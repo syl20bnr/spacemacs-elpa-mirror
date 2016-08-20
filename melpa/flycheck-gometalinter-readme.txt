@@ -1,0 +1,1 @@
+Flycheck checker for gometalinter
