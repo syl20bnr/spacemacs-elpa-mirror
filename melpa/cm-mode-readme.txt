@@ -4,7 +4,7 @@ CriticMarkup for Emacs
 `cm-mode' is a minor mode that provides support for CriticMarkup in Emacs.
 
 CriticMarkup is a way for authors and editors to track changes to
-documents in plain text. It defines the following patterns for marking
+documents in plain text.  It defines the following patterns for marking
 changes:
 
 - Addition {++ ++}

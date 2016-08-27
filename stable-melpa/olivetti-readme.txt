@@ -11,9 +11,9 @@ Features
 - Text body width can be the number of characters (an integer) or a
   fraction of the window width (a float between 0.0 and 1.0).
 - Interactively change body width with:
-  `olivetti-shrink` C-c [
-  `olivetti-expand` C-c ]
-  and `olivetti-set-width`.
+  `olivetti-shrink` C-c [ [ [ ...
+  `olivetti-expand` C-c ] ] ] ...
+  `olivetti-set-width` C-c \
 - If `olivetti-body-width` is an integer, the text body width will scale
   with use of `text-scale-mode`, whereas if a fraction (float) then the
   text body width will remain at that fraction.
@@ -44,7 +44,7 @@ Known Bugs
 
 - `linum-mode` currently has a bug that overwrites margin settings,
   making it incompatible with Olivetti. More information here:
-  <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=20674>
+  <http://debbugs.gnu.org/20674>.
 
 Please report bugs on GitHub [Issues][] page.
 

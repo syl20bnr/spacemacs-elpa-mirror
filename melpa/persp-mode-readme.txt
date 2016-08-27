@@ -37,16 +37,25 @@ p -- switch to previous perspecive.
 s -- create/switch to perspective in frame.
 S -- create/switch to perspecive in window.
 r -- rename perspective.
-c -- kill perspective
-  (if you kill nil('none') persp -- it'll kill all opened buffers).
+c -- copy current perspecive.
+C -- kill perspective.
+  Calling with prefix argument will not kill perspective's buffers
+  (however if you try to kill 'none' persp -- it'l kill all opened buffers).
 a -- add buffer to perspective.
+  Calling with prefix argument reverses the effect of the persp-switch-to-added-buffer.
 b -- switch to buffer in perspecive.
 t -- switch to buffer without adding it to current perspective.
+  Calling with prefix argument allows to remove a buffer from perspective without
+  killing and switching to another buffer.
 i -- import all buffers from another perspective.
+I -- import window configuration from another perspecive.
 k -- remove buffer from perspective.
-K -- kill buffer
+  Calling with prefix argument reverses the effect of the persp-auto-kill-buffer-on-remove.
+K -- kill buffer.
 w -- save perspectives to file.
+W -- save subset of perspectives to file.
 l -- load perspectives from file.
+L -- load subset of perspectives from file.
 o -- switch off persp-mode.
   (This may be usefull when you launch emacs just to edit a single file and don't want to
 restore buffers)

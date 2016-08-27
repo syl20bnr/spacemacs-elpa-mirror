@@ -29,7 +29,8 @@
 
  (@> "Overview of Features")
  (@> "Macros")
- (@> "Variables")
+ (@> "Options")
+ (@> "Internal Variables")
  (@> "Keys")
  (@> "General Search-Property Commands")
  (@> "General Non-Interactive Functions")
@@ -52,6 +53,9 @@
    `isearchp-imenu-non-interactive-function',
    `isearchp-lazy-highlights-forward',
    `isearchp-lazy-highlights-forward-regexp',
+   `isearchp-make-anti-zones-invisible',
+   `isearchp-make-anti-zones-visible',
+   `isearchp-make-zones-invisible', `isearchp-make-zones-visible',
    `isearchp-mark-lazy-highlights',
    `isearchp-narrow-to-lazy-highlights',
    `isearchp-narrow-to-matching-zones',
@@ -59,17 +63,20 @@
    `isearchp-previous-visible-thing', `isearchp-property-backward',
    `isearchp-property-backward-regexp',
    `isearchp-property-forward', `isearchp-property-forward-regexp',
-   `isearchp-put-prop-on-region',
+   `isearchp-put-prop-on-region', `isearchp-put-prop-on-zones',
    `isearchp-regexp-context-regexp-search',
    `isearchp-regexp-context-search',
    `isearchp-regexp-define-contexts',
    `isearchp-remove-all-properties', `isearchp-remove-dimming',
    `isearchp-remove-property', `isearchp-thing',
    `isearchp-thing-define-contexts', `isearchp-thing-regexp',
+   `isearchp-toggle-anti-zones-invisible',
    `isearchp-toggle-complementing-domain',
    `isearchp-toggle-dimming-outside-search-area',
    `isearchp-toggle-ignoring-comments',
-   `isearchp-toggle-hiding-comments', `isearchp-zones-backward',
+   `isearchp-toggle-hiding-comments',
+   `isearchp-toggle-zone/anti-zone-visibility',
+   `isearchp-toggle-zones-invisible', `isearchp-zones-backward',
    `isearchp-zones-backward-regexp', `isearchp-zones-forward',
    `isearchp-zones-forward-regexp'.
 
@@ -109,12 +116,13 @@
 
  Internal variables defined here:
 
-   `isearchp-dimmed-overlays', `isearchp-excluded-zones',
-   `isearchp-property-prop', `isearchp-property-prop-prefix',
-   `isearchp-property-type', `isearchp-property-values',
-   `isearchp-complement-domain-p', `isearchp-context-level',
-   `isearchp-filter-predicate-orig', `isearchp-last-thing-type',
-   `isearchp-zone-limits-function'.
+   `isearchp-anti-zones-invisible-p', `isearchp-dimmed-overlays',
+   `isearchp-excluded-zones', `isearchp-property-prop',
+   `isearchp-property-prop-prefix', `isearchp-property-type',
+   `isearchp-property-values', `isearchp-complement-domain-p',
+   `isearchp-context-level', `isearchp-filter-predicate-orig',
+   `isearchp-last-thing-type', `isearchp-zone-limits-function',
+   `isearchp-zones-invisible-p'.
 
 
  Keys bound in `isearch-mode-map' here:
@@ -209,6 +217,21 @@ Overview of Features ---------------------------------------------
    This gives you an interactive way to set up zones for
    text-property search (`C-t').  For property `face', empty input
    removes all faces from the region.
+
+ * If you use library `zones.el' then you can use command
+   `isearchp-put-prop-on-region' (outside of Isearch) to add a text
+   property to a set of zones.
+
+ * If you use library `zones.el' then you can make a set of zones,
+   or their complement (the anti-zones), invisible (or visible, if
+   they are invisible).  See commands
+   `isearchp-make-zones-invisible',
+   `isearchp-make-anti-zones-invisible',
+   `isearchp-make-anti-zones-visible',
+   `isearchp-make-zones-visible',
+   `isearchp-toggle-zone/anti-zone-visibility',
+   `isearchp-toggle-zones-invisible', and
+   `isearchp-toggle-anti-zones-invisible'.
 
  * You can use command `isearchp-mark-lazy-highlights' to put
    property `isearchp-lazy-highlight' on the text that has lazy

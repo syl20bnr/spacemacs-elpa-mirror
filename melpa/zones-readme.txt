@@ -186,6 +186,9 @@
  * Search them (they are automatically coalesced first).  For this
    you need library `isearch-prop.el'.
 
+ * Make a set of zones or its complement (the anti-zones)
+   invisible.  For this you also need library `isearch-prop.el'.
+
  * Highlight and unhighlight them.  For this you need library
    `highlight.el' or library `facemenu+.el' (different kinds of
    highlighting).

@@ -36,9 +36,11 @@ Further there is function =emacsshot-snap-window-include-modeline=
 which does as =emacsshot-snap-window= but includes the modeline when
 taking the shot.
 
-The filenames are configurable.  Hint: =M-x customize-group emacsshot=.
+The filenames are configurable.  Hint: =M-x customize-group
+emacsshot=.  Note that the file-suffix defines the image-format under
+which the file gets stored.
 
-It's even possible to add a timestamp to the filename as postfix.  See
+It's possible to add a timestamp to the filename as postfix.  See
 =M-x customize-variable emacsshot-with-timestamp=.
 
 It might be a good idea to bind the functions to a key.  This can
@@ -100,6 +102,7 @@ to your .emacs or whatever you use for Emacs intitialization.
 =convert= actually creates the snapshots.
 
 ** Development
+
 *** Lentic Literate Style
 
 This program is written in Emacs Lisp in lentic style based on the
