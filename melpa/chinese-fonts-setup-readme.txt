@@ -158,6 +158,12 @@ emacs 自动启动，这个命令将 `cfs-set-font-with-saved-step' 添加到
 用户也可以手动运行 `cfs-set-font-with-saved-step' 来让
 chinese-fonts-setup 生效。
 
+*** 使用 chinese-fonts-setup 生成 elisp 字体配置片断
+有些用户觉得 chinese-fonts-setup *太过厚重* , 他们喜欢使用简单的
+方式来配置字体，这些用户可以了解一下 `cfs-insert-fonts-configure'
+命令，这个命令可以根据 chinese-fonts-setup 的设置自动生成一个
+"字体配置 elisp 片断", 并插入光标处，将这个片断写入 .emacs 文件
+后，就不需要启动 chinese-fonts-setup 来设置字体了。
 
 ** Tips
 

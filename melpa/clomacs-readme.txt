@@ -236,6 +236,7 @@ Handle errors. Handle difference between CIDER versions."
                                 cl-entity-name-str)))
     (list doc namespace-str cl-entity-full-name)))
 
+###autoload
 (cl-defmacro clomacs-def (el-entity-name
                           cl-entity-name
                           &optional &key
@@ -269,6 +270,7 @@ or it may be a custom function (:string by default)."
            (clomacs-get-result result :value ',type ',namespace)))
        ,doc)))
 
+###autoload
 (cl-defmacro clomacs-defun (el-func-name
                             cl-func-name
                             &optional &key
