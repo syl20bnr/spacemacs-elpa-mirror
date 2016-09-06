@@ -4,7 +4,7 @@
 
 ;; Author: Xah Lee ( http://xahlee.org/ )
 ;; Version: 5.2.0
-;; Package-Version: 20160827.2003
+;; Package-Version: 20160906.1341
 ;; Created: 10 Sep 2013
 ;; Keywords: convenience, emulations, vim, ergoemacs
 ;; Homepage: http://ergoemacs.org/misc/ergoemacs_vi_mode.html
@@ -1601,11 +1601,12 @@ Version 2016-07-20"
 (defun xah-delete-current-file-copy-to-kill-ring ()
   "Delete current buffer/file and close the buffer, push content to `kill-ring'.
 URL `http://ergoemacs.org/emacs/elisp_delete-current-file.html'
-Version 2016-07-20"
+Version 2016-09-03"
   (interactive)
-  (progn
-    (kill-new (buffer-string))
-    (message "Buffer content copied to kill-ring.")
+  (let ((-bstr (buffer-string)))
+    (when (> (length -bstr) 0)
+      (kill-new -bstr)
+      (message "Buffer content copied to kill-ring."))
     (when (buffer-file-name)
       (when (file-exists-p (buffer-file-name))
         (progn
@@ -2241,6 +2242,7 @@ If `universal-argument' is called first, do switch frame."
       (define-key xah-fly-key-map (kbd "<C-tab>") 'xah-next-user-buffer)
       (define-key xah-fly-key-map (kbd "<C-S-iso-lefttab>") 'xah-previous-user-buffer)
 
+      (define-key xah-fly-key-map (kbd "C-a") 'mark-whole-buffer)
       (define-key xah-fly-key-map (kbd "C-v") 'yank)
       (define-key xah-fly-key-map (kbd "C-w") 'xah-close-current-buffer)
       (define-key xah-fly-key-map (kbd "C-z") 'undo)

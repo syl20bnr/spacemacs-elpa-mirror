@@ -1,7 +1,12 @@
 ;;; zoutline.el --- Simple outline library. -*- lexical-binding: t -*-
-;; Package-Version: 20160902.1024
 
 ;; Copyright (C) 2016 Oleh Krehel
+
+;; Author: Oleh Krehel <ohwoeowho@gmail.com>
+;; URL: https://github.com/abo-abo/zoutline
+;; Package-Version: 20160906.743
+;; Version: 0.1.0
+;; Keywords: outline
 
 ;; This file is not part of GNU Emacs
 
@@ -59,6 +64,8 @@ Return nil if moved 0 times."
                    "\n\\*\\{5\\} "
                    "\n\\*\\{6\\} "
                    "\n\\*\\{7\\} "])
+
+(declare-function reveal-post-command "reveal")
 
 (defun zo-down-visible (&optional arg)
   "Move ARG times down by outline."
