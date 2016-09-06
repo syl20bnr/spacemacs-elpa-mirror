@@ -23,6 +23,10 @@ Endpoints:
     Accepts a q parameter which is an filter string to be parsed
     and handled by `elfeed-search-parse-filter'.
 
+/elfeed/tags
+    Accepts a PUT request to modify the tags of zero or more
+    entries based on a JSON entry passed as the content.
+
 /elfeed/update
     Accepts a time parameter. If time < `elfeed-db-last-update',
     respond with time. Otherwise don't respond until database

@@ -50,26 +50,16 @@ profile 代表了一套字体配置，chinese-fonts-setup 使用 profile 的概�
 
 每一个 profile 都对应一个 emacs-lisp 文件, 保存在 `cfs-profiles-directory'
 目录中, 这些文件包含了英文字体设置，中文字体设置以及中文字体大小，
-类似：
+其结构类似：
 
 #+BEGIN_EXAMPLE
-`cfs--custom-set-fontsnames' 列表有3个子列表，第1个为英文字体列表，第2个为中文字体列表，
-第3个列表中的字体用于显示不常用汉字，每一个字体列表中，*第一个* *有效并可用* 的字体将被使用。
-将光标移动到上述列表中，按 `C-c C-c' 可以测试字体显示效果。另外，用户可以通过命令
-`cfs-insert-fontname’ 来选择一个 *可用* 字体，然后在当前光标处插入其字体名称。
 (setq cfs--custom-set-fontnames
-      '(
-        ("PragmataPro" "Ubuntu Mono" "DejaVu Sans Mono" "Courier" "Courier New" "Free Mono" "Inconsolata" "Droid Sans Mono" "Monaco" "Consolas" "Liberation Mono" "MonacoB" "MonacoB2" "MonacoBSemi" "Droid Sans Mono Pro" "Source Code Pro" "Lucida Console" "Envy Code R" "Andale Mono" "Lucida Sans Typewriter" "monoOne" "Lucida Typewriter" "Panic Sans" "Hack" "Bitstream Vera Sans Mono" "HyperFont" "PT Mono" "Ti92Pluspc" "Excalibur Monospace" "Menlof" "Cousine" "Fira Mono" "Lekton" "M+ 1mn" "BPmono" "Anonymous Pro" "ProFont" "ProFontWindows" "Latin Modern Mono" "Code 2002" "ProggyCleanTT" "ProggyTinyTT")
-        ("文泉驿等宽微米黑" "Ubuntu Mono" "隶书" "新宋体" "宋体" "楷体_GB2312" "仿宋_GB2312" "方正姚体" "Noto Sans S Chinese Regular" "微软雅黑" "Microsoft Yahei" "Microsoft_Yahei" "文泉驿等宽正黑" "黑体" "Hiragino Sans GB" "文泉驿正黑" "文泉驿点阵正黑" "SimHei" "SimSun" "NSimSun" "FangSong" "KaiTi" "FangSong_GB2312" "KaiTi_GB2312" "LiSu" "YouYuan" "幼圆" "STXihei" "STKaiti" "STSong" "STZhongsong" "STFangsong" "FZShuTi" "FZYaoti" "STCaiyun" "STHupo" "STLiti" "STXingkai" "STXinwei" "方正舒体" "方正粗圆_GBK" "华文仿宋" "华文中宋" "华文彩云" "华文新魏" "华文细黑" "华文行楷")
-        ("HanaMinB" "SimSun-ExtB" "MingLiU-ExtB" "PMingLiU-ExtB" "MingLiU_HKSCS-ExtB")
-        ))
+      '(("PragmataPro" "Ubuntu Mono" "DejaVu Sans Mono")
+        ("文泉驿等宽微米黑" "Ubuntu Mono" "隶书" "新宋体")
+        ("HanaMinB" "SimSun-ExtB" "MingLiU-ExtB")))
 
-`cfs--custom-set-fontsizes' 中，所有元素的结构都类似：(英文字号 中文字号 EXT-B字体字号)
-将光标移动到各个数字上，按 C-c C-c 查看光标处字号的对齐效果。
-按 C-<up> 增大光标处字号，按 C-<down> 减小光标处字号。
 (setq cfs--custom-set-fontsizes
-      '(
-        (9    9.0  9.5 )
+      '((9    9.0  9.5 )
         (10   11.0 11.0)
         (11.5 12.5 12.5)
         (12.5 13.5 13.5)
@@ -82,8 +72,7 @@ profile 代表了一套字体配置，chinese-fonts-setup 使用 profile 的概�
         (26   27.0 27.0)
         (28   29.0 29.0)
         (30   32.0 32.0)
-        (32   33.0 33.0)
-        ))
+        (32   33.0 33.0)))
 #+END_EXAMPLE
 
 *** profile 命名与切换
@@ -110,9 +99,12 @@ chinese-fonts-setup 使用下面两个命令来切换 profile ：
 [[./snapshots/cfs-ui-2.png]]
 [[./snapshots/cfs-ui-3.png]]
 [[./snapshots/cfs-ui-4.png]]
+[[./snapshots/cfs-ui-5.png]]
+[[./snapshots/cfs-ui-6.png]]
+[[./snapshots/cfs-ui-7.png]]
 
 *** 使用 cfs-edit-profile-without-ui 命令编辑 profile
-除了使用 `cfs-edit-profile' , 有经验的用户也可以使用
+除了使用 `cfs-edit-profile' , *有经验* 的用户也可以使用
 `cfs-edit-profile-without-ui' 命令，直接编辑当前 profile 文件，
 两个命令的效果是一样的。
 
@@ -124,11 +116,9 @@ chinese-fonts-setup 使用下面两个命令来切换 profile ：
 | C-up    | cfs-increment-fontsize-at-point | 增大光标下字号的大小，同时显示对齐效果 |
 | C-down  | cfs-decrement-fontsize-at-point | 减小光标下字号的大小，同时显示对齐效果 |
 
-配置完成后，有可能需要重启 Emacs, 参考：http://debbugs.gnu.org/db/17/1785.html
+注1: 不建议 chinese-fonts-setup 新用户使用这种方式
 
-[[./snapshots/cfs-edit-fontnames.gif]]
-
-[[./snapshots/cfs-edit-fontsizes.gif]]
+注2: 配置完成后，有可能需要重启 Emacs, 参考：http://debbugs.gnu.org/db/17/1785.html
 
 *** 使用 cfs-regenerate-profile 重置 profile
 `cfs-regenerate-profile' 命令会使用 chinese-fonts-setup 自带的
@@ -164,6 +154,41 @@ chinese-fonts-setup 生效。
 命令，这个命令可以根据 chinese-fonts-setup 的设置自动生成一个
 "字体配置 elisp 片断", 并插入光标处，将这个片断写入 .emacs 文件
 后，就不需要启动 chinese-fonts-setup 来设置字体了。
+
+*** Chinese-fonts-setup 高级功能
+Chinese-fonts-setup *仅仅* 设置英文，中文和 EXT-B 字体，不处理
+其它字体，比如：symbol 字体，但 chinese-fonts-setup 提供了一个
+hook: `cfs-set-font-finish-hook' , 用户可以用它来处理一些特殊设置，
+下面的一段代码用来配置 symbol 字体，参数 fontsizes-list 是一个列表，
+记录了 *当前使用* 的英文字体，中文字体和 EXT-B 字体的字号。
+
+#+BEGIN_EXAMPLE
+(defun my-set-symbol-fonts (fontsizes-list)
+  (set-fontset-font t 'symbol "Inconsolata" nil 'append))
+
+(add-hook 'cfs-set-font-finish-hook 'my-set-symbol-fonts)
+#+END_EXAMPLE
+
+除了字体设置，这个 hook 还可以实现其它功能，比如：行距随着字号自动调整
+
+#+BEGIN_EXAMPLE
+(defvar my-line-spacing-alist
+      '((9 . 0.1) (10 . 0.9) (11.5 . 0.2)
+        (12.5 . 0.2) (14 . 0.2) (16 . 0.2)
+        (18 . 0.2) (20 . 1.0) (22 . 0.2)
+        (24 . 0.2) (26 . 0.2) (28 . 0.2)
+        (30 . 0.2) (32 . 0.2)))
+
+(defun my-line-spacing-setup (fontsizes-list)
+  (let ((fontsize (car fontsizes-list))
+        (line-spacing-alist (copy-list my-line-spacing-alist)))
+    (dolist (list line-spacing-alist)
+      (when (= fontsize (car list))
+        (setq line-spacing-alist nil)
+        (setq-default line-spacing (cdr list))))))
+
+(add-hook 'cfs-set-font-finish-hook #'my-line-spacing-setup)
+#+END_EXAMPLE
 
 ** Tips
 

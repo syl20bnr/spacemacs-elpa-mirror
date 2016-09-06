@@ -22,3 +22,11 @@ Here follows an example setup to activate `sqlup-mode` automatically:
 (add-hook 'sql-mode-hook 'sqlup-mode)
 (add-hook 'sql-interactive-mode-hook 'sqlup-mode)
 (add-hook 'redis-mode-hook 'sqlup-mode)
+
+Sqlup can be configured to ignore certain keywords by adding them to the list
+`sqlup-blacklist`. For example if you use `name` as a column name it would be
+annoying to have it upcased so you can prevent this by adding
+
+(add-to-list 'sqlup-blacklist "name")
+
+to your config (or do the equivalent through the `M-x customize` interface).

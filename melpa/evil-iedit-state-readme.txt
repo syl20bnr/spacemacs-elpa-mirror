@@ -23,7 +23,8 @@ For more info visit: https://github.com/syl20bnr/evil-iedit-state
   :tag " <Ei> "
   :enable (insert)
   :cursor (bar . 2)
-  :message "-- IEDIT-INSERT --")
+  :message "-- IEDIT-INSERT --"
+  :input-method t)
 
 (defun evil-iedit-state/iedit-mode (&optional arg)
   "Start `iedit-mode'."
@@ -126,15 +127,15 @@ If INTERACTIVE is non-nil then COMMAND is called interactively."
   (evil-paste-before count))
 
 expand-region integration, add an "e" command
+###autoload
 (eval-after-load 'expand-region
   '(progn
      (defun evil-iedit-state/iedit-mode-from-expand-region (&optional arg)
        "Start `iedit-mode'."
        (interactive "P")
        (evil-iedit-state/iedit-mode arg)
-       ;; hack to leave expand-region temporary overlay map
-       ;; we choose a letter that is not in `iedit state'
-       (setq unread-command-events (listify-key-sequence "kj")))
+       ;; force expand-region temporary overlay map exit
+       (setq overriding-terminal-local-map nil))
 
      (defadvice er/prepare-for-more-expansions-internal
          (around iedit/prepare-for-more-expansions-internal activate)

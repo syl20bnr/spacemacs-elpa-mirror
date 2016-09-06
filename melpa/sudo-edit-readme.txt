@@ -1,13 +1,13 @@
-This file provides several utility functions for opening buffers
-as root using 'sudo'.  They are:
+This package allows to open files as another user, by default "root":
 
-sudo-edit
-sudo-edit-current-file
+    `sudo-edit'
 
 Suggested keybinding:
-(global-set-key (kbd "C-c C-r") 'sudo-edit-current-file)
 
-Installation
+    (global-set-key (kbd "C-c C-r") 'sudo-edit)
+
+Installation:
 
 To use this mode, put the following in your init.el:
-(require 'sudo-edit)
+
+    (require 'sudo-edit)

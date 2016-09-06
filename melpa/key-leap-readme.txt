@@ -10,7 +10,7 @@ the variable `key-leap-key-strings'.  This is a list of strings
 that specify what chars to use for each position in the keys.  For
 example, adding this to your init file
 
-(setq key-leap-key-chars '("htn" "ao" "ht"))
+(setq key-leap-key-strings '("htn" "ao" "ht"))
 
 will make key-leap-mode generate and use the following keys:
 hah hat hoh hot tah tat toh tot nah nat noh not

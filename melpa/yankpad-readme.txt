@@ -24,13 +24,16 @@ you use the snippet.
 If you name a category to a major-mode name, that category will be switched
 to when you change major-mode.  If you have projectile installed, you can also
 name a categories to the same name as your projecile projects, and they will
-be switched to when using `projectile-find-file'.
+be switched to when using `projectile-find-file'.  These snippets will be
+appended to your active snippets if you change category.
 
 To insert a snippet from the yankpad, use `yankpad-insert' or
 `yankpad-expand'.  `yankpad-expand' will look for a keyword at point, and
 expand a snippet with a name starting with that word, followed by
 `yankpad-expand-separator' (a colon by default).  If you need to change the
-category, use `yankpad-set-category'.
+category, use `yankpad-set-category'.  If you want to append snippets from
+another category (basically having several categories active at the same
+time), use `yankpad-append-category'.
 
 For further customization, please see the Github page: https://github.com/Kungsgeten/yankpad
 
@@ -38,6 +41,7 @@ Here's an example of what yankpad.org could look like:
 
 Yankpad example:
 
+* Category 1
 ** Snippet 1
 
    This is a snippet.
@@ -67,3 +71,15 @@ Yankpad example:
    #+BEGIN_SRC emacs-lisp
    (magit-status)
    #+END_SRC
+
+* org-mode
+** Snippet 1
+   This category will be switched to automatically when visiting an org-mode buffer.
+
+* Category 3
+  :PROPERTIES:
+  :INCLUDE:  Category 1|Category 2
+  :END:
+** A snippet among many!
+   This category will include snippets from Category 1 and Category 2.
+   This is done by setting the INCLUDE property of the category.

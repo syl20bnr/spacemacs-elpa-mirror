@@ -7,5 +7,6 @@
  - M-x composer-install  - Run composer install command
  - M-x composer-require  - Run composer require command
  - C-u M-x composer-require  - Run composer require --dev command
- - M-x composer-find-json-file  - Open composer.json of the project.
- - M-x composer-view-lock-file  - Open composer.lock of the project (as read-only).
+ - M-x composer-dump-autoload - Run composer dump-autoload command
+ - M-x composer-find-json-file  - Open composer.json of the project
+ - M-x composer-view-lock-file  - Open composer.lock of the project (as read-only)

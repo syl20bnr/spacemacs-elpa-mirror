@@ -80,7 +80,7 @@
 	 ((:keywords "async")
 	  (:url . "http://elpa.gnu.org/packages/async.html"))])
  (auctex .
-	 [(11 89 4)
+	 [(11 89 5)
 	  nil "Integrated environment for *TeX*" tar
 	  ((:url . "http://www.gnu.org/software/auctex/"))])
  (aumix-mode .
@@ -631,7 +631,7 @@
 	     ((:url . "https://github.com/michael-heerdegen/on-screen.el")
 	      (:keywords "convenience"))])
  (org .
-      [(20160829)
+      [(20160905)
        nil "Outline-based notes management and organizer" tar nil])
  (osc .
       [(0 1)
