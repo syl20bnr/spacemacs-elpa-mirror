@@ -8,7 +8,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20160905.137
+;; Package-Version: 20160907.748
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -298,7 +298,8 @@ line as a type signature."
       (let ((file (match-string 1 result))
             (line (string-to-number (match-string 2 result)))
             (col (string-to-number (match-string 3 result))))
-        (find-file file)
+        (unless (string= file (intero-temp-file-name))
+          (find-file file))
         (pop-mark)
         (goto-char (point-min))
         (forward-line (1- line))

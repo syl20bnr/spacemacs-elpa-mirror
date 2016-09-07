@@ -179,6 +179,11 @@ TODO:
 
 - improve docstrings
 
+- Make it work in comments, too? (-> `parse-sexp-ignore-comments').
+  Related: should the pattern `symbol' also match strings that
+  contain matches for a symbol so that it's possible to replace
+  also occurrences of a symbol in docstrings?
+
 - handle more reader syntaxes, e.g. #n, #n#
 
 - Implement sessions; add multi-file support based on iterators.  A

@@ -5,7 +5,7 @@
 ;; Author: DarkSun <lujun9972@gmail.com>
 ;; Created: 2015-12-27
 ;; Version: 0.2
-;; Package-Version: 20160906.1705
+;; Package-Version: 20160906.2327
 ;; Keywords: convenience, eww, org
 ;; Package-Requires: ((org "8.0") (emacs "24.4"))
 ;; URL: https://github.com/lujun9972/org-preview-html

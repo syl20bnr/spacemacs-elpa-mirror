@@ -5,9 +5,9 @@
 
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; Keywords: languages, clojure, cider
-;; Package-Version: 1.0
+;; Package-Version: 1.1
 ;; Created: 20 Mar 2015
-;; Version: 1.0
+;; Version: 1.1
 ;; Package-Requires: ((emacs "24") (highlight "0") (eval-sexp-fu "0.4.0"))
 
 ;; This file is not part of GNU Emacs.
@@ -52,7 +52,7 @@ area is identical to that which is evaluated."
   (define-eval-sexp-fu-flash-command cider-pprint-eval-last-sexp
     (eval-sexp-fu-flash (cider-esf--bounds-of-last-sexp)))
   (define-eval-sexp-fu-flash-command cider-eval-defun-at-point
-    (eval-sexp-fu-flash (let ((bounds (cider--region-for-defun-at-point)))
+    (eval-sexp-fu-flash (let ((bounds (cider-defun-at-point 'bounds)))
                           (cons (first bounds) (second bounds)))))
 
   ;; Defines:
