@@ -1,5 +1,5 @@
 ;;; cmake-mode.el --- major-mode for editing CMake sources
-;; Package-Version: 3.6.1
+;; Package-Version: 3.6.2
 
 ;=============================================================================
 ; CMake - Cross Platform Makefile Generator

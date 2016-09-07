@@ -4,7 +4,7 @@
 ;;
 ;; Author: Raghav Kumar Gautam <raghav@apache.org>
 ;; Keywords: Apple, AppleScript, OSX, Finder, Emacs, Elisp, VPN, Speech
-;; Package-Version: 20160830.1149
+;; Package-Version: 20160907.1017
 ;; Package-Requires: ((emacs "24.4"))
 ;;; Commentary:
 ;; Provides functions for:
@@ -265,7 +265,7 @@ end tell
   "Start terminal in DIR."
   (interactive)
   (let ((cd-cmd (concat "cd "
-                        (shell-quote-argument (or dir default-directory))
+                        (shell-quote-argument (expand-file-name (or dir default-directory)))
                         (when cmd-with-quoted-args
                           (concat ";" cmd-with-quoted-args)))))
     (osx-lib-run-applescript (concat "tell application \"Terminal\" to activate do script \"" cd-cmd "\""))))
