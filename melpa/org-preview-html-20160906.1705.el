@@ -5,7 +5,7 @@
 ;; Author: DarkSun <lujun9972@gmail.com>
 ;; Created: 2015-12-27
 ;; Version: 0.2
-;; Package-Version: 20160905.2215
+;; Package-Version: 20160906.1705
 ;; Keywords: convenience, eww, org
 ;; Package-Requires: ((org "8.0") (emacs "24.4"))
 ;; URL: https://github.com/lujun9972/org-preview-html
@@ -69,7 +69,7 @@
     (setq org-preview-html/htmlfilename (concat buffer-file-name (make-temp-name "-") ".html"))
     ;; bogus file change to be able to save
     (insert " ")
-    (delete-backward-char 1)
+    (delete-char -1)
     ;; trigger creation of preview buffer
     (save-buffer)
     (message "Eww preview is on")))

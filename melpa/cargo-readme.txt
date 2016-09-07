@@ -16,3 +16,4 @@ Current supported Cargo Key Combinations:
  * C-c C-c C-f - cargo-process-current-test
  * C-c C-c C-o - cargo-process-current-file-tests
  * C-c C-c C-m - cargo-process-fmt
+ * C-c C-c C-k - cargo-process-check
