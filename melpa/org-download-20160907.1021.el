@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel
 ;; URL: https://github.com/abo-abo/org-download
-;; Package-Version: 20160814.237
+;; Package-Version: 20160907.1021
 ;; Version: 0.1.0
 ;; Package-Requires: ((async "1.2"))
 ;; Keywords: images, screenshots, download
@@ -279,9 +279,7 @@ It's inserted before the image link and is used to annotate it.")
 
 (defun org-download-image (link)
   "Save image at address LINK to `org-download--dir'."
-  (interactive
-   (list
-    (read-file-name "Open file:")))
+  (interactive "sUrl: ")
   (let (ext)
     (unless (image-type-from-file-name link)
       (with-current-buffer (url-retrieve-synchronously link t)
