@@ -60,7 +60,7 @@ If you use evil-mode, insert below code into ~/.emacs,
 ivy-mode is used for filter/search UI
 In ivy-mode, SPACE is translated to regex ".*".
 For example, the search string "dec fun pro" is transformed into
-a regex "\\(dec\\).*\\(fun\\).*\\(pro\\)"
+regular expression "\\(dec\\).*\\(fun\\).*\\(pro\\)"
 `C-h i g (ivy)' for more key-binding tips.
 
 `ffip-save-ivy-last' saves the most recent search result.

@@ -178,19 +178,52 @@ chinese-fonts-setup 生效。
 
 *** Chinese-fonts-setup 高级功能
 Chinese-fonts-setup *仅仅* 设置英文，中文和 EXT-B 字体，不处理
-其它字体，比如：symbol 字体，但 chinese-fonts-setup 提供了一个
-hook: `cfs-set-font-finish-hook' , 用户可以用它来处理一些特殊设置，
-下面的一段代码用来配置 symbol 字体，参数 fontsizes-list 是一个列表，
-记录了 *当前使用* 的英文字体，中文字体和 EXT-B 字体的字号。
+其它字符的字体，比如：symbol 字符，但 chinese-fonts-setup 可以
+通过 hook: `cfs-set-font-finish-hook' 来处理类似的问题（这个
+hook 使用的函数只有一个参数 fontsizes-list, 用来记录 *当前使用*
+的英文字体，中文字体和 EXT-B 字体的字号）。
 
+下面是一些例子：
+**** 设置 symbol 字符的字体
 #+BEGIN_EXAMPLE
 (defun my-set-symbol-fonts (fontsizes-list)
-  (set-fontset-font t 'symbol "Inconsolata" nil 'append))
+  (let* ((fontname "Inconsolata")
+         (fontsize (nth 0 fontsizes-list))
+         (fontspec (font-spec :name fontname
+                              :size fontsize
+                              :weight 'normal
+                              :slant 'normal)))
+    (if (cfs--fontspec-valid-p fontspec)
+        (set-fontset-font "fontset-default" 'symbol fontspec nil 'append)
+      (message "字体 %S 不存在！" fontname))))
 
 (add-hook 'cfs-set-font-finish-hook 'my-set-symbol-fonts)
 #+END_EXAMPLE
 
-除了字体设置，这个 hook 还可以实现其它功能，比如：行距随着字号自动调整
+**** 设置一些不常用汉字字符的字体
+#+BEGIN_EXAMPLE
+(defun my-set-exta-fonts (fontsizes-list)
+  (let* ((fontname "微软雅黑")
+         (fontsize (nth 1 fontsizes-list))
+         (fontspec (font-spec :name fontname
+                              :size fontsize
+                              :weight 'normal
+                              :slant 'normal)))
+    (if (cfs--fontspec-valid-p fontspec)
+        (set-fontset-font "fontset-default" '(#x3400 . #x4DFF) fontspec nil 'append)
+      (message "字体 %S 不存在！" fontname))))
+
+(add-hook 'cfs-set-font-finish-hook 'my-set-exta-fonts)
+#+END_EXAMPLE
+注意事项：
+
+1. "(#x3400 . #x4DFF)" 代表了待设字符在 unicode-bmp 中的范围。
+2. 用户可以通过下面的方式来确定待字符的范围
+   1. 运行 `describe-char' 来显示 *待设字符* 的信息
+   2. 点击 “code point in charset” 处的链接，来显示整个 unicode-bmp 表
+   3. 获取范围
+
+**** 设置行距随着字号自动调整
 
 #+BEGIN_EXAMPLE
 (defvar my-line-spacing-alist
