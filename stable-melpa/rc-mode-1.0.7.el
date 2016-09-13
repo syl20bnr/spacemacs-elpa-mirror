@@ -4,7 +4,7 @@
 
 ;; Author: Jordan Brown
 ;; URL: https://github.com/mrhmouse/rc-mode.el
-;; Package-Version: 1.0.6
+;; Package-Version: 1.0.7
 ;; Version: 1.0.6
 ;; Keywords: rc, plan9, shell
 
@@ -60,7 +60,7 @@
                       "\\|")
      . font-lock-builtin-face)
 
-    ("\\(?1:\\$#?\\$*[a-zA-Z0-9_]+\\)\\|\\(?1:[a-zA-Z0-9_]+\\)[[:space:]]*="
+    ("\\(?1:\\$#?\\$*[a-zA-Z0-9_]+\\)\\|^[^#]*\\(?1:[a-zA-Z0-9_]+\\)[[:space:]]*="
      1 font-lock-variable-name-face)
 
     ("#.*$"
