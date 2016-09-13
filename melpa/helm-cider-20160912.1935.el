@@ -4,7 +4,7 @@
 
 ;; Author: Tianxiang Xiong <tianxiang.xiong@gmail.com>
 ;; Package-Requires: ((emacs "24.4") (cider "0.12") (helm-core "2.0") (seq "1.0"))
-;; Package-Version: 20160902.2037
+;; Package-Version: 20160912.1935
 ;; Keywords: tools, convenience
 ;; URL: https://github.com/clojure-emacs/helm-cider
 ;; Version: 0.1.2
@@ -125,6 +125,14 @@ a symbol-end \(\\_>\); otherwise, the regexp wouldn't match."
                              ""))))
         (concat "\\_<" (regexp-quote (or string "")) symbol-end))
     ""))
+
+(defun helm-cider--source-by-name (name &optional sources)
+  "Get a Helm source in SOURCES by NAME.
+
+Default value of SOURCES is `helm-sources'."
+  (car (cl-member-if (lambda (source)
+                       (string= name (assoc-default 'name source)))
+                     (or sources helm-sources))))
 
 (defun helm-cider--symbol-name (qualified-name)
   "Get the name porition of the fully qualified symbol name
@@ -383,7 +391,7 @@ browsing documentation."
         (with-helm-buffer
           (let ((helm--force-updating-p t))
             (if symbol
-                (helm-preselect symbol ns)
+                (helm-preselect symbol (helm-cider--source-by-name ns))
               (helm-goto-source ns)
               (helm-next-line))
             (recenter 1))))

@@ -5,7 +5,7 @@ Provides functions for:
   3. Notification functions
      (osx-lib-notify2 "Emacs" "Text Editor")
   4. Copying to/from clipboard
-  5. Show the current file in Finder. Works with dired.
+  5. Show the current file in Finder.  Works with dired.
   6. Get/Set Sound volume
      (osx-lib-set-volume 25)
      (osx-lib-get-volume)

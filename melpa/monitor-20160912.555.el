@@ -3,7 +3,7 @@
 ;; Copyright (C) 2016 Ben Moon
 ;; Author: Ben Moon <guiltydolphin@gmail.com>
 ;; URL: https://github.com/guiltydolphin/monitor
-;; Package-Version: 20160911.514
+;; Package-Version: 20160912.555
 ;; Git-Repository: git://github.com/guiltydolphin/monitor.git
 ;; Created: 2016-08-17
 ;; Version: 0.1.0
@@ -155,7 +155,7 @@ If LOCAL is non-nil then monitor the buffer-local value."
   "Monitor EXPR and run FN if it's value is changed.
 Optional MODE should specify a `major-mode'.
 If LOCAL is non-nil then monitor the buffer-local value."
-  (monitor--monitor-expression-value expr fn mode local))
+  `(monitor--monitor-expression-value ',expr ,fn ,mode ,local))
 
 (provide 'monitor)
 ;;; monitor.el ends here

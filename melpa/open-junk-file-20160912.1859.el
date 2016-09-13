@@ -1,12 +1,12 @@
 ;;; open-junk-file.el --- Open a junk (memo) file to try-and-error
 
-;; $Time-stamp: <2016-05-15 07:25:46 rubikitch>$
+;; $Time-stamp: <2016-09-13 10:59:40 rubikitch>$
 
 ;; Copyright (C) 2010  rubikitch
 
 ;; Author: rubikitch <rubikitch@ruby-lang.org>
 ;; Keywords: convenience, tools
-;; Package-Version: 20160514.1525
+;; Package-Version: 20160912.1859
 ;; URL: http://www.emacswiki.org/cgi-bin/wiki/download/open-junk-file.el
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -117,14 +117,18 @@ It can include `format-time-string' format specifications."
   "List of functions to be called after a buffer is loaded from a `junk' file.
 Whether the file is a JUNK or not is infered by `open-junk-file-format'.")
 
+;;;###autoload
 (defun find-file-hook--open-junk-file ()
   "Run `open-junk-file-hook' when the file is a JUNK file."
   (when (string-prefix-p
          (file-truename (replace-regexp-in-string "%.+$" "" open-junk-file-format))
          (file-truename buffer-file-name))
     (run-hooks 'open-junk-file-hook)))
+
+;;;###autoload
 (add-hook 'find-file-hook 'find-file-hook--open-junk-file)
 
+;;;###autoload
 (defun open-junk-file (&optional format find-file-fn)
   "Open a new file whose filename is derived from current time.
  You can write short program in it. It helps to try-and-error programs.

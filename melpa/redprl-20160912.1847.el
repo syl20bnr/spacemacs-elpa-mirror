@@ -4,7 +4,7 @@
 
 ;; Author: Jonathan Sterling <jon@jonmsterling.com>
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 20160910.1508
+;; Package-Version: 20160912.1847
 ;; Version: 0.0.1
 ;; Keywords: languages
 
@@ -76,11 +76,11 @@
   "Syntax table for RedPRL.")
 
 (defconst redprl-keywords
-  '("Def" "Thm" "Tac" "Sym" "Record")
+  '("Def" "Thm" "Tac" "Sym" "Record" "Print")
   "RedPRL's keywords.")
 
 (defconst redprl-builtin-sorts
-  '("exp" "exn" "lbl" "lvl")
+  '("exp" "exn" "lbl" "lvl" "dim")
   "RedPRL's built-in sorts.")
 
 (defconst redprl-def-name-regexp
