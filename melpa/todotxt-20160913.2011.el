@@ -5,14 +5,14 @@
 ;; Description: A major mode for editing todo.txt files
 
 ;; Author: Rick Dillon <rpdillon@killring.org>
-;; Copyright (C) 2011-2013 Rick Dillon
+;; Copyright (C) 2011-2016 Rick Dillon
 
 ;; Created: 14 March 2011
-;; Version: 0.2.3
-;; Package-Version: 20160913.1110
+;; Version: 0.2.4
+;; Package-Version: 20160913.2011
 ;; URL: https://github.com/rpdillon/todotxt.el
 ;; Keywords: todo.txt, todotxt, todotxt.el
-;; Compatibility: GNU Emacs 22 ~ 24
+;; Compatibility: GNU Emacs 22 ~ 25
 ;;
 ;; This file is NOT part of GNU Emacs
 
@@ -36,14 +36,17 @@
 ;; This file provides a Emacs interface to the todo.txt file format
 ;; use by Gina Trapani's Todo.txt command-line tool
 ;; (http://todotxt.com/) and Android application
-;; (https://github.com/ginatrapani/todo.txt-touch).
+;; (https://github.com/ginatrapani/todo.txt-touch).  It aims to be
+;; compatible with SimpleTask
+;; (https://github.com/mpcjanssen/simpletask-android) but does not yet
+;; have full support for all extensions.
 ;;
 ;; Setup:
 ;;  - Put todotxt.el somewhere on your Emacs path
 ;;  - Load todotxt using (require 'todotxt) in you .emacs (or other initialization) file
 ;;  - Customize the variable 'todotxt-file' with the location of your todo.txt file.
 ;;  - View the file with M-x todotxt
-;;  - Bind 'todotxt' to some accelerator like C-x t: (global-set-key (kbd "C-x t") 'todotxt)
+;;  - Bind 'todotxt' to some accelerator like C-c t: (global-set-key (kbd "C-c t") 'todotxt)
 ;;
 ;; Usage:
 ;;  - Navigate up and down with 'p' and 'n' (or 'k' and 'j')
@@ -235,13 +238,17 @@ beginning of the line containing that item."
       (todotxt-find-first-visible-char)))
 
 (defun todotxt-find-first-visible-char ()
+  "Move the point to the first visible character in the buffer."
+  (goto-char (point-min))
+  (todotxt-find-next-visible-char))
+
+(defun todotxt-find-next-visible-char ()
   "Move the point to the next character in the buffer that does
 not have an overlay applied to it.  This function exists to
 address an odd bug in which the point can exist at (point-min)
 even though it is invisible.  This usually needs to be called
 after items are filtered in some way, but perhaps in other case
 as well."
-  (goto-char (point-min))
   (while (not (equal (overlays-at (point)) nil))
     (forward-char)))
 
@@ -286,6 +293,7 @@ or '+') and return a list of them."
 resides."
   (save-excursion
     (beginning-of-line)
+    (todotxt-find-next-visible-char)
     (let ((beg (point)))
       (end-of-line)
       (buffer-substring beg (point)))))
