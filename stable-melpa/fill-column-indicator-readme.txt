@@ -3,6 +3,13 @@ fill column by drawing a thin line (in design parlance, a `rule') down the
 length of the editing window.  Fill-column-indicator implements this
 facility in Emacs.
 
+PLEASE NOTE: There is a small incompatibility between this package and the
+current stable Emacs relase (v24.3).  A bug in Emacs's internal display
+routine that was introduced shortly before that release can cause vertical
+motion commands to skip blank lines when fci-mode is active.  This has
+been fixed in Emacs trunk.  See github.com/alpaker/Fill-Column-Indicator/issues/31
+for further discussion.
+
 Installation and Usage
 ======================
 
@@ -20,10 +27,11 @@ Configuration
 
 By default, fci-mode draws its vertical indicator at the fill column.  If
 you'd like it to be drawn at another column, set `fci-rule-column' to the
-column number.  This variable becomes buffer local when set, so you can
-use different values for different modes.  The default behavior (drawing
-the rule at the fill column) is specified by setting fci-rule-column to
-nil.
+column number.  (A case in which this might be useful is when you want to
+fill comments at, for example, column 70, but want a vertical rule at
+column 80 or 100 to indicate the maximum line length for code.)  The
+default behavior (showing the indicator at the fill column) is specified
+by setting fci-rule-column to nil.
 
 On graphical displays the fill-column rule is drawn using a bitmap
 image.  Its color is controlled by the variable `fci-rule-color', whose
@@ -94,7 +102,7 @@ o Fci-mode is intended to be used with monospaced fonts.  If you're using
 
 o Fci-mode in not currently compatible with Emacs's
   `show-trailing-whitespace' feature (given the way the latter is
-  implemented, such compatilibility is going to be hard to achieve).  A
+  implemented, such compatibility is going to be hard to achieve).  A
   workaround is to configure `whitespace-mode' to replicate the
   functionality of show-trailing-whitespace.  This can be done with the
   following setting:
@@ -121,18 +129,6 @@ o Fci-mode should work smoothly when simultaneously displaying the same
   support this use case, but thus far there seems to be no demand for
   it.)
 
-o An issue specific to the Mac OS X (NextStep) port, versions 23.0-23.2:
-  Emacs won't, in these particular versions, draw a cursor on top of an
-  image.  Thus on graphical displays the cursor will disappear when
-  positioned directly on top of the fill-column rule.  The best way to
-  deal with this is to upgrade to v23.3 or v24 (or downgrade to v22).  If
-  that isn't practical, a fix is available via the mini-package
-  fci-osx-23-fix.el, which can be downloaded from:
-
-    github.com/alpaker/Fill-Column-Indicator
-
- Directions for its use are given in the file header.
-
 Todo
 ====
 
@@ -146,7 +142,7 @@ Acknowledgements
 ================
 
 Thanks to Ami Fischman, Christopher Genovese, Michael Hoffman, José
-Alfredo Romero L., José Lombera, R. Lange, Joe Lisee, Frank Meffert,
+Alfredo Romero L., R. Lange, Joe Lisee, José Lombera, Frank Meffert,
 Mitchell Peabody, sheijk, and an anonymous BT subscriber for bug reports
-and suggestions.  Special thanks to lomew and Pär Wieslander for code
-contributions.
+and suggestions.  Special thanks to lomew, John Lamp, David Röthlisberger,
+and Pär Wieslander for code contributions.

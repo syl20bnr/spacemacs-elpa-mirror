@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20160905.940
+;; Package-Version: 20160914.435
 ;; Version: 0.8.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.8.0"))
 ;; Keywords: matching
@@ -726,7 +726,8 @@ Run `swiper' for those buffers."
                (swiper--multi-candidates
                 (mapcar #'get-buffer swiper-multi-buffers))))
         ((eq this-command 'ivy-call)
-         (delete-minibuffer-contents))))
+         (with-selected-window (active-minibuffer-window)
+           (delete-minibuffer-contents)))))
 
 (defun swiper-multi-action-2 (x)
   (when (> (length x) 0)

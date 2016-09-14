@@ -3,7 +3,7 @@
 ;; Copyright (C) 2016 David Thompson
 ;; Author: David Thompson
 ;; Version: 0.1
-;; Package-Version: 20160904.1533
+;; Package-Version: 20160914.756
 ;; Keywords: dired, launch
 ;; URL: https://github.com/thomp/dired-launch
 
@@ -64,7 +64,7 @@
       (message "Windows not supported")
     (save-window-excursion
       (mapc #'(lambda (file)
-		(let ((launch-cmd (read-from-minibuffer (concat "Launch " file " with?" ))))
+		(let ((launch-cmd (read-from-minibuffer (concat "Launch " file " with? " ))))
 		  (dired-launch-call-process-on launch-cmd file))) 
 	    (dired-get-marked-files t current-prefix-arg)))))
 

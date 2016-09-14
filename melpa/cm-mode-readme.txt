@@ -26,6 +26,8 @@ changes:
 Key bindings
 ------------
 
+`cm-mode' provides the following key bindings:
+
 `C-c * a' : add text
 `C-c * d' : delete text
 `C-c * s' : make a substitution
@@ -35,9 +37,16 @@ Key bindings
 `C-c * *' : move forward out of a change
 `C-c * f' : move forward to the next change
 `C-c * b' : move backward to the previous change
-`C-c * C' : set author
+`C-c * t' : set author
 `C-c * F' : activate follow changes mode
 
+The `C-c *' prefix can easily be changed, if so desired:
+
+(define-key cm-mode-map (kbd "C-c *") nil)
+(define-key cm-mode-map (kbd "C-c c") 'cm-prefix-map)
+
+This unbinds `C-c *' and sets up `C-c c' as the prefix for all cm-mode
+commands.
 
 Usage
 -----
