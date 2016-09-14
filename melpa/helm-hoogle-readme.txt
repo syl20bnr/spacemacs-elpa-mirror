@@ -8,13 +8,7 @@ cabal install hoogle, then run M-x helm-hoogle
   "Use helm to navigate query results from Hoogle"
   :group 'helm)
 
-(defvar helm-c-source-hoogle
-  '((name . "Hoogle")
-    (candidates . helm-c-hoogle-set-candidates)
-    (action . (("Lookup Entry" . eww-browse-url)))
-    (filtered-candidate-transformer . (lambda (candidates source) candidates))
-    (volatile)
-    (delayed)))
+(defvar helm-c-hoogle-transform-hook nil)
 
 (defun helm-c-hoogle-set-candidates (&optional request-prefix)
   (let* ((pattern (or (and request-prefix
@@ -32,6 +26,7 @@ cabal install hoogle, then run M-x helm-hoogle
     (let (candidates)
       (with-temp-buffer
         (apply #'call-process "hoogle" nil t nil args)
+        (run-hooks 'helm-c-hoogle-transform-hook)
         (goto-char (point-min))
         (while (not (eobp))
           (if (looking-at "\\(.+?\\) -- \\(.+\\)")
@@ -44,8 +39,12 @@ cabal install hoogle, then run M-x helm-hoogle
 ###autoload
 (defun helm-hoogle ()
   (interactive)
-  (helm :sources 'helm-c-source-hoogle
-        :input ""
+  (helm :sources
+        (helm-build-sync-source "Hoogle"
+          :candidates #'helm-c-hoogle-set-candidates
+          :action '(("Lookup Entry" browse-url))
+          :filtered-candidate-transformer (lambda (candidates source) candidates)
+          :volatile t)
         :prompt "Hoogle: "
         :buffer "*Hoogle search*"))
 
