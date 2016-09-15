@@ -716,7 +716,7 @@
 	    ((:url . "http://elpa.gnu.org/packages/rnc-mode.html")
 	     (:keywords "xml" "relaxng"))])
  (rudel .
-	[(0 3)
+	[(0 3 1)
 	 ((emacs
 	   (24))
 	  (cl-lib

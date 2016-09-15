@@ -4,7 +4,7 @@
 
 ;; Author: Sean Farley <sean@farley.io>
 ;; Version: 0.1
-;; Package-Version: 20160504.1145
+;; Package-Version: 20160909.1503
 ;; URL: https://bitbucket.org/seanfarley/erc-hipchatify
 ;; Package-Requires: ((emacs "24.4") (s "1.10.0") (alert "1.2") (request "0.2.0"))
 ;; Keywords: erc bitlbee hipchat multimedia
@@ -52,6 +52,11 @@
 
 (defcustom erc-hipchatify-token nil
   "The token to which we make api calls, created at https://atlassian.hipchat.com/account/api."
+  :group 'erc-hipchatify
+  :type 'string)
+
+(defcustom erc-hipchatify-email nil
+  "The email associated with the hipchat account for making some api calls."
   :group 'erc-hipchatify
   :type 'string)
 
@@ -142,7 +147,9 @@ Optional argument URL is location to download emoticons."
    :parser 'json-read
    :error (function* (lambda (&key error-thrown &allow-other-keys&rest _)
                        (message "erc-hipchatify error: %S" error-thrown)))
-   :status-code '((500 . (lambda (&rest _) (message "erc-hipchatify got an internal server error (500) from HipChat."))))
+   :status-code '((500 . (lambda (&rest _) (message "erc-hipchatify got an internal server error (500) from HipChat.")))
+                  (401 . (lambda (&rest _) (message "erc-hipchatify got an unauthorized oauth session (401) from HipChat. Check your token!")))
+                  )
    :success (function*
              (lambda (&key data &allow-other-keys)
                (when data
@@ -165,6 +172,18 @@ It's mostly garabled html and we'll be rendering most of that
 stuff ourselves.
 Argument STRING incoming message."
   (cond
+   ((s-contains?
+     "Update HipChat to view files (https://www.hipchat.com/downloads)"
+     string)
+    (setq erc-insert-this nil))
+   ((s-contains?
+     "We've changed how we handle files. Update HipChat to get back to viewing them. Or just click the file's name above and log in."
+     string)
+    (setq erc-insert-this nil))
+   ((s-contains?
+     "Learn more (https://confluence.atlassian.com/display/HIPCHAT/Share+files)"
+     string)
+    (setq erc-insert-this nil))
    ((s-starts-with? "<Link>" string)
     (setq erc-insert-this nil))
    ((s-starts-with? "<Bamboo>" string)
@@ -203,9 +222,7 @@ messages."
   (save-excursion
     ;; use the fact that erc leaves the buffer narrowed so we can extract the
     ;; string, we substract 1 from point-max so we don't get an extra newline
-    (let* ((oldStart (point-min))
-           (oldWidth shr-width)
-           (origmsg (buffer-substring-no-properties (point-min) (1- (point-max)))))
+    (let* ((origmsg (buffer-substring-no-properties (point-min) (1- (point-max)))))
       (when (s-starts-with? "<" origmsg)
         ;; now, search for the first "> " which indicates the end of the nickname
         ;; and start of the message (adding two which is the length of "> ")
@@ -220,6 +237,14 @@ messages."
                 (replace-match (concat "&lt;"
                                        (match-string-no-properties 1)
                                        (match-string-no-properties 2)))))
+          ;; add username to file links to sacve a step
+          (when erc-hipchatify-email
+              (goto-char newStart)
+              (while (re-search-forward "https://www\\.hipchat\\.com\\(/file/[a-f0-9]+\\)" nil t)
+                (replace-match
+                 (format "https://www.hipchat.com/login_select_auth?email=%s&d=%s"
+                         (url-hexify-string erc-hipchatify-email)
+                         (url-hexify-string (match-string-no-properties 1))))))
           ;; replace bamboo img tags with hipchat emoticons
           (goto-char newStart)
           (while (search-forward "<img src=\"https://bamboo.bb-inf.net/images/iconsv4/icon-build-queued.png\" alt=\"icon-build-queued.png\">" nil t)
@@ -267,9 +292,7 @@ messages."
                    (format "<img alt=\"%s\" src=\"%s\" />" hp-shortcut hp-link)))))))
           ;; subtract the length of the username from shr-width so that
           ;; wrapping works
-          (setq shr-width (1- (- oldWidth (- newStart oldStart))))
           (shr-render-region newStart (1- (point-max)))
-          (setq shr-width oldWidth)
           ;; rendering the region adds two lines before and after?
           (goto-char newStart)
           (while (re-search-forward "\n\n" nil t)

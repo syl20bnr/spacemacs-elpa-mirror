@@ -7,11 +7,11 @@
 ;; Copyright (C) 1999-2016, Drew Adams, all rights reserved.
 ;; Created: Fri Mar 19 15:58:58 1999
 ;; Version: 2013.07.23
-;; Package-Version: 20160826.2346
+;; Package-Version: 20160914.1102
 ;; Package-Requires: ()
-;; Last-Updated: Fri Aug 26 23:46:06 2016 (-0700)
+;; Last-Updated: Wed Sep 14 11:02:58 2016 (-0700)
 ;;           By: dradams
-;;     Update #: 9598
+;;     Update #: 9604
 ;; URL: http://www.emacswiki.org/dired+.el
 ;; Doc URL: http://www.emacswiki.org/DiredPlus
 ;; Keywords: unix, mouse, directories, diredp, dired
@@ -21,13 +21,13 @@
 ;;
 ;;   `apropos', `apropos+', `autofit-frame', `avoid', `bookmark',
 ;;   `bookmark+', `bookmark+-1', `bookmark+-bmu', `bookmark+-key',
-;;   `bookmark+-lit', `cmds-menu', `dired', `dired+', `dired-aux',
-;;   `dired-x', `easymenu', `ffap', `fit-frame', `frame-fns',
-;;   `help+20', `highlight', `image-dired', `image-file', `info',
-;;   `info+20', `menu-bar', `menu-bar+', `misc-cmds', `misc-fns',
-;;   `naked', `pp', `pp+', `second-sel', `strings', `subr-21',
-;;   `thingatpt', `thingatpt+', `unaccent', `w32-browser',
-;;   `w32browser-dlgopen', `wid-edit', `wid-edit+', `widget'.
+;;   `bookmark+-lit', `dired', `dired+', `dired-aux', `dired-x',
+;;   `easymenu', `ffap', `fit-frame', `frame-fns', `help+20',
+;;   `highlight', `image-dired', `image-file', `info', `info+20',
+;;   `menu-bar', `menu-bar+', `misc-cmds', `misc-fns', `naked', `pp',
+;;   `pp+', `second-sel', `strings', `subr-21', `thingatpt',
+;;   `thingatpt+', `unaccent', `w32-browser', `w32browser-dlgopen',
+;;   `wid-edit', `wid-edit+', `widget'.
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -654,6 +654,8 @@
 ;;
 ;;; Change Log:
 ;;
+;; 2016/09/14 dadams
+;;     diredp-dired-plus-description: Added entry for dired-hide-details-mode - ( key.
 ;; 2016/08/26 dadams
 ;;     diredp-y-or-n-files-p: pop-to-buffer only when the buffer was created.
 ;;                            Update wrt vanilla (scroll actions).
@@ -10549,7 +10551,13 @@ being bound to keys (i.e., listed as `M-x ...').
 General
 -------
 
-* \\[revert-buffer]\t\t- Refresh (sync and show all)
+"
+
+    (and (fboundp 'dired-hide-details-mode)
+         "* \\[dired-hide-details-mode]\t\t- Hide/show details
+")
+
+"* \\[revert-buffer]\t\t- Refresh (sync and show all)
 * \\[diredp-toggle-find-file-reuse-dir]\t- Toggle reusing directories
 "
 

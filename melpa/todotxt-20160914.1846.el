@@ -9,7 +9,7 @@
 
 ;; Created: 14 March 2011
 ;; Version: 0.2.4
-;; Package-Version: 20160913.2011
+;; Package-Version: 20160914.1846
 ;; URL: https://github.com/rpdillon/todotxt.el
 ;; Keywords: todo.txt, todotxt, todotxt.el
 ;; Compatibility: GNU Emacs 22 ~ 25
@@ -348,7 +348,8 @@ from 'todotxt-file'."
 (defun todotxt-revert ()
   "Revert the contents of the todotxt buffer."
   (interactive)
-  (revert-buffer nil 't 't))
+  (revert-buffer nil 't 't)
+  (setq buffer-read-only 't))
 
 (defun todotxt-show-incomplete ()
   "Filter out complete items from the todo list."
