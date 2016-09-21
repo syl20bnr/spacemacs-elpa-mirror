@@ -4,10 +4,11 @@
  Commands defined here:
 
    `isearch-yank-secondary', `primary-to-secondary',
-   `rotate-secondary-selection-yank-pointer', `secondary-dwim',
-   `secondary-save-then-kill', `secondary-swap-region',
-   `secondary-to-primary', `set-secondary-start',
-   `yank-pop-commands', `yank-pop-secondary', `yank-secondary'.
+   `rotate-secondary-selection-yank-pointer',
+   `secondary-yank|select|move|swap', `secondary-save-then-kill',
+   `secondary-swap-region', `secondary-to-primary',
+   `set-secondary-start', `yank-pop-commands',
+   `yank-pop-secondary', `yank-secondary'.
 
  User options defined here:
 
@@ -36,7 +37,7 @@
 
  Suggested key bindings:
 
-  (global-set-key (kbd "C-M-y")               'secondary-dwim)
+  (global-set-key (kbd "C-M-y")               'secondary-yank|select|move|swap)
   (define-key esc-map "y"                     'yank-pop-commands)
   (define-key isearch-mode-map (kbd "C-M-y")  'isearch-yank-secondary)
   (global-set-key (kbd "C-x C-M-SPC")         'set-secondary-start)

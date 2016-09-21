@@ -456,7 +456,7 @@
    `diredp-hide-details-propagate-flag' (Emacs 24.4+),
    `diredp-ignore-compressed-flag',
    `diredp-image-show-this-file-use-frame-flag' (Emacs 22+),
-   `diredp-prompt-for-bookmark-prefix-flag',
+   `diredp-max-frames', `diredp-prompt-for-bookmark-prefix-flag',
    `diredp-w32-local-drives', `diredp-wrap-around-flag'.
 
  Non-interactive functions defined here:

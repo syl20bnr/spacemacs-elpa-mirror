@@ -147,6 +147,12 @@ fallback 信息，覆盖需要 *重置* 的 profile, 这个 profile 原来的
 
 [[./snapshots/cfs-increase-and-decrease-fontsize.gif]]
 
+*** 使用 cfs-use-system-type
+有些用户希望将 profile 配置文件做为自己的 emacs 配置，在不同
+的计算机上同步和管理，我建议这些用户将 `cfs-use-system-type'
+设置为 t, 这样，相同名称的 profile 在不同的操作系统下，保存的
+位置也不同，可以避免 profile 冲突。
+
 *** 让 chinese-fonts-setup 随着 emacs 自动启动
 `chinese-fonts-setup-enable' 命令可以让 chinese-fonts-setup 随着
 emacs 自动启动，这个命令将 `cfs-set-font-with-saved-step' 添加到
