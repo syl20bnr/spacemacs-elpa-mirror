@@ -4,10 +4,10 @@
 
 ;; Author: Ivan Malison <IvanMalison@gmail.com>
 ;; Keywords: term manager projectile
-;; Package-Version: 20160921.1801
+;; Package-Version: 20160921.2008
 ;; URL: https://www.github.com/IvanMalison/term-projectile
 ;; Version: 0.0.0
-;; Package-Requires: ((term-manager "0.0.0") (projectile "0.13.0") (emacs "24"))
+;; Package-Requires: ((term-manager "0.1.0") (projectile "0.13.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -28,13 +28,16 @@
 
 ;;; Code:
 
+(require 'projectile)
 (require 'term-manager)
+
+(defvar term-projectile-global-directory "~")
 
 (defun term-projectile ()
   "Make a new term-manger instance configured for projectile usage."
   (interactive)
   (let ((manager
-         (make-instance term-manager
+         (make-instance 'term-manager
                         :get-symbol 'term-projectile-get-symbol-for-buffer)))
     (term-manager-enable-buffer-renaming-and-reindexing manager)
     manager))
@@ -48,10 +51,19 @@
 
 (defconst term-projectile-term-manager (term-projectile))
 
-(defun term-projectile-switch (&optional delta directory)
-  (when (stringp directory) (setq directory (intern directory)))
-  (term-manager-switch-to-buffer
-   term-projectile-term-manager directory delta))
+(cl-defun term-projectile-switch (&optional delta (directory nil directory-provided))
+  (when (stringp directory)
+    (setq directory (intern directory)))
+  (let (args)
+    (when directory-provided
+      (setq args (list :directory directory)))
+    (apply 'term-manager-switch-to-buffer
+           term-projectile-term-manager :delta delta args)))
+
+(defun term-projectile-global-switch (&rest args)
+  (let ((default-directory term-projectile-global-directory))
+    (switch-to-buffer (apply 'term-manager-get-next-global-buffer
+                             term-projectile-term-manager args))))
 
 (defun term-projectile-get-all-buffers ()
   (term-manager-get-all-buffers term-projectile-term-manager))
@@ -82,6 +94,15 @@ Make a new one if none exists."
   (term-projectile-switch -1))
 
 ;;;###autoload
+(defun term-projectile-create-new (&optional directory)
+  "Make a new `ansi-term' buffer for DIRECTORY.
+If directory is nil, use the current projectile project"
+  (interactive)
+  (when (stringp directory) (setq directory (intern directory)))
+  (switch-to-buffer
+   (term-manager-build-term term-projectile-term-manager directory)))
+
+;;;###autoload
 (defun term-projectile-default-directory-forward ()
   "Switch forward to the next term-projectile ansi-term buffer for `defualt-directory'."
   (interactive)
@@ -94,20 +115,31 @@ Make a new one if none exists."
   (term-projectile-switch -1 default-directory))
 
 ;;;###autoload
-(defun term-projectile-create-new (&optional directory)
-  "Make a new `ansi-term' buffer for DIRECTORY.
-If directory is nil, use the current projectile project"
-  (interactive)
-  (when (stringp directory) (setq directory (intern directory)))
-  (switch-to-buffer
-   (term-manager-build-term term-projectile-term-manager directory)))
-
-;;;###autoload
-(defun term-projectile-create-new-default-directory ()
+(defun term-projectile-default-directory-create-new ()
   "Make a new `ansi-term' buffer in `default-directory'."
   (interactive)
   (let ((directory (if (stringp default-directory) (intern default-directory))))
     (term-projectile-create-new directory)))
+
+;;;###autoload
+(defun term-projectile-global-forward ()
+  "Switch forward to the next term-projectile ansi-term buffer.
+Make a new one if none exists."
+  (interactive)
+  (term-projectile-global-switch :delta 1))
+
+;;;###autoload
+(defun term-projectile-global-backward ()
+  "Switch backward to the next term-projectile ansi-term buffer.
+Make a new one if none exists."
+  (interactive)
+  (term-projectile-global-switch :delta -1))
+
+;;;###autoload
+(defun term-projectile-global-create-new ()
+  "Make a new `ansi-term' buffer in `term-projectile-global-directory'."
+  (interactive)
+  (term-projectile-create-new term-projectile-global-directory))
 
 (provide 'term-projectile)
 ;;; term-projectile.el ends here
