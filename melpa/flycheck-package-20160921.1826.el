@@ -5,7 +5,7 @@
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;;         Fanael Linithien <fanael4@gmail.com>
 ;; Keywords: lisp
-;; Package-Version: 20160919.747
+;; Package-Version: 20160921.1826
 ;; Version: 0
 ;; Package-Requires: ((cl-lib "0.5") (flycheck "0.22") (emacs "24"))
 
@@ -219,7 +219,7 @@ the form (PACKAGE-NAME PACKAGE-VERSION LINE-NO LINE-BEGINNING-OFFSET)."
   "Check that all VALID-DEPS are available for installation."
   (pcase-dolist (`(,package-name ,package-version ,line-no ,offset) valid-deps)
     (if (eq 'emacs package-name)
-        (unless (version-list-<= (list 24) package-version)
+        (unless (version-list-<= '(24) package-version)
           (flycheck-package--error
            line-no offset 'error
            "You can only depend on Emacs version 24 or greater."))
@@ -239,7 +239,7 @@ the form (PACKAGE-NAME PACKAGE-VERSION LINE-NO LINE-BEGINNING-OFFSET)."
 (defun flycheck-package--check-deps-use-non-snapshot-version (valid-deps)
   "Warn about any VALID-DEPS on snapshot versions of packages."
   (pcase-dolist (`(,package-name ,package-version ,line-no ,offset) valid-deps)
-    (unless (version-list-< package-version (list 19001201 1))
+    (unless (version-list-< package-version '(19001201 1))
       (flycheck-package--error
        line-no offset 'warning
        (format "Use a non-snapshot version number for dependency on \"%S\" if possible."
@@ -280,7 +280,7 @@ the form (PACKAGE-NAME PACKAGE-VERSION LINE-NO LINE-BEGINNING-OFFSET)."
              'warning
              (format "You should depend on (emacs \"%s\") if you need `%s'."
                      (mapconcat #'number-to-string added-in-version ".")
-                     (buffer-substring-no-properties (match-beginning 1) (match-end 1))))))))))
+                     (match-string-no-properties 1)))))))))
 
 (defun flycheck-package--check-lexical-binding-is-on-first-line ()
   "Check that any `lexical-binding' declaration is on the first line of the file."
@@ -418,7 +418,7 @@ value of the header with any leading or trailing whitespace removed."
     (goto-char (point-min))
     (let ((case-fold-search t))
       (if (re-search-forward (concat (lm-get-header-re header-name) "\\(.*?\\) *$") nil t)
-          (substring-no-properties (match-string 3))
+          (match-string-no-properties 3)
         (goto-char initial-point)
         nil))))
 

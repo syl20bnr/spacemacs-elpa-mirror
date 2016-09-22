@@ -6,8 +6,8 @@
 ;;       Chris Barrett <chris.d.barrett@me.com>
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Arthur Evstifeev <lod@pisem.net>
-;; Version: 1.0
-;; Package-Version: 20160919.509
+;; Version: 2.0
+;; Package-Version: 20160921.1921
 ;; Package-Requires: ((emacs "24.4") (flycheck "0.25"))
 ;; Keywords: languages swift
 

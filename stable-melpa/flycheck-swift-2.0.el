@@ -6,8 +6,8 @@
 ;;       Chris Barrett <chris.d.barrett@me.com>
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Arthur Evstifeev <lod@pisem.net>
-;; Version: 1.0
-;; Package-Version: 1.0
+;; Version: 2.0
+;; Package-Version: 2.0
 ;; Package-Requires: ((emacs "24.4") (flycheck "0.25"))
 ;; Keywords: languages swift
 
@@ -35,48 +35,43 @@
 (require 'flycheck)
 (require 'cl-lib)
 
-(defgroup flycheck-swift nil
-  "Configuration for swift-mode."
-  :group 'flycheck
-  :prefix "swift-")
-
 ;;; Flycheck
 
 (flycheck-def-executable-var swift "swiftc")
 
-(flycheck-def-option-var flycheck-swift:extra-flags nil swift
+(flycheck-def-option-var flycheck-swift-extra-flags nil swift
   "Extra flags prepended to arguments of swiftc"
   :type '(repeat (string :tag "Flags"))
   :safe #'flycheck-string-list-p)
 
-(flycheck-def-option-var flycheck-swift:sdk-path nil swift
+(flycheck-def-option-var flycheck-swift-sdk-path nil swift
   "A path to the targeted SDK"
   :type '(choice (const :tag "Don't link against sdk" nil)
                  (string :tag "Targeted SDK path"))
   :safe #'stringp)
 
-(flycheck-def-option-var flycheck-swift:linked-sources '("*.swift") swift
+(flycheck-def-option-var flycheck-swift-linked-sources '("*.swift") swift
   "Source files path to link against. Can be glob, i.e. *.swift"
   :type '(repeat (string :tag "Linked Sources"))
   :safe #'flycheck-string-list-p)
 
-(flycheck-def-option-var flycheck-swift:framework-search-paths nil swift
+(flycheck-def-option-var flycheck-swift-framework-search-paths nil swift
   "A list of framework search paths"
   :type '(repeat (directory :tag "Include directory"))
   :safe #'flycheck-string-list-p)
 
-(flycheck-def-option-var flycheck-swift:cc-include-search-paths nil swift
+(flycheck-def-option-var flycheck-swift-cc-include-search-paths nil swift
   "A list of include file search paths to pass to the Objective-C compiler"
   :type '(repeat (directory :tag "Include directory"))
   :safe #'flycheck-string-list-p)
 
-(flycheck-def-option-var flycheck-swift:target nil swift
+(flycheck-def-option-var flycheck-swift-target nil swift
   "Target used by swift compiler"
   :type '(choice (const :tag "Don't specify target" nil)
                  (string :tag "Build target"))
   :safe #'stringp)
 
-(flycheck-def-option-var flycheck-swift:import-objc-header nil swift
+(flycheck-def-option-var flycheck-swift-import-objc-header nil swift
   "Objective C header file to import, if any"
   :type '(choice (const :tag "Don't specify objective C bridging header" nil)
                  (string :tag "Objective C bridging header path"))
@@ -85,10 +80,10 @@
 (flycheck-define-checker swift
   "Flycheck plugin for for Apple's Swift programming language."
   :command ("swiftc"
-            (eval flycheck-swift:extra-flags)
+            (eval flycheck-swift-extra-flags)
             "-parse"
-            (option "-sdk" flycheck-swift:sdk-path)
-            (option-list "-F" flycheck-swift:framework-search-paths)
+            (option "-sdk" flycheck-swift-sdk-path)
+            (option-list "-F" flycheck-swift-framework-search-paths)
             ;; Swift compiler will complain about redeclaration
             ;; if we will include original file along with
             ;; temporary source file created by flycheck.
@@ -111,12 +106,12 @@
                            (equal source-original path)))
                       (cl-mapcan
                        #'(lambda (path) (file-expand-wildcards path t))
-                       flycheck-swift:linked-sources)))
+                       flycheck-swift-linked-sources)))
                  (setq default-directory default-directory-old))))
-            (option "-target" flycheck-swift:target)
-            (option "-import-objc-header" flycheck-swift:import-objc-header)
-            (option-list "-Xcc" flycheck-swift:cc-include-search-paths
-                         flycheck-swift:prepend-for-cc-include-search-path)
+            (option "-target" flycheck-swift-target)
+            (option "-import-objc-header" flycheck-swift-import-objc-header)
+            (option-list "-Xcc" flycheck-swift-cc-include-search-paths
+                         flycheck-swift-prepend-for-cc-include-search-path)
             source)
   :error-patterns ((error line-start (file-name) ":" line ":" column ": "
                           "error: " (message) line-end)
@@ -124,7 +119,7 @@
                             "warning: " (message) line-end))
   :modes (swift-mode swift3-mode))
 
-(defun flycheck-swift:prepend-for-cc-include-search-path (opt path)
+(defun flycheck-swift-prepend-for-cc-include-search-path (opt path)
   "Return list for -Xcc -I option.
 
 OPT is assumed to be -Xcc.
@@ -132,15 +127,11 @@ PATH is a include search path."
   (list opt (concat "-I" path)))
 
 ;;;###autoload
-(defun flycheck-swift:setup ()
+(defun flycheck-swift-setup ()
   "Setup Flycheck for Swift."
   (interactive)
   ;; Add checkers in reverse order, because `add-to-list' adds to front.
   (add-to-list 'flycheck-checkers 'swift))
-
-;;;###autoload
-(defalias 'flycheck-swift-setup 'flycheck-swift:setup)
-
 
 (provide 'flycheck-swift)
 

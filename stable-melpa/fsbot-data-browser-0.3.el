@@ -5,16 +5,16 @@
 ;; Author: Benaiah Mischenko
 ;; Maintainer: Benaiah Mischenko
 ;; Created: Thu September 15 2016
-;; Version: 0.1
-;; Package-Version: 20160919.1708
+;; Version: 0.3
+;; Package-Version: 0.3
 ;; Package-Requires: ()
 ;; Last-Updated: Thu September 15 2016
 ;;           By: Benaiah Mischenko
-;;     Update #: 1
+;;     Update #: 3
 ;; URL: http://github.com/benaiah/fsbot-data-browser
 ;; Doc URL: http://github.com/benaiah/fsbot-data-browser
 ;; Keywords: fsbot, irc, tabulated-list-mode
-;; Compatibility: GNU Emacs: 24.x, 25.x
+;; Compatibility: GNU Emacs: 24.4 and up, 25.x
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -55,7 +55,10 @@
    "http://gnufans.net/~fsbot/data/botbbdb"
    (lambda (&rest _)
      (write-region nil nil "~/.emacs.d/.fsbot-data-raw" nil)
-     (message "fsbot data finished downloading"))))
+     (message "fsbot data finished downloading")
+     (fsbot-load-data))))
+
+(defalias 'fsbot-refresh-data 'fsbot-download-data)
 
 (defun fsbot-slurp-file-into-buffer (filename)
   (insert-file-contents filename)
@@ -91,7 +94,7 @@
                                   (cdr (car (cdr (aref (car entry) 7)))))))
                       `(,key [,key ,notes])))
                   fsbot-parsed-data)))
-    (setq fsbot-data (cl-copy-tree loaded-fsbot-data))
+    (setq fsbot-data loaded-fsbot-data)
     loaded-fsbot-data))
 
 (defun fsbot-get-entry (entry-title)
@@ -123,8 +126,15 @@
 
 (define-derived-mode fsbot-data-browser-mode tabulated-list-mode
   "Fsbot Data Browser" "Tabulated-list-mode browser for fsbot data."
-  (setq tabulated-list-format [("Key" 30 t)
-                               ("Notes" 0 t)])
+  (setq tabulated-list-format
+        [("Key" 30
+          ;; sorting function, for some reason tabulated-list-mode
+          ;; defaults to a case-sensitive sort, which we don't want
+          (lambda (entry-a entry-b)
+            (let ((key-a (downcase (car entry-a)))
+                  (key-b (downcase (car entry-b))))
+              (string-lessp key-a key-b))))
+         ("Notes" 0 nil)])
   (setq tabulated-list-padding 2)
   (setq tabulated-list-sort-key (cons "Key" nil))
   (tabulated-list-init-header))
@@ -146,7 +156,8 @@
 (defun fsbot-view-data ()
   "View fsbot db. You must call `fsbot-download-data' before this will work."
   (interactive)
-  (fsbot-list-data (fsbot-load-data)))
+  (let ((fsbot-viewable-data (if fsbot-data (copy-tree fsbot-data) (fsbot-load-data))))
+    (fsbot-list-data fsbot-viewable-data)))
 
 (provide 'fsbot-data-browser)
 

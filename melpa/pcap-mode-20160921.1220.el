@@ -4,7 +4,7 @@
 ;; Created: 2016-08-16
 ;; Edited: 2016-08-29
 ;; Version: 0.2
-;; Package-Version: 20160830.1322
+;; Package-Version: 20160921.1220
 ;; Keywords: pcap, packets, tcpdump, wireshark, tshark
 ;; Repository:
 ;; Package-Requires: ((emacs "24.3"))
@@ -51,6 +51,8 @@
 ;;                        checkdoc
 ;; * 2016-08-29 (aconole) Shell-quote the file and interface names
 ;;                        last of the checkdoc issues.
+;; * 2016-09-12 (aconole) TCP Converstation refactoring
+;; * 2016-09-21 (aconole) Add IPv6 support for TCP conversation tracking
 ;;; Code:
 
 (defgroup pcap-mode nil "Major mode for viewing pcap files"
@@ -152,6 +154,18 @@
         t
       nil)))
 
+(defun pcap-mode--switches (arg)
+  "Return ARG if it begins with '-', and nil otherwise."
+  (if (string= (substring arg 0 1) "-")
+      arg
+    nil))
+
+(defun pcap-mode--no-switches (arg)
+  "Inverse of `pcap-mode--switches`"
+  (if (pcap-mode--switches arg)
+      nil
+    arg))
+
 (defun pcap-mode-list-tcp-conversations ()
   "List the tcp conversations within a PCAP."
   (interactive)
@@ -164,6 +178,24 @@
       (pcap-mode-set-tshark-filter "")
     (pcap-mode-list-tcp-conversations)))
 
+(defun pcap-mode--connection-string (line)
+  "Formats a connection string LINE from a tcp conversation to a list.
+The list will be (ip/ip6 source-ip source-port dest-ip dest-port)."
+  (if (eq (length (split-string line ":")) 3)
+      (append (list "ip") (split-string (car (split-string line)) ":")
+              (split-string (car (cddr (split-string line))) ":"))
+    (let* ((elmts (split-string line))
+           (ipsrc (butlast (split-string (car elmts) ":")))
+           (ipsrcp (last (split-string (car elmts) ":")))
+           (ipdst (butlast (split-string (car (cddr elmts)) ":")))
+           (ipdstp (last (split-string (car (cddr elmts)) ":")))
+           )
+      (append (list "ipv6")
+              (list (mapconcat 'identity ipsrc ":"))
+              ipsrcp
+              (list (mapconcat 'identity ipdst ":"))
+              ipdstp))))
+
 (defun pcap-mode-follow-tcp-stream ()
   "Set the output filter to follow a stream from the list of tcp conversations.
 Requires running pcap-list-tcp-conversations first."
@@ -171,24 +203,26 @@ Requires running pcap-list-tcp-conversations first."
   (let* ((line (buffer-substring-no-properties
               (line-beginning-position)
               (line-end-position)))
-         (connection ; (sip, sport, dip, dport)
-          (append (split-string (car (split-string line)) ":")
-                  (split-string (car (cddr (split-string line))) ":"))))
+         (connection (pcap-mode--connection-string line)))
+    (if connection
          (pcap-mode-set-tshark-filter
             (replace-regexp-in-string "== " "=="
                                     (mapconcat 'identity
                                                (list
                                                 "-Y \""
-                                                "ip.addr=="
-                                                (car connection)
-                                                "&& tcp.port=="
+                                                (format "%s.addr=="
+                                                        (car connection))
                                                 (car (cdr connection))
-                                                "&& ip.addr=="
-                                                (car (cddr connection))
                                                 "&& tcp.port=="
+                                                (car (cddr connection))
+                                                (format "&& %s.addr=="
+                                                        (car connection))
                                                 (car (cdr (cddr connection)))
+                                                "&& tcp.port=="
+                                                (car (cddr (cddr connection)))
                                                 "\"")
-                                               " ")))))
+                                               " ")))
+      (message "ERROR: Unable to determine connection information"))))
 
 (defun pcap-mode--get-tshark-command (filename filters &optional
                                                capture-interface)
