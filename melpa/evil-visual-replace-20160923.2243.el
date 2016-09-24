@@ -4,7 +4,7 @@
 
 ;; Author: Troy Pracy
 ;; URL: https://github.com/troyp/evil-visual-replace
-;; Package-Version: 20160731.508
+;; Package-Version: 20160923.2243
 ;; Version: 0.0.3
 ;; Keywords: evil search replace regexp block rectangular region visual
 ;; Package-Requires: ((evil "1.0.0"))
@@ -55,7 +55,6 @@ Bind `evil-visual-replace-query-replace' to M-% and
   (define-key evil-visual-state-map (kbd "C-M-%") 'evil-visual-replace-replace-regexp)
   )
 
-;;;###autoload
 (evil-define-operator evil-visual-replace-query-replace
   (start end type fromstr tostr  &optional delimited backward)
   "Replace FROMSTR with TOSTR from START to END with CHAR.
@@ -111,7 +110,6 @@ For non-visual-state replacements, use `query-replace'."
                        t nil delimited nil nil
                        start end backward))))
 
-;;;###autoload
 (evil-define-operator evil-visual-replace-replace-regexp
     (start end type regexp tostr  &optional delimited backward)
     "Replace REGEXP with TOSTR from START to END with CHAR.

@@ -1,14 +1,13 @@
 ;;; ansible-doc.el --- Ansible documentation Minor Mode  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2014, 2015  Sebastian Wiesner <swiesner@lunaryorn.com>
-;; Copyright (C) 2013, 2014 Free Software Foundation, Inc.
+;; Copyright (C) 2014-2016  Sebastian Wiesner <swiesner@lunaryorn.com>
 
 ;; Author: Sebastian Wiesner <swiesner@lunaryorn>
 ;; URL: https://github.com/lunaryorn/ansible-doc.el
-;; Package-Version: 0.3
+;; Package-Version: 20160924.124
 ;; Keywords: tools, help
-;; Version: 0.3
-;; Package-Requires: ((emacs "24.1"))
+;; Version: 0.4
+;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is part of GNU Emacs.
 
@@ -33,7 +32,7 @@
 ;; Emacs.
 ;;
 ;; Additionally provide `ansible-doc-mode' minor mode to add documentation
-;; lookup to YAML Mode. Enable with:
+;; lookup to YAML Mode.  Enable with:
 ;;
 ;; (add-hook 'yaml-mode-hook #'ansible-doc-mode)
 
@@ -51,24 +50,6 @@
 
 ;;; YAML Mode
 (declare-function yaml-mode "yaml-mode" nil)
-
-(eval-and-compile
-  ;; `defvar-local' Emacs 24.2 and below
-  (unless (fboundp 'defvar-local)
-    (defmacro defvar-local (var val &optional docstring)
-      "Define VAR as a buffer-local variable with default value VAL.
-Like `defvar' but additionally marks the variable as being automatically
-buffer-local wherever it is set."
-      (declare (debug defvar) (doc-string 3))
-      `(progn
-         (defvar ,var ,val ,docstring)
-         (make-variable-buffer-local ',var))))
-
-  (unless (fboundp 'setq-local)
-    ;; `setq-local' for Emacs 24.2 and below
-    (defmacro setq-local (var val)
-      "Set variable VAR to value VAL in current buffer."
-      `(set (make-local-variable ',var) ,val))))
 
 (defgroup ansible nil
   "Ansible configuration and provisioning system."
@@ -141,7 +122,8 @@ buffer-local wherever it is set."
               (let ((retcode (call-process "ansible-doc" nil t nil "--list")))
                 (unless (equal retcode 0)
                   (error "Command ansible-doc --list failed with code %s, returned %s"
-                         retcode (buffer-string)))))
+                         retcode (buffer-string)))
+                retcode))
         (goto-char (point-max))
         (while (re-search-backward (rx line-start
                                        (group (one-or-more (not (any space))))
@@ -159,6 +141,9 @@ buffer-local wherever it is set."
          (default (if (or (null modules) (member symbol modules))
                       symbol
                     nil))
+         (prompt (if default
+                     (format "%s (default %s): " prompt default)
+                   (format "%s: " prompt)))
          ;; If we have no modules available, we don't require a match, and use
          ;; the symbol at point as default value and sole completion candidate.
          (reply (completing-read prompt
@@ -213,7 +198,7 @@ buffer-local wherever it is set."
                     (group (1+ (not (any space)))) line-end) 1)))
 
 (defun ansible-doc-fontify-module-xrefs (beg end)
-  "Propertize all module xrefs between point and LIMIT."
+  "Propertize all module xrefs between BEG and END."
   (remove-overlays beg end)
   (save-excursion
     (goto-char beg)
@@ -226,6 +211,9 @@ buffer-local wherever it is set."
 
 (defun ansible-doc-fontify-yaml (text)
   "Add `font-lock-face' properties to YAML TEXT.
+
+If `yaml-mode' is bound as a function use it to fontify TEXT as
+YAML, otherwise return TEXT unchanged.
 
 Return a fontified copy of TEXT."
   ;; Graciously inspired by http://emacs.stackexchange.com/a/5408/227
@@ -267,7 +255,9 @@ Return a fontified copy of TEXT."
         (insert fontified)))))
 
 (defun ansible-doc-revert-module-buffer (_ignore-auto noconfirm)
-  "Revert an Ansible Module doc buffer."
+  "Revert an Ansible Module doc buffer.
+
+If NOCONFIRM is non-nil revert without prompt."
   (let ((module (ansible-doc-current-module))
         (old-pos (point)))
     (when (or noconfirm
@@ -340,7 +330,7 @@ Return a fontified copy of TEXT."
 (defun ansible-doc (module)
   "Show ansible documentation for MODULE."
   (interactive
-   (list (ansible-doc-read-module "Documentation for Ansible Module: ")))
+   (list (ansible-doc-read-module "Documentation for Ansible Module")))
   (pop-to-buffer (ansible-doc-buffer module)))
 
 (defvar ansible-doc-mode-map

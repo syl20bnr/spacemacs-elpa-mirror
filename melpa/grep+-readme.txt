@@ -53,7 +53,7 @@
  ***** NOTE: The following variables defined in `grep.el'
              have been REDEFINED HERE:
 
- `grep-mode-font-lock-keywords', `grep-regexp-alist'
+ `grep-mode-font-lock-keywords', `grep-regexp-alist' (Emacs < 24)
    - Mouse-over the whole line.
 
 

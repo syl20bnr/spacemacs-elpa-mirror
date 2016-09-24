@@ -3,6 +3,7 @@ bibtex-completion backend.  If you are familiar with helm-bibtex,
 this is the ivy version.
 
 News:
+- 09/20/2016: Added fallback options to ivy frontend.
 - 04/18/2016: Improved support for Mendely/Jabref/Zotero way of
   referencing PDFs.
 - 04/12/2016: Published ivy version of helm-bibtex.
