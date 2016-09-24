@@ -14,7 +14,7 @@ Other Requirements:
 Setup:
 
 (require 'emms-player-simple-mpv)
-If you use other control functions,
+This plugin provides control functions (e.g. ab-loop, speed, fullscreen).
 (require 'emms-player-simple-mpv-control-functions)
 
 Usage:
@@ -34,7 +34,7 @@ An example of setting like emms-player-mplayer.el
 
 (add-to-list 'emms-player-list 'emms-player-my-mpv)
 
-The following setting examples are available:
+The following example configuration files are available:
 
   + emms-player-simple-mpv-e.g.time-display.el
   + emms-player-simple-mpv-e.g.playlist-fname.el

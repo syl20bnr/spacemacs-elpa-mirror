@@ -4,7 +4,7 @@
 ;;
 ;; Author: Boris Buliga <d12frosted@gmail.com>
 ;; URL: https://github.com/d12frosted/flyspell-correct
-;; Package-Version: 0.2
+;; Package-Version: 0.3
 ;; Package-X-Original-Version: 0.1.0
 ;; Package-Requires: ((flyspell-correct "0.1.0") (ivy "0.8.0"))
 ;;
@@ -29,7 +29,10 @@
 ;; Interface implementation
 
 (defun flyspell-correct-ivy (candidates word)
-  "Run `ivy-read' for the given CANDIDATES given by flyspell for the WORD.
+  "Run `ivy-read' for the given CANDIDATES.
+
+List of CANDIDATES is given by flyspell for the WORD.
+
 Return a selected word to use as a replacement or a tuple
 of (command, word) to be used by `flyspell-do-correct'."
   (let* (result

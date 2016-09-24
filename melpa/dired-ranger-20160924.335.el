@@ -5,7 +5,7 @@
 ;; Author: Matúš Goljer <matus.goljer@gmail.com>
 ;; Maintainer: Matúš Goljer <matus.goljer@gmail.com>
 ;; Version: 0.0.1
-;; Package-Version: 20160528.1031
+;; Package-Version: 20160924.335
 ;; Created: 17th June 2014
 ;; Package-requires: ((dash "2.7.0") (dired-hacks-utils "0.0.1"))
 ;; Keywords: files
@@ -168,7 +168,9 @@ copy ring."
     (--each files (when (file-exists-p it)
                     (if (file-directory-p it)
                         (copy-directory it target-directory)
-                      (copy-file it target-directory 0))
+                      (condition-case err
+                          (copy-file it target-directory 0)
+                        (file-already-exists nil)))
                     (cl-incf copied-files)))
     (dired-ranger--revert-target ?P target-directory files)
     (unless arg (ring-remove dired-ranger-copy-ring 0))
@@ -191,7 +193,9 @@ instead of copying them."
          (target-directory (dired-current-directory))
          (copied-files 0))
     (--each files (when (file-exists-p it)
-                    (rename-file it target-directory 0)
+                    (condition-case err
+                        (rename-file it target-directory 0)
+                      (file-already-exists nil))
                     (cl-incf copied-files)))
     (dired-ranger--revert-target ?M target-directory files)
     (--each buffers

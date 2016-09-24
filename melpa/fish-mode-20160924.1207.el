@@ -4,7 +4,7 @@
 
 ;; Author: Tony Wang <wwwjfy@gmail.com>
 ;; Keywords: Fish, shell
-;; Package-Version: 20160429.2057
+;; Package-Version: 20160924.1207
 ;; Package-Requires: ((emacs "24"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -298,7 +298,7 @@
       font-lock-builtin-face)
 
    ;; Numbers
-   `( ,(rx symbol-start (1+ (or digit (char ?.))) symbol-end)
+   `( ,(rx symbol-start (optional "-")(1+ (or digit (char ?.))) symbol-end)
       .
       font-lock-constant-face)))
 
