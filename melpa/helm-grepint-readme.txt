@@ -32,6 +32,11 @@ details on what is required for a new grep to be defined.
 
 ### Changes
 
+Version 1.1.1
+
+- Add `--ignore-case' argument for `git-grep' to make it consistent with
+  `ag' in the `helm-grepint-set-default-config'.
+
 Version 1.1.0
 
 - Fix incompatibilities with recent helm versions.

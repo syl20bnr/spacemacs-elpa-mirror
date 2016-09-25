@@ -1,13 +1,13 @@
 ;;; helm-grepint.el --- Generic helm interface to grep -*- lexical-binding: t -*-
 
-;; Copyright (C) 2015 Kalle Kankare
+;; Copyright (C) 2015, 2016 Kalle Kankare
 
 ;; Author: Kalle Kankare <kalle.kankare@iki.fi>
 ;; Maintainer: Kalle Kankare <kalle.kankare@iki.fi>
 ;; Created: 19 Sep 2015
 ;; Keywords: grep, grepping, searching, helm
-;; Package-Version: 20160903.321
-;; Version: 1.1.0
+;; Package-Version: 20160925.858
+;; Version: 1.1.1
 ;; URL: https://github.com/kopoli/helm-grepint
 ;; Package-Requires: ((helm "1.0") (emacs "24"))
 
@@ -61,6 +61,11 @@
 ;; details on what is required for a new grep to be defined.
 
 ;; ### Changes
+
+;; Version 1.1.1
+
+;; - Add `--ignore-case' argument for `git-grep' to make it consistent with
+;;   `ag' in the `helm-grepint-set-default-config'.
 
 ;; Version 1.1.0
 
@@ -353,7 +358,7 @@ See the usage for ARG in `helm-grepint--grep'."
 
   (helm-grepint-add-grep-config git-grep
     :command "git"
-    :arguments "--no-pager grep --line-number --no-color"
+    :arguments "--no-pager grep --ignore-case --line-number --no-color"
     :enable-function helm-grepint-git-grep-locate-root
     :root-directory-function helm-grepint-git-grep-locate-root)
 

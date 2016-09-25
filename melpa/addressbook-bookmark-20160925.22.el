@@ -6,7 +6,7 @@
 
 ;; Compatibility: GNU Emacs 24.1+
 ;; Package-Requires: ((emacs "24"))
-;; Package-Version: 20160316.2303
+;; Package-Version: 20160925.22
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -105,23 +105,23 @@ Special commands:
   (bookmark-maybe-load-default-file)
   (let ((mail-list ())
         (mail-bufs (message-buffers))
-        len-head)
+        emails)
     (setq mail-list
-          (if (eq major-mode 'addressbook-mode)
-                (split-string
-                 (assoc-default
-                  'email (addressbook-get-contact-data)) " ?, ?")
-              (split-string
-               (assoc-default
-                'email (assoc bookmark-name bookmark-alist)) " ?, ?")))
+          (cond ((eq major-mode 'addressbook-mode)
+                 (split-string
+                  (assoc-default
+                   'email (addressbook-get-contact-data)) " ?, ?"))
+                ((and bookmark-name
+                      (setq emails (assoc-default
+                                    'email (assoc bookmark-name bookmark-alist))))
+                 (split-string emails " ?, ?"))
+                (t (error "No contact found to set mail buffer"))))
     (cond ((and (or cc append) mail-bufs) ; A mail buffer exists, use it.
            (pop-to-buffer
-            (if (and mail-bufs (> (length mail-bufs) 1))
+            (if (cdr mail-bufs)
                 (completing-read "MailBuffer: " mail-bufs nil t)
                 (car mail-bufs))))
-          ((or cc append)                 ; No mail buffer found create one.
-           (compose-mail nil nil nil nil 'switch-to-buffer-other-window))
-          (t                              ; create a new mail buffer.
+          (t                        ; No mail buffer found create one.
            (compose-mail nil nil nil nil 'switch-to-buffer-other-window)))
     (goto-char (point-min))
     (save-excursion
@@ -130,17 +130,20 @@ Special commands:
           (or (search-forward "To: " nil t)
               (search-forward "Newsgroups: " nil t)))
       (end-of-line)
-      (setq len-head (- (point) (point-at-bol)))
-      (let ((email (if (> (length mail-list) 1)
+      (let ((email (if (cdr mail-list)
                        (completing-read "Choose mail: " mail-list nil t)
                        (car mail-list))))
-        (if append
-            (progn
-              (message-next-header)
-              (forward-line -1)
-              (end-of-line)
-              (insert (concat ",\n" (make-string len-head ? ) email)))
-            (insert email))))
+        (when email
+          (if (and append
+                   (not (looking-back
+                         "\\([Tt]o:\\|[Cc]c:\\|[Bb]cc:\\) "
+                         (point-at-bol))))
+              (progn
+                (message-next-header)
+                (forward-line -1)
+                (end-of-line)
+                (insert (concat ",\n   " email)))
+              (insert email)))))
     (search-forward "Subject: ")))
 
 (defun addressbook-set-mail-buffer (append)

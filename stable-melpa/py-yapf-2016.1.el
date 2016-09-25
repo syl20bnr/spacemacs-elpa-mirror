@@ -1,89 +1,75 @@
-;;; py-isort.el --- Use isort to sort the imports in a Python buffer
+;;; py-yapf.el --- Use yapf to beautify a Python buffer
 
-;; Copyright (C) 2014, Friedrich Paetzke <paetzke@fastmail.fm>
+;; Copyright (C) 2015-2016, Friedrich Paetzke <f.paetzke@gmail.com>
 
-;; Author: Friedrich Paetzke <paetzke@fastmail.fm>
-;; URL: http://paetzke.me/project/py-isort.el
-;; Package-Version: 0.8
-;; Version: 0.8
+;; Author: Friedrich Paetzke <f.paetzke@gmail.com>
+;; URL: https://github.com/paetzke/py-yapf.el
+;; Package-Version: 2016.1
+;; Version: 2016.1
 
 ;;; Commentary:
 
-;; Provides commands, which use the external "isort" tool
-;; to tidy up the imports in the current buffer.
+;; Provides commands, which use the external "yapf"
+;; tool to tidy up the current buffer according to Python's PEP8.
 
-;; To automatically sort imports when saving a python file, use the
+;; To automatically apply when saving a python file, use the
 ;; following code:
 
-;;   (add-hook 'before-save-hook 'py-isort-before-save)
-
-;; To customize the behaviour of "isort" you can set the
-;; py-isort-options e.g.
-
-;;   (setq py-isort-options '("--lines=100"))
+;;   (add-hook 'python-mode-hook 'py-yapf-enable-on-save)
 
 ;;; Code:
 
 
-(defgroup py-isort nil
-  "Use isort to sort the imports in a Python buffer."
+(defgroup py-yapf nil
+  "Use yapf to beautify a Python buffer."
   :group 'convenience
-  :prefix "py-isort-")
+  :prefix "py-yapf-")
 
 
-(defcustom py-isort-options nil
-  "Options used for isort."
-  :group 'py-isort
+(defcustom py-yapf-options nil
+  "Options used for yapf.
+
+Note that `--in-place' is used by default."
+  :group 'py-yapf
   :type '(repeat (string :tag "option")))
 
 
-(defun py-isort--call-executable (errbuf file)
-  (let ((default-directory (file-name-directory buffer-file-name)))
-    (zerop (apply 'call-process "isort" nil errbuf nil
-                  (append `(" " , file, " ",
-                            (concat "--settings-path=" default-directory))
-                          py-isort-options)))))
+(defun py-yapf--call-executable (errbuf file)
+  (apply 'call-process "yapf" nil errbuf nil
+         (append py-yapf-options `("--in-place", file))))
 
 
-(defun py-isort--call (only-on-region)
-  (py-isort-bf--apply-executable-to-buffer "isort"
-                                           'py-isort--call-executable
-                                           only-on-region
-                                           "py"))
+(defun py-yapf--call ()
+  (py-yapf-bf--apply-executable-to-buffer "yapf" 'py-yapf--call-executable nil "py" t))
 
 
 ;;;###autoload
-(defun py-isort-region ()
-  "Uses the \"isort\" tool to reformat the current region."
+(defun py-yapf-buffer ()
+  "Uses the \"yapf\" tool to reformat the current buffer."
   (interactive)
-  (py-isort--call t))
+  (py-yapf--call))
 
 
 ;;;###autoload
-(defun py-isort-buffer ()
-  "Uses the \"isort\" tool to reformat the current buffer."
+(defun py-yapf-enable-on-save ()
+  "Pre-save hooked to be used before running py-yapf."
   (interactive)
-  (py-isort--call nil))
-
-
-;;;###autoload
-(defun py-isort-before-save ()
-  (interactive)
-  (when (eq major-mode 'python-mode)
-    (condition-case err (py-isort-buffer)
-      (error (message "%s" (error-message-string err))))))
+  (add-hook 'before-save-hook 'py-yapf-buffer nil t))
 
 
 ;; BEGIN GENERATED -----------------
 ;; !!! This file is generated !!!
 ;; buftra.el
-;; Copyright (C) 2015, Friedrich Paetzke <paetzke@fastmail.fm>
-;; Author: Friedrich Paetzke <paetzke@fastmail.fm>
+;; Copyright (C) 2015-2016, Friedrich Paetzke <f.paetzke@gmail.com>
+;; Author: Friedrich Paetzke <f.paetzke@gmail.com>
 ;; URL: https://github.com/paetzke/buftra.el
-;; Version: 0.4
+;; Version: 0.6
+
+;; This code is initially copied from go-mode.el (copyright the go-mode authors).
+;; See LICENSE or https://raw.githubusercontent.com/dominikh/go-mode.el/master/LICENSE
 
 
-(defun py-isort-bf--apply-rcs-patch (patch-buffer)
+(defun py-yapf-bf--apply-rcs-patch (patch-buffer)
   "Apply an RCS-formatted diff from PATCH-BUFFER to the current buffer."
   (let ((target-buffer (current-buffer))
         (line-offset 0))
@@ -92,7 +78,7 @@
         (goto-char (point-min))
         (while (not (eobp))
           (unless (looking-at "^\\([ad]\\)\\([0-9]+\\) \\([0-9]+\\)")
-            (error "invalid rcs patch or internal error in py-isort-bf--apply-rcs-patch"))
+            (error "invalid rcs patch or internal error in py-yapf-bf--apply-rcs-patch"))
           (forward-line)
           (let ((action (match-string 1))
                 (from (string-to-number (match-string 2)))
@@ -112,24 +98,29 @@
                 (goto-char (point-min))
                 (forward-line (- from line-offset 1))
                 (setq line-offset (+ line-offset len))
-                (kill-whole-line len)))
+                (kill-whole-line len)
+                (pop kill-ring)))
              (t
-              (error "invalid rcs patch or internal error in py-isort-bf-apply--rcs-patch")))))))))
+              (error "invalid rcs patch or internal error in py-yapf-bf--apply-rcs-patch")))))))))
 
 
-(defun py-isort-bf--replace-region (filename)
+(defun py-yapf-bf--replace-region (filename)
   (delete-region (region-beginning) (region-end))
   (insert-file-contents filename))
 
 
-(defun py-isort-bf--apply-executable-to-buffer (executable-name
+(defun py-yapf-bf--apply-executable-to-buffer (executable-name
                                            executable-call
                                            only-on-region
-                                           file-extension)
+                                           file-extension
+                                           ignore-return-code)
   "Formats the current buffer according to the executable"
   (when (not (executable-find executable-name))
     (error (format "%s command not found." executable-name)))
-  (let ((tmpfile (make-temp-file executable-name nil (concat "." file-extension)))
+  ;; Make sure tempfile is an absolute path in the current directory so that
+  ;; YAPF can use its standard mechanisms to find the project's .style.yapf
+  (let ((tmpfile (make-temp-file (concat default-directory executable-name)
+                                 nil (concat "." file-extension)))
         (patchbuf (get-buffer-create (format "*%s patch*" executable-name)))
         (errbuf (get-buffer-create (format "*%s Errors*" executable-name)))
         (coding-system-for-read buffer-file-coding-system)
@@ -144,30 +135,34 @@
         (write-region (region-beginning) (region-end) tmpfile)
       (write-region nil nil tmpfile))
 
-    (if (funcall executable-call errbuf tmpfile)
+    (if (or (funcall executable-call errbuf tmpfile)
+            (ignore-return-code))
         (if (zerop (call-process-region (point-min) (point-max) "diff" nil
                                         patchbuf nil "-n" "-" tmpfile))
             (progn
               (kill-buffer errbuf)
+              (pop kill-ring)
               (message (format "Buffer is already %sed" executable-name)))
 
           (if only-on-region
-              (py-isort-bf--replace-region tmpfile)
-            (py-isort-bf--apply-rcs-patch patchbuf))
+              (py-yapf-bf--replace-region tmpfile)
+            (py-yapf-bf--apply-rcs-patch patchbuf))
 
           (kill-buffer errbuf)
+          (pop kill-ring)
           (message (format "Applied %s" executable-name)))
       (error (format "Could not apply %s. Check *%s Errors* for details"
                      executable-name executable-name)))
     (kill-buffer patchbuf)
+    (pop kill-ring)
     (delete-file tmpfile)))
 
 
-;; py-isort-bf.el ends here
+;; py-yapf-bf.el ends here
 ;; END GENERATED -------------------
 
 
-(provide 'py-isort)
+(provide 'py-yapf)
 
 
-;;; py-isort.el ends here
+;;; py-yapf.el ends here

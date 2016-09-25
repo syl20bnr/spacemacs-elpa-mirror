@@ -13,5 +13,5 @@ By putting the following line to ~/.emacs.d/init.el,
 (sage-shell:define-alias)
 you can run Sage by M-x run-sage instead of M-x sage-shell:run-sage.
 
-Please visit https://github.com/stakemori/sage-shell-mode for more
+Please visit https://github.com/sagemath/sage-shell-mode for more
 infomation.

@@ -4,8 +4,8 @@
 
 ;; Author: Friedrich Paetzke <f.paetzke@gmail.com>
 ;; URL: http://paetzke.me/project/py-autopep8.el
-;; Package-Version: 20151231.614
-;; Version: 0.8
+;; Package-Version: 2016.1
+;; Version: 2016.1
 
 ;;; Commentary:
 
@@ -146,7 +146,6 @@ Note that `--in-place' is used by default."
                                         patchbuf nil "-n" "-" tmpfile))
             (progn
               (kill-buffer errbuf)
-              (pop kill-ring)
               (message (format "Buffer is already %sed" executable-name)))
 
           (if only-on-region
@@ -154,12 +153,10 @@ Note that `--in-place' is used by default."
             (py-autopep8-bf--apply-rcs-patch patchbuf))
 
           (kill-buffer errbuf)
-          (pop kill-ring)
           (message (format "Applied %s" executable-name)))
       (error (format "Could not apply %s. Check *%s Errors* for details"
                      executable-name executable-name)))
     (kill-buffer patchbuf)
-    (pop kill-ring)
     (delete-file tmpfile)))
 
 

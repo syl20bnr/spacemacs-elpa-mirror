@@ -1,69 +1,83 @@
-;;; py-autopep8.el --- Use autopep8 to beautify a Python buffer
+;;; py-isort.el --- Use isort to sort the imports in a Python buffer
 
-;; Copyright (C) 2013-2015, Friedrich Paetzke <paetzke@fastmail.fm>
+;; Copyright (C) 2014, Friedrich Paetzke <paetzke@fastmail.fm>
 
 ;; Author: Friedrich Paetzke <paetzke@fastmail.fm>
-;; URL: http://paetzke.me/project/py-autopep8.el
-;; Package-Version: 0.7.0
-;; Version: 0.7
+;; URL: http://paetzke.me/project/py-isort.el
+;; Package-Version: 20160925.318
+;; Version: 2016.1
 
 ;;; Commentary:
 
-;; Provides the `py-autopep8' command, which uses the external "autopep8"
-;; tool to tidy up the current buffer according to Python's PEP8.
+;; Provides commands, which use the external "isort" tool
+;; to tidy up the imports in the current buffer.
 
-;; To automatically apply when saving a python file, use the
+;; To automatically sort imports when saving a python file, use the
 ;; following code:
 
-;;   (add-hook 'python-mode-hook 'py-autopep8-enable-on-save)
+;;   (add-hook 'before-save-hook 'py-isort-before-save)
 
-;; To customize the behaviour of "autopep8" you can set the
-;; py-autopep8-options e.g.
+;; To customize the behaviour of "isort" you can set the
+;; py-isort-options e.g.
 
-;;   (setq py-autopep8-options '("--max-line-length=100"))
+;;   (setq py-isort-options '("--lines=100"))
 
 ;;; Code:
 
-(defgroup py-autopep8 nil
-  "Use autopep8 to beautify a Python buffer."
+
+(defgroup py-isort nil
+  "Use isort to sort the imports in a Python buffer."
   :group 'convenience
-  :prefix "py-autopep8-")
+  :prefix "py-isort-")
 
 
-(defcustom py-autopep8-options nil
-  "Options used for autopep8.
-
-Note that `--in-place' is used by default."
-  :group 'py-autopep8
+(defcustom py-isort-options nil
+  "Options used for isort."
+  :group 'py-isort
   :type '(repeat (string :tag "option")))
 
 
-(defun py-autopep8--call-executable (errbuf file)
-  (zerop (apply 'call-process "autopep8" nil errbuf nil
-                (append py-autopep8-options `("--in-place", file)))))
+(defun py-isort--find-settings-path ()
+  (expand-file-name
+   (or (locate-dominating-file buffer-file-name ".isort.cfg")
+       (file-name-directory buffer-file-name))))
+
+
+(defun py-isort--call-executable (errbuf file)
+  (let ((default-directory (py-isort--find-settings-path)))
+    (zerop (apply 'call-process "isort" nil errbuf nil
+                  (append `(" " , file, " ",
+                            (concat "--settings-path=" default-directory))
+                          py-isort-options)))))
+
+
+(defun py-isort--call (only-on-region)
+  (py-isort-bf--apply-executable-to-buffer "isort"
+                                           'py-isort--call-executable
+                                           only-on-region
+                                           "py"))
 
 
 ;;;###autoload
-(defun py-autopep8 ()
-  "Deprecated! Use py-autopep8-buffer instead."
+(defun py-isort-region ()
+  "Uses the \"isort\" tool to reformat the current region."
   (interactive)
-  (py-autopep8-buffer))
+  (py-isort--call t))
 
 
 ;;;###autoload
-(defun py-autopep8-buffer ()
-  "Uses the \"autopep8\" tool to reformat the current buffer."
+(defun py-isort-buffer ()
+  "Uses the \"isort\" tool to reformat the current buffer."
   (interactive)
-  (py-autopep8-bf--apply-executable-to-buffer "autopep8"
-                                              'py-autopep8--call-executable
-                                              nil))
+  (py-isort--call nil))
 
 
 ;;;###autoload
-(defun py-autopep8-enable-on-save ()
-  "Pre-save hook to be used before running autopep8."
+(defun py-isort-before-save ()
   (interactive)
-  (add-hook 'before-save-hook 'py-autopep8-buffer nil t))
+  (when (eq major-mode 'python-mode)
+    (condition-case err (py-isort-buffer)
+      (error (message "%s" (error-message-string err))))))
 
 
 ;; BEGIN GENERATED -----------------
@@ -72,10 +86,10 @@ Note that `--in-place' is used by default."
 ;; Copyright (C) 2015, Friedrich Paetzke <paetzke@fastmail.fm>
 ;; Author: Friedrich Paetzke <paetzke@fastmail.fm>
 ;; URL: https://github.com/paetzke/buftra.el
-;; Version: 0.3
+;; Version: 0.4
 
 
-(defun py-autopep8-bf--apply-rcs-patch (patch-buffer)
+(defun py-isort-bf--apply-rcs-patch (patch-buffer)
   "Apply an RCS-formatted diff from PATCH-BUFFER to the current buffer."
   (let ((target-buffer (current-buffer))
         (line-offset 0))
@@ -84,7 +98,7 @@ Note that `--in-place' is used by default."
         (goto-char (point-min))
         (while (not (eobp))
           (unless (looking-at "^\\([ad]\\)\\([0-9]+\\) \\([0-9]+\\)")
-            (error "invalid rcs patch or internal error in py-autopep8-bf--apply-rcs-patch"))
+            (error "invalid rcs patch or internal error in py-isort-bf--apply-rcs-patch"))
           (forward-line)
           (let ((action (match-string 1))
                 (from (string-to-number (match-string 2)))
@@ -106,19 +120,22 @@ Note that `--in-place' is used by default."
                 (setq line-offset (+ line-offset len))
                 (kill-whole-line len)))
              (t
-              (error "invalid rcs patch or internal error in py-autopep8-bf-apply--rcs-patch")))))))))
+              (error "invalid rcs patch or internal error in py-isort-bf-apply--rcs-patch")))))))))
 
 
-(defun py-autopep8-bf--replace-region (filename)
+(defun py-isort-bf--replace-region (filename)
   (delete-region (region-beginning) (region-end))
   (insert-file-contents filename))
 
 
-(defun py-autopep8-bf--apply-executable-to-buffer (executable-name executable-call only-on-region)
+(defun py-isort-bf--apply-executable-to-buffer (executable-name
+                                           executable-call
+                                           only-on-region
+                                           file-extension)
   "Formats the current buffer according to the executable"
   (when (not (executable-find executable-name))
     (error (format "%s command not found." executable-name)))
-  (let ((tmpfile (make-temp-file executable-name nil ".py"))
+  (let ((tmpfile (make-temp-file executable-name nil (concat "." file-extension)))
         (patchbuf (get-buffer-create (format "*%s patch*" executable-name)))
         (errbuf (get-buffer-create (format "*%s Errors*" executable-name)))
         (coding-system-for-read buffer-file-coding-system)
@@ -141,8 +158,8 @@ Note that `--in-place' is used by default."
               (message (format "Buffer is already %sed" executable-name)))
 
           (if only-on-region
-              (py-autopep8-bf--replace-region tmpfile)
-            (py-autopep8-bf--apply-rcs-patch patchbuf))
+              (py-isort-bf--replace-region tmpfile)
+            (py-isort-bf--apply-rcs-patch patchbuf))
 
           (kill-buffer errbuf)
           (message (format "Applied %s" executable-name)))
@@ -152,11 +169,11 @@ Note that `--in-place' is used by default."
     (delete-file tmpfile)))
 
 
-;; py-autopep8-bf.el ends here
+;; py-isort-bf.el ends here
 ;; END GENERATED -------------------
 
 
-(provide 'py-autopep8)
+(provide 'py-isort)
 
 
-;;; py-autopep8.el ends here
+;;; py-isort.el ends here
