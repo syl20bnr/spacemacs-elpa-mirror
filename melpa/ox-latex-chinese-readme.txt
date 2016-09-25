@@ -56,7 +56,7 @@ Tex Live 主站访问速度很慢，建议同学们使用国内镜像，许多 L
 
 1. 运行 Tex Live 管理器： 开始 > 程序 > Tex Live 2015 > Tex Live Manager
 2. 载入本地宏包仓库：tlmgr > 载入其它仓库，在弹出的对话框中选择 “choose local directory”，载入本地仓库 “Z:”。
-3. 安装所需宏包： collection-langcjk, collection-langchinese, ctex, ctex-faq, bibtex8, environ, trimspaces, zhnumber, wrapfig, capt-of, latexmk, dvipng
+3. 安装所需宏包： collection-langcjk, collection-langchinese, ctex, ctex-faq, bibtex8, environ, trimspaces, zhnumber, wrapfig, capt-of, latexmk, dvipng, dvisvgm
 
 
 **** 第二种方式：使用 tlmge 命令安装
@@ -72,7 +72,7 @@ Tex Live 主站访问速度很慢，建议同学们使用国内镜像，许多 L
    #+END_EXAMPLE
 4. 安装所需宏包
    #+BEGIN_EXAMPLE
-   tlmgr install collection-langcjk collection-langchinese ctex ctex-faq bibtex8 environ trimspaces zhnumber wrapfig capt-of latexmk dvipng
+   tlmgr install collection-langcjk collection-langchinese ctex ctex-faq bibtex8 environ trimspaces zhnumber wrapfig capt-of latexmk dvipng dvisvgm
    #+END_EXAMPLE
 
 ** 安装并配置 ox-latex-chinese
@@ -100,6 +100,14 @@ Tex Live 主站访问速度很慢，建议同学们使用国内镜像，许多 L
    #+END_EXAMPLE
 
 ** 常见错误排查和解决
+
+*** 中文目录下的 org 文件无法转换为 pdf 文件
+这个问题可以使用 latexmk 命令配合 "%b.tex" (仅仅使用文件名，而不是文件的绝对路径) 来规避，比如：
+
+#+BEGIN_EXAMPLE
+(setq oxlc/org-latex-commands '("latexmk -xelatex -g -pdf %b.tex"))
+#+END_EXAMPLE
+
 *** 缺少必要的 Latex 宏包
 **** 表现形式
  1. message buffer中有类似输出

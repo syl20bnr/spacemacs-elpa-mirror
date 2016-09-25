@@ -1,11 +1,11 @@
 ;;; ox-latex-chinese.el --- An example org latex exporter configure for Chinese users
 
 ;; * Header
-;; Copyright (c) 2015, Feng Shu
+;; Copyright (c) 2016, Feng Shu
 
 ;; Author: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/ox-latex-chinese
-;; Package-Version: 20160513.1728
+;; Package-Version: 20160925.133
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -88,7 +88,7 @@
 
 ;; 1. 运行 Tex Live 管理器： 开始 > 程序 > Tex Live 2015 > Tex Live Manager
 ;; 2. 载入本地宏包仓库：tlmgr > 载入其它仓库，在弹出的对话框中选择 “choose local directory”，载入本地仓库 “Z:”。
-;; 3. 安装所需宏包： collection-langcjk, collection-langchinese, ctex, ctex-faq, bibtex8, environ, trimspaces, zhnumber, wrapfig, capt-of, latexmk, dvipng
+;; 3. 安装所需宏包： collection-langcjk, collection-langchinese, ctex, ctex-faq, bibtex8, environ, trimspaces, zhnumber, wrapfig, capt-of, latexmk, dvipng, dvisvgm
 
 
 ;; **** 第二种方式：使用 tlmge 命令安装
@@ -104,7 +104,7 @@
 ;;    #+END_EXAMPLE
 ;; 4. 安装所需宏包
 ;;    #+BEGIN_EXAMPLE
-;;    tlmgr install collection-langcjk collection-langchinese ctex ctex-faq bibtex8 environ trimspaces zhnumber wrapfig capt-of latexmk dvipng
+;;    tlmgr install collection-langcjk collection-langchinese ctex ctex-faq bibtex8 environ trimspaces zhnumber wrapfig capt-of latexmk dvipng dvisvgm
 ;;    #+END_EXAMPLE
 
 ;; ** 安装并配置 ox-latex-chinese
@@ -132,6 +132,14 @@
 ;;    #+END_EXAMPLE
 
 ;; ** 常见错误排查和解决
+
+;; *** 中文目录下的 org 文件无法转换为 pdf 文件
+;; 这个问题可以使用 latexmk 命令配合 "%b.tex" (仅仅使用文件名，而不是文件的绝对路径) 来规避，比如：
+
+;; #+BEGIN_EXAMPLE
+;; (setq oxlc/org-latex-commands '("latexmk -xelatex -g -pdf %b.tex"))
+;; #+END_EXAMPLE
+
 ;; *** 缺少必要的 Latex 宏包
 ;; **** 表现形式
 ;;  1. message buffer中有类似输出
@@ -193,12 +201,6 @@
   "Options for exporting Org mode files to LaTeX."
   :group 'org-export-latex)
 
-(defcustom oxlc/org-latex-coding-system 'utf-8
-  "Please see the info of `org-latex-coding-system', when `oxlc/org-latex-chinese-enable'
-set to t, its value will override the value of `org-latex-coding-system' before exporting
-to latex."
-  :group 'org-export-latex-chinese)
-
 (defcustom oxlc/org-latex-fonts
   '((mainfont "Times New Roman")
     (CJKmainfont "SimSun" "宋体" "新宋体" "宋体" "STSong" "STZhongson" "华文中宋")
@@ -213,20 +215,79 @@ to latex."
   :group 'org-export-latex-chinese)
 
 (defcustom oxlc/org-latex-commands
-  '(("default"
-     :pdf ("xelatex -interaction nonstopmode -output-directory %o %f"
-           "bibtex %b"
-           "xelatex -interaction nonstopmode -output-directory %o %f"
-           "xelatex -interaction nonstopmode -output-directory %o %f"))
-    ("fragment"
-     :pdf ("xelatex -interaction nonstopmode -output-directory %o %f")
-     :xdv ("xelatex -no-pdf -interaction nonstopmode -output-directory %o %f")))
+  '("xelatex -interaction nonstopmode -output-directory %o %f"
+    "bibtex %b"
+    "xelatex -interaction nonstopmode -output-directory %o %f"
+    "xelatex -interaction nonstopmode -output-directory %o %f")
   "Set latex commands which will be used by `oxlc/org-latex-compile'."
+  :group 'org-export-latex-chinese)
+
+(defcustom oxlc/org-latex-preview-commands
+  '("xelatex -interaction nonstopmode -output-directory %o %f")
+  "Set latex commands used for preview latex snippet, which will be
+used by `oxlc/org-latex-compile'.
+
+Note: this option *only* useful for org-mode (version < 9.0) ."
+  :group 'org-export-latex-chinese)
+
+(defcustom oxlc/org-preview-latex-process-alist
+  '((dvipng
+     :programs ("latex" "dvipng" "gs")
+     :description "dvi > png"
+     :message "you need to install programs: latex, dvipng and ghostscript."
+     :image-input-type "dvi"
+     :image-output-type "png"
+     :image-size-adjust (1.0 . 1.0)
+     :latex-compiler ("latex -interaction nonstopmode -output-directory %o %f")
+     :image-converter ("dvipng -fg %F -bg %B -D %D -T tight -o %b.png %f"))
+    (dvisvgm
+     :programs ("latex" "dvisvgm" "gs")
+     :description "dvi > svg"
+     :message "you need to install programs: latex, dvisvgm and ghostscript."
+     :use-xcolor t
+     :image-input-type "dvi"
+     :image-output-type "svg"
+     :image-size-adjust (1.7 . 1.5)
+     :latex-compiler ("latex -interaction nonstopmode -output-directory %o %f")
+     :image-converter ("dvisvgm %f -n -b min -c %S -o %b.svg"))
+    (dvisvgm-xelatex
+     :programs ("latex" "dvisvgm" "gs")
+     :description "dvi > svg"
+     :message "you need to install programs: latex, dvisvgm and ghostscript."
+     :use-xcolor t
+     :image-input-type "xdv"
+     :image-output-type "svg"
+     :image-size-adjust (1.7 . 1.5)
+     :latex-compiler ("xelatex -no-pdf -interaction nonstopmode -output-directory %o %f")
+     :image-converter ("dvisvgm %f -n -b min -c %S -o %b.svg"))
+    (imagemagick
+     :programs ("latex" "convert" "gs")
+     :description "pdf > png"
+     :message
+     "you need to install programs: latex, imagemagick and ghostscript."
+     :use-xcolor t
+     :image-input-type "pdf"
+     :image-output-type "png"
+     :image-size-adjust (1.0 . 1.0)
+     :latex-compiler ("xelatex -interaction nonstopmode -output-directory %o %f")
+     :image-converter
+     ("convert -density %S -trim -antialias %f -quality 100 %b.png")))
+  "Please see the info of `org-preview-latex-process-alist', when `oxlc/org-latex-chinese-enable'
+set to t, its value will override the value of `org-preview-latex-process-alist' before exporting
+to latex.
+
+Note: this option is useful for org-mode (version >= 9.0 )."
   :group 'org-export-latex-chinese)
 
 (defcustom oxlc/org-latex-default-class "ctexart"
   "Please see the info of `org-latex-default-class', when `oxlc/org-latex-chinese-enable'
 set to t, its value will override the value of `org-latex-default-class' before exporting
+to latex."
+  :group 'org-export-latex-chinese)
+
+(defcustom oxlc/org-preview-latex-default-process 'dvipng
+  "Please see the info of `org-preview-latex-default-process', when `oxlc/org-latex-chinese-enable'
+set to t, its value will override the value of `org-preview-latex-default-process' before exporting
 to latex."
   :group 'org-export-latex-chinese)
 
@@ -304,13 +365,13 @@ to latex."
   "判断是否开启 ox-latex-chinese.")
 
 (defconst oxlc/overrided-variables
-  '(org-latex-packages-alist
+  '(org-latex-default-class
+    org-latex-classes
+    org-latex-packages-alist
     org-format-latex-header
     org-latex-default-packages-alist
-    org-latex-classes
-    org-latex-default-class
-    org-latex-commands
-    org-latex-coding-system)
+    org-preview-latex-process-alist
+    org-preview-latex-default-process)
   "记录所有被 ox-latex-chinese 包强制覆盖得变量。")
 
 (defun oxlc/generate-latex-fonts-setting ()
@@ -350,47 +411,40 @@ to latex."
                            fontname))
                      (font-family-list)))))
 
-(defun oxlc/get-override-value (variable)
-  "返回 `variable' 对应的 ox-latex-chinese 变量的取值。"
-  (symbol-value (intern (concat "oxlc/" (symbol-name variable)))))
+(defmacro oxlc/if (cond expression1 expression2)
+  (declare (indent 1))
+  `(if ,cond
+       (let ((org-latex-default-class oxlc/org-latex-default-class)
+             (org-latex-classes oxlc/org-latex-classes)
+             (org-latex-default-packages-alist oxlc/org-latex-default-packages-alist)
+             (org-latex-packages-alist
+              (cons (oxlc/generate-latex-fonts-setting)
+                    oxlc/org-latex-packages-alist))
+             (org-latex-pdf-process oxlc/org-latex-commands)
+             (org-preview-latex-default-process oxlc/org-preview-latex-default-process)
+             (org-preview-latex-process-alist oxlc/org-preview-latex-process-alist))
+         ,expression1)
+     ,expression2))
 
 (defun oxlc/org-export-as (orig-fun backend &optional subtreep
                                     visible-only body-only ext-plist)
-  (if (and oxlc/ox-latex-chinese-enable
-           (member backend '(latex beamer)))
-      (let ((org-latex-coding-system (oxlc/get-override-value 'org-latex-coding-system))
-            (org-latex-commands (oxlc/get-override-value 'org-latex-commands))
-            (org-latex-default-class (oxlc/get-override-value 'org-latex-default-class))
-            (org-latex-classes (oxlc/get-override-value 'org-latex-classes))
-            (org-latex-default-packages-alist (oxlc/get-override-value 'org-latex-default-packages-alist))
-            (org-latex-packages-alist
-             `(,(oxlc/generate-latex-fonts-setting)
-               ,@(oxlc/get-override-value 'org-latex-packages-alist))))
-        (funcall orig-fun backend subtreep visible-only body-only ext-plist))
+  (oxlc/if (and oxlc/ox-latex-chinese-enable
+                (member backend '(latex beamer)))
+    (funcall orig-fun backend subtreep visible-only body-only ext-plist)
     (funcall orig-fun backend subtreep visible-only body-only ext-plist)))
 
 (defun oxlc/org-create-formula-image-with-imagemagick (orig-fun string tofile options buffer)
-  (interactive)
-  (if oxlc/ox-latex-chinese-enable
-      (let ((org-latex-coding-system (oxlc/get-override-value 'org-latex-coding-system))
-            (org-latex-commands (oxlc/get-override-value 'org-latex-commands))
-            (org-latex-default-class (oxlc/get-override-value 'org-latex-default-class))
-            (org-latex-classes (oxlc/get-override-value 'org-latex-classes))
-            (org-latex-default-packages-alist (oxlc/get-override-value 'org-latex-default-packages-alist))
-            (org-format-latex-header (oxlc/get-override-value 'org-format-latex-header))
-            (org-latex-packages-alist
-             `(,(oxlc/generate-latex-fonts-setting)
-               ,@(oxlc/get-override-value 'org-latex-packages-alist))))
-        (funcall orig-fun string tofile options buffer))
+  (oxlc/if oxlc/ox-latex-chinese-enable
+    (funcall orig-fun string tofile options buffer)
     (funcall orig-fun string tofile options buffer)))
 
 (defun oxlc/org-latex-compile (orig-fun texfile &optional snippet)
-  (if oxlc/ox-latex-chinese-enable
-      (let ((org-latex-pdf-process
-             (if snippet
-                 (plist-get (cdr (assoc "fragment" oxlc/org-latex-commands)) :pdf)
-               (plist-get (cdr (assoc "default" oxlc/org-latex-commands)) :pdf))))
-        (funcall orig-fun texfile snippet))
+  (oxlc/if oxlc/ox-latex-chinese-enable
+    (let ((org-latex-pdf-process
+           (if snippet
+               oxlc/org-latex-preview-commands
+             oxlc/org-latex-commands)))
+      (funcall orig-fun texfile snippet))
     (funcall orig-fun texfile snippet)))
 
 (defun oxlc/toggle-ox-latex-chinese (&optional force-enable)

@@ -1,10 +1,12 @@
 ;;; org-board.el --- a bookmarking and web archival system for Org mode.
 
+;; Copyright (C) 2016 Charles A. Roelli
+
 ;; Author: Charles A. Roelli <charles@aurox.ch>
-;; Url: https://github.com/scallywag/org-board
-;; Package-Version: 20160922.710
 ;; Created: Wed Aug 10 2016
 ;; Keywords: org, bookmarks, archives
+;; Package-Version: 20160924.954
+;; Homepage: https://github.com/scallywag/org-board
 
 ;;; Commentary:
 ;;
@@ -18,6 +20,7 @@
 ;;; Code:
 
 (require 'org-attach)
+(require 'url)
 (require 'find-lisp) ;; not yet used, see TODO.org
 
 (defgroup org-board nil
@@ -180,7 +183,6 @@ added as a link in the :ARCHIVED_AT: property."
   "Print the `wget' invocation that will be run, taking into
 account the current options.  Creates an `org-attach' directory
 and property if not already present."
-
   (interactive)
   (let* ((attach-directory (org-attach-dir t))
 	 (urls (org-entry-get-multivalued-property (point) "URL"))
@@ -227,8 +229,9 @@ attachments to the entry are deleted."
 
 ;;;###autoload
 (defun org-board-open ()
-  "Open the archived version of the page pointed to by the URL,
-and if that does not work, open a list of HTML files from the
+  "Open the archived version of the page pointed to by the URL property.
+
+If that does not work, open a list of HTML files from the
 most recent archive, in Dired."
   (interactive)
   (let* ((link
@@ -238,10 +241,44 @@ most recent archive, in Dired."
          (folder
           (progn
             (string-match "^\\[\\[file:\\(.*\\)\\]\\[.*\\]\\]$" link)
-            (match-string-no-properties 1 link))))
-    (find-name-dired folder "*.html")
-    ;; TODO: if find turned up with nothing, search for all files instead
-    ))
+            (match-string-no-properties 1 link)))
+	 (urls
+	  (org-entry-get-multivalued-property (point) "URL")))
+    (dolist (url-string urls)
+      (let* ((url-parsed (url-generic-parse-url url-string))
+	     (url-host-string (url-host url-parsed))
+	     (url-path-string (url-filename url-parsed))
+	     (url-combined-string (concat folder url-host-string url-path-string))
+	     (url-filesystem-guess (if (string= (substring url-combined-string -1) "/")
+				       (org-board-extend-default-path url-combined-string)
+				     url-combined-string)))
+	(unless (eq (org-board-open-with url-filesystem-guess) 0)
+	  (message "%s %s" (org-board-open-with url-filesystem-guess) url-filesystem-guess)
+	  (find-name-dired folder "*.html"))))))
+
+;;;###autoload
+(defun org-board-open-with (filename-string)
+  "Open visited file in default external program.
+
+Adapted from:
+http://emacsredux.com/blog/2013/03/27/open-file-in-external-program/"
+  (when filename-string
+    (call-process (cond
+                     ((eq system-type 'darwin) "open")
+                     ((member system-type '(gnu gnu/linux gnu/kfreebsd) "xdg-open"))
+                     (t (read-shell-command "Open current file with: ")))
+		  nil nil nil
+		  filename-string)))
+
+;;;###autoload
+(defun org-board-extend-default-path (filename-string)
+  "Extend a filename to end in `/index.html'.
+
+Examples: `aurox.ch'  => `aurox.ch/index.html'
+          `aurox.ch/' => `aurox.ch/index.html'."
+  (if (string= (substring filename-string -1) "/")
+      (concat filename-string "index.html")
+    (concat filename-string "/index.html")))
 
 ;;;###autoload
 (defun org-board-new (url)

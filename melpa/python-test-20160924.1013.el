@@ -4,7 +4,7 @@
 
 ;; Author: Mario Rodas <marsam@users.noreply.github.com>
 ;; URL: https://github.com/emacs-pe/python-test.el
-;; Package-Version: 20160801.1224
+;; Package-Version: 20160924.1013
 ;; Keywords: convenience
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "24.3"))
@@ -319,7 +319,13 @@ This function is called from `compilation-filter-hook'."
 (defvar python-shell--interpreter-args)
 
 (defun python-test-track-pdb-prompt ()
-  "Do something if pdb prompt is detected."
+  "Change compilation to `python-inferior-mode' when a pdb prompt is detected.
+
+This function is a hack that enables `inferior-python-mode' when
+a pdb prompt is detected in `compilation-mode' buffers, and to
+work is meant to be added to `compilation-filter-hook'.  To go
+back to `compilation-mode' you need to call
+\\[python-test-back-to-compilation]."
   (let ((output (buffer-substring-no-properties compilation-filter-start (point-max))))
     (when (string-match-p python-shell-prompt-pdb-regexp output)
       (message "Entering pdb...")
@@ -329,6 +335,18 @@ This function is called from `compilation-filter-hook'."
         (set-process-filter (get-buffer-process (current-buffer)) 'comint-output-filter)
         (inferior-python-mode)
         (run-hook-with-args 'comint-output-filter-functions output)))))
+
+(defun python-test-back-to-compilation ()
+  "Go back to compilation mode.
+
+See `python-test-track-pdb-prompt' documentation for more
+information."
+  (interactive)
+  (let ((process (get-buffer-process (current-buffer))))
+    (when process
+      (message "Enabling compilation mode... ")
+      (set-process-filter process 'compilation-filter)
+      (compilation-mode))))
 
 (define-compilation-mode python-test-mode "python-test"
   "Python test results compilation mode"

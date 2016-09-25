@@ -2,10 +2,10 @@
 
 ;; This file is not part of Emacs
 
-;; Author: Ismail Ansari team.terminal@aol.in
+;; Author: Mohammed Ismail Ansari <team.terminal@gmail.com>
 ;; Keywords: convenience, shortcuts
-;; Package-Version: 20160119.2030
-;; Maintainer: Ismail Ansari team.terminal@aol.in
+;; Package-Version: 20160924.2206
+;; Maintainer: Mohammed Ismail Ansari <team.terminal@gmail.com>
 ;; Created: 2015/04/17
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Description: Quick toggle controls at a key-stroke

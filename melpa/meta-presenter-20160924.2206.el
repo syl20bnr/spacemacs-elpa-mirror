@@ -2,10 +2,10 @@
 
 ;; This file is not part of Emacs
 
-;; Author: Ismail Ansari team.terminal@aol.in
+;; Author: Mohammed Ismail Ansari <team.terminal@gmail.com>
 ;; Keywords: productivity, presentation
-;; Package-Version: 20150501.410
-;; Maintainer: Ismail Ansari team.terminal@aol.in
+;; Package-Version: 20160924.2206
+;; Maintainer: Mohammed Ismail Ansari <team.terminal@gmail.com>
 ;; Created: 2014/12/22
 ;; Description: A simple multi-file presentation tool for Emacs
 ;; URL: http://ismail.teamfluxion.com

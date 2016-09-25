@@ -2,10 +2,10 @@
 
 ;; This file is not part of Emacs
 
-;; Author: Ismail Ansari team.terminal@aol.in
+;; Author: Mohammed Ismail Ansari <team.terminal@gmail.com>
 ;; Keywords: convenience, color-themes
-;; Package-Version: 20150723.1104
-;; Maintainer: Ismail Ansari team.terminal@aol.in
+;; Package-Version: 20160924.2205
+;; Maintainer: Mohammed Ismail Ansari <team.terminal@gmail.com>
 ;; Created: 2014/03/22
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; Description: Loop thru the available color-themes with a key-binding
