@@ -86,6 +86,10 @@ Tex Live 主站访问速度很慢，建议同学们使用国内镜像，许多 L
 (oxlc/toggle-ox-latex-chinese t)
 #+END_EXAMPLE
 
+注：用户可以使用 `oxlc/insert-configure-template' 在当前 buffer 的光标处
+插入一段 emacs 配置代码, 这段 elisp 代码的功能和 ox-latex-chinese 的功能
+*基本一样* , 用户可以把这段代码做为自己的 org 中文配置来进一步调整优化。
+
 ** 设置 LaTeX 片断预览功能
 1. 确保 emacs 可以显示 png 文件，具体参考：ftp://ftp.gnu.org/gnu/emacs/windows/README
 2. 安装 [[http://www.imagemagick.org/][imagemagick]] 和 [[http://ghostscript.com/][ghostscript]]
