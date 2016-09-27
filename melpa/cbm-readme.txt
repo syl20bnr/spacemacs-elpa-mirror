@@ -14,5 +14,6 @@ It is recommended to bind `cbm-cycle', `cbm-switch-buffer' and
 
 Usage:
 
-This package provides one usefull commands for switching to
-"similiar" buffers.
+This package provides useful commands for switching to similar
+buffers. It's particularly handy for switching between buffers in
+the same major mode.

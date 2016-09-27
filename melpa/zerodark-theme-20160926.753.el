@@ -4,7 +4,7 @@
 
 ;; Author: Nicolas Petton <nicolas@petton.fr>
 ;; Keywords: themes
-;; Package-Version: 20160923.1455
+;; Package-Version: 20160926.753
 ;; URL: https://github.com/NicolasPetton/zerodark-theme
 ;; Version: 1.0
 
@@ -75,7 +75,7 @@
       (green-light (if (true-color-p) "#9eac8c" "#afaf87"))
       (peach "PeachPuff3")
       (diff-added-background (if (true-color-p) "#284437" "#284437"))
-      (diff-added-refined-background (if (true-color-p) "#1987;54" "#00875f"))
+      (diff-added-refined-background (if (true-color-p) "#198754" "#00875f"))
       (diff-removed-background (if (true-color-p) "#583333" "#580000"))
       (diff-removed-refined-background (if (true-color-p) "#981b1b" "#870000"))
       (diff-current-background (if (true-color-p) "#3e4d58" "#5f;5f5f"))
@@ -501,6 +501,11 @@
    `(font-latex-sectioning-5-face ((,class :foreground ,blue)))
    `(font-latex-string-face ((,class :inherit font-lock-string-face)))
    `(font-latex-warning-face ((,class :inherit warning)))
+
+   ;; Anzu
+
+   `(anzu-replace-highlight ((,class :background ,(if (true-color-p) "#981b1b" "#870000"))))
+   `(anzu-replace-to ((,class :background ,(if (true-color-p) "#198754" "#00875f"))))
    )
 
   (custom-theme-set-variables

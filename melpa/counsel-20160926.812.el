@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20160926.238
+;; Package-Version: 20160926.812
 ;; Version: 0.8.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.8.0"))
 ;; Keywords: completion, matching
@@ -2242,6 +2242,14 @@ And insert it into the minibuffer. Useful during
     (ivy-read "Expr: " (delete-dups read-expression-history)
               :action #'insert)))
 
+;;** `counsel-shell-command-history'
+;;;###autoload
+(defun counsel-shell-command-history ()
+  (interactive)
+  (ivy-read "cmd: " shell-command-history
+            :action #'insert
+            :caller 'counsel-shell-command-history))
+
 ;;** `counsel-esh-history'
 (defun counsel--browse-history (elements)
   "Use Ivy to navigate through ELEMENTS."
@@ -2550,9 +2558,14 @@ replacements. "
   :keymap counsel-mode-map
   :lighter " counsel"
   (if counsel-mode
-      (when (and (fboundp 'advice-add)
-                 counsel-mode-override-describe-bindings)
-        (advice-add #'describe-bindings :override #'counsel-descbinds))
+      (progn
+        (when (and (fboundp 'advice-add)
+                   counsel-mode-override-describe-bindings)
+          (advice-add #'describe-bindings :override #'counsel-descbinds))
+        (define-key minibuffer-local-shell-command-map (kbd "C-r")
+          'counsel-shell-command-history)
+        (define-key read-expression-map (kbd "C-r")
+          'counsel-expression-history))
     (when (fboundp 'advice-remove)
       (advice-remove #'describe-bindings #'counsel-descbinds))))
 

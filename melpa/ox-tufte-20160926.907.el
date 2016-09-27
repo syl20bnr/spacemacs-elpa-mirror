@@ -5,7 +5,7 @@
 ;; Author: M. Lee Hinman
 ;; Description: An org exporter for Tufte HTML
 ;; Keywords: org, tufte, html
-;; Package-Version: 20160906.1801
+;; Package-Version: 20160926.907
 ;; Version: 1.0.0
 ;; Package-Requires: ((org "8.2") (emacs "24"))
 ;; URL: https://github.com/dakrone/ox-tufte
@@ -149,7 +149,7 @@ link. INFO is a plist holding contextual information."
 (defun org-tufte-src-block (src-block contents info)
   "Transcode SRC-BLOCK element into Tufte HTML format. CONTENTS
 is nil. INFO is a plist used as a communication channel."
-  (format "<pre class=\"code\">%s</pre>"
+  (format "<pre class=\"code\"><code>%s</code></pre>"
           (org-html-format-code src-block info)))
 
 

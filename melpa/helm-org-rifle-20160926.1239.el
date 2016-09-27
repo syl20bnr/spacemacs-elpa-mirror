@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/helm-org-rifle
-;; Package-Version: 20160420.818
+;; Package-Version: 20160926.1239
 ;; Version: 1.3-pre
 ;; Package-Requires: ((emacs "24.4") (dash "2.12") (f "0.18.1") (helm "1.9.4") (s "1.10.0"))
 ;; Keywords: hypermedia, outlines
@@ -49,10 +49,11 @@
 ;; entry, or <C-return> to show it in an indirect buffer.
 
 ;; Commands:
-;; + `helm-org-rifle': Shows results from all open Org buffers
-;; + `helm-org-rifle-current-buffer': Shows results from current buffer
-;; + `helm-org-rifle-directories': Shows results from selected directories; with prefix, recursively
-;; + `helm-org-rifle-files': Shows results from selected files
+;; + `helm-org-rifle': Show results from all open Org buffers
+;; + `helm-org-rifle-agenda-files': Show results from Org agenda files
+;; + `helm-org-rifle-current-buffer': Show results from current buffer
+;; + `helm-org-rifle-directories': Show results from selected directories; with prefix, recursively
+;; + `helm-org-rifle-files': Show results from selected files
 
 ;;; Tips
 
@@ -242,6 +243,12 @@ peace!"
   (interactive)
   (let ((helm-candidate-separator " "))
     (helm :sources (helm-org-rifle-get-sources-for-open-buffers))))
+
+;;;###autoload
+(defun helm-org-rifle-agenda-files ()
+  "Rifle through Org agenda files."
+  (interactive)
+  (helm-org-rifle-files org-agenda-files))
 
 ;;;###autoload
 (defun helm-org-rifle-current-buffer ()
