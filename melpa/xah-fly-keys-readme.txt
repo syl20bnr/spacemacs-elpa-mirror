@@ -43,35 +43,37 @@ C-h for getting a list of keys following a prefix/leader key.
 
 Leader key
 
-All emacs C-x keys have a key sequence. Most commands are 2 to 3 keys. The first key we call it leader key.
-
 You NEVER need to press Ctrl+x
+
+Any emacs commands that has a keybinding starting with C-x, has also a key sequence binding in xah-fly-keys. For example,
+【C-x b】 switch-to-buffer is 【SPACE u】
+【C-x C-f】 find-file is 【SPACE c .】
+【C-x n n】 narrow-to-region is 【SPACE n n】
+The first key we call it leader key. In the above examples, the SPACE is the leader key.
 
 When in command mode, the 【SPACE】 is a leader key.
 
 globally, the leader key is the 【f9】 key.
 
-the following stardard keys with Control are supported, when the variable xah-fly-use-control-key is t
+the following stardard keys with Control are supported:
 
- ;; (kbd "<C-tab>") 'xah-next-user-buffer
- ;; (kbd "<C-S-iso-lefttab>") 'xah-previous-user-buffer
- ;; (kbd "C-v") 'yank
- ;; (kbd "C-w") 'xah-close-current-buffer
- ;; (kbd "C-z") 'undo
- ;; (kbd "C-n") 'xah-new-empty-buffer
- ;; (kbd "C-o") 'find-file
- ;; (kbd "C-s") 'save-buffer
- ;; (kbd "C-S-s") 'write-file
- ;; (kbd "C-S-t") 'xah-open-last-closed
- ;; (kbd "C-+") 'text-scale-increase
- ;; (kbd "C--") 'text-scale-decrease
- ;; (kbd "C-0") (lambda () (interactive) (text-scale-set 0))))
-
-That't it.
+ ;; 【Ctrl+tab】 'xah-next-user-buffer
+ ;; 【Ctrl+shift+tab】 'xah-previous-user-buffer
+ ;; 【Ctrl+v】 'yank
+ ;; 【Ctrl+w】 'xah-close-current-buffer
+ ;; 【Ctrl+z】 'undo
+ ;; 【Ctrl+n】 'xah-new-empty-buffer
+ ;; 【Ctrl+o】 'find-file
+ ;; 【Ctrl+s】 'save-buffer
+ ;; 【Ctrl+shift+s】 'write-file
+ ;; 【Ctrl+shift+t】 'xah-open-last-closed
+ ;; 【Ctrl++】 'text-scale-increase
+ ;; 【Ctrl+-】 'text-scale-decrease
+ ;; 【Ctrl+0】 (lambda () (interactive) (text-scale-set 0))))
 
 On the Mac, I highly recommend using a app called Sail to set your capslock to send Home. So that it acts as xah-fly-command-mode-activate. You can set capslock or one of the cmd key to Home. See http://xahlee.info/kbd/Mac_OS_X_keymapping_keybinding_tools.html
 
-I recommend you clone xah-fly-keys.el, and modify it, and use your modified version. Don't worry about upgrade. (I still make key tweaks every week, for the past 3 years.)
+I recommend you clone xah-fly-keys.el, and modify it, and use your modified version. Don't worry about upgrade. The main point is use it for your own good. (I still make key tweaks every week, for the past 3 years.)
 
 If you have a bug, post on github. If you have question, post on xah-fly-keys home page.
 

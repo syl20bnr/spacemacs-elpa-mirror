@@ -2,10 +2,8 @@ Note: this package is still early stage.  I'm going to
 support [nim-mode](https://github.com/nim-lang/nim-mode) first and
 then other programming major-modes.
 
-If your nim-mode merged this PR (https://github.com/nim-lang/nim-mode/pull/138)
-and you already configured nimsuggest, you can use suggestion-box
-without configuration.
-
+You can see the instruction here:
+ https://github.com/yuutayamada/suggestion-box-nim-el
 
 This package is more or less for major-mode maintainers who want to
 show type information on the cursor and currently only tested on
