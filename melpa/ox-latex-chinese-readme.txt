@@ -109,7 +109,7 @@ Tex Live 主站访问速度很慢，建议同学们使用国内镜像，许多 L
 这个问题可以使用 latexmk 命令配合 "%b.tex" (仅仅使用文件名，而不是文件的绝对路径) 来规避，比如：
 
 #+BEGIN_EXAMPLE
-(setq oxlc/org-latex-commands '("latexmk -xelatex -g -pdf %b.tex"))
+(setq oxlc/org-latex-commands '("latexmk -xelatex -gg -pdf %b.tex"))
 #+END_EXAMPLE
 
 *** 缺少必要的 Latex 宏包

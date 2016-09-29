@@ -22,7 +22,7 @@ To change/add keys, put the following in your emacs init.
 Change the command to the one you want, or `nil' to reset.
 
 You can also create your own lookup command to lookup perl, ruby, php, clojure, etc.
-See: http://ergoemacs.org/emacs/emacs_lookup_ref.html
+See: http://ergoemacs.org/emacs/xah-lookup.html
 
 Like it?
 Buy Xah Emacs Tutorial

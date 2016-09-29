@@ -1,4 +1,4 @@
-This package displays emojis in Emacs similar to how Github, Slack etc do. It
+This package displays emojis in Emacs similar to how Github, Slack etc do.  It
 can display plain ascii like ':)' as well as Github style emojis like ':smile:'
 
 It provides a minor mode `emojify-mode' to enable display of emojis in a buffer.

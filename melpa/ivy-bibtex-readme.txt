@@ -3,6 +3,11 @@ bibtex-completion backend.  If you are familiar with helm-bibtex,
 this is the ivy version.
 
 News:
+- 09/29/2016: Performance improvements in ivy-bibtex.  Note: If
+  you changed your default action in ivy-bibtex, you have to rename
+  the action, e.g. from `bibtex-completion-insert-key` to
+  `ivy-bibtex-insert-key`.  For details see
+  https://github.com/tmalsburg/helm-bibtex#change-the-default-action
 - 09/20/2016: Added fallback options to ivy frontend.
 - 04/18/2016: Improved support for Mendely/Jabref/Zotero way of
   referencing PDFs.
