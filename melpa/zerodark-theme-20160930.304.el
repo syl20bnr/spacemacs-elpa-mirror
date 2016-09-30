@@ -1,12 +1,14 @@
 ;;; zerodark-theme.el --- A dark, medium contrast theme for Emacs
 
-;; Copyright (C) 2015  Nicolas Petton
+;; Copyright (C) 2015-2016  Nicolas Petton
 
 ;; Author: Nicolas Petton <nicolas@petton.fr>
 ;; Keywords: themes
-;; Package-Version: 1.11
+;; Package-Version: 20160930.304
 ;; URL: https://github.com/NicolasPetton/zerodark-theme
-;; Version: 1.0
+;; Version: 2.0
+;; Package: zerodark-theme
+;; Package-Requires: ((s "1.9.0") (all-the-icons "2.0.0"))
 
 ;; This file is NOT part of GNU Emacs
 
@@ -22,6 +24,9 @@
 ;;
 
 ;;; Code:
+
+(require 's)
+(require 'all-the-icons)
 
 (deftheme zerodark
   "A dark medium contrast theme")
@@ -40,11 +45,34 @@
   :type 'boolean
   :group 'zerodark)
 
+(defcustom zerodark-use-zerodark-mode-line-format t
+  "When non-nil, use the zerodark mode-line format."
+  :type 'boolean
+  :group 'zerodark)
+
+(defvar zerodark-modeline-position ":%l:%c %p "
+  "Mode line construct for displaying the position in the buffer.")
+
+(defvar zerodark-modeline-buffer-identification '(:eval (propertize "%b" 'face 'bold))
+  "Mode line construct for displaying the position in the buffer.")
+
+(defvar zerodark-modeline-modified '(:eval (if (buffer-modified-p (current-buffer))
+                                               (all-the-icons-faicon "floppy-o" :height 1 :v-adjust 0)
+                                             (all-the-icons-faicon "check" :height 1 :v-adjust 0))))
+
+(defvar zerodark-modeline-ro '(:eval (if buffer-read-only (propertize "RO " 'face 'bold) "")))
+
+(defvar zerodark-buffer-coding '(:eval (unless (eq buffer-file-coding-system (default-value 'buffer-file-coding-system))
+                                         mode-line-mule-info)))
+
+(defvar zerodark-modeline-vc '(vc-mode ("   "
+                                        (:eval (all-the-icons-faicon "code-fork" :height 1 :v-adjust 0))
+                                        (:eval (s-truncate 25 vc-mode)))))
+
 (defun true-color-p ()
   (or
    (display-graphic-p)
    (= (tty-display-color-cells) 16777216)))
-
 
 (let ((class '((class color) (min-colors 89)))
       (default (if (true-color-p) "#abb2bf" "#afafaf"))
@@ -52,7 +80,7 @@
       (background (if (true-color-p) "#282c34" "#333333"))
       (background-darker (if (true-color-p) "#21252b" "#222222"))
       (mode-line-inactive (if "#1c2129" "#222222"))
-      (mode-line-active (if (true-color-p) "#7e3f8e" "#875f87"))
+      (mode-line-active (if (true-color-p) "#6f337e" "#875f87"))
       (background-lighter (if (true-color-p) "#3a3f4b" "#5f5f5f"))
       (background-red (if (true-color-p) "#4c3840" "#5f5f5f"))
       (background-purple (if (true-color-p) "#48384c" "#5f5f5f"))
@@ -75,7 +103,7 @@
       (green-light (if (true-color-p) "#9eac8c" "#afaf87"))
       (peach "PeachPuff3")
       (diff-added-background (if (true-color-p) "#284437" "#284437"))
-      (diff-added-refined-background (if (true-color-p) "#1987;54" "#00875f"))
+      (diff-added-refined-background (if (true-color-p) "#198754" "#00875f"))
       (diff-removed-background (if (true-color-p) "#583333" "#580000"))
       (diff-removed-refined-background (if (true-color-p) "#981b1b" "#870000"))
       (diff-current-background (if (true-color-p) "#3e4d58" "#5f;5f5f"))
@@ -117,7 +145,7 @@
                                                       light
                                                     blue)
                                      :box ,(when zerodark-use-paddings-in-mode-line
-                                             (list :line-width 4
+                                             (list :line-width 5
                                                    :color
                                                    (if zerodark-use-high-contrast-in-mode-line
                                                        mode-line-active
@@ -126,9 +154,11 @@
                                                    mode-line-inactive
                                                  background-darker)
                                               :height 0.9
-                                              :foreground ,default
+                                              :foreground ,(if zerodark-use-high-contrast-in-mode-line
+                                                      comment
+                                                    default)
                                               :box ,(when zerodark-use-paddings-in-mode-line
-                                                      (list :line-width 4
+                                                      (list :line-width 5
                                                             :color (if zerodark-use-high-contrast-in-mode-line
                                                                        mode-line-inactive
                                                                      background-darker)))))))
@@ -295,7 +325,7 @@
 
    ;; js2-mode
    `(js2-function-param ((,class (:foreground ,blue))))
-   `(js2-error ((,class (:foreground ,red :weight bold))))
+   `(js2-error ((,class (:foreground ,red))))
 
    ;; flycheck
    `(flycheck-fringe-error ((,class (:foreground ,red :background ,background-red :weight bold :inverse-video t))))
@@ -501,6 +531,22 @@
    `(font-latex-sectioning-5-face ((,class :foreground ,blue)))
    `(font-latex-string-face ((,class :inherit font-lock-string-face)))
    `(font-latex-warning-face ((,class :inherit warning)))
+
+   ;; Anzu
+
+   `(anzu-replace-highlight ((,class :background ,diff-removed-refined-background :strike-through t)))
+   `(anzu-replace-to ((,class :background ,diff-added-refined-background)))
+   `(anzu-mode-line ((,class :inherit mode-line :weight bold)))
+
+   ;; jabber.el
+   `(jabber-roster-user-online ((,class :foreground ,blue :weight bold)))
+   `(jabber-roster-user-error ((,class :foreground ,red :background ,background-red :weight bold)))
+   `(jabber-rare-time-face ((,class :foreground ,comment)))
+   `(jabber-chat-prompt-local ((,class :foreground ,purple :background ,background-purple :weight bold)))
+   `(jabber-chat-prompt-foreign ((,class :foreground ,green :background ,background-green :weight bold)))
+   `(jabber-activity-personal-face ((,class :foreground ,red :background ,background-red :weight bold)))
+   `(jabber-roster-user-away ((,class :foreground ,orange)))
+   `(jabber-roster-user-xa ((,class :foreground ,orange)))
    )
 
   (custom-theme-set-variables
@@ -515,9 +561,32 @@
                               ,default])))
 
 ;;;###autoload
+(defun zerodark-setup-modeline-format ()
+  "Setup the mode-line format for zerodark."
+  (interactive)
+  (setq-default mode-line-format
+              `("%e"
+                mode-line-front-space
+                ,zerodark-modeline-ro
+                ,zerodark-buffer-coding
+                mode-line-frame-identification " "
+                " "
+                ,zerodark-modeline-modified
+                " "
+                ,zerodark-modeline-buffer-identification
+                ,zerodark-modeline-position
+                ,zerodark-modeline-vc
+                "  " mode-line-modes mode-line-misc-info mode-line-end-spaces
+                )))
+
+;;;###autoload
 (when (and (boundp 'custom-theme-load-path) load-file-name)
   (add-to-list 'custom-theme-load-path
                (file-name-as-directory (file-name-directory load-file-name))))
+
+;;;###autoload
+(when zerodark-use-zerodark-mode-line-format
+  (zerodark-setup-modeline-format))
 
 (provide-theme 'zerodark)
 

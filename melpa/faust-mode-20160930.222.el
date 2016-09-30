@@ -4,7 +4,7 @@
 
 ;; Author: Juan A. Romero <rukano@gmail.com>
 ;; Version: 0.1
-;; Package-Version: 20160119.920
+;; Package-Version: 20160930.222
 ;; Maintainer: Bart Brouns <bart@magnetophon.nl>
 ;; URL: https://github.com/magnetophon/emacs-faust-mode
 ;; Keywords: languages
@@ -38,7 +38,6 @@
 ;; Colorize arguments (numbers)
 ;; Colorize [] metadata in string?
 ;; Run Shell faust w/ custom defaults
-;; *** Get rid of the No comment syntax defined warning
 
 
 ;; ROADMAP
@@ -97,17 +96,9 @@
   ;; code for syntax highlighting
   (setq font-lock-defaults '((faust-font-lock-keywords)))
 
-  ;; modify the keymap
-  (define-key faust-mode-map [remap comment-dwim] 'faust-comment-dwim))
-
-;; comment dwin support
-(defun faust-comment-dwim (arg)
-"Comment or uncomment current line or region in a smart way.
-For detail, see `comment-dwim'."
-   (interactive "*P")
-   (require 'newcomment)
-   (let ((deactivate-mark nil) (comment-start "//") (comment-end ""))
-     (comment-dwim arg)))
+  ;; set mode-local comment syntax
+  (set (make-local-variable 'comment-start) "// ")
+  (set (make-local-variable 'comment-end) ""))
 
 (modify-syntax-entry ?/  ". 124b" faust-mode-syntax-table)
 (modify-syntax-entry ?*  ". 23" faust-mode-syntax-table)

@@ -10,7 +10,6 @@ Colorize after keyword {}
 Colorize arguments (numbers)
 Colorize [] metadata in string?
 Run Shell faust w/ custom defaults
-*** Get rid of the No comment syntax defined warning
 
 
 ROADMAP

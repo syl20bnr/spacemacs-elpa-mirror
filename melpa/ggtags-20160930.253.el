@@ -4,7 +4,7 @@
 
 ;; Author: Leo Liu <sdl.web@gmail.com>
 ;; Version: 0.8.12
-;; Package-Version: 20160929.2135
+;; Package-Version: 20160930.253
 ;; Keywords: tools, convenience
 ;; Created: 2013-01-29
 ;; URL: https://github.com/leoliu/ggtags
@@ -1688,11 +1688,18 @@ ggtags: history match invalid, jump to first match instead")
             'compilation-message)))
         ;; There are multiple matches so pop up the buffer.
         (and ggtags-navigation-mode (ggtags-global--display-buffer))
-      ;; For the `compilation-auto-jump' in idle timer to run.
-      ;; See also: http://debbugs.gnu.org/13829
-      (sit-for 0)
+      ;; Manually run the `compilation-auto-jump' timer. Hackish but
+      ;; everything else seems unreliable. See:
+      ;;
+      ;; - http://debbugs.gnu.org/13829
+      ;; - http://debbugs.gnu.org/23987
+      ;; - https://github.com/leoliu/ggtags/issues/89
+      ;;
+      (pcase (cl-find 'compilation-auto-jump timer-list :key #'timer--function)
+        (`nil )
+        (timer (timer-event-handler timer)))
       (ggtags-navigation-mode -1)
-      (ggtags-navigation-mode-cleanup buf 0)))))
+      (ggtags-navigation-mode-cleanup buf t)))))
 
 (defvar ggtags-global-mode-font-lock-keywords
   '(("^Global \\(exited abnormally\\|interrupt\\|killed\\|terminated\\)\\(?:.*with code \\([0-9]+\\)\\)?.*"
@@ -1816,7 +1823,7 @@ ggtags: history match invalid, jump to first match instead")
             (goto-char (match-beginning 0))
           (goto-char orig))))))
 
-(defun ggtags-navigation-mode-cleanup (&optional buf time)
+(defun ggtags-navigation-mode-cleanup (&optional buf kill)
   (let ((buf (or buf ggtags-global-last-buffer)))
     (and (buffer-live-p buf)
          (with-current-buffer buf
@@ -1825,7 +1832,7 @@ ggtags: history match invalid, jump to first match instead")
            (when (and (derived-mode-p 'ggtags-global-mode)
                       (get-buffer-window))
              (quit-windows-on (current-buffer)))
-           (and time (run-with-idle-timer time nil #'kill-buffer buf))))))
+           (and kill (kill-buffer buf))))))
 
 (defun ggtags-navigation-mode-done ()
   (interactive)
@@ -1838,7 +1845,7 @@ ggtags: history match invalid, jump to first match instead")
   "Abort navigation and return to where the search was started."
   (interactive)
   (ggtags-navigation-mode -1)
-  (ggtags-navigation-mode-cleanup nil 0)
+  (ggtags-navigation-mode-cleanup nil t)
   ;; Run after (ggtags-navigation-mode -1) or
   ;; ggtags-global-start-marker might not have been saved.
   (when (and ggtags-global-start-marker
