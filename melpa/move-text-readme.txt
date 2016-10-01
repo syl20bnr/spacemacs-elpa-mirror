@@ -1,6 +1,7 @@
-MoveText is extracted from Basic edit toolkit.
-It allows you to move the current line using M-up / M-down
-if a region is marked, it will move the region instead.
+MoveText 2.0.0 is a re-write of the old move-text and compatible with >= Emacs 25.1
+
+It allows you to move the current line using M-up / M-down if a
+region is marked, it will move the region instead.
 
 
 Installation:
@@ -15,7 +16,6 @@ And the following to your ~/.emacs startup file.
 (require 'move-text)
 (move-text-default-bindings)
 
-
 Acknowledgements:
 
- Feature extracted from basic-edit-toolkit.el - by Andy Stewart (LazyCat)
+ Original v1.x was a Feature extracted from basic-edit-toolkit.el - by Andy Stewart (LazyCat)
