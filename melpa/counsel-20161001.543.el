@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20160928.426
+;; Package-Version: 20161001.543
 ;; Version: 0.8.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.8.0"))
 ;; Keywords: completion, matching
@@ -2301,7 +2301,7 @@ And insert it into the minibuffer. Useful during
                      (lookup-key keymap (kbd (nth 0 x)))))
                   heads)))
     (ivy-read "head: " head-names
-              :action #'call-interactively)
+              :action (lambda (x) (call-interactively (cdr x))))
     (hydra-keyboard-quit)))
 ;;** `counsel-semantic'
 (declare-function semantic-tag-start "tag")

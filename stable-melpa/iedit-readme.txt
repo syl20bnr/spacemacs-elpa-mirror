@@ -4,7 +4,7 @@ other occurrences edited in the same way.
 
 Normal scenario of iedit-mode is like:
 
-- Highlight certain contents - by press C-; (The default binding)
+- Highlight certain contents - by press C-; (The default key binding)
   All occurrences of a symbol, string in the buffer or a region may be
   highlighted corresponding to current mark, point and prefix argument.
   Refer to the document of `iedit-mode' for details.
@@ -34,3 +34,12 @@ document of function `iedit-mode' (C-h f iedit-mode RET) for more details.
 The code was developed and fully tested on Gnu Emacs 24.0.93, partially
 tested on Gnu Emacs 22. If you have any compatible problem, please let me
 know.
+
+Contributors
+Adam Lindberg <eproxus@gmail.com> added a case sensitivity option that can be toggled.
+
+Tassilo Horn <tassilo@member.fsf.org> added an option to match only complete
+words, not inside words
+
+Le Wang <l26wang@gmail.com> proposed to match only complete symbols,  not
+inside symbols, contributed rectangle support
