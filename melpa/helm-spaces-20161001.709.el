@@ -3,10 +3,10 @@
 ;; Copyright (C) 2013-2016 Yasuyuki Oka
 
 ;; Author: Yasuyuki Oka <yasuyk@gmail.com>
-;; Version: 0.3
-;; Package-Version: 0.3
+;; Version: 0.4
+;; Package-Version: 20161001.709
 ;; URL: https://github.com/yasuyk/helm-spaces
-;; Package-Requires: ((helm "1.9.3") (spaces "0.1.0"))
+;; Package-Requires: ((helm-core "2.2") (spaces "0.1.0"))
 ;; Keywords: helm frames convenience
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -50,8 +50,7 @@
   :group 'helm-spaces)
 
 ;;; Faces
-(defface helm-spaces-current-space
-    '((t (:foreground "green")))
+(defface helm-spaces-current-space nil
   "Face used for current space."
   :group 'helm-spaces)
 
@@ -70,16 +69,15 @@ ask user replacing old space."
     (sp-new-space name)))
 
 (defvar helm-source-space-create
-  '((name . "Creates a new space")
-    (persistent-action . t) ;; Disable persistent-action
-    (persistent-help . "DoNothing")
-    (dummy)
-    (no-delay-on-input)
-    (action . (lambda (candidate)
-                (if (equal candidate "")
-                    (sp-new-space)
-                  (helm-spaces-new-space candidate)))))
-  "Create a new space.")
+  (helm-build-dummy-source
+      "Creates a new space"
+    :action (helm-make-actions
+             "Create a new space"
+             (lambda (candidate)
+               (if (equal candidate "")
+                   (sp-new-space)
+                 (helm-spaces-new-space candidate))))))
+
 
 (defun helm-spaces-candidates ()
   "Return a list of all spaces.
@@ -92,24 +90,21 @@ The currently selected space is colored by `helm-spaces-current-space'."
           collect (car sname))))
 
 (defvar helm-source-spaces
-  '((name . "Spaces")
-    (persistent-action . t) ;; Disable persistent-action
-    (persistent-help . "DoNothing")
-    (candidates . helm-spaces-candidates)
-    (action . (("Switch space" . sp-switch-space)
+  (helm-build-sync-source "Show all spaces"
+    :candidates 'helm-spaces-candidates
+    :action '(("Switch space" . sp-switch-space)
                ("Kill space" . sp-kill-space)
                ("Replace space" . helm-spaces-new-space)
                ("Kill all spaces" .
                 (lambda (dummy) (sp-clear-spaces))))))
-  "Show all spaces.")
 
 ;;;###autoload
 (defun helm-spaces ()
   "Helm to list spaces and to create a new space."
   (interactive)
-  (helm-other-buffer '(helm-source-spaces
-                       helm-source-space-create)
-                     "*helm spaces*"))
+  (helm :sources'(helm-source-spaces
+                  helm-source-space-create)
+        :buffer "*helm spaces*"))
 
 (provide 'helm-spaces)
 

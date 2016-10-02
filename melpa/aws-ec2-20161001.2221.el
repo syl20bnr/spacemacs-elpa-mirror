@@ -4,7 +4,7 @@
 
 ;; Author: Yuki Inoue <inouetakahiroki _at_ gmail.com>
 ;; URL: https://github.com/Yuki-Inoue/aws.el
-;; Package-Version: 20160928.340
+;; Package-Version: 20161001.2221
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.1") (dash-functional "1.2.0") (magit-popup "2.6.0") (tablist "0.70"))
 
@@ -35,11 +35,20 @@
 (require 'dash-functional)
 (require 'magit-popup)
 
+;;;###autoload
+(defcustom aws-command (executable-find "aws")
+  "The command for \\[aws-instances] and other aws-ec2 commands."
+  :type 'string
+  :group 'aws-ec2)
 
 (defun aws--shell-command-to-string (&rest args)
-  (let ((cmd (funcall #'combine-and-quote-strings (append (aws-bin) args))))
-    (message cmd)
-    (shell-command-to-string cmd)))
+  (with-temp-buffer
+    (let* ((retval (apply #'call-process (aws-bin) nil (current-buffer) nil (append (aws-profile-args) args)))
+           (output (buffer-string)))
+      (unless (= 0 retval)
+        (with-current-buffer (get-buffer-create "*aws-errors*") (insert output))
+        (error "The aws command failed. Check *aws-errors* for output"))
+      output)))
 
 (defun aws-profile-args ()
   (if aws-current-profile
@@ -47,7 +56,8 @@
     nil))
 
 (defun aws-bin ()
-  (cons "aws" (aws-profile-args)))
+  (or aws-command
+      (error "aws-command must be set to the path of the aws executable")))
 
 (defun aws-ec2-all-raw-instances ()
   (interactive)
@@ -109,7 +119,7 @@
 
 
 (defun aws-instances-refresh ()
-  "Refresh elasticsearch snapshots."
+  "Refresh aws-instances entries."
 
   (setq
    tabulated-list-entries
@@ -160,14 +170,14 @@
 (aws-define-popup
  aws-instances-configure-popup
  'aws-instances-popups
- :actions  '((?C "Configure ssh-config" aws-instances-configure-ssh-config)))
+ :actions  '((?C "Append ssh configs to ~/.ssh/config" aws-instances-configure-ssh-config)))
 
 
 
 (defun aws-ec2-command-on-selection (command)
   (apply 'aws--shell-command-to-string
          "ec2" command "--instance-ids"
-         (-map #'car (tablist-get-marked-items))))
+         (mapcar #'car (tablist-get-marked-items))))
 
 (defun aws-instances-reboot-selection ()
   (interactive)
@@ -245,7 +255,7 @@ Host %s
   (let ((aws-instances
          (->>
           (tablist-get-marked-items)
-          (-map #'car)
+          (mapcar #'car)
           (apply #'aws--shell-command-to-string
                  "ec2" "describe-instances"
                  "--instance-ids")
@@ -268,7 +278,7 @@ Host %s
                          key-path
                          (->>
                           aws-instances-ssh-config-option-entries
-                          (-map (lambda (str) (concat "  " str)))
+                          (mapcar (lambda (str) (concat "  " str)))
                           (s-join "\n")))))
           (write-region snippet nil "~/.ssh/config" 'append)
           )))))
