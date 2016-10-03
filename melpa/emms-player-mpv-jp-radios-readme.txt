@@ -10,7 +10,8 @@ This provides EMMS players and stream lists of Japan radio stations.
 The following plugins are available:
 + emms-streams-jp-radios.el
 + emms-streams-jp-radios-anything.el
-+ emms-streams-jp-radios-helm.el (helm v1.7.9 or later is needed.)
++ emms-streams-jp-radios-helm.el ( helm v1.7.9 or later )
++ emms-streams-jp-radios-counsel.el ( ivy 0.8.0 or later )
 
 Further information is available from:
 https://github.com/momomo5717/emms-player-mpv-jp-radios  ( README.org )
@@ -50,7 +51,13 @@ emms-streams-jp-radios.el provides `emms-streams-jp-radios' and
 `emms-stream-jp-radios-popup' like `emms-streams'.
 
 If `anything' is installed, `emms-streams-jp-radios-anything' is available.
-(require 'emms-streams-jp-radios-anything)
+(autoload 'emms-streams-jp-radios-anything
+  "emms-streams-jp-radios-anything" nil t)
 
 If `helm' is installed, `emms-streams-jp-radios-helm' is available.
-(require 'emms-streams-jp-radios-helm)
+(autoload 'emms-streams-jp-radios-helm
+  "emms-streams-jp-radios-helm" nil t)
+
+If `ivy' is installed, `emms-streams-jp-radios-counsel' is available.
+(autoload 'emms-streams-jp-radios-counsel
+  "emms-streams-jp-radios-counsel" nil t)

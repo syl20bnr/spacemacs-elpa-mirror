@@ -8,9 +8,8 @@ list-packages``) and is also available on `MELPA
 
 The goal is to make working with GNU Global in Emacs as effortlessly
 and intuitively as possible and to integrate tightly with standard
-emacs packages. ``ggtags.el`` is tested in emacs 24.1, 24.2, 24.3,
-24.4 and trunk. Patches, feature requests and bug reports are welcome.
-Thanks.
+emacs packages. ``ggtags.el`` is tested in Emacs 24 and 25. Patches,
+feature requests and bug reports are welcome. Thanks.
 
 Features
 ~~~~~~~~
@@ -30,7 +29,8 @@ Features
 #. Highlight (definition) tag at point.
 #. Abbreviated display of file names.
 #. Support all Global search backends: ``grep``, ``idutils`` etc.
-#. Support `exuberant ctags <http://ctags.sourceforge.net/>`_ backend.
+#. Support `exuberant ctags <http://ctags.sourceforge.net/>`_ and
+   ``pygments`` backend.
 #. Support all Global's output formats: ``grep``, ``ctags-x``,
    ``cscope`` etc.
 #. Support projects on remote hosts (e.g. via ``tramp``).
@@ -114,8 +114,8 @@ directory. The mode line will display the directory name next to the
 buffer name. If point is at a valid definition tag, it is underlined.
 
 ``ggtags`` is similar to the standard ``etags`` package. For example
-these keys ``M-.``, ``M-,``, ``M-*`` and ``C-M-.`` should work as
-expected in ``ggtags-mode``.
+these keys ``M-.``, ``M-,`` and ``C-M-.`` should work as expected in
+``ggtags-mode``.
 
 The following search commands are available:
 
@@ -213,10 +213,10 @@ turned on to facilitate locating the right match.
 
 ``RET``
 
-   Found the right match so exit navigation mode. Resumable by ``M-,``
-   (``tags-loop-continue``).
+   Found the right match so exit navigation mode. Resumable by
+   ``M-x tags-loop-continue``.
 
-``M-*``
+``M-,`` (``M-*`` if Emacs < 25)
 
    Abort and go back to the location where the search was started.
 
@@ -227,8 +227,9 @@ Commands are available from the ``Ggtags`` menu in ``ggtags-mode``.
 
 ggtags-prev-mark
 
-   Move to the previously (older) visited location. Unlike ``M-*``
-   this doesn't delete the location from the tag ring.
+   Move to the previously (older) visited location. Unlike ``M-,``
+   (``M-*`` if Emacs < 25) this doesn't delete the location from the
+   tag ring.
 
 ggtags-next-mark
 
@@ -313,6 +314,17 @@ Integration with other packages
 NEWS
 ~~~~
 
+[2016-10-02 Sun] 0.8.12
++++++++++++++++++++++++
+
+#. Work with Emacs 25.
+#. ``ggtags-navigation-mode`` is more discreet in displaying lighter
+   when ``ggtags-enable-navigation-keys`` is set to nil.
+#. ``ggtags-make-project`` tries harder to find TAG files respecting
+   ``GTAGSDBPATH``.
+#. Fix error "Selecting deleted buffer"
+   (`#89 <https://github.com/leoliu/ggtags/issues/89>`_).
+   
 [2015-12-15 Tue] 0.8.11
 +++++++++++++++++++++++
 
@@ -378,7 +390,7 @@ NEWS
 [2014-04-12 Sat] 0.8.3
 ++++++++++++++++++++++
 
-#. Tweak mode-line ligter in ``ggtags-navigation-mode``.
+#. Tweak mode-line lighter in ``ggtags-navigation-mode``.
 
 [2014-04-05 Sat] 0.8.2
 ++++++++++++++++++++++
