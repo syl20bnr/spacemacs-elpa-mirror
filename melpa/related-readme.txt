@@ -13,11 +13,12 @@ bindings, you might want to try something like this :
  (global-set-key (kbd "<your key seq>") 'related-switch-forward)
  (global-set-key (kbd "<your key seq>") 'related-switch-backward)
 
-You might also want to try related-switch-buffer, which prompt you
-for the next related buffer to go to (no default key binding here).
+You might also want to try related-switch-buffer, which prompts you
+for the next related buffer to go to, and integrates nicely with
+helm or ido (no default key binding here).
 
-Related derive from each buffer an hopefully meaningful "base name"
-and buffers with same "base name" forms a group.  Related helps you
+Related derives from each buffer a hopefully meaningful "base name"
+and buffers with same "base name" form a group.  Related helps you
 to navigate those groups.
 
 For example, buffers visiting the following files :
@@ -26,17 +27,17 @@ For example, buffers visiting the following files :
  /path/to/source/foo.c
  /path/to/doc/foo.org
 
-Would be grouped together (their names reduce to "foo").  Supposing
+Would be grouped together (their names reduce to "foo"). Supposing
 you have dozens of opened buffers, and are working in "foo.h",
 Related helps you to cycle across "foo" buffers :
 
-Cycle "forward" with "C-t" :
+Cycle "forward" with "C-x <up>" :
 
  foo.h -> foo.c -> foo.org
     ^                 |
     +-----------------+
 
-And cycle "backward" with "C-S-t" :
+And cycle "backward" with ""C-x <down>" :
 
  foo.h <- foo.c <- foo.org
     |                 ^

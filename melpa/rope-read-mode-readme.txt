@@ -111,6 +111,13 @@ amixer set Beep off
 silences the beep on some systems.  Precondition is that you have the
 ~amixer~ program ready.
 
+*** User Feedback
+
+[2016-10-03 Mon 15:04] M: "I use rope read mode occasionally to read
+info manuals, mail (via gnus) and text of web pages (via eww).  Most
+of the time I start the mode and then use key 'p' to walk through the
+text.  Finally I use key 'q' to quit."
+
 ** Install
 
 *** Emacs Package
@@ -199,7 +206,6 @@ Contributions in any respect are welcome, e.g. ideas and improvements.
   alternative view mode.
 - 'fliptext' which also is available as Elpa package
   [[http://melpa.org/#/fliptext][file:http://melpa.org/packages/fliptext-badge.svg]] realizes an
-
   ˙ʇxǝʇ pǝddılɟ ɹoɟ poɥʇǝɯ-ʇnduı
 
 ** History
