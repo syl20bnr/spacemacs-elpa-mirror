@@ -8,7 +8,7 @@ clang-format.el is available via MELPA and can be installed via
   M-x package-install clang-format
 
 when ("melpa" . "http://melpa.org/packages/") is included in
-`package-archives'. Alternatively, ensure the directory of this
+`package-archives'.  Alternatively, ensure the directory of this
 file is in your `load-path' and add
 
   (require 'clang-format)
