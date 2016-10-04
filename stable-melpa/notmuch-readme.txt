@@ -2,7 +2,7 @@ This is an emacs-based interface to the notmuch mail system.
 
 You will first need to have the notmuch program installed and have a
 notmuch database built in order to use this. See
-http://notmuchmail.org for details.
+https://notmuchmail.org for details.
 
 To install this software, copy it to a directory that is on the
 `load-path' variable within emacs (a good candidate is
@@ -24,4 +24,4 @@ or run:
 
 Have fun, and let us know if you have any comment, questions, or
 kudos: Notmuch list <notmuch@notmuchmail.org> (subscription is not
-required, but is available from http://notmuchmail.org).
+required, but is available from https://notmuchmail.org).

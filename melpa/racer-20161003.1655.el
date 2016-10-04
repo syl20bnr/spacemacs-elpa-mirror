@@ -4,7 +4,7 @@
 
 ;; Author: Phil Dawes
 ;; URL: https://github.com/racer-rust/emacs-racer
-;; Package-Version: 20160924.1735
+;; Package-Version: 20161003.1655
 ;; Version: 1.2
 ;; Package-Requires: ((emacs "24.3") (rust-mode "0.2.0") (dash "2.11.0") (s "1.10.0") (f "0.18.2"))
 ;; Keywords: abbrev, convenience, matching, rust, tools
@@ -79,14 +79,14 @@
   :group 'racer)
 
 (defcustom racer-rust-src-path
-  (or (getenv "RUST_SRC_PATH") "/usr/local/src/rust/src")
+  "/usr/local/src/rust/src"
   "Path to the rust source tree."
   :type 'file
   :group 'racer)
 
 (defcustom racer-cargo-home
-  (or (getenv "CARGO_HOME") (expand-file-name "~/.cargo"))
-  "To enable completion for cargo crates, you need to set the CARGO_HOME environment variable to .cargo in your home directory."
+  (expand-file-name "~/.cargo")
+  "Path to your current cargo home. Usually `~/.cargo'."
   :type 'file
   :group 'racer)
 
@@ -97,14 +97,16 @@
 
 (defun racer--call (command &rest args)
   "Call racer command COMMAND with args ARGS."
-  (when (null racer-rust-src-path)
-    (user-error "You need to set racer-rust-src-path"))
-  (unless (file-directory-p racer-rust-src-path)
-    (user-error "%s is not a directory" racer-rust-src-path))
-  (setenv "RUST_SRC_PATH" (expand-file-name racer-rust-src-path))
-  (setenv "CARGO_HOME" (expand-file-name racer-cargo-home))
-  (let ((default-directory (or (racer--cargo-project-root) default-directory)))
-    (apply #'process-lines racer-cmd command args)))
+  (let ((rust-src-path (or racer-rust-src-path (getenv "RUST_SRC_PATH")))
+        (cargo-home (or racer-cargo-home (getenv "CARGO_HOME"))))
+    (when (null rust-src-path)
+      (user-error "You need to set `racer-rust-src-path' or `RUST_SRC_PATH'"))
+    (let ((default-directory (or (racer--cargo-project-root) default-directory))
+          (process-environment (append (list
+                                        (format "RUST_SRC_PATH=%s" rust-src-path)
+                                        (format "CARGO_HOME=%s" cargo-home))
+                                       process-environment)))
+      (apply #'process-lines racer-cmd command args))))
 
 (defun racer--call-at-point (command)
   "Call racer command COMMAND at point of current buffer."

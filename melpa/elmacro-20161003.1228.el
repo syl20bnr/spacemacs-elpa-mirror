@@ -2,7 +2,7 @@
 
 ;; Author: Philippe Vaucher <philippe.vaucher@gmail.com>
 ;; URL: https://github.com/Silex/elmacro
-;; Package-Version: 20161002.701
+;; Package-Version: 20161003.1228
 ;; Keywords: macro, elisp, convenience
 ;; Version: 1.0.0
 ;; Package-Requires: ((s "1.11.0") (dash "2.13.0"))
@@ -124,7 +124,8 @@ This will be used as arguments for `replace-regexp-in-string'."
 
 (defun elmacro-processor-handle-special-objects (commands)
   "Turn special objects into usable objects."
-  (--map (let ((str (prin1-to-string it)))
+  (--map (let ((print-quoted t)
+               (str (prin1-to-string it)))
            (--each elmacro-special-objects
              (setq str (eval `(replace-regexp-in-string ,@it str))))
            (condition-case nil

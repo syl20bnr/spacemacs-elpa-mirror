@@ -4,8 +4,8 @@
 
 ;; Author: Ivan Malison <IvanMalison@gmail.com>
 ;; Keywords: term manager projectile
-;; Package-Version: 20160922.1303
-;; URL: https://www.github.com/IvanMalison/term-projectile
+;; Package-Version: 20161003.1428
+;; URL: https://www.github.com/IvanMalison/term-manager
 ;; Version: 0.1.0
 ;; Package-Requires: ((term-manager "0.1.0") (projectile "0.13.0"))
 

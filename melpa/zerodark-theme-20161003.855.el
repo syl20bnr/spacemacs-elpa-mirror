@@ -4,7 +4,7 @@
 
 ;; Author: Nicolas Petton <nicolas@petton.fr>
 ;; Keywords: themes
-;; Package-Version: 20161003.147
+;; Package-Version: 20161003.855
 ;; URL: https://github.com/NicolasPetton/zerodark-theme
 ;; Version: 3.5
 ;; Package: zerodark-theme
@@ -674,15 +674,15 @@ The result is cached for one second to avoid hiccups."
 
 (defvar zerodark-modeline-bar '(:eval (propertize " "
                                                   'display
-                                                  (pl/percent-xpm 30 100 0 0 0 10 nil nil))))
+                                                  (pl/percent-xpm 20 100 0 0 0 10 nil nil))))
 
 (defvar zerodark-modeline-bar-alt '(:eval (propertize " "
                                                       'display
                                                       (if (zerodark--active-window-p)
                                                           (if buffer-read-only
-                                                              (pl/percent-xpm 30 100 0 0 0 6 "#0088CC" "#0088CC")
-                                                            (pl/percent-xpm 30 100 0 0 0 6 "#c678dd" "#c678dd"))
-                                                        (pl/percent-xpm 30 100 0 0 0 6 nil nil)))))
+                                                              (pl/percent-xpm 20 100 0 0 0 6 "#0088CC" "#0088CC")
+                                                            (pl/percent-xpm 20 100 0 0 0 6 "#c678dd" "#c678dd"))
+                                                        (pl/percent-xpm 20 100 0 0 0 6 nil nil)))))
 
 ;;;###autoload
 (defun zerodark-setup-modeline-format ()
@@ -748,10 +748,14 @@ The result is cached for one second to avoid hiccups."
      ;; Mode line faces
      `(mode-line ((,class (:background ,mode-line
                                        :height 0.9
-                                       :foreground ,light))))
+                                       :foreground ,light
+                                       :box ,(list :line-width 1
+                                                   :color comment)))))
      `(mode-line-inactive ((,class (:background ,mode-line
                                                 :height 0.9
-                                                :foreground ,comment))))
+                                                :foreground ,comment
+                                                :box ,(list :line-width 1
+                                                            :color comment)))))
      `(anzu-mode-line ((,class :inherit mode-line :foreground ,purple :weight bold :inverse-video t)))
      ))
 
