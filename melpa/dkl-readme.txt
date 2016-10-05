@@ -13,7 +13,7 @@
 
 ## Installation
 
-Install [dkl from MELPA](http://melpa.org/#/ewmctrl), or put the `dkl' directory in your load-path and do a `(require 'display-keyboard-layout)'.
+Install [dkl from MELPA](https://melpa.org/#/dkl), or put the `dkl' directory in your load-path and do a `(require 'dkl)'.
 
 ## Usage
 

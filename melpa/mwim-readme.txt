@@ -1,11 +1,13 @@
 MWIM stands for "Move Where I Mean".  This package is inspired by
 <http://www.emacswiki.org/emacs/BackToIndentationOrBeginning>.  It
-provides commands for moving to the beginning/end of code, line or
-comment.
+provides commands to switch between various positions on the current
+line (particularly, to move to the beginning/end of code, line or
+comment).
 
 To install the package manually, add the following to your init file:
 
   (add-to-list 'load-path "/path/to/mwim-dir")
+  (autoload 'mwim "mwim" nil t)
   (autoload 'mwim-beginning "mwim" nil t)
   (autoload 'mwim-end "mwim" nil t)
   (autoload 'mwim-beginning-of-code-or-line "mwim" nil t)
