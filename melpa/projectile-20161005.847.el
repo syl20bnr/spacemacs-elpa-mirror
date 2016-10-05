@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20161004.1340
+;; Package-Version: 20161005.847
 ;; Keywords: project, convenience
 ;; Version: 0.15.0-cvs
 ;; Package-Requires: ((pkg-info "0.4"))
@@ -564,6 +564,15 @@ projects."
           function)
   :package-version '(projectile . "0.13.0"))
 
+(defcustom projectile-track-known-projects-automatically t
+  "Controls whether Projectile will automatically register known projects.
+
+When set to nil you'll have always add projects explicitly with
+`projectile-add-known-project'."
+  :group 'projectile
+  :type 'boolean
+  :package-version '(projectile . "0.15.0"))
+
 
 ;;; Version information
 
@@ -733,9 +742,9 @@ The cache is created both in memory and on the hard drive."
                (not (projectile-ignored-project-p project-root)))
       (projectile-cache-current-file))))
 
-(defun projectile-cache-projects-find-file-hook ()
+(defun projectile-track-known-projects-find-file-hook ()
   "Function for caching projects with `find-file-hook'."
-  (when (projectile-project-p)
+  (when (and projectile-track-known-projects-automatically (projectile-project-p))
     (let ((known-projects (and (sequencep projectile-known-projects)
                                (copy-sequence projectile-known-projects))))
       (projectile-add-known-project (projectile-project-root))
@@ -1490,36 +1499,45 @@ Never use on many files since it's going to recalculate the
 project-root for every file."
   (expand-file-name name (projectile-project-root)))
 
-(defun projectile-completing-read (prompt choices &optional initial-input)
+(cl-defun projectile-completing-read (prompt choices
+                                      &key initial-input action)
   "Present a project tailored PROMPT with CHOICES."
-  (let ((prompt (projectile-prepend-project-name prompt)))
-    (cond
-     ((eq projectile-completion-system 'ido)
-      (ido-completing-read prompt choices nil nil initial-input))
-     ((eq projectile-completion-system 'default)
-      (completing-read prompt choices nil nil initial-input))
-     ((eq projectile-completion-system 'helm)
-      (if (fboundp 'helm-comp-read)
-          (helm-comp-read prompt choices
-                          :initial-input initial-input
-                          :candidates-in-buffer t
-                          :must-match 'confirm)
-        (user-error "Please install helm from \
+  (let ((prompt (projectile-prepend-project-name prompt))
+        res)
+    (setq res
+          (cond
+            ((eq projectile-completion-system 'ido)
+             (ido-completing-read prompt choices nil nil initial-input))
+            ((eq projectile-completion-system 'default)
+             (completing-read prompt choices nil nil initial-input))
+            ((eq projectile-completion-system 'helm)
+             (if (fboundp 'helm)
+                 (helm :sources
+                       `((name . ,prompt)
+                         (candidates . ,choices)
+                         (action . ,(prog1 action
+                                      (setq action nil)))))
+               (user-error "Please install helm from \
 https://github.com/emacs-helm/helm")))
-     ((eq projectile-completion-system 'grizzl)
-      (if (and (fboundp 'grizzl-completing-read)
-               (fboundp 'grizzl-make-index))
-          (grizzl-completing-read prompt (grizzl-make-index choices))
-        (user-error "Please install grizzl from \
+            ((eq projectile-completion-system 'grizzl)
+             (if (and (fboundp 'grizzl-completing-read)
+                      (fboundp 'grizzl-make-index))
+                 (grizzl-completing-read prompt (grizzl-make-index choices))
+               (user-error "Please install grizzl from \
 https://github.com/d11wtq/grizzl")))
-     ((eq projectile-completion-system 'ivy)
-      (if (fboundp 'ivy-read)
-          (ivy-read prompt choices
-                    :initial-input initial-input
-                    :caller 'projectile-completing-read)
-        (user-error "Please install ivy from \
+            ((eq projectile-completion-system 'ivy)
+             (if (fboundp 'ivy-read)
+                 (ivy-read prompt choices
+                           :initial-input initial-input
+                           :action (prog1 action
+                                     (setq action nil))
+                           :caller 'projectile-completing-read)
+               (user-error "Please install ivy from \
 https://github.com/abo-abo/swiper")))
-     (t (funcall projectile-completion-system prompt choices)))))
+            (t (funcall projectile-completion-system prompt choices))))
+    (if action
+        (funcall action res)
+      res)))
 
 (defun projectile-current-project-files ()
   "Return a list of files for the current project."
@@ -1560,7 +1578,7 @@ https://github.com/abo-abo/swiper")))
 
 ;;; Interactive commands
 (defcustom projectile-other-file-alist
-  '(;; handle C/C++ extensions
+  '( ;; handle C/C++ extensions
     ("cpp" . ("h" "hpp" "ipp"))
     ("ipp" . ("h" "hpp" "cpp"))
     ("hpp" . ("h" "ipp" "cpp" "cc"))
@@ -1583,7 +1601,10 @@ https://github.com/abo-abo/swiper")))
     ("lock" . (""))
     ("gpg" . (""))
     )
-  "Alist of extensions for switching to file with the same name, using other extensions based on the extension of current file.")
+  "Alist of extensions for switching to file with the same name,
+  using other extensions based on the extension of current
+  file."
+  :type 'alist)
 
 ;;;###autoload
 (defun projectile-find-other-file (&optional flex-matching)
@@ -1798,10 +1819,12 @@ is presented.
 With a prefix ARG invalidates the cache first."
   (interactive "P")
   (projectile-maybe-invalidate-cache arg)
-  (let ((file (projectile-completing-read "Find file: "
-                                          (projectile-current-project-files))))
-    (find-file (expand-file-name file (projectile-project-root)))
-    (run-hooks 'projectile-find-file-hook)))
+  (projectile-completing-read
+   "Find file: "
+   (projectile-current-project-files)
+   :action `(lambda (file)
+              (find-file (expand-file-name file ,(projectile-project-root)))
+              (run-hooks 'projectile-find-file-hook))))
 
 ;;;###autoload
 (defun projectile-find-file-other-window (&optional arg)
@@ -2603,7 +2626,10 @@ For hg projects `monky-status' is used if available."
   "Show a list of recently visited files in a project."
   (interactive)
   (if (boundp 'recentf-list)
-      (find-file (projectile-expand-root (projectile-completing-read "Recently visited files: " (projectile-recentf-files))))
+      (find-file (projectile-expand-root
+                  (projectile-completing-read
+                   "Recently visited files: "
+                   (projectile-recentf-files))))
     (message "recentf is not enabled")))
 
 (defun projectile-recentf-files ()
@@ -2822,9 +2848,10 @@ With a prefix ARG invokes `projectile-commander' instead of
   (interactive "P")
   (let (projects)
     (if (setq projects (projectile-relevant-known-projects))
-        (projectile-switch-project-by-name
-         (projectile-completing-read "Switch to project: " projects)
-         arg)
+        (projectile-completing-read
+         "Switch to project: " projects
+         :action (lambda (project)
+                   (projectile-switch-project-by-name project arg)))
       (error "There are no known projects"))))
 
 ;;;###autoload
@@ -2937,15 +2964,17 @@ See `projectile-cleanup-known-projects'."
 ;;;###autoload
 (defun projectile-remove-known-project (&optional project)
   "Remove PROJECT from the list of known projects."
-  (interactive (list (projectile-completing-read "Remove from known projects: "
-                                                 projectile-known-projects)))
+  (interactive (list (projectile-completing-read
+                      "Remove from known projects: " projectile-known-projects
+                      :action 'projectile-remove-known-project)))
+  (unless (called-interactively-p 'any)
   (setq projectile-known-projects
         (cl-remove-if
          (lambda (proj) (string= project proj))
          projectile-known-projects))
   (projectile-merge-known-projects)
   (when projectile-verbose
-    (message "Project %s removed from the list of known projects." project)))
+      (message "Project %s removed from the list of known projects." project))))
 
 ;;;###autoload
 (defun projectile-remove-current-project-from-known-projects ()
@@ -3307,6 +3336,13 @@ entirely."
   :risky t
   :package-version '(projectile "0.12.0"))
 
+(defun projectile-find-file-hook-function ()
+  "Called by `find-file-hook' when `projectile-mode' is on."
+  (unless (file-remote-p default-directory)
+    (projectile-cache-files-find-file-hook)
+    (projectile-track-known-projects-find-file-hook)
+    (projectile-visit-project-tags-table)))
+
 ;;;###autoload
 (define-minor-mode projectile-mode
   "Minor mode to assist project management and navigation.
@@ -3324,6 +3360,7 @@ Otherwise behave as if called interactively.
   :keymap projectile-mode-map
   :group 'projectile
   :require 'projectile
+  :global t
   (cond
    (projectile-mode
     ;; initialize the projects cache if needed
@@ -3331,25 +3368,19 @@ Otherwise behave as if called interactively.
       (setq projectile-projects-cache
             (or (projectile-unserialize projectile-cache-file)
                 (make-hash-table :test 'equal))))
-    (add-hook 'find-file-hook #'projectile-cache-files-find-file-hook t t)
-    (add-hook 'find-file-hook #'projectile-cache-projects-find-file-hook t t)
-    (add-hook 'projectile-find-dir-hook #'projectile-cache-projects-find-file-hook)
-    (add-hook 'find-file-hook #'projectile-visit-project-tags-table t t)
-    (add-hook 'dired-before-readin-hook #'projectile-cache-projects-find-file-hook t t)
+    (add-hook 'find-file-hook 'projectile-find-file-hook-function)
+    (add-hook 'projectile-find-dir-hook #'projectile-track-known-projects-find-file-hook t)
+    (add-hook 'dired-before-readin-hook #'projectile-track-known-projects-find-file-hook t t)
     (ad-activate 'compilation-find-file)
     (ad-activate 'delete-file))
    (t
-    (remove-hook 'find-file-hook #'projectile-cache-files-find-file-hook t)
-    (remove-hook 'find-file-hook #'projectile-cache-projects-find-file-hook t)
-    (remove-hook 'find-file-hook #'projectile-visit-project-tags-table t)
-    (remove-hook 'dired-before-readin-hook #'projectile-cache-projects-find-file-hook t)
+    (remove-hook 'find-file-hook #'projectile-find-file-hook-function)
+    (remove-hook 'dired-before-readin-hook #'projectile-track-known-projects-find-file-hook t)
     (ad-deactivate 'compilation-find-file)
     (ad-deactivate 'delete-file))))
 
 ;;;###autoload
-(define-globalized-minor-mode projectile-global-mode
-  projectile-mode
-  projectile-mode)
+(define-obsolete-function-alias 'projectile-global-mode 'projectile-mode)
 
 (provide 'projectile)
 

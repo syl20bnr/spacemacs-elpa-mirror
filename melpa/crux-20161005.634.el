@@ -4,7 +4,7 @@
 ;;
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/crux
-;; Package-Version: 20160725.59
+;; Package-Version: 20161005.634
 ;; Version: 0.3.0
 ;; Keywords: convenience
 ;; Package-Requires: ((seq "1.11"))
@@ -38,6 +38,8 @@
 (require 'thingatpt)
 (require 'seq)
 (require 'tramp)
+
+(declare-function dired-get-file-for-visit "dired")
 
 (defgroup crux nil
   "crux configuration."
@@ -314,7 +316,7 @@ point reaches the beginning or end of the buffer, stop there."
 (defun crux-eval-and-replace ()
   "Replace the preceding sexp with its value."
   (interactive)
-  (let ((value (eval (preceding-sexp))))
+  (let ((value (eval (elisp--preceding-sexp))))
     (backward-kill-sexp)
     (insert (format "%s" value))))
 

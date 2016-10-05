@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20161001.543
+;; Package-Version: 20161005.214
 ;; Version: 0.8.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.8.0"))
 ;; Keywords: completion, matching
@@ -1701,7 +1701,8 @@ the command."
                   (setq ivy--old-re
                         (ivy--regex string)))))
       (counsel--async-command
-       (format counsel-grep-base-command regex counsel--git-grep-dir))
+       (format counsel-grep-base-command regex
+               (shell-quote-argument counsel--git-grep-dir)))
       nil)))
 
 (defun counsel-grep-action (x)
