@@ -22,10 +22,12 @@ NTLM authentication procedure example:
 
  1. Open a network connection to the Exchange server at the IMAP port (143)
  2. Receive an opening message such as:
-    "* OK Microsoft Exchange IMAP4rev1 server version 5.5.2653.7 (XXXX) ready"
+    "* OK Microsoft Exchange IMAP4rev1 server
+       version 5.5.2653.7 (XXXX) ready"
  3. Ask for IMAP server capability by sending "NNN capability"
  4. Receive a capability message such as:
-    "* CAPABILITY IMAP4 IMAP4rev1 IDLE LITERAL+ LOGIN-REFERRALS MAILBOX-REFERRALS NAMESPACE AUTH=NTLM"
+    "* CAPABILITY IMAP4 IMAP4rev1 IDLE LITERAL+
+       LOGIN-REFERRALS MAILBOX-REFERRALS NAMESPACE AUTH=NTLM"
  5. Ask for NTLM authentication by sending a string
     "NNN authenticate ntlm"
  6. Receive continuation acknowledgment "+"
