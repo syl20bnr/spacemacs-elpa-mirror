@@ -3,8 +3,8 @@
 ;; Copyright (C) 2012 Constantin Kulikov
 
 ;; Author: Constantin Kulikov (Bad_ptr) <zxnotdead@gmail.com>
-;; Version: 2.9
-;; Package-Version: 20161001.533
+;; Version: 2.9.1
+;; Package-Version: 2.9.1
 ;; Package-Requires: ()
 ;; Keywords: perspectives, session, workspace, persistence, windows, buffers, convenience
 ;; URL: https://github.com/Bad-ptr/persp-mode.el
@@ -1114,7 +1114,7 @@ to a wrong one.")
               (acons param-name value params))))))
 
 (defun* persp-parameter (param-name &optional (persp (get-current-persp)))
-  (cdr-safe (assq param-name (safe-persp-parameters persp))))
+  (cdr (assq param-name (safe-persp-parameters persp))))
 
 (defun* delete-persp-parameter (param-name &optional (persp (get-current-persp)))
   (when (and (not (null param-name)) (symbolp param-name))
@@ -1134,26 +1134,30 @@ to a wrong one.")
   (remove-hook 'after-make-frame-functions #'persp-mode-start-and-remove-from-make-frame-hook))
 
 (defun persp-asave-on-exit (&optional interactive-query)
-  (when (and persp-mode (> persp-auto-save-opt 0))
-    (condition-case-unless-debug err
-        (persp-save-state-to-file)
-      (error
-       (message "[persp-mode] Error: Can not autosave perspectives -- %s"
-                err)
-       (when (or noninteractive
-                 (progn
-                   (when (null (persp-frame-list-without-daemon))
-                     (make-frame))
-                   (null (persp-frame-list-without-daemon))))
-         (setq interactive-query nil))
-       (if interactive-query
-           (yes-or-no-p "persp-mode can not save perspectives, do you want to exit anyway?")
-         t)))))
+  (when persp-mode
+    (if (> persp-auto-save-opt 0)
+        (condition-case-unless-debug err
+            (persp-save-state-to-file)
+          (error
+           (message "[persp-mode] Error: Can not autosave perspectives -- %s"
+                    err)
+           (when (or noninteractive
+                     (progn
+                       (when (null (persp-frame-list-without-daemon))
+                         (make-frame))
+                       (null (persp-frame-list-without-daemon))))
+             (setq interactive-query nil))
+           (if interactive-query
+               (yes-or-no-p "persp-mode can not save perspectives, do you want to exit anyway?")
+             t)))
+      t)))
 (defun persp-kill-emacs-h ()
   (persp-asave-on-exit nil))
+
 (defun persp-kill-emacs-query-function ()
   (when (persp-asave-on-exit t)
-    (remove-hook 'kill-emacs-hook #'persp-kill-emacs-h)))
+    (remove-hook 'kill-emacs-hook #'persp-kill-emacs-h))
+  t)
 
 (defun persp-special-last-buffer-make-current ()
   (setq persp-special-last-buffer (current-buffer)))
@@ -3096,11 +3100,11 @@ does not exists or not a directory %S." p-save-dir)
                   persp-auto-save-persps-to-their-file
                   persp-before-save-state-to-file-functions)
               (mapc #'(lambda (gr)
-                        (let ((pfname (car gr)) (pl (cdr gr)) names)
-                          (mapc #'(lambda (p) (push (safe-persp-name p) names)) pl)
-                          (if pfname
-                              (persp-save-to-file-by-names pfname phash names 'yes nil)
-                            (persp-save-to-file-by-names p-save-file phash names 'no nil))))
+                        (destructuring-bind (pfname . pl) gr
+                          (let ((names (mapcar #'safe-persp-name pl)))
+                            (if pfname
+                                (persp-save-to-file-by-names pfname phash names 'yes nil)
+                              (persp-save-to-file-by-names p-save-file phash names 'no nil)))))
                     fg))
           (with-temp-buffer
             (erase-buffer)

@@ -4,7 +4,7 @@
 
 ;; Author: Sam Halliday <Sam.Halliday@gmail.com>
 ;; Keywords: faces
-;; Package-Version: 1.0
+;; Package-Version: 1.1
 ;; URL: https://github.com/fommil/darcula-theme-emacs
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -74,7 +74,7 @@
  'darcula
  '(default ((t (:inherit nil :stipple nil :background "#2B2B2B" :foreground "#a9b7c6"
                          :inverse-video nil :box nil :strike-through nil :overline nil
-                         :underline nil :slant normal :weight normal :height 120
+                         :underline nil :slant normal :weight normal
                          :width normal :foundry nil))))
  '(cursor ((t (:foreground "#042028" :background "#708183"))))
  '(error ((t (:inherit 'default :underline (:style wave :color "red")))))
@@ -142,12 +142,31 @@
  '(company-scrollbar-bg ((t (:inherit 'mode-line-inactive))))
  '(company-scrollbar-fg ((t (:inherit 'tooltip))))
  '(company-tooltip-selection ((t (:inherit 'highlight))))
- '(company-tooltip-common ((t (:inherit 'mode-line))))
- '(company-tooltip-common-completion ((t (:inherit 'mode-line))))
+ '(company-tooltip-common ((t (:inherit 'mode-line-emphasis))))
+ '(company-tooltip-common-selection ((t (:inherit 'highlight))))
  '(company-tooltip-annotation ((t (:inherit 'mode-line))))
+ ;; http://www.gnu.org/software/emacs/manual/html_node/ediff/Highlighting-Difference-Regions.html
+ '(ediff-current-diff-A ((t (:background "#3B2B2B"))))
+ '(ediff-current-diff-B ((t (:background "#2B3B2B"))))
+ '(ediff-current-diff-C ((t (:background "#2B2B3B"))))
+ '(ediff-fine-diff-A ((t (:weight ultra-bold :background "#5B2B2B"))))
+ '(ediff-fine-diff-B ((t (:weight ultra-bold :background "#2B5B2B"))))
+ '(ediff-fine-diff-C ((t (:weight ultra-bold :background "#2B2B5B"))))
+ '(ediff-odd-diff-A ((t nil)))
+ '(ediff-odd-diff-B ((t (:inherit 'ediff-odd-diff-A))))
+ '(ediff-odd-diff-C ((t (:inherit 'ediff-odd-diff-A))))
+ '(ediff-even-diff-A ((t nil)))
+ '(ediff-even-diff-B ((t (:inherit 'ediff-even-diff-A))))
+ '(ediff-even-diff-C ((t (:inherit 'ediff-even-diff-A))))
+ '(smerge-mine ((t (:inherit 'ediff-current-diff-A))))
+ '(smerge-other ((t (:inherit 'ediff-current-diff-B))))
+ '(smerge-refined-removed ((t (:inherit 'ediff-fine-diff-A))))
+ '(smerge-refined-added ((t (:inherit 'ediff-fine-diff-B))))
+ '(smerge-markers ((t (:inherit 'font-lock-comment-face))))
  '(git-gutter:modified ((t (:foreground "#9876aa"))))
  '(git-gutter:added ((t (:foreground "#629755"))))
  '(git-gutter:deleted ((t (:foreground "#cc7832"))))
+ '(ido-subdir ((t (:inherit 'font-lock-string-face))))
  '(isearch ((t (:weight normal :slant normal :underline nil :inverse-video t :foreground "#bd3612" :background "#042028"))))
  '(isearch-fail ((t (:weight normal :slant normal :underline nil :inverse-video t :foreground "#bd3612" :background "#042028"))))
  '(lazy-highlight ((t (:weight normal :slant normal :underline nil :inverse-video t :foreground "#a57705" :background "#042028"))))

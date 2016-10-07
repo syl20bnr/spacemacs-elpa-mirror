@@ -4,7 +4,7 @@
 
 ;; Author: Syohei YOSHIDA <syohex@gmail.com>
 ;; URL: https://github.com/syohex/emacs-hcl-mode
-;; Package-Version: 20160502.1700
+;; Package-Version: 20161006.950
 ;; Version: 0.02
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 
@@ -210,7 +210,9 @@
        (append "{}[]" electric-indent-chars)))
 
 ;;;###autoload
-(add-to-list 'auto-mode-alist '("\\.hcl\\'" . hcl-mode))
+(progn
+  (add-to-list 'auto-mode-alist '("\\.hcl\\'" . hcl-mode))
+  (add-to-list 'auto-mode-alist '("\\.nomad\\'" . hcl-mode)))
 
 (provide 'hcl-mode)
 

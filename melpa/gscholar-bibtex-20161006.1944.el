@@ -4,7 +4,7 @@
 
 ;; Author: Junpeng Qiu <qjpchmail@gmail.com>
 ;; Keywords: extensions
-;; Package-Version: 20160929.1218
+;; Package-Version: 20161006.1944
 ;; Version: 0.3.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -731,7 +731,7 @@
           (gscholar-bibtex-dispatcher :bibtex-urls search-results))
     (setq gscholar-bibtex-entries-cache
           (make-vector (length gscholar-bibtex-urls-cache) ""))
-    (unless (get-buffer-window gscholar-buffer)
+    (unless (eq gscholar-buffer (window-buffer (selected-window)))
       (switch-to-buffer-other-window gscholar-buffer))
     (setq buffer-read-only nil)
     (erase-buffer)
