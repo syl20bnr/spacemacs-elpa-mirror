@@ -15,8 +15,10 @@ installed in /opt/foo-2.0.  You're often working on multiple
 foo-lang projects at once, and your Emacs startup time is 45
 minutes, so you don't want to globally modify your PATH.  If you
 just do
+
   (setq-local exec-path (cons "/opt/foo/bin" exec-path))
   (put 'exec-path 'permanent-local t)
+
 then you'll run into a problem, because foo-mode calls fooc inside
 a with-temp-buffer call to capture the output!  Instead, you can do
 

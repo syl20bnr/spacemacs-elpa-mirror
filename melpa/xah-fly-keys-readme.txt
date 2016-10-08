@@ -59,14 +59,14 @@ the following stardard keys with Control are supported:
 
  ;; 【Ctrl+tab】 'xah-next-user-buffer
  ;; 【Ctrl+shift+tab】 'xah-previous-user-buffer
- ;; 【Ctrl+v】 'yank
- ;; 【Ctrl+w】 'xah-close-current-buffer
- ;; 【Ctrl+z】 'undo
- ;; 【Ctrl+n】 'xah-new-empty-buffer
- ;; 【Ctrl+o】 'find-file
- ;; 【Ctrl+s】 'save-buffer
- ;; 【Ctrl+shift+s】 'write-file
- ;; 【Ctrl+shift+t】 'xah-open-last-closed
+ ;; 【Ctrl+v】 paste
+ ;; 【Ctrl+w】 close
+ ;; 【Ctrl+z】 undo
+ ;; 【Ctrl+n】 new
+ ;; 【Ctrl+o】 open
+ ;; 【Ctrl+s】 save
+ ;; 【Ctrl+shift+s】 save as
+ ;; 【Ctrl+shift+t】 open last clased
  ;; 【Ctrl++】 'text-scale-increase
  ;; 【Ctrl+-】 'text-scale-decrease
  ;; 【Ctrl+0】 (lambda () (interactive) (text-scale-set 0))))
