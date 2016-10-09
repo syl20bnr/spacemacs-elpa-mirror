@@ -77,6 +77,6 @@ somethin' like this:
 
 Credits
 
- This package was inspired by Alex Kost's fantastic `mwim' package.
- It has even more features, so check it out!
- https://github.com/alezost/mwim.el
+This package was inspired by Alex Kost's fantastic `mwim' package.
+It has even more features, so check it out!
+https://github.com/alezost/mwim.el

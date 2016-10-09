@@ -12,7 +12,7 @@ To use enable `global-orglink-mode' and customize
   <mailto:jonas@bernoul.li>
   man:info
   <info:man>
-  http://github.com/tarsius/orglink
+  https://github.com/tarsius/orglink
   TODO support Emacs Lisp xref links like (in) `help-mode'.
   TODO support footnote.el links (only)
 

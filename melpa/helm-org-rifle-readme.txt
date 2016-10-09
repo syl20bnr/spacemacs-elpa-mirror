@@ -43,6 +43,7 @@ Commands:
 + `helm-org-rifle-current-buffer': Show results from current buffer
 + `helm-org-rifle-directories': Show results from selected directories; with prefix, recursively
 + `helm-org-rifle-files': Show results from selected files
++ `helm-org-rifle-org-directory': Show results from Org files in `org-directory'
 
 Tips
 

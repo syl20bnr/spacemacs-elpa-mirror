@@ -129,11 +129,12 @@
  for moving between window; the primary motivation is to allow
  `icicle-other-window-or-frame' under icicles.
 
- And three hooks can be set as well:
+ And four hooks can be set as well:
 
    + `win-switch-load-hook'
    + `win-switch-on-hook'
    + `win-switch-off-hook'
+   + `win-switch-abort-hook'
 
  The following functions are used to set options:
 
@@ -170,6 +171,7 @@ Code Contents
   3. (@> "Preventing Default Shadowing")
   4. (@> "Internal Configuration Data")
   5. (@> "Internal Functions and Macros")
-  6. (@> "Customization Initializers and Option Setters")
-  7. (@> "User Entry Points")
-  8. (@> "Pre-defined Configurations")
+  6. (@> "Actions and Key Commands")
+  7. (@> "Customization Initializers and Option Setters")
+  8. (@> "User Entry Points")
+  9. (@> "Pre-defined Configurations")
