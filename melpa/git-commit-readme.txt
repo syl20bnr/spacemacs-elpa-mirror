@@ -67,10 +67,9 @@ prettifies them by using different faces for various parts, such as
 files.
 
 Finally this package highlights style errors, like lines that are
-too long, or when the second line is not empty.  It may even nag you
-when you attempt to finish the commit without having fixed these
-issues.  Some people like that nagging, I don't, so you'll have to
-enable it.  Which brings me to the last point.  Like any
-respectable Emacs package, this one too is highly customizable:
+too long, or when the second line is not empty.  It may even nag
+you when you attempt to finish the commit without having fixed
+these issues.  The style checks and many other settings can easily
+be configured:
 
   M-x customize-group RET git-commit RET
