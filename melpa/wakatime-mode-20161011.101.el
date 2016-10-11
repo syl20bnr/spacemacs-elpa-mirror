@@ -6,7 +6,7 @@
 ;; Maintainer: Alan Hamlett <alan@wakatime.com>
 ;; Website: https://wakatime.com
 ;; Keywords: calendar, comm
-;; Package-Version: 20161006.431
+;; Package-Version: 20161011.101
 ;; Version: 1.0.2
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -187,7 +187,7 @@
              (when (and (not (= 0 exit-status)) (not (= 102 exit-status)))
                (error "WakaTime Error (%s)" exit-status)
              )
-             (when (= 102 exit-status)
+             (when (= 104 exit-status)
                ; If we are retrying already, error out
                (if ,retrying
                    (error "WakaTime Error (%s)" exit-status)

@@ -4,7 +4,7 @@
 
 ;; Author: Elis "etu" Axelsson
 ;; URL: https://github.com/etu/webpaste.el
-;; Package-Version: 20161009.444
+;; Package-Version: 20161010.1100
 ;; Package-X-Original-Version: 1.0.0
 ;; Version: 1.0.0
 ;; Keywords: convenience, comm, paste
@@ -82,7 +82,7 @@ Usage:
              `request`.
 :post-data   Default post fields sent to service. Defaults to nil.
 :post-field  Name of the field to insert the code into.
-:success     Callback sent to `requset`, look up how to write these in the
+:success     Callback sent to `request`, look up how to write these in the
              documentation for `request`"
   `(lambda (text)
      "Paste TEXT to provider"
@@ -136,7 +136,7 @@ Usage:
       :post-data '(("syntax" . "text")
                    ("title" . "")
                    ("poster" . "")
-                   ("expiry_days" . "1"))
+                   ("expiry_days" . 1))
       :post-field "content"
       :success
       (cl-function (lambda (&key response &allow-other-keys)

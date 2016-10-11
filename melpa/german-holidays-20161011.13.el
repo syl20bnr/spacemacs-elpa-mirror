@@ -2,8 +2,8 @@
 
 ;; Author: Sebastian Christ <rudolfo.christ@gmail.com>
 ;; URL: https://github.com/rudolfochrist/german-holidays
-;; Package-Version: 20151102.743
-;; Version: 0.2.0
+;; Package-Version: 20161011.13
+;; Version: 0.2.1
 
 ;; This file is not part of GNU Emacs
 
@@ -39,7 +39,7 @@
 ;; This works for for all states:
 ;;
 ;;  `holiday-german-BW-holidays'
-;;  `holiday-german-HE-hoidays'
+;;  `holiday-german-HE-holidays'
 ;;  `holiday-german-HH-holidays'
 ;;  etc.
 ;;

@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2015, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 5.4.4
-;; Package-Version: 20161007.1551
+;; Version: 5.5.0
+;; Package-Version: 20161010.2232
 ;; Created: 10 Sep 2013
 ;; Keywords: convenience, emulations, vim, ergoemacs
 ;; Homepage: http://ergoemacs.org/misc/ergoemacs_vi_mode.html
@@ -830,9 +830,15 @@ Version 2016-07-17"
          (file-name-directory -fpath))))))
 
 (defun xah-delete-text-block ()
-  "Delete selection or current or next text block and also copy to `kill-ring'.
+  "Delete current/next text block or selection, and also copy to `kill-ring'.
+
+A “block” is text between blank lines.
+The “current block” is the block the cursor is at.
+If cursor is not on a block, deletes the next block.
+If there's a text selection, just delete that region.
+
 URL `http://ergoemacs.org/emacs/emacs_delete_block.html'
-Version 2016-08-13"
+Version 2016-10-10"
   (interactive)
   (if (use-region-p)
       (kill-region (region-beginning) (region-end))
@@ -845,8 +851,14 @@ Version 2016-08-13"
 
 (defun xah-delete-current-text-block ()
   "Delete the current text block and also copy to `kill-ring'.
+
+A “block” is text between blank lines.
+The “current block” is the block the cursor is at.
+If cursor is not on a block nor on edge of a block, delete 2 empty lines.
+If there's a text selection, ignore it.
+
 URL `http://ergoemacs.org/emacs/emacs_delete_block.html'
-Version 2016-07-22"
+Version 2016-10-10"
   (interactive)
   (let (-p1 -p2)
     (progn
@@ -1021,30 +1033,82 @@ Version 2015-05-07"
 
 ;; insertion commands
 
-(defun xah-insert-date (&optional add-time-stamp-p)
+(defun xah-insert-date ()
   "Insert current date and or time.
+Insert date in this format: yyyy-mm-dd.
+When called with `universal-argument', prompt for a format to use.
+If there's text selection, delete it first.
 
-• In this format yyyy-mm-dd.
-• When called with `universal-argument', insert date and time, e.g. 2012-05-28T07:06:23-07:00
-• Replaces text selection.
+Do not use this function lisp code. Use `format-time-string' directly.
 
-See also `xah-current-date-time-string'.
-version 2016-04-12"
-  (interactive "P")
+URL `http://ergoemacs.org/emacs/elisp_insert-date-time.html'
+version 2016-10-11"
+  (interactive)
   (when (use-region-p) (delete-region (region-beginning) (region-end)))
-  (insert
-   (if add-time-stamp-p
-       (xah-current-date-time-string)
-     (format-time-string "%Y-%m-%d"))))
+  (let ((-style
+         (if current-prefix-arg
+             (string-to-number
+              (substring
+               (ido-completing-read
+                "Style:"
+                '(
+                  "1 → 2016-10-10 Monday"
+                  "2 → 2016-10-10T19:39:47-07:00"
+                  "3 → 2016-10-10 19:39:58-07:00"
+                  "4 → Monday, October 10, 2016"
+                  "5 → Mon, Oct 10, 2016"
+                  "6 → October 10, 2016"
+                  "7 → Oct 10, 2016"
+                  )) 0 1))
+           0
+           )))
+    (insert
+     (cond
+      ((= -style 0)
+       (format-time-string "%Y-%m-%d") ; "2016-10-10"
+       )
+      ((= -style 1)
+       (format-time-string "%Y-%m-%d %A") ; "2016-10-10 Monday"
+       )
+      ((= -style 2)
+       (concat
+        (format-time-string "%Y-%m-%dT%T")
+        ((lambda (-x) (format "%s:%s" (substring -x 0 3) (substring -x 3 5))) (format-time-string "%z")))
+       ;; "2016-10-10T19:02:23-07:00"
+       )
+      ((= -style 3)
+       (concat
+        (format-time-string "%Y-%m-%d %T")
+        ((lambda (-x) (format "%s:%s" (substring -x 0 3) (substring -x 3 5))) (format-time-string "%z")))
+       ;; "2016-10-10 19:10:09-07:00"
+       )
+      ((= -style 4)
+       (format-time-string "%A, %B %d, %Y")
+       ;; "Monday, October 10, 2016"
+       )
+      ((= -style 5)
+       (format-time-string "%a, %b %d, %Y")
+       ;; "Mon, Oct 10, 2016"
+       )
+      ((= -style 6)
+       (format-time-string "%B %d, %Y")
+       ;; "October 10, 2016"
+       )
+      ((= -style 7)
+       (format-time-string "%b %d, %Y")
+       ;; "Oct 10, 2016"
+       )
+      (t
+       (format-time-string "%Y-%m-%d"))))))
 
-(defun xah-current-date-time-string ()
-  "Returns current date-time string in full ISO 8601 format.
-Example: 「2012-04-05T21:08:24-07:00」.
+;; (defun xah-current-date-time-string ()
+;;   "Returns current date-time string in full ISO 8601 format.
+;; Example: 「2012-04-05T21:08:24-07:00」.
 
-Note, for the time zone offset, both the formats 「hhmm」 and 「hh:mm」 are valid ISO 8601. However, Atom Webfeed spec seems to require 「hh:mm」."
-  (concat
-   (format-time-string "%Y-%m-%dT%T")
-   ((lambda (-x) (format "%s:%s" (substring -x 0 3) (substring -x 3 5))) (format-time-string "%z"))))
+;; Note, for the time zone offset, both the formats 「hhmm」 and 「hh:mm」 are valid ISO 8601. However, Atom Webfeed spec seems to require 「hh:mm」."
+;;   (concat
+;;    (format-time-string "%Y-%m-%dT%T")
+;;    ((lambda (-x) (format "%s:%s" (substring -x 0 3) (substring -x 3 5))) (format-time-string "%z"))))
 
 (defun xah-insert-bracket-pair (*left-bracket *right-bracket)
   "Insert brackets around selection, word, at point, and maybe move cursor in between.
@@ -1560,8 +1624,7 @@ version 2016-01-28"
           (message "No recognized program file suffix for this file."))))))
 
 (defun xah-clean-empty-lines (&optional *begin *end *n)
-  "replace repeated blank lines to just 1.
-Only space and tab is considered whitespace here.
+  "Replace repeated blank lines to just 1.
 Works on whole buffer or text selection, respects `narrow-to-region'.
 
 *N is the number of newline chars to use in replacement.
@@ -1947,6 +2010,7 @@ If `universal-argument' is called first, do switch frame."
    ("." . find-file)
    ("c" . bookmark-bmenu-list)
    ("e" . ibuffer)
+   ("u" . find-file-at-point)
    ("h" . recentf-open-files)
    ("l" . bookmark-set)
    ("n" . xah-new-empty-buffer)
@@ -2110,7 +2174,7 @@ If `universal-argument' is called first, do switch frame."
    ("RET" . insert-char)
    ("SPC" . xah-insert-unicode)
    ("b" . xah-insert-black-lenticular-bracket【】)
-   ("c" . xah-insert-tortoise-shell-bracket〔〕)
+   ("c" . xah-insert-ascii-single-quote)
    ("d" . xah-insert-double-curly-quote“”)
    ("f" . xah-insert-emacs-quote)
    ("g" . xah-insert-ascii-double-quote)
@@ -2119,7 +2183,7 @@ If `universal-argument' is called first, do switch frame."
    ("m" . xah-insert-corner-bracket「」)
    ("n" . xah-insert-square-bracket) ; []
    ("p" . xah-insert-single-angle-quote‹›)
-   ("r" . xah-insert-ascii-single-quote)
+   ("r" . xah-insert-tortoise-shell-bracket〔〕 )
    ("s" . xah-insert-string-assignment)
    ("t" . xah-insert-paren)
    ("u" . xah-insert-date)
@@ -2137,7 +2201,7 @@ If `universal-argument' is called first, do switch frame."
   (define-key xah-fly-leader-key-map (kbd ".") xah-highlight-keymap)
 
   (define-key xah-fly-leader-key-map (kbd "'") 'xah-fill-or-unfill)
-  (define-key xah-fly-leader-key-map (kbd ",") nil)
+  (define-key xah-fly-leader-key-map (kbd ",") 'universal-argument)
   (define-key xah-fly-leader-key-map (kbd "-") nil)
   (define-key xah-fly-leader-key-map (kbd "/") nil)
   (define-key xah-fly-leader-key-map (kbd ";") 'comment-dwim)
@@ -2153,7 +2217,7 @@ If `universal-argument' is called first, do switch frame."
   (define-key xah-fly-leader-key-map (kbd "5") nil)
   (define-key xah-fly-leader-key-map (kbd "6") nil)
   (define-key xah-fly-leader-key-map (kbd "7") nil)
-  (define-key xah-fly-leader-key-map (kbd "8") 'find-file-at-point)
+  (define-key xah-fly-leader-key-map (kbd "8") nil)
   (define-key xah-fly-leader-key-map (kbd "9") 'ispell-word)
   (define-key xah-fly-leader-key-map (kbd "0") nil)
 
