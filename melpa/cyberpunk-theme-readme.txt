@@ -7,6 +7,9 @@ possible, with further tweaks that suit my fancy.
 
 (deftheme cyberpunk "The Cyberpunk color theme")
 
+(defcustom cyberpunk-transparent-background nil
+  "Make transparent background in terminal. (Workaround)")
+
 (let ((class '((class color) (min-colors 89)))
       ;; Cyberpunk palette
       (cyberpunk-fg "#dcdccc")
@@ -54,7 +57,9 @@ possible, with further tweaks that suit my fancy.
       (cyberpunk-blue-7 "#00ffff")
       (cyberpunk-blue-8 "#4F94CD")
       (cyberpunk-magenta "#dc8cc3")
-      (cyberpunk-black (if (and (not (display-graphic-p)) (eq system-type 'darwin))
+      (cyberpunk-black (if (and cyberpunk-transparent-background
+                                (not (display-graphic-p))
+                                (eq system-type 'darwin))
                            "ARGBBB000000"
                          "#000000"))
       (cyberpunk-black-2 "#0C1021")
