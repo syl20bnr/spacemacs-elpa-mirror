@@ -1,1 +1,1 @@
- Color theme for Emacs, when soothe and gruvbox collide.
+ A color theme for Emacs, from the darkness... it watches

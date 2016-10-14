@@ -382,7 +382,7 @@ undos! So to get back to the initial state you now have to rewind through
                       o  o     o     o     o     o
                       |  |\    |\    |\    |\    |
                       |  | \   | \   | \   | \   |
-                      o  o  |  |  o  o  o  |  o  o
+                      o  o  |  |  o  o  |  |  o  o
                       | /   |  |  | /   |  |  | /
                       |/    |  |  |/    |  |  |/
      (already undid   o     |  |  o<.   |  |  o
@@ -558,7 +558,7 @@ you want to customize the diff display.)
 Finally, hitting "q" will quit the visualizer, leaving the parent buffer in
 whatever state you ended at. Hitting "C-q" will abort the visualizer,
 returning the parent buffer to whatever state it was originally in when the
-visualizer was .
+visualizer was invoked.
 
 
 
