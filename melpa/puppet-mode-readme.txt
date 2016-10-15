@@ -3,7 +3,7 @@ GNU Emacs 24 major mode for editing Puppet manifests.
 Provides syntax highlighting, indentation, alignment, movement, Imenu and
 code checking.
 
-Syntax highlighting: Fontification upports all of Puppet 3 syntax, including
+Syntax highlighting: Fontification supports all of Puppet 3 syntax, including
 variable expansion in strings.
 
 Indentation: Indent expressions automatically.

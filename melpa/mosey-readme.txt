@@ -3,14 +3,17 @@ Howdy.  Why don't ya mosey on in here.  Have yourself a sit-down.
 `mosey' makes it easy to mosey back and forth in your buffers.
 Just pass `mosey' a list of functions that move the point to
 certain places, and it'll mosey the point between those places.
-Tell it `:backward' if you want to mosey on back, otherwise it'll
-mosey on ahead.  Tell it to `:cycle' if you want it to loop around
-when it gets to one end or the other.
+Tell it `:backward t' if you want to mosey on back, otherwise it'll
+mosey on ahead.  Tell it to `:bounce t' if you want it to bounce
+back a notch when it hits the end, and tell it to `:cycle t' if you
+want it to loop around when it gets to one end or the other.
 
 To make it easier for ya, just pass a list of point-moving
-functions to `defmosey', and it'll cook up four functions:
-`mosey-forward', `mosey-backward', `mosey-forward-cycle', and
-`mosey-backward-cycle'.
+functions to `defmosey', and it'll cook up six functions:
+`mosey-forward', `mosey-backward', `mosey-forward-bounce',
+`mosey-backward-bounce', `mosey-forward-cycle', and
+`mosey-backward-cycle'.  Then you can pick your fav-o-rite ones and
+forget about the rest!
 
 Installation
 
@@ -31,6 +34,8 @@ current line:
 
 + mosey-forward
 + mosey-backward
++ mosey-forward-bounce
++ mosey-backward-bounce
 + mosey-forward-cycle
 + mosey-backward-cycle
 
@@ -44,8 +49,9 @@ You might even want to rebind your keys to 'em, maybe like this:
 
 (use-package mosey
   :bind* (
-          ("C-a" . mosey-backward)
-          ("C-e" . mosey-forward)
+          ;; My personal favorites
+          ("C-a" . mosey-backward-bounce)
+          ("C-e" . mosey-forward-bounce)
           ))
 
 Make your own moseys
@@ -61,10 +67,12 @@ this (this example uses functions from smartparens):
             mosey-goto-beginning-of-comment-text)
   :prefix "lisp")
 
-That'll cook up four functions for ya:
+That'll cook up six functions for ya:
 
 + mosey-lisp-forward
 + mosey-lisp-backward
++ mosey-lisp-forward-bounce
++ mosey-lisp-backward-bounce
 + mosey-lisp-forward-cycle
 + mosey-lisp-backward-cycle
 
@@ -72,8 +80,8 @@ Then maybe you'd want to use 'em in your `emacs-lisp-mode',
 somethin' like this:
 
 (bind-keys :map emacs-lisp-mode-map
-           ("C-a" . mosey-lisp-backward)
-           ("C-e" . mosey-lisp-forward))
+           ("C-a" . mosey-lisp-backward-cycle)
+           ("C-e" . mosey-lisp-forward-cycle))
 
 Credits
 
