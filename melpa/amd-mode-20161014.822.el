@@ -4,7 +4,7 @@
 ;;
 ;; Author: Nicolas Petton <petton.nicolas@gmail.com>
 ;; Keywords: javascript, amd, projectile
-;; Package-Version: 20161012.39
+;; Package-Version: 20161014.822
 ;; Version: 2.0
 ;; Package: amd-mode
 ;; Package-Requires: ((emacs "25") (projectile "0.10.0") (s "1.9.0") (f "0.16.2") (seq "2.16") (makey "0.3") (js2-mode "20140114") (js2-refactor "0.6.1"))
@@ -224,7 +224,8 @@ The MATCH is one output result from the ag search."
   (goto-char (point-min))
   (insert "define([], function() {
 
-});")
+});
+")
   (backward-char 3)
   (js2-indent-line))
 

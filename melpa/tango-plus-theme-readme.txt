@@ -1,8 +1,8 @@
-This theme is based on the tango theme that is part of GNU Emacs.
-
-Most colors in this theme come from the Tango palette, which is in
-the public domain: http://tango.freedesktop.org/
-Some colors were added to improve contrast.
+Color theme for Emacs loosely based on the tango palette.  The
+basis for this theme was the tango theme part of Emacs 24 but
+recent versions deviate considerably.  Some colors where added to
+increase contrast.  Also, support was added for evil, org mode,
+mu4e, helm, epresent, and markdown-mode among others.
 
 For details and screenshots visit the project page on Github:
 

@@ -4,8 +4,8 @@
 
 ;; Author: David Vazquez Pua <davazp@gmail.com>
 ;; Keywords: languages
-;; Package-Version: 20161012.2240
-;; Package-Requires: ((emacs "24.3") (json-mode "1.7.0"))
+;; Package-Version: 20161016.635
+;; Package-Requires: ((emacs "24.3"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -22,15 +22,39 @@
 
 ;;; Commentary:
 
-;; 
+;; This package implements a major mode to edit GraphQL schemas and
+;; query. The basic functionality includes:
+;;
+;;    - Syntax highlight
+;;    - Automatic indentation
+;;
+;; Additionally, it is able to
+;;    - Sending GraphQL queries to an end-point URL
+;;
+;; Files with the .graphql extension are automatically opened with
+;; this mode.
+
 
 ;;; Code:
 
 (require 'newcomment)
 (require 'json)
 (require 'url)
-(require 'json-mode)
 (require 'cl-lib)
+
+
+;;; User Customizations:
+
+(defgroup graphql nil
+  "Major mode for editing GraphQL schemas and queries."
+  :tag "GraphQL"
+  :group 'languages)
+
+(defcustom graphql-indent-level 2
+  "Number of spaces for each indentation step in `graphql-mode'."
+  :type 'integer
+  :safe 'integerp)
+
 
 (defvar graphql-url
   nil)
@@ -83,7 +107,8 @@ response from the server."
     (with-current-buffer-window
      "*GraphQL*" 'display-buffer-pop-up-window nil
      (erase-buffer)
-     (json-mode)
+     (when (fboundp 'json-mode)
+       (json-mode))
      (insert response)
      (json-pretty-print-buffer))))
 
@@ -111,7 +136,7 @@ response from the server."
         (when (looking-at "\\s-*\\s)")
           (setq level (1- level)))
 
-        (indent-line-to (* 2 level))
+        (indent-line-to (* graphql-indent-level level))
         (setq indent-pos (point))))
 
     (when (< position indent-pos)

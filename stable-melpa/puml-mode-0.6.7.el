@@ -6,8 +6,8 @@
 ;; Author: Zhang Weize (zwz)
 ;; Maintainer: Carlo Sciolla (skuro)
 ;; Keywords: uml plantuml ascii
-;; Package-Version: 0.6.6
-;; Version: 0.6.5
+;; Package-Version: 0.6.7
+;; Version: 0.6.7
 ;; Package-Requires: ((emacs "24"))
 
 ;; You can redistribute this program and/or modify it under the terms
@@ -29,6 +29,7 @@
 
 ;;; Change log:
 ;;
+;; Version 0.6.7, 2016-10-11 Added deprecation warning in favor of plantuml-mode
 ;; version 0.6.6, 2016-07-19 Added autoload, minor bug fixes
 ;; version 0.6.5, 2016-03-24 Added UTF8 support and open in new window / frame shortcuts
 ;; version 0.6.4, 2015-12-12 Added support for comments (single and multiline) -- thanks to https://github.com/nivekuil
@@ -53,9 +54,11 @@
   (expand-file-name "~/plantuml.jar")
   "The location of the PlantUML executable JAR.")
 
+(defcustom puml-suppress-deprecation-warning t "To silence the deprecation warning when `puml-mode' is found upon loading.")
+
 (defvar puml-mode-hook nil "Standard hook for puml-mode.")
 
-(defconst puml-mode-version "0.6.5" "The puml-mode version string.")
+(defconst puml-mode-version "0.6.7" "The puml-mode version string.")
 
 (defvar puml-mode-debug-enabled nil)
 
@@ -300,7 +303,21 @@ Shortcuts             Command Name
   (set (make-local-variable 'comment-end) "'/")
   (set (make-local-variable 'comment-multi-line) t)
   (set (make-local-variable 'comment-style) 'extra-line)
-  (setq font-lock-defaults '((puml-font-lock-keywords) nil t)))
+  (setq font-lock-defaults '((puml-font-lock-keywords) nil t))
+
+  ; Run hooks:
+  (run-mode-hooks 'puml-mode-hook))
+
+(defun puml-deprecation-warning ()
+  "Warns the user about the deprecation of the `puml-mode' project."
+  (if (and puml-suppress-deprecation-warning
+           (featurep 'puml-mode))
+      (display-warning :warning
+                       "`puml-mode' is now deprecated and no longer updated, but it's still present in your system.\
+You should move your configuration to use `plantuml-mode'. See https://github.com/sytac/plantuml-mode. \
+See more at https://github.com/skuro/puml-mode/issues/26")))
+
+(add-hook 'puml-mode-hook 'puml-deprecation-warning)
 
 (provide 'puml-mode)
 ;;; puml-mode.el ends here
