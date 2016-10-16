@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015-2016 jack angers
 ;; Author: jack angers
 ;; Version: 0.4.3
-;; Package-Version: 20160928.1442
+;; Package-Version: 20161015.1230
 ;; Package-Requires: ((emacs "24.3") (f "0.17.3") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -382,6 +382,16 @@
            :regex "JJJ\\s*=\\s*"
            :tests ("$test = 1234"))
 
+    ;; shell
+    (:type "function" :supports ("ag" "grep") :language "shell"
+           :regex "function\\s*JJJ\\s*"
+           :tests ("function test{" "function test {" "function test () {")
+           :not   ("function nottest {"))
+
+    (:type "variable" :supports ("ag" "grep") :language "shell"
+           :regex "\\bJJJ\\s*=\\s*"
+           :tests ("test = 1234") :not ("blahtest = 1234"))
+
     ;; php
     (:type "function" :supports ("ag" "grep") :language "php"
            :regex "function\\s*JJJ\\s*\\\("
@@ -658,6 +668,8 @@
     (:language "php" :ext "inc" :agtype "php")
     (:language "ruby" :ext "rb" :agtype "ruby")
     (:language "scala" :ext "scala" :agtype "scala")
+    (:language "shell" :ext "sh" :agtype "shell")
+    (:language "shell" :ext "bash" :agtype "shell")
     (:language "swift" :ext "swift" :agtype nil)
     (:language "r" :ext "R" :agtype "r")
     (:language "r" :ext "r" :agtype "r")

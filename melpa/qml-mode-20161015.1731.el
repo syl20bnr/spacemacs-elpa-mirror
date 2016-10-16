@@ -2,11 +2,12 @@
 
 ;; Copyright (C) 2010      Wen-Chun Lin
 ;; Copyright (C) 2013-2016 Yen-Chin Lee
+;; Copyleft  (C) 2016      Ono Hiroko (@kuanyui)
 
 ;; Author: Yen-Chin Lee <coldnew.tw@gmail.com>
 ;; URL: https://github.com/coldnew/qml-mode
-;; Package-Version: 20160108.704
-;; Version: 0.3
+;; Package-Version: 20161015.1731
+;; Version: 0.4
 ;; Keywords: qml, qt, qt declarative
 
 ;; This file is NOT part of GNU Emacs.
@@ -43,6 +44,11 @@
 ;;      (add-to-list 'auto-mode-alist '("\\.qml$" . qml-mode))
 
 ;;; ChangeLog
+;;
+;; 0.4
+;;
+;;   * Add QML component id highlighter
+;;   * Add basic types provided by QML modules as property keyword
 ;;
 ;; 0.3
 ;;
@@ -125,7 +131,10 @@
 (defconst qml--property
   '("bool" "double" "real" "int"
     "string" "url" "color" "date"
-    "variant" "alias"))
+    "variant" "alias"
+    "font" "matrix4x4" "point" "quaternion" "rect" "size" "vector2d" "vector3d" "vector4d"
+    ))
+
 
 (defconst qml--property-re
   (concat "\\(property[ \t]+" (qml--list-to-string qml--property) "\\)+[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"))
@@ -159,7 +168,7 @@
     ;; Constant
     (,qml--constants-re (0 font-lock-constant-face))
     (,js--constant-re (0 font-lock-constant-face))
-    ("\\<id[ \t]*:[ \t]*\\([a-zA-Z0-9_]+\\)" (1 'font-lock-constant-face))
+    ("\\<id[ \t]*:[ \t]*\\([a-zA-Z0-9_]+\\)" (1 'font-lock-preprocessor-face))
     ("\\([+-]?\\<[0-9]*\\.?[0-9]+[xX]?[0-9a-fA-F]*\\)" . font-lock-constant-face)
     ("\\([a-zA-Z_\\.]+[a-zA-Z0-9_]*\\)[ \t]*:" (1 font-lock-variable-name-face))
     ;; builtin
@@ -178,13 +187,73 @@
     ;; commented out.
     (,qml--property-re (1 'font-lock-type-face)
                        (3 'font-lock-variable-name-face))
-    
+
     ,@qml--font-lock-keywords-1))
 
 (defconst qml--font-lock-keywords
   '(qml--font-lock-keywords-2
     qml--font-lock-keywords-1
     qml--font-lock-keywords-2))
+
+(defvar-local qml--id-list '())
+(defvar-local qml-refresh-timer nil "Buffer-local timer.")
+
+;; ======================================================
+;; Highlight component id
+;; ======================================================
+
+(defun qml--search-all-id-in-current-file ()
+  "Get all compnents' id defined in current QML file."
+  (let (id-list)
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward "\\<id[ \t]*:[ \t]*\\([a-zA-Z0-9_]+\\)" nil :no-error)
+        (cl-pushnew (match-string-no-properties 1) id-list :test #'string-equal)))
+    id-list))
+
+(defun qml--gen-font-lock-keywords (string-list face)
+  (list
+   (list (js--regexp-opt-symbol string-list) 0 face 'prepend)))
+
+(defun qml--highlight-all-id-in-current-file ()
+  (interactive)
+  (let ((old-id-list qml--id-list)
+        (new-id-list (qml--search-all-id-in-current-file)))
+    (when (not (equal old-id-list new-id-list))
+      (if old-id-list
+          (font-lock-remove-keywords nil (qml--gen-font-lock-keywords old-id-list 'font-lock-preprocessor-face)))
+      (setq qml--id-list new-id-list)
+      (font-lock-add-keywords nil (qml--gen-font-lock-keywords new-id-list 'font-lock-preprocessor-face) 'append)
+      (qml--flush))
+    ))
+
+(defun qml--flush ()
+  (if (fboundp 'font-lock-flush)
+      (font-lock-flush)
+    ;; Emacs < 25
+    (with-no-warnings
+      (font-lock-fontify-buffer))))
+
+;; ======================================================
+;; Idle Timer
+;; ======================================================
+
+(defun qml-timer-handler (buffer)
+  (when (buffer-live-p buffer)
+    (with-current-buffer buffer
+      (qml--highlight-all-id-in-current-file)
+      )))
+
+(add-hook 'qml-mode-hook
+          (lambda ()
+            (setq qml-refresh-timer
+                  (run-with-idle-timer 1.0 t 'qml-timer-handler (current-buffer)))))
+
+(add-hook 'kill-buffer-hook
+          (lambda ()
+            (when (timerp qml-refresh-timer)
+              (cancel-timer qml-refresh-timer))))
+
 
 ;;;###autoload
 (define-derived-mode qml-mode js-mode "QML"
