@@ -1,5 +1,5 @@
 A collection of color tools aimed at those working with (normal 6
-digit) hex color codes, useful for CSS, Emacs themes, etc. etc.
+digit) hex color codes, useful for CSS, Emacs themes, etc.
 
 View the presentation at https://github.com/emacsfodder/kurecolor
 

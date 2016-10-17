@@ -7,7 +7,3 @@ Plantuml is an open-source tool in java that allows to quickly write :
     - component diagram,
     - state diagram
     - object diagram
-using a simple and intuitive language.
-
-to install:
-(require 'plantuml-mode)
