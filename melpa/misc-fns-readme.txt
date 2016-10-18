@@ -16,11 +16,12 @@
 
  Functions defined here:
 
-   `another-buffer', `color-named-at', `current-line',
-   `display-in-mode-line', `do-files', `flatten', `fontify-buffer',
-   `interesting-buffer-p', `live-buffer-name',
+   `all-apply-p', `another-buffer', `color-named-at',
+   `current-line', `display-in-mode-line', `do-files', `flatten',
+   `fontify-buffer', `interesting-buffer-p', `live-buffer-name',
    `make-transient-mark-mode-buffer-local', `mode-ancestors',
    `mode-symbol-p', `mod-signed', `notify-user-of-mode',
    `read-mode-name', `region-or-buffer-limits', `signum',
-   `string-after-p', `string-before-p', `undefine-keys-bound-to',
-   `undefine-killer-commands', `unique-name'.
+   `some-apply-p' `string-after-p', `string-before-p',
+   `undefine-keys-bound-to', `undefine-killer-commands',
+   `unique-name'.

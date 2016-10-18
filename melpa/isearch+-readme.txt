@@ -49,16 +49,26 @@
  Commands defined here:
 
    `isearchp-act-on-demand' (Emacs 22+),
+   `isearchp-add-filter-predicate' (Emacs 24.3+),
    `isearchp-append-register', `isearch-char-by-name' (Emacs
-   23-24.3), `isearchp-complete',
-   `isearchp-cycle-mismatch-removal',
+   23-24.3), `isearchp-complement-filter' (Emacs 24.3+),
+   `isearchp-complete', `isearchp-cycle-mismatch-removal',
+   `isearchp-defun-filter-predicate' (Emacs 24.3+),
    `isearchp-eval-sexp-and-insert' (Emacs 22+),
    `isearchp-fontify-buffer-now', `isearchp-init-edit',
+   `isearchp-near' (Emacs 24.3+), `isearchp-near-after' (Emacs
+   24.3+), `isearchp-near-before' (Emacs 24.3+),
    `isearchp-open-recursive-edit' (Emacs 22+),
+   `isearchp-or-filter-predicate' (Emacs 24.3+),
    `isearchp-remove-failed-part' (Emacs 22+),
    `isearchp-remove-failed-part-or-last-char' (Emacs 22+),
+   `isearchp-remove-filter-predicate' (Emacs 24.3+),
+   `isearchp-reset-filter-predicate' (Emacs 24.3+),
    `isearchp-retrieve-last-quit-search',
+   `isearchp-save-filter-predicate' (Emacs 24.3+),
+   `isearchp-set-filter-predicate' (Emacs 24.3+),
    `isearchp-set-region-around-search-target',
+   `isearchp-show-filters' (Emacs 24.3+),
    `isearchp-toggle-lazy-highlight-cleanup' (Emacs 22+),
    `isearchp-toggle-lazy-highlighting' (Emacs 22+),
    `isearchp-toggle-literal-replacement' (Emacs 22+),
@@ -82,7 +92,8 @@
    `isearchp-drop-mismatch-regexp-flag',
    `isearchp-initiate-edit-commands' (Emacs 22+),
    `isearchp-mouse-2-flag', `isearchp-on-demand-action-function'
-   (Emacs 22+), `isearchp-regexp-quote-yank-flag',
+   (Emacs 22+), `isearchp-prompt-for-filter-name' (Emacs 24.3+),
+   `isearchp-regexp-quote-yank-flag',
    `isearchp-repeat-search-if-fail-flag' (Emacs 22+),
    `isearchp-restrict-to-region-flag' (Emacs 24.3+),
    `isearchp-resume-with-last-when-empty-flag' (Emacs 22+),
@@ -102,12 +113,20 @@
 
    `isearchp-barf-if-use-minibuffer',
    `isearchp-complete-past-string', `isearchp-fail-pos',
+   `isearchp-filters-message' (Emacs 24.3+),
    `isearchp-highlight-lighter', `isearchp-message-prefix',
-   `isearchp-message-suffix', `isearchp-read-face-names',
-   `isearchp-read-face-names--read', `isearchp-read-sexps',
-   `isearchp-remove-duplicates', `isearchp-remove-mismatch',
-   `isearchp-repeat-command', `isearchp-repeat-search-if-fail'
-   (Emacs 22+), `isearchp-replace-fixed-case-p' (Emacs 22+),
+   `isearchp-message-suffix', `isearchp-near-after-predicate'
+   (Emacs 24.3+), `isearchp-near-before-predicate'
+   (Emacs 24.3+), `isearchp-near-predicate' (Emacs 24.3+),
+   `isearchp-not-pred' (Emacs 24.3+), `isearchp-read-face-names',
+   `isearchp-read-face-names--read', `isearchp-read-filter-name'
+   (Emacs 24.3+), `isearchp-read-near-args' (Emacs 24.3+),
+   `isearchp-read-predicate' (Emacs 24.3+),
+   `isearchp-read-prompt-prefix' (Emacs 24.3+),
+   `isearchp-read-sexps', `isearchp-remove-duplicates',
+   `isearchp-remove-mismatch', `isearchp-repeat-command',
+   `isearchp-repeat-search-if-fail' (Emacs 22+),
+   `isearchp-replace-fixed-case-p' (Emacs 22+),
    `isearchp-replace-match' (Emacs 22+),
    `isearchp-replace-multiple' (Emacs 22+),
    `isearchp-replace-on-demand' (Emacs 22+),
@@ -125,6 +144,7 @@
    `isearchp-reg-beg', `isearchp-reg-end',
    `isearchp-replace-literally' (Emacs 22+), `isearchp-replacement'
    (Emacs 22+), `isearchp--replacing-on-demand' (Emacs 22+),
+   `isearchp-saved-filter-predicate' (Emacs 24.3+),
    `isearchp-win-pt-line', `isearch-update-post-hook' (Emacs
    20-21).
 
@@ -138,6 +158,8 @@
  `isearch-cancel'      - Restore cursor position relative to window.
  `isearch-dehighlight' - Remove unused arg, for Emacs 20.
  `isearch--describe-word-mode' - Face `isearchp-word' on string.
+ `isearch-done'        - Restore/update `isearch-filter-predicate'.
+                         Reset `ring-bell-function'.
  `isearch-edit-string' - Put point at mismatch position.
  `isearch-forward', `isearch-forward-regexp' -
                          Prefix arg can  `multi-isearch-buffers'.
@@ -147,8 +169,9 @@
  `isearch-mode-help'   - End isearch.  List bindings.
  `isearch-message'     - Highlight failed part of search string in
                          echo area, in face `isearch-fail'.
- `isearch-message-prefix' - Highlight prompt keywords:
-                            wrapped, regexp, word, multi
+ `isearch-message-prefix' - Highlight prompt keywords: wrapped,
+                         regexp, word, multi.
+                         Reverse the order of the filter prefixes.
  `isearch-mouse-2'     - Respect `isearchp-mouse-2-flag'(Emacs 21+)
  `isearch-search'      - Can limit to active region (Emacs 24.3+)
  `isearch-repeat'      - Can limit to active region (Emacs 24.3+)
@@ -237,6 +260,81 @@
 
 Overview of Features ---------------------------------------------
 
+ * Dynamic search filtering (starting with Emacs 24.3).  You can
+   add and remove any number of search filters while searching
+   incrementally.
+
+   The predicate that is the value of `isearch-filter-predicate' is
+   advised by additional predicates that you add, creating a
+   complex suite of predicates that act together.
+
+   These commands are available, all on prefix key `M-?':
+
+   - `M-? &' (`isearchp-add-filter-predicate') adds a filter
+     predicate, AND-ing it as an additional `:after-while' filter.
+
+   - `M-? |' (`isearchp-or-filter-predicate') adds a filter
+     predicate, OR-ing it as an additional `:before-until' filter.
+
+   - `M-? ~' (`isearchp-complement-filter') complements the current
+     filter.  It either adds an `:around' filter that complements
+     or it removes an existing top-level complementing filter.
+
+   - `M-? -' (`isearchp-remove-filter-predicate') removes the last
+     added filter predicate.
+
+   - `M-? !' (`isearchp-set-filter-predicate') sets the overall
+     filter predicate (advised `isearch-filter-predicate') to a
+     single predicate.
+
+   - `M-? 0' (`isearchp-reset-filter-predicate') resets
+     `isearch-filter-predicate' to its original (default) value.
+
+   - `M-? s' (`isearchp-save-filter-predicate') saves the current
+     filter-predicate suite for subsequent searches.  Unless you
+     save it, the next Isearch starts out from scratch, using the
+     default value of `isearch-filter-predicate'.
+
+   - `M-? n' (`isearchp-defun-filter-predicate') names the current
+     suite of filter predicates, creating a named predicate that
+     does the same thing.  (You can use that name with `M-? -' to
+     remove that predicate.)  With a prefix arg it can also set or
+     save (i.e., do what `M-? !' or `M-? s' does).
+
+   - `M-? M-h' (`isearchp-show-filters') echoes the current suite
+     of filter predicates (advice and original, unadvised
+     predicate).
+
+   - `M-? @', `M-? <', and `M-? >' (`isearchp-near',
+     `isearchp-near-before', and `isearchp-near-after') constrain
+     searching to be within a given distance of (near) another
+     search pattern.
+
+   When you use one of the commands that adds a filter predicate as
+   advice to `isearch-filter-predicate' you can be prompted for two
+   things: (1) a name for the predicate and (2) text to add to the
+   Isearch prompt as a reminder of filtering.  Two user options
+   control this prompting:
+
+   - `isearchp-prompt-for-filter-name' says whether to prompt you
+     always, never, or only when the predicate that you provide is
+     not a symbol (it is a lambda form).  The last of these is the
+     default behavior.  If you are prompted and provide a name, you
+     can use that name with `M-? -' to remove that predicate.
+
+   - `isearchp-prompt-for-isearch-prompt-prefix' says whether to
+     prompt you for a prefix to add to the Isearch prompt.  You are
+     prompted by default, but if you don't care to see such a
+     prompt prefix and you don't want to be bothered by it, you can
+     customize this to skip prompting.
+
+   In addition, whatever the value of these options, when you add a
+   filter predicate you can override the option values by using a
+   prefix argument.  A non-positive prefix arg overrides the option
+   for name prompting, and a non-negative prefix arg overrides the
+   option for prompt-prefix prompting.  (So zero, e.g., `M-0',
+   overrides both.)
+
  * Case-sensitivity is indicated in the mode line minor-mode
    lighter: `ISEARCH' for case-insensitive; `Isearch' for
    case-sensitive.
@@ -271,13 +369,6 @@ Overview of Features ---------------------------------------------
      during isearch - toggle `isearchp-set-region-flag'.
    - Command `isearchp-set-region-around-search-target' - manually
      set the region around the last search target.
-
- * If you also use library `character-fold+.el' then you can use
-   `M-s =' (command `isearchp-toggle-symmetric-char-fold') to
-   toggle whether character folding is symmetric.  Note that lazy
-   highlighting can slow down symmetric char folding considerably,
-   so you might also want to use `M-s h L' to turn off such
-   highlighting.
 
  * When you visit a search hit, you can perform an action on it.
    Use `C-M-RET' (command `isearchp-act-on-demand' - Emacs 22+
@@ -598,6 +689,16 @@ Overview of Features ---------------------------------------------
  * You can, by default, select text with the mouse, then hit `C-s'
    etc. to search for it.  This is controlled by user option
    `isearchp-mouse-2-flag'.
+
+ * If you also use library `character-fold+.el' then you can use
+   `M-s =' (command `isearchp-toggle-symmetric-char-fold') to
+   toggle whether character folding is symmetric.  Note that lazy
+   highlighting can slow down symmetric char folding considerably,
+   so you might also want to use `M-s h L' to turn off such
+   highlighting.
+
+   This feature is not available now, since vanilla Emacs changed
+   the way vanilla file `character-fold.el' works.
 
  If you have Emacs 23 or later then I recommend that you also use
  the companion library, `isearch-prop.el'.  If it is in your

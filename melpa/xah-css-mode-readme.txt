@@ -16,7 +16,7 @@ Features:
 
 • Call `xah-css-hex-to-hsl-color' to convert #rrggbb color format under cursor to HSL Color format.
 
-• Call `xah-css-minify' to compact region.
+• Call `xah-css-compact-css-region' to minify region.
 
 • Call `xah-css-expand-to-multi-lines' to expand minified CSS code to multi-lines format.
 
