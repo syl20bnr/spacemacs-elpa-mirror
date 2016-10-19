@@ -33,8 +33,8 @@ snapshot of the current Emacs-window (i.e. the window which contains
 the active cursor.)
 
 Further there is function =emacsshot-snap-window-include-modeline=
-which does as =emacsshot-snap-window= but includes the modeline when
-taking the shot.
+which does the same as =emacsshot-snap-window= but also includes the
+modeline when taking the shot.
 
 The filenames are configurable.  Hint: =M-x customize-group
 emacsshot=.  Note that the file-suffix defines the image-format under
@@ -47,6 +47,7 @@ It might be a good idea to bind the functions to a key.  This can
 make the usage more convenient.  Further the binding is a way to
 avoid images which contain the command that has been used to create
 the image e.g. "M-x emacsshot-snap-frame" in the minibuffer.
+
 Beware of the heisenshot!
 
 Concretely the print-key could trigger the shot.  Evaluation of
@@ -74,6 +75,7 @@ Note that emacsshot currently trys to overwrite any existing file with
 the target name without asking.
 
 ** Install
+
 *** Emacs Package
 
 When emacsshot has been installed as elpa-package

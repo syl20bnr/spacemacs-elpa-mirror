@@ -1,4 +1,4 @@
-Simple PHP project for EDE.  Inspired by `ede-cpp-root-project'.
+PHP EDE project that supports class autoloading and composer.json detection.
 
 Example project definition :
 (ede-php-autoload-project "My project"
