@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.9
-;; Package-Version: 20160731.1035
+;; Package-Version: 20161019.1847
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.3"))
 ;; Keywords: comm, tools
 
@@ -62,6 +62,7 @@
 (require 'calc-ext)
 (require 'color)
 (require 'json)
+(require 'mailcap)
 (require 'tabulated-list)
 (require 'url-util)
 
@@ -594,20 +595,19 @@ Direction D should be a symbol, either \"up\" or \"down\"."
   "Make a prompt to set transfer speed limit.
 If UPLOAD is non-nil, make a prompt for upload rate, otherwise
 for download rate."
-  (let-alist (transmission-request "session-get")
-    (let ((limit (if upload .arguments.speed-limit-up
-                   .arguments.speed-limit-down))
-          (enabled (eq t (if upload .arguments.speed-limit-up-enabled
-                           .arguments.speed-limit-down-enabled))))
+  (let-alist (cdr (assq 'arguments (transmission-request "session-get")))
+    (let ((limit (if upload .speed-limit-up .speed-limit-down))
+          (enabled (eq t (if upload .speed-limit-up-enabled
+                           .speed-limit-down-enabled))))
       (list (read-number (concat "Set global " (if upload "up" "down") "load limit ("
                                  (if enabled (format "%d kB/s" limit) "disabled")
                                  "): "))))))
 
 (defun transmission-prompt-ratio-limit ()
   "Make a prompt to set global seed ratio limit."
-  (let-alist (transmission-request "session-get")
-    (let ((limit .arguments.seedRatioLimit)
-          (enabled (eq t .arguments.seedRatioLimited)))
+  (let-alist (cdr (assq 'arguments (transmission-request "session-get")))
+    (let ((limit .seedRatioLimit)
+          (enabled (eq t .seedRatioLimited)))
       (list (read-number (concat "Set global seed ratio limit ("
                                  (if enabled (format "%.1f" limit) "disabled")
                                  "): "))))))
@@ -814,23 +814,17 @@ Done in the spirit of `dired-plural-s'."
   (let ((m (if (= -1 n) 0 n)))
     (concat (transmission-group-digits m) " " s (unless (= m 1) "s"))))
 
-(defun transmission-format-rate (bytes throttled)
-  "Format BYTES per second into a string with units."
-  (if (not (eq t throttled)) "unlimited"
-    (concat (transmission-group-digits bytes) " kB/s")))
-
 (defun transmission-format-size (bytes)
   "Format size BYTES into a more readable string."
   (format "%s (%s bytes)" (transmission-size bytes)
           (transmission-group-digits bytes)))
 
-(defmacro transmission-tabulated-list-pred (key)
+(defun transmission-tabulated-list-pred (key)
   "Return a sorting predicate comparing values of KEY.
 KEY should be a key in an element of `tabulated-list-entries'."
-  (declare (debug t))
-  `(lambda (a b)
-     (> (cdr (assq ,key (car a)))
-        (cdr (assq ,key (car b))))))
+  (lambda (a b)
+    (> (cdr (assq key (car a)))
+       (cdr (assq key (car b))))))
 
 (defmacro transmission-let*-ids (bindings &rest body)
   "Conditionally bind variables according to BINDINGS and eval BODY.
@@ -903,9 +897,35 @@ When called with a prefix, prompt for DIRECTORY."
                               (base64-encode-string (buffer-string))))
              (setq torrent (string-trim torrent))
              `(:filename ,(if (transmission-btih-p torrent)
-                              (format "magnet:?xt=urn:btih:%s" torrent)
+                              (concat "magnet:?xt=urn:btih:" torrent)
                             torrent)))
            (if directory (list :download-dir (expand-file-name directory))))))
+
+(defun transmission-free (location)
+  "Show in the echo area how much free space is in the directory LOCATION."
+  (interactive (list (read-directory-name "Directory: " nil nil t)))
+  (transmission-request-async
+   (lambda (content)
+     (let-alist (cdr (assq 'arguments (json-read-from-string content)))
+       (message "%s free in %s" (transmission-format-size .size-bytes)
+                (abbreviate-file-name .path))))
+   "free-space" (list :path (expand-file-name location))))
+
+(defun transmission-status ()
+  "Message some information about the session."
+  (interactive)
+  (transmission-request-async
+   (lambda (content)
+     (let-alist (cdr (assq 'arguments (json-read-from-string content)))
+       (message (concat "%d kB/s down, %d kB/s up; %d/%d torrents active; "
+                        "%s received, %s sent; uptime %s")
+                (transmission-rate .downloadSpeed)
+                (transmission-rate .uploadSpeed)
+                .activeTorrentCount .torrentCount
+                (transmission-size .current-stats.downloadedBytes)
+                (transmission-size .current-stats.uploadedBytes)
+                (transmission-eta .current-stats.secondsActive nil))))
+   "session-stats"))
 
 (defun transmission-move (location)
   "Move torrent at point or in region to a new LOCATION."
@@ -1131,8 +1151,13 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   "Run a command COMMAND on the FILE at point."
   (interactive
    (let* ((fap (run-hook-with-args-until-success 'file-name-at-point-functions))
-          (prompt (and fap (format "! on %s: " (file-name-nondirectory fap)))))
-     (if fap (list (read-shell-command prompt) fap)
+          (def (mailcap-file-default-commands
+                (list (replace-regexp-in-string "\\.part\\'" "" fap))))
+          (prompt (and fap (concat "! on " (file-name-nondirectory fap)
+                                   (if def (format " (default %s)" (car def)))
+                                   ": ")))
+          (input (read-shell-command prompt nil nil def t)))
+     (if fap (list (if (string-empty-p input) (or (car def) "") input) fap)
        (user-error "File does not exist"))))
   (let* ((args (nconc (split-string command) (list (expand-file-name file))))
          (prog (car args)))
@@ -1357,7 +1382,7 @@ Each form in BODY is a column descriptor."
       (concat "Name: " .name)
       (concat "Hash: " .hashString)
       (concat "Magnet: " (propertize .magnetLink 'font-lock-face 'link) "\n")
-      (format "Location: %s" (abbreviate-file-name .downloadDir))
+      (concat "Location: " (abbreviate-file-name .downloadDir))
       (format "Percent done: %.1f%%" (* 100 .percentDone))
       (format "Bandwidth priority: %s"
               (car (rassoc .bandwidthPriority transmission-priority-alist)))

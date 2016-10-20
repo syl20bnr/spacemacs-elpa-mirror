@@ -8,7 +8,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20161017.609
+;; Package-Version: 20161020.340
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -1076,7 +1076,12 @@ The path returned is canonicalized and stripped of any text properties."
     (prog1
         (or intero-temp-file-name
             (setq intero-temp-file-name
-                  (intero-canonicalize-path (make-temp-file "intero" nil ".hs"))))
+                  (intero-canonicalize-path
+                   (let ((temporary-file-directory
+                          (expand-file-name ".stack-work/intero/"
+                                            (intero-project-root))))
+                     (make-directory temporary-file-directory t)
+                     (make-temp-file "intero" nil ".hs")))))
       (let ((contents (buffer-string)))
         (with-temp-file intero-temp-file-name
           (insert contents))))))
