@@ -4,7 +4,7 @@
 
 ;; Author: Gergely Polonkai <gergely@polonkai.eu>
 ;; Keywords: gobject, glib, gtk, helper, utilities
-;; Package-Version: 20160928.2013
+;; Package-Version: 20161020.823
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -39,42 +39,79 @@
 (defvar-local gobgen-widget-parent-name nil
   "Widget for the name of the parent class.")
 (defvar-local gobgen-widget-parent-prefix nil
-  "Widget for the prefix of the parent class. It is auto-filled, but changeable.")
+  "Widget for the prefix of the parent class. It is auto-filled, but
+  changeable.")
 (defvar-local gobgen-widget-recent nil
   "Checkbox field for the recent GLib option.")
 (defvar-local gobgen-widget-private nil
   "Checkbox field for the private structure option.")
 
 (defun gobject-get-prefix (class-name)
+  "Guess the GObject prefix from CLASS-NAME."
+
   (car (split-string class-name "_")))
 
-(defun gobgen-gen-header (CLASS_FULL_NAME
-                          CLASS_PREFIX
-                          CLASS_NAME
-                          ClassFullName
+(defun gobgen-gen-header (class-full-name-upper
+                          class-prefix-upper
+                          class-name-upper
+                          class-full-name-camel
                           func-prefix
-                          parent_prefix
-                          ParentPrefix
-                          ParentName
+                          parent-prefix-snake
+                          parent-prefix-camel
+                          parent-name-camel
                           parent-header
                           recent-glib
                           need-private)
-  "Generate the contents of a GObject header file."
+  "Generate the contents of a GObject header file.
+
+CLASS-FULL-NAME-UPPER is the full GObject name of the new class in
+UPPER_SNAKE_CASE notation.
+
+CLASS-PREFIX-UPPER is the GObject prefix of the new class in
+UPPER_SNAKE_CASE notation.
+
+CLASS-NAME-UPPER is the name of the new class without the
+prefix in UPPER_SNAKE_CASE notation.
+
+CLASS-FULL-NAME-CAMEL is the full name of the new object in
+CamelCase notation.
+
+FUNC-PREFIX is the function prefix for object methods.  Usually
+it is the same as the full object name in lower_snake_case
+notation.
+
+PARENT-PREFIX-SNAKE is the prefix of the parent object in
+snake_case notation.
+
+PARENT-PREFIX-CAMEL is the prefix of the parent object in
+CamelCase notation.
+
+PARENT-NAME-CAMEL is the name of the parent class without the
+prefix, in CamelCase notation.
+
+PARENT-HEADER is the name of the header file to be included in
+order to use the parent class.
+
+If RECENT-GLIB is 't', some features available from GLib 2.38
+will be used.
+
+If NEED-PRIVATE is 't', a private struct will be added to the new
+class."
 
   (concat
    "#ifndef __"
-   CLASS_FULL_NAME
+   class-full-name-upper
    "_H__\n"
 
    "#define __"
-   CLASS_FULL_NAME
+   class-full-name-upper
    "_H__\n"
 
    "\n"
 
-   (if (string-equal "g" parent_prefix)
+   (if (string-equal "g" parent-prefix-snake)
        "#include <glib-object.h>"
-     (if (string-equal "gtk" parent_prefix)
+     (if (string-equal "gtk" parent-prefix-snake)
          "#include <gtk/gtk.h>"
        (concat "// You might want to revise this\n"
                "#include <"
@@ -88,34 +125,34 @@
 
    "\n"
 
-   "#define " CLASS_PREFIX "_TYPE_" CLASS_NAME "         (" func-prefix "_get_type())\n"
+   "#define " class-prefix-upper "_TYPE_" class-name-upper "         (" func-prefix "_get_type())\n"
 
-   "#define " CLASS_FULL_NAME "(o)           (G_TYPE_CHECK_INSTANCE_CAST((o), " CLASS_PREFIX "_TYPE_" CLASS_NAME ", " ClassFullName "))\n"
+   "#define " class-full-name-upper "(o)           (G_TYPE_CHECK_INSTANCE_CAST((o), " class-prefix-upper "_TYPE_" class-name-upper ", " class-full-name-camel "))\n"
 
-   "#define " CLASS_FULL_NAME "_CLASS(k)     (G_TYPE_CHECK_CLASS_CAST((k), " CLASS_PREFIX "_TYPE_" CLASS_NAME ", " ClassFullName "Class))\n"
+   "#define " class-full-name-upper "_CLASS(k)     (G_TYPE_CHECK_CLASS_CAST((k), " class-prefix-upper "_TYPE_" class-name-upper ", " class-full-name-camel "Class))\n"
 
-   "#define " CLASS_PREFIX "_IS_" CLASS_NAME "(o)        (G_TYPE_CHECK_INSTANCE_TYPE((o), " CLASS_PREFIX "_TYPE_" CLASS_NAME "))\n"
+   "#define " class-prefix-upper "_IS_" class-name-upper "(o)        (G_TYPE_CHECK_INSTANCE_TYPE((o), " class-prefix-upper "_TYPE_" class-name-upper "))\n"
 
-   "#define " CLASS_PREFIX "_IS_" CLASS_NAME "_CLASS(k)  (G_TYPE_CHECK_CLASS_TYPE((k), " CLASS_PREFIX "_TYPE_" CLASS_NAME "))\n"
+   "#define " class-prefix-upper "_IS_" class-name-upper "_CLASS(k)  (G_TYPE_CHECK_CLASS_TYPE((k), " class-prefix-upper "_TYPE_" class-name-upper "))\n"
 
-   "#define " CLASS_FULL_NAME"_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS((o), " CLASS_PREFIX "_TYPE_" CLASS_NAME ", " ClassFullName "Class))\n"
+   "#define " class-full-name-upper"_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS((o), " class-prefix-upper "_TYPE_" class-name-upper ", " class-full-name-camel "Class))\n"
 
    "\n"
 
-   "typedef struct _" ClassFullName "      " ClassFullName ";\n"
+   "typedef struct _" class-full-name-camel "      " class-full-name-camel ";\n"
 
-   "typedef struct _" ClassFullName "Class " ClassFullName "Class;\n"
+   "typedef struct _" class-full-name-camel "Class " class-full-name-camel "Class;\n"
 
    (if (and (not recent-glib) need-private)
-       (concat "typedef struct _" ClassFullName "Private " ClassFullName "Private;\n"))
+       (concat "typedef struct _" class-full-name-camel "Private " class-full-name-camel "Private;\n"))
 
    "\n"
 
-   "struct _" ClassFullName " {\n"
+   "struct _" class-full-name-camel " {\n"
 
    "    /* Parent instance structure */\n"
 
-   "    " ParentPrefix ParentName " parent_instance;\n"
+   "    " parent-prefix-camel parent-name-camel " parent_instance;\n"
 
    "\n"
 
@@ -124,15 +161,15 @@
    (if (and (not recent-glib) need-private)
        (concat "\n"
                "    /*< private >*/\n"
-               "    " ClassFullName "Private *priv;\n"))
+               "    " class-full-name-camel "Private *priv;\n"))
 
    "};\n"
 
    "\n"
 
-   "struct _" ClassFullName "Class {\n"
+   "struct _" class-full-name-camel "Class {\n"
 
-   "    " ParentPrefix ParentName "Class parent_class;\n"
+   "    " parent-prefix-camel parent-name-camel "Class parent_class;\n"
 
    "};\n"
 
@@ -147,21 +184,55 @@
    "\n"
 
    "#endif /* __"
-   CLASS_FULL_NAME
+   class-full-name-upper
    "_H__ */\n"))
 
-(defun gobgen-gen-code (CLASS_FULL_NAME
-                        CLASS_PREFIX
-                        CLASS_NAME
-                        class_name
-                        ClassFullName
+(defun gobgen-gen-code (class-full-name-upper
+                        class-prefix-upper
+                        class-name-upper
+                        class-name-snake
+                        class-full-name-camel
                         func-prefix
                         file-name-header
-                        PARENT_PREFIX
-                        PARENT_NAME
+                        parent-prefix-upper
+                        parent-name-upper
                         recent-glib
                         need-private)
-  "Generate the contents of a GObject source file."
+  "Generate the contents of a GObject source file.
+
+CLASS-FULL-NAME-UPPER is the full GObject name of the new class in
+UPPER_SNAKE_CASE notation.
+
+CLASS-PREFIX-UPPER is the GObject prefix of the new class in
+UPPER_SNAKE_CASE notation.
+
+CLASS-NAME-UPPER is the name of the new class without the
+prefix in UPPER_SNAKE_CASE notation.
+
+CLASS-NAME-SNAKE is the name of the new class without the prefix
+in snake_case notation.
+
+CLASS-FULL-NAME-CAMEL is the full name of the new object in
+CamelCase notation.
+
+FUNC-PREFIX is the function prefix for object methods.  Usually
+it is the same as the full object name in lower_snake_case
+notation.
+
+FILE-NAME-HEADER is the name of the header file generated for the
+new class.
+
+PARENT-PREFIX-UPPER is the prefix of the parent object in
+UPPER_SNAKE_CASE notation.
+
+PARENT-NAME-UPPER is the name of the parent class without the
+prefix in UPPER_SNAKE_CASE notation.
+
+If RECENT-GLIB is 't', some features available from GLib 2.38
+will be used.
+
+If NEED-PRIVATE is 't', a private struct will be added to the new
+class."
 
   (concat
    "#include \"" file-name-header "\"\n"
@@ -172,21 +243,21 @@
        (concat
         (if (not recent-glib)
             (concat
-             "#define " CLASS_FULL_NAME "_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE( \\\n"
+             "#define " class-full-name-upper "_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE( \\\n"
              "            (o), \\\n"
-             "            " CLASS_PREFIX "_TYPE_" CLASS_NAME ", \\\n"
-             "            " ClassFullName "Private \\\n"
+             "            " class-prefix-upper "_TYPE_" class-name-upper ", \\\n"
+             "            " class-full-name-camel "Private \\\n"
              "        ))\n"
              "\n"))
 
         (if recent-glib "typedef ")
 
-        "struct _" ClassFullName "Private {\n"
+        "struct _" class-full-name-camel "Private {\n"
         "    /* TODO: You must add something here, or GLib will produce warnings! */\n"
         "}"
 
         (if recent-glib
-            (concat " " ClassFullName "Private"))
+            (concat " " class-full-name-camel "Private"))
 
         ";\n"
         "\n"))
@@ -196,7 +267,7 @@
    (if (and recent-glib need-private)
        "_WITH_PRIVATE")
 
-   "(" ClassFullName ", " func-prefix ", " PARENT_PREFIX "_TYPE_" PARENT_NAME ");\n"
+   "(" class-full-name-camel ", " func-prefix ", " parent-prefix-upper "_TYPE_" parent-name-upper ");\n"
 
    "\n"
 
@@ -210,14 +281,14 @@
    "\n"
 
    "static void\n"
-   func-prefix "_class_init(" ClassFullName "Class *klass)\n"
+   func-prefix "_class_init(" class-full-name-camel "Class *klass)\n"
    "{\n"
    "    GObjectClass *gobject_class = G_OBJECT_CLASS(klass);\n"
    "\n"
 
    (if (and (not recent-glib) need-private)
        (concat
-        "    g_type_class_add_private(klass, sizeof(" ClassFullName "Private));\n"
+        "    g_type_class_add_private(klass, sizeof(" class-full-name-camel "Private));\n"
         "\n"))
 
    "    gobject_class->finalize = " func-prefix "_finalize;\n"
@@ -227,12 +298,12 @@
    "\n"
 
    "static void\n"
-   func-prefix "_init(" ClassFullName " *" class_name ")\n"
+   func-prefix "_init(" class-full-name-camel " *" class-name-snake ")\n"
    "{\n"
 
    (if (and (not recent-glib) need-private)
        (concat
-        "    " class_name "->priv = " CLASS_FULL_NAME "_GET_PRIVATE(" class_name ");\n"))
+        "    " class-name-snake "->priv = " class-full-name-upper "_GET_PRIVATE(" class-name-snake ");\n"))
 
    "}\n"))
 
@@ -242,7 +313,21 @@
                          parent-name
                          recent-glib
                          need-private)
-  "Generate the header definition for a GObject derived clas."
+  "Generate the boilerplate of a new GObject derived class.
+
+CLASS-PREFIX is the prefix of the new class.
+
+CLASS-NAME is the name of the new class, without the prefix.
+
+PARENT-PREFIX is the prefix of the parent class.
+
+PARENT-NAME is the name of the parent class, without the prefix.
+
+If RECENT-GLIB is 't', some features available from GLib 2.38
+will be used.
+
+If NEED-PRIVATE is 't', a private struct will be added to the new
+class."
 
   (let* ((parent-prefix        (downcase parent-prefix))
          (parent-name          (downcase parent-name))
@@ -263,21 +348,21 @@
                (parent-name-pcs   (split-string parent-name "_"))
                (class-prefix-pcs  (split-string class-prefix "_"))
                (class-name-pcs    (split-string class-name "_"))
-               (parent_prefix     (string-join parent-prefix-pcs "_"))
-               (ParentPrefix      (mapconcat 'capitalize parent-prefix-pcs ""))
-               (PARENT_PREFIX     (upcase parent_prefix))
+               (parent-prefix-snake     (string-join parent-prefix-pcs "_"))
+               (parent-prefix-camel      (mapconcat 'capitalize parent-prefix-pcs ""))
+               (parent-prefix-upper     (upcase parent-prefix-snake))
                (parent_name       (string-join parent-name-pcs "_"))
-               (ParentName        (mapconcat 'capitalize parent-name-pcs ""))
-               (PARENT_NAME       (upcase parent_name))
+               (parent-name-camel        (mapconcat 'capitalize parent-name-pcs ""))
+               (parent-name-upper       (upcase parent_name))
                (class_prefix      (string-join class-prefix-pcs "_"))
                (ClassPrefix       (mapconcat 'capitalize class-prefix-pcs ""))
-               (CLASS_PREFIX      (upcase class_prefix))
-               (class_name        (string-join class-name-pcs "_"))
+               (class-prefix-upper      (upcase class_prefix))
+               (class-name-snake        (string-join class-name-pcs "_"))
                (ClassName         (mapconcat 'capitalize class-name-pcs ""))
-               (CLASS_NAME        (upcase class_name))
-               (func-prefix       (concat class_prefix "_" class_name))
-               (ClassFullName     (concat ClassPrefix ClassName))
-               (CLASS_FULL_NAME   (concat CLASS_PREFIX "_" CLASS_NAME))
+               (class-name-upper        (upcase class-name-snake))
+               (func-prefix       (concat class_prefix "_" class-name-snake))
+               (class-full-name-camel     (concat ClassPrefix ClassName))
+               (class-full-name-upper   (concat class-prefix-upper "_" class-name-upper))
                (parent-header     (concat (string-join (append parent-prefix-pcs parent-name-pcs) "-") ".h"))
                (file-name-base    (string-join (append class-prefix-pcs class-name-pcs) "-"))
                (file-name-code    (concat file-name-base ".c"))
@@ -287,14 +372,14 @@
           (split-window-vertically)
           (other-window 1)
           (find-file file-name-header)
-          (insert (gobgen-gen-header CLASS_FULL_NAME
-                                     CLASS_PREFIX
-                                     CLASS_NAME
-                                     ClassFullName
+          (insert (gobgen-gen-header class-full-name-upper
+                                     class-prefix-upper
+                                     class-name-upper
+                                     class-full-name-camel
                                      func-prefix
-                                     parent_prefix
-                                     ParentPrefix
-                                     ParentName
+                                     parent-prefix-snake
+                                     parent-prefix-camel
+                                     parent-name-camel
                                      parent-header
                                      recent-glib
                                      need-private))
@@ -302,21 +387,21 @@
           (split-window-vertically)
           (other-window 1)
           (find-file file-name-code)
-          (insert (gobgen-gen-code CLASS_FULL_NAME
-                                   CLASS_PREFIX
-                                   CLASS_NAME
-                                   class_name
-                                   ClassFullName
+          (insert (gobgen-gen-code class-full-name-upper
+                                   class-prefix-upper
+                                   class-name-upper
+                                   class-name-snake
+                                   class-full-name-camel
                                    func-prefix
                                    file-name-header
-                                   PARENT_PREFIX
-                                   PARENT_NAME
+                                   parent-prefix-upper
+                                   parent-name-upper
                                    recent-glib
                                    need-private)))))))
 
 ;;;###autoload
 (defun gobgen ()
-  "Create widgets window for GObject creation"
+  "Create widgets window for GObject creation."
 
   (interactive)
 

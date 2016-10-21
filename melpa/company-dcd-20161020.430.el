@@ -2,7 +2,7 @@
 
 ;; Author: tsukimizake <shomasd_at_gmail.com>
 ;; Version: 0.1
-;; Package-Version: 20160806.1852
+;; Package-Version: 20161020.430
 ;; Package-Requires: ((company "0.9") (flycheck-dmd-dub "0.7") (yasnippet "0.8") (popwin "0.7") (cl-lib "0.5") (ivy "20160804.326"))
 ;; Keywords: languages
 ;; URL: http://github.com/tsukimizake/company-dcd
@@ -47,6 +47,12 @@
 (defcustom company-dcd-client-executable
   "dcd-client"
   "Location of dcd-client executable."
+  :group 'company-dcd
+  :type 'file)
+
+(defcustom company-dcd-compiler
+  "dmd"
+  "Name of dlang compiler executable."
   :group 'company-dcd
   :type 'file)
 
@@ -834,11 +840,11 @@ paths from stderr.
 
 This method avoids needing to find the correct dmd.conf and parsing it correctly."
   (with-temp-buffer
-    (call-process "dmd" nil t nil "company-dcd-nonexisting-file-test")
+    (call-process company-dcd-compiler nil t nil "company-dcd-nonexisting-file-test")
     (goto-char (point-min))
     (let (lines)
       (while (re-search-forward company-dcd--dmd-import-path-pattern nil t)
-	(push (concat "-I" (match-string-no-properties 1)) lines))
+        (push (concat "-I" (match-string-no-properties 1)) lines))
       (nreverse lines))))
 
 (defun company-dcd--add-imports ()

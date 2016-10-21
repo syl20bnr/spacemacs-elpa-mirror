@@ -2,7 +2,7 @@
 
 ;; Author: Lit Wakefield <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/evil-textobj-anyblock
-;; Package-Version: 20151017.1417
+;; Package-Version: 20161020.1112
 ;; Keywords: evil
 ;; Package-Requires: ((cl-lib "0.5") (evil "1.1.0"))
 ;; Version: 0.1
@@ -83,8 +83,9 @@ whether to make an outer or inner textobject."
                            open-block close-block beg end type count outerp)))
                      (when (and block-info
                                 ;; prevent seeking forward behaviour for quotes
-                                (>= (point) (cl-first block-info))
-                                (<= (point) (cl-second block-info)))
+                                ;; require a new region to be larder on both sides
+                                (>= (or beg (point)) (cl-first block-info))
+                                (<= (or end (point)) (cl-second block-info)))
                        ;; (append block-info (list open-block close-block))
                        block-info)))
             collect it)

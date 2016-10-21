@@ -4,7 +4,7 @@
 
 ;; Author: Mario Rodas <marsam@users.noreply.github.com>
 ;; URL: https://github.com/emacs-pe/python-test.el
-;; Package-Version: 20161015.652
+;; Package-Version: 20161020.1139
 ;; Keywords: convenience, tools, processes
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "25.1"))
@@ -404,8 +404,8 @@ a pdb prompt is detected in `compilation-mode' buffers, and to
 work is meant to be added to `compilation-filter-hook'.  To go
 back to `compilation-mode' you need to call
 \\[python-test-back-to-compilation]."
-  (let ((output (buffer-substring-no-properties compilation-filter-start (point-max))))
-    (when (string-match-p python-shell-prompt-pdb-regexp output)
+  (let ((output (ignore-errors (buffer-substring-no-properties compilation-filter-start (point)))))
+    (when (and output (string-match-p python-shell-prompt-pdb-regexp output))
       (message "Entering pdb...")
       (setq buffer-read-only nil)
       (let ((python-shell--interpreter nil)
