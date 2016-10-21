@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2015, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.org/ )
-;; Version: 2.9.0
-;; Package-Version: 20161013.442
+;; Version: 2.10.0
+;; Package-Version: 20161020.2002
 ;; Created: 23 Mar 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: lisp, languages
@@ -1362,6 +1362,19 @@
 (defvar xah-elisp-elisp-all-keywords nil "List of all elisp keywords")
 (setq xah-elisp-elisp-all-keywords (append xah-elisp-elisp-lang-words xah-elisp-emacs-words xah-elisp-emacs-user-commands xah-elisp-keyword-builtin xah-elisp-elisp-vars-1 ))
 
+
+(defun xah-elisp-display-page-break-as-line ()
+  "Display the formfeed ^L char as line.
+Version 2016-10-11"
+  (interactive)
+  ;; 2016-10-11 thanks to Steve Purcell's page-break-lines.el
+  (progn
+    (when (null buffer-display-table)
+      (setq buffer-display-table (make-display-table)))
+    (aset buffer-display-table ?\^L
+          (vconcat (make-list 70 (make-glyph-code ?─ 'font-lock-comment-face))))
+    (redraw-frame)))
+
 
 
 ;; emacs 24.4 or 24.3 change fix
@@ -2211,6 +2224,7 @@ URL `http://ergoemacs.org/emacs/xah-elisp-mode.html'
         (setq abbrev-expand-function 'xah-elisp-expand-abbrev-maybe))
     (progn (add-hook 'abbrev-expand-functions 'xah-elisp-expand-abbrev-maybe nil t)))
 
+  (xah-elisp-display-page-break-as-line)
   (setq prettify-symbols-alist '(("lambda" . 955)))
 
   :group 'xah-elisp-mode
