@@ -30,6 +30,9 @@ Set up keybindings:
     (define-key term-raw-map (kbd "M-#") 'term-alert-all-toggle)
     (define-key term-raw-map (kbd "C-'") 'term-alert-runtime)
 
+You can change what happens when an alert occurs by setting the
+variable `term-alert-function'.
+
 
 Installation
 
