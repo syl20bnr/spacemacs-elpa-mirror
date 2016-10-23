@@ -5,7 +5,7 @@
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;;         Fanael Linithien <fanael4@gmail.com>
 ;; Keywords: lisp
-;; Package-Version: 0.2
+;; Package-Version: 20161023.336
 ;; Version: 0
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
 
@@ -273,7 +273,7 @@ the form (PACKAGE-NAME PACKAGE-VERSION LINE-NO LINE-BEGINNING-OFFSET)."
       (when (version-list-< emacs-version-dep added-in-version)
         (goto-char (point-min))
         (while (re-search-forward (concat "(\\s-*?\\(" regexp "\\)\\_>") nil t)
-          (unless (let ((ppss (syntax-ppss)))
+          (unless (let ((ppss (save-match-data (syntax-ppss))))
                     (or (nth 3 ppss) (nth 4 ppss)))
             (package-lint--error
              (line-number-at-pos)
@@ -407,16 +407,16 @@ DESC is a struct as returned by `package-buffer-info'."
 
 (defun package-lint--check-defs-prefix (definitions)
   "Verify that symbol DEFINITIONS start with package prefix."
-  (let* ((prefix (package-lint--get-package-prefix))
-         (prefix-re (rx-to-string `(seq string-start ,prefix (or "-" string-end)))))
+  (let ((prefix (package-lint--get-package-prefix)))
     (when prefix
-      (pcase-dolist (`(,name . ,position) definitions)
-        (unless (string-match-p prefix-re name)
-          (let ((line-no (line-number-at-pos position)))
-            (package-lint--error
-             line-no 1 'error
-             (format "\"%s\" doesn't start with package's prefix \"%s\"."
-                     name prefix))))))))
+      (let ((prefix-re (rx-to-string `(seq string-start ,prefix (or "-" string-end)))))
+        (pcase-dolist (`(,name . ,position) definitions)
+          (unless (string-match-p prefix-re name)
+            (let ((line-no (line-number-at-pos position)))
+              (package-lint--error
+               line-no 1 'error
+               (format "\"%s\" doesn't start with package's prefix \"%s\"."
+                       name prefix)))))))))
 
 
 ;;; Helpers
@@ -474,6 +474,8 @@ For details, see `hack-local-variables-prop-line'."
   ;; is legal, if silly.
   (cdr (assq 'lexical-binding (package-lint--get-header-line-file-local-variables))))
 
+(defvar semantic-imenu-summary-function)
+
 (defun package-lint--get-defs ()
   "Return a list of all variables and functions defined in the current buffer.
 
@@ -481,27 +483,27 @@ The returned list is of the form (SYMBOL-NAME . POSITION)."
   ;; We probably could use Semantic instead, but it's a *global* minor mode and
   ;; it tends to be quite heavy, so use Imenu instead; if the user has Semantic
   ;; enabled, Imenu will use its index anyway.
-  (save-excursion
-    (let ((result '())
-          (index
-           ;; In case it's actually Semantic, tell it not to decorate symbol
-           ;; names.
+  (let ((result '())
+        (index
+         ;; In case it's actually Semantic, tell it not to decorate symbol
+         ;; names.
+         (save-excursion
            (let ((semantic-imenu-summary-function 'semantic-format-tag-name))
-             (funcall imenu-create-index-function))))
-      (dolist (entry index)
-        (pcase entry
-          ((and `(,submenu-name . ,submenu-elements)
-                (guard (consp submenu-elements)))
-           (when (member submenu-name '("Variables" "Defuns"))
-             (setq result (nconc (reverse submenu-elements) result))))
-          (_
-           (push entry result))))
-      ;; If it's Semantic, then it returns overlays, not positions. Convert
-      ;; them.
-      (dolist (entry result)
-        (when (overlayp (cdr entry))
-          (setcdr entry (overlay-start (cdr entry)))))
-      (nreverse result))))
+             (funcall imenu-create-index-function)))))
+    (dolist (entry index)
+      (pcase entry
+        ((and `(,submenu-name . ,submenu-elements)
+              (guard (consp submenu-elements)))
+         (when (member submenu-name '("Variables" "Defuns"))
+           (setq result (nconc (reverse submenu-elements) result))))
+        (_
+         (push entry result))))
+    ;; If it's Semantic, then it returns overlays, not positions. Convert
+    ;; them.
+    (dolist (entry result)
+      (when (overlayp (cdr entry))
+        (setcdr entry (overlay-start (cdr entry)))))
+    (nreverse result)))
 
 (defun package-lint--get-package-prefix ()
   "Return package prefix string (i.e. the symbol the package `provide's).
@@ -514,7 +516,7 @@ Prefix is returned without any `-mode' suffix."
 ;;; Public interface
 
 ;;;###autoload
-(defun package-lint-buffer (buffer)
+(defun package-lint-buffer (&optional buffer)
   "Get linter errors and warnings for BUFFER.
 
 Returns a list, each element of which is list of
@@ -526,6 +528,29 @@ where TYPE is either 'warning or 'error.
 Current buffer is used if none is specified."
   (with-current-buffer (or buffer (current-buffer))
     (package-lint--check-all)))
+
+(defun package-lint-batch-and-exit ()
+  "Run `package-lint-buffer' on the files remaining on the command line.
+Use this only with -batch, it won't work interactively.
+
+When done, exit Emacs with status 0 if there were no errors nor warnings or 1
+otherwise."
+  (unless noninteractive
+    (error "`package-lint-batch-and-exit' is to be used only with -batch"))
+  ;; Make sure package.el is initialized so we can query its database.
+  (package-initialize)
+  (let ((success t))
+    (dolist (file command-line-args-left)
+      (with-temp-buffer
+        (insert-file-contents file t)
+        (emacs-lisp-mode)
+        (let ((checking-result (package-lint-buffer)))
+          (when checking-result
+            (setq success nil)
+            (message "In `%s':" file)
+            (pcase-dolist (`(,line ,col ,type ,message) checking-result)
+              (message "  at %d:%d: %s: %s" line col type message))))))
+    (kill-emacs (if success 0 1))))
 
 (provide 'package-lint)
 ;;; package-lint.el ends here

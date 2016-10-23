@@ -5,7 +5,7 @@
 ;; Author: Alex Kost <alezost@gmail.com>
 ;; Created: 6 Feb 2014
 ;; Version: 0.8
-;; Package-Version: 20161022.840
+;; Package-Version: 20161023.122
 ;; URL: https://github.com/alezost/aurel
 ;; Keywords: tools
 ;; Package-Requires: ((emacs "24.3") (bui "1.0") (dash "2.11.0"))
@@ -92,6 +92,11 @@
 (defgroup aurel nil
   "Search for and download AUR (Arch User Repository) packages."
   :group 'applications)
+
+(defgroup aurel-faces nil
+  "Faces for 'aurel' buffers."
+  :group 'aurel
+  :group 'faces)
 
 (defcustom aurel-aur-user-package-info-check nil
   "If non-nil, check additional info before displaying a package info.
