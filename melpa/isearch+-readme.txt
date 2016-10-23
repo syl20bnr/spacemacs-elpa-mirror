@@ -91,8 +91,9 @@
    24.3+), `isearchp-drop-mismatch',
    `isearchp-drop-mismatch-regexp-flag',
    `isearchp-initiate-edit-commands' (Emacs 22+),
-   `isearchp-mouse-2-flag', `isearchp-on-demand-action-function'
-   (Emacs 22+), `isearchp-prompt-for-filter-name' (Emacs 24.3+),
+   `isearchp-mouse-2-flag', `isearchp-movement-unit-alist' (Emacs
+   24.3+), `isearchp-on-demand-action-function' (Emacs 22+),
+   `isearchp-prompt-for-filter-name' (Emacs 24.3+),
    `isearchp-regexp-quote-yank-flag',
    `isearchp-repeat-search-if-fail-flag' (Emacs 22+),
    `isearchp-restrict-to-region-flag' (Emacs 24.3+),
@@ -116,11 +117,12 @@
    `isearchp-filters-message' (Emacs 24.3+),
    `isearchp-highlight-lighter', `isearchp-message-prefix',
    `isearchp-message-suffix', `isearchp-near-after-predicate'
-   (Emacs 24.3+), `isearchp-near-before-predicate'
-   (Emacs 24.3+), `isearchp-near-predicate' (Emacs 24.3+),
-   `isearchp-not-pred' (Emacs 24.3+), `isearchp-read-face-names',
+   (Emacs 24.3+), `isearchp-near-before-predicate' (Emacs 24.3+),
+   `isearchp-near-predicate' (Emacs 24.3+), `isearchp-not-pred'
+   (Emacs 24.3+), `isearchp-read-face-names',
    `isearchp-read-face-names--read', `isearchp-read-filter-name'
-   (Emacs 24.3+), `isearchp-read-near-args' (Emacs 24.3+),
+   (Emacs 24.3+), `isearchp-read-measure' (Emacs 24.3+),
+   `isearchp-read-near-args' (Emacs 24.3+),
    `isearchp-read-predicate' (Emacs 24.3+),
    `isearchp-read-prompt-prefix' (Emacs 24.3+),
    `isearchp-read-sexps', `isearchp-remove-duplicates',
@@ -308,7 +310,15 @@ Overview of Features ---------------------------------------------
    - `M-? @', `M-? <', and `M-? >' (`isearchp-near',
      `isearchp-near-before', and `isearchp-near-after') constrain
      searching to be within a given distance of (near) another
-     search pattern.
+     search pattern.  For example, you can limit search hits to
+     those whose end (or beginning, if searching backward) is
+     within, say, 4 words of another search pattern.  You are
+     prompted for the search pattern for the nearby text, the
+     "near" distance, and the unit of distance measurement
+     (default: characters).  You can define the list of acceptable
+     units by customizing option `isearchp-movement-unit-alist'.
+     The default option value includes units character, word, sexp,
+     list, and sentence.
 
    When you use one of the commands that adds a filter predicate as
    advice to `isearch-filter-predicate' you can be prompted for two

@@ -4,7 +4,7 @@
 
 ;; Author: atom smith
 ;; URL: https://github.com/re5et/itail
-;; Package-Version: 20151113.835
+;; Package-Version: 20161022.1431
 ;; Created: 26 Dec 2012
 ;; Version: 0.0.5
 ;; Keywords: tail
@@ -89,6 +89,12 @@ an sh compatible shell command like 'grep ERROR'")
   :type 'boolean
   :group 'itail)
 
+(defcustom itail-open-fn
+  'pop-to-buffer
+  "Function to use when opening tail."
+  :type 'function
+  :group 'itail)
+
 (define-minor-mode itail-mode
   "Tail a local or remote (using tramp) file with
 nice bindings for interacting with a tail like
@@ -110,7 +116,7 @@ clearing and filtering
                    (match-string 2 file)
                  (expand-file-name file))))
     (make-comint buffer-name "tail" nil "-F" file)
-    (pop-to-buffer (concat "*" buffer-name "*")))
+    (funcall itail-open-fn (concat "*" buffer-name "*")))
   (ansi-color-for-comint-mode-on)
   (add-hook 'comint-preoutput-filter-functions 'itail-output-filter)
   (setq itail-file file)
