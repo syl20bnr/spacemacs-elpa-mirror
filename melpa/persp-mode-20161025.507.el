@@ -3,8 +3,8 @@
 ;; Copyright (C) 2012 Constantin Kulikov
 
 ;; Author: Constantin Kulikov (Bad_ptr) <zxnotdead@gmail.com>
-;; Version: 2.9.3
-;; Package-Version: 20161024.704
+;; Version: 2.9.4
+;; Package-Version: 20161025.507
 ;; Package-Requires: ()
 ;; Keywords: perspectives, session, workspace, persistence, windows, buffers, convenience
 ;; URL: https://github.com/Bad-ptr/persp-mode.el
@@ -1448,8 +1448,7 @@ named collections of buffers and window configurations."
           (add-hook 'kill-emacs-query-functions  #'persp-kill-emacs-query-function)
           (add-hook 'kill-emacs-hook             #'persp-kill-emacs-h)
           (add-hook 'server-switch-hook          #'persp-server-switch)
-          (when persp-add-buffer-on-after-change-major-mode
-            (add-hook 'after-change-major-mode-hook #'persp-after-change-major-mode-h))
+          (add-hook 'after-change-major-mode-hook #'persp-after-change-major-mode-h)
 
           (persp-set-ido-hooks persp-set-ido-hooks)
           (persp-set-read-buffer-function persp-set-read-buffer-function)
@@ -1610,12 +1609,14 @@ and then killed.\nWhat do you really want to do? "
 
 (defun persp-after-change-major-mode-h ()
   (let ((buf (current-buffer)))
-    (unless (persp-buffer-filtered-out-p
-             buf persp-add-buffer-on-after-change-major-mode-filter-functions)
-      (case persp-add-buffer-on-after-change-major-mode
-        ('nil nil)
-        (free (and (persp-buffer-free-p buf) (persp-add-buffer buf)))
-        (t (persp-add-buffer buf))))))
+    (persp-find-and-set-persps-for-buffer buf)
+    (when persp-add-buffer-on-after-change-major-mode
+      (unless (persp-buffer-filtered-out-p
+               buf persp-add-buffer-on-after-change-major-mode-filter-functions)
+        (case persp-add-buffer-on-after-change-major-mode
+          ('nil nil)
+          (free (and (persp-buffer-free-p buf) (persp-add-buffer buf)))
+          (t (persp-add-buffer buf)))))))
 
 (defun persp-server-switch ()
   (condition-case-unless-debug err
@@ -1903,6 +1904,19 @@ Return the created perspective."
     (message "[persp-mode] Error: Can't create a perspective with empty name.")
     nil))
 
+(defun persp-find-and-set-persps-for-buffer (&optional buffer-or-name)
+  (setq buffer-or-name (if buffer-or-name
+                           (persp-get-buffer-or-null buffer-or-name)
+                         (current-buffer)))
+  (when buffer-or-name
+    (with-current-buffer buffer-or-name
+      (unless persp-buffer-in-persps
+        (mapc #'(lambda (p)
+                  (when p
+                    (when (memq buffer-or-name (persp-buffers p))
+                      (push (persp-name p) persp-buffer-in-persps))))
+              (persp-persps))))))
+
 (defun* persp-contain-buffer-p
     (&optional (buff-or-name (current-buffer)) (persp (get-current-persp)) delweak)
   (if (and delweak (safe-persp-weak persp))
@@ -1941,10 +1955,12 @@ Return the created perspective."
   (mapc
    #'(lambda (bon)
        (let ((buffer (persp-get-buffer-or-null bon)))
-         (when (and persp buffer (null (persp-contain-buffer-p buffer persp)))
-           (push buffer (persp-buffers persp))
-           (with-current-buffer buffer
-             (push (persp-name persp) persp-buffer-in-persps)))
+         (when (and persp buffer)
+           (unless (persp-contain-buffer-p buffer persp)
+             (push buffer (persp-buffers persp)))
+           (unless (persp-contain-buffer-p* buffer persp)
+             (with-current-buffer buffer
+               (push (persp-name persp) persp-buffer-in-persps))))
          (when (and buffer switchorno (eq persp (get-current-persp)))
            (persp-switch-to-buffer buffer))
          buffer))
@@ -3152,12 +3168,21 @@ does not exists or not a directory %S." p-save-dir)
           (persp-nil-wconf persp-nil-wconf)
           (persp-nil-parameters (copy-tree persp-nil-parameters))
           (persp-nil-hidden persp-nil-hidden)
-          bufferlist-pre bufferlist-diff)
+          bufferlist-diff)
       (when (or (eq keep-others 'yes) (eq keep-others t))
-        (setq bufferlist-pre (funcall persp-buffer-list-function))
-        (persp-load-state-from-file fname temphash (cons 'not (regexp-opt names)))
-        (setq bufferlist-diff (delete-if #'(lambda (b) (memq b bufferlist-pre))
-                                         (funcall persp-buffer-list-function))))
+        (let ((bufferlist-pre
+               (mapcar #'(lambda (b)
+                           (with-current-buffer b
+                             (cons b persp-buffer-in-persps)))
+                       (funcall persp-buffer-list-function))))
+          (persp-load-state-from-file fname temphash (cons 'not (regexp-opt names)))
+          (setq bufferlist-diff (delete-if #'(lambda (b)
+                                               (destructuring-bind (buf . buf-persps) (assq b bufferlist-pre)
+                                                 (when buf
+                                                   (with-current-buffer buf
+                                                     (setq persp-buffer-in-persps buf-persps))
+                                                   t)))
+                                           (funcall persp-buffer-list-function)))))
       (mapc #'(lambda (pn)
                 (let ((p (persp-add (persp-get-by-name pn phash) temphash)))
                   (when (and p persp-auto-save-persps-to-their-file)
@@ -3391,7 +3416,8 @@ does not exists or not a directory %S." p-save-dir)
                                    (expand-file-name persp-save-dir))
                                (file-name-nondirectory fname))))
       (if (not (file-exists-p p-save-file))
-          (message "[persp-mode] Error: No such file -- %S." p-save-file)
+          (progn (message "[persp-mode] Error: No such file -- %S." p-save-file)
+                 nil)
         (let (readed-list)
           (with-current-buffer (find-file-noselect p-save-file)
             (goto-char (point-min))

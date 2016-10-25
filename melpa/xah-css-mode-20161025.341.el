@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2015 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.org/ )
-;; Version: 2.4.7
-;; Package-Version: 20161017.1807
+;; Version: 2.4.8
+;; Package-Version: 20161025.341
 ;; Created: 18 April 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: languages, convenience, css, color
@@ -890,70 +890,114 @@ emacs 25.x changed `up-list' to take up to 3 args. Before, only 1."
     (up-list arg1)))
 
 
+;; abbrev
 
 (defun xah-css-abbrev-enable-function ()
-  "Determine whether to expand abbrev.
-This is called by emacs abbrev system."
+  "Return t if not in string or comment. Else nil.
+This is for abbrev table property `:enable-function'.
+Version 2016-10-24"
   (let ((-syntax-state (syntax-ppss)))
-    (if (or (nth 3 -syntax-state) (nth 4 -syntax-state))
-        (progn nil)
-      t)))
+    (not (or (nth 3 -syntax-state) (nth 4 -syntax-state)))))
 
-(setq xah-css-mode-abbrev-table nil)
+(defun xah-css-expand-abbrev ()
+  "Expand the symbol before cursor,
+if cursor is not in string or comment.
+Returns the abbrev symbol if there's a expansion, else nil.
+Version 2016-10-24"
+  (interactive)
+  (when (xah-css-abbrev-enable-function) ; abbrev property :enable-function doesn't seem to work, so check here instead
+    (let (
+          -p1 -p2
+          -abrStr
+          -abrSymbol
+          )
+      (save-excursion
+        (forward-symbol -1)
+        (setq -p1 (point))
+        (forward-symbol 1)
+        (setq -p2 (point)))
+      (setq -abrStr (buffer-substring-no-properties -p1 -p2))
+      (setq -abrSymbol (abbrev-symbol -abrStr))
+      (if -abrSymbol
+          (progn
+            (abbrev-insert -abrSymbol -abrStr -p1 -p2 )
+            (xah-css--abbrev-position-cursor -p1)
+            -abrSymbol)
+        nil))))
+
+(defun xah-css--abbrev-position-cursor (&optional *pos)
+  "Move cursor back to ▮ if exist, else put at end.
+Return true if found, else false.
+Version 2016-10-24"
+  (interactive)
+  (message "pos is %s" *pos)
+  (let ((-found-p (search-backward "▮" (if *pos *pos (max (point-min) (- (point) 100))) t )))
+    (when -found-p (forward-char ))
+    -found-p
+    ))
+
+(defun xah-css--ahf ()
+  "Abbrev hook function, used for `define-abbrev'.
+ Our use is to prevent inserting the char that triggered expansion. Experimental.
+ the “ahf” stand for abbrev hook function.
+Version 2016-10-24"
+  t)
+
+(put 'xah-css--ahf 'no-self-insert t)
 
 (define-abbrev-table 'xah-css-mode-abbrev-table
   '(
 
-    ("bgc" "background-color" nil :system t)
-    ("rgb" "rgb(▮)" nil :system t)
-    ("rgba" "rgba(▮)" nil :system t)
-    ("rotate" "rotate(▮9deg)" nil :system t)
-    ("rotate3d" "rotate3d(▮)" nil :system t)
-    ("rotateX" "rotateX(▮)" nil :system t)
-    ("rotateY" "rotateY(▮)" nil :system t)
-    ("rotateZ" "rotateZ(▮)" nil :system t)
-    ("scale" "scale(▮)" nil :system t)
-    ("scale3d" "scale3d(▮)" nil :system t)
-    ("scaleX" "scaleX(▮)" nil :system t)
-    ("scaleY" "scaleY(▮)" nil :system t)
-    ("scaleZ" "scaleZ(▮)" nil :system t)
-    ("skew" "skew(▮9deg)" nil :system t)
-    ("skewX" "skewX(▮)" nil :system t)
-    ("skewY" "skewY(▮)" nil :system t)
-    ("steps" "steps(▮)" nil :system t)
+    ("bgc" "background-color" xah-css--ahf)
+    ("rgb" "rgb(▮)" xah-css--ahf)
+    ("rgba" "rgba(▮)" xah-css--ahf)
+    ("rotate" "rotate(▮9deg)" xah-css--ahf)
+    ("rotate3d" "rotate3d(▮)" xah-css--ahf)
+    ("rotateX" "rotateX(▮)" xah-css--ahf)
+    ("rotateY" "rotateY(▮)" xah-css--ahf)
+    ("rotateZ" "rotateZ(▮)" xah-css--ahf)
+    ("scale" "scale(▮)" xah-css--ahf)
+    ("scale3d" "scale3d(▮)" xah-css--ahf)
+    ("scaleX" "scaleX(▮)" xah-css--ahf)
+    ("scaleY" "scaleY(▮)" xah-css--ahf)
+    ("scaleZ" "scaleZ(▮)" xah-css--ahf)
+    ("skew" "skew(▮9deg)" xah-css--ahf)
+    ("skewX" "skewX(▮)" xah-css--ahf)
+    ("skewY" "skewY(▮)" xah-css--ahf)
+    ("steps" "steps(▮)" xah-css--ahf)
 
-    ("translate" "translate(▮px,▮px)" nil :system t)
-    ("translate3d" "translate3d(▮)" nil :system t)
-    ("translateX" "translateX(▮)" nil :system t)
-    ("translateY" "translateY(▮)" nil :system t)
-    ("translateZ" "translateZ(▮)" nil :system t)
+    ("translate" "translate(▮px,▮px)" xah-css--ahf)
+    ("translate3d" "translate3d(▮)" xah-css--ahf)
+    ("translateX" "translateX(▮)" xah-css--ahf)
+    ("translateY" "translateY(▮)" xah-css--ahf)
+    ("translateZ" "translateZ(▮)" xah-css--ahf)
 
-    ("zwhite" "#ffffff" nil :system t)
-    ("zsilver" "#c0c0c0" nil :system t)
-    ("zgray" "#808080" nil :system t)
-    ("zblack" "#000000" nil :system t)
-    ("zred" "#ff0000" nil :system t)
-    ("zmaroon" "#800000" nil :system t)
-    ("zyellow" "#ffff00" nil :system t)
-    ("zolive" "#808000" nil :system t)
-    ("zlime" "#00ff00" nil :system t)
-    ("zgreen" "#008000" nil :system t)
-    ("zaqua" "#00ffff" nil :system t)
-    ("zteal" "#008080" nil :system t)
-    ("zblue" "#0000ff" nil :system t)
-    ("znavy" "#000080" nil :system t)
-    ("zfuchsia" "#ff00ff" nil :system t)
-    ("zpurple" "#800080" nil :system t)
-    ("zorange" "#ffa500" nil :system t)
+    ("zwhite" "#ffffff" xah-css--ahf)
+    ("zsilver" "#c0c0c0" xah-css--ahf)
+    ("zgray" "#808080" xah-css--ahf)
+    ("zblack" "#000000" xah-css--ahf)
+    ("zred" "#ff0000" xah-css--ahf)
+    ("zmaroon" "#800000" xah-css--ahf)
+    ("zyellow" "#ffff00" xah-css--ahf)
+    ("zolive" "#808000" xah-css--ahf)
+    ("zlime" "#00ff00" xah-css--ahf)
+    ("zgreen" "#008000" xah-css--ahf)
+    ("zaqua" "#00ffff" xah-css--ahf)
+    ("zteal" "#008080" xah-css--ahf)
+    ("zblue" "#0000ff" xah-css--ahf)
+    ("znavy" "#000080" xah-css--ahf)
+    ("zfuchsia" "#ff00ff" xah-css--ahf)
+    ("zpurple" "#800080" xah-css--ahf)
+    ("zorange" "#ffa500" xah-css--ahf)
 
 )
 
   "abbrev table for `xah-css-mode'"
-  ;; :regexp "\\_<\\([_-0-9A-Za-z]+\\)"
-  :regexp "\\([_-0-9A-Za-z]+\\)"
-  :case-fixed t
-  ;; :enable-function 'xah-css-abbrev-enable-function
   )
+
+(abbrev-table-put xah-css-mode-abbrev-table :case-fixed t)
+(abbrev-table-put xah-css-mode-abbrev-table :system t)
+(abbrev-table-put xah-css-mode-abbrev-table :enable-function 'xah-css-abbrev-enable-function)
 
 
 ;; keybinding
@@ -995,6 +1039,17 @@ URL `http://ergoemacs.org/emacs/xah-css-mode.html'
   (setq-local comment-start-skip "/\\*+[ \t]*")
   (setq-local comment-end "*/")
   (setq-local comment-end-skip "[ \t]*\\*+/")
+
+  (make-local-variable 'abbrev-expand-function)
+  (if (or
+       (and (>= emacs-major-version 24)
+            (>= emacs-minor-version 4))
+       (>= emacs-major-version 25))
+      (progn
+        (setq abbrev-expand-function 'xah-css-expand-abbrev))
+    (progn (add-hook 'abbrev-expand-functions 'xah-css-expand-abbrev nil t)))
+
+  (abbrev-mode 1)
 
   :group 'xah-css-mode
   )

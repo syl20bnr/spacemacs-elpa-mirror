@@ -4,7 +4,7 @@
 
 ;; Author: Dmitry Akatov <akatovda@yandex.com>
 ;; URL: https://github.com/rails-to-cosmos/
-;; Package-Version: 20161024.227
+;; Package-Version: 20161025.213
 ;; Package-X-Original-Version: 20160311.458
 
 ;;; Commentary:
@@ -149,6 +149,11 @@
    `(jabber-roster-user-offline ((t (:foreground ,comment))))
    `(jabber-roster-user-away ((t (:foreground ,frost))))
    `(jabber-rare-time-face ((t (:foreground ,slightly-brighter-than-midnight))))
+
+   ;; SQL*Plus
+   `(sqlplus-table-head-face ((t (:foreground ,sunrise))))
+   `(sqlplus-table-even-rows-face ((t (:foreground ,fg :background ,as-dark-as-midnight))))
+   `(sqlplus-table-odd-rows-face ((t (:foreground ,fg))))
 
    ;; Rainbow-delimiters
    `(rainbow-delimiters-depth-1-face ((t (:foreground ,spring-flower))))

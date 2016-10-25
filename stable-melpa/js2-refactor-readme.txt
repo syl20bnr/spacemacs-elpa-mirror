@@ -13,7 +13,7 @@ It is also recommended to get
 [expand-region](https://github.com/magnars/expand-region.el) to more easily mark
 vars, method calls and functions for refactorings.
 
-Then add this to your emacs settings:
+Then add this to your Emacs settings:
 
     (require 'js2-refactor)
     (add-hook 'js2-mode-hook #'js2-refactor-mode)
@@ -27,16 +27,12 @@ structure - yet.
 
 All refactorings start with `C-c C-m` and then a two-letter mnemonic shortcut.
 
+ * `ee` is `expand-node-at-point`: Expand bracketed list according to node type at point (array, object, function, call args).
+ * `cc` is `contract-node-at-point`: Contract bracketed list according to node type at point (array, object, function, call args).
  * `ef` is `extract-function`: Extracts the marked expressions out into a new named function.
  * `em` is `extract-method`: Extracts the marked expressions out into a new named method in an object literal.
  * `ip` is `introduce-parameter`: Changes the marked expression to a parameter in a local function.
  * `lp` is `localize-parameter`: Changes a parameter to a local var in a local function.
- * `eo` is `expand-object`: Converts a one line object literal to multiline.
- * `co` is `contract-object`: Converts a multiline object literal to one line.
- * `eu` is `expand-function`: Converts a one line function to multiline (expecting semicolons as statement delimiters).
- * `cu` is `contract-function`: Converts a multiline function to one line (expecting semicolons as statement delimiters).
- * `ea` is `expand-array`: Converts a one line array to multiline.
- * `ca` is `contract-array`: Converts a multiline array to one line.
  * `wi` is `wrap-buffer-in-iife`: Wraps the entire buffer in an immediately invoked function expression
  * `ig` is `inject-global-in-iife`: Creates a shortcut for a marked global by injecting it in the wrapping immediately invoked function expression
  * `ag` is `add-to-globals-annotation`: Creates a `/*global */` annotation if it is missing, and adds the var at point to it.
@@ -44,7 +40,7 @@ All refactorings start with `C-c C-m` and then a two-letter mnemonic shortcut.
  * `iv` is `inline-var`: Replaces all instances of a variable with its initial value.
  * `rv` is `rename-var`: Renames the variable on point and all occurrences in its lexical scope.
  * `vt` is `var-to-this`: Changes local `var a` to be `this.a` instead.
- * `ao` is `arguments-to-object`: Replaces arguments to a function call with an object literal of named arguments. Requires yasnippets.
+ * `ao` is `arguments-to-object`: Replaces arguments to a function call with an object literal of named arguments.  Requires yasnippets.
  * `3i` is `ternary-to-if`: Converts ternary operator to if-statement.
  * `sv` is `split-var-declaration`: Splits a `var` with multiple vars declared, into several `var` statements.
  * `ss` is `split-string`: Splits a `string`.
@@ -52,7 +48,7 @@ All refactorings start with `C-c C-m` and then a two-letter mnemonic shortcut.
 
 There are also some minor conveniences bundled:
 
- * `C-S-down` and `C-S-up` moves the current line up or down. If the line is an
+ * `C-S-down` and `C-S-up` moves the current line up or down.  If the line is an
    element in an object or array literal, it makes sure that the commas are
    still correctly placed.
  * `k` `kill-line`: Like `kill-line` but respecting the AST.
@@ -76,8 +72,8 @@ Thanks!
 ## Contribute
 
 This project is still in its infancy, and everything isn't quite sorted out
-yet. If you're eager to contribute, please add an issue here on github and we
-can discuss your changes a little before diving into the elisp. :-)
+yet.  If you're eager to contribute, please add an issue here on github and we
+can discuss your changes a little before diving into the elisp :-).
 
 To fetch the test dependencies:
 

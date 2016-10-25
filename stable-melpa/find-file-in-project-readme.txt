@@ -49,25 +49,31 @@ to open correspong file.
 
 If you use evil-mode, insert below code into ~/.emacs,
   (defun ffip-diff-mode-hook-setup ()
-      (evil-local-set-key 'normal "p" 'diff-hunk-prev)
-      (evil-local-set-key 'normal "n" 'diff-hunk-next)
+      (evil-local-set-key 'normal "K" 'diff-hunk-prev)
+      (evil-local-set-key 'normal "J" 'diff-hunk-next)
       (evil-local-set-key 'normal "P" 'diff-file-prev)
       (evil-local-set-key 'normal "N" 'diff-file-next)
       (evil-local-set-key 'normal (kbd "RET") 'ffip-diff-find-file)
       (evil-local-set-key 'normal "o" 'ffip-diff-find-file))
   (add-hook 'ffip-diff-mode-hook 'ffip-diff-mode-hook-setup)
 
-ivy-mode is used for filter/search UI
-In ivy-mode, SPACE is translated to regex ".*".
+`find-relative-path' find file/directory and copy its relative path
+into `kill-ring'. You can customize `ffip-find-relative-path-callback'
+to format the relative path,
+  (setq ffip-find-relative-path-callback 'ffip-copy-reactjs-import)
+  (setq ffip-find-relative-path-callback 'ffip-copy-org-file-link)
+
+`ivy-mode' is used for filter/search UI
+In `ivy-mode', SPACE is translated to regex ".*".
 For example, the search string "dec fun pro" is transformed into
-a regex "\\(dec\\).*\\(fun\\).*\\(pro\\)"
+regular expression "\\(dec\\).*\\(fun\\).*\\(pro\\)"
 `C-h i g (ivy)' for more key-binding tips.
 
 `ffip-save-ivy-last' saves the most recent search result.
 `ffip-ivy-resume' re-use the save result. Both requires `ivy-mode'
-installed. You can use `ivy-resume' too.
+installed.
 
-You can switch to ido-mode by `(setq ffip-prefer-ido-mode t)'
+You can switch to `ido-mode' by `(setq ffip-prefer-ido-mode t)'
 
 GNU Find can be installed,
   - through `Brew' on OS X
@@ -82,6 +88,6 @@ This program works on Windows/Cygwin/Linux/Mac Emacs.
 Windows setup is as easy as installing Cygwin into default directory on
 ANY driver. That's all.
 
-See https://github.com/technomancy/find-file-in-project for advanced tips
+See https://github.com/technomancy/find-file-in-project for advanced tips.
 
 Recommended binding: (global-set-key (kbd "C-x f") 'find-file-in-project)

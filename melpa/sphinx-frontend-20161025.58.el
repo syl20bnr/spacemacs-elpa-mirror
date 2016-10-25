@@ -4,7 +4,7 @@
 
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/kostafey/sphinx-frontend
-;; Package-Version: 20160606.820
+;; Package-Version: 20161025.58
 ;; Keywords: compile, sphinx, reStructuredText
 ;; Version: 0.1
 
@@ -49,7 +49,7 @@ Returns current document's tree root directory."
   (let ((current-dir (sphinx-get-root-document-dir)))
     (concat sphinx-build-command " " output-format " "
             ;; sourcedir
-            (shell-quote-argument (file-name-as-directory current-dir)) " "
+            (shell-quote-argument (file-name-as-directory (expand-file-name current-dir))) " "
             ;; outdir
             (shell-quote-argument (file-name-as-directory
                                    (expand-file-name output-dir current-dir))))))
