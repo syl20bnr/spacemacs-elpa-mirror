@@ -1,1 +1,1 @@
-Frontend for godoctor
+Frontend for godoctor, a refactoring tool for the Go programming language

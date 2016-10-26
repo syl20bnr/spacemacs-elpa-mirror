@@ -1,9 +1,40 @@
-This theme is a port of the overtone/emacs-live theme of the same name
-(https://github.com/overtone/emacs-live). The original theme was
-designed for use with the color-theme package. This theme adopts the
-new built-in theme support deftheme. Additionally, this
-theme strives to offer as many mode-specific customizations as
-possible, with further tweaks that suit my fancy.
+;;; cyberpunk-theme.el --- Cyberpunk Color Theme
+
+;; Copyright 2012-2016, Nicholas M. Van Horn
+
+;; Author: Nicholas M. Van Horn <vanhorn.nm@gmail.com>
+;; Keywords: color theme cyberpunk
+;; Package-Version: 1.18
+;; Version: 1.18
+
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+;; Boston, MA 02111-1307, USA.
+;;
+
+;; "and he'd still see the matrix in his sleep, bright lattices of logic
+;; unfolding across that colorless void..."
+;; William Gibson, Neuromancer.
+
+;;; Commentary:
+
+;; This theme is a port of the overtone/emacs-live theme of the same name
+;; (https://github.com/overtone/emacs-live). The original theme was
+;; designed for use with the color-theme package. This theme adopts the
+;; new built-in theme support deftheme. Additionally, this
+;; theme strives to offer as many mode-specific customizations as
+;; possible, with further tweaks that suit my fancy.
 
 (deftheme cyberpunk "The Cyberpunk color theme")
 
@@ -123,7 +154,7 @@ possible, with further tweaks that suit my fancy.
    ;; faces used by isearch
    `(isearch ((,class (:foreground ,cyberpunk-black :background ,cyberpunk-pink-1))))
    `(isearch-fail ((,class (:background ,cyberpunk-red-1))))
-
+   
    `(lazy-highlight ((,class (:foreground ,cyberpunk-black :background ,cyberpunk-yellow))))
    `(query-replace ((,class (:background ,cyberpunk-gray-5))))
    `(Highline-face ((,class (:background ,cyberpunk-green-1))))
@@ -150,7 +181,7 @@ possible, with further tweaks that suit my fancy.
    ;;; font lock
    `(font-lock-builtin-face ((,class (:foreground ,cyberpunk-blue-5))))
    `(font-lock-comment-face ((,class (:foreground ,cyberpunk-gray-2 :italic t))))
-   ;; `(font-lock-comment-delimiter-face ((,class (:foreground ,cyberpunk-green))))
+   ;; `(font-lock-comment-delimiter-face ((,class (:foreground ,cyberpunk-green)))) 
    `(font-lock-constant-face ((,class (:foreground ,cyberpunk-blue-6))))
    ;; `(font-lock-doc-face ((,class (:foreground ,cyberpunk-green+1))))
    `(font-lock-doc-face ((,class (:foreground ,cyberpunk-yellow-1))))
@@ -229,7 +260,7 @@ possible, with further tweaks that suit my fancy.
    `(company-scrollbar-bg ((,class (:background ,cyberpunk-gray-5))))
    `(company-preview ((,class (:foreground ,cyberpunk-gray :background ,cyberpunk-pink-1))))
    `(company-preview-common ((,class (:foreground ,cyberpunk-gray :background ,cyberpunk-pink-1))))
-
+   
    ;; diff
    `(diff-added ((,class (:foreground ,cyberpunk-green))))
    `(diff-changed ((,class (:foreground ,cyberpunk-yellow))))
@@ -498,7 +529,7 @@ possible, with further tweaks that suit my fancy.
    `(magit-reflog-cherry-pick  ((t (:foreground ,cyberpunk-green))))
    `(magit-reflog-remote       ((t (:foreground ,cyberpunk-cyan))))
    `(magit-reflog-other        ((t (:foreground ,cyberpunk-cyan))))
-
+   
    `(eval-sexp-fu-flash ((,class (:background ,cyberpunk-gray-8 :foreground ,cyberpunk-pink-2))))
 
    ;; message-mode
@@ -591,10 +622,10 @@ possible, with further tweaks that suit my fancy.
    `(org-column ((,class (:background ,cyberpunk-yellow-3 :foreground ,cyberpunk-black))))
    `(org-column-title ((,class (:background ,cyberpunk-bg-1 :underline t :weight bold))))
    `(org-block ((,class (:foreground ,cyberpunk-fg :background ,cyberpunk-bg-05))))
-   `(org-block-begin-line
+   `(org-block-begin-line 
      ((,class (:foreground "#008ED1" :background ,cyberpunk-bg-1))))
    `(org-block-background ((,class (:background ,cyberpunk-bg-05))))
-   `(org-block-end-line
+   `(org-block-end-line 
      ((,class (:foreground "#008ED1" :background ,cyberpunk-bg-1))))
 
    ;; `(org-deadline-announce ((,class (:foreground ,cyberpunk-red-1))))
@@ -762,17 +793,17 @@ possible, with further tweaks that suit my fancy.
    ;; fill-column-indicator
    `(fci-rule-color ,cyberpunk-bg-05)))
 
-###autoload
+;;;###autoload
 (when load-file-name
   (add-to-list 'custom-theme-load-path
                (file-name-as-directory (file-name-directory load-file-name))))
 
 (provide-theme 'cyberpunk)
 
-Local Variables:
-no-byte-compile: t
-indent-tabs-mode: nil
-eval: (when (fboundp 'rainbow-mode) (rainbow-mode +1))
-End:
+;; Local Variables:
+;; no-byte-compile: t
+;; indent-tabs-mode: nil
+;; eval: (when (fboundp 'rainbow-mode) (rainbow-mode +1))
+;; End:
 
-cyberpunk-theme.el ends here.
+;;; cyberpunk-theme.el ends here.
