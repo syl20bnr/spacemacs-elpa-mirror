@@ -17,7 +17,7 @@
 
 ;; Author: Jimmy Yuen Ho Wong <wyuenho@gmail.com>
 ;; Version: 0.2.1
-;; Package-Version: 20140925.808
+;; Package-Version: 20161026.742
 ;; Created: 11 June 2014
 ;; Keywords: convenience wp
 
@@ -103,7 +103,7 @@ If the prefix N is positive, this function moves the current line
 forward N lines; otherwise backward."
   (interactive "*p")
   (let ((col (current-column)))
-    (goto-char (save-excursion
+    (goto-char (save-mark-and-excursion
                  (push-mark)
                  (end-of-line)
                  (md/move-region n)

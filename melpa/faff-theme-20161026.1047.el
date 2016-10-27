@@ -4,8 +4,8 @@
 
 ;; Author: James Ferguson <(concat "wjcferguson" at-sign "gmail.com")>
 ;; URL: https://github.com/WJCFerguson/emacs-faff-theme
-;; Package-Version: 20160928.741
-;; Version: 20160928.10:40
+;; Package-Version: 20161026.1047
+;; Version: 20161026.13:47
 ;; Keywords: color theme
 
 ;; This file is not part of GNU Emacs.
@@ -108,6 +108,12 @@
  '(dired-filetype-source ((t (:foreground "red4" :weight bold))))
  '(dired-filetype-video ((t (:foreground "brown"))))
  '(flymake-warnline ((t (:background "LightBlue3"))))
+ '(dired-subtree-depth-1-face ((t (:background "ivory2"))))
+ '(dired-subtree-depth-2-face ((t (:background "ivory1"))))
+ '(dired-subtree-depth-3-face ((t (:background "white"))))
+ '(dired-subtree-depth-4-face ((t (:background "ivory2"))))
+ '(dired-subtree-depth-5-face ((t (:background "ivory1"))))
+ '(dired-subtree-depth-6-face ((t (:background "white")))) '(flymake-warnline ((t (:background "LightBlue3"))))
  '(highlight-indentation-face ((t (:inherit fringe :background "ivory3"))))
  '(hl-line ((t (:background "ivory2"))))
  '(jabber-activity-face ((t (:background "green1"))))

@@ -4,7 +4,7 @@
 
 ;; Author: alpha22jp <alpha22jp@gmail.com>
 ;; Package-Requires: ((emacs "24.3") (let-alist "1.0.4") (websocket "1.4"))
-;; Package-Version: 20161025.1544
+;; Package-Version: 20161026.551
 ;; Keywords: chrome edit textarea
 ;; URL: https://github.com/alpha22jp/atomic-chrome
 ;; Version: 0.1.0
@@ -55,6 +55,12 @@ otherwise edit on Chrome is ignored while editing on Emacs."
   :type 'boolean
   :group 'atomic-chrome)
 
+(defcustom atomic-chrome-default-major-mode
+  'text-mode
+  "Default major mode for editing buffer."
+  :type 'function
+  :group 'atomic-chrome)
+
 (defcustom atomic-chrome-edit-mode-hook nil
   "Customizable hook which run when the editing buffer is created."
   :type 'hook
@@ -87,6 +93,7 @@ otherwise edit on Chrome is ignored while editing on Emacs."
   "Create buffer associated with WS named TITLE, and insert TEXT to the buffer."
   (let ((buffer (generate-new-buffer title)))
     (with-current-buffer buffer
+      (funcall atomic-chrome-default-major-mode)
       (setq atomic-chrome-buffer-ws ws)
       (puthash (websocket-conn ws) (buffer-name) atomic-chrome-ws-conn-list)
       (atomic-chrome-edit-mode)

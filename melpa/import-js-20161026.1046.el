@@ -3,7 +3,7 @@
 ;;
 ;; Author: Kevin Kehl <kevin.kehl@gmail.com>
 ;; URL: http://github.com/trotzig/import-js/
-;; Package-Version: 20160504.2210
+;; Package-Version: 20161026.1046
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 0.1
 ;; Keywords: javascript
@@ -46,8 +46,9 @@
                            ,@opts
                            ,path))
     (revert-buffer t t t)
-      (with-current-buffer temp-buffer
-        (buffer-string))))
+    (let ((out (with-current-buffer temp-buffer (buffer-string))))
+      (kill-buffer temp-buffer)
+      out)))
 
 (defun import-js-word-at-point ()
   (save-excursion
