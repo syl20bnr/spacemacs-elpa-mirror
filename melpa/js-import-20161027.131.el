@@ -4,7 +4,7 @@
 
 ;; Author: Jakob Lind <karl.jakob.lind@gmail.com>
 ;; URL: https://github.com/jakoblind/js-import
-;; Package-Version: 20161022.620
+;; Package-Version: 20161027.131
 ;; Package-Requires: ((emacs "24.4") (f "0.19.0") (projectile "0.14.0") (dash "2.13.0"))
 ;; Version: 1.0
 ;; Keywords: tools
@@ -33,12 +33,19 @@
 (require 'subr-x)
 (require 'projectile)
 
-(defun js-import-get-project-dependencies ()
-  "Get dependencies section in package.json for the current Projectile project."
+(defun js-import-get-package-json ()
+  "Return the path to package.json from projectile-project-root"
+  (concat (projectile-project-root) "package.json"))
+
+(defun js-import-get-project-dependencies (package-json-path)
+  "Return a list of strings with dependencies fetched from package.json in PACKAGE-JSON-PATH. If file not found, return nil"
   (let ((json-object-type 'hash-table))
-    (hash-table-keys
-     (gethash "dependencies"
-              (json-read-from-string (f-read-text (concat (projectile-project-root) "package.json") 'utf-8))))))
+    (when-let ((package-json-content (condition-case nil (f-read-text package-json-path 'utf-8) (error nil)))
+               (dependencies-hash (condition-case nil (gethash "dependencies" (json-read-from-string package-json-content)) (error nil))))
+      (when dependencies-hash
+        (hash-table-keys dependencies-hash)))))
+
+(js-import-get-project-dependencies)
 
 (defun js-import-string-ends-with-p (string suffix)
   "Return t if STRING ends with SUFFIX."
@@ -56,7 +63,7 @@
   (interactive)
   (let* ((filtered-project-files
           (-filter 'js-import-is-js-file (projectile-current-project-files)))
-         (all (append (js-import-get-project-dependencies) filtered-project-files))
+         (all (append (js-import-get-project-dependencies (js-import-get-package-json)) filtered-project-files))
          (selected-file (ido-completing-read "Select a file to import: " all))
          (selected-file-name (f-filename (f-no-ext selected-file)))
          (selected-file-relative-path

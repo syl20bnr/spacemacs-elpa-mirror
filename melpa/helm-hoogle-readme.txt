@@ -42,7 +42,7 @@ cabal install hoogle, then run M-x helm-hoogle
   (helm :sources
         (helm-build-sync-source "Hoogle"
           :candidates #'helm-c-hoogle-set-candidates
-          :action '(("Lookup Entry" browse-url))
+          :action '(("Lookup Entry" . browse-url))
           :filtered-candidate-transformer (lambda (candidates source) candidates)
           :volatile t)
         :prompt "Hoogle: "

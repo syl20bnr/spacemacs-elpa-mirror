@@ -8,7 +8,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20161020.340
+;; Package-Version: 0.1.19
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -287,7 +287,8 @@ line as a type signature."
             (goto-char (point-min))))))))
 
 (defun intero-goto-definition ()
-  "Jump to the definition of the thing at point."
+  "Jump to the definition of the thing at point.
+Returns nil when unable to find definition."
   (interactive)
   (let ((result (apply #'intero-get-loc-at (intero-thing-at-point))))
     (when (string-match "\\(.*?\\):(\\([0-9]+\\),\\([0-9]+\\))-(\\([0-9]+\\),\\([0-9]+\\))$"
@@ -304,7 +305,8 @@ line as a type signature."
         (pop-mark)
         (goto-char (point-min))
         (forward-line (1- line))
-        (forward-char (1- col))))))
+        (forward-char (1- col))
+        t))))
 
 (defun intero-restart ()
   "Simply restart the process with the same configuration as before."
@@ -934,7 +936,7 @@ If PROMPT-OPTIONS is non-nil, prompt with an options list."
     (insert (propertize
              (format "Starting:\n  stack ghci %s\n" (combine-and-quote-strings arguments))
              'face 'font-lock-comment-face))
-    (let ((script (with-current-buffer (find-file-noselect (make-temp-file "intero-script"))
+    (let ((script (with-current-buffer (find-file-noselect (intero-make-temp-file "intero-script"))
                     (insert ":set prompt \"\"
 :set -fobject-code
 :set prompt \"\\4 \"
@@ -1070,6 +1072,19 @@ The path returned is canonicalized and stripped of any text properties."
 (defvar-local intero-temp-file-name nil
   "The name of a temporary file to which the current buffer's content is copied.")
 
+(defun intero-make-temp-file (prefix &optional dir-flag suffix)
+  "Like `make-temp-file', but using a different temp directory.
+PREFIX, DIR-FLAG and SUFFIX are all passed to `make-temp-file'
+unmodified.  A different directory is applied so that if docker
+is used with stack, the commands run inside docker can find the
+path."
+  (let ((temporary-file-directory
+         (expand-file-name ".stack-work/intero/"
+                           (intero-project-root))))
+    (make-directory temporary-file-directory t)
+    (make-temp-file prefix dir-flag suffix)))
+
+
 (defun intero-temp-file-name (&optional buffer)
   "Return the name of a temp file containing an up-to-date copy of BUFFER's contents."
   (with-current-buffer (or buffer (current-buffer))
@@ -1077,11 +1092,7 @@ The path returned is canonicalized and stripped of any text properties."
         (or intero-temp-file-name
             (setq intero-temp-file-name
                   (intero-canonicalize-path
-                   (let ((temporary-file-directory
-                          (expand-file-name ".stack-work/intero/"
-                                            (intero-project-root))))
-                     (make-directory temporary-file-directory t)
-                     (make-temp-file "intero" nil ".hs")))))
+                   (intero-make-temp-file "intero" nil ".hs"))))
       (let ((contents (buffer-string)))
         (with-temp-file intero-temp-file-name
           (insert contents))))))
@@ -1472,7 +1483,7 @@ NO-LOAD enable the correspondingly-named stack options."
             (list "--no-build"))
           (when no-load
             (list "--no-load"))
-          (let ((dir (make-temp-file "intero" t)))
+          (let ((dir (intero-make-temp-file "intero" t)))
             (list "--ghci-options"
                   (concat "-odir=" dir)
                   "--ghci-options"

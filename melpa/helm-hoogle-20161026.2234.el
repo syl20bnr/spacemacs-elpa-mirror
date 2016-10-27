@@ -5,7 +5,7 @@
 ;; Author: John Wiegley <jwiegley@gmail.com>
 ;; Created: 13 Jan 2013
 ;; Version: 1.0
-;; Package-Version: 20160913.1022
+;; Package-Version: 20161026.2234
 ;; Keywords: haskell programming hoogle
 ;; X-URL: https://github.com/jwiegley/haskell-config
 ;; Package-Requires: ((helm "1.6.2") (emacs "24.4"))
@@ -71,7 +71,7 @@
   (helm :sources
         (helm-build-sync-source "Hoogle"
           :candidates #'helm-c-hoogle-set-candidates
-          :action '(("Lookup Entry" browse-url))
+          :action '(("Lookup Entry" . browse-url))
           :filtered-candidate-transformer (lambda (candidates source) candidates)
           :volatile t)
         :prompt "Hoogle: "

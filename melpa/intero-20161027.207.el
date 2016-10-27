@@ -8,7 +8,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 0.1.18
+;; Package-Version: 20161027.207
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -55,6 +55,7 @@
 (require 'company)
 (require 'comint)
 (require 'widget)
+(require 'eldoc)
 (eval-when-compile
   (require 'wid-edit))
 
@@ -66,12 +67,12 @@
   :group 'haskell)
 
 (defcustom intero-package-version
-  "0.1.15"
+  "0.1.18"
   "Package version to auto-install.
 
 This version does not necessarily have to be the latest version
-of intero published on Hackage. Sometimes there are changes to
-Intero which have no use for the Emacs mode. It is only bumped
+of intero published on Hackage.  Sometimes there are changes to
+Intero which have no use for the Emacs mode.  It is only bumped
 when the Emacs mode actually requires newer features from the
 intero executable, otherwise we force our users to upgrade
 pointlessly."
@@ -119,14 +120,13 @@ This causes it to skip building the target."
     (when (fboundp 'interactive-haskell-mode)
       (message "Disabling interactive-haskell-mode ...")
       (interactive-haskell-mode -1)))
-  (when (intero-buffer-file-name)
-    (if intero-mode
-        (progn (flycheck-select-checker 'intero)
-               (flycheck-mode)
-               (add-to-list (make-local-variable 'company-backends) 'company-intero)
-               (company-mode)
-               (setq-local eldoc-documentation-function 'eldoc-intero))
-      (message "Intero mode disabled."))))
+  (if intero-mode
+      (progn (flycheck-select-checker 'intero)
+             (flycheck-mode)
+             (add-to-list (make-local-variable 'company-backends) 'company-intero)
+             (company-mode)
+             (setq-local eldoc-documentation-function 'eldoc-intero))
+    (message "Intero mode disabled.")))
 
 (define-key intero-mode-map (kbd "C-c C-t") 'intero-type-at)
 (define-key intero-mode-map (kbd "C-c C-i") 'intero-info)
@@ -287,7 +287,8 @@ line as a type signature."
             (goto-char (point-min))))))))
 
 (defun intero-goto-definition ()
-  "Jump to the definition of the thing at point."
+  "Jump to the definition of the thing at point.
+Returns nil when unable to find definition."
   (interactive)
   (let ((result (apply #'intero-get-loc-at (intero-thing-at-point))))
     (when (string-match "\\(.*?\\):(\\([0-9]+\\),\\([0-9]+\\))-(\\([0-9]+\\),\\([0-9]+\\))$"
@@ -299,11 +300,13 @@ line as a type signature."
       (let ((file (match-string 1 result))
             (line (string-to-number (match-string 2 result)))
             (col (string-to-number (match-string 3 result))))
-        (find-file file)
+        (unless (string= file (intero-temp-file-name))
+          (find-file file))
         (pop-mark)
         (goto-char (point-min))
         (forward-line (1- line))
-        (forward-char (1- col))))))
+        (forward-char (1- col))
+        t))))
 
 (defun intero-restart ()
   "Simply restart the process with the same configuration as before."
@@ -393,10 +396,9 @@ running context across :load/:reloads in Intero."
                       cont
                       'interrupted)
     (let ((file-buffer (current-buffer)))
-      (intero-save-silently)
       (intero-async-call
        'backend
-       (concat ":l " (intero-buffer-file-name))
+       (concat ":l " (intero-temp-file-name))
        (list :cont cont
              :file-buffer file-buffer
              :checker checker)
@@ -421,37 +423,6 @@ running context across :load/:reloads in Intero."
                                     nil
                                     (lambda (_st _))))))))))))
 
-(defun intero-original-write-region (&rest _)
-  "Place to store the original write-region function, to use later.")
-(fset 'intero-original-write-region (symbol-function 'write-region))
-
-(defun intero-silent-write-region (start end filename &optional append visit lockname mustbenew)
-  "Same as `write-region', but with messages supressed."
-  (let ((result (intero-original-write-region start end filename append 'no-message lockname mustbenew)))
-    ;; This is what visit normally does:
-    (when visit
-      (set-visited-file-modtime)
-      (set-buffer-modified-p nil))
-    result))
-
-(defun intero-save-silently ()
-  "Silently save the current buffer, if it is modified:
-
-* Does not print messages.
-* Does not trigger any hooks."
-  (interactive)
-  (let (;; Canonical list of hooks taken from:
-        ;; https://www.gnu.org/software/emacs/manual/html_node/elisp/Saving-Buffers.html
-        auto-save-hook
-        require-final-newline
-        before-save-hook
-        after-save-hook
-        write-contents-functions
-        write-file-functions)
-    (when (buffer-modified-p)
-      ;; Supress message output.
-      (cl-letf (((symbol-function 'write-region) #'intero-silent-write-region))
-        (basic-save-buffer)))))
 
 (flycheck-define-generic-checker 'intero
   "A syntax and type checker for Haskell using an Intero worker
@@ -467,7 +438,8 @@ CHECKER and BUFFER are added to each item parsed from STRING."
   (with-temp-buffer
     (insert string)
     (goto-char (point-min))
-    (let ((messages (list)))
+    (let ((messages (list))
+          (temp-file (intero-temp-file-name buffer)))
       (while (search-forward-regexp
               (concat "[\r\n]\\([A-Z]?:?[^ \r\n:][^:\n\r]+\\):\\([0-9()-:]+\\):"
                       "[ \n\r]+\\([[:unibyte:][:nonascii:]]+?\\)\n[^ ]")
@@ -491,10 +463,9 @@ CHECKER and BUFFER are added to each item parsed from STRING."
                        line column type
                        msg
                        :checker checker
-                       :buffer (when (string= (intero-buffer-file-name buffer)
-                                              file)
+                       :buffer (when (string= temp-file file)
                                  buffer)
-                       :filename file)
+                       :filename (intero-buffer-file-name buffer))
                       messages)))
         (forward-line -1))
       (delete-dups messages))))
@@ -579,9 +550,11 @@ Other arguments are IGNORED."
     (or (and (bound-and-true-p intero-mode)
              (cl-case type
                (haskell-completions-module-name-prefix
-                (intero-get-repl-completions source-buffer (concat "import " prefix) cont))
+                (intero-get-repl-completions source-buffer (concat "import " prefix) cont)
+                t)
                (haskell-completions-identifier-prefix
-                (intero-get-completions source-buffer beg end cont))
+                (intero-get-completions source-buffer beg end cont)
+                t)
                (haskell-completions-language-extension-prefix
                 (intero-get-repl-completions
                  source-buffer
@@ -591,13 +564,15 @@ Other arguments are IGNORED."
                                       (mapcar (lambda (x)
                                                 (replace-regexp-in-string "^-X" "" x))
                                               results)))
-                           cont)))
+                           cont))
+                t)
                (haskell-completions-pragma-name-prefix
                 (funcall cont
                          (cl-remove-if-not
                           (lambda (candidate)
                             (string-match (concat "^" prefix) candidate))
-                          intero-pragmas)))))
+                          intero-pragmas))
+                t)))
         (intero-get-repl-completions source-buffer prefix cont))))
 
 (defun intero-completions-grab-prefix (&optional minlen)
@@ -730,12 +705,74 @@ pragma is supported also."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ELDoc integration
 
+(defvar-local eldoc-intero-cache (make-hash-table :test 'equal)
+  "Cache for types of regions, used by `eldoc-intero'.
+This is not for saving on requests (we make a request even if
+something is in cache, overwriting the old entry), but rather for
+making types show immediately when we do have them cached.")
+
+(defun eldoc-intero-maybe-print (msg)
+  "Print MSG with eldoc if eldoc would display a message now.
+Like `eldoc-print-current-symbol-info', but just printing MSG
+instead of using `eldoc-documentation-function'."
+  (with-demoted-errors "eldoc error: %s"
+    (and (or (eldoc-display-message-p)
+             ;; Erase the last message if we won't display a new one.
+             (when eldoc-last-message
+               (eldoc-message nil)
+               nil))
+         (eldoc-message msg))))
+
 (defun eldoc-intero ()
   "ELDoc backend for intero."
-  (let* ((ty (apply #'intero-get-type-at (intero-thing-at-point)))
-         (is-error (string-match "^<.+>:.+:" ty)))
-    (unless is-error
-      (intero-fontify-expression (replace-regexp-in-string "[ \n]+" " " ty)))))
+  (apply #'intero-get-type-at-async
+         (lambda (beg end ty)
+           (let ((response-status (intero-haskell-utils-repl-response-error-status ty)))
+             (if (eq 'no-error response-status)
+               (let ((msg (intero-fontify-expression
+                           (replace-regexp-in-string "[ \n]+" " " ty))))
+                 ;; Got an updated type-at-point, cache and print now:
+                 (puthash (list beg end)
+                          msg
+                          eldoc-intero-cache)
+                 (eldoc-intero-maybe-print msg))
+               ;; But if we're seeing errors, invalidate cache-at-point:
+               (remhash (list beg end) eldoc-intero-cache))))
+         (intero-thing-at-point))
+  ;; If we have something cached at point, print that first:
+  (gethash (intero-thing-at-point) eldoc-intero-cache))
+
+(defun intero-haskell-utils-repl-response-error-status (response)
+  "Parse response REPL's RESPONSE for errors.
+Returns one of the following symbols:
+
++ unknown-command
++ option-missing
++ interactive-error
++ no-error
+
+*Warning*: this funciton covers only three kind of responses:
+
+* \"unknown command …\"
+  REPL missing requested command
+* \"<interactive>:3:5: …\"
+  interactive REPL error
+* \"Couldn't guess that module name. Does it exist?\"
+  (:type-at and maybe some other commands error)
+* *all other reposnses* are treated as success reposneses and
+  'no-error is returned."
+  (let ((first-line (car (split-string response "\n" t))))
+    (cond
+     ((null first-line) 'no-error)
+     ((string-match-p "^unknown command" first-line)
+      'unknown-command)
+     ((string-match-p
+       "^Couldn't guess that module name. Does it exist?"
+       first-line)
+      'option-missing)
+     ((string-match-p "^<interactive>:" first-line)
+      'interactive-error)
+     (t 'no-error))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; REPL
@@ -746,7 +783,8 @@ pragma is supported also."
   "Records the buffer to which `intero-repl-switch-back' should jump.
 This is set by `intero-repl-buffer', and should otherwise be nil.")
 
-(defun intero-clear-buffer ()
+(defun intero-repl-clear-buffer ()
+  "Clear the current REPL buffer."
   (interactive)
   (let ((comint-buffer-maximum-size 0))
     (comint-truncate-buffer)))
@@ -756,7 +794,7 @@ This is set by `intero-repl-buffer', and should otherwise be nil.")
 If PROMPT-OPTIONS is non-nil, prompt with an options list."
   (interactive "P")
   (save-buffer)
-  (let ((file (intero-buffer-file-name))
+  (let ((file (intero-temp-file-name))
         (repl-buffer (intero-repl-buffer prompt-options t)))
     (with-current-buffer repl-buffer
       (comint-simple-send
@@ -806,8 +844,7 @@ STORE-PREVIOUS is non-nil, note the caller's buffer in
   "Keymap for clicking on links in REPL.")
 
 (defun intero-find-file-with-line:char ()
-  "Opens the file from 'file text property and moves to line:char
-from 'line text property."
+  "Jump to the file and location indicated by text properties at point."
   (interactive)
   (let ((file (get-text-property (point) 'file))
         (line (get-text-property (point) 'line))
@@ -818,7 +855,7 @@ from 'line text property."
     (forward-char (1- char))))
 
 (defun intero-linkify-file-line-char (begin end)
-  "Linkify all occurances of <file>:<line>:<char>: betwen begin and end"
+  "Linkify all occurences of <file>:<line>:<char>: betwen BEGIN and END."
   (when (> end begin)
     (let ((end-marker (copy-marker end))
           ;; match - /path/to/file.ext:<line>:<char>:
@@ -844,12 +881,11 @@ from 'line text property."
 
 (defvar intero-last-output-newline-marker nil)
 
-(defun intero-linkify-process-output (ignored)
-  "comint-output-filter-function to turn <file>:<line>:<char>: into
-links that can be clicked on.
+(defun intero-linkify-process-output (_)
+  "Comint filter function to make <file>:<line>:<char>: into clickable links.
 
 Note that this function uses the `intero-last-output-newline-marker',
-to keep track of line breaks. The `intero-linkify-file-line-char'
+to keep track of line breaks.  The `intero-linkify-file-line-char'
 function is subsequently applied to each line, once."
   (unless intero-last-output-newline-marker
     (setq-local intero-last-output-newline-marker (make-marker))
@@ -900,7 +936,7 @@ If PROMPT-OPTIONS is non-nil, prompt with an options list."
     (insert (propertize
              (format "Starting:\n  stack ghci %s\n" (combine-and-quote-strings arguments))
              'face 'font-lock-comment-face))
-    (let ((script (with-current-buffer (find-file-noselect (make-temp-file "intero-script"))
+    (let ((script (with-current-buffer (find-file-noselect (intero-make-temp-file "intero-script"))
                     (insert ":set prompt \"\"
 :set -fobject-code
 :set prompt \"\\4 \"
@@ -934,8 +970,7 @@ changes in the BACKEND-BUFFER."
       (setq intero-repl-no-load (not (member "load-all" new-options)))
       (setq intero-repl-no-build (not (member "build-first" new-options))))))
 
-;; For live migration, remove later
-(font-lock-remove-keywords
+(font-lock-add-keywords
  'intero-repl-mode
  '(("\\(\4\\)"
     (0 (prog1 ()
@@ -943,17 +978,9 @@ changes in the BACKEND-BUFFER."
                          (match-end 1)
                          ?λ))))))
 
-(font-lock-add-keywords
- 'intero-repl-mode
- '(("\\(\4\\)"
-    (0 (prog1 ()
-         (compose-region (match-beginning 1)
-                         (match-end 1)
-                         ?‽))))))
-
 (define-key intero-repl-mode-map [remap move-beginning-of-line] 'intero-repl-beginning-of-line)
 (define-key intero-repl-mode-map [remap delete-backward-char] 'intero-repl-delete-backward-char)
-(define-key intero-repl-mode-map (kbd "C-c C-k") 'intero-clear-buffer)
+(define-key intero-repl-mode-map (kbd "C-c C-k") 'intero-repl-clear-buffer)
 (define-key intero-repl-mode-map (kbd "C-c C-z") 'intero-repl-switch-back)
 
 (defun intero-repl-delete-backward-char ()
@@ -1042,6 +1069,34 @@ The path returned is canonicalized and stripped of any text properties."
     (when name
       (intero-canonicalize-path (substring-no-properties name)))))
 
+(defvar-local intero-temp-file-name nil
+  "The name of a temporary file to which the current buffer's content is copied.")
+
+(defun intero-make-temp-file (prefix &optional dir-flag suffix)
+  "Like `make-temp-file', but using a different temp directory.
+PREFIX, DIR-FLAG and SUFFIX are all passed to `make-temp-file'
+unmodified.  A different directory is applied so that if docker
+is used with stack, the commands run inside docker can find the
+path."
+  (let ((temporary-file-directory
+         (expand-file-name ".stack-work/intero/"
+                           (intero-project-root))))
+    (make-directory temporary-file-directory t)
+    (make-temp-file prefix dir-flag suffix)))
+
+
+(defun intero-temp-file-name (&optional buffer)
+  "Return the name of a temp file containing an up-to-date copy of BUFFER's contents."
+  (with-current-buffer (or buffer (current-buffer))
+    (prog1
+        (or intero-temp-file-name
+            (setq intero-temp-file-name
+                  (intero-canonicalize-path
+                   (intero-make-temp-file "intero" nil ".hs"))))
+      (let ((contents (buffer-string)))
+        (with-temp-file intero-temp-file-name
+          (insert contents))))))
+
 (defun intero-canonicalize-path (path)
   "Return a standardized version of PATH.
 Path names are standardised and drive names are
@@ -1071,17 +1126,39 @@ x:\\foo\\bar (i.e., Windows)."
    "\n$" ""
    (intero-blocking-call
     'backend
-    (format ":type-at %S %d %d %d %d %S"
-            (intero-buffer-file-name)
-            (save-excursion (goto-char beg)
-                            (line-number-at-pos))
-            (save-excursion (goto-char beg)
-                            (1+ (current-column)))
-            (save-excursion (goto-char end)
-                            (line-number-at-pos))
-            (save-excursion (goto-char end)
-                            (1+ (current-column)))
-            (buffer-substring-no-properties beg end)))))
+    (intero-format-get-type-at beg end))))
+
+(defun intero-get-type-at-async (cont beg end)
+  "Call CONT with type of the region denoted by BEG and END.
+CONT is called within the current buffer, with BEG, END and the
+type as arguments."
+  (intero-async-call
+   'backend
+   (intero-format-get-type-at beg end)
+   (list :cont cont
+         :source-buffer (current-buffer)
+         :beg beg
+         :end end)
+   (lambda (state reply)
+     (with-current-buffer (plist-get state :source-buffer)
+       (funcall (plist-get state :cont)
+                (plist-get state :beg)
+                (plist-get state :end)
+                (replace-regexp-in-string "\n$" "" reply))))))
+
+(defun intero-format-get-type-at (beg end)
+  "Compose a request for getting types in region from BEG to END."
+  (format ":type-at %S %d %d %d %d %S"
+          (intero-temp-file-name)
+          (save-excursion (goto-char beg)
+                          (line-number-at-pos))
+          (save-excursion (goto-char beg)
+                          (1+ (current-column)))
+          (save-excursion (goto-char end)
+                          (line-number-at-pos))
+          (save-excursion (goto-char end)
+                          (1+ (current-column)))
+          (buffer-substring-no-properties beg end)))
 
 (defun intero-get-info-of (thing)
   "Get info for THING."
@@ -1102,7 +1179,7 @@ x:\\foo\\bar (i.e., Windows)."
                (unless (member 'save flycheck-check-syntax-automatically)
                  (intero-async-call
                   'backend
-                  (concat ":l " (intero-buffer-file-name))))
+                  (concat ":l " (intero-temp-file-name))))
                (intero-async-call
                 'backend
                 ":set -fobject-code")
@@ -1120,7 +1197,7 @@ x:\\foo\\bar (i.e., Windows)."
    (intero-blocking-call
     'backend
     (format ":loc-at %S %d %d %d %d %S"
-            (intero-buffer-file-name)
+            (intero-temp-file-name)
             (save-excursion (goto-char beg)
                             (line-number-at-pos))
             (save-excursion (goto-char beg)
@@ -1138,7 +1215,7 @@ x:\\foo\\bar (i.e., Windows)."
    (intero-blocking-call
     'backend
     (format ":uses %S %d %d %d %d %S"
-            (intero-buffer-file-name)
+            (intero-temp-file-name)
             (save-excursion (goto-char beg)
                             (line-number-at-pos))
             (save-excursion (goto-char beg)
@@ -1156,7 +1233,7 @@ passed to CONT in SOURCE-BUFFER."
   (intero-async-call
    'backend
    (format ":complete-at %S %d %d %d %d %S"
-           (intero-buffer-file-name)
+           (intero-temp-file-name)
            (save-excursion (goto-char beg)
                            (line-number-at-pos))
            (save-excursion (goto-char beg)
@@ -1172,10 +1249,12 @@ passed to CONT in SOURCE-BUFFER."
          (plist-get state :source-buffer)
        (funcall
         (plist-get state :cont)
-        (mapcar
-         (lambda (x)
-           (replace-regexp-in-string "\\\"" "" x))
-         (split-string reply "\n" t)))))))
+        (if (string-match "^*** Exception" reply)
+            (list)
+          (mapcar
+           (lambda (x)
+             (replace-regexp-in-string "\\\"" "" x))
+           (split-string reply "\n" t))))))))
 
 (defun intero-get-repl-completions (source-buffer prefix cont)
   "Get REPL completions and send to SOURCE-BUFFER.
@@ -1404,7 +1483,7 @@ NO-LOAD enable the correspondingly-named stack options."
             (list "--no-build"))
           (when no-load
             (list "--no-load"))
-          (let ((dir (make-temp-file "intero" t)))
+          (let ((dir (intero-make-temp-file "intero" t)))
             (list "--ghci-options"
                   (concat "-odir=" dir)
                   "--ghci-options"
@@ -1515,7 +1594,7 @@ You can always run M-x intero-restart to make it try again.
                          (funcall func state string))
                        (setq repeat t))
               (when intero-debug
-                (warn "Received output but no callback in `intero-callbacks': %S"
+                (intero--warn "Received output but no callback in `intero-callbacks': %S"
                       string)))))
         (delete-region (point-min) (point))))))
 
@@ -1579,7 +1658,7 @@ config exists."
                                      "--project-root"
                                      "--verbosity" "silent"))
               (0 (buffer-substring (line-beginning-position) (line-end-position)))
-              (t (warn "Couldn't get the Stack project root.
+              (t (intero--warn "Couldn't get the Stack project root.
 
 This can be caused by a syntax error in your stack.yaml file. Check that out.
 
@@ -1971,7 +2050,7 @@ suggestions are available."
                   (concat text
                           "\n\n"
                           (propertize "(Hit `C-c C-r' in the Haskell buffer to apply suggestions)"
-                                      'face 'font-lock-warning)))))))
+                                      'face 'font-lock-warning-face)))))))
   (setq intero-lighter
         (if (null intero-suggestions)
             " Intero"
@@ -1990,7 +2069,7 @@ suggestions are available."
 ;; Auto actions
 
 (defun intero-parse-comma-list (text)
-  "Parse a list of comma-separated expressions."
+  "Parse a list of comma-separated expressions in TEXT."
   (cl-loop for tok in (split-string text "[[:space:]\n]*,[[:space:]\n]*")
            with acc = nil
            append (let* ((clist (string-to-list tok))
@@ -2148,6 +2227,11 @@ suggestions are available."
                    (insert "{-# OPTIONS_GHC "
                            (plist-get suggestion :option)
                            " #-}\n"))))))))))
+
+(defun intero--warn (message &rest args)
+  "Display a warning message made from (format MESSAGE ARGS...).
+Equivalent to 'warn', but label the warning as coming from intero."
+  (display-warning 'intero (apply 'format message args) :warning))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
