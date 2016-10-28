@@ -4,7 +4,6 @@ This package contains extra functions for easy-kill/easy-mark:
 * easy-mark-sexp
 * easy-mark-to-char
 * easy-mark-up-to-char
-* easy-kill-delete-region
 
 It also provides the following easy-kill/easy-mark targets:
 
@@ -45,11 +44,6 @@ Suggested settings are as follows:
   ;; `easy-mark-to-char' or `easy-mark-up-to-char' could be a good
   ;; replacement for `zap-to-char'.
   (global-set-key [remap zap-to-char] 'easy-mark-to-char)
-
-  ;; `delete-region' is automatically remapped, but you'll want to
-  ;; have these if you are in love with `delete-selection-mode'.
-  (define-key easy-kill-base-map (kbd "C-d") 'easy-kill-delete-region)
-  (define-key easy-kill-base-map (kbd "DEL") 'easy-kill-delete-region)
 
   ;; Add the following tuples to `easy-kill-alist', preferrably by
   ;; using `customize-variable'.
