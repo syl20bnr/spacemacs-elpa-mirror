@@ -4,8 +4,8 @@
 
 ;; Author: Vasilij Schneidermann <v.schneidermann@gmail.com>
 ;; URL: https://github.com/wasamasa/eyebrowse
-;; Package-Version: 20160625.201
-;; Version: 0.7.0
+;; Package-Version: 20161027.1213
+;; Version: 0.7.1
 ;; Package-Requires: ((dash "2.7.0") (emacs "24.3.1"))
 ;; Keywords: convenience
 
@@ -260,7 +260,10 @@ This function keeps the sortedness intact."
     (when (version< emacs-version "25")
       (delete-other-windows)
       (set-window-dedicated-p nil nil))
-    (window-state-put (cadr match) (frame-root-window))))
+    ;; KLUDGE: workaround for visual-fill-column foolishly
+    ;; setting the split-window parameter
+    (let ((ignore-window-parameters t))
+      (window-state-put (cadr match) (frame-root-window)))))
 
 (defun eyebrowse--read-slot ()
   "Read in a window config SLOT to switch to.

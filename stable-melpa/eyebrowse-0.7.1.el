@@ -4,8 +4,8 @@
 
 ;; Author: Vasilij Schneidermann <v.schneidermann@gmail.com>
 ;; URL: https://github.com/wasamasa/eyebrowse
-;; Package-Version: 0.7.0
-;; Version: 0.7.0
+;; Package-Version: 0.7.1
+;; Version: 0.7.1
 ;; Package-Requires: ((dash "2.7.0") (emacs "24.3.1"))
 ;; Keywords: convenience
 
@@ -187,6 +187,8 @@ If t, ask for confirmation."
       (define-key prefix-map (kbd "7") 'eyebrowse-switch-to-window-config-7)
       (define-key prefix-map (kbd "8") 'eyebrowse-switch-to-window-config-8)
       (define-key prefix-map (kbd "9") 'eyebrowse-switch-to-window-config-9)
+      (define-key prefix-map (kbd "c") 'eyebrowse-create-window-config)
+      (define-key prefix-map (kbd "C-c") 'eyebrowse-create-window-config)
       (define-key map eyebrowse-keymap-prefix prefix-map))
     map)
   "Initial key map for `eyebrowse-mode'.")
@@ -258,7 +260,10 @@ This function keeps the sortedness intact."
     (when (version< emacs-version "25")
       (delete-other-windows)
       (set-window-dedicated-p nil nil))
-    (window-state-put (cadr match) (frame-root-window))))
+    ;; KLUDGE: workaround for visual-fill-column foolishly
+    ;; setting the split-window parameter
+    (let ((ignore-window-parameters t))
+      (window-state-put (cadr match) (frame-root-window)))))
 
 (defun eyebrowse--read-slot ()
   "Read in a window config SLOT to switch to.
@@ -450,6 +455,30 @@ prefix argument to select a slot by its number."
   (interactive)
   (eyebrowse-switch-to-window-config 9))
 
+(defun eyebrowse-free-slot (slots)
+  "Returns a yet unoccupied slot.
+The specific behaviour is tmux-like."
+  (let ((min (car slots)))
+    (if (> min 1)
+        1
+      (let (last cur done)
+        (while (and slots (not done))
+          (setq last (car slots)
+                cur (cadr slots))
+          (when (and last cur
+                     (> (- cur last) 1))
+            (setq done t))
+          (setq slots (cdr slots)))
+        (1+ last)))))
+
+(defun eyebrowse-create-window-config ()
+  "Creates a window config at a yet unoccupied slot."
+  (interactive)
+  (let* ((window-configs (eyebrowse--get 'window-configs))
+         (slots (mapcar 'car window-configs))
+         (slot (eyebrowse-free-slot slots)))
+    (eyebrowse-switch-to-window-config slot)))
+
 ;;;###autoload
 (defun eyebrowse-setup-evil-keys ()
   "Set up key bindings specific to Evil.
@@ -529,10 +558,12 @@ is detected, extra key bindings will be set up with
                           (interactive "e")
                           (eyebrowse-switch-to-window-config slot)))
                       map))
+                   (help-echo "mouse-1: Switch to indicated workspace")
                    (caption (eyebrowse-format-slot window-config)))
               (propertize caption 'face face 'slot slot
                           'mouse-face 'mode-line-highlight
-                          'local-map keymap)))
+                          'local-map keymap
+                          'help-echo help-echo)))
           window-configs separator)
          right-delimiter)
       "")))

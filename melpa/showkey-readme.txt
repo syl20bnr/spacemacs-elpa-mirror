@@ -35,22 +35,26 @@ Commentary:
  * `showkey-tooltip-key-only-flag' non-nil means show only the key
    used, not also its description.  The default value is nil.
 
+ * `showkey-tooltip-timeout' is the number of seconds to show the
+   tooltip, before hiding it.  (It is also hidden upon any user
+   event, such as hitting another key.)
 
+
+
+ Commands defined here:
+
+   `showkey-log-mode', `showkey-tooltip-mode'.
 
  User options defined here:
 
    `showkey-log-erase-keys', `showkey-log-frame-alist',
    `showkey-tooltip-height', `showkey-log-ignored-events',
    `showkey-tooltip-ignored-events',
-   `showkey-tooltip-key-only-flag'.
+   `showkey-tooltip-key-only-flag', `showkey-tooltip-timeout'.
 
  Faces defined here:
 
-    `showkey-log-latest'.
-
- Commands defined here:
-
-   `showkey-log-mode', `showkey-tooltip-mode'.
+   `showkey-log-latest'.
 
  Non-interactive functions defined here:
 

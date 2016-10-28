@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2009-2014 Julia contributors
 ;; URL: https://github.com/JuliaLang/julia
-;; Package-Version: 20161017.613
+;; Package-Version: 20161027.625
 ;; Version: 0.3
 ;; Keywords: languages
 
@@ -480,12 +480,14 @@ beginning of the buffer."
   (unless (eq (point) (point-min))
     (backward-char)))
 
-(defvar julia-max-block-lookback 5000
+(defcustom julia-max-block-lookback 5000
   "When indenting, don't look back more than this
 many characters to see if there are unclosed blocks.
 
 This variable has a moderate effect on indent performance if set too
-high.")
+high, but stops indenting in the middle of long blocks if set too low."
+  :type 'integer
+  :group 'julia)
 
 (defun julia-paren-indent ()
   "Return the column of the text following the innermost

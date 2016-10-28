@@ -8,7 +8,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Version: 0.3
-;; Package-Version: 20160924.1555
+;; Package-Version: 20161027.1746
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.3") (s "1.11.0") (dash "2.12.0") (list-utils "0.4.4") (loop "1.2"))
 
@@ -151,7 +151,10 @@ return a pretty, propertized string."
   "Given an elisp VALUE, return a pretty propertized
 string listing the elements.
 
-VALUE may be a list, string, vector or symbol."
+VALUE may be a list, string, vector or symbol.
+
+If VALUE is a list or vector, show each list item along with its
+index."
   (cond
    ((vectorp value)
     (refine--format-with-index (refine--vector->list value)))
@@ -568,7 +571,10 @@ For booleans, toggle nil/t."
 ;;;###autoload
 (defun refine (symbol)
   "Interactively edit the value of a symbol \(usually a list\)."
-  (interactive (list (read (completing-read "Variable: " (refine--variables)))))
+  (interactive (list (read (completing-read "Variable: " (refine--variables)
+                                            nil nil nil nil
+                                            (-if-let (variable (variable-at-point))
+                                                (and (symbolp variable) (symbol-name variable)))))))
   (let* ((buf (refine--buffer symbol)))
     (refine--update buf symbol)
     (switch-to-buffer buf)

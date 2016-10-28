@@ -1,11 +1,11 @@
 ;;; parsec.el --- Parser combinator library  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2016  Junpeng Qiu
+;; Copyright (C) 2016  Free Software Foundation, Inc.
 
 ;; Author: Junpeng Qiu <qjpchmail@gmail.com>
 ;; Maintainer: Junpeng Qiu <qjpchmail@gmail.com>
 ;; URL: https://github.com/cute-jumper/parsec.el
-;; Package-Version: 20161024.1313
+;; Package-Version: 20161027.1726
 ;; Version: 0.1.3
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: extensions
@@ -573,30 +573,6 @@
       (parsec-stop :expected (format "%s" pred)
                    :found (parsec-eof-or-char-as-string)))))
 
-(defun parsec-newline ()
-  "Parse a newline character \"\\n\"."
-  (parsec-ch ?\n))
-
-(defun parsec-crlf ()
-  "Parse a carriage return (\'\\r\') followed by a newline \"\\n\"."
-  (parsec-and (parsec-ch ?\r) (parsec-ch ?\n)))
-
-(defun parsec-eol ()
-  "Parse a newline or a CRLF and return \"\\n\"."
-  (parsec-or (parsec-newline) (parsec-crlf)))
-
-(defun parsec-eob ()
-  "Indicate the end of file (buffer)."
-  (unless (eobp)
-    (parsec-stop :expected "`EOF'"
-                 :found (parsec-eof-or-char-as-string))))
-
-(defalias 'parsec-eof 'parsec-eob)
-
-(defun parsec-eol-or-eof ()
-  "Indicate either eol or eof."
-  (parsec-or (parsec-eol) (parsec-eof)))
-
 (defun parsec-re (regexp)
   "Parse the input matching the regular expression REGEXP."
   (if (looking-at regexp)
@@ -1029,6 +1005,30 @@ Otherwise, return `(Just . p)' where p is the result of PARSER."
        (if ,res-sym
            (parsec-just ,res-sym)
          parsec-nothing))))
+
+(defun parsec-newline ()
+  "Parse a newline character \"\\n\"."
+  (parsec-ch ?\n))
+
+(defun parsec-crlf ()
+  "Parse a carriage return (\'\\r\') followed by a newline \"\\n\"."
+  (parsec-and (parsec-ch ?\r) (parsec-ch ?\n)))
+
+(defun parsec-eol ()
+  "Parse a newline or a CRLF and return \"\\n\"."
+  (parsec-or (parsec-newline) (parsec-crlf)))
+
+(defun parsec-eob ()
+  "Indicate the end of file (buffer)."
+  (unless (eobp)
+    (parsec-stop :expected "`EOF'"
+                 :found (parsec-eof-or-char-as-string))))
+
+(defalias 'parsec-eof 'parsec-eob)
+
+(defun parsec-eol-or-eof ()
+  "Indicate either eol or eof."
+  (parsec-or (parsec-eol) (parsec-eof)))
 
 (defmacro parsec-with-input (input &rest parsers)
   "With INPUT, start parsing by applying PARSERS sequentially."

@@ -4,10 +4,10 @@
 
 ;; Author: Adam Niederer <adam.niederer@gmail.com>
 ;; URL: http://github.com/AdamNiederer/0xc
-;; Package-Version: 20161018.1031
+;; Package-Version: 20161027.2140
 ;; Version: 0.1
 ;; Keywords: base conversion
-;; Package-Requires: ((emacs "24.4"))
+;; Package-Requires: ((emacs "24.4") (s))
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@
 
 (require 'subr-x)
 (require 'thingatpt)
+(require 's)
 
 (defgroup 0xc nil
   "Base conversion functions"
@@ -81,6 +82,13 @@
   :group '0xc
   :type 'integer)
 
+(defcustom 0xc-extension ".."
+  "The token signifying a digit of a number should be repeated until the number's
+length is a power of two"
+  :tag "0xc Extension Token"
+  :group '0xc
+  :type 'string)
+
 (defun 0xc-number-to-string (number base)
   "Convert an integer number into a different base string"
   (if (equal number 0) ""
@@ -107,9 +115,9 @@ provided, additional sanity checks will be performed before converting"
 
 (defun 0xc-string-to-number (number &optional base)
   "Convert a base-whatever number string into base-10 integer"
-  (when (not (string-match-p (format "^\\([0-9]*:?\\|0[bxodt]\\)[0-9A-z%s]+$" (if 0xc-strict 0xc-padding "")) number))
+  (when (not (s-matches? (format "^\\([0-9]*:?\\|0[bxodt]\\)[0-9A-z%s]+$" (if 0xc-strict 0xc-padding "")) number))
     (error "Not a number"))
-  (let* ((number (0xc--strip-padding number))
+  (let* ((number (0xc--strip-padding (0xc--extend-number number)))
          (base (or base (0xc--infer-base number))))
     (0xc--string-to-number (0xc--reverse-string (0xc--strip-base-hint number)) base)))
 
@@ -120,34 +128,41 @@ provided, additional sanity checks will be performed before converting"
 
 (defun 0xc--strip-base-hint (number)
   "Return the number string without any base hints (0x, 0b, 3:, etc)"
-  (cond ((string-match-p "^0[bxodt]" number)
+  (cond ((s-matches? "^0[bxodt]" number)
          (substring number 2))
-        ((string-match-p "^[0-9]*:" number)
-         (or (nth 1 (split-string number ":" t "[ \t\n\r]")) ""))
+        ((s-matches? "^[0-9]*:" number)
+         (or (nth 1 (s-split ":" number t)) ""))
         (t number)))
 
 (defun 0xc--infer-base (number)
   "Return the base of a number, based on some heuristics"
-  (when (not (string-match-p (format "^\\([0-9]+:\\|0[bxodt]\\)?[0-9A-z%s]+$" 0xc-padding) number))
+  (when (not (s-matches? (format "^\\([0-9]+:\\|0[bxodt]\\)?[0-9A-z%s]+$" 0xc-padding) number))
     (error "Not a number"))
-  (let ((prefix (substring number 0 2))
+  (let ((prefix (or (0xc--prefix-base number)))
         (base (0xc--highest-base (0xc--strip-base-hint number))))
-    (cond ((> base 0xc-max-base) (error "Number exceeds maximum allowed base: %s" 0xc-max-base))
-          ((equal "0b" prefix) 2)
-          ((equal "0t" prefix) 3)
-          ((equal "0o" prefix) 8)
-          ((equal "0d" prefix) 10)
-          ((equal "0x" prefix) 16)
-          ((string-match-p "^[0-9]+:" number)
-           (string-to-number (car (split-string prefix ":" t "[ \t\n\r]"))))
+    (cond ((> (max (or prefix 0) base) 0xc-max-base) (error "Number exceeds maximum allowed base: %s" 0xc-max-base))
+          ((and prefix (> base prefix)) (error "Number has a digit of a higher base than its prefix"))
+          (prefix prefix)
           ((and 0xc-clamp-ten (>= 10 base 3)) 10)
           ((and 0xc-clamp-hex (>= 16 base 3)) 16)
           (t base))))
 
+(defun 0xc--prefix-base (number)
+  "Return the base of a number's prefix, if it has one. Return nil otherwise"
+  (let ((prefix (substring number 0 2)))
+    (cond ((equal "0b" prefix) 2)
+          ((equal "0t" prefix) 3)
+          ((equal "0o" prefix) 8)
+          ((equal "0d" prefix) 10)
+          ((equal "0x" prefix) 16)
+          ((s-matches? "^[0-9]+:" number)
+           (string-to-number (car (s-split ":" prefix t))))
+          (t nil))))
+
 (defun 0xc--strip-padding (number)
   "Remove every character contained in `0xc-padding' from number, and trim
 whitespace at the beginning and end"
-  (string-join (split-string number (format "[%s]" 0xc-padding) t "[ \t\n\r]")))
+  (s-trim (s-join "" (s-split (format "[%s]" 0xc-padding) number t))))
 
 (defun 0xc--highest-base (string)
   "Returns the base of the number according to heuristics"
@@ -156,9 +171,31 @@ whitespace at the beginning and end"
 
 (defun 0xc--digit-value (char)
   "Returns the numeric value of an ASCII character"
-  (if (string-match-p "^[0-9]" char)
+  (if (s-matches? "^[0-9]" char)
       (string-to-number char)
     (- (aref (upcase char) 0) 55)))
+
+(defun 0xc--extend-number (number)
+  "Returns the number, with all instances of `0xc-extension' expanded according
+to the user's preferences"
+  (if (equal (s-count-matches (regexp-quote 0xc-extension) number) 0)
+      number
+    (when (> (s-count-matches (regexp-quote 0xc-extension) number) 1)
+      (error "Only one extension token may be used"))
+    (when (and (> (- (length number) 2) (s-index-of 0xc-extension number) 0)
+               (not (equal (aref number (1- (s-index-of 0xc-extension number)))
+                           (aref number (+ (length 0xc-extension) (s-index-of 0xc-extension number))))))
+      (error "The digit before and after the extension token must be the same"))
+    (let* ((number-length (length (s-replace 0xc-extension "" number)))
+           (repeat-times (- (0xc--next-power-of-2 number-length) number-length))
+           (to-repeat (string (aref number (if (< (1- (s-index-of 0xc-extension number)) 0)
+                                               (+ (length 0xc-extension) (s-index-of 0xc-extension number))
+                                               (1- (s-index-of 0xc-extension number)))))))
+      (s-replace 0xc-extension (s-repeat repeat-times to-repeat) number))))
+
+(defun 0xc--next-power-of-2 (n)
+  "Return the smallest power of 2 greater than n"
+  (expt 2 (ceiling (log n 2))))
 
 ;;;###autoload
 (defun 0xc-convert (base &optional number silent)

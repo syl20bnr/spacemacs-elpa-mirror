@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.9
-;; Package-Version: 20161021.904
+;; Package-Version: 20161027.848
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.3"))
 ;; Keywords: comm, tools
 
@@ -885,6 +885,17 @@ point or in region--is non-nil, then BINDINGS and BODY are fed to
            ,@body)
        (user-error "No torrent selected"))))
 
+(defun transmission-collect-hook (hook)
+  "Run HOOK and return a list of non-nil results from calling its elements."
+  (let (res)
+    (run-hook-wrapped
+     hook
+     (lambda (fun)
+       (let ((val (funcall fun)))
+         (when val (push val res)))
+       nil))
+    (nreverse res)))
+
 (defmacro transmission-with-window-maybe (window &rest body)
   "If WINDOW is non-nil, execute BODY with WINDOW current.
 Otherwise, just execute BODY."
@@ -919,9 +930,9 @@ WINDOW with `window-start' and the line/column coordinates of `point'."
   "Add TORRENT by filename, URL, magnet link, or info hash.
 When called with a prefix, prompt for DIRECTORY."
   (interactive
-   (let* ((f (run-hook-with-args-until-success 'transmission-torrent-functions))
-          (def (and f (file-relative-name f)))
-          (prompt (concat "Add torrent" (if def (format " [%s]" def)) ": ")))
+   (let* ((f (transmission-collect-hook 'transmission-torrent-functions))
+          (def (mapcar #'file-relative-name f))
+          (prompt (concat "Add torrent" (if def (format " [%s]" (car def))) ": ")))
      (list (read-file-name prompt nil def)
            (if current-prefix-arg
                (read-directory-name "Target directory: ")))))
@@ -956,7 +967,7 @@ When called with a prefix, prompt for DIRECTORY."
                 (abbreviate-file-name .path))))
    "free-space" (list :path (expand-file-name location))))
 
-(defun transmission-status ()
+(defun transmission-stats ()
   "Message some information about the session."
   (interactive)
   (transmission-request-async
@@ -1800,6 +1811,14 @@ Key bindings:
     ["Move Torrent" transmission-move]
     ["Reannounce Torrent" transmission-reannounce]
     ["Verify Torrent" transmission-verify]
+    "--"
+    ["Query Free Space" transmission-free]
+    ["Session Statistics" transmission-stats]
+    ("Turtle Mode" :help "Set and schedule alternative speed limits"
+     ["Toggle Turtle Mode" transmission-turtle-toggle]
+     ["Set Active Days" transmission-turtle-set-days]
+     ["Set Active Time Span" transmission-turtle-set-times]
+     ["Set Turtle Speed Limits" transmission-turtle-set-speeds])
     "--"
     ["View Torrent Files" transmission-files]
     ["View Torrent Info" transmission-info]
