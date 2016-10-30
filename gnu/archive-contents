@@ -408,6 +408,11 @@
 	nil "Heap (a.k.a. priority queue) data structure" single
 	((:url . "http://www.dr-qubit.org/emacs.php")
 	 (:keywords "extensions" "data structures" "heap" "priority queue"))])
+ (highlight-escape-sequences .
+			     [(0 3)
+			      nil "Highlight escape sequences" single
+			      ((:url . "https://github.com/dgutov/highlight-escape-sequences")
+			       (:keywords "convenience"))])
  (html5-schema .
 	       [(0 1)
 		nil "Add HTML5 schemas for use by nXML" tar

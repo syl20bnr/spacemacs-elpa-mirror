@@ -1,6 +1,13 @@
 Translates ANSI control sequences into text properties.
 
-* Regular ANSI
-* XTERM 256 color
+* Regular ANSI colors
 
-xterm-color.el should perform much better than ansi-color.el
+* XTERM 256 colors
+
+* Works with compilation-mode (experimental)
+
+* Works with eshell
+
+* More accurate than ansi-color.el
+
+* Should perform much better than ansi-color.el
