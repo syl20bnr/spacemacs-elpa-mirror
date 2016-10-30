@@ -5,7 +5,7 @@
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 5 Dec 2015
 ;; Version: 0.0.6
-;; Package-Version: 0.0.6
+;; Package-Version: 0.0.7
 ;; Keywords: php dependency manager
 ;; Package-Requires: ((emacs "24") (s "1.9.0") (f "0.17") (request "0.2.0"))
 
@@ -40,6 +40,7 @@
 ;;  - M-x composer-view-lock-file  - Open composer.lock of the project (as read-only)
 
 ;;; Code:
+(require 'compile)
 (require 's)
 (require 'f)
 (require 'request)
@@ -59,7 +60,8 @@
 (defgroup composer nil
   "Interface to PHP Composer."
   :group 'external
-  :tag "PHP Composer"
+  :group (if (featurep 'php-mode) 'php nil)
+  :tag "Composer"
   :prefix "composer-")
 
 (defcustom composer-use-ansi-color nil
@@ -67,7 +69,7 @@
   :type 'boolean)
 
 (defcustom composer-interactive-sub-commands
-  '("remove" "search")
+  '("init" "remove" "search")
   "List of sub commands of interactive execution."
   :type '(repeat string))
 

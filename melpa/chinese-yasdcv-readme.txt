@@ -1,9 +1,9 @@
 # 简介 #
-Chinese-yasdcv 是 sdcv 的一个emacs前端，其工作原理是：
+Chinese-yasdcv 是 sdcv 的一个 emacs 前端，其工作原理是：
 
 1. 调用 sdcv 程序，将翻译得到的结果定向到 *Stardict Output* buffer。
 2. 调用对应的elisp函数，清理上述 buffer 中的内容，并将其转化为 org-mode 格式。
-3. 弹出一个窗口显示上述buffer内容。
+3. 弹出一个窗口显示上述 buffer 内容。
 
 注：sdcv 是 StarDict 的 Console 版本，yasdcv 表示：Yet Another Sdcv。
 
@@ -28,5 +28,5 @@ Chinese-yasdcv 是 sdcv 的一个emacs前端，其工作原理是：
 或者选择某一个单词（划词翻译），然后运行上述命令。
 
 查询中文时，划词翻译可以正常使用，点词翻译要用到 Chinese-pyim 包中的命令
-`pyim-get-words-list-at-point', 需要用户正确安装 Chinese-pyim 并添加配置拼音词库。
+`pyim-aptwords-get', 需要用户正确安装 Chinese-pyim 并添加配置拼音词库。
 具体细节请阅读 Chinese-pyim 的相关文档：http://tumashu.github.io/chinese-pyim/

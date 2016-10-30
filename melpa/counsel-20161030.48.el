@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20161028.1337
+;; Package-Version: 20161030.48
 ;; Version: 0.8.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.8.0"))
 ;; Keywords: completion, matching
@@ -1537,6 +1537,26 @@ INITIAL-INPUT can be given as the initial minibuffer input."
               :action (lambda (x)
                         (message (cdr x)))
               :caller 'counsel-dpkg)))
+
+;;** `counsel-rpm'
+;;;###autoload
+(defun counsel-rpm ()
+  "Call the \"rpm\" shell command."
+  (interactive)
+  (let ((cands (mapcar
+                (lambda (x)
+                  (let ((y (split-string x "|")))
+                    (cons (format "%-40s   %s"
+                                  (ivy--truncate-string
+                                   (nth 0 y) 40)
+                                  (nth 1 y))
+                          (mapconcat #'identity y " "))))
+                (split-string
+                 (shell-command-to-string "rpm -qa --qf \"%{NAME}|%{SUMMARY}\\n\"") "\n" t))))
+    (ivy-read "rpm: " cands
+              :action (lambda (x)
+                        (message (cdr x)))
+              :caller 'counsel-rpm)))
 
 ;;** File Jump and Dired Jump
 

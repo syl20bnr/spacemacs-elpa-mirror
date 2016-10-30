@@ -3,10 +3,10 @@
 ;; Copyright (C)  2014 Yasuyuki Oka <yasuyk@gmail.com>
 
 ;; Author: Yasuyuki Oka <yasuyk@gmail.com>
-;; Version: 0.1.2
-;; Package-Version: 20140217.1312
+;; Version: 0.2.0
+;; Package-Version: 0.2.0
 ;; URL: https://github.com/yasuyk/cdnjs.el
-;; Package-Requires: ((cl-lib "0.3") (dash "2.5.0") (deferred "0.3.2") (f "0.16.0") (pkg-info "0.4"))
+;; Package-Requires: ((cl-lib "0.3") (dash "2.13.0") (deferred "0.4") (f "0.17.2") (pkg-info "0.5"))
 ;; Keywords: tools
 
 ;; This file is not part of GNU Emacs.
@@ -146,7 +146,7 @@ Slots:
 
 ;; `gocdnjs' executable
 
-(defconst cdnjs/gocdnjs-required-version "0.1.0")
+(defconst cdnjs/gocdnjs-required-version "0.2.0")
 
 (defconst cdnjs/gocdnjs-notfound-msg
   "gocdnjs not found. Install gocdnjs by M-x `cdnjs-install-gocdnjs' \
