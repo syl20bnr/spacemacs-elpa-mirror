@@ -128,7 +128,7 @@ This function accepts two arguments: filename and page number."
   "Create an index alist from PDF mapping mnemonics to page numbers.
 This function requires the pdftotext command line program."
   (let ((mnemonic (concat "INSTRUCTION SET REFERENCE, [A-Z]-[A-Z]\n\n"
-                          "\\([[:alnum:]/ ]+\\) ?—"))
+                          "\\([[:alnum:]/ ]+\\)[- ]?—"))
         (case-fold-search nil))
     (with-temp-buffer
       (call-process x86-lookup-pdftotext-program nil t nil
@@ -145,7 +145,7 @@ This function requires the pdftotext command line program."
 
 (defun x86-lookup--index-file (pdf)
   "Return index filename from PDF filename."
-  (concat (sha1 pdf) "_v2"))
+  (concat (sha1 pdf) "_v3"))
 
 (defun x86-lookup--save-index (pdf index)
   "Save INDEX for PDF in `x86-lookup-cache-directory'."

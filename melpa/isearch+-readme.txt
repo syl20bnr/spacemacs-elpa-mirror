@@ -50,6 +50,7 @@
 
    `isearchp-act-on-demand' (Emacs 22+),
    `isearchp-add-filter-predicate' (Emacs 24.3+),
+   `isearchp-add-regexp-filter-predicate' (Emacs 24.3+),
    `isearchp-append-register', `isearch-char-by-name' (Emacs
    23-24.3), `isearchp-complement-filter' (Emacs 24.3+),
    `isearchp-complete', `isearchp-cycle-mismatch-removal',
@@ -69,6 +70,7 @@
    `isearchp-set-filter-predicate' (Emacs 24.3+),
    `isearchp-set-region-around-search-target',
    `isearchp-show-filters' (Emacs 24.3+),
+   `isearchp-toggle-auto-save-filter-predicate' (Emacs 24.3+),
    `isearchp-toggle-lazy-highlight-cleanup' (Emacs 22+),
    `isearchp-toggle-lazy-highlighting' (Emacs 22+),
    `isearchp-toggle-literal-replacement' (Emacs 22+),
@@ -87,9 +89,11 @@
 
  User options defined here:
 
+   `isearchp-auto-save-filter-predicate-flag' (Emacs 22+),
    `isearchp-case-fold', `isearchp-deactivate-region-flag' (Emacs
    24.3+), `isearchp-drop-mismatch',
    `isearchp-drop-mismatch-regexp-flag',
+   `isearchp-filter-predicates-alist' (Emacs 24.3+),
    `isearchp-initiate-edit-commands' (Emacs 22+),
    `isearchp-mouse-2-flag', `isearchp-movement-unit-alist' (Emacs
    24.3+), `isearchp-on-demand-action-function' (Emacs 22+),
@@ -112,12 +116,32 @@
 
  Non-interactive functions defined here:
 
+   `isearchp-add-filter-predicate-1' (Emacs 24.3+),
    `isearchp-barf-if-use-minibuffer',
    `isearchp-complete-past-string', `isearchp-fail-pos',
    `isearchp-filters-message' (Emacs 24.3+),
-   `isearchp-highlight-lighter', `isearchp-message-prefix',
-   `isearchp-message-suffix', `isearchp-near-after-predicate'
-   (Emacs 24.3+), `isearchp-near-before-predicate' (Emacs 24.3+),
+   `isearchp-highlight-lighter', `isearchp-in-color-p' (Emacs
+   24.3+), `isearchp-in-comment-p' (Emacs 24.3+),
+   `isearchp-in-comment-or-delim-p' (Emacs 24.3+),
+   `isearchp-in-decimal-number-p' (Emacs 24.3+),
+   `isearchp-in-defun-p' (Emacs 24.3+),
+   `isearchp-in-email-address-p' (Emacs 24.3+),
+   `isearchp-in-file-name-p' (Emacs 24.3+),
+   `isearchp-in-file-or-url-p' (Emacs 24.3+),
+   `isearchp-in-hex-number-p' (Emacs 24.3+), `isearchp-in-line-p'
+   (Emacs 24.3+), `isearchp-in-lisp-variable-p' (Emacs 24.3+),
+   `isearchp-in-list-p' (Emacs 24.3+), `isearchp-in-number-p'
+   (Emacs 24.3+), `isearchp-in-page-p' (Emacs 24.3+),
+   `isearchp-in-paragraph-p' (Emacs 24.3+),
+   `isearchp-in-sentence-p' (Emacs 24.3+), `isearchp-in-sexp-p'
+   (Emacs 24.3+), `isearchp-in-string-or-comment-p' (Emacs 24.3+),
+   `isearchp-in-string-p' (Emacs 24.3+), `isearchp-in-symbol-p'
+   (Emacs 24.3+), `isearchp-in-url-p' (Emacs 24.3+),
+   `isearchp-in-word-p' (Emacs 24.3+),
+   `isearchp-match-regexp-filter-predicate' (Emacs 24.3+),
+   `isearchp-message-prefix', `isearchp-message-suffix',
+   `isearchp-near-after-predicate' (Emacs 24.3+),
+   `isearchp-near-before-predicate' (Emacs 24.3+),
    `isearchp-near-predicate' (Emacs 24.3+), `isearchp-not-pred'
    (Emacs 24.3+), `isearchp-read-face-names',
    `isearchp-read-face-names--read', `isearchp-read-filter-name'
@@ -125,6 +149,7 @@
    `isearchp-read-near-args' (Emacs 24.3+),
    `isearchp-read-predicate' (Emacs 24.3+),
    `isearchp-read-prompt-prefix' (Emacs 24.3+),
+   `isearchp-read-regexp-during-search' (Emacs 24.3+),
    `isearchp-read-sexps', `isearchp-remove-duplicates',
    `isearchp-remove-mismatch', `isearchp-repeat-command',
    `isearchp-repeat-search-if-fail' (Emacs 22+),
@@ -172,8 +197,8 @@
  `isearch-message'     - Highlight failed part of search string in
                          echo area, in face `isearch-fail'.
  `isearch-message-prefix' - Highlight prompt keywords: wrapped,
-                         regexp, word, multi.
-                         Reverse the order of the filter prefixes.
+                         regexp, word, multi.  Highlight filter
+                         prefixes, and reverse their order.
  `isearch-mouse-2'     - Respect `isearchp-mouse-2-flag'(Emacs 21+)
  `isearch-search'      - Can limit to active region (Emacs 24.3+)
  `isearch-repeat'      - Can limit to active region (Emacs 24.3+)
@@ -265,6 +290,7 @@ Overview of Features ---------------------------------------------
  * Dynamic search filtering (starting with Emacs 24.3).  You can
    add and remove any number of search filters while searching
    incrementally.
+   See https://www.emacswiki.org/emacs/DynamicIsearchFiltering.
 
    The predicate that is the value of `isearch-filter-predicate' is
    advised by additional predicates that you add, creating a
@@ -274,6 +300,9 @@ Overview of Features ---------------------------------------------
 
    - `M-? &' (`isearchp-add-filter-predicate') adds a filter
      predicate, AND-ing it as an additional `:after-while' filter.
+
+   - `M-? %' (`isearchp-add-regexp-filter-predicate') adds a filter
+     predicate that requires search hits to match a given regexp.
 
    - `M-? |' (`isearchp-or-filter-predicate') adds a filter
      predicate, OR-ing it as an additional `:before-until' filter.
@@ -296,6 +325,11 @@ Overview of Features ---------------------------------------------
      filter-predicate suite for subsequent searches.  Unless you
      save it, the next Isearch starts out from scratch, using the
      default value of `isearch-filter-predicate'.
+
+   - `M-? S' (`isearchp-toggle-auto-save-filter-predicate')
+     toggles option `isearchp-auto-save-filter-predicate-flag',
+     which provides automatic filter-predicate saving (so no need
+     to use `M-? s').
 
    - `M-? n' (`isearchp-defun-filter-predicate') names the current
      suite of filter predicates, creating a named predicate that
@@ -332,7 +366,7 @@ Overview of Features ---------------------------------------------
      default behavior.  If you are prompted and provide a name, you
      can use that name with `M-? -' to remove that predicate.
 
-   - `isearchp-prompt-for-isearch-prompt-prefix' says whether to
+   - `isearchp-prompt-for-prompt-prefix-flag' says whether to
      prompt you for a prefix to add to the Isearch prompt.  You are
      prompted by default, but if you don't care to see such a
      prompt prefix and you don't want to be bothered by it, you can

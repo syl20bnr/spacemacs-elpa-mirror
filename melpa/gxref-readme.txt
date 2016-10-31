@@ -1,4 +1,4 @@
-A pretty simple (but, at least for me effective) backend for xref
+A pretty simple (but, at least for me, effective) backend for xref
 library, using GNU Global.
 
 Prerequisites:
@@ -14,7 +14,7 @@ keep up with API changes.
 
 Installing:
 
-(require 'gxref)
+Add something like the following to your init.el file:
 (add-to-list 'xref-backend-functions 'gxref-xref-backend)
 
 TODO:

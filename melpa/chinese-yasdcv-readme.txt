@@ -28,5 +28,5 @@ Chinese-yasdcv 是 sdcv 的一个 emacs 前端，其工作原理是：
 或者选择某一个单词（划词翻译），然后运行上述命令。
 
 查询中文时，划词翻译可以正常使用，点词翻译要用到 Chinese-pyim 包中的命令
-`pyim-aptwords-get', 需要用户正确安装 Chinese-pyim 并添加配置拼音词库。
+`pyim-cwords-at-point', 需要用户正确安装 Chinese-pyim 并添加配置拼音词库。
 具体细节请阅读 Chinese-pyim 的相关文档：http://tumashu.github.io/chinese-pyim/
