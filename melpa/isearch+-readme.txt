@@ -163,6 +163,7 @@
 
  Internal variables defined here:
 
+   `isearchp-filter-map' (Emacs 24.3+),
    `isearchp-last-non-nil-invisible',
    `isearchp-last-quit-regexp-search', `isearchp-last-quit-search',
    `isearchp-nomodify-action-hook' (Emacs 22+),
@@ -248,7 +249,6 @@
    `C-y C-w'    `isearchp-yank-word-or-char' (Emacs 22+)
    `C-y C-y'    `isearch-yank-kill'
    `C-y M-y'    `isearch-yank-pop' (Emacs 24+)
-   `C-z'        `isearchp-yank-char' (Emacs 22+)
    `M-c'        `isearch-toggle-case-fold'
    `M-e'        `isearch-edit-string'
    `M-g'        `isearchp-retrieve-last-quit-search'
@@ -296,52 +296,54 @@ Overview of Features ---------------------------------------------
    advised by additional predicates that you add, creating a
    complex suite of predicates that act together.
 
-   These commands are available, all on prefix key `M-?':
+   The following filtering commands are available during Isearch.
+   They are all on prefix key `C-z', by default.  (They are on
+   prefix keymap `isearchp-filter-map', which you can bind to any
+   key in `isearch-mode-map'.)
 
-   - `M-? &' (`isearchp-add-filter-predicate') adds a filter
+   - `C-z &' (`isearchp-add-filter-predicate') adds a filter
      predicate, AND-ing it as an additional `:after-while' filter.
 
-   - `M-? %' (`isearchp-add-regexp-filter-predicate') adds a filter
+   - `C-z %' (`isearchp-add-regexp-filter-predicate') adds a filter
      predicate that requires search hits to match a given regexp.
 
-   - `M-? |' (`isearchp-or-filter-predicate') adds a filter
+   - `C-z |' (`isearchp-or-filter-predicate') adds a filter
      predicate, OR-ing it as an additional `:before-until' filter.
 
-   - `M-? ~' (`isearchp-complement-filter') complements the current
+   - `C-z ~' (`isearchp-complement-filter') complements the current
      filter.  It either adds an `:around' filter that complements
      or it removes an existing top-level complementing filter.
 
-   - `M-? -' (`isearchp-remove-filter-predicate') removes the last
+   - `C-z -' (`isearchp-remove-filter-predicate') removes the last
      added filter predicate.
 
-   - `M-? !' (`isearchp-set-filter-predicate') sets the overall
+   - `C-z !' (`isearchp-set-filter-predicate') sets the overall
      filter predicate (advised `isearch-filter-predicate') to a
      single predicate.
 
-   - `M-? 0' (`isearchp-reset-filter-predicate') resets
+   - `C-z 0' (`isearchp-reset-filter-predicate') resets
      `isearch-filter-predicate' to its original (default) value.
 
-   - `M-? s' (`isearchp-save-filter-predicate') saves the current
+   - `C-z s' (`isearchp-save-filter-predicate') saves the current
      filter-predicate suite for subsequent searches.  Unless you
      save it, the next Isearch starts out from scratch, using the
      default value of `isearch-filter-predicate'.
 
-   - `M-? S' (`isearchp-toggle-auto-save-filter-predicate')
-     toggles option `isearchp-auto-save-filter-predicate-flag',
-     which provides automatic filter-predicate saving (so no need
-     to use `M-? s').
+   - `C-z S' (uppercase `s')
+     (`isearchp-toggle-auto-save-filter-predicate') toggles option
+     `isearchp-auto-save-filter-predicate-flag', which provides
+     automatic filter-predicate saving (so no need to use `C-z s').
 
-   - `M-? n' (`isearchp-defun-filter-predicate') names the current
+   - `C-z n' (`isearchp-defun-filter-predicate') names the current
      suite of filter predicates, creating a named predicate that
-     does the same thing.  (You can use that name with `M-? -' to
+     does the same thing.  (You can use that name with `C-z -' to
      remove that predicate.)  With a prefix arg it can also set or
-     save (i.e., do what `M-? !' or `M-? s' does).
+     save (i.e., do what `C-z !' or `C-z s' does).
 
-   - `M-? M-h' (`isearchp-show-filters') echoes the current suite
-     of filter predicates (advice and original, unadvised
-     predicate).
+   - `C-z ?' (`isearchp-show-filters') echoes the current suite of
+     filter predicates (advice and original, unadvised predicate).
 
-   - `M-? @', `M-? <', and `M-? >' (`isearchp-near',
+   - `C-z @', `C-z <', and `C-z >' (`isearchp-near',
      `isearchp-near-before', and `isearchp-near-after') constrain
      searching to be within a given distance of (near) another
      search pattern.  For example, you can limit search hits to
@@ -364,7 +366,7 @@ Overview of Features ---------------------------------------------
      always, never, or only when the predicate that you provide is
      not a symbol (it is a lambda form).  The last of these is the
      default behavior.  If you are prompted and provide a name, you
-     can use that name with `M-? -' to remove that predicate.
+     can use that name with `C-z -' to remove that predicate.
 
    - `isearchp-prompt-for-prompt-prefix-flag' says whether to
      prompt you for a prefix to add to the Isearch prompt.  You are
@@ -551,8 +553,8 @@ Overview of Features ---------------------------------------------
  * `C-M-y' (`isearch-yank-secondary') yanks the secondary selection
    into the search string, if you also use library `second-sel.el'.
 
- * `C-z' (`isearchp-yank-char') yanks successive characters onto
-   the search string.  This command is also bound to `C-y C-c'.
+ * `C-y C-c' (`isearchp-yank-char') yanks successive characters
+   onto the search string.
 
  * `C-_' (`isearchp-yank-symbol-or-char') yanks successive symbols
    (or words or subwords or chars) into the search string.

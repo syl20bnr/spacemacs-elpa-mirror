@@ -165,7 +165,7 @@
      `Info-fontify-quotations-flag' are non-`nil'.
 
    - Emphasized text, that is, text enclosed in underscore
-     characters, like this: _this is emphasized text_ is
+     characters, like this: _this is emphasized text_, is
      highlighted if `Info-fontify-emphasis-flag' is non-`nil'.
      (But if internal variable `info-fontify-emphasis' is `nil'
      then there is no such highlighting, and that option has no

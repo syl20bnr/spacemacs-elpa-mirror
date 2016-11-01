@@ -30,7 +30,7 @@ while in the other the LaTeX source is commented out, giving an entirely valid L
 
 *** 安装 easy-lentic
 
-1. 配置melpa源，参考：http://melpa.org/#/getting-started
+1. 配置 melpa 源，参考：http://melpa.org/#/getting-started
 2. M-x package-install RET easy-lentic RET
 
 *** 安装 ox-gfm
@@ -38,13 +38,10 @@ while in the other the LaTeX source is commented out, giving an entirely valid L
 easy-lentic 可以使用 ox-gfm (Github Flavored Markdown exporter for Org Mode) 将 org 格式转换
 为 github markdown 格式，但这个功能需要用户 *手动安装 ox-gfm*, 具体安装方式：
 
-1. 配置 org 源，具体请参考：http://orgmode.org/elpa.html
-2. M-x package-install RET org-plus-contrib RET
+1. 配置 melpa 源，参考：http://melpa.org/#/getting-started
+2. M-x package-install RET ox-gfm RET
 
-注意：
-
-1. ox-gfm 已合并到 org-plus-contrib，melpa 中找到的 ox-gfm 包已经 *停止开发* 了。
-2. 如果用户没有安装 ox-gfm, 那么，easy-lentic 将使用 ox-md 后端生成 README.md。
+如果用户没有安装 ox-gfm, 那么，easy-lentic 将使用 ox-md 后端生成 README.md。
 
 ** 配置
 
