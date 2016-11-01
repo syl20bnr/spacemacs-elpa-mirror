@@ -1,4 +1,4 @@
-Emacs Ada mode version 5.2.0
+Emacs Ada mode version 5.2.1
 
 Ada mode requires Emacs 24.2 or greater
 

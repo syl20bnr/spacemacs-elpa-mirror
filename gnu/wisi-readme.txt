@@ -1,4 +1,4 @@
-Emacs wisi package 1.1.3
+Emacs wisi package 1.1.4
 
 The wisi package provides utilities for using generalized LALR parsers
 to do indentation and navigation. See ada-mode for an example of its

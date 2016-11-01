@@ -21,11 +21,9 @@ For example, you can press key `99,ci` to comment out 99 lines.
 
 Setup:
 
-Use case 1,
-If you use comma as leader key, as most Vim users do, setup is one liner,
+1. If comma is your leader key, as most Vim users do, setup is one liner,
 (evilnc-default-hotkeys)
 
-Use case 2,
 If you use evil-leader and its default leader key,
 insert below setup into your ~/.emacs instead,
 
@@ -37,11 +35,18 @@ insert below setup into your ~/.emacs instead,
   "ci" 'evilnc-comment-or-uncomment-lines
   "cl" 'evilnc-quick-comment-or-uncomment-to-the-line
   "ll" 'evilnc-quick-comment-or-uncomment-to-the-line
-  "cc" 'evilnc-copy-and-comment-lines
+  "cc" 'evilnc-copy-and-comment-lines ; Or use `evilnc-comment-and-kill-ring-save' instead
   "cp" 'evilnc-comment-or-uncomment-paragraphs
   "cr" 'comment-or-uncomment-region
   "cv" 'evilnc-toggle-invert-comment-line-by-line
   "\\" 'evilnc-comment-operator
   )
 
-See https://github.com/redguardtoo/evil-nerd-commenter for more use cases.
+For certain major modes, you need manual setup to override its original
+keybindings,
+
+(defun matlab-mode-hook-config ()
+  (local-set-key (kbd "M-;") 'evilnc-comment-or-uncomment-lines))
+(add-hook 'matlab-mode-hook 'matlab-mode-hook-config)
+
+See https://github.com/redguardtoo/evil-nerd-commenter for detail.

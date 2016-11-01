@@ -72,7 +72,11 @@ Chinese-pyim 的目标是： *尽最大的努力成为一个好用的 emacs 中�
   ;; 我使用全拼
   (setq pyim-default-scheme 'quanpin)
 
-  ;; 设置 pyim 探针设置，可以实现 *无痛* 中英文切换 :-)
+  ;; 设置 pyim 探针设置，这是 pyim 高级功能设置，可以实现 *无痛* 中英文切换 :-)
+  ;; 我自己使用的中英文动态切换规则是：
+  ;; 1. 光标只有在注释里面时，才可以输入中文。
+  ;; 2. 光标前是汉字字符时，才能输入中文。
+  ;; 3. 使用 M-j 快捷键，强制将光标前的拼音字符串转换为中文。
   (setq-default pyim-english-input-switch-functions
                 '(pyim-probe-dynamic-english
                   pyim-probe-isearch-mode
@@ -425,18 +429,6 @@ E-Neo 同学编写了一个词库转换工具: [[https://github.com/E-Neo/scel2p
 1. 只有 :file 是 *必须* 设置的。
 2. 必须使用词库文件的绝对路径。
 3. 词库文件的编码必须为 utf-8-unix，否则会出现乱码。
-
-*** 如何快速切换词库
-用户可以自定义类似的命令来实现快速切换拼音词库。
-
-#+BEGIN_EXAMPLE
-(defun pyim-use-dict:bigdict ()
-  (interactive)
-  (setq pyim-dicts
-        '((:name "BigDict"
-                 :file "/path/to/pyim-bigdict.pyim.gz" )))
-  (pyim-restart-1 t))
-#+END_EXAMPLE
 
 *** Emacs 启动时加载 chinese-pyim 词库
 
