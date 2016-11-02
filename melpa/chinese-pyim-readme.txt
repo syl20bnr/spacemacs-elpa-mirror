@@ -91,7 +91,7 @@ Chinese-pyim 的目标是： *尽最大的努力成为一个好用的 emacs 中�
   (setq pyim-isearch-enable-pinyin-search t)
 
   ;; 使用 pupup-el 来绘制选词框
-  (setq pyim-use-tooltip 'popup)
+  (setq pyim-page-tooltip 'popup)
 
   ;; 选词框显示5个候选词
   (setq pyim-page-length 5)
@@ -213,17 +213,17 @@ Chinese-pyim 支持五笔输入模式，用户可以通过变量 `pyim-default-s
 
 1. 使用 popup 包来绘制选词框 （emacs overlay 机制）
    #+BEGIN_EXAMPLE
-   (setq pyim-use-tooltip 'popup)
+   (setq pyim-page-tooltip 'popup)
    #+END_EXAMPLE
 2. 使用 pos-tip 包来绘制选词框（emacs tooltip 机制）
    #+BEGIN_EXAMPLE
-   (setq pyim-use-tooltip 'pos-tip)
+   (setq pyim-page-tooltip 'pos-tip)
    #+END_EXAMPLE
 
 注：Linux 平台下，emacs 可以使用 GTK 来绘制选词框：
 
 #+BEGIN_EXAMPLE
-(setq pyim-use-tooltip 'pos-tip)
+(setq pyim-page-tooltip 'pos-tip)
 (setq x-gtk-use-system-tooltips t)
 #+END_EXAMPLE
 
@@ -235,10 +235,10 @@ Chinese-pyim 的 tooltip 选词框默认使用 *双行显示* 的样式，在一
 的样式：
 
 #+BEGIN_EXAMPLE
-(setq pyim-guidance 'pyim-guidance:one-line)
+(setq pyim-page-style 'one-line)
 #+END_EXAMPLE
 
-注：用户也可以自定义 guidance 格式化函数。
+注：用户可以添加函数 pyim-page-style:style-name 来定义自己的选词框格式。
 
 *** 设置模糊音
 可以通过设置 `pyim-fuzzy-pinyin-alist' 变量来自定义模糊音。

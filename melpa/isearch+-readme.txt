@@ -714,7 +714,7 @@ Overview of Features ---------------------------------------------
      line following that one in the buffer.  As usual, `C-g' puts
      you back where you started.  This binding is made only if you
      also use `misc-cmds.el'.
-   - `C-h' provides help on Isearch while searsching.  This library
+   - `C-h' provides help on Isearch while searching.  This library
      also redefines `isearch-mode-help' so that it lists all
      Isearch bindings and ends Isearch properly.
 
