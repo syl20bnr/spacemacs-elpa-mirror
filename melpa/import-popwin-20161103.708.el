@@ -1,12 +1,12 @@
 ;;; import-popwin.el --- popwin buffer near by import statements with popwin
 
-;; Copyright (C) 2015 by Syohei YOSHIDA
+;; Copyright (C) 2016 by Syohei YOSHIDA
 
 ;; Author: Syohei YOSHIDA <syohex@gmail.com>
 ;; URL: https://github.com/syohex/emacs-import-popwin
-;; Package-Version: 20150716.233
+;; Package-Version: 20161103.708
 ;; Version: 0.09
-;; Package-Requires: ((popwin "0.6") (cl-lib "0.5"))
+;; Package-Requires: ((emacs "24.3") (popwin "0.6"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -36,13 +36,11 @@
 
 (defcustom import-popwin:height 0.4
   "height of popwin buffer"
-  :type 'number
-  :group 'import-popwin)
+  :type 'number)
 
 (defcustom import-popwin:position 'bottom
   "position of popwin buffer"
-  :type 'symbol
-  :group 'import-popwin)
+  :type 'symbol)
 
 (defvar import-popwin:info nil)
 

@@ -3,7 +3,7 @@
 ;; Copyright (C) 2016 Rami Chowdhury
 ;; Author: Rami Chowdhury <rami.chowdhury@gmail.com>
 ;; URL: http://github.com/necaris/conda.el
-;; Package-Version: 0.0.5
+;; Package-Version: 0.0.6
 ;; Version: 20160914
 ;; Keywords: python, environment, conda
 ;; Package-Requires: ((emacs "24.4") (pythonic "0.1.0") (dash "2.13.0") (s "1.11.0") (f "0.18.2"))
@@ -86,6 +86,8 @@ environment variable."
 
 (defvar conda-project-env-name nil  ;; placeholder for buffer-local variable
   "Current conda environment for the project.  Should always be buffer-local.")
+;; ensure it's considered safe
+(put 'conda-project-env-name 'safe-local-variable 'stringp)
 
 ;; internal utility functions
 

@@ -5,7 +5,7 @@
 ;; Author: Johannes Goslar
 ;; Created: 5 April 2016
 ;; Version: 0.1.0
-;; Package-Version: 20160801.753
+;; Package-Version: 20161103.932
 ;; Keywords: theme, zenburn
 ;; URL: https://github.com/ksjogo/labburn-theme
 
@@ -182,6 +182,8 @@ RED, GREEN, and BLUE should be numbers between 0.0 and 1.0, inclusive."
  `(grep-hit-face ((t (:foreground ,labburn-blue))))
  `(grep-match-face ((t (:foreground ,labburn-orange))))
  `(match ((t (:background ,labburn-bg-1 :foreground ,labburn-orange))))
+;;;;; info
+ `(Info-quoted ((t (:inherit font-lock-constant-face))))
 ;;;;; isearch
  `(isearch ((t (:foreground ,labburn-highlight))))
  `(isearch-fail ((t (:foreground ,labburn-fg :background ,labburn-red-4))))
@@ -201,7 +203,7 @@ RED, GREEN, and BLUE should be numbers between 0.0 and 1.0, inclusive."
  `(trailing-whitespace ((t (:background ,labburn-red))))
  `(vertical-border ((t (:background ,labburn-bg :foreground ,labburn-bg))))
 ;;;;; font lock
- `(font-lock-builtin-face ((t (:foreground ,labburn-fg))))
+ `(font-lock-builtin-face ((t (:foreground ,labburn-fg+1))))
  `(font-lock-comment-face ((t (:foreground ,labburn-green))))
  `(font-lock-comment-delimiter-face ((t (:foreground ,labburn-green-1))))
  `(font-lock-constant-face ((t (:foreground ,labburn-green+4))))
@@ -210,10 +212,10 @@ RED, GREEN, and BLUE should be numbers between 0.0 and 1.0, inclusive."
  `(font-lock-keyword-face ((t (:foreground ,labburn-yellow))))
  `(font-lock-negation-char-face ((t (:foreground ,labburn-yellow))))
  `(font-lock-preprocessor-face ((t (:foreground ,labburn-blue+1))))
- `(font-lock-regexp-grouping-construct ((t (:foreground ,labburn-yellow))))
- `(font-lock-regexp-grouping-backslash ((t (:foreground ,labburn-green))))
+ `(font-lock-regexp-grouping-construct ((t (:foreground ,labburn-yellow+2))))
+ `(font-lock-regexp-grouping-backslash ((t (:foreground ,labburn-green+2))))
  `(font-lock-string-face ((t (:foreground ,labburn-red))))
- `(font-lock-type-face ((t (:foreground ,labburn-orange))))
+ `(font-lock-type-face ((t (:foreground ,labburn-blue-1))))
  `(font-lock-variable-name-face ((t (:foreground ,labburn-orange))))
  `(font-lock-warning-face ((t (:foreground ,labburn-yellow-2))))
  `(c-annotation-face ((t (:inherit font-lock-constant-face))))
@@ -268,7 +270,7 @@ RED, GREEN, and BLUE should be numbers between 0.0 and 1.0, inclusive."
  `(bm-fringe-persistent-face ((t (:background ,labburn-green-1 :foreground ,labburn-bg))))
  `(bm-persistent-face ((t (:background ,labburn-green-1 :foreground ,labburn-bg))))
 ;;;;; cider
- `(cider-result-overlay-face ((t (:foreground ,labburn-fg-1 :background unspecified))))
+ `(cider-result-overlay-face ((t (:background unspecified))))
  `(cider-enlightened-face ((t (:box (:color ,labburn-orange :line-width -1)))))
  `(cider-enlightened-local-face ((t (:weight bold :foreground ,labburn-green+1))))
  `(cider-deprecated-face ((t (:background ,labburn-yellow-2))))
@@ -651,6 +653,23 @@ RED, GREEN, and BLUE should be numbers between 0.0 and 1.0, inclusive."
  `(mini-header-line-active ((t (:background ,labburn-bg-2))))
 ;;;;; mu4e
  `(mu4e-header-key-face ((t (:inherit custom-link :underline nil))))
+ ;;;;; neotree
+ `(neo-banner-face ((t (:foreground ,labburn-blue+1 :weight bold))))
+ `(neo-header-face ((t (:foreground ,labburn-fg))))
+ `(neo-root-dir-face ((t (:foreground ,labburn-blue+1 :weight bold))))
+ `(neo-dir-link-face ((t (:foreground ,labburn-blue))))
+ `(neo-file-link-face ((t (:foreground ,labburn-fg))))
+ `(neo-expand-btn-face ((t (:foreground ,labburn-blue))))
+ `(neo-vc-default-face ((t (:foreground ,labburn-fg+1))))
+ `(neo-vc-user-face ((t (:foreground ,labburn-red :slant italic))))
+ `(neo-vc-up-to-date-face ((t (:foreground ,labburn-fg))))
+ `(neo-vc-edited-face ((t (:foreground ,labburn-magenta))))
+ `(neo-vc-needs-merge-face ((t (:foreground ,labburn-red+1))))
+ `(neo-vc-unlocked-changes-face ((t (:foreground ,labburn-red :background ,labburn-blue-5))))
+ `(neo-vc-added-face ((t (:foreground ,labburn-green+1))))
+ `(neo-vc-conflict-face ((t (:foreground ,labburn-red+1))))
+ `(neo-vc-missing-face ((t (:foreground ,labburn-red+1))))
+ `(neo-vc-ignored-face ((t (:foreground ,labburn-fg-1))))
 ;;;;; org-mode
  `(org-agenda-date-today
    ((t (:foreground ,labburn-fg+1 :slant italic))) t)
@@ -709,7 +728,7 @@ RED, GREEN, and BLUE should be numbers between 0.0 and 1.0, inclusive."
  `(outline-6 ((t (:foreground ,labburn-green+2))))
  `(outline-7 ((t (:foreground ,labburn-red-4))))
  `(outline-8 ((t (:foreground ,labburn-blue-4))))
- ;;;;; pdf-tools
+;;;;; pdf-tools
  `(pdf-view-midnight-colors '(,labburn-fg . ,labburn-bg-05))
 ;;;;; rainbow-delimiters
  `(rainbow-delimiters-depth-1-face ((t (:foreground ,labburn-fg))))
@@ -740,7 +759,7 @@ RED, GREEN, and BLUE should be numbers between 0.0 and 1.0, inclusive."
 ;;;;; show-paren
  `(show-paren-mismatch ((t (:foreground ,labburn-red))))
  `(show-paren-match ((t (:foreground ,labburn-highlight))))
- ;;;;; smartparens
+;;;;; smartparens
  `(sp-show-pair-enclosing-face ((t (:foreground ,labburn-highlight))))
  `(sp-show-pair-match-face ((t (:foreground ,labburn-highlight))))
  `(sp-show-pair-mismatch-face ((t (:foreground ,labburn-red))))

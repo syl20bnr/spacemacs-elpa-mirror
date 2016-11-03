@@ -5,7 +5,7 @@
 ;; Author: Alex Murray <murray.alex@gmail.com>
 ;; Maintainer: Alex Murray <murray.alex@gmail.com>
 ;; URL: https://github.com/alexmurray/evil-vimish-fold
-;; Package-Version: 20161017.1837
+;; Package-Version: 20161103.333
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "24.4") (evil "1.0.0") (vimish-fold "0.2.0"))
 
@@ -30,6 +30,7 @@
 ;;
 ;; Provides bindings to create and delete folds via "zf" and "zd" respectively,
 ;; and provides integration of usual vim fold commands via `vimish-fold`.
+;; Also supports navigation between folds using "zj" / "zk" respectively.
 ;;
 
 ;;; Code:
@@ -61,6 +62,8 @@ See also `evil-create-fold'."
   "Go to the start of the next fold."
   :type inclusive
   (when vimish-fold-mode
+    (unless (numberp count)
+      (setq count 1))
     (dotimes (_ count nil)
       (vimish-fold-next-fold))))
 
@@ -68,6 +71,8 @@ See also `evil-create-fold'."
   "Go to the start of the previous fold."
   :type inclusive
   (when vimish-fold-mode
+    (unless (numberp count)
+      (setq count 1))
     (dotimes (_ count nil)
       (vimish-fold-previous-fold))))
 

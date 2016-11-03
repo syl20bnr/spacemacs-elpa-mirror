@@ -4,7 +4,7 @@
 
 ;; Author: Nicolas Petton <nicolas@petton.fr>
 ;; Keywords: convenience, javascript
-;; Package-Version: 20161030.646
+;; Package-Version: 20161103.823
 ;; Version: 1.0
 ;; Package: gulp-task-runner
 
@@ -81,8 +81,7 @@ If GULPFILE is absent, its value is takend from
   (let* ((gulpfile (gulp--get-gulpfile)))
     (or (gulp--get-tasks-from-cache gulpfile)
         (let ((tasks (gulp--get-tasks-from-gulp)))
-          (setq gulp--task-cache (cons (cons gulpfile tasks)
-                                       gulp--task-cache))
+          (gulp--add-to-cache gulpfile tasks)
           tasks))))
 
 (defun gulp--get-buffer-name (&rest _)
