@@ -4,7 +4,7 @@
 ;;
 ;; Author: George Thomas <iamgeorgethomas@gmail.com>
 ;; URL: https://github.com/thegeorgeous/railscasts-reloaded-theme
-;; Package-Version: 20161102.1124
+;; Package-Version: 20161104.550
 ;; Version: 1.0.0
 ;;
 ;;; Commentary:
@@ -76,6 +76,7 @@
   `(package-name ((t (:foreground ,railscasts-yellow))))
   `(package-status-installed ((t (:foreground ,railscasts-dark-green))))
   `(package-status-dependency ((t (:foreground ,railscasts-green))))
+  `(package-status-built-in ((t (:foreground ,railscasts-red))))
   `(package-description ((t (:foreground ,railscasts-orange))))
 
   ;;;; modeline

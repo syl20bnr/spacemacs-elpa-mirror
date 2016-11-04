@@ -4,7 +4,7 @@
 
 ;; Author: Nicolas Petton <nicolas@petton.fr>
 ;; Keywords: themes
-;; Package-Version: 20161101.1624
+;; Package-Version: 20161104.626
 ;; URL: https://github.com/NicolasPetton/zerodark-theme
 ;; Version: 3.6
 ;; Package: zerodark-theme
@@ -126,7 +126,7 @@
 
 (defvar zerodark-modeline-vc '(vc-mode ("   "
                                         (:eval (all-the-icons-faicon "code-fork" :height 0.9 :v-adjust 0))
-                                        (:eval (truncate-string-to-width 25 vc-mode nil nil "...")))))
+                                        (:eval (truncate-string-to-width vc-mode 25 nil nil "...")))))
 
 (defvar zerodark-modeline-vc-alt '(vc-mode ("   "
                                             (:eval (all-the-icons-faicon "code-fork"
@@ -134,7 +134,7 @@
                                                                          :v-adjust 0
                                                                          :face (when (zerodark--active-window-p)
                                                                                  (zerodark-git-face))))
-                                            (:eval (propertize (truncate-string-to-width 25 vc-mode nil nil "...")
+                                            (:eval (propertize (truncate-string-to-width vc-mode 25 nil nil "...")
                                                                'face (when (zerodark--active-window-p)
                                                                        (zerodark-git-face)))))))
 

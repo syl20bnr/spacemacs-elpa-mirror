@@ -2,7 +2,7 @@
 
 ;; Author: Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/Fanael/wordgen.el
-;; Package-Version: 20161102.1820
+;; Package-Version: 20161104.822
 ;; Package-X-Original-Version: 0.1
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 
@@ -123,10 +123,12 @@ RULESET compilation time.
 Type errors, like (replicate \"foo\" 3) or (++ \"foo\" 10), also result in an
 error being signaled during RULESET compilation."
   (let ((compiled-ruleset (wordgen-compile-ruleset ruleset))
-        (rng (wordgen--prng-create-from-bytes (or seed (wordgen--get-default-seed))))
+        (rng (wordgen--prng-create-from-bytes
+              (or seed (wordgen--get-default-seed))))
         (result '()))
     (dotimes (_ word-count)
-      (push (wordgen-evaluate-ruleset compiled-ruleset rng starting-rule) result))
+      (push (wordgen-evaluate-ruleset compiled-ruleset rng starting-rule)
+            result))
     result))
 
 (defun wordgen-compile-ruleset (ruleset)
@@ -287,7 +289,8 @@ time."
   (value :read-only t))
 
 (wordgen--define-derived-expr-type (choice nil)
-    (wordgen--expr-choice-make (children-count total-weight children original-form))
+    (wordgen--expr-choice-make
+     (children-count total-weight children original-form))
   "CHILDREN is a list of lists (EXPR WEIGHT RUNNING-WEIGHT).
 CHILDREN is sorted according to RUNNING-WEIGHT, ascending."
   ;; The children count is trivial to get from the original vector, so store it
@@ -389,7 +392,8 @@ CHILDREN is sorted according to RUNNING-WEIGHT, ascending."
 (defun wordgen--parse-concat (expression)
   "Compile a concat expression to intermediate representation.
 EXPRESSION is the whole (++ ...) list."
-  (wordgen--expr-concat-make (mapcar #'wordgen--parse-expression (cdr expression))
+  (wordgen--expr-concat-make (mapcar #'wordgen--parse-expression
+                                     (cdr expression))
                              expression))
 
 (defun wordgen--parse-replicate (expression)
@@ -535,10 +539,12 @@ instead."
     (string
      `(wordgen-print-string ,(wordgen--expr-string-value expr)))
     (rule-call
-     `(wordgen-call-rule-by-name rules rng ',(wordgen--expr-rule-call-rule-name expr)))
+     `(wordgen-call-rule-by-name
+       rules rng ',(wordgen--expr-rule-call-rule-name expr)))
     (concat
      `(progn
-        ,@(mapcar #'wordgen--expr-compile (wordgen--expr-concat-children expr))))
+        ,@(mapcar #'wordgen--expr-compile
+                  (wordgen--expr-concat-children expr))))
     (choice
      (wordgen--expr-choice-compile expr))
     (replicate
@@ -553,26 +559,19 @@ instead."
   (let ((total-weight (wordgen--expr-choice-total-weight choice))
         (children (wordgen--expr-choice-children choice))
         (children-count (wordgen--expr-choice-children-count choice)))
-    ;; We have three strategies available to us.
-    ;; * lookup table: used when the weights are relatively dense.
-    ;; * binary search: used when the weights are sparse.
-    ;; * cond-based linear search: used when the are few subexpressions.
-    ;; The conditions used here are mere heuristics that work good enough.
-    (cond
-     ((and (> children-count 2)
-           (> 10 (/ total-weight children-count)))
-      (wordgen--compile-choice-dense children total-weight))
-     ((> children-count 5)
-      (wordgen--compile-choice-sparse children total-weight))
-     (t
-      (wordgen--compile-choice-tiny children total-weight)))))
+    ;; A lookup table makes sense only when the weights are relatively dense.
+    (if (and (> children-count 2)
+             (> 10 (/ total-weight children-count)))
+        (wordgen--compile-choice-dense children total-weight)
+      (wordgen--compile-choice-tree choice))))
 
 (defun wordgen--compile-choice-dense (children total-weight)
   "Compile a choice expression into a dense table lookup.
 CHILDREN and TOTAL-WEIGHT are the slots of `wordgen--expr-choice'."
   (let* ((same-type (wordgen--choice-children-same-eval-type-p children))
          (vec (wordgen--build-vector total-weight children))
-         (aref-form `(aref ,vec (wordgen-prng-next-int ,(1- total-weight) rng))))
+         (aref-form
+          `(aref ,vec (wordgen-prng-next-int ,(1- total-weight) rng))))
     (pcase same-type
       (`integer aref-form)
       (`string `(wordgen-print-string ,aref-form))
@@ -584,33 +583,52 @@ CHILDREN and TOTAL-WEIGHT are the slots of `wordgen--expr-choice'."
        `(let ((x ,aref-form))
           (wordgen--eval-choice-subexpression x rules rng))))))
 
-(defun wordgen--compile-choice-tiny (children total-weight)
-  "Compile a choice expression into a series of conditionals.
-CHILDREN and TOTAL-WEIGHT are the slots of `wordgen--expr-choice'."
-  `(let ((number (wordgen-prng-next-int ,(1- total-weight) rng)))
-     (cond
-      ,@(mapcar
-         (lambda (child)
-           (pcase-let ((`(,expr _ ,limit) child))
-             `(,(if (= limit total-weight) t `(< number ,limit))
-               ,(wordgen--expr-compile expr))))
-         children))))
+(defun wordgen--compile-choice-tree (choice)
+  "Compile a CHOICE expression into a binary tree of conditionals."
+  (let* ((total-weight (wordgen--expr-choice-total-weight choice))
+         (children (wordgen--expr-choice-children choice))
+         (count (wordgen--expr-choice-children-count choice))
+         (tree
+          (wordgen--sorted-array-to-binary-tree (vconcat children) 0 count)))
+    `(let ((number (wordgen-prng-next-int ,(1- total-weight) rng)))
+       ,(wordgen--compile-choice-tree-1 tree))))
 
-(defun wordgen--compile-choice-sparse (children total-weight)
-  "Compile a choice expression into binary search.
-CHILDREN and TOTAL-WEIGHT are the slots of `wordgen--expr-choice'."
-  (let ((vec
-         (apply
-          #'vector
-          (mapcar
-           (lambda (child)
-             (pcase-let ((`(,expr ,weight ,running-weight) child))
-               (list (- running-weight weight)
-                     running-weight
-                     (wordgen--build-choice-subexpression expr))))
-           children))))
-    `(wordgen--choice-binary-search
-      ,vec (wordgen-prng-next-int ,(1- total-weight) rng) rules rng)))
+(defun wordgen--compile-choice-tree-1 (node)
+  "Compile a NODE of the choice expression tree to an Emacs Lisp form."
+  (pcase-let* ((`((,expr ,weight ,limit) . (,left-child . ,right-child)) node)
+               (body (wordgen--expr-compile expr))
+               (start (- limit weight)))
+    (cond
+     ((and left-child right-child)
+      `(cond
+        ((< number ,start)
+         ,(wordgen--compile-choice-tree-1 left-child))
+        ((>= number ,limit)
+         ,(wordgen--compile-choice-tree-1 right-child))
+        (t
+         ,body)))
+     (left-child
+      `(if (>= number ,start)
+           ,body
+         ,(wordgen--compile-choice-tree-1 left-child)))
+     (right-child
+      `(if (< number ,limit)
+           ,body
+         ,(wordgen--compile-choice-tree-1 right-child)))
+     (t
+      body))))
+
+(defun wordgen--sorted-array-to-binary-tree (vec start end)
+  "Given a sorted vector VEC, return the corresponding binary tree.
+Only the range [START..END) of VEC is used; when it's empty, nil is returned.
+
+Each node of the tree is of the form (VALUE . (LEFT . RIGHT))."
+  (unless (>= start end)
+    (let ((mid (+ start (/ (- end start) 2))))
+      (cons (aref vec mid)
+            (cons
+             (wordgen--sorted-array-to-binary-tree vec start mid)
+             (wordgen--sorted-array-to-binary-tree vec (1+ mid) end))))))
 
 (defun wordgen--build-vector (length subexprs)
   "Build a vector of LENGTH elements using SUBEXPRS.
@@ -679,31 +697,6 @@ If all CHILDREN are string literals, integer literals, or lambdas, symbols
           (setq type child-type)))
       type)))
 
-(defun wordgen--choice-binary-search (vec number rules rng)
-  "Find the range in VEC in which NUMBER is, using binary search.
-
-VEC is a sorted vector of (BEGIN END FORM), where [BEGIN..END) is a numeric
-range and FORM is its corresponding compiled form returned from
-`wordgen--build-choice-subexpression'.
-
-RULES and RNG are passed unchanged to the compiled forms."
-  (catch 'return
-    (let ((low 0)
-          (high (length vec)))
-      (while t
-        (let* ((half (+ low (/ (- high low) 2)))
-               (guess (aref vec half))
-               (guess-low (nth 0 guess)))
-          (cond
-           ((and (<= guess-low number)
-                 (< number (nth 1 guess)))
-            (let ((form (nth 2 guess)))
-              (throw 'return (wordgen--eval-choice-subexpression form rules rng))))
-           ((> guess-low number)
-            (setq high half))
-           (t
-            (setq low (1+ half)))))))))
-
 (defun wordgen--expr-replicate-compile (replicate)
   "Compile a REPLICATE expression to an Emacs Lisp form."
   (let ((times-compiled
@@ -720,9 +713,11 @@ RULES and RNG are passed unchanged to the compiled forms."
 (defun wordgen--expr-concat-reeval-compile (concat-reeval)
   "Compile a CONCAT-REEVAL expression to an Emacs Lisp form."
   (let ((times-compiled
-         (wordgen--expr-compile (wordgen--expr-concat-reeval-reps concat-reeval)))
+         (wordgen--expr-compile
+          (wordgen--expr-concat-reeval-reps concat-reeval)))
         (form-compiled
-         (wordgen--expr-compile (wordgen--expr-concat-reeval-subexpr concat-reeval))))
+         (wordgen--expr-compile
+          (wordgen--expr-concat-reeval-subexpr concat-reeval))))
     `(let ((times ,times-compiled))
        (if (<= times 0)
            ""
@@ -765,10 +760,13 @@ When available, uses /dev/urandom."
     (set-buffer-multibyte nil)
     (setq buffer-file-coding-system 'binary)
     (pcase (ignore-errors
-             (call-process "dd" nil '(t nil) nil
-                           "if=/dev/urandom"
-                           (eval-when-compile (concat "bs=" (number-to-string wordgen--prng-optimal-bytes-size)))
-                           "count=1"))
+             (call-process
+              "dd" nil '(t nil) nil
+              "if=/dev/urandom"
+              (eval-when-compile
+                (concat "bs="
+                        (number-to-string wordgen--prng-optimal-bytes-size)))
+              "count=1"))
       (`0 (buffer-string))
       (_ (current-time-string)))))
 
@@ -791,13 +789,15 @@ PASSED-ARRAY must be a vector of 128 32-bit integers."
               `(let ((,value-symbol ,value))
                  (logxor ,value-symbol
                          ,(if (> shift 0)
-                              ;; We're shifting left, so the result may be bigger than 32
-                              ;; bits; truncate it.
+                              ;; We're shifting left, so the result may be
+                              ;; bigger than 32 bits; truncate it.
                               `(logand (lsh ,value-symbol ,shift) #xFFFFFFFF)
                             `(lsh ,value-symbol ,shift)))))))
         (let* ((result
-                (logxor (xorshift -12 (xorshift 17 (aref array index)))
-                        (xorshift -15 (xorshift 13 (aref array (as-index (+ index 33))))))))
+                (logxor
+                 (xorshift -12 (xorshift 17 (aref array index)))
+                 (xorshift -15 (xorshift 13 (aref array
+                                                  (as-index (+ index 33))))))))
           (aset array index result)
           (setq index (as-index (1+ index)))
           result)))))
@@ -842,7 +842,9 @@ LIMIT must be a non-negative integer."
    ((< limit #xFFFFFFFF) (wordgen--prng-next-int-small limit rng))
    ((= limit #xFFFFFFFF) (funcall rng))
    (t (let ((result nil))
-        (while (> (setq result (+ (lsh (wordgen-prng-next-int (lsh limit -32) rng) 32)
+        (while (> (setq result (+ (lsh (wordgen-prng-next-int
+                                        (lsh limit -32) rng)
+                                       32)
                                   (funcall rng)))
                   limit))
         result))))

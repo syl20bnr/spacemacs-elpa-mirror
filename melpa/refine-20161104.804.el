@@ -6,7 +6,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Version: 0.4
-;; Package-Version: 20161028.1638
+;; Package-Version: 20161104.804
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.3") (s "1.11.0") (dash "2.12.0") (list-utils "0.4.4") (loop "1.2"))
 
@@ -98,8 +98,11 @@ Returns nil if SYMBOL is not a custom variable."
                                      (format " %s" it))
                                    lines)))
              (format "\"%s\"" (s-join "\n" indented-lines))))
-          ;; Print nil and t as-is.'
+          ;; Print nil and t as-is.
           ((or (eq t value) (eq nil value))
+           (format "%s" value))
+          ;; Print :foo symbols as-is.
+          ((and (symbolp value) (s-prefix? ":" (symbol-name value)))
            (format "%s" value))
           ;; Display other symbols, and lists, with a quote, so we
           ;; show usable syntax.
