@@ -3,7 +3,8 @@ To setup, insert below code into ~/.emacs:
   (autoload 'gmail2bbdb-import-file "gmail2bbdb" nil t nil)
 
 Usage:
-  - At https://www.google.com/contacts, click "More->Export->vCard format->Export".
-    The file "contacts.vcf" will be downloaded.
-  - Run command "M-x gmail2bbdb-import-file" and select contacts.vcf.
-    ~/.bbdb will be created.
+- Click "More->Export->vCard format->Export" at Google Contacts.
+  Download "contacts.vcf".
+- Run "M-x gmail2bbdb-import-file" and select contacts.vcf.
+  "~/.bbdb" is created.
+- Keep using BBDB.

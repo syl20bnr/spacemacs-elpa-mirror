@@ -12,7 +12,7 @@ To install, just drop this file into a directory in your
 handle files ending in '.yml', add something like:
 
    (require 'yaml-mode)
-   (add-to-list 'auto-mode-alist '("\\.yml$" . yaml-mode))
+   (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode))
 
 to your .emacs file.
 
