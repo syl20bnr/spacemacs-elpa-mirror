@@ -3,9 +3,9 @@
 ;; Copyright (C) 2011-2015  The Magit Project Contributors
 
 ;; Author: Lluís Vilanova <vilanova@ac.upc.edu>
-;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
+;; Maintainer: Lluís Vilanova <vilanova@ac.upc.edu>
 ;; Keywords: vc tools
-;; Package-Version: 2.1.2
+;; Package-Version: 2.1.3
 ;; Package: magit-stgit
 ;; Package-Requires: ((emacs "24.4") (magit "2.1.0"))
 
@@ -66,6 +66,11 @@
 (defgroup magit-stgit nil
   "StGit support for Magit."
   :group 'magit-extensions)
+
+(defgroup magit-stgit-commands nil
+  "Options controlling behavior of certain commands."
+  :group 'magit-stgit)
+
 
 (defcustom magit-stgit-executable "stg"
   "The name of the StGit executable."
@@ -246,7 +251,7 @@ Else, asks the user for a patch name."
 
 (magit-define-popup magit-stgit-popup
   "Popup console for StGit commands."
-  'magit-popups
+  'magit-stgit-commands
   :actions '((?i  "Init"     magit-stgit-init)
              ;;
              (?N  "New"      magit-stgit-new-popup)
@@ -261,6 +266,8 @@ Else, asks the user for a patch name."
              ;;
              (?\r "Show"     magit-stgit-show)
              (?a  "Goto"     magit-stgit-goto-popup)
+             ;;
+             (?m  "Mail patches" magit-stgit-mail-popup)
              ;;
              (?g  "Refresh"  magit-stgit-refresh-popup)
              (?r  "Repair"   magit-stgit-repair)
@@ -286,7 +293,7 @@ Else, asks the user for a patch name."
 
 (magit-define-popup magit-stgit-new-popup
   "Popup console for StGit new."
-  'magit-popups
+  'magit-stgit-commands
   :switches '((?a "Add \"Acked-by:\" line" "--ack")
               (?s "Add \"Signed-off-by:\" line" "--sign"))
   :options  '((?n "Set patch name" ""
@@ -303,7 +310,7 @@ Use ARGS to pass additional arguments."
 
 (magit-define-popup magit-stgit-edit-popup
   "Popup console for StGit edit."
-  'magit-popups
+  'magit-stgit-commands
   :switches '((?s "Add \"Signed-off-by:\" line" "--sign")
               (?a "Add \"Acked-by:\" line" "--ack"))
   :actions  '((?e  "Edit"  magit-stgit-edit))
@@ -319,7 +326,7 @@ Use ARGS to pass additional arguments."
 
 (magit-define-popup magit-stgit-float-popup
   "Popup console for StGit float."
-  'magit-popups
+  'magit-stgit-commands
   :switches '((?k "Keep the local changes" "--keep"))
   :actions  '((?f  "Float"  magit-stgit-float))
   :default-action #'magit-stgit-float)
@@ -342,7 +349,7 @@ Use ARGS to pass additional arguments."
 
 (magit-define-popup magit-stgit-sink-popup
   "Popup console for StGit sink."
-  'magit-popups
+  'magit-stgit-commands
   :switches '((?k "Keep the local changes" "--keep"))
   :options  '((?t "Sink patches below the target patch (else to bottom)"
                   "--to="
@@ -366,7 +373,7 @@ Use ARGS to pass additional arguments."
 
 (magit-define-popup magit-stgit-commit-popup
   "Popup console for StGit commit."
-  'magit-popups
+  'magit-stgit-commands
   :switches '((?a "Commit all applied patches" "--all"))
   :options  '((?n "Commit the specified number of patches" "--number=" read-number))
   :actions  '((?c  "Commit"  magit-stgit-commit))
@@ -384,7 +391,7 @@ Use ARGS to pass additional arguments."
 
 (magit-define-popup magit-stgit-uncommit-popup
   "Popup console for StGit uncommit."
-  'magit-popups
+  'magit-stgit-commands
   :options  '((?n "Uncommit the specified number of commits" "--num=" read-number))
   :actions  '((?C  "Uncommit"  magit-stgit-uncommit))
   :default-action #'magit-stgit-uncommit)
@@ -397,7 +404,7 @@ Use ARGS to pass additional arguments."
 
 (magit-define-popup magit-stgit-refresh-popup
   "Popup console for StGit refresh."
-  'magit-popups
+  'magit-stgit-commands
   :switches '((?u "Only update the current patch files"    "--update")
               (?i "Refresh from index instead of worktree" "--index")
               (?F "Force refresh even if index is dirty"   "--force")
@@ -430,7 +437,7 @@ into the series."
 
 (magit-define-popup magit-stgit-rebase-popup
   "Popup console for StGit rebase."
-  'magit-popups
+  'magit-stgit-commands
   :switches '((?n "Do not push the patches back after rebasing" "--nopush")
               (?m "Check for patches merged upstream"           "--merged"))
   :actions  '((?R  "Rebase"  magit-stgit-rebase))
@@ -453,7 +460,7 @@ Use ARGS to pass additional arguments"
 
 (magit-define-popup magit-stgit-delete-popup
   "Popup console for StGit delete."
-  'magit-popups
+  'magit-stgit-commands
   :switches '((?s "Spill patch contents to worktree and index" "--spill"))
   :actions  '((?k  "Delete"  magit-stgit-delete))
   :default-action #'magit-stgit-delete)
@@ -485,7 +492,7 @@ Use ARGS to pass additional arguments."
 
 (magit-define-popup magit-stgit-goto-popup
   "Popup console for StGit goto."
-  'magit-popups
+  'magit-stgit-commands
   :switches '((?k "Keep the local changes"            "--keep")
               (?m "Check for patches merged upstream" "--merged"))
   :actions  '((?a  "Goto"  magit-stgit-goto))
@@ -503,11 +510,11 @@ Use ARGS to pass additional arguments."
 (defun magit-stgit-show (patch)
   "Show diff of a StGit patch."
   (interactive (magit-stgit-read-patches nil nil t t "Show patch"))
-  (magit-show-commit (magit-stgit-lines "id" patch)))
+  (magit-show-commit (car (magit-stgit-lines "id" patch))))
 
 (magit-define-popup magit-stgit-undo-popup
   "Popup console for StGit undo."
-  'magit-popups
+  'magit-stgit-commands
   :options  '((?n "Undo the last N commands" "--number=" read-number))
   :switches '((?h "Discard changes in index/worktree" "--hard"))
   :actions  '((?z  "Undo"  magit-stgit-undo))
@@ -522,7 +529,7 @@ Use ARGS to pass additional arguments."
 
 (magit-define-popup magit-stgit-redo-popup
   "Popup console for StGit redo."
-  'magit-popups
+  'magit-stgit-commands
   :options  '((?n "Undo the last N commands" "--number=" read-number))
   :switches '((?h "Discard changes in index/worktree" "--hard"))
   :actions  '((?Z  "Redo"  magit-stgit-redo))
@@ -534,6 +541,67 @@ Use ARGS to pass additional arguments."
 Use ARGS to pass additional arguments."
   (interactive (magit-stgit-redo-arguments))
   (magit-run-stgit "redo" args))
+
+;;;; magit-stgit-mail
+
+(magit-define-popup magit-stgit-mail-popup
+  "Popup console for StGit mail."
+  'magit-stgit-commands
+  :man-page "stg-mail"
+  :switches '((?m "Generate an mbox file instead of sending" "--mbox")
+              (?g "Use git send-email" "--git" t)
+              (?A "Auto-detect To, Cc and Bcc for all patches from cover"
+                  "--auto-recipients" t))
+  :options '((?o "Set file as cover message" "--cover="
+                 (lambda (prompt default) (read-file-name "Find file: " default)))
+             (?v "Add version to [PATCH ...]" "--version=")
+             (?p "Add prefix to [... PATCH ...]" "--prefix=")
+             (?t "Mail To" "--to=")
+             (?c "Mail Cc" "--cc=")
+             (?b "Mail Bcc:" "--bcc="))
+  :actions '((?m "Send" magit-stgit-mail)))
+
+;;;###autoload
+(defun magit-stgit-mail (patches &rest args)
+  "Send PATCHES with \"stg mail\".
+
+If a cover is specified, it will be searched to automatically set
+the To, Cc, and Bcc fields for all patches."
+  (interactive (list (magit-stgit-read-patches t t t t "Send patch")
+                     (magit-stgit-mail-arguments)))
+  (setq args (-flatten args))           ; nested list when called from popup
+  (let* ((auto "--auto-recipients")
+         (have-auto (member auto args))
+         (cover (car (delq nil (mapcar (lambda (arg)
+                                         (if (string-prefix-p "--cover=" arg)
+                                             arg nil))
+                                       args))))
+         (cover-pos -1))
+    (when have-auto
+      (setq args (delete auto args)))
+    (when (and have-auto cover)
+      (setq cover (substring cover 8))
+      (setq cover (with-temp-buffer (insert-file-contents cover)
+                                    (buffer-string)))
+      (while (setq cover-pos
+                   (string-match
+                        "^\\(To\\|Cc\\|Bcc\\):[[:space:]]+\\(.*\\)[[:space:]]*$"
+                        cover (1+ cover-pos)))
+        (let ((field (match-string 1 cover))
+              (recipient (match-string 2 cover)))
+          (setq field (match-string 1 cover))
+          (when (string-match "<" recipient)
+            (setq recipient (format "\"%s\"" recipient)))
+          (cond ((equal field "To")
+                 (setq args (cons (format "--to=%s" recipient)
+                                  args)))
+                ((equal field "Cc")
+                 (setq args (cons (format "--cc=%s" recipient)
+                                  args)))
+                ((equal field "Bcc")
+                 (setq args (cons (format "--bcc=%s" recipient)
+                                  args)))))))
+    (magit-run-stgit-async "mail" args patches)))
 
 ;;; Mode
 

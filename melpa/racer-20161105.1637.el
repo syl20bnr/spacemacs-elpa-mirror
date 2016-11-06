@@ -4,8 +4,8 @@
 
 ;; Author: Phil Dawes
 ;; URL: https://github.com/racer-rust/emacs-racer
-;; Package-Version: 20161105.538
-;; Version: 1.2
+;; Package-Version: 20161105.1637
+;; Version: 1.3
 ;; Package-Requires: ((emacs "24.3") (rust-mode "0.2.0") (dash "2.11.0") (s "1.10.0") (f "0.18.2"))
 ;; Keywords: abbrev, convenience, matching, rust, tools
 
@@ -69,8 +69,6 @@
 (require 'thingatpt)
 (require 'button)
 (require 'help-mode)
-;; `cl-case' is not autoloaded on Emacs 24.4.
-(eval-when-compile (require 'cl))
 
 (defgroup racer nil
   "Support for Rust completion via racer."
@@ -160,8 +158,8 @@ racer or racer.el."
 
          ;; Give copy-paste instructions for reproducing any errors
          ;; the user has seen.
-         (racer--header "The temporary file will have been deleted. You should be able to reproduce\n")
-         (racer--header "the same output from racer with the following command:\n\n")
+         (racer--header
+          (s-word-wrap 60 "The temporary file will have been deleted. You should be able to reproduce the same output from racer with the following command:\n\n"))
          (format "$ %s %s %s %s\n\n" cargo-home-used rust-src-path-used
                  (plist-get racer--prev-state :program)
                  (s-join " "
@@ -444,7 +442,7 @@ fenced code delimiters and code annotations."
                    ;; Remove trailing newlines, so we can ensure we
                    ;; have consistent blank lines between sections.
                    (racer--trim-newlines
-                    (cl-case section-type
+                    (pcase section-type
                       (:text
                        (racer--propertize-all-inline-code
                         (racer--propertize-links
@@ -503,7 +501,7 @@ COLUMN number."
        'column column)
       (buffer-string))))
 
-(defun racer--kind (raw-kind)
+(defun racer--kind-description (raw-kind)
   "Human friendly description of a rust kind.
 For example, 'EnumKind' -> 'an enum kind'."
   (let* ((parts (s-split-words raw-kind))
@@ -522,17 +520,22 @@ correct value."
              (raw-docstring (plist-get description :docstring))
              (docstring (if raw-docstring
                             (racer--propertize-docstring raw-docstring)
-                          "Not documented.")))
+                          "Not documented."))
+             (kind (plist-get description :kind)))
         (racer--help-buf
          (format
-          "%s is %s defined in %s.\n\n%s\n\n%s"
+          "%s is %s defined in %s.\n\n%s%s"
           name
-          (racer--kind (plist-get description :kind))
+          (racer--kind-description kind)
           (racer--src-button
            (plist-get description :path)
            (plist-get description :line)
            (plist-get description :column))
-          (concat "    " (racer--syntax-highlight (plist-get description :signature)))
+          (if (equal kind "Module")
+              ;; No point showing the 'signature' of modules, which is
+              ;; just their full path.
+              ""
+            (format "    %s\n\n" (racer--syntax-highlight (plist-get description :signature))))
           docstring))))))
 
 (defun racer-describe ()

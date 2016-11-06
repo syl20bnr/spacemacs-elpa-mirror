@@ -4,7 +4,7 @@
 
 ;; Author: Felipe Ochoa <felipe@fov.space>
 ;; URL: https://github.com/felipeochoa/rjsx-mode/
-;; Package-Version: 20161104.702
+;; Package-Version: 20161105.833
 ;; Package-Requires: ((emacs "24.4") (js2-mode "20160623"))
 ;; Version: 1.0
 ;; Keywords: languages
@@ -27,6 +27,8 @@
 ;; the parse tree gain access to the JSX structure.
 
 ;;; Code:
+
+;;;; Basic mode definitions
 
 (require 'cl-lib)
 (require 'js2-mode)
@@ -59,6 +61,19 @@ the `:around' combinator.  JS2-PARSER is the original XML parser."
   (advice-remove 'js2-parse-xml-initializer #'rjsx-parse-xml-initializer))
 
 
+(defface rjsx-tag
+  '((t . (:inherit font-lock-function-name-face)))
+  "`rjsx-mode' face used to highlight JSX tag names."
+  :group 'rjsx-mode)
+
+(defface rjsx-attr
+  '((t . (:inherit font-lock-variable-name-face)))
+  "`rjsx-mode' face used to highlight JSX attribute names."
+  :group 'rjsx-mode)
+
+
+;;;; Parser constants struct definitions
+
 ;;Token types for XML nodes. Never returned by scanner
 (defvar rjsx-JSX            (+ 1 js2-num-tokens))
 (defvar rjsx-JSX-CLOSE      (+ 2 js2-num-tokens))
@@ -72,29 +87,17 @@ the `:around' combinator.  JS2-PARSER is the original XML parser."
 (js2-msg "msg.bad.jsx.ident" "invalid JSX identifier")
 (js2-msg "msg.invalid.jsx.string" "invalid JSX string (cannot contain delimiter in string body)")
 (js2-msg "msg.mismatched.close.tag" "mismatched closing JSX tag; expected `%s'")
-(js2-msg "msg.no.gt.in.opener" "missing '>' in opening tag")
-(js2-msg "msg.no.gt.in.closer" "missing '>' in closing tag")
-(js2-msg "msg.no.gt.after.slash" "missing '>' after '/' in self-closing tag")
-(js2-msg "msg.no.rc.after.spread" "missing '}' after spread-prop")
-(js2-msg "msg.no.equals.after.jsx.prop" "missing '=' after prop `%s'")
+(js2-msg "msg.no.gt.in.opener" "missing `>' in opening tag")
+(js2-msg "msg.no.gt.in.closer" "missing `>' in closing tag")
+(js2-msg "msg.no.gt.after.slash" "missing `>' after `/' in self-closing tag")
+(js2-msg "msg.no.rc.after.spread" "missing `}' after spread-prop")
+(js2-msg "msg.no.equals.after.jsx.prop" "missing `=' after prop `%s'")
 (js2-msg "msg.no.value.after.jsx.prop" "missing value after prop `%s'")
 (js2-msg "msg.no.dots.in.prop.spread" "missing `...' in spread prop")
-(js2-msg "msg.no.rc.after.expr" "missing '}' after expression")
-(js2-msg "msg.empty.expr" "empty '{}' expression")
+(js2-msg "msg.no.rc.after.expr" "missing `}' after expression")
+(js2-msg "msg.empty.expr" "empty `{}' expression")
 
 
-(defface rjsx-tag
-  '((t . (:inherit font-lock-function-name-face)))
-  "`rjsx-mode' face used to highlight JSX tag names."
-  :group 'rjsx-mode)
-
-(defface rjsx-attr
-  '((t . (:inherit font-lock-variable-name-face)))
-  "`rjsx-mode' face used to highlight JSX attribute names."
-  :group 'rjsx-mode)
-
-
-;; TODO: define js2-printers for all of the structs
 (cl-defstruct (rjsx-node
                (:include js2-node (type rjsx-JSX))
                (:constructor nil)
@@ -140,8 +143,11 @@ the `:around' combinator.  JS2-PARSER is the original XML parser."
 (defun rjsx-node-opening-tag-name (node)
   "Return a string with NODE's opening tag including any namespace and member operations."
   (let ((name-n (rjsx-node-name node)))
-    (if (rjsx-member-p name-n) (rjsx-member-full-name name-n)
-      (rjsx-identifier-full-name name-n))))
+    (cond
+     ((rjsx-member-p name-n) (rjsx-member-full-name name-n))
+     ((rjsx-identifier-p name-n) (rjsx-identifier-full-name name-n))
+     ;; Otherwise it's either nil or an error. Either way, no name :(
+     (t ""))))
 
 (defun rjsx-node-push-prop (n rjsx-prop)
   "Extend rjsx-node N's rjsx-props with js2-node RJSX-PROP.
@@ -182,9 +188,10 @@ Sets KID's parent to N."
 (defun rjsx-closing-tag-full-name (n)
   "Return the string with N's fully-namespaced name, or just name if it's not namespaced."
   (let ((child (rjsx-closing-tag-name n)))
-    (if (rjsx-member-p child)
-        (rjsx-member-full-name child)
-      (rjsx-identifier-full-name child))))
+    (cond
+     ((rjsx-member-p child) (rjsx-member-full-name child))
+     ((rjsx-identifier-p child) (rjsx-identifier-full-name child))
+     (t ""))))
 
 (cl-defstruct (rjsx-identifier
                (:include js2-node (type rjsx-JSX-IDENT))
@@ -301,8 +308,10 @@ Sets KID's parent to N."
   ;; Text nodes include whitespace
   (insert (rjsx-text-value node)))
 
+
+;;;; Recursive descent parsing
 (defvar rjsx-print-debug-message nil "If t will print out debug messages.")
-;(setq rjsx-print-debug-message t) (add-hook 'js2-jsx-mode-hook 'rjsx-mode)
+;(setq rjsx-print-debug-message t)
 (defmacro rjsx-maybe-message (&rest args)
   "If debug is enabled, call `message' with ARGS."
   `(when rjsx-print-debug-message
@@ -335,45 +344,62 @@ This is the entry point when ‘js2-parse-unary-expr’ finds a '<' character"
 (defun rjsx-parse-xml ()
   "Parse a complete xml node from start to end tag."
   (let ((pn (make-rjsx-node)) self-closing name-n name-str child child-name-str)
-    ;; If there are parse errors here
-    (rjsx-maybe-message "cleared <")
-    (setf (rjsx-node-name pn) (setq name-n (rjsx-parse-member-or-ns 'rjsx-tag)))
-    (if (js2-error-node-p name-n)
-        (progn (rjsx-maybe-message "could not parse tag name")
-               (make-js2-error-node :pos (js2-node-pos pn) :len (1+ (js2-node-len name-n))))
-      (setq name-str (if (rjsx-member-p name-n) (rjsx-member-full-name name-n)
-                       (rjsx-identifier-full-name name-n)))
-      (rjsx-maybe-message "cleared tag name: '%s'" name-str)
-      ;; Now parse the attributes
-      (rjsx-parse-attributes pn)
-      (rjsx-maybe-message "cleared attributes")
-      (setf (js2-node-len pn) (- (js2-current-token-end) (js2-node-pos pn)))
-      ;; Now parse either a self closing tag or the end of the opening tag
-      (rjsx-maybe-message "next type: `%s'" (js2-peek-token))
-      (if (setq self-closing (js2-match-token js2-DIV))
-          ;; TODO: make sure there's no whitespace between / and >
-          (js2-must-match js2-GT "msg.no.gt.after.slash"
-                          (js2-node-pos pn) (- (js2-current-token-end) (js2-node-pos pn)))
-        (js2-must-match js2-GT "msg.no.gt.in.opener" (js2-node-pos pn) (js2-node-len pn)))
-      (rjsx-maybe-message "cleared opener closer, self-closing: %s" self-closing)
-      (if self-closing
-          (setf (js2-node-len pn) (- (js2-current-token-end) (js2-node-pos pn)))
-        (while (not (rjsx-closing-tag-p (setq child (rjsx-parse-child))))
-          ;; rjsx-parse-child calls our scanner, which always moves
-          ;; forward at least one character. If it hits EOF, it
-          ;; signals to our caller, so we don't have to worry about infinite loops here
-          (rjsx-maybe-message "parsed child")
-          (rjsx-node-push-child pn child)
-          (if (= 0 (js2-node-len child)) ; TODO: Does this ever happen?
-              (js2-get-token)))
-        (setq child-name-str (rjsx-closing-tag-full-name child))
-        (unless (string= name-str child-name-str)
-          (js2-report-error "msg.mismatched.close.tag" name-str (js2-node-pos child) (js2-node-len child)))
-        (rjsx-maybe-message "cleared children for `%s'" name-str)
-        (js2-node-add-children pn child)
-        (setf (rjsx-node-closing-tag pn) child))
-      (rjsx-maybe-message "Returning completed XML node")
-      pn)))
+    (rjsx-maybe-message "Starting rjsx-parse-xml after <")
+    (if (setq child (rjsx-parse-empty-tag))
+        child
+      (setf (rjsx-node-name pn) (setq name-n (rjsx-parse-member-or-ns 'rjsx-tag)))
+      (if (js2-error-node-p name-n)
+          (progn (rjsx-maybe-message "could not parse tag name")
+                 (make-js2-error-node :pos (js2-node-pos pn) :len (1+ (js2-node-len name-n))))
+        (js2-node-add-children pn name-n)
+        (setq name-str (if (rjsx-member-p name-n) (rjsx-member-full-name name-n)
+                         (rjsx-identifier-full-name name-n)))
+        (rjsx-maybe-message "cleared tag name: '%s'" name-str)
+        ;; Now parse the attributes
+        (rjsx-parse-attributes pn)
+        (rjsx-maybe-message "cleared attributes")
+        ;; Now parse either a self closing tag or the end of the opening tag
+        (rjsx-maybe-message "next type: `%s'" (js2-peek-token))
+        (if (setq self-closing (js2-match-token js2-DIV))
+            ;; TODO: make sure there's no whitespace between / and >
+            (js2-must-match js2-GT "msg.no.gt.after.slash"
+                            (js2-node-pos pn) (- (js2-current-token-end) (js2-node-pos pn)))
+          (js2-must-match js2-GT "msg.no.gt.in.opener" (js2-node-pos pn) (js2-node-len pn)))
+        (rjsx-maybe-message "cleared opener closer, self-closing: %s" self-closing)
+        (if self-closing
+            (setf (js2-node-len pn) (- (js2-current-token-end) (js2-node-pos pn)))
+          (while (not (rjsx-closing-tag-p (setq child (rjsx-parse-child))))
+            ;; rjsx-parse-child calls our scanner, which always moves
+            ;; forward at least one character. If it hits EOF, it
+            ;; signals to our caller, so we don't have to worry about infinite loops here
+            (rjsx-maybe-message "parsed child")
+            (rjsx-node-push-child pn child)
+            (if (= 0 (js2-node-len child)) ; TODO: Does this ever happen?
+                (js2-get-token)))
+          (setq child-name-str (rjsx-closing-tag-full-name child))
+          (unless (string= name-str child-name-str)
+            (js2-report-error "msg.mismatched.close.tag" name-str (js2-node-pos child) (js2-node-len child)))
+          (rjsx-maybe-message "cleared children for `%s'" name-str)
+          (js2-node-add-children pn child)
+          (setf (rjsx-node-closing-tag pn) child))
+        (rjsx-maybe-message "Returning completed XML node")
+        (setf (js2-node-len pn) (- (js2-current-token-end) (js2-node-pos pn)))
+        pn))))
+
+(defun rjsx-parse-empty-tag ()
+  "Check if we are in an empty tag of the form `</>' and consume it if so.
+Returns a `js2-error-node' if we are in one or nil if not."
+  (let ((beg (js2-current-token-beg)))
+    (when (js2-match-token js2-DIV)
+        (if (js2-match-token js2-GT)
+            (progn ; We're in a </> block, likely created by us in `rjsx-electric-lt'
+              ;; We only highlight the < to reduce the visual impact
+              (js2-report-error "msg.syntax" nil beg 1)
+              (make-js2-error-node :pos beg :len (- (js2-current-token-end) beg)))
+          ;; TODO: This is probably an unmatched closing tag. We should
+          ;; consume it, mark it an error, and move on
+          (js2-unget-token)
+          nil))))
 
 (defun rjsx-parse-attributes (parent)
   "Parse all attributes, including key=value and {...spread}, and add them to PARENT."
@@ -387,12 +413,12 @@ This is the entry point when ‘js2-parse-unary-expr’ finds a '<' character"
     (while (not (memql (js2-peek-token) loop-terminators))
       (rjsx-maybe-message "Starting loop. Next token type: %s\nToken pos: %s" (js2-peek-token) (js2-current-token-beg))
       (setq attr
-       (if (js2-match-token js2-LC)
-           (or (rjsx-check-for-empty-curlies t)
-               (prog1 (rjsx-parse-spread)
-                 (rjsx-maybe-message "Parsed spread")))
-         (rjsx-maybe-message "Parsing single attr")
-         (rjsx-parse-single-attr)))
+            (if (js2-match-token js2-LC)
+                (or (rjsx-check-for-empty-curlies t)
+                    (prog1 (rjsx-parse-spread)
+                      (rjsx-maybe-message "Parsed spread")))
+              (rjsx-maybe-message "Parsing single attr")
+              (rjsx-parse-single-attr)))
       (when (js2-error-node-p attr) (js2-get-token))
                                         ; TODO: We should make this conditional on
                                         ; `js2-recover-from-parse-errors'
@@ -656,15 +682,17 @@ and {}-bracketed expressions.  Return the parsed child."
 Return the parsed child, which is a `rjsx-closing-tag' if a
 closing tag was parsed."
   (let ((beg (js2-current-token-beg)) pn)
-    (if (js2-match-token js2-DIV)
-        (progn (setq pn (make-rjsx-closing-tag :pos beg :name (rjsx-parse-member-or-ns 'rjsx-tag)))
-               (if (js2-must-match js2-GT "msg.no.gt.in.closer" beg (- (js2-current-token-end) beg))
-                   (rjsx-maybe-message "parsed closing tag")
-                 (rjsx-maybe-message "missing closing `>'"))
-               (setf (js2-node-len pn) (- (js2-current-token-end) beg))
-               pn)
-      (rjsx-maybe-message "parsing a child XML item")
-      (rjsx-parse-xml))))
+    (if (setq pn (rjsx-parse-empty-tag))
+        pn
+      (if (js2-match-token js2-DIV)
+          (progn (setq pn (make-rjsx-closing-tag :pos beg :name (rjsx-parse-member-or-ns 'rjsx-tag)))
+                 (if (js2-must-match js2-GT "msg.no.gt.in.closer" beg (- (js2-current-token-end) beg))
+                     (rjsx-maybe-message "parsed closing tag")
+                   (rjsx-maybe-message "missing closing `>'"))
+                 (setf (js2-node-len pn) (- (js2-current-token-end) beg))
+                 pn)
+        (rjsx-maybe-message "parsing a child XML item")
+        (rjsx-parse-xml)))))
 
 (defun rjsx-get-next-xml-token ()
   "Scan through the XML text and push one token onto the stack."
@@ -709,5 +737,54 @@ closing tag was parsed."
           (throw 'rjsx-eof-while-parsing t))
          (t (js2-add-to-string c)))))))
 
+
+;;;; Interactive commands and keybindings
+(defun rjsx-electric-lt (n)
+    "Insert a context-sensitive less-than sign.
+Optional prefix argument N indicates how many signs to insert.
+If N is greater than one, no special handling takes place.
+Otherwise, if the less-than sign would start a JSX block, it
+inserts `< />' and places the cursor inside the new tag."
+    (interactive "p")
+    (if (/= n 1)
+        (insert (make-string n "<"))
+      (let ((inhibit-changing-match-data t))
+        (if (looking-back (rx (or "=" "(" "?" ":" ">" "}" "&" "|" "{"
+                                  "return")
+                              (zero-or-more (or "\n" space)))
+                          (point-at-bol -2))
+            (progn (insert "</>")
+                   (backward-char 2))
+          (insert "<")))))
+
+(define-key rjsx-mode-map "<" 'rjsx-electric-lt)
+
+(defun rjsx-delete-creates-full-tag (n &optional killflag)
+  "N and KILLFLAG are as in `delete-char'.
+If N is 1 and KILLFLAG nil, checks to see if we're in a
+self-closing tag about to delete the slash.  If so, deletes the
+slash and inserts a matching end-tag."
+  (interactive "p")
+  (if (or killflag (/= 1 n) (not (looking-at-p "/\\s-*>")) (not js2-mode-ast))
+      (call-interactively 'delete-char)
+    (let ((node (js2-node-at-point (point) t)))
+      (while (and node (not (rjsx-node-p node)))
+        (setq node (js2-node-parent node)))
+      (if node
+          (progn
+            (delete-char 1)
+            (search-forward ">" )
+            (save-excursion
+              (insert "</" (rjsx-node-opening-tag-name node) ">")))
+        (delete-char 1)))))
+
+(define-key rjsx-mode-map (kbd "C-d") 'rjsx-delete-creates-full-tag)
+
+
 (provide 'rjsx-mode)
 ;;; rjsx-mode.el ends here
+
+;; Local Variables:
+;; outline-regexp: ";;;\\(;* [^
+;; ]\\|###autoload\\)\\|(....."
+;; End:

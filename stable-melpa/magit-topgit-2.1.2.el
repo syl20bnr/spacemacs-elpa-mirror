@@ -1,11 +1,11 @@
 ;;; magit-topgit.el --- TopGit extension for Magit
 
-;; Copyright (C) 2010-2015  The Magit Project Contributors
+;; Copyright (C) 2010-2016  The Magit Project Contributors
 
 ;; Author: Yann Hodique <yann.hodique@gmail.com>
-;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
+;; Maintainer: Robin Green <greenrd@greenrd.org>
 ;; Keywords: vc tools
-;; Package-Version: 2.1.1
+;; Package-Version: 2.1.2
 ;; Package: magit-topgit
 ;; Package-Requires: ((emacs "24.4") (magit "2.1.0"))
 
@@ -35,6 +35,13 @@
 ;; topics is displayed in the status buffer.  While point is on such
 ;; a topic it can checked out using `RET' and discarded using `k'.
 ;; Other TopGit commands are available from the TopGit popup on `T'.
+
+;; TopGit popup on `T' shadows default magit-notes-popup on `T'.
+;; To rebind magit-notes-popup on `O':
+;;
+;;   (with-eval-after-load 'magit
+;;     (define-key magit-mode-map "O" 'magit-notes-popup)
+;;     (magit-change-popup-key 'magit-dispatch-popup :action ?T ?O))
 
 ;; To enable the mode in a particular repository use:
 ;;
@@ -109,7 +116,7 @@
 (defun magit-start-topgit (&optional input &rest args)
   (apply #'magit-start-process magit-topgit-executable input args))
 
-(defconst magit-topgit-topic-re "^\\(.\\{7\\}\\)\t\\([^ ]+\\) +\\(.*\\)")
+(defconst magit-topgit-topic-re "^\\(.\\{7\\}\\)\t\\([^ \t]+\\)[ \t]+\\(.*\\)")
 
 (defun magit-topgit-read-topic (prompt)
   (magit-completing-read

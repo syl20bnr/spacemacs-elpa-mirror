@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2015, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.11.3
-;; Package-Version: 20161102.1327
+;; Version: 2.11.4
+;; Package-Version: 20161105.1325
 ;; Created: 23 Mar 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: lisp, languages
@@ -70,9 +70,6 @@
 ;; Then put the following in ~/.emacs.d/init.el
 ;; (add-to-list 'load-path "~/.emacs.d/lisp/")
 ;; (autoload 'xah-elisp-mode "xah-elisp-mode" "xah emacs lisp major mode." t)
-
-;;; todo:
-;; 2015-05-17 type this “push-mark” and you get this instead (push NEWELT-▮ PLACE). temp solution, type “push” then tab. Always use tab to create functions...
 
 
 ;;; Code:
@@ -240,6 +237,8 @@
 (defvar xah-elisp-emacs-words nil "List of elisp keywords that's not core lisp language, such as buffer, marker, hook, editing, copy paste, ….")
 (setq xah-elisp-emacs-words '(
 
+
+"make-syntax-table"
 "display-completion-list"
 "all-completions"
 "try-completion"
@@ -1675,6 +1674,7 @@ If there's a text selection, act on the region, else, on defun block."
     ("mb" "match-beginning" xah-elisp--ahf)
     ("md" "make-directory" xah-elisp--ahf)
     ("me" "match-end" xah-elisp--ahf)
+    ("mc" "mapcar" xah-elisp--ahf)
     ("ms" "match-string" xah-elisp--ahf)
     ("pm" "point-min" xah-elisp--ahf)
     ("px" "point-max" xah-elisp--ahf)
@@ -2131,18 +2131,23 @@ If there's a text selection, act on the region, else, on defun block."
           )))
 
 
-;; ;; syntax table
-;; (defvar xah-elisp-syntax-table nil "Syntax table for `xah-elisp-mode'.")
-;; (setq xah-elisp-syntax-table
-;;       (let ((synTable (make-syntax-table)))
-;;         (modify-syntax-entry ?\; "<" synTable)
-;;         (modify-syntax-entry ?\n ">" synTable)
-;;         (modify-syntax-entry ?` "'   " synTable)
-;;         (modify-syntax-entry ?' "'   " synTable)
-;;         (modify-syntax-entry ?, "'   " synTable)
-;;         (modify-syntax-entry ?@ "'   " synTable)
+;; syntax table
+(defvar xah-elisp-mode-syntax-table nil "Syntax table for `xah-elisp-mode'.")
 
-;;         synTable))
+(setq xah-elisp-mode-syntax-table
+      (let ((synTable (make-syntax-table emacs-lisp-mode-syntax-table)))
+
+        (modify-syntax-entry ?\* "w" synTable)
+        (modify-syntax-entry ?\- "w" synTable)
+
+        ;; (modify-syntax-entry ?\; "<" synTable)
+        ;; (modify-syntax-entry ?\n ">" synTable)
+        ;; (modify-syntax-entry ?` "'   " synTable)
+        ;; (modify-syntax-entry ?' "'   " synTable)
+        ;; (modify-syntax-entry ?, "'   " synTable)
+        ;; (modify-syntax-entry ?@ "'   " synTable)
+
+        synTable))
 
 
 ;; keybinding
@@ -2188,7 +2193,7 @@ home page:
 URL `http://ergoemacs.org/emacs/xah-elisp-mode.html'
 
 \\{xah-elisp-mode-map}"
-  (set-syntax-table emacs-lisp-mode-syntax-table)
+  ;; (set-syntax-table emacs-lisp-mode-syntax-table)
   (setq font-lock-defaults '((xah-elisp-font-lock-keywords)))
 
   (setq-local comment-start "; ")

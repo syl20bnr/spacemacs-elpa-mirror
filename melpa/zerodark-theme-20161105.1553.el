@@ -4,7 +4,7 @@
 
 ;; Author: Nicolas Petton <nicolas@petton.fr>
 ;; Keywords: themes
-;; Package-Version: 20161104.626
+;; Package-Version: 20161105.1553
 ;; URL: https://github.com/NicolasPetton/zerodark-theme
 ;; Version: 3.6
 ;; Package: zerodark-theme
@@ -64,6 +64,10 @@
   '((t :foreground "#98be65" :height 0.9))
   "Face for not modified buffers in the mode-line.")
 
+(defface zerodark-buffer-position-alt-face
+  '((t :height 0.9))
+  "Face for line/column numbers in the mode-line.")
+
 (defface zerodark-vc-alt-face
   '((t :foreground "#61afef"))
   "Face for vc status in the mode-line.")
@@ -88,7 +92,9 @@
 (defvar zerodark-modeline-position ":%l:%c %p "
   "Mode line construct for displaying the position in the buffer.")
 
-(defvar zerodark-modeline-position-alt (propertize ":%l:%c %p " 'face 'mode-line-inactive)
+(defvar zerodark-modeline-position-alt '(:eval (propertize ":%l:%c %p " 'face (if (zerodark--active-window-p)
+                                                                                  'zerodark-buffer-position-alt-face
+                                                                                'mode-line-inactive)))
   "Alternate mode line construct for displaying the position in the buffer.")
 
 (defvar zerodark-modeline-buffer-identification '(:eval (propertize "%b" 'face 'bold))
@@ -618,6 +624,8 @@ The result is cached for one second to avoid hiccups."
    `(term ((,class (:foreground ,default :background ,background))))
    `(term-default-fg-color ((,class (:inherit term-color-white))))
    `(term-default-bg-color ((,class (:inherit term-color-black))))
+
+   `(sh-heredoc ((,class (:foreground ,orange :weight bold))))
 
    `(avy-lead-face ((,class :foreground ,red :background ,background-red)))
    `(avy-lead-face-0 ((,class :foreground ,purple :background ,background-purple)))

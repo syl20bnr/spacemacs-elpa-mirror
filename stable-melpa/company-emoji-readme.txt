@@ -3,12 +3,10 @@ company-mode backend providing autocompletion for emoji. 🆒💦
 ### setup
 
 Add `company-emoji.el` to your load-path, then add something like the
-following to your init file (`company-emoji-init` doesn’t start
-company-mode):
+following to your init file:
 
 (require 'company-emoji)
-(add-hook 'markdown-mode-hook 'company-mode)
-(add-hook 'markdown-mode-hook 'company-emoji-init)
+(add-to-list 'company-backends 'company-emoji)
 
 After selecting an emoji-word from the completion-list, it will be
 replaced by the real unicode emoji (`:cactus:` becomes 🌵, `:cat:`
@@ -16,32 +14,29 @@ becomes 🐱, etc.)
 
 ### emoji font support
 
-#### mac os
-
-If you’re using the cocoa version of Emacs (i.e., if built
- `‐-with-ns`, or `--with-cocoa` using Homebrew), you’ll need to add
- something like this to your init file (thanks [@waymondo](https://github.com/waymondo)!):
+If you’re on Linux, or on Mac OS X and using the Cocoa version of
+Emacs (i.e., if built `‐-with-ns`, or `--with-cocoa` using Homebrew),
+you’ll need to add something like this to your init file (thanks to
+[@syohex](https://github.com/syohex) and
+[@waymondo](https://github.com/waymondo)):
 
 ```elisp
-(defun darwin-set-emoji-font (frame)
-"Adjust the font settings of FRAME so Emacs NS/Cocoa can display emoji properly."
+(defun --set-emoji-font (frame)
+  "Adjust the font settings of FRAME so Emacs can display emoji properly."
   (if (eq system-type 'darwin)
-    (set-fontset-font t 'symbol (font-spec :family "Apple Color Emoji") frame 'prepend)))
-For when emacs is started with Emacs.app
-(darwin-set-emoji-font nil)
-Hook for when a cocoa frame is created with emacsclient
+      ;; For NS/Cocoa
+      (set-fontset-font t 'symbol (font-spec :family "Apple Color Emoji") frame 'prepend)
+    ;; For Linux
+    (set-fontset-font t 'symbol (font-spec :family "Symbola") frame 'prepend)))
+
+For when Emacs is started in GUI mode:
+(--set-emoji-font nil)
+Hook for when a frame is created with emacsclient
 see https://www.gnu.org/software/emacs/manual/html_node/elisp/Creating-Frames.html
-(add-hook 'after-make-frame-functions 'darwin-set-emoji-font)
+(add-hook 'after-make-frame-functions '--set-emoji-font)
 ```
 
-#### linux
-
-Linux users will need to replace “Apple Color Emoji” with an available
-font with emoji support, such as
-[Symbola](https://zhm.github.io/symbola/) (thanks to
-[@syohex](https://github.com/syohex) for figuring this out for their
-[emoji backend for auto-complete](https://github.com/syohex/emacs-ac-emoji#linux-users)).
-Symbola can be installed with `apt-get`:
+[Symbola](https://zhm.github.io/symbola/) can be installed with `apt-get`:
 
 ```sh
 apt-get install ttf-ancient-fonts
@@ -75,9 +70,9 @@ Hide Company Emoji Aliases:
 (“Symbol” designates the user-defined alias, and “string” designates
 the original shortcode you want your alias to mimick.)
 
-Occasionally new default aliases may be added (like :middle-finger:
+Occasionally new default aliases may be added (like `:middle-finger:`
 for 🖕). If you’re upgrading and have modified the
-`company-emoji-alises` variable, the new aliases will be ignored;
+`company-emoji-aliases` variable, the new aliases will be ignored;
 you’ll need to add them manually.
 
 #### unicode replacement

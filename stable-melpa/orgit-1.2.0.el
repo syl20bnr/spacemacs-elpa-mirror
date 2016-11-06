@@ -6,7 +6,7 @@
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.1") (magit "2.4.1") (org "8.3.3"))
-;; Package-Version: 20161104.1823
+;; Package-Version: 1.2.0
 ;; Homepage: https://github.com/magit/orgit
 
 ;; This library was inspired by `org-magit.el' which was written by
@@ -66,13 +66,16 @@
 (require 'magit)
 (require 'org)
 
+;;;###autoload
 (defun orgit-link-set-parameters (type &rest parameters)
   (if (fboundp 'org-link-set-parameters) ; since v9.0
       (apply  #'org-link-set-parameters type parameters)
     (with-no-warnings
-      (funcall 'org-add-link-type type
-               (plist-get parameters :follow)
-               (plist-get parameters :export)))))
+      (org-add-link-type type
+                         (plist-get parameters :follow)
+                         (plist-get parameters :export))
+      (add-hook 'org-store-link-functions
+                (plist-get parameters :store)))))
 
 ;;; Options
 
@@ -142,10 +145,10 @@ If all of the above fails then `orgit-export' raises an error."
 
 ;;;###autoload
 (eval-after-load "org"
-  '(progn (orgit-link-set-parameters "orgit"
-                                     :follow 'orgit-status-open
-                                     :export 'orgit-status-export)
-          (add-hook 'org-store-link-functions 'orgit-status-store)))
+  '(orgit-link-set-parameters "orgit"
+                              :store  'orgit-status-store
+                              :follow 'orgit-status-open
+                              :export 'orgit-status-export))
 
 ;;;###autoload
 (defun orgit-status-store ()
@@ -158,7 +161,7 @@ If all of the above fails then `orgit-export' raises an error."
 
 ;;;###autoload
 (defun orgit-status-open (path)
-  (magit-status-internal (file-name-as-directory path)))
+  (magit-status-internal (file-name-as-directory (expand-file-name path))))
 
 ;;;###autoload
 (defun orgit-status-export (path desc format)
@@ -168,10 +171,10 @@ If all of the above fails then `orgit-export' raises an error."
 
 ;;;###autoload
 (eval-after-load "org"
-  '(progn (orgit-link-set-parameters "orgit-log"
-                                     :follow 'orgit-log-open
-                                     :export 'orgit-log-export)
-          (add-hook 'org-store-link-functions 'orgit-log-store)))
+  '(orgit-link-set-parameters "orgit-log"
+                              :store  'orgit-log-store
+                              :follow 'orgit-log-open
+                              :export 'orgit-log-export))
 
 ;;;###autoload
 (defun orgit-log-store ()
@@ -185,8 +188,9 @@ If all of the above fails then `orgit-export' raises an error."
 
 ;;;###autoload
 (defun orgit-log-open (path)
-  (-let [(default-directory rev)
-         (split-string path "::")]
+  (-let* (((dir rev)
+           (split-string path "::"))
+          (default-directory (file-name-as-directory (expand-file-name dir))))
     (apply #'magit-log
            (cons (list rev) (magit-log-arguments)))))
 
@@ -198,10 +202,10 @@ If all of the above fails then `orgit-export' raises an error."
 
 ;;;###autoload
 (eval-after-load "org"
-  '(progn (orgit-link-set-parameters "orgit-rev"
-                                     :follow 'orgit-rev-open
-                                     :export 'orgit-rev-export)
-          (add-hook 'org-store-link-functions 'orgit-rev-store)))
+  '(orgit-link-set-parameters "orgit-rev"
+                              :store  'orgit-rev-store
+                              :follow 'orgit-rev-open
+                              :export 'orgit-rev-export))
 
 ;;;###autoload
 (defun orgit-rev-store ()
@@ -221,8 +225,9 @@ points at the revision, if any."
 
 ;;;###autoload
 (defun orgit-rev-open (path)
-  (-let [(default-directory rev)
-         (split-string path "::")]
+  (-let* (((dir rev)
+           (split-string path "::"))
+          (default-directory (file-name-as-directory (expand-file-name dir))))
     (apply #'magit-show-commit
            (cons rev (magit-diff-arguments)))))
 
@@ -235,7 +240,7 @@ points at the revision, if any."
 (defun orgit-export (path desc format gitvar idx)
   (-let* (((dir rev)
            (split-string path "::"))
-          (default-directory (file-name-as-directory dir))
+          (default-directory (file-name-as-directory (expand-file-name dir)))
           (remotes (magit-git-lines "remote"))
           (remote  (magit-get "orgit.remote"))
           (remote  (cond ((= (length remotes) 1) (car remotes))

@@ -5,7 +5,7 @@
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;;         Fanael Linithien <fanael4@gmail.com>
 ;; Keywords: lisp
-;; Package-Version: 20161104.2345
+;; Package-Version: 20161105.2041
 ;; Version: 0
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
 
@@ -467,7 +467,7 @@ DESC is a struct as returned by `package-buffer-info'."
   (save-excursion
     (goto-char (point-min))
     (re-search-forward
-     (concat lm-header-prefix (rx (or "Package-Version" "Package-Requires")))
+     (concat lm-header-prefix (rx (or "Version" "Package-Version" "Package-Requires")))
      nil t)))
 
 (defun package-lint--lowest-installable-version-of (package)
@@ -572,6 +572,21 @@ where TYPE is either 'warning or 'error.
 Current buffer is used if none is specified."
   (with-current-buffer (or buffer (current-buffer))
     (package-lint--check-all force)))
+
+;;;###autoload
+(defun package-lint-current-buffer ()
+  "Display lint errors and warnings for the current buffer."
+  (interactive)
+  (let ((errs (package-lint-buffer nil t))
+        (buf "*Package-Lint*"))
+    (with-current-buffer (get-buffer-create buf)
+      (let ((buffer-read-only nil))
+        (delete-region (point-min) (point-max))
+        (pcase-dolist (`(,line ,col ,type ,message) errs)
+          (insert (format "%d:%d: %s: %s\n" line col type message))))
+      (special-mode)
+      (view-mode 1))
+    (display-buffer buf)))
 
 (defun package-lint-batch-and-exit ()
   "Run `package-lint-buffer' on the files remaining on the command line.

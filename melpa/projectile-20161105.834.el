@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20161105.110
+;; Package-Version: 20161105.834
 ;; Keywords: project, convenience
 ;; Version: 0.15.0-cvs
 ;; Package-Requires: ((pkg-info "0.4"))
@@ -1599,7 +1599,7 @@ project-root for every file."
            ((eq projectile-completion-system 'helm)
             (if (fboundp 'helm)
                 (helm :sources
-                      (helm-build-sync-source "Projectile"
+                      (helm-make-source "Projectile" 'helm-source-sync
                         :candidates choices
                         :action (if action
                                     (prog1 action

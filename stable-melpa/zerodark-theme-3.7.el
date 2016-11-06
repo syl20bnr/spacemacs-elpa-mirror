@@ -4,11 +4,11 @@
 
 ;; Author: Nicolas Petton <nicolas@petton.fr>
 ;; Keywords: themes
-;; Package-Version: 3.6
+;; Package-Version: 3.7
 ;; URL: https://github.com/NicolasPetton/zerodark-theme
-;; Version: 3.5
+;; Version: 3.6
 ;; Package: zerodark-theme
-;; Package-Requires: ((s "1.9.0") (all-the-icons "2.0.0") (powerline "2.4") (magit "2.8.0") (flycheck "29"))
+;; Package-Requires: ((all-the-icons "2.0.0") (powerline "2.4") (magit "2.8.0") (flycheck "29"))
 
 ;; This file is NOT part of GNU Emacs
 
@@ -28,7 +28,6 @@
 
 ;;; Code:
 
-(require 's)
 (require 'all-the-icons)
 (require 'powerline)
 
@@ -65,6 +64,10 @@
   '((t :foreground "#98be65" :height 0.9))
   "Face for not modified buffers in the mode-line.")
 
+(defface zerodark-buffer-position-alt-face
+  '((t :height 0.9))
+  "Face for line/column numbers in the mode-line.")
+
 (defface zerodark-vc-alt-face
   '((t :foreground "#61afef"))
   "Face for vc status in the mode-line.")
@@ -89,7 +92,9 @@
 (defvar zerodark-modeline-position ":%l:%c %p "
   "Mode line construct for displaying the position in the buffer.")
 
-(defvar zerodark-modeline-position-alt (propertize ":%l:%c %p " 'face 'mode-line-inactive)
+(defvar zerodark-modeline-position-alt '(:eval (propertize ":%l:%c %p " 'face (if (zerodark--active-window-p)
+                                                                                  'zerodark-buffer-position-alt-face
+                                                                                'mode-line-inactive)))
   "Alternate mode line construct for displaying the position in the buffer.")
 
 (defvar zerodark-modeline-buffer-identification '(:eval (propertize "%b" 'face 'bold))
@@ -127,7 +132,7 @@
 
 (defvar zerodark-modeline-vc '(vc-mode ("   "
                                         (:eval (all-the-icons-faicon "code-fork" :height 0.9 :v-adjust 0))
-                                        (:eval (s-truncate 25 vc-mode)))))
+                                        (:eval (truncate-string-to-width vc-mode 25 nil nil "...")))))
 
 (defvar zerodark-modeline-vc-alt '(vc-mode ("   "
                                             (:eval (all-the-icons-faicon "code-fork"
@@ -135,7 +140,7 @@
                                                                          :v-adjust 0
                                                                          :face (when (zerodark--active-window-p)
                                                                                  (zerodark-git-face))))
-                                            (:eval (propertize (s-truncate 25 vc-mode)
+                                            (:eval (propertize (truncate-string-to-width vc-mode 25 nil nil "...")
                                                                'face (when (zerodark--active-window-p)
                                                                        (zerodark-git-face)))))))
 
@@ -274,7 +279,12 @@ The result is cached for one second to avoid hiccups."
                                               :foreground ,(if zerodark-use-high-contrast-in-mode-line
                                                       comment
                                                     default)))))
-   `(header-line ((,class (:inherit mode-line-inactive))))
+   `(header-line ((,class (:background ,background-darker :foreground ,comment))))
+
+   ;; error & success
+   `(error ((,class (:foreground ,red :weight bold))))
+   `(warning ((,class (:foreground ,orange :weight bold))))
+   `(success ((,class (:foreground ,green :weight bold))))
 
    ;; powerline
    `(powerline-active1 ((,class (:height 0.9 :foreground ,blue :background ,background-darker))))
@@ -344,7 +354,7 @@ The result is cached for one second to avoid hiccups."
    `(compilation-line-number ((,class (:foreground ,green :weight bold))))
    `(compilation-mode-line-exit ((,class (:foreground ,green :weight bold :inverse-video nil))))
    `(compilation-mode-line-run ((,class (:foreground ,orange :weight bold))))
-   `(compilation-mode-line-error ((,class (:foreground ,red :weight bold))))
+   `(compilation-mode-line-fail ((,class (:foreground ,red :weight bold))))
 
    ;; dired
    `(dired-header ((,class (:foreground ,blue :background ,background-blue :weight bold))))
@@ -459,12 +469,12 @@ The result is cached for one second to avoid hiccups."
    `(org-headline-done ((,class (:foreground ,comment))))
    `(outline-1 ((,class (:foreground ,blue :weight bold))))
    `(outline-2 ((,class (:foreground ,purple :weight bold))))
-   `(outline-3 ((,class (:weight bold))))
-   `(outline-4 ((,class (:weight bold))))
-   `(outline-5 ((,class (:weight bold))))
-   `(outline-6 ((,class (:weight bold))))
-   `(outline-7 ((,class (:weight bold))))
-   `(outline-8 ((,class (:weight bold))))
+   `(outline-3 ((,class (:weight bold :foreground ,default))))
+   `(outline-4 ((,class (:weight bold :foreground ,default))))
+   `(outline-5 ((,class (:weight bold :foreground ,default))))
+   `(outline-6 ((,class (:weight bold :foreground ,default))))
+   `(outline-7 ((,class (:weight bold :foreground ,default))))
+   `(outline-8 ((,class (:weight bold :foreground ,default))))
    `(org-column-title ((,class (:foreground unspecified :background unspecified))))
    `(org-agenda-date ((,class (:foreground ,purple :weight bold))))
    `(org-agenda-date-today ((,class (:foreground ,blue :weight bold :background ,background-blue :box 1))))
@@ -472,6 +482,10 @@ The result is cached for one second to avoid hiccups."
    `(org-scheduled-today ((,class (:foreground ,default :weight bold))))
    `(org-agenda-done ((,class (:foreground ,comment))))
    `(org-time-grid ((,class (:foreground ,comment))))
+
+   ;; org columns
+   `(org-column ((,class (:background ,background-darker))))
+   `(org-column-title ((,class (:background ,background-blue :foreground ,blue :weight bold))))
 
    ;; org blocks
    `(org-block-begin-line ((,class (:background ,background-green :foreground ,green-light :height 0.9))))
@@ -646,8 +660,11 @@ The result is cached for one second to avoid hiccups."
 
    ;; Anzu
 
-   `(anzu-replace-highlight ((,class :background ,diff-removed-refined-background :strike-through t)))
-   `(anzu-replace-to ((,class :background ,diff-added-refined-background)))
+   `(anzu-replace-highlight ((,class :foreground ,red :background ,background-red :strike-through t)))
+   `(anzu-replace-to ((,class :foreground ,green :background ,background-green)))
+   `(anzu-match-1 ((,class :foreground ,red :background ,background-red :box t)))
+   `(anzu-match-2 ((,class :foreground ,red :background ,background-red :box t)))
+   `(anzu-match-3 ((,class :foreground ,red :background ,background-red :box t)))
    `(anzu-mode-line ((,class :inherit mode-line :weight bold)))
 
    ;; jabber.el
@@ -659,6 +676,13 @@ The result is cached for one second to avoid hiccups."
    `(jabber-activity-personal-face ((,class :foreground ,red :background ,background-red :weight bold)))
    `(jabber-roster-user-away ((,class :foreground ,orange)))
    `(jabber-roster-user-xa ((,class :foreground ,orange)))
+
+   ;; ace-window
+   `(aw-leading-char-face ((,class :foreground ,red :weight bold)))
+   `(aw-background-face ((,class :foreground ,comment)))
+
+   ;; paren-face.el
+   `(parenthesis ((,class (:foreground ,comment))))
    )
 
   (custom-theme-set-variables
@@ -754,7 +778,8 @@ The result is cached for one second to avoid hiccups."
      `(mode-line-inactive ((,class (:background ,mode-line
                                                 :height 0.9
                                                 :foreground ,comment
-                                                :box 1))))
+                                                :box ,(list :line-width 1
+                                                            :color comment)))))
      `(anzu-mode-line ((,class :inherit mode-line :foreground ,purple :weight bold :inverse-video t)))
      ))
 

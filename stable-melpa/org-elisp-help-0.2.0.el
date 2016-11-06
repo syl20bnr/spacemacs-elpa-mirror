@@ -5,10 +5,10 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Created: 20130423
 ;; Version: 0.1.0
-;; Package-Version: 0.1.0
+;; Package-Version: 0.2.0
 ;; Status: beta
-;; Package-Requires: ((cl-lib "0.2") (org "8.0"))
-;; Homepage: http://tarsius.github.com/org-elisp-help
+;; Package-Requires: ((cl-lib "0.2") (org "9.0"))
+;; Homepage: https://github.com/tarsius/org-elisp-help
 ;; Keywords: org, remember, lisp
 
 ;; This file is not part of Org.
@@ -57,8 +57,8 @@
 (require 'cl-lib)
 (require 'org)
 
-(org-add-link-type "elisp-function" 'org-elisp-help-function-open)
-(org-add-link-type "elisp-variable" 'org-elisp-help-variable-open)
+(org-link-set-parameters "elisp-function" :follow 'org-elisp-help-function-open)
+(org-link-set-parameters "elisp-variable" :follow 'org-elisp-help-variable-open)
 
 (defcustom org-elisp-help-function-open-function 'describe-function
   "Function used to follow an \"elisp-function\" link."

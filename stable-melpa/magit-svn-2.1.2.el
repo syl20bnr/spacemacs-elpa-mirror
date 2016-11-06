@@ -5,7 +5,7 @@
 ;; Author: Phil Jackson <phil@shellarchive.co.uk>
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 ;; Keywords: vc tools
-;; Package-Version: 2.1.1
+;; Package-Version: 2.1.2
 ;; Package: magit-svn
 ;; Package-Requires: ((emacs "24.4") (magit "2.1.0"))
 
@@ -235,15 +235,17 @@ in `magit-svn-external-directories' and runs
       (magit-insert-heading "Unpushed git commits:")
       (magit-insert-log (format "%s..HEAD" it)))))
 
-(magit-define-section-jumper svn-unpulled "Unpulled svn commits")
-(magit-define-section-jumper svn-unpushed "Unpushed git commits")
+(magit-define-section-jumper magit-jump-to-svn-unpulled
+  "Unpulled svn commits" svn-unpulled)
+(magit-define-section-jumper magit-jump-to-svn-unpushed
+  "Unpushed git commits" svn-unpushed)
 
 (defun magit-insert-svn-remote ()
   (--when-let (magit-svn-get-rev)
     (magit-insert-section (line)
-      (magit-insert (format "%-10s%s from %s\n" "Remote:"
-                            (propertize (concat "r" it) 'face 'magit-hash)
-                            (magit-svn-get-url))))))
+      (insert (format "%-10s%s from %s\n" "Remote:"
+                      (propertize (concat "r" it) 'face 'magit-hash)
+                      (magit-svn-get-url))))))
 
 ;;; magit-svn.el ends soon
 
