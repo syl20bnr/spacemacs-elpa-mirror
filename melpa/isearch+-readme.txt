@@ -119,7 +119,6 @@
    `isearchp-add-filter-predicate-1' (Emacs 24.3+),
    `isearchp-barf-if-use-minibuffer',
    `isearchp-complete-past-string', `isearchp-fail-pos',
-   `isearchp-filters-message' (Emacs 24.3+),
    `isearchp-highlight-lighter', `isearchp-in-color-p' (Emacs
    24.3+), `isearchp-in-comment-p' (Emacs 24.3+),
    `isearchp-in-comment-or-delim-p' (Emacs 24.3+),
@@ -324,6 +323,11 @@ Overview of Features ---------------------------------------------
    - `C-z 0' (`isearchp-reset-filter-predicate') resets
      `isearch-filter-predicate' to its original (default) value.
 
+   - `C-z p' (`isearchp-toggle-showing-filter-prompt-prefixes')
+     toggles option `isearchp-show-filter-prompt-prefixes-flag',
+     which controls whether to show filter prefixes in the Isearch
+     prompt.
+
    - `C-z s' (`isearchp-save-filter-predicate') saves the current
      filter-predicate suite for subsequent searches.  Unless you
      save it, the next Isearch starts out from scratch, using the
@@ -380,6 +384,10 @@ Overview of Features ---------------------------------------------
    for name prompting, and a non-negative prefix arg overrides the
    option for prompt-prefix prompting.  (So zero, e.g., `M-0',
    overrides both.)
+
+   Option `isearchp-show-filter-prompt-prefixes-flag' controls
+   whether prefixes for filters are added to the Isearch prompt.
+   You can toggle this option during search using `C-z p'.
 
  * Case-sensitivity is indicated in the mode line minor-mode
    lighter: `ISEARCH' for case-insensitive; `Isearch' for
