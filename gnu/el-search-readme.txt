@@ -192,15 +192,18 @@ There is currently nothing like `occur' for el-search.  However,
 you can get a list of matches in the form
 (file-name-or-buffer . match-position) with
 
-   (el-search-all-matches
-     (el-search-make-search (el-search--matcher pattern) stream))
+ (el-search-all-matches (el-search-make-search pattern stream))
 
 where PATTERN is the search pattern and STREAM is a stream of
-buffers or files.  For example,
+buffers or files (typical ways to construct such a STREAM are to
+call the `stream' function on a list of buffers, or to use
+`el-search-stream-of-directory-files').
+
+For example,
 
   (el-search-all-matches
    (el-search-make-search
-    (el-search--matcher ''require)
+    ''require
     (seq-filter
      (lambda (buffer)
         (with-current-buffer buffer (derived-mode-p 'emacs-lisp-mode)))

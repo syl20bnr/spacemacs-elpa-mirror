@@ -4,7 +4,7 @@
 
 ;; Author: Mario Rodas <marsam@users.noreply.github.com>
 ;; URL: https://github.com/emacs-pe/python-test.el
-;; Package-Version: 20161020.1139
+;; Package-Version: 20161107.1048
 ;; Keywords: convenience, tools, processes
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "25.1"))
@@ -396,6 +396,7 @@ This function is called from `compilation-filter-hook'."
 (defvar python-shell--interpreter)
 (defvar python-shell--interpreter-args)
 
+;;;###autoload
 (defun python-test-track-pdb-prompt ()
   "Change compilation to `python-inferior-mode' when a pdb prompt is detected.
 
@@ -434,7 +435,7 @@ information."
               python-test-compilation-regexp-alist-alist)
   (setq-local compilation-error-regexp-alist
               python-test-compilation-regexp-alist)
-  (add-hook 'compilation-filter-hook 'python-test-track-pdb-prompt nil t)
+  (add-hook 'compilation-filter-hook 'python-test-track-pdb-prompt t t)
   (add-hook 'compilation-filter-hook 'python-test-ansi-color-filter nil t))
 
 (define-key python-test-mode-map (kbd "p") #'compilation-previous-error)
