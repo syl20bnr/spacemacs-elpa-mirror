@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015-2016 jack angers
 ;; Author: jack angers
 ;; Version: 0.4.3
-;; Package-Version: 20161015.1230
+;; Package-Version: 20161109.1024
 ;; Package-Requires: ((emacs "24.3") (f "0.17.3") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -866,9 +866,9 @@ Optionally pass t for RUN-NOT-TESTS to see a list of all failed rules"
   (let* ((filename (if (s-ends-with? ".gz" file)
                        (f-no-ext file)
                      file))
-         (result (-filter
-                 (lambda (f) (s-ends-with? (concat "." (plist-get f :ext)) filename))
-                 dumb-jump-language-file-exts)))
+         (result (--filter
+                  (s-ends-with? (concat "." (plist-get it :ext)) filename)
+                  dumb-jump-language-file-exts)))
     (when result
         (plist-get (car result) :language))))
 
@@ -1079,8 +1079,8 @@ Ffrom the ROOT project CONFIG-FILE."
          (lines (s-split "\n" contents))
          (lang-match (s-match "^language \\\(.+\\\)$" contents))
          (lang (when (= (length lang-match) 2) (nth 1 lang-match)))
-         (exclude-lines (-filter (lambda (f) (s-starts-with? "-" f)) lines))
-         (include-lines (-filter (lambda (f) (s-starts-with? "+" f)) lines))
+         (exclude-lines (--filter (s-starts-with? "-" it) lines))
+         (include-lines (--filter (s-starts-with? "+" it) lines))
          (exclude-paths (-map (lambda (f)
                                  (let* ((dir (substring f 1))
                                        (use-dir (if (s-starts-with? "/" dir)
@@ -1143,12 +1143,12 @@ Ffrom the ROOT project CONFIG-FILE."
     matched))
 
 (defun dumb-jump-use-ag? ()
-  "Return t if we should use ag. That is, ag is installed AND grep is not forced."
+  "Return t if we should use ag.  That is, ag is installed AND grep is not forced."
   (and (dumb-jump-ag-installed?) (not dumb-jump-force-grep)))
 
 ;; TODO: rename dumb-jump-run-definition-command
 (defun dumb-jump-run-command (look-for proj regexes lang exclude-args cur-file line-num)
-  "Run the grep command based on the needle LOOKFOR in the directory TOSEARCH"
+  "Run the grep command based on the needle LOOK-FOR in the directory TOSEARCH"
   (let* ((use-grep (not (dumb-jump-use-ag?)))
          (cmd (if use-grep
                   (dumb-jump-generate-grep-command look-for cur-file proj regexes lang exclude-args)
@@ -1173,7 +1173,7 @@ Ffrom the ROOT project CONFIG-FILE."
 
 
 (defun dumb-jump-parse-response-line (resp-line cur-file)
-  "Parse a search program's single RESP-LINE for CUR-FILE into a list of (path line context)"
+  "Parse a search program's single RESP-LINE for CUR-FILE into a list of (path line context)."
   (let* ((parts (--remove (string= it "")
                           (s-split ":?[0-9]+:" resp-line)))
          (line-num-raw (s-match ":?\\([0-9]+\\):" resp-line)))
@@ -1190,7 +1190,7 @@ Ffrom the ROOT project CONFIG-FILE."
         (list (f-join cur-file) (nth 1 line-num-raw) (nth 0 parts)))))))
 
 (defun dumb-jump-parse-response-lines (parsed cur-file cur-line-num)
-  "Turn PARSED response lines in a list of property lists"
+  "Turn PARSED response lines into a list of property lists.  Using CUR-FILE and CUR-LINE-NUM to exclude jump origin."
   (let* ((records (--mapcat (when it
                              (let* ((line-num (string-to-number (nth 1 it)))
                                     (diff (- cur-line-num line-num)))
@@ -1204,7 +1204,7 @@ Ffrom the ROOT project CONFIG-FILE."
      results)))
 
 (defun dumb-jump-parse-grep-response (resp cur-file cur-line-num)
-  "Takes a grep response RESP and parses into a list of plists"
+  "Takes a grep response RESP and parses into a list of plists."
   (let* ((resp-no-warnings (--filter (and (not (s-starts-with? "grep:" it))
                                           (not (s-contains? "No such file or" it)))
                                      (s-split "\n" (s-trim resp))))
@@ -1212,18 +1212,18 @@ Ffrom the ROOT project CONFIG-FILE."
     (dumb-jump-parse-response-lines parsed cur-file cur-line-num)))
 
 (defun dumb-jump-parse-ag-response (resp cur-file cur-line-num)
-  "Takes a ag response RESP and parses into a list of plists"
+  "Takes a ag response RESP and parses into a list of plists."
   (let* ((resp-lines (s-split "\n" (s-trim resp)))
          (parsed (--map (dumb-jump-parse-response-line it cur-file) resp-lines)))
     (dumb-jump-parse-response-lines parsed cur-file cur-line-num)))
 
 (defun dumb-jump-re-match (re s)
-  "Does regular expression RE match string S. If RE is nil return nil"
+  "Does regular expression RE match string S. If RE is nil return nil."
   (when (and re s)
     (s-match re s)))
 
 (defun dumb-jump-get-ctx-type-by-language (lang pt-ctx)
-  "Detect the type of context by the language"
+  "Detect the type of context by the language LANG and its context PT-CTX."
   (let* ((contexts (--filter (string= (plist-get it ':language) lang) dumb-jump-language-contexts))
          (usable-ctxs
           (when (> (length contexts) 0)
@@ -1297,8 +1297,8 @@ Ffrom the ROOT project CONFIG-FILE."
 
 (defun dumb-jump-generate-grep-command (look-for cur-file proj regexes lang exclude-paths)
   "Find LOOK-FOR's CUR-FILE in the PROJ with REGEXES for the LANG but not in EXCLUDE-PATHS."
-  (let* ((filled-regexes (-map (lambda (r) (format "'%s'" r))
-                               (dumb-jump-populate-regexes look-for regexes nil)))
+  (let* ((filled-regexes (--map (format "'%s'" it)
+                                (dumb-jump-populate-regexes look-for regexes nil)))
          (cmd (concat dumb-jump-grep-prefix " " (if (s-ends-with? ".gz" cur-file)
                                                     dumb-jump-zgrep-cmd
                                                   dumb-jump-grep-cmd)))

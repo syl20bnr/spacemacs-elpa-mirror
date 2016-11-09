@@ -1,11 +1,11 @@
-;;; projectile-variable.el --- Store project local variables. -*- mode: lexical-binding: t -*-
+;;; projectile-variable.el --- Store project local variables. -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2016 USAMI Kenta
 
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 11 Sep 2016
 ;; Version: 0.0.1
-;; Package-Version: 20160910.1005
+;; Package-Version: 20161109.625
 ;; Keywords: project, convenience
 ;; Homepage: https://github.com/zonuexe/projectile-variable
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5") (projectile "0.14.0"))
