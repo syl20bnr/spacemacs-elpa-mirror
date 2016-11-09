@@ -4,7 +4,7 @@
 
 ;; Author: Dedi Hirschfeld
 ;; URL: https://github.com/dedi/gxref
-;; Package-Version: 20161108.639
+;; Package-Version: 20161109.206
 ;; Keywords: xref, global
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "25"))
@@ -251,7 +251,7 @@ arguments to pass to GNU Global."
 (cl-defmethod xref-backend-identifier-at-point ((_backend (eql gxref)))
   (let ((current-symbol (symbol-at-point)))
     (when current-symbol
-      (symbol-name (current-symbol)))))
+      (symbol-name current-symbol))))
 
 (cl-defmethod xref-backend-definitions ((_backend (eql gxref)) symbol)
   (gxref--find-symbol symbol "-d"))

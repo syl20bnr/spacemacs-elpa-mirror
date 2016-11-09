@@ -1,5 +1,5 @@
 ;;; auto-save-buffers-enhanced.el --- Automatically save buffers in a decent way
-;; Package-Version: 20130607.1949
+;; Package-Version: 20161108.2310
 ;; -*- coding: utf-8; mode:emacs-lisp -*-
 
 ;; Copyright (C) 2007 Kentaro Kuribayashi
@@ -172,7 +172,8 @@ auto-saving."
 
 (defun auto-save-buffers-enhanced-scratch-read-after-init-hook ()
   (let ((scratch-buf (get-buffer "*scratch*")))
-    (when scratch-buf
+    (when (and scratch-buf
+               (file-exists-p auto-save-buffers-enhanced-file-related-with-scratch-buffer))
       (with-current-buffer scratch-buf
         (erase-buffer)
         (insert-file-contents auto-save-buffers-enhanced-file-related-with-scratch-buffer)))))
