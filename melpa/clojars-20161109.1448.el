@@ -5,9 +5,9 @@
 ;; Author: Joshua Miller <josh@joshmiller.io>
 ;; License: GPLv3
 ;; Created: 2014-12-15 17:21:05
-;; Version: 1.1.0
-;; Package-Version: 20160518.2135
-;; Package-X-Original-Version: 20160519.110
+;; Version: 1.1.1
+;; Package-Version: 20161109.1448
+;; Package-X-Original-Version: 20161109.111
 ;; URL: https://github.com/joshuamiller/clojars.el
 ;; Keywords: docs, help, tools
 ;; Package-Requires: ((request-deferred "0.2.0"))
@@ -57,8 +57,13 @@
     (deferred:nextc it
       (lambda (response)
         (let ((results (cdr (assoc 'results (request-response-data response)))))
-          (kill-new (completing-read "Results: "
-                                     (mapcar 'clojars-jar-result results))))))))
+	  (if (= 0 (length results))
+	      (message "No clojars found with that name")
+	    (progn
+	      (kill-new (completing-read "Results [TAB to complete]: "
+					 (mapcar 'clojars-jar-result results)
+					 nil 'confirm-after-completion))
+	      (message "You've copied: %s clojar" (car kill-ring)))))))))
 
 (provide 'clojars)
 

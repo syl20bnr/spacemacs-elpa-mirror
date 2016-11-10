@@ -5,7 +5,7 @@
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;;         Fanael Linithien <fanael4@gmail.com>
 ;; Keywords: lisp
-;; Package-Version: 20161106.718
+;; Package-Version: 20161110.214
 ;; Version: 0
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
 
@@ -582,7 +582,7 @@ Current buffer is used if none is specified."
         (buf "*Package-Lint*"))
     (with-current-buffer (get-buffer-create buf)
       (let ((buffer-read-only nil))
-        (delete-region (point-min) (point-max))
+        (erase-buffer)
         (pcase-dolist (`(,line ,col ,type ,message) errs)
           (insert (format "%d:%d: %s: %s\n" line col type message))))
       (special-mode)

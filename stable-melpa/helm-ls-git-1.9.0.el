@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 ~ 2015 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; Package-Requires: ((helm "1.7.8"))
-;; Package-Version: 1.8.0
+;; Package-Version: 1.9.0
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -77,6 +77,12 @@ Valid values are symbol 'abs (default) or 'relative."
   :group 'helm-ls-git
   :type '(repeat symbol))
 
+(defcustom helm-ls-git-format-glob-string "'%s'"
+  "String to format globs in `helm-grep-get-file-extensions'.
+Glob are enclosed in single quotes by default."
+  :group 'helm-ls-git
+  :type 'string)
+
 
 (defface helm-ls-git-modified-not-staged-face
     '((t :foreground "yellow"))
@@ -127,9 +133,58 @@ Valid values are symbol 'abs (default) or 'relative."
 (defvar helm-ls-git-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map helm-generic-files-map)
-    (define-key map (kbd "C-s")   'helm-ls-git-run-grep)
+    (define-key map (kbd "C-s")   'helm-ff-run-grep)
+    (define-key map (kbd "M-g g") 'helm-ls-git-run-grep)
     (define-key map (kbd "C-c g") 'helm-ff-run-gid)
     map))
+
+(defvar helm-ls-git-help-message
+  "* Helm ls git
+
+** Tips
+
+*** Git grep usage
+
+**** With no prefix arg.
+
+Git grep all files in current repository.
+
+**** With one prefix arg.
+
+Git grep all files in current repository with a specific extension,
+\(you will be prompted for choosing extension\).
+
+**** Grep a subdirectory of current repository.
+
+Switch to `helm-find-files' with `C-x C-f', navigate to your directory
+and launch git-grep from there.
+
+** Commands
+\\<helm-ls-git-map>
+\\[helm-ls-git-run-grep]\t\tRun git-grep.
+\\[helm-ff-run-gid]\t\tRun Gid.
+\\<helm-generic-files-map>
+\\[helm-ff-run-toggle-basename]\t\tToggle basename.
+\\[helm-ff-run-zgrep]\t\tRun zgrep.
+\\[helm-ff-run-pdfgrep]\t\tRun Pdfgrep on marked files.
+\\[helm-ff-run-copy-file]\t\tCopy file(s)
+\\[helm-ff-run-rename-file]\t\tRename file(s).
+\\[helm-ff-run-symlink-file]\t\tSymlink file(s).
+\\[helm-ff-run-hardlink-file]\t\tHardlink file(s).
+\\[helm-ff-run-delete-file]\t\tDelete file(s).
+\\[helm-ff-run-byte-compile-file]\t\tByte compile file(s) (C-u load) (elisp).
+\\[helm-ff-run-load-file]\t\tLoad file(s) (elisp).
+\\[helm-ff-run-ediff-file]\t\tEdiff file.
+\\[helm-ff-run-ediff-merge-file]\t\tEdiff merge file.
+\\[helm-ff-run-switch-other-window]\t\tSwitch other window.
+\\[helm-ff-properties-persistent]\t\tShow file properties.
+\\[helm-ff-run-etags]\t\tRun etags (C-u use tap, C-u C-u reload DB).
+\\[helm-yank-text-at-point]\t\tYank text at point.
+\\[helm-ff-run-open-file-externally]\t\tOpen file with external program (C-u to choose).
+\\[helm-ff-run-open-file-with-default-tool]\t\tOpen file externally with default tool.
+\\[helm-ff-run-insert-org-link]\t\tInsert org link.")
+
+
 
 ;; Append visited files from `helm-source-ls-git' to `file-name-history'.
 (add-to-list 'helm-files-save-history-extra-sources "Git files")
@@ -218,7 +273,7 @@ Valid values are symbol 'abs (default) or 'relative."
                       (lambda (_candidate)
                         (funcall helm-ls-git-status-command
                                  (helm-default-directory)))
-                      "Git grep files (`C-u' only files with ext, `C-u C-u' all)"
+                      "Git grep files (`C-u' only with ext)"
                       'helm-ls-git-grep
                       "Gid" 'helm-ff-gid
                       "Search in Git log (C-u show patch)"
@@ -238,7 +293,7 @@ Valid values are symbol 'abs (default) or 'relative."
                        (helm-set-local-variable
                         'helm-ls-git--current-branch nil)))
    (keymap :initform helm-ls-git-map)
-   (help-message :initform helm-generic-file-help-message)
+   (help-message :initform helm-ls-git-help-message)
    (match-part :initform 'helm-ls-git-match-part)
    (candidate-transformer :initform '(helm-ls-git-transformer
                                       helm-ls-git-sort-fn))
@@ -269,15 +324,13 @@ Valid values are symbol 'abs (default) or 'relative."
   (let* ((helm-grep-default-command helm-ls-git-grep-command)
          helm-grep-default-recurse-command
          (files (cond ((equal helm-current-prefix-arg '(4))
-                       (list "--"
-                             (format "'%s'" (mapconcat
-                                             'identity
-                                             (helm-grep-get-file-extensions
-                                             (helm-marked-candidates))
-                                             " "))))
-                      ((equal helm-current-prefix-arg '(16))
-                       '("--"))
-                      (t (helm-marked-candidates))))
+                       (list (format helm-ls-git-format-glob-string
+                                     (mapconcat
+                                      'identity
+                                      (helm-grep-get-file-extensions
+                                       (helm-marked-candidates))
+                                      " "))))
+                      (t '(""))))
          ;; Expand filename of each candidate with the git root dir.
          ;; The filename will be in the help-echo prop.
          (helm-grep-default-directory-fn 'helm-ls-git-root-dir)
@@ -405,28 +458,29 @@ Valid values are symbol 'abs (default) or 'relative."
           (t actions))))
 
 (defun helm-ls-git-diff (candidate)
-  (let (helm-persistent-action-use-special-display)
-    (with-current-buffer (find-file-noselect candidate)
-      (when (buffer-live-p (get-buffer "*vc-diff*"))
+  (let ((default-directory
+         (expand-file-name (file-name-directory candidate))))
+    (if (and (get-buffer-window "*vc-diff*" 'visible)
+             (eq last-command 'helm-execute-persistent-action))
         (kill-buffer "*vc-diff*")
-        (balance-windows))
-      (vc-git-diff (list candidate))
-      (pop-to-buffer "*vc-diff*")
-      (diff-mode))))
+        (when (buffer-live-p (get-buffer "*vc-diff*"))
+          (kill-buffer "*vc-diff*"))
+        (vc-git-diff (helm-marked-candidates))
+        (pop-to-buffer "*vc-diff*")
+        (diff-mode))))
 
 ;; Overhide the actions of helm-type-buffer.
 (defmethod helm--setup-source :after ((source helm-source-buffers))
-  (let ((name (oref source :name)))
+  (let ((name (slot-value source 'name)))
     (when (string= name "Buffers in git project")
-      (set-slot-value
-       source 'action
-       (helm-append-at-nth
-        helm-type-buffer-actions
-        (helm-make-actions "Git status"
-                           (lambda (_candidate)
-                             (funcall helm-ls-git-status-command
-                                      (helm-default-directory))))
-        1)))))
+      (setf (slot-value source 'action)
+            (helm-append-at-nth
+             helm-type-buffer-actions
+             (helm-make-actions "Git status"
+                                (lambda (_candidate)
+                                  (funcall helm-ls-git-status-command
+                                           (helm-default-directory))))
+             1)))))
 
 ;;;###autoload
 (defun helm-ls-git-ls (&optional arg)

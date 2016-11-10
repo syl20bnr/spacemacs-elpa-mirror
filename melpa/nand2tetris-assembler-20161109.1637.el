@@ -7,7 +7,7 @@
 ;; Created: 10 August 2015
 
 ;; Keywords: nand2tetris-assembler, hdl
-;; Package-Version: 20161011.1748
+;; Package-Version: 20161109.1637
 ;; Homepage: http://www.github.com/CestDiego/nand2tetris-assembler.el/
 ;; Version: 1.0.0
 ;; Package-Requires: ((nand2tetris "1.0.0"))
@@ -295,14 +295,14 @@ that when returning the corresponding instruction we use the
                             ".hack"))
          (instructions     (nand2tetris-assembler/replace-variables digested-lines)))
     (with-temp-file filename
-      (mapcar #'/process instructions))))
+      (mapcar #'nand2tetris-assembler/process instructions))))
 
 
 ;;; Bindings
 (defvar nand2tetris-assembler-mode-map
   (let ((map (make-sparse-keymap)))
     ;;Compile
-    (define-key map "\C-c\C-c" #'/init)
+    (define-key map "\C-c\C-c" #'nand2tetris-assembler/init)
     map)
   "Keymap for `nand2tetris-assembler-mode'.")
 
@@ -331,7 +331,7 @@ that when returning the corresponding instruction we use the
   ;;      '(nand2tetris-font-lock-keywords nil nil nil nil))
   )
 
-:autoload
+;;;###autoload
 (add-to-list 'auto-mode-alist
              `(,(concat (expand-file-name nand2tetris-core-base-dir) "\.*\\.asm")
                . ,#'nand2tetris-assembler-mode))

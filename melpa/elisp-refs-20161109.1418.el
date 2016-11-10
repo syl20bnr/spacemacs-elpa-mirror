@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Version: 1.1
-;; Package-Version: 20161027.2208
+;; Package-Version: 20161109.1418
 ;; Keywords: lisp
 ;; Package-Requires: ((dash "2.12.0") (f "0.18.2") (list-utils "0.4.4") (loop "2.1") (s "1.11.0"))
 
@@ -251,6 +251,12 @@ START-POS and END-POS should be the position of FORM within BUFFER."
 We consider parameters to be variables too."
   (cond
    ((consp form)
+    nil)
+   ;; Ignore (defun _ (SYMBOL ...) ...)
+   ((or (equal (car path) '(defsubst . 1))
+        (equal (car path) '(defun . 1))
+        (equal (car path) '(defmacro . 1))
+        (equal (car path) '(cl-defun . 1)))
     nil)
    ;; (let (SYMBOL ...) ...) is a variable, not a function call.
    ((or

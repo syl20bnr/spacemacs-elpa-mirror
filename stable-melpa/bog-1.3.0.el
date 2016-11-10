@@ -4,9 +4,9 @@
 
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;; URL: https://github.com/kyleam/bog
-;; Package-Version: 1.2.0
+;; Package-Version: 1.3.0
 ;; Keywords: bib, outlines
-;; Version: 1.2.0
+;; Version: 1.3.0
 ;; Package-Requires: ((cl-lib "0.5"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -62,10 +62,12 @@ By default, this matches any sequence of lower case
 letters (allowing hyphenation) that is followed by 4 digits and
 then lower case letters.
 
-The format must be anchored by '\\b' and should be restricted to
-letters, digits, '-', and '_'.
+The format should be restricted to word characters and anchored
+by word boundaries (i.e. '\\b..\\b' or '\\\\=<..\\>').
+`bog-citekey-format-allow-at' controls whether '@' is considered
+a word character.
 
-This is case-sensitive (i.e., case-fold-search will be set to
+This is case-sensitive (i.e., `case-fold-search' will be set to
 nil).
 
 The default format corresponds to the following BibTeX autokey
@@ -77,6 +79,23 @@ settings:
         bibtex-autokey-titlewords 1
         bibtex-autokey-year-title-separator \"\")"
   :type 'regexp)
+
+(defcustom bog-citekey-format-allow-at t
+  "Treat '@' as a word charcter, as it is in Org mode.
+
+If this value is nil, Bog functions treat '@' as a punctuation
+character, which allows them to work on Pandoc's @citekey format.
+
+Warning: Setting this variable after Bog is loaded does not have
+an effect.  However, it can be changed at any time through the
+Customize interface."
+  :package-version '(bog . "1.3.0")
+  :set (lambda (var val)
+         (set var val)
+         (when (boundp 'bog-citekey-syntax-table)
+           (modify-syntax-entry ?@ (if val "w" ".")
+                                bog-citekey-syntax-table)))
+  :type 'boolean)
 
 (defcustom bog-citekey-web-search-groups '(1 2 3)
   "List of citekey subexpressions to use for web search.
@@ -169,13 +188,19 @@ arguments and return the name of the final file.  Currently the
 only built-in function is `bog-file-ask-on-conflict'."
   :type 'function)
 
-(defcustom bog-file-secondary-name "-supplement"
+(defcustom bog-file-secondary-name ".supplement"
   "Modification to make to file name on renaming confict.
+
 If <citekey>.<ext> already exists, `bog-file-ask-on-conflict'
 prompts for another name.
 <citekey>`bog-file-secondary-name'.<ext> is the default value for
-the prompt."
-  :type 'string)
+the prompt.
+
+For `bog-list-orphan-files' to work correctly, the first
+character should be a non-word character according to
+`bog-citekey-syntax-table'."
+  :type 'string
+  :package-version '(bog . "1.3.0"))
 
 (defcustom bog-web-search-url
   "http://scholar.google.com/scholar?q=%s"
@@ -235,27 +260,37 @@ kills the indirect buffer created by the previous call."
   :type 'boolean)
 
 (defvar bog-citekey-syntax-table
-  (let ((st (make-syntax-table org-mode-syntax-table)))
+  (let ((st (make-syntax-table text-mode-syntax-table)))
     (modify-syntax-entry ?- "w" st)
     (modify-syntax-entry ?_ "w" st)
+    (modify-syntax-entry ?@ (if bog-citekey-format-allow-at "w" ".") st)
+    (modify-syntax-entry ?\" "\"" st)
+    (modify-syntax-entry ?\\ "_" st)
+    (modify-syntax-entry ?~ "_" st)
     st)
   "Syntax table used when working with citekeys.
 Like `org-mode-syntax-table', but hyphens and underscores are
-treated as word characters.")
+treated as word characters.  '@' will be considered a word
+character if `bog-citekey-format-allow-at' is non-nil.")
+
+(defcustom bog-clean-bib-hook nil
+  "Hook run during `bog-clean-and-rename-staged-bibs' call.
+After each bib file is processed, functions in this hook will be
+called in a buffer visiting the bib file."
+  :package-version '(bog . "1.3.0")
+  :type 'hook)
 
 
 ;;; Citekey methods
 
 (defun bog-citekey-p (text)
   "Return non-nil if TEXT matches `bog-citekey-format'."
-  (let ((case-fold-search nil))
-    (string-match-p (format "\\`%s\\'" bog-citekey-format) text)))
+  (with-syntax-table bog-citekey-syntax-table
+    (let ((case-fold-search nil))
+      (string-match-p (format "\\`%s\\'" bog-citekey-format) text))))
 
 (defun bog-citekey-at-point ()
-  "Return citekey at point.
-The citekey must have the format specified by
-`bog-citekey-format'.  Hyphens and underscores are considered as
-word constituents."
+  "Return citekey at point."
   (save-excursion
     (with-syntax-table bog-citekey-syntax-table
       (skip-syntax-backward "w")
@@ -390,8 +425,9 @@ Otherwise, prompt for CATEGORY."
     (let ((case-fold-search nil)
           citekeys)
       (goto-char (point-min))
-      (while (re-search-forward bog-citekey-format nil t)
-        (push (match-string-no-properties 0) citekeys))
+      (with-syntax-table bog-citekey-syntax-table
+        (while (re-search-forward bog-citekey-format nil t)
+          (push (match-string-no-properties 0) citekeys)))
       (bog--maybe-sort (delete-dups citekeys)))))
 
 (defun bog-heading-citekeys-in-wide-buffer ()
@@ -407,10 +443,11 @@ Otherwise, prompt for CATEGORY."
       (let ((default-directory (file-name-directory file)))
         (insert-file-contents file)
         (org-mode)
-        (while (re-search-forward bog-citekey-format nil t)
-          (unless (or (org-at-heading-p)
-                      (org-at-property-p))
-            (push (match-string-no-properties 0) citekeys))))
+        (with-syntax-table bog-citekey-syntax-table
+          (while (re-search-forward bog-citekey-format nil t)
+            (unless (or (org-at-heading-p)
+                        (org-at-property-p))
+              (push (match-string-no-properties 0) citekeys)))))
       (bog--maybe-sort (delete-dups citekeys)))))
 
 ;;;; Selection
@@ -453,9 +490,12 @@ If NO-CONTEXT is non-nil, immediately fall back."
                       bog-citekey-at-point
                       bog-all-heading-citekeys)
 
+(defvar bog-citekey-history nil)
+
 (defun bog-select-citekey (citekeys)
   "Prompt for citekey from CITEKEYS."
-  (completing-read "Select citekey: " citekeys))
+  (completing-read "Select citekey: " citekeys
+                   nil t nil 'bog-citekey-history))
 
 ;;;; Other
 
@@ -600,11 +640,12 @@ determined by `bog-subdirectory-group'."
 (defun bog--get-subdir (citekey)
   "Return subdirectory for citekey file.
 Subdirectory is determined by `bog-subdirectory-group'."
-  (let ((case-fold-search nil))
-    (and bog-subdirectory-group
-         (string-match bog-citekey-format citekey)
-         (match-string-no-properties bog-subdirectory-group
-                                     citekey))))
+  (with-syntax-table bog-citekey-syntax-table
+    (let ((case-fold-search nil))
+      (and bog-subdirectory-group
+           (string-match bog-citekey-format citekey)
+           (match-string-no-properties bog-subdirectory-group
+                                       citekey)))))
 
 ;;;###autoload
 (defun bog-rename-staged-file-to-citekey (&optional no-context)
@@ -687,7 +728,7 @@ controls the default string for the prompt."
                (read-string
                 (format "File %s already exists.  Name to use instead: "
                         (file-name-base citekey-file))
-                new-file-name nil nil '(new-file-name)))
+                new-file-name))
          (setq citekey-file (expand-file-name new-file-name dir))
          (rename-file staged-file citekey-file))))
     citekey-file))
@@ -714,8 +755,12 @@ Generate a file name with the form
   "Return leading citekey part from base name of FILE."
   (let ((fname (file-name-base file))
         (case-fold-search nil))
-    (and (string-match (concat "^" bog-citekey-format) fname)
-         (match-string 0 fname))))
+    ;; Use `org-mode-syntax-table' instead of
+    ;; `bog-citekey-syntax-table' so the hyphens and underscores are
+    ;; treated as word boundaries.
+    (with-syntax-table org-mode-syntax-table
+      (and (string-match (concat "^" bog-citekey-format) fname)
+           (match-string 0 fname)))))
 
 (defun bog-all-citekey-files ()
   "Return list of all files in `bog-file-directory'."
@@ -749,14 +794,16 @@ Generate a file name with the form
       (erase-buffer)
       (setq default-directory bog-root-directory)
       (insert ?\n)
-      (dolist (ck-file (bog-all-citekey-files))
-        (let ((base-name (file-name-nondirectory ck-file))
-              (case-fold-search nil))
-          (unless (and (string-match (concat "\\`" bog-citekey-format)
-                                     base-name)
-                       (member (match-string-no-properties 0 base-name)
-                               head-cks))
-            (insert (format "- [[file:%s]]\n" (file-relative-name ck-file))))))
+      (with-syntax-table bog-citekey-syntax-table
+        (dolist (ck-file (bog-all-citekey-files))
+          (let ((base-name (file-name-nondirectory ck-file))
+                (case-fold-search nil))
+            (unless (and (string-match (concat "\\`" bog-citekey-format)
+                                       base-name)
+                         (member (match-string-no-properties 0 base-name)
+                                 head-cks))
+              (insert (format "- [[file:%s]]\n"
+                              (file-relative-name ck-file)))))))
       (goto-char (point-min))
       (org-mode)
       (if (/= (buffer-size) 1)
@@ -831,7 +878,8 @@ one entry per BibTeX file."
       (let ((dir (file-name-directory bib-file)))
         (unless (file-exists-p dir)
           (make-directory dir)))
-      (write-file bib-file))
+      (write-file bib-file)
+      (run-hooks 'bog-clean-bib-hook))
     ;; If a buffer was visiting the original bib file, point it to the
     ;; new file.
     (let ((file-buf (find-buffer-visiting file)))
@@ -974,10 +1022,11 @@ If the citekey prompt is slow to appear, consider enabling the
 (defun bog--citekey-groups-with-delim (citekey delim)
   "Return expression groups CITEKEY, seperated by DELIM.
 Groups are specified by `bog-citekey-web-search-groups'."
-  (let ((case-fold-search nil))
-    (string-match bog-citekey-format citekey)
-    (mapconcat (lambda (g) (match-string-no-properties g citekey))
-               bog-citekey-web-search-groups delim)))
+  (with-syntax-table bog-citekey-syntax-table
+    (let ((case-fold-search nil))
+      (string-match bog-citekey-format citekey)
+      (mapconcat (lambda (g) (match-string-no-properties g citekey))
+                 bog-citekey-web-search-groups delim))))
 
 
 ;;; Notes-related
@@ -1313,16 +1362,18 @@ Topic headings are determined by `bog-topic-heading-level'."
   "Face used to highlight text that matches `bog-citekey-format'.")
 
 (defun bog-fontify-non-heading-citekeys (limit)
-  "Highlight non-heading citekey in an Org buffer."
-  (let ((case-fold-search nil))
-    (while (re-search-forward bog-citekey-format limit t)
-      (unless (save-match-data (org-at-heading-p))
-        (add-text-properties (match-beginning 0) (match-end 0)
-                             '(face bog-citekey-face))))))
+  "Highlight non-heading citekeys."
+  (let ((org-buffer-p (derived-mode-p 'org-mode)))
+    (with-syntax-table bog-citekey-syntax-table
+      (let ((case-fold-search nil))
+        (while (re-search-forward bog-citekey-format limit t)
+          (unless (and org-buffer-p
+                       (save-match-data (org-at-heading-p)))
+            (add-text-properties (match-beginning 0) (match-end 0)
+                                 '(face bog-citekey-face))))))))
 
 (defvar bog-citekey-font-lock-keywords
-  `((,bog-citekey-format . 'bog-citekey-face))
-  "Citekey font-lock for non-Org buffers.")
+  '((bog-fontify-non-heading-citekeys . bog-citekey-face)))
 
 (defvar bog-font-lock-function
   (if (fboundp 'font-lock-flush)
