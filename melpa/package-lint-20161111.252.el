@@ -5,7 +5,7 @@
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;;         Fanael Linithien <fanael4@gmail.com>
 ;; Keywords: lisp
-;; Package-Version: 20161110.214
+;; Package-Version: 20161111.252
 ;; Version: 0
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
 
@@ -168,7 +168,7 @@ Package-Version headers are present."
       (unless (cl-some (lambda (keyword) (assoc (intern keyword) finder-known-keywords)) keywords)
         (package-lint--error
          line-no 1 'warning
-         (format "You should include standard keywords: see `finder-known-keywords'."))))))
+         (format "You should include standard keywords: see the variable `finder-known-keywords'."))))))
 
 (defun package-lint--check-dependency-list ()
   "Check the contents of the \"Package-Requires\" header.
@@ -589,6 +589,7 @@ Current buffer is used if none is specified."
       (view-mode 1))
     (display-buffer buf)))
 
+;;;###autoload
 (defun package-lint-batch-and-exit ()
   "Run `package-lint-buffer' on the files remaining on the command line.
 Use this only with -batch, it won't work interactively.

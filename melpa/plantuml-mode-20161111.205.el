@@ -6,8 +6,8 @@
 ;; Author: Zhang Weize (zwz)
 ;; Maintainer: Carlo Sciolla (skuro)
 ;; Keywords: uml plantuml ascii
-;; Package-Version: 20161109.321
-;; Version: 1.2.0
+;; Package-Version: 20161111.205
+;; Version: 1.2.2
 ;; Package-Requires: ((emacs "24"))
 
 ;; You can redistribute this program and/or modify it under the terms
@@ -29,6 +29,8 @@
 
 ;;; Change log:
 ;;
+;; version 1.2.2, 2016-11-11 Fixed java commands handling under windows; support spaces in `plantuml-jar-path'
+;; version 1.2.1, 2016-11-11 Support for paths like `~/.plantuml/plantuml.jar' for `plantuml-jar-path' (the tilde was previously unsupported)
 ;; version 1.2.0, 2016-11-09 Added `plantuml-preview-current-buffer', courtesy of @7mamu4
 ;; version 1.1.1, 2016-11-08 Fix process handling with Windows native emacs; better file extention match for autoloading the mode
 ;; version 1.1.0, 2016-10-18 Make PlantUML run headless by default; introduced custom variable `plantuml-java-args' to control which arguments are passed to Plantuml.
@@ -61,7 +63,7 @@
 
 (defvar plantuml-mode-hook nil "Standard hook for plantuml-mode.")
 
-(defconst plantuml-mode-version "1.2.0" "The plantuml-mode version string.")
+(defconst plantuml-mode-version "1.2.2" "The plantuml-mode version string.")
 
 (defvar plantuml-mode-debug-enabled nil)
 
@@ -84,7 +86,7 @@
 
 (defun plantuml-render-command (&rest arguments)
   "Create a command line to execute PlantUML with arguments (as ARGUMENTS)."
-  (let* ((cmd-list (append plantuml-java-args (list plantuml-jar-path) arguments))
+  (let* ((cmd-list (append plantuml-java-args (list (expand-file-name plantuml-jar-path)) arguments))
          (cmd (mapconcat 'identity cmd-list "|")))
     (plantuml-debug (format "Command is [%s]" cmd))
     cmd-list))
@@ -220,7 +222,7 @@ default output type for new buffers."
   `(start-process "PLANTUML" ,buf
                   plantuml-java-command
                   ,@plantuml-java-args
-                  (shell-quote-argument plantuml-jar-path)
+                  (expand-file-name plantuml-jar-path)
                   (plantuml-output-type-opt) "-p"))
 
 (defun plantuml-preview-string (prefix string)
@@ -277,6 +279,18 @@ Uses prefix (as PREFIX) to choose where to display it:
                                       (buffer-substring-no-properties
                                        (region-beginning) (region-end))
                                       "\n@enduml")))
+
+(defun plantuml-preview-current-block (prefix)
+  "Preview diagram from the PlantUML sources from the previous @startuml to the next @enduml.
+Uses prefix (as PREFIX) to choose where to display it:
+- 4  (when prefixing the command with C-u) -> new window
+- 16 (when prefixing the command with C-u C-u) -> new frame.
+- else -> new buffer"
+  (interactive "p")
+  (save-restriction
+    (narrow-to-region
+     (search-backward "@startuml") (search-forward "@enduml"))
+    (plantuml-preview-buffer prefix)))
 
 (defun plantuml-preview (prefix)
   "Preview diagram from the PlantUML sources.
