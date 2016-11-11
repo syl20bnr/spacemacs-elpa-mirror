@@ -1,86 +1,104 @@
-A pretty simple (but, at least for me, effective) backend for Emacs 25 xref
-library, using GNU Global.
+A pretty simple (but, at least for me, effective) backend for Emacs 25
+xref library using GNU Global.
 
-
-Prerequisites:
---------------
+## Prerequisites:
 
 * GNU Global.
 * Emacs version >= 25.1
 
-Installation using package.el:
-------------------------------
+## Installation
 
-Gxref is now available on [MELPA](https://melpa.org/#/getting-started).
-Once you get MELPA set up, you can install gxref by typing
+Gxref is now available on MELPA.  Once you
+get [MELPA](https://melpa.org/#/getting-started) set up, you can
+install gxref by typing
+
+```
 M-x package-install RET gxref RET
+```
 
-Manual Installation:
---------------------
+See [here][Installation] if you prefer to install manually.
 
-Clone the repository, and add it to your load path, or just download
-gxref.el and put it in a directory that is already in your load path.
 
-Usage:
-------
+## <a name="setup"></a>Setting up.
 
 Add something like the following to your init.el file:
 
+```elisp
 (add-to-list 'xref-backend-functions 'gxref-xref-backend)
+```
 
 This will add gxref as a backend for xref functions.  The backend will
-be used whenever a GNU Global project is detected - that is, whenever
-a GTAGS file exists at the current directory or above it.
+be used whenever a GNU Global project is detected.  That is, whenever
+a GTAGS file exists in the current directory or above it, or an
+explicit project [was set](#setting_project).
 
-by default, xref functions are bound as follows:
+
+## <a name="usage"></a>Usage
+
+### Using gxref to locate tags
+
+After [setup](#setup), invoking any of the xref functions will use GNU
+Global to locate the tag whenever a GTAGS file can be located.  By
+default, xref functions are bound as follows:
 
 
 | Function              | Binding  |
-|-----------------------+----------|
+|:---------------------:|:--------:|
 | xref-find-definitions | M-.      |
 | xref-find-references  | M-?      |
 | xref-find-apropos     | C-M-.    |
 
+If a GTAGS file can't be located for the current buffer, xref will
+fall back to whatever other backends it's configured to try.
 
-Configuration/Customization
----------------------------
+### <a name="setting_project"></a>Project root directory.
+
+By default, gxref searches for the root directory of the project,
+which contains the GTAGS file, by looking for that file in the current
+directory, and then upwards through parent directories until it is
+located.  If you prefer, you can explicitly set the project directory
+manually.  This can be done either interactively, by typing `M-x
+gxref-set-project-dir RET`, or by setting the variable
+`gxref-gtags-root-dir` to the GTAGS directory.  You can also set up
+`gxref-gtags-root-dir` as a file-local or a dir-local variable.
+
+### Configuring gxref
 
 gxref can be customized in several ways.  use
+`M-x customize-group RET gxref RET` to start.
 
-M-x customize-group RET gxref RET
-
-to start.
-
-Additionally, the following buffer-local variables can be defined to tweak
-the behavior:
-
- - gxref-gtags-root -
-
-   Explicitly set the project root.  This will make gxref backend
-   available in the buffer even if it is not under a GTAGS project.
+Additionally, the following variables can be defined to tweak the
+behaviour.  You can set them either globally, or as file-local or
+dir-local variables:
 
  - gxref-gtags-conf
-
    The GTAGS/GLOBAL configuration file to use.
 
  - gxref-gtags-label
-
    GTAGS/GLOBAL Configuration label
 
  - gxref-gtags-lib-path
-
    the library path.  Passed to GNU Global using the GTAGSLIBPATH
- environment variable.
+   environment variable.
 
+## Bug reports
+
+If you find any bugs, please tell me about it at
+the [gxref home page][Repository]
 ## Disclaimers:
 
 Because the xref API in Emacs 25.1 is experimental, it's likely to
-change in ways that will break this package.  I will try to
-keep up with API changes.
+change in ways that will break this package.  I will try to keep up
+with API changes.
 
+## Source and License
 
+Package source can be found in the github
+repository [here][Repository].
 
-## Missing/TODO:
+It is released under version 3 of the GPL, which you can
+find [here][License]
 
-* Generate DB at root
-* project.el integration.
+[Repository]: https://github.com/dedi/gxref
+[Installation]: https://github.com/dedi/gxref/wiki/Installing-and-setting-up-gxref
+[License]: https://www.gnu.org/licenses/gpl-3.0.en.html
