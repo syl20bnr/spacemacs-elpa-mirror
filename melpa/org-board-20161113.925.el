@@ -5,7 +5,7 @@
 ;; Author: Charles A. Roelli <charles@aurox.ch>
 ;; Created: Wed Aug 10 2016
 ;; Keywords: org, bookmarks, archives
-;; Package-Version: 20161112.346
+;; Package-Version: 20161113.925
 ;; Homepage: https://github.com/scallywag/org-board
 
 ;;; Commentary:
@@ -293,7 +293,7 @@ according to `org-board-domain-regexp-alist'."
 (defun org-board-options-handler (wget-options)
   "Expand WGET_OPTIONS according to `org-board-agent-header-alist'."
   (let ((wget-options-expanded))
-    (mapcar #'(lambda (wget-option)
+    (mapc #'(lambda (wget-option)
                 (let ((expanded (assoc wget-option
                                        org-board-agent-header-alist)))
                   (if expanded

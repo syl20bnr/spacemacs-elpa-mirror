@@ -4,7 +4,7 @@
 
 ;; Author: Yasuyuki Oka <yasuyk@gmail.com>
 ;; Version: 0.3.1
-;; Package-Version: 20160410.1005
+;; Package-Version: 20161113.542
 ;; URL: https://github.com/yasuyk/web-beautify
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -94,6 +94,7 @@
 
 (defun web-beautify-reload ()
   "Reload mode to activate faces."
+  (deactivate-mark)
   (cond ((eq major-mode 'web-mode)
          (web-mode-reload))
         ((eq major-mode 'js2-mode)
