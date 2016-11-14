@@ -4,7 +4,7 @@
 
 ;; Author: Felipe Ochoa <felipe@fov.space>
 ;; URL: https://github.com/felipeochoa/rjsx-mode/
-;; Package-Version: 20161105.833
+;; Package-Version: 20161114.548
 ;; Package-Requires: ((emacs "24.4") (js2-mode "20160623"))
 ;; Version: 1.0
 ;; Keywords: languages
@@ -19,6 +19,7 @@
 ;;
 ;; - Highlighting JSX tag names and attributes (using the rjsx-tag and
 ;;   rjsx-attr faces)
+;; - Highlight undeclared JSX components
 ;; - Parsing the spread operator {...otherProps}
 ;; - Parsing && and || in child expressions {cond && <BigComponent/>}
 ;; - Parsing ternary expressions {toggle ? <ToggleOn /> : <ToggleOff />}
@@ -60,6 +61,10 @@ the `:around' combinator.  JS2-PARSER is the original XML parser."
   "Remove the rjsx advice on the js2 parser.  This will cause rjsx to stop working globally."
   (advice-remove 'js2-parse-xml-initializer #'rjsx-parse-xml-initializer))
 
+(with-eval-after-load 'flycheck
+  (dolist (checker flycheck-checkers)
+    (when (memq 'js2-mode (flycheck-checker-get checker 'modes))
+      (push 'rjsx-mode (flycheck-checker-get checker 'modes)))))
 
 (defface rjsx-tag
   '((t . (:inherit font-lock-function-name-face)))
@@ -74,15 +79,21 @@ the `:around' combinator.  JS2-PARSER is the original XML parser."
 
 ;;;; Parser constants struct definitions
 
-;;Token types for XML nodes. Never returned by scanner
-(defvar rjsx-JSX            (+ 1 js2-num-tokens))
-(defvar rjsx-JSX-CLOSE      (+ 2 js2-num-tokens))
-(defvar rjsx-JSX-IDENT      (+ 3 js2-num-tokens))
-(defvar rjsx-JSX-MEMBER     (+ 4 js2-num-tokens))
-(defvar rjsx-JSX-ATTR       (+ 5 js2-num-tokens))
-(defvar rjsx-JSX-SPREAD     (+ 6 js2-num-tokens))
-(defvar rjsx-JSX-TEXT       (+ 7 js2-num-tokens))
-(defvar rjsx-JSX-EXPRESSION (+ 8 js2-num-tokens))
+;; Token types for XML nodes. We need to re-use some unused values to
+;; not mess up the vectors that js2 has set up
+(defvar rjsx-JSX            js2-ENUM_INIT_KEYS)
+(defvar rjsx-JSX-CLOSE      js2-ENUM_INIT_VALUES)
+(defvar rjsx-JSX-IDENT      js2-ENUM_INIT_ARRAY)
+(defvar rjsx-JSX-MEMBER     js2-ENUM_NEXT)
+(defvar rjsx-JSX-ATTR       js2-ENUM_ID)
+(defvar rjsx-JSX-SPREAD     js2-REF_NS_MEMBER)
+(defvar rjsx-JSX-TEXT       js2-ESCXMLTEXT)
+(defvar rjsx-JSX-EXPRESSION js2-ESCXMLATTR)
+
+(dolist (sym '(rjsx-JSX rjsx-JSX-CLOSE rjsx-JSX-IDENT rjsx-JSX-MEMBER rjsx-JSX-ATTR
+                        rjsx-JSX-SPREAD rjsx-JSX-TEXT rjsx-JSX-EXPRESSION))
+  (aset js2-token-names (symbol-value sym) (downcase (substring (symbol-name sym) 5)))
+  (puthash sym (symbol-value sym) js2-token-codes))
 
 (js2-msg "msg.bad.jsx.ident" "invalid JSX identifier")
 (js2-msg "msg.invalid.jsx.string" "invalid JSX string (cannot contain delimiter in string body)")
@@ -91,7 +102,6 @@ the `:around' combinator.  JS2-PARSER is the original XML parser."
 (js2-msg "msg.no.gt.in.closer" "missing `>' in closing tag")
 (js2-msg "msg.no.gt.after.slash" "missing `>' after `/' in self-closing tag")
 (js2-msg "msg.no.rc.after.spread" "missing `}' after spread-prop")
-(js2-msg "msg.no.equals.after.jsx.prop" "missing `=' after prop `%s'")
 (js2-msg "msg.no.value.after.jsx.prop" "missing value after prop `%s'")
 (js2-msg "msg.no.dots.in.prop.spread" "missing `...' in spread prop")
 (js2-msg "msg.no.rc.after.expr" "missing `}' after expression")
@@ -199,7 +209,7 @@ Sets KID's parent to N."
                (:constructor make-rjsx-identifier (&key (pos (js2-current-token-beg))
                                                            len namespace name)))
   (namespace nil)
-  name)
+  name)  ; js2-name-node
 
 (put 'cl-struct-rjsx-identifier 'js2-visitor 'js2-visit-none)
 (put 'cl-struct-rjsx-identifier 'js2-printer 'rjsx-identifier-print)
@@ -211,8 +221,8 @@ Sets KID's parent to N."
 (defun rjsx-identifier-full-name (n)
   "Return the string with N's fully-namespaced name, or just name if it's not namespaced."
   (if (rjsx-identifier-namespace n)
-      (format "%s:%s" (rjsx-identifier-namespace n) (rjsx-identifier-name n))
-    (rjsx-identifier-name n)))
+      (format "%s:%s" (rjsx-identifier-namespace n) (js2-name-node-name (rjsx-identifier-name n)))
+    (js2-name-node-name (rjsx-identifier-name n))))
 
 (cl-defstruct (rjsx-member
                (:include js2-node (type rjsx-JSX-MEMBER))
@@ -251,8 +261,9 @@ Sets KID's parent to N."
 (defun rjsx-attr-print (node indent-level)
   "Print the `rjsx-attr' NODE at INDENT-LEVEL."
   (js2-print-ast (rjsx-attr-name node) indent-level)
-  (insert "=")
-  (js2-print-ast (rjsx-attr-value node) 0))
+  (unless (js2-empty-expr-node-p (rjsx-attr-value node))
+    (insert "=")
+    (js2-print-ast (rjsx-attr-value node) 0)))
 
 (cl-defstruct (rjsx-spread
                (:include js2-node (type rjsx-JSX-SPREAD))
@@ -354,6 +365,14 @@ This is the entry point when ‘js2-parse-unary-expr’ finds a '<' character"
         (js2-node-add-children pn name-n)
         (setq name-str (if (rjsx-member-p name-n) (rjsx-member-full-name name-n)
                          (rjsx-identifier-full-name name-n)))
+        (if js2-highlight-external-variables
+            (let ((name-node (rjsx-identifier-name
+                              (if (rjsx-member-p name-n)
+                                  (car (rjsx-member-idents name-n))
+                                name-n)))
+                  (case-fold-search nil))
+              (when (string-match-p "^[[:upper:]]" (js2-name-node-name name-node))
+                (js2-record-name-node name-node))))
         (rjsx-maybe-message "cleared tag name: '%s'" name-str)
         ;; Now parse the attributes
         (rjsx-parse-attributes pn)
@@ -361,9 +380,12 @@ This is the entry point when ‘js2-parse-unary-expr’ finds a '<' character"
         ;; Now parse either a self closing tag or the end of the opening tag
         (rjsx-maybe-message "next type: `%s'" (js2-peek-token))
         (if (setq self-closing (js2-match-token js2-DIV))
-            ;; TODO: make sure there's no whitespace between / and >
-            (js2-must-match js2-GT "msg.no.gt.after.slash"
-                            (js2-node-pos pn) (- (js2-current-token-end) (js2-node-pos pn)))
+            (progn
+              (js2-record-text-property (js2-current-token-beg) (js2-current-token-end)
+                                        'rjsx-class 'self-closing-slash)
+              ;; TODO: How do we un-mark old slashes?
+              (js2-must-match js2-GT "msg.no.gt.after.slash"
+                                   (js2-node-pos pn) (- (js2-current-token-end) (js2-node-pos pn))))
           (js2-must-match js2-GT "msg.no.gt.in.opener" (js2-node-pos pn) (js2-node-len pn)))
         (rjsx-maybe-message "cleared opener closer, self-closing: %s" self-closing)
         (if self-closing
@@ -507,9 +529,7 @@ Assumes the current token is a '{'."
                 (js2-report-error "msg.no.value.after.jsx.prop" (rjsx-identifier-full-name name)
                                   beg (- (js2-current-token-end) beg))
                 (setq value (make-js2-error-node :pos beg :len (js2-current-token-len))))))
-        (js2-report-error "msg.no.equals.after.jsx.prop" (rjsx-identifier-full-name name)
-                          beg (- (js2-current-token-end) beg))
-        (setq value (make-js2-error-node :pos beg :len (- (js2-current-token-end) beg))))
+        (setq value (make-js2-empty-expr-node :pos (js2-current-token-end) :len 0)))
       (rjsx-maybe-message "value type: `%s'" (js2-node-type value))
       (setf (rjsx-attr-value pn) value)
       (setf (js2-node-len pn) (- (js2-node-end value) (js2-node-pos pn)))
@@ -583,6 +603,7 @@ argument ALLOW-NS is nil, does not allow namespaced names."
             (allow-colon allow-ns)
             (continue t)
             (prev-token-end (js2-current-token-end))
+            (name-start (js2-current-token-beg))
             matched-colon)
         (while (and continue
                     (or (and (memq (js2-peek-token) (list js2-SUB js2-ASSIGN_SUB))
@@ -594,7 +615,8 @@ argument ALLOW-NS is nil, does not allow namespaced names."
           (if (setq matched-colon (js2-match-token js2-COLON))
               (setf (rjsx-identifier-namespace pn) (apply #'concat (nreverse name-parts))
                     allow-colon nil
-                    name-parts (list))
+                    name-parts (list)
+                    name-start nil)
             (when (= (js2-get-token) js2-ASSIGN_SUB) ; Otherwise it's a js2-SUB
               (setf (js2-token-end (js2-current-token)) (1- (js2-current-token-end))
                     (js2-token-type (js2-current-token)) js2-SUB
@@ -606,7 +628,8 @@ argument ALLOW-NS is nil, does not allow namespaced names."
           (if (js2-match-token js2-NAME)
               (if (eq prev-token-end (js2-current-token-beg))
                   (progn (push (js2-current-token-string) name-parts)
-                         (setq prev-token-end (js2-current-token-end)))
+                         (setq prev-token-end (js2-current-token-end)
+                               name-start (or name-start (js2-current-token-beg))))
                 (js2-unget-token)
                 (setq continue nil))
             (when (= js2-COLON (js2-current-token-type))
@@ -616,7 +639,11 @@ argument ALLOW-NS is nil, does not allow namespaced names."
         (when face
           (js2-set-face beg (js2-current-token-end) face 'record))
         (setf (js2-node-len pn) (- (js2-current-token-end) beg)
-              (rjsx-identifier-name pn) (apply #'concat (nreverse name-parts)))
+              (rjsx-identifier-name pn) (if name-start
+                                            (make-js2-name-node :pos name-start
+                                                                :len (- (js2-current-token-end) name-start)
+                                                                :name (apply #'concat (nreverse name-parts)))
+                                          (make-js2-name-node :pos (js2-current-token-end) :len 0 :name "")))
         pn)
     (make-js2-error-node :len (js2-current-token-len))))
 
@@ -749,7 +776,7 @@ inserts `< />' and places the cursor inside the new tag."
     (if (/= n 1)
         (insert (make-string n "<"))
       (let ((inhibit-changing-match-data t))
-        (if (looking-back (rx (or "=" "(" "?" ":" ">" "}" "&" "|" "{"
+        (if (looking-back (rx (or "=" "(" "?" ":" ">" "}" "&" "|" "{" ","
                                   "return")
                               (zero-or-more (or "\n" space)))
                           (point-at-bol -2))
@@ -765,7 +792,7 @@ If N is 1 and KILLFLAG nil, checks to see if we're in a
 self-closing tag about to delete the slash.  If so, deletes the
 slash and inserts a matching end-tag."
   (interactive "p")
-  (if (or killflag (/= 1 n) (not (looking-at-p "/\\s-*>")) (not js2-mode-ast))
+  (if (or killflag (/= 1 n) (not (eq (get-char-property (point) 'rjsx-class) 'self-closing-slash)))
       (call-interactively 'delete-char)
     (let ((node (js2-node-at-point (point) t)))
       (while (and node (not (rjsx-node-p node)))

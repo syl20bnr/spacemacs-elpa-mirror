@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20161109.1133
+;; Package-Version: 20161114.144
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((flycheck "0.30") (emacs "25.1") (dash "2.13.0"))
@@ -805,7 +805,7 @@ a list is returned instead of failing with a nil result."
 ;; Auto-fix
 
 (defcustom dante-suggestible-extensions
-  '("DeriveFoldable" "DeriveFunctor" "DeriveGeneric" "DeriveTraversable" "FlexibleContexts" "FlexibleInstances" "FunctionalDependencies" "GADTs" "GeneralizedNewtypeDeriving" "MultiParamTypeClasses" "RankNTypes" "RecordWildCards" "ScopedTypeVariables" "TypeFamilies" "TypeOperators" "ViewPatterns")
+  '("DeriveFoldable" "DeriveFunctor" "DeriveGeneric" "DeriveTraversable" "FlexibleContexts" "FlexibleInstances" "FunctionalDependencies" "GADTs" "GeneralizedNewtypeDeriving" "MultiParamTypeClasses" "RankNTypes" "RecordWildCards" "ScopedTypeVariables" "TypeFamilies" "TypeOperators" "TypeSynonymInstances" "ViewPatterns")
   "Language extensions that Dante will use to fix errors."
   :group 'dante
   :type '(repeat string))

@@ -4,9 +4,9 @@
 
 ;; Author: Lars Tveito <larstvei@ifi.uio.no>
 ;; URL: http://github.com/larstvei/Focus
-;; Package-Version: 0.1.0
+;; Package-Version: 20161113.1145
 ;; Created: 11th May 2015
-;; Version: 0.1.0
+;; Version: 0.1.1
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -92,13 +92,6 @@ The timer calls `focus-read-only-hide-cursor' after
                focus-read-only-blink-timer))
   (make-local-variable var))
 
-;; Changing major-mode should not affect Focus mode.
-(dolist (var '(focus-current-thing
-               focus-pre-overlay
-               focus-post-overlay
-               post-command-hook))
-  (put var 'permanent-local t))
-
 (defun focus-any (f lst)
   "Apply F to each element of LST and return first NON-NIL."
   (when lst
@@ -139,14 +132,18 @@ argument."
                    (make-list foregrounds foreground)))))
 
 (defun focus-move-focus ()
-  "Move `focus-pre-overlay' and `focus-post-overlay'.
+  "Moves the focused section according to `focus-bounds'.
 
-If function `focus-mode' is enabled, this command fires after
-each command."
+If `focus-mode' is enabled, this command fires after each
+command."
   (let* ((bounds (focus-bounds)))
     (when bounds
-      (move-overlay focus-pre-overlay  (point-min) (car bounds))
-      (move-overlay focus-post-overlay (cdr bounds) (point-max)))))
+      (focus-move-overlays (car bounds) (cdr bounds)))))
+
+(defun focus-move-overlays (low high)
+  "Move `focus-pre-overlay' and `focus-post-overlay'."
+  (move-overlay focus-pre-overlay  (point-min) low)
+  (move-overlay focus-post-overlay high (point-max)))
 
 (defun focus-init ()
   "This function is run when command `focus-mode' is enabled.
@@ -154,20 +151,25 @@ each command."
 It sets the `focus-pre-overlay' and `focus-post-overlay' to
 overlays; these are invisible until `focus-move-focus' is run. It
 adds `focus-move-focus' to `post-command-hook'."
-  (setq focus-pre-overlay  (make-overlay (point-min) (point-min))
-        focus-post-overlay (make-overlay (point-max) (point-max)))
-  (let ((color (focus-make-dim-color)))
-    (mapc (lambda (o) (overlay-put o 'face (cons 'foreground-color color)))
-          (list focus-pre-overlay focus-post-overlay)))
-  (add-hook 'post-command-hook 'focus-move-focus nil t))
+  (unless (or focus-pre-overlay focus-post-overlay)
+    (setq focus-pre-overlay  (make-overlay (point-min) (point-min))
+          focus-post-overlay (make-overlay (point-max) (point-max)))
+    (let ((color (focus-make-dim-color)))
+      (mapc (lambda (o) (overlay-put o 'face (cons 'foreground-color color)))
+            (list focus-pre-overlay focus-post-overlay)))
+    (add-hook 'post-command-hook 'focus-move-focus nil t)
+    (add-hook 'change-major-mode-hook 'focus-terminate)))
 
 (defun focus-terminate ()
   "This function is run when command `focus-mode' is disabled.
 
 The overlays pointed to by `focus-pre-overlay' and `focus-post-overlay' are
 deleted, and `focus-move-focus' is removed from `post-command-hook'."
-  (progn (mapc 'delete-overlay (list focus-pre-overlay focus-post-overlay))
-         (remove-hook 'post-command-hook 'focus-move-focus t)))
+  (when (and focus-pre-overlay focus-post-overlay)
+    (mapc 'delete-overlay (list focus-pre-overlay focus-post-overlay))
+    (remove-hook 'post-command-hook 'focus-move-focus t)
+    (setq focus-pre-overlay  nil
+          focus-post-overlay nil)))
 
 (defun focus-goto-thing (bounds)
   "Move point to the middle of BOUNDS."
@@ -189,6 +191,21 @@ default is overwritten. This function simply helps set the
          (thing (completing-read "Thing: " candidates)))
     (setq focus-current-thing (intern thing))))
 
+(defun focus-pin ()
+  "Pin the focused section to its current location or the region,
+if active."
+  (interactive)
+  (when focus-mode
+    (when (region-active-p)
+      (focus-move-overlays (region-beginning) (region-end)))
+   (remove-hook 'post-command-hook 'focus-move-focus t)))
+
+(defun focus-unpin ()
+  "Unpin the focused section."
+  (interactive)
+  (when focus-mode
+    (add-hook 'post-command-hook 'focus-move-focus nil t)))
+
 (defun focus-next-thing (&optional n)
   "Moves the point to the middle of the Nth next thing."
   (interactive "p")
@@ -196,7 +213,7 @@ default is overwritten. This function simply helps set the
         (thing (focus-get-thing)))
     (forward-thing thing n)
     (when (equal current-bounds (focus-bounds))
-      (forward-thing thing (signum n)))
+      (forward-thing thing (cl-signum n)))
     (focus-goto-thing (focus-bounds))))
 
 (defun focus-prev-thing (&optional n)
@@ -259,6 +276,10 @@ up the `focus-read-only-blink-timer' and hooks."
   :keymap (let ((map (make-sparse-keymap)))
             (define-key map (kbd "C-c C-q") 'focus-read-only-mode)
             map)
+  (unless (and (color-defined-p (face-attribute 'default :background))
+               (color-defined-p (face-attribute 'default :foreground)))
+    (message "Can't enable focus mode when no theme is loaded.")
+    (setq focus-mode nil))
   (if focus-mode (focus-init) (focus-terminate)))
 
 ;;;###autoload

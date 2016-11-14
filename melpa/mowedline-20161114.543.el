@@ -4,9 +4,9 @@
 ;; Copyright (C) 2011-2015  John J. Foerch
 
 ;; Author: John Foerch <jjfoerch@earthlink.net>
-;; Version: 0.3
-;; Package-Version: 2.0.0
-;; Date: 2015-06-01
+;; Version: 0.4
+;; Package-Version: 20161114.543
+;; Date: 2016-11-10
 
 ;; mowedline is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -61,8 +61,8 @@
   "Perform a mowedline update for the given widget and value
 directly via dbus."
   (dbus-call-method
-   :session "mowedline.server" "/"
-   "mowedline.interface" "update"
+   :session "net.retroj.mowedline" "/net/retroj/mowedline"
+   "net.retroj.mowedline" "update"
    (if (symbolp widget)
        (symbol-name widget)
      widget)
