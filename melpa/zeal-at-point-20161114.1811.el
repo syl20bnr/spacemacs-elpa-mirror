@@ -4,7 +4,7 @@
 ;; Author:  Jinzhu <wosmvp@gmail.com>
 ;; Created: 29 Nov 2013
 ;; Version: 0.0.3
-;; Package-Version: 20161027.2344
+;; Package-Version: 20161114.1811
 ;; URL: https://github.com/jinzhu/zeal-at-point
 ;;
 ;; This file is NOT part of GNU Emacs.
@@ -62,8 +62,17 @@
   "Searching in Zeal for text at point"
   :group 'external)
 
+(defvar zeal-at-point-zeal-version
+  (when (executable-find "zeal")
+    (let ((output (with-temp-buffer
+                    (call-process "zeal" nil t nil "--version")
+                    (buffer-string))))
+      (when (string-match "Zeal \\([[:digit:]\\.]+\\)" output)
+        (match-string 1 output))))
+  "The version of zeal installed on the system.")
+
 (defcustom zeal-at-point-mode-alist
-  '((actionscript-mode . "actionscript")
+  `((actionscript-mode . "actionscript")
     (arduino-mode . "arduino")
     (c++-mode . "c++")
     (c-mode . "c")
@@ -73,7 +82,10 @@
     (cperl-mode . "perl")
     (css-mode . "css")
     (elixir-mode . "elixir")
-    (emacs-lisp-mode . "emacs lisp")
+    (emacs-lisp-mode . ,(if (and zeal-at-point-zeal-version
+                                 (version< zeal-at-point-zeal-version "0.3.0"))
+                            "emacs lisp"
+                          "elisp"))
     (enh-ruby-mode . "ruby")
     (erlang-mode . "erlang")
     (gfm-mode . "markdown")
@@ -132,15 +144,6 @@ the combined docset.")
 (make-variable-buffer-local 'zeal-at-point-docset)
 
 (defvar zeal-at-point--docset-history nil)
-
-(defvar zeal-at-point-zeal-version
-  (when (executable-find "zeal")
-    (let ((output (with-temp-buffer
-                    (call-process "zeal" nil t nil "--version")
-                    (buffer-string))))
-      (when (string-match "Zeal \\([[:digit:]\\.]+\\)" output)
-        (match-string 1 output))))
-  "The version of zeal installed on the system.")
 
 (unless (fboundp 'setq-local)
   (defmacro setq-local (var val)

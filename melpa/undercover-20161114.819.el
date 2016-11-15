@@ -1,10 +1,10 @@
-;;; undercover.el --- Test coverage library for Emacs -*- lexical-binding: t -*-
+;;; undercover.el --- Test coverage library for Emacs Lisp -*- lexical-binding: t -*-
 
 ;; Copyright (c) 2014 Sviridov Alexander
 
 ;; Author: Sviridov Alexander <sviridov.vmi@gmail.com>
 ;; URL: https://github.com/sviridov/undercover.el
-;; Package-Version: 20161016.2358
+;; Package-Version: 20161114.819
 ;; Created: Sat Sep 27 2014
 ;; Keywords: lisp, tests, coverage, tools
 ;; Version: 0.6.0

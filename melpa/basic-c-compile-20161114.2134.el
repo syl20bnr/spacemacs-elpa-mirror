@@ -24,7 +24,7 @@
 
 ;; Author: Nick Spain <nicholas.spain96@gmail.com>
 ;; Version: 1.5.9
-;; Package-Version: 20161112.1017
+;; Package-Version: 20161114.2134
 ;; Keywords: C, Makefile, compilation, convenience
 ;; URL: https://github.com/nick96/basic-c-compile
 ;; Package-Requires: ((cl-lib "0.5"))
@@ -44,10 +44,13 @@
 ;; Compilation hangs if basic-c-compile-run-c is called and it find
 ;; that the outfile is out of date.  Press enter to get passed this.
 
+;;; TODO:
+;; Refector to utilise s, f and dash libraries -- makes code cleaner
 
 ;;; Code:
 
 (require 'cl-lib)
+(require 'f)
 
 ;; User customisation
 ;; These can be changed by the user in their init file
@@ -148,7 +151,7 @@ Makefile's INFILE."
 				    basic-c-compile-make-clean
 				    "Makefile"))
 
-;; TODO: Break this down
+;; Refactor this
 ;;;###autoload
 (defun basic-c-compile-file ()
   "Compile file with or without a Makefile.
@@ -224,17 +227,11 @@ compiled before it is run."
 
 ;; Non-interactive functions
 
-(defun basic-c-compile--choose-files ()
-  "Return string of SELECTED-FILES which can be entered from the mini-buffer."
-  (let ((selected-files (read-string "Enter files: ")))
-    selected-files))
-
-
 (defun basic-c-compile--c-file-extension-p (file-name)
   "Return t if FILE-NAME has extension '.c', otherwise nil."
-  (equal (last (split-string file-name "\\."))
-         '("c")))
+  (equal (f-ext file-name) "c"))
 
+;; Is this function necessary??
 (defun basic-c-compile--files-to-compile (var-files-to-compile
                                           file
                                           &optional str-files-to-compile)
@@ -252,13 +249,11 @@ purposes)."
 				     (directory-files (file-name-directory
 						       file)))))
                     " "))
-        (;; Call function that allows input of files to be compiled
-         (equal var-files-to-compile "selection")
+         ((equal var-files-to-compile "selection")
          (if str-files-to-compile
              str-files-to-compile
-           (basic-c-compile--choose-files)))
-        (;; Default to only compiling the current file
-         t (shell-quote-argument file))))
+           (read-string "Enter files:")))
+         (t (shell-quote-argument file))))
 
 (defun basic-c-compile--sans-makefile (compiler
                                        flags
@@ -280,8 +275,7 @@ extension EXTENSION."
 (defun basic-c-compile--with-makefile (arg)
   "Compile file using the Makefile with specified ARG (build,
 clean or rebuild)."
-  (compile (format "make %s"
-                   arg)))
+  (compile (format "make %s" arg)))
 
 (defun basic-c-compile--create-makefile (compiler
                                          files-to-compile
@@ -295,30 +289,34 @@ Out-file will have name FILE.EXTENSION compiled with flags
 COMPILER-FLAGS and makefile with clean command CLEAN will be
 written to MAKEFILE."
   (let ((makefile-contents
-         (format (concat "CC = %s\n"
-                         "INFILE = %s\n"
-                         "OUTFILE = %s%s\n"
-                         "FLAGS = %s\n\n"
-                         "build: $(INFILE)\n\t"
-                         "$(CC) $(FLAGS) $(INFILE)  -o $(OUTFILE)\n\n"
-                         "clean:\n\t%s\n\n"
-                         "rebuild: clean build")
+         (format (s-join "\n" '("CC = %s"
+				"INFILE = %s"
+				"OUTFILE = %s%s"
+				"FLAGS = %s\n"
+				"build: $(INFILE)"
+				"\t$(CC) $(FLAGS) $(INFILE) -o $(OUTFILE)\n"
+				"clean:"
+				"\t%s\n"
+				"rebuild: clean build"))
                  compiler
                  (if (listp files-to-compile)
-                     (mapcar #'file-name-nondirectory files-to-compile)
-                   (file-name-nondirectory files-to-compile))
-                 (shell-quote-argument (file-name-nondirectory
+                     (s-join " "
+			     (mapcar #'shell-quote-argument
+				     (mapcar #'file-name-nondirectory
+					     files-to-compile)))
+                   (shell-quote-argument (file-name-nondirectory
+					  files-to-compile)))
+		 (shell-quote-argument (file-name-nondirectory
 					(file-name-sans-extension file)))
                  (if extension
                      (format ".%s" extension)
 		   "")
                  compiler-flags
                  clean)))
-    (write-region makefile-contents
-                  nil
-                  makefile)))
+    (f-write makefile-contents 'utf-8 makefile)))
 
 
+;; Should this be in a non-interactive function, it has side effects?
 (defun basic-c-compile--run-c-file (file extension)
   "Run FILE.EXTENSION with the output printing in a temporary buffer."
   (compile (format "./%s%s"

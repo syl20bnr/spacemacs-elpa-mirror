@@ -86,15 +86,14 @@
  Load this library after loading the standard GNU file
  `thingatpt.el'.  You can put this in your init file (`~/.emacs'):
 
-   (eval-after-load "thingatpt"
-     '(require 'thingatpt+))
+   (eval-after-load "thingatpt" '(require 'thingatpt+))
 
  That defines new functions and improved versions of some of the
  standard thing-at-point functions.  All such functions have the
  prefix `tap-', so they are not used by default in any way.
 
- That does not at all, however, make Emacs use the improved
- functions.  Merely loading this library does not change the
+ Requiring library `thingatpt+.el' does not, however, make Emacs
+ use the improved functions.  Merely loading it does not change the
  behavior of thing-at-point features.
 
  If you want functions defined here to be used for calls to
@@ -105,6 +104,11 @@
    (eval-after-load "thingatpt"
      '(when (require 'thingatpt+)
         (tap-put-thing-at-point-props))
+
+ Note that some of my other libraries, including Icicles,
+ Bookmark+, `grep+.el', `replace+.el', and `strings.el', do exactly
+ that.  Note too that `tap-put-thing-at-point-props' improves the
+ behavior of (thing-at-point 'list) - see below.
 
  A further step, which I recommend, is to use the `tap-' versions
  of standard functions, defined here, everywhere in place of those

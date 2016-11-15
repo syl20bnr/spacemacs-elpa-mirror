@@ -6,4 +6,4 @@ import-js-import
 import-js-goto
 
 For a detailed introduction see:
-http://github.com/trotzig/import-js/blob/master/README.md
+http://github.com/Galooshi/emacs-import-js/blob/master/README.md

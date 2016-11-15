@@ -4,7 +4,7 @@
 
 ;; Author:            Adam Sokolnicki <adam.sokolnicki@gmail.com>
 ;; URL:               https://github.com/asok/rake.el
-;; Package-Version: 0.4.0
+;; Package-Version: 0.4.1
 ;; Version:           0.3.3
 ;; Keywords:          rake, ruby
 ;; Package-Requires:  ((f "0.13.0") (dash "1.5.0") (cl-lib "0.5"))
@@ -36,7 +36,9 @@
 ;;
 ;;; Code:
 
+(require 'ansi-color)
 (require 'cl-lib)
+(require 'compile)
 (require 'dash)
 (require 'f)
 
@@ -75,19 +77,26 @@
 (defconst rake--omit-cache   16)
 
 (defun rake--spring-p (root)
-  (let ((path (concat temporary-file-directory "spring/%s"))
-        (ruby-version (shell-command-to-string "ruby -e 'print RUBY_VERSION'")))
+  (let ((root (directory-file-name root)))
     (or
-     (file-exists-p (f-canonical
-                     (format path (concat (md5 root 0 -1) ".pid"))))
-     (file-exists-p (f-canonical
-                     (format path (md5 (concat ruby-version root) 0 -1)))))))
+     ;; Older versions
+     (file-exists-p (format "%s/tmp/spring/spring.pid" root))
+     ;; 0.9.2+
+     (file-exists-p (format "%s/spring/%s.pid" temporary-file-directory (md5 root)))
+     ;; 1.2.0+
+     (let* ((path (or (getenv "XDG_RUNTIME_DIR") temporary-file-directory))
+            (ruby-version (shell-command-to-string "ruby -e 'print RUBY_VERSION'"))
+            (application-id (md5 (concat ruby-version root))))
+       (or
+        (file-exists-p (format "%s/spring/%s.pid" path application-id))
+        ;; 1.5.0+
+        (file-exists-p (format "%s/spring-%s/%s.pid" path (user-real-uid) application-id)))))))
 
 (defun rake--zeus-p (root)
   (file-exists-p (expand-file-name ".zeus.sock" root)))
 
 (defun rake--bundler-p (root)
-  (file-exists-p (expand-file-name "Gemfile" root)))
+  (locate-dominating-file root "Gemfile"))
 
 (defun rake--vertical-ido-on-p ()
   (and
@@ -196,6 +205,10 @@ If `rake-enable-caching' is t look in the cache, if not fallback to calling rake
                                 tasks
                               (rake--tasks-without-doscstrings tasks))))))
 
+(defun rake--apply-ansi-color ()
+  (let ((inhibit-read-only t))
+    (ansi-color-apply-on-region compilation-filter-start (point))))
+
 (defun rake-compile (root task mode)
   (setq rake--last-root root
         rake--last-task task
@@ -211,7 +224,8 @@ If `rake-enable-caching' is t look in the cache, if not fallback to calling rake
   (rake-compile rake--last-root rake--last-task rake--last-mode))
 
 (define-derived-mode rake-compilation-mode compilation-mode "Rake Compilation"
-  "Compilation mode used by `rake' command.")
+  "Compilation mode used by `rake' command."
+  (add-hook 'compilation-filter-hook 'rake--apply-ansi-color nil t))
 
 ;;;###autoload
 (defun rake-regenerate-cache ()

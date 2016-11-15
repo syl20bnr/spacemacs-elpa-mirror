@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Version: 1.1
-;; Package-Version: 20161109.1418
+;; Package-Version: 20161114.1550
 ;; Keywords: lisp
 ;; Package-Requires: ((dash "2.12.0") (f "0.18.2") (list-utils "0.4.4") (loop "2.1") (s "1.11.0"))
 
@@ -323,7 +323,7 @@ positions of SYMBOL."
 (defun elisp-refs--loaded-files ()
   "Return a list of all files that have been loaded in Emacs.
 Where the file was a .elc, return the path to the .el file instead."
-  (let ((elc-paths (mapcar #'-first-item load-history)))
+  (let ((elc-paths (-non-nil (mapcar #'-first-item load-history))))
     (-non-nil
      (--map
       (let ((el-name (format "%s.el" (f-no-ext it)))
