@@ -2,7 +2,7 @@
 
 ;; Author: Philippe Vaucher <philippe.vaucher@gmail.com>
 ;; URL: https://github.com/Silex/package-utils
-;; Package-Version: 20161114.2350
+;; Package-Version: 20161115.108
 ;; Keywords: package, convenience
 ;; Version: 0.4.2
 ;; Package-Requires: ((async "1.6"))
@@ -140,23 +140,7 @@ With prefix argument NO-FETCH, do not call `package-refresh-contents'."
   "Install PACKAGE asynchronously.
 
 Contrary to `package-install', PACKAGE can only be a symbol."
-  (interactive
-   ;; Copied from `package-install'
-   (progn
-     ;; Initialize the package system to get the list of package
-     ;; symbols for completion.
-     (unless package--initialized
-       (package-initialize t))
-     (unless package-archive-contents
-       (package-refresh-contents))
-     (list (intern (completing-read
-                    "Install package: "
-                    (delq nil
-                          (mapcar (lambda (elt)
-                                    (unless (package-installed-p (car elt))
-                                      (symbol-name (car elt))))
-                                  package-archive-contents))
-                    nil t)))))
+  (interactive (list (car (eval (cadr (interactive-form 'package-install))))))
   (async-start
    `(lambda ()
       ,(async-inject-variables "^package-archives$")

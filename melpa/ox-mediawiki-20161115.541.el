@@ -5,7 +5,7 @@
 ;; Author: Tom Alexander <tomalexander@paphus.com>
 ;; Author: Tim Visher <tim.visher@gmail.com>
 ;; Package-Requires: ((cl-lib "0.5") (s "1.9.0"))
-;; Package-Version: 20150923.902
+;; Package-Version: 20161115.541
 ;; Keywords: org, wp, mediawiki
 ;; Homepage: https://github.com/tomalexander/orgmode-mediawiki
 
@@ -94,7 +94,6 @@ by the footnotes themselves."
 ;;; Define Back-End
 
 (org-export-define-derived-backend 'mw 'html
-  :export-block '("MW" "MEDIAWIKI")
   :filters-alist '((:filter-parse-tree . org-mw-separate-elements))
   :menu-entry
   '(?m "Export to Mediawiki"

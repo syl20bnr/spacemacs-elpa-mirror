@@ -2,7 +2,7 @@
 
 ;; Author: myuhe <yuhei.maeda_at_gmail.com>
 ;; URL: https://github.com/myuhe/org-gcal.el
-;; Package-Version: 20160805.2144
+;; Package-Version: 20161115.357
 ;; Version: 0.2
 ;; Maintainer: myuhe
 ;; Copyright (C) :2014 myuhe all rights reserved.
@@ -451,7 +451,7 @@ It returns the code provided by the service."
                               (plist-get (plist-get (read (buffer-string)) :token) :access_token)))
         (org-gcal--notify 
          (concat org-gcal-token-file " is not exists" )
-         (concat "Make" org-gcal-token-file))))))
+         (concat "Make " org-gcal-token-file))))))
 
 (defun org-gcal--safe-substring (string from &optional to)
   "Calls the `substring' function safely.

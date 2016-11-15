@@ -4,7 +4,7 @@
 
 ;; Author: Felipe Ochoa <felipe@fov.space>
 ;; URL: https://github.com/felipeochoa/rjsx-mode/
-;; Package-Version: 20161114.548
+;; Package-Version: 20161115.456
 ;; Package-Requires: ((emacs "24.4") (js2-mode "20160623"))
 ;; Version: 1.0
 ;; Keywords: languages
@@ -61,10 +61,6 @@ the `:around' combinator.  JS2-PARSER is the original XML parser."
   "Remove the rjsx advice on the js2 parser.  This will cause rjsx to stop working globally."
   (advice-remove 'js2-parse-xml-initializer #'rjsx-parse-xml-initializer))
 
-(with-eval-after-load 'flycheck
-  (dolist (checker flycheck-checkers)
-    (when (memq 'js2-mode (flycheck-checker-get checker 'modes))
-      (push 'rjsx-mode (flycheck-checker-get checker 'modes)))))
 
 (defface rjsx-tag
   '((t . (:inherit font-lock-function-name-face)))

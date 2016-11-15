@@ -4,16 +4,16 @@
 
   * You can optionally show the result of pretty-printing in a
     tooltip at point, by customizing option `pp-max-tooltip-size'
-    (Emacs 24.4+).
+    (Emacs 24+).
 
   * You can use a zero prefix argument (e.g. `M-o') with
     `pp-eval-last-sexp' (`C-x C-e') or `pp-eval-expression', to
     swap the use of a tooltip defined by option
-    `pp-max-tooltip-size'.
+    `pp-max-tooltip-size'.  (Emacs 24+)
 
   * There are additional commands that are versions of
     `pp-eval-last-sexp' and `pp-eval-expression' that always or
-    never use a tooltip.
+    never use a tooltip.  (Emacs 24+)
 
   * Pretty-printing respects options
     `pp-eval-expression-print-length' and
@@ -30,13 +30,14 @@
 
      - With no prefix argument, option `pp-max-tooltip-size' is
        respected. If a tooltip is not used then if the value fits
-       on one line (frame width) it is shown in the echo
-       area. Otherwise, it is shown in buffer *Pp Eval Output*'.
+       on one line (frame width) it is shown in the echo area.
+       Otherwise, it is shown in buffer *Pp Eval Output*'.  (Emacs
+       24+)
 
      - With a zero prefix arg, the use of a tooltip according to
        `pp-max-tooltip-size' is swapped: if that option is `nil'
        then a tooltip is used, and if non-`nil' a tooltip is not
-       used.
+       used.  (Emacs 24+)
 
      - With non-zero prefix argument, the value is inserted into
        the current buffer at point. With a negative prefix arg, if
@@ -47,12 +48,8 @@
        `pp-read-expression-map', which is like
        `read-expression-map' but with some Emacs-Lisp key bindings.
 
-     - With a prefix arg, the value is inserted into the current
-       buffer at point.  With a negative prefix arg, if the value
-       is a string, then it is inserted without being enclosed in
-       double-quotes (`"').
-
-  * Command `pp-eval-last-sexp' is enhanced in these ways:
+  * Command `pp-eval-last-sexp' is enhanced in these ways (Emacs
+    24+):
 
      - With a zero prefix arg, the use of a tooltip according to
        `pp-max-tooltip-size' is swapped: if that option is `nil'
@@ -67,7 +64,7 @@
     `pp-max-tooltip-size'): `pp-eval-expression-with-tooltip',
     `pp-eval-expression-without-tooltip',
     `pp-eval-last-sexp-with-tooltip', and
-    `pp-eval-last-sexp-without-tooltip' (Emacs 24.4+).
+    `pp-eval-last-sexp-without-tooltip' (Emacs 24+).
 
 
 
@@ -88,14 +85,15 @@
 
  Commands defined here:
 
-   `pp-eval-expression-with-tooltip',
-   `pp-eval-expression-without-tooltip',
-   `pp-eval-last-sexp-with-tooltip',
-   `pp-eval-last-sexp-without-tooltip'.
+   `pp-eval-expression-with-tooltip' (Emacs 24+),
+   `pp-eval-expression-without-tooltip' (Emacs 24+),
+   `pp-eval-last-sexp-with-tooltip' (Emacs 24+),
+   `pp-eval-last-sexp-without-tooltip' (Emacs 24+).
 
  Non-interactive functions defined here:
 
-   `pp-expression-size', `pp-show-tooltip', `pp-tooltip-show'.
+   `pp-expression-size', `pp-read--expression' (Emacs 24.4+),
+   `pp-show-tooltip' (Emacs 24+), `pp-tooltip-show' (Emacs 24+).
 
  Variables defined here:
 
@@ -106,4 +104,4 @@
              been REDEFINED HERE:
 
    `pp-display-expression', `pp-eval-expression',
-   `pp-eval-last-sexp'.
+   `pp-eval-last-sexp' (Emacs 23+).
