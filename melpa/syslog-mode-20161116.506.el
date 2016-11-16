@@ -6,7 +6,7 @@
 ;; Maintainer: Joe Bloggs <vapniks@yahoo.com>
 ;; Created: 2003-03-17 18:50:12 Harley Gorrell
 ;; Version: 2.2
-;; Package-Version: 20161115.659
+;; Package-Version: 20161116.506
 ;; Last-Updated: 2013-10-21 19:04:00
 ;;           By: Joe Bloggs
 ;; URL: https://github.com/vapniks/syslog-mode
@@ -712,6 +712,11 @@ The ARG and SEARCH-STRING arguments are the same as for `whois'."
 (defface syslog-su
   '((t  :weight bold :foreground "firebrick"))
   "Face for su and sudo"
+  :group 'syslog)
+
+(defface syslog-hide
+  '((t :foreground "black" :background "black"))
+  "Face for hiding text"
   :group 'syslog)
 
 ;; Keywords

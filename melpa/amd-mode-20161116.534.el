@@ -4,8 +4,8 @@
 ;;
 ;; Author: Nicolas Petton <petton.nicolas@gmail.com>
 ;; Keywords: javascript, amd, projectile
-;; Package-Version: 20161103.139
-;; Version: 2.0
+;; Package-Version: 20161116.534
+;; Version: 2.7
 ;; Package: amd-mode
 ;; Package-Requires: ((emacs "25") (projectile "20161008.47") (s "1.9.0") (f "0.16.2") (seq "2.16") (makey "0.3") (js2-mode "20140114") (js2-refactor "0.6.1"))
 
@@ -490,9 +490,11 @@ ignored."
   (js2-indent-line))
 
 (defun amd--buffer-file-name (&optional buffer)
-  "Return the name of the buffer's file relative to the current
-project."
-  (amd--file-name (buffer-file-name buffer)))
+  "Return name of BUFFER's file relative to project.
+If BUFFER is nil, do that for the current buffer.
+If BUFFER is not visiting a file, return nil."
+  (if-let ((path (buffer-file-name buffer)))
+      (amd--file-name path)))
 
 (defun amd--buffer-module ()
   (amd--module (buffer-file-name)))
@@ -560,12 +562,21 @@ buffer file."
     (setq path (replace-regexp-in-string (car rule) (cdr rule) path)))
   path)
 
-(defun amd--buffer-directory ()
-  (file-name-directory (amd--buffer-file-name)))
+(defun amd--buffer-directory (&optional buffer)
+  "Return path of BUFFER's file relative to project.
+Do not include the filename.
+If BUFFER is nil, do that for the current buffer.
+If BUFFER is not visiting a file, return nil.
+If BUFFER is at the root of the project, return the empty string."
+  (if-let ((name (amd--buffer-file-name buffer)))
+      (or
+       (file-name-directory name)
+       "")))
 
 (defun amd--use-relative-file-name-p (file)
-  "Return non-nil if the relative file name of FILE should be used."
-  (if (string= file (buffer-file-name))
+  "Non-nil if current buffer should link to FILE relatively."
+  (if (or (null (buffer-file-name))
+          (string= file (buffer-file-name)))
       nil
     (or amd-always-use-relative-file-name
         (and amd-use-relative-file-name
@@ -574,8 +585,8 @@ buffer file."
 
 (defun amd--inside-imports-p ()
   (let ((parent (js2-node-parent (js2-node-at-point))))
-   (or (amd--imports-node-p (js2-node-at-point))
-       (and parent (amd--imports-node-p parent)))))
+    (or (amd--imports-node-p (js2-node-at-point))
+        (and parent (amd--imports-node-p parent)))))
 
 (defun amd--imports-node-p (node)
   (let* ((imports-node node)

@@ -2,7 +2,7 @@
 
 ;; Author: Sebastian Christ <rudolfo.christ@gmail.com>
 ;; URL: https://github.com/rudolfochrist/interleave
-;; Package-Version: 20161108.1022
+;; Package-Version: 20161116.425
 ;; Version: 1.3.20161108-492
 
 ;; This file is not part of GNU Emacs
@@ -171,6 +171,12 @@ The possible values are 'asc for ascending and 'desc for descending."
  (defvar interleave-multi-pdf-notes-file nil
    "Indicates if the current Org notes file is a multi-pdf notes file."))
 
+(defconst interleave--page-note-prop "interleave_page_note"
+  "The page note property string.")
+
+(defconst interleave--pdf-prop "interleave_pdf"
+  "The pdf property string.")
+
 (defun interleave--find-pdf-path (buffer)
   "Search the `interleave_pdf' property in BUFFER and extracts it when found."
   (with-current-buffer buffer
@@ -188,9 +194,9 @@ The possible values are 'asc for ascending and 'desc for descending."
       (let ((headline (org-element-at-point)))
         (when (and (equal (org-element-type headline) 'headline)
                    (equal (org-element-property :level headline) 1)
-                   (org-entry-get nil "interleave_pdf"))
+                   (org-entry-get nil interleave--pdf-prop))
           (setq interleave-multi-pdf-notes-file t)
-          (org-entry-get nil "interleave_pdf"))))))
+          (org-entry-get nil interleave--pdf-prop))))))
 
 (defun interleave--open-file (split-window)
   "Opens the pdf file in besides the notes buffer.
@@ -212,14 +218,19 @@ SPLIT-WINDOW is a function that actually splits the window, so it must be either
            (insert "#+INTERLEAVE_PDF: " pdf-file-name)))))
     (interleave-pdf-mode 1)))
 
-(defun interleave--goto-parent-headline ()
-  "Search the tree for the outermost parent headline."
-  (let ((headline (org-element-at-point)))
-    (unless (equal (org-element-type headline) 'headline)
-      (outline-up-heading 1)
-      (setq headline (org-element-at-point)))
-    (ignore-errors
-      (outline-up-heading (1- (org-element-property :level headline))))))
+(defun interleave--goto-parent-headline (property)
+  "Traverse the tree until the parent headline.
+
+Consider a headline with property PROPERTY as parent headline."
+  (catch 'done
+    (if (and (eql (org-element-type (org-element-at-point)) 'headline)
+             (org-entry-get (point) property))
+        t 
+      (condition-case nil
+          (org-up-element)
+        ('error
+         (throw 'done nil)))
+      (interleave--goto-parent-headline property))))
 
 (defun interleave--goto-search-position ()
   "Move point to the search start position.
@@ -227,7 +238,7 @@ SPLIT-WINDOW is a function that actually splits the window, so it must be either
 For multi-pdf notes this is the outermost parent headline.  For everything else
 this is the beginning of the buffer."
   (if interleave-multi-pdf-notes-file
-      (interleave--goto-parent-headline)
+      (interleave--goto-parent-headline interleave--pdf-prop)
     (goto-char (point-min))))
 
 (defun interleave--go-to-page-note (page)
@@ -247,8 +258,10 @@ property set to PAGE.
       (when (re-search-forward (format "^\[ \t\r\]*\:interleave_page_note\: %s$"
                                        page)
                                nil t)
+        (org-back-to-heading t)
         (org-narrow-to-subtree)
-        (org-show-entry)
+        (org-show-subtree)
+        (org-cycle-hide-drawers t)
         t))))
 
 (defun interleave-go-to-next-page ()
@@ -308,7 +321,7 @@ For multi-pdf notes this is the end of the subtree.  For everything else
 this is the end of the buffer"
   (if (not interleave-multi-pdf-notes-file)
       (goto-char (point-max))
-    (interleave--goto-parent-headline)
+    (interleave--goto-parent-headline interleave--pdf-prop)
     (org-end-of-subtree)))
 
 (defun interleave--insert-heading-respect-content ()
@@ -329,8 +342,9 @@ Adjusts the heading level automatically."
       (interleave--goto-insert-position)
       (interleave--insert-heading-respect-content)
       (insert (format "Notes for page %d" page))
-      (org-set-property "interleave_page_note" (number-to-string page))
-      (org-narrow-to-subtree)))
+      (org-set-property interleave--page-note-prop (number-to-string page))
+      (org-narrow-to-subtree)
+      (org-cycle-hide-drawers t)))
   (interleave--switch-to-org-buffer t))
 
 (defun interleave-add-note ()
@@ -350,16 +364,11 @@ buffer."
   "Open PDF page for currently visible notes."
   (interactive)
   (interleave--switch-to-org-buffer)
-  (let (pdf-page)
-    (save-excursion
-      (when interleave-multi-pdf-notes-file
-        (interleave--goto-search-position))
-      (org-narrow-to-subtree)
-      (goto-char (point-min))
-      (re-search-forward "^ *:interleave_page_note: *\\(.*\\)")
-      (setq pdf-page (string-to-number (match-string 1))))
+  (let ((pdf-page (string-to-number
+                   (org-entry-get-with-inheritance interleave--page-note-prop))))
     (when (and (integerp pdf-page)
                (> pdf-page 0)) ; The page number needs to be a positive integer
+      (org-narrow-to-subtree)
       (interleave--switch-to-pdf-buffer)
       (funcall interleave-pdf-goto-page-fn pdf-page))))
 
@@ -370,25 +379,19 @@ buffer."
 previous set of notes."
   (interactive)
   (interleave--switch-to-org-buffer)
-  (let (pdf-page)
-    (save-excursion
-      (when interleave-multi-pdf-notes-file
-        (interleave--goto-search-position))
-      (org-narrow-to-subtree)
-      (goto-char (point-min))
-      (widen)
-      (when interleave-multi-pdf-notes-file
-        (save-excursion (interleave--goto-search-position)
-                        (org-narrow-to-subtree)))
-      (when (re-search-backward "^ *:interleave_page_note: *\\(.*\\)" nil :noerror)
-        (setq pdf-page (string-to-number (match-string 1)))))
-    (if (and (integerp pdf-page)
-             (> pdf-page 0)) ; The page number needs to be a positive integer
-        (progn
-          (interleave--go-to-page-note pdf-page)
-          (interleave--switch-to-pdf-buffer)
-          (funcall interleave-pdf-goto-page-fn pdf-page))
-      (org-narrow-to-subtree))))
+  (widen)
+  (interleave--goto-parent-headline interleave--page-note-prop)
+  (org-backward-heading-same-level 1)
+  (org-narrow-to-subtree)
+  (org-show-subtree)
+  (org-cycle-hide-drawers t)
+  (let ((pdf-page (string-to-number
+                   (org-entry-get-with-inheritance interleave--page-note-prop)))) 
+    (when (and (integerp pdf-page)
+               (> pdf-page 0)) ; The page number needs to be a positive integer
+
+      (interleave--switch-to-pdf-buffer)
+      (funcall interleave-pdf-goto-page-fn pdf-page))))
 
 (define-obsolete-function-alias
   'interleave--sync-pdf-page-next 'interleave-sync-pdf-page-next "1.3.0")
@@ -397,26 +400,25 @@ previous set of notes."
 next set of notes."
   (interactive)
   (interleave--switch-to-org-buffer)
-  (let (pdf-page)
-    (save-excursion
-      (when interleave-multi-pdf-notes-file
-        (interleave--goto-search-position))
-      (org-narrow-to-subtree)
-      (goto-char (point-min))
-      (re-search-forward "^ *:interleave_page_note:") ; current page
-      (widen)
-      (when interleave-multi-pdf-notes-file
-        (save-excursion (interleave--goto-search-position)
-                        (org-narrow-to-subtree)))
-      (when (re-search-forward "^ *:interleave_page_note: *\\(.*\\)" nil :noerror) ; next page
-        (setq pdf-page (string-to-number (match-string 1)))))
-    (if (and (integerp pdf-page)
-             (> pdf-page 0)) ; The page number needs to be a positive integer
-        (progn
-          (interleave--go-to-page-note pdf-page)
-          (interleave--switch-to-pdf-buffer)
-          (funcall interleave-pdf-goto-page-fn pdf-page))
-      (org-narrow-to-subtree))))
+  (widen)
+  ;; go to the first notes heading if we're not at an headline or if
+  ;; we're on multi-pdf heading. This is useful to quickly jump to the
+  ;; notes if they start at page 96 or so. Image you need to skip page
+  ;; for page.
+  (if (interleave--goto-parent-headline interleave--page-note-prop)
+      (org-forward-heading-same-level 1)
+    (when interleave-multi-pdf-notes-file
+      (org-show-subtree))
+    (outline-next-visible-heading 1))
+  (org-narrow-to-subtree)
+  (org-show-subtree)
+  (org-cycle-hide-drawers t)
+  (let ((pdf-page (string-to-number
+                   (org-entry-get (point) interleave--page-note-prop))))
+    (when (and (integerp pdf-page)
+               (> pdf-page 0)) ; The page number needs to be a positive integer
+      (interleave--switch-to-pdf-buffer)
+      (funcall interleave-pdf-goto-page-fn pdf-page))))
 
 ;;;###autoload
 (define-obsolete-function-alias
@@ -497,15 +499,17 @@ of .pdf)."
   "Sort notes by interleave_page_property.
 
 SORT-ORDER is either 'asc or 'desc."
-  (org-sort-entries nil ?f
-                    (lambda ()
-                      (or (string-to-number
-                           (org-entry-get nil
-                                          "interleave_page_note"))
-                          -1))
-                    (if (eq sort-order 'asc)
-                        #'<
-                      #'>)))
+  (condition-case nil
+      (org-sort-entries nil ?f
+                        (lambda ()
+                          (or (string-to-number
+                               (org-entry-get nil
+                                              "interleave_page_note"))
+                              -1))
+                        (if (eq sort-order 'asc)
+                            #'<
+                          #'>))
+    ('user-error nil)))
 
 ;;; Interleave
 ;; Minor mode for the org file buffer containing notes
