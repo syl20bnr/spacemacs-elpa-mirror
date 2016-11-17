@@ -52,8 +52,9 @@
    `isearchp-add-filter-predicate' (Emacs 24.3+),
    `isearchp-add-regexp-filter-predicate' (Emacs 24.3+),
    `isearchp-append-register', `isearch-char-by-name' (Emacs
-   23-24.3), `isearchp-complement-filter' (Emacs 24.3+),
-   `isearchp-complete', `isearchp-cycle-mismatch-removal',
+   23-24.3), `isearchp-columns' (Emacs 24.3+),
+   `isearchp-complement-filter' (Emacs 24.3+), `isearchp-complete',
+   `isearchp-cycle-mismatch-removal',
    `isearchp-defun-filter-predicate' (Emacs 24.3+),
    `isearchp-eval-sexp-and-insert' (Emacs 22+),
    `isearchp-fontify-buffer-now', `isearchp-init-edit',
@@ -117,8 +118,8 @@
  Non-interactive functions defined here:
 
    `isearchp-add-filter-predicate-1' (Emacs 24.3+),
-   `isearchp-barf-if-use-minibuffer',
-   `isearchp-complete-past-string', `isearchp-fail-pos',
+   `isearchp-barf-if-use-minibuffer', `isearchp-columns-p' (Emacs
+   24.3+), `isearchp-complete-past-string', `isearchp-fail-pos',
    `isearchp-highlight-lighter', `isearchp-in-color-p' (Emacs
    24.3+), `isearchp-in-comment-p' (Emacs 24.3+),
    `isearchp-in-comment-or-delim-p' (Emacs 24.3+),
@@ -323,6 +324,15 @@ Overview of Features ---------------------------------------------
    - `C-z 0' (`isearchp-reset-filter-predicate') resets
      `isearch-filter-predicate' to its original (default) value.
 
+   - `C-z c' (`isearchp-columns') adds a filter predicate that
+     limits search between two columns (or before/after a column).
+
+   - `C-z n' (`isearchp-defun-filter-predicate') names the current
+     suite of filter predicates, creating a named predicate that
+     does the same thing.  (You can use that name with `C-z -' to
+     remove that predicate.)  With a prefix arg it can also set or
+     save (i.e., do what `C-z !' or `C-z s' does).
+
    - `C-z p' (`isearchp-toggle-showing-filter-prompt-prefixes')
      toggles option `isearchp-show-filter-prompt-prefixes-flag',
      which controls whether to show filter prefixes in the Isearch
@@ -337,12 +347,6 @@ Overview of Features ---------------------------------------------
      (`isearchp-toggle-auto-save-filter-predicate') toggles option
      `isearchp-auto-save-filter-predicate-flag', which provides
      automatic filter-predicate saving (so no need to use `C-z s').
-
-   - `C-z n' (`isearchp-defun-filter-predicate') names the current
-     suite of filter predicates, creating a named predicate that
-     does the same thing.  (You can use that name with `C-z -' to
-     remove that predicate.)  With a prefix arg it can also set or
-     save (i.e., do what `C-z !' or `C-z s' does).
 
    - `C-z ?' (`isearchp-show-filters') echoes the current suite of
      filter predicates (advice and original, unadvised predicate).

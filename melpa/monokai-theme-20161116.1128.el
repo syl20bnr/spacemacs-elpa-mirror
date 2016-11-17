@@ -4,7 +4,7 @@
 
 ;; Author: Kelvin Smith <oneKelvinSmith@gmail.com>
 ;; URL: http://github.com/oneKelvinSmith/monokai-emacs
-;; Package-Version: 20161115.1455
+;; Package-Version: 20161116.1128
 ;; Version: 3.0.0
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -3218,12 +3218,6 @@ Also affects 'linum-mode' background."
      ((,monokai-class (:inherit bold))
       (,monokai-256-class  (:inherit bold))))
 
-   ;; linum-mode
-   `(linum
-     ((,monokai-class (:foreground ,monokai-line-number
-                                   :background ,monokai-fringe-bg))
-      (,monokai-256-class  (:foreground ,monokai-256-line-number
-                                        :background ,monokai-256-fringe-bg))))
    ;; linum-mode
    `(linum
      ((,monokai-class (:foreground ,monokai-line-number

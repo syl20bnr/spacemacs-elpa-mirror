@@ -7,11 +7,11 @@
 ;; Copyright (C) 1996-2016, Drew Adams, all rights reserved.
 ;; Created: Fri Dec 15 10:44:14 1995
 ;; Version: 0
-;; Package-Version: 20161115.1129
+;; Package-Version: 20161115.1908
 ;; Package-Requires: ()
-;; Last-Updated: Tue Nov 15 11:15:27 2016 (-0800)
+;; Last-Updated: Tue Nov 15 19:07:31 2016 (-0800)
 ;;           By: dradams
-;;     Update #: 4971
+;;     Update #: 4987
 ;; URL: http://www.emacswiki.org/isearch+.el
 ;; Doc URL: http://www.emacswiki.org/IsearchPlus
 ;; Doc URL: http://www.emacswiki.org/DynamicIsearchFiltering
@@ -83,8 +83,9 @@
 ;;    `isearchp-add-filter-predicate' (Emacs 24.3+),
 ;;    `isearchp-add-regexp-filter-predicate' (Emacs 24.3+),
 ;;    `isearchp-append-register', `isearch-char-by-name' (Emacs
-;;    23-24.3), `isearchp-complement-filter' (Emacs 24.3+),
-;;    `isearchp-complete', `isearchp-cycle-mismatch-removal',
+;;    23-24.3), `isearchp-columns' (Emacs 24.3+),
+;;    `isearchp-complement-filter' (Emacs 24.3+), `isearchp-complete',
+;;    `isearchp-cycle-mismatch-removal',
 ;;    `isearchp-defun-filter-predicate' (Emacs 24.3+),
 ;;    `isearchp-eval-sexp-and-insert' (Emacs 22+),
 ;;    `isearchp-fontify-buffer-now', `isearchp-init-edit',
@@ -148,8 +149,8 @@
 ;;  Non-interactive functions defined here:
 ;;
 ;;    `isearchp-add-filter-predicate-1' (Emacs 24.3+),
-;;    `isearchp-barf-if-use-minibuffer',
-;;    `isearchp-complete-past-string', `isearchp-fail-pos',
+;;    `isearchp-barf-if-use-minibuffer', `isearchp-columns-p' (Emacs
+;;    24.3+), `isearchp-complete-past-string', `isearchp-fail-pos',
 ;;    `isearchp-highlight-lighter', `isearchp-in-color-p' (Emacs
 ;;    24.3+), `isearchp-in-comment-p' (Emacs 24.3+),
 ;;    `isearchp-in-comment-or-delim-p' (Emacs 24.3+),
@@ -354,6 +355,15 @@
 ;;    - `C-z 0' (`isearchp-reset-filter-predicate') resets
 ;;      `isearch-filter-predicate' to its original (default) value.
 ;;
+;;    - `C-z c' (`isearchp-columns') adds a filter predicate that
+;;      limits search between two columns (or before/after a column).
+;;
+;;    - `C-z n' (`isearchp-defun-filter-predicate') names the current
+;;      suite of filter predicates, creating a named predicate that
+;;      does the same thing.  (You can use that name with `C-z -' to
+;;      remove that predicate.)  With a prefix arg it can also set or
+;;      save (i.e., do what `C-z !' or `C-z s' does).
+;;
 ;;    - `C-z p' (`isearchp-toggle-showing-filter-prompt-prefixes')
 ;;      toggles option `isearchp-show-filter-prompt-prefixes-flag',
 ;;      which controls whether to show filter prefixes in the Isearch
@@ -368,12 +378,6 @@
 ;;      (`isearchp-toggle-auto-save-filter-predicate') toggles option
 ;;      `isearchp-auto-save-filter-predicate-flag', which provides
 ;;      automatic filter-predicate saving (so no need to use `C-z s').
-;;
-;;    - `C-z n' (`isearchp-defun-filter-predicate') names the current
-;;      suite of filter predicates, creating a named predicate that
-;;      does the same thing.  (You can use that name with `C-z -' to
-;;      remove that predicate.)  With a prefix arg it can also set or
-;;      save (i.e., do what `C-z !' or `C-z s' does).
 ;;
 ;;    - `C-z ?' (`isearchp-show-filters') echoes the current suite of
 ;;      filter predicates (advice and original, unadvised predicate).
@@ -813,6 +817,7 @@
 ;;(@* "Change log")
 ;;
 ;; 2016/11/15 dadams
+;;     Added: isearchp-columns, isearchp-columns-p.
 ;;     isearchp-read-predicate: If input was not a completion choice then Lisp-read it (e.g. lambda form).
 ;; 2016/11/09 dadams
 ;;     isearchp-add(-regexp)-filter-predicate(-1), isearchp-or-filter-predicate, isearchp-near*:
@@ -1523,6 +1528,7 @@ t     means search is never  case sensitive
   (define-key isearchp-filter-map (kbd "-")  'isearchp-remove-filter-predicate)               ; `C-z -'
   (define-key isearchp-filter-map (kbd "~")  'isearchp-complement-filter)                     ; `C-z ~'
   (define-key isearchp-filter-map (kbd "!")  'isearchp-set-filter-predicate)                  ; `C-z !'
+  (define-key isearchp-filter-map (kbd "c")  'isearchp-columns)                               ; `C-z c'
   (define-key isearchp-filter-map (kbd "p")  'isearchp-toggle-showing-filter-prompt-prefixes) ; `C-z p'
   (define-key isearchp-filter-map (kbd "s")  'isearchp-save-filter-predicate)                 ; `C-z s'
   (define-key isearchp-filter-map (kbd "S")  'isearchp-toggle-auto-save-filter-predicate)     ; `C-z S'
@@ -4556,7 +4562,7 @@ The predicate is suitable for `isearch-filter-predicate'"
     "Return non-nil if calling FILTER-PREDICATE on BEG and END returns nil."
     (not (funcall filter-predicate beg end)))
 
-  (defun isearchp-show-filters () ; `C-z ?'
+  (defun isearchp-show-filters ()       ; `C-z ?'
     "Print a message listing the current filter predicates."
     (interactive)
     (let ((preds  ()))
@@ -4754,10 +4760,43 @@ DISTANCE is a cons returned by function `isearchp-read-measure'."
                            (setq unit-pos  (point)))
            (save-match-data (re-search-forward ,pattern (min (point-max) unit-pos) t))))))
 
+  (defun isearchp-columns (min max &optional flip-read-name-p flip-read-prefix-p msgp) ; `C-z c'
+    "Add a predicate that restrict searching between two columns (inclusive).
+You are prompted for the minumum and maximum columns, in that order.
+Defaults: 0 for the minimum, largest integer for the maximum.
+Example: Enter 71 as min, default as max, to search past column 70.
+
+You might also be prompted for a predicate name or an Isearch prompt
+prefix - see `isearchp-add-filter-predicate'."
+    (interactive
+     (let ((isearchp-resume-with-last-when-empty-flag  nil)
+           mn mx)
+       (with-isearch-suspended 
+         (setq mn  (read-number "Minimum column: " 0))
+         (while (not (natnump mn))
+           (setq mn  (read-number "Minimum column (0,1,2,...): " 0)))
+         (setq mx  (read-number "Maximum column: " most-positive-fixnum))
+         (while (not (natnump mx))
+           (setq mx  (read-number "Maximum column (0,1,2,...): " most-positive-fixnum))))
+       (list mn mx 
+             (and current-prefix-arg  (<= (prefix-numeric-value current-prefix-arg) 0))
+             (and current-prefix-arg  (>= (prefix-numeric-value current-prefix-arg) 0))
+             t)))
+    (isearchp-add-filter-predicate (isearchp-columns-p min max) flip-read-name-p flip-read-prefix-p msgp))
+
+  (defun isearchp-columns-p (min max)
+    "Return t if all chars in search hit are between columns MIN and MAX."
+    `(lambda (beg end)
+       (and (>= (save-excursion (goto-char beg) (current-column)) ,min)
+            (<= (save-excursion (goto-char end) (current-column)) ,max))))
+
   (defun isearchp-in-comment-p (beg end)
     "Return t if all chars in the search hit are in the same comment.
-\(The comment delimiters are not considered to be in the comment.)
-BEG and END are the search-hit limits."
+BEG and END are the search-hit limits.
+
+The comment delimiters are not considered to be in the comment.  See
+`isearchp-in-comment-or-delim-p' for a predicate that includes the
+delimiters, `comment-start' and `comment-end'."
     (let ((result  t)
           (pos     beg))
       (save-excursion

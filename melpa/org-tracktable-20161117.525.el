@@ -2,7 +2,7 @@
 
 ;; Author: tty-tourist <andreasrasholm@protonmail.com>
 ;; URL: https://github.com/tty-tourist/org-tracktable
-;; Package-Version: 20160621.1127
+;; Package-Version: 20161117.525
 ;; Created: 2015-11-03
 ;; Keywords: org, writing
 ;; Package-Requires: ((emacs "24")(cl-lib "0.5"))
@@ -78,6 +78,11 @@ If you want to change this variable, it's recommended to do it before
 inserting the table, to ensure consistency.  The default name is
 'tracktable'."
   :type 'string :group 'convenience)
+
+(defcustom org-tracktable-ignore-blocks nil
+  "A list of strings containing names of blocks to ignore.
+See `org-in-block-p' for more detail."
+  :type '(repeat string) :group 'convenience)
 
 (defun org-tracktable-tracktable-exists-p ()
   "Check if the 'tracktable' exists in buffer."
@@ -210,6 +215,9 @@ heading with the tag 'nowc' or 'noexport.'"
          ;; Ignore comments.
          ((org-at-comment-p)
           (forward-line))
+	 ;; Ignore blocks defined by user.
+	 ((org-in-block-p org-tracktable-ignore-blocks)
+	  (forward-line))
          ;; Ignore drawers.
          ((org-at-drawer-p)
 	  (progn (goto-char (match-end 0))

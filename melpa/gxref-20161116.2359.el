@@ -4,7 +4,7 @@
 
 ;; Author: Dedi Hirschfeld
 ;; URL: https://github.com/dedi/gxref
-;; Package-Version: 20161111.54
+;; Package-Version: 20161116.2359
 ;; Keywords: xref, global, tools
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "25"))
@@ -73,6 +73,7 @@
 ;; | xref-find-definitions | M-.      |
 ;; | xref-find-references  | M-?      |
 ;; | xref-find-apropos     | C-M-.    |
+;; | xref-pop-marker-stack | M-,      |
 
 ;; If a GTAGS file can't be located for the current buffer, xref will
 ;; fall back to whatever other backends it's configured to try.
@@ -135,20 +136,24 @@
 (require 'cl-lib)
 (require 'xref)
 
+;;;###autoload
 (defgroup gxref nil
   "XRef backend using GNU Global."
   :group 'xref)
 
+;;;###autoload
 (defcustom gxref-global-exe "global"
   "Path to GNU Global executable."
   :type 'string
   :group 'gxref)
 
-(defcustom gxref-gtags-exe "gtags"
-  "Path to GTAGS executable."
+;;;###autoload
+(defcustom gxref-create-db-cmd "gtags"
+  "Command to create the gtags database."
   :type 'string
   :group 'gxref)
 
+;;;###autoload
 (defcustom gxref-update-db-on-save t
   "A flag indicating whether to update the GTAGS database when a file is saved."
   :type 'boolean
@@ -164,40 +169,27 @@ If not defined, 'global -p' will be used to find it."
   :safe 'directory-name-p
   )
 
-;;;###autoload
-(defvar-local gxref-gtags-root nil
-  "DEPRECATED. Use `gxref-project-root-dir' instead.
-Root directory of the project. If not defined, 'global -p' will
-be used to find it.")
-
 
 ;;;###autoload
-(defvar gxref-gtags-conf nil
+(defcustom gxref-gtags-conf nil
   "Explicit GTAGS/GLOBAL configuration file.")
 
 ;;;###autoload
-(defvar gxref-gtags-label nil
+(defcustom gxref-gtags-label nil
   "Explicit GTAGS/GLOBAL label.")
 
 ;;;###autoload
-(defvar gxref-gtags-lib-path nil
+(defcustom gxref-gtags-lib-path nil
   "Explicit GLOBAL libpath.")
 
-
-
-(defun gxref--get-gtags-root-dir ()
-    "Figure out the user-configured root directory.
-This uses either `gxref-project-root-dir' variable, or, failing that, the
-deprecated `gxref-gtags-root' variable."
-    (or gxref-project-root-dir gxref-gtags-root))
 
 
 (defun gxref--prepare-process-environment()
   "Figure out the process environment to use for running GLOBAL/GTAGS"
   (append
    process-environment
-   (when (gxref--get-gtags-root-dir)
-     (list (concat "GTAGSROOT=" (gxref--get-gtags-root-dir))))
+   (when gxref-project-root-dir
+     (list (concat "GTAGSROOT=" gxref-project-root-dir)))
    (when gxref-gtags-conf     (list (concat "GTAGSCONF=" gxref-gtags-conf)))
    (when gxref-gtags-label    (list (concat "GTAGSLABEL=" gxref-gtags-label)))
    (when gxref-gtags-lib-path (list (concat "GTAGSLIB=" gxref-gtags-lib-path))))
@@ -214,10 +206,15 @@ global"
     (error nil))))
 
 
+(defun gxref--global-find-project ()
+  "Run global to find db path."
+      (car (gxref--global-to-list '("-p"))))
+
+
 (defun gxref--find-project-root ()
   "Return the project root for the current project.  Return nil if none."
-  (or gxref-gtags-root
-      (car (gxref--global-to-list '("-p")))))
+  (or gxref-project-root-dir
+      (gxref--global-find-project)))
 
 
 (defun gxref--make-xref-from-file-loc (file line column desc)
@@ -254,6 +251,9 @@ any additional command line arguments to pass to GNU Global."
     ))
 
 
+;;;; Interactive commands.
+
+;;;###autoload
 (defun gxref-update-db ()
   "Update GTAGS project database for current project."
   (interactive)
@@ -262,6 +262,7 @@ any additional command line arguments to pass to GNU Global."
   ;; `gxref--global-to-list'`
   (gxref--global-to-list '("-u")))
 
+;;;###autoload
 (defun gxref-single-update-db ()
   "Update GTAGS project database for the current file."
   (interactive)
@@ -280,9 +281,31 @@ any additional command line arguments to pass to GNU Global."
 (add-hook 'after-save-hook 'gxref--after-save-hook)
 
 
-;;
-;; gxref backend definition.
-;;
+(defun gxref--create-db-internal (project-root-dir &optional display)
+  "Run `gxref-create-db-cmd' to create a GTAGS database in PROJECT-ROOT-DIR.
+If DISPLAY is true, display the process buffer.  Return the new process."
+  (let* ((gtags-buffer (get-buffer-create "*Gxref make db*"))
+        (default-directory project-root-dir)
+        (process-environment (gxref--prepare-process-environment))
+        (make-db-process (start-file-process-shell-command
+                          "gxref-make-db"
+                          gtags-buffer
+                          gxref-create-db-cmd)))
+    (when display (display-buffer gtags-buffer))
+    make-db-process
+  ))
+
+
+;;;###autoload
+(defun gxref-create-db (project-root-dir)
+  "Create a GTAGS database in the directory specified as PROJECT-ROOT-DIR."
+  (interactive "DCreate db in directory: ")
+    (set-process-sentinel
+     (gxref--create-db-internal gxref-project-root-dir)
+     (lambda (_process event)
+       (message "Gxref tag %s: %s" project-dir
+                (replace-regexp-in-string "\n+$" "" event)))))
+
 
 ;;;###autoload
 (defun gxref-set-project-dir (project-dir)
@@ -300,8 +323,15 @@ explicitly set the variable `gxref-project-root-dir'.  This has
 the same effect as using this function, but can be by setting a
 file-local or dir-local variable."
   (interactive "DProject Directory: ")
-  (setq gxref-project-root-dir (expand-file-name project-dir)
-  ))
+  (setq gxref-project-root-dir (expand-file-name project-dir))
+  (if (and (not (gxref--global-find-project))
+             (y-or-n-p "No GTAGS file found.  Try to create one?"))
+    (set-process-sentinel
+     (gxref--create-db-internal gxref-project-root-dir)
+     (lambda (_process event)
+       (message "Gxref tag %s: %s" project-dir
+                (replace-regexp-in-string "\n+$" "" event)))
+  )))
 
 ;;;###autoload
 (defun gxref-clear-project-dir ()
@@ -312,6 +342,8 @@ a GTAGS file is found.  See `gxref-set-project-dir' for more details."
   (interactive)
   (setq gxref-project-root-dir nil)
   )
+
+;;;; gxref backend definition.
 
 
 ;;;###autoload

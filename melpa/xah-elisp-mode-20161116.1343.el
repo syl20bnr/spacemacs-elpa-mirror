@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2015, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.11.4
-;; Package-Version: 20161105.1325
+;; Version: 2.11.6
+;; Package-Version: 20161116.1343
 ;; Created: 23 Mar 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: lisp, languages
@@ -180,6 +180,8 @@
 "print-length"
 "print-level"
 "progn"
+"prog1"
+"prog2"
 "provide"
 "push"
 "put"
@@ -232,11 +234,21 @@
 "while"
 "zerop"
 
+"string-collate-equalp"
+"string-prefix-p"
+"string-suffix-p"
+"string<"
+"string-lessp"
+"string-greaterp"
+"string-collate-lessp"
+"string-prefix-p"
+"string-suffix-p"
+"compare-strings"
+"assoc-string"
 ))
 
 (defvar xah-elisp-emacs-words nil "List of elisp keywords that's not core lisp language, such as buffer, marker, hook, editing, copy paste, ….")
 (setq xah-elisp-emacs-words '(
-
 
 "make-syntax-table"
 "display-completion-list"
@@ -631,7 +643,7 @@
 (setq xah-elisp-elisp-vars-1 '(
 
 "load-in-progress"
-
+"split-string-default-separators"
 "image-cache-eviction-delay"
 "max-image-size"
 "buffer-access-fontify-functions"
@@ -1643,15 +1655,13 @@ If there's a text selection, act on the region, else, on defun block."
     ("m" "(message \"%s▮\" ARGS)" xah-elisp--ahf)
     ("p" "(point)" xah-elisp--ahf)
     ("s" "(setq ▮ VAL)" xah-elisp--ahf)
-    ("w" "(let (i)
-  (when  (< i 9)
-    ▮
-    (1+ i)))" xah-elisp--ahf)
+    ("o" "&optional " xah-elisp--ahf)
+    ("w" "(when ▮)" xah-elisp--ahf)
     ("ah" "add-hook" xah-elisp--ahf)
     ("bc" "backward-char" xah-elisp--ahf)
     ("bs" "buffer-substring" xah-elisp--ahf)
     ("bw" "backward-word" xah-elisp--ahf)
-    ("ca" "custom-autoload" xah-elisp--ahf)
+    ("ca" "char-after" xah-elisp--ahf)
     ("cb" "current-buffer" xah-elisp--ahf)
     ("cc" "condition-case" xah-elisp--ahf)
     ("cd" "copy-directory" xah-elisp--ahf)
@@ -1934,6 +1944,8 @@ If there's a text selection, act on the region, else, on defun block."
     ("princ" "(princ ▮)" xah-elisp--ahf)
     ("print" "(print ▮)" xah-elisp--ahf)
     ("progn" "(progn\n▮)" xah-elisp--ahf)
+    ("prog1" "(prog1\n▮)" xah-elisp--ahf)
+    ("prog2" "(prog2\n▮)" xah-elisp--ahf)
     ("pop" "(pop ▮)" xah-elisp--ahf)
     ("propertize" "(propertize STRING▮ &rest PROPERTIES)" xah-elisp--ahf)
     ("push" "(push NEWELT▮ PLACE)" xah-elisp--ahf)
@@ -1994,7 +2006,6 @@ If there's a text selection, act on the region, else, on defun block."
     ("skip-chars-backward" "(skip-chars-backward \"▮\" &optional LIM)" xah-elisp--ahf)
     ("skip-chars-forward" "(skip-chars-forward \"▮\" &optional LIM)" xah-elisp--ahf)
     ("split-string" "(split-string ▮ &optional SEPARATORS OMIT-NULLS)" xah-elisp--ahf)
-    ("string" "(string ▮)" xah-elisp--ahf)
     ("string-equal" "(string-equal str1▮ str2)" xah-elisp--ahf)
     ("string-match" "(string-match \"REGEXP▮\" \"STRING\" &optional START)" xah-elisp--ahf)
     ("string-match-p" "(string-match-p \"REGEXP▮\" \"STRING\" &optional START)" xah-elisp--ahf)
@@ -2034,6 +2045,23 @@ If there's a text selection, act on the region, else, on defun block."
     ("write-region" "(write-region (point-min) (point-max) FILENAME &optional APPEND VISIT LOCKNAME MUSTBENEW)" xah-elisp--ahf)
     ("y-or-n-p" "(y-or-n-p \"PROMPT▮ \")" xah-elisp--ahf)
     ("yes-or-no-p" "(yes-or-no-p \"PROMPT▮ \")" xah-elisp--ahf)
+
+    ("make-string" "(make-string count character)" xah-elisp--ahf)
+    ("string" "(string &rest characters)" xah-elisp--ahf)
+
+    ("char-equal" "(char-equal char1▮ char1)" xah-elisp--ahf)
+
+    ("string-collate-equalp" "(string-collate-equalp string1▮ string2 &optional locale)" xah-elisp--ahf)
+    ("string-prefix-p" "(string-prefix-p prefixstr▮ string2 &optional ignore-case)" xah-elisp--ahf)
+    ("string-suffix-p" "(string-suffix-p suffix▮ string &optional ignore-case)" xah-elisp--ahf)
+    ("string-lessp" "(string-lessp string1▮ string2)" xah-elisp--ahf)
+    ("string-greaterp" "(string-greaterp string1▮ string2)" xah-elisp--ahf)
+    ("string-collate-lessp" "(string-collate-lessp string1▮ string2 &optional locale)" xah-elisp--ahf)
+    ("string-prefix-p" "(string-prefix-p string1▮ string2 &optional ignore-case)" xah-elisp--ahf)
+    ("string-suffix-p" "(string-suffix-p suffix▮ string &optional ignore-case)" xah-elisp--ahf)
+    ("compare-strings" "(compare-strings string1▮ start1 end1 string2 start2 end2)" xah-elisp--ahf)
+    ("assoc-string" "(assoc-string key▮ alist &optional case-fold)" xah-elisp--ahf)
+
     ;;
     )
 
@@ -2138,7 +2166,7 @@ If there's a text selection, act on the region, else, on defun block."
       (let ((synTable (make-syntax-table emacs-lisp-mode-syntax-table)))
 
         (modify-syntax-entry ?\* "w" synTable)
-        (modify-syntax-entry ?\- "w" synTable)
+        (modify-syntax-entry ?\- "_" synTable)
 
         ;; (modify-syntax-entry ?\; "<" synTable)
         ;; (modify-syntax-entry ?\n ">" synTable)

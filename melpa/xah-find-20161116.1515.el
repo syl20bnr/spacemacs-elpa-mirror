@@ -2,9 +2,9 @@
 
 ;; Copyright © 2012-2015 by Xah Lee
 
-;; Author: Xah Lee ( http://xahlee.org/ )
-;; Version: 3.0.0
-;; Package-Version: 20160721.2030
+;; Author: Xah Lee ( http://xahlee.info/ )
+;; Version: 3.0.1
+;; Package-Version: 20161116.1515
 ;; Created: 02 April 2012
 ;; Keywords: convenience, extensions, files, tools, unix
 ;; Homepage: http://ergoemacs.org/emacs/elisp-xah-find-text.html
@@ -139,7 +139,7 @@
   )
 
 (defcustom xah-find-context-char-count-after
-  30
+  50
   "Number of characters to print after search string."
   :group 'xah-find
   )
@@ -153,13 +153,13 @@
   )
 
 (defcustom xah-find-file-separator
-  "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+  "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
   "A string as visual separator."
   :group 'xah-find )
 
 (defcustom
   xah-find-occur-separator
-  "──────────────────────────────────────────────────────────────────────\n"
+  "────────────────────────────────────────────────────────────\n"
   "A string as visual separator."
   :group 'xah-find )
 
@@ -176,13 +176,13 @@
   :group 'xah-find )
 
 (defcustom xah-find-occur-prefix
-"[["
+"「"
   "A left-bracket string that marks matched text and navigate previous/next."
   :group 'xah-find
   )
 
 (defcustom xah-find-occur-postfix
-  "]]"
+  "」"
   "A right-bracket string that marks matched text and navigate previous/next."
   :group 'xah-find
   )
@@ -192,13 +192,13 @@
 ;; http://xahlee.info/comp/unicode_matching_brackets.html
 
 (defcustom xah-find-filepath-prefix
-"<<"
+"«"
   "A left-bracket string used to mark file path and navigate previous/next."
   :group 'xah-find
   )
 
 (defcustom xah-find-filepath-postfix
-  ">>"
+  "»"
   "A right-bracket string used to mark file path and navigate previous/next."
   :group 'xah-find
   )
@@ -221,35 +221,18 @@ Version 2015-05-23"
         "e3824ad41f2ec1ed" ))
     *sequence)))
 
-(defun xah-find--ignore-dir-p (*path)
-  "Return true if *PATH should be ignored. Else, nil."
+(defun xah-find--ignore-dir-p (*path )
+  "Return true if one of `xah-find-dir-ignore-regex-list' matches *PATH. Else, nil.
+2016-11-16"
   (catch 'exit25001
     (mapc
-     (lambda (x)
-       (when (string-match x *path) (throw 'exit25001 x)))
+     (lambda (-regex)
+       (when (string-match -regex *path) (throw 'exit25001 -regex)))
      xah-find-dir-ignore-regex-list)
     nil
     ))
 
 
-
-;; (defun xah-find--display-formfeed-as-line ()
-;;   "Modify a display-table that displays page-breaks prettily.
-;; If the buffer inside *WINDOW has `page-break-lines-mode' enabled,
-;; its display table will be modified as necessary."
-;;   ;; code borrowed from Steve Purcell's https://github.com/purcell/page-break-lines GPL
-;;   (progn
-;;     (unless buffer-display-table
-;;       (setq buffer-display-table (make-display-table)))
-;;     (let* (
-;;            (-linechar 9472)
-;;            (-glyph (make-glyph-code -linechar))
-;;            (-new-display-entry (vconcat (make-list 60 -glyph))))
-;;       (unless (equal -new-display-entry (elt buffer-display-table ?\^L))
-;;         (aset buffer-display-table ?\^L -new-display-entry)))))
-
-
-
 (defvar xah-find-output-mode-map nil "Keybinding for `xah-find.el output'")
 (progn
   (setq xah-find-output-mode-map (make-sparse-keymap))
@@ -265,14 +248,20 @@ Version 2015-05-23"
   (define-key xah-find-output-mode-map (kbd "M-n") 'xah-find-next-file)
   (define-key xah-find-output-mode-map (kbd "M-p") 'xah-find-previous-file)
   (define-key xah-find-output-mode-map (kbd "RET") 'xah-find--jump-to-place)
-)
+  )
 
-(define-derived-mode xah-find-output-mode prog-mode "ξfind"
+(define-derived-mode xah-find-output-mode fundamental-mode "ξxah-find"
   "Major mode for reading output for xah-find commands.
 home page:
 URL `http://ergoemacs.org/emacs/elisp-xah-find-text.html'
 
 \\{xah-find-output-mode-map}"
+
+  (progn
+    (when (null buffer-display-table)
+      (setq buffer-display-table (make-display-table)))
+    (aset buffer-display-table ?\^L
+          (vconcat (make-list 70 (make-glyph-code ?─ 'font-lock-comment-face)))))
 
   :group 'xah-find
   )
@@ -451,10 +440,9 @@ URL `http://ergoemacs.org/emacs/elisp-xah-find-text.html'
         (put-text-property (line-beginning-position) (line-end-position) 'face (list :background xah-find-file-background-color))))
 
     (goto-char 1)
-    (search-forward "━" nil "NOERROR")
+    (search-forward "━" nil "NOERROR") ; todo, need fix
     (search-forward xah-find-occur-prefix nil "NOERROR")
     (xah-find-output-mode)
-    ;; (use-local-map xah-find-output-mode-map)
     ))
 
 

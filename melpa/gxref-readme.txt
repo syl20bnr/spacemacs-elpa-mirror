@@ -47,6 +47,7 @@ default, xref functions are bound as follows:
 | xref-find-definitions | M-.      |
 | xref-find-references  | M-?      |
 | xref-find-apropos     | C-M-.    |
+| xref-pop-marker-stack | M-,      |
 
 If a GTAGS file can't be located for the current buffer, xref will
 fall back to whatever other backends it's configured to try.
