@@ -803,7 +803,7 @@
 	   ((:url . "https://github.com/Malabarba/speed-of-thought-lisp")
 	    (:keywords "convenience" "lisp"))])
  (spinner .
-	  [(1 7 1)
+	  [(1 7 3)
 	   nil "Add spinners and progress-bars to the mode-line for ongoing operations" single
 	   ((:url . "https://github.com/Malabarba/spinner.el")
 	    (:keywords "processes" "mode-line"))])
@@ -903,11 +903,13 @@
 		 ((:url . "http://elpa.gnu.org/packages/url-http-ntlm.html")
 		  (:keywords "comm" "data" "processes" "hypermedia"))])
  (validate .
-	   [(1 0 0)
+	   [(1 0 2)
 	    ((emacs
 	      (24 1))
 	     (cl-lib
-	      (0 5)))
+	      (0 5))
+	     (seq
+	      (2 16)))
 	    "Schema validation for Emacs-lisp" single
 	    ((:url . "http://elpa.gnu.org/packages/validate.html")
 	     (:keywords "lisp"))])

@@ -4,8 +4,8 @@
 
 ;; Author: Artur Malabarba <emacs@endlessparentheses.com>
 ;; Keywords: lisp
-;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
-;; Version: 1.0.0
+;; Package-Requires: ((emacs "24.1") (cl-lib "0.5") (seq "2.16"))
+;; Version: 1.0.2
 
 ;;; Commentary:
 ;;
@@ -165,7 +165,7 @@ indicate a failure."
   (let ((report (validate--check value schema)))
     (if report
         (unless noerror
-          (user-error report))
+          (user-error "%s" report))
       value)))
 
 ;;;###autoload
@@ -208,6 +208,14 @@ VALUE is validated against SYMBOL's custom type.
 
 ;;;; ChangeLog:
 
+;; 2016-11-17  Artur Malabarba  <bruce.connor.am@gmail.com>
+;; 
+;; 	Merge commit '1c9cdd66501a2f32c59347c56cf4a4316e51ad32'
+;; 
+;; 2016-11-17  Artur Malabarba  <bruce.connor.am@gmail.com>
+;; 
+;; 	Merge commit 'c30247ea4efbddb8efc0c21634b1e78aac4dea6a'
+;; 
 ;; 2016-10-12  Artur Malabarba  <bruce.connor.am@gmail.com>
 ;; 
 ;; 	Merge commit '16e0e2338b9539610437e420d968c7084d48eb57'

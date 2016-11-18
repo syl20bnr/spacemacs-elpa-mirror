@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 ~ 2015 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; Version: 1.7
-;; Package-Version: 20161113.1120
+;; Package-Version: 20161117.906
 ;; Package-Requires: ((helm "1.5") (bbdb "3.1.2"))
 ;; URL: https://github.com/emacs-helm/helm-bbdb
 
@@ -55,9 +55,12 @@
 The format is \"Firstname Lastname\"."
   (require 'bbdb)
   (mapcar (lambda (bbdb-record)
-            (replace-regexp-in-string
-             "\\s-+$" ""
-             (concat (aref bbdb-record 0) " " (aref bbdb-record 1))))
+            (let ((name1 (aref bbdb-record 0))
+                  (name2 (aref bbdb-record 1)))
+              (cond ((and name1 name2)
+                     (concat name1 " " name2))
+                    (name1)
+                    (name2))))
           (bbdb-records)))
 
 (defun helm-bbdb-read-phone ()
@@ -143,21 +146,20 @@ All other actions are removed."
 
 URL `http://bbdb.sourceforge.net/'")
 
-(defvar bbdb-append-records)
 (defun helm-bbdb-view-person-action (candidate)
   "View BBDB data of single CANDIDATE or marked candidates."
-  (helm-aif (helm-marked-candidates)
-      (let ((bbdb-append-records (length it)))
-        (cl-dolist (i it)
-          (bbdb-redisplay-record (helm-bbdb-get-record i))))
-    (bbdb-redisplay-record (helm-bbdb-get-record candidate))))
+  (bbdb-display-records
+   (mapcar 'helm-bbdb-get-record (helm-marked-candidates)) nil t))
 
 (defun helm-bbdb-collect-mail-addresses ()
   "Return a list of all mail addresses of records in bbdb buffer."
   (with-current-buffer bbdb-buffer-name
     (cl-loop for i in bbdb-records
-          if (bbdb-record-mail (car i))
-          collect (bbdb-mail-address (car i)))))
+             for mails = (bbdb-record-mail (car i))
+             when mails collect
+             (if (cdr mails)
+                 (helm-comp-read "Choose mail: " mails)
+                 (bbdb-mail-address (car i))))))
 
 (defun helm-bbdb-compose-mail (candidate)
   "Compose a mail with all records of bbdb buffer."

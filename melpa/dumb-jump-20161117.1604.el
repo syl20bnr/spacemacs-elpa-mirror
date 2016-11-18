@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015-2016 jack angers
 ;; Author: jack angers
 ;; Version: 0.4.3
-;; Package-Version: 20161109.1024
+;; Package-Version: 20161117.1604
 ;; Package-Requires: ((emacs "24.3") (f "0.17.3") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -667,6 +667,8 @@
     (:language "php" :ext "php" :agtype "php")
     (:language "php" :ext "inc" :agtype "php")
     (:language "ruby" :ext "rb" :agtype "ruby")
+    (:language "ruby" :ext "haml" :agtype "ruby")
+    (:language "ruby" :ext "slim" :agtype "ruby")
     (:language "scala" :ext "scala" :agtype "scala")
     (:language "shell" :ext "sh" :agtype "shell")
     (:language "shell" :ext "bash" :agtype "shell")
@@ -677,7 +679,7 @@
     (:language "python" :ext "py" :agtype "python")
     (:language "go" :ext "go" :agtype "go")
     (:language "lua" :ext "lua" :agtype "lua"))
-  "Mapping of programming lanaguage(s) to file extensions."
+  "Mapping of programming language(s) to file extensions."
   :group 'dumb-jump
   :type
   '(repeat
