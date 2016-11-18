@@ -2,7 +2,7 @@
 
 ;; Author: tty-tourist <andreasrasholm@protonmail.com>
 ;; URL: https://github.com/tty-tourist/org-tracktable
-;; Package-Version: 20161117.614
+;; Package-Version: 20161118.529
 ;; Created: 2015-11-03
 ;; Keywords: org, writing
 ;; Package-Requires: ((emacs "24")(cl-lib "0.5"))
@@ -212,9 +212,14 @@ heading with the tag 'nowc' or 'noexport.'"
                     (member "noexport" tags))
                 (outline-next-heading)
               (forward-line))))
-	 ;; Ignore blocks defined by user.
-	 ((org-in-block-p org-tracktable-ignore-blocks)
-	  (forward-line))
+         ;; Ignore comments.
+         ((org-at-comment-p)
+          (forward-line))
+         ;; Ignore drawers.
+         ((org-at-drawer-p)
+	  (progn (goto-char (match-end 0))
+		 (re-search-forward org-property-end-re (point-max) t)
+		 (forward-line)))
          (t
           (progn
             (and (re-search-forward "\\w+\\W*" end 'skip)
