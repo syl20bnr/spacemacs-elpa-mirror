@@ -5,7 +5,7 @@
 ;; Author: Tijs Mallaerts <tijs.mallaerts@gmail.com>
 
 ;; Package-Requires: ((emacs "24.4") (s "1.11.0"))
-;; Package-Version: 20161105.505
+;; Package-Version: 20161127.221
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -36,6 +36,15 @@
 (defvar cmd-to-echo--process-names '()
   "List of process names started with cmd-to-echo.")
 
+(defgroup cmd-to-echo nil
+  "Cmd-to-echo customizations."
+  :group 'processes)
+
+(defcustom cmd-to-echo-add-output-to-process-buffers nil
+  "Controls whether output should be added to the process buffers."
+  :type 'boolean
+  :group 'cmd-to-echo)
+
 (defun cmd-to-echo--advice-put-text-property (orig-func start end property value object)
   "Make `put-text-property' put the face value instead of the font-lock-face.
 ORIG-FUNC is the `put-text-property' function, START END PROPERTY
@@ -54,6 +63,10 @@ and the echo area does not display that correctly."
 (defun cmd-to-echo--proc-filter (proc str)
   "The process filter of the cmd-to-echo PROC.
 The STR will be shown in the echo area."
+  (when cmd-to-echo-add-output-to-process-buffers
+    (with-current-buffer (process-buffer proc)
+      (insert (concat (ansi-color-apply str)
+                      "\n"))))
   (message "%s" (s-trim (cmd-to-echo--ansi-color-apply str))))
 
 (defun cmd-to-echo-kill-process ()

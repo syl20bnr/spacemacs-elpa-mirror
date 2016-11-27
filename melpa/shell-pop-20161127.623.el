@@ -5,7 +5,7 @@
 ;; Author:        Kazuo YAGI <kazuo.yagi@gmail.com>
 ;; Maintainer:    Kazuo YAGI <kazuo.yagi@gmail.com>
 ;; URL:           http://github.com/kyagi/shell-pop-el
-;; Package-Version: 20160611.540
+;; Package-Version: 20161127.623
 ;; Version:       0.63
 ;; Created:       2009-05-31 23:57:08
 ;; Keywords:      shell, terminal, tools
@@ -330,6 +330,7 @@ The input format is the same as that of `kbd'."
   (if (shell-pop--full-p)
       (jump-to-register :shell-pop)
     (when (and (not (one-window-p)) (not (= shell-pop-window-height 100)))
+      (bury-buffer)
       (delete-window)
       (select-window shell-pop-last-window))
     (when shell-pop-restore-window-configuration

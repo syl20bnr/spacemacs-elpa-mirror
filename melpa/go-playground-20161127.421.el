@@ -4,7 +4,7 @@
 
 ;; Author: Alexander I.Grafov (axel) <grafov@gmail.com>
 ;; URL: https://github.com/grafov/go-playground
-;; Package-Version: 20161122.804
+;; Package-Version: 20161127.421
 ;; Keywords: tools, golang
 ;; Package-Requires: ((emacs "24") (go-mode "1.0.0") (gotest "0.40.0"))
 
@@ -99,6 +99,7 @@ By default it will be created as snippet.go"
   "Base directory for playground snippets.  Better to set it under GOPATH."
   :group 'go-playground)
 
+;;;###autoload
 (defun go-playground ()
   "Run playground for Go language in a new buffer."
   (interactive)
