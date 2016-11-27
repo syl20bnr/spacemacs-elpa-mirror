@@ -5,6 +5,7 @@ See README.md for detailed description.
 
 (require 'cl-lib)
 (require 'cider)
+(require 's)
 
 (defvar clomacs-verify-nrepl-on-call t)
 (defvar clomacs-autoload-nrepl-on-call t)
@@ -18,11 +19,16 @@ REPL-BUFFER-PROJECT-NAME \"clomacs\"."
    (mapcar
     (lambda (x)
       (let ((this-repl
-             (cadr (split-string (buffer-name (car cider-connections)) " "))))
-        (if (string= repl-buffer-project-name
+             (s-chop-suffix
+              "*"
+              (cadr (split-string (buffer-name (car cider-connections)) " ")))))
+        (if (and
+             (>= (length this-repl)
+                 (length repl-buffer-project-name))
+             (string= repl-buffer-project-name
                      (substring this-repl
                                 0
-                                (length repl-buffer-project-name)))
+                                (length repl-buffer-project-name))))
             x)))
     cider-connections)))
 
@@ -65,8 +71,7 @@ If can't find any nREPL process return nil."
         (let ((old-cider-repl-pop cider-repl-pop-to-buffer-on-connect))
           (setq cider-repl-pop-to-buffer-on-connect nil)
           (while (not (clomacs-get-connection library))
-            (sleep-for 0.1)
-            (message starting-msg))
+            (sleep-for 0.1))
           (setq cider-repl-pop-to-buffer-on-connect old-cider-repl-pop)
           (if (and library (not is-opened))
               (kill-buffer lib-buff))))

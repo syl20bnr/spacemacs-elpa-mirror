@@ -1,26 +1,28 @@
- This library defines a macro, `ucsc-make-commands', and two
- commands:
+ This library defines three commands:
 
  * `ucsc-define-char-insert-cmd' - Define a command to insert a
                                    Unicode character.
 
+ * `ucsc-make-commands' - Define such commands for all Unicode
+                          chars whose names match a regexp.
+
  * `ucsc-insert' - Insert a Unicode character and possibly define a
                    command to insert it.
 
- You can use `ucsc-make-commands' or `ucsc-define-char-insert-cmd'
- in Emacs-Lisp code (such as in your init file) to define
- character-inserting commands.  In all cases:
+ You can also use `ucsc-define-char-insert-cmd' or
+ `ucsc-make-commands' in Emacs-Lisp code (such as in your init
+ file) to define character-inserting commands.
 
  * The names of the character-inserting commands created are the
    same as the char names, except that they are lowercase and any
    `SPC' chars in the character name are replaced by hyphens (`-').
 
- * You can use a numeric prefix argument with the command, to
-   insert multiple copies of the given character.
+ * You can use a numeric prefix argument with a character-inserting
+   command to insert multiple copies of the given character.
 
- The commands are tailor-made to insert a given Unicode character.
- You can bind such a command to a key sequence, effectively adding
- Unicode characters to your keyboard.
+ The character-inserting commands are tailor-made to insert a given
+ Unicode character.  You can bind such a command to a key sequence,
+ effectively adding Unicode characters to your keyboard.
 
  Command `ucsc-insert' is a replacement for vanilla command
  `insert-char' (called `ucs-insert' prior to Emacs 24), which Emacs
@@ -53,8 +55,9 @@
  these commands, like `insert-char', can be a bit slow if you use
  completion, because there are many, *MANY* completion candidates.
 
- You can use macro `ucsc-make-commands' to quickly create a whole
- set of such commands for characters whose names are similar.
+ You can use `ucsc-make-commands' to quickly create a whole set of
+ such commands for characters whose names are similar.  The list of
+ commands (symbols) is returned.
 
  You provide a regexp as the argument to `ucsc-make-commands'.  It
  is matched against all Unicode character names (in `ucs-names').
@@ -104,10 +107,7 @@
  immediately what the names represent: WYSIWYG.
 
 
- Macros defined here:
-
-   `ucsc-make-commands'.
-
  Commands defined here:
 
-   `ucsc-define-char-insert-cmd', `ucsc-insert'.
+   `ucsc-define-char-insert-cmd', `ucsc-insert',
+   `ucsc-make-commands'.

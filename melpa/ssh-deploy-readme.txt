@@ -1,13 +1,18 @@
-`ssh-deploy' enables automatic deploys on explicit-save, manual
-uploads, downloads, differences, remote terminals and remote directory browsing
-via key-pair password-less authorized SSH connections and password-based FTP connections.
-To do this it uses `tramp',`tramp-term', `scp', `curl', `ediff' and `ztree'.
+`ssh-deploy' enables automatic deploys on explicit-save, manual uploads,
+downloads, differences, remote terminals (optional) and remote directory browsing via TRAMP.
+To do this it progressively uses `tramp', `tramp-term', `ediff', `async` and `ztree'.
 By setting the variables (globally or per directory):
-`ssh-deploy-root-local',`ssh-deploy-root-remote',
-`ssh-deploy-on-explicit-save' you can setup a directory for
-SSH or FTP deployment.
+`ssh-deploy-root-local',`ssh-deploy-root-remote', `ssh-deploy-on-explicit-save'
+you can setup a directory for SSH or FTP deployment.
 
-- To setup a hook on explicit save do this:
+For asynchronous transfers you need to setup `~/.netrc' or equivalent for automatic authentication.
+
+Example contents of `~/.netrc':
+machine myserver.com login myuser port ftp password mypassword
+
+Set permissions to this file to 700 with you as the owner.
+
+- To setup a upload hook on save do this:
     (add-hook 'after-save-hook (lambda() (if ssh-deploy-on-explicit-save (ssh-deploy-upload-handler)) ))
 
 - To set key-bindings do something like this:
@@ -17,18 +22,18 @@ SSH or FTP deployment.
     (global-set-key (kbd "C-c C-z t") (lambda() (interactive)(ssh-deploy-remote-terminal-handler) ))
     (global-set-key (kbd "C-c C-z b") (lambda() (interactive)(ssh-deploy-browse-remote-handler) ))
 
-An illustrative example for SSH, /Users/Chris/Web/Site1/.dir.locals.el
+An illustrative example for `SSH' deployment, /Users/Chris/Web/Site1/.dir.locals.el
 ((nil . (
   (ssh-deploy-root-local . "/Users/Chris/Web/Site1/")
   (ssh-deploy-root-remote . "/ssh:web@myserver.com:/var/www/site1/")
   (ssh-deploy-on-explicity-save . t)
 )))
 
-An example for FTP, /Users/Chris/Web/Site2/.dir.locals.el:
+An example for `FTP' deployment, /Users/Chris/Web/Site2/.dir.locals.el:
 ((nil . (
-(ssh-deploy-root-local . "/Users/Chris/Web/Site2/")
-(ssh-deploy-root-remote . "/ftp:myuser:mypassword@myserver.com:/site2/")
-(ssh-deploy-on-explicit-save . nil)
+  (ssh-deploy-root-local . "/Users/Chris/Web/Site2/")
+  (ssh-deploy-root-remote . "/ftp:myuser@myserver.com:/var/www/site2/")
+  (ssh-deploy-on-explicit-save . nil)
 )))
 
 Now when you are in a directory which is deployed via SSH or FTP you can access these features.
