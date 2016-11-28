@@ -7,11 +7,11 @@
 ;; Copyright (C) 1996-2016, Drew Adams, all rights reserved.
 ;; Created: Tue Sep 12 16:30:11 1995
 ;; Version: 0
-;; Package-Version: 20161031.727
+;; Package-Version: 20161127.1748
 ;; Package-Requires: ()
-;; Last-Updated: Mon Oct 31 07:28:17 2016 (-0700)
+;; Last-Updated: Sun Nov 27 17:50:34 2016 (-0800)
 ;;           By: dradams
-;;     Update #: 5715
+;;     Update #: 5717
 ;; URL: http://www.emacswiki.org/info+.el
 ;; Doc URL: http://www.emacswiki.org/InfoPlus
 ;; Keywords: help, docs, internal
@@ -43,7 +43,7 @@
 ;;  of this doc.  Linkd mode will highlight this Index, as well as the
 ;;  cross-references and section headings throughout this file.  You
 ;;  can get `linkd.el' here:
-;;  http://dto.freeshell.org/notebook/Linkd.html.
+;;  http://www.emacswiki.org/emacs/download/linkd.el.
 ;;
 ;;  (@> "Things Defined Here")
 ;;  (@> "Documentation")

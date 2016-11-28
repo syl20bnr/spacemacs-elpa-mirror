@@ -1,10 +1,10 @@
 ;;; go-playground.el --- Local Golang playground for short snippets.
 
-;; Copyright (C) 2015  Alexander I.Grafov (axel)
+;; Copyright (C) 2015-2016  Alexander I.Grafov (axel)
 
 ;; Author: Alexander I.Grafov (axel) <grafov@gmail.com>
 ;; URL: https://github.com/grafov/go-playground
-;; Package-Version: 20161127.421
+;; Package-Version: 20161127.1437
 ;; Keywords: tools, golang
 ;; Package-Requires: ((emacs "24") (go-mode "1.0.0") (gotest "0.40.0"))
 
@@ -74,16 +74,16 @@ By default it will be created as snippet.go"
   (compile (concat go-command " run *.go")))
 
 ;; draft
-(defun go-playground-print-unused ()
-  "Uncompleted function in development.  Don't use it."
-  (interactive)
-  (save-buffer t)
-  (let ((snippet-buf (current-buffer)) (compile-buf (compile (go-run-get-program (go-run-arguments)))))
-    (set-buffer compile-buf)
-    (looking-at "^.*:[0-9]+: \\([_.a-zA-Z0-9]+\\) declared and not used")
-    (let ((not-used-var (match-string 0)))
-      (set-buffer snippet-buf)
-      (insert not-used-var))))
+;; (defun go-playground-print-unused ()
+;;   "Uncompleted function in development.  Don't use it."
+;;   (interactive)
+;;   (save-buffer t)
+;;   (let ((snippet-buf (current-buffer)) (compile-buf (compile (go-run-get-program (go-run-arguments)))))
+;;     (set-buffer compile-buf)
+;;     (looking-at "^.*:[0-9]+: \\([_.a-zA-Z0-9]+\\) declared and not used")
+;;     (let ((not-used-var (match-string 0)))
+;;       (set-buffer snippet-buf)
+;;       (insert not-used-var))))
 
 (defun go-playground-send-to-play.golang.org ()
   (interactive)
@@ -92,7 +92,7 @@ By default it will be created as snippet.go"
   (insert (go-play-buffer)))
 
 (defgroup go-playground nil
-  "Options specific to `go-playground`."
+  "Options specific to Go Playground."
   :group 'go)
 
 (defcustom go-playground-basedir "~/go/src/playground"
@@ -113,9 +113,12 @@ package main
 // Execute the snippet with Ctl-Return
 // Remove this snippet completely with M-x `go-playground-rm`
 
-import ()
+import (
+    \"fmt\"
+)
 
 func main() {
+    fmt.Println(\"Results:\")
 
 }
 ")

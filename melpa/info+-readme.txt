@@ -15,7 +15,7 @@
  of this doc.  Linkd mode will highlight this Index, as well as the
  cross-references and section headings throughout this file.  You
  can get `linkd.el' here:
- http://dto.freeshell.org/notebook/Linkd.html.
+ http://www.emacswiki.org/emacs/download/linkd.el.
 
  (@> "Things Defined Here")
  (@> "Documentation")

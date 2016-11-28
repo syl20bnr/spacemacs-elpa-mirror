@@ -7,11 +7,11 @@
 ;; Copyright (C) 2011-2016, Drew Adams, all rights reserved.
 ;; Created: Sun Sep  8 11:51:41 2013 (-0700)
 ;; Version: 0
-;; Package-Version: 20161117.1101
+;; Package-Version: 20161127.1755
 ;; Package-Requires: ()
-;; Last-Updated: Thu Nov 17 11:03:05 2016 (-0800)
+;; Last-Updated: Sun Nov 27 17:57:12 2016 (-0800)
 ;;           By: dradams
-;;     Update #: 1411
+;;     Update #: 1412
 ;; URL: http://www.emacswiki.org/isearch-prop.el
 ;; Doc URL: http://www.emacswiki.org/IsearchPlus
 ;; Keywords: search, matching, invisible, thing, help
@@ -52,7 +52,7 @@
 ;;  navigate around the sections of this doc.  Linkd mode will
 ;;  highlight this Index, as well as the cross-references and section
 ;;  headings throughout this file.  You can get `linkd.el' here:
-;;  http://dto.freeshell.org/notebook/Linkd.html.
+;;  http://www.emacswiki.org/emacs/download/linkd.el.
 ;;
 ;;  (@> "Overview of Features")
 ;;  (@> "Macros")

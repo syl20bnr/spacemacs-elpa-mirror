@@ -1,7 +1,7 @@
 ;;; flycheck-scala-sbt.el --- sbt-mode checker for Scala -*- lexical-binding: t -*-
 
 ;; Version: 0.1
-;; Package-Version: 20161127.4
+;; Package-Version: 20161127.1321
 ;; Url: https://www.github.com/rjmac/flycheck-scala-sbt
 ;; Package-requires: ((emacs "25.1") (flycheck "30") (sbt-mode "0.2"))
 
@@ -36,7 +36,8 @@ if `flycheck-scala-sbt-trigger-other-buffers' is set."
   :type '(choice (const :tag "Yes" t)
                  (const :tag "No" nil)
                  (const :tag "Only for unopened files" :unopened-buffers)
-                 (const :tag "Only for files unassociated with the current SBT session" :unknown-buffer))
+                 (const :tag "Only for files unassociated with the current SBT session" :unknown-buffer)
+                 (const :tag "Create a single message for all other-file diagnostics" :coalesce))
   :tag "Collect from other files"
   :group 'flycheck-scala-sbt)
 
@@ -98,22 +99,31 @@ This option is somewhat experimental."
   :tag "Initiate checks in all buffers that share an SBT session"
   :group 'flycheck-scala-sbt)
 
+(defcustom flycheck-scala-sbt-create-error-buffer-p
+  nil
+  "Provide a buffer that contains a hyperlinked list of all errors.
+
+Analogous to that provided by `flycheck-list-errors' but across
+all files in the SBT project.
+
+If true, it can be shown and jumped to by invoking the
+`flycheck-scala-sbt-show-errors-list' command."
+  :type 'boolean
+  :tag "Create a buffer to navigate to errors across the project"
+  :group 'flycheck-scala-sbt)
+
 ;; This is a bit of a workaround for flycheck's lack of any idea of
 ;; project-wide diagnostic collection.  We'll use tabulated-list-mode
 ;; to manage a list of all our project-wide errors ourselves.
-(define-derived-mode flycheck-scala-sbt-errors-mode tabulated-list-mode "flycheck-scala-sbt"
-  (setq tabulated-list-format [("File" 30 t)
-                               ("Type" 7 t)
-                               ("Message" 0 t)]
-        tabulated-list-padding 2
+(define-derived-mode flycheck-scala-sbt--errors-mode tabulated-list-mode "flycheck-scala-sbt"
+  (setq tabulated-list-format []
         tabulated-list-sort-key (cons "File" nil))
   (tabulated-list-init-header))
 
 (defun flycheck-scala-sbt--error-buffer-name ()
   "Compute the name of the error buffer for the current buffer."
-  (save-window-excursion
-    (with-current-buffer (current-buffer)
-      (concat (buffer-name (sbt:run-sbt)) "/errors"))))
+  (with-current-buffer (current-buffer)
+    (concat (buffer-name (save-window-excursion (sbt:run-sbt))) "/errors")))
 
 (defun flycheck-scala-sbt--populate-sbt-errors (errors)
   "Populate the error buffer with ERRORS.
@@ -121,32 +131,78 @@ This option is somewhat experimental."
 Returns the buffer.  Should only be called from the SBT buffer
 itself."
   (with-current-buffer (get-buffer-create (flycheck-scala-sbt--error-buffer-name))
-    (flycheck-scala-sbt-errors-mode)
-    (let ((message-prefix (concat "\n" (make-string (+ 2 30 2 7) ?\s))))
-      (setq tabulated-list-entries (mapcar (lambda (error)
-                                             (cl-destructuring-bind (file row col type message) error
-                                               (let* ((file-pos (if col
-                                                                    (format ":%s:%s" row col)
-                                                                  (format ":%s" row)))
-                                                      (goto-error (lambda (button)
-                                                                    (ignore button)
-                                                                    (find-file-other-window file)
-                                                                    (goto-char (point-min))
-                                                                    (beginning-of-line row)
-                                                                    (when col
-                                                                      (forward-char (1- col)))))
-                                                      (file-button (cons (concat (file-name-nondirectory file) file-pos)
-                                                                         (list 'action goto-error
-                                                                               'help-echo (concat file file-pos))))
-                                                      (type (cons (symbol-name type) (list 'face (cl-ecase type
-                                                                                                   (error 'error)
-                                                                                                   (warning 'warning))
-                                                                                           'action goto-error
-                                                                                           'help-echo (concat file file-pos))))
-                                                      (message (replace-regexp-in-string "\n" message-prefix message)))
-                                                 (list nil (vector file-button type message)))))
-                                           errors)))
-    (tabulated-list-print)
+    (flycheck-scala-sbt--errors-mode)
+    (let* ((entries (mapcar (lambda (error)
+                              (cl-destructuring-bind (file row col type message) error
+                                (let* ((file-pos (if col
+                                                     (format ":%s:%s" row col)
+                                                   (format ":%s" row)))
+                                       (file-with-pos (concat file file-pos))
+                                       (goto-error (lambda (button)
+                                                     (ignore button)
+                                                     (find-file-other-window file)
+                                                     (goto-char (point-min))
+                                                     (beginning-of-line row)
+                                                     (when col
+                                                       (forward-char (1- col)))))
+                                       (file-button (let ((basename (file-name-nondirectory file)))
+                                                      (cons (concat basename file-pos)
+                                                            (list 'action goto-error
+                                                                  'help-echo file-with-pos
+                                                                  'flycheck-scala-sbt-pos (list basename file row col)))))
+                                       (type-button (cons (symbol-name type)
+                                                          (list 'face (cl-ecase type
+                                                                        (error 'error)
+                                                                        (warning 'warning))
+                                                                'action goto-error
+                                                                'help-echo file-with-pos)))
+                                       (message-button (cons (replace-regexp-in-string "\n" "\n  " message)
+                                                             (list 'face 'normal
+                                                                   'action goto-error
+                                                                   'help-echo file-with-pos))))
+                                  (list error (vector file-button type-button message-button)))))
+                            errors))
+           (max-in-column (lambda (col min-length)
+                            (cl-reduce 'max entries
+                                       :initial-value min-length
+                                       :key (lambda (error)
+                                              ;; error is (id [(file_label . props) (type_label . props) (message_label . props])
+                                              (length (car (aref (cadr error) col)))))))
+           (longest-file (funcall max-in-column 0 6))
+           (longest-type (funcall max-in-column 1 6))
+           (file-sort (lambda (entry1 entry2)
+                        (cl-destructuring-bind (basename1 file1 row1 col1)
+                            (plist-get (cdr (aref (cadr entry1) 0)) 'flycheck-scala-sbt-pos)
+                          (cl-destructuring-bind (basename2 file2 row2 col2)
+                              (plist-get (cdr (aref (cadr entry2) 0)) 'flycheck-scala-sbt-pos)
+                            ;; We want to group errors in the same
+                            ;; file together, then sort by position.
+                            ;; But we want to order by what we're
+                            ;; displaying, which is the basename.
+                            ;; So we'll sort by basename, and only
+                            ;; break ties by considering the full
+                            ;; pathname.
+                            (if (string-lessp basename1 basename2)
+                                t
+                              (if (string-lessp basename2 basename1)
+                                  nil
+                                (if (string-lessp file1 file2)
+                                    t
+                                  (if (string-lessp file2 file1)
+                                      nil
+                                    (if (< row1 row2)
+                                        t
+                                      (if (< row2 row1)
+                                          nil
+                                        (< (or col1 -1) (or col2 -1)))))))))))))
+      (setq tabulated-list-format (vector (list "File" longest-file file-sort)
+                                          (list "Type" longest-type t)
+                                          (list "Message" 0 t))
+            tabulated-list-entries entries)
+      (tabulated-list-init-header)
+      (let ((ws (get-buffer-window-list nil nil t)))
+        (tabulated-list-print t)
+        (dolist (w ws) (set-window-point w (point)))))
     (current-buffer)))
 
 (defun flycheck-scala-sbt-show-errors-list ()
@@ -158,7 +214,7 @@ itself."
       (error "No SBT error list available for the current buffer"))))
 
 (cl-defstruct flycheck-scala-sbt--check buffer checker project-p callback)
-(cl-defstruct flycheck-scala-sbt--state current-timer active pending known-buffers recursing-p)
+(cl-defstruct flycheck-scala-sbt--state current-timer active pending known-buffers recursing)
 (defvar-local flycheck-scala-sbt--raw-state nil)
 (defun flycheck-scala-sbt--state ()
   "Return the current buffer's state, creating it if necessary."
@@ -167,7 +223,7 @@ itself."
                                                                         :active nil
                                                                         :pending nil
                                                                         :known-buffers (make-hash-table)
-                                                                        :recursing-p nil)))
+                                                                        :recursing nil)))
   flycheck-scala-sbt--raw-state)
 
 (defun flycheck-scala-sbt--build-error-p (line)
@@ -255,7 +311,8 @@ them, and there is a non-empty set of current checkers."
                   (let ((state (flycheck-scala-sbt--state)))
                     (condition-case err
                         (let ((errors (flycheck-scala-sbt--errors-list)))
-                          (flycheck-scala-sbt--populate-sbt-errors errors)
+                          (when flycheck-scala-sbt-create-error-buffer-p
+                            (flycheck-scala-sbt--populate-sbt-errors errors))
                           (dolist (check (flycheck-scala-sbt--state-active state))
                             (condition-case err
                                 (funcall (flycheck-scala-sbt--check-callback check)
@@ -303,73 +360,86 @@ them, and there is a non-empty set of current checkers."
                                'errored
                                msg))))))
     (flycheck-scala-sbt--wait-for-prompt-then (:prompt-type prompt-type)
-      (save-window-excursion
-        (cl-ecase prompt-type
-          (:normal
-           ;; ok, everything's good with the build script as far as we
-           ;; know.  Let's try building stuff!
-           (let ((sbt:save-some-buffers nil)
-                 (state (flycheck-scala-sbt--state)))
-             (if (and flycheck-scala-sbt-auto-reload-p
-                      (cl-find-if #'flycheck-scala-sbt--check-project-p (flycheck-scala-sbt--state-active state)))
-                 (progn
-                   ;; we're in a build script (probably) so issue a
-                   ;; reload to pick up changes to it.
-                   (flycheck-scala-sbt--debug "One of our buffers was (probably) a build script; reloading")
-                   (sbt:command "reload" nil)
-                   (finish-post-reload))
-               ;; Normal source file, just recompile.
-               (flycheck-scala-sbt--debug "One of our buffers was (probably) not a build script; just compiling")
-               (sbt:command "test:compile" nil)
-               (finish))))
-          (:console
-           (if flycheck-scala-sbt-auto-exit-console-p
+      (cl-ecase prompt-type
+        (:normal
+         ;; ok, everything's good with the build script as far as we
+         ;; know.  Let's try building stuff!
+         (let ((sbt:save-some-buffers nil)
+               (state (flycheck-scala-sbt--state)))
+           (if (and flycheck-scala-sbt-auto-reload-p
+                    (cl-find-if #'flycheck-scala-sbt--check-project-p (flycheck-scala-sbt--state-active state)))
                (progn
-                 (sbt:clear (current-buffer))
-                 (comint-send-string (current-buffer) ":quit\n")
-                 (flycheck-scala-sbt--actually-start))
-             (broadcast-error "SBT is in a console session.  Exit it to reenable flycheck")
-             (kickoff-pending)))
-          (:build-error
-           ;; nope, we left off in a bad place.  Issue a retry and
-           ;; see if that fixes things.
-           (if flycheck-scala-sbt-auto-reload-p
-               (progn
-                 (flycheck-scala-sbt--issue-retry)
+                 ;; we're in a build script (probably) so issue a
+                 ;; reload to pick up changes to it.
+                 (flycheck-scala-sbt--debug "One of our buffers was (probably) a build script; reloading")
+                 (save-window-excursion (sbt:command "reload" nil))
                  (finish-post-reload))
-             (broadcast-error "The project failed to load")
-             (kickoff-pending))))))))
+             ;; Normal source file, just recompile.
+             (flycheck-scala-sbt--debug "One of our buffers was (probably) not a build script; just compiling")
+             (save-window-excursion (sbt:command "test:compile" nil))
+             (finish))))
+        (:console
+         (if flycheck-scala-sbt-auto-exit-console-p
+             (progn
+               (save-window-excursion (sbt:clear (current-buffer)))
+               (comint-send-string (current-buffer) ":quit\n")
+               (flycheck-scala-sbt--actually-start))
+           (broadcast-error "SBT is in a console session.  Exit it to reenable flycheck")
+           (kickoff-pending)))
+        (:build-error
+         ;; nope, we left off in a bad place.  Issue a retry and
+         ;; see if that fixes things.
+         (if flycheck-scala-sbt-auto-reload-p
+             (progn
+               (flycheck-scala-sbt--issue-retry)
+               (finish-post-reload))
+           (broadcast-error "The project failed to load")
+           (kickoff-pending)))))))
+
+(defun flycheck-scala-sbt--recursively-start-other-buffers (target-buffer state mode)
+  "Starting from TARGET-BUFFER, start flychecks in other buffers that share the same STATE, propagating MODE to them."
+  (when (and flycheck-scala-sbt-trigger-other-buffers-p
+             (not (flycheck-scala-sbt--state-recursing state)))
+    (puthash target-buffer t (flycheck-scala-sbt--state-known-buffers state))
+    (flycheck-scala-sbt--debug "There are %s known buffers sharing this SBT session" (hash-table-count (flycheck-scala-sbt--state-known-buffers state)))
+    (unwind-protect
+        (progn
+          (setf (flycheck-scala-sbt--state-recursing state) mode)
+          (dolist (buffer (hash-table-keys (flycheck-scala-sbt--state-known-buffers state)))
+            (if (buffer-live-p buffer)
+                (unless (eql buffer target-buffer)
+                  (with-current-buffer buffer
+                    (flycheck-buffer)))
+              (remhash buffer (flycheck-scala-sbt--state-known-buffers state)))))
+      (setf (flycheck-scala-sbt--state-recursing state) nil))))
 
 (defun flycheck-scala-sbt--start (checker callback)
-  "The main entry point for the CHECKER.  Don't call this.  CALLBACK."
-  (save-window-excursion
-    (let* ((target-buffer (current-buffer))
-           (project-p (flycheck-scala-sbt--build-script-p target-buffer)))
-      (with-current-buffer (sbt:run-sbt)
-        (let ((state (flycheck-scala-sbt--state))
-              (check (make-flycheck-scala-sbt--check :buffer target-buffer :checker checker :project-p project-p :callback callback)))
-          (if (and (flycheck-scala-sbt--state-active state) (not (flycheck-scala-sbt--state-recursing-p state)))
-              (progn
-                (flycheck-scala-sbt--debug "There is a check active for this SBT; deferring")
-                (push check (flycheck-scala-sbt--state-pending state)))
-            (flycheck-scala-sbt--debug "None active; starting")
-            (push check (flycheck-scala-sbt--state-active state))
-            (unless (flycheck-scala-sbt--state-recursing-p state)
-              (when flycheck-scala-sbt-trigger-other-buffers-p
-                (puthash target-buffer t (flycheck-scala-sbt--state-known-buffers state))
-                (flycheck-scala-sbt--debug "There are %s known buffers sharing this SBT session" (hash-table-count (flycheck-scala-sbt--state-known-buffers state)))
-                (unwind-protect
-                    (progn
-                      (setf (flycheck-scala-sbt--state-recursing-p state) t)
-                      (dolist (buffer (hash-table-keys (flycheck-scala-sbt--state-known-buffers state)))
-                        (if (buffer-live-p buffer)
-                            (unless (eql buffer target-buffer)
-                              (with-current-buffer buffer
-                                (flycheck-buffer)))
-                          (remhash buffer (flycheck-scala-sbt--state-known-buffers state)))))
-                  (setf (flycheck-scala-sbt--state-recursing-p state) nil)))
-              (flycheck-scala-sbt--actually-start)))
-          check)))))
+  "The main entry point for the CHECKER.  Don't call this.  CALLBACK.
+
+This is weirdly shaped because we may want to start flychecks in
+other buffers, and the only way to do that is ultimately to call
+`flycheck-buffer' (which is done in
+`flycheck-scala-sbt--recursively-start-other-buffers').  Note
+that we want to do this even if the state is pending.  In either
+case, the recursively created checks will simply push a check
+object onto one of the two lists in the current state."
+  (let* ((target-buffer (current-buffer))
+         (project-p (flycheck-scala-sbt--build-script-p target-buffer)))
+    (with-current-buffer (save-window-excursion (sbt:run-sbt))
+      (let ((state (flycheck-scala-sbt--state))
+            (check (make-flycheck-scala-sbt--check :buffer target-buffer :checker checker :project-p project-p :callback callback)))
+        (if (and (flycheck-scala-sbt--state-active state)
+                 (not (eql (flycheck-scala-sbt--state-recursing state) 'active)))
+            (progn
+              (flycheck-scala-sbt--debug "There is a check active for this SBT; deferring")
+              (push check (flycheck-scala-sbt--state-pending state))
+              (flycheck-scala-sbt--recursively-start-other-buffers target-buffer state 'pending))
+          (flycheck-scala-sbt--debug "None active (or we're recursing to create active checks); starting")
+          (push check (flycheck-scala-sbt--state-active state))
+          (flycheck-scala-sbt--recursively-start-other-buffers target-buffer state 'active)
+          (unless (flycheck-scala-sbt--state-recursing state)
+            (flycheck-scala-sbt--actually-start)))
+        check))))
 
 (defconst flycheck-scala-sbt--weird-buildscript-regex "^\\[\\(error\\|warn\\)][[:space:]]\\[\\(.*\\)]:\\([0-9]+\\):[[:space:]]\\(.*\\)$")
 (defun flycheck-scala-sbt--errors-list ()
@@ -389,27 +459,7 @@ them, and there is a non-empty set of current checkers."
       (goto-char (point-min))
       (while (re-search-forward flycheck-scala-sbt--weird-buildscript-regex (point-max) t)
         (push (flycheck-scala-sbt--extract-weird-error-info) acc))
-      (sort acc (lambda (e1 e2)
-                  (cl-destructuring-bind (file1 row1 col1 type1 message1) e1
-                    (cl-destructuring-bind (file2 row2 col2 type2 message2) e2
-                      ;; ew.  Surely there's a better way to write this.
-                      (if (string-lessp file1 file2)
-                          t
-                        (if (string-lessp file2 file1)
-                            nil
-                          (if (< row1 row2)
-                              t
-                            (if (> row2 row1)
-                                nil
-                              (if (< (or col1 -1) (or col2 -1))
-                                  t
-                                (if (< (or col2 -1) (or col1 -1))
-                                    nil
-                                  (if (string-lessp type1 type2)
-                                      t
-                                    (if (string-lessp type2 type1)
-                                        nil
-                                      (string-lessp message1 message2))))))))))))))))
+      acc)))
 
 (defun flycheck-scala-sbt--extract-weird-error-info ()
   "Extract errors from build scripts in the occasional weird format.
@@ -529,8 +579,22 @@ error occurred."
   (when (buffer-live-p (flycheck-scala-sbt--check-buffer check))
     (let ((state (flycheck-scala-sbt--state)))
       (with-current-buffer (flycheck-scala-sbt--check-buffer check)
-        (let ((checker (flycheck-scala-sbt--check-checker check)))
-          (cl-mapcan (lambda (error) (flycheck-scala-sbt--convert-error-info checker error (flycheck-scala-sbt--state-known-buffers state))) errors))))))
+        (let* ((checker (flycheck-scala-sbt--check-checker check))
+               (converted-errors
+                (cl-mapcan (lambda (error) (flycheck-scala-sbt--convert-error-info checker error (flycheck-scala-sbt--state-known-buffers state))) errors))
+               (other-buffer-p (lambda (error) (and (listp error) (eql (car error) :other-buffer)))))
+          (if (not (cl-find-if other-buffer-p converted-errors))
+              converted-errors
+            (cons (flycheck-error-new :buffer (current-buffer)
+                                      :message (let ((count (cl-count-if other-buffer-p converted-errors)))
+                                                 (format "%s diagnostic%s from outside this file"
+                                                         count (if (= count 1) "" "s")))
+                                      :line 1
+                                      :level (car (cl-sort (mapcar 'cadr (cl-remove-if-not other-buffer-p converted-errors))
+                                                           '<
+                                                           :key (lambda (x)
+                                                                  (- (flycheck-error-level-severity x))))))
+                  (cl-remove-if other-buffer-p converted-errors))))))))
 
 (defun flycheck-scala-sbt--interrupt (checker context)
   "Cancel CHECKER's pending check CONTEXT.
@@ -539,7 +603,7 @@ This only actually cancels the pending check if it is blocked
 behind some other running check."
   (ignore checker)
   (flycheck-scala-sbt--debug "Asked to interrupt a job")
-  (with-current-buffer (sbt:run-sbt)
+  (with-current-buffer (save-window-excursion (sbt:run-sbt))
     (let ((state (flycheck-scala-sbt--state)))
       (flycheck-scala-sbt--debug "Cancelling %s" (flycheck-scala-sbt--check-buffer context))
       (setf (flycheck-scala-sbt--state-pending state) (remove context (flycheck-scala-sbt--state-pending state)))
@@ -573,6 +637,8 @@ ERROR should come from `flycheck-scala-sbt--extract-error-info'."
                                 :line 1
                                 :column 1
                                 :level level)))
+     ((eql flycheck-scala-sbt-collect-from-other-files-p :coalesce)
+      (list (list :other-buffer level)))
      (t nil))))
 
 (flycheck-define-generic-checker
