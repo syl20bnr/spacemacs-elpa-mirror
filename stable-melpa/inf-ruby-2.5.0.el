@@ -8,10 +8,10 @@
 ;;         Dmitry Gutov <dgutov@yandex.ru>
 ;;         Kyle Hargraves <pd@krh.me>
 ;; URL: http://github.com/nonsequitur/inf-ruby
-;; Package-Version: 20161128.1733
+;; Package-Version: 2.5.0
 ;; Created: 8 April 1998
 ;; Keywords: languages ruby
-;; Version: 2.4.0
+;; Version: 2.5.0
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -459,6 +459,7 @@ Must not contain ruby meta characters.")
 
 (defvar ruby-last-ruby-buffer nil
   "The last buffer we switched to `inf-ruby' from.")
+(make-variable-buffer-local 'ruby-last-ruby-buffer)
 
 (defun ruby-remember-ruby-buffer (buffer)
   (setq ruby-last-ruby-buffer buffer))
@@ -715,6 +716,7 @@ automatically."
 
 ;;;###autoload
 (defun inf-ruby-console-zeus (dir)
+  "Run Rails console in DIR using Zeus."
   (interactive "D")
   (let ((default-directory (file-name-as-directory dir))
         (exec-prefix (if (executable-find "zeus") "" "bundle exec ")))
@@ -831,6 +833,8 @@ Gemfile, it should use the `gemspec' instruction."
     (cond
      ((file-exists-p "console.rb")
       (run-ruby "bundle exec ruby console.rb" "console.rb"))
+     ((file-executable-p "console")
+      (run-ruby "bundle exec console" "console.rb"))
      ((inf-ruby-file-contents-match "Gemfile" "[\"']pry[\"']")
       (run-ruby "bundle exec pry" "pry"))
      (t

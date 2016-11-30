@@ -16,9 +16,9 @@ automatically.
 
 Additionally, consider adding
 
-   (add-hook 'after-init-hook 'inf-ruby-switch-setup)
+   (add-hook 'compilation-filter-hook 'inf-ruby-auto-enter)
 
-to your init file to easily switch from common Ruby compilation
+to your init file to automatically switch from common Ruby compilation
 modes to interact with a debugger.
 
 To call `inf-ruby-console-auto' more easily, you can, for example,
