@@ -4,7 +4,7 @@
 
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-which-key
-;; Package-Version: 20161129.538
+;; Package-Version: 20161129.1829
 ;; Version: 1.1.15
 ;; Keywords:
 ;; Package-Requires: ((emacs "24.3"))
@@ -811,7 +811,7 @@ replacements are added to
   (while key-sequence
     ;; normalize key sequences before adding
     (let ((key-seq (key-description (kbd key-sequence))))
-      (push (cons (cons (format "\\`%s\\'" key-seq) nil)
+      (push (cons (cons (regexp-quote key-seq) nil)
                   (cons nil (or (car-safe replacement) replacement)))
             which-key-replacement-alist)
       (when (consp replacement)
@@ -837,7 +837,7 @@ addition KEY-SEQUENCE REPLACEMENT pairs) to apply."
     (while key-sequence
     ;; normalize key sequences before adding
       (let ((key-seq (key-description (kbd key-sequence))))
-        (push (cons (cons (format "\\`%s\\'" key-seq) nil)
+        (push (cons (cons (regexp-quote key-seq) nil)
                     (cons nil (or (car-safe replacement) replacement)))
               mode-alist)
         (when (consp replacement)

@@ -4,7 +4,7 @@
 ;; Author: Kris Jenkins <krisajenkins@gmail.com>
 ;; Maintainer: Kris Jenkins <krisajenkins@gmail.com>
 ;; Keywords: org babel mongo mongodb
-;; Package-Version: 20160504.1434
+;; Package-Version: 20161130.152
 ;; URL: https://github.com/krisajenkins/ob-mongo
 ;; Created: 17th July 2013
 ;; Version: 0.1.0
@@ -24,6 +24,11 @@
 
 (defcustom ob-mongo:default-db nil
   "Default mongo database."
+  :group 'ob-mongo
+  :type 'string)
+
+(defcustom ob-mongo:default-host nil
+  "Default mongo host."
   :group 'ob-mongo
   :type 'string)
 
@@ -50,6 +55,7 @@
 (defun ob-mongo--make-command (params)
   (let ((pdefs `((:mongoexec ,ob-mongo:default-mongo-executable)
                  (quiet "--quiet")
+                 (:host , ob-mongo:default-host "--host")
                  (:port ,ob-mongo:default-port "--port")
                  (:password ,ob-mongo:default-password "--password")
                  (:user ,ob-mongo:default-user "--username")

@@ -6,7 +6,7 @@
 
 ;; Compatibility: GNU Emacs 24.1+
 ;; Package-Requires: ((emacs "24"))
-;; Package-Version: 20161124.301
+;; Package-Version: 20161130.150
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -214,7 +214,7 @@ Special commands:
                 (car mail-list)))
     (goto-char (point-min)) (search-forward "Subject: " nil t)))
 
-(defun addressbook-bookmark-make-entry (name email phone
+(defun addressbook-bookmark-make-entry (name group email phone
                                         web street city state zipcode country note image-path)
   "Build an addressbook bookmark entry."
   `(,name
@@ -231,6 +231,7 @@ Special commands:
     (zipcode . ,zipcode)
     (country . ,country)
     (note . ,note)
+    (group . ,group)
     (handler . addressbook-bookmark-jump)))
 
 (defun addressbook-read-name (prompt)
@@ -253,6 +254,7 @@ Special commands:
     (cl-labels
         ((record ()
            (let ((name       (read-string "Name: "))
+                 (group      (addressbook-read-name "Group: "))
                  (email      (addressbook-read-name "Mail: "))
                  (phone      (addressbook-read-name "Phone: "))
                  (web        (addressbook-read-name "Web: "))
@@ -267,12 +269,12 @@ Special commands:
              (bookmark-maybe-load-default-file)
              (let ((old-entry (assoc name bookmark-alist))
                    (new-entry (addressbook-bookmark-make-entry
-                               name email phone web street city state zipcode country note image-path))) 
+                               name group email phone web street city state zipcode country note image-path))) 
                (if (and old-entry
                         (string= (assoc-default 'type old-entry) "addressbook"))
                    (setf (cdr old-entry)
                          (cdr (addressbook-bookmark-make-entry
-                               name email phone web street city state zipcode country note image-path)))
+                               name group email phone web street city state zipcode country note image-path)))
                    (push new-entry bookmark-alist)))
              (bookmark-bmenu-surreptitiously-rebuild-list)
              (addressbook-maybe-save-bookmark)
@@ -300,7 +302,7 @@ Special commands:
                                 data)))
          (old-entry (assoc name bookmark-alist))
          (new-entry (addressbook-bookmark-make-entry
-                     name mail "" "" "" "" "" "" "" "" "")))
+                     name "" mail "" "" "" "" "" "" "" "" "")))
     (when data
       (if (and old-entry
                (string= (assoc-default 'type old-entry) "addressbook"))
@@ -310,7 +312,7 @@ Special commands:
                                   (list mail)))
                  (mail-str (mapconcat 'identity new-mail-ls ", ")))
             (setq new-entry (addressbook-bookmark-make-entry
-                             name mail-str "" "" "" "" "" "" "" "" ""))
+                             name "" mail-str "" "" "" "" "" "" "" "" ""))
             (setf (cdr old-entry)
                   (cdr new-entry)))
           (push new-entry bookmark-alist))
@@ -340,6 +342,7 @@ Special commands:
 (defun addressbook-bookmark-edit (bookmark)
   "Edit an addressbook bookmark entry."
   (let* ((old-name       (car bookmark))
+         (old-group      (assoc-default 'group bookmark))
          (old-mail       (assoc-default 'email bookmark))
          (old-phone      (assoc-default 'phone bookmark))
          (old-web        (assoc-default 'web bookmark))
@@ -351,6 +354,7 @@ Special commands:
          (old-note       (assoc-default 'note bookmark))
          (old-image-path (assoc-default 'image bookmark))
          (name           (read-string "Name: " old-name))
+         (group          (read-string "Group: " old-group))
          (mail           (read-string "Mail: " old-mail))
          (phone          (read-string "Phone: " old-phone))
          (web            (read-string "Web: " old-web))
@@ -362,7 +366,7 @@ Special commands:
          (note           (read-string "Note: " old-note))
          (image-path     (read-string "Image path: " old-image-path))
          (new-entry      (addressbook-bookmark-make-entry
-                          name mail phone web street city state
+                          name group mail phone web street city state
                           zipcode country note image-path)))
     (when (y-or-n-p "Save changes? ")
       (setcar bookmark name)
@@ -405,6 +409,7 @@ Special commands:
   (bookmark-maybe-load-default-file)
   (let* ((data              (assoc name bookmark-alist))
          (buf               (get-buffer-create addressbook-buffer-name))
+         (group             (assoc-default 'group data))
          (mail              (assoc-default 'email data))
          (phone             (assoc-default 'phone data))
          (web               (assoc-default 'web data))
@@ -446,6 +451,9 @@ Special commands:
                   (insert (make-string padwidth ?\s)))))
         (insert-image image))
       (insert "\n"
+              (if (string= group "") ""
+                  (concat (propertize "Group:" 'face '((:underline t)))
+                          "   " group "\n"))
               (if (string= mail "") ""
                   (concat (propertize "Mail:" 'face '((:underline t)))
                           "    " mail "\n"))

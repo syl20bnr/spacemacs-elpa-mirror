@@ -4,7 +4,7 @@
 
 ;; Author: Nicolas Petton <nicolas@petton.fr>
 ;; Keywords: themes
-;; Package-Version: 20161128.624
+;; Package-Version: 20161130.224
 ;; URL: https://github.com/NicolasPetton/zerodark-theme
 ;; Version: 3.6
 ;; Package: zerodark-theme
@@ -218,7 +218,7 @@ The result is cached for one second to avoid hiccups."
       (diff-added-refined-background (if (true-color-p) "#198754" "#00875f"))
       (diff-removed-background (if (true-color-p) "#583333" "#580000"))
       (diff-removed-refined-background (if (true-color-p) "#981b1b" "#870000"))
-      (diff-current-background (if (true-color-p) "#3e4d58" "#5f5f5f"))
+      (diff-current-background (if (true-color-p) "#3e4d58" "#5f;5f5f"))
       (diff-current-refined-background (if (true-color-p) "#456981" "#5f5f87")))
   (custom-theme-set-faces
    'zerodark
@@ -448,12 +448,12 @@ The result is cached for one second to avoid hiccups."
    `(org-headline-done ((,class (:foreground ,comment))))
    `(outline-1 ((,class (:foreground ,blue :weight bold))))
    `(outline-2 ((,class (:foreground ,purple :weight bold))))
-   `(outline-3 ((,class (:foreground ,peach :weight bold))))
-   `(outline-4 ((,class (:foreground ,green-light :weight bold))))
-   `(outline-5 ((,class (:foreground ,blue :weight bold))))
-   `(outline-6 ((,class (:foreground ,purple :weight bold))))
-   `(outline-7 ((,class (:foreground ,peach :weight bold))))
-   `(outline-8 ((,class (:foreground ,green-light :weight bold))))
+   `(outline-3 ((,class (:weight bold :foreground ,default))))
+   `(outline-4 ((,class (:weight bold :foreground ,default))))
+   `(outline-5 ((,class (:weight bold :foreground ,default))))
+   `(outline-6 ((,class (:weight bold :foreground ,default))))
+   `(outline-7 ((,class (:weight bold :foreground ,default))))
+   `(outline-8 ((,class (:weight bold :foreground ,default))))
    `(org-column-title ((,class (:foreground unspecified :background unspecified))))
    `(org-agenda-date ((,class (:foreground ,purple :weight bold))))
    `(org-agenda-date-today ((,class (:foreground ,blue :weight bold :background ,background-blue :box 1))))
@@ -665,6 +665,9 @@ The result is cached for one second to avoid hiccups."
 
    ;; paren-face.el
    `(parenthesis ((,class (:foreground ,comment))))
+
+   ;; makefile
+   `(makefile-space ((,class (:background ,background-blue))))
    )
 
   (custom-theme-set-variables
