@@ -1,5 +1,5 @@
 This is a new version of simplenote.el which assists the interaction with
-Simplenote (http://app.simplenote.com/). The major improvement points from
+Simplenote (http://app.simplenote.com/).  The major improvement points from
 the original version are
 
 * Use of Simplenote API ver.2 to interact with server which can provide the

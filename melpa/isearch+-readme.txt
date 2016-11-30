@@ -49,29 +49,29 @@
  Commands defined here:
 
    `isearchp-act-on-demand' (Emacs 22+),
-   `isearchp-add-filter-predicate' (Emacs 24.3+),
-   `isearchp-add-regexp-filter-predicate' (Emacs 24.3+),
+   `isearchp-add-filter-predicate' (Emacs 24.4+),
+   `isearchp-add-regexp-filter-predicate' (Emacs 24.4+),
    `isearchp-append-register', `isearch-char-by-name' (Emacs
-   23-24.3), `isearchp-columns' (Emacs 24.3+),
-   `isearchp-complement-filter' (Emacs 24.3+), `isearchp-complete',
+   23-24.3), `isearchp-columns' (Emacs 24.4+),
+   `isearchp-complement-filter' (Emacs 24.4+), `isearchp-complete',
    `isearchp-cycle-mismatch-removal',
-   `isearchp-defun-filter-predicate' (Emacs 24.3+),
+   `isearchp-defun-filter-predicate' (Emacs 24.4+),
    `isearchp-eval-sexp-and-insert' (Emacs 22+),
    `isearchp-fontify-buffer-now', `isearchp-init-edit',
-   `isearchp-near' (Emacs 24.3+), `isearchp-near-after' (Emacs
-   24.3+), `isearchp-near-before' (Emacs 24.3+),
+   `isearchp-near' (Emacs 24.4+), `isearchp-near-after' (Emacs
+   24.4+), `isearchp-near-before' (Emacs 24.4+),
    `isearchp-open-recursive-edit' (Emacs 22+),
-   `isearchp-or-filter-predicate' (Emacs 24.3+),
+   `isearchp-or-filter-predicate' (Emacs 24.4+),
    `isearchp-remove-failed-part' (Emacs 22+),
    `isearchp-remove-failed-part-or-last-char' (Emacs 22+),
-   `isearchp-remove-filter-predicate' (Emacs 24.3+),
-   `isearchp-reset-filter-predicate' (Emacs 24.3+),
+   `isearchp-remove-filter-predicate' (Emacs 24.4+),
+   `isearchp-reset-filter-predicate' (Emacs 24.4+),
    `isearchp-retrieve-last-quit-search',
-   `isearchp-save-filter-predicate' (Emacs 24.3+),
-   `isearchp-set-filter-predicate' (Emacs 24.3+),
+   `isearchp-save-filter-predicate' (Emacs 24.4+),
+   `isearchp-set-filter-predicate' (Emacs 24.4+),
    `isearchp-set-region-around-search-target',
-   `isearchp-show-filters' (Emacs 24.3+),
-   `isearchp-toggle-auto-save-filter-predicate' (Emacs 24.3+),
+   `isearchp-show-filters' (Emacs 24.4+),
+   `isearchp-toggle-auto-save-filter-predicate' (Emacs 24.4+),
    `isearchp-toggle-lazy-highlight-cleanup' (Emacs 22+),
    `isearchp-toggle-lazy-highlighting' (Emacs 22+),
    `isearchp-toggle-literal-replacement' (Emacs 22+),
@@ -94,17 +94,18 @@
    `isearchp-case-fold', `isearchp-deactivate-region-flag' (Emacs
    24.3+), `isearchp-drop-mismatch',
    `isearchp-drop-mismatch-regexp-flag',
-   `isearchp-filter-predicates-alist' (Emacs 24.3+),
+   `isearchp-filter-predicates-alist' (Emacs 24.4+),
    `isearchp-initiate-edit-commands' (Emacs 22+),
    `isearchp-mouse-2-flag', `isearchp-movement-unit-alist' (Emacs
-   24.3+), `isearchp-on-demand-action-function' (Emacs 22+),
-   `isearchp-prompt-for-filter-name' (Emacs 24.3+),
+   24.4+), `isearchp-on-demand-action-function' (Emacs 22+),
+   `isearchp-prompt-for-filter-name' (Emacs 24.4+),
    `isearchp-regexp-quote-yank-flag',
    `isearchp-repeat-search-if-fail-flag' (Emacs 22+),
    `isearchp-restrict-to-region-flag' (Emacs 24.3+),
    `isearchp-resume-with-last-when-empty-flag' (Emacs 22+),
    `isearchp-ring-bell-function', `isearchp-set-region-flag',
-   `isearchp-toggle-option-flag'.
+   `isearchp-toggle-option-flag',
+   `isearchp-update-filter-predicates-alist-flag' (Emacs 24.4+).
 
  Faces defined here:
 
@@ -117,39 +118,40 @@
 
  Non-interactive functions defined here:
 
-   `isearchp-add-filter-predicate-1' (Emacs 24.3+),
-   `isearchp-barf-if-use-minibuffer', `isearchp-columns-p' (Emacs
-   24.3+), `isearchp-complete-past-string', `isearchp-fail-pos',
+   `isearchp-add-filter-predicate-1' (Emacs 24.4+),
+   `isearchp-assoc-delete-all', `isearchp-barf-if-use-minibuffer',
+   `isearchp-columns-p' (Emacs 24.4+),
+   `isearchp-complete-past-string', `isearchp-fail-pos',
    `isearchp-highlight-lighter', `isearchp-in-color-p' (Emacs
-   24.3+), `isearchp-in-comment-p' (Emacs 24.3+),
-   `isearchp-in-comment-or-delim-p' (Emacs 24.3+),
-   `isearchp-in-decimal-number-p' (Emacs 24.3+),
-   `isearchp-in-defun-p' (Emacs 24.3+),
-   `isearchp-in-email-address-p' (Emacs 24.3+),
-   `isearchp-in-file-name-p' (Emacs 24.3+),
-   `isearchp-in-file-or-url-p' (Emacs 24.3+),
-   `isearchp-in-hex-number-p' (Emacs 24.3+), `isearchp-in-line-p'
-   (Emacs 24.3+), `isearchp-in-lisp-variable-p' (Emacs 24.3+),
-   `isearchp-in-list-p' (Emacs 24.3+), `isearchp-in-number-p'
-   (Emacs 24.3+), `isearchp-in-page-p' (Emacs 24.3+),
-   `isearchp-in-paragraph-p' (Emacs 24.3+),
-   `isearchp-in-sentence-p' (Emacs 24.3+), `isearchp-in-sexp-p'
-   (Emacs 24.3+), `isearchp-in-string-or-comment-p' (Emacs 24.3+),
-   `isearchp-in-string-p' (Emacs 24.3+), `isearchp-in-symbol-p'
-   (Emacs 24.3+), `isearchp-in-url-p' (Emacs 24.3+),
-   `isearchp-in-word-p' (Emacs 24.3+),
-   `isearchp-match-regexp-filter-predicate' (Emacs 24.3+),
+   24.4+), `isearchp-in-comment-p' (Emacs 24.4+),
+   `isearchp-in-comment-or-delim-p' (Emacs 24.4+),
+   `isearchp-in-decimal-number-p' (Emacs 24.4+),
+   `isearchp-in-defun-p' (Emacs 24.4+),
+   `isearchp-in-email-address-p' (Emacs 24.4+),
+   `isearchp-in-file-name-p' (Emacs 24.4+),
+   `isearchp-in-file-or-url-p' (Emacs 24.4+),
+   `isearchp-in-hex-number-p' (Emacs 24.4+), `isearchp-in-line-p'
+   (Emacs 24.4+), `isearchp-in-lisp-variable-p' (Emacs 24.4+),
+   `isearchp-in-list-p' (Emacs 24.4+), `isearchp-in-number-p'
+   (Emacs 24.4+), `isearchp-in-page-p' (Emacs 24.4+),
+   `isearchp-in-paragraph-p' (Emacs 24.4+),
+   `isearchp-in-sentence-p' (Emacs 24.4+), `isearchp-in-sexp-p'
+   (Emacs 24.4+), `isearchp-in-string-or-comment-p' (Emacs 24.4+),
+   `isearchp-in-string-p' (Emacs 24.4+), `isearchp-in-symbol-p'
+   (Emacs 24.4+), `isearchp-in-url-p' (Emacs 24.4+),
+   `isearchp-in-word-p' (Emacs 24.4+),
+   `isearchp-match-regexp-filter-predicate' (Emacs 24.4+),
    `isearchp-message-prefix', `isearchp-message-suffix',
-   `isearchp-near-after-predicate' (Emacs 24.3+),
-   `isearchp-near-before-predicate' (Emacs 24.3+),
-   `isearchp-near-predicate' (Emacs 24.3+), `isearchp-not-pred'
-   (Emacs 24.3+), `isearchp-read-face-names',
+   `isearchp-near-after-predicate' (Emacs 24.4+),
+   `isearchp-near-before-predicate' (Emacs 24.4+),
+   `isearchp-near-predicate' (Emacs 24.4+), `isearchp-not-pred'
+   (Emacs 24.4+), `isearchp-read-face-names',
    `isearchp-read-face-names--read', `isearchp-read-filter-name'
-   (Emacs 24.3+), `isearchp-read-measure' (Emacs 24.3+),
-   `isearchp-read-near-args' (Emacs 24.3+),
-   `isearchp-read-predicate' (Emacs 24.3+),
-   `isearchp-read-prompt-prefix' (Emacs 24.3+),
-   `isearchp-read-regexp-during-search' (Emacs 24.3+),
+   (Emacs 24.4+), `isearchp-read-measure' (Emacs 24.4+),
+   `isearchp-read-near-args' (Emacs 24.4+),
+   `isearchp-read-predicate' (Emacs 24.4+),
+   `isearchp-read-prompt-prefix' (Emacs 24.4+),
+   `isearchp-read-regexp-during-search' (Emacs 24.4+),
    `isearchp-read-sexps', `isearchp-remove-duplicates',
    `isearchp-remove-mismatch', `isearchp-repeat-command',
    `isearchp-repeat-search-if-fail' (Emacs 22+),
@@ -163,7 +165,8 @@
 
  Internal variables defined here:
 
-   `isearchp-filter-map' (Emacs 24.3+),
+   `isearchp-current-filter-preds-alist' (Emacs 24.4+),
+   `isearchp-filter-map' (Emacs 24.4+),
    `isearchp-last-non-nil-invisible',
    `isearchp-last-quit-regexp-search', `isearchp-last-quit-search',
    `isearchp-nomodify-action-hook' (Emacs 22+),
@@ -172,9 +175,10 @@
    `isearchp-reg-beg', `isearchp-reg-end',
    `isearchp-replace-literally' (Emacs 22+), `isearchp-replacement'
    (Emacs 22+), `isearchp--replacing-on-demand' (Emacs 22+),
-   `isearchp-saved-filter-predicate' (Emacs 24.3+),
-   `isearchp-win-pt-line', `isearch-update-post-hook' (Emacs
-   20-21).
+   `isearchp-saved-filter-predicate' (Emacs 24.4+),
+   `isearch-update-post-hook' (Emacs 20-21),
+   `isearchp-user-entered-new-filter-p' (Emacs 24.4+),
+   `isearchp-win-pt-line'.
 
 
  ***** NOTE: The following macros and functions defined in
@@ -392,6 +396,18 @@ Overview of Features ---------------------------------------------
    Option `isearchp-show-filter-prompt-prefixes-flag' controls
    whether prefixes for filters are added to the Isearch prompt.
    You can toggle this option during search using `C-z p'.
+
+   User option `isearchp-filter-predicates-alist' contains filter
+   predicates that are available as completion candidates whenever
+   you are prompted for one.  See its documentation for details.
+
+   Filter predicates that you add dynamically are added as
+   completion candidates for the current Emacs session.  If option
+   `isearchp-update-filter-predicates-alist-flag' is non-`nil' then
+   they are also added to `isearchp-filter-predicates-alist'.  That
+   updated option value is NOT saved, however.  If you want to save
+   your additions to it for future Emacs sessions sessions then use
+   `M-x customize-option isearchp-filter-predicates-alist'.
 
  * Case-sensitivity is indicated in the mode line minor-mode
    lighter: `ISEARCH' for case-insensitive; `Isearch' for
