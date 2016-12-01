@@ -3,9 +3,9 @@
 ;; Copyright (C) 2016  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
-;; Homepage: https://gitlab.com/emacscollective/closql
+;; Homepage: https://github.com/emacscollective/closql
 ;; Package-Requires: ((emacs "25.1") (emacsql-sqlite "2.0.2"))
-;; Package-Version: 20161104.1326
+;; Package-Version: 20161130.925
 ;; Keywords: extensions
 
 ;; This file is not part of GNU Emacs.

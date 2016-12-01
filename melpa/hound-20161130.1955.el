@@ -1,8 +1,8 @@
 ;;; hound.el --- Display hound search results in a compilation window
 
 ;; Author: Ryan Young
-;; Version: 1.1.0
-;; Package-Version: 20160731.2106
+;; Version: 1.2.0
+;; Package-Version: 20161130.1955
 ;; Created: February 13, 2013
 ;; Package-Requires: ((request "0.2.0") (cl-lib "0.5"))
 
@@ -48,11 +48,11 @@
   "Non-nil means we open search results in the same window, hiding the results buffer."
   :type 'boolean
   :group 'hound)
-(defcustom hound-host "localhost"
+(defcustom hound-host "http://localhost"
   "This is the hostname specifying where the hound server is running"
   :type 'string
   :group 'hound)
-(defcustom hound-api-port "443"
+(defcustom hound-api-port "6080"
   "This is the port number of the hound service"
   :type 'string
   :group 'hound)
@@ -95,8 +95,8 @@ so that we can locate and open the file."
 ;;; ----- HTTP request to grab search results
 
 (defun hound/get-search-url (query api-p)
-  (let* ((api-url (concat "https://" hound-host ":" hound-api-port "/api/v1/search?"))
-         (web-url (concat "https://" hound-host "?"))
+  (let* ((api-url (concat hound-host ":" hound-api-port "/api/v1/search?"))
+         (web-url (concat hound-host "?"))
          (url (if api-p api-url web-url)))
     (concat url "&repos=*&q=" (url-encode-url query) )))
 

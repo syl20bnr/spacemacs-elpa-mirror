@@ -3,8 +3,8 @@
 ;; Copyright (c) 2016 Abhinav Tushar
 
 ;; Author: Abhinav Tushar <abhinav.tushar.vs@gmail.com>
-;; Version: 0.2.7
-;; Package-Version: 0.2.7
+;; Version: 0.2.8
+;; Package-Version: 0.2.8
 ;; Package-Requires: ((enlive "0.0.1") (dash "2.13.0") (s "1.11.0"))
 ;; Keywords: cricket, score
 ;; URL: https://github.com/lepisma/cricbuzz.el
@@ -188,11 +188,9 @@
            (insert (enlive-text it)))
          (-remove-item " " row-node)))
 
-(defun cricbuzz-insert-table (data-nodes)
+(defun cricbuzz-insert-table (header-node row-nodes)
   "Insert org-table using given data"
-  (let* ((header-node (second data-nodes))
-         (col-size (length (-remove-item " " header-node)))
-         (row-nodes (cdr (cdr data-nodes)))
+  (let* ((col-size (length (-remove-item " " header-node)))
          (junk-nodes nil))
     (org-table-create (concat (int-to-string col-size) "x1"))
     (cricbuzz-insert-row header-node)
@@ -223,14 +221,20 @@
 (defun cricbuzz-insert-batting (batting-node)
   "Insert batting card"
   (insert "** Batting\n\n")
-  (cricbuzz-insert-table (-non-nil
-                          (-map 'enlive-direct-children (cdr batting-node)))))
+  (let* ((data-nodes (-non-nil
+                      (-map 'enlive-direct-children (cdr batting-node))))
+         (header-node (second data-nodes))
+         (row-nodes (cdr (cdr data-nodes))))
+    (cricbuzz-insert-table header-node row-nodes)))
 
 (defun cricbuzz-insert-bowling (bowling-node)
   "Insert bowling card"
   (insert "** Bowling\n\n")
-  (cricbuzz-insert-table (-non-nil
-                          (-map 'enlive-direct-children bowling-node))))
+  (let* ((data-nodes (-non-nil
+                      (-map 'enlive-direct-children bowling-node)))
+         (header-node (first data-nodes))
+         (row-nodes (cdr data-nodes)))
+    (cricbuzz-insert-table header-node row-nodes)))
 
 (defun cricbuzz-insert-fow (inning-node)
   "Insert fall of wickets if present"
