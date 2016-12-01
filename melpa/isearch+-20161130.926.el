@@ -7,11 +7,11 @@
 ;; Copyright (C) 1996-2016, Drew Adams, all rights reserved.
 ;; Created: Fri Dec 15 10:44:14 1995
 ;; Version: 0
-;; Package-Version: 20161129.1936
+;; Package-Version: 20161130.926
 ;; Package-Requires: ()
-;; Last-Updated: Tue Nov 29 19:38:07 2016 (-0800)
+;; Last-Updated: Wed Nov 30 09:27:53 2016 (-0800)
 ;;           By: dradams
-;;     Update #: 5093
+;;     Update #: 5116
 ;; URL: http://www.emacswiki.org/isearch+.el
 ;; Doc URL: http://www.emacswiki.org/IsearchPlus
 ;; Doc URL: http://www.emacswiki.org/DynamicIsearchFiltering
@@ -20,8 +20,7 @@
 ;;
 ;; Features that might be required by this library:
 ;;
-;;   `avoid', `backquote', `bytecomp', `cconv', `cl', `cl-extra',
-;;   `cl-lib', `color', `frame-fns', `gv', `help-fns',
+;;   `avoid', `cl', `cl-lib', `color', `frame-fns', `gv', `help-fns',
 ;;   `isearch-prop', `macroexp', `misc-cmds', `misc-fns', `strings',
 ;;   `thingatpt', `thingatpt+', `zones'.
 ;;
@@ -198,6 +197,7 @@
 ;;
 ;;    `isearchp-current-filter-preds-alist' (Emacs 24.4+),
 ;;    `isearchp-filter-map' (Emacs 24.4+),
+;;    `isearchp-in-lazy-highlight-update-p' (Emacs 24.3+),
 ;;    `isearchp-last-non-nil-invisible',
 ;;    `isearchp-last-quit-regexp-search', `isearchp-last-quit-search',
 ;;    `isearchp-nomodify-action-hook' (Emacs 22+),
@@ -322,7 +322,7 @@
 ;;
 ;;; Overview of Features ---------------------------------------------
 ;;
-;;  * Dynamic search filtering (starting with Emacs 24.3).  You can
+;;  * Dynamic search filtering (starting with Emacs 24.4).  You can
 ;;    add and remove any number of search filters while searching
 ;;    incrementally.
 ;;    See https://www.emacswiki.org/emacs/DynamicIsearchFiltering.
@@ -330,6 +330,35 @@
 ;;    The predicate that is the value of `isearch-filter-predicate' is
 ;;    advised by additional predicates that you add, creating a
 ;;    complex suite of predicates that act together.
+;;
+;;    Reminder: An Isearch filter predicate is a function that accepts
+;;    two buffer positions, BEG and END, as its first two arguments.
+;;    These values are the beginning and ending positions of a search
+;;    hit.  If the return value of the function is `nil' then the
+;;    search hit is excluded from searching; otherwise it is included.
+;;
+;;    A filter predicate can perform side effects, if you like.  Only
+;;    the return value is used by Isearch.  For example, if you wanted
+;;    to more easily see the cursor position each time search stops at
+;;    a search hit, you could use something like this as a filter
+;;    predicate.  (This requires library `crosshairs.el', which
+;;    highlights the current column and line using crosshairs.)
+;;
+;;      (lambda (beg end)
+;;        (save-excursion (goto-char end)) ; Gp to end of search hit.
+;;        ;; Avoid calling `crosshairs' when inside
+;;        ;; `isearch-lazy-highlight-search'.
+;;        (unless isearchp-in-lazy-highlight-update-p (crosshairs))
+;;        t)  ; Return non-nil always - no real filtering.
+;;
+;;    The side-effect producing call to function `crosshairs' is
+;;    guarded by variable `isearchp-in-lazy-highlight-update-p' here,
+;;    so that it is invoked only when the cursor is moved to a search
+;;    hit, not also when lazy highlighting is performed.  (Filtering
+;;    applies also to lazy highlighting: it filters out search hits
+;;    that are not being used.  But in this case no real filtering is
+;;    done, and there is no need to show crosshairs moving across the
+;;    buffer during lazy highlighting.)
 ;;
 ;;    The following filtering commands are available during Isearch.
 ;;    They are all on prefix key `C-z', by default.  (They are on
@@ -401,9 +430,12 @@
 ;;
 ;;    When you use one of the commands that adds a filter predicate as
 ;;    advice to `isearch-filter-predicate' you can be prompted for two
-;;    things: (1) a name for the predicate and (2) text to add to the
-;;    Isearch prompt as a reminder of filtering.  Two user options
-;;    control this prompting:
+;;    things: (1) a short name for the predicate and (2) text to add
+;;    to the Isearch prompt as a reminder of filtering.  The optional
+;;    short name is a convenience for referring to the predicate - for
+;;    adding it again or removing it, for example.
+;;
+;;    Two user options control this prompting:
 ;;
 ;;    - `isearchp-prompt-for-filter-name' says whether to prompt you
 ;;      always, never, or only when the predicate that you provide is
@@ -832,6 +864,9 @@
 ;;
 ;;(@* "Change log")
 ;;
+;; 2016/11/30 dadams
+;;     Added: isearchp-in-lazy-highlight-update-p.
+;;     isearch-query-replace is for Emacs 24.4+, not 24.3+.
 ;; 2016/11/29 dadams
 ;;     Added: isearchp-assoc-delete-all, isearchp-current-filter-preds-alist,
 ;;            isearchp-update-filter-predicates-alist-flag, isearchp-user-entered-new-filter-p.
@@ -1428,6 +1463,7 @@
 (defvar isearchp-filter-map)             ; Here (Emacs 24.4+).
 (defvar isearchp-filter-predicates-alist) ; Here (Emacs 24.4+).
 (defvar isearchp-initiate-edit-commands) ; Here (Emacs 22+).
+(defvar isearchp-in-lazy-highlight-update-p) ; Here (Emacs 24.3+).
 (defvar isearchp-movement-unit-alist) ; Here (Emacs 24.4+).
 (defvar isearchp-nomodify-action-hook)   ; Here (Emacs 22+).
 (defvar isearchp-on-demand-action-function) ; Here (Emacs 22+).
@@ -2921,8 +2957,8 @@ not necessarily fontify the whole buffer."
 
   )
 
-(when (or (> emacs-major-version 24)    ; Emacs 24.3+
-          (and (= emacs-major-version 24)  (> emacs-minor-version 2)))
+(when (or (> emacs-major-version 24)    ; Emacs 24.4+
+          (and (= emacs-major-version 24)  (> emacs-minor-version 3)))
 
   ;; REPLACE ORIGINAL in `isearch.el'.
   ;;
@@ -4305,15 +4341,21 @@ Attempt to do the search exactly the way the pending Isearch would."
       (error nil)))
 
 
+  (defvar isearchp-in-lazy-highlight-update-p nil
+    "Non-nil means `isearch-lazy-highlight-update' is processing.")
+
+
   ;; REPLACE ORIGINAL in `isearch.el'.
   ;;
   ;; 1. Use `isearchp-reg-(beg|end)', not point-min|max.
   ;; 2. Fixes Emacs bug #21092, at least for nil `lazy-highlight-max-at-a-time'.
+  ;; 3. Binds `isearchp-in-lazy-highlight-update-p', as a convenience (e.g., for filter predicates).
   ;;
   (defun isearch-lazy-highlight-update ()
     "Update highlighting of other matches for current search."
-    (let ((max      lazy-highlight-max-at-a-time)
-          (looping  t)
+    (let ((max                                  lazy-highlight-max-at-a-time)
+          (looping                              t)
+          (isearchp-in-lazy-highlight-update-p  t)
           nomore)
       (with-local-quit
         (save-selected-window

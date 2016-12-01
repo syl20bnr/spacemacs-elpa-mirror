@@ -167,6 +167,7 @@
 
    `isearchp-current-filter-preds-alist' (Emacs 24.4+),
    `isearchp-filter-map' (Emacs 24.4+),
+   `isearchp-in-lazy-highlight-update-p' (Emacs 24.3+),
    `isearchp-last-non-nil-invisible',
    `isearchp-last-quit-regexp-search', `isearchp-last-quit-search',
    `isearchp-nomodify-action-hook' (Emacs 22+),
@@ -291,7 +292,7 @@
 
 Overview of Features ---------------------------------------------
 
- * Dynamic search filtering (starting with Emacs 24.3).  You can
+ * Dynamic search filtering (starting with Emacs 24.4).  You can
    add and remove any number of search filters while searching
    incrementally.
    See https://www.emacswiki.org/emacs/DynamicIsearchFiltering.
@@ -299,6 +300,35 @@ Overview of Features ---------------------------------------------
    The predicate that is the value of `isearch-filter-predicate' is
    advised by additional predicates that you add, creating a
    complex suite of predicates that act together.
+
+   Reminder: An Isearch filter predicate is a function that accepts
+   two buffer positions, BEG and END, as its first two arguments.
+   These values are the beginning and ending positions of a search
+   hit.  If the return value of the function is `nil' then the
+   search hit is excluded from searching; otherwise it is included.
+
+   A filter predicate can perform side effects, if you like.  Only
+   the return value is used by Isearch.  For example, if you wanted
+   to more easily see the cursor position each time search stops at
+   a search hit, you could use something like this as a filter
+   predicate.  (This requires library `crosshairs.el', which
+   highlights the current column and line using crosshairs.)
+
+     (lambda (beg end)
+       (save-excursion (goto-char end)) ; Gp to end of search hit.
+       ;; Avoid calling `crosshairs' when inside
+       ;; `isearch-lazy-highlight-search'.
+       (unless isearchp-in-lazy-highlight-update-p (crosshairs))
+       t)  ; Return non-nil always - no real filtering.
+
+   The side-effect producing call to function `crosshairs' is
+   guarded by variable `isearchp-in-lazy-highlight-update-p' here,
+   so that it is invoked only when the cursor is moved to a search
+   hit, not also when lazy highlighting is performed.  (Filtering
+   applies also to lazy highlighting: it filters out search hits
+   that are not being used.  But in this case no real filtering is
+   done, and there is no need to show crosshairs moving across the
+   buffer during lazy highlighting.)
 
    The following filtering commands are available during Isearch.
    They are all on prefix key `C-z', by default.  (They are on
@@ -370,9 +400,12 @@ Overview of Features ---------------------------------------------
 
    When you use one of the commands that adds a filter predicate as
    advice to `isearch-filter-predicate' you can be prompted for two
-   things: (1) a name for the predicate and (2) text to add to the
-   Isearch prompt as a reminder of filtering.  Two user options
-   control this prompting:
+   things: (1) a short name for the predicate and (2) text to add
+   to the Isearch prompt as a reminder of filtering.  The optional
+   short name is a convenience for referring to the predicate - for
+   adding it again or removing it, for example.
+
+   Two user options control this prompting:
 
    - `isearchp-prompt-for-filter-name' says whether to prompt you
      always, never, or only when the predicate that you provide is
