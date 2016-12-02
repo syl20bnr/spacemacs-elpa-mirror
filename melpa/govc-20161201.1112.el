@@ -2,7 +2,7 @@
 
 ;; Author: The govc developers
 ;; URL: https://github.com/vmware/govmomi/tree/master/govc/emacs
-;; Package-Version: 0.11.4
+;; Package-Version: 20161201.1112
 ;; Keywords: convenience
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.3") (dash "1.5.0") (s "1.9.0") (magit-popup "2.0.50") (json-mode "1.6.0"))
@@ -366,8 +366,7 @@ Return value is `json-read'."
 
 (defun govc-ls-datacenter ()
   "List datacenters."
-  (delete-dups (--map (nth 1 (split-string it "/"))
-                      (govc "ls"))))
+  (govc "ls" "-t" "Datacenter" "/" "/*"))
 
 (defun govc-object-prompt (prompt ls)
   "PROMPT for object name via LS function.  Return object without PROMPT if there is just one instance."
@@ -1189,7 +1188,7 @@ Open via `eww' by default, via `browse-url' if ARG is non-nil."
 (defun govc-vm-filter ()
   "Default `govc-filter' for `vm-info'."
   (--map (concat it "/*")
-         (append (govc-ls-folder (list (concat "/" govc-session-datacenter "/vm")))
+         (append (govc-ls-folder (list (concat govc-session-datacenter "/vm")))
                  (govc "ls" "-t" "VirtualApp" "vm"))))
 
 (defun govc-ls-folder (folders)

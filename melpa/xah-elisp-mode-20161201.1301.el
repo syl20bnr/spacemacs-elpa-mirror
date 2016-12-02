@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2015, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.11.6
-;; Package-Version: 20161116.1343
+;; Version: 2.11.8
+;; Package-Version: 20161201.1301
 ;; Created: 23 Mar 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: lisp, languages
@@ -81,6 +81,7 @@
 (defvar xah-elisp-elisp-lang-words nil "List of elisp keywords of “core” language. Core is not well defined here, but mostly in C.")
 (setq xah-elisp-elisp-lang-words '(
 
+"make-string"
 "abs"
 "add-to-list"
 "alist-get"
@@ -1400,6 +1401,8 @@ emacs 25.x changed `up-list' to take up to 3 args. Before, only 1."
 
 ;; completion
 
+
+
 (defun xah-elisp-complete-symbol ()
   "Perform keyword completion on current symbol.
 This uses `ido-mode' user interface for completion."
@@ -2048,6 +2051,7 @@ If there's a text selection, act on the region, else, on defun block."
 
     ("make-string" "(make-string count character)" xah-elisp--ahf)
     ("string" "(string &rest characters)" xah-elisp--ahf)
+    ("backward-up-list" "(backward-up-list &optional ARG▮ 'ESCAPE-STRINGS 'NO-SYNTAX-CROSSING)" xah-elisp--ahf)
 
     ("char-equal" "(char-equal char1▮ char1)" xah-elisp--ahf)
 
@@ -2237,7 +2241,16 @@ URL `http://ergoemacs.org/emacs/xah-elisp-mode.html'
   ;;               #'elisp-eldoc-documentation-function)
 
   ;; when calling emacs's complete-symbol, follow convention. When pressing TAB, do xah way.
-  (add-hook 'completion-at-point-functions 'elisp-completion-at-point nil 'local)
+  (if (version< emacs-version "25.1.1")
+      (progn
+        (add-hook 'completion-at-point-functions 'completion-at-point nil 'local))
+    (progn
+      ;; between GNU Emacs 24.5.1 and GNU Emacs 25.1.1, new is a elisp-mode.el at ~/apps/emacs-25.1/lisp/progmodes/elisp-mode.el
+      ;; it seems it's extracted from lisp-mode.el at /home/xah/apps/emacs-25.1/lisp/emacs-lisp/lisp-mode.el
+      ;; however, there's no command named elisp-mode
+      ;; 'elisp-completion-at-point is new, not in 24.5.1
+      (require 'elisp-mode)
+      (add-hook 'completion-at-point-functions 'elisp-completion-at-point nil 'local)))
 
   (make-local-variable 'abbrev-expand-function)
   (if (or

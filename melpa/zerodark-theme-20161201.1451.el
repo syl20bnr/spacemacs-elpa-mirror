@@ -4,7 +4,7 @@
 
 ;; Author: Nicolas Petton <nicolas@petton.fr>
 ;; Keywords: themes
-;; Package-Version: 20161130.224
+;; Package-Version: 20161201.1451
 ;; URL: https://github.com/NicolasPetton/zerodark-theme
 ;; Version: 3.6
 ;; Package: zerodark-theme
@@ -215,11 +215,11 @@ The result is cached for one second to avoid hiccups."
       (green-light (if (true-color-p) "#9eac8c" "#afaf87"))
       (peach "PeachPuff3")
       (diff-added-background (if (true-color-p) "#284437" "#284437"))
-      (diff-added-refined-background (if (true-color-p) "#198754" "#00875f"))
+      (diff-added-refined-background (if (true-color-p) "#1e8967" "#1e8967"))
       (diff-removed-background (if (true-color-p) "#583333" "#580000"))
-      (diff-removed-refined-background (if (true-color-p) "#981b1b" "#870000"))
-      (diff-current-background (if (true-color-p) "#3e4d58" "#5f;5f5f"))
-      (diff-current-refined-background (if (true-color-p) "#456981" "#5f5f87")))
+      (diff-removed-refined-background (if (true-color-p) "#b33c49" "#b33c49"))
+      (diff-current-background (if (true-color-p) "#29457b" "#29457b"))
+      (diff-current-refined-background (if (true-color-p) "#4174ae" "#4174ae")))
   (custom-theme-set-faces
    'zerodark
    `(default ((,class (:background ,background :foreground ,default))))
@@ -338,14 +338,32 @@ The result is cached for one second to avoid hiccups."
    `(dired-header ((,class (:foreground ,blue :background ,background-blue :weight bold))))
    `(dired-directory ((,class (:foreground ,purple :weight bold))))
 
+   ;; diff
+   `(diff-removed ((,class (:background ,background-red :foreground ,red))))
+   `(diff-added ((,class (:background ,background-green :foreground ,green))))
+   `(diff-hunk-header ((,class (:background ,background-blue :weight bold :foreground ,blue))))
+   `(diff-file-header ((,class (:weight bold))))
+   `(diff-header ((,class (:background ,background :foreground ,blue))))
+   `(diff-context ((,class (:foreground ,default))))
+   `(diff-refine-added ((,class (:foreground ,green :background ,background-green :weight bold :underline t))))
+   `(diff-refine-removed ((,class (:background ,background-red :foreground ,red :weight bold :underline t))))
+
+   ;; ediff
+   `(ediff-fine-diff-B ((,class (:inherit diff-refine-added))))
+   `(ediff-current-diff-B ((,class (:inherit diff-added))))
+   `(ediff-fine-diff-A ((,class (:inherit diff-refine-removed))))
+   `(ediff-current-diff-A ((,class (:inherit diff-removed))))
+   `(ediff-fine-diff-C ((,class (:foreground ,blue :background ,background-blue :weight bold :underline t))))
+   `(ediff-current-diff-C ((,class (:background ,background-blue :foreground ,blue))))
+
    ;; magit
    `(magit-diff-context-highlight ((,class (:background ,background-darker))))
    `(magit-diff-file-heading ((,class (:weight bold :foreground ,blue))))
    `(magit-diff-file-heading-highlight ((,class (:weight bold :foreground ,blue :background ,background-blue))))
-   `(magit-diff-removed-highlight ((,class (:background ,diff-removed-background))))
-   `(magit-diff-removed ((,class (:background ,diff-removed-background))))
-   `(magit-diff-added-highlight ((,class (:background ,diff-added-background))))
-   `(magit-diff-added ((,class (:background ,diff-added-background))))
+   `(magit-diff-removed-highlight ((,class (:inherit diff-removed))))
+   `(magit-diff-removed ((,class (:inherit diff-removed))))
+   `(magit-diff-added-highlight ((,class (:inherit diff-added))))
+   `(magit-diff-added ((,class (:inherit diff-added))))
    `(magit-diff-lines-heading ((,class (:background ,blue-dark :foreground "white"))))
    `(magit-diff-hunk-heading ((,class (:background ,background-lighter))))
    `(magit-diff-hunk-heading-highlight ((,class (:background ,blue-dark))))
@@ -497,23 +515,6 @@ The result is cached for one second to avoid hiccups."
 
    ;; which-function
    `(which-func ((,class (:foreground ,purple))))
-
-   ;; diff
-   `(diff-removed ((,class (:foreground ,default :background ,diff-removed-background))))
-   `(diff-added ((,class (:foreground ,default :background ,diff-added-background))))
-   `(diff-hunk-header ((,class (:background ,background-blue :weight bold :foreground ,blue))))
-   `(diff-file-header ((,class (:weight bold))))
-   `(diff-header ((,class (:background ,background :foreground ,blue))))
-   `(diff-context ((,class (:foreground ,default))))
-   `(diff-refine-added ((,class (:foreground ,grey :background ,diff-added-refined-background))))
-   `(diff-refine-removed ((,class (:background ,diff-removed-refined-background :foreground ,grey))))
-
-   ;; ediff
-   `(ediff-fine-diff-B ((,class (:foreground ,grey :background ,diff-added-refined-background))))
-   `(ediff-current-diff-B ((,class (:background ,diff-added-background))))
-   `(ediff-fine-diff-A ((,class (:background ,diff-removed-refined-background :foreground ,grey))))
-   `(ediff-current-diff-C ((,class (:background ,diff-current-background))))
-   `(ediff-fine-diff-C ((,class (:foreground ,grey :background ,diff-current-refined-background))))
 
    `(ediff-even-diff-A ((,class (:background ,highlight :foreground unspecified))))
    `(ediff-even-diff-B ((,class (:background ,highlight :foreground unspecified))))
@@ -668,6 +669,13 @@ The result is cached for one second to avoid hiccups."
 
    ;; makefile
    `(makefile-space ((,class (:background ,background-blue))))
+
+   ;; epa
+   `(epa-validity-high ((,class (:foreground ,green))))
+   `(epa-validity-low ((,class (:foreground ,default))))
+   `(epa-validity-disabled ((,class (:foreground ,red :weight bold :background ,background-red))))
+   `(epa-field-name ((,class (:foreground ,purple :weight bold))))
+   `(epa-field-body ((,class (:foreground ,orange))))
    )
 
   (custom-theme-set-variables
