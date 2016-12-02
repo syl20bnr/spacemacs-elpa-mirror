@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 ~ 2015 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; Version: 1.1
-;; Package-Version: 20160604.52
+;; Package-Version: 20161202.517
 ;; Package-Requires: ((helm "1.5") (cl-lib "0.5") (emacs "24.1"))
 ;; URL: https://github.com/emacs-helm/helm-firefox
 
@@ -123,6 +123,7 @@ After closing firefox, you will be able to browse your bookmarks."
                                (helm-browse-url 
                                 (format helm-surfraw-duckduckgo-url
                                         (url-hexify-string candidate))))))
+        :truncate-lines t
         :buffer "*Helm Firefox*"))
 
 

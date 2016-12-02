@@ -4,7 +4,7 @@
 
 ;; Author: Nicolas Petton <nicolas@petton.fr>
 ;; Keywords: themes
-;; Package-Version: 20161201.1451
+;; Package-Version: 20161202.731
 ;; URL: https://github.com/NicolasPetton/zerodark-theme
 ;; Version: 3.6
 ;; Package: zerodark-theme
@@ -373,9 +373,9 @@ The result is cached for one second to avoid hiccups."
 
    `(magit-section-highlight ((,class (:background ,background-darker))))
    `(magit-section-heading ((,class (:foreground ,grey :weight bold))))
-   `(magit-branch-current ((,class (:foreground ,blue :box 1))))
-   `(magit-branch-local ((,class (:foreground ,purple :box 1))))
-   `(magit-branch-remote ((,class (:foreground ,green :box 1))))
+   `(magit-branch-current ((,class (:foreground ,blue :background ,background-darker :box 1))))
+   `(magit-branch-local ((,class (:foreground ,purple :background ,background-darker :box 1))))
+   `(magit-branch-remote ((,class (:foreground ,green :background ,background-darker :box 1))))
 
    `(magit-reflog-reset ((,class (:background ,background-red :foreground ,red :weight bold))))
    `(magit-reflog-amend ((,class (:background ,background-blue :foreground ,blue :weight bold))))
@@ -423,6 +423,8 @@ The result is cached for one second to avoid hiccups."
    `(notmuch-crypto-signature-good-key ((,class (:background ,blue :foreground ,background :weight bold))))
    `(notmuch-crypto-signature-bad ((,class (:background ,red :foreground ,background :weight bold))))
    `(notmuch-tag-face ((,class (:foreground ,green :weight bold))))
+   `(notmuch-tree-match-author-face ((,class (:foreground ,purple))))
+   `(notmuch-tree-match-tag-face ((,class (:foreground ,green :weight bold))))
 
    ;; company
    `(company-preview ((,class (:background ,background-darker :foreground ,default))))
