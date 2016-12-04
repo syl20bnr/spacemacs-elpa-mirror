@@ -1,5 +1,5 @@
 This package converts the buffer text and the associated
-decorations to HTML.  Mail to <hniksic@xemacs.org> to discuss
+decorations to HTML.  Mail to <hniksic@gmail.com> to discuss
 features and additions.  All suggestions are more than welcome.
 
 To use it, just switch to the buffer you want HTML-ized and type
@@ -40,18 +40,10 @@ don't try to remove that dependency.  I see no practical problems
 with using the full power of the CL extensions, except that one
 might learn to like them too much.
 
-The latest version is available as a git repository at:
+The latest version is available at:
 
-       <http://fly.srk.fer.hr/~hniksic/emacs/htmlize.git>
+       <https://github.com/hniksic/emacs-htmlize>
 
-The snapshot of the latest release can be obtained at:
-
-       <http://fly.srk.fer.hr/~hniksic/emacs/htmlize.el.cgi>
-
-You can find a sample of htmlize's output (possibly generated with
-an older version) at:
-
-       <http://fly.srk.fer.hr/~hniksic/emacs/htmlize.el.html>
 
 Thanks go to the many people who have sent reports and contributed
 comments, suggestions, and fixes.  They include Ron Gut, Bob
