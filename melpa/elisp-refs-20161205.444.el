@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Version: 1.2
-;; Package-Version: 20161128.1341
+;; Package-Version: 20161205.444
 ;; Keywords: lisp
 ;; Package-Requires: ((dash "2.12.0") (f "0.18.2") (list-utils "0.4.4") (loop "2.1") (s "1.11.0"))
 
@@ -525,7 +525,7 @@ KIND should be 'function, 'macro, 'variable, 'special or 'symbol."
     (s-word-wrap 70 (format "%s %s" found-str searched-str))))
 
 ;; TODO: if we have multiple matches on one line, we repeatedly show
-;; that line. That's slighly confusing.
+;; that line. That's slightly confusing.
 (defun elisp-refs--show-results (symbol description results
                                         searched-file-count prefix)
   "Given a RESULTS list where each element takes the form \(forms . buffer\),

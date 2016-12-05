@@ -1,10 +1,10 @@
 ;;; multi-project.el --- Easily work with multiple projects.
 
-;; Copyright (C) 2010 - 2014
+;; Copyright (C) 2010 - 2016
 
 ;; Author: Shawn Ellis <shawn.ellis17@gmail.com>
-;; Version: 0.0.17
-;; Package-Version: 20150314.744
+;; Version: 0.0.18
+;; Package-Version: 20161204.223
 ;; URL: https://bitbucket.org/ellisvelo/multi-project/overview
 ;; Keywords: project management
 ;;
@@ -236,17 +236,23 @@ Optional argument OTHERWINDOW open another window."
    (delq nil
 	 (mapcar (lambda (x) (and (string= project (car x)) x)) lst))))
 
-(defun multi-project-filter-dir (projectdir lst)
-  "Filter based upon the PROJECTDIR of the LST."
-  (let ((dir (expand-file-name (concat projectdir "/"))))
-    (car
-     (delq nil
-	   (mapcar
-	    (lambda (x) (and (string-match
-			      (expand-file-name (concat (nth 1 x) "/"))
-			      dir)
-			     x))
-	    lst)))))
+(defun multi-project-parent-file (file)
+  "Return the parent of the FILE."
+  (mapconcat 'identity (butlast (split-string file "/")) "/"))
+
+(defun multi-project-compare-matches (dir lst)
+  (let ((normalized-dir (abbreviate-file-name (directory-file-name dir))))
+  (delq nil (mapcar (lambda (x) (if (string-equal normalized-dir
+						  (nth 1 x))
+				    x)) lst))))
+
+(defun multi-project-filter-dir (dir lst)
+  (let ((project))
+    (when (> (length dir) 0)
+      (setq project (multi-project-compare-matches dir lst))
+      (if project
+	  (car project)
+	(multi-project-filter-dir (multi-project-parent-file dir) lst)))))
 
 (defun multi-project-filter-empty-string (lst)
   "Filter out empty strings from LST."
@@ -261,13 +267,8 @@ Optional argument OTHERWINDOW open another window."
 
 (defun multi-project-find-by-directory ()
   "Return the project list from the set of defined projects in multi-projects-roots."
-  (interactive)
-  (let ((result)
-        (directory (replace-regexp-in-string "/plink:" "/" default-directory)))
+  (multi-project-filter-dir default-directory multi-project-roots))
 
-    (setq directory (expand-file-name (replace-regexp-in-string "/$" "" directory)))
-    (setq result (multi-project-filter-dir directory multi-project-roots))
-    result))
 
 (defun multi-project-find-by-name(projectname)
   "Returns the project list that corresponds to the project name"
@@ -873,11 +874,42 @@ Optional argument OTHERWINDOW if true, the display is created in a secondary win
         ;;(multi-project-dired-project project)
         (message "Current project %s" (car project))))))
 
+(defun multi-project-compose-grep ()
+  "Composes the grep command that ignores version control directories like .svn, .hg, and .git. If no version control directory is found, the default grep-find-command is returned"
+  (let ((grep-command)
+	(exclusion))
+    (cond ((file-exists-p ".hg")
+	   (setq exclusion ".hg"))
+
+	  ((file-exists-p ".svn")
+	   (setq exclusion ".svn"))
+
+	  ((file-exists-p ".git")
+	   (setq exclusion ".git")))
+
+    (if exclusion
+	(cons (concat "find . -path '*/" exclusion
+		      "' -prune -o -type f -exec grep -nH -e  {} +")
+	      (+ 55 (length exclusion)))
+      grep-find-command)))
+
 (defun multi-project-interactive-grep ()
   "Run grep-find interactively."
   (interactive)
-  (multi-project-top)
-  (call-interactively 'grep-find))
+  (multi-project-root)
+
+  ;; grep-apply-setting generates an error when using tramp and attempting to
+  ;; apply the grep setting (wrong-type-argument consp nil)
+  (condition-case nil
+      (let ((orig-command grep-find-command))
+	(if (and orig-command grep-find-command)
+	    (grep-apply-setting 'grep-find-command (multi-project-compose-grep)))
+	(call-interactively 'grep-find)
+
+	(if (and orig-command grep-find-command)
+	    (grep-apply-setting 'grep-find-command orig-command)))
+    (error (call-interactively 'grep-find))))
+
 
 (defun multi-project-execute-tags-command (buffer-name etags-command)
   (if (fboundp 'async-shell-command)
@@ -950,24 +982,24 @@ Optional argument OTHERWINDOW if true, the display is created in a secondary win
 
     (setq project-list (list project-name project-directory project-subdir))
 
-    (let ((tags-file (concat project-directory "/TAGS")))
+    (when (y-or-n-p "Use a TAGS file?")
+      (let ((tags-file (concat project-directory "/TAGS")))
 
-      (setq project-tags (read-file-name "Project tags: " tags-file tags-file))
-      (if (and (> (length project-tags) 0)
-	       (file-exists-p project-tags)
-	       (string-match "TAGS$" project-tags))
-          (add-to-list 'project-list project-tags t))
+	(setq project-tags (read-file-name "Project tags: " tags-file tags-file))
+	(if (and (> (length project-tags) 0)
+		 (file-exists-p project-tags)
+		 (string-match "TAGS$" project-tags))
+	    (add-to-list 'project-list project-tags t))
 
-      (when (and (not (file-exists-p project-tags))
-		 (y-or-n-p "Create a TAGS file? "))
-	(message "Creating TAGS file...")
-	(let ((buffer-name (concat "*" project-name "-TAGS*"))
-	      (etags-command
-	       (multi-project-create-tags-command project-directory
-						  project-tags)))
+	(when (not (file-exists-p project-tags))
+	  (message "Creating TAGS file...")
+	  (let ((buffer-name (concat "*" project-name "-TAGS*"))
+		(etags-command
+		 (multi-project-create-tags-command project-directory
+						    project-tags)))
 
-	      (multi-project-execute-tags-command buffer-name etags-command)
-	      (add-to-list 'project-list project-tags t))))
+	    (multi-project-execute-tags-command buffer-name etags-command)
+	    (add-to-list 'project-list project-tags t)))))
 
     (add-to-list 'multi-project-roots project-list t)
     (multi-project-save-projects)
@@ -1162,7 +1194,7 @@ Optional argument OTHERWINDOW if true, the display is created in a secondary win
   "'multi-project-mode' menu"
   '("MP"
     ["Jump to a project" multi-project-display-projects t]
-    ["Jump to the project top" multi-project-top t]
+    ["Jump to the project root" multi-project-root t]
     ["Compile..." multi-project-compile t]
     ["Find file..." multi-project-find-file t]
     ["Grep project ..." multi-project-interactive-grep t]

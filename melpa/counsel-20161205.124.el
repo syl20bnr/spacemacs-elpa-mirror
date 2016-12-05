@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20161129.525
+;; Package-Version: 20161205.124
 ;; Version: 0.8.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.8.0"))
 ;; Keywords: completion, matching
@@ -616,6 +616,14 @@ input corresponding to the chosen variable."
  'counsel-M-x-transformer)
 
 (declare-function bookmark-all-names "bookmark")
+(declare-function bookmark-location "bookmark")
+
+(defcustom counsel-bookmark-avoid-dired nil
+  "If non-nil, choosing a directory in `counsel-bookmark'
+forwards the choice to `counsel-find-file' instead of opening a
+dired buffer."
+  :type 'boolean
+  :group 'ivy)
 
 ;;;###autoload
 (defun counsel-bookmark ()
@@ -625,10 +633,17 @@ input corresponding to the chosen variable."
   (ivy-read "Create or jump to bookmark: "
             (bookmark-all-names)
             :action (lambda (x)
-                      (if (member x (bookmark-all-names))
-                          (with-ivy-window
-                            (bookmark-jump x))
-                        (bookmark-set x)))
+                      (cond ((and counsel-bookmark-avoid-dired
+                                  (member x (bookmark-all-names))
+                                  (file-directory-p (bookmark-location x)))
+                             (with-ivy-window
+                               (let ((default-directory (bookmark-location x)))
+                                 (counsel-find-file))))
+                            ((member x (bookmark-all-names))
+                             (with-ivy-window
+                               (bookmark-jump x)))
+                            (t
+                             (bookmark-set x))))
             :caller 'counsel-bookmark))
 
 (ivy-set-actions

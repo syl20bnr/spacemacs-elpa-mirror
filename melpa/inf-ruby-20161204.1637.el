@@ -8,7 +8,7 @@
 ;;         Dmitry Gutov <dgutov@yandex.ru>
 ;;         Kyle Hargraves <pd@krh.me>
 ;; URL: http://github.com/nonsequitur/inf-ruby
-;; Package-Version: 20161204.354
+;; Package-Version: 20161204.1637
 ;; Created: 8 April 1998
 ;; Keywords: languages ruby
 ;; Version: 2.5.0
@@ -100,6 +100,16 @@ Also see the description of `ielm-prompt-read-only'."
                            inf-ruby-implementations))
   :group 'inf-ruby)
 
+(defcustom inf-ruby-console-environment 'ask
+  "Envronment to use for the `inf-ruby-console-*' commands.
+If the value is not a string, ask the user to choose from the
+available ones.  Otherwise, just use the value.
+
+Currently only affects `inf-ruby-console-rails'."
+  :type '(choice
+          (const ask :tag "Ask the user")
+          (string :tag "Environment name")))
+
 (defconst inf-ruby-prompt-format
   (concat
    (mapconcat
@@ -181,6 +191,22 @@ next one.")
     (define-key map (kbd "C-c C-z") 'ruby-switch-to-inf)
     (define-key map (kbd "C-c C-l") 'ruby-load-file)
     (define-key map (kbd "C-c C-s") 'inf-ruby)
+    (easy-menu-define
+      inf-ruby-minor-mode-menu
+      map
+      "Inferior Ruby Minor Mode Menu"
+      '("Inf-Ruby"
+        ;; TODO: Add appropriate :active (or ENABLE) conditions.
+        ["Send definition" ruby-send-definition t]
+        ["Send last expression" ruby-send-last-sexp t]
+        ["Send block" ruby-send-block t]
+        ["Send region" ruby-send-region t]
+        "--"
+        ["Load file..." ruby-load-file t]
+        "--"
+        ["Start REPL" inf-ruby t]
+        ["Switch to REPL" ruby-switch-to-inf t]
+        ))
     map))
 
 ;;;###autoload
@@ -202,7 +228,7 @@ The following commands are available:
 (defvar inf-ruby-buffer-impl-name nil "The name of the Ruby shell")
 (make-variable-buffer-local 'inf-ruby-buffer-impl-name)
 
-(defun inf-ruby-mode ()
+(define-derived-mode inf-ruby-mode comint-mode "Inf-Ruby"
   "Major mode for interacting with an inferior Ruby REPL process.
 
 A simple IRB process can be fired up with \\[inf-ruby].
@@ -239,11 +265,6 @@ to continue it.
 The following commands are available:
 
 \\{inf-ruby-mode-map}"
-  (interactive)
-  (let ((orig-mode-line-process mode-line-process))
-    (comint-mode)
-    (when orig-mode-line-process
-      (setq mode-line-process orig-mode-line-process)))
   (setq comint-prompt-regexp inf-ruby-prompt-pattern)
   (ruby-mode-variables)
   (when (bound-and-true-p ruby-use-smie)
@@ -251,9 +272,6 @@ The following commands are available:
          #'inf-ruby-smie--forward-token)
     (set (make-local-variable 'smie-backward-token-function)
          #'inf-ruby-smie--backward-token))
-  (setq major-mode 'inf-ruby-mode)
-  (setq mode-name "Inf-Ruby")
-  (use-local-map inf-ruby-mode-map)
   (add-hook 'comint-output-filter-functions 'inf-ruby-output-filter nil t)
   (setq comint-get-old-input 'inf-ruby-get-old-input)
   (set (make-local-variable 'compilation-error-regexp-alist)
@@ -262,8 +280,7 @@ The following commands are available:
   (when (eq system-type 'windows-nt)
     (setq comint-process-echoes t))
   (add-hook 'completion-at-point-functions 'inf-ruby-completion-at-point nil t)
-  (compilation-shell-minor-mode t)
-  (run-hooks 'inf-ruby-mode-hook))
+  (compilation-shell-minor-mode t))
 
 (defun inf-ruby-output-filter (output)
   "Check if the current prompt is a top-level prompt."
@@ -630,11 +647,14 @@ interactive mode, i.e. hits a debugger breakpoint."
   (setq buffer-read-only nil)
   (buffer-enable-undo)
   (let ((mode major-mode)
-        (arguments compilation-arguments))
+        (arguments compilation-arguments)
+        (orig-mode-line-process mode-line-process))
     (inf-ruby-mode)
     (make-local-variable 'inf-ruby-orig-compilation-mode)
     (setq inf-ruby-orig-compilation-mode mode)
-    (set (make-local-variable 'compilation-arguments) arguments))
+    (set (make-local-variable 'compilation-arguments) arguments)
+    (when orig-mode-line-process
+      (setq mode-line-process orig-mode-line-process)))
   (let ((proc (get-buffer-process (current-buffer))))
     (when proc
       (make-local-variable 'inf-ruby-orig-process-filter)
@@ -751,15 +771,22 @@ automatically."
   "Run Rails console in DIR."
   (interactive (list (inf-ruby-console-read-directory 'rails)))
   (let* ((default-directory (file-name-as-directory dir))
-         (envs (inf-ruby-console-rails-envs))
-         (env (completing-read "Rails environment: " envs nil t
-                               nil nil (car (member "development" envs))))
+         (env (inf-ruby-console-rails-env))
          (with-bundler (file-exists-p "Gemfile")))
     (inf-ruby-console-run
      (concat (when with-bundler "bundle exec ")
              "rails console "
              env)
      "rails")))
+
+(defun inf-ruby-console-rails-env ()
+  (if (stringp inf-ruby-console-environment)
+      inf-ruby-console-environment
+    (let ((envs (inf-ruby-console-rails-envs)))
+      (completing-read "Rails environment: "
+                       envs
+                       nil t
+                       nil nil (car (member "development" envs))))))
 
 (defun inf-ruby-console-rails-envs ()
   (let ((files (file-expand-wildcards "config/environments/*.rb")))

@@ -4,7 +4,7 @@
 ;; Emacs User Group Berlin <emacs-berlin@emacs-berlin.org>
 
 ;; Version: 0.1
-;; Package-Version: 20161204.952
+;; Package-Version: 20161205.23
 ;; Keywords: languages, lisp
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -392,56 +392,6 @@ Check if list opener inside a string. "
       (insert closer)
       closer))))
 
-(defun general-close--insert-separator-maybe (orig)
-  "Returns `t', if separator was inserted. "
-  (let (erg)
-    (when (< 0 (abs (skip-chars-backward " \t\r\n\f")))
-      (delete-region (point) orig))
-    (when
-	(not (eq (char-before) general-close-command-separator-char))
-      (when (save-excursion
-	      (forward-char -1)
-	      (when (ignore-errors (setq erg (nth 1 (parse-partial-sexp (point-min) (point)))))
-		(goto-char erg))
-	      (back-to-indentation)
-	      ;; ert does no font-lock
-	      (or (and general-close-keywords (looking-at general-close-keywords))
-		  (face-at-point)))
-	(insert general-close-command-separator-char) t))))
-
-(defun general-close--handle-separator-modes (orig closer)
-  "Some languages close expressions with a special char, often `:'
-
-See `general-close-command-separator-char'"
-  (let (done)
-    (cond ((eq closer ?})
-	   (if
-	       (save-excursion
-		 (skip-chars-backward " \t\r\n\f")
-		 (or (eq (char-before) general-close-command-separator-char)
-		     (eq (char-before) closer)))
-	       (progn
-		 (unless (looking-back "^[ \t]+" nil)
-		   (newline-and-indent))
-		 (insert closer)
-		 (setq done t))
-	     (insert general-close-command-separator-char)
-	     (setq done t)))
-	  ((and (eq closer ?\)) (eq (char-before) ?\;))
-	   (newline-and-indent)
-	   (insert closer)
-	   closer)
-	  ;; Semicolon inserted where it probably shouldn't be? #12
-	  ((and (eq closer ?\)) (eq (char-before) ?\)))
-	   (insert general-close-command-separator-char)
-	   closer)
-	  (closer
-	   (skip-chars-backward " \t\r\n\f")
-	   (insert closer)
-	   closer)
-	  (t (general-close--insert-separator-maybe orig)))
-    done))
-
 (defun general-close-insert-with-padding-maybe (strg &optional nbefore nafter)
   "Takes a string. Insert a space before and after maybe.
 
@@ -464,25 +414,6 @@ When `general-close-insert-with-padding-p' is `t', the default "
 		    ;; (eq (char-after) ?\))
 		    nafter) (insert " "))))))
 
-(defun general-close--semicolon-separator-modes-dispatch (orig closer pps)
-  (let ((closer (or closer (and (nth 1 pps) (nth-1-pps-complement-char-maybe pps))))
-	done erg)
-    (cond ((and closer (eq closer ?\))(progn (save-excursion (skip-chars-backward " \t\r\n\f")(looking-back general-close-command-operator-chars (line-beginning-position)))))
-	   (setq erg (car (general-closer-uniq-varlist (nth 1 pps) orig)))
-	   (cond ((and (stringp erg)(< 1 (length erg)))
-		  (general-close-insert-with-padding-maybe erg)
-		  (setq done t))
-		 ((and (stringp erg)(eq 1 (length erg)))
-		  (general-close-insert-with-padding-maybe
-		   (general-close--raise-symbol-maybe (string-to-char erg)))
-		  (setq done t))))
-	  ((progn (save-excursion (beginning-of-line) (looking-at general-close-pre-assignment-re)))
-	   (general-close-insert-with-padding-maybe "=")
-	   (setq done t))
-	  (t (setq general-close-command-separator-char 59)
-	     (setq done (general-close--handle-separator-modes orig closer))))
-    done))
-
 (defun general-close--others (orig closer pps)
   (let (done erg)
     (cond
@@ -491,57 +422,11 @@ When `general-close-insert-with-padding-p' is `t', the default "
 	     (insert (nth 3 pps)))
 	    ((setq erg (general-close-in-string-interpolation-maybe pps))
 	     (general-close--return-complement-char-maybe erg))
-	    (t (general-close--return-complement-char-maybe (nth 8 pps))
-	))
+	    (t (general-close--return-complement-char-maybe (nth 8 pps))))
       (setq done t))
-     ;; a command separator may precede closing delimiter
-     ((and
-       ;; (nth 1 pps)
-       (member major-mode general-close--semicolon-separator-modes))
-      (setq done (general-close--semicolon-separator-modes-dispatch orig closer pps)))
-     ((and (not (nth 1 pps)) (member major-mode general-close--colon-separator-modes))
-      (setq general-close-command-separator-char ?\:)
-      (setq done (general-close--handle-separator-modes orig closer)))
-     (closer (setq done (general-close--insert-delimiter-char-maybe orig closer)))
-     (t (setq done (general-close--insert-assignment-maybe (line-beginning-position) general-close-pre-assignment-re))))
+     (closer (setq done (general-close--insert-delimiter-char-maybe orig closer))))
     done))
 
-(defun general-close--comint-send ()
-  (let (done)
-    (comint-send-input)
-    (goto-char (point-max))
-    (setq done t)
-    done))
-
-(defun general-close--insert-and-fixup (strg)
-  (if (eq (char-before) ?\ )
-      (insert (concat strg " "))
-      (insert (concat " " strg " "))))
-
-(defun general-close--insert-assignment-maybe (beg regexp)
-  (let (done)
-    (when (save-excursion
-	    (goto-char beg)
-	    (skip-chars-forward " \t\r\n\f")
-	    (looking-at regexp))
-      (general-close-insert-with-padding-maybe "=")
-      (setq done t))
-    done))
-
-(defun general-close--repeat-type-maybe (beg regexp)
-  (let (done)
-    (when (save-excursion
-	    (skip-chars-backward " \t\r\n\f")
-	    (and (looking-back "->" beg)
-	    (goto-char beg)
-	    (looking-at regexp)))
-      (fixup-whitespace)
-      (if (eq (char-after) ?\ )
-	  (forward-char 1)
-	(insert 32))
-      (insert (match-string-no-properties 2))
-      (setq done t))
-    done))
 
 (defun general-close--comments-intern (orig start end)
   (if (looking-at start)
@@ -594,7 +479,7 @@ When `general-close-insert-with-padding-p' is `t', the default "
 	 (match-end 0))
 	(t (point-min))))
 
-(defun general-close--common (beg pps)
+(defun general-close--common (pps)
   (let ((closer (general-close--fetch-delimiter-maybe pps))
 	done)
     (when closer
@@ -602,19 +487,6 @@ When `general-close-insert-with-padding-p' is `t', the default "
 	(insert closer)
 	(setq done t)))
     done))
-
-(defun general-close--cleanup-inserts ()
-  (skip-chars-backward " \t\r\n\f")
-  (let ((orig (point))
-	(pps (parse-partial-sexp (point-min) (point))))
-    (cond ((eq (char-before) general-close-list-separator-char)
-	   (delete-char -1)
-	   (when (< (point) orig)
-	     (general-close--cleanup-inserts)))
-	  ((and (nth 3 pps)(eq 1 (nth 0 pps))(eq 7 (syntax-class (syntax-after (1- (point))))))
-	   (delete-char -1)
-	   (when (< (point) orig)
-	     (general-close--cleanup-inserts))))))
 
 (defun general-close-fetch-delimiter (pps)
   "In some cases in (nth 3 pps only returns `t'. "
@@ -665,14 +537,10 @@ When `general-close-insert-with-padding-p' is `t', the default "
 	     (setq done t)))
     done))
 
-(defun general-close-python-listclose (list-separator-char closer force pps)
+(defun general-close-python-listclose (closer force pps)
   "If inside list, assume another item first. "
   (let (done)
-    (cond ((and force (eq (char-before) list-separator-char))
-	   (delete-char -1)
-	   (insert closer)
-	   (setq done t))
-	  ((member (char-before) (list ?' ?\"))
+    (cond ((member (char-before) (list ?' ?\"))
 	   (if force
 	       (progn
 		 (insert closer)
@@ -684,10 +552,6 @@ When `general-close-insert-with-padding-p' is `t', the default "
 		 (insert (char-before))
 	       (insert ","))
 	     (setq done t)))
-	  ((eq (char-before) list-separator-char)
-	     (delete-char -1)
-	     (insert closer)
-	   (setq done t))
 	  (t (insert closer)
 	     (setq done t)))
     done))
@@ -705,12 +569,6 @@ When `general-close-insert-with-padding-p' is `t', the default "
      ((and (eq 2 (nth 1 pps)) (looking-back "\\[\\[:[a-z]+" (1- (nth 1 pps))))
       (insert ":")
       (setq done t))
-     ;; ((and (eq 1 (nth 1 pps))
-     ;; 	   (save-excursion
-     ;; 	     (beginning-of-line)
-     ;; 	     (looking-at general-close-emacs-lisp-function-re)))
-     ;;  (general-close-insert-with-padding-maybe "()" nil t)
-     ;;  (setq done t))
      ((save-excursion
 	(skip-chars-backward " \t\r\n\f")
 	(looking-back general-close-emacs-lisp-block-re (line-beginning-position)))
@@ -745,30 +603,6 @@ When `general-close-insert-with-padding-p' is `t', the default "
 	(setq erg (string-to-char erg)))
       erg)))
 
-(defun general-close--raise-symbol-maybe (symbol)
-  "Return the symbol following in asci decimal-values.
-
-If at char `z', follow up with `a'
-If arg SYMBOL is a string, return it unchanged"
-  (cond
-   ((stringp symbol)
-    (cond ((string-match "^[0-9]+$" symbol)
-	   (prin1-to-string (1+ (car (read-from-string symbol)))))
-	  (t symbol)))
-   ((eq 122 symbol)
-    ;; if at char `z', follow up with `a'
-    97)
-   ((eq symbol 90)
-    65)
-   ((and (< symbol 123)(< 96 symbol))
-    (1+ symbol))
-   ((and (< symbol 133)(< 64 symbol))
-    (1+ symbol))
-   ;; raise until number 9
-   ((and (< 47 symbol)(< symbol 57))
-    (1+ symbol))
-   (t (prin1-to-string (1+ (car (read-from-string (char-to-string symbol))))))))
-
 (defun general-close-python-close (closer pps force b-of-st b-of-bl)
   "Might deliver equivalent to `py-dedent'"
   (interactive "*")
@@ -790,7 +624,7 @@ If arg SYMBOL is a string, return it unchanged"
 	     done)
 	(cond
 	 (closer
-	  (setq done (general-close-python-listclose list-separator-char closer force pps)))
+	  (setq done (general-close-python-listclose closer force pps)))
 	 ((and (not (char-equal ?: (char-before)))
 	       (save-excursion
 		 (funcall general-close-beginning-of-statement)
@@ -798,10 +632,7 @@ If arg SYMBOL is a string, return it unchanged"
 	  (insert ":")
 	  (setq done t))
 	 ((and (nth 3 pps)(setq closer (general-close-in-string-maybe))(setq done t))
-	  (insert closer))
-	 (t (eolp)
-	    (ignore-errors (newline-and-indent))
-	    (setq done t)))
+	  (insert closer)))
 	done)
       done)))
 
@@ -857,81 +688,6 @@ If arg SYMBOL is a string, return it unchanged"
 (defun general-closer-forward-sexp-maybe (pos)
   (ignore-errors (forward-sexp))
   (when (< pos (point))(point)))
-
-(defun general-closer-uniq-varlist (&optional beg end pps)
-  "Return a list of variables existing in buffer-substring. "
-  (save-excursion
-    (let* (sorted
-	   (pos (point))
-	   (beg (or beg (ignore-errors (nth 1 pps))
-		    (or (nth 1 pps)
-			(nth 1 (parse-partial-sexp (point-min) (point))))))
-	   (end (or end
-		    (save-excursion
-		      (goto-char beg)
-		      (or (general-closer-forward-sexp-maybe pos))
-			  pos)))
-
-	   (varlist (split-string (buffer-substring-no-properties beg end) "[[:punct:][0-9 \r\n\f\t]" t)))
-      (dolist (elt varlist)
-	(unless (member elt sorted)
-	  (push elt sorted)))
-      (setq sorted (nreverse sorted))
-      sorted)))
-
-(defun general-close-insert-var-in-listcomprh (list-separator-char pps &optional sorted splitpos)
-  ;; which var of sorted to insert?
-  (let* ((sorted sorted)
-	 (splitpos (or splitpos
-		       (save-excursion (and (skip-chars-backward "^|" (line-beginning-position))(eq (char-before) ?|)(1- (point))))
-		       (and (eq (char-before) list-separator-char) (1- (point)))))
-	 done vars-at-point candidate)
-    (if splitpos
-	(progn
-	  (setq vars-at-point
-		(general-closer-uniq-varlist splitpos (line-end-position) pps))
-	  (setq vars-at-point (nreverse vars-at-point))
-	  (setq candidate
-		(if vars-at-point
-		    (cond ((not (or (eq 2 (nth 1 pps))
-				    (eq (length vars-at-point) (length sorted))))
-			   ;; (eq (member (car vars-at-point) sorted)
-			   (nth (length vars-at-point) sorted)))
-		  ;; sorted))
-		  (cond ((looking-back "<-[ \t]*" (line-beginning-position))
-			 "[")
-			((looking-back "|[ \t]*" (line-beginning-position))
-			 (car sorted))
-			((looking-back (char-to-string list-separator-char) (line-beginning-position))
-			 (if (< 1 (length (car sorted)))
-			     (car sorted)
-			   (general-close--raise-symbol-maybe (string-to-char (car sorted)))))
-			(t "<-"))))))
-    (unless done
-      (when candidate
-	;; general-close-list-comprehension-test-16
-	(general-close-insert-with-padding-maybe candidate)
-	(setq done t)))
-    done))
-
-(defun general-close-haskell-close-in-list-comprehension (list-separator-char pps orig)
-  (let ((splitpos
-	 (+ (line-beginning-position)
-	    ;; position in substring
-	    (string-match "|" (buffer-substring-no-properties (line-beginning-position) (point)))))
-	sorted done)
-    (cond ((and splitpos (progn (save-excursion (skip-chars-backward " \t\r\n\f")(eq (char-before) ?\]))))
-	   (skip-chars-backward " \t\r\n\f")
-	   (insert list-separator-char)
-	   (setq done t))
-	  (t (goto-char splitpos)
-	     (skip-chars-backward "^)\[" (line-beginning-position))
-	     (and (eq (char-before) ?\))(forward-char -1))
-	     (setq sorted (general-closer-uniq-varlist nil splitpos (parse-partial-sexp (line-beginning-position) (point))))
-	     (goto-char orig)
-	     (setq done
-		   (general-close-insert-var-in-listcomprh list-separator-char pps sorted splitpos))))
-    done))
 
 (defun general-close-inferior-sml-close ()
   (let (done)
@@ -1040,7 +796,7 @@ If arg SYMBOL is a string, return it unchanged"
     (cond
      ((setq done (general-close--modes pps orig closer force)))
      ((setq done (general-close--others orig closer pps)))
-     ((setq done (general-close--common beg pps))))
+     ((setq done (general-close--common pps))))
     (or (< orig (point)) (and iact verbose (message "%s" "nil")))))
 
 (defun general-close (&optional arg beg force)

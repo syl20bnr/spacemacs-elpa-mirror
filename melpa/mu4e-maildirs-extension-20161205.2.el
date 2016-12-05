@@ -6,7 +6,7 @@
 
 ;; Filename: mu4e-maildirs-extension.el
 ;; Version: 0.1
-;; Package-Version: 20160911.41
+;; Package-Version: 20161205.2
 ;; Author: Andreu Gil Pàmies <agpchil@gmail.com>
 ;; Created: 22-07-2013
 ;; Description: Show mu4e maildirs summary in mu4e-main-view with unread and
@@ -757,13 +757,17 @@ When preceded with `universal-argument':
 (defun mu4e-maildirs-extension-load ()
   "Initialize."
   (mu4e-maildirs-extension-unload)
-  (add-hook 'mu4e-index-updated-hook mu4e-maildirs-extension-index-updated-func)
+  (if (boundp 'mu4e-msg-changed-hook)
+      (add-hook 'mu4e-msg-changed-hook mu4e-maildirs-extension-index-updated-func)
+  (add-hook 'mu4e-index-updated-hook mu4e-maildirs-extension-index-updated-func))
   (add-hook 'mu4e-main-mode-hook mu4e-maildirs-extension-main-view-func))
 
 ;;;###autoload
 (defun mu4e-maildirs-extension-unload ()
   "Initialize."
-  (remove-hook 'mu4e-index-updated-hook mu4e-maildirs-extension-index-updated-func)
+  (if (boundp 'mu4e-msg-changed-hook)
+      (remove-hook 'mu4e-msg-changed-hook mu4e-maildirs-extension-index-updated-func)
+    (remove-hook 'mu4e-index-updated-hook mu4e-maildirs-extension-index-updated-func))
   (remove-hook 'mu4e-main-mode-hook mu4e-maildirs-extension-main-view-func))
 
 ;;;###autoload

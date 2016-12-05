@@ -3,8 +3,8 @@
 ;; Copyright (C) 2016 james sangho nah <microamp@protonmail.com>
 ;;
 ;; Author: james sangho nah <microamp@protonmail.com>
-;; Version: 0.0.8
-;; Package-Version: 20161204.201
+;; Version: 0.0.9
+;; Package-Version: 0.0.9
 ;; Keywords: go golang refactoring
 ;; Homepage: https://github.com/microamp/godoctor.el
 
@@ -116,10 +116,15 @@
     (unless symbol
       (error "No symbol at point"))
     (let* ((compilation-buffer "*godoctor rename*")
-           (offset (point))
            (new-name (symbol-name symbol))
            (len (length new-name))
-           (pos (format "%d,%d" offset len))
+           (startrow (line-number-at-pos))
+           (startcol (current-column))
+           (endrow startrow)
+           (endcol (+ startcol (- len 1)))
+           (pos (format "%d,%d:%d,%d"
+                        startrow startcol
+                        endrow endcol))
            (new-name (read-string "New name: " new-name))
            (cmd (godoctor-rename-cmd pos new-name dry-run)))
       (godoctor--execute-command compilation-buffer cmd dry-run))))
