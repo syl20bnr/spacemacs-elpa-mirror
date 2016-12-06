@@ -4,8 +4,8 @@
 
 ;; Author: Hrvoje Niksic <hniksic@gmail.com>
 ;; Keywords: hypermedia, extensions
-;; Package-Version: 20161204.517
-;; Version: 1.49
+;; Package-Version: 20161205.1201
+;; Version: 1.50
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by

@@ -72,6 +72,7 @@
    `isearchp-set-region-around-search-target',
    `isearchp-show-filters' (Emacs 24.4+),
    `isearchp-toggle-auto-save-filter-predicate' (Emacs 24.4+),
+   `isearchp-toggle-dimming-filter-failures' (Emacs 24.4+),
    `isearchp-toggle-lazy-highlight-cleanup' (Emacs 22+),
    `isearchp-toggle-lazy-highlighting' (Emacs 22+),
    `isearchp-toggle-literal-replacement' (Emacs 22+),
@@ -96,6 +97,7 @@
    `isearchp-drop-mismatch-regexp-flag',
    `isearchp-filter-predicates-alist' (Emacs 24.4+),
    `isearchp-initiate-edit-commands' (Emacs 22+),
+   `isearchp-lazy-dim-filter-failures-flag' (Emacs 24.4+),
    `isearchp-mouse-2-flag', `isearchp-movement-unit-alist' (Emacs
    24.4+), `isearchp-on-demand-action-function' (Emacs 22+),
    `isearchp-prompt-for-filter-name' (Emacs 24.4+),
@@ -170,6 +172,7 @@
    `isearchp-in-lazy-highlight-update-p' (Emacs 24.3+),
    `isearchp-last-non-nil-invisible',
    `isearchp-last-quit-regexp-search', `isearchp-last-quit-search',
+   `isearchp-lazy-highlight-face' (Emacs 24.4+),
    `isearchp-nomodify-action-hook' (Emacs 22+),
    `isearchp-noprompt-action-function',
    `isearchp-orig-ring-bell-fn', `isearchp-pref-arg',
@@ -441,6 +444,21 @@ Overview of Features ---------------------------------------------
    updated option value is NOT saved, however.  If you want to save
    your additions to it for future Emacs sessions sessions then use
    `M-x customize-option isearchp-filter-predicates-alist'.
+
+   If option `isearchp-lazy-dim-filter-failures-flag' is non-nil
+   then search hits that are skipped because they are removed by
+   filtering are nevertheless lazy-highlighted, but using a face
+   that dims the background.  You can toggle this highlighting of
+   filter-failure search hits using `M-s h d' (command
+   `isearchp-toggle-dimming-filter-failures').
+
+   The dimming face for this is hard-coded as having background
+   color #9abfca, unless you also use library `isearch-prop.el'
+   (recommended).  If you use `isearch-prop.el' then you can
+   control the dimming color using option `isearchp-dimming-color'.
+   It specifies a given background color to use always, or it
+   specifies that the current background color is to be dimmed a
+   given amount.
 
  * Case-sensitivity is indicated in the mode line minor-mode
    lighter: `ISEARCH' for case-insensitive; `Isearch' for
