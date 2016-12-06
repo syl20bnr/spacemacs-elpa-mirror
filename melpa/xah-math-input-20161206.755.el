@@ -2,9 +2,9 @@
 
 ;; Copyright © 2010-2015 by Xah Lee
 
-;; Author: Xah Lee ( http://xahlee.org/ )
+;; Author: Xah Lee ( http://xahlee.info/ )
 ;; Version: 2.1.6
-;; Package-Version: 20160711.1326
+;; Package-Version: 20161206.755
 ;; Created: 08 Dec 2010
 ;; Keywords: abbrev, convenience, unicode, math, LaTex
 ;; URL: http://ergoemacs.org/emacs/xmsi-math-symbols-input.html
@@ -296,6 +296,8 @@
   ["¬_¬" "😒"]
   ["meh" "😒"]
 
+  ["obj" "￼"]
+
   [":o" "😮"]
   [":O" "😲"]
 
@@ -343,7 +345,8 @@
 
   ["undo" "⎌"] ["redo" "↷"]
 
-  ["delete" "⌫"] ["dell" "⌫"] ["delr" "⌦"]
+  ["backspace" "⌫"]
+  ["delete" "⌦"]
 
   ["space" "␣"]
 

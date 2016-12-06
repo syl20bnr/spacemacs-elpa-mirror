@@ -2,7 +2,7 @@
 
 ;; Author: Zach Massia <zmassia@gmail.com>
 ;; URL: https://github.com/zachmassia/platformio-mode
-;; Package-Version: 20161205.1437
+;; Package-Version: 20161206.636
 ;; Version: 0.1.0
 ;; Package-Requires: ((projectile "0.13.0"))
 
@@ -123,7 +123,7 @@
   (interactive "P")
   (platformio--run "-t clean" arg))
 
-(defun platformio-update (arg)
+(defun platformio-update ()
   "Update installed PlatformIO libraries."
   (interactive)
   (platformio--exec "update"))

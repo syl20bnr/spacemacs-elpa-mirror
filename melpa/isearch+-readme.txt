@@ -324,7 +324,7 @@ Overview of Features ---------------------------------------------
        (unless isearchp-in-lazy-highlight-update-p (crosshairs))
        t)  ; Return non-nil always - no real filtering.
 
-   The side-effect producing call to function `crosshairs' is
+   The side-effect-producing call to function `crosshairs' is
    guarded by variable `isearchp-in-lazy-highlight-update-p' here,
    so that it is invoked only when the cursor is moved to a search
    hit, not also when lazy highlighting is performed.  (Filtering
@@ -401,6 +401,13 @@ Overview of Features ---------------------------------------------
      The default option value includes units character, word, sexp,
      list, and sentence.
 
+     You can also use functions `isearch-near-predicate',
+     `isearchp-near-before-predicate', and
+     `isearchp-near-before-predicate' to define your own nearness
+     predicates, which incorporate particular patterns and
+     distances. You can then simply add such a predicate using `C-z
+     &' (no prompting for pattern or distance).
+
    When you use one of the commands that adds a filter predicate as
    advice to `isearch-filter-predicate' you can be prompted for two
    things: (1) a short name for the predicate and (2) text to add
@@ -445,7 +452,7 @@ Overview of Features ---------------------------------------------
    your additions to it for future Emacs sessions sessions then use
    `M-x customize-option isearchp-filter-predicates-alist'.
 
-   If option `isearchp-lazy-dim-filter-failures-flag' is non-nil
+   If option `isearchp-lazy-dim-filter-failures-flag' is non-`nil'
    then search hits that are skipped because they are removed by
    filtering are nevertheless lazy-highlighted, but using a face
    that dims the background.  You can toggle this highlighting of

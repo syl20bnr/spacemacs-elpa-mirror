@@ -5,8 +5,9 @@
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 26 Oct 2015
 ;; Version: 0.0.1
-;; Package-Version: 20160822.701
-;; Keywords: file recentf after-init-hook
+;; Package-Version: 20161206.645
+;; Homepage: https://github.com/zonuexe/init-open-recentf.el
+;; Keywords: files recentf after-init-hook
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -37,7 +38,7 @@
 ;;
 ;;   (init-open-recentf)
 ;;
-;; `init-open-recentf' supports the following frameworks: helm, ido, anything (and the default emacs setup without those frameworks).
+;; `init-open-recentf' supports the following frameworks: helm, ido, anything (and the default Emacs setup without those frameworks).
 ;;  The package determines the frameworks from your environment, but you can also indicate it explicitly.
 ;;
 ;;   (setq init-open-recentf-interface 'ido)
@@ -69,6 +70,7 @@
   :type '(radio (const :tag "Use ido interface" 'ido)
                 (const :tag "Use helm interface" 'helm)
                 (const :tag "Use anything interface" 'anything)
+                (const :tag "Use Ivy/counsel interface" 'counsel)
                 (const :tag "Use Emacs default (recentf-open-files)" 'default)
                 (const :tag "Select automatically" 'nil))
   :group 'init-open-recentf)
@@ -94,6 +96,7 @@
       (cond
        ((and (boundp 'helm-mode) helm-mode) 'helm)
        ((and (boundp 'ido-mode) ido-mode) 'ido)
+       ((and (boundp 'counsel-mode) counsel-mode) 'counsel)
        ((fboundp 'anything-recentf) 'anything)
        (:else 'default))))
 
@@ -104,6 +107,7 @@
     (cl-case (init-open-recentf-interface)
       ((helm) (helm-recentf))
       ((ido) (find-file (ido-completing-read "Find recent file: " recentf-list)))
+      ((counsel) (counsel-recentf))
       ((anything) (anything-recentf))
       ((default) (recentf-open-files)))))
 
