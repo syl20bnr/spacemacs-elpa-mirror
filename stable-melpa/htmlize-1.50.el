@@ -4,7 +4,7 @@
 
 ;; Author: Hrvoje Niksic <hniksic@gmail.com>
 ;; Keywords: hypermedia, extensions
-;; Package-Version: 20161205.1201
+;; Package-Version: 1.50
 ;; Version: 1.50
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -92,7 +92,7 @@
   (defvar font-lock-support-mode)
   (defvar global-font-lock-mode))
 
-(defconst htmlize-version "1.48")
+(defconst htmlize-version "1.50")
 
 (defgroup htmlize nil
   "Convert buffer text and faces to HTML."

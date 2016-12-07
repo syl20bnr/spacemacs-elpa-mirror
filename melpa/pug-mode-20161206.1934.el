@@ -13,7 +13,7 @@
 ;; Created: February 18, 2016
 ;; Modified: September 15, 2016
 ;; Version: 1.0.4
-;; Package-Version: 20160915.252
+;; Package-Version: 20161206.1934
 ;; Homepage: https://github.com/hlissner/emacs-pug-mode
 ;; Keywords: markup, language, jade, pug
 ;; Package-Requires: ((cl-lib "0.5"))
@@ -63,7 +63,7 @@ line could be nested within this line.")
              "div" "dl" "dt" "em" "embed" "fieldset" "figure" "font" "footer"
              "form" "frame" "frameset" "h1" "h2" "h3" "h4" "h5" "h6" "head"
              "header" "hgroup" "hr" "html" "i" "iframe" "img" "input" "ins"
-             "keygen" "kbd" "label" "legend" "li" "link" "map" "mark" "menu"
+             "keygen" "kbd" "label" "legend" "li" "link" "map" "main" "mark" "menu"
              "meta" "meter" "nav" "noframes" "noscript" "object" "ol" "optgroup"
              "option" "output" "p" "param" "pre" "progress" "q" "rp" "rt" "ruby"
              "s" "samp" "script" "section" "select" "small" "source" "span"
@@ -84,8 +84,8 @@ line could be nested within this line.")
 (defconst pug-control-re
   (concat "^ *\\(- \\)?\\("
           (regexp-opt
-           '("if" "unless" "while" "until" "else" "for" "begin" "elsif" "when"
-             "default" "case" "var'"
+           '("if" "unless" "while" "until" "else" "for" "each" "in" "begin" 
+             "elsif" "when" "default" "case" "var'"
 
              "extends" "block" "mixin"
              ) 'words)
@@ -147,8 +147,8 @@ line could be nested within this line.")
     ("[^a-z]\\('[^'\n]*'\\)"
      1 font-lock-string-face append)
     ;; Double quoted string
-    ;; ("\\(\"[^\"]*\"\\)"
-    ;;  1 font-lock-string-face append)
+    ("\\(\"[^\"]*\"\\)"
+     1 font-lock-string-face append)
 
     ;; plain text block
     (,(pug-nested-re "[\\.#+a-z][^ \t]*\\(?:(.+)\\)?\\(\\.\\)")
@@ -170,8 +170,9 @@ line could be nested within this line.")
      (3 font-lock-string-face))
 
     ;; attributes
+    ;; FIXME Doesn't take inline js or multiline attributes into account
     ("[a-z0-9-_]("
-     ("\\(?:(\\|,\\s-*\\)\\([[:alnum:]_-]+\\)\\(\\s-*=\\s-*\\('[^']+'\\|\"[^\"]+\"\\|[^,]+\\)\\)?"
+     ("\\(?:(\\|,?\\s-*\\)\\([[:alnum:]_-]+\\)\\(\\s-*=\\s-*\\('[^']+'\\|\"[^\"]+\"\\)\\)?"
       (backward-char) (forward-char)
       (1 font-lock-constant-face)))
 

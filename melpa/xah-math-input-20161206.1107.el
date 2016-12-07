@@ -3,8 +3,8 @@
 ;; Copyright © 2010-2015 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.1.6
-;; Package-Version: 20161206.755
+;; Version: 2.2.0
+;; Package-Version: 20161206.1107
 ;; Created: 08 Dec 2010
 ;; Keywords: abbrev, convenience, unicode, math, LaTex
 ;; URL: http://ergoemacs.org/emacs/xmsi-math-symbols-input.html
@@ -19,7 +19,14 @@
 
 ;; A minor mode for inputing math symbols and Unicode symbols.
 
-;; Call xah-math-input-mode to toggle on/off.
+;; Call `global-xah-math-input-mode' to toggle on/off for all buffers.
+;; Call `xah-math-input-mode' to toggle on/off for current buffer.
+
+;; In lisp code:
+;; (global-xah-math-input-mode 1) ; turn on globally
+;; (global-xah-math-input-mode 0) ; turn off globally
+;; (xah-math-input-mode 1) or (xah-math-input-mode-on) ; turn on for current buffer
+;; (xah-math-input-mode 0) or (xah-math-input-mode-off) ; turn off for current buffer
 
 ;; Type “inf”, then press 【Shift+Space】 `xah-math-input-change-to-symbol', then it becomes “∞”.
 ;; Other examples:
@@ -38,8 +45,6 @@
 
 ;;; Install:
 
-;; Open the file, then type 【Alt+x eval-buffer】. That's it.
-
 ;; Manual install.
 ;; To have emacs automatically load the file when it restarts, follow these steps:
 
@@ -47,7 +52,7 @@
 
 ;; Put the following lines in your emacs init file:
 ;; (add-to-list 'load-path "~/.emacs.d/lisp/")
-;; (xah-math-input-mode 1) ; activate the mode.
+;; (global-xah-math-input-mode 1) ; activate the mode globally
 
 ;; References
 ;; http://xahlee.info/comp/unicode_index.html
@@ -758,6 +763,21 @@ See also: `xah-math-input-mode'."
         (user-error "「%s」 no match found for that abbrev/input. Call “xah-math-input-list-math-symbols” for a list. Or use a decimal e.g. 「945」 or hexadecimal e.g. 「x3b1」, or full Unicode name e.g. 「greek small letter alpha」."  inputStr)))))
 
 ;;;###autoload
+(define-globalized-minor-mode global-xah-math-input-mode xah-math-input-mode xah-math-input-mode-on)
+
+;;;###autoload
+(defun xah-math-input-mode-on ()
+  "Turn on `xah-math-input-mode' in current buffer."
+  (interactive)
+  (xah-math-input-mode 1))
+
+;;;###autoload
+(defun xah-math-input-mode-off ()
+  "Turn off `xah-math-input-mode' in current buffer."
+  (interactive)
+  (xah-math-input-mode 0))
+
+;;;###autoload
 (define-minor-mode xah-math-input-mode
   "Toggle xah-math-input minor mode.
 
@@ -800,7 +820,7 @@ part of Emacs 23)
 
 Home page at: URL `http://ergoemacs.org/emacs/xah-math-input-math-symbols-input.html'"
   nil
-  :global t
+  :global nil
   :lighter " ∑"
   :keymap xah-math-input-keymap
   )

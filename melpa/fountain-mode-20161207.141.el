@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 20161206.226
+;; Package-Version: 20161207.141
 ;; Version: 2.3.0
 ;; Package-Requires: ((emacs "24.4"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -3475,13 +3475,13 @@ scene number from being auto-upcased.."
 
 (defvar fountain-font-lock-keywords-plist
   (backquote
-   (;; Section Heading
+   (;; Section Headings
     (,fountain-section-heading-regexp
      ((:level 2 :subexp 0 :face fountain-section-heading
               :invisible section-heading)
       (:level 2 :subexp 2 :face fountain-non-printing
               :override t))
-     ,fountain-align-scene-heading)
+     fountain-align-scene-heading)
     ;; Scene Headings
     ((lambda (limit)
        (fountain-match-element 'fountain-match-scene-heading limit))
@@ -3504,7 +3504,7 @@ scene number from being auto-upcased.."
               :invisible fountain-syntax-chars
               :override append
               :laxmatch t))
-     ,fountain-align-scene-heading)
+     fountain-align-scene-heading)
     ;; Character
     ((lambda (limit)
        (fountain-match-element 'fountain-match-character limit))
@@ -3516,19 +3516,19 @@ scene number from being auto-upcased.."
       (:level 3 :subexp 5 :face highlight
               :override append
               :laxmatch t))
-     ,fountain-align-character)
+     fountain-align-character)
     ;; Parenthetical
     ((lambda (limit)
        (fountain-match-element 'fountain-match-paren limit))
      ((:level 3 :subexp 0 :face fountain-paren
               :invisible paren))
-     ,fountain-align-paren)
+     fountain-align-paren)
     ;; Dialog
     ((lambda (limit)
        (fountain-match-element 'fountain-match-dialog limit))
      ((:level 3 :subexp 0 :face fountain-dialog
               :invisible lines))
-     ,fountain-align-dialog)
+     fountain-align-dialog)
     ;; Transition
     ((lambda (limit)
        (fountain-match-element 'fountain-match-trans limit))
@@ -3538,7 +3538,7 @@ scene number from being auto-upcased.."
               :invisible fountain-syntax-chars
               :override t
               :laxmatch t))
-     ,fountain-align-trans)
+     fountain-align-trans)
     ;; Center text
     (,fountain-center-regexp
      ((:level 2 :subexp 2 :face fountain-comment
@@ -3549,7 +3549,7 @@ scene number from being auto-upcased.."
       (:level 2 :subexp 4 :face fountain-comment
               :invisible fountain-syntax-chars
               :override t))
-     ,fountain-align-center)
+     fountain-align-center)
     ;; Page-break
     (,fountain-page-break-regexp
      ((:level 2 :subexp 0 :face fountain-page-break
@@ -3564,7 +3564,7 @@ scene number from being auto-upcased.."
       (:level 2 :subexp 2 :face fountain-comment
               :invisible fountain-syntax-chars
               :override t))
-     ,fountain-align-synopsis)
+     fountain-align-synopsis)
     ;; Notes
     (,fountain-note-regexp
      ((:level 2 :subexp 0 :face fountain-note
@@ -3587,7 +3587,7 @@ scene number from being auto-upcased.."
               :invisible fountain-syntax-chars
               :override t
               :laxmatch t))
-     ,fountain-align-action)
+     fountain-align-action)
     ;; Non-breaking space
     (,fountain-nbsp-regexp
      ((:level 1 :subexp 2 :face fountain-non-printing
@@ -3739,9 +3739,9 @@ keywords suitable for Font Lock."
     (dolist (var fountain-font-lock-keywords-plist keywords)
       (let ((matcher (car var))
             (plist-list (nth 1 var))
-            (align (fountain-get-align (nth 2 var)))
+            (align (fountain-get-align (symbol-value (nth 2 var))))
             align-props facespec)
-        (if (and fountain-align-elements align)
+        (if (and align fountain-align-elements)
             (setq align-props (backquote (line-prefix (space :align-to ,align)
                                           wrap-prefix (space :align-to ,align)))))
         (dolist (var plist-list)

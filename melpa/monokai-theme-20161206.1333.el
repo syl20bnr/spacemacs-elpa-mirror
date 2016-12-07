@@ -4,8 +4,8 @@
 
 ;; Author: Kelvin Smith <oneKelvinSmith@gmail.com>
 ;; URL: http://github.com/oneKelvinSmith/monokai-emacs
-;; Package-Version: 20161204.454
-;; Version: 3.1.0
+;; Package-Version: 20161206.1333
+;; Version: 3.2.0
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -315,10 +315,8 @@ Also affects 'linum-mode' background."
       (,monokai-256-class  (:foreground ,monokai-256-comments))))
 
    `(font-lock-comment-face
-     ((,monokai-class (:foreground ,monokai-comments
-                                   :background ,monokai-background))
-      (,monokai-256-class  (:foreground ,monokai-256-comments
-                                        :background ,monokai-256-background))))
+     ((,monokai-class (:foreground ,monokai-comments))
+      (,monokai-256-class  (:foreground ,monokai-256-comments))))
 
    `(font-lock-constant-face
      ((,monokai-class (:foreground ,monokai-violet))
@@ -4132,13 +4130,13 @@ Also affects 'linum-mode' background."
 
    `(org-block
      ((,monokai-class (:foreground ,monokai-emphasis
-                                   :background ,monokai-gray))
+                                   :background ,monokai-highlight-alt))
       (,monokai-256-class  (:foreground ,monokai-256-emphasis
-                                        :background ,monokai-256-gray))))
+                                        :background ,monokai-256-highlight-alt))))
 
    `(org-block-background
-     ((,monokai-class (:background ,monokai-gray))
-      (,monokai-256-class  (:background ,monokai-256-gray))))
+     ((,monokai-class (:background ,monokai-highlight-alt))
+      (,monokai-256-class  (:background ,monokai-256-highlight-alt))))
 
    `(org-block-begin-line
      ((,monokai-class (:foreground ,monokai-comments

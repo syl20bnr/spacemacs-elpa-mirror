@@ -1,12 +1,12 @@
-;;; eshell-z.el --- cd to frequent directory in eshell
+;;; eshell-z.el --- cd to frequent directory in eshell  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2015  Chunyang Xu
+;; Copyright (C) 2015, 2016  Chunyang Xu
 
-;; Author: Chunyang Xu <xuchunyang56@gmail.com>
+;; Author: Chunyang Xu <mail@xuchunyang.me>
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 20151110.2046
+;; Package-Version: 0.3.1
 ;; Keywords: convenience
-;; Version: 0.2.1
+;; Version: 0.3.1
 ;; Homepage: https://github.com/xuchunyang/eshell-z
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -52,12 +52,22 @@
 ;;      z -t foo      cd to most recently accessed dir matching foo
 ;;      z -l foo      list all dirs matching foo (by frecency)
 ;;
+;; Install:
+;;
+;; You can install this package from Melpa and Melpa-stable with package.el,
+;; that is, ~M-x package-install RET eshell-z RET~. Or you can also install it
+;; manually by add eshell-z.el to your `load-path', something like
+;;
+;;   (add-to-list 'load-path "path/to/eshell-z.el")
+;;
 ;; Setup:
 ;;
 ;; To use this package, add following code to your init.el or .emacs
 ;;
-;;   (require 'eshell-z)
-;;
+;;   (add-hook 'eshell-mode-hook
+;;             (defun my-eshell-mode-hook ()
+;;               (require 'eshell-z)))
+
 
 ;;; Code:
 
@@ -222,8 +232,6 @@ If it is nil, the freq-dir-hash-table will not be written to disk."
             (eshell-z--write-freq-dir-hash-table))
         (setq eshell-z--remove-p nil))))
 
-;; FIXME: It seems making these hook (and above global variables) be buffer-local
-;; is more elegant, but I don't know how for now.
 (add-hook 'eshell-post-command-hook #'eshell-z--add)
 (add-hook 'eshell-post-command-hook #'eshell-z--remove 'append)
 
@@ -255,9 +263,18 @@ Base on frequency and time."
         (format "%-10d" result)
       (format "%-10.1f" result))))
 
-;;; TODO: DRY
+(defun eshell-z--ensure-hash-table ()
+  "Ensure `eshell-z-freq-dir-hash-table' is a hash table, not nil."
+  (unless eshell-z-freq-dir-hash-table
+    (if eshell-z-freq-dir-hash-table-file-name
+        (eshell-z--read-freq-dir-hash-table)))
+
+  (unless eshell-z-freq-dir-hash-table
+    (setq eshell-z-freq-dir-hash-table (make-hash-table :test 'equal))))
+
 (defun eshell/z (&rest args)
   "cd to frequent directory in eshell."
+  (eshell-z--ensure-hash-table)
   (eshell-eval-using-options
    "z" args
    '((?c "current" nil current
@@ -362,7 +379,9 @@ Base on frequency and time."
   "Switch to eshell and change directory to DIR."
   (interactive
    (list (let ((paths
-                (sort (eshell-z--hash-table-values eshell-z-freq-dir-hash-table)
+                (sort (progn
+                        (eshell-z--ensure-hash-table)
+                        (eshell-z--hash-table-values eshell-z-freq-dir-hash-table))
                       (lambda (elt1 elt2)
                         (> (eshell-z--frecent elt1)
                            (eshell-z--frecent elt2))))))
@@ -372,9 +391,12 @@ Base on frequency and time."
                      (goto-char (point-max))
                      (insert
                       (format "cd '%s'" dir))
-                     (eshell-send-input))))
-    (if (get-buffer "*eshell*")
-        (switch-to-buffer "*eshell*")
+                     (eshell-send-input)))
+        (eshell-buffer (if (eq major-mode 'eshell-mode)
+                           (buffer-name)
+                         "*eshell*")))
+    (if (get-buffer eshell-buffer)
+        (switch-to-buffer eshell-buffer)
       (call-interactively 'eshell))
     (unless (get-buffer-process (current-buffer))
       (funcall cd-eshell))))
