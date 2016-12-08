@@ -4,7 +4,7 @@
 
 ;; Author: Marian Schubert <marian.schubert@gmail.com>
 ;; URL: http://github.com/maio/eink-emacs
-;; Package-Version: 20161111.854
+;; Package-Version: 20161207.410
 ;; Version: 1.0
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -102,6 +102,7 @@
    `(org-block ((t (:foreground ,fg))))
    `(org-block-begin-line ((t (:foreground ,fg-light))))
    `(org-block-end-line ((t (:foreground ,fg-light))))
+   `(org-verbatim ((t (:foreground ,fg :weight semi-bold))))
    `(org-date ((t (:foreground ,fg) :underline)))
    `(org-done ((t (:foreground ,fg-light))))
    `(org-hide ((t (:foreground ,bg))))

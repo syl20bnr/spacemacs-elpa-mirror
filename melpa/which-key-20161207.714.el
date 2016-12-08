@@ -4,7 +4,7 @@
 
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-which-key
-;; Package-Version: 20161205.1129
+;; Package-Version: 20161207.714
 ;; Version: 1.1.15
 ;; Keywords:
 ;; Package-Requires: ((emacs "24.3"))
@@ -203,7 +203,8 @@ pattern for matching command names and use
 `which-key-highlighted-command-face' for any matching names. If
 the element is a cons cell, it should take the form (regexp .
 face to apply)."
-  :group 'which-key)
+  :group 'which-key
+  :type  '(repeat (choice string (cons regexp face))))
 
 (defcustom which-key-special-keys '()
   "These keys will automatically be truncated to one character

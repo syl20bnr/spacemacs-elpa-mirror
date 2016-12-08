@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20161207.221
+;; Package-Version: 20161207.331
 ;; Version: 0.8.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.8.0"))
 ;; Keywords: completion, matching
@@ -2726,10 +2726,10 @@ the same problem."
 ;;** `counsel-colors-emacs'
 (ivy-set-actions
  'counsel-colors-emacs
- '(("n" counsel-color-action-insert-name "insert color name")
-   ("h" counsel-color-action-insert-hex "insert color hexadecimal value")
-   ("N" counsel-color-action-kill-name "kill color name")
-   ("H" counsel-color-action-kill-hex "kill color hexadecimal value")))
+ '(("n" counsel-colors-action-insert-name "insert color name")
+   ("h" counsel-colors-action-insert-hex "insert color hexadecimal value")
+   ("N" counsel-colors-action-kill-name "kill color name")
+   ("H" counsel-colors-action-kill-hex "kill color hexadecimal value")))
 
 (defvar counsel-colors-emacs-history nil
   "History for `counsel-colors-emacs'.")
