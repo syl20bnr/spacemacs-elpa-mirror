@@ -4,7 +4,7 @@
 ;;
 ;; Author:     Rustem Muslimov <r.muslimov@gmail.com>
 ;; Version:    0.8.0
-;; Package-Version: 20161018.858
+;; Package-Version: 20161207.2252
 ;; Keywords:   github, gitlab, bitbucket, convenience
 ;; Package-Requires: ((f "0.17.2") (s "1.9.0") (cl-lib "0.5"))
 
@@ -91,9 +91,10 @@ When nil, uses the commit hash. The contents will never change."
   "Return (REMOTE-URL . REF) which contains FILENAME.
 Returns nil if no appropriate remote or ref can be found."
   (let ((local-branch (browse-at-remote--get-local-branch))
-        (revision (if (fboundp 'vc-git--symbolic-ref)
-                           (vc-git--symbolic-ref (or filename "."))
-                         (vc-git-working-revision (or filename "."))))
+        (revision (if (and (fboundp 'vc-git--symbolic-ref)
+                           browse-at-remote-prefer-symbolic)
+                      (vc-git--symbolic-ref (or filename "."))
+                    (vc-git-working-revision (or filename "."))))
         remote-branch
         remote-name)
     ;; If we're on a branch, try to find a corresponding remote

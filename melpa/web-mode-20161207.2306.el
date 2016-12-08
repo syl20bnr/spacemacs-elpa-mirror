@@ -4,7 +4,7 @@
 ;; Copyright 2011-2016 François-Xavier Bois
 
 ;; Version: 14.0.31
-;; Package-Version: 20161203.834
+;; Package-Version: 20161207.2306
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; URL: http://web-mode.org
@@ -4028,7 +4028,7 @@ another auto-completion with different ac-sources (e.g. ac-php)")
               (setq element-content-type "jsx"))
              ((string-match-p " type[ ]*=[ ]*[\"']text/\\(markdown\\|template\\)" script)
               (setq element-content-type "markdown"))
-             ((string-match-p " type[ ]*=[ ]*[\"']text/\\(x-handlebars\\|x-jquery-tmpl\\|html\\|ng-template\\|template\\|mustache\\|x-dust-template\\)" script)
+             ((string-match-p " type[ ]*=[ ]*[\"']text/\\(x-handlebars\\|x-jquery-tmpl\\|x-jsrender\\|html\\|ng-template\\|template\\|mustache\\|x-dust-template\\)" script)
               (setq element-content-type "html"
                     part-close-tag nil))
              ((string-match-p " type[ ]*=[ ]*[\"']application/\\(ld\\+json\\|json\\)" script)
@@ -5955,7 +5955,7 @@ another auto-completion with different ac-sources (e.g. ac-php)")
       (setq plist (list :background str
                         :foreground (web-mode-colorize-foreground str)))
       (put-text-property beg end 'face plist))
-     ((string= (substring str 0 4) "rgb(")
+     ((or (string= (substring str 0 4) "rgb(") (string= (substring str 0 5) "rgba("))
       (setq str (format "#%02X%02X%02X"
                         (string-to-number (match-string-no-properties 1))
                         (string-to-number (match-string-no-properties 2))
