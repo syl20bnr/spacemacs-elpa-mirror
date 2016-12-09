@@ -1,5 +1,5 @@
 ;;; dockerfile-mode.el --- Major mode for editing Docker's Dockerfiles
-;; Package-Version: 20160128.951
+;; Package-Version: 20161208.656
 
 ;; Copyright (c) 2013 Spotify AB
 ;;
@@ -35,6 +35,14 @@
 
 (defcustom dockerfile-use-sudo nil
   "Runs docker builder command with sudo.")
+
+(defcustom dockerfile-build-args nil
+  "List of --build-arg to pass to docker build.
+
+Each element of the list will be passed as a separate
+ --build-arg to the docker build command."
+  :type '(repeat string)
+  :group 'dockerfile)
 
 (defvar dockerfile-font-lock-keywords
   `(,(cons (rx (or line-start "onbuild ")
@@ -81,6 +89,11 @@
 (unless dockerfile-mode-abbrev-table
   (define-abbrev-table 'dockerfile-mode-abbrev-table ()))
 
+(defun dockerfile-build-arg-string ()
+  "Create a --build-arg string for each element in `dockerfile-build-args'."
+  (mapconcat (lambda (arg) (concat "--build-arg " "\"" arg "\""))
+             dockerfile-build-args " "))
+
 ;;;###autoload
 (defun dockerfile-build-buffer (image-name)
   "Build an image based upon the buffer"
@@ -91,7 +104,7 @@
   (save-buffer)
   (if (stringp image-name)
       (async-shell-command
-       (format "%sdocker build -t %s -f \"%s\" \"%s\"" (if dockerfile-use-sudo "sudo " "") image-name (buffer-file-name) (file-name-directory (buffer-file-name)))
+       (format "%sdocker build -t %s %s -f \"%s\" \"%s\"" (if dockerfile-use-sudo "sudo " "") image-name (dockerfile-build-arg-string) (buffer-file-name) (file-name-directory (buffer-file-name)))
        "*docker-build-output*")
     (print "docker-image-name must be a string, consider surrounding it with double quotes")))
 
@@ -105,7 +118,7 @@
   (save-buffer)
   (if (stringp image-name)
       (async-shell-command
-       (format "%s docker build --no-cache -t %s -f \"%s\" \"%s\"" (if dockerfile-use-sudo "sudo" "") image-name (buffer-file-name) (file-name-directory (buffer-file-name)))
+       (format "%s docker build --no-cache -t %s %s -f \"%s\" \"%s\"" (if dockerfile-use-sudo "sudo" "") image-name (dockerfile-build-arg-string) (buffer-file-name) (file-name-directory (buffer-file-name)))
        "*docker-build-output*")
     (print "docker-image-name must be a string, consider surrounding it with double quotes")))
 

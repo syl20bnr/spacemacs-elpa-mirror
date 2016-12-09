@@ -13,7 +13,7 @@
 ;; Created: February 18, 2016
 ;; Modified: September 15, 2016
 ;; Version: 1.0.4
-;; Package-Version: 20161206.1934
+;; Package-Version: 20161208.2016
 ;; Homepage: https://github.com/hlissner/emacs-pug-mode
 ;; Keywords: markup, language, jade, pug
 ;; Package-Requires: ((cl-lib "0.5"))
@@ -75,7 +75,7 @@ line could be nested within this line.")
 (defconst pug-selfclosing-tags-re
   (concat "^ *"
           (regexp-opt
-           '("meta" "title" "img" "area" "base" "br" "col" "command" "embed"
+           '("meta" "img" "area" "base" "br" "col" "command" "embed"
              "hr" "input" "link" "param" "source" "track" "wbr") t)))
 
 (defconst pug-keywords-re
@@ -142,7 +142,9 @@ line could be nested within this line.")
     ;; block keywords
     (,pug-control-re
      (2 font-lock-keyword-face append))
-
+    ;; "in" keyword in "each" statement
+    ("each\\s-+\\w*\\s-+\\(in\\)" (1 font-lock-keyword-face))
+    
     ;; Single quote string
     ("[^a-z]\\('[^'\n]*'\\)"
      1 font-lock-string-face append)

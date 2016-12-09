@@ -1,7 +1,7 @@
 ;;; copy-as-format.el --- Copy buffer locations as GitHub/Slack/JIRA/HipChat/... formatted text
 
 ;; Author: Skye Shaw <skye.shaw@gmail.com>
-;; Package-Version: 20161207.1811
+;; Package-Version: 20161208.2152
 ;; Package-X-Original-Version: 0.0.1
 ;; Keywords: github, slack, jira, hipchat, gitlab, bitbucket, tools, convenience
 ;; URL: https://github.com/sshaw/copy-as-format
@@ -61,7 +61,7 @@
 
 (defun copy-as-format--extract-text ()
   (if (not (use-region-p))
-      (buffer-substring (line-beginning-position) (line-end-position))
+      (buffer-substring-no-properties (line-beginning-position) (line-end-position))
     ;; Avoid adding an extra blank line to the selection. This happens when point or mark
     ;; is at the start of the next line.
     ;;
@@ -72,7 +72,7 @@
     (let ((end (region-end)))
       (when (= end (line-beginning-position))
         (setq end (1- end)))
-      (buffer-substring (region-beginning) end))))
+      (buffer-substring-no-properties (region-beginning) end))))
 
 (defun copy-as-format--disqus (text multiline)
   (format "<pre><code class='%s'>\n%s\n</code></pre>\n"

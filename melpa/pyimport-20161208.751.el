@@ -5,7 +5,7 @@
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Created: 25 Jun 2016
 ;; Version: 1.1
-;; Package-Version: 20160705.1444
+;; Package-Version: 20161208.751
 ;; Package-Requires: ((dash "2.8.0") (s "1.9.0"))
 ;;; Commentary:
 
@@ -142,7 +142,7 @@ Dumb: just scans open Python buffers."
                (line (pyimport--import-simplify example-line symbol)))
           (pyimport--insert-import line)
           (message "%s (from %s)" line (get-text-property 0 'pyimport-path example-line)))
-      (user-error "No matches found"))))
+      (user-error "No matches found for %s" symbol))))
 
 (defun pyimport--extract-unused-var (flycheck-message)
   "Extract the import variable name from FLYCHECK-MESSAGE.

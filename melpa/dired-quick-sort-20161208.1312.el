@@ -4,7 +4,7 @@
 
 ;; Author: Hong Xu <hong@topbug.net>
 ;; URL: https://gitlab.com/xuhdev/dired-quick-sort#dired-quick-sort
-;; Package-Version: 20161025.1322
+;; Package-Version: 20161208.1312
 ;; Version: 0.1+
 ;; Package-Requires: ((hydra "0.13.0"))
 ;; Keywords: convenience, files
@@ -168,10 +168,11 @@ _q_: quit                   ^ ^                     ^ ^                         
 (defun dired-quick-sort-setup ()
   "Run the default setup.
 
-This will bind \"S\" in `dired-mode' to run `hydra-dired-quick-sort/body', and
-automatically run the sorting criteria after entering `dired-mode'.  You can
-choose to not call this setup function and run a modified version of this
-function to use your own preferred setup:
+This will bind the key S in `dired-mode' to run
+`hydra-dired-quick-sort/body', and automatically run the sorting
+criteria after entering `dired-mode'.  You can choose to not call
+this setup function and run a modified version of this function
+to use your own preferred setup:
 
   ;; Replace \"S\" with other keys to invoke the dired-quick-sort hydra.
   (define-key dired-mode-map \"S\" 'hydra-dired-quick-sort/body)

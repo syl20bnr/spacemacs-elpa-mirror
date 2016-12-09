@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Clément Pit-Claudel
 ;; Author: Clément Pit--Claudel <clement.pitclaudel@live.com>
 ;; URL: https://github.com/FStarLang/fstar.el
-;; Package-Version: 20161208.0
+;; Package-Version: 20161208.957
 
 ;; Created: 27 Aug 2015
 ;; Version: 0.3
@@ -103,9 +103,10 @@ error."
 (defun fstar--init-compatibility-layer ()
   "Adjust compatibility settings based on `fstar-executable''s version number."
   (let* ((version-string (car (process-lines (fstar-find-executable) "--version"))))
-    (unless (string-match "F\\* \\(.*\\)" version-string)
-      (error "Can't parse version number from %S" version-string))
-    (setq fstar--vernum (match-string 1 version-string)))
+    (if (string-match "F\\* \\([- .[:alnum:]]*\\)" version-string)
+        (setq fstar--vernum (match-string 1 version-string))
+      (warn "Can't parse version number from %S" version-string)
+      (setq fstar--vernum "unknown")))
   (let ((v (if (string-match-p "unknown" fstar--vernum) "1000" fstar--vernum)))
     (setq fstar--error-messages-use-absolute-linums (version< "0.9.3.0-beta1" v))))
 
