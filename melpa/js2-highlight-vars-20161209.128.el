@@ -3,9 +3,9 @@
 ;; Copyright (C) 2009  Free Software Foundation, Inc.
 ;; Author:  Mihai Bazon <mihai.bazon@gmail.com>
 ;; Version: 0.1.0
-;; Package-Version: 20150914.108
+;; Package-Version: 20161209.128
 ;; URL: http://mihai.bazon.net/projects/editing-javascript-with-emacs-js2-mode/js2-highlight-vars-mode
-;; Package-Requires: ((js2-mode "20150908"))
+;; Package-Requires: ((emacs "24.4") (js2-mode "20150908"))
 
 ;;; Commentary:
 ;;
@@ -110,8 +110,7 @@
                  (overlay-put ovl 'evaporate t)
                  (overlay-put ovl 'js2-highlight-vars t)))
              t)))
-        (setq js2--highlight-vars-tokens tokens)
-        (top-level)))))
+        (setq js2--highlight-vars-tokens tokens)))))
 
 (defun js2-highlight-vars-next ()
   (interactive)
