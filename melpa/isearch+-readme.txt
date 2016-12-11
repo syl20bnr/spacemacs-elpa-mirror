@@ -162,8 +162,8 @@
    `isearchp-replace-multiple' (Emacs 22+),
    `isearchp-replace-on-demand' (Emacs 22+),
    `isearchp-reset-noprompt-action-fn', `isearchp-set-region',
-   `isearchp-set-sel-and-yank',
-   `isearchp-update-edit-init-commands' (Emacs 22+).
+   `isearchp-set-sel-and-yank', `isearchp-show-hit-w-crosshairs'
+   (Emacs 24.4+), `isearchp-update-edit-init-commands' (Emacs 22+).
 
  Internal variables defined here:
 
@@ -295,10 +295,11 @@
 
 Overview of Features ---------------------------------------------
 
- * Dynamic search filtering (starting with Emacs 24.4).  You can
-   add and remove any number of search filters while searching
-   incrementally.
-   See https://www.emacswiki.org/emacs/DynamicIsearchFiltering.
+ * Dynamic search filtering (starting with Emacs 24.4).
+
+   You can add and remove any number of search filters while
+   searching incrementally.  See
+   https://www.emacswiki.org/emacs/DynamicIsearchFiltering.
 
    The predicate that is the value of `isearch-filter-predicate' is
    advised by additional predicates that you add, creating a
@@ -310,11 +311,57 @@ Overview of Features ---------------------------------------------
    hit.  If the return value of the function is `nil' then the
    search hit is excluded from searching; otherwise it is included.
 
-   A filter predicate can perform side effects, if you like.  Only
-   the return value is used by Isearch.  For example, if you wanted
-   to more easily see the cursor position each time search stops at
-   a search hit, you could use something like this as a filter
-   predicate.  (This requires library `crosshairs.el', which
+   The value of standard variable (but not a user option)
+   `isearch-filter-predicate' is the filter predicate used by
+   Isearch.  By default, the value is predicate
+   `isearch-filter-visible', which returns non-`nil' for any search
+   hit that is visible (not rendered invisible by a text property,
+   overlay property, etc.)
+
+   If you search the Emacs Lisp source code, you will find only two
+   uses, so far, of variable `isearch-filter-predicate', even
+   though such filtering has been around since Emacs 23.  It’s
+   hardly ever used.  Why?
+
+   Because it’s not so easy to use, out of the box.  And it’s not
+   thought of as a way to *refine* searches, but rather as a way to
+   *wall off* certain areas from searching.
+
+   Yes, those are in fact the same thing, but I don’t think people
+   think this way ... because Isearch does not make it particularly
+   easy to use filters.  Isearch+ tries to do that, to let you
+   refine searches by adding filters incrementally.
+
+   The idea is simple: Isearch+ defines some keys that prompt you
+   for a filter.  You can enter any filter predicates at the
+   prompts.  There are also some predefined predicates that you can
+   choose from, using completion.  You can combine predicates using
+   AND, OR, and NOT.
+
+   A filter predicate does essentially the same thing as the search
+   pattern that you type at the Isearch prompt.  Each restricts the
+   search space (the buffer text) to certain zones: those that
+   satisfy the predicate and those that match the search pattern.
+
+   But a predicate can be much more general than is the predefined
+   pattern-matching provided by Emacs Isearch.  Suppose that you
+   want to find lines of text that contain `cat', `dog', and
+   `turtle'.  There is no simple search pattern that lets you do
+   this.  A regexp would need to explicitly express each possible
+   order, and there are 6 of them - not so simple.
+
+   But a predicate can just check each line for `cat' AND check for
+   `dog' AND check for `turtle'.  It is usually much easier to
+   combine simple patterns than it is to come up with a complex
+   pattern that does the same thing.  And the way to combine
+   patterns in Emacs Isearch is to use one or more filter
+   predicates.
+
+   A filter predicate can even perform side effects, if you like.
+   Only the return value is used by Isearch.  For example, if you
+   wanted to more easily see the cursor position each time search
+   stops at a search hit, you could use something like this as a
+   filter predicate.  (This requires library `crosshairs.el', which
    highlights the current column and line using crosshairs.)
 
      (lambda (beg end)
@@ -442,7 +489,42 @@ Overview of Features ---------------------------------------------
 
    User option `isearchp-filter-predicates-alist' contains filter
    predicates that are available as completion candidates whenever
-   you are prompted for one.  See its documentation for details.
+   you are prompted for one.  This is an important option.  The
+   alist entries can be of several forms, which affect the behavior
+   differently.
+
+   In particular, instead of choosing a filter predicate as a
+   completion candidate, you can choose a function that creates and
+   returns a filter predicate, after prompting you for some more
+   information.
+
+   This is the case, for example, for function
+   `isearchp-near-before-predicate'.  It is used in the predefined
+   alist entry `("near<..."  isearchp-near-before-predicate)',
+   which associates the short name `near<...', as a completion
+   candidate, with the function.
+
+   When you choose this candidate, function
+   `isearchp-near-before-predicate' prompts you for another pattern
+   for Isearch to match, a max number of units of nearness, and
+   which units to measure with.  It constructs and returns a
+   predicate that checks those match parameters.  As usual, you can
+   be prompted for a short name and an Isearch prompt prefix to
+   associate with the newly defined predicate, so that you can
+   easily choose it again (no prompting).
+
+   For the completion candidates that are predefined, this
+   naming convention is used:
+
+   * Bracketed names (`[...]') stand for predicates that check that
+     the search hit is within something.  For example, name `[;]'
+     tests whether it is inside a comment.
+
+   * Names that end in `...' indicate candidates that prompt you
+     for more information.  These names represent, not filter
+     predicates, but functions that return filter predicates.  For
+     example, `near<...' stands for function
+     `isearchp-near-before-predicate' (see above).
 
    Filter predicates that you add dynamically are added as
    completion candidates for the current Emacs session.  If option

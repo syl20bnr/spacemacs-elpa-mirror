@@ -33,11 +33,6 @@ The goal of this mode is for it to become 100% semantic lisp code editor, such t
 
 If you like the idea, please help fund the project. Buy Xah Emacs Tutorial http://ergoemacs.org/emacs/buy_xah_emacs_tutorial.html or make a donation. See home page. Thanks.
 
-auto-complete-mode support
-if you want also to use auto-complete-mode, add the following to your emacs init.
-
-make auto-complete-mode support xah-elisp-mode
-(when (boundp 'ac-modes)
-  (add-to-list 'ac-modes 'xah-elisp-mode))
+2016-12-02 compatible with company-mode
 
 equires emacs 24.3 because of using setq-local
