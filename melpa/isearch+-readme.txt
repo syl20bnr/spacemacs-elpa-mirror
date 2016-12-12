@@ -96,6 +96,7 @@
    24.3+), `isearchp-drop-mismatch',
    `isearchp-drop-mismatch-regexp-flag',
    `isearchp-filter-predicates-alist' (Emacs 24.4+),
+   `isearchp-highlight-regexp-group-levels-flag',
    `isearchp-initiate-edit-commands' (Emacs 22+),
    `isearchp-lazy-dim-filter-failures-flag' (Emacs 24.4+),
    `isearchp-mouse-2-flag', `isearchp-movement-unit-alist' (Emacs
@@ -112,7 +113,11 @@
  Faces defined here:
 
    `isearch-fail', `isearchp-multi', `isearchp-overwrapped',
-   `isearchp-regexp', `isearchp-word', `isearchp-wrapped'.
+   `isearchp-regexp', `isearchp-regexp-level-1',
+   `isearchp-regexp-level-2', `isearchp-regexp-level-3',
+   `isearchp-regexp-level-4', `isearchp-regexp-level-5',
+   `isearchp-regexp-level-6', `isearchp-regexp-level-7',
+   `isearchp-regexp-level-8', `isearchp-word', `isearchp-wrapped'.
 
  Macros defined here:
 
@@ -177,8 +182,9 @@
    `isearchp-noprompt-action-function',
    `isearchp-orig-ring-bell-fn', `isearchp-pref-arg',
    `isearchp-reg-beg', `isearchp-reg-end',
-   `isearchp-replace-literally' (Emacs 22+), `isearchp-replacement'
-   (Emacs 22+), `isearchp--replacing-on-demand' (Emacs 22+),
+   `isearchp-regexp-level-overlays', `isearchp-replace-literally'
+   (Emacs 22+), `isearchp-replacement' (Emacs 22+),
+   `isearchp--replacing-on-demand' (Emacs 22+),
    `isearchp-saved-filter-predicate' (Emacs 24.4+),
    `isearch-update-post-hook' (Emacs 20-21),
    `isearchp-user-entered-new-filter-p' (Emacs 24.4+),
@@ -192,13 +198,15 @@
  `isearch-backward', `isearch-backward-regexp' -
                          Prefix arg can  `multi-isearch-buffers'.
  `isearch-cancel'      - Restore cursor position relative to window.
- `isearch-dehighlight' - Remove unused arg, for Emacs 20.
+ `isearch-dehighlight' - Delete regexp-group level overlays too.
+                         Added unused arg, for Emacs 20.
  `isearch--describe-word-mode' - Face `isearchp-word' on string.
  `isearch-done'        - Restore/update `isearch-filter-predicate'.
                          Reset `ring-bell-function'.
  `isearch-edit-string' - Put point at mismatch position.
  `isearch-forward', `isearch-forward-regexp' -
                          Prefix arg can  `multi-isearch-buffers'.
+ `isearch-highlight'   - Highlight also regexp-group levels.
  `isearch-lazy-highlight-search' - Can limit to region (24.3+)
  `isearch-lazy-highlight-update' - Can limit to region (24.3+)
  `isearch-mode'        - Save cursor position relative to window.
@@ -552,6 +560,10 @@ Overview of Features ---------------------------------------------
  * Case-sensitivity is indicated in the mode line minor-mode
    lighter: `ISEARCH' for case-insensitive; `Isearch' for
    case-sensitive.
+
+ * Optional highlighting of the first eight regexp-group levels,
+   controlled by option
+   `isearchp-highlight-regexp-group-levels-flag'.
 
  * Whether search is literal or regexp is indicated in the mode
    line minor-mode lighter: `R*SEARCH' or `R*search', for regexp.

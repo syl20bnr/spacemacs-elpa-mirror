@@ -2,8 +2,11 @@ Note: The interface used in this file requires CC Mode 5.30 or
 later.
 
 History:
-  00.9 - 2016-12-09
-       workaround Emacs bug #18845 (for 24.4)
+  0.9.1 - 2016-12-12
+       use define-derived-mode
+       yang-fill-paragraph now works in Emacs 23
+  0.9 - 2016-12-09
+       workaround Emacs bug #18845 (for 24.4+)
   00.8 - 2016-10-27
        rfc7950 compliant
        added yang-fill-paragraph for better string fill
@@ -28,6 +31,9 @@ History:
 
 Useful tips:
 
+  Put this in your .emacs:
+    (require 'yang-mode)
+
   For use with Emacs 23, put this in your .emacs:
     (autoload 'yang-mode "yang-mode" "Major mode for editing YANG modules."
               t)
@@ -37,8 +43,6 @@ Useful tips:
   that removing the byte-compiled cc-mode.elc file fixes these problems.
   (e.g. /usr/share/emacs/23.1/lisp/progmodes/cc-mode.elc)
 
-  For use with Emacs 22, just use:
-    (require 'yang-mode nil t)
 
   For editing somewhat larger YANG modules, add this to your .emacs
     (setq blink-matching-paren-distance nil)
