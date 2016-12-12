@@ -18,7 +18,7 @@
 
 ;; Author: zk_phi
 ;; URL: http://hins11.yu-yake.com/
-;; Package-Version: 20161212.241
+;; Package-Version: 20161212.657
 ;; Version: 1.1.0
 
 ;;; Commentary:
@@ -88,15 +88,19 @@ must be the expression matched.
 ESCAPE-MATCHER is a function with 1 parameter, LIMIT, which
 searches the next escaped expression. The function must return
 non-nil if succeeded, or nil otherwise. When the function returns
-non-nil, (match-string 0) must be the expression matched.")
+non-nil, (match-string 0) must be the expression matched."
+  :type 'alist
+  :group 'highlight-stages)
 
 (defcustom highlight-stages-highlight-real-quote t
   "If non-nil, \"real\" (not escapable) quotes are also
   highlighted."
+  :type 'boolean
   :group 'highlight-stages)
 
 (defcustom highlight-stages-highlight-priority 1
   "Priority which highlight overlays get."
+  :type 'integer
   :group 'highlight-stages)
 
 ;; + faces

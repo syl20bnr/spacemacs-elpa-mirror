@@ -16,8 +16,8 @@
 ;; Boston, MA 02111-1307, USA.
 
 ;; Author: Martin Bjorklund <mbj4668@gmail.com>
-;; Version: 00.9
-;; Package-Version: 20161209.438
+;; Version: 0.9.1
+;; Package-Version: 20161212.213
 
 ;;; Commentary:
 
@@ -25,8 +25,11 @@
 ;; later.
 
 ;; History:
-;;   00.9 - 2016-12-09
-;;        workaround Emacs bug #18845 (for 24.4)
+;;   0.9.1 - 2016-12-12
+;;        use define-derived-mode
+;;        yang-fill-paragraph now works in Emacs 23
+;;   0.9 - 2016-12-09
+;;        workaround Emacs bug #18845 (for 24.4+)
 ;;   00.8 - 2016-10-27
 ;;        rfc7950 compliant
 ;;        added yang-fill-paragraph for better string fill
@@ -51,6 +54,9 @@
 
 ;; Useful tips:
 ;;
+;;   Put this in your .emacs:
+;;     (require 'yang-mode)
+;;
 ;;   For use with Emacs 23, put this in your .emacs:
 ;;     (autoload 'yang-mode "yang-mode" "Major mode for editing YANG modules."
 ;;               t)
@@ -60,8 +66,6 @@
 ;;   that removing the byte-compiled cc-mode.elc file fixes these problems.
 ;;   (e.g. /usr/share/emacs/23.1/lisp/progmodes/cc-mode.elc)
 ;;
-;;   For use with Emacs 22, just use:
-;;     (require 'yang-mode nil t)
 ;;
 ;;   For editing somewhat larger YANG modules, add this to your .emacs
 ;;     (setq blink-matching-paren-distance nil)
@@ -142,7 +146,7 @@
 
 ;; Work around Emacs bug #18845, cc-mode expects cl to be loaded
 (eval-and-compile
-  (if (and (= emacs-major-version 24) (= emacs-minor-version 4))
+  (if (and (= emacs-major-version 24) (>= emacs-minor-version 4))
     (require 'cl)))
 
 ;; YANG has no primitive types in the C/Java sense.
@@ -268,32 +272,18 @@
 (defvar yang-font-lock-keywords yang-font-lock-keywords-3
   "Default expressions to highlight in YANG mode.")
 
-(defvar yang-mode-syntax-table nil
-  "Syntax table used in `yang-mode' buffers.")
-(or yang-mode-syntax-table
-    (setq yang-mode-syntax-table
-          (funcall (c-lang-const c-make-mode-syntax-table yang))))
-
-(defvar yang-mode-abbrev-table nil
-  "Abbreviation table used in `yang-mode' buffers.")
-(c-define-abbrev-table 'yang-mode-abbrev-table
-  ;; Keywords that if they occur first on a line might alter the
-  ;; syntactic context, and which therefore should trig reindentation
-  ;; when they are completed.
-  '())
-
 (defvar yang-mode-map (let ((map (c-make-inherited-keymap)))
                       ;; Add bindings which are only useful for YANG
                       map)
   "Keymap used in `yang-mode' buffers.")
 
 (easy-menu-define yang-menu yang-mode-map "YANG Mode Commands"
-                  ;; Can use `yang' as the language for `c-mode-menu'
-                  ;; since its definition covers any language.  In
-                  ;; this case the language is used to adapt to the
-                  ;; nonexistence of a cpp pass and thus removing some
-                  ;; irrelevant menu alternatives.
-                  (cons "YANG" (c-lang-const c-mode-menu yang)))
+  ;; Can use `yang' as the language for `c-mode-menu'
+  ;; since its definition covers any language.  In
+  ;; this case the language is used to adapt to the
+  ;; nonexistence of a cpp pass and thus removing some
+  ;; irrelevant menu alternatives.
+  (cons "YANG" (c-lang-const c-mode-menu yang)))
 
 (defun yang-fill-paragraph (&optional arg)
   "Like \\[c-fill-paragraph] but handles first line in strings properly.
@@ -321,7 +311,7 @@
                   (setq col (- first-char (point)))
                   (goto-char first-char)
                   (setq tmppoint (point))
-                  (insert-char ?\n)
+                  (insert-char ?\n 1)
                   (insert-char ?\s col))
               (goto-char curpoint))))
       (c-fill-paragraph arg)
@@ -344,7 +334,7 @@
 (add-to-list 'auto-mode-alist '("\\.yang\\'" . yang-mode))
 
 ;;;###autoload
-(defun yang-mode ()
+(define-derived-mode yang-mode c-mode "YANG"
   "Major mode for editing YANG modules.
 
 The hook `c-mode-common-hook' is run with no args at mode
@@ -352,37 +342,17 @@ initialization, then `yang-mode-hook'.
 
 Key bindings:
 \\{yang-mode-map}"
-  (interactive)
-  (kill-all-local-variables)
   (c-initialize-cc-mode t)
-  (set-syntax-table yang-mode-syntax-table)
-  (setq major-mode 'yang-mode
-        mode-name "YANG"
-        local-abbrev-table yang-mode-abbrev-table
-        abbrev-mode t)
-  (use-local-map yang-mode-map)
-  ;; `c-init-language-vars' is a macro that is expanded at compile
-  ;; time to a large `setq' with all the language variables and their
-  ;; customized values for our language.
   (c-init-language-vars yang-mode)
-  ;; `c-common-init' initializes most of the components of a CC Mode
-  ;; buffer, including setup of the mode menu, font-lock, etc.
-  ;; There's also a lower level routine `c-basic-common-init' that
-  ;; only makes the necessary initialization to get the syntactic
-  ;; analysis and similar things working.
   (c-common-init 'yang-mode)
+
   ;; Allow auto-fill in strings
   (setq c-ignore-auto-fill '(cpp code))
 
   ;; Install `yang-fill-paragraph' on `fill-paragraph-function' so
   ;; that a direct call to `fill-paragraph' behaves better.
-  (make-local-variable 'fill-paragraph-function)
-  (setq fill-paragraph-function 'yang-fill-paragraph)
-
-  (easy-menu-add yang-menu)
-  (run-hooks 'c-mode-common-hook)
-  (run-hooks 'yang-mode-hook)
-  (c-update-modeline))
+  (make-local-variable fill-paragraph-function)
+  (setq fill-paragraph-function 'yang-fill-paragraph))
 
 (provide 'yang-mode)
 
