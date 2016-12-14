@@ -2,6 +2,10 @@ Note: The interface used in this file requires CC Mode 5.30 or
 later.
 
 History:
+  0.9.3 - 2016-12-13
+       derive from nil
+  0.9.2 - 2016-12-13
+       derive mode from prog-mode in order to get correct hook behavior
   0.9.1 - 2016-12-12
        use define-derived-mode
        yang-fill-paragraph now works in Emacs 23
@@ -60,9 +64,8 @@ Useful tips:
 
     (add-hook 'yang-mode-hook 'my-yang-mode-hook)
 
-  Use the oultine minor mode for YANG.
-  This is very useful to get a good overview of the structure of
-  a module.
+  Using the oultine minor mode for YANG is very useful to get a
+  good overview of the structure of a module.
 
   Put this in your .emacs:
 

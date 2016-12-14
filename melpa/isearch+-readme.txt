@@ -73,6 +73,7 @@
    `isearchp-show-filters' (Emacs 24.4+),
    `isearchp-toggle-auto-save-filter-predicate' (Emacs 24.4+),
    `isearchp-toggle-dimming-filter-failures' (Emacs 24.4+),
+   `isearchp-toggle-highlighting-regexp-groups',
    `isearchp-toggle-lazy-highlight-cleanup' (Emacs 22+),
    `isearchp-toggle-lazy-highlighting' (Emacs 22+),
    `isearchp-toggle-literal-replacement' (Emacs 22+),
@@ -245,45 +246,98 @@
  `multi-isearch-end'    - Fix for bug #20234: reset buffer list.
 
 
- Keys bound in `isearch-mode-map' here:
+ Keys bound in `isearch-mode-map' here, by default.  Some are from
+ `isearch-prop.el'.  Keys bound to `isearchp-init-edit' by default
+ are controlled by option `isearchp-initiate-edit-commands'.
 
    `C-`'        `isearchp-toggle-regexp-quote-yank'
    `C-+'        `isearchp-toggle-search-invisible'
    `C-_'        `isearchp-yank-symbol-or-char' (Emacs 22+)
    `C-('        `isearchp-yank-sexp-symbol-or-char' (Emacs 22+)
+   `C-backspace' `isearchp-remove-failed-part-or-last-char'
+                 (Emacs 22+)
    `C-end'      `goto-longest-line' (requires `misc-cmds.el')
+   `C-left'     `isearchp-init-edit' (Emacs 22+)
+   `C-b'        `isearchp-init-edit' (Emacs 22+)
    `C-h'        `isearch-mode-help'
+   `C-t'        `isearchp-property-forward' (Emacs 23+)
+                (`isearch-prop.el')
    `C-x n'      `isearchp-toggle-region-restriction' (Emacs 24.3+)
    `C-x o'      `isearchp-open-recursive-edit' (Emacs 22+)
    `C-x r g'    `isearchp-append-register'
    `C-x 8 RET'  `isearch-char-by-name' (Emacs 23-24.3)
    `C-y C-_'    `isearchp-yank-symbol-or-char' (Emacs 22+)
    `C-y C-('    `isearchp-yank-sexp-symbol-or-char' (Emacs 22+)
-   `C-y C-2'    `isearch-yank-secondary'
+   `C-y C-2'    `isearch-yank-secondary' (requires `second-sel.el')
    `C-y C-c'    `isearchp-yank-char' (Emacs 22+)
    `C-y C-e'    `isearchp-yank-line'
    `C-y C-w'    `isearchp-yank-word-or-char' (Emacs 22+)
    `C-y C-y'    `isearch-yank-kill'
+   `C-y M-g'    `isearchp-retrieve-last-quit-search'
    `C-y M-y'    `isearch-yank-pop' (Emacs 24+)
+   `C-z !'      `isearchp-set-filter-predicate' (Emacs 24.4+)
+   `C-z %'      `isearchp-add-regexp-filter-predicate'
+                (Emacs 24.4+)
+   `C-z &'      `isearchp-add-filter-predicate' (Emacs 24.4+)
+   `C-z -'      `isearchp-remove-filter-predicate' (Emacs 24.4+)
+   `C-z 0'      `isearchp-reset-filter-predicate' (Emacs 24.4+)
+   `C-z <'      `isearchp-near-before' (Emacs 24.4+)
+   `C-z >'      `isearchp-near-after' (Emacs 24.4+)
+   `C-z ?'      `isearchp-show-filters' (Emacs 24.4+)
+   `C-z @'      `isearchp-near' (Emacs 24.4+)
+   `C-z c'      `isearchp-columns' (Emacs 24.4+)
+   `C-z n'      `isearchp-defun-filter-predicate' (Emacs 24.4+)
+   `C-z p'      `isearchp-toggle-showing-filter-prompt-prefixes'
+                (Emacs 24.4+)
+   `C-z S'      `isearchp-toggle-auto-save-filter-predicate'
+                (Emacs 24.4+)
+   `C-z s'      `isearchp-save-filter-predicate' (Emacs 24.4+)
+   `C-z |'      `isearchp-or-filter-predicate' (Emacs 24.4+)
+   `C-z ~'      `isearchp-complement-filter' (Emacs 24.4+)
+   `C-M-;'      `isearchp-toggle-ignoring-comments' (Emacs 23+)
+                (`isearch-prop.el')
+   `C-M-`'      `isearchp-toggle-literal-replacement' (Emacs 22+)
+   `C-M-~'      `isearchp-toggle-complementing-domain' (Emacs 23+)
+                (`isearch-prop.el')
+   `C-M-RET'    `isearchp-act-on-demand' (Emacs 22+)
+   `C-M-tab'    `isearchp-complete' (on MS Windows)
+   `C-M-b'      `isearchp-init-edit' (Emacs 22+)
+   `C-M-D'      `isearchp-toggle-dimming-outside-search-area'
+                (Emacs 23+) (`isearch-prop.el')
+   `C-M-left'   `isearchp-init-edit' (Emacs 22+)
+   `C-M-i'      `isearchp-complete'
+   `C-M-l'      `isearchp-remove-failed-part' (Emacs 22+)
+   `C-M-t'      `isearchp-property-forward-regexp' (Emacs 23+)
+   `C-M-y'      `isearch-yank-secondary' (requires `second-sel.el')
+   `C-S-SPC'    `isearchp-narrow-to-lazy-highlights' (Emacs 23+)
+                (`isearch-prop.el')
+   `M-:'        `isearchp-eval-sexp-and-insert' (Emacs 22+)
+   `M-;'        `isearchp-toggle-hiding-comments' (Emacs 23+)
+                (`isearch-prop.el')
+   `M-left'   `isearchp-init-edit' (Emacs 22+)
+   `M-b'        `isearchp-init-edit' (Emacs 22+)
    `M-c'        `isearch-toggle-case-fold'
    `M-e'        `isearch-edit-string'
    `M-g'        `isearchp-retrieve-last-quit-search'
    `M-k'        `isearchp-cycle-mismatch-removal'
    `M-r'        `isearch-toggle-regexp'
+   `M-w'        `isearchp-kill-ring-save'
+   `M-s C-e'    `isearchp-yank-line'
    `M-s ='      `isearchp-toggle-symmetric-char-fold' (Emacs 25+)
+   `M-s h d'    `isearchp-toggle-dimming-filter-failures'
+                (Emacs 24.4+)
+   `M-s h l'    `isearchp-toggle-lazy-highlight-cleanup' (Emacs 22+)
+   `M-s h L'    `isearchp-toggle-lazy-highlighting' (Emacs 22+)
+   `M-s h R'    `isearchp-toggle-highlighting-regexp-groups'
    `M-s i'      `isearch-toggle-invisible'
-   `M-s h l'    `isearchp-toggle-lazy-highlight-cleanup'(Emacs 22+)
-   `M-s h L'    `isearchp-toggle-lazy-highlighting'(Emacs 22+)
-   `M-s w'      `isearch-toggle-word'
+   `M-s v'      `isearchp-toggle-option-toggle'
    `M-TAB'      `isearchp-complete'
    `M-s M-SPC'  `isearchp-toggle-set-region'
-   `M-s M-k'    `isearchp-toggle-repeat-search-if-fail'
-   `M-w'        `isearchp-kill-ring-save'
-   `C-M-i'      `isearchp-complete'
-   `C-M-l'      `isearchp-remove-failed-part' (Emacs 22+)
-   `C-M-y'      `isearch-yank-secondary'
-   `C-M-RET'    `isearchp-act-on-demand' (Emacs 22+)
-   `C-M-tab'    `isearchp-complete' (on MS Windows)
+   `M-s M-k'    `isearchp-toggle-repeat-search-if-fail' (Emacs 22+)
+   `M-s h '     `isearchp-toggle-lazy-highlighting'
+   `M-S-delete' `isearchp-cleanup'  (Emacs 23+) (`isearch-prop.el')
+   `left'       `isearchp-init-edit' (Emacs 22+)
+   `mouse-2'    `isearch-mouse-2'
    `next'       `isearch-repeat-forward'
    `prior'      `isearch-repeat-backward'
 
@@ -563,7 +617,9 @@ Overview of Features ---------------------------------------------
 
  * Optional highlighting of the first eight regexp-group levels,
    controlled by option
-   `isearchp-highlight-regexp-group-levels-flag'.
+   `isearchp-highlight-regexp-group-levels-flag'.  You can toggle
+   the value using `M-s h R' (command
+   `isearchp-toggle-highlighting-regexp-groups.') during Isearch.
 
  * Whether search is literal or regexp is indicated in the mode
    line minor-mode lighter: `R*SEARCH' or `R*search', for regexp.
