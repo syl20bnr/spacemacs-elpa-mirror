@@ -1,18 +1,20 @@
 Suggested key bindings
 ======================
 
-You can eval the following key definitions to try things out while
-reading this introduction.  These are the bindings I use
-personally:
+After loading this file, you can eval the following key definitions
+to try things out while reading this introduction.  These are the
+bindings I use personally:
 
   (define-key emacs-lisp-mode-map [(control ?S)] #'el-search-pattern)
   (define-key emacs-lisp-mode-map [(control ?%)] #'el-search-query-replace)
   (define-key global-map          [(control ?J)] #'el-search-jump-to-search-head)
   (define-key global-map          [(control ?N)] #'el-search-continue-in-next-buffer)
+  (define-key global-map          [(control ?O)] #'el-search-overview)
 
   (define-key el-search-read-expression-map [(control ?S)] #'exit-minibuffer)
 
   (define-key isearch-mode-map [(control ?S)] #'el-search-search-from-isearch)
+  (define-key isearch-mode-map [(control ?%)] #'el-search-replace-from-isearch)
 
   (with-eval-after-load 'dired
     (define-key dired-mode-map [(control ?S)] #'el-search-dired-marked-files))
@@ -21,8 +23,8 @@ These bindings may not work in a console (if you have an idea for
 official bindings that fit better into the Emacs ecosystem, please
 mail me).
 
-The binding in `isearch-mode-map' lets you switch to "el-search"
-from isearch reusing already the given input.  The binding in
+The bindings in `isearch-mode-map' let you switch to "el-search"
+commands from isearch reusing already given input.  The binding in
 `el-search-read-expression-map' allows you to hit C-S twice to
 start a search using the last search pattern, similar to isearch.
 
@@ -54,10 +56,10 @@ Example 1: if you enter
 
    97
 
-at the prompt, this will find any occurrence of the number 97 in
-the code, but not 977 or (+ 90 7) or "My string containing 97".
-But it will find anything `eq' to 97 after reading, e.g. #x61 or
-?a.
+at the prompt, el-search will find any occurrence of the number 97
+in the code, but not 977 or (+ 90 7) or "My string containing 97"
+or symbol_97.  But it will find anything `equal' to 97 after
+reading, e.g. #x61 or ?a.
 
 
 Example 2: If you enter the pattern
@@ -97,8 +99,8 @@ If you wanted to search a buffer for symbols that are defined in
 ,----------------------------------------------------------------------
 | Q: "But I hate `pcase'!  Can't we just do without?"                 |
 |                                                                     |
-| A: Respect that you kept up until here! Just use (guard CODE), where|
-| CODE is any normal Elisp expression that returns non-nil when and   |
+| A: Respect that you kept up until here! Just use (guard EXPR), where|
+| EXPR is any normal Elisp expression that returns non-nil when and   |
 | only when you have a match.  Use the variable `exp' to refer to     |
 | the currently tested expression.  Just like in the last example!    |
 `----------------------------------------------------------------------
@@ -110,7 +112,7 @@ own `pcase' pattern types for the purpose of el-searching with
 `el-search-defpattern'.  It is just like `pcase-defmacro', but the
 effect is limited to this package (i.e. it uses a separate name
 space).  See C-h f `el-search-pattern' for a list of predefined
-pattern forms.
+pattern types.
 
 Some additional pattern definitions can be found in the file
 "el-search-x" which is part of this package.
@@ -122,8 +124,8 @@ Replacing
 You can replace expressions with command `el-search-query-replace'.
 You are queried for a (pcase) pattern and a replacement expression.
 For each match of the pattern, the replacement expression is
-evaluated with the bindings created by the pcase matching in
-effect, and printed to a string to produce the replacement.
+evaluated with the bindings created by pattern matching in effect,
+and printed to a string to produce the replacement.
 
 Example: In some buffer you want to swap the two expressions at the
 places of the first two arguments in all calls of function `foo',
@@ -151,7 +153,7 @@ It is possible to replace a match with multiple expressions using
 "splicing mode".  When it is active, the replacement expression
 must evaluate to a list, and is spliced instead of inserted into
 the buffer for any replaced match.  Use s to toggle splicing mode
-in a `el-search-query-replace' session.
+in an `el-search-query-replace' session.
 
 
 Multi Searching
@@ -168,49 +170,39 @@ Emacs elisp sources) and `el-search-dired-marked-files'.  Actually,
 every search is internally a multi search.
 
 You can pause any (multi) search by just doing something different,
-the state of the search is automatically saved. You can continue
+the state of the search is automatically saved.  You can continue
 searching by calling `el-search-jump-to-search-head': this command
 jumps to the last match and re-activates the search.
 
 `el-search-continue-in-next-buffer' skips all remaining matches in
 the current buffer and continues searching in the next buffer.
+`el-search-skip-directory' even skips all subsequent files under a
+specified directory.
 
 Matches found in the current buffer are recorded; use
 `el-search-previous-match' to revisit them in reverse order (this
 is actually the poor-man's version of a backward search, since a
 real backward el-search would be slow).
 
-There is no multi query-replace currently implemented; I don't know
-if it would be that useful as a separate command anyway.  If you
-want to query-replace in multiple buffers or files, call an
+This package automatically uses techniques to speed up (multi)
+searching (without an impact on the matches you get, of course).
+The degree of possible optimizations varies very much depending on
+the nature of the search pattern, so the search speed can vary
+greatly.
+
+There are no special multi query-replace commands currently
+implemented; I don't know if it would be that useful anyway.  If
+you want to query-replace in multiple buffers or files, call an
 appropriate multi-search command, and every time a first match is
 found in any buffer, start an ordinary `el-search-query-replace';
 after finishing, check that everything is ok, save etc, and resume
 the multi search with one of the above commands.
 
-There is currently nothing like `occur' for el-search.  However,
-you can get a list of matches in the form
-(file-name-or-buffer . match-position) with
-
- (el-search-all-matches (el-search-make-search pattern stream))
-
-where PATTERN is the search pattern and STREAM is a stream of
-buffers or files (typical ways to construct such a STREAM are to
-call the `stream' function on a list of buffers, or to use
-`el-search-stream-of-directory-files').
-
-For example,
-
-  (el-search-all-matches
-   (el-search-make-search
-    ''require
-    (seq-filter
-     (lambda (buffer)
-        (with-current-buffer buffer (derived-mode-p 'emacs-lisp-mode)))
-     (stream (buffer-list)))))
-
-would return a list of matches for the symbol require in all elisp
-mode buffers.
+I've not yet implemented a real "occur" for el-search.  For now,
+there is the command `el-search-overview' (C-O in the suggested key
+bindings above).  It will display an overview for the current
+search in a separate window showing a complete count of matches per
+file/buffer.
 
 
 Multiple multi searches
@@ -223,7 +215,8 @@ you select an older search to resume and switches to the buffer and
 position where this search had been suspended.
 
 There is no special command to restart a prior search from the
-beginning.  I suggest to use `repeat-complex-command'.
+beginning.  I suggest to use the pattern input history or
+`repeat-complex-command'.
 
 
 Writing replacement rules for semi-automatic code rewriting
@@ -250,9 +243,8 @@ could look like this:
             (let ,new `(dolist (,,var ,,list) . ,,body)))))
 
 The first condition in the `and' performs the matching and binds
-the essential parts of the `mapc' form to variables.  The second,
-the `let' part, binds the pattern specified argument NEW (as said,
-typically just a variable to receive the rewritten code) to the
+the essential parts of the `mapc' form to helper variables.  The
+second, the `let' part, binds the specified variable NEW to the
 rewritten expression - in our case, a `dolist' form is constructed
 with the remembered code parts filled in.
 
@@ -260,14 +252,6 @@ Now, in `el-search-query-replace', you just specify the following
 rule:
 
   (el-search-mapc->dolist replacement) -> replacement
-
-And when you want to replace in multiple buffers or files, call an
-appropriate multi el-search command, e.g. `el-search-directory',
-and specify
-
-  (el-search-mapc->dolist replacement)
-
-as search pattern.
 
 
 
@@ -330,7 +314,7 @@ TODO:
   that it's possible to replace also occurrences of a symbol in
   docstrings?
 
-- Implement an occur like interface?
+- Implement an occur like interface
 
 - Port this to non Emacs Lisp modes?  How?  Would it already
   work using only syntax tables, sexp scanning and font-lock?

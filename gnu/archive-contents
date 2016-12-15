@@ -291,7 +291,7 @@
 	     ((:url . "http://elpa.gnu.org/packages/ediprolog.html")
 	      (:keywords "languages" "processes"))])
  (el-search .
-	    [(1 1 2)
+	    [(1 2)
 	     ((emacs
 	       (25))
 	      (stream
@@ -645,7 +645,7 @@
 	     ((:url . "https://github.com/michael-heerdegen/on-screen.el")
 	      (:keywords "convenience"))])
  (org .
-      [(20161118)
+      [(20161214)
        nil "Outline-based notes management and organizer" tar nil])
  (osc .
       [(0 1)

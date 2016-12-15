@@ -160,7 +160,8 @@
    `isearchp-read-predicate' (Emacs 24.4+),
    `isearchp-read-prompt-prefix' (Emacs 24.4+),
    `isearchp-read-regexp-during-search' (Emacs 24.4+),
-   `isearchp-read-sexps', `isearchp-remove-duplicates',
+   `isearchp-read-sexps', `isearchp-redo-lazy-highlighting' (Emacs
+   24.4+), `isearchp-remove-duplicates',
    `isearchp-remove-mismatch', `isearchp-repeat-command',
    `isearchp-repeat-search-if-fail' (Emacs 22+),
    `isearchp-replace-fixed-case-p' (Emacs 22+),

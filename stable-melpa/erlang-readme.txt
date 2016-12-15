@@ -28,7 +28,7 @@ or if you have a patch suggestion to:
      erlang-patches@erlang.org
 Please state as exactly as possible:
    - Version number of Erlang Mode (see the menu), Emacs, Erlang,
-	and of any other relevant software.
+     and of any other relevant software.
    - What the expected result was.
    - What you did, preferably in a repeatable step-by-step form.
    - A description of the unexpected result.
