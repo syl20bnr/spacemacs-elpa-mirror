@@ -4,7 +4,7 @@
 
 ;; Author: Christopher Wellons <wellons@nullprogram.com>
 ;; URL: https://github.com/skeeto/x86-lookup
-;; Package-Version: 20161030.1736
+;; Package-Version: 20161215.448
 ;; Version: 1.1.1
 ;; Package-Requires: ((emacs "24.3") (cl-lib "0.3"))
 
@@ -141,6 +141,8 @@ This function accepts two arguments: filename and page number."
 This function requires the pdftotext command line program."
   (let ((mnemonic (concat "INSTRUCTION SET REFERENCE, [A-Z]-[A-Z]\n\n"
                           "\\([[:alnum:]/ ]+\\)[- ]?—"))
+        (coding-system-for-read 'utf-8)
+        (coding-system-for-write 'utf-8)
         (case-fold-search nil))
     (with-temp-buffer
       (call-process x86-lookup-pdftotext-program nil t nil

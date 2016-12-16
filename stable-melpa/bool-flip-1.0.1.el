@@ -4,9 +4,9 @@
 ;;
 ;; Author: Michael Brandt <michaelbrandt5@gmail.com>
 ;; URL: http://github.com/michaeljb/bool-flip/
-;; Package-Version: 20161030.1654
+;; Package-Version: 1.0.1
 ;; Package-Requires: ((emacs "24.3"))
-;; Version: 1.0.0
+;; Version: 1.0.1
 ;; Keywords: boolean, convenience, usability
 
 ;; This file is not part of GNU Emacs.
@@ -37,7 +37,7 @@
     ("y"    . "n")
     ("YES"  . "NO")
     ("Yes"  . "No")
-    ("yes"  . "yes")
+    ("yes"  . "no")
     ("1"    . "0"))
   "List of values flipped by `bool-flip-do-flip'."
   :group 'bool-flip

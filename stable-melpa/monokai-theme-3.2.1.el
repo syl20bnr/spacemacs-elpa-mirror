@@ -4,8 +4,8 @@
 
 ;; Author: Kelvin Smith <oneKelvinSmith@gmail.com>
 ;; URL: http://github.com/oneKelvinSmith/monokai-emacs
-;; Package-Version: 3.2.0
-;; Version: 3.2.0
+;; Package-Version: 3.2.1
+;; Version: 3.2.1
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -4032,6 +4032,10 @@ Also affects 'linum-mode' background."
      ((,monokai-class (:foreground ,monokai-comments))
       (,monokai-256-class  (:foreground ,monokai-256-comments))))
 
+   ;; adoc-mode / markup
+   `(markup-meta-face
+     ((,monokai-class (:foreground ,monokai-gray-l))
+      (,monokai-256-class  (:foreground ,monokai-256-gray-l))))
 
    ;; org-mode
    `(org-agenda-structure

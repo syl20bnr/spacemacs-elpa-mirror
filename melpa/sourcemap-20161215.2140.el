@@ -4,9 +4,9 @@
 
 ;; Author: Syohei YOSHIDA <syohex@gmail.com>
 ;; URL: https://github.com/syohex/emacs-sourcemap
-;; Package-Version: 20160511.2137
-;; Version: 0.02
-;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
+;; Package-Version: 20161215.2140
+;; Version: 0.03
+;; Package-Requires: ((emacs "24.3"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -242,7 +242,7 @@
 This functions should be called in generated Javascript file."
   (let ((sourcemap-file (plist-get props :sourcemap)))
     (unless sourcemap-file
-      (error "Error: ':sourcemap' property is not set"))
+      (user-error "Error: ':sourcemap' property is not set"))
     (let* ((sourcemap (sourcemap-from-file sourcemap-file))
            (source-file (file-name-nondirectory (plist-get props :source)))
            (samefile-mappings (sourcemap--filter-same-file sourcemap source-file)))

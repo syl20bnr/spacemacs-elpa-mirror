@@ -1,12 +1,12 @@
 ;;; sourcemap.el --- Sourcemap parser -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2014 by Syohei YOSHIDA
+;; Copyright (C) 2016 by Syohei YOSHIDA
 
 ;; Author: Syohei YOSHIDA <syohex@gmail.com>
 ;; URL: https://github.com/syohex/emacs-sourcemap
-;; Package-Version: 0.2
-;; Version: 0.02
-;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
+;; Package-Version: 0.3
+;; Version: 0.03
+;; Package-Requires: ((emacs "24.3"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -45,8 +45,7 @@
   (cl-loop for char across chars
            for index = 0 then (1+ index)
            do
-           (progn
-             (puthash char index sourcemap--char2int-table))))
+           (puthash char index sourcemap--char2int-table)))
 
 (defsubst sourcemap--vlq-continuation-value-p (value)
   (not (zerop (logand value sourcemap--vlq-continuation-bit))))
@@ -156,86 +155,86 @@
                        (cl-incf previous-name name-value))
                      (setq curpos (plist-get temp :rest-index))))
                  (push mapping mappings))))))
-    (reverse mappings)))
+    (vconcat (reverse mappings))))
 
-(defun sourcemap-generated-position-for (sourcemap &rest props)
-  (let ((mappings (sourcemap--parse-mappings sourcemap))
-        (original-source (plist-get props :source))
-        (line (plist-get props :line))
-        (column (plist-get props :column)))
-    (cl-loop for map in mappings
-             for source = (sourcemap-entry-source map)
-             for original-line = (sourcemap-entry-original-line map)
-             for original-column = (sourcemap-entry-original-column map)
-             when (and (string= original-source source)
-                       (= original-line line) (= original-column column))
-             return (list :line (sourcemap-entry-generated-line map)
-                          :column (sourcemap-entry-generated-column map)))))
-
-(defun sourcemap-original-position-for (sourcemap &rest props)
-  (let ((mappings (sourcemap--parse-mappings sourcemap))
-        (line (plist-get props :line))
-        (column (plist-get props :column)))
-    (cl-loop for map in mappings
-             for generated-line = (sourcemap-entry-generated-line map)
-             for generated-column = (sourcemap-entry-generated-column map)
-             when (and (= generated-line line) (= generated-column column))
-             return (list :line (sourcemap-entry-original-line map)
-                          :column (sourcemap-entry-original-column map)))))
-
-(defun sourcemap--compare-mapping (target here)
-  (let ((target-line (sourcemap-entry-original-line target))
-        (target-column (sourcemap-entry-original-column target))
-        (source-line (sourcemap-entry-original-line here))
-        (source-column (sourcemap-entry-original-column here)))
-    (cond ((< target-line source-line) 1)
-          ((> target-line source-line) -1)
-          ((< target-column source-column) 1)
-          ((> target-column source-column) -1)
-          (t 0))))
-
-(defsubst sourcemap--line-distance (here a)
-  (abs (- (sourcemap-entry-original-line here) (sourcemap-entry-original-line a))))
-
-(defsubst sourcemap--column-distance (here a)
-  (abs (- (sourcemap-entry-original-column here) (sourcemap-entry-original-column a))))
-
-(defun sourcemap--select-nearest (here low high)
-  (let ((distance-low (sourcemap--line-distance here low))
-        (distance-high (sourcemap--line-distance here high)))
+(defun sourcemap--select-nearest (src low high line-fn column-fn)
+  (let* ((low-line (funcall line-fn low))
+         (low-column (funcall column-fn low))
+         (high-line (funcall line-fn high))
+         (high-column (funcall column-fn high))
+         (src-line (funcall line-fn src))
+         (src-column (funcall column-fn src))
+         (distance-low (abs (- src-line low-line)))
+         (distance-high (abs (- src-line high-line))))
     (cond ((< distance-low distance-high) low)
           ((> distance-low distance-high) high)
           (t
-           (let ((distance-low (sourcemap--column-distance here low))
-                 (distance-high (sourcemap--column-distance here high)))
-            (cond ((<= distance-low distance-high) low)
-                  ((> distance-low distance-high) high)))))))
+           (let ((distance-low (abs (- src-column low-column)))
+                 (distance-high (abs (- src-column high-column))))
+             (cond ((<= distance-low distance-high) low)
+                   ((> distance-low distance-high) high)))))))
 
-(defun sourcemap--binary-search (mappings here)
-  (let ((v-mappings (vconcat mappings))
-        (low 0) (high (1- (length mappings)))
-        finish matched last-low last-high)
-    (while (and (< low high) (not finish))
+(defsubst sourcemap--compare-mapping (target-line target-column source-line source-column)
+  (cond ((< target-line source-line) 1)
+        ((> target-line source-line) -1)
+        ((< target-column source-column) 1)
+        ((> target-column source-column) -1)
+        (t 0)))
+
+(defun sourcemap--binary-search (sourcemap here type &optional nearlest)
+  (let ((low 0) (high (1- (length sourcemap)))
+        line-fn column-fn finish matched last-low last-high
+        source-line source-column)
+    (if (eq type 'original)
+        (setq line-fn #'sourcemap-entry-original-line
+              column-fn #'sourcemap-entry-original-column)
+      (setq line-fn #'sourcemap-entry-generated-line
+            column-fn #'sourcemap-entry-generated-column))
+    (setq source-line (funcall line-fn here)
+          source-column (funcall column-fn here))
+    (while (and (<= low high) (not finish))
       (let* ((middle-index (/ (+ low high) 2))
-             (middle (aref v-mappings middle-index))
-             (compare-value (sourcemap--compare-mapping middle here)))
+             (middle (aref sourcemap middle-index))
+             (middle-line (funcall line-fn middle))
+             (middle-column (funcall column-fn middle))
+             (compare-value (sourcemap--compare-mapping
+                             middle-line middle-column source-line source-column)))
         (setq last-low low last-high high)
         (cond ((= compare-value -1)
                (setq high (1- middle-index)))
               ((= compare-value 1)
                (setq low (1+ middle-index)))
               (t
-               (setq finish t
-                     matched middle)))))
-    (if finish
-        matched
-      (sourcemap--select-nearest here
-                                 (aref v-mappings last-low)
-                                 (aref v-mappings last-high)))))
+               (setq finish t matched middle)))))
+    (cond (finish matched)
+          (nearlest (sourcemap--select-nearest
+                     here (aref sourcemap last-low) (aref sourcemap last-high)
+                     line-fn column-fn)))))
 
-(defsubst sourcemap--filter-same-file (mappings source)
-  (cl-remove-if-not (lambda (a)
-                      (string= source (sourcemap-entry-source a))) mappings))
+(defsubst sourcemap--filter-same-file (sourcemap file)
+  (cl-loop for map across sourcemap
+           when (string= file (sourcemap-entry-source map))
+           collect map into ret
+           finally return (vconcat ret)))
+
+(defun sourcemap-generated-position-for (sourcemap &rest props)
+  (let ((samefile-map (sourcemap--filter-same-file sourcemap (plist-get props :source)))
+        (here (make-sourcemap-entry :original-line (plist-get props :line)
+                                    :original-column (plist-get props :column))))
+    (when samefile-map
+      (let ((ret (sourcemap--binary-search samefile-map here 'original)))
+        (when ret
+          (list :line (sourcemap-entry-generated-line ret)
+                :column (sourcemap-entry-generated-column ret)))))))
+
+(defun sourcemap-original-position-for (sourcemap &rest props)
+  (let ((here (make-sourcemap-entry :generated-line (plist-get props :line)
+                                    :generated-column (plist-get props :column))))
+    (let ((ret (sourcemap--binary-search sourcemap here 'generated)))
+      (when ret
+        (list :source (sourcemap-entry-source ret)
+              :line (sourcemap-entry-original-line ret)
+              :column (sourcemap-entry-original-column ret))))))
 
 ;;;###autoload
 (defun sourcemap-goto-corresponding-point (props)
@@ -243,16 +242,15 @@
 This functions should be called in generated Javascript file."
   (let ((sourcemap-file (plist-get props :sourcemap)))
     (unless sourcemap-file
-      (error "Error: ':sourcemap' property is not set"))
+      (user-error "Error: ':sourcemap' property is not set"))
     (let* ((sourcemap (sourcemap-from-file sourcemap-file))
-           (mappings (sourcemap--parse-mappings sourcemap))
            (source-file (file-name-nondirectory (plist-get props :source)))
-           (samefile-mappings (sourcemap--filter-same-file mappings source-file)))
+           (samefile-mappings (sourcemap--filter-same-file sourcemap source-file)))
       (if (not samefile-mappings)
           (message "Informations in '%s' are not found" source-file)
         (let* ((here (make-sourcemap-entry :original-line (plist-get props :line)
                                            :original-column (plist-get props :column)))
-               (nearest (sourcemap--binary-search mappings here)))
+               (nearest (sourcemap--binary-search sourcemap here 'original t)))
           (forward-line (1- (sourcemap-entry-generated-line nearest)))
           (move-to-column (sourcemap-entry-generated-column nearest)))))))
 
@@ -260,11 +258,11 @@ This functions should be called in generated Javascript file."
 (defun sourcemap-from-file (file)
   (interactive
    (list (read-file-name "Sourcemap File: " nil nil t)))
-  (json-read-file file))
+  (sourcemap--parse-mappings (json-read-file file)))
 
 ;;;###autoload
 (defun sourcemap-from-string (str)
-  (json-read-from-string str))
+  (sourcemap--parse-mappings (json-read-from-string str)))
 
 (provide 'sourcemap)
 

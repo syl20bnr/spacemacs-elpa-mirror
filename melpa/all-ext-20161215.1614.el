@@ -5,14 +5,14 @@
 ;; Author: rubikitch <rubikitch@ruby-lang.org>
 ;; Maintainer: rubikitch <rubikitch@ruby-lang.org>
 ;; Copyright (C) 2013, 2016, rubikitch, all rights reserved.
-;; Time-stamp: <2016-12-15 15:49:43 rubikitch>
+;; Time-stamp: <2016-12-16 09:14:03 rubikitch>
 ;; Created: 2013-01-31 16:05:17
 ;; Version: 0.1
-;; Package-Version: 20161214.2250
+;; Package-Version: 20161215.1614
 ;; URL: http://www.emacswiki.org/emacs/download/all-ext.el
 ;; Package-Requires: ((all "1.0"))
 ;; Keywords: all, search, replace, anything, helm, helm-swoop, occur
-;; Compatibility: GNU Emacs 24.4, 24.5
+;; Compatibility: GNU Emacs 24.4, 24.5, 25.1
 ;;
 ;; Features that might be required by this library:
 ;;
@@ -78,6 +78,15 @@
 (require 'all)
 (require 'multiple-cursors nil t)
 
+(defgroup all nil
+  "Listing and editing matching lines."
+  :group 'matching)
+
+(defcustom all-from-occur-select-window-flag t
+  "Select *All* window from `helm-occur' or `anything-occur'."
+  :type 'boolean
+  :group 'all)
+
 ;;;; Line number overlay
 (defun all-make-lineno-overlay (lineno)
   (let ((o (make-overlay (point) (point))))
@@ -126,9 +135,6 @@
 (defvar helm-current-buffer)
 (defvar anything-map)
 (defvar helm-map)
-(defcustom all-from-occur-select-window-flag t
-  "Select *All* window from `helm-occur' or `anything-occur'."
-  :type 'boolean)
 
 (with-eval-after-load "anything-config"
   (define-key anything-map (kbd "C-c C-a") 'all-from-anything-occur))
@@ -147,7 +153,7 @@
 (defun all-from-helm-occur ()
   "Call `all' from `helm' content."
   (interactive)
-  (helm-run-after-quit
+  (helm-run-after-exit
    'all-from-anything-occur-internal "helm-occur"
    helm-buffer helm-current-buffer))
 
@@ -171,9 +177,9 @@
 	  (goto-char (point-max)))
       (with-current-buffer anybuf
         (save-excursion
-          (when anything-marked-candidates
+          (when (bound-and-true-p anything-marked-candidates)
             (setq marked-candidates (anything-marked-candidates)))
-          (when helm-marked-candidates
+          (when (bound-and-true-p helm-marked-candidates)
             (setq marked-candidates (helm-marked-candidates)))
           (goto-char (point-min))
           (forward-line 1)              ;ignore title line
