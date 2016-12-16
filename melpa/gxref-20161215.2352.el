@@ -4,7 +4,7 @@
 
 ;; Author: Dedi Hirschfeld
 ;; URL: https://github.com/dedi/gxref
-;; Package-Version: 20161126.706
+;; Package-Version: 20161215.2352
 ;; Keywords: xref, global, tools
 ;; Version: 0.2 alpha
 ;; Package-Requires: ((emacs "25"))
@@ -245,7 +245,7 @@ expected format, return nil."
             (string-to-number (match-string 2 ctags-x-line))
             0
             (match-string 4 ctags-x-line))
-    nil))
+    ))
 
 
 (defun gxref--find-symbol (symbol &rest args)
@@ -256,8 +256,9 @@ any additional command line arguments to pass to GNU Global."
           (append args
                   (list "-x" "-a" (shell-quote-argument symbol))))
          (global-output (gxref--global-to-list process-args)))
-    (mapcar #'gxref--make-xref-from-gtags-x-line global-output)
-    ))
+    (remove nil
+            (mapcar #'gxref--make-xref-from-gtags-x-line global-output)
+            )))
 
 
 ;;;; Interactive commands.

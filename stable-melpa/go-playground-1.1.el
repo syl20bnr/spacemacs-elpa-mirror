@@ -4,7 +4,7 @@
 
 ;; Author: Alexander I.Grafov (axel) <grafov@gmail.com>
 ;; URL: https://github.com/grafov/go-playground
-;; Package-Version: 1.0
+;; Package-Version: 1.1
 ;; Keywords: tools, golang
 ;; Package-Requires: ((emacs "24") (go-mode "1.0.0") (gotest "0.40.0"))
 
@@ -126,7 +126,7 @@ func main() {
 
 // === Go Playground ===
 // Execute the snippet with Ctl-Return
-// Remove this snippet completely with M-x `go-playground-rm`
+// Remove the snippet completely with its dir and all files M-x `go-playground-rm`
 
 "))
 
@@ -135,8 +135,11 @@ func main() {
   "Remove files of the current snippet together with directory of this snippet."
   (interactive)
   (save-buffer)
-  (delete-directory (file-name-directory (buffer-file-name)) t t)
-  (kill-buffer))
+  (if (string-match-p (file-truename go-playground-basedir) (file-truename (buffer-file-name)))
+	  (progn (delete-directory (file-name-directory (buffer-file-name)) t t)
+			 (kill-buffer))
+	(message "Won't delete this! Because %s is not under the path %s. Remove the snippet manually!"
+			 (buffer-file-name) go-playground-basedir)))
 
 ;;;###autoload
 (defun go-playground-remove-current-snippet ()

@@ -4,7 +4,7 @@
 
 ;; Author: Christopher Wellons <wellons@nullprogram.com>
 ;; URL: https://github.com/skeeto/nasm-mode
-;; Package-Version: 20160525.1826
+;; Package-Version: 20161216.425
 ;; Version: 1.1.0
 ;; Package-Requires: ((emacs "24.3"))
 
@@ -699,6 +699,8 @@ With a prefix arg, kill the comment on the current line with
 (define-derived-mode nasm-mode prog-mode "NASM"
   "Major mode for editing NASM assembly programs."
   :group 'nasm-mode
+  (make-local-variable 'indent-line-function)
+  (make-local-variable 'comment-start)
   (setf font-lock-defaults '(nasm-font-lock-keywords nil :case-fold)
         indent-line-function #'nasm-indent-line
         comment-start ";"
