@@ -1,4 +1,4 @@
-;;; winum.el --- Window numbers: navigate windows and frames using numbers.
+;;; winum.el --- Navigate windows and frames using numbers.
 ;;
 ;; Copyright (c) 2006-2015 Nikolaj Schumacher
 ;; Copyright (c) 2016 Thomas Chauvot de Beauchêne
@@ -18,7 +18,7 @@
 ;;
 ;; Author: Thomas de Beauchêne <thomas.de.beauchene@gmail.com>
 ;; Version: 1.0
-;; Package-Version: 20161216.1017
+;; Package-Version: 20161217.459
 ;; Keywords: convenience, frames, windows, multi-screen
 ;; URL: http://github.com/deb0ch/winum.el
 ;; Created: 2016
@@ -34,6 +34,9 @@
 ;; This package is an extended and actively maintained version of the
 ;; https://github.com/nschum/window-numbering.el package by Nikolaj Schumacher,
 ;; with some ideas and code taken from https://github.com/abo-abo/ace-window.
+;;
+;; This version brings, among other things, support for number sets across multiple
+;; frames, giving the user a smoother experience of multi-screen Emacs.
 ;;
 ;;; Code:
 ;;
@@ -75,8 +78,22 @@ Has effect only when `winum-scope' is not 'frame-local."
   "Function called for each window by `winum-mode'.
 This is called before automatic assignment begins.  The function should
 return a number to have it assigned to the current-window, nil otherwise.
+
 This function along with `winum-auto-assign-0-to-minibuffer' are the only
-ways to have 0 assigned to a window."
+ways to have 0 assigned to a window.
+
+Example: always assign *Calculator* the number 9 and *NeoTree* the number 0:
+
+  (defun my-winum-assign-func ()
+    (cond
+     ((equal (buffer-name) \"*Calculator*\")
+      9)
+     ((string-match-p (buffer-name) \".*\\*NeoTree\\*.*\")
+      0)
+     (t
+      nil)))
+
+  (setq winum-assign-func 'my-winum-assign-func)"
   :group 'winum
   :type  'function)
 
@@ -91,7 +108,7 @@ numbers in the mode-line.")
   :type  'integer)
 
 (defcustom winum-ignored-buffers '(" *which-key*")
-  "List of buffers to ignore when selecting window."
+  "List of buffers to ignore when assigning numbers."
   :group 'winum
   :type  '(repeat string))
 

@@ -4,7 +4,7 @@
 
 ;; Author: codefalling <code.falling@gmail.com>
 ;; Keywords: languages
-;; Package-Version: 20161009.1916
+;; Package-Version: 20161217.624
 
 ;; Version: 0.2
 ;; Package-Requires: ((mmm-mode "0.5.4"))
@@ -86,10 +86,10 @@
 ;;;###autoload
 (define-derived-mode vue-mode html-mode "vue"
   (when (not vue-initialized)
-    (vue--setup-mmm))
-  (mmm-mode-on))
+    (vue--setup-mmm)))
 
 ;;;###autoload
+(setq mmm-global-mode 'maybe)
 (add-to-list 'auto-mode-alist '("\\.vue\\'" . vue-mode))
 
 (provide 'vue-mode)
