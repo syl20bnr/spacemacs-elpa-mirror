@@ -5,7 +5,7 @@
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Created: 25 Jun 2016
 ;; Version: 1.1
-;; Package-Version: 20161209.557
+;; Package-Version: 20161216.829
 ;; Package-Requires: ((dash "2.8.0") (s "1.9.0"))
 ;;; Commentary:
 
@@ -123,9 +123,12 @@ baz is SYMBOL."
   "Try to insert an import for the symbol at point.
 Dumb: just scans open Python buffers."
   (interactive)
-  (let ((symbol (substring-no-properties (thing-at-point 'symbol)))
+  (let ((symbol (thing-at-point 'symbol))
         (matching-lines nil)
         (case-fold-search nil))
+    (unless symbol
+      (user-error "No symbol at point"))
+    (setq symbol (substring-no-properties symbol))
     ;; Find all the import lines in all Python buffers
     (dolist (buffer (pyimport--buffers-in-mode 'python-mode))
       (dolist (line (pyimport--import-lines buffer))

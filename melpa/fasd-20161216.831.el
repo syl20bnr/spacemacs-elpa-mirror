@@ -3,9 +3,8 @@
 ;; Copyright (C) 2013 steckerhalter
 
 ;; Author: steckerhalter
-;; Package-Requires: ((grizzl "0"))
-;; Package-Version: 20161203.2208
 ;; URL: https://github.com/steckerhalter/emacs-fasd
+;; Package-Version: 20161216.831
 ;; Keywords: cli bash zsh autojump
 
 ;;; Commentary:
@@ -28,8 +27,6 @@
 
 ;;; Code:
 
-(require 'grizzl)
-
 (defgroup fasd nil
   "Navigate previously-visited files and directories easily"
   :group 'tools
@@ -41,12 +38,12 @@
 When set to nil, all fasd results are returned for completion"
   :type 'boolean)
 
-(defcustom fasd-completing-read-function 'grizzl-completing-read
+(defcustom fasd-completing-read-function nil
   "The completion function to use for `fasd' completion.
-Default is `grizzl-completing-read'.  If set to `nil' it will
-fall back to the standard `completing-read-function', which could
-be using `helm' or `ido' depending on what you are using.  To use
-e.g. `ido' explicitly set it to `ido-completing-read'."
+If set to `nil' it will use the standard
+`completing-read-function', which could be using `helm' or `ido'
+depending on what you are using.  To use e.g. `ido' explicitly
+set it to `ido-completing-read'."
   :type 'symbol)
 
 (defcustom fasd-standard-search "-a"

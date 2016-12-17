@@ -1,7 +1,7 @@
 ;;; copy-as-format.el --- Copy buffer locations as GitHub/Slack/JIRA/HipChat/... formatted text
 
 ;; Author: Skye Shaw <skye.shaw@gmail.com>
-;; Package-Version: 20161208.2152
+;; Package-Version: 20161216.1810
 ;; Package-X-Original-Version: 0.0.1
 ;; Keywords: github, slack, jira, hipchat, gitlab, bitbucket, tools, convenience
 ;; URL: https://github.com/sshaw/copy-as-format
@@ -102,7 +102,7 @@
 	(format "{code%s}\n%s\n{code}\n"
 		(if (null lang) "" (concat ":" lang))
 		text))
-    (format "{{%s}}" text)))
+    (format "{{%s}}" (copy-as-format--trim text))))
 
 (defun copy-as-format--markdown (text multiline)
   (if multiline
@@ -117,7 +117,7 @@
       (format "```\n%s\n```\n" text)
     (copy-as-format--inline-markdown
      ;; Slack preserves leading and trailing whitespace
-     (replace-regexp-in-string "^[[:space:]]+\\|[[:space:]]+$" "" text))))
+     (copy-as-format--trim text))))
 
 (defun copy-as-format--inline-markdown (text)
   (format "`%s`" text))
@@ -127,6 +127,10 @@
       ;; There may be no extension so downcase filename to avoid nil check
       (file-name-extension (downcase (buffer-file-name)))
     ""))
+
+(defun copy-as-format--trim (s)
+  (replace-regexp-in-string "^[[:space:]]+\\|[[:space:]]+$" "" s))
+
 
 ;;;###autoload
 (defun copy-as-format ()

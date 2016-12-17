@@ -4,8 +4,8 @@
 
 ;; Author: Christopher Wellons <wellons@nullprogram.com>
 ;; URL: https://github.com/skeeto/nasm-mode
-;; Package-Version: 20161216.425
-;; Version: 1.1.0
+;; Package-Version: 20161216.736
+;; Version: 1.1.1
 ;; Package-Requires: ((emacs "24.3"))
 
 ;;; Commentary:
