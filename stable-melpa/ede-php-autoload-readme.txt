@@ -1,4 +1,4 @@
-Simple PHP project for EDE.  Inspired by `ede-cpp-root-project'.
+PHP EDE project that supports class autoloading and composer.json detection.
 
 Example project definition :
 (ede-php-autoload-project "My project"
@@ -10,6 +10,8 @@ Example project definition :
 This EDE project can then be used through a semanticdb
 backend.  Enable it by activating `ede-php-autoload-mode'.
 
+
 (require 'ede)
+
 (require 'ede-php-autoload-composer)
 (require 'ede-php-autoload/class-loader)

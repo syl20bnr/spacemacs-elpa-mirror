@@ -4,8 +4,8 @@
 
 ;; Author: Goichi Hirakawa <gooichi@gyazsquare.com>
 ;; URL: https://github.com/GyazSquare/flycheck-swift3
-;; Package-Version: 20161214.501
-;; Version: 1.0.5
+;; Package-Version: 1.0.6
+;; Version: 1.0.6
 ;; Keywords: convenience, languages, tools
 ;; Package-Requires: ((emacs "24.4") (flycheck "26"))
 
@@ -221,7 +221,9 @@ See URL `https://swift.org/'."
   :command (flycheck-swift3--syntax-checking-command)
   :standard-input t
   :error-patterns
-  '((info line-start (or "<stdin>" (file-name)) ":" line ":" column
+  '((error line-start "<unknown>:" line
+           ": error: " (optional (message)) line-end)
+    (info line-start (or "<stdin>" (file-name)) ":" line ":" column
           ": note: " (optional (message)) line-end)
     (warning line-start (or "<stdin>" (file-name)) ":" line ":" column
              ": warning: " (optional (message)) line-end)

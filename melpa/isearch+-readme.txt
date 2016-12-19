@@ -97,7 +97,7 @@
    24.3+), `isearchp-drop-mismatch',
    `isearchp-drop-mismatch-regexp-flag',
    `isearchp-filter-predicates-alist' (Emacs 24.4+),
-   `isearchp-highlight-regexp-group-levels-flag',
+   `isearchp-highlight-regexp-group-levels-flag' (Emacs 24.4+),
    `isearchp-initiate-edit-commands' (Emacs 22+),
    `isearchp-lazy-dim-filter-failures-flag' (Emacs 24.4+),
    `isearchp-mouse-2-flag', `isearchp-movement-unit-alist' (Emacs
@@ -113,12 +113,17 @@
 
  Faces defined here:
 
-   `isearch-fail', `isearchp-multi', `isearchp-overwrapped',
-   `isearchp-regexp', `isearchp-regexp-level-1',
-   `isearchp-regexp-level-2', `isearchp-regexp-level-3',
-   `isearchp-regexp-level-4', `isearchp-regexp-level-5',
-   `isearchp-regexp-level-6', `isearchp-regexp-level-7',
-   `isearchp-regexp-level-8', `isearchp-word', `isearchp-wrapped'.
+   `isearch-fail', `isearchp-lazy-odd-regexp-groups' (Emacs 24.4+),
+   `isearchp-multi', `isearchp-overwrapped', `isearchp-regexp',
+   `isearchp-regexp-level-1' (Emacs 24.4+),
+   `isearchp-regexp-level-2' (Emacs 24.4+),
+   `isearchp-regexp-level-3' (Emacs 24.4+),
+   `isearchp-regexp-level-4' (Emacs 24.4+),
+   `isearchp-regexp-level-5' (Emacs 24.4+),
+   `isearchp-regexp-level-6' (Emacs 24.4+),
+   `isearchp-regexp-level-7' (Emacs 24.4+),
+   `isearchp-regexp-level-8' (Emacs 24.4+), `isearchp-word',
+   `isearchp-wrapped'.
 
  Macros defined here:
 
@@ -153,7 +158,7 @@
    `isearchp-near-after-predicate' (Emacs 24.4+),
    `isearchp-near-before-predicate' (Emacs 24.4+),
    `isearchp-near-predicate' (Emacs 24.4+), `isearchp-not-pred'
-   (Emacs 24.4+), `isearchp-read-face-names',
+   (Emacs 24.4+), `isearchp-oddp', `isearchp-read-face-names',
    `isearchp-read-face-names--read', `isearchp-read-filter-name'
    (Emacs 24.4+), `isearchp-read-measure' (Emacs 24.4+),
    `isearchp-read-near-args' (Emacs 24.4+),
@@ -161,10 +166,9 @@
    `isearchp-read-prompt-prefix' (Emacs 24.4+),
    `isearchp-read-regexp-during-search' (Emacs 24.4+),
    `isearchp-read-sexps', `isearchp-redo-lazy-highlighting' (Emacs
-   24.4+), `isearchp-remove-duplicates',
-   `isearchp-remove-mismatch', `isearchp-repeat-command',
-   `isearchp-repeat-search-if-fail' (Emacs 22+),
-   `isearchp-replace-fixed-case-p' (Emacs 22+),
+   24.4+), `isearchp-remove-duplicates', `isearchp-remove-mismatch',
+   `isearchp-repeat-command', `isearchp-repeat-search-if-fail'
+   (Emacs 22+), `isearchp-replace-fixed-case-p' (Emacs 22+),
    `isearchp-replace-match' (Emacs 22+),
    `isearchp-replace-multiple' (Emacs 22+),
    `isearchp-replace-on-demand' (Emacs 22+),
@@ -179,14 +183,15 @@
    `isearchp-in-lazy-highlight-update-p' (Emacs 24.3+),
    `isearchp-last-non-nil-invisible',
    `isearchp-last-quit-regexp-search', `isearchp-last-quit-search',
-   `isearchp-lazy-highlight-face' (Emacs 24.4+),
+   `isearchp-lazy-highlight-face' (Emacs 22+),
+   `isearchp-lazy-regexp-level-overlays' (Emacs 24.4+),
    `isearchp-nomodify-action-hook' (Emacs 22+),
    `isearchp-noprompt-action-function',
    `isearchp-orig-ring-bell-fn', `isearchp-pref-arg',
    `isearchp-reg-beg', `isearchp-reg-end',
-   `isearchp-regexp-level-overlays', `isearchp-replace-literally'
-   (Emacs 22+), `isearchp-replacement' (Emacs 22+),
-   `isearchp--replacing-on-demand' (Emacs 22+),
+   `isearchp-regexp-level-overlays' (Emacs 24.4+),
+   `isearchp-replace-literally' (Emacs 22+), `isearchp-replacement'
+   (Emacs 22+), `isearchp--replacing-on-demand' (Emacs 22+),
    `isearchp-saved-filter-predicate' (Emacs 24.4+),
    `isearch-update-post-hook' (Emacs 20-21),
    `isearchp-user-entered-new-filter-p' (Emacs 24.4+),
@@ -209,6 +214,7 @@
  `isearch-forward', `isearch-forward-regexp' -
                          Prefix arg can  `multi-isearch-buffers'.
  `isearch-highlight'   - Highlight also regexp-group levels.
+ `lazy-highlight-cleanup' - Delete lazy regexp overlays. (24.4+)
  `isearch-lazy-highlight-search' - Can limit to region (24.3+)
  `isearch-lazy-highlight-update' - Can limit to region (24.3+)
  `isearch-mode'        - Save cursor position relative to window.
@@ -616,11 +622,13 @@ Overview of Features ---------------------------------------------
    lighter: `ISEARCH' for case-insensitive; `Isearch' for
    case-sensitive.
 
- * Optional highlighting of the first eight regexp-group levels,
-   controlled by option
-   `isearchp-highlight-regexp-group-levels-flag'.  You can toggle
+ * Optional highlighting of the first eight regexp-group levels in
+   the current search hit, controlled by option
+   `isearchp-highlight-regexp-group-levels-flag'.  For
+   lazy-highlighting of other search hits, the odd groups are
+   highlighted differently from the even groups.  You can toggle
    the value using `M-s h R' (command
-   `isearchp-toggle-highlighting-regexp-groups.') during Isearch.
+   `isearchp-toggle-highlighting-regexp-groups.')  during Isearch.
 
  * Whether search is literal or regexp is indicated in the mode
    line minor-mode lighter: `R*SEARCH' or `R*search', for regexp.

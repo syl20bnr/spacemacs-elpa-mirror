@@ -4,8 +4,8 @@
 
 ;; Authors: Jason Milkins <jasonm23@gmail.com>
 ;; URL: http://github.com/emacsfodder/emacs-theme-darktooth
-;; Package-Version: 20161210.2038
-;; Version: 0.1.62
+;; Package-Version: 0.2.100
+;; Version: 0.1.66
 
 ;;; Commentary:
 ;;  A color theme for Emacs, from the darkness... it watches

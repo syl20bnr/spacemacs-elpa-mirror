@@ -1,11 +1,12 @@
-;;; xah-replace-pairs.el --- Multi-pair find/replace in strings and region.
+;;; xah-replace-pairs.el --- Multi-pair find/replace in strings and region.  -*- coding: utf-8; lexical-binding: t; -*-
 
-;; Copyright © 2010-2015, by Xah Lee
+;; Copyright © 2010-2016, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.2.0
-;; Package-Version: 20161210.2059
+;; Version: 2.2.2
+;; Package-Version: 20161218.2147
 ;; Created: 17 Aug 2010
+;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: lisp, tools, find replace
 ;; URL: http://ergoemacs.org/emacs/elisp_replace_string_region.html
 
