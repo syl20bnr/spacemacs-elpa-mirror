@@ -2,6 +2,9 @@ Note: The interface used in this file requires CC Mode 5.30 or
 later.
 
 History:
+  0.9.4 - 2016-12-20
+       derive from prog-mode if available, otherwise nil
+       use proper syntax-table
   0.9.3 - 2016-12-13
        derive from nil
   0.9.2 - 2016-12-13

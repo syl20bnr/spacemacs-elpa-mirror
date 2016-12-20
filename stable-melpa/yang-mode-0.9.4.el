@@ -16,8 +16,8 @@
 ;; Boston, MA 02111-1307, USA.
 
 ;; Author: Martin Bjorklund <mbj4668@gmail.com>
-;; Version: 0.9.3
-;; Package-Version: 20161213.1247
+;; Version: 0.9.4
+;; Package-Version: 0.9.4
 
 ;;; Commentary:
 
@@ -25,6 +25,9 @@
 ;; later.
 
 ;; History:
+;;   0.9.4 - 2016-12-20
+;;        derive from prog-mode if available, otherwise nil
+;;        use proper syntax-table
 ;;   0.9.3 - 2016-12-13
 ;;        derive from nil
 ;;   0.9.2 - 2016-12-13
@@ -275,6 +278,12 @@
 (defvar yang-font-lock-keywords yang-font-lock-keywords-3
   "Default expressions to highlight in YANG mode.")
 
+(defvar yang-mode-syntax-table nil
+  "Syntax table used in `yang-mode' buffers.")
+(or yang-mode-syntax-table
+    (setq yang-mode-syntax-table
+          (funcall (c-lang-const c-make-mode-syntax-table yang))))
+
 (defvar yang-mode-map (let ((map (c-make-inherited-keymap)))
                       ;; Add bindings which are only useful for YANG
                       map)
@@ -336,8 +345,15 @@
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.yang\\'" . yang-mode))
 
+;; derive from prog-mode if it is defined
+(if (fboundp 'prog-mode)
+    (defmacro yang-define-derived-mode (mode &rest args)
+      `(define-derived-mode ,mode prog-mode ,@args))
+  (defmacro yang-define-derived-mode (mode &rest args)
+    `(define-derived-mode ,mode nil ,@args)))
+
 ;;;###autoload
-(define-derived-mode yang-mode nil "YANG"
+(yang-define-derived-mode yang-mode "YANG"
   "Major mode for editing YANG modules.
 
 The hook `c-mode-common-hook' is run with no args at mode
@@ -345,6 +361,7 @@ initialization, then `yang-mode-hook'.
 
 Key bindings:
 \\{yang-mode-map}"
+  :syntax-table yang-mode-syntax-table
   (c-initialize-cc-mode t)
   (c-init-language-vars yang-mode)
   (c-common-init 'yang-mode)
@@ -356,7 +373,7 @@ Key bindings:
   ;; that a direct call to `fill-paragraph' behaves better.
   (make-local-variable fill-paragraph-function)
   (setq fill-paragraph-function 'yang-fill-paragraph)
-  ;; we derive from nil rather than c-mode in order to not run
+  ;; we derive from prog-mode/nil rather than c-mode in order to not run
   ;; c-mode-hooks; this means that we need to run c-mode-common-hook
   ;; explicitly.
   (c-run-mode-hooks 'c-mode-common-hook))
