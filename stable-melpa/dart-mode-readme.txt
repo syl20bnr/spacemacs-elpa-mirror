@@ -1,7 +1,4 @@
-To install, save this on your load path and add the following to
-your .emacs file:
-
-(require 'dart-mode)
+To install, see https://github.com/nex3/dart-mode/blob/master/README.md
 
 Known bugs:
 

@@ -2,8 +2,8 @@
 
 ;; Author: Natalie Weizenbaum
 ;; URL: http://code.google.com/p/dart-mode
-;; Package-Version: 0.14
-;; Version: 0.14
+;; Package-Version: 0.15
+;; Version: 0.15
 ;; Package-Requires: ((cl-lib "0.5") (dash "2.10.0") (flycheck "0.23"))
 ;; Keywords: language
 
@@ -24,10 +24,7 @@
 
 ;;; Commentary:
 
-;; To install, save this on your load path and add the following to
-;; your .emacs file:
-;;
-;; (require 'dart-mode)
+;; To install, see https://github.com/nex3/dart-mode/blob/master/README.md
 ;;
 ;; Known bugs:
 ;;
@@ -50,25 +47,10 @@
 
 (eval-and-compile (c-add-language 'dart-mode 'java-mode))
 
+(require 'cl-lib)
 (require 'dash)
 (require 'flycheck)
 (require 'json)
-
-;; See https://debbugs.gnu.org/cgi/bugreport.cgi?bug=18845. cc-mode before 24.4
-;; uses 'cl without requiring it but we use 'cl-lib in this package. We can
-;; simply require 'cl past 24.4 but need to work around the dependency for
-;; earlier versions.
-(eval-when-compile
-  (unless (require 'cl-lib nil t)
-    (require 'cl)))
-
-(eval-and-compile
-  (if (and (= emacs-major-version 24) (>= emacs-minor-version 4))
-    (require 'cl)))
-
-(if (and (= emacs-major-version 24) (< emacs-minor-version 3))
-    (unless (fboundp 'cl-set-difference)
-      (defalias 'cl-set-difference 'set-difference)))
 
 ;;; CC configuration
 
@@ -245,15 +227,18 @@
 
 ;;; CC indentation support
 
+(defvar c-syntactic-context nil
+  "A dynamically-bound variable used by cc-mode.")
+
 (defun dart-block-offset (info)
   "Calculate the correct indentation for inline functions.
 
 When indenting inline functions, we want to pretend that
 functions taking them as parameters essentially don't exist."
-  (destructuring-bind (syntax . anchor) info
+  (cl-destructuring-bind (syntax . anchor) info
     (let ((arglist-count
-           (loop for (symbol . _) in c-syntactic-context
-                 count (eq symbol 'arglist-cont-nonempty))))
+           (cl-loop for (symbol . _) in c-syntactic-context
+                    count (eq symbol 'arglist-cont-nonempty))))
       (if (> arglist-count 0)
           (- (* -1 c-basic-offset arglist-count)
              (if (eq syntax 'block-close) c-basic-offset 0))
@@ -262,7 +247,7 @@ functions taking them as parameters essentially don't exist."
 (defun dart-brace-list-cont-nonempty-offset (info)
   "Indent a brace-list line in the same style as arglist-cont-nonempty.
 This could be either an actual brace-list or an optional parameter."
-  (destructuring-bind (syntax . anchor) info
+  (cl-destructuring-bind (_ . anchor) info
     ;; If we're in a function definition with optional arguments, indent as if
     ;; the brace wasn't there. Currently this misses the in-function function
     ;; definition, but that's probably acceptable.
@@ -297,8 +282,9 @@ SYNTAX-GUESS is the output of `c-guess-basic-syntax'."
          ;; code block.
          (= (char-before) ?\))
          ;; "else" and "try" are the only keywords that come immediately before
-         ;; a block.
-         (looking-back "\\<\\(else\\|try\\)\\>")
+         ;; a block.  Look only back at most 4 characters (the length of
+         ;; "else") for performance reasons.
+         (looking-back "\\<\\(else\\|try\\)\\>" (- (point) 4))
          ;; CC is good at figuring out if we're in a class.
          (assq 'inclass syntax-guess))))))
 
@@ -332,7 +318,7 @@ SYNTAX-GUESS is the output of `c-guess-basic-syntax'."
                (backward-up-list)
                (when (= (char-after) ?\[)
                  (setq ad-return-value
-                       `((,(case type
+                       `((,(cl-case type
                              (arglist-intro 'brace-list-intro)
                              (arglist-cont 'brace-list-entry)
                              (arglist-cont-nonempty 'dart-brace-list-cont-nonempty)
@@ -456,7 +442,8 @@ whichever comes first."
 
 (defcustom dart-font-lock-extra-types nil
   "*List of extra types (aside from the type keywords) to recognize in DART mode.
-Each list item should be a regexp matching a single identifier.")
+Each list item should be a regexp matching a single identifier."
+  :group 'dart-mode)
 
 (defconst dart-font-lock-keywords-1 (c-lang-const c-matchers-1 dart)
   "Minimal highlighting for Dart mode.")
@@ -478,110 +465,6 @@ Each list item should be a regexp matching a single identifier.")
 (unless dart-mode-syntax-table
   (setq dart-mode-syntax-table
         (funcall (c-lang-const c-make-mode-syntax-table dart))))
-
-
-;;; Flymake Support
-
-(defun flymake-dart-init ()
-  "Return the dart_analyzer command to invoke for flymake."
-  (let* ((temp-file  (flymake-init-create-temp-buffer-copy
-                      'flymake-create-temp-inplace))
-	 (local-file (file-relative-name
-                      temp-file
-                      (file-name-directory buffer-file-name)))
-         ;; Work around Dart issue 7497
-         (work-dir (expand-file-name
-                    "flymake-dart-work"
-                    (flymake-get-temp-dir))))
-    (list "dart_analyzer" (list "--error_format" "machine" local-file
-                                "--work" work-dir))))
-
-(defun flymake-dart-cleanup ()
-  "Clean up after running the Dart analyzer."
-  (flymake-simple-cleanup)
-  (let ((dir-name (expand-file-name
-                   "flymake-dart-work"
-                   (flymake-get-temp-dir))))
-    (condition-case nil
-        (delete-dir dir-name t)
-      (error
-       (flymake-log 1 "Failed to delete dir %s, error ignored" dir-name)))))
-
-(eval-after-load 'flymake
-  '(progn
-     (when (boundp 'flymake-warn-line-regexp)
-       (add-hook 'dart-mode-hook
-                 (lambda ()
-                   (set (make-variable-buffer-local 'flymake-warn-line-regexp)
-                        "^WARNING|"))))
-
-     (defadvice flymake-post-syntax-check (before flymake-post-syntax-check-dart activate)
-       "Sets the exit code of the dart_analyzer process to 0.
-
-dart_analyzer can report errors for files other than the current
-file. flymake dies horribly if the process emits a non-zero exit
-code without any warnings for the current file. These two
-properties interact poorly."
-       (when (eq major-mode 'dart-mode)
-         (ad-set-arg 0 0)))
-
-     (push '("\\.dart\\'" flymake-dart-init flymake-dart-cleanup)
-           flymake-allowed-file-name-masks)
-     ;; Accept negative numbers to work around Dart issue 7495
-     (push '("^[^|]+|[^|]+|[^|]+|file:\\([^|]+\\)|\\([0-9]+\\)|\\([0-9]+\\)|[0-9]+|\\(.*\\)$"
-             1 2 3 4)
-           flymake-err-line-patterns)))
-
-
-;;; Formatter integration
-
-(defcustom dart-format-path "dartformat"
-  "The path to the dartformat executable.
-
-Defaults to looking it up on `exec-path'.")
-
-(defun dart-format-region (beg end)
-  "Run the Dart formatter on the current region.
-
-This uses `dart-format-path' to find the formatter."
-  (interactive "r")
-  (save-excursion
-    (goto-char beg)
-    (if (eolp) (forward-char))
-    (back-to-indentation)
-    (let ((indent (/ (current-column) 2)))
-      ;; Make sure that the region starts at the beginning of a line so that the
-      ;; formatter can re-indent it correctly.
-      (beginning-of-line)
-      (setq beg (point))
-
-      ;; Same with the end.
-      (goto-char end)
-      (unless (bolp)
-        (end-of-line)
-        (forward-char))
-      (setq end (point))
-
-      (call-process-region
-       beg end dart-format-path t t nil
-       "--statement" "--indent" (number-to-string indent)))))
-
-(defun dart-format-statement (pos)
-  "Run the Dart formatter on the current statement.
-
-This uses `dart-format-path' to find the formatter."
-  (interactive "d")
-  (save-excursion
-    (dart-beginning-of-statement)
-    (let ((beg (point)))
-      (loop do (condition-case nil
-                   (forward-sexp)
-                 (error (backward-up-list -1)))
-            until (if (looking-at "[[:space:]\\n]*\\(;\\)")
-                      (goto-char (match-end 1))
-                    (and (eq (char-before) ?})
-                         (eolp))))
-      (dart-format-region beg (point)))))
 
 
 ;;; Dart analysis server
@@ -682,7 +565,7 @@ directory or the current file directory to the analysis roots."
 (defun dart-start-analysis-server ()
   "Start the Dart analysis server."
   (when dart--analysis-server
-    (process-kill-without-query
+    (kill-process
      (dart--analysis-server-process dart--analysis-server))
     (kill-buffer (dart--analysis-server-buffer dart--analysis-server)))
   (let* ((process-connection-type nil)
@@ -692,6 +575,7 @@ directory or the current file directory to the analysis roots."
                          dart-executable-path
                          dart-analysis-server-snapshot-path
                          "--no-error-notification")))
+    (set-process-query-on-exit-flag dart-process nil)
     (setq dart--analysis-server
           (dart--analysis-server-create dart-process))))
 
@@ -704,7 +588,7 @@ directory or the current file directory to the analysis roots."
     (buffer-disable-undo (dart--analysis-server-buffer instance))
     (set-process-filter
      process
-     (lambda (proc string)
+     (lambda (_ string)
        (dart--analysis-server-process-filter instance string)))
     instance))
 
@@ -852,7 +736,7 @@ the callback for that request is given the json decoded response."
           (dart--analysis-server-on-error-callback msg)
         (dart-info (format "No callback was associated with id %s" raw-id))))))
 
-(defun dart--flycheck-start (checker callback)
+(defun dart--flycheck-start (_ callback)
   "Run the CHECKER and report the errors to the CALLBACK."
   (dart-info (format "Checking syntax for %s" (current-buffer)))
   (dart--analysis-server-send
@@ -934,10 +818,10 @@ true for positions before the start of the statement, but on its line."
    (save-excursion
      (skip-syntax-backward " ")
      (when (bolp)
-       (loop do (forward-char -1)
+       (cl-loop do (forward-char -1)
              while (looking-at "^ *$"))
        (skip-syntax-backward " ")
-       (case (char-before)
+       (cl-case (char-before)
          ((?} ?\;) t)
          ((?{) (dart-in-block-p (c-guess-basic-syntax))))))))
 

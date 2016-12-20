@@ -4,7 +4,7 @@
 ;; Author: stardiviner <numbchild@gmail.com>
 ;; Maintainer: stardiviner <numbchild@gmail.com>
 ;; Keywords: kiwix wikipedia
-;; Package-Version: 20161216.255
+;; Package-Version: 20161219.1811
 ;; URL: https://github.com/stardiviner/kiwix.el
 ;; Created: 23th July 2016
 ;; Version: 0.1.0
@@ -34,7 +34,9 @@
 
 
 (require 'cl-lib)
-(require 'org) ; load for `org-link-set-parameters'
+;; load for `org-link-set-parameters'
+(require 'org)
+(autoload 'org-link-set-parameters "org")
 
 (defgroup kiwix nil
   "Kiwix customization options.")
