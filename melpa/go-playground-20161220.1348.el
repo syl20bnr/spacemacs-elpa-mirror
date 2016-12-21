@@ -4,9 +4,9 @@
 
 ;; Author: Alexander I.Grafov (axel) <grafov@gmail.com>
 ;; URL: https://github.com/grafov/go-playground
-;; Package-Version: 20161216.1129
+;; Package-Version: 20161220.1348
 ;; Keywords: tools, golang
-;; Package-Requires: ((emacs "24") (go-mode "1.0.0") (gotest "0.40.0"))
+;; Package-Requires: ((emacs "24") (go-mode "1.4.0") (gotest "0.13.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -69,9 +69,8 @@ By default confirmation required."
 (define-minor-mode go-playground-mode
   "A place for playing with golang code and export it in short snippets."
   :init-value nil
-  :lighter ""
-  :keymap '(([C-return] . go-playground-exec))
-  (setq mode-name "Play(Go)"))
+  :lighter "Play(Go)"
+  :keymap '(([C-return] . go-playground-exec)))
 
 (defun go-playground-snippet-file-name(&optional snippet-name)
   (let ((file-name (cond (snippet-name)
@@ -137,7 +136,6 @@ func main() {
 
 "))
 
-;;;###autoload
 (defun go-playground-rm ()  
   "Remove files of the current snippet together with directory of this snippet."
   (interactive)

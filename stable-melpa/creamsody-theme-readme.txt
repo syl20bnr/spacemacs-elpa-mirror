@@ -1,3 +1,3 @@
  Straight from the soda fountain.
 
- Please note: this theme is not intended for terminal use.
+Supports terminal and uses Autothemer from 0.3.0

@@ -12,7 +12,7 @@
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 
 ;; Package-Requires: ((emacs "24.4") (dash "20160820.501") (with-editor "20161201.925"))
-;; Package-Version: 20161214.519
+;; Package-Version: 20161220.1051
 ;; Keywords: git tools vc
 ;; Homepage: https://github.com/magit/magit
 
@@ -114,6 +114,7 @@
 
 (require 'dash)
 (require 'log-edit)
+(require 'magit-utils nil t)
 (require 'ring)
 (require 'server)
 (require 'with-editor)
@@ -163,12 +164,6 @@ The major mode configured here is turned on by the minor mode
   :type '(choice (function-item text-mode)
                  (const :tag "No major mode")))
 
-(unless (find-lisp-object-file-name 'git-commit-setup-hook 'defvar)
-  (add-hook 'git-commit-setup-hook 'with-editor-usage-message)
-  (add-hook 'git-commit-setup-hook 'git-commit-propertize-diff)
-  (add-hook 'git-commit-setup-hook 'git-commit-turn-on-auto-fill)
-  (add-hook 'git-commit-setup-hook 'git-commit-setup-changelog-support)
-  (add-hook 'git-commit-setup-hook 'git-commit-save-message))
 (defcustom git-commit-setup-hook
   '(git-commit-save-message
     git-commit-setup-changelog-support
@@ -178,6 +173,7 @@ The major mode configured here is turned on by the minor mode
   "Hook run at the end of `git-commit-setup'."
   :group 'git-commit
   :type 'hook
+  :get (and (featurep 'magit-utils) 'magit-hook-custom-get)
   :options '(git-commit-save-message
              git-commit-setup-changelog-support
              git-commit-turn-on-auto-fill

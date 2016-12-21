@@ -4,7 +4,7 @@
 
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-which-key
-;; Package-Version: 20161215.658
+;; Package-Version: 20161220.1256
 ;; Version: 1.1.15
 ;; Keywords:
 ;; Package-Requires: ((emacs "24.3"))
@@ -254,6 +254,12 @@ and nil. Nil turns the feature off."
 (defcustom which-key-min-display-lines 1
   "The minimum number of horizontal lines to display in the
   which-key buffer."
+  :group 'which-key
+  :type 'integer)
+
+(defcustom which-key-max-display-columns nil
+  "The maximum number of columns to display in the which-key
+buffer. nil means don't impose a maximum."
   :group 'which-key
   :type 'integer)
 
@@ -1609,7 +1615,7 @@ Returns a plist that holds the page strings, as well as
 metadata."
   (let ((cols-w-widths (mapcar #'which-key--pad-column
                                (which-key--partition-list avl-lines keys)))
-        (page-width 0) (n-pages 0) (n-keys 0)
+        (page-width 0) (n-pages 0) (n-keys 0) (n-columns 0)
         page-cols pages page-widths keys/page col)
     (if (> (apply #'max (mapcar #'car cols-w-widths)) avl-width)
         ;; give up if no columns fit
@@ -1618,17 +1624,21 @@ metadata."
       (while cols-w-widths
         ;; start new page
         (cl-incf n-pages)
-        (setq col (pop cols-w-widths)
-              page-cols (list (cdr col))
-              page-width (car col)
-              n-keys (length (cdr col)))
+        (setq col (pop cols-w-widths))
+        (setq page-cols (list (cdr col)))
+        (setq page-width (car col))
+        (setq n-keys (length (cdr col)))
+        (setq n-columns 1)
         ;; add additional columns as long as they fit
         (while (and cols-w-widths
+                    (or (null which-key-max-display-columns)
+                        (< n-columns which-key-max-display-columns))
                     (<= (+ (caar cols-w-widths) page-width) avl-width))
           (setq col (pop cols-w-widths))
           (push (cdr col) page-cols)
           (cl-incf page-width (car col))
-          (cl-incf n-keys (length (cdr col))))
+          (cl-incf n-keys (length (cdr col)))
+          (cl-incf n-columns))
         (push (which-key--join-columns page-cols) pages)
         (push n-keys keys/page)
         (push page-width page-widths))

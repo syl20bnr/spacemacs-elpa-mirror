@@ -2,6 +2,7 @@ Send region or buffer to a format server (will setup localhost:58000 by default)
  - [standard](http://standardjs.com)  # zero config
  - [jsbeautify](https://github.com/beautify-web/js-beautify)  # little config
  - [esformatter](https://github.com/millermedeiros/esformatter)  # total config
+ - [airbnb](https://github.com/airbnb/babel-preset-airbnb)  # **Airbnb** style formatter
  - [stylefmt](https://github.com/morishitter/stylefmt)  # css
 
 ## Install

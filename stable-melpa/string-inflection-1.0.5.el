@@ -4,8 +4,8 @@
 
 ;; Author: akicho8 <akicho8@gmail.com>
 ;; Keywords: elisp
-;; Package-Version: 20161213.1737
-;; Version: 1.0.4
+;; Package-Version: 1.0.5
+;; Version: 1.0.5
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -137,11 +137,14 @@
 
 ;; --------------------------------------------------------------------------------
 
+(defun string-inflection-non-word-chars ()
+  (concat "^" string-inflection-word-chars))
+
 (defun string-inflection-get-current-word (&optional skip)
   "Gets the symbol near the cursor.  If SKIP is non-nil, skip non-word characters forward."
   (interactive)
   (and skip
-       (skip-chars-forward string-inflection-non-word-chars))
+       (skip-chars-forward (string-inflection-non-word-chars)))
   (let ((start (progn
                  (skip-chars-forward string-inflection-word-chars)
                  (point)))
@@ -151,9 +154,6 @@
     (prog1
         (buffer-substring start end)
       (delete-region start end))))
-
-(defun string-inflection-non-word-chars ()
-  (concat "^" string-inflection-word-chars))
 
 ;; --------------------------------------------------------------------------------
 
