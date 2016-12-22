@@ -254,14 +254,15 @@ Non-interactive functions defined here:
   `mouse3-dired-set-to-toggle-marks',
   `mouse3-dired-this-file-marked-p',
   `mouse3-dired-this-file-unmarked-p',
-  `mouse3-dired-toggle-marks-in-region', `mouse3-file-or-dir',
-  `mouse3-nonempty-region-p', `mouse3-region-popup-choice',
-  `mouse3-region-popup-choice-1',
+  `mouse3-dired-toggle-marks-in-region', `mouse3-ffap-guesser',
+  `mouse3-file-or-dir', `mouse3-nonempty-region-p',
+  `mouse3-region-popup-choice', `mouse3-region-popup-choice-1',
   `mouse3-region-popup-custom-entries',
   `mouse3-second-click-command'.
 
 Internal variables defined here:
 
+  `mouse3-ffap-max-region-size',
   `mouse3-noregion-popup-misc-submenu',
   `mouse3-region-popup-change-text-submenu',
   `mouse3-region-popup-check-convert-submenu',

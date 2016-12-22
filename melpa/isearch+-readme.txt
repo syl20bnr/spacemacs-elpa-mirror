@@ -135,6 +135,7 @@
    `isearchp-assoc-delete-all', `isearchp-barf-if-use-minibuffer',
    `isearchp-columns-p' (Emacs 24.4+),
    `isearchp-complete-past-string', `isearchp-fail-pos',
+   `isearchp-ffap-guesser' (Emacs 24.4+),
    `isearchp-highlight-lighter', `isearchp-in-color-p' (Emacs
    24.4+), `isearchp-in-comment-p' (Emacs 24.4+),
    `isearchp-in-comment-or-delim-p' (Emacs 24.4+),
@@ -166,9 +167,10 @@
    `isearchp-read-prompt-prefix' (Emacs 24.4+),
    `isearchp-read-regexp-during-search' (Emacs 24.4+),
    `isearchp-read-sexps', `isearchp-redo-lazy-highlighting' (Emacs
-   24.4+), `isearchp-remove-duplicates', `isearchp-remove-mismatch',
-   `isearchp-repeat-command', `isearchp-repeat-search-if-fail'
-   (Emacs 22+), `isearchp-replace-fixed-case-p' (Emacs 22+),
+   24.4+), `isearchp-remove-duplicates',
+   `isearchp-remove-mismatch', `isearchp-repeat-command',
+   `isearchp-repeat-search-if-fail' (Emacs 22+),
+   `isearchp-replace-fixed-case-p' (Emacs 22+),
    `isearchp-replace-match' (Emacs 22+),
    `isearchp-replace-multiple' (Emacs 22+),
    `isearchp-replace-on-demand' (Emacs 22+),
@@ -179,6 +181,7 @@
  Internal variables defined here:
 
    `isearchp-current-filter-preds-alist' (Emacs 24.4+),
+   `isearchp-ffap-max-region-size' (Emacs 24.4+),
    `isearchp-filter-map' (Emacs 24.4+),
    `isearchp-in-lazy-highlight-update-p' (Emacs 24.3+),
    `isearchp-last-non-nil-invisible',

@@ -7,7 +7,7 @@
   - Visual Studio project file manager
     backend: msvc + ede
   - coexistence of different versions
-    2015/2013/2012/2010
+    2017/2015/2013/2012/2010
   - code completion (auto / manual)
     backend: ac-clang
     ac-sources: ac-clang or semantic
@@ -26,9 +26,9 @@
 
 * REQUIRED ENVIRONMENT
   - Microsoft Windows 64/32bit
-    8/7/Vista
-  - Microsoft Visual Studio Professional
-    2015/2013/2012/2010
+    10/8/7/Vista
+  - Microsoft Visual Studio Community/Professional/Enterprise
+    2017/2015/2013/2012/2010
   - Shell 64/32bit
     CYGWIN/MSYS/CMD(cmdproxy)
     CYGWIN's bash recommended
