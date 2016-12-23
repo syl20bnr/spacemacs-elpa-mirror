@@ -2,9 +2,9 @@ xah-reformat-code contains commands to reformat current paragraph into 1 long li
 
 It is like emacs `fill-region', but designed for programing language source code.
 
-it contain commands to strickly exchange whatespaces by newline, or vice versa. No adding other char or removing other char.
+it contain commands to strictly exchange whitespaces by newline, or vice versa. No adding other char or removing other char.
 
-this is suitable for languages that strickly consider whitespaces equivalent except in string or comment. For example, XML, HTML, CSS, lisp, Wolfram Language.
+this is suitable for languages that strictly consider whitespaces equivalent except in string or comment. For example, XML, HTML, CSS, lisp, Wolfram Language.
 
 2016-12-16 todo:
 • auto skip strings and comments.

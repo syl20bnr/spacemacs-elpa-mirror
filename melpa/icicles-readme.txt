@@ -41,7 +41,7 @@
  navigate around the sections of this doc.  Linkd mode will
  highlight this Index, as well as the cross-references and section
  headings throughout this file.  You can get `linkd.el' here:
- http://dto.freeshell.org/notebook/Linkd.html.
+ http://www.emacswiki.org/emacs/download/linkd.el.
 
  (@> "Things Defined in Icicles")
  (@> "Miscellaneous")
@@ -1418,9 +1418,9 @@
    `icicle-extra-candidates-dir-insert-p',
    `icicle-face-name-history', `icicle-face-remapping-Completions',
    `icicle-face-remapping-region', `icicle-fancy-candidates-p',
-   `icicle-fancy-cands-internal-p', `icicle-file-menu-map',
-   `icicle-file-name-completion-table', `icicle-files',
-   `icicle-file-sort-first-time-p',
+   `icicle-fancy-cands-internal-p', `icicle-ffap-max-region-size',
+   `icicle-file-menu-map', `icicle-file-name-completion-table',
+   `icicle-files', `icicle-file-sort-first-time-p',
    `icicle-filtered-default-value',
    `icicle-find-file-abs-action-fn', `icicle-find-file-action-fn',
    `icicle-font-name-history', `icicle-frame-alist',

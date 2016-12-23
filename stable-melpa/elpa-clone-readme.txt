@@ -9,6 +9,11 @@ Prerequisites:
 
 Installation:
 
+`elpa-clone` is available on [MELPA] and [el-get].
+
+[MELPA]: https://melpa.org/
+[el-get]: https://github.com/dimitri/el-get
+
 To install `elpa-clone' from git repository, clone the repo, then add the
 repo dir into `load-path'.
 
