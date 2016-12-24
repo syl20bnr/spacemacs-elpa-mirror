@@ -437,7 +437,7 @@ Overview of Features ---------------------------------------------
    highlights the current column and line using crosshairs.)
 
      (lambda (beg end)
-       (save-excursion (goto-char end)) ; Gp to end of search hit.
+       (save-excursion (goto-char end)) ; Go to end of search hit.
        ;; Avoid calling `crosshairs' when inside
        ;; `isearch-lazy-highlight-search'.
        (unless isearchp-in-lazy-highlight-update-p (crosshairs))
@@ -451,6 +451,10 @@ Overview of Features ---------------------------------------------
    that are not being used.  But in this case no real filtering is
    done, and there is no need to show crosshairs moving across the
    buffer during lazy highlighting.)
+
+   (You can choose that crosshairs-showing filter predicate by the
+   name `crosshairs' when prompted for a predicate.  It corresponds
+   to predicate `isearchp-show-hit-w-crosshairs'.)
 
    The following filtering commands are available during Isearch.
    They are all on prefix key `C-z', by default.  (They are on

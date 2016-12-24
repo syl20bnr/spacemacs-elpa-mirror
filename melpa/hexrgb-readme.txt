@@ -27,8 +27,10 @@
  Commands defined here:
 
    `hexrgb-blue', `hexrgb-complement', `hexrgb-green',
-   `hexrgb-hue', `hexrgb-read-color', `hexrgb-red',
-   `hexrgb-saturation', `hexrgb-value'.
+   `hexrgb-hue', `hexrgb-hue-complement', `hexrgb-read-color',
+   `hexrgb-red', `hexrgb-saturation',
+   `hexrgb-saturation-complement', `hexrgb-value',
+   `hexrgb-value-complement'.
 
  Non-interactive functions defined here:
 
