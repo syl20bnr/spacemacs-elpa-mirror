@@ -2,7 +2,7 @@
 
 ;; Author: Sebastian Christ <rudolfo.christ@gmail.com>
 ;; URL: https://github.com/rudolfochrist/interleave
-;; Package-Version: 20161219.654
+;; Package-Version: 20161225.327
 ;; Version: 1.4.20161123-610
 
 ;; This file is not part of GNU Emacs
@@ -169,7 +169,7 @@ taken as columns."
                  (const nil)))
 
 (defcustom interleave-disable-narrowing nil
-  "Disable the narrowing in notes buffer."
+  "Disable narrowing in notes/org buffer."
   :group 'interleave
   :type 'boolean)
 
@@ -292,25 +292,38 @@ ignored."
 Effectively resolves the headline with the interleave_page_note
 property set to PAGE and returns the point.
 
+If `interleave-disable-narrowing' is non-nil then the buffer gets
+re-centered to the page heading.
+
 It (possibly) narrows the subtree when found."
   (with-current-buffer interleave-org-buffer
-    (save-excursion
-      (widen)
-      (interleave--goto-search-position)
-      (when interleave-multi-pdf-notes-file
-        ;; only search the current subtree for notes. See. Issue #16
-        (interleave--narrow-to-subtree t))
-      (when (re-search-forward (format "^\[ \t\r\]*\:interleave_page_note\: %s$"
-                                       page)
-                               nil t)
-        ;; widen the buffer again for the case it is narrowed from
-        ;; multi-pdf notes search. Kinda ugly I know. Maybe a macro helps?
-        (widen) 
-        (org-back-to-heading t)
-        (interleave--narrow-to-subtree)
-        (org-show-subtree)
-        (org-cycle-hide-drawers t)
-        (point)))))
+    (let (point
+          (window (get-buffer-window (current-buffer) 'visible)))
+      (save-excursion
+        (widen)
+        (interleave--goto-search-position)
+        (when interleave-multi-pdf-notes-file
+          ;; only search the current subtree for notes. See. Issue #16
+          (interleave--narrow-to-subtree t))
+        (when (re-search-forward (format "^\[ \t\r\]*\:interleave_page_note\: %s$"
+                                         page)
+                                 nil t)
+          ;; widen the buffer again for the case it is narrowed from
+          ;; multi-pdf notes search. Kinda ugly I know. Maybe a macro helps?
+          (widen) 
+          (org-back-to-heading t)
+          (interleave--narrow-to-subtree)
+          (org-show-subtree)
+          (org-cycle-hide-drawers t)
+          (setq point (point))))
+      ;; When narrowing is disabled, and the notes/org buffer is
+      ;; visible recenter to the current headline. So even if not
+      ;; narrowed the notes buffer scrolls allong with the PDF.
+      (when (and interleave-disable-narrowing point window)
+        (with-selected-window window
+          (goto-char point)
+          (recenter)))
+      point)))
 
 (defun interleave-go-to-next-page ()
   "Go to the next page in PDF.  Look up for available notes."
@@ -354,13 +367,16 @@ If POSITION is non-nil move point to it."
     (goto-char position))
   (when insert-newline-maybe
     (save-restriction
-      (interleave--narrow-to-subtree t)
-      (goto-char (point-max))
-      (unless interleave-disable-narrowing
-        (redisplay))
-      ;; Insert a new line if not already on a new line
-      (when (not (looking-back "^ *" (line-beginning-position)))
-        (org-return)))))
+      (when interleave-disable-narrowing
+        (interleave--narrow-to-subtree t))
+      (interleave--goto-insert-position))
+    ;; Expand again. Sometimes the new content is outside the narrowed
+    ;; region.
+    (org-show-subtree)
+    (redisplay)
+    ;; Insert a new line if not already on a new line
+    (when (not (looking-back "^ *" (line-beginning-position)))
+      (org-return))))
 
 (defun interleave--switch-to-pdf-buffer ()
   "Switch to the pdf buffer."
@@ -660,22 +676,28 @@ Keybindings (org-mode buffer):
             (setq interleave-org-buffer (buffer-name))
             (setq interleave--window-configuration (current-window-configuration))
             (interleave--open-file (interleave--select-split-function))
+            ;; expand/show all headlines if narrowing is disabled
+            (when interleave-disable-narrowing
+              (with-current-buffer interleave-org-buffer
+                (interleave--goto-search-position)
+                (if interleave-multi-pdf-notes-file
+                    (org-show-subtree) 
+                  (outline-show-all))
+                (org-cycle-hide-drawers 'all)))
             (interleave--go-to-page-note 1)
             (message "Interleave enabled"))
         ('quit
          (interleave-mode -1)))
     ;; Disable the corresponding minor mode in the PDF file too.
-    (progn
-      (if (and interleave-pdf-buffer
+    (when (and interleave-pdf-buffer
                (get-buffer interleave-pdf-buffer))
-          (progn
-            (interleave--switch-to-pdf-buffer)
-            (interleave-pdf-mode -1)
-            (setq interleave-pdf-buffer nil)))
-      (set-window-configuration interleave--window-configuration)
-      (setq interleave--window-configuration nil)
-      (setq interleave-org-buffer nil)
-      (message "Interleave mode disabled"))))
+      (interleave--switch-to-pdf-buffer)
+      (interleave-pdf-mode -1)
+      (setq interleave-pdf-buffer nil))
+    (set-window-configuration interleave--window-configuration)
+    (setq interleave--window-configuration nil)
+    (setq interleave-org-buffer nil)
+    (message "Interleave mode disabled")))
 
 ;;; Interleave PDF Mode
 ;; Minor mode for the pdf file buffer associated with the notes
