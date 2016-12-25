@@ -78,6 +78,10 @@
                        1. Allow DEFAULTS to be a list of strings.
                        2. Prepend DEFAULTS to the vanilla defaults.
 
+   `replace-highlight' (Emacs 24.4+) - Highlight regexp groups, per
+                     `isearchp-highlight-regexp-group-levels-flag'.
+   `replace-dehighlight' (Emacs 24.4+) - Dehighlight regexp groups.
+
 
  This file should be loaded after loading the standard GNU file
  `replace.el'.  So, in your `~/.emacs' file, do this:

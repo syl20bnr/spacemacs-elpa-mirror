@@ -4,7 +4,7 @@
 
 ;; Author: Sebastian Sturm
 ;; URL: https://github.com/sebastiansturm/autothemer
-;; Package-Version: 20161219.1426
+;; Package-Version: 20161221.1331
 ;; Version: 0.2
 ;; Package-Requires: ((dash "2.10.0") (emacs "24") (cl-lib "0.5"))
 
@@ -67,6 +67,7 @@ bindings within both the REDUCED-SPECS and the BODY."
     (setq face-customizer
           `(let ((,face-specs)
                  (,temp-defined-colors))
+             (deftheme ,name ,description)
              ,@(cl-loop for n from 0 to (1- n-displays)
                         collect
                         `(let* ,(autothemer--extract-let-block full-palette n)
@@ -97,7 +98,6 @@ bindings within both the REDUCED-SPECS and the BODY."
                                                     ,(autothemer--demote-heads (elt it 1))))
                                                  reduced-specs))
                                   ))))
-             (deftheme ,name ,description)
              (apply #'custom-theme-set-faces ',name
                     (cl-loop for ,temp-n from 0 to ,(1- n-faces)
                              collect (list (elt ',face-names ,temp-n)
