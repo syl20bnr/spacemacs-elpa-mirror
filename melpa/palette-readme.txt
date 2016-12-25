@@ -196,6 +196,14 @@
  and variables.  If for some reason you do load both libraries,
  then load `palette.el' after `eyedropper.el'.
 
+ ** Use with Crosshairs **
+
+ I recommend that you also use library `crosshairs.el', so that you
+ can turn on `crosshairs-mode' (using the suggested key binding of
+ `C-+').  That makes the location of the cursor much more visible,
+ which really helps since it is necessarily very small for the
+ palette.
+
  ** Use with Icicles **
 
  If you use this library with Icicles (`icicles.el' and associated

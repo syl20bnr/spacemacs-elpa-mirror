@@ -7,11 +7,11 @@
 ;; Copyright (C) 2006-2016, Drew Adams, all rights reserved.
 ;; Created: Sat May 20 07:56:06 2006
 ;; Version: 0
-;; Package-Version: 20161223.1204
+;; Package-Version: 20161224.1325
 ;; Package-Requires: ((hexrgb "0"))
-;; Last-Updated: Fri Dec 23 12:07:01 2016 (-0800)
+;; Last-Updated: Sat Dec 24 13:27:49 2016 (-0800)
 ;;           By: dradams
-;;     Update #: 909
+;;     Update #: 916
 ;; URL: http://www.emacswiki.org/palette.el
 ;; Doc URL: http://emacswiki.org/ColorPalette
 ;; Keywords: color, rgb, hsv, hexadecimal, face, frame
@@ -224,6 +224,14 @@
 ;;  and variables.  If for some reason you do load both libraries,
 ;;  then load `palette.el' after `eyedropper.el'.
 ;;
+;;  ** Use with Crosshairs **
+;;
+;;  I recommend that you also use library `crosshairs.el', so that you
+;;  can turn on `crosshairs-mode' (using the suggested key binding of
+;;  `C-+').  That makes the location of the cursor much more visible,
+;;  which really helps since it is necessarily very small for the
+;;  palette.
+;;
 ;;  ** Use with Icicles **
 ;;
 ;;  If you use this library with Icicles (`icicles.el' and associated
@@ -322,6 +330,9 @@
 ;;
 ;;; Change Log:
 ;;
+;; 2016/12/24 dadams
+;;     Added palette-popup-map as obsolete alias for palette-menu.
+;;     Soft-require crosshairs.el.
 ;; 2016/12/23 dadams
 ;;     Added:
 ;;       palette-menu-complement, palette-menu-increase-decrease, palette-menu-set,
@@ -491,6 +502,7 @@
                   ;; hexrgb-rgb-to-hex, hexrgb-rgb-to-hsv, hexrgb-saturation, hexrgb-value
 
 (require 'misc-cmds nil t) ;; (no error if not found) list-colors-nearest
+(require 'crosshairs nil t) ;; (no error if not found) Recommended, to show cursor better.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -651,6 +663,7 @@ The saved value is updated when `palette' is called and whenever the
 user updates `blink-cursor-mode'.")
 
 (defvar palette-menu nil "Keymap for `palette-mode' popup menu.")
+(define-obsolete-variable-alias 'palette-popup-map 'palette-menu "2016-Dec-23")
 (defvar palette-menu-increase-decrease nil
   "Keymap for `Increase/Decrease' submap of `palette-mode' popup menu.")
 (defvar palette-menu-complement nil
