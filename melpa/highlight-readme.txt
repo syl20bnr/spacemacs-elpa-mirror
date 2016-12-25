@@ -111,8 +111,8 @@
    `hlt-nonempty-region-p', `hlt-props-to-copy/yank',
    `hlt-read-bg/face-name', `hlt-read-props-completing',
    `hlt-region-or-buffer-limits', `hlt-remove-if-not',
-   `hlt-set-intersection', `hlt-set-union', `hlt-subplist',
-   `hlt-tty-colors', `hlt-unhighlight-for-overlay'.
+   `hlt-set-intersection', `hlt-set-union', `hlt-string-match-p',
+   `hlt-subplist', `hlt-tty-colors', `hlt-unhighlight-for-overlay'.
 
  Internal variables defined here:
 
