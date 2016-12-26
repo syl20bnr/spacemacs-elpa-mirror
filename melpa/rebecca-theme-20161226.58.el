@@ -7,7 +7,7 @@
 
 ;; Author: vic <vborja@apache.org>
 ;; Version: 1.0.0
-;; Package-Version: 20161225.149
+;; Package-Version: 20161226.58
 ;; Package-Requires: ((emacs "24"))
 ;; URL: https://github.com/vic/rebecca-theme
 ;; Keywords: theme, dark
@@ -30,6 +30,7 @@
       (fg2 "#e2e2dc")
       (fg3 "#94f2e7")
       (fg4 "#F1EFF7")
+      (bg0 "#270d27")
       (bg1 "#292a44")
       (bg2 "#373844")
       (bg3 "#383A62")
@@ -71,7 +72,7 @@
    `(ffap ((,class (:foreground ,fg4))))
    `(fringe ((,class (:background ,bg1 :foreground ,fg4))))
    `(highlight ((,class (:foreground ,fg3 :background ,bg3))))
-   `(hl-line ((,class (:background  ,bg5))))
+   `(hl-line ((,class (:background  ,bg0))))
    `(info-quoted-name ((,class (:foreground ,builtin))))
    `(info-string ((,class (:foreground ,str))))
    `(lazy-highlight ((,class (:foreground ,fg2 :background ,bg3))))
@@ -81,6 +82,7 @@
    `(minibuffer-prompt ((,class (:bold t :foreground ,keyword))))
    `(region ((,class (:background ,rebecca :foreground ,fg3))))
    `(show-paren-match-face ((,class (:background ,warning))))
+   `(tooltip ((,class (:foreground ,fg2 :background ,bg0))))
    `(trailing-whitespace ((,class :foreground nil :background ,warning)))
    `(vertical-border ((,class (:foreground ,bg2))))
    `(warning ((,class (:foreground ,warning))))
@@ -108,7 +110,7 @@
    `(company-scrollbar-bg ((,class (:background ,bg3))))
    `(company-scrollbar-fg ((,class (:foreground ,keyword))))
    `(company-template-field ((,class (:inherit region))))
-   `(company-tooltip ((,class (:foreground ,fg2 :background ,bg1 :bold t))))
+   `(company-tooltip ((,class (:inherit tooltip :bold t))))
    `(company-tooltip-annotation ((,class (:foreground ,const))))
    `(company-tooltip-common ((,class ( :foreground ,fg3))))
    `(company-tooltip-common-selection ((,class (:foreground ,str))))
