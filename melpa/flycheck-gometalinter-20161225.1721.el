@@ -5,7 +5,7 @@
 
 ;; Author: Diep Pham <me@favadi.com>
 ;; Keywords: convenience, tools, go
-;; Package-Version: 20160714.2232
+;; Package-Version: 20161225.1721
 ;; Version: 0.1.0
 ;; URL: https://github.com/favadi/flycheck-gometalinter
 ;; Package-Requires: ((emacs "24") (flycheck "0.22"))
@@ -43,6 +43,11 @@
 ;;; Code:
 
 (require 'flycheck)
+
+(flycheck-def-option-var flycheck-gometalinter-concurrency nil gometalinter
+  "Number of concurrent linters to run."
+  :safe #'integerp
+  :type 'integer)
 
 (flycheck-def-option-var flycheck-gometalinter-vendor nil gometalinter
   "Skips 'vendor' directories and sets GO15VENDOREXPERIMENT=1."
@@ -86,6 +91,7 @@ flycheck-gometalinter-enable-linters."
   "A all-in-one Go linter.
 See URL: `https://github.com/alecthomas/gometalinter'"
   :command ("gometalinter"
+            (option "--concurrency=" flycheck-gometalinter-concurrency concat flycheck-option-int)
             (option-flag "--vendor" flycheck-gometalinter-vendor)
             (option-flag "--disable-all" flycheck-gometalinter-disable-all)
             (option-flag "--fast" flycheck-gometalinter-fast)

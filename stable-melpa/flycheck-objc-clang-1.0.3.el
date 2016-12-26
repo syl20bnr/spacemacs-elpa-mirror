@@ -4,8 +4,8 @@
 
 ;; Author: Goichi Hirakawa <gooichi@gyazsquare.com>
 ;; URL: https://github.com/GyazSquare/flycheck-objc-clang
-;; Package-Version: 1.0.2
-;; Version: 1.0.2
+;; Package-Version: 1.0.3
+;; Version: 1.0.3
 ;; Keywords: convenience, languages, tools
 ;; Package-Requires: ((emacs "24.4") (flycheck "26"))
 
@@ -138,10 +138,10 @@ When non-nil, set watchOS deployment target via
 (flycheck-def-option-var flycheck-objc-clang-warnings
     '("all"
       "extra"
+      "error=non-modular-include-in-framework-module"
       "no-unused-parameter"
       "error=deprecated-objc-isa-usage"
       "duplicate-method-match"
-      "protocol"
       "undeclared-selector"
       "error=objc-root-class")
     objc-clang
@@ -248,11 +248,11 @@ See URL `http://clang.llvm.org/'."
            (message "In file included from") " " (or "<stdin>" (file-name))
            ":" line ":" line-end)
     (info line-start (or "<stdin>" (file-name)) ":" line ":" column
-          ": note: " (optional (message)) line-end)
+          ": " (or "note" "remark") ": " (optional (message)) line-end)
     (warning line-start (or "<stdin>" (file-name)) ":" line ":" column
-             ": warning: " (optional (message)) line-end)
+             ": " "warning" ": " (optional (message)) line-end)
     (error line-start (or "<stdin>" (file-name)) ":" line ":" column
-           ": " (or "fatal error" "error") ": " (optional (message)) line-end))
+           ": " (or "error" "fatal error") ": " (optional (message)) line-end))
   :error-filter
   (lambda (errors)
     (let ((errors (flycheck-sanitize-errors errors)))
