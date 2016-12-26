@@ -5,8 +5,8 @@
 ;; Author: Alexey Veretennikov <alexey.veretennikov@gmail.com>
 ;;
 ;; Created: 2009-09-08
-;; Version: 1.2.2
-;; Package-Version: 20161122.1107
+;; Version: 1.2.3
+;; Package-Version: 20161226.600
 ;; Package-Requires: ((cl-lib "0"))
 ;; Keywords: matching
 ;; URL: https://github.com/fourier/loccur
@@ -47,6 +47,9 @@
 ;;
 ;;; Change Log:
 ;;
+;; 2016-12-26 (1.2.3)
+;;    + Removed empty line in the beginning of the buffer.
+;;    + Added 'Tips and tricks' session to the README.md file
 ;; 2015-12-27 (1.2.2)
 ;;    + Preparation for GNU ELPA submission. Removed contributions
 ;;    without signed papers
@@ -280,6 +283,7 @@ REGEX is an argument to `loccur'."
   (let ((prev-end (point-min))
         (overlays (list)))
     (when buffer-matches
+      (push (list 1 (caar buffer-matches)) overlays)
       (mapc (lambda (line)
               (let ((beginning (car line)))
                 (unless ( = (- beginning prev-end) 1)

@@ -6,8 +6,8 @@
 ;; http://zenorocha.mit-license.org
 
 ;; Author: vic <vborja@apache.org>
-;; Version: 1.0.0
-;; Package-Version: 20161226.58
+;; Version: 1.1.0
+;; Package-Version: 20161226.439
 ;; Package-Requires: ((emacs "24"))
 ;; URL: https://github.com/vic/rebecca-theme
 ;; Keywords: theme, dark
@@ -77,9 +77,9 @@
    `(info-string ((,class (:foreground ,str))))
    `(lazy-highlight ((,class (:foreground ,fg2 :background ,bg3))))
    `(link ((,class (:foreground ,const :underline t))))
-   `(linum ((,class (:foreground ,comment :background ,bg1 :height 0.6))))
-   `(linum-relative-current ((,class (:foreground ,fg1 :background ,bg1 :height 0.6))))
-   `(minibuffer-prompt ((,class (:bold t :foreground ,keyword))))
+   `(linum ((,class (:foreground ,comment :background ,bg1 :height 0.9))))
+   `(linum-relative-current ((,class (:foreground ,fg1 :background ,bg1 :height 0.9))))
+   `(minibuffer-prompt ((,class (:bold t :foreground ,str))))
    `(region ((,class (:background ,rebecca :foreground ,fg3))))
    `(show-paren-match-face ((,class (:background ,warning))))
    `(tooltip ((,class (:foreground ,fg2 :background ,bg0))))
@@ -129,7 +129,8 @@
    `(elixir-attribute-face ((,class (:foreground ,elixir-attribute-fg))))
    `(elixir-atom-face ((,class (:foreground ,elixir-atom-fg))))
    ;; evil
-   `(evil-search-highlight-persist-highlight-face ((,class (:background ,fg3 :foreground ,bg3))))
+   `(evil-ex-lazy-highlight ((,class (:inherit lazy-highlight))))
+   `(evil-search-highlight-persist-highlight-face ((,class (:background ,type :foreground ,bg5))))
    ;; font-latex
    `(font-latex-bold-face ((,class (:foreground ,type))))
    `(font-latex-italic-face ((,class (:foreground ,key3 :italic t))))
@@ -176,6 +177,7 @@
    `(helm-buffer-directory ((,class (:foreground ,type :background ,bg1))))
    `(helm-buffer-not-saved ((,class (:foreground ,str :background ,bg1))))
 
+
    `(helm-buffer-process ((,class (:foreground ,builtin :background ,bg1))))
    `(helm-buffer-saved-out ((,class (:foreground ,fg1 :background ,bg1))))
    `(helm-buffer-size ((,class (:foreground ,fg1 :background ,bg1))))
@@ -198,7 +200,7 @@
    `(helm-selection-line ((,class (:background ,bg2))))
    `(helm-separator ((,class (:foreground ,type :background ,bg1))))
    `(helm-source-go-package-godoc-description ((,class (:foreground ,str))))
-   `(helm-source-header ((,class (:foreground ,keyword :background ,bg1 :underline nil :weight bold))))
+   `(helm-source-header ((,class (:foreground ,type :background ,bg1 :underline nil :weight bold))))
    `(helm-time-zone-current ((,class (:foreground ,builtin :background ,bg1))))
    `(helm-time-zone-home ((,class (:foreground ,type :background ,bg1))))
    `(helm-visible-mark ((,class (:foreground ,bg1 :background ,bg3))))
@@ -209,8 +211,8 @@
    `(ido-only-match ((,class (:foreground ,warning))))
    `(ido-subdir ((,class (:foreground ,builtin))))
    ;; isearch
-   `(isearch ((,class (:bold t :foreground ,warning :background ,bg3))))
-   `(isearch-fail ((,class (:foreground ,bg1 :background ,warning))))
+   `(isearch ((,class (:bold t :foreground ,key3 :background ,bg0))))
+   `(isearch-fail ((,class (:foreground ,bg0 :background ,key3))))
    ;; jde-java
    `(jde-java-font-lock-constant-face ((t (:foreground ,const))))
    `(jde-java-font-lock-modifier-face ((t (:foreground ,key3))))
@@ -249,16 +251,17 @@
    `(magit-section-heading        ((,class (:foreground ,keyword :weight bold))))
    `(magit-section-highlight      ((,class (:background ,bg2))))
    ;; mode-line
-   `(mode-line ((,class (:foreground ,fg1 :background ,rebecca))))
+   `(mode-line ((,class (:foreground ,type :background ,rebecca))))
    `(mode-line-inactive ((,class (:inherit mode-line :background ,bg1 :foreground ,comment :box ,comment))))
-   `(mode-line-buffer-id ((,class (:foreground ,type))))
+   `(mode-line-buffer-id ((,class (:foreground ,fg1))))
    ;; mu4e
    `(mu4e-cited-1-face ((,class (:foreground ,fg2))))
    `(mu4e-cited-7-face ((,class (:foreground ,fg3))))
    `(mu4e-header-marks-face ((,class (:foreground ,type))))
    `(mu4e-view-url-number-face ((,class (:foreground ,type))))
    ;; neotree
-   `(neo-dir-link-face ((,class (:foreground ,type))))
+   `(neo-dir-link-face ((,class (:foreground ,keyword))))
+   `(neo-root-dir-face ((,class (:inherit dired-header))))
    ;; org
    `(org-agenda-date ((,class (:foreground ,rainbow-2 :underline nil))))
    `(org-agenda-dimmed-todo-face ((,class (:foreground ,comment))))
@@ -377,7 +380,7 @@
    `(which-func ((,class (:inherit ,font-lock-function-name-face))))
    `(dired-directory ((,class (:foreground ,func :weight normal))))
    `(dired-flagged ((,class (:foreground ,keyword))))
-   `(dired-header ((,class (:foreground ,bg1 :background ,func))))
+   `(dired-header ((,class (:foreground ,type))))
    `(dired-ignored ((,class (:inherit shadow))))
    `(dired-mark ((,class (:foreground ,var :weight bold))))
    `(dired-marked ((,class (:foreground ,builtin :weight bold))))

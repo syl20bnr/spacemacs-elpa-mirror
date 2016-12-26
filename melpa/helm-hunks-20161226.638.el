@@ -4,7 +4,7 @@
 
 ;; Author: @torgeir
 ;; Version: 1.0.0
-;; Package-Version: 20161019.144
+;; Package-Version: 20161226.638
 ;; Keywords: helm git hunks vc
 ;; Package-Requires: ((emacs "24.4") (helm "1.9.8"))
 
@@ -26,7 +26,8 @@
 ;; A helm interface for browsing unstaged git hunks.
 ;;
 ;; Enable `helm-follow-mode' and trigger `helm-hunks' to jump around
-;; unstaged hunks like never before.
+;; unstaged hunks like never before. Run `helm-hunks-current-buffer`
+;; to jump around the current buffer only.
 ;;
 ;; Credits/inspiration: git-gutter+ - https://github.com/nonsequitur/git-gutter-plus/
 
@@ -316,7 +317,7 @@ Will `cd' to the git root to make git diff paths align with paths on disk as we'
     :candidates-process 'helm-hunks--candidates
     :action '(("Go to hunk" . helm-hunks--action-find-hunk))
     :persistent-action 'helm-hunks--persistent-action
-    :persistent-help "[C-s] stage, [C-c C-p] show diffs, [C-c C-o] find other frame, [C-c o] find other window"                           
+    :persistent-help "[C-s] stage, [C-c C-p] show diffs, [C-c C-o] find other frame, [C-c o] find other window"
     :multiline t
     :nomark t
     :follow 1)
@@ -340,6 +341,17 @@ Will `cd' to the git root to make git diff paths align with paths on disk as we'
   (interactive)
   (helm :sources '(helm-hunks--source)
         :keymap helm-hunks--keymap))
+
+;;;###autoload
+(defun helm-hunks-current-buffer ()
+  "Helm-hunks entry point current buffer."
+  (interactive)
+  (let* ((current-file-relative (file-relative-name (buffer-file-name (current-buffer))))
+         (helm-hunks--cmd-diffs-single-file (format "%s -- %s" helm-hunks--cmd-diffs current-file-relative))
+         (helm-hunks--cmd-file-names-single-file (format "%s -- %s" helm-hunks--cmd-file-names current-file-relative))
+         (helm-hunks--cmd-diffs helm-hunks--cmd-diffs-single-file)
+         (helm-hunks--cmd-file-names helm-hunks--cmd-file-names-single-file))
+    (helm-hunks)))
 
 (provide 'helm-hunks)
 ;;; helm-hunks.el ends here

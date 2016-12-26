@@ -5,7 +5,7 @@
 ;; frontend.
 ;; Author: Sergey Kostyaev <feo.me@ya.ru>
 ;; Version: 1.0.0
-;; Package-Version: 20161224.620
+;; Package-Version: 20161226.206
 ;; Package-Requires: ((emacs "24.4") (ivy-erlang-complete "20161018.1145") (company "0.9.2"))
 ;; Keywords: tools
 ;; 
@@ -103,7 +103,8 @@
             (buffer-substring-no-properties
              (match-beginning 1) (match-end 1)))
            (ivy-erlang-complete--find-local-vars)
-           (ivy-erlang-complete--find-local-functions)
+           (company-erlang--transform-arity
+            (ivy-erlang-complete--find-local-functions))
            (ivy-erlang-complete--get-record-names)
            (ivy-erlang-complete--find-modules)
            ivy-erlang-complete-macros))
@@ -135,7 +136,8 @@
     (setq ivy-erlang-complete-candidates
           (append
            (ivy-erlang-complete--find-local-vars)
-           (ivy-erlang-complete--find-local-functions)
+           (company-erlang--transform-arity
+            (ivy-erlang-complete--find-local-functions))
            (ivy-erlang-complete--get-record-names)
            (ivy-erlang-complete--find-modules)
            ivy-erlang-complete-macros))
