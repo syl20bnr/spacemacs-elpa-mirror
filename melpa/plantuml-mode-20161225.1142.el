@@ -6,8 +6,8 @@
 ;; Author: Zhang Weize (zwz)
 ;; Maintainer: Carlo Sciolla (skuro)
 ;; Keywords: uml plantuml ascii
-;; Package-Version: 20161111.205
-;; Version: 1.2.2
+;; Package-Version: 20161225.1142
+;; Version: 1.2.3
 ;; Package-Requires: ((emacs "24"))
 
 ;; You can redistribute this program and/or modify it under the terms
@@ -29,6 +29,7 @@
 
 ;;; Change log:
 ;;
+;; version 1.2.3, 2016-12-25 #50 unicode support in generated output
 ;; version 1.2.2, 2016-11-11 Fixed java commands handling under windows; support spaces in `plantuml-jar-path'
 ;; version 1.2.1, 2016-11-11 Support for paths like `~/.plantuml/plantuml.jar' for `plantuml-jar-path' (the tilde was previously unsupported)
 ;; version 1.2.0, 2016-11-09 Added `plantuml-preview-current-buffer', courtesy of @7mamu4
@@ -63,7 +64,7 @@
 
 (defvar plantuml-mode-hook nil "Standard hook for plantuml-mode.")
 
-(defconst plantuml-mode-version "1.2.2" "The plantuml-mode version string.")
+(defconst plantuml-mode-version "1.2.3" "The plantuml-mode version string.")
 
 (defvar plantuml-mode-debug-enabled nil)
 
@@ -223,7 +224,7 @@ default output type for new buffers."
                   plantuml-java-command
                   ,@plantuml-java-args
                   (expand-file-name plantuml-jar-path)
-                  (plantuml-output-type-opt) "-p"))
+                  (plantuml-output-type-opt) "-charset" "UTF-8" "-p"))
 
 (defun plantuml-preview-string (prefix string)
   "Preview diagram from PlantUML sources (as STRING), using prefix (as PREFIX)
