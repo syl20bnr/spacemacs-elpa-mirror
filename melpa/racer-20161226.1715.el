@@ -4,7 +4,7 @@
 
 ;; Author: Phil Dawes
 ;; URL: https://github.com/racer-rust/emacs-racer
-;; Package-Version: 20161209.1533
+;; Package-Version: 20161226.1715
 ;; Version: 1.3
 ;; Package-Requires: ((emacs "24.3") (rust-mode "0.2.0") (dash "2.13.0") (s "1.10.0") (f "0.18.2"))
 ;; Keywords: abbrev, convenience, matching, rust, tools
@@ -86,9 +86,19 @@
 (defcustom racer-rust-src-path
   (or
    (getenv "RUST_SRC_PATH")
+   (when (executable-find "rustc")
+     (let* ((sysroot (s-trim-right
+                      (shell-command-to-string
+                       (format "%s --print sysroot" (executable-find "rustc")))))
+            (src-path (f-join sysroot "lib/rustlib/src/rust/src")))
+       (when (file-exists-p src-path)
+         src-path)
+       src-path))
    "/usr/local/src/rust/src")
+
   "Path to the rust source tree.
-If nil, we will query $RUST_SRC_PATH at runtime."
+If nil, we will query $RUST_SRC_PATH at runtime.
+If $RUST_SRC_PATH is not set, look for rust source in rustup's install directory."
   :type 'file
   :group 'racer)
 

@@ -18,7 +18,7 @@
 ;;
 ;; Author: Thomas de Beauchêne <thomas.de.beauchene@gmail.com>
 ;; Version: 1.0
-;; Package-Version: 20161224.606
+;; Package-Version: 20161226.1051
 ;; Keywords: convenience, frames, windows, multi-screen
 ;; URL: http://github.com/deb0ch/winum.el
 ;; Created: 2016
@@ -40,8 +40,6 @@
 ;;
 ;;; Code:
 ;;
-;; FIXME: Error during redisplay: (eval (winum-get-number-string)) signaled
-;;        (wrong-type-argument numberp nil) when opening a helm buffer.
 ;; FIXME: when `winum-scope' is changed from frame-local to non-local in
 ;;        customize, the mode-line is messed up until next `winum-update'.
 ;; FIXME: The mode-line's window number is not always up to date in all frames.
@@ -315,14 +313,8 @@ PREFIX must be a key sequence, like the ones returned by `kbd'."
 ;;;###autoload
 (defun winum-get-window-by-number (n)
   "Return window numbered N if exists, nil otherwise."
-  (let ((windows (if (eq winum-scope 'frame-local)
-                     (car (gethash (selected-frame) winum--frames-table))
-                   winum--window-vector))
-        window)
-    (if (and (>= n 0) (< n (1+ winum--window-count))
-             (setq window (aref windows n)))
-        window
-      nil)))
+  (when (>= n 0) (< n (1+ winum--window-count))
+        (aref (winum--get-window-vector) n)))
 
 ;;;###autoload
 (defun winum-get-number-string (&optional window)
@@ -330,7 +322,8 @@ PREFIX must be a key sequence, like the ones returned by `kbd'."
 WINDOW: if specified, the window of which we want to know the number.
         If not specified, the number of the currently selected window is
         returned."
-  (let ((s (int-to-string (winum-get-number window))))
+  (let* ((n (winum-get-number window))
+         (s (when (numberp n) (int-to-string n))))
     (propertize s 'face 'winum-face)))
 
 ;;;###autoload
@@ -340,9 +333,7 @@ WINDOW: if specified, the window of which we want to know the number.
         If not specified, the number of the currently selected window is
         returned."
   (let ((w (or window (selected-window))))
-    (if (eq winum-scope 'frame-local)
-        (gethash w (cdr (gethash (selected-frame) winum--frames-table)))
-      (gethash w winum--numbers-table))))
+    (gethash w (winum--get-numbers-table))))
 
 ;; Internal functions ----------------------------------------------------------
 

@@ -1,240 +1,123 @@
-             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                         `ORG-PASSWORD-MANAGER'
-              Minimal password manager for Emacs Org Mode.
+Org Password Manager
 
-                          Leandro Facchinetti
-             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Leandro Facchinetti <me@leafac.com>
 
+Password manager for Org Mode.
 
-Table of Contents
-─────────────────
+Version         0.0.1
+--------------------------------------------------------------------
+Documentation   https://www.leafac.com/software/org-password-manager
+--------------------------------------------------------------------
+License         GNU General Public License Version 3
+--------------------------------------------------------------------
+Code of Conduct Contributor Covenant v1.4.0
+--------------------------------------------------------------------
+Distribution    MELPA
+--------------------------------------------------------------------
+Source          https://git.leafac.com/org-password-manager
+--------------------------------------------------------------------
+Bug Reports     Write emails to org-password-manager@leafac.com.
+--------------------------------------------------------------------
+Contributions   Send patches and pull requests via email to
+                org-password-manager@leafac.com.
+--------------------------------------------------------------------
 
-1 Philosophy
-2 Features
-3 Installation
-4 Usage
-.. 4.1 Store passwords in Org Mode files
-.. 4.2 Get username
-.. 4.3 Get password
-.. 4.4 Generate password
-5 Configuration
-6 Comparison to similar tools
+1. Overview
 
-Table of Contents
-─────────────────
+Use GnuPG to encrypt the Org Mode files that contains credentials
+instead of storing sensitive information in plain text.
 
-1 Philosophy
-2 Features
-3 Installation
-4 Usage
-.. 4.1 Store passwords in Org Mode files
-.. 4.2 Get username
-.. 4.3 Get password
-.. 4.4 Generate password
-5 Configuration
-6 Comparison to similar tools
+Use Org Mode files to store credentials and retrieve them securely.
+Integrate with pwgen to generate passwords.
 
-1 Philosophy
-════════════
+2. Installation
 
-  Simple: To learn and use.
+Available from MELPA, add the repository to Emacs and install with
+M-x package-install. Password creation requires pwgen.
 
-  Concise: Don’t recreate features that already exist elsewhere
-           (e.g. secure password generation).
+3. Usage
 
-  Secure: Don’t do fancy security measures, they should be handled by
-          specialized tools (e.g. [GnuPG]).
+This section assumes the default configuration.
 
-  Flexible: Restrict the users the least possible.
+Add credentials as properties named USERNAME and PASSWORD to headings in
+Org Mode files. For example:
 
+  * [[http://example.com][My favorite website]]
+    :PROPERTIES:
+    :USERNAME: leandro
+    :PASSWORD: chunky-tempeh
+    :END:
+   
+  * SSH key
+    :PROPERTIES:
+    :PASSWORD: tofu
+    :END:
 
-  [GnuPG] https://gnupg.org/
+Passwords are cleared from the clipboard after 30 seconds.
 
+Retrieve usernames with C-c C-p u (org-password-manager-get-username)
+and passwords with C-c C-p p (org-password-manager-get-password). If
+point is not under a heading that contains credentials, Org Password
+Manager asks for a heading. To force this behavior even when the point
+is under a heading that contains credentials, use the C-u argument (for
+example, C-u C-c C-p u).
 
-2 Features
-══════════
+Generate passwords with C-c C-p g
+(org-password-manager-generate-password). To customize the parameters to
+pwgen, use the C-u argument (C-u C-c C-p g).
 
-  1. Use [Org Mode] as password manager.
+4. Configuration
 
-  2. Retrieve passwords in a practical and secure manner.
+For the default configuration with the keybindings covered in the Usage
+section, add the following to the Emacs configuration:
 
-  3. Generate secure passwords.
+  (add-hook 'org-mode-hook 'org-password-manager-key-bindings)
 
-  4. No configuration required.
+To customize the key bindings, start with the following code:
 
+  (defun org-password-manager-key-bindings ()
+    "Binds keys for org-password-manager."
+    (local-set-key (kbd "C-c C-p u") 'org-password-manager-get-username)
+    (local-set-key (kbd "C-c C-p p") 'org-password-manager-get-password)
+    (local-set-key (kbd "C-c C-p
+  g") 'org-password-manager-generate-password))
 
-  [Org Mode] http://orgmode.org/
+For Interactive Do (ido) support, add the following to the Emacs
+configuration:
 
+  (setq org-completion-use-ido t)
 
-3 Installation
-══════════════
+For advanced configuration, refer to
+M-x customize-group org-password-manager.
 
-  Available in [MELPA]. Install with `M-x package-install'.
+5. Changelog
 
-  Password generation depends on [`pwgen']. If you want to use this
-  feature, install it.
+This section documents all notable changes to Org Password Manager. It
+follows recommendations from Keep a CHANGELOG and uses Semantic
+Versioning. Each released version is a Git tag.
 
-  If you want to use the default keybindings described below on the
-  [Usage] section, add the following line to your Emacs configuration:
+5.1. Unreleased
 
-  ┌────
-  │ (add-hook 'org-mode-hook 'org-password-manager-key-bindings)
-  └────
+5.1.1. Added
 
-  If you want some other keybindings, refer to the body of the function
-  `org-password-manager-key-bindings' for an example on how to do it.
 
-  If you want [`ido'] completion, enable the `org-completion-use-ido'
-  variable by adding the following line to your Emacs configuration:
+5.1.2. Changed
 
-  ┌────
-  │ (setq org-completion-use-ido t)
-  └────
 
+5.1.3. Deprecated
 
-  [MELPA] http://melpa.org/#/org-password-manager
 
-  [`pwgen'] http://pwgen.sourceforge.net/
+5.1.4. Removed
 
-  [Usage] See section 4
 
-  [`ido'] https://www.gnu.org/software/emacs/manual/ido.html
+5.1.5. Fixed
 
 
-4 Usage
-═══════
+5.1.6. Security
 
 
+5.2. 0.0.1 · 2015-07-29
 
+5.2.1. Added
 
-4.1 Store passwords in Org Mode files
-─────────────────────────────────────
-
-  Follow the example:
-
-  ┌────
-  │ * [[http://example.com][My favorite website]]
-  │   :PROPERTIES:
-  │   :USERNAME: leandro
-  │   :PASSWORD: chunky-tempeh
-  │   :END:
-  |
-  │ * SSH key
-  │   :PROPERTIES:
-  │   :PASSWORD: tofu
-  │   :END:
-  └────
-
-
-4.2 Get username
-────────────────
-
-  Type `C-c C-p u' (`org-password-manager-get-username') and search for
-  the title of the entry containing the `USERNAME' property (e.g. “My
-  favorite website”). The username is copied to the clipboard.
-
-  If the point is at an entry that contains the `USERNAME' property, it
-  is copied without querying for the heading. If you still want to be
-  queried (because you want the username for a different entry) use the
-  `C-u' argument typing `C-u C-c C-p u'.
-
-
-4.3 Get password
-────────────────
-
-  Type `C-c C-p p' (`org-password-manager-get-password') and search for
-  the title of the entry containing the `PASSWORD' property (e.g. “My
-  favorite website”). The password is copied to the clipboard. It tries
-  to increase the security by skipping the kill ring and copying the
-  password directly to the system’s clipboard and by erasing it after 30
-  seconds. This period is customizable, refer to the [Configuration]
-  section for more.
-
-  If the point is at an entry that contains the `PASSWORD' property, it
-  is copied without querying for the heading. If you still want to be
-  queried (because you want the password for a different entry) use the
-  `C-u' argument typing `C-u C-c C-p u'.
-
-
-  [Configuration] See section 5
-
-
-4.4 Generate password
-─────────────────────
-
-  Type `C-c C-p g' (`org-password-manager-generate-password') and the
-  generated password is inserted under the point on the buffer. It is
-  also copied to your clipboard. It tries to increase the security by
-  skipping the kill ring and copying the password directly to the
-  system’s clipboard and by erasing it after 30 seconds. This period is
-  customizable, refer to the [Configuration] section for more.
-
-  If you want to customize the `pwgen' command before running it
-  (e.g. you want a shorter password), use the `C-u' argument by typing
-  `C-u C-c C-p g'.
-
-
-  [Configuration] See section 5
-
-
-5 Configuration
-═══════════════
-
-  Refer to `M-x customize-group org-password-manager'.
-
-
-6 Comparison to similar tools
-═════════════════════════════
-
-  This work was first inspired by [Emacs] and [Org mode], obviously.
-
-  But I also want to cite two other projects that are similar in spirit
-  to `org-password-manager'. They aim to accomplish the same
-  goal—i.e. using [Emacs] [Org mode] as a password manager. Though they
-  differ on design from each other and from
-  `org-password-manager'. Thus, the effort to create
-  `org-password-manager' is still justified.
-
-  Those related projects are both called `org-passwords'. One is by
-  [Jorge Alfaro-Murillo] and the other by [Andrea Crotti].
-
-  [Jorge Alfaro-Murillo's `org-passwords'] has lots of features, way
-  more than `org-password-manager' plans to have. For example, it
-  implements its own password generator, requires configuration for
-  pointing to a password file that should only contain passwords and
-  opens that file in read-only mode with a timeout. It is so complete
-  that it is in the official distribution of [Org mode] under
-  [org-contrib].
-
-  `org-password-manager', on the other hand, uses [pwgen] to generate
-  passwords, handles passwords stored on the middle of any [Org mode]
-  file with other contents and doesn’t open those files in any special
-  way.
-
-  [Andrea Crotti's `org-passwords'] is more minimal than
-  `org-password-manager' aims to be. It only retrieves passwords for the
-  entry under the point, generates passwords by calling [pwgen] and has
-  almost no documentation, requiring the user to read the source.
-
-  I appreciate the mentioned works and thank its authors.
-
-
-  [Emacs] https://www.gnu.org/software/emacs/
-
-  [Org mode] http://orgmode.org/
-
-  [Jorge Alfaro-Murillo]
-  https://bitbucket.org/alfaromurillo/org-passwords.el
-
-  [Andrea Crotti] https://github.com/AndreaCrotti/org-passwords/
-
-  [Jorge Alfaro-Murillo's `org-passwords']
-  https://bitbucket.org/alfaromurillo/org-passwords.el
-
-  [org-contrib]
-  http://orgmode.org/cgit.cgi/org-mode.git/tree/contrib/lisp/org-passwords.el
-
-  [pwgen] http://pwgen.sourceforge.net/
-
-  [Andrea Crotti's `org-passwords']
-  https://github.com/AndreaCrotti/org-passwords/
+* Core functionality.

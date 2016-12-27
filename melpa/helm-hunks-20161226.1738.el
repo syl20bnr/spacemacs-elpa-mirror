@@ -3,8 +3,8 @@
 ;; Copyright (C) 2012-2016 Free Software Foundation, Inc.
 
 ;; Author: @torgeir
-;; Version: 1.0.0
-;; Package-Version: 20161226.638
+;; Version: 1.4.0
+;; Package-Version: 20161226.1738
 ;; Keywords: helm git hunks vc
 ;; Package-Requires: ((emacs "24.4") (helm "1.9.8"))
 
@@ -26,15 +26,20 @@
 ;; A helm interface for browsing unstaged git hunks.
 ;;
 ;; Enable `helm-follow-mode' and trigger `helm-hunks' to jump around
-;; unstaged hunks like never before. Run `helm-hunks-current-buffer`
-;; to jump around the current buffer only.
+;; unstaged hunks like never before. Stage them with `C-s`.
+;;
+;; Run `helm-hunks-current-buffer` to jump around the current buffer only.
+;;
+;; Run `helm-hunks-staged` to jump around staged hunks, unstage with `C-u`.
+;;
+;; Run `helm-hunks-staged-current-buffer` to jump around staged hunks in
+;; the current buffer only, unstage with `C-u`.
 ;;
 ;; Credits/inspiration: git-gutter+ - https://github.com/nonsequitur/git-gutter-plus/
 
 ;;; Todo:
 
 ;; TODO kill visited hunk from helm-hunks
-;; TODO show staged hunks
 
 ;;; Code:
 
@@ -69,13 +74,31 @@
   "git apply --unidiff-zero --cached -"
   "Git command to apply the patch read from stdin.")
 
+(defvar helm-hunks--cmd-git-apply-reverse
+  "git apply --unidiff-zero --cached --reverse -"
+  "Git command to apply the patch read from stdin in reverse.")
+
 (defvar helm-hunks--msg-no-changes
   "No changes."
   "Message shown in the helm buffer when there are no changed hunks.")
 
+(defvar helm-hunks--msg-no-changes-staged
+  "No staged changes."
+  "Message shown in the helm buffer when there are no staged hunks.")
+
+(defun helm-hunks--msg-no-hunks ()
+  "Message to show when there are no hunks to display."
+  (if helm-hunks--is-staged
+      helm-hunks--msg-no-changes-staged
+    helm-hunks--msg-no-changes))
+
 (defvar helm-hunks--is-preview
   nil
   "Is preview mode enabled, to show diff lines preview inside helm while navigating.")
+
+(defvar helm-hunks--is-staged
+  nil
+  "Is showing staged hunks.")
 
 ;; Refresh git-gutter+ on git changes
 (when (and (boundp 'git-gutter+-mode)
@@ -189,7 +212,7 @@ diff content as an individual patch, `type' the type of change and
 (defun helm-hunks--format-candidate-for-display (hunk)
   "Formats `HUNK' for display as a line in helm."
   (let ((file (cdr (assoc 'file hunk))))
-    (unless (equal file helm-hunks--msg-no-changes)
+    (unless (equal file (helm-hunks--msg-no-hunks))
       (let* ((line (cdr (assoc 'line hunk)))
              (type (cdr (assoc 'type hunk)))
              (content (cdr (assoc 'content hunk)))
@@ -256,17 +279,21 @@ occured at and the `TYPE' of change."
   (with-helm-alive-p
     (helm-exit-and-execute-action #'helm-hunks--action-find-hunk-other-window)))
 
-(defun helm-hunks--stage-hunk-interactive ()
+(defun helm-hunks--stage-or-unstage-hunk-interactive ()
   "Interactive defun to stage the currently selected helm candidate's hunk (`real' value)."
   (interactive)
   (with-helm-alive-p
-    (let ((real (helm-get-selection)))
+    (let* ((real (helm-get-selection))
+           (n (1- (helm-candidate-number-at-point)))
+           (candidates (helm-get-cached-candidates helm-hunks--source))
+           (next-candidate (nth n candidates)))
       (when real
-        (helm-hunks--stage-hunk real)
+        (helm-hunks--stage-or-unstage-hunk real)
         (helm-refresh)
+        (when next-candidate (when (> n 0) (helm-next-line n)))
         (helm-hunks--run-hooks-for-buffer-of-hunk real)))))
 
-(defun helm-hunks--stage-hunk (hunk)
+(defun helm-hunks--stage-or-unstage-hunk (hunk)
   "Stage a `HUNK'.
 
 Will `cd' to the git root to make git diff paths align with paths on disk as we're not nescessarily in the git root when `helm-hunks' is run, and diffs are gathered."
@@ -279,7 +306,9 @@ Will `cd' to the git root to make git diff paths align with paths on disk as we'
                 (point-max)
                 (format "cd %s && %s"
                         (shell-quote-argument (helm-hunks--get-git-root))
-                        helm-hunks--cmd-git-apply)
+                        (if helm-hunks--is-staged
+                            helm-hunks--cmd-git-apply-reverse
+                          helm-hunks--cmd-git-apply))
                 t t nil))
         (buffer-string)))))
 
@@ -299,17 +328,17 @@ Will `cd' to the git root to make git diff paths align with paths on disk as we'
   "Candidates for the `helm-hunks' source, on the form (display . real)."
   (let ((candidates (helm-hunks--changes)))
     (if (equal nil candidates)
-        `((,helm-hunks--msg-no-changes . nil))
+        `((,(helm-hunks--msg-no-hunks) . nil))
       candidates)))
 
 (defun helm-hunks--action-find-hunk (hunk)
   "Action that triggers on RET for the `helm-hunks' source. Jumps to the file of the `HUNK'."
-  (unless (equal hunk helm-hunks--msg-no-changes)
+  (unless (equal hunk (helm-hunks--msg-no-hunks))
     (helm-hunks--find-hunk-with-fn hunk #'find-file)))
 
 (defun helm-hunks--persistent-action (hunk)
   "Persistent action to trigger on follow for the `helm-hunks' source. Jumps to the file of the `HUNK'."
-  (unless (equal hunk helm-hunks--msg-no-changes)
+  (unless (equal hunk (helm-hunks--msg-no-hunks))
     (helm-hunks--find-hunk-with-fn hunk #'find-file)))
 
 (defvar helm-hunks--source
@@ -317,7 +346,7 @@ Will `cd' to the git root to make git diff paths align with paths on disk as we'
     :candidates-process 'helm-hunks--candidates
     :action '(("Go to hunk" . helm-hunks--action-find-hunk))
     :persistent-action 'helm-hunks--persistent-action
-    :persistent-help "[C-s] stage, [C-c C-p] show diffs, [C-c C-o] find other frame, [C-c o] find other window"
+    :persistent-help "[C-s] stage, [C-u] unstage/reset, [C-c C-p] show diffs, [C-c C-o] find other frame, [C-c o] find other window"
     :multiline t
     :nomark t
     :follow 1)
@@ -328,7 +357,8 @@ Will `cd' to the git root to make git diff paths align with paths on disk as we'
     (set-keymap-parent map helm-map)
     ;; TODO
     ;; (define-key map (kbd "C-r") 'helm-hunks--revert-hunk)
-    (define-key map (kbd "C-s") 'helm-hunks--stage-hunk-interactive)
+    (define-key map (kbd "C-u") 'helm-hunks--stage-or-unstage-hunk-interactive)
+    (define-key map (kbd "C-s") 'helm-hunks--stage-or-unstage-hunk-interactive)
     (define-key map (kbd "C-c C-o") 'helm-hunks--find-hunk-other-frame-interactive)
     (define-key map (kbd "C-c o") 'helm-hunks--find-hunk-other-window-interactive)
     (define-key map (kbd "C-c C-p") 'helm-hunks--toggle-preview-interactive)
@@ -349,6 +379,31 @@ Will `cd' to the git root to make git diff paths align with paths on disk as we'
   (let* ((current-file-relative (file-relative-name (buffer-file-name (current-buffer))))
          (helm-hunks--cmd-diffs-single-file (format "%s -- %s" helm-hunks--cmd-diffs current-file-relative))
          (helm-hunks--cmd-file-names-single-file (format "%s -- %s" helm-hunks--cmd-file-names current-file-relative))
+         (helm-hunks--cmd-diffs helm-hunks--cmd-diffs-single-file)
+         (helm-hunks--cmd-file-names helm-hunks--cmd-file-names-single-file))
+    (helm-hunks)))
+
+;;;###autoload
+(defun helm-hunks-staged ()
+  "Helm-hunks entry point staged hunks."
+  (interactive)
+  (let* ((helm-hunks--is-staged t)
+         (helm-hunks--cmd-diffs-staged (format "%s --staged" helm-hunks--cmd-diffs))
+         (helm-hunks--cmd-file-names-staged (format "%s --staged" helm-hunks--cmd-file-names))
+         (helm-hunks--cmd-diffs helm-hunks--cmd-diffs-staged)
+         (helm-hunks--cmd-file-names helm-hunks--cmd-file-names-staged))
+    (helm-hunks)))
+
+;;;###autoload
+(defun helm-hunks-staged-current-buffer ()
+  "Helm-hunks entry point staged hunks current buffer."
+  (interactive)
+  (let* ((current-file-relative (file-relative-name (buffer-file-name (current-buffer))))
+         (helm-hunks--is-staged t)
+         (helm-hunks--cmd-diffs-staged (format "%s --staged" helm-hunks--cmd-diffs))
+         (helm-hunks--cmd-file-names-staged (format "%s --staged" helm-hunks--cmd-file-names))
+         (helm-hunks--cmd-diffs-single-file (format "%s -- %s" helm-hunks--cmd-diffs-staged current-file-relative))
+         (helm-hunks--cmd-file-names-single-file (format "%s -- %s" helm-hunks--cmd-file-names-staged current-file-relative))
          (helm-hunks--cmd-diffs helm-hunks--cmd-diffs-single-file)
          (helm-hunks--cmd-file-names helm-hunks--cmd-file-names-single-file))
     (helm-hunks)))
