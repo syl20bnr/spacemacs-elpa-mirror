@@ -4,7 +4,7 @@
 
 ;; Author: Francesc Rocher <francesc.rocher@gmail.com>
 ;; URL: http://github.com/rocher/persp-fr
-;; Package-Version: 20161108.1138
+;; Package-Version: 20161226.1241
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.0") (persp-mode "2.9.1"))
 ;; Keywords: perspectives, workspace, windows, convenience
@@ -100,36 +100,35 @@
 
 (defvar persp-fr-default-frame-name (frame-parameter nil 'name))
 
-(defun persp-fr-update (name)
+(defun persp-fr-update (&optional hook &rest rest)
   "Keep a list of perspective names in the frame title."
-  (interactive)
-  (let ((current (or (if (or (null name) (listp name)) nil name)
-                     (frame-parameter nil 'persp-fr-persp-current)
-                     persp-nil-name))
-        (persp-list (or (persp-names-current-frame-fast-ordered)
-                        (list persp-nil-name)))
-        (title (concat (or persp-fr-title-prefix
-                           persp-fr-default-frame-name
-                           (frame-parameter nil 'persp-fr-frame-name))
-                       "   -")))
-    (dolist (persp persp-list)
-      (setq title
-            (concat title
-                    (if (eq current persp)
-                        (format "[ %s ]" persp)
-                      (format "- %s -" persp)))))
-    (setq title (concat title "-"))
-    (if (and persp-fr-title-max-length
-             (> (length title) persp-fr-title-max-length))
-        (setq title (concat (substring title 0 persp-fr-title-max-length) " ..")))
-    (set-frame-name title)
-    (modify-frame-parameters nil `((persp-fr-persp-current . ,current)))))
-
-(defun persp-fr-rename-hook (persp oldname newname)
-  (persp-fr-update newname))
-
-(defun persp-fr-force-update (args)
-  (persp-fr-update nil))
+  (let ((current (get-current-persp)))
+    (unless (and (eq hook 'persp-before-kill-functions)
+                 (eq (car rest) current))
+      (setq current (safe-persp-name current))
+      (let ((persp-list (persp-names-current-frame-fast-ordered))
+            title)
+        (when (eq hook 'persp-before-kill-functions)
+          (setq persp-list
+                (delete (safe-persp-name (car rest))
+                        persp-list)))
+        (setq title
+              (concat (or persp-fr-title-prefix
+                          persp-fr-default-frame-name
+                          current)
+                      "   - "
+                      (mapconcat
+                       #'(lambda (persp)
+                           (if (string= current persp)
+                               (concat "[ " persp " ]")
+                             persp))
+                       persp-list
+                       " - ")
+                      " -"))
+        (if (and persp-fr-title-max-length
+                 (> (length title) persp-fr-title-max-length))
+            (setq title (concat (substring title 0 persp-fr-title-max-length) " ..")))
+        (set-frame-name title)))))
 
 ;;;###autoload
 (defun persp-fr-start ()
@@ -137,14 +136,21 @@
 This is exactly the same as `persp-mode', but perspective names
 are shown in the frame title."
   (interactive)
-  (add-function :after
-                (symbol-function 'persp-switch)
-                #'persp-fr-update)
-  (add-function :after
-                (symbol-function 'persp-kill)
-                #'persp-fr-force-update)
-  (add-hook 'persp-renamed-functions #'persp-fr-rename-hook)
-  (persp-fr-update nil))
+  (macrolet ((add-persp-hooks
+              (&rest hooks)
+              (let (code)
+                (dolist (hook hooks)
+                  (push
+                   `(add-hook
+                     ',hook
+                     #'(lambda (&rest rest)
+                         (apply #'persp-fr-update ',hook rest)))
+                   code))
+                `(progn ,@code))))
+    (add-persp-hooks persp-before-kill-functions persp-activated-functions
+                     persp-created-functions persp-renamed-functions
+                     focus-in-hook))
+  (persp-fr-update))
 
 (provide 'persp-fr)
 ;;; persp-fr.el ends here
