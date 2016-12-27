@@ -6,11 +6,11 @@
 ;;
 ;; Created: 2009-09-08
 ;; Version: 1.2.3
-;; Package-Version: 20161226.600
-;; Package-Requires: ((cl-lib "0"))
+;; Package-Version: 20161227.251
+;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: matching
 ;; URL: https://github.com/fourier/loccur
-;; Compatibility: GNU Emacs 23.x, GNU Emacs 24.x
+;; Compatibility: GNU Emacs 24.3
 ;;
 ;; This file is part of GNU Emacs.
 ;;

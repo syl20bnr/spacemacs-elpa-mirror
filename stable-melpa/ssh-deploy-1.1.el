@@ -1,11 +1,11 @@
-;;; `ssh-deploy.el --- Deployment via SSH or FTP, global or per directory.
+;;; ssh-deploy.el --- Deployment via SSH or FTP, global or per directory.
 
 ;; Author: Christian Johansson <github.com/cjohansson>
 ;; Maintainer: Christian Johansson <github.com/cjohansson>
 ;; Created: 5 Jul 2016
-;; Modified: 30 Nov 2016
-;; Version: 1.43
-;; Package-Version: 1.0.0
+;; Modified: 20 Dec 2016
+;; Version: 1.48
+;; Package-Version: 1.1
 ;; Keywords: tools, convenience
 ;; URL: https://github.com/cjohansson/emacs-ssh-deploy
 
@@ -177,20 +177,20 @@
                   (async-start
                    `(lambda()
                       (require 'ediff)
-                      (if (fboundp 'ediff-same-contents)
+                      (if (fboundp 'ediff-same-file-contents)
                           (progn
-                            (if (or (not (file-exists-p ,remote-path)) (and (file-exists-p ,revision-path) (ediff-same-contents ,revision-path ,remote-path)))
+                            (if (or (not (file-exists-p ,remote-path)) (and (file-exists-p ,revision-path) (ediff-same-file-contents ,revision-path ,remote-path)))
                                 (progn
                                   (message "Uploading file '%s' to '%s' via tramp asynchronously.." ,local ,remote-path)
                                   (copy-file ,local ,remote-path t t t t)
                                   (copy-file ,local ,revision-path t t t t)
-                                  0)
-                              1))
-                        2))
-                   (lambda(return-message)
-                     (if (= return-message 0) (message "Upload completed.")
-                       (if (= return-message 1) (display-warning "ssh-deploy" "External file has changed, please download or diff." :warning)
-                         (if (= return-message 2) (display-warning "ssh-deploy" "Function ediff-same-contents is missing" :warning))))))))
+                                  (list 0 (format "Upload '%s' completed." ,remote-path)))
+                              (list 1 (format "External file '%s' has changed, please download or diff." ,remote-path))))
+                        (list 1 "Function ediff-same-file-contents is missing.")))
+		   (lambda(return)
+		     (if (= (nth 0 return) 0)
+			 (message (nth 1 return))
+		       (display-warning "ssh-deploy" (nth 1 return) :warning))))))
             (progn
               (message "Uploading directory '%s' to '%s' via tramp asynchronously.." local remote-path)
               (if (string= remote-path (alist-get 'string remote))
@@ -200,14 +200,14 @@
                         (copy-directory ,local ,remote-path t t t)
                         ,local)
                      (lambda(return-path)
-                       (message "Upload '%s' finished" return-path))))
+                       (message "Upload '%s' finished." return-path))))
                 (progn
                   (async-start
                    `(lambda()
                       (copy-directory ,local ,(file-name-directory (directory-file-name remote-path)) t t)
                       ,local)
                    (lambda(return-path)
-                     (message "Upload '%s' finished" return-path)))))))))
+                     (message "Upload '%s' finished." return-path)))))))))
     (message "async.el is not installed")))
 
 (defun ssh-deploy--upload-via-tramp (local remote local-root)
@@ -247,7 +247,7 @@
                     (copy-file ,remote-path ,local t t t t)
                     ,local)
                  (lambda(return-path)
-                   (message "Download '%s' finished" return-path)
+                   (message "Download '%s' finished." return-path)
                    (ssh-deploy-store-revision return-path))))
             (progn
               (message "Downloading directory '%s' to '%s' via tramp asynchronously.." remote-path local)
@@ -258,14 +258,14 @@
                         (copy-directory ,remote-path ,local t t t)
                         ,local)
                      (lambda(return-path)
-                       (message "Download '%s' finished" return-path))))
+                       (message "Download '%s' finished." return-path))))
                 (progn
                   (async-start
                    `(lambda()
                       (copy-directory ,remote-path ,(file-name-directory (directory-file-name remote-path)) t t)
                       ,local)
                    (lambda(return-path)
-                     (message "Download '%s' finished" return-path)))))))))
+                     (message "Download '%s' finished." return-path)))))))))
     (message "async.el is not installed")))
 
 (defun ssh-deploy--download-via-tramp (remote local local-root)
@@ -276,17 +276,17 @@
         (progn
           (message "Downloading file '%s' to '%s' via tramp synchronously.." remote-path local)
           (copy-file remote-path local t t t t)
-          (message "Download '%s' finished" local)
+          (message "Download '%s' finished." local)
           (ssh-deploy-store-revision local))
       (progn
         (message "Downloading directory '%s' to '%s' via tramp synchronously.." remote-path local)
         (if (string= remote-path (alist-get 'string remote))
             (progn
               (copy-directory remote-path local t t t)
-              (message "Download '%s' finished" local))
+              (message "Download '%s' finished." local))
           (progn
             (copy-directory remote-path (file-name-directory (directory-file-name remote-path)) t t)
-            (message "Download '%s' finished" local))
+            (message "Download '%s' finished." local))
           )))))
 
 (defun ssh-deploy--upload (local remote local-root async)
@@ -303,13 +303,13 @@
           (if (file-exists-p revision-path)
               (progn
                 (require 'ediff)
-                (if (fboundp 'ediff-same-contents)
+                (if (fboundp 'ediff-same-file-contents)
                     (progn
-                      (if (not (ediff-same-contents revision-path remote))
+                      (if (not (ediff-same-file-contents revision-path remote))
                           t
                         nil))
                   (progn
-                    (message "Function ediff-same-contents is missing.")
+                    (message "Function ediff-same-file-contents is missing.")
                     nil)))
             t))
       nil)))
@@ -350,7 +350,7 @@
            (ssh-deploy--is-not-empty-string ssh-deploy-root-remote))
       (if (and (ssh-deploy--is-not-empty-string buffer-file-name))
           (let ((local-root (file-truename ssh-deploy-root-local))
-                (remote-root (file-truename ssh-deploy-root-remote))
+                (remote-root ssh-deploy-root-remote)
                 (path (file-truename buffer-file-name)))
             (if (ssh-deploy--file-is-in-path path local-root)
                 (progn
@@ -364,25 +364,31 @@
                                     (progn
                                       (async-start
                                        `(lambda()
-                                          (require 'ediff)
-                                          (if (fboundp 'ediff-same-contents)
+                                          (if (file-exists-p ,remote-path)
                                               (progn
-                                                (if (ediff-same-contents ,revision-path ,remote-path)
-                                                    0
-                                                  1))
-                                            2))
-                                       (lambda(return-message)
-                                         (if (= return-message 0) (message "Remote file has not changed.")
-                                           (if (= return-message 1) (display-warning "ssh-deploy" "External file has changed, please download or diff." :warning)
-                                             (if (= return-message 2) (display-warning "ssh-deploy" "Function ediff-same-contents is missing" :warning)))))))
+                                                (require 'ediff)
+                                                (if (fboundp 'ediff-same-file-contents)
+                                                    (progn
+                                                      (if (ediff-same-file-contents ,revision-path ,remote-path)
+                                                          (list 0 (format "Remote file '%s' has not changed." ,remote-path))
+                                                        (list 1 (format "External file '%s' has changed, please download or diff." ,remote-path))))
+                                                  (list 1 "Function ediff-same-file-contents is missing.")))
+                                            (list 0 (format "Remote file '%s' doesn't exist." ,remote-path))))
+                                       (lambda(return)
+                                         (if (= (nth 0 return) 0)
+					     (message (nth 1 return))
+					   (display-warning "ssh-deploy" (nth 1 return) :warning)))))
                                   (progn
-                                    (require 'ediff)
-                                    (if (fboundp 'ediff-same-contents)
+                                    (if (file-exists-p remote-path)
                                         (progn
-                                          (if (ediff-same-contents revision-path remote-path)
-                                              (message "Remote file has not changed.")
-                                            (display-warning "ssh-deploy" "External file has changed, please download or diff." :warning)))
-                                      (display-warning "ssh-deploy" "Function ediff-same-contents is missing" :warning)))))
+                                          (require 'ediff)
+                                          (if (fboundp 'ediff-same-file-contents)
+                                              (progn
+                                                (if (ediff-same-file-contents revision-path remote-path)
+                                                    (message "Remote file '%s' has not changed." remote-path)
+                                                  (display-warning "ssh-deploy" (format "External file '%s' has changed, please download or diff." remote-path) :warning)))
+                                            (display-warning "ssh-deploy" "Function ediff-same-file-contents is missing." :warning)))
+                                      (message "Remote file '%s' doesn't exist." remote-path)))))
                             (progn
                               (if (fboundp 'async-start)
                                   (progn
@@ -391,32 +397,32 @@
                                         (if (file-exists-p ,remote-path)
                                             (progn
                                               (require 'ediff)
-                                              (if (fboundp 'ediff-same-contents)
+                                              (if (fboundp 'ediff-same-file-contents)
                                                   (progn
-                                                    (if (ediff-same-contents ,path ,remote-path)
+                                                    (if (ediff-same-file-contents ,path ,remote-path)
                                                         (progn
                                                           (copy-file ,path ,revision-path t t t t)
-                                                          (message "Remote file has not changed, created base revision."))
-                                                      (display-warning "ssh-deploy" "External file has changed, please download or diff." :warning)))
-                                                (display-warning "ssh-deploy" "Function ediff-same-contents is missing" :warning)))
-                                          (progn
-                                            (message "Remote file doesn't exist"))))
-                                     (lambda(return-message)
-                                       (message return-message))))
+                                                          (list 0 (format "Remote file '%s' has not changed, created base revision." ,remote-path)))
+                                                      (list 1 (format "External file has '%s' changed, please download or diff." ,remote-path))))
+                                                (list 1 "Function ediff-file-same-contents is missing")))
+                                          (list 0 (format "Remote file '%s' doesn't exist." ,remote-path))))
+                                       (lambda(return)
+                                         (if (= (nth 0 return) 0)
+					     (message (nth 1 return))
+					   (display-warning "ssh-deploy" (nth 1 return) :warning)))))
                                 (progn
                                   (if (file-exists-p remote-path)
                                       (progn
                                         (require 'ediff)
-                                        (if (fboundp 'ediff-same-contents)
+                                        (if (fboundp 'ediff-same-file-contents)
                                             (progn
-                                              (if (ediff-same-contents path remote-path)
+                                              (if (ediff-same-file-contents path remote-path)
                                                   (progn
                                                     (copy-file path revision-path t t t t)
-                                                    (message "Remote file has not changed, created base revision."))
-                                                (display-warning "ssh-deploy" "External file has changed, please download or diff." :warning)))
-                                          (display-warning "ssh-deploy" "Function ediff-same-contents is missing" :warning)))
-                                    (progn
-                                      (message "Remote file doesn't exist"))))))))))))))))
+                                                    (message "Remote file '%s' has not changed, created base revision." remote-path))
+                                                (display-warning "ssh-deploy" (format "External file '%s' has changed, please download or diff." remote-path) :warning)))
+                                          (display-warning "ssh-deploy" "Function ediff-same-file-contents is missing." :warning)))
+                                      (message "Remote file '%s' doesn't exist." remote-path)))))))))))))))
 
 ;;;### autoload
 (defun ssh-deploy-download-handler ()
@@ -477,13 +483,13 @@
                 (if file-or-directory
                     (progn
                       (require 'ediff)
-                      (if (fboundp 'ediff-same-contents)
+                      (if (fboundp 'ediff-same-file-contents)
                           (progn
                             (message "Comparing file '%s' to '%s'.." path command)
-                            (if (ediff-same-contents path command)
+                            (if (ediff-same-file-contents path command)
                                 (message "Files have identical contents.")
                               (ediff path command)))
-                        (message "Function ediff-same-contents is missing.")))
+                        (message "Function ediff-same-file-contents is missing.")))
                   (progn
                     (if (fboundp 'ztree-diff)
                         (progn

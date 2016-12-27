@@ -4,7 +4,7 @@
 
 ;; Author: codefalling <code.falling@gmail.com>
 ;; Keywords: languages
-;; Package-Version: 20161217.624
+;; Package-Version: 20161227.133
 
 ;; Version: 0.2
 ;; Package-Requires: ((mmm-mode "0.5.4"))
@@ -41,6 +41,7 @@
   '((:type template :name nil :mode web-mode)
     (:type template :name html :mode html-mode)
     (:type template :name jade :mode jade-mode)
+    (:type template :name pug :mode pug-mode)
     (:type script :name nil :mode js-mode)
     (:type script :name js :mode js-mode)
     (:type script :name es6 :mode js-mode)

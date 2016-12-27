@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2016, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 5.7.6
-;; Package-Version: 20161222.209
+;; Version: 5.8.8
+;; Package-Version: 20161227.443
 ;; Created: 10 Sep 2013
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, emulations, vim, ergoemacs
@@ -797,6 +797,87 @@ Version 2016-10-25"
           (progn
             (comment-or-uncomment-region -lbp -lep)
             (forward-line )))))))
+
+(defun xah-quote-lines ()
+  "Change current text block's lines to quoted lines with comma or other separator char.
+When there is a text selection, act on the the selection, else, act on a text block separated by blank lines.
+
+For example,
+
+ cat
+ dog
+ cow
+
+becomes
+
+ \"cat\",
+ \"dog\",
+ \"cow\",
+
+or
+
+ (cat)
+ (dog)
+ (cow)
+
+URL `http://ergoemacs.org/emacs/emacs_quote_lines.html'
+Version 2016-12-27"
+  (interactive)
+  (let* (
+         -p1
+         -p2
+         (-quoteToUse
+          (read-string
+           "Quote to use:" "\"" nil
+           '(
+             ""
+             "\""
+             "'"
+             "("
+             "{"
+             "["
+             )))
+         (-separator
+          (read-string
+           "line separator:" "," nil
+           '(
+             ""
+             ","
+             ";"
+             )))
+         (-beginQuote -quoteToUse)
+         (-endQuote
+          (cond
+           ((equal -quoteToUse "(") ")")
+           ((equal -quoteToUse "{") "}")
+           ((equal -quoteToUse "[") "]")
+           (t -quoteToUse))))
+    (if (use-region-p)
+        (progn
+          (setq -p1 (region-beginning))
+          (setq -p2 (region-end)))
+      (progn
+        (if (re-search-backward "\n[ \t]*\n" nil "NOERROR")
+            (progn (re-search-forward "\n[ \t]*\n")
+                   (setq -p1 (point)))
+          (setq -p1 (point)))
+        (re-search-forward "\n[ \t]*\n" nil "NOERROR")
+        (setq -p2 (point))))
+    (save-excursion
+      (save-restriction
+        (narrow-to-region -p1 -p2)
+
+        (goto-char (point-min))
+        (insert -quoteToUse)
+        (goto-char (point-max))
+        (insert -quoteToUse)
+
+        (goto-char (point-min))
+
+        (while (search-forward "\n" nil 'NOERROR)
+          (replace-match (concat -endQuote -separator "\n" -beginQuote) 'FIXEDCASE 'LITERAL))
+        ;;
+        ))))
 
 (defun xah-dired-rename-space-to-underscore ()
   "In dired, rename current or marked files by replacing space to underscore _.
@@ -1596,6 +1677,18 @@ Version 2016-06-19"
     (while (and (not (string-equal "*" (substring (buffer-name) 0 1))) (< i 20))
       (setq i (1+ i)) (previous-buffer))))
 
+(defun xah-new-empty-buffer ()
+  "Create a new empty buffer.
+New buffer will be named “untitled” or “untitled<2>”, “untitled<3>”, etc.
+
+URL `http://ergoemacs.org/emacs/emacs_new_empty_buffer.html'
+Version 2016-12-27"
+  (interactive)
+  (let ((-buf (generate-new-buffer "untitled")))
+    (switch-to-buffer -buf)
+    (funcall initial-major-mode)
+    (setq buffer-offer-save t)))
+
 (defvar xah-recently-closed-buffers nil "alist of recently closed buffers. Each element is (buffer name, file path). The max number to track is controlled by the variable `xah-recently-closed-buffers-max'.")
 
 (defvar xah-recently-closed-buffers-max 40 "The maximum length for `xah-recently-closed-buffers'.")
@@ -1673,24 +1766,6 @@ Version 2016-06-19"
     (switch-to-buffer -buf)
     (mapc (lambda (-f) (insert (cdr -f) "\n"))
           xah-recently-closed-buffers)))
-
-(defun xah-new-empty-buffer ()
-  "Open a new empty buffer.
-URL `http://ergoemacs.org/emacs/emacs_new_empty_buffer.html'
-Version 2016-08-11"
-  (interactive)
-  (let ((-buf (generate-new-buffer "untitled")))
-    (switch-to-buffer -buf)
-    (funcall initial-major-mode)
-    (setq buffer-offer-save t)))
-
-;; note: emacs won't offer to save a buffer that's
-;; not associated with a file,
-;; even if buffer-modified-p is true.
-;; One work around is to define your own my-kill-buffer function
-;; that wraps around kill-buffer, and check on the buffer modification
-;; status to offer save
-;; This custome kill buffer is close-current-buffer.
 
 
 
@@ -2267,6 +2342,7 @@ If `universal-argument' is called first, do switch frame."
    ("." . kmacro-start-macro)
    ("p" . kmacro-end-macro)
    ("e" . call-last-kbd-macro)
+   ("u" . xah-quote-lines)
    ("c" . replace-rectangle)
    ("d" . delete-rectangle)
    ("g" . kill-rectangle)
@@ -2568,6 +2644,13 @@ If `universal-argument' is called first, do switch frame."
 
       (define-key xah-fly-key-map (kbd "C-1") 'xah-pop-local-mark-ring)
       (define-key xah-fly-key-map (kbd "C-2") 'pop-global-mark)
+
+      (define-key xah-fly-key-map (kbd "C-7") 'xah-pop-local-mark-ring)
+      (define-key xah-fly-key-map (kbd "C-8") 'pop-global-mark)
+
+      (define-key xah-fly-key-map (kbd "C-9") 'scroll-down-command)
+      (define-key xah-fly-key-map (kbd "C-0") 'scroll-up-command)
+
       (define-key xah-fly-key-map (kbd "C-SPC") 'xah-fly-leader-key-map)
 
       (define-key xah-fly-key-map (kbd "C-a") 'mark-whole-buffer)
@@ -2588,12 +2671,10 @@ If `universal-argument' is called first, do switch frame."
 
       (define-key xah-fly-key-map (kbd "C-r") 'hippie-expand)
       (define-key xah-fly-key-map (kbd "C-t") 'xah-toggle-letter-case) ; never do transpose-chars
-
+      ;;
       ))
 
   (progn ; rule: all commands with meta key defined here must have other shortcuts. that is, meta binding is considered a luxury
-    (define-key xah-fly-key-map (kbd "M-1") 'xah-pop-local-mark-ring)
-    (define-key xah-fly-key-map (kbd "M-2") 'pop-global-mark)
 
     (define-key xah-fly-key-map (kbd "M-RET") 'xah-cycle-hyphen-underscore-space)
     (define-key xah-fly-key-map (kbd "M-c") 'xah-toggle-letter-case )

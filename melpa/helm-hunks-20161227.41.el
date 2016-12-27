@@ -4,7 +4,7 @@
 
 ;; Author: @torgeir
 ;; Version: 1.4.0
-;; Package-Version: 20161226.1738
+;; Package-Version: 20161227.41
 ;; Keywords: helm git hunks vc
 ;; Package-Requires: ((emacs "24.4") (helm "1.9.8"))
 
@@ -48,7 +48,8 @@
 (require 'subr-x)
 
 (defgroup helm-hunks nil
-  "A helm interface for git hunks")
+  "A helm interface for git hunks"
+  :group 'helm)
 
 (defcustom helm-hunks-refresh-hook
   nil
