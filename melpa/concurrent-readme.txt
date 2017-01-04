@@ -7,7 +7,7 @@ based on 'deferred.el'. This library has following features:
 - Dataflow
 - Signal/Channel
 
-(require 'cl)
+(require 'cl-lib)
 
 (require 'deferred)
 

@@ -50,28 +50,34 @@
 
    `isearchp-act-on-demand' (Emacs 22+),
    `isearchp-add-filter-predicate' (Emacs 24.4+),
+   `isearchp-add-inline-regexp-filter-predicate' (Emacs 24.4+),
    `isearchp-add-regexp-filter-predicate' (Emacs 24.4+),
-   `isearchp-append-register', `isearch-char-by-name' (Emacs
-   23-24.3), `isearchp-columns' (Emacs 24.4+),
-   `isearchp-complement-filter' (Emacs 24.4+), `isearchp-complete',
-   `isearchp-cycle-mismatch-removal',
+   `isearchp-append-register',
+   `isearchp-bookmark-current-filter-predicate' (Emacs 24.4+),
+   `isearch-char-by-name' (Emacs 23-24.3), `isearchp-columns'
+   (Emacs 24.4+), `isearchp-complement-filter' (Emacs 24.4+),
+   `isearchp-complete', `isearchp-cycle-mismatch-removal',
    `isearchp-defun-filter-predicate' (Emacs 24.4+),
+   `isearchp-describe-prefix-bindings',
    `isearchp-eval-sexp-and-insert' (Emacs 22+),
    `isearchp-fontify-buffer-now', `isearchp-init-edit',
-   `isearchp-near' (Emacs 24.4+), `isearchp-near-after' (Emacs
-   24.4+), `isearchp-near-before' (Emacs 24.4+),
+   `isearchp-keep-filter-predicate' (Emacs 24.4+), `isearchp-near'
+   (Emacs 24.4+), `isearchp-near-after' (Emacs 24.4+),
+   `isearchp-near-before' (Emacs 24.4+),
+   `isearchp-negate-last-filter' (Emacs 24.4+),
    `isearchp-open-recursive-edit' (Emacs 22+),
    `isearchp-or-filter-predicate' (Emacs 24.4+),
+   `isearchp-or-last-filter' (Emacs 24.4+),
    `isearchp-remove-failed-part' (Emacs 22+),
    `isearchp-remove-failed-part-or-last-char' (Emacs 22+),
    `isearchp-remove-filter-predicate' (Emacs 24.4+),
    `isearchp-reset-filter-predicate' (Emacs 24.4+),
+   `isearchp-reset-filter-preds-alist' (Emacs 24.4+),
    `isearchp-retrieve-last-quit-search',
-   `isearchp-save-filter-predicate' (Emacs 24.4+),
    `isearchp-set-filter-predicate' (Emacs 24.4+),
    `isearchp-set-region-around-search-target',
    `isearchp-show-filters' (Emacs 24.4+),
-   `isearchp-toggle-auto-save-filter-predicate' (Emacs 24.4+),
+   `isearchp-toggle-auto-keep-filter-predicate' (Emacs 24.4+),
    `isearchp-toggle-dimming-filter-failures' (Emacs 24.4+),
    `isearchp-toggle-highlighting-regexp-groups',
    `isearchp-toggle-lazy-highlight-cleanup' (Emacs 22+),
@@ -92,7 +98,7 @@
 
  User options defined here:
 
-   `isearchp-auto-save-filter-predicate-flag' (Emacs 22+),
+   `isearchp-auto-keep-filter-predicate-flag' (Emacs 22+),
    `isearchp-case-fold', `isearchp-deactivate-region-flag' (Emacs
    24.3+), `isearchp-drop-mismatch',
    `isearchp-drop-mismatch-regexp-flag',
@@ -134,8 +140,13 @@
    `isearchp-add-filter-predicate-1' (Emacs 24.4+),
    `isearchp-assoc-delete-all', `isearchp-barf-if-use-minibuffer',
    `isearchp-columns-p' (Emacs 24.4+),
-   `isearchp-complete-past-string', `isearchp-fail-pos',
-   `isearchp-ffap-guesser' (Emacs 24.4+),
+   `isearchp-complete-past-string',
+   `isearchp-current-filter-predicates' (Emacs 24.4+),
+   `isearchp-fail-pos', `isearchp-ffap-guesser' (Emacs 24.4+),
+   `isearchp-filter-bookmark-alist-only' (Emacs 24.4+),
+   `isearchp-filter-bookmark-p' (Emacs 24.4+),
+   `isearchp-filters-description' (Emacs 24.4+),
+   `isearchp-first-isearch-advice' (Emacs 24.4+),
    `isearchp-highlight-lighter', `isearchp-in-color-p' (Emacs
    24.4+), `isearchp-in-comment-p' (Emacs 24.4+),
    `isearchp-in-comment-or-delim-p' (Emacs 24.4+),
@@ -154,12 +165,15 @@
    `isearchp-in-string-p' (Emacs 24.4+), `isearchp-in-symbol-p'
    (Emacs 24.4+), `isearchp-in-url-p' (Emacs 24.4+),
    `isearchp-in-word-p' (Emacs 24.4+),
+   `isearchp-last-isearch-advice' (Emacs 24.4+),
    `isearchp-match-regexp-filter-predicate' (Emacs 24.4+),
    `isearchp-message-prefix', `isearchp-message-suffix',
    `isearchp-near-after-predicate' (Emacs 24.4+),
    `isearchp-near-before-predicate' (Emacs 24.4+),
    `isearchp-near-predicate' (Emacs 24.4+), `isearchp-not-pred'
-   (Emacs 24.4+), `isearchp-oddp', `isearchp-read-face-names',
+   (Emacs 24.4+), `isearchp-not-predicate' (Emacs 24.4+),
+   `isearchp-oddp', `isearchp-or-predicates' (Emacs 24.4+),
+   `isearchp-or-preds' (Emacs 24.4+), `isearchp-read-face-names',
    `isearchp-read-face-names--read', `isearchp-read-filter-name'
    (Emacs 24.4+), `isearchp-read-measure' (Emacs 24.4+),
    `isearchp-read-near-args' (Emacs 24.4+),
@@ -184,6 +198,7 @@
    `isearchp-ffap-max-region-size' (Emacs 24.4+),
    `isearchp-filter-map' (Emacs 24.4+),
    `isearchp-in-lazy-highlight-update-p' (Emacs 24.3+),
+   `isearchp-kept-filter-predicate' (Emacs 24.4+),
    `isearchp-last-non-nil-invisible',
    `isearchp-last-quit-regexp-search', `isearchp-last-quit-search',
    `isearchp-lazy-highlight-face' (Emacs 22+),
@@ -195,7 +210,6 @@
    `isearchp-regexp-level-overlays' (Emacs 24.4+),
    `isearchp-replace-literally' (Emacs 22+), `isearchp-replacement'
    (Emacs 22+), `isearchp--replacing-on-demand' (Emacs 22+),
-   `isearchp-saved-filter-predicate' (Emacs 24.4+),
    `isearch-update-post-hook' (Emacs 20-21),
    `isearchp-user-entered-new-filter-p' (Emacs 24.4+),
    `isearchp-win-pt-line'.
@@ -288,6 +302,8 @@
    `C-z !'      `isearchp-set-filter-predicate' (Emacs 24.4+)
    `C-z %'      `isearchp-add-regexp-filter-predicate'
                 (Emacs 24.4+)
+   `C-z .'      `isearchp-add-inline-regexp-filter-predicate'
+                (Emacs 24.4+)
    `C-z &'      `isearchp-add-filter-predicate' (Emacs 24.4+)
    `C-z -'      `isearchp-remove-filter-predicate' (Emacs 24.4+)
    `C-z 0'      `isearchp-reset-filter-predicate' (Emacs 24.4+)
@@ -295,15 +311,19 @@
    `C-z >'      `isearchp-near-after' (Emacs 24.4+)
    `C-z ?'      `isearchp-show-filters' (Emacs 24.4+)
    `C-z @'      `isearchp-near' (Emacs 24.4+)
+   `C-z b'      `isearchp-bookmark-current-filter-predicate' (Emacs
+                24.4+ and requires library Bookmark+)
    `C-z c'      `isearchp-columns' (Emacs 24.4+)
    `C-z n'      `isearchp-defun-filter-predicate' (Emacs 24.4+)
    `C-z p'      `isearchp-toggle-showing-filter-prompt-prefixes'
                 (Emacs 24.4+)
-   `C-z S'      `isearchp-toggle-auto-save-filter-predicate'
+   `C-z S'      `isearchp-toggle-auto-keep-filter-predicate'
                 (Emacs 24.4+)
-   `C-z s'      `isearchp-save-filter-predicate' (Emacs 24.4+)
-   `C-z |'      `isearchp-or-filter-predicate' (Emacs 24.4+)
-   `C-z ~'      `isearchp-complement-filter' (Emacs 24.4+)
+   `C-z s'      `isearchp-keep-filter-predicate' (Emacs 24.4+)
+   `C-z ||'     `isearchp-or-filter-predicate' (Emacs 24.4+)
+   `C-z |1'     `isearchp-or-last-filter' (Emacs 24.4+)
+   `C-z ~~'     `isearchp-complement-filter' (Emacs 24.4+)
+   `C-z ~1'     `isearchp-negate-last-filter' (Emacs 24.4+)
    `C-M-;'      `isearchp-toggle-ignoring-comments' (Emacs 23+)
                 (`isearch-prop.el')
    `C-M-`'      `isearchp-toggle-literal-replacement' (Emacs 22+)
@@ -457,9 +477,10 @@ Overview of Features ---------------------------------------------
    to predicate `isearchp-show-hit-w-crosshairs'.)
 
    The following filtering commands are available during Isearch.
-   They are all on prefix key `C-z', by default.  (They are on
+   They are all on prefix key `C-z', by default.  They are on
    prefix keymap `isearchp-filter-map', which you can bind to any
-   key in `isearch-mode-map'.)
+   key in `isearch-mode-map'.  If you forget a `C-z' key, you can
+   use `C-z C-h' while searching to show them all.
 
    - `C-z &' (`isearchp-add-filter-predicate') adds a filter
      predicate, AND-ing it as an additional `:after-while' filter.
@@ -467,15 +488,29 @@ Overview of Features ---------------------------------------------
    - `C-z %' (`isearchp-add-regexp-filter-predicate') adds a filter
      predicate that requires search hits to match a given regexp.
 
-   - `C-z |' (`isearchp-or-filter-predicate') adds a filter
+   - `C-z .' (`isearchp-add-inline-regexp-filter-predicate') is
+     really just `C-z %', but `.*' is added to each side of the
+     regexp you enter.  You can use this multiple times when regexp
+     searching for full lines with `.+', to find the lines that
+     contain multiple regexp matches in any order.
+
+   - `C-z ||' (`isearchp-or-filter-predicate') adds a filter
      predicate, OR-ing it as an additional `:before-until' filter.
 
-   - `C-z ~' (`isearchp-complement-filter') complements the current
+   - `C-z |1' (`isearchp-or-last-filter') replaces the last-added
+     filter by its disjunction with another predicate, which you
+     specify.
+
+   - `C-z ~~' (`isearchp-complement-filter') complements the current
      filter.  It either adds an `:around' filter that complements
      or it removes an existing top-level complementing filter.
 
-   - `C-z -' (`isearchp-remove-filter-predicate') removes the last
-     added filter predicate.
+   - `C-z ~1' (`isearchp-negate-last-filter') replaces the
+     last-added filter by its complement.
+
+   - `C-z -' (`isearchp-remove-filter-predicate') removes a filter
+     predicate that you specify, using completion.  The last-added
+     is the default - retrieve it using `M-n'.
 
    - `C-z !' (`isearchp-set-filter-predicate') sets the overall
      filter predicate (advised `isearch-filter-predicate') to a
@@ -484,29 +519,48 @@ Overview of Features ---------------------------------------------
    - `C-z 0' (`isearchp-reset-filter-predicate') resets
      `isearch-filter-predicate' to its original (default) value.
 
+   - `C-z b' (`isearchp-bookmark-current-filter-predicate')
+     bookmarks the current value of `isearch-filter-predicate',
+     persisting it for reuse in future Emacs sessions.  You need
+     library Bookmark+ to be able to use this.
+
    - `C-z c' (`isearchp-columns') adds a filter predicate that
      limits search between two columns (or before/after a column).
 
    - `C-z n' (`isearchp-defun-filter-predicate') names the current
      suite of filter predicates, creating a named predicate that
-     does the same thing.  (You can use that name with `C-z -' to
-     remove that predicate.)  With a prefix arg it can also set or
-     save (i.e., do what `C-z !' or `C-z s' does).
+     does the same thing.  With a prefix arg it can also set or
+     keep it (for this Emacs session) - that is, do what `C-z !' or
+     `C-z s' does.
+
+     You can use that name with `C-z -' to remove that predicate.
+     You can also use it to create a custom Isearch command that
+     uses it for filtering.  For example:
+
+       (defun foo ()
+         "Isearch with filter predicate `my-filter-pred'."
+         (interactive)
+         (let ((isearch-filter-predicate  'my-filter-pred))
+           (isearch-forward)))
 
    - `C-z p' (`isearchp-toggle-showing-filter-prompt-prefixes')
      toggles option `isearchp-show-filter-prompt-prefixes-flag',
      which controls whether to show filter prefixes in the Isearch
      prompt.
 
-   - `C-z s' (`isearchp-save-filter-predicate') saves the current
-     filter-predicate suite for subsequent searches.  Unless you
-     save it, the next Isearch starts out from scratch, using the
-     default value of `isearch-filter-predicate'.
+   - `C-z s' (`isearchp-keep-filter-predicate') keeps the current
+     filter-predicate suite for subsequent searches (in this Emacs
+     session only).  Unless you do this (and unless auto-keeping is
+     turned on), the next Isearch starts out from scratch, using
+     the default value of `isearch-filter-predicate'.  (To remove
+     the kept predicate suite, use `C-z 0'.)
 
    - `C-z S' (uppercase `s')
-     (`isearchp-toggle-auto-save-filter-predicate') toggles option
-     `isearchp-auto-save-filter-predicate-flag', which provides
-     automatic filter-predicate saving (so no need to use `C-z s').
+     (`isearchp-toggle-auto-keep-filter-predicate') toggles option
+     `isearchp-auto-keep-filter-predicate-flag', which
+     automatically keeps the current filter-predicate suite, so
+     that it is used for subsequent searches (so no need to use
+     `C-z s').  (To remove a kept predicate suite, use `C-z 0'.)
 
    - `C-z ?' (`isearchp-show-filters') echoes the current suite of
      filter predicates (advice and original, unadvised predicate).
@@ -530,6 +584,25 @@ Overview of Features ---------------------------------------------
      predicates, which incorporate particular patterns and
      distances. You can then simply add such a predicate using `C-z
      &' (no prompting for pattern or distance).
+
+   Typically you add (`C-z &', `C-z %', etc.) a filter predicate to
+   those already active, or you remove one (`C-z -').  Adding is
+   implicitly an AND operation: the list of current predicates must
+   all be satisfied.  You can also OR a predicate against either
+   the entire ANDed list of predicates (`C-z ||') or against only
+   the last-added one (`C-z |1').  And you can complement either
+   the entire ANDed list (`C-z ~~') or just the last-added
+   predicate (`C-z ~1').
+
+   This ORing and NOTing, together with adding and removing
+   predicates in a given order (implicitly ANDing them), gives you
+   complete Boolean combination flexibility.
+
+   The list of filter predicates is always a conjunction.  But you
+   can use, as any of the conjuncts, a predicate that implements a
+   disjunction or a negation.  Or you can replace the entire list
+   by a single predicate that implements a disjunction or a
+   negation.
 
    When you use one of the commands that adds a filter predicate as
    advice to `isearch-filter-predicate' you can be prompted for two
@@ -589,12 +662,18 @@ Overview of Features ---------------------------------------------
    associate with the newly defined predicate, so that you can
    easily choose it again (no prompting).
 
+   Similarly, candidate `not...' prompts you for a predicate to
+   negate, and candidate `or...' prompts you for two predicates to
+   combine using `or'.
+
    For the completion candidates that are predefined, this
    naming convention is used:
 
    * Bracketed names (`[...]') stand for predicates that check that
      the search hit is within something.  For example, name `[;]'
-     tests whether it is inside a comment.
+     tests whether it is inside a comment (`;' is the Emacs-Lisp
+     comment-start character), and name `[defun]' tests whether it
+     is inside a defun.
 
    * Names that end in `...' indicate candidates that prompt you
      for more information.  These names represent, not filter
@@ -606,9 +685,15 @@ Overview of Features ---------------------------------------------
    completion candidates for the current Emacs session.  If option
    `isearchp-update-filter-predicates-alist-flag' is non-`nil' then
    they are also added to `isearchp-filter-predicates-alist'.  That
-   updated option value is NOT saved, however.  If you want to save
-   your additions to it for future Emacs sessions sessions then use
+   updated option value is NOT SAVED, however.  If you want to save
+   your additions to it for future Emacs sessions then use
    `M-x customize-option isearchp-filter-predicates-alist'.
+
+   You can use command `isearchp-reset-filter-preds-alist' (not
+   bound) to reset the filter predicates available for completion
+   to those in option `isearchp-filter-predicates-alist'.  A prefix
+   arg with `C-z 0' also resets this, along with resetting to the
+   unadvised value of `isearch-filter-predicate'.
 
    If option `isearchp-lazy-dim-filter-failures-flag' is non-`nil'
    then search hits that are skipped because they are removed by

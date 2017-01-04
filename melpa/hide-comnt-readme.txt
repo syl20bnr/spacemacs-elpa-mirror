@@ -1,4 +1,7 @@
- Hide/show comments in code.
+   Hide/show comments in code.
+
+ Comments are hidden by giving them and `invisible' property of
+ value `hide-comment'.
 
 
  Macros defined here:
@@ -11,7 +14,8 @@
 
  User options defined here:
 
-   `hide-whitespace-before-comment-flag', `ignore-comments-flag'.
+   `hide-whitespace-before-comment-flag', `ignore-comments-flag',
+   `show-invisible-comments-shows-all'.
 
  Non-interactive functions defined here:
 

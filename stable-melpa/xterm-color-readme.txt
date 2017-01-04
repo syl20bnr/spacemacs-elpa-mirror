@@ -1,17 +1,13 @@
 Translates ANSI control sequences into text properties.
 
-* Regular ANSI
-* XTERM 256 color
+* Regular ANSI colors
 
-xterm-color.el should perform much better than ansi-color.el
+* XTERM 256 colors
 
-Install/Uninstall (comint):
+* Works with compilation-mode (experimental)
 
+* Works with eshell
 
-(progn (add-hook 'comint-preoutput-filter-functions 'xterm-color-filter)
-       (setq comint-output-filter-functions (remove 'ansi-color-process-output comint-output-filter-functions))
-       (setq font-lock-unfontify-region-function 'xterm-color-unfontify-region))
+* More accurate than ansi-color.el
 
-(progn (remove-hook 'comint-preoutput-filter-functions 'xterm-color-filter)
-       (add-to-list 'comint-output-filter-functions 'ansi-color-process-output)
-       (setq font-lock-unfontify-region-function 'font-lock-default-unfontify-region))
+* Should perform much better than ansi-color.el

@@ -1,16 +1,24 @@
-Major mode for editing emacs lisp.
+Major mode for editing emacs lisp code.
 This is alternative to GNU Emacs emacs-lisp-mode.
 
 Major features different from emacs-lisp-mode:
 
-• Syntax coloring of 99% statistically most frequently used elisp functions.
-• Completion for function names with `ido-mode' interface. (press TAB after word)
+• Syntax coloring of ALL elisp symbols documented in elisp manual.
+
+• Symbols are colored by their technical type: function, special form, macro, command, user option, variable.
+
+• Completion for function names with `ido-mode' interface, for ALL symbols in obarray. (press TAB after word)
+
+• Command to format entire sexp expression unit. (press TAB before word.)
+
 • Function param template. (press space after function name.)
-• 1 to 4 letters abbrevs for top 50 most used functions. e.g. “bsnp” → “buffer-substring-no-properties”
-• Convenient formatting command that formats entire sexp expression unit. (press TAB before word.)
+
+• 1 to 4 letters abbrevs for top 50 most used functions. e.g. “d” → expands full (defun ...) template.
+
+abbrev or template are not expanded when in comment or string.
 
 Call `xah-elisp-mode' to activate the mode.
-Files ending in “.el” will also open in `xah-elisp-mode'.
+Files ending in “.el” will open in `xah-elisp-mode'.
 
 Single letter abbrevs are:
 d → defun

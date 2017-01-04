@@ -1,6 +1,7 @@
-mentor is a GNU Emacs frontend for the `rTorrent' bittorrent client.  It uses
-XML-RPC to communicate with rTorrent, and needs rTorrent to be configured
-accordingly.
+mentor is a GNU Emacs frontend for the `rTorrent' bittorrent client.
+
+By default, it will start and run rTorrent from within Emacs but can also be
+configured to use an external rTorrent instance over XML-RPC.
 
 This project aims to provide a feature complete and highly customizable
 interface, which will feel familiar to Emacs users.  Key bindings are chosen

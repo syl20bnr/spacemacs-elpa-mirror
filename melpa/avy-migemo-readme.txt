@@ -4,8 +4,8 @@ Migemo which is a library for incremental search has Japanese dictionaries.
 It could be used as abbreviation matching for other languages
 by preparing user's migemo dictionaries or customizing `avy-migemo-get-function'.
 
-For example, if url is defined in a migemo dictionary as ftp, http, and so on,
-these words also can be added to avy's candidates.
+`avy-migemo-get-function' can also use `char-fold-to-regexp' as below.
+(setq avy-migemo-get-function 'char-fold-to-regexp)
 
 
 The following functions are provided:
