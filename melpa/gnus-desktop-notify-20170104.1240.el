@@ -3,7 +3,7 @@
 ;; Author: Yuri D'Elia <wavexx AT thregr.org>
 ;; Contributors: Philipp Haselwarter <philipp.haselwarter AT gmx.de>
 ;; Version: 1.4
-;; Package-Version: 20160210.247
+;; Package-Version: 20170104.1240
 ;; URL: http://www.thregr.org/~wavexx/software/gnus-desktop-notify.el/
 ;; GIT: git://src.thregr.org/gnus-desktop-notify.el/
 ;; Package-Requires: ((gnus "1.0"))
@@ -145,11 +145,16 @@ function. Each argument will be formatted according to
 `gnus-desktop-notify-format'"
   :type 'file)
 
-(defcustom gnus-desktop-notify-send-program
-  "notify-send -i /usr/share/icons/gnome/32x32/actions/mail_new.png"
-  "Path and default arguments to the 'notify-send' program (part
-of libnotify's utilities)."
+(defcustom gnus-desktop-notify-send-program "notify-send"
+  "Path to the `notify-send' executable.
+This is usually bundled as part of libnotify's utilities."
   :type 'file)
+
+(defcustom gnus-desktop-notify-send-switches
+  '("-i" "/usr/share/icons/gnome/32x32/actions/mail_new.png")
+  "List of strings to pass as extra options to `notify-send'.
+See `gnus-desktop-notify-send-program'."
+  :type '(repeat (string :tag "Argument")))
 
 (defcustom gnus-desktop-notify-behavior 'gnus-desktop-notify-multi
   "Desktop notification behavior. Can be either:
@@ -236,18 +241,26 @@ with each argument being a group formatted according to
 				   (mapconcat 'shell-quote-argument groups " "))))))
 
 (defun gnus-desktop-notify-send (groups)
-  "Call 'notify-send' (as defined by `gnus-desktop-notify-send-program'),
-with the behavior defined by `gnus-desktop-notify-behavior'."
-  (let ((groups (mapcar 'gnus-desktop-notify-arg groups))
-	(subject (shell-quote-argument gnus-desktop-notify-send-subject)))
-    (case gnus-desktop-notify-behavior
-      ('gnus-desktop-notify-single
-       (dolist (g groups)
-	 (call-process-shell-command gnus-desktop-notify-send-program nil 0 nil "--"
-				     subject (shell-quote-argument g))))
-      ('gnus-desktop-notify-multi
-       (call-process-shell-command gnus-desktop-notify-send-program nil 0 nil "--"
-				   subject (mapconcat 'shell-quote-argument groups "\C-m"))))))
+  "Invoke the configured `notify-send' program.
+See `gnus-desktop-notify-send-program',
+`gnus-desktop-notify-send-switches' and
+`gnus-desktop-notify-behavior' for configuration options."
+  (let ((args   `(,gnus-desktop-notify-send-program
+                  ,@gnus-desktop-notify-send-switches
+                  "--"
+                  ,gnus-desktop-notify-send-subject))
+        (groups (mapcar #'gnus-desktop-notify-arg groups)))
+    ;; Iterate over the groups either individually or as a whole
+    (dolist (group (case gnus-desktop-notify-behavior
+                     (gnus-desktop-notify-single groups)
+                     (gnus-desktop-notify-multi  `(,groups))))
+      ;; Join the groups when viewing as a whole
+      (let* ((lines (if (listp group) group `(,group)))
+             (body  (mapconcat #'identity lines "\n")))
+        ;; Actually perform the work
+        (call-process-shell-command
+         (mapconcat #'shell-quote-argument `(,@args ,body) " ")
+         nil 0 nil)))))
 
 (defun gnus-desktop-notify-dbus (groups)
   "Generate a notification directly using `notifications' with
@@ -259,7 +272,7 @@ the behavior defined by `gnus-desktop-notify-behavior'."
 	 (notifications-notify :title gnus-desktop-notify-send-subject :body g)))
       ('gnus-desktop-notify-multi
        (notifications-notify :title gnus-desktop-notify-send-subject
-			     :body (mapconcat 'identity groups "\C-m"))))))
+			     :body (mapconcat 'identity groups "\n"))))))
 
 (defun gnus-desktop-notify-alert (groups)
   "Generate a notification directly using `alert' with
