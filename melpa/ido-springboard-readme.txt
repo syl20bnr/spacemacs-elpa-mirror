@@ -49,6 +49,12 @@ default-directory of the buffer where you started the ido command.
           (t
            nil))))
 
+(defun ido-springboard-add-trap ()
+  (add-hook 'pre-command-hook 'ido-springboard-trap-command t t))
+
+(defun ido-springboard-remove-trap ()
+  (remove-hook 'pre-command-hook 'ido-springboard-trap-command t))
+
 (defun ido-springboard-trap-command ()
   (unless ido-springboard-trapped
     (condition-case err
@@ -65,12 +71,6 @@ default-directory of the buffer where you started the ido command.
               (throw 'abort dir))))
       (error
        (message "Error occurred: %s" err)))))
-
-(defun ido-springboard-add-trap ()
-  (add-hook 'pre-command-hook 'ido-springboard-trap-command t t))
-
-(defun ido-springboard-remove-trap ()
-  (remove-hook 'pre-command-hook 'ido-springboard-trap-command t))
 
 ###autoload
 (defadvice ido-switch-buffer (around ido-springboard-ido-switch-buffer activate)

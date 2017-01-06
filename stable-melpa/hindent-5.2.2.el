@@ -4,7 +4,7 @@
 
 ;; Author: Chris Done <chrisdone@gmail.com>
 ;; URL: https://github.com/chrisdone/hindent
-;; Package-Version: 5.2.1
+;; Package-Version: 5.2.2
 ;; Package-Requires: ((cl-lib "0.5"))
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -37,26 +37,34 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Customization properties
 
+(defgroup hindent nil
+  "Integration with the \"hindent\" reformatting program."
+  :prefix "hindent-"
+  :group 'haskell)
+
 (defcustom hindent-style
   nil
   "The style to use for formatting.
 
-This customization is deprecated and ignored."
-  :group 'haskell
+For hindent versions lower than 5, you must set this to a non-nil string."
+  :group 'hindent
   :type 'string
   :safe #'stringp)
+
+(make-obsolete-variable 'hindent-style nil "hindent 5")
+
 
 (defcustom hindent-process-path
   "hindent"
   "Location where the hindent executable is located."
-  :group 'haskell
+  :group 'hindent
   :type 'string
   :safe #'stringp)
 
 (defcustom hindent-line-length
   80
   "Optionally override the line length."
-  :group 'haskell
+  :group 'hindent
   :type '(choice (const :tag "Default: 80" 80)
                  (integer :tag "Override" 120))
   :safe (lambda (val) (or (integerp val) (not val))))
@@ -64,15 +72,15 @@ This customization is deprecated and ignored."
 (defcustom hindent-indent-size
   2
   "Optionally override the indent size."
-  :group 'haskell
+  :group 'hindent
   :type '(choice (const :tag "Default: 2" 2)
                  (integer :tag "Override" 4))
   :safe (lambda (val) (or (integerp val) (not val))))
 
 (defcustom hindent-reformat-buffer-on-save nil
-  "Set to t to run `hindent-reformat-buffer' when a buffer in
-`hindent-mode' is saved."
-  :group 'haskell
+  "Set to t to run `hindent-reformat-buffer' when a buffer in `hindent-mode' is saved."
+  :group 'hindent
+  :type 'boolean
   :safe #'booleanp)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -95,7 +103,7 @@ Provide the following keybindings:
   :init-value nil
   :keymap hindent-mode-map
   :lighter " HI"
-  :group 'haskell
+  :group 'hindent
   :require 'hindent
   (if hindent-mode
       (add-hook 'before-save-hook 'hindent--before-save nil t)
@@ -111,9 +119,10 @@ Provide the following keybindings:
 
 ;;;###autoload
 (defun hindent-reformat-decl ()
-  "Re-format the current declaration by parsing and pretty
-  printing it. Comments are preserved, although placement may be
-  funky."
+  "Re-format the current declaration.
+
+The declaration is parsed and pretty printed.  Comments are
+preserved, although placement may be funky."
   (interactive)
   (let ((start-end (hindent-decl-points)))
     (when start-end
@@ -133,18 +142,22 @@ Provide the following keybindings:
   "Re-format current declaration, or fill paragraph.
 
 Fill paragraph if in a comment, otherwise reformat the current
-declaration."
+declaration.  When filling, the prefix argument JUSTIFY will
+cause the text to be justified, as per `fill-paragraph'."
   (interactive (progn
                  ;; Copied from `fill-paragraph'
                  (barf-if-buffer-read-only)
                  (list (if current-prefix-arg 'full))))
   (if (hindent-in-comment)
       (fill-paragraph justify t)
-    (hindent/reformat-decl)))
+    (hindent-reformat-decl)))
 
 ;;;###autoload
 (defun hindent-reformat-region (beg end &optional drop-newline)
-  "Reformat the given region, accounting for indentation."
+  "Reformat the region from BEG to END, accounting for indentation.
+
+If DROP-NEWLINE is non-nil, don't require a newline at the end of
+the file."
   (interactive "r")
   (if (= (save-excursion (goto-char beg)
                          (line-beginning-position))
@@ -166,17 +179,19 @@ declaration."
         (insert new-string)))))
 
 ;;;###autoload
-(defun hindent/reformat-decl ()
-  "See `hindent-reformat-decl'."
-  (hindent-reformat-decl))
+(define-obsolete-function-alias 'hindent/reformat-decl 'hindent-reformat-decl)
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal library
 
 (defun hindent-reformat-region-as-is (beg end &optional drop-newline)
-  "Reformat the given region as-is.
+  "Reformat the given region from BEG to END as-is.
 
-This is the place where hindent is actually called."
+This is the place where hindent is actually called.
+
+If DROP-NEWLINE is non-nil, don't require a newline at the end of
+the file."
   (let* ((original (current-buffer))
          (orig-str (buffer-substring-no-properties beg end)))
     (with-temp-buffer
@@ -206,8 +221,8 @@ This is the place where hindent is actually called."
                      (new-str (with-current-buffer temp
                                 (when (and drop-newline (not last-decl))
                                   (goto-char (point-max))
-                                  (when (looking-back "\n")
-                                    (delete-backward-char 1)))
+                                  (when (looking-back "\n" (1- (point)))
+                                    (delete-char -1)))
                                 (buffer-string))))
                 (if (not (string= new-str orig-str))
                     (let ((line (line-number-at-pos))
@@ -220,25 +235,25 @@ This is the place where hindent is actually called."
                           (goto-char (point-min))
                           (forward-line (1- line))
                           (goto-char (+ (line-beginning-position) col))
-                          (when (looking-back "^[ ]+")
+                          (when (looking-back "^[ ]+" (line-beginning-position))
                             (back-to-indentation))
                           (delete-trailing-whitespace new-start new-end)))
                       (message "Formatted."))
                   (message "Already formatted.")))))))))))
 
-(defun hindent-decl-points (&optional use-line-comments)
-  "Get the start and end position of the current
-declaration. This assumes that declarations start at column zero
-and that the rest is always indented by one space afterwards, so
-Template Haskell uses with it all being at column zero are not
-expected to work."
+(defun hindent-decl-points ()
+  "Get the start and end position of the current declaration.
+
+This assumes that declarations start at column zero and that the
+rest is always indented by one space afterwards, so Template
+Haskell uses with it all being at column zero are not expected to
+work."
   (cond
    ;; If we're in a block comment spanning multiple lines then let's
    ;; see if it starts at the beginning of the line (or if any comment
    ;; is at the beginning of the line, we don't care to treat it as a
    ;; proper declaration.
-   ((and (not use-line-comments)
-         (hindent-in-comment)
+   ((and (hindent-in-comment)
          (save-excursion (goto-char (line-beginning-position))
                          (hindent-in-comment)))
     nil)
@@ -291,25 +306,20 @@ expected to work."
                   (point))
                (/= (line-beginning-position) (point)))
       (forward-char -1))
-    (and (or (eq 'font-lock-comment-delimiter-face
-                 (get-text-property (point) 'face))
-             (eq 'font-lock-doc-face
-                 (get-text-property (point) 'face))
-             (eq 'font-lock-comment-face
-                 (get-text-property (point) 'face))
-             (save-excursion (goto-char (line-beginning-position))
-                             (looking-at "^\-\- ")))
-         ;; Pragmas {-# SPECIALIZE .. #-} etc are not to be treated as
-         ;; comments, even though they are highlighted as such
-         (not (save-excursion (goto-char (line-beginning-position))
-                              (looking-at "{-# "))))))
+    (and
+     (elt (syntax-ppss) 4)
+     ;; Pragmas {-# SPECIALIZE .. #-} etc are not to be treated as
+     ;; comments, even though they are highlighted as such
+     (not (save-excursion (goto-char (line-beginning-position))
+                          (looking-at "{-# "))))))
 
 (defun hindent-extra-arguments ()
-  "Pass in extra arguments, such as extensions and optionally
-other things later."
-  (if (boundp 'haskell-language-extensions)
-      haskell-language-extensions
-    '()))
+  "Extra command line arguments for the hindent invocation."
+  (append
+   (when (boundp 'haskell-language-extensions)
+     haskell-language-extensions)
+   (when hindent-style
+     (list "--style" hindent-style))))
 
 (provide 'hindent)
 

@@ -5,7 +5,7 @@
 ;; Author: John Wiegley <jwiegley@gmail.com>
 ;; Created: 13 Jun 2012
 ;; Version: 1.0
-;; Package-Version: 20150505.1011
+;; Package-Version: 20170105.2355
 ;; Keywords: ido
 ;; X-URL: https://github.com/jwiegley/springboard
 
@@ -77,6 +77,12 @@
           (t
            nil))))
 
+(defun ido-springboard-add-trap ()
+  (add-hook 'pre-command-hook 'ido-springboard-trap-command t t))
+
+(defun ido-springboard-remove-trap ()
+  (remove-hook 'pre-command-hook 'ido-springboard-trap-command t))
+
 (defun ido-springboard-trap-command ()
   (unless ido-springboard-trapped
     (condition-case err
@@ -93,12 +99,6 @@
               (throw 'abort dir))))
       (error
        (message "Error occurred: %s" err)))))
-
-(defun ido-springboard-add-trap ()
-  (add-hook 'pre-command-hook 'ido-springboard-trap-command t t))
-
-(defun ido-springboard-remove-trap ()
-  (remove-hook 'pre-command-hook 'ido-springboard-trap-command t))
 
 ;;;###autoload
 (defadvice ido-switch-buffer (around ido-springboard-ido-switch-buffer activate)
