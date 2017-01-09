@@ -1,1 +1,1 @@
-minimum Emacs version supported is 24.3
+This file bootstraps JDEE.

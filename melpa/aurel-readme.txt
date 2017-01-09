@@ -21,7 +21,8 @@ package, use `aurel-package-info' command.  Also you can display a
 list of installed AUR packages with `aurel-installed-packages'.
 
 Information about the packages is represented in a list-like buffer
-similar to a buffer containing emacs packages.  To get more info
+similar to a buffer containing emacs packages.  Press "h" to see a
+hint (a summary of the available key bindings).  To get more info
 about a package (or marked packages), press "RET".  To download a
 package, press "d" (don't forget to set `aurel-download-directory'
 before).  In a list buffer, you can mark several packages for

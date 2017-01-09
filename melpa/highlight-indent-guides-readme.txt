@@ -4,12 +4,9 @@ mode, regardless of indent width, even in languages with non-uniform
 indentation such as Haskell.  This mode works properly around hard tabs and
 mixed indentation, and it behaves well in large buffers.
 
-To install, put this file in your load-path, and require it:
-
-  (require 'highlight-indent-guides)
-
-Then, do M-x highlight-indent-guides-mode to enable it.  To enable it
-automatically in most programming modes, use the following:
+To install, put this file in your load-path, and do
+M-x highlight-indent-guides-mode to enable it.  To enable it automatically in
+most programming modes, use the following:
 
   (add-hook 'prog-mode-hook 'highlight-indent-guides-mode)
 
@@ -18,6 +15,11 @@ To set the display method, use:
   (setq highlight-indent-guides-method METHOD)
 
 Where METHOD is either 'fill, 'column, or 'character.
+
+To change the character used for drawing guide lines with the 'character
+method, use:
+
+  (setq highlight-indent-guides-character ?ch)
 
 By default, this mode automatically inspects your theme and chooses
 appropriate colors for highlighting.  To tweak the subtlety of these colors,
@@ -34,7 +36,3 @@ Or, to manually set the colors used for highlighting, use:
   (set-face-background 'highlight-indent-guides-odd-face "color")
   (set-face-background 'highlight-indent-guides-even-face "color")
   (set-face-foreground 'highlight-indent-guides-character-face "color")
-
-To change the character used for drawing guide lines, use:
-
-  (setq highlight-indent-guides-character ?ch)
