@@ -6,7 +6,9 @@ or
 (load-file "path/to/jazz-theme.el")
 (load-theme 'jazz t)
 
-Don't forget that the theme requires Emacs 24.
+Don't forget that the theme requires Emacs 24+.
+
+The more information on the project page at https://github.com/donderom/jazz-theme
 
 Credits
 

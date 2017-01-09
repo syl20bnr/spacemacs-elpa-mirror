@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel
 ;; URL: https://github.com/abo-abo/org-download
-;; Package-Version: 20161228.633
+;; Package-Version: 20170105.1740
 ;; Version: 0.1.0
 ;; Package-Requires: ((async "1.2"))
 ;; Keywords: images, screenshots, download
@@ -188,7 +188,7 @@ The directory is created if it didn't exist before."
 (defun org-download--fullname (link &optional ext)
   "Return the file name where LINK will be saved to.
 
-It's affected by `org-download-timestamp' and `org-download--dir'.
+It's affected by `org-download--dir'.
 EXT can hold the file extension, in case LINK doesn't provide it."
   (let ((filename
          (file-name-nondirectory
@@ -199,11 +199,16 @@ EXT can hold the file extension, in case LINK doesn't provide it."
       (setq filename (replace-match "" nil nil filename 1)))
     (abbreviate-file-name
      (expand-file-name
-      (format "%s%s.%s"
-              (file-name-sans-extension filename)
-              (format-time-string org-download-timestamp)
-              (or ext (file-name-extension filename)))
+      (org-download--fullname-format filename ext)
       dir))))
+
+(defun org-download--fullname-format (filename &optional ext)
+  "It's affected by `org-download-timestamp'.
+EXT can hold the file extension, in case FILENAME doesn't provide it."
+  (format "%s%s.%s"
+          (file-name-sans-extension filename)
+          (format-time-string org-download-timestamp)
+          (or ext (file-name-extension filename))))
 
 (defun org-download--image (link filename)
   "Save LINK to FILENAME asynchronously and show inline images in current buffer."
@@ -282,6 +287,10 @@ The screenshot tool is determined by `org-download-screenshot-method'."
   "Function that takes LINK and returns a string.
 It's inserted before the image link and is used to annotate it.")
 
+(defvar org-download-link-format
+  "[[file:%s]]"
+  "Format of the file link to insert.")
+
 (defun org-download-image (link)
   "Save image at address LINK to `org-download--dir'."
   (interactive "sUrl: ")
@@ -330,7 +339,7 @@ It's inserted before the image link and is used to annotate it.")
     (if (= org-download-image-latex-width 0)
         ""
       (format "#+attr_latex: :width %dcm\n" org-download-image-latex-width))
-    (format "[[file:%s]]" (file-relative-name filename (file-name-directory (buffer-name))))))
+    (format org-download-link-format (file-relative-name filename (file-name-directory (buffer-name))))))
   (org-display-inline-images))
 
 (defun org-download--at-comment-p ()

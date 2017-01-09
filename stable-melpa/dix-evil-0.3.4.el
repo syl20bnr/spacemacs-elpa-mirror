@@ -4,7 +4,7 @@
 
 ;; Author: Kevin Brubeck Unhammer <unhammer@fsfe.org>
 ;; Version: 0.1.0
-;; Package-Version: 0.3.3
+;; Package-Version: 0.3.4
 ;; Url: http://wiki.apertium.org/wiki/Emacs
 ;; Keywords: languages
 ;; Package-Requires: ((dix "0.3.0") (evil "1.0.7"))
@@ -53,6 +53,12 @@
 
 (advice-add #'dix-goto-pardef :before (defun dix-goto-pardef-push-jump (&rest ignore)
                                         (evil--jumps-push)))
+
+(add-hook 'dix-mode-hook
+          (defun dix-avoid-slow-paren-matching ()
+            "Avoid `evil-highlight-closing-paren-at-point-states' in `dix-mode'.
+That functionality is very slow in big nXML files."
+            (set (make-local-variable 'evil-highlight-closing-paren-at-point-states) nil)))
 
 (provide 'dix-evil)
 

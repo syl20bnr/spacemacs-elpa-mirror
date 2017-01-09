@@ -1,10 +1,10 @@
-;;; jazz-theme.el --- A warm color theme for Emacs 24.
+;;; jazz-theme.el --- A warm color theme for Emacs 24+.
 
 ;; Copyright (C) 2012-2014 Roman Parykin, Bozhidar Batsov
 
 ;; Author: Roman Parykin <donderom@ymail.com>
 ;; URL: https://github.com/donderom/jazz-theme
-;; Package-Version: 20160715.829
+;; Package-Version: 20170109.353
 ;; Version: 1.0
 
 ;; Based on zenburn-theme.el
@@ -35,7 +35,9 @@
 ;; (load-file "path/to/jazz-theme.el")
 ;; (load-theme 'jazz t)
 ;;
-;; Don't forget that the theme requires Emacs 24.
+;; Don't forget that the theme requires Emacs 24+.
+;;
+;; The more information on the project page at https://github.com/donderom/jazz-theme
 ;;
 ;;; Credits
 ;;
@@ -233,6 +235,9 @@
    `(diff-header ((,class (:background ,jazz-bg+1))))
    `(diff-file-header
      ((,class (:background ,jazz-bg+2 :foreground ,jazz-fg :bold t))))
+
+   ;; ein
+   `(ein:cell-input-area ((,class (:background ,jazz-bg+1))))
 
    ;; ert
    `(ert-test-result-expected ((,class (:foreground ,jazz-green+4 :background ,jazz-bg))))
