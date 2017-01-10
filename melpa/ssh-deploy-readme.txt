@@ -10,7 +10,7 @@ For asynchronous transfers you need to setup `~/.netrc' or equivalent for automa
 Example contents of `~/.netrc':
 machine myserver.com login myuser port ftp password mypassword
 
-Set permissions to this file to 700 with you as the owner.
+Set permissions to this file to `700' with you as the owner.
 
 - To setup a upload hook on save do this:
     (add-hook 'after-save-hook (lambda() (if ssh-deploy-on-explicit-save (ssh-deploy-upload-handler)) ))
@@ -19,6 +19,7 @@ Set permissions to this file to 700 with you as the owner.
     (add-hook 'find-file-hook (lambda() (if ssh-deploy-automatically-detect-remote-changes (ssh-deploy-remote-changes-handler)) ))
 
 - To set key-bindings do something like this:
+    (global-set-key (kbd "C-c C-z f") (lambda() (interactive)(ssh-deploy-upload-handler-forced) ))
     (global-set-key (kbd "C-c C-z u") (lambda() (interactive)(ssh-deploy-upload-handler) ))
     (global-set-key (kbd "C-c C-z d") (lambda() (interactive)(ssh-deploy-download-handler) ))
     (global-set-key (kbd "C-c C-z x") (lambda() (interactive)(ssh-deploy-diff-handler) ))
