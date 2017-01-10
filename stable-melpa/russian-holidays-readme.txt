@@ -1,10 +1,13 @@
+The list of official Russian holidays and commemorative days that
+are day offs. With regional holidays included.
+
 Installation:
 
-To use `russian-holidays-holidays' exclusively for the calendar
+To use `russian-holidays' exclusively for the calendar
 
  (setq calendar-holidays russian-holidays)
 
-To use 'russian-holidays-holidays' additionally to other calenders
+To use 'russian-holidays' additionally to other calenders
 
  (setq calendar-holidays (append calendar-holidays russian-holidays))
 
