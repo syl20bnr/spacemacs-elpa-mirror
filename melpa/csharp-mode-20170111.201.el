@@ -5,7 +5,7 @@
 ;; Created    : Feburary 2005
 ;; Modified   : 2016
 ;; Version    : 0.9.0
-;; Package-Version: 20161105.512
+;; Package-Version: 20170111.201
 ;; Keywords   : c# languages oop mode
 ;; X-URL      : https://github.com/josteink/csharp-mode
 ;; Last-saved : 2016-May-28
@@ -763,11 +763,11 @@ to work properly with code that includes attributes.
            ,`(,(concat
                 "\\<\\(using\\)[ \t\n\f\v\r]+"
                 "\\(?:"
-                "\\([A-Za-z_][[:alnum:]]*\\)"
+                "\\([A-Za-z_]+\\)"
                 "[ \t\n\f\v\r]*="
                 "[ \t\n\f\v\r]*"
                 "\\)?"
-                "\\(\\(?:[A-Za-z_][[:alnum:]]*\\.\\)*[A-Za-z_][[:alnum:]]*\\)"
+                "\\(\\(?:[A-Za-z_]+\\.\\)*[A-Za-z_]+\\)"
                 "[ \t\n\f\v\r]*;")
               (2 font-lock-constant-face t t)
               (3 font-lock-constant-face))

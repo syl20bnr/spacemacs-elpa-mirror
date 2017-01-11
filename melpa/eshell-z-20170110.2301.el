@@ -1,10 +1,10 @@
 ;;; eshell-z.el --- cd to frequent directory in eshell  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2015, 2016  Chunyang Xu
+;; Copyright (C) 2015, 2016, 2017  Chunyang Xu
 
 ;; Author: Chunyang Xu <mail@xuchunyang.me>
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 20161206.2249
+;; Package-Version: 20170110.2301
 ;; Keywords: convenience
 ;; Version: 0.3.1
 ;; Homepage: https://github.com/xuchunyang/eshell-z
@@ -76,18 +76,33 @@
 (require 'em-dirs)
 (require 'pcomplete)
 
+(defgroup eshell-z nil
+  "Eshell z customizations."
+  :group 'eshell)
+
 (defcustom eshell-z-freq-dir-hash-table-file-name
   (or (getenv "_Z_DATA")
       (expand-file-name "~/.z"))
   "If non-nil, name of the file to read/write the freq-dir-hash-table.
 If it is nil, the freq-dir-hash-table will not be written to disk."
   :type 'file
-  :group 'eshell-dirs)
+  :group 'eshell-z)
 
 (defcustom eshell-z-exclude-dirs '("/tmp/" "~/.emacs.d/elpa")
   "A list of directory trees to exclude."
   :type '(repeat (choice string))
-  :group 'eshell-dirs)
+  :group 'eshell-z)
+
+(defcustom eshell-z-change-dir-function
+  (lambda (dir)
+    (eshell-kill-input)
+    (goto-char (point-max))
+    (insert
+     (format "cd '%s'" dir))
+    (eshell-send-input))
+  "Function to control how the directory should be changed."
+  :type 'function
+  :group 'eshell-z)
 
 (defvar eshell-z-freq-dir-hash-table nil
   "The frequent directory that Eshell was in.")
@@ -232,6 +247,7 @@ If it is nil, the freq-dir-hash-table will not be written to disk."
             (eshell-z--write-freq-dir-hash-table))
         (setq eshell-z--remove-p nil))))
 
+;; FIXME: It's much better to provide a minor mode to handle this
 (add-hook 'eshell-post-command-hook #'eshell-z--add)
 (add-hook 'eshell-post-command-hook #'eshell-z--remove 'append)
 
@@ -386,20 +402,14 @@ Base on frequency and time."
                         (> (eshell-z--frecent elt1)
                            (eshell-z--frecent elt2))))))
            (completing-read "pattern " paths nil t))))
-  (let ((cd-eshell (lambda ()
-                     (eshell-kill-input)
-                     (goto-char (point-max))
-                     (insert
-                      (format "cd '%s'" dir))
-                     (eshell-send-input)))
-        (eshell-buffer (if (eq major-mode 'eshell-mode)
+  (let ((eshell-buffer (if (eq major-mode 'eshell-mode)
                            (buffer-name)
                          "*eshell*")))
     (if (get-buffer eshell-buffer)
         (switch-to-buffer eshell-buffer)
       (call-interactively 'eshell))
     (unless (get-buffer-process (current-buffer))
-      (funcall cd-eshell))))
+      (funcall eshell-z-change-dir-function dir))))
 
 (provide 'eshell-z)
 ;;; eshell-z.el ends here
