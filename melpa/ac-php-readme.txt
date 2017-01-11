@@ -1,4 +1,3 @@
-Commentary:
 Auto Completion source for php.
 support  Linux and OSX,  but windows need more test
 More info and **example** at : https://github.com/xcwen/ac-php

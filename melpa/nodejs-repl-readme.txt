@@ -13,6 +13,15 @@ and add the following line to your .emacs:
 Type M-x nodejs-repl to run Node.js REPL.
 See also `comint-mode' to check key bindings.
 
+You can define key bindings to send JavaScript codes to REPL like below:
+
+    (add-hook 'js-mode-hook
+              (lambda ()
+                (define-key js-mode-map (kbd "C-x C-e") 'nodejs-repl-send-last-sexp)
+                (define-key js-mode-map (kbd "C-c C-r") 'nodejs-repl-send-region)
+                (define-key js-mode-map (kbd "C-c C-l") 'nodejs-repl-load-file)
+                (define-key js-mode-map (kbd "C-c C-z") 'nodejs-repl-switch-to-repl)))
+
 
 (require 'cc-mode)
 (require 'comint)
@@ -22,7 +31,7 @@ See also `comint-mode' to check key bindings.
   "Run Node.js REPL and communicate the process."
   :group 'processes)
 
-(defconst nodejs-repl-version "0.1.0"
+(defconst nodejs-repl-version "0.1.1"
   "Node.js mode Version.")
 
 (defcustom nodejs-repl-command "node"
@@ -54,6 +63,10 @@ See also `comint-input-ignoredups'"
 See also `comint-process-echoes'"
   :group 'nodejs-repl
   :type 'boolean)
+
+(defvar nodejs-repl-nodejs-version)
+(defvar nodejs-repl--nodejs-version-re
+  "^v\\([0-9]+\\(?:\\.[0-9]+\\)*\\)\\(?:\\.x\\)*\\(?:-\\w+\\)?[\r\n]*$")
 
 (defvar nodejs-repl-mode-hook nil
   "Functions runafter `nodejs-repl' is started.")

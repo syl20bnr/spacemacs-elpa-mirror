@@ -8,5 +8,5 @@ It assigns a maximum of 9 frames to switch from.
 Installation
 
 (add-to-list 'load-path "/path/to/frame-tag")
-(require 'frame-numbering)
+(require 'frame-tag)
 (frame-tag-mode 1)
