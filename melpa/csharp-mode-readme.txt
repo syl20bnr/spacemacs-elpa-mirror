@@ -1,4 +1,4 @@
-   This is a major mode for editing C# code. It performs automatic
+   This is a major mode for editing C# code.  It performs automatic
    indentation of C# syntax; font locking; and integration with
    imenu.el.
 
@@ -39,7 +39,7 @@ it, and add the following to your .emacs file:
      (append '(("\\.cs$" . csharp-mode)) auto-mode-alist))
 
 
-Optionally, define and register a mode-hook function. To do so, use
+Optionally, define and register a mode-hook function.  To do so, use
 something like this in your .emacs file:
 
   (defun my-csharp-mode-fn ()
@@ -62,7 +62,7 @@ something like this in your .emacs file:
  imenu integration
  -----------------------------
 
- This should just work. For those who don't know what imenu is, it
+ This should just work.  For those who don't know what imenu is, it
  allows navigation to different points within the file from an
  "Index" menu, in the window's menubar.  csharp-mode computes the
  menu containing the namespaces, classes, methods, and so on, in the
