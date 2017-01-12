@@ -4,7 +4,7 @@
 
 ;; Author: Syohei YOSHIDA <syohex@gmail.com>
 ;; URL: https://github.com/syohex/emacs-terraform-mode
-;; Package-Version: 20170101.456
+;; Package-Version: 20170111.2117
 ;; Version: 0.06
 ;; Package-Requires: ((emacs "24.3") (hcl-mode "0.03"))
 
@@ -53,10 +53,15 @@
 (defconst terraform--provisioner-regexp
   "^\\s-+\\(provisioner\\)\\s-+\"")
 
+(defconst terraform--inner-block-regexp
+  "^\\s-+\\(connection\\)\\s-+{"
+  "Inner special block.")
+
 (defvar terraform-font-lock-keywords
   `((,terraform--block-regexp 1 font-lock-function-name-face)
     (,terraform--atlas-regexp 1 font-lock-function-name-face)
     (,terraform--provisioner-regexp 1 font-lock-function-name-face)
+    (,terraform--inner-block-regexp 1 font-lock-keyword-face)
     ,@hcl-font-lock-keywords))
 
 (defun terraform-format-buffer ()

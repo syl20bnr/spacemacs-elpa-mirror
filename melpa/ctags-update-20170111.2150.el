@@ -2,7 +2,7 @@
 
 ;; Created: 2011-10-16 13:17
 ;; Version: 1.0
-;; Package-Version: 20170111.2044
+;; Package-Version: 20170111.2150
 ;; Author: Joseph(纪秀峰)  jixiuf@gmail.com
 ;; Keywords: exuberant-ctags etags
 ;; URL: https://github.com/jixiuf/ctags-update
@@ -181,23 +181,27 @@ this return t if current buffer file name is TAGS."
     (when (file-exists-p tmp-tags)
       (delete-file tmp-tags ))))
 
-(defun ctags-update-how-to-update()
+(defun ctags-update-how-to-update(is-interactive)
   "return a tagfile"
   (let (tags)
     (cond
      ((> (prefix-numeric-value current-prefix-arg) 1)  ;C-u or C-uC-u ,generate new tags in selected directory
-      (expand-file-name "TAGS" (read-directory-name "Generate TAGS in dir:")))
-     ((called-interactively-p 'interactive)
+      (setq tags (expand-file-name "TAGS" (read-directory-name "Generate TAGS in dir:"))))
+     (is-interactive
       (setq tags (ctags-update-find-tags-file))
-      (unless tags (expand-file-name "TAGS" (read-directory-name "Generate TAGS in dir:"))))
+      (unless tags
+        (setq tags (expand-file-name "TAGS" (read-directory-name "Generate TAGS in dir:")))))
      (t
       (setq tags (ctags-update-find-tags-file))
       (unless tags
         (setq ctags-update-last-update-time
               (- (float-time (current-time)) ctags-update-delay-seconds 1))
-        (expand-file-name
-         "TAGS" (read-directory-name
-                 "Generate TAGS in dir(or disable `ctags-auto-update-mode'):")))))))
+        (setq tags
+              (expand-file-name
+               "TAGS" (read-directory-name
+                       "Generate TAGS in dir(or disable `ctags-auto-update-mode'):"))))))
+    tags))
+
 ;;;###autoload
 (defun ctags-update(&optional args)
   "ctags-update in parent directory using `exuberant-ctags'.
@@ -207,7 +211,7 @@ this return t if current buffer file name is TAGS."
 4. with prefix `C-uC-u' save the command to kill-ring instead of execute it."
   (interactive "P")
   (let (tags proc)
-    (setq tags (ctags-update-how-to-update))
+    (setq tags (ctags-update-how-to-update (called-interactively-p 'interactive)))
     (when tags
       (when (get-process tags)          ;process name == tags
         (user-error "Another ctags-update process is already running"))
