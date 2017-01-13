@@ -555,6 +555,8 @@
                              only for MS Windows)
  `dired-insert-set-properties' - `mouse-face' on whole line.
  `dired-mark-files-regexp' - Add regexp to `regexp-search-ring'.
+                             More matching possibilities.
+                             Added optional arg LOCALP.
  `dired-mark-pop-up'       - Delete the window or frame popped up,
                              afterward, and bury its buffer. Do not
                              show a menu bar for pop-up frame.

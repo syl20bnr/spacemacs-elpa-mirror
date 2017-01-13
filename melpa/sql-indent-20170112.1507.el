@@ -6,7 +6,7 @@
 ;;          Matt Henry <mcthenry+gnu@gmail.com>
 ;; Maintainer: Boerge Svingen <bsvingen@borkdal.com>
 ;; Version: $Id: sql-indent.el,v 1.10 2009/03/25 22:52:25 mhenry Exp $
-;; Package-Version: 20150424.1716
+;; Package-Version: 20170112.1507
 
 ;; Keywords: languages
 ;; URL: https://github.com/bsvingen/sql-indent
@@ -85,10 +85,6 @@ indented by `sql-indent-offset'."
   :type 'number
   :group 'SQL)
 
-(defcustom sql-indent-maybe-tab nil
-  "If non-nil, call `insert-tab' if `current-column' did not change."
-  :type 'boolean
-  :group 'SQL)
 
 (defvar sql-indent-debug nil
   "If non-nil, `sql-indent-line' will output debugging messages.")
@@ -128,8 +124,7 @@ Return a list containing the level change and the previous indentation."
     (let* ((p-line (cond ((and prev-start prev-indent)
 			  (list prev-start prev-indent))
 			 ((sql-indent-get-last-line-start))))
-	   (curr-start (progn (beginning-of-line)
-			      (point)))
+	   (curr-start (point-at-bol))
 	   (paren (nth 0 (parse-partial-sexp (nth 0 p-line) curr-start))))
 
       ;; Add opening or closing parens.
@@ -157,50 +152,10 @@ Return a list containing the level change and the previous indentation."
   (interactive)
   (save-excursion
     (goto-char (point-min))
-    (let*
-	((line 0)
-	 (level 0)
-	 (start (point))
-	 (indent (if (looking-at "^\\s-*$")
-		     0
-		   (current-indentation)))
-	 (this-indent 0)
-	 (vals '()))
-
-      (while (/= (point) (point-max))
+    (while (/= (point) (point-max))
 	(forward-line)
-
-	(setq vals
-	      (sql-indent-level-delta start indent)
-	      )
-	(setq level  (nth 0 vals)
-	      indent (nth 1 vals))
-
-	(setq this-indent
-	      (max 0       ; Make sure the indentation is at least to column 0
-		   (* sql-indent-offset
-		      (if (< level 0)
-			  0
-			level))))
-
-	(if sql-indent-debug
-	    (progn
-	      (setq line (1+ line))
-	      (message "Line %3d; level %3d; indent was %3d; at %d" line level indent (point))))
-
-	(beginning-of-line)
-	(if (and (not (looking-at "^\\s-*$")) ; Leave blank lines alone
-		 (not (sql-indent-is-string-or-comment)) ; Don't mess with comments or strings
-		 (/= this-indent (current-indentation))) ; Don't change the line if already ok.
-
-	    (indent-line-to this-indent)
-	  )
-
-	(end-of-line)
-	)
-      )
-    )
-  )
+	(sql-indent-line)
+	(end-of-line))))
 
 (defun sql-indent-line ()
   "Indent current line in an SQL statement."
@@ -216,8 +171,8 @@ Return a list containing the level change and the previous indentation."
 	 )
 
     (if sql-indent-debug
-	(message "SQL Indent: level delta: %3d; prev: %3d; this: %3d"
-		 level-delta prev-indent this-indent))
+	(message "SQL Indent: line: %3d, level delta: %3d; prev: %3d; this: %3d"
+		 (line-number-at-pos) level-delta prev-indent this-indent))
 
     (save-excursion
 

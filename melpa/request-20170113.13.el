@@ -6,7 +6,7 @@
 
 ;; Author: Takafumi Arakaki <aka.tkf at gmail.com>
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
-;; Package-Version: 20161221.1711
+;; Package-Version: 20170113.13
 ;; Version: 0.2.0
 
 ;; This file is NOT part of GNU Emacs.
@@ -1070,7 +1070,7 @@ See \"set-cookie-av\" in http://www.ietf.org/rfc/rfc2965.txt")
 
 (defun request--consume-200-connection-established ()
   "Remove \"HTTP/* 200 Connection established\" header at the point."
-  (when (looking-at-p "HTTP/1\\.0 200 Connection established")
+  (when (looking-at-p "HTTP/1\\.[0-1] 200 Connection established")
     (delete-region (point) (progn (request--goto-next-body) (point)))))
 
 (defun request--curl-preprocess ()

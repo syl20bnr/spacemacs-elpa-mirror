@@ -4,7 +4,7 @@
 
 ;; Author: Philip Arvidsson <philip@philiparvidsson.com>
 ;; URL: https://github.com/philiparvidsson/emacs-github-theme
-;; Package-Version: 20170112.922
+;; Package-Version: 20170112.2207
 ;; Version: 1.0
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -1255,36 +1255,6 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(vc-annotate-very-old-color ,github-comment)
    `(vc-annotate-background ,github-selection)
    ))
-
-;;; Rainbow Support
-
-(declare-function rainbow-mode 'rainbow-mode)
-(declare-function rainbow-colorize-by-assoc 'rainbow-mode)
-
-(defvar github-add-font-lock-keywords nil
-  "Whether to add font-lock keywords for github color names.
-In buffers visiting library `github-theme.el' the github
-specific keywords are always added.  In all other Emacs-Lisp
-buffers this variable controls whether this should be done.
-This requires library `rainbow-mode'.")
-
-(defvar github-colors-font-lock-keywords nil)
-
-;; (defadvice rainbow-turn-on (after github activate)
-;;   "Maybe also add font-lock keywords for github colors."
-;;   (when (and (derived-mode-p 'emacs-lisp-mode)
-;;              (or github-add-font-lock-keywords
-;;                  (equal (file-name-nondirectory (buffer-file-name))
-;;                         "github-theme.el")))
-;;     (unless github-colors-font-lock-keywords
-;;       (setq github-colors-font-lock-keywords
-;;             `((,(regexp-opt (mapcar 'car github-colors-alist) 'words)
-;;                (0 (rainbow-colorize-by-assoc github-colors-alist))))))
-;;     (font-lock-add-keywords nil github-colors-font-lock-keywords)))
-
-;; (defadvice rainbow-turn-off (after github activate)
-;;   "Also remove font-lock keywords for github colors."
-;;   (font-lock-remove-keywords nil github-colors-font-lock-keywords))
 
 ;;; Footer
 

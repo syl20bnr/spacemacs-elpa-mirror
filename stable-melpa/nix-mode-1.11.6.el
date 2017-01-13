@@ -2,7 +2,7 @@
 
 ;; Author: Eelco Dolstra
 ;; URL: https://github.com/NixOS/nix/tree/master/misc/emacs
-;; Package-Version: 1.11.5
+;; Package-Version: 1.11.6
 ;; Version: 1.0
 
 ;;; Commentary:
