@@ -5,7 +5,7 @@
 ;; Created: 1997
 ;; Description: routines for stemming English word
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 20140226.1626
+;; Package-Version: 20170113.24
 ;; Keywords: text
 ;; Human-Keywords: stemming
 ;; Version: 2.140226
@@ -977,8 +977,8 @@ Porter のアルゴリズムに基づいて派生語を処理する関数"
 
 (provide 'stem-english)
 
-;;; stem-english.el ends here
-
 ;; Local Variables:
 ;; time-stamp-pattern: "10/Version:\\\\?[ \t]+2.%02y%02m%02d\\\\?\n"
 ;; End:
+
+;;; stem-english.el ends here

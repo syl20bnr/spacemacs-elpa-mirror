@@ -4,7 +4,7 @@
 ;; Copyright 2011-2016 François-Xavier Bois
 
 ;; Version: 14.0.35
-;; Package-Version: 20161230.1026
+;; Package-Version: 20170112.2320
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; URL: http://web-mode.org
@@ -9938,6 +9938,18 @@ Prompt user if TAG-NAME isn't provided."
         (setq web-mode-change-end (point-max))
         )
       ) ;when auto-indent
+
+    (when (and web-mode-enable-auto-indentation
+               (member this-command '(self-insert-command))
+               (member (get-text-property (point) 'part-side) '(javascript))
+               (looking-back "^[ \t]+\\(}\\|\]\\)"))
+      (indent-according-to-mode)
+      ;;(message "%S" (point))
+      (when (and web-mode-change-end (> web-mode-change-end (point-max)))
+        (message "post-command: enlarge web-mode-change-end")
+        (setq web-mode-change-end (point-max))
+        )
+      )
 
     (when web-mode-enable-current-element-highlight
       (web-mode-highlight-current-element))

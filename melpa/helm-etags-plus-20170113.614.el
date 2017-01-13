@@ -3,7 +3,7 @@
 ;; Created: 2011-02-23
 ;; Last Updated: 纪秀峰 2014-07-27 16:56:24
 ;; Version: 1.1
-;; Package-Version: 20170108.848
+;; Package-Version: 20170113.614
 ;; Author: 纪秀峰(Joseph) <jixiuf@gmail.com>
 ;; Copyright (C) 2015, 纪秀峰(Joseph), all rights reserved.
 ;; URL       :https://github.com/jixiuf/helm-etags-plus
@@ -176,6 +176,11 @@ if you set this to nil"
   :group 'helm-etags-plus
   :type 'number)
 
+(defcustom helm-etags-plus-auto-create-tags t
+  "If no TAGS found,prompt creating one by `ctags-update' if ctags-update.el exists."
+  :group 'helm-etags-plus
+  :type 'number)
+
 (defface helm-etags-plus-highlight-face
   '((t (:foreground "white" :background "cadetblue4" :bold t)))
   "Font Lock mode face used to highlight tags.
@@ -278,12 +283,15 @@ Returns nil if the buffer is not visiting a file"
 (defun helm-etags-plus-get-tag-files()
   "Get tag files."
   (let ((local-tag  (helm-etags-plus-find-tags-file)))
-      (when local-tag
-        (add-to-list 'tags-table-list (helm-etags-plus-find-tags-file)))
-      (dolist (tag tags-table-list)
-        (when (not (file-exists-p tag))
-          (setq  tags-table-list (delete tag tags-table-list))))
-      (mapcar 'tags-expand-table-name tags-table-list)))
+    (if local-tag
+        (add-to-list 'tags-table-list (helm-etags-plus-find-tags-file))
+      (when (and (featurep 'ctags-update)
+                 (boundp 'ctags-update))
+        (call-interactively 'ctags-update)))
+    (dolist (tag tags-table-list)
+      (when (not (file-exists-p tag))
+        (setq  tags-table-list (delete tag tags-table-list))))
+    (mapcar 'tags-expand-table-name tags-table-list)))
 
 (defun helm-etags-plus-rename-tag-buffer-maybe(buf)
   (with-current-buffer buf
@@ -692,8 +700,6 @@ Argument CANDIDATE-MARKER candidate marker."
           :preselect  "\t")))           ;if an candidate ,then this line is preselected
 
 (provide 'helm-etags-plus)
+
 ;;; helm-etags-plus.el ends here.
 
-(provide 'helm-etags-plus)
-
-;;; helm-etags-plus.el ends here
