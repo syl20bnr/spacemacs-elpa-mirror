@@ -4,7 +4,7 @@
 
 ;; Author: Samuel W. Flint <swflint@flintfam.org>
 ;; Version: 2.5
-;; Package-Version: 20160811.1911
+;; Package-Version: 20161231.1331
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; Keywords: buffer-management
 ;; URL: http://github.com/swflint/buffer-sets
@@ -52,6 +52,16 @@
 (defcustom buffer-set-file "~/.emacs.d/buffer-set-definitions.el"
   "The file to store buffer set definitions in."
   :type 'file :group 'editing)
+
+;;;###autoload
+(defcustom buffer-sets-load-on-start (list)
+  "A list of buffer-sets to load on Emacs start."
+  :type '(repeat symbol) :group 'editing)
+
+;;;###autoload
+(defcustom buffer-sets-ignore-save (list)
+  "A list of buffer-sets to ignore on saving."
+  :type '(repeat symbol) :group 'editing)
 
 
 ;;; Utility Functions
@@ -238,16 +248,17 @@
 
 (defun buffer-sets-save (the-set)
   "Save defined buffer sets."
-  (insert (format "%S\n\n" (let ((name (buffer-set-name the-set))
-                                 (files (buffer-set-files the-set))
-                                 (select (buffer-set-select the-set))
-                                 (on-apply (buffer-set-on-apply-source the-set))
-                                 (on-remove (buffer-set-on-remove-source the-set)))
-                             `(define-buffer-set ,name
-                                :files ,files
-                                :select ,select
-                                :on-apply ,on-apply
-                                :on-remove ,on-remove)))))
+  (if (not (member the-set buffer-sets-ignore-save))
+      (insert (format "%S\n\n" (let ((name (buffer-set-name the-set))
+                                     (files (buffer-set-files the-set))
+                                     (select (buffer-set-select the-set))
+                                     (on-apply (buffer-set-on-apply-source the-set))
+                                     (on-remove (buffer-set-on-remove-source the-set)))
+                                 `(define-buffer-set ,name
+                                    :files ,files
+                                    :select ,select
+                                    :on-apply ,on-apply
+                                    :on-remove ,on-remove))))))
 
 ;;;###autoload
 (defun buffer-sets-load-definitions-file ()
@@ -300,6 +311,15 @@
       (buffer-sets-save-definitions)
       (remove-hook 'kill-emacs-hook #'buffer-sets-unload-all-buffer-sets)
       (remove-hook 'kill-emacs-hook #'buffer-sets-save-definitions))))
+
+;;;###autoload
+(defun buffer-sets-install-emacs-start-hook ()
+  "Install the hook to load buffer-sets on Emacs start."
+  (add-hook 'after-init-hook #'buffer-sets-after-init))
+
+(defun buffer-sets-after-init ()
+  "Load buffer-sets on Emacs start."
+  (mapcar #'load-buffer-set buffer-sets-load-on-start))
 
 (provide 'buffer-sets)
 

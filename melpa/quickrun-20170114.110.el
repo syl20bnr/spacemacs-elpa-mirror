@@ -4,7 +4,7 @@
 
 ;; Author: Syohei YOSHIDA <syohex@gmail.com>
 ;; URL: https://github.com/syohex/emacs-quickrun
-;; Package-Version: 20160808.1753
+;; Package-Version: 20170114.110
 ;; Version: 2.2.7
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 
@@ -588,13 +588,11 @@ if you set your own language configuration.
         (cdr compilation-mode)))))
 
 (defun quickrun/pop-to-buffer (buf cb)
-  (if quickrun-focus-p
-      (progn
-        (pop-to-buffer buf)
-        (funcall cb))
-    (save-selected-window
-      (pop-to-buffer buf)
-      (funcall cb))))
+  (let ((win (selected-window)))
+    (pop-to-buffer buf)
+    (funcall cb)
+    (unless quickrun-focus-p
+      (select-window win))))
 
 (defun quickrun/compilation-start (cmd compile-conf)
   (let ((use-compile (quickrun/check-using-compilation-mode compile-conf)))

@@ -1,12 +1,12 @@
 ;;; ac-racer.el --- auto-complete source of racer
 
-;; Copyright (C) 2015 by Syohei YOSHIDA
+;; Copyright (C) 2017 by Syohei YOSHIDA
 
 ;; Author: Syohei YOSHIDA <syohex@gmail.com>
 ;; URL: https://github.com/syohex/emacs-ac-racer
-;; Package-Version: 0.1
-;; Version: 0.01
-;; Package-Requires: ((auto-complete "1.5.0") (racer "0.0.2") (cl-lib "0.5"))
+;; Package-Version: 0.2
+;; Version: 0.02
+;; Package-Requires: ((emacs "24.3") (auto-complete "1.5.0") (racer "0.0.2"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@
 
 ;;; Commentary:
 
+;; ac-racer.el provides auto-complete source for Rust programming language.
+
 ;;; Code:
 
 (require 'auto-complete)
@@ -37,6 +39,7 @@
 
 (defun ac-racer--collect-candidates ()
   (goto-char (point-min))
+  ;; MATCH (1:candidate),line,column,filepath,(2:type),(3:signature)
   (let ((re "^MATCH \\([^,]+\\),[^,]+,[^,]+,[^,]+,\\([^,]+\\),\\(.+\\)"))
     (cl-loop while (re-search-forward re nil t)
              for candidate = (match-string-no-properties 1)
@@ -45,13 +48,18 @@
              collect
              (popup-make-item candidate :document signature :summary type))))
 
+(defun ac-racer--prefix ()
+  (save-excursion
+    (skip-syntax-backward "w_")
+    (point)))
+
 (defun ac-racer--candidates ()
   (let ((process-environment (if racer-rust-src-path
                                  (cons (concat "RUST_SRC_PATH=" racer-rust-src-path)
                                        process-environment)
                                process-environment))
         (line (number-to-string (line-number-at-pos)))
-        (column (number-to-string (1- (current-column))))
+        (column (number-to-string (current-column)))
         (file (or (buffer-file-name) "")))
     (write-region (point-min) (point-max) ac-racer--tempfile nil 'no-message)
     (with-temp-buffer
@@ -67,7 +75,9 @@
   (add-to-list 'ac-sources 'ac-source-racer))
 
 (ac-define-source racer
-  '((candidates . ac-racer--candidates)))
+  '((prefix . ac-racer--prefix)
+    (candidates . ac-racer--candidates)
+    (requires . -1)))
 
 (provide 'ac-racer)
 
