@@ -27,8 +27,5 @@ It's set in your ~/.emacs like this:
 And the following to your ~/.emacs startup file.
 
 (require 'all-ext)
-optional
-(require 'helm-config) ;; or (require 'anything-config)
-(define-key all-mode-map (kbd "C-c C-m") 'mc/edit-lines-in-all)
 
 No need more.

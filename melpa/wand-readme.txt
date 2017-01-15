@@ -1,6 +1,6 @@
-Wand is an extension that allows users to select a piece of text and
-perform actions based on predefined patterns.  Wand is inspired by Xiki[1]
-and Acme editor[2].
+Wand is an extension that allows users to select text and perform actions
+based on predefined patterns.  Wand is inspired by Xiki[1] and Acme
+editor[2].
 
 
 Dependencies:
@@ -10,8 +10,11 @@ an Emacs package manager such as ELPA or el-get.
 
 * Common Lisp Extensions, bundled with all recent versions of Emacs.
 
-* A modern list library for Emacs Lisp: magnars's excellent Dash[4] -- to
+* A modern list library for Emacs Lisp: @magnars's excellent Dash[4] -- to
   promote better ways to write Emacs Lisp.
+
+* The long lost Emacs string manipulation library: s.el[5] -- also by
+  @magnars.
 
 Installation:
 
