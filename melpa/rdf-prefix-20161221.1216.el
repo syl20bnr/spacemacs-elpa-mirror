@@ -1,10 +1,11 @@
-;;; rdf-prefix.el --- Prefix lookup for RDF
+;;; rdf-prefix.el --- Prefix lookup for RDF  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2014-2016  Simen Heggestøyl
 
 ;; Author: Simen Heggestøyl <simenheg@gmail.com>
+;; Maintainer: Simen Heggestøyl <simenheg@gmail.com>
 ;; Version: 1.6
-;; Package-Version: 20160813.829
+;; Package-Version: 20161221.1216
 ;; Keywords: convenience, abbrev
 ;; Homepage: https://github.com/simenheg/rdf-prefix
 

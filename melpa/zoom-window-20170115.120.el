@@ -1,10 +1,10 @@
 ;;; zoom-window.el --- Zoom window like tmux -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2016 by Syohei YOSHIDA
+;; Copyright (C) 2017 by Syohei YOSHIDA
 
 ;; Author: Syohei YOSHIDA <syohex@gmail.com>
 ;; URL: https://github.com/syohex/emacs-zoom-window
-;; Package-Version: 20161123.405
+;; Package-Version: 20170115.120
 ;; Version: 0.05
 ;; Package-Requires: ((emacs "24.3"))
 
