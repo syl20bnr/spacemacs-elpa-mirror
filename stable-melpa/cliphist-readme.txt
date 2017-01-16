@@ -1,6 +1,7 @@
 Read clipboard items from following clipboard managers,
-  - Parcellite (http://parcellite.sourceforge.net)
-  - Flycut (https://github.com/TermiT/Flycut)
+  - Parcellite (http://parcellite.sourceforge.net) at Linux
+  - ClipIt (http://clipit.sourceforge.net) at Linux
+  - Flycut (https://github.com/TermiT/Flycut) on OSX
 
 Usage:
   Make sure clipboard manager is running.
@@ -19,3 +20,7 @@ Usage:
 
   If `cliphist-cc-kill-ring' is true, the selected/pasted string
   will be inserted into kill-ring
+
+You can tweak =cliphist-linux-clipboard-managers= to tell cliphist
+how to detect clipboard manager:
+  `(setq cliphist-linux-clipboard-managers '("clipit" "parcellite"))'

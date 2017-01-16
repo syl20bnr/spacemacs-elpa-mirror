@@ -398,7 +398,7 @@
 	 ((:keywords "mail" "org" "gnus" "bbdb" "todo" "task")
 	  (:url . "https://github.com/girzel/gnorb"))])
  (gnugo .
-	[(3 0 0)
+	[(3 0 1)
 	 ((ascii-art-to-unicode
 	   (1 5))
 	  (xpm
