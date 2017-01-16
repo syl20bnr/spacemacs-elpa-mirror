@@ -4,9 +4,9 @@
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; Keywords: convenience editing evil
-;; Package-Version: 20160607.1015
+;; Package-Version: 3.14
 ;; Created: 22 Oct 2014
-;; Version: 3.13
+;; Version: 3.14
 ;; Package-Requires: ((emacs "24") (evil "1.0.9") (cl-lib "0.5"))
 ;; URL: https://github.com/syl20bnr/evil-escape
 
@@ -145,7 +145,7 @@ with a key sequence."
   :group 'evil
   :global t
   (if evil-escape-mode
-      (add-hook 'pre-command-hook 'evil-escape-pre-command-hook t)
+      (add-hook 'pre-command-hook 'evil-escape-pre-command-hook)
     (remove-hook 'pre-command-hook 'evil-escape-pre-command-hook)))
 
 (defun evil-escape ()

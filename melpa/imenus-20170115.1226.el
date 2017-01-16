@@ -1,11 +1,11 @@
 ;;; imenus.el --- Imenu for multiple buffers and without subgroups
 
-;; Copyright © 2014-2016 Alex Kost
+;; Copyright © 2014–2017 Alex Kost
 
 ;; Author: Alex Kost <alezost@gmail.com>
 ;; Created: 19 Dec 2014
 ;; Version: 0.2
-;; Package-Version: 20160220.1332
+;; Package-Version: 20170115.1226
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; URL: https://github.com/alezost/imenus.el
 ;; Keywords: tools convenience
@@ -128,13 +128,17 @@ POSITION is passed to `imenus-goto'.")
                          (current-local-map))))
 
 (declare-function ido-select-text "ido" nil)
+(declare-function ivy-immediate-done "ivy" nil)
 
 (defun imenus-exit-minibuffer ()
   "Quit the current minibuffer command.
 Make this command return the current user input."
-  (if (boundp 'ido-cur-item) ; if inside ido
-      (ido-select-text)
-    (exit-minibuffer)))
+  (cond
+   ((boundp 'ido-cur-item)                      ; if inside ido
+    (ido-select-text))
+   ((memq 'ivy--exhibit post-command-hook)      ; if inside ivy
+    (ivy-immediate-done))
+   (t (exit-minibuffer))))
 
 (defun imenus-rescan ()
   "Rescan the current imenus index."

@@ -4,9 +4,9 @@
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; Keywords: convenience editing evil
-;; Package-Version: 3.12
+;; Package-Version: 20170115.1343
 ;; Created: 22 Oct 2014
-;; Version: 3.12
+;; Version: 3.14
 ;; Package-Requires: ((emacs "24") (evil "1.0.9") (cl-lib "0.5"))
 ;; URL: https://github.com/syl20bnr/evil-escape
 
@@ -35,8 +35,10 @@
 ;;   - escape from evil-iedit-state to normal state
 ;;   - abort evil ex command
 ;;   - quit minibuffer
+;;   - quit compilation buffers
 ;;   - abort isearch
 ;;   - quit ibuffer
+;;   - quit image buffer
 ;;   - quit magit buffers
 ;;   - quit help buffers
 ;;   - quit apropos buffers
@@ -112,7 +114,12 @@ key first."
   :group 'evil-escape)
 
 (defcustom evil-escape-excluded-major-modes nil
-  "Excluded major modes where escape sequences has no effect."
+  "Excluded major modes where escape sequences have no effect."
+  :type 'sexp
+  :group 'evil-escape)
+
+(defcustom evil-escape-excluded-states nil
+  "Excluded states where escape sequences have no effect."
   :type 'sexp
   :group 'evil-escape)
 
@@ -138,7 +145,7 @@ with a key sequence."
   :group 'evil
   :global t
   (if evil-escape-mode
-      (add-hook 'pre-command-hook 'evil-escape-pre-command-hook t)
+      (add-hook 'pre-command-hook 'evil-escape-pre-command-hook)
     (remove-hook 'pre-command-hook 'evil-escape-pre-command-hook)))
 
 (defun evil-escape ()
@@ -157,7 +164,7 @@ with a key sequence."
     (`evilified (evil-escape--escape-emacs-state))
     (`visual 'evil-exit-visual-state)
     (`replace 'evil-normal-state)
-    (`lisp 'evil-normal-state)
+    (`lisp 'evil-lisp-state/quit)
     (`iedit 'evil-iedit-state/quit-iedit-mode)
     (`iedit-insert 'evil-iedit-state/quit-iedit-mode)
     (_ (evil-escape--escape-normal-state))))
@@ -174,7 +181,7 @@ with a key sequence."
           (when inserted (evil-escape--delete))
           (set-buffer-modified-p modified)
           (cond
-           ((and (integerp evt)
+           ((and (characterp evt)
                  (or (and (equal (this-command-keys) (evil-escape--first-key))
                           (char-equal evt skey))
                      (and evil-escape-unordered-key-sequence
@@ -192,15 +199,19 @@ with a key sequence."
 
 (defun evil-escape-p ()
   "Return non-nil if evil-escape can run."
-  (and (not evil-escape-inhibit)
+  (and evil-escape-key-sequence
+       (not evil-escape-inhibit)
        (or (window-minibuffer-p)
            (bound-and-true-p isearch-mode)
-           (eq 'ibuffer-mode major-mode)
+           (memq major-mode '(ibuffer-mode
+                              image-mode))
+           (evil-escape--is-magit-buffer)
            (and (fboundp 'helm-alive-p) (helm-alive-p))
            (or (not (eq 'normal evil-state))
                (not (eq 'evil-force-normal-state
                         (lookup-key evil-normal-state-map [escape])))))
        (not (memq major-mode evil-escape-excluded-major-modes))
+       (not (memq evil-state evil-escape-excluded-states))
        (or (not evil-escape-enable-only-for-major-modes)
            (memq major-mode evil-escape-enable-only-for-major-modes))
        (or (equal (this-command-keys) (evil-escape--first-key))
@@ -215,6 +226,8 @@ with a key sequence."
   (cond
    ((and (fboundp 'helm-alive-p) (helm-alive-p)) 'helm-keyboard-quit)
    ((eq 'ibuffer-mode major-mode) 'ibuffer-quit)
+   ((eq 'image-mode major-mode) 'quit-window)
+   ((evil-escape--is-magit-buffer) 'evil-escape--escape-with-q)
    ((bound-and-true-p isearch-mode) 'isearch-abort)
    ((window-minibuffer-p) 'abort-recursive-edit)
    (t (lookup-key evil-normal-state-map [escape]))))
@@ -222,10 +235,12 @@ with a key sequence."
 (defun evil-escape--escape-motion-state ()
   "Return the function to escape from motion state."
   (cond
-   ((or (eq 'apropos-mode major-mode)
-        (eq 'help-mode major-mode)
-        (eq 'ert-results-mode major-mode)
-        (eq 'ert-simple-view-mode major-mode)) 'quit-window)
+   ((or (memq major-mode '(apropos-mode
+                           help-mode
+                           ert-results-mode
+                           ert-simple-view-mode
+                           compilation-mode
+                           image-mode))) 'quit-window)
    ((eq 'undo-tree-visualizer-mode major-mode) 'undo-tree-visualizer-quit)
    ((and (fboundp 'helm-ag--edit-abort)
          (string-equal "*helm-ag-edit*" (buffer-name))) 'helm-ag--edit-abort)
@@ -237,11 +252,12 @@ with a key sequence."
   (cond
    ((bound-and-true-p isearch-mode) 'isearch-abort)
    ((window-minibuffer-p) 'abort-recursive-edit)
-   ((string-match "magit" (symbol-name major-mode)) 'evil-escape--escape-with-q)
+   ((evil-escape--is-magit-buffer) 'evil-escape--escape-with-q)
    ((eq 'ibuffer-mode major-mode) 'ibuffer-quit)
    ((eq 'emoji-cheat-sheet-plus-buffer-mode major-mode) 'kill-this-buffer)
    ((eq 'paradox-menu-mode major-mode) 'evil-escape--escape-with-q)
-   ((eq 'gist-list-menu-mode major-mode) 'quit-window)
+   ((memq major-mode '(gist-list-menu-mode
+                       image-mode)) 'quit-window)
    (t 'evil-normal-state)))
 
 (defun evil-escape--first-key ()
@@ -298,7 +314,6 @@ with a key sequence."
   "Delete character while taking into account mode specifities."
   (pcase major-mode
     (`term-mode (call-interactively 'term-send-backspace))
-    (`deft-mode (call-interactively 'deft-filter-increment))
     (_ (cond
         ((bound-and-true-p isearch-mode) (isearch-delete-char))
         (t (evil-escape--delete-func))))))
@@ -307,6 +322,10 @@ with a key sequence."
   "Send `q' key press event to exit from a buffer."
   (interactive)
   (setq unread-command-events (listify-key-sequence "q")))
+
+(defun evil-escape--is-magit-buffer ()
+  "Return non nil if the current buffer is a Magit buffer."
+  (string-match "magit" (symbol-name major-mode)))
 
 (provide 'evil-escape)
 

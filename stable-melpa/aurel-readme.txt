@@ -1,5 +1,5 @@
-The package provides an interface for searching, getting information,
-voting, subscribing and downloading packages from the Arch User
+This package provides an interface for searching, getting information,
+voting for, subscribing and downloading packages from the Arch User
 Repository (AUR) <https://aur.archlinux.org/>.
 
 To manually install the package, add the following to your init-file:
@@ -21,8 +21,9 @@ package, use `aurel-package-info' command.  Also you can display a
 list of installed AUR packages with `aurel-installed-packages'.
 
 Information about the packages is represented in a list-like buffer
-similar to a buffer containing emacs packages.  To get more info
-about a package, press "RET" on a package line.  To download a
+similar to a buffer containing emacs packages.  Press "h" to see a
+hint (a summary of the available key bindings).  To get more info
+about a package (or marked packages), press "RET".  To download a
 package, press "d" (don't forget to set `aurel-download-directory'
 before).  In a list buffer, you can mark several packages for
 downloading with "m"/"M" (and unmark with "u"/"U" and "DEL"); also
@@ -38,7 +39,7 @@ After receiving information about the packages, pacman is called to
 find what packages are installed.  To disable that, set
 `aurel-installed-packages-check' to nil.
 
-To vote/subscribe for a package, press "v"/"s" (with prefix
+To vote/subscribe for a package, press "v"/"s" (with prefix,
 unvote/unsubscribe) in a package info buffer (you should have an AUR
 account for that).  To add information about "Voted"/"Subscribed"
 status, use the following:

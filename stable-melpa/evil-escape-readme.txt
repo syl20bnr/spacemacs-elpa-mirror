@@ -6,8 +6,10 @@ Press `fd` quickly to:
   - escape from evil-iedit-state to normal state
   - abort evil ex command
   - quit minibuffer
+  - quit compilation buffers
   - abort isearch
   - quit ibuffer
+  - quit image buffer
   - quit magit buffers
   - quit help buffers
   - quit apropos buffers
