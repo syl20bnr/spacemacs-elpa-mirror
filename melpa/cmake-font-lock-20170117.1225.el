@@ -4,9 +4,9 @@
 
 ;; Author: Anders Lindgren
 ;; Keywords: faces, languages
-;; Package-Version: 20150828.1327
+;; Package-Version: 20170117.1225
 ;; Created: 2012-12-05
-;; Version: 0.1.2
+;; Version: 0.1.3
 ;; Package-Requires: ((cmake-mode "0.0"))
 ;; URL: https://github.com/Lindydancer/cmake-font-lock
 
@@ -1132,7 +1132,7 @@ ${var} construct."
                               (forward-sexp)
                             (error (forward-char)))
                           t)
-                         ((memq (following-char) '(?{ ?}))
+                         ((memq (following-char) '(?$ ?{ ?}))
                           (forward-char)
                           t)
                          (t
