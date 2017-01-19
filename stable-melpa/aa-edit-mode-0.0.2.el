@@ -1,13 +1,13 @@
-;;; aa-edit-mode.el --- Major mode for editing AA -*- lexical-binding: t -*-
+;;; aa-edit-mode.el --- Major mode for editing AA(S_JIS Art) and .mlt file -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2016 USAMI Kenta
 
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 28 Feb 2016
-;; Version: 0.0.1
-;; Package-Version: 20160227.2217
-;; Keywords: text shiftjis
-;; Package-Requires: ((emacs "24") (navi2ch "2.0.0"))
+;; Version: 0.0.2
+;; Package-Version: 0.0.2
+;; Keywords: wp text shiftjis mlt yaruo
+;; Package-Requires: ((emacs "24.3") (navi2ch "2.0.0"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -30,21 +30,41 @@
 ;;
 ;; https://en.wikipedia.org/wiki/Shift_JIS_art
 ;; https://ja.wikipedia.org/wiki/%E3%82%A2%E3%82%B9%E3%82%AD%E3%83%BC%E3%82%A2%E3%83%BC%E3%83%88
+;;
+;; `aa-edit-mode' supports .mlt format.
+;; http://yaruo.wikia.com/wiki/%E3%82%84%E3%82%8B%E5%A4%AB%E3%82%B9%E3%83%AC%E7%94%A8MLT%E5%8F%8E%E9%9B%86%E6%89%80
+
 
 ;;; Code:
-(require 'navi2ch)
-(require 'navi2ch-mona)
+
+(when (require 'navi2ch nil t)
+  (require 'navi2ch-mona))
+
+(defgroup aa-edit '()
+  "Major mode for editing AA(Shift_JIS Art) and .mlt file"
+  :group 'text)
+
+(defconst aa-edit-mlt-delimiter-regexp
+  (eval-when-compile
+    (rx bol "[SPLIT]")))
+
+(defcustom aa-edit-delimiter-pattern aa-edit-mlt-delimiter-regexp
+  "A delimiter (separator) regexp pattern of ASCII Art that based on `PAGE-DELIMITER'.")
 
 (defun aa-edit-mode--face ()
   "Return face for display AA."
-  (if (eq navi2ch-mona-face-variable t)
-      'navi2ch-mona16-face
-    navi2ch-mona-face-variable))
+  (if (boundp 'navi2ch-mona-face-variable)
+      (if (eq navi2ch-mona-face-variable t)
+          'navi2ch-mona16-face
+        navi2ch-mona-face-variable)
+    ""))
 
 ;;;###autoload
 (define-derived-mode aa-edit-mode text-mode "（´д｀）"
   "Major mode for editing AA"
-  (navi2ch-mona-setup)
+  (when (fboundp 'navi2ch-mona-setup)
+    (navi2ch-mona-setup))
+  (setq-local page-delimiter aa-edit-delimiter-pattern)
   (buffer-face-set (aa-edit-mode--face)))
 
 ;;;###autoload

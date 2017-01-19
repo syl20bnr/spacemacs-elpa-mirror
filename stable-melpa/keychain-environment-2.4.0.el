@@ -8,7 +8,7 @@
 ;; Created: 20081218
 ;; Homepage: https://github.com/tarsius/keychain-environment
 ;; Keywords: gnupg, pgp, ssh
-;; Package-Version: 20160424.446
+;; Package-Version: 2.4.0
 
 ;; This file is not part of GNU Emacs.
 
@@ -61,13 +61,13 @@ information retrieved from files created by the keychain script."
   (let* ((ssh (shell-command-to-string "keychain -q --noask --agents ssh --eval"))
          (gpg (shell-command-to-string "keychain -q --noask --agents gpg --eval")))
     (list (and ssh
-               (string-match "SSH_AUTH_SOCK=\\(.*?\\);" ssh)
+               (string-match "SSH_AUTH_SOCK[=\s]\\([^\s;\n]*\\)" ssh)
                (setenv       "SSH_AUTH_SOCK" (match-string 1 ssh)))
           (and ssh
-               (string-match "SSH_AGENT_PID=\\([0-9]*\\)?;" ssh)
+               (string-match "SSH_AGENT_PID[=\s]\\([0-9]*\\)?" ssh)
                (setenv       "SSH_AGENT_PID" (match-string 1 ssh)))
           (and gpg
-               (string-match "GPG_AGENT_INFO=\\(.*?\\);" gpg)
+               (string-match "GPG_AGENT_INFO[=\s]\\([^\s;\n]*\\)" gpg)
                (setenv       "GPG_AGENT_INFO" (match-string 1 gpg))))))
 
 (provide 'keychain-environment)

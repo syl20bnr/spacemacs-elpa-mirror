@@ -4,7 +4,7 @@
 
 ;; Author: Tom Willemse <tom@ryuslash.org>
 ;; Keywords:
-;; Package-Version: 20160224.416
+;; Package-Version: 20170117.1516
 ;; Version: 1.0.0
 ;; URL: http://projects.ryuslash.org/eshell-fringe-status/
 
@@ -71,6 +71,16 @@ determines the look of the fringe indicator."
           (const :tag "Arrow" efs-arrow-bitmap)
           (const :tag "Minus" efs-minus-bitmap)
           (const :tag "Plus" efs-plus-bitmap)))
+
+(defcustom eshell-fringe-status-before-insert-hook nil
+  "A list of functions to call before inserting the fringe status."
+  :group 'eshell-fringe-status
+  :type 'hook)
+
+(defcustom eshell-fringe-status-after-insert-hook nil
+  "A list of functions to call after inserting the fringe status."
+  :group 'eshell-fringe-status
+  :type 'hook)
 
 (defface eshell-fringe-status-success
   '((t (:foreground "#00aa00")))
@@ -156,7 +166,9 @@ window."
     (save-excursion
       (beginning-of-line)
       (let ((inhibit-read-only t))
-        (insert (efs--propertized-text))))))
+        (run-hooks 'eshell-fringe-status-before-insert-hook)
+        (insert (efs--propertized-text))
+        (run-hooks 'eshell-fringe-status-after-insert-hook)))))
 
 ;;;###autoload
 (define-minor-mode eshell-fringe-status-mode

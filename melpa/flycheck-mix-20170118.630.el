@@ -4,7 +4,7 @@
 
 ;; Author: Tomasz Kowal <tomekowal@gmail.com>
 ;; Version: 1.0.0
-;; Package-Version: 20160803.140
+;; Package-Version: 20170118.630
 ;; Package-Requires: ((flycheck "27") (elixir-mode "1.8.0"))
 ;; Keywords: Elixir flycheck mix
 ;; URL: https://github.com/tomekowal/flycheck-mix
@@ -52,12 +52,13 @@
            "compile")
  :error-patterns
  ((warning line-start
-            (file-name)
-            ":"
-            line
-            ": warning: "
-            (message)
-            line-end)
+           "warning:"
+           ;; Multiline warnings
+           (message (minimal-match (one-or-more anything)))
+           (file-name "lib/" (minimal-match (one-or-more not-newline)) )
+           ":"
+           line
+           line-end)
    (error line-start
           "** ("
           (one-or-more word)

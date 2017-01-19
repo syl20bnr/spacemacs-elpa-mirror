@@ -5,7 +5,7 @@
 ;; Author: Phil Jackson <phil@shellarchive.co.uk>
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 ;; Keywords: vc tools
-;; Package-Version: 2.1.2
+;; Package-Version: 20170118.925
 ;; Package: magit-svn
 ;; Package-Requires: ((emacs "24.4") (magit "2.1.0"))
 
@@ -88,10 +88,89 @@
                        (magit-git-lines "svn" "info"))
     (match-string 1 it)))
 
-(defun magit-svn-get-ref ()
-  (--when-let (--first (string-match "^Remote Branch: \\(.+\\)" it)
-                       (magit-git-lines "svn" "rebase" "--dry-run"))
-    (match-string 1 it)))
+;;;; magit-svn-get-ref
+
+(defun magit-svn-expand-braces-in-branches (branch)
+  (if (not (string-match "\\(.+\\){\\(.+,.+\\)}\\(.*\\):\\(.*\\)\\\*" branch))
+      (list branch)
+    (let ((prefix (match-string 1 branch))
+          (suffix (match-string 3 branch))
+          (rhs (match-string 4 branch))
+          (pieces (split-string (match-string 2 branch) ",")))
+      (mapcar (lambda (p) (concat prefix p suffix ":" rhs p)) pieces))))
+
+(defun magit-svn-get-local-ref (url)
+  (let* ((branches (cons (magit-get "svn-remote" "svn" "fetch")
+                        (magit-get-all "svn-remote" "svn" "branches")))
+         (branches (apply 'nconc
+                          (mapcar 'magit-svn-expand-braces-in-branches
+                                  branches)))
+        (base-url (magit-get "svn-remote" "svn" "url"))
+        (result nil))
+    (while branches
+      (let* ((pats (split-string (pop branches) ":"))
+             (src (replace-regexp-in-string "\\*" "\\\\(.*\\\\)" (car pats)))
+             (dst (replace-regexp-in-string "\\*" "\\\\1" (cadr pats)))
+             (base-url (replace-regexp-in-string "\\+" "\\\\+" base-url))
+             (base-url (replace-regexp-in-string "//.+@" "//" base-url))
+             (pat1 (concat "^" src "$"))
+             (pat2 (cond ((equal src "") (concat "^" base-url "$"))
+                         (t (concat "^" base-url "/" src "$")))))
+        (cond ((string-match pat1 url)
+               (setq result (replace-match dst nil nil url))
+               (setq branches nil))
+              ((string-match pat2 url)
+               (setq result (replace-match dst nil nil url))
+               (setq branches nil)))))
+    result))
+
+(defvar magit-svn-get-ref-info-cache nil
+  "A cache for svn-ref-info.
+As `magit-get-svn-ref-info' might be considered a quite
+expensive operation a cache is taken so that `magit-status'
+doesn't repeatedly call it.")
+
+(defun magit-svn-get-ref-info (&optional use-cache)
+  "Gather details about the current git-svn repository.
+Return nil if there isn't one.  Keys of the alist are ref-path,
+trunk-ref-name and local-ref-name.
+If USE-CACHE is non-nil then return the value of
+`magit-get-svn-ref-info-cache'."
+  (if (and use-cache magit-svn-get-ref-info-cache)
+      magit-svn-get-ref-info-cache
+    (let* ((fetch (magit-get "svn-remote" "svn" "fetch"))
+           (url)
+           (revision))
+      (when fetch
+        (let* ((ref (cadr (split-string fetch ":")))
+               (ref-path (file-name-directory ref))
+               (trunk-ref-name (file-name-nondirectory ref)))
+          (setq-local magit-svn-get-ref-info-cache
+                (list
+                 (cons 'ref-path ref-path)
+                 (cons 'trunk-ref-name trunk-ref-name)
+                 ;; get the local ref from the log. This is actually
+                 ;; the way that git-svn does it.
+                 (cons 'local-ref
+                       (with-temp-buffer
+                         (magit-git-insert "log" "-1" "--first-parent"
+                                           "--grep" "git-svn")
+                         (goto-char (point-min))
+                         (cond ((re-search-forward
+                                 "git-svn-id: \\(.+/.+?\\)@\\([0-9]+\\)" nil t)
+                                (setq url (match-string 1)
+                                      revision (match-string 2))
+                                (magit-svn-get-local-ref url))
+                               (t
+                                (setq url (magit-get "svn-remote" "svn" "url"))
+                                nil))))
+                 (cons 'revision revision)
+                 (cons 'url url))))))))
+
+(defun magit-svn-get-ref (&optional use-cache)
+  "Get the best guess remote ref for the current git-svn based branch.
+If USE-CACHE is non-nil, use the cached information."
+  (cdr (assoc 'local-ref (magit-svn-get-ref-info use-cache))))
 
 ;;; Commands
 
