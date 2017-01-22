@@ -13,6 +13,8 @@ put the following in your emacs init file:
 (add-to-list 'load-path "~/.emacs.d/lisp/")
 (require 'xah-fly-keys)
 (xah-fly-keys 1)
+(xah-fly-set-layout "qwerty") ; required if you use qwerty
+(xah-fly-set-layout "dvorak")
 
 --------------------------------------------------
 HOW TO USE
@@ -23,11 +25,11 @@ Important command/insert mode switch keys:
 
 xah-fly-command-mode-activate (press 【<home>】 or 【F8】 or 【Alt+Space】 or 【menu】)
 
-xah-fly-insert-mode-activate  (when in command mode, press letter 【u】 key)
+xah-fly-insert-mode-activate  (when in command mode, press letter 【f】 key)
 
 When in command mode:
-【u】 activates insertion mode
-【Space】 is a leader key. For example, 【SPACE p】 calls query-replace. Press 【SPACE C-h】 to see the full list.
+【f】 (or Dvorak 【u】) activates insertion mode.
+【Space】 is a leader key. For example, 【SPACE r】 (Dvorak 【SPACE p】) calls query-replace. Press 【SPACE C-h】 to see the full list.
 【Space Space】 also activates insertion mode.
 【Space Enter】 calls execute-extended-command or smex (if smex is installed).
 【a】 calls execute-extended-command or smex (if smex is installed).
@@ -46,14 +48,14 @@ Leader key
 You NEVER need to press Ctrl+x
 
 Any emacs commands that has a keybinding starting with C-x, has also a key sequence binding in xah-fly-keys. For example,
-【C-x b】 switch-to-buffer is 【SPACE u】
-【C-x C-f】 find-file is 【SPACE c .】
-【C-x n n】 narrow-to-region is 【SPACE n n】
+【C-x b】 switch-to-buffer is 【SPACE f】 (Dvorak 【SPACE u】)
+【C-x C-f】 find-file is 【SPACE i e】 (Dvorak 【SPACE c .】)
+【C-x n n】 narrow-to-region is 【SPACE l l】 (Dvorak 【SPACE n n】)
 The first key we call it leader key. In the above examples, the SPACE is the leader key.
 
 When in command mode, the 【SPACE】 is a leader key.
 
-globally, the leader key is the 【f9】 key.
+globally, the leader key is the 【f9】 key. 【f9】 is leader key regardless it's in command mode or insert mode.
 
 the following stardard keys with Control are supported:
 
@@ -71,11 +73,12 @@ the following stardard keys with Control are supported:
  ;; 【Ctrl+-】 'text-scale-decrease
  ;; 【Ctrl+0】 (lambda () (interactive) (text-scale-set 0))))
 
-On the Mac, I highly recommend using a app called Sail to set your capslock to send Home. So that it acts as xah-fly-command-mode-activate. You can set capslock or one of the cmd key to Home. See http://xahlee.info/kbd/Mac_OS_X_keymapping_keybinding_tools.html
+I highly recommend setting 【capslock】 to send 【Home】. So that it acts as `xah-fly-command-mode-activate'.
+see
+How to Make the CapsLock Key do Home Key
+http://ergoemacs.org/misc/capslock_do_home_key.html
 
-I recommend you clone xah-fly-keys.el, and modify it, and use your modified version. Don't worry about upgrade. The main point is use it for your own good. (I still make key tweaks every week, for the past 3 years.)
-
-If you have a bug, post on github. If you have question, post on xah-fly-keys home page.
+If you have a bug, post on github. Or post comment xah-fly-keys home page for small questions.
 
 For detail about design and other info, see home page at
 http://ergoemacs.org/misc/ergoemacs_vi_mode.html

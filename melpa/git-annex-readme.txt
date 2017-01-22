@@ -22,7 +22,8 @@ current file):
 (defcustom git-annex-commit t
   "If not nil, git-annex command will commit by default.
 
-otherwise you will have to commit by hand.")
+otherwise you will have to commit by hand."
+  :type 'boolean)
 
 (defsubst git-annex (&rest args)
   (apply #'call-process "git" nil nil nil "annex" args))
