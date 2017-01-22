@@ -1,11 +1,11 @@
 ;;; no-littering.el --- help keeping ~/.emacs.d clean
 
-;; Copyright (C) 2016  Jonas Bernoulli
+;; Copyright (C) 2016-2017  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/tarsius/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 0.5.2
+;; Package-Version: 20170122.357
 
 ;; This file is not part of GNU Emacs.
 
@@ -211,7 +211,6 @@ This variable has to be set before `no-littering' is loaded.")
     (setq semanticdb-default-save-directory (var "semantic/"))
     (setq shared-game-score-directory      (var "shared-game-score/"))
     (setq tramp-persistency-file-name      (var "tramp-persistency.el"))
-    (setq trash-directory                  (var "trash/"))
     (setq url-cache-directory              (var "url/cache/"))
     (setq url-configuration-directory      (var "url/configuration/"))
 
@@ -244,8 +243,18 @@ This variable has to be set before `no-littering' is loaded.")
     (setq helm-adaptive-history-file       (var "helm/adaptive-history.el"))
     (setq helm-github-stars-cache-file     (var "helm/github-stars-cache.el"))
     (setq irony-user-dir                   (var "irony/"))
+    (setq jabber-avatar-cache-directory    (var "jabber/avatar-cache"))
+    (eval-after-load 'jabber
+      `(make-directory ,(var "jabber/avatar-cache/") t))
+    (setq jabber-history-dir               (var "jabber/history"))
+    (eval-after-load 'jabber
+      `(make-directory ,(var "jabber/history/") t))
     (setq mc/list-file                     (var "mc-list.el"))
     (setq org-gcal-dir                     (var "org/gcal/"))
+    (eval-after-load 'org-caldav
+      `(make-directory ,(var "org/caldav/save") t))
+    (setq org-caldav-backup-file           (var "org/caldav/backup.org"))
+    (setq org-caldav-save-directory        (var "org/caldav/save"))
     (setq pcache-directory                 (var "pcache/"))
     (setq persistent-scratch-save-file     (var "persistent-scratch.el"))
     (eval-after-load 'projectile
@@ -254,8 +263,10 @@ This variable has to be set before `no-littering' is loaded.")
     (setq projectile-known-projects-file   (var "projectile/known-projects.el"))
     (setq request-storage-directory        (var "request/storage/"))
     (setq rmh-elfeed-org-files             (list (var "elfeed/rmh-elfeed.org")))
+    (setq runner-init-file                 (var "runner-init.el"))
     (setq save-kill-file-name              (var "save-kill.el"))
     (setq smex-save-file                   (var "smex-save.el"))
+    (setq speed-type-gb-dir                (var "speed-type/"))
     (eval-after-load 'sx
       `(make-directory ,(var "sx/cache/") t))
     (setq sx-cache-directory               (var "sx/cache/"))

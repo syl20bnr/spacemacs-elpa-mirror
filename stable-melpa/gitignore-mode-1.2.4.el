@@ -7,7 +7,7 @@
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/magit/git-modes
 ;; Keywords: convenience vc git
-;; Package-Version: 1.2.2
+;; Package-Version: 1.2.4
 
 ;; This file is not part of GNU Emacs.
 

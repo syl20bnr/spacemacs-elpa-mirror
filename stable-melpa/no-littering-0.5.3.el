@@ -1,11 +1,11 @@
 ;;; no-littering.el --- help keeping ~/.emacs.d clean
 
-;; Copyright (C) 2016  Jonas Bernoulli
+;; Copyright (C) 2016-2017  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/tarsius/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 20170118.1115
+;; Package-Version: 0.5.3
 
 ;; This file is not part of GNU Emacs.
 

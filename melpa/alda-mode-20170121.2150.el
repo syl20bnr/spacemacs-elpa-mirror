@@ -3,7 +3,7 @@
 ;; Copyright (C) 2016 Jay Kamat
 ;; Author: Jay Kamat <github@jgkamat.33mail.com>
 ;; Version: 0.2.1
-;; Package-Version: 20161213.1359
+;; Package-Version: 20170121.2150
 ;; Keywords: alda, highlight
 ;; URL: http://github.com/jgkamat/alda-mode
 ;; Package-Requires: ((emacs "24.0"))
@@ -68,6 +68,7 @@ When set to nil, will attempt to use the binary found on your $PATH."
 (defun alda-run-cmd (cmd)
   "Plays the given cmd using alda play --code.
 Argument CMD the cmd to run alda with"
+  (interactive "sEnter alda command: ")
   (let ((server-down
           (if (string-match "[Ss]erver [Dd]own" (shell-command-to-string (concat (alda-location) " status")))
             (progn (message "Alda server down, starting in Emacs.") t)
@@ -92,6 +93,10 @@ ARGUMENT TEXT The text to play with the current alda server."
   (alda-run-cmd (concat "play --file " "\"" (buffer-file-name) "\"")))
 
 ;; TODO Come up with a replacement for the alda append command
+;; alda append was deprecated, which breaks all these commands
+;; Before, you could use these commands to load only parts of your file, but
+;; there's no way to do this right now. Ask for a replacement for alda append!
+
 ;; (defun alda-append-text (text)
 ;;   "Append the specified TEXT to the alda server instance.
 ;; ARGUMENT TEXT The text to append to the current alda server."
@@ -117,9 +122,7 @@ ARGUMENT TEXT The text to play with the current alda server."
 ;;   "Plays the current selection in alda.
 ;; Argument START The start of the selection to play from.
 ;; Argument END The end of the selection to play from."
-
 ;;   (interactive "r")
-
 ;;   (if (eq start end)
 ;;     (message "No mark was set!")
 ;;     (alda-play-text (buffer-substring-no-properties start end))))
