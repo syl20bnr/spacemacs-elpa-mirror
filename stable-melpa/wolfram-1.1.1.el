@@ -4,7 +4,7 @@
 
 ;; Author: Hans Sjunnesson <hans.sjunnesson@gmail.com>
 ;; Keywords: math
-;; Package-Version: 1.1
+;; Package-Version: 1.1.1
 ;; Version: 1.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -22,12 +22,28 @@
 
 ;;; Commentary:
 
-;; 
+;; This package allows you to query Wolfram Alpha from within Emacs.
+
+;; It is required to get a WolframAlpha Developer AppID in order to use this
+;; package.
+;;  - Create an account at https://developer.wolframalpha.com/portal/signin.html.
+;;  - Once you sign in with the Wolfram ID at
+;;    https://developer.wolframalpha.com/portal/myapps/, click on "Get an AppID"
+;;    to get your Wolfram API or AppID.
+;;  - Follow the steps where you put in your app name and description, and
+;;    you will end up with an AppID that looks like "ABCDEF-GHIJKLMNOP",
+;;    where few of those characters could be numbers too.
+;;  - Set the custom variable `wolfram-alpha-app-id' to that AppID.
+
+;; To make a query, run `M-x wolfram-alpha' then type your query. It will show
+;; the results in a buffer called `*WolframAlpha*'.
+
+(require 'url)
+(require 'xml)
+(require 'url-cache)
+(require 'org-faces)                    ;For `org-level-1' and `org-level-2' faces
 
 ;;; Vars:
-
-(defvar wolfram-alpha-query-history nil
-  "History for `wolfram-alpha' prompt.")
 
 (defgroup wolfram-alpha nil
   "Wolfram Alpha customization group"
@@ -38,14 +54,21 @@
   :group 'wolfram-alpha
   :type 'string)
 
-(defvar wolfram-alpha-buffer-name "*WolframAlpha*")
+(defface wolfram-query
+  '((t (:inherit org-level-1)))
+  "Face for the query string in the WolframAlpha buffer.")
 
+(defface wolfram-pod-title
+  '((t (:inherit org-level-2)))
+  "Face for the pod titles in search results in the WolframAlpha buffer.")
+
+(defvar wolfram-alpha-buffer-name "*WolframAlpha*"
+  "Name of WolframAlpha search buffer. ")
+
+(defvar wolfram-alpha-query-history nil
+  "History for `wolfram-alpha' prompt.")
 
 ;;; Code:
-
-(require 'url)
-(require 'xml)
-(require 'url-cache)
 
 (defun wolfram--url-for-query (query)
   "Formats a WolframAlpha API url."
@@ -67,7 +90,7 @@
     (insert
      (when title
        (format "\n## %s%s\n\n"
-               title
+               (propertize title 'face 'wolfram-pod-title)
                (if err " *error*" ""))))
     ;; Then subpods
     (dolist (subpod (xml-get-children pod 'subpod)) (wolfram--append-subpod subpod))))
@@ -113,15 +136,24 @@
   (wolfram--switch-to-wolfram-buffer)
   (goto-char (point-max))
   (let ((inhibit-read-only t))
-    (insert (format "# \"%s\" (searching)\n" query))))
+    (insert (format "# \"%s\" (searching)\n"
+                    (propertize query 'face 'wolfram-query)))))
 
-(defun wolfram--append-pods-to-buffer (buffer pods)
-  "Appends all of the pods to a specific buffer."
+(defun wolfram--delete-in-progress-notification ()
+  "Switch to WolframAlpha buffer and delete the \"(searching)\" notification.
+That notification indicates that the search is still in progress. This function
+removes that notification."
+  (wolfram--switch-to-wolfram-buffer)
+  (goto-char (point-max))
+  (search-backward " (searching)")
   (let ((inhibit-read-only t))
-    (goto-char (point-max))
-    (search-backward " (searching)")
-    (replace-match "")
-    (goto-char (point-max))
+    (replace-match ""))
+  (goto-char (point-max)))
+
+(defun wolfram--append-pods-to-buffer (pods)
+  "Appends all pods from PODS to WolframAlpha buffer."
+  (wolfram--delete-in-progress-notification)
+  (let ((inhibit-read-only t))
     (dolist (pod pods)
       (wolfram--append-pod pod))
     (insert "\n")))
@@ -138,6 +170,23 @@
           (insert-image (create-image data nil t)))
       (kill-buffer buffer))))
 
+(defun wolfram--query-callback (_args)
+  "Callback function to run after XML is returned for a query."
+  (let* ((data (buffer-string))
+         (pods (xml-get-children
+                (with-temp-buffer
+                  (erase-buffer)
+                  (insert data)
+                  (car (xml-parse-region (point-min) (point-max))))
+                'pod)))
+    (if pods                         ;If at least 1 result pod was returned
+        (wolfram--append-pods-to-buffer pods)
+      (wolfram--delete-in-progress-notification)
+      (let ((inhibit-read-only t))
+        (insert (propertize "No results for your query.\n\n"
+                            'face 'warning))))
+    (message "")))                      ;Remove the "Contacting host:.." message
+
 ;;;###autoload
 (defun wolfram-alpha (query)
   "Sends a query to Wolfram Alpha, returns the resulting data as a list of pods."
@@ -149,26 +198,9 @@
       (read-string "Query: " nil 'wolfram-alpha-history))))
   (unless (and (bound-and-true-p wolfram-alpha-app-id)
                (not (string= "" wolfram-alpha-app-id)))
-    (error "Custom variable wolfram-alpha-app-id not set."))
+    (error "Custom variable `wolfram-alpha-app-id' not set."))
   (wolfram--create-wolfram-buffer query)
-  (wolfram--async-xml-for-query
-   query
-   (lambda (args)
-     (let ((pods 
-            (xml-get-children
-             (let ((data (buffer-string)))
-               (with-temp-buffer
-                 (erase-buffer)
-                 (insert data)
-                 (car (xml-parse-region (point-min) (point-max)))))
-             'pod)))
-       (let ((buffer (wolfram--switch-to-wolfram-buffer)))
-         (wolfram--append-pods-to-buffer
-          buffer
-          pods))
-       )
-     ))
-  )
+  (wolfram--async-xml-for-query query #'wolfram--query-callback))
 
 (provide 'wolfram)
 ;;; wolfram.el ends here
