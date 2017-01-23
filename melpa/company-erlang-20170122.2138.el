@@ -1,11 +1,11 @@
-;;; company-erlang.el --- company backend based on ivy-erlang-complete
+;;; company-erlang.el --- company backend based on ivy-erlang-complete -*- lexical-binding: t -*-
 ;;
 ;; Filename: company-erlang.el
 ;; Description: Context sensitive erlang completion package with company as
 ;; frontend.
 ;; Author: Sergey Kostyaev <feo.me@ya.ru>
 ;; Version: 1.0.0
-;; Package-Version: 20170107.115
+;; Package-Version: 20170122.2138
 ;; Package-Requires: ((emacs "24.4") (ivy-erlang-complete "0.1") (company "0.9.2"))
 ;; Keywords: tools
 ;; 
