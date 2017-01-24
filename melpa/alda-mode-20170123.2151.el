@@ -3,7 +3,7 @@
 ;; Copyright (C) 2016 Jay Kamat
 ;; Author: Jay Kamat <github@jgkamat.33mail.com>
 ;; Version: 0.2.1
-;; Package-Version: 20170121.2150
+;; Package-Version: 20170123.2151
 ;; Keywords: alda, highlight
 ;; URL: http://github.com/jgkamat/alda-mode
 ;; Package-Requires: ((emacs "24.0"))
@@ -45,13 +45,19 @@
 ;;; -- Region playback functions --
 
 (defgroup Alda nil
-  "A group for alda customization."
+  "Alda customization options"
   :group 'applications)
 
 (defcustom alda-binary-location nil
   "Alda binary location for `alda-mode'.
 When set to nil, will attempt to use the binary found on your $PATH."
   :type 'string
+  :group 'Alda)
+
+(defcustom alda-ess-keymap t
+  "Whether to use ess keymap in alda-mode
+When set to nil, will not set any ess keybindings"
+  :type 'boolean
   :group 'Alda)
 
 (defun alda-location()
@@ -118,14 +124,14 @@ ARGUMENT TEXT The text to play with the current alda server."
 ;;     (message "no mark was set")
 ;;     (alda-append-text (buffer-substring-no-properties start end))))
 
-;; (defun alda-play-region (start end)
-;;   "Plays the current selection in alda.
-;; Argument START The start of the selection to play from.
-;; Argument END The end of the selection to play from."
-;;   (interactive "r")
-;;   (if (eq start end)
-;;     (message "No mark was set!")
-;;     (alda-play-text (buffer-substring-no-properties start end))))
+(defun alda-play-region (start end)
+  "Plays the current selection in alda.
+Argument START The start of the selection to play from.
+Argument END The end of the selection to play from."
+  (interactive "r")
+  (if (eq start end)
+    (message "No mark was set!")
+    (alda-play-text (buffer-substring-no-properties start end))))
 
 ;; If evil is found, make evil commands as well.
 (eval-when-compile
@@ -147,7 +153,7 @@ ARGUMENT TEXT The text to play with the current alda server."
   "Stops songs from playing, and cleans up idle alda runner processes.
 Because alda runs in the background, the only way to do this is with alda restart as of now."
   (interactive)
-  (shell-command (concat (alda-location) " stop -y"))
+  (shell-command (concat (alda-location) " down"))
   (delete-process +alda-output-buffer+))
 
 ;;; -- Font Lock Regexes --
@@ -240,6 +246,20 @@ Because alda runs in the background, the only way to do this is with alda restar
       (delete-horizontal-space)
       (tab-to-tab-stop))))
 
+(defun alda-play-block ()
+  (interactive)
+  (save-excursion
+    (mark-paragraph)
+    (alda-play-region (region-beginning) (region-end))))
+
+(defun alda-play-line ()
+  (interactive)
+  (alda-play-region (line-beginning-position) (line-end-position)))
+
+(defun alda-play-buffer ()
+  (interactive)
+  (alda-play-text (buffer-string)))
+
 ;;; -- Alda Keymaps --
 ;; TODO determine standard keymap for alda-mode
 
@@ -253,7 +273,14 @@ Because alda runs in the background, the only way to do this is with alda restar
   (define-key alda-mode-map [menu-bar alda-mode] (cons "Alda" (make-sparse-keymap)))
   (define-key alda-mode-map [menu-bar alda-mode alda-colon]
     '(menu-item "Insert Colon" alda-colon
-       :help "Insert a colon; if it follows a label, delete the label's indentation")))
+       :help "Insert a colon; if it follows a label, delete the label's indentation"))
+
+  ;; Add alda-ess-keymap if requested
+  (when alda-ess-keymap
+    (define-key alda-mode-map "\C-c\C-r" 'alda-play-region)
+    (define-key alda-mode-map "\C-c\C-c" 'alda-play-block)
+    (define-key alda-mode-map "\C-c\C-n" 'alda-play-line)
+    (define-key alda-mode-map "\C-c\C-b" 'alda-play-buffer)))
 
 
 ;;; -- Alda Mode Definition --
@@ -277,8 +304,6 @@ Because alda runs in the background, the only way to do this is with alda restar
 
   ;; Set alda highlighting
   (setq font-lock-defaults '(alda-highlights)))
-
-
 
 ;; Open alda files in alda-mode
 ;;;###autoload

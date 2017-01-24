@@ -4,7 +4,7 @@
 
 ;; Author: Constantin Kulikov (Bad_ptr) <zxnotdead@gmail.com>
 ;; Version: 2.9.5
-;; Package-Version: 20170120.934
+;; Package-Version: 20170123.1056
 ;; Package-Requires: ()
 ;; Keywords: perspectives, session, workspace, persistence, windows, buffers, convenience
 ;; URL: https://github.com/Bad-ptr/persp-mode.el
@@ -3377,12 +3377,12 @@ does not exists or not a directory %S." p-save-dir)
                           buf
                         (if (file-exists-p fname)
                             (setq buf (find-file-noselect fname))
-                          (message "[persp-mode] Warning: The file %s is no longer exists." fname)
+                          (message "[persp-mode] Warning: The file %s no longer exists." fname)
                           (setq buf nil)))
                     (if (and fname (file-exists-p fname))
                         (setq buf (find-file-noselect fname))
                       (when fname
-                        (message "[persp-mode] Warning: The file %s is no longer exists." fname))
+                        (message "[persp-mode] Warning: The file %s no longer exists." fname))
                       (setq buf (get-buffer-create name))))
                   (when (buffer-live-p buf)
                     (macrolet ((restorevars ()

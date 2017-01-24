@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov
 ;; URL: https://github.com/bbatsov/rubocop-emacs
-;; Package-Version: 20170121.435
+;; Package-Version: 20170123.906
 ;; Version: 0.5.0-cvs
 ;; Keywords: project, convenience
 ;; Package-Requires: ((emacs "24"))
@@ -99,6 +99,7 @@ When NO-ERROR is non-nil returns nil instead of raise an error."
   "Build RuboCop requires from `rubocop-extensions'."
   (if rubocop-extensions
       (concat
+       " "
        (mapconcat
         (lambda (ext)
           (format "--require %s" ext))

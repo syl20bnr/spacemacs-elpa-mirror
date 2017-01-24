@@ -4,7 +4,7 @@
 ;;
 ;; Author: George Thomas <iamgeorgethomas@gmail.com>
 ;; URL: https://github.com/thegeorgeous/railscasts-reloaded-theme
-;; Package-Version: 1.2.0
+;; Package-Version: 1.3.0
 ;; Version: 1.0.0
 ;;
 ;;; Commentary:
@@ -138,6 +138,10 @@
   `(company-scrollbar-bg ((t (:background ,railscasts-silver))))
   `(company-preview ((t (:background ,railscasts-green))))
   `(company-preview ((t (:foreground ,railscasts-green :background ,railscasts-bg-1))))
+
+  ;;;; auto-complete
+  `(ac-candidate-face ((t (:foreground ,railscasts-fg :background ,railscasts-bg-2 ))))
+  `(ac-selection-face ((t ( :foreground ,railscasts-fg :background ,railscasts-orange))))
 
   ;;;; enh-ruby
   `(enh-ruby-op-face ((t (:foreground ,railscasts-yellow))))
