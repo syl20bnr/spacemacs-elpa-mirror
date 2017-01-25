@@ -2,7 +2,7 @@
 
 ;; Author: Wouter Bolsterlee <wouter@bolsterl.ee>
 ;; Version: 1.0.0
-;; Package-Version: 20160909.1407
+;; Package-Version: 20170125.452
 ;; Package-Requires: ((emacs "24") (evil "1.2.12"))
 ;; Keywords: evil key swap numbers symbols
 ;; URL: https://github.com/wbolster/evil-swap-keys
@@ -69,7 +69,9 @@ This should match the actual keyboard layout."
     evil-snipe-t
     evil-snipe-T
     evil-snipe-x
-    evil-snipe-X)
+    evil-snipe-X
+    evil-surround-region
+    evil-Surround-region)
   "Commands that read keys which should be treated as text input."
   :group 'evil-swap-keys
   :type '(repeat function))
@@ -251,43 +253,51 @@ the 'key-translation-map callback signature."
 ;;;###autoload
 (defun evil-swap-keys-swap-number-row ()
   "Swap the keys on the number row."
+  (interactive)
   (dolist (pair evil-swap-keys-number-row-keys)
     (evil-swap-keys-add-pair (car pair) (cdr pair))))
 
 ;;;###autoload
 (defun evil-swap-keys-swap-underscore-dash ()
   "Swap the underscore and the dash."
+  (interactive)
   (evil-swap-keys-add-pair "_" "-"))
 
 ;;;###autoload
 (defun evil-swap-keys-swap-colon-semicolon ()
   "Swap the colon and semicolon."
+  (interactive)
   (evil-swap-keys-add-pair ":" ";"))
 
 ;;;###autoload
 (defun evil-swap-keys-swap-tilde-backtick ()
   "Swap the backtick and tilde."
+  (interactive)
   (evil-swap-keys-add-pair "~" "`"))
 
 ;;;###autoload
 (defun evil-swap-keys-swap-double-single-quotes ()
   "Swap the double and single quotes."
+  (interactive)
   (evil-swap-keys-add-pair "\"" "'"))
 
 ;;;###autoload
 (defun evil-swap-keys-swap-square-curly-brackets ()
   "Swap the square and curly brackets."
+  (interactive)
   (evil-swap-keys-add-pair "[" "{")
   (evil-swap-keys-add-pair "]" "}"))
 
 ;;;###autoload
 (defun evil-swap-keys-swap-pipe-backslash ()
   "Swap the pipe and backslash."
+  (interactive)
   (evil-swap-keys-add-pair "|" "\\"))
 
 ;;;###autoload
 (defun evil-swap-keys-swap-question-mark-slash ()
   "Swap the question mark and slash."
+  (interactive)
   (evil-swap-keys-add-pair "/" "?"))
 
 (provide 'evil-swap-keys)

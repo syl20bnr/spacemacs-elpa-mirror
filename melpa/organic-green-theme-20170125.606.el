@@ -1,5 +1,5 @@
 ﻿;;; organic-green-theme.el --- Low-contrast green color theme.
-;; Package-Version: 20161222.232
+;; Package-Version: 20170125.606
 
 ;;; Copyright © 2009-2016 - Kostafey <kostafey@gmail.com>
 
@@ -160,6 +160,10 @@ Basic, Font Lock, Isearch, Jabber, rst, magit, Web faces are included.")
    '(jdee-java-properties-font-lock-class-name-face ((t (:inherit font-lock-constant-face :bold nil))))
    '(jdee-java-properties-font-lock-value-face ((t (:inherit font-lock-string-face :bold nil))))
    `(jdee-java-properties-font-lock-backslash-face ((t (:foreground ,sea-eye))))
+
+   ;; scala
+   `(scala-font-lock:var-face ((t (:foreground ,orange-3))))
+   `(ensime-result-overlay-face ((t (:background ,organic-bg :foreground ,organic-comment-fg :box (:line-width -1 :color "#F0F0A1")))))
 
    ;; Tcl
    '(tcl-substitution-char-face ((t (:foreground "OliveDrab4"))))
