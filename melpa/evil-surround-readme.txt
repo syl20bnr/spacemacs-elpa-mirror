@@ -10,4 +10,4 @@ by adding `turn-on-evil-surround-mode' to the mode hook.
 
 This package uses Evil as its vi layer. It is available from:
 
-    https://bitbucket.org/lyro/evil/
+    https://github.com/emacs-evil/evil

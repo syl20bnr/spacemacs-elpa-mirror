@@ -96,28 +96,8 @@ This section documents all notable changes to Org Password Manager. It
 follows recommendations from Keep a CHANGELOG and uses Semantic
 Versioning. Each released version is a Git tag.
 
-5.1. Unreleased
+5.1. 0.0.1 · 2015-07-29
 
 5.1.1. Added
-
-
-5.1.2. Changed
-
-
-5.1.3. Deprecated
-
-
-5.1.4. Removed
-
-
-5.1.5. Fixed
-
-
-5.1.6. Security
-
-
-5.2. 0.0.1 · 2015-07-29
-
-5.2.1. Added
 
 * Core functionality.

@@ -33,7 +33,8 @@ expand a snippet with a name starting with that word, followed by
 `yankpad-expand-separator' (a colon by default).  If you need to change the
 category, use `yankpad-set-category'.  If you want to append snippets from
 another category (basically having several categories active at the same
-time), use `yankpad-append-category'.
+time), use `yankpad-append-category'.  If you have company-mode enabled,
+you can also use `company-yankpad`.
 
 For further customization, please see the Github page: https://github.com/Kungsgeten/yankpad
 

@@ -14,7 +14,7 @@ xah-find-replace-text-regex
 
 • Using emacs regex, not bash/perl etc regex.
 
-These commands treats find/replace string as sequence of chars, not as lines as in grep/sed, so it's easier to find or replace a block of text, especially programming language source code.
+These commands treats find/replace string as sequence of chars, not as lines as in grep/sed, so it's easier to find or replace a text containing lots newlines, especially programming language source code.
 
 • Reliably Find/Replace string that contains newline chars.
 
@@ -58,14 +58,7 @@ By default, .git dir is ignored. You can add to it by adding the following in yo
    ; more regex here. regex is matched against file full path
   ])
 
-BACKGROUND COLORS
-
-To change background color of result match string, put this in your emacs init:
-
-(setq xah-find-file-background-color "blue")
-(setq xah-find-match-background-color "green")
-
-Call list-colors-display to see available colors names or hex syntax.
+to customize the color for matched text, call `customize-group' and then give xah-find.
 
 USE CASE
 
