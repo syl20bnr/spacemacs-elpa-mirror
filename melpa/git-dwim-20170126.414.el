@@ -1,11 +1,11 @@
-;;;; git-dwim.el --- Context-aware git commands such as branch handling
+;;; git-dwim.el --- Context-aware git commands such as branch handling
 ;; Time-stamp: <2010-07-19 06:35:44 rubikitch>
 
 ;; Copyright (C) 2010  rubikitch
 
 ;; Author: rubikitch <rubikitch@ruby-lang.org>
 ;; Keywords: git, tools, convenience
-;; Package-Version: 20100718.1436
+;; Package-Version: 20170126.414
 ;; URL: http://www.emacswiki.org/cgi-bin/wiki/download/git-dwim.el
 
 ;; This file is free software; you can redistribute it and/or modify

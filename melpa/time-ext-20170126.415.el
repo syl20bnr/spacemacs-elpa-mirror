@@ -1,11 +1,11 @@
-;;;; time-ext.el --- more function for time/date
+;;; time-ext.el --- more function for time/date
 ;; Time-stamp: <2010-05-16 09:40:38 rubikitch>
 
 ;; Copyright (C) 2010  rubikitch
 
 ;; Author: rubikitch <rubikitch@ruby-lang.org>
 ;; Keywords: lisp
-;; Package-Version: 20100515.1740
+;; Package-Version: 20170126.415
 ;; URL: http://www.emacswiki.org/cgi-bin/wiki/download/time-ext.el
 
 ;; This file is free software; you can redistribute it and/or modify

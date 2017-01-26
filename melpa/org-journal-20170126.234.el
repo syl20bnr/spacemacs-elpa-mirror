@@ -2,8 +2,8 @@
 
 ;; Author: Bastian Bechtold
 ;; URL: http://github.com/bastibe/org-journal
-;; Package-Version: 1.11.2
-;; Version: 1.11.2
+;; Package-Version: 20170126.234
+;; Version: 1.12.0
 
 ;; Adapted from http://www.emacswiki.org/PersonalDiary
 
@@ -92,7 +92,7 @@ org-journal. Use org-journal-file-format instead.")
 ; Customizable variables
 (defgroup org-journal nil
   "Settings for the personal journal"
-  :version "1.11.0"
+  :version "1.12.0"
   :group 'applications)
 
 (defface org-journal-highlight
@@ -182,6 +182,12 @@ to encrypt/decrypt it."
 See agenda tags view match description for the format of this."
   :type 'string :group 'org-journal)
 
+(defcustom org-journal-search-results-order-by :asc
+  "When :desc, make search results ordered by date descending
+
+Otherwise, date ascending."
+  :type 'symbol :group 'org-journal)
+
 ;; Automatically switch to journal mode when opening a journal entry file
 (setq org-journal-file-pattern
       (org-journal-format-string->regex org-journal-file-format))
@@ -206,6 +212,7 @@ See agenda tags view match description for the format of this."
 (define-key org-journal-mode-map (kbd "C-c C-f") 'org-journal-open-next-entry)
 (define-key org-journal-mode-map (kbd "C-c C-b") 'org-journal-open-previous-entry)
 (define-key org-journal-mode-map (kbd "C-c C-j") 'org-journal-new-entry)
+(define-key org-journal-mode-map (kbd "C-c C-s") 'org-journal-search)
 
 ;;;###autoload
 (eval-after-load "calendar"
@@ -663,7 +670,9 @@ org-journal-time-prefix."
                            (line-end-position)))
                  (res (list fname (line-number-at-pos) fullstr)))
             (push res results)))))
-    (reverse results)))
+    (cond
+     ((eql org-journal-search-results-order-by :desc) results)
+     (t (reverse results)))))
 
 (defun org-journal-search-print-results (str results period-start period-end)
   "Print search results using text buttons"

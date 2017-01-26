@@ -2,8 +2,8 @@
 
 ;; Author: Bastian Bechtold
 ;; URL: http://github.com/bastibe/org-journal
-;; Package-Version: 20170104.648
-;; Version: 1.11.4
+;; Package-Version: 1.12.0
+;; Version: 1.12.0
 
 ;; Adapted from http://www.emacswiki.org/PersonalDiary
 
@@ -92,7 +92,7 @@ org-journal. Use org-journal-file-format instead.")
 ; Customizable variables
 (defgroup org-journal nil
   "Settings for the personal journal"
-  :version "1.11.4"
+  :version "1.12.0"
   :group 'applications)
 
 (defface org-journal-highlight
@@ -212,6 +212,7 @@ Otherwise, date ascending."
 (define-key org-journal-mode-map (kbd "C-c C-f") 'org-journal-open-next-entry)
 (define-key org-journal-mode-map (kbd "C-c C-b") 'org-journal-open-previous-entry)
 (define-key org-journal-mode-map (kbd "C-c C-j") 'org-journal-new-entry)
+(define-key org-journal-mode-map (kbd "C-c C-s") 'org-journal-search)
 
 ;;;###autoload
 (eval-after-load "calendar"

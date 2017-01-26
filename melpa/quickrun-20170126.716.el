@@ -4,7 +4,7 @@
 
 ;; Author: Syohei YOSHIDA <syohex@gmail.com>
 ;; URL: https://github.com/syohex/emacs-quickrun
-;; Package-Version: 20170114.645
+;; Package-Version: 20170126.716
 ;; Version: 2.2.8
 ;; Package-Requires: ((emacs "24.3"))
 
@@ -383,7 +383,7 @@
 
     ("rust" . ((:command . "rustc")
                (:exec . ("%c %o -o %e %s" "%e %a"))
-               (:compile-only . "%c --no-trans --warn-unused-imports %o -o %e %s")
+               (:compile-only . "%c %o -o %e %s")
                (:remove . ("%e"))
                (:description . "Compile rust and execute")))
 
@@ -643,6 +643,14 @@ if you set your own language configuration.
         (process-send-region process (point-min) (point-max))
         (process-send-eof process)))))
 
+(defun quickrun--default-filter (proc output)
+  (with-current-buffer (process-buffer proc)
+    (read-only-mode -1)
+    (goto-char (point-max))
+    (let ((start (point)))
+      (insert output)
+      (ansi-color-apply-on-region start (point)))))
+
 (defun quickrun/exec (cmd-lst src mode)
   (if quickrun/run-in-shell
       (quickrun/send-to-shell cmd-lst)
@@ -655,6 +663,8 @@ if you set your own language configuration.
         (when (and (null rest-cmds) quickrun-input-file-extension)
           (let ((file (quickrun/stdin-file-name)))
             (quickrun/send-file-as-stdin process file)))
+        (when (eq outputter 'quickrun/default-outputter)
+          (set-process-filter process #'quickrun--default-filter))
         (set-process-sentinel process
                               (quickrun/make-sentinel rest-cmds outputter src mode))))))
 
@@ -691,7 +701,8 @@ if you set your own language configuration.
 
 (defun quickrun/send-to-shell (cmd-lst)
   (window-configuration-to-register :quickrun-shell)
-  (let ((buf (get-buffer quickrun/buffer-name)))
+  (let ((buf (get-buffer quickrun/buffer-name))
+        (win (selected-window)))
     (pop-to-buffer buf)
     (let ((cmd-str (quickrun/concat-commands cmd-lst))
           (eshell-buf (get-buffer quickrun/eshell-buffer-name))
@@ -703,7 +714,9 @@ if you set your own language configuration.
       (kill-buffer quickrun/buffer-name)
       (setq-local quickrun/shell-last-command cmd-str)
       (add-hook 'eshell-post-command-hook 'quickrun/eshell-post-hook)
-      (quickrun/insert-command cmd-str))))
+      (quickrun/insert-command cmd-str)
+      (unless quickrun-focus-p
+        (select-window win)))))
 
 (defsubst quickrun/default-directory ()
   (or quickrun-option-default-directory default-directory))
@@ -801,7 +814,6 @@ if you set your own language configuration.
     (recenter arg)))
 
 (defun quickrun/default-outputter ()
-  (ansi-color-apply-on-region (point-min) (point-max))
   (quickrun/recenter -1))
 
 (defun quickrun/outputter-multi-p (outputter)

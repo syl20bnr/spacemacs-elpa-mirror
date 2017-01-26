@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2016, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 7.0.4
-;; Package-Version: 20170125.1347
+;; Version: 7.0.6
+;; Package-Version: 20170126.432
 ;; Created: 10 Sep 2013
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, emulations, vim, ergoemacs
@@ -32,9 +32,9 @@
 
 ;; (add-to-list 'load-path "~/.emacs.d/lisp/")
 ;; (require 'xah-fly-keys)
-;; (xah-fly-keys 1)
 ;; (xah-fly-set-layout "qwerty") ; required if you use qwerty
 ;; (xah-fly-set-layout "dvorak")
+;; (xah-fly-keys 1)
 
 ;; --------------------------------------------------
 ;; HOW TO USE
@@ -2299,7 +2299,7 @@ Version 2017-01-21"
       *charstr
     (progn (xah--dvorak-to-qwerty *charstr))))
 
-(defun xah-fly--define-keys (*kmap-name *key-cmd-alist)
+(defun xah-fly--define-keys (*keymap-name *key-cmd-alist)
   "Map `define-key' over a alist *key-cmd-alist.
 Example usage:
 ;; (xah-fly--define-keys
@@ -2313,7 +2313,7 @@ Version 2017-01-21"
   (interactive)
   (mapc
    (lambda (-pair)
-     (define-key *kmap-name (xah-fly--key-char (kbd (car -pair))) (cdr -pair)))
+     (define-key *keymap-name (xah-fly--key-char (kbd (car -pair))) (cdr -pair)))
    *key-cmd-alist))
 
 
@@ -2917,8 +2917,8 @@ Version 2017-01-21"
      ("4" . split-window-below)
      ("5" . delete-char)
      ("6" . xah-select-block)
-     ("7" . delete-other-windows)
-     ("8" . delete-other-windows)
+     ("7" . xah-select-current-line)
+     ("8" . xah-extend-selection)
      ("9" . xah-select-text-in-quote)
      ("0" . xah-backward-punct)
 

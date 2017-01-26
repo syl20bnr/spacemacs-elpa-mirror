@@ -6,8 +6,8 @@
 ;; Original-Author: Joachim Mathes
 ;; Created: July 2009
 ;; Version: 0.2
-;; Package-Version: 20160719.212
-;; Package-Requires: ((emacs "24.4") (use-package))
+;; Package-Version: 20170126.112
+;; Package-Requires: ((emacs "24.4") (use-package "0"))
 ;; Keywords: typo3, typoscript
 ;; URL: https://github.com/ksjogo/typoscript-mode
 ;; EmacsWiki: TypoScriptMode

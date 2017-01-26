@@ -1,11 +1,11 @@
-;;;; sudo-ext.el --- sudo support
+;;; sudo-ext.el --- sudo support
 ;; Time-stamp: <2011-01-17 15:52:34 rubikitch>
 
 ;; Copyright (C) 2010  rubikitch
 
 ;; Author: rubikitch <rubikitch@ruby-lang.org>
 ;; Keywords: unix
-;; Package-Version: 20110116.2310
+;; Package-Version: 20170126.414
 ;; URL: http://www.emacswiki.org/cgi-bin/wiki/download/sudo-ext.el
 
 ;; This file is free software; you can redistribute it and/or modify

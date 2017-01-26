@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170119.859
+;; Package-Version: 20170126.145
 ;; Version: 0.8.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.8.0"))
 ;; Keywords: completion, matching
@@ -1686,7 +1686,7 @@ If non-nil, EXTRA-AG-ARGS string is appended to BASE-CMD."
       (let* ((args-end (string-match " -- " extra-ag-args))
              (file (if args-end
                        (substring-no-properties extra-ag-args (+ args-end 3))
-                     default-directory))
+                     ""))
              (extra-ag-args (if args-end
                                 (substring-no-properties extra-ag-args 0 args-end)
                               extra-ag-args))
@@ -1694,7 +1694,6 @@ If non-nil, EXTRA-AG-ARGS string is appended to BASE-CMD."
                              (concat extra-ag-args
                                      " -- "
                                      (shell-quote-argument regex)
-                                     " "
                                      file))))
         (if (file-remote-p default-directory)
             (split-string (shell-command-to-string ag-cmd) "\n" t)
