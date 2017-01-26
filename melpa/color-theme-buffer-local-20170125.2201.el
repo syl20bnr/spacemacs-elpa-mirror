@@ -2,12 +2,12 @@
 
 ;;; Name: color-theme-buffer-local
 ;;; Version: 0.0.3
-;; Package-Version: 20151012.1628
+;; Package-Version: 20170125.2201
 ;;; Author: Victor Borja <vic.borja@gmail.com>
 ;;; URL: http://github.com/vic/color-theme-buffer-local
 ;;; Description: Set color-theme by buffer.
 ;;; Keywords: faces
-;;; Package-Requires: ((color-theme))
+;;; Package-Requires: ((color-theme "0"))
 ;;; Dependencies: ((color-theme))
 
 

@@ -4,8 +4,8 @@
 
 ;; Author: GB Gardner <gbgar@users.noreply.github.com>
 ;; Version: 1.0
-;; Package-Version: 20161210.1223
-;; Package-Requires: ((company "0.9.0") (cl-lib "0.5") (parsebib "1.0") (regexp-opt))
+;; Package-Version: 20170125.2135
+;; Package-Requires: ((company "0.9.0") (cl-lib "0.5") (parsebib "1.0"))
 ;; Keywords: company-mode, bibtex
 ;; URL: https://github.com/gbgar/company-bibtex
 

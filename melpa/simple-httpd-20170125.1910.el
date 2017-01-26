@@ -4,7 +4,7 @@
 
 ;; Author: Christopher Wellons <wellons@nullprogram.com>
 ;; URL: https://github.com/skeeto/emacs-http-server
-;; Package-Version: 20170125.1327
+;; Package-Version: 20170125.1910
 ;; Version: 1.4.6
 ;; Package-Requires: ((cl-lib "0.3"))
 
@@ -642,7 +642,7 @@ if it failed to parse a complete HTTP header."
           (version (match-string 3))
           (headers ()))
       (setf (point) (match-end 0))
-      (while (looking-at "\\([-!#-'*+.0-9A-Z^_`a-z|~]++\\): *\\([^\r]+\\)\r\n")
+      (while (looking-at "\\([-!#-'*+.0-9A-Z^_`a-z|~]+\\): *\\([^\r]+\\)\r\n")
         (setf (point) (match-end 0))
         (let ((name (match-string 1))
               (value (match-string 2)))

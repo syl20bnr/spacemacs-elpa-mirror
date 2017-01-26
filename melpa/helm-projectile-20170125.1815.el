@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov
 ;; URL: https://github.com/bbatsov/helm-projectile
-;; Package-Version: 20170125.1439
+;; Package-Version: 20170125.1815
 ;; Created: 2011-31-07
 ;; Keywords: project, convenience
 ;; Version: 0.14.0
@@ -211,12 +211,12 @@ It is there because Helm requires it."
   :type '(alist :key-type string :value-type function))
 
 (defvar helm-source-projectile-projects
-  (helm-build-in-buffer-source "Projectile projects"
-    :data (lambda ()
-            (if (projectile-project-p)
-                (cons (abbreviate-file-name (projectile-project-root))
-                      (projectile-relevant-known-projects))
-              projectile-known-projects))
+  (helm-build-sync-source "Projectile projects"
+    :candidates (lambda ()
+                  (if (projectile-project-p)
+                      (cons (abbreviate-file-name (projectile-project-root))
+                            (projectile-relevant-known-projects))
+                    projectile-known-projects))
     :fuzzy-match helm-projectile-fuzzy-match
     :keymap helm-projectile-projects-map
     :mode-line helm-read-file-name-mode-line-string
@@ -489,7 +489,7 @@ CANDIDATE is the selected file.  Used when no file is explicitly marked."
   "Action for files.")
 
 (defvar helm-source-projectile-files-list
-  (helm-build-in-buffer-source "Projectile files"
+  (helm-build-sync-source "Projectile files"
     :candidates (lambda ()
                   (condition-case nil
                       (cl-loop with root = (projectile-project-root)
@@ -506,12 +506,12 @@ CANDIDATE is the selected file.  Used when no file is explicitly marked."
   "Helm source definition for Projectile files.")
 
 (defvar helm-source-projectile-files-in-all-projects-list
-  (helm-build-in-buffer-source "Projectile files in all Projects"
-    :data (lambda ()
-            (condition-case nil
-                (let ((projectile-require-project-root nil))
-                  (projectile-all-project-files))
-              (error nil)))
+  (helm-build-sync-source "Projectile files in all Projects"
+    :candidates (lambda ()
+                  (condition-case nil
+                      (let ((projectile-require-project-root nil))
+                        (projectile-all-project-files))
+                    (error nil)))
     :keymap helm-find-files-map
     :help-message 'helm-ff-help-message
     :mode-line helm-read-file-name-mode-line-string
@@ -560,7 +560,7 @@ CANDIDATE is the selected file.  Used when no file is explicitly marked."
   (run-hooks 'projectile-find-dir-hook))
 
 (defvar helm-source-projectile-directories-list
-  (helm-build-in-buffer-source "Projectile directories"
+  (helm-build-sync-source "Projectile directories"
     :candidates (lambda ()
                   (condition-case nil
                       (let ((dirs (if projectile-find-dir-includes-top-level
@@ -624,7 +624,7 @@ CANDIDATE is the selected file.  Used when no file is explicitly marked."
 (defvar helm-source-projectile-buffers-list (helm-make-source "Project buffers" 'helm-source-projectile-buffer))
 
 (defvar helm-source-projectile-recentf-list
-  (helm-build-in-buffer-source "Projectile recent files"
+  (helm-build-sync-source "Projectile recent files"
     :candidates (lambda ()
                   (condition-case nil
                       (helm-projectile--files-display-real (projectile-recentf-files)
@@ -702,7 +702,7 @@ With a prefix ARG invalidates the cache first."
          (files (projectile-select-files project-files)))
     (if (= (length files) 1)
         (find-file (expand-file-name (car files) (projectile-project-root)))
-      (helm :sources (helm-build-in-buffer-source "Projectile files"
+      (helm :sources (helm-build-sync-source "Projectile files"
                        :candidates (if (> (length files) 1)
                                        (helm-projectile--files-display-real files project-root)
                                      (helm-projectile--files-display-real project-files project-root))
@@ -732,8 +732,8 @@ Other file extensions can be customized with the variable `projectile-other-file
             (find-file (expand-file-name (car other-files) project-root))
           (progn
             (let* ((helm-ff-transformer-show-only-basename nil))
-              (helm :sources (helm-build-in-buffer-source "Projectile other files"
-                               :data (helm-projectile--files-display-real other-files project-root)
+              (helm :sources (helm-build-sync-source "Projectile other files"
+                               :candidates (helm-projectile--files-display-real other-files project-root)
                                :keymap (let ((map (copy-keymap helm-find-files-map)))
                                          (define-key map (kbd "<left>") 'helm-previous-source)
                                          (define-key map (kbd "<right>") 'helm-next-source)

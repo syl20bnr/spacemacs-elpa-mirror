@@ -3,7 +3,7 @@
 ;; Copyright (C) 2016 Jay Kamat
 ;; Author: Jay Kamat <github@jgkamat.33mail.com>
 ;; Version: 0.2.1
-;; Package-Version: 20170124.956
+;; Package-Version: 20170125.1720
 ;; Keywords: alda, highlight
 ;; URL: http://github.com/jgkamat/alda-mode
 ;; Package-Requires: ((emacs "24.0"))
@@ -32,7 +32,6 @@
 ;; If set to a string, alda-mode will use that binary instead of 'alda' on your path.
 ;; Ex: (setq alda-binary-location "/usr/local/bin/alda")
 ;; Ex: (setq alda-binary-location nil) ;; Use default alda location
-;;
 ;; alda-ess-keymap: Whether to add the default ess keymap.
 ;; If nil, alda-mode will not add the default ess keymaps.
 ;; Ex: (setq alda-ess-keymap nil) ;; before (require 'alda)
@@ -162,7 +161,7 @@ Because alda runs in the background, the only way to do this is with alda restar
 ;;; -- Font Lock Regexes --
 (let
   ;; Prevent regexes from taking up memory
-  ((alda-comment-regexp "\\(#.*$\\)")
+  ((alda-comment-regexp "\\(#.*$\\)\\|\\(?1:(comment\\_>\\)")
     (alda-instrument-regexp "\\([a-zA-Z]\\{2\\}[A-Za-z0-9_\-]*\\)\\(\s*\\(\"[A-Za-z0-9_\-]*\"\\)\\)?:")
     (alda-voice-regexp "\\([Vv][0-9]+\\):")
     (alda-string-regexp "“\\([^ ]+?\\)”")
@@ -180,7 +179,7 @@ Because alda runs in the background, the only way to do this is with alda restar
   (defvar alda-highlights nil
     "Font lock highlights for alda-mode")
   (setq alda-highlights
-    `((,alda-comment-regexp . (1 font-lock-comment-face) )
+    `((,alda-comment-regexp . (1 font-lock-comment-face))
        (,alda-bar-regexp . (1 font-lock-comment-face))
        (,alda-voice-regexp . (1 font-lock-function-name-face))
        (,alda-instrument-regexp . (1 font-lock-type-face))
