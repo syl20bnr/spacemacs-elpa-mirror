@@ -12,8 +12,8 @@ put the following in your emacs init file:
 
 (add-to-list 'load-path "~/.emacs.d/lisp/")
 (require 'xah-fly-keys)
-(xah-fly-set-layout "qwerty") ; required if you use qwerty
-(xah-fly-set-layout "dvorak")
+(xah-fly-keys-set-layout "qwerty") ; required if you use qwerty
+(xah-fly-keys-set-layout "dvorak")
 (xah-fly-keys 1)
 
 --------------------------------------------------

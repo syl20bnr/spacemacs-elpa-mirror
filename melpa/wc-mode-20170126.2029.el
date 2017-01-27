@@ -3,8 +3,8 @@
 ;; Author: Benjamin Beckwith
 ;; Created: 2010-6-19
 ;; Version: 1.3
-;; Package-Version: 20161031.648
-;; Last-Updated: 2010-6-19
+;; Package-Version: 20170126.2029
+;; Last-Updated: 2016-10-31
 ;; URL: https://github.com/bnbeckwith/wc-mode
 ;; Keywords:
 ;; Compatability:

@@ -9,3 +9,6 @@ To use it, add to your init.el:
 You want to use flow in conjunction with other JS checkers.
 E.g. to use with gjslint, add this to your init.el
 (flycheck-add-next-checker 'javascript-gjslint 'javascript-flow)
+
+For coverage warnings add this to your init.el
+(flycheck-add-next-checker 'javascript-flow 'javascript-flow-coverage)

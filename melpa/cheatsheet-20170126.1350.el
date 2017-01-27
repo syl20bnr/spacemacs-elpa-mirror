@@ -4,7 +4,7 @@
 ;;
 ;; Author: Shirin Nikita <shirin.nikita@gmail.com> and contributors
 ;; URL: http://github.com/darksmile/cheatsheet/
-;; Package-Version: 20170124.330
+;; Package-Version: 20170126.1350
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Version: 1.0
 ;; Keywords: convenience, usability
@@ -126,8 +126,13 @@
                               :cheats (cheatsheet--get-group group))))
     (mapcar #'make-group (cheatsheet--cheat-groups))))
 
+;;;###autoload
 (defun cheatsheet-add-group (group &rest cheats)
-  (mapcar '(lambda (cheat) (append `(:group ,group) cheat)) cheats))
+  "Add cheats to the same group."
+  (mapcar #'(lambda (cheat)
+              (apply 'cheatsheet-add
+                     (append `(:group ,group) cheat)))
+          cheats))
 
 ;;;###autoload
 (defun cheatsheet-show ()
