@@ -25,7 +25,7 @@ Important command/insert mode switch keys:
 
 xah-fly-command-mode-activate (press 【<home>】 or 【F8】 or 【Alt+Space】 or 【menu】)
 
-xah-fly-insert-mode-activate  (when in command mode, press letter 【f】 key)
+xah-fly-insert-mode-activate  (when in command mode, press qwerty letter key f. (Dvorak key u))
 
 When in command mode:
 【f】 (or Dvorak 【u】) activates insertion mode.

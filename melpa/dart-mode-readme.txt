@@ -11,3 +11,9 @@ Known bugs:
 * Sexp movement doesn't properly ignore quotes in interpolation.
 * Methods using "=>" can cause indentation woes.
 * C and C++ modes seem to be hosed.
+
+Definitions adapted from go-mode.el are
+
+gofmt-command gofmt-args gofmt-show-errors gofmt go--apply-rcs-patch
+gofmt--kill-error-buffer gofmt--process-errors gofmt-before-save
+go--goto-line go--delete-whole-line
