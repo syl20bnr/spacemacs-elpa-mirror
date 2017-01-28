@@ -11,8 +11,8 @@
 ;;	Marius Vollmer <marius.vollmer@gmail.com>
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 
-;; Package-Requires: ((emacs "24.4") (dash "2.13.0") (with-editor "2.5.9"))
-;; Package-Version: 2.10.0
+;; Package-Requires: ((emacs "24.4") (dash "20161121.55") (with-editor "20170111.609"))
+;; Package-Version: 20170128.745
 ;; Keywords: git tools vc
 ;; Homepage: https://github.com/magit/magit
 
@@ -180,6 +180,7 @@ The major mode configured here is turned on by the minor mode
              git-commit-turn-on-auto-fill
              git-commit-turn-on-flyspell
              git-commit-propertize-diff
+             bug-reference-mode
              with-editor-usage-message))
 
 (defcustom git-commit-finish-query-functions
@@ -408,7 +409,7 @@ already using it, then you probably shouldn't start doing so."
                                                (regexp-quote buffer-file-name)
                                                "\\'")
                                        git-commit-major-mode))))
-      (normal-mode)))
+      (normal-mode t)))
   (setq with-editor-show-usage nil)
   (with-editor-mode 1)
   (add-hook 'with-editor-finish-query-functions

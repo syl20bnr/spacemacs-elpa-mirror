@@ -1,10 +1,10 @@
 ;;; clomacs.el --- Simplifies Emacs Lisp interaction with Clojure. -*- lexical-binding: t -*-
 
-;; Copyright (C) 2013-2016 Kostafey <kostafey@gmail.com>
+;; Copyright (C) 2013-2017 Kostafey <kostafey@gmail.com>
 
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/clojure-emacs/clomacs
-;; Package-Version: 20161227.131
+;; Package-Version: 20170128.708
 ;; Keywords: clojure, interaction
 ;; Version: 0.0.2
 ;; Package-Requires: ((emacs "24.3") (cider "0.11") (s "1.10.0"))
@@ -292,15 +292,13 @@ or it may be a custom function (:string by default)."
        (progn
          (clomacs-ensure-nrepl-run ,lib-name)
          (let* ((connection (clomacs-get-connection ,lib-name))
-                (session (clomacs-get-session connection))
                 (result
                  (nrepl-sync-request:eval
                   (concat
                    (if ',namespace
                        (concat "(require '" ',namespace-str ") ") "")
                    ',cl-entity-full-name)
-                  connection
-                  session)))
+                  connection)))
            (clomacs-get-result result :value ',type ',namespace)))
        ,doc)))
 
@@ -336,7 +334,6 @@ RETURN-VALUE may be :value or :stdout (:value by default)."
            (setq attrs (concat attrs " "
                                (clomacs-format-arg a))))
          (let* ((connection (clomacs-get-connection ,lib-name))
-                (session (clomacs-get-session connection))
                 (request (concat
                           (if ',namespace
                               (concat "(require '" ',namespace-str ") ") "")
@@ -351,13 +348,11 @@ RETURN-VALUE may be :value or :stdout (:value by default)."
                                         ,return-value ',return-type ',namespace)))
                         (if el-result
                             (,callback el-result)))))
-                connection
-                session)
+                connection)
              (clomacs-get-result
               (nrepl-sync-request:eval
                request
-               connection
-               session)
+               connection)
               ,return-value ',return-type ',namespace)))))))
 
 (defun clomacs-load-file (file-path)

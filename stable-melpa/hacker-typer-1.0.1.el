@@ -3,12 +3,12 @@
 ;; Copyright (C) 2017 by Diego A. Mundo
 ;; Author: Diego A. Mundo <diegoamundo@gmail.com>
 ;; URL: http://github.com/therockmandolinist/emacs-hacker-typer
-;; Package-Version: 20170127.1614
+;; Package-Version: 1.0.1
 ;; Git-Repository: git://github.com/therockmandolinist/emacs-hacker-typer.git
 ;; Created: 2016-01-20
-;; Version: 0.1.5
+;; Version: 1.0.0
 ;; Keywords: hacker typer multimedia games
-;; Package-Requires: ((cl-lib "0.5"))
+;; Package-Requires: ((async "20161103.1036"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -28,9 +28,14 @@
 
 ;;; Commentary:
 
+;; This package provides a customizable implementation of hackertyper.com in
+;; Emacs for your amusement. It opens a buffer in which typing any letter
+;; inserts a piece of a specified or randomly chosen script. It can also pull
+;; up a picture of "hackerman" on command.
+
 ;;; Code:
 
-(require 'cl-lib)
+(require 'async)
 
 (defcustom hacker-typer-show-hackerman nil
   "If t, show hackerman on calling `hacker-typer'."
@@ -38,13 +43,13 @@
   :type 'boolean)
 
 (defcustom hacker-typer-data-dir
-  (cl-flet ((var (file dir) (expand-file-name (convert-standard-filename file)
-                                              dir)))
-    (if (require 'no-littering nil t)
-        (progn
-          (make-directory (var "hacker-typer/" no-littering-var-directory) t)
-          (var "hacker-typer/" no-littering-var-directory))
-      (var "hacker-typer/" user-emacs-directory)))
+  (let* ((parent-dir (if (require 'no-littering nil t)
+                         no-littering-var-directory
+                       user-emacs-directory))
+         (std-dir (expand-file-name (convert-standard-filename "hacker-typer/")
+                                    parent-dir)))
+    (make-directory std-dir t)
+    std-dir)
   "Directory in which to store ‘hacker-typer’ files.
 
 If no-littering is installed, defaults to
@@ -119,7 +124,9 @@ amusing picture of Rami Malek as \"hackerman\".
 
 With prefix argument ARG, prompt for a file to type."
   (interactive "P")
-  (let* ((hack-file (if arg (read-file-name "Choose file: ")
+  (let* ((hack-file (if arg
+                        (hacker-typer--chose-file
+                         (read-file-name "Choose file: "))
                       (hacker-typer--choose-file)))
          (hacker-typer-buffer-name (file-name-nondirectory hack-file))
          (mycharset "0123456789abcdefghijklmnopqrstuvwxyz")
@@ -165,7 +172,7 @@ With prefix argument ARG, prompt for a file to type."
 
 ;;;###autoload
 (defun hacker-typer-quit ()
-  "Kill hacker-typer buffers."
+  "Kill ‘hacker-typer’ buffers."
   (interactive)
   (when (get-buffer hacker-typer--previous-buffer)
     (kill-buffer hacker-typer--previous-buffer))
@@ -211,7 +218,7 @@ With prefix argument ARG, prompt for a file to type."
         (inhibit-message t))
     ;; If file doesn't exist, get it.
     (unless (file-exists-p hacker-file)
-      (url-copy-file "http://i.imgur.com/hpV2qGim.png" hacker-file t))
+      (url-copy-file "http://i.imgur.com/hpV2qGil.png" hacker-file t))
     ;; Print file url to buffer and turn on iimage-mode
     (with-output-to-temp-buffer "*hackerman*"
       (princ (concat "file://" hacker-file)))
@@ -227,9 +234,20 @@ With prefix argument ARG, prompt for a file to type."
       (other-window 1)
       (delete-other-windows))))
 
+;;;###autoload
+(defalias 'hackerman 'hacker-typer-hackerman)
+
+;;;###autoload
+(defun hacker-typer-clear-cache ()
+  "Delete all data in `hacker-typer-data-dir'."
+  (interactive)
+  (dolist (f (directory-files hacker-typer-data-dir t))
+    (unless (file-directory-p f)
+      (delete-file f))))
+
 ;; utils
 (defun hacker-typer--insert-contents (filename)
-  "Insert contents from FILENAME into hacker-typer buffer."
+  "Insert contents from FILENAME into ‘hacker-typer’ buffer."
   (let* ((rate-range (apply 'number-sequence hacker-typer-random-range))
          (inc-amount (if (eq hacker-typer-type-rate 'random)
                          (elt rate-range (random (length rate-range)))
@@ -240,7 +258,7 @@ With prefix argument ARG, prompt for a file to type."
     (setq hacker-typer--end (+ hacker-typer--start inc-amount))))
 
 (defun hacker-typer--set-mode (buffer-name)
-  "Set major mode for hacker-typer buffer named BUFFER-NAME based on buffer extension."
+  "Set major mode for ‘hacker-typer’ buffer named BUFFER-NAME based on buffer extension."
   (let ((name buffer-name)
         (mode nil))
     ;; Remove backup-suffixes from file name.
@@ -269,33 +287,39 @@ With prefix argument ARG, prompt for a file to type."
       (when mode
         (set-auto-mode-0 mode 'keep-mode-if-same)))))
 
-(defun hacker-typer--choose-file ()
-  "Randomly choose file from `hacker-typer-files', downloading if necessary."
-  (let* ((file-url (elt hacker-typer-files
-                        (random (length hacker-typer-files))))
+(defun hacker-typer--choose-file (&optional filename)
+  "Randomly choose file from `hacker-typer-files'.
+
+Downloads file and removes comments when necessary. If FILENAME
+is provided, use that file instead."
+  (let* ((file-url (if filename
+                       (concat "file://" (expand-file-name filename))
+                     (elt hacker-typer-files
+                          (random (length hacker-typer-files)))))
          (base-name (file-name-nondirectory file-url))
          (base-name-nc (concat "no-comment-" base-name))
          (hacker-file (concat hacker-typer-data-dir base-name))
-         (hacker-file-nc (concat hacker-typer-data-dir base-name-nc))
-         (inhibit-redisplay t))
+         (hacker-file-nc (concat hacker-typer-data-dir base-name-nc)))
     ;; If file doesn't exist, get it
-    (unless (file-exists-p hacker-file)
+    (unless (or hacker-typer-remove-comments (file-exists-p hacker-file))
       (url-copy-file file-url hacker-file t))
     ;; If remove-comments is on and uncommented file doesn't exist, get it.
     (unless (or (not hacker-typer-remove-comments)
                 (file-exists-p hacker-file-nc))
       (url-copy-file file-url hacker-file-nc t)
-      (find-file hacker-file-nc)
       ;; remove comments
-      (goto-char (point-min))
-      (let (kill-ring)
-        (comment-kill (count-lines (point-min) (point-max))))
-      ;; remove awkward newlines
-      (goto-char (point-min))
-      (while (re-search-forward "\n\n+" nil t) (replace-match "\n\n"))
-      ;; save an dkill
-      (save-buffer)
-      (kill-buffer base-name-nc))
+      (async-start
+       (lambda ()
+         (find-file hacker-file-nc)
+         (goto-char (point-min))
+         (let (kill-ring)
+           (comment-kill (count-lines (point-min) (point-max))))
+         ;; remove awkward newlines
+         (goto-char (point-min))
+         (while (re-search-forward "\n\n+" nil t) (replace-match "\n\n"))
+         ;; save and kill
+         (save-buffer))
+       'ignore))
     ;; return appropriate file name.
     (if hacker-typer-remove-comments
         hacker-file-nc
