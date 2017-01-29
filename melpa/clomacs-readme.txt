@@ -219,7 +219,7 @@ Handle errors. Handle difference between CIDER versions."
   (concat "\"" str "\""))
 
 (cl-defun clomacs-prepare-vars (cl-entity-name
-                                &optional &key
+                                &key
                                 (doc nil)
                                 (return-type :string)
                                 namespace)
@@ -245,7 +245,7 @@ Handle errors. Handle difference between CIDER versions."
 ###autoload
 (cl-defmacro clomacs-def (el-entity-name
                           cl-entity-name
-                          &optional &key
+                          &key
                           (doc nil)
                           (type :string)
                           lib-name
@@ -277,7 +277,7 @@ or it may be a custom function (:string by default)."
 ###autoload
 (cl-defmacro clomacs-defun (el-func-name
                             cl-func-name
-                            &optional &key
+                            &key
                             (call-type :sync)
                             (callback nil)
                             (doc nil)

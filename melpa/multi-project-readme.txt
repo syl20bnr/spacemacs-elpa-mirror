@@ -16,8 +16,9 @@ C-xpa - Anchor a project          Stores the project to be retrieved via
                                   multi-project-anchored
 C-xpg - Run grep-find             Runs grep-find at project top
 C-xpu - Resets the anchor         Clears out the multi-project-anchored var
-C-xpl - Last project from Anchor  Jumps to the project stored via the anchor
+C-xpl - Last project from anchor  Jumps to the project stored via the anchor
 C-xpp - Present project           Displays current project
+C-xpv - Vist current project      Visits current project
 C-xpf - Find project files        Interactively find project files
 C-xpn - Add a new project         Prompts for new project information
 C-xpr - Go to project root        Displays the project root
