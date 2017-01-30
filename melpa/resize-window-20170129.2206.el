@@ -5,7 +5,7 @@
 ;; Author: Dan Sutton  <danielsutton01@gmail.com>
 ;; Maintainer: Dan Sutton  <danielsutton01@gmail.com>
 ;; URL: https://github.com/dpsutton/resize-mode
-;; Package-Version: 20160511.2005
+;; Package-Version: 20170129.2206
 
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24"))
@@ -26,20 +26,20 @@
 ;; <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; Easily allows you to resize windows. Rather than guessing that you
+;; Easily allows you to resize windows.  Rather than guessing that you
 ;; want `C-u 17 C-x {`, you could just press FFff, which enlarges 5
-;; lines, then 5 lines, then one and then one. The idea is that the
+;; lines, then 5 lines, then one and then one.  The idea is that the
 ;; normal motions n,p,f,b along with r for reset and w for cycling
-;; windows allows for super simple resizing of windows. All of this is
+;; windows allows for super simple resizing of windows.  All of this is
 ;; inside of a while loop so that you don't have to invoke more chords
 ;; to resize again, but just keep using standard motions until you are
 ;; happy.
 
-;; All of the work is done inside of resize-window. Its just a while
+;; All of the work is done inside of resize-window.  Its just a while
 ;; loop that keeps looping over character input until it doesn't
-;; recognize an option or an allowable capital. The dispatch alist has
+;; recognize an option or an allowable capital.  The dispatch alist has
 ;; a character code to look for, a function to invoke, a string for
-;; display and whether to match against capital letters. If so, it is
+;; display and whether to match against capital letters.  If so, it is
 ;; invoked with the default capital argument rather than the default
 ;; argument.
 
@@ -103,6 +103,9 @@ should return the fine adjustment (default 1)."
     (?r resize-window--reset-windows         " Resize - reset window layout" nil)
     (?w resize-window--cycle-window-positive " Resize - cycle window" nil)
     (?W resize-window--cycle-window-negative " Resize - cycle window" nil)
+    (?2 split-window-below " Split window horizontally" nil)
+    (?3 split-window-right " Slit window vertically" nil)
+    (?0 resize-window--delete-window " Delete window" nil)
     (?? resize-window--display-menu          " Resize - display menu" nil))
   "List of actions for `resize-window-dispatch-default.
 Main data structure of the dispatcher with the form:
@@ -125,30 +128,48 @@ overridden in tests to test the output of message."
 (defun resize-window--match-alias (key)
   "Taken the KEY or keyboard selection from `read-key` check for alias.
 Match the KEY against the alias table.  If found, return the value that it
-points to, which should be a key in the resize-window-dispatch-alist.
+points to, which should be a key in the ‘resize-window-dispatch-alist’.
 Otherwise, return the key."
   (let ((alias (assoc key resize-window-alias-list)))
     (if alias
         (car (cdr alias))
       key)))
 
+(defun resize-window--choice-keybinding (choice)
+  "Get the keybinding associated with CHOICE."
+  (car choice))
+
+(defun resize-window--choice-documentation (choice)
+  "Get the documentation associated with CHOICE."
+  (car (cdr (cdr choice))))
+
+(defun resize-window--choice-lambda (choice)
+  "Get the lambda associated with CHOICE."
+  (car (cdr choice)))
+
+(defun resize-window--allows-capitals (choice)
+  "To save time typing, we will tell whether we allow capitals for scaling.
+To do so, we check to see whether CHOICE allows for capitals by
+checking its last spot in the list for whether it is true or
+nil."
+  (car (last choice)))
+
 (defun resize-window--display-choice (choice)
   "Formats screen message about CHOICE.
 CHOICE is a \(key function description allows-capital\)."
-  (format "%s: %s " (if (resize-window--allows-capitals choice)
-                        (format "%s|%s"
-                                (string (car choice))
-                                (string (- (car choice) 32)))
-                      (string (car choice)))
-          (car (cdr (cdr choice)))))
+  (let ((key (resize-window--choice-keybinding choice)))
+    (format "%s: %s " (if (resize-window--allows-capitals choice)
+                          (format "%s|%s"
+                                  (string key)
+                                  (string (- key 32)))
+                        (string key))
+            (resize-window--choice-documentation choice))))
 
 (defun resize-window--get-documentation-strings ()
-  "Get all documentation strings for display."
-  (let ((documentation ""))
-    (dolist (choice resize-window-dispatch-alist)
-      (setq documentation
-            (concat (resize-window--display-choice choice) "\n" documentation)))
-    documentation))
+  (reduce (lambda (c1 c2)
+            (concat c1 c2 "\n"))
+          (mapcar 'resize-window--display-choice
+                  resize-window-dispatch-alist)))
 
 (defun resize-window--make-background ()
   "Place a background over the current window."
@@ -164,20 +185,13 @@ CHOICE is a \(key function description allows-capital\)."
   "Given a CHOICE, grab values out of the alist.
 If SCALED, then call action with the resize-window-capital-argument."
   ;; (char function description)
-  (let ((action (cadr choice))
-        (description (car (cdr (cdr choice)))))
+  (let ((action (resize-window--choice-lambda choice))
+        (description (resize-window--choice-documentation choice)))
     (if scaled
         (funcall action (resize-window-uppercase-argument))
       (funcall action))
-    (unless (equal (car choice) ??)
+    (unless (equal (resize-window--choice-keybinding choice) ??)
       (resize-window--notify "%s" description))))
-
-(defun resize-window--allows-capitals (choice)
-  "To save time typing, we will tell whether we allow capitals for scaling.
-To do so, we check to see whether CHOICE allows for capitals by
-checking its last spot in the list for whether it is true or
-nil."
-  (car (last choice)))
 
 ;;;###autoload
 (defun resize-window ()
@@ -193,7 +207,7 @@ to enlarge right."
     (while reading-characters
       (let* ((char (resize-window--match-alias (read-key)))
              (choice (assoc char resize-window-dispatch-alist))
-             (capital (when (numberp char) 
+             (capital (when (numberp char)
                         (assoc (+ char 32) resize-window-dispatch-alist))))
         (cond
          (choice (resize-window--execute-action choice))
@@ -246,6 +260,11 @@ If no SIZE is given, extend by `resize-window-default-argument`"
 (defun resize-window--display-menu ()
   "Display menu in minibuffer."
   (resize-window--notify "%s" (resize-window--get-documentation-strings)))
+
+(defun resize-window--delete-window ()
+  (delete-overlay resize-window--background-overlay)
+  (delete-window)
+  (setq resize-window--background-overlay (resize-window--make-background)))
 
 (provide 'resize-window)
 ;;; resize-window.el ends here

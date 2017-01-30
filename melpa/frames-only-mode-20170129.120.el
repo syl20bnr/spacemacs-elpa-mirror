@@ -3,8 +3,8 @@
 ;; Copyright (C) 2015 Free Software Foundation, Inc.
 
 ;; Author: David Shepherd <davidshepherd7@gmail.com>
-;; Version: 0.0.0
-;; Package-Version: 20170123.1127
+;; Version: 1.0.0
+;; Package-Version: 20170129.120
 ;; Package-Requires: ((emacs "24.4") (seq "2.3"))
 ;; Keywords: frames, windows
 ;; URL: https://github.com/davidshepherd7/frames-only-mode

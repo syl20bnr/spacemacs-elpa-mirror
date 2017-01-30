@@ -2,7 +2,7 @@
 
 ;; Author: stardiviner <numbchild@gmail.com>
 ;; Keywords: inline docs overlay
-;; Package-Version: 20170127.1828
+;; Package-Version: 20170129.717
 ;; URL: https://github.com/stardiviner/inline-docs.el
 ;; Created: 20th Jan 2017
 ;; Version: 1.0.1
@@ -113,8 +113,8 @@ Set `inline-docs-position' to `up' to fix issue that `inline-docs' does not show
           (inline-docs--clear-overlay)
           ;; decide overlay positions
           (cl-case inline-docs-position
-            ('up (forward-line 0))
-            ('down (forward-line)))
+            ('above (forward-line 0))
+            ('below (forward-line)))
           (setq start-pos (point))
           (end-of-line)
           (setq end-pos (point))
