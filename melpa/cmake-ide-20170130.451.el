@@ -4,7 +4,7 @@
 
 ;; Author:  Atila Neves <atila.neves@gmail.com>
 ;; Version: 0.5
-;; Package-Version: 20161229.138
+;; Package-Version: 20170130.451
 ;; Package-Requires: ((emacs "24.1") (cl-lib "0.5") (seq "1.11") (levenshtein "0"))
 ;; Keywords: languages
 ;; URL: http://github.com/atilaneves/cmake-ide
@@ -148,6 +148,13 @@
   "Location of rdm executable."
   :group 'rtags
   :type 'file)
+
+(defcustom cmake-ide-rdm-rc-path
+  ""
+  "Location of a custom rdm run control file."
+  :group 'cmake-ide
+  :type 'string
+  :safe #'stringp)
 
 (defcustom cmake-ide-src-extensions
   '(".c" ".cpp" ".C" ".cxx" ".cc")
@@ -935,7 +942,8 @@ the object file's name just above."
       (let ((buf (get-buffer-create cmake-ide-rdm-buffer-name)))
         (cmake-ide--message "Starting rdm server")
         (with-current-buffer buf (start-process "rdm" (current-buffer)
-                                                cmake-ide-rdm-executable))))))
+                                                cmake-ide-rdm-executable
+                                                "-c" cmake-ide-rdm-rc-path))))))
 
 (defun cmake-ide--process-running-p (name)
   "If a process called NAME is running or not."
