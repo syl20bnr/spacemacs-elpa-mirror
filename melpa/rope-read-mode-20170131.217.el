@@ -10,7 +10,7 @@
 ;; Maintainer: Marco Wahl <marcowahlsoft@gmail.com>
 ;; Created: 4 Jan 2015
 ;; Version: See git tag.
-;; Package-Version: 20161003.610
+;; Package-Version: 20170131.217
 ;; Keywords: reading, convenience, chill
 ;; URL: https://github.com/marcowahl/rope-read-mode
 
@@ -68,7 +68,7 @@
 
 ;;   - Find the start of the next line easily.
 
-;;   - Avoid stressful eye movement.
+;;   - Avoid flurry eye movement.
 
 ;; - Have an alternative view on text.
 

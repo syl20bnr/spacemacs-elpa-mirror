@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Sven Keidel
 
 ;; Author: Sven Keidel <svenkeidel@gmail.com>
-;; Package-Version: 20160914.1324
+;; Package-Version: 20170131.241
 ;; Package-X-Original-Version: 0.1
 ;; Package-Requires: ((dash "2.12.1") (s "1.10.0"))
 ;; Homepage: https://github.com/travisbhartwell/nix-emacs
@@ -59,7 +59,7 @@ e.g. /home/user/.nix-defexpr/channels/unstable/nixpkgs"
 ;;;###autoload
 (defun nix-shell-command (sandbox &rest args)
   "Assemble a command from ARGS that can be executed in the specified SANDBOX."
-  (list "sh" "-c" (format "source %s; %s" (nix-sandbox-rc sandbox) (s-join " " args))))
+  (list "bash" "-c" (format "source %s; %s" (nix-sandbox-rc sandbox) (s-join " " args))))
 
 (defun nix-shell-string (sandbox &rest args)
   "Assemble a command string from ARGS that can be executed in the specifed SANDBOX."

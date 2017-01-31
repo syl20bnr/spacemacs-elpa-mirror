@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/tarsius/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 20170122.357
+;; Package-Version: 20170122.942
 
 ;; This file is not part of GNU Emacs.
 
@@ -69,7 +69,7 @@
 
 ;; * File names
 ;;
-;; 1. File names are based on the name of the respective Emacs lisp
+;; 1. File names are based on the name of the respective Emacs Lisp
 ;;    variables and the name of the respective Emacs package.
 ;;
 ;; 2. The name of the respective Emacs package should serve as the
@@ -98,11 +98,11 @@
 ;;
 ;; 2. If a package has multiple data (or config files), then those files
 ;;    are placed in a subdirectory of `no-littering-var-directory` (or
-;;    `no-littering-var-directory`).
+;;    `no-littering-etc-directory`).
 ;;
 ;; 3. If a subdirectory is used for a package's data (or config) file
 ;;    variables, then the name of the directory should match the name of
-;;    the package in most cases. The subdirectory name may serve as the
+;;    the package in most cases.  The subdirectory name may serve as the
 ;;    package prefix of the file name.
 ;;
 ;; 4. A package that provides a "framework" for other packages to use,

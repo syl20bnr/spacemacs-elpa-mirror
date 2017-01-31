@@ -15,7 +15,7 @@
 
 ;; Author: Chunyang Xu <xuchunyang.me@gmail.com>
 ;; URL: https://github.com/xuchunyang/grab-mac-link.el
-;; Package-Version: 20170129.2350
+;; Package-Version: 20170131.254
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: Markdown, mac, hyperlink
@@ -52,16 +52,21 @@
 ;; - markdonw: [Wikipedia](https://www.wikipedia.org/)
 ;; - org:      [[https://www.wikipedia.org/][Wikipedia]]
 ;;
-;; To use, type M-x grab-mac-link or call `grab-mac-link' from lisp
+;; To use, type M-x grab-mac-link or call `grab-mac-link' from Lisp
 ;;
 ;;   (grab-mac-link APP &optional LINK-TYPE)
 
 ;;; Code:
 
+(declare-function org-add-link-type "org-compat" (type &optional follow export))
+(declare-function org-make-link-string "org" (link &optional description))
+
+(defvar org-stored-links)
+
 (defun grab-mac-link-split (as-link)
   (split-string as-link "::split::"))
 
-(defun grab-mac-link-make-plain-link (url name)
+(defun grab-mac-link-make-plain-link (url _name)
   url)
 
 (defvar grab-mac-link-org-setup-p nil)
@@ -310,8 +315,8 @@ or nil, plain link will be used."
       (if current-prefix-arg
           (if (eq link-type 'org)
               (let* ((res (funcall grab-link-func))
-                     (link (first res))
-                     (desc (second res)))
+                     (link (car res))
+                     (desc (cadr res)))
                 (push (list link desc) org-stored-links))
             (kill-new link))
         (insert link)))
