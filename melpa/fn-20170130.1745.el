@@ -4,8 +4,8 @@
 
 ;; Author: Troy Pracy
 ;; Keywords: functional
-;; Package-Version: 20161101.527
-;; Version: 0.1.1
+;; Package-Version: 20170130.1745
+;; Version: 0.1.2
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5") (dash "2.12.1") (dash-functional "1.2.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -51,7 +51,7 @@ If applied to a literal, creates a constant function, or equivalently, a thunk
 
 Examples:
 
-  (-map (fn (* <> <>)) (number-sequence 0 10))
+  (-map (fn (* <1> <1>)) (number-sequence 0 10))
   ;; (0 1 4 9 16 25 36 49 64 81 100)
 
   (-map (fn (/ (-sum <>)
@@ -81,9 +81,8 @@ Examples:
                                                       numbered-placeholders)
                                          -1)))
          bindings)
-    (cl-assert (not (and symbolic-vars-used numbered-vars-used))
-               nil
-               "Numbered placeholders <n> should not be combined with <>.")
+    (when (and symbolic-vars-used numbered-vars-used)
+      (error "Numbered placeholders <n> should not be combined with <>."))
     (when (member '<rest> symbols)
       (!cons (list '<rest>
                    (case highest-index-used
@@ -114,15 +113,16 @@ Examples:
 Intended for inline use where concision is desired.  If creating a function to
 bind as a function value, use `lambda' or `-lambda'.
 
-The definition BODY may use the anaphoric parameter <> for the sole argument,
-order <1> ... <9> to refer to multiple positional arguments. The parameter
-<rest> refers to a list containing the (n+1)st and later arguments,where <n> is
-the highest numerical parameter supplied.
+Identical to `fn' except that BODY is automatically parenthesized.
 
+The definition BODY may use the anaphoric parameter <> for the sole argument,
+or <1> ... <9> to refer to multiple positional arguments. The parameter
+<rest> refers to a list containing the (n+1)st and later arguments, where <n> is
+the highest numerical parameter supplied.
 
 Examples:
 
-  (-map (fn: * <> <>) (number-sequence 0 10))
+  (-map (fn: * <1> <1>) (number-sequence 0 10))
   ;; (0 1 4 9 16 25 36 49 64 81 100)
 
   (-filter (fn: > <> 0)
@@ -141,9 +141,8 @@ Examples:
                                                       numbered-placeholders)
                                          -1)))
          bindings)
-    (cl-assert (not (and symbolic-vars-used numbered-vars-used))
-               nil
-               "Numbered placeholders <n> should not be combined with <>.")
+    (when (and symbolic-vars-used numbered-vars-used)
+      (error "Numbered placeholders <n> should not be combined with <>."))
     (when (member '<rest> symbols)
       (!cons (list '<rest>
                    (case highest-index-used

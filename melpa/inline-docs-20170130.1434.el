@@ -2,7 +2,7 @@
 
 ;; Author: stardiviner <numbchild@gmail.com>
 ;; Keywords: inline docs overlay
-;; Package-Version: 20170129.717
+;; Package-Version: 20170130.1434
 ;; URL: https://github.com/stardiviner/inline-docs.el
 ;; Created: 20th Jan 2017
 ;; Version: 1.0.1
@@ -47,17 +47,17 @@ Set `inline-docs-position' to `up' to fix issue that `inline-docs' does not show
 
 (defcustom inline-docs-border-symbol ?―
   "Specify symbol for inline-docs border."
-  :type 'integer
+  :type 'character
   :group 'inline-docs)
 
 (defcustom inline-docs-prefix-symbol ?\s
   "Specify symbol for inline-docs prefix."
-  :type 'integer
+  :type 'character
   :group 'inline-docs)
 
 (defcustom inline-docs-indicator-symbol "➜"
   "Specify symbol for inline-docs indicator."
-  :type 'string
+  :type 'character
   :group 'inline-docs)
 
 (defface inline-docs-face
@@ -134,6 +134,7 @@ Set `inline-docs-position' to `up' to fix issue that `inline-docs' does not show
           (overlay-put inline-docs-overlay 'before-string str))
       (add-hook 'post-command-hook 'inline-docs--clear-overlay))))
 
+;;;###autoload
 (defun inline-docs-display-docs-momentary (format-string &rest args)
   "Display inline docs FORMAT-STRING under point with extra ARGS."
   (when format-string

@@ -4,9 +4,10 @@
 
 ;; Author: Aaron Jacobs <atheriel@gmail.com>
 ;; URL: https://github.com/atheriel/org-clock-csv
-;; Package-Version: 20160906.1047
-;; Keywords: org
+;; Package-Version: 20170130.2117
+;; Keywords: calendar, data, org
 ;; Version: 1.0
+;; Package-Requires: ((org "8.3"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -40,6 +41,9 @@
 (require 'org)
 (require 'org-agenda)
 (require 'org-element)
+
+(eval-when-compile
+  (require 'cl-lib))
 
 ;;;; Configuration options:
 

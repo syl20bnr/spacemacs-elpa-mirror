@@ -5,10 +5,10 @@
 ;; Author: Dan Sutton  <danielsutton01@gmail.com>
 ;; Maintainer: Dan Sutton  <danielsutton01@gmail.com>
 ;; URL: https://github.com/dpsutton/resize-mode
-;; Package-Version: 0.3.0
+;; Package-Version: 20170130.1926
 
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "24"))
+;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: window, resize
 
 ;; This program is free software: you can redistribute it and/or modify
@@ -35,15 +35,31 @@
 ;; to resize again, but just keep using standard motions until you are
 ;; happy.
 
-;; All of the work is done inside of resize-window.  Its just a while
-;; loop that keeps looping over character input until it doesn't
-;; recognize an option or an allowable capital.  The dispatch alist has
-;; a character code to look for, a function to invoke, a string for
-;; display and whether to match against capital letters.  If so, it is
-;; invoked with the default capital argument rather than the default
-;; argument.
+;; But, just run `M-x resize-window`. There are only a few commands to learn,
+;; and they mimic the normal motions in emacs.
+
+;;   n : Makes the window vertically bigger, think scrolling down. Use
+;;        N  to enlarge 5 lines at once.
+;;   p : Makes the window vertically smaller, again, like scrolling. Use
+;;        P  to shrink 5 lines at once.
+;;   f : Makes the window horizontally bigger, like scrolling forward;
+;;        F  for five lines at once.
+;;   b : window horizontally smaller,  B  for five lines at once.
+;;   r : reset window layout to standard
+;;   w : cycle through windows so that you can adjust other window
+;;       panes.  W  cycles in the opposite direction.
+;;   2 : create a new horizontal split
+;;   3 : create a new vertical split
+;;   0 : delete the current window
+;;   k : kill all buffers and put window config on the stack
+;;   y : make the window configuration according to the last config
+;;   pushed onto the stack
+;;   ? : Display menu listing commands
+
 
 ;;; Code:
+
+(require 'cl-lib)
 
 (defgroup resize-window nil
   "Quickly resize current window"
@@ -64,7 +80,8 @@ This is also valuable to see that you are in resize mode."
   :type 'boolean)
 
 (defcustom resize-window-swap-capital-and-lowercase-behavior nil
-  "Reverse default behavior of lower case and uppercase arguments.")
+  "Reverse default behavior of lower case and uppercase arguments."
+  :type 'boolean)
 
 (defcustom resize-window-notify-with-messages t
   "Show notifications in message bar."
@@ -72,6 +89,9 @@ This is also valuable to see that you are in resize mode."
 
 (defvar resize-window--background-overlay ()
   "Holder for background overlay.")
+
+(defvar resize-window--window-stack ()
+  "Stack for holding window configurations.")
 
 (defface resize-window-background
   '((t (:foreground "gray40")))
@@ -106,6 +126,8 @@ should return the fine adjustment (default 1)."
     (?2 split-window-below " Split window horizontally" nil)
     (?3 split-window-right " Slit window vertically" nil)
     (?0 resize-window--delete-window " Delete window" nil)
+    (?k resize-window--kill-other-windows " Kill other windows (save state)" nil)
+    (?y resize-window--restore-windows " (when state) Restore window configuration" nil)
     (?? resize-window--display-menu          " Resize - display menu" nil))
   "List of actions for `resize-window-dispatch-default.
 Main data structure of the dispatcher with the form:
@@ -166,10 +188,10 @@ CHOICE is a \(key function description allows-capital\)."
             (resize-window--choice-documentation choice))))
 
 (defun resize-window--get-documentation-strings ()
-  (reduce (lambda (c1 c2)
-            (concat c1 c2 "\n"))
-          (mapcar 'resize-window--display-choice
-                  resize-window-dispatch-alist)))
+  (cl-reduce (lambda (c1 c2)
+               (concat c1 c2 "\n"))
+             (mapcar 'resize-window--display-choice
+                     resize-window-dispatch-alist)))
 
 (defun resize-window--make-background ()
   "Place a background over the current window."
@@ -245,6 +267,12 @@ If no SIZE is given, extend by `resize-window-default-argument`"
   "Reset window layout to even spread."
   (balance-windows))
 
+(defun resize-window--delete-overlays ()
+  (delete-overlay resize-window--background-overlay))
+
+(defun resize-window--create-overlay ()
+  (setq resize-window--background-overlay (resize-window--make-background)))
+
 (defun resize-window--cycle-window-positive ()
   "Cycle windows."
   (delete-overlay resize-window--background-overlay)
@@ -265,6 +293,24 @@ If no SIZE is given, extend by `resize-window-default-argument`"
   (delete-overlay resize-window--background-overlay)
   (delete-window)
   (setq resize-window--background-overlay (resize-window--make-background)))
+
+(defun resize-window--window-push ()
+  (push (current-window-configuration) resize-window--window-stack))
+
+(defun resize-window--window-pop ()
+  (pop resize-window--window-stack))
+
+(defun resize-window--kill-other-windows ()
+  (resize-window--delete-overlays)
+  (resize-window--window-push)
+  (delete-other-windows)
+  (resize-window--create-overlay))
+
+(defun resize-window--restore-windows ()
+  (when-let ((config (resize-window--window-pop)))
+    (resize-window--delete-overlays)
+    (set-window-configuration config)
+    (resize-window--create-overlay)))
 
 (provide 'resize-window)
 ;;; resize-window.el ends here

@@ -2,9 +2,9 @@
 
 ;; Author: midnightSuyama <midnightSuyama@gmail.com>
 ;; URL: https://github.com/midnightSuyama/shader-mode
-;; Package-Version: 20151030.704
+;; Package-Version: 20170130.623
 ;; Package-Requires: ((emacs "24"))
-;; Version: 0.1.1
+;; Version: 0.2.0
 
 ;; Copyright (C) 2015 midnightSuyama
 
@@ -34,19 +34,17 @@
              (regexp-opt '(
                            ;; ShaderLab
                            "Shader" "Properties" "SubShader" "Pass" "UsePass" "GrabPass" "Tags"
-                           "Cull" "ZWrite" "ZTest" "Offset"
-                           "Blend"
-                           "Tags"
-                           "Stencil" "Ref" "ReadMask" "WriteMask" "Comp" "Pass" "Fail" "ZFail"
+                           "Cull" "ZTest" "ZWrite" "Offset" "Blend" "BlendOp" "AlphaToMask" "ColorMask"
+                           "Stencil" "Ref" "ReadMask" "WriteMask" "Comp" "Fail" "ZFail"
                            "Name"
                            "Color" "Material" "Lighting" "SeparateSpecular" "ColorMaterial" "Diffuse" "Ambient" "Specular" "Shininess" "Emission"
                            "SetTexture" "combine" "constantColor"
                            "AlphaTest"
-                           "Fog" "Mode" "Color" "Density" "Range"
+                           "Fog" "Mode" "Density" "Range"
                            "BindChannels" "Bind"
                            "LOD"
                            "Fallback" "CustomEditor" "Category"
-                           "CGPROGRAM" "ENDCG"
+                           "CGPROGRAM" "CGINCLUDE" "ENDCG"
                            
                            ;; Cg
                            "asm" "asm_fragment" "auto"
@@ -140,7 +138,7 @@
 (defconst shader-font-lock-preprocessor-face
   `(,(concat "^[ \t]*#[ \t]*"
              (regexp-opt '("define" "elif" "else" "endif" "error" "if" "ifdef" "ifndef" "include" "pragma" "undef"))
-             "\\>.*") . font-lock-preprocessor-face))
+             "\\>") . font-lock-preprocessor-face))
 
 (defconst shader-font-lock-keywords
   (list

@@ -3,11 +3,11 @@
 
 ;; Author: Russell Black (killdash9@github)
 ;; Keywords: convenience
-;; Package-Version: 20160830.1451
+;; Package-Version: 20170130.2222
 ;; URL: https://github.com/killdash9/better-shell
 ;; Created: 1st Mar 2016
 ;; Version: 1.0
-;; Package-Requires: ((cl-lib "0.5"))
+;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
