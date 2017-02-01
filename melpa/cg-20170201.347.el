@@ -1,10 +1,10 @@
-;;; cg.el --- major mode for editing Constraint Grammar files
+;;; cg.el --- major mode for editing Constraint Grammar files  -*- lexical-binding: t; coding: utf-8 -*-
 
-;; Copyright (C) 2010-2016 Kevin Brubeck Unhammer
+;; Copyright (C) 2010-2017 Kevin Brubeck Unhammer
 
 ;; Author: Kevin Brubeck Unhammer <unhammer@fsfe.org>
-;; Version: 0.2.0
-;; Package-Version: 20160801.615
+;; Version: 0.3.0
+;; Package-Version: 20170201.347
 ;; Url: http://beta.visl.sdu.dk/constraint_grammar.html
 ;; Keywords: languages
 
@@ -67,7 +67,7 @@
 
 ;;; Code:
 
-(defconst cg-version "0.2.0" "Version of cg-mode.")
+(defconst cg-version "0.3.0" "Version of cg-mode.")
 
 (eval-when-compile (require 'cl))
 (require 'cl-lib)
@@ -623,11 +623,13 @@ to.")
 (defcustom cg-check-do-cache t
   "If non-nil, `cg-check' caches the output of `cg-pre-pipe' (the
 cache is emptied whenever you make a change in the input buffer,
-or call `cg-check' from another CG file).")
+or call `cg-check' from another CG file)."
+  :group 'cg
+  :type 'bool)
 
 (defvar cg--check-cache-buffer nil "See `cg-check-do-cache'.")
 
-(defun cg-input-mode-bork-cache (from to len)
+(defun cg-input-mode-bork-cache (_from _to _len)
   "Since `cg-check' will not reuse a cache unless `cg--file' and
 `cg--cache-in' match."
   (when cg--check-cache-buffer
@@ -820,7 +822,7 @@ Call `cg-output-set-unhide' to set a regex which will be exempt
 from hiding.  Call `cg-output-show-all' to turn off all hiding."
   (interactive)
   (setq cg--output-hiding-analyses t)
-  (lexical-let (prev)
+  (let (prev)
     (save-excursion
       (goto-char (point-min))
       (while (re-search-forward "^\"<.*>\"" nil 'noerror)
@@ -879,17 +881,18 @@ See `cg-output-hide-analyses'."
 
 ;;;###autoload
 (defcustom cg-check-after-change nil
-  "If non-nil, run `cg-check' on grammar after each change to the
-buffer.")
+  "If non-nil, run `cg-check' on grammar after each change to the buffer."
+  :group 'cg
+  :type 'bool)
 
 ;;;###autoload
 (defcustom cg-check-after-change-secs 1
-  "Minimum seconds between each `cg-check' after a change to a CG
-buffer (so 0 is after each change)."
+  "Minimum seconds between each `cg-check' after a change to a CG buffer.
+Use 0 to check immediately after each change."
   :type 'integer)
 
 (defvar cg--after-change-timer nil)
-(defun cg-after-change (from to len)
+(defun cg-after-change (_from _to _len)
   (when (and cg-check-after-change
              (not (member cg--after-change-timer timer-list)))
     (setq
@@ -956,7 +959,7 @@ something like
 
 Similarly, `cg-post-pipe' is run on output."
   (interactive)
-  (lexical-let*
+  (let*
       ((file (buffer-file-name))
        (tmp (make-temp-file "cg."))
        ;; Run in a separate process buffer from cmd and post-pipe:
@@ -992,16 +995,16 @@ Similarly, `cg-post-pipe' is run on output."
         (with-current-buffer cg--check-cache-buffer
           (cg-end-process (get-buffer-process out) (buffer-string)))
 
-      (lexical-let ((cg-proc (get-buffer-process out))
-                    (pre-proc (start-process "cg-pre-pipe" "*cg-pre-pipe-output*"
-                                             "/bin/bash" "-c" pre-pipe))
-                    (cache-buffer (cg-pristine-cache-buffer file in pre-pipe)))
-        (set-process-filter pre-proc (lambda (pre-proc string)
+      (let ((cg-proc (get-buffer-process out))
+            (pre-proc (start-process "cg-pre-pipe" "*cg-pre-pipe-output*"
+                                     "/bin/bash" "-c" pre-pipe))
+            (cache-buffer (cg-pristine-cache-buffer file in pre-pipe)))
+        (set-process-filter pre-proc (lambda (_pre-proc string)
                                        (with-current-buffer cache-buffer
                                          (insert string))
                                        (when (eq (process-status cg-proc) 'run)
                                          (process-send-string cg-proc string))))
-        (set-process-sentinel pre-proc (lambda (pre-proc string)
+        (set-process-sentinel pre-proc (lambda (_pre-proc _string)
                                          (when (eq (process-status cg-proc) 'run)
                                            (cg-end-process cg-proc))))
         (with-current-buffer in
@@ -1009,7 +1012,7 @@ Similarly, `cg-post-pipe' is run on output."
 
     (display-buffer out)))
 
-(defun cg-check-finish-function (buffer change)
+(defun cg-check-finish-function (buffer _change)
   ;; Note: this makes `recompile' not work, which is why `g' is
   ;; rebound in `cg-output-mode'
   (let ((w (get-buffer-window buffer)))
