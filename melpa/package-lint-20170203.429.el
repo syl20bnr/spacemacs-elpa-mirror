@@ -4,8 +4,9 @@
 
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;;         Fanael Linithien <fanael4@gmail.com>
+;; URL: https://github.com/purcell/package-lint
+;; Package-Version: 20170203.429
 ;; Keywords: lisp
-;; Package-Version: 20170202.748
 ;; Version: 0
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
 

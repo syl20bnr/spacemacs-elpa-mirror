@@ -10,11 +10,11 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20170110.430
+;; Package-Version: 20170203.248
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
-;; Package-Requires: ((flycheck "0.25") (company "0.8") (emacs "24.3") (haskell-mode "13.0"))
+;; Package-Requires: ((flycheck "0.25") (company "0.8") (emacs "24.4") (haskell-mode "13.0"))
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by

@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel
 ;; URL: https://github.com/abo-abo/org-download
-;; Package-Version: 20170105.1740
+;; Package-Version: 20170202.927
 ;; Version: 0.1.0
 ;; Package-Requires: ((async "1.2"))
 ;; Keywords: images, screenshots, download
@@ -393,7 +393,7 @@ When TIMES isn't nil, delete only TIMES links."
   (save-excursion
     (goto-char beg)
     (while (and (>= (decf times) 0)
-                (re-search-forward "\\[\\[\\([^]]*\\)\\]\\]" end t))
+                (re-search-forward "\\[\\[file:\\([^]]*\\)\\]\\]" end t))
       (let ((str (match-string-no-properties 1)))
         (delete-region beg
                        (match-end 0))
