@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170201.726
+;; Package-Version: 20170202.453
 ;; Version: 0.8.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.8.0"))
 ;; Keywords: completion, matching
@@ -2193,6 +2193,77 @@ INITIAL-INPUT can be given as the initial minibuffer input."
     (ivy-read "Marks: " candidates
               :action (lambda (elem)
                         (goto-char (cdr elem))))))
+
+;;** `counsel-package'
+(defvar package--initialized)
+(defvar package-archive-contents)
+(declare-function package-installed-p "package")
+(declare-function package-delete "package")
+
+(defun counsel-package ()
+  "Install or delete packages.
+
+Packages not currently installed have a \"+\"
+prepended. Selecting one of these will try to install
+it. Currently installed packages have a \"-\" prepended, and
+selecting one of these will delete the package.
+
+Additional Actions:
+
+  \\<ivy-minibuffer-map>\\[ivy-dispatching-done] d: describe package"
+  (interactive)
+  (unless package--initialized
+    (package-initialize t))
+  (unless package-archive-contents
+    (package-refresh-contents))
+  (let ((cands (mapcar #'counsel-package-make-package-cell
+                       package-archive-contents)))
+    (ivy-read "Packages (install +pkg or delete -pkg): "
+              (cl-sort cands #'counsel--package-sort)
+              :action #'counsel-package-action
+              :initial-input "^+ "
+              :require-match t
+              :caller 'counsel-package)))
+
+(defun counsel-package-make-package-cell (pkg)
+  (let* ((pkg-sym (car pkg))
+         (pkg-name (symbol-name pkg-sym)))
+    (cons (format "%s%s"
+                  (if (package-installed-p pkg-sym) "-" "+")
+                  pkg-name)
+          pkg)))
+
+(defun counsel-package-action (pkg-cons)
+  (let ((pkg (cadr pkg-cons)))
+    (if (package-installed-p pkg)
+        (package-delete pkg)
+      (package-install pkg))))
+
+(defun counsel-package-action-describe (pkg-cons)
+  "Call `describe-package' for package in PKG-CONS."
+  (describe-package (cadr pkg-cons)))
+
+(defun counsel-package-action-homepage (pkg-cons)
+  "Open homepage for package in PKG-CONS."
+  (let* ((desc-list (cddr pkg-cons))
+         (desc (if (listp desc-list) (car desc-list) desc-list))
+         (url (cdr (assoc :url (package-desc-extras desc)))))
+    (when url
+      (require 'browse-url)
+      (browse-url url))))
+
+(defun counsel--package-sort (a b)
+  "Sort function for `counsel-package'."
+  (let* ((a (car a))
+         (b (car b))
+         (a-inst (equal (substring a 0 1) "+"))
+         (b-inst (equal (substring b 0 1) "+")))
+    (or (and a-inst (not b-inst))
+        (and (eq a-inst b-inst) (string-lessp a b)))))
+
+(ivy-set-actions 'counsel-package
+                 '(("d" counsel-package-action-describe "describe package")
+                   ("h" counsel-package-action-homepage "open package homepage")))
 
 ;;** `counsel-tmm'
 (defvar tmm-km-list nil)

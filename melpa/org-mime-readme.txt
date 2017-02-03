@@ -11,6 +11,18 @@ from within an org-mode buffer to convert the buffer to html, and
 package the results into an email handling with appropriate MIME
 encoding.
 
+`org-mime-org-subtree-htmlize' is similar to `org-mime-org-buffer-htmlize'
+but works on subtree. It can also read subtree properties MAIL_SUBJECT,
+MAIL_TO, MAIL_CC, and MAIL_BCC. Here is the sample of subtree:
+
+* mail one
+  :PROPERTIES:
+  :MAIL_SUBJECT: mail title
+  :MAIL_TO: person1@gmail.com
+  :MAIL_CC: person2@gmail.com
+  :MAIL_BCC: person3@gmail.com
+  :END:
+
 Quick start:
 Write mail in message-mode, make sure the mail body follows org format.
 Before sending mail, `M-x org-mime-htmlize'

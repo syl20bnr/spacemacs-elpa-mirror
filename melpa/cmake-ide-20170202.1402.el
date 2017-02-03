@@ -4,7 +4,7 @@
 
 ;; Author:  Atila Neves <atila.neves@gmail.com>
 ;; Version: 0.5
-;; Package-Version: 20170130.451
+;; Package-Version: 20170202.1402
 ;; Package-Requires: ((emacs "24.1") (cl-lib "0.5") (seq "1.11") (levenshtein "0"))
 ;; Keywords: languages
 ;; URL: http://github.com/atilaneves/cmake-ide
@@ -645,7 +645,9 @@ the object file's name just above."
 (defun cmake-ide--filter-ac-flags (flags)
   "Filter unwanted compiler arguments out from FLAGS."
   (cmake-ide--filter
-   (lambda (x) (not (or (string-match "^-m32$" x) (string-match "^-Werror$" x) (string-match "^-c$" x))))
+   (lambda (x)
+     (cl-loop for flag in '("-m32" "-Werror" "-c" "-fPIC" "-pipe" "-g" "-ggdb")
+              never (string-match (format "^%s$" flag) x)))
    flags))
 
 (defun cmake-ide--delete-dup-hdr-flags (flags)

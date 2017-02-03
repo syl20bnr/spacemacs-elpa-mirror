@@ -4,7 +4,7 @@
 ;;
 ;; Author: Göktuğ Kayaalp <self@gkayaalp.com>
 ;; Keywords: weather, forecast
-;; Package-Version: 20170109.859
+;; Package-Version: 20170202.1427
 ;; Version: 0.6.1
 ;; URL: http://gkayaalp.com/emacs.html#forecast.el
 ;; Package-Requires: ((emacs "24.4"))
@@ -149,6 +149,11 @@
 
 ;;; Changes:
 ;;
+;; next
+;;   - Replace calls to ‘oddp’ w/ ‘cl-oddp’.
+;;   - (forecast--get-forecast) Fix call to ‘signal’.
+;;   - Fix "Invalid Time Specification" error on Emacs 24.5 (thanks
+;;     to GitHub user ‘bdollard’.
 ;; v0.6.1, 09 Jan 2017
 ;;   - Fixed alignment issued in the Upcoming graph.
 ;;   - Distinctly identify max/min temp in upcoming temp graph.
@@ -214,6 +219,7 @@
 ;; Steve Purcell <steve@sanityinc.com>
 ;; Syohei YOSHIDA <syohex@gmail.com>
 ;; TopSlick <TopSlick@users.noreply.github.com>
+;; bdollard <bradley.dollard@gmail.com>
 ;;
 
 ;;; TODO:
@@ -399,7 +405,7 @@ representation of the returned JSON from the API."
                 (ignore args)
                 (let ((err (plist-get status :error)))
                   (when err
-                    (apply 'signal err)))
+                    (funcall 'signal (car err) (cdr err))))
                 (save-excursion
                   (goto-char (point-min))
                   (re-search-forward "^{")
@@ -679,24 +685,24 @@ wind directions."
       (cl-loop for j upfrom 0 to 7 do
                (insert
                 (cond ((= i (nth j hi))
-                       (if (oddp i)
+                       (if (cl-oddp i)
                            (concat "-|-" forecast-graph-marker-upcoming-max "-|-")
                          (concat " | " forecast-graph-marker-upcoming-max " | ")))
                       ((= i (nth j lo))
-                       (if (oddp i)
+                       (if (cl-oddp i)
                            (concat "-|-" forecast-graph-marker-upcoming-min "-|-")
                          (concat " | " forecast-graph-marker-upcoming-min " | ")))
                       ((and (< i (nth j hi))
                             (> i (nth j lo)))
-                       (if (oddp i)
+                       (if (cl-oddp i)
                            (concat "-|-" forecast-graph-marker "-|-")
                          (concat " | " forecast-graph-marker " | ")))
-                      ((oddp i) "-|---|-")
+                      ((cl-oddp i) "-|---|-")
                       (t " |   | "))))
       (newline))
     (forecast--insert-format
      "Day:  %s\n" (mapconcat (lambda (tm)
-                               (format-time-string "%5a  " tm)) time ""))
+                               (format-time-string "%5a  " (seconds-to-time tm))) time ""))
     ;; precipitation
     (insert "      ")
     (mapc (lambda (p)

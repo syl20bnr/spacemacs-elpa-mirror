@@ -8,3 +8,30 @@ https://github.com/then/promise
 * supports "thenable"
 * supports "Inheritance of Promise"
 * supports "rejection-tracking"
+
+Usage:
+See `promise-examples.el' for details.
+
+(require 'promise)
+
+(defun do-something-async (delay-sec value)
+  "Return `Promise' to resolve the value asynchronously."
+  (promise-new (lambda (resolve _reject)
+                 (run-at-time delay-sec
+                              nil
+                              (lambda ()
+                                (funcall resolve value))))))
+
+(defun example4 ()
+  "All processes are asynchronous Promise chain."
+  (promise-chain (do-something-async 1 33)
+    (then (lambda (result)
+            (message "first result: %s" result)
+            (do-something-async 1 (* result 2))))
+
+    (then (lambda (second-result)
+            (message "second result: %s" second-result)
+            (do-something-async 1 (* second-result 2))))
+
+    (then (lambda (third-result)
+            (message "third result: %s" third-result)))))

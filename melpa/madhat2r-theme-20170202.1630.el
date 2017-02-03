@@ -4,7 +4,7 @@
 
 ;; Author: Micah Duke
 ;; URL: <https://github.com/madhat2r/madhat2r-theme>
-;; Package-Version: 20170130.1431
+;; Package-Version: 20170202.1630
 ;;
 ;; Version: 0.1
 ;; Keywords: color, theme
@@ -324,8 +324,8 @@
       (,madhat2r-term-class (:foreground ,suc-term))))
 
    `(tooltip
-     ((,madhat2r-class (:background ,ttip-sl :foreground ,base :bold nil :italic nil :underline nil))
-      (,madhat2r-term-class (:background ,ttip-sl :foreground ,base-term :bold nil :italic nil :underline nil))))
+     ((,madhat2r-class (:background ,bg3 :foreground ,base :bold nil :italic nil :underline nil))
+      (,madhat2r-term-class (:background ,bg3-term :foreground ,base-term :bold nil :italic nil :underline nil))))
 
    `(vertical-border
      ((,madhat2r-class (:foreground ,bg4))
@@ -467,56 +467,64 @@
       (,madhat2r-term-class (:background ,base-term :foreground ,bg1))))
 
    `(company-preview
-     ((,madhat2r-class (:background ,ttip-bg :foreground ,ttip))
-      (,madhat2r-term-class (:background ,ttip-bg :foreground ,ttip-term))))
+     ((,madhat2r-class (:background ,bg3 :foreground ,base))
+      (,madhat2r-term-class (:background ,bg3-term :foreground ,base-term))))
 
    `(company-preview-common
-     ((,madhat2r-class (:background ,ttip-bg :foreground ,base))
-      (,madhat2r-term-class (:background ,ttip-bg :foreground ,base-term))))
+     ((,madhat2r-class (:background ,bg3 :foreground ,comp))
+      (,madhat2r-term-class (:background ,bg3-term :foreground ,comp-term))))
 
    `(company-preview-search
-     ((,madhat2r-class (:inherit match))
-      (,madhat2r-term-class (:inherit match))))
+     ((,madhat2r-class (:foreground ,const))
+      (,madhat2r-term-class (:foreground ,const-term))))
 
    `(company-scrollbar-bg
      ((,madhat2r-class (:background ,bg2))
-      (,madhat2r-term-class (:background ,bg2))))
+      (,madhat2r-term-class (:background ,bg2-term))))
 
    `(company-scrollbar-fg
      ((,madhat2r-class (:background ,act2))
-      (,madhat2r-term-class (:background ,act2))))
+      (,madhat2r-term-class (:background ,act2-term))))
 
    `(company-template-field
      ((,madhat2r-class (:inherit region))
       (,madhat2r-term-class (:inherit region))))
 
    `(company-tooltip
-     ((,madhat2r-class (:background ,ttip-bg :foreground ,ttip))
-      (,madhat2r-term-class (:background ,ttip-bg :foreground ,ttip-term))))
+     ((,madhat2r-class (:background ,bg3 :foreground ,base))
+      (,madhat2r-term-class (:background ,bg3-term :foreground ,base-term))))
 
    `(company-tooltip-annotation
      ((,madhat2r-class (:foreground ,keyword))
       (,madhat2r-term-class (:foreground ,keyword-term))))
 
+   `(company-tooltip-annotation-selection
+     ((,madhat2r-class (:foreground ,keyword))
+      (,madhat2r-term-class (:foreground ,keyword-term))))
+
    `(company-tooltip-common
-     ((,madhat2r-class (:background ,ttip-bg :foreground ,base))
-      (,madhat2r-term-class (:background ,ttip-bg :foreground ,base-term))))
+     ((,madhat2r-class (:background ,bg3 :foreground ,comp))
+      (,madhat2r-term-class (:background ,bg3-term :foreground ,comp-term))))
 
    `(company-tooltip-common-selection
-     ((,madhat2r-class (:foreground ,base))
-      (,madhat2r-term-class (:foreground ,base-term))))
+     ((,madhat2r-class (:foreground ,comp))
+      (,madhat2r-term-class (:foreground ,comp-term))))
 
    `(company-tooltip-mouse
      ((,madhat2r-class (:inherit highlight))
-      (,madhat2r-term-class (:inherit highlight))))
+      (,madhat2r-term-class (:inherit highlight-term))))
 
    `(company-tooltip-search
-     ((,madhat2r-class (:inherit match))
-      (,madhat2r-term-class (:inherit match))))
+     ((,madhat2r-class (:foreground ,const))
+      (,madhat2r-term-class (:foreground ,const-term))))
+
+   `(company-tooltip-search-selection
+     ((,madhat2r-class (:foreground ,const))
+      (,madhat2r-term-class (:foreground ,const-term))))
 
    `(company-tooltip-selection
-     ((,madhat2r-class (:background ,ttip-sl :foreground ,base))
-      (,madhat2r-term-class (:background ,ttip-sl :foreground ,base-term))))
+     ((,madhat2r-class (:background ,lnum :foreground ,base))
+      (,madhat2r-term-class (:background ,lnum-term :foreground ,base-term))))
 
    ;;;;; diff
 

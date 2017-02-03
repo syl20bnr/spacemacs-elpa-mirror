@@ -4,7 +4,7 @@
 
 ;; Author: Joel Moberg
 ;; URL: https://github.com/joelmo/fuff
-;; Package-Version: 20170201.1515
+;; Package-Version: 20170202.703
 ;; Version: 0.1
 ;; Package-Requires: ((seq "2.3"))
 ;; Keywords: files, project, convenience
@@ -80,7 +80,7 @@ Argument FILE is a file or directory above the starting point."
   "Internal command for `fuff-find-file'.
 Files will be listed recursively from DIR."
   (let ((selected (ido-completing-read "Find file (fu): " (fuff-files dir))))
-    (if (file-exists-p selected)
+    (if (file-accessible-directory-p selected)
 	(let ((default-directory selected))
 	  (command-execute 'find-file))
       (find-file (concat dir "/" selected)))))
@@ -88,8 +88,10 @@ Files will be listed recursively from DIR."
 (defun fuff-ido-switch ()
   "Switch to `fuff-find-file' if a start directory can be entered."
   (let ((dir (fuff-start-directory ido-current-directory)))
-    (if dir
-    	(fuff-internal dir))))
+    (when dir
+      (fuff-internal dir)
+      ;; Unable to exit the minibuffer before calling fuff-internal
+      (exit-minibuffer))))
 
 (defun fuff-ido-setup ()
   "Determine when to setup the ido switch hook."
