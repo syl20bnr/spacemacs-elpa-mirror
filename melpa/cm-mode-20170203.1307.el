@@ -5,8 +5,8 @@
 ;; Author: Joost Kremers <joostkremers@fastmail.fm>
 ;; Maintainer: Joost Kremers <joostkremers@fastmail.fm>
 ;; Created: 14 Feb 2013
-;; Version: 1.5
-;; Package-Version: 1.5
+;; Version: 1.6
+;; Package-Version: 20170203.1307
 ;; Keywords: text, markdown
 ;; Package-Requires: ((cl-lib "0.5"))
 
@@ -156,6 +156,18 @@ it is added automatically."
                  (string :tag "Author")))
 (make-variable-buffer-local 'cm-author)
 
+(defcustom cm-read-only-annotations t
+  "Make annotations read-only.
+By default, annotation markers are read-only, so they cannot be
+overwritten.  This interferes with reformatting, however, so you
+can disable this behaviour.  Note that if you change the value of
+this variable for a particular buffer, you may need to deactivate
+and reactivate `cm-mode'."
+  :group 'criticmarkup
+  :safe 'booleanp
+  :type 'boolean)
+(make-variable-buffer-local 'cm-read-only-annotations)
+
 (defface cm-addition-face '((t (:inherit success)))
   "Face for CriticMarkup additions."
   :group 'criticmarkup-faces)
@@ -229,6 +241,21 @@ This keymap contains only one binding: `C-c *', which is bound to
 (define-key cm-prefix-map "t" #'cm-set-author)
 (define-key cm-prefix-map "F" #'cm-follow-changes)
 
+(easy-menu-define cm-mode-menu cm-mode-map "CriticMarkup Menu"
+  '("CriticMarkup"
+    ["Addition" cm-addition t]
+    ["Deletion" cm-deletion t]
+    ["Substitution" cm-substitution t]
+    ["Comment" cm-comment t]
+    "--"
+    ["Accept/Reject Change" cm-accept/reject-change-at-point t]
+    ["Accept/Reject All Changes" cm-accept/reject-all-changes t]
+    "--"
+    ["Move To Next Change" cm-forward-change t]
+    ["Move To Previous Change" cm-backward-change t]
+    "--"
+    ["Set Author" cm-set-author t]))
+
 ;;;###autoload
 (define-minor-mode cm-mode
   "Minor mode for CriticMarkup."
@@ -237,7 +264,8 @@ This keymap contains only one binding: `C-c *', which is bound to
    (cm-mode                             ; cm-mode is turned on
     (setq font-lock-multiline t)
     (font-lock-add-keywords nil (cm-font-lock-keywords) t)
-    (add-to-list 'font-lock-extra-managed-props 'read-only)
+    (when cm-read-only-annotations
+      (add-to-list 'font-lock-extra-managed-props 'read-only))
     (add-to-list 'font-lock-extra-managed-props 'rear-nonsticky)
     (cm-font-lock-ensure)
     (setq cm-current-markup-overlay (make-overlay 1 1))
@@ -263,12 +291,13 @@ This keymap contains only one binding: `C-c *', which is bound to
                                        "\\(?:[[:ascii:]]\\|[[:nonascii:]]\\)*?"))
     (add-to-list 'font-lock `(0 ,face prepend) t) ; the highlighter for the entire change
     (dotimes (n (length markup))
-      (add-to-list 'font-lock `(,(1+ n) '(face ,face read-only t)) t) ; make the tags read-only
-      (add-to-list 'font-lock `("." (progn ; and make the read-only property of the final character rear-nonsticky
-                                      (goto-char (1- (match-end ,(1+ n))))
-                                      (1+ (point)))
-                                nil
-                                (0 '(face ,face rear-nonsticky (read-only)))) t))
+      (when cm-read-only-annotations
+	(add-to-list 'font-lock `(,(1+ n) '(face ,face read-only t)) t) ; make the tags read-only
+	(add-to-list 'font-lock `("." (progn ; and make the read-only property of the final character rear-nonsticky
+					(goto-char (1- (match-end ,(1+ n))))
+					(1+ (point)))
+				  nil
+				  (0 '(face ,face rear-nonsticky (read-only)))) t)))
     font-lock))
 
 ;; `cm-font-lock-for-markup' produces a font-lock entry that can be given

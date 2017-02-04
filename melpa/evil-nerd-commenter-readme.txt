@@ -39,8 +39,7 @@ insert below setup into your ~/.emacs instead,
   "cp" 'evilnc-comment-or-uncomment-paragraphs
   "cr" 'comment-or-uncomment-region
   "cv" 'evilnc-toggle-invert-comment-line-by-line
-  "\\" 'evilnc-comment-operator
-  )
+  "\\" 'evilnc-comment-operator)
 
 For certain major modes, you need manual setup to override its original
 keybindings,

@@ -8,11 +8,8 @@ than some user-defined value, none of the above happens because
 there is likely not enough text to guess the language correctly.
 
 The detection algorithm is based on counts of character
-trigrams.  At this time, supported languages are Czech, Dansk,
+trigrams.  At this time, supported languages are Czech, Danish,
 Dutch, English, Finnish, French, German, Italian, Norwegian,
-Polish, Portuguese, Russian, Slovak, Slovenian, Swedish.  Adding
-further languages is very easy and this package already contains
-language statistics for 49 additional languages.
-
-See here for more details:
-https://github.com/tmalsburg/guess-language.el
+Polish, Portuguese, Russian, Slovak, Slovenian, Spanish,
+Swedish.  Adding further languages is very easy and this package
+already contains language statistics for 49 additional languages.

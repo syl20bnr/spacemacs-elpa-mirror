@@ -5,8 +5,8 @@
 ;; Author: Joost Kremers <joostkremers@fastmail.fm>
 ;; Maintainer: Joost Kremers <joostkremers@fastmail.fm>
 ;; Created: 14 Feb 2013
-;; Version: 1.5
-;; Package-Version: 20170112.614
+;; Version: 1.6
+;; Package-Version: 1.6
 ;; Keywords: text, markdown
 ;; Package-Requires: ((cl-lib "0.5"))
 
@@ -241,6 +241,21 @@ This keymap contains only one binding: `C-c *', which is bound to
 (define-key cm-prefix-map "t" #'cm-set-author)
 (define-key cm-prefix-map "F" #'cm-follow-changes)
 
+(easy-menu-define cm-mode-menu cm-mode-map "CriticMarkup Menu"
+  '("CriticMarkup"
+    ["Addition" cm-addition t]
+    ["Deletion" cm-deletion t]
+    ["Substitution" cm-substitution t]
+    ["Comment" cm-comment t]
+    "--"
+    ["Accept/Reject Change" cm-accept/reject-change-at-point t]
+    ["Accept/Reject All Changes" cm-accept/reject-all-changes t]
+    "--"
+    ["Move To Next Change" cm-forward-change t]
+    ["Move To Previous Change" cm-backward-change t]
+    "--"
+    ["Set Author" cm-set-author t]))
+
 ;;;###autoload
 (define-minor-mode cm-mode
   "Minor mode for CriticMarkup."
@@ -250,7 +265,7 @@ This keymap contains only one binding: `C-c *', which is bound to
     (setq font-lock-multiline t)
     (font-lock-add-keywords nil (cm-font-lock-keywords) t)
     (when cm-read-only-annotations
-	(add-to-list 'font-lock-extra-managed-props 'read-only))
+      (add-to-list 'font-lock-extra-managed-props 'read-only))
     (add-to-list 'font-lock-extra-managed-props 'rear-nonsticky)
     (cm-font-lock-ensure)
     (setq cm-current-markup-overlay (make-overlay 1 1))
