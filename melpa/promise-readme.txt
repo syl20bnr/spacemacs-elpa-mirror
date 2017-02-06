@@ -11,6 +11,8 @@ https://github.com/then/promise
 
 Usage:
 See `promise-examples.el' for details.
+ https://raw.githubusercontent.com/chuntaro/emacs-promise/master/examples/promise-examples.el
+ You can check the operation while downloading and running it interactively.
 
 (require 'promise)
 

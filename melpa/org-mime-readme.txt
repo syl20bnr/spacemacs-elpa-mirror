@@ -23,6 +23,13 @@ MAIL_TO, MAIL_CC, and MAIL_BCC. Here is the sample of subtree:
   :MAIL_BCC: person3@gmail.com
   :END:
 
+To avoid exporting TOC, you can setup `org-mime-export-options',
+  (setq org-mime-export-options '(:section-numbers nil
+                                  :with-author nil
+                                  :with-toc nil))
+Or just setup your export options in org buffer/subtree which is overrided
+by `org-mime-export-options' when it's NOT nil.
+
 Quick start:
 Write mail in message-mode, make sure the mail body follows org format.
 Before sending mail, `M-x org-mime-htmlize'

@@ -26,6 +26,6 @@ The design draws from a number of sources, including the command
 line utility transmission-remote(1), the ncurses interface
 transmission-remote-cli(1), and the rtorrent(1) client.  These can
 be found respectively at the following:
-<https://trac.transmissionbt.com/browser/trunk/daemon/remote.c>
+<https://github.com/transmission/transmission/blob/master/daemon/remote.c>
 <https://github.com/fagga/transmission-remote-cli>
 <https://rakshasa.github.io/rtorrent/>
