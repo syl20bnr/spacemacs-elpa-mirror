@@ -6,7 +6,7 @@
 
 ;; Compatibility: GNU Emacs 24.1+
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
-;; Package-Version: 20160406.1206
+;; Package-Version: 20170207.38
 
 ;; X-URL: https://github.com/thierryvolpiatto/iterator
 
@@ -48,7 +48,7 @@ A simple replacement of CL `position'."
 
 (defun iterator:next (iterator)
   "Return next elm of ITERATOR."
-  (funcall iterator))
+  (and iterator (funcall iterator)))
 
 (cl-defun iterator:sub-next (seq elm &key (test 'eq))
   "Create iterator from position of ELM to end of SEQ."
@@ -102,30 +102,70 @@ A simple replacement of CL `position'."
         (setq lis (cdr lis))
         elm))))
 
-(defun iterator:scroll-list (seq size)
-  "Create an iterator of the cl-subseq of the cdr of SEQ ending to SIZE."
-  (let* ((lis seq)
-         (end size))
+(cl-defun iterator:scroll-list (seq &optional (size (length seq)))
+  "Create an iterator on all the cons cells of SEQ of length SIZE.
+
+Similar to (cl-loop for i on SEQ collect i).
+
+Example:
+    (setq lst '(a b c d e))
+    (setq iter (iterator:scroll-list lst))
+    ;; Each call of:
+    (iterator:next iter)
+    ;; returns
+    => (a b c d e)
+    => (b c d e)
+    => (c d e)
+    => (d e)
+    => (e)
+    => nil "
+  (let ((lis seq)
+        (end size))
     (lambda ()
       (let ((sub (cl-subseq lis 0 end)))
         (setq lis (cdr lis))
-        (if (< (length lis) end)
-            (setq end (- end 1)))
-        (remove nil sub)))))
+        (when (< (length lis) end)
+          (setq end (- end 1)))
+        (delq nil sub)))))
 
-(defun iterator:scroll-up (seq elm size)
-  (let* ((pos (cl-position (car (last elm)) seq))
-         (sub (reverse (cl-subseq seq 0 pos)))
-         (iterator (iterator:scroll-list sub size)))
-    (lambda ()
-      (reverse (iterator:next iterator)))))
+(cl-defun iterator:scroll-up (seq elm &optional (size (length seq)))
+  "Same as `iterator:scroll-list' but start al ELM and scroll up SEQ.
 
-(defun iterator:scroll-down (seq elm size)
-  (let* ((pos (cl-position (car (last elm)) seq))
-         (sub (cl-subseq seq pos))
-         (iterator (iterator:scroll-list sub size)))
-    (lambda ()
-      (iterator:next iterator))))
+IOW Move from right to left in SEQ.
+
+Example:
+
+    (setq lst '(a b c d e))
+    (setq iter (iterator:scroll-list lst))
+    ;; Each call of:
+    (iterator:next iter)
+    ;; Returns
+    =>(a b c d e)
+    =>(b c d e)
+    =>(c d e)
+
+    (setq iter (iterator:scroll-up lst (iterator:next iter)))
+    ;; Each call of:
+    (iterator:next iter)
+    ;; Returns
+    =>(a b c)
+    =>(a b)
+    =>(a) "
+  (when elm
+    (let* ((pos (cl-position (if (listp elm) (car elm) elm) seq))
+           (sub (reverse (cl-subseq seq 0 pos)))
+           (iterator (iterator:scroll-list sub size)))
+      (lambda ()
+        (reverse (iterator:next iterator))))))
+
+(cl-defun iterator:scroll-down (seq elm &optional (size (length seq)))
+  "Same as `iterator:scroll-up' but move from left to right in SEQ."
+  (when elm
+    (let* ((pos (cl-position (if (listp elm) (car elm) elm) seq))
+           (sub (cl-subseq seq pos))
+           (iterator (iterator:scroll-list sub size)))
+      (lambda ()
+        (iterator:next iterator)))))
 
 (defun iterator:fibo ()
   "Fibonacci generator."

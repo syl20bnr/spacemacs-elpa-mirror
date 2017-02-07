@@ -5,7 +5,7 @@
 ;; Author: Charles A. Roelli  <charles@aurox.ch>
 ;; Created: Wed Aug 10 2016
 ;; Keywords: org, bookmarks, archives
-;; Package-Version: 20170206.527
+;; Package-Version: 20170207.634
 ;; Homepage: https://github.com/scallywag/org-board
 
 ;;; Commentary:
@@ -261,8 +261,7 @@
 (require 'org-pcomplete)
 (require 'url)
 (require 'find-lisp)
-
-;;; defcustom:
+(require 'cl-lib)
 
 (defgroup org-board nil
   "Options concerning the bookmarking archival system."
@@ -385,6 +384,36 @@ WGET_OPTIONS before archiving.  They can either be defined in
 for `wget', like `--no-check-certificate'."
   :type '(alist :key-type regexp :value-type (list string)))
 
+(defvar org-board-after-archive-functions nil
+  "Special hook run after archiving a site.
+Each function there is called with three arguments:
+
+ - a list of URLs downloaded,
+ - the folder name where they were downloaded,
+ - and the process filter event string.
+
+Generally, if the event string matches \"exited abnormally\" then
+something in the archive process went wrong.  The functions added to
+this special hook should check for this case.
+
+If the event string does not match \"exited abnormally\" then it can
+be assumed that the download completed successfully.")
+
+(defun org-board-test-after-archive-function (urls output-folder
+                                                   event)
+  "Use this function as a template for designing your own post-archive
+functions.
+
+To add a function to `org-board-after-archive-functions', use the
+following code:
+
+\(add-hook 'org-board-after-archive-functions 'function-name)."
+
+  (with-current-buffer (get-buffer-create "*org-board-post-archive*")
+    (princ "Downloaded " (current-buffer))
+    (princ urls (current-buffer))
+    (princ ".\n" (current-buffer))))
+
 (defvar org-board-keymap
   (make-sparse-keymap)
   "Keymap for org-board usage.")
@@ -427,7 +456,11 @@ Prints success message to echo area otherwise."
 	(write-region (combine-and-quote-strings
 		       (process-command process)) nil
 		      (concat wget-output-directory "org-board-"
-			      org-id-token ".log"))))))
+			      org-id-token ".log")))))
+  (run-hook-with-args 'org-board-after-archive-functions
+                      (process-get process 'urls)
+                      (process-get process 'wget-output-directory)
+                      event))
 
 (defun org-board-wget-call (path directory args site)
   "Start wget in a temporary buffer.
@@ -484,8 +517,7 @@ added as a link in the :ARCHIVED_AT: property."
 		 (format-time-string "%Y-%m-%d-%a-%H-%M-%S"
 				     (current-time)))
 		((or (eq org-board-archive-date-format 'iso-8601) t)
-		 (format-time-string "%FT%TZ")
-		 )))
+		 (format-time-string "%FT%TZ"))))
          (output-directory (concat (file-name-as-directory attach-directory)
                                    (file-name-as-directory timestamp)))
          (org-id-token (org-id-get))
@@ -501,6 +533,8 @@ added as a link in the :ARCHIVED_AT: property."
                  output-directory)
     (process-put wget-process 'org-id
                  org-id-token)
+    (process-put wget-process 'urls
+                 (cl-copy-list urls))
     (org-entry-add-to-multivalued-property (point) "ARCHIVED_AT"
                                            link-to-output)))
 
@@ -628,7 +662,9 @@ Examples: `aurox.ch'  => `aurox.ch/index.html'
 ;;;###autoload
 (defun org-board-new (url)
   "Ask for a URL, create a property with it, and archive it."
-  (interactive "MURL: ")
+  (interactive
+   (list
+    (completing-read "URL: " nil)))
   (org-entry-add-to-multivalued-property nil "URL" url)
   (org-board-archive))
 

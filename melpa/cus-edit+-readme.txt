@@ -64,10 +64,17 @@ Enhancements to `cus-edit.el'.
  before you quit Emacs, you are notified of all preference changes
  you have made and given a chance to save them (individually or
  collectively).  This is analogous to Emacs asking you about files
- you've changed but not saved, before letting you exit. (If you
- also use another hook to confirm exit from Emacs, then `C-x C-c'
- becomes, in effect, a key binding for `customize-unsaved' - just
- say `n' to exiting Emacs.)
+ you've changed but not saved, before letting you exit.
+
+ If you also use another hook function to confirm exit from Emacs,
+ and it is invoked after `customize-unsaved', then you will likely
+ want to also customize `customize-unsaved-confirm-exits-flag' to
+ non-`nil'.  That stops `customize-unsaved' from canceling
+ quitting.  In this scenario, `C-x C-c' becomes, in effect, a key
+ binding for `customize-unsaved': Say `y' to see your unsaved
+ changes and then `y' or `n' to the next prompt to quit Emacs or
+ not, depending on whether you want to save some changes before
+ quitting.
 
  Updating Customize with External Changes
  ----------------------------------------
@@ -150,12 +157,12 @@ Enhancements to `cus-edit.el'.
  be asked whether or not you want to save them each you quit Emacs.
 
  To deal with that, a list of ignored preferences,
- `customize-customized-ignore', is defined here.  Its preferences
+ `customize-unsaved-ignore', is defined here.  Its preferences
  (symbols) are not used by `customize-unsaved' at all (you can
  override that interactively with a prefix arg).  So, the other way
  to deal with the legacy Emacs preferences, besides just saving
  them in your custom file, is to add them to
- `customize-customized-ignore' so `customize-unsaved' will ignore
+ `customize-unsaved-ignore' so `customize-unsaved' will ignore
  them.
 
  To make it easy for you to add preferences to this ignore list,
@@ -262,11 +269,11 @@ Enhancements to `cus-edit.el'.
    (remove-hook 'kill-emacs-query-functions 'customize-unsaved)
 
 
-
  Options (variables) defined here:
 
    `customp-buffer-create-hook', `custom-buffer-verbose-help'
-   (Emacs 20, 21 only), `customize-customized-ignore'.
+   (Emacs 20, 21 only), `customize-unsaved-confirm-exits-flag',
+   `customize-unsaved-ignore'.
 
 
  Commands defined here:
