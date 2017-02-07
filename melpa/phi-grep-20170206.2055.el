@@ -1,6 +1,6 @@
 ;;; phi-grep.el --- Interactively-editable recursive grep implementation in elisp
 
-;; Copyright (C) 2014-2015 zk_phi
+;; Copyright (C) 2014- zk_phi
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
 
 ;; Author: zk_phi
 ;; URL: http://hins11.yu-yake.com/
-;; Package-Version: 20150212.724
-;; Version: 1.0.0
+;; Package-Version: 20170206.2055
+;; Version: 1.1.0
 ;; Package-Requires: ((cl-lib "0.1"))
 
 ;;; Commentary:
@@ -50,7 +50,8 @@
 
 ;;; Change Log:
 
-;; 1.0.0 first released
+;; 1.0.0 First release
+;; 1.1.0 Respect the language's syntax table while searching
 
 ;;; Code:
 
@@ -58,7 +59,7 @@
 (require 'dired)
 (require 'cl-lib)
 
-(defconst phi-grep-version "1.0.0")
+(defconst phi-grep-version "1.1.0")
 
 ;; + user options
 
@@ -76,16 +77,19 @@
     "\.ppt$" "\.pptx$" "\.xls$" "\.xlsx$" "\.doc$" "\.docx$"
     "~$" "#[^/]+#$")
   "List of regexps that defines what files to ignore."
+  :type '(list string)
   :group 'phi-grep)
 
 (defcustom phi-grep-ignored-dirs
   '("." ".." ".hg" ".svn" "RCS" ".bzr" ".git"
     ".VirtualBox" ".arch-ids" "CVS" "{arch}" "knits")
   "List of directory names we don't want to search in."
+  :type '(list string)
   :group 'phi-grep)
 
 (defcustom phi-grep-mode-hook nil
   "Hook run when initializing phi-grep buffers."
+  :type '(list function)
   :group 'phi-grep)
 
 (defcustom phi-grep-mode-map
@@ -95,6 +99,7 @@
     (define-key kmap [remap kill-buffer] 'phi-grep-abort)
     kmap)
   "Keymap for phi-grep buffers."
+  :type '(restricted-sexp :match-alternatives (syntax-table-p))
   :group 'phi-grep)
 
 (defcustom phi-grep-make-backup-function 'phi-grep-default-backup-function
@@ -102,10 +107,12 @@
 comitting changes to the file. the function is expected to make a
 backup of the file. this variable can also set nil, to tell
 phi-grep not to make backups."
+  :type 'function
   :group 'phi-grep)
 
 (defcustom phi-grep-window-height 20
   "height of phi-grep window"
+  :type 'integer
   :group 'phi-grep)
 
 ;; + faces
@@ -154,17 +161,16 @@ phi-grep not to make backups."
   "Return a list of all (LINE-NUM LINE-STR (BEG . END) (BEG
  . END) ...) in the buffer that matches REGEXP."
   (save-excursion
-    (let ((cnt 1) res)
-      (dolist (line (split-string
-                     (buffer-substring-no-properties (point-min) (point-max))
-                     "\n"))
-        (when (string-match regexp line)
-          (let (matches)
-            (while (progn
-                     (push (cons (match-beginning 0) (match-end 0)) matches)
-                     (string-match regexp line (1+ (caar matches)))))
-            (push (cons cnt (cons line matches)) res)))
-        (cl-incf cnt))
+    (let (res)
+      (goto-char 1)
+      (while (search-forward-regexp regexp nil t)
+        (let ((beg (point-at-bol)) (end (point-at-eol)) matches)
+          (while (progn
+                   (push (cons (- (match-beginning 0) beg) (- (match-end 0) beg)) matches)
+                   (search-forward-regexp regexp end t)))
+          (push (cons (line-number-at-pos)
+                      (cons (buffer-substring-no-properties beg end) matches))
+                res)))
       (nreverse res))))
 
 ;; ++ files
@@ -303,6 +309,8 @@ there is one."
                                 (pgr:search-all-regexp regexp))
                             (with-temp-buffer
                               (insert-file-contents file)
+                              (let ((buffer-file-name file))
+                                (ignore-errors (set-auto-mode)))
                               (pgr:search-all-regexp regexp))))
            (first-item-p t)
            items)
@@ -507,7 +515,7 @@ reuse the buffer instead of finding file to keep modifications."
    (list (read-directory-name "Tree: ")
          (read-regexp (if (fboundp 'read-regexp) "Regexp" "Regexp: "))
          (read-string "CheckOnly: ")))
-  (phi-grep (pgr:directory-files tree t (split-string only " ")) regexp))
+  (phi-grep (pgr:directory-files tree t (split-string (or only "") " ")) regexp))
 
 ;;;###autoload
 (defun phi-grep-dired-in-dir-at-point (regex &optional only)

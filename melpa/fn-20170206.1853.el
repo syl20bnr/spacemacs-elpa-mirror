@@ -4,7 +4,7 @@
 
 ;; Author: Troy Pracy
 ;; Keywords: functional
-;; Package-Version: 20170130.1745
+;; Package-Version: 20170206.1853
 ;; Version: 0.1.2
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5") (dash "2.12.1") (dash-functional "1.2.0"))
 
@@ -51,15 +51,15 @@ If applied to a literal, creates a constant function, or equivalently, a thunk
 
 Examples:
 
-  (-map (fn (* <1> <1>)) (number-sequence 0 10))
+  (-map (fn (* <> <>)) (number-sequence 0 10))
   ;; (0 1 4 9 16 25 36 49 64 81 100)
 
   (-map (fn (/ (-sum <>)
                (length <>)))
         '((3.0 4.0 5.0 5.0 10.0)
-          (1.0 2.0 2.0 2.0)
+          (1.5 2.5 2.0)
           (1 5)))
-  ;; (5.4 1.75 3)
+  ;; (5.4 2.0 3)
   ;; find average of each list
 
   (-filter (fn (zerop (mod <> 3)))
@@ -122,7 +122,7 @@ the highest numerical parameter supplied.
 
 Examples:
 
-  (-map (fn: * <1> <1>) (number-sequence 0 10))
+  (-map (fn: * <> <>) (number-sequence 0 10))
   ;; (0 1 4 9 16 25 36 49 64 81 100)
 
   (-filter (fn: > <> 0)
