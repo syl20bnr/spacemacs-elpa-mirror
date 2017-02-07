@@ -10,7 +10,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20170203.248
+;; Package-Version: 20170206.1238
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -1051,7 +1051,7 @@ function is subsequently applied to each line, once."
   (setq-local warning-suppress-types (cons '(undo discard-info) warning-suppress-types))
   (add-hook 'comint-output-filter-functions
             'intero-linkify-process-output
-            t)
+            t t)
   (setq-local comint-prompt-read-only t)
   (add-to-list (make-local-variable 'company-backends) 'company-intero)
   (company-mode))
