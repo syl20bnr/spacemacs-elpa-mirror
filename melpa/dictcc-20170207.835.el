@@ -5,7 +5,7 @@
 ;;
 ;; Author: Marten Lienen <marten.lienen@gmail.com>
 ;; Version: 0.1.1
-;; Package-Version: 20151221.357
+;; Package-Version: 20170207.835
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5") (s "1.0") (dash "2.0") (helm "1.0"))
 
@@ -56,6 +56,16 @@
   "Destination language."
   :type 'string
   :group 'dictcc)
+
+(defface dictcc-tag-face
+  '((((background dark)) :inherit font-lock-comment-face :foreground "#555555")
+    (((background light)) :inherit font-lock-comment-face :foreground "#AAAAAA")
+    (default :inherit font-lock-comment-face))
+  "Font Lock mode face used to fade tags."
+  :group 'dictcc)
+
+(defvar dictcc-tag-face 'dictcc-tag-face
+  "Face name to use for tags.")
 
 (cl-defstruct dictcc--translation text tags)
 
@@ -128,9 +138,11 @@ Emacs does not like my regexps."
   "Generate a string representation of TRANSLATION."
   (concat (dictcc--translation-text translation)
           " "
-          (s-join " "
-                  (mapcar (lambda (tag) (concat "[" tag "]"))
-                          (dictcc--translation-tags translation)))))
+          (propertize
+           (s-join " "
+                   (mapcar (lambda (tag) (concat "[" tag "]"))
+                           (dictcc--translation-tags translation)))
+           'face dictcc-tag-face)))
 
 (defun dictcc--request-url (query)
   "Generate a URL for QUERY."
@@ -204,8 +216,7 @@ At the moment they are of the form `<tr id='trXXX'></tr>'."
 
 (defun dictcc--candidate (pair)
   "Generate the candidate pair for a PAIR of translations."
-  (let* ((format-string (format "%%-%ds -- %%%ds"
-                                dictcc-candidate-width
+  (let* ((format-string (format "%%-%ds   %%s"
                                 dictcc-candidate-width))
          (source (dictcc--cap-string (dictcc--translation-to-string (car pair))))
          (destination (dictcc--cap-string (dictcc--translation-to-string (cdr pair))))
@@ -219,7 +230,7 @@ At the moment they are of the form `<tr id='trXXX'></tr>'."
     string))
 
 (defun dictcc--select-translation (query translations)
-  "Select one from TRANSLATIONS and insert it into the buffer."
+  "For QUERY, select one of TRANSLATIONS and insert into buffer."
   (let* ((candidates (mapcar #'dictcc--candidate translations))
          (source `((name . ,(format "Translations for «%s»" query))
                    (candidates . ,candidates)

@@ -1,9 +1,10 @@
 ;;; copy-as-format.el --- Copy buffer locations as GitHub/Slack/JIRA/HipChat/... formatted text
 
+;; Copyright (C) 2016-2017 Skye Shaw
 ;; Author: Skye Shaw <skye.shaw@gmail.com>
-;; Package-Version: 20161231.1628
-;; Package-X-Original-Version: 0.0.2
-;; Keywords: github, slack, jira, hipchat, gitlab, bitbucket, tools, convenience
+;; Package-Version: 0.0.3
+;; Package-X-Original-Version: 0.0.3
+;; Keywords: github, slack, jira, hipchat, gitlab, bitbucket, org-mode, tools, convenience
 ;; URL: https://github.com/sshaw/copy-as-format
 ;; Package-Requires: ((cl-lib "0.5"))
 
@@ -33,6 +34,9 @@
 
 ;;; Change Log:
 
+;; 2016-02-07 - v0.0.3
+;; * Add support for Org-mode
+;;
 ;; 2016-12-31 - v0.0.2
 ;; * Remove leading whitespace when copying regions
 ;; * Remove leading whitespace when copying JIRA single lines
@@ -56,6 +60,7 @@
     ("html"      copy-as-format--html)
     ("jira"      copy-as-format--jira)
     ("markdown"  copy-as-format--markdown)
+    ("org-mode"  copy-as-format--org-mode)
     ("slack"     copy-as-format--slack))
   "Alist of format names and the function to do the formatting.")
 
@@ -137,6 +142,11 @@
         (buffer-string))
     (copy-as-format--inline-markdown text)))
 
+(defun copy-as-format--org-mode (text multiline)
+  (format "#+BEGIN_SRC %s\n%s\n#+END_SRC\n"
+          (replace-regexp-in-string "-mode\\'" "" (symbol-name major-mode))
+          text))
+
 (defun copy-as-format--slack (text multiline)
   (if multiline
       (format "```\n%s\n```\n" text)
@@ -206,6 +216,7 @@ With a prefix argument prompt for the format."
 ;;;###autoload (autoload 'copy-as-format-html      "copy-as-format" nil t)
 ;;;###autoload (autoload 'copy-as-format-jira      "copy-as-format" nil t)
 ;;;###autoload (autoload 'copy-as-format-markdown  "copy-as-format" nil t)
+;;;###autoload (autoload 'copy-as-format-org-mode  "copy-as-format" nil t)
 ;;;###autoload (autoload 'copy-as-format-slack     "copy-as-format" nil t)
 
 (provide 'copy-as-format)

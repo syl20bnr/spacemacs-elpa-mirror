@@ -1,11 +1,10 @@
-;;; ranger.el --- Make dired more like ranger
-
+;;; ranger.el --- Make dired more like ranger -*- lexical-binding: t -*-
 ;; Copyright (C) 2015  Rich Alesi
 
 ;; Author : Rich Alesi <https://github.com/ralesi>
 ;; Version: 0.9.8.3
-;; Package-Version: 20161002.2336
-;; Keywords: files, convenience
+;; Package-Version: 20170207.2133
+;; Keywords: files, convenience, dired
 ;; Homepage: https://github.com/ralesi/ranger
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -57,18 +56,17 @@
 
 ;; version 0.9.1,   2015-07-19 changed package to ranger
 ;; version 0.9.2,   2015-07-26 improve exit from ranger, bookmark support
-;; version 0.9.4,   2015-07-31 deer mode, history navigation
-;; version 0.9.5,   2015-08-20 fixed most bugs when reverting from ranger
-;; version 0.9.6,   2015-09-11 delete all accessed buffers, add details to echo
-;; version 0.9.7,   2015-09-13 copy and paste functionality added
-;; version 0.9.8,   2015-10-04 multiple ranger window support, override dired
-;; version 0.9.8.1, 2015-10-04 ranger is now a major mode
-;; version 0.9.8.3, 2016-08-23 ranger-override-dired-mode
+;; version 0.9.3,   2015-07-31 deer mode, history navigation
+;; version 0.9.4,   2015-08-20 fixed most bugs when reverting from ranger
+;; version 0.9.5,   2015-09-11 delete all accessed buffers, add details to echo
+;; version 0.9.6,   2015-09-13 copy and paste functionality added
+;; version 0.9.7,   2015-10-04 multiple ranger window support, override dired
+;; version 0.9.8,   2015-10-04 ranger is now a major mode
+;; version 0.9.8.1, 2016-08-23 ranger-override-dired-mode
 ;; version 0.9.8.4, 2016-10-02 more mappings to match ranger
 
 ;;; Code:
 
-(declare-function dired-omit-mode "dired-x")
 (declare-function dired-kill-tree "dired-aux")
 (declare-function image-dired-display-window-height "image-dired")
 (declare-function image-dired-display-window-width "image-dired")
@@ -81,7 +79,6 @@
 (require 'dired)
 (require 'hl-line)
 (require 'autorevert)
-(require 'bookmark)
 (require 'ring)
 
 (require 'subr-x)
@@ -98,6 +95,11 @@
   :group 'ranger
   :type 'boolean)
 
+(defcustom ranger-return-to-ranger nil
+  "Return to ranger after killing edit buffer."
+  :group 'ranger
+  :type 'boolean)
+
 (defcustom ranger-cleanup-eagerly nil
   "Cleanup opened buffers upon `ranger-next-file' & `ranger-prev-file'."
   :group 'ranger
@@ -108,9 +110,14 @@
   :group 'ranger
   :type 'boolean)
 
-(defcustom ranger-hidden-filter
-  "^\.|\.(?:pyc|pyo|bak|swp)$|^lost\+found$|^__(py)?cache__$"
+(defcustom ranger-hidden-regexp
+  "^\\."
   "Regexp of filenames to hide."
+  :group 'ranger
+  :type 'string)
+
+(defcustom ranger-omit-regexp "^\\.?#\\|^\\.$\\|^\\.\\.$"
+  "Regexp of omitted filetypes in ranger."
   :group 'ranger
   :type 'string)
 
@@ -262,8 +269,6 @@ preview window."
 ;; declare used variables
 (defvar ranger-was-ranger)
 (defvar ranger-mode)
-(defvar dired-omit-verbose)
-(defvar dired-omit-mode)
 (defvar image-dired-temp-image-file)
 (defvar image-dired-cmd-create-temp-image-program)
 (defvar image-dired-cmd-create-temp-image-options)
@@ -304,7 +309,6 @@ preview window."
 (defvar ranger-pre-saved nil)
 (defvar ranger-pre-hl-mode nil)
 (defvar ranger-pre-arev-mode nil)
-(defvar ranger-pre-omit-mode nil)
 (defvar ranger-pre-dired-listing nil)
 
 (defvar ranger-preview-window nil)
@@ -339,14 +343,93 @@ preview window."
 (defvar ranger-preview-dir-hook '(;; ranger-to-dired
                                   ;; revert-buffer
                                   ranger-sort
-                                  ranger-omit-files
+                                  ranger-filter-files
                                   ranger-truncate
                                   ranger-show-details
                                   ))
 
 (defun ranger-show-details ()
   "Show details."
-  (dired-hide-details-mode -1))
+  (ranger-mask-show-details)
+  ;; (dired-hide-details-mode -1)
+  ;; (ranger-mask-details)
+  )
+
+(defcustom ranger-dired-display-mask '(t t t t t t t t)
+  "Contols hiding/transforming columns.  If set, its value must be a list of
+symbols, one for each attributes column.  If the symbol is nil, then the
+corresponding column will be hidden, and if it's not nil then the column will be
+left untouched.  The symbol may also be the name of a function that takes one
+string argument and evaluates to a different string -- in this case this
+function will be used to transform the contents of the corresponding column and
+its result will be displayed instead."
+  :group 'ranger
+  :type '(repeat symbol))
+
+(defcustom ranger-dired-hide-mask '(nil nil nil nil nil nil nil t)
+  "Contols hiding/transforming columns.  If set, its value must be a list of
+symbols, one for each attributes column.  If the symbol is nil, then the
+corresponding column will be hidden, and if it's not nil then the column will be
+left untouched.  The symbol may also be the name of a function that takes one
+string argument and evaluates to a different string -- in this case this
+function will be used to transform the contents of the corresponding column and
+its result will be displayed instead."
+  :group 'ranger
+  :type '(repeat symbol))
+
+(defun ranger-mask-attributes (beg end mask)
+  "Manage the hiding of attributes in region from BEG to END.
+Selective hiding of specific attributes can be controlled by MASK."
+  (let ((cursor beg) props)
+    (cl-labels ((ranger-make-display-props
+            (display-function-or-flag)
+            (cond ((functionp display-function-or-flag)
+                   `(display
+                     ,(apply display-function-or-flag
+                             (list (buffer-substring cursor (1- (point)))))))
+                  ((null display-function-or-flag) '(invisible t))
+                  (t nil))))
+      (if t
+          (block block
+            (mapc (lambda (do-display)
+                    (search-forward-regexp "\\w")
+                    (search-forward-regexp "\\s-")
+                    (forward-char -1)
+                    (setq props (ranger-make-display-props do-display))
+                    (when props
+                      (add-text-properties cursor (point) props))
+                    (setq cursor (point))
+                    (if (>= (point) end) (return-from block)))
+                  mask))
+        (unless (>= cursor end)
+          (add-text-properties cursor (1- end) '(invisible t)))))))
+
+(defun ranger-mask-details (mask)
+  "Manage the display of file attributes with `MASK'."
+  (let ((inhibit-read-only t)
+        (beg (point-min))
+        (end (point-max))
+        (next))
+    (save-excursion
+      (goto-char beg)
+      (forward-line -1)
+      (while (and (null next) (< (point) end))
+        (forward-line 1)
+        (setq next (dired-move-to-filename)))
+      (while (and next (< next end))
+        (beginning-of-line)
+        (forward-char 1)
+        (remove-text-properties (point) next '(invisible t))
+        (remove-text-properties (point) next '(display))
+        (ranger-mask-attributes (point) next mask)
+        (forward-line 1)
+        (setq next (dired-move-to-filename))))))
+
+(defun ranger-mask-show-details ()
+  (ranger-mask-details ranger-dired-display-mask))
+
+(defun ranger-mask-hide-details ()
+  (ranger-mask-details ranger-dired-hide-mask))
 
 (defun ranger-truncate ()
   "Truncate lines."
@@ -356,7 +439,7 @@ preview window."
                                  ;; revert-buffer
                                  dired-hide-details-mode
                                  ranger-sort
-                                 ranger-omit-files
+                                 ranger-filter-files
                                  ranger-sub-window-setup
                                  ))
 
@@ -366,7 +449,8 @@ preview window."
     (define-key map "?"             'ranger-help)
     (define-key map "du"            'ranger-show-size)
     (define-key map "q"             'ranger-close)
-    (define-key map "ZZ"             'ranger-close)
+    ;; (define-key map (kbd "<ESC>")   'ranger-close)
+    (define-key map "ZZ"            'ranger-close)
     (define-key map "Q"             'ranger-disable)
     (define-key map "ZQ"             'ranger-disable)
     (define-key map (kbd "C-r")     'ranger-refresh)
@@ -460,7 +544,7 @@ preview window."
     (define-key map "z-"            'ranger-less-parents)
     (define-key map "zh"            'ranger-toggle-dotfiles)
     (define-key map (kbd "C-h")     'ranger-toggle-dotfiles)
-    (define-key map "zp"            'ranger-minimal-toggle)
+    (define-key map "zP"            'ranger-minimal-toggle)
     (define-key map "zd"            'ranger-toggle-dir-first)
     ;; TODO map zf   regexp filter
 
@@ -474,8 +558,18 @@ preview window."
     (define-key map "uq" 'ranger-restore-tab)
 
     ;; define M + number bindings to access tabs.
-    (cl-loop for num in '(1 2 3 4 5 6 7 8 9)
-             do (eval `(define-key map (kbd ,(concat "M-" (int-to-string num))) '(lambda() (interactive)(ranger-goto-tab ,num)))))
+    (define-key map "\M-1" '(lambda () (interactive) (ranger-goto-tab 1)))
+    (define-key map "\M-2" '(lambda () (interactive) (ranger-goto-tab 2)))
+    (define-key map "\M-3" '(lambda () (interactive) (ranger-goto-tab 3)))
+    (define-key map "\M-4" '(lambda () (interactive) (ranger-goto-tab 4)))
+    (define-key map "\M-5" '(lambda () (interactive) (ranger-goto-tab 5)))
+    (define-key map "\M-6" '(lambda () (interactive) (ranger-goto-tab 6)))
+    (define-key map "\M-7" '(lambda () (interactive) (ranger-goto-tab 7)))
+    (define-key map "\M-8" '(lambda () (interactive) (ranger-goto-tab 8)))
+    (define-key map "\M-9" '(lambda () (interactive) (ranger-goto-tab 9)))
+    (define-key map "\M-0" '(lambda () (interactive) (ranger-goto-tab 0)))
+    ;; (cl-loop for num in '(1 2 3 4 5 6 7 8 9)
+    ;;          do (eval `(define-key map (concat "\\M-" ,(number-to-string num)) '(lambda() (interactive)(ranger-goto-tab ,num)))))
 
     ;; search
     (define-key map "/"             'ranger-search)
@@ -566,7 +660,25 @@ to not replace existing value."
 
 
 ;; data structures
-(cl-defstruct (ranger-window (:constructor ranger--track-window))
+
+(cl-defstruct (ranger
+               (:conc-name ranger-)
+               (:constructor make-ranger))
+  (id nil)
+  (window nil)
+  (frame nil)
+  (buffer nil)
+  (track-file nil)
+  (entry-buffer nil)
+  (window-conf nil)
+  (tab-index nil)
+  (history nil)
+  (minimal nil))
+               
+(ranger-id
+ (make-ranger))
+
+(cl-defstruct (ranger-window (:constructor ranger-track-window))
   prev-buffer curr-buffer curr-tab history)
 
 (defun ranger-track-window (window &optional prev curr tab)
@@ -799,7 +911,8 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
     (eshell)
     (kill-buffer tmp)
     (add-hook 'eshell-exit-hook
-              '(lambda () (unless (one-window-p) (delete-window))) nil t)))
+              '(lambda () (unless (one-window-p) (delete-window))
+                 (select-window 'ranger-window)) nil t)))
 
 
 ;;; delayed function creation
@@ -1097,16 +1210,36 @@ ranger-`CHAR'."
   (interactive)
   (setq ranger-deer-show-details (not ranger-deer-show-details))
   (ranger-setup)
+  ;; (ranger-mask-details)
   (message (format "Show file details: %s"  ranger-deer-show-details)))
 
-(defun ranger-omit-files ()
-  "Quietly omit files in dired."
-  ;; (setq-local dired-omit-files "^\\.?#\\|^\\.$\\|^\\.\\.$")
-  (setq-local dired-omit-verbose nil)
-  (let ((dired-omit-files (if (not ranger-show-hidden)
-                              (concat dired-omit-files "\\|^\\.")
-                            dired-omit-files)))
-    (dired-omit-mode t)))
+(defun ranger-filter-files ()
+  "Omit and filter files in ranger."
+  (let ((omit-re (if (not ranger-show-hidden)
+                     (concat ranger-omit-regexp
+                             "\\|"
+                             ranger-hidden-regexp)
+                            ranger-omit-regexp)))
+    (ranger-omit-files omit-re)))
+
+(defun ranger-omit-files (&optional regexp)
+  (interactive "sOmit files (regexp): ")
+  (let ((omit-re (or regexp ranger-omit-regexp))
+        (old-modified-p (buffer-modified-p))
+        count)
+    (or (string= omit-re "")
+        (let ((dired-marker-char 16))
+          (if (dired-mark-unmarked-files omit-re nil nil 'no-dir)
+              (progn
+                (setq count (dired-do-kill-lines nil ""))
+                (force-mode-line-update)))))
+    ;; Try to preserve modified state of buffer.  So `%*' doesn't appear
+    ;; in mode-line of omitted buffers.
+    ;; (set-buffer-modified-p (and old-modified-p
+    ;;                             (save-excursion
+    ;;                               (goto-char (point-min))
+    ;;                               (re-search-forward dired-re-mark nil t))))
+    count))
 
 (defun ranger-sort-criteria (criteria)
   "Call sort-dired by different `CRITERIA'."
@@ -1151,22 +1284,19 @@ ranger-`CHAR'."
   (interactive)
   (if (r--fget ranger-minimal)
       (message "Currently in deer mode. Previews are disabled.")
+    (setq ranger-preview-file (not ranger-preview-file))
     (if ranger-preview-file
         (progn
-          (when (and ranger-preview-window
-                     (eq (selected-frame) (window-frame ranger-preview-window))
-                     (window-live-p ranger-preview-window)
-                     (window-at-side-p ranger-preview-window 'right))
-            (ignore-errors
-              (delete-window ranger-preview-window)))
-          (dired-hide-details-mode -1)
-          (funcall 'add-to-invisibility-spec 'dired-hide-details-information)
-          (setq ranger-preview-file nil))
+          (ranger-mask-hide-details)
+          (ranger-setup-preview))
       (progn
-        (setq ranger-preview-file t)
-        (dired-hide-details-mode t)
-        (setq dired-hide-details-hide-symlink-targets nil))
-      (ranger-setup-preview))))
+        (when (and ranger-preview-window
+                   (eq (selected-frame) (window-frame ranger-preview-window))
+                   (window-live-p ranger-preview-window)
+                   (window-at-side-p ranger-preview-window 'right))
+          (ignore-errors
+            (delete-window ranger-preview-window)))
+        (ranger-mask-show-details)))))
 
 (defun ranger-toggle-scale-images ()
   "Show/hide dot-files."
@@ -1235,7 +1365,7 @@ ranger-`CHAR'."
       (delete-other-windows))
     (r--aput ranger-w-alist
              window
-             (cons (current-buffer) nil)
+             (cons (cons (current-buffer) (point)) nil)
              (null overwrite))))
 
 (defun ranger-find-file (&optional entry ignore-history)
@@ -1866,7 +1996,9 @@ is set, show literally instead of actual buffer."
             (when (not (memq preview-buffer original-buffer-list))
               (add-to-list 'ranger-preview-buffers preview-buffer))
             (setq ranger-preview-window preview-window)
-            (dired-hide-details-mode t)))))))
+            (ranger-mask-hide-details)
+            ;; (dired-hide-details-mode t)
+            ))))))
 
 
 ;; utilities
@@ -2041,7 +2173,8 @@ fraction of the total frame size"
          (ranger-window-props
           (r--aget ranger-w-alist
                    (selected-window)))
-         (prev-buffer (car ranger-window-props))
+         (prev-buffer (caar ranger-window-props))
+         (prev-point (cdar ranger-window-props))
          (ranger-buffer (cdr ranger-window-props))
          (config
           (r--aget ranger-f-alist
@@ -2053,7 +2186,9 @@ fraction of the total frame size"
       (if minimal
           (when (and prev-buffer
                      (buffer-live-p prev-buffer))
-            (switch-to-buffer prev-buffer))
+            (switch-to-buffer prev-buffer)
+            (goto-char prev-point)
+            )
         (when (and config
                    (window-configuration-p config))
           (set-window-configuration config)
@@ -2124,10 +2259,9 @@ fraction of the total frame size"
         (auto-revert-mode -1))
       (setq header-line-format ranger-pre-header-format)
       (when (derived-mode-p 'dired-mode)
-        (unless ranger-pre-omit-mode
-          (dired-omit-mode -1))
         (setq dired-listing-switches ranger-pre-dired-listing)
-        (dired-hide-details-mode -1)
+        (ranger-mask-show-details)
+        ;; (dired-hide-details-mode -1)
         ;; revert ranger-mode
         ;; (setq ranger-mode nil)
         ;; hide details line at top
@@ -2145,7 +2279,7 @@ fraction of the total frame size"
   (let* ((ranger-window-props
           (r--aget ranger-w-alist
                    (selected-window)))
-         (prev-buffer (car ranger-window-props))
+         (prev-buffer (caar ranger-window-props))
          (minimal (r--fget ranger-minimal))
          (ranger-buffer (cdr ranger-window-props))
          (current (current-buffer))
@@ -2156,7 +2290,9 @@ fraction of the total frame size"
       (ranger-disable)
       (find-file buffer-fn)
       (setq-local cursor-type t)
-      (setq header-line-format ranger-pre-header-format))
+      (setq header-line-format ranger-pre-header-format)
+      (when ranger-return-to-ranger
+        (add-hook 'kill-buffer-hook 'ranger nil t)))
      ((eq major-mode 'dired-mode)
       (if minimal
           (deer)
@@ -2176,7 +2312,7 @@ fraction of the total frame size"
          (ranger-window-props
           (r--aget ranger-w-alist
                    (selected-window)))
-         (prev-buffer (car ranger-window-props))
+         (prev-buffer (caar ranger-window-props))
          (ranger-windows (r--akeys ranger-w-alist))
          (ranger-buffer (cdr ranger-window-props))
          (ranger-frames (r--akeys ranger-f-alist)))
@@ -2404,7 +2540,6 @@ properly provides the modeline in dired mode. "
            ))
     (with-eval-after-load "diminish"
       ;; (diminish 'ranger-mode)
-      (diminish 'dired-omit-mode)
       (diminish 'auto-revert-mode))
     (force-mode-line-update)))
 
@@ -2425,8 +2560,8 @@ properly provides the modeline in dired mode. "
         (when (and ranger-listing-dir-first
                    (not (string-match "[XStU]+" switches)))
           (if (string-match "r" switches)
-              (sort-regexp-fields nil "^.*$" "[ ]*." (point) (point-max))
-            (sort-regexp-fields t "^.*$" "[ ]*." (point) (point-max))))
+                (sort-regexp-fields nil "^.*\n" "^[ ]*." (point) (point-max))
+            (sort-regexp-fields t "^.*\n" "^[ ]*." (point) (point-max))))
         (set-buffer-modified-p nil)))))
 
 ;;;###autoload
@@ -2536,7 +2671,6 @@ properly provides the modeline in dired mode. "
     (setq ranger-pre-header-format header-line-format)
     (setq ranger-pre-hl-mode hl-line-mode)
     (setq ranger-pre-arev-mode auto-revert-mode)
-    (setq ranger-pre-omit-mode dired-omit-mode)
     (setq ranger-pre-dired-listing dired-listing-switches)
     (setq ranger-pre-saved t))
 
@@ -2561,12 +2695,7 @@ properly provides the modeline in dired mode. "
   ;; hide groups, show human readable file sizes
   (setq dired-listing-switches ranger-listing-switches)
 
-  (if (r--fget ranger-minimal)
-      (if ranger-deer-show-details
-          (dired-hide-details-mode -1)
-        (dired-hide-details-mode t))
-    (progn
-      (dired-hide-details-mode -1)))
+  ;; (ranger-mask-hide-details)
 
   ;; truncate lines for primary window
   (ranger-truncate)
@@ -2581,7 +2710,7 @@ properly provides the modeline in dired mode. "
 
   (ranger-sort t)
   (ranger-show-flags)
-  (ranger-omit-files)
+  (ranger-filter-files)
 
   ;; open new tab if ranger is in multiple frames.
   (if (> (length ranger-f-alist) 1)
@@ -2605,6 +2734,13 @@ properly provides the modeline in dired mode. "
   (ranger-hide-the-cursor)
   (run-hooks 'ranger-mode-load-hook)
 
+  (if (r--fget ranger-minimal)
+      (if ranger-deer-show-details
+          (ranger-mask-show-details)
+        (ranger-mask-hide-details))
+    (progn
+        (ranger-mask-hide-details)))
+
   (ranger--message "Ranger loaded"))
 
 (defun ranger-hide-the-cursor ()
@@ -2614,6 +2750,8 @@ properly provides the modeline in dired mode. "
 
 (defvar ranger--debug nil)
 (defvar ranger--debug-period 0.5)
+
+;; TODO make a ranger debug pane as the bottom window
 
 (defun ranger--message (format &rest args)
   (when ranger--debug

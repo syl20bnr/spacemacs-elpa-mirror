@@ -5,7 +5,7 @@
 ;; Author: Samuel Tonini <tonini.samuel@gmail.com>
 
 ;; URL: http://www.github.com/tonini/overseer.el
-;; Package-Version: 20160517.2343
+;; Package-Version: 20170207.2241
 ;; Version: 0.3.0
 ;; Package-Requires: ((emacs "24") (dash "2.10.0") (pkg-info "0.4") (f "0.18.1"))
 ;; Keywords:
@@ -191,9 +191,18 @@
   (interactive "Mert-runner -t: ")
   (overseer-execute (list "-t" tags)))
 
+(defvar overseer--prompt-history nil
+  "List of recent prompts read from minibuffer.")
+
 (defun overseer-test-prompt (command)
   "Run ert-runner with custom arguments."
-  (interactive "Mert-runner: ")
+  (interactive
+   (list (let ((default (car-safe overseer--prompt-history)))
+           (read-string
+            (if default
+                (format "ert-runner (default \"%s\"): " default)
+              "ert-runner ")
+            nil 'overseer--prompt-history default t))))
   (overseer-execute (list command)))
 
 (defun overseer-execute (cmdlist)
