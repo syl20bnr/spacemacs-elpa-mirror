@@ -16,6 +16,9 @@ See `promise-examples.el' for details.
 
 (require 'promise)
 
+Please be sure to enable it when developing.
+(promise-rejection-tracking-enable '((all-rejections . t)))
+
 (defun do-something-async (delay-sec value)
   "Return `Promise' to resolve the value asynchronously."
   (promise-new (lambda (resolve _reject)

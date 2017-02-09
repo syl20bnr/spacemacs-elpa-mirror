@@ -1,4 +1,6 @@
 Store project local variables (property) using Projectile and Symbol Plists.
+The name of this package has projectile- in the prefix, but it can now be executed without depending on it.
+
 
 - https://github.com/bbatsov/projectile
 - https://www.gnu.org/software/emacs/manual/html_node/elisp/Symbol-Plists.html

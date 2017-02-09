@@ -1,9 +1,35 @@
-The aim of this mode is to make editing Python code in a
-version-controlled project easier, and enable the execution of
-repetitive tasks --such as running tests or scripts-- in emacs
-shell buffers. Please see README.rst for details.
+;;; abl-mode.el --- Python TDD minor mode
 
-<<--------- The necessary minor-mode stuff  ---------->>
+;;
+;; Author: Ulas Tuerkmen <ulas.tuerkmen at gmail dot com>
+;; URL: http://github.com/afroisalreadyinu/abl-mode
+;; Package-Version: 20170208.647
+;; Version: 0.9.2
+;;
+;; Copyright (C) 2011 Ulas Tuerkmen
+;;
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+;; GNU General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+
+;;; Commentary:
+
+;; The aim of this mode is to make editing Python code in a
+;; version-controlled project easier, and enable the execution of
+;; repetitive tasks --such as running tests or scripts-- in emacs
+;; shell buffers. Please see README.rst for details.
+
+;; <<--------- The necessary minor-mode stuff  ---------->>
 (eval-when-compile (require 'cl))
 
 (defgroup abl-mode nil
@@ -14,7 +40,7 @@ shell buffers. Please see README.rst for details.
   "Mode variable for abl-mode")
 (make-variable-buffer-local 'abl-mode)
 
-###autoload
+;;;###autoload
 (defun abl-mode (&optional arg)
   "abl minor mode"
   (interactive "P")
@@ -33,7 +59,7 @@ shell buffers. Please see README.rst for details.
 	  (setq abl-mode-ve-name (abl-mode-get-ve-name))
 	  (abl-mode-local-options project-base)))))
 
-###autoload
+;;;###autoload
 (defun abl-mode-hook ()
   (abl-mode))
 
@@ -56,7 +82,7 @@ shell buffers. Please see README.rst for details.
           (cons (cons 'abl-mode abl-mode-keymap)
                 minor-mode-map-alist)))
 
-<<------------  Customization options  -------------->>
+;; <<------------  Customization options  -------------->>
 
 (defcustom abl-mode-ve-activate-command "workon %s"
   "The command for activating a virtual environment")
@@ -104,7 +130,7 @@ shell buffers. Please see README.rst for details.
 "Regexp to find out whether the test run has finished.")
 (make-variable-buffer-local 'abl-mode-end-testrun-re)
 
-<<----------------  Here ends the customization -------------->>
+;; <<----------------  Here ends the customization -------------->>
 
 (defvar abl-mode-branch-base ""
   "Base directory of the current branch")
@@ -145,7 +171,7 @@ shell buffers. Please see README.rst for details.
 
 (defvar abl-mode-identifier-re "[^a-zA-Z0-9_\.]")
 
-<<------------- Helpers  ------------->>
+;; <<------------- Helpers  ------------->>
 
 (defun abl-mode-starts-with (str1 str2)
   "Does str1 start with str2?"
@@ -246,7 +272,7 @@ return str"
     (setq str (replace-match "" t t str)))
   str)
 
-------------------------------------
+;; ------------------------------------
 
 (defun abl-mode-git-or-svn (base-dir)
   (cond ((locate-dominating-file (abl-mode-concat-paths base-dir) ".git") "git")
@@ -326,7 +352,7 @@ branch. If no vcs, "
      (concat prjct-name "_"
 	     (replace-regexp-in-string "/" "-" branch-name)))))
 
-<< ---------------  Shell stuff  ----------------->>
+;;<< ---------------  Shell stuff  ----------------->>
 
 (defun abl-mode-shell-name-for-branch (project-name branch-name)
   (concat abl-mode-branch-shell-prefix project-name "_" branch-name))
@@ -439,7 +465,7 @@ map for latest test run output."
 	      (cons name create-new)
 	    (abl-mode-ve-name-or-create vem-or-y 't)))))))
 
-<<------------  Running the server and tests  -------->>
+;; <<------------  Running the server and tests  -------->>
 
 (defun abl-mode-determine-test-function-name ()
   (save-excursion
@@ -466,8 +492,8 @@ followed by a proper class name).")
 	(buffer-substring-no-properties start (point)))))))
 
 
-this function assumes that you are already in a test function (see
-the function above)
+;;this function assumes that you are already in a test function (see
+;;the function above)
 (defun abl-mode-test-in-class ()
   (save-excursion
     (end-of-line)
@@ -625,7 +651,7 @@ import module and print its __file__ attribute."
 	(error (format "Importing module %s caused SyntaxError" module)))
     (find-file (abl-mode-drop-last-if possible-path "c"))))
 
-Sample custom command
+;; Sample custom command
 
 (defun run-current-branch ()
   (interactive)
@@ -639,16 +665,16 @@ Sample custom command
 (provide 'abl-mode)
 
 
-<<------------  TODOS -------------->>
-- intelligent filtering of test files; do not complain when file does not fit regexp
-- tdd mode where tests are ran when files change
-- open a library file from vm
-- improve test infrastructure
-- add not changing directories through pwdx
-for mac: function pwdx {
-  lsof -a -p $1 -d cwd -n | tail -1 | awk '{print $NF}'
-}
-- change abl-mode init to work also with files not inside the git dir (opened modules)
-- moving back to shell window if it has a pdb?
+;; <<------------  TODOS -------------->>
+;; - intelligent filtering of test files; do not complain when file does not fit regexp
+;; - tdd mode where tests are ran when files change
+;; - open a library file from vm
+;; - improve test infrastructure
+;; - add not changing directories through pwdx
+;; for mac: function pwdx {
+;;   lsof -a -p $1 -d cwd -n | tail -1 | awk '{print $NF}'
+;; }
+;; - change abl-mode init to work also with files not inside the git dir (opened modules)
+;; - moving back to shell window if it has a pdb?
 
-abl-mode.el ends here
+;;; abl-mode.el ends here

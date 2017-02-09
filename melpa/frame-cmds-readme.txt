@@ -71,12 +71,14 @@
  Commands defined here:
 
    `create-frame-tiled-horizontally',
-   `create-frame-tiled-vertically', `delete-1-window-frames-on',
+   `create-frame-tiled-vertically', `decrease-frame-transparency'
+   (Emacs 23+), `delete-1-window-frames-on',
    `delete/iconify-window', `delete/iconify-windows-on',
    `delete-other-frames', `delete-windows-for', `enlarge-font',
    `enlarge-frame', `enlarge-frame-horizontally',
    `hide-everything', `hide-frame', `iconify-everything',
    `iconify/map-frame', `iconify/show-frame',
+   `increase-frame-transparency' (Emacs 23+),
    `jump-to-frame-config-register', `maximize-frame',
    `maximize-frame-horizontally', `maximize-frame-vertically',
    `mouse-iconify/map-frame', `mouse-iconify/show-frame',
@@ -153,6 +155,8 @@
   (global-set-key [(control meta right)]         'enlarge-frame-horizontally)
   (global-set-key [(control meta up)]            'shrink-frame)
   (global-set-key [(control meta left)]          'shrink-frame-horizontally)
+  (global-set-key (kbd "C-M-S-<down>")           'increase-frame-transparency)
+  (global-set-key (kbd "C-M-S-<up>")             'decrease-frame-transparency)
   (global-set-key [(control ?x) (control ?z)]    'iconify-everything)
   (global-set-key [vertical-line S-down-mouse-1] 'iconify-everything)
   (global-set-key [(control ?z)]                 'iconify/show-frame)

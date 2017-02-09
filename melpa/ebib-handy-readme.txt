@@ -1,5 +1,8 @@
 * README                                                             :README:
 ** Introduce
+
+This package cannot work again, please don't install it .....
+
 ebib-handy is a ebib tool, which can let ebib become a cite chooser.
 [[./snapshots/ebib-handy.gif]]
 

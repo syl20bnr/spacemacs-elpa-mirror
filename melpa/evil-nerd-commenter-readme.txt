@@ -21,7 +21,7 @@ For example, you can press key `99,ci` to comment out 99 lines.
 
 Setup:
 
-1. If comma is your leader key, as most Vim users do, setup is one liner,
+If comma is your leader key, as most Vim users do, setup is one liner,
 (evilnc-default-hotkeys)
 
 If you use evil-leader and its default leader key,
@@ -41,6 +41,11 @@ insert below setup into your ~/.emacs instead,
   "cv" 'evilnc-toggle-invert-comment-line-by-line
   "."  'evilnc-copy-and-comment-operator
   "\\" 'evilnc-comment-operator)
+
+You can setup `evilnc-original-above-comment-when-copy-and-comment' to decide which
+style to use when `evilnc-copy-and-comment-lines' or `evilnc-copy-and-comment-operator',
+  - Place the commented out text above original text
+  - Or place the original text above commented out text
 
 For certain major modes, you need manual setup to override its original
 keybindings,
