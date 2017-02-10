@@ -6,7 +6,7 @@
 ;; Author:  Yoshinari Nomura <nom@quickhack.net>
 ;; Created: 2011-06-23
 ;; Version: 0.2
-;; Package-Version: 20150503.37
+;; Package-Version: 20170209.1623
 ;; Package-Requires: ((htmlize "1.47"))
 ;; Keywords: evernote, applescript
 ;; URL: https://github.com/yoshinari-nomura/epic
@@ -473,7 +473,11 @@ Return new filename in the sandbox."
 (eval-after-load 'org
   '(if (and (boundp 'org-link-protocols)
             (not (assoc "evernote" org-link-protocols)))
-       (org-add-link-type "evernote" 'epic-org-evernote-note-open)))
+       ;; org version 8
+       (org-add-link-type "evernote" 'epic-org-evernote-note-open)
+     ;; org version 9
+     (org-link-set-parameters "evernote"
+                              :follow #'epic-org-evernote-note-open)))
 
 ;; C-cC-o (org-open-at-point) works on evernote:// links.
 (defun epic-org-evernote-note-open (path)

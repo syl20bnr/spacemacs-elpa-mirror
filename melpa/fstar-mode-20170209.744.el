@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Clément Pit-Claudel
 ;; Author: Clément Pit--Claudel <clement.pitclaudel@live.com>
 ;; URL: https://github.com/FStarLang/fstar.el
-;; Package-Version: 20170124.521
+;; Package-Version: 20170209.744
 
 ;; Created: 27 Aug 2015
 ;; Version: 0.3
@@ -896,17 +896,29 @@ multiple arguments as one string will not work: you should use
            buffer-file-name)))
     (append `(,file-name "--in") args)))
 
+(defun fstar-subp-adjust-path (fn buf prog args)
+  "Run FN with PATH extended to contain directory of PROG.
+Forward BUF, PROG, and ARGS to FN."
+  (let* ((prog-dir (file-name-directory prog))
+         (path (concat prog-dir path-separator (getenv "PATH")))
+         (process-environment (cons (concat "PATH=" path) process-environment)))
+    (funcall fn buf prog args)))
+
+(defun fstar-subp-start-process (buf prog args)
+  "Start an F* subprocess PROG in BUF with ARGS."
+  (apply #'start-process "F* interactive" buf prog args))
+
 (defun fstar-subp-start ()
   "Start an F* subprocess attached to the current buffer, if none exists."
-  (unless buffer-file-name
-    (error "Can't start F* subprocess without a file name (save this buffer first)"))
+  (unless (and buffer-file-name (file-exists-p buffer-file-name))
+    (error "Can't start F* subprocess without a backing file (save this buffer first)"))
   (unless fstar-subp--process
     (let ((prog-abs (fstar-find-executable)))
       (fstar--init-compatibility-layer)
       (let* ((buf (fstar-subp-make-buffer))
              (process-connection-type nil)
              (args (fstar-subp-with-interactive-args (fstar-subp-get-prover-args)))
-             (proc (apply #'start-process "F* interactive" buf prog-abs args)))
+             (proc (fstar-subp-start-process buf prog-abs args)))
         (fstar-subp-log "Started F* interactive with arguments %S" args)
         (set-process-query-on-exit-flag proc nil)
         (set-process-filter proc #'fstar-subp-filter)

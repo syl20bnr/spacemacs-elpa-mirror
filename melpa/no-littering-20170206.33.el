@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/tarsius/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 20170122.942
+;; Package-Version: 20170206.33
 
 ;; This file is not part of GNU Emacs.
 
@@ -234,6 +234,15 @@ This variable has to be set before `no-littering' is loaded.")
        `(make-directory ,(var "elfeed/") t))
     (setq elfeed-db-directory              (var "elfeed/db/"))
     (setq elfeed-enclosure-default-dir     (var "elfeed/enclosures/"))
+    (eval-after-load 'x-win
+      (let ((session-dir (var "emacs-session/")))
+        `(progn
+           (make-directory ,session-dir t)
+           (defun emacs-session-filename (session-id)
+             "Construct a filename to save the session in based on SESSION-ID.
+This function overrides the one on `x-win' to use `no-littering'
+directories."
+             (expand-file-name session-id ,session-dir)))))
     (setq emms-directory                   (var "emms/"))
     (eval-after-load 'emojify
       `(make-directory ,(var "emojify/") t))

@@ -1,11 +1,11 @@
 ;;; helm-ag.el --- the silver searcher with helm interface -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2016 by Syohei YOSHIDA
+;; Copyright (C) 2017 by Syohei YOSHIDA
 
 ;; Author: Syohei YOSHIDA <syohex@gmail.com>
 ;; URL: https://github.com/syohex/emacs-helm-ag
-;; Package-Version: 20170127.2155
-;; Version: 0.57
+;; Package-Version: 20170209.745
+;; Version: 0.58
 ;; Package-Requires: ((emacs "24.4") (helm "2.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -490,7 +490,13 @@ Default behaviour shows finish and result in mode-line."
 (defun helm-ag--query ()
   (let* ((searched-word (helm-ag--searched-word))
          (marked-word (helm-ag--marked-input nil))
-         (query (read-string "Pattern: " (or marked-word searched-word) 'helm-ag--command-history)))
+         (query (read-from-minibuffer "Pattern: "
+                                      (or marked-word searched-word)
+                                      nil
+                                      nil
+                                      'helm-ag--command-history
+                                      (helm-aif (symbol-at-point)
+                                          (symbol-name it)))))
     (when (string-empty-p query)
       (error "Input is empty!!"))
     (setq helm-ag--last-query query)))

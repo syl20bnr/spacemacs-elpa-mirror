@@ -3,9 +3,9 @@
 ;; Author: Ricardo Banffy <rbanffy@gmail.com>
 ;; Maintainer: Ricardo Banffy <rbanffy@gmail.com>
 ;; URL: https://github.com/rbanffy/green-screen-emacs
-;; Package-Version: 20170208.711
+;; Package-Version: 20170209.1208
 ;; Keywords: faces, theme
-;; Version: 1.0.0
+;; Version: 1.0.0a
 
 ;; Copyright (C) 2017  Ricardo Bánffy
 

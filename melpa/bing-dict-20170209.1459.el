@@ -4,7 +4,7 @@
 
 ;; Author: Junpeng Qiu <qjpchmail@gmail.com>
 ;; URL: https://github.com/cute-jumper/bing-dict.el
-;; Package-Version: 20160616.1820
+;; Package-Version: 20170209.1459
 ;; Keywords: extensions
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -54,10 +54,27 @@
 ;; `nil`. If set to `t`, the result will be added to the `kill-ring` and you are
 ;; able to use `C-y` to paste the result.
 
+;; Also, sometimes synonyms and antonyms could be useful, set
+;; `bing-dict-show-thesaurus` to control whether you need them or not. The value of
+;; `bing-dict-show-thesaurus` could be either `nil`, `'synonym`, `'antonym` or
+;; `'both`. The default value is `nil`. Setting the vaule to `'synonym` or
+;; `'antonym` only shows the corresponding part, and setting it to `'both` will
+;; show both synonyms and antonyms at the same time:
+
+;; (setq bing-dict-show-thesaurus 'both)
+
+;; The variable `bing-dict-pronunciation-style` controls how the pronunciation is
+;; shown. By default, its value is `'us` and the pronunciation is shown using
+;; "American Phonetic Alphabet" (APA). You can choose the "International Phonetic
+;; Alphabet" (IPA) by setting its value to `'uk` (In fact, any value other than
+;;                                                   `'us` will work):
+
+;; (setq bing-dict-pronunciation-style 'uk)
+
 ;; ## As for More Features...
 ;; This extension aims for a quick search for a word. I don't plan to parse all the
 ;; sections of the search results. If you want to view the complete results of your
-;; query word, I suggest using external browser to do this. The following code
+;; query word, I suggest using the external browser to do this. The following code
 ;; could partly achieve the goal:
 
 ;;     (browse-url
@@ -89,10 +106,33 @@
 
 (require 'thingatpt)
 
+(defvar bing-dict-pronunciation-style 'us
+  "Pronuciation style.
+If the value is set to be `us', use the US-style pronuciation.
+Otherwise, use the UK-style.")
+
+(defvar bing-dict-show-thesaurus nil
+  "Whether to show synonyms, antonyms or not.
+The value could be `synonym', `antonym', `both', or nil.")
+
 (defvar bing-dict-add-to-kill-ring nil
   "Whether the result should be added to `kill-ring'.")
 
 (defvar bing-dict-history nil)
+
+(defvar bing-dict--base-url "http://www.bing.com/dict/search?mkt=zh-cn&q=")
+(defvar bing-dict--no-resul-text (propertize "No results"
+                                             'face
+                                             'font-lock-warning-face))
+(defvar bing-dict--machine-translation-text (propertize "Machine translation"
+                                                        'face
+                                                        'font-lock-builtin-face))
+(defvar bing-dict--sounds-like-text (propertize "Sounds like"
+                                                'face
+                                                'font-lock-builtin-face))
+(defvar bing-dict--seperator (propertize " | "
+                                         'face
+                                         'font-lock-builtin-face))
 
 (defun bing-dict--message (format-string &rest args)
   (let ((result (apply #'format format-string args)))
@@ -120,21 +160,25 @@
     (goto-char (point-min))))
 
 (defun bing-dict--pronunciation ()
-  (propertize
-   (bing-dict--replace-html-entities
-    (or
-     (progn
-       (goto-char (point-min))
-       (if (re-search-forward "<div class=\"hd_prUS" nil t)
-           (progn
-             (goto-char (point-min))
-             (when (re-search-forward "<div class=\"hd_prUS[^[]*\\(\\[.*?\\]\\)" nil t)
-               (match-string-no-properties 1)))
-         (when (re-search-forward "hd_p1_1\" lang=\"en\">\\(.*?\\)</div" nil t)
-           (match-string-no-properties 1))))
-     ""))
-   'face
-   'font-lock-comment-face))
+  (let ((pron-regexp (concat "<div class=\"hd_pr"
+                             (and (eq bing-dict-pronunciation-style 'us)
+                                  "US")
+                             "\"")))
+    (propertize
+     (bing-dict--replace-html-entities
+      (or
+       (progn
+         (goto-char (point-min))
+         (if (re-search-forward pron-regexp nil t)
+             (progn
+               (goto-char (point-min))
+               (when (re-search-forward (concat pron-regexp "[^[]*\\(\\[.*?\\]\\)") nil t)
+                 (match-string-no-properties 1)))
+           (when (re-search-forward "hd_p1_1\" lang=\"en\">\\(.*?\\)</div" nil t)
+             (match-string-no-properties 1))))
+       ""))
+     'face
+     'font-lock-comment-face)))
 
 (defsubst bing-dict--clean-inner-html (html)
   (replace-regexp-in-string "<.*?>" "" html))
@@ -161,7 +205,34 @@
                              'font-lock-doc-face))
             (def (match-string-no-properties 2)))
         (push (format "%s %s" pos def) defs)))
-    (mapcar 'bing-dict--clean-inner-html (nreverse defs))))
+    (mapcar 'bing-dict--clean-inner-html defs)))
+
+(defun bing-dict--thesaurus (header starting-regexp)
+  (let (thesaurus)
+    (goto-char (point-min))
+    (when (re-search-forward starting-regexp nil t)
+      (catch 'break
+        (while t
+          (re-search-forward
+           "div class=\"de_title1\">\\(.*?\\)</div><div class=\"col_fl\">\\(.*?\\)</div>"
+           nil t)
+          (push (format "%s %s"
+                        (propertize (match-string-no-properties 1) 'face 'font-lock-string-face)
+                        (bing-dict--clean-inner-html
+                         (match-string-no-properties 2)))
+                thesaurus)
+          (goto-char (match-end 0))
+          (unless (looking-at "</div><div class=\"df_div2\">")
+            (throw 'break t))))
+      (format "%s %s"
+              (propertize header 'face 'font-lock-doc-face)
+              (mapconcat #'identity thesaurus " ")))))
+
+(defun bing-dict--synonyms ()
+  (bing-dict--thesaurus "Synonym" "div id=\"synoid\""))
+
+(defun bing-dict--antonyms ()
+  (bing-dict--thesaurus "Antonym" "div id=\"antoid\""))
 
 (defun bing-dict--has-machine-translation-p ()
   (goto-char (point-min))
@@ -170,7 +241,10 @@
 (defun bing-dict--machine-translation ()
   (goto-char (point-min))
   (when (re-search-forward "div class=\"p1-11\">\\(.*?\\)</div>" nil t)
-    (bing-dict--clean-inner-html (match-string-no-properties 1))))
+    (propertize
+     (bing-dict--clean-inner-html (match-string-no-properties 1))
+     'face
+     'font-lock-doc-face)))
 
 (defun bing-dict--get-sounds-like-words ()
   (goto-char (point-min))
@@ -193,31 +267,45 @@
 (defun bing-dict-brief-cb (status keyword)
   (set-buffer-multibyte t)
   (bing-dict--delete-response-header)
+  (setq keyword (propertize keyword
+                            'face
+                            'font-lock-keyword-face))
   (condition-case nil
       (if (bing-dict--has-machine-translation-p)
-          (bing-dict--message "Machine translation: %s --> %s" keyword
-                              (propertize (bing-dict--machine-translation)
-                                          'face
-                                          'font-lock-doc-face))
+          (bing-dict--message "%s: %s -> %s"
+                              bing-dict--machine-translation-text
+                              keyword
+                              (bing-dict--machine-translation))
         (let ((defs (bing-dict--definitions))
-              query-word
+              extra-defs
               pronunciation
               short-defstr)
           (if defs
               (progn
+                (cond
+                 ((eq bing-dict-show-thesaurus 'synonym)
+                  (when (setq extra-defs (bing-dict--synonyms))
+                    (push extra-defs defs)))
+                 ((eq bing-dict-show-thesaurus 'antonym)
+                  (when (setq extra-defs (bing-dict--antonyms))
+                    (push extra-defs defs)))
+                 ((eq bing-dict-show-thesaurus 'both)
+                  (dolist (func '(bing-dict--synonyms bing-dict--antonyms))
+                    (when (setq extra-defs (funcall func))
+                      (push extra-defs defs)))))
                 (setq
-                 query-word (propertize keyword 'face 'font-lock-keyword-face)
                  pronunciation (bing-dict--pronunciation)
-                 short-defstr (mapconcat 'identity defs
-                                         (propertize " | "
-                                                     'face
-                                                     'font-lock-builtin-face)))
-                (bing-dict--message "%s %s: %s" query-word pronunciation short-defstr))
+                 short-defstr (mapconcat 'identity (nreverse defs)
+                                         bing-dict--seperator))
+                (bing-dict--message "%s %s: %s"
+                                    keyword pronunciation short-defstr))
             (let ((sounds-like-words (bing-dict--get-sounds-like-words)))
               (if sounds-like-words
-                  (bing-dict--message "Sounds like: %s" sounds-like-words)
-                (bing-dict--message "No results"))))))
-    (error (bing-dict--message "No results"))))
+                  (bing-dict--message "%s: %s"
+                                      bing-dict--sounds-like-text
+                                      sounds-like-words)
+                (bing-dict--message bing-dict--no-resul-text))))))
+    (error (bing-dict--message bing-dict--no-resul-text))))
 
 ;;;###autoload
 (defun bing-dict-brief (word)
@@ -234,7 +322,7 @@
           (string (read-string prompt nil 'bing-dict-history default)))
      (list string)))
   (save-match-data
-    (url-retrieve (concat "http://www.bing.com/dict/search?mkt=zh-cn&q="
+    (url-retrieve (concat bing-dict--base-url
                           (url-hexify-string word))
                   'bing-dict-brief-cb
                   `(,(decode-coding-string word 'utf-8))
