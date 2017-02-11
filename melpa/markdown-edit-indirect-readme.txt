@@ -8,3 +8,14 @@ add the following key binding:
 
     (eval-after-load 'markdown-mode
       '(define-key markdown-mode-map (kbd "C-c '") 'markdown-edit-indirect))
+
+Or in case you use \\[use-package] you can install and configure everything
+in one step:
+
+    (use-package markdown-mode
+      :ensure t
+      :demand markdown-edit-indirect
+      :mode (("\\.md" . markdown-mode)
+             ("\\.markdown" . markdown-mode))
+      :bind (:markdown-mode-map
+             ("C-c '" . markdown-edit-indirect)))
