@@ -104,6 +104,9 @@ shell buffers. Please see README.rst for details.
 "Regexp to find out whether the test run has finished.")
 (make-variable-buffer-local 'abl-mode-end-testrun-re)
 
+(defcustom abl-test-func-re "^ *\\(async\\)+ *def test_*"
+  "Regexp used to pick the test function the cursor is in")
+
 <<----------------  Here ends the customization -------------->>
 
 (defvar abl-mode-branch-base ""
@@ -444,12 +447,12 @@ map for latest test run output."
 (defun abl-mode-determine-test-function-name ()
   (save-excursion
     (end-of-line)
-    (if (not (re-search-backward "^ *def test_*" nil t))
-	(error "Looks like you are not even in a function definiton! Bad girl!"))
-    (let* ((start (re-search-forward "^ *def *"))
+    (if (not (re-search-backward abl-test-func-re nil t))
+	(error "Looks like you are not even in a function definiton"))
+    (let* ((start (re-search-forward "^ *\\(async\\)+ *def "))
 	   (end (re-search-forward "test_[^\(]*" (line-end-position) t)))
       (if (not end)
-	  (error "Looks like you are not inside a test function. Go to a test function! Now!")
+	  (error "Looks like you are not inside a test function.")
 	(buffer-substring-no-properties start (point))))))
 
 
@@ -518,7 +521,7 @@ if none of these is true."
 	file-path
       (let* ((test-func-pos
 	      (save-excursion
-		(re-search-backward "^ *def test*" nil t)))
+		(re-search-backward abl-test-func-re nil t)))
 	     (test-class-pos
 	      (save-excursion
 		(re-search-backward "^class *" nil t))))
