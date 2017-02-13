@@ -4,10 +4,10 @@
 
 ;; Author: Tianxiang Xiong <tianxiang.xiong@gmail.com>
 ;; Keywords: decompile, java, languages, tools
-;; Package-Version: 20170210.2307
+;; Package-Version: 0.2.0
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/xiongtx/jdecomp
-;; Version: 0.1.0
+;; Version: 0.2.0
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -174,7 +174,8 @@ Optional parameter DECOMPILER-TYPE defaults to
   (condition-case nil
       (cl-ecase decompiler-type
         ('cfr #'jdecomp--cfr-command)
-        ('fernflower #'jdecomp--fernflower-command))
+        ('fernflower #'jdecomp--fernflower-command)
+        ('procyon #'jdecomp--procyon-command))
     (error (user-error "%s is not a known decompiler" decompiler-type))))
 
 (cl-defun jdecomp--ensure-decompiler (&optional (decompiler-type jdecomp-decompiler-type))
@@ -185,7 +186,8 @@ Optional parameter DECOMPILER-TYPE defaults to
   (unless (condition-case nil
               (cl-ecase decompiler-type
                 ('cfr (jdecomp--jar-p (jdecomp--decompiler-path 'cfr)))
-                ('fernflower (jdecomp--jar-p (jdecomp--decompiler-path 'fernflower))))
+                ('fernflower (jdecomp--jar-p (jdecomp--decompiler-path 'fernflower)))
+                ('procyon (jdecomp--jar-p (jdecomp--decompiler-path 'procyon))))
             (error (user-error "%s is not a known decompiler" decompiler-type)))
     (user-error "%s decompiler is not available" decompiler-type)))
 
@@ -250,6 +252,41 @@ applicable."
   (if jar
       (jdecomp--fernflower-decompile-file-in-jar file jar)
     (jdecomp--fernflower-decompile-file file)))
+
+(defun jdecomp--procyon-decompile-file (file)
+  "Decompile FILE with Procyon and return result as string.
+
+FILE must be a Java classfile.
+
+Optional parameter EXTRACTED-P, when non-nil, indicates that FILE
+was extracted from a JAR with `jdecomp--extract-to-file'."
+  (jdecomp--ensure-decompiler 'procyon)
+  (with-output-to-string
+    (apply #'call-process "java" nil standard-output nil
+           `("-jar" ,(expand-file-name (jdecomp--decompiler-path 'procyon))
+             ,@(jdecomp--decompiler-options 'procyon)
+             ,file))))
+
+(defun jdecomp--procyon-decompile-file-in-jar (file jar)
+  "Decompile FILE with Procyon and return result as string.
+
+FILE must be a Java classfile.
+
+Optional parameter JAR is the JAR file containing FILE, if
+applicable."
+  (let ((extracted-file (jdecomp---extract-to-file jar file)))
+    (jdecomp--procyon-decompile-file extracted-file)))
+
+(defun jdecomp--procyon-command (file &optional jar)
+  "Decompile FILE with  and return result as string.
+
+FILE must be a Java classfile.
+
+Optional parameter JAR is the JAR file containing FILE, if
+applicable."
+  (if jar
+      (jdecomp--procyon-decompile-file-in-jar file jar)
+    (jdecomp--procyon-decompile-file file)))
 
 (defun jdecomp--preview-mode-update-modeline ()
   "Update mode line for `jdecomp-preview-mode'.

@@ -2,7 +2,7 @@
 
 ;; Author: Damien Merenne
 ;; URL: https://github.com/canatella/repo-el
-;; Package-Version: 0.1.2
+;; Package-Version: 0.1.3
 ;; Created: 2016-01-11
 ;; Keywords: convenience
 ;; Version: 0.1
@@ -238,7 +238,7 @@ PROC is the repo info process, EVENT is the sentinel event."
           (funcall parse-error))
         (forward-line)
         (while (not (looking-at "Repo process finished"))
-          (repo-status-insert status (thing-at-point 'line))
+          (repo-status-insert status "%s" (thing-at-point 'line))
           (forward-line))
         (repo-status-setup-buffer status workspace)
         ))))
