@@ -2,6 +2,8 @@ Note: The interface used in this file requires CC Mode 5.30 or
 later.
 
 History:
+  0.9.5 - 2017-02-13
+       autoload fix
   0.9.4 - 2016-12-20
        derive from prog-mode if available, otherwise nil
        use proper syntax-table
