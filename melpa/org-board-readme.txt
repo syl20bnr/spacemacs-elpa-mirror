@@ -9,7 +9,7 @@ Commands defined here:
 
   `org-board-archive', `org-board-archive-dry-run',
   `org-board-delete-all', `org-board-open', `org-board-new',
-  `org-board-diff', `org-board-cancel'.
+  `org-board-diff', `org-board-diff3', `org-board-cancel'.
 
 Variables defined here:
 
@@ -69,8 +69,11 @@ User commands
  `org-board-open' Opens the bookmark at point in a browser.
    Default to the built-in browser, and with prefix, the OS browser.
 
- `org-board-diff' uses `zdiff' (which itself uses the pre-installed
-   `ediff') to recursively diff two archives of the same entry.
+ `org-board-diff' uses `zdiff' (if available) or `ediff' to
+   recursively diff two archives of the same entry.
+
+ `org-board-diff3' uses `ediff' to recursively diff three archives
+   of the same entry.
 
  `org-board-cancel' cancels the current org-board archival process.
 
@@ -159,7 +162,7 @@ Diffing
  two archives done for the same entry, so you can see how a page
  has changed over time.  The diff recurses through the directory
  structure of an archive and will highlight any changes that have
- been made.
+ been made.  `ediff' is used if `zdiff' is not available.
 
 Getting started
 
@@ -186,6 +189,7 @@ Keybindings
  | k   | org-board-delete-all       |
  | o   | org-board-open             |
  | d   | org-board-diff             |
+ | 3   | org-board-diff3            |
  | c   | org-board-cancel           |
  | O   | org-attach-reveal-in-emacs |
  | ?   | Show help for this keymap. |
