@@ -4,7 +4,7 @@
 ;; Copyright 2011-2017 François-Xavier Bois
 
 ;; Version: 14.0.43
-;; Package-Version: 20170214.424
+;; Package-Version: 20170215.1023
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; URL: http://web-mode.org
@@ -10041,7 +10041,7 @@ Prompt user if TAG-NAME isn't provided."
       (setq ctx (web-mode-complete)))
 
      ((and web-mode-enable-auto-opening
-           (member this-command '(newline electric-newline-and-maybe-indent))
+           (member this-command '(newline electric-newline-and-maybe-indent newline-and-indent))
            (or (and (not (eobp))
                     (eq (char-after) ?\<)
                     (eq (get-text-property (point) 'tag-type) 'end)

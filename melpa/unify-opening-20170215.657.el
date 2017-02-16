@@ -4,9 +4,9 @@
 
 ;; Author: Damien Cassou <damien.cassou@gmail.com>
 ;; Url: https://github.com/DamienCassou/unify-opening
-;; Package-Version: 20151116.1648
+;; Package-Version: 20170215.657
 ;; GIT: https://github.com/DamienCassou/unify-opening
-;; Version: 0.1
+;; Version: 1.1.0
 ;; Package-Requires: ((emacs "24.4"))
 ;; Created: 16 Jan 2015
 ;; Keywords: dired org mu4e open runner extension file
@@ -27,13 +27,13 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; Make everything use the same mechanism to open files. Currently,
-;; `dired` has its mechanism, `org-mode` uses something different (the
-;; `org-file-apps` variable), and `mu4e` something else (a simple
-;; prompt). This package makes sure that each package uses the
-;; mechanism of `dired`. I advise you to install the
-;; [`runner`](https://github.com/thamer/runner) package to improve the
-;; `dired` mechanism.
+;;
+;; Make everything use the same mechanism to open files.  Currently, `dired` has
+;; its mechanism, `org-mode` uses something different (the `org-file-apps`
+;; variable), and `mu4e` something else (a simple prompt).  This package makes
+;; sure that each package uses the mechanism of `dired`.  I advise you to
+;; install the [`runner`](https://github.com/thamer/runner) package to improve
+;; the `dired` mechanism.
 
 ;;; Code:
 
@@ -41,6 +41,10 @@
 (declare-function dired-do-async-shell-command "dired-aux")
 (declare-function dired-guess-shell-command "dired-x")
 (declare-function mu4e~view-get-attach "ext:mu4e-view")
+(declare-function mm-handle-filename "mm-decode")
+(declare-function mm-save-part-to-file "mm-decode")
+(declare-function mm-interactively-view-part "mm-decode")
+
 (eval-when-compile (defvar org-file-apps))
 
 (defun unify-opening-find-cmd (file)
