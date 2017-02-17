@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170208.107
+;; Package-Version: 20170217.304
 ;; Version: 0.8.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.8.0"))
 ;; Keywords: completion, matching
@@ -898,9 +898,8 @@ Describe the selected candidate."
 
 (ivy-set-actions
  'counsel-git
- '(("j"
-    find-file-other-window
-    "other")))
+ '(("j" find-file-other-window "other")
+   ("x" counsel-find-file-extern "open externally")))
 
 ;;;###autoload
 (defun counsel-git ()
@@ -2106,7 +2105,8 @@ INITIAL-INPUT can be given as the initial minibuffer input."
                        (counsel-org--set-tags))))))
            (counsel-org--set-tags)))
         ((eq this-command 'ivy-call)
-         (delete-minibuffer-contents))))
+         (with-selected-window (active-minibuffer-window)
+           (delete-minibuffer-contents)))))
 
 (defun counsel-org-tag-prompt ()
   (format "Tags (%s): "

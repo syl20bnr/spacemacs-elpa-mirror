@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170214.37
+;; Package-Version: 20170217.57
 ;; Version: 0.8.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.8.0"))
 ;; Keywords: matching
@@ -612,7 +612,9 @@ WND, when specified is the window."
                           (point))))
            (end (or end (save-excursion
                           (forward-line wh)
-                          (point)))))
+                          (point))))
+           (case-fold-search (and ivy-case-fold-search
+                                  (string= re (downcase re)))))
       (when (>= (length re) swiper-min-highlight)
         (save-excursion
           (goto-char beg)
@@ -781,7 +783,10 @@ Run `swiper' for those buffers."
     (let* ((buffers (cl-remove-if-not #'swiper-all-buffer-p (buffer-list)))
            (re-full (funcall ivy--regex-function str))
            re re-tail
-           cands match)
+           cands match
+           (case-fold-search
+            (and ivy-case-fold-search
+                 (string= str (downcase str)))))
       (if (stringp re-full)
           (setq re re-full)
         (setq re (caar re-full))
