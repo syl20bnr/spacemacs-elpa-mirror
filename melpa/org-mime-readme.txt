@@ -30,6 +30,9 @@ To avoid exporting TOC, you can setup `org-mime-export-options',
 Or just setup your export options in org buffer/subtree which is overrided
 by `org-mime-export-options' when it's NOT nil.
 
+You can change `org-mime-up-subtree-heading' before exporting subtree.
+heck its documentation.
+
 Quick start:
 Write mail in message-mode, make sure the mail body follows org format.
 Before sending mail, `M-x org-mime-htmlize'
