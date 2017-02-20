@@ -4,6 +4,11 @@ question is defined in `yankpad-file' and is set to "yankpad.org" in your
 category and each subheading of that category defines a snippet.  This way
 you can have different yankpads for different occasions.
 
+You can open your `yankpad-file' by using `yankpad-edit' (or just open it in
+any other way).  Another way to add new snippets is by using
+`yankpad-capture-snippet', which will add a snippet to the current
+`yankpad-category'.
+
 If you have yasnippet installed, yankpad will try to use it when pasting
 snippets.  This means that you can use the features that yasnippet provides
 (tab stops, elisp, etc).  You can use yankpad without yasnippet, and then the
