@@ -7,12 +7,12 @@
 ;; Copyright (C) 2000-2017, Drew Adams, all rights reserved.
 ;; Created: Thu Dec  7 10:06:18 2000
 ;; Version: 0
-;; Package-Version: 20170102.903
+;; Package-Version: 20170221.752
 ;; Package-Requires: ((fit-frame "0"))
-;; Last-Updated: Sat Dec 24 16:56:52 2016 (-0800)
+;; Last-Updated: Tue Feb 21 07:52:06 2017 (-0800)
 ;;           By: dradams
-;;     Update #: 710
-;; URL: http://www.emacswiki.org/autofit-frame.el
+;;     Update #: 711
+;; URL: https://www.emacswiki.org/emacs/download/autofit-frame.el
 ;; Doc URL: http://www.emacswiki.org/emacs/Shrink-Wrapping_Frames
 ;; Keywords: internal, extensions, convenience, local
 ;; Compatibility: GNU Emacs: 20.x, 21.x, 22.x, 23.x, 24.x, 25.x

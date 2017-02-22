@@ -5,7 +5,7 @@
 ;; Author: Thomas Fini Hansen <xen@xen.dk>
 ;; Created: January 29, 2017
 ;; Version: 0.1.0
-;; Package-Version: 20170221.1222
+;; Package-Version: 20170221.1226
 ;; Package-Requires: ((ede-php-autoload "1.0.0") (f "0.19.0") (s "1.7.0"))
 ;; Keywords: programming, php
 ;; Homepage: https://github.com/xendk/ede-php-autoload-composer-installers
@@ -153,7 +153,6 @@ PROJECT-DIR is the project root."
                            collect (cons spec key))))
 
 (ede-php-autoload-composer-define-visitor #'ede-php-autoload-composer-installers-autoloads)
-;; (add-to-list 'ede-php-autoload-composer--visitors #'ede-php-autoload-composer-installers-autoloads t)
 
 (provide 'ede-php-autoload-composer-installers)
 ;;; ede-php-autoload-composer-installers.el ends here

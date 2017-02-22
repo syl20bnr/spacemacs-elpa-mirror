@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand
 ;; URL: http://github.com/Kungsgeten/selected.el
-;; Package-Version: 20170217.1106
+;; Package-Version: 20170222.34
 ;; Version: 1.01
 ;; Keywords: convenience
 ;; Package-Requires: ()
@@ -51,8 +51,8 @@
                 selected-keymap)))
         (if selected-minor-mode-override
             (push `(selected-region-active-mode . ,map) minor-mode-overriding-map-alist)
-          (setf (cdr (assoc 'selected-region-active-mode map))
-                selected-keymap)))
+          (setf (cdr (assoc 'selected-region-active-mode minor-mode-map-alist))
+                map)))
     (setq minor-mode-overriding-map-alist
           (assq-delete-all 'selected-region-active-mode minor-mode-overriding-map-alist))))
 

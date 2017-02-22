@@ -7,12 +7,12 @@
 ;; Copyright (C) 2006-2017, Drew Adams, all rights reserved.
 ;; Created: Fri Jun 23 08:07:15 2006
 ;; Version: 0
-;; Package-Version: 20170101.930
+;; Package-Version: 20170221.1640
 ;; Package-Requires: ((hexrgb "0"))
-;; Last-Updated: Sun Jan  1 09:32:47 2017 (-0800)
+;; Last-Updated: Tue Feb 21 16:40:24 2017 (-0800)
 ;;           By: dradams
-;;     Update #: 196
-;; URL: http://www.emacswiki.org/eyedropper.el
+;;     Update #: 197
+;; URL: https://www.emacswiki.org/emacs/download/eyedropper.el
 ;; Doc URL: http://www.emacswiki.org/CustomizingFaces
 ;; Keywords: color, rgb, hsv, hexadecimal, face, frame
 ;; Compatibility: GNU Emacs: 20.x, 21.x, 22.x, 23.x, 24.x, 25.x
