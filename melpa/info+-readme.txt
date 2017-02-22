@@ -38,6 +38,7 @@
    `Info-follow-nearest-node-new-window', `Info-goto-node-web',
    `Info-history-clear', `info-manual', `Info-merge-subnodes',
    `Info-mouse-follow-nearest-node-new-window',
+   `Info-persist-history-mode' (Emacs 24.4+),
    `Info-save-current-node', `Info-set-breadcrumbs-depth',
    `Info-toggle-fontify-angle-bracketed',
    `Info-toggle-fontify-emphasis',
@@ -64,8 +65,8 @@
    `Info-fit-frame-flag', `Info-fontify-angle-bracketed-flag',
    `Info-fontify-emphasis-flag', `Info-fontify-quotations-flag',
    `Info-fontify-reference-items-flag',
-   `Info-fontify-single-quote-flag', `Info-saved-nodes',
-   `Info-subtree-separator'.
+   `Info-fontify-single-quote-flag', `Info-saved-history-file'
+   (Emacs 24.4+), `Info-saved-nodes', `Info-subtree-separator'.
 
  Macros defined here:
 
@@ -75,7 +76,9 @@
 
    `Info-display-node-default-header', `info-fontify-quotations',
    `info-fontify-reference-items',
-   `Info-insert-breadcrumbs-in-mode-line', `Info-isearch-search-p',
+   `Info-insert-breadcrumbs-in-mode-line',
+   `Info-restore-history-list' (Emacs 24.4+),
+   `Info-save-history-list' (Emacs 24.4+), `Info-isearch-search-p',
    `Info-search-beg', `Info-search-end'.
 
  Internal variables defined here:
@@ -148,7 +151,7 @@
  Library `info+.el' extends the standard Emacs library `info.el' in
  several ways.  It provides:
 
- * Additional, finer-grained highlighting.  This makes a big
+ * Additional, finer-grained highlighting.  This can make a big
    difference in readability.
 
    - Quoted names, like this: `name-stands-out' or
@@ -213,6 +216,14 @@
      are those saved in option `Info-virtual-book'.  With `C-u',
      bookmarked Info nodes are also included.  (If you use Icicles,
      see also `icicle-Info-virtual-book'.)
+
+   - `Info-persist-history-mode' - Enabling this minor mode saves
+     the list of your visited Info nodes between Emacs sessions.
+     This gives you a persistent virtual manual of the nodes you
+     have visited in the past.  If the mode is enabled, the list of
+     visited nodes is saved to the file named by option
+     `Info-saved-history-file' when you quit Emacs (not Info) or
+     when you kill an Info buffer.
 
    - `Info-save-current-node' (bound to `.') – Save the name of the
      current node to list `Info-saved-nodes', for use by `v'

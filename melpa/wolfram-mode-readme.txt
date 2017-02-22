@@ -8,6 +8,7 @@ You should add the followings to `~/.emacs.d/init.el'.
  (autoload 'run-wolfram "wolfram-mode" nil t)
  (setq wolfram-program "/Applications/Mathematica.app/Contents/MacOS/MathKernel")
  (add-to-list 'auto-mode-alist '("\\.m$" . wolfram-mode))
+ (setq wolfram-path "directory-in-Mathematica-$Path") ;; e.g. on Linux ~/.Mathematica/Applications
 
 
 
