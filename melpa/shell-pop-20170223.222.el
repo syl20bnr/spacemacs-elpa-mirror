@@ -5,12 +5,12 @@
 ;; Author:        Kazuo YAGI <kazuo.yagi@gmail.com>
 ;; Maintainer:    Kazuo YAGI <kazuo.yagi@gmail.com>
 ;; URL:           http://github.com/kyagi/shell-pop-el
-;; Package-Version: 20161127.623
+;; Package-Version: 20170223.222
 ;; Version:       0.63
 ;; Created:       2009-05-31 23:57:08
 ;; Keywords:      shell, terminal, tools
 ;; Compatibility: GNU 24.x
-;; Package-Requires: ((emacs "24"))
+;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -59,6 +59,7 @@
 (declare-function eshell-process-interact "esh-proc")
 
 (require 'term)
+(require 'cl-lib)
 
 (defgroup shell-pop ()
   "Shell-pop"
@@ -72,6 +73,7 @@
 (defvar shell-pop-last-window nil)
 (defvar shell-pop-last-shell-buffer-index 1)
 (defvar shell-pop-last-shell-buffer-name "")
+(defvar shell-pop-window-configuration nil)
 ;; internal}
 
 (defcustom shell-pop-window-size 30
@@ -306,7 +308,8 @@ The input format is the same as that of `kbd'."
              (shell-pop-get-internal-mode-buffer-window index)))
         (cwd (replace-regexp-in-string "\\\\" "/" default-directory)))
     (when (shell-pop--full-p)
-      (window-configuration-to-register :shell-pop)
+      (setq shell-pop-window-configuration
+            (list (current-window-configuration) (point-marker)))
       (delete-other-windows))
     (if w
         (select-window w)
@@ -328,7 +331,11 @@ The input format is the same as that of `kbd'."
 (defun shell-pop-out ()
   (run-hooks 'shell-pop-out-hook)
   (if (shell-pop--full-p)
-      (jump-to-register :shell-pop)
+      (let ((window-conf (cl-first shell-pop-window-configuration))
+            (marker (cl-second shell-pop-window-configuration)))
+        (set-window-configuration window-conf)
+        (when (marker-buffer marker)
+          (goto-char marker)))
     (when (and (not (one-window-p)) (not (= shell-pop-window-height 100)))
       (bury-buffer)
       (delete-window)

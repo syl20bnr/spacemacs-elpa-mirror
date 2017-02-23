@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170221.1659
+;; Package-Version: 20170223.204
 ;; Version: 0.8.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.8.0"))
 ;; Keywords: matching
@@ -255,7 +255,9 @@
     twittering-mode
     vc-dir-mode
     rcirc-mode
-    circe-mode
+    circe-channel-mode
+    circe-server-mode
+    circe-query-mode
     sauron-mode
     w3m-mode)
   "List of major-modes that are incompatible with font-lock-ensure.")

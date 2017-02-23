@@ -1,12 +1,12 @@
 ;;; dokuwiki-mode.el --- Major mode for DokuWiki document
 
-;; Copyright (C)  2013, 2014 Tsunenobu Kai
+;; Copyright (C)  2013-2017 Tsunenobu Kai
 
-;; Author: Tsunenobu Kai <kbkbkbkb1@gmail.com>
+;; Author: Tsunenobu Kai <kai2nenobu@gmail.com>
 ;; URL: https://github.com/kai2nenobu/emacs-dokuwiki-mode
-;; Package-Version: 20160129.7
-;; Version: 0.1.0
-;; Keywords: DokuWiki
+;; Package-Version: 20170223.501
+;; Version: 0.1.1
+;; Keywords: hypermedia text DokuWiki
 
 ;; This file is not part of GNU Emacs.
 
@@ -27,10 +27,10 @@
 
 ;;; Code:
 
-(defgroup dokuwiki nil
+(defgroup dokuwiki-mode nil
   "Major mode for DokuWiki document."
   :group 'text
-  :prefix "dokuwiki"
+  :group 'dokuwiki
   :tag "DokuWiki"
   :link '(url-link "https://www.dokuwiki.org/dokuwiki"))
 

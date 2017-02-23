@@ -4,7 +4,7 @@
 
 ;; Author: Syohei YOSHIDA <syohex@gmail.com>
 ;; URL: https://github.com/syohex/emacs-counsel-gtags
-;; Package-Version: 20161024.633
+;; Package-Version: 20170223.509
 ;; Version: 0.01
 ;; Package-Requires: ((emacs "24.3") (counsel "0.8.0"))
 
@@ -202,11 +202,8 @@ Always update if value of this variable is nil."
 (defun counsel-gtags--select-file (type tagname &optional extra-options)
   (let* ((root (counsel-gtags--default-directory))
          (encoding buffer-file-coding-system)
-         (comp-fn (lambda (_string)
-                    (let ((default-directory root))
-                      (counsel-gtags--execute type tagname encoding extra-options)))))
-    (ivy-read "Pattern: " comp-fn
-              :dynamic-collection t
+         (default-directory root))
+    (ivy-read "Pattern: " (counsel-gtags--execute type tagname encoding extra-options)
               :unwind (lambda ()
                         (counsel-delete-process)
                         (swiper--cleanup))
