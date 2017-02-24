@@ -4,7 +4,7 @@
 
 ;; Author: Nicolas Vaughan <n.vaughan [at] oxon.org>
 ;; Keywords: lisp
-;; Package-Version: 20170213.1355
+;; Package-Version: 20170224.449
 ;; Version: 0.0.3
 ;; Package-Requires: ((emacs "24"))
 
@@ -35,43 +35,49 @@
 (defun nv-delete-back-all ()
   "Backward deletes either (i) all empty lines, or (ii) one whole word, or (iii) a single non-word character."
   (interactive)
-  (let ((nl-p nil))
-    ;; First part:
-    ;; Look back and find if we have to do a full back-delete
-    (save-excursion
-      (while (looking-back "[\n\s-]" 1 nil)
-        (progn
-          (if (looking-back "[\s-]" 1 nil)
-              (while (looking-back "[\s-]" 1 nil)
-                (left-char 1))
-            )
-          (if (looking-back "[\n]" 1 nil)
-              (progn
-                (while (looking-back "[\n]" 1 nil)
+  ;; If region is selected, delete it:
+  (if (region-active-p)
+      ;; then:
+      (delete-region (region-beginning) (region-end))
+    ;; else continue:
+    (let ((nl-p nil))
+      ;; First part:
+      ;; Look back and find if we have to do a full back-delete
+      (save-excursion
+        (while (looking-back "[\n\s-]" 1 nil)
+          (progn
+            (if (looking-back "[\s-]" 1 nil)
+                (while (looking-back "[\s-]" 1 nil)
                   (left-char 1))
-                (setq nl-p t)
-                )
+              )
+            (if (looking-back "[\n]" 1 nil)
+                (progn
+                  (while (looking-back "[\n]" 1 nil)
+                    (left-char 1))
+                  (setq nl-p t)
+                  )
+              )
             )
           )
         )
-      )
-    ;; Second part:
-    ;; Do we have to do a full back-delete?
-    (if nl-p
-        (if (looking-back "[\n\s-]" 1 nil)
-            ;; delete all spaces and newline chars behind the point
-            (while (looking-back "[\n\s-]" 1 nil)
-              (delete-char -1))
+      ;; Second part:
+      ;; Do we have to do a full back-delete?
+      (if nl-p
+          (if (looking-back "[\n\s-]" 1 nil)
+              ;; delete all spaces and newline chars behind the point
+              (while (looking-back "[\n\s-]" 1 nil)
+                (delete-char -1))
+            )
+        ;; else, delete one word
+        (progn
+          ;; delete all trailing spaces
+          (if (looking-back "[\s-]" 1 nil)
+              (while (looking-back "[\s-]" 1 nil)
+                (delete-char -1))
+            )
+          ;; delete one word
+          (nv-delete-back-word 1)
           )
-      ;; else, delete one word
-      (progn
-        ;; delete all trailing spaces
-        (if (looking-back "[\s-]" 1 nil)
-            (while (looking-back "[\s-]" 1 nil)
-              (delete-char -1))
-          )
-        ;; delete one word
-        (nv-delete-back-word 1)
         )
       )
     )
@@ -82,7 +88,11 @@
 (defun nv-delete-back ()
   "Backward-deletes either (i) all spaces, (ii) one whole word, or (iii) a single non-word/non-space character."
   (interactive)
-  (progn
+  ;; If region is selected, delete it:
+  (if (region-active-p)
+      ;; then:
+      (delete-region (region-beginning) (region-end))
+    ;; else continue:
     ;; Do we have a newline char behind the point?
     (if (looking-back "[\n]" 1 nil)
         ;; then, delete the newline char
@@ -100,6 +110,7 @@
   )
 
 
+
 ;;;###autoload
 (defun nv-delete-back-word (&optional amount)
   "Backward-deletes either (i) one whole word, or (ii) a single non-word character.  If AMOUNT is supplied, the function will delete AMOUNT times of words or non-word characters.  The function can also be called with a prefix."
@@ -112,8 +123,7 @@
       (if (region-active-p)
           ;; then:
           (delete-region (region-beginning) (region-end))
-        ;;
-        ;; else:
+        ;; else continue:
         (progn
           ;; now, first check if there are any spaces
           (if (looking-back "[[:space:]]" 1 nil)

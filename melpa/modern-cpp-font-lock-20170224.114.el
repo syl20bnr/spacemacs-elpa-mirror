@@ -4,7 +4,7 @@
 
 ;; Author: Ludwig PACIFICI <ludwig@lud.cc>
 ;; URL: https://github.com/ludwigpacifici/modern-cpp-font-lock
-;; Package-Version: 20160622.1321
+;; Package-Version: 20170224.114
 ;; Version: 0.1.3
 ;; Created: 12 May 2016
 ;; Keywords: languages, c++, cpp, font-lock
@@ -169,7 +169,7 @@ http://en.cppreference.com/w/cpp/language/integer_literal"
 (defun modern-c++-generate-font-lock-literal-integer ()
   (eval-when-compile
     (let* ((integer-suffix-regexp (regexp-opt (sort '("ull" "LLu" "LLU" "llu" "llU" "uLL" "ULL" "Ull" "ll" "LL" "ul" "uL" "Ul" "UL" "lu" "lU" "LU" "Lu" "u" "U" "l" "L") 'modern-c++-string-lenght>)))
-           (not-alpha-numeric-regexp "[^0-9a-zA-Z'\\\.]")
+           (not-alpha-numeric-regexp "[^0-9a-zA-Z'\\\._]")
            (literal-binary-regexp (concat not-alpha-numeric-regexp "\\(0[bB]\\)\\([01']+\\)\\(" integer-suffix-regexp "?\\)"))
            (literal-octal-regexp (concat not-alpha-numeric-regexp "\\(0\\)\\([0-7']+\\)\\(" integer-suffix-regexp "?\\)"))
            (literal-hex-regexp (concat not-alpha-numeric-regexp "\\(0[xX]\\)\\([0-9a-fA-F']+\\)\\(" integer-suffix-regexp "?\\)"))

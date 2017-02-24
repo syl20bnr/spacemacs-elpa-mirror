@@ -1,11 +1,11 @@
 ;;; pyvenv.el --- Python virtual environment interface -*- lexical-binding: t -*-
 
-;; Copyright (C) 2013-2015  Jorgen Schaefer <contact@jorgenschaefer.de>
+;; Copyright (C) 2013-2017  Jorgen Schaefer <contact@jorgenschaefer.de>
 
 ;; Author: Jorgen Schaefer <contact@jorgenschaefer.de>
 ;; URL: http://github.com/jorgenschaefer/pyvenv
-;; Package-Version: 1.9
-;; Version: 1.9
+;; Package-Version: 20170224.538
+;; Version: 1.10
 ;; Keywords: Python, Virtualenv, Tools
 
 ;; This program is free software; you can redistribute it and/or
@@ -159,24 +159,31 @@ This is usually the base name of `pyvenv-virtual-env'.")
       (setq exec-path old-exec-path
             process-environment old-process-environment)))
   (run-hooks 'pyvenv-pre-activate-hooks)
-  (setq pyvenv-old-exec-path exec-path
-        pyvenv-old-process-environment process-environment
-        ;; For some reason, Emacs adds some directories to `exec-path'
-        ;; but not to `process-environment'?
-        exec-path (if (file-exists-p (format "%s/Scripts" directory))
-                      (cons (format "%s/Scripts" directory) exec-path)
-                    (cons (format "%s/bin" directory) exec-path))
-        process-environment (append
-                             (list
-                              (format "VIRTUAL_ENV=%s" directory)
-                              (format "PATH=%s" (mapconcat (lambda (x)
-                                                             (or x "."))
-                                                           exec-path
-                                                           path-separator))
-                              ;; No "=" means to unset
-                              "PYTHONHOME")
-                             process-environment)
-        )
+  (let ((new-directories (append
+                          ;; Unix
+                          (when (file-exists-p (format "%s/bin" directory))
+                            (list (format "%s/bin" directory)))
+                          ;; Windows
+                          (when (file-exists-p (format "%s/Scripts" directory))
+                            (list (format "%s/Scripts" directory))))))
+    (setq pyvenv-old-exec-path exec-path
+          pyvenv-old-process-environment process-environment
+          ;; For some reason, Emacs adds some directories to `exec-path'
+          ;; but not to `process-environment'?
+          exec-path (append new-directories exec-path)
+          process-environment (append
+                               (list
+                                (format "VIRTUAL_ENV=%s" directory)
+                                (format "PATH=%s"
+                                        (mapconcat 'identity
+                                                   (append new-directories
+                                                           (split-string (getenv "PATH")
+                                                                         path-separator))
+                                                   path-separator))
+                                ;; No "=" means to unset
+                                "PYTHONHOME")
+                               process-environment)
+          ))
   (pyvenv-run-virtualenvwrapper-hook "post_activate")
   (run-hooks 'pyvenv-post-activate-hooks))
 
@@ -331,7 +338,8 @@ they specify a virtualenv different from the current one, switch
 to that virtualenv."
   (cond
    (pyvenv-activate
-    (when (and (not (equal pyvenv-activate pyvenv-virtual-env))
+    (when (and (not (equal (file-name-as-directory pyvenv-activate)
+                           pyvenv-virtual-env))
                (or (not pyvenv-tracking-ask-before-change)
                    (y-or-n-p (format "Switch to virtualenv %s (currently %s)"
                                      pyvenv-activate pyvenv-virtual-env))))
@@ -351,14 +359,9 @@ environment accordingly.
 
 CAREFUL! This will modify your `process-environment' and
 `exec-path'."
-  (when (pyvenv-hook-dir)
+  (when (pyvenv-virtualenvwrapper-supported)
     (with-temp-buffer
-      (let ((tmpfile (make-temp-file "pyvenv-virtualenvwrapper-"))
-            ;; `call-process-shell-command' uses `shell-file-name',
-            ;; which can be bound to various shells with incompatible
-            ;; syntaxes. Avoid quoting hell by using the least likely
-            ;; to break. See #36
-            (shell-file-name "/bin/sh"))
+      (let ((tmpfile (make-temp-file "pyvenv-virtualenvwrapper-")))
         (unwind-protect
             (progn
               (apply #'call-process
@@ -372,12 +375,12 @@ CAREFUL! This will modify your `process-environment' and
                                (cons hook args))
                        (cons hook args)))
               (call-process-shell-command
-               (format ". '%s' ; echo ; echo =-=-= ; python -c \"import os, json ; print(json.dumps(dict(os.environ)))\""
+               (format ". '%s' ; python -c 'import os, json; print(\"\\n=-=-=\"); print(json.dumps(dict(os.environ)))'"
                        tmpfile)
                nil t nil))
           (delete-file tmpfile)))
       (goto-char (point-min))
-      (when (and (not (re-search-forward "ImportError: No module named '?virtualenvwrapper'?" nil t))
+      (when (and (not (re-search-forward "\\(ImportError\\|ModuleNotFoundError\\): No module named '?virtualenvwrapper'?" nil t))
                  (re-search-forward "\n=-=-=\n" nil t))
         (let ((output (buffer-substring (point-min)
                                         (match-beginning 0))))
@@ -396,7 +399,8 @@ CAREFUL! This will modify your `process-environment' and
             (when (not (member env process-environment))
               (setq process-environment (cons env process-environment))))
           (when (eq (car binding) 'PATH)
-            (setq exec-path (split-string (cdr binding) ":"))))))))
+            (setq exec-path (split-string (cdr binding)
+                                          path-separator))))))))
 
 ;;;###autoload
 (defun pyvenv-restart-python ()
@@ -438,6 +442,12 @@ back to the default of $WORKON_HOME or even just ~/.virtualenvs/."
 This is the value of $WORKON_HOME or ~/.virtualenvs."
   (or (getenv "WORKON_HOME")
       (expand-file-name "~/.virtualenvs")))
+
+(defun pyvenv-virtualenvwrapper-supported ()
+  "Return true iff virtualenvwrapper is supported.
+
+Right now, this just checks if WORKON_HOME is set."
+  (getenv "WORKON_HOME"))
 
 ;;; Compatibility
 

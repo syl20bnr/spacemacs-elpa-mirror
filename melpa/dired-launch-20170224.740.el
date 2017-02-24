@@ -3,7 +3,7 @@
 ;; Copyright (C) 2016 David Thompson
 ;; Author: David Thompson
 ;; Version: 0.2
-;; Package-Version: 20170223.2240
+;; Package-Version: 20170224.740
 ;; Keywords: dired, launch
 ;; URL: https://github.com/thomp/dired-launch
 
@@ -26,16 +26,22 @@
 (defun dired-launch-homebrew (files launch-cmd)
   (mapc #'(lambda (file)
 	    (let ((buffer-name "dired-launch-output-buffer"))
-	      (dired-launch-call-process-on launch-cmd file)))
+	      (dired-launch-call-process-on launch-cmd
+					    (second dired-launch-mailcap-friend)
+					    file)))
 	files))
 
-(defun dired-launch-call-process-on (launch-cmd file)
-  ;; handle file names with spaces
-  (call-process launch-cmd
-		nil	; infile
-		0 ; async-ish...
-		nil 
-		(second dired-launch-default-launcher) file))
+(defun dired-launch-call-process-on (launch-cmd &rest args)
+  (if (executable-find launch-cmd)
+      ;; handle file names with spaces
+      (apply #'call-process
+	     (append (list launch-cmd
+			   nil		; infile
+			   0		; async-ish...
+			   nil		; display
+			   )
+		     args))
+    (message "Could not find %s. Is %s installed? Check the value of dired-launch-default-launcher." launch-cmd launch-cmd)))
 
 ;;;###autoload
 (defun dired-launch-command ()
