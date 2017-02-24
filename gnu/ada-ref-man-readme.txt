@@ -1,4 +1,4 @@
-Emacs info version of Ada Reference Manual 2012
+Emacs info version of Ada Reference Manual 2012 TC1
 
 The Ada Reference Manual is provided as a Gnu ELPA package; to install
 the package, add to ~./emacs:
