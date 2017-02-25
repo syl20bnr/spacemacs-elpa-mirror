@@ -1,10 +1,10 @@
-;;; helm-hunks.el --- A helm interface for git hunks -*- lexical-binding: t -*-
+;;; helm-hunks.el --- A helm interface for git hunks - browsing, staging, unstaging and killing -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2012-2016 Free Software Foundation, Inc.
 
 ;; Author: @torgeir
-;; Version: 1.5.0
-;; Package-Version: 20161229.657
+;; Version: 1.5.1
+;; Package-Version: 20170225.602
 ;; Keywords: helm git hunks vc
 ;; Package-Requires: ((emacs "24.4") (helm "1.9.8"))
 
@@ -23,7 +23,7 @@
 
 ;;; Commentary:
 
-;; A helm interface for git hunks.
+;; A helm interface for git hunks - browsing, staging, unstaging and killing.
 ;;
 ;; Enable `helm-follow-mode' and trigger `helm-hunks' and jump around
 ;; unstaged hunks like never before with `C-n' and `C-p'. Stage with `C-s'.
@@ -280,6 +280,18 @@ occured at and the `TYPE' of change."
   (unless (equal hunk (helm-hunks--msg-no-hunks))
     (helm-hunks--find-hunk-with-fn hunk #'find-file)))
 
+(defvar helm-hunks--keymap
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map helm-map)
+    (define-key map (kbd "C-k") 'helm-hunks--revert-hunk-interactive)
+    (define-key map (kbd "C-s") 'helm-hunks--stage-hunk-interactive)
+    (define-key map (kbd "C-u") 'helm-hunks--unstage-hunk-interactive)
+    (define-key map (kbd "C-c o")   'helm-hunks--find-hunk-other-window-interactive)
+    (define-key map (kbd "C-c C-o") 'helm-hunks--find-hunk-other-frame-interactive)
+    (define-key map (kbd "C-c C-p") 'helm-hunks--toggle-preview-interactive)
+    map)
+  "Keymap for `helm-hunks'.")
+
 (defvar helm-hunks--source
   (helm-build-async-source "Show hunks in project"
     :candidates-process 'helm-hunks--candidates
@@ -287,6 +299,7 @@ occured at and the `TYPE' of change."
     :persistent-action 'helm-hunks--persistent-action
     :persistent-help "[C-s] stage, [C-u] unstage/reset, [C-k] kill, [C-c C-p] show diffs, [C-c C-o] find other frame, [C-c o] find other window"
     :multiline t
+    :keymap helm-hunks--keymap
     :nomark t
     :follow 1)
   "Helm-hunks source to list changed hunks in the project.")
@@ -421,18 +434,6 @@ Will `cd' to the git root to make git diff paths align with paths on disk as we'
     (setq helm-hunks--is-preview is-preview)
     (with-helm-alive-p
       (helm-force-update candidate))))
-
-(defvar helm-hunks--keymap
-  (let ((map (make-sparse-keymap)))
-    (set-keymap-parent map helm-map)
-    (define-key map (kbd "C-k") 'helm-hunks--revert-hunk-interactive)
-    (define-key map (kbd "C-s") 'helm-hunks--stage-hunk-interactive)
-    (define-key map (kbd "C-u") 'helm-hunks--unstage-hunk-interactive)
-    (define-key map (kbd "C-c o")   'helm-hunks--find-hunk-other-window-interactive)
-    (define-key map (kbd "C-c C-o") 'helm-hunks--find-hunk-other-frame-interactive)
-    (define-key map (kbd "C-c C-p") 'helm-hunks--toggle-preview-interactive)
-    map)
-  "Keymap for `helm-hunks'.")
 
 ;;;###autoload
 (defun helm-hunks ()

@@ -1,8 +1,9 @@
 ;;; git-link.el --- Get the GitHub/Bitbucket/GitLab URL for a buffer location
 
+;; Copyright (C) 2013-2017 Skye Shaw and others
 ;; Author: Skye Shaw <skye.shaw@gmail.com>
-;; Version: 0.4.5
-;; Package-Version: 20170218.1541
+;; Version: 0.5.0 (unreleased)
+;; Package-Version: 20170225.904
 ;; Keywords: git, vc, github, bitbucket, gitlab, convenience
 ;; URL: http://github.com/sshaw/git-link
 
@@ -90,6 +91,9 @@
 
 (require 'thingatpt)
 (require 'url-util)
+
+(eval-when-compile
+  (defvar git-timemachine-revision))    ;silence reference to free variable warning
 
 (defvar git-link-default-remote nil
   "Name of the remote to link to.")

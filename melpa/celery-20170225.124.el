@@ -1,10 +1,10 @@
 ;;; celery.el --- a minor mode to draw stats from celery and more?  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2015  ardumont
+;; Copyright (C) 2015-2017  ardumont
 
 ;; Author: ardumont <eniotna.t@gmail.com>
 ;; Keywords: celery, convenience
-;; Package-Version: 20150812.147
+;; Package-Version: 20170225.124
 ;; Package-Requires: ((emacs "24") (dash-functional "2.11.0") (s "1.9.0") (deferred "0.3.2"))
 ;; Version: 0.0.3
 ;; URL: https://github.com/ardumont/emacs-celery

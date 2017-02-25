@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/worf
-;; Package-Version: 20170211.402
+;; Package-Version: 20170225.405
 ;; Version: 0.1.0
 ;; Package-Requires: ((swiper "0.7.0") (ace-link "0.1.0") (hydra "0.13.0") (zoutline "0.1.0"))
 ;; Keywords: lisp
@@ -795,18 +795,9 @@ Negative ARG shifts the heading left."
 (defvar worf-beginning-of-line t)
 
 (defun worf-beginning-of-line ()
-  "Replaces `org-beginning-of-line'.
-When already at beginning of line, move back to heading."
+  "Replaces `org-beginning-of-line'."
   (interactive)
-  (let ((pt (point)))
-    (org-beginning-of-line)
-    (while (not (bolp))
-      (backward-char))
-    (when (and worf-beginning-of-line
-               (eq pt (point))
-               (not (looking-at "^[*]")))
-      (push-mark)
-      (re-search-backward "^*"))))
+  (beginning-of-line))
 
 (defcustom worf-completion-method 'ivy
   "Method to select a candidate from a list of strings."
@@ -1024,6 +1015,11 @@ If already there, return it to previous position."
   (interactive)
   (call-interactively 'org-attach-open))
 
+(defvar worf-visit-function 'find-file
+  "Function to call when visiting a file.
+For example, the user might prefer to visit pdf or mp4 with
+external applications.")
+
 (defun worf-visit (arg)
   "Forward to find file in project with ARG."
   (interactive "p")
@@ -1033,8 +1029,9 @@ If already there, return it to previous position."
                   (file (if (= (length files) 1)
                             (car files)
                           (completing-read "Open attachment: "
-                                           (mapcar #'list files) nil t))))
-             (find-file (expand-file-name file attach-dir))))
+                                           (mapcar #'list files) nil t)))
+                  (file (expand-file-name file attach-dir)))
+             (funcall worf-visit-function file)))
           ((= arg 1)
            (projectile-find-file nil))
           ((= arg 2)
@@ -1537,7 +1534,20 @@ calling `self-insert-command'."
            (org-archive-location
             (format "%s::%s %04d-%02d-%02d %s" afile
                     (make-string (org-get-valid-level 0 2) ?*) y m d
-                    (format-time-string "%A" (encode-time 0 0 0 d m y)))))
+                    (format-time-string "%A" (encode-time 0 0 0 d m y))))
+           (id (org-attach-dir)))
+      (when id
+        (let ((new-location
+               (file-name-directory
+                (expand-file-name
+                 (file-relative-name id)
+                 (file-name-directory afile))))
+              (id-parent (file-name-directory id)))
+          (make-directory new-location t)
+          (rename-file id new-location)
+          (when (equal (directory-files id-parent)
+                       '("." ".."))
+            (delete-directory id-parent))))
       (org-set-tags-to (org-get-tags-at))
       (if (null afile)
           (error "Invalid `org-archive-location'")
@@ -1635,7 +1645,8 @@ AGENDA-FILES is a list of files.")
   (setq org-agenda-files
         (cl-remove-if-not
          #'file-exists-p
-         (apply #'append (mapcar #'cadr worf-agenda-files))))
+         (delete-dups
+          (apply #'append (mapcar #'cadr worf-agenda-files)))))
   (org-agenda-redo))
 
 (provide 'worf)

@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170219.2346
+;; Package-Version: 20170225.356
 ;; Version: 0.8.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.8.0"))
 ;; Keywords: completion, matching
@@ -2252,6 +2252,8 @@ Additional Actions:
 (defun counsel-package-action-describe (pkg-cons)
   "Call `describe-package' for package in PKG-CONS."
   (describe-package (cadr pkg-cons)))
+
+(declare-function package-desc-extras "package")
 
 (defun counsel-package-action-homepage (pkg-cons)
   "Open homepage for package in PKG-CONS."

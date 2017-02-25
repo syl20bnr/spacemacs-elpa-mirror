@@ -1,12 +1,12 @@
-;;; sexy-monochrome-theme.el --- A sexy dark Emacs 24 theme for your sexy code
+;;; sexy-monochrome-theme.el --- A sexy dark Emacs >= 24 theme for your sexy code
 
-;; Copyright (c) 2016 Volodymyr Yevtushenko
+;; Copyright (c) 2017 Volodymyr Yevtushenko
 
 ;; Author: Volodymyr Yevtushenko <vol.yevtushenko@ukr.net>
 ;; Keywords: themes
-;; Package-Version: 20160915.353
+;; Package-Version: 20170225.346
 ;; URL: https://github.com/nuncostans/sexy-monochrome-theme
-;; Version: 1.0
+;; Version: 2.0
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 ;;
 ;;   (load-theme 'sexy-monochrome t)
 ;;
-;; Requirements: Emacs 24.
+;; Requirements: Emacs >= 24.
 
 ;;; Credits:
 
@@ -37,7 +37,7 @@
 ;;; Code:
 
 (deftheme sexy-monochrome
-  "Gray on black for your focused hacking sessions.")
+  "Gray on black (with bit of light slate gray colours) theme for your hacking sessions.")
 
 (font-lock-add-keywords 'c-mode
                         '(("\\(\\w+\\)\\s-*\("
@@ -45,27 +45,33 @@
                         t)
 
 (let ((class '((class color) (min-colors 10)))
-      (black "black")
+      (black "#000000")
       (white "white")
       (lgray "light gray")
       (dgray "dark gray")
-      (sgray "light slate gray"))
+      (sgray "light slate gray")
+      (foreground "grey90")
+      (region "light slate gray")
+      (comment "grey36")
+      (string "light slate gray")
+      (linum "dim gray")
+      (paren-match "dark slate blue")
+      )
 
   (custom-theme-set-faces
    'sexy-monochrome
 
-   (if (window-system)
-       `(default ((,class (:foreground ,lgray :background ,black)))))
+   `(default ((,class (:foreground ,lgray :background ,black))))
    `(cursor ((,class (:background ,lgray))))
 
    ;; Highlighting faces
    `(fringe ((t (:background "black" :foreground "light gray"))))
    `(highlight ((t (:background "gray9"))))
-   `(region ((t (:background "#333333"))))
+   `(region ((t (:background ,region))))
    `(secondary-selection ((,class (:foreground: ,black :background ,sgray))))
    `(isearch ((,class (:foreground ,black :background ,lgray))))
    `(lazy-highlight ((,class (:foreground ,black :background ,lgray))))
-   `(linum ((t (:foreground "dim gray"))))
+   `(linum ((t (:foreground ,linum))))
    `(trailing-whitespace ((,class (:background "red"))))
 
    ;; Mode line faces
@@ -74,8 +80,8 @@
 
    ;; Whitespace-mode
    `(whitespace-empty ((,class (:background unspecified :foreground "red"))))
-   `(whitespace-line ((,class (:background "gray9" :foreground ,black))))
-   `(whitespace-space ((t (:foreground ,dgray))))
+   `(whitespace-line ((,class (:background ,lgray :underline t))))
+   `(whitespace-space ((t (:foreground "gray9"))))
    `(whitespace-tab ((t (:foreground ,dgray))))
 
    ;; Escape and prompt faces
@@ -86,23 +92,28 @@
    `(success ((,class (:foreground "green"))))
 
    ;; Font lock faces
-   `(font-lock-builtin-face ((,class (:foreground ,lgray))))
-   `(font-lock-comment-face ((,class (:foreground "gray36"))))
-   `(font-lock-constant-face ((,class (:foreground ,dgray))))
-   `(font-lock-function-name-face ((t (:foreground ,sgray))))
-   `(font-lock-keyword-face ((,class (:weight bold :foreground ,white))))
-   `(font-lock-string-face ((t (:foreground ,sgray))))
-   `(font-lock-type-face ((,class (:foreground ,sgray))))
-   `(font-lock-variable-name-face ((,class (:foreground ,dgray))))
+   `(font-lock-builtin-face ((,class (:foreground ,foreground :weight bold))))
+   `(font-lock-constant-face ((,class (:foreground ,sgray :weight bold))))
+   `(font-lock-keyword-face ((,class (:foreground ,foreground :weight bold))))
+   `(font-lock-type-face ((,class (:foreground ,foreground :slant italic))))
+   `(font-lock-function-name-face ((,class (:foreground ,foreground :weight bold))))
+   `(font-lock-variable-name-face ((,class (:foreground ,foreground))))
+   `(font-lock-comment-delimiter-face ((,class (:foreground ,comment))))
+   `(font-lock-comment-face ((,class (:foreground ,comment))))
+   `(font-lock-doc-face ((,class (:inherit (font-lock-comment-face)))))
+   `(font-lock-string-face ((,class (:foreground ,foreground :foreground ,string))))
    `(font-lock-warning-face ((,class (:foreground "yellow"))))
-
+   
    ;; Button and link faces
    `(link ((,class (:underline t :foreground ,lgray))))
    `(link-visited ((,class (:underline t :foreground ,lgray))))
 
    ;; Show-paren
-   `(show-paren-match ((t (:background "grey25"))))
+   `(show-paren-match ((t (:background ,paren-match))))
    `(show-paren-mismatch ((t (:background "red"))))
+   
+   ;; highlight indentation current column face
+   `(highlight-indentation-current-column-face ((t (:background "gray20"))))
 
    ;; Speedbar
    `(speedbar-button-face ((,class (:foreground ,dgray))))

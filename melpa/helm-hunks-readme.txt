@@ -1,4 +1,4 @@
-A helm interface for git hunks.
+A helm interface for git hunks - browsing, staging, unstaging and killing.
 
 Enable `helm-follow-mode' and trigger `helm-hunks' and jump around
 unstaged hunks like never before with `C-n' and `C-p'. Stage with `C-s'.

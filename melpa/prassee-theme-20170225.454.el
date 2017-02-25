@@ -3,11 +3,11 @@
 ;; Copyright (c) 2017 Prassee
 
 ;; Author: Prassee  <prassee.sathian@gmail.com>
-;; Keywords: theme dark colors
-;; Package-Version: 20170221.1756
-;; URL: http://github.com/fgeller/basic-theme.el
+;; Keywords: faces
+;; Package-Version: 20170225.454
+;; URL: https://github.com/prassee/prassee-emacs-theme
 ;; Package-Requires: ((emacs "24"))
-;; Version: 1.0
+;; Version: 1.1
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -52,8 +52,8 @@
       (blue           "#51afef")
       (blue-d         "#1f5582")
       (green          "#98be65"))
-  
-  (let* ((bg             "#002b36") 
+
+  (let* ((bg             "#002b36")
          (bg-d           "#002b36")
          (fg             "#bbc2cf")
          (highlight      grey-c)
@@ -73,12 +73,15 @@
          (variables      white)
          (numbers        orange)
          (region         "#3d4451")
+
          ;; tabs
          (tab-unfocused-bg "#353a42")
          (tab-unfocused-fg "#1e2022")
+
          ;; main search regions
          (search-bg      blue)
          (search-fg      black)
+
          ;; other search regions
          (search-rest-bg grey-d)
          (search-rest-fg blue)
@@ -98,7 +101,7 @@
 
     (custom-theme-set-faces
      'prassee
-     
+
      ;; Global
      `(default                ((,c (:background ,bg-d :foreground ,fg))))
      `(fringe                 ((,c (:inherit default :foreground ,comments))))
@@ -140,13 +143,12 @@
      `(font-lock-preprocessor-char-face      ((,c (:foreground ,operators ))))
      `(font-lock-regexp-grouping-backslash   ((,c (:foreground ,operators ))))
      `(font-lock-regexp-grouping-construct   ((,c (:foreground ,operators ))))
-    
-     
+
      ;; Modeline
      `(mode-line                   ((,c (:foreground ,black
-                                         :background ,teal))))
+                                                     :background ,teal))))
      `(mode-line-inactive          ((,c (:foreground ,green
-                                         :background ,green-c))))
+                                                     :background ,green-c))))
      `(header-line                 ((,c (:inherit mode-line))))
 
      ;; Powerline/Spaceline
@@ -171,7 +173,6 @@
      `(window-divider-first-pixel  ((,c (:foreground ,vertical-bar))))
      `(window-divider-last-pixel   ((,c (:foreground ,vertical-bar))))
 
-     
      ;;
      ;; Plugins
      ;;
@@ -182,8 +183,7 @@
      `(avy-lead-face-2    ((,c (:background ,search-bg :foreground ,search-fg))))
      `(avy-lead-face      ((,c (:background ,search-bg :foreground ,search-fg))))
 
-
-      ;; company-mode
+     ;; company-mode
      `(company-tooltip             ((,c (:inherit tooltip))))
      `(company-tooltip-common      ((,c (:foreground ,blue))))
      `(company-tooltip-search      ((,c (:foreground ,search-fg :background ,highlight))))
@@ -195,19 +195,19 @@
      `(company-preview             ((,c (:foreground ,blue))))
      `(company-preview-common      ((,c (:foreground ,magenta :background ,grey-d))))
      `(company-preview-search      ((,c (:inherit company-tooltip-search))))
-        
+
      ;; diff-hl
      `(diff-hl-change              ((,c (:foreground ,vc-modified))))
      `(diff-hl-delete              ((,c (:foreground ,vc-deleted))))
      `(diff-hl-insert              ((,c (:foreground ,vc-added))))
-   
+
      ;; elscreen
      `(elscreen-tab-background-face     ((,c (:background ,bg-d))))
      `(elscreen-tab-control-face        ((,c (:background ,bg-d :foreground ,bg-d))))
      `(elscreen-tab-current-screen-face ((,c (:background ,bg :foreground ,fg))))
      `(elscreen-tab-other-screen-face   ((,c (:background ,tab-unfocused-bg :foreground ,tab-unfocused-fg))))
-    
-    
+
+
      ;; flycheck
      `(flycheck-error     ((,c (:underline (:style wave :color ,red)))))
      `(flycheck-warning   ((,c (:underline (:style wave :color ,yellow)))))
@@ -297,22 +297,21 @@
      ;; Language-specific
      ;;
 
-    
-     ;;; (css|scss)-mode
+     ;; (css|scss)-mode
      `(css-proprietary-property ((,c (:foreground ,orange))))
      `(css-property             ((,c (:foreground ,green))))
      `(css-selector             ((,c (:foreground ,blue))))
 
-     ;;; js2-mode
+     ;; js2-mode
      `(js2-function-param  ((,c (:foreground ,variables))))
      `(js2-function-call   ((,c (:foreground ,functions))))
      `(js2-object-property ((,c (:foreground ,violet))))
      `(js2-jsdoc-tag       ((,c (:foreground ,comments))))
 
-     ;;; makefile-*-mode
+     ;; makefile-*-mode
      `(makefile-targets     ((,c (:foreground ,blue))))
 
-     ;;; markdown-mode
+     ;; markdown-mode
      `(markdown-header-face           ((,c (:foreground ,red :bold t))))
      `(markdown-header-delimiter-face ((,c (:inherit markdown-header-face))))
      `(markdown-metadata-key-face     ((,c (:foreground ,red))))
@@ -375,17 +374,16 @@
      `(org-list-bullet           ((,c (:foreground ,cyan))))  ; custom
      `(message-header-name       ((,c (:foreground ,green)))) ; custom
 
-;;      `(vertical-border ((t (:foreground ,white))))
-          ;;; typescript-mode
+     ;; typescript-mode
      `(ts-object-property  ((,c (:inherit js2-object-property))))
-     ;;; web-mode
+
+     ;; web-mode
      `(web-mode-doctype-face           ((,c (:foreground ,comments))))
      `(web-mode-html-tag-face          ((,c (:foreground ,methods))))
      `(web-mode-html-tag-bracket-face  ((,c (:foreground ,methods))))
      `(web-mode-html-attr-name-face    ((,c (:foreground ,type))))
      `(web-mode-html-entity-face       ((,c (:foreground ,cyan ))))
      `(web-mode-block-control-face     ((,c (:foreground ,orange))))
-     ;;`(web-mode-html-tag-bracket-face  ((,c (:foreground ,operators))))
      )))
 
 ;;;###autoload

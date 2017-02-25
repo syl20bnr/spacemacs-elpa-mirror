@@ -4,7 +4,7 @@
 
 ;; Author: Mark Laws <mdl@60hz.org>
 ;; URL: http://github.com/drvink/flycheck-ats2
-;; Package-Version: 20151130.607
+;; Package-Version: 20170225.836
 ;; Keywords: convenience, tools, languages
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "24.1") (flycheck "0.22"))
@@ -52,41 +52,48 @@
 
 (require 'flycheck)
 
-(flycheck-define-checker ats2
-  "ATS2 checker using patscc."
-  :command ("patscc" "-tcats" source-inplace)
-  :error-patterns
-  ((error
-    ;; This will catch all single-line messages:
-    ;;
-    ;; filename: 3120(line=151, offs=1) -- 3124(line=151, offs=5): error(3): the applied dynamic expression is of non-function type: S2Ecst(bool_t0ype)
-    ;; filename: 3120(line=151, offs=1) -- 3124(line=151, offs=5): error(3): the dynamic expression cannot be assigned the type [S2Ecst(bool_t0ype)].
-    ;;
-    ;; ...and multi-line messages of the same form that end with a colon, in
-    ;; which case we assume there will be two following lines that should be
-    ;; grouped with the first line, e.g.:
-    ;;
-    ;; filename: 3120(line=151, offs=1) -- 3124(line=151, offs=5): error(3): mismatch of static terms (tyleq):
-    ;; The actual term is: S2Eerr()
-    ;; The needed term is: S2Ecst(bool_t0ype)
+(defun flycheck-ats2-rx-level (level)
+  "Return a flycheck-rx form for an ATS-Postiats error message with LEVEL."
+  ;; This will catch all single-line messages:
+  ;;
+  ;; filename: 3120(line=151, offs=1) -- 3124(line=151, offs=5): error(3): the applied dynamic expression is of non-function type: S2Ecst(bool_t0ype)
+  ;; filename: 3120(line=151, offs=1) -- 3124(line=151, offs=5): error(3): the dynamic expression cannot be assigned the type [S2Ecst(bool_t0ype)].
+  ;;
+  ;; ...and multi-line messages of the same form that end with a colon, in
+  ;; which case we assume there will be two following lines that should be
+  ;; grouped with the first line, e.g.:
+  ;;
+  ;; filename: 3120(line=151, offs=1) -- 3124(line=151, offs=5): error(3): mismatch of static terms (tyleq):
+  ;; The actual term is: S2Eerr()
+  ;; The needed term is: S2Ecst(bool_t0ype)
+  ;;
+  ;; See: https://github.com/githwxi/ATS-Postiats/blob/1c0a515f8fb0f757359f7bf096e8a5541683a6ff/src/pats_errmsg.dats
 
-    ;; file name
-    bol (file-name)
+  ;; file name
+  `(bol
+    (file-name)
     ;; offset of error start
-    ?: space (1+ num)
+    ":" space (1+ num)
     ;; line, column; start of error span
-    "(line=" line ?, space "offs=" column ?\)
+    "(line=" line "," space "offs=" column ")"
     ;; offset of error end
     space "--" space (1+ num)
     ;; line, column; end of error span
-    "(line=" (1+ num) ?, space "offs=" (1+ num) "):"
-    space
+    "(line=" (1+ num) "," space "offs=" (1+ num) "):"
+    space ,level "(" (id (one-or-more alnum)) "):"
     ;; error message; up to three lines long
     (message
      (+? not-newline)
      (or (: ?: ?\n (repeat 2 (: (1+ not-newline) ?\n)))
          ?\n))))
-  :modes ats-mode)
+
+(flycheck-define-command-checker 'ats2
+  "ATS2 checker using patscc."
+  :command '("patscc" "-tcats" source-inplace)
+  :error-patterns
+  `((error   ,@(flycheck-ats2-rx-level "error"))
+    (warning ,@(flycheck-ats2-rx-level "warning")))
+  :modes 'ats-mode)
 
 ;;;###autoload
 (defun flycheck-ats2-setup ()
