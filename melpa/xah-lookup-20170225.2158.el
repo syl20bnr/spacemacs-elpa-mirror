@@ -3,8 +3,8 @@
 ;; Copyright © 2011-2017 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 3.0.1
-;; Package-Version: 20170209.342
+;; Version: 3.1.0
+;; Package-Version: 20170225.2158
 ;; Created: 14 Nov 2011
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: help, docs, convenience
@@ -23,7 +23,6 @@
 ;; • xah-lookup-wikipedia        ; 【C-h 8】
 ;; • xah-lookup-word-definition  ; 【C-h 9】
 ;; • xah-lookup-word-dict-org
-;; • xah-lookup-answers.com
 ;; • xah-lookup-wiktionary
 
 ;; If there's a text selection (a phrase you want to lookup), these commands will lookup the selected text.
@@ -111,7 +110,6 @@
   [
    "http://www.dict.org/bin/Dict?Form=Dict2&Database=*&Query=word02051" ; 1913 Webster, WordNet
    "http://www.thefreedictionary.com/word02051"                         ; AHD
-   "http://www.answers.com/main/ntquery?s=word02051"                    ; AHD
    "http://en.wiktionary.org/wiki/word02051"
    "http://www.google.com/search?q=define:+word02051"     ; google
    "http://www.etymonline.com/index.php?search=word02051" ; etymology
@@ -222,7 +220,7 @@ Version 2017-02-09"
 
 ;;;###autoload
 (defun xah-lookup-word-definition (&optional *word)
-  "Lookup definition of current word or text selection in URL `http://thefreedictionary.com/'.
+  "Lookup definition of current word or text selection in URL `http://www.thefreedictionary.com/curlicue'.
 Version 2017-02-09"
   (interactive)
   (xah-lookup-word-on-internet
@@ -230,7 +228,7 @@ Version 2017-02-09"
    (get 'xah-lookup-word-definition 'xah-lookup-url )
    (get 'xah-lookup-word-definition 'xah-lookup-browser-function )))
 
-(put 'xah-lookup-word-definition 'xah-lookup-url "http://www.dict.org/bin/Dict?Form=Dict2&Database=*&Query=word02051")
+(put 'xah-lookup-word-definition 'xah-lookup-url "http://www.thefreedictionary.com/word02051")
 (put 'xah-lookup-word-definition 'xah-lookup-browser-function 'eww)
 
 (defun xah-lookup-word-dict-org (&optional *word)
@@ -245,17 +243,10 @@ Version 2017-02-09"
 (put 'xah-lookup-word-dict-org 'xah-lookup-url "http://www.dict.org/bin/Dict?Form=Dict2&Database=*&Query=word02051")
 (put 'xah-lookup-word-dict-org 'xah-lookup-browser-function 'eww)
 
-(defun xah-lookup-answers.com (&optional *word)
-  "Lookup current word or text selection in URL `http://answers.com/'.
-Version 2017-02-09"
-  (interactive)
-  (xah-lookup-word-on-internet
-   *word
-   (get 'xah-lookup-answers.com 'xah-lookup-url )
-   (get 'xah-lookup-answers.com 'xah-lookup-browser-function )))
 
-(put 'xah-lookup-answers.com 'xah-lookup-url "http://www.answers.com/main/ntquery?s=word02051")
-(put 'xah-lookup-answers.com 'xah-lookup-browser-function xah-lookup-browser-function)
+
+
+
 
 (defun xah-lookup-wiktionary (&optional *word)
   "Lookup definition of current word or text selection in URL `http://en.wiktionary.org/'
@@ -275,10 +266,14 @@ Current word or text selection is used as input.
 The dictionaries used are in `xah-lookup-dictionary-list'."
   (interactive)
   (mapc
-   (lambda
-     (-url)
-     (xah-lookup-word-on-internet *word -url xah-lookup-dictionary-browser-function))
+   (lambda (-url)
+     (xah-lookup-word-on-internet
+      *word
+      -url
+      (get 'xah-lookup-all-dictionaries 'xah-lookup-browser-function )))
    xah-lookup-dictionary-list))
+
+(put 'xah-lookup-all-dictionaries 'xah-lookup-browser-function 'browse-url)
 
 (define-key help-map (kbd "7") 'xah-lookup-google)
 (define-key help-map (kbd "8") 'xah-lookup-wikipedia)
