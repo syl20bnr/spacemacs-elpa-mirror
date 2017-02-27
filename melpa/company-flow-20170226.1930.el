@@ -4,7 +4,7 @@
 
 ;; Author: Aaron Jensen <aaronjensen@gmail.com>
 ;; URL: https://github.com/aaronjensen/company-flow
-;; Package-Version: 20170225.1346
+;; Package-Version: 20170226.1930
 ;; Version: 0.1.0
 ;; Package-Requires: ((company "0.8.0") (dash "2.13.0"))
 
@@ -139,6 +139,7 @@ PROCESS, and terminates standard input with EOF."
        buffer-file-name
        (file-exists-p buffer-file-name)
        (not (company-in-string-or-comment))
+       (locate-dominating-file buffer-file-name ".flowconfig")
        (or (company-grab-symbol-cons "\\." 1)
            'stop)))
 

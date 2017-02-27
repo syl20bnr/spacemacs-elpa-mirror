@@ -5,7 +5,7 @@
 ;; Author: Thomas Fini Hansen <xen@xen.dk>
 ;; Created: February 16, 2017
 ;; Version: 0.1.0
-;; Package-Version: 0.1.0
+;; Package-Version: 0.1.1
 ;; Package-Requires: ((ede-php-autoload "1.0.0") (f "0.19.0") (s "1.7.0"))
 ;; Keywords: programming, php, drupal
 
@@ -46,7 +46,7 @@
 CONTEXT is the composer context and AUTOLOADS are the currently
 found autoloads."
   (let* ((core-path (ede-php-autoload-drupal--core-path autoloads))
-         (drupal-root (f-dirname core-path))
+         (drupal-root (if core-path (f-dirname core-path)))
          (module-autoloads ()))
     (when core-path
       (setq autoloads

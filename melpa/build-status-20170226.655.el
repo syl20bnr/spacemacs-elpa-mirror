@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017 Skye Shaw
 ;; Author: Skye Shaw <skye.shaw@gmail.com>
 ;; Version: 0.0.1
-;; Package-Version: 20170208.1922
+;; Package-Version: 20170226.655
 ;; Keywords: mode-line, ci, circleci, travis-ci
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; URL: http://github.com/sshaw/build-status
@@ -379,5 +379,5 @@ Signals an error if the response does not contain an HTTP 200 status code."
   :global t
   :variable ((build-status--activate-mode) . build-status--toggle-mode))
 
-(provide 'build-status-mode)
+(provide 'build-status)
 ;;; build-status.el ends here

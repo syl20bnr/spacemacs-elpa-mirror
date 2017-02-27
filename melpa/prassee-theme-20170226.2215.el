@@ -1,10 +1,10 @@
-;;; prassee-theme.el --- A high contrast color theme for Emacs.
+;;; prassee-theme.el --- A high contrast color theme
 
 ;; Copyright (c) 2017 Prassee
 
 ;; Author: Prassee  <prassee.sathian@gmail.com>
 ;; Keywords: faces
-;; Package-Version: 20170225.454
+;; Package-Version: 20170226.2215
 ;; URL: https://github.com/prassee/prassee-emacs-theme
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 1.1
@@ -24,8 +24,8 @@
 
 ;;; Commentary:
 
-;; A variant of the Doom theme Zenburn for Emacs 25, built on top
-;; of the new built-in theme support in Emacs 25.
+;; A variant of the Doom theme Zenburn for Emacs 24, built on top
+;; of the new built-in theme support in Emacs 24.
 
 ;;; Code:
 

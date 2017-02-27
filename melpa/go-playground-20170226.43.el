@@ -1,10 +1,10 @@
 ;;; go-playground.el --- Local Golang playground for short snippets.
 
-;; Copyright (C) 2015-2016  Alexander I.Grafov (axel)
+;; Copyright (C) 2015-2017  Alexander I.Grafov (axel)
 
 ;; Author: Alexander I.Grafov (axel) <grafov@gmail.com>
 ;; URL: https://github.com/grafov/go-playground
-;; Package-Version: 20170226.24
+;; Package-Version: 20170226.43
 ;; Keywords: tools, golang
 ;; Version: 1.1
 ;; Package-Requires: ((emacs "24") (go-mode "1.4.0") (gotest "0.13.0"))

@@ -4,7 +4,7 @@
 ;; Author: Bastian Bechtold
 ;; Maintainer: Bastian Bechtold
 ;; URL: https://github.com/bastibe/annotate.el
-;; Package-Version: 20170224.459
+;; Package-Version: 20170227.23
 ;; Created: 2015-06-10
 ;; Version: 0.4.7
 
@@ -383,11 +383,11 @@ annotation, and can be conveniently viewed in diff-mode."
 - the newline that will display the annotation
 
 The first match will get `annotate--change-guard` as its
-`insert-behind-hook`, to make sure that if a newline is inserted
+`insert-in-front-hook`, to make sure that if a newline is inserted
 between the overlay and the annotation, the `display` property of
 the newline is properly disposed of.
 
-The second match will get `annotate-annotation-builder` as its
+The second match will get `annotate--annotation-builder` as its
 `display` property, which makes the newline look like an
 annotation plus the newline."
   (goto-char (next-overlay-change (point)))
@@ -443,15 +443,17 @@ annotation plus the newline."
   (save-excursion
     (goto-char (1- (point))) ; we start at the start of the next line
     ;; find overlays in the preceding line
-    (let* ((prefix (annotate-make-prefix)) ; white space before first annotation
-           (text "")
-           (bol (progn (beginning-of-line) (point)))
-           (eol (progn (end-of-line) (point)))
-           ;; include line break if on empty line:
-           (bol* (if (= bol eol) (1- bol) bol))
-           (overlays (sort (overlays-in bol* eol)
+    (let ((prefix (annotate-make-prefix)) ; white space before first annotation
+          (bol (progn (beginning-of-line) (point)))
+          (eol (progn (end-of-line) (point)))
+          (text "")
+          (overlays nil))
+      ;; include previous line if point is at bol:
+      (when (eq nil (overlays-in bol eol))
+        (setq bol (1- bol)))
+      (setq overlays (sort (overlays-in bol eol)
                            (lambda (x y)
-                             (< (overlay-end x) (overlay-end y))))))
+                             (< (overlay-end x) (overlay-end y)))))
       ;; put each annotation on its own line
       (dolist (ov overlays)
         (if (overlay-get ov 'annotation)
@@ -607,14 +609,12 @@ an overlay and it's annotation."
 (defun annotate-make-prefix ()
   "An empty string from the end of the line upto the annotation."
   (save-excursion
-    (move-end-of-line nil)
-    (let ((eol (point))
-          (prefix-length nil))
-      (move-beginning-of-line nil)
-      (setq prefix-length (- annotate-annotation-column (- eol (point))))
+    (let* ((line-text (buffer-substring
+                       (progn (beginning-of-line) (point))
+                       (progn (end-of-line) (point))))
+           (prefix-length (- annotate-annotation-column (string-width line-text))))
       (if (< prefix-length 2)
           (make-string 2 ? )
-
         (make-string prefix-length ? )))))
 
 (defun annotate-bounds ()

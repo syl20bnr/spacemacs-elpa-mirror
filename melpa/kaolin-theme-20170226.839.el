@@ -4,7 +4,7 @@
 
 ;; Author: 0rdy <mail@0rdy.com>
 ;; URL: https://github.com/0rdy/kaolin-theme
-;; Package-Version: 20170225.105
+;; Package-Version: 20170226.839
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 0.2.0
 
@@ -165,7 +165,7 @@
      `(secondary-selection ((,class (:background ,green :foreground ,bg1))))
      `(fringe ((,class (:background ,bg1 :foreground ,fg1))))
      `(cursor ((,class (:background ,cursor))))
-     `(isearch ((,class (:background ,bg2 :foreground ,light-green :bold ,bold :underline t))))
+     `(isearch ((,class (:background nil :foreground ,light-green :bold ,bold :underline t))))
      `(vertical-border ((,class (:foreground ,win-border))))
      `(minibuffer-prompt ((,class (:foreground ,keyword :bold ,bold))))
      `(default-italic ((,class (:italic t))))
@@ -338,6 +338,23 @@
      `(diff-added ((,class (:background ,dark-green :foreground ,fg1))))
      `(diff-changed ((,class (:background ,dark-yellow :foreground ,fg1))))
      `(diff-removed ((,class (:background ,dark-red :foreground ,fg1))))
+
+     ;; Ediff
+     `(ediff-current-diff-A ((,class (:background ,dark-red :foreground ,red))))
+     `(ediff-current-diff-B ((,class (:background ,dark-green :foreground ,light-green))))
+     `(ediff-current-diff-C ((,class (:background ,dark-blue :foreground ,teal-blue))))
+
+     `(ediff-even-diff-A ((,class (:background ,bg2))))
+     `(ediff-even-diff-B ((,class (:background ,bg2))))
+     `(ediff-even-diff-C ((,class (:background ,bg2))))
+
+     `(ediff-fine-diff-A ((,class (:background nil :bold ,bold))))
+     `(ediff-fine-diff-B ((,class (:background nil :bold ,bold))))
+     `(ediff-fine-diff-C ((,class (:background nil :bold ,bold))))
+
+     `(ediff-odd-diff-A ((,class (:background ,bg3))))
+     `(ediff-odd-diff-B ((,class (:background ,bg3))))
+     `(ediff-odd-diff-C ((,class (:background ,bg3))))
 
      ;; Magit
      `(magit-section-highlight ((,class (:background ,bg2))))

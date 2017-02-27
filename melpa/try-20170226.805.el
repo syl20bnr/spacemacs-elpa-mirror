@@ -4,7 +4,7 @@
 
 ;; Author: Lars Tveito <larstvei@ifi.uio.no>
 ;; URL: http://github.com/larstvei/try
-;; Package-Version: 20160226.730
+;; Package-Version: 20170226.805
 ;; Created: 13th November 2014
 ;; Keywords: packages
 ;; Version: 0.0.1
@@ -90,7 +90,9 @@ to a raw .el file. Packages are stored in `try-tmp-dir' and raw
           ((try-package-exists-p package-symbol)
            (let ((package-user-dir try-tmp-dir)
                  (package-alist nil))
-             (package-install package-symbol)
+             (if (version< emacs-version "25.1")
+                 (package-install package-symbol)
+                 (package-install package-symbol 'dont-select))
              (message "Trying %s!" url-or-package)))
           (t (message (concat "Couldn't find a sensible way to try this. "
                               "Try running `package-refresh-contents'!"))))))

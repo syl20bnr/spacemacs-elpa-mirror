@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/tarsius/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 20170206.33
+;; Package-Version: 20170226.1130
 
 ;; This file is not part of GNU Emacs.
 
@@ -259,6 +259,7 @@ directories."
     (eval-after-load 'jabber
       `(make-directory ,(var "jabber/history/") t))
     (setq mc/list-file                     (var "mc-list.el"))
+    (setq multi-compile-history-file       (var "multi-compile-history.el"))
     (setq org-gcal-dir                     (var "org/gcal/"))
     (eval-after-load 'org-caldav
       `(make-directory ,(var "org/caldav/save") t))
@@ -266,6 +267,7 @@ directories."
     (setq org-caldav-save-directory        (var "org/caldav/save"))
     (setq pcache-directory                 (var "pcache/"))
     (setq persistent-scratch-save-file     (var "persistent-scratch.el"))
+    (setq persp-save-dir                   (var "persp-mode/"))
     (eval-after-load 'projectile
       `(make-directory ,(var "projectile/") t))
     (setq projectile-cache-file            (var "projectile/cache.el"))
@@ -274,6 +276,7 @@ directories."
     (setq rmh-elfeed-org-files             (list (var "elfeed/rmh-elfeed.org")))
     (setq runner-init-file                 (var "runner-init.el"))
     (setq save-kill-file-name              (var "save-kill.el"))
+    (setq save-visited-files-location      (var "save-visited-files-location"))
     (setq smex-save-file                   (var "smex-save.el"))
     (setq speed-type-gb-dir                (var "speed-type/"))
     (eval-after-load 'sx

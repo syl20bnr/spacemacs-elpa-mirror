@@ -1,7 +1,7 @@
 ;;; flycheck-scala-sbt.el --- sbt-mode checker for Scala -*- lexical-binding: t -*-
 
 ;; Version: 0.1
-;; Package-Version: 20170222.1621
+;; Package-Version: 20170226.1127
 ;; Url: https://www.github.com/rjmac/flycheck-scala-sbt
 ;; Package-requires: ((emacs "25.1") (flycheck "30") (sbt-mode "0.2"))
 
@@ -21,25 +21,6 @@
   :prefix "flycheck-scala-sbt-"
   :tag "Scala-SBT"
   :group 'flycheck)
-
-(defcustom flycheck-scala-sbt-collect-from-other-files-p
-  t
-  "Whether to collect errors and warnings from other files.
-
-If set, errors detected in other files are shown at the start of
-the current buffer.  Valid values are t for \"always collect from
-other files\", nil for \"never collect from other files\",
-`:unopened-buffer' for \"only collect from files not currently
-open\", and `:unknown-buffer' for \"only collect from files not
-tied to the current SBT session\".  `:unknown-buffer' only works
-if `flycheck-scala-sbt-trigger-other-buffers' is set."
-  :type '(choice (const :tag "Yes" t)
-                 (const :tag "No" nil)
-                 (const :tag "Only for unopened files" :unopened-buffers)
-                 (const :tag "Only for files unassociated with the current SBT session" :unknown-buffer)
-                 (const :tag "Create a single message for all other-file diagnostics" :coalesce))
-  :tag "Collect from other files"
-  :group 'flycheck-scala-sbt)
 
 (defcustom flycheck-scala-sbt-auto-reload-p
   t
@@ -80,27 +61,8 @@ be restarted, as it affects the way the checker is defined."
   :tag "Display extra debugging messages"
   :group 'flycheck-scala-sbt)
 
-(defcustom flycheck-scala-sbt-trigger-other-buffers-p
-  nil
-  "Initiate checks in all other buffers that share the same SBT session.
-
-Changes in one file can affect other open files.  This can be
-confusing when you make a change and then switch to another
-existing buffer in the same project, as that other buffer will
-not be rechecked unless it is either saved or `flycheck-buffer'
-is explicitly called.  This configuration option causes
-flychecking a Scala buffer automatically initiate checks in all
-other buffers that share the same session.  SBT will only
-actually compile once, but the errors will be distributed to all
-relevant buffers.
-
-This option is somewhat experimental."
-  :type 'boolean
-  :tag "Initiate checks in all buffers that share an SBT session"
-  :group 'flycheck-scala-sbt)
-
 (defcustom flycheck-scala-sbt-create-error-buffer-p
-  nil
+  t
   "Provide a buffer that contains a hyperlinked list of all errors.
 
 Analogous to that provided by `flycheck-list-errors' but across
@@ -398,8 +360,7 @@ them, and there is a non-empty set of current checkers."
 
 (defun flycheck-scala-sbt--recursively-start-other-buffers (target-buffer state mode)
   "Starting from TARGET-BUFFER, start flychecks in other buffers that share the same STATE, propagating MODE to them."
-  (when (and flycheck-scala-sbt-trigger-other-buffers-p
-             (not (flycheck-scala-sbt--state-recursing state)))
+  (when (not (flycheck-scala-sbt--state-recursing state))
     (puthash target-buffer t (flycheck-scala-sbt--state-known-buffers state))
     (flycheck-scala-sbt--debug "There are %s known buffers sharing this SBT session" (hash-table-count (flycheck-scala-sbt--state-known-buffers state)))
     (unwind-protect
@@ -636,21 +597,8 @@ ERROR should come from `flycheck-scala-sbt--extract-error-info'."
     (cond
      ((eql buffer (current-buffer))
       (list (flycheck-error-new :buffer buffer :message message :checker checker :filename file :line row :column col :level level)))
-     ((or (eql flycheck-scala-sbt-collect-from-other-files-p t)
-          (and (eql flycheck-scala-sbt-collect-from-other-files-p :unopened-buffers)
-               (null buffer))
-          (and (eql flycheck-scala-sbt-collect-from-other-files-p :unknown-buffer)
-               (not (gethash buffer known-buffers))))
-      (list (flycheck-error-new :buffer (current-buffer)
-                                :message (concat "from " file ":" (prin1-to-string row) ":" (prin1-to-string col) ":\n  " (replace-regexp-in-string "\n" "\n  " message))
-                                :checker checker
-                                :filename (buffer-file-name)
-                                :line 1
-                                :column 1
-                                :level level)))
-     ((eql flycheck-scala-sbt-collect-from-other-files-p :coalesce)
-      (list (list :other-buffer level)))
-     (t nil))))
+     (t
+      (list (list :other-buffer level))))))
 
 (flycheck-define-generic-checker
     'scala-sbt
