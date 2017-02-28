@@ -4,10 +4,10 @@
 
 ;; Author: Prassee  <prassee.sathian@gmail.com>
 ;; Keywords: faces
-;; Package-Version: 20170226.2215
+;; Package-Version: 20170228.618
 ;; URL: https://github.com/prassee/prassee-emacs-theme
 ;; Package-Requires: ((emacs "24"))
-;; Version: 1.1
+;; Version: 1.2
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by

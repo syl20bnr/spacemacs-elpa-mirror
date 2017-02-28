@@ -10,7 +10,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20170221.931
+;; Package-Version: 20170228.441
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -1072,7 +1072,8 @@ If PROMPT-OPTIONS is non-nil, prompt with an options list."
                           (unless (equal "" package-name)
                             (list package-name))))
                     (buffer-local-value 'intero-repl-no-build backend-buffer)
-                    (buffer-local-value 'intero-repl-no-load backend-buffer))))
+                    (buffer-local-value 'intero-repl-no-load backend-buffer)
+                    nil)))
     (insert (propertize
              (format "Starting:\n  stack ghci %s\n" (combine-and-quote-strings arguments))
              'face 'font-lock-comment-face))
@@ -1721,7 +1722,8 @@ Automatically performs initial actions in SOURCE-BUFFER, if specified."
                    (unless (equal "" package-name)
                      (list package-name))))
              (not (buffer-local-value 'intero-try-with-build buffer))
-             t ;; pass --no-load
+             t ;; pass --no-load to stack
+             t ;; pass -ignore-dot-ghci to intero
              ))
            (arguments (cons "ghci" options))
            (process (with-current-buffer buffer
@@ -1789,7 +1791,7 @@ Restarts flycheck in case there was a problem and flycheck is stuck."
   (flycheck-mode)
   (flycheck-buffer))
 
-(defun intero-make-options-list (targets no-build no-load)
+(defun intero-make-options-list (targets no-build no-load ignore-dot-ghci)
   "Make the stack ghci options list.
 TARGETS are the build targets.  When non-nil, NO-BUILD and
 NO-LOAD enable the correspondingly-named stack options."
@@ -1801,6 +1803,8 @@ NO-LOAD enable the correspondingly-named stack options."
             (list "--no-build"))
           (when no-load
             (list "--no-load"))
+          (when ignore-dot-ghci
+            (list "--ghci-options" "-ignore-dot-ghci"))
           (let ((dir (intero-localize-path (intero-make-temp-file "intero" t))))
             (list "--ghci-options"
                   (concat "-odir=" dir)

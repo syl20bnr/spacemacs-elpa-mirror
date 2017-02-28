@@ -2,7 +2,7 @@
 
 ;; Author: Ono Hiroko (kuanyui) <azazabc123@gmail.com>
 ;; Keywords: tools, hexo
-;; Package-Version: 20170227.2148
+;; Package-Version: 20170228.615
 ;; Package-Requires: ((emacs "24.3"))
 ;; X-URL: https://github.com/kuanyui/hexo.el
 ;; Version: {{VERSION}}
@@ -104,11 +104,25 @@ See `hexo-setq-tabulated-list-entries'")
 ;; ======================================================
 ;; Small tools
 ;; ======================================================
+(defmacro hexo-mode-only (&rest body)
+  `(if (eq major-mode 'hexo-mode)
+       (progn ,@body)
+     (message "Please run his command in `hexo-mode' buffer (M-x `hexo').")))
+
+(defmacro hexo-mode-article-only (&rest body)
+  `(if (tabulated-list-get-id)
+       (progn ,@body)
+     (message "No article found at this position.")))
+
+(defmacro hexo-repo-only (&rest body)
+  `(if (or hexo-root-dir (hexo-find-root-dir))
+       (progn ,@body)
+     (message "Please run his command under a Hexo repo directory.")))
 
 (defun hexo-path-join (&rest paths)
   "Like os.path.join() in Python 3"
   (let* ((-paths (remove-if (lambda (x) (or (null x)
-                                       (equal "" x)))
+                                            (equal "" x)))
                             paths))
          (raw-head (car -paths))
          (raw-tail (cdr -paths))
@@ -523,21 +537,6 @@ SUBEXP-DEPTH is 0 by default."
         (push (cons (match-beginning subexp-depth) (match-end subexp-depth)) result)
         (setq pos m)))
     (nreverse result)))
-
-(defmacro hexo-mode-only (&rest body)
-  `(if (eq major-mode 'hexo-mode)
-       (progn ,@body)
-     (message "Please run his command in `hexo-mode' buffer (M-x `hexo').")))
-
-(defmacro hexo-mode-article-only (&rest body)
-  `(if (tabulated-list-get-id)
-       (progn ,@body)
-     (message "No article found at this position.")))
-
-(defmacro hexo-repo-only (&rest body)
-  `(if (or hexo-root-dir (hexo-find-root-dir))
-       (progn ,@body)
-     (message "Please run his command under a Hexo repo directory.")))
 
 (defun hexo-command-open-file ()
   "Open the file under the cursor"

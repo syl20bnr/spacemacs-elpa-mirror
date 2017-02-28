@@ -4,7 +4,7 @@
 
 ;; Author: Andreas Stallinger <astallinger@coati.io>
 ;; Keywords: external, tool
-;; Package-Version: 20160725.1704
+;; Package-Version: 20170228.705
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -127,6 +127,13 @@
   (setq coati-message (mapconcat 'identity (list "setActiveToken" coati-file coati-row coati-col) ">>"))
   (setq coati-message (mapconcat 'identity (list coati-message "<EOM>") "")))
 
+(defun coati-send-ping nil
+  "Sending ping to coati."
+  (setq coati-client
+	(open-network-stream "coati-client"
+					   "*coati-client*" coati-ip coati-port-coati))
+	(process-send-string coati-client "ping>>Emacs<EOM>"))
+
 (defun coati-send-message(message)
   "Sending message to coati."
   (setq coati-client
@@ -146,7 +153,8 @@
 							:filter 'coati-listen-filter))
 	(if coati-server
 	  (set-process-query-on-exit-flag coati-server nil)
-	  (error "Could not start server process"))))
+	  (error "Could not start server process"))
+	(coati-send-ping)))
 
 (defun coati-listen-filter (proc string)
   "Tcp listener filter.  No need for PROC.  STRING is the command send from coati."
@@ -167,6 +175,9 @@
 		  ;; move cursor
 		  (forward-line (- coati-row (line-number-at-pos)))
 		  (move-to-column coati-col)
+		)
+		(when (string= (car coati-message) "ping")
+		  (coati-send-ping)
 		)
 	)
 	(message "Could not process the message from coati: %s" string)
