@@ -2,7 +2,7 @@
 
 ;; Author: Ono Hiroko (kuanyui) <azazabc123@gmail.com>
 ;; Keywords: tools, hexo
-;; Package-Version: 20160815.2246
+;; Package-Version: 20170227.2148
 ;; Package-Requires: ((emacs "24.3"))
 ;; X-URL: https://github.com/kuanyui/hexo.el
 ;; Version: {{VERSION}}
@@ -45,6 +45,9 @@ See `hexo-setq-tabulated-list-entries'")
 
 (defvar hexo-process nil
   "Hexo process object.")
+
+(defvar hexo-new-format 'md
+  "The article format for `hexo-new'. Available formats: `md', `org'")
 
 ;; ======================================================
 ;; Faces
@@ -167,7 +170,8 @@ Return ((FILE-PATH . BUFFER) ...)"
     (let ((lines (split-string (buffer-string) "\n" t)))
       (if (null n)
           lines
-        (cl-remove-if #'null (cl-subseq lines 0 (1- n)))))))
+        (cl-remove-if #'null (cl-subseq lines 0 (min (1- n)
+                                                     (length lines))))))))
 
 (defun hexo-get-file-head-lines-as-string (file-path &optional n)
   "Get first N lines of a file as a string."
@@ -178,7 +182,7 @@ Return ((FILE-PATH . BUFFER) ...)"
 If not found, try to `executable-find' hexo in your system."
   (let* ((root-dir (hexo-find-root-dir from-path))
          (guessed-hexo (hexo-path-join root-dir "/node_modules/hexo/bin/hexo")))
-    (if (and root-dir (file-exists-p guessed-hexo))
+    (if (and (not (eq system-type 'windows-nt)) root-dir (file-exists-p guessed-hexo))
         guessed-hexo
       (executable-find "hexo"))))
 
@@ -304,7 +308,8 @@ Also see: `hexo-generate-tabulated-list-entries'"
   (if (file-exists-p dir-path)
       (cl-remove-if (lambda (x) (or
                             (not (file-exists-p x))
-                            (not (string-suffix-p ".md" x))
+                            (and (not (string-suffix-p ".md" x))
+                                 (not (string-suffix-p ".org" x)))
                             (member (file-name-base x) '("." ".."))
                             ;;(string-suffix-p "#" x) ;useless
                             (string-suffix-p "~" x)))
@@ -349,7 +354,7 @@ FILTER is a function with one arg."
 
 (defun hexo-parse-tags (string)
   "Return a list containing tags"
-  (cond ((string-match "\\[\\(.+\\)\\]" string)
+  (cond ((or (string-match "\\[\\(.*\\)\\]" string) (string-match "\\(.*,.*\\)" string))
          (let* ((raw (match-string 1 string)) ; "this", "is", "tag"
                 (raw (replace-regexp-in-string ", " "," raw 'fixedcase)))
            (remove "" (mapcar #'hexo-trim-quotes (split-string raw ",")))))
@@ -368,13 +373,13 @@ FILTER is a function with one arg."
     (cl-remove-if
      #'null
      (mapcar (lambda (line)
-               (cond ((string-match "^title: ?\\(.+\\)" line)
+               (cond ((string-match "title: *\\(.+\\)" line)
                       (cons 'title (hexo-trim (match-string 1 line))))
-                     ((string-match "^date: ?\\([0-9].+\\) " line) ;hide time
+                     ((string-match "date: *<?\\([0-9-/.]+\\)" line) ;hide time
                       (cons 'date (match-string 1 line)))
-                     ((string-match "^tags: ?\\(.+\\)" line)
+                     ((string-match "tags: *\\(.+\\)" line)
                       (cons 'tags (hexo-parse-tags (match-string 1 line))))
-                     ((string-match "^categories: ?\\(.+\\)" line)
+                     ((string-match "categories: *\\(.+\\)" line)
                       (cons 'categories (hexo-parse-tags (match-string 1 line))))
                      (t nil)))
              head-lines))))
@@ -459,6 +464,7 @@ KEY is a downcased symbol. <ex> 'status "
 (define-key hexo-mode-map (kbd "N") 'hexo-new)
 (define-key hexo-mode-map (kbd "R") 'hexo-command-rename-file)
 (define-key hexo-mode-map (kbd "<f2>") 'hexo-command-rename-file)
+(define-key hexo-mode-map (kbd "D") 'hexo-command-delete-file)
 ;; View
 (define-key hexo-mode-map (kbd "g") 'hexo-command-revert-tabulated-list)
 (define-key hexo-mode-map (kbd "S") 'tabulated-list-sort)
@@ -488,7 +494,8 @@ KEY is a downcased symbol. <ex> 'status "
                     "[RET] Open       [  g] Refresh     [T T] Touch time     [  m] Mark          [s r] Run server   [  ?] Show this help\n"
                     "[SPC] Show Info  [  S] Sort        [T S] Toggle status  [  u] Unmark        [s s] Stop server  [  Q] Quit\n"
                     "[  N] New        [  f] Filter tag  [  t] Tags toggler   [M a] Add tags      [s d] Deploy\n"
-                    "[  R] Rename                                            [M r] Remove tags"))
+                    "[  R] Rename                                            [M r] Remove tags\n"
+                    "[  D] Delete"))
          (help-str-without-brackets (replace-regexp-in-string "[][]" " " help-str 'fixedcase)))
     (mapc (lambda (begin-end)
             (add-face-text-property (car begin-end)
@@ -533,11 +540,26 @@ SUBEXP-DEPTH is 0 by default."
      (message "Please run his command under a Hexo repo directory.")))
 
 (defun hexo-command-open-file ()
-  "Open file under the cursor"
+  "Open the file under the cursor"
   (interactive)
   (hexo-mode-only
    (hexo-mode-article-only
     (find-file (tabulated-list-get-id)))))
+
+(defun hexo-command-delete-file ()
+  "Delete the file under the cursor"
+  (interactive)
+  (hexo-mode-only
+   (hexo-mode-article-only
+    (if (yes-or-no-p (format "Are you sure to delete file '%s' ?\nATTENTION: THIS ACTION CANNOT BE UNDONE!" (tabulated-list-get-id)))
+        (let ((filename (tabulated-list-get-id)))
+          (delete-file filename)
+          (previous-line)
+          (hexo-command-revert-tabulated-list)
+          (next-line)
+          (message (format "File \"%s\" deleted successfully." filename)))
+      (message "Action cancelled; nothing deleted.")
+      ))))
 
 (defun hexo-command-rename-file (&optional init-value)
   "Rename (mv) the filename of the article under the cursor."
@@ -551,10 +573,11 @@ SUBEXP-DEPTH is 0 by default."
           (let* ((original-file-path (tabulated-list-get-id))
                  (pwd (file-name-directory original-file-path))
                  (original-name-without-ext (or init-value (file-name-base original-file-path)))
+                 (original-file-ext (file-name-extension original-file-path t))
                  (new-name-without-ext (read-from-minibuffer
                                         (format "Rename '%s' to: " original-name-without-ext)
                                         original-name-without-ext))
-                 (new-file-path (format "%s/%s.md" pwd new-name-without-ext)))
+                 (new-file-path (format "%s/%s%s" pwd new-name-without-ext original-file-ext)))
             (if (file-exists-p new-file-path)
                 (progn (hexo-message "Filename '%s' already existed. Please try another name." new-name-without-ext)
                        (sit-for 5)
@@ -661,12 +684,16 @@ If you want to edit the tags of a single file, use hexo-command-tags-toggler (pr
 (defun hexo-overwrite-tags-to-file (file-path tags-list)
   "TAGS-LIST is a string list"
   (let* ((formatted-tags-list (hexo-format-tags-list tags-list))
+         (file-ext (file-name-extension file-path))
          (old-file-content (hexo-get-file-content-as-string file-path))
          (new-file-content (with-temp-buffer
                              (insert old-file-content)
                              (goto-char (point-min))
-                             (re-search-forward "tags:.*" nil t)
-                             (replace-match (format "tags: %s" formatted-tags-list))
+                             (if (equal file-ext "org")
+                                 (progn (re-search-forward "^ *#\\+tags:.*" nil t)
+                                        (replace-match (format "#+TAGS: %s" formatted-tags-list) t))
+                               (progn (re-search-forward "^tags:.*" nil t)
+                                      (replace-match (format "tags: [%s]" formatted-tags-list) t)))
                              (buffer-string))))
     (hexo-overwrite-file-with-string file-path new-file-content)))
 
@@ -698,7 +725,7 @@ If you want to edit the tags of a single file, use hexo-command-tags-toggler (pr
             (hexo-sort-string-list (hexo-remove-duplicates-in-string-list (cons tag all-tags))))))))
 
 (defun hexo-format-tags-list (tags-list)
-  (format "[%s]"
+  (format "%s"
           (mapconcat #'identity tags-list ", ")))
 
 (defun hexo-command-show-article-info ()
@@ -799,17 +826,46 @@ under theme/default/layout/"
            (message "Not found hexo command in your node_modules/ nor $PATH,"))
           (t (hexo--new-interactively hexo-command)))))
 
+(defun hexo--new-read-url-from-user (&optional init-content)
+  (interactive)
+  (let* ((used-urls (mapcar #'file-name-base
+                            (hexo-get-all-article-files nil 'include-drafts)))
+         (url (read-from-minibuffer "Article URL: " (or init-content ""))))
+    (if (member url used-urls)
+        (progn (message "This url has been used, please try another one.")
+               (sit-for 2)
+               (hexo--new-read-url-from-user url))
+      url)))
+
 (defun hexo--new-interactively (hexo-command)
   (let* ((stdout (shell-command-to-string (format "%s new '%s'"
                                                   hexo-command
-                                                  (read-from-minibuffer "Article URI: "))))
-         (created-file-path (progn (string-match "Created: \\(.+\\)$" stdout)
-                                   (match-string 1 stdout))))
-    (find-file created-file-path)
-    (goto-char 0)
-    (replace-regexp "title: .+$" (format "title: \"%s\""
-                                         (read-from-minibuffer "Article Title: "
-                                                               (car minibuffer-history))))
+                                                  (hexo--new-read-url-from-user))))
+         (created-md-file-path (progn (string-match "Created: \\(.+\\)$" stdout)
+                                      (match-string 1 stdout)))
+         (created-org-file-path (concat (file-name-sans-extension created-md-file-path) ".org")))
+    (cond ((eq hexo-new-format 'org)
+           (rename-file created-md-file-path created-org-file-path)
+           (find-file created-org-file-path)
+           (goto-char 0) (replace-regexp "date:.*"
+                                         (concat "#+DATE: " (format-time-string "<%Y-%m-%d %a %H:%M>")))
+           (goto-char 0) (replace-regexp "^ *tags: *" "#+TAGS: " )
+           (goto-char 0) (flush-lines "---")
+           (goto-char (point-max))
+           (insert "#+LAYOUT: \n#+CATEGORIES: \n")
+           (goto-char 0)
+           (replace-regexp "title: .+$"
+                           (format "#+TITLE: \"%s\""
+                                   (read-from-minibuffer "Article Title: "
+                                                         (car minibuffer-history))))
+           )
+          (t
+           (find-file created-md-file-path)
+           (goto-char 0)
+           (replace-regexp "title: .+$"
+                           (format "title: \"%s\""
+                                   (read-from-minibuffer "Article Title: "
+                                                         (car minibuffer-history))))))
     (save-buffer)))
 
 ;;;###autoload
@@ -848,7 +904,7 @@ You can run this function in dired or a hexo article."
                (progn (tabulated-list-revert)
                       (search-forward file-name nil t))
              (message "Two filenames duplicated in _posts/ and _drafts/. Abort."))))
-        ((and (eq major-mode 'markdown-mode)
+        ((and (member major-mode '(org-mode markdown-mode gfm-mode))
               (hexo-find-root-dir))
          (let ((new-path (hexo--toggle-article-status (buffer-file-name))))
            (if new-path
@@ -858,7 +914,8 @@ You can run this function in dired or a hexo article."
              (message "Two filenames duplicated in _posts/ and _drafts/. Abort."))))
         ((and (eq major-mode 'dired-mode)
               (hexo-find-root-dir)
-              (string-suffix-p ".md" (dired-get-file-for-visit))
+              (or  (string-suffix-p ".md" (dired-get-file-for-visit))
+                   (string-suffix-p ".org" (dired-get-file-for-visit)))
               (member (hexo-get-article-parent-dir-name (dired-get-file-for-visit)) '("_posts" "_drafts")))
          (hexo--toggle-article-status (dired-get-file-for-visit)))
         (t
@@ -893,19 +950,26 @@ If success, return the new file path, else nil."
 Please run this function in the article."
   (interactive)
   (cond
-   ((not (eq major-mode 'markdown-mode))
-    (message "Please run this function in a markdown file. Action cancelled."))
+   ((not (member major-mode '(markdown-mode org-mode gfm-mode)))
+    (message "Please run this function in a markdown file or org-mode file. Action cancelled."))
    ((yes-or-no-p "This operation may *change the permanent link* of this article, continue? ")
     (save-excursion
       (goto-char (point-min))
       (save-match-data
-        (if (re-search-forward "^date: [0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\} [0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\}" nil :no-error)
-            (let ((current-time (format-time-string "date: %Y-%m-%d %H:%M:%S")))
-              (replace-match current-time)
-              (save-buffer)
-              (message (concat "Date updated: " current-time)))
-          (message "Didn't find any time stamp in this article, abort.")))))
-   ))
+        (cond ((eq major-mode 'org-mode)
+               (let ((current-time (format-time-string "<%Y-%m-%d %a %H:%M>")))
+                 (if (not (re-search-forward "#\\+DATE:.+" nil :no-error))
+                     (message "Didn't find any time stamp in this article, abort.")
+                   (progn (replace-match (concat "#+DATE: " current-time))
+                          (save-buffer)
+                          (message (concat "Date updated: " current-time))))))
+              (t
+               (let ((current-time (format-time-string "%Y-%m-%d %H:%M:%S")))
+                 (if (not (re-search-forward "date: [0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\} [0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\}" nil :no-error))
+                     (message "Didn't find any time stamp in this article, abort.")
+                   (progn (replace-match (concat "date: " current-time))
+                          (save-buffer)
+                          (message (concat "Date updated: " current-time))))))))))))
 
 
 (defun hexo-get-permalink-format (&optional root-or-file-path)
@@ -943,14 +1007,18 @@ Please run this function in the article."
 (defun hexo-completing-read-post (&optional repo-root-dir)
   "Use `ido-completing-read' to read filename in _posts/.
 Return absolute path of the article file."
-  (format "%s/source/_posts/%s.md"
-          (hexo-find-root-dir repo-root-dir)
-          (ido-completing-read
-           "Select Article: "
-           (mapcar #'file-name-base (hexo-get-all-article-files repo-root-dir nil)) ;not include drafts
-           nil t)))
+  (let ((article (format "%s/source/_posts/%s.md"
+                         (hexo-find-root-dir repo-root-dir)
+                         (ido-completing-read
+                          "Select Article: "
+                          (mapcar #'file-name-base (hexo-get-all-article-files repo-root-dir nil)) ;not include drafts
+                          nil t))))
+    (if (file-exists-p article)
+        article
+      (replace-regexp-in-string "md$"  "org" article))
+    ))
 
-(defun hexo-get-article-title (file-path)
+(defun  hexo-get-article-title (file-path)
   (let ((head (hexo-get-file-head-lines-as-string file-path 3)))
     (string-match "title:\\(.+\\)" head)
     (hexo-trim (match-string 1 head))))
@@ -959,28 +1027,30 @@ Return absolute path of the article file."
 (defun hexo-insert-article-link ()
   "Insert a link to other article in _posts/."
   (interactive)
-  (if (or (not (eq major-mode 'markdown-mode))
+  (if (or (not (member major-mode '(markdown-mode gfm-mode org-mode)))
           (not (hexo-find-root-dir)))
-      (message "This command only usable in a hexo article buffer (markdown).")
+      (message "This command only usable in a hexo article buffer (markdown or org).")
     (let* ((file-path (hexo-completing-read-post))
            (title+permalink (hexo-get-article-title-and-permalink file-path))
            (title (car title+permalink))
            (permalink (cdr title+permalink))
+           (link-format (if (eq major-mode 'org-mode)
+                            (list (format "[[%s][%s]]" permalink title)
+                                  (format "[[%s]]" permalink))
+                          (list (format "[%s](%s)" title permalink)
+                                (format "[](%s)" permalink))))
+           (pos (point))
            )
-      (insert (ido-completing-read "Select one to insert: "
-                                   (list (format "[%s](%s)" title permalink)
-                                         (format "[](%s)" permalink))))
-      (backward-sexp 2)
-      (right-char 1))))
+      (insert (ido-completing-read "Select one to insert: " link-format)))))
 
 ;;;###autoload
 (defun hexo-insert-file-link ()
   "Insert the link toward the files in source/ ,
 exclude _posts/ & _drafts/"
   (interactive)
-  (if (or (not (eq major-mode 'markdown-mode))
+  (if (or (not (member major-mode '(markdown-mode gfm-mode org-mode)))
           (not (hexo-find-root-dir)))
-      (message "This command only usable in a hexo article buffer (markdown).")
+      (message "This command only usable in a hexo article buffer (markdown or org-mode).")
     (let* ((source-dir-fullpath (concat (hexo-find-root-dir) "source/"))
            (file-fullpath (file-truename ;[FIXME] Fucking useless ido-read-file-name
                            (ido-read-file-name "Input file path: "
@@ -989,11 +1059,13 @@ exclude _posts/ & _drafts/"
                                                t
                                                nil
                                                (lambda (x) (not (or (string-match "_posts/" x)
-                                                               (string-match "_drafts/" x)))))))
+                                                                    (string-match "_drafts/" x)))))))
            (file-link (substring file-fullpath (1- (length source-dir-fullpath))))
            (text (file-name-nondirectory file-fullpath)))
       (insert (ido-completing-read "Select one to insert: "
-                                   (list (format "[%s](%s)" text file-link)
+                                   (list (if (eq major-mode 'org-mode)
+                                             (format "[[%s][%s]]" file-link text)
+                                           (format "[%s](%s)" text file-link))
                                          file-link))))))
 
 ;;;###autoload
@@ -1020,24 +1092,41 @@ exclude _posts/ & _drafts/"
   "[Link](/2015/coscup-2015/) => /2015/coscup-2015/
 Return the link. If not found link under cursor, return nil."
   (save-excursion
-    (let* ((original (point))
-           (beg (search-backward "["))
-           (end (search-forward ")"))
-           (str (buffer-substring beg end))
-           (url (progn (string-match "\\[.+?\\](\\(.+?\\))" str)
-                       (match-string 1 str))))
-      (if (and (>= original beg) (<= original end))
-          url
-        nil))))
+    (if (member major-mode '(markdown-mode gfm-mode))
+        (let* ((original (point))
+               (beg (search-backward "["))
+               (end (search-forward ")"))
+               (str (buffer-substring beg end))
+               (url (progn (string-match "\\[.+?\\](\\(.+?\\))" str)
+                           (match-string 1 str))))
+          (if (and (>= original beg) (<= original end))
+              url
+            nil))
+      (let* ((original (point))
+             (beg (search-backward "[["))
+             (end (search-forward "]]"))
+             (str (buffer-substring beg end))
+             (url (progn (string-match "\\[\\[\\(.+?\\)\\].*" str)
+                         (match-string 1 str))))
+        (if (and (>= original beg) (<= original end))
+            url
+          nil)))
+
+    ))
 
 (defun hexo-get-file-path-from-post-permalink (permalink &optional repo-root-dir)
   "/2015/coscup-2015/ <= this is permalink
-This is only resonable for files in _posts/."
-  (let ((filename-without-ext (progn (string-match "/?\\([^/]+\\)/?$" permalink)
-                                     (match-string 1 permalink))))
-    (format "%s/source/_posts/%s.md"
-            (hexo-find-root-dir repo-root-dir)
-            filename-without-ext)))
+This is merely resonable for files in _posts/."
+  (let* ((filename-without-ext (progn (string-match "/?\\([^/]+\\)/?$" permalink)
+                                      (match-string 1 permalink)))
+         (article (format "%s/source/_posts/%s.md"
+                          (hexo-find-root-dir repo-root-dir)
+                          filename-without-ext))
+         )
+    (if (file-exists-p article) article
+      (replace-regexp-in-string "md$" "org" article))
+
+    ))
 
 ;; ======================================================
 ;; Run Hexo process in Emacs

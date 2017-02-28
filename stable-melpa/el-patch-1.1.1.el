@@ -6,9 +6,9 @@
 ;; Created: 31 Dec 2016
 ;; Homepage: https://github.com/raxod502/el-patch
 ;; Keywords: extensions
-;; Package-Version: 1.1
+;; Package-Version: 1.1.1
 ;; Package-Requires: ((emacs "25"))
-;; Version: 1.1
+;; Version: 1.1.1
 
 ;;; Commentary:
 
@@ -294,7 +294,7 @@ whether the symbol is a function or variable."
                  (read defun-buffer))))))))
 
 ;;;###autoload
-(defun el-patch-validate (patch-definition &optional nomsg run-hooks)
+(defun el-patch-validate (name type &optional nomsg run-hooks)
   "Validate the patch given by PATCH-DEFINITION.
 This means el-patch will attempt to find the original definition
 for the function, and verify that it is the same as the original
@@ -314,17 +314,22 @@ If NOMSG is non-nil, does not signal a message when the patch is
 valid.
 
 If RUN-HOOKS is non-nil, runs `el-patch-pre-validate-hook' and
-`el-patch-post-validate-hook'. Interactively, this happens when a
-prefix argument is provided.
+`el-patch-post-validate-hook'. Interactively, this happens unless
+a prefix argument is provided.
 
 See also `el-patch-validate-all'."
   (interactive (progn
-                 (when current-prefix-arg
+                 (unless current-prefix-arg
                    (run-hooks 'el-patch-pre-validate-hook))
-                 (list (el-patch--select-patch) nil current-prefix-arg)))
+                 (append (el-patch--select-patch)
+                         (list nil (unless current-prefix-arg
+                                     'post-only)))))
+  (unless (member run-hooks '(nil post-only))
+    (run-hooks 'el-patch-pre-validate-hook))
   (unwind-protect
       (progn
-        (let* ((type (car patch-definition))
+        (let* ((patch-definition (el-patch-get name type))
+               (type (car patch-definition))
                (expected-definition (el-patch--resolve-definition
                                      patch-definition nil))
                (name (cadr expected-definition))
@@ -362,11 +367,12 @@ See `el-patch-validate'."
   (unwind-protect
       (let ((patch-count 0)
             (warning-count 0))
-        (dolist (patch-hash (hash-table-values el-patch--patches))
-          (dolist (patch-definition (hash-table-values patch-hash))
-            (setq patch-count (1+ patch-count))
-            (unless (el-patch-validate patch-definition 'nomsg)
-              (setq warning-count (1+ warning-count)))))
+        (dolist (name (hash-table-keys el-patch--patches))
+          (let ((patch-hash (gethash name el-patch--patches)))
+            (dolist (type (hash-table-keys patch-hash))
+              (setq patch-count (1+ patch-count))
+              (unless (el-patch-validate name type 'nomsg)
+                (setq warning-count (1+ warning-count))))))
         (cond
          ((zerop patch-count)
           (user-error "No patches defined"))
@@ -402,10 +408,13 @@ Return a list of those items. Beware, uses heuristics."
   "Evaluate DEFINITION without updating `load-history'.
 DEFINITION should be a list beginning with `defun', `defmacro',
 `define-minor-mode', etc."
-  (eval definition)
-  (dolist (item (el-patch--compute-load-history-items
-                 definition))
-    (setq current-load-list (remove item current-load-list))))
+  (let ((items (cl-remove-if (lambda (item)
+                               (member item current-load-list))
+                             (el-patch--compute-load-history-items
+                              definition))))
+    (eval definition)
+    (dolist (item items)
+      (setq current-load-list (remove item current-load-list)))))
 
 (defun el-patch--definition (patch-definition)
   "Activate a PATCH-DEFINITION and update `el-patch--patches'.
@@ -574,9 +583,9 @@ not be found, return nil."
 
 (defun el-patch--select-patch ()
   "Use `completing-read' to select a patched function.
-Return a list of two elements, the name (a symbol `defun',
-`defmacro', etc.) of the object being patched and the type (a
-symbol) of the definition."
+Return a list of two elements, the name (a symbol) of the object
+being patched and the type (a symbol `defun', `defmacro', etc.)
+of the definition."
   (let ((options (mapcar #'symbol-name (hash-table-keys el-patch--patches))))
     (unless options
       (user-error "No patches defined"))

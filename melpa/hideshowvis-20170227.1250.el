@@ -4,7 +4,7 @@
 ;;
 ;; Author: Jan Rehders <cmdkeen@gmx.de>
 ;; Version: 0.5
-;; Package-Version: 20130824.500
+;; Package-Version: 20170227.1250
 ;; Contributions and bug fixes by Bryan Waite, Michael Heerdegen, John Yates and
 ;; Matthew Fidler.
 ;;
@@ -80,7 +80,8 @@
 ;; - don't show '-' in fringe if the foldable region ends on the same line
 ;;
 
-(define-fringe-bitmap 'hideshowvis-hideable-marker [0 0 0 126 126 0 0 0])
+(when (fboundp 'define-fringe-bitmap)
+  (define-fringe-bitmap 'hideshowvis-hideable-marker [0 0 0 126 126 0 0 0]))
 
 (defconst hideshowvis-version "v0.5" "Version of hideshowvis minor mode")
 
@@ -188,7 +189,8 @@ and a yellow marker indicating the number of hidden lines at
 the end of the line for hidden regions."
   (interactive)
   
-  (define-fringe-bitmap 'hs-marker [0 24 24 126 126 24 24 0])
+  (when (fboundp 'define-fringe-bitmap)
+    (define-fringe-bitmap 'hs-marker [0 24 24 126 126 24 24 0]))
   
   (defcustom hs-fringe-face 'hs-fringe-face
     "*Specify face used to highlight the fringe on hidden regions."

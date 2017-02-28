@@ -5,7 +5,7 @@
 ;; Version: 1.3
 ;; Package-Requires: ((emacs "24"))
 ;; Based On: ujelly by Mark Tran
-;; Package-Version: 20160406.1257
+;; Package-Version: 20170227.1420
 ;; Package-X-Original-Version: 20151208.2136
 ;; "What do you mean, no one calls you JBeans?!  I call you JBeans!"
 ;; -- Wilbur
@@ -64,6 +64,10 @@
       (jbeans-red-8      (if (display-graphic-p) "#fc0d1b" "#fc0d1b"))
       (jbeans-red-9      (if (display-graphic-p) "#ffdddd" "#ffdddd"))
       )
+
+      (custom-theme-set-variables
+        'jbeans
+        `(linum-format " %5i "))
 
       (custom-theme-set-faces
        'jbeans
@@ -195,7 +199,7 @@
 ;;;;; Lazy highlight
        `(lazy-highlight                      ((,class (:foreground ,jbeans-red-4 :background nil))))
 ;;;;; Linum
-       `(linum                               ((,class (:slant italic :foreground ,jbeans-grey-4))))
+       `(linum                               ((,class (:foreground ,jbeans-grey-5 :background ,jbeans-grey-0))))
 ;;;;; Ediff
        `(ediff-even-diff-A                   ((,class (:background ,jbeans-grey-2 :foreground ,jbeans-fg))))
        `(ediff-even-diff-B                   ((,class (:background ,jbeans-grey-3 :foreground ,jbeans-fg))))

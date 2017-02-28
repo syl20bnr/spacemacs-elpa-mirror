@@ -4,7 +4,7 @@
 ;;
 ;; Author: Yoshinobu Fujimoto
 ;; Version: 0.1.2
-;; Package-Version: 20170222.504
+;; Package-Version: 20170227.1917
 ;; URL: https://github.com/jimo1001/helm-perspeen
 ;; Created: 2017-01-30
 ;; Package-Requires: ((perspeen "0.1.0") (helm "2.5.0"))
@@ -86,7 +86,7 @@
 
 (defun helm-perspeen--switch-to-buffer-tab (buffer)
   "Open a BUFFER with new tab."
-  (perspeen-tab-create-tab buffer 0) nil)
+  (perspeen-tab-create-tab buffer 0 t) nil)
 
 (defun helm-perspeen--open-file-tab (filename)
   "Open a FILENAME with new tab."
@@ -110,10 +110,6 @@
     map)
   "Keymap for `helm-perspeen'.")
 
-(defun helm-perspeen--compact-filename (filename)
-  "Return compact FILENAME."
-  (replace-regexp-in-string (concat "^" (getenv "HOME")) "~" (expand-file-name filename)))
-
 (defvar helm-source-perspeen-tabs
   (helm-build-sync-source "Tabs (perspeen)"
     :candidates
@@ -121,14 +117,14 @@
       (if perspeen-tab-configurations
           (let ((index -1))
             (mapcar (lambda (tab)
-                      (let* ((buffer (get tab 'current-buffer))
-                             (current-dir (or (file-name-directory (or (buffer-file-name buffer) ""))
-                                              default-directory)))
-                        (setq index (1+ index))
-                        (cons (format "%-36s  %s"
+                      (let ((buffer (get tab 'current-buffer)) (current-dir))
+                        (setq index (+ index 1))
+                        (setq current-dir (or (file-name-directory (or (buffer-file-name buffer) ""))
+                                              default-directory))
+                        (cons (format "%s\t%s"
                                       (buffer-name buffer)
                                       (propertize
-                                       (format "(in `%s')" (helm-perspeen--compact-filename current-dir)) 'face 'helm-perspeen-directory))
+                                       (format "(in `%s')" current-dir) 'face 'helm-perspeen-directory))
                               index)))
                     (perspeen-tab-get-tabs)))
         nil))
@@ -191,10 +187,8 @@ Argument WS the workspace to swith to."
       (mapcar (lambda (ws)
                 (let ((name (perspeen-ws-struct-name ws))
                       (root-dir (perspeen-ws-struct-root-dir ws)))
-                  (cons (format "%-36s  %s"
-                                name
-                                (propertize (format "(in `%s')" (helm-perspeen--compact-filename root-dir))
-                                            'face 'helm-perspeen-directory))
+                  (cons (format "%s\t%s" name
+                                (propertize (format "(in `%s')" root-dir) 'face 'helm-perspeen-directory))
                         ws)))
               perspeen-ws-list))
     :action 'helm-source-perspeen-workspaces-actions
@@ -217,20 +211,23 @@ DIR is project root directory."
   (perspeen-change-root-dir dir))
 
 ;;;###autoload
-(eval-after-load 'helm
+(eval-after-load 'helm-buffers
   '(progn
-     (define-key helm-find-files-map (kbd "C-c t")
-       #'(lambda ()
-           (interactive)
-           (helm-exit-and-execute-action 'helm-perspeen--open-file-tab)))
      (define-key helm-buffer-map (kbd "C-c t")
        #'(lambda ()
            (interactive)
            (helm-exit-and-execute-action 'helm-perspeen--switch-to-buffer-tab)))
      (add-to-list 'helm-type-buffer-actions
-                  '("Open buffer with new perspeen's tab" . helm-perspeen--switch-to-buffer-tab) t)
+                  '("Open buffer with new perspeen's tab" . helm-perspeen--switch-to-buffer-tab) t)))
+
+(eval-after-load 'helm-files
+  '(progn
+     (define-key helm-find-files-map (kbd "C-c t")
+      #'(lambda ()
+          (interactive)
+          (helm-exit-and-execute-action 'helm-perspeen--open-file-tab)))
      (add-to-list 'helm-find-files-actions
-                  '("Open file with new perspeen's tab" . helm-perspeen--open-file-tab) t)
+                 '("Open file with new perspeen's tab" . helm-perspeen--open-file-tab) t)
      (add-to-list 'helm-type-file-actions
                   '("Open file with new perspeen's tab" . helm-perspeen--open-file-tab) t)))
 

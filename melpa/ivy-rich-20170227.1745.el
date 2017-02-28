@@ -4,7 +4,7 @@
 
 ;; Author: Yevgnen Koh <wherejoystarts@gmail.com>
 ;; Package-Requires: ((emacs "24.4") (ivy "0.8.0"))
-;; Package-Version: 20170223.1727
+;; Package-Version: 20170227.1745
 ;; Version: 0.0.2
 ;; Keywords: ivy
 
@@ -76,6 +76,11 @@ to hold the project name."
 (defcustom ivy-rich-switch-buffer-align-virtual-buffer
   nil
   "Whether to align virtual buffers just as true buffers or not."
+  :type 'boolean)
+
+(defcustom ivy-rich-abbreviate-paths
+  nil
+  "Abbreviate paths using `abbreviate-file-name'."
   :type 'boolean)
 
 (defvar ivy-rich-switch-buffer-buffer-size-length 7)
@@ -175,6 +180,12 @@ For example, a path /a/b/c/d/e/f.el will be shortened to /a/…/e/f.el."
      'face
      'success)))
 
+(defun ivy-rich-abbreviate-path (path)
+  "Return a shortened version of PATH if `ivy-rich-abbreviate-paths' is set."
+  (if ivy-rich-abbreviate-paths
+      (abbreviate-file-name path)
+    path))
+
 (defun ivy-rich-switch-buffer-path (project)
   (let* ((project-home (if (or (not project)
                                (not (projectile-project-p)))
@@ -189,11 +200,12 @@ For example, a path /a/b/c/d/e/f.el will be shortened to /a/…/e/f.el."
                              (* 4 (length ivy-rich-switch-buffer-delimiter))
                              2))        ; Fixed the unexpected wrapping in terminal
          (path (file-truename (or (buffer-file-name) default-directory)))
+         (path (ivy-rich-abbreviate-path path))
          ;; If we're in project, we find the relative path
          (path (if (or (not project)
                        (ivy-rich-string-empty-p project))
                    path
-                 (substring-no-properties path (length project-home)))))
+                 (substring-no-properties path (length (ivy-rich-abbreviate-path project-home))))))
     (ivy-rich-switch-buffer-pad
      (ivy-rich-switch-buffer-shorten-path path path-max-length)
      path-max-length)))

@@ -7,11 +7,11 @@
 ;; Copyright (C) 2006-2017, Drew Adams, all rights reserved.
 ;; Created: Thu Sep 14 08:15:39 2006
 ;; Version: 0
-;; Package-Version: 20170219.757
+;; Package-Version: 20170227.1124
 ;; Package-Requires: ()
-;; Last-Updated: Sun Feb 19 07:56:41 2017 (-0800)
+;; Last-Updated: Mon Feb 27 11:25:29 2017 (-0800)
 ;;           By: dradams
-;;     Update #: 840
+;;     Update #: 843
 ;; URL: http://www.emacswiki.org/modeline-posn.el
 ;; Doc URL: http://www.emacswiki.org/emacs/ModeLinePosition
 ;; Keywords: mode-line, region, column
@@ -191,6 +191,8 @@
 ;;
 ;;; Change Log:
 ;;
+;; 2017/02/27 dadams
+;;     modelinepos-style: Wrap calls to rectangle--pos-cols with save-excursion (Emacs bug #25777).
 ;; 2017/02/19 dadams
 ;;     isearch-query-replace-regexp:
 ;;       Check that isearchp-reg-beg is boundp before using it in remove-hook.  Thx to Yuri D'Elia.
@@ -316,7 +318,8 @@ It is the responsibility of individual commands to manage the value.
                                  (abs (- (mark t) (point))))
                                (if modelinepos-rect-p
                                    (if (fboundp 'rectangle--pos-cols) ; Emacs 25+
-                                       (let ((rpc  (rectangle--pos-cols (region-beginning) (region-end))))
+                                       (let ((rpc  (save-excursion
+                                                     (rectangle--pos-cols (region-beginning) (region-end)))))
                                          (abs (- (car rpc) (cdr rpc))))
                                      (let ((start  (region-beginning))
                                            (end    (region-end))
@@ -359,7 +362,7 @@ sexps the string expects as arguments."
               (abs (- (mark t) (point))))
             (if modelinepos-rect-p
                 (if (fboundp 'rectangle--pos-cols) ; Emacs 25+
-                    (let ((rpc  (rectangle--pos-cols (region-beginning) (region-end))))
+                    (let ((rpc  (save-excursion (rectangle--pos-cols (region-beginning) (region-end)))))
                       (abs (- (car rpc) (cdr rpc))))
                   (let ((start  (region-beginning))
                         (end    (region-end))

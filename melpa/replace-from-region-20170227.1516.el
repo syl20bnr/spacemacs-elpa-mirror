@@ -5,10 +5,10 @@
 ;; Author: rubikitch <rubikitch@ruby-lang.org>
 ;; Maintainer: rubikitch <rubikitch@ruby-lang.org>
 ;; Copyright (C) 2013, rubikitch, all rights reserved.
-;; Time-stamp: <2016-12-03 17:10:02 rubikitch>
+;; Time-stamp: <2017-02-28 08:12:56 rubikitch>
 ;; Created: 2013-01-28 14:49:07
 ;; Version: 0.2
-;; Package-Version: 20161203.1306
+;; Package-Version: 20170227.1516
 ;; URL: http://www.emacswiki.org/emacs/download/replace-from-region.el
 ;; Keywords: replace, search, region
 ;; Compatibility: GNU Emacs 24.2.2, 25.1
@@ -120,7 +120,7 @@
 		 from nil nil           ;HERE
 		 query-replace-to-history-variable from t)))
        (add-to-history query-replace-to-history-variable to nil t)
-       (setq query-replace-defaults (cons from to))
+       (push (cons from to) query-replace-defaults)
        to))
    regexp-flag))
 
