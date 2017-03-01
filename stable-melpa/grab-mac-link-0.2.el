@@ -1,7 +1,7 @@
 ;;; grab-mac-link.el --- Grab link from Mac Apps and insert it into Emacs  -*- lexical-binding: t; -*-
 
 ;; Copyright (c) 2010-2016 Free Software Foundation, Inc.
-;; Copyright (C) 2016  Chunyang Xu
+;; Copyright (C) 2016-2017  Chunyang Xu
 
 ;; The code is heavily inspired by org-mac-link.el
 
@@ -15,8 +15,8 @@
 
 ;; Author: Chunyang Xu <xuchunyang.me@gmail.com>
 ;; URL: https://github.com/xuchunyang/grab-mac-link.el
-;; Package-Version: 20170211.619
-;; Version: 0.1
+;; Package-Version: 0.2
+;; Version: 0.2
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: Markdown, mac, hyperlink
 ;; Created: Sat Jun 11 15:07:18 CST 2016

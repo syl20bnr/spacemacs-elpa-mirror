@@ -226,6 +226,10 @@
      option `Info-saved-history-file' when you quit Emacs (not
      Info) or when you kill an Info buffer.
 
+     (If you also use library Bookmark+ then you can also bookmark
+     Info nodes, including automatically.  This records how many
+     times you have visited each node and when you last did so.)
+
    - `Info-save-current-node' (bound to `.') – Save the name of the
      current node to list `Info-saved-nodes', for use by `v'
      (`Info-virtual-book').

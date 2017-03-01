@@ -4,8 +4,8 @@
 
 ;; Author: Nathaniel Flath <nflath@gmail.com>
 ;; URL: http://github.com/nflath/save-visited-files
-;; Package-Version: 20170215.1537
-;; Version: 1.3
+;; Package-Version: 20170228.2250
+;; Version: 1.4
 
 ;;; Commentary:
 
@@ -30,6 +30,9 @@
 ;; off the saving of files, you need to run (turn-off-save-visited-files-mode)
 
 ;; Changelog:
+;; 1.4
+;;  * Add to after-init-hook if run during initialization instead of restoring
+;;  * immediately.
 ;; 1.3
 ;;  * Allow saving of dired directories.
 ;;  * Add save-visited-files-ignore-directories configuration variable.
@@ -168,7 +171,9 @@ optionally open all files from such a list at startup."
         (add-hook 'kill-emacs-hook 'save-visited-files-save)
         (unless save-visited-files-already-restored
           (when save-visited-files-auto-restore
-            (save-visited-files-restore)))
+            (if after-init-time
+                (save-visited-files-restore)
+              (add-hook 'after-init-hook 'save-visited-files-restore))))
         (message "Save visited files mode enabled"))
     ;; deactivate
     (progn

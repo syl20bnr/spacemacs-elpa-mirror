@@ -19,6 +19,9 @@ M-x save-visited-files-restore will open all files saved this way.  To turn
 off the saving of files, you need to run (turn-off-save-visited-files-mode)
 
 Changelog:
+1.4
+ * Add to after-init-hook if run during initialization instead of restoring
+ * immediately.
 1.3
  * Allow saving of dired directories.
  * Add save-visited-files-ignore-directories configuration variable.

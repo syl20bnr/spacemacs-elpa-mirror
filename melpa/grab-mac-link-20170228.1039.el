@@ -1,7 +1,7 @@
 ;;; grab-mac-link.el --- Grab link from Mac Apps and insert it into Emacs  -*- lexical-binding: t; -*-
 
 ;; Copyright (c) 2010-2016 Free Software Foundation, Inc.
-;; Copyright (C) 2016  Chunyang Xu
+;; Copyright (C) 2016-2017  Chunyang Xu
 
 ;; The code is heavily inspired by org-mac-link.el
 
@@ -15,8 +15,8 @@
 
 ;; Author: Chunyang Xu <xuchunyang.me@gmail.com>
 ;; URL: https://github.com/xuchunyang/grab-mac-link.el
-;; Package-Version: 0.1
-;; Version: 0.1
+;; Package-Version: 20170228.1039
+;; Version: 0.2
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: Markdown, mac, hyperlink
 ;; Created: Sat Jun 11 15:07:18 CST 2016
@@ -52,16 +52,21 @@
 ;; - markdonw: [Wikipedia](https://www.wikipedia.org/)
 ;; - org:      [[https://www.wikipedia.org/][Wikipedia]]
 ;;
-;; To use, type M-x grab-mac-link or call `grab-mac-link' from lisp
+;; To use, type M-x grab-mac-link or call `grab-mac-link' from Lisp
 ;;
 ;;   (grab-mac-link APP &optional LINK-TYPE)
 
 ;;; Code:
 
+(declare-function org-add-link-type "org-compat" (type &optional follow export))
+(declare-function org-make-link-string "org" (link &optional description))
+
+(defvar org-stored-links)
+
 (defun grab-mac-link-split (as-link)
   (split-string as-link "::split::"))
 
-(defun grab-mac-link-make-plain-link (url name)
+(defun grab-mac-link-make-plain-link (url _name)
   url)
 
 (defvar grab-mac-link-org-setup-p nil)
@@ -255,6 +260,10 @@ This will use the command `open' with the message URL."
   "Prompt for an application to grab a link from.
 When done, go grab the link, and insert it at point.
 
+With a prefix argument, instead of \"insert\", save it to
+kill-ring. For org link, save it to `org-stored-links', then
+later you can insert it via `org-insert-link'.
+
 If called from lisp, grab link from APP and return it (as a
 string) with LINK-TYPE.  APP is a symbol and must be one of
 '(chrome safari finder mail terminal), LINK-TYPE is also a symbol
@@ -302,7 +311,17 @@ or nil, plain link will be used."
   (let* ((grab-link-func (intern (format "grab-mac-link-%s-1" app)))
          (make-link-func (intern (format "grab-mac-link-make-%s-link" link-type)))
          (link (apply make-link-func (funcall grab-link-func))))
-    (and (called-interactively-p 'any) (insert link))
+    (when (called-interactively-p 'any)
+      (if current-prefix-arg
+          (if (eq link-type 'org)
+              (let* ((res (funcall grab-link-func))
+                     (link (car res))
+                     (desc (cadr res)))
+                (push (list link desc) org-stored-links)
+                (message "Stored: %s" desc))
+            (kill-new link)
+            (message "Copied: %s" link))
+        (insert link)))
     link))
 
 (provide 'grab-mac-link)
