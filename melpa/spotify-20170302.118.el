@@ -6,7 +6,7 @@
 ;; Author: R.W. van 't Veer
 ;; Created: 18 Oct 2012
 ;; Keywords: convenience
-;; Package-Version: 20160816.15
+;; Package-Version: 20170302.118
 ;; Version: 0.3.3
 ;; URL: https://github.com/remvee/spotify-el
 ;; Package-Requires: ((cl-lib "0.5"))
@@ -44,7 +44,8 @@
 
 (eval-and-compile
   (defun spotify-p-dbus ()
-    (string= "gnu/linux" system-type)))
+    (and (string= "gnu/linux" system-type)
+	 (featurep 'dbusbind)))
 
 (defun spotify-p-osa ()
   (string= "darwin" system-type))

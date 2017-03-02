@@ -1,11 +1,11 @@
 ;;; inf-clojure.el --- Run an external Clojure process in an Emacs buffer -*- lexical-binding: t; -*-
 
-;; Copyright © 2014-2016 Bozhidar Batsov
+;; Copyright © 2014-2017 Bozhidar Batsov
 
 ;; Authors: Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Olin Shivers <shivers@cs.cmu.edu>
 ;; URL: http://github.com/clojure-emacs/inf-clojure
-;; Package-Version: 20161121.314
+;; Package-Version: 20170302.255
 ;; Keywords: processes, clojure
 ;; Version: 1.5.0-snapshot
 ;; Package-Requires: ((emacs "24.4") (clojure-mode "5.6"))
@@ -49,6 +49,9 @@
   "Run an external Clojure process (REPL) in an Emacs buffer."
   :group 'clojure)
 
+(defconst inf-clojure-version "1.5.0-snapshot"
+  "The current version of `inf-clojure'.")
+
 (defcustom inf-clojure-prompt-read-only t
   "If non-nil, the prompt will be read-only.
 
@@ -84,7 +87,9 @@ mode.  Default is whitespace followed by 0 or 1 single-letter colon-keyword
         ["Show documentation for var" inf-clojure-show-var-documentation t]
         ["Show source for var" inf-clojure-show-var-source t]
         "--"
-        ["Clear REPL" inf-clojure-clear-repl-buffer]))
+        ["Clear REPL" inf-clojure-clear-repl-buffer]
+        "--"
+        ["Version" inf-clojure-display-version]))
     map))
 
 (defvar inf-clojure-minor-mode-map
@@ -165,6 +170,13 @@ to load that file."
 
 (defcustom inf-clojure-subprompt " *#_=> *"
   "Regexp to recognize subprompts in the Inferior Clojure mode."
+  :type 'regexp
+  :group 'inf-clojure)
+
+(defcustom inf-clojure-comint-prompt-regexp "^\\( *#_\\|[^=> \n]+\\)=> *"
+  "Regexp to recognize both main prompt and subprompt for comint.
+This should usually be a combination of `inf-clojure-prompt' and
+`inf-clojure-subprompt'."
   :type 'regexp
   :group 'inf-clojure)
 
@@ -254,13 +266,13 @@ If `comint-use-prompt-regexp' is nil (the default), \\[comint-insert-input] on o
 Paragraphs are separated only by blank lines.  Semicolons start comments.
 If you accidentally suspend your process, use \\[comint-continue-subjob]
 to continue it."
-  (setq comint-prompt-regexp inf-clojure-prompt)
+  (setq comint-prompt-regexp inf-clojure-comint-prompt-regexp)
   (setq mode-line-process '(":%s"))
   (clojure-mode-variables)
   (inf-clojure-eldoc-setup)
   (setq comint-get-old-input #'inf-clojure-get-old-input)
   (setq comint-input-filter #'inf-clojure-input-filter)
-  (set (make-local-variable 'comint-prompt-read-only) inf-clojure-prompt-read-only)
+  (setq-local comint-prompt-read-only inf-clojure-prompt-read-only)
   (add-hook 'comint-preoutput-filter-functions #'inf-clojure-preoutput-filter nil t)
   (add-hook 'completion-at-point-functions #'inf-clojure-completion-at-point nil t))
 
@@ -269,7 +281,7 @@ to continue it."
   (save-excursion
     (let ((end (point)))
       (backward-sexp)
-      (buffer-substring (point) end))))
+      (buffer-substring (max (point) (comint-line-beginning-position)) end))))
 
 (defun inf-clojure-input-filter (str)
   "Return t if STR does not match `inf-clojure-filter-regexp'."
@@ -770,6 +782,11 @@ Return the number of nested sexp the point was over or after."
   "Turn on eldoc mode in the current buffer."
   (setq-local eldoc-documentation-function #'inf-clojure-eldoc)
   (apply #'eldoc-add-command inf-clojure-extra-eldoc-commands))
+
+(defun inf-clojure-display-version ()
+  "Display the current `inf-clojure' in the minibuffer."
+  (interactive)
+  (message "inf-clojure (version %s)" inf-clojure-version))
 
 (provide 'inf-clojure)
 
