@@ -4,7 +4,7 @@
 ;;
 ;; Author: Austin Bingham <austin.bingham@gmail.com>
 ;; Version: 0.10
-;; Package-Version: 20161010.152
+;; Package-Version: 20170302.613
 ;; URL: https://github.com/abingham/traad
 ;; Package-Requires: ((deferred "0.3.2") (popup "0.5.0") (request "0.2.0") (request-deferred "0.2.0") (virtualenvwrapper "20151123"))
 ;;
@@ -950,6 +950,7 @@ task_id field in the response."
 (defconst traad--install-server-command
   "pip install --upgrade traad")
 
+;;;###autoload
 (defun traad-install-server ()
   "Install traad.
 

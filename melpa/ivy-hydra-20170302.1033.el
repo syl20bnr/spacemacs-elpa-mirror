@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170301.1213
+;; Package-Version: 20170302.1033
 ;; Version: 0.8.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.8.0") (hydra "0.13.4"))
 ;; Keywords: completion, matching, bindings
@@ -97,7 +97,7 @@ _h_ ^+^ _l_ | _d_one      ^ ^  | _o_ops   | _m_: matcher %-5s(ivy--matcher-desc)
                      (cdr actions))
            ("M-o" nil "back")))))))
 
-(define-key ivy-mode-map (kbd "M-o") 'ivy-dispatching-done-hydra)
+(define-key ivy-minibuffer-map (kbd "M-o") 'ivy-dispatching-done-hydra)
 
 (provide 'ivy-hydra)
 
