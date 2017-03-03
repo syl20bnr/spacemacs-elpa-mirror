@@ -4,7 +4,7 @@
 ;;
 ;; Author:     Rustem Muslimov <r.muslimov@gmail.com>
 ;; Version:    0.8.0
-;; Package-Version: 20161207.2252
+;; Package-Version: 20170302.2236
 ;; Keywords:   github, gitlab, bitbucket, convenience
 ;; Package-Requires: ((f "0.17.2") (s "1.9.0") (cl-lib "0.5"))
 
@@ -207,10 +207,10 @@ If HEAD is detached, return nil."
   "Commit URL formatted for github"
   (format "%s/commit/%s" repo-url commithash))
 
-(defun browse-at-remote--format-region-url-as-bitbucket (repo-url location filename &optional linestart _lineend)
+(defun browse-at-remote--format-region-url-as-bitbucket (repo-url location filename &optional linestart lineend)
   "URL formatted for bitbucket"
   (cond
-   (linestart (format "%s/src/%s/%s#cl-%d" repo-url location filename linestart))
+   (linestart (format "%s/src/%s/%s#cl-%d:%d" repo-url location filename linestart lineend))
    (t (format "%s/src/%s/%s" repo-url location filename))))
 
 (defun browse-at-remote--format-commit-url-as-bitbucket (repo-url commithash)

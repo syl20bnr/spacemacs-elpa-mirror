@@ -4,8 +4,8 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.10
-;; Package-Version: 20170216.457
-;; Package-Requires: ((emacs "24.4") (let-alist "1.0.3"))
+;; Package-Version: 20170302.1854
+;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
 ;; This program is free software; you can redistribute it and/or
@@ -418,8 +418,9 @@ Details regarding the Transmission RPC can be found here:
 
 ;; Asynchronous calls
 
-(defun transmission-process-filter (process _string)
-  "Function used as a supplement to the default filter function for PROCESS."
+(defun transmission-process-filter (process text)
+  "Handle PROCESS's output TEXT and trigger handlers."
+  (internal-default-process-filter process text)
   (when (buffer-live-p (process-buffer process))
     (with-current-buffer (process-buffer process)
       (when (transmission--content-finished-p)
@@ -454,7 +455,7 @@ METHOD, ARGUMENTS, and TAG are the same as in `transmission-request'."
   (let ((process (transmission-make-network-process))
         (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
     (set-process-sentinel process #'transmission-process-sentinel)
-    (add-function :after (process-filter process) 'transmission-process-filter)
+    (set-process-filter process #'transmission-process-filter)
     (process-put process :request content)
     (process-put process :callback callback)
     (transmission-http-post process content)
@@ -947,10 +948,11 @@ When called with a prefix, prompt for DIRECTORY."
      (let-alist (json-read-from-string content)
        (pcase .result
          ("success"
-          (or (and .arguments.torrent-added.name
-                   (message "Added %s" .arguments.torrent-added.name))
-              (and .arguments.torrent-duplicate.name
-                   (message "Already added %s" .arguments.torrent-duplicate.name))))
+          (let-alist .arguments
+            (or (and .torrent-added.name
+                     (message "Added %s" .torrent-added.name))
+                (and .torrent-duplicate.name
+                     (message "Already added %s" .torrent-duplicate.name)))))
          (_ (message .result)))))
    "torrent-add"
    (append (if (and (file-readable-p torrent) (not (file-directory-p torrent)))
@@ -1022,7 +1024,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (transmission-let*-ids
       ((prompt "Set bandwidth priority: ")
        (priority (completing-read prompt transmission-priority-alist nil t))
-       (number (cdr (assoc-string priority transmission-priority-alist)))
+       (number (cdr (assq (intern priority) transmission-priority-alist)))
        (arguments `(:ids ,ids :bandwidthPriority ,number)))
     (transmission-request-async nil "torrent-set" arguments)))
 
@@ -1491,7 +1493,7 @@ Each form in BODY is a column descriptor."
     (setq tabulated-list-entries nil)
     (transmission-do-entries files
       (format "%d%%" (transmission-percent .bytesCompleted .length))
-      (symbol-name (car (rassoc .priority transmission-priority-alist)))
+      (symbol-name (car (rassq .priority transmission-priority-alist)))
       (if (eq .wanted :json-false) "no" "yes")
       (transmission-size .length)
       (if truncate (string-remove-prefix directory .name) .name)))
@@ -1516,7 +1518,7 @@ Each form in BODY is a column descriptor."
              (fmt (if (zerop (mod percent 1)) "%d" "%.2f")))
         (concat "Percent done: " (format fmt percent) "%"))
       (format "Bandwidth priority: %s"
-              (car (rassoc .bandwidthPriority transmission-priority-alist)))
+              (car (rassq .bandwidthPriority transmission-priority-alist)))
       (concat "Speed: "
               (transmission-format-limits
                .honorsSessionLimits .rateDownload .rateUpload
