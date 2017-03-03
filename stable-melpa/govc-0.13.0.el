@@ -2,9 +2,9 @@
 
 ;; Author: The govc developers
 ;; URL: https://github.com/vmware/govmomi/tree/master/govc/emacs
-;; Package-Version: 20170227.1257
+;; Package-Version: 0.13.0
 ;; Keywords: convenience
-;; Version: 0.1.0
+;; Version: 0.13.0
 ;; Package-Requires: ((emacs "24.3") (dash "1.5.0") (s "1.9.0") (magit-popup "2.0.50") (json-mode "1.6.0"))
 
 ;; This file is NOT part of GNU Emacs.
