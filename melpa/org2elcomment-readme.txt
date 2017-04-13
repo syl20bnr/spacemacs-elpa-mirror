@@ -24,7 +24,7 @@ Convert `org-mode' file to Elisp comments.
 1 Overview
 ==========
 
-  This simple package is mainly used for Elisp package writers. After
+  This simple package is mainly used for Elisp package writers.  After
   you've written the `README.org' for your package, you can use
   `org2elcomment' to convert the org file to Elisp comments in the
   corresponding source code file.
@@ -34,9 +34,9 @@ Convert `org-mode' file to Elisp comments.
 =======
 
   Make sure your source code file has `;;; Commentary:' and `;;; Code:'
-  lines. The generated comments will be put between these two lines. If
-  you use `auto-insert', it will take care of generating a standard file
-  header that contains these two lines in your source code.
+  lines.  The generated comments will be put between these two lines.
+  If you use `auto-insert', it will take care of generating a standard
+  file header that contains these two lines in your source code.
 
 
 2.1 Command `org2elcomment'
@@ -50,12 +50,12 @@ Convert `org-mode' file to Elisp comments.
 2.2 Command `org2elcomment-anywhere'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  You can invoke this command anywhere in Emacs. It requires two
-  parameters. You need to select the source code file as well as the org
-  file. After selecting the org file, you can optionally save the org
-  file location as the file-local variable in the source code file so
-  that you don't need to select the org file again for the same source
-  code file.
+  You can invoke this command anywhere in Emacs.  It requires two
+  parameters.  You need to select the source code file as well as the
+  org file.  After selecting the org file, you can optionally save the
+  org file location as the file-local variable in the source code file
+  so that you don't need to select the org file again for the same
+  source code file.
 
   If you want to automate the process of converting the org to the
   commentary section in Elisp file in your project, you can consider
@@ -69,7 +69,7 @@ Convert `org-mode' file to Elisp comments.
 ~~~~~~~~~~~~~~~~~~~~~~
 
   Behind the scenes, this package uses `org-export-as' function and the
-  default backend is `ascii'. You can change to whatever backend that
+  default backend is `ascii'.  You can change to whatever backend that
   your org-mode export engine supports, such as `md' (for markdown):
 
   ,----
@@ -81,8 +81,8 @@ Convert `org-mode' file to Elisp comments.
 ~~~~~~~~~~~~~~~~~~~~~
 
   In fact, it is even possible to use your own export function instead
-  of the exporter of org-mode. Write a function which accepts a file
-  name of an org file and returns the string as the export result. Here
+  of the exporter of org-mode.  Write a function which accepts a file
+  name of an org file and returns the string as the export result.  Here
   is how the default exporter that we use in this package looks like:
 
   ,----

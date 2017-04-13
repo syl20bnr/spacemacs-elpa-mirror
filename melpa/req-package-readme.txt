@@ -113,6 +113,7 @@ https://coveralls.io/github/edvorg/req-package?branch=develop
   │ (req-package flymake-custom
   │   :require flymake
   │   :loader :path ;; use package that is on load-path
+  │   :load-path "/path/to/file/directory"
   │   :config (...))
   └────
 
@@ -132,7 +133,7 @@ https://coveralls.io/github/edvorg/req-package?branch=develop
 
   `req-package' supports extensible package providers system.  This is
   alternative to `:ensure' keyword in `use-package'.  Use `:loader'
-  keyword with `:el-get', `:elpa', `:build-in' or `:path' value.  Extend
+  keyword with `:el-get', `:elpa', `:built-in' or `:path' value.  Extend
   `req-package-providers-map' if you want to introduce new provider.
   Tweak provider priorities using `req-package-providers-priority' map.
 
@@ -187,7 +188,7 @@ https://coveralls.io/github/edvorg/req-package?branch=develop
   • no need to use progn in :init and :config sections
   • no need to use list literal in :require section
   • `:loader' keyword now accepts loaders as keywords or as functions.
-    e.g. `:el-get', `:elpa', `:build-int', `:path' and `my-loader-fn'
+    e.g. `:el-get', `:elpa', `:built-in', `:path' and `my-loader-fn'
   • `req-package-force' replaced with `:force' keyword
 
 

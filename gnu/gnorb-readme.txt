@@ -43,16 +43,12 @@ you do, and you have some ideas about how it should be handled, please
 contact the author and suggest them.
 ** Installation
 
-It's easiest to install Gnorb from Elpa: run `list-packages' and look
-for it there.
+Gnorb is developed inside the Elpa repository -- install with M-x
+package-install RET gnorb RET. There is a [[https://github.com/girzel/gnorb/][Github repository]], but the
+code there is stale as of March 2017. Any issues opened there will be
+addressed, though obviously pull requests won't work. Prefer
+submitting bugs via `emacs-report-bug'.
 
-Or clone the Git repo at https://github.com/girzel/gnorb, and add the
-top-level directory to your load path.
-
-If you want to use Gnorb for tracking emails with TODOs, you'll need
-to add a nngnorb server to your `gnus-secondary-select-methods'
-variable, then call `gnorb-tracking-initialize' in your init files.
-Again, see the manual for details.
 ** Roadmap
 *** More fully utilize nngnorb
 Instead of just being place to put nnir searches, the nngnorb server
@@ -84,19 +80,9 @@ composing messages from... Or maybe it's just a case of NIH.
 Provide an Org Agenda command that does an email search for messages
 received in the visible date span, or day under point, etc. Make it
 work in the calendar, as well?
-*** DONE Capture to child/subtree trigger actions
-:LOGBOOK:
-- State "DONE"       from "TODO"       [2015-03-17 Tue 17:42]
-:END:
-Add trigger actions that create new sibling or child headings on the
-original Org heading.
 *** TODO Gnus message tagging
 Allow tagging of Gnus messages, by giving the message's registry entry
 an 'org-tags key.
-*** TODO Email subtree export to doc and rtf
-When using `gnorb-email-subtree', provide built-in options for
-exporting to doc and rtf attachments; these are such commonly-needed
-formats. Do the odt conversion automatically.
 *** TODO Collect BBDB messages by thread
 At present, when you collect message links on a BBDB contact, each
 message is a separate link. If you have lengthy conversations with
@@ -112,3 +98,16 @@ automatically.
 *** TODO gnorb-bbdb-view
 Provide a `gnorb-bbdb-view' command that opens a Summary buffer
 containing all the tracked messages from the contact(s) under point.
+*** DONE Email subtree export to doc and rtf
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2017-03-11 Sat 12:35]
+:END:
+When using `gnorb-email-subtree', provide built-in options for
+exporting to doc and rtf attachments; these are such commonly-needed
+formats. Do the odt conversion automatically.
+*** DONE Capture to child/subtree trigger actions
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2015-03-17 Tue 17:42]
+:END:
+Add trigger actions that create new sibling or child headings on the
+original Org heading.

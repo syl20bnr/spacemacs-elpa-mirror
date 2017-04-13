@@ -54,3 +54,13 @@ know.
 I think that this program makes lazy password management more
 securely.  But I'm not sure that this program is secure enough.
 I'd like many people to check and advice me.
+
+Integrating with OS launchers (Alfred, QuickSilver, Launchbar, etc.)
+
+Invoke id-manager with an input string.
+
+An example script to use for Alfred:
+
+INPUT="{query}"
+osascript -e 'tell app "Emacs" to activate'
+emacsclient -e "(id-manager \"$INPUT\"))"

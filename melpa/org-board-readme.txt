@@ -10,24 +10,26 @@ run after an archive, allowing for extensive user customization.
 Commands defined here:
 
   `org-board-archive', `org-board-archive-dry-run',
-  `org-board-delete-all', `org-board-open', `org-board-new',
-  `org-board-diff', `org-board-diff3', `org-board-cancel'.
+  `org-board-cancel', `org-board-delete-all', `org-board-diff',
+  `org-board-diff', `org-board-new3', `org-board-open',
+  `org-board-run-after-archive-function'.
 
 Functions defined here:
 
-  `org-board-expand-regexp-alist', `org-board-options-handler',
-  `org-board-thing-at-point',
-  `org-board-wget-process-sentinel-function',
-  `org-board-extend-default-path', `org-board-wget-call',
-  `org-board-test-after-archive-function', `org-board-open-with'.
+  `org-board-expand-regexp-alist', `org-board-extend-default-path',
+  `org-board-make-timestamp', `org-board-open-with',
+  `org-board-options-handler',
+  `org-board-test-after-archive-function',
+  `org-board-thing-at-point', `org-board-wget-call',
+  `org-board-wget-process-sentinel-function'.
 
 Variables defined here:
 
-  `org-board-wget-program', `org-board-wget-switches',
-  `org-board-wget-show-buffer', `org-board-log-wget-invocation',
-  `org-board-archive-date-format', `org-board-agent-header-alist',
-  `org-board-domain-regexp-alist', `org-board-default-browser',
-  `org-board-after-archive-functions'.
+  `org-board-after-archive-functions',
+  `org-board-agent-header-alist', `org-board-archive-date-format',
+  `org-board-default-browser', `org-board-domain-regexp-alist',
+  `org-board-log-wget-invocation', `org-board-wget-program',
+  `org-board-wget-show-buffer', `org-board-wget-switches'.
 
 Keymap defined here:
 
@@ -39,7 +41,7 @@ Functions advised here:
 
 Documentation:
 
-Motivation
+* Motivation
 
  org-board is a bookmarking and web archival system for Emacs Org
  mode, building on ideas from Pinboard <https://pinboard.in>.  It
@@ -50,13 +52,13 @@ Motivation
  whole sites for archival with a couple of keystrokes, while
  keeping track of your archives from a simple Org file.
 
-Summary
+* Summary
 
  In org-board, a bookmark is represented by an Org heading of any
  level, with a `URL' property containing one or more URLs.  Once
  such a heading is created, a call to `org-board-archive' creates a
  unique ID and directory for the entry via `org-attach', archives
- the contents and requisites of the page(s) listed in the URL
+ the contents and requisites of the page(s) listed in the `URL'
  property using `wget', and saves them inside the entry's
  directory.  A link to the (timestamped) root archive folder is
  created in the property `ARCHIVED_AT'.  Multiple archives can be
@@ -65,22 +67,23 @@ Summary
  `org-board-after-archive-functions' (defaulting to nil) holds a
  list of functions to run after each archival operation.
 
-User commands
+* User commands
 
  `org-board-archive' archives the current entry, creating a unique
-   ID and directory via org-attach if necessary.
+   ID and directory via `org-attach' if necessary.
 
  `org-board-archive-dry-run' shows the `wget' invocation that will
-   run for this entry.
+   run for this entry in the echo area.
 
  `org-board-new' prompts for a URL to add to the current entry's
-   properties, then archives it immediately.
+   properties, then archives the entry immediately.
 
  `org-board-delete-all' deletes all the archives for this entry by
-   deleting the org-attach directory.
+   deleting the `org-attach' directory.
 
- `org-board-open' Opens the bookmark at point in a browser.
-   Default to the built-in browser, and with prefix, the OS browser.
+ `org-board-open' opens the bookmark at point in a browser.
+   Default to the built-in browser, `eww', and with prefix, the
+   native operating system browser.
 
  `org-board-diff' uses `zdiff' (if available) or `ediff' to
    recursively diff two archives of the same entry.
@@ -90,10 +93,14 @@ User commands
 
  `org-board-cancel' cancels the current org-board archival process.
 
+ `org-board-run-after-archive-function' prompts for a function and
+   an archive in the current entry, and applies the function to the
+   archive.
+
  These are all bound in the `org-board-keymap' variable (not bound
  to any key by default).
 
-Customizable options
+* Customizable options
 
  `org-board-wget-program' is the path to the wget program.
 
@@ -134,7 +141,7 @@ Customizable options
  example use of `org-board-after-archive-functions', see the
  "Example usage" section below.
 
-Known limitations
+* Known limitations
 
  Options like "--header: 'Agent X" cannot be specified as
  properties, because the property API splits on spaces, and such an
@@ -144,9 +151,9 @@ Known limitations
 
  At the moment, only one archive can be done at a time.
 
-Example usage
+* Example usage
 
-Archiving
+** Archiving
 
  I recently found a list of articles on linkers that I wanted to
  bookmark and keep locally for offline reading.  In a dedicated org
@@ -155,11 +162,11 @@ Archiving
  ** TODO Linkers (20-part series)
  :PROPERTIES:
  :URL:          http://a3f.at/lists/linkers
- :WGET_OPTIONS: --recursive -l 1
+ :WGET_OPTIONS: --recursive -l 1 --span-hosts
  :END:
 
- Where the URL property is a page that already lists the URLs that
- I wanted to download.  I specified the recursive property for
+ Where the `URL' property is a page that already lists the URLs
+ that I wanted to download.  I specified the recursive property for
  `wget' along with a depth of 1 ("-l 1") so that each linked page
  would be downloaded.  With point inside the entry, I run "M-x
  org-board-archive".  An `org-attach' directory is created and
@@ -169,7 +176,7 @@ Archiving
  ** TODO Linkers (20-part series)
  :PROPERTIES:
  :URL:          http://a3f.at/lists/linkers
- :WGET_OPTIONS: --recursive -l 1
+ :WGET_OPTIONS: --recursive -l 1 --span-hosts
  :ID:           D3BCE79F-C465-45D5-847E-7733684B9812
  :ARCHIVED_AT:  [2016-08-30-Tue-15-03-56]
  :END:
@@ -178,7 +185,7 @@ Archiving
  the root of the timestamped archival directory.  The ID property
  was automatically generated by `org-attach'.
 
-Diffing
+** Diffing
 
  You can diff between two archives done for the same entry using
  `org-board-diff', so you can see how a page has changed over time.
@@ -189,7 +196,7 @@ Diffing
  intuitive to use).  `org-board-diff3' also offers diffing between
  three different archive directories.
 
-`org-board-after-archive-functions'
+** `org-board-after-archive-functions'
 
  `org-board-after-archive-functions' is a list of functions run
  after an archive is finished.  You can use it to do anything you
@@ -202,7 +209,7 @@ Diffing
  organize them.
 
  Here is an example function that copies the archived page to an
- external service called IPFS <http://ipfs.io/>, a decentralized
+ external service called `IPFS' <http://ipfs.io/>, a decentralized
  versioning and storage system geared towards web content (thanks
  to Alan Schmitt):
 
@@ -212,10 +219,16 @@ Diffing
      (let* ((parsed-url (url-generic-parse-url (car urls)))
             (domain (url-host parsed-url))
             (path (url-filename parsed-url))
-            (output (shell-command-to-string (concat "ipfs add -r " (concat output-folder domain))))
-            (ipref (nth 1 (split-string (car (last (split-string output "\n" t))) " "))))
+            (output (shell-command-to-string
+ 		     (concat "ipfs add -r "
+ 			     (concat output-folder domain))))
+            (ipref
+ 	     (nth 1 (split-string
+ 		     (car (last (split-string output "\n" t))) " "))))
        (with-current-buffer (get-buffer-create "*org-board-post-archive*")
-         (princ (format "your file is at %s\n" (concat "http://localhost:8080/ipfs/" ipref path)) (current-buffer))))))
+         (princ (format "your file is at %s\n"
+ 			(concat "http://localhost:8080/ipfs/" ipref path))
+ 		(current-buffer))))))
 
  (eval-after-load "org-board"
    '(add-hook 'org-board-after-archive-functions 'org-board-add-to-ipfs))
@@ -231,10 +244,14 @@ Diffing
  its docstring and the docstring of
  `org-board-test-after-archive-function'.
 
+ You can also interactively run an after-archive function with the
+ command `org-board-run-after-archive-function'.  See its docstring
+ for details.
 
-Getting started
 
-Installation
+* Getting started
+
+** Installation
 
  There are two ways to install the package.  One way is to clone
  this repository and add the directory to your load-path manually.
@@ -246,29 +263,30 @@ Installation
  using MELPA <https://github.com/melpa/melpa>.  M-x
  package-install RET org-board RET will take care of it.
 
-Keybindings
+** Keybindings
 
  The following keymap is defined in `org-board-keymap':
 
- | Key | Command                    |
- | a   | org-board-archive          |
- | r   | org-board-archive-dry-run  |
- | n   | org-board-new              |
- | k   | org-board-delete-all       |
- | o   | org-board-open             |
- | d   | org-board-diff             |
- | 3   | org-board-diff3            |
- | c   | org-board-cancel           |
- | O   | org-attach-reveal-in-emacs |
- | ?   | Show help for this keymap. |
+ | Key | Command                              |
+ | a   | org-board-archive                    |
+ | r   | org-board-archive-dry-run            |
+ | n   | org-board-new                        |
+ | k   | org-board-delete-all                 |
+ | o   | org-board-open                       |
+ | d   | org-board-diff                       |
+ | 3   | org-board-diff3                      |
+ | c   | org-board-cancel                     |
+ | x   | org-board-run-after-archive-function |
+ | O   | org-attach-reveal-in-emacs           |
+ | ?   | Show help for this keymap.           |
 
- To install the keymap is give it a prefix key, e.g.:
+ To install the keymap give it a prefix key, e.g.:
 
- (global-set-key (kbd "C-c o") 'org-board-keymap)
+ (global-set-key (kbd "C-c o") org-board-keymap)
 
  Then typing `C-c o a' would run `org-board-archive', for example.
 
-Miscellaneous
+* Miscellaneous
 
  The location of `wget' should be picked up automatically from the
  `PATH' environment variable.  If it is not, then the variable
@@ -279,7 +297,7 @@ Miscellaneous
  default `org-board-archive' will just download the page and its
  requisites (images and CSS), and nothing else.
 
-Support for org-capture from Firefox (thanks to Alan Schmitt):
+** Support for org-capture from Firefox (thanks to Alan Schmitt):
 
  On the Firefox side, install org-capture from here:
 
@@ -305,7 +323,7 @@ Support for org-capture from Firefox (thanks to Alan Schmitt):
              "* %?%:description\n:PROPERTIES:\n:URL: %:link\n:END:\n\n Added %U")
            ...))
 
- And add a hook to org-capture-before-finalize-hook:
+ And add a hook to `org-capture-before-finalize-hook':
 
    (defun do-org-board-dl-hook ()
      (when (equal (buffer-name)
@@ -314,7 +332,7 @@ Support for org-capture from Firefox (thanks to Alan Schmitt):
 
    (add-hook 'org-capture-before-finalize-hook 'do-org-board-dl-hook)
 
-Acknowledgements
+* Acknowledgements
 
  Thanks to Alan Schmitt for the code to combine `org-board' and
  `org-capture', and for the example function used in the

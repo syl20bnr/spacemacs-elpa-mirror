@@ -5,3 +5,5 @@ Then start the Remote with the command:
 'kodi-remote-keyboard'
 Alternativly start the Series Overview with the command:
 'kodi-remote-series'
+Also open kodi Video Playlist with the command:
+'kodi-remote-playlist'

@@ -32,4 +32,4 @@ if you are using ido,you'd better disable ido for dired
 or
 (with-eval-after-load 'dired
   (require 'helm-dired-history)
-  (define-key dired-mode-map "," 'helm-dired-history-view))
+  (define-key dired-mode-map "," 'dired))

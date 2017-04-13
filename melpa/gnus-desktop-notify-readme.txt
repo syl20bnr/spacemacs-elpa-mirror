@@ -21,8 +21,8 @@ You can also call any program directly by changing the
 by setting a different `gnus-desktop-notify-function' function.
 
 By default, all groups are notified when new messages are received. You can
-exclude a single group by setting the `group-notify' group parameter to
-t. You can also selectively monitor groups instead by changing the
+exclude a single group by setting the `group-notify' group parameter to `t'.
+You can also selectively monitor groups instead by changing the
 `gnus-desktop-notify-groups' variable to `gnus-desktop-notify-explicit' and
 then manually selecting which groups to include. Press 'G c' in the group
 buffer to customize group parameters interactively.

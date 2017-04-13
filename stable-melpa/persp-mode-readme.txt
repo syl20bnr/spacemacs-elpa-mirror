@@ -1,4 +1,4 @@
-Based on the perspective.el by Nathan Weizenbaum
+Based on the perspective.el by Natalie Weizenbaum
  (http://github.com/nex3/perspective-el) but the perspectives are shared
   among the frames and could be saved/restored from/to a file.
 

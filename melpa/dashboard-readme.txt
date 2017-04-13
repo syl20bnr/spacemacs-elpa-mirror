@@ -1,2 +1,2 @@
-A shameless extraction of Spacemacs’ startup screen, with sections for
-bookmarks, projectil projects and more.
+An extensible Emacs dashboard, with sections for
+bookmarks, projectil projects, org-agenda and more.

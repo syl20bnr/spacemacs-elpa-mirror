@@ -11,27 +11,31 @@ cards will inserted under a new "Cards" heading in the current tree.
 For example, given the following org headline,
 
    * Vocab
-   | English   | Spanish |
-   |-----------+---------|
-   | Today     | Hoy     |
-   | Yesterday | Ayer    |
-   | Tomorrow  | Mañana  |
+   |-----------+---------+----------------|
+   | English   | Spanish | Example        |
+   |-----------+---------+----------------|
+   | Today     | Hoy     | Hoy es domingo |
+   | Yesterday | Ayer    |                |
+   | Tomorrow  | Mañana  |                |
+   |-----------+---------+----------------|
 
 invoking `org-drill-table-generate' will generate cards for each table row:
 
    * Vocab
    :PROPERTIES:
-   :DRILL_HEADING: Noun
+   :DRILL_HEADING:
    :DRILL_CARD_TYPE: twosided
    :DRILL_INSTRUCTIONS: Translate the following word.
    :END:
-   | English   | Spanish |
-   |-----------+---------|
-   | Today     | Hoy     |
-   | Yesterday | Ayer    |
-   | Tomorrow  | Mañana  |
+   |-----------+---------+----------------|
+   | English   | Spanish | Example        |
+   |-----------+---------+----------------|
+   | Today     | Hoy     | Hoy es domingo |
+   | Yesterday | Ayer    |                |
+   | Tomorrow  | Mañana  |                |
+   |-----------+---------+----------------|
    ** Cards
-   *** Noun                                                            :drill:
+   *** Today                                                          :drill:
    :PROPERTIES:
    :DRILL_CARD_TYPE: twosided
    :END:
@@ -40,7 +44,9 @@ invoking `org-drill-table-generate' will generate cards for each table row:
    Today
    **** Spanish
    Hoy
-   *** Noun                                                            :drill:
+   **** Example
+   Hoy es domingo
+   *** Yesterday                                                      :drill:
    :PROPERTIES:
    :DRILL_CARD_TYPE: twosided
    :END:
@@ -49,7 +55,7 @@ invoking `org-drill-table-generate' will generate cards for each table row:
    Yesterday
    **** Spanish
    Ayer
-   *** Noun                                                            :drill:
+   *** Tomorrow                                                       :drill:
    :PROPERTIES:
    :DRILL_CARD_TYPE: twosided
    :END:
@@ -58,6 +64,14 @@ invoking `org-drill-table-generate' will generate cards for each table row:
    Tomorrow
    **** Spanish
    Mañana
+
+Note that there are several things happening here:
+  - Each column in the table is put on its own row if it's non-empty
+  - Instead of using the DRILL_HEADING property as a generic heading, the first element of each row is used as the heading
+
+
+If instead of using the words from the first column as the headings, you want to use the same string for each heading,
+(i.e. the old behavior) this can be done by specifying the DRILL_HEADING property
 
 `org-drill-table-generate' checks the existing list of cards so it does not
 add duplicates.

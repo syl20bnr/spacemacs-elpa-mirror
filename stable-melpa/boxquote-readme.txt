@@ -13,4 +13,4 @@ yanking text into the current buffer.
 
 The latest version of boxquote.el can be found at:
 
-  <URL:http://www.davep.org/emacs/#boxquote.el>
+  <URL:https://github.com/davep/boxquote.el>

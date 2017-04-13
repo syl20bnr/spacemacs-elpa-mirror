@@ -353,6 +353,9 @@
 
 [History]
 $Log: mpg123.el,v $
+Revision 1.61  2017/02/21 08:06:31  yuuji
+Summary: string-to-int -> string-to-number
+
 Revision 1.60  2015/12/04 10:05:43  yuuji
 Fix error when ogg3info returns no music length.
 

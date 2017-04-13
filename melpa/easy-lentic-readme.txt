@@ -1,4 +1,7 @@
 * easy-lentic 使用说明                                               :README:
+
+注意： 这个包作者已经不维护了，有兴趣的同学可以收养它 :-) !!!
+
 easy-lentic 是基于 lentic 的一个扩展，但它不是扩展了 lentic 的功能，而是让 lentic 更加专注
 于一个 *特定* 的使用场合，即：
 

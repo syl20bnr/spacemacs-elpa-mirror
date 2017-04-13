@@ -4,6 +4,10 @@
  Mark mode.
 
 
+ Macros defined here:
+
+   `with-comments-hidden'.
+
  Commands defined here:
 
    `cycle-thing-region', `mark-enclosing-list',

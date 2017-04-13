@@ -1,10 +1,12 @@
-Usage:
-You can call `eshell-git-prompt-use-theme' to pick up a theme then launch
-Eshell.
+This package provides some themes of Emacs Shell (Eshell) prompt.
 
-Add the following to your initialization file to let Eshell to use it every
-time:
-  (eshell-git-prompt-use-theme 'robbyrussell)
+Usage:
+In Eshell, type ~use-theme~ to list and preview available themes, then
+type ~use-theme name~ to choose a theme.
+
+You can also choose a theme in your init file by using
+~eshell-git-prompt-use-theme~, then Eshell will use theme at the
+startup. For example, put the following in you init file
 
 TODO
 - [ ] For `eshell-prompt-regexp' hack, replace '$' with '' ('\x06')

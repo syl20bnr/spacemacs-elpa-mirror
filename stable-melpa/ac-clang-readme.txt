@@ -29,20 +29,22 @@
 
   - Optional
     CMake support.
-    clang-server.exe and libclang.dll built with Microsoft Visual Studio 2015/2013.
+    clang-server.exe and libclang.dll built with Microsoft Visual Studio 2017/2015/2013.
     x86_64 Machine Architecture + Windows Platform support. (Visual Studio Predefined Macros)
 
 * EASY INSTALLATION(Windows Only):
-  - Visual C++ Redistributable Packages for Visual Studio 2015/2013
-    Must be installed if don't have a Visual Studio 2015/2013.
+  - Visual C++ Redistributable Packages for Visual Studio 2017/2015/2013
+    Must be installed if don't have a Visual Studio 2017/2015/2013.
 
+    - 2017
+      [?]
     - 2015
-      [http://www.microsoft.com/download/details.aspx?id=48145]
+      [http://www.microsoft.com/download/details.aspx?id=53587]
     - 2013
       [http://www.microsoft.com/download/details.aspx?id=40784]
 
   - Completion Server Program
-    Built with Microsoft Visual Studio 2015/2013.
+    Built with Microsoft Visual Studio 2017/2015/2013.
     [https://github.com/yaruopooner/ac-clang/releases]
     1. download clang-server.zip
     2. clang-server.exe and libclang.dll is expected to be available in the PATH or in Emacs' exec-path.

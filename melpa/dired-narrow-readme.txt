@@ -11,10 +11,11 @@ During the filtering process, several special functions are
 available.  You can customize the binding by changing
 `dired-narrow-map'.
 
-* `dired-narrow-next-file' (<down>) - move the point to the next file
-* `dired-narrow-previous-file' (<up>) - move the point to the
+* `dired-narrow-next-file' (<down> or C-n) - move the point to the
+  next file
+* `dired-narrow-previous-file' (<up> or C-p) - move the point to the
   previous file
-* `dired-narrow-enter-directory' (<right>) - descend into the
+* `dired-narrow-enter-directory' (<right> or C-j) - descend into the
   directory under point and immediately go back to narrowing mode
 
 You can customize what happens after exiting the live filtering

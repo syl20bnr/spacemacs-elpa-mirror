@@ -47,6 +47,12 @@ style to use when `evilnc-copy-and-comment-lines' or `evilnc-copy-and-comment-op
   - Place the commented out text above original text
   - Or place the original text above commented out text
 
+We defined comment text object "c" which can have multi-lines.
+Press "vac" to select outer object (comment with limiters).
+Press "vic" to select inner object (comment without limiter).
+You can assign other key instead of "c" to the text object by
+customizing `evilnc-comment-text-object'.
+
 For certain major modes, you need manual setup to override its original
 keybindings,
 

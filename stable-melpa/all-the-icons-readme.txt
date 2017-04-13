@@ -10,10 +10,11 @@ This package was inspired by
 
 Currently, this package provides an interface to the following Icon Fonts
 
-- Atom File Icons,   found at https://atom.io/packages/file-icons
-- FontAwesome Icons, found at http://fontawesome.io/
-- GitHub Octicons,   found at http://octicons.github.com
-- Weather Icons,     found at https://erikflowers.github.io/weather-icons/
-- AllTheIcons,       a custom Icon Font maintained as part of this package
+- Atom File Icons,       found at https://atom.io/packages/file-icons
+- FontAwesome Icons,     found at http://fontawesome.io/
+- GitHub Octicons,       found at http://octicons.github.com
+- Material Design Icons, found at http://google.github.io/material-design-icons/
+- Weather Icons,         found at https://erikflowers.github.io/weather-icons/
+- AllTheIcons,           a custom Icon Font maintained as part of this package
 
 Requests for new icons will be accepted and added to the AllTheIcons Icon Font

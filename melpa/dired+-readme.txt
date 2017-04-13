@@ -223,15 +223,15 @@
  `Dired+' adds commands for combining and augmenting Dired
  listings:
 
-  * `diredp-add-to-dired-buffer', bound globally to `C-x E' ("E"
-    for extra files), lets you add arbitrary file and directory
-    names to an existing Dired buffer.
+  * `diredp-add-to-dired-buffer', bound globally to `C-x D A', lets
+    you add arbitrary file and directory names to an existing Dired
+    buffer.
 
-  * `diredp-dired-union', bound globally to `C-x D', lets you take
-    the union of multiple Dired listings, or convert an ordinary
-    Dired listing to an explicit list of absolute file names.  With
-    a non-positive prefix arg, you can add extra file and directory
-    names, just as for `diredp-add-to-dired-buffer'.
+  * `diredp-dired-union', bound globally to `C-x D U', lets you
+    take the union of multiple Dired listings, or convert an
+    ordinary Dired listing to an explicit list of absolute file
+    names.  With a non-positive prefix arg, you can add extra file
+    and directory names, just as for `diredp-add-to-dired-buffer'.
 
  You can optionally add a header line to a Dired buffer using
  toggle command `diredp-breadcrumbs-in-header-line-mode'.  (A
@@ -505,19 +505,22 @@
    `diredp-files-within-dirs-done', `diredp-font-lock-keywords-1',
    `diredp-hide-details-last-state' (Emacs 24.4+),
    `diredp-hide-details-toggled' (Emacs 24.4+),
-   `diredp-hide/show-menu', `diredp-list-files-map',
-   `diredp-loaded-p', `diredp-menu-bar-encryption-menu',
-   `diredp-menu-bar-images-menu.',
-   `diredp-menu-bar-immediate-menu',
-   `diredp-menu-bar-immediate-bookmarks-menu',
-   `diredp-menu-bar-immediate-encryption-menu',
-   `diredp-menu-bar-mark-menu', `diredp-menu-bar-operate-menu',
-   `diredp-menu-bar-operate-bookmarks-menu',
-   `diredp-menu-bar-operate-recursive-menu',
-   `diredp-menu-bar-regexp-menu',
-   `diredp-menu-bar-regexp-recursive-menu',
-   `diredp-menu-bar-subdir-menu', `diredp-navigate-menu',
-   `diredp-re-no-dot', `diredp-w32-drives-mode-map'.
+   `diredp-hide/show-menu', `diredp-images-recursive-menu',
+   `diredp-list-files-map', `diredp-loaded-p',
+   `diredp-menu-bar-dir-menu', `diredp-menu-bar-marks-menu',
+   `diredp-menu-bar-multiple-menu', `diredp-menu-bar-regexp-menu',
+   `diredp-menu-bar-single-menu', `diredp-multiple-bookmarks-menu',
+   `diredp-multiple-delete-menu', `diredp-multiple-dired-menu',
+   `diredp-multiple-images-menu',
+   `diredp-multiple-encryption-menu',
+   `diredp-multiple-move-copy-link-menu',
+   `diredp-multiple-omit-menu', `diredp-multiple-recursive-menu',
+   `diredp-multiple-rename-menu', `diredp-multiple-search-menu',
+   `diredp-navigate-menu', `diredp-regexp-recursive-menu',
+   `diredp-re-no-dot', `diredp-single-bookmarks-menu',
+   `diredp-single-encryption-menu', `diredp-single-image-menu',
+   `diredp-single-move-copy-link-menu', `diredp-single-open-menu',
+   `diredp-single-rename-menu', `diredp-w32-drives-mode-map'.
 
  Macros defined here:
 

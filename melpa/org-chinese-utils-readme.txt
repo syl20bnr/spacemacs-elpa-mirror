@@ -1,7 +1,7 @@
 * org-chinese-utils README                                 :README:
 ** 介绍
 org-chinese-utils 是一个 org-mode 小工具管理器，可以方便 org-mode 中文用户：
-1. 将 org 文件导出为 HTML/ODT 文件时，删除不必要的空格。
+1. 将 org 文件导出为 HTML 文件时，删除不必要的空格。
 2. 按 'C-c C-c', 根据当前内容智能折行。
 3. 如果 org-babel 结果中包含表格时，对表格进行对齐处理。
 4. ...
