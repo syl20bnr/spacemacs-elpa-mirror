@@ -7,4 +7,4 @@ Building-Notes:
 display random au fur et à mesure.  ? ring/list
 Utiliser aussi pour commandes à renforcer trigger.  affiche après un certain random.
 §Later: plusieurs catégories.
-§maybe: le binder avec un des trucs de quotes?: forturnes, and co.
+§maybe: le binder avec un des trucs de quotes?: fortunes, and co.
