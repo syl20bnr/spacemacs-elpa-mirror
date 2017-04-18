@@ -2,8 +2,8 @@
 ;; Copyright 2000-2017 by Dave Pearson <davep@davep.org>
 
 ;; Author: Dave Pearson <davep@davep.org>
-;; Version: 1.10
-;; Package-Version: 20170325.430
+;; Version: 1.11
+;; Package-Version: 20170418.854
 ;; Keywords: convenience, quoting
 ;; URL: https://github.com/davep/thinks.el
 ;; Package-Requires: ((cl-lib "0.5"))
@@ -86,7 +86,7 @@
   :prefix "thinks-")
 
 (defcustom thinks-bubbles ". o O "
-  "*The lead-in think bubbles.
+  "The lead-in think bubbles.
 
 Note that parts of the code assume that the string with always have even
 length and that every second character is a space. If you want to modify
@@ -95,17 +95,17 @@ this string it is best that you stick to this format."
   :group 'thinks)
 
 (defcustom thinks-main-bubble-left "( "
-  "*The characters to use for the left hand side of the main bubble."
+  "The characters to use for the left hand side of the main bubble."
   :type  'string
   :group 'thinks)
 
 (defcustom thinks-main-bubble-right " )"
-  "*The characters to use for the right hand side of the main bubble."
+  "The characters to use for the right hand side of the main bubble."
   :type  'string
   :group 'thinks)
 
 (defcustom thinks-from 'top
-  "*Do we think from the TOP or the BOTTOM?"
+  "Do we think from the TOP or the BOTTOM?"
   :type  '(choice
            (const :tag "Think from the top of the bubble"               top)
            (const :tag "Think from the middle of the bubble"            middle)
@@ -114,7 +114,7 @@ this string it is best that you stick to this format."
   :group 'thinks)
 
 (defcustom thinks-extra-silliness nil
-  "*Do we want some extra silliness?
+  "Do we want some extra silliness?
 
 Note that the extra silliness only kicks in when `thinks-from' is set to
 `bottom' or `bottom-diagonal'."
@@ -184,10 +184,10 @@ Note that the extra silliness only kicks in when `thinks-from' is set to
       (when (eq thinks-from 'bottom-diagonal)
         (unless (bolp)
           (insert "\n"))
-        (loop for n downfrom (- (length thinks-bubbles) 2) to (if extra-silly 2 0) by 2
-              do (insert (make-string n 32)
-                         (substring thinks-bubbles n (1+ n))
-                         "\n")))
+        (cl-loop for n downfrom (- (length thinks-bubbles) 2) to (if extra-silly 2 0) by 2
+           do (insert (make-string n 32)
+                      (substring thinks-bubbles n (1+ n))
+                      "\n")))
       (when extra-silly
         (setf (point) (point-max))
         (unless (bolp)

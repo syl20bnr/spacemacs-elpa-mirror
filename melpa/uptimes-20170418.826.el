@@ -2,8 +2,8 @@
 ;; Copyright 1999-2017 by Dave Pearson <davep@davep.org>
 
 ;; Author: Dave Pearson <davep@davep.org>
-;; Version: 3.3
-;; Package-Version: 20170402.143
+;; Version: 3.4
+;; Package-Version: 20170418.826
 ;; Keywords: uptime
 ;; URL: https://github.com/davep/uptimes.el
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
@@ -49,23 +49,23 @@
   :prefix "uptimes-")
 
 (defcustom uptimes-database (locate-user-emacs-file ".uptimes.el" "~/.emacs-uptimes")
-  "*Database of uptimes."
+  "Database of uptimes."
   :type  'file
   :group 'uptimes)
 
 (defcustom uptimes-keep-count 10
-  "*Number of uptimes to keep."
+  "Number of uptimes to keep."
   :type  'integer
   :group 'uptimes)
 
 (defcustom uptimes-auto-save t
-  "*Should we auto-save our uptime data?"
+  "Should we auto-save our uptime data?"
   :type  '(choice (const :tag "Yes, auto-save uptime details" t)
                   (const :tag "No, don't auto-save details" nil))
   :group 'uptimes)
 
 (defcustom uptimes-auto-save-interval 300
-  "*How often, in seconds, should we auto-save the data?"
+  "How often, in seconds, should we auto-save the data?"
   :type  'integer
   :group 'uptimes)
 

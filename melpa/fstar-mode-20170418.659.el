@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015-2017 Clément Pit-Claudel
 ;; Author: Clément Pit-Claudel <clement.pitclaudel@live.com>
 ;; URL: https://github.com/FStarLang/fstar.el
-;; Package-Version: 20170417.2303
+;; Package-Version: 20170418.659
 
 ;; Created: 27 Aug 2015
 ;; Version: 0.4
@@ -1733,7 +1733,7 @@ Recall that the legacy F* protocol doesn't ack pops."
   filename line-from line-to col-from col-to)
 
 (cl-defstruct fstar-issue
-  level loc alternate-loc message)
+  level locs message)
 
 (defconst fstar-subp-issue-location-regexp
   "\\(.*?\\)(\\([[:digit:]]+\\),\\([[:digit:]]+\\)-\\([[:digit:]]+\\),\\([[:digit:]]+\\))")
@@ -1760,13 +1760,12 @@ Recall that the legacy F* protocol doesn't ack pops."
         (setq issue-level level)
         (setq message (substring message (length marker)))))
     (make-fstar-issue :level issue-level
-                      :loc (make-fstar-location
-                            :filename filename
-                            :line-from (string-to-number line-from)
-                            :col-from (string-to-number col-from)
-                            :line-to (string-to-number line-to)
-                            :col-to (string-to-number col-to))
-                      :alternate-loc nil
+                      :locs `(,(make-fstar-location
+                                :filename filename
+                                :line-from (string-to-number line-from)
+                                :col-from (string-to-number col-from)
+                                :line-to (string-to-number line-to)
+                                :col-to (string-to-number col-to)))
                       :message message)))
 
 (defun fstar-subp-json--parse-location (json)
@@ -1782,10 +1781,10 @@ Recall that the legacy F* protocol doesn't ack pops."
 (defun fstar-subp-json--parse-issue (json)
   "Convert JSON issue into fstar-mode issue."
   (let-alist json
-    (make-fstar-issue :level (intern .level)
-                      :loc (fstar-subp-json--parse-location .range)
-                      :alternate-loc nil
-                      :message .message)))
+    (make-fstar-issue
+     :level (intern .level)
+     :locs (mapcar #'fstar-subp-json--parse-location .ranges)
+     :message .message)))
 
 (defun fstar-subp-parse-issues (response)
   "Parse RESPONSE into a list of issues."
@@ -1805,15 +1804,15 @@ Recall that the legacy F* protocol doesn't ack pops."
 
 (defun fstar-subp-cleanup-issue (issue &optional ov)
   "Fixup ISSUE: include a file name, and adjust line numbers wrt OV."
-  (let ((loc (fstar-issue-loc issue)))
+  (-when-let* ((loc (car (fstar-issue-locs issue))))
     (when (member (fstar-location-filename loc) '("unknown" "<input>"))
       (cl-assert buffer-file-name) ;; FIXME "unknown"
       (setf (fstar-location-filename loc) buffer-file-name))
     (unless (or (fstar--has-feature 'absolute-linums-in-errors) (null ov))
       (let ((linum (1- (line-number-at-pos (overlay-start ov)))))
         (cl-incf (fstar-location-line-from loc) linum)
-        (cl-incf (fstar-location-line-to loc) linum)))
-    issue))
+        (cl-incf (fstar-location-line-to loc) linum))))
+  issue)
 
 (defun fstar-subp--in-issue-p (pt)
   "Check if PT is covered by an F* issue overlay."
@@ -1847,12 +1846,12 @@ Recall that the legacy F* protocol doesn't ack pops."
   "Highlight ISSUE in current buffer.
 PARENT is the overlay whose processing caused this issue to be
 reported."
-  (let* ((loc (fstar-issue-loc issue))
-         (from (fstar--row-col-offset (fstar-location-line-from loc)
-                                 (fstar-location-col-from loc)))
-         (to (fstar--row-col-offset (fstar-location-line-to loc)
-                               (fstar-location-col-to loc)))
-         (overlay (make-overlay from (max to (1+ from)) (current-buffer) t nil)))
+  (-when-let* ((loc (car (fstar-issue-locs issue)))
+               (from (fstar--row-col-offset (fstar-location-line-from loc)
+                                       (fstar-location-col-from loc)))
+               (to (fstar--row-col-offset (fstar-location-line-to loc)
+                                     (fstar-location-col-to loc)))
+               (overlay (make-overlay from (max to (1+ from)) (current-buffer) t nil)))
     (overlay-put overlay 'fstar-subp-issue t)
     (overlay-put overlay 'fstar-subp-issue-parent-overlay parent)
     (overlay-put overlay 'face (fstar-subp-issue-face issue))
@@ -1868,14 +1867,15 @@ reported."
 
 (defun fstar-subp-jump-to-issue (issue)
   "Jump to ISSUE in current buffer."
-  (let ((loc (fstar-issue-loc issue)))
+  (-when-let* ((loc (car (fstar-issue-locs issue))))
     (goto-char (fstar--row-col-offset (fstar-location-line-from loc)
                                  (fstar-location-col-from loc)))))
 
 (defun fstar-subp--local-issue-p (issue)
   "Check if ISSUE came from the current buffer."
-  (string= (expand-file-name buffer-file-name)
-           (expand-file-name (fstar-location-filename (fstar-issue-loc issue)))))
+  (-when-let* ((loc (car (fstar-issue-locs issue))))
+    (string= (expand-file-name buffer-file-name)
+             (expand-file-name (fstar-location-filename loc)))))
 
 (defun fstar-subp-parse-and-highlight-issues (status response overlay)
   "Parse issues in RESPONSE (caused by processing OVERLAY) and display them.
@@ -2252,7 +2252,7 @@ Pass ARG to `fstar-subp-advance-or-retract-to-point'."
 
 (defun fstar-subp--make-flycheck-issue (issue)
   "Convert an F* ISSUE to a Flycheck issue."
-  (let ((loc (fstar-issue-loc issue)))
+  (-when-let* ((loc (car (fstar-issue-locs issue))))
     (flycheck-error-new-at
      (fstar-location-line-from loc)
      (1+ (fstar-location-col-from loc))
@@ -2269,7 +2269,7 @@ Pass ARG to `fstar-subp-advance-or-retract-to-point'."
            (issues (mapcar #'fstar-subp-cleanup-issue raw-issues)))
       (fstar-log 'info "Highlighting Flycheck issues: %S" issues)
       (funcall callback 'finished
-               (mapcar #'fstar-subp--make-flycheck-issue issues)))))
+               (delq nil (mapcar #'fstar-subp--make-flycheck-issue issues))))))
 
 (defun fstar-subp--start-syntax-check (_checker callback)
   "Start a light syntax check; pass results to CALLBACK."

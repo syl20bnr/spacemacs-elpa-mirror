@@ -18,7 +18,7 @@
 
 ;; Author: Masanao Igarashi <syoux2@gmail.com>
 ;; Keywords: org, rst, reST, reStructuredText
-;; Package-Version: 20170219.2052
+;; Package-Version: 20170418.758
 ;; Version: 0.2
 ;; URL: https://github.com/masayuko/ox-rst
 ;; Package-Requires: ((emacs "24.4") (org "8.2.4"))
@@ -313,13 +313,6 @@ Empty lines are not indented."
   (when (stringp s)
     (replace-regexp-in-string
      "\\(^\\)\\(?:.*\\S-\\)" (make-string width ? ) s nil nil 1)))
-
-
-(defun org-rst--has-caption-p (element _info)
-  "Non-nil when ELEMENT has a caption affiliated keyword.
-INFO is a plist used as a communication channel.  This function
-is meant to be used as a predicate for `org-export-get-ordinal'."
-  (org-element-property :caption element))
 
 
 (defun org-rst--make-attribute-string (attributes)
