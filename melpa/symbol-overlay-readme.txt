@@ -7,20 +7,21 @@ package `highlight-symbol'.  The fundamental difference is that in
 
 Advantages
 
-In `symbol-overlay', `overlay-put' is much faster than the traditional
-highlighting method `font-lock' especially in a large buffer, or even a
-less-than-100-lines small buffer of major-mode with complicated keywords
-syntax,like haskell-mode.  Besides, all the overlays of each symbol are
-sequentially stored in an alist `symbol-overlay-keywords-alist', from which
-the number of occurrences can be immediately obtained.  While in
-`highlight-symbol', counting the number occurrences would call the function
-`how-many' twice, causing extra costs.
+When highlighting symbols in a buffer of regular size and language,
+`overlay-put' behaves as fast as the traditional Highlighting method
+`font-lock'.  However, for a buffer of major-mode with complicated keywords
+syntax, like haskell-mode, `font-lock' is quite slow even the buffer is less
+than 100 lines.  Besides, when counting the number of highlighted
+occurrences, `highlight-symbol' will call the function `how-many' twice,
+which could also result in an unpleasant delay in a large buffer.  Those
+problems don't exist in `symbol-overlay'.
 
-When highlighting symbols with overlays, **an auto-activated overlay-inside
-keymap** will enable you to call various useful commands with **a single
-keystroke**.
+When putting overlays on symbols, an auto-activated overlay-inside keymap
+will enable you to call various useful commands with a single keystroke.
 
-Toggle overlays of all occurrences of symbol at point: `symbol-overlay-put'
+Toggle all overlays of symbol at point: `symbol-overlay-put'
+Copy symbol at point: `symbol-overlay-save-symbol'
+Jump back to the position before a recent jump: `symbol-overlay-echo-mark'
 Remove all highlighted symbols in the buffer: `symbol-overlay-remove-all'
 Jump between locations of symbol at point: `symbol-overlay-jump-next' &
 `symbol-overlay-jump-prev'
