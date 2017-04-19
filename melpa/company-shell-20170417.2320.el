@@ -1,13 +1,13 @@
 ;;; company-shell.el --- Company mode backend for shell functions
 
-;; Copyright (C) 2015 Alexander Miller
+;; Copyright (C) 2017 Alexander Miller
 
 ;; Author: Alexander Miller <alexanderm@web.de>
 ;; Package-Requires: ((company "0.8.12") (dash "2.12.0") (cl-lib "0.5"))
-;; Package-Version: 20161128.953
+;; Package-Version: 20170417.2320
 ;; Homepage: https://github.com/Alexander-Miller/company-shell
-;; Version: 1.1
-;; Keywords: company, shell
+;; Version: 1.0
+;; Keywords: company, shell, auto-completion
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -34,48 +34,70 @@
 (require 'cl-lib)
 (require 'subr-x)
 
+(defgroup company-shell nil
+  "Company mode backend for shell functions."
+  :group 'company
+  :prefix "company-shell-"
+  :link '(url-link :tag "Repository" "https://github.com/Alexander-Miller/company-shell"))
+
 (defvar company-shell--cache nil
-  "Cache of all possible $PATH completions. Automatically built when nil. Invoke `company-shell-rebuild-cache' to rebuild manually.")
+  "Cache of all possible $PATH completions. Automatically built when nil.
+ Invoke `company-shell-rebuild-cache' to rebuild manually.")
 
 (defvar company-shell--fish-cache nil
-  "Cache of all possible fish shell function completions. Automatically built when nil. Invoke `company-shell-rebuild-cache' to rebuild manually.")
+  "Cache of all possible fish shell function completions. Automatically
+built when nil. Invoke `company-shell-rebuild-cache' to rebuild manually.")
 
-(defvar company-shell-delete-duplicates t
-  "If non-nil the list of completions will be purged of duplicates. Duplicates in this context means any two
-string-equal entries, regardless where they have been found. This would prevent a completion candidate
-appearing twice because it is found in both /usr/bin/ and /usr/local/bin.
+(defcustom company-shell-delete-duplicates t
+  "If non-nil the list of completions will be purged of duplicates. Duplicates
+in this context means any two string-equal entries, regardless where they have
+been found. This would prevent a completion candidate appearing twice because
+it is found in both /usr/bin/ and /usr/local/bin.
 
-For a change to this variable to take effect the cache needs to be rebuilt via `company-shell-rebuild-cache'.")
+For a change to this variable to take effect the cache needs to be rebuilt
+via `company-shell-rebuild-cache'."
+  :type 'boolean
+  :group 'company-shell)
 
-(defvar company-shell-modes '(sh-mode fish-mode shell-mode eshell-mode)
-  "List of major modes where `company-shell' will be providing completions if it is part of `company-backends'.
-All modes not on this list will be ignored. Set value to nil to enable company-shell regardless of current major-mode.")
+(defcustom company-shell-modes '(sh-mode fish-mode shell-mode eshell-mode)
+  "List of major modes where `company-shell' will be providing completions if it
+is part of `company-backends'. All modes not on this list will be ignored. Set
+value to nil to enable company-shell regardless of current major-mode."
+  :type 'list
+  :group 'company-shell)
 
-(defvar company-fish-shell-modes '(fish-mode shell-mode)
-  "List of major modes where `company-fish-shell' will be providing completions if it is part of `company-backends'.
-All modes not on this list will be ignored. Set value to nil to enable company-fish-shell regardless of current major-mode.")
+(defcustom company-fish-shell-modes '(fish-mode shell-mode)
+  "List of major modes where `company-fish-shell' will be providing completions
+if it is part of `company-backends'. All modes not on this list will be ignored.
+Set value to nil to enable company-fish-shell regardless of current major-mode."
+  :type 'list
+  :group 'company-shell)
 
-(defvar company-shell-use-help-arg nil
+(defcustom company-shell-use-help-arg nil
   "SETTING THIS TO t IS POTENTIALLY UNSAFE.
 
-If non-nil company-(fish)-shell will try and find a doc-string by running `arg --help'
-if `man arg' did not produce any valid results. This is not completely safe since
-company-shell does not and can not know whether it is safe to run a command in this
-fashion. Some applications may simply ignore or misinterpret the command flag, with
-unpredictable results. Usually this just means that instead of any actual documentation
-you'll see an error message telling you the program doesn't know what to do with the
---help arg or that it was started with invalid input. In rare cases a program may simple
-ignore the --help arg and directly spawn a GUI like xfce4-notes-settings does.
+If non-nil company-(fish)-shell will try and find a doc-string by running
+`arg --help'if `man arg' did not produce any valid results. This is not
+completely safe since company-shell does not and can not know whether it is
+safe to run a command in this fashion. Some applications may simply ignore or
+misinterpret the command flag, with unpredictable results. Usually this just
+means that instead of any actual documentation you'll see an error message
+telling you the program doesn't know what to do with the --help arg or that
+it was started with invalid input. In rare cases a program may simple ignore
+the --help arg and directly spawn a GUI like xfce4-notes-settings does.
 
-To mitigate any such issues company-shell will run the --help attempt on a timer of
-1 second. This is more than enough to fetch the doc output if it is available, but will
-quickly close any process that may accidentally have been spawned. In addition the command
-will run in a restricted shell (via $(which sh) --restricted) to further avoid any unwanted
-side effects.
+To mitigate any such issues company-shell will run the --help attempt on a timer
+of 1 second. This is more than enough to fetch the doc output if it is available,
+but will quickly close any process that may accidentally have been spawned. In
+addition the command will run in a restricted shell (found via
+$(which sh) --restricted) to further avoid any unwanted side effects.
 
-Despite these precautions company-shell will nonetheless need to sometimes run completely unknown
-binaries, which is why this option is turned off by default. You need to consciously enable
-it in the understanding that you do this AT YOUR OWN RISK.")
+Despite these precautions company-shell will nonetheless need to sometimes run
+completely unknown binaries, which is why this option is turned off by default.
+You need to consciously enable it in the understanding that you do this AT
+YOUR OWN RISK."
+  :type 'boolean
+  :group 'company-shell)
 
 (defun company-shell--fetch-candidates ()
   (unless company-shell--cache (company-shell--build-cache))
@@ -103,14 +125,13 @@ it in the understanding that you do this AT YOUR OWN RISK.")
 (defun company-shell--build-fish-cache ()
   (when (executable-find "fish")
     (setq company-shell--fish-cache
-          (append
-           (-> (shell-command-to-string "fish -c \"functions -a\"")
-               (split-string "\n")
-               (sort 'string-lessp))
-           (-> "fish -c \"builtin -n\""
-               (shell-command-to-string)
-               (split-string "\n")
-               (sort #'string-lessp))))))
+          (-flatten (--map
+                     (-> it
+                         (format "fish -c \"%s\"")
+                         (shell-command-to-string)
+                         (split-string "\n")
+                         (sort #'string-lessp))
+                     '("functions -a" "builtin -n"))))))
 
 (defun company-shell--prefix (mode-list)
   (when (or (null mode-list)

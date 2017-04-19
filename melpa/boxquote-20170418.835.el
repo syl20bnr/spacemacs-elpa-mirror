@@ -2,8 +2,8 @@
 ;; Copyright 1999-2017 by Dave Pearson <davep@davep.org>
 
 ;; Author: Dave Pearson <davep@davep.org>
-;; Version: 2.0
-;; Package-Version: 20170329.406
+;; Version: 2.1
+;; Package-Version: 20170418.835
 ;; Keywords: quoting
 ;; URL: https://github.com/davep/boxquote.el
 ;; Package-Requires: ((cl-lib "0.5"))
@@ -64,56 +64,56 @@
   :prefix "boxquote-")
 
 (defcustom boxquote-top-and-tail "----"
-  "*Text that will be used at the top and tail of the box."
+  "Text that will be used at the top and tail of the box."
   :type  'string
   :group 'boxquote)
 
 (defcustom boxquote-top-corner ","
-  "*Text used for the top corner of the box."
+  "Text used for the top corner of the box."
   :type  'string
   :group 'boxquote)
 
 (defcustom boxquote-bottom-corner "`"
-  "*Text used for the bottom corner of the box."
+  "Text used for the bottom corner of the box."
   :type  'string
   :group 'boxquote)
 
 (defcustom boxquote-side "| "
-  "*Text used for the side of the box."
+  "Text used for the side of the box."
   :type  'string
   :group 'boxquote)
 
 (defcustom boxquote-title-format "[ %s ]"
-  "*Format string to use when creating a box title."
+  "Format string to use when creating a box title."
   :type  'string
   :group 'boxquote)
 
 (defcustom boxquote-title-files t
-  "*Should a `boxquote-insert-file' title the box with the file name?"
+  "Should a `boxquote-insert-file' title the box with the file name?"
   :type '(choice
           (const :tag "Title the box with the file name" t)
           (const :tag "Don't title the box with the file name" nil))
   :group 'boxquote)
 
 (defcustom boxquote-file-title-function #'file-name-nondirectory
-  "*Function to apply to a file's name when using it to title a box."
+  "Function to apply to a file's name when using it to title a box."
   :type  'function
   :group 'boxquote)
 
 (defcustom boxquote-title-buffers t
-  "*Should a `boxquote-insert-buffer' title the box with the buffer name?"
+  "Should a `boxquote-insert-buffer' title the box with the buffer name?"
   :type '(choice
           (const :tag "Title the box with the buffer name" t)
           (const :tag "Don't title the box with the buffer name" nil))
   :group 'boxquote)
 
 (defcustom boxquote-buffer-title-function #'identity
-  "*Function to apply to a buffer's name when using it to title a box."
+  "Function to apply to a buffer's name when using it to title a box."
   :type  'function
   :group 'boxquote)
 
 (defcustom boxquote-region-hook nil
-  "*Hooks to perform when on a region prior to boxquoting.
+  "Hooks to perform when on a region prior to boxquoting.
 
 Note that all forms of boxquoting use `boxquote-region' to create the
 boxquote. Because of this any hook you place here will be invoked by any of
@@ -122,17 +122,17 @@ the boxquoting functions."
   :group 'boxquote)
 
 (defcustom boxquote-yank-hook nil
-  "*Hooks to perform on the yanked text prior to boxquoting."
+  "Hooks to perform on the yanked text prior to boxquoting."
   :type  'hook
   :group 'boxquote)
 
 (defcustom boxquote-insert-file-hook nil
-  "*Hooks to perform on the text from an inserted file prior to boxquoting."
+  "Hooks to perform on the text from an inserted file prior to boxquoting."
   :type  'hook
   :group 'boxquote)
 
 (defcustom boxquote-kill-ring-save-title #'buffer-name
-  "*Function for working out the title for a `boxquote-kill-ring-save'.
+  "Function for working out the title for a `boxquote-kill-ring-save'.
 
 The string returned from this function will be used as the title for a
 boxquote when the saved text is yanked into a buffer with \\[boxquote-yank].
@@ -152,27 +152,27 @@ the article you'd copied the text from."
   :group 'boxquote)
 
 (defcustom boxquote-describe-function-title-format "C-h f %s RET"
-  "*Format string to use when formatting a function description box title."
+  "Format string to use when formatting a function description box title."
   :type  'string
   :group 'boxquote)
 
 (defcustom boxquote-describe-variable-title-format "C-h v %s RET"
-  "*Format string to use when formatting a variable description box title."
+  "Format string to use when formatting a variable description box title."
   :type  'string
   :group 'boxquote)
 
 (defcustom boxquote-describe-key-title-format "C-h k %s"
-  "*Format string to use when formatting a key description box title."
+  "Format string to use when formatting a key description box title."
   :type  'string
   :group 'boxquote)
 
 (defcustom boxquote-where-is-title-format "C-h w %s RET"
-  "*Format string to use when formatting a `where-is' description box title."
+  "Format string to use when formatting a `where-is' description box title."
   :type  'string
   :group 'boxquote)
 
 (defcustom boxquote-where-is-body-format "%s is on %s"
-  "*Format string to use when formatting a `where-is' description."
+  "Format string to use when formatting a `where-is' description."
   :type  'string
   :group 'boxquote)
 
@@ -523,10 +523,10 @@ prompted for a buffer. The key defintion used will be taken from that buffer."
                               (regexp-quote boxquote-bottom-corner)
                               "]" boxquote-top-and-tail))
                 (lines (concat "^" (regexp-quote boxquote-side))))
-            (loop while (< (point) (point-max))
-                  if (looking-at ends)  do (kill-line t)
-                  if (looking-at lines) do (delete-char 2)
-                  do (forward-line)))
+            (cl-loop while (< (point) (point-max))
+               if (looking-at ends)  do (kill-line t)
+               if (looking-at lines) do (delete-char 2)
+               do (forward-line)))
         (error "I can't see a box here")))))
 
 ;;;###autoload

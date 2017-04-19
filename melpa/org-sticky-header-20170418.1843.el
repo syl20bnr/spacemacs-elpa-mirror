@@ -2,9 +2,9 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-sticky-header
-;; Package-Version: 20170413.1844
+;; Package-Version: 20170418.1843
 ;; Version: 0.1.0-pre
-;; Package-Requires: ((emacs "24.4"))
+;; Package-Requires: ((emacs "24.4") (dash "2.13.0") (s "1.10.0"))
 ;; Keywords: hypermedia, outlines, Org
 
 ;;; Commentary:
@@ -42,6 +42,9 @@
 
 ;;; Code:
 
+(require 'dash)
+(require 's)
+
 (defvar org-sticky-header-old-hlf nil
   "Value of the header line when entering org-sticky-header mode.")
 
@@ -51,10 +54,41 @@
            (org-sticky-header--fetch-stickyline)))
   "The header line format used by stickyfunc mode.")
 
+(defgroup org-sticky-header nil
+  "Options for `org-sticky-header-mode'."
+  :group 'org)
+
 (defcustom org-sticky-header-full-path nil
   "Show the full outline path."
-  :type 'boolean
-  :group 'org)
+  :type '(radio (const :tag "Show only current heading" nil)
+                (const :tag "Show full outline path to current heading" full)
+                (const :tag "Show full outline path, but reversed so current heading is first" reversed)))
+
+(defcustom org-sticky-header-always-show-header t
+  "Show the header even when the top line of the buffer is a heading.
+When this is on, and the top line of the buffer is a heading,
+you'll see the heading shown twice: once in the header and once
+in the buffer.  But since the header can look different than the
+heading (i.e. it can show the full path), it shouldn't
+necessarily disappear. If you use full-path display, you probably
+want this on, but if you only display the current heading, you
+might prefer to turn it off.  "
+  :type 'boolean)
+
+(defcustom org-sticky-header-prefix "   "
+  "Prefix to display before heading in header line.
+You can adjust this to help align the heading according to your
+face settings.  (It would be nice to automate this.  Suggestions
+welcome.)"
+  :type 'string)
+
+(defcustom org-sticky-header-outline-path-separator "/"
+  "String displayed between elements of outline paths."
+  :type 'string)
+
+(defcustom org-sticky-header-outline-path-reversed-separator "\\"
+  "String displayed between elements of reversed outline paths."
+  :type 'string)
 
 (defun org-sticky-header--fetch-stickyline ()
   "Make the heading at the top of the current window sticky.
@@ -62,14 +96,21 @@ Capture its heading line, and place it in the header line.
 If there is no heading, disable the header line."
   (save-excursion
     (goto-char (window-start))
-    (unless (org-at-heading-p)
+    (when (or org-sticky-header-always-show-header
+              (not (org-at-heading-p)))
       (org-back-to-heading)
-      ;; TODO: 3 spaces seems to be almost right, but it's still not
-      ;; perfect, and it's probably not universally right.  Something
-      ;; related to org-indent might be good.
-      (if org-sticky-header-full-path
-          (org-format-outline-path (org-get-outline-path t) nil "   ")
-        (concat "   " (buffer-substring (line-beginning-position) (line-end-position)))))))
+      (pcase org-sticky-header-full-path
+        ('nil (concat org-sticky-header-prefix (org-get-heading t t)))
+        ('full (concat org-sticky-header-prefix (org-format-outline-path (org-get-outline-path t) (window-width) nil
+                                                                         org-sticky-header-outline-path-separator)))
+        ('reversed (concat org-sticky-header-prefix
+                           ;; Using "🐱" "CAT FACE" as separator character. It needs to be a single character,
+                           ;; otherwise it could get truncated and cause splitting to fail, and the chances of this
+                           ;; character being in a heading is low enough...right?
+                           (->> (org-format-outline-path (org-get-outline-path t) (window-width) nil "🐱")
+                                (s-split "🐱")
+                                (nreverse)
+                                (s-join org-sticky-header-outline-path-reversed-separator))))))))
 
 ;;;###autoload
 (define-minor-mode org-sticky-header-mode

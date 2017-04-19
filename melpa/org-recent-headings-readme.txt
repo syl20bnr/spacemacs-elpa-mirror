@@ -14,7 +14,10 @@ This package makes use of handy functions and settings in
 
 Installation:
 
-Put this file in your `load-path', then in your init file:
+Install from MELPA, or manually by putting this file in your
+`load-path'.  Then put this in your init file:
 
 (require 'org-recent-headings)
 (org-recent-headings-mode)
+
+You may also install Helm and/or Ivy, but they aren't required.

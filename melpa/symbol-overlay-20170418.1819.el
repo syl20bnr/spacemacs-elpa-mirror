@@ -4,7 +4,7 @@
 
 ;; Author: wolray <wolray@foxmail.com>
 ;; Version: 2.5
-;; Package-Version: 20170418.507
+;; Package-Version: 20170418.1819
 ;; URL: https://github.com/wolray/symbol-overlay/
 ;; Keywords: faces, matching
 ;; Package-Requires: ((emacs "24.3"))
@@ -326,6 +326,7 @@ DIR must be 1 or -1."
 If COUNT is non-nil, count at the end."
   (unless (minibufferp)
     (let* ((case-fold-search nil)
+	   (inhibit-modification-hooks t)
 	   (symbol (symbol-overlay-get-symbol))
 	   (new (substring symbol 3 -3)))
       (beginning-of-thing 'symbol)

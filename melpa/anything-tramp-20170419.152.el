@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-anything-tramp
-;; Package-Version: 20170412.445
-;; Version: 0.3.3
+;; Package-Version: 20170419.152
+;; Version: 0.4.3
 ;; Package-Requires: ((emacs "24.3") (anything "1.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -34,7 +34,7 @@
 (require 'cl-lib)
 
 (defgroup anything-tramp nil
-  "Tramp with anything for server and docker"
+  "Tramp with anything for ssh server and docker"
   :group 'anything)
 
 (defcustom anything-tramp-docker-user nil
@@ -74,6 +74,7 @@
 				(push
 				 (concat "/docker:" anything-tramp-docker-user "@" (car info) ":/")
 				 hosts)))))
+    (push "/sudo:root@localhost:/" hosts)
     (reverse hosts)))
 
 (defun anything-tramp-open (path)

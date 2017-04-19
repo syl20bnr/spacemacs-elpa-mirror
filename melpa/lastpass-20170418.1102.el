@@ -4,7 +4,7 @@
 
 ;; Author: Petter Storvik
 ;; URL: https://github.com/storvik/lastpass
-;; Package-Version: 20170415.1008
+;; Package-Version: 20170418.1102
 ;; Version: 0.2.0
 ;; Created: 2017-02-17
 ;; Package-Requires: ((emacs "24.4") (seq "1.9") (cl-lib "0.5"))
@@ -249,7 +249,7 @@ If run interactively PRINT-MESSAGE gets set and password is printed to minibuffe
 
 ;;;###autoload
 (defun lastpass-getfield (field account &optional print-message)
-  "Get custom field associated with ACCOUNT.
+  "Get custom FIELD associated with ACCOUNT.
 If run interactively PRINT-MESSAGE gets set and custom field is printed to minibuffer."
   (interactive "MLastPass account name: \np")
   (unless (equal (nth 0 (lastpass-runcmd "status")) 0)

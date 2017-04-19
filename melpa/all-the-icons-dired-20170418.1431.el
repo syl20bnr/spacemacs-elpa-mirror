@@ -4,8 +4,8 @@
 
 ;; Author: jtbm37
 ;; Version: 1.0
-;; Package-Version: 20170210.811
-;; Keywords: icons, dired
+;; Package-Version: 20170418.1431
+;; Keywords: files icons dired
 ;; Package-Requires: ((emacs "24.4") (all-the-icons "2.2.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -53,7 +53,8 @@
   (when (and (not all-the-icons-dired-displayed) dired-subdir-alist)
     (setq-local all-the-icons-dired-displayed t)
     (let ((inhibit-read-only t)
-	  (remote-p (tramp-tramp-file-p default-directory)))
+	  (remote-p (and (fboundp 'tramp-tramp-file-p)
+                         (tramp-tramp-file-p default-directory))))
       (save-excursion
 	(goto-char (point-min))
 	(while (not (eobp))
@@ -78,7 +79,7 @@
 	  (forward-line 1))))))
 
 (defun all-the-icons-dired--reset (&optional _arg _noconfirm)
-  "Functions used as advice when redisplaying buffer"
+  "Functions used as advice when redisplaying buffer."
   (setq-local all-the-icons-dired-displayed nil))
 
 ;;;###autoload

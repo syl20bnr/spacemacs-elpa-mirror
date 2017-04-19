@@ -3,7 +3,7 @@
 ;; Copyright (C) 2009  Free Software Foundation, Inc.
 ;; Author:  Mihai Bazon <mihai.bazon@gmail.com>
 ;; Version: 0.1.0
-;; Package-Version: 20161209.128
+;; Package-Version: 20170418.1129
 ;; URL: http://mihai.bazon.net/projects/editing-javascript-with-emacs-js2-mode/js2-highlight-vars-mode
 ;; Package-Requires: ((emacs "24.4") (js2-mode "20150908"))
 
@@ -146,22 +146,24 @@
         (ovl (make-overlay 1 1))
         (all nil)
         doit)
-    (overlay-put ovl 'face 'highlight)
-    (dolist (pos (mapcar (lambda(pos)
-                           (let ((m (make-marker)))
-                             (set-marker m pos))) js2--highlight-vars-tokens))
-      (goto-char pos)
-      (move-overlay ovl pos (+ pos len))
-      (setq doit (if all
-                     ?y
-                   (read-char "Replace this occurrence? (y/n/!)")))
-      (when (= doit ?!)
-        (setq all t
-              doit ?y))
-      (when (= doit ?y)
-        (insert new-name)
-        (delete-char len)))
-    (delete-overlay ovl)))
+    (unwind-protect
+        (progn
+          (overlay-put ovl 'face 'highlight)
+          (dolist (pos (mapcar (lambda(pos)
+                                 (let ((m (make-marker)))
+                                   (set-marker m pos))) js2--highlight-vars-tokens))
+            (goto-char pos)
+            (move-overlay ovl pos (+ pos len))
+            (setq doit (if all
+                           ?y
+                         (read-char "Replace this occurrence? (y/n/!)")))
+            (when (= doit ?!)
+              (setq all t
+                    doit ?y))
+            (when (= doit ?y)
+              (insert new-name)
+              (delete-char len))))
+      (delete-overlay ovl))))
 
 (defun js2--unhighlight-vars (&rest ignore)
   (setq js2--highlight-vars-tokens nil
