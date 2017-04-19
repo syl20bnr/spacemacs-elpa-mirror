@@ -4,7 +4,7 @@
 
 ;; Author: Aurélien Aptel <aaptel@suse.com>
 ;; URL: http://github.com/aaptel/smblog-mode
-;; Package-Version: 20160317.430
+;; Package-Version: 20170419.321
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "24.3"))
 
@@ -613,6 +613,7 @@ ACTION can be one of `collapse' or `expand'. Anything else will toggle the curre
 (define-derived-mode smblog-reqs-mode special-mode "Smblog Reqs"
   "Major mode for viewing smbd requests.
 \\{smblog-reqs-mode-map}"
+  (buffer-disable-undo)
   (define-key smblog-reqs-mode-map (kbd "n")   'smblog-next-req)
   (define-key smblog-reqs-mode-map (kbd "p")   'smblog-prev-req)
   (define-key smblog-reqs-mode-map (kbd "RET") 'smblog-jump-to-req)
@@ -623,6 +624,7 @@ ACTION can be one of `collapse' or `expand'. Anything else will toggle the curre
 (define-derived-mode smblog-mode special-mode "Smblog"
   "Major mode for viewing samba log files.
 \\{smblog-mode-map}"
+  (buffer-disable-undo)
   (define-key smblog-mode-map (kbd "n")   'smblog-next-msg)
   (define-key smblog-mode-map (kbd "p")   'smblog-prev-msg)
   (define-key smblog-mode-map (kbd "s")   'smblog-goto-src)

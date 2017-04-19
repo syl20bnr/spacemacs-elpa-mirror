@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20170410.700
+;; Package-Version: 20170419.441
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((flycheck "0.30") (emacs "25.1") (dash "2.13.0"))
@@ -104,8 +104,9 @@ Customize as a file or directory variable."
   "Get the root directory for the project (if
 `dante-project-root' is set as a variable, return that, otherwise
 look for a .cabal file, or use the current dir)."
-  (or dante-project-root
-      (file-name-directory (or (dante-cabal-find-file) (dante-buffer-file-name)))))
+  (file-name-as-directory
+                (or dante-project-root
+                    (file-name-directory (or (dante-cabal-find-file) (dante-buffer-file-name))))))
 
 (defun dante-repl-by-file (root files cmdline)
   (cl-some (lambda (file) (when (file-exists-p (concat root file)) cmdline)) files))

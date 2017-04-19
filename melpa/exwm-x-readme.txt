@@ -6,11 +6,11 @@ Exwm-X is an extension of exwm (emacs x window manager), which can
 make exwm easier for Mouse-Control-People to use.
 
 ** Feature
-1. Shortcuts, toolbar and other window operate buttons in mode-line.
+1. Window operate buttons in mode-line.
 2. Move or resize a floating-window without press WIN key.
 3. Jump-or-exec, which will switch to an exist app instead of launch it again.
 
-** Pictures and videos
+** Pictures
 1. Tilling windows
 
    [[./snapshots/tilling-window.png]]
@@ -18,11 +18,6 @@ make exwm easier for Mouse-Control-People to use.
 2. Floating windows
 
    [[./snapshots/floating-window.png]]
-
-3. Exwm-X videos
-
-   [[https://github.com/tumashu/exwm-x-videos]]
-
 
 ** Install
 1. Config melpa repository, please see：http://melpa.org/#/getting-started
@@ -34,9 +29,6 @@ make exwm easier for Mouse-Control-People to use.
 You should edit "~/.initrc" file or "~/.xsession" file like below example:
 
 #+BEGIN_EXAMPLE
-# The below line make sure "exwm-x-example" package correct loaded,
-# don't delete!
-export exwm_x_enable="yes"
 
 # Emacs X input method (exim) setting
 # export XMODIFIERS=@im=exim
@@ -44,19 +36,40 @@ export exwm_x_enable="yes"
 # export QT_IM_MODULE=xim
 # export CLUTTER_IM_MODULE=xim
 
-# xhost +
+xhost +SI:localuser:$USER
 
-exec dbus-launch --exit-with-session emacs
+# Fallback cursor
+# xsetroot -cursor_name left_ptr
+
+# Keyboard repeat rate
+# xset r rate 200 60
+
+exec dbus-launch --exit-with-session emacs --eval '(cond ((file-exists-p "~/.exwm") (load-file "~/.exwm")) ((not (featurep (quote exwm))) (require (quote exwm)) (require (quote exwm-config)) (exwm-config-default) (message "exwm configuration not found. Falling back to default configuration...")))'
 #+END_EXAMPLE
 
-*** Edit emacs configure
-Add the below two lines to your emacs configure file:
+*** Make "~/.initrc" or "~/.xsession" excutable
 
 #+BEGIN_EXAMPLE
-(require 'exwm-x)
-(require 'exwm-x-example) ;; Adjust this line.
+chmod a+x ~/.xsession
 #+END_EXAMPLE
 
-Note: Package "exwm-x-example" is Exwm-X buildin example, user can use it to test Exwm-X's
+or
+
+#+BEGIN_EXAMPLE
+chmod a+x ~/.initrc
+#+END_EXAMPLE
+
+*** Edit "~/.exwm"
+Add the below lines to your emacs configure file:
+
+#+BEGIN_EXAMPLE
+(add-to-list 'load-path "/path/to/exwm-x")
+(require 'exwm)
+(require 'exwm-x)
+(require 'exwmx-xfce)
+(require 'exwmx-example) ;; Adjust this line.
+#+END_EXAMPLE
+
+Note: Package "exwmx-example" is Exwm-X buildin example, user can use it to test Exwm-X's
 features. If it doesn't suit for your need, just copy and paste its useful pieces
 to your own exwm config :-)

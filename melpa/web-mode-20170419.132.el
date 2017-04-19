@@ -3,8 +3,8 @@
 
 ;; Copyright 2011-2017 François-Xavier Bois
 
-;; Version: 14.1.13
-;; Package-Version: 20170410.1335
+;; Version: 14.1.14
+;; Package-Version: 20170419.132
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; Package-Requires: ((emacs "23.1"))
@@ -25,7 +25,7 @@
 
 ;;---- CONSTS ------------------------------------------------------------------
 
-(defconst web-mode-version "14.1.13"
+(defconst web-mode-version "14.1.14"
   "Web Mode version.")
 
 ;;---- GROUPS ------------------------------------------------------------------
@@ -7141,6 +7141,10 @@ another auto-completion with different ac-sources (e.g. ac-php)")
                  (web-mode-is-prefixed-string pos "gql"))
             (setq offset (web-mode-relayql-indentation pos "gql"))
             )
+           ((and is_js
+                 (web-mode-is-prefixed-string pos "graphql"))
+            (setq offset (web-mode-relayql-indentation pos "graphql"))
+            )
            (t
             (setq offset nil))
            ) ;cond
@@ -11557,7 +11561,7 @@ Prompt user if TAG-NAME isn't provided."
     (if (null pos) pos (cons pos dot-pos))
     ))
 
-;; Relay.QL , gql
+;; Relay.QL , gql, graphql
 (defun web-mode-is-prefixed-string (pos prefix-regexp)
   (let (beg)
     (cond
