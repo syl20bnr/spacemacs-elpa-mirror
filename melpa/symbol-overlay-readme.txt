@@ -28,6 +28,8 @@ Jump between locations of symbol at point: `symbol-overlay-jump-next' &
 Jump to the definition of symbol at point: `symbol-overlay-jump-to-definition'
 Switch to the closest symbol highlighted nearby:
 `symbol-overlay-switch-forward' & `symbol-overlay-switch-backward'
+Toggle overlays to be showed in buffer or only in scope:
+`symbol-overlay-toggle-in-scope'
 Query replace symbol at point: `symbol-overlay-query-replace'
 Rename symbol at point on all its occurrences: `symbol-overlay-rename'
 
