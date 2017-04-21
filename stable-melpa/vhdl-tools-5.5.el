@@ -8,15 +8,15 @@
 ;; Original author:  wandad guscheh <wandad.guscheh@fh-hagenberg.at>
 ;; Author:           Cayetano Santos
 ;; Keywords: vhdl
-;; Package-Version: 20170315.1525
+;; Package-Version: 5.5
 
 ;; Filename: vhdl-tools.el
 ;; Description: Utilities for navigating vhdl sources.
 ;; URL: https://csantosb.github.io/vhdl-tools/
 ;; Keywords: convenience
 ;; Compatibility: GNU Emacs >= 25.1
-;; Version: 5.4
-;; Package-Requires: ((ggtags "0.8.12") (emacs "25.1") (outshine "2.0") (helm "2.5.3"))
+;; Version: 5.5
+;; Package-Requires: ((ggtags "0.8.12") (emacs "25.1") (outshine "2.0") (helm "2.6.0"))
 
 ;;; License:
 ;;
@@ -188,26 +188,6 @@ Needed to determine end of name."
 
 ;; Ancillary functions
 
-(defun vhdl-tools-vorg-tangle-header-argument ()
-  "To be used as def argument to `tangle' in source block header."
-  (if (let ((mytags (org-get-tags-at (point) t)))
-	(or (member vhdl-tools-vorg-tangle-header-argument-var mytags)
-	    (null mytags)))
-      (format "%s.vhd" (file-name-base
-			(buffer-file-name))) "no"))
-
-(defun vhdl-tools-vorg-prologue-header-argument ()
-  "To be used as def argument to `prologue' in source block header."
-  (save-excursion
-    (org-back-to-heading nil)
-    (let ((heading (car (cdr (org-element-headline-parser (point))))))
-      (format "\n-- %s %s\n\n"
-	      (if (> (plist-get heading ':level) 1)
-		  (make-string (- (plist-get heading ':level) 1)
-			       ?*)
-		(make-string 1 ?*))
-	      (plist-get heading ':raw-value)))))
-
 (defun vhdl-tools--cleanup-tangled ()
   "Make invisible reference comments after tangling."
   (interactive)
@@ -272,6 +252,11 @@ To determine end of word, vhdl-tools-allowed-chars-in-signal is used."
 		(call-interactively 'helm-semantic-or-imenu)))))
 
 (defun vhdl-tools--post-jump-function ()
+  "To be called after jumping to recenter, indent, etc."
+  (recenter-top-bottom vhdl-tools-recenter-nb-lines)
+  (back-to-indentation))
+
+(defun vhdl-tools-vorg--post-jump-function ()
   "To be called after jumping to recenter, indent, etc."
   (recenter-top-bottom vhdl-tools-recenter-nb-lines)
   (back-to-indentation))
@@ -546,7 +531,7 @@ When no symbol at point, move point to indentation."
 		  (minibuffer-with-setup-hook
 		      (lambda ()
 			;; (insert (format "^.* : \\(entity work.\\)*%s$" ,(vhdl-tools--get-name)))
-			(insert (format "^.*: %s$" ,(vhdl-tools--get-name))))
+			(insert (format "^.*: %s$ vhd" ,(vhdl-tools--get-name))))
 		    (call-interactively 'helm-grep-do-git-grep (vc-find-root (buffer-file-name) ".git") nil))))
       ;; search, when nil, do nothing
       (when vhdl-tools-thing
@@ -562,7 +547,15 @@ When no symbol at point, move point to indentation."
 
 ;;;; Go Forward
 
+;;;###autoload
 (defun vhdl-tools-smcn-next()
+  (interactive)
+  (smartscan-symbol-go-forward)
+  (vhdl-tools--fold)
+  (recenter-top-bottom vhdl-tools-recenter-nb-lines))
+
+;;;###autoload
+(defun vhdl-tools-vorg-smcn-next()
   (interactive)
   (smartscan-symbol-go-forward)
   (vhdl-tools--fold)
@@ -570,13 +563,19 @@ When no symbol at point, move point to indentation."
 
 ;;;; Go Backwards
 
+;;;###autoload
 (defun vhdl-tools-smcn-prev()
   (interactive)
   (smartscan-symbol-go-backward)
   (vhdl-tools--fold)
-  ;;(recenter)
   (recenter-top-bottom vhdl-tools-recenter-nb-lines))
 
+;;;###autoload
+(defun vhdl-tools-vorg-smcn-prev()
+  (interactive)
+  (smartscan-symbol-go-backward)
+  (vhdl-tools--fold)
+  (recenter-top-bottom vhdl-tools-recenter-nb-lines))
 
 ;;; Org / VHDL
 
@@ -586,54 +585,40 @@ When no symbol at point, move point to indentation."
 
 ;;;; VHDL to VOrg
 
-;; TODO: depending on `vhdl-tools-vorg-tangle-comments-link', jump to vOrg using old strategy
-
-;; (defun vhdl-tools-vorg-jump-to-vorg(arg)
-;;   "From vhdl file, jump to same line in vorg file."
-;;   (interactive "P")
-;;   (let ((myfile (format "%s.vorg" (file-name-base)))
-;; 	(myline (save-excursion
-;; 		  (back-to-indentation)
-;; 		  (set-mark-command nil)
-;; 		  (end-of-line)
-;; 		  (buffer-substring-no-properties (region-beginning)
-;; 						  (region-end)))))
-;;     (when (file-exists-p myfile)
-;;       (if (equal arg '(4))
-;; 	  (progn
-;; 	    (find-file myfile)
-;; 	    (beginning-of-buffer)
-;; 	    (search-forward myline nil t nil))
-;; 	(org-babel-tangle-jump-to-org))
-;;       (org-content 5)
-;;       (org-back-to-heading nil)
-;;       (org-show-subtree)
-;;       (search-forward myline nil t nil)
-;;       (recenter-top-bottom vhdl-tools-recenter-nb-lines)
-;;       (back-to-indentation)
-;;       (when (region-active-p) (keyboard-quit)))))
-
-
 ;;;###autoload
 (defun vhdl-tools-vorg-jump-to-vorg()
   "From `vhdl' file, jump to same line in `vorg' file."
   (interactive)
   (let ((myfile (format "%s.org" (file-name-base)))
-	(myline (save-excursion
-		  (back-to-indentation)
-		  (set-mark-command nil)
-		  (end-of-line)
-		  (buffer-substring-no-properties (region-beginning)
-						  (region-end)))))
-    (when (file-exists-p myfile)
-      (org-babel-tangle-jump-to-org)
-      (org-content 5)
-      (org-back-to-heading nil)
-      (org-show-subtree)
-      (search-forward myline nil t nil)
-      (recenter-top-bottom vhdl-tools-recenter-nb-lines)
-      (back-to-indentation)
-      (when (region-active-p) (keyboard-quit)))))
+	(myline (and (not vhdl-tools-vorg-tangle-comments-link)
+		     (save-excursion
+		       (back-to-indentation)
+		       (set-mark-command nil)
+		       (end-of-line)
+		       (buffer-substring-no-properties (region-beginning)
+						       (region-end))))))
+    (if (file-exists-p myfile)
+	(progn
+	  (if vhdl-tools-vorg-tangle-comments-link
+	      ;; use org feature
+	      (let (;; I avoid scanning too much files: I already know where the
+		    ;; related org file is.
+		    (org-id-search-archives nil)
+		    (org-agenda-files nil))
+		(org-babel-tangle-jump-to-org))
+	    ;; use custom search
+	    (progn
+	      (find-file myfile)
+	      (beginning-of-buffer)
+	      (search-forward myline nil t nil)))
+	  (org-content 5)
+	  (org-back-to-heading nil)
+	  (org-show-subtree)
+	  (search-forward myline nil t nil)
+	  (recenter-top-bottom vhdl-tools-recenter-nb-lines)
+	  (back-to-indentation)
+	  (when (region-active-p) (keyboard-quit)))
+      (message (format "no %s file exists" myfile)))))
 
 ;;;; VOrg to VHDL
 
@@ -733,6 +718,29 @@ Beautifies source code blocks before editing."
     (org-edit-src-save)
     (org-edit-src-exit)))
 
+;;;; Vorg Helper
+
+;; Ancillary functions
+
+(defun vhdl-tools-vorg-tangle-header-argument ()
+  "To be used as def argument to `tangle' in source block header."
+  (if (let ((mytags (org-get-tags-at (point) t)))
+	(or (member vhdl-tools-vorg-tangle-header-argument-var mytags)
+	    (null mytags)))
+      (format "%s.vhd" (file-name-base
+			(buffer-file-name))) "no"))
+
+(defun vhdl-tools-vorg-prologue-header-argument ()
+  "To be used as def argument to `prologue' in source block header."
+  (save-excursion
+    (org-back-to-heading nil)
+    (let ((heading (car (cdr (org-element-headline-parser (point))))))
+      (format "\n-- %s %s\n\n"
+	      (if (> (plist-get heading ':level) 1)
+		  (make-string (- (plist-get heading ':level) 1)
+			       ?*)
+		(make-string 1 ?*))
+	      (plist-get heading ':raw-value)))))
 
 ;;; Links
 ;;
@@ -839,10 +847,11 @@ Beautifies source code blocks before editing."
   ;; I move forward one char to force getting to next
   (forward-char)
   (re-search-forward outline-regexp)
-  (beginning-of-line)
+  ;; (beginning-of-line)
   (vhdl-tools--fold)
   (vhdl-tools--post-jump-function))
 
+;;;###autoload
 (defun vhdl-tools-vorg-headings-next()
   "Get to next heading in vorg buffer."
   (interactive)
@@ -850,7 +859,7 @@ Beautifies source code blocks before editing."
   (when vhdl-tools-manage-folding
     (outline-hide-sublevels 5)
     (org-show-entry)
-    (vhdl-tools--post-jump-function)))
+    (vhdl-tools-vorg--post-jump-function)))
 
 ;;;; Get to previous
 
@@ -861,10 +870,11 @@ Beautifies source code blocks before editing."
   ;; hack: no necessary in this case
   ;; (see vhdl-tools-headings-next)
   (re-search-backward outline-regexp)
-  (beginning-of-line)
+  ;; (beginning-of-line)
   (vhdl-tools--fold)
   (vhdl-tools--post-jump-function))
 
+;;;###autoload
 (defun vhdl-tools-vorg-headings-prev()
   "Get to next heading in vorg buffer."
   (interactive)
@@ -872,7 +882,7 @@ Beautifies source code blocks before editing."
   (when vhdl-tools-manage-folding
     (outline-hide-sublevels 5)
     (org-show-entry)
-    (vhdl-tools--post-jump-function)))
+    (vhdl-tools-vorg--post-jump-function)))
 
 
 ;;; Helm-imenu navigation
@@ -886,7 +896,8 @@ Beautifies source code blocks before editing."
     (set-buffer-modified-p t)
     (save-buffer)
     (call-interactively 'imenu)
-    (vhdl-tools--fold)))
+    (vhdl-tools--fold)
+    (vhdl-tools--post-jump-function)))
 
 ;;;; Instances
 
@@ -899,7 +910,8 @@ Beautifies source code blocks before editing."
     (set-buffer-modified-p t)
     (save-buffer)
     (vhdl-tools--imenu-with-initial-minibuffer "^Instance")
-    (vhdl-tools--fold)))
+    (vhdl-tools--fold)
+    (vhdl-tools--post-jump-function)))
 
 ;;;; Processes
 
@@ -912,7 +924,8 @@ Beautifies source code blocks before editing."
     (set-buffer-modified-p t)
     (save-buffer)
     (vhdl-tools--imenu-with-initial-minibuffer "^Process")
-    (vhdl-tools--fold)))
+    (vhdl-tools--fold)
+    (vhdl-tools--post-jump-function)))
 
 ;;;; Components
 
@@ -925,7 +938,8 @@ Beautifies source code blocks before editing."
     (set-buffer-modified-p t)
     (save-buffer)
     (vhdl-tools--imenu-with-initial-minibuffer "^Component")
-    (vhdl-tools--fold)))
+    (vhdl-tools--fold)
+    (vhdl-tools--post-jump-function)))
 
 ;;;; Headings
 
@@ -938,7 +952,8 @@ Beautifies source code blocks before editing."
     (set-buffer-modified-p t)
     (save-buffer)
     (call-interactively 'helm-semantic-or-imenu)
-    (vhdl-tools--fold)))
+    (vhdl-tools--fold)
+    (vhdl-tools--post-jump-function)))
 
 ;;;; Outshine - imenu
 
@@ -948,8 +963,8 @@ Beautifies source code blocks before editing."
   (if (equal arg '(4))
       (outshine-imenu nil)
     (vhdl-tools-imenu-headers))
-  (vhdl-tools--post-jump-function)
-  (vhdl-tools--fold))
+  (vhdl-tools--fold)
+  (vhdl-tools--post-jump-function))
 
 ;;;; All
 
@@ -1032,6 +1047,7 @@ Key bindings:
 	  (progn
 	    ;; optional smartscan remapping
 	    (when (and vhdl-tools-remap-smartscan
+		       vhdl-tools-use-outshine
 		       (boundp 'smartscan-mode)
 		       (smartscan-mode 1))
 	      (define-key vhdl-mode-map [remap smartscan-symbol-go-forward]
@@ -1103,6 +1119,13 @@ Key bindings:
   (require 'vhdl-tools)
   (if vhdl-tools-vorg-mode
       (progn
+	(when (and vhdl-tools-remap-smartscan
+		   (boundp 'smartscan-mode)
+		   (smartscan-mode 1))
+	  (define-key vhdl-tools-vorg-map [remap smartscan-symbol-go-forward]
+	    #'vhdl-tools-vorg-smcn-next)
+	  (define-key vhdl-tools-vorg-map [remap smartscan-symbol-go-backward]
+	    #'vhdl-tools-vorg-smcn-prev))
 	(message "VHDL Tools Vorg enabled.")
 	(add-hook 'org-src-mode-hook 'vhdl-tools-vorg-src-edit-beautify))
     ;; disable

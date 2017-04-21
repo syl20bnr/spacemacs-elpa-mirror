@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-lion
-;; Package-Version: 20170417.550
+;; Package-Version: 20170420.1028
 ;; Package-Requires: ((emacs "24") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim
@@ -137,14 +137,15 @@ BEG and END specify the retion to align.
 REGEX is the regex to align by."
   (when (> (length regex) 0)
 
+    (when (and count (> count 1))
+      (user-error "Only COUNT `1' is supported at the moment"))
+
     (save-restriction
       (narrow-to-region beg end)
 
-      ;; squeeze spaces if configured to do so; at this point, count `1' isn't supported with `evil-lion-squeeze-spaces'
+      ;; squeeze spaces if configured to do so
       (when evil-lion-squeeze-spaces
-        (when (not (null count))
-          (user-error "Passing COUNT when `evil-lion-squeeze-spaces' is non-nil is not supported at the moment"))
-        (evil-lion--squeeze-spaces type (point-min) (point-max) regex))
+        (evil-lion--squeeze-spaces type count (point-min) (point-max) regex))
 
       ;; prepare input for align-region and call it
       (let* ((indent-tabs-mode nil)
@@ -164,7 +165,7 @@ REGEX is the regex to align by."
           (require 'align))
         (align-region (point-min) (point-max) 'entire rule nil nil)))))
 
-(defun evil-lion--squeeze-spaces (type beg end regex)
+(defun evil-lion--squeeze-spaces (type count beg end regex)
   "Replace multiple spaces with one space in the given region.
 
 Each of the lines in the given region are processed, this function
@@ -172,33 +173,40 @@ performs line-wise operation, it doesn't strictly follow the given
 region boundary.
 
 TYPE can either be 'left or right.
+If COUNT is 1, spaces will be squeezed on the first match only.
 BEG and END specify the region.
 REGEX is the regex that must follow or preceed the spaces."
   (save-excursion
     (let ((line-count (count-lines beg end)))
       (goto-char beg)
       (dotimes (var line-count)
-        (evil-lion--squeeze-spaces-on-current-line type regex) ;; repeat squeeze until it returns nil
+        (evil-lion--squeeze-spaces-on-current-line type count regex)
         (forward-line 1)))))
 
-(defun evil-lion--squeeze-spaces-on-current-line (type regex)
+(defun evil-lion--squeeze-spaces-on-current-line (type count regex)
   "Replace multiple spaces with one space on the current line.
 
 TYPE can either be 'left or right.
+If COUNT is 1, spaces will be squeezed on the first match only.
 For TYPE 'left, spaces will be squeezed only if the REGEX matches
 after the spaces.
 For TYPE 'right, spaces will be squeezed only if the REGEX matches
 before the spaces."
   (beginning-of-line)
   ;; look for 2 or more spaces
-  (while (re-search-forward "\\([ ]\\{2,\\}\\)" (point-at-eol) t)
-    (when (save-excursion (save-match-data (or
-                                            ;; for type 'left, check if the spaces are followed by the regex
-                                            (and (eq type 'left) (looking-at regex))
-                                            ;; for type 'right, check if the spaces are preceeded by the regex
-                                            (and (eq type 'right) (goto-char (match-beginning 0)) (looking-back regex))
-                                            )))
-      (replace-match " "))))
+  (let ((continue-loop t)
+        (spaces-regex "\\([ ]\\{2,\\}\\)")) ;; match 2 or more spaces
+    (while (and (re-search-forward regex (point-at-eol) t) continue-loop)
+      (when (save-excursion (or
+                             ;; for type 'right, match spaces after the regex
+                             (and (eq type 'right) (looking-at spaces-regex))
+                             ;; for type 'left, match spaces before the regex
+                             (and (eq type 'left) (goto-char (match-beginning 0)) (looking-back spaces-regex))))
+        (replace-match " "))
+      ;; if COUNT is 1, exit the loop after the first match of REGEX
+      (when (eq count 1)
+        (setq continue-loop nil)))))
+
 
 (defun evil-lion--bind-keys (mode)
   "Bind keys for the given minor MODE."

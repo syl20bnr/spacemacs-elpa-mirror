@@ -4,7 +4,7 @@
 
 ;; Author: 0rdy <mail@0rdy.com>
 ;; URL: https://github.com/0rdy/kaolin-theme
-;; Package-Version: 20170419.1219
+;; Package-Version: 20170420.1357
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 0.6.0
 
@@ -113,7 +113,8 @@
       (magenta         "#5454b6")
       ;; (light-purple "#9d769d")
       (light-purple    "#cea2ca")
-      (alt-purple      "#8c4a64")
+      ;; (alt-purple      "#8c4a64")
+      (alt-purple      "#915c83")
 
       (violet          "#ab98b5")
 
@@ -176,14 +177,13 @@
          (functions  teal)
          (str        teal-green)
          (str-alt    jade)
-         (str        teal-green)
-         (str-alt    jade)
          (doc        str-alt)
          (type       alt-orange)
          (const      violet)
          (var        faded-blue)
          (num        faded-red)
          (bool       faded-red)
+         (prep       alt-purple)
          (warning    orange)
          (err        red))
 
@@ -202,7 +202,7 @@
      `(font-lock-type-face ((,class (:foreground ,type))))
      `(font-lock-variable-name-face ((,class (:foreground ,var))))
      `(font-lock-warning-face ((,class (:background nil :foreground ,warning))))
-     `(font-lock-preprocessor-face ((,class (:foreground ,deep-pink :bold nil))))
+     `(font-lock-preprocessor-face ((,class (:foreground ,prep :bold nil))))
 
      ;; Kaolin faces
      `(kaolin-boolean ((,class (:foreground ,bool))))

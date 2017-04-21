@@ -4,7 +4,7 @@
 
 ;; Author: nsf <no.smile.face@gmail.com>
 ;; Keywords: languages
-;; Package-Version: 20170401.345
+;; Package-Version: 20170420.515
 ;; Package-Requires: ((company "0.8.0") (go-mode "1.0.0"))
 
 ;; No license, this code is under public domain, do whatever you want.
@@ -194,6 +194,20 @@ triggers a completion immediately."
     (when word
       (string-match-p "^0x\\|^[0-9]+" word))))
 
+(defun company-go--syntax-highlight (str)
+  "Apply syntax highlighting to STR."
+  ;; If the user has disabled font-lock, respect that.
+  (if global-font-lock-mode
+      (with-temp-buffer
+        (insert str)
+        (delay-mode-hooks (go-mode))
+        (if (fboundp 'font-lock-ensure)
+            (font-lock-ensure)
+          (with-no-warnings
+            (font-lock-fontify-buffer)))
+        (buffer-string))
+    str))
+
 ;;;###autoload
 (defun company-go (command &optional arg &rest ignored)
   (interactive (list 'interactive))
@@ -204,7 +218,8 @@ triggers a completion immediately."
                  (not (company-go--in-num-literal-p))
                  (or (company-go--prefix) 'stop)))
     (candidates (company-go--candidates))
-    (meta (get-text-property 0 'meta arg))
+    (meta
+     (company-go--syntax-highlight (get-text-property 0 'meta arg)))
     (annotation
      (when company-go-show-annotation
        (company-go--extract-annotation (get-text-property 0 'meta arg))))

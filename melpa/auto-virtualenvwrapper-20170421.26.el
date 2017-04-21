@@ -1,11 +1,11 @@
-;;; auto-virtualenvwrapper.el --- Auto activate python virtualenvs
+;;; auto-virtualenvwrapper.el --- Lightweight auto activate python virtualenvs
 
 ;; Copyright (C) 2017 Marcwebbie, Robert Zaremba
 
 ;; Author: Marcwebbie <marcwebbie@gmail.com>
 ;;         Robert Zaremba <robert-zaremba@scale-it.pl>
 ;; Version: 1.0
-;; Package-Version: 20170309.1536
+;; Package-Version: 20170421.26
 ;; Keywords: Python, Virtualenv, Tools
 ;; Package-Requires: ((cl-lib "0.6") (s "1.10.0") (virtualenvwrapper "0"))
 

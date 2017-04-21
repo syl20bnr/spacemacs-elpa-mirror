@@ -4,9 +4,9 @@
 
 ;; Author: James Wong <jianwang.academic@gmail.com>
 ;; URL: https://github.com/et2010/org-edit-latex
-;; Package-Version: 20170408.2046
+;; Package-Version: 20170420.1738
 ;; Keywords: org, LaTeX
-;; Version: 0.7.0
+;; Version: 0.7.2
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -26,6 +26,24 @@
 
 ;; This package will let you edit a latex fragment like editing a src code
 ;; block.
+
+;; Install
+;; =======
+
+;; First, download this package and include its path in your load-path. Then, you can add following in your init file:
+
+;; (require 'org-edit-latex)
+
+;; And don't forget to add latex to `org-babel-load-languages' (below is for demonstration, your languages list may differ from it.)
+
+;; (org-babel-do-load-languages
+;;  'org-babel-load-languages
+;;  '((emacs-lisp . t)
+;;    (latex . t)   ;; <== add latex to the list
+;;    (python . t)
+;;    (shell . t)
+;;    (ruby . t)
+;;    (perl . t)))
 
 ;; Usage
 ;; =====

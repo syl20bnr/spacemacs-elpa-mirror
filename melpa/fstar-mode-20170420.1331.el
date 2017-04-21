@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015-2017 Clément Pit-Claudel
 ;; Author: Clément Pit-Claudel <clement.pitclaudel@live.com>
 ;; URL: https://github.com/FStarLang/fstar.el
-;; Package-Version: 20170419.2021
+;; Package-Version: 20170420.1331
 
 ;; Created: 27 Aug 2015
 ;; Version: 0.4
@@ -182,7 +182,7 @@ after."
 
 (defun fstar--unwrap-paragraphs (str)
   "Remove hard line wraps from STR."
-  (replace-regexp-in-string "\n\\([^\n\t ]\\)" "\\1" str))
+  (replace-regexp-in-string " *\n\\([^\n\t ]\\)" " \\1" str))
 
 (defun fstar--resolve-fn-value (fn-or-v)
   "Return FN-OR-V, or the result of calling it if it's a function."
@@ -221,7 +221,7 @@ Return value indicates whether a window was hidden."
 (defun fstar--read-string (prompt default)
   "Read a string with PROMPT and DEFAULT.
 Prompt should have one string placeholder to accommodate DEFAULT."
-  (let ((default-info (if default (format " (default %s)" default) "")))
+  (let ((default-info (if default (format " (default ‘%s’)" default) "")))
     (setq prompt (format prompt default-info)))
   (read-string prompt nil nil default))
 
@@ -291,6 +291,15 @@ shown (nil for same window, `window' for a new window, and
     (recenter)
     (when (fboundp 'pulse-momentary-highlight-one-line)
       (pulse-momentary-highlight-one-line (point)))))
+
+(defun fstar--visit-link-target (marker)
+  "Jump to file indicated by entry at MARKER."
+  (find-file (get-text-property (marker-position marker)
+                                'fstar--target (marker-buffer marker))))
+
+(defun fstar--lispify-null (x)
+  "Return X, or nil if X is `:json-null'."
+  (unless (eq x :json-null) x))
 
 ;;; Debugging
 
@@ -828,7 +837,8 @@ leads to the binder's start."
 
 (defun fstar--unparens (str)
   "Remove parentheses surrounding STR, if any."
-  (if (and (> (length str) 2)
+  (if (and str
+           (> (length str) 2)
            (eq (aref str 0) ?\()
            (eq (aref str (1- (length str))) ?\)))
       (substring str 1 (- (length str) 1))
@@ -980,6 +990,7 @@ leads to the binder's start."
 (define-key 'fstar-query-map (kbd "C-j C-d") #'fstar-visit-dependency)
 (define-key 'fstar-query-map (kbd "h w") #'fstar-browse-wiki)
 (define-key 'fstar-query-map (kbd "h W") #'fstar-browse-wiki-in-browser)
+(define-key 'fstar-query-map (kbd "h o") #'fstar-list-options)
 
 (defvar fstar-mode-map
   (let ((map (make-sparse-keymap)))
@@ -1534,7 +1545,7 @@ return value."
 (defun fstar-subp-json--read-response (beg end)
   "Read JSON message from BEG to END."
   (goto-char beg)
-  (let* ((json-null nil)
+  (let* ((json-null :json-null)
          (json-false :json-false)
          (json-key-type 'symbol)
          (json-array-type 'list)
@@ -1767,7 +1778,7 @@ Recall that the legacy F* protocol doesn't ack pops."
 (cl-defstruct fstar-location
   filename line-from line-to col-from col-to)
 
-(defun fstar-loc-as-string (loc)
+(defun fstar--loc-to-string (loc)
   "Turn LOC into a string."
   (format "%s(%d,%d-%d,%d)"
           (fstar-location-filename loc)
@@ -1924,7 +1935,7 @@ Returns a pair of (CLEAN-MESSAGE . LOCATIONS)."
        (if (cdr locs)
            "\nRelated locations (\\[fstar-jump-to-related-error] to visit):\n"
          "\nRelated location (\\[fstar-jump-to-related-error] to visit): "))
-      (mapconcat #'fstar-loc-as-string locs "\n"))
+      (mapconcat #'fstar--loc-to-string locs "\n"))
      'face 'italic)))
 
 (defun fstar-subp--help-echo-at (pos)
@@ -2270,6 +2281,13 @@ Ignores separators found in comments."
                           collect (point))))
       (fstar-subp-enqueue-until pos found))))
 
+(defun fstar-subp-reload-to-point (pos)
+  "Retract everything and process again to POS."
+  (interactive (list (point)))
+  (fstar-subp-start)
+  (fstar-subp-retract-until (point-min))
+  (fstar-subp-advance-until pos))
+
 (defun fstar-subp-advance-or-retract-to-point (&optional arg)
   "Advance or retract proof state to reach point.
 
@@ -2456,7 +2474,7 @@ buffer."
   "\\([^\0]+?\\)\\(?:#doc \\([^\0]+?\\)\\)?\\'")
 
 (cl-defstruct fstar-lookup-result
-  source-file name def-start def-end type doc def)
+  name def-loc type doc def)
 
 (defun fstar-lookup-result-sig (info &optional help-kbd)
   "Format signature of INFO.
@@ -2468,12 +2486,9 @@ to use HELP-KBD to show documentation."
           (and help-kbd (fstar-lookup-result-doc info)
                (substitute-command-keys (format " (%s for help)" help-kbd)))))
 
-(defun fstar-lookup-result-def-loc (info)
+(defun fstar-lookup-result-def-loc-str (info)
   "Format a location information from INFO."
-  (format "%s:%d:%d"
-          (fstar-lookup-result-source-file info) ;; FIXME hyperlink
-          (car (fstar-lookup-result-def-start info))
-          (cdr (fstar-lookup-result-def-start info))))
+  (fstar--loc-to-string (fstar-lookup-result-def-loc info)))
 
 (defun fstar-lookup-result-docstring (info)
   "Format docstring of INFO, if any."
@@ -2493,25 +2508,37 @@ to use HELP-KBD to show documentation."
                        (mapcar #'fstar--string-trim (fstar--match-strings-no-properties
                                                 '(1 2) body)))))
       (make-fstar-lookup-result
-       :source-file file
        :name name
-       :def-start (cons (string-to-number start-r) (string-to-number start-c))
-       :def-end (cons (string-to-number end-r) (string-to-number end-c))
+       :def-loc (make-fstar-location
+                 :filename file
+                 :line-from (string-to-number start-r)
+                 :line-to (string-to-number end-r)
+                 :col-from (string-to-number start-c)
+                 :col-to (string-to-number end-c))
        :type (and type (fstar--unparens type))
        :doc (fstar--string-trim doc)
        :def nil))))
+
+(defun fstar-subp-json--parse-defined-at (defined-at)
+  "Parse DEFINED-AT part of lookup result."
+  (when (fstar--lispify-null defined-at)
+    (let-alist defined-at
+      (make-fstar-location
+       :filename .fname
+       :line-from (elt .beg 0)
+       :col-from (elt .beg 1)
+       :line-to (elt .end 0)
+       :col-to (elt .end 1)))))
 
 (defun fstar-subp-json--parse-info (json)
   "Parse info structure from JSON."
   (let-alist json
     (make-fstar-lookup-result
-     :source-file .defined-at.fname
      :name .name
-     :def-start (cons (elt .defined-at.beg 0) (elt .defined-at.beg 1))
-     :def-end (cons (elt .defined-at.end 0) (elt .defined-at.end 1))
-     :type (and .type (fstar--unparens .type)) ;; FIXME remove once F* is fixed
-     :doc (fstar--string-trim .documentation)
-     :def (fstar--unparens .definition))))
+     :def-loc (fstar-subp-json--parse-defined-at .defined-at)
+     :type (fstar--unparens (fstar--lispify-null .type)) ;; FIXME remove once F* is fixed
+     :doc (fstar--string-trim (fstar--lispify-null .documentation))
+     :def (fstar--unparens (fstar--lispify-null .definition)))))
 
 (defun fstar-subp--pos-check-wrapper (pos continuation)
   "Construct a continuation that runs CONTINUATION if point is POS.
@@ -2610,7 +2637,7 @@ asynchronously after the fact)."
          (type (fstar-lookup-result-type info))
          (def (fstar-lookup-result-def info))
          (name (fstar-lookup-result-name info))
-         (def-loc (fstar-lookup-result-def-loc info))
+         (def-loc (fstar-lookup-result-def-loc-str info))
          (title (fstar--propertize-title name))
          (subtitle (propertize def-loc 'face '(:height 0.9))))
     (save-excursion
@@ -2828,11 +2855,15 @@ a prefix argument, prompt for rules as well."
 
   (when (eq term 'interactive)
     (setq term
-          (if (region-active-p)
-              (buffer-substring-no-properties (region-beginning) (region-end))
-            (fstar--read-string (format "Term to %s-reduce%%s: "
-                                   (mapconcat #'fstar-subp--eval-rule-to-char rules ""))
-                           (fstar--fqn-at-point)))))
+          (fstar--read-string
+           (format "Term to %s-reduce%%s: " (mapconcat #'fstar-subp--eval-rule-to-char rules ""))
+           (cond
+            ((region-active-p)
+             (buffer-substring-no-properties (region-beginning) (region-end)))
+            ((eq (char-before) (if (fstar-in-comment-p) ?\] ?\)))
+             (buffer-substring-no-properties
+              (1- (point)) (save-excursion (backward-list) (1+ (point)))))
+            (t (fstar--fqn-at-point))))))
   (setq term (string-trim term))
 
   (fstar-subp--query (fstar-subp--eval-query term rules)
@@ -2896,12 +2927,14 @@ the search buffer."
   "Jump to position in INFO.
 DISPLAY-ACTION indicates how: nil means in the current window;
 `window' means in a side window."
-  (if info
-      (pcase-let* ((target-fname (fstar-lookup-result-source-file info))
-                   (`(,target-row . ,target-col) (fstar-lookup-result-def-start info)))
-        (when (equal target-fname "<input>")
-          (setq target-fname buffer-file-name))
-        (fstar--navigate-to target-fname target-row target-col display-action))
+  (-if-let* ((def-loc (and info (fstar-lookup-result-def-loc info))))
+      (let* ((target-fname (fstar-location-filename def-loc)))
+        (if (equal target-fname "<input>")
+            (setq target-fname buffer-file-name))
+        (fstar--navigate-to target-fname
+                       (fstar-location-line-from def-loc)
+                       (fstar-location-col-from def-loc)
+                       display-action))
     (message "No definition found")))
 
 (defun fstar-jump-to-definition-1 (pos disp)
@@ -2934,10 +2967,17 @@ DISP should be nil (display in same window) or
 (defconst fstar--visit-dependency-buffer-name "*fstar: dependencies*")
 (push fstar--visit-dependency-buffer-name fstar--all-temp-buffer-names)
 
-(defun fstar--visit-dependency-visit-link (marker)
-  "Jump to file indicated by entry at MARKER."
-  (find-file (get-text-property (marker-position marker)
-                                'fstar--target (marker-buffer marker))))
+(defun fstar-subp--visit-dependency-insert (source-buf deps)
+  "Insert information about DEPS of SOURCE-BUF in current buffer."
+  (setq deps (sort deps #'string<))
+  (let ((title (format "Dependencies of %s" (buffer-name source-buf))))
+    (insert (fstar--propertize-title title) "\n\n"))
+  (dolist (fname deps)
+    (insert "  ")
+    (insert-text-button fname 'fstar--target fname
+                        'face 'default 'follow-link t
+                        'action 'fstar--visit-link-target)
+    (insert "\n")))
 
 (defun fstar-subp--visit-dependency-continuation (source-buf response)
   "Let user jump to one of the dependencies in RESPONSE.
@@ -2946,15 +2986,7 @@ SOURCE-BUF indicates where the query was started from."
              (help-window-select t))
       (with-help-window fstar--visit-dependency-buffer-name
         (with-current-buffer standard-output
-          (setq deps (sort deps #'string<))
-          (let ((title (format "Dependencies of %s" (buffer-name source-buf))))
-            (insert (fstar--propertize-title title) "\n\n"))
-          (dolist (fname deps)
-            (insert "  ")
-            (insert-text-button fname 'fstar--target fname
-                                'face 'default 'follow-link t
-                                'action 'fstar--visit-dependency-visit-link)
-            (insert "\n"))
+          (fstar-subp--visit-dependency-insert source-buf deps)
           (goto-char (point-min))
           (search-forward "\n\n  " nil t) ;; Find first entry
           (set-marker help-window-point-marker (point))))
@@ -3104,12 +3136,15 @@ CALLBACK is the company-mode asynchronous quickhelp callback."
 (defun fstar-subp-company--location-continuation (callback info)
   "Forward type INFO to CALLBACK.
 CALLBACK is the company-mode asynchronous meta callback."
-  (if (fstar-lookup-result-p info)
-      (pcase-let* ((fname (fstar-lookup-result-source-file info))
-                   (`(,row . ,col) (fstar-lookup-result-def-start info)))
+  (-if-let* ((def-loc (and (fstar-lookup-result-p info)
+                           (fstar-lookup-result-def-loc info))))
+      (pcase-let* ((fname (fstar-location-filename def-loc))
+                   (line (fstar-location-line-from def-loc))
+                   (col (fstar-location-col-from def-loc)))
         (funcall callback (if (string= fname "<input>")
-                              (cons (current-buffer) (fstar--row-col-offset row col))
-                            (cons fname row))))
+                              (cons (current-buffer)
+                                    (fstar--row-col-offset line col))
+                            (cons fname line))))
     (funcall callback nil)))
 
 (defun fstar-subp-company--async-location (candidate callback)
@@ -3190,6 +3225,91 @@ COMMAND, ARG: see `company-backends'."
   (kill-local-variable 'company-idle-delay)
   (kill-local-variable 'company-tooltip-align-annotations)
   (kill-local-variable 'company-abort-manual-when-too-short))
+
+;;; ;; ;; Options list
+
+(defconst fstar--list-options-buffer-name "*fstar: options*")
+(push fstar--list-options-buffer-name fstar--all-temp-buffer-names)
+
+(defconst fstar--options-true (propertize "true" 'face 'success))
+(defconst fstar--options-false (propertize "false" 'face 'error))
+(defconst fstar--options-unset (propertize "unset" 'face 'warning))
+
+(defun fstar-subp--option-val-to-string (val)
+  "Format VAL for display."
+  (cond
+   ((eq val t) fstar--options-true)
+   ((eq val :json-null) fstar--options-unset)
+   ((eq val :json-false) fstar--options-false)
+   ((numberp val) (number-to-string val))
+   ((stringp val) (propertize (prin1-to-string val) 'face 'font-lock-string-face))
+   ((listp val)
+    (concat "[" (mapconcat #'fstar-subp--option-val-to-string val " ") "]"))
+   (t (warn "Unexpected value %S" val)
+      (format "%S" val))))
+
+(defun fstar-subp--is-default (opt-info)
+  "Check if OPT-INFO has its val equal to its default."
+  (let-alist opt-info
+    (equal .value .default)))
+
+(defun fstar-subp--list-options-1 (display-default sp1 sp2 nl opt-info)
+  "Insert a row of the option table.
+OPT-INFO js a JSON object representing with information about an
+F* option; DISPLAY-DEFAULT says whether default values should be
+printed.  SP1, SP2, and NL are spacers."
+  (let-alist opt-info
+    (let ((doc (fstar--lispify-null .documentation))
+          (doc-face '(font-lock-comment-face (:height 0.7))))
+      (setq doc (string-trim (or doc "")))
+      (setq doc (replace-regexp-in-string " *(default.*)" "" doc t t))
+      (setq doc (replace-regexp-in-string " *\n+ *" " " doc t t))
+      (when (eq doc "") (setq doc "(undocumented)"))
+      (insert "  " .name sp1 (fstar-subp--option-val-to-string .value)
+              (if (not display-default) "\n"
+                (concat sp2 (fstar-subp--option-val-to-string .default) "\n"))
+              "  " (propertize doc 'face doc-face) nl))))
+
+(defun fstar-subp--list-options-continuation-1 (options display-default title)
+  "Print a batch of OPTIONS under TITLE.
+With DISPLAY-DEFAULT, also show default values."
+  (declare (indent 2))
+  (let ((sp1 (concat (propertize " " 'display '(space :align-to 30)) " "))
+        (sp2 (concat (propertize " " 'display '(space :align-to 60)) " "))
+        (nl (propertize "\n" 'line-spacing 0.4))
+        (hdr-face '(bold underline)))
+    (insert (fstar--propertize-title title) "\n\n")
+    (insert "  " (propertize "Name" 'face hdr-face)
+            sp1 (propertize "Value" 'face hdr-face)
+            (if (not display-default) nl
+              (concat sp2 (propertize "Default value" 'face hdr-face) nl)))
+    (dolist (opt-info options)
+      (fstar-subp--list-options-1 display-default sp1 sp2 nl opt-info))))
+
+(defun fstar-subp--list-options-continuation (source-buf response)
+  "Let user jump to one of the dependencies in RESPONSE.
+SOURCE-BUF indicates where the query was started from."
+  (if response
+      (let-alist response
+        (with-help-window fstar--visit-dependency-buffer-name
+          (with-current-buffer standard-output
+            (let* ((options (cl-sort .options #'string-lessp
+                                     :key (lambda (k) (cdr (assoc "name" k)))))
+                   (grouped (-group-by #'fstar-subp--is-default options)))
+              (fstar-subp--list-options-continuation-1 (cdr (assq nil grouped)) t
+                (format "Options set in %s" (buffer-name source-buf)))
+              (fstar-subp--list-options-continuation-1 (cdr (assq t grouped)) nil
+                "\nUnchanged options")))))
+    (message "Query `describe-repl' failed")))
+
+(defun fstar-list-options ()
+  "Show information about the current process."
+  (interactive)
+  (fstar-subp--ensure-available #'user-error 'describe-repl)
+  (fstar-subp--query (fstar-subp--describe-repl-query)
+                (fstar-subp--pos-check-wrapper (point)
+                  (apply-partially #'fstar-subp--list-options-continuation
+                                   (current-buffer)))))
 
 ;;; ;; ;; Busy spinner
 
@@ -3387,6 +3507,7 @@ Function is public to make it easier to debug `fstar-subp-prover-args'."
     ("C-c C-l"        "C-S-l" fstar-subp-advance-or-retract-to-point-lax)
     ("C-c C-."        "C-S-." fstar-subp-goto-beginning-of-unprocessed)
     ("C-c C-b"        "C-S-b" fstar-subp-advance-to-point-max-lax)
+    ("C-c C-r"        "C-S-r" fstar-subp-reload-to-point)
     ("C-c C-x"        "C-M-c" fstar-subp-kill-one-or-many)
     ("C-c C-c"        "C-M-S-c" fstar-subp-kill-z3))
   "Proof-General and Atom bindings table.")
@@ -3471,7 +3592,9 @@ Function is public to make it easier to debug `fstar-subp-prover-args'."
      ["Typecheck everything up to point (lax)"
       fstar-subp-advance-or-retract-to-point-lax]
      ["Typecheck whole buffer (lax)"
-      fstar-subp-advance-to-point-max-lax])
+      fstar-subp-advance-to-point-max-lax]
+     ["Show current value of all F* options"
+      fstar-list-options (fstar-subp-available-p)])
     ("Interactive queries"
      ["Evaluate an expression"
       fstar-eval (fstar-subp-available-p)]

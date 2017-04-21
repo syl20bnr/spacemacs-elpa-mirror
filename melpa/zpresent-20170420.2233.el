@@ -1,7 +1,7 @@
 ;;; zpresent.el --- Simple presentation mode based on org files.  -*- lexical-binding: t; -*-
 
 ;; Version: 0.2
-;; Package-Version: 20170413.2126
+;; Package-Version: 20170420.2233
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright 2015-2017 Zachary Kanfer <zkanfer@gmail.com>
@@ -165,6 +165,8 @@ Return the list of slides."
       (puthash 'type 'title slide))
     (when-let ((author (cdr (assoc "author" (gethash :properties structure)))))
       (puthash 'author author slide))
+    (when-let ((date (cdr (assoc "date" (gethash :properties structure)))))
+      (puthash 'date date slide))
     slide))
 
 ;;zck test how this interacts with indentation/centering, if it does
@@ -556,6 +558,10 @@ for example, for the first slide of each top level org element."
 
     (when-let ((author-name (gethash 'author slide)))
       (insert (propertize (format "\nby %s" (string-trim author-name))
+                          'face
+                          'zpresent-h1)))
+    (when-let ((date (gethash 'date slide)))
+      (insert (propertize (format "\n%s" (string-trim date))
                           'face
                           'zpresent-h1)))))
 
