@@ -4,7 +4,7 @@
 
 ;; Author: Vibhav Pant <vibhavp@gmail.com>
 ;; Version: 1.0
-;; Package-Version: 20170420.4
+;; Package-Version: 20170421.326
 ;; Package-Requires: ((lsp-mode "2.0") (rust-mode "0.3.0"))
 ;; Keywords: rust
 ;; URL: https://github.com/emacs-lsp/lsp-rust
@@ -37,10 +37,10 @@
     (file-name-directory dir)))
 
 ;;;###autoload
-(lsp-define-client 'rust-mode "rust" 'stdio
+(lsp-define-stdio-client 'rust-mode "rust" 'stdio
 		   #'lsp-rust--get-root
-		   :command (lsp-rust--rls-command)
-		   :name "Rust Language Server")
+		    "Rust Language Server"
+		   (lsp-rust--rls-command))
 
 (lsp-client-on-notification 'rust-mode "rustDocument/diagnosticsBegin"
 			    #'(lambda (_w _p)))

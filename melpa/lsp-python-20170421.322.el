@@ -4,18 +4,24 @@
 
 ;; Author: Vibhav Pant <vibhavp@gmail.com>
 ;; Version: 1.0
-;; Package-Version: 20170419.604
+;; Package-Version: 20170421.322
 ;; Package-Requires: ((lsp-mode "2.0"))
 ;; Keywords: python
 ;; URL: https://github.com/emacs-lsp/lsp-python
 
 (require 'lsp-mode)
+(require 'lsp-common)
 (require 'python)
 
 ;;;###autoload
-(lsp-define-client 'python-mode "python" 'stdio #'(lambda () default-directory)
-  :command '("pyls")
-  :name "Python Language Server")
+(lsp-define-stdio-client 'python-mode "python" 'stdio
+			 (lsp-make-traverser #'(lambda (dir)
+						 (directory-files
+						  dir
+						  nil
+						  "\\(__init__\\|setup\\)\\.py")))
+			 "Python Language Server"
+			 '("pyls"))
 
 (provide 'lsp-python)
 ;;; lsp-python.el ends here

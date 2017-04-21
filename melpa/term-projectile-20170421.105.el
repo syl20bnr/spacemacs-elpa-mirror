@@ -3,8 +3,8 @@
 ;; Copyright (C) 2016 Ivan Malison
 
 ;; Author: Ivan Malison <IvanMalison@gmail.com>
-;; Keywords: term manager projectile
-;; Package-Version: 20161106.1419
+;; Keywords: projectile tools terminals vc
+;; Package-Version: 20170421.105
 ;; URL: https://www.github.com/IvanMalison/term-manager
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24") (term-manager "0.1.0") (projectile "0.13.0"))

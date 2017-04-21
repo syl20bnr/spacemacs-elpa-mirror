@@ -1,7 +1,7 @@
 ;;; lsp-haskell.el --- Haskell support for lsp-mode
 
 ;; Version: 1.0
-;; Package-Version: 20170419.606
+;; Package-Version: 20170421.328
 ;; Package-Requires: ((lsp-mode "2.0") (haskell-mode "1.0"))
 ;; Keywords: haskell
 ;; URL: https://github.com/emacs-lsp/lsp-haskell
@@ -27,10 +27,30 @@
         (user-error (concat "Couldn't find cabal file, using:" dir))
       dir)))
 
+;; ---------------------------------------------------------------------
+;; HaRe functions
+
+(defun lsp-demote ()
+  "Demote a function to the level it is used"
+  (interactive)
+  (lsp--send-execute-command
+   "hare:demote"
+   (vector `(:file (:textDocument ,(lsp-text-document-identifier)))
+           `(:start_pos (:position ,(lsp-point-to-position (point)))))))
+
+(defun lsp-lift-to-top ()
+  "Lift a function to the top level"
+  (interactive)
+  (lsp--cur-workspace-check)
+  (user-error "Not implemented")
+  )
+
+;; ---------------------------------------------------------------------
+
 ;;;###autoload
-(lsp-define-client 'haskell-mode "haskell" 'stdio #'lsp-haskell--get-root
-  :command '("hie" "--lsp" "-d" "-l" "/tmp/hie.log")
-  :name "Haskell Language Server")
+(lsp-define-stdio-client 'haskell-mode "haskell" 'stdio #'lsp-haskell--get-root
+			  "Haskell Language Server"
+			 '("hie" "--lsp" "-d" "-l" "/tmp/hie.log"))
 
 (provide 'lsp-haskell)
 ;;; lsp-haskell.el ends here

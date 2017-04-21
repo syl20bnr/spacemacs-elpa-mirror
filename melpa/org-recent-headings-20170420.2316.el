@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-recent-headings
-;; Package-Version: 20170419.2217
+;; Package-Version: 20170420.2316
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "24.4") (org "9.0.5") (dash "2.13.0"))
 ;; Keywords: hypermedia, outlines, Org
@@ -102,6 +102,7 @@ Whenever one of these functions is called, the heading for the
 entry at point will be added to the recent-headings list.  This
 means that the point should be in a regular Org buffer (i.e. not
 an agenda buffer)."
+  ;; FIXME: This needs to toggle the mode when set, if it's active
   :type '(repeat function)
   :group 'org-recent-headings)
 
@@ -171,11 +172,9 @@ prevent paths from being wrapped onto a second line."
              (file-path (buffer-file-name (buffer-base-buffer buffer))))
       (with-current-buffer buffer
         (org-with-wide-buffer
-         (when (and (org-back-to-heading)
-                    (looking-at org-complex-heading-regexp))
-           (let* ((heading (or (match-string-no-properties 4)
-                               (warn "org-recent-headings: Heading is empty, oops.  Please report this bug.")))
-                  (outline-path (if org-recent-headings-reverse-paths
+         (-when-let ((heading (org-get-heading)))
+           ;; Heading is not empty
+           (let* ((outline-path (if org-recent-headings-reverse-paths
                                     (s-join "\\" (nreverse (org-split-string (org-format-outline-path (org-get-outline-path t)
                                                                                                       1000 nil "")
                                                                              "")))
