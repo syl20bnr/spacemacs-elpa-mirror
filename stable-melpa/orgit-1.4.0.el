@@ -6,7 +6,7 @@
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 
 ;; Package-Requires: ((emacs "24.4") (dash "2.13.0") (magit "2.10.0") (org "8.3.3"))
-;; Package-Version: 1.3.0
+;; Package-Version: 1.4.0
 ;; Homepage: https://github.com/magit/orgit
 
 ;; This library was inspired by `org-magit.el' which was written by
@@ -28,10 +28,20 @@
 
 ;;; Commentary:
 
-;; This package defines several Org link types, which can be used to
-;; link to certain Magit buffers.  Use the command `org-store-link'
-;; while such a buffer is current to store a link.  Later you can
-;; insert it into an Org buffer using the command `org-insert-link'.
+;; This package defines the Org link types `orgit', `orgit-rev', and
+;; `orgit-log', which can be used to link to Magit status, revision,
+;; and log buffers.
+
+;; Use the command `org-store-link' in such a buffer to store a link.
+;; Later you can insert that into an Org buffer using the command
+;; `org-insert-link'.
+
+;; Alternatively you can use `org-insert-link' to insert a link
+;; without first storing it.  When prompted, first enter just the
+;; link type followed by a colon and press RET.  Then you are
+;; prompted again and can provide the repository with completion.
+;; The `orgit-rev' and `orgit-log' types additionally read a revision,
+;; again with completion.
 
 ;; Format
 ;; ------
@@ -170,9 +180,10 @@ If all of the above fails then `orgit-export' raises an error."
 ;;;###autoload
 (eval-after-load "org"
   '(orgit-link-set-parameters "orgit"
-                              :store  'orgit-status-store
-                              :follow 'orgit-status-open
-                              :export 'orgit-status-export))
+                              :store    'orgit-status-store
+                              :follow   'orgit-status-open
+                              :export   'orgit-status-export
+                              :complete 'orgit-status-complete-link))
 
 ;;;###autoload
 (defun orgit-status-store ()
@@ -191,14 +202,19 @@ If all of the above fails then `orgit-export' raises an error."
 (defun orgit-status-export (path desc format)
   (orgit-export path desc format "status" 1))
 
+;;;###autoload
+(defun orgit-status-complete-link (&optional arg)
+  (concat "orgit:" (abbreviate-file-name (magit-read-repository arg))))
+
 ;;; Log
 
 ;;;###autoload
 (eval-after-load "org"
   '(orgit-link-set-parameters "orgit-log"
-                              :store  'orgit-log-store
-                              :follow 'orgit-log-open
-                              :export 'orgit-log-export))
+                              :store    'orgit-log-store
+                              :follow   'orgit-log-open
+                              :export   'orgit-log-export
+                              :complete 'orgit-log-complete-link))
 
 ;;;###autoload
 (defun orgit-log-store ()
@@ -238,14 +254,22 @@ If all of the above fails then `orgit-export' raises an error."
 (defun orgit-log-export (path desc format)
   (orgit-export path desc format "log" 2))
 
+;;;###autoload
+(defun orgit-log-complete-link (&optional arg)
+  (let ((default-directory (magit-read-repository arg)))
+    (format "orgit-log:%s::%s"
+            (abbreviate-file-name default-directory)
+            (magit-read-branch-or-commit "Revision"))))
+
 ;;; Revision
 
 ;;;###autoload
 (eval-after-load "org"
   '(orgit-link-set-parameters "orgit-rev"
-                              :store  'orgit-rev-store
-                              :follow 'orgit-rev-open
-                              :export 'orgit-rev-export))
+                              :store    'orgit-rev-store
+                              :follow   'orgit-rev-open
+                              :export   'orgit-rev-export
+                              :complete 'orgit-rev-complete-link))
 
 ;;;###autoload
 (defun orgit-rev-store ()
@@ -274,6 +298,13 @@ points at the revision, if any."
 ;;;###autoload
 (defun orgit-rev-export (path desc format)
   (orgit-export path desc format "rev" 3))
+
+;;;###autoload
+(defun orgit-rev-complete-link (&optional arg)
+  (let ((default-directory (magit-read-repository arg)))
+    (format "orgit-rev:%s::%s"
+            (abbreviate-file-name default-directory)
+            (magit-read-branch-or-commit "Revision"))))
 
 ;;; Export
 

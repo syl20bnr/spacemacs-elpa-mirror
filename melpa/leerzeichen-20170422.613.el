@@ -4,7 +4,7 @@
 
 ;; Author: Felix Geller <fgeller@gmail.com>
 ;; Keywords: whitespace characters
-;; Package-Version: 20151105.2228
+;; Package-Version: 20170422.613
 ;; URL: http://github.com/fgeller/leerzeichen.el
 
 ;; This file is not part of GNU Emacs.
@@ -57,6 +57,7 @@
     (aset table ?\  `[,leerzeichen-space-glyph])
     table))
 
+;;;###autoload
 (define-minor-mode leerzeichen-mode
   "Minor mode to highlight whitespace characters by displaying them differently."
   nil "lz " nil

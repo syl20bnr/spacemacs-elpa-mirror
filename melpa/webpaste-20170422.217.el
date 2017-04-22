@@ -4,7 +4,7 @@
 
 ;; Author: Elis "etu" Axelsson
 ;; URL: https://github.com/etu/webpaste.el
-;; Package-Version: 20170328.1448
+;; Package-Version: 20170422.217
 ;; Package-X-Original-Version: 1.1.0
 ;; Version: 1.1.0
 ;; Keywords: convenience, comm, paste
@@ -62,27 +62,29 @@ each run.")
 
 
 
-(cl-defun webpaste-provider (&key domain
+(cl-defun webpaste-provider (&key uri
                                   (type "POST")
                                   (parser 'buffer-string)
                                   (post-data '())
+                                  (no-failover nil)
                                   post-field
                                   success)
   "Macro to create the lambda function for a provider.
 
-This macro accepts the parameters :domain, :type, :parser, :post-data,
-:post-field and :success.
+This macro accepts the parameters :uri, :type, :parser, :post-data, :post-field
+and :success.
 
 Usage:
   (webpaste-provider
     [:keyword [option]]...)
 
-:domain      URL that we should do the request to to paste data.
+:uri         URI that we should do the request to to paste data.
 :type        HTTP Request type, defaults to POST.
 :parser      Defines how request.el parses the result. Look up :parser for
              `request`. This defaults to 'buffer-string.
 :post-data   Default post fields sent to service. Defaults to nil.
 :post-field  Name of the field to insert the code into.
+:no-failover Set to t to not allow doing failovers, Defaults to nil.
 :success     Callback sent to `request`, look up how to write these in the
              documentation for `request`"
   (lambda (text)
@@ -92,7 +94,7 @@ Usage:
     (cl-pushnew (cons post-field text) post-data)
 
     ;; Do request
-    (request domain
+    (request uri
              :type type
              :data post-data
              :parser parser
@@ -100,7 +102,8 @@ Usage:
              :error
              (cl-function (lambda (&key error-thrown &allow-other-keys)
                             (message "Got error: %S" error-thrown)
-                            (webpaste-paste-text text))))
+                            (if (eq no-failover nil)
+                                (webpaste-paste-text text)))))
     nil))
 
 
@@ -109,7 +112,7 @@ Usage:
 (defcustom webpaste-providers-alist
   (list (list "ptpb.pw"
               (webpaste-provider
-               :domain "https://ptpb.pw/"
+               :uri "https://ptpb.pw/"
                :post-field "c"
                :success
                (cl-function (lambda (&key response &allow-other-keys)
@@ -118,7 +121,7 @@ Usage:
 
         (list "ix.io"
               (webpaste-provider
-               :domain "http://ix.io/"
+               :uri "http://ix.io/"
                :post-field "f:1"
                :success
                (cl-function (lambda (&key data &allow-other-keys)
@@ -128,7 +131,7 @@ Usage:
 
         (list "sprunge.us"
               (webpaste-provider
-               :domain "http://sprunge.us/"
+               :uri "http://sprunge.us/"
                :post-field "sprunge"
                :success
                (cl-function (lambda (&key data &allow-other-keys)
@@ -138,7 +141,7 @@ Usage:
 
         (list "dpaste.com"
               (webpaste-provider
-               :domain "http://dpaste.com/api/v2/"
+               :uri "http://dpaste.com/api/v2/"
                :post-data '(("syntax" . "text")
                             ("title" . "")
                             ("poster" . "")
@@ -151,7 +154,7 @@ Usage:
 
         (list "dpaste.de"
               (webpaste-provider
-               :domain "https://dpaste.de/api/"
+               :uri "https://dpaste.de/api/"
                :post-data '(("lexer" . "text")
                             ("format" . "url")
                             ("expires" . 86400))
@@ -205,6 +208,14 @@ return it to the user."
 
 
 ;;;###autoload
+(defun webpaste-paste-text-to-provider (text provider-name)
+  "Paste TEXT to specific PROVIDER-NAME.
+This function sends a paste to a spacific provider.  This function is created to
+make `webpaste-paste-text' do less magic things all at once."
+  (funcall (cadr (assoc provider-name webpaste-providers-alist)) text))
+
+
+;;;###autoload
 (defun webpaste-paste-text (text)
   "Paste TEXT to some paste service.
 If ‘webpaste-provider-priority’ isn't populated, it will populate it with the
@@ -231,7 +242,7 @@ When we run out of providers to try, it will restart since
     (setq webpaste-tested-providers (cdr webpaste-tested-providers))
 
     ;; Run pasting function
-    (funcall (cadr (assoc provider-name webpaste-providers-alist)) text)))
+    (webpaste-paste-text-to-provider text provider-name)))
 
 
 ;;;###autoload

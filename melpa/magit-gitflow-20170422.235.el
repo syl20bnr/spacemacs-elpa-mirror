@@ -4,7 +4,7 @@
 
 ;; Author: Jan Tatarik <Jan.Tatarik@gmail.com>
 ;; Keywords: vc tools
-;; Package-Version: 20160809.1335
+;; Package-Version: 20170422.235
 ;; URL: https://github.com/jtatarik/magit-gitflow
 ;; Package: magit-gitflow
 ;; Package-Requires: ((magit "2.1.0") (magit-popup "2.2.0"))
@@ -171,7 +171,7 @@
               (?R   "Keep remote branch"  "--keepremote")
               (?L   "Keep local branch"   "--keeplocal")
               (?D   "Force delete branch" "--force_delete")
-              (?s   "Squash"              "--squash")
+              (?S   "Squash"              "--squash")
               (?n   "No fast-forward"     "--no-ff")))
 
 (magit-define-popup magit-gitflow-feature-delete-popup
@@ -222,7 +222,7 @@
               (?R   "Keep remote branch"  "--keepremote")
               (?L   "Keep local branch"   "--keeplocal")
               (?D   "Force delete branch" "--force_delete")
-              (?s   "Squash"              "--squash")
+              (?S   "Squash"              "--squash")
               (?n   "No fast-forward"     "--no-ff")))
 
 (magit-define-popup magit-gitflow-bugfix-delete-popup

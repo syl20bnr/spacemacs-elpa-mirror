@@ -10,7 +10,7 @@
 ;; Maintainer: Bozhidar Batsov <bozhidar@batsov.com>
 ;;     Sebastian Wiesner <swiesner@lunaryorn.com>
 ;; URL: https://github.com/voxpupuli/puppet-mode
-;; Package-Version: 20170415.2259
+;; Package-Version: 20170421.2255
 ;; Keywords: languages
 ;; Version: 0.4-cvs
 ;; Package-Requires: ((emacs "24.1") (pkg-info "0.4"))
@@ -979,7 +979,11 @@ Used as `syntax-propertize-function' in Puppet Mode."
   "Align rules for Puppet Mode.")
 
 (defconst puppet-mode-align-exclude-rules
-  '((puppet-comment
+  '((puppet-nested
+     (regexp . "\\s-*=>\\s-*\\({[^}]*}\\)")
+     (modes  . '(puppet-mode))
+     (separate . entire))
+    (puppet-comment
      (regexp . "^\\s-*\#\\(.*\\)")
      (modes . '(puppet-mode))))
   "Rules for excluding lines from alignment for Puppet Mode.")
@@ -988,14 +992,10 @@ Used as `syntax-propertize-function' in Puppet Mode."
   "Align the current block."
   (interactive)
   (save-excursion
-    (save-match-data
-      (let ((beg (search-backward "{" nil 'no-error)))
-        ;; Skip backwards over strings and comments
-        (while (and beg (puppet-in-string-or-comment-p beg))
-          (setq beg (search-backward "{" nil 'no-error)))
-        (when beg
-          (forward-list)
-          (align beg (point)))))))
+    (backward-up-list)
+    (let ((beg (point)))
+      (forward-list)
+      (align beg (point)))))
 
 
 ;;; Dealing with strings

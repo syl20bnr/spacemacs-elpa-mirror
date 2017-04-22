@@ -1,7 +1,17 @@
-This package defines several Org link types, which can be used to
-link to certain Magit buffers.  Use the command `org-store-link'
-while such a buffer is current to store a link.  Later you can
-insert it into an Org buffer using the command `org-insert-link'.
+This package defines the Org link types `orgit', `orgit-rev', and
+`orgit-log', which can be used to link to Magit status, revision,
+and log buffers.
+
+Use the command `org-store-link' in such a buffer to store a link.
+Later you can insert that into an Org buffer using the command
+`org-insert-link'.
+
+Alternatively you can use `org-insert-link' to insert a link
+without first storing it.  When prompted, first enter just the
+link type followed by a colon and press RET.  Then you are
+prompted again and can provide the repository with completion.
+The `orgit-rev' and `orgit-log' types additionally read a revision,
+again with completion.
 
 Format
 ------

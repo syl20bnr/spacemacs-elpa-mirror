@@ -4,7 +4,7 @@
 
 ;; Author: Andrew Phillips <theasp@gmail.com>
 ;; Keywords: color theme dark flatui faces
-;; Package-Version: 20170420.1213
+;; Package-Version: 20170421.1718
 ;; URL: https://github.com/theasp/flatui-dark-theme
 ;; Package-Requires: ((emacs "24"))
 
@@ -121,7 +121,7 @@
    `(font-lock-constant-face ((,class (:foreground ,c1a))))
    `(font-lock-doc-face ((,class (:foreground ,c7a))))
    `(font-lock-doc-string-face ((,class (:foreground ,c6a))))
-   `(font-lock-function-name-face ((,class (:foreground ,c4a))))
+   `(font-lock-function-name-face ((,class (:foreground ,c3a))))
    `(font-lock-keyword-face ((,class (:foreground ,c4a))))
    `(font-lock-negation-char-face ((,class (:foreground ,c2b))))
    `(font-lock-preprocessor-face ((,class (:foreground ,c4b))))
