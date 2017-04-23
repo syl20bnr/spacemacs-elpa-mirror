@@ -228,6 +228,8 @@ hook 使用的函数只有一个参数 fontsizes-list, 用来记录 *当前使�
    1. 运行 `describe-char' 来显示 *待设字符* 的信息
    2. 点击 “code point in charset” 处的链接，来显示整个 unicode-bmp 表
    3. 获取范围
+3. 如果遇到 *部分符号* 无法正确对齐，可以参考:
+   1. https://github.com/tumashu/chinese-fonts-setup/issues/64#issuecomment-296414028
 
 **** 设置行距随着字号自动调整
 
@@ -271,7 +273,6 @@ hook 使用的函数只有一个参数 fontsizes-list, 用来记录 *当前使�
    2. HanaMinB 下载地址: https://osdn.jp/projects/hanazono-font/downloads/62072/hanazono-20141012.zip/
 7. 字体设置和 coding 设置也有关系，如果 chinese-fonts-setup 的行为很奇怪，
    又找不到确切原因，可以参考：https://github.com/tumashu/chinese-fonts-setup/issues/54#issuecomment-246228904
-
 
 ** 参考文章
 1. http://baohaojun.github.io/perfect-emacs-chinese-font.html
