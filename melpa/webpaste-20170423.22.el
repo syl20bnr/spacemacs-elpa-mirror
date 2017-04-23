@@ -4,9 +4,9 @@
 
 ;; Author: Elis "etu" Axelsson
 ;; URL: https://github.com/etu/webpaste.el
-;; Package-Version: 20170422.1335
-;; Package-X-Original-Version: 1.2.0
-;; Version: 1.2.0
+;; Package-Version: 20170423.22
+;; Package-X-Original-Version: 1.2.1
+;; Version: 1.2.1
 ;; Keywords: convenience, comm, paste
 ;; Package-Requires: ((emacs "24.4") (request "0.2.0") (cl-lib "0.5"))
 
@@ -62,6 +62,20 @@ each run.")
 
 
 
+;;; Predefined error lambda for providers
+(defvar webpaste/providers-error-lambda
+  (cl-function (lambda (&key error-thrown &allow-other-keys)
+                 (message "Got error: %S" error-thrown)
+                 (webpaste-paste-text text)))
+  "Predefined error callback for providers that always does failover.")
+
+
+(defvar webpaste/providers-error-lambda-no-failover
+  (cl-function (lambda (&key error-thrown &allow-other-keys)
+                 (message "Got error: %S" error-thrown)))
+  "Predefined error callback for providers that shouldn't do failover.")
+
+
 ;;; Predefined success lambdas for providers
 (defvar webpaste/providers-success-location-header
   (cl-function (lambda (&key response &allow-other-keys)
@@ -84,9 +98,9 @@ each run.")
                                   (type "POST")
                                   (parser 'buffer-string)
                                   (post-data '())
-                                  (no-failover nil)
                                   (sync nil)
                                   post-field
+                                  error-lambda
                                   success-lambda)
   "Function to create the lambda function for a provider.
 
@@ -100,11 +114,15 @@ Usage:
                 `request'. This defaults to 'buffer-string.
 :post-data      Default post fields sent to service. Defaults to nil.
 :post-field     Name of the field to insert the code into.
-:no-failover    Set to t to not allow doing failovers.  Defaults to nil.
 :sync           Set to t to wait until request is done.  Defaults to nil.  This
                 should only be used for debugging purposes.
 :success-lambda Callback sent to `request', look up how to write these in the
-                documentation for `request'."
+                documentation for `request'.
+:error-lambda   Callback sent to `request', look up how to write these in the
+                documentation for `request'.  A good default value forr this is
+                `webpaste/providers-error-lambda', but there's also
+                `webpaste/providers-error-lambda-no-failover' available if you
+                need a provider that isn't allowed to failover."
   (lambda (text)
     "Paste TEXT to provider"
 
@@ -119,11 +137,7 @@ Usage:
                :parser parser
                :success success-lambda
                :sync sync
-               :error
-               (cl-function (lambda (&key error-thrown &allow-other-keys)
-                              (message "Got error: %S" error-thrown)
-                              (unless no-failover
-                                (webpaste-paste-text text))))))))
+               :error error-lambda))))
 
 
 
@@ -133,19 +147,22 @@ Usage:
      ,(webpaste-provider
        :uri "https://ptpb.pw/"
        :post-field "c"
-       :success-lambda webpaste/providers-success-location-header))
+       :success-lambda webpaste/providers-success-location-header
+       :error-lambda webpaste/providers-error-lambda))
 
     ("ix.io"
      ,(webpaste-provider
        :uri "http://ix.io/"
        :post-field "f:1"
-       :success-lambda webpaste/providers-success-returned-string))
+       :success-lambda webpaste/providers-success-returned-string
+       :error-lambda webpaste/providers-error-lambda))
 
     ("sprunge.us"
      ,(webpaste-provider
        :uri "http://sprunge.us/"
        :post-field "sprunge"
-       :success-lambda webpaste/providers-success-returned-string))
+       :success-lambda webpaste/providers-success-returned-string
+       :error-lambda webpaste/providers-error-lambda))
 
     ("dpaste.com"
      ,(webpaste-provider
@@ -155,7 +172,8 @@ Usage:
                     ("poster" . "")
                     ("expiry_days" . 1))
        :post-field "content"
-       :success-lambda webpaste/providers-success-location-header))
+       :success-lambda webpaste/providers-success-location-header
+       :error-lambda webpaste/providers-error-lambda))
 
     ("dpaste.de"
      ,(webpaste-provider
@@ -164,7 +182,8 @@ Usage:
                     ("format" . "url")
                     ("expires" . 86400))
        :post-field "content"
-       :success-lambda webpaste/providers-success-returned-string)))
+       :success-lambda webpaste/providers-success-returned-string
+       :error-lambda webpaste/providers-error-lambda)))
 
   "Define all webpaste.el providers.
 Consists of provider name and lambda function to do the actuall call to the

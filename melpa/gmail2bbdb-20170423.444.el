@@ -3,7 +3,7 @@
 ;; Copyright (C) 2014, 2015 Chen Bin
 ;; Author: Chen Bin <chenbin.sh@gmail.com>
 ;; URL: http://github.com/redguardtoo/gmail2bbdb
-;; Package-Version: 20161104.2041
+;; Package-Version: 20170423.444
 ;; Keywords: vcard bbdb email contact gmail
 ;; Version: 0.0.6
 
@@ -119,7 +119,7 @@ Existing BBDB records will be *overrided*."
           (insert ";; -*- mode: Emacs-Lisp; coding: utf-8; -*-\n")
           (insert ";;; file-format: 7\n")
           (insert (mapconcat 'identity rlt "\n"))
-          (write-file (file-truename gmail2bbdb-bbdb-file)))
+          (write-file dst-file))
       (message "No email found"))))
 
 (provide 'gmail2bbdb)

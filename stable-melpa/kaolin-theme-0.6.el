@@ -4,7 +4,7 @@
 
 ;; Author: 0rdy <mail@0rdy.com>
 ;; URL: https://github.com/0rdy/kaolin-theme
-;; Package-Version: 20170421.1909
+;; Package-Version: 0.6
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 0.6.0
 

@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170418.118
+;; Package-Version: 20170423.304
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -2273,7 +2273,8 @@ Additional Actions:
 (defun counsel-package-action (pkg-cons)
   (let ((pkg (cadr pkg-cons)))
     (if (package-installed-p pkg)
-        (package-delete pkg)
+        (package-delete
+         (cadr (assoc pkg package-alist)))
       (package-install pkg))))
 
 (defun counsel-package-action-describe (pkg-cons)

@@ -3,10 +3,10 @@
 ;; Copyright (C) 2016 ZHANG Weiyi
 
 ;; Author: ZHANG Weiyi <dochang@gmail.com>
-;; Version: 0.0.4
-;; Package-Version: 0.0.4
-;; Package-Requires: ((cl-lib "0"))
-;; Keywords: elpa, clone, mirror
+;; Version: 0.0.5
+;; Package-Version: 20170423.412
+;; Package-Requires: ((emacs "24.4") (cl-lib "0"))
+;; Keywords: comm, elpa, clone, mirror
 ;; URL: https://github.com/dochang/elpa-clone
 
 ;; This file is not part of GNU Emacs.
@@ -36,6 +36,7 @@
 ;;
 ;;   - Emacs 24.4 or later
 ;;   - cl-lib
+;;   - rsync (optional, but recommended)
 
 ;; Installation:
 ;;
@@ -58,6 +59,34 @@
 ;;
 ;; You can customize download interval via `elpa-clone-download-interval'.  But
 ;; note that the *real* interval is `(max elpa-clone-download-interval 5)'.
+;;
+;; ### Prefer rsync
+;;
+;; Some ELPA archives can more efficiently be cloned using rsync:
+;;
+;;     (elpa-clone "elpa.gnu.org::elpa/" "/path/to/elpa")
+;;     (elpa-clone "rsync://melpa.org/packages/" "/path/to/elpa")
+;;     (elpa-clone "rsync://stable.melpa.org/packages/" "/path/to/elpa")
+;;
+;; Currently, only the following archives support rsync:
+;;
+;;   - GNU ELPA
+;;   - MELPA
+;;   - MELPA Stable
+;;
+;; By default, `elpa-clone` selects the appropriate sync method based on the
+;; upstream url, but you can also specify the method you want:
+;;
+;;     (elpa-clone "foo/" "bar/" :sync-method 'rsync)
+;;     (elpa-clone "foo::bar/" "/path/to/elpa" :sync-method 'local)
+;;     (elpa-clone "rsync://foo/bar/" "/path/to/elpa" :sync-method 'url)
+;;
+;; Available methods are:
+;;
+;;   - `rsync`: use rsync (recommended)
+;;   - `url`: use the `url` library
+;;   - `local`: treat upstream as a local directory
+;;   - `nil`: choose a method based on upstream
 
 ;; Note:
 ;;
@@ -199,10 +228,21 @@ The value may be an integer or floating point."
       (mapc cleaner outdate-filenames)
       (mapc downloader new-filenames))))
 
+(defun elpa-clone--url-join (upstream filename)
+  (let* ((url (url-generic-parse-url upstream))
+         (path-and-query (url-path-and-query url))
+         (path (car path-and-query))
+         (query (cdr path-and-query)))
+    (when (or (null path) (equal path ""))
+      (setq path "/"))
+    (setq path (expand-file-name filename path))
+    (setf (url-filename url) (if query (concat path "?" query) path))
+    (url-recreate-url url)))
+
 (defun elpa-clone--remote (upstream downstream signature readme)
   (elpa-clone--internal
    upstream downstream signature readme
-   'concat
+   'elpa-clone--url-join
    'url-copy-file
    'url-insert-file-contents
    'url-http-file-exists-p))
@@ -216,12 +256,34 @@ The value may be an integer or floating point."
    'insert-file-contents
    'file-exists-p))
 
+(defun elpa-clone--rsync (upstream downstream)
+  (call-process "rsync" nil nil nil
+                "--archive" "--compress" "--delete"
+                upstream downstream))
+
+(defun elpa-clone--select-sync-method (upstream)
+  (pcase upstream
+    ((pred (string-match-p "\\`rsync://")) 'rsync)
+    ((pred (string-match-p "\\`[a-zA-Z][[:alnum:]+.-]*://")) 'url)
+    ((pred (string-match-p "\\`[[:alnum:].-]+::?[^:]*")) 'rsync)
+    (_ 'local)))
+
 ;;;###autoload
-(defun elpa-clone (upstream downstream &optional signature readme)
+(cl-defun elpa-clone (upstream downstream &key sync-method signature readme)
   "Clone ELPA archive.
 
 UPSTREAM is an ELPA URL or local ELPA directory.
 DOWNSTREAM is the download directory.
+
+By default, `elpa-clone' will choose the appropriate SYNC-METHOD for UPSTREAM.
+You can also specify the method.  Available methods are:
+
+  `rsync' -- use rsync
+  `url'   -- use the \"url\" library.  See Info node `(url)'.
+  `local' -- treat UPSTREAM as a local directory.
+  `nil'   -- choose a method based on UPSTREAM.
+
+Default SYNC-METHOD is `nil'.
 
 When SIGNATURE is nil, download *.sig files only if exists.
 When SIGNATURE is `never', never download *.sig files.
@@ -247,9 +309,13 @@ When README is any other value, always download readme files."
 
   (let ((make-backup-files nil)
         (version-control 'never))
-    (if (string-match-p "\\`https?:" upstream)
-        (elpa-clone--remote upstream downstream signature readme)
-      (elpa-clone--local upstream downstream signature readme))))
+    (unless sync-method
+      (setq sync-method (elpa-clone--select-sync-method upstream)))
+    (pcase sync-method
+      (`rsync (elpa-clone--rsync upstream downstream))
+      (`url (elpa-clone--remote upstream downstream signature readme))
+      (`local (elpa-clone--local upstream downstream signature readme))
+      (_ (error "Unknown sync method %s" sync-method)))))
 
 (provide 'elpa-clone)
 

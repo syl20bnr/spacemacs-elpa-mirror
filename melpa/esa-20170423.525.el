@@ -6,7 +6,7 @@
 ;; Author: Nab Inno <nab@blahfe.com>
 ;; Created: 21 May 2016
 ;; Version: 0.8.13
-;; Package-Version: 20170422.7
+;; Package-Version: 20170423.525
 ;; Keywords: tools esa
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; URL: https://github.com/nabinno/esa.el
@@ -102,6 +102,11 @@ Example:
 "
   :type '(alist :key-type string
                 :value-type directory)
+  :group 'esa)
+
+(defcustom esa-number-of-list-per-page "20"
+  "Number of list per page."
+  :type 'string
   :group 'esa)
 
 
@@ -249,7 +254,9 @@ the URL into the kill ring."
    "GET"
    (format "https://api.esa.io/v1/teams/%s/posts" esa-team-name)
    'esa-lists-retrieved-callback
-   (if q `(("q" . ,q)))))
+   (if q
+       `(("per_page" . ,esa-number-of-list-per-page) ("q" . ,q))
+     `(("per_page" . ,esa-number-of-list-per-page)))))
 
 (defun esa-list-revert-buffer (&rest ignore)
   ;; redraw esa list
