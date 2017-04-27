@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2016, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 7.3.0
-;; Package-Version: 20170426.1054
+;; Version: 7.3.1
+;; Package-Version: 20170427.516
 ;; Created: 10 Sep 2013
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, emulations, vim, ergoemacs
@@ -2773,10 +2773,10 @@ Version 2017-01-21"
 
     (define-key xah-fly-key-map (kbd "<f9>") xah-fly-leader-key-map)
 
-    (define-key xah-fly-key-map (kbd "<f11>") 'xah-previous-user-buffer)
-    (define-key xah-fly-key-map (kbd "<f12>") 'xah-next-user-buffer)
-    (define-key xah-fly-key-map (kbd "<C-f11>") 'xah-previous-emacs-buffer)
-    (define-key xah-fly-key-map (kbd "<C-f12>") 'xah-next-emacs-buffer))
+    (define-key xah-fly-key-map (kbd "<f1>") 'xah-previous-user-buffer)
+    (define-key xah-fly-key-map (kbd "<f2>") 'xah-next-user-buffer)
+    (define-key xah-fly-key-map (kbd "<C-f1>") 'xah-previous-emacs-buffer)
+    (define-key xah-fly-key-map (kbd "<C-f2>") 'xah-next-emacs-buffer))
 
   (progn
     ;; set arrow keys in isearch. left/right is backward/forward, up/down is history. press Return to exit

@@ -1,9 +1,9 @@
-;;; erc-twitch.el --- Support for Twitch emotes for ERC.
+;;; erc-twitch.el --- Support for Twitch emotes for ERC.  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2015 Vibhav Pant <vibhavp@gmail.com>
 
 ;; Url: https://github.com/vibhavp/erc-twitch
-;; Package-Version: 20160522.859
+;; Package-Version: 20170426.2306
 ;; Author: Vibhav Pant <vibhavp@gmail.com>
 ;; Version: 1.0
 ;; Package-Requires: ((json "1.3") (erc "5.0"))
@@ -31,8 +31,8 @@
 
 (require 'json)
 (require 'erc)
+(require 'cl-lib)
 
-(defvar erc-twitch-emote-template nil)
 (defvar erc-twitch-emotes nil)
 (defcustom erc-twitch-cache-dir (let ((dir (concat user-emacs-directory "erc-twitch/")))
 				  (make-directory dir :parents)
@@ -46,6 +46,11 @@
   :group 'erc-twitch
   :type 'list)
 
+(defcustom erc-twitch-colors t
+  "Use twitch user colors for displaying messages."
+  :group 'erc-twitch
+  :type 'boolean)
+
 (defun erc-twitch--get-emotes-json ()
   (let ((json-object-type 'hash-table))
     (with-current-buffer
@@ -54,11 +59,10 @@
 
 (defun erc-twitch--read-emotes ()
   (let ((json (erc-twitch--get-emotes-json)))
-    (setq erc-twitch-emote-template (gethash "small" (gethash "template" json)))
     (setq erc-twitch-emotes (gethash "emotes" json))))
 
 (defun erc-twitch--make-emote-url (image-id)
-  (replace-regexp-in-string "\{image_id\}" (number-to-string image-id) erc-twitch-emote-template))
+  (format "http://static-cdn.jtvnw.net/emoticons/v1/%s/1.0" image-id))
 
 (defun erc-twitch--get-emote-image (image-id)
   (let* ((file (format "%s/%d.png" erc-twitch-cache-dir image-id))
@@ -87,7 +91,34 @@
 		  (throw 'break nil))))))))))
 
 (defun erc-twitch-replace-text ()
-  (erc-twitch--perform-substitution (current-buffer)))
+  (if (< emacs-major-version 26)
+      (erc-twitch--perform-substitution (current-buffer))
+    (save-excursion
+      (goto-char (point-min))
+      (let* ((message-start (re-search-forward "^<\\(.+\\)> "  nil t))
+	     (tags (plist-get (text-properties-at (or message-start (point))) 'tags))
+	     (emotes (cadr (assoc-string "emotes" tags)))
+	     (color (cadr (assoc-string "color" tags)))
+	     image colon-posn emote-id start-pos end-pos emote-name)
+	(when (and erc-twitch-colors color (color-defined-p color)
+		   (match-beginning 1) (match-end 1))
+	  (add-text-properties (match-beginning 1) (match-end 1)
+			       `(font-lock-face (:foreground ,color))))
+	(when (and (stringp emotes) message-start)
+	  (dolist (emote (remove "" (split-string emotes "/")))
+	    (setq colon-posn (string-match ":" emote 0)
+		  emote-id (string-to-number (substring emote 0 colon-posn))
+		  emote (substring emote (1+ colon-posn)))
+	    (dolist (indices (split-string emote ","))
+	      (cl-destructuring-bind (start-pos end-pos)
+		  (mapcar #'string-to-number (split-string indices "-"))
+		(cl-incf start-pos message-start)
+		(cl-incf end-pos (1+ message-start))
+		(unless (and (< start-pos (point-max)) (< end-pos (point-max)))
+		  (setq image (erc-twitch--get-emote-image emote-id)
+			emote-name (buffer-substring-no-properties start-pos end-pos))
+		  (add-text-properties start-pos end-pos `(help-echo ,emote-name))
+		  (put-text-property start-pos end-pos 'display image))))))))))
 
 (define-erc-module twitch nil
   "Enables usage of Twitch emotes"
