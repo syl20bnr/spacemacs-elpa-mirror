@@ -13,10 +13,12 @@ _________________
 .. 1.1 `pinyinlib-build-regexp-char'
 .. 1.2 `pinyinlib-build-regexp-string'
 2 Packages that Use This Library
-3 Contribute
+3 Acknowledgment
+4 Contribute
 
 
-Library for converting first letter of Pinyin to Chinese characters.
+Library for converting first letter of Pinyin to Simplified/Traditional
+Chinese characters.
 
 
 1 Functions
@@ -43,8 +45,8 @@ Library for converting first letter of Pinyin to Chinese characters.
   - If `only-chinese-p' is `t': the resulting regular expression doesn't
     contain the English letter `char'.
 
-  When converting English punctuactions to Chinese punctuations, it used
-  the following table:
+  When converting English punctuactions to Chinese/English punctuations,
+  it uses the following table:
    English Punctuation  Chinese & English Punctuations
   -----------------------------------------------------
    .                    。.
@@ -86,7 +88,16 @@ Library for converting first letter of Pinyin to Chinese characters.
 https://github.com/cute-jumper/evil-find-char-pinyin
 
 
-3 Contribute
+3 Acknowledgment
+================
+
+  - The ASCII char to Chinese character
+        table(`pinyinlib--simplified-char-table' in code) is from
+        [https://github.com/redguardtoo/find-by-pinyin-dired].
+  - @erstern adds the table for traditional Chinese characters.
+
+
+4 Contribute
 ============
 
   Contributions are always welcome. If you want to add some common

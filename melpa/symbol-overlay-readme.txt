@@ -24,6 +24,7 @@ Jump between locations of symbol at point: `symbol-overlay-jump-next' &
 `symbol-overlay-jump-prev'
 Switch to the closest symbol highlighted nearby:
 `symbol-overlay-switch-forward' & `symbol-overlay-switch-backward'
+Minor mode for auto-highlighting symbol at point: `symbol-overlay-mode'
 Remove all highlighted symbols in the buffer: `symbol-overlay-remove-all'
 Copy symbol at point: `symbol-overlay-save-symbol'
 Toggle overlays to be showed in buffer or only in scope:
@@ -37,11 +38,12 @@ Rename symbol at point on all its occurrences: `symbol-overlay-rename'
 
 Usage
 
-To use `symbol-overlay' in your Emacs, you need only to bind three keys:
+To use `symbol-overlay' in your Emacs, you need only to bind these keys:
 (require 'symbol-overlay)
 (global-set-key (kbd "M-i") 'symbol-overlay-put)
 (global-set-key (kbd "M-u") 'symbol-overlay-switch-backward)
 (global-set-key (kbd "M-o") 'symbol-overlay-switch-forward)
+(global-set-key (kbd "<f8>") 'symbol-overlay-mode)
 
 Default key-bindings are defined in `symbol-overlay-map'.
 You can re-bind the commands to any keys you prefer by simply writing

@@ -8,11 +8,12 @@ Example
 
 ## Use Interactive
 
-M-x wandbox                - Alias `wandbox-compile-buffer'
-M-x wandbox-compile-file   - Compile with file contents
-M-x wandbox-compile-region - Compile marked region
-M-x wandbox-compile-buffer - Compile current buffer
-M-x wandbox-list-compilers - Display copilers list
+M-x wandbox                 - Alias `wandbox-compile-buffer'
+M-x wandbox-compile-file    - Compile with file contents
+M-x wandbox-compile-region  - Compile marked region
+M-x wandbox-compile-buffer  - Compile current buffer
+M-x wandbox-insert-template - Insert template snippet
+M-x wandbox-list-compilers  - Display copilers list
 
 Note: if `#wandbox param: value` token found on selected file/buffer,
 wandbox-compile-file/buffer compiles using those params.

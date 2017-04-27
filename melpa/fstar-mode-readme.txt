@@ -3,7 +3,7 @@ This file implements support for F* programming in Emacs, including:
 * Syntax highlighting
 * Unicode math (prettify-symbols-mode)
 * Documentation and search
-* Simple indentation
+* Relative indentation
 * Type hints (Eldoc)
 * Autocompletion (Company)
 * Type-aware snippets (Yasnippet)
