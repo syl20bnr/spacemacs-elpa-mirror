@@ -6,7 +6,7 @@
 ;; Author: Nab Inno <nab@blahfe.com>
 ;; Created: 21 May 2016
 ;; Version: 0.8.13
-;; Package-Version: 20170423.525
+;; Package-Version: 20170427.845
 ;; Keywords: tools esa
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; URL: https://github.com/nabinno/esa.el
@@ -114,10 +114,10 @@ Example:
 
 ;; POST /v1/teams/%s/posts
 ;;;###autoload
-(defun esa-region (begin end &optional wip)
-  "Post the current region as a new esa at yourteam.esa.io.
+(defun esa-region (begin end &optional wip skip-notice)
+  "Post the current region from BEGIN to END as a new esa at yourteam.esa.io.
 
-With a prefix argument, makes a esa on WIP."
+With a prefix argument, makes a esa on WIP with SKIP-NOTICE."
   (interactive "r\nP")
   (let* ((name (read-from-minibuffer "Name: "))
          (category (read-from-minibuffer "Category: "))
@@ -130,6 +130,7 @@ With a prefix argument, makes a esa on WIP."
         (("name" . ,name)
          ("body_md" . ,(buffer-substring begin end))
          ("category" . ,category)
+         ("message" . ,(if skip-notice "[skip notice]" ""))
          ("tags" . ,(vconcat (split-string tags)))
          ("wip" . ,(if wip 't :json-false))))))))
 
@@ -138,35 +139,35 @@ With a prefix argument, makes a esa on WIP."
   "Post the current region as a new wip paste at yourteam.esa.io.
 Copies the URL into the kill ring."
   (interactive "r")
-  (esa-region begin end t))
+  (esa-region begin end t nil))
 
 ;;;###autoload
-(defun esa-buffer (&optional wip)
+(defun esa-buffer (&optional wip skip-notice)
   "Post the current buffer as a new paste at yourteam.esa.io.
 Copies the URL into the kill ring.
 
-With a prefix argument, makes a wip paste."
+With a prefix argument, makes a WIP and SKIP-NOTICE paste."
   (interactive "P")
-  (esa-region (point-min) (point-max) wip))
+  (esa-region (point-min) (point-max) wip skip-notice))
 
 ;;;###autoload
 (defun esa-buffer-wip ()
   "Post the current buffer as a new wip paste at yourteam.esa.io.
 Copies the URL into the kill ring."
   (interactive)
-  (esa-region (point-min) (point-max) t))
+  (esa-region (point-min) (point-max) t nil))
 
 ;;;###autoload
-(defun esa-region-or-buffer (&optional wip)
-  "Post either the current region, or if mark is not set, the
-current buffer as a new paste at yourteam.esa.io.
+(defun esa-region-or-buffer (&optional wip skip-notice)
+  "Post either the current region, or if mark is not set.
+The current buffer as a new paste at yourteam.esa.io.
 Copies the URL into the kill ring.
 
-With a prefix argument, makes a wip paste."
+With a prefix argument, makes a WIP and SKIP-NOTICE paste."
   (interactive "P")
   (if (esa-region-active-p)
       (esa-region (region-beginning) (region-end) wip)
-    (esa-buffer wip)))
+    (esa-buffer wip skip-notice)))
 
 ;;;###autoload
 (defun esa-region-or-buffer-wip ()
@@ -176,7 +177,7 @@ the URL into the kill ring."
   (interactive)
   (if (esa-region-active-p)
       (esa-region (region-beginning) (region-end) t)
-    (esa-buffer t)))
+    (esa-buffer t nil)))
 
 (defun esa-region-active-p ()
   (if (functionp 'region-active-p)
@@ -300,7 +301,7 @@ Parses the result and displays the list."
    (esa-simple-receiver "Delete")))
 
 ;; PATCH /v1/teams/%s/posts/%s
-(defun esa-update (number name category tags body_md &optional wip)
+(defun esa-update (number name category tags body_md &optional wip skip-notice)
   (esa-request
    "PATCH"
    (format "https://api.esa.io/v1/teams/%s/posts/%s" esa-team-name number)
@@ -309,16 +310,20 @@ Parses the result and displays the list."
         (body_md
          `(("post" .
             (("body_md" . ,body_md)
-             ("wip" . ,(if wip 't :json-false))))))
+             ("wip" . ,(if wip 't :json-false))
+             ("message" . ,(if skip-notice "[skip notice]" ""))))))
         (tags
          `(("post" .
-            (("tags" . ,(vconcat (split-string tags)))))))
+            (("tags" . ,(vconcat (split-string tags)))
+             ("message" . "[skip notice]")))))
         (category
          `(("post" .
-            (("category" . ,category)))))
+            (("category" . ,category)
+             ("message" . "[skip notice]")))))
         (name
          `(("post" .
-            (("name" . ,name)))))))))
+            (("name" . ,name)
+             ("message" . "[skip notice]")))))))))
 
 
 ;;; Components:
@@ -411,7 +416,7 @@ for the esa."
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-k") 'kill-this-buffer)
     (define-key map (kbd "C-c C-c") 'esa-update-body-md-wip-command)
-    (define-key map (kbd "C-c C-p") 'esa-update-body-md-command)
+    (define-key map (kbd "C-c C-p") 'esa-update-body-md-skip-notice-command)
     map))
 
 (define-derived-mode esa-describe-write-mode fundamental-mode "Esa Describe"
@@ -488,8 +493,7 @@ for the esa."
 
 ;; commands
 (defun esa-update-body-md-command (&optional number body_md)
-  "Called when a esa [Edit] button has been pressed.
-Edit the esa body_md."
+  "Edit the esa by NUMBER and BODY_MD."
   (interactive "P")
   (let* ((number (save-excursion
                    (goto-char (point-min))
@@ -501,9 +505,21 @@ Edit the esa body_md."
                       (buffer-substring (point) (point-max))))))
     (esa-update number nil nil nil body_md)))
 
+(defun esa-update-body-md-skip-notice-command (&optional number body_md)
+  "Edit the esa with [skip notice] by NUMBER and BODY_MD."
+  (interactive "P")
+  (let* ((number (save-excursion
+                   (goto-char (point-min))
+                   (when (re-search-forward "Number: " nil t)
+                     (buffer-substring (point) (progn (forward-word) (point))))))
+         (body_md (save-excursion
+                    (goto-char (point-min))
+                    (when (re-search-forward "^-\r?\n\n" nil t)
+                      (buffer-substring (point) (point-max))))))
+    (esa-update number nil nil nil body_md nil "[skip notice]")))
+
 (defun esa-update-body-md-wip-command (&optional number body_md)
-  "Called when a esa [Edit] button has been pressed.
-Edit the esa body_md."
+  "Edit the esa by NUMBER and BODY_MD."
   (interactive "P")
   (let* ((number (save-excursion
                    (goto-char (point-min))
@@ -516,8 +532,7 @@ Edit the esa body_md."
     (esa-update number nil nil nil body_md t)))
 
 (defun esa-delete-command (&optional number)
-  "Called when a esa [Delete] button has been pressed.
-Confirm and delete the esa."
+  "Confirm and delete the esa by NUMBER."
   (interactive "P")
   (when (y-or-n-p "Really delete this esa? ")
     (let* ((number (save-excursion

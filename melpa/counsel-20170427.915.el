@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170426.1322
+;; Package-Version: 20170427.915
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -2233,6 +2233,7 @@ INITIAL-INPUT can be given as the initial minibuffer input."
 
 ;;** `counsel-package'
 (defvar package--initialized)
+(defvar package-alist)
 (defvar package-archive-contents)
 (declare-function package-installed-p "package")
 (declare-function package-delete "package")

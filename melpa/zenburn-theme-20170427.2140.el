@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: http://github.com/bbatsov/zenburn-emacs
-;; Package-Version: 20170306.2250
+;; Package-Version: 20170427.2140
 ;; Version: 2.5
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -184,6 +184,9 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(font-lock-warning-face ((t (:foreground ,zenburn-yellow-2 :weight bold))))
 
    `(c-annotation-face ((t (:inherit font-lock-constant-face))))
+;;;;; man
+   '(Man-overstrike ((t (:inherit font-lock-keyword-face))))
+   '(Man-underline  ((t (:inherit (font-lock-string-face underline)))))
 ;;;;; newsticker
    `(newsticker-date-face ((t (:foreground ,zenburn-fg))))
    `(newsticker-default-face ((t (:foreground ,zenburn-fg))))
@@ -202,6 +205,9 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(newsticker-treeview-obsolete-face ((t (:foreground ,zenburn-red))))
    `(newsticker-treeview-old-face ((t (:foreground ,zenburn-bg+3))))
    `(newsticker-treeview-selection-face ((t (:background ,zenburn-bg-1 :foreground ,zenburn-yellow))))
+;;;;; woman
+   '(woman-bold   ((t (:inherit font-lock-keyword-face))))
+   '(woman-italic ((t (:inherit (font-lock-string-face italic)))))
 ;;;; Third-party
 ;;;;; ace-jump
    `(ace-jump-face-background

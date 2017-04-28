@@ -4,7 +4,7 @@
 ;; Author:  Jinzhu <wosmvp@gmail.com>
 ;; Created: 29 Nov 2013
 ;; Version: 0.0.3
-;; Package-Version: 20161114.1811
+;; Package-Version: 20170427.2042
 ;; URL: https://github.com/jinzhu/zeal-at-point
 ;;
 ;; This file is NOT part of GNU Emacs.
@@ -74,7 +74,7 @@
 (defcustom zeal-at-point-mode-alist
   `((actionscript-mode . "actionscript")
     (arduino-mode . "arduino")
-    (c++-mode . "c++")
+    (c++-mode . "cpp")
     (c-mode . "c")
     (clojure-mode . "clojure")
     (coffee-mode . "coffee")

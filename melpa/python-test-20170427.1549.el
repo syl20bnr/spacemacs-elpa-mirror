@@ -4,7 +4,7 @@
 
 ;; Author: Mario Rodas <marsam@users.noreply.github.com>
 ;; URL: https://github.com/emacs-pe/python-test.el
-;; Package-Version: 20170415.1556
+;; Package-Version: 20170427.1549
 ;; Keywords: convenience, tools, processes
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "25.1"))
@@ -363,6 +363,9 @@ It predates `python-nav-beginning-of-defun-regexp' to search a function definiti
           (group (1+ (not (any "\"<")))) ; avoid `<stdin>' &c
           "\", line " (group (1+ digit)))
      1 2)
+    (nose
+     ,(rx "vi +" (group (+ num)) " " (group (+ not-newline)) "  # " (+ not-newline))
+     2 1)
     (pytest
      ,(rx line-start (group (+ any)) ":" (group (1+ digit)) ": " (? (group (+ not-newline))))
      1 2 3))
