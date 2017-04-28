@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: http://github.com/bbatsov/zenburn-emacs
-;; Package-Version: 20170427.2140
+;; Package-Version: 20170428.331
 ;; Version: 2.5
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -618,6 +618,7 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(gnus-group-news-low-empty ((t (:foreground ,zenburn-bg+2))))
    `(gnus-signature ((t (:foreground ,zenburn-yellow))))
    `(gnus-x ((t (:background ,zenburn-fg :foreground ,zenburn-bg))))
+   `(mm-uu-extract ((t (:background ,zenburn-bg-05 :foreground ,zenburn-green+1))))
 ;;;;; guide-key
    `(guide-key/highlight-command-face ((t (:foreground ,zenburn-blue))))
    `(guide-key/key-face ((t (:foreground ,zenburn-green))))
