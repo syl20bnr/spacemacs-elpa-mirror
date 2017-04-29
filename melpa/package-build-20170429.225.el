@@ -7,7 +7,7 @@
 ;; Author: Donald Ephraim Curtis <dcurtis@milkbox.net>
 ;; Created: 2011-09-30
 ;; Version: 0.1
-;; Package-Version: 20170428.1602
+;; Package-Version: 20170429.225
 ;; Keywords: tools
 ;; Package-Requires: ((cl-lib "0.5"))
 
@@ -633,11 +633,6 @@ Return a cons cell whose `car' is the root and whose `cdr' is the repository."
   (let ((url (format "https://gitlab.com/%s.git" (plist-get config :repo))))
     (package-build--checkout-git name (plist-put (copy-sequence config) :url url) dir)))
 
-(defun package-build--checkout-bitbucket (name config dir)
-  "Check package NAME with config CONFIG out of bitbucket into DIR."
-  (let ((url (format "https://bitbucket.com/%s" (plist-get config :repo))))
-    (package-build--checkout-hg name (plist-put (copy-sequence config) :url url) dir)))
-
 ;;;; Bzr
 
 (defun package-build--bzr-repo (dir)
@@ -739,6 +734,11 @@ Return a cons cell whose `car' is the root and whose `cdr' is the repository."
         (package-build--find-parse-time "\
 \\([0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\} \
 [0-9]\\{2\\}:[0-9]\\{2\\}\\( [+-][0-9]\\{4\\}\\)?\\)")))))
+
+(defun package-build--checkout-bitbucket (name config dir)
+  "Check package NAME with config CONFIG out of bitbucket into DIR."
+  (let ((url (format "https://bitbucket.com/%s" (plist-get config :repo))))
+    (package-build--checkout-hg name (plist-put (copy-sequence config) :url url) dir)))
 
 ;;; Utilities
 

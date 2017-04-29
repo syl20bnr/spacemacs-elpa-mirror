@@ -4,11 +4,11 @@
 
 ;; Author: Elis "etu" Axelsson
 ;; URL: https://github.com/etu/webpaste.el
-;; Package-Version: 20170423.22
-;; Package-X-Original-Version: 1.2.1
-;; Version: 1.2.1
+;; Package-Version: 20170429.504
+;; Package-X-Original-Version: 1.2.2
+;; Version: 1.2.2
 ;; Keywords: convenience, comm, paste
-;; Package-Requires: ((emacs "24.4") (request "0.2.0") (cl-lib "0.5"))
+;; Package-Requires: ((emacs "24.4") (request "0.2.0") (cl-lib "0.5") (json "1.4"))
 
 ;;; Commentary:
 
@@ -37,6 +37,7 @@
 ;;; Code:
 (require 'request)
 (require 'cl-lib)
+(require 'json)
 
 
 
@@ -92,48 +93,67 @@ each run.")
                     (replace-regexp-in-string "\n$" "" data)))))
   "Predefined success callback for providers returning a string with URL.")
 
+
+(defvar webpaste/providers-default-post-field-lambda
+  (lambda (text post-field post-data)
+    (cl-pushnew (cons post-field text) post-data)
+
+    post-data)
+  "Predefined lambda for building post fields.")
+
 
 
 (cl-defun webpaste-provider (&key uri
-                                  (type "POST")
-                                  (parser 'buffer-string)
-                                  (post-data '())
-                                  (sync nil)
                                   post-field
-                                  error-lambda
-                                  success-lambda)
+                                  success-lambda
+                                  (type "POST")
+                                  (post-data '())
+                                  (parser 'buffer-string)
+                                  (error-lambda webpaste/providers-error-lambda)
+                                  (post-field-lambda webpaste/providers-default-post-field-lambda)
+                                  (sync nil))
   "Function to create the lambda function for a provider.
 
 Usage:
   (webpaste-provider
     [:keyword [option]]...)
 
-:uri            URI that we should do the request to to paste data.
-:type           HTTP Request type, defaults to POST.
-:parser         Defines how request.el parses the result. Look up :parser for
-                `request'. This defaults to 'buffer-string.
-:post-data      Default post fields sent to service. Defaults to nil.
-:post-field     Name of the field to insert the code into.
-:sync           Set to t to wait until request is done.  Defaults to nil.  This
-                should only be used for debugging purposes.
-:success-lambda Callback sent to `request', look up how to write these in the
-                documentation for `request'.
-:error-lambda   Callback sent to `request', look up how to write these in the
-                documentation for `request'.  A good default value forr this is
-                `webpaste/providers-error-lambda', but there's also
-                `webpaste/providers-error-lambda-no-failover' available if you
-                need a provider that isn't allowed to failover."
+Required params:
+:uri               URI that we should do the request to to paste data.
+
+:post-field        Name of the field to insert the code into.
+
+:success-lambda    Callback sent to `request', look up how to write these in the
+                   documentation for `request'.
+
+Optional params:
+:type              HTTP Request type, defaults to POST.
+
+:post-data         Default post fields sent to service. Defaults to nil.
+
+:parser            Defines how request.el parses the result. Look up :parser for
+                   `request'. This defaults to 'buffer-string.
+
+:error-lambda      Callback sent to `request', look up how to write these in the
+                   documentation for `request'.  The default value for this is
+                   `webpaste/providers-error-lambda', but there's also
+                   `webpaste/providers-error-lambda-no-failover' available if
+                   you need a provider that isn't allowed to failover.
+
+:post-field-lambda Function that builds and returns the post data that should be
+                   sent to the provider.  It should accept the parameter TEXT
+                   only which contains the content that should be sent.
+
+:sync              Set to t to wait until request is done.  Defaults to nil.
+                   This should only be used for debugging purposes."
   (lambda (text)
     "Paste TEXT to provider"
 
     (prog1 nil
-      ;; Local variable post-data
-      (cl-pushnew (cons post-field text) post-data)
-
       ;; Do request
       (request uri
                :type type
-               :data post-data
+               :data (funcall post-field-lambda text post-field post-data)
                :parser parser
                :success success-lambda
                :sync sync
@@ -147,22 +167,19 @@ Usage:
      ,(webpaste-provider
        :uri "https://ptpb.pw/"
        :post-field "c"
-       :success-lambda webpaste/providers-success-location-header
-       :error-lambda webpaste/providers-error-lambda))
+       :success-lambda webpaste/providers-success-location-header))
 
     ("ix.io"
      ,(webpaste-provider
        :uri "http://ix.io/"
        :post-field "f:1"
-       :success-lambda webpaste/providers-success-returned-string
-       :error-lambda webpaste/providers-error-lambda))
+       :success-lambda webpaste/providers-success-returned-string))
 
     ("sprunge.us"
      ,(webpaste-provider
        :uri "http://sprunge.us/"
        :post-field "sprunge"
-       :success-lambda webpaste/providers-success-returned-string
-       :error-lambda webpaste/providers-error-lambda))
+       :success-lambda webpaste/providers-success-returned-string))
 
     ("dpaste.com"
      ,(webpaste-provider
@@ -172,8 +189,7 @@ Usage:
                     ("poster" . "")
                     ("expiry_days" . 1))
        :post-field "content"
-       :success-lambda webpaste/providers-success-location-header
-       :error-lambda webpaste/providers-error-lambda))
+       :success-lambda webpaste/providers-success-location-header))
 
     ("dpaste.de"
      ,(webpaste-provider
@@ -182,8 +198,22 @@ Usage:
                     ("format" . "url")
                     ("expires" . 86400))
        :post-field "content"
-       :success-lambda webpaste/providers-success-returned-string
-       :error-lambda webpaste/providers-error-lambda)))
+       :success-lambda webpaste/providers-success-returned-string))
+
+    ("gist.github.com"
+     ,(webpaste-provider
+       :uri "https://api.github.com/gists"
+       :post-field nil
+       :post-field-lambda (lambda (text post-field post-data)
+                            (json-encode `(("description" . "Pasted from Emacs with webpaste.el")
+                                           ("public" . "true")
+                                           ("files" .
+                                            (("file.txt" .
+                                              (("content" . ,text))))))))
+       :success-lambda (cl-function (lambda (&key data &allow-other-keys)
+                                      (when data
+                                        (webpaste-return-url
+                                         (cdr (assoc 'html_url (json-read-from-string data))))))))))
 
   "Define all webpaste.el providers.
 Consists of provider name and lambda function to do the actuall call to the
