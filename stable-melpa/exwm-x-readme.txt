@@ -45,7 +45,7 @@ xhost +SI:localuser:$USER
 # Keyboard repeat rate
 # xset r rate 200 60
 
-exec dbus-launch --exit-with-session emacs --eval '(cond ((file-exists-p "~/.exwm") (load-file "~/.exwm")) ((not (featurep (quote exwm))) (require (quote exwm)) (require (quote exwm-config)) (exwm-config-default) (message "exwm configuration not found. Falling back to default configuration...")))'
+exec dbus-launch --exit-with-session emacs --eval '(require (quote exwmx-loader))'
 #+END_EXAMPLE
 
 *** Make "~/.initrc" or "~/.xsession" excutable
@@ -70,10 +70,9 @@ Add your exwm config to this file, for example:
 (require 'exwmx-xfce)
 (require 'exwmx-example)
 (exwm-input-set-key (kbd "C-t v") 'exwmx:thunar)
-(exwm-input-set-key (kbd "C-t c") 'exwmx:xfce4-terminal)
 (exwm-input-set-key (kbd "C-t f") 'exwmx:icecat)
-(exwm-input-set-key (kbd "C-t C-x") 'exwmx:xfce4-new-terminal)
-(exwm-input-set-key (kbd "C-t C-t") 'exwmx:xfce4-terminal)
+(exwm-input-set-key (kbd "C-t c") 'exwmx:xfce4-terminal)
+(exwm-input-set-key (kbd "C-t C-c") 'exwmx:xfce4-new-terminal)
 #+END_EXAMPLE
 
 Note: Package "exwmx-example" is Exwm-X buildin example, user can use it to test Exwm-X's
