@@ -3,5 +3,6 @@ from available options.  This is used in the following packages:
 
 * `ace-popup-menu'
 * `char-menu'
+* `hasky-extensions'
 
 You can use it directly for your custom needs as well.
