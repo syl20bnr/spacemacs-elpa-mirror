@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20170420.45
+;; Package-Version: 20170430.1336
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((flycheck "0.30") (emacs "25.1") (dash "2.13.0"))
@@ -82,7 +82,7 @@ expands to: (fun1 arg1 (λ (x) (fun2 arg2 (λ (x y) body))))."
   "Command line to start GHCi, as a list: the executable and its arguments.
 When nil, dante will guess the value depending on
 `dante-project-root' contents.  Customize as a file or directory
-variable. Each element of the list is evaluated before being
+variable.  Each element of the list is evaluated before being
 passed to the shell."
   :group 'dante
   :type '(repeat string))
@@ -101,15 +101,16 @@ Customize as a file or directory variable."
   :type '(choice (const nil) string))
 
 (defun dante-project-root ()
-  "Get the root directory for the project (if
-`dante-project-root' is set as a variable, return that, otherwise
-look for a .cabal file, or use the current dir)."
+  "Get the root directory for the project.
+If `dante-project-root' is set as a variable, return that,
+otherwise look for a .cabal file, or use the current dir."
   (file-name-as-directory
                 (or dante-project-root
                     (file-name-directory (or (dante-cabal-find-file) (dante-buffer-file-name))))))
 
 (defun dante-repl-by-file (root files cmdline)
-  (cl-some (lambda (file) (when (file-exists-p (concat root file)) cmdline)) files))
+  "Return if ROOT / file exists for any file in FILES, return CMDLINE."
+  (when (-any? (lambda (file) (file-exists-p (concat root file))) files) cmdline))
 
 (defconst dante-repl-command-line-default-methods
   `((styx  . ,(lambda (root) (dante-repl-by-file root '("styx.yaml") '("styx" "repl" dante-target))))
@@ -121,14 +122,15 @@ look for a .cabal file, or use the current dir)."
   "Default GHCi launch command lines.")
 
 (defcustom dante-repl-command-line-methods-alist dante-repl-command-line-default-methods
-  "GHCi launch command lines. This is an alist from method name
-  to a function taking the root directory and returning either a
-  command line or nil if the method should not apply. The first
-  non-nil result will be used as a command line. Customize this
-  if you do not want certain methods to be used by default by
-  dante. If you want a specific configuration for your project,
-  customize `dante-repl-command-line' directly, f as a
-  directory-local variable."
+"GHCi launch command lines.
+This is an alist from method name to a function taking the root
+directory and returning either a command line or nil if the
+method should not apply.  The first non-nil result will be used as
+a command line.  Customize this if you do not want certain methods
+to be used by default by dante.  If you want a specific
+configuration for your project, customize
+`dante-repl-command-line' directly, f as a directory-local
+variable."
   :type '(alist :key-type symbol :value-type function))
 ;; (setq dante-repl-command-line-methods-alist dante-repl-command-line-default-methods)
 
@@ -138,7 +140,7 @@ If `dante-repl-command-line' is non-nil, it will be returned.
 Otherwise, use `dante-repl-command-line-methods-alist'."
   (or dante-repl-command-line
       (let ((root (dante-project-root)))
-            (--first it (--map (funcall (cdr it) (dante-project-root))
+            (--first it (--map (funcall (cdr it) root)
                                dante-repl-command-line-methods-alist)))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mode
@@ -237,7 +239,8 @@ If `haskell-mode' is loaded, just return EXPRESSION."
 ;; Type and info at point
 
 (defun dante-type-at (insert)
-  "Get the type of the thing or selection at point."
+  "Get the type of the thing or selection at point.
+When the universal argument INSERT is non-nil, insert the type in the buffer."
   (interactive "P")
   (let ((tap (dante--ghc-subexp (dante-thing-at-point))))
     (dante-cps-let ((_load-messages (dante-async-load-current-buffer nil))
@@ -253,7 +256,7 @@ If `haskell-mode' is loaded, just return EXPRESSION."
         (help-xref-following nil)
         (origin (buffer-name)))
     (dante-cps-let ((_load-message (dante-async-load-current-buffer t))
-              (info (dante-async-call (format ":i %s" ident))))
+                    (info (dante-async-call (format ":i %s" ident))))
       (help-setup-xref (list #'dante-call-in-buffer (current-buffer) #'dante-info ident)
                        (called-interactively-p 'interactive))
       (save-excursion
@@ -534,7 +537,11 @@ x:\\foo\\bar (i.e., Windows)."
   "Restart the process with the same configuration as before."
   (interactive)
   (when (dante-buffer-p) (dante-destroy))
-  (dante-start (lambda (_buffer done) (funcall done))))
+  (let ((fm-enabled flycheck-mode))
+    (flycheck-mode -1) ;; because flycheck gets confused when dante is restarted.
+    (dante-cps-let (((_buffer done) (dante-start)))
+      (when fm-enabled (flycheck-mode 1))
+      (funcall done))))
 
 (defun dante-start (cont) ;; TODO: rename to "dante-session"
   "Run the CONT in a valid GHCi session for the current (source) buffer.
@@ -668,7 +675,7 @@ You can always run M-x dante-restart to make it try again.
 
 (defun dante-wait-for-prompt (source-buf cmd acc cont s-in)
   "Loop waiting for a GHCi prompt for SOURCE-BUF after CMD.
-Text is ACC umulated.  CONT is call with all concatenated S-IN."
+Text is ACC umulated.  CONT is called with all concatenated S-IN."
   (let ((s (concat acc s-in)))
     (if (string-match "\4\\(.*\\)|" s)
         (progn
@@ -689,7 +696,8 @@ Text is ACC umulated.  CONT is call with all concatenated S-IN."
     (funcall callback string)))
 
 (defun dante-schedule-next (buffer)
-  "Run the next GHCi sub-session for BUFFER, if any."
+  "Run the next GHCi sub-session for BUFFER, if any.
+Note that sub-sessions are not interleaved."
   (unless dante-callback
     (let ((req (pop dante-queue)))
       (if (not req)
@@ -806,6 +814,7 @@ a list is returned instead of failing with a nil result."
   nil)
 
 (defun dante-expand-filename (filename)
+  "Prepend FILENAME with the dante running directory."
   (concat (with-current-buffer (dante-buffer-p) default-directory) filename))
 
 (defun dante--make-xref (string nm)
@@ -873,8 +882,8 @@ a list is returned instead of failing with a nil result."
             (insert "_ <- "))
            ((string-match "Failed to load interface for ‘\\(.*\\)’\n[ ]*Perhaps you meant[ \n]*\\([^ ]*\\)" msg)
             (let ((replacement (match-string 2 msg)))
-              (search-forward (match-string 1 msg))
               ;; ^^ delete-region may garble the matches
+              (search-forward (match-string 1 msg))
               (delete-region (match-beginning 0) (point))
               (insert replacement)))
            ((string-match "Perhaps you meant ‘\\([^‘]*\\)’" msg)

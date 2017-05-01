@@ -18,7 +18,7 @@
 ;;
 ;; Author: Thomas de Beauchêne <thomas.de.beauchene@gmail.com>
 ;; Version: 1.0
-;; Package-Version: 20170418.631
+;; Package-Version: 20170430.1629
 ;; Keywords: convenience, frames, windows, multi-screen
 ;; URL: http://github.com/deb0ch/winum.el
 ;; Created: 2016
@@ -40,8 +40,6 @@
 ;;
 ;;; Code:
 ;;
-;; FIXME: when `winum-scope' is changed from frame-local to non-local in
-;;        customize, the mode-line is messed up until next `winum-update'.
 ;; FIXME: The mode-line's window number is not always up to date in all frames.
 ;;
 
@@ -171,6 +169,10 @@ To get a window given a number, use the `car' of a value.
 To get a number given a window, use the `cdr' of a value.
 
 Such a structure allows for per-frame bidirectional fast access.")
+
+(defvar winum--last-used-scope winum-scope
+  "Tracks the last used `winum-scope'.
+Needed to detect scope changes at runtime.")
 
 ;; Interactive functions -------------------------------------------------------
 
@@ -480,6 +482,7 @@ windows, however a higher number can be reserved by the user-defined
 
 (defun winum--set-window-vector (window-vector)
   "Set WINDOW-VECTOR according to the current `winum-scope'."
+  (winum--check-for-scope-change)
   (if (eq winum-scope 'frame-local)
       (puthash (selected-frame)
                (cons window-vector
@@ -490,6 +493,7 @@ windows, however a higher number can be reserved by the user-defined
 (defun winum--get-window-vector ()
   "Return the window vector used to get a window given a number.
 This vector is not stored the same way depending on the value of `winum-scope'."
+  (winum--check-for-scope-change)
   (if (eq winum-scope 'frame-local)
       (car (gethash (selected-frame) winum--frames-table))
     winum--window-vector))
@@ -498,6 +502,7 @@ This vector is not stored the same way depending on the value of `winum-scope'."
   "Return the numbers hashtable used to get a number given a window.
 This hashtable is not stored the same way depending on the value of
 `winum-scope'"
+  (winum--check-for-scope-change)
   (if (eq winum-scope 'frame-local)
       (cdr (gethash (selected-frame) winum--frames-table))
     winum--numbers-table))
@@ -520,6 +525,14 @@ using the `winum-assign-func', or using `winum-auto-assign-0-to-minibuffer'."
     (if (window-live-p window)
         (select-window window)
       (error "Got a dead window %S" window))))
+
+(defun winum--check-for-scope-change ()
+  "Check whether the `winum-scope' has been changed.
+If a change is detected run `winum--init' to reinitialize all
+internal data structures according to the new scope."
+  (unless (eq winum-scope winum--last-used-scope)
+    (setq winum--last-used-scope winum-scope)
+    (winum--init)))
 
 (push "^No window numbered .$"     debug-ignored-errors)
 (push "^Got a dead window .$"      debug-ignored-errors)

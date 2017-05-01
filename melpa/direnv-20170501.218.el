@@ -1,8 +1,8 @@
 ;;; direnv.el --- direnv support for emacs
 
 ;; Author: Wouter Bolsterlee <wouter@bolsterl.ee>
-;; Version: 1.1.0
-;; Package-Version: 1.1.0
+;; Version: 1.2.0
+;; Package-Version: 20170501.218
 ;; Package-Requires: ((emacs "24.4") (dash "2.13.0") (with-editor "2.5.10"))
 ;; Keywords: direnv, environment
 ;; URL: https://github.com/wbolster/emacs-direnv
@@ -18,6 +18,7 @@
 
 (require 'dash)
 (require 'json)
+(require 'subr-x)
 (require 'with-editor)
 
 (defgroup direnv nil
@@ -25,10 +26,14 @@
   :group 'environment
   :prefix "direnv-")
 
+(defun direnv--detect ()
+  "Detect the direnv executable."
+  (executable-find "direnv"))
+
 (defvar direnv--output-buffer-name " *direnv*"
   "Name of the hidden buffer used for direnv interaction.")
 
-(defvar direnv--installed (executable-find "direnv")
+(defvar direnv--installed (direnv--detect)
   "Whether direnv is installed.")
 
 (defvar direnv--active-directory nil
@@ -47,17 +52,32 @@ interactively."
   :group 'direnv
   :type 'boolean)
 
+(defcustom direnv-use-faces-in-summary t
+  "Whether to use custom font faces in the summary message.
+
+When enabled, the summary message uses custom font faces strings
+for added, changed, and removed environment variables, which
+usually results in coloured output."
+  :group 'direnv
+  :type 'boolean)
+
 (defun direnv--export (directory)
   "Call direnv for DIRECTORY and return the parsed result."
+  (unless direnv--installed
+    (setq direnv--installed (direnv--detect)))
+  (unless direnv--installed
+    (user-error "Could not find the direnv executable. Is exec-path correct?"))
   (with-current-buffer (get-buffer-create direnv--output-buffer-name)
-    (delete-region (point-min) (point-max))
+    (erase-buffer)
     (let* ((default-directory directory)
-           (exit-code (call-process "direnv" nil '(t nil) nil "export" "json")))
+           (exit-code (call-process "direnv" nil '(t t) nil "export" "json")))
       (unless (zerop exit-code)
-        (error "Error running direnv: exit code %s; output was:\n%S"
-               exit-code (buffer-string)))
+        (display-buffer (current-buffer))
+        (error "Error running direnv: exit code %s; output is in buffer '%s'"
+               exit-code direnv--output-buffer-name))
       (unless (zerop (buffer-size))
-        (goto-char (point-min))
+        (goto-char (point-max))
+        (re-search-backward "^{")
         (let ((json-key-type 'string))
           (json-read-object))))))
 
@@ -73,9 +93,8 @@ interactively."
 (defun direnv--maybe-update-environment ()
   "Maybe update the environment."
   (with-current-buffer (window-buffer)
-    (let* ((filename (buffer-file-name (window-buffer))))
-      (when (and direnv--installed
-                 filename
+    (let* ((filename (buffer-file-name (current-buffer))))
+      (when (and filename
                  (not (string-equal direnv--active-directory (file-name-directory filename)))
                  (not (file-remote-p filename)))
         (direnv-update-environment filename)))))
@@ -94,12 +113,23 @@ interactively."
   "Create a summary string for ITEMS."
   (string-join
    (--map
-    (concat
-     (if (cdr it) (if (getenv (car it)) "~" "+") "-")
-     (car it))
+    (let* ((name (car it))
+           (state (cdr it))
+           (face)
+           (prefix))
+      (pcase state
+        ('added   (setq prefix "+" face 'diff-added))
+        ('changed (setq prefix "~" face 'diff-changed))
+        ('removed (setq prefix "-" face 'diff-removed)))
+      (propertize (concat prefix name) 'face face))
     (--sort
-     (string-lessp (car it) (car other))
-     (--remove (string-prefix-p "DIRENV_" (car it)) items)))
+     (string-lessp (symbol-name (cdr it)) (symbol-name (cdr other)))
+     (--map
+      (cons (car it)
+            (if (cdr it) (if (getenv (car it)) 'changed 'added) 'removed))
+      (--sort
+       (string-lessp (car it) (car other))
+       (--remove (string-prefix-p "DIRENV_" (car it)) items)))))
    " "))
 
 (defun direnv--show-summary (items old-directory new-directory)
@@ -117,6 +147,8 @@ the environment changes."
       (setq summary "no changes"))
     (unless direnv-show-paths-in-summary
       (setq paths ""))
+    (unless direnv-use-faces-in-summary
+      (setq summary (substring-no-properties summary)))
     (message "direnv: %s%s" summary paths)))
 
 ;;;###autoload

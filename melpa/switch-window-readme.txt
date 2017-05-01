@@ -58,19 +58,40 @@ to get input instead:
 (setq switch-window-input-style 'minibuffer)
 #+END_EXAMPLE
 
-*** I want to make switch-window beautiful?
-All you should to do is setting the variable
-`switch-window-label-buffer-function', for example:
+*** I use text terminal, but I want *bigger* label.
+The only choice is using asciiart, which *draw* a bigger label
+with *small* ascii char.
+
+#+BEGIN_EXAMPLE
+(setq switch-window-shortcut-appearance 'asciiart)
+#+END_EXAMPLE
+
+[[./snapshots/switch-window-3.png]]
+
+*** I want to use image or icon as label.
+1. Prepare your label images, rename them to:
+   1.png ... 9.png, a.png ... z.png.
+
+   You can use other image types supported by
+   emacs, please see: `image-types'.
+2. Put all above images to directory:
+   `switch-window-image-directory'.
+3. Set variable: `switch-window-shortcut-appearance'
+   #+BEGIN_EXAMPLE
+   (setq switch-window-shortcut-appearance 'image)
+   #+END_EXAMPLE
+
+[[./snapshots/switch-window-2.png]]
+
+*** `switch-window-shortcut-appearance' can't satisfy my need. how to do?
+All you should do is hacking you own label buffer function,
+for example: my-switch-window-label-buffer-function, and set
+the below variable:
 
 #+BEGIN_EXAMPLE
 (setq switch-window-label-buffer-function
       'my-switch-window-label-buffer-function)
 #+END_EXAMPLE
-
-The below are some switch-window user's showcases:
-
-[[./snapshots/switch-window-2.png]]
-[[./snapshots/switch-window-3.png]]
 
 *** Have any other similar package exist?
 - [[https://github.com/abo-abo/ace-window][ace-window]]

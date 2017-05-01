@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015-2017 Clément Pit-Claudel
 ;; Author: Clément Pit-Claudel <clement.pitclaudel@live.com>
 ;; URL: https://github.com/FStarLang/fstar.el
-;; Package-Version: 20170429.1229
+;; Package-Version: 20170501.229
 
 ;; Created: 27 Aug 2015
 ;; Version: 0.4
@@ -2471,13 +2471,14 @@ Report an error if the region is empty."
         (fstar-subp-set-status overlay 'pending)
         (fstar-subp--set-queue-timer)))))
 
-(defun fstar-subp-advance-next ()
-  "Process next block."
-  (interactive)
+(defun fstar-subp-advance-next (&optional lax)
+  "Process next block, possibly (with prefix arg) in LAX mode."
+  (interactive "P")
   (fstar-subp-start)
   (fstar--widened
     (-if-let* ((target (fstar-subp--find-point-to-process 1)))
-        (fstar-subp-enqueue-until (goto-char target))
+        (let ((fstar-subp--lax lax))
+          (fstar-subp-enqueue-until (goto-char target)))
       (user-error "Cannot find a full block to process"))))
 
 (defun fstar-subp-pop-overlay (overlay)

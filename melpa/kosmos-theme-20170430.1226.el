@@ -2,7 +2,7 @@
 
 ;; Author: Maxim Kim <habamax@gmail.com>
 ;; Url: https://github.com/habamax/kosmos-theme
-;; Package-Version: 20170218.1121
+;; Package-Version: 20170430.1226
 ;; Package-Requires: ((emacs "24"))
 
 ;;; Commentary:
@@ -34,8 +34,8 @@
      (kosmos-bg-todo "#775555")
      (kosmos-fg-done "#abbdab")
      (kosmos-bg-done "#777777")
-     (kosmos-h1 "#b0b0b0")
-     (kosmos-h2 "#b0b090")
+     (kosmos-title "#f0f07f")
+     (kosmos-heading "#ffffff")
      (kosmos-bg-hl-parens "#703000")
      (kosmos-bg-alt "#252520")
      (kosmos-fg-modeline-hl "#ffff00")
@@ -180,18 +180,18 @@
    ;; org
    `(org-document-title ((t (:foreground ,kosmos-keyword :weight bold :height 1.6))))
 
-   `(org-level-1 ((t (:foreground ,kosmos-h1 :weight bold :height 1.3))))
-   `(org-level-2 ((t (:foreground ,kosmos-h2 :weight bold :height 1.2))))
-   `(org-level-3 ((t (:foreground ,kosmos-h1 :weight bold :height 1.1))))
+   `(org-level-1 ((t (:foreground ,kosmos-heading :weight bold :height 1.3))))
+   `(org-level-2 ((t (:foreground ,kosmos-heading :weight bold :height 1.2))))
+   `(org-level-3 ((t (:foreground ,kosmos-heading :weight bold :height 1.1))))
 
-   `(org-level-4 ((t (:foreground ,kosmos-h2 :slant italic :height 1.1))))
-   `(org-level-5 ((t (:foreground ,kosmos-h1 :slant italic :height 1.1))))
-   `(org-level-6 ((t (:foreground ,kosmos-h2 :slant italic :height 1.1))))
+   `(org-level-4 ((t (:foreground ,kosmos-heading :slant italic :height 1.1))))
+   `(org-level-5 ((t (:foreground ,kosmos-heading :slant italic :height 1.1))))
+   `(org-level-6 ((t (:foreground ,kosmos-heading :slant italic :height 1.1))))
 
-   `(org-level-7 ((t (:foreground ,kosmos-h1 :slant italic :height 1))))
-   `(org-level-8 ((t (:foreground ,kosmos-h2 :slant italic :height 1))))
-   `(org-level-9 ((t (:foreground ,kosmos-h1 :slant italic :height 1))))
-   `(org-level-10 ((t (:foreground ,kosmos-h2 :slant italic :height 1))))
+   `(org-level-7 ((t (:foreground ,kosmos-heading :slant italic :height 1))))
+   `(org-level-8 ((t (:foreground ,kosmos-heading :slant italic :height 1))))
+   `(org-level-9 ((t (:foreground ,kosmos-heading :slant italic :height 1))))
+   `(org-level-10 ((t (:foreground ,kosmos-heading :slant italic :height 1))))
 
    `(org-tag ((nil (:foreground ,kosmos-comment))))
 
@@ -211,7 +211,7 @@
    `(org-agenda-structure ((t (:foreground ,kosmos-fg :height 1.6 :weight bold))))
    `(org-agenda-date ((nil (:height 1.0))))
    `(org-agenda-date-today ((t (:height 1.5 :weight bold))))
-   `(org-agenda-date-weekend ((t (:foreground ,kosmos-h2 :height 1.3))))
+   `(org-agenda-date-weekend ((t (:foreground ,kosmos-title :height 1.3))))
 
    '(org-scheduled ((t (:inherit :default))))
    `(org-scheduled-today ((t (:inherit :default :foreground ,kosmos-keyword))))
@@ -281,6 +281,19 @@
    `(rainbow-delimiters-depth-8-face ((t (:foreground "#90a0bd"))))
    `(rainbow-delimiters-depth-9-face ((t (:foreground "#a0bd90"))))
 
+
+   ;; asciidoctor-mode
+   ;; `(asciidoctor-header-rule-face ((t (:foreground ,kosmos-h1 :weight bold :height 1.3))))
+   ;; `(asciidoctor-header-delimiter-face ((t (:weight bold :height 1.3))))
+
+   `(asciidoctor-header-face-1 ((t (:foreground ,kosmos-title :weight bold :height 1.3))))
+   `(asciidoctor-header-face-2 ((t (:foreground ,kosmos-heading :weight bold :height 1.3))))
+   `(asciidoctor-header-face-3 ((t (:foreground ,kosmos-heading :weight bold :height 1.2))))
+   `(asciidoctor-header-face-4 ((t (:foreground ,kosmos-heading :weight bold :height 1.1))))
+   `(asciidoctor-header-face-5 ((t (:foreground ,kosmos-heading :slant italic :height 1.1))))
+   `(asciidoctor-header-face-6 ((t (:foreground ,kosmos-heading :slant italic :height 1.1))))
+
+   
    )
   )
 

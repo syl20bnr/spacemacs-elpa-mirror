@@ -4,7 +4,7 @@
 
 ;; Author: Mario Rodas <marsam@users.noreply.github.com>
 ;; URL: https://github.com/emacs-pe/luarocks.el
-;; Package-Version: 20170429.1814
+;; Package-Version: 20170430.1605
 ;; Keywords: convenience
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
@@ -61,8 +61,11 @@
   (cl-assert (executable-find luarocks-executable) nil "LuaRocks executable not found: %s" luarocks-executable)
   (setenv "LUA_PATH" (luarocks-exec-string "path" "--lr-path"))
   (setenv "LUA_CPATH" (luarocks-exec-string "path" "--lr-cpath"))
-  (dolist (path (parse-colon-path (luarocks-exec-string "path" "--lr-bin")))
-    (add-to-list 'exec-path path)))
+  (let ((binpaths (parse-colon-path (getenv "PATH"))))
+    (dolist (path (parse-colon-path (luarocks-exec-string "path" "--lr-bin")))
+      (or (member path binpaths)
+          (setenv "PATH" (concat path path-separator (getenv "PATH"))))
+      (add-to-list 'exec-path path))))
 
 (provide 'luarocks)
 ;;; luarocks.el ends here

@@ -7,7 +7,7 @@
 ;; Maintainer: Joost Kremers <joostkremers@fastmail.fm>
 ;; Created: 2014
 ;; Version: 2.3
-;; Package-Version: 20170326.2344
+;; Package-Version: 20170501.347
 ;; Keywords: text bibtex
 ;; Package-Requires: ((emacs "24.3"))
 
@@ -152,8 +152,14 @@ combination, the field inherits from the same-name field in the
 cross-referenced entry.  If no inheritance should take place, the
 target field is set to the symbol `none'.")
 
-(defconst parsebib--bibtex-identifier "[^^\"@\\&$#%',={}() \t\n\f]+" "Regexp describing a licit BibTeX identifier.")
-(defconst parsebib--key-regexp "[^^\"@\\&$#%',={} \t\n\f]+" "Regexp describing a licit key.")
+;; Regexes describing BibTeX identifiers and keys.  Note that while $ ^ & are
+;; valid in BibTeX keys, they may nonetheless be problematic, because they are
+;; special for TeX.  The difference between `parsebib--bibtex-identifier' and
+;; `parsebib--key-regexp' are the parentheses (), which are valid in keys.  It may in
+;; fact not be necessary (or desirable) to distinguish the two, but until
+;; someone complains, I'll keep it this way.
+(defconst parsebib--bibtex-identifier "[^\"@\\#%',={}() \t\n\f]+" "Regexp describing a licit BibTeX identifier.")
+(defconst parsebib--key-regexp        "[^\"@\\#%',={} \t\n\f]+" "Regexp describing a licit key.")
 (defconst parsebib--entry-start "^[ \t]*@" "Regexp describing the start of an entry.")
 
 ;; Emacs 24.3 compatibility code.

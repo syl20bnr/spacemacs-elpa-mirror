@@ -4,7 +4,7 @@
 
 ;; Author: wolray <wolray@foxmail.com>
 ;; Version: 3.3
-;; Package-Version: 20170428.241
+;; Package-Version: 20170501.108
 ;; URL: https://github.com/wolray/symbol-overlay/
 ;; Keywords: faces, matching
 ;; Package-Requires: ((emacs "24.3"))
@@ -523,7 +523,8 @@ BEG, END and LEN are the beginning, end and length of changed text."
 	  (and (looking-at-p re)
 	       (setq end (re-search-forward "\\_>")))
 	  (goto-char beg)
-	  (and (looking-at-p (concat "\\(" re "\\|\\_>\\)"))
+	  (and (not (looking-at-p "\\_<"))
+	       (looking-at-p (concat "\\(" re "\\|\\_>\\)"))
 	       (setq beg (re-search-backward "\\_<")))
 	  (mapc #'(lambda (overlay)
 		    (and (overlay-get overlay 'symbol)
