@@ -23,6 +23,19 @@ Note: User can install switch-window with [[http://github.com/dimitri/el-get][El
 (global-set-key (kbd "C-x 0") 'switch-window-then-delete)
 #+END_EXAMPLE
 
+When switch-window is enabled, user can use the below five keys:
+
+| key | command description   |
+|-----+-----------------------|
+| "i" | Move the border up    |
+| "k" | Move the border down  |
+| "j" | Move the border left  |
+| "k" | Move the border right |
+| "b" | Balance windows       |
+
+If you want to customize this feature, please see variable:
+`switch-window-extra-map'.
+
 ** Tips
 
 *** I want to select a window with "a-z" instead of "1-9".
