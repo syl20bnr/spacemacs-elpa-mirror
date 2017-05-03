@@ -4,7 +4,7 @@
 
 ;; Author: Elis "etu" Axelsson
 ;; URL: https://github.com/etu/webpaste.el
-;; Package-Version: 20170501.1005
+;; Package-Version: 20170503.105
 ;; Package-X-Original-Version: 1.2.2
 ;; Version: 1.2.2
 ;; Keywords: convenience, comm, paste
@@ -95,10 +95,12 @@ each run.")
 
 
 (defvar webpaste/providers-default-post-field-lambda
-  (lambda (text post-field post-data)
-    (cl-pushnew (cons post-field text) post-data)
+  (cl-function (lambda (&key text
+                        post-field
+                        (post-data '()))
+                 (cl-pushnew (cons post-field text) post-data)
 
-    post-data)
+                 post-data))
   "Predefined lambda for building post fields.")
 
 
@@ -144,8 +146,9 @@ Optional params:
                    you need a provider that isn't allowed to failover.
 
 :post-field-lambda Function that builds and returns the post data that should be
-                   sent to the provider.  It should accept the parameter TEXT,
-                   POST-FIELD and POST-DATA.
+                   sent to the provider.  It should accept named parameters by
+                   the names TEXT, POST-FIELD and POST-DATA.  POST-DATA should
+                   default to `nil' or empty list.
 
                    TEXT contains the data that should be sent.
                    POST-FIELD cointains the name of the field to be sent.
@@ -160,7 +163,10 @@ Optional params:
       ;; Do request
       (request uri
                :type type
-               :data (funcall post-field-lambda text post-field post-data)
+               :data (funcall post-field-lambda
+                              :text text
+                              :post-field post-field
+                              :post-data post-data)
                :parser parser
                :success success-lambda
                :sync sync
@@ -211,12 +217,12 @@ Optional params:
      ,(webpaste-provider
        :uri "https://api.github.com/gists"
        :post-field nil
-       :post-field-lambda (lambda (text post-field post-data)
+       :post-field-lambda (cl-function (lambda (&key text post-field (post-data '()))
                             (json-encode `(("description" . "Pasted from Emacs with webpaste.el")
                                            ("public" . "false")
                                            ("files" .
                                             (("file.txt" .
-                                              (("content" . ,text))))))))
+                                              (("content" . ,text)))))))))
        :success-lambda (cl-function (lambda (&key data &allow-other-keys)
                                       (when data
                                         (webpaste-return-url
