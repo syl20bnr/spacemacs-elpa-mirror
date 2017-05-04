@@ -4,8 +4,8 @@
 
 ;; Author: Fritz Stelzer <brotzeitmacher@gmail.com>
 ;; URL: https://github.com/brotzeitmacher/arch-packer
-;; Package-Version: 20170502.340
-;; Version: 0.1
+;; Package-Version: 20170503.356
+;; Version: 0.2
 ;; Package-Requires: ((emacs "25.1") (s "1.11.0"))
 
 ;;; License:
@@ -584,45 +584,46 @@
 (defun arch-packer-menu-execute ()
   "Perform marked Package Menu actions."
   (interactive)
-  (let (upgrade-list
-        delete-list
-        cmd
-        pkg-desc)
-    (save-excursion
-      (goto-char (point-min))
-      (while (not (eobp))
-        (setq cmd (char-after))
-        (setq pkg-desc (tabulated-list-get-id))
-        (cond ((eq cmd ?D)
-               (push (substring-no-properties pkg-desc) delete-list))
-              ((eq cmd ?U)
-               (push (substring-no-properties pkg-desc) upgrade-list)))
-        (forward-line)))
-    (unless (or delete-list upgrade-list)
-      (user-error "No operations specified"))
-    (let* ((del (when delete-list
-                  (concat (format "Delete %d package%s "
-                                  (length delete-list)
-                                  (if (> (length delete-list) 1)
+  (unless (process-running-child-p arch-packer-process-name)
+   (let (upgrade-list
+         delete-list
+         cmd
+         pkg-desc)
+     (save-excursion
+       (goto-char (point-min))
+       (while (not (eobp))
+         (setq cmd (char-after))
+         (setq pkg-desc (tabulated-list-get-id))
+         (cond ((eq cmd ?D)
+                (push (substring-no-properties pkg-desc) delete-list))
+               ((eq cmd ?U)
+                (push (substring-no-properties pkg-desc) upgrade-list)))
+         (forward-line)))
+     (unless (or delete-list upgrade-list)
+       (user-error "No operations specified"))
+     (let* ((del (when delete-list
+                   (concat (format "Delete %d package%s "
+                                   (length delete-list)
+                                   (if (> (length delete-list) 1)
+                                       "s" ""))
+                           (replace-regexp-in-string " " ", "
+                                                     (format "%s" delete-list)))))
+            (up (when upgrade-list
+                  (concat (format "Upgrade %d package%s "
+                                  (length upgrade-list)
+                                  (if (> (length upgrade-list) 1)
                                       "s" ""))
                           (replace-regexp-in-string " " ", "
-                                                    (format "%s" delete-list)))))
-           (up (when upgrade-list
-                 (concat (format "Upgrade %d package%s "
-                                 (length upgrade-list)
-                                 (if (> (length upgrade-list) 1)
-                                     "s" ""))
-                         (replace-regexp-in-string " " ", "
-                                                   (format "%s" upgrade-list)))))
-           (msg (if (and del up)
-                    (concat del " and " up)
-                  (or del up))))
-      (when (yes-or-no-p (format "%s" msg))
-        (when upgrade-list
-          (arch-packer-upgrade-package (mapconcat 'identity upgrade-list " ")))
-        (arch-packer-wait-shell-subprocess)
-        (when delete-list
-          (arch-packer-delete-package (mapconcat 'identity delete-list " ")))))))
+                                                    (format "%s" upgrade-list)))))
+            (msg (if (and del up)
+                     (concat del " and " up)
+                   (or del up))))
+       (when (yes-or-no-p (format "%s" msg))
+         (when upgrade-list
+           (arch-packer-upgrade-package (mapconcat 'identity upgrade-list " ")))
+         (arch-packer-wait-shell-subprocess)
+         (when delete-list
+           (arch-packer-delete-package (mapconcat 'identity delete-list " "))))))))
 
 ;;;###autoload
 (defun arch-packer-search-package ()
@@ -630,9 +631,10 @@
   (interactive)
   (unless (arch-packer-shell-process-live-p)
     (arch-packer-open-shell-process))
-  (let ((pkg (read-from-minibuffer "Enter package name: ")))
-    (setq arch-packer-search-string (s-trim pkg)))
-  (arch-packer-get-exit-status))
+  (unless (process-running-child-p arch-packer-process-name)
+      (let ((pkg (read-from-minibuffer "Enter package name: ")))
+        (setq arch-packer-search-string (s-trim pkg)))
+    (arch-packer-get-exit-status)))
 
 ;;;###autoload
 (defun arch-packer-install-package ()
@@ -641,21 +643,23 @@
   (unless (arch-packer-shell-process-live-p)
     (and (arch-packer-open-shell-process)
          (arch-packer-refresh-database)))
-  (if (string= major-mode "arch-packer-search-mode")
-      (let ((pkg (save-excursion
-                   (beginning-of-line-text)
-                   (word-at-point))))
-        (when (yes-or-no-p (format "Install package %s ?" pkg))
-          (arch-packer-upgrade-package (s-trim pkg))))
-    (let ((pkg (read-from-minibuffer "Enter package name: ")))
-      (arch-packer-upgrade-package (s-trim pkg)))))
+  (unless (process-running-child-p arch-packer-process-name)
+    (if (string= major-mode "arch-packer-search-mode")
+        (let ((pkg (save-excursion
+                     (beginning-of-line-text)
+                     (word-at-point))))
+          (when (yes-or-no-p (format "Install package %s ?" pkg))
+            (arch-packer-upgrade-package (s-trim pkg))))
+      (let ((pkg (read-from-minibuffer "Enter package name: ")))
+        (arch-packer-upgrade-package (s-trim pkg))))))
 
 ;;;###autoload
 (defun arch-packer-list-packages ()
   "Refresh package menu."
   (interactive)
   (if (arch-packer-shell-process-live-p)
-      (arch-packer-get-exit-status)
+      (unless (process-running-child-p arch-packer-process-name)
+        (arch-packer-get-exit-status))
     (progn (arch-packer-open-shell-process)
            (arch-packer-refresh-database))))
 

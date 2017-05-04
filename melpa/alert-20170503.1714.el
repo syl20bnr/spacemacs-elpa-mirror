@@ -6,7 +6,7 @@
 ;; Created: 24 Aug 2011
 ;; Updated: 16 Mar 2015
 ;; Version: 1.2
-;; Package-Version: 20170429.1810
+;; Package-Version: 20170503.1714
 ;; Package-Requires: ((gntp "0.1") (log4e "0.3.0"))
 ;; Keywords: notification emacs message
 ;; X-URL: https://github.com/jwiegley/alert
@@ -766,7 +766,7 @@ strings."
 
 (defcustom alert-notifier-command (executable-find "terminal-notifier")
   "Path to the terminal-notifier command.
-From https://github.com/alloy/terminal-notifier."
+From https://github.com/julienXX/terminal-notifier."
   :type 'file
   :group 'alert)
 

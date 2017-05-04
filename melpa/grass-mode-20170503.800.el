@@ -3,8 +3,8 @@
 ;; Copyright (C) Tyler Smith 2017
 
 ;; Author: Tyler Smith <tyler@plantarum.ca>
-;; Version: 0.4
-;; Package-Version: 20170303.854
+;; Version: 0.5
+;; Package-Version: 20170503.800
 ;; Package-Requires: ((cl-lib "0.2") (dash "2.8.0"))
 ;; Keywords: GRASS, GIS
 
@@ -387,6 +387,7 @@ list element for use in grass-commands. See grass-parse-command-list"
                                          help-file "\n")) 
             (while (and (< counter 5)
                         (< (nth 7 (file-attributes help-file)) 1))
+              ;; attribute 7 is file size!
               ;; help-file is usually produced instantly, but OS-level
               ;; issues may occasionally delay this. If the file is still
               ;; empty, wait a half- second and then retry. Note that some
@@ -481,7 +482,7 @@ grass-program-alist."
   (push (list prog
               (grass-parse-command-list))
         grass-completion-lookup-table)
-  (grass-update-completions prog grass-command-updates)
+  (grass-update-completions prog grass-command-updates) ;; see docs for grass-command-updates
   (grass-write-completions-to-file)
   (setq grass-commands 
         (cadr (assoc grass-name grass-completion-lookup-table))))
@@ -879,14 +880,28 @@ already active. With a prefix force the creation of a new process."
                        (concat 
                         (file-name-as-directory
                          (cdr grass-location)) 
-                        grass-mapset)))
+                        grass-mapset))
+                 ;; NB: passing empty arguments to grass via start-process
+                 ;; causes GRASS to ignore all arguments? Not sure why this
+                 ;; happens, but as a result opening grass will
+                 ;; automatically load the previous mapset, and ignore the
+                 ;; users selected mapset at this point. As a quick fix,
+                 ;; when we are not creating a new mapset, and so don't
+                 ;; need arg2 and arg3, we call start-process with a single
+                 ;; argument here. A separate branch of the 'if' form
+                 ;; handles the three-argument call.
+                 (setq grass-process
+                       (start-process "grass" (concat "*" grass-name "*")
+                                      grass-program "-text" arg1)))
         (setq arg1 "-c") ;; new location
         (setq arg2 (expand-file-name (read-file-name "Georeferenced file: ")))
         (setq arg3 (concat
-                    (expand-file-name grass-grassdata) "/"  (car grass-location))))
-      (setq grass-process
-            (start-process "grass" (concat "*" grass-name "*")
-                           grass-program "-text" arg1 arg2 arg3))))
+                    (expand-file-name grass-grassdata) "/"  (car grass-location)))
+        (message "Loading grass location: %s %s %s %s"
+                 grass-program "-text" arg1 arg2 arg3)
+        (setq grass-process
+              (start-process "grass" (concat "*" grass-name "*")
+                             grass-program "-text" arg1 arg2 arg3)))))
 
   (grass-read-completions)
 

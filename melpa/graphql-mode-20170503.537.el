@@ -4,7 +4,7 @@
 
 ;; Author: David Vazquez Pua <davazp@gmail.com>
 ;; Keywords: languages
-;; Package-Version: 20170502.555
+;; Package-Version: 20170503.537
 ;; Package-Requires: ((emacs "24.3"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -64,7 +64,7 @@
   "Send QUERY to the server at `graphql-url' and return the
 response from the server."
   (let ((url-request-method "POST")
-        (url (format "%s/?query=%s" graphql-url (url-encode-url query))))
+        (url (format "%s?query=%s" graphql-url (url-encode-url query))))
     (with-current-buffer (url-retrieve-synchronously url t)
       (goto-char (point-min))
       (search-forward "\n\n")

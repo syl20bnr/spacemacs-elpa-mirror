@@ -3,8 +3,8 @@
 
 ;; Copyright 2011-2017 François-Xavier Bois
 
-;; Version: 14.1.18
-;; Package-Version: 20170501.1032
+;; Version: 14.1.19
+;; Package-Version: 20170503.1134
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; Package-Requires: ((emacs "23.1"))
@@ -25,7 +25,7 @@
 
 ;;---- CONSTS ------------------------------------------------------------------
 
-(defconst web-mode-version "14.1.18"
+(defconst web-mode-version "14.1.19"
   "Web Mode version.")
 
 ;;---- GROUPS ------------------------------------------------------------------
@@ -7211,10 +7211,11 @@ another auto-completion with different ac-sources (e.g. ac-php)")
          ((and (member language '("jsx"))
                (eq curr-char ?\})
                (get-text-property pos 'jsx-end))
-          (when debug (message "I180(%S) jsx-expr-beg" pos))
+          (when debug (message "I180(%S) jsx-expr-end" pos))
           (web-mode-go (1- reg-beg))
           (setq reg-col nil)
-          (setq offset (current-column)))
+          ;;(setq offset (current-column)))
+          (setq offset (current-indentation)))
 
          ((and (member language '("html" "xml" "javascript" "jsx"))
                (get-text-property pos 'tag-type)

@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170501.1903
+;; Package-Version: 20170503.852
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -2418,6 +2418,10 @@ Additional Actions:
     (insert (substring-no-properties s))
     (setq ivy-completion-end (point))))
 
+(defun counsel-yank-pop-action-remove (s)
+  "Remove S from the kill ring."
+  (setq kill-ring (delete s kill-ring)))
+
 ;;;###autoload
 (defun counsel-yank-pop ()
   "Ivy replacement for `yank-pop'."
@@ -2442,6 +2446,10 @@ Additional Actions:
       (ivy-read "kill-ring: " candidates
                 :action 'counsel-yank-pop-action
                 :caller 'counsel-yank-pop))))
+
+(ivy-set-actions
+ 'counsel-yank-pop
+ '(("d" counsel-yank-pop-action-remove "delete")))
 
 ;;** `counsel-imenu'
 (defvar imenu-auto-rescan)
