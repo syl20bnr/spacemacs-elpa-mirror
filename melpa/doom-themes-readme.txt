@@ -41,7 +41,7 @@ Soon to come:
 Example configuration:
 
   (require 'doom-themes)
-  (load-theme 'doom-one t) ;; or doom-dark, etc.
+  (load-theme 'doom-one t) ;; or doom-molokai, etc.
 
   ;;; OPTIONAL
   ;; brighter source buffers
@@ -49,4 +49,4 @@ Example configuration:
   ;; brighter minibuffer when active
   (add-hook 'minibuffer-setup-hook 'doom-brighten-minibuffer)
   ;; Custom neotree theme
-  (require 'doom-neotree)
+  (doom-themes-neotree-config)

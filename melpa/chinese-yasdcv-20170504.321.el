@@ -4,7 +4,7 @@
 
 ;; Author: Feng Shu <tumashu@gmail.com>
 ;; URL: https://github.com/tumashu/chinese-yasdcv
-;; Package-Version: 20161030.1504
+;; Package-Version: 20170504.321
 ;; Package-Requires: ((cl-lib "0.5") (chinese-pyim "0.0.1"))
 ;; Version: 0.0.1
 ;; Keywords: convenience, Chinese, dictionary
@@ -323,6 +323,24 @@
       (message "Can't find word at point."))
      ((or (not translate) (string= translate ""))
       (message "Can't translate the word: \"%s\"" word))
+     (t (yasdcv--buffer-output-translation translate)))))
+
+;;;###autoload
+(defun yasdcv-translate-input ()
+  "Translate the input word with sdcv"
+  (interactive)
+  (let* ((current-words (pyim-cwords-at-point))
+         (word (if mark-active
+                   (buffer-substring-no-properties
+                    (region-beginning) (region-end))
+                 (car (car current-words))))
+         (input-word (read-string (format "Input: ")
+                                  word nil nil))
+         (translate (yasdcv--get-translate input-word)))
+
+    (cond
+     ((or (not translate) (string= translate ""))
+      (message "Can't translate the word: \"%s\"" input-word))
      (t (yasdcv--buffer-output-translation translate)))))
 
 (provide 'chinese-yasdcv)

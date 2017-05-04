@@ -4,7 +4,7 @@
 
 ;; Author: Elis "etu" Axelsson
 ;; URL: https://github.com/etu/webpaste.el
-;; Package-Version: 20170503.821
+;; Package-Version: 20170503.2239
 ;; Package-X-Original-Version: 1.2.2
 ;; Version: 1.2.2
 ;; Keywords: convenience, comm, paste
@@ -288,21 +288,13 @@ return it to the user."
 (defun webpaste/get-lang-alist-with-overrides (overrides)
   "Fetches lang-alist with OVERRIDES applied."
 
+  ;; Copy original list to temporary list
   (let ((lang-alist webpaste/default-lang-alist))
-    ;; Go through list of overrides
+    ;; Go through list of overrides and append them to the temporary list
     (dolist (override-element overrides)
-      ;; Set key and value from override list
-      (let ((key (car override-element))
-            (value (cdr override-element)))
+      (cl-pushnew override-element lang-alist))
 
-        ;; If the element doesn't exist, add it
-        (unless (assoc (car override-element) lang-alist)
-          (cl-pushnew (cons key value) lang-alist))
-
-        ;; If the element in the list is changed
-        (unless (equal (cdr (assoc key lang-alist)) value)
-          (cl-pushnew (cons key value) lang-alist))))
-
+    ;; Return temporary list
     lang-alist))
 
 
