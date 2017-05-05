@@ -4,8 +4,8 @@
 
 ;; Author: Yegor Timoshenko <yegortimoshenko@gmail.com>
 ;; URL: https://github.com/yegortimoshenko/plain-theme
-;; Package-Version: 20170504.1004
-;; Version: 3
+;; Package-Version: 4
+;; Version: 4
 
 ;; Permission to use, copy, modify, and/or distribute this software for any
 ;; purpose with or without fee is hereby granted, provided that the above
@@ -45,7 +45,8 @@
     font-lock-variable-name-face
     font-lock-warning-face
     fringe
-    mode-line    
+    mode-line
+    sh-quoted-exec
     web-mode-error-face
     web-mode-warning-face
     web-mode-preprocessor-face

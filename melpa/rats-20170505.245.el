@@ -5,7 +5,7 @@
 ;; Author: Antoine Kalmbach <ane@iki.fi>
 ;; Created: 2016-03-05
 ;; Version: 0.1.0
-;; Package-Version: 20160315.1145
+;; Package-Version: 20170505.245
 ;; Keywords: go
 ;; Package-Requires: ((s "1.10.0") (go-mode "1.3.1") (cl-lib "0.5"))
 
@@ -121,7 +121,8 @@
     (if go-command
         (let* ((output-buffer-name "*rats-test*") 
                (arguments '("test" "-v"))
-               (full-args (append arguments )))
+               (full-args (append arguments))
+               (inhibit-read-only t))
           (when (get-buffer output-buffer-name)
             (with-current-buffer (get-buffer output-buffer-name)
               (erase-buffer)))
@@ -135,7 +136,8 @@
                 (if (s-present? test)
                     (or (rats--get-test-results (buffer-string) test)
                         `((err . ,(format "The test %s was not run." test))))  
-                  (rats--parse-results (buffer-string)))))))
+                  (rats--parse-results (buffer-string))))
+              (compilation-mode))))
       `((err . ,(format "`%s' command not found in PATH!" rats-go-executable-name))))))
 
 (defun rats--report-result (result &optional name)

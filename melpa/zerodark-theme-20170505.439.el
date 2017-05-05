@@ -4,9 +4,9 @@
 
 ;; Author: Nicolas Petton <nicolas@petton.fr>
 ;; Keywords: themes
-;; Package-Version: 4.2
+;; Package-Version: 20170505.439
 ;; URL: https://github.com/NicolasPetton/zerodark-theme
-;; Version: 3.6
+;; Version: 4.3
 ;; Package: zerodark-theme
 ;; Package-Requires: ((all-the-icons "2.0.0") (magit "2.8.0") (flycheck "29"))
 
@@ -471,12 +471,12 @@ The result is cached for one second to avoid hiccups."
    `(org-headline-done ((,class (:foreground ,comment))))
    `(outline-1 ((,class (:foreground ,blue :weight bold))))
    `(outline-2 ((,class (:foreground ,purple :weight bold))))
-   `(outline-3 ((,class (:weight bold :foreground ,default))))
-   `(outline-4 ((,class (:weight bold :foreground ,default))))
-   `(outline-5 ((,class (:weight bold :foreground ,default))))
-   `(outline-6 ((,class (:weight bold :foreground ,default))))
-   `(outline-7 ((,class (:weight bold :foreground ,default))))
-   `(outline-8 ((,class (:weight bold :foreground ,default))))
+   `(outline-3 ((,class (:foreground ,peach :weight bold))))
+   `(outline-4 ((,class (:foreground ,green-light :weight bold))))
+   `(outline-5 ((,class (:foreground ,blue :weight bold))))
+   `(outline-6 ((,class (:foreground ,purple :weight bold))))
+   `(outline-7 ((,class (:foreground ,peach :weight bold))))
+   `(outline-8 ((,class (:foreground ,green-light :weight bold))))
    `(org-column-title ((,class (:foreground unspecified :background unspecified))))
    `(org-agenda-date ((,class (:foreground ,purple :weight bold))))
    `(org-agenda-date-today ((,class (:foreground ,blue :weight bold :background ,background-blue :box 1))))
@@ -671,6 +671,10 @@ The result is cached for one second to avoid hiccups."
 
    ;; paren-face.el
    `(parenthesis ((,class (:foreground ,comment))))
+
+   ;; rainbow-delimiters
+   `(rainbow-delimiters-mismatched-face ((,class :foreground ,red :weight bold :background ,background-red)))
+   `(rainbow-delimiters-unmatched-face ((,class :foreground ,red :weight bold :background ,background-red)))
 
    ;; makefile
    `(makefile-space ((,class (:background ,background-blue))))
