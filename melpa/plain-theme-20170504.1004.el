@@ -4,8 +4,8 @@
 
 ;; Author: Yegor Timoshenko <yegortimoshenko@gmail.com>
 ;; URL: https://github.com/yegortimoshenko/plain-theme
-;; Package-Version: 20170114.1146
-;; Version: 2
+;; Package-Version: 20170504.1004
+;; Version: 3
 
 ;; Permission to use, copy, modify, and/or distribute this software for any
 ;; purpose with or without fee is hereby granted, provided that the above
@@ -19,17 +19,13 @@
 ;; OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 ;; PERFORMANCE OF THIS SOFTWARE.
 
-;;; Commentary:
-
-;; To install, enable MELPA (http://melpa.org/#/getting-started) and execute:
-;; M-x package-install plain-theme
-
 ;;; Code:
 
 (deftheme plain)
 
 (defvar plain-faces
   `(default
+    eshell-prompt
     font-lock-builtin-face
     font-lock-comment-delimiter-face
     font-lock-comment-face
@@ -48,6 +44,8 @@
     font-lock-type-face
     font-lock-variable-name-face
     font-lock-warning-face
+    fringe
+    mode-line    
     web-mode-error-face
     web-mode-warning-face
     web-mode-preprocessor-face
@@ -115,9 +113,7 @@
     web-mode-jsx-depth-1-face
     web-mode-jsx-depth-2-face
     web-mode-jsx-depth-3-face
-    web-mode-jsx-depth-4-face
-    fringe
-    mode-line))
+    web-mode-jsx-depth-4-face))
 
 (let ((black "#000")
       (white "#fff"))

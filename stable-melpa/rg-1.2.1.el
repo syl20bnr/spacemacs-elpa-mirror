@@ -6,8 +6,8 @@
 ;;
 ;; Author: David Landell <david.landell@sunnyhill.email>
 ;;         Roland McGrath <roland@gnu.org>
-;; Version: 1.2.0
-;; Package-Version: 1.2.0
+;; Version: 1.2.1
+;; Package-Version: 1.2.1
 ;; Homepage: https://github.com/davja/rg.el
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24") (s "1.10.0") (seq "2.19"))
 ;; Keywords: matching, tools
@@ -131,7 +131,7 @@ for special purposes.")
     ("^.+?[-=][0-9]+[-=].*\n" (0 grep-context-face))))
 
 (defvar rg-mode-map
-  (let ((map grep-mode-map))
+  (let ((map (copy-keymap grep-mode-map)))
     (define-key map "c" 'rg-rerun-toggle-case)
     (define-key map "i" 'rg-rerun-toggle-ignore)
     (define-key map "r" 'rg-rerun-change-regexp)

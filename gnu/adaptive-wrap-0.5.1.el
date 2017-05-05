@@ -1,10 +1,10 @@
 ;;; adaptive-wrap.el --- Smart line-wrapping with wrap-prefix
 
-;; Copyright (C) 2011-2013  Free Software Foundation, Inc.
+;; Copyright (C) 2011-2013, 2017  Free Software Foundation, Inc.
 
 ;; Author: Stephen Berman <stephen.berman@gmx.net>
 ;;         Stefan Monnier <monnier@iro.umontreal.ca>
-;; Version: 0.5
+;; Version: 0.5.1
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -55,6 +55,7 @@ extra indent = 2
     enim ad minim veniam, quis nostrud exercitation ullamco laboris
     nisi ut aliquip ex ea commodo consequat."
   :type 'integer
+  :safe 'integerp
   :group 'visual-line)
 (make-variable-buffer-local 'adaptive-wrap-extra-indent)
 
@@ -96,7 +97,13 @@ extra indent = 2
   :lighter ""
   :group 'visual-line
   (if adaptive-wrap-prefix-mode
-      (jit-lock-register #'adaptive-wrap-prefix-function)
+      (progn
+        ;; HACK ATTACK!  We need to run after font-lock, but jit-lock-register
+        ;; doesn't accept an `append' argument, so we add ourselves beforehand,
+        ;; to make sure we're at the end of the hook (bug#15155).
+        (add-hook 'jit-lock-functions
+                  #'adaptive-wrap-prefix-function 'append t)
+        (jit-lock-register #'adaptive-wrap-prefix-function))
     (jit-lock-unregister #'adaptive-wrap-prefix-function)
     (with-silent-modifications
       (save-restriction
@@ -113,20 +120,32 @@ extra indent = 2
 
 ;;;; ChangeLog:
 
+;; 2017-05-04  Noam Postavsky  <npostavs@users.sourceforge.net>
+;; 
+;; 	Mark adaptive-wrap-extra-indent as safe if integerp (Bug#23816)
+;; 
+;; 	* packages/adaptive-wrap/adaptive-wrap.el: Bump version, copyright.
+;; 	(adaptive-wrap-extra-indent): Mark as safe if integerp.
+;; 
+;; 2013-08-24  Stefan Monnier  <monnier@iro.umontreal.ca>
+;; 
+;; 	* adaptive-wrap.el (adaptive-wrap-mode): Move after font-lock
+;; 	(bug#15155).
+;; 
 ;; 2013-07-31  Stephen Berman  <stephen.berman@gmx.net>
 ;; 
-;; 	* adaptive-wrap.el: Fix bug#14974 by using define-key-after
-;; 	instead of easy-menu-add-item.
+;; 	* adaptive-wrap.el: Fix bug#14974 by using define-key-after instead of
+;; 	easy-menu-add-item.
 ;; 	(adaptive-wrap-unload-function): Remove.
 ;; 
 ;; 2013-07-29  Stephen Berman  <stephen.berman@gmx.net>
 ;; 
 ;; 	* adaptive-wrap.el: Require easymenu (bug#14974).
 ;; 
-;; 2013-07-19  R?diger Sonderfeld  <ruediger@c-plusplus.de>
+;; 2013-07-19  Rüdiger Sonderfeld  <ruediger@c-plusplus.de>
 ;; 
-;; 	* adaptive-wrap.el (menu-bar-options-menu): Add checkbox for Adaptive Wrap
-;; 	to the Line Wrapping submenu.
+;; 	* adaptive-wrap.el (menu-bar-options-menu): Add checkbox for Adaptive
+;; 	Wrap to the Line Wrapping submenu.
 ;; 	(adaptive-wrap-unload-function): New function.
 ;; 
 ;; 2013-02-01  Stephen Berman  <stephen.berman@gmx.net>
@@ -135,14 +154,14 @@ extra indent = 2
 ;; 
 ;; 2012-12-05  Stefan Monnier  <monnier@iro.umontreal.ca>
 ;; 
-;; 	* adaptive-wrap.el (adaptive-wrap-extra-indent): Fix buffer-localness.
+;; 	* adaptive-wrap.el (adaptive-wrap-extra-indent): Fix buffer-localness. 
 ;; 	Reported by Jonathan Kotta <jpkotta@gmail.com>.
 ;; 
 ;; 2012-10-30  Stefan Monnier  <monnier@iro.umontreal.ca>
 ;; 
 ;; 	Clean up copyright notices.
 ;; 
-;; 2012-05-21  Jonathan Kotta  <jpkotta@gmail.com>  (tiny change)
+;; 2012-05-21  Jonathan Kotta  <jpkotta@gmail.com>
 ;; 
 ;; 	Add adaptive-wrap-extra-indent.
 ;; 	* adaptive-wrap/adaptive-wrap.el (adaptive-wrap-extra-indent): New var.
@@ -153,20 +172,8 @@ extra indent = 2
 ;; 2012-01-05  Chong Yidong  <cyd@gnu.org>
 ;; 
 ;; 	Rename adaptive-wrap-prefix to adaptive-wrap.
-;; 	
+;; 
 ;; 	The old name overflowed the column in list-packages.
-;; 
-;; 2011-12-04  Stefan Monnier  <monnier@iro.umontreal.ca>
-;; 
-;; 	* adaptive-wrap-prefix.el: Improve commentary.
-;; 
-;; 2011-12-04  Stefan Monnier  <monnier@iro.umontreal.ca>
-;; 
-;; 	Rename awp-mode since we're not bound to 8+3.
-;; 
-;; 2011-11-25  Stefan Monnier  <monnier@iro.umontreal.ca>
-;; 
-;; 	* awp-mode: New package.
 ;; 
 
 
