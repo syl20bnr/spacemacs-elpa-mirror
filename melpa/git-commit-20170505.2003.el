@@ -12,7 +12,7 @@
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 
 ;; Package-Requires: ((emacs "24.4") (dash "20170207.2056") (with-editor "20170111.609"))
-;; Package-Version: 20170314.1414
+;; Package-Version: 20170505.2003
 ;; Keywords: git tools vc
 ;; Homepage: https://github.com/magit/magit
 
@@ -236,6 +236,9 @@ already using it, then you probably shouldn't start doing so."
   :safe 'numberp
   :type '(choice (const :tag "use regular fill-column")
                  number))
+
+(make-obsolete-variable 'git-commit-fill-column 'fill-column
+                        "Magit 2.11.0" 'set)
 
 (defcustom git-commit-known-pseudo-headers
   '("Signed-off-by" "Acked-by" "Cc"

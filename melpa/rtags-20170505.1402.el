@@ -1,11 +1,11 @@
-;;; rtags.el --- A front-end for rtags -*- lexical-binding: t -*-
+;;; rtags.el --- A front-end for rtags
 
 ;; Copyright (C) 2011-2017  Jan Erik Hanssen and Anders Bakken
 
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 20170504.49
+;; Package-Version: 20170505.1402
 ;; Version: 2.9
 
 ;; This file is not part of GNU Emacs.

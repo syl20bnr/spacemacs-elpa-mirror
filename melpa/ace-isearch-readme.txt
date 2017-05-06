@@ -1,11 +1,11 @@
 `ace-isearch.el' provides a minor mode which combines `isearch',
-`ace-jump-mode', `avy', and `helm-swoop'.
+`ace-jump-mode', `avy', `helm-swoop' and `swiper'.
 
 The "default" behavior can be summrized as:
 
 L = 1     : `ace-jump-mode' or `avy'
 1 < L < 6 : `isearch'
-L >= 6    : `helm-swoop'
+L >= 6    : `helm-swoop' or `swiper'
 
 where L is the input string length during `isearch'.  When L is 1, after a
 few seconds specified by `ace-isearch-jump-delay', `ace-jump-mode' or `avy'

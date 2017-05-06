@@ -3,7 +3,7 @@
 ;; Copyright (C) 2013-2015 Steve Purcell
 
 ;; Author: Steve Purcell <steve@sanityinc.com>
-;; Package-Version: 20150603.447
+;; Package-Version: 20170505.1923
 ;; Package-X-Original-Version: 0
 ;; URL: https://github.com/purcell/whitespace-cleanup-mode
 ;; Keywords: convenience
@@ -51,7 +51,8 @@
 
 (require 'whitespace)
 
-(defgroup whitespace-cleanup-mode nil
+;;;###autoload
+(defgroup whitespace-cleanup nil
   "Automatically clean up whitespace on save."
   :group 'convenience)
 
@@ -63,13 +64,13 @@ to the end of the line's trimmed content.  When this variable is
 non-nil, then the trimmed space is re-added after save, but
 without marking the buffer as modified.  This allows
 uninterrupted editing with very short autosave intervals."
-  :group 'whitespace-cleanup-mode)
+  :group 'whitespace-cleanup)
 
 (defcustom whitespace-cleanup-mode-only-if-initially-clean t
   "When non-nil, only clean up whitespace at save if it was clean initially.
 The check for initial cleanliness is done when `whitespace-cleanup-mode' is
 enabled."
-  :group 'whitespace-cleanup-mode)
+  :group 'whitespace-cleanup)
 
 (defcustom whitespace-cleanup-mode-ignore-modes
   '(special-mode view-mode comint-mode cider-repl-mode haskell-interactive-mode)
@@ -78,7 +79,7 @@ If the major mode of a buffer is derived from one of these, then
  `global-whitespace-cleanup-mode' will not enable `whitespace-cleanup-mode'
  in that buffer."
   :type '(repeat symbol)
-  :group 'whitespace-cleanup-mode)
+  :group 'whitespace-cleanup)
 
 (defvar whitespace-cleanup-mode-initially-clean nil
   "Records whether `whitespace-cleanup' was a no-op when the mode launched.")

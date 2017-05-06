@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015-2017 Clément Pit-Claudel
 ;; Author: Clément Pit-Claudel <clement.pitclaudel@live.com>
 ;; URL: https://github.com/FStarLang/fstar.el
-;; Package-Version: 20170501.229
+;; Package-Version: 20170504.2114
 
 ;; Created: 27 Aug 2015
 ;; Version: 0.4
@@ -2453,14 +2453,15 @@ buffer is in a comment that doesn't start in column 0."
 
 ;;; ;; Advancing and retracting
 
-(defun fstar-subp-enqueue-until (end)
+(defun fstar-subp-enqueue-until (end &optional no-error)
   "Mark region up to END busy, and enqueue the newly created overlay.
-Report an error if the region is empty."
+Report an error if the region is empty and NO-ERROR is nil."
   (fstar-subp-start)
   (let ((beg (fstar-subp--untracked-beginning-position))
         (end (save-excursion (goto-char end) (skip-chars-backward fstar--spaces) (point))))
     (if (<= end beg)
-        (user-error "Nothing to process!")
+        (unless no-error
+          (user-error "Nothing to process!"))
       (when (eq (char-after end) ?\n)
         (cl-incf end))
       (fstar-assert (cl-loop for overlay in (overlays-in beg end)
@@ -2517,12 +2518,10 @@ Report an error if the region is empty."
   (fstar--widened-excursion
     (let ((found nil))
       (fstar-subp--untracked-beginning)
-      (while (and (<= (point) pos) (fstar-subp--next-point-to-process))
+      (while (and (fstar-subp--next-point-to-process) (<= (point) pos))
         (fstar-subp-enqueue-until (point))
         (setq found t))
-      (unless found
-        (user-error (substitute-command-keys "Cannot find a full block \
-to process (try C-u \\[fstar-subp-advance-or-retract-to-point]?)"))))))
+      (fstar-subp-enqueue-until pos found))))
 
 (defun fstar-subp-reload-to-point (pos lax)
   "Retract everything and process (possibly in LAX mode) again to POS."

@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 ~ 2015 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; Version: 1.0
-;; Package-Version: 20161122.522
+;; Package-Version: 20170505.2338
 ;; Package-Requires: ((helm "1.5") (bbdb "3.1.2"))
 ;; URL: https://github.com/emacs-helm/helm-bbdb
 
@@ -48,6 +48,8 @@
 (declare-function bbdb-record-organization "ext:bbdb")
 (declare-function bbdb-record-name "ext:bbdb")
 
+(defvar helm-bbdb--cache nil)
+
 (defgroup helm-bbdb nil
   "Commands and function for bbdb."
   :group 'helm)
@@ -64,15 +66,16 @@
 (defun helm-bbdb-candidates ()
   "Return a list of all names in the bbdb database.
 The format is \"Firstname Lastname\"."
-  (require 'bbdb)
-  (mapcar (lambda (bbdb-record)
-            (let ((name1 (aref bbdb-record 0))
-                  (name2 (aref bbdb-record 1)))
-              (cond ((and name1 name2)
-                     (concat name1 " " name2))
-                    (name1)
-                    (name2))))
-          (bbdb-records)))
+  (cl-loop for bbdb-record in (bbdb-records)
+           for name1 = (aref bbdb-record 0)
+           for name2 = (aref bbdb-record 1)
+           when (or (and name1 (not (string= name1 "")))
+                    (and name2 (not (string= name2 ""))))
+           collect (cons (cond ((and name1 name2)
+                                (concat name1 " " name2))
+                               (name1)
+                               (name2))
+                         bbdb-record)))
 
 (defun helm-bbdb-read-phone ()
   "Return a list of vector address objects.
@@ -118,7 +121,8 @@ See docstring of `bbdb-create-internal' for more info on address entries."
 Returns only an entry to add the current `helm-pattern' as new contact.
 All other actions are removed."
   (require 'bbdb-com)
-  (if (string= candidate "*Add new contact*")
+  (if (and (stringp candidate)
+           (string= candidate "*Add new contact*"))
       (helm-make-actions
        "Add to contacts"
        (lambda (_actions)
@@ -149,21 +153,24 @@ All other actions are removed."
                 (mapconcat
                  'identity
                  (bbdb-record-mail
-                  (helm-bbdb-get-record candidate t))
-                 ",")))
+                  (assoc-default candidate helm-bbdb--cache))
+                ",")))
 
 (defun helm-bbdb-match-org (candidate)
-  "Additional match function that match email address of CANDIDATE."
+  "Additional match function that match organization of CANDIDATE."
   (string-match helm-pattern
                 (mapconcat
                  'identity
                  (bbdb-record-organization
-                  (helm-bbdb-get-record candidate t))
+                  (assoc-default candidate helm-bbdb--cache))
                  ",")))
 
 (defvar helm-source-bbdb
   (helm-build-sync-source "BBDB"
-    :candidates 'helm-bbdb-candidates
+    :init (lambda ()
+            (require 'bbdb)
+            (setq helm-bbdb--cache (helm-bbdb-candidates)))
+    :candidates 'helm-bbdb--cache
     :match '(helm-bbdb-match-mail helm-bbdb-match-org)
     :action 'helm-bbdb-actions
     :persistent-action 'helm-bbdb-persistent-action
@@ -181,9 +188,16 @@ URL `http://bbdb.sourceforge.net/'")
   (bbdb-display-records
    (mapcar 'helm-bbdb-get-record candidates) nil t))
 
+(defun helm-bbdb--marked-contacts ()
+  (cl-loop for c in (helm-marked-candidates)
+           for name1 = (aref c 0)
+           for name2 = (aref c 1)
+           for name3 = (car (aref c 3))
+           collect (or name3 name1 name2)))
+
 (defun helm-bbdb-view-person-action (_candidate)
   "View BBDB data of single CANDIDATE or marked candidates."
-  (helm-bbdb--view-person-action-1 (helm-marked-candidates)))
+  (helm-bbdb--view-person-action-1 (helm-bbdb--marked-contacts)))
 
 (defun helm-bbdb-persistent-action (candidate)
   (cl-letf (((symbol-function 'bbdb-pop-up-window)
@@ -221,7 +235,7 @@ URL `http://bbdb.sourceforge.net/'")
 (defun helm-bbdb-delete-contact (_candidate)
   "Delete CANDIDATE from the bbdb buffer and database.
 Prompt user to confirm deletion."
-  (let ((cands (helm-marked-candidates)))
+  (let ((cands (helm-bbdb--marked-contacts)))
     (with-helm-display-marked-candidates
       "*bbdb candidates*" cands
       (when (y-or-n-p "Delete contacts")

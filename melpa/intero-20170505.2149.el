@@ -10,7 +10,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20170410.1625
+;; Package-Version: 20170505.2149
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -162,9 +162,9 @@ To use this, use the following mode hook:
   "Run intero-mode when the current project is in `intero-whitelist'."
   (interactive)
   (let ((file (buffer-file-name)))
-    (when (cl-remove-if-not (lambda (directory)
-                              (file-in-directory-p file directory))
-                            intero-whitelist)
+    (when (cl-some (lambda (directory)
+                     (file-in-directory-p file directory))
+                   intero-whitelist)
       (intero-mode))))
 
 ;;;###autoload
@@ -172,15 +172,16 @@ To use this, use the following mode hook:
   "Run intero-mode unless the current project is in `intero-blacklist'."
   (interactive)
   (let ((file (buffer-file-name)))
-    (unless (cl-remove-if-not (lambda (directory)
-                                (file-in-directory-p file directory))
-                              intero-blacklist)
+    (unless (cl-some (lambda (directory)
+                       (file-in-directory-p file directory))
+                     intero-blacklist)
       (intero-mode))))
 
 (define-key intero-mode-map (kbd "C-c C-t") 'intero-type-at)
 (define-key intero-mode-map (kbd "C-c C-i") 'intero-info)
 (define-key intero-mode-map (kbd "M-.") 'intero-goto-definition)
 (define-key intero-mode-map (kbd "C-c C-l") 'intero-repl-load)
+(define-key intero-mode-map (kbd "C-c C-c") 'intero-repl-eval-region)
 (define-key intero-mode-map (kbd "C-c C-z") 'intero-repl)
 (define-key intero-mode-map (kbd "C-c C-r") 'intero-apply-suggestions)
 (define-key intero-mode-map (kbd "C-c C-e") 'intero-expand-splice-at-point)
@@ -558,7 +559,8 @@ running context across :load/:reloads in Intero."
   "A syntax and type checker for Haskell using an Intero worker
 process."
   :start 'intero-check
-  :modes '(haskell-mode literate-haskell-mode))
+  :modes '(haskell-mode literate-haskell-mode)
+  :predicate (lambda () intero-mode))
 
 (add-to-list 'flycheck-checkers 'intero)
 
@@ -926,19 +928,43 @@ This is set by `intero-repl-buffer', and should otherwise be nil.")
   (let ((comint-buffer-maximum-size 0))
     (comint-truncate-buffer)))
 
+(defmacro intero-with-repl-buffer (prompt-options &rest body)
+  "Evaluate given forms with the REPL as the current buffer.
+The REPL will be started if necessary, and the REPL buffer will
+be activated after evaluation.  PROMPT-OPTIONS are passed to
+`intero-repl-buffer'.  BODY is the forms to be evaluated."
+  (declare (indent defun))
+  (let ((repl-buffer (cl-gensym)))
+    `(let ((,repl-buffer (intero-repl-buffer ,prompt-options t)))
+       (with-current-buffer ,repl-buffer
+         ,@body)
+       (pop-to-buffer ,repl-buffer))))
+
 (defun intero-repl-load (&optional prompt-options)
   "Load the current file in the REPL.
 If PROMPT-OPTIONS is non-nil, prompt with an options list."
   (interactive "P")
   (save-buffer)
-  (let ((file (intero-localize-path (intero-temp-file-name)))
-        (repl-buffer (intero-repl-buffer prompt-options t)))
-    (with-current-buffer repl-buffer
+  (let ((file (intero-localize-path (intero-temp-file-name))))
+    (intero-with-repl-buffer prompt-options
       (comint-simple-send
        (get-buffer-process (current-buffer))
        (concat ":l " file))
-      (setq intero-repl-last-loaded file))
-    (pop-to-buffer repl-buffer)))
+      (setq intero-repl-last-loaded file))))
+
+(defun intero-repl-eval-region (begin end &optional prompt-options)
+  "Evaluate the code in region from BEGIN to END in the REPL.
+If the region is unset, the current line will be used.
+PROMPT-OPTIONS are passed to `intero-repl-buffer' if supplied."
+  (interactive "r")
+  (unless (use-region-p)
+    (setq begin (line-beginning-position)
+          end (line-end-position)))
+  (let ((text (buffer-substring-no-properties begin end)))
+    (intero-with-repl-buffer prompt-options
+      (comint-simple-send
+       (get-buffer-process (current-buffer))
+       text))))
 
 (defun intero-repl (&optional prompt-options)
   "Start up the REPL for this stack project.
@@ -977,23 +1003,22 @@ STORE-PREVIOUS is non-nil, note the caller's buffer in
          (initial-buffer (current-buffer))
          (backend-buffer (intero-buffer 'backend)))
     (with-current-buffer
-        (if (get-buffer name)
-            (get-buffer name)
-          (with-current-buffer
-              (get-buffer-create name)
-            ;; The new buffer doesn't know if the initial buffer was hosted
-            ;; remotely or not, so we need to extend by the host of the
-            ;; initial buffer to cd. We could also achieve this by setting the
-            ;; buffer's intero-buffer-host, but intero-repl-mode wipes this, so
-            ;; we defer setting that until after.
-            (cd (intero-extend-path-by-buffer-host root initial-buffer))
-            (intero-repl-mode) ; wipes buffer-local variables
-            (intero-inherit-local-variables initial-buffer)
-            (setq intero-buffer-host (intero-buffer-host initial-buffer))
-            (intero-repl-mode-start backend-buffer
-                                    (buffer-local-value 'intero-targets backend-buffer)
-                                    prompt-options)
-            (current-buffer)))
+        (or (get-buffer name)
+            (with-current-buffer
+                (get-buffer-create name)
+              ;; The new buffer doesn't know if the initial buffer was hosted
+              ;; remotely or not, so we need to extend by the host of the
+              ;; initial buffer to cd. We could also achieve this by setting the
+              ;; buffer's intero-buffer-host, but intero-repl-mode wipes this, so
+              ;; we defer setting that until after.
+              (cd (intero-extend-path-by-buffer-host root initial-buffer))
+              (intero-repl-mode) ; wipes buffer-local variables
+              (intero-inherit-local-variables initial-buffer)
+              (setq intero-buffer-host (intero-buffer-host initial-buffer))
+              (intero-repl-mode-start backend-buffer
+                                      (buffer-local-value 'intero-targets backend-buffer)
+                                      prompt-options)
+              (current-buffer)))
       (progn
         (when store-previous
           (setq intero-repl-previous-buffer initial-buffer))

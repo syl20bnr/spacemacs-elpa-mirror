@@ -1,7 +1,7 @@
 ;;; lsp-java.el --- Java support for lsp-mode
 
 ;; Version: 1.0
-;; Package-Version: 20170421.325
+;; Package-Version: 20170506.213
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "2.0"))
 ;; Keywords: java
 ;; URL: https://github.com/emacs-lsp/lsp-java
@@ -82,7 +82,9 @@ The entry point of the language server is in `lsp-java-server-install-dir'/plugi
 
 (lsp-define-stdio-client 'java-mode "java" 'stdio #'lsp-java--get-root
 			 "Java Language Server"
-			 (lsp-java--ls-command))
+			 (lsp-java--ls-command)
+			 :ignore-regexps '("^SLF4J: "
+					   "^Listening for transport dt_socket at address: "))
 
 (provide 'lsp-java)
 ;;; lsp-java.el ends here

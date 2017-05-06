@@ -3,9 +3,9 @@
 ;; Author: Christian Johansson <github.com/cjohansson>
 ;; Maintainer: Christian Johansson <github.com/cjohansson>
 ;; Created: 5 Jul 2016
-;; Modified: 24 Apr 2017
-;; Version: 1.51
-;; Package-Version: 20170423.2332
+;; Modified: 5 May 2017
+;; Version: 1.52
+;; Package-Version: 20170505.931
 ;; Keywords: tools, convenience
 ;; URL: https://github.com/cjohansson/emacs-ssh-deploy
 
@@ -184,7 +184,7 @@
   "Upload LOCAL path to REMOTE and LOCAL-ROOT via tramp asynchrously and FORCE upload despite external change."
   (if (fboundp 'async-start)
       (progn
-        (let ((remote-path (concat "/" (alist-get 'protocol remote) ":" (shell-quote-argument (alist-get 'username remote)) "@" (shell-quote-argument (alist-get 'server remote)) ":" (shell-quote-argument (alist-get 'path remote))))
+        (let ((remote-path (concat "/" (shell-quote-argument (alist-get 'protocol remote)) ":" (shell-quote-argument (alist-get 'username remote)) "@" (shell-quote-argument (alist-get 'server remote)) ":" (alist-get 'path remote)))
               (file-or-directory (file-regular-p local)))
           (if file-or-directory
               (progn
@@ -227,7 +227,7 @@
 
 (defun ssh-deploy--upload-via-tramp (local remote local-root force)
   "Upload LOCAL path to REMOTE and LOCAL-ROOT via tramp synchrously and FORCE despite external change."
-  (let ((remote-path (concat "/" (alist-get 'protocol remote) ":" (shell-quote-argument (alist-get 'username remote)) "@" (shell-quote-argument (alist-get 'server remote)) ":" (shell-quote-argument (alist-get 'path remote))))
+  (let ((remote-path (concat "/" (shell-quote-argument (alist-get 'protocol remote)) ":" (shell-quote-argument (alist-get 'username remote)) "@" (shell-quote-argument (alist-get 'server remote)) ":" (alist-get 'path remote)))
         (file-or-directory (file-regular-p local)))
     (if file-or-directory
         (progn
@@ -252,7 +252,7 @@
   "Download REMOTE path to LOCAL and LOCAL-ROOT via tramp asynchronously."
   (if (fboundp 'async-start)
       (progn
-        (let ((remote-path (concat "/" (alist-get 'protocol remote) ":" (shell-quote-argument (alist-get 'username remote)) "@" (shell-quote-argument (alist-get 'server remote)) ":" (shell-quote-argument (alist-get 'path remote))))
+        (let ((remote-path (concat "/" (shell-quote-argument (alist-get 'protocol remote)) ":" (shell-quote-argument (alist-get 'username remote)) "@" (shell-quote-argument (alist-get 'server remote)) ":" (alist-get 'path remote)))
               (file-or-directory (file-regular-p local)))
           (if file-or-directory
               (progn
@@ -285,7 +285,7 @@
 
 (defun ssh-deploy--download-via-tramp (remote local local-root)
   "Download REMOTE path to LOCAL and LOCAL-ROOT via tramp synchronously."
-  (let ((remote-path (concat "/" (alist-get 'protocol remote) ":" (shell-quote-argument (alist-get 'username remote)) "@" (shell-quote-argument (alist-get 'server remote)) ":" (shell-quote-argument (alist-get 'path remote))))
+  (let ((remote-path (concat "/" (shell-quote-argument (alist-get 'protocol remote)) ":" (shell-quote-argument (alist-get 'username remote)) "@" (shell-quote-argument (alist-get 'server remote)) ":" (alist-get 'path remote)))
         (file-or-directory (file-regular-p local)))
     (if file-or-directory
         (progn
