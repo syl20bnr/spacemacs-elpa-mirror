@@ -15,6 +15,7 @@ without the need for optional dependencies
 - `process'           The currently running process
 - `position'          The Line/Column current position
 - `region-info'       Count of lines and words currently in region
+- `narrowed'          Whether or not the current buffer is narrowed
 - `fullscreen'        An indicator of whether or not window is fullscreen
 - `text-scale'        The amount of global text scale
 - `vc-icon'           The current Version Control Icon
@@ -31,6 +32,7 @@ this is a list of them and their required packages.
 - `bookmark' [`bookmark']                           Whether or not the current buffer has been modified
 - `window-number' [`winum' or `window-numbering']   The current window number
 - `projectile' [`projectile']                       The current project you're working in
+- `multiple-cursors' [`multiple-cursors']           Show the number of active multiple cursors in use
 - `git-status' [`git-gutter']                       Number of added/removed lines in current buffer
 - `flycheck-status' [`flycheck']                    A summary of Errors/Warnings/Info in buffer
 - `flycheck-status-info' [`flycheck']               A summary dedicated to Info statuses in buffer

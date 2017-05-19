@@ -41,9 +41,10 @@ Usage
 To use `symbol-overlay' in your Emacs, you need only to bind these keys:
 (require 'symbol-overlay)
 (global-set-key (kbd "M-i") 'symbol-overlay-put)
-(global-set-key (kbd "M-u") 'symbol-overlay-switch-backward)
-(global-set-key (kbd "M-o") 'symbol-overlay-switch-forward)
-(global-set-key (kbd "<f8>") 'symbol-overlay-mode)
+(global-set-key (kbd "M-n") 'symbol-overlay-switch-forward)
+(global-set-key (kbd "M-p") 'symbol-overlay-switch-backward)
+(global-set-key (kbd "<f7>") 'symbol-overlay-mode)
+(global-set-key (kbd "<f8>") 'symbol-overlay-remove-all)
 
 Default key-bindings are defined in `symbol-overlay-map'.
 You can re-bind the commands to any keys you prefer by simply writing

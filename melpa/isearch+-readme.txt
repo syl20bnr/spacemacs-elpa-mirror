@@ -133,7 +133,7 @@
 
  Macros defined here:
 
-   `isearchp-user-error'.
+   `isearchp-define-in/out-filter', `isearchp-user-error'.
 
  Non-interactive functions defined here:
 
@@ -171,6 +171,20 @@
    `isearchp-near-after-predicate' (Emacs 24.4+),
    `isearchp-near-before-predicate' (Emacs 24.4+),
    `isearchp-near-predicate' (Emacs 24.4+), `isearchp-not-pred'
+   (Emacs 24.4+), `isearchp-not-in-color-p' (Emacs 24.4+),
+   `isearchp-not-in-decimal-number-p' (Emacs 24.4+),
+   `isearchp-not-in-defun-p' (Emacs 24.4+),
+   `isearchp-not-in-email-address-p' (Emacs 24.4+),
+   `isearchp-not-in-file-name-p' (Emacs 24.4+),
+   `isearchp-not-in-hex-number-p' (Emacs 24.4+),
+   `isearchp-not-in-line-p' (Emacs 24.4+), `isearchp-not-in-list-p'
+   (Emacs 24.4+), `isearchp-not-in-number-p' (Emacs 24.4+),
+   `isearchp-not-in-page-p' (Emacs 24.4+),
+   `isearchp-not-in-paragraph-p' (Emacs 24.4+),
+   `isearchp-not-in-sentence-p' (Emacs 24.4+),
+   `isearchp-not-in-sexp-p' (Emacs 24.4+),
+   `isearchp-not-in-symbol-p' (Emacs 24.4+),
+   `isearchp-not-in-url-p' (Emacs 24.4+), `isearchp-not-in-word-p'
    (Emacs 24.4+), `isearchp-not-predicate' (Emacs 24.4+),
    `isearchp-oddp', `isearchp-or-predicates' (Emacs 24.4+),
    `isearchp-or-preds' (Emacs 24.4+), `isearchp-read-face-names',
@@ -580,7 +594,7 @@ Overview of Features ---------------------------------------------
 
      You can also use functions `isearch-near-predicate',
      `isearchp-near-before-predicate', and
-     `isearchp-near-before-predicate' to define your own nearness
+     `isearchp-near-after-predicate' to define your own nearness
      predicates, which incorporate particular patterns and
      distances. You can then simply add such a predicate using `C-z
      &' (no prompting for pattern or distance).
@@ -670,10 +684,13 @@ Overview of Features ---------------------------------------------
    naming convention is used:
 
    * Bracketed names (`[...]') stand for predicates that check that
-     the search hit is within something.  For example, name `[;]'
-     tests whether it is inside a comment (`;' is the Emacs-Lisp
-     comment-start character), and name `[defun]' tests whether it
-     is inside a defun.
+     the search hit is (entirely) within something.  For example,
+     name `[;]' means that each filtered search hit must be inside
+     a comment (`;' is the Emacs-Lisp comment-start character), and
+     name `[defun]' means each search hit must be inside a defun.
+
+   * A `~' in front of a name means "not".  For example, `~[;]'
+     means the filtered search hits must not be in comments.
 
    * Names that end in `...' indicate candidates that prompt you
      for more information.  These names represent, not filter

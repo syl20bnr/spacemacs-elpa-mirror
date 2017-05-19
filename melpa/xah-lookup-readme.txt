@@ -1,9 +1,9 @@
 This package provide commands for looking up the web of word under cursor.
 
 • xah-lookup-word-on-internet
-• xah-lookup-google           ; 【C-h 7】
-• xah-lookup-wikipedia        ; 【C-h 8】
-• xah-lookup-word-definition  ; 【C-h 9】
+• xah-lookup-google
+• xah-lookup-wikipedia
+• xah-lookup-word-definition
 • xah-lookup-word-dict-org
 • xah-lookup-wiktionary
 • xah-lookup-etymology

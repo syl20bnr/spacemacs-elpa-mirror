@@ -12,6 +12,7 @@ for instance [[brain:index]]. You can also include search patterns in the
 link, just like the `org-mode' file-link: [[brain:index::*Programming]].
 
 You can use `org-brain-visualize' to see the relationships between entries,
-quickly add parents/children to an entry, and open them for editing. In this
-view you may also have pinned entries, which will be shown at all times. To
-pin an entry, add #+BRAIN_PIN: on a line in the beginning of the entry file.
+quickly add parents/children/pins to an entry, and open them for editing. In
+this view you may also have pinned entries, which will be shown at all times.
+To pin an entry, add #+BRAIN_PIN: on a line in the beginning of the entry
+file (or use bindings in `org-brain-visualize-mode' directly).

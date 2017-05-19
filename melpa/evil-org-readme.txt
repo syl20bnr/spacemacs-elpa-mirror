@@ -1,2 +1,2 @@
 Known Bugs:
-See, https://github.com/edwtjo/evil-org-mode/issues
+See, https://github.com/Somelauw/evil-org-mode/issues

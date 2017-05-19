@@ -37,9 +37,10 @@ details.
 To find in *current directory*, use `find-file-in-current-directory'
 and `find-file-in-current-directory-by-selected'.
 
-`ffip-show-diff' execute the backend from `ffip-diff-backends'.
-The selected index is the parameter passed to `ffip-show-diff'
-whose default value in one.
+`ffip-show-diff-by-description' and `ffip-show-diff' execute the
+backend from `ffip-diff-backends'.
+`ffip-show-diff-by-description' has more friendly UI.
+`ffip-show-diff' has optional parameter as index of selected backend.
 The output of execution is expected be in Unified Diff Format.
 The output is inserted into *ffip-diff* buffer.
 In the buffer, press "o/C-c C-c"/ENTER" or `M-x ffip-diff-find-file'

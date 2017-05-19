@@ -37,9 +37,10 @@ details.
 To find in *current directory*, use `find-file-in-current-directory'
 and `find-file-in-current-directory-by-selected'.
 
-`ffip-show-diff' execute the backend from `ffip-diff-backends'.
-The selected index is the parameter passed to `ffip-show-diff'
-whose default value in one.
+`ffip-show-diff-by-description' and `ffip-show-diff' execute the
+backend from `ffip-diff-backends'.
+`ffip-show-diff-by-description' has more friendly UI.
+`ffip-show-diff' has optional parameter as index of selected backend.
 The output of execution is expected be in Unified Diff Format.
 The output is inserted into *ffip-diff* buffer.
 In the buffer, press "o/C-c C-c"/ENTER" or `M-x ffip-diff-find-file'
@@ -75,18 +76,17 @@ installed.
 
 You can switch to `ido-mode' by `(setq ffip-prefer-ido-mode t)'
 
-GNU Find can be installed,
-  - through `Brew' on OS X
-  - through `Cygwin' or `MYSYS2' on Windows.
-Find executable will be automatically detected. But you can manually
-specify the executable location by insert below code into ~/.emacs,
+BSD/GNU Find can be installed through `Cygwin' or `MYSYS2' on Windows.
+Executable is automatically detected. But you can manually specify
+the executable location by insert below code into ~/.emacs,
 
   (if (eq system-type 'windows-nt)
      (setq ffip-find-executable "c:\\\\cygwin64\\\\bin\\\\find"))
-This program works on Windows/Cygwin/Linux/Mac Emacs.
+
+This program works on Windows/Cygwin/Linux/Mac.
 
 Windows setup is as easy as installing Cygwin into default directory on
-ANY driver. That's all.
+ANY driver.
 
 See https://github.com/technomancy/find-file-in-project for advanced tips.
 

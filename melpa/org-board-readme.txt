@@ -11,7 +11,7 @@ Commands defined here:
 
   `org-board-archive', `org-board-archive-dry-run',
   `org-board-cancel', `org-board-delete-all', `org-board-diff',
-  `org-board-diff', `org-board-new3', `org-board-open',
+  `org-board-diff3', `org-board-new', `org-board-open',
   `org-board-run-after-archive-function'.
 
 Functions defined here:

@@ -57,7 +57,7 @@ If you want to customize this feature, please see variable:
 
 *** I want to select minibuffer with label "z".
 #+BEGIN_EXAMPLE
-(setq switch-window-minibuffer-shortcut "z")
+(setq switch-window-minibuffer-shortcut ?z)
 #+END_EXAMPLE
 
 *** Switch-window seem to conflict with Exwm, how to do?
@@ -70,6 +70,9 @@ to get input instead:
 #+BEGIN_EXAMPLE
 (setq switch-window-input-style 'minibuffer)
 #+END_EXAMPLE
+
+Note: if you use minibuffer to get input, the feature about
+`switch-window-minibuffer-shortcut' will not work well.
 
 *** I use text terminal, but I want *bigger* label.
 The only choice is using asciiart, which *draw* a bigger label

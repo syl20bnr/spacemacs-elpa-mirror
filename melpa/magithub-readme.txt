@@ -1,7 +1,7 @@
-Magithub is an interface to GitHub using the `hub' utility [1].
+Magithub is an interface to GitHub.
 
-Integrated into Magit workflows, Magithub allows very easy, very
-basic GitHub repository management.  Supported actions include:
+Integrated into Magit workflows, Magithub allows easy GitHub
+repository management.  Supported actions include:
 
  - pushing brand-new local repositories up to GitHub
  - creating forks of existing repositories

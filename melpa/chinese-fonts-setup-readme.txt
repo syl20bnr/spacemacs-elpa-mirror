@@ -143,7 +143,8 @@ fallback 信息，覆盖需要 *重置* 的 profile, 这个 profile 原来的
 | cfs-increase-fontsize | 增大字体大小 |
 | cfs-decrease-fontsize | 减小字体大小 |
 
-注意：在调整字体大小的同时，字号信息也会保存 ~/.emacs 中。
+注意：在调整字体大小的同时，字号信息也会保存到 `cfs-directory' 目录下
+`cfs-config-filename' 对应的文件中。
 
 [[./snapshots/cfs-increase-and-decrease-fontsize.gif]]
 
