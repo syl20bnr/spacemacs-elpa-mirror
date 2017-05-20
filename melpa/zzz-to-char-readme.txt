@@ -7,5 +7,3 @@ The commands are minimalistic and often work like built-in ones when
 there is only one occurrence of target character (except they
 automatically work in backward direction too). You can also specify how
 many characters to scan from each side of point, see `zzz-to-char-reach'.
-
-This package uses avy as backend.

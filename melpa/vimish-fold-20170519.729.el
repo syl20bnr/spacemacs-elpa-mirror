@@ -1,12 +1,12 @@
 ;;; vimish-fold.el --- Fold text like in Vim -*- lexical-binding: t; -*-
 ;;
-;; Copyright © 2015–2017 Mark Karpov <markkarpov@openmailbox.org>
+;; Copyright © 2015–2017 Mark Karpov <markkarpov92@gmail.com>
 ;; Copyright © 2012–2013 Magnar Sveen <magnars@gmail.com>
 ;;
-;; Author: Mark Karpov <markkarpov@openmailbox.org>
+;; Author: Mark Karpov <markkarpov92@gmail.com>
 ;; Author: Magnar Sveen <magnars@gmail.com>
 ;; URL: https://github.com/mrkkrp/vimish-fold
-;; Package-Version: 20161231.1600
+;; Package-Version: 20170519.729
 ;; Version: 0.2.2
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (f "0.18.0"))
 ;; Keywords: convenience
@@ -35,12 +35,13 @@
 ;;
 ;; * good visual feedback: it's obvious which part of text is folded;
 ;;
-;; * persistence by default: when you close file your folds don't disappear;
+;; * persistence by default: when you kill a buffer your folds don't
+;;   disappear;
 ;;
 ;; * persistence scales well, you can work on hundreds of files with lots of
 ;;   folds without adverse effects;
 ;;
-;; * it doesn't break indentation or something;
+;; * it does not break indentation;
 ;;
 ;; * folds can be toggled from folded state to unfolded and back very
 ;;   easily;
