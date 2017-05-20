@@ -1,4 +1,4 @@
-;;; hack-time-mode.el --- Forge time   -*- lexical-binding: t ; -*-
+;;; hack-time-mode.el --- Forge time   -*- lexical-binding: t ; eval: (read-only-mode 1) -*-
 
 
 ;; THIS FILE HAS BEEN GENERATED.
@@ -13,7 +13,7 @@
 ;; Maintainer: Marco Wahl <marcowahlsoft@gmail.com>
 ;; Created: 2017
 ;; Version: 0.0.1
-;; Package-Version: 20170413.630
+;; Package-Version: 20170520.307
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: time, convenience
 ;; URL: https://gitlab.com/marcowahl/hack-time-mode

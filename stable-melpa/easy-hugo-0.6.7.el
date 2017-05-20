@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 0.6.6
-;; Version: 0.6.6
+;; Package-Version: 0.6.7
+;; Version: 0.6.7
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -354,8 +354,7 @@ Enjoy!
 (defun easy-hugo-open ()
   "Open file."
   (interactive)
-  (unless (or (string-match "^
-$" (thing-at-point 'line))
+  (unless (or (string-match "^$" (thing-at-point 'line))
 	      (eq (point) (point-max))
 	      (> (+ 1 easy-hugo--forward-char) (length (thing-at-point 'line))))
     (let ((file (expand-file-name
@@ -368,8 +367,7 @@ $" (thing-at-point 'line))
 (defun easy-hugo-view ()
   "Open file with 'view-mode'."
   (interactive)
-  (unless (or (string-match "^
-$" (thing-at-point 'line))
+  (unless (or (string-match "^$" (thing-at-point 'line))
 	      (eq (point) (point-max))
 	      (> (+ 1 easy-hugo--forward-char) (length (thing-at-point 'line))))
     (let ((file (expand-file-name
@@ -382,8 +380,7 @@ $" (thing-at-point 'line))
 (defun easy-hugo-delete ()
   "Delete file."
   (interactive)
-  (unless (or (string-match "^
-$" (thing-at-point 'line))
+  (unless (or (string-match "^$" (thing-at-point 'line))
 	      (eq (point) (point-max))
 	      (> (+ 1 easy-hugo--forward-char) (length (thing-at-point 'line))))
     (let ((file (expand-file-name
@@ -391,7 +388,7 @@ $" (thing-at-point 'line))
 		 easy-hugo-basedir)))
       (when (and (file-exists-p file)
 		 (not (file-directory-p file)))
-	(when (y-or-n-p "Do you delete a file? ")
+	(when (y-or-n-p (concat "Delete " file))
 	  (if easy-hugo-no-help
 	      (setq easy-hugo--line (- (line-number-at-pos) 2))
 	    (setq easy-hugo--line (- (line-number-at-pos) 11)))
@@ -432,7 +429,10 @@ $" (thing-at-point 'line))
 		       (string= (car files) ".."))
 	     (push
 	      (concat
-	       (format-time-string "%Y-%m-%d %H:%M:%S " (nth 5 (file-attributes (expand-file-name (concat "content/post/" (car files)) easy-hugo-basedir))))
+	       (format-time-string "%Y-%m-%d %H:%M:%S " (nth 5 (file-attributes
+								(expand-file-name
+								 (concat "content/post/" (car files))
+								 easy-hugo-basedir))))
 	       (car files))
 	      lists))
 	   (pop files))

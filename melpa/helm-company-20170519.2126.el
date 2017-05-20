@@ -3,9 +3,10 @@
 ;; Copyright (C) 2013 Yasuyuki Oka <yasuyk@gmail.com>
 
 ;; Author: Yasuyuki Oka <yasuyk@gmail.com>
+;; Maintainer: Daniel Ralston <Sodel-the-Vociferous@users.noreply.github.com>
 ;; Version: 0.1.1
-;; Package-Version: 20170306.2113
-;; URL: https://github.com/yasuyk/helm-company
+;; Package-Version: 20170519.2126
+;; URL: https://github.com/Sodel-the-Vociferous/helm-company
 ;; Package-Requires: ((helm "1.5.9") (company "0.6.13"))
 
 ;; This program is free software; you can redistribute it and/or modify

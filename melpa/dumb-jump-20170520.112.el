@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015-2016 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.0
-;; Package-Version: 20170510.1430
+;; Package-Version: 20170520.112
 ;; Package-Requires: ((emacs "24.3") (f "0.17.3") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -320,7 +320,7 @@ using searcher git-grep."
     (:type "variable" :supports ("ag" "grep" "rg" "git-grep") :language "objc"
            :regex "\\b\\*?JJJ\\s*=[^=\\n]+"
            :tests ("NSString *test = @\"asdf\"")
-           :tests ("NSString *testnot = @\"asdf\"" "NSString *nottest = @\"asdf\""))
+           :not ("NSString *testnot = @\"asdf\"" "NSString *nottest = @\"asdf\""))
 
     ;; swift
     (:type "variable" :supports ("ag" "grep" "rg" "git-grep") :language "swift"

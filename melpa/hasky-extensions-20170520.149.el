@@ -1,10 +1,10 @@
 ;;; hasky-extensions.el --- Toggle Haskell language extensions -*- lexical-binding: t; -*-
 ;;
-;; Copyright © 2016–2017 Mark Karpov <markkarpov@openmailbox.org>
+;; Copyright © 2016–2017 Mark Karpov <markkarpov92@gmail.com>
 ;;
-;; Author: Mark Karpov <markkarpov@openmailbox.org>
+;; Author: Mark Karpov <markkarpov92@gmail.com>
 ;; URL: https://github.com/hasky-mode/hasky-extensions
-;; Package-Version: 20170426.1347
+;; Package-Version: 20170520.149
 ;; Version: 0.1.1
 ;; Package-Requires: ((emacs "24.4") (avy-menu "0.2"))
 ;; Keywords: programming
@@ -109,9 +109,9 @@
 
 Very large files can either slow down the process of extensions
 detection or cause stack overflows, thus we limit number of
-characters the package will traverse.  The default value should
-be appropriate for most users since language extension pragmas
-are typically placed in the beginning of file.  If you wish to
+characters the package traverses.  The default value should be
+appropriate for most users since language extension pragmas are
+typically placed at the beginning of a file.  If you wish to
 disable the limitation, set this value to NIL (not recommended)."
   :tag "How many characters from beginning of file to scan"
   :type 'integer)
@@ -136,7 +136,7 @@ disable the limitation, set this value to NIL (not recommended)."
 ;; The editing itself
 
 (defun hasky-extensions--next-ext (&optional ext)
-  "Find and return name of next extensions in the file or NIL.
+  "Find and return name of next extension in the file or NIL.
 
 If EXT is supplied, find this particular extension."
   (re-search-forward
@@ -191,7 +191,7 @@ with “default-extensions” or similar settings."
   ;; module declaration (with one empty line between them).  If The file
   ;; contains no module declaration yet, place the new extension after
   ;; header.  If the file has no header, place the new extension at the
-  ;; beginning of file.
+  ;; beginning of the file.
   (save-excursion
     (let ((ext (format "{-# LANGUAGE %s #-}\n" extension)))
       (cond ((progn
@@ -238,7 +238,7 @@ with “default-extensions” or similar settings."
 
 ;;;###autoload
 (defun hasky-extensions ()
-  "Invoke the menu that allows to add and remove Haskell language extensions."
+  "Invoke a menu for managing Haskell language extensions."
   (interactive)
   (let ((exts (hasky-extensions-list))
         (selected t))

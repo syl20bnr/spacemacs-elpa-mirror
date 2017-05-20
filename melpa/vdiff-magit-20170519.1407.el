@@ -4,8 +4,8 @@
 
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
-;; URL: https://github.com/justbur/emacs-vdiff
-;; Package-Version: 20170518.419
+;; URL: https://github.com/justbur/emacs-vdiff-magit
+;; Package-Version: 20170519.1407
 ;; Version: 0.3
 ;; Keywords: diff
 ;; Package-Requires: ((emacs "24.4") (vdiff "0.3") (magit "2.10.0"))

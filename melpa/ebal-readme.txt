@@ -1,6 +1,6 @@
-This is Emacs interface to Cabal and Stack.  Currently, it provides fast
-and easy access to most Cabal commands († — commands available in Stack
-mode):
+This is an Emacs interface to Cabal and Stack.  Currently, it provides
+fast and easy access to most Cabal commands (†—commands available in
+Stack mode):
 
 * init (in stack mode this is done for you automatically)
 * build †
