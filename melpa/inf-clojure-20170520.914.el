@@ -5,7 +5,7 @@
 ;; Authors: Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Olin Shivers <shivers@cs.cmu.edu>
 ;; URL: http://github.com/clojure-emacs/inf-clojure
-;; Package-Version: 20170518.19
+;; Package-Version: 20170520.914
 ;; Keywords: processes, clojure
 ;; Version: 2.0.1
 ;; Package-Requires: ((emacs "24.4") (clojure-mode "5.6"))
@@ -1199,7 +1199,8 @@ Useful for commands that can invoked outside of an inf-clojure buffer
       (cond
        ((null repl-buffers) (user-error "No inf-clojure buffers found"))
        ((= (length repl-buffers) 1) (car repl-buffers))
-       (t (get-buffer (completing-read "Select target inf-clojure buffer: " (mapcar #'buffer-name repl-buffers))))))))
+       (t (get-buffer (completing-read "Select target inf-clojure buffer: "
+                                       (mapcar #'buffer-name repl-buffers))))))))
 
 (defun inf-clojure-quit (&optional buffer)
   "Kill the REPL buffer and its underlying process.

@@ -4,7 +4,7 @@
 
 ;; Author: David Engster <deng@randomsample.de>
 ;; Keywords: calendar, caldav
-;; Package-Version: 20170518.1220
+;; Package-Version: 20170520.850
 ;; Package-Requires: ((org "7"))
 ;;
 ;; This file is not part of GNU Emacs.
@@ -82,15 +82,15 @@ can choose between the following options:
 Use this variable to sync with several different remote
 calendars.  If you set this, the global variables
 `org-caldav-url', `org-caldav-calendar-id', `org-caldav-files',
-`org-caldav-select-tags', `org-caldav-exclude-tags' and
-`org-caldav-inbox' will only serve
-as default values.  They can be overridden through the plist keys
-:url, :calendar-id, :files, :select-tags and :inbox, resp.  If
-you specify any other key, it will be prefixed with \"org-\",
-meaning that if you use for instance :agenda-skip-function, it
-will override `org-agenda-skip-function'.
-All provided calendars can then be synced in order by calling
-`org-caldav-sync' as usual.
+`org-caldav-select-tags', `org-caldav-exclude-tags',
+`org-caldav-inbox' and `org-caldav-skip-conditions' will only
+serve as default values.  They can be overridden through the
+plist keys :url, :calendar-id, :files, :select-tags, :inbox,
+and :skip-conditions, resp.  If you specify any other key, it
+will be prefixed with \"org-\", meaning that if you use for
+instance :agenda-skip-function, it will override
+`org-agenda-skip-function'.  All provided calendars can then be
+synced in order by calling `org-caldav-sync' as usual.
 
 Example:
 '((:calendar-id \"work@whatever\" :files (\"~/org/work.org\")
@@ -122,6 +122,13 @@ Can be one of the following symbols:
 ask = Ask for before deletion (default)
 never = Never delete Org entries
 always = Always delete")
+
+(defvar org-caldav-skip-conditions nil
+  "Conditions for skipping entries during icalendar export.
+This must be a list of conditions, which are described in the
+doc-string of `org-agenda-skip-if'.  Any entry that matches will
+not be exported.  Note that the normal `org-agenda-skip-function'
+has no effect on the icalendar exporter.")
 
 (defvar org-caldav-backup-file
   (expand-file-name "org-caldav-backup.org" user-emacs-directory)
@@ -545,6 +552,7 @@ Are you really sure? ")))
     (:select-tags 'org-caldav-select-tags)
     (:exclude-tags 'org-caldav-exclude-tags)
     (:inbox 'org-caldav-inbox)
+    (:skip-conditions 'org-caldav-skip-conditions)
     (t (intern
 	(concat "org-"
 		(substring (symbol-name key) 1))))))
@@ -555,40 +563,33 @@ The format of CALENDAR is described in `org-caldav-calendars'.
 If CALENDAR is not provided, the default values will be used.
 If RESUME is non-nil, try to resume."
   (setq org-caldav-previous-calendar calendar)
-  (let ((org-caldav-url org-caldav-url)
-	(org-caldav-calendar-id org-caldav-calendar-id)
-	(org-caldav-files org-caldav-files)
-	(org-caldav-select-tags org-caldav-select-tags)
-	(org-caldav-exclude-tags org-caldav-exclude-tags)
-	(org-caldav-inbox org-caldav-inbox)
-	(org-caldav-empty-calendar nil))
-    (while calendar
-      (let ((key (pop calendar))
-	    (value (pop calendar)))
-	(set (org-caldav-var-for-key key) value)))
-    ;; Make sure org files are existing
-    (dolist (filename (append org-caldav-files
-			      (list (org-caldav-inbox-file org-caldav-inbox))))
-	    (when (not (file-exists-p filename))
-	      (user-error "File %s does not exist" filename)))
-    (org-caldav-check-connection)
-    (unless resume
-      (setq org-caldav-ics-buffer (org-caldav-generate-ics))
+  (let (calkeys calvalues)
+    (dolist (i (number-sequence 0 (1- (length calendar)) 2))
+      (setq calkeys (append calkeys (list (nth i calendar)))
+	    calvalues (append calvalues (list (nth (1+ i) calendar)))))
+    (progv (mapcar 'org-caldav-var-for-key calkeys) calvalues
+      (dolist (filename (append org-caldav-files
+				(list (org-caldav-inbox-file org-caldav-inbox))))
+	(when (not (file-exists-p filename))
+	  (user-error "File %s does not exist" filename)))
+      (org-caldav-check-connection)
+      (unless resume
+	(setq org-caldav-ics-buffer (org-caldav-generate-ics))
+	(setq org-caldav-event-list nil)
+	(org-caldav-load-sync-state)
+	;; Remove status in event list
+	(dolist (cur org-caldav-event-list)
+	  (org-caldav-event-set-status cur nil))
+	(org-caldav-update-eventdb-from-org org-caldav-ics-buffer)
+	(org-caldav-update-eventdb-from-cal))
+      (org-caldav-update-events-in-cal org-caldav-ics-buffer)
+      (org-caldav-update-events-in-org)
+      (org-caldav-save-sync-state)
       (setq org-caldav-event-list nil)
-      (org-caldav-load-sync-state)
-      ;; Remove status in event list
-      (dolist (cur org-caldav-event-list)
-	(org-caldav-event-set-status cur nil))
-      (org-caldav-update-eventdb-from-org org-caldav-ics-buffer)
-      (org-caldav-update-eventdb-from-cal))
-    (org-caldav-update-events-in-cal org-caldav-ics-buffer)
-    (org-caldav-update-events-in-org)
-    (org-caldav-save-sync-state)
-    (setq org-caldav-event-list nil)
-    (with-current-buffer org-caldav-ics-buffer
-      (set-buffer-modified-p nil)
-      (kill-buffer))
-    (delete-file (buffer-file-name org-caldav-ics-buffer))))
+      (with-current-buffer org-caldav-ics-buffer
+	(set-buffer-modified-p nil)
+	(kill-buffer))
+      (delete-file (buffer-file-name org-caldav-ics-buffer)))))
 
 ;;;###autoload
 (defun org-caldav-sync ()
@@ -758,9 +759,10 @@ returned as a cons (POINT . LEVEL)."
 	   (let ((org-link-search-inhibit-query t)
 		 level)
 	     ;; org-link-search changed signature in v8.3
-	     (if (version< org-version "8.3")
-		 (org-link-search (concat "*" (nth 2 inbox)) nil nil t)
-	       (org-link-search (concat "*" (nth 2 inbox)) nil t))
+	     (with-no-warnings
+	       (if (version< org-version "8.3")
+		   (org-link-search (concat "*" (nth 2 inbox)) nil nil t)
+		 (org-link-search (concat "*" (nth 2 inbox)) nil t)))
 	     (setq level (1+ (org-current-level)))
 	     (org-end-of-subtree t t)
 	     (cons (point) level))))
@@ -929,6 +931,14 @@ is on s-expression."
       (insert item "\n")
       (save-buffer))))
 
+(defun org-caldav-skip-function (backend)
+  (when (eq backend 'icalendar)
+    (org-map-entries
+     (lambda ()
+       (let ((pt (apply 'org-agenda-skip-entry-if org-caldav-skip-conditions)))
+	 (when pt
+	   (delete-region (point) pt)))))))
+
 (defun org-caldav-generate-ics ()
   "Generate ICS file from `org-caldav-files'.
 Returns buffer containing the ICS file."
@@ -948,6 +958,9 @@ Returns buffer containing the ICS file."
 	;; Does not work yet
 	(org-icalendar-include-bbdb-anniversaries nil)
 	(icalendar-uid-format "orgsexp-%h")
+	(org-export-before-parsing-hook
+	 (append org-export-before-parsing-hook
+		 (when org-caldav-skip-conditions '(org-caldav-skip-function))))
 	(org-icalendar-date-time-format
 	 (cond
 	  ((and org-icalendar-timezone

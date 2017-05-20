@@ -1,10 +1,10 @@
 ;;; noxml-fold.el --- Fold away XML things.
 
-;; Copyright (C) 2014--2015 Patrick McAllister
+;; Copyright (C) 2014--2017 Patrick McAllister
 
 ;; Author: Patrick McAllister <pma@rdorte.org>
 ;; Keywords: xml, folding
-;; Package-Version: 20160707.847
+;; Package-Version: 20170520.545
 ;; URL: https://github.com/paddymcall/noxml-fold
 
 ;; This program is free software: you can redistribute it and/or modify
@@ -365,9 +365,16 @@ Finds the folding rules in `noxml-fold-spec-list' by matching the
 root element's default namespace, or, failing that, the root
 element's local name."
   (let ()
-    (or
-     (car (assoc-default (noxml-find-default-namespace) noxml-fold-spec-list '(lambda (x y) (member y x))))
-     (car (assoc-default (noxml-find-root-element) noxml-fold-spec-list '(lambda (x y) (member y x)))))))
+    (unless (= (point-min) (point-max))
+      (or
+       (car (assoc-default
+	     (noxml-find-default-namespace)
+	     noxml-fold-spec-list
+	     '(lambda (x y) (member y x))))
+       (car (assoc-default
+	     (noxml-find-root-element)
+	     noxml-fold-spec-list
+	     '(lambda (x y) (member y x))))))))
 
 
 (defun noxml-fold-flatten-spec-list (&optional spec-list)

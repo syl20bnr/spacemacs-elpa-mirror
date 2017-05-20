@@ -3,15 +3,15 @@
 ;; Author: Christian Johansson <github.com/cjohansson>
 ;; Maintainer: Christian Johansson <github.com/cjohansson>
 ;; Created: 5 Jul 2016
-;; Modified: 15 May 2017
-;; Version: 1.54
-;; Package-Version: 20170514.2129
+;; Modified: 20 May 2017
+;; Version: 1.56
+;; Package-Version: 20170520.26
 ;; Keywords: tools, convenience
 ;; URL: https://github.com/cjohansson/emacs-ssh-deploy
 
 ;; This file is not part of GNU Emacs.
 
-;; Copyright (C) 2016 Christian Johansson
+;; Copyright (C) 2017 Christian Johansson
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License as
@@ -265,6 +265,8 @@
                           (progn
                             (if (or (eq t ,force) (not (file-exists-p ,remote-path)) (and (file-exists-p ,revision-path) (ediff-same-file-contents ,revision-path ,remote-path)))
                                 (progn
+                                  (if (not (file-directory-p (file-name-directory ,remote-path)))
+                                      (make-directory (file-name-directory ,remote-path) t))
                                   (copy-file ,local ,remote-path t t t t)
                                   (copy-file ,local ,revision-path t t t t)
                                   (list 0 (format "Upload '%s' completed." ,remote-path)))
@@ -280,6 +282,8 @@
                   (progn
                     (async-start
                      `(lambda()
+                        (if (not (file-directory-p (file-name-directory ,remote-path)))
+                            (make-directory (file-name-directory ,remote-path) t))
                         (copy-directory ,local ,remote-path t t t)
                         ,local)
                      (lambda(return-path)
@@ -287,7 +291,7 @@
                 (progn
                   (async-start
                    `(lambda()
-                      (copy-directory ,local ,(file-name-directory (directory-file-name remote-path)) t t)
+                      (copy-directory ,local ,(file-name-directory (directory-file-name remote-path)) t t t)
                       ,local)
                    (lambda(return-path)
                      (message "Upload '%s' finished." return-path)))))))))
@@ -302,6 +306,8 @@
           (if (or (boundp 'force) (not (ssh-deploy--remote-has-changed local remote-path)))
               (progn
                 (message "Uploading file '%s' to '%s' via tramp synchronously.." local remote-path)
+                (if (not (file-directory-p (file-name-directory remote-path)))
+                    (make-directory (file-name-directory remote-path) t))
                 (copy-file local remote-path t t t t)
                 (message "Upload '%s' finished" local)
                 (ssh-deploy-store-revision local))
@@ -313,7 +319,7 @@
               (copy-directory local remote-path t t t)
               (message "Upload '%s' finished" local))
           (progn
-            (copy-directory local (file-name-directory (directory-file-name remote-path)) t t)
+            (copy-directory local (file-name-directory (directory-file-name remote-path)) t t t)
             (message "Upload '%s' finished" local)))))))
 
 (defun ssh-deploy--download-via-tramp-async (remote local local-root)
@@ -345,7 +351,7 @@
                 (progn
                   (async-start
                    `(lambda()
-                      (copy-directory ,remote-path ,(file-name-directory (directory-file-name remote-path)) t t)
+                      (copy-directory ,remote-path ,(file-name-directory (directory-file-name remote-path)) t t t)
                       ,local)
                    (lambda(return-path)
                      (message "Download '%s' finished." return-path)))))))))
@@ -368,7 +374,7 @@
               (copy-directory remote-path local t t t)
               (message "Download '%s' finished." local))
           (progn
-            (copy-directory remote-path (file-name-directory (directory-file-name remote-path)) t t)
+            (copy-directory remote-path (file-name-directory (directory-file-name remote-path)) t t t)
             (message "Download '%s' finished." local))
           )))))
 

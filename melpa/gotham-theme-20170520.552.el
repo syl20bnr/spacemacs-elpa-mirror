@@ -4,7 +4,7 @@
 
 ;; Author: Vasilij Schneidermann <v.schneidermann@gmail.com>
 ;; URL: https://github.com/wasamasa/gotham-theme
-;; Package-Version: 20170512.1244
+;; Package-Version: 20170520.552
 ;; Version: 1.1.7
 
 ;; This file is NOT part of GNU Emacs.
@@ -157,7 +157,7 @@ depending on DISPLAY for keys which are either :foreground or
    (warning :foreground orange)
 
    ;; search and highlighting
-   (match :background base5)
+   (match :background base4)
    (isearch :inverse-video t)
    (isearch-fail :foreground red)
    (lazy-highlight :foreground base2 :background yellow)
