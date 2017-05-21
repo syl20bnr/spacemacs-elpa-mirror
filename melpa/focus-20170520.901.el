@@ -4,7 +4,7 @@
 
 ;; Author: Lars Tveito <larstvei@ifi.uio.no>
 ;; URL: http://github.com/larstvei/Focus
-;; Package-Version: 20161113.1145
+;; Package-Version: 20170520.901
 ;; Created: 11th May 2015
 ;; Version: 0.1.1
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
@@ -71,6 +71,9 @@ Things that are defined include `symbol', `list', `sexp',
   :type '(float)
   :group 'focus)
 
+(defvar focus-cursor-type cursor-type
+  "Used to restore the users `cursor-type'")
+
 (defvar focus-current-thing nil
   "Overrides the choice of thing dictated by `focus-mode-to-thing' if set.")
 
@@ -101,9 +104,9 @@ The timer calls `focus-read-only-hide-cursor' after
 (defun focus-get-thing ()
   "Return the current thing, based on `focus-mode-to-thing'."
   (or focus-current-thing
-   (let* ((modes (mapcar 'car focus-mode-to-thing))
-          (mode  (focus-any 'derived-mode-p modes)))
-     (if mode (cdr (assoc mode focus-mode-to-thing)) 'sentence))))
+      (let* ((modes (mapcar 'car focus-mode-to-thing))
+             (mode  (focus-any 'derived-mode-p modes)))
+        (if mode (cdr (assoc mode focus-mode-to-thing)) 'sentence))))
 
 (defun focus-bounds ()
   "Return the current bounds, based on `focus-get-thing'."
@@ -186,8 +189,8 @@ default is overwritten. This function simply helps set the
 `focus-current-thing'."
   (interactive)
   (let* ((candidates '(symbol list sexp defun
-                      filename url email word
-                      sentence whitespace line page))
+                              filename url email word
+                              sentence whitespace line page))
          (thing (completing-read "Thing: " candidates)))
     (setq focus-current-thing (intern thing))))
 
@@ -198,7 +201,7 @@ if active."
   (when focus-mode
     (when (region-active-p)
       (focus-move-overlays (region-beginning) (region-end)))
-   (remove-hook 'post-command-hook 'focus-move-focus t)))
+    (remove-hook 'post-command-hook 'focus-move-focus t)))
 
 (defun focus-unpin ()
   "Unpin the focused section."
@@ -237,7 +240,7 @@ This is added to the `pre-command-hook' when
   (when (and focus-read-only-mode
              (not (member last-command '(focus-next-thing focus-prev-thing))))
     (when focus-read-only-blink-timer (cancel-timer focus-read-only-blink-timer))
-    (setq cursor-type t)
+    (setq cursor-type focus-cursor-type)
     (setq focus-read-only-blink-timer
           (run-at-time focus-read-only-blink-seconds nil
                        'focus-read-only-hide-cursor (current-buffer)))))
@@ -257,7 +260,7 @@ Enables `read-only-mode', hides the cursor and adds
 Disables `read-only-mode' and shows the cursor again. It cleans
 up the `focus-read-only-blink-timer' and hooks."
   (read-only-mode -1)
-  (setq cursor-type t)
+  (setq cursor-type focus-cursor-type)
   (when focus-read-only-blink-timer
     (cancel-timer focus-read-only-blink-timer))
   (setq focus-read-only-blink-timer nil)
@@ -294,6 +297,8 @@ up the `focus-read-only-blink-timer' and hooks."
             (define-key map (kbd "i") 'turn-off-focus-read-only-mode)
             (define-key map (kbd "q") 'turn-off-focus-read-only-mode)
             map)
+  (when cursor-type
+    (setq focus-cursor-type cursor-type))
   (if focus-read-only-mode (focus-read-only-init) (focus-read-only-terminate)))
 
 (provide 'focus)

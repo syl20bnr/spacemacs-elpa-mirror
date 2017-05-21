@@ -4,7 +4,7 @@
 
 ;; Author: Nathaniel Flath <flat0103@gmail.com>
 ;; URL: https://github.com/nflath/sudo-edit
-;; Package-Version: 20170201.916
+;; Package-Version: 20170520.845
 ;; Keywords: convenience
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
@@ -124,8 +124,8 @@ attention to case differences."
                    (tramp-file-name-host vec)
                    ""
                    (tramp-file-name-hop vec))))
-        (setq hop (string-remove-prefix tramp-prefix-format hop))
-        (setq hop (string-remove-suffix tramp-postfix-host-format hop))
+        (setq hop (string-remove-prefix (if (fboundp 'tramp-prefix-format) (tramp-prefix-format) (bound-and-true-p tramp-prefix-format)) hop))
+        (setq hop (string-remove-suffix (if (fboundp 'tramp-postfix-host-format) (tramp-postfix-host-format) (bound-and-true-p tramp-postfix-host-format)) hop))
         (setq hop (concat hop tramp-postfix-hop-format))
         (if (and (string= user (tramp-file-name-user vec))
                  (string-match tramp-local-host-regexp (tramp-file-name-host vec)))
@@ -141,7 +141,7 @@ With a prefix ARG prompt for a file to visit.  Will also prompt
 for a file to visit if current buffer is not visiting a file."
   (interactive "P")
   (let ((user (if arg
-                  (completing-read "User: " (system-users) nil nil nil 'sudo-edit-user-history sudo-edit-user)
+                  (completing-read "User: " (and (fboundp 'system-users) (system-users)) nil nil nil 'sudo-edit-user-history sudo-edit-user)
                 sudo-edit-user))
         (filename (or buffer-file-name
                       (and (derived-mode-p 'dired-mode) default-directory))))

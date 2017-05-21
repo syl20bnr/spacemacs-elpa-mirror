@@ -4,7 +4,7 @@
 
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-which-key
-;; Package-Version: 20170519.1455
+;; Package-Version: 20170521.549
 ;; Version: 3.0
 ;; Keywords:
 ;; Package-Requires: ((emacs "24.4"))
@@ -356,7 +356,11 @@ are
 See the README and the docstrings for those functions for more
 information."
   :group 'which-key
-  :type 'function)
+  :type '(choice (function-item which-key-key-order)
+                 (function-item which-key-key-order-alpha)
+                 (function-item which-key-description-order)
+                 (function-item which-key-prefix-then-key-order)
+                 (function-item which-key-local-then-key-order)))
 
 (defcustom which-key-sort-uppercase-first t
   "If non-nil, uppercase comes before lowercase in sorting

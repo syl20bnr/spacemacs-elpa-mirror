@@ -4,7 +4,7 @@
 
 ;; Author: 0rdy <mail@0rdy.com>
 ;; URL: https://github.com/0rdy/kaolin-theme
-;; Package-Version: 20170520.151
+;; Package-Version: 20170521.303
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 0.8.0
 
@@ -712,7 +712,11 @@
      `(evil-ex-info ((,c (:foreground ,orange))))
      `(evil-ex-substitute-matches ((,c (:background nil :foreground ,red :underline ,underline))))
      `(evil-ex-substitute-replacement ((,c (:background nil :foreground ,light-green))))
-     '(evil-ex-lazy-highlight ((t (:inherit lazy-highlight))))
+     `(evil-ex-lazy-highlight ((t (:inherit lazy-highlight))))
+
+     ;; Vimish-fold
+     `(vimish-fold-overlay ((,c (:background ,bg2 :foreground ,comment))))
+     `(vimish-fold-fringe ((,c (:background nil :foreground ,jade))))
 
     ;; Avy
      `(avy-lead-face ((,c (:background ,dark-red :foreground ,white))))

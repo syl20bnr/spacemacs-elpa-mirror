@@ -4,7 +4,7 @@
 
 ;; Author: John Louis Del Rosario <john2x@gmail.com>
 ;; URL: https://github.com/john2x/plan9-theme.el
-;; Package-Version: 20170129.553
+;; Package-Version: 20170520.1827
 ;; Version: 0.2
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -259,7 +259,7 @@ Also bind `class' to ((class color) (min-colors 89))."
    ;; `(ediff-odd-diff-B ((t (:background ,silver))))
    ;; `(ediff-odd-diff-C ((t (:background ,silver))))
 ;;;;; erc
-   `(erc-default-face ((t (:foreground ,fg :height 1.1))))
+   `(erc-default-face ((t (:foreground ,fg))))
    `(erc-header-line ((t (:inherit header-line))))
    `(erc-action-face ((t (:inherit erc-default-face))))
    `(erc-bold-face ((t (:inherit erc-default-face :weight bold))))
@@ -271,10 +271,10 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(erc-notice-face ((t (:foreground ,fg-light))))
    `(erc-highlight-face ((t (:background ,highlight))))
 
-   `(erc-input-face ((t (:foreground ,fg :height 1.1 :background ,purple-light))))
-   `(erc-current-nick-face ((t (:foreground ,fg :background ,cyan-light :weight bold))))
-   ;;`(erc-nick-default-face ((t (:foreground ,fg :background ,bg-dark))))
-   `(erc-my-nick-face ((t (:foreground ,fg :background ,cyan-light :weight bold))))
+   `(erc-input-face ((t (:foreground ,fg :background ,bg-alt))))
+   `(erc-current-nick-face ((t (:foreground ,fg :background ,cyan-light :weight bold :box (:line-width 1 :style released-button)))))
+   `(erc-nick-default-face ((t (:weight bold :background ,bg-alt))))
+   `(erc-my-nick-face ((t (:foreground ,fg :background ,cyan-light :weight bold :box (:line-width 1 :style released-button)))))
    `(erc-nick-msg-face ((t (:inherit erc-default))))
    `(erc-fool-face ((t (:inherit erc-default))))
    `(erc-pal-face ((t (:foreground ,purple :weight bold))))
@@ -296,7 +296,7 @@ Also bind `class' to ((class color) (min-colors 89))."
   ;;;;; evil
    `(evil-search-highlight-persist-highlight-face ((t (:inherit lazy-highlight))))
 ;;;;; flx
-   `(flx-highlight-face ((t (:foreground ,yellow :weight bold))))
+   `(flx-highlight-face ((t (:foreground ,yellow :background ,green-light :weight bold :underline t))))
 ;;;;; company
    `(company-tooltip ((t (:background ,green-light))))
    `(company-tooltip-selection ((t (:background ,cyan-light))))
@@ -407,7 +407,7 @@ Also bind `class' to ((class color) (min-colors 89))."
 ;;;;; ido-vertical
    `(ido-vertical-first-match-face ((t (:foreground ,fg :background ,cyan-light :weight bold))))
    `(ido-vertical-only-match-face ((t (:foreground ,red :background ,red-light :weight bold))))
-   `(ido-vertical-match-face ((t (:foreground ,fg :background ,green-light :weight bold))))
+   `(ido-vertical-match-face ((t (:foreground ,fg :background ,green-light :weight bold :underline t))))
 ;;;;; indent-guide
    `(indent-guide-face ((t (:foreground ,highlight))))
 ;;;;; ivy
@@ -468,6 +468,9 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(magit-blame-heading ((t (:foreground ,fg-light :background ,bg-alt))))
 ;;;;; paren-face
    `(parenthesis ((t (:foreground "#CCCCB7"))))
+;;;;; project-explorer
+   `(pe/file-face ((t (:foreground ,fg))))
+   `(pe/directory-face ((t (:foreground ,blue :weight bold))))
 ;; ;;;;; outline
 ;;    `(outline-1 ((t (:foreground ,green-sea))))
 ;;    `(outline-2 ((t (:foreground ,belize-hole))))
@@ -519,6 +522,8 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(sml/vc ((t (:foreground ,fg :weight bold))))
    `(sml/vc-edited ((t (:foreground ,red :weight bold))))
    `(sml/git ((t (:foreground ,fg :weight bold))))
+;; sh
+   `(sh-heredoc-face ((t (:foreground ,purple))))
 ;; ;;;;; SLIME
 ;;    `(slime-repl-output-face ((t (:foreground ,midnight-blue))))
 ;;    `(slime-repl-inputed-output-face ((t (:foreground ,wet-asphalt))))
@@ -603,8 +608,8 @@ Also bind `class' to ((class color) (min-colors 89))."
 ;;;;; which-func-mode
    `(which-func ((t (:foreground ,purple :background ,purple-light))))
 ;;;;; yascroll
-   `(yascroll:thumb-text-area ((t (:background ,green-light))))
-   `(yascroll:thumb-fringe ((t (:background ,highlight :foreground ,bg :style released-button))))
+   `(yascroll:thumb-text-area ((t (:background ,highlight))))
+   `(yascroll:thumb-fringe ((t (:background ,bg :foreground ,bg :box (:line-width 1 :style released-button)))))
 ;;;;; Org
    `(org-level-1 ((t (:height 1.4 :weight bold :background ,bg-dark
                               :family "Sans Serif"
@@ -629,7 +634,7 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(org-table ((t (:foreground ,purple))))
    `(org-formula ((t (:foreground ,blue :background ,bg-alt))))
    `(org-code ((t (:foreground ,red :background ,bg-alt))))
-   `(org-verbatim ((t (:foreground ,fg :background ,bg-alt))))
+   `(org-verbatim ((t (:foreground ,fg :background ,bg-alt :underline t))))
    `(org-special-keyword ((t (:foreground ,cyan))))
    `(org-agenda-date ((t (:foreground ,cyan))))
    `(org-agenda-structure ((t (:foreground ,purple))))

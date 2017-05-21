@@ -5,8 +5,7 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-vdiff
-;; Package-Version: 20170518.550
-;; Version: 0.2
+;; Version: 0.2.3
 ;; Keywords: diff
 ;; Package-Requires: ((emacs "24.4") (hydra "0.13.0"))
 
@@ -374,18 +373,24 @@ point."
           (throw 'yes ovr))))))
 
 (defun vdiff--hunk-at-point-p ()
-  "Return first vdiff hunk overlay found at point."
+  "Non-nil if point is in hunk overlay.
+
+Returns overlay."
   (let ((ovr (vdiff--overlay-at-pos)))
     (and (overlayp ovr)
          (overlay-get ovr 'vdiff-type)
-         (not (eq (overlay-get ovr 'vdiff-type) 'fold)))))
+         (not (eq (overlay-get ovr 'vdiff-type) 'fold))
+         ovr)))
 
 (defun vdiff--fold-at-point-p ()
-  "Return first vdiff fold overlay found at point."
+  "Non-nil if point is in fold overlay.
+
+Returns overlay."
   (let ((ovr (vdiff--overlay-at-pos)))
     (and (overlayp ovr)
          (overlay-get ovr 'vdiff-type)
-         (eq (overlay-get ovr 'vdiff-type) 'fold))))
+         (eq (overlay-get ovr 'vdiff-type) 'fold)
+         ovr)))
 
 (defun vdiff--overlays-in-region (beg end)
   "Return any vdiff overlays found within BEG and END."
@@ -1429,7 +1434,6 @@ buffer)."
              (2-scroll (nth 3 2-scroll-data))
              ;; 1 is short for this; 2 is the first other and 3 is the second
              (vdiff--in-scroll-hook t))
-        (message "%s" 2-scroll-data)
         (when (and 2-pos 2-start-pos)
           (set-window-point 2-win 2-pos)
           ;; For some reason without this unless the vscroll gets eff'd
@@ -2104,6 +2108,27 @@ enabled automatically if `vdiff-lock-scrolling' is non-nil."
   ("i" vdiff-toggle-hydra/body :exit t)
   ("q" nil :exit t)
   ("Q" vdiff-quit :exit t))
+
+;;;; ChangeLog:
+
+;; 2017-05-20  Justin Burkett  <justin@burkett.cc>
+;; 
+;; 	Merge commit '857d2a42e92040a3009394da21e4d37c98d43c87'
+;; 
+;; 2017-05-20  Justin Burkett  <justin@burkett.cc>
+;; 
+;; 	Merge commit 'f55acdbfcbb14e463d0850cfd041614c7002669e'
+;; 
+;; 2017-05-18  Justin Burkett  <justin@burkett.cc>
+;; 
+;; 	Add 'packages/vdiff/' from commit
+;; 	'0f3f249a71beaa7603a3e114dfb621d79f03539a'
+;; 
+;; 	git-subtree-dir: packages/vdiff git-subtree-mainline:
+;; 	4abb4600a4bd2fef855b42af3c79cf9a0826566c git-subtree-split:
+;; 	0f3f249a71beaa7603a3e114dfb621d79f03539a
+;; 
+
 
 (provide 'vdiff)
 ;;; vdiff.el ends here

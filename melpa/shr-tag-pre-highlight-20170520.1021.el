@@ -4,7 +4,7 @@
 
 ;; Author: Chunyang Xu <mail@xuchunyang.me>
 ;; Package-Requires: ((emacs "24") (language-detection "0.1.0"))
-;; Package-Version: 20170513.2339
+;; Package-Version: 20170520.1021
 ;; Keywords: html
 ;; Version: 0
 
@@ -23,9 +23,22 @@
 
 ;;; Commentary:
 
+;; [![MELPA](https://melpa.org/packages/shr-tag-pre-highlight-badge.svg)](https://melpa.org/#/shr-tag-pre-highlight)
+;;
 ;; This package adds syntax highlighting support for code block in
 ;; HTML, rendered by `shr.el'.  The probably most famous user of
 ;; `shr.el' is EWW (the Emacs Web Wowser).
+;;
+;; Example:
+;;
+;; | Before               | After                                 |
+;; | ------               | -----                                 |
+;; | ![](eww-default.png) | ![](eww-with-syntax-highlighting.png) |
+;;
+;; In above, I am using EWW to visit
+;; https://emacs-china.org/t/eww/2949. And the color theme is
+;; sanityinc-tomorrow-eighties, from Steve Purcell's
+;; color-theme-sanityinc-tomorrow package
 
 ;; Installation:
 ;;
