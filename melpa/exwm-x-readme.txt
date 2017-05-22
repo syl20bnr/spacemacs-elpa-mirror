@@ -27,6 +27,13 @@ make exwm easier for Mouse-Control-People to use.
 
 ** Configure
 
+*** Add exwm-x directory to emacs's load-path
+Pasting the below line to "~/.emacs" is a simple way.
+
+#+BEGIN_EXAMPLE
+(add-to-list 'load-path "/path/to/exwm-x")
+#+END_EXAMPLE
+
 *** Edit "~/.initrc" file or "~/.xsession" file
 You should edit "~/.initrc" file or "~/.xsession" file like below example:
 
@@ -46,7 +53,7 @@ xhost +SI:localuser:$USER
 # Keyboard repeat rate
 # xset r rate 200 60
 
-exec dbus-launch --exit-with-session emacs --eval '(load "/path/to/exwmx-loader.el")'
+exec dbus-launch --exit-with-session emacs --eval '(require (quote exwmx-loader))'
 #+END_EXAMPLE
 
 *** Make "~/.initrc" or "~/.xsession" excutable
@@ -65,7 +72,6 @@ chmod a+x ~/.initrc
 Add your exwm config to this file, for example:
 
 #+BEGIN_EXAMPLE
-(add-to-list 'load-path "/path/to/exwm-x")
 (require 'exwm)
 (require 'exwm-x)
 (require 'exwmx-xfce)

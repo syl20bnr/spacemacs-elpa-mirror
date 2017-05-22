@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2016, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 7.4.7
-;; Package-Version: 20170515.1325
+;; Version: 7.4.8
+;; Package-Version: 20170521.1855
 ;; Created: 10 Sep 2013
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, emulations, vim, ergoemacs
@@ -2866,7 +2866,7 @@ Version 2017-01-21"
      ("\\" . nil)
      ("=" . xah-forward-equal-sign)
      ("[" . xah-backward-quote )
-     ("]" . xah-forward-quote-smart)
+     ("]" . xah-forward-quote)
      ("`" . other-frame)
 
      ("1" . pop-global-mark)

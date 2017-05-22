@@ -6,7 +6,7 @@
 ;; Author: Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; Co-author: https://github.com/analyticd
 ;; URL: http://github.com/Kungsgeten/org-brain
-;; Package-Version: 20170518.704
+;; Package-Version: 20170521.1409
 ;; Keywords: outlines hypermedia
 ;; Package-Requires: ((emacs "25") (org "9"))
 ;; Version: 0.3
@@ -570,7 +570,7 @@ If PROMPT is non nil, use `org-insert-link' even if not being run interactively.
   (let ((resources (org-brain-resources entry)))
     ;; Top level resources
     (when (mapc #'org-brain-insert-resource-button
-                (cl-remove-if (lambda (x) (eq nil (car x))) resources))
+                (cl-remove-if-not (lambda (x) (eq nil (car x))) resources))
       (insert "\n"))
     (org-element-map
         (with-temp-buffer
@@ -594,7 +594,7 @@ If PROMPT is non nil, use `org-insert-link' even if not being run interactively.
           (when (mapc (lambda (resource)
                         (org-brain-insert-resource-button
                          resource (1+ (org-element-property :level headline))))
-                      (cl-remove-if
+                      (cl-remove-if-not
                        (lambda (x) (string-equal head-title (car x))) resources))
             (insert "\n")))))))
 

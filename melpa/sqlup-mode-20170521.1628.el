@@ -4,9 +4,9 @@
 
 ;; Author: Aldric Giacomoni <trevoke@gmail.com>
 ;; URL: https://github.com/trevoke/sqlup-mode.el
-;; Package-Version: 0.7.1
+;; Package-Version: 20170521.1628
 ;; Created: Jun 25 2014
-;; Version: 0.7.1
+;; Version: 0.7.2
 ;; Keywords: sql, tools, redis, upcase
 
 ;;; License:
@@ -69,7 +69,6 @@
 (require 'sql)
 
 
-;;; Customizable variables
 (defcustom sqlup-blacklist
   '()
   "List of words which should never be upcased
@@ -80,12 +79,12 @@ strings not regexes."
   :group 'sqlup)
 
 
-;;; Internal variables
 (defconst sqlup-trigger-characters
   (mapcar 'string-to-char '(";"
                             " "
                             "("
                             ","
+                            "\n"
                             "'"))
   "When the user types one of these characters,
 this mode's logic will be evaluated.")
@@ -114,41 +113,18 @@ figures out what is and isn't a keyword.")
   "Add buffer-local hook to handle this mode's logic"
   (set (make-local-variable 'sqlup-work-buffer) nil)
   (set (make-local-variable 'sqlup-local-keywords) nil)
-  (add-hook 'post-command-hook 'sqlup-capitalize-as-you-type nil t))
+  (add-hook 'post-self-insert-hook 'sqlup-capitalize-as-you-type nil t))
 
 (defun sqlup-disable-keyword-capitalization ()
   "Remove buffer-local hook to handle this mode's logic"
   (if sqlup-work-buffer (kill-buffer sqlup-work-buffer))
-  (remove-hook 'post-command-hook 'sqlup-capitalize-as-you-type t))
+  (remove-hook 'post-self-insert-hook 'sqlup-capitalize-as-you-type t))
 
 (defun sqlup-capitalize-as-you-type ()
   "If the user typed a trigger key, check if we should capitalize
 the previous word."
-  (if (sqlup-should-do-work-p)
+  (if (member last-command-event sqlup-trigger-characters)
       (save-excursion (sqlup-maybe-capitalize-symbol -1))))
-
-(defun sqlup-should-do-work-p ()
-  "Checks whether the user pressed one of the trigger keys.
-Other than <RET>, characters are in variable sqlup-trigger-characters."
-  (and (sqlup-not-just-initialized-p)
-       (or (sqlup-user-pressed-return-p)
-           (and (sqlup-user-is-typing-p)
-                (sqlup-trigger-self-insert-character-p)))))
-
-(defun sqlup-not-just-initialized-p ()
-  (not (eq this-command 'sqlup-mode)))
-
-(defun sqlup-user-pressed-return-p ()
-  (and (< 0 (length (this-command-keys-vector)))
-       (or (equal 13 last-command-event)
-           (equal 10 last-command-event))))
-
-(defun sqlup-user-is-typing-p ()
-  (eq this-command #'self-insert-command))
-
-(defun sqlup-trigger-self-insert-character-p ()
-  (let ((sqlup-current-char last-command-event))
-    (member sqlup-current-char sqlup-trigger-characters)))
 
 (defun sqlup-maybe-capitalize-symbol (direction)
   "DIRECTION is either 1 for forward or -1 for backward"
@@ -272,6 +248,12 @@ sqlup-mode enabled."
 the sql product. We need to advice sql-set-product since sql-mode does not
 provide any hook that runs after changing the product"
   (setq sqlup-local-keywords nil))
+
+(defadvice comint-send-input (before sqlup-capitalize-sent-input activate)
+  "Capitalize any sql keywords before point when sending input in
+  interactive sql"
+  (when sqlup-mode
+    (save-excursion (sqlup-maybe-capitalize-symbol -1))))
 
 (provide 'sqlup-mode)
 ;;; sqlup-mode.el ends here

@@ -5,7 +5,7 @@
 ;; Authors: Austin Bingham <austin.bingham@gmail.com>
 ;;          Peter Vasil <mail@petervasil.net>
 ;; version: 0.2
-;; Package-Version: 20170514.2306
+;; Package-Version: 20170521.1109
 ;; URL: https://github.com/abingham/emacs-ycmd
 ;; Package-Requires: ((ycmd "1.1") (company "0.9.0") (deferred "0.2.0") (s "1.9.0") (dash "2.12.1") (let-alist "1.0.4") (f "0.18.2"))
 ;;
@@ -407,12 +407,12 @@ candidates list."
   (let* ((prefix-start-col (- (+ 1 (ycmd--column-in-bytes)) (length prefix)))
          (prefix-size (- start-col prefix-start-col))
          (prefix-diff (substring-no-properties prefix 0 prefix-size))
+         (prefix-diff-p (s-present? prefix-diff))
          candidates)
     (dolist (candidate completions (nreverse candidates))
-      (when (s-present? prefix-diff)
-        (let ((it (assq 'insertion_text candidate)))
-          (setcdr it (concat prefix-diff
-                             (substring-no-properties (cdr it))))))
+      (when prefix-diff-p
+        (let ((it (cdr (assq 'insertion_text candidate))))
+          (setf it (s-prepend prefix-diff it))))
       (when (or company-ycmd-enable-fuzzy-matching
                 (company-ycmd--prefix-candidate-p candidate prefix))
         (let ((result (funcall construct-candidate-fn candidate)))

@@ -5,7 +5,7 @@
 ;; Author: Jorge Araya Navarro <elcorreo@deshackra.com>
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 20170521.1028
+;; Package-Version: 20170521.1140
 ;; Package-X-Original-Version: 0.2.2
 ;; Homepage: https://bitbucket.org/shackra/dwight-k.-schrute
 
@@ -86,11 +86,18 @@
 (defvar-local schrute--time-last-command (current-time) "Time of invocation for `last-command'.")
 (defvar schrute--interesting-commands nil "List of commands we care about.  Generated when `schrute-mode' is activated.")
 
-(defun schrute--call-until-success (cmd)
+(defun schrute--call-until-success-1 (cmd)
   "Call command `CMD' until the user comply with the input required."
   (when (not (ignore-errors (call-interactively cmd) t))
     (discard-input)
-    (schrute--call-until-success cmd)))
+    (schrute--call-until-success-1 cmd)))
+
+(defun schrute--call-until-success (cmd)
+  "Call `schrute--call-until-success' with `CMD' and catch any recursion error."
+  (condition-case err
+      (schrute--call-until-success-1 cmd)
+    (error (when (string= "Lisp nesting exceeds ‘max-lisp-eval-depth’" (error-message-string err))
+             (message "Oh my God, Jim! `%s' throws errors as a feature, please redefine and ignore its errors!" cmd)))))
 
 (defun schrute--run-command ()
   "Helper that will run an alternative-command."
@@ -126,12 +133,6 @@
 
 ;;;###autoload
 (defun schrute-check-last-command ()
-  "Catch errors when running `schrute-check-last-command-1'."
-  (condition-case err
-      (schrute-check-last-command-1)
-    (error (message "schrute-check-last-command-1: %s" (error-message-string err)))))
-
-(defun schrute-check-last-command-1 ()
   "Check what command was used last time.
 
 It also check the time between the last two invocations of the

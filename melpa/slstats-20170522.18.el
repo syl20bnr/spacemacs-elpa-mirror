@@ -2,8 +2,8 @@
 ;; Copyright 2017 by Dave Pearson <davep@davep.org>
 
 ;; Author: Dave Pearson <davep@davep.org>
-;; Version: 1.5
-;; Package-Version: 1.5
+;; Version: 1.6
+;; Package-Version: 20170522.18
 ;; Keywords: games
 ;; URL: https://github.com/davep/slstats.el
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
@@ -46,6 +46,11 @@
   "Face used on captions in the slstats output windows."
   :group 'slstats)
 
+(defcustom slstats-cache-timeout (* 60 5)
+  "Seconds to wait before deciding data in the cache is \"stale\"."
+  :type 'integer
+  :group 'slstats)
+
 (defconst slstats-lab-url "http://secondlife.com/httprequest/homepage.php"
   "The URL that contains the SL statistics.")
 
@@ -86,9 +91,6 @@ SEP is an optional separator that is passed to `split-string'."
         (split-string
          (buffer-substring-no-properties (point) (point-max))
          sep))))))
-
-(defconst slstats-cache-timeout (* 60 5)
-  "Length of time to hold on to cached data.")
 
 (defvar slstats-cache (make-hash-table :size 5)
   "Data cache.")
@@ -326,6 +328,6 @@ This includes information available about the state of the grid and the SL econo
                 (slstats-insert-map (slstats-get :terrain_uuid region-info)))))
         (error "%s is not a known region on the Second Life grid" region)))))
 
-  (provide 'slstats)
+(provide 'slstats)
 
 ;;; slstats.el ends here
