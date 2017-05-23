@@ -29,8 +29,11 @@ search when calling `find-file-in-project-by-selected'. For example,
 When file basename `helloWorld' provided, `HelloWorld', `hello-world'
 are added as the file name search patterns.
 `C-h v ffip-filename-rules' to see its default value.
+`find-file-with-similar-name' find file with similar name to current
+opened file. The regular expression `ffip-strip-file-name-regex' is
+also used by `find-file-with-similar-name'.
 
-All these variables may be overridden on a per-directory basis in
+all these variables may be overridden on a per-directory basis in
 your .dir-locals.el.  See (info "(Emacs) Directory Variables") for
 details.
 
