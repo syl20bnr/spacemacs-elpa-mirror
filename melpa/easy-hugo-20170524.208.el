@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20170524.34
-;; Version: 0.7.7
+;; Package-Version: 20170524.208
+;; Version: 0.8.7
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -23,7 +23,10 @@
 
 ;;; Commentary:
 
-;; Package for writing blogs made with hugo by markdown or org-mode
+;; Emacs major mode for writing blogs made with hugo
+;; by markdown or org-mode or AsciiDoc or reStructuredText or mmark or html.
+;; You can publish your blog to the server or Github Pages
+;; or Amazon S3 or Google Cloud Storage.
 
 ;;; Code:
 
@@ -61,7 +64,12 @@
   :type 'integer)
 
 (defcustom easy-hugo-amazon-s3-bucket-name nil
-  "Amazon-S3-bucket-name."
+  "Amazon S3 bucket name."
+  :group 'easy-hugo
+  :type 'string)
+
+(defcustom easy-hugo-google-cloud-storage-bucket-name nil
+  "Google Cloud Storage bucket name."
   :group 'easy-hugo
   :type 'string)
 
@@ -248,6 +256,23 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
    (when easy-hugo-url
      (browse-url easy-hugo-url))))
 
+;;;###autoload
+(defun easy-hugo-google-cloud-storage-deploy ()
+  "Deploy hugo source at Google Cloud Storage."
+  (interactive)
+  (easy-hugo-with-env
+   (unless (executable-find "gsutil")
+     (error "'Google Cloud SDK' is not installed"))
+   (unless easy-hugo-google-cloud-storage-bucket-name
+     (error "Please set 'easy-hugo-google-cloud-storage-bucket-name' variable"))
+   (when (file-directory-p "public")
+     (delete-directory "public" t nil))
+   (shell-command-to-string "hugo --destination public")
+   (shell-command-to-string (concat "gsutil -m rsync -d -r public gs://" easy-hugo-google-cloud-storage-bucket-name "/"))
+   (message "Blog deployed")
+   (when easy-hugo-url
+     (browse-url easy-hugo-url))))
+
 (defconst easy-hugo--help
   "Easy-hugo
 
@@ -256,7 +281,8 @@ p ... Preview          g ... Refresh              A ... Deploy Amazon S3
 v ... Open view-mode   s ... Sort time            D ... Dired
 d ... Delete post      j ... Next line            h ... Backword char
 P ... Publish server   k ... Previous line        l ... Forward char
-? ... Help easy-hugo   q ... Quit easy-hugo       N ... No help-mode
+r ... Refresh          C ... Deploy GCP Storage   N ... No help-mode
+? ... Help easy-hugo   q ... Quit easy-hugo
 
 "
   "Help of easy-hugo.")
@@ -300,6 +326,7 @@ Enjoy!
     (define-key map "S" 'easy-hugo-sort-char)
     (define-key map "G" 'easy-hugo-github-deploy)
     (define-key map "A" 'easy-hugo-amazon-s3-deploy)
+    (define-key map "C" 'easy-hugo-google-cloud-storage-deploy)
     (define-key map "q" 'easy-hugo-quit)
     map)
   "Keymap for easy-hugo major mode.")
@@ -414,7 +441,7 @@ Enjoy!
 	(when (y-or-n-p (concat "Delete " file))
 	  (if easy-hugo-no-help
 	      (setq easy-hugo--line (- (line-number-at-pos) 2))
-	    (setq easy-hugo--line (- (line-number-at-pos) 11)))
+	    (setq easy-hugo--line (- (line-number-at-pos) 12)))
 	  (delete-file file)
 	  (easy-hugo)
 	  (when (> easy-hugo--line 0)
