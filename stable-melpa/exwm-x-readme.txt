@@ -10,6 +10,7 @@ make exwm easier for Mouse-Control-People to use.
 2. Move or resize a floating-window without press WIN key.
 3. Jump-or-exec, which will switch to an exist app instead of launch it again.
 4. Dmenu, just dynamic menu
+5. Emacs's kill-ring integration
 
 ** Pictures
 1. Tilling windows
@@ -25,6 +26,13 @@ make exwm easier for Mouse-Control-People to use.
 2. M-x package-install RET exwm-x RET
 
 ** Configure
+
+*** Add exwm-x directory to emacs's load-path
+Pasting the below line to "~/.emacs" is a simple way.
+
+#+BEGIN_EXAMPLE
+(add-to-list 'load-path "/path/to/exwm-x")
+#+END_EXAMPLE
 
 *** Edit "~/.initrc" file or "~/.xsession" file
 You should edit "~/.initrc" file or "~/.xsession" file like below example:
@@ -60,19 +68,18 @@ or
 chmod a+x ~/.initrc
 #+END_EXAMPLE
 
-*** Edit "~/.exwm"
+*** Edit "~/.exwm-x"
 Add your exwm config to this file, for example:
 
 #+BEGIN_EXAMPLE
-(add-to-list 'load-path "/path/to/exwm-x")
 (require 'exwm)
 (require 'exwm-x)
 (require 'exwmx-xfce)
 (require 'exwmx-example)
-(exwm-input-set-key (kbd "C-t v") 'exwmx:thunar)
-(exwm-input-set-key (kbd "C-t f") 'exwmx:icecat)
-(exwm-input-set-key (kbd "C-t c") 'exwmx:xfce4-terminal)
-(exwm-input-set-key (kbd "C-t C-c") 'exwmx:xfce4-new-terminal)
+(exwm-input-set-key (kbd "C-t v") 'exwmx:file-browser)
+(exwm-input-set-key (kbd "C-t f") 'exwmx:web-browser)
+(exwm-input-set-key (kbd "C-t c") 'exwmx-xfce-terminal)
+(exwm-input-set-key (kbd "C-t C-c") 'exwmx-xfce-new-terminal)
 #+END_EXAMPLE
 
 Note: Package "exwmx-example" is Exwm-X buildin example, user can use it to test Exwm-X's

@@ -5,3 +5,7 @@ Customizable options are:
  cwm-lighter
  cwm-centered-window-width
  cwm-ignore-buffer-predicates
+ cwm-incremental-padding
+ cwm-incremental-padding-%
+ cwm-use-vertical-padding
+ cwm-frame-internal-border
