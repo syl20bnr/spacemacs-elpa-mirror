@@ -4,7 +4,7 @@
 
 ;; Author: Dmitry Moskowski
 ;; Keywords: tools, convenience
-;; Package-Version: 20170508.1433
+;; Package-Version: 20170524.1605
 ;; Package-X-Original-Version: 20170501.112
 ;; Homepage: https://github.com/corpix/ob-blockdiag.el
 
@@ -30,7 +30,7 @@
     (:size    . nil))
   "Default arguments for drawing a blockdiag image.")
 
-(add-to-list 'org-src-lang-modes '("blockdiag" . blockdiag-mode))
+(add-to-list 'org-src-lang-modes '("blockdiag" . blockdiag))
 
 (defun org-babel-execute:blockdiag (body params)
   (let ((file (cdr (assoc :file params)))

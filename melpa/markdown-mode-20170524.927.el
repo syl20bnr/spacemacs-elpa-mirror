@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jrblevin@sdf.org>
 ;; Created: May 24, 2007
 ;; Version: 2.1
-;; Package-Version: 20170522.858
+;; Package-Version: 20170524.927
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: http://jblevins.org/projects/markdown-mode/
@@ -40,6 +40,27 @@
 
 ;; [Markdown]: http://daringfireball.net/projects/markdown/
 ;; [release notes]: http://jblevins.org/projects/markdown-mode/rev-2-1
+
+;;; Documentation:
+
+;; Documentation for Markdown Mode is available below, but Emacs is also
+;; a self-documenting editor.  That means that the source code itself
+;; contains additional documentation: each function has its own docstring
+;; available via `C-h f` (`describe-function'), individual keybindings
+;; can be investigated with `C-h k` (`describe-key'), and a complete list
+;; of keybindings is available using `C-h m` (`describe-mode').
+
+;; Additionally, to celebrate Markdown Mode's 10th birthday the package
+;; creator is writing a [Guide to Markdown Mode for Emacs][guide].  This
+;; ebook will supplement the existing documentation with in-depth
+;; discussion of advanced movement and editing commands, configuration
+;; examples, tips and tricks, and a survey of other packages that work
+;; with Markdown Mode.  It will be [published at Leanpub][guide] and
+;; possibly available through other channels.  Please visit
+;; the [book homepage][guide] to sign up to be notified when it is ready
+;; and to help determine the price.
+
+;;  [guide]: https://leanpub.com/markdown-mode
 
 ;;; Installation:
 
@@ -1437,13 +1458,13 @@ Function is called repeatedly until it returns nil. For details, see
   (save-match-data
     (save-excursion
       (let* ((new-start (progn (goto-char start)
-                               (if (re-search-backward
-                                    markdown-regex-block-separator-noindent nil t)
+                               (skip-chars-forward "\n")
+                               (if (re-search-backward "\n\n" nil t)
                                    (min start (match-end 0))
                                  (point-min))))
              (new-end (progn (goto-char end)
-                             (if (re-search-forward
-                                  markdown-regex-block-separator-noindent nil t)
+                             (skip-chars-backward "\n")
+                             (if (re-search-forward "\n\n" nil t)
                                  (max end (match-beginning 0))
                                (point-max))))
              (code-match (markdown-code-block-at-pos new-start))
@@ -7187,9 +7208,6 @@ or \\[markdown-toggle-inline-images]."
     (make-local-hook 'after-change-functions)
     (make-local-hook 'font-lock-extend-region-functions)
     (make-local-hook 'window-configuration-change-hook))
-
-  ;; Initial syntax analysis
-  (markdown-syntax-propertize (point-min) (point-max))
 
   ;; Make checkboxes buttons
   (when markdown-make-gfm-checkboxes-buttons

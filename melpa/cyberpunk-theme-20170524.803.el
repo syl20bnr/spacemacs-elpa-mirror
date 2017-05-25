@@ -4,8 +4,8 @@
 
 ;; Author: Nicholas M. Van Horn <vanhorn.nm@gmail.com>
 ;; Keywords: color theme cyberpunk
-;; Package-Version: 20170522.1217
-;; Version: 1.18
+;; Package-Version: 20170524.803
+;; Version: 1.19
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -406,11 +406,12 @@
                            :underline nil
                            :weight bold
                            :box (:line-width -1 :style released-button)))))
-   `(helm-selection ((,class (:background ,cyberpunk-bg+1 :underline nil))))
+   `(helm-selection ((,class (:background ,cyberpunk-bg-1 :underline nil))))
    `(helm-selection-line ((,class (:background ,cyberpunk-bg+1))))
    `(helm-visible-mark ((,class (:foreground ,cyberpunk-bg :background ,cyberpunk-yellow-2))))
    `(helm-candidate-number ((,class (:foreground ,cyberpunk-green+4 :background ,cyberpunk-bg-1))))
    `(helm-ff-directory ((,class (:foreground ,cyberpunk-pink :background ,cyberpunk-bg))))
+   `(helm-ff-dotted-directory ((,class (:foreground ,cyberpunk-pink :background ,cyberpunk-bg))))
 
    ;; hl-line-mode
    `(hl-sexp-face ((,class (:background ,cyberpunk-gray-5))))

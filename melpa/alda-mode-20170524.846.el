@@ -3,7 +3,7 @@
 ;; Copyright (C) 2016 Jay Kamat
 ;; Author: Jay Kamat <github@jgkamat.33mail.com>
 ;; Version: 0.2.1
-;; Package-Version: 20170125.1720
+;; Package-Version: 20170524.846
 ;; Keywords: alda, highlight
 ;; URL: http://github.com/jgkamat/alda-mode
 ;; Package-Requires: ((emacs "24.0"))
@@ -93,7 +93,10 @@ Argument CMD the cmd to run alda with"
 (defun alda-play-text (text)
   "Plays the specified TEXT in the alda server.
 ARGUMENT TEXT The text to play with the current alda server."
-  (alda-run-cmd (concat "play --code '" text "'")))
+  (if (eql system-type 'windows-nt) 
+      (let ((one-liner-text (replace-regexp-in-string "\n" " " text)))
+        (alda-run-cmd (concat "play --code \"" one-liner-text "\"")))
+    (alda-run-cmd (concat "play --code '" text "'"))))
 
 (defun alda-play-file ()
   "Plays the current buffer's file in alda."

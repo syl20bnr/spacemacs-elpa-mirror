@@ -5,7 +5,7 @@
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Created: 21 October 2014
 ;; Version: 0.3
-;; Package-Version: 20150308.518
+;; Package-Version: 20170524.1229
 
 ;;; Commentary:
 ;; `conf-mode' offers adequate highlighting for Logstash configuration
@@ -42,7 +42,7 @@
   :group 'languages)
 
 (defcustom logstash-indent 4
-  "Indentation offset for `logstash-conf-mode'"
+  "Indentation offset for `logstash-conf-mode'."
   :group 'logstash
   :type 'integer)
 
@@ -93,6 +93,7 @@
     open-paren-count))
 
 (defun logstash-indent-line ()
+  "Indent the current line."
   (interactive)
   (let ((initial-column (current-column))
         initial-indentation
@@ -122,12 +123,19 @@
 
 ;;;###autoload
 (defun logstash-conf-mode ()
+  "A major mode for editing Logstash pipeline files."
   (interactive)
   ;; It's a pain to use `define-derived-mode' with conf-mode, so just
   ;; call it directly instead.
   (conf-unix-mode)
   (setq indent-line-function 'logstash-indent-line)
   (setq mode-name "Logstash"))
+
+;;;###autoload
+(add-to-list 'auto-mode-alist '("\\.logstash\\'" . logstash-conf-mode))
+
+;;;###autoload
+(add-to-list 'interpreter-mode-alist '("logstash" . logstash-conf-mode))
 
 (provide 'logstash-conf)
 ;;; logstash-conf.el ends here
