@@ -1,11 +1,11 @@
 ;;; scratch.el --- Mode-specific scratch buffers
 
 ;; Author: Ian Eure <ian.eure@gmail.com>
-;; Version: 1.1
-;; Package-Version: 20120830.1105
-;; Keywords: editing
+;; Version: 1.2
+;; Package-Version: 20170523.2046
+;; Keywords: convenience, tools, files
 
-;; Copyright (c) 2009-1020, 2010, 2012 Ian Eure <ian.eure@gmail.com>
+;; Copyright (c) 1999-2017 Ian Eure <ian.eure@gmail.com>
 ;; All rights reserved.
 
 ;; Redistribution and use in source and binary forms, with or without
@@ -48,6 +48,12 @@
 ;; 2012-08-30 Ian Eure
 ;;   Dump current region into new scratch buffer
 
+;; 2017-05-23 Ian Eure
+;;   Set up *sql* buffers so they know about the inferior process they
+;;   were created from.
+;;   Add mappings for additional inferior modes.
+;;   Fix checkdoc & package-lint issues.
+
 ;;; Code:
 
 (defgroup scratch nil
@@ -58,7 +64,10 @@
 (defcustom scratch-mode-alist
   '((erc-mode . fundamental-mode)
     (sql-interactive-mode . sql-mode)
-    (shell-mode . sh-mode))
+    (shell-mode . sh-mode)
+    (inferior-python-mode . python-mode)
+    (inferior-tcl-mode . tcl-mode)
+    (inferior-octave-mode . octave-mode))
   "Alist of mappings from major modes to major modes for SCRATCH.
 
 Some interactive modes don't lend themselves well to scratch
@@ -68,11 +77,16 @@ for those buffers."
   :type '(alist :key-type symbol :value-type symbol))
 
 (defvar scratch-history nil
-  "History of scratch buffers")
+  "History of scratch buffers.")
 
 (defvar scratch-major-mode-list nil
-  "List of major modes SCRATCH may use. See `scratch-list-modes'.")
+  "List of major modes SCRATCH may use.  See `scratch-list-modes'.")
 
+(defvar scratch-parent nil
+  "The parent of this scratch buffer.")
+(make-variable-buffer-local 'scratch-parent)
+
+;;;###autoload
 (defvar scratch-buffer nil
   "Non-nil if the current buffer is a scratch buffer.")
 (make-variable-buffer-local 'scratch-buffer)
@@ -90,11 +104,34 @@ for those buffers."
                (push (substring name 0 -5) modes)))))
         modes)))
 
+(defun scratch-link-sql ()
+  "Link a scratch buffer to a SQLi buffer.
+
+   This sets the scratch buffer up so SQL-SEND-BUFFER etc work as
+   expected."
+  (let ((product (with-current-buffer scratch-parent sql-product)))
+    (setq sql-product product
+          sql-buffer parent)))
+
+(defun scratch-link-buffers ()
+  "Link a parent and child buffer.
+
+   When a scratch buffer is created from a mode for an inferior
+   process, and has features which rely on knowing the inferior
+   process, link them."
+  (cond
+   ((eq (with-current-buffer scratch-parent major-mode) 'sql-interactive-mode)
+    (scratch-link-sql))
+   (t nil)))
+
 ;;;###autoload
 (defun scratch (&optional arg)
-  "Get a scratch buffer for the current mode."
+  "Get a scratch buffer for the current mode.
+
+   When prefix ARG is set, prompt for scratch buffer mode."
   (interactive "p")
   (let* ((tmp) (name)
+         (parent (current-buffer))
          (mode (cond (current-prefix-arg
                       (intern (concat (setq name (completing-read
                                                   "Mode: " (scratch-list-modes)
@@ -108,9 +145,8 @@ for those buffers."
                   (or name (replace-regexp-in-string "-mode$" ""
                                                      (symbol-name mode)))))
          (buf (get-buffer name)))
-    (cond ((bufferp buf)
-           (pop-to-buffer buf))
-          (t
+    (cond ((bufferp buf) (pop-to-buffer buf)) ; Existing scratch buffer
+          (t                                  ; New scratch buffer
            (let ((contents (when (region-active-p)
                              (buffer-substring (region-beginning)
                                                (region-end)))))
@@ -119,7 +155,10 @@ for those buffers."
              (let ((scratch-buffer t))
                (funcall mode))
              (when contents (save-excursion (insert contents)))
-             (setq scratch-buffer t))))))
+             (setq scratch-buffer t)
+             (unless current-prefix-arg
+               (setq scratch-parent parent)
+               (scratch-link-buffers)))))))
 
 (provide 'scratch)
 ;;; scratch.el ends here

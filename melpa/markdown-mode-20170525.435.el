@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jrblevin@sdf.org>
 ;; Created: May 24, 2007
 ;; Version: 2.1
-;; Package-Version: 20170524.927
+;; Package-Version: 20170525.435
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: http://jblevins.org/projects/markdown-mode/
@@ -640,7 +640,7 @@
 ;;     for `markdown-reference-location'.
 ;;
 ;;   * `markdown-nested-imenu-heading-index' - Use nested imenu
-;;     heading instead of a flat index (default: `nil').  A nested
+;;     heading instead of a flat index (default: `t').  A nested
 ;;     index may provide more natural browsing from the menu, but a
 ;;     flat list may allow for faster keyboard navigation via tab
 ;;     completion.
@@ -1089,7 +1089,7 @@ and `iso-latin-1'.  Use `list-coding-systems' for more choices."
   :group 'markdown
   :type 'string)
 
-(defcustom markdown-nested-imenu-heading-index nil
+(defcustom markdown-nested-imenu-heading-index t
   "Use nested or flat imenu heading index.
 A nested index may provide more natural browsing from the menu,
 but a flat list may allow for faster keyboard navigation via tab
@@ -4971,7 +4971,10 @@ See also `markdown-mode-map'.")
      ["Check References" markdown-check-refs]
      ["Toggle Inline Images" markdown-toggle-inline-images
       :style radio
-      :selected markdown-inline-image-overlays])
+      :selected markdown-inline-image-overlays]
+     ["Toggle Wiki Links" markdown-toggle-wiki-links
+      :style radio
+      :selected markdown-enable-wiki-links])
     ("Styles"
      ["Bold" markdown-insert-bold]
      ["Italic" markdown-insert-italic]

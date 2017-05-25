@@ -4,7 +4,7 @@
 
 ;; Author: Mihai Bazon <mihai.bazon@gmail.com>
 ;; Keywords:
-;; Package-Version: 20130816.1354
+;; Package-Version: 20170525.417
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -44,29 +44,39 @@
 (defun %stupid-force-indent-line ()
   (let (col)
     (save-excursion
-      (beginning-of-line-text)
-      (setq col (+ (current-column) stupid-indent-level))
-      (indent-line-to col))
+     (back-to-indentation)
+     (setq col (+ (current-column) stupid-indent-level))
+     (indent-line-to col))
     (when (< (current-column) col)
-      (beginning-of-line-text))))
+      (back-to-indentation))))
 
 (defun stupid-indent-line ()
   (interactive)
   (let ((bt (save-excursion
-              (beginning-of-line-text)
-              (current-column))))
-    (if (< (current-column) bt)
-        (beginning-of-line-text)
-      (%stupid-force-indent-line))))
+             (back-to-indentation)
+             (current-column))))
+    (cond
+      ((< (current-column) bt)
+       (back-to-indentation))
+      ((looking-at "\\s-*\n")
+       (let ((col (save-excursion
+                   (previous-line)
+                   (back-to-indentation)
+                   (current-column))))
+         (if (< (current-column) col)
+             (indent-line-to col)
+             (%stupid-force-indent-line))))
+      (t
+       (%stupid-force-indent-line)))))
 
 (defun stupid-outdent-line ()
   (interactive)
   (let (col)
     (save-excursion
-      (beginning-of-line-text)
-      (setq col (- (current-column) stupid-indent-level))
-      (when (>= col 0)
-        (indent-line-to col)))))
+     (back-to-indentation)
+     (setq col (- (current-column) stupid-indent-level))
+     (when (>= col 0)
+       (indent-line-to col)))))
 
 (defun stupid-indent-region (start stop)
   (interactive "r")
@@ -86,32 +96,32 @@
       (stupid-outdent-line))
     (forward-line 1)))
 
-(defun stupid-indent (begin end)
-  (interactive "r")
+(defun stupid-indent ()
+  (interactive)
   (if (use-region-p)
       (save-excursion
-        (stupid-indent-region begin end)
-        (setq deactivate-mark nil))
-    (stupid-indent-line)))
+       (stupid-indent-region (region-beginning) (region-end))
+       (setq deactivate-mark nil))
+      (stupid-indent-line)))
 
-(defun stupid-outdent (begin end)
-  (interactive "r")
+(defun stupid-outdent ()
+  (interactive)
   (if (use-region-p)
       (save-excursion
-        (stupid-outdent-region begin end)
-        (setq deactivate-mark nil))
-    (stupid-outdent-line)))
+       (stupid-outdent-region (region-beginning) (region-end))
+       (setq deactivate-mark nil))
+      (stupid-outdent-line)))
 
 (defun stupid-indent-newline ()
   (interactive)
   (when (< (point)
            (save-excursion
-             (beginning-of-line-text)
-             (point)))
-    (beginning-of-line-text))
+            (back-to-indentation)
+            (point)))
+    (back-to-indentation))
   (let ((col (save-excursion
-               (beginning-of-line-text)
-               (current-column))))
+              (back-to-indentation)
+              (current-column))))
     (newline)
     (indent-to-column col)))
 

@@ -1,14 +1,13 @@
 ;;; test-simple.el --- Simple Unit Test Framework for Emacs Lisp -*- lexical-binding: t -*-
 ;; Rewritten from Phil Hagelberg's behave.el by rocky
 
-;; Copyright (C) 2015, 2016 Free Software Foundation, Inc
+;; Copyright (C) 2015, 2016, 2017 Free Software Foundation, Inc
 
 ;; Author: Rocky Bernstein <rocky@gnu.org>
 ;; URL: http://github.com/rocky/emacs-test-simple
-;; Package-Version: 20170117.411
 ;; Keywords: unit-test
 ;; Package-Requires: ((cl-lib "0"))
-;; Version: 1.2.0
+;; Version: 1.3.0
 
 ;; This program is free software: you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License as
@@ -90,6 +89,12 @@
 
 ;;; Code:
 
+;; Press C-x C-e at the end of the next line configure the program in GNU emacs
+;; for building via "make" to get set up.
+;; (compile (format "EMACSLOADPATH=:%s ./autogen.sh" "."))
+;; After that you can run:
+;; (compile "make check")
+
 (require 'cl-lib)
 
 (defgroup test-simple nil
@@ -157,8 +162,6 @@ clears out information from the previous run."
   (interactive)
 
   (unless test-info
-    (unless test-simple-info
-      (make-variable-buffer-local (defvar test-simple-info (make-test-info))))
     (setq test-info test-simple-info))
 
   (setf (test-info-description test-info) "none set")
@@ -377,6 +380,99 @@ Calling this function interactively, COMMAND-LINE-FORMATS is set above."
      (kill-emacs 1))))
 (when noninteractive
   (add-hook 'kill-emacs-hook 'test-simple-noninteractive-kill-emacs-hook))
+
+;;;; ChangeLog:
+
+;; 2017-05-25  rocky  <rocky@gnu.org>
+;; 
+;; 	Merge commit '604942d36021a8b14877a0a640234a09c79e0927'
+;; 
+;; 2016-03-03  rocky  <rocky@gnu.org>
+;; 
+;; 	Version 1.2.0 Sync with github
+;; 
+;; 	github syohex:
+;; 	* Switch from Carton to Cask
+;; 
+;; 	rubikitch@ruby-lang.org:
+;; 	* test-simple.el: test-simple-run: make it a command.
+;; 	* README.md: Mention test-simple-run
+;; 	* example/gcd-tests.el: gcd-tests.el: Add test-simple-run comment line
+;; 	* test-simple.el: Emacs exits abnormally when noninteractive test fails.
+;; 	* test-simple.el: New function `test-simple-run': register test You can
+;; 	 run tests easily by pressing C-x C-z.
+;; 	* test-basic.el: fix botched joke
+;; 
+;; 2016-03-03  rocky  <rocky@gnu.org>
+;; 
+;; 	Merge branch 'master' of git.sv.gnu.org:/srv/git/emacs/elpa
+;; 
+;; 2015-04-26  Stefan Monnier  <monnier@iro.umontreal.ca>
+;; 
+;; 	* packages/test-simple/test-simple.el: Use cl-lib
+;; 
+;; 	(test-simple-msg): Let-bind inhibit-read-only directly.
+;; 	(test-simple--ok-msg, test-simple--not-ok-msg): Rename from ok-msg and 
+;; 	not-ok-msg.
+;; 	* packages/test-simple/ChangeLog: Remove empty file.
+;; 
+;; 2015-03-31  rocky  <rocky@gnu.org>
+;; 
+;; 	Merge commit 'bb13df55aa357538f95c3a8a28cac18533f5d164'
+;; 
+;; 2015-02-16  rocky  <rocky@gnu.org>
+;; 
+;; 	Merge commit '3fd5ea161e41d94902ef499b41f7032ef07f6430'
+;; 
+;; 2015-02-15  rocky  <rocky@gnu.org>
+;; 
+;; 	Merge commit 'ec7ba4f2dbae0901724483de5868127a1cbc38e9'
+;; 
+;; 2015-02-15  rocky  <rocky@gnu.org>
+;; 
+;; 	Merge commit '7fe5510edce15f5733552bb4d9de4f5ab1e0de76'
+;; 
+;; 2015-02-15  rocky  <rocky@gnu.org>
+;; 
+;; 	Add 'packages/test-simple/' from commit
+;; 	'75eea25bae04d8e5e3e835a2770f02f0ff4602c4'
+;; 
+;; 	git-subtree-dir: packages/test-simple git-subtree-mainline:
+;; 	bfb36f072e1d8b382639bd5cc6087fb0c963894b git-subtree-split:
+;; 	75eea25bae04d8e5e3e835a2770f02f0ff4602c4
+;; 
+;; 2015-02-15  rocky  <rocky@gnu.org>
+;; 
+;; 	Oops - should have added in branch externals/<pkg>
+;; 
+;; 2015-02-15  rocky  <rocky@gnu.org>
+;; 
+;; 	Add 'packages/test-simple/' from commit
+;; 	'75eea25bae04d8e5e3e835a2770f02f0ff4602c4'
+;; 
+;; 	git-subtree-dir: packages/test-simple git-subtree-mainline:
+;; 	b3736acc55750eb13c8d21579ce022bc5a077568 git-subtree-split:
+;; 	75eea25bae04d8e5e3e835a2770f02f0ff4602c4
+;; 
+;; 2015-02-15  rocky  <rocky@gnu.org>
+;; 
+;; 	Remove realgud and dependents as a git submodule
+;; 
+;; 2015-02-15  rocky  <rocky@gnu.org>
+;; 
+;; 	New gud replacement package: realgud (a front end interface to 
+;; 	debuggers).
+;; 
+;; 	This package requires:
+;; 
+;; 	* loc-changes - location marks in buffers
+;; 	* load-relative - load emacs lisp relative to emacs source
+;; 	* test-simple - simple test framework.
+;; 
+;; 	Using .gitmodules in this way is a bit of an experiment. Currently these 
+;; 	four projects are separate github repositories.
+;; 
+
 
 
 (provide 'test-simple)

@@ -7,7 +7,7 @@
 ;; Created: 17 Jun 2012
 ;; Modified: 17 Oct 2016
 ;; Version: 2.3
-;; Package-Version: 20170509.1157
+;; Package-Version: 20170524.2245
 ;; Package-Requires: ((bind-key "1.0") (diminish "0.44"))
 ;; Keywords: dotemacs startup speed config package
 ;; URL: https://github.com/jwiegley/use-package
@@ -727,7 +727,7 @@ If the package is installed, its entry is removed from
                 ;; bypassed.
                 (member context '(:byte-compile :ensure :config))
                 (y-or-n-p (format "Install package %S?" package))))
-          (progn
+          (with-demoted-errors (format "Cannot load %s: %%S" name)
             (when (assoc package (bound-and-true-p package-pinned-packages))
               (package-read-all-archive-contents))
             (if (assoc package package-archive-contents)
