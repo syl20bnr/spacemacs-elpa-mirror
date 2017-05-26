@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jrblevin@sdf.org>
 ;; Created: May 24, 2007
 ;; Version: 2.1
-;; Package-Version: 20170525.435
+;; Package-Version: 20170526.612
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: http://jblevins.org/projects/markdown-mode/
@@ -5097,7 +5097,7 @@ See `imenu-create-index-function' and `imenu--index-alist' for details."
     (let* ((text (match-string-no-properties 3))
            (reference (match-string-no-properties 6))
            (target (downcase (if (string= reference "") text reference)))
-           (loc (cadr (markdown-reference-definition target))))
+           (loc (cadr (save-match-data (markdown-reference-definition target)))))
       (if loc
           (goto-char loc)
         (goto-char (match-beginning 0))

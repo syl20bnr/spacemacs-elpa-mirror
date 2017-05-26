@@ -4,8 +4,8 @@
 
 ;; Author: Dmytro Koval
 ;; https://github.com/dawidof/emacs-monokai-theme
-;; Version: 0.101
-;; Package-Version: 20170325.1430
+;; Version: 0.103
+;; Package-Version: 20170526.512
 ;; Package-Requires: ((emacs "24"))
 ;; Created with emacs-theme-generator, https://github.com/mswift42/theme-creator.
 
@@ -35,7 +35,7 @@
       (fg2 "#bdbdb1")
       (fg3 "#ababa0")
       (fg4 "#999990")
-      (bg1 "#272822")
+      (bg1 "#262626")
       (bg2 "#363631")
       (bg3 "#454640")
       (bg4 "#545550")
@@ -250,5 +250,10 @@
 
 
 (provide-theme 'monokai-alt)
+
+;; Local Variables:
+;; no-byte-compile: t
+;; fill-column: 120
+;; End:
 
 ;;; monokai-alt-theme.el ends here
