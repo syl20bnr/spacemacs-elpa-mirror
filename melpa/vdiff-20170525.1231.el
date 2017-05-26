@@ -5,7 +5,7 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-vdiff
-;; Package-Version: 20170523.516
+;; Package-Version: 20170525.1231
 ;; Version: 0.2.3
 ;; Keywords: diff
 ;; Package-Requires: ((emacs "24.4") (hydra "0.13.0"))
@@ -85,6 +85,10 @@
   "Extra arguments to pass to diff. If this is set wrong, you may
 break vdiff. It is empty by default."
   :type 'string)
+
+(defcustom vdiff-disable-folding nil
+  "If non-nil, disable folding in vdiff buffers."
+  :type 'boolean)
 
 (defcustom vdiff-fold-padding 6
   "Unchanged lines to leave unfolded around a fold"
@@ -368,20 +372,28 @@ one buffer to another. Only applies in 3-way diffs."
   (goto-char (point-min))
   (forward-line (1- n)))
 
-(defun vdiff--overlay-at-pos (&optional pos)
+(defun vdiff--overlay-at-pos (&optional pos noerror)
   "Return first vdiff overlay found at POS which defaults to
-point."
-  (let ((pos (or pos (point))))
-    (catch 'yes
-      (dolist (ovr (overlays-at pos))
-        (when (overlay-get ovr 'vdiff-type)
-          (throw 'yes ovr))))))
+point.
+
+If NOERROR is non-nil, don't signal an error when no overlay is
+found."
+  (let ((pos (or pos (point)))
+        ovr)
+    (setq ovr
+          (catch 'yes
+            (dolist (ovr (overlays-at pos))
+              (when (overlay-get ovr 'vdiff-type)
+                (throw 'yes ovr)))))
+    (if (or ovr noerror)
+        ovr
+      (user-error "No vdiff overlay found here."))))
 
 (defun vdiff--hunk-at-point-p ()
   "Non-nil if point is in hunk overlay.
 
 Returns overlay."
-  (let ((ovr (vdiff--overlay-at-pos)))
+  (let ((ovr (vdiff--overlay-at-pos nil t)))
     (and (overlayp ovr)
          (overlay-get ovr 'vdiff-type)
          (not (eq (overlay-get ovr 'vdiff-type) 'fold))
@@ -391,7 +403,7 @@ Returns overlay."
   "Non-nil if point is in fold overlay.
 
 Returns overlay."
-  (let ((ovr (vdiff--overlay-at-pos)))
+  (let ((ovr (vdiff--overlay-at-pos nil t)))
     (and (overlayp ovr)
          (overlay-get ovr 'vdiff-type)
          (eq (overlay-get ovr 'vdiff-type) 'fold)
@@ -408,7 +420,7 @@ Returns overlay."
 (defun vdiff--maybe-exit-overlay (&optional up no-fold)
   "Move point out of any vdiff overlays. Move down unless UP is
 non-nil. Ignore folds if NO-FOLD is non-nil."
-  (let* ((ovr (vdiff--overlay-at-pos))
+  (let* ((ovr (vdiff--overlay-at-pos nil t))
          (type (when ovr (overlay-get ovr 'vdiff-type))))
     (when (and type
                (or (not no-fold)
@@ -1143,7 +1155,8 @@ of a \"word\"."
                             (with-current-buffer c-buffer
                               (line-number-at-pos (point-max))))))
               folds))
-      (vdiff--add-folds a-buffer b-buffer c-buffer folds))))
+      (unless vdiff-disable-folding
+        (vdiff--add-folds a-buffer b-buffer c-buffer folds)))))
 
 ;; * Send/Receive changes
 
@@ -1158,7 +1171,7 @@ well. This only returns bounds for `interactive'."
         (deactivate-mark))
     (list (if (or (= (line-number-at-pos) 1)
                   (vdiff--overlay-at-pos
-                   (line-beginning-position)))
+                   (line-beginning-position) t))
               (line-beginning-position)
             (save-excursion
               (forward-line -1)

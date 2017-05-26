@@ -2,7 +2,7 @@
 
 ;; Author: Natalie Weizenbaum
 ;; URL: http://code.google.com/p/dart-mode
-;; Package-Version: 20170519.1742
+;; Package-Version: 20170525.1236
 ;; Version: 0.15
 ;; Package-Requires: ((cl-lib "0.5") (dash "2.10.0") (flycheck "0.23"))
 ;; Keywords: language
@@ -83,7 +83,6 @@
 (eval-when-compile
   (and (= emacs-major-version 24)
        (>= emacs-minor-version 4)
-       (null emacs-repository-version)
        (require 'cl))
   (require 'cc-langs)
   (require 'cc-fonts))
