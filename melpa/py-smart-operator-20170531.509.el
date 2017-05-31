@@ -5,7 +5,7 @@
 ;;
 ;; Author:     Rustem Muslimov <r.muslimov@gmail.com>
 ;; Version:    0.1.0
-;; Package-Version: 20150824.1910
+;; Package-Version: 20170531.509
 ;; Keywords:   python, convenience, smart-operator
 ;; Package-Requires: ((s "1.9.0"))
 
@@ -40,16 +40,16 @@
 
 (defvar py-smart-operator-operators
   '(
-   ;; ( char in-string in-paren in-global)
-	("+" py-smart-operator-do-nothing py-smart-operator-do-wrap py-smart-operator-do-wrap)
-	("-" py-smart-operator-do-nothing py-smart-operator-do-wrap py-smart-operator-do-wrap)
-	("/" py-smart-operator-do-nothing py-smart-operator-do-wrap py-smart-operator-do-wrap)
-    ("*" py-smart-operator-do-nothing py-smart-operator-do-wrap py-smart-operator-do-wrap)
-	("=" py-smart-operator-do-nothing py-smart-operator-do-nothing py-smart-operator-do-wrap)
-	("," py-smart-operator-do-nothing py-smart-operator-do-space-after py-smart-operator-do-space-after)
-	(":" py-smart-operator-do-nothing py-smart-operator-do-space-after py-smart-operator-do-nothing)
-	("<" py-smart-operator-do-nothing py-smart-operator-do-nothing py-smart-operator-do-wrap)
-	(">" py-smart-operator-do-nothing py-smart-operator-do-nothing py-smart-operator-do-wrap)
+    ;; ( char in-comment in-string in-paren in-global)
+    ("+" py-smart-operator-do-nothing py-smart-operator-do-nothing py-smart-operator-do-wrap py-smart-operator-do-wrap)
+    ("-" py-smart-operator-do-nothing py-smart-operator-do-nothing py-smart-operator-do-wrap py-smart-operator-do-wrap)
+    ("/" py-smart-operator-do-nothing py-smart-operator-do-nothing py-smart-operator-do-wrap py-smart-operator-do-wrap)
+    ("*" py-smart-operator-do-nothing py-smart-operator-do-nothing py-smart-operator-do-wrap py-smart-operator-do-wrap)
+    ("=" py-smart-operator-do-nothing py-smart-operator-do-nothing py-smart-operator-do-nothing py-smart-operator-do-wrap)
+    ("," py-smart-operator-do-nothing py-smart-operator-do-nothing py-smart-operator-do-space-after py-smart-operator-do-space-after)
+    (":" py-smart-operator-do-nothing py-smart-operator-do-nothing py-smart-operator-do-space-after py-smart-operator-do-nothing)
+    ("<" py-smart-operator-do-nothing py-smart-operator-do-nothing py-smart-operator-do-nothing py-smart-operator-do-wrap)
+    (">" py-smart-operator-do-nothing py-smart-operator-do-nothing py-smart-operator-do-nothing py-smart-operator-do-wrap)
     )
   "Registered operators")
 
@@ -82,7 +82,7 @@
       (progn
         (delete-char to-delete)
         (insert to-insert)))
-   )))
+    )))
 
 (defun py-smart-operator-do-wrap (prev-symbols arg)
   "Decide what to do inside of paren"
@@ -106,13 +106,17 @@
   "Insert required operator by looking to configuration in operators var"
   (let ((prev (buffer-substring-no-properties (- (point) 2) (point)))
         (arg (car option))
-        (do-when-string (nth 1 option))
-        (do-when-paren (nth 2 option))
-        (do-when-global (nth 3 option)))
+        (context (python-syntax-context-type))
+        (do-when-comment (nth 1 option))
+        (do-when-string (nth 2 option))
+        (do-when-paren (nth 3 option))
+        (do-when-global (nth 4 option)))
     (cond
-     ((eq (python-syntax-context-type) 'string)
+     ((eq context 'comment)
+      (py-smart-operator-insert (funcall do-when-comment prev arg)))
+     ((eq context 'string)
       (py-smart-operator-insert (funcall do-when-string prev arg)))
-     ((eq (python-syntax-context-type) 'paren)
+     ((eq context 'paren)
       (py-smart-operator-insert (funcall do-when-paren prev arg)))
      (t (py-smart-operator-insert (funcall do-when-global prev arg))))
     ))
