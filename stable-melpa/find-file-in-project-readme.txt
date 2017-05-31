@@ -51,7 +51,13 @@ to open correspong file.
 
 `ffip-diff-find-file-before-hook' is called before `ffip-diff-find-file'.
 
-If you use evil-mode, insert below code into ~/.emacs,
+`ffip-diff-apply-hunk' applies current hunk in `diff-mode' (please note
+`ffip-diff-mode' inherits from `diff-mode') to the target.
+file. The target file could be located by searching `recentf-list'.
+Except this extra feature, `ffip-diff-apply-hunk' is same as `diff-apply-hunk'.
+So `diff-apply-hunk' can be replaced by `ffip-diff-apply-hunk'.
+
+If you use `evil-mode', insert below code into ~/.emacs,
   (defun ffip-diff-mode-hook-setup ()
       (evil-local-set-key 'normal "K" 'diff-hunk-prev)
       (evil-local-set-key 'normal "J" 'diff-hunk-next)

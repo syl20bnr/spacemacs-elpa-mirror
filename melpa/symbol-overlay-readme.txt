@@ -8,7 +8,7 @@ package `highlight-symbol'.  The fundamental difference is that in
 Advantages
 
 When highlighting symbols in a buffer of regular size and language,
-`overlay-put' behaves as fast as the traditional Highlighting method
+`overlay-put' behaves as fast as the traditional highlighting method
 `font-lock'.  However, for a buffer of major-mode with complicated keywords
 syntax, like haskell-mode, `font-lock' is quite slow even the buffer is less
 than 100 lines.  Besides, when counting the number of highlighted

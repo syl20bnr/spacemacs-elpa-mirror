@@ -14,5 +14,6 @@ Turn off automatic Flycheck syntax checking rtags does this manually.
   (flycheck-select-checker 'rtags)
   (setq-local flycheck-check-syntax-automatically nil)
   (setq-local flycheck-highlighting-mode nil))
-c-mode-common-hook is also called by c++-mode
-(add-hook 'c-mode-common-hook #'my-flycheck-rtags-setup)
+(add-hook 'c-mode-hook #'my-flycheck-rtags-setup)
+(add-hook 'c++-mode-hook #'my-flycheck-rtags-setup)
+(add-hook 'objc-mode-hook #'my-flycheck-rtags-setup)

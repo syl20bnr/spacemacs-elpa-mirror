@@ -1,14 +1,16 @@
 markdown-mode is a major mode for editing [Markdown][]-formatted
-text. The latest stable version is markdown-mode 2.1, released on
-January 9, 2016. See the [release notes][] for details.
-markdown-mode is free software, licensed under the GNU GPL.
+text. The latest stable version is markdown-mode 2.2, released on
+May 26, 2017. See the [release notes][] for details.
+markdown-mode is free software, licensed under the GNU GPL v2.
 
 ![Markdown Mode Screenshot](http://jblevins.org/projects/markdown-mode/screenshots/20160108-001.png)
 
 [Markdown]: http://daringfireball.net/projects/markdown/
-[release notes]: http://jblevins.org/projects/markdown-mode/rev-2-1
+[release notes]: http://jblevins.org/projects/markdown-mode/rev-2-2
 
 Documentation:
+
+<a href="https://leanpub.com/markdown-mode"><img src="http://jblevins.org/projects/markdown-mode/guide-v2.2.png" align="right" height="350" width="252"></a>
 
 Documentation for Markdown Mode is available below, but Emacs is also
 a self-documenting editor.  That means that the source code itself
@@ -37,10 +39,12 @@ using `package.el'. First, configure `package.el' and the MELPA Stable
 repository by adding the following to your `.emacs', `init.el',
 or equivalent startup file:
 
-    (require 'package)
-    (add-to-list 'package-archives
-                 '("melpa-stable" . "https://stable.melpa.org/packages/"))
-    (package-initialize)
+``` Lisp
+(require 'package)
+(add-to-list 'package-archives
+             '("melpa-stable" . "https://stable.melpa.org/packages/"))
+(package-initialize)
+```
 
 Then, after restarting Emacs or evaluating the above statements, issue
 the following command: `M-x package-install RET markdown-mode RET`.
@@ -53,13 +57,15 @@ then you can automatically install and configure `markdown-mode' by
 adding a declaration such as this one to your init file (as an
 example; adjust settings as desired):
 
-    (use-package markdown-mode
-      :ensure t
-      :commands (markdown-mode gfm-mode)
-      :mode (("README\\.md\\'" . gfm-mode)
-             ("\\.md\\'" . markdown-mode)
-             ("\\.markdown\\'" . markdown-mode))
-      :init (setq markdown-command "multimarkdown"))
+``` Lisp
+(use-package markdown-mode
+  :ensure t
+  :commands (markdown-mode gfm-mode)
+  :mode (("README\\.md\\'" . gfm-mode)
+         ("\\.md\\'" . markdown-mode)
+         ("\\.markdown\\'" . markdown-mode))
+  :init (setq markdown-command "multimarkdown"))
+```
 
 [MELPA Stable]: http://stable.melpa.org/
 [use-package]: https://github.com/jwiegley/use-package
@@ -72,14 +78,16 @@ save the file where Emacs can find it (i.e., a directory in your
 `load-path'). You can then configure `markdown-mode' and `gfm-mode'
 to load automatically by adding the following to your init file:
 
-    (autoload 'markdown-mode "markdown-mode"
-       "Major mode for editing Markdown files" t)
-    (add-to-list 'auto-mode-alist '("\\.markdown\\'" . markdown-mode))
-    (add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
+``` Lisp
+(autoload 'markdown-mode "markdown-mode"
+   "Major mode for editing Markdown files" t)
+(add-to-list 'auto-mode-alist '("\\.markdown\\'" . markdown-mode))
+(add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
 
-    (autoload 'gfm-mode "markdown-mode"
-       "Major mode for editing GitHub Flavored Markdown files" t)
-    (add-to-list 'auto-mode-alist '("README\\.md\\'" . gfm-mode))
+(autoload 'gfm-mode "markdown-mode"
+   "Major mode for editing GitHub Flavored Markdown files" t)
+(add-to-list 'auto-mode-alist '("README\\.md\\'" . gfm-mode))
+```
 
 [markdown-mode.el]: http://jblevins.org/projects/markdown-mode/markdown-mode.el
 
@@ -89,7 +97,9 @@ To follow or contribute to markdown-mode development, you can
 browse or clone the Git repository
 [on GitHub](https://github.com/jrblevin/markdown-mode):
 
-    git clone https://github.com/jrblevin/markdown-mode.git
+```
+git clone https://github.com/jrblevin/markdown-mode.git
+```
 
 If you prefer to install and use the development version, which may
 become unstable at some times, you can either clone the Git
@@ -99,7 +109,9 @@ repository as above or install markdown-mode from
 If you clone the repository directly, then make sure that Emacs can
 find it by adding the following line to your startup file:
 
-    (add-to-list 'load-path "/path/to/markdown-mode/repository")
+``` Lisp
+(add-to-list 'load-path "/path/to/markdown-mode/repository")
+```
 
 **Packaged Installation**
 

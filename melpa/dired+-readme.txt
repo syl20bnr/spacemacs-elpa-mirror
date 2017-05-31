@@ -495,7 +495,7 @@
    `diredp-remove-if', `diredp-remove-if-not',
    `diredp-root-directory-p', `diredp-set-header-line-breadcrumbs'
    (Emacs 22+), `diredp-set-tag-value', `diredp-set-union',
-   `direp--set-up-font-locking', `diredp-string-match-p',
+   `diredp--set-up-font-locking', `diredp-string-match-p',
    `diredp-tag', `diredp-this-file-marked-p',
    `diredp-this-file-unmarked-p', `diredp-this-subdir',
    `diredp-untag', `diredp-y-or-n-files-p'.
