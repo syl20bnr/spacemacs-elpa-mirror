@@ -4,8 +4,8 @@
 
 ;; Author:            Adam Sokolnicki <adam.sokolnicki@gmail.com>
 ;; URL:               https://github.com/asok/projectile-rails
-;; Package-Version: 0.14.0
-;; Version:           0.12.0
+;; Package-Version: 0.15.0
+;; Version:           0.15.0
 ;; Keywords:          rails, projectile
 ;; Package-Requires:  ((emacs "24.3") (projectile "0.12.0") (inflections "1.1") (inf-ruby "2.2.6") (f "0.13.0") (rake "0.3.2"))
 
@@ -143,7 +143,7 @@
   :group 'projectile-rails
   :type '(repeat string))
 
-(defvar projectile-rails-keyword-face	'projectile-rails-keyword-face
+(defvar projectile-rails-keyword-face 'projectile-rails-keyword-face
   "Face name to use for keywords.")
 
 (defface projectile-rails-keyword-face '((t :inherit 'font-lock-keyword-face))
@@ -190,6 +190,11 @@
   :group 'projectile-rails
   :type '(repeat string))
 
+(defcustom projectile-rails-component-dir "app/javascript/packs/"
+  "The directory to look for javascript component files in."
+  :group 'projectile-rails
+  :type 'string)
+
 (defcustom projectile-rails-stylesheet-dirs
   '("app/assets/stylesheets/" "lib/assets/stylesheets/" "public/stylesheets/")
   "The list of directories to look for the stylesheet files in."
@@ -233,6 +238,16 @@
 
 (defcustom projectile-rails-zeus-command "zeus"
   "The command for zeus."
+  :group 'projectile-rails
+  :type 'string)
+
+(defcustom projectile-rails-root-file "Gemfile"
+  "The file that is used to identify rails root."
+  :group 'projectile-rails
+  :type 'string)
+
+(defcustom projectile-rails-verify-root-file "config/routes.rb"
+  "The file that is used to verify rails root directory."
   :group 'projectile-rails
   :type 'string)
 
@@ -503,6 +518,14 @@ The bound variable is \"filename\"."
    "javascript: "
    (--map (list it "/\\(.+\\)\\.[^.]+$") projectile-rails-javascript-dirs)))
 
+(defun projectile-rails-find-component ()
+  "Find a javascript component."
+  (interactive)
+  (projectile-rails-find-resource
+   "component: "
+   `((,projectile-rails-component-dir
+      ,(concat projectile-rails-component-dir "\\(.+\\.[^.]+\\)$")))))
+
 (defun projectile-rails-find-stylesheet ()
   "Find a stylesheet file."
   (interactive)
@@ -524,6 +547,13 @@ The bound variable is \"filename\"."
   (projectile-rails-find-resource
    "environment: "
    '(("config/" "/\\(application\\|environment\\)\\.rb$") ("config/environments/" "/\\([^/]+\\)\\.rb$"))))
+
+(defun projectile-rails-find-webpack ()
+  "Find a webpack configuration"
+  (interactive)
+  (projectile-rails-find-resource
+   "webpack config: "
+   '(("config/webpack/" "config/webpack/\\(.+\\.[^.]+\\)$"))))
 
 (defun projectile-rails-find-locale ()
   "Find a locale file."
@@ -703,8 +733,8 @@ The mode of the output buffer will be `projectile-rails-compilation-mode'."
 (defun projectile-rails-root ()
   "Returns rails root directory if this file is a part of a Rails application else nil"
   (ignore-errors
-    (let ((root (projectile-locate-dominating-file default-directory "Gemfile")))
-      (when (file-exists-p (expand-file-name "config/routes.rb" root))
+    (let ((root (projectile-locate-dominating-file default-directory projectile-rails-root-file)))
+      (when (file-exists-p (expand-file-name projectile-rails-verify-root-file root))
         root))))
 
 (defun projectile-rails-root-relative-to-project-root ()
@@ -1183,6 +1213,11 @@ If called interactively will ask user for the PARTIAL-NAME."
   (interactive)
   (projectile-rails-goto-file "Gemfile"))
 
+(defun projectile-rails-goto-package ()
+  "Visit package.json file."
+  (interactive)
+  (projectile-rails-goto-file "package.json"))
+
 (defun projectile-rails-goto-schema ()
   "Visit db/schema.rb file."
   (interactive)
@@ -1306,6 +1341,7 @@ If file does not exist and ASK in not nil it will ask user to proceed."
     (define-key map (kbd "d") 'projectile-rails-goto-schema)
     (define-key map (kbd "s") 'projectile-rails-goto-seeds)
     (define-key map (kbd "h") 'projectile-rails-goto-spec-helper)
+    (define-key map (kbd "p") 'projectile-rails-goto-package)
     map)
   "A goto map for `projectile-rails-mode'.")
 (fset 'projectile-rails-mode-goto-map projectile-rails-mode-goto-map)
@@ -1357,11 +1393,14 @@ If file does not exist and ASK in not nil it will ask user to proceed."
     (define-key map (kbd "u") 'projectile-rails-find-fixture)
     (define-key map (kbd "U") 'projectile-rails-find-current-fixture)
 
+    (define-key map (kbd "w") 'projectile-rails-find-component)
+
     (define-key map (kbd "l") 'projectile-rails-find-lib)
     (define-key map (kbd "f") 'projectile-rails-find-feature)
     (define-key map (kbd "i") 'projectile-rails-find-initializer)
     (define-key map (kbd "o") 'projectile-rails-find-log)
     (define-key map (kbd "e") 'projectile-rails-find-environment)
+    (define-key map (kbd "W") 'projectile-rails-find-webpack)
     (define-key map (kbd "a") 'projectile-rails-find-locale)
     (define-key map (kbd "@") 'projectile-rails-find-mailer)
     (define-key map (kbd "!") 'projectile-rails-find-validator)
@@ -1395,6 +1434,7 @@ If file does not exist and ASK in not nil it will ask user to proceed."
     ["Find controller"          projectile-rails-find-controller]
     ["Find view"                projectile-rails-find-view]
     ["Find javascript"          projectile-rails-find-javascript]
+    ["Find component"           projectile-rails-find-component]
     ["Find stylesheet"          projectile-rails-find-stylesheet]
     ["Find helper"              projectile-rails-find-helper]
     ["Find spec"                projectile-rails-find-spec]
@@ -1405,6 +1445,7 @@ If file does not exist and ASK in not nil it will ask user to proceed."
     ["Find lib"                 projectile-rails-find-lib]
     ["Find initializer"         projectile-rails-find-initializer]
     ["Find environment"         projectile-rails-find-environment]
+    ["Find webpack config"      projectile-rails-find-webpack]
     ["Find log"                 projectile-rails-find-log]
     ["Find locale"              projectile-rails-find-locale]
     ["Find mailer"              projectile-rails-find-mailer]
@@ -1417,6 +1458,7 @@ If file does not exist and ASK in not nil it will ask user to proceed."
     ["Go to file at point"      projectile-rails-goto-file-at-point]
     "--"
     ["Go to Gemfile"            projectile-rails-goto-gemfile]
+    ["Go to package"            projectile-rails-goto-package]
     ["Go to routes"             projectile-rails-goto-routes]
     ["Go to schema"             projectile-rails-goto-schema]
     ["Go to seeds"              projectile-rails-goto-seeds]
@@ -1534,6 +1576,7 @@ Killing the buffer will terminate to server's process."
                      ("h" "helper"      projectile-rails-find-helper)
                      ("l" "lib"         projectile-rails-find-lib)
                      ("j" "javascript"  projectile-rails-find-javascript)
+                     ("w" "component"   projectile-rails-find-component)
                      ("s" "stylesheet"  projectile-rails-find-stylesheet)
                      ("p" "spec"        projectile-rails-find-spec)
                      ("u" "fixture"     projectile-rails-find-fixture)
@@ -1570,6 +1613,7 @@ Killing the buffer will terminate to server's process."
                     ("Go to"
                      ("f" "file at point" projectile-rails-goto-file-at-point)
                      ("g" "Gemfile"       projectile-rails-goto-gemfile)
+                     ("p" "package"       projectile-rails-goto-package)
                      ("r" "routes"        projectile-rails-goto-routes)
                      ("d" "schema"        projectile-rails-goto-schema)
                      ("s" "seeds"         projectile-rails-goto-seeds)
@@ -1601,6 +1645,7 @@ Killing the buffer will terminate to server's process."
       ("h" projectile-rails-find-helper      "helper")
       ("l" projectile-rails-find-lib         "lib")
       ("j" projectile-rails-find-javascript  "javascript")
+      ("w" projectile-rails-find-component  "component")
       ("s" projectile-rails-find-stylesheet  "stylesheet")
       ("p" projectile-rails-find-spec        "spec")
       ("u" projectile-rails-find-fixture     "fixture")
@@ -1632,6 +1677,7 @@ Killing the buffer will terminate to server's process."
       "Go to"
       ("f" projectile-rails-goto-file-at-point "file at point")
       ("g" projectile-rails-goto-gemfile       "Gemfile")
+      ("p" projectile-rails-goto-package       "package")
       ("r" projectile-rails-goto-routes        "routes")
       ("d" projectile-rails-goto-schema        "schema")
       ("s" projectile-rails-goto-seeds         "seeds")
