@@ -3,10 +3,10 @@
 ;; Copyright (C) 2010-2016 SAKURAI Masashi
 
 ;; Author: SAKURAI Masashi <m.sakurai at kiwanami.net>
-;; Version: 0.5.0
-;; Package-Version: 20170530.1823
+;; Version: 0.5.1
+;; Package-Version: 20170531.2135
 ;; Keywords: deferred, async
-;; Package-Requires: ((emacs "24.3"))
+;; Package-Requires: ((emacs "24.4"))
 ;; URL: https://github.com/kiwanami/emacs-deferred
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -68,6 +68,7 @@
 ;; deferred.el.
 
 (require 'cl-lib)
+(require 'subr-x)
 
 (declare-function pp-display-expression 'pp)
 
@@ -808,25 +809,28 @@ the command process."
                         (apply f proc-name buf-name command args)))
                 (set-process-sentinel
                  proc
-                 (lambda (_proc event)
-                   (cond
-                    ((string-match "exited abnormally" event)
-                     (let ((msg (if (buffer-live-p proc-buf)
-                                    (format "Process [%s] exited abnormally : %s"
-                                            command
-                                            (with-current-buffer proc-buf (buffer-string)))
-                                  (concat "Process exited abnormally: " proc-name))))
-                       (kill-buffer proc-buf)
-                       (deferred:post-task nd 'ng msg)))
-                    ((equal event "finished\n")
-                     (deferred:post-task nd 'ok proc-buf)))))
-                (setf (deferred-cancel nd)
-                      (lambda (x) (deferred:default-cancel x)
-                        (when proc
-                          (kill-process proc)
-                          (kill-buffer proc-buf)))))
-            (error (deferred:post-task nd 'ng err)))
-          nil))
+                 (lambda (proc event)
+		   (unless (process-live-p proc)
+		     (if (zerop (process-exit-status proc))
+			 (deferred:post-task nd 'ok proc-buf)
+		       (let ((msg (format "Deferred process exited abnormally:\n  command: %s\n  exit status: %s %s\n  event: %s\n  buffer contents: %S"
+					  command
+					  (process-status proc)
+					  (process-exit-status proc)
+					  (string-trim-right event)
+					  (if (buffer-live-p proc-buf)
+					      (with-current-buffer proc-buf
+						(buffer-string))
+					    "(unavailable)"))))
+			 (kill-buffer proc-buf)
+			 (deferred:post-task nd 'ng msg))))))
+		(setf (deferred-cancel nd)
+		      (lambda (x) (deferred:default-cancel x)
+			(when proc
+			  (kill-process proc)
+			  (kill-buffer proc-buf)))))
+	    (error (deferred:post-task nd 'ng err)))
+	  nil))
       nd)))
 
 (defmacro deferred:processc (d command &rest args)

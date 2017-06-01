@@ -1,7 +1,7 @@
 ;;; rust-mode.el --- A major emacs mode for editing Rust source code -*-lexical-binding: t-*-
 
 ;; Version: 0.3.0
-;; Package-Version: 20170514.2022
+;; Package-Version: 20170531.1558
 ;; Author: Mozilla
 ;; Url: https://github.com/rust-lang/rust-mode
 ;; Keywords: languages
@@ -1198,12 +1198,26 @@ This is written mainly to be used as `end-of-defun-function' for Rust."
   (with-current-buffer (get-buffer-create "*rustfmt*")
     (erase-buffer)
     (insert-buffer-substring buf)
-    (if (zerop (call-process-region (point-min) (point-max) rust-rustfmt-bin t t nil))
-        (progn
-          (if (not (string= (buffer-string) (with-current-buffer buf (buffer-string))))
-              (copy-to-buffer buf (point-min) (point-max)))
-          (kill-buffer))
-      (error "Rustfmt failed, see *rustfmt* buffer for details"))))
+    (let* ((tmpf (make-temp-file "rustfmt"))
+           (ret (call-process-region (point-min) (point-max) rust-rustfmt-bin
+                                     t `(t ,tmpf) nil)))
+      (unwind-protect
+          (cond
+           ((zerop ret)
+            (if (not (string= (buffer-string)
+                              (with-current-buffer buf (buffer-string))))
+                (copy-to-buffer buf (point-min) (point-max)))
+            (kill-buffer))
+           ((= ret 3)
+            (if (not (string= (buffer-string)
+                              (with-current-buffer buf (buffer-string))))
+                (copy-to-buffer buf (point-min) (point-max)))
+            (erase-buffer)
+            (insert-file-contents tmpf)
+            (error "Rustfmt could not format some lines, see *rustfmt* buffer for details"))
+           (t
+            (error "Rustfmt failed, see *rustfmt* buffer for details"))))
+      (delete-file tmpf))))
 
 (defconst rust--format-word "\\b\\(else\\|enum\\|fn\\|for\\|if\\|let\\|loop\\|match\\|struct\\|unsafe\\|while\\)\\b")
 (defconst rust--format-line "\\([\n]\\)")

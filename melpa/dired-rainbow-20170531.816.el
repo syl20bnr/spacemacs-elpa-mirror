@@ -5,7 +5,7 @@
 ;; Author: Matus Goljer <matus.goljer@gmail.com>
 ;; Maintainer: Matus Goljer <matus.goljer@gmail.com>
 ;; Keywords: files
-;; Package-Version: 20170417.1341
+;; Package-Version: 20170531.816
 ;; Version: 0.0.3
 ;; Created: 16th February 2014
 ;; Package-requires: ((dash "2.5.0") (dired-hacks-utils "0.0.1"))
@@ -105,11 +105,12 @@ SYMBOL is the identifier of the face.  The macro will define a face named
 
   dired-rainbow-SYMBOL-face.
 
-FACE-PROPS is either a string or a list.  If a string, it is
+FACE-PROPS is a string, a list or a symbol.  If a string, it is
 assumed to be either a color name or a hexadecimal code (#......)
 describing a color.  If a list, it is assumed to be a property
 list describing the face.  See `defface' for list of possible
-attributes.
+attributes.  If a symbol it is taken as the name of an existing
+face which is used.
 
 EXTENSIONS is either a list or a symbol evaluating to a list of
 extensions that should be highlighted with this face.  Note that
@@ -119,6 +120,7 @@ compilation and must be defined before this macro is processed.
 Additionally, EXTENSIONS can be a single string or a symbol
 evaluating to a string that is interpreted as a regexp matching
 the entire file name."
+  (declare (debug (symbolp [&or stringp listp symbolp] [&or symbolp listp stringp])))
   (let* ((matcher (if (or (listp extensions)
                           (stringp extensions))
                       extensions
@@ -149,11 +151,12 @@ SYMBOL is the identifier of the face.  The macro will define a face named
 
   dired-rainbow-SYMBOL-face.
 
-FACE-PROPS is either a string or a list.  If a string, it is
+FACE-PROPS is a string, a list or a symbol.  If a string, it is
 assumed to be either a color name or a hexadecimal code (#......)
 describing a color.  If a list, it is assumed to be a property
 list describing the face.  See `defface' for list of possible
-attributes.
+attributes.  If a symbol it is taken as the name of an existing
+face which is used.
 
 CHMOD is a regexp matching \"ls -l\" style permissions string.
 For example, the pattern
@@ -161,6 +164,7 @@ For example, the pattern
   \"-.*x.*\"
 
 matches any file with executable flag set for user, group or everyone."
+  (declare (debug (symbolp [&or stringp listp symbolp] stringp)))
   (let* ((regexp (concat
                   "^[^!]."
                   chmod

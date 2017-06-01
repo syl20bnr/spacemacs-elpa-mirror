@@ -5,8 +5,8 @@
 ;; Author: Alexander Miller <alexanderm@web.de>
 ;; Homepage: https://github.com/Alexander-Miller/pfuture
 ;; Package-Requires: ((emacs "25"))
-;; Package-Version: 20170529.813
-;; Version: 1.0
+;; Package-Version: 20170531.805
+;; Version: 1.1
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -63,9 +63,8 @@ specify fractional number of seconds. In case of a timeout nil will be returned.
 
 JUST-THIS-ONE: When t only read from the process of FUTURE and no other. For
 details see documentation of `accept-process-output'."
-  (when (pfuture-live-p future)
-    (accept-process-output
-     (pfuture-process future) timeout nil just-this-one))
+  (accept-process-output
+   (pfuture-process future) timeout nil just-this-one)
   (pfuture-result future))
 
 (defun pfuture-await-to-finish (future)
@@ -74,6 +73,7 @@ Same as `pfuture-await', but will keep reading (and blocking) so long as the
 process associated with FUTURE is *alive*.
 If the process never quits this method will block forever. Use with caution!"
   (let ((process (pfuture-process future)))
+    (accept-process-output process nil nil t)
     (while (process-live-p process)
       (accept-process-output process nil nil t)))
   (pfuture-result future))

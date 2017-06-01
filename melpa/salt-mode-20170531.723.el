@@ -5,7 +5,7 @@
 ;; Author: Ben Hayden <hayden767@gmail.com>
 ;; Maintainer: Glynn Forrest <me@glynnforrest.com>
 ;; URL: https://github.com/glynnforrest/salt-mode
-;; Package-Version: 20170526.1702
+;; Package-Version: 20170531.723
 ;; Keywords: languages
 ;; Version: 0.1
 ;; Package-Requires: ((yaml-mode "0.0.12") (mmm-mode "0.5.4") (mmm-jinja2 "0.1"))
@@ -83,6 +83,54 @@ suitable for spellchecking."
 
 (put 'salt-mode 'flyspell-mode-predicate #'salt--flyspell-predicate)
 
+(defconst salt-mode-toplevel-keywords
+  '("include" "exclude" "extend")
+  "Keys with special meaning at the top level of state files.")
+
+(defconst salt-mode-requisite-types
+  '("require" "watch" "prereq" "use" "onchanges" "onfail"
+    "require_in" "watch_in" "prereq_in" "use_in" "onchanges_in" "onfail_in")
+  "Keys that identify requisite relations between states.
+
+More about requisites can be found in the Salt documentation,
+https://docs.saltstack.com/en/latest/ref/states/requisites.html")
+
+(defface salt-mode-keyword-face
+  '((t (:inherit font-lock-keyword-face)))
+  "Face for special Salt highstate keywords (e.g. `include')."
+  :group 'salt)
+
+(defface salt-mode-requisite-face
+  '((t (:inherit font-lock-builtin-face)))
+  "Face for Salt state requisites (e.g. `require', `watch_in')."
+  :group 'salt)
+
+(defface salt-mode-state-function-face
+  '((t (:inherit font-lock-function-name-face)))
+  "Face for Salt state functions (e.g. `file.managed')."
+  :group 'salt)
+
+(defface salt-mode-state-id-face
+  '((t (:inherit font-lock-constant-face)))
+  "Face for unquoted Salt state IDs."
+  :group 'salt)
+
+(defconst salt-mode-keywords
+  `((,(format "^%s:" (regexp-opt salt-mode-toplevel-keywords t))
+     (1 'salt-mode-keyword-face))
+    (,(format "^ +- *%s:" (regexp-opt salt-mode-requisite-types t))
+     (1 'salt-mode-requisite-face))
+    ("^\\([^ \"':#][^\"':#\n]*\\):"
+     (1 'salt-mode-state-id-face))
+    ("^ +\\([a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*\\):?"
+     (1 'salt-mode-state-function-face))
+    ;; TODO:
+    ;; - Match state IDs in extend: forms and requisite lists.
+    ;; - Don't match requisites unless they're under functions.
+    ;; - Handle top, pillar, and orch files specially.
+    )
+  "Regexps for YAML keys with special meaning in SLS files.")
+
 ;;;###autoload
 (define-derived-mode salt-mode yaml-mode "SaltStack"
   "A major mode to edit Salt States."
@@ -91,7 +139,8 @@ suitable for spellchecking."
         electric-indent-inhibit t
         mmm-global-mode 'maybe)
 
-  (mmm-add-mode-ext-class 'salt-mode "\\.sls\\'" 'jinja2))
+  (mmm-add-mode-ext-class 'salt-mode "\\.sls\\'" 'jinja2)
+  (font-lock-add-keywords nil salt-mode-keywords))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.sls\\'" . salt-mode))
