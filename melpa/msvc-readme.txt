@@ -182,8 +182,10 @@ Usage:
     `<TAB>`
   - jump to definition / return from definition
     this is nestable jump.
+    target is type, function, enum, macro, include, misc.
+    visit to definition file / return from definition file.
     `M-.` / `M-,`
-  - visit to include file / return from include file
+  - visit to include file / return from include file(CEDET)
     `M-i` / `M-I`
   - goto error line prev / next
     `M-[` / `M-]`

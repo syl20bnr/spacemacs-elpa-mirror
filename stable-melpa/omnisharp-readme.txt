@@ -4,8 +4,6 @@ in C# solutions in Emacs, provided by an OmniSharp server instance
 that works in the background.
 
 See the project home page for more information.
-
-Work in progress! Judge gently!
 (require 'json)
 (require 'cl-lib)
 (require 'files)
@@ -18,18 +16,16 @@ Work in progress! Judge gently!
 (require 'etags)
 (require 'flycheck)
 (require 's)
+(require 'shut-up)
 
-(add-to-list 'load-path (expand-file-name (concat (file-name-directory (or load-file-name buffer-file-name)) "/src/")))
-(add-to-list 'load-path (expand-file-name (concat (file-name-directory (or load-file-name buffer-file-name)) "/src/actions")))
-
+(require 'omnisharp-server-management)
 (require 'omnisharp-utils)
+(require 'omnisharp-http-utils)
 (require 'omnisharp-server-actions)
 (require 'omnisharp-auto-complete-actions)
-
-(defgroup omnisharp ()
-  "Omnisharp-emacs is a port of the awesome OmniSharp server to
-the Emacs text editor. It provides IDE-like features for editing
-files in C# solutions in Emacs, provided by an OmniSharp server
-instance that works in the background."
-  :group 'external
-  :group 'csharp)
+(require 'omnisharp-current-symbol-actions)
+(require 'omnisharp-navigation-actions)
+(require 'omnisharp-settings)
+(require 'omnisharp-helm-integration)
+(require 'omnisharp-solution-actions)
+(require 'omnisharp-format-actions)
