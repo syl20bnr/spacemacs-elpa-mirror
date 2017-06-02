@@ -4,7 +4,7 @@
 
 ;; Author:  Atila Neves <atila.neves@gmail.com>
 ;; Version: 0.5
-;; Package-Version: 20170522.1105
+;; Package-Version: 20170602.121
 ;; Package-Requires: ((emacs "24.1") (cl-lib "0.5") (seq "1.11") (levenshtein "0"))
 ;; Keywords: languages
 ;; URL: http://github.com/atilaneves/cmake-ide
@@ -135,6 +135,18 @@
 (defcustom cmake-ide-header-search-first-including
   t
   "Whether or not to search for the first source file to include a header when setting flags for them."
+  :group 'cmake-ide
+  :type 'booleanp
+  :safe #'booleanp)
+
+(defcustom cmake-ide-flycheck-cppcheck-strict-standards
+  nil
+  "Whether or not to be strict when setting cppcheck standards for flycheck.
+If 't' or otherwise non-nil, the flycheck-cppcheck-standards
+variable will only be set to contain standards that exactly match
+those from the compile database.  (If there are none, it will not
+be modified.)  If 'nil', standards will be gracefully degraded to
+the closest possible matches available in cppcheck."
   :group 'cmake-ide
   :type 'booleanp
   :safe #'booleanp)
@@ -528,7 +540,14 @@ the object file's name just above."
           (make-local-variable 'flycheck-clang-language-standard)
           (let* ((stds (cmake-ide--filter (lambda (x) (string-match std-regex x)) flags))
                  (repls (mapcar (lambda (x) (replace-regexp-in-string std-regex "" x)) stds)))
-            (when repls (setq flycheck-clang-language-standard (car repls))))
+            (when repls
+              (setq flycheck-clang-language-standard (car repls))
+              (unless cmake-ide-flycheck-cppcheck-strict-standards
+                (setq repls (mapcar 'cmake-ide--cmake-standard-to-cppcheck-standard repls)))
+              (setq repls (cmake-ide--filter 'cmake-ide--valid-cppcheck-standard-p repls))
+              (when repls
+                (make-local-variable 'flycheck-cppcheck-standards)
+                (setq flycheck-cppcheck-standards repls))))
 
           (make-local-variable 'flycheck-cppcheck-include-path)
           (setq flycheck-cppcheck-include-path (append sys-includes (cmake-ide--flags-to-include-paths flags))))
@@ -967,6 +986,28 @@ the object file's name just above."
   (when name
     (string-match regexp name)))
 
+(defun cmake-ide--valid-cppcheck-standard-p (standard)
+  "If STANDARD is supported by cppcheck."
+  (member standard '("posix" "c89" "c99" "c11" "c++03" "c++11")))
+
+(defun cmake-ide--cmake-standard-to-cppcheck-standard (standard)
+  "Convert a CMake language STANDARD to the closest supported by cppcheck.
+If there is no clear and sensible conversion, the input is
+returned unchanged."
+  (let ((gnu-replaced (replace-regexp-in-string "gnu" "c" standard)))
+    (cond
+     ;; Convert "close-enough" matches.
+     ((equal gnu-replaced "c90") "c89")
+     ((equal gnu-replaced "c++98") "c++03")
+     ((equal gnu-replaced "c++0x") "c++03")
+     ((equal gnu-replaced "c++14") "c++11")
+     ((equal gnu-replaced "c++1y") "c++11")
+     ((equal gnu-replaced "c++17") "c++11")
+     ((equal gnu-replaced "c++1z") "c++11")
+     ;; See if what we have matches cppcheck's capabilities exactly.
+     ((cmake-ide--valid-cppcheck-standard-p gnu-replaced) gnu-replaced)
+     ;; Otherwise, just hand back the original input.
+     (t standard))))
 
 (provide 'cmake-ide)
 ;;; cmake-ide.el ends here

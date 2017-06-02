@@ -2,8 +2,8 @@
 
 ;; Copyright (C) 2013-2017 Skye Shaw and others
 ;; Author: Skye Shaw <skye.shaw@gmail.com>
-;; Version: 0.5.0 (unreleased)
-;; Package-Version: 20170601.1741
+;; Version: 0.5.0
+;; Package-Version: 20170601.2027
 ;; Keywords: git, vc, github, bitbucket, gitlab, convenience
 ;; URL: http://github.com/sshaw/git-link
 ;; Package-Requires: ((cl-lib "0.6.1"))

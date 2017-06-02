@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 ~ 2015 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; Package-Requires: ((helm "1.7.8"))
-;; Package-Version: 20170523.1149
+;; Package-Version: 20170601.2200
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -50,7 +50,10 @@ Valid values are symbol 'absolute or 'relative (default)."
            (const :tag "Show relative path" relative)))
 
 (defcustom helm-ls-git-status-command 'vc-dir
-  "Favorite git-status command for emacs."
+  "Favorite git-status command for emacs.
+
+If you want to use magit use `magit-status-internal' and not
+`magit-status' which is working only interactively."
   :group 'helm-ls-git
   :type 'symbol)
 
@@ -155,6 +158,19 @@ To see files in submodules add the option \"--recurse-submodules\"."
   "* Helm ls git
 
 ** Tips
+
+*** Start helm-ls-git
+
+You can start with `helm-ls-git-ls' but you can also use the generic
+`helm-browse-project' which will use `helm-ls-git' if you are in a git
+project (actually supported backends are git, hg and svn). 
+
+*** You may want to use magit as git status command
+
+By default helm-ls-git is using emacs `vc-dir' as `helm-ls-git-status-command',
+perhaps you want to use something better like `magit-status' ?
+If it's the case use `magit-status-internal' as value for `helm-ls-git-status-command'
+as `magit-status' is working only interactively (it will not work from helm-ls-git).
 
 *** Git grep usage
 
@@ -523,11 +539,13 @@ and launch git-grep from there.
     (setq helm-source-ls-git-status
           (and (memq 'helm-source-ls-git-status helm-ls-git-default-sources)
                (helm-make-source "Git status" 'helm-ls-git-status-source
-                 :fuzzy-match helm-ls-git-fuzzy-match))
+                 :fuzzy-match helm-ls-git-fuzzy-match
+                 :group 'helm-ls-git))
           helm-source-ls-git
           (and (memq 'helm-source-ls-git helm-ls-git-default-sources)
                (helm-make-source "Git files" 'helm-ls-git-source
-                 :fuzzy-match helm-ls-git-fuzzy-match))
+                 :fuzzy-match helm-ls-git-fuzzy-match
+                 :group 'helm-ls-git))
           helm-source-ls-git-buffers
           (and (memq 'helm-source-ls-git-buffers helm-ls-git-default-sources)
                (helm-make-source "Buffers in git project" 'helm-source-buffers
