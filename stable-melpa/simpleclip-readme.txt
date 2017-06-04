@@ -55,7 +55,8 @@ See Also
 
 Notes
 
-`x-select-enable-primary' is not affected by `simpleclip-mode'.
+`simpleclip-mode' does not affect `x-select-enable-primary' or
+`select-enable-primary'.
 
 Access to the system clipboard from a TTY is provided for those
 cases where a literal paste is needed -- for example, where
@@ -71,7 +72,9 @@ The following functions may be useful to call from Lisp:
 
 Compatibility and Requirements
 
-    GNU Emacs version 24.4-devel     : yes, at the time of writing
+    GNU Emacs version 25.1           : yes
+    GNU Emacs version 24.5           : yes
+    GNU Emacs version 24.4           : yes
     GNU Emacs version 24.3           : yes
     GNU Emacs version 23.3           : yes
     GNU Emacs version 22.2           : yes, with some limitations
@@ -107,14 +110,14 @@ Redistribution and use in source and binary forms, with or
 without modification, are permitted provided that the following
 conditions are met:
 
-   1. Redistributions of source code must retain the above
-      copyright notice, this list of conditions and the following
-      disclaimer.
+  1. Redistributions of source code must retain the above
+     copyright notice, this list of conditions and the following
+     disclaimer.
 
-   2. Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials
-      provided with the distribution.
+  2. Redistributions in binary form must reproduce the above
+     copyright notice, this list of conditions and the following
+     disclaimer in the documentation and/or other materials
+     provided with the distribution.
 
 This software is provided by Roland Walker "AS IS" and any express
 or implied warranties, including, but not limited to, the implied

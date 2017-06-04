@@ -2,3 +2,5 @@ Copy buffer locations as GitHub/Slack/JIRA/HipChat/... formatted code and add th
 to the kill ring.  The buffer will not be modified.
 
 With a prefix argument prompt for the format.  Defaults to `copy-as-format-default'.
+
+To add formats see `copy-as-format-format-alist'.
