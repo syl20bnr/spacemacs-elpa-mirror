@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170602.2145
+;; Package-Version: 20170605.255
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1843,7 +1843,7 @@ If non-nil, EXTRA-AG-ARGS string is appended to BASE-CMD."
                                (match-string 1 (buffer-name)))))))
          (cands (split-string
                  (shell-command-to-string
-                  (format counsel-ag-base-command (shell-quote-argument regex)))
+                  (format counsel-ag-base-command (concat "-- " (shell-quote-argument regex))))
                  "\n"
                  t)))
     ;; Need precise number of header lines for `wgrep' to work.

@@ -3,8 +3,8 @@
 ;; Copyright (C) 2017 Damien Cassou
 
 ;; Author: Damien Cassou <damien@cassou.me>
-;; Version: 0.5.0
-;; Package-Version: 0.5.0
+;; Version: 0.6.0
+;; Package-Version: 20170605.842
 ;; Package-Requires: ((emacs "25.1"))
 ;; GIT: https://github.com/DamienCassou/hierarchy
 ;;
@@ -519,12 +519,32 @@ LABELFN is a function taking an item of HIERARCHY and an indentation
 value (a number) as parameter and returning a string to be displayed as a
 button label."
   (require 'wid-edit)
+  (require 'tree-widget)
   (hierarchy-map-tree (lambda (item indent children)
                         (widget-convert
                          'tree-widget
                          :tag (hierarchy-labelfn-to-string labelfn item indent)
                          :args children))
                       hierarchy))
+
+(defun hierarchy-tree-display (hierarchy labelfn &optional buffer)
+  "Display HIERARCHY as a tree widget in a new buffer.
+
+HIERARCHY and LABELFN are passed unchanged to
+`hierarchy-convert-to-tree-widget'.
+
+The tabulated list is displayed in BUFFER, or a newly created buffer if
+nil.  The buffer is returned."
+  (let ((buffer (or buffer (generate-new-buffer "*hierarchy-tree*")))
+        (tree-widget (hierarchy-convert-to-tree-widget hierarchy labelfn)))
+    (with-current-buffer buffer
+      (setq-local buffer-read-only t)
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (widget-create tree-widget)
+        (goto-char (point-min))
+        (special-mode)))
+    buffer))
 
 (provide 'hierarchy)
 

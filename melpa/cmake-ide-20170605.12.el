@@ -4,7 +4,7 @@
 
 ;; Author:  Atila Neves <atila.neves@gmail.com>
 ;; Version: 0.5
-;; Package-Version: 20170602.121
+;; Package-Version: 20170605.12
 ;; Package-Requires: ((emacs "24.1") (cl-lib "0.5") (seq "1.11") (levenshtein "0"))
 ;; Keywords: languages
 ;; URL: http://github.com/atilaneves/cmake-ide
@@ -505,7 +505,8 @@ the object file's name just above."
         (make-local-variable 'company-c-headers-path-user)
         (setq company-c-headers-path-user (cmake-ide--flags-to-include-paths flags))
         (make-local-variable 'company-c-headers-path-system)
-        (when sys-includes (add-to-list 'company-c-headers-path-system sys-includes)))
+        (when sys-includes
+          (setq company-c-headers-path-system (append sys-includes company-c-headers-path-system))))
 
       (when (and (featurep 'irony) (not (gethash (cmake-ide--get-build-dir) cmake-ide--irony)))
         (irony-cdb-json-add-compile-commands-path (cmake-ide--locate-project-dir) (cmake-ide--comp-db-file-name))

@@ -1,7 +1,7 @@
 ;;; zpresent.el --- Simple presentation mode based on org files.  -*- lexical-binding: t; -*-
 
-;; Version: 0.2
-;; Package-Version: 20170420.2233
+;; Version: 0.3
+;; Package-Version: 20170604.2312
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright 2015-2017 Zachary Kanfer <zkanfer@gmail.com>
@@ -22,7 +22,7 @@
 
 ;; Homepage: https://bitbucket.org/zck/zpresent.el
 
-;; Package-Requires: ((emacs "25.1") (org-parser "0.2") (dash "2.13.0"))
+;; Package-Requires: ((emacs "25.1") (org-parser "0.3") (dash "2.13.0"))
 
 ;; Keywords: comm
 
@@ -61,6 +61,7 @@
 (require 'org-parser)
 (require 'subr-x)
 (require 'cl-lib)
+(require 'cl-macs)
 (require 'dash)
 
 ;;;; Variables:
@@ -133,28 +134,55 @@
 
 (defun zpresent--format-structure (structure)
   "Convert STRUCTURE into a list of slides."
-  (zpresent--format-structure-helper structure
-                                     (zpresent--make-top-level-slide structure)
-                                     1))
+
+  (cl-multiple-value-bind
+      (slide-list last-slide) (zpresent--format-structure-helper structure
+                                                                 (zpresent--make-top-level-slide structure)
+                                                                 1)
+    (if (member "slide"
+                (gethash :tags
+                         (zpresent--get-last-descendant structure)))
+        slide-list
+      (append slide-list (list last-slide)))))
 
 (defun zpresent--format-structure-helper (structure slide-so-far level)
   "Convert STRUCTURE into a list of slides.
 
 SLIDE-SO-FAR is the built-up slide to append text in the body to.
 
-STRUCTURE is at level LEVEL.  This is used for indentation.
+This method returns a list containing two elements: the first is the
+list of slides, and the second is the last slide generated from all
+the children of STRUCTURE.
 
-Return the list of slides."
-  (let ((most-recent-slide slide-so-far)
-        (slides-list (list slide-so-far))
-        (how-many-slides 0))
+STRUCTURE is at indentation level LEVEL."
+  (let ((this-slide slide-so-far)
+        (slides-list nil)
+        (prior-siblings 0))
+    (when (member "slide" (gethash :tags structure))
+      (setq slides-list (append slides-list
+                                (list this-slide))))
     (dolist (cur-child (gethash :children structure))
-      (setq slides-list
-            (append slides-list
-                    (zpresent--format-structure-helper cur-child (zpresent--make-following-slide most-recent-slide cur-child level how-many-slides) (1+ level))))
-      (setq most-recent-slide (car (last slides-list)))
-      (cl-incf how-many-slides))
-    slides-list))
+      (let ((child-slide (zpresent--make-following-slide this-slide cur-child level prior-siblings)))
+        (cl-multiple-value-bind
+            (child-slide-list child-last-slide) (zpresent--format-structure-helper cur-child
+                                                                                   child-slide
+                                                                                   (1+ level))
+
+          (setq slides-list
+                (append slides-list
+                        child-slide-list))
+          (setq this-slide child-last-slide)))
+      (cl-incf prior-siblings))
+    (values slides-list this-slide)))
+
+(defun zpresent--get-last-descendant (structure)
+  "Get the last descendant of STRUCTURE.
+
+This will recurse down, so it will return a grandchild, etc., as
+necessary."
+  (if (gethash :children structure)
+      (zpresent--get-last-descendant (-last-item (gethash :children structure)))
+    structure))
 
 (defun zpresent--make-top-level-slide (structure)
   "Make a top level slide from STRUCTURE."

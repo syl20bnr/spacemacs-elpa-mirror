@@ -4,7 +4,7 @@
 
 ;; Author: Damien Cassou <damien@cassou.me>
 ;; Version: 1.1.0
-;; Package-Version: 20170526.743
+;; Package-Version: 20170605.541
 ;; GIT: https://github.com/DamienCassou/beginend
 ;; Package-Requires: ((emacs "24.4"))
 ;; Created: 01 Jun 2015
@@ -240,6 +240,16 @@ BEGIN-BODY and END-BODY are two `progn' expressions passed to respectively
     (prodigy-first))
   (progn
     (prodigy-last)))
+
+(declare-function magit-section-backward "magit-section")
+
+(beginend-define-mode magit-status-mode
+  (progn
+    (re-search-forward "^$")
+    (forward-line))
+  (progn
+    (magit-section-backward)
+    (magit-section-backward)))
 
 ;;;###autoload
 (defun beginend-setup-all ()

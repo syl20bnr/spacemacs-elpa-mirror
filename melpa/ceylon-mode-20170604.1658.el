@@ -4,7 +4,7 @@
 
 ;; Author: Lucas Werkmeister <mail@lucaswerkmeister.de>
 ;; URL: https://github.com/lucaswerkmeister/ceylon-mode
-;; Package-Version: 20170527.334
+;; Package-Version: 20170604.1658
 ;; Keywords: languages ceylon
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "24"))
@@ -39,7 +39,7 @@
    '("\\('\\(?:[^'\\]\\|\\\\.\\)*'\\)" . font-lock-string-face)) ; character literal
   "Syntax highlighting for Ceylon strings.")
 ;; optimized regular expressions
-;; don't forget to add \\< \\> around the regexp
+;; kill old value, copy regexp-opt expression (C-Space, select, M-w), move point to location of old value, C-u M-: C-y
 ;;(regexp-opt '("assembly" "module" "package" "import"
 ;;              "alias" "class" "interface" "object" "given" "value" "assign" "void" "function" "new"
 ;;              "of" "extends" "satisfies" "abstracts"
@@ -49,17 +49,17 @@
 ;;              "if" "else" "switch" "case" "for" "while" "try" "catch" "finally" "then" "let"
 ;;              "this" "outer" "super"
 ;;              "is" "exists" "nonempty"
-;;              ) t)
+;;              ) 'words)
 (defconst ceylon-font-lock-keywords
   (list
    '("\\<\\(a\\(?:bstracts\\|lias\\|ss\\(?:e\\(?:mbly\\|rt\\)\\|ign\\)\\)\\|break\\|c\\(?:a\\(?:se\\|tch\\)\\|lass\\|ontinue\\)\\|dynamic\\|e\\(?:lse\\|x\\(?:\\(?:ist\\|tend\\)s\\)\\)\\|f\\(?:inally\\|or\\|unction\\)\\|given\\|i\\(?:mport\\|nterface\\|[fns]\\)\\|let\\|module\\|n\\(?:ew\\|onempty\\)\\|o\\(?:bject\\|f\\|ut\\(?:er\\)?\\)\\|package\\|return\\|s\\(?:atisfies\\|uper\\|witch\\)\\|t\\(?:h\\(?:en\\|is\\|row\\)\\|ry\\)\\|v\\(?:alue\\|oid\\)\\|while\\)\\>" . font-lock-keyword-face))
   "Syntax highlighting for Ceylon keywords.")
-;; (regexp-opt '("shared" "abstract" "formal" "default" "actual" "variable" "late" "native" "deprecated" "final" "sealed" "annotation" "suppressWarnings" "small" "static") t)
+;; (regexp-opt '("shared" "abstract" "formal" "default" "actual" "variable" "late" "native" "deprecated" "final" "sealed" "annotation" "suppressWarnings" "small" "static") 'words)
 (defconst ceylon-font-lock-language-annos
   (list
    '("\\<\\(a\\(?:bstract\\|ctual\\|nnotation\\)\\|de\\(?:fault\\|precated\\)\\|f\\(?:\\(?:in\\|orm\\)al\\)\\|late\\|native\\|s\\(?:ealed\\|hared\\|mall\\|tatic\\|uppressWarnings\\)\\|variable\\)\\>" . font-lock-builtin-face))
   "Syntax highlighting for Ceylon language annotations.")
-;; (regexp-opt '("doc" "by" "license" "see" "throws" "tagged") t)
+;; (regexp-opt '("doc" "by" "license" "see" "throws" "tagged") 'words)
 (defconst ceylon-font-lock-doc-annos
   (list
    '("\\<\\(by\\|doc\\|license\\|see\\|t\\(?:agged\\|hrows\\)\\)\\>" . font-lock-builtin-face))
@@ -194,6 +194,50 @@ and `ceylon-format-buffer' otherwise."
   (if (use-region-p)
       (ceylon-format-region)
     (ceylon-format-buffer)))
+
+(defun ceylon-source-directory (&optional path)
+  "Locate the Ceylon source code directory.
+
+Optional argument PATH describes the location to start the search
+at and defaults to the current directory."
+  ;; locate module.ceylon file
+  (let ((module-directory (locate-dominating-file (or path ".") "module.ceylon"))
+        ;; declare local variables for use below
+        module-name module-name-parts source-directory)
+    (when module-directory
+      ;; parse module name from module.ceylon
+      (with-temp-buffer
+        (insert-file-contents (concat module-directory "module.ceylon"))
+        (re-search-forward "\\_<module\\_>\\s-*\\(\\(?:\\w\\|\\s_\\)+\\(?:\\.\\(?:\\w\\|\\s_\\)+\\)*\\)" nil t)
+        (setq module-name (match-string 1)))
+      ;; strip module name parts from directory in reverse order
+      (when module-name
+        (setq module-name-parts (reverse (split-string module-name "\\.")))
+        (setq source-directory module-directory)
+        (while (and module-name-parts (string-equal
+                                       (car module-name-parts)
+                                       (file-name-nondirectory (directory-file-name source-directory))))
+          (setq module-name-parts (cdr module-name-parts))
+          (setq source-directory (file-name-directory (directory-file-name source-directory))))
+        ;; if loop didn’t terminate prematurely, directory structure was sound and we can return the result
+        (when (not module-name-parts) source-directory)))))
+
+(defun ceylon-project-directory (&optional path)
+  "Locate the Ceylon main project directory.
+
+Optional argument PATH describes the location to start the search
+at and defaults to the current directory."
+  ;; locate .ceylon/config file
+  (unless path (setq path "."))
+  (let* ((ceylon-config-path (concat (file-name-as-directory ".ceylon") "config"))
+         (project-directory (locate-dominating-file path ceylon-config-path)))
+    (if project-directory
+        ;; if it exists, it defines the project directory
+        project-directory
+      ;; otherwise, assume that source directory is one level below project directory
+      (let ((source-directory (ceylon-source-directory path)))
+        (when source-directory
+          (file-name-directory (directory-file-name source-directory)))))))
 
 ;;;###autoload (add-to-list 'auto-mode-alist '("\\.ceylon\\'" . ceylon-mode))
 

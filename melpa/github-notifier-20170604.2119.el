@@ -1,10 +1,10 @@
 ;;; github-notifier.el --- Displays your GitHub notifications unread count in mode-line  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2015, 2016  Chunyang Xu
+;; Copyright (C) 2015, 2016, 2017 Chunyang Xu
 
-;; Author: Chunyang Xu <xuchunyang56@gmail.com>
+;; Author: Chunyang Xu <mail@xuchunyang.me>
 ;; URL: https://github.com/xuchunyang/github-notifier.el
-;; Package-Version: 20161102.755
+;; Package-Version: 20170604.2119
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: github, mode-line
 ;; Version: 0.1
@@ -35,7 +35,7 @@
 
 (defgroup github-notifier nil
   "Github Notifier"
-  :group 'emacs)
+  :group 'comm)
 
 ;;; Custom
 (defcustom github-notifier-token nil

@@ -4,8 +4,8 @@
 
 ;; Author: Yasuyuki Oka <yasuyk@gmail.com>
 ;; Maintainer: Daniel Ralston <Sodel-the-Vociferous@users.noreply.github.com>
-;; Version: 0.1.1
-;; Package-Version: 20170604.2020
+;; Version: 0.1.3
+;; Package-Version: 20170605.620
 ;; URL: https://github.com/Sodel-the-Vociferous/helm-company
 ;; Package-Requires: ((helm "1.5.9") (company "0.6.13"))
 
@@ -56,9 +56,18 @@ Set it to nil if you don't want this limit."
 (defcustom helm-company-show-annotations t
   "Show annotations provided by company-backend when completing.
 
-Annotations will be formatted in `helm-company-annotation-face'."
+Annotations will be formatted in the `company-tooltip-annotation'
+face."
   :group 'helm-company
   :type 'boolean )
+
+(defcustom helm-company-initialize-pattern-with-thing-at-point nil
+  "Use the thing-at-point as the initial helm completion pattern.
+
+The thing-at-point is whatever partial thing you've typed that
+you're trying to complete."
+  :group 'helm-company
+  :type 'boolean)
 
 (defvar helm-company-help-window nil)
 (defvar helm-company-candidates nil)
@@ -83,10 +92,6 @@ annotations.
 
 Since the same bare string might have different annotations, each
 value in the hash table is a *list*, not a single string.")
-
-(defface helm-company-annotation-face
-  '((t (:foreground "orange" :underline t)))
-  "Face used for the candidate annotation in helm.")
 
 (defun helm-company-call-backend (&rest args)
   "Bridge between helm-company and company"
@@ -114,13 +119,13 @@ value in the hash table is a *list*, not a single string.")
       (helm-exit-minibuffer)
     (setq helm-company-backend             company-backend
           helm-company-candidates          company-candidates
-          helm-company-raw-candidates-hash (helm-company--hash-raw-candidates company-candidates)))
-  (company-abort))
+          helm-company-raw-candidates-hash (helm-company--hash-raw-candidates company-candidates))))
 
 (defun helm-company-cleanup ()
   (setq helm-company-backend             nil
         helm-company-candidates          nil
-        helm-company-raw-candidates-hash nil))
+        helm-company-raw-candidates-hash nil)
+  (company-abort))
 
 (defun helm-company-action-insert (candidate)
   "Insert CANDIDATE."
@@ -203,7 +208,7 @@ value in the hash table is a *list*, not a single string.")
 
 (defun helm-company--propertize-annotation (str)
   (let ((str (concat str)))             ; Copy the string
-    (put-text-property 0 (length str) 'font-lock-face 'helm-company-annotation-face
+    (put-text-property 0 (length str) 'font-lock-face 'company-tooltip-annotation
                        str)
     str))
 
@@ -245,7 +250,8 @@ original candidate string(s) from
 into (DISPLAY . REAL) pairs.
 
 The display strings have the company-provided annotation
-appended, and formatted in `helm-company-annotation-face'."
+appended, and formatted in the `company-tooltip-annotation'
+face."
   (if (or (not helm-company-show-annotations) (consp (car candidates)))
       candidates
     (helm-company-add-annotations-transformer-1 candidates (null helm--in-fuzzy))))
@@ -289,10 +295,14 @@ It is useful to narrow candidates."
   (interactive)
   (unless company-candidates
     (company-complete))
-  (when company-point
-    (helm :sources 'helm-source-company
-          :buffer  "*helm company*"
-          :candidate-number-limit helm-company-candidate-number-limit)))
+  (let ((initial-pattern (if helm-company-initialize-pattern-with-thing-at-point
+                             (thing-at-point 'symbol)
+                           "")))
+    (when company-point
+      (helm :sources 'helm-source-company
+            :buffer  "*helm company*"
+            :input initial-pattern
+            :candidate-number-limit helm-company-candidate-number-limit))))
 
 (provide 'helm-company)
 

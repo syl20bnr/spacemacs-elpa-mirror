@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel
 ;; URL: https://github.com/abo-abo/org-download
-;; Package-Version: 20170213.1151
+;; Package-Version: 20170605.23
 ;; Version: 0.1.0
 ;; Package-Requires: ((async "1.2"))
 ;; Keywords: images, screenshots, download
@@ -132,10 +132,16 @@ will be used."
           (const :tag "gnome-screenshot" "gnome-screenshot -a -f %s")
           (const :tag "scrot" "scrot -s %s")
           (const :tag "gm" "gm import %s")
-          ;; screenshot script in osx, -i standars for iterative,
-          ;; press space key to toggle bettwen selection and
+          ;; screenshot script in osx, -i stands for interactive,
+          ;; press space key to toggle between selection and
           ;; window/application mode.
-          (const :tag "screencapture" "screencapture -i %s"))
+          (const :tag "screencapture" "screencapture -i %s")
+          ;; take an image that is already on the clipboard, for Linux
+          (const :tag "xclip"
+                 "xclip -selection clipboard -t image/png -o > %s")
+          ;; take an image that is already on the clipboard, for Windows
+          (const :tag "imagemagick/convert" "convert clipboard: %s")
+          )
   :group 'org-download)
 
 (defcustom org-download-image-html-width 0
