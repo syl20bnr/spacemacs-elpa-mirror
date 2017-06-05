@@ -52,10 +52,6 @@
    type when Emacs is idle.
 
 
- Faces defined here:
-
-   `hl-line'.
-
  User options defined here:
 
    `hl-line-flash-show-period',
@@ -74,8 +70,8 @@
 
  Internal variables defined here:
 
-   `hl-line-idle-interval', `hl-line-idle-timer',
-   `hl-line-when-idle-p'.
+   `hl-line-flash-timer', `hl-line-idle-interval',
+   `hl-line-idle-timer', `hl-line-when-idle-p'.
 
 
  ***** NOTE: The following non-interactive functions defined in

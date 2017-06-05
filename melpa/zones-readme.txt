@@ -43,6 +43,14 @@
    `zz-select-region-repeat', `zz-set-izones-var',
    `zz-unite-zones'.
 
+ User options defined here:
+
+   `zz-narrowing-use-fringe-flag'.
+
+ Faces defined here:
+
+   `zz-fringe-for-narrowing'.
+
  Non-interactive functions defined here:
 
    `zz-buffer-of-markers', `zz-car-<', `zz-every',
@@ -329,6 +337,12 @@
  on the `Narrow' part still widens completely, but `mouse-2' on the
  `-NUM' part uses `zz-narrow-repeat' to cycle to the next
  narrowing.
+
+ If option `zz-narrowing-use-fringe-flag' is non-nil, which it is
+ by default, then the face of the selected frame's fringe is set to
+ `zz-fringe-for-narrowing' whenever the buffer is narrowed.  This
+ shows you that the current buffer is narrowed even if the
+ mode-line does not.
 
 
 (@* "Define Your Own Commands")
