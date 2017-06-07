@@ -1,37 +1,45 @@
-;;; nlinum-hl.el --- highlight current line number for nlinum
+;;; nlinum-hl.el --- heal nlinum line numbers -*- lexical-binding: t; -*-
 ;;
 ;; Copyright (C) 2017 Henrik Lissner
 ;;
 ;; Author: Henrik Lissner <http://github/hlissner>
 ;; Maintainer: Henrik Lissner <henrik@lissner.net>
 ;; Created: Jun 03, 2017
-;; Modified: Jun 06, 2017
-;; Version: 1.0.3
-;; Package-Version: 20170605.1737
+;; Modified: Jun 07, 2017
+;; Version: 1.0.4
+;; Package-Version: 20170607.424
 ;; Keywords: nlinum highlight current line faces
 ;; Homepage: https://github.com/hlissner/emacs-nlinum-hl
-;; Package-Requires: ((emacs "24.4") (nlinum "1.6") (cl-lib "0.5"))
+;; Package-Requires: ((emacs "24.4") (nlinum "1.7") (cl-lib "0.5"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
 ;;; Commentary:
 ;;
-;; Extends nlinum to provide current-line-number highlighting, and tries to
-;; mitigate disappearing line numbers (a known issue with nlinum).
+;; `nlinum-hl' is an nlinum extension that tries to mitigate disappearing line
+;; numbers in buffers that have been open a while (a known issue with nlinum).
 ;;
 ;;; Installation:
 ;;
 ;; M-x package-install RET nlinum-hl
 ;;
 ;;   (require 'nlinum-hl)
-;;   (add-hook 'nlinum-mode-hook #'nlinum-hl-mode))
+;;   (add-hook 'post-gc-hook #'nlinum-hl-flush-all-windows)
 ;;
-;; Alternatively, use `use-package':
+;; The `post-gc-hook' hook works flawlessly for me. In case this isn't true for
+;; everyone, here are some alternatives:
 ;;
-;;   (use-package nlinum-hl
-;;     :after nlinum
-;;     :config
-;;     (add-hook 'nlinum-mode-hook #'nlinum-hl-mode))
+;;   ;; whenever Emacs loses/gains focus
+;;   (add-hook 'focus-in-hook  #'nlinum-hl-flush-all-windows)
+;;   (add-hook 'focus-out-hook #'nlinum-hl-flush-all-windows)
+;;
+;;   ;; when idling
+;;   (run-with-idle-timer 5 t #'nlinum-hl-flush-window)
+;;   (run-with-idle-timer 30 t #'nlinum-hl-flush-all-windows)
+;;
+;;   ;; when switching windows
+;;   (advice-add #'select-window :before #'nlinum-hl-do-flush)
+;;   (advice-add #'select-window :after  #'nlinum-hl-do-flush)
 ;;
 ;;; Code:
 
@@ -83,7 +91,6 @@ If t, redraw nlinum across all buffers (slowest)."
         (let* ((pbol (line-beginning-position))
                (peol (min (1+ pbol) (point-max))))
           (setq nlinum-hl--line lineno)
-          ;; (jit-lock-fontify-now pbol peol)
           ;; Unhighlight previous highlight
           (when nlinum-hl--overlay
             (let ((str (nth 1 (get-text-property 0 'display (overlay-get nlinum-hl--overlay 'before-string)))))

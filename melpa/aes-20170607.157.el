@@ -1,12 +1,12 @@
 ;;; aes.el --- Implementation of AES
 
-;; Copyright (C) 2008, 2009, 2013, 2014, 2015 Markus Sauermann
+;; Copyright (C) 2008, 2009, 2013, 2014, 2015, 2017 Markus Sauermann
 
 ;; Author: Markus Sauermann <emacs-aes@sauermann-consulting.de>
 ;; Maintainer: Markus Sauermann <emacs-aes@sauermann-consulting.de>
 ;; Created: 15 Feb 2008
-;; Version: 0.8
-;; Package-Version: 20160121.1237
+;; Version: 0.9
+;; Package-Version: 20170607.157
 ;; Keywords: data, tools
 ;; URL: https://github.com/Sauermann/emacs-aes
 
@@ -42,6 +42,7 @@
 ;; in the applications group.
 
 ;; Emacs compatibility:
+;; Version 25 is not tested
 ;; Version 24.4 and 24.5 are recommended
 ;; Version 24.3 should only be used, if the patch described in [11]
 ;; is applied, because there is a bug that causes passwords to be
@@ -1357,13 +1358,35 @@ The test is done by looking at the first line of the buffer."
     (goto-char (point-min))
     (looking-at "aes-encrypted V [0-9]+.[0-9]+-.+\n")))
 
+(defvar aes--save-temp-buffer nil
+  "Temporary storage variable for buffer content.")
+
 (defun aes--encrypt-current-buffer-check ()
   "Encrypt current buffer, if it is not encrypted.
 Return nil."
   (if (not (aes-is-encrypted))
       (progn
+        (setq aes--save-temp-buffer (point))
         (aes-encrypt-buffer-or-string (current-buffer))
+        (add-hook 'after-save-hook
+                  'aes--restore-buffer-from-temp-var)
         nil)))
+
+(defun aes--restore-buffer-from-temp-var ()
+  "Restore Buffer content from temp variable."
+  (remove-hook 'after-save-hook
+               'aes--restore-buffer-from-temp-var)
+  (aes-decrypt-current-buffer)
+  (goto-char aes--save-temp-buffer)
+  (setq aes--save-temp-buffer nil)
+;  (erase-buffer)
+;  (insert aes--save-temp-buffer)
+;  (setq buffer-file-coding-system
+;        (car (find-coding-systems-region
+;              (point-min) (point-max))))
+  (set-buffer-modified-p nil)
+;  (setq aes--save-temp-buffer nil)
+  )
 
 (defun aes-encrypt-current-buffer (&optional password)
   "Encrypt current buffer.

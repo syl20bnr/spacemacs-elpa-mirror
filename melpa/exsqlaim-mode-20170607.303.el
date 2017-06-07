@@ -2,7 +2,7 @@
 
 ;; Author: Ahmad Nazir Raja <ahmadnazir@gmail.com>
 ;; Version: 0.0.1
-;; Package-Version: 20170418.124
+;; Package-Version: 20170607.303
 ;; Package-Requires: ((s "1.10.0"))
 ;; URL: https://github.com/ahmadnazir/exsqlaim-mode
 
@@ -46,7 +46,7 @@
 (defun exsqlaim-mode--get-vars ()
   "Get a map of all variables and values."
   (cons
-   '(";"."\\p;") ;; echo the query to the terminal
+   '(";\n"."\\p;") ;; echo the query to the terminal
    (exsqlaim-mode--find-vars-before-point)))
 
 (defun exsqlaim-mode--get-raw-query (start end)

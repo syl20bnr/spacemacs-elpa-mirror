@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2009-2014 Julia contributors
 ;; URL: https://github.com/JuliaLang/julia
-;; Package-Version: 20170426.1806
+;; Package-Version: 20170607.537
 ;; Version: 0.3
 ;; Keywords: languages
 
@@ -235,6 +235,8 @@ This function provides equivalent functionality, but makes no efforts to optimis
               (seq "(" (* (not (any "(" ")"))) ")")
               (not (any "(" ")"))))
       ")"
+      (* space)
+      (? "::" (* space) (1+ (not (any space))))
       (* space)
       (* (seq "where" (or "{" (+ space)) (+ (not (any "=")))))
       "="

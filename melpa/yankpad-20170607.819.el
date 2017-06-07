@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand
 ;; URL: http://github.com/Kungsgeten/yankpad
-;; Package-Version: 20170523.235
+;; Package-Version: 20170607.819
 ;; Version: 1.70
 ;; Keywords: abbrev convenience
 ;; Package-Requires: ((emacs "24"))
@@ -320,6 +320,8 @@ Does not change `yankpad-category'."
   "Replace word at point with a snippet.
 Only works if the word is found in the first matching group of `yankpad-expand-keyword-regex'."
   (interactive)
+  (unless yankpad-category
+    (yankpad-set-category))
   (let* ((word (word-at-point))
          (bounds (bounds-of-thing-at-point 'word))
          (snippet-prefix (concat word yankpad-expand-separator)))
@@ -433,6 +435,8 @@ If successful, make `yankpad-category' buffer-local."
       (when category (yankpad-set-local-category category)))))
 
 (add-hook 'after-change-major-mode-hook #'yankpad-local-category-to-major-mode)
+;; Run the function when yankpad is loaded
+(yankpad-local-category-to-major-mode)
 
 (defun yankpad-local-category-to-projectile ()
   "Try to change `yankpad-category' to match the `projectile-project-name'.
@@ -445,6 +449,8 @@ If successful, make `yankpad-category' buffer-local."
 
 (eval-after-load "projectile"
   (add-hook 'projectile-find-file-hook #'yankpad-local-category-to-projectile))
+;; Run the function when yankpad is loaded
+(yankpad-local-category-to-projectile)
 
 ;; `company-yankpad--name-or-key' and `company-yankpad' are Copyright (C) 2017
 ;; Sidart Kurias (https://github.com/sid-kurias/) and are included by permission

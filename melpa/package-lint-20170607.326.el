@@ -5,7 +5,7 @@
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;;         Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/purcell/package-lint
-;; Package-Version: 20170604.1626
+;; Package-Version: 20170607.326
 ;; Keywords: lisp
 ;; Version: 0
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
@@ -251,11 +251,20 @@ This is bound dynamically while the checks run.")
             (package-lint--check-libraries-available-in-emacs deps)
             (package-lint--check-macros-functions-available-in-emacs deps))
           (package-lint--check-for-literal-emacs-path)
+          (package-lint--check-commentary-existence)
           (let ((definitions (package-lint--get-defs)))
             (package-lint--check-autoloads-on-private-functions definitions)
             (package-lint--check-defs-prefix definitions)
             (package-lint--check-symbol-separators definitions)))))
-    package-lint--errors))
+    (sort package-lint--errors
+          (lambda (a b)
+            (pcase-let ((`(,a-line ,a-column ,_ ,a-message) a)
+                        (`(,b-line ,b-column ,_ ,b-message) b))
+              (cond
+               ((/= a-line b-line) (< a-line b-line))
+               ((/= a-column b-column) (< a-column b-column))
+               (t
+                (string-lessp a-message b-message))))))))
 
 (defun package-lint--error (line col type message)
   "Construct a datum for error at LINE and COL with TYPE and MESSAGE."
@@ -263,6 +272,22 @@ This is bound dynamically while the checks run.")
 
 
 ;;; Checks
+
+(defun package-lint--check-commentary-existence ()
+  "Warn about nonexistent or empty commentary section."
+  (let ((start (lm-commentary-start)))
+    (if (null start)
+        (package-lint--error
+         1 1 'error
+         "Package should have a ;;; Commentary section.")
+      ;; Skip over the section header.
+      (goto-char start)
+      (forward-line)
+      (when (package-lint--region-empty-p (point) (lm-commentary-end))
+        (goto-char start)
+        (package-lint--error
+         (line-number-at-pos) (current-column) 'error
+         "Package should have a non-empty ;;; Commentary section.")))))
 
 (defun package-lint--check-autoloads-on-private-functions (definitions)
   "Verify that private functions DEFINITIONS don't have autoload cookies."
@@ -601,6 +626,19 @@ DESC is a struct as returned by `package-buffer-info'."
 
 
 ;;; Helpers
+
+(defun package-lint--region-empty-p (start end)
+  "Return t iff the region between START and END has no non-empty lines.
+
+Lines consisting only of whitespace or empty comments are considered empty."
+  (save-excursion
+    (save-restriction
+      (let ((inhibit-changing-match-data t))
+        (narrow-to-region start end)
+        (goto-char start)
+        (while (and (looking-at "^[[:space:]]*;+[[:space:]]*$")
+                    (= 0 (forward-line))))
+        (eobp)))))
 
 (defun package-lint--lowest-installable-version-of (package)
   "Return the lowest version of PACKAGE available for installation."
