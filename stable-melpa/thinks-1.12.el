@@ -2,8 +2,8 @@
 ;; Copyright 2000-2017 by Dave Pearson <davep@davep.org>
 
 ;; Author: Dave Pearson <davep@davep.org>
-;; Version: 1.11
-;; Package-Version: 1.11
+;; Version: 1.12
+;; Package-Version: 1.12
 ;; Keywords: convenience, quoting
 ;; URL: https://github.com/davep/thinks.el
 ;; Package-Requires: ((cl-lib "0.5"))
@@ -123,18 +123,6 @@ Note that the extra silliness only kicks in when `thinks-from' is set to
            (const :tag "No, I actually have a serious use for this" nil))
   :group 'thinks)
 
-;; Support code for working in different flavours of emacs.
-
-(defun thinks-xemacs-p ()
-  "Are we running in XEmacs?"
-  (and (boundp 'running-xemacs) (symbol-value 'running-xemacs)))
-
-(defun thinks-mark-active-p ()
-  "Is there a mark active?"
-  (if (thinks-xemacs-p)
-      (funcall (symbol-function 'region-active-p))
-    (symbol-value 'mark-active)))
-
 ;; Main code:
 
 (defun thinks-bubble-wrap (text &optional no-filling)
@@ -242,9 +230,7 @@ the text to be filled for you."
   "If region is active, bubble wrap region bounding START and END.
 If not, query for text to insert in bubble."
   (interactive)
-  (if (thinks-mark-active-p)
-      (call-interactively #'thinks-region)
-    (call-interactively #'thinks)))
+  (call-interactively (if mark-active #'thinks-region #'thinks)))
 
 (provide 'thinks)
 
