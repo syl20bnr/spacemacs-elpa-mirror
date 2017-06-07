@@ -650,7 +650,7 @@
 	      ((:url . "http://elpa.gnu.org/packages/nhexl-mode.html")
 	       (:keywords "data"))])
  (nlinum .
-	 [(1 6)
+	 [(1 7)
 	  nil "Show line numbers in the margin" single
 	  ((:url . "http://elpa.gnu.org/packages/nlinum.html")
 	   (:keywords "convenience"))])
@@ -686,7 +686,7 @@
 	     ((:url . "https://github.com/michael-heerdegen/on-screen.el")
 	      (:keywords "convenience"))])
  (org .
-      [(20170515)
+      [(20170606)
        nil "Outline-based notes management and organizer" tar nil])
  (org-edna .
 	   [(1 0 -3 1)
