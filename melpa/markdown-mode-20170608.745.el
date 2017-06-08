@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jrblevin@sdf.org>
 ;; Created: May 24, 2007
 ;; Version: 2.3-dev
-;; Package-Version: 20170607.1239
+;; Package-Version: 20170608.745
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: http://jblevins.org/projects/markdown-mode/
@@ -1754,7 +1754,7 @@ of the block. If so, return a cons of (pos . property) where the beginning of
 the block was propertized."
   (let ((start-pt (point))
         (closest-open
-         (markdown-min-of-seq
+         (markdown-max-of-seq
           #'car
           (cl-remove-if
            #'null

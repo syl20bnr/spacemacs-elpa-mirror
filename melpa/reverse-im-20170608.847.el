@@ -1,6 +1,6 @@
 ;;; reverse-im.el --- Reverse mapping for keyboard layouts other than english. -*- lexical-binding: t -*-
 ;; Package-Requires: ((emacs "24.4"))
-;; Package-Version: 20170607.858
+;; Package-Version: 20170608.847
 ;; Keywords: input method
 ;; Homepage: https://github.com/a13/reverse-im.el
 
@@ -42,12 +42,14 @@
 
 (defun reverse-im--key-def (map mod)
   "Return a list of last two arguments for `define-key' for MAP with MOD modifier."
-  (cl-destructuring-bind (keychar def) map
-    (let ((from (quail-get-translation def (char-to-string keychar) 1)))
-      (and (characterp from) (characterp keychar) (not (= from keychar))
-           (list
-            (vector (append mod (list from)))
-            (vector (append mod (list keychar))))))))
+  (pcase map
+    (`(,keychar ,def)
+     (let ((from (quail-get-translation def (char-to-string keychar) 1)))
+       (and (characterp from) (characterp keychar) (not (= from keychar))
+            (list
+             (vector (append mod (list from)))
+             (vector (append mod (list keychar)))))))
+    (_ nil)))
 
 (defun reverse-im--translation-table (input-method)
   "Generate a translation table for INPUT-METHOD."
