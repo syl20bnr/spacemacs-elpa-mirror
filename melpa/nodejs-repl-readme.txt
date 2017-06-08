@@ -31,7 +31,7 @@ You can define key bindings to send JavaScript codes to REPL like below:
   "Run Node.js REPL and communicate the process."
   :group 'processes)
 
-(defconst nodejs-repl-version "0.1.1"
+(defconst nodejs-repl-version "0.1.3"
   "Node.js mode Version.")
 
 (defcustom nodejs-repl-command "node"
@@ -126,6 +126,11 @@ not support Unicode characters
    "'[^'\\]*\\(?:\\\\.[^'\\]*\\)*"                ; single quote
    "\\)"
    "$"))
+
+(defvar nodejs-repl-unary-operator-chars
+  '(?! ?+ ?-))
+(defvar nodejs-repl-unary-operator-words
+  '(void typeof delete))
 
 (defvar nodejs-repl-cache-token "")
 (defvar nodejs-repl-cache-candidates ())

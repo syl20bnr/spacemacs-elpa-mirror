@@ -7,7 +7,7 @@
 ;; Created: Jun 03, 2017
 ;; Modified: Jun 07, 2017
 ;; Version: 1.0.4
-;; Package-Version: 20170607.424
+;; Package-Version: 20170607.1221
 ;; Keywords: nlinum highlight current line faces
 ;; Homepage: https://github.com/hlissner/emacs-nlinum-hl
 ;; Package-Requires: ((emacs "24.4") (nlinum "1.7") (cl-lib "0.5"))
@@ -24,18 +24,21 @@
 ;; M-x package-install RET nlinum-hl
 ;;
 ;;   (require 'nlinum-hl)
+;;
+;; By itself, `nlinum-hl` does nothing. You'll need to attach one of its
+;; functions or hooks somewhere. I leave it to you to decide where, as it
+;; depends on how bad the problem is for you. Here are some examples:
+;;
+;;   ;; Runs occasionally, though unpredictably
 ;;   (add-hook 'post-gc-hook #'nlinum-hl-flush-all-windows)
 ;;
-;; The `post-gc-hook' hook works flawlessly for me. In case this isn't true for
-;; everyone, here are some alternatives:
+;;   ;; after X amount of idle time
+;;   (run-with-idle-timer 5 t #'nlinum-hl-flush-window)
+;;   (run-with-idle-timer 30 t #'nlinum-hl-flush-all-windows)
 ;;
 ;;   ;; whenever Emacs loses/gains focus
 ;;   (add-hook 'focus-in-hook  #'nlinum-hl-flush-all-windows)
 ;;   (add-hook 'focus-out-hook #'nlinum-hl-flush-all-windows)
-;;
-;;   ;; when idling
-;;   (run-with-idle-timer 5 t #'nlinum-hl-flush-window)
-;;   (run-with-idle-timer 30 t #'nlinum-hl-flush-all-windows)
 ;;
 ;;   ;; when switching windows
 ;;   (advice-add #'select-window :before #'nlinum-hl-do-flush)

@@ -1,6 +1,6 @@
 ;;; reverse-im.el --- Reverse mapping for keyboard layouts other than english. -*- lexical-binding: t -*-
 ;; Package-Requires: ((emacs "24.4"))
-;; Package-Version: 20170607.808
+;; Package-Version: 20170607.858
 ;; Keywords: input method
 ;; Homepage: https://github.com/a13/reverse-im.el
 
@@ -85,4 +85,3 @@ Example usage: (reverse-im-activate \"russian-computer\")"
 (provide 'reverse-im)
 
 ;;; reverse-im.el ends here
-(reverse-im-deactivate)

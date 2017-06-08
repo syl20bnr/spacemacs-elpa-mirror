@@ -1,7 +1,7 @@
 ;;; zpresent.el --- Simple presentation mode based on org files.  -*- lexical-binding: t; -*-
 
 ;; Version: 0.3
-;; Package-Version: 20170606.2115
+;; Package-Version: 20170607.2215
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright 2015-2017 Zachary Kanfer <zkanfer@gmail.com>
@@ -238,9 +238,16 @@ indicate something other than plain text.  For example, an image."
                     (cons body-indentation body-line))
                   body))))
 
-(defun zpresent--get-bullet-type (structure)
-  "Get the type of bullet for STRUCTURE."
-  (let ((bullet-property (assoc "bullet-type" (gethash :properties structure))))
+(defun zpresent--get-bullet-type (structure &optional parent-structure)
+  "Get the type of bullet for STRUCTURE.
+
+This will respect in order of precedence:
+1. The 'bullet-type' property of STRUCTURE.
+2. The 'child-bullet-type' property of PARENT-STRUCTURE, if provided.
+3. The :bullet-type used for STRUCTURE in the original org file."
+  (let ((bullet-property (or (assoc "bullet-type" (gethash :properties structure))
+                             (when parent-structure
+                               (assoc "child-bullet-type" (gethash :properties parent-structure))))))
     (pcase (cdr bullet-property)
       ("*" ?*)
       (")" ?\))
