@@ -9,7 +9,7 @@
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Artur Malabarba <bruce.connor.am@gmail.com>
 ;; URL: http://github.com/clojure-emacs/clojure-mode
-;; Package-Version: 20170527.1442
+;; Package-Version: 20170608.2315
 ;; Keywords: languages clojure clojurescript lisp
 ;; Version: 5.7.0-snapshot
 ;; Package-Requires: ((emacs "24.4"))
@@ -580,14 +580,14 @@ If JUSTIFY is non-nil, justify as well as fill the paragraph."
   (if (clojure-in-docstring-p)
       (let ((paragraph-start
              (concat paragraph-start
-                     "\\|\\s-*\\([(;:\"[]\\|~@\\|`(\\|#'(\\)"))
+                     "\\|\\s-*\\([(:\"[]\\|~@\\|`(\\|#'(\\)"))
             (paragraph-separate
              (concat paragraph-separate "\\|\\s-*\".*[,\\.]$"))
             (fill-column (or clojure-docstring-fill-column fill-column))
             (fill-prefix (clojure-docstring-fill-prefix)))
         (fill-paragraph justify))
     (let ((paragraph-start (concat paragraph-start
-                                   "\\|\\s-*\\([(;:\"[]\\|`(\\|#'(\\)"))
+                                   "\\|\\s-*\\([(:\"[]\\|`(\\|#'(\\)"))
           (paragraph-separate
            (concat paragraph-separate "\\|\\s-*\".*[,\\.[]$")))
       (or (fill-comment-paragraph justify)

@@ -4,7 +4,7 @@
 
 ;; Author: Chris Done <chrisdone@gmail.com>
 ;; URL: https://github.com/chrisdone/hindent
-;; Package-Version: 20160905.243
+;; Package-Version: 20170609.126
 ;; Package-Requires: ((cl-lib "0.5"))
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -60,22 +60,6 @@ For hindent versions lower than 5, you must set this to a non-nil string."
   :group 'hindent
   :type 'string
   :safe #'stringp)
-
-(defcustom hindent-line-length
-  80
-  "Optionally override the line length."
-  :group 'hindent
-  :type '(choice (const :tag "Default: 80" 80)
-                 (integer :tag "Override" 120))
-  :safe (lambda (val) (or (integerp val) (not val))))
-
-(defcustom hindent-indent-size
-  2
-  "Optionally override the indent size."
-  :group 'hindent
-  :type '(choice (const :tag "Default: 2" 2)
-                 (integer :tag "Override" 4))
-  :safe (lambda (val) (or (integerp val) (not val))))
 
 (defcustom hindent-reformat-buffer-on-save nil
   "Set to t to run `hindent-reformat-buffer' when a buffer in `hindent-mode' is saved."

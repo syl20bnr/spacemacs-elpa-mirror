@@ -4,8 +4,8 @@
 
 ;; Author: Dimitar Dimitrov <mail.mitko@gmail.com>
 ;; URL: https://github.com/drdv/jemdoc-mode
-;; Package-Version: 20170606.856
-;; Package-X-Original-Version: 20170529.1
+;; Package-Version: 20170609.542
+;; Package-X-Original-Version: 20170609.1
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: convenience, usability
 
@@ -165,8 +165,14 @@ or #include{name of file}."
 
 
 
+(defvar-local jemdoc-mode-tilde-block-delimiter-last-value nil
+  "Record the last assigned value of the text property `tilde-block-delimiter'.")
+
 (defvar-local jemdoc-mode-debug-messages nil
   "Set to non-nil to output debug messages.")
+
+(defvar-local jemdoc-mode-warning-messages t
+  "Set to non-nil to output warning messages.")
 
 (defvar jemdoc-mode-map
   (let ((map (make-sparse-keymap)))
@@ -208,6 +214,8 @@ Text properties:
   (let ((case-fold-search nil))
     (goto-char start)
 
+    ;;(message "syntax: %d - %d" start end)
+
     (remove-text-properties start end '(jemdoc-keywords-in-comments-property))
     (remove-text-properties start end '(font-lock-ignore t))
 
@@ -219,13 +227,63 @@ Text properties:
 		     "addjs" "addpackage" "addtex" "analytics" "title"
 		     "noeqs" "noeqcache" "eqsize" "eqdir")
 		   'words)
-       (0 (ignore (jemdoc-mode-property-assign))))
-      ;; regions to be ignored
+       (0 (ignore (jemdoc-mode-keywords-in-comments-property-assign))))
+      ;; handle tilde blocks
       ("^~~~ *$"
-       (0 (ignore (jemdoc-mode-ignore-region)))))
-     start end)))
+       (0 (ignore (jemdoc-mode-tilde-block-text-properties)))))
+     start end))
+  (when (and jemdoc-mode-warning-messages
+	     (eq jemdoc-mode-tilde-block-delimiter-last-value 'start))
+    (message "Warning: wrong delimiters of tilde blocks.")))
 
-(defun jemdoc-mode-property-assign ()
+(defun jemdoc-mode-tilde-block-text-properties ()
+  "Assign text properties to tilde-blocks.
+
+1. `tilde-block-delimiter' -> `start'
+   first character of ~~~ at the beginning of tilde-blocks
+2. `tilde-block-delimiter' -> `end'
+   first character of ~~~ at the end of tilde-blocks
+3. `font-lock-ignore' -> t
+   content of code-blocks."
+  (let (previous-label
+	single-property-change)
+    ;; first, record the 'tilde-block-delimiter text property of
+    ;; the previous "^~~~ *$" (don't move point)
+    (save-excursion
+      (beginning-of-line)
+      (when (re-search-backward "^~~~ *$" nil t)
+	(setq previous-label (get-text-property (point) 'tilde-block-delimiter))))
+    ;; second, assign a 'tilde-block-delimiter text property to
+    ;; the current "^~~~ *$"
+    (save-excursion
+      (beginning-of-line)
+      (cond
+       ;; when previous-label is 'start
+       ((eq previous-label 'start)
+	(put-text-property (point) (1+ (point)) 'tilde-block-delimiter 'end)
+	(setq jemdoc-mode-tilde-block-delimiter-last-value 'end))
+       ;; when previous-label is either 'end or nil (the first delimiter)
+       (t
+	(put-text-property (point) (1+ (point)) 'tilde-block-delimiter 'start)
+	(setq jemdoc-mode-tilde-block-delimiter-last-value 'start)))
+
+      ;; here I have to go back to the beginning of the containing tilde-block
+      (setq single-property-change
+	    (previous-single-property-change (point) 'tilde-block-delimiter))
+      (when single-property-change
+	(goto-char single-property-change)
+	(goto-char (line-beginning-position 2))
+	;; code-block
+	(when (looking-at "^ *\\({[^}{]*} *\\)\\{2,2\\}$")
+	  (let ((start (line-beginning-position 2))
+		(end (progn
+		       (re-search-forward "^~~~ *$" nil t)
+		       (line-end-position 0))))
+	    (put-text-property start end  'font-lock-ignore t)
+	    (remove-text-properties start end '(face nil))
+	    ))))))
+
+(defun jemdoc-mode-keywords-in-comments-property-assign ()
   "Assign text properties in keywords in comments."
   (let* ((beg (match-beginning 0))
 	 (str-line (thing-at-point 'line t))
@@ -240,7 +298,7 @@ Text properties:
 			 'jemdoc-keywords-in-comments-property
 			 (cons (nth 4 context) (match-data))))))
 
-(defun jemdoc-mode-property-retrieve (limit)
+(defun jemdoc-mode-keywords-in-comments-property-retrieve (limit)
   "Highlight text with jemdoc-keywords-in-comments-property (until LIMIT)."
   (let ((pos
 	 (next-single-char-property-change (point)
@@ -254,7 +312,7 @@ Text properties:
             (progn
               (set-match-data (cdr value))
               t)
-          (jemdoc-mode-property-retrieve limit))))))
+          (jemdoc-mode-keywords-in-comments-property-retrieve limit))))))
 
 
 
@@ -424,63 +482,54 @@ STR appearing N or less times in a row."
 
 
 
-(defun jemdoc-mode-in-tilde-block-internal (tilde-block-type)
+(defun jemdoc-mode-in-tilde-block-internal (&optional tilde-block-type)
   "Check whether point is inside a tilde block.
 
 If point is inside a tilde block with type TILDE-BLOCK-TYPE,
 return a cell array with its beginning and end.  If not, return nil.
 
 TILDE-BLOCK-TYPE can be 'code-block, 'general-block."
+  (or tilde-block-type (setq tilde-block-type 'general-block))
+
   (save-excursion
-    (let ((p (point))
-	  (regexp
-	   (if (eq tilde-block-type 'code-block)
-	       ;; code block
-	       "^ *\\({[^}{]*} *\\)\\{2,2\\}$"
-	     ;; general-block
-	     "^ *\\(\\({[^}{]*} *\\)\\{1,2\\}\\|\\({[^}{]*} *\\)\\{7,7\\}\\)$"))
+    (let ((code-block-regexp "^ *\\({[^}{]*} *\\)\\{2,2\\}$")
 	  beg
 	  end)
-      (catch 'drdv-return
 
-	(beginning-of-line)
-	(if (and (re-search-forward "^~~~ *$" nil t)
-		 (save-excursion
-		   (goto-char (line-beginning-position 2))
-		   (not (looking-at regexp))))
-	    (setq end (match-end 0))
-	  (throw 'drdv-return nil))
+      (beginning-of-line)
+      (cond
+       ;; On a closing "^~~~ *$"
+       ((eq (get-text-property (point) 'tilde-block-delimiter) 'end)
+	(setq end (line-end-position 1))
+	(re-search-backward "^~~~ *$" nil t)
+	(setq beg (point)))
+       ;; On an opening "^~~~ *$"
+       ((eq (get-text-property (point) 'tilde-block-delimiter) 'start)
+	(setq beg (point))
+	(end-of-line)
+	(re-search-forward "^~~~ *$" nil t)
+	(setq end (point)))
+       ;; Not on a "^~~~ *$" line
+       (t
+	(when (and (re-search-backward "^~~~ *$" nil t)
+		   (eq (get-text-property (point) 'tilde-block-delimiter) 'start))
+	  (setq beg (point))
+	  (end-of-line)
+	  ;; to to closing "^~~~ *$"
+	  (re-search-forward "^~~~ *$" nil t)
+	  (setq end (point)))))
 
-	(beginning-of-line)
-	(if (re-search-backward "^~~~ *$" nil t)
-	    (setq beg (match-beginning 0))
-	  (throw 'drdv-return nil))
-
-	(goto-char (line-beginning-position 2))
-	(if (looking-at regexp)
-	    `(,beg . ,end)
-	  nil)))))
-
-(defun jemdoc-mode-ignore-region ()
-  "Assign text property 'font-lock-ignore to code-blocks."
-  (let ((region (jemdoc-mode-in-tilde-block-internal 'code-block)))
-    (when region
-      (let ((start (save-excursion
-		     (goto-char (car region))
-		     ;; leave the highlightling of the opening ~~~\n{}{}
-		     (line-beginning-position 3)))
-	    (end (save-excursion
-		   (goto-char (cdr region))
-		   ;; leave the highlightling of the closing ~~~
-		   (line-end-position 0))))
-
-	(put-text-property start end  'font-lock-ignore t)
-	(remove-text-properties start end '(face nil))
-
-	;; move point after the block
-	(goto-char (save-excursion
-		     (goto-char (cdr region))
-		     (line-beginning-position 2)))))))
+      ;; when we are in a gelera tilde-block
+      (when beg
+	(cond
+	 ;; when checking for a general-block
+	 ((eq tilde-block-type 'general-block) `(,beg . ,end))
+	 ;; when checking for a code-block
+	 ((eq tilde-block-type 'code-block)
+	  (goto-char beg)
+	  (goto-char (line-beginning-position 2))
+	  (when (looking-at code-block-regexp)
+	    `(,beg . ,end))))))))
 
 
 
@@ -827,7 +876,8 @@ BUTTON is the standard input given to functions registerd in the
      0 'jemdoc-mode-face-http-mail prepend)
 
    ;; syntax-table stuff
-   '(jemdoc-mode-property-retrieve 0 'jemdoc-mode-face-special-keywords t)
+   '(jemdoc-mode-keywords-in-comments-property-retrieve
+     0 'jemdoc-mode-face-special-keywords t)
 
    ;; #include{...} and #includeraw{...}
    ;; since I use "t" as a third argument I can directly nest \\(.*?\\)

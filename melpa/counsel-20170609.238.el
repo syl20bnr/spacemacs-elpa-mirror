@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170605.255
+;; Package-Version: 20170609.238
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -644,6 +644,32 @@ input corresponding to the chosen variable."
  'counsel-M-x
  'counsel-M-x-transformer)
 
+;;;###autoload
+(defun counsel-file-register ()
+  (interactive)
+  (ivy-read "File Register: "
+            ;; Use the `register-alist' variable to filter out file
+            ;; registers.  Each entry for a file registar will have the
+            ;; following layout:initj
+            ;;
+            ;;     (NUMBER 'file . "string/path/to/file")
+            ;;
+            ;; So we go through each entry and see if the `cadr' is
+            ;; `eq' to the symbol `file'.  If so then add the filename
+            ;; (`cddr') which `ivy-read' will use for its choices.
+            (mapcar (lambda (register-alist-entry)
+                      (if (eq 'file (cadr register-alist-entry))
+                          (cddr register-alist-entry)))
+                      register-alist)
+            :sort t
+            :require-match t
+            :history 'counsel-file-register
+            :caller 'counsel-file-register
+            :action (lambda (register-file)
+                      (with-ivy-window (find-file register-file)))
+            :history 'counsel-file-register
+            :caller 'counsel-file-register))
+
 (declare-function bookmark-all-names "bookmark")
 (declare-function bookmark-location "bookmark")
 
@@ -1010,15 +1036,21 @@ Typical value: '(recenter)."
                                   (cl-subseq dir-list (- (length dir-list) 3))))
                  directory))))))
 
+(defcustom counsel-git-grep-skip-counting-lines nil
+  "If non-nil, total lines in the git repository will not be counted
+  before grepping."
+  :type 'boolean
+  :group 'ivy)
+
 (defun counsel-git-grep-function (string &optional _pred &rest _unused)
   "Grep in the current git repository for STRING."
-  (if (and (> counsel--git-grep-count 20000)
+  (if (and (or counsel-git-grep-skip-counting-lines (> counsel--git-grep-count 20000))
            (< (length string) 3))
       (counsel-more-chars 3)
     (let* ((default-directory counsel--git-grep-dir)
            (cmd (format counsel-git-grep-cmd
                         (setq ivy--old-re (ivy--regex string t)))))
-      (if (<= counsel--git-grep-count 20000)
+      (if (and (not counsel-git-grep-skip-counting-lines) (<= counsel--git-grep-count 20000))
           (split-string (shell-command-to-string cmd) "\n" t)
         (counsel--gg-candidates (ivy--regex string))
         nil))))
@@ -1114,7 +1146,7 @@ INITIAL-INPUT can be given as the initial minibuffer input."
             (locate-dominating-file default-directory ".git")))
     (if (null counsel--git-grep-dir)
         (error "Not in a git repository")
-      (unless proj
+      (unless (or proj counsel-git-grep-skip-counting-lines)
         (setq counsel--git-grep-count
               (if (eq system-type 'windows-nt)
                   0
@@ -1124,7 +1156,7 @@ INITIAL-INPUT can be given as the initial minibuffer input."
                              'counsel-git-grep-function)
                 :initial-input initial-input
                 :matcher #'counsel-git-grep-matcher
-                :dynamic-collection (or proj (> counsel--git-grep-count 20000))
+                :dynamic-collection (or proj counsel-git-grep-skip-counting-lines (> counsel--git-grep-count 20000))
                 :keymap counsel-git-grep-map
                 :action #'counsel-git-grep-action
                 :unwind #'swiper--cleanup
@@ -1872,7 +1904,7 @@ This uses `counsel-ag' with `counsel-pt-base-command' replacing
     (counsel-ag initial-input)))
 
 ;;** `counsel-rg'
-(defcustom counsel-rg-base-command "rg -i --no-heading --line-number --max-columns 150 %s ."
+(defcustom counsel-rg-base-command "rg -i --no-heading --line-number --max-columns 150 --color never %s ."
   "Used to in place of `counsel-rg-base-command' to search with
 ripgrep using `counsel-rg'."
   :type 'string
