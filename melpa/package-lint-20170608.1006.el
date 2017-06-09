@@ -5,7 +5,7 @@
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;;         Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/purcell/package-lint
-;; Package-Version: 20170607.326
+;; Package-Version: 20170608.1006
 ;; Keywords: lisp
 ;; Version: 0
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
@@ -614,7 +614,15 @@ DESC is a struct as returned by `package-buffer-info'."
   "Verify that symbol DEFINITIONS start with package prefix."
   (let ((prefix (package-lint--get-package-prefix)))
     (when prefix
-      (let ((prefix-re (rx-to-string `(seq string-start ,prefix (or "-" string-end)))))
+      (let ((prefix-re
+             (rx-to-string
+              `(seq string-start
+                    (or (seq ,prefix (or "-" string-end))
+                        (seq "global-"
+                             ,prefix
+                             (or "-mode"
+                                 (seq "-" (* any) "-mode"))
+                             string-end))))))
         (pcase-dolist (`(,name . ,position) definitions)
           (unless (or (string-match-p prefix-re name)
                       (string-match-p package-lint--sane-prefixes name))
@@ -636,7 +644,7 @@ Lines consisting only of whitespace or empty comments are considered empty."
       (let ((inhibit-changing-match-data t))
         (narrow-to-region start end)
         (goto-char start)
-        (while (and (looking-at "^[[:space:]]*;+[[:space:]]*$")
+        (while (and (looking-at "^[[:space:]]*;*[[:space:]]*$")
                     (= 0 (forward-line))))
         (eobp)))))
 

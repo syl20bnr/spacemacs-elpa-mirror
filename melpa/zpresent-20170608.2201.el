@@ -1,7 +1,7 @@
 ;;; zpresent.el --- Simple presentation mode based on org files.  -*- lexical-binding: t; -*-
 
 ;; Version: 0.3
-;; Package-Version: 20170607.2215
+;; Package-Version: 20170608.2201
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright 2015-2017 Zachary Kanfer <zkanfer@gmail.com>
@@ -163,7 +163,7 @@ STRUCTURE is at indentation level LEVEL."
       (setq slides-list (append slides-list
                                 (list this-slide))))
     (dolist (cur-child (gethash :children structure))
-      (let ((child-slide (zpresent--make-following-slide this-slide cur-child level prior-siblings)))
+      (let ((child-slide (zpresent--make-following-slide this-slide cur-child level prior-siblings structure)))
         (cl-multiple-value-bind
             (child-slide-list child-last-slide) (zpresent--format-structure-helper cur-child
                                                                                    child-slide
@@ -208,12 +208,15 @@ This returns a list of lines."
               (gethash :body structure))
     (list (gethash :text structure))))
 
-(defun zpresent--make-body (structure level prior-siblings)
+(defun zpresent--make-body (structure level prior-siblings &optional parent-structure)
   "Make the body text for STRUCTURE (a single structure, not a list)
 at indentation level LEVEL.
 
 PRIOR-SIBLINGS is the number of structures before STRUCTURE with the
 same parent.  This is used for ordered lists.
+
+PARENT-STRUCTURE is the parent structure of STRUCTURE, if applicable.
+It's used to inherit properties.
 
 Body text is a list containing the text just for the headline,
 ignoring any children, but handling multiline headlines.  Each item in
@@ -223,7 +226,7 @@ The result of this is a list, containing both text and hashes.  Hashes
 indicate something other than plain text.  For example, an image."
   (cons (cons (format " %s%s "
                       (make-string (* (1- level) 2) ?\s)
-                      (zpresent--format-bullet structure prior-siblings))
+                      (zpresent--format-bullet structure prior-siblings parent-structure))
               (gethash :text structure))
         (let ((body (gethash :body structure))
               (body-indentation (format "%s%s"
@@ -254,12 +257,15 @@ This will respect in order of precedence:
       ("." ?.)
       (t (gethash :bullet-type structure)))))
 
-(defun zpresent--format-bullet (structure prior-siblings)
+(defun zpresent--format-bullet (structure prior-siblings &optional parent-structure)
   "Format the bullet for STRUCTURE, not including whitespace before or after.
 
 PRIOR-SIBLINGS is the number of structures before STRUCTURE with the
-same parent.  This is used for ordered lists."
-  (case (zpresent--get-bullet-type structure)
+same parent.  This is used for ordered lists.
+
+PARENT-STRUCTURE is the parent structure of STRUCTURE.  It's used to
+inherit properties."
+  (case (zpresent--get-bullet-type structure parent-structure)
     (?* zpresent-bullet)
     (?\) (format "%d)" (1+ prior-siblings)))
     (?. (format "%d." (1+ prior-siblings)))
@@ -278,11 +284,11 @@ slide is created with an empty body."
     (puthash 'type 'normal slide)
     slide))
 
-(defun zpresent--make-following-slide (slide structure level &optional prior-siblings)
+(defun zpresent--make-following-slide (slide structure level &optional prior-siblings parent-structure)
   "Extend SLIDE with the contents of STRUCTURE, at level LEVEL.
 
 PRIOR-SIBLINGS is the number of structures at the same level before
-STRUCTURE with the same parent."
+STRUCTURE with the same PARENT-STRUCTURE."
   (let ((new-slide (copy-hash-table slide)))
 
     (puthash 'checkpoint
@@ -290,7 +296,7 @@ STRUCTURE with the same parent."
              new-slide)
     (puthash 'body
              (append (gethash 'body slide)
-                     (zpresent--make-body structure level (or prior-siblings 0)))
+                     (zpresent--make-body structure level (or prior-siblings 0) parent-structure))
              new-slide)
     new-slide))
 

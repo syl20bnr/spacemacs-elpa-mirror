@@ -4,8 +4,8 @@
 
 ;; Author: Yasuyuki Oka <yasuyk@gmail.com>
 ;; Maintainer: Daniel Ralston <Sodel-the-Vociferous@users.noreply.github.com>
-;; Version: 0.1.4
-;; Package-Version: 0.1.4
+;; Version: 0.2.0
+;; Package-Version: 0.2.0
 ;; URL: https://github.com/Sodel-the-Vociferous/helm-company
 ;; Package-Requires: ((helm "1.5.9") (company "0.6.13"))
 
@@ -40,6 +40,7 @@
 (require 'helm-files)
 (require 'helm-elisp) ;; For with-helm-show-completion
 (require 'company)
+(require 'subr-x)
 
 (defgroup helm-company nil
   "Helm interface for company-mode."
@@ -61,7 +62,7 @@ face."
   :group 'helm-company
   :type 'boolean )
 
-(defcustom helm-company-initialize-pattern-with-thing-at-point nil
+(defcustom helm-company-initialize-pattern-with-prefix nil
   "Use the thing-at-point as the initial helm completion pattern.
 
 The thing-at-point is whatever partial thing you've typed that
@@ -72,41 +73,28 @@ you're trying to complete."
 (defvar helm-company-help-window nil)
 (defvar helm-company-candidates nil)
 (defvar helm-company-backend nil)
-(defvar helm-company-raw-candidates-hash nil
+(defvar helm-company-display-candidates-hash nil
   "A hash table.
 
-KEY: a candidate string with all properties removed
+KEYS: Candidate display strings with no properties.
 
-VALUE: (candidate strings exactly as provided by company-backend ...)
-
-Each key is a completion candidate string, with all properties
-stripped off. Each key's value is a list of original completion
-candidate strings, exactly as provided by company-backend.
+VALUES: (FORMATTED-DISPLAY . COMPANY-CANDIDATE) pairs.
+COMPANY-CANDIDATE is the candidate string exactly as provided by
+company-backend (properties and all); FORMATTED-DISPLAY is the
+formatted display string (with font-lock properties) of
+COMPANY-CANDIDATE, for Helm to display.
 
 Some completion backends use string properties to store and
 retrieve annotation data. Helm strips all properties off before
 completion, which may break this feature. So, the original
 strings provided by company-backend are stored here, so they can
 be retrieved and passed to company-backend when asking for
-annotations.
-
-Since the same bare string might have different annotations, each
-value in the hash table is a *list*, not a single string.")
+annotations.")
 
 (defun helm-company-call-backend (&rest args)
   "Bridge between helm-company and company"
   (let ((company-backend helm-company-backend))
     (apply 'company-call-backend args)))
-
-(defun helm-company--hash-raw-candidates (candidates)
-  (let ((hash (make-hash-table :test 'equal :size 1000)))
-    (cl-loop for raw-cand in candidates
-             for clean-cand = (substring-no-properties raw-cand)
-             do (puthash clean-cand
-                         (append (gethash raw-cand hash nil)
-                                 (list raw-cand))
-                         hash)
-             finally return hash)))
 
 (defun helm-company-init ()
   "Prepare helm for company."
@@ -117,26 +105,30 @@ value in the hash table is a *list*, not a single string.")
   (setq helm-company-help-window nil)
   (if (<= (length company-candidates) 1)
       (helm-exit-minibuffer)
-    (setq helm-company-backend             company-backend
-          helm-company-candidates          company-candidates
-          helm-company-raw-candidates-hash (helm-company--hash-raw-candidates company-candidates))))
+    (setq helm-company-backend                 company-backend
+          helm-company-candidates              company-candidates
+          helm-company-display-candidates-hash (helm-company--make-display-candidate-hash company-candidates))))
 
 (defun helm-company-cleanup ()
   (setq helm-company-backend             nil
-        helm-company-candidates          nil
-        helm-company-raw-candidates-hash nil)
+        helm-company-candidates          nil)
   (company-abort))
+
+(defun helm-company-cleanup-post-action ()
+  (helm-attrset 'company-candidates nil)
+  (setq helm-company-backend             nil
+        helm-company-candidates          nil
+        helm-company-display-candidates-hash nil))
 
 (defun helm-company-action-insert (candidate)
   "Insert CANDIDATE."
   (let* ((company-candidates (helm-attr 'company-candidates))
          (company-backend (helm-attr 'company-backend))
-         (selection (cl-find-if (lambda (s) (string-equal candidate s)) company-candidates))
          (company-common (helm-attr 'company-common))
          (company-prefix (helm-attr 'company-prefix)))
-    (company-finish selection))
+    (company-finish candidate))
   ;; for GC
-  (helm-attrset 'company-candidates nil))
+  (helm-company-cleanup-post-action))
 
 (defun helm-company-action-show-document (candidate)
   "Show the documentation of the CANDIDATE."
@@ -213,9 +205,10 @@ value in the hash table is a *list*, not a single string.")
     str))
 
 (defun helm-company--make-display-string (candidate annotation)
-  (if (null annotation)
-      candidate
-    (concat candidate " " (helm-company--propertize-annotation annotation))))
+  (let ((candidate (substring-no-properties candidate)))
+    (if (null annotation)
+        candidate
+      (concat candidate " " (helm-company--propertize-annotation annotation)))))
 
 (defun helm-company--get-annotations (candidate)
   "Return a list of the annotations (if any) supplied for a
@@ -224,12 +217,8 @@ candidate by company-backend.
 When getting annotations from `company-backend', first it tries
 with the `candidate' arg. If that doesn't work, it gets the
 original candidate string(s) from
-`helm-company-raw-candidates-hash', and tries with those."
-  (company-manual-begin)
-  (let ((raw-candidates (gethash candidate helm-company-raw-candidates-hash '(""))))
-    (cl-loop for raw-cand in raw-candidates
-             collect (or (company-call-backend 'annotation candidate)
-                         (company-call-backend 'annotation raw-cand)))))
+`helm-company-display-candidates-hash', and tries with those."
+  (company-call-backend 'annotation candidate))
 
 (defun helm-company--make-display-candidate-pairs (candidates)
   (cl-loop for cand in candidates
@@ -237,6 +226,15 @@ original candidate string(s) from
            (cl-loop for annot in (helm-company--get-annotations cand)
                     collect (cons (helm-company--make-display-string cand annot)
                                   cand))))
+
+(defun helm-company--make-display-candidate-hash (candidates)
+  (let ((hash (make-hash-table :test 'equal :size 1000)))
+    (cl-loop for candidate in candidates
+             for annot = (helm-company--get-annotations candidate)
+             for display-str = (helm-company--make-display-string candidate annot)
+             for key = (substring-no-properties display-str)
+             do (puthash key (cons display-str candidate) hash))
+    hash))
 
 (defun helm-company-add-annotations-transformer-1 (candidates &optional sort)
   (with-helm-current-buffer
@@ -255,6 +253,22 @@ face."
   (if (or (not helm-company-show-annotations) (consp (car candidates)))
       candidates
     (helm-company-add-annotations-transformer-1 candidates (null helm--in-fuzzy))))
+
+(defun helm-company-get-display-strings ()
+  (let ((sort (null helm--in-fuzzy))
+        (display-strs (hash-table-keys helm-company-display-candidates-hash)))
+    (if sort
+        (sort display-strs #'helm-generic-sort-fn)
+      display-strs)))
+
+(defun helm-company-get-real-candidate (display-str)
+  (let ((display-str (substring-no-properties display-str)))
+    (cdr (gethash display-str helm-company-display-candidates-hash))))
+
+(defun helm-company-get-formatted-display-strings (display-strs &optional _)
+  (let ((display-strs (mapcar 'substring-no-properties display-strs)))
+    (mapcar (lambda (display-str) (car (gethash display-str helm-company-display-candidates-hash)))
+            display-strs)))
 
 (defvar helm-company-map
   (let ((keymap (make-sparse-keymap)))
@@ -278,15 +292,18 @@ face."
   (helm-build-in-buffer-source "Company"
     :data (lambda ()
             (helm-company-init)
-            (helm-attr 'company-candidates))
-    :filtered-candidate-transformer 'helm-company-add-annotations-transformer
+            (helm-company-get-display-strings))
+            ;(list "position -> int"))
+    :filtered-candidate-transformer 'helm-company-get-formatted-display-strings
+    :display-to-real 'helm-company-get-real-candidate
     :cleanup 'helm-company-cleanup
     :fuzzy-match helm-company-fuzzy-match
     :keymap helm-company-map
     :persistent-action 'helm-company-show-doc-buffer
     :persistent-help "Show documentation (If available)"
     :action helm-company-actions)
-  "Helm source definition for recent files in current project.")
+  ;; "Helm source definition for recent files in current project."
+  )
 
 ;;;###autoload
 (defun helm-company ()
@@ -295,15 +312,13 @@ It is useful to narrow candidates."
   (interactive)
   (unless company-candidates
     (company-complete)
-    ;; Work around a bug in company. `company-complete' inserts the common part
-    ;; of all candidates into the buffer. But, it doesn't update
-    ;; `company-prefix' -- and `company-prefix' is all `company-finish'
-    ;; replaces in the buffer. (issue #9)
+    ;; (company-call-frontends 'hide) Work around a quirk with company.
+    ;; `company-complete' inserts the common part of all candidates into the
+    ;; buffer. But, it doesn't update `company-prefix' -- and `company-prefix'
+    ;; is all `company-finish' replaces in the buffer. (issue #9)
     (when company-common
       (setq company-prefix company-common)))
-  (let ((initial-pattern (if helm-company-initialize-pattern-with-thing-at-point
-                             (thing-at-point 'symbol)
-                           "")))
+  (let ((initial-pattern (and helm-company-initialize-pattern-with-prefix company-prefix)))
     (when company-point
       (helm :sources 'helm-source-company
             :buffer  "*helm company*"

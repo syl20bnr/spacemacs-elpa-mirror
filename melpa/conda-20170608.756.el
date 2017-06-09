@@ -3,7 +3,7 @@
 ;; Copyright (C) 2016 Rami Chowdhury
 ;; Author: Rami Chowdhury <rami.chowdhury@gmail.com>
 ;; URL: http://github.com/necaris/conda.el
-;; Package-Version: 20170425.1845
+;; Package-Version: 20170608.756
 ;; Version: 20160914
 ;; Keywords: python, environment, conda
 ;; Package-Requires: ((emacs "24.4") (pythonic "0.1.0") (dash "2.13.0") (s "1.11.0") (f "0.18.2"))
@@ -218,7 +218,8 @@ environment variable."
   (let* ((xp-location (expand-file-name (conda-env-location)))
          (proper-location (file-name-as-directory xp-location)))
     (-filter (lambda (p)
-               (conda--includes-path-element proper-location p))
+	       (and (not (null p))
+		    (conda--includes-path-element proper-location p)))
              path)))
 
 (defun conda-env-is-valid (name)
