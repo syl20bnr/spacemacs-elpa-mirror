@@ -5,7 +5,7 @@
 ;; Author: Ben Hayden <hayden767@gmail.com>
 ;; Maintainer: Glynn Forrest <me@glynnforrest.com>
 ;; URL: https://github.com/glynnforrest/salt-mode
-;; Package-Version: 20170602.919
+;; Package-Version: 20170611.420
 ;; Keywords: languages
 ;; Version: 0.1
 ;; Package-Requires: ((yaml-mode "0.0.12") (mmm-mode "0.5.4") (mmm-jinja2 "0.1"))
@@ -83,6 +83,51 @@ suitable for spellchecking."
 
 (put 'salt-mode 'flyspell-mode-predicate #'salt-mode--flyspell-predicate)
 
+(defun salt-mode--state-module-at-point ()
+  "Get the state module at point, either pkg or pkg.installed, or return nil."
+  ;; TODO: replace or refactor this to work with thing-at-point
+  (save-excursion
+    (when (looking-back ":" 1)
+      (backward-char))
+    (skip-chars-forward " ")
+    (let* (start
+           end
+           (module (progn (skip-chars-backward "_.a-z0-9")
+                          (setq start (point))
+                          (forward-char)
+                          (skip-chars-forward "_.a-z0-9")
+                          (setq end (point))
+                          (replace-regexp-in-string "^ +\\| +$" "" (buffer-substring-no-properties start end)))))
+      (if (string= "" module) nil module))))
+
+(defun salt-mode--doc-read-arg ()
+  "Get the argument for interactively calling `salt-mode-browse-doc'"
+  (let* ((default (salt-mode--state-module-at-point))
+         (prompt (if default
+                     (format "Open salt doc (%s): " default)
+                   "Open salt doc, e.g. file.managed: "))
+         (word (if (or current-prefix-arg (not default))
+                   (completing-read prompt nil nil nil nil nil default)
+                 default)))
+    (list word)))
+
+(defun salt-mode-browse-doc (module)
+  "Browse to the documentation for the state module `MODULE'.
+
+`MODULE' may be the name of a state module (pkg), or the name of a
+state module and method (pkg.installed).
+
+When called interactively, use the module at point.
+If no module is found or a prefix argument is supplied, prompt for the
+module to use.
+"
+  (interactive (salt-mode--doc-read-arg))
+  (let* ((pieces (split-string module "\\." t " +"))
+         (module (car pieces))
+         (url (format "https://docs.saltstack.com/en/latest/ref/states/all/salt.states.%s.html" module))
+         (method (cadr pieces)))
+    (browse-url (if method (concat url "#salt.states." module "." method) url))))
+
 (defconst salt-mode-toplevel-keywords
   '("include" "exclude" "extend")
   "Keys with special meaning at the top level of state files.")
@@ -120,7 +165,7 @@ https://docs.saltstack.com/en/latest/ref/states/requisites.html")
      (1 'salt-mode-keyword-face))
     (,(format "^ +- *%s:" (regexp-opt salt-mode-requisite-types t))
      (1 'salt-mode-requisite-face))
-    ("^\\([^ \"':#][^\"':#\n]*\\):"
+    ("^\\([^ \"':#\n][^\"':#\n]*\\):"
      (1 'salt-mode-state-id-face))
     ("^ +\\([a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*\\):?"
      (1 'salt-mode-state-function-face))

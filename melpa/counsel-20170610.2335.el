@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170610.133
+;; Package-Version: 20170610.2335
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -3840,9 +3840,9 @@ MODE is a symbol."
 This behaves as `switch-to-buffer', except when the buffer is
 already visible; in that case, select the window corresponding to
 the buffer."
-  (let ((buffer (get-buffer buffer-or-name)))
+  (let ((buffer (get-buffer buffer-name)))
     (if (not buffer)
-        (shell buffer-or-name)
+        (shell buffer-name)
       (let (window-of-buffer-visible)
         (catch 'found
           (walk-windows (lambda (window)
