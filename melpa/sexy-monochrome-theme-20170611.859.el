@@ -4,7 +4,7 @@
 
 ;; Author: Volodymyr Yevtushenko <vol.yevtushenko@ukr.net>
 ;; Keywords: themes
-;; Package-Version: 20170610.1643
+;; Package-Version: 20170611.859
 ;; URL: https://github.com/voloyev/sexy-monochrome-theme
 ;; Version: 2.0
 
@@ -56,8 +56,7 @@
       (string "light slate gray")
       (linum "dim gray")
       (paren-match "dark slate blue")
-      (paren-mismatch "red")
-      )
+      (paren-mismatch "red"))
 
   (custom-theme-set-faces
    'sexy-monochrome
