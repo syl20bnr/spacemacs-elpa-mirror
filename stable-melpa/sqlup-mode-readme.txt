@@ -9,9 +9,11 @@ The capitalization is triggered when you press the following keys:
 * '
 
 This package also provides a function to capitalize SQL keywords inside a
-region - always available, no need to activate the minor mode to use it:
+region as well as the whole bufer - always available, no need to activate
+the minor mode to use it:
 
 M-x sqlup-capitalize-keywords-in-region
+M-x sqlup-capitalize-keywords-in-buffer
 
 It is not bound to a keybinding. Here is an example of how you could do it:
 

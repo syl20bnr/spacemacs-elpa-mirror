@@ -401,6 +401,15 @@
 	  "emacs frontend to GNU Global source code tagging system" single
 	  ((:url . "https://github.com/leoliu/ggtags")
 	   (:keywords "tools" "convenience"))])
+ (gited .
+	[(0 2 2)
+	 ((emacs
+	   (24 4))
+	  (cl-lib
+	   (0 5)))
+	 "Operate on Git branches like dired" tar
+	 ((:keywords "git" "vc" "convenience")
+	  (:url . "http://elpa.gnu.org/packages/gited.html"))])
  (gnome-c-style .
 		[(0 1)
 		 nil "minor mode for editing GNOME-style C source code" tar
