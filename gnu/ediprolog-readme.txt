@@ -39,9 +39,10 @@ When waiting for output of the Prolog process, you can press C-g to
 unblock Emacs and continue with other work. To resume interaction
 with the Prolog process, use M-x ediprolog-toplevel RET.
 
-If you press F10 when point is NOT on a query, the buffer content
+If you press F10 when point is *not* on a query, the buffer content
 is consulted in the Prolog process, and point is moved to the first
-error (if any).
+error (if any).  In transient mark mode, if the region is active,
+only the text in the region is consulted.
 
 For convenience, the most recent interactions with the Prolog
 process are logged in the buffer "*ediprolog-history*".
@@ -59,4 +60,4 @@ processes simultaneously. Revert with M-x ediprolog-unlocalize RET.
   C-u F10       first consult buffer, then evaluate query (if any)
   C-u C-u F10   like C-u F10, with a new process
 
-Tested with SWI-Prolog 5.6.55 + Emacs 21.2, 22.3, 23.1 and 24.3
+Tested with SWI-Prolog 7.3.21 + Emacs 22.1, 23.4, 24.5, 25.1 and 26.0

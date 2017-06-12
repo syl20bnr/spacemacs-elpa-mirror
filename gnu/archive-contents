@@ -305,7 +305,7 @@
 	     ((:keywords "killing" "convenience")
 	      (:url . "https://github.com/leoliu/easy-kill"))])
  (ediprolog .
-	    [(1 1)
+	    [(1 2)
 	     nil "Emacs Does Interactive Prolog" single
 	     ((:url . "http://elpa.gnu.org/packages/ediprolog.html")
 	      (:keywords "languages" "processes"))])
@@ -1026,7 +1026,7 @@
 	      ((:keywords "http" "server" "network")
 	       (:url . "https://github.com/eschulte/emacs-web-server"))])
  (websocket .
-	    [(1 6)
+	    [(1 8)
 	     nil "Emacs WebSocket client and server" tar
 	     ((:keywords "communication" "websocket" "server")
 	      (:url . "http://elpa.gnu.org/packages/websocket.html"))])

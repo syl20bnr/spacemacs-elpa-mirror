@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>
 ;; URL: http://github.com/Bruce-Connor/audio-notes-mode
-;; Package-Version: 20140204.1154
+;; Package-Version: 20170611.1459
 ;; Version: 1.1.1
 ;; Keywords: hypermedia convenience
 ;; ShortName: anm
@@ -129,7 +129,7 @@ when you activate `audio-notes-mode'."
   :type '(choice string nil)
   :group 'audio-notes-mode)
 
-(defcustom anm/file-regexp "^[^\\.].*\.\\(mp[34]\\|wav\\|3ga\\|3gpp\\)$"
+(defcustom anm/file-regexp "^[^\\.].*\.\\(mp[34]\\|wav\\|3ga\\|3gpp\\|m4a\\)$"
      "Regexp which filenames must match to be managed by OAN.
 
 Default is to play only mp4, mp3, wav and 3ga, and to exclude hidden files."

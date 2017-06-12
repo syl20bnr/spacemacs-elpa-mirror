@@ -4,7 +4,7 @@
 
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Package-Requires: ((evil "1.2.3") (magit "2.6.0"))
-;; Package-Version: 20161130.847
+;; Package-Version: 20170611.1237
 ;; Homepage: https://github.com/justbur/evil-magit
 ;; Version: 0.4.1
 
@@ -480,7 +480,8 @@ evil-magit affects.")
 (defvar evil-magit-popup-changes
   (append
    (when evil-magit-want-horizontal-movement
-     '((magit-dispatch-popup :actions "l" "L" magit-log-popup)))
+     '((magit-dispatch-popup :actions "L" "\C-l" magit-log-refresh-popup)
+       (magit-dispatch-popup :actions "l" "L" magit-log-popup)))
    '((magit-branch-popup :actions "x" "X" magit-branch-reset)
      (magit-branch-popup :actions "k" "x" magit-branch-delete)
      (magit-dispatch-popup :actions "o" "'" magit-submodule-popup)
@@ -496,13 +497,18 @@ evil-magit affects.")
      (magit-tag-popup    :actions "k" "x" magit-tag-delete)))
   "Changes to popup keys")
 
+(defun evil-magit-change-popup-key (popup type from to _)
+  "Wrap `magit-change-popup-key'."
+  (magit-change-popup-key popup type (string-to-char from) (string-to-char to))
+  (unless (eq (lookup-key magit-popup-mode-map to)
+              'magit-invoke-popup-action)
+    (define-key magit-popup-mode-map to #'magit-invoke-popup-action)))
+
 (defun evil-magit-adjust-popups ()
   "Adjust popup keys to match evil-magit."
   (unless evil-magit-popup-keys-changed
     (dolist (change evil-magit-popup-changes)
-      (magit-change-popup-key
-       (nth 0 change) (nth 1 change)
-       (string-to-char (nth 2 change)) (string-to-char (nth 3 change))))
+      (apply #'evil-magit-change-popup-key change))
     (setq evil-magit-popup-keys-changed t)))
 
 (defun evil-magit-revert-popups ()

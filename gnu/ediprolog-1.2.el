@@ -1,10 +1,11 @@
 ;;; ediprolog.el --- Emacs Does Interactive Prolog
 
-;; Copyright (C) 2006, 2007, 2008, 2009, 2012, 2013  Free Software Foundation, Inc.
+;; Copyright (C) 2006-2009, 2012-2013, 2016-2017  Free Software Foundation, Inc.
 
-;; Author: Markus Triska <markus.triska@gmx.at>
+;; Author: Markus Triska <triska@metalevel.at>
 ;; Keywords: languages, processes
-;; Version: 1.1
+;; Version: 1.2
+;; Homepage: https://www.metalevel.at/ediprolog/
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -62,9 +63,10 @@
 ;; unblock Emacs and continue with other work. To resume interaction
 ;; with the Prolog process, use M-x ediprolog-toplevel RET.
 
-;; If you press F10 when point is NOT on a query, the buffer content
+;; If you press F10 when point is *not* on a query, the buffer content
 ;; is consulted in the Prolog process, and point is moved to the first
-;; error (if any).
+;; error (if any).  In transient mark mode, if the region is active,
+;; only the text in the region is consulted.
 
 ;; For convenience, the most recent interactions with the Prolog
 ;; process are logged in the buffer "*ediprolog-history*".
@@ -82,11 +84,11 @@
 ;;   C-u F10       first consult buffer, then evaluate query (if any)
 ;;   C-u C-u F10   like C-u F10, with a new process
 
-;; Tested with SWI-Prolog 5.6.55 + Emacs 21.2, 22.3, 23.1 and 24.3
+;; Tested with SWI-Prolog 7.3.21 + Emacs 22.1, 23.4, 24.5, 25.1 and 26.0
 
 ;;; Code:
 
-(defconst ediprolog-version "0.9z")
+(defconst ediprolog-version "1.2")
 
 (defgroup ediprolog nil
   "Transparent interaction with SWI-Prolog."
@@ -246,7 +248,7 @@ default Prolog prompt.")
       (erase-buffer)
       (insert str)
       (goto-char (point-min))
-      ;; remove normal consult status lines, which start with "%" 
+      ;; remove normal consult status lines, which start with "%"
       (while (re-search-forward "^[\t ]*%.*\n" nil t)
         (delete-region (match-beginning 0) (match-end 0))))
     (setq str (buffer-string)))
@@ -344,13 +346,18 @@ arguments, equivalent to `ediprolog-remove-interactions'."
                    ;; omit trailing whitespace
                    (+ (point) (skip-chars-backward "\t "))
                  (error "Missing `.' at the end of this query")))
-           (query (buffer-substring-no-properties from to)))
+           (query (buffer-substring-no-properties from to))
+           (handle (and (fboundp 'prepare-change-group)
+                        (fboundp 'undo-amalgamate-change-group)
+                        (cons t (prepare-change-group)))))
       (end-of-line)
       (insert "\n" ediprolog-indent-prefix ediprolog-prefix)
       (ediprolog-interact
        (format "%s\n" (mapconcat #'identity
                                  ;; `%' can precede each query line
-                                 (split-string query "\n[ \t%]*") " "))))
+                                 (split-string query "\n[ \t%]*") " ")))
+      (when handle
+        (undo-amalgamate-change-group (cdr handle))))
     t))
 
 ;;;###autoload
@@ -424,8 +431,8 @@ want to resume interaction with the toplevel."
 (defun ediprolog-remove-interactions ()
   "Remove all lines starting with `ediprolog-prefix' from buffer.
 
-In transient mark mode, the function operates on the region if it
-is active."
+In transient mark mode, if the region is active, the function
+operates on the region."
   (interactive)
   (save-excursion
     (save-restriction
@@ -443,8 +450,8 @@ non-nil, start a new process. Otherwise use the existing process,
 if any. In case of errors, point is moved to the position of the
 first error, and the mark is left at the previous position.
 
-In transient mark mode, the function operates on the region if it
-is active."
+In transient mark mode, if the region is active, the function
+operates on the region."
   (interactive)
   (when (string= (buffer-name) ediprolog-consult-buffer)
     (error "Cannot consult the consult buffer"))
@@ -611,6 +618,21 @@ this buffer becomes buffer-local."
 
 ;;;; ChangeLog:
 
+;; 2017-06-11  Markus Triska  <triska@metalevel.at>
+;; 
+;; 	* ediprolog/ediprolog.el (ediprolog-version): Bump to 1.2
+;; 
+;; 	(ediprolog-query): Use undo-amalgamate-change-group when available.
+;; 	(ediprolog-remove-interactions, ediprolog-consult): Improve docstring.
+;; 
+;; 2016-07-11  Paul Eggert	 <eggert@cs.ucla.edu>
+;; 
+;; 	Fix some quoting problems in doc strings
+;; 
+;; 	Most of these are minor issues involving, e.g., quoting `like this' 
+;; 	instead of 'like this'.	 A few involve escaping ` and ' with a preceding
+;; 	\= when the characters should not be turned into curved single quotes.
+;; 
 ;; 2015-09-23  Dmitry Gutov  <dgutov@yandex.ru>
 ;; 
 ;; 	ediprolog: Don't autoload variables

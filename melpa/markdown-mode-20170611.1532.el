@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jrblevin@sdf.org>
 ;; Created: May 24, 2007
 ;; Version: 2.3-dev
-;; Package-Version: 20170610.602
+;; Package-Version: 20170611.1532
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: http://jblevins.org/projects/markdown-mode/
@@ -588,7 +588,7 @@
 ;;   * `markdown-header-scaling-values' - list of scaling values,
 ;;     relative to baseline, for headers of levels one through six,
 ;;     used when `markdown-header-scaling' is non-nil
-;;     (default: `(1.8 1.4 1.2 1.0 1.0 1.0)`).
+;;     (default: `(2.0 1.7 1.4 1.1 1.0 1.0)`).
 ;;
 ;;   * `markdown-list-indent-width' - depth of indentation for lists
 ;;     when inserting, promoting, and demoting list items (default: 4).
@@ -717,6 +717,9 @@
 ;;     Markup hiding can be toggled using `C-c C-x C-m`
 ;;     (`markdown-toggle-markup-hiding') or from the Markdown | Show &
 ;;     Hide menu.
+;;
+;;     The placeholder character used to replace blockquote markup can
+;;     be changed by setting `markdown-blockquote-display-char'.
 ;;
 ;;   * `markdown-fontify-code-blocks-natively' - Whether to fontify
 ;;      code in code blocks using the native major mode.  This only
@@ -1121,6 +1124,18 @@ Depending on your font, some good choices are …, ⋯, #, ∞, ★, and ⚓."
   :safe 'characterp
   :package-version '(markdown-mode . "2.3"))
 
+(defcustom markdown-blockquote-display-char
+  (cond
+   ((char-displayable-p ?▌) "▌")
+   ((char-displayable-p ?┃) "┃")
+   ((char-displayable-p ?│) "│")
+   ((char-displayable-p ?|) "|")
+   (t ">"))
+  "Character for hiding blockquote markup."
+  :type 'string
+  :safe 'stringp
+  :package-version '(markdown-mode . "2.3"))
+
 (defcustom markdown-enable-math nil
   "Syntax highlighting for inline LaTeX and itex expressions.
 Set this to a non-nil value to turn on math support by default.
@@ -1335,14 +1350,14 @@ Group 2 matches only the label, without the surrounding markup.
 Group 3 matches the closing square bracket.")
 
 (defconst markdown-regex-header
-  "^\\(?:\\([^\r\n\t -].*\\)\n\\(?:\\(=+\\)\\|\\(-+\\)\\)\\|\\(#+\\)[ \t]+\\(.*?\\)[ \t]*\\(#*\\)\\)$"
+  "^\\(?:\\([^\r\n\t -].*\\)\n\\(?:\\(=+\\)\\|\\(-+\\)\\)\\|\\(#+[ \t]+\\)\\(.*?\\)\\([ \t]*#*\\)\\)$"
   "Regexp identifying Markdown headings.
 Group 1 matches the text of a setext heading.
 Group 2 matches the underline of a level-1 setext heading.
 Group 3 matches the underline of a level-2 setext heading.
-Group 4 matches the opening hash marks of an atx heading.
+Group 4 matches the opening hash marks of an atx heading and whitespace.
 Group 5 matches the text, without surrounding whitespace, of an atx heading.
-Group 6 matches the closing hash marks of an atx heading.")
+Group 6 matches the closing whitespace and hash marks of an atx heading.")
 
 (defconst markdown-regex-header-setext
   "^\\([^\r\n\t -].*\\)\n\\(=+\\|-+\\)$"
@@ -1438,8 +1453,11 @@ Groups 2 and 4 matches the opening and closing delimiters.
 Group 3 matches the text inside the delimiters.")
 
 (defconst markdown-regex-blockquote
-  "^[ \t]*\\(>\\)\\(.*\\)$"
+  "^[ \t]*\\([A-Z]*>\\)\\(.*\\)$"
   "Regular expression for matching blockquote lines.
+Also accounts for a potential capital letter preceding the angle
+bracket, for use with Leanpub blocks (asides, warnings, info
+blocks, etc.).
 Group 1 matches the leading angle bracket.
 Group 2 matches the text.")
 
@@ -2025,7 +2043,8 @@ start which was previously propertized."
        (match-beginning 0) (match-end 0)
        (cond ((match-string-no-properties 2) 'markdown-heading-1-setext)
              ((match-string-no-properties 3) 'markdown-heading-2-setext)
-             (t (let ((atx-level (length (match-string-no-properties 4))))
+             (t (let ((atx-level (length (markdown-trim-whitespace
+                                          (match-string-no-properties 4)))))
                   (intern (format "markdown-heading-%d-atx" atx-level)))))
        (match-data t)))))
 
@@ -2381,7 +2400,7 @@ headers of levels one through six respectively."
   :package-version '(markdown-mode . "2.2"))
 
 (defcustom markdown-header-scaling-values
-  '(1.8 1.4 1.2 1.0 1.0 1.0)
+  '(2.0 1.7 1.4 1.1 1.0 1.0)
   "List of scaling values for headers of level one through six.
 Used when `markdown-header-scaling' is non-nil."
   :type 'list
@@ -2410,7 +2429,6 @@ Used when `markdown-header-scaling' is non-nil."
        `(defface ,face-name
           '((t (:inherit markdown-header-face :height ,scale)))
           (format "Face for level %s headers.
-
 You probably don't want to customize this face directly. Instead
 you can customize the base face `markdown-header-face' or the
 variable-height variable `markdown-header-scaling'." ,num1)
@@ -2473,28 +2491,7 @@ See `font-lock-syntactic-face-function' for details."
     (markdown-match-fenced-end-code-block . ((0 markdown-markup-face)))
     (markdown-match-fenced-code-blocks . ((0 markdown-pre-face)))
     (markdown-match-pre-blocks . ((0 markdown-pre-face)))
-    (markdown-match-heading-1-setext . ((1 markdown-header-face-1)
-                                        (2 markdown-header-rule-face)))
-    (markdown-match-heading-2-setext . ((1 markdown-header-face-2)
-                                        (3 markdown-header-rule-face)))
-    (markdown-match-heading-6-atx . ((4 markdown-header-delimiter-face)
-                                     (5 markdown-header-face-6)
-                                     (6 markdown-header-delimiter-face)))
-    (markdown-match-heading-5-atx . ((4 markdown-header-delimiter-face)
-                                     (5 markdown-header-face-5)
-                                     (6 markdown-header-delimiter-face)))
-    (markdown-match-heading-4-atx . ((4 markdown-header-delimiter-face)
-                                     (5 markdown-header-face-4)
-                                     (6 markdown-header-delimiter-face)))
-    (markdown-match-heading-3-atx . ((4 markdown-header-delimiter-face)
-                                     (5 markdown-header-face-3)
-                                     (6 markdown-header-delimiter-face)))
-    (markdown-match-heading-2-atx . ((4 markdown-header-delimiter-face)
-                                     (5 markdown-header-face-2)
-                                     (6 markdown-header-delimiter-face)))
-    (markdown-match-heading-1-atx . ((4 markdown-header-delimiter-face)
-                                     (5 markdown-header-face-1)
-                                     (6 markdown-header-delimiter-face)))
+    (markdown-fontify-headings)
     (markdown-match-declarative-metadata . ((1 markdown-metadata-key-face)
                                               (2 markdown-markup-face)
                                               (3 markdown-metadata-value-face)))
@@ -2538,8 +2535,7 @@ See `font-lock-syntactic-face-function' for details."
     (markdown-fontify-plain-uris)
     (,markdown-regex-email . markdown-link-face)
     (,markdown-regex-line-break . (1 markdown-line-break-face prepend))
-    (markdown-match-blockquotes . ((0 markdown-blockquote-face append)
-                                   (1 markdown-markup-face prepend))))
+    (markdown-fontify-blockquotes))
   "Syntax highlighting for Markdown files.")
 
 (defvar markdown-mode-font-lock-keywords nil
@@ -3299,38 +3295,6 @@ Use data stored in 'markdown-blockquote text property during syntax
 analysis."
   (markdown-match-propertized-text 'markdown-blockquote last))
 
-(defun markdown-match-heading-1-setext (last)
-  "Match level 1 setext headings from point to LAST."
-  (markdown-match-propertized-text 'markdown-heading-1-setext last))
-
-(defun markdown-match-heading-2-setext (last)
-  "Match level 2 setext headings from point to LAST."
-  (markdown-match-propertized-text 'markdown-heading-2-setext last))
-
-(defun markdown-match-heading-1-atx (last)
-  "Match level 1 ATX headings from point to LAST."
-  (markdown-match-propertized-text 'markdown-heading-1-atx last))
-
-(defun markdown-match-heading-2-atx (last)
-  "Match level 2 ATX headings from point to LAST."
-  (markdown-match-propertized-text 'markdown-heading-2-atx last))
-
-(defun markdown-match-heading-3-atx (last)
-  "Match level 3 ATX headings from point to LAST."
-  (markdown-match-propertized-text 'markdown-heading-3-atx last))
-
-(defun markdown-match-heading-4-atx (last)
-  "Match level 4 ATX headings from point to LAST."
-  (markdown-match-propertized-text 'markdown-heading-4-atx last))
-
-(defun markdown-match-heading-5-atx (last)
-  "Match level 5 ATX headings from point to LAST."
-  (markdown-match-propertized-text 'markdown-heading-5-atx last))
-
-(defun markdown-match-heading-6-atx (last)
-  "Match level 6 ATX headings from point to LAST."
-  (markdown-match-propertized-text 'markdown-heading-6-atx last))
-
 (defun markdown-match-hr (last)
   "Match horizontal rules comments from the point to LAST."
   (while (and (re-search-forward markdown-regex-hr last t)
@@ -3527,6 +3491,54 @@ is \"\n\n\""
 
 (defun markdown-match-yaml-metadata-key (last)
   (markdown-match-propertized-text 'markdown-metadata-key last))
+
+
+;;; Markdown Font Fontification Functions =====================================
+
+(defun markdown-fontify-headings (last)
+  "Add text properties to headings from point to LAST."
+  (when (markdown-match-propertized-text 'markdown-heading last)
+    (let* ((level (markdown-outline-level))
+           (heading-face
+            (intern (format "markdown-header-face-%d" level)))
+           (heading-props `(face ,heading-face))
+           (markup-props `(face markdown-header-delimiter-face
+                                ,@(when markdown-hide-markup `(display ""))))
+           (rule-props `(face markdown-header-rule-face
+                              ,@(when markdown-hide-markup `(display "")))))
+      (if (match-end 1)
+          ;; Setext heading
+          (progn (add-text-properties
+                  (match-beginning 1) (match-end 1) heading-props)
+                 (if (= level 1)
+                     (add-text-properties
+                      (match-beginning 2) (match-end 2) rule-props)
+                   (add-text-properties
+                    (match-beginning 3) (match-end 3) rule-props)))
+        ;; atx heading
+        (add-text-properties
+         (match-beginning 4) (match-end 4) markup-props)
+        (add-text-properties
+         (match-beginning 5) (match-end 5) heading-props)
+        (when (match-end 6)
+          (add-text-properties
+           (match-beginning 6) (match-end 6) markup-props))))
+    t))
+
+(defun markdown-fontify-blockquotes (last)
+  "Apply font-lock properties to blockquotes from point to LAST."
+  (when (markdown-match-blockquotes last)
+    (add-text-properties
+     (match-beginning 1) (match-end 1)
+     (if markdown-hide-markup
+         `(face markdown-blockquote-face
+                display ,markdown-blockquote-display-char)
+       `(face markdown-markup-face
+              ,@(when markdown-hide-markup
+                  `(display ,markdown-blockquote-display-char)))))
+    (font-lock-append-text-property
+     (match-beginning 0) (match-end 0) 'face 'markdown-blockquote-face)
+    t))
 
 
 ;;; Syntax Table ==============================================================
@@ -5341,7 +5353,8 @@ See `imenu-create-index-function' and `imenu--index-alist' for details."
             (setq heading (match-string-no-properties 1))
             (setq pos (match-beginning 1)
                   level 2))
-           ((setq hashes (match-string-no-properties 4))
+           ((setq hashes (markdown-trim-whitespace
+                          (match-string-no-properties 4)))
             (setq heading (match-string-no-properties 5)
                   pos (match-beginning 4)
                   level (length hashes))))
@@ -6329,7 +6342,8 @@ Calls `markdown-cycle' with argument t."
    ((markdown-code-block-at-point-p) 7) ;; Only 6 header levels are defined.
    ((match-end 2) 1)
    ((match-end 3) 2)
-   ((match-end 4) (- (match-end 4) (match-beginning 4)))))
+   ((match-end 4)
+    (length (markdown-trim-whitespace (match-string-no-properties 4))))))
 
 (defun markdown-promote-subtree (&optional arg)
   "Promote the current subtree of ATX headings.
@@ -7787,6 +7801,7 @@ position."
   ;; Markup hiding
   (make-local-variable 'markdown-hide-markup)
   (add-to-list 'font-lock-extra-managed-props 'invisible)
+  (add-to-list 'font-lock-extra-managed-props 'display)
   (if markdown-hide-markup
       (add-to-invisibility-spec 'markdown-markup)
     (remove-from-invisibility-spec 'markdown-markup))

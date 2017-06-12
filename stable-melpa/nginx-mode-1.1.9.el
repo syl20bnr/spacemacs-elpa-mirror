@@ -5,8 +5,8 @@
 ;; Author: Andrew J Cosgriff <andrew@cosgriff.name>
 ;; Maintainer: Andrew J Cosgriff <andrew@cosgriff.name>
 ;; Created: 15 Oct 2010
-;; Version: 1.1.8
-;; Package-Version: 20170524.1812
+;; Version: 1.1.9
+;; Package-Version: 1.1.9
 ;; Keywords: languages, nginx
 
 ;; available from http://github.com/ajc/nginx-mode
@@ -191,6 +191,11 @@ The variable nginx-indent-level controls the amount of indentation.
 (add-to-list 'auto-mode-alist '("nginx\\.conf\\'"  . nginx-mode))
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("/nginx/.+\\.conf\\'" . nginx-mode))
+;;;###autoload
+(add-to-list
+ 'magic-fallback-mode-alist
+ '("\\(?:.*\n\\)*\\(?:http\\|server\\|location .+\\|upstream .+\\)[ \n\t]+{"
+   . nginx-mode))
 
 (provide 'nginx-mode)
 
