@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Keywords: help, lisp
-;; Package-Version: 20170605.1432
+;; Package-Version: 20170612.205
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2"))
 
@@ -207,13 +207,37 @@ This allows us to distinguish strings from symbols."
    docstring
    t t))
 
+(defconst helpful--highlighting-funcs
+  '(ert--activate-font-lock-keywords
+    highlight-quoted-mode
+    rainbow-delimiters-mode)
+  "Highlighting functions that are safe to run in a temporary buffer.
+This is used in `helpful--syntax-highlight' to support extra
+highlighting that the user may have configured in their mode
+hooks.")
+
 (defun helpful--syntax-highlight (source &optional mode)
   "Return a propertized version of SOURCE in MODE."
   (unless mode
     (setq mode #'emacs-lisp-mode))
   (with-temp-buffer
     (insert source)
+
+    ;; Switch to major-mode MODE, but don't run any hooks.
     (delay-mode-hooks (funcall mode))
+
+    ;; `delayed-mode-hooks' contains mode hooks like
+    ;; `emacs-lisp-mode-hook'. Build a list of functions that are run
+    ;; when the mode hooks run.
+    (let (hook-funcs)
+      (dolist (hook delayed-mode-hooks)
+        (let ((funcs (symbol-value hook)))
+          (setq hook-funcs (append hook-funcs funcs))))
+
+      ;; Filter hooks to those that relate to highlighting, and run them.
+      (setq hook-funcs (-intersection hook-funcs helpful--highlighting-funcs))
+      (-map #'funcall hook-funcs))
+
     (if (fboundp 'font-lock-ensure)
         (font-lock-ensure)
       (with-no-warnings

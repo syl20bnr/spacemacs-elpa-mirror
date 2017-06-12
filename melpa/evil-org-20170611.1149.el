@@ -4,11 +4,11 @@
 ;; Maintainer: Somelauw
 ;; Original-author: Edward Tjörnhammar
 ;; URL: https://github.com/Somelauw/evil-org-mode.git
-;; Package-Version: 20170606.455
+;; Package-Version: 20170611.1149
 ;; Git-Repository: git://github.com/Somelauw/evil-org-mode.git
 ;; Created: 2012-06-14
 ;; Forked-since: 2017-02-12
-;; Version: 0.7.3
+;; Version: 0.7.4
 ;; Package-Requires: ((emacs "24.4") (evil "1.0") (org "8.0.0"))
 ;; Keywords: evil vim-emulation org-mode key-bindings presets
 
@@ -61,8 +61,7 @@
   :type '(alist :key-type symbol :value-type string)
   :options '(up down left right))
 
-(defcustom evil-org-use-additional-insert
-  nil
+(defcustom evil-org-use-additional-insert nil
   "Whether additional keybindings should also be available in insert mode."
   :group 'evil-org)
 
@@ -84,6 +83,13 @@ arguments."
               (const todo)
               (const heading)
               (const leader)))
+
+(defcustom evil-org-special-o/O '(table-row item)
+  "When o and O should be special.
+This makes them continue item lists and table rows.
+By default, o and O are bound to evil-org-open-above and evil-org-open-below."
+  :group 'evil-org
+  :type '(set (const table-row) (const item)))
 
 ;;; Variable declarations
 (defvar browse-url-generic-program)
@@ -118,10 +124,13 @@ FUN function callback"
 
 (defun evil-org-open-below (count)
   "Clever insertion of org item.
-Argument COUNT number of lines to insert."
-  (interactive "p")
+Argument COUNT number of lines to insert.
+The behavior in items and tables can be controlled using evil-org-special-o/O.
+Passing in any prefix argument, executes the command without special behavior."
+  (interactive "P")
   (end-of-visible-line)
-  (let ((e (org-element-lineage (org-element-at-point) '(item table-row) t)))
+  (let* ((special (and (null count) evil-org-special-o/O))
+         (e (org-element-lineage (org-element-at-point) special t)))
     (case (org-element-type e)
       ((table-row) (org-table-insert-row '(4)) (evil-insert nil))
       ((item) (org-insert-item) (evil-append nil))
@@ -129,13 +138,16 @@ Argument COUNT number of lines to insert."
 
 (defun evil-org-open-above (count)
   "Clever insertion of org item.
-Argument COUNT number of lines to insert."
-  (interactive "p")
-  (end-of-visible-line)
-  (let ((e (org-element-lineage (org-element-at-point) '(item table-row) t)))
+Argument COUNT number of lines to insert.
+The behavior in items and tables can be controlled using evil-org-special-o/O.
+Passing in any prefix argument, executes the command without special behavior."
+  (interactive "P")
+  (beginning-of-line)
+  (let* ((special (and (null count) evil-org-special-o/O))
+         (e (org-element-lineage (org-element-at-point) special t)))
     (case (org-element-type e)
       ((table-row) (org-table-insert-row) (evil-insert nil))
-      ((item) (beginning-of-visual-line) (org-insert-item) (evil-append nil))
+      ((item) (org-insert-item) (evil-append nil))
       (otherwise (evil-open-above count)))))
 
 (defun evil-org-insert-subheading (&optional arg)

@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jrblevin@sdf.org>
 ;; Created: May 24, 2007
 ;; Version: 2.3-dev
-;; Package-Version: 20170611.1532
+;; Package-Version: 20170612.715
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: http://jblevins.org/projects/markdown-mode/
@@ -713,13 +713,18 @@
 ;;     underscores for italic and bold text will be hidden, text
 ;;     bullets for unordered lists will be replaced by Unicode
 ;;     bullets, and so on.  Since this includes URLs and reference
-;;     labels, when non-nil this setting supercedes `markdown-hide-urls'.
+;;     labels, when non-nil this setting supersedes `markdown-hide-urls'.
 ;;     Markup hiding can be toggled using `C-c C-x C-m`
 ;;     (`markdown-toggle-markup-hiding') or from the Markdown | Show &
 ;;     Hide menu.
 ;;
+;;     Unicode bullets are used to replace ASCII list item markers.
+;;     The list of characters used, in order of list level, can be
+;;     specified by setting the variable `markdown-list-item-bullets'.
 ;;     The placeholder character used to replace blockquote markup can
 ;;     be changed by setting `markdown-blockquote-display-char'.
+;;     Similarly, the character used for horizontal rules can be
+;;     customized by setting `markdown-hr-display-char'.
 ;;
 ;;   * `markdown-fontify-code-blocks-natively' - Whether to fontify
 ;;      code in code blocks using the native major mode.  This only
@@ -817,10 +822,10 @@
 ;;   prompted for the name of the language, but may press enter to
 ;;   continue without naming a language.
 ;;
-;; * **Strikethrough:** Strikethrough text is only supported in
-;;   `gfm-mode' and can be inserted (and toggled) using `C-c C-s d`.
-;;   Following the mnemonics for the other style keybindings, the
-;;   letter `d` coincides with the HTML tag `<del>`.
+;; * **Strikethrough:** Strikethrough text is supported in both
+;;   `markdown-mode' and `gfm-mode'.  It can be inserted (and toggled)
+;;   using `C-c C-s d`.  Following the mnemonics for the other style
+;;   keybindings, the letter `d` coincides with the HTML tag `<del>`.
 ;;
 ;; * **Task lists:** GFM task lists will be rendered as checkboxes
 ;;   (Emacs buttons) in both `markdown-mode' and `gfm-mode' when
@@ -1134,6 +1139,15 @@ Depending on your font, some good choices are …, ⋯, #, ∞, ★, and ⚓."
   "Character for hiding blockquote markup."
   :type 'string
   :safe 'stringp
+  :package-version '(markdown-mode . "2.3"))
+
+(defcustom markdown-hr-display-char
+  (cond ((char-displayable-p ?─) ?─)
+        ((char-displayable-p ?━) ?━)
+        (t ?-))
+  "Character for hiding horizontal rule markup."
+  :type 'character
+  :safe 'characterp
   :package-version '(markdown-mode . "2.3"))
 
 (defcustom markdown-enable-math nil
@@ -2017,6 +2031,17 @@ start which was previously propertized."
                          'markdown-blockquote
                          (match-data t)))))
 
+(defun markdown-syntax-propertize-hrs (start end)
+  "Match horizontal rules from START to END."
+  (save-excursion
+    (goto-char start)
+    (while (re-search-forward markdown-regex-hr end t)
+      (unless (or (markdown-on-heading-p)
+                  (markdown-code-block-at-point-p))
+        (put-text-property (match-beginning 0) (match-end 0)
+                           'markdown-hr
+                           (match-data t))))))
+
 (defun markdown-syntax-propertize-yaml-metadata (start end)
   (save-excursion
     (goto-char start)
@@ -2050,7 +2075,7 @@ start which was previously propertized."
 
 (defun markdown-syntax-propertize-comments (start end)
   "Match HTML comments from the START to END."
-  (let* ((state (syntax-ppss)) (in-comment (nth 4 state)))
+  (let* ((in-comment (markdown-in-comment-p)))
     (goto-char start)
     (cond
      ;; Comment start
@@ -2085,6 +2110,7 @@ start which was previously propertized."
         'markdown-gfm-code nil
         'markdown-pre nil
         'markdown-blockquote nil
+        'markdown-hr nil
         'markdown-heading nil
         'markdown-heading-1-setext nil
         'markdown-heading-2-setext nil
@@ -2097,7 +2123,7 @@ start which was previously propertized."
         'markdown-metadata-key nil
         'markdown-metadata-value nil
         'markdown-metadata-markup nil)
-  "Property list of all known markdown syntactic properties.")
+  "Property list of all Markdown syntactic properties.")
 
 (defun markdown-syntax-propertize (start end)
   "Function used as `syntax-propertize-function'.
@@ -2110,6 +2136,7 @@ START and END delimit region to propertize."
       (markdown-syntax-propertize-pre-blocks start end)
       (markdown-syntax-propertize-blockquotes start end)
       (markdown-syntax-propertize-headings start end)
+      (markdown-syntax-propertize-hrs start end)
       (markdown-syntax-propertize-comments start end))))
 
 
@@ -2385,6 +2412,11 @@ and disable it otherwise."
   "Face for mouse highlighting."
   :group 'markdown-faces)
 
+(defface markdown-hr-face
+  '((t (:inherit markdown-markup-face)))
+  "Face for horizontal rules."
+  :group 'markdown-faces)
+
 (defcustom markdown-header-scaling nil
   "Whether to use variable-height faces for headers.
 When non-nil, `markdown-header-face' will inherit from
@@ -2455,12 +2487,14 @@ code blocks.  Similarly, when using a dark-background theme, lighten it
 slightly.  If the face has been customized already, leave it alone."
   ;; Don't update customized faces
   (unless (get 'markdown-code-face 'saved-face)
-    (set-face-attribute
-     'markdown-code-face nil
-     :background
-     (cl-case (cdr (assq 'background-mode (frame-parameters)))
-       ('light (color-darken-name (face-background 'default) 5))
-       ('dark (color-lighten-name (face-background 'default) 5))))))
+    (let ((bg (face-background 'default)))
+      (when (and bg (not (equal bg "unspecified-bg")))
+        (set-face-attribute
+         'markdown-code-face nil
+         :background
+         (cl-case (cdr (assq 'background-mode (frame-parameters)))
+           ('light (color-darken-name bg 5))
+           ('dark (color-lighten-name bg 5))))))))
 
 (defun markdown-syntactic-face (state)
   "Return font-lock face for characters with given STATE.
@@ -2469,6 +2503,15 @@ See `font-lock-syntactic-face-function' for details."
     (cond
      (in-comment 'markdown-comment-face)
      (t nil))))
+
+(defcustom markdown-list-item-bullets
+  '("●" "◎" "○" "◆" "◇" "►" "•")
+  "List of bullets to use for unordered lists.
+It can contain any number of symbols, which will be repeated.
+Depending on your font, some reasonable choices are:
+♥ ● ◇ ✚ ✜ ☯ ◆ ♠ ♣ ♦ ❀ ◆ ◖ ▶ ► • ★ ▸."
+  :group 'markdown
+  :type '(repeat (string :tag "Bullet character")))
 
 (defvar markdown-mode-font-lock-keywords-basic
   `((markdown-match-yaml-metadata-begin . ((1 markdown-markup-face)))
@@ -2489,7 +2532,7 @@ See `font-lock-syntactic-face-function' for details."
                                                (4 markdown-language-info-face nil t)
                                                (5 markdown-markup-face nil t)))
     (markdown-match-fenced-end-code-block . ((0 markdown-markup-face)))
-    (markdown-match-fenced-code-blocks . ((0 markdown-pre-face)))
+    (markdown-fontify-fenced-code-blocks)
     (markdown-match-pre-blocks . ((0 markdown-pre-face)))
     (markdown-fontify-headings)
     (markdown-match-declarative-metadata . ((1 markdown-metadata-key-face)
@@ -2498,7 +2541,7 @@ See `font-lock-syntactic-face-function' for details."
     (markdown-match-pandoc-metadata . ((1 markdown-markup-face)
                                        (2 markdown-markup-face)
                                        (3 markdown-metadata-value-face)))
-    (markdown-match-hr . markdown-header-delimiter-face)
+    (markdown-fontify-hrs)
     (markdown-match-code . ((1 markdown-markup-properties)
                             (2 markdown-inline-code-face)
                             (3 markdown-markup-properties)))
@@ -2506,7 +2549,7 @@ See `font-lock-syntactic-face-function' for details."
                             (2 markdown-inline-code-face)
                             (3 markdown-markup-properties)))
     (markdown-fontify-angle-uris)
-    (,markdown-regex-list . (2 markdown-list-face))
+    (markdown-fontify-list-items)
     (,markdown-regex-footnote . ((1 markdown-markup-face)          ; [^
                                  (2 markdown-footnote-face)        ; label
                                  (3 markdown-markup-face)))        ; ]
@@ -2532,6 +2575,9 @@ See `font-lock-syntactic-face-function' for details."
     (markdown-match-italic . ((1 markdown-markup-properties prepend)
                               (2 markdown-italic-face append)
                               (3 markdown-markup-properties prepend)))
+    (,markdown-regex-strike-through . ((3 markdown-markup-properties)
+                                       (4 markdown-strike-through-face)
+                                       (5 markdown-markup-properties)))
     (markdown-fontify-plain-uris)
     (,markdown-regex-email . markdown-link-face)
     (,markdown-regex-line-break . (1 markdown-line-break-face prepend))
@@ -2654,7 +2700,7 @@ Used for `flyspell-generic-check-word-predicate'."
     (goto-char (1- (point)))
     (not (or (markdown-code-block-at-point-p)
              (markdown-inline-code-at-point-p)
-             (nth 4 (syntax-ppss)) ;; in comment
+             (markdown-in-comment-p)
              (let ((faces (get-text-property (point) 'face)))
                (if (listp faces)
                    (or (memq 'markdown-reference-face faces)
@@ -3116,6 +3162,11 @@ Set match data for `markdown-regex-header'."
       (set-match-data match-data)
       t)))
 
+(defsubst markdown-in-comment-p (&optional pos)
+  "Return non-nil if POS is in a comment.
+If POS is not given, use point instead."
+  (nth 4 (syntax-ppss pos)))
+
 
 ;;; Markdown Font Lock Matching Functions =====================================
 
@@ -3237,6 +3288,24 @@ $..$ or `markdown-regex-math-inline-double' for matching $$..$$."
             t)
         (goto-char (1+ (match-end 0)))))))
 
+(defun markdown-match-list-items (last)
+  "Match list items from point to LAST."
+  (when (markdown-match-inline-generic markdown-regex-list last)
+    (let ((begin (match-beginning 2))
+          (end (match-end 2)))
+        (if (or (markdown-range-property-any
+                 begin end 'face (list markdown-inline-code-face
+                                       markdown-bold-face
+                                       markdown-math-face))
+                (markdown-range-properties-exist begin end '(markdown-hr))
+                (markdown-in-comment-p))
+            (progn (goto-char (min (1+ (match-end 0)) last))
+                   (markdown-match-list-items last))
+          (set-match-data (list (match-beginning 0) (match-end 0)
+                                (match-beginning 1) (match-end 1)
+                                (match-beginning 2) (match-end 2)))
+          (goto-char (1+ (match-end 0)))))))
+
 (defun markdown-match-math-single (last)
   "Match single quoted $..$ math from point to LAST."
   (markdown-match-math-generic markdown-regex-math-inline-single last))
@@ -3297,16 +3366,7 @@ analysis."
 
 (defun markdown-match-hr (last)
   "Match horizontal rules comments from the point to LAST."
-  (while (and (re-search-forward markdown-regex-hr last t)
-              (or (markdown-on-heading-p)
-                  (markdown-code-block-at-point-p))
-              (< (match-end 0) last))
-    (forward-line))
-  (beginning-of-line)
-  (cond ((looking-at-p markdown-regex-hr)
-         (forward-line)
-         t)
-        (t nil)))
+  (markdown-match-propertized-text 'markdown-hr last))
 
 (defun markdown-match-comments (last)
   "Match HTML comments from the point to LAST."
@@ -3539,6 +3599,33 @@ is \"\n\n\""
     (font-lock-append-text-property
      (match-beginning 0) (match-end 0) 'face 'markdown-blockquote-face)
     t))
+
+(defun markdown-fontify-list-items (last)
+  "Apply font-lock properties to list markers from point to LAST."
+  (when (markdown-match-list-items last)
+    (let* ((indent (length (match-string-no-properties 1)))
+           (level (/ indent 4)) ;; level = 0, 1, 2, ...
+           (bullet (nth (mod level (length markdown-list-item-bullets))
+                        markdown-list-item-bullets)))
+      (add-text-properties
+       (match-beginning 2) (match-end 2) '(face markdown-list-face))
+      (when (and markdown-hide-markup
+                 (string-match-p "[\\*\\+-]" (match-string 2)))
+        (add-text-properties
+         (match-beginning 2) (match-end 2) `(display ,bullet))))
+    t))
+
+(defun markdown-fontify-hrs (last)
+  "Add text properties to horizontal rules from point to LAST."
+  (when (markdown-match-hr last)
+    (add-text-properties
+     (match-beginning 0) (match-end 0)
+     `(face markdown-hr-face
+            font-lock-multiline t
+            ,@(when markdown-hide-markup
+                `(display ,(make-string
+                            (window-body-width) markdown-hr-display-char)))))
+     t))
 
 
 ;;; Syntax Table ==============================================================
@@ -7696,9 +7783,10 @@ LANG is a string, and the returned major mode is a symbol."
          (intern (concat lang "-mode"))
          (intern (concat (downcase lang) "-mode")))))
 
-(defun markdown-fontify-gfm-code-blocks (last)
-  "Add text properties to next GFM code block from point to LAST."
-  (when (markdown-match-gfm-code-blocks last)
+(defun markdown-fontify-code-blocks-generic (matcher last)
+  "Add text properties to next code block from point to LAST.
+Use matching function MATCHER."
+  (when (funcall matcher last)
     (save-excursion
       (save-match-data
         (let* ((start (match-beginning 0))
@@ -7707,20 +7795,28 @@ LANG is a string, and the returned major mode is a symbol."
                (bol-prev (progn (goto-char start)
                                 (if (bolp) (point-at-bol 0) (point-at-bol))))
                (eol-next (progn (goto-char end)
-                                (if (eolp) (point-at-eol 2) (point-at-eol))))
+                                (if (bolp) (point-at-bol 2) (point-at-bol 3))))
                lang)
           (if (and markdown-fontify-code-blocks-natively
                    (setq lang (markdown-code-block-lang)))
-              (markdown-fontify-gfm-code-block lang start end)
+              (markdown-fontify-code-block-natively lang start end)
             (add-text-properties start end '(face markdown-pre-face)))
           ;; Set background for block as well as opening and closing lines.
           (font-lock-append-text-property
            bol-prev eol-next 'face 'markdown-code-face))))
     t))
 
+(defun markdown-fontify-gfm-code-blocks (last)
+  "Add text properties to next GFM code block from point to LAST."
+  (markdown-fontify-code-blocks-generic 'markdown-match-gfm-code-blocks last))
+
+(defun markdown-fontify-fenced-code-blocks (last)
+  "Add text properties to next tilde fenced code block from point to LAST."
+  (markdown-fontify-code-blocks-generic 'markdown-match-fenced-code-blocks last))
+
 ;; Based on `org-src-font-lock-fontify-block' from org-src.el.
-(defun markdown-fontify-gfm-code-block (lang start end)
-  "Fontify given code block.
+(defun markdown-fontify-code-block-natively (lang start end)
+  "Fontify given GFM or fenced code block.
 This function is called by Emacs for automatic fontification when
 `markdown-fontify-code-blocks-natively' is non-nil.  LANG is the
 language used in the block. START and END specify the block
@@ -7916,14 +8012,8 @@ position."
   "Hook run when entering GFM mode.")
 
 (defvar gfm-font-lock-keywords
-  (append
-   ;; GFM features to match first
-   (list
-    (cons markdown-regex-strike-through '((3 markdown-markup-face)
-                                          (4 markdown-strike-through-face)
-                                          (5 markdown-markup-face))))
-   ;; Basic Markdown features (excluding possibly overridden ones)
-   markdown-mode-font-lock-keywords-basic)
+  ;; Basic Markdown features (excluding possibly overridden ones)
+  markdown-mode-font-lock-keywords-basic
   "Default highlighting expressions for GitHub Flavored Markdown mode.")
 
 ;;;###autoload
