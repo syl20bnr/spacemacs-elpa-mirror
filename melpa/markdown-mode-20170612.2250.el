@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jrblevin@sdf.org>
 ;; Created: May 24, 2007
 ;; Version: 2.3-dev
-;; Package-Version: 20170612.715
+;; Package-Version: 20170612.2250
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: http://jblevins.org/projects/markdown-mode/
@@ -493,6 +493,14 @@
 ;;     `C-M-}` (`markdown-end-of-text-block`).  To mark a plain text
 ;;     block, use `C-c M-h` (`markdown-mark-text-block`).
 ;;
+;;   * Miscellaneous Commands:
+;;
+;;     When the `[edit-indirect](https://github.com/Fanael/edit-indirect/)`
+;;     package is installed, <kbd>C-c '</kbd> (`markdown-edit-code-block`)
+;;     can be used to edit a code block in an indirect buffer in the
+;;     native major mode.  Press <kbd>C-c C-c</kbd> to commit changes
+;;     and return or <kbd>C-c C-k</kbd> to cancel.
+;;
 ;; As noted, many of the commands above behave differently depending
 ;; on whether Transient Mark mode is enabled or not.  When it makes
 ;; sense, if Transient Mark mode is on and the region is active, the
@@ -721,10 +729,11 @@
 ;;     Unicode bullets are used to replace ASCII list item markers.
 ;;     The list of characters used, in order of list level, can be
 ;;     specified by setting the variable `markdown-list-item-bullets'.
-;;     The placeholder character used to replace blockquote markup can
-;;     be changed by setting `markdown-blockquote-display-char'.
-;;     Similarly, the character used for horizontal rules can be
-;;     customized by setting `markdown-hr-display-char'.
+;;     The placeholder characters used to replace other markup can
+;;     be changed by customizing the corresponding variables:
+;;     `markdown-blockquote-display-char',
+;;     `markdown-hr-display-char', and
+;;     `markdown-definition-display-char'.
 ;;
 ;;   * `markdown-fontify-code-blocks-natively' - Whether to fontify
 ;;      code in code blocks using the native major mode.  This only
@@ -733,7 +742,7 @@
 ;;      use.  The language to mode mapping may be customized by setting
 ;;      the variable `markdown-code-lang-modes'.  This can be toggled
 ;;      interactively by pressing `C-c C-x C-f`
-;;      (`markdown-toggle-fontify-code-blocks-natively`).
+;;      (`markdown-toggle-fontify-code-blocks-natively').
 ;;
 ;; Additionally, the faces used for syntax highlighting can be modified to
 ;; your liking by issuing `M-x customize-group RET markdown-faces`
@@ -946,6 +955,11 @@
 (defconst markdown-output-buffer-name "*markdown-output*"
   "Name of temporary buffer for markdown command output.")
 
+(defconst markdown-sub-superscript-display
+  '(((raise -0.3) (height 0.7))         ; subscript
+    ((raise 0.3) (height 0.7)))         ; superscript
+  "Parameters for sub- and superscript formatting.")
+
 
 ;;; Global Variables ==========================================================
 
@@ -1150,6 +1164,18 @@ Depending on your font, some good choices are …, ⋯, #, ∞, ★, and ⚓."
   :safe 'characterp
   :package-version '(markdown-mode . "2.3"))
 
+(defcustom markdown-definition-display-char
+  (cond ((char-displayable-p ?⁘) ?⁘)
+        ((char-displayable-p ?⁙) ?⁙)
+        ((char-displayable-p ?≡) ?≡)
+        ((char-displayable-p ?⌑) ?⌑)
+        ((char-displayable-p ?◊) ?◊)
+        (t nil))
+  "Character for replacing definition list markup."
+  :type 'character
+  :safe 'characterp
+  :package-version '(markdown-mode . "2.3"))
+
 (defcustom markdown-enable-math nil
   "Syntax highlighting for inline LaTeX and itex expressions.
 Set this to a non-nil value to turn on math support by default.
@@ -1158,6 +1184,7 @@ Math support can be enabled, disabled, or toggled later using
   :group 'markdown
   :type 'boolean
   :safe 'booleanp)
+(make-variable-buffer-local 'markdown-enable-math)
 
 (defcustom markdown-css-paths nil
   "URL of CSS file to link to in the output XHTML."
@@ -1303,7 +1330,7 @@ Such URLs will be replaced by an ellipsis (…), but it is still
 part of the buffer.  Deleting the final parenthesis, for example,
 allows easy editing of the URL.  You can also hover your mouse
 pointer over the link text to see the URL.
-
+Set this to a non-nil value to turn this feature on by default.
 You can interactively set the value of this variable by calling
 `markdown-toggle-url-hiding' or from the menu Markdown > Links &
 Images menu."
@@ -1311,6 +1338,7 @@ Images menu."
   :type 'boolean
   :safe 'booleanp
   :package-version '(markdown-mode . "2.3"))
+(make-variable-buffer-local 'markdown-hide-urls)
 
 
 ;;; Regular Expressions =======================================================
@@ -1408,19 +1436,20 @@ Groups 1 and 3 match the opening and closing tags.
 Group 2 matches the key sequence.")
 
 (defconst markdown-regex-gfm-code-block-open
- "^[[:blank:]]*\\(```\\)[[:blank:]]*\\({\\)?[[:blank:]]*\\([^[:space:]]+?\\)?\\(?:[[:blank:]]+\\(.+?\\)\\)?[[:blank:]]*\\(}\\)?[[:blank:]]*$"
- "Regular expression matching opening of GFM code blocks.
-Group 1 matches the opening three backquotes.
-Group 2 matches the opening brace (optional).
+  "^[[:blank:]]*\\(```\\)\\([[:blank:]]*{?[[:blank:]]*\\)\\([^[:space:]]+?\\)?\\(?:[[:blank:]]+\\(.+?\\)\\)?\\([[:blank:]]*}?[[:blank:]]*\\)$"
+  "Regular expression matching opening of GFM code blocks.
+Group 1 matches the opening three backquotes and any following whitespace.
+Group 2 matches the opening brace (optional) and surrounding whitespace.
 Group 3 matches the language identifier (optional).
 Group 4 matches the info string (optional).
-Group 5 matches the closing brace (optional).
+Group 5 matches the closing brace (optional), whitespace, and newline.
 Groups need to agree with `markdown-regex-tilde-fence-begin'.")
 
 (defconst markdown-regex-gfm-code-block-close
- "^[[:blank:]]*\\(```\\)\\s *?$"
+ "^[[:blank:]]*\\(```\\)\\(\\s *?\\)$"
  "Regular expression matching closing of GFM code blocks.
-Group 1 matches the closing three backquotes.")
+Group 1 matches the closing three backquotes.
+Group 2 matches any whitespace and the final newline.")
 
 (defconst markdown-regex-pre
   "^\\(    \\|\t\\).*$"
@@ -1554,13 +1583,13 @@ missing."
 
 (defconst markdown-regex-tilde-fence-begin
   (markdown-make-tilde-fence-regex
-   3 "[[:blank:]]*\\({\\)?[[:blank:]]*\\([^[:space:]]+?\\)?\\(?:[[:blank:]]+\\(.+?\\)\\)?[[:blank:]]*\\(}\\)?[[:blank:]]*$")
+   3 "\\([[:blank:]]*{?\\)[[:blank:]]*\\([^[:space:]]+?\\)?\\(?:[[:blank:]]+\\(.+?\\)\\)?\\([[:blank:]]*}?[[:blank:]]*\\)$")
   "Regular expression for matching tilde-fenced code blocks.
 Group 1 matches the opening tildes.
-Group 2 matches the opening brace (optional).
+Group 2 matches (optional) opening brace and surrounding whitespace.
 Group 3 matches the language identifier (optional).
 Group 4 matches the info string (optional).
-Group 5 matches the closing brace (optional).
+Group 5 matches the closing brace (optional) and any surrounding whitespace.
 Groups need to agree with `markdown-regex-gfm-code-block-open'.")
 
 (defconst markdown-regex-declarative-metadata
@@ -1599,8 +1628,24 @@ or
       markdown-regex-yaml-pandoc-metadata-end-border
     markdown-regex-yaml-metadata-border))
 
+(defconst markdown-regex-sub-superscript
+  "\\(?:^\\|[^\\~^]\\)\\(\\([~^]\\)\\([[:alnum:]]+\\)\\(\\2\\)\\)"
+  "The regular expression matching a sub- or superscript.
+The leading un-numbered group matches the character before the
+opening tilde or carat, if any, ensuring that it is not a
+backslash escape, carat, or tilde.
+Group 1 matches the entire expression, including markup.
+Group 2 matches the opening markup--a tilde or carat.
+Group 3 matches the text inside the delimiters.
+Group 4 matches the closing markup--a tilde or carat.")
+
 
 ;;; Syntax ====================================================================
+
+(defsubst markdown-in-comment-p (&optional pos)
+  "Return non-nil if POS is in a comment.
+If POS is not given, use point instead."
+  (nth 4 (syntax-ppss pos)))
 
 (defun markdown-syntax-propertize-extend-region (start end)
   "Extend START to END region to include an entire block of text.
@@ -2146,12 +2191,20 @@ START and END delimit region to propertize."
   '(face markdown-markup-face invisible markdown-markup)
   "List of properties and values to apply to markup.")
 
+(defconst markdown-language-keyword-properties
+  '(face markdown-language-keyword-face invisible markdown-markup)
+  "List of properties and values to apply to code block language names.")
+
+(defconst markdown-language-info-properties
+  '(face markdown-language-info-face invisible markdown-markup)
+  "List of properties and values to apply to code block language info strings.")
+
 (defcustom markdown-hide-markup nil
   "Determines whether markup in the buffer will be hidden.
 When set to nil, all markup is displayed in the buffer as it
 appears in the file.  An exception is when `markdown-hide-urls'
 is non-nil.
-When set to a non-nil value, all possible markup will be hidden.
+Set this to a non-nil value to turn this feature on by default.
 You can interactively toggle the value of this variable with
 `markdown-toggle-markup-hiding', \\[markdown-toggle-markup-hiding],
 or from the Markdown > Show & Hide menu."
@@ -2159,6 +2212,7 @@ or from the Markdown > Show & Hide menu."
   :type 'boolean
   :safe 'booleanp
   :package-version '(markdown-mode . "2.3"))
+(make-variable-buffer-local 'markdown-hide-markup)
 
 (defun markdown-toggle-markup-hiding (&optional arg)
   "Toggle the display or hiding of markup.
@@ -2519,19 +2573,19 @@ Depending on your font, some reasonable choices are:
     (markdown-match-yaml-metadata-key . ((1 markdown-metadata-key-face)
                                          (2 markdown-markup-face)
                                          (3 markdown-metadata-value-face)))
-    (markdown-match-gfm-open-code-blocks . ((1 markdown-markup-face)
-                                            (2 markdown-markup-face nil t)
-                                            (3 markdown-language-keyword-face nil t)
-                                            (4 markdown-language-info-face nil t)
-                                            (5 markdown-markup-face nil t)))
-    (markdown-match-gfm-close-code-blocks . ((1 markdown-markup-face)))
+    (markdown-match-gfm-open-code-blocks . ((1 markdown-markup-properties)
+                                            (2 markdown-markup-properties nil t)
+                                            (3 markdown-language-keyword-properties nil t)
+                                            (4 markdown-language-info-properties nil t)
+                                            (5 markdown-markup-properties nil t)))
+    (markdown-match-gfm-close-code-blocks . ((0 markdown-markup-properties)))
     (markdown-fontify-gfm-code-blocks)
-    (markdown-match-fenced-start-code-block . ((1 markdown-markup-face)
-                                               (2 markdown-markup-face nil t)
-                                               (3 markdown-language-keyword-face nil t)
-                                               (4 markdown-language-info-face nil t)
-                                               (5 markdown-markup-face nil t)))
-    (markdown-match-fenced-end-code-block . ((0 markdown-markup-face)))
+    (markdown-match-fenced-start-code-block . ((1 markdown-markup-properties)
+                                               (2 markdown-markup-properties nil t)
+                                               (3 markdown-language-keyword-properties nil t)
+                                               (4 markdown-language-info-properties nil t)
+                                               (5 markdown-markup-properties nil t)))
+    (markdown-match-fenced-end-code-block . ((0 markdown-markup-properties)))
     (markdown-fontify-fenced-code-blocks)
     (markdown-match-pre-blocks . ((0 markdown-pre-face)))
     (markdown-fontify-headings)
@@ -2542,9 +2596,9 @@ Depending on your font, some reasonable choices are:
                                        (2 markdown-markup-face)
                                        (3 markdown-metadata-value-face)))
     (markdown-fontify-hrs)
-    (markdown-match-code . ((1 markdown-markup-properties)
-                            (2 markdown-inline-code-face)
-                            (3 markdown-markup-properties)))
+    (markdown-match-code . ((1 markdown-markup-properties prepend)
+                            (2 markdown-inline-code-face prepend)
+                            (3 markdown-markup-properties prepend)))
     (,markdown-regex-kbd . ((1 markdown-markup-properties)
                             (2 markdown-inline-code-face)
                             (3 markdown-markup-properties)))
@@ -2581,6 +2635,7 @@ Depending on your font, some reasonable choices are:
     (markdown-fontify-plain-uris)
     (,markdown-regex-email . markdown-link-face)
     (,markdown-regex-line-break . (1 markdown-line-break-face prepend))
+    (markdown-fontify-sub-superscripts)
     (markdown-fontify-blockquotes))
   "Syntax highlighting for Markdown files.")
 
@@ -3098,8 +3153,8 @@ intact additional processing."
           (cl-pushnew target refs :test #'equal)))
       (reverse refs))))
 
-(defun markdown-inline-code-at-point ()
-  "Return non-nil if the point is at an inline code fragment.
+(defun markdown-inline-code-at-pos (pos)
+  "Return non-nil if there is an inline code fragment at POS.
 Return nil otherwise.  Set match data according to
 `markdown-match-code' upon success.
 This function searches the block for a code fragment that
@@ -3112,6 +3167,7 @@ Group 1 matches the opening backquotes.
 Group 2 matches the code fragment itself, without backquotes.
 Group 3 matches the closing backquotes."
   (save-excursion
+    (goto-char pos)
     (let ((old-point (point))
           (end-of-block (progn (markdown-end-of-text-block) (point)))
           found)
@@ -3123,12 +3179,22 @@ Group 3 matches the closing backquotes."
            (<= (match-beginning 0) old-point) ; match contains old-point
            (>= (match-end 0) old-point)))))
 
+(defun markdown-inline-code-at-pos-p (pos)
+  "Return non-nil if there is an inline code fragment at POS.
+Like `markdown-inline-code-at-pos`, but preserves match data."
+  (save-match-data (markdown-inline-code-at-pos pos)))
+
+(defun markdown-inline-code-at-point ()
+  "Return non-nil if the point is at an inline code fragment.
+See `markdown-inline-code-at-pos' for details."
+  (markdown-inline-code-at-pos (point)))
+
 (defun markdown-inline-code-at-point-p ()
   "Return non-nil if there is inline code at the point.
 This is a predicate function counterpart to
 `markdown-inline-code-at-point' which does not modify the match
 data.  See `markdown-code-block-at-point-p' for code blocks."
-  (save-match-data (markdown-inline-code-at-point)))
+  (save-match-data (markdown-inline-code-at-pos (point))))
 
 (make-obsolete 'markdown-code-at-point-p 'markdown-inline-code-at-point-p "v2.2")
 
@@ -3162,11 +3228,6 @@ Set match data for `markdown-regex-header'."
       (set-match-data match-data)
       t)))
 
-(defsubst markdown-in-comment-p (&optional pos)
-  "Return non-nil if POS is in a comment.
-If POS is not given, use point instead."
-  (nth 4 (syntax-ppss pos)))
-
 
 ;;; Markdown Font Lock Matching Functions =====================================
 
@@ -3177,7 +3238,7 @@ Return nil otherwise."
   (let (props)
     (catch 'found
       (dolist (loc (number-sequence begin end))
-        (when (setq props (get-char-property loc prop))
+        (when (setq props (get-text-property loc prop))
           (cond ((listp props)
                  ;; props is a list, check for membership
                  (dolist (val prop-values)
@@ -3193,7 +3254,7 @@ Return nil otherwise."
    with result = nil
    while (not
           (setq result
-                (cl-some (lambda (prop) (get-char-property loc prop)) props)))
+                (cl-some (lambda (prop) (get-text-property loc prop)) props)))
    finally return result))
 
 (defun markdown-match-inline-generic (regex last &optional faceless)
@@ -3226,50 +3287,53 @@ When FACELESS is non-nil, do not return matches where faces have been applied."
                           (match-beginning 2) (match-end 2)
                           (match-beginning 3) (match-end 3)
                           (match-beginning 4) (match-end 4)))
-    (goto-char (1+ (match-end 0)))))
+    t))
 
 (defun markdown-match-bold (last)
   "Match inline bold from the point to LAST."
   (when (markdown-match-inline-generic markdown-regex-bold last)
-    (let ((begin (match-beginning 2)) (end (match-end 2)))
-      (cond
-       ((markdown-range-property-any
-         begin end 'face (list markdown-inline-code-face
-                               markdown-math-face))
-        (goto-char (1+ (match-end 0)))
-        (markdown-match-bold last))
-       (t
+    (let ((begin (match-beginning 2))
+          (end (match-end 2)))
+      (if (or (markdown-inline-code-at-pos-p begin)
+              (markdown-inline-code-at-pos-p end)
+              (markdown-range-property-any
+               begin begin 'face '(markdown-url-face))
+              (markdown-range-property-any
+               begin end 'face '(markdown-inline-code-face
+                                 markdown-math-face)))
+          (progn (goto-char (min (1+ begin) last))
+                 (when (< (point) last)
+                   (markdown-match-italic last)))
         (set-match-data (list (match-beginning 2) (match-end 2)
-                          (match-beginning 3) (match-end 3)
-                          (match-beginning 4) (match-end 4)
-                          (match-beginning 5) (match-end 5)))
-        (goto-char (1+ (match-end 0))))))))
+                              (match-beginning 3) (match-end 3)
+                              (match-beginning 4) (match-end 4)
+                              (match-beginning 5) (match-end 5)))
+        t))))
 
 (defun markdown-match-italic (last)
   "Match inline italics from the point to LAST."
   (let ((regex (if (eq major-mode 'gfm-mode)
                    markdown-regex-gfm-italic markdown-regex-italic)))
     (when (markdown-match-inline-generic regex last)
-      (let ((begin (match-beginning 1)) (end (match-end 1)))
-        (cond
-         ((markdown-range-property-any
-           begin begin 'face (list markdown-url-face))
-          ;; Italics shouldn't begin inside a URL due to an underscore
-          (goto-char (min (1+ (match-end 0)) last))
-          (markdown-match-italic last))
-         ((markdown-range-property-any
-           begin end 'face (list markdown-inline-code-face
-                                 markdown-bold-face
-                                 markdown-list-face
-                                 markdown-math-face))
-          (goto-char (1+ (match-end 0)))
-          (markdown-match-italic last))
-         (t
+      (let ((begin (match-beginning 1))
+            (end (match-end 1)))
+        (if (or (markdown-inline-code-at-pos-p begin)
+                (markdown-inline-code-at-pos-p end)
+                (markdown-range-property-any
+                 begin begin 'face '(markdown-url-face))
+                (markdown-range-property-any
+                 begin end 'face '(markdown-inline-code-face
+                                   markdown-bold-face
+                                   markdown-list-face
+                                   markdown-math-face)))
+            (progn (goto-char (min (1+ begin) last))
+                   (when (< (point) last)
+                     (markdown-match-italic last)))
           (set-match-data (list (match-beginning 1) (match-end 1)
                                 (match-beginning 2) (match-end 2)
                                 (match-beginning 3) (match-end 3)
                                 (match-beginning 4) (match-end 4)))
-          (goto-char (1+ (match-end 0)))))))))
+          t)))))
 
 (defun markdown-match-math-generic (regex last)
   "Match REGEX from point to LAST.
@@ -3609,10 +3673,17 @@ is \"\n\n\""
                         markdown-list-item-bullets)))
       (add-text-properties
        (match-beginning 2) (match-end 2) '(face markdown-list-face))
-      (when (and markdown-hide-markup
-                 (string-match-p "[\\*\\+-]" (match-string 2)))
-        (add-text-properties
-         (match-beginning 2) (match-end 2) `(display ,bullet))))
+      (when markdown-hide-markup
+        (cond
+         ;; Unordered lists
+         ((string-match-p "[\\*\\+-]" (match-string 2))
+          (add-text-properties
+           (match-beginning 2) (match-end 2) `(display ,bullet)))
+         ;; Definition lists
+         ((string-equal ":" (match-string 2))
+          (add-text-properties
+           (match-beginning 2) (match-end 2)
+           `(display ,(char-to-string markdown-definition-display-char)))))))
     t))
 
 (defun markdown-fontify-hrs (last)
@@ -3626,6 +3697,25 @@ is \"\n\n\""
                 `(display ,(make-string
                             (window-body-width) markdown-hr-display-char)))))
      t))
+
+(defun markdown-fontify-sub-superscripts (last)
+  "Apply text properties to sub- and superscripts from point to LAST."
+  (when (markdown-search-until-condition
+         (lambda () (and (not (markdown-code-block-at-point-p))
+                         (not (markdown-inline-code-at-point-p))
+                         (not (markdown-in-comment-p))))
+         markdown-regex-sub-superscript last t)
+    (let* ((subscript-p (string= (match-string 2) "~"))
+           (index (if subscript-p 0 1))
+           (mp (list 'face 'markdown-markup-face
+                     'invisible 'markdown-markup)))
+      (when markdown-hide-markup
+        (put-text-property (match-beginning 3) (match-end 3)
+                           'display
+                           (nth index markdown-sub-superscript-display)))
+      (add-text-properties (match-beginning 2) (match-end 2) mp)
+      (add-text-properties (match-beginning 4) (match-end 4) mp)
+      t)))
 
 
 ;;; Syntax Table ==============================================================
@@ -4459,9 +4549,13 @@ at the beginning of the block."
     (set-match-data (get-text-property (point) (cdr pos-prop)))
     ;; Note: Hard-coded group number assumes tilde
     ;; and GFM fenced code regexp groups agree.
-    (when (and (match-beginning 3) (match-end 3))
-      (buffer-substring-no-properties
-       (match-beginning 3) (match-end 3)))))
+    (let ((begin (match-beginning 3))
+          (end (match-end 3)))
+      (when (and begin end)
+        ;; Fix language strings beginning with periods, like ".ruby".
+        (when (eq (char-after begin) ?.)
+          (setq begin (1+ begin)))
+        (buffer-substring-no-properties begin end)))))
 
 (defun markdown-gfm-parse-buffer-for-languages (&optional buffer)
   (with-current-buffer (or buffer (current-buffer))
@@ -5216,6 +5310,7 @@ Assumes match data is available for `markdown-regex-italic'."
     (define-key map (kbd "C-c C-c c") 'markdown-check-refs)
     (define-key map (kbd "C-c C-c n") 'markdown-cleanup-list-numbers)
     (define-key map (kbd "C-c C-c ]") 'markdown-complete-buffer)
+    (define-key map (kbd "C-c '") 'markdown-edit-code-block)
     ;; List editing
     (define-key map (kbd "M-<up>") 'markdown-move-up)
     (define-key map (kbd "M-<down>") 'markdown-move-down)
@@ -5381,6 +5476,7 @@ See also `markdown-mode-map'.")
      ["Blockquote" markdown-insert-blockquote]
      ["Preformatted" markdown-insert-pre]
      ["GFM Code Block" markdown-insert-gfm-code-block]
+     ["Edit Code Block" markdown-edit-code-block (markdown-code-block-at-point-p)]
      "---"
      ["Blockquote Region" markdown-blockquote-region]
      ["Preformatted Region" markdown-pre-region]
@@ -6268,7 +6364,7 @@ Only visible heading lines are considered, unless INVISIBLE-OK is non-nil."
 
 (defun markdown-on-heading-p ()
   "Return non-nil if point is on a heading line."
-  (get-text-property (point) 'markdown-heading))
+  (get-text-property (point-at-bol) 'markdown-heading))
 
 (defun markdown-end-of-subtree (&optional invisible-OK)
   "Move to the end of the current subtree.
@@ -7803,7 +7899,10 @@ Use matching function MATCHER."
             (add-text-properties start end '(face markdown-pre-face)))
           ;; Set background for block as well as opening and closing lines.
           (font-lock-append-text-property
-           bol-prev eol-next 'face 'markdown-code-face))))
+           bol-prev eol-next 'face 'markdown-code-face)
+          ;; Set invisible property for lines before and after, including newline.
+          (add-text-properties bol-prev start '(invisible markdown-markup))
+          (add-text-properties end eol-next '(invisible markdown-markup)))))
     t))
 
 (defun markdown-fontify-gfm-code-blocks (last)
@@ -7851,6 +7950,30 @@ position."
          '(font-lock-fontified t fontified t font-lock-multiline t))
         (set-buffer-modified-p modified)))))
 
+(require 'edit-indirect nil t)
+(defvar edit-indirect-guess-mode-function)
+
+(defun markdown-edit-code-block ()
+  "Edit Markdown code block in an indirect buffer."
+  (interactive)
+  (save-excursion
+    (if (fboundp 'edit-indirect-region)
+        (let* ((bounds (markdown-get-enclosing-fenced-block-construct))
+               (begin (and bounds (goto-char (nth 0 bounds)) (point-at-bol 2)))
+               (end (and bounds (goto-char (nth 1 bounds)) (point-at-bol 1))))
+          (if (and begin end)
+              (let* ((lang (markdown-code-block-lang))
+                     (mode (and lang (markdown-get-lang-mode lang)))
+                     (edit-indirect-guess-mode-function
+                      (lambda (_parent-buffer _beg _end)
+                        (funcall mode))))
+                (edit-indirect-region begin end 'display-buffer))
+            (error "Not inside a GFM or tilde fenced code block")))
+      (when (y-or-n-p "Package edit-indirect needed to edit code blocks. Install it now? ")
+        (progn (package-refresh-contents)
+               (package-install 'edit-indirect)
+               (markdown-edit-code-block))))))
+
 
 ;;; Mode Definition  ==========================================================
 
@@ -7891,18 +8014,12 @@ position."
   (set (make-local-variable 'font-lock-defaults) nil)
   (set (make-local-variable 'font-lock-multiline) t)
   (add-to-list 'font-lock-extra-managed-props 'composition)
-  (markdown-update-code-face)
-  ;; URL hiding
-  (make-local-variable 'markdown-hide-urls)
-  ;; Markup hiding
-  (make-local-variable 'markdown-hide-markup)
   (add-to-list 'font-lock-extra-managed-props 'invisible)
   (add-to-list 'font-lock-extra-managed-props 'display)
   (if markdown-hide-markup
       (add-to-invisibility-spec 'markdown-markup)
     (remove-from-invisibility-spec 'markdown-markup))
-  ;; Extensions
-  (make-local-variable 'markdown-enable-math)
+  (markdown-update-code-face)
   ;; Reload extensions
   (markdown-reload-extensions)
   ;; Add a buffer-local hook to reload after file-local variables are read

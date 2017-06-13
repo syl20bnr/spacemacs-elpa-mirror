@@ -20,7 +20,7 @@
 ;; USA
 
 ;; Version: 1.0
-;; Package-Version: 20170319.902
+;; Package-Version: 20170612.1038
 ;; Author: Adrien Brochard
 ;; Keywords: snippet org-mode yasnippet tools
 ;; URL: https://github.com/abrochard/org-sync-snippets
@@ -94,6 +94,25 @@
   :type 'string
   :group 'org-sync-snippets)
 
+(defun org-sync-snippets--parse-dir (snippets-dir level)
+  "Recursive function to  write snippets to org file.
+
+SNIPPETS-DIR the location of the snippets file.
+LEVEL the current folder level."
+  (if (< 0 level)
+      (insert (make-string level (aref "*" 0)) " " (file-name-base snippets-dir) "\n"))
+  (dolist (mode (f-directories snippets-dir))
+    (org-sync-snippets--parse-dir mode (+ level 1)))
+  (dolist (snippet-file (f-files snippets-dir))
+      (let ((content (f-read-text snippet-file 'utf-8)))
+        (unless (string-match "^# tangle: no" content)
+          (insert (make-string (+ 1 level) (aref "*" 0)) " " (file-name-base snippet-file) "\n"
+                  "#+BEGIN_SRC snippet "
+                  ":tangle " snippet-file
+                  "\n"
+                  (replace-regexp-in-string "^" "  "  content) "\n"
+                  "#+END_SRC\n")))))
+
 (defun org-sync-snippets--to-org (snippets-dir org-file)
   "Write snippets to org file.
 
@@ -102,31 +121,24 @@ ORG-FILE the location of the compiled org file."
   (with-temp-file org-file
     (insert "#+TITLE: " org-sync-snippets-collection-title "\n")
     (insert "#+AUTHOR: org-sync-snippets\n\n")
-    (dolist (mode (f-directories snippets-dir))
-      (insert "* " (file-name-base mode) "\n")
-      (dolist (snippet-file (f-files mode))
-        (let ((content (f-read-text snippet-file 'utf-8)))
-          (unless (string-match "^# tangle: no" content)
-            (insert "** " (file-name-base snippet-file) "\n"
-                    "#+BEGIN_SRC snippet "
-                    ":tangle " snippet-file
-                    "\n"
-                    (replace-regexp-in-string "^" "  " content) "\n"
-                    "#+END_SRC\n")))))))
+    (org-sync-snippets--parse-dir snippets-dir 0)))
+
+(defun org-sync-snippets--create-dir-structure (org-file)
+  "Make sure that all folders are created in preparation for tangling.
+
+ORG-FILE the location of the compiled org file."
+  (with-temp-buffer
+    (insert-file-contents org-file)
+    (while (re-search-forward ":tangle \\(/.*/\\)" (point-max) t)
+      (if (not (f-dir? (match-string 1)))
+          (make-directory (match-string 1) t)))))
 
 (defun org-sync-snippets--to-snippets (org-file snippets-dir)
   "Tangle org file to snippets.
 
 ORG-FILE the location of the compiled org file
 SNIPPETS-DIR is the location of the snippet files."
-  (unless (f-dir? snippets-dir)
-    (f-mkdir snippets-dir))
-  (with-temp-buffer
-    (insert-file-contents org-file)
-    (while (re-search-forward "^* \\(.+-mode\\)" (point-max) t)
-      (let ((path (concat (file-name-as-directory snippets-dir) (match-string 1))))
-        (unless (f-dir? path)
-          (f-mkdir path)))))
+  (org-sync-snippets--create-dir-structure org-file)
   (org-babel-tangle-file org-file))
 
 ;;;###autoload

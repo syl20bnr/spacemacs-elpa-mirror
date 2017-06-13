@@ -4,7 +4,7 @@
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
 ;; Keywords: convenience
-;; Package-Version: 20170611.1403
+;; Package-Version: 20170612.1308
 ;; Version: 1.0.0
 ;; URL: https://github.com/Sarcasm/company-irony/
 ;; Package-Requires: ((emacs "24.1") (company "0.8.0") (irony "1.0.0") (cl-lib "0.5"))
@@ -51,14 +51,16 @@
   (get-text-property 0 'company-irony candidate))
 
 (defun company-irony-prefix ()
-  (let ((symbol-start (irony-completion-beginning-of-symbol)))
-    (when symbol-start
-      (let ((prefix (buffer-substring-no-properties symbol-start (point))))
-        (save-excursion
-          (goto-char symbol-start)
-          (if (irony-completion-at-trigger-point-p)
-              (cons prefix t)
-            prefix))))))
+  (pcase-let ((`(,symbol-start . ,symbol-end) (irony-completion-symbol-bounds)))
+    (if (and symbol-end (> symbol-end (point)))
+        'stop
+      (when symbol-start
+        (let ((prefix (buffer-substring-no-properties symbol-start (point))))
+          (save-excursion
+            (goto-char symbol-start)
+            (if (irony-completion-at-trigger-point-p)
+                (cons prefix t)
+              prefix)))))))
 
 (defun company-irony--filter-candidates (prefix candidates)
   (cl-loop for candidate in candidates

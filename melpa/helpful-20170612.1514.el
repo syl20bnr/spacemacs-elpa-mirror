@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Keywords: help, lisp
-;; Package-Version: 20170612.205
+;; Package-Version: 20170612.1514
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2"))
 
@@ -520,8 +520,9 @@ For example, \"(some-func FOO &optional BAR)\"."
     
     (or docstring-sig source-sig)))
 
-;; TODO: Info mentions, e.g. `define-derived-mode'.
-;; TODO: add button for searching the manual.
+;; TODO: Info mentions, e.g. `define-derived-mode' or `defface'.
+;; TODO: for plain symbol, just highlight rather than creating links
+;; e.g. in `defface'.
 (defun helpful--docstring (sym)
   "Get the docstring for SYM."
   (-when-let (docstring (documentation sym))

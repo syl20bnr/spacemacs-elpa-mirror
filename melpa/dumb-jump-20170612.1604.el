@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015-2016 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.0
-;; Package-Version: 20170611.1336
+;; Package-Version: 20170612.1604
 ;; Package-Requires: ((emacs "24.3") (f "0.17.3") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -1868,7 +1868,7 @@ searcher symbol."
 (defun dumb-jump-generate-git-grep-command (look-for cur-file proj regexes lang exclude-paths)
   "Generate the git grep response based on the needle LOOK-FOR in the directory PROJ."
   (let* ((filled-regexes (dumb-jump-populate-regexes look-for regexes 'git-grep))
-         (ggtypes (dumb-jump-get-git-grep-type-by-language lang))
+         (ggtypes (when (f-ext cur-file) (dumb-jump-get-git-grep-type-by-language lang)))
          (cmd (concat dumb-jump-git-grep-cmd
                       " --color=never --line-number"
                       (if dumb-jump-git-grep-search-untracked

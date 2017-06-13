@@ -4,7 +4,7 @@
 
 ;; Author: Elis "etu" Axelsson
 ;; URL: https://github.com/etu/webpaste.el
-;; Package-Version: 20170611.345
+;; Package-Version: 20170612.1352
 ;; Package-X-Original-Version: 1.5.0
 ;; Version: 1.5.0
 ;; Keywords: convenience, comm, paste
@@ -41,6 +41,7 @@
 
 
 
+;;;###autoload
 (defgroup webpaste nil
   "Configuration options for webpaste.el where you can define paste providers,
 provider priority for which order which provider should be tried when used."
@@ -93,21 +94,21 @@ This uses `simpleclip-set-contents' to copy to clipboard."
      :post-field "c"
      :lang-uri-separator "/"
      :lang-overrides ((emacs-lisp-mode . "elisp"))
-     :success-lambda webpaste-providers-success-location-header)
+     :success-lambda webpaste--providers-success-location-header)
 
     ("ix.io"
      :uri "http://ix.io/"
      :post-field "f:1"
      :lang-uri-separator "/"
      :lang-overrides ((emacs-lisp-mode . "elisp"))
-     :success-lambda webpaste-providers-success-returned-string)
+     :success-lambda webpaste--providers-success-returned-string)
 
     ("sprunge.us"
      :uri "http://sprunge.us/"
      :post-field "sprunge"
      :lang-uri-separator "?"
      :lang-overrides ((emacs-lisp-mode . "clojure"))
-     :success-lambda webpaste-providers-success-returned-string)
+     :success-lambda webpaste--providers-success-returned-string)
 
     ("dpaste.com"
      :uri "http://dpaste.com/api/v2/"
@@ -117,7 +118,7 @@ This uses `simpleclip-set-contents' to copy to clipboard."
      :post-field "content"
      :post-lang-field-name "syntax"
      :lang-overrides ((emacs-lisp-mode . "clojure"))
-     :success-lambda webpaste-providers-success-location-header)
+     :success-lambda webpaste--providers-success-location-header)
 
     ("dpaste.de"
      :uri "https://dpaste.de/api/"
@@ -125,7 +126,7 @@ This uses `simpleclip-set-contents' to copy to clipboard."
      :post-field "content"
      :post-lang-field-name "lexer"
      :lang-overrides ((emacs-lisp-mode . "clojure"))
-     :success-lambda webpaste-providers-success-returned-string)
+     :success-lambda webpaste--providers-success-returned-string)
 
     ("gist.github.com"
      :uri "https://api.github.com/gists"
@@ -148,7 +149,7 @@ This uses `simpleclip-set-contents' to copy to clipboard."
      :post-field "code"
      :post-lang-field-name "language"
      :lang-overrides ((emacs-lisp-mode . "clojure"))
-     :success-lambda webpaste-providers-success-response-url))
+     :success-lambda webpaste--providers-success-response-url))
 
   "Define all webpaste.el providers.
 Consists of provider name and arguments to be sent to `webpaste--provider' when
@@ -193,21 +194,21 @@ precalculated, and also available both for pre and post request access.")
 
 
 ;;; Predefined error lambda for providers
-(cl-defun webpaste-providers-error-lambda (&key text)
+(cl-defun webpaste--providers-error-lambda (&key text)
   "Predefined error callback for providers that always does failover."
   (cl-function (lambda (&key error-thrown &allow-other-keys)
                  (message "Got error: %S" error-thrown)
-                 (webpaste-paste-text text))))
+                 (webpaste--paste-text text))))
 
 
-(cl-defun webpaste-providers-error-lambda-no-failover (&key text)
+(cl-defun webpaste--providers-error-lambda-no-failover (&key text)
   "Predefined error callback for providers that shouldn't do failover."
   (cl-function (lambda (&key error-thrown &allow-other-keys)
                  (message "Got error: %S" error-thrown))))
 
 
 ;;; Predefined success lambdas for providers
-(cl-defun webpaste-providers-success-location-header ()
+(cl-defun webpaste--providers-success-location-header ()
   "Predefined success callback for providers returning a Location header."
   (cl-function (lambda (&key response &allow-other-keys)
                  (when response
@@ -215,7 +216,7 @@ precalculated, and also available both for pre and post request access.")
                     (request-response-header response "Location"))))))
 
 
-(cl-defun webpaste-providers-success-response-url ()
+(cl-defun webpaste--providers-success-response-url ()
   "Predefined success callback for providers that and up with an URL somehow."
   (cl-function (lambda (&key response &allow-other-keys)
                  (when response
@@ -223,7 +224,7 @@ precalculated, and also available both for pre and post request access.")
                     (request-response-url response))))))
 
 
-(cl-defun webpaste-providers-success-returned-string ()
+(cl-defun webpaste--providers-success-returned-string ()
   "Predefined success callback for providers returning a string with URL."
   (cl-function (lambda (&key data &allow-other-keys)
                  (when data
@@ -233,7 +234,7 @@ precalculated, and also available both for pre and post request access.")
                    (webpaste--return-url data)))))
 
 
-(cl-defun webpaste-providers-default-post-field-lambda ()
+(cl-defun webpaste--providers-default-post-field-lambda ()
   "Predefined lambda for building post fields."
   (cl-function (lambda (&key text
                         post-field
@@ -275,8 +276,8 @@ precalculated, and also available both for pre and post request access.")
                                   (parser 'buffer-string)
                                   (lang-overrides '())
                                   (lang-uri-separator nil)
-                                  (error-lambda 'webpaste-providers-error-lambda)
-                                  (post-field-lambda 'webpaste-providers-default-post-field-lambda))
+                                  (error-lambda 'webpaste--providers-error-lambda)
+                                  (post-field-lambda 'webpaste--providers-default-post-field-lambda))
   "Function to create the lambda function for a provider.
 
 Usage:
@@ -290,8 +291,8 @@ Required params:
 
 :success-lambda    Callback sent to `request', look up how to write these in the
                    documentation for `request'.  Two good examples are
-                   `webpaste-providers-success-location-header' and
-                   `webpaste-providers-success-returned-string' as well as the
+                   `webpaste--providers-success-location-header' and
+                   `webpaste--providers-success-returned-string' as well as the
                    custom one used for the gist.github.com provider.
 
 Optional params:
@@ -315,8 +316,8 @@ Optional params:
 
 :error-lambda      Callback sent to `request', look up how to write these in the
                    documentation for `request'.  The default value for this is
-                   `webpaste-providers-error-lambda', but there's also
-                   `webpaste-providers-error-lambda-no-failover' available if
+                   `webpaste--providers-error-lambda', but there's also
+                   `webpaste--providers-error-lambda-no-failover' available if
                    you need a provider that isn't allowed to failover.
 
 :post-field-lambda Function that builds and returns the post data that should be
@@ -423,18 +424,15 @@ Optional params:
   ;; Return URL instead of nil
   returned-url)
 
-
 
-;;;###autoload
-(cl-defun webpaste-paste-text-to-provider (text provider-name)
+(cl-defun webpaste--paste-text-to-provider (text provider-name)
   "Paste TEXT to specific PROVIDER-NAME.
 This function sends a paste to a spacific provider.  This function is created to
-make `webpaste-paste-text' do less magic things all at once."
+make `webpaste--paste-text' do less magic things all at once."
   (funcall (webpaste--get-provider-by-name provider-name) text))
 
 
-;;;###autoload
-(cl-defun webpaste-paste-text (text)
+(cl-defun webpaste--paste-text (text)
   "Paste TEXT to some paste service.
 If ‘webpaste-provider-priority’ isn't populated, it will populate it with the
 default providers.
@@ -460,8 +458,9 @@ When we run out of providers to try, it will restart since
     (setq webpaste--tested-providers (cdr webpaste--tested-providers))
 
     ;; Run pasting function
-    (webpaste-paste-text-to-provider text provider-name)))
+    (webpaste--paste-text-to-provider text provider-name)))
 
+
 
 ;;;###autoload
 (cl-defun webpaste-paste-region (point mark)
@@ -474,7 +473,7 @@ Argument MARK Current mark."
   (unless (and webpaste-paste-confirmation
                (not (yes-or-no-p "paste entire region?")))
     ;; Extract the buffer contents with buffer-substring and paste it
-    (webpaste-paste-text (buffer-substring point mark))))
+    (webpaste--paste-text (buffer-substring point mark))))
 
 
 ;;;###autoload
@@ -486,7 +485,7 @@ Argument MARK Current mark."
   (unless (and webpaste-paste-confirmation
                (not (yes-or-no-p "paste entire buffer?")))
     ;; Extract the buffer contents with buffer-substring and paste it
-    (webpaste-paste-text (buffer-substring (point-min) (point-max)))))
+    (webpaste--paste-text (buffer-substring (point-min) (point-max)))))
 
 
 

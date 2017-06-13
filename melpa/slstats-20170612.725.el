@@ -2,8 +2,8 @@
 ;; Copyright 2017 by Dave Pearson <davep@davep.org>
 
 ;; Author: Dave Pearson <davep@davep.org>
-;; Version: 1.7
-;; Package-Version: 20170602.304
+;; Version: 1.8
+;; Package-Version: 20170612.725
 ;; Keywords: games
 ;; URL: https://github.com/davep/slstats.el
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
@@ -200,7 +200,7 @@ last-update time for the statistic."
 
 (defun slstats-caption (s)
   "Add properties to S to make it a caption for the slstats outout."
-  (propertize (concat s ": ") 'font-lock-face 'package-help-section-name))
+  (propertize (concat s ": ") 'font-lock-face 'slstats-caption))
 
 (defun slstats-format-grid-size-total (title size stats)
   "Format a grid size total.

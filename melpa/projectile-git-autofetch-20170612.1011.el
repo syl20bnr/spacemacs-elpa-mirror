@@ -4,7 +4,7 @@
 
 ;; Author: Andreas Müller <code@0x7.ch>
 ;; Keywords: tools, vc
-;; Package-Version: 20161109.1429
+;; Package-Version: 20170612.1011
 ;; Version: 0.1.0
 ;; URL: https://github.com/andrmuel/projectile-git-autofetch
 ;; Package-Requires: ((projectile "0.14.0") (alert "1.2"))
@@ -112,6 +112,7 @@ Selection of projects that should be automatically fetched."
 	  (let* ((buffer (generate-new-buffer " *git-fetch"))
 		 (process (start-process "git-fetch" buffer "git" "fetch")))
 	    (process-put process 'projectile-project project)
+	    (set-process-query-on-exit-flag process nil)
 	    (set-process-sentinel process #'projectile-git-autofetch-sentinel)))))))
 
 (defvar projectile-git-autofetch-timer nil

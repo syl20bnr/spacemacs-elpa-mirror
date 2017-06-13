@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170610.2335
+;; Package-Version: 20170612.917
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -3814,7 +3814,7 @@ Remaps built-in functions to counsel replacements.")
   :type 'boolean)
 
 (defun counsel-list-buffers-with-mode (mode)
-  "List all buffers with major-mode MODE.
+  "List all buffers with `major-mode' MODE.
 
 MODE is a symbol."
   (save-current-buffer
