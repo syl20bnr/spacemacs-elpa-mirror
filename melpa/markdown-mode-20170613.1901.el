@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jrblevin@sdf.org>
 ;; Created: May 24, 2007
 ;; Version: 2.3-dev
-;; Package-Version: 20170612.2250
+;; Package-Version: 20170613.1901
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: http://jblevins.org/projects/markdown-mode/
@@ -2547,8 +2547,8 @@ slightly.  If the face has been customized already, leave it alone."
          'markdown-code-face nil
          :background
          (cl-case (cdr (assq 'background-mode (frame-parameters)))
-           ('light (color-darken-name bg 5))
-           ('dark (color-lighten-name bg 5))))))))
+           ('light (color-darken-name bg 3))
+           ('dark (color-lighten-name bg 3))))))))
 
 (defun markdown-syntactic-face (state)
   "Return font-lock face for characters with given STATE.
@@ -6045,29 +6045,58 @@ a list."
 
 (defun markdown-beginning-of-defun (&optional arg)
   "`beginning-of-defun-function' for Markdown.
-Move backward to the beginning of the current or previous section.
-When ARG is non-nil, repeat that many times.  When ARG is negative,
-move forward to the ARG-th following section."
-  (interactive "P")
+This is used to find the beginning of the defun and should behave
+like ‘beginning-of-defun’, returning non-nil if it found the
+beginning of a defun.  It moves the point backward, right before a
+heading which defines a defun.  When ARG is non-nil, repeat that
+many times.  When ARG is negative, move forward to the ARG-th
+following section."
   (or arg (setq arg 1))
-  (forward-char 1)
-  (or (re-search-backward markdown-regex-header nil t arg)
-      (goto-char (point-min))))
+  (when (< arg 0) (end-of-line))
+  ;; Adjust position for setext headings.
+  (when (and (thing-at-point-looking-at markdown-regex-header-setext)
+             (not (= (point) (match-beginning 0)))
+             (not (markdown-code-block-at-point-p)))
+    (goto-char (match-end 0)))
+  (let (found)
+    ;; Move backward with positive argument.
+    (while (and (not (bobp)) (> arg 0))
+      (setq found nil)
+      (while (and (not found)
+                  (not (bobp))
+                  (re-search-backward markdown-regex-header nil 'move))
+        (when (not (markdown-code-block-at-pos (match-beginning 0))))
+        (setq found (match-beginning 0)))
+      (setq arg (1- arg)))
+    ;; Move forward with negative argument.
+    (while (and (not (eobp)) (< arg 0))
+      (setq found nil)
+      (while (and (not found)
+                  (not (eobp))
+                  (re-search-forward markdown-regex-header nil 'move))
+        (when (not (markdown-code-block-at-pos (match-beginning 0))))
+        (setq found (match-beginning 0)))
+      (setq arg (1+ arg)))
+    (when found
+      (beginning-of-line)
+      t)))
 
-(defun markdown-end-of-defun (&optional arg)
-  "`end-of-defun-function' for Markdown.
-Move forward to the end of the current or following section.
-When ARG is non-nil, repeat that many times.  When ARG is negative,
-move back to the ARG-th preceding section."
-  (interactive "P")
-  (or arg (setq arg 1))
-  (when (looking-at markdown-regex-header)
-    (goto-char (match-beginning 0))
-    (forward-char 1))
-  (if (re-search-forward markdown-regex-header nil t arg)
-      (goto-char (match-beginning 0))
-    (goto-char (point-max)))
-  (skip-syntax-backward "-"))
+(defun markdown-end-of-defun ()
+  "`end-of-defun-function’ for Markdown.
+This is used to find the end of the defun at point.
+It is called with no argument, right after calling ‘beginning-of-defun-raw’,
+so it can assume that point is at the beginning of the defun body.
+It should move point to the first position after the defun."
+  (or (eobp) (forward-char 1))
+  (let (found)
+    (while (and (not found)
+                (not (eobp))
+                (re-search-forward markdown-regex-header nil 'move))
+      (when (not (markdown-code-block-at-pos (match-beginning 0)))
+        (setq found (match-beginning 0))))
+    (when found
+      (goto-char found)
+      (skip-syntax-backward "-"))))
 
 (make-obsolete 'markdown-beginning-of-block 'markdown-beginning-of-text-block "v2.2")
 
@@ -7031,16 +7060,20 @@ displaying the rendered output."
       (when (file-exists-p outfile-name)
         (delete-file outfile-name)))))
 
+(defun markdown-get-other-window ()
+  "Find another window to display preview or output content."
+  (cond
+   ((memq markdown-split-window-direction '(vertical below))
+    (or (window-in-direction 'below) (split-window-vertically)))
+   ((memq markdown-split-window-direction '(horizontal right))
+    (or (window-in-direction 'right) (split-window-horizontally)))
+   (t (split-window-sensibly (get-buffer-window)))))
+
 (defun markdown-display-buffer-other-window (buf)
+  "Display preview or output buffer BUF in another window."
   (let ((cur-buf (current-buffer))
-        split-width-threshold split-height-threshold)
-    (cond ((memq markdown-split-window-direction '(vertical below))
-           (setq split-width-threshold nil)
-           (setq split-height-threshold 0))
-          ((memq markdown-split-window-direction '(horizontal right))
-           (setq split-width-threshold 0)
-           (setq split-height-threshold nil)))
-    (switch-to-buffer-other-window buf)
+        (window (markdown-get-other-window)))
+    (set-window-buffer window buf)
     (set-buffer cur-buf)))
 
 (defun markdown-live-preview-if-markdown ()

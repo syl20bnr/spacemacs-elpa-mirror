@@ -4,7 +4,7 @@
 
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Package-Requires: ((evil "1.2.3") (magit "2.6.0"))
-;; Package-Version: 20170611.1237
+;; Package-Version: 20170613.510
 ;; Homepage: https://github.com/justbur/evil-magit
 ;; Version: 0.4.1
 
@@ -500,8 +500,9 @@ evil-magit affects.")
 (defun evil-magit-change-popup-key (popup type from to _)
   "Wrap `magit-change-popup-key'."
   (magit-change-popup-key popup type (string-to-char from) (string-to-char to))
-  (unless (eq (lookup-key magit-popup-mode-map to)
-              'magit-invoke-popup-action)
+  ;; Support C-a -- C-z
+  (when (and (>= (string-to-char to) 1)
+             (<= (string-to-char to) 26))
     (define-key magit-popup-mode-map to #'magit-invoke-popup-action)))
 
 (defun evil-magit-adjust-popups ()

@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015-2016 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.0
-;; Package-Version: 20170612.1604
+;; Package-Version: 20170613.1206
 ;; Package-Requires: ((emacs "24.3") (f "0.17.3") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -896,7 +896,7 @@ a symbol then it's probably a function call"
   :type 'hook)
 
 (defcustom dumb-jump-aggressive
-  t
+  nil
   "If `t` jump aggressively with the possiblity of a false positive.
 If `nil` always show list of more than 1 match."
   :group 'dumb-jump

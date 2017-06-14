@@ -4,7 +4,7 @@
 
 ;; Author: Phil Hagelberg
 ;; URL: https://github.com/technomancy/better-defaults
-;; Package-Version: 20170425.834
+;; Package-Version: 20170613.2104
 ;; Version: 0.1.3
 ;; Created: 2013-04-16
 ;; Keywords: convenience
@@ -42,7 +42,6 @@
 
 ;;; Code:
 
-;;;###autoload
 (progn
   (unless (fboundp 'helm-mode)
     (ido-mode t)

@@ -1,10 +1,10 @@
 ;;; keymap-utils.el --- keymap utilities
 
-;; Copyright (C) 2008-2016  Jonas Bernoulli
+;; Copyright (C) 2008-2017  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Package-Requires: ((cl-lib "0.3"))
-;; Package-Version: 20161212.957
+;; Package-Version: 20170613.1356
 ;; Homepage: https://github.com/tarsius/keymap-utils
 ;; Keywords: convenience, extensions
 
@@ -131,6 +131,7 @@ the parent keymap of any keymap a key in KEYMAP is bound to."
 
 ;;; Keymap Variables
 
+;;;###autoload
 (defun kmu-current-local-mapvar ()
   "Return the variable bound to the current local keymap.
 Interactively also show the variable in the echo area."
@@ -594,10 +595,12 @@ bindings turn on this mode as early as possible."
 
 (defvar kmu-vanilla-keymaps nil)
 
+;;;###autoload
 (defun kmu-save-vanilla-keymaps (&optional filename)
   (interactive)
   (mapc 'kmu-save-vanilla-keymap (kmu-mapvar-list)))
 
+;;;###autoload
 (defun kmu-save-vanilla-keymap (mapvar)
   (interactive (list (kmu-read-mapvar "Save keymap: ")))
   (unless (assoc mapvar kmu-vanilla-keymaps)

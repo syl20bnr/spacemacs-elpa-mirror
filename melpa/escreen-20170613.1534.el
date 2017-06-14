@@ -1,29 +1,11 @@
 ;;; escreen.el --- emacs window session manager
+;; Package-Version: 20170613.1534
 
-;;; Copyright (C) 1992, 94, 95, 97, 2001, 2005 Noah S. Friedman
+;; Author: Noah Friedman <friedman@splode.com>
+;; Created: 1992-03-23
+;; Public domain
 
-;;; Author: Noah Friedman <friedman@splode.com>
-;;; Maintainer: friedman@splode.com
-;;; Keywords: extensions
-;; Package-Version: 20091203.1013
-;;; Created: 1992-03-23
-
-;;; $Id: escreen.el,v 1.18 2005/05/23 09:47:13 friedman Exp $
-
-;; This program is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2, or (at your option)
-;; any later version.
-;;
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
-;;
-;; You should have received a copy of the GNU General Public License
-;; along with this program; if not, you can either send email to this
-;; program's maintainer or write to: The Free Software Foundation,
-;; Inc.; 51 Franklin Street, Fifth Floor; Boston, MA 02110-1301, USA.
+;;; $Id: escreen.el,v 1.20 2017/06/05 18:13:00 friedman Exp $
 
 ;;; Commentary:
 
@@ -32,14 +14,6 @@
 ;;
 ;;   (load "escreen")
 ;;   (escreen-install)
-
-;; If you are using Emacs 19, you may have trouble loading this program
-;; because of the customs syntax officially introduced in Emacs 20.  In
-;; that case, first load cust-stub.el, available from
-;;
-;;     http://www.splode.com/~friedman/software/emacs-lisp/
-;;
-;; Updates to escreen.el will also be made available on that page.
 
 ;; Inspired by:
 ;;   * wicos.el, written by Heikki Suopanki <suopanki@phoenix.oulu.fi>
@@ -195,69 +169,96 @@ to update the prefix in the global keymap."
     (escreen-map-save-menu-bar-mode   . escreen-map-restore-menu-bar-mode)
     (buffer-list                      . escreen-map-restore-buffer-list)))
 
-;; Keeps track of escreen state (window config, buffers, etc.)
-;; The structure of each elt is
-;;
-;;  (screen-number screen-name
-;;                 #<window-configuration>
-;;                 (((critical-data-buffer-1) user-data-buffer-1 ...)
-;;                  ((critical-data-buffer-2) user-data-buffer-2 ...)
-;;                  ...)
-;;                 selected-window-number)
-;;
-(defvar escreen-configuration-alist nil)
-
-;; Current screen number.  Smallest possible screen number is 0.
-(defvar escreen-current-screen-number 0)
-
-;; Current screen number as a string.
-;; Smallest possible screen number is 0.
-(defvar escreen-current-screen-string
-  (int-to-string escreen-current-screen-number))
-
-;; Last-visited screen number.  Smallest possible screen number is 0.
-(defvar escreen-last-screen-number 0)
-
-;; Highest screen number currently in use.
-(defvar escreen-highest-screen-number-used 0)
-
-;; t or nil depending on if there is more than one screen
-;; This is only used by escreen-enable-number-mode-if-more-than-one-screen
-;; and escreen-mode-line-format.
-;; This defaults to t since initially there is only one screen on a frame.
-(defvar escreen-one-screen-p t)
-
 ;; It's ok to change this, but it makes use of internal variables
-(defvar escreen-mode-line-format
-  '(escreen-number-mode
-    (escreen-one-screen-p "" ("S" escreen-current-screen-string " "))))
+(defconst escreen-mode-line-format
+  '(:eval (if (escreen-one-screen-p)
+              ""
+            (format "S%d " (escreen-current-screen-number)))))
+;; This property required or redisplay won't evaluate this variable.
+(put 'escreen-mode-line-format 'risky-local-variable t)
 
-(defvar escreen-frame-local-variables
-  '(escreen-configuration-alist
-    escreen-current-screen-number
-    escreen-current-screen-string
-    escreen-last-screen-number
-    escreen-highest-screen-number-used
-    escreen-one-screen-p))
+(eval-and-compile
 
 
-(defmacro escreen-save-frame-excursion (&rest body)
+;; Starting with Emacs 22, frame-local variables are deprecated and their
+;; functionality has been progressively reduced with every major release.
+;; As of Emacs 26, they are gone completely.  You can still create new
+;; elements in the frame's parameter list, but you have to modify and
+;; retrieve them explicitly using normal lisp calls.
+;;
+;; It's still useful to keep frame-specific values in the parameter alist
+;; rather than maintaining a separate alist because this way they will
+;; automatically be garbage collected when a frame is deleted.
+
+;; Frame-specific parameters:
+;;
+;; * escreen-configuration-alist
+;;   Keeps track of escreen state (window config, buffers, etc.)
+;;   The structure of each elt is
+;;
+;;    (screen-number screen-name
+;;                   #<window-configuration>
+;;                   (((critical-data-buffer-1) user-data-buffer-1 ...)
+;;                    ((critical-data-buffer-2) user-data-buffer-2 ...)
+;;                    ...)
+;;                   selected-window-number)
+;;
+;; * escreen-current-screen-number
+;;   Current screen number on this frame.
+;;   Smallest possible screen number is 0.
+;;
+;; * escreen-last-screen-number
+;;   Last-visited screen number.
+;;
+;; * escreen-highest-screen-number-used
+;;   Highest screen number currently in use on this frame.
+;;
+;; * escreen-one-screen-p
+;;   `t' or nil depending on if there is more than one screen on this frame.
+;;   This defaults to t since initially there is only one screen on a frame.
+(defconst escreen-frame-default-values
+  '((escreen-configuration-alist        . nil)
+    (escreen-current-screen-number      . 0)
+    (escreen-last-screen-number         . 0)
+    (escreen-highest-screen-number-used . 0)
+    (escreen-one-screen-p               . t)))
+
+(defsubst escreen-get (var &optional frame)
+  (let ((elt (assq var (frame-parameters frame))))
+    (if elt
+        (cdr elt)
+      (cdr (assq var escreen-frame-default-values)))))
+
+(defsubst escreen-set (var value &optional frame)
+  (modify-frame-parameters frame (list (cons var value))))
+
+;; Define getters and setters for each symbol that looks up or modifies
+;; their frame-specific value.
+(defmacro escreen-make-frame-specific-accessors (syms)
+  (let ((fns nil)
+        g s)
+    (mapc (lambda (sym)
+            (setq g `(defalias ',sym (lambda (&optional frame) (escreen-get ',sym frame)))
+                  s `(defalias ',(intern (format "set-%s" sym))
+                       (lambda (val &optional frame) (escreen-set ',sym val frame)))
+                  fns (cons g (cons s fns))))
+      (eval syms))
+    (cons 'progn fns)))
+
+(escreen-make-frame-specific-accessors (mapcar 'car escreen-frame-default-values))
+
+) ;;eval-and-compile
+
+
+(defmacro escreen-save-current-frame (&rest body)
   "Execute BODY, saving and restoring the selected frame."
+  (declare (indent 0))
   (let ((orig-frame (make-symbol "orig-frame")))
     `(let ((,orig-frame (selected-frame)))
        (unwind-protect
            (progn ,@body)
-         (and (frame-live-p ,orig-frame)
-              (select-frame ,orig-frame))))))
-
-(put 'escreen-save-frame-excursion 'lisp-indent-function 0)
-
-(defalias 'escreen-mapc (if (fboundp 'mapc) 'mapc 'mapcar))
-
-(defsubst escreen-map-frames (fn)
-  (escreen-save-frame-excursion
-    (escreen-mapc fn (frame-list))))
-
+         (when (frame-live-p ,orig-frame)
+           (select-frame ,orig-frame))))))
 
 ;; Older versions of Emacs did not have window-pixel-edges
 ;; Older versions of XEmacs did not have window-edges
@@ -276,21 +277,11 @@ to update the prefix in the global keymap."
              (setq global-mode-string
                    (cons elt global-mode-string)))))
 
-  (cond ((fboundp 'make-variable-frame-local)
-         (escreen-mapc 'make-variable-frame-local
-                       escreen-frame-local-variables)
-
-         (add-hook 'after-make-frame-functions
-                   'escreen-initialize-frame-variables)))
-
   (if escreen-number-mode
       (escreen-number-mode 1))
 
-  ;; Initialize escreen-configuration-alist by placing current window
-  ;; config in it.
-  (if (fboundp 'make-variable-frame-local)
-      (escreen-map-frames 'escreen-initialize-frame-variables)
-    (escreen-save-current-screen-configuration)))
+  (add-hook 'after-make-frame-functions 'escreen-initialize-frame-variables)
+  (mapc 'escreen-initialize-frame-variables (frame-list)))
 
 (defun escreen-number-mode (&optional prefix)
   "*Toggle escreen-number-mode (see variable docstring).
@@ -316,11 +307,10 @@ New screen will display one window with the buffer specified by
 
     ;; Save window configuration before switching to a new one.
     (escreen-save-current-screen-configuration)
-    (and (> new-screen-number escreen-highest-screen-number-used)
-         (setq escreen-highest-screen-number-used new-screen-number))
-    (setq escreen-last-screen-number escreen-current-screen-number)
-    (setq escreen-current-screen-number new-screen-number)
-    (setq escreen-current-screen-string (int-to-string new-screen-number))
+    (and (> new-screen-number (escreen-highest-screen-number-used))
+         (set-escreen-highest-screen-number-used new-screen-number))
+    (set-escreen-last-screen-number (escreen-current-screen-number))
+    (set-escreen-current-screen-number new-screen-number)
 
     ;; Don't reuse any of the previous screen's window objects; settings
     ;; like window-dedicated-p, window display tables, etc. will just cause
@@ -351,8 +341,8 @@ No error occurs if the specified screen number doesn't exist.
 You cannot kill the last existing screen.
 Switch to previous screen if killing active one."
   (interactive)
-  (let* ((screen-number (or number escreen-current-screen-number))
-         (killing-current-screen-p (eq escreen-current-screen-number
+  (let* ((screen-number (or number (escreen-current-screen-number)))
+         (killing-current-screen-p (eq (escreen-current-screen-number)
                                        screen-number))
          (screen-data (escreen-configuration-escreen screen-number))
          previous-screen)
@@ -365,24 +355,18 @@ Switch to previous screen if killing active one."
            (and killing-current-screen-p
                 (setq previous-screen (escreen-get-prev-screen-number)))
            (escreen-configuration-escreen-delete screen-data)
-           (and (eq screen-number escreen-highest-screen-number-used)
+           (and (eq screen-number (escreen-highest-screen-number-used))
                 ;; We're killing the screen with the highest number.
                 ;; Look for the next highest number.
-                (setq escreen-highest-screen-number-used
-                      (car (sort (escreen-configuration-screen-numbers) '>))))
+                (set-escreen-highest-screen-number-used
+                 (car (sort (escreen-configuration-screen-numbers) '>))))
            (and killing-current-screen-p
                 (escreen-goto-screen previous-screen 'dont-update-current))))))
 
-;; This is only called in versions of emacs which support frame-local
-;; variables; that's Emacs 20.3 and later.
 (defun escreen-initialize-frame-variables (&optional frame)
-  (escreen-save-frame-excursion
+  (escreen-save-current-frame
     (select-frame frame)
-    (modify-frame-parameters frame
-      (mapcar (lambda (s)
-                (cons s (default-value s)))
-              escreen-frame-local-variables))
-    (setq escreen-configuration-alist nil)
+    (set-escreen-configuration-alist nil)
     (escreen-save-current-screen-configuration)))
 
 
@@ -398,19 +382,18 @@ configuration, though this isn't intended to be used interactively."
     (or dont-update-current
         (escreen-save-current-screen-configuration))
     (escreen-restore-screen-map screen-data)
-    (setq escreen-current-screen-string (int-to-string number))
     (or dont-update-current
-        (setq escreen-last-screen-number escreen-current-screen-number))
-    (setq escreen-current-screen-number number))
+        (set-escreen-last-screen-number (escreen-current-screen-number)))
+    (set-escreen-current-screen-number number))
   (run-hooks 'escreen-goto-screen-hook))
 
 (defun escreen-goto-last-screen ()
   "Switch to the last visited screen."
   (interactive)
-  (let ((n (if (= escreen-last-screen-number escreen-current-screen-number)
-               (escreen-get-next-screen-number escreen-last-screen-number)
-             escreen-last-screen-number)))
-    (setq escreen-last-screen-number escreen-current-screen-number)
+  (let ((n (if (= (escreen-last-screen-number) (escreen-current-screen-number))
+               (escreen-get-next-screen-number (escreen-last-screen-number))
+             (escreen-last-screen-number))))
+    (set-escreen-last-screen-number (escreen-current-screen-number))
     (escreen-goto-screen n)))
 
 (defun escreen-goto-prev-screen (&optional n)
@@ -439,7 +422,7 @@ If prefix arg N given, jump to the Nth next screen."
                   'escreen-get-next-screen-number
                 'escreen-get-prev-screen-number))
         (i 0)
-        (screen-number escreen-current-screen-number))
+        (screen-number (escreen-current-screen-number)))
     (and (> n total)
          ;; Trim off excess amount so we do fewer iterations, since
          ;; wrapping over the total number of screens even once is
@@ -468,8 +451,8 @@ If called interactively, also print this result in the minibuffer."
   (interactive)
   (if (interactive-p)
       (message "escreen: current screen is number %d"
-               escreen-current-screen-number)
-    escreen-current-screen-number))
+               (escreen-current-screen-number))
+    (escreen-current-screen-number)))
 
 (defun escreen-get-active-screen-numbers ()
   "Print a list of the active screen numbers in the echo area.
@@ -517,50 +500,52 @@ Returns a list of numbers which represent screen numbers presently in use."
         (new-alist-member nil))
     (if screen-data
         (setcdr (cdr screen-data) (escreen-save-screen-map))
-      (setq new-alist-member (cons escreen-current-screen-number
+      (setq new-alist-member (cons (escreen-current-screen-number)
                                    (cons nil (escreen-save-screen-map))))
-      (setq escreen-configuration-alist
-            (cons new-alist-member escreen-configuration-alist)))))
+      (set-escreen-configuration-alist
+       (cons new-alist-member (escreen-configuration-alist))))))
 
 ;; Return attributes for screen N, or nil if it doesn't exist.
 (defun escreen-screen-defined (&optional n)
-  (escreen-configuration-escreen (or n escreen-current-screen-number)))
+  (escreen-configuration-escreen (or n (escreen-current-screen-number))))
 
 ;; Return nearest number less than current screen number that is
 ;; an active screen, wrapping around end of screen list if necessary.
 (defun escreen-get-prev-screen-number (&optional current-screen-number)
   (or current-screen-number
-      (setq current-screen-number escreen-current-screen-number))
-  (if (eq 0 escreen-highest-screen-number-used)
+      (setq current-screen-number (escreen-current-screen-number)))
+  (if (eq 0 (escreen-highest-screen-number-used))
       0
     ;; Decrement/wrap current screen number
     (setq current-screen-number (1- current-screen-number))
     (and (< current-screen-number 0)
-         (setq current-screen-number escreen-highest-screen-number-used))
-    (while (not (assq current-screen-number escreen-configuration-alist))
+         (setq current-screen-number (escreen-highest-screen-number-used)))
+    (while (not (assq current-screen-number (escreen-configuration-alist)))
       ;; Decrement/wrap current screen number
       (setq current-screen-number (1- current-screen-number))
       (and (< current-screen-number 0)
-           (setq current-screen-number escreen-highest-screen-number-used)))
+           (setq current-screen-number (escreen-highest-screen-number-used))))
     current-screen-number))
 
 ;; Return nearest number greater than current screen number that is
 ;; an active screen, wrapping around end of screen list if necessary.
 (defun escreen-get-next-screen-number (&optional current-screen-number)
   (or current-screen-number
-      (setq current-screen-number escreen-current-screen-number))
-  (if (eq 0 escreen-highest-screen-number-used)
-      0
-    ;; Increment/wrap current screen number
-    (setq current-screen-number (1+ current-screen-number))
-    (and (> current-screen-number escreen-highest-screen-number-used)
-         (setq current-screen-number 0))
-    (while (not (assq current-screen-number escreen-configuration-alist))
+      (setq current-screen-number (escreen-current-screen-number)))
+  (let ((highest (escreen-highest-screen-number-used))
+        (config-alist (escreen-configuration-alist)))
+    (if (eq 0 highest)
+        0
       ;; Increment/wrap current screen number
       (setq current-screen-number (1+ current-screen-number))
-      (and (> current-screen-number escreen-highest-screen-number-used)
-           (setq current-screen-number 0)))
-    current-screen-number))
+      (if (> current-screen-number highest)
+          (setq current-screen-number 0))
+      (while (not (assq current-screen-number config-alist))
+        ;; Increment/wrap current screen number
+        (setq current-screen-number (1+ current-screen-number))
+        (if (> current-screen-number highest)
+            (setq current-screen-number 0)))
+      current-screen-number)))
 
 
 ;;; Primitive accessors for escreen-configuration-alist
@@ -569,27 +554,27 @@ Returns a list of numbers which represent screen numbers presently in use."
 ;;; debugging more difficult and they are not critical for speed.
 
 (defun escreen-configuration-escreen (number)
-  (assq number escreen-configuration-alist))
+  (assq number (escreen-configuration-alist)))
 
 (defun escreen-configuration-escreen-delete (data)
-  (setq escreen-configuration-alist
-        (delq (if (numberp data)
-                  (escreen-configuration-escreen data)
-                data)
-              escreen-configuration-alist)))
+  (set-escreen-configuration-alist
+   (delq (if (numberp data)
+             (escreen-configuration-escreen data)
+           data)
+         (escreen-configuration-alist))))
 
 (defun escreen-configuration-screen-numbers ()
-  (mapcar 'car escreen-configuration-alist))
+  (mapcar 'car (escreen-configuration-alist)))
 
 (defun escreen-configuration-one-screen-p ()
-  (>= 1 (length escreen-configuration-alist)))
+  (>= 1 (length (escreen-configuration-alist))))
 
 ;; Sort the alist so that they are in order numerically.
 (defun escreen-configuration-alist-sort-by-number ()
-  (setq escreen-configuration-alist
-        (sort escreen-configuration-alist
-              (lambda (a b)
-                (< (car a) (car b))))))
+  (set-escreen-configuration-alist
+   (sort (escreen-configuration-alist)
+         (lambda (a b)
+           (< (car a) (car b))))))
 
 ;;; map-data sub-accessors
 
@@ -666,10 +651,10 @@ Returns a list of numbers which represent screen numbers presently in use."
       (setq win-count (1+ win-count))
 
       (escreen-restore-critical-data
-        (escreen-configuration-data-map-critical (car map)))
+       (escreen-configuration-data-map-critical (car map)))
       (widen)
       (escreen-restore-user-data
-        (escreen-configuration-data-map-user (car map)))
+       (escreen-configuration-data-map-user (car map)))
       (select-window (next-window))
       (setq map (cdr map)))
     (select-window (or sel-win (escreen-first-window)))))
@@ -897,7 +882,7 @@ Returns a list of numbers which represent screen numbers presently in use."
     ;; Update escreen-configuration-alist to contain up-to-date information
     ;; on current screen, since we'll be displaying data about it.
     (escreen-save-current-screen-configuration)
-    (setq alist escreen-configuration-alist)
+    (setq alist (escreen-configuration-alist))
     (save-excursion
       (set-buffer escreen-menu-buffer)
       (setq buffer-read-only nil)
@@ -910,7 +895,7 @@ Returns a list of numbers which represent screen numbers presently in use."
         (setq screen-number (escreen-configuration-screen-number screen-data))
         (setq data-map (escreen-configuration-data-map screen-data))
 
-        (if (= screen-number escreen-current-screen-number)
+        (if (= screen-number (escreen-current-screen-number))
             (insert (format "*%-6d " screen-number))
           (insert (format " %-6d " screen-number)))
         (while data-map
@@ -942,8 +927,8 @@ Returns a list of numbers which represent screen numbers presently in use."
 ;; escreen is in use.  The only reason for doing this, however, is to save
 ;; valuable mode line real estate.
 (defun escreen-enable-number-mode-if-more-than-one-screen ()
-  (setq escreen-one-screen-p
-        (null (cdr (escreen-get-active-screen-numbers))))
+  (set-escreen-one-screen-p
+   (null (cdr (escreen-get-active-screen-numbers))))
   (force-mode-line-update t))
 
 (provide 'escreen)

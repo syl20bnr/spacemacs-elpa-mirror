@@ -20,7 +20,7 @@
 ;; USA
 
 ;; Version: 1.0
-;; Package-Version: 20170612.1038
+;; Package-Version: 20170613.718
 ;; Author: Adrien Brochard
 ;; Keywords: snippet org-mode yasnippet tools
 ;; URL: https://github.com/abrochard/org-sync-snippets
@@ -111,7 +111,7 @@ LEVEL the current folder level."
                   ":tangle " snippet-file
                   "\n"
                   (replace-regexp-in-string "^" "  "  content) "\n"
-                  "#+END_SRC\n")))))
+                  "#+END_SRC\n\n")))))
 
 (defun org-sync-snippets--to-org (snippets-dir org-file)
   "Write snippets to org file.

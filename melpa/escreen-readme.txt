@@ -4,14 +4,6 @@ the following to your .emacs:
   (load "escreen")
   (escreen-install)
 
-If you are using Emacs 19, you may have trouble loading this program
-because of the customs syntax officially introduced in Emacs 20.  In
-that case, first load cust-stub.el, available from
-
-    http://www.splode.com/~friedman/software/emacs-lisp/
-
-Updates to escreen.el will also be made available on that page.
-
 Inspired by:
   * wicos.el, written by Heikki Suopanki <suopanki@phoenix.oulu.fi>
   * `screen', written by Oliver Laumann, Juergen Weigert,

@@ -1027,7 +1027,9 @@
 	       (:url . "https://github.com/eschulte/emacs-web-server"))])
  (websocket .
 	    [(1 8)
-	     nil "Emacs WebSocket client and server" tar
+	     ((cl-lib
+	       (0 5)))
+	     "Emacs WebSocket client and server" tar
 	     ((:keywords "communication" "websocket" "server")
 	      (:url . "http://elpa.gnu.org/packages/websocket.html"))])
  (windresize .

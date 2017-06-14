@@ -3,10 +3,10 @@
 ;; Authors: Chris Rayner (dchrisrayner @ gmail)
 ;; Created: May 23 2011
 ;; Keywords: processes, tools
-;; Package-Version: 0.0.4
+;; Package-Version: 0.0.5
 ;; Homepage: https://github.com/riscy/shx-for-emacs
 ;; Package-Requires: ((emacs "24.4"))
-;; Version: 0.0.4
+;; Version: 0.0.5
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -319,14 +319,11 @@ With non-nil WITHOUT-PREFIX, strip `shx-cmd-prefix' from each."
             (if without-prefix (string-remove-prefix shx-cmd-prefix cmd) cmd))
           (all-completions shx-cmd-prefix obarray 'functionp)))
 
-(defun shx--expand-filename (filename)
-  "Expand FILENAME to include an absolute path.
-Warn the user if there are characters in the string that could be
-used in an injection attack."
-  (if (string-match "[\"';&<>`]" filename)
-      (shx-insert 'error "shx can't securely accept special characters "
-                  "like '" (match-string 0 filename) "' in a filename\n")
-    (expand-file-name filename)))
+(defun shx--escape-filename (filename)
+  "Escape FILENAME to mitigate injection attacks."
+  (replace-regexp-in-string ; modeled on Ruby's "Shellwords"
+   "\\([^A-Za-z0-9_\-.,:\/@\n]\\)" "\\\\\\1"
+   (expand-file-name filename)))
 
 (defun shx--hint (text)
   "Show a hint containing TEXT."
@@ -381,8 +378,6 @@ used in an injection attack."
    (match-beginning 0) (match-end 0)
    `(keymap ,shx-click-file mouse-face link font-lock-face font-lock-doc-face)))
 
-;; TODO: do something like this instead:
-;; https://github.com/rubysl/rubysl-shellwords/blob/2.0/lib/rubysl/shellwords/shellwords.rb
 (defun shx--parse-filenames (files)
   "Turn a string of FILES into a list of filename strings.
 FILES can have various styles of quoting and escaping."
@@ -393,11 +388,18 @@ FILES can have various styles of quoting and escaping."
               (replace-regexp-in-string tmp-space " " filename))
             (split-string-and-unquote escaped))))
 
-(defun shx--quote-regexp (delimiter &optional max-length)
+(defun shx--quote-regexp (delimiter &optional escape max-length)
   "Regexp matching strings delimited by DELIMITER.
+ESCAPE is the string that can be used to escape the delimiter.
 MAX-LENGTH is the length of the longest match (default 80)."
   (concat delimiter
-          "[^" delimiter "]" "\\{0," (format "%d" (or max-length 80)) "\\}"
+          "\\("
+          (when escape
+            (concat escape escape "\\|"      ; two backslashes OR
+                    escape delimiter "\\|")) ; escaped delimiter
+          "[^" delimiter "]"
+          "\\)"
+          "\\{0," (format "%d" (or max-length 80)) "\\}"
           delimiter))
 
 (defun shx--safe-as-markup-p (command)
@@ -474,7 +476,9 @@ are sent straight through to the process to handle paging."
   "Insert image FILENAME into the buffer."
   (let* ((img-name (make-temp-file "tmp" nil ".png"))
          (status (call-process
-                  shx-path-to-convert nil t nil (shx--expand-filename filename)
+                  ;; NOTE: FILENAME is interpreted literally by emacs and
+                  ;; does not need to go through shx--escape-filename:
+                  shx-path-to-convert nil t nil (expand-file-name filename)
                   "-resize" (format "x%d>" shx-img-height) img-name)))
     (when (zerop status)
       (let ((pos (point)))
@@ -486,19 +490,18 @@ are sent straight through to the process to handle paging."
   "Prepare a plot of the data in FILENAME.
 Use a gnuplot specific PLOT-COMMAND (for example 'plot') and
 LINE-STYLE (for example 'w lp'); insert the plot in the buffer."
-  (let ((filename (shx--expand-filename filename))
-        (img-name (make-temp-file "tmp" nil ".png")))
-    (and filename
-         (zerop (call-process shx-path-to-gnuplot nil t nil "-e"
-                              (concat "set term png transparent truecolor;"
-                                      "set border lw 3 lc rgb \""
-                                      (color-lighten-name
-                                       (face-attribute 'default :foreground) 5)
-                                      "\"; set out \"" img-name "\"; "
-                                      plot-command " \""
-                                      filename "\" "
-                                      line-style)))
-         (shx-insert-image img-name))))
+  (let* ((img-name (make-temp-file "tmp" nil ".png"))
+         (status (call-process
+                  shx-path-to-gnuplot nil t nil "-e"
+                  (concat
+                   "set term png transparent truecolor;"
+                   "set border lw 3 lc rgb \""
+                   (color-lighten-name (face-attribute 'default :foreground) 5)
+                   "\"; set out \"" img-name "\"; "
+                   plot-command " \""
+                   (shx--escape-filename filename) "\" "
+                   line-style))))
+    (when (zerop status) (shx-insert-image img-name))))
 
 (defun shx--insert-timer (timer-number timer)
   "Insert a line of the form '<TIMER-NUMBER> <TIMER>'."
@@ -737,7 +740,7 @@ See `Man-notify-method' for what happens when the page is ready."
 
 (defun shx-cmd-name (name)
   "(SAFE) Rename the current buffer to NAME."
-  (rename-buffer (generate-new-buffer-name (concat "*" name "*"))))
+  (rename-buffer (generate-new-buffer-name name)))
 
 (defun shx-cmd-oedit (file)
   "(SAFE) open FILE in other window.
@@ -751,13 +754,14 @@ See `Man-notify-method' for what happens when the page is ready."
 
 (defun shx-cmd-pwd (_args)
   "(SAFE) Show what Emacs thinks the default directory is.
-\nNote if you're at a shell prompt, you can use
+\nNote if you're at a shell prompt, you can probably use
 \\[shell-resync-dirs] to reset Emacs' pwd to the shell's pwd."
   (shx-insert default-directory "\n"))
 
 (defun shx-cmd-ssh (host)
-  "Open a shell on (remote) HOST using tramp.
-Benefit from the remote host's completions.
+  "Open a shell on HOST using tramp.
+\nThis way you benefit from the remote host's completions, and
+commands like :pwd and :edit will work correctly.
 \nExample:\n
   :ssh hostname:port"
   (if (equal host "")
@@ -771,7 +775,7 @@ Benefit from the remote host's completions.
 
 (defun shx-cmd-plotbar (filename)
   "(SAFE) Show barplot of FILENAME.
-\nFor example, :plotbar file.dat where file.dat contains:\n
+\nFor example, \":plotbar file.dat\" where file.dat contains:\n
   \"Topic 1\" YHEIGHT1
   \"Topic 2\" YHEIGHT2
   \"Topic 3\" YHEIGHT3"
@@ -786,10 +790,8 @@ Benefit from the remote host's completions.
 
 (defun shx-cmd-plotmatrix (filename)
   "(SAFE) Show heatmap of FILENAME.
-\nFor example, :plotmatrix file.dat where file.dat contains:\n
-  1.5   2    3
-  4     5    6
-  7     8    9.5"
+\nFor example, \":plotmatrix file.dat\" where file.dat contains:\n
+  1.5   2    3\n  4     5    6\n  7     8    9.5"
   (shx-insert-plot (car (shx--parse-filenames filename))
                    (concat "set view map; unset xtics; unset ytics;"
                            "unset title; set colorbox; set palette defined"
@@ -800,15 +802,10 @@ Benefit from the remote host's completions.
 
 (defun shx-cmd-plotline (filename)
   "(SAFE) Show line plot of FILENAME.
-\nFor example, :plotline file.dat where file.dat contains:\n
-  1 2
-  2 4
-  4 8
-\nOr just a single column:\n
-  1
-  2
-  3
-  5"
+\nFor example, \":plotscatter file.dat\", where file.dat contains:
+  1 2\n  2 4\n  4 8\n
+Or just a single column:
+  1\n  2\n  3\n  5"
   (shx-insert-plot (car (shx--parse-filenames filename))
                    "plot" "w l lw 1 notitle"))
 
@@ -822,17 +819,13 @@ http://www.gnuplotting.org/tag/pm3d/"
 
 (defun shx-cmd-plotscatter (filename)
   "(SAFE) Show scatter plot of FILENAME.
-\nFor example, :plotscatter file.dat, where file.dat contains:
-  1 2
-  2 4
-  4 8
-\nOr just a single column:\n
-  1
-  2
-  3
-  5"
+\nFor example, \":plotscatter file.dat\", where file.dat contains:
+  1 2\n  2 4\n  4 8\n
+Or just a single column:
+  1\n  2\n  3\n  5"
   (shx-insert-plot (car (shx--parse-filenames filename))
                    "plot" "w p ps 2 pt 7 notitle"))
+(defalias 'shx-cmd-plot #'shx-cmd-plotscatter)
 
 (defun shx-cmd-view (filename)
   "(SAFE) View image with FILENAME directly in the buffer."
@@ -842,11 +835,11 @@ http://www.gnuplotting.org/tag/pm3d/"
 ;;; loading
 
 (defcustom shx-shell-mode-font-locks
-  `(("#+[^#]*\\'"                                 0 'font-lock-comment-face)
+  `(("#.*[^#^\n]*\\'"                             0 'font-lock-comment-face)
     ("~"                                          0 'font-lock-preprocessor-face)
     (,(regexp-opt '(">" "<" "&&" "|"))            0 'font-lock-keyword-face)
-    (,(shx--quote-regexp "`")                     0 'font-lock-preprocessor-face)
-    (,(shx--quote-regexp "\"")                    0 'font-lock-string-face)
+    (,(shx--quote-regexp "`" "\\\\")              0 'font-lock-preprocessor-face)
+    (,(shx--quote-regexp "\"" "\\\\")             0 'font-lock-string-face)
     ;; disallow leading alphabet chars so we 'don't match on contractions'
     (,(concat "[^A-Za-z]\\(" (shx--quote-regexp "'") "\\)")
                                                   1 'font-lock-string-face)

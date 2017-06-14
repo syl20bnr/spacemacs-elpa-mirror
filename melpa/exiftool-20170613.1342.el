@@ -4,8 +4,8 @@
 ;; Copyright (C) 2017 by Arun I
 ;;
 ;; Author: Arun I <arunisaac@systemreboot.net>
-;; Version: 0.1
-;; Package-Version: 0.2
+;; Version: 0.3
+;; Package-Version: 20170613.1342
 ;; Keywords: data
 ;; Homepage: https://git.systemreboot.net/exiftool.el
 ;; Package-Requires: ((emacs "25"))
@@ -87,10 +87,13 @@ value. If no TAGS are specified, read all tags from FILE.
 \(fn FILE TAG...)"
   (mapcar
    (lambda (line)
-     (cl-destructuring-bind
-	 (tag value) (split-string line ": ")
-       (let ((value (if (equal value "-") "" value)))
-	 (cons tag value))))
+     (string-match "\\([^:]*\\): \\(.*\\)" line)
+     (let ((tag (match-string 1 line))
+	   (value (match-string 2 line)))
+       (cons tag (if (equal value "-")
+		     (exiftool-command "-s" "-s" "-s"
+				       (format "-%s" tag) file)
+		   value))))
    (split-string
     (apply 'exiftool-command
 	   "-s" "-s" "-f"
@@ -107,9 +110,10 @@ If no TAGS are specified, copy all tags from SOURCE."
 	 "-overwrite_original"
 	 "-tagsFromFile" source
 	 (append
-	  (mapcar (apply-partially 'format "-%s") tags)
-	  (list "-all:all" destination)))
-  (message "Tags from %s copied to %s" source destination)
+	  (if tags
+	      (mapcar (apply-partially 'format "-%s") tags)
+	    (list "-all:all"))
+	  (list destination)))
   destination)
 
 (defun exiftool-write (file &rest tag-value-alist)
