@@ -5,10 +5,10 @@
 ;; Author: Ben Hayden <hayden767@gmail.com>
 ;; Maintainer: Glynn Forrest <me@glynnforrest.com>
 ;; URL: https://github.com/glynnforrest/salt-mode
-;; Package-Version: 20170611.420
+;; Package-Version: 20170614.435
 ;; Keywords: languages
 ;; Version: 0.1
-;; Package-Requires: ((yaml-mode "0.0.12") (mmm-mode "0.5.4") (mmm-jinja2 "0.1"))
+;; Package-Requires: ((emacs "24.3") (yaml-mode "0.0.12") (mmm-mode "0.5.4") (mmm-jinja2 "0.1"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -60,6 +60,7 @@
 (require 'yaml-mode)
 (require 'mmm-auto)
 (require 'mmm-jinja2)
+(require 'thingatpt)
 
 (defgroup salt-mode nil
   "SaltStack major mode."
@@ -83,22 +84,88 @@ suitable for spellchecking."
 
 (put 'salt-mode 'flyspell-mode-predicate #'salt-mode--flyspell-predicate)
 
+(defun salt-mode--indented-re (lo hi)
+  "Return a regexp to match a line with an indent level between LO and HI."
+  (format "^%s\\{%d,%d\\}" (make-string salt-mode-indent-level ?\s) lo hi))
+
+(defun salt-mode-bounds-of-state-function-at-point ()
+  "Return the bounds of the state function name at the current point."
+  (save-excursion
+    (skip-chars-backward "a-z0-9_.:")
+    (when (and (looking-back (salt-mode--indented-re 1 2))
+               (looking-at "[a-z0-9_]+\\.[a-z0-9_]+"))
+      (cons (point) (match-end 0)))))
+
+(defun salt-mode-forward-state-function (&optional arg)
+  "Move point forward ARG state function definitions.
+Move backward if ARG is negative. If ARG is omitted or nil, move
+forward one state function definition."
+  (interactive "p")
+  ;; Use "." as a cheap check for finding potential functions. This
+  ;; gets a little hairy because of the optional :, which isn't
+  ;; part of the bounds but works best when skipped as if it were.
+  (let ((arg (or arg 1)))
+    (while (< arg 0)
+      (skip-chars-backward "^a-z0-9_.:")
+      (let ((bounds (salt-mode-bounds-of-state-function-at-point)))
+        (while (and (not bounds) (skip-chars-backward "^."))
+          (backward-char)
+          (setq bounds (salt-mode-bounds-of-state-function-at-point)))
+        (goto-char (car bounds))
+        (setq arg (1+ arg))))
+    (while (> arg 0)
+      (skip-chars-forward "^a-z0-9_.:")
+      (let ((bounds (salt-mode-bounds-of-state-function-at-point)))
+        (while (and (not bounds) (skip-chars-forward "^."))
+          (forward-char)
+          (setq bounds (salt-mode-bounds-of-state-function-at-point)))
+        (goto-char (cdr bounds))
+        (skip-chars-forward ":")
+        (setq arg (1- arg))))))
+
+(defun salt-mode-backward-state-function (&optional arg)
+  "Move point backward ARG state function definitions.
+Move forward if ARG is negative. If ARG is omitted or nil, move
+backward one state function definition."
+  (interactive "p")
+  (forward-thing 'salt-mode-state-function (- (or arg 1))))
+
+(put 'salt-mode-state-function 'bounds-of-thing-at-point
+     #'salt-mode-bounds-of-state-function-at-point)
+
+(put 'salt-mode-state-function 'forward-op
+     #'salt-mode-forward-state-function)
+
+(defun salt-mode-bounds-of-state-module-at-point ()
+  "Return the bounds of the state module name at the current point."
+  (save-excursion
+    (skip-chars-backward "a-z0-9_.:")
+    (when (and (looking-back (salt-mode--indented-re 1 2))
+               (looking-at "[a-z0-9_]+"))
+      (cons (point) (match-end 0)))))
+
+(put 'salt-mode-state-module 'bounds-of-thing-at-point
+     #'salt-mode-bounds-of-state-module-at-point)
+
 (defun salt-mode--state-module-at-point ()
   "Get the state module at point, either pkg or pkg.installed, or return nil."
-  ;; TODO: replace or refactor this to work with thing-at-point
-  (save-excursion
-    (when (looking-back ":" 1)
-      (backward-char))
-    (skip-chars-forward " ")
-    (let* (start
-           end
-           (module (progn (skip-chars-backward "_.a-z0-9")
-                          (setq start (point))
-                          (forward-char)
-                          (skip-chars-forward "_.a-z0-9")
-                          (setq end (point))
-                          (replace-regexp-in-string "^ +\\| +$" "" (buffer-substring-no-properties start end)))))
-      (if (string= "" module) nil module))))
+  ;; TODO return nil if looking at a state id, don't get the last
+  ;; function from the previous state id
+  (let ((thing (or (thing-at-point 'salt-mode-state-function)
+                   (thing-at-point 'salt-mode-state-module))))
+    (if (not thing)
+        (save-excursion
+          ;; try the first word on the current line, e.g.
+          ;; | file.managed
+          (beginning-of-line)
+          (skip-chars-forward " ")
+          (if (not (thing-at-point 'salt-mode-state-function))
+              ;; no function on this line, try jumping backwards to the last state function
+              (ignore-errors (salt-mode-backward-state-function)))
+          (setq thing (thing-at-point 'salt-mode-state-function))))
+    (when thing
+      (set-text-properties 0 (length thing) nil thing))
+    thing))
 
 (defun salt-mode--doc-read-arg ()
   "Get the argument for interactively calling `salt-mode-browse-doc'"
@@ -176,6 +243,14 @@ https://docs.saltstack.com/en/latest/ref/states/requisites.html")
     )
   "Regexps for YAML keys with special meaning in SLS files.")
 
+(defconst salt-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-M-b") #'salt-mode-backward-state-function)
+    (define-key map (kbd "C-M-f") #'salt-mode-forward-state-function)
+    ;; (define-key map (kbd "C-M-n") 'salt-mode-forward-state-id)
+    ;; (define-key map (kbd "C-M-p") 'salt-mode-backward-state-id)
+    map) "Keymap for `salt-mode'.")
+
 ;;;###autoload
 (define-derived-mode salt-mode yaml-mode "SaltStack"
   "A major mode to edit Salt States."
@@ -183,6 +258,8 @@ https://docs.saltstack.com/en/latest/ref/states/requisites.html")
         indent-tabs-mode nil
         electric-indent-inhibit t
         mmm-global-mode 'maybe)
+
+  (setq-local yaml-indent-offset salt-mode-indent-level)
 
   (mmm-add-mode-ext-class 'salt-mode "\\.sls\\'" 'jinja2)
   (font-lock-add-keywords nil salt-mode-keywords))

@@ -4,7 +4,7 @@
 ;; Author: Carl X. Su <bcbcarl@gmail.com>
 ;;         ono hiroko (kuanyui) <azazabc123@gmail.com>
 ;; Version: 0.2.0
-;; Package-Version: 20170322.2041
+;; Package-Version: 20170614.506
 ;; Package-Requires: ((emacs "24.4") (xterm-color "1.0"))
 ;; Keywords: comm, weather, wttrin
 ;; URL: https://github.com/bcbcarl/emacs-wttrin
@@ -67,10 +67,14 @@
         (setq buffer-read-only t)))))
 
 ;;;###autoload
-(defun wttrin ()
-  "Display weather information."
-  (interactive)
-  (wttrin-query (completing-read "City name: " wttrin-default-cities nil nil)))
+(defun wttrin (city)
+  "Display weather information for CITY."
+  (interactive
+   (list
+    (completing-read "City name: " wttrin-default-cities nil nil
+                     (when (= (length wttrin-default-cities) 1)
+                       (car wttrin-default-cities)))))
+  (wttrin-query city))
 
 (provide 'wttrin)
 

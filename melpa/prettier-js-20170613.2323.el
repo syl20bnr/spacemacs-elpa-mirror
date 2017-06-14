@@ -1,7 +1,7 @@
 ;;; prettier-js.el --- Minor mode to format JS code on file save
 
 ;; Version: 0.1.0
-;; Package-Version: 20170606.612
+;; Package-Version: 20170613.2323
 
 ;; Copyright (c) 2014 The go-mode Authors. All rights reserved.
 ;; Portions Copyright (c) 2015-present, Facebook, Inc. All rights reserved.
@@ -194,11 +194,11 @@ a `before-save-hook'."
              (message "Could not apply prettier")
              (if errbuf
                  (prettier-js--process-errors (buffer-file-name) bufferfile errorfile errbuf))
-             )))
-     (kill-buffer patchbuf)
-     (delete-file errorfile)
-     (delete-file bufferfile)
-     (delete-file outputfile)))
+             ))
+       (kill-buffer patchbuf)
+       (delete-file errorfile)
+       (delete-file bufferfile)
+       (delete-file outputfile))))
 
 ;;;###autoload
 (define-minor-mode prettier-js-mode
