@@ -20,7 +20,7 @@
 ;; USA
 
 ;; Version: 1.0
-;; Package-Version: 20170613.718
+;; Package-Version: 20170614.641
 ;; Author: Adrien Brochard
 ;; Keywords: snippet org-mode yasnippet tools
 ;; URL: https://github.com/abrochard/org-sync-snippets
@@ -100,13 +100,13 @@
 SNIPPETS-DIR the location of the snippets file.
 LEVEL the current folder level."
   (if (< 0 level)
-      (insert (make-string level (aref "*" 0)) " " (file-name-base snippets-dir) "\n"))
+      (insert (make-string level (aref "*" 0)) " " (file-name-base snippets-dir) "\n\n"))
   (dolist (mode (f-directories snippets-dir))
     (org-sync-snippets--parse-dir mode (+ level 1)))
   (dolist (snippet-file (f-files snippets-dir))
       (let ((content (f-read-text snippet-file 'utf-8)))
         (unless (string-match "^# tangle: no" content)
-          (insert (make-string (+ 1 level) (aref "*" 0)) " " (file-name-base snippet-file) "\n"
+          (insert (make-string (+ 1 level) (aref "*" 0)) " " (file-name-base snippet-file) "\n\n"
                   "#+BEGIN_SRC snippet "
                   ":tangle " snippet-file
                   "\n"

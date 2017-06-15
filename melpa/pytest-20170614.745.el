@@ -5,7 +5,7 @@
 ;; Licensed under the same terms as Emacs.
 
 ;; Version: 0.2.1
-;; Package-Version: 20161014.815
+;; Package-Version: 20170614.745
 ;; Keywords: pytest python testing
 ;; URL: https://github.com/ionrock/pytest-el
 ;; Package-Requires: ((s "1.9.0"))
@@ -128,11 +128,21 @@ Optional argument FLAGS py.test command line flags."
          (use-comint (s-contains? "pdb" cmd-flags)))
     (funcall #'(lambda (command)
                  (compilation-start command use-comint
-                                    (lambda (mode) (concat "*pytest*"))))
+                                    (lambda (mode) (concat (pytest-get-temp-buffer-name)))))
              (pytest-cmd-format pytest-cmd-format-string where pytest cmd-flags tnames))
     (if use-comint
-	(with-current-buffer (get-buffer "*pytest*")
+	(with-current-buffer (get-buffer (pytest-get-temp-buffer-name))
 	  (inferior-python-mode)))))
+
+(defun pytest-get-temp-buffer-name ()
+  "Get name of temporary buffer.
+Includes projectile support if installed.
+This allows one test buffer per project."
+  (let ((postfix (if (and (fboundp 'projectile-project-p)
+                          (projectile-project-p))
+                     (concat "-" (projectile-project-name) "*")
+                   "*")))
+    (concat "*pytest" postfix)))
 
 ;;; Run entire test suite
 ;;;###autoload

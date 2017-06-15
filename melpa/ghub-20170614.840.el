@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/tarsius/ghub
 ;; Keywords: tools
-;; Package-Version: 20170610.1149
+;; Package-Version: 20170614.840
 ;; Package-Requires: ((emacs "25"))
 
 ;; This file is not part of GNU Emacs.
@@ -101,6 +101,7 @@
 ;;; Code:
 
 (require 'auth-source)
+(require 'cl-lib)
 (require 'json)
 (require 'url)
 (require 'url-auth)

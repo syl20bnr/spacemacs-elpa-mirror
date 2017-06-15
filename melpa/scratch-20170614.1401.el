@@ -2,7 +2,7 @@
 
 ;; Author: Ian Eure <ian.eure@gmail.com>
 ;; Version: 1.2
-;; Package-Version: 20170523.2046
+;; Package-Version: 20170614.1401
 ;; Keywords: convenience, tools, files
 
 ;; Copyright (c) 1999-2017 Ian Eure <ian.eure@gmail.com>
@@ -66,6 +66,7 @@
     (sql-interactive-mode . sql-mode)
     (shell-mode . sh-mode)
     (inferior-python-mode . python-mode)
+    (cider-repl-mode . clojure-mode)
     (inferior-tcl-mode . tcl-mode)
     (inferior-octave-mode . octave-mode))
   "Alist of mappings from major modes to major modes for SCRATCH.
@@ -148,8 +149,8 @@ for those buffers."
     (cond ((bufferp buf) (pop-to-buffer buf)) ; Existing scratch buffer
           (t                                  ; New scratch buffer
            (let ((contents (when (region-active-p)
-                             (buffer-substring (region-beginning)
-                                               (region-end)))))
+                             (buffer-substring-no-properties
+                              (region-beginning) (region-end)))))
              (setq buf (get-buffer-create name))
              (pop-to-buffer buf)
              (let ((scratch-buffer t))

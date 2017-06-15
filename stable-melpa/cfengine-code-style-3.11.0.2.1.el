@@ -2,7 +2,7 @@
 
 ;; Author: Mikhail Gusarov <mikhail.gusarov@cfengine.com>
 ;; URL: https://github.com/cfengine/core
-;; Package-Version: 3.10.1
+;; Package-Version: 3.11.0.2.1
 
 ;;; Commentary:
 

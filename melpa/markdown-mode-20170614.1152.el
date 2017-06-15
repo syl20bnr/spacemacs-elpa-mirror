@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jrblevin@sdf.org>
 ;; Created: May 24, 2007
 ;; Version: 2.3-dev
-;; Package-Version: 20170613.1901
+;; Package-Version: 20170614.1152
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: http://jblevins.org/projects/markdown-mode/
@@ -16,8 +16,8 @@
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2, or (at your option)
-;; any later version.
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
 
 ;; This program is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,9 +25,7 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with this program; if not, write to the Free Software
-;; Foundation, Inc., 51 Franklin Street, Fifth Floor,
-;; Boston, MA 02110-1301, USA.
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
@@ -1532,7 +1530,7 @@ Group 6 matches the closing square brackets.")
   "Regular expression for matching inline URIs in angle brackets.")
 
 (defconst markdown-regex-email
-  "<\\(\\(\\sw\\|\\s_\\|\\s.\\)+@\\(\\sw\\|\\s_\\|\\s.\\)+\\)>"
+  "<\\(\\(?:\\sw\\|\\s_\\|\\s.\\)+@\\(?:\\sw\\|\\s_\\|\\s.\\)+\\)>"
   "Regular expression for matching inline email addresses.")
 
 (defsubst markdown-make-regex-link-generic ()
@@ -2423,7 +2421,16 @@ and disable it otherwise."
 
 (defface markdown-url-face
   '((t (:inherit font-lock-string-face)))
-  "Face for URLs."
+  "Face for URLs that are part of markup.
+For example, this applies to URLs in inline links:
+[link text](http://example.com/)."
+  :group 'markdown-faces)
+
+(defface markdown-plain-url-face
+  '((t (:inherit markdown-link-face)))
+  "Face for URLs that are also links.
+For example, this applies to plain angle bracket URLs:
+<http://example.com/>."
   :group 'markdown-faces)
 
 (defface markdown-link-title-face
@@ -2603,6 +2610,7 @@ Depending on your font, some reasonable choices are:
                             (2 markdown-inline-code-face)
                             (3 markdown-markup-properties)))
     (markdown-fontify-angle-uris)
+    (,markdown-regex-email . 'markdown-plain-url-face)
     (markdown-fontify-list-items)
     (,markdown-regex-footnote . ((1 markdown-markup-face)          ; [^
                                  (2 markdown-footnote-face)        ; label
@@ -2615,6 +2623,7 @@ Depending on your font, some reasonable choices are:
                                              (4 markdown-markup-face)    ; :
                                              (5 markdown-url-face)       ; url
                                              (6 markdown-link-title-face))) ; "title" (optional)
+    (markdown-fontify-plain-uris)
     ;; Math mode $..$
     (markdown-match-math-single . ((1 markdown-markup-face prepend)
                                    (2 markdown-math-face append)
@@ -2632,8 +2641,6 @@ Depending on your font, some reasonable choices are:
     (,markdown-regex-strike-through . ((3 markdown-markup-properties)
                                        (4 markdown-strike-through-face)
                                        (5 markdown-markup-properties)))
-    (markdown-fontify-plain-uris)
-    (,markdown-regex-email . markdown-link-face)
     (,markdown-regex-line-break . (1 markdown-line-break-face prepend))
     (markdown-fontify-sub-superscripts)
     (markdown-fontify-blockquotes))
@@ -2760,9 +2767,11 @@ Used for `flyspell-generic-check-word-predicate'."
                (if (listp faces)
                    (or (memq 'markdown-reference-face faces)
                        (memq 'markdown-markup-face faces)
+                       (memq 'markdown-plain-url-face faces)
                        (memq 'markdown-url-face faces))
                  (memq faces '(markdown-reference-face
                                markdown-markup-face
+                               markdown-plain-url-face
                                markdown-url-face))))))))
 
 (defun markdown-font-lock-ensure ()
@@ -3153,6 +3162,27 @@ intact additional processing."
           (cl-pushnew target refs :test #'equal)))
       (reverse refs))))
 
+(defun markdown-get-used-uris ()
+  "Return a list of all used URIs in the buffer."
+  (save-excursion
+    (goto-char (point-min))
+    (let (uris)
+      (while (re-search-forward
+              (concat "\\(?:" markdown-regex-link-inline
+                      "\\|" markdown-regex-angle-uri
+                      "\\|" markdown-regex-uri
+                      "\\|" markdown-regex-email
+                      "\\)")
+              nil t)
+        (unless (or (markdown-inline-code-at-point-p)
+                    (markdown-code-block-at-point-p))
+          (cl-pushnew (or (match-string-no-properties 6)
+                          (match-string-no-properties 10)
+                          (match-string-no-properties 12)
+                          (match-string-no-properties 13))
+                      uris :test #'equal)))
+      (reverse uris))))
+
 (defun markdown-inline-code-at-pos (pos)
   "Return non-nil if there is an inline code fragment at POS.
 Return nil otherwise.  Set match data according to
@@ -3200,8 +3230,10 @@ data.  See `markdown-code-block-at-point-p' for code blocks."
 
 (defun markdown-code-block-at-pos (pos)
   "Return match data list if there is a code block at POS.
+Uses text properties at the beginning of the line position.
 This includes pre blocks, tilde-fenced code blocks, and GFM
 quoted code blocks.  Return nil otherwise."
+  (setq pos (save-excursion (goto-char pos) (point-at-bol)))
   (or (get-text-property pos 'markdown-pre)
       (markdown-get-enclosing-fenced-block-construct pos)
       ;; polymode removes text properties set by markdown-mode, so
@@ -3283,11 +3315,25 @@ When FACELESS is non-nil, do not return matches where faces have been applied."
   (unless (bobp)
     (backward-char 1))
   (when (markdown-match-inline-generic markdown-regex-code last)
-    (set-match-data (list (match-beginning 1) (match-end 1)
-                          (match-beginning 2) (match-end 2)
-                          (match-beginning 3) (match-end 3)
-                          (match-beginning 4) (match-end 4)))
-    t))
+    (let ((begin (match-beginning 1))
+          (end (match-end 1))
+          (open-begin (match-beginning 2))
+          (open-end (match-end 2))
+          (code-begin (match-beginning 3))
+          (code-end (match-end 3))
+          (close-begin (match-beginning 4))
+          (close-end (match-end 4)))
+      (if (or (markdown-in-comment-p begin)
+              (markdown-in-comment-p end)
+              (markdown-code-block-at-pos begin))
+          (progn (goto-char (min (1+ begin) last))
+                 (when (< (point) last)
+                   (markdown-match-code last)))
+        (set-match-data (list begin end
+                              open-begin open-end
+                              code-begin code-end
+                              close-begin close-end))
+        t))))
 
 (defun markdown-match-bold (last)
   "Match inline bold from the point to LAST."
@@ -3296,8 +3342,10 @@ When FACELESS is non-nil, do not return matches where faces have been applied."
           (end (match-end 2)))
       (if (or (markdown-inline-code-at-pos-p begin)
               (markdown-inline-code-at-pos-p end)
+              (markdown-in-comment-p)
               (markdown-range-property-any
-               begin begin 'face '(markdown-url-face))
+               begin begin 'face '(markdown-url-face
+                                   markdown-plain-url-face))
               (markdown-range-property-any
                begin end 'face '(markdown-inline-code-face
                                  markdown-math-face)))
@@ -3319,8 +3367,10 @@ When FACELESS is non-nil, do not return matches where faces have been applied."
             (end (match-end 1)))
         (if (or (markdown-inline-code-at-pos-p begin)
                 (markdown-inline-code-at-pos-p end)
+                (markdown-in-comment-p)
                 (markdown-range-property-any
-                 begin begin 'face '(markdown-url-face))
+                 begin begin 'face '(markdown-url-face
+                                     markdown-plain-url-face))
                 (markdown-range-property-any
                  begin end 'face '(markdown-inline-code-face
                                    markdown-bold-face
@@ -4400,62 +4450,79 @@ if three backquotes inserted at the beginning of line."
     (call-interactively #'markdown-insert-gfm-code-block)))
 
 (defconst markdown-gfm-recognized-languages
-  ;; to reproduce/update, evaluate the let-form in
+  ;; To reproduce/update, evaluate the let-form in
   ;; scripts/get-recognized-gfm-languages.el. that produces a single long sexp,
   ;; but with appropriate use of a keyboard macro, indenting and filling it
   ;; properly is pretty fast.
-  '("ABAP" "AGS-Script" "AMPL" "ANTLR" "API-Blueprint" "APL" "ASP" "ATS"
-    "ActionScript" "Ada" "Agda" "Alloy" "Ant-Build-System" "ApacheConf" "Apex"
-    "AppleScript" "Arc" "Arduino" "AsciiDoc" "AspectJ" "Assembly" "Augeas"
-    "AutoHotkey" "AutoIt" "Awk" "Batchfile" "Befunge" "Bison" "BitBake"
-    "BlitzBasic" "BlitzMax" "Bluespec" "Boo" "Brainfuck" "Brightscript" "Bro" "C#"
-    "C++" "C-ObjDump" "C2hs-Haskell" "CLIPS" "CMake" "COBOL" "CSS" "Cap'n-Proto"
-    "CartoCSS" "Ceylon" "Chapel" "Charity" "ChucK" "Cirru" "Clarion" "Clean"
-    "Click" "Clojure" "CoffeeScript" "ColdFusion" "ColdFusion-CFC" "Common-Lisp"
-    "Component-Pascal" "Cool" "Coq" "Cpp-ObjDump" "Creole" "Crystal" "Cucumber"
-    "Cuda" "Cycript" "Cython" "D-ObjDump" "DIGITAL-Command-Language" "DM"
-    "DNS-Zone" "DTrace" "Darcs-Patch" "Dart" "Diff" "Dockerfile" "Dogescript"
-    "Dylan" "ECL" "ECLiPSe" "Eagle" "Ecere-Projects" "Eiffel" "Elixir" "Elm"
-    "Emacs-Lisp" "EmberScript" "Erlang" "F#" "FLUX" "FORTRAN" "Factor" "Fancy"
-    "Fantom" "Filterscript" "Formatted" "Forth" "FreeMarker" "Frege" "G-code"
-    "GAMS" "GAP" "GAS" "GDScript" "GLSL" "Game-Maker-Language" "Genshi"
-    "Gentoo-Ebuild" "Gentoo-Eclass" "Gettext-Catalog" "Glyph" "Gnuplot" "Go"
-    "Golo" "Gosu" "Grace" "Gradle" "Grammatical-Framework"
-    "Graph-Modeling-Language" "Graphviz-(DOT)" "Groff" "Groovy"
-    "Groovy-Server-Pages" "HCL" "HTML" "HTML+Django" "HTML+EEX" "HTML+ERB"
-    "HTML+PHP" "HTTP" "Hack" "Haml" "Handlebars" "Harbour" "Haskell" "Haxe" "Hy"
-    "HyPhy" "IDL" "IGOR-Pro" "INI" "IRC-log" "Idris" "Inform-7" "Inno-Setup" "Io"
-    "Ioke" "Isabelle" "Isabelle-ROOT" "JFlex" "JSON" "JSON5" "JSONLD" "JSONiq"
-    "JSX" "Jade" "Jasmin" "Java" "Java-Server-Pages" "JavaScript" "Julia"
-    "Jupyter-Notebook" "KRL" "KiCad" "Kit" "Kotlin" "LFE" "LLVM" "LOLCODE" "LSL"
-    "LabVIEW" "Lasso" "Latte" "Lean" "Less" "Lex" "LilyPond" "Limbo"
-    "Linker-Script" "Linux-Kernel-Module" "Liquid" "Literate-Agda"
-    "Literate-CoffeeScript" "Literate-Haskell" "LiveScript" "Logos" "Logtalk"
-    "LookML" "LoomScript" "Lua" "MAXScript" "MTML" "MUF" "Makefile" "Mako"
-    "Markdown" "Mask" "Mathematica" "Matlab" "Maven-POM" "Max" "MediaWiki"
-    "Mercury" "Metal" "MiniD" "Mirah" "Modelica" "Modula-2"
-    "Module-Management-System" "Monkey" "Moocode" "MoonScript" "Myghty" "NCL" "NL"
-    "NSIS" "Nemerle" "NetLinx" "NetLinx+ERB" "NetLogo" "NewLisp" "Nginx" "Nimrod"
-    "Ninja" "Nit" "Nix" "Nu" "NumPy" "OCaml" "ObjDump" "Objective-C"
-    "Objective-C++" "Objective-J" "Omgrofl" "Opa" "Opal" "OpenCL" "OpenEdge-ABL"
-    "OpenSCAD" "Org" "Ox" "Oxygene" "Oz" "PAWN" "PHP" "PLSQL" "PLpgSQL" "Pan"
-    "Papyrus" "Parrot" "Parrot-Assembly" "Parrot-Internal-Representation" "Pascal"
-    "Perl" "Perl6" "Pickle" "PicoLisp" "PigLatin" "Pike" "Pod" "PogoScript" "Pony"
-    "PostScript" "PowerShell" "Processing" "Prolog" "Propeller-Spin"
-    "Protocol-Buffer" "Public-Key" "Puppet" "Pure-Data" "PureBasic" "PureScript"
-    "Python" "Python-traceback" "QML" "QMake" "RAML" "RDoc" "REALbasic" "RHTML"
-    "RMarkdown" "Racket" "Ragel-in-Ruby-Host" "Raw-token-data" "Rebol" "Red"
-    "Redcode" "Ren'Py" "RenderScript" "RobotFramework" "Rouge" "Ruby" "Rust" "SAS"
-    "SCSS" "SMT" "SPARQL" "SQF" "SQL" "SQLPL" "STON" "SVG" "Sage" "SaltStack"
-    "Sass" "Scala" "Scaml" "Scheme" "Scilab" "Self" "Shell" "ShellSession" "Shen"
-    "Slash" "Slim" "Smali" "Smalltalk" "Smarty" "SourcePawn" "Squirrel" "Stan"
-    "Standard-ML" "Stata" "Stylus" "SuperCollider" "Swift" "SystemVerilog" "TOML"
-    "TXL" "Tcl" "Tcsh" "TeX" "Tea" "Text" "Textile" "Thrift" "Turing" "Turtle"
-    "Twig" "TypeScript" "Unified-Parallel-C" "Unity3D-Asset" "UnrealScript"
-    "UrWeb" "VCL" "VHDL" "Vala" "Verilog" "VimL" "Visual-Basic" "Volt" "Vue"
-    "Web-Ontology-Language" "WebIDL" "X10" "XC" "XML" "XPages" "XProc" "XQuery"
-    "XS" "XSLT" "Xojo" "Xtend" "YAML" "Yacc" "Zephir" "Zimpl" "desktop" "eC" "edn"
-    "fish" "mupad" "nesC" "ooc" "reStructuredText" "wisp" "xBase")
+  '("1C-Enterprise" "ABAP" "ABNF" "AGS-Script" "AMPL" "ANTLR"
+    "API-Blueprint" "APL" "ASN.1" "ASP" "ATS" "ActionScript" "Ada" "Agda"
+    "Alloy" "Alpine-Abuild" "Ant-Build-System" "ApacheConf" "Apex"
+    "Apollo-Guidance-Computer" "AppleScript" "Arc" "Arduino" "AsciiDoc"
+    "AspectJ" "Assembly" "Augeas" "AutoHotkey" "AutoIt" "Awk" "Batchfile"
+    "Befunge" "Bison" "BitBake" "Blade" "BlitzBasic" "BlitzMax" "Bluespec"
+    "Boo" "Brainfuck" "Brightscript" "Bro" "C#" "C++" "C-ObjDump"
+    "C2hs-Haskell" "CLIPS" "CMake" "COBOL" "COLLADA" "CSON" "CSS" "CSV"
+    "CWeb" "Cap'n-Proto" "CartoCSS" "Ceylon" "Chapel" "Charity" "ChucK"
+    "Cirru" "Clarion" "Clean" "Click" "Clojure" "Closure-Templates"
+    "CoffeeScript" "ColdFusion" "ColdFusion-CFC" "Common-Lisp"
+    "Component-Pascal" "Cool" "Coq" "Cpp-ObjDump" "Creole" "Crystal"
+    "Csound" "Csound-Document" "Csound-Score" "Cuda" "Cycript" "Cython"
+    "D-ObjDump" "DIGITAL-Command-Language" "DM" "DNS-Zone" "DTrace"
+    "Darcs-Patch" "Dart" "Diff" "Dockerfile" "Dogescript" "Dylan" "EBNF"
+    "ECL" "ECLiPSe" "EJS" "EQ" "Eagle" "Ecere-Projects" "Eiffel" "Elixir"
+    "Elm" "Emacs-Lisp" "EmberScript" "Erlang" "F#" "FLUX" "Factor" "Fancy"
+    "Fantom" "Filebench-WML" "Filterscript" "Formatted" "Forth" "Fortran"
+    "FreeMarker" "Frege" "G-code" "GAMS" "GAP" "GCC-Machine-Description"
+    "GDB" "GDScript" "GLSL" "GN" "Game-Maker-Language" "Genie" "Genshi"
+    "Gentoo-Ebuild" "Gentoo-Eclass" "Gettext-Catalog" "Gherkin" "Glyph"
+    "Gnuplot" "Go" "Golo" "Gosu" "Grace" "Gradle" "Grammatical-Framework"
+    "Graph-Modeling-Language" "GraphQL" "Graphviz-(DOT)" "Groovy"
+    "Groovy-Server-Pages" "HCL" "HLSL" "HTML" "HTML+Django" "HTML+ECR"
+    "HTML+EEX" "HTML+ERB" "HTML+PHP" "HTTP" "Hack" "Haml" "Handlebars"
+    "Harbour" "Haskell" "Haxe" "Hy" "HyPhy" "IDL" "IGOR-Pro" "INI"
+    "IRC-log" "Idris" "Inform-7" "Inno-Setup" "Io" "Ioke" "Isabelle"
+    "Isabelle-ROOT" "JFlex" "JSON" "JSON5" "JSONLD" "JSONiq" "JSX"
+    "Jasmin" "Java" "Java-Server-Pages" "JavaScript" "Jison" "Jison-Lex"
+    "Jolie" "Julia" "Jupyter-Notebook" "KRL" "KiCad" "Kit" "Kotlin" "LFE"
+    "LLVM" "LOLCODE" "LSL" "LabVIEW" "Lasso" "Latte" "Lean" "Less" "Lex"
+    "LilyPond" "Limbo" "Linker-Script" "Linux-Kernel-Module" "Liquid"
+    "Literate-Agda" "Literate-CoffeeScript" "Literate-Haskell"
+    "LiveScript" "Logos" "Logtalk" "LookML" "LoomScript" "Lua" "M4"
+    "M4Sugar" "MAXScript" "MQL4" "MQL5" "MTML" "MUF" "Makefile" "Mako"
+    "Markdown" "Marko" "Mask" "Mathematica" "Matlab" "Maven-POM" "Max"
+    "MediaWiki" "Mercury" "Meson" "Metal" "MiniD" "Mirah" "Modelica"
+    "Modula-2" "Module-Management-System" "Monkey" "Moocode" "MoonScript"
+    "Myghty" "NCL" "NL" "NSIS" "Nemerle" "NetLinx" "NetLinx+ERB" "NetLogo"
+    "NewLisp" "Nginx" "Nim" "Ninja" "Nit" "Nix" "Nu" "NumPy" "OCaml"
+    "ObjDump" "Objective-C" "Objective-C++" "Objective-J" "Omgrofl" "Opa"
+    "Opal" "OpenCL" "OpenEdge-ABL" "OpenRC-runscript" "OpenSCAD"
+    "OpenType-Feature-File" "Org" "Ox" "Oxygene" "Oz" "P4" "PAWN" "PHP"
+    "PLSQL" "PLpgSQL" "POV-Ray-SDL" "Pan" "Papyrus" "Parrot"
+    "Parrot-Assembly" "Parrot-Internal-Representation" "Pascal" "Pep8"
+    "Perl" "Perl6" "Pic" "Pickle" "PicoLisp" "PigLatin" "Pike" "Pod"
+    "PogoScript" "Pony" "PostScript" "PowerBuilder" "PowerShell"
+    "Processing" "Prolog" "Propeller-Spin" "Protocol-Buffer" "Public-Key"
+    "Pug" "Puppet" "Pure-Data" "PureBasic" "PureScript" "Python"
+    "Python-console" "Python-traceback" "QML" "QMake" "RAML" "RDoc"
+    "REALbasic" "REXX" "RHTML" "RMarkdown" "RPM-Spec" "RUNOFF" "Racket"
+    "Ragel" "Rascal" "Raw-token-data" "Reason" "Rebol" "Red" "Redcode"
+    "Regular-Expression" "Ren'Py" "RenderScript" "RobotFramework" "Roff"
+    "Rouge" "Ruby" "Rust" "SAS" "SCSS" "SMT" "SPARQL" "SQF" "SQL" "SQLPL"
+    "SRecode-Template" "STON" "SVG" "Sage" "SaltStack" "Sass" "Scala"
+    "Scaml" "Scheme" "Scilab" "Self" "ShaderLab" "Shell" "ShellSession"
+    "Shen" "Slash" "Slim" "Smali" "Smalltalk" "Smarty" "SourcePawn"
+    "Spline-Font-Database" "Squirrel" "Stan" "Standard-ML" "Stata"
+    "Stylus" "SubRip-Text" "Sublime-Text-Config" "SuperCollider" "Swift"
+    "SystemVerilog" "TI-Program" "TLA" "TOML" "TXL" "Tcl" "Tcsh" "TeX"
+    "Tea" "Terra" "Text" "Textile" "Thrift" "Turing" "Turtle" "Twig"
+    "Type-Language" "TypeScript" "Unified-Parallel-C" "Unity3D-Asset"
+    "Unix-Assembly" "Uno" "UnrealScript" "UrWeb" "VCL" "VHDL" "Vala"
+    "Verilog" "Vim-script" "Visual-Basic" "Volt" "Vue"
+    "Wavefront-Material" "Wavefront-Object" "Web-Ontology-Language"
+    "WebAssembly" "WebIDL" "World-of-Warcraft-Addon-Data" "X10" "XC"
+    "XCompose" "XML" "XPages" "XProc" "XQuery" "XS" "XSLT" "Xojo" "Xtend"
+    "YAML" "YANG" "Yacc" "Zephir" "Zimpl" "desktop" "eC" "edn" "fish"
+    "mupad" "nesC" "ooc" "reStructuredText" "wisp" "xBase")
   "Language specifiers recognized by GitHub's syntax highlighting features.")
 
 (defvar markdown-gfm-used-languages nil
@@ -7147,23 +7214,56 @@ See `markdown-wiki-link-p' for more information."
 
 (make-obsolete 'markdown-link-link 'markdown-link-url "v2.3")
 
+(defun markdown-link-at-pos (pos)
+  "Return properties of link at position POS.
+Value is a list of elements describing the link:
+ 0. beginning position
+ 1. end position
+ 2. link text
+ 3. URL
+ 4. reference label
+ 5. title text"
+  (save-excursion
+    (goto-char pos)
+    (let (begin end text url reference title)
+      (cond
+       ;; Inline or reference image or link at point.
+       ((or (thing-at-point-looking-at markdown-regex-link-inline)
+            (thing-at-point-looking-at markdown-regex-link-reference))
+        (when (null (match-beginning 1))
+          ;; No exclamation point, so not an image.
+          (setq begin (match-beginning 0)
+                end (match-end 0)
+                text (match-string-no-properties 3))
+          (if (char-equal (char-after (match-beginning 5)) ?\[)
+              ;; Reference link
+              (setq reference (match-string-no-properties 6))
+            ;; Inline link
+            (setq url (match-string-no-properties 6))
+            (when (match-end 7)
+              (setq title (substring (match-string-no-properties 7) 1 -1))))))
+       ;; Angle bracket URI at point.
+       ((thing-at-point-looking-at markdown-regex-angle-uri)
+        (setq begin (match-beginning 0)
+              end (match-end 0)
+              url (match-string-no-properties 2)))
+       ;; Plain URI at point.
+       ((thing-at-point-looking-at markdown-regex-uri)
+        (setq begin (match-beginning 0)
+              end (match-end 0)
+              url (match-string-no-properties 1))))
+      (list begin end text url reference title))))
+
 (defun markdown-link-url ()
   "Return the URL part of the regular (non-wiki) link at point.
 Works with both inline and reference style links.  If point is
 not at a link or the link reference is not defined returns nil."
-  (cond
-   ((thing-at-point-looking-at markdown-regex-link-inline)
-    (match-string-no-properties 6))
-   ((thing-at-point-looking-at markdown-regex-link-reference)
-    (let* ((text (match-string-no-properties 3))
-           (reference (match-string-no-properties 6))
-           (target (downcase (if (string= reference "") text reference))))
-      (car (markdown-reference-definition target))))
-   ((thing-at-point-looking-at markdown-regex-uri)
-    (match-string-no-properties 0))
-   ((thing-at-point-looking-at markdown-regex-angle-uri)
-    (match-string-no-properties 2))
-   (t nil)))
+  (let* ((values (markdown-link-at-pos (point)))
+         (text (nth 2 values))
+         (url (nth 3 values))
+         (ref (nth 4 values)))
+    (or url (and ref (car (markdown-reference-definition
+                           (downcase (if (string= ref "") text ref))))))))
 
 (defun markdown-follow-link-at-point ()
   "Open the current non-wiki link.
@@ -7275,7 +7375,7 @@ Otherwise, open with `find-file' after stripping anchor and/or query string."
                      'font-lock-multiline t))
            ;; URI part
            (up (list 'keymap markdown-mode-mouse-map
-                     'face markdown-link-face
+                     'face 'markdown-plain-url-face
                      'mouse-face 'markdown-highlight-face
                      'font-lock-multiline t)))
       (dolist (g '(1 3))
@@ -7289,7 +7389,7 @@ Otherwise, open with `find-file' after stripping anchor and/or query string."
     (let* ((start (match-beginning 0))
            (end (match-end 0))
            (props (list 'keymap markdown-mode-mouse-map
-                        'face markdown-link-face
+                        'face 'markdown-plain-url-face
                         'mouse-face 'markdown-highlight-face
                         'font-lock-multiline t)))
       (add-text-properties start end props)
