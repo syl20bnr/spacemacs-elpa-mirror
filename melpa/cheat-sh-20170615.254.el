@@ -2,8 +2,8 @@
 ;; Copyright 2017 by Dave Pearson <davep@davep.org>
 
 ;; Author: Dave Pearson <davep@davep.org>
-;; Version: 1.4
-;; Package-Version: 20170612.735
+;; Version: 1.5
+;; Package-Version: 20170615.254
 ;; Keywords: docs, help
 ;; URL: https://github.com/davep/cheat-sh.el
 ;; Package-Requires: ((emacs "24"))
@@ -26,6 +26,11 @@
 (defface cheat-sh-caption
   '((t :inherit (bold font-lock-function-name-face)))
   "Face used on captions in the cheat-sh output window."
+  :group 'cheat-sh)
+
+(defcustom cheat-sh-list-timeout (* 60 60 4)
+  "Seconds to wait before deciding the cached sheet list is \"stale\"."
+  :type 'integer
   :group 'cheat-sh)
 
 (defconst cheat-sh-url "http://cheat.sh/%s?T"
@@ -54,15 +59,29 @@ text.")
 (defvar cheat-sh-sheet-list nil
   "List of all available sheets.")
 
+(defvar cheat-sh-sheet-list-acquired nil
+  "The time when variable `cheat-sh-sheet-list' was populated.")
+
+(defun cheat-sh-sheet-list-cache ()
+  "Return the list of sheets.
+
+The list is cached in memory, and is considered \"stale\" and is
+refreshed after `cheat-sh-list-timeout' seconds."
+  (when (and cheat-sh-sheet-list-acquired
+             (> (- (time-to-seconds) cheat-sh-sheet-list-acquired) cheat-sh-list-timeout))
+    (setq cheat-sh-sheet-list nil))
+  (or cheat-sh-sheet-list
+      (progn
+        (setq cheat-sh-sheet-list-acquired (time-to-seconds))
+        (setq cheat-sh-sheet-list (split-string (cheat-sh-get ":list") "\n")))))
+
 (defun cheat-sh-read (prompt)
   "Read input from the user, showing PROMPT to prompt them.
 
 This function is used by some `interactive' functions in
 cheat-sh.el to get the item to look up. It provides completion
 based of the sheets that are available on cheat.sh."
-  (completing-read prompt
-                   (or cheat-sh-sheet-list
-                       (setq cheat-sh-sheet-list (split-string (cheat-sh-get ":list") "\n")))))
+  (completing-read prompt (cheat-sh-sheet-list-cache)))
 
 (defun cheat-sh-decorate-results (buffer)
   "Decorate BUFFER with properties to highlight results."

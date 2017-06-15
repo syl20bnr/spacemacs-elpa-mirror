@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jrblevin@sdf.org>
 ;; Created: May 24, 2007
 ;; Version: 2.3-dev
-;; Package-Version: 20170614.1152
+;; Package-Version: 20170614.2238
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: http://jblevins.org/projects/markdown-mode/
@@ -1989,16 +1989,21 @@ of the block construct enclosing POS, if it exists. Used in
             #'markdown-text-property-at-point
             (markdown-get-fenced-block-end-properties)))))))))
 
-(defun markdown-propertize-end-match (reg end correct-entry enclosed-text-start)
+(defun markdown-propertize-end-match (reg end fence-spec middle-begin)
   "Get match for REG up to END, if exists, and propertize appropriately.
-CORRECT-ENTRY is an entry in `markdown-fenced-block-pairs' and
-ENCLOSED-TEXT-START is the start of the \"middle\" section of the block."
+FENCE-SPEC is an entry in `markdown-fenced-block-pairs' and
+MIDDLE-BEGIN is the start of the \"middle\" section of the block."
   (when (re-search-forward reg end t)
-    (put-text-property (match-beginning 0) (match-end 0)
-                       (cl-cadadr correct-entry) (match-data t))
-    (put-text-property
-     enclosed-text-start (match-beginning 0) (cl-third correct-entry)
-     (list enclosed-text-start (match-beginning 0)))))
+    (let ((close-begin (match-beginning 0)) ; Start of closing line.
+          (close-end (match-end 0))         ; End of closing line.
+          (close-data (match-data t)))      ; Match data for closing line.
+      ;; Propertize middle section of fenced block.
+      (put-text-property middle-begin close-begin
+                         (cl-third fence-spec)
+                         (list middle-begin close-begin))
+      ;; Propertize closing line of fenced block.
+      (put-text-property close-begin close-end
+                         (cl-cadadr fence-spec) close-data))))
 
 (defun markdown-syntax-propertize-fenced-block-constructs (start end)
   "Propertize according to `markdown-fenced-block-pairs' from START to END.
@@ -7089,33 +7094,35 @@ Browse the resulting file within Emacs using
 `markdown-live-preview-window-function' Return the buffer
 displaying the rendered output."
   (interactive)
-  (let* ((markdown-live-preview-currently-exporting t)
-         (cur-buf (current-buffer))
-         (export-file (markdown-export (markdown-live-preview-get-filename)))
-         ;; get positions in all windows currently displaying output buffer
-         (window-data
-          (markdown-live-preview-window-serialize
-           markdown-live-preview-buffer)))
-    (save-window-excursion
-      (let ((output-buffer
-             (funcall markdown-live-preview-window-function export-file)))
-        (with-current-buffer output-buffer
-          (setq markdown-live-preview-source-buffer cur-buf)
-          (add-hook 'kill-buffer-hook
-                    #'markdown-live-preview-remove-on-kill t t))
+  (let ((filename (markdown-live-preview-get-filename)))
+    (when filename
+      (let* ((markdown-live-preview-currently-exporting t)
+             (cur-buf (current-buffer))
+             (export-file (markdown-export filename))
+             ;; get positions in all windows currently displaying output buffer
+             (window-data
+              (markdown-live-preview-window-serialize
+               markdown-live-preview-buffer)))
+        (save-window-excursion
+          (let ((output-buffer
+                 (funcall markdown-live-preview-window-function export-file)))
+            (with-current-buffer output-buffer
+              (setq markdown-live-preview-source-buffer cur-buf)
+              (add-hook 'kill-buffer-hook
+                        #'markdown-live-preview-remove-on-kill t t))
+            (with-current-buffer cur-buf
+              (setq markdown-live-preview-buffer output-buffer))))
         (with-current-buffer cur-buf
-          (setq markdown-live-preview-buffer output-buffer))))
-    (with-current-buffer cur-buf
-      ;; reset all windows displaying output buffer to where they were,
-      ;; now with the new output
-      (mapc #'markdown-live-preview-window-deserialize window-data)
-      ;; delete html editing buffer
-      (let ((buf (get-file-buffer export-file))) (when buf (kill-buffer buf)))
-      (when (and export-file (file-exists-p export-file)
-                 (eq markdown-live-preview-delete-export
-                     'delete-on-export))
-        (delete-file export-file))
-      markdown-live-preview-buffer)))
+          ;; reset all windows displaying output buffer to where they were,
+          ;; now with the new output
+          (mapc #'markdown-live-preview-window-deserialize window-data)
+          ;; delete html editing buffer
+          (let ((buf (get-file-buffer export-file))) (when buf (kill-buffer buf)))
+          (when (and export-file (file-exists-p export-file)
+                     (eq markdown-live-preview-delete-export
+                         'delete-on-export))
+            (delete-file export-file))
+          markdown-live-preview-buffer)))))
 
 (defun markdown-live-preview-remove ()
   (when (buffer-live-p markdown-live-preview-buffer)
@@ -7124,7 +7131,7 @@ displaying the rendered output."
   ;; if set to 'delete-on-export, the output has already been deleted
   (when (eq markdown-live-preview-delete-export 'delete-on-destroy)
     (let ((outfile-name (markdown-live-preview-get-filename)))
-      (when (file-exists-p outfile-name)
+      (when (and outfile-name (file-exists-p outfile-name))
         (delete-file outfile-name)))))
 
 (defun markdown-get-other-window ()
@@ -7705,24 +7712,39 @@ handles filling itself, it always returns t so that
     (fill-paragraph justify))
   t)
 
-(defun markdown-fill-forward-paragraph-function (&optional arg)
+(make-obsolete 'markdown-fill-forward-paragraph-function
+               'markdown-fill-forward-paragraph "v2.3")
+
+(defun markdown-fill-forward-paragraph (&optional arg)
   "Function used by `fill-paragraph' to move over ARG paragraphs.
 This is a `fill-forward-paragraph-function' for `markdown-mode'.
 It is called with a single argument specifying the number of
 paragraphs to move.  Just like `forward-paragraph', it should
 return the number of paragraphs left to move."
-  (let* ((arg (or arg 1))
-         (paragraphs-remaining (forward-paragraph arg))
-         (start (point)))
-    (when (< arg 0)
+  (or arg (setq arg 1))
+  (if (> arg 0)
+      ;; With positive ARG, move across ARG non-code-block paragraphs,
+      ;; one at a time.  When passing a code block, don't decrement ARG.
+      (while (and (not (eobp))
+                  (> arg 0)
+                  (= (forward-paragraph 1) 0)
+                  (or (markdown-code-block-at-pos (point-at-bol 0))
+                      (setq arg (1- arg)))))
+    ;; Move backward by one paragraph with negative ARG (always -1).
+    (let ((start (point)))
+      (setq arg (forward-paragraph arg))
       (while (and (not (eobp))
                   (progn (move-to-left-margin) (not (eobp)))
                   (looking-at-p paragraph-separate))
         (forward-line 1))
-      (if (looking-at markdown-regex-list)
-          (forward-char (length (match-string 0)))
-        (goto-char start)))
-    paragraphs-remaining))
+      (cond
+       ;; Move point past whitespace following list marker.
+       ((looking-at markdown-regex-list)
+        (goto-char (match-end 0)))
+       ;; Return point if the paragraph passed was a code block.
+       ((markdown-code-block-at-pos (point-at-bol 2))
+        (goto-char start)))))
+  arg)
 
 
 ;;; Extension Framework =======================================================
@@ -8206,7 +8228,7 @@ position."
   (set (make-local-variable 'adaptive-fill-function)
        'markdown-adaptive-fill-function)
   (set (make-local-variable 'fill-forward-paragraph-function)
-       'markdown-fill-forward-paragraph-function)
+       #'markdown-fill-forward-paragraph)
   ;; Outline mode
   (make-local-variable 'outline-regexp)
   (setq outline-regexp markdown-regex-header)
@@ -8282,7 +8304,10 @@ position."
   "Toggle native previewing on save for a specific markdown file."
   :lighter " MD-Preview"
   (if markdown-live-preview-mode
-      (markdown-display-buffer-other-window (markdown-live-preview-export))
+      (if (markdown-live-preview-get-filename)
+          (markdown-display-buffer-other-window (markdown-live-preview-export))
+        (markdown-live-preview-mode -1)
+        (error "Buffer %s does not visit a file" (current-buffer)))
     (markdown-live-preview-remove)))
 
 

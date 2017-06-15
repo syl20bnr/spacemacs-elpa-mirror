@@ -10,7 +10,7 @@
 ;; Maintainer: Bozhidar Batsov <bozhidar@batsov.com>
 ;;     Sebastian Wiesner <swiesner@lunaryorn.com>
 ;; URL: https://github.com/voxpupuli/puppet-mode
-;; Package-Version: 20170528.904
+;; Package-Version: 20170614.2215
 ;; Keywords: languages
 ;; Version: 0.4-cvs
 ;; Package-Requires: ((emacs "24.1") (pkg-info "0.4"))
@@ -528,22 +528,12 @@ When called interactively, prompt for COMMAND."
 block (the line containing the opening brace).  Used to set the indentation
 of the closing brace of a block."
   (save-excursion
-    (save-match-data
-      (let ((opoint (point))
-            (apoint (search-backward "{" nil t)))
-        (when apoint
-          ;; This is a bit of a hack and doesn't allow for strings.  We really
-          ;; want to parse by sexps at some point.
-          (let ((close-braces (count-matches "}" apoint opoint))
-                (open-braces 0))
-            (while (and apoint (> close-braces open-braces))
-              (setq apoint (search-backward "{" nil t))
-              (when apoint
-                (setq close-braces (count-matches "}" apoint opoint))
-                (setq open-braces (1+ open-braces)))))
-          (if apoint
-              (current-indentation)
-            nil))))))
+    (let ((opoint (nth 1 (syntax-ppss))))
+      (when (and opoint
+                 (progn
+                   (goto-char opoint)
+                   (looking-at-p "{")))
+        (current-indentation)))))
 
 (defun puppet-in-argument-list ()
   "If point is in an argument list, return the position of the opening '('.
@@ -560,14 +550,12 @@ that array, else return nil."
 it, else return nil.
 OPENSTRING is a regexp string matching the opening character."
   (save-excursion
-    (save-match-data
-      (condition-case nil
-          (progn
-            (backward-up-list)
-            (if (looking-at openstring)
-                (point)
-              nil))
-        (scan-error nil)))))
+    (let ((opoint (nth 1 (syntax-ppss))))
+      (when (and opoint
+                 (progn
+                   (goto-char opoint)
+                   (looking-at-p openstring)))
+        opoint))))
 
 (defun puppet-in-include ()
   "If point is in a continued list of include statements, return the position

@@ -5,10 +5,10 @@
 ;; Maintainer: jidaikobo-shibata
 ;; Contributions: syohex, Steve Purcell
 ;; Keywords: dired explorer
-;; Package-Version: 20160809.200
+;; Package-Version: 20170614.1956
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Version: 0.3
-;; for Emacs 24.5.1
+;; Version: 0.5
+;; for Emacs 24.5.1 - 25.2
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -53,10 +53,16 @@
 ;;             (dired-explorer-mode t)))
 ;;
 ;; toggle mode by ":".
+
+;;; Change Log:
+;; If You troubled with my change. Please contact me on Email.
 ;;
-;; below are also useful.
-;; (define-key dired-mode-map (kbd "RET") 'dired-explorer-dired-open)
-;; (define-key dired-mode-map (kbd "<s-return>") 'dired-explorer-dired-open)
+;; 0.5
+;; dired-explorer-dired-open is deleted. it seems meanless.
+;; I was too foolish that I killed important Emacs keybind M-x at this mode.
+;;
+;; 0.4
+;; first release
 
 ;;; Code:
 
@@ -75,14 +81,14 @@
 
 (defvar dired-explorer-mode-map
   (let ((map (make-sparse-keymap)))
+    ;; Lower keys for normal dired-mode are replaced M-* at thid mode.
+    ;; except for "x".
     (define-key map "\M-a" 'dired-find-alternate-file)
     (define-key map "\M-d" 'dired-flag-file-deletion)
     (define-key map "\M-e" 'dired-find-file)
     (define-key map "\M-f" 'dired-find-file)
-    (define-key map "\M-\C-m" 'dired-find-file)
     (define-key map "\M-g" 'revert-buffer)
     (define-key map "\M-i" 'dired-maybe-insert-subdir)
-    (define-key map "\M-I" 'dired-kill-subdir)
     (define-key map "\M-j" 'dired-goto-file)
     (define-key map "\M-k" 'dired-do-kill-lines)
     (define-key map "\M-l" 'dired-do-redisplay)
@@ -95,13 +101,13 @@
     (define-key map "\M-u" 'dired-unmark)
     (define-key map "\M-v" 'dired-view-file)
     (define-key map "\M-w" 'dired-copy-filename-as-kill)
-    (define-key map "\M-x" 'dired-do-flagged-delete)
+    (define-key map "\M-X" 'dired-do-flagged-delete) ; this must be capital
     (define-key map "\M-y" 'dired-show-file-type)
     (define-key map ":" 'dired-explorer-mode)
-    (define-key map "\C-m" 'dired-explorer-dired-open)
-    (define-key map (kbd "<return>") 'dired-explorer-dired-open)
-    (define-key map "^" 'dired-explorer-dired-open)
-    (define-key map "I" 'dired-kill-subdir)
+    ;; (define-key map "\C-m" 'dired-find-file)
+    ;; (define-key map (kbd "<return>") 'dired-find-file)
+    ;; (define-key map "^" 'dired-find-file)
+    ;; (define-key map "I" 'dired-kill-subdir)
     map))
 
 (define-minor-mode dired-explorer-mode
@@ -217,58 +223,58 @@
                (file-exists-p mac-orig-path))
       mac-orig-path)))
 
-(defun dired-explorer-dired-open ()
-  "Dired open in accordance with situation."
-  (interactive)
-  (let* (p1
-         p2
-         (file "")
-         (path (when (dired-file-name-at-point) (expand-file-name (dired-file-name-at-point))))
-         (is-explorer (eq major-mode 'dired-explorer-mode))
-         (mac-orig-path (dired-mac-alias-path path)))
-    (if mac-orig-path
-        (progn
-          (setq path mac-orig-path)
-          (cond ((and
-                  (one-window-p)
-                  (file-directory-p path)
-                  (not (memq last-input-event '(s-return S-return))))
-                 (find-alternate-file path))
-                (t
-                 (find-file path))))
-      (when path
-        (save-excursion
-          (setq p1 (dired-move-to-filename))
-          (setq p2 (dired-move-to-end-of-filename))))
-      (when (and p1 p2) (setq file (buffer-substring p1 p2)))
-      ;; (message "this-event: %s this-command: %s" last-input-event this-command)
-      (cond ((string= file ".")
-             (message "current directory."))
-            ;; up directory at same buffer
-            ((and
-              (one-window-p)
-              (not (memq last-input-event '(s-return S-return)))
-              (or
-               (string= file "..")
-               ;; means "^"
-               (memq last-input-event '(94))))
-             (find-alternate-file
-              (file-name-directory (directory-file-name (dired-current-directory)))))
-            ((and
-              (one-window-p)
-              (file-directory-p path)
-              (not (memq last-input-event '(s-return S-return))))
-             (dired-find-alternate-file))
-            ;; find file/directory at new buffer when S-RET / s-RET
-            ((memq last-input-event '(94))
-             (find-file
-              (file-name-directory (directory-file-name (dired-current-directory)))))
-            (t
-             (dired-find-file))))
-    ;; keep explorer-mode
-    (when (or (and (file-directory-p path) is-explorer)
-              (and (string= file "..") is-explorer))
-      (unless dired-explorer-mode (dired-explorer-mode t)))))
+;; (defun dired-explorer-dired-open ()
+;;   "Dired open in accordance with situation."
+;;   (interactive)
+;;   (let* (p1
+;;          p2
+;;          (file "")
+;;          (path (when (dired-file-name-at-point) (expand-file-name (dired-file-name-at-point))))
+;;          (is-explorer (eq major-mode 'dired-explorer-mode))
+;;          (mac-orig-path (dired-mac-alias-path path)))
+;;     (if mac-orig-path
+;;         (progn
+;;           (setq path mac-orig-path)
+;;           (cond ((and
+;;                   (one-window-p)
+;;                   (file-directory-p path)
+;;                   (not (memq last-input-event '(s-return S-return))))
+;;                  (find-alternate-file path))
+;;                 (t
+;;                  (find-file path))))
+;;       (when path
+;;         (save-excursion
+;;           (setq p1 (dired-move-to-filename))
+;;           (setq p2 (dired-move-to-end-of-filename))))
+;;       (when (and p1 p2) (setq file (buffer-substring p1 p2)))
+;;       ;; (message "this-event: %s this-command: %s" last-input-event this-command)
+;;       (cond ((string= file ".")
+;;              (message "current directory."))
+;;             ;; up directory at same buffer
+;;             ((and
+;;               (one-window-p)
+;;               (not (memq last-input-event '(s-return S-return)))
+;;               (or
+;;                (string= file "..")
+;;                ;; means "^"
+;;                (memq last-input-event '(94))))
+;;              (find-alternate-file
+;;               (file-name-directory (directory-file-name (dired-current-directory)))))
+;;             ((and
+;;               (one-window-p)
+;;               (file-directory-p path)
+;;               (not (memq last-input-event '(s-return S-return))))
+;;              (dired-find-alternate-file))
+;;             ;; find file/directory at new buffer when S-RET / s-RET
+;;             ((memq last-input-event '(94))
+;;              (find-file
+;;               (file-name-directory (directory-file-name (dired-current-directory)))))
+;;             (t
+;;              (dired-find-file))))
+;;     ;; keep explorer-mode
+;;     (when (or (and (file-directory-p path) is-explorer)
+;;               (and (string= file "..") is-explorer))
+;;       (unless dired-explorer-mode (dired-explorer-mode t)))))
 
 ;;; ------------------------------------------------------------
 ;;; Provide
