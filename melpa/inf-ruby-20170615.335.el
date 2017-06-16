@@ -8,7 +8,7 @@
 ;;         Dmitry Gutov <dgutov@yandex.ru>
 ;;         Kyle Hargraves <pd@krh.me>
 ;; URL: http://github.com/nonsequitur/inf-ruby
-;; Package-Version: 20170614.1739
+;; Package-Version: 20170615.335
 ;; Created: 8 April 1998
 ;; Keywords: languages ruby
 ;; Version: 2.5.1
@@ -815,11 +815,12 @@ automatically."
   (interactive (list (inf-ruby-console-read-directory 'hanami)))
   (let* ((default-directory (file-name-as-directory dir))
          (env (inf-ruby-console-hanami-env))
-         (with-bundler (file-exists-p "Gemfile")))
+         (with-bundler (file-exists-p "Gemfile"))
+         (process-environment (cons (format "HANAMI_ENV=%s" env)
+                                    process-environment)))
     (inf-ruby-console-run
      (concat (when with-bundler "bundle exec ")
-             "hanami console "
-             env)
+             "hanami console")
      "hanami")))
 
 (defun inf-ruby-console-hanami-env ()

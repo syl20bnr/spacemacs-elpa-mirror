@@ -4,7 +4,7 @@
 
 ;; Author: Junpeng Qiu <qjpchmail@gmail.com>
 ;; Package-Requires: ((cl-lib "0.5") (expand-region "0.10.0"))
-;; Package-Version: 20170508.1526
+;; Package-Version: 20170615.1131
 ;; Keywords: extensions
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -716,12 +716,12 @@
 ;; funcions & commands ;;
 ;; ------------------- ;;
 (defun embrace-with-tag ()
-  (let* ((input (read-string "Tag: "))
-         (_ (string-match "\\([0-9a-z-]+\\)\\(.*?\\)[>]*$" input))
-         (tag  (match-string 1 input))
-         (rest (match-string 2 input)))
-    (cons (format "<%s%s>" (or tag "") (or rest ""))
-          (format "</%s>" (or tag "")))))
+  (let ((input (read-string "Tag: ")) tag rest)
+    (when (string-match "\\([0-9a-z-]+\\)\\(.*?\\)[>]*$" input)
+      (setq tag (match-string 1 input))
+      (setq rest (match-string 2 input))
+      (cons (format "<%s%s>" (or tag "") (or rest ""))
+            (format "</%s>" (or tag ""))))))
 
 (defun embrace-with-function ()
   (let ((fname (read-string "Function: ")))
@@ -880,7 +880,7 @@
          ((eq char ?d)
           (call-interactively 'embrace-delete))
          (t
-          (error "Unknow command"))))
+          (error "Unknown key"))))
     (embrace--hide-help-buffer)))
 
 ;; -------- ;;

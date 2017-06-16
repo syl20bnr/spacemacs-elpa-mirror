@@ -4,7 +4,7 @@
 
 ;; Author: Ankur Dave <ankurdave@gmail.com>
 ;; Url: https://github.com/ankurdave/color-identifiers-mode
-;; Package-Version: 20170614.2311
+;; Package-Version: 20170615.1338
 ;; Created: 24 Jan 2014
 ;; Version: 1.1
 ;; Keywords: faces, languages
@@ -158,8 +158,10 @@ SCAN-FN."
   "Extract a list of identifiers declared in the current buffer.
 For cc-mode support within color-identifiers-mode."
   (let ((result nil))
-    ;; Variables that cc-mode highlighted with font-lock-variable-name-face
     (save-excursion
+      ;; Ensure cc-mode has highlighted the whole buffer
+      (font-lock-ensure (point-min) (point-max))
+      ;; Find identifiers that cc-mode highlighted with font-lock-variable-name-face
       (goto-char (point-min))
       (catch 'end-of-file
         (while t
@@ -288,6 +290,7 @@ arguments, loops (for .. in), or for comprehensions."
                     (setq result (append params result)))))
             (wrong-type-argument nil))))
       ;; Variables that python-mode highlighted with font-lock-variable-name-face
+      (font-lock-ensure (point-min) (point-max))
       (save-excursion
         (goto-char (point-min))
         (catch 'end-of-file
@@ -706,7 +709,7 @@ be colored."
 
 (defun color-identifiers:hash-identifier (identifier)
   "Return a color for IDENTIFIER based on its hash."
-  (nth (% (sxhash identifier) color-identifiers:num-colors)
+  (nth (% (abs (sxhash identifier)) color-identifiers:num-colors)
        color-identifiers:colors))
 
 (defun color-identifiers:scan-identifiers (fn limit &optional continue-p)

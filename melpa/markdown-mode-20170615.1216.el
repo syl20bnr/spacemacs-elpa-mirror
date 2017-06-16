@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jrblevin@sdf.org>
 ;; Created: May 24, 2007
 ;; Version: 2.3-dev
-;; Package-Version: 20170614.2238
+;; Package-Version: 20170615.1216
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: http://jblevins.org/projects/markdown-mode/
@@ -1494,13 +1494,14 @@ Groups 2 and 4 matches the opening and closing delimiters.
 Group 3 matches the text inside the delimiters.")
 
 (defconst markdown-regex-blockquote
-  "^[ \t]*\\([A-Z]*>\\)\\(.*\\)$"
+  "^[ \t]*\\([A-Z]?>\\)\\([ \t]*\\)\\(.*\\)$"
   "Regular expression for matching blockquote lines.
 Also accounts for a potential capital letter preceding the angle
 bracket, for use with Leanpub blocks (asides, warnings, info
 blocks, etc.).
 Group 1 matches the leading angle bracket.
-Group 2 matches the text.")
+Group 2 matches the separating whitespace.
+Group 3 matches the text.")
 
 (defconst markdown-regex-line-break
   "[^ \n\t][ \t]*\\(  \\)$"
@@ -1626,6 +1627,18 @@ or
       markdown-regex-yaml-pandoc-metadata-end-border
     markdown-regex-yaml-metadata-border))
 
+(defconst markdown-regex-inline-attributes
+  "[ \t]*\\({:?\\)[ \t]*\\(\\(#[[:alpha:]_.:-]+\\|\\.[[:alpha:]_.:-]+\\|\\w+=['\"]?[^\n'\"]*['\"]?\\),?[ \t]*\\)+\\(}\\)[ \t]*$"
+  "Regular expression for matching inline identifiers or attribute lists.
+Compatible with Pandoc, Python Markdown, PHP Markdown Extra, and Leanpub.")
+
+(defconst markdown-regex-leanpub-sections
+  (concat
+   "^\\({\\)\\("
+   (regexp-opt '("frontmatter" "mainmatter" "backmatter" "appendix" "pagebreak"))
+   "\\)\\(}\\)[ \t]*\n")
+  "Regular expression for Leanpub section markers and related syntax.")
+
 (defconst markdown-regex-sub-superscript
   "\\(?:^\\|[^\\~^]\\)\\(\\([~^]\\)\\([[:alnum:]]+\\)\\(\\2\\)\\)"
   "The regular expression matching a sub- or superscript.
@@ -1636,6 +1649,31 @@ Group 1 matches the entire expression, including markup.
 Group 2 matches the opening markup--a tilde or carat.
 Group 3 matches the text inside the delimiters.
 Group 4 matches the closing markup--a tilde or carat.")
+
+(defconst markdown-regex-include
+  "^\\(<<\\)\\(?:\\(\\[\\)\\(.*\\)\\(\\]\\)\\)?\\(?:\\((\\)\\(.*\\)\\()\\)\\)?\\(?:\\({\\)\\(.*\\)\\(}\\)\\)?$"
+  "Regular expression matching common forms of include syntax.
+Marked 2, Leanpub, and other processors support some of these forms:
+
+<<[sections/section1.md]
+<<(folder/filename)
+<<[Code title](folder/filename)
+<<{folder/raw_file.html}
+
+Group 1 matches the opening two angle brackets.
+Groups 2-4 match the opening square bracket, the text inside,
+and the closing square bracket, respectively.
+Groups 5-7 match the opening parenthesis, the text inside, and
+the closing parenthesis.
+Groups 8-10 match the opening brace, the text inside, and the brace.")
+
+(defconst markdown-regex-pandoc-inline-footnote
+  "\\(\\^\\)\\(\\[\\)\\(\\(?:.\\|\n[^\n]\\)*?\\)\\(\\]\\)"
+  "Regular expression for Pandoc inline footnote^[footnote text].
+Group 1 matches the opening caret.
+Group 2 matches the opening square bracket.
+Group 3 matches the footnote text, without the surrounding markup.
+Group 4 matches the closing square bracket.")
 
 
 ;;; Syntax ====================================================================
@@ -2202,6 +2240,14 @@ START and END delimit region to propertize."
   '(face markdown-language-info-face invisible markdown-markup)
   "List of properties and values to apply to code block language info strings.")
 
+(defconst markdown-include-title-properties
+  '(face markdown-link-title-face invisible markdown-markup)
+  "List of properties and values to apply to included code titles.")
+
+(defconst markdown-inline-footnote-properties
+  '(face nil display ((raise 0.2) (height 0.8)))
+  "Properties to apply to footnote markers and inline footnotes.")
+
 (defcustom markdown-hide-markup nil
   "Determines whether markup in the buffer will be hidden.
 When set to nil, all markup is displayed in the buffer as it
@@ -2301,8 +2347,8 @@ and disable it otherwise."
 (defvar markdown-reference-face 'markdown-reference-face
   "Face name to use for reference.")
 
-(defvar markdown-footnote-face 'markdown-footnote-face
-  "Face name to use for footnote identifiers.")
+(defvar markdown-footnote-marker-face 'markdown-footnote-marker-face
+  "Face name to use for footnote markers.")
 
 (defvar markdown-url-face 'markdown-url-face
   "Face name to use for URLs.")
@@ -2419,9 +2465,17 @@ and disable it otherwise."
   "Face for link references."
   :group 'markdown-faces)
 
-(defface markdown-footnote-face
+(define-obsolete-face-alias 'markdown-footnote-face
+  'markdown-footnote-marker-face "v2.3")
+
+(defface markdown-footnote-marker-face
   '((t (:inherit markdown-markup-face)))
   "Face for footnote markers."
+  :group 'markdown-faces)
+
+(defface markdown-footnote-text-face
+  '((t (:inherit font-lock-comment-face)))
+  "Face for footnote text."
   :group 'markdown-faces)
 
 (defface markdown-url-face
@@ -2617,9 +2671,22 @@ Depending on your font, some reasonable choices are:
     (markdown-fontify-angle-uris)
     (,markdown-regex-email . 'markdown-plain-url-face)
     (markdown-fontify-list-items)
-    (,markdown-regex-footnote . ((1 markdown-markup-face)          ; [^
-                                 (2 markdown-footnote-face)        ; label
-                                 (3 markdown-markup-face)))        ; ]
+    (,markdown-regex-footnote . ((0 markdown-inline-footnote-properties)
+                                 (1 markdown-markup-properties)    ; [^
+                                 (2 markdown-footnote-marker-face) ; label
+                                 (3 markdown-markup-properties)))  ; ]
+    (,markdown-regex-pandoc-inline-footnote . ((0 markdown-inline-footnote-properties)
+                                               (1 markdown-markup-properties)   ; ^
+                                               (2 markdown-markup-properties)   ; [
+                                               (3 'markdown-footnote-text-face) ; text
+                                               (4 markdown-markup-properties))) ; ]
+    (markdown-match-includes . ((1 markdown-markup-properties)
+                                (2 markdown-markup-properties nil t)
+                                (3 markdown-include-title-properties nil t)
+                                (4 markdown-markup-properties nil t)
+                                (5 markdown-markup-properties)
+                                (6 'markdown-url-face)
+                                (7 markdown-markup-properties)))
     (markdown-fontify-inline-links)
     (markdown-fontify-reference-links)
     (,markdown-regex-reference-definition . ((1 markdown-markup-face) ; [
@@ -2648,6 +2715,8 @@ Depending on your font, some reasonable choices are:
                                        (5 markdown-markup-properties)))
     (,markdown-regex-line-break . (1 markdown-line-break-face prepend))
     (markdown-fontify-sub-superscripts)
+    (markdown-match-inline-attributes . ((0 markdown-markup-properties prepend)))
+    (markdown-match-leanpub-sections . ((0 markdown-markup-properties)))
     (markdown-fontify-blockquotes))
   "Syntax highlighting for Markdown files.")
 
@@ -3265,6 +3334,11 @@ Set match data for `markdown-regex-header'."
       (set-match-data match-data)
       t)))
 
+(defun markdown-pipe-at-bol-p ()
+  "Return non-nil if the line begins with a pipe symbol.
+This may be useful for tables and Pandoc's line_blocks extension."
+  (char-equal (char-after (point-at-bol)) ?|))
+
 
 ;;; Markdown Font Lock Matching Functions =====================================
 
@@ -3505,7 +3579,14 @@ links with URLs."
                 ;; Clear match data to test for a match after functions returns.
                 (set-match-data nil)
                 (re-search-forward "\\(!\\)?\\(\\[\\)" last 'limit))
-              (markdown-code-block-at-point-p)
+              ;; Keep searching if this is in a code block, inline
+              ;; code, or a comment, or if it is include syntax.
+              (or (markdown-code-block-at-point-p)
+                  (markdown-inline-code-at-pos-p (match-beginning 0))
+                  (markdown-inline-code-at-pos-p (match-end 0))
+                  (markdown-in-comment-p)
+                  (and (char-equal (char-after (point-at-bol)) ?<)
+                       (char-equal (char-after (1+ (point-at-bol))) ?<)))
               (< (point) last)))
   ;; Match opening exclamation point (optional) and left bracket.
   (when (match-beginning 2)
@@ -3670,6 +3751,80 @@ is \"\n\n\""
 
 (defun markdown-match-yaml-metadata-key (last)
   (markdown-match-propertized-text 'markdown-metadata-key last))
+
+(defun markdown-match-inline-attributes (last)
+  "Match inline attributes from point to LAST."
+  (when (markdown-match-inline-generic markdown-regex-inline-attributes last)
+    (unless (or (markdown-inline-code-at-pos-p (match-beginning 0))
+                (markdown-inline-code-at-pos-p (match-end 0))
+                (markdown-in-comment-p))
+      t)))
+
+(defun markdown-match-leanpub-sections (last)
+  "Match Leanpub section markers from point to LAST."
+  (when (markdown-match-inline-generic markdown-regex-leanpub-sections last)
+    (unless (or (markdown-inline-code-at-pos-p (match-beginning 0))
+                (markdown-inline-code-at-pos-p (match-end 0))
+                (markdown-in-comment-p))
+      t)))
+
+(defun markdown-match-includes (last)
+  "Match include statements from point to LAST.
+Sets match data for the following seven groups:
+Group 1: opening two angle brackets
+Group 2: opening title delimiter (optional)
+Group 3: title text (optional)
+Group 4: closing title delimiter (optional)
+Group 5: opening filename delimiter
+Group 6: filename
+Group 7: closing filename delimiter"
+  (when (markdown-match-inline-generic markdown-regex-include last)
+    (let ((valid (not (or (markdown-in-comment-p (match-beginning 0))
+                          (markdown-in-comment-p (match-end 0))
+                          (markdown-code-block-at-pos (match-beginning 0))))))
+      (cond
+       ;; Parentheses and maybe square brackets, but no curly braces:
+       ;; match optional title in square brackets and file in parentheses.
+       ((and valid (match-beginning 5)
+             (not (match-beginning 8)))
+        (set-match-data (list (match-beginning 1) (match-end 7)
+                              (match-beginning 1) (match-end 1)
+                              (match-beginning 2) (match-end 2)
+                              (match-beginning 3) (match-end 3)
+                              (match-beginning 4) (match-end 4)
+                              (match-beginning 5) (match-end 5)
+                              (match-beginning 6) (match-end 6)
+                              (match-beginning 7) (match-end 7))))
+       ;; Only square brackets present: match file in square brackets.
+       ((and valid (match-beginning 2)
+             (not (match-beginning 5))
+             (not (match-beginning 7)))
+        (set-match-data (list (match-beginning 1) (match-end 4)
+                              (match-beginning 1) (match-end 1)
+                              nil nil
+                              nil nil
+                              nil nil
+                              (match-beginning 2) (match-end 2)
+                              (match-beginning 3) (match-end 3)
+                              (match-beginning 4) (match-end 4))))
+       ;; Only curly braces present: match file in curly braces.
+       ((and valid (match-beginning 8)
+             (not (match-beginning 2))
+             (not (match-beginning 5)))
+        (set-match-data (list (match-beginning 1) (match-end 10)
+                              (match-beginning 1) (match-end 1)
+                              nil nil
+                              nil nil
+                              nil nil
+                              (match-beginning 8) (match-end 8)
+                              (match-beginning 9) (match-end 9)
+                              (match-beginning 10) (match-end 10))))
+       (t
+        ;; Not a valid match, move to next line and search again.
+        (forward-line)
+        (when (< (point) last)
+          (setq valid (markdown-match-includes last)))))
+      valid)))
 
 
 ;;; Markdown Font Fontification Functions =====================================
@@ -7685,11 +7840,12 @@ This is an exact copy of `line-number-at-pos' for use in emacs21."
     (markdown-replace-regexp-in-string
      "[0-9\\.*+-]" " " (match-string-no-properties 0)))
    ;; Blockquote
-   ((looking-at "^[ \t]*>[ \t]*")
-    (match-string-no-properties 0))
+   ((looking-at markdown-regex-blockquote)
+    (buffer-substring-no-properties (match-beginning 0) (match-end 2)))
    ;; List items
    ((looking-at markdown-regex-list)
     (match-string-no-properties 0))
+   ;; Footnote definition
    ((looking-at-p markdown-regex-footnote-definition)
     "    ") ; four spaces
    ;; No match
@@ -7740,6 +7896,10 @@ return the number of paragraphs left to move."
       (cond
        ;; Move point past whitespace following list marker.
        ((looking-at markdown-regex-list)
+        (goto-char (match-end 0)))
+       ;; Move point past whitespace following pipe at beginning of line
+       ;; to handle Pandoc line blocks.
+       ((looking-at "^|\\s-*")
         (goto-char (match-end 0)))
        ;; Return point if the paragraph passed was a code block.
        ((markdown-code-block-at-pos (point-at-bol 2))
@@ -7963,21 +8123,12 @@ or \\[markdown-toggle-inline-images]."
                   (overlay-put ov 'face 'default)
                   (push ov markdown-inline-image-overlays))))))))))
 
-(defun markdown-toggle-inline-images (&optional arg)
-  "Toggle inline image overlays in the buffer.
-With a prefix argument ARG, enable inline images if ARG is
-positive, and disable it otherwise.  If called from Lisp, enable
-the mode if ARG is omitted or nil."
-  (interactive (list (or current-prefix-arg 'toggle)))
-  (setq markdown-inline-image-overlays
-        (if (eq arg 'toggle)
-            (not markdown-inline-image-overlays)
-          (> (prefix-numeric-value arg) 0)))
+(defun markdown-toggle-inline-images ()
+  "Toggle inline image overlays in the buffer."
+  (interactive)
   (if markdown-inline-image-overlays
-      (progn (message "markdown-mode inline images enabled")
-             (markdown-display-inline-images))
-    (message "markdown-mode inline images disabled")
-    (markdown-remove-inline-images)))
+      (markdown-remove-inline-images)
+    (markdown-display-inline-images)))
 
 
 ;;; GFM Code Block Fontification ==============================================
@@ -8206,6 +8357,7 @@ position."
                     "[ \t]*\\(?:[0-9]+\\|#\\)\\.[ \t]+" ; ordered list item
                     "[ \t]*\\[\\S-*\\]:[ \t]+" ; link ref def
                     "[ \t]*:[ \t]+" ; definition
+                    "^|" ; table or Pandoc line block
                     )
                   "\\|"))
   (set
@@ -8223,7 +8375,7 @@ position."
                 "[ \t]*\\[\\^\\S-*\\]:[ \t]*$") ; just the start of a footnote def
               "\\|"))
   (set (make-local-variable 'adaptive-fill-first-line-regexp)
-       "\\`[ \t]*>[ \t]*?\\'")
+       "\\`[ \t]*[A-Z]?>[ \t]*?\\'")
   (set (make-local-variable 'adaptive-fill-regexp) "\\s-*")
   (set (make-local-variable 'adaptive-fill-function)
        'markdown-adaptive-fill-function)
@@ -8244,6 +8396,8 @@ position."
             'markdown-inside-link-p nil t)
   (add-hook 'fill-nobreak-predicate
             'markdown-line-is-reference-definition-p nil t)
+  (add-hook 'fill-nobreak-predicate
+            'markdown-pipe-at-bol-p nil t)
 
   ;; Indentation
   (setq indent-line-function markdown-indent-function)

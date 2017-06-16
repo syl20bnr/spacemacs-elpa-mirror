@@ -10,7 +10,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20170611.437
+;; Package-Version: 20170615.104
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -718,7 +718,7 @@ CHECKER and BUFFER are added to each item parsed from STRING."
                        :checker checker
                        :buffer (when (intero-paths-for-same-file temp-file file)
                                  buffer)
-                       :filename file)
+                       :filename (intero-buffer-file-name buffer))
                       messages)))
         (forward-line -1))
       (delete-dups messages))))

@@ -4,7 +4,7 @@
 
 ;; Author: wolray <wolray@foxmail.com>
 ;; Version: 3.6
-;; Package-Version: 20170604.2240
+;; Package-Version: 20170615.1919
 ;; URL: https://github.com/wolray/symbol-overlay/
 ;; Keywords: faces, matching
 ;; Package-Requires: ((emacs "24.3"))
@@ -321,6 +321,8 @@ If SHOW-COLOR is non-nil, display the color used by current overlay."
   (unless (minibufferp)
     (mapc 'delete-overlay (symbol-overlay-get-list))
     (setq symbol-overlay-keywords-alist nil)))
+
+(add-hook 'before-revert-hook 'symbol-overlay-remove-all)
 
 ;;;###autoload
 (defun symbol-overlay-save-symbol ()

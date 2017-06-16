@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2016, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 3.1.4
-;; Package-Version: 20170511.2126
+;; Version: 3.1.5
+;; Package-Version: 20170615.648
 ;; Created: 23 Mar 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: lisp, languages
@@ -473,6 +473,7 @@
 "define-package"
 "print"
 "princ"
+"prin1"
 "terpri"
 "write-char"
 "pp"

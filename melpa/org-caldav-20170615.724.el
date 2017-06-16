@@ -4,7 +4,7 @@
 
 ;; Author: David Engster <deng@randomsample.de>
 ;; Keywords: calendar, caldav
-;; Package-Version: 20170614.1244
+;; Package-Version: 20170615.724
 ;; Package-Requires: ((org "7"))
 ;;
 ;; This file is not part of GNU Emacs.
@@ -385,7 +385,7 @@ default namespace."
     (with-current-buffer buffer
       (save-excursion
 	(goto-char (point-min))
-	(when (re-search-forward "<.* \\(xmlns=\"DAV:\"\\)" nil t)
+	(when (re-search-forward "<[^>]* \\(xmlns=\"DAV:\"\\)" nil t)
 	  (replace-match "xmlns:DAV=\"DAV:\"" nil nil nil 1)
 	  (goto-char (match-beginning 0))
 	  (while (re-search-forward "</?" nil t)

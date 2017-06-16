@@ -7,7 +7,7 @@
 ;; Author: David Landell <david.landell@sunnyhill.email>
 ;;         Roland McGrath <roland@gnu.org>
 ;; Version: 1.3.0
-;; Package-Version: 20170603.1202
+;; Package-Version: 20170615.702
 ;; Homepage: https://github.com/dajva/rg.el
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24") (s "1.10.0") (seq "2.19"))
 ;; Keywords: matching, tools
@@ -208,7 +208,8 @@ for special purposes.")
            (globs (cdr typedef)))
        (mapconcat
         (lambda (glob)
-          (concat "--type-add '" name ":" glob "'"))
+          (concat "--type-add "
+                  (shell-quote-argument (concat name ":" glob))))
         (split-string globs) " ")))
    rg-custom-type-aliases))
 
@@ -414,15 +415,16 @@ Commands:
 
 (defun rg-build-command (regexp files)
 "Create the command for REGEXP and FILES."
-  (grep-expand-template
-   (rg-build-template
-    (not (equal files "everything"))
-    (unless (assoc files (rg-get-type-aliases))
-      (let ((pattern files))
-        (setq files "custom")
-        pattern)))
-   regexp
-   files))
+  (concat (grep-expand-template
+           (rg-build-template
+            (not (equal files "everything"))
+            (unless (assoc files (rg-get-type-aliases))
+              (let ((pattern files))
+                (setq files "custom")
+                pattern)))
+           regexp
+           files)
+          " ."))
 
 (defun rg-rerun ()
 "Run `rg-recompile' with `compilation-arguments' taken from `rg-last-search'."
