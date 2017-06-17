@@ -4,7 +4,7 @@
 
 ;; Author: Dewdrops <v_v_4474@126.com>
 ;; URL: https://github.com/Dewdrops/evil-ReplaceWithRegister
-;; Package-Version: 20161127.2159
+;; Package-Version: 20170616.813
 ;; Version: 0.1
 ;; Keywords: evil, plugin
 ;; Package-Requires: ((evil "1.0.8"))
@@ -69,6 +69,7 @@
   (let ((text (if register
                   (evil-get-register register)
                 (current-kill 0))))
+    (goto-char beg)
     (if (eq type 'block)
         (evil-apply-on-block
          (lambda (begcol endcol)
@@ -79,7 +80,7 @@
                      (end (evil-move-to-column endcol nil t)))
                  (delete-region beg end)
                  (dotimes (_ count)
-                   (insert text)))))) 
+                   (insert text))))))
          beg end t)
       (delete-region beg end)
       (dotimes (_ count)

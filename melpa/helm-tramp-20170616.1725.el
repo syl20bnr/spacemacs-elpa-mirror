@@ -1,11 +1,11 @@
-;;; helm-tramp.el --- Tramp helm interface for ssh server and docker -*- lexical-binding: t; -*-
+;;; helm-tramp.el --- Tramp helm interface for ssh, docker, vagrant -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2017 by Masashı Mıyaura
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-helm-tramp
-;; Package-Version: 20170419.135
-;; Version: 0.4.3
+;; Package-Version: 20170616.1725
+;; Version: 0.5.3
 ;; Package-Requires: ((emacs "24.3") (helm "2.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -26,6 +26,7 @@
 ;; helm-tramp provides interfaces of Tramp
 ;; You can also use tramp with helm interface as root
 ;; If you use it with docker-tramp, you can also use docker with helm interface
+;; If you use it with vagrant-tramp, you can also use vagrant with helm interface
 
 ;;; Code:
 
@@ -34,7 +35,7 @@
 (require 'cl-lib)
 
 (defgroup helm-tramp nil
-  "Tramp with helm interface for ssh server and docker"
+  "Tramp with helm interface for ssh, docker, vagrant"
   :group 'helm)
 
 (defcustom helm-tramp-docker-user nil
@@ -74,6 +75,11 @@
 				(push
 				 (concat "/docker:" helm-tramp-docker-user "@" (car info) ":/")
 				 hosts)))))
+    (when (featurep 'vagrant-tramp)
+      (cl-loop for box-name in (map 'list 'cadr (vagrant-tramp--completions))
+               do (progn
+                    (push (concat "/vagrant:" box-name ":/") hosts)
+                    (push (concat "/vagrant:" box-name "|sudo:" box-name ":/") hosts))))
     (push "/sudo:root@localhost:/" hosts)
     (reverse hosts)))
 
@@ -98,6 +104,9 @@ You can connect your server with tramp"
   (when (featurep 'docker-tramp)
     (unless (executable-find "docker")
       (error "'docker' is not installed")))
+  (when (featurep 'vagrant-tramp)
+    (unless (executable-find "vagrant")
+      (error "'vagrant' is not installed")))
   (helm :sources '(helm-tramp--source) :buffer "*helm tramp*"))
 
 (provide 'helm-tramp)
