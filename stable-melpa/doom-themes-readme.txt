@@ -6,7 +6,9 @@ icons, and (soon) a mode-line config.
 
 Currently available colorschemes:
 + doom-one: inspired by Atom One Dark
-+ doom-dark: based on Molokai
++ doom-molokai: based on Monokai
++ doom-vibrant: a more vibranch version of doom-one
++ doom-nova: adapted from Nova color scheme
 
 Soon to come:
 + doom-one-light: inspired by Atom One Light
