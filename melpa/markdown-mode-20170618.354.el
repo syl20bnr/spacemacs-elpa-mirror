@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jrblevin@sdf.org>
 ;; Created: May 24, 2007
 ;; Version: 2.3-dev
-;; Package-Version: 20170617.17
+;; Package-Version: 20170618.354
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: http://jblevins.org/projects/markdown-mode/
@@ -172,15 +172,17 @@
 
 ;; `markdown-mode' depends on `cl-lib', which has been bundled with
 ;; GNU Emacs since 24.3.  Users of GNU Emacs 24.1 and 24.2 can install
-;; `cl-lib' with `package.el'.
+;; `cl-lib' with `package.el'.  Additionally, to enable editing of code
+;; blocks in indirect buffers using `C-c '`, you will need to install
+;; the [`edit-indirect'][ei] package.
+
+;;   [ei]: https://github.com/Fanael/edit-indirect/
 
 ;;; Usage:
 
 ;; Keybindings are grouped by prefixes based on their function.  For
-;; example, the commands for inserting links are grouped under `C-c
-;; C-a`, where the `C-a` is a mnemonic for the HTML `<a>` tag.  In
-;; other cases, the connection to HTML is not direct.  For example,
-;; commands dealing with headings begin with `C-c C-t` (mnemonic:
+;; example, the commands for styling text are grouped under `C-c C-s`
+;; and commands dealing with headings begin with `C-c C-t` (mnemonic:
 ;; titling).  The primary commands in each group will are described
 ;; below.  You can obtain a list of all keybindings by pressing `C-c
 ;; C-h`.  Movement and shifting commands tend to be associated with
@@ -191,13 +193,14 @@
 ;; commands are described below.  You can obtain a list of all
 ;; keybindings by pressing `C-c C-h`.
 ;;
-;;   * Hyperlinks: `C-c C-a`
+;;   * Hyperlinks: `C-c C-l`
 ;;
-;;     In this group, `C-c C-a l` inserts links, either inline,
-;;     reference, or plain URLs.  The URL or `[reference]` label, link
-;;     text, and optional title are entered through a series of
-;;     interactive prompts.  The type of link is determined by which
-;;     values are provided:
+;;     `C-c C-l` (`markdown-insert-link`) is a general command for
+;;     inserting standard Markdown links of any form: either inline
+;;     links, reference links, or plain URLs in angle brackets.  The
+;;     URL or `[reference]` label, link text, and optional title are
+;;     entered through a series of interactive prompts.  The type of
+;;     link is determined by which values are provided:
 ;;
 ;;     *   If both a URL and link text are given, insert an inline link:
 ;;         `[text](url)`.
@@ -208,9 +211,10 @@
 ;;     *   If only a URL is given, insert a plain URL link:
 ;;         `<url>`.
 ;;
-;;     If there is an active region, use the text as the default URL,
-;;     if it seems to be a URL, or link text value otherwise.  The region
-;;     will be deleted and replaced by the link.
+;;     If there is an active region, this command uses the region as
+;;     either the default URL (if it seems to be a URL) or link text
+;;     value otherwise.  The region will be deleted and replaced by the
+;;     link.
 ;;
 ;;     Note that this function can be used to convert a link from one
 ;;     type to another (inline, reference, or plain URL) by
@@ -223,19 +227,6 @@
 ;;     `markdown-reference-location'.  If a title is given, it will be
 ;;     added to the end of the reference definition and will be used
 ;;     to populate the title attribute when converted to HTML.
-;;
-;;     `C-c C-a f` inserts a footnote marker at the point, inserts a
-;;     footnote definition below, and positions the point for
-;;     inserting the footnote text.  Note that footnotes are an
-;;     extension to Markdown and are not supported by all processors.
-;;
-;;     `C-c C-a w` behaves much like the link insertion command
-;;     and inserts a wiki link of the form `[[WikiLink]]`.  If there
-;;     is an active region, use the region as the link text.  If the
-;;     point is at a word, use the word as the link text.  If there is
-;;     no active region and the point is not at word, simply insert
-;;     link markup.  Note that wiki links are an extension to Markdown
-;;     and are not supported by all processors.
 ;;
 ;;   * Images: `C-c C-i`
 ;;
@@ -308,6 +299,22 @@
 ;;     With a numeric prefix `N`, insert the string in position `N`
 ;;     (counting from 1).
 ;;
+;;   * Footnotes: `C-c C-a f`
+;;
+;;     `C-c C-a f` inserts a footnote marker at the point, inserts a
+;;     footnote definition below, and positions the point for
+;;     inserting the footnote text.  Note that footnotes are an
+;;     extension to Markdown and are not supported by all processors.
+;;
+;;   * Wiki Links: `C-c C-a f`
+;;
+;;     `C-c C-a w` inserts a wiki link of the form `[[WikiLink]]`.  If
+;;     there is an active region, use the region as the link text.  If the
+;;     point is at a word, use the word as the link text.  If there is
+;;     no active region and the point is not at word, simply insert
+;;     link markup.  Note that wiki links are an extension to Markdown
+;;     and are not supported by all processors.
+;;
 ;;   * Markdown and Maintenance Commands: `C-c C-c`
 ;;
 ;;     *Compile:* `C-c C-c m` will run Markdown on the current buffer
@@ -361,15 +368,18 @@
 ;;     or in the other window with the `C-u` prefix).  Use `M-p` and
 ;;     `M-n` to quickly jump to the previous or next link of any type.
 ;;
-;;   * Jumping: `C-c C-l`
+;;   * Doing Things: `C-c C-d`
 ;;
-;;     Use `C-c C-l` to jump from the object at point to its counterpart
-;;     elsewhere in the text, when possible.  Jumps between reference
-;;     links and definitions; between footnote markers and footnote
-;;     text.  If more than one link uses the same reference name, a
-;;     new buffer will be created containing clickable buttons for jumping
-;;     to each link.  You may press `TAB` or `S-TAB` to jump between
-;;     buttons in this window.
+;;     Use `C-c C-d` to do something sensible with the object at the point:
+;;
+;;       - Jumps between reference links and reference definitions.
+;;         If more than one link uses the same reference label, a
+;;         window will be shown containing clickable buttons for
+;;         jumping to each link.  Pressing `TAB` or `S-TAB` cycles
+;;         between buttons in this window.
+;;       - Jumps between footnote markers and footnote text.
+;;       - Toggles the completion status of GFM task list items
+;;         (checkboxes).
 ;;
 ;;   * Promotion and Demotion: `C-c C--` and `C-c C-=`
 ;;
@@ -491,11 +501,10 @@
 ;;
 ;;   * Miscellaneous Commands:
 ;;
-;;     When the `[edit-indirect](https://github.com/Fanael/edit-indirect/)`
-;;     package is installed, <kbd>C-c '</kbd> (`markdown-edit-code-block`)
-;;     can be used to edit a code block in an indirect buffer in the
-;;     native major mode.  Press <kbd>C-c C-c</kbd> to commit changes
-;;     and return or <kbd>C-c C-k</kbd> to cancel.
+;;     When the [`edit-indirect'][ei] package is installed, `C-c '`
+;;     (`markdown-edit-code-block`) can be used to edit a code block
+;;     in an indirect buffer in the native major mode. Press `C-c C-c`
+;;     to commit changes and return or `C-c C-k` to cancel.
 ;;
 ;; As noted, many of the commands above behave differently depending
 ;; on whether Transient Mark mode is enabled or not.  When it makes
@@ -1255,7 +1264,7 @@ completion."
   :type 'boolean)
 
 (defcustom markdown-use-pandoc-style-yaml-metadata nil
-  "When non-nil, allow yaml metadata anywhere in the document."
+  "When non-nil, allow YAML metadata anywhere in the document."
   :group 'markdown
   :type 'boolean)
 
@@ -1607,20 +1616,20 @@ or
 
 (defconst markdown-regex-yaml-metadata-border
   "\\(-\\{3\\}\\)$"
-  "Regular expression for matching yaml metadata.")
+  "Regular expression for matching YAML metadata.")
 
 (defconst markdown-regex-yaml-pandoc-metadata-end-border
   "^\\(\\.\\{3\\}\\|\\-\\{3\\}\\)$"
-  "Regular expression for matching yaml metadata end borders.")
+  "Regular expression for matching YAML metadata end borders.")
 
 (defsubst markdown-get-yaml-metadata-start-border ()
-  "Return yaml metadata start border depending upon whether Pandoc is used."
+  "Return YAML metadata start border depending upon whether Pandoc is used."
   (concat
    (if markdown-use-pandoc-style-yaml-metadata "^" "\\`")
    markdown-regex-yaml-metadata-border))
 
 (defsubst markdown-get-yaml-metadata-end-border (_)
-  "Return yaml metadata end border depending upon whether Pandoc is used."
+  "Return YAML metadata end border depending upon whether Pandoc is used."
   (if markdown-use-pandoc-style-yaml-metadata
       markdown-regex-yaml-pandoc-metadata-end-border
     markdown-regex-yaml-metadata-border))
@@ -2840,10 +2849,12 @@ Used for `flyspell-generic-check-word-predicate'."
                    (or (memq 'markdown-reference-face faces)
                        (memq 'markdown-markup-face faces)
                        (memq 'markdown-plain-url-face faces)
+                       (memq 'markdown-inline-code-face faces)
                        (memq 'markdown-url-face faces))
                  (memq faces '(markdown-reference-face
                                markdown-markup-face
                                markdown-plain-url-face
+                               markdown-inline-code-face
                                markdown-url-face))))))))
 
 (defun markdown-font-lock-ensure ()
@@ -3154,6 +3165,9 @@ The named components are:
     marker, and whitespace following list marker (an integer).
   - marker: String containing the list marker and following whitespace
             (e.g., \"- \" or \"* \").
+  - checkbox: String containing the GFM checkbox portion, if any,
+    including any trailing whitespace before the text
+    begins (e.g., \"[x] \").
 
 As an example, for the following unordered list item
 
@@ -3161,29 +3175,27 @@ As an example, for the following unordered list item
 
 the returned list would be
 
-    (1 14 3 5 \"- \")
+    (1 14 3 5 \"- \" nil)
 
 If the point is not inside a list item, return nil.
 Leave match data intact for `markdown-regex-list'."
-  (let (cur prev-begin prev-end indent nonlist-indent marker)
-    ;; Store current location
-    (setq cur (point))
-    ;; Verify that cur is between beginning and end of item
-    (save-excursion
+  (save-excursion
+    (let ((cur (point)))
       (end-of-line)
       (when (re-search-backward markdown-regex-list nil t)
-        (setq prev-begin (match-beginning 0))
-        (setq indent (length (match-string-no-properties 1)))
-        (setq nonlist-indent (length (match-string 0)))
-        (setq marker (concat (match-string-no-properties 2)
-                             (match-string-no-properties 3)))
-        (save-match-data
-          (markdown-cur-list-item-end nonlist-indent)
-          (setq prev-end (point)))
-        (when (and (>= cur prev-begin)
-                   (<= cur prev-end)
-                   nonlist-indent)
-          (list prev-begin prev-end indent nonlist-indent marker))))))
+        (let* ((begin (match-beginning 0))
+               (indent (length (match-string-no-properties 1)))
+               (nonlist-indent (length (match-string 0)))
+               (marker (concat (match-string-no-properties 2)
+                               (match-string-no-properties 3)))
+               (checkbox (progn (goto-char (match-end 0))
+                                (when (looking-at "\\[[xX ]\\]\\s-*")
+                                  (match-string-no-properties 0))))
+               (end (save-match-data
+                      (markdown-cur-list-item-end nonlist-indent)
+                      (point))))
+          (when (and (>= cur begin) (<= cur end) nonlist-indent)
+            (list begin end indent nonlist-indent marker checkbox)))))))
 
 (defun markdown-list-item-at-point-p ()
   "Return t if there is a list item at the point and nil otherwise."
@@ -4204,7 +4216,7 @@ be used to populate the title attribute when converted to XHTML."
     (when url
       (message
        (substitute-command-keys
-        "Defined reference [%s], press \\[markdown-jump] to jump there")
+        "Reference [%s] was defined, press \\[markdown-do] to jump there")
        label))))
 
 (make-obsolete 'markdown-insert-inline-link-dwim 'markdown-insert-link "v2.3")
@@ -5462,46 +5474,44 @@ Assumes match data is available for `markdown-regex-italic'."
 (defvar markdown-mode-map
   (let ((map (make-keymap)))
     ;; Element insertion
-    (define-key map "\C-c\C-al" 'markdown-insert-link)
-    (define-key map "\C-c\C-af" 'markdown-insert-footnote)
-    (define-key map "\C-c\C-aw" 'markdown-insert-wiki-link)
-    (define-key map "\C-c\C-ii" 'markdown-insert-image)
-    (define-key map "\C-c\C-iI" 'markdown-insert-reference-image)
-    (define-key map "\C-c\C-th" 'markdown-insert-header-dwim)
-    (define-key map "\C-c\C-tH" 'markdown-insert-header-setext-dwim)
-    (define-key map "\C-c\C-t1" 'markdown-insert-header-atx-1)
-    (define-key map "\C-c\C-t2" 'markdown-insert-header-atx-2)
-    (define-key map "\C-c\C-t3" 'markdown-insert-header-atx-3)
-    (define-key map "\C-c\C-t4" 'markdown-insert-header-atx-4)
-    (define-key map "\C-c\C-t5" 'markdown-insert-header-atx-5)
-    (define-key map "\C-c\C-t6" 'markdown-insert-header-atx-6)
-    (define-key map "\C-c\C-t!" 'markdown-insert-header-setext-1)
-    (define-key map "\C-c\C-t@" 'markdown-insert-header-setext-2)
-    (define-key map "\C-c\C-ss" 'markdown-insert-bold)
-    (define-key map "\C-c\C-se" 'markdown-insert-italic)
-    (define-key map "\C-c\C-sc" 'markdown-insert-code)
-    (define-key map "\C-c\C-sb" 'markdown-insert-blockquote)
-    (define-key map "\C-c\C-sk" 'markdown-insert-kbd)
-    (define-key map "\C-c\C-s\C-b" 'markdown-blockquote-region)
-    (define-key map "\C-c\C-sp" 'markdown-insert-pre)
-    (define-key map "\C-c\C-s\C-p" 'markdown-pre-region)
-    (define-key map "\C-c\C-sP" 'markdown-insert-gfm-code-block)
-    (define-key map "\C-c-" 'markdown-insert-hr)
+    (define-key map (kbd "C-c C-l") 'markdown-insert-link)
+    (define-key map (kbd "C-c C-a l") 'markdown-insert-link)
+    (define-key map (kbd "C-c C-a f") 'markdown-insert-footnote)
+    (define-key map (kbd "C-c C-a w") 'markdown-insert-wiki-link)
+    (define-key map (kbd "C-c C-i i") 'markdown-insert-image)
+    (define-key map (kbd "C-c C-i I") 'markdown-insert-reference-image)
+    (define-key map (kbd "C-c C-t h") 'markdown-insert-header-dwim)
+    (define-key map (kbd "C-c C-t H") 'markdown-insert-header-setext-dwim)
+    (define-key map (kbd "C-c C-t 1") 'markdown-insert-header-atx-1)
+    (define-key map (kbd "C-c C-t 2") 'markdown-insert-header-atx-2)
+    (define-key map (kbd "C-c C-t 3") 'markdown-insert-header-atx-3)
+    (define-key map (kbd "C-c C-t 4") 'markdown-insert-header-atx-4)
+    (define-key map (kbd "C-c C-t 5") 'markdown-insert-header-atx-5)
+    (define-key map (kbd "C-c C-t 6") 'markdown-insert-header-atx-6)
+    (define-key map (kbd "C-c C-t !") 'markdown-insert-header-setext-1)
+    (define-key map (kbd "C-c C-t @") 'markdown-insert-header-setext-2)
+    (define-key map (kbd "C-c C-s s") 'markdown-insert-bold)
+    (define-key map (kbd "C-c C-s e") 'markdown-insert-italic)
+    (define-key map (kbd "C-c C-s c") 'markdown-insert-code)
+    (define-key map (kbd "C-c C-s b") 'markdown-insert-blockquote)
+    (define-key map (kbd "C-c C-s k") 'markdown-insert-kbd)
+    (define-key map (kbd "C-c C-s C-b") 'markdown-blockquote-region)
+    (define-key map (kbd "C-c C-s p") 'markdown-insert-pre)
+    (define-key map (kbd "C-c C-s C-p") 'markdown-pre-region)
+    (define-key map (kbd "C-c C-s P") 'markdown-insert-gfm-code-block)
+    (define-key map (kbd "C-c -") 'markdown-insert-hr)
     ;; Element insertion (deprecated)
-    (define-key map "\C-c\C-ar" 'markdown-insert-reference-link-dwim)
-    (define-key map "\C-c\C-tt" 'markdown-insert-header-setext-1)
-    (define-key map "\C-c\C-ts" 'markdown-insert-header-setext-2)
-    (define-key map "\C-c\C-aL" 'markdown-insert-link)
-    (define-key map "\C-c\C-au" 'markdown-insert-link)
+    (define-key map (kbd "C-c C-t t") 'markdown-insert-header-setext-1)
+    (define-key map (kbd "C-c C-t s") 'markdown-insert-header-setext-2)
     ;; Element removal
     (define-key map (kbd "C-c C-k") 'markdown-kill-thing-at-point)
     ;; Promotion, Demotion, Completion, and Cycling
     (define-key map (kbd "C-c C--") 'markdown-promote)
     (define-key map (kbd "C-c C-=") 'markdown-demote)
     (define-key map (kbd "C-c C-]") 'markdown-complete)
-    ;; Following and Jumping
+    ;; Following and doing things
     (define-key map (kbd "C-c C-o") 'markdown-follow-thing-at-point)
-    (define-key map (kbd "C-c C-l") 'markdown-jump)
+    (define-key map (kbd "C-c C-d") 'markdown-do)
     ;; Indentation
     (define-key map (kbd "C-m") 'markdown-enter-key)
     (define-key map (kbd "DEL") 'markdown-exdent-or-delete)
@@ -5574,7 +5584,7 @@ Assumes match data is available for `markdown-regex-italic'."
     (define-key map (kbd "C-c C-x r") 'markdown-demote)
     (define-key map (kbd "C-c C-x m") 'markdown-insert-list-item)
     ;; Deprecated keys
-    (define-key map "\C-c\C-i\C-t" 'markdown-toggle-inline-images)
+    (define-key map (kbd "C-c C-i C-t") 'markdown-toggle-inline-images)
     map)
   "Keymap for Markdown major mode.")
 
@@ -5602,7 +5612,7 @@ See also `markdown-mode-map'.")
   '("Markdown"
     "---"
     ("Movement"
-     ["Jump" markdown-jump]
+     ["Jump" markdown-do]
      ["Follow Link" markdown-follow-thing-at-point]
      ["Next Link" markdown-next-link]
      ["Previous Link" markdown-previous-link]
@@ -6084,12 +6094,11 @@ increase the indentation by one level."
         ;; Compute indentation and marker for new list item
         (setq cur-indent (nth 2 bounds))
         (setq marker (nth 4 bounds))
-        ;; Is this a GFM checkbox?
-        (when (save-excursion
-                (goto-char (cl-first bounds))
-                (forward-char (cl-fourth bounds))
-                (looking-at "\\(\\[\\)[xX ]\\(\\]\\s-*\\)"))
-          (setq marker (concat marker (match-string 1) " " (match-string 2))))
+        ;; If current item is a GFM checkbox, insert new unchecked checkbox.
+        (when (nth 5 bounds)
+          (setq marker
+                (concat marker
+                        (replace-regexp-in-string "[Xx]" " " (nth 5 bounds)))))
         (cond
          ;; Dedent: decrement indentation, find previous marker.
          ((= arg 4)
@@ -7755,7 +7764,7 @@ Designed to be used with the `after-change-functions' hook."
   (markdown-check-change-for-wiki-link (point-min) (point-max)))
 
 
-;;; Following and Jumping =====================================================
+;;; Following & Doing =========================================================
 
 (defun markdown-follow-thing-at-point (arg)
   "Follow thing at point if possible, such as a reference link or wiki link.
@@ -7772,21 +7781,32 @@ See `markdown-follow-link-at-point' and
         (t
          (error "Nothing to follow at point"))))
 
-(defun markdown-jump ()
-  "Jump to another location based on context at point.
+(make-obsolete 'markdown-jump 'markdown-do "v2.3")
+
+(defun markdown-do ()
+  "Do something sensible based on context at point.
 Jumps between reference links and definitions; between footnote
 markers and footnote text."
   (interactive)
-  (cond ((markdown-footnote-text-positions)
-         (markdown-footnote-return))
-        ((markdown-footnote-marker-positions)
-         (markdown-footnote-goto-text))
-        ((thing-at-point-looking-at markdown-regex-link-reference)
-         (markdown-reference-goto-definition))
-        ((thing-at-point-looking-at markdown-regex-reference-definition)
-         (markdown-reference-goto-link (match-string-no-properties 2)))
-        (t
-         (error "Nothing to jump to from context at point"))))
+  (cond
+   ;; Footnote definition
+   ((markdown-footnote-text-positions)
+    (markdown-footnote-return))
+   ;; Footnote marker
+   ((markdown-footnote-marker-positions)
+    (markdown-footnote-goto-text))
+   ;; Reference link
+   ((thing-at-point-looking-at markdown-regex-link-reference)
+    (markdown-reference-goto-definition))
+   ;; Reference definition
+   ((thing-at-point-looking-at markdown-regex-reference-definition)
+    (markdown-reference-goto-link (match-string-no-properties 2)))
+   ;; GFM task list item
+   ((markdown-gfm-task-list-item-at-point)
+    (markdown-toggle-gfm-checkbox))
+   ;; Otherwise
+   (t
+    (error "Nothing to do in context at point"))))
 
 
 ;;; Miscellaneous =============================================================
@@ -8024,6 +8044,16 @@ if ARG is omitted or nil."
   'face 'markdown-gfm-checkbox-face
   'mouse-face 'markdown-highlight-face
   'action #'markdown-toggle-gfm-checkbox-button)
+
+(defun markdown-gfm-task-list-item-at-point (&optional bounds)
+  "Return non-nil if there is a GFM task list item at the point.
+Optionally, the list item BOUNDS may be given if available, as
+returned by `markdown-cur-list-item-bounds'.  When a task list item
+is found, the return value is the same value returned by
+`markdown-cur-list-item-bounds'."
+  (unless bounds
+    (setq bounds (markdown-cur-list-item-bounds)))
+  (> (length (nth 5 bounds)) 0))
 
 (defun markdown-toggle-gfm-checkbox ()
   "Toggle GFM checkbox at point.

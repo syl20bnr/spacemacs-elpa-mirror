@@ -18,7 +18,7 @@
 
 ;; Author: zk_phi
 ;; URL: http://hins11.yu-yake.com/
-;; Package-Version: 20150116.506
+;; Package-Version: 20170618.221
 ;; Version: 1.1.0
 ;; Package-Requires: ((phi-search "2.2.0") (migemo "1.9.1"))
 
@@ -62,9 +62,11 @@
   (if (and phi-search-migemo--last-query
            (string= (car phi-search-migemo--last-query) query))
       (cdr phi-search-migemo--last-query)
-    (let ((pat (migemo-get-pattern query)))
-      (setq phi-search-migemo--last-query (cons query pat))
-      pat)))
+    (condition-case nil
+        (let ((pat (migemo-get-pattern query)))
+          (setq phi-search-migemo--last-query (cons query pat))
+          pat)
+      (error query))))
 
 ;;;###autoload
 (defun phi-search-migemo-toggle ()

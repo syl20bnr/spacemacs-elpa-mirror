@@ -4,7 +4,7 @@
 
 ;; Author: Damien Cassou <damien@cassou.me>
 ;; Version: 1.1.0
-;; Package-Version: 20170605.541
+;; Package-Version: 20170618.407
 ;; GIT: https://github.com/DamienCassou/beginend
 ;; Package-Requires: ((emacs "24.4"))
 ;; Created: 01 Jun 2015
@@ -250,6 +250,41 @@ BEGIN-BODY and END-BODY are two `progn' expressions passed to respectively
   (progn
     (magit-section-backward)
     (magit-section-backward)))
+
+(defun beginend--point-is-in-comment-p (&optional p)
+  "Return non-nil if point is in comment.
+
+If optional argument P is present test at that point instead of `point'."
+  (setq p (or p (point)))
+  (ignore-errors
+    (save-excursion
+      (or (nth 4 (syntax-ppss p))
+          (eq (char-syntax (char-after p)) ?<)
+          (let ((s (car (syntax-after p))))
+            (when s
+              (or (and (/= 0 (logand (lsh 1 16) s))
+                       (nth 4 (syntax-ppss (+ p 2))))
+                  (and (/= 0 (logand (lsh 1 17) s))
+                       (nth 4 (syntax-ppss (+ p 1)))))))))))
+
+(defun beginend--prog-mode-code-position-p ()
+  "Return non-nil if point, at beginning of line, is inside code."
+  (not
+   (or (beginend--point-is-in-comment-p)
+       (= (point) (line-end-position))
+       (looking-at (char-to-string ?\f))))) ;; form-feed (^L)
+
+(beginend-define-mode prog-mode
+  (progn
+    (while (not (or (eobp)
+                    (beginend--prog-mode-code-position-p)))
+      (forward-line)))
+  (progn
+    (while (not (or (bobp)
+                    (beginend--prog-mode-code-position-p)))
+      (forward-line -1))))
+
+
 
 ;;;###autoload
 (defun beginend-setup-all ()

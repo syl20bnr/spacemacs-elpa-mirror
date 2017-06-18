@@ -62,5 +62,5 @@ composed to "[灊灝灞灣]".
 
 ** Data Sources
 
-Data 'ids.txt' and 'ucs-strokes.txt' are taken from
+Data 'ids-cdp.txt' and 'ucs-strokes.txt' are taken from
 http://github.com/cjkvi/. License follows their terms.

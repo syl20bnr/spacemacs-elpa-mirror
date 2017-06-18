@@ -141,4 +141,8 @@ maintainer if not).
 
 `markdown-mode' depends on `cl-lib', which has been bundled with
 GNU Emacs since 24.3.  Users of GNU Emacs 24.1 and 24.2 can install
-`cl-lib' with `package.el'.
+`cl-lib' with `package.el'.  Additionally, to enable editing of code
+blocks in indirect buffers using `C-c '`, you will need to install
+the [`edit-indirect'][ei] package.
+
+  [ei]: https://github.com/Fanael/edit-indirect/
