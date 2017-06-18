@@ -2,9 +2,10 @@
 
 ;; Copyright (C) 2015-2017 Damien Cassou
 
-;; Author: Damien Cassou <damien@cassou.me>
+;; Authors: Damien Cassou <damien@cassou.me>
+;;          Matus Goljer <matus.goljer@gmail.com>
 ;; Version: 1.1.0
-;; Package-Version: 20170618.407
+;; Package-Version: 20170618.503
 ;; GIT: https://github.com/DamienCassou/beginend
 ;; Package-Requires: ((emacs "24.4"))
 ;; Created: 01 Jun 2015
@@ -50,18 +51,28 @@
   (re-search-backward "[^[:space:]]" nil t)
   (forward-char))
 
+(defun beginend--out-of-bounds-p (point)
+  "Return non-nil if POINT is outside [`point-min', `point-max'].
+This is possible if buffer was narrowed after POINT was stored."
+  (not (<= (point-min) point (point-max))))
+
 (defmacro beginend--double-tap (extremum &rest body)
   "Go to point EXTREMUM if executing BODY did not change point."
   (declare (debug (form body))
            (indent 1))
   (let ((oldpos-var (make-symbol "old-position"))
+        (newpos-var (make-symbol "new-position"))
         (extremum-var (make-symbol "extremum")))
     `(let ((,oldpos-var (point))
+           (,newpos-var nil)
            (,extremum-var ,extremum))
        (goto-char ,extremum-var)
-       (unless (buffer-narrowed-p)
-         ,@body)
-       (if (= ,oldpos-var (point))
+       (save-restriction
+         (widen)
+         ,@body
+         (setq ,newpos-var (point)))
+       (if (or (beginend--out-of-bounds-p ,newpos-var)
+               (= ,oldpos-var ,newpos-var))
            (goto-char ,extremum-var)
          (when (/= ,oldpos-var ,extremum-var)
            (push-mark ,oldpos-var))))))
