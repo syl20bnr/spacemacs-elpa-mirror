@@ -19,9 +19,9 @@ Usage:
  them.  This is done thanks to nvm.el.
  Please note nvm.el is optional. So you need *manually* install it.
  To enable nvm support, run `js-do-use-nvm'.
- The first time you start the JS interpreter with run-js, you will be asked
- to select a version of node.js
- If you want to change version of node js, run `js-select-node-version'
+ The first time you start the JS interpreter with `js-comint-repl', you will
+be asked to select a version of Node.js
+ If you want to change version of node js, run `js-comint-select-node-version'
 
  `js-comint-clear' clears the content of REPL.
 
