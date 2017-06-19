@@ -6,8 +6,8 @@
 ;; Author: Joost Kremers <joostkremers@fastmail.fm>
 ;; Maintainer: Joost Kremers <joostkremers@fastmail.fm>
 ;; Created: 2014
-;; Version: 2.1
-;; Package-Version: 2.2
+;; Version: 2.3
+;; Package-Version: 2.3.1
 ;; Keywords: text bibtex
 ;; Package-Requires: ((emacs "24.3"))
 
@@ -152,8 +152,14 @@ combination, the field inherits from the same-name field in the
 cross-referenced entry.  If no inheritance should take place, the
 target field is set to the symbol `none'.")
 
-(defconst parsebib--bibtex-identifier "[^^\"@\\&$#%',={}() \t\n\f]+" "Regexp describing a licit BibTeX identifier.")
-(defconst parsebib--key-regexp "[^^\"@\\&$#%',={} \t\n\f]+" "Regexp describing a licit key.")
+;; Regexes describing BibTeX identifiers and keys.  Note that while $ ^ & are
+;; valid in BibTeX keys, they may nonetheless be problematic, because they are
+;; special for TeX.  The difference between `parsebib--bibtex-identifier' and
+;; `parsebib--key-regexp' are the parentheses (), which are valid in keys.  It may in
+;; fact not be necessary (or desirable) to distinguish the two, but until
+;; someone complains, I'll keep it this way.
+(defconst parsebib--bibtex-identifier "[^\"@\\#%',={}() \t\n\f]+" "Regexp describing a licit BibTeX identifier.")
+(defconst parsebib--key-regexp        "[^\"@\\#%',={} \t\n\f]+" "Regexp describing a licit key.")
 (defconst parsebib--entry-start "^[ \t]*@" "Regexp describing the start of an entry.")
 
 ;; Emacs 24.3 compatibility code.
@@ -200,31 +206,26 @@ This function handles parentheses () and braces {}.  Return t if a
 matching parenthesis was found.  Note that this function puts
 point right before the closing delimiter (unlike e.g.,
 `forward-sexp', which puts it right after.)"
-  (let ((result (cond
-                 ((eq (char-after) ?\{)
-                  (parsebib--match-brace-forward))
-                 ((eq (char-after) ?\()
-                  ;; This is really a hack. We want to allow unbalanced parentheses in
-                  ;; field values (BibTeX does), so we cannot use forward-sexp
-                  ;; here. For the same reason, looking for the matching paren by hand
-                  ;; is pretty complicated. However, balanced parentheses can only be
-                  ;; used to enclose entire entries (or @STRINGs or @PREAMBLEs) so we
-                  ;; can be pretty sure we'll find it right before the next @ at the
-                  ;; start of a line, or right before the end of the file.
-                  (let ((beg (point)))
-                    (re-search-forward parsebib--entry-start nil 0)
-                    (skip-chars-backward "@ \n\t\f")
-                    (if (eq (char-after) ?\))
-                        ;; if we've found a closing paren, return t
-                        t
-                      ;; otherwise put the cursor back and signal an error
-                      (goto-char beg)
-                      (signal 'scan-error (list "Unbalanced parentheses" beg (point-max)))))))))
-    (when result
-      ;; move point one char back to place it where the rest of parsebib expects it
-      (forward-char -1)
-      ;; make sure we return t
-      result)))
+  (cond
+   ((eq (char-after) ?\{)
+    (parsebib--match-brace-forward))
+   ((eq (char-after) ?\()
+    ;; This is really a hack. We want to allow unbalanced parentheses in
+    ;; field values (BibTeX does), so we cannot use forward-sexp
+    ;; here. For the same reason, looking for the matching paren by hand
+    ;; is pretty complicated. However, balanced parentheses can only be
+    ;; used to enclose entire entries (or @STRINGs or @PREAMBLEs) so we
+    ;; can be pretty sure we'll find it right before the next @ at the
+    ;; start of a line, or right before the end of the file.
+    (let ((beg (point)))
+      (re-search-forward parsebib--entry-start nil 0)
+      (skip-chars-backward "@ \n\t\f")
+      (if (eq (char-after) ?\))
+          ;; if we've found a closing paren, return t
+          t
+        ;; otherwise put the cursor back and signal an error
+        (goto-char beg)
+        (signal 'scan-error (list "Unbalanced parentheses" beg (point-max))))))))
 
 (defun parsebib--match-delim-forward ()
   "Move forward to the closing delimiter matching the delimiter at point.
@@ -392,14 +393,18 @@ at the end of the buffer.
 POS can be a number or a marker and defaults to point."
   (when pos (goto-char pos))
   (when (re-search-forward parsebib--entry-start nil 0)
-    (if (parsebib--looking-at-goto-end (concat "\\(" parsebib--bibtex-identifier "\\)" "[[:space:]]*[\(\{]") 1)
+    (if (parsebib--looking-at-goto-end (concat "\\(" parsebib--bibtex-identifier "\\)" "[[:space:]]*[\(\{]?") 1)
         (match-string-no-properties 1)
       (signal 'parsebib-entry-type-error (list (point))))))
 
 (defun parsebib-read-comment (&optional pos)
   "Read the @Comment beginning at the line POS is on.
-Return value is the text of the @Comment or nil if no comment is
-found.
+Return value is the text of the @Comment including the braces.
+For comments that last until the end of the line (i.e., comments
+that are not delimited by braces), the return value includes the
+whitespace between `@comment' and the actual comment text.
+
+If no comment could be found, return nil.
 
 POS can be a number or a marker.  It does not have to be at the
 beginning of a line, but the @Comment entry must start at the
@@ -407,11 +412,13 @@ beginning of the line POS is on.  If POS is nil, it defaults to
 point."
   (when pos (goto-char pos))
   (beginning-of-line)
-  (when (parsebib--looking-at-goto-end (concat parsebib--entry-start "comment[[:space:]]*[\(\{]"))
-    (let ((beg (point))) ; we are right after the opening brace / parenthesis
-      (forward-char -1)  ; move back to the brace / paren
-      (when (parsebib--match-paren-forward)
-        (buffer-substring-no-properties beg (point))))))
+  (when (parsebib--looking-at-goto-end (concat parsebib--entry-start "\\(comment\\)[[:space:]]*[\(\{]?") 1)
+    (let ((beg (point)))
+      (if (looking-at-p "[[:space:]]*[\(\{]")
+          (progn (skip-chars-forward "[:space:]")
+                 (parsebib--match-paren-forward))
+        (goto-char (point-at-eol)))
+      (buffer-substring-no-properties beg (point)))))
 
 (defun parsebib-read-string (&optional pos strings)
   "Read the @String definition beginning at the line POS is on.
@@ -431,19 +438,20 @@ expansion."
   (when pos (goto-char pos))
   (beginning-of-line)
   (when (parsebib--looking-at-goto-end (concat parsebib--entry-start "\\(string[[:space:]]*\\)[\(\{]") 1)
-    (let ((limit (save-excursion        ; find the position of the matching end parenthesis
+    (let ((limit (save-excursion
                    (parsebib--match-paren-forward)
                    (point))))
       (parsebib--looking-at-goto-end (concat "[({]\\(" parsebib--bibtex-identifier "\\)[[:space:]]*=[[:space:]]*"))
       (let ((abbr (match-string-no-properties 1)))
         (when (and abbr (> (length abbr) 0))            ; if we found an abbrev
           (let ((expansion (parsebib--parse-value limit strings)))
-            (goto-char (1+ limit))
+            (goto-char limit)
             (cons abbr expansion)))))))
 
 (defun parsebib-read-preamble (&optional pos)
   "Read the @Preamble definition at the line POS is on.
-Return the preamble as a string, or nil if none was found.
+Return the preamble as a string (including the braces surrounding
+the preamble text), or nil if no preamble was found.
 
 POS can be a number or a marker.  It does not have to be at the
 beginning of a line, but the @Preamble must start at the
@@ -451,9 +459,8 @@ beginning of the line POS is on.  If POS is nil, it defaults to
 point."
   (when pos (goto-char pos))
   (beginning-of-line)
-  (when (parsebib--looking-at-goto-end (concat parsebib--entry-start "preamble[[:space:]]*[\(\{]"))
+  (when (parsebib--looking-at-goto-end (concat parsebib--entry-start "\\(preamble[[:space:]]*\\)[\(\{]") 1)
     (let ((beg (point)))
-      (forward-char -1)
       (when (parsebib--match-paren-forward)
         (buffer-substring-no-properties beg (point))))))
 
@@ -541,7 +548,7 @@ Return a list of strings, each string a separate @Comment."
                while item do
                (when (cl-equalp item "comment")
                  (push (parsebib-read-comment) res)))
-      (nreverse res))))
+      (nreverse (delq nil res)))))
 
 (defun parsebib-collect-strings (&optional hash expand-strings)
   "Collect all @String definitions in the current buffer.
@@ -678,7 +685,7 @@ local variable is found, the value of the variable
                    (when entry
                      (puthash (cdr (assoc-string "=key=" entry)) entry entries))))))
       (when inheritance (parsebib-expand-xrefs entries (if (eq inheritance t) dialect inheritance)))
-      (list entries strings preambles comments dialect))))
+      (list entries strings (nreverse preambles) (nreverse comments) dialect))))
 
 (provide 'parsebib)
 
