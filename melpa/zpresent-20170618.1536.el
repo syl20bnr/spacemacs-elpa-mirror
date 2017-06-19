@@ -1,7 +1,7 @@
 ;;; zpresent.el --- Simple presentation mode based on org files.  -*- lexical-binding: t; -*-
 
 ;; Version: 0.3
-;; Package-Version: 20170608.2211
+;; Package-Version: 20170618.1536
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright 2015-2017 Zachary Kanfer <zkanfer@gmail.com>
@@ -34,9 +34,6 @@
 
 ;; A tutorial can be accessed by opening `tutorial.org`, then running
 ;; `M-x zpresent`.
-
-;;; TODOs:
-;;zck why symbols here, but keywords in org-structure?
 
 ;;; Code:
 
@@ -197,11 +194,11 @@ necessary."
         (type (assoc "type" (gethash :properties structure))))
     (when (and type
                (equal "title" (string-trim (cdr type))))
-      (puthash 'type 'title slide))
+      (puthash :type :title slide))
     (when-let ((author (cdr (assoc "author" (gethash :properties structure)))))
-      (puthash 'author author slide))
+      (puthash :author author slide))
     (when-let ((date (cdr (assoc "date" (gethash :properties structure)))))
-      (puthash 'date date slide))
+      (puthash :date date slide))
     slide))
 
 ;;zck test how this interacts with indentation/centering, if it does
@@ -284,11 +281,11 @@ inherit properties."
 If BODY is present, add it as the body of the slide.  Otherwise, the
 slide is created with an empty body."
   (let ((slide (make-hash-table)))
-    (puthash 'checkpoint t slide)
-    (puthash 'title title slide)
-    (puthash 'body (if body (list body) nil) slide)
+    (puthash :checkpoint t slide)
+    (puthash :title title slide)
+    (puthash :body (if body (list body) nil) slide)
 
-    (puthash 'type 'normal slide)
+    (puthash :type :normal slide)
     slide))
 
 (defun zpresent--make-following-slide (slide structure level &optional prior-siblings parent-structure)
@@ -298,11 +295,11 @@ PRIOR-SIBLINGS is the number of structures at the same level before
 STRUCTURE with the same PARENT-STRUCTURE."
   (let ((new-slide (copy-hash-table slide)))
 
-    (puthash 'checkpoint
+    (puthash :checkpoint
              nil
              new-slide)
-    (puthash 'body
-             (append (gethash 'body slide)
+    (puthash :body
+             (append (gethash :body slide)
                      (zpresent--make-body structure level (or prior-siblings 0) parent-structure))
              new-slide)
     new-slide))
@@ -551,10 +548,10 @@ If there's a single word of length MAX-LENGTH, that word will be on a line by it
 (defun zpresent--next-checkpoint-slide ()
   "Move to the next checkpoint slide.
 
-A checkpoint slide is one with the attribute 'checkpoint.  It's used,
+A checkpoint slide is one with the attribute :checkpoint.  It's used,
 for example, for the first slide of each top level org element."
   (interactive)
-  (let ((checkpoint-position (zpresent--next-match (lambda (slide) (gethash 'checkpoint slide))
+  (let ((checkpoint-position (zpresent--next-match (lambda (slide) (gethash :checkpoint slide))
                                                    zpresent-slides
                                                    (1+ zpresent-position))))
     (when checkpoint-position
@@ -564,10 +561,10 @@ for example, for the first slide of each top level org element."
 (defun zpresent--previous-checkpoint-slide ()
   "Move to the previous checkpoint slide.
 
-A checkpoint slide is one with the attribute 'checkpoint.  It's used,
+A checkpoint slide is one with the attribute :checkpoint.  It's used,
 for example, for the first slide of each top level org element."
   (interactive)
-  (let ((checkpoint-position (zpresent--previous-match (lambda (slide) (gethash 'checkpoint slide))
+  (let ((checkpoint-position (zpresent--previous-match (lambda (slide) (gethash :checkpoint slide))
                                                        zpresent-slides
                                                        (1- zpresent-position))))
     (when checkpoint-position
@@ -590,8 +587,8 @@ for example, for the first slide of each top level org element."
 
 (defun zpresent--slide (slide)
   "Present SLIDE."
-  (if (equal (gethash 'type slide)
-             'title)
+  (if (equal (gethash :type slide)
+             :title)
       (zpresent--present-title-slide slide)
     (zpresent--present-normal-slide slide)))
 
@@ -603,11 +600,11 @@ for example, for the first slide of each top level org element."
   (let ((inhibit-read-only t))
     (erase-buffer)
     (insert "\n")
-    (when (gethash 'title slide)
-      (zpresent--insert-title (gethash 'title slide) 'zpresent-h1)
+    (when (gethash :title slide)
+      (zpresent--insert-title (gethash :title slide) 'zpresent-h1)
       (insert "\n"))
-    (when (gethash 'body slide)
-      (dolist (body-item (gethash 'body slide))
+    (when (gethash :body slide)
+      (dolist (body-item (gethash :body slide))
         (zpresent--insert-body-item body-item)
         (insert "\n")))))
 
@@ -616,19 +613,19 @@ for example, for the first slide of each top level org element."
   (switch-to-buffer "zpresentation")
   (buffer-disable-undo "zpresentation")
   (let ((inhibit-read-only t)
-        (title-lines (zpresent--get-lines-for-title (gethash 'title slide) (window-max-chars-per-line nil 'zpresent-title-slide-title))))
+        (title-lines (zpresent--get-lines-for-title (gethash :title slide) (window-max-chars-per-line nil 'zpresent-title-slide-title))))
     (erase-buffer)
     (insert (propertize (make-string (zpresent--newlines-for-vertical-centering (length title-lines)
                                                                                 (zpresent--lines-in-window 'zpresent-title-slide-title))
                                      ?\n)
                         'face 'zpresent-title-slide-title))
-    (zpresent--insert-title (gethash 'title slide) 'zpresent-title-slide-title)
+    (zpresent--insert-title (gethash :title slide) 'zpresent-title-slide-title)
 
-    (when-let ((author-name (gethash 'author slide)))
+    (when-let ((author-name (gethash :author slide)))
       (insert (propertize (format "\nby %s" (string-trim author-name))
                           'face
                           'zpresent-h1)))
-    (when-let ((date (gethash 'date slide)))
+    (when-let ((date (gethash :date slide)))
       (insert (propertize (format "\n%s" (string-trim date))
                           'face
                           'zpresent-h1)))))

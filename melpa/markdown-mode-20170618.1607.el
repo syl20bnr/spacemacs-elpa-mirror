@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jrblevin@sdf.org>
 ;; Created: May 24, 2007
 ;; Version: 2.3-dev
-;; Package-Version: 20170618.354
+;; Package-Version: 20170618.1607
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: http://jblevins.org/projects/markdown-mode/
@@ -710,8 +710,8 @@
 ;;     `markdown-mode' as well as `gfm-mode'.
 ;;
 ;;   * `markdown-hide-urls' - Determines whether URL and reference
-;;     labels are hidden for inline and reference links (default: `t`).
-;;     By default, inline links will appear in the buffer as
+;;     labels are hidden for inline and reference links (default: `nil').
+;;     When non-nil, inline links will appear in the buffer as
 ;;     `[link](∞)` instead of
 ;;     `[link](http://perhaps.a/very/long/url/)`.  To change the
 ;;     placeholder (composition) character used, set the variable
@@ -917,7 +917,7 @@
 ;;   * 2013-01-25: [Version 1.9][]
 ;;   * 2013-03-24: [Version 2.0][]
 ;;   * 2016-01-09: [Version 2.1][]
-;;   * 2016-05-26: [Version 2.2][]
+;;   * 2017-05-26: [Version 2.2][]
 ;;
 ;; [Version 1.1]: http://jblevins.org/projects/markdown-mode/rev-1-1
 ;; [Version 1.2]: http://jblevins.org/projects/markdown-mode/rev-1-2
@@ -1329,16 +1329,18 @@ This applies to insertions done with
   :group 'markdown
   :type 'boolean)
 
-(defcustom markdown-hide-urls t
+(defcustom markdown-hide-urls nil
   "Hide URLs of inline links and reference tags of reference links.
-Such URLs will be replaced by an ellipsis (…), but it is still
-part of the buffer.  Deleting the final parenthesis, for example,
-allows easy editing of the URL.  You can also hover your mouse
-pointer over the link text to see the URL.
+Such URLs will be replaced by a single customizable
+character (∞), or `markdown-url-compose-char', but are still part
+of the buffer.  Links can be edited interactively with
+\\[markdown-insert-link] or, for example, by deleting the final
+parenthesis to remove the invisibility property. You can also
+hover your mouse pointer over the link text to see the URL.
 Set this to a non-nil value to turn this feature on by default.
 You can interactively set the value of this variable by calling
-`markdown-toggle-url-hiding' or from the menu Markdown > Links &
-Images menu."
+`markdown-toggle-url-hiding', pressing \\[markdown-toggle-url-hiding],
+or from the menu Markdown > Links & Images menu."
   :group 'markdown
   :type 'boolean
   :safe 'booleanp
@@ -7521,7 +7523,7 @@ Otherwise, open with `find-file' after stripping anchor and/or query string."
           (add-text-properties (match-beginning g) (match-end g) mp)))
       (when link-start (add-text-properties link-start link-end lp))
       (when ref-start (add-text-properties ref-start ref-end rp)
-            (when (and markdown-hide-urls (> (- ref-end ref-start) 3))
+            (when (and markdown-hide-urls (> (- ref-end ref-start) 2))
               (compose-region ref-start ref-end markdown-url-compose-char)))
       t)))
 
