@@ -5,7 +5,7 @@ adds several command-line functions which plug into Emacs (for example, use
 
 See <https://github.com/riscy/shx-for-emacs/blob/master/README.org> for more.
 
-This version tested with Emacs 25.1.1
+This version tested with Emacs 25.2.1
 
 Manual install:
 

@@ -1,6 +1,10 @@
-Highlight TODO and similar keywords in comments and strings.  To
-use, turn on `hl-todo-mode' in individual buffers or use the the
-global variant `global-hl-todo-mode'.
+Highlight TODO and similar keywords in comments and strings.
+
+You can either turn on `hl-todo-mode' in individual buffers or use
+the the global variant `global-hl-todo-mode'.  Note that the option
+`hl-todo-activate-in-modes' controls in what buffers the local mode
+will be activated if you do the latter.  By default it will only be
+activated in buffers whose major-mode derives from `prog-mode'.
 
 This package also provides commands for moving to the next or
 previous keyword and to invoke `occur' with a regexp that matches

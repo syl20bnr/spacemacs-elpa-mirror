@@ -15,4 +15,8 @@ Kill hunks you wish undone with `C-k'.
 Preview hunk changes with `C-c C-p', and jump to hunks in "other window"
 or "other frame" with `C-c o' and `C-c C-o', respectively.
 
+Commit with `C-c C-c`, amend with `C-c C-a`.
+
+Quit with `C-c C-k'.
+
 Credits/inspiration: git-gutter+ - https://github.com/nonsequitur/git-gutter-plus/

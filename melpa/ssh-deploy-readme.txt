@@ -6,9 +6,9 @@ By setting the variables (globally or per directory):
 `ssh-deploy-root-local',`ssh-deploy-root-remote', `ssh-deploy-on-explicit-save'
 you can setup a directory for `SSH' or `FTP' deployment.
 
-For asynchronous transfers you need to setup `~/.netrc' or equivalent for automatic authentication.
+For asynchronous transfers you need to setup `~/.netrc' or key-based authorization or equivalent for automatic authentication.
 
-Example contents of `~/.netrc':
+Example contents of `~/.netrc' for `FTP':
 machine myserver.com login myuser port ftp password mypassword
 
 Set permissions to this file to `700' with you as the owner.
@@ -30,7 +30,7 @@ Set permissions to this file to `700' with you as the owner.
     (global-set-key (kbd "C-c C-z e") (lambda() (interactive)(ssh-deploy-remote-changes-handler) ))
     (global-set-key (kbd "C-c C-z b") (lambda() (interactive)(ssh-deploy-browse-remote-handler) ))
 
-An illustrative example for `SSH' deployment, /Users/Chris/Web/Site1/.dir.locals.el
+An illustrative example for `SSH' deployment, /Users/Chris/Web/Site1/.dir.locals.el:
 ((nil . (
   (ssh-deploy-root-local . "/Users/Chris/Web/Site1/")
   (ssh-deploy-root-remote . "/ssh:myuser@myserver.com:/var/www/site1/")
@@ -45,5 +45,14 @@ An example for `FTP' deployment, /Users/Chris/Web/Site2/.dir.locals.el:
 )))
 
 Now when you are in a directory which is deployed via SSH or FTP you can access these features.
+
+
+Here is a list of other variables you can set globally or per directory:
+* `ssh-deploy-debug' Enables debugging messages
+* `ssh-deploy-revision-folder' The folder used for storing local revisions
+* `ssh-deploy-automatically-detect-remote-changes' Enables automatic detection of remote changes
+* `ssh-deploy-exclude-list' A list defining what paths to exclude from deployment
+* `ssh-deploy-async' Enables asynchronous transfers (you need to install `async.el' as well)
+
 
 Please see README.md from the same repository for documentation.

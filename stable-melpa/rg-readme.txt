@@ -9,7 +9,7 @@ Install the package and bind the main entry point `rg':
 
 There are also other entry points for easy searching:
 `rg-project' - Search in a project.
-`rg-dwim' - Handsfree search. Search thing at point in project in
+`rg-dwim' - Handsfree search.  Search thing at point in project in
 files matching the type alias of the current buffer file name.
 
 The `rg' results buffer has bindings for modification of
@@ -33,5 +33,10 @@ own aliases:
     ("baz" .    "*.baz *.qux")))
 
 The `rg-define-toggle' macro can be used to define a toggleable
-flag for the rg command line. Such flags can then be toggled from
-the results buffer and the search repeate with updated flags.
+flag for the rg command line.  Such flags can then be toggled from
+the results buffer to repeat the search with updated flags.
+
+The default configuration of this package is compatible with `wgrep'.
+If grouped mode and/or show columns is enabled you need to install
+the wgrep-ag package from MELPA and configure it like this:
+(add-hook 'rg-mode-hook 'wgrep-ag-setup)

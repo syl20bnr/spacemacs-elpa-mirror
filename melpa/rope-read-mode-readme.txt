@@ -35,6 +35,9 @@ When =rope-read-mode= is on you can press
 - =d= /downwards/ to reverse every other line starting with the line
   below the cursor
 
+Configuration
+-------------
+
 For convenience you can bind command =rope-read-mode= to a key.  For
 example to activate or deactivate =rope-read-mode= by pressing scroll
 lock two times use the line
@@ -42,5 +45,9 @@ lock two times use the line
 #+BEGIN_EXAMPLE
 (global-set-key (kbd "<Scroll_Lock> <Scroll_Lock>") 'rope-read-mode)
 #+END_EXAMPLE
+
+You can control the flipping via customization.  See M-x
+customize-apropos rope-read.  Shortcut: With point after the next
+closing parenthesis do C-xe (customize-apropos "rope-read").
 
 
