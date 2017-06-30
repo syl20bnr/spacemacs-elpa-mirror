@@ -2,13 +2,13 @@
 
 ;; Author: Ono Hiroko (kuanyui) <azazabc123@gmail.com>
 ;; Keywords: tools, hexo
-;; Package-Version: 20170627.22
+;; Package-Version: 20170629.1933
 ;; Package-Requires: ((emacs "24.3"))
 ;; X-URL: https://github.com/kuanyui/hexo.el
 ;; Version: {{VERSION}}
 
 ;; License: MIT
-;; Ono Hiroko (kuanyui) (c) Copyright 2016
+;; Ono Hiroko (kuanyui) (c) Copyright 2016-2017
 
 ;;; Commentary:
 ;;
@@ -1165,7 +1165,7 @@ This is merely resonable for files in _posts/."
 (defun hexo-replace-hexo-command-to-path (command-string &optional repo-path)
   "Replace all 'hexo' in COMMAND-STRING to hexo command's path"
   (hexo-ensure-hexo-executable-available
-   (replace-regexp-in-string "_HEXO" hexo-executable-path command-string)))
+   (replace-regexp-in-string "_HEXO" hexo-executable-path command-string t)))
 
 (defun hexo-server-run ()
   "Run a Hexo server process (posts only / posts + drafts)"
