@@ -2,7 +2,7 @@
 
 ;; Author: The govc developers
 ;; URL: https://github.com/vmware/govmomi/tree/master/govc/emacs
-;; Package-Version: 20170316.1124
+;; Package-Version: 20170629.1129
 ;; Keywords: convenience
 ;; Version: 0.14.0
 ;; Package-Requires: ((emacs "24.3") (dash "1.5.0") (s "1.9.0") (magit-popup "2.0.50") (json-mode "1.6.0"))
@@ -368,7 +368,7 @@ Optionally set `GOVC_*' vars in `process-environment' using prefix
 
 (defun govc-process (command handler)
   "Run COMMAND, calling HANDLER upon successful exit of the process."
-  (message command)
+  (message "%s" command)
   (let ((process-environment (govc-environment))
         (exit-code))
     (add-to-list 'govc-command-history command)

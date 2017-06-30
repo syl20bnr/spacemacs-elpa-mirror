@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; URL: http://github.com/Kungsgeten/org-brain
-;; Package-Version: 20170629.501
+;; Package-Version: 20170629.1228
 ;; Keywords: outlines hypermedia
 ;; Package-Requires: ((emacs "25") (org "9"))
 ;; Version: 0.4
@@ -396,7 +396,8 @@ The car is the raw-link and the cdr is the description."
                 (unless (member (org-element-property :type link)
                                 org-brain-ignored-resource-links)
                   (cons (org-element-property :raw-link link)
-                        (car (org-element-contents link)))))
+                        (when-let ((desc (car (org-element-contents link))))
+                          (replace-regexp-in-string "[ \t\n\r]+" " " desc)))))
               nil nil t)))
          ;; Attachments
          (when-let ((attach-dir (org-attach-dir)))
