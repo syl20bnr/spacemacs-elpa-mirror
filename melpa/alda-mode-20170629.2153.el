@@ -3,7 +3,7 @@
 ;; Copyright (C) 2016 Jay Kamat
 ;; Author: Jay Kamat <github@jgkamat.33mail.com>
 ;; Version: 0.1.1
-;; Package-Version: 20170611.1031
+;; Package-Version: 20170629.2153
 ;; Keywords: alda, highlight
 ;; URL: http://github.com/jgkamat/alda-mode
 ;; Package-Requires: ((emacs "24.0"))
@@ -44,6 +44,12 @@
 
 ;;; Code:
 
+;;; -- Variables --
+(defvar *alda-history*
+  ""
+  "Holds the history to be sent to the alda server.
+If you are experiencing problems, try clearing your history with 'alda-history-clear'.")
+
 ;;; -- Region playback functions --
 
 (defgroup Alda nil
@@ -58,19 +64,19 @@ This must be a _full_ path to."
   :group 'Alda)
 
 (defcustom alda-ess-keymap t
-  "Whether to use ess keymap in alda-mode.
+  "Whether to use ess keymap in 'alda-mode'.
 When set to nil, will not set any ess keybindings"
   :type 'boolean
   :group 'Alda)
 
 (defun alda-location ()
-  "Returns what 'alda' should be called as in the shell based on alda-binary-location or the path."
+  "Return what 'alda' should be called as in the shell based on alda-binary-location or the path."
   (if alda-binary-location
     alda-binary-location
     (locate-file "alda" exec-path)))
 
 (defun alda-server ()
-  "Starts an alda server in an emacs process."
+  "Start an alda server in an Emacs process."
   (interactive)
   (start-process +alda-output-name+ +alda-output-buffer+ (alda-location)  "server"))
 
@@ -93,39 +99,61 @@ Argument ARGS a list of arguments to pass to alda"
 
 (defun alda-play-text (text)
   "Plays the specified TEXT in the alda server.
+This does include any history you might have added.
 ARGUMENT TEXT The text to play with the current alda server."
-  (alda-run-cmd "play" "--code" text))
+  (alda-run-cmd "play" "--history" *alda-history* "--code" text))
+
+(defun alda-stop ()
+  "Stop current alda playback."
+  (alda-run-cmd "stop"))
 
 (defun alda-play-file ()
-  "Plays the current buffer's file in alda."
+  "Plays the current buffer's file in alda.
+This does not include any history that you may have added"
   (interactive)
   (alda-run-cmd "play" "--file" (buffer-file-name)))
 
-;; TODO Come up with a replacement for the alda append command
-;; alda append was deprecated, which breaks all these commands
-;; Before, you could use these commands to load only parts of your file, but
-;; there's no way to do this right now. Ask for a replacement for alda append!
+;; This is the replacement for the old 'alda append' command
+;; Previously, command history was stored on the server, now it is stored on the client.
+;; 'alda-mode' is your client, so we will take care of history for you!
+;; These commands are in beta, so report an issue if you find any problems!
+(defun alda-history-append-text (text)
+  "Append the specified TEXT to the alda server instance.
+ARGUMENT TEXT The text to append to the current alda server."
+  (setq *alda-history* (concat *alda-history* "\n" text)))
 
-;; (defun alda-append-text (text)
-;;   "Append the specified TEXT to the alda server instance.
-;; ARGUMENT TEXT The text to append to the current alda server."
-;;   (alda-run-cmd (concat "append --code '" text "'")))
 
-;; (defun alda-append-file ()
-;;   "Append the current buffer's file to the alda server without playing it.
-;; Argument START The start of the selection to append from.
-;; Argument END The end of the selection to append from."
-;;   (interactive)
-;;   (alda-run-cmd (concat "append --file " "\"" (buffer-file-name) "\"")))
+(defun alda-history-clear ()
+  "Clears the current alda history.
+This can help resolve problems if you are having problems running your score"
+  (interactive)
+  (setq *alda-history* ""))
 
-;; (defun alda-append-region (start end)
-;;   "Append the current buffer's file to the alda server without playing it.
-;; Argument START The start of the selection to append from.
-;; Argument END The end of the selection to append from."
-;;   (interactive "r")
-;;   (if (eq start end)
-;;     (message "no mark was set")
-;;     (alda-append-text (buffer-substring-no-properties start end))))
+(defun alda-history-append-region (start end)
+  "Append the current selection to the alda history.
+Argument START The start of the selection to append from.
+Argument END The end of the selection to append from."
+  (interactive "r")
+  (if (eq start end)
+    (message "no mark was set")
+    (alda-history-append-text (buffer-substring-no-properties start end))))
+
+(defun alda-history-append-buffer ()
+  "Append the current buffer to alda history."
+  (interactive)
+  (alda-history-append-text (buffer-string)))
+
+(defun alda-history-append-block ()
+  "Append the selected block of alda code to history."
+  (interactive)
+  (save-excursion
+    (mark-paragraph)
+    (alda-history-append-region (region-beginning) (region-end))))
+
+(defun alda-history-append-line ()
+  "Append the current line of alda code to history."
+  (interactive)
+  (alda-history-append-region (line-beginning-position) (line-end-position)))
 
 (defun alda-play-region (start end)
   "Plays the current selection in alda.
@@ -146,13 +174,21 @@ Argument END The end of the selection to play from."
 
 ;; Macro will be expanded based on the above dummy/evil load
 (evil-define-operator alda-evil-play-region (beg end type register yank-hanlder)
-  "Plays the text from BEG to END"
+  "Plays the text from BEG to END."
   :move-point nil
   :repeat nil
   (interactive "<R><x><y>")
   (alda-play-region beg end))
 
-(defun alda-stop ()
+(evil-define-operator alda-evil-history-append-region (beg end type register yank-hanlder)
+  "Appends the text from BEG to END to alda history."
+  :move-point nil
+  :repeat nil
+  (interactive "<R><x><y>")
+  (alda-history-append-region beg end))
+
+;; Renamed stop -> down for consistency
+(defun alda-down ()
   "Stops songs from playing, and cleans up idle alda runner processes.
 Because alda runs in the background, the only way to do this is with alda restart as of now."
   (interactive)
@@ -178,7 +214,7 @@ Because alda runs in the background, the only way to do this is with alda restar
     (alda-markers-regexp "\\([@%][a-zA-Z]\\{2\\}[a-zA-Z0-9()+-]*\\)"))
 
   (defvar alda-highlights nil
-    "Font lock highlights for alda-mode")
+    "Font lock highlights for 'alda-mode'")
   (setq alda-highlights
     `((,alda-comment-regexp . (1 font-lock-comment-face))
        (,alda-bar-regexp . (1 font-lock-comment-face))
@@ -250,16 +286,19 @@ Because alda runs in the background, the only way to do this is with alda restar
       (tab-to-tab-stop))))
 
 (defun alda-play-block ()
+  "Plays the selected block of alda code."
   (interactive)
   (save-excursion
     (mark-paragraph)
     (alda-play-region (region-beginning) (region-end))))
 
 (defun alda-play-line ()
+  "Plays the current line of alda code."
   (interactive)
   (alda-play-region (line-beginning-position) (line-end-position)))
 
 (defun alda-play-buffer ()
+  "Plays the current buffer of alda code."
   (interactive)
   (alda-play-text (buffer-string)))
 
