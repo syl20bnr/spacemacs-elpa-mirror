@@ -5,7 +5,7 @@
 ;; Author: Matúš Goljer <matus.goljer@gmail.com>
 ;; Maintainer: Matúš Goljer <matus.goljer@gmail.com>
 ;; Version: 1.1.0
-;; Package-Version: 1.2.1
+;; Package-Version: 1.2.2
 ;; Created: 26th March 2015
 ;; Keywords: conf
 
@@ -91,7 +91,7 @@ echo json_encode($result);" root class)
               "\\_>")
      0 'font-lock-constant-face)
     ("\\<%\\(.*?\\)%\\>" 0 'font-lock-keyword-face)
-    ("[^[:alnum:]]@\\_<\\(.*?\\)\\_>" 0 'font-lock-type-face)
+    ("[^[:alnum:]]\\(@\\_<\\(.*?\\)\\_>\\)" 1 'font-lock-type-face)
     ("::\\(\\sw+?\\)\\>" 1 'font-lock-function-name-face)
     ("\\_<\\$\\(.*?\\)\\_>" 1 'font-lock-variable-name-face)
     ,@conf-colon-font-lock-keywords))

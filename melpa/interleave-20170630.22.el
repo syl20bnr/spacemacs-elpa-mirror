@@ -2,7 +2,7 @@
 
 ;; Author: Sebastian Christ <rudolfo.christ@gmail.com>
 ;; URL: https://github.com/rudolfochrist/interleave
-;; Package-Version: 20170211.807
+;; Package-Version: 20170630.22
 ;; Version: 1.4.20161123-610
 
 ;; This file is not part of GNU Emacs
@@ -403,15 +403,16 @@ PARENT-HEADLINE.
 
 Return the position of the newly inserted heading."
   (org-insert-heading-respect-content)
-  (when interleave-multi-pdf-notes-file
-    (let* ((parent-level (org-element-property :level parent-headline))
-           (change-level (if (> (org-element-property :level (org-element-at-point))
-                                (1+ parent-level))
-                             #'org-promote
-                           #'org-demote)))
-      (while (/= (org-element-property :level (org-element-at-point))
-                 (1+ parent-level))
-        (funcall change-level))))
+  (let* ((parent-level (if interleave-multi-pdf-notes-file
+                           (org-element-property :level parent-headline)
+                         0))
+         (change-level (if (> (org-element-property :level (org-element-at-point))
+                              (1+ parent-level))
+                           #'org-promote
+                         #'org-demote)))
+    (while (/= (org-element-property :level (org-element-at-point))
+               (1+ parent-level))
+      (funcall change-level)))
   (point))
 
 (defun interleave--create-new-note (page)
@@ -681,7 +682,7 @@ Keybindings (org-mode buffer):
                 (interleave--goto-search-position)
                 (if interleave-multi-pdf-notes-file
                     (org-show-subtree) 
-                  (outline-show-all))
+                  (show-all))
                 (org-cycle-hide-drawers 'all)))
             (interleave--go-to-page-note 1)
             (message "Interleave enabled"))

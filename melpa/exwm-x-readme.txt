@@ -30,7 +30,7 @@ By default, every appconfig have the following keys:
 Record the shell command of application.
 
 **** :alias
-Define alias of an application, this key is used by `exwmx-jump-or-exec'.
+Define alias of an application, this key is used by `exwmx-quickrun'.
 
 **** :pretty-name
 In EXWM and Exwm-X, an application is assocated with an emacs buffer,
@@ -41,13 +41,13 @@ Record the paste keybinding of an application, this key is used
 by `exwmx-sendstring'.
 
 **** :class
-Record the application's class, this key is used by `exwmx-jump-or-exec'.
+Record the application's class, this key is used by `exwmx-quickrun'.
 
 **** :instance
-Record the application's instance, this key is used by `exwmx-jump-or-exec'.
+Record the application's instance, this key is used by `exwmx-quickrun'.
 
 **** :title
-Record the application's title, this key is used by `exwmx-jump-or-exec'.
+Record the application's title, this key is used by `exwmx-quickrun'.
 
 **** :floating
 If set it to `t', application will floating when launched.
@@ -104,17 +104,17 @@ to resize a floating-window, *without press WIN key*.
 
 Note: button-line is mode-line or header-line of emacs.
 
-*** Jump-or-exec
+*** Quick Run
 If the application's window is found, jump to this window, otherwise,
 launch the application with command.
 
 **** Common usage
 
 #+BEGIN_EXAMPLE
-(exwmx-jump-or-exec "firefox")
+(exwmx-quickrun "firefox")
 #+END_EXAMPLE
 
-Note: `exwmx-jump-or-exec' *need* appconfigs stored in
+Note: `exwmx-quickrun' *need* appconfigs stored in
 `exwmx-appconfig-file', user should store appconfigs of
 frequently used applications by yourself with the help
 of `exwmx-appconfig'.
@@ -124,7 +124,7 @@ Search an appconfig which :alias is "web-browser", and run this
 appconfig's :command.
 
 #+BEGIN_EXAMPLE
-(exwmx-jump-or-exec "web-browser" nil t)
+(exwmx-quickrun "web-browser" nil t)
 #+END_EXAMPLE
 
 *** Dmenu
@@ -176,7 +176,7 @@ should set :paste-key of this application with the help of `exwmx-appconfig'.
 
 *** Others
 1. `exwmx-shell-command': run a shell command.
-2. `exwmx-shell-command-interactively': run a shell command interactively.
+2. `exwmx-terminal-emulator': run a shell command in a terminal emulator.
 
 ** Install
 1. Config melpa repository, please see：http://melpa.org/#/getting-started
@@ -245,7 +245,7 @@ appconfigs of frequently used applications should be added
 to appconfig database file: `exwmx-appconfig-file',
 it is simple but *very very* important, for many useful commands
 of Exwm-X need this database file, for example:
-`exwmx-jump-or-exec', `exwmx-sendstring' and so on.
+`exwmx-quickrun', `exwmx-sendstring' and so on.
 
 user should do like the below:
 
