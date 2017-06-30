@@ -95,6 +95,13 @@ buffer, use:
 
     M-x el2markdown-write-readme RET
 
+Post processing:
+
+To post-process the output, add a function to
+`el2markdown-post-convert-hook'.  The functions in the hook should
+accept one argument, the output stream (typically the destination
+buffer).  When the hook is run current buffer is the source buffer.
+
 Batch mode:
 
 You can run el2markdown in batch mode. The function
