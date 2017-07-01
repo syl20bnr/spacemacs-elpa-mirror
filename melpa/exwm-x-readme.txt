@@ -124,7 +124,19 @@ Search an appconfig which :alias is "web-browser", and run this
 appconfig's :command.
 
 #+BEGIN_EXAMPLE
-(exwmx-quickrun "web-browser" nil t)
+(exwmx-quickrun "web-browser" t)
+#+END_EXAMPLE
+
+**** Adjust window ruler
+
+#+BEGIN_EXAMPLE
+(exwmx-quickrun "firefox" nil '(:class :instance :title))
+#+END_EXAMPLE
+
+or
+
+#+BEGIN_EXAMPLE
+(exwmx-quickrun "firefox" nil '(:class "XXX" :instance "XXX" :title "XXX"))
 #+END_EXAMPLE
 
 *** Dmenu
