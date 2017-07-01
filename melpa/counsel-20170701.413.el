@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170628.1034
+;; Package-Version: 20170701.413
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -924,7 +924,7 @@ See `describe-buffer-bindings' for further information."
       (re-search-forward "")
       (forward-char 1)
       (while (not (eobp))
-        (when (looking-at "^\\([^\t\n]+\\)\t+\\(.*\\)$")
+        (when (looking-at "^\\([^\t\n]+\\)[\t ]*\\(.*\\)$")
           (let ((key (match-string 1))
                 (fun (match-string 2))
                 cmd)
