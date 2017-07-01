@@ -4,10 +4,10 @@
 
 ;; Author: Leandro Facchinetti <me@leafac.com>
 ;; Version: 0.0.1
-;; Package-Version: 20170124.549
+;; Package-Version: 20170701.919
 ;; Keywords: password
 ;; URL: https://git.leafac.com/org-password-manager
-;; Package-Requires: ((org "8.2.10") (s "1.9.0"))
+;; Package-Requires: ((org "8.2.10") (s "1.9.0") (dash "2.13.0"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -134,6 +134,7 @@
 
 (require 'org)
 (require 's)
+(require 'dash)
 
 (defgroup org-password-manager nil
   "Minimal password manager for Emacs Org Mode."
@@ -170,12 +171,14 @@ heading that contains the property."
     (if (and property (not ask-for-input?))
         (setq heading (org-link-display-format (org-get-heading t t)))
       (let* ((property-entries
-              (org-map-entries
-               (lambda ()
-                 (list
-                  (org-link-display-format (org-get-heading t t))
-                  (org-entry-get (point) property-name)))
-               (concat property-name "={.+}") org-password-manager-scope))
+              (-filter #'cadr
+                       (org-map-entries
+                        (lambda ()
+                          (list
+                           (org-link-display-format (org-get-heading t t))
+                           (org-entry-get (point) property-name)))
+                        nil
+                        org-password-manager-scope)))
              (chosen-heading (funcall 'org-completing-read
                                       (concat display-property-name " for: ")
                                       property-entries
