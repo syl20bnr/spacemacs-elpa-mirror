@@ -411,14 +411,15 @@
  you can use `C-x n a' (command `zz-add-zone') to add the current
  region to the same variable.
 
- You can use command `hlt-highlight-regions' to highlight the
- `zz-izones' zones, and you can use command
- `hlt-highlight-regions-in-buffers' to highlight all zones recorded
- for a given set of buffers.  You can use commands
- `hlt-unhighlight-regions' and `hlt-unhighlight-regions-in-buffers'
- to unhighlight them.  If option `hlt-auto-faces-flag' is non-nil
- then each zone gets a different face.  Otherwise, all of them are
- highlighted with the same face.
+ You can use command `hlt-highlight-regions' to highlight buffer
+ zones, as defined by their limits (interactively, `zz-izones'),
+ and you can use command `hlt-highlight-regions-in-buffers' to
+ highlight all zones recorded for a given set of buffers.  You can
+ use commands `hlt-unhighlight-regions' and
+ `hlt-unhighlight-regions-in-buffers' to unhighlight them.  If
+ option `hlt-auto-faces-flag' is non-nil then each zone gets a
+ different face.  Otherwise, all of them are highlighted with the
+ same face.
 
  From Isearch you can highlight the search-pattern matches.  You
  can do this across multiple buffers being searched together.
