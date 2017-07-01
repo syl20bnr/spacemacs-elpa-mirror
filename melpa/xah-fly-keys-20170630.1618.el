@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2016, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 7.5.0
-;; Package-Version: 20170629.2103
+;; Version: 7.5.1
+;; Package-Version: 20170630.1618
 ;; Created: 10 Sep 2013
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, emulations, vim, ergoemacs
@@ -2594,8 +2594,6 @@ Version 2017-01-21"
    ("DEL" . xah-fly-insert-mode-activate)
    ("RET" . execute-extended-command)
    ("TAB" . xah-fly--tab-key-map)
-
-   ("<delete>" . xah-close-current-buffer)
 
    ("." . xah-fly-dot-keymap)
    ("'" . xah-fill-or-unfill)

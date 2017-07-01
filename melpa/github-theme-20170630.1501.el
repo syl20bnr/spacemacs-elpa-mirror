@@ -4,7 +4,7 @@
 
 ;; Author: Philip Arvidsson <philip@philiparvidsson.com>
 ;; URL: https://github.com/philiparvidsson/GitHub-Theme-for-Emacs
-;; Package-Version: 20170624.2223
+;; Package-Version: 20170630.1501
 ;; Version: 1.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -1024,6 +1024,10 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(rcirc-track-keyword ((t (:bold t))))
    `(rcirc-url ((t (:bold t))))
    `(rcirc-keyword ((t (:foreground ,github-keyword :bold t))))
+;;;;; realgud
+   `(realgud-overlay-arrow1 ((t (:foreground "#24292e"))))
+   `(realgud-overlay-arrow2 ((t (:foreground "#63645c"))))
+   `(realgud-overlay-arrow3 ((t (:foreground "#bcbdc0"))))
 ;;;;; rpm-mode
    `(rpm-spec-dir-face ((t (:foreground ,github-comment))))
    `(rpm-spec-doc-face ((t (:foreground ,github-comment))))
