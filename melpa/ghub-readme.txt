@@ -1,7 +1,7 @@
 A minuscule client for the Github API.
 
-This library just provides the HTTP verbs.  Instead of wrapping
-every resource, I recommend https://developer.github.com/v3.
+This library just provides the HTTP methods.
+See https://developer.github.com/v3 for valid requests.
 
 Initial configuration
 ---------------------
@@ -47,7 +47,7 @@ Initial configuration:
   $ git config gh_example_com.user employee
   $ emacs ~/.authinfo.gpg
   # -*- epa-file-encrypt-to: ("employee@example.com") -*-
-  machine gh.example.com/api/v3 login employee password <token>
+  machine gh.example.com login employee password <token>
 
 Note that unlike for Github.com, which uses `github.user', the Git
 variable used to store the username for an Enterprise instance is

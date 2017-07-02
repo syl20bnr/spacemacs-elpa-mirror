@@ -5,7 +5,7 @@
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;;         Rémi Vanicat <vanicat@debian.org>
 ;; URL: https://github.com/magit/magit-annex
-;; Package-Version: 20170621.1328
+;; Package-Version: 20170702.832
 ;; Keywords: vc tools
 ;; Version: 1.3.1
 ;; Package-Requires: ((cl-lib "0.3") (magit "2.3.0"))
@@ -88,11 +88,14 @@
   "Whether to confirm before adding all changes to the annex."
   :type 'boolean)
 
-(defcustom magit-annex-standard-options nil
-  "Call git-annex with these options.
+(defcustom magit-annex-global-arguments nil
+  "Arguments that are added to every git-annex call.
 These are placed after \"annex\" in the call, whereas values from
-`magit-git-standard-options' are placed after \"git\"."
+`magit-git-global-arguments' are placed after \"git\"."
   :type '(repeat string))
+
+(define-obsolete-variable-alias 'magit-annex-standard-options
+  'magit-annex-global-arguments "1.4.0")
 
 (defcustom magit-annex-limit-file-choices t
   "Limit choices for file commands based on state of repo.
@@ -227,16 +230,16 @@ program used to open the unused file."
   "Call git-annex synchronously in a separate process, and refresh.
 
 Before ARGS are passed to git-annex,
-`magit-annex-standard-options' will be prepended.
+`magit-annex-global-arguments' will be prepended.
 
 See `magit-run-git' for more details on the git call."
-  (magit-run-git "annex" magit-annex-standard-options args))
+  (magit-run-git "annex" magit-annex-global-arguments args))
 
 (defun magit-annex-run-async (&rest args)
   "Call git-annex asynchronously with ARGS.
 See `magit-annex-run' and `magit-run-git-async' for more
 information."
-  (magit-run-git-async "annex" magit-annex-standard-options args))
+  (magit-run-git-async "annex" magit-annex-global-arguments args))
 
 (defun magit-annex-command (command)
   "Execute COMMAND asynchonously, displaying output.

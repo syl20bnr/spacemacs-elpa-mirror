@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/tarsius/ghub
 ;; Keywords: tools
-;; Package-Version: 20170614.840
+;; Package-Version: 20170702.512
 ;; Package-Requires: ((emacs "25"))
 
 ;; This file is not part of GNU Emacs.
@@ -26,8 +26,8 @@
 
 ;; A minuscule client for the Github API.
 
-;; This library just provides the HTTP verbs.  Instead of wrapping
-;; every resource, I recommend https://developer.github.com/v3.
+;; This library just provides the HTTP methods.
+;; See https://developer.github.com/v3 for valid requests.
 
 ;; Initial configuration
 ;; ---------------------
@@ -73,7 +73,7 @@
 ;;   $ git config gh_example_com.user employee
 ;;   $ emacs ~/.authinfo.gpg
 ;;   # -*- epa-file-encrypt-to: ("employee@example.com") -*-
-;;   machine gh.example.com/api/v3 login employee password <token>
+;;   machine gh.example.com login employee password <token>
 ;;
 ;; Note that unlike for Github.com, which uses `github.user', the Git
 ;; variable used to store the username for an Enterprise instance is
@@ -231,21 +231,23 @@ in which case return nil."
           (ghub--username))
     (url-basic-auth url t)))
 
+(defun ghub--hostname ()
+  (save-match-data
+    (if (string-match "\\`https?://\\([^/]+\\)" ghub-base-url)
+        (match-string 1 ghub-base-url)
+      (signal 'ghub-auth-error '("Invalid value for ghub-base-url")))))
+
 (defun ghub--token ()
   "Return the configured token.
 Use `auth-source-search' to get the token for the user returned
 by `ghub--username' and a host based on `ghub-base-url'.  When
 `ghub-token' is non-nil, then return its value instead."
   (or ghub-token
-      (let ((secret
-             (plist-get
-              (car (auth-source-search
-                    :max 1
-                    :user (ghub--username)
-                    :host (save-match-data
-                            (string-match "\\`https?://" ghub-base-url)
-                            (substring ghub-base-url (match-end 0)))))
-              :secret)))
+      (let ((secret (plist-get (car (auth-source-search
+                                     :max 1
+                                     :user (ghub--username)
+                                     :host (ghub--hostname)))
+                               :secret)))
         (or (if (functionp secret)
                 (funcall secret)
               secret)
@@ -258,16 +260,15 @@ For Github enterprise instances, get the value of `HOST.user',
 where HOST is the host part of the `URI', with dots replaced with
 underscores.  E.g. `gh_example_com.user' for gh.example.com/api."
   (or ghub-username
-      (substring
-       (shell-command-to-string
-        (format "git config %s.user"
-                (if (string-equal ghub-base-url "https://api.github.com")
-                    "github"
-                  (save-match-data
-                    (and (string-match "\\`https?://\\([^/]+\\)" ghub-base-url)
-                         (replace-regexp-in-string
-                          "\\." "_" (match-string 1 ghub-base-url)))))))
-       0 -1)))
+      (let* ((var (concat
+                   (if (string-equal ghub-base-url "https://api.github.com")
+                       "github"
+                     (subst-char-in-string ?. ?_ (ghub--hostname)))
+                   ".user"))
+             (val (ignore-errors (car (process-lines "git" "config" var)))))
+        (if val
+            (subst-char-in-string ?. ?_ val)
+          (signal 'ghub-auth-error (list (format "%s is undefined" var)))))))
 
 (defun ghub-wait (resource)
   "Busy-wait until RESOURCE becomes available."
