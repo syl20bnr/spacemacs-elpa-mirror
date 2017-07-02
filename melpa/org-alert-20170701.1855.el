@@ -4,7 +4,7 @@
 
 ;; Author: Stephen Pegoraro <spegoraro@tutive.com>
 ;; Version: 0.1.0
-;; Package-Version: 20160701.1900
+;; Package-Version: 20170701.1855
 ;; Package-Requires: ((s "1.10.0") (dash "2.12.0") (alert "1.2"))
 ;; Keywords: org, org-mode, notify, notifications
 ;; URL: https://github.com/groksteve/org-alert
@@ -48,26 +48,28 @@
 (defvar org-alert-notification-title "*org*"
   "Title to be sent with notify-send.")
 
+(defvar org-alert-headline-regexp "\\(Sched.+:.+\\|Deadline:.+\\)"
+  "Regexp for headlines to search in agenda buffer.")
 
 (defun org-alert--preserve-agenda-buffer ()
   "Rename any existing agenda buffer to avoid clobbering."
   (let ((agenda-buffer (get-buffer org-agenda-buffer-name)))
     (if agenda-buffer
-	(with-current-buffer agenda-buffer
-	  (rename-buffer (concat "~" org-agenda-buffer-name))))))
+        (with-current-buffer agenda-buffer
+          (rename-buffer (concat "~" org-agenda-buffer-name))))))
 
 
 (defun org-alert--restore-agenda-buffer ()
   "Restore the renamed agenda buffer if it exists."
   (let ((agenda-buffer (get-buffer (concat "~" org-agenda-buffer-name))))
     (if agenda-buffer
-	(with-current-buffer agenda-buffer
-	  (rename-buffer org-agenda-buffer-name)))))
+        (with-current-buffer agenda-buffer
+          (rename-buffer org-agenda-buffer-name)))))
 
 
 (defun org-alert--strip-prefix (headline)
   "Remove the scheduled/deadline prefix from HEADLINE."
-  (replace-regexp-in-string ".+:\s+" "" headline))
+  (replace-regexp-in-string ".*:\s+" "" headline))
 
 
 (defun org-alert--unique-headlines (regexp agenda)
@@ -84,7 +86,7 @@
     (setq org-agenda-window-setup agenda-setup)
     (let ((agenda (buffer-substring-no-properties (point-min) (point-max))))
       (kill-buffer)
-      (org-alert--unique-headlines "\\(Sched.+:.+\\|Deadline:.+\\)" agenda))))
+      (org-alert--unique-headlines org-alert-headline-regexp agenda))))
 
 
 (defun org-alert--headline-complete? (headline)

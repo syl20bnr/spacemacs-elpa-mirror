@@ -8,15 +8,15 @@
 ;; Original author:  wandad guscheh <wandad.guscheh@fh-hagenberg.at>
 ;; Author:           Cayetano Santos
 ;; Keywords: vhdl
-;; Package-Version: 5.5
+;; Package-Version: 5.6
 
 ;; Filename: vhdl-tools.el
 ;; Description: Utilities for navigating vhdl sources.
 ;; URL: https://csantosb.github.io/vhdl-tools/
 ;; Keywords: convenience
-;; Compatibility: GNU Emacs >= 25.1
-;; Version: 5.5
-;; Package-Requires: ((ggtags "0.8.12") (emacs "25.1") (outshine "2.0") (helm "2.6.0"))
+;; Compatibility: GNU Emacs >= 25.2
+;; Version: 5.6
+;; Package-Requires: ((ggtags "0.8.12") (emacs "25.2") (outshine "2.0") (helm "2.8.0"))
 
 ;;; License:
 ;;
@@ -134,6 +134,10 @@
   :type 'boolean :group 'vhdl-tools-vorg)
 
 ;;;;; tools
+
+(defcustom vhdl-tools-verbose nil
+  "Make `vhdl-tools' verbose."
+  :type 'boolean :group 'vhdl-tools)
 
 (defcustom vhdl-tools-allowed-chars-in-signal "a-z0-9A-Z_"
   "Regexp with allowed characters in signal, constant or function.
@@ -590,21 +594,18 @@ When no symbol at point, move point to indentation."
   "From `vhdl' file, jump to same line in `vorg' file."
   (interactive)
   (let ((myfile (format "%s.org" (file-name-base)))
-	(myline (and (not vhdl-tools-vorg-tangle-comments-link)
-		     (save-excursion
-		       (back-to-indentation)
-		       (set-mark-command nil)
-		       (end-of-line)
-		       (buffer-substring-no-properties (region-beginning)
-						       (region-end))))))
+	(myline (vhdl-tools-vorg-get-current-line)))
     (if (file-exists-p myfile)
 	(progn
 	  (if vhdl-tools-vorg-tangle-comments-link
 	      ;; use org feature
 	      (let (;; I avoid scanning too much files: I already know where the
 		    ;; related org file is.
+		    ;; TODO: still too many files to scan ...
 		    (org-id-search-archives nil)
-		    (org-agenda-files nil))
+		    (org-id-locations nil)
+		    (org-agenda-files nil)
+		    (org-id-extra-files nil))
 		(org-babel-tangle-jump-to-org))
 	    ;; use custom search
 	    (progn
@@ -616,26 +617,22 @@ When no symbol at point, move point to indentation."
 	  (org-show-subtree)
 	  (search-forward myline nil t nil)
 	  (recenter-top-bottom vhdl-tools-recenter-nb-lines)
-	  (back-to-indentation)
-	  (when (region-active-p) (keyboard-quit)))
+	  (back-to-indentation))
       (message (format "no %s file exists" myfile)))))
 
 ;;;; VOrg to VHDL
 
 ;;;###autoload
 (defun vhdl-tools-vorg-jump-from-vorg()
-  "From `vorg' file, jump to same line in `vhdl' file."
+  "From `vorg' file, jump to same line in `vhdl' file, tangling the
+code before if necessary."
   (interactive)
-  (back-to-indentation)
-  (let ((myfile (format "%s.vhd" (file-name-base)))
-	(myline (save-excursion
-		  (back-to-indentation)
-		  (set-mark-command nil)
-		  (end-of-line)
-		  (buffer-substring-no-properties (region-beginning)
-						  (region-end)))))
-    (when (file-exists-p myfile)
-      (find-file myfile)
+  (call-interactively 'vhdl-tools-vorg-tangle)
+  (let ((vhdlfile (format "%s.vhd" (file-name-base)))
+	;; store current line
+	(myline (vhdl-tools-vorg-get-current-line)))
+    (when (file-exists-p vhdlfile)
+      (find-file vhdlfile)
       (goto-char (point-min))
       (when vhdl-tools-use-outshine
 	(outline-next-heading))
@@ -643,58 +640,69 @@ When no symbol at point, move point to indentation."
 	(vhdl-tools--fold)
 	(search-forward myline nil t nil)
 	(recenter-top-bottom vhdl-tools-recenter-nb-lines)
-	(back-to-indentation))))
-  (when (region-active-p) (keyboard-quit)))
+	(back-to-indentation)))))
+
+;;;; VOrg to module
+
+;;;###autoload
+(defun vhdl-tools-vorg-jump-from-vorg-into-module()
+  "From `vorg' file, jump to same line in `vhdl' file, tangling the
+code before if necessary, then jump into module."
+  (interactive)
+  (vhdl-tools-vorg-jump-from-vorg)
+  (vhdl-tools-jump-into-module))
 
 ;;;; VOrg tangle
 
 ;;;###autoload
-(defun vhdl-tools-vorg-tangle (myfile)
-  "Tangle a `vorg' `MYFILE' file to its corresponding `vhdl' file."
+(defun vhdl-tools-vorg-tangle (orgfile)
+  "Tangle a `vorg' `ORGFILE' file to its corresponding `vhdl' file."
   (interactive (list (format "%s.org" (file-name-base))))
-  (when (region-active-p) (keyboard-quit))
-  (let ((org-babel-tangle-uncomment-comments nil)
-	;; sets the "comments:link" header arg
-	;; possible as this is constant header arg, not dynamic with code block
-	(org-babel-default-header-args
-	 (if vhdl-tools-vorg-tangle-comments-link
-	     (cons '(:comments . "link")
-		   (assq-delete-all :comments org-babel-default-header-args))
-	   org-babel-default-header-args))
-	(org-babel-tangle-comment-format-beg
-	 (format "%s %s" vhdl-tools-vorg-tangle-comment-format-beg
-		 org-babel-tangle-comment-format-beg))
-	(org-babel-tangle-comment-format-end
-	 (format "%s %s" vhdl-tools-vorg-tangle-comment-format-end
-		 org-babel-tangle-comment-format-end))
-	(myfilename (format "%s.vhd" (file-name-base myfile))))
-    (if (or (not (file-exists-p myfilename))
-	    (file-newer-than-file-p myfile myfilename))
-	;; tangle, beautify and jump to tangled file only when there are tangled blocks
-	(when (org-babel-tangle-file myfile myfilename "vhdl")
-	  ;; When tangling the org file, this code helps to auto set proper
-	  ;; indentation, whitespace fixup, alignment, and case fixing to entire
-	  ;; exported buffer
-	  (message (format "File %s tangled to %s." myfile myfilename))
-	  (org-babel-with-temp-filebuffer myfilename
-	    (vhdl-beautify-buffer)
-	    (save-buffer)))
-      (message (format "File %s NOT tangled to %s." myfile myfilename)))
-    (when (and (called-interactively-p 'interactive)
-	       (file-exists-p myfilename))
-      (call-interactively 'vhdl-tools-vorg-jump-from-vorg))))
+  (let ((vhdlfile (format "%s.vhd" (file-name-base orgfile))))
+    (if (or (file-newer-than-file-p orgfile vhdlfile)
+	    (not (file-exists-p vhdlfile)))
+	;; do tangle
+	(let ((org-babel-tangle-uncomment-comments nil)
+	      ;; sets the "comments:link" header arg
+	      ;; possible as this is constant header arg, not dynamic with code block
+	      (org-babel-default-header-args
+	       (if vhdl-tools-vorg-tangle-comments-link
+		   (cons '(:comments . "link")
+			 (assq-delete-all :comments org-babel-default-header-args))
+		 org-babel-default-header-args))
+	      (org-babel-tangle-comment-format-beg
+	       (format "%s %s" vhdl-tools-vorg-tangle-comment-format-beg
+		       org-babel-tangle-comment-format-beg))
+	      (org-babel-tangle-comment-format-end
+	       (format "%s %s" vhdl-tools-vorg-tangle-comment-format-end
+		       org-babel-tangle-comment-format-end)))
+	  ;; tangle and beautify the tangled file only when there are tangled blocks
+	  (when (org-babel-tangle-file orgfile vhdlfile "vhdl")
+	    (when vhdl-tools-verbose
+	      (message (format "File %s tangled to %s." orgfile vhdlfile)))
+	    ;; When tangling the org file, this code helps to auto set proper
+	    ;; indentation, whitespace fixup, alignment, and case fixing to entire
+	    ;; exported buffer
+	    (org-babel-with-temp-filebuffer vhdlfile
+	      (vhdl-beautify-buffer)
+	      (vhdl-beautify-buffer)
+	      (save-buffer))))
+      ;; don't tangle
+      (when vhdl-tools-verbose
+	(message (format "File %s NOT tangled to %s." orgfile vhdlfile))))))
 
 ;;;###autoload
 (defun vhdl-tools-vorg-tangle-all ()
   "Tangle all `vorg' files in current dir to its corresponding `vhdl' file."
   (interactive)
   (let ((vc-follow-symlinks nil)
+	(vhdl-tools-verbose t)
 	(org-global-properties
 	 '(("header-args:vhdl" . ":prologue (vhdl-tools-vorg-prologue-header-argument) :tangle (vhdl-tools-vorg-tangle-header-argument)"))))
     (loop for thisfile in (file-expand-wildcards "*.org") do
 	  (unless (or (string-match "readme" thisfile)
 		      (and (file-exists-p (format "%s.el" (file-name-base thisfile)))
-			   (not (file-newer-than-file-p this (format "%s.el" (file-name-base thisfile))))))
+			   (not (file-newer-than-file-p thisfile (format "%s.el" (file-name-base thisfile))))))
 	    (vhdl-tools-vorg-tangle thisfile)))))
 
 ;;;; VOrg source editing beautify
@@ -722,13 +730,36 @@ Beautifies source code blocks before editing."
 
 ;; Ancillary functions
 
+
+(defun vhdl-tools-vorg-get-current-line ()
+  "Send current line avoiding any comments."
+  (save-excursion
+    (back-to-indentation)
+    (let ((vhdl-tools-vorg-line-beginning (point)))
+      ;; check there is a comment in current line
+      (if (let ((maxposition (save-excursion
+			       (end-of-line)
+			       (point))))
+	    (save-excursion
+	      (re-search-forward "--" maxposition t)))
+	  (progn
+	    (re-search-forward "--")
+	    (re-search-backward " ")
+	    ;; previous non whitespace character
+	    (re-search-backward "\\S-"))
+	(end-of-line))
+      (buffer-substring-no-properties
+       vhdl-tools-vorg-line-beginning
+       (point)))))
+
 (defun vhdl-tools-vorg-tangle-header-argument ()
   "To be used as def argument to `tangle' in source block header."
   (if (let ((mytags (org-get-tags-at (point) t)))
 	(or (member vhdl-tools-vorg-tangle-header-argument-var mytags)
 	    (null mytags)))
       (format "%s.vhd" (file-name-base
-			(buffer-file-name))) "no"))
+			(buffer-file-name)))
+    "no"))
 
 (defun vhdl-tools-vorg-prologue-header-argument ()
   "To be used as def argument to `prologue' in source block header."
@@ -758,14 +789,10 @@ Beautifies source code blocks before editing."
 ;;;; Link Store
 
 ;;;###autoload
-(defun vhdl-tools-store-link()
+(defun vhdl-tools-store-link ()
   "Store current line as a link."
   (interactive)
-  (let* ((myline (save-excursion
-		   (back-to-indentation)
-		   (set-mark-command nil)
-		   (end-of-line)
-		   (buffer-substring-no-properties (region-beginning) (region-end))))
+  (let* ((myline (vhdl-tools-vorg-get-current-line))
 	 (myentity (save-excursion
 		     (search-backward-regexp "entity")
 		     (forward-word)
@@ -1068,9 +1095,11 @@ Key bindings:
 	    (setq vhdl-tools--ggtags-active ggtags-mode)
 	    (ggtags-mode 1)
 	    ;; notify
-	    (message "VHDL Tools enabled."))
+	    (when vhdl-tools-verbose
+	      (message "VHDL Tools enabled.")))
 	;; not gtags files available
-	(message "VHDL Tools NOT enabled."))
+	(when vhdl-tools-verbose
+	  (message "VHDL Tools NOT enabled.")))
     ;; disable
     (progn
       (when vhdl-tools-remap-smartscan
@@ -1085,7 +1114,8 @@ Key bindings:
 	;; custom outline regexp
 	(setq-local outline-regexp vhdl-tools--outline-regexp-old))
       ;; notify
-      (message "VHDL Tools disabled."))))
+      (when vhdl-tools-verbose
+	(message "VHDL Tools disabled.")))))
 
 
 ;;; Minor Mode - vOrg
@@ -1095,6 +1125,7 @@ Key bindings:
 (defvar vhdl-tools-vorg-map
   (let ((m (make-sparse-keymap)))
     (define-key m (kbd "C-c M-,") #'vhdl-tools-vorg-jump-from-vorg)
+    (define-key m (kbd "C-c M-.") #'vhdl-tools-vorg-jump-from-vorg-into-module)
     (define-key m [remap org-babel-tangle] #'vhdl-tools-vorg-tangle)
     (define-key m (kbd "C-c C-v _") #'vhdl-tools-vorg-tangle-all)
     (define-key m (kbd "C-c C-n") #'vhdl-tools-vorg-headings-next)
@@ -1126,11 +1157,13 @@ Key bindings:
 	    #'vhdl-tools-vorg-smcn-next)
 	  (define-key vhdl-tools-vorg-map [remap smartscan-symbol-go-backward]
 	    #'vhdl-tools-vorg-smcn-prev))
-	(message "VHDL Tools Vorg enabled.")
+	(when vhdl-tools-verbose
+	  (message "VHDL Tools Vorg enabled."))
 	(add-hook 'org-src-mode-hook 'vhdl-tools-vorg-src-edit-beautify))
     ;; disable
     (progn
-      (message "VHDL Tools Vorg disabled.")
+      (when vhdl-tools-verbose
+	(message "VHDL Tools Vorg disabled."))
       (remove-hook 'org-src-mode-hook 'vhdl-tools-vorg-src-edit-beautify))))
 
 (provide 'vhdl-tools)
