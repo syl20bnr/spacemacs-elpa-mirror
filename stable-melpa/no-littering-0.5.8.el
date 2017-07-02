@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/tarsius/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 0.5.7
+;; Package-Version: 0.5.8
 
 ;; This file is not part of GNU Emacs.
 
@@ -194,6 +194,7 @@ This variable has to be set before `no-littering' is loaded.")
     (eval-after-load 'desktop
       `(make-directory ,(var "desktop/") t))
     (setq desktop-path                     (list (var "desktop/")))
+    (setq epkg-repository                  (var "epkgs/"))
     (setq eshell-directory-name            (var "eshell/"))
     (eval-after-load 'eww
       `(make-directory ,(var "eww/") t))
@@ -214,6 +215,7 @@ This variable has to be set before `no-littering' is loaded.")
       `(make-directory ,(var "org/") t))
     (setq org-clock-persist-file           (var "org/clock-persist.el"))
     (setq org-id-locations-file            (var "org/id-locations.el"))
+    (setq org-publish-timestamp-directory  (var "org/timestamps/"))
     (setq org-registry-file                (var "org/registry.el"))
     (setq recentf-save-file                (var "recentf-save.el"))
     (setq save-place-file                  (var "save-place.el"))
@@ -263,6 +265,7 @@ directories."
     (setq helm-adaptive-history-file       (var "helm/adaptive-history.el"))
     (setq helm-github-stars-cache-file     (var "helm/github-stars-cache.el"))
     (setq historian-save-file              (var "historian-save.el"))
+    (setq indium-workspace-file            (var "indium/workspaces.el"))
     (setq irony-user-dir                   (var "irony/"))
     (setq jabber-avatar-cache-directory    (var "jabber/avatar-cache"))
     (eval-after-load 'jabber
@@ -270,6 +273,8 @@ directories."
     (setq jabber-history-dir               (var "jabber/history"))
     (eval-after-load 'jabber
       `(make-directory ,(var "jabber/history/") t))
+    (setq magithub-dir                     (var "magithub/"))
+    (setq magithub-cache-file              (var "magithub/cache.el"))
     (setq mc/list-file                     (var "mc-list.el"))
     (setq multi-compile-history-file       (var "multi-compile-history.el"))
     (setq org-gcal-dir                     (var "org/gcal/"))
@@ -294,6 +299,7 @@ directories."
     (eval-after-load 'sx
       `(make-directory ,(var "sx/cache/") t))
     (setq sx-cache-directory               (var "sx/cache/"))
+    (setq tldr-directory-path              (var "tldr/")
     (setq undo-tree-history-directory-alist (list (cons "." (var "undo-tree-hist/"))))
     (setq user-emacs-ensime-directory      (var "ensime/"))
     (eval-after-load 'xkcd

@@ -5,9 +5,9 @@
 ;; Author: Henrik Lissner <http://github/hlissner>
 ;; Maintainer: Henrik Lissner <henrik@lissner.net>
 ;; Created: December 5, 2014
-;; Modified: June 23, 2017
-;; Version: 2.0.8
-;; Package-Version: 20170630.1401
+;; Modified: July 02, 2017
+;; Version: 2.0.9
+;; Package-Version: 20170702.302
 ;; Keywords: emulation, vim, evil, sneak, seek
 ;; Homepage: https://github.com/hlissner/evil-snipe
 ;; Package-Requires: ((emacs "24.4") (evil "1.2.12") (cl-lib "0.5"))
@@ -133,7 +133,7 @@ mode use:
                        (regexp :tag "Pattern"))))
 (define-obsolete-variable-alias 'evil-snipe-symbol-groups 'evil-snipe-aliases "v2.0.0")
 
-(defcustom evil-snipe-disabled-modes '()
+(defcustom evil-snipe-disabled-modes '(magit-mode)
   "A list of modes in which the global evil-snipe minor modes
 will not be turned on."
   :group 'evil-snipe
@@ -341,13 +341,13 @@ or behind it if COUNT is negative."
 
 (defun evil-snipe--cleanup ()
   "Disables overlays and cleans up after evil-snipe."
-  (when evil-snipe-local-mode
-    (remove-overlays nil nil 'category 'evil-snipe))
-  (remove-hook 'pre-command-hook #'evil-snipe--cleanup))
+  (when (or evil-snipe-local-mode evil-snipe-override-local-mode)
+    (remove-overlays nil nil 'category 'evil-snipe)
+    (remove-hook 'pre-command-hook #'evil-snipe--cleanup)))
 
 (defun evil-snipe--disable-transient-map ()
   "Disable lingering transient map, if necessary."
-  (when (and evil-snipe-local-mode (functionp evil-snipe--transient-map-func))
+  (when (functionp evil-snipe--transient-map-func)
     (funcall evil-snipe--transient-map-func)
     (setq evil-snipe--transient-map-func nil)))
 
@@ -587,15 +587,17 @@ be inclusive or exclusive."
 (defun turn-on-evil-snipe-mode ()
   "Enable evil-snipe-mode in the current buffer."
   (unless (or (minibufferp)
+              (eq major-mode 'fundamental-mode)
               (apply #'derived-mode-p evil-snipe-disabled-modes))
-    (evil-snipe-local-mode 1)))
+    (evil-snipe-local-mode +1)))
 
 ;;;###autoload
 (defun turn-on-evil-snipe-override-mode ()
   "Enable evil-snipe-mode in the current buffer."
   (unless (or (minibufferp)
+              (eq major-mode 'fundamental-mode)
               (apply #'derived-mode-p evil-snipe-disabled-modes))
-    (evil-snipe-override-local-mode 1)))
+    (evil-snipe-override-local-mode +1)))
 
 ;;;###autoload
 (defun turn-off-evil-snipe-mode ()
@@ -607,20 +609,16 @@ be inclusive or exclusive."
   "Disable evil-snipe-override-mode in the current buffer."
   (evil-snipe-override-local-mode -1))
 
+(when (fboundp 'advice-add)
+  (advice-add #'evil-force-normal-state :before #'evil-snipe--cleanup))
+(add-hook 'evil-insert-state-entry-hook #'evil-snipe--disable-transient-map)
+
 ;;;###autoload
 (define-minor-mode evil-snipe-local-mode
   "evil-snipe minor mode."
   :lighter " snipe"
   :keymap evil-snipe-mode-map
-  :group 'evil-snipe
-  (cond (evil-snipe-local-mode
-         (when (fboundp 'advice-add)
-           (advice-add #'evil-force-normal-state :before #'evil-snipe--cleanup))
-         (add-hook 'evil-insert-state-entry-hook #'evil-snipe--disable-transient-map nil t))
-        (t
-         (when (fboundp 'advice-remove)
-           (advice-remove #'evil-force-normal-state #'evil-snipe--cleanup))
-         (remove-hook 'evil-insert-state-entry-hook #'evil-snipe--disable-transient-map t))))
+  :group 'evil-snipe)
 
 ;;;###autoload
 (define-minor-mode evil-snipe-override-local-mode

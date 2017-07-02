@@ -5,7 +5,7 @@
 ;; Author: Ben Hayden <hayden767@gmail.com>
 ;; Maintainer: Glynn Forrest <me@glynnforrest.com>
 ;; URL: https://github.com/glynnforrest/salt-mode
-;; Package-Version: 20170701.1800
+;; Package-Version: 20170701.2116
 ;; Keywords: languages
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "24.4") (yaml-mode "0.0.12") (mmm-mode "0.5.4") (mmm-jinja2 "0.1"))
@@ -164,8 +164,8 @@ backward one state function definition."
 
 (defun salt-mode--state-module-at-point ()
   "Get the state module at point, either pkg or pkg.installed, or return nil."
-  (let ((thing (or (thing-at-point 'salt-mode-state-function)
-                   (thing-at-point 'salt-mode-state-module))))
+  (let ((thing (or (thing-at-point 'salt-mode-state-function t)
+                   (thing-at-point 'salt-mode-state-module t))))
     (unless thing
       (save-excursion
         (beginning-of-line)
@@ -181,7 +181,7 @@ backward one state function definition."
           (unless (thing-at-point 'salt-mode-state-function)
               ;; no module on this line, try jumping backwards to the last state function
               (ignore-errors (salt-mode-backward-state-function)))
-          (setq thing (thing-at-point 'salt-mode-state-function)))))
+          (setq thing (thing-at-point 'salt-mode-state-function t)))))
     thing))
 
 (defconst salt-mode--query-template "
