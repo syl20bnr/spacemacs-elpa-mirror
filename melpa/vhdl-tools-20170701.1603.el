@@ -8,15 +8,15 @@
 ;; Original author:  wandad guscheh <wandad.guscheh@fh-hagenberg.at>
 ;; Author:           Cayetano Santos
 ;; Keywords: vhdl
-;; Package-Version: 20170508.735
+;; Package-Version: 20170701.1603
 
 ;; Filename: vhdl-tools.el
 ;; Description: Utilities for navigating vhdl sources.
 ;; URL: https://csantosb.github.io/vhdl-tools/
 ;; Keywords: convenience
-;; Compatibility: GNU Emacs >= 25.1
-;; Version: 5.5
-;; Package-Requires: ((ggtags "0.8.12") (emacs "25.1") (outshine "2.0") (helm "2.6.0"))
+;; Compatibility: GNU Emacs >= 25.2
+;; Version: 5.6
+;; Package-Requires: ((ggtags "0.8.12") (emacs "25.2") (outshine "2.0") (helm "2.8.0"))
 
 ;;; License:
 ;;
@@ -134,6 +134,10 @@
   :type 'boolean :group 'vhdl-tools-vorg)
 
 ;;;;; tools
+
+(defcustom vhdl-tools-verbose nil
+  "Make `vhdl-tools' verbose."
+  :type 'boolean :group 'vhdl-tools)
 
 (defcustom vhdl-tools-allowed-chars-in-signal "a-z0-9A-Z_"
   "Regexp with allowed characters in signal, constant or function.
@@ -638,6 +642,16 @@ code before if necessary."
 	(recenter-top-bottom vhdl-tools-recenter-nb-lines)
 	(back-to-indentation)))))
 
+;;;; VOrg to module
+
+;;;###autoload
+(defun vhdl-tools-vorg-jump-from-vorg-into-module()
+  "From `vorg' file, jump to same line in `vhdl' file, tangling the
+code before if necessary, then jump into module."
+  (interactive)
+  (vhdl-tools-vorg-jump-from-vorg)
+  (vhdl-tools-jump-into-module))
+
 ;;;; VOrg tangle
 
 ;;;###autoload
@@ -647,6 +661,7 @@ code before if necessary."
   (let ((vhdlfile (format "%s.vhd" (file-name-base orgfile))))
     (if (or (file-newer-than-file-p orgfile vhdlfile)
 	    (not (file-exists-p vhdlfile)))
+	;; do tangle
 	(let ((org-babel-tangle-uncomment-comments nil)
 	      ;; sets the "comments:link" header arg
 	      ;; possible as this is constant header arg, not dynamic with code block
@@ -663,18 +678,17 @@ code before if necessary."
 		       org-babel-tangle-comment-format-end)))
 	  ;; tangle and beautify the tangled file only when there are tangled blocks
 	  (when (org-babel-tangle-file orgfile vhdlfile "vhdl")
+	    (when vhdl-tools-verbose
+	      (message (format "File %s tangled to %s." orgfile vhdlfile)))
 	    ;; When tangling the org file, this code helps to auto set proper
 	    ;; indentation, whitespace fixup, alignment, and case fixing to entire
 	    ;; exported buffer
-	    (message (format "File %s tangled to %s." orgfile vhdlfile))
 	    (org-babel-with-temp-filebuffer vhdlfile
 	      (vhdl-beautify-buffer)
-	      (save-buffer)))
-	  ;; avoid noise when not called as a command
-	  (when (called-interactively-p 'interactive)
-	    (message (format "File %s NOT tangled to %s." orgfile vhdlfile))))
-      ;; avoid noise when not called as a command
-      (when (called-interactively-p 'interactive)
+	      (vhdl-beautify-buffer)
+	      (save-buffer))))
+      ;; don't tangle
+      (when vhdl-tools-verbose
 	(message (format "File %s NOT tangled to %s." orgfile vhdlfile))))))
 
 ;;;###autoload
@@ -682,12 +696,13 @@ code before if necessary."
   "Tangle all `vorg' files in current dir to its corresponding `vhdl' file."
   (interactive)
   (let ((vc-follow-symlinks nil)
+	(vhdl-tools-verbose t)
 	(org-global-properties
 	 '(("header-args:vhdl" . ":prologue (vhdl-tools-vorg-prologue-header-argument) :tangle (vhdl-tools-vorg-tangle-header-argument)"))))
     (loop for thisfile in (file-expand-wildcards "*.org") do
 	  (unless (or (string-match "readme" thisfile)
 		      (and (file-exists-p (format "%s.el" (file-name-base thisfile)))
-			   (not (file-newer-than-file-p this (format "%s.el" (file-name-base thisfile))))))
+			   (not (file-newer-than-file-p thisfile (format "%s.el" (file-name-base thisfile))))))
 	    (vhdl-tools-vorg-tangle thisfile)))))
 
 ;;;; VOrg source editing beautify
@@ -743,7 +758,8 @@ Beautifies source code blocks before editing."
 	(or (member vhdl-tools-vorg-tangle-header-argument-var mytags)
 	    (null mytags)))
       (format "%s.vhd" (file-name-base
-			(buffer-file-name))) "no"))
+			(buffer-file-name)))
+    "no"))
 
 (defun vhdl-tools-vorg-prologue-header-argument ()
   "To be used as def argument to `prologue' in source block header."
@@ -1079,9 +1095,11 @@ Key bindings:
 	    (setq vhdl-tools--ggtags-active ggtags-mode)
 	    (ggtags-mode 1)
 	    ;; notify
-	    (message "VHDL Tools enabled."))
+	    (when vhdl-tools-verbose
+	      (message "VHDL Tools enabled.")))
 	;; not gtags files available
-	(message "VHDL Tools NOT enabled."))
+	(when vhdl-tools-verbose
+	  (message "VHDL Tools NOT enabled.")))
     ;; disable
     (progn
       (when vhdl-tools-remap-smartscan
@@ -1096,7 +1114,8 @@ Key bindings:
 	;; custom outline regexp
 	(setq-local outline-regexp vhdl-tools--outline-regexp-old))
       ;; notify
-      (message "VHDL Tools disabled."))))
+      (when vhdl-tools-verbose
+	(message "VHDL Tools disabled.")))))
 
 
 ;;; Minor Mode - vOrg
@@ -1106,6 +1125,7 @@ Key bindings:
 (defvar vhdl-tools-vorg-map
   (let ((m (make-sparse-keymap)))
     (define-key m (kbd "C-c M-,") #'vhdl-tools-vorg-jump-from-vorg)
+    (define-key m (kbd "C-c M-.") #'vhdl-tools-vorg-jump-from-vorg-into-module)
     (define-key m [remap org-babel-tangle] #'vhdl-tools-vorg-tangle)
     (define-key m (kbd "C-c C-v _") #'vhdl-tools-vorg-tangle-all)
     (define-key m (kbd "C-c C-n") #'vhdl-tools-vorg-headings-next)
@@ -1137,11 +1157,13 @@ Key bindings:
 	    #'vhdl-tools-vorg-smcn-next)
 	  (define-key vhdl-tools-vorg-map [remap smartscan-symbol-go-backward]
 	    #'vhdl-tools-vorg-smcn-prev))
-	(message "VHDL Tools Vorg enabled.")
+	(when vhdl-tools-verbose
+	  (message "VHDL Tools Vorg enabled."))
 	(add-hook 'org-src-mode-hook 'vhdl-tools-vorg-src-edit-beautify))
     ;; disable
     (progn
-      (message "VHDL Tools Vorg disabled.")
+      (when vhdl-tools-verbose
+	(message "VHDL Tools Vorg disabled."))
       (remove-hook 'org-src-mode-hook 'vhdl-tools-vorg-src-edit-beautify))))
 
 (provide 'vhdl-tools)
