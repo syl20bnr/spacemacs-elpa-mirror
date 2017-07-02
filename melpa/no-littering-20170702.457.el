@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/tarsius/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 0.5.8
+;; Package-Version: 20170702.457
 
 ;; This file is not part of GNU Emacs.
 
@@ -299,7 +299,7 @@ directories."
     (eval-after-load 'sx
       `(make-directory ,(var "sx/cache/") t))
     (setq sx-cache-directory               (var "sx/cache/"))
-    (setq tldr-directory-path              (var "tldr/")
+    (setq tldr-directory-path              (var "tldr/"))
     (setq undo-tree-history-directory-alist (list (cons "." (var "undo-tree-hist/"))))
     (setq user-emacs-ensime-directory      (var "ensime/"))
     (eval-after-load 'xkcd

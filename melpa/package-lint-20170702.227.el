@@ -5,7 +5,7 @@
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;;         Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/purcell/package-lint
-;; Package-Version: 20170624.1712
+;; Package-Version: 20170702.227
 ;; Keywords: lisp
 ;; Version: 0
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
@@ -188,6 +188,8 @@ This is bound dynamically while the checks run.")
           directory-name-p
           file-notify-valid-p
           filepos-to-bufferpos
+          font-lock-ensure
+          font-lock-flush
           format-message
           forward-word-strictly
           frame-edges

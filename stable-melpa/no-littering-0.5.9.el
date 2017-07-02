@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/tarsius/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 20170621.1348
+;; Package-Version: 0.5.9
 
 ;; This file is not part of GNU Emacs.
 
@@ -215,6 +215,7 @@ This variable has to be set before `no-littering' is loaded.")
       `(make-directory ,(var "org/") t))
     (setq org-clock-persist-file           (var "org/clock-persist.el"))
     (setq org-id-locations-file            (var "org/id-locations.el"))
+    (setq org-publish-timestamp-directory  (var "org/timestamps/"))
     (setq org-registry-file                (var "org/registry.el"))
     (setq recentf-save-file                (var "recentf-save.el"))
     (setq save-place-file                  (var "save-place.el"))
@@ -298,6 +299,7 @@ directories."
     (eval-after-load 'sx
       `(make-directory ,(var "sx/cache/") t))
     (setq sx-cache-directory               (var "sx/cache/"))
+    (setq tldr-directory-path              (var "tldr/"))
     (setq undo-tree-history-directory-alist (list (cons "." (var "undo-tree-hist/"))))
     (setq user-emacs-ensime-directory      (var "ensime/"))
     (eval-after-load 'xkcd

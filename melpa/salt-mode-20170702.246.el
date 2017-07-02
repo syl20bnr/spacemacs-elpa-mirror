@@ -5,7 +5,7 @@
 ;; Author: Ben Hayden <hayden767@gmail.com>
 ;; Maintainer: Glynn Forrest <me@glynnforrest.com>
 ;; URL: https://github.com/glynnforrest/salt-mode
-;; Package-Version: 20170701.2116
+;; Package-Version: 20170702.246
 ;; Keywords: languages
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "24.4") (yaml-mode "0.0.12") (mmm-mode "0.5.4") (mmm-jinja2 "0.1"))
@@ -467,6 +467,11 @@ https://docs.saltstack.com/en/latest/ref/states/top.html")
   "Face for Salt minion match types."
   :group 'salt)
 
+(defface salt-mode-file-source-face
+  '((t (:inherit font-lock-builtin-face)))
+  "Face for salt:// in Salt file sources."
+  :group 'salt)
+
 (defconst salt-mode-keywords
   `((,(format "^%s:" (regexp-opt salt-mode-toplevel-keywords t))
      (1 'salt-mode-keyword-face))
@@ -476,6 +481,8 @@ https://docs.saltstack.com/en/latest/ref/states/top.html")
      (1 'salt-mode-state-id-face))
     ("^ +\\([a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*\\):?"
      (1 'salt-mode-state-function-face))
+    (": *\\(salt://\\)"
+     (1 'salt-mode-file-source-face))
     ;; TODO:
     ;; - Match state IDs in extend: forms and requisite lists.
     ;; - Don't match requisites unless they're under functions.
@@ -514,7 +521,10 @@ https://docs.saltstack.com/en/latest/ref/states/top.html")
          ((equal (file-name-nondirectory buffer-file-name) "top.sls")
           salt-mode-top-file-keywords)
          (t salt-mode-keywords)))
-  (font-lock-flush))
+  (if (fboundp 'font-lock-flush)
+      (font-lock-flush)
+    ;; use defontify as a fallback in emacs 24
+    (font-lock-defontify)))
 
 (add-to-list 'mmm-set-file-name-for-modes 'salt-mode)
 (mmm-add-mode-ext-class 'salt-mode "\\.sls\\'" 'jinja2)
