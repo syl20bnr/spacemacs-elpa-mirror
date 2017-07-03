@@ -17,6 +17,7 @@ See the project home page for more information.
 (require 'flycheck)
 (require 's)
 (require 'shut-up)
+(require 'f)
 
 (require 'omnisharp-server-management)
 (require 'omnisharp-utils)
@@ -29,3 +30,4 @@ See the project home page for more information.
 (require 'omnisharp-helm-integration)
 (require 'omnisharp-solution-actions)
 (require 'omnisharp-format-actions)
+(require 'omnisharp-server-installation)
