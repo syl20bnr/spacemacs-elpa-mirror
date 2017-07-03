@@ -14,8 +14,6 @@ To roll generic dice, use the function decide-roll-dice. It will
 ask for what roll to make, something like 2d6 or 3d10+2 or 2d12-1.
 The default if nothing is input, or nothing that can be parsed
 properly as a dice specification, 1d6 is rolled.
-Also understood are dA (or da) for average-dice (d6 numbered 2, 3, 3, 4, 4, 5)
-and dF (or df) for Fudge/FATE dice (d6 labeled +, +, 0, 0, -, -).
 M-p and M-n can be used to navigate history to re-roll.
 Rolling dice is bound to ? d when decide-mode is active.
 Some common and less common die-rolls have their own key-bindings
@@ -33,6 +31,16 @@ enabled per default in decide-mode:
 ? 2 0 -> 1d20
 ? % -> 1d100
 ? D -> 2d6
+
+Custom dice can be defined in the decide-custom-dice alist. By default it
+contains configuration for dA (average-dice, d6 numbered 2, 3, 3, 4, 4, 5)
+and dF (Fudge/FATE dice, d6 labeled +, +, 0, 0, -, -). Custom dice names
+are not case sensitive (avoid having dice with the same name only differing
+in case). Each custom dice side has a string
+label and an optional value that is used (if it exists) to calculate the sum
+of rolling multiple dice of that type. There are some pre-defined
+key-bindings in decide-mode for the included custom dice:
+
 ? f -> 4dF
 ? a -> 1dA
 ? A -> 2dA

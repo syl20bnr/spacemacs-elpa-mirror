@@ -1,9 +1,9 @@
 ;;; decide.el --- rolling dice and other random things
-;; Copyright 2016 Pelle Nilsson
+;; Copyright 2016, 2017 Pelle Nilsson et al
 ;;
 ;; Author: Pelle Nilsson <perni@lysator.liu.se>
-;; Version: 0.5
-;; Package-Version: 20160314.1248
+;; Version: 0.7
+;; Package-Version: 0.7
 ;;
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -36,8 +36,6 @@
 ;; ask for what roll to make, something like 2d6 or 3d10+2 or 2d12-1.
 ;; The default if nothing is input, or nothing that can be parsed
 ;; properly as a dice specification, 1d6 is rolled.
-;; Also understood are dA (or da) for average-dice (d6 numbered 2, 3, 3, 4, 4, 5)
-;; and dF (or df) for Fudge/FATE dice (d6 labeled +, +, 0, 0, -, -).
 ;; M-p and M-n can be used to navigate history to re-roll.
 ;; Rolling dice is bound to ? d when decide-mode is active.
 ;; Some common and less common die-rolls have their own key-bindings
@@ -55,6 +53,16 @@
 ;; ? 2 0 -> 1d20
 ;; ? % -> 1d100
 ;; ? D -> 2d6
+;;
+;; Custom dice can be defined in the decide-custom-dice alist. By default it
+;; contains configuration for dA (average-dice, d6 numbered 2, 3, 3, 4, 4, 5)
+;; and dF (Fudge/FATE dice, d6 labeled +, +, 0, 0, -, -). Custom dice names
+;; are not case sensitive (avoid having dice with the same name only differing
+;; in case). Each custom dice side has a string
+;; label and an optional value that is used (if it exists) to calculate the sum
+;; of rolling multiple dice of that type. There are some pre-defined
+;; key-bindings in decide-mode for the included custom dice:
+;;
 ;; ? f -> 4dF
 ;; ? a -> 1dA
 ;; ? A -> 2dA
@@ -120,12 +128,12 @@
 ;; To just type a question-mark (?) press ? immediately followed by
 ;; space or enter. (Or quote the ? key normally, ie C-q ?).
 ;;
-
 ;;; Code:
 
 (defvar decide-mode-map (make-sparse-keymap)
   "Keymap for decide minor mode.")
 
+;;;###autoload
 (define-minor-mode decide-mode
   "Minor mode for making  decisions.
 \\<decide-mode-map"
@@ -150,13 +158,25 @@
                          "example-dragon-prefix~dragon"
                          "2-3 example-dragon-prefix~dragons"
                          "example-dragon-prefix~dragon"
-                         "dragon named 2d~6"
                          "2d4~-headed dragon"
                          "1d3+1 dragons"))
     ("example-dragon-prefix" . ("" "ice " "undead " "epic " "old "
                                 "semi-" "cute " "ugly ")))
   "Alist specifying tables used for the decide-from-table function.")
 
+(defvar decide-custom-dice
+  '(("F" . ((0 "0")
+            (-1 "-")
+            (1 "+")))
+    ("A" . ((2 "2")
+            (3 "3")
+            (3 "3")
+            (4 "4")
+            (4 "4")
+            (5 "5"))))
+  "Alist specifying custom dice for decide-roll-dice. Keys are
+  the names used when rolling dice. They are case insensitive, so
+  avoid using names that only differ in case (e.g. Hi and HI).")
 (setq decide-for-me-dice
       (let ((ya "YES+")
             (y "YES")
@@ -176,20 +196,16 @@
     (nth (random (length die)) die)))
 
 (defun decide-for-me-result (name result)
-  (concatenate 'string
-               (if name
-                   (concatenate 'string "["
-                                name
-                                "] ")
-                 ""
-                 )
-               "-> "
-               result
-               "\n"))
+  (concat (if name
+            (concat "[" name "] ")
+            "")
+          "-> "
+          result
+          "\n"))
 
 (defun decide-insert (&rest ARGS)
   (if buffer-read-only
-      (minibuffer-message (apply (apply-partially 'concatenate 'string) ARGS))
+      (minibuffer-message (apply 'concat ARGS))
     (apply 'insert ARGS)))
 
 (defun decide-for-me-likely ()
@@ -217,7 +233,7 @@
     (decide-for-me-get :unlikely))))
 
 (defun decide-range-average (&rest results)
-  (floor (+ 0.5 (/ (apply '+ (map 'list 'float results))
+  (floor (+ 0.5 (/ (apply '+ (mapcar 'float results))
                    (length results)))))
 
 (defun decide-parse-range (s)
@@ -259,7 +275,7 @@
 
 (defun decide-from-range-get (from to fn draws)
   (apply fn
-         (map 'list 'decide-from-range-draw
+         (mapcar 'decide-from-range-draw
               (make-list draws (cons from to)))))
 
 (defun decide-from-range (from to fn draws)
@@ -282,11 +298,11 @@
 (defun decide-choose-from-table-list-part (part)
   (let ((parts (split-string part " ")))
     (mapconcat 'identity
-               (map 'list 'decide-choose-from-table parts) " ")))
+               (mapcar 'decide-choose-from-table parts) " ")))
 
 (defun decide-choose-from-table-list (choice)
   (mapconcat 'identity
-             (map 'list 'decide-choose-from-table-list-part
+             (mapcar 'decide-choose-from-table-list-part
                   (split-string choice "~")) ""))
 
 (defun decide-choose-from-table-choices (choices)
@@ -354,32 +370,28 @@
   (decide-random-choice "forward,left,right,back,up,down"))
 
 (defun decide-strings-to-numbers (numbers)
-  (map 'list 'string-to-number numbers))
+  (mapcar (lambda (s)
+            (cond ((null s) 0)
+                  ((string-match "[0-9]+" s) (string-to-number s))
+                  ((equal "+" s) 0)
+                  ((equal "-" s) 0)
+                  (t s))) numbers))
 
 (defun decide-roll-custom-die (sides)
   (nth (random (length sides)) sides))
-
-(defun decide-roll-fudge-die ()
-  (decide-roll-custom-die '((0 "0")
-                            (-1 "-")
-                            (1 "+"))))
-
-(defun decide-roll-average-die ()
-  (decide-roll-custom-die '((2 "2")
-                            (3 "3")
-                            (3 "3")
-                            (4 "4")
-                            (4 "4")
-                            (5 "5"))))
 
 (defun decide-roll-number-die (faces)
   (let ((res (+ 1 (random faces))))
     (list res (format "%d" res))))
 
 (defun decide-roll-die (faces)
-  (cond ((equal faces "f") (decide-roll-fudge-die))
-        ((equal faces "a") (decide-roll-average-die))
-        (t (decide-roll-number-die faces))))
+  (cond ((stringp faces)
+         (let ((sides (cdr (assoc-string faces decide-custom-dice t))))
+           (if sides
+               (decide-roll-custom-die sides)
+             '(0 "?"))))
+        ((numberp faces)
+         (decide-roll-number-die faces))))
 
 (defun decide-roll-dice-result (nr faces)
   (if (= 0 nr)
@@ -388,15 +400,15 @@
           (decide-roll-dice-result (- nr 1) faces))))
 
 (defun decide-describe-roll (rolled)
-  (let ((first-described (format "%s" (second (first rolled)))))
+  (let ((first-described (format "%s" (cadr (car rolled)))))
     (if (= 1 (length rolled))
         first-described
       (format "%s %s"
               first-described
-              (decide-describe-roll (rest rolled))))))
+              (decide-describe-roll (cdr rolled))))))
 
 (defun decide-sum-dice-rolled (rolled mod)
-  (apply '+ (cons mod (map 'list 'first rolled))))
+  (apply '+ (cons mod (mapcar 'car rolled))))
 
 (defun decide-roll-dice-spec (nr faces mod)
   (let* ((rolled (decide-roll-dice-result nr faces))
@@ -408,37 +420,14 @@
           (format "= %d" sum))
       (format "(%s) %+d = %d" rolled-description mod sum))))
 
-(defun decide-clean-up-dice-spec-string (spec-string)
-  (let ((s (downcase spec-string)))
-    (cond ((= 0 (length s)) "")
-          ((equal "d" (substring s 0 1))
-           (concatenate 'string "1" s))
-          (t s))))
-
-(defun decide-make-dice-spec (spec-string)
+(defun decide-make-dice-spec (s)
   "eg \"1d6\" -> (1 6 0) or \"2d10+2\" -> (2 10 2) or \"4dF\" -> (4 \"f\" 0)"
-  (let ((s (decide-clean-up-dice-spec-string spec-string)))
-    (cond ((string-match "^\\([1-9][0-9]*\\)d\\([1-9][0-9]*\\)\\([+-][1-9][0-9]*\\)"
-                         s)
-           (decide-strings-to-numbers (list (match-string 1 s)
-                                            (match-string 2 s)
-                                            (match-string 3 s))))
-          ((string-match "^\\([1-9][0-9]*\\)d\\([1-9][0-9]*\\)"
-                         s)
-           (decide-strings-to-numbers (list (match-string 1 s)
-                                            (match-string 2 s)
-                                            "0")))
-          ((string-match "^\\([1-9][0-9]*\\)d\\([fa]\\)\\([+-][1-9][0-9]*\\)"
-                         s)
-           (list (string-to-number (match-string 1 s))
-                 (match-string 2 s)
-                 (string-to-number (match-string 3 s))
-                 ))
-          ((string-match "^\\([1-9][0-9]*\\)d\\([fa]\\)" s)
-           (list (string-to-number (match-string 1 s))
-                 (match-string 2 s)
-                 0))
-          (t nil))))
+  (when (string-match
+         "^\\([1-9][0-9]*\\)d\\([0-9a-zA-Z]*\\)\\([+-][0-9]*\\)?"
+         s)
+    (decide-strings-to-numbers (list (match-string 1 s)
+                                     (match-string 2 s)
+                                     (match-string 3 s)))))
 
 (defun decide-describe-dice-spec (spec)
   (let* ((mod (car (last spec)))
@@ -523,6 +512,32 @@
   (interactive)
   (decide-roll-dice "1d100"))
 
+(defun decide-find-last-ws ()
+  (save-excursion
+    (let ((p (search-backward-regexp "[\s\n(]")))
+      (if p (+ p 1) (point-min)))
+    )
+  )
+
+(defun decide-get-from-last-ws ()
+  (buffer-substring-no-properties (decide-find-last-ws) (point))
+)
+
+(defun decide-dwim-insert ()
+  "Do what I mean with last word."
+  (interactive)
+  (let* ((s (decide-get-from-last-ws))
+         (dice-spec (decide-make-dice-spec s))
+         (range-spec (decide-parse-range s))
+         )
+    (cond (dice-spec (progn
+                       (delete-backward-char (length s))
+                       (decide-roll-dice-insert dice-spec)))
+          (range-spec (progn
+                        (delete-backward-char (length s))
+                        (decide-random-range s)))
+          (t (decide-for-me-normal)))))
+
 (defun decide-question-return ()
   (interactive)
   (insert "?\n"))
@@ -535,7 +550,7 @@
 
 (define-key decide-mode-map (kbd "?") 'decide-prefix-map)
 
-(define-key decide-mode-map (kbd "? ?") 'decide-for-me-normal)
+(define-key decide-mode-map (kbd "? ?") 'decide-dwim-insert)
 (define-key decide-mode-map (kbd "? +") 'decide-for-me-likely)
 (define-key decide-mode-map (kbd "? -") 'decide-for-me-unlikely)
 

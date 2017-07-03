@@ -2,7 +2,7 @@
 
 ;; Author: Ono Hiroko (kuanyui) <azazabc123@gmail.com>
 ;; Keywords: tools, hexo
-;; Package-Version: 20170629.1933
+;; Package-Version: 20170702.1915
 ;; Package-Requires: ((emacs "24.3"))
 ;; X-URL: https://github.com/kuanyui/hexo.el
 ;; Version: {{VERSION}}
@@ -856,7 +856,7 @@ under theme/default/layout/"
               (insert "#+LAYOUT: \n#+CATEGORIES: \n")
               (goto-char 0)
               (replace-regexp "title: .+$"
-                              (format "#+TITLE: \"%s\""
+                              (format "#+TITLE: %s"
                                       (read-from-minibuffer "Article Title: "
                                                             (car minibuffer-history))))
               )

@@ -1,9 +1,9 @@
 ;;; decide.el --- rolling dice and other random things
-;; Copyright 2016, 2017 Pelle Nilsson
+;; Copyright 2016, 2017 Pelle Nilsson et al
 ;;
 ;; Author: Pelle Nilsson <perni@lysator.liu.se>
-;; Version: 0.6.1
-;; Package-Version: 0.6.1
+;; Version: 0.7
+;; Package-Version: 20170702.1617
 ;;
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -158,7 +158,6 @@
                          "example-dragon-prefix~dragon"
                          "2-3 example-dragon-prefix~dragons"
                          "example-dragon-prefix~dragon"
-                         "dragon named 2d~6"
                          "2d4~-headed dragon"
                          "1d3+1 dragons"))
     ("example-dragon-prefix" . ("" "ice " "undead " "epic " "old "
@@ -421,23 +420,14 @@
           (format "= %d" sum))
       (format "(%s) %+d = %d" rolled-description mod sum))))
 
-(defun decide-clean-up-dice-spec-string (spec-string)
-  (let ((s (downcase spec-string)))
-    (cond ((= 0 (length s)) "")
-          ((equal "d" (substring s 0 1))
-           (concat "1" s))
-          (t s))))
-
-(defun decide-make-dice-spec (spec-string)
+(defun decide-make-dice-spec (s)
   "eg \"1d6\" -> (1 6 0) or \"2d10+2\" -> (2 10 2) or \"4dF\" -> (4 \"f\" 0)"
-  (let ((s (decide-clean-up-dice-spec-string spec-string)))
-
-    (when (string-match
-           "^\\([1-9][0-9]*\\)d\\([0-9a-zA-Z]*\\)\\([+-][0-9]*\\)?"
-           s)
-      (decide-strings-to-numbers (list (match-string 1 s)
-                                       (match-string 2 s)
-                                       (match-string 3 s))))))
+  (when (string-match
+         "^\\([1-9][0-9]*\\)d\\([0-9a-zA-Z]*\\)\\([+-][0-9]*\\)?"
+         s)
+    (decide-strings-to-numbers (list (match-string 1 s)
+                                     (match-string 2 s)
+                                     (match-string 3 s)))))
 
 (defun decide-describe-dice-spec (spec)
   (let* ((mod (car (last spec)))
@@ -522,6 +512,32 @@
   (interactive)
   (decide-roll-dice "1d100"))
 
+(defun decide-find-last-ws ()
+  (save-excursion
+    (let ((p (search-backward-regexp "[\s\n(]")))
+      (if p (+ p 1) (point-min)))
+    )
+  )
+
+(defun decide-get-from-last-ws ()
+  (buffer-substring-no-properties (decide-find-last-ws) (point))
+)
+
+(defun decide-dwim-insert ()
+  "Do what I mean with last word."
+  (interactive)
+  (let* ((s (decide-get-from-last-ws))
+         (dice-spec (decide-make-dice-spec s))
+         (range-spec (decide-parse-range s))
+         )
+    (cond (dice-spec (progn
+                       (delete-backward-char (length s))
+                       (decide-roll-dice-insert dice-spec)))
+          (range-spec (progn
+                        (delete-backward-char (length s))
+                        (decide-random-range s)))
+          (t (decide-for-me-normal)))))
+
 (defun decide-question-return ()
   (interactive)
   (insert "?\n"))
@@ -534,7 +550,7 @@
 
 (define-key decide-mode-map (kbd "?") 'decide-prefix-map)
 
-(define-key decide-mode-map (kbd "? ?") 'decide-for-me-normal)
+(define-key decide-mode-map (kbd "? ?") 'decide-dwim-insert)
 (define-key decide-mode-map (kbd "? +") 'decide-for-me-likely)
 (define-key decide-mode-map (kbd "? -") 'decide-for-me-unlikely)
 
