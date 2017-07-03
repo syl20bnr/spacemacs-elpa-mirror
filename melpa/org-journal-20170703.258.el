@@ -2,7 +2,7 @@
 
 ;; Author: Bastian Bechtold
 ;; URL: http://github.com/bastibe/org-journal
-;; Package-Version: 20170221.612
+;; Package-Version: 20170703.258
 ;; Version: 1.12.0
 
 ;; Adapted from http://www.emacswiki.org/PersonalDiary
@@ -135,7 +135,8 @@ org-journal. Use org-journal-file-format instead.")
 (defcustom org-journal-date-format "%A, %x"
   "Format string for date, by default \"WEEKDAY, DATE\", where
   DATE is what Emacs thinks is an appropriate way to format days
-  in your language."
+  in your language. If you define it as a function, it is evaluated
+  and inserted."
   :type 'string :group 'org-journal)
 
 (defcustom org-journal-date-prefix "* "
@@ -272,8 +273,10 @@ Whenever a journal entry is created the
 
       ;; empty file? Add a date timestamp
       (when new-file-p
-        (insert org-journal-date-prefix
-                (format-time-string org-journal-date-format time)))
+        (if (functionp org-journal-date-format)
+            (insert (funcall org-journal-date-format time))
+          (insert org-journal-date-prefix
+                  (format-time-string org-journal-date-format time))))
 
       ;; add crypt tag if encryption is enabled and tag is not present
       (when org-journal-enable-encryption

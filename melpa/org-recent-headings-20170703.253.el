@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-recent-headings
-;; Package-Version: 20170604.1353
+;; Package-Version: 20170703.253
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "24.4") (org "9.0.5") (dash "2.13.0"))
 ;; Keywords: hypermedia, outlines, Org
@@ -128,9 +128,9 @@ an agenda buffer)."
                 org-recent-headings-mode
                 (org-recent-headings--load-list)))))
 
-(defcustom org-recent-headings-show-entry-function 'org-recent-headings--show-entry
+(defcustom org-recent-headings-show-entry-function 'org-recent-headings--show-entry-direct
   "Default function to use to show selected entries."
-  :type '(radio (function :tag "Show entries in real buffers." org-recent-headings--show-entry)
+  :type '(radio (function :tag "Show entries in real buffers." org-recent-headings--show-entry-direct)
                 (function :tag "Show entries in indirect buffers." org-recent-headings--show-entry-indirect)
                 (function :tag "Custom function")))
 
@@ -164,19 +164,34 @@ some users may prefer to just use regexp matchers."
 
 (defun org-recent-headings--compare-entries (a b)
   "Return non-nil if A and B point to the same entry."
-  ;; FIXME: Is this necessary?  Would plain `equal' work? ... It seems
-  ;; to, but I just changed to plists, so let's see if it still does...
-  (cl-destructuring-bind ((a-display . (a-file . a-regexp)) . (b-display . (b-file . b-regexp))) (cons a b)
-    (and (equal a-file b-file)
-         (equal a-regexp b-regexp))))
+  (-let (((ignore &keys :file a-file :id a-id :regexp a-regexp) a)
+         ((ignore &keys :file b-file :id b-id :regexp b-regexp) b))
+    (or
+     ;; If the Org IDs are set and are the same, the entries point to
+     ;; the same heading
+     (when (and a-id b-id)
+       (string-equal a-id b-id))
+     (and
+      ;; Otherwise, if both the file path and regexp are the same,
+      ;; they point to the same heading
+      (string-equal a-file b-file)
+      (string-equal a-regexp b-regexp)))))
 
 (defun org-recent-headings--remove-duplicates ()
   "Remove duplicates from `org-recent-headings-list'."
   (cl-delete-duplicates org-recent-headings-list
-                        :test #'equal
+                        :test #'org-recent-headings--compare-entries
                         :from-end t))
 
-(defun org-recent-headings--show-entry (real)
+(defun org-recent-headings--show-entry-default (real)
+  "Show heading specified by REAL using default function.
+Default function set in `org-recent-headings-show-entry-function'."
+  ;; This is for the Helm source, to allow it to make use of a
+  ;; customized option setting the default function.  Maybe there's a
+  ;; better way, but this works.
+  (funcall org-recent-headings-show-entry-function real))
+
+(defun org-recent-headings--show-entry-direct (real)
   "Go to heading specified by REAL.
 REAL is a plist with `:file', `:id', and `:regexp' entries.  If
 `:id' is non-nil, `:file' and `:regexp may be nil.'"
@@ -203,7 +218,7 @@ REAL is a plist with `:file', `:id', and `:regexp' entries.  If
 
 (defun org-recent-headings--show-entry-indirect (real)
   "Go to heading specified by REAL in an indirect buffer."
-  (org-recent-headings--show-entry real)
+  (org-recent-headings--show-entry-direct real)
   (org-tree-to-indirect-buffer))
 
 (defun org-recent-headings--store-heading (&rest ignore)
@@ -356,8 +371,8 @@ With prefix argument ARG, turn on if positive, otherwise off."
       :candidate-transformer 'org-recent-headings--truncate-candidates
       :keymap org-recent-headings-helm-map
       :action (helm-make-actions
-               "Show entry (default function)" org-recent-headings-show-entry-function
-               "Show entry in real buffer" 'org-recent-headings--show-entry
+               "Show entry (default function)" 'org-recent-headings--show-entry-default
+               "Show entry in real buffer" 'org-recent-headings--show-entry-direct
                "Show entry in indirect buffer" 'org-recent-headings--show-entry-indirect
                "Remove entry" 'org-recent-headings--remove-entries
                "Bookmark heading" 'org-recent-headings--bookmark-entry))
