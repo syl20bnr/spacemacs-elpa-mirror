@@ -3,10 +3,10 @@
 ;; Authors: Chris Rayner (dchrisrayner @ gmail)
 ;; Created: May 23 2011
 ;; Keywords: processes, tools
-;; Package-Version: 20170624.1454
+;; Package-Version: 0.0.7
 ;; Homepage: https://github.com/riscy/shx-for-emacs
 ;; Package-Requires: ((emacs "24.4"))
-;; Version: 0.0.6
+;; Version: 0.0.7
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -284,10 +284,9 @@ buffer's `process-mark'."
   (forward-line 0))
 
 (defun shx--search-forward (pattern)
-  "Search forward in the past for PATTERN."
-  (and (< (line-number-at-pos (point))
-          (line-number-at-pos (point-max)))
-       (re-search-forward pattern nil t)))
+  "Search forward from the current point for PATTERN."
+  (when (< (point-at-eol) (point-max))
+    (re-search-forward pattern nil t)))
 
 
 ;;; util
@@ -368,7 +367,8 @@ With non-nil WITHOUT-PREFIX, strip `shx-cmd-prefix' from each."
   (let* ((prefix (format "%s%s" shx-cmd-prefix (downcase cmd-prefix)))
          (completion (try-completion prefix obarray 'functionp)))
     (when completion
-      (intern (if (eq completion t) prefix completion)))))
+      (let ((user-cmd (intern (if (eq completion t) prefix completion))))
+        (when (functionp user-cmd) user-cmd)))))
 
 (defun shx--parse-url ()
   "Add a matched URL to `shx-urls' and make it clickable."
@@ -635,9 +635,11 @@ therefore ensure `comint-prompt-read-only' is nil."
   "(SAFE) Launch an Emacs `ediff' between FILES.
 \nExample:\n
   :diff file1.txt file2.csv"
-  (shx-insert "Invoking ediff " files "\n")
-  (shx--asynch-funcall
-   #'ediff (mapcar 'expand-file-name (shx--parse-filenames files))))
+  (let ((file-list (shx--parse-filenames files)))
+    (if (not (eq (list-length file-list) 2))
+        (shx-insert 'error "diff <file1> <file2>\n")
+      (shx-insert "Invoking ediff " files "\n")
+      (shx--asynch-funcall #'ediff (mapcar 'expand-file-name file-list)))))
 
 (defun shx-cmd-edit (file)
   "(SAFE) open FILE in the current window.
@@ -710,7 +712,8 @@ If function doesn't exist (or none is supplied), read from user."
 (defalias 'shx-cmd-h #'shx-cmd-help)
 
 (defun shx-cmd-keep (_arg)
-  "(SAFE) Put the previous command into `shx-kept-commands'."
+  "(SAFE) Add the previous command into `shx-kept-commands'.
+This enables it to be accessed later using `shx-cmd-kept'."
   (let* ((command (substring-no-properties (ring-ref comint-input-ring 1)))
          (desc (read-string (format "'%s'\nDescription: " command))))
     (if (string-empty-p desc)
@@ -721,10 +724,11 @@ If function doesn't exist (or none is supplied), read from user."
       (shx--hint "type ':kept' or ':k' to see all kept commands"))))
 
 (defun shx-cmd-kept (regexp)
-  "(SAFE) Show the `shx-kept-commands' commands matching REGEXP.
+  "(SAFE) List the \"kept\" commands that match REGEXP.\n
 Each matching command is appended to the input history, enabling
-access via \\[comint-previous-input].
-\nMemorized commands are stored in `shx-kept-commands'."
+access via \\[comint-previous-input] and \\[comint-next-input].\n
+The list containing all of these commands is `shx-kept-commands'.
+That list can be added to using `shx-cmd-keep'."
   (if (string-empty-p regexp)
       (shx-insert 'error "kept <regexp>\n")
     (shx--restore-kept-commands regexp t)
@@ -907,7 +911,6 @@ comint-mode in general.  Use `shx-global-mode' to enable
 
 (defun shx--turn-on ()
   "Call the function `shx-mode' if appropriate."
-  (interactive)
   (when (derived-mode-p 'comint-mode) (shx-mode +1)))
 
 
