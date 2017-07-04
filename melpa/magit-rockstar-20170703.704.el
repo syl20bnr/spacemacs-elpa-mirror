@@ -1,10 +1,10 @@
 ;;; magit-rockstar.el --- commit like a rockstar  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2015-2016  Jonas Bernoulli
+;; Copyright (C) 2015-2017  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Package-Requires: ((dash "2.12.1") (magit "2.6.1"))
-;; Package-Version: 20161013.544
+;; Package-Version: 20170703.704
 ;; Homepage: https://github.com/tarsius/magit-rockstar
 ;; Keywords: convenience
 
@@ -68,9 +68,10 @@
   "Attempt to make you look like a rockstar programmer.
 Want to hammer out commits at one commit per minute?
 With this function you can!"
-  (interactive (list (magit-read-other-branch "Rocking since" nil
-                                              (magit-get-upstream-branch))
-                     (read-number "Offset: " 0)))
+  (interactive
+   (list (magit-read-other-branch-or-commit "Rocking since" nil
+                                            (magit-get-upstream-branch))
+         (read-number "Offset: " 0)))
   (let* ((branch (magit-get-current-branch))
          (range (concat from ".." branch))
          (time (+ (truncate (float-time)) (* (or offset 0) 60)))

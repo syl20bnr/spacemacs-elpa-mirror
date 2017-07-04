@@ -5,8 +5,8 @@
 ;; Author: Alex Murray <murray.alex@gmail.com>
 ;; Maintainer: Alex Murray <murray.alex@gmail.com>
 ;; URL: https://github.com/alexmurray/flycheck-clang-analyzer
-;; Package-Version: 20170623.446
-;; Version: 0.1
+;; Package-Version: 20170703.1751
+;; Version: 0.2
 ;; Package-Requires: ((flycheck "0.24") (emacs "24.4"))
 
 ;; This file is not part of GNU Emacs.
@@ -68,7 +68,7 @@
 ;; irony
 (defun flycheck-clang-analyzer--irony-active ()
   "Check if 'irony-mode' is available and active."
-  (and (fboundp 'irony-mode) irony-mode))
+  (and (fboundp 'irony-mode) (boundp 'irony-mode) irony-mode))
 
 (defun flycheck-clang-analyzer--irony-get-compile-options ()
   "Get compile options from irony."
@@ -160,6 +160,7 @@ See `https://github.com/alexmurray/clang-analyzer/'."
             "-fno-color-diagnostics" ; don't include color in output
             "-fno-caret-diagnostics" ; don't indicate location in output
             "-fno-diagnostics-show-option" ; don't show warning group
+            "-Xanalyzer" "-analyzer-output=text"
             source-inplace)
   :predicate flycheck-clang-analyzer--backend
   :working-directory flycheck-clang-analyzer--get-default-directory

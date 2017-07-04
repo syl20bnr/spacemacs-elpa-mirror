@@ -5,9 +5,9 @@
 ;; Author: Alex Murray <murray.alex@gmail.com>
 ;; Maintainer: Alex Murray <murray.alex@gmail.com>
 ;; URL: https://github.com/alexmurray/flycheck-coverity
-;; Package-Version: 20170520.825
-;; Version: 0.1
-;; Package-Requires: ((flycheck "0.24") (dash "2.13.0") (emacs "24.4"))
+;; Package-Version: 20170703.1759
+;; Version: 0.2
+;; Package-Requires: ((flycheck "0.24") (dash "2.12.0") (emacs "24.4"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -32,13 +32,12 @@
 
 ;;;; Setup
 
-;; (eval-after-load 'flycheck
-;;   '(progn
-;;      (require 'flycheck-coverity)
-;;      (flycheck-coverity-setup)
-;;      ;; chain after cppcheck since this is the last checker in the upstream
-;;      ;; configuration
-;;      (flycheck-add-next-checker 'c/c++-cppcheck '(warning . coverity))))
+;; (with-eval-after-load 'flycheck
+;;    (require 'flycheck-coverity)
+;;    (flycheck-coverity-setup)
+;;    ;; chain after cppcheck since this is the last checker in the upstream
+;;    ;; configuration
+;;    (flycheck-add-next-checker 'c/c++-cppcheck '(warning . coverity)))
 
 ;; If you do not use cppcheck then chain after clang / gcc / other C checker
 ;; that you use
@@ -48,6 +47,7 @@
 ;;; Code:
 (require 'flycheck)
 (require 'dash)
+(require 'cl-lib)
 
 (flycheck-def-args-var flycheck-coverity-args coverity)
 
@@ -79,10 +79,10 @@
 (defun flycheck-coverity--locate-build-log ()
   "Locate the data-coverity directory."
   (-when-let (data-coverity (flycheck-coverity--locate-data-coverity))
-    (first (file-expand-wildcards (concat (file-name-as-directory data-coverity)
-					  (file-name-as-directory "*")
-					  (file-name-as-directory "idir")
-					  "build-log.txt")))))
+    (cl-first (file-expand-wildcards (concat (file-name-as-directory data-coverity)
+                                             (file-name-as-directory "*")
+                                             (file-name-as-directory "idir")
+                                             "build-log.txt")))))
 
 (defun flycheck-coverity--setup-p ()
   "Determine if `cov-run-desktop --setup` has been run by the presence of data-coverity directory."
