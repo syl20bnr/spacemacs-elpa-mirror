@@ -1,7 +1,7 @@
 ;;; zpresent.el --- Simple presentation mode based on org files.  -*- lexical-binding: t; -*-
 
 ;; Version: 0.3
-;; Package-Version: 20170620.2134
+;; Package-Version: 20170703.2041
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright 2015-2017 Zachary Kanfer <zkanfer@gmail.com>
@@ -100,8 +100,6 @@
 
 
 ;;;; Faces:
-;;zck make scaling function just change zpresent-base, not the faces in zpresent-faces.
-;;zck why doesn't this center properly anymore?
 (defface zpresent-base '((t . (:height 4.0))) "The base face, so we can manage changing sizes only by changing this face." :group 'zpresent-faces)
 (defface zpresent-h1 '((t . (:height 1.0 :inherit zpresent-base))) "Face for the title of a regular slide." :group 'zpresent-faces)
 (defface zpresent-title-slide-title '((t . (:height 1.5 :inherit zpresent-base))) "Face for titles in a title slide." :group 'zpresent-faces)
@@ -204,7 +202,6 @@ necessary."
       (puthash :date date slide))
     slide))
 
-;;zck test how this interacts with indentation/centering, if it does
 (defun zpresent--extract-current-text (structure)
   "Extracts the text that should go in the slide for STRUCTURE.
 
@@ -455,10 +452,13 @@ broken item, and the second item is the rest of the item."
 
 LINE-LIST is a list of structure items -- either strings, or hashes
 representing formatted text."
-  (if (not line-list)
-      0
-    (+ (zpresent--item-length (car line-list))
-       (zpresent--line-length (cdr line-list)))))
+  (cond ((not line-list) 0)
+        ((listp line-list)
+         (+ (zpresent--item-length (car line-list))
+            (zpresent--line-length (cdr line-list))))
+
+        ;;zck calculate the length of a block properly.
+        (t 0)))
 
 (defun zpresent--item-length (item)
   "Calculate the length of ITEM, which is a string or a formatted text hash."
@@ -700,8 +700,10 @@ amount.  Otherwise, center the title-line."
   (if precalculated-whitespace
       (insert (propertize precalculated-whitespace 'face face))
     (insert (propertize (zpresent--whitespace-for-centered-title-line title-line face) 'face face)))
-  (dolist (title-item title-line)
-    (zpresent--insert-item title-item face))
+  (if (listp title-line)
+      (dolist (title-item title-line)
+        (zpresent--insert-item title-item face))
+    (zpresent--insert-item title-line face))
   (insert "\n"))
 
 (defun zpresent--insert-item (item face)
@@ -715,7 +717,12 @@ amount.  Otherwise, center the title-line."
            (zpresent--insert-item inner-item face)))
         ((zpresent--item-is-image item)
          (zpresent--insert-image (gethash :target item)))
-        (t (zpresent--insert-link item face))))
+        ((hash-table-p item)
+         (case (gethash :type item)
+           (:link (zpresent--insert-link item face))
+           (:block (insert (propertize (gethash :body item)
+                                       'face
+                                       face)))))))
 
 (defun zpresent--item-is-image (item)
   "T if ITEM is an image."
