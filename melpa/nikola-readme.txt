@@ -1,5 +1,5 @@
 If you find a bug, you may send an e-mail or open an issue at
-https://git.daemons.cf/drymer/nikola.el/
+https://git.daemons.it/drymer/nikola.el/
 ◊ Main commands:
   • `nikola-new-post': Creates a new post and opens it.
   • `nikola-new-page': Creates a new page and opens it.

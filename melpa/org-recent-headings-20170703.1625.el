@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-recent-headings
-;; Package-Version: 20170703.253
+;; Package-Version: 20170703.1625
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "24.4") (org "9.0.5") (dash "2.13.0"))
 ;; Keywords: hypermedia, outlines, Org
@@ -167,9 +167,9 @@ some users may prefer to just use regexp matchers."
   (-let (((ignore &keys :file a-file :id a-id :regexp a-regexp) a)
          ((ignore &keys :file b-file :id b-id :regexp b-regexp) b))
     (or
-     ;; If the Org IDs are set and are the same, the entries point to
-     ;; the same heading
      (when (and a-id b-id)
+       ;; If the Org IDs are set and are the same, the entries point to
+       ;; the same heading
        (string-equal a-id b-id))
      (and
       ;; Otherwise, if both the file path and regexp are the same,
@@ -346,6 +346,8 @@ With prefix argument ARG, turn on if positive, otherwise off."
 
 (when (fboundp 'helm)
   ;; FIXME: is `helm' the best symbol to use here?
+
+  (require 'helm)
 
   (defvar org-recent-headings-helm-map
     (let ((map (copy-keymap helm-map)))

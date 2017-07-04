@@ -4,11 +4,11 @@
 
 ;; Author:: drymer <drymer [ AT ] autistici.org>
 ;; Package-Requires: ((async "1.5") (emacs "24.3"))
-;; Package-Version: 20170301.1148
+;; Package-Version: 20170703.1321
 ;; Version: 0.1
 
 ;; Keywords:: nikola
-;; X-URL:: https://git.daemons.cf/drymer/nikola.el
+;; X-URL:: https://git.daemons.it/drymer/nikola.el
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 
 ;;; Commentary:
 ;; If you find a bug, you may send an e-mail or open an issue at
-;; https://git.daemons.cf/drymer/nikola.el/
+;; https://git.daemons.it/drymer/nikola.el/
 ;; ◊ Main commands:
 ;;   • `nikola-new-post': Creates a new post and opens it.
 ;;   • `nikola-new-page': Creates a new page and opens it.
@@ -259,7 +259,6 @@ buffer."))
 	   (let ((inhibit-read-only t))
 	     (insert result)))))))
 
-
 ;;;###autoload
 (defun nikola-new-post()
   "Creates a new post on nikola-output-root-directory/posts/ and opens it."
@@ -372,7 +371,7 @@ buffer."))
 u want to restart it? ")
 	    (progn (nikola-webserver-stop)(sleep-for 1))
 	  (user-error "Exit")))
-    (message (concat "Serving Webserver on " nikola-webserver-host
+    (message (concat "Serving Webserver on " nikola-webserver-host ":"
 		     nikola-webserver-port "... " "(it can take a while):"))
     (if (eq nikola-verbose t)
 	(setq buffer-name-p "*Nikola*")
