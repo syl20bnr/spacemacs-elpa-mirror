@@ -2,8 +2,10 @@
 
 ;; Author: Bastian Bechtold
 ;; URL: http://github.com/bastibe/org-journal
-;; Package-Version: 1.12.0
-;; Version: 1.12.0
+;; Package-Version: 20170705.217
+;; Version: 1.12.1
+
+;;; Commentary:
 
 ;; Adapted from http://www.emacswiki.org/PersonalDiary
 
@@ -54,6 +56,8 @@
 ;;                   ] to go to next entry
 ;; When viewing a journal entry: C-c C-b to view previous entry
 ;;                               C-c C-f to view next entry
+
+;;; Code:
 
 (defvar org-journal-file-pattern
   "^\\(?1:[0-9]\\{4\\}\\)\\(?2:[0-9][0-9]\\)\\(?3:[0-9][0-9]\\)\\'"
@@ -135,7 +139,8 @@ org-journal. Use org-journal-file-format instead.")
 (defcustom org-journal-date-format "%A, %x"
   "Format string for date, by default \"WEEKDAY, DATE\", where
   DATE is what Emacs thinks is an appropriate way to format days
-  in your language."
+  in your language. If you define it as a function, it is evaluated
+  and inserted."
   :type 'string :group 'org-journal)
 
 (defcustom org-journal-date-prefix "* "
@@ -187,6 +192,9 @@ See agenda tags view match description for the format of this."
 
 Otherwise, date ascending."
   :type 'symbol :group 'org-journal)
+
+(defvar org-journal-after-entry-create-hook nil
+  "Hook called after journal entry creation")
 
 ;; Automatically switch to journal mode when opening a journal entry file
 (setq org-journal-file-pattern
@@ -248,17 +256,20 @@ If no TIME is given, uses the current time."
 ;;;###autoload
 (defun org-journal-new-entry (prefix &optional time)
   "Open today's journal file and start a new entry.
-Giving the command a prefix arg will just open a today's file,
-without adding an entry. If given a time, create an entry for
-the time's day."
+Giving the command a PREFIX arg will just open a today's file,
+without adding an entry. If given a TIME, create an entry for the
+time's day.
+
+Whenever a journal entry is created the
+`org-journal-after-entry-create-hook' hook is run"
   (interactive "P")
   (org-journal-dir-check-or-create)
   (let* ((entry-path (org-journal-get-entry-path time))
          (should-add-entry-p (not prefix)))
 
     ;; open journal file
-    (if (not (string= entry-path (buffer-file-name)))
-        (funcall org-journal-find-file entry-path))
+    (unless (string= entry-path (buffer-file-name))
+      (funcall org-journal-find-file entry-path))
     (org-journal-decrypt)
     (goto-char (point-max))
     (let ((unsaved (buffer-modified-p))
@@ -266,8 +277,10 @@ the time's day."
 
       ;; empty file? Add a date timestamp
       (when new-file-p
-        (insert org-journal-date-prefix
-                (format-time-string org-journal-date-format time)))
+        (if (functionp org-journal-date-format)
+            (insert (funcall org-journal-date-format time))
+          (insert org-journal-date-prefix
+                  (format-time-string org-journal-date-format time))))
 
       ;; add crypt tag if encryption is enabled and tag is not present
       (when org-journal-enable-encryption
@@ -280,13 +293,14 @@ the time's day."
       (when (and new-file-p org-journal-carryover-items)
         (save-excursion (org-journal-carryover)))
 
-      ;; skip adding entry if a prefix is given
+      ;; insert the header of the entry
       (when should-add-entry-p
         (unless (eq (current-column) 0) (insert "\n"))
-        (insert "\n" org-journal-time-prefix
-                (if (= (time-to-days (current-time)) (time-to-days time))
-                    (format-time-string org-journal-time-format)
-                  "")))
+        (let ((timestamp (if (= (time-to-days (current-time)) (time-to-days time))
+                             (format-time-string org-journal-time-format)
+                           "")))
+          (insert "\n" org-journal-time-prefix timestamp))
+        (run-hooks 'org-journal-after-entry-create-hook))
 
       ;; switch to the outline, hide subtrees
       (org-journal-mode)
@@ -295,7 +309,7 @@ the time's day."
         (show-all))
 
       ;; open the recent entry when the prefix is given
-      (if should-add-entry-p
+      (when should-add-entry-p
         (show-entry))
 
       (set-buffer-modified-p unsaved))))

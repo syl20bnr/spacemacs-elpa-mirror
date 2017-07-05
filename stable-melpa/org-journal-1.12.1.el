@@ -2,8 +2,10 @@
 
 ;; Author: Bastian Bechtold
 ;; URL: http://github.com/bastibe/org-journal
-;; Package-Version: 20170703.258
-;; Version: 1.12.0
+;; Package-Version: 1.12.1
+;; Version: 1.12.1
+
+;;; Commentary:
 
 ;; Adapted from http://www.emacswiki.org/PersonalDiary
 
@@ -54,6 +56,8 @@
 ;;                   ] to go to next entry
 ;; When viewing a journal entry: C-c C-b to view previous entry
 ;;                               C-c C-f to view next entry
+
+;;; Code:
 
 (defvar org-journal-file-pattern
   "^\\(?1:[0-9]\\{4\\}\\)\\(?2:[0-9][0-9]\\)\\(?3:[0-9][0-9]\\)\\'"
