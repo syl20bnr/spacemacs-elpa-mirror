@@ -5,7 +5,7 @@
 ;; Author: Dan Sutton  <danielsutton01@gmail.com>
 ;; Maintainer: Dan Sutton  <danielsutton01@gmail.com>
 ;; URL: https://github.com/dpsutton/resize-mode
-;; Package-Version: 20170624.1658
+;; Package-Version: 20170704.2212
 
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
@@ -135,9 +135,9 @@ Main data structure of the dispatcher with the form:
 
 (defvar resize-window-alias-list
   '((right ?f)
-    (up ?n)
+    (down ?n)
     (left ?b)
-    (down ?p))
+    (up ?p))
   "List of aliases for commands.
 Rather than have to use n, etc, you can alias keys for others.")
 
