@@ -216,7 +216,10 @@ Handle errors. Handle difference between CIDER versions."
        type))))
 
 (defun clomacs-add-quotes (str)
-  (concat "\"" str "\""))
+  (format "%S"
+          (progn
+            (set-text-properties 0 (length str) nil str)
+            str)))
 
 (cl-defun clomacs-prepare-vars (cl-entity-name
                                 &key

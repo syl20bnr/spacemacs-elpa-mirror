@@ -4,8 +4,8 @@
 
 ;; Author:     Paul Pogonyshev <pogonyshev@gmail.com>
 ;; Maintainer: Paul Pogonyshev <pogonyshev@gmail.com>
-;; Version:    0.8
-;; Package-Version: 20170518.428
+;; Version:    0.8.1
+;; Package-Version: 20170705.1217
 ;; Keywords:   files, tools
 ;; Homepage:   https://github.com/doublep/logview
 ;; Package-Requires: ((emacs "24.1") (datetime "0.2"))
@@ -2623,7 +2623,8 @@ Optional third argument is to make the function suitable for
                            (unless (equal (plist-get view :submode) logview-filter-edit--editing-views-for-submode)
                              (push view combined-views)))
                          (setq logview--views (nreverse combined-views)))
-                     (setq logview--views new-views))))
+                     (setq logview--views             new-views
+                           logview--views-need-saving t))))
                (funcall do-quit)
                ;; This takes effect only after quitting.
                (logview--update-mode-name))

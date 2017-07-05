@@ -4,7 +4,7 @@
 
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/clojure-emacs/clomacs
-;; Package-Version: 20170128.850
+;; Package-Version: 20170705.719
 ;; Keywords: clojure, interaction
 ;; Version: 0.0.2
 ;; Package-Requires: ((emacs "24.3") (cider "0.11") (s "1.10.0"))
@@ -244,7 +244,10 @@ Handle errors. Handle difference between CIDER versions."
        type))))
 
 (defun clomacs-add-quotes (str)
-  (concat "\"" str "\""))
+  (format "%S"
+          (progn
+            (set-text-properties 0 (length str) nil str)
+            str)))
 
 (cl-defun clomacs-prepare-vars (cl-entity-name
                                 &key
