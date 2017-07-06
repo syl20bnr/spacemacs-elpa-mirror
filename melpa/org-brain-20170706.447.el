@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; URL: http://github.com/Kungsgeten/org-brain
-;; Package-Version: 20170629.1228
+;; Package-Version: 20170706.447
 ;; Keywords: outlines hypermedia
 ;; Package-Requires: ((emacs "25") (org "9"))
 ;; Version: 0.4
@@ -307,12 +307,23 @@ For PREDICATE, REQUIRE-MATCH and INITIAL-INPUT, see `completing-read'."
     (nth 1 entry)))
 
 (defun org-brain-text (entry)
-  "Get the text of ENTRY as string, skipping properties drawer.
-Currently getting text of file entries are not supported."
+  "Get the text of ENTRY as string, skipping properties drawer."
   (when-let
       ((entry-text
         (if (org-brain-filep entry)
-            nil
+            ;; File entry
+            (with-temp-buffer
+              (ignore-errors (insert-file-contents (org-brain-entry-path entry)))
+              (goto-char (point-min))
+              (or (outline-next-heading)
+                  (goto-char (point-max)))
+              (buffer-substring (or (save-excursion
+                                      (when (re-search-backward "^[#:*]" nil t)
+                                        (end-of-line)
+                                        (point)))
+                                    (point-min))
+                                (point)))
+          ;; Headline entry
           (org-with-point-at (org-brain-entry-marker entry)
             (let ((tags (org-get-tags-at nil t)))
               (unless (member org-brain-exclude-text-tag tags)
@@ -324,11 +335,11 @@ Currently getting text of file entries are not supported."
                              (org-goto-first-child))
                         (org-end-of-subtree t))
                     (setq end (point)))
-                  (let ((text (buffer-substring (point) end)))
-                    (remove-text-properties 0 (length text)
-                                            '(line-prefix nil wrap-prefix nil)
-                                            text)
-                    (org-remove-indentation text)))))))))
+                  (buffer-substring (point) end))))))))
+    (remove-text-properties 0 (length entry-text)
+                            '(line-prefix nil wrap-prefix nil)
+                            entry-text)
+    (org-remove-indentation entry-text)
     (with-temp-buffer
       (insert entry-text)
       (goto-char (point-min))

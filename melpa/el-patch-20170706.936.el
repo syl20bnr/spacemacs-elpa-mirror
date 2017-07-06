@@ -6,7 +6,7 @@
 ;; Created: 31 Dec 2016
 ;; Homepage: https://github.com/raxod502/el-patch
 ;; Keywords: extensions
-;; Package-Version: 20170705.1739
+;; Package-Version: 20170706.936
 ;; Package-Requires: ((emacs "25"))
 ;; Version: 1.1.2
 
@@ -216,7 +216,6 @@ their bindings."
                (error "Not enough arguments (%d) for `el-patch-literal'"
                       (1- (length form))))
              (cdr form))
-            ((quote el-patch-feature))
             (_ (list (cl-mapcan resolve form)))))
       (or (gethash form table)
           (list form)))))
@@ -595,15 +594,6 @@ will act as patch directives)."
 Resolves to ARG, which is not processed further by el-patch."
   (declare (indent 0))
   `(error "Can't use `el-patch-literal' outside of an `el-patch'"))
-
-;;;###autoload
-(defmacro el-patch-feature (feature)
-  "Deprecated no-op for backwards compatibility.
-This form previously declared that FEATURE needed to be loaded in
-order to define the function being patched, but it now does
-nothing."
-  (declare (indent 0)
-           (obsolete "el-patch-feature is no longer necessary" "1.1")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Viewing patches
