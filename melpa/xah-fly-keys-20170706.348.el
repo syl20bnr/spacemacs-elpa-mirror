@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2016, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 7.5.3
-;; Package-Version: 20170705.1616
+;; Version: 7.6.1
+;; Package-Version: 20170706.348
 ;; Created: 10 Sep 2013
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, emulations, vim, ergoemacs
@@ -150,7 +150,7 @@ Version 2017-06-26"
   (let ((-p (point)))
     (if (or (equal (point) (line-beginning-position))
             (equal last-command this-command ))
-        (if (re-search-backward "\n[\t\n ]*\n+" nil "NOERROR")
+        (if (re-search-backward "\n[\t\n ]*\n+" nil "move")
             (progn
               (skip-chars-backward "\n\t ")
               ;; (forward-char )
@@ -173,7 +173,7 @@ Version 2017-05-30"
   (if (or (equal (point) (line-end-position))
           (equal last-command this-command ))
       (progn
-        (re-search-forward "\n[\t\n ]*\n+" nil "NOERROR" ))
+        (re-search-forward "\n[\t\n ]*\n+" nil "move" ))
     (end-of-line)))
 
 (defvar xah-brackets nil "string of left/right brackets pairs.")
@@ -714,11 +714,11 @@ Version 2017-01-08"
         (progn (setq -p1 (region-beginning))
                (setq -p2 (region-end)))
       (save-excursion
-        (if (re-search-backward -blanks-regex nil "NOERROR")
+        (if (re-search-backward -blanks-regex nil "move")
             (progn (re-search-forward -blanks-regex)
                    (setq -p1 (point)))
           (setq -p1 (point)))
-        (if (re-search-forward -blanks-regex nil "NOERROR")
+        (if (re-search-forward -blanks-regex nil "move")
             (progn (re-search-backward -blanks-regex)
                    (setq -p2 (point)))
           (setq -p2 (point)))))
@@ -748,46 +748,55 @@ Version 2016-07-13"
   (let ((fill-column most-positive-fixnum))
     (fill-region *begin *end)))
 
-(defun xah-reformat-lines ()
+(defun xah-reformat-lines ( &optional *length)
   "Reformat current text block into 1 long line or multiple short lines.
 When there is a text selection, act on the selection, else, act on a text block separated by blank lines.
 
 When the command is called for the first time, it checks the current line's length to decide to go into 1 line or multiple lines. If current line is short, it'll reformat to 1 long lines. And vice versa.
 
 Repeated call toggles between formatting to 1 long line and multiple lines.
+
+If `universal-argument' is called first, use the number value for min length of line. By default, it's 70.
+
 URL `http://ergoemacs.org/emacs/emacs_reformat_lines.html'
-Version 2017-03-08"
+Version 2017-07-06"
   (interactive)
-  ;; This command symbol has a property “'compact-p”, the possible values are t and nil. This property is used to easily determine whether to compact or uncompact, when this command is called again
-  (let (
-        (-compact-p
-         (if (eq last-command this-command)
-             (get this-command 'compact-p)
-           (> (- (line-end-position) (line-beginning-position)) fill-column)))
-        (deactivate-mark nil)
-        (-blanks-regex "\n[ \t]*\n")
-        -p1 -p2
-        )
+  ;; This command symbol has a property “'is-longline-p”, the possible values are t and nil. This property is used to easily determine whether to compact or uncompact, when this command is called again
+  (let* (
+         (*length (if *length
+                      *length
+                    (if current-prefix-arg (prefix-numeric-value current-prefix-arg) 70 )))
+         (is-longline-p
+          (if (eq last-command this-command)
+              (get this-command 'is-longline-p)
+            (> (- (line-end-position) (line-beginning-position)) *length)))
+         (deactivate-mark nil)
+         (-blanks-regex "\n[ \t]*\n")
+         -p1 -p2
+         )
     (if (use-region-p)
         (progn (setq -p1 (region-beginning))
                (setq -p2 (region-end)))
       (save-excursion
-        (if (re-search-backward -blanks-regex nil "NOERROR")
+        (if (re-search-backward -blanks-regex nil "move")
             (progn (re-search-forward -blanks-regex)
                    (setq -p1 (point)))
           (setq -p1 (point)))
-        (if (re-search-forward -blanks-regex nil "NOERROR")
+        (if (re-search-forward -blanks-regex nil "move")
             (progn (re-search-backward -blanks-regex)
                    (setq -p2 (point)))
           (setq -p2 (point)))))
     (save-excursion
-      (if -compact-p
-          (xah-reformat-to-multi-lines-region -p1 -p2)
-        (xah-reformat-whitespaces-to-one-space -p1 -p2))
-      (put this-command 'compact-p (not -compact-p)))))
+      (if current-prefix-arg
+          (xah-reformat-to-multi-lines -p1 -p2 *length)
+        (if is-longline-p
+            (xah-reformat-to-multi-lines -p1 -p2 *length)
+          (xah-reformat-whitespaces-to-one-space -p1 -p2)))
+      (put this-command 'is-longline-p (not is-longline-p)))))
 
 (defun xah-reformat-whitespaces-to-one-space (*begin *end)
   "Replace whitespaces by one space.
+
 URL `http://ergoemacs.org/emacs/emacs_reformat_lines.html'
 Version 2017-01-11"
   (interactive "r")
@@ -796,29 +805,52 @@ Version 2017-01-11"
       (narrow-to-region *begin *end)
       (goto-char (point-min))
       (while
-          (search-forward "\n" nil "NOERROR")
+          (search-forward "\n" nil "move")
         (replace-match " "))
       (goto-char (point-min))
       (while
-          (search-forward "\t" nil "NOERROR")
+          (search-forward "\t" nil "move")
         (replace-match " "))
       (goto-char (point-min))
       (while
-          (re-search-forward "  +" nil "NOERROR")
+          (re-search-forward "  +" nil "move")
         (replace-match " ")))))
 
-(defun xah-reformat-to-multi-lines-region (*begin *end)
-  "Replace space by a newline char at places so lines are not long.
+(defun xah-reformat-to-multi-lines ( &optional *begin *end *min-length)
+  "Replace spaces by a newline at places so lines are not long.
+When there is a text selection, act on the selection, else, act on a text block separated by blank lines.
+
+If `universal-argument' is called first, use the number value for min length of line. By default, it's 70.
+
 URL `http://ergoemacs.org/emacs/emacs_reformat_lines.html'
-Version 2016-12-13"
-  (interactive "r")
-  (save-restriction
-    (narrow-to-region *begin *end)
-    (goto-char (point-min))
-    (while
-        (search-forward " " nil "NOERROR")
-      (when (> (- (point) (line-beginning-position)) fill-column)
-        (replace-match "\n" )))))
+Version 2017-07-06"
+  (interactive )
+  (let (
+        -p1 -p2
+        (-blanks-regex "\n[ \t]*\n")
+        (-minlen (if *min-length
+                     *min-length
+                   (if current-prefix-arg (prefix-numeric-value current-prefix-arg) 70 ))))
+    (if (and  *begin *end)
+        (setq -p1 *begin -p2 *end)
+      (if (region-active-p)
+          (progn (setq -p1 (region-beginning) -p2 (region-end)))
+        (save-excursion
+          (if (re-search-backward -blanks-regex nil "move")
+              (progn (re-search-forward -blanks-regex)
+                     (setq -p1 (point)))
+            (setq -p1 (point)))
+          (if (re-search-forward -blanks-regex nil "move")
+              (progn (re-search-backward -blanks-regex)
+                     (setq -p2 (point)))
+            (setq -p2 (point))))))
+    (save-restriction
+      (narrow-to-region -p1 -p2)
+      (goto-char (point-min))
+      (while
+          (re-search-forward " +" nil "move")
+        (when (> (- (point) (line-beginning-position)) -minlen)
+          (replace-match "\n" ))))))
 
 (defun xah-comment-dwim ()
   "Like `comment-dwim', but toggle comment if cursor is not at end of line.
@@ -902,11 +934,11 @@ Version 2017-01-11"
           (setq -p1 (region-beginning))
           (setq -p2 (region-end)))
       (progn
-        (if (re-search-backward "\n[ \t]*\n" nil "NOERROR")
+        (if (re-search-backward "\n[ \t]*\n" nil "move")
             (progn (re-search-forward "\n[ \t]*\n")
                    (setq -p1 (point)))
           (setq -p1 (point)))
-        (re-search-forward "\n[ \t]*\n" nil "NOERROR")
+        (re-search-forward "\n[ \t]*\n" nil "move")
         (skip-chars-backward " \t\n" )
         (setq -p2 (point))))
     (save-excursion
@@ -918,7 +950,7 @@ Version 2017-01-11"
         (goto-char (point-max))
         (insert -endQuote)
         (goto-char (point-min))
-        (while (re-search-forward "\n\\([\t ]*\\)" nil "NOERROR" )
+        (while (re-search-forward "\n\\([\t ]*\\)" nil "move" )
           (replace-match
            (concat -endQuote -separator (concat "\n" (match-string 1)) -beginQuote) "FIXEDCASE" "LITERAL"))
         ;;
@@ -1011,7 +1043,7 @@ Version 2017-01-27"
                ;;  "\\|"
                ;;  (elt -charArray (% (+ -nowState 2) -length)))
                (point-max)
-               "NOERROR")
+               "move")
             (replace-match -changeTo "FIXEDCASE" "LITERAL"))))
       (when (or (string= -changeTo " ") -regionWasActive-p)
         (goto-char -p2)
@@ -1029,7 +1061,7 @@ Version 2017-01-11"
       (narrow-to-region *begin *end)
       (goto-char (point-min))
       (while
-          (re-search-forward "_" (point-max) "NOERROR")
+          (re-search-forward "_" (point-max) "move")
         (replace-match " " "FIXEDCASE" "LITERAL")))))
 
 (defun xah-copy-file-path (&optional *dir-path-only-p)
@@ -1070,7 +1102,7 @@ Version 2016-10-10"
       (kill-region (region-beginning) (region-end))
     (progn
       (beginning-of-line)
-      (if (re-search-forward "[[:graph:]]" (line-end-position) "NOERROR")
+      (if (re-search-forward "[[:graph:]]" (line-end-position) "move")
           (xah-delete-current-text-block)
         (when (re-search-forward "[[:graph:]]" )
           (xah-delete-current-text-block))))))
@@ -1088,11 +1120,11 @@ Version 2016-10-10"
   (interactive)
   (let (-p1 -p2)
     (progn
-      (if (re-search-backward "\n[ \t]*\n" nil "NOERROR")
+      (if (re-search-backward "\n[ \t]*\n" nil "move")
           (progn (re-search-forward "\n[ \t]*\n")
                  (setq -p1 (point)))
         (setq -p1 (point)))
-      (re-search-forward "\n[ \t]*\n" nil "NOERROR")
+      (re-search-forward "\n[ \t]*\n" nil "move")
       (setq -p2 (point)))
     (kill-region -p1 -p2)))
 
@@ -2031,7 +2063,7 @@ Version 2017-01-27"
       (narrow-to-region *begin *end)
       (progn
         (goto-char (point-min))
-        (while (re-search-forward "\n\n\n+" nil "NOERROR")
+        (while (re-search-forward "\n\n\n+" nil "move")
           (replace-match (make-string (if *n *n 2) 10)))))))
 
 (defun xah-clean-whitespace (&optional *begin *end)
@@ -2052,7 +2084,7 @@ Version 2016-10-15"
       (narrow-to-region *begin *end)
       (progn
         (goto-char (point-min))
-        (while (re-search-forward "[ \t]+\n" nil "NOERROR")
+        (while (re-search-forward "[ \t]+\n" nil "move")
           (replace-match "\n")))
       (xah-clean-empty-lines (point-min) (point-max))
       (progn

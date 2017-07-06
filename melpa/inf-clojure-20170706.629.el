@@ -5,7 +5,7 @@
 ;; Authors: Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Olin Shivers <shivers@cs.cmu.edu>
 ;; URL: http://github.com/clojure-emacs/inf-clojure
-;; Package-Version: 20170705.305
+;; Package-Version: 20170706.629
 ;; Keywords: processes, clojure
 ;; Version: 2.0.1
 ;; Package-Requires: ((emacs "24.4") (clojure-mode "5.6"))
@@ -192,7 +192,7 @@ often connecting to a remote REPL process."
 
 (define-obsolete-variable-alias 'inf-clojure-program 'inf-clojure-lein-cmd "2.0.0")
 
-(defcustom inf-clojure-boot-cmd "boot repl"
+(defcustom inf-clojure-boot-cmd "boot repl -C"
   "The command used to start a Clojure REPL for Boot projects.
 
 Alternatively you can specify a TCP connection cons pair, instead

@@ -4,7 +4,7 @@
 
 ;; Author: Damien Cassou <damien@cassou.me>
 ;; Version: 0.6.0
-;; Package-Version: 20170617.1126
+;; Package-Version: 20170706.552
 ;; Package-Requires: ((emacs "25.1"))
 ;; GIT: https://github.com/DamienCassou/hierarchy
 ;;
@@ -85,7 +85,7 @@
 SORTFN is a function taking two items of the hierarchy as parameter and
 returning non-nil if the first parameter is lower than the second."
   (setf (hierarchy--roots hierarchy)
-        (sort (hierarchy--roots hierarchy)
+        (sort (hierarchy--compute-roots hierarchy)
               sortfn)))
 
 (defun hierarchy--add-relation (hierarchy item parent acceptfn)
@@ -528,8 +528,8 @@ nil.  The buffer is returned."
   "Return a tree-widget for HIERARCHY.
 
 LABELFN is a function taking an item of HIERARCHY and an indentation
-value (a number) as parameter and returning a string to be displayed as a
-button label."
+value (a number) as parameter and inserting a string to be displayed as a
+node label."
   (require 'wid-edit)
   (require 'tree-widget)
   (hierarchy-map-tree (lambda (item indent children)
