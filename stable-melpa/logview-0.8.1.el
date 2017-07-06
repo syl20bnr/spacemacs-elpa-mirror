@@ -4,8 +4,8 @@
 
 ;; Author:     Paul Pogonyshev <pogonyshev@gmail.com>
 ;; Maintainer: Paul Pogonyshev <pogonyshev@gmail.com>
-;; Version:    0.8
-;; Package-Version: 0.8
+;; Version:    0.8.1
+;; Package-Version: 0.8.1
 ;; Keywords:   files, tools
 ;; Homepage:   https://github.com/doublep/logview
 ;; Package-Requires: ((emacs "24.1") (datetime "0.2"))
@@ -164,6 +164,12 @@ format
     Additionally, you can use special placeholder \"IGNORED\" if
     needed.  Usecase for it are log files that contain too many
     fields to map to the ones Logview supports natively.
+
+    Finally, you can explicitly specify \"MESSAGE\" field at the
+    very end of the format string.  Normally, you can leave that
+    to Logview, just as in the example above.  However, when the
+    mode adds the field itself, it also prepends it with a space,
+    which might be incorrect for some special custom submodes.
 
 levels  [may be optional]
 
@@ -343,6 +349,15 @@ To temporarily change this on per-buffer basis type \\<logview-mode-map>\\[logvi
   :group 'logview
   :type  'file)
 
+(defcustom logview-completing-read-function nil
+  "Completion system used by Logview."
+  :group 'logview
+  :type  '(radio
+           (const :tag "Auto" nil)
+           (function-item completing-read)
+           (function-item ido-completing-read)
+           (function :tag "Custom function")))
+
 
 (defgroup logview-faces nil
   "Faces for Logview mode."
@@ -443,6 +458,7 @@ To temporarily change this on per-buffer basis type \\<logview-mode-map>\\[logvi
 (defconst logview--name-group      3)
 (defconst logview--thread-group    4)
 (defconst logview--ignored-group   5)
+(defconst logview--message-group   6)
 
 (defconst logview--final-levels '(error warning information debug trace))
 
@@ -450,7 +466,8 @@ To temporarily change this on per-buffer basis type \\<logview-mode-map>\\[logvi
                                                  (group "LEVEL")
                                                  (group "NAME")
                                                  (group "THREAD")
-                                                 (group "IGNORED"))
+                                                 (group "IGNORED")
+                                                 (group "MESSAGE"))
                                          eow))
 (defconst logview--timestamp-entry-part-regexp (rx bow "TIMESTAMP" eow))
 
@@ -499,11 +516,11 @@ Levels are ordered least to most important.")
 (defvar logview--empty-filter-id '((nil nil) (nil nil) (nil nil)))
 (defvar-local logview--applied-filter-id logview--empty-filter-id)
 
-(defvar logview--submode-name-history)
-(defvar logview--timestamp-format-history)
-(defvar logview--name-regexp-history)
-(defvar logview--thread-regexp-history)
-(defvar logview--message-regexp-history)
+(defvar logview--submode-name-history     nil)
+(defvar logview--timestamp-format-history nil)
+(defvar logview--name-regexp-history      nil)
+(defvar logview--thread-regexp-history    nil)
+(defvar logview--message-regexp-history   nil)
 
 (defvar-local logview--process-buffer-changes nil)
 
@@ -1815,6 +1832,7 @@ returns non-nil."
          timestamp-at
          cannot-match
          features
+         have-explicit-message
          (add-text-part (lambda (from to)
                           (push (replace-regexp-in-string "[ \t]+" "[ \t]+" (regexp-quote (substring format from to))) parts))))
     (unless (and (stringp format) (> (length format) 0))
@@ -1839,6 +1857,10 @@ returns non-nil."
                                                               logview--final-levels))))
                    parts)
              (push 'level features))
+            ((match-beginning logview--message-group)
+             (unless (= (match-end logview--message-group) (length format))
+               (user-error "Field `MESSAGE' can only be placed at the very end of format string"))
+             (setq have-explicit-message t))
             (t
              (dolist (k (list logview--name-group logview--thread-group logview--ignored-group))
                (when (match-beginning k)
@@ -1872,8 +1894,8 @@ returns non-nil."
       (setq search-from end))
     (when (< search-from (length format))
       (funcall add-text-part search-from nil))
-    ;; Always behave as if format string ends with whitespace.
-    (unless (string-match "[ \t]$" format)
+    ;; Unless `MESSAGE' field is used explicitly, behave as if format string ends with whitespace.
+    (unless (or have-explicit-message (string-match "[ \t]$" format))
       (push "[ \t]+" parts))
     (setq parts (nreverse parts))
     (when timestamp-at
@@ -2505,7 +2527,11 @@ This list is preserved across Emacs session in
       (setq logview--views-need-saving nil))))
 
 (defun logview--completing-read (&rest arguments)
-  (apply (if (fboundp 'ido-completing-read) 'ido-completing-read 'completing-read) arguments))
+  (apply (or logview-completing-read-function
+             (if (and (boundp 'ido-mode) (fboundp 'ido-completing-read) ido-mode)
+                 #'ido-completing-read
+               #'completing-read))
+         arguments))
 
 
 
@@ -2597,7 +2623,8 @@ Optional third argument is to make the function suitable for
                            (unless (equal (plist-get view :submode) logview-filter-edit--editing-views-for-submode)
                              (push view combined-views)))
                          (setq logview--views (nreverse combined-views)))
-                     (setq logview--views new-views))))
+                     (setq logview--views             new-views
+                           logview--views-need-saving t))))
                (funcall do-quit)
                ;; This takes effect only after quitting.
                (logview--update-mode-name))

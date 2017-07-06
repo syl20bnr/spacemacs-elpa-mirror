@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170703.1059
+;; Package-Version: 20170705.417
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1365,8 +1365,8 @@ When REVERT is non-nil, regenerate the current *ivy-occur* buffer."
 (defun counsel-git-grep-recenter ()
   "Recenter window according to the selected candidate."
   (interactive)
+  (counsel-git-grep-action (ivy-state-current ivy-last))
   (with-ivy-window
-    (counsel-git-grep-action (ivy-state-current ivy-last))
     (recenter-top-bottom)))
 
 ;;** `counsel-git-stash'
