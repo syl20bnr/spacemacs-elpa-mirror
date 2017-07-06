@@ -6,9 +6,9 @@
 ;; Created: 31 Dec 2016
 ;; Homepage: https://github.com/raxod502/el-patch
 ;; Keywords: extensions
-;; Package-Version: 1.1.1
+;; Package-Version: 1.1.2
 ;; Package-Requires: ((emacs "25"))
-;; Version: 1.1.1
+;; Version: 1.1.2
 
 ;;; Commentary:
 
@@ -49,6 +49,24 @@
 
 (require 'subr-x)
 (require 'cl-lib)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; User-facing variables
+
+(defgroup el-patch nil
+  "Future-proof your Emacs Lisp customizations!"
+  :prefix "el-patch-"
+  :group 'lisp
+  :link '(url-link :tag "GitHub" "https://github.com/raxod502/el-patch")
+  :link '(emacs-commentary-link :tag "Commentary" "el-patch"))
+
+(defcustom el-patch-use-aggressive-defvar nil
+  "When patching `defvar' or similar, override existing values.
+This means that `el-patch-defvar', `el-patch-defconst', and
+`el-patch-defcustom' will unbind the old variable definition
+before evaluating the new one."
+  :type 'boolean
+  :group 'el-patch)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Internal variables
@@ -217,20 +235,24 @@ new version."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Validating patches
 
-(defvar el-patch-pre-validate-hook nil
+(defcustom el-patch-pre-validate-hook nil
   "Hook run before `el-patch-validate-all'.
 Also run before `el-patch-validate' if a prefix argument is
 provided. This hook should contain functions that make sure all
 of your patches are defined (for example, you might need to load
-some features if your patches are lazily defined).")
+some features if your patches are lazily defined)."
+  :type 'hook
+  :group 'el-patch)
 
-(defvar el-patch-post-validate-hook nil
+(defcustom el-patch-post-validate-hook nil
   "Hook run after `el-patch-validate-all'.
 Also run after `el-patch-validate' if a prefix argument is
 provided. This hook should contain functions that undo any
 patching that might have taken place in
 `el-patch-pre-validate-hook', if you do not want the patches to
-be defined permanently.")
+be defined permanently."
+  :type 'hook
+  :group 'el-patch)
 
 (defun el-patch--classify-definition-type (type)
   "Classifies a definition TYPE as a `function' or `variable'.
@@ -238,7 +260,7 @@ TYPE is a symbol `defun', `defmacro', etc."
   (pcase type
     ((or 'defun 'defmacro 'defsubst 'define-minor-mode)
      'function)
-    ((or 'defvar 'defcustom)
+    ((or 'defvar 'defconst 'defcustom)
      'variable)
     (_ (error "Unexpected definition type %S" type))))
 
@@ -395,7 +417,7 @@ Return a list of those items. Beware, uses heuristics."
     (pcase type
       ((or 'defun 'defmacro 'defsubst)
        (list (cons 'defun name)))
-      ((or 'defvar 'defcustom)
+      ((or 'defvar 'defconst 'defcustom)
        (list name))
       ((quote define-minor-mode)
        (list (cons 'defun name)
@@ -412,6 +434,15 @@ DEFINITION should be a list beginning with `defun', `defmacro',
                                (member item current-load-list))
                              (el-patch--compute-load-history-items
                               definition))))
+    (when (and el-patch-use-aggressive-defvar
+               (eq (el-patch--classify-definition-type
+                    (car definition))
+                   'variable))
+      ;; Note that this won't necessarily handle `define-minor-mode'
+      ;; correctly if a custom `:variable' is specified. However, I'm
+      ;; not going to handle that edge case until somebody else
+      ;; complains about it.
+      (makunbound (cadr definition)))
     (eval definition)
     (dolist (item items)
       (setq current-load-list (remove item current-load-list)))))
@@ -465,6 +496,12 @@ etc., which may contain patch directives."
   "Patch a variable. The ARGS are the same as for `defvar'."
   (declare (indent defun))
   `(el-patch--definition ',(cons #'defvar args)))
+
+;;;###autoload
+(defmacro el-patch-defconst (&rest args)
+  "Patch a constant. The ARGS are the same as for `defconst'."
+  (declare (indent defun))
+  `(el-patch--definition ',(cons #'defconst args)))
 
 ;;;###autoload
 (defmacro el-patch-defcustom (&rest args)

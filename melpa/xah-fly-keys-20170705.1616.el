@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2016, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 7.5.2
-;; Package-Version: 20170702.1914
+;; Version: 7.5.3
+;; Package-Version: 20170705.1616
 ;; Created: 10 Sep 2013
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, emulations, vim, ergoemacs
@@ -1672,11 +1672,11 @@ Version 2017-05-22"
            ((looking-at "\\s(")
             (if (eq (nth 0 (syntax-ppss)) 0)
                 (progn
-                  (message "left bracket, depth 0.")
+                  ;; (message "left bracket, depth 0.")
                   (end-of-line) ; select current line
                   (set-mark (line-beginning-position)))
               (progn
-                (message "left bracket, depth not 0")
+                ;; (message "left bracket, depth not 0")
                 (up-list -1 t t)
                 (mark-sexp))))
            ((eq -rb (line-beginning-position))
@@ -1686,65 +1686,68 @@ Version 2017-05-22"
                 (cond
                  ((eq -re -firstLineEndPos)
                   (progn
-                    (message "exactly 1 line. extend to next whole line." )
+                    ;; (message "exactly 1 line. extend to next whole line." )
                     (forward-line 1)
                     (end-of-line)))
                  ((< -re -firstLineEndPos)
                   (progn
-                    (message "less than 1 line. complete the line." )
+                    ;; (message "less than 1 line. complete the line." )
                     (end-of-line)))
                  ((> -re -firstLineEndPos)
                   (progn
-                    (message "beginning of line, but end is greater than 1st end of line" )
+                    ;; (message "beginning of line, but end is greater than 1st end of line" )
                     (goto-char -re)
                     (if (eq (point) (line-end-position))
                         (progn
-                          (message "exactly multiple lines" )
+                          ;; (message "exactly multiple lines" )
                           (forward-line 1)
                           (end-of-line))
                       (progn
-                        (message "multiple lines but end is not eol. make it so" )
+                        ;; (message "multiple lines but end is not eol. make it so" )
                         (goto-char -re)
                         (end-of-line)))))
                  (t (error "logic error 42946" ))))))
            ((and (> (point) (line-beginning-position)) (<= (point) (line-end-position)))
             (progn
-              (message "less than 1 line" )
+              ;; (message "less than 1 line" )
               (end-of-line) ; select current line
               (set-mark (line-beginning-position))))
-           (t (message "last resort" ) nil))))
+           (t
+            ;; (message "last resort" )
+            nil))))
     (progn
       (cond
        ((looking-at "\\s(")
-        (message "left bracket")
+        ;; (message "left bracket")
         (mark-sexp)) ; left bracket
        ((looking-at "\\s)")
-        (message "right bracket")
+        ;; (message "right bracket")
         (backward-up-list) (mark-sexp))
        ((looking-at "\\s\"")
-        (message "string quote")
+        ;; (message "string quote")
         (mark-sexp)) ; string quote
        ;; ((and (eq (point) (line-beginning-position)) (not (looking-at "\n")))
        ;;  (message "beginning of line and not empty")
        ;;  (end-of-line)
        ;;  (set-mark (line-beginning-position)))
        ((or (looking-back "\\s_" 1) (looking-back "\\sw" 1))
-        (message "left is word or symbol")
+        ;; (message "left is word or symbol")
         (skip-syntax-backward "_w" )
         ;; (re-search-backward "^\\(\\sw\\|\\s_\\)" nil t)
         (mark-sexp)
         (exchange-point-and-mark))
        ((and (looking-at "\\s ") (looking-back "\\s " 1))
-        (message "left and right both space" )
+        ;; (message "left and right both space" )
         (skip-chars-backward "\\s " ) (set-mark (point))
         (skip-chars-forward "\\s "))
        ((and (looking-at "\n") (looking-back "\n" 1))
-        (message "left and right both newline")
+        ;; (message "left and right both newline")
         (skip-chars-forward "\n")
         (set-mark (point))
         (re-search-forward "\n[ \t]*\n")) ; between blank lines, select next text block
-       (t (message "just mark sexp" )
-          (mark-sexp))
+       (t
+        ;; (message "just mark sexp" )
+        (mark-sexp))
        ;;
        ))))
 
@@ -2896,8 +2899,8 @@ Version 2017-01-21"
       (define-key xah-fly-key-map (kbd "C--") 'text-scale-decrease)
       (define-key xah-fly-key-map (kbd "C-0") (lambda () (interactive) (text-scale-set 0)))
 
-      (define-key xah-fly-key-map (kbd "C-r") 'hippie-expand)
-      (define-key xah-fly-key-map (kbd "C-t") 'xah-toggle-letter-case) ; never do transpose-chars
+      (define-key xah-fly-key-map (kbd "C-t") nil) ; never do transpose-chars
+
       ;;
       ))
 
@@ -2938,7 +2941,7 @@ Version 2017-01-21"
      ("-" . xah-cycle-hyphen-underscore-space)
      ("." . backward-kill-word)
      (";" . xah-comment-dwim)
-     ("/" . xah-backward-equal-sign)
+     ("/" . hippie-expand)
      ("\\" . nil)
      ("=" . xah-forward-equal-sign)
      ("[" . xah-backward-punct )
@@ -2957,7 +2960,7 @@ Version 2017-01-21"
      ("7" . xah-select-current-line)
      ("8" . xah-extend-selection)
      ("9" . xah-select-text-in-quote)
-     ("0" . xah-backward-punct)
+     ("0" . nil)
 
      ("a" . execute-extended-command)
      ("b" . isearch-forward)
