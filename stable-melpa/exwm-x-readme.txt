@@ -1,8 +1,8 @@
-* Exwm-X                                                         :README:doc:
+* EXWM-X                                                         :README:doc:
 
-** What is Exwm-X
+** What is EXWM-X
 
-Exwm-X is a derivative window manager based on EXWM (emacs x window manager),
+EXWM-X is a derivative window manager based on EXWM (emacs x window manager),
 which focus on Mouse-Control-People.
 
 ** Showcase
@@ -33,7 +33,7 @@ Record the shell command of application.
 Define alias of an application, this key is used by `exwmx-quickrun'.
 
 **** :pretty-name
-In EXWM and Exwm-X, an application is assocated with an emacs buffer,
+In EXWM and EXWM-X, an application is assocated with an emacs buffer,
 user can set the buffer's name with :pretty-name.
 
 **** :paste-key
@@ -62,7 +62,7 @@ Note: if set it to `t', all keys in `exwm-input-prefix-keys'
 will be removed, this is very useful when you want to launch
 a new emacs session, this make new emacs session use *nearly*
 all the keybindings except the keybindings defined by
-`exwm-input-set-key'.
+`exwmx-input-set-key'.
 
 **** :ignore-simulation-keys
 Ingore simulation keys of application, if you set :remove-prefix-keys
@@ -72,7 +72,7 @@ to 't, maybe you should set this option to 't too.
 Evaluation a expression when launch an application.
 
 *** Buttons
-Exwm-X add the following *buttons* to mode-line, user can
+EXWM-X add the following *buttons* to mode-line, user can
 click them to operate application's window:
 
 1. [X]: Delete the current application.
@@ -86,7 +86,7 @@ click them to operate application's window:
 9. [_]: minumize floating application
 10. [Line 'XXXX'] or [L]: line-mode
 11. [Char 'XXXX'] or [C]: Char-mode
-12. [←][↑][↓][→]: Resize the floating window of application.
+12. [9][8][7][6][5]: Set the size of the floating window to 90%~50% of screen.
 
 Note: user can use mode-line as the button-line of floating window:
 
@@ -98,9 +98,9 @@ Note: user can use mode-line as the button-line of floating window:
 By default, EXWM use "s-'down-mouse-1'" to move a floating-window
 and "s-'down-mouse-3'" to resize a floating-window.
 
-When Exwm-X is enabled, user can drag *title showed in button-line*
-to move a floating-window. and click [←][↑][↓][→] in button-line
-to resize a floating-window, *without press WIN key*.
+When EXWM-X is enabled, user can drag *title showed in button-line*
+to move a floating-window. and click [9][8][7][6][5] in button-line
+to set a floating-window's size, *without press WIN key*.
 
 Note: button-line is mode-line or header-line of emacs.
 
@@ -239,24 +239,24 @@ Add your exwm config to this file, for example:
 (require 'exwm-x)
 (require 'exwmx-xfce)
 (require 'exwmx-example)
-(exwm-input-set-key (kbd "C-t v") 'exwmx:file-browser)
-(exwm-input-set-key (kbd "C-t f") 'exwmx:web-browser)
-(exwm-input-set-key (kbd "C-t e") 'exwmx:emacs)
-(exwm-input-set-key (kbd "C-t c") 'exwmx-xfce-terminal)
-(exwm-input-set-key (kbd "C-t z") 'exwmx-floating-hide-all)
-(exwm-input-set-key (kbd "C-t C-c") 'exwmx-xfce-new-terminal)
-(exwm-input-set-key (kbd "C-t b") 'exwmx-switch-application)
+(exwmx-input-set-key (kbd "C-t v") 'exwmx:file-browser)
+(exwmx-input-set-key (kbd "C-t f") 'exwmx:web-browser)
+(exwmx-input-set-key (kbd "C-t e") 'exwmx:emacs)
+(exwmx-input-set-key (kbd "C-t c") 'exwmx-xfce-terminal)
+(exwmx-input-set-key (kbd "C-t z") 'exwmx-floating-hide-all)
+(exwmx-input-set-key (kbd "C-t C-c") 'exwmx-xfce-new-terminal)
+(exwmx-input-set-key (kbd "C-t b") 'exwmx-switch-application)
 
-(exwm-input-set-key (kbd "C-t C-f") 'exwm-floating-toggle-floating)
+(exwmx-input-set-key (kbd "C-t C-f") 'exwmx-floating-toggle-floating)
 #+END_EXAMPLE
 
 ** Usage
 *** Build appconfig database
-When user *first* login in Exwm-X desktop environment,
+When user *first* login in EXWM-X desktop environment,
 appconfigs of frequently used applications should be added
 to appconfig database file: `exwmx-appconfig-file',
 it is simple but *very very* important, for many useful commands
-of Exwm-X need this database file, for example:
+of EXWM-X need this database file, for example:
 `exwmx-quickrun', `exwmx-sendstring' and so on.
 
 user should do like the below:
@@ -270,9 +270,9 @@ user should do like the below:
 
 
 *** The usage of "exwmx-example"
-"exwmx-example" is Exwm-X buildin example, user can use it to
-test Exwm-X's features, the following is its keybindings.
-by the way, Exwm-X is a Exwm derivative, most Exwm commands
+"exwmx-example" is EXWM-X buildin example, user can use it to
+test EXWM-X's features, the following is its keybindings.
+by the way, EXWM-X is a EXWM derivative, most EXWM commands
 can be used too :-)
 
 | Key       | command                         |
