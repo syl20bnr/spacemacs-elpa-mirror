@@ -62,7 +62,7 @@ Note: if set it to `t', all keys in `exwm-input-prefix-keys'
 will be removed, this is very useful when you want to launch
 a new emacs session, this make new emacs session use *nearly*
 all the keybindings except the keybindings defined by
-`exwm-input-set-key'.
+`exwmx-input-set-key'.
 
 **** :ignore-simulation-keys
 Ingore simulation keys of application, if you set :remove-prefix-keys
@@ -86,7 +86,7 @@ click them to operate application's window:
 9. [_]: minumize floating application
 10. [Line 'XXXX'] or [L]: line-mode
 11. [Char 'XXXX'] or [C]: Char-mode
-12. [←][↑][↓][→]: Resize the floating window of application.
+12. [9][8][7][6][5]: Set the size of the floating window to 90%~50% of screen.
 
 Note: user can use mode-line as the button-line of floating window:
 
@@ -99,8 +99,8 @@ By default, EXWM use "s-'down-mouse-1'" to move a floating-window
 and "s-'down-mouse-3'" to resize a floating-window.
 
 When EXWM-X is enabled, user can drag *title showed in button-line*
-to move a floating-window. and click [←][↑][↓][→] in button-line
-to resize a floating-window, *without press WIN key*.
+to move a floating-window. and click [9][8][7][6][5] in button-line
+to set a floating-window's size, *without press WIN key*.
 
 Note: button-line is mode-line or header-line of emacs.
 
@@ -239,15 +239,15 @@ Add your exwm config to this file, for example:
 (require 'exwm-x)
 (require 'exwmx-xfce)
 (require 'exwmx-example)
-(exwm-input-set-key (kbd "C-t v") 'exwmx:file-browser)
-(exwm-input-set-key (kbd "C-t f") 'exwmx:web-browser)
-(exwm-input-set-key (kbd "C-t e") 'exwmx:emacs)
-(exwm-input-set-key (kbd "C-t c") 'exwmx-xfce-terminal)
-(exwm-input-set-key (kbd "C-t z") 'exwmx-floating-hide-all)
-(exwm-input-set-key (kbd "C-t C-c") 'exwmx-xfce-new-terminal)
-(exwm-input-set-key (kbd "C-t b") 'exwmx-switch-application)
+(exwmx-input-set-key (kbd "C-t v") 'exwmx:file-browser)
+(exwmx-input-set-key (kbd "C-t f") 'exwmx:web-browser)
+(exwmx-input-set-key (kbd "C-t e") 'exwmx:emacs)
+(exwmx-input-set-key (kbd "C-t c") 'exwmx-xfce-terminal)
+(exwmx-input-set-key (kbd "C-t z") 'exwmx-floating-hide-all)
+(exwmx-input-set-key (kbd "C-t C-c") 'exwmx-xfce-new-terminal)
+(exwmx-input-set-key (kbd "C-t b") 'exwmx-switch-application)
 
-(exwm-input-set-key (kbd "C-t C-f") 'exwm-floating-toggle-floating)
+(exwmx-input-set-key (kbd "C-t C-f") 'exwmx-floating-toggle-floating)
 #+END_EXAMPLE
 
 ** Usage
