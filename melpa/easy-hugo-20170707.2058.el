@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20170531.216
-;; Version: 0.9.9
+;; Package-Version: 20170707.2058
+;; Version: 1.0.0
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -421,7 +421,7 @@ Because only two are supported by hugo."
 
 ;;;###autoload
 (defun easy-hugo-article ()
-  "Open a list of articles written in hugo."
+  "Open a list of articles written in hugo with dired."
   (interactive)
   (unless easy-hugo-basedir
     (error "Please set easy-hugo-basedir variable"))
@@ -498,6 +498,14 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
      (goto-char (point-max))
      (save-buffer))))
 
+(defun easy-hugo--version ()
+  "Return the version of hugo."
+  (let ((source (split-string
+		 (with-temp-buffer
+		   (shell-command-to-string "hugo version"))
+		 " ")))
+    (substring (nth 4 source) 1)))
+
 ;;;###autoload
 (defun easy-hugo-preview ()
   "Preview hugo at localhost."
@@ -506,8 +514,11 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
    (if (process-live-p easy-hugo--server-process)
        (browse-url easy-hugo-preview-url)
      (progn
-       (setq easy-hugo--server-process
-	     (start-process "hugo-server" easy-hugo--preview-buffer "hugo" "server"))
+       (if (<= 0.25 (string-to-number (easy-hugo--version)))
+	   (setq easy-hugo--server-process
+	   	 (start-process "hugo-server" easy-hugo--preview-buffer "hugo" "server" "--navigateToChanged"))
+	 (setq easy-hugo--server-process
+	       (start-process "hugo-server" easy-hugo--preview-buffer "hugo" "server")))
        (browse-url easy-hugo-preview-url)
        (run-at-time easy-hugo-previewtime nil 'easy-hugo--preview-end)))))
 
@@ -524,7 +535,7 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
 
 ;;;###autoload
 (defun easy-hugo-github-deploy ()
-  "Execute deploy.sh script locate at 'easy-hugo-basedir'."
+  "Execute deploy.sh script locate at `easy-hugo-basedir'."
   (interactive)
   (easy-hugo-with-env
    (let ((deployscript (file-truename (concat easy-hugo-basedir "deploy.sh"))))
@@ -585,12 +596,12 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
   (easy-hugo-with-env
    (unless easy-hugo-basedir
      (error "Please set easy-hugo-basedir variable"))
-   (cond ((file-exists-p (concat easy-hugo-basedir "config.toml"))
-	  (find-file (concat easy-hugo-basedir "config.toml")))
-	 ((file-exists-p (concat easy-hugo-basedir "config.yaml"))
-	  (find-file (concat easy-hugo-basedir "config.yaml")))
-	 ((file-exists-p (concat easy-hugo-basedir "config.json"))
-	  (find-file (concat easy-hugo-basedir "config.json")))
+   (cond ((file-exists-p (expand-file-name "config.toml" easy-hugo-basedir))
+	  (find-file (expand-file-name "config.toml" easy-hugo-basedir)))
+	 ((file-exists-p (expand-file-name "config.yaml" easy-hugo-basedir))
+	  (find-file (expand-file-name "config.yaml" easy-hugo-basedir)))
+	 ((file-exists-p (expand-file-name "config.json" easy-hugo-basedir))
+	  (find-file (expand-file-name "config.json" easy-hugo-basedir)))
 	 (t (error "Hugo config file not found at %s" easy-hugo-basedir)))))
 
 (defconst easy-hugo--help
@@ -764,7 +775,7 @@ Enjoy!
   (easy-hugo))
 
 (defun easy-hugo-open ()
-  "Open file."
+  "Open the file on the pointer."
   (interactive)
   (unless (or (string-match "^$" (thing-at-point 'line))
 	      (eq (point) (point-max))
@@ -777,12 +788,12 @@ Enjoy!
 	(find-file file)))))
 
 (defun easy-hugo-open-basedir ()
-  "Open easy-hugo-basedir."
+  "Open `easy-hugo-basedir' with dired."
   (interactive)
   (switch-to-buffer (find-file-noselect easy-hugo-basedir)))
 
 (defun easy-hugo-view ()
-  "Open file with 'view-mode'."
+  "Open the file on the pointer with 'view-mode'."
   (interactive)
   (unless (or (string-match "^$" (thing-at-point 'line))
 	      (eq (point) (point-max))
@@ -795,7 +806,7 @@ Enjoy!
 	(view-file file)))))
 
 (defun easy-hugo-delete ()
-  "Delete file."
+  "Delete the file on the pointer."
   (interactive)
   (unless (or (string-match "^$" (thing-at-point 'line))
 	      (eq (point) (point-max))
