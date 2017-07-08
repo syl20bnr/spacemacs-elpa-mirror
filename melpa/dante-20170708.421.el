@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20170622.34
+;; Package-Version: 20170708.421
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((flycheck "0.30") (emacs "25.1") (dash "2.13.0") (f "0.19.0") (s "1.11.0"))
@@ -119,6 +119,10 @@ otherwise look for a .cabal file, or use the current dir."
                                                       '("nix-shell" "--run" (if dante-target (concat "cabal repl " dante-target) "cabal repl")))))
     (stack . ,(lambda (root) (dante-repl-by-file root '("stack.yaml") '("stack" "repl" dante-target))))
     (mafia . ,(lambda (root) (dante-repl-by-file root '("mafia") '("mafia" "repl" dante-target))))
+    (new-build . ,(lambda (root)
+                    (when (or (directory-files root nil ".*\\.cabal$")
+                              (file-exists-p "cabal.project"))
+                      '("cabal" "new-repl" dante-target))))
     (bare  . ,(lambda (_) '("cabal" "repl" dante-target))))
   "Default GHCi launch command lines.")
 
