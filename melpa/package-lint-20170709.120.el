@@ -5,7 +5,7 @@
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;;         Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/purcell/package-lint
-;; Package-Version: 20170709.107
+;; Package-Version: 20170709.120
 ;; Keywords: lisp
 ;; Version: 0
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
@@ -445,8 +445,8 @@ the form (PACKAGE-NAME PACKAGE-VERSION LINE-NO LINE-BEGINNING-OFFSET)."
   (let ((ppss (save-match-data (syntax-ppss))))
     (or (nth 3 ppss) (nth 4 ppss))))
 
-(defun package-lint--seen-featurep-check-for (sym)
-  "Return non-nil if a `featurep' check for SYM is present before point."
+(defun package-lint--seen-fboundp-check-for (sym)
+  "Return non-nil if a `fboundp' check for SYM is present before point."
   (save-excursion
     (save-match-data
       (and (re-search-backward
@@ -464,7 +464,7 @@ REGEXP is (concat RX-START REGEXP* RX-END) for each REGEXP*."
         (while (re-search-forward (concat rx-start regexp rx-end) nil t)
           (unless (package-lint--inside-comment-or-string-p)
             (let ((sym (match-string-no-properties 1)))
-              (unless (package-lint--seen-featurep-check-for sym)
+              (unless (package-lint--seen-fboundp-check-for sym)
                 (package-lint--error
                  (line-number-at-pos)
                  (save-excursion (goto-char (match-beginning 1)) (current-column))

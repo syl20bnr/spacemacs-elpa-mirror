@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2016, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 7.6.6
-;; Package-Version: 20170708.2034
+;; Version: 7.6.9
+;; Package-Version: 20170709.242
 ;; Created: 10 Sep 2013
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, emulations, vim, ergoemacs
@@ -1119,14 +1119,14 @@ Version 2017-01-27"
 A “block” is text between blank lines.
 
 URL `http://ergoemacs.org/emacs/emacs_delete_block.html'
-Version 2017-07-07"
+Version 2017-07-09"
   (interactive)
   (let (-p1 -p2)
     (if (use-region-p)
         (setq -p1 (region-beginning) -p2 (region-end))
       (progn
-        (if (re-search-backward "\n[ \t]*\n" nil "move")
-            (progn (re-search-forward "\n[ \t]*\n")
+        (if (re-search-backward "\n[ \t]*\n+" nil "move")
+            (progn (re-search-forward "\n[ \t]*\n+")
                    (setq -p1 (point)))
           (setq -p1 (point)))
         (re-search-forward "\n[ \t]*\n" nil "move")

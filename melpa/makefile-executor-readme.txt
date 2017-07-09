@@ -1,0 +1,14 @@
+A set of tools aimed at working with Makefiles on a project level.
+
+Currently available:
+- Interactively selecting a make target and running it.
+  Bound to 'C-c C-e' when 'makefile-executor-mode' is enabled.
+- Calculation of variables et.c.; $(BINARY) will show up as what it
+  evaluates to.
+- Execution from any buffer in a project.  If more than one is found,
+  an interactive prompt for one is shown.  This is added to the
+  `projectile-commander' on the 'm' key.
+
+To enable it, use the following snippet to add the hook into 'makefile-mode':
+
+(add-hook 'makefile-mode-hook 'makefile-executor-mode)
