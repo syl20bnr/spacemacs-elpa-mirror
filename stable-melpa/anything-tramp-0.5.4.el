@@ -1,11 +1,11 @@
-;;; anything-tramp.el --- Tramp with anything for ssh server and docker -*- lexical-binding: t; -*-
+;;; anything-tramp.el --- Tramp with anything for ssh and docker and vagrant-*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2017 by Masashı Mıyaura
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-anything-tramp
-;; Package-Version: 0.4.3
-;; Version: 0.4.3
+;; Package-Version: 0.5.4
+;; Version: 0.5.4
 ;; Package-Requires: ((emacs "24.3") (anything "1.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -26,6 +26,7 @@
 ;; anything-tramp provides interfaces of Tramp
 ;; You can also use tramp with anything interface as root
 ;; If you use it with docker-tramp, you can also use docker with anything interface
+;; If you use it with vagrant-tramp, you can also use vagrant with anything interface
 
 ;;; Code:
 
@@ -34,7 +35,7 @@
 (require 'cl-lib)
 
 (defgroup anything-tramp nil
-  "Tramp with anything for ssh server and docker"
+  "Tramp with anything for ssh server and docker and vagrant"
   :group 'anything)
 
 (defcustom anything-tramp-docker-user nil
@@ -64,7 +65,7 @@
 	  (push
 	   (concat "/ssh:" host "|sudo:" host ":/")
 	   hosts))))
-    (when (featurep 'docker-tramp)
+    (when (package-installed-p 'docker-tramp)
       (cl-loop for line in (cdr (ignore-errors (apply #'process-lines "docker" (list "ps"))))
 	       for info = (split-string line "[[:space:]]+" t)
 	       collect (progn (push
@@ -74,6 +75,11 @@
 				(push
 				 (concat "/docker:" anything-tramp-docker-user "@" (car info) ":/")
 				 hosts)))))
+    (when (package-installed-p 'vagrant-tramp)
+      (cl-loop for box-name in (map 'list 'cadr (vagrant-tramp--completions))
+               do (progn
+                    (push (concat "/vagrant:" box-name ":/") hosts)
+                    (push (concat "/vagrant:" box-name "|sudo:" box-name ":/") hosts))))
     (push "/sudo:root@localhost:/" hosts)
     (reverse hosts)))
 
@@ -94,9 +100,12 @@ You can connect your server with tramp"
   (interactive)
   (unless (file-exists-p "~/.ssh/config")
     (error "There is no ~/.ssh/config"))
-  (when (featurep 'docker-tramp)
+  (when (package-installed-p 'docker-tramp)
     (unless (executable-find "docker")
       (error "'docker' is not installed")))
+  (when (package-installed-p 'vagrant-tramp)
+    (unless (executable-find "vagrant")
+      (error "'vagrant' is not installed")))
   (anything-other-buffer
    '(anything-tramp-hosts)
    "*anything-tramp*"))

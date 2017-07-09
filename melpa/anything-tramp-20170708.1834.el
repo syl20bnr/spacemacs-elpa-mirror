@@ -1,10 +1,10 @@
-;;; anything-tramp.el --- Tramp with anything for ssh server and docker -*- lexical-binding: t; -*-
+;;; anything-tramp.el --- Tramp with anything for ssh and docker and vagrant-*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2017 by Masashı Mıyaura
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-anything-tramp
-;; Package-Version: 20170708.327
+;; Package-Version: 20170708.1834
 ;; Version: 0.5.4
 ;; Package-Requires: ((emacs "24.3") (anything "1.0"))
 
@@ -26,6 +26,7 @@
 ;; anything-tramp provides interfaces of Tramp
 ;; You can also use tramp with anything interface as root
 ;; If you use it with docker-tramp, you can also use docker with anything interface
+;; If you use it with vagrant-tramp, you can also use vagrant with anything interface
 
 ;;; Code:
 
@@ -34,7 +35,7 @@
 (require 'cl-lib)
 
 (defgroup anything-tramp nil
-  "Tramp with anything for ssh server and docker"
+  "Tramp with anything for ssh server and docker and vagrant"
   :group 'anything)
 
 (defcustom anything-tramp-docker-user nil
