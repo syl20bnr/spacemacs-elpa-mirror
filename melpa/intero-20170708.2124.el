@@ -10,11 +10,11 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20170615.104
+;; Package-Version: 20170708.2124
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
-;; Package-Requires: ((flycheck "0.25") (company "0.8") (emacs "24.4") (haskell-mode "13.0"))
+;; Package-Requires: ((flycheck "0.25") (company "0.8") (emacs "25") (haskell-mode "13.0"))
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -354,7 +354,7 @@ You can use this to kill them or look inside."
     (buffer-string)))
 
 (defun intero-uses-at ()
-  "Highlight uses of the identifier at point."
+  "Highlight where the identifier at point is used."
   (interactive)
   (let* ((thing (intero-thing-at-point))
          (uses (split-string (apply #'intero-get-uses-at thing)
@@ -2929,8 +2929,7 @@ Equivalent to 'warn', but label the warning as coming from intero."
   (remove-overlays (point-min) (point-max) 'intero-highlight-uses-mode-highlight t))
 
 (defun intero-highlight-uses-mode-replace ()
-  "Replace all highlighted instances in the buffer with something
-  else."
+  "Replace all highlighted instances in the buffer with something else."
   (interactive)
   (save-excursion
     (goto-char (point-min))
@@ -2998,7 +2997,8 @@ Equivalent to 'warn', but label the warning as coming from intero."
       (car os))))
 
 (defun intero-highlight-uses-mode-highlight (start end current)
-  "Make a highlight overlay at the given span."
+  "Make a highlight overlay at the span from START to END.
+If CURRENT, highlight the span uniquely."
   (let ((o (make-overlay start end)))
     (overlay-put o 'priority 999)
     (overlay-put o 'face
