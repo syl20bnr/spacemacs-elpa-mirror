@@ -4,7 +4,7 @@
 
 ;; Author: atom smith
 ;; URL: https://github.com/re5et/itail
-;; Package-Version: 20161022.1431
+;; Package-Version: 20170709.1543
 ;; Created: 26 Dec 2012
 ;; Version: 0.0.5
 ;; Keywords: tail
@@ -74,6 +74,19 @@ an sh compatible shell command like 'grep ERROR'")
   "Interactive tail."
   :group 'itail)
 
+(defcustom itail-lines
+  nil
+  "Number of line to start output with when opening tail.
+If positive or zero, count from the beginning of file.
+If negative, count from the end of file."
+  :type '(choice (const         :tag "Default"      :value nil)
+                 (function-item :tag "Screen Lines" :value (lambda ()
+                                                             (- (count-screen-lines (window-start)
+                                                                                    (window-end)))))
+                 (function      :tag "Dynamic Lines")
+                 (integer       :tag "Static Lines"))
+  :group 'itail)
+
 (defcustom itail-highlight-list
   '(("Error" . hi-red-b)
     ("GET\\|POST\\|DELETE\\|PUT" . hi-green-b)
@@ -106,19 +119,23 @@ clearing and filtering
   :keymap itail-keymap)
 
 ;;;###autoload
-(defun itail (file)
+(defun itail (file &optional lines)
   "Tail file FILE in itail mode.  Supports remote tailing through tramp "
-  (interactive "ftail file: ")
-  (let* ((buffer-name (concat "tail " file))
+  (interactive "fTail file: \nP")
+  (let* ((buffer-name (concat "itail: " file))
          (remote-match (string-match "\\(.*:\\)\\(.*\\)" file))
          (default-directory (if remote-match (match-string 1 file) default-directory))
          (file (if remote-match
                    (match-string 2 file)
-                 (expand-file-name file))))
-    (make-comint buffer-name "tail" nil "-F" file)
+                 (expand-file-name file)))
+         (lines (or lines (if (functionp itail-lines) (funcall itail-lines) itail-lines))))
+    (apply #'make-comint buffer-name "tail" nil "-F" file (when (numberp lines)
+                                                            (list "-n" (format "%+d" lines))))
     (funcall itail-open-fn (concat "*" buffer-name "*")))
   (ansi-color-for-comint-mode-on)
   (add-hook 'comint-preoutput-filter-functions 'itail-output-filter)
+  (goto-char (point-max))
+  (setq buffer-read-only t)
   (setq itail-file file)
   (setq itail-filters ())
   (itail-mode-line)

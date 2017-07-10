@@ -4,7 +4,7 @@
 
 ;; Author: Nicolas Petton <nicolas@petton.fr>
 ;; Keywords: themes
-;; Package-Version: 20170607.1301
+;; Package-Version: 4.5
 ;; URL: https://github.com/NicolasPetton/zerodark-theme
 ;; Version: 4.3
 ;; Package: zerodark-theme
@@ -285,6 +285,10 @@ The result is cached for one second to avoid hiccups."
    `(linum ((,class (:foreground ,comment :background ,background))))
    ;; from hlinum
    `(linum-highlight-face ((,class (:foreground ,blue ,background ,background-blue))))
+
+   ;; native line numbers (emacs 26)
+   `(line-number ((,class (:foreground ,comment :background ,background))))
+   `(line-number-current-line ((,class (:foreground ,blue ,background ,background-blue))))
 
    ;; eshell
    `(eshell-prompt ((,class (:foreground ,orange :background ,background :weight bold))))
