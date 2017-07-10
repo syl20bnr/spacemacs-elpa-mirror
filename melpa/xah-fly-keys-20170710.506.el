@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2016, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 7.6.11
-;; Package-Version: 20170710.359
+;; Version: 7.6.12
+;; Package-Version: 20170710.506
 ;; Created: 10 Sep 2013
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, emulations, vim, ergoemacs
@@ -3133,9 +3133,6 @@ Version 2017-01-21"
   (if xah-fly-insert-state-q
       (xah-fly-command-mode-activate)
     (xah-fly-insert-mode-activate)))
-
-;; automatic save buffer when switching to command mode
-(add-hook 'xah-fly-command-mode-activate-hook 'xah-fly-save-buffer-if-file)
 
 (defun xah-fly-save-buffer-if-file ()
   "Save current buffer if it is a file."

@@ -4,9 +4,9 @@
 
 ;; Author: 0rdy <mail@0rdy.com>
 ;; URL: https://github.com/0rdy/kaolin-theme
-;; Package-Version: 20170618.919
+;; Package-Version: 20170710.1014
 ;; Package-Requires: ((emacs "24"))
-;; Version: 0.8.5
+;; Version: 0.8.6
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@
   "Face to highlight boolean values"
   :group 'kaolin-theme)
 
-;; TODO: move light-green to separate hl var and (??) chage to lavender
+;; TODO: move light-green to separated hl var and (??) chage to lavender
 ;; Kaolin color palette
 (let ((c '((class color) (min-colors 89)))
       (black1          "#1b1b1b")
@@ -172,6 +172,7 @@
          (rb4 faded-blue)
          (rb5 green)
          (rb6 light-brown)
+         ;; TODO: change
          (rb7 light-green)
          (rb8 wheat)
          (rb9 lavender)
@@ -221,7 +222,7 @@
          ;; TODO: change number color ??  pink ?? light-yellow ?? alt-orange
          (num        red)
          (bool       num)
-         (prep       alt-purple)
+         (prep       lavender)
          (warning    orange)
          (err        red))
 

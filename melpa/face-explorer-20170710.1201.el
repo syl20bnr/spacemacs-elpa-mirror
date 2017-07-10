@@ -4,9 +4,10 @@
 
 ;; Author: Anders Lindgren
 ;; Keywords: faces
-;; Package-Version: 20170626.431
-;; Version: 0.0.2
+;; Package-Version: 20170710.1201
+;; Version: 0.0.3
 ;; Created: 2017-02-24 (Based code from e2ansi created 2014-12-09)
+;; URL: https://github.com/Lindydancer/face-explorer
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by

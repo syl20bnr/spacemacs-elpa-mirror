@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 ~ 2015 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; Version: 1.6.8
-;; Package-Version: 20170709.2215
+;; Package-Version: 20170710.1238
 ;; Package-Requires: ((helm "1.5") (w3m "0.0") (cl-lib "0.5") (emacs "24.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -29,9 +29,10 @@
 ;; without having the w3m executable :-;
 ;; So check if w3m program is present before trying to load
 ;; emacs-w3m.
-(eval-when-compile
-  (when (executable-find "w3m")
-    (require 'w3m-bookmark nil t)))
+(when (executable-find "w3m")
+  (require 'w3m-bookmark nil t))
+
+(declare-function w3m-browse-url "w3m.el")
 
 
 (defgroup helm-w3m nil
@@ -144,7 +145,13 @@ Needs w3m and emacs-w3m.
 http://w3m.sourceforge.net/
 http://emacs-w3m.namazu.org/"
   (interactive)
-  (helm :sources 'helm-source-w3m-bookmarks
+  (helm :sources `(helm-source-w3m-bookmarks
+                   ,(helm-build-dummy-source "DuckDuckgo"
+                      :action (lambda (candidate)
+                                (w3m-browse-url
+                                 (format helm-surfraw-duckduckgo-url
+                                         (url-hexify-string candidate))
+                                 helm-current-prefix-arg))))
         :buffer "*helm w3m bookmarks*"))
 
 

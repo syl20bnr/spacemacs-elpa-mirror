@@ -42,3 +42,4 @@ this is a list of them and their required packages.
 - `sunrise' [`yahoo-weather']                       Display an icon to show todays sunrise time
 - `sunset' [`yahoo-weather']                        Display an icon to show todays sunset time
 - `battery-status' [`fancy-battery']                Display a colour coded battery with time remaining
+- `nyan-mode' [`nyan-mode']                         Display Nyan Cat as a progress meter through the buffer

@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170705.417
+;; Package-Version: 20170710.1111
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -2003,7 +2003,7 @@ This uses `counsel-ag' with `counsel-ack-base-command' replacing
 
 
 ;;** `counsel-rg'
-(defcustom counsel-rg-base-command "rg -i --no-heading --line-number --max-columns 150 --color never %s ."
+(defcustom counsel-rg-base-command "rg -i --no-heading --line-number --color never %s ."
   "Alternative to `counsel-ag-base-command' using ripgrep."
   :type 'string
   :group 'ivy)

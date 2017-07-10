@@ -5,7 +5,7 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/system-packages
-;; Package-Version: 20170627.1127
+;; Package-Version: 20170710.612
 ;; Version: 0.1
 ;; Package-Requires: ((cl-lib "0.5"))
 
@@ -104,6 +104,23 @@
              (list-installed-packages-all . "pacman -Q")
              (list-dependencies-of . "pacman -Qi")))
     ;; Debian (and Ubuntu) based systems
+    (apt .
+         ((default-sudo . t)
+          (install . "apt install")
+          (search . "apt search")
+          (uninstall . "apt remove")
+          (update . ("apt update" "apt upgrade"))
+          (clean-cache . "apt-get clean")
+          (log . "cat /var/log/dpkg.log")
+          (get-info . "dpkg -s")
+          (get-info-remote . "apt show")
+          (list-files-provided-by . "dpkg -L")
+          (verify-all-packages . "debsums")
+          (verify-all-dependencies . "apt-get check")
+          (remove-orphaned . "apt autoremove")
+          (list-installed-packages . nil)
+          (list-installed-packages-all . nil)
+          (list-dependencies-of . "apt-cache deps")))
     (aptitude .
               ((default-sudo . t)
                (install . "aptitude install")
@@ -121,23 +138,6 @@
                (list-installed-packages . "aptitude search '~i!~M'")
                (list-installed-packages-all . "aptitude search '~i!~M'")
                (list-dependencies-of . "apt-cache deps")))
-    (apt .
-         ((default-sudo . t)
-          (install . "apt-get install")
-          (search . "apt-cache search")
-          (uninstall . "apt-get remove")
-          (update . ("apt-get update" "apt-get upgrade"))
-          (clean-cache . "apt-get clean")
-          (log . "cat /var/log/dpkg.log")
-          (get-info . "dpkg -s")
-          (get-info-remote . "apt-cache show")
-          (list-files-provided-by . "dpkg -L")
-          (verify-all-packages . "debsums")
-          (verify-all-dependencies . "apt-get check")
-          (remove-orphaned . "apt-get autoremove")
-          (list-installed-packages . nil)
-          (list-installed-packages-all . nil)
-          (list-dependencies-of . "apt-cache deps")))
     ;; Gentoo
     (emerge .
             ((default-sudo . t)
