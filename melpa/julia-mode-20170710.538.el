@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2009-2014 Julia contributors
 ;; URL: https://github.com/JuliaLang/julia
-;; Package-Version: 20170607.537
+;; Package-Version: 20170710.538
 ;; Version: 0.3
 ;; Keywords: languages
 
@@ -1447,6 +1447,7 @@ strings."
 (puthash "\\hermitconjmatrix" "⊹" julia-latexsubs)
 (puthash "\\intercal" "⊺" julia-latexsubs)
 (puthash "\\veebar" "⊻" julia-latexsubs)
+(puthash "\\xor" "⊻" julia-latexsubs)
 (puthash "\\barwedge" "⊼" julia-latexsubs)
 (puthash "\\barvee" "⊽" julia-latexsubs)
 (puthash "\\rightanglearc" "⊾" julia-latexsubs)

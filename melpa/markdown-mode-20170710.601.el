@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jrblevin@sdf.org>
 ;; Created: May 24, 2007
 ;; Version: 2.3-dev
-;; Package-Version: 20170707.1030
+;; Package-Version: 20170710.601
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: http://jblevins.org/projects/markdown-mode/
@@ -1746,7 +1746,11 @@ and END are the previous region to refontify."
       ;; (point-max) is deleted, but font-lock-extend-region-functions
       ;; are called.  Force a syntax property update in that case.
       (when (= end (point-max))
-        (markdown-syntax-propertize (car res) (cdr res)))
+        ;; This function is called in a buffer modification hook.
+        ;; `markdown-syntax-propertize' doesn't save the match data,
+        ;; so we have to do it here.
+        (save-match-data
+          (markdown-syntax-propertize (car res) (cdr res))))
       (setq jit-lock-start (car res)
             jit-lock-end (cdr res)))))
 
@@ -8309,6 +8313,14 @@ return the number of paragraphs left to move."
         (goto-char start)))))
   arg)
 
+(defun markdown--inhibit-electric-quote ()
+  "Function added to `electric-quote-inhibit-functions'.
+Return non-nil if the quote has been inserted inside a code block
+or span."
+  (let ((pos (1- (point))))
+    (or (markdown-inline-code-at-pos pos)
+        (markdown-code-block-at-pos pos))))
+
 
 ;;; Extension Framework =======================================================
 
@@ -8851,6 +8863,10 @@ position."
   ;; Flyspell
   (setq-local flyspell-generic-check-word-predicate
               #'markdown-flyspell-check-word-p)
+
+  ;; Electric quoting
+  (add-hook 'electric-quote-inhibit-functions
+            #'markdown--inhibit-electric-quote nil :local)
 
   ;; Backwards compatibility with markdown-css-path
   (when (boundp 'markdown-css-path)

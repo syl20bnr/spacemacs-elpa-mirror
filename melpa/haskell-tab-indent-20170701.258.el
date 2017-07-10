@@ -1,12 +1,12 @@
 ;;; haskell-tab-indent.el --- tab-based indentation for haskell-mode
 
-;; Copyright (C) 2015  Sean Whitton
+;; Copyright (C) 2015, 2017  Sean Whitton
 
 ;; Author: Sean Whitton <spwhitton@spwhitton.name>
 ;; URL: https://spwhitton.name/tech/code/haskell-tab-indent/
-;; Version: 0.1.0
-;; Package-Version: 20151205.1159
-;; Package-X-Original-Version: 0.1.0
+;; Version: 0.2
+;; Package-Version: 20170701.258
+;; Package-X-Original-Version: 0.2
 ;; Keywords: indentation, haskell
 
 ;; This file is NOT part of GNU Emacs.
@@ -45,8 +45,8 @@
 ;;                  (add-hook 'hack-local-variables-hook
 ;;                            (lambda ()
 ;;                              (if indent-tabs-mode
-;;                                  (haskell-tab-indent-mode)
-;;                                (haskell-indentation-mode)))
+;;                                  (haskell-tab-indent-mode 1)
+;;                                (haskell-indentation-mode 1)))
 ;;                            nil t))) ; local hook
 
 ;;; Code:
@@ -135,6 +135,12 @@ Binds the TAB key to cycle between possible indents."
   :lighter " TabInd"
   (kill-local-variable 'indent-line-function)
   (when haskell-tab-indent-mode
+    ;; recent `haskell-mode' considers `haskell-indentation-mode' to
+    ;; be the default, and unconditionally turns it on.  Follow recent
+    ;; `haskell-indent-mode' and turn it off when activating our mode
+    (when (and (bound-and-true-p haskell-indentation-mode)
+               (fboundp 'haskell-indentation-mode))
+      (haskell-indentation-mode 0))
     (set (make-local-variable 'indent-line-function) 'haskell-tab-indent)
     (set (make-local-variable 'indent-tabs-mode) t)))
 

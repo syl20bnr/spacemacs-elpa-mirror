@@ -3,7 +3,7 @@
 ;; Copyright (C) 2016 Al Scott <github.com/scottaj>
 ;; Author: Al Scott
 ;; URL: http://github.com/scottaj/mocha.el
-;; Package-Version: 20170513.1501
+;; Package-Version: 20170710.816
 ;; Created: 2016
 ;; Version: 1.1
 ;; Keywords: javascript mocha jasmine
@@ -60,10 +60,16 @@
   :group 'mocha
   :safe #'stringp)
 
+(defun mocha-list-of-strings-p (object)
+  "Return t if OBJECT is a list of strings and nil otherwise."
+  (and (listp object)
+       (not (memq nil (mapcar #'stringp object)))))
+
 (defcustom mocha-imenu-functions '("describe" "it" "beforeAll" "beforeEach" "afterAll" "afterEach")
   "Functions that create a new imenu entry at every call site."
   :type '(repeat 'string)
-  :group 'mocha)
+  :group 'mocha
+  :safe #'mocha-list-of-strings-p)
 
 (defvar mocha-project-test-directory nil)
 (put 'mocha-project-test-directory 'safe-local-variable #'stringp)
@@ -202,12 +208,8 @@ If we reach the root without finding what we are looking for return nil."
 When a 'describe' or 'it' is found, return the first argument of that call.
 If js2-mode is not enabled in the buffer, returns nil.
 If there is no wrapping 'describe' or 'it' found, return nil."
-  (if (string= major-mode "js2-mode")
-      (let ((node (js2-node-at-point)))
-        (mocha-walk-up-to-it node))
-    (progn
-      (message "js2-mode must be enabled to run test at point.")
-      nil)))
+  (let ((node (js2-node-at-point)))
+    (mocha-walk-up-to-it node)))
 
 ;;;###autoload
 (defun mocha-test-project ()

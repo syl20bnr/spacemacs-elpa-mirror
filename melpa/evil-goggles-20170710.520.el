@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20170708.551
+;; Package-Version: 20170710.520
 ;; Package-Requires: ((emacs "25") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -60,6 +60,18 @@
     (unwind-protect
         (sit-for evil-goggles-duration)
       (delete-overlay ov))))
+
+(defun evil-goggles--show-block (beg end face)
+  "Show overlay in blcok from BEG to END with FACE."
+  (let ((ovs))
+    (unwind-protect
+        (progn
+          ;; create multiple overlays, one for each line in the block
+          (evil-apply-on-block (lambda (line-beg line-end)
+                                 (add-to-list 'ovs (evil-goggles--make-overlay line-beg line-end 'face face)))
+                               beg end nil)
+          (sit-for evil-goggles-duration))
+      (mapcar 'delete-overlay ovs))))
 
 (defun evil-goggles--make-overlay (beg end &rest properties)
   "Make overlay in region from BEG to END with PROPERTIES."
@@ -250,17 +262,24 @@ COUNT REGISTER YANK-HANDLER are the arguments of the original function."
 (defun evil-goggles--evil-paste-show (register yank-handler)
   "Helper fun to show the goggles overlay on the last pasted text.
 
-The overlay region is derermined by evil's variable `evil-last-paste'"
-  (message "evil-goggles--evil-paste-block-p: %s" (evil-goggles--evil-paste-block-p register yank-handler))
-  (unless (or evil-goggles--on (evil-goggles--evil-paste-block-p register yank-handler))
-    ;; TODO show the goggles overlay when the pasted text is a block
+The overlay region is derermined by evil's marks [ and ]
+Argument REGISTER is the evil register.
+Argument YANK-HANDLER is the yank hanler."
+  (unless evil-goggles--on
     (let* ((beg (save-excursion (evil-goto-mark ?\[) (point)))
            (end (save-excursion (evil-goto-mark ?\]) (point)))
            (is-beg-at-eol (save-excursion (goto-char beg) (eolp)))
-           (beg-corrected (if is-beg-at-eol (1+ beg) beg) ))
-      (evil-goggles--show beg-corrected end 'evil-goggles-paste-face))))
+           (beg-corrected (if is-beg-at-eol (1+ beg) beg))
+           (show-fn (if (evil-goggles--evil-paste-block-p register yank-handler)
+                        'evil-goggles--show-block
+                      'evil-goggles--show)))
+      (funcall show-fn beg-corrected end 'evil-goggles-paste-face))))
 
 (defun evil-goggles--evil-paste-block-p (register yank-handler)
+  "Return t if the paste was a vertical block.
+
+Argument REGISTER is the evil register.
+Argument YANK-HANDLER is the yank hanler."
   (let* ((text (if register
                    (evil-get-register register)
                  (current-kill 0)))
