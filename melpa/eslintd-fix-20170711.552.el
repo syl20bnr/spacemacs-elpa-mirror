@@ -4,7 +4,7 @@
 
 ;; Author: Aaron Jensen <aaronjensen@gmail.com>
 ;; URL: https://github.com/aaronjensen/eslintd-fix
-;; Package-Version: 20170313.1943
+;; Package-Version: 20170711.552
 ;; Version: 1.0.0
 
 ;;; Commentary:
@@ -168,9 +168,7 @@ function."
     (when (and (eslintd-fix--verify)
                executable
                (file-executable-p executable))
-      (let ((current-point (point))
-            (line (count-screen-lines (window-start) (point)))
-            (command (concat
+      (let ((command (concat
                       "("
                       " set -o pipefail;"
                       " original=$(cat);"
@@ -183,9 +181,10 @@ function."
                       " | ( diff -n <(echo \"$original\") -; true )"
                       " )"))
             (buffer (current-buffer))
-            (text (buffer-substring-no-properties (point-min) (point-max))))
+            (buffer-min (point-min))
+            (buffer-max (point-max)))
         (with-temp-buffer
-          (insert text)
+          (insert-buffer-substring buffer buffer-min buffer-max)
           (when (zerop
                  (shell-command-on-region
                   ;; Region
