@@ -4,7 +4,7 @@
 
 ;; Author: Henrik Jürges <juerges.henrik@gmail.com>
 ;; URL: https://github.com/santifa/pasp-mode
-;; Package-Version: 20170615.605
+;; Package-Version: 20170711.516
 ;; Version: 0.1.0
 ;; Package-requires: ((emacs "24.3"))
 ;; Keywords: asp, pasp, Answer Set Programs, Potassco Answer Set Programs, Major mode, languages
@@ -143,7 +143,7 @@
   "Face for ASP base constructs."
   :group 'font-lock-highlighting-faces)
 
-;; Syntax tables
+;; Syntax highlighting
 
 (defvar pasp-highlighting nil
   "Regex list for syntax highlighting.")
@@ -197,6 +197,7 @@ Needs a mode restart."
 
 (defun pasp-generate-command (encoding &optional instance)
   "Generate Clingo call with some ASP input file.
+
 Argument ENCODING The current buffer which holds the problem encoding.
 Optional argument INSTANCE The problem instance which is solved by the encoding.
   If no instance it is assumed to be also in the encoding file."
@@ -225,7 +226,7 @@ Optional argument INSTANCE The problem instance which is solved by the encoding.
   (pasp-run-clingo (buffer-file-name)))
 
 ;; save the last user input
-(setq pasp-last-instance "")
+(defvar pasp-last-instance "")
 
 ;;;###autoload
 (defun pasp-run (instance)
@@ -234,7 +235,7 @@ Optional argument INSTANCE The problem instance which is solved by the encoding.
    (list (read-file-name
           (format "Instance [%s]:" (file-name-nondirectory pasp-last-instance))
           nil pasp-last-instance)))
-    (setq pasp-last-instance instance)
+    (setq-local pasp-last-instance instance)
     (pasp-run-clingo (buffer-file-name) instance))
 
 ;;; Utility functions
@@ -246,13 +247,6 @@ Optional argument INSTANCE The problem instance which is solved by the encoding.
     (unload-feature 'pasp-mode)
     (require 'pasp-mode)
     (pasp-mode)))
-
-;;; Keymap
-
-(progn
-  (setq pasp-mode-map (make-sparse-keymap))
-  (define-key pasp-mode-map (kbd "C-c C-b") 'pasp-run-buffer)
-  (define-key pasp-mode-map (kbd "C-c C-e") 'pasp-run))
 
 ;;; File ending
 
@@ -266,13 +260,17 @@ Optional argument INSTANCE The problem instance which is solved by the encoding.
   "A major mode for editing Answer Set Programs."
   ;;(setq font-lock-defaults '(pasp-highlights))
   (pasp-choose-highlighting)
-  (set-syntax-table pasp-mode-syntax-table)
-  (use-local-map pasp-mode-map)
   
   ;; define the syntax for un/comment region and dwim
   (setq-local comment-start "%")
   (setq-local comment-end "")
-  (setq tab-width pasp-indentation))
+  (setq-local tab-width pasp-indentation))
+
+;;; Keymap
+
+(define-key pasp-mode-map (kbd "C-c C-b") 'pasp-run-buffer)
+(define-key pasp-mode-map (kbd "C-c C-e") 'pasp-run)
+
 
 ;; add mode to feature list
 (provide 'pasp-mode)

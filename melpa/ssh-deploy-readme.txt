@@ -19,6 +19,12 @@ Set permissions to this file to `700' with you as the owner.
 - To setup automatic storing of base revisions and download of external changes do this:
     (add-hook 'find-file-hook (lambda() (if ssh-deploy-automatically-detect-remote-changes (ssh-deploy-remote-changes-handler)) ))
 
+- To avoid the directory variables warning add this:
+       (put 'ssh-deploy-root-local 'safe-local-variable 'identity)
+       (put 'ssh-deploy-root-remote 'safe-local-variable 'identity)
+       (put 'ssh-deploy-on-explicit-save 'safe-local-variable 'identity)
+       (put 'ssh-deploy-async 'safe-local-variable 'identity)
+
 - To set key-bindings do something like this:
     (global-set-key (kbd "C-c C-z f") (lambda() (interactive)(ssh-deploy-upload-handler-forced) ))
     (global-set-key (kbd "C-c C-z u") (lambda() (interactive)(ssh-deploy-upload-handler) ))
@@ -26,7 +32,7 @@ Set permissions to this file to `700' with you as the owner.
     (global-set-key (kbd "C-c C-z d") (lambda() (interactive)(ssh-deploy-download-handler) ))
     (global-set-key (kbd "C-c C-z x") (lambda() (interactive)(ssh-deploy-diff-handler) ))
     (global-set-key (kbd "C-c C-z t") (lambda() (interactive)(ssh-deploy-remote-terminal-handler) ))
-    (global-set-key (kbd "C-c C-z r") (lambda() (interactive)(ssh-deploy-rename-handler) ))
+    (global-set-key (kbd "C-c C-z R") (lambda() (interactive)(ssh-deploy-rename-handler) ))
     (global-set-key (kbd "C-c C-z e") (lambda() (interactive)(ssh-deploy-remote-changes-handler) ))
     (global-set-key (kbd "C-c C-z b") (lambda() (interactive)(ssh-deploy-browse-remote-handler) ))
 
@@ -48,11 +54,14 @@ Now when you are in a directory which is deployed via SSH or FTP you can access 
 
 
 Here is a list of other variables you can set globally or per directory:
-* `ssh-deploy-debug' Enables debugging messages
-* `ssh-deploy-revision-folder' The folder used for storing local revisions
-* `ssh-deploy-automatically-detect-remote-changes' Enables automatic detection of remote changes
-* `ssh-deploy-exclude-list' A list defining what paths to exclude from deployment
-* `ssh-deploy-async' Enables asynchronous transfers (you need to install `async.el' as well)
 
+* `ssh-deploy-root-local' The local root that should be under deployment *(string)*
+* `ssh-deploy-root-remote' The remote root that should be under deployment, should follow a `/protocol:user@host:path` format *(string)*
+* `ssh-deploy-debug' Enables debugging messages *(boolean)*
+* `ssh-deploy-revision-folder' The folder used for storing local revisions *(string)*
+* `ssh-deploy-automatically-detect-remote-changes' Enables automatic detection of remote changes *(boolean)*
+* `ssh-deploy-on-explicit-save' Enabled automatic uploads on save *(boolean)*
+* `ssh-deploy-exclude-list' A list defining what paths to exclude from deployment *(list)*
+* `ssh-deploy-async' Enables asynchronous transfers (you need to have `async.el` installed as well) *(boolean)*
 
 Please see README.md from the same repository for documentation.
