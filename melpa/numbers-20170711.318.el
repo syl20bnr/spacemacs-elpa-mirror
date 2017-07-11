@@ -3,7 +3,7 @@
 
 ;; Author: Dave Pearson <davep@davep.org>
 ;; Version: 1.3
-;; Package-Version: 20170710.455
+;; Package-Version: 20170711.318
 ;; Keywords: games, trivia, maths, numbers
 ;; URL: https://github.com/davep/numbers.el
 ;; Package-Requires: ((emacs "24"))
@@ -21,7 +21,7 @@
 ;;
 ;; `numbers-math' - Shows/inserts a maths-related fact about a number.
 ;;
-;; `number-trivia' - Shows/inserts some trivia about a number.
+;; `numbers-trivia' - Shows/inserts some trivia about a number.
 ;;
 ;; In both cases calling the command will prompt for a number. If there
 ;; appears to be a number in the current buffer, near the current point,

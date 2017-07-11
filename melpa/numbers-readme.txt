@@ -5,7 +5,7 @@ Two main commands are provided:
 
 `numbers-math' - Shows/inserts a maths-related fact about a number.
 
-`number-trivia' - Shows/inserts some trivia about a number.
+`numbers-trivia' - Shows/inserts some trivia about a number.
 
 In both cases calling the command will prompt for a number. If there
 appears to be a number in the current buffer, near the current point,
