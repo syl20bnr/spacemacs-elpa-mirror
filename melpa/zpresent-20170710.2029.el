@@ -1,7 +1,7 @@
 ;;; zpresent.el --- Simple presentation mode based on org files.  -*- lexical-binding: t; -*-
 
 ;; Version: 0.3
-;; Package-Version: 20170709.2219
+;; Package-Version: 20170710.2029
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright 2015-2017 Zachary Kanfer <zkanfer@gmail.com>
@@ -244,8 +244,7 @@ indicate something other than plain text.  For example, an image."
                     (cons body-indentation body-line))
                   body))))
 
-;;when should parent-structure be optional?
-(defun zpresent--get-bullet-type (structure &optional parent-structure)
+(defun zpresent--get-bullet-type (structure parent-structure)
   "Get the type of bullet for STRUCTURE.
 
 This will respect in order of precedence:
