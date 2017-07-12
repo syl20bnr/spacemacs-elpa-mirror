@@ -2,7 +2,7 @@
 
 ;; Author: 10sr <8.slashes@gmail.com>
 ;; URL: https://github.com/10sr/editorconfig-charset-extras-el
-;; Package-Version: 20170508.112
+;; Package-Version: 20170712.108
 ;; Version: 0.1
 ;; Package-Requires: ((editorconfig "0.6.0"))
 ;; Keywords: tools
@@ -94,7 +94,7 @@ The list of supported charsets is taken from the result of function
                                 hash)))
     (let ((decided (editorconfig-charset-extras--decide charset emacs-charset)))
       (when decided
-        (set-buffer-file-coding-system decided)))))
+        (set-buffer-file-coding-system decided nil t)))))
 
 (provide 'editorconfig-charset-extras)
 

@@ -1,11 +1,16 @@
-;;; numbers.el --- Display information and trivia about numbers
+;;; numbers.el --- Display information and trivia about numbers -*- lexical-binding: t -*-
 ;; Copyright 2017 by Dave Pearson <davep@davep.org>
 
 ;; Author: Dave Pearson <davep@davep.org>
-;; Version: 1.3
-;; Package-Version: 1.3
+;; Version: 1.4
+;; Package-Version: 1.4
 ;; Keywords: games, trivia, maths, numbers
 ;; URL: https://github.com/davep/numbers.el
+;; Package-Requires: ((emacs "24"))
+
+;; numbers.el is free software distributed under the terms of the GNU
+;; General Public Licence, version 2 or (at your option) any later version.
+;; For details see the file COPYING.
 
 ;;; Commentary:
 ;;
@@ -16,7 +21,7 @@
 ;;
 ;; `numbers-math' - Shows/inserts a maths-related fact about a number.
 ;;
-;; `number-trivia' - Shows/inserts some trivia about a number.
+;; `numbers-trivia' - Shows/inserts some trivia about a number.
 ;;
 ;; In both cases calling the command will prompt for a number. If there
 ;; appears to be a number in the current buffer, near the current point,
@@ -104,16 +109,36 @@ they input. insert will then be the value of
      (read-number "Number: " (thing-at-point 'number))
      current-prefix-arg)))
 
-(defun numbers-reveal (getter number insert)
+(defun numbers-reveal (getter fail-message insert)
+  "Use GETTER to find and reveal something about a number.
+
+If the get fails, reveal FAIL-MESSAGE.
+
+If INSERT is non-nil use `insert' to reveal the finding,
+otherwise use `message'."
+  (let ((finding (or (funcall getter) fail-message)))
+    (if insert
+        (insert finding)
+      (message "%s" finding))))
+
+(defun numbers-reveal-number (getter number insert)
   "Use GETTER to find and reveal something about NUMBER.
 
 If INSERT is non-nil use `insert' to reveal the finding,
 otherwise use `message'."
-  (let ((finding (or (funcall getter number)
-                     (format "Unable to get anything for %d." number))))
-    (if insert
-        (insert finding)
-      (message "%s" finding))))
+  (numbers-reveal
+   (lambda () (funcall getter number))
+   (format "Unable to get anything for %d." number)
+   insert))
+
+(defun numbers-reveal-random (getter description insert)
+  "Use GETTER to find and reveal something about a random number.
+
+DESCRIPTION will be used to compose a failure message.
+
+If INSERT is non-nil use `insert' to reveal the finding,
+otherwise use `message'."
+  (numbers-reveal getter (format "Unable to get %s" description) insert))
 
 ;;;###autoload
 (defun numbers-math (number &optional insert)
@@ -122,7 +147,7 @@ otherwise use `message'."
 If INSERT is non-nil `insert' the information rather than display
 it."
   (interactive (numbers-reader))
-  (numbers-reveal #'numbers-get-math number insert))
+  (numbers-reveal-number #'numbers-get-math number insert))
 
 ;;;###autoload
 (defun numbers-trivia (number &optional insert)
@@ -131,7 +156,7 @@ it."
 If INSERT is non-nil `insert' the information rather than display
 it."
   (interactive (numbers-reader))
-  (numbers-reveal #'numbers-get-trivia number insert))
+  (numbers-reveal-number #'numbers-get-trivia number insert))
 
 ;;;###autoload
 (defun numbers-random-math (&optional insert)
@@ -140,11 +165,7 @@ it."
 The fact is displayed in the message area, or inserted at `point'
 if INSERT is non-nil."
   (interactive "P")
-  (let ((math (or (numbers-get-math-random)
-                  "Unable to get a random math fact")))
-    (if insert
-        (insert math)
-      (message "%s" math))))
+  (numbers-reveal-random #'numbers-get-math-random "a random maths fact" insert))
 
 ;;;###autoload
 (defun numbers-random-trivia (&optional insert)
@@ -153,11 +174,16 @@ if INSERT is non-nil."
 The trivia is displayed in the message area, or inserted at
 `point' if INSERT is non-nil."
   (interactive "P")
-  (let ((trivia (or (numbers-get-trivia-random)
-                    "Unable to get some random number trivia")))
-    (if insert
-        (insert trivia)
-      (message "%s" trivia))))
+  (numbers-reveal-random #'numbers-get-trivia-random "some random number trivia" insert))
+
+;;;###autoload
+(defun numbers-random (&optional insert)
+  "Display a maths fact or some trivia about a random number.
+
+When called this command randomly calls `numbers-random-math' or
+`numbers-random-trivia'."
+  (interactive "P")
+  (funcall (if (zerop (random 2)) #'numbers-random-math #'numbers-random-trivia) insert))
 
 (provide 'numbers)
 

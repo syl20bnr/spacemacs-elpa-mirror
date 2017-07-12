@@ -4,7 +4,7 @@
 
 ;; Author: codefalling <code.falling@gmail.com>
 ;; Keywords: languages
-;; Package-Version: 20170706.1942
+;; Package-Version: 20170711.2051
 
 ;; Version: 0.2
 ;; Package-Requires: ((mmm-mode "0.5.4") (vue-html-mode "0.1") (ssass-mode "0.1"))
@@ -94,6 +94,8 @@
 
 ;;;###autoload
 (setq mmm-global-mode 'maybe)
+
+;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.vue\\'" . vue-mode))
 
 (provide 'vue-mode)
