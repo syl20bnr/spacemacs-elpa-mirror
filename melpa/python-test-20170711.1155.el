@@ -4,7 +4,7 @@
 
 ;; Author: Mario Rodas <marsam@users.noreply.github.com>
 ;; URL: https://github.com/emacs-pe/python-test.el
-;; Package-Version: 20170427.1549
+;; Package-Version: 20170711.1155
 ;; Keywords: convenience, tools, processes
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "25.1"))
@@ -99,6 +99,12 @@
   "A list of files considered to mark the root of a project.
 The topmost match has precedence."
   :type '(repeat string)
+  :group 'python-test)
+
+(defcustom python-test-django-settings nil
+  "Django settings file to use when running tests."
+  :type 'string
+  :safe #'stringp
   :group 'python-test)
 
 
@@ -353,6 +359,62 @@ It predates `python-nav-beginning-of-defun-regexp' to search a function definiti
 
 (cl-defmethod python-test-args-defun ((_backend (eql nose)))
   (list (format "%s:%s" (python-test-capture-path) (python-test-capture-defun))))
+
+
+;; Django
+(add-to-list 'python-test-backends 'django)
+
+(defun python-test-django-settings-arg ()
+  "Return the settings command line arg if `python-test-django-settings' is set."
+  (when python-test-django-settings
+    (format "--settings=%s" python-test-django-settings)))
+
+(defun python-test-django-manage.py-path ()
+  "Returns the path to manage.py"
+  (expand-file-name (locate-dominating-file buffer-file-name "manage.py")))
+
+(defun python-test-django-manage.py ()
+  (format "%smanage.py" (python-test-django-manage.py-path)))
+
+(defun python-test-django-package ()
+  (substring (file-relative-name (python-test-django-manage.py-path)
+                                 (format "%s../" (python-test-django-manage.py-path))) 0 -1))
+
+(defun python-test-django-module ()
+  (format "%s.%s" (python-test-django-package)
+          (python-test-path-module (python-test-capture-path (python-test-django-manage.py-path)))))
+
+(cl-defmethod python-test-executable ((_backend (eql django)))
+  "Python unitest executable is python itself, given that django is executed as module."
+  python-shell-interpreter)
+
+(cl-defmethod python-test-args-project ((_backend (eql django)))
+  (remove nil (list (python-test-django-manage.py) "test"
+                    (python-test-django-settings-arg)
+                    (python-test-django-package))))
+
+(cl-defmethod python-test-args-file ((_backend (eql django)))
+  (remove nil (list (python-test-django-manage.py) "test"
+                    (python-test-django-settings-arg)
+                    (python-test-django-module))))
+
+(cl-defmethod python-test-args-class ((_backend (eql django)))
+  (remove nil (list (python-test-django-manage.py) "test"
+                    (python-test-django-settings-arg)
+                    (format "%s.%s"
+                            (python-test-django-module)
+                            (python-test-capture-class)))))
+
+(cl-defmethod python-test-args-method ((_backend (eql django)))
+  (remove nil (list (python-test-django-manage.py) "test"
+                    (python-test-django-settings-arg)
+                    (format "%s.%s.%s"
+                            (python-test-django-module)
+                            (python-test-capture-class)
+                            (python-test-capture-defun)))))
+
+(cl-defmethod python-test-args-defun ((_backend (eql django)))
+  (user-error "Django doesn't support testing functions"))
 
 
 ;;; python-test-mode
