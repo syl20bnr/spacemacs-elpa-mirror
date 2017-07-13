@@ -12,129 +12,111 @@
 ;; THIS FILE HAS BEEN GENERATED.
 
 
-;;; Commentary:
-
+;;
 ;; Version: 3.0.0
-;; Package-Version: 20170709.521
+;; Package-Version: 20170713.1206
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: convenience
 
 ;; When point is in an empty line then fill the line with a character
 ;; making it as long as the line above.
 
+;;; Commentary:
+;;
 ;; This program provides just command =underline-with-char=.
-
+;;
+
 ;; Examples
 ;; ========
-
-;; Notation: <!> means point.
 ;;
+;; Notation:
+;; - <!> means the cursor.
+;; - RET means the return key.
+;;
+
 ;; Full underlining
 ;; ................
 ;;
-;; Input:
-;; ^^^^^^
-
-;; #+begin_src text
+;; Input
+;; _____
+;;
 ;; lala
 ;; <!>
-;; #+end_src
 ;;
-;; Action:
-;; ^^^^^^^
-
-;; #+begin_src text
-;; M-x underline-with-char
-;; #+end_src
+;; Action
+;; ______
 ;;
-;; Output:
-;; ^^^^^^^
-
-;; #+begin_src text
+;; M-x underline-with-char RET
+;;
+;; Output
+;; ______
+;;
 ;; lala
 ;; ----<!>
-;; #+end_src
 ;;
+
 ;; Partial underlining
 ;; ...................
-
-;; Input:
-;; ^^^^^^
-
-;; #+begin_src text
-;; ;; lolo
-;; ;; <!>
-;; #+end_src
 ;;
-;; Action:
-;; ^^^^^^^
-
-;; #+begin_src text
-;; M-x underline-with-char
-;; #+end_src
+;; Input
+;; _____
 ;;
-;; Output:
-;; ^^^^^^^
-
-;; #+begin_src text
-;; ;; lolo
-;; ;; ----<!>
-;; #+end_src
+;; lolololo
+;; //<!>
 ;;
-;; Use a certain char for current and subsequent underlinings
-;; ..........................................................
+;; Action
+;; ______
 ;;
-;; Input:
-;; ^^^^^^
-
-;; #+begin_src text
+;; M-x underline-with-char RET
+;;
+;; Output
+;; ______
+;;
+;; lolololo
+;; //------<!>
+;;
+
+;; Use a certain char for current and subsequent underlinings (1)
+;; ..............................................................
+;;
+;; Input
+;; _____
+;;
 ;; lala
 ;; <!>
-;; #+end_src
 ;;
-;; Action:
-;; ^^^^^^^
-
-;; #+begin_src text
-;; C-u M-x underline-with-char X
-;; #+end_src
+;; Action
+;; ______
 ;;
-;; Output:
-;; ^^^^^^^
-
-;; #+begin_src text
+;; C-u M-x underline-with-char X RET
+;;
+;; Output
+;; ______
+;;
 ;; lala
 ;; XXXX<!>
-;; #+end_src
 ;;
-;; Change the buffer.  Example:
-;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-;; #+begin_src text
+
+;; Use a certain char for current and subsequent underlinings (2)
+;; ..............................................................
+;;
+;; Input
+;; _____
+;;
+;; lala
+;; <!>
+;;
+;; Action
+;; ______
+;;
+;; C-u M-x underline-with-char X RET RET M-x underline-with-char RET
+;;
+;; Output
+;; ______
+;;
 ;; lala
 ;; XXXX
-;;
-;; ;; Worthy to be underlined
-;; ;; <!>
-;; #+end_src
-;;
-;; Go on without prefix argument (C-u):
-;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-;; #+begin_src text
-;; M-x underline-with-char X
-;; #+end_src
-;;
-;; Output:
-;; ^^^^^^^
-
-;; #+begin_src text
-;; lala
-;; XXXX
-;;
-;; ;; Worthy to be underlined
-;; ;; XXXXXXXXXXXXXXXXXXXXXXX<!>
-;; #+end_src
+;; XXXX<!>
 
 
 ;;; Code:

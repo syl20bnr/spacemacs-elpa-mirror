@@ -4,7 +4,7 @@
 
 ;; Author: Rustem Muslimov <r.muslimov@gmail.com>
 ;; Keywords: jenkins, convenience
-;; Package-Version: 20160903.1556
+;; Package-Version: 20170713.702
 ;; Package-Requires: ((dash "2.12") (emacs "24.3") (json "1.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -306,7 +306,7 @@
     (let* (
          (job-url (jenkins-job-url jobname))
          (raw-data (jenkins--retrieve-page-as-json job-url))
-         (builds (-map #'convert-item (vector-take 25 (cdar raw-data))))
+         (builds (-map #'convert-item (vector-take 25 (alist-get 'builds raw-data))))
          (latestSuccessful
           (caar (--filter (equal (plist-get (cdr it) :result) "SUCCESS") builds)))
          (latestFailed
