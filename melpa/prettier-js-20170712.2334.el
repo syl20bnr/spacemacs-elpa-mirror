@@ -1,7 +1,7 @@
 ;;; prettier-js.el --- Minor mode to format JS code on file save
 
 ;; Version: 0.1.0
-;; Package-Version: 20170703.519
+;; Package-Version: 20170712.2334
 
 ;; Copyright (c) 2014 The go-mode Authors. All rights reserved.
 ;; Portions Copyright (c) 2015-present, Facebook, Inc. All rights reserved.
@@ -57,7 +57,7 @@
 
 (defcustom prettier-js-args '()
   "List of args to send to prettier command."
-  :type 'list
+  :type '(repeat string)
   :group 'prettier-js)
 
 (defcustom prettier-js-show-errors 'buffer
@@ -184,7 +184,7 @@ a `before-save-hook'."
              (erase-buffer))
            (if (zerop (apply 'call-process
                              prettier-js-command bufferfile (list (list :file outputfile) errorfile)
-                             nil (append (append prettier-js-args width-args (list "--stdin")) (list buffer-file-name))))
+                             nil (append prettier-js-args width-args (list "--stdin" "--stdin-filepath" buffer-file-name))))
                (progn
                  (call-process-region (point-min) (point-max) "diff" nil patchbuf nil "-n" "-"
                                       outputfile)
