@@ -4,7 +4,7 @@
 
 ;; Author: Lefteris Karapetsas  <lefteris@refu.co>
 ;; Keywords: languages
-;; Package-Version: 20161017.1506
+;; Package-Version: 20170712.1442
 ;; Version: 0.1.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -439,7 +439,8 @@ Highlight the 1st result."
     :command ("/usr/bin/solc" source-inplace)
     :error-patterns
     ((error line-start (file-name) ":" line ":" column ":" " Error: " (message))
-     (warning line-start "Error: " (message)))
+     (error line-start "Error: " (message))
+     (warning line-start (file-name) ":" line ":" column ":" " Warning: " (message)))
     :modes solidity-mode
     :predicate (lambda () (eq major-mode 'solidity-mode)))
   (add-to-list 'flycheck-checkers 'solidity-checker)
