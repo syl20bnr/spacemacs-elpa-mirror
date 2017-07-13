@@ -3,8 +3,8 @@
 ;; Copyright © 2011-2017 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 3.2.5
-;; Package-Version: 20170517.1459
+;; Version: 3.2.6
+;; Package-Version: 20170713.615
 ;; Created: 14 Nov 2011
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: help, docs, convenience
@@ -134,10 +134,10 @@ Version 2014-10-20"
     (save-restriction
       (narrow-to-region *from *to)
       (mapc
-       (lambda (-pair)
+       (lambda ($pair)
          (goto-char (point-min))
-         (while (search-forward-regexp (elt -pair 0) (point-max) t)
-           (replace-match (elt -pair 1))))
+         (while (search-forward-regexp (elt $pair 0) (point-max) t)
+           (replace-match (elt $pair 1))))
        [
         ["á\\|à\\|â\\|ä\\|ã\\|å" "a"]
         ["é\\|è\\|ê\\|ë" "e"]
@@ -176,22 +176,22 @@ For a list of online reference sites, see:
  URL `http://ergoemacs.org/emacs/xah-lookup.html'
 Version 2017-02-09"
   (interactive)
-  (let (-word -refUrl -myUrl)
-    (setq -word
+  (let ($word $refUrl $myUrl)
+    (setq $word
           (if *word
               *word
             (if (region-active-p)
                 (buffer-substring-no-properties (region-beginning) (region-end))
               (current-word))))
-    (setq -word (replace-regexp-in-string " " "%20" (xah-lookup--asciify-string -word)))
-    (setq -refUrl
+    (setq $word (replace-regexp-in-string " " "%20" (xah-lookup--asciify-string $word)))
+    (setq $refUrl
           (if *url
               *url
             "http://www.google.com/search?q=word02051" ))
-    (setq -myUrl (replace-regexp-in-string "word02051" -word -refUrl t t))
+    (setq $myUrl (replace-regexp-in-string "word02051" $word $refUrl t t))
     (if *browser-function
-        (funcall *browser-function -myUrl)
-      (funcall xah-lookup-browser-function -myUrl))))
+        (funcall *browser-function $myUrl)
+      (funcall xah-lookup-browser-function $myUrl))))
 
 ;;;###autoload
 (defun xah-lookup-google (&optional *word)
@@ -278,10 +278,10 @@ Current word or text selection is used as input.
 The dictionaries used are in `xah-lookup-dictionary-list'."
   (interactive)
   (mapc
-   (lambda (-url)
+   (lambda ($url)
      (xah-lookup-word-on-internet
       *word
-      -url
+      $url
       (get 'xah-lookup-all-dictionaries 'xah-lookup-browser-function )))
    xah-lookup-dictionary-list))
 

@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2016 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.4.14
-;; Package-Version: 20170517.1634
+;; Version: 2.4.15
+;; Package-Version: 20170713.629
 ;; Created: 18 April 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: languages, convenience, css, color
@@ -112,18 +112,18 @@ URL `http://ergoemacs.org/emacs/elisp_convert_rgb_hsl_color.html'
 Version 2016-07-19"
   (interactive)
   (let* (
-         (-bds (bounds-of-thing-at-point 'word))
-         (-p1 (car -bds))
-         (-p2 (cdr -bds))
-         (-currentWord (buffer-substring-no-properties -p1 -p2)))
-    (if (string-match "[a-fA-F0-9]\\{6\\}" -currentWord)
+         ($bds (bounds-of-thing-at-point 'word))
+         ($p1 (car $bds))
+         ($p2 (cdr $bds))
+         ($currentWord (buffer-substring-no-properties $p1 $p2)))
+    (if (string-match "[a-fA-F0-9]\\{6\\}" $currentWord)
         (progn
-          (delete-region -p1 -p2 )
+          (delete-region $p1 $p2 )
           (when (equal (char-before) 35) ; 35 is #
             (delete-char -1))
-          (insert (xah-css-hex-to-hsl-color -currentWord )))
+          (insert (xah-css-hex-to-hsl-color $currentWord )))
       (progn
-        (user-error "The current word 「%s」 is not of the form #rrggbb." -currentWord)))))
+        (user-error "The current word 「%s」 is not of the form #rrggbb." $currentWord)))))
 
 (defun xah-css-hex-to-hsl-color (*hex-str)
   "Convert *hex-str color to CSS HSL format.
@@ -132,15 +132,15 @@ Note: The input string must NOT start with “#”.
 URL `http://ergoemacs.org/emacs/emacs_CSS_colors.html'
 Version 2016-07-19"
   (let* (
-         (-colorVec (xah-css-convert-color-hex-to-vec *hex-str))
-         (-R (elt -colorVec 0))
-         (-G (elt -colorVec 1))
-         (-B (elt -colorVec 2))
-         (-hsl (color-rgb-to-hsl -R -G -B))
-         (-H (elt -hsl 0))
-         (-S (elt -hsl 1))
-         (-L (elt -hsl 2)))
-    (format "hsl(%d,%d%%,%d%%)" (* -H 360) (* -S 100) (* -L 100))))
+         ($colorVec (xah-css-convert-color-hex-to-vec *hex-str))
+         ($R (elt $colorVec 0))
+         ($G (elt $colorVec 1))
+         ($B (elt $colorVec 2))
+         ($hsl (color-rgb-to-hsl $R $G $B))
+         ($H (elt $hsl 0))
+         ($S (elt $hsl 1))
+         ($L (elt $hsl 2)))
+    (format "hsl(%d,%d%%,%d%%)" (* $H 360) (* $S 100) (* $L 100))))
 
 (defun xah-css-convert-color-hex-to-vec (*rrggbb)
   "Convert color *rrggbb from “\"rrggbb\"” string to a elisp vector [r g b], where the values are from 0 to 1.
@@ -181,10 +181,10 @@ Find strings case sensitivity depends on `case-fold-search'. You can set it loca
   (save-restriction
       (narrow-to-region *begin *end)
       (mapc
-       (lambda (-x)
+       (lambda ($x)
          (goto-char (point-min))
-         (while (search-forward-regexp (elt -x 0) (point-max) t)
-           (replace-match (elt -x 1) fixedcase-p literal-p)))
+         (while (search-forward-regexp (elt $x 0) (point-max) t)
+           (replace-match (elt $x 1) fixedcase-p literal-p)))
        pairs)))
 
 (defun xah-css--replace-pairs-region (*begin *end pairs)
@@ -202,34 +202,34 @@ Once a subsring in the buffer is replaced, that part will not change again.  For
 
 Note: the region's text or any string in PAIRS is assumed to NOT contain any character from Unicode Private Use Area A. That is, U+F0000 to U+FFFFD. And, there are no more than 65534 pairs."
   (let (
-        (-unicodePriveUseA #xf0000)
-        (-i 0)
-        (-tempMapPoints '()))
+        ($unicodePriveUseA #xf0000)
+        ($i 0)
+        ($tempMapPoints '()))
     (progn
       ;; generate a list of Unicode chars for intermediate replacement. These chars are in  Private Use Area.
-      (setq -i 0)
-      (while (< -i (length pairs))
-        (push (char-to-string (+ -unicodePriveUseA -i)) -tempMapPoints)
-        (setq -i (1+ -i))))
+      (setq $i 0)
+      (while (< $i (length pairs))
+        (push (char-to-string (+ $unicodePriveUseA $i)) $tempMapPoints)
+        (setq $i (1+ $i))))
     (save-excursion
       (save-restriction
         (narrow-to-region *begin *end)
         (progn
-          ;; replace each find string by corresponding item in -tempMapPoints
-          (setq -i 0)
-          (while (< -i (length pairs))
+          ;; replace each find string by corresponding item in $tempMapPoints
+          (setq $i 0)
+          (while (< $i (length pairs))
             (goto-char (point-min))
-            (while (search-forward (elt (elt pairs -i) 0) nil t)
-              (replace-match (elt -tempMapPoints -i) t t))
-            (setq -i (1+ -i))))
+            (while (search-forward (elt (elt pairs $i) 0) nil t)
+              (replace-match (elt $tempMapPoints $i) t t))
+            (setq $i (1+ $i))))
         (progn
-          ;; replace each -tempMapPoints by corresponding replacement string
-          (setq -i 0)
-          (while (< -i (length pairs))
+          ;; replace each $tempMapPoints by corresponding replacement string
+          (setq $i 0)
+          (while (< $i (length pairs))
             (goto-char (point-min))
-            (while (search-forward (elt -tempMapPoints -i) nil t)
-              (replace-match (elt (elt pairs -i) 1) t t))
-            (setq -i (1+ -i))))))))
+            (while (search-forward (elt $tempMapPoints $i) nil t)
+              (replace-match (elt (elt pairs $i) 1) t t))
+            (setq $i (1+ $i))))))))
 
 (defun xah-css-compact-block ()
   "Compact current CSS code block.
@@ -237,18 +237,18 @@ A block is surrounded by blank lines.
 This command basically replace newline char by space.
 Version 2015-06-29"
   (interactive)
-  (let (-p1 -p2)
+  (let ($p1 $p2)
     (save-excursion
       (if (re-search-backward "\n[ \t]*\n" nil "move")
           (progn (re-search-forward "\n[ \t]*\n")
-                 (setq -p1 (point)))
-        (setq -p1 (point)))
+                 (setq $p1 (point)))
+        (setq $p1 (point)))
       (if (re-search-forward "\n[ \t]*\n" nil "move")
           (progn (re-search-backward "\n[ \t]*\n")
-                 (setq -p2 (point)))
-        (setq -p2 (point))))
+                 (setq $p2 (point)))
+        (setq $p2 (point))))
     (save-restriction
-      (narrow-to-region -p1 -p2)
+      (narrow-to-region $p1 $p2)
 
       (goto-char (point-min))
       (while (search-forward "\n" nil t)
@@ -727,19 +727,19 @@ Version 2016-10-02"
 This uses `ido-mode' user interface for completion."
   (interactive)
   (let* (
-         (-bds (bounds-of-thing-at-point 'symbol))
-         (-p1 (car -bds))
-         (-p2 (cdr -bds))
-         (-current-sym
-          (if  (or (null -p1) (null -p2) (equal -p1 -p2))
+         ($bds (bounds-of-thing-at-point 'symbol))
+         ($p1 (car $bds))
+         ($p2 (cdr $bds))
+         ($current-sym
+          (if  (or (null $p1) (null $p2) (equal $p1 $p2))
               ""
-            (buffer-substring-no-properties -p1 -p2)))
-         -result-sym)
-    (when (not -current-sym) (setq -current-sym ""))
-    (setq -result-sym
-          (ido-completing-read "" xah-css-all-keywords nil nil -current-sym ))
-    (delete-region -p1 -p2)
-    (insert -result-sym)))
+            (buffer-substring-no-properties $p1 $p2)))
+         $result-sym)
+    (when (not $current-sym) (setq $current-sym ""))
+    (setq $result-sym
+          (ido-completing-read "" xah-css-all-keywords nil nil $current-sym ))
+    (delete-region $p1 $p2)
+    (insert $result-sym)))
 
 
 ;; syntax table
@@ -846,8 +846,8 @@ If char before point is letters and char after point is whitespace or punctuatio
   ;; space▮char → do indent
   ;; char▮space → do completion
   ;; char ▮char → do indent
-  (let ( (-syntax-state (syntax-ppss)))
-    (if (or (nth 3 -syntax-state) (nth 4 -syntax-state))
+  (let ( ($syntax-state (syntax-ppss)))
+    (if (or (nth 3 $syntax-state) (nth 4 $syntax-state))
         (xah-css-prettify-root-sexp)
       (if
           (and (looking-back "[-_a-zA-Z]" 1)
@@ -860,34 +860,34 @@ If char before point is letters and char after point is whitespace or punctuatio
 Root sexp group is the outmost sexp unit."
   (interactive)
   (save-excursion
-    (let (-p1
-          ;; -p2
+    (let ($p1
+          ;; $p2
           )
       (xah-css-goto-outmost-bracket)
-      (setq -p1 (point))
-      (scan-sexps -p1 1)
-      ;; (setq -p2 (point))
+      (setq $p1 (point))
+      (scan-sexps $p1 1)
+      ;; (setq $p2 (point))
       (progn
-        (goto-char -p1)
+        (goto-char $p1)
         (indent-sexp)
-        ;; (indent-region -p1 -p2)
-        ;; (c-indent-region -p1 -p2)
+        ;; (indent-region $p1 $p2)
+        ;; (c-indent-region $p1 $p2)
         ))))
 
 (defun xah-css-goto-outmost-bracket (&optional pos)
   "Move cursor to the beginning of outer-most bracket, with respect to pos.
 Returns true if point is moved, else false."
   (interactive)
-  (let ((-i 0)
-        (-p0 (if (number-or-marker-p pos)
+  (let (($i 0)
+        ($p0 (if (number-or-marker-p pos)
                  pos
                (point))))
-    (goto-char -p0)
+    (goto-char $p0)
     (while
-        (and (< (setq -i (1+ -i)) 20)
+        (and (< (setq $i (1+ $i)) 20)
              (not (eq (nth 0 (syntax-ppss (point))) 0)))
       (xah-css-up-list -1 "ESCAPE-STRINGS" "NO-SYNTAX-CROSSING"))
-    (if (equal -p0 (point))
+    (if (equal $p0 (point))
         nil
       t
       )))
@@ -907,8 +907,8 @@ emacs 25.x changed `up-list' to take up to 3 args. Before, only 1."
   "Return t if not in string or comment. Else nil.
 This is for abbrev table property `:enable-function'.
 Version 2016-10-24"
-  (let ((-syntax-state (syntax-ppss)))
-    (not (or (nth 3 -syntax-state) (nth 4 -syntax-state)))))
+  (let (($syntax-state (syntax-ppss)))
+    (not (or (nth 3 $syntax-state) (nth 4 $syntax-state)))))
 
 (defun xah-css-expand-abbrev ()
   "Expand the symbol before cursor,
@@ -918,22 +918,22 @@ Version 2016-10-24"
   (interactive)
   (when (xah-css-abbrev-enable-function) ; abbrev property :enable-function doesn't seem to work, so check here instead
     (let (
-          -p1 -p2
-          -abrStr
-          -abrSymbol
+          $p1 $p2
+          $abrStr
+          $abrSymbol
           )
       (save-excursion
         (forward-symbol -1)
-        (setq -p1 (point))
+        (setq $p1 (point))
         (forward-symbol 1)
-        (setq -p2 (point)))
-      (setq -abrStr (buffer-substring-no-properties -p1 -p2))
-      (setq -abrSymbol (abbrev-symbol -abrStr))
-      (if -abrSymbol
+        (setq $p2 (point)))
+      (setq $abrStr (buffer-substring-no-properties $p1 $p2))
+      (setq $abrSymbol (abbrev-symbol $abrStr))
+      (if $abrSymbol
           (progn
-            (abbrev-insert -abrSymbol -abrStr -p1 -p2 )
-            (xah-css--abbrev-position-cursor -p1)
-            -abrSymbol)
+            (abbrev-insert $abrSymbol $abrStr $p1 $p2 )
+            (xah-css--abbrev-position-cursor $p1)
+            $abrSymbol)
         nil))))
 
 (defun xah-css--abbrev-position-cursor (&optional *pos)
@@ -941,9 +941,9 @@ Version 2016-10-24"
 Return true if found, else false.
 Version 2016-10-24"
   (interactive)
-  (let ((-found-p (search-backward "▮" (if *pos *pos (max (point-min) (- (point) 100))) t )))
-    (when -found-p (forward-char ))
-    -found-p
+  (let (($found-p (search-backward "▮" (if *pos *pos (max (point-min) (- (point) 100))) t )))
+    (when $found-p (forward-char ))
+    $found-p
     ))
 
 (defun xah-css--ahf ()

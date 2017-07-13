@@ -3,8 +3,8 @@
 ;; Copyright © 2011-2016 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.0.5
-;; Package-Version: 20170527.1806
+;; Version: 2.0.6
+;; Package-Version: 20170713.628
 ;; Created: 22 May 2015
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: extensions, lisp, tools
@@ -141,30 +141,30 @@ Version 2017-05-27"
 
        ((eq *unit 'url)
         (let (p0
-              ;; (-delimitors "^ \t\n,()[]{}<>〔〕“”\"`'!$^*|\;")
-              (-delimitors "!\"#$%&'*+,-./0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~"))
+              ;; ($delimitors "^ \t\n,()[]{}<>〔〕“”\"`'!$^*|\;")
+              ($delimitors "!\"#$%&'*+,-./0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~"))
           (setq p0 (point))
-          (skip-chars-backward -delimitors) ;"^ \t\n,([{<>〔“\""
+          (skip-chars-backward $delimitors) ;"^ \t\n,([{<>〔“\""
           (setq p1 (point))
           (goto-char p0)
-          (skip-chars-forward -delimitors) ;"^ \t\n,)]}<>〕\"”"
+          (skip-chars-forward $delimitors) ;"^ \t\n,)]}<>〕\"”"
           (setq p2 (point))))
 
        ;; • 'filepath-or-url — either file path or URL, with heuristics to detect which sequences of chars to grab. They cannot be distinguished correctly by just lexical form. For example, URL usually contains the colon, but file path not. Sometimes you need this, for example, the value of “href” attribute, which can be just a file path (e.g. relative path) or URL (e.g. http://example.com/)
 
        ;; ((eq *unit 'filepath-or-url)
        ;;  (let (p0
-       ;;        -input
+       ;;        $input
        ;;        (case-fold-search nil)
-       ;;        (-delimitors "!\"#$%&'*+,-./0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~"))
+       ;;        ($delimitors "!\"#$%&'*+,-./0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~"))
        ;;    (setq p0 (point))
-       ;;    (skip-chars-backward -delimitors) ;"^ \t\n,([{<>〔“\""
+       ;;    (skip-chars-backward $delimitors) ;"^ \t\n,([{<>〔“\""
        ;;    (setq p1 (point))
        ;;    (goto-char p0)
-       ;;    (skip-chars-forward -delimitors) ;"^ \t\n,)]}<>〕\"”"
+       ;;    (skip-chars-forward $delimitors) ;"^ \t\n,)]}<>〕\"”"
        ;;    (setq p2 (point))
-       ;;    (setq -input (buffer-substring-no-properties p1 p2))
-       ;;    (if (string-match "`http\\|`file" -input &optional START)
+       ;;    (setq $input (buffer-substring-no-properties p1 p2))
+       ;;    (if (string-match "`http\\|`file" $input &optional START)
        ;;        (progn )
        ;;      (progn ))))
 
@@ -189,17 +189,17 @@ Version 2016-10-18"
 (defun xah-get-thing-at-point (*unit)
   "Same as `xah-get-bounds-of-thing', but return the string.
 Version 2016-10-18T02:31:36-07:00"
-  (let ( (-bds (xah-get-bounds-of-thing *unit)) )
-    (buffer-substring-no-properties (car -bds) (cdr -bds))))
+  (let ( ($bds (xah-get-bounds-of-thing *unit)) )
+    (buffer-substring-no-properties (car $bds) (cdr $bds))))
 
 (defun xah-get-thing-at-cursor (*unit)
   "Same as `xah-get-bounds-of-thing', except this returns a vector [text a b], where text is the string and a b are its boundary.
 
 Version 2016-10-18T00:23:52-07:00"
   (let* (
-         (-bds (xah-get-bounds-of-thing *unit))
-         (-p1 (car -bds)) (-p2 (cdr -bds)))
-    (vector (buffer-substring-no-properties -p1 -p2) -p1 -p2 )))
+         ($bds (xah-get-bounds-of-thing *unit))
+         ($p1 (car $bds)) ($p2 (cdr $bds)))
+    (vector (buffer-substring-no-properties $p1 $p2) $p1 $p2 )))
 
 (make-obsolete 'xah-get-thing-at-cursor 'xah-get-thing-at-point "2016-10-18")
 
@@ -207,9 +207,9 @@ Version 2016-10-18T00:23:52-07:00"
   "Same as `xah-get-bounds-of-thing-or-region', except returns a vector [text a b], where text is the string and a b are its boundary."
   (interactive)
   (let* (
-         (-bds (xah-get-bounds-of-thing-or-region *unit))
-         (-p1 (car -bds)) (-p2 (cdr -bds)))
-    (vector (buffer-substring-no-properties -p1 -p2) -p1 -p2 )))
+         ($bds (xah-get-bounds-of-thing-or-region *unit))
+         ($p1 (car $bds)) ($p2 (cdr $bds)))
+    (vector (buffer-substring-no-properties $p1 $p2) $p1 $p2 )))
 
 (make-obsolete 'xah-get-thing-or-selection 'xah-get-bounds-of-thing-or-region "2016-10-18")
 

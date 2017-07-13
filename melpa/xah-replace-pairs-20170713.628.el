@@ -3,8 +3,8 @@
 ;; Copyright © 2010-2016, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.2.4
-;; Package-Version: 20170221.2112
+;; Version: 2.2.5
+;; Package-Version: 20170713.628
 ;; Created: 17 Aug 2010
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: lisp, tools, find replace
@@ -62,53 +62,54 @@ Once a subsring in the buffer is replaced, that part will not change again.  For
 Returns a list, each element is a vector [position findStr replaceStr].
 
 Note: the region's text or any string in *PAIRS is assumed to NOT contain any character from Unicode Private Use Area A. That is, U+F0000 to U+FFFFD. And, there are no more than 65534 pairs.
-Version 2017-02-07"
+Version 2017-05-24"
   (let (
-        (-unicodePriveUseA #xf0000)
-        (-i 0)
-        (-tempMapPoints '())
-        (-changeLog '()))
+        ($unicodePriveUseA #xf0000)
+        ($i 0)
+        ($tempMapPoints '())
+        ($changeLog '()))
     (progn
       ;; generate a list of Unicode chars for intermediate replacement. These chars are in  Private Use Area.
-      (setq -i 0)
-      (while (< -i (length *pairs))
-        (push (char-to-string (+ -unicodePriveUseA -i)) -tempMapPoints)
-        (setq -i (1+ -i))))
+      (setq $i 0)
+      (while (< $i (length *pairs))
+        (push (char-to-string (+ $unicodePriveUseA $i)) $tempMapPoints)
+        (setq $i (1+ $i))))
     (save-excursion
       (save-restriction
         (narrow-to-region *begin *end)
         (progn
-          ;; replace each find string by corresponding item in -tempMapPoints
-          (setq -i 0)
-          (while (< -i (length *pairs))
+          ;; replace each find string by corresponding item in $tempMapPoints
+          (setq $i 0)
+          (while (< $i (length *pairs))
             (goto-char (point-min))
-            (while (search-forward (elt (elt *pairs -i) 0) nil t)
-              (replace-match (elt -tempMapPoints -i) t t))
-            (setq -i (1+ -i))))
+            (while (search-forward (elt (elt *pairs $i) 0) nil t)
+              (replace-match (elt $tempMapPoints $i) t t))
+            (setq $i (1+ $i))))
         (progn
-          ;; replace each -tempMapPoints by corresponding replacement string
-          (setq -i 0)
-          (while (< -i (length *pairs))
+          ;; replace each $tempMapPoints by corresponding replacement string
+          (setq $i 0)
+          (while (< $i (length *pairs))
             (goto-char (point-min))
-            (while (search-forward (elt -tempMapPoints -i) nil t)
+            (while (search-forward (elt $tempMapPoints $i) nil t)
               (push (vector (point)
-                            (elt (elt *pairs -i) 0)
-                            (elt (elt *pairs -i) 1)) -changeLog)
-              (replace-match (elt (elt *pairs -i) 1) t t)
+                            (elt (elt *pairs $i) 0)
+                            (elt (elt *pairs $i) 1)) $changeLog)
+              (replace-match (elt (elt *pairs $i) 1) t t)
               (when *hilight-p
-                (overlay-put (make-overlay (match-beginning 0) (match-end 0)) 'face '((t :background "red" :foreground "white")))
+                ;; (overlay-put (make-overlay (match-beginning 0) (match-end 0)) 'face '((t :background "red" :foreground "white")))
+                (overlay-put (make-overlay (match-beginning 0) (match-end 0)) 'face 'highlight)
                 ;;
                 ))
-            (setq -i (1+ -i))))))
+            (setq $i (1+ $i))))))
 
-    (when (and *report-p (> (length -changeLog) 0))
+    (when (and *report-p (> (length $changeLog) 0))
       (mapc
-       (lambda (-x)
-         (princ -x)
+       (lambda ($x)
+         (princ $x)
          (terpri))
-       (reverse -changeLog)))
+       (reverse $changeLog)))
 
-    -changeLog
+    $changeLog
     ))
 
 (defun xah-replace-pairs-in-string (*str *pairs)
@@ -138,10 +139,10 @@ Version 2017-02-21"
     (save-restriction
       (narrow-to-region *begin *end)
       (mapc
-       (lambda (-x)
+       (lambda ($x)
          (goto-char (point-min))
-         (while (search-forward-regexp (elt -x 0) (point-max) t)
-           (replace-match (elt -x 1) *fixedcase-p *literal-p)
+         (while (search-forward-regexp (elt $x 0) (point-max) t)
+           (replace-match (elt $x 1) *fixedcase-p *literal-p)
            (when *hilight-p
              (overlay-put (make-overlay (match-beginning 0) (match-end 0)) 'face 'highlight))))
        *pairs))))

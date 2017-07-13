@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2016, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 3.1.8
-;; Package-Version: 20170712.2252
+;; Version: 3.1.9
+;; Package-Version: 20170713.629
 ;; Created: 23 Mar 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: lisp, languages
@@ -2692,28 +2692,28 @@ This uses `ido-mode' user interface for completion.
 version 2017-01-27"
   (interactive)
   (let* (
-         (-bds (bounds-of-thing-at-point 'symbol))
-         (-p1 (car -bds))
-         (-p2 (cdr -bds))
-         (-current-sym
-          (if  (or (not -p1) (not -p2) (equal -p1 -p2))
+         ($bds (bounds-of-thing-at-point 'symbol))
+         ($p1 (car $bds))
+         ($p2 (cdr $bds))
+         ($current-sym
+          (if  (or (not $p1) (not $p2) (equal $p1 $p2))
               ""
-            (buffer-substring-no-properties -p1 -p2)))
-         -result-sym)
-    (when (not -current-sym) (setq -current-sym ""))
-    (setq -result-sym
-          (ido-completing-read "" xah-elisp-all-symbols nil nil -current-sym ))
-    (delete-region -p1 -p2)
-    (insert -result-sym)))
+            (buffer-substring-no-properties $p1 $p2)))
+         $result-sym)
+    (when (not $current-sym) (setq $current-sym ""))
+    (setq $result-sym
+          (ido-completing-read "" xah-elisp-all-symbols nil nil $current-sym ))
+    (delete-region $p1 $p2)
+    (insert $result-sym)))
 
 (defun xah-elisp-completion-function ()
   "This is the function to be used for the hook `completion-at-point-functions'."
   (interactive)
   (let* (
-         (-bds (bounds-of-thing-at-point 'symbol))
-         (-p1 (car -bds))
-         (-p2 (cdr -bds)))
-    (list -p1 -p2 xah-elisp-all-symbols nil )))
+         ($bds (bounds-of-thing-at-point 'symbol))
+         ($p1 (car $bds))
+         ($p2 (cdr $bds)))
+    (list $p1 $p2 xah-elisp-all-symbols nil )))
 
 (defun xah-elisp-start-with-left-paren-p ()
   "Returns t or nil"
@@ -2739,24 +2739,24 @@ becomes
 Cursor is moved to the left deleted paren spot, mark is set to the right deleted paren spot.
 Call `exchange-point-and-mark' \\[exchange-point-and-mark] to highlight them."
   (interactive)
-  (let (-pos)
+  (let ($pos)
     (atomic-change-group
       (xah-elisp-up-list -1 "ESCAPE-STRINGS" "NO-SYNTAX-CROSSING")
       (while (not (char-equal (char-after) ?\( ))
         (xah-elisp-up-list -1 "ESCAPE-STRINGS" "NO-SYNTAX-CROSSING"))
-      (setq -pos (point))
+      (setq $pos (point))
       (forward-sexp)
       (delete-char -1)
       (push-mark (point) t t)
-      (goto-char -pos)
+      (goto-char $pos)
       (delete-char 1))))
 
 (defun xah-elisp-abbrev-enable-function ()
   "Return t if not in string or comment. Else nil.
 This is for abbrev table property `:enable-function'.
 Version 2016-10-24"
-  (let ((-syntax-state (syntax-ppss)))
-    (not (or (nth 3 -syntax-state) (nth 4 -syntax-state)))))
+  (let (($syntax-state (syntax-ppss)))
+    (not (or (nth 3 $syntax-state) (nth 4 $syntax-state)))))
 
 (defun xah-elisp-expand-abbrev ()
   "Expand the symbol before cursor,
@@ -2765,31 +2765,31 @@ Returns the abbrev symbol if there's a expansion, else nil.
 Version 2017-01-13"
   (interactive)
   (when (xah-elisp-abbrev-enable-function) ; abbrev property :enable-function doesn't seem to work, so check here instead
-    (let ( -p1 -p2
-               -abrStr
-               -abrSymbol
+    (let ( $p1 $p2
+               $abrStr
+               $abrSymbol
                )
 
       ;; (save-excursion
       ;;   (forward-symbol -1)
-      ;;   (setq -p1 (point))
-      ;;   (goto-char -p0)
-      ;;   (setq -p2 -p0))
+      ;;   (setq $p1 (point))
+      ;;   (goto-char $p0)
+      ;;   (setq $p2 $p0))
 
       (save-excursion
         ;; 2017-01-16 note: we select the whole symbol to solve a problem. problem is: if “aa”  is a abbrev, and “▮bbcc” is existing word with cursor at beginning, and user wants to type aabbcc. Normally, aa immediately expands. This prevent people editing bbcc to become aabbcc. This happens for example in elisp where “aa” is “re” for “region-end” and user wants to add “re-” to “search-forward” to get “re-search-forward”. The downside of this is that, people cannot type a abbrev when in middle of a word.
         (forward-symbol -1)
-        (setq -p1 (point))
+        (setq $p1 (point))
         (forward-symbol 1)
-        (setq -p2 (point)))
+        (setq $p2 (point)))
 
-      (setq -abrStr (buffer-substring-no-properties -p1 -p2))
-      (setq -abrSymbol (abbrev-symbol -abrStr))
-      (if -abrSymbol
+      (setq $abrStr (buffer-substring-no-properties $p1 $p2))
+      (setq $abrSymbol (abbrev-symbol $abrStr))
+      (if $abrSymbol
           (progn
-            (abbrev-insert -abrSymbol -abrStr -p1 -p2 )
-            (xah-elisp--abbrev-position-cursor -p1)
-            -abrSymbol)
+            (abbrev-insert $abrSymbol $abrStr $p1 $p2 )
+            (xah-elisp--abbrev-position-cursor $p1)
+            $abrSymbol)
         nil))))
 
 (defun xah-elisp--abbrev-position-cursor (&optional *pos)
@@ -2797,9 +2797,9 @@ Version 2017-01-13"
 Return true if found, else false.
 Version 2016-10-24"
   (interactive)
-  (let ((-found-p (search-backward "▮" (if *pos *pos (max (point-min) (- (point) 100))) t )))
-    (when -found-p (delete-char 1))
-    -found-p
+  (let (($found-p (search-backward "▮" (if *pos *pos (max (point-min) (- (point) 100))) t )))
+    (when $found-p (delete-char 1))
+    $found-p
     ))
 
 (defun xah-elisp--ahf ()
@@ -2825,8 +2825,8 @@ If char before point is letters and char after point is whitespace or punctuatio
   ;; space▮char → do indent
   ;; char▮space → do completion
   ;; char ▮char → do indent
-  (let ( (-syntax-state (syntax-ppss)))
-    (if (or (nth 3 -syntax-state) (nth 4 -syntax-state))
+  (let ( ($syntax-state (syntax-ppss)))
+    (if (or (nth 3 $syntax-state) (nth 4 $syntax-state))
         (progn
           (xah-elisp-prettify-root-sexp))
       (progn (if
@@ -2842,13 +2842,13 @@ Root sexp group is the outmost sexp unit.
 Version 2016-10-13"
   (interactive)
   (save-excursion
-    (let (-p1 -p2)
+    (let ($p1 $p2)
       (xah-elisp-goto-outmost-bracket)
-      (setq -p1 (point))
-      (setq -p2 (scan-sexps (point) 1))
+      (setq $p1 (point))
+      (setq $p2 (scan-sexps (point) 1))
       (save-excursion
         (save-restriction
-          (narrow-to-region -p1 -p2)
+          (narrow-to-region $p1 $p2)
           (progn
             (goto-char (point-min))
             (indent-sexp)
@@ -2883,16 +2883,16 @@ Version 2017-01-27"
   "Move cursor to the beginning of outer-most bracket, with respect to *pos.
 Returns true if point is moved, else false."
   (interactive)
-  (let ((-i 0)
-        (-p0 (if (number-or-marker-p *pos)
+  (let (($i 0)
+        ($p0 (if (number-or-marker-p *pos)
                  *pos
                (point))))
-    (goto-char -p0)
+    (goto-char $p0)
     (while
-        (and (< (setq -i (1+ -i)) 20)
+        (and (< (setq $i (1+ $i)) 20)
              (not (eq (nth 0 (syntax-ppss (point))) 0)))
       (xah-elisp-up-list -1 "ESCAPE-STRINGS" "NO-SYNTAX-CROSSING"))
-    (if (equal -p0 (point))
+    (if (equal $p0 (point))
         nil
       t
       )))
@@ -2907,24 +2907,24 @@ Version 2017-01-27"
      (save-excursion
        (xah-elisp-goto-outmost-bracket)
        (list (point) (scan-sexps (point) 1)))))
-  (let ((-p1 *begin) (-p2 *end))
+  (let (($p1 *begin) ($p2 *end))
     (when (not *begin)
       (save-excursion
         (xah-elisp-goto-outmost-bracket)
-        (setq -p1 (point))
-        (setq -p2 (scan-sexps (point) 1))))
-    (xah-elisp-compact-parens-region -p1 -p2)))
+        (setq $p1 (point))
+        (setq $p2 (scan-sexps (point) 1))))
+    (xah-elisp-compact-parens-region $p1 $p2)))
 
 (defun xah-elisp-compact-parens-region (*begin *end)
   "Remove whitespaces in ending repetition of parenthesises in region."
   (interactive "r")
-  (let (-syntax-state)
+  (let ($syntax-state)
     (save-restriction
       (narrow-to-region *begin *end)
       (goto-char (point-min))
       (while (search-forward-regexp ")[ \t\n]+)" nil t)
-        (setq -syntax-state (syntax-ppss (match-beginning 0)))
-        (if (or (nth 3 -syntax-state ) (nth 4 -syntax-state))
+        (setq $syntax-state (syntax-ppss (match-beginning 0)))
+        (if (or (nth 3 $syntax-state ) (nth 4 $syntax-state))
             (progn (search-forward ")"))
           (progn (replace-match "))")
                  (search-backward ")")))))))
@@ -3420,7 +3420,7 @@ Version 2017-01-27"
 (face-spec-set
  'xah-elisp-star-word
  '(
-   (t :foreground "red"  :weight bold))
+   (t :foreground "red" :weight bold))
  'face-defface-spec
  )
 
@@ -3439,9 +3439,16 @@ Version 2017-01-27"
 
 (defface xah-elisp-xi-word
   '(
-    (t :foreground "dark green"))
+    (t :foreground "dark green" :weight bold))
    "Face for user variables."
   :group 'xah-elisp-mode )
+
+(face-spec-set
+ 'xah-elisp-xi-word
+ '(
+    (t :foreground "dark green" :weight bold))
+ 'face-defface-spec
+ )
 
 (defface xah-elisp-dash-word
   '(
