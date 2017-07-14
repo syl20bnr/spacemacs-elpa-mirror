@@ -3,10 +3,10 @@
 ;; Authors: Chris Rayner (dchrisrayner @ gmail)
 ;; Created: May 23 2011
 ;; Keywords: processes, tools
-;; Package-Version: 0.0.7
+;; Package-Version: 0.0.8
 ;; Homepage: https://github.com/riscy/shx-for-emacs
 ;; Package-Requires: ((emacs "24.4"))
-;; Version: 0.0.7
+;; Version: 0.0.8
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -68,6 +68,10 @@
   :link '(url-link
           :tag "shx on Github"
           "https://github.com/riscy/shx-for-emacs"))
+
+(defcustom shx-disable-undo nil
+  "Whether to disable undo in shx buffers."
+  :type 'boolean)
 
 (defcustom shx-path-to-convert "convert"
   "Path to ImageMagick's convert binary."
@@ -636,7 +640,7 @@ therefore ensure `comint-prompt-read-only' is nil."
 \nExample:\n
   :diff file1.txt file2.csv"
   (let ((file-list (shx--parse-filenames files)))
-    (if (not (eq (list-length file-list) 2))
+    (if (not (eq (length file-list) 2))
         (shx-insert 'error "diff <file1> <file2>\n")
       (shx-insert "Invoking ediff " files "\n")
       (shx--asynch-funcall #'ediff (mapcar 'expand-file-name file-list)))))
@@ -666,7 +670,12 @@ therefore ensure `comint-prompt-read-only' is nil."
     (error (shx-insert 'error "invalid sexp\n"))))
 
 (defun shx-cmd-find (file)
-  "Run fuzzy find for FILE."
+  "Run fuzzy find for FILE.
+Depending on the contents of the current directory, this command
+may take a while and unfortunately blocks Emacs in the meantime.
+\nExamples:\n
+  :f prefix
+  :f *suffix"
   (if (equal file "")
       (shx-insert 'error "find <prefix>\n")
     (let* ((fuzzy-file (mapconcat 'char-to-string (string-to-list file) "*"))
@@ -724,7 +733,7 @@ This enables it to be accessed later using `shx-cmd-kept'."
       (shx--hint "type ':kept' or ':k' to see all kept commands"))))
 
 (defun shx-cmd-kept (regexp)
-  "(SAFE) List the \"kept\" commands that match REGEXP.\n
+  "(SAFE) List the \"kept\" commands that match REGEXP.
 Each matching command is appended to the input history, enabling
 access via \\[comint-previous-input] and \\[comint-next-input].\n
 The list containing all of these commands is `shx-kept-commands'.
@@ -859,18 +868,6 @@ Or just a single column:
   "Some additional syntax highlighting for the shx minor mode."
   :type '(alist :key-type regexp))
 
-(defun shx (&optional name)
-  "Create a new shx-enhanced shell session.
-NAME is the optional name of the new buffer.
-See the function `shx-mode' for details."
-  (interactive)
-  (let ((name (or name (generate-new-buffer-name "*shx*"))))
-    ;; switch-to-buffer first -- shell uses pop-to-buffer
-    ;; which is unpredictable! :(
-    (switch-to-buffer name)
-    (shell name)
-    (shx-mode)))
-
 ;;;###autoload
 (define-minor-mode shx-mode
   "Toggle shx-mode on or off.
@@ -885,6 +882,19 @@ comint-mode in general.  Use `shx-global-mode' to enable
 ;;;###autoload
 (define-globalized-minor-mode shx-global-mode shx-mode shx--turn-on)
 
+(defun shx (&optional name)
+  "Create a new shx-enhanced shell session.
+NAME is the optional name of the new buffer.
+See the function `shx-mode' for details."
+  (interactive)
+  (let ((name (or name (generate-new-buffer-name "*shx*"))))
+    ;; switch-to-buffer first -- shell uses pop-to-buffer
+    ;; which is unpredictable! :(
+    (switch-to-buffer name)
+    (shell name)
+    ;; shx might already be active due to shx-global-mode:
+    (unless shx-mode (shx-mode))))
+
 (defun shx--activate ()
   "Add font-locks, tweak defaults, add hooks/advice."
   (setq-local shx-buffer (current-buffer))
@@ -893,8 +903,9 @@ comint-mode in general.  Use `shx-global-mode' to enable
   (font-lock-add-keywords nil shx-font-locks)
   (setq-local shx--old-prompt-read-only comint-prompt-read-only)
   (setq-local comint-prompt-read-only nil)
-  (setq-local shx--old-undo-disabled (eq t buffer-undo-list))
-  (unless shx--old-undo-disabled (buffer-disable-undo))
+  (when shx-disable-undo
+    (setq-local shx--old-undo-disabled (eq t buffer-undo-list))
+    (unless shx--old-undo-disabled (buffer-disable-undo)))
   ;; do this one with a delay because spacemacs tries to set this variable too:
   (shx--asynch-funcall (lambda () (setq comint-input-sender 'shx-filter-input)))
   (add-hook 'comint-output-filter-functions #'shx-parse-output-hook nil t))
@@ -905,7 +916,7 @@ comint-mode in general.  Use `shx-global-mode' to enable
     (font-lock-remove-keywords nil shx-shell-mode-font-locks))
   (font-lock-remove-keywords nil shx-font-locks)
   (setq-local comint-prompt-read-only shx--old-prompt-read-only)
-  (unless shx--old-undo-disabled (buffer-enable-undo))
+  (when shx-disable-undo (unless shx--old-undo-disabled (buffer-enable-undo)))
   (setq comint-input-sender 'comint-simple-send)
   (remove-hook 'comint-output-filter-functions #'shx-parse-output-hook t))
 
