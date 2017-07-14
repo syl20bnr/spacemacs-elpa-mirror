@@ -8,20 +8,22 @@
 ;; :END:
 
 
-;; [[file:~/p/elisp/mw/underline-with-char/underline-with-char.org::*Program][Program:1]]
+;; [[id:17c5897e-3413-4576-aa83-3869e0cb1053][Program:1]]
 ;; THIS FILE HAS BEEN GENERATED.
 
 
 ;;
 ;; Version: 3.0.0
-;; Package-Version: 20170713.1206
+;; Package-Version: 20170713.1329
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: convenience
 
+;;; Commentary:
+;;
+;; This program supports underlining with a certain character.
+;;
 ;; When point is in an empty line then fill the line with a character
 ;; making it as long as the line above.
-
-;;; Commentary:
 ;;
 ;; This program provides just command =underline-with-char=.
 ;;
@@ -30,7 +32,7 @@
 ;; ========
 ;;
 ;; Notation:
-;; - <!> means the cursor.
+;; - | means the cursor.
 ;; - RET means the return key.
 ;;
 
@@ -41,7 +43,7 @@
 ;; _____
 ;;
 ;; lala
-;; <!>
+;; |
 ;;
 ;; Action
 ;; ______
@@ -52,7 +54,7 @@
 ;; ______
 ;;
 ;; lala
-;; ----<!>
+;; ----|
 ;;
 
 ;; Partial underlining
@@ -62,7 +64,7 @@
 ;; _____
 ;;
 ;; lolololo
-;; //<!>
+;; //|
 ;;
 ;; Action
 ;; ______
@@ -73,7 +75,7 @@
 ;; ______
 ;;
 ;; lolololo
-;; //------<!>
+;; //------|
 ;;
 
 ;; Use a certain char for current and subsequent underlinings (1)
@@ -83,7 +85,7 @@
 ;; _____
 ;;
 ;; lala
-;; <!>
+;; |
 ;;
 ;; Action
 ;; ______
@@ -94,7 +96,7 @@
 ;; ______
 ;;
 ;; lala
-;; XXXX<!>
+;; XXXX|
 ;;
 
 ;; Use a certain char for current and subsequent underlinings (2)
@@ -104,7 +106,7 @@
 ;; _____
 ;;
 ;; lala
-;; <!>
+;; |
 ;;
 ;; Action
 ;; ______
@@ -116,7 +118,7 @@
 ;;
 ;; lala
 ;; XXXX
-;; XXXX<!>
+;; XXXX|
 
 
 ;;; Code:
@@ -140,15 +142,15 @@ With prefix ARG use the next entered character for this and
 subsequent underlining.
 
 Example with `underline-with-char-fill-char' set to '-' and point
-symbolized as <!> and starting with
+symbolized as | and starting with
 
 ;; Commentary:
-;; <!>
+;; |
 
 get
 
 ;; Commentary:
-;; -----------"
+;; -----------|"
   (interactive "P")
   (when (equal '(4) arg)
     (setq underline-with-char-fill-char (read-char "char: ")))

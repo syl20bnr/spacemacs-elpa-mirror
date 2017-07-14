@@ -4,7 +4,7 @@
 
 ;; Author: Junpeng Qiu <qjpchmail@gmail.com>
 ;; Keywords: extensions
-;; Package-Version: 20170509.1134
+;; Package-Version: 20170713.1934
 ;; Version: 0.3.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -494,6 +494,7 @@
                        (intern (concat "gscholar-bibtex-" s "-sources")))))
     `(,(funcall build-name (car names)) . ,(funcall build-name (cdr names)))))
 
+;;;###autoload
 (defun gscholar-bibtex-source-on-off (action source-name)
   (let* ((prompt (if (eq action :on) "available" "enabled"))
          (symbol-pair (gscholar-bibtex--get-list-symbol-pair action))

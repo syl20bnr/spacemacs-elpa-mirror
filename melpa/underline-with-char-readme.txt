@@ -1,3 +1,8 @@
+This program supports underlining with a certain character.
+
+When point is in an empty line then fill the line with a character
+making it as long as the line above.
+
 This program provides just command =underline-with-char=.
 
 
@@ -5,7 +10,7 @@ Examples
 ========
 
 Notation:
-- <!> means the cursor.
+- | means the cursor.
 - RET means the return key.
 
 
@@ -16,7 +21,7 @@ Input
 _____
 
 lala
-<!>
+|
 
 Action
 ______
@@ -27,7 +32,7 @@ Output
 ______
 
 lala
-----<!>
+----|
 
 
 Partial underlining
@@ -37,7 +42,7 @@ Input
 _____
 
 lolololo
-//<!>
+//|
 
 Action
 ______
@@ -48,7 +53,7 @@ Output
 ______
 
 lolololo
-//------<!>
+//------|
 
 
 Use a certain char for current and subsequent underlinings (1)
@@ -58,7 +63,7 @@ Input
 _____
 
 lala
-<!>
+|
 
 Action
 ______
@@ -69,7 +74,7 @@ Output
 ______
 
 lala
-XXXX<!>
+XXXX|
 
 
 Use a certain char for current and subsequent underlinings (2)
@@ -79,7 +84,7 @@ Input
 _____
 
 lala
-<!>
+|
 
 Action
 ______
@@ -91,6 +96,6 @@ ______
 
 lala
 XXXX
-XXXX<!>
+XXXX|
 
 
