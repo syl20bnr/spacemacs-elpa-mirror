@@ -4,7 +4,7 @@
 ;;
 ;; Author: Austin Bingham <austin.bingham@gmail.com>
 ;; Version: 0.10
-;; Package-Version: 20170528.2302
+;; Package-Version: 20170713.2320
 ;; URL: https://github.com/abingham/traad
 ;; Package-Requires: ((deferred "0.3.2") (popup "0.5.0") (request "0.2.0") (request-deferred "0.2.0") (virtualenvwrapper "20151123"))
 ;;
@@ -489,6 +489,17 @@ necessary. Return the history buffer."
 	 (cons "path" (buffer-file-name))
 	 (cons "offset" (traad-adjust-point (point))))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; inline support
+
+(defun traad-inline ()
+  (interactive)
+  (traad-typical-deferred-post
+   "Inline"
+   "/refactor/inline"
+   (list
+    (cons "path" (buffer-file-name))
+    (cons "offset" (traad-adjust-point (point))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; extraction support
