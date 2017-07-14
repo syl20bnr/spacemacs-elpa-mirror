@@ -4,7 +4,7 @@
 ;;
 ;; Author: binjo.cn@gmail.com
 ;; Version: $Id: yara-mode.el,v 0.0 2012/10/16 14:11:51 binjo Exp $
-;; Package-Version: 20160821.724
+;; Package-Version: 20170713.2206
 ;; Keywords: yara
 ;; X-URL: not distributed yet
 ;; Package-Requires: ((emacs "24"))
@@ -55,6 +55,7 @@ For detail, see `comment-dwim'."
   (interactive "*P")
   (require 'newcomment)
   (let ((comment-start "//")
+        (comment-start-skip "//")
         (comment-end ""))
     (comment-dwim arg)))
 

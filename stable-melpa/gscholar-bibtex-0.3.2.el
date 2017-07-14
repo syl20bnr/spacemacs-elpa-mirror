@@ -4,8 +4,8 @@
 
 ;; Author: Junpeng Qiu <qjpchmail@gmail.com>
 ;; Keywords: extensions
-;; Package-Version: 0.3.1
-;; Version: 0.2
+;; Package-Version: 0.3.2
+;; Version: 0.3.1
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -47,7 +47,8 @@
 ;;   - TAB: show BibTeX entry for current search result
 ;;   - A/W: append/write to `gscholar-bibtex-database-file' (see later)
 ;;   - a/w: append/write to a file
-;;   - c: close BibTeX entry window
+;;   - c: copy the current BibTeX entry
+;;   - x: close BibTeX entry window
 ;;   - q: quit
 
 ;; ** Sources
@@ -133,12 +134,14 @@
 
 (require 'bibtex)
 (require 'xml)
+(require 'url)
+(require 'json)
 
 (defgroup gscholar-bibtex nil
   "Retrieve BibTeX from Google Scholar and other online sources(ACM, IEEE, DBLP)."
   :group 'bibtex)
 
-(defconst gscholar-bibtex-version "0.2"
+(defconst gscholar-bibtex-version "0.3.1"
   "`gscholar-bibtex' version number.")
 
 (defvar gscholar-bibtex-caller-buffer nil
@@ -177,6 +180,10 @@
 (defconst gscholar-bibtex-entry-buffer-name "*BibTeX entry*"
   "Buffer name for BibTeX entry.")
 
+(defconst gscholar-bibtex-user-agent-string
+  "Mozilla/5.0 (X11; Linux x86_64; rv:46.0) Gecko/20100101 Firefox/46.0"
+  "User agent for `gscholar-bibtex'.")
+
 (defconst gscholar-bibtex-function-suffixes-alist
   '((:search-results . "search-results")
     (:titles . "titles")
@@ -186,7 +193,7 @@
 
 (defconst gscholar-bibtex-help
   (let ((help-message "[<n>/<p>] next/previous; [<TAB>] show BibTeX entry; [<A>/<W>] append/write to database;\
- [<a>/<w>] append/write to file; [<c>] close BibTeX entry window; [<q>] quit;"))
+ [<a>/<w>] append/write to file; [<c>] copy entry; [<x>] close BibTeX entry window; [<q>] quit;"))
     (while (string-match "<\\([a-zA-Z]+\\)>" help-message)
       (setq help-message
             (replace-match
@@ -217,10 +224,10 @@
   (forward-line (1- N)))
 
 (defun gscholar-bibtex-prettify-title (s)
-  (propertize s 'face 'gscholar-bibtex-title))
+  (propertize (or s "") 'face 'gscholar-bibtex-title))
 
 (defun gscholar-bibtex-prettify-subtitle (s)
-  (propertize s 'face 'gscholar-bibtex-subtitle))
+  (propertize (or s "") 'face 'gscholar-bibtex-subtitle))
 
 (defun gscholar-bibtex-highlight-current-item-hook ()
   (save-excursion
@@ -240,7 +247,8 @@
     (define-key map "W" 'gscholar-bibtex-write-bibtex-to-database)
     (define-key map "a" 'gscholar-bibtex-append-bibtex-to-file)
     (define-key map "w" 'gscholar-bibtex-write-bibtex-to-file)
-    (define-key map "c" 'gscholar-bibtex-quit-entry-window)
+    (define-key map "c" 'gscholar-bibtex-copy-bibtex-entry)
+    (define-key map "x" 'gscholar-bibtex-quit-entry-window)
     (define-key map "q" 'gscholar-bibtex-quit-gscholar-window)
     map))
 
@@ -308,9 +316,12 @@
    (xml-get-children node child-name)))
 
 (defun gscholar-bibtex--url-retrieve-as-buffer (url)
-  (let ((response-buffer (url-retrieve-synchronously url)))
+  (let* ((url-request-extra-headers
+          (append url-request-extra-headers `(("User-Agent" . ,gscholar-bibtex-user-agent-string))))
+         (response-buffer (url-retrieve-synchronously url)))
     (with-current-buffer response-buffer
-      (gscholar-bibtex--delete-response-header))
+      (gscholar-bibtex--delete-response-header)
+      (set-buffer-multibyte t))
     response-buffer))
 
 (defun gscholar-bibtex--url-retrieve-as-string (url)
@@ -370,7 +381,8 @@
     (unless entry-window
       (select-window (split-window-below))
       (switch-to-buffer entry-buffer)
-      (select-window gscholar-window))))
+      (select-window gscholar-window)))
+  (gscholar-bibtex-show-help))
 
 (defun gscholar-bibtex--write-bibtex-to-database-impl (&optional append)
   (gscholar-bibtex-guard)
@@ -409,6 +421,15 @@
 (defun gscholar-bibtex-write-bibtex-to-file ()
   (interactive)
   (gscholar-bibtex--write-bibtex-to-file-impl "Write BibTeX entry to file: "))
+
+(defun gscholar-bibtex-copy-bibtex-entry ()
+  (interactive)
+  (gscholar-bibtex-retrieve-and-show-bibtex)
+  (with-current-buffer (get-buffer gscholar-bibtex-entry-buffer-name)
+    (kill-new (buffer-string))
+    (message "The current BiBTeX entry copied.")
+    (sit-for 2)
+    (gscholar-bibtex-show-help)))
 
 (defun gscholar-bibtex-quit-entry-window ()
   (interactive)
@@ -473,6 +494,7 @@
                        (intern (concat "gscholar-bibtex-" s "-sources")))))
     `(,(funcall build-name (car names)) . ,(funcall build-name (cdr names)))))
 
+;;;###autoload
 (defun gscholar-bibtex-source-on-off (action source-name)
   (let* ((prompt (if (eq action :on) "available" "enabled"))
          (symbol-pair (gscholar-bibtex--get-list-symbol-pair action))
@@ -544,26 +566,36 @@
 
 ;;; ieee
 (defun gscholar-bibtex-ieee-search-results (query)
-  (let* ((url-request-method "GET"))
-    (gscholar-bibtex--url-retrieve-as-string
-     (concat
-      "http://ieeexplore.ieee.org/search/searchresult.jsp?queryText="
-      (url-hexify-string query)))))
+  (let* ((url-request-method "POST")
+         (url-request-extra-headers
+          `(("Content-Type" . "application/json;charset=utf-8")
+            ("Accept" . "application/json, text/plain, */*")
+            ("Referer" .
+             ,(format "http://ieeexplore.ieee.org/search/searchresult.jsp?newsearch=true&queryText=%s"
+                      (url-hexify-string query)))))
+         (url-request-data (format "{\"queryText\":\"%s\",\"newsearch\":\"true\"}" query)))
+    (with-current-buffer
+        (gscholar-bibtex--url-retrieve-as-buffer "http://ieeexplore.ieee.org/rest/search")
+      (goto-char (point-min))
+      (assoc-default 'records (json-read)))))
 
-(defun gscholar-bibtex-ieee-titles (buffer-content)
-  (gscholar-bibtex-re-search
-   buffer-content
-   "Select this article: \\(.*\\) type" 1))
+(defun gscholar-bibtex-ieee-titles (records)
+  (mapcar (lambda (record) (replace-regexp-in-string "\\(\\[::\\)\\|\\(::\\]\\)" ""
+                                                 (assoc-default 'title record)))
+          records))
 
-(defun gscholar-bibtex-ieee-subtitles (buffer-content)
-  (gscholar-bibtex-re-search
-   buffer-content
-   "<a.*?class=\"authorPreferredName[^>]*?>\\([[:space:][:print:]]*?\\)<a href='.." 1))
+(defun gscholar-bibtex-ieee-subtitles (records)
+  (mapcar (lambda (record)
+            (concat
+             (mapconcat
+              (lambda (x) (assoc-default 'preferredName x))
+              (assoc-default 'authors record) "; ")
+             " -- "
+             (assoc-default 'publicationTitle record)))
+          records))
 
-(defun gscholar-bibtex-ieee-bibtex-urls (buffer-content)
-  (gscholar-bibtex-re-search
-   buffer-content
-   "<input.*id=\'\\(.*\\)\'" 1))
+(defun gscholar-bibtex-ieee-bibtex-urls (records)
+  (mapcar (lambda (record) (assoc-default 'articleNumber record)) records))
 
 (defun gscholar-bibtex-ieee-bibtex-content (bibtex-id)
   (let* ((url-request-method "POST")
@@ -589,19 +621,31 @@
 ;;; Google Scholar
 (defun gscholar-bibtex-google-scholar-search-results (query)
   (let* ((url-request-method "GET")
+         (system-time-locale "C")
+         ;; Fabricate a cookie with a random ID that expires in an hour.
          (random-id (format "%016x" (random (expt 16 16))))
-         (url-request-extra-headers
-          `(("Cookie" . ,(concat "GSP=ID=" random-id ":CF=4")))))
+         (expiration (format-time-string "%a, %d %b %Y %H:%M:%S.00 %Z"
+                                         (time-add (current-time)
+                                                   (seconds-to-time 3600)) t))
+         (my-cookie (mapconcat #'identity
+                               (list (format "GSP=ID=%s:CF=4" random-id)
+                                     (format "expires=%s" expiration)
+                                     "path=/"
+                                     "domain=scholar.google.com")
+                               "; "))
+         (url-current-object
+          (url-generic-parse-url "http://scholar.google.com")))
+    (url-cookie-handle-set-cookie my-cookie)
     (gscholar-bibtex--url-retrieve-as-string
-     (concat  "http://scholar.google.com/scholar?q="
-              (url-hexify-string
-               (replace-regexp-in-string " " "\+" query))))))
+     (concat "http://scholar.google.com/scholar?q="
+             (url-hexify-string
+              (replace-regexp-in-string " " "\+" query))))))
 
 (defun gscholar-bibtex-google-scholar-bibtex-urls (buffer-content)
   (gscholar-bibtex-re-search buffer-content "\\(/scholar\.bib.*?\\)\"" 1))
 
 (defun gscholar-bibtex-google-scholar-titles (buffer-content)
-  (gscholar-bibtex-re-search buffer-content "<h3.*?>\\(.*?\\)</h3>" 1))
+  (gscholar-bibtex-re-search buffer-content "<div class=\"gs_ri\"><h3.*?>\\(.*?\\)</h3>" 1))
 
 (defun gscholar-bibtex-google-scholar-subtitles (buffer-content)
   (gscholar-bibtex-re-search
@@ -699,7 +743,7 @@
           (gscholar-bibtex-dispatcher :bibtex-urls search-results))
     (setq gscholar-bibtex-entries-cache
           (make-vector (length gscholar-bibtex-urls-cache) ""))
-    (unless (get-buffer-window gscholar-buffer)
+    (unless (eq gscholar-buffer (window-buffer (selected-window)))
       (switch-to-buffer-other-window gscholar-buffer))
     (setq buffer-read-only nil)
     (erase-buffer)
