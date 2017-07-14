@@ -7,7 +7,7 @@
 ;; Author: Jon de Andrés Frías <jondeandres@gmail.com>
 ;;         Raimon Grau Cuscó <raimonster@gmail.com>
 ;; Version: 0.9
-;; Package-Version: 20150914.314
+;; Package-Version: 20170713.1438
 ;; Keywords: multimedia
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -161,7 +161,7 @@ If several regex match prior occurring have higher priority."
                                         ;(image-dired-display-image FILE &optional ORIGINAL-SIZE)
 
 (defun erc-image-show-url-image (url)
-  (when url
+  (when (and url window-system)
     (let ((file-name (expand-file-name (md5 url) erc-image-images-path)))
       (goto-char (point-max))
       (url-queue-retrieve url

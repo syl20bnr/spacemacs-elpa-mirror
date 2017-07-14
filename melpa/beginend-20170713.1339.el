@@ -5,7 +5,7 @@
 ;; Authors: Damien Cassou <damien@cassou.me>
 ;;          Matus Goljer <matus.goljer@gmail.com>
 ;; Version: 1.1.0
-;; Package-Version: 20170625.850
+;; Package-Version: 20170713.1339
 ;; GIT: https://github.com/DamienCassou/beginend
 ;; Package-Requires: ((emacs "24.4"))
 ;; Created: 01 Jun 2015
@@ -156,6 +156,7 @@ BEGIN-BODY and END-BODY are two `progn' expressions passed to respectively
       (beginend--goto-nonwhitespace))))
 
 (declare-function dired-next-line "dired")
+(declare-function dired-move-to-filename "dired")
 
 (beginend-define-mode dired-mode
   (progn
@@ -171,7 +172,8 @@ BEGIN-BODY and END-BODY are two `progn' expressions passed to respectively
         (setf move (- move 1)))
       (dired-next-line move)))
   (progn
-    (beginend--goto-nonwhitespace)))
+    (beginend--goto-nonwhitespace)
+    (dired-move-to-filename)))
 
 (beginend-define-mode occur-mode
   (progn
@@ -211,18 +213,22 @@ BEGIN-BODY and END-BODY are two `progn' expressions passed to respectively
 (beginend-define-mode recentf-dialog-mode
   (progn
     (when (re-search-forward "^  \\[" nil t)
-      (goto-char (match-beginning 0))))
+      (goto-char (match-beginning 0))
+      (back-to-indentation)))
   (progn
-    (re-search-backward "^  \\[" nil t)))
+    (re-search-backward "^  \\[" nil t)
+    (back-to-indentation)))
 
 (declare-function org-agenda-next-item "org-agenda")
 (declare-function org-agenda-previous-item "org-agenda")
 
 (beginend-define-mode org-agenda-mode
   (progn
-    (org-agenda-next-item 1))
+    (org-agenda-next-item 1)
+    (back-to-indentation))
   (progn
-    (org-agenda-previous-item 1)))
+    (org-agenda-previous-item 1)
+    (back-to-indentation)))
 
 (declare-function compilation-next-error "compile")
 (declare-function compilation-previous-error "compile")
@@ -239,10 +245,10 @@ BEGIN-BODY and END-BODY are two `progn' expressions passed to respectively
 (beginend-define-mode notmuch-search-mode
   (progn
     (notmuch-search-first-thread)
-    (beginning-of-line))
+    (back-to-indentation))
   (progn
     (notmuch-search-last-thread)
-    (end-of-line)))
+    (back-to-indentation)))
 
 (beginend-define-mode elfeed-search-mode
   (progn)
@@ -254,9 +260,13 @@ BEGIN-BODY and END-BODY are two `progn' expressions passed to respectively
 
 (beginend-define-mode prodigy-mode
   (progn
-    (prodigy-first))
+    (prodigy-first)
+    (goto-char (line-beginning-position))
+    (back-to-indentation))
   (progn
-    (prodigy-last)))
+    (prodigy-last)
+    (goto-char (line-beginning-position))
+    (back-to-indentation)))
 
 (declare-function magit-section-backward "magit-section")
 
@@ -299,7 +309,8 @@ If optional argument P is present test at that point instead of `point'."
   (progn
     (while (not (or (bobp)
                     (beginend--prog-mode-code-position-p)))
-      (forward-line -1))))
+      (forward-line -1))
+    (goto-char (line-end-position))))
 
 
 
