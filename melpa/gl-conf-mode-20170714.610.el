@@ -5,7 +5,7 @@
 ;;
 ;; Author: Luis Lloret
 ;; URL: https://github.com/llloret/gitolite-emacs
-;; Package-Version: 20170627.822
+;; Package-Version: 20170714.610
 ;; Keywords: git, gitolite, languages
 ;; Version: 0.3
 ;; Package-Requires: ((emacs "24.3"))
@@ -465,7 +465,7 @@ current file."
 ;; gl-conf mode init function.
 ;;
 
-(defconst gl-conf--syntax-table
+(defconst gl-conf-mode-syntax-table
   (let ((table (make-syntax-table)))
     (modify-syntax-entry ?_  "w" table)
     (modify-syntax-entry ?@  "w" table)
@@ -501,13 +501,10 @@ malformed constructs) and basic navigation.
 
 \\{gl-conf-mode-map}"
   :group 'gl-conf
-  :syntax-table gl-conf--syntax-table
-
   (setq-local comment-start "# ")
   (setq-local comment-start-skip "#+\\s-*")
   (setq-local indent-line-function #'gl-conf-indent)
-  (setq-local font-lock-defaults gl-conf--font-lock-keywords)
-  (font-lock-flush))
+  (setq-local font-lock-defaults gl-conf--font-lock-keywords))
 
 
 (provide 'gl-conf-mode)
