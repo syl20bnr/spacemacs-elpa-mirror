@@ -3,7 +3,7 @@
 ;; Copyright (C) DIKU 2013-2017, University of Copenhagen
 ;;
 ;; URL: https://github.com/HIPERFIT/futhark
-;; Package-Version: 20170705.1240
+;; Package-Version: 20170714.1430
 ;; Keywords: languages
 ;; Version: 0.1
 ;; Package-Requires: ((cl-lib "0.5"))
