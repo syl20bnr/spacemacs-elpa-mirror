@@ -4,7 +4,7 @@
 
 ;; Authors: Jason Milkins <jasonm23@gmail.com>
 ;; URL: http://github.com/emacsfodder/emacs-theme-darktooth
-;; Package-Version: 20170629.1848
+;; Package-Version: 20170715.757
 ;; Version: 0.3.7
 ;; Package-Requires: ((autothemer "0.2"))
 
@@ -303,7 +303,9 @@
   ;; MODE SUPPORT: diff
   (diff-changed                              (:foreground darktooth-light1 :background nil))
   (diff-added                                (:foreground darktooth-neutral_green :background nil))
+  (diff-refine-added                         (:foreground darktooth-bright_green :background darktooth-muted_green))
   (diff-removed                              (:foreground darktooth-neutral_red :background nil))
+  (diff-refine-removed                       (:foreground darktooth-bright_red :background darktooth-muted_red))
 
   ;; MODE SUPPORT: diff-indicator
   (diff-indicator-changed                    (:inherit 'diff-changed))

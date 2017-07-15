@@ -4,7 +4,7 @@
 
 ;; Author: Guido Kraemer <guido.kraemer@gmx.de>
 ;; URL: https://github.com/gdkrmr/flycheck-julia
-;; Package-Version: 20170715.143
+;; Package-Version: 20170715.945
 ;; Keywords: convenience, tools, languages
 ;; Version: 0.0.3
 ;; Package-Requires: ((emacs "24") (flycheck "0.22"))
@@ -98,6 +98,7 @@ CHECKER and CALLBACK are flycheck requirements."
   (start-process-shell-command
    "flycheck-julia-server" "*julia-linter*"
    ;; TODO: use pipes or something different than an open port
+   ;; TODO: decide how too handle query on exit (set-process-query-on-exit-flag)
    (concat flycheck-julia-executable
            " -e \'using Lint\; lintserver\("
            (number-to-string flycheck-julia-port)
