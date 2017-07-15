@@ -8,13 +8,13 @@
 ;; :END:
 
 
-;; [[id:17c5897e-3413-4576-aa83-3869e0cb1053][Program:1]]
+;; [[file:~/p/elisp/mw/underline-with-char/underline-with-char.org::*Program][Program:1]]
 ;; THIS FILE HAS BEEN GENERATED.
 
 
 ;;
 ;; Version: 3.0.0
-;; Package-Version: 20170713.1329
+;; Package-Version: 20170714.1511
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: convenience
 
@@ -160,12 +160,8 @@ get
       (let ((col (current-column)))
         (forward-line -1)
         (end-of-line)
-        (when (< col (current-column))
-          (beginning-of-line)
-          (forward-char col)))
-      (let ((old-point (point)))
-        (- (progn (end-of-line) (point)) old-point)))
-        underline-with-char-fill-char)))
+        (max 0 (- (current-column) col))))
+    underline-with-char-fill-char)))
 
 
 (provide 'underline-with-char)

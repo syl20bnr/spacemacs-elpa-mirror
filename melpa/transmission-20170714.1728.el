@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.10
-;; Package-Version: 20170330.2125
+;; Package-Version: 20170714.1728
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -685,7 +685,7 @@ Days are the keys of `transmission-schedules'."
          (torrents (transmission-torrents response)))
     (cdr (assq 'trackerStats (elt torrents 0)))))
 
-(defun transmission-list-unique-announce-urls ()
+(defun transmission-unique-announce-urls ()
   "Return a list of unique announce URLs from all current torrents."
   (let* ((response (transmission-request "torrent-get" '(:fields ("trackers"))))
          (trackers (transmission-refs (transmission-torrents response) 'trackers))
@@ -1118,7 +1118,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                   "Add announce URLs: "
                   (cl-loop for url in
                            (append transmission-trackers
-                                   (transmission-list-unique-announce-urls))
+                                   (transmission-unique-announce-urls))
                            unless (member url trackers) collect url))
                  (user-error "No trackers to add")))
        (arguments (list :ids ids :trackerAdd
@@ -1177,7 +1177,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
          (replacement
           (completing-read "Replacement tracker? "
                            (append transmission-trackers
-                                   (transmission-list-unique-announce-urls))))
+                                   (transmission-unique-announce-urls))))
          (arguments (list :ids id :trackerReplace (vector tid replacement))))
     (transmission-request-async
      (lambda (content)
@@ -1245,11 +1245,14 @@ See `transmission-read-time' for details on time input."
    (lambda (content)
      (let* ((arguments (cdr (assq 'arguments (json-read-from-string content))))
             (enable (equal json-false (cdr (assq 'alt-speed-enabled arguments)))))
-       (when (y-or-n-p (concat (if enable "En" "Dis") "able turtle mode? "))
-         (transmission-request-async
-          (lambda (content)
-            (message (cdr (assq 'result (json-read-from-string content)))))
-          "session-set" `(:alt-speed-enabled ,(or enable json-false))))))
+       (transmission-request-async
+        (lambda (content)
+          (let-alist (json-read-from-string content)
+            (pcase .result
+              ("success"
+               (message (concat "Turtle mode " (if enable "en" "dis") "abled")))
+              (_ (message .result)))))
+        "session-set" `(:alt-speed-enabled ,(or enable json-false)))))
    "session-get"))
 
 (defun transmission-verify ()

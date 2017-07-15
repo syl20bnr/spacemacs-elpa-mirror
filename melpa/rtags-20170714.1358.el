@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 20170713.1648
+;; Package-Version: 20170714.1358
 ;; Version: 2.10
 
 ;; This file is not part of GNU Emacs.
@@ -4561,9 +4561,11 @@ See `rtags-get-summary-text' for details."
 set of buffers we are visiting."
   (condition-case nil
       (let ((name (rtags-buffer-file-name)))
-        (when (and rtags-enabled name (funcall rtags-is-indexable (current-buffer)))
-          (unless (file-directory-p default-directory)
-            (cd "/"))
+        (when (and rtags-enabled
+                   name
+                   default-directory
+                   (file-directory-p default-directory)
+                   (funcall rtags-is-indexable (current-buffer)))
           (rtags-call-rc :noerror t :silent-query t :output nil "--remove-buffers" name)))
     (error
      t))
