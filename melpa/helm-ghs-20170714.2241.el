@@ -3,8 +3,8 @@
 ;; Copyright (C) 2017 by iory
 
 ;; Author: iory <ab.ioryz@gmail.com>
-;; Version: 0.0.1
-;; Package-Version: 20170714.1718
+;; Version: 0.0.2
+;; Package-Version: 20170714.2241
 ;; URL: https://github.com/iory/emacs-helm-ghs
 ;; Package-Requires: ((emacs "24") (helm "2.2.0"))
 
@@ -53,7 +53,7 @@
   "*Listup ghs list. args of ARGS is query."
   (with-temp-buffer
     (unless (zerop (apply #'call-process
-                          helm-ghs-command-ghs nil t nil (list args)))
+                          helm-ghs-command-ghs nil t nil args))
       (error "Failed: Can't get ghs list candidates"))
     (let ((repos))
       (goto-char (point-min))
@@ -67,7 +67,7 @@
   "Interactively call ghs and show repos matching QUERY using helm."
   (interactive (list (read-string "Query: ")))
   (let* ((repo (helm-comp-read "ghs-list: "
-                               (helm-ghs--list-candidates query)
+                               (helm-ghs--list-candidates (split-string query " "))
                                :name "ghs list"
                                :must-match t))
          (username/repo (car (split-string repo " "))))

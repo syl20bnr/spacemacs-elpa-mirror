@@ -4,10 +4,10 @@
 
 ;; Author: Guido Kraemer <guido.kraemer@gmx.de>
 ;; URL: https://github.com/gdkrmr/flycheck-julia
-;; Package-Version: 20170627.1310
+;; Package-Version: 20170715.143
 ;; Keywords: convenience, tools, languages
 ;; Version: 0.0.3
-;; Package-Requires: ((emacs "25") (flycheck "0.22"))
+;; Package-Requires: ((emacs "24") (flycheck "0.22"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -36,8 +36,6 @@
 ;;
 ;;      ;; Enable Flycheck checker
 ;;      (flycheck-julia-setup)
-;;
-;;    (add-hook 'julia-mode-hook #'flycheck-mode)
 ;;
 ;; # Usage
 ;;
@@ -97,14 +95,6 @@ CHECKER and CALLBACK are flycheck requirements."
 
 (defun flycheck-julia-server-start ()
   "Start the julia server for linting."
-  ;; make-process is emacs 25 only:
-  ;; this one does not work anywayse:
-  ;; (make-process
-  ;;  :name            "flycheck-julia-server"
-  ;;  :buffer          nil
-  ;;  :command         '("julia" "-e 'using Lint; lintserver(9999, \"standard-linter-v2\")'")
-  ;;  :noquery         t
-  ;;  :stop            nil)
   (start-process-shell-command
    "flycheck-julia-server" "*julia-linter*"
    ;; TODO: use pipes or something different than an open port
@@ -126,8 +116,8 @@ CHECKER and CALLBACK are flycheck requirements."
 (defun flycheck-julia-server-query (checker)
   "Query a lint.
 
-Query a lint for the current buffer and return the errors in a
-flycheck compatible format.
+Query a lint for the current buffer and return the errors as
+flycheck objects.
 
 CHECKER is 'julia-linter, this is a flycheck internal."
 
@@ -137,37 +127,35 @@ CHECKER is 'julia-linter, this is a flycheck internal."
                :name "julia-lint-client"
                :host 'local
                :service flycheck-julia-port))
-        (query-list `(("file"            . ,buffer-file-name)
+        (query-list `(("file"            . ,(if buffer-file-name (buffer-file-name) ""))
                       ("code_str"        . ,(buffer-substring-no-properties
                                              (point-min) (point-max)))
                       ("ignore_info"     . ,json-false)
                       ("ignore_warnings" . ,json-false)
                       ("show_code"       . t)))
-        (proc-output ""))
+        (proc-output nil))
 
     ;; Network processes may be return results in different orders, then we are
     ;; screwed, not sure what to do about this? use named pipes? use sockets?
     ;; use priority queues?
     ;; I actually never observed this, so ignoring it for now.
-    ;; TODO: this gives a warning, try to make the warning disappear!
+    ;; TODO: this gives a compiler warning, try to make the warning disappear!
     (defun flycheck-julia-keep-output (process output)
       (setq proc-output (concat proc-output output)))
     (set-process-filter proc 'flycheck-julia-keep-output)
 
     (process-send-string proc (json-encode query-list))
 
-    ;; TODO: because our process is asynchronous, we need to
+    ;; Because our process is asynchronous, we need to
     ;; 1. to wait and
     ;; 2. the string is sent in 500 char pieces and the results may arrive in a
-    ;; different order.
+    ;; different order. -> I did not observe this behavior until now!
     ;; TODO: figure out a way to do this completely asynchronous.
-    ;; wait a maximum of 1 second
     (accept-process-output proc flycheck-julia-max-wait)
-
     (flycheck-julia-error-parser
-      (json-read-from-string proc-output)
-      checker
-      (current-buffer))))
+     (when proc-output (json-read-from-string proc-output))
+     checker
+     (current-buffer))))
 
 (defun flycheck-julia-error-parser (errors checker buffer)
   "Parse the error returned from the Julia lint server.
