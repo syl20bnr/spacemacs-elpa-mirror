@@ -5,7 +5,7 @@
 ;; Author: Matúš Goljer <matus.goljer@gmail.com>
 ;; Maintainer: Matúš Goljer <matus.goljer@gmail.com>
 ;; Version: 0.0.1
-;; Package-Version: 20170715.1326
+;; Package-Version: 20170716.752
 ;; Created: 15th July 2017
 ;; Package-requires: ((dash "2.10.0"))
 ;; Keywords: files
@@ -128,7 +128,7 @@ COLUMN-INFO is a data structure returned by
         (save-excursion
           (skip-syntax-forward " ")
           (search-forward " ")
-          (- date-column (current-column))))
+          (max 0 (- date-column (current-column)))))
       32))))
 
 (defun dired-collapse ()

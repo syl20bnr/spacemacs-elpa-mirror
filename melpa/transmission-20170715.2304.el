@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.10
-;; Package-Version: 20170715.2100
+;; Package-Version: 20170715.2304
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -1459,12 +1459,14 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
         (save-restriction
           (widen)
           (goto-char (point-min))
-          (while (and (> n 0) (zerop (forward-line)))
-            (when (= (following-char) ?>)
-              (setq props (text-properties-at (point)))
-              (delete-region (point) (1+ (point)))
-              (insert (apply #'propertize "\s" props))
-              (cl-decf n)))))
+          (catch :eobp
+            (while (> n 0)
+              (when (= (following-char) ?>)
+                (setq props (text-properties-at (point)))
+                (delete-region (point) (1+ (point)))
+                (insert (apply #'propertize "\s" props))
+                (cl-decf n))
+             (when (not (zerop (forward-line))) (throw :eobp nil))))))
       (setq transmission-marked-ids nil)
       (set-buffer-modified-p nil)
       (message "%s removed" (transmission-plural len "mark")))))

@@ -2,8 +2,9 @@
 
 ;; Author: Martin Kühl <purl.org/net/mkhl>
 ;; URL: https://github.com/dgutov/espresso-theme
-;; Package-Version: 20130228.2348
+;; Package-Version: 20170716.813
 ;; Version: 1.0
+;; License: MIT
 
 ;;; Commentary:
 ;;
