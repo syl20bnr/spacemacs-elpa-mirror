@@ -4,7 +4,7 @@
 
 ;; Author: PythonNut <pythonnut@pythonnut.com>
 ;; Keywords: convenience
-;; Package-Version: 20170630.1054
+;; Package-Version: 20170715.2142
 ;; Version: 20170111
 ;; URL: https://github.com/PythonNut/historian.el
 ;; Package-Requires: ((emacs "24.4"))
@@ -98,6 +98,14 @@
               (insert-file-contents historian-save-file)
               (read (current-buffer)))
           (make-hash-table))))
+
+;;;###autoload
+(defun historian-clear ()
+  (interactive)
+  (setq historian--history-table (make-hash-table))
+  (delete-file historian-save-file t)
+  (with-temp-file historian-save-file
+    (prin1 historian--history-table (current-buffer))))
 
 ;;;###autoload
 (define-minor-mode historian-mode

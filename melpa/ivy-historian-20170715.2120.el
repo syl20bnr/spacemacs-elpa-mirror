@@ -4,7 +4,7 @@
 
 ;; Author: PythonNut <pythonnut@pythonnut.com>
 ;; Keywords: convenience, ivy
-;; Package-Version: 20170416.2154
+;; Package-Version: 20170715.2120
 ;; Version: 20170111
 ;; URL: https://github.com/PythonNut/historian.el
 ;; Package-Requires: ((emacs "24.4") (historian "20170111") (ivy "0.8.0") (flx "0.6.1"))
@@ -102,7 +102,9 @@
                                                  recent-index))
                                          0)))
                     (cons
-                     (+ (car orig-score) freq-boost recent-boost)
+                     (+ (or (car orig-score) most-negative-fixnum)
+                        freq-boost
+                        recent-boost)
                      (cdr orig-score)))
                 orig-score)))))
       (funcall old-fun name cands))))
