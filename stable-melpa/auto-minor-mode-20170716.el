@@ -3,8 +3,8 @@
 ;; Copyright 2017 Joe Wreschnig
 ;;
 ;; Author: Joe Wreschnig <joe.wreschnig@gmail.com>
-;; Package-Version: 20170620
-;; Package-X-Original-Version: 20170620
+;; Package-Version: 20170716
+;; Package-X-Original-Version: 20170716
 ;; Package-Requires: ((emacs "25"))
 ;; Keywords: convenience
 ;;
@@ -82,7 +82,7 @@ Unlike `magic-mode-alist', matching is always case-folded.")
   "Remove remote connections and backup version from FILE-NAME."
   (let ((remote-id (file-remote-p file-name))
         (file-name (file-name-sans-versions file-name)))
-    (if (and remote-id (string-match-p (regexp-quote remote-id) file-name))
+    (if (and remote-id (string-match (regexp-quote remote-id) file-name))
         (substring file-name (match-end 0))
       file-name)))
 
@@ -96,7 +96,7 @@ information, see `auto-mode-alist'.
 If the optional argument KEEP-MODE-IF-SAME is non-nil, then we
 don’t re-activate minor modes already enabled in the buffer."
   (when buffer-file-name
-    (let* ((bufname (auto-minor-mode--plain-filename buffer-file-name)))
+    (let ((bufname (auto-minor-mode--plain-filename buffer-file-name)))
       (dolist (p alist)
         (let ((match (car p))
               (mode (cdr p)))
