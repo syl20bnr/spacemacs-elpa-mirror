@@ -4,7 +4,7 @@
 
 ;; Author: Marian Schubert <marian.schubert@gmail.com>
 ;; URL: http://github.com/maio/eink-emacs
-;; Package-Version: 20161207.410
+;; Package-Version: 20170717.807
 ;; Version: 1.0
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -39,6 +39,7 @@
   "Theme emulating reading on an E Ink device.")
 
 (let ((fg "#111111")
+      (fg-table "#222291")
       (bg "#fffff8")
       (bg-light "#ddddd8")
       (fg-light "#ddddd8")
@@ -100,8 +101,8 @@
    `(org-agenda-date-weekend ((t (:foreground ,fg :weight normal))))
    `(org-agenda-structure ((t (:foreground ,fg :weight bold))))
    `(org-block ((t (:foreground ,fg))))
-   `(org-block-begin-line ((t (:foreground ,fg-light))))
-   `(org-block-end-line ((t (:foreground ,fg-light))))
+   `(org-block-begin-line ((t (:foreground ,fg-light :height 0.8))))
+   `(org-block-end-line ((t (:foreground ,fg-light :height 0.8))))
    `(org-verbatim ((t (:foreground ,fg :weight semi-bold))))
    `(org-date ((t (:foreground ,fg) :underline)))
    `(org-done ((t (:foreground ,fg-light))))
@@ -120,6 +121,11 @@
    `(org-special-keyword ((t (:foreground ,fg))))
    `(org-todo ((t (:foreground ,fg))))
    `(org-verse ((t (:inherit org-block :slant italic))))
+   `(org-table ((t (:foreground ,fg-table))))
+
+   ;; powerline
+   `(powerline-active1 ((t (:background "grey22" :foreground ,bg :inherit mode-line))))
+   `(powerline-active2 ((t (:background "grey40" :foreground ,bg :inherit mode-line))))
 
    ;; magit
    `(magit-header ((t (:weight semi-bold))))
@@ -208,8 +214,9 @@
    `(rpm-spec-ghost-face ((t (:inherit default))))
    `(rpm-spec-section-face ((t (:inherit default :weight bold))))
 
-   ;; nlinum-relative
+   ;; linum / nlinum-relative
    `(nlinum-relative-current-face ((t (:inherit normal :weight bold))))
+   `(linum ((t (:inherit normal :weight bold))))
 
    ;; web-mode
    `(web-mode-current-element-highlight-face ((t (:inherit normal :weight bold :foreground ,fg))))
