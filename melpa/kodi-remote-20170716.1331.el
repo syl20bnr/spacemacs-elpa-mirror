@@ -4,7 +4,7 @@
 
 ;; Author: Stefan Huchler <stefan.huchler@mail.de>
 ;; URL: http://github.com/spiderbit/kodi-remote.el
-;; Package-Version: 20170714.1133
+;; Package-Version: 20170716.1331
 ;; Package-Requires: ((request "0.2.0")(let-alist "1.0.4")(json "1.4")(elnode "20140203.1506"))
 ;; Keywords: kodi tools convinience
 
@@ -315,16 +315,6 @@ Argument DIRECTION which direction and how big of step to seek."
   (kodi-remote-sit-for-done)
   (setq kodi-volume (let-alist kodi-properties .volume)))
 
-(defun kodi-remote-get-series-episodes (&optional show-id)
-  "Poll availible series episodes.
-Optional argument SHOW-ID limits to a specific show."
-  (let* ((params
-	      `(("params" . (( "tvshowid" . ,show-id )
-			     ))
-		)
-	      ))
-    (kodi-remote-get "VideoLibrary.GetEpisodes" params)))
-
 (defun kodi-remote-get-songs (&optional id)
   "Poll list of songs.
 Optional argument ID limits to a specific artist."
@@ -333,35 +323,22 @@ Optional argument ID limits to a specific artist."
 			  (("artistid". ,id))))))))
     (kodi-remote-get "AudioLibrary.GetSongs" params)))
 
-(defun kodi-remote-get-unwatched-series-episodes (&optional show-id)
+(defun kodi-remote-get-series-episodes (&optional show-id filter-watched)
   "Poll unwatches episodes from show.
 Optional argument SHOW-ID limits to a specific show."
   ;; (setq show-id nil)
-  (if (integerp show-id)
-      (let* ((params
-	      `(("params" . (( "tvshowid" . ,show-id )
-			     ("filter" .
-			      (("field" . "playcount")
+  (let* ((filter '("filter" . (("field" . "playcount")
 			       ("operator" . "lessthan")
-			       ("value" . "1" ))
-			      )
-			     ("properties" .
-			      ["title" "episode"])
-			     ))
-		)
-	      ))
-	(kodi-remote-get "VideoLibrary.GetEpisodes" params))
-    (let* ((params
-	    '(("params" . (("properties" .
-			    ["title" "watchedepisodes" "episode"])
-			   ("filter" .
-			    (("field" . "playcount")
-			     ("operator" . "lessthan")
-			     ("value" . "1" ))
-			    ))
-	       )
-	      )))
-      (kodi-remote-get "VideoLibrary.GetEpisodes" params))))
+			       ("value" . "1" ))))
+	 (pre-params (if (integerp show-id)
+			 `(("tvshowid" . ,show-id)
+			   ("properties" . ["title" "episode"]))
+		       `(("properties" .
+			   ["title" "watchedepisodes" "episode"]))
+		       ))
+	 (params (list (append '("params") pre-params
+			       (if filter-watched `(,filter))))))
+    (kodi-remote-get "VideoLibrary.GetEpisodes" params)))
 
 (defun kodi-remote-get-show-list ()
   "Poll unwatched show."
@@ -797,36 +774,18 @@ Argument ITEM the media data form kodi"
 		      id ,tvshowid))))))
 
 
-(defun kodi-generate-music-entry (item)
+(defun kodi-generate-entry (action id item)
   "Generate tabulated-list entry for kodi media buffers.
 Argument ITEM the media data form kodi"
   (let* ((number-of-nodes 5)
-	 (subitemid (assoc-default 'artistid item))
+	 (subitemid (assoc-default id item))
 	 (label (decode-coding-string (assoc-default 'label item) 'utf-8))
-	 (itemid (assoc-default 'artistid item)))
+	 (itemid (assoc-default id item)))
     (when (or (> number-of-nodes 0) kodi-unseen-visible)
       (list subitemid
 	    (vector `(,label
-		      action kodi-remote-songs-wrapper
-		      id , itemid)
-		    ;; `(,(number-to-string number-of-episodes)
-		    ;;   action kodi-remote-draw-episodes
-		    ;;   id ,tvshowid)
-		    )))))
-
-(defun kodi-generate-song-entry (item)
-  "Generate tabulated-list entry for kodi media buffers.
-Argument ITEM the media data form kodi"
-  (let* ((number-of-nodes 5)
-	 (subitemid (assoc-default 'songid item))
-	 (label (decode-coding-string (assoc-default 'label item) 'utf-8))
-	 (itemid (assoc-default 'songid item)))
-    (when (or (> number-of-nodes 0) kodi-unseen-visible)
-      (list subitemid
-	    (vector `(,label
-		      action sbit-action-song
-		      id , itemid)
-		    )))))
+		      action ,action
+		      id , subitemid))))))
 
 (defun kodi-remote-draw ()
   "Draw the buffer with new contents via `kodi-refresh-function'."
@@ -841,9 +800,8 @@ Optional argument _ARG revert excepts this param.
 Optional argument _NOCONFIRM revert excepts this param."
   (interactive)
   (kodi-remote-video-scan)
-  (if kodi-unseen-visible
-      (kodi-remote-get-series-episodes kodi-selected-show)
-      (kodi-remote-get-unwatched-series-episodes kodi-selected-show))
+  (kodi-remote-get-series-episodes kodi-selected-show
+				   (not kodi-unseen-visible))
   (kodi-remote-sit-for-done)
   (let* ((entries '()))
     (dolist (episode (append (let-alist kodi-properties .episodes) nil))
@@ -866,7 +824,8 @@ Optional argument _NOCONFIRM revert excepts this param."
   (kodi-remote-sit-for-done)
   (setq tabulated-list-entries
   	(remove nil
-  		(mapcar 'kodi-generate-song-entry
+  		(mapcar (apply-partially 'kodi-generate-entry
+					 'sbit-action-song 'songid)
   			(let-alist kodi-properties .songs))))
   (tabulated-list-init-header)
   (tabulated-list-print))
@@ -894,18 +853,15 @@ Optional argument _NOCONFIRM revert excepts this param."
 Optional argument _ARG revert excepts this param.
 Optional argument _NOCONFIRM revert excepts this param."
   (interactive)
-  ;; (kodi-remote-video-scan)
-  ;; (kodi-remote-sit-for-done)
   (kodi-remote-get-artist-list)
   (kodi-remote-sit-for-done)
   (setq tabulated-list-entries
   	(remove nil
-  		(mapcar 'kodi-generate-music-entry
+  		(mapcar (apply-partially 'kodi-generate-entry
+					 'kodi-remote-songs-wrapper 'artistid)
   			(let-alist kodi-properties .artists))))
   (tabulated-list-init-header)
   (tabulated-list-print))
-
-
 
 
 ;;;###autoload
