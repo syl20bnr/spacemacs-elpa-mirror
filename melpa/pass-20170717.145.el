@@ -5,7 +5,7 @@
 ;; Author: Nicolas Petton <petton.nicolas@gmail.com>
 ;;         Damien Cassou <damien@cassou.me>
 ;; Version: 1.7
-;; Package-Version: 20170712.33
+;; Package-Version: 20170717.145
 ;; GIT: https://github.com/NicolasPetton/pass
 ;; Package-Requires: ((emacs "24") (password-store "0.1") (f "0.17"))
 ;; Created: 09 Jun 2015
@@ -177,17 +177,17 @@ Similar to `save-excursion' but only restore the point."
       (pass-display-data))))
 
 (defun pass-insert ()
-  (interactive)
   "Insert an entry to the password-store.
 The password is read from user input."
+  (interactive)
   (call-interactively #'password-store-insert)
   (pass-update-buffer))
 
 (defun pass-insert-generated ()
-  (interactive)
   "Insert an entry to the password-store.
 Use a generated password instead of reading the password from
 user input."
+  (interactive)
   (call-interactively #'password-store-generate)
   (pass-update-buffer))
 
@@ -260,7 +260,7 @@ indented according to INDENT-LEVEL."
 
 (defun pass-entry-at-point ()
   "Return the `pass-entry' property at point."
-  (get-text-property (point) 'pass-entry))
+  (get-text-property (point-at-eol) 'pass-entry))
 
 (defun pass-directory-at-point ()
   "Return the `pass-directory' property at point."
@@ -269,11 +269,10 @@ indented according to INDENT-LEVEL."
 (defun pass-closest-entry ()
   "Return the closest entry in the current buffer, looking backward."
   (save-excursion
-    (unless (bobp)
-      (or (pass-entry-at-point)
-          (progn
-            (forward-line -1)
-            (pass-closest-entry))))))
+    (or (pass-entry-at-point)
+        (unless (bolp)
+          (forward-line -1)
+          (pass-closest-entry)))))
 
 (defun pass--goto-next (pred)
   "Move point to the next match of PRED."

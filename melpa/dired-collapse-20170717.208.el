@@ -5,7 +5,7 @@
 ;; Author: Matúš Goljer <matus.goljer@gmail.com>
 ;; Maintainer: Matúš Goljer <matus.goljer@gmail.com>
 ;; Version: 0.0.1
-;; Package-Version: 20170716.752
+;; Package-Version: 20170717.208
 ;; Created: 15th July 2017
 ;; Package-requires: ((dash "2.10.0"))
 ;; Keywords: files
@@ -66,6 +66,7 @@
 
 (require 'dash)
 (require 'dired)
+(require 'f)
 
 (defgroup dired-collapse ()
   "Collapse unique nested paths in dired listing."
@@ -133,7 +134,11 @@ COLUMN-INFO is a data structure returned by
 
 (defun dired-collapse ()
   "Collapse unique nested paths in dired listing."
-  (-let* ((inhibit-read-only t)
+  (-let* (;; dired-hide-details-mode hides details by assigning a special invisibility text property
+          ;; to them, while dired-collapse requires all the details. So we disable invisibility here
+          ;; temporarily.
+          (buffer-invisibility-spec nil)
+          (inhibit-read-only t)
           ;; We need to figure out where the columns start so we can pad the
           ;; data re-inserted individually
           (column-info (dired-collapse--get-column-info)))
