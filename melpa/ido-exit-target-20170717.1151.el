@@ -4,11 +4,12 @@
 
 ;; Author: justin talbott <justin@waymondo.com>
 ;; Keywords: convenience, tools, extensions
-;; Package-Version: 20150904.737
+;; Package-Version: 20170717.1151
 ;; URL: https://github.com/waymondo/ido-exit-target
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "24.4"))
 ;; Filename: ido-exit-target.el
+;; License: GNU General Public License version 3, or (at your option) any later version
 ;;
 
 ;;; Commentary:

@@ -4,11 +4,12 @@
 
 ;; Author: justin talbott <justin@waymondo.com>
 ;; Keywords: convenience, tools, extensions
-;; Package-Version: 20170208.1035
+;; Package-Version: 20170717.1152
 ;; URL: https://github.com/waymondo/use-package-chords
 ;; Version: 0.2
 ;; Package-Requires: ((use-package "2.1") (bind-key "1.0") (bind-chord "0.2") (key-chord "0.6"))
 ;; Filename: use-package-chords.el
+;; License: GNU General Public License version 3, or (at your option) any later version
 ;;
 
 ;;; Commentary:
