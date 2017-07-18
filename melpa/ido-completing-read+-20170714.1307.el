@@ -6,7 +6,7 @@
 ;; Author: Ryan Thompson
 ;; Created: Sat Apr  4 13:41:20 2015 (-0700)
 ;; Version: 4.0
-;; Package-Version: 20170708.1116
+;; Package-Version: 20170714.1307
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
 ;; URL: https://github.com/DarwinAwardWinner/ido-ubiquitous
 ;; Keywords: ido, completion, convenience
@@ -102,19 +102,39 @@ Debug info is printed to the *Messages* buffer."
   (when ido-cr+-debug-mode
     (apply #'message (concat "ido-completing-read+: " format-string) args)))
 
+;;; Ido variables
+
+;; For unknown reasons, these variables need to be re-declared here to
+;; silence byte-compiler warnings, despite already being declared in
+;; ido.el.
+
+(defmacro define-ido-internal-var (symbol &optional initvalue docstring)
+  "Declare and initialize an ido internal variable.
+
+This is used to suppress byte-compilation warnings about
+reference to free variables when ido-cr+ attempts to access
+internal ido variables with no initial value set. Such variables
+are originally declared like `(defvar VARNAME)'.
+
+This is a wrapper for `defvar' that supplies a default for the
+INITVALUE and DOCSTRING arguments."
+  `(defvar ,symbol ,initvalue
+     ,(or docstring
+          "Internal ido variable.
+
+This variable was originally declared in `ido.el' without an
+initial value or docstring. The documentation you're reading
+comes from re-declaring it in `ido-completing-read+.el' in order
+to suppress some byte-compilation warnings. Setting another
+package's variable is not safe in general, but in this case it
+should be, because ido always let-binds this variable before
+using it, so the initial value shouldn't matter.")))
+
+(define-ido-internal-var ido-context-switch-command)
+(define-ido-internal-var ido-cur-list)
+(define-ido-internal-var ido-require-match)
+
 ;;; Core code
-
-(defvar ido-cur-list nil
-  "Internal ido variable.
-
-This variable is originally declared in `ido.el', but it is not
-given a value (or a docstring). This documentation comes from a
-re-declaration in `ido-completing-read+.el' that initializes it
-to nil, which should suppress some byte-compilation warnings in
-Emacs 25. Setting another package's variable is not safe in
-general, but in this case it should be, because ido always
-let-binds this variable before using it, so the initial value
-shouldn't matter.")
 
 ;;;###autoload
 (defvar ido-cr+-minibuffer-depth -1
@@ -240,6 +260,8 @@ disable fallback based on collection size, set this to nil."
     grep-read-files
     ;; Magit already supports ido on its own
     magit-builtin-completing-read
+    ;; ESS already supports ido on its own
+    ess-completing-read
     ;; https://github.com/DarwinAwardWinner/ido-ubiquitous/issues/39
     Info-read-node-name
     ;; https://github.com/DarwinAwardWinner/ido-ubiquitous/issues/44
@@ -567,8 +589,10 @@ completion for them."
          (apply ido-cr+-fallback-function ido-cr+-orig-completing-read-args))))))
 
 ;;;###autoload
-(defadvice ido-completing-read (around ido-cr+ activate)
-  "This advice is the implementation of `ido-cr+-replace-completely'."
+(define-advice ido-completing-read (:around (orig-fun &rest args) ido-cr+-replace)
+  "This advice allows ido-cr+ to coompletely replace `ido-completing-read'.
+
+See the varaible `ido-cr+-replace-completely' for more information."
   ;; If this advice is autoloaded, then we need to force loading of
   ;; the rest of the file so all the variables will be defined.
   (when (not (featurep 'ido-completing-read+))
@@ -577,47 +601,38 @@ completion for them."
           (not ido-cr+-replace-completely))
       ;; ido-cr+ has either already activated or isn't going to
       ;; activate, so just run the function as normal
-      ad-do-it
+      (apply orig-fun args)
     ;; Otherwise, we need to activate ido-cr+.
-    (setq ad-return-value (apply #'ido-completing-read+ (ad-get-args 0)))))
+    (apply #'ido-completing-read+ args)))
 
 ;;;###autoload
-(defadvice call-interactively (around ido-cr+-record-command-name activate)
-  "Record the command being interactively called.
+(define-advice call-interactively
+    (:around (orig-fun command &rest args) ido-cr+-record-current-command)
+  "Let-bind the command being interactively called.
 
-See `ido-cr+-current-command'."
-  (let ((ido-cr+-current-command (ad-get-arg 0)))
-    ad-do-it))
+See `ido-cr+-current-command' for more information."
+  (let ((ido-cr+-current-command command))
+    (apply orig-fun command args)))
 
 ;; Fallback on magic C-f and C-b
-;;;###autoload
-(defvar ido-context-switch-command nil
-  "Variable holding the command used for switching to another completion mode.
-
-This variable is originally declared in `ido.el', but it is not
-given a value (or a docstring). This documentation comes from a
-re-declaration in `ido-completing-read+.el' that initializes it
-to nil, which should suppress some byte-compilation warnings in
-Emacs 25. Setting another package's variable is not safe in
-general, but in this case it should be, because ido always
-let-binds this variable before using it, so the initial value
-shouldn't matter.")
-
-(defadvice ido-magic-forward-char (before ido-cr+-fallback activate)
+(define-advice ido-magic-forward-char
+    (:before (&rest args) ido-cr+-fallback)
   "Allow falling back in ido-completing-read+."
   (when (ido-cr+-active)
     ;; `ido-context-switch-command' is already let-bound at this
     ;; point.
     (setq ido-context-switch-command #'ido-fallback-command)))
 
-(defadvice ido-magic-backward-char (before ido-cr+-fallback activate)
+(define-advice ido-magic-backward-char
+    (:before (&rest args) ido-cr+-fallback)
   "Allow falling back in ido-completing-read+."
   (when (ido-cr+-active)
     ;; `ido-context-switch-command' is already let-bound at this
     ;; point.
     (setq ido-context-switch-command #'ido-fallback-command)))
 
-(defadvice ido-select-text (around fix-require-match-behavior activate)
+(define-advice ido-select-text
+    (:around (orig-fun &rest args) ido-cr+-fix-require-match)
   "Fix ido behavior when `require-match' is non-nil.
 
 Standard ido will allow C-j to exit with an incomplete completion
@@ -625,23 +640,27 @@ even when `require-match' is non-nil. Ordinary completion does
 not allow this. In ordinary completion, RET on an incomplete
 match is equivalent to TAB, and C-j selects the first match.
 Since RET in ido already selects the first match, this advice
-sets up C-j to be equivalent to TAB in the same situation."
+sets up C-j to be equivalent to TAB in the same situation.
+
+This advice only activates if the current ido completion was
+called through ido-cr+."
   (if (and
        ;; Only override C-j behavior if...
        ;; We're using ico-cr+
        (ido-cr+-active)
        ;; Require-match is non-nil
-       (with-no-warnings ido-require-match)
-       ;; Current text is not a complete choice
-       (not (member ido-text (with-no-warnings ido-cur-list))))
+       ido-require-match
+       ;; Current text is incomplete
+       (not (member ido-text ido-cur-list)))
       (progn
         (ido-cr+--debug-message
          "Overriding C-j behavior for require-match: performing completion instead of exiting with current text. (This might still exit with a match if `ido-confirm-unique-completion' is nil)")
         (ido-complete))
-    ad-do-it))
+    (apply orig-fun args)))
 
-(defadvice ido-exhibit (before ido-cr+-update-dynamic-collection activate)
-  "Maybe update the set of completions when ido-text changes."
+(define-advice ido-exhibit
+    (:before (&rest args) ido-cr+-update-dynamic-collection)
+  "Maybe update the set of completions when `ido-text' changes."
   (when ido-cr+-dynamic-collection
     (let ((prev-ido-text ido-text)
           (current-ido-text (buffer-substring-no-properties (minibuffer-prompt-end) (point-max))))
@@ -672,7 +691,8 @@ sets up C-j to be equivalent to TAB in the same situation."
 
 ;; Interoperation with minibuffer-electric-default-mode: only show the
 ;; default when the input is empty and the empty string is the selected
-(defadvice minibuf-eldef-update-minibuffer (around ido-cr+-compat activate)
+(define-advice minibuf-eldef-update-minibuffer
+    (:around (orig-fun &rest args) ido-cr+-compat)
   "This advice allows minibuffer-electric-default-mode to work with ido-cr+."
   (if (ido-cr+-active)
       (unless (eq minibuf-eldef-showing-default-in-prompt
@@ -683,7 +703,7 @@ sets up C-j to be equivalent to TAB in the same situation."
               (not minibuf-eldef-showing-default-in-prompt))
         (overlay-put minibuf-eldef-overlay 'invisible
                      (not minibuf-eldef-showing-default-in-prompt)))
-    ad-do-it))
+    (apply orig-fun args)))
 
 ;;;###autoload
 (define-minor-mode ido-ubiquitous-mode
@@ -764,7 +784,7 @@ blacklist was modified."
          (curval ido-cr+-function-blacklist)
          (defval (eval (car (get 'ido-cr+-function-blacklist 'standard-value))))
          (newval (delete-dups (append defval curval)))
-         (new-entries (cl-set-difference curval defval :test #'equal))
+         (new-entries (cl-set-difference defval curval :test #'equal))
          (modified nil)
          (saved nil)
          (message-lines ()))
@@ -793,7 +813,7 @@ blacklist was modified."
           (if saved
               (push "Saved the new value of `ido-cr+-function-blacklist' to your Custom file."
                     message-lines)
-            (push "Hoever, the new value of `ido-cr+-function-blacklist' has not yet been saved for future sessions. To save it. re-run this command with a prefix argument:  `C-u M-x ido-cr+-update-blacklist'; or else manually inspect and save the value using `M-x customize-variable ido-cr+-function-blacklist'."
+            (push "However, the new value of `ido-cr+-function-blacklist' has not yet been saved for future sessions. To save it. re-run this command with a prefix argument:  `C-u M-x ido-cr+-update-blacklist'; or else manually inspect and save the value using `M-x customize-variable ido-cr+-function-blacklist'."
                   message-lines)))
       (push "No updates were required to `ido-cr+-function-blacklist'." message-lines))
     (unless quiet

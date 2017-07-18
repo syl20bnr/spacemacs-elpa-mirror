@@ -34,14 +34,14 @@
 ;; Author: Daniel Ma <danielhgma@gmail.com> and contributors
 ;; URL: https://github.com/danielma/rufo.el
 ;; Version: 0.3.0
-;; Package-Version: 20170712.824
+;; Package-Version: 20170718.716
 ;; Package-X-Original-Version: 0.3.0
 ;; Package-Requires: ((emacs "24.3"))
 
 ;;; Commentary:
 
 ;; This package provides the rufo-minor-mode minor mode, which will use rufo
-;; (https://github.com/asterite/rufo) to automatically fix ruby code
+;; (https://github.com/ruby-formatter/rufo) to automatically fix ruby code
 ;; when it is saved.
 
 ;; To use it, require it, make sure `rufo' is in your path and add it to

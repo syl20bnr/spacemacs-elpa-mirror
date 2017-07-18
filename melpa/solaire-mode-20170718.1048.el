@@ -5,9 +5,9 @@
 ;; Author: Henrik Lissner <http://github/hlissner>
 ;; Maintainer: Henrik Lissner <henrik@lissner.net>
 ;; Created: Jun 03, 2017
-;; Modified: Jun 04, 2017
-;; Version: 1.0.0
-;; Package-Version: 20170610.442
+;; Modified: Jul 18, 2017
+;; Version: 1.0.2
+;; Package-Version: 20170718.1048
 ;; Keywords: dim bright window buffer faces
 ;; Homepage: https://github.com/hlissner/emacs-solaire-mode
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
@@ -51,7 +51,7 @@
 
 (defgroup solaire-mode nil
   "Options for solaire-mode."
-  :group 'faces) ; FIXME :group
+  :group 'faces)
 
 (defface solaire-default-face '((t (:inherit default)))
   "Alternative version of the `default' face."
@@ -61,8 +61,10 @@
   "Alternative face for the minibuffer. See `solaire-mode-in-minibuffer'."
   :group 'solaire-mode)
 
-(defface solaire-linum-face '((t (:inherit linum)))
-  "Alternative face for `linum-mode' (and `nlinum-mode')."
+(defface solaire-line-number-face
+  `((t (:inherit ,(if (boundp 'display-line-numbers) 'line-number 'linum))))
+  "Alternative face for `line-number' (native line numbers in Emacs 26+) and
+`linum'."
   :group 'solaire-mode)
 
 (defface solaire-hl-line-face '((t (:inherit hl-line)))
@@ -101,7 +103,8 @@ telephone-line, so it's best to simply turn this off for those plugins."
 (defcustom solaire-mode-remap-faces
   '((default solaire-default-face)
     (hl-line solaire-hl-line-face)
-    (linum solaire-linum-face)
+    (linum solaire-line-number-face)
+    (line-number solaire-line-number-face)
     (org-hide solaire-org-hide-face)
     (mode-line solaire-mode-line-face)
     (mode-line-inactive solaire-mode-line-inactive-face))

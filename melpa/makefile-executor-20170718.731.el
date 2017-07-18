@@ -1,10 +1,10 @@
-;;; makefile-executor.el --- Emacs helpers to run things from makefiles -*- lexical-binding: t -*-
+;;; makefile-executor.el --- Commands for conveniently running makefile targets -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2017 Lowe Thiderman
 
 ;; Author: Lowe Thiderman <lowe.thiderman@gmail.com>
 ;; URL: https://github.com/thiderman/makefile-executor.el
-;; Package-Version: 20170626.533
+;; Package-Version: 20170718.731
 ;; Package-X-Original-Version: 20170613
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.3") (dash "2.11.0") (f "0.11.0") (projectile "0.10.0") (s "1.10.0"))
@@ -56,6 +56,7 @@
 (defvar makefile-executor-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-e") 'makefile-executor-execute-target)
+    (define-key map (kbd "C-c C-c") 'makefile-executor-execute-last)
     map)
   "Keymap for `makefile-executor-mode'.")
 
@@ -69,6 +70,21 @@ Bindings in `makefile-mode':
   :keymap makefile-executor-mode-map)
 
 (defvar makefile-executor-special-target "emacs--makefile--list")
+
+(setq makefile-executor-cache (make-hash-table :test 'equal))
+
+(defgroup makefile-executor nil
+  "Conveniently running Makefile targets."
+  :group 'convenience
+  :prefix "makefile-executor-")
+
+(defcustom makefile-executor-projectile-style 'makefile-executor-execute-project-target
+  "Decides what to do when executing from `projectile-commander'."
+  :type '(choice
+          (const :tag "Always choose target"
+                 makefile-executor-execute-project-target)
+          (const :tag "Run most recently executed target"
+                 makefile-executor-execute-last)))
 
 ;; Based on http://stackoverflow.com/a/26339924/983746
 (defvar makefile-executor-list-target-code
@@ -107,14 +123,18 @@ Optional argument FILENAME defaults to current buffer."
       (s-split "\n" (buffer-string) t))))
 
 ;;;###autoload
-(defun makefile-executor-execute-target (filename)
+(defun makefile-executor-execute-target (filename &optional target)
   "Execute a Makefile target from FILENAME.
 
 FILENAME defaults to current buffer."
   (interactive
    (list (buffer-file-name)))
 
-  (let ((target (completing-read "target: " (makefile-executor-get-targets filename))))
+  (let ((target (or target
+                    (completing-read "target: " (makefile-executor-get-targets filename)))))
+    (puthash (projectile-project-root)
+             (list filename target)
+             makefile-executor-cache)
     (compile (format "make -f %s %s"
                      (shell-quote-argument filename)
                      target))))
@@ -132,9 +152,22 @@ If there are several Makefiles, a prompt to select one of them is shown."
          (car files)
        (completing-read "Makefile: " files)))))
 
+;;;###autoload
+(defun makefile-executor-execute-last ()
+  "Execute the most recently executed Makefile target.
+
+If none is set, prompt for it using `makefile-executor-execute-project-target'."
+  (interactive)
+  (let ((targets (gethash (projectile-project-root)
+                          makefile-executor-cache)))
+    (if (not targets)
+        (makefile-executor-execute-project-target)
+      (makefile-executor-execute-target (car targets)
+                                        (cadr targets)))))
+
 (def-projectile-commander-method ?m
     "Execute makefile targets in project."
-    (makefile-executor-execute-project-target))
+    (funcall makefile-executor-projectile-style))
 
 (provide 'makefile-executor)
 
