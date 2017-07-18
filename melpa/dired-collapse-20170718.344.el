@@ -5,7 +5,7 @@
 ;; Author: Matúš Goljer <matus.goljer@gmail.com>
 ;; Maintainer: Matúš Goljer <matus.goljer@gmail.com>
 ;; Version: 0.0.1
-;; Package-Version: 20170717.1557
+;; Package-Version: 20170718.344
 ;; Created: 15th July 2017
 ;; Package-requires: ((dash "2.10.0") (f "0.19.0"))
 ;; Keywords: files
@@ -73,6 +73,7 @@
   :group 'dired-hacks
   :prefix "dired-collapse-")
 
+;;;###autoload
 (define-minor-mode dired-collapse-mode
   "Toggle collapsing of unique nested paths in Dired."
   :group 'dired-collapse
