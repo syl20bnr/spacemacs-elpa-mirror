@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.10
-;; Package-Version: 20170715.2304
+;; Package-Version: 20170717.1758
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -31,9 +31,9 @@
 
 ;; Entry points are the `transmission' and `transmission-add'
 ;; commands.  A variety of commands are available for manipulating
-;; torrents and their contents, some of which can be applied over
-;; multiple items by selecting them within a region.  The menus for
-;; each context provide good exposure.
+;; torrents and their contents, many of which can be applied over
+;; multiple items by selecting them with marks or within a region.
+;; The menus for each context provide good exposure.
 
 ;; "M-x transmission RET" pops up a torrent list.  One can add,
 ;; start/stop, verify, remove torrents, set speed limits, ratio
@@ -431,8 +431,7 @@ Details regarding the Transmission RPC can be found here:
             (progn (transmission--status)
                    (delete-process process))
           (transmission-conflict
-           (let ((content (process-get process :request)))
-             (transmission-http-post process content)))
+           (transmission-http-post process (process-get process :request)))
           (error
            (process-put process :callback nil)
            (delete-process process)
@@ -575,7 +574,7 @@ otherwise some other estimate indicated by SECONDS and PERCENT."
 (defun transmission-when (seconds)
   "The `transmission-eta' of time between `current-time' and SECONDS."
   (if (<= seconds 0) "never"
-    (let ((secs (- seconds (time-to-seconds (current-time)))))
+    (let ((secs (- seconds (float-time (current-time)))))
       (format (if (< secs 0) "%s ago" "in %s")
               (transmission-eta (abs secs) nil)))))
 
@@ -676,7 +675,7 @@ Days are the keys of `transmission-schedules'."
           (cl-decf n v)))
       (nreverse res)))))
 
-(defun transmission-list-trackers (id)
+(defun transmission-tracker-stats (id)
   "Return the \"trackerStats\" array for torrent id ID."
   (let* ((arguments `(:ids ,id :fields ("trackerStats")))
          (response (transmission-request "torrent-get" arguments))
@@ -1192,7 +1191,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
 (defun transmission-trackers-add (ids urls)
   "Add announce URLs to selected torrent or torrents."
   (transmission-interactive
-   (let* ((trackers (transmission-refs (transmission-list-trackers ids) 'announce))
+   (let* ((trackers (transmission-refs (transmission-tracker-stats ids) 'announce))
           (urls (or (transmission-read-strings
                      "Add announce URLs: "
                      (cl-loop for url in
@@ -1213,7 +1212,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   "Remove trackers from torrent at point by ID or announce URL."
   (interactive)
   (let* ((id (or transmission-torrent-id (user-error "No torrent selected")))
-         (array (or (transmission-list-trackers id)
+         (array (or (transmission-tracker-stats id)
                     (user-error "No trackers to remove")))
          (prompt (format "Remove tracker (%d trackers): " (length array)))
          (trackers (cl-loop for x across array
@@ -1238,7 +1237,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   "Replace tracker by ID or announce URL."
   (interactive)
   (let* ((id (or transmission-torrent-id (user-error "No torrent selected")))
-         (trackers (or (cl-loop for x across (transmission-list-trackers id)
+         (trackers (or (cl-loop for x across (transmission-tracker-stats id)
                                 collect (cons (cdr (assq 'announce x))
                                               (cdr (assq 'id x))))
                        (user-error "No trackers to replace")))
@@ -1662,15 +1661,21 @@ Each form in BODY is a column descriptor."
   (setq tabulated-list-entries (reverse tabulated-list-entries))
   (tabulated-list-print))
 
+(defmacro transmission-insert-each-when (&rest body)
+  "Insert each non-nil form in BODY sequentially on its own line."
+  (declare (indent 0) (debug t))
+  (let ((tmp (make-symbol "tmp")))
+    (cl-loop for form in body
+             collect `(when (setq ,tmp ,form) (insert ,tmp "\n")) into res
+             finally return `(let (,tmp) ,@res))))
+
 (defun transmission-draw-info (id)
   (let* ((arguments `(:ids ,id :fields ,transmission-draw-info-keys))
          (response (transmission-request "torrent-get" arguments)))
     (setq transmission-torrent-vector (transmission-torrents response)))
   (erase-buffer)
   (let-alist (elt transmission-torrent-vector 0)
-    (mapc
-     (lambda (s) (if s (insert s "\n")))
-     (vector
+    (transmission-insert-each-when
       (format "ID: %d" id)
       (concat "Name: " .name)
       (concat "Hash: " .hashString)
@@ -1702,7 +1707,7 @@ Each form in BODY is a column descriptor."
       (unless (zerop .corruptEver)
         (concat "Corrupt: " (transmission-format-size .corruptEver)))
       (concat "Total size: " (transmission-format-size .totalSize))
-      (transmission-format-pieces-internal .pieces .pieceCount .pieceSize)))))
+      (transmission-format-pieces-internal .pieces .pieceCount .pieceSize))))
 
 (defun transmission-draw-peers (id)
   (let* ((arguments `(:ids ,id :fields ("peers")))

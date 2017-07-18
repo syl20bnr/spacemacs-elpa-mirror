@@ -5,9 +5,9 @@
 ;; Author: Matúš Goljer <matus.goljer@gmail.com>
 ;; Maintainer: Matúš Goljer <matus.goljer@gmail.com>
 ;; Version: 0.0.1
-;; Package-Version: 20170717.208
+;; Package-Version: 20170717.1557
 ;; Created: 15th July 2017
-;; Package-requires: ((dash "2.10.0"))
+;; Package-requires: ((dash "2.10.0") (f "0.19.0"))
 ;; Keywords: files
 
 ;; This program is free software; you can redistribute it and/or
