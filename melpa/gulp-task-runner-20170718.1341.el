@@ -1,10 +1,10 @@
 ;;; gulp-task-runner.el --- Gulp task runner                     -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2016  Nicolas Petton
+;; Copyright (C) 2016, 2017  Nicolas Petton
 
 ;; Author: Nicolas Petton <nicolas@petton.fr>
 ;; Keywords: convenience, javascript
-;; Package-Version: 20161103.1523
+;; Package-Version: 20170718.1341
 ;; Version: 1.0
 ;; Package: gulp-task-runner
 
@@ -39,20 +39,21 @@ forces reload of the task list from gulpfile.js."
   (when prefix
     (gulp--invalidate-cache))
   (let* ((gulpfile (or (gulp--current-gulpfile)
-                       (gulp--gulpfile-from-cache))))
+                       (gulp--gulpfile-from-cache)))
+         (gulp-bin (executable-find "gulp")))
     (if gulpfile
-        (gulp--run-gulpfile gulpfile)
+        (gulp--run-gulpfile gulpfile gulp-bin)
       (warn "No gulpfile to get the tasks from"))))
 
-(defun gulp--run-gulpfile (gulpfile)
+(defun gulp--run-gulpfile (gulpfile gulp-bin)
   "Let the user choose a task from GULPFILE and run it."
-  (let* ((tasks (gulp--get-tasks gulpfile))
+  (let* ((tasks (gulp--get-tasks gulpfile gulp-bin))
          (task (completing-read "Gulp task: " tasks)))
     ;; Use a temporary buffer to change current directory
     (with-temp-buffer
       (cd (file-name-directory gulpfile))
       (let ((compilation-buffer-name-function #'gulp--get-buffer-name))
-        (compilation-start (format "gulp %s" task))))))
+        (compilation-start (format "%s %s" gulp-bin task))))))
 
 (defun gulp--add-to-cache (gulpfile tasks)
   "Add (GULPFILE TASKS) to `gulp--task-cache'."
@@ -76,9 +77,9 @@ If GULPFILE is nil, remove task list for `gulp--current-gulpfile'."
     (when gulpfile
       (expand-file-name "gulpfile.js" gulpfile))))
 
-(defun gulp--get-tasks-from-gulp ()
+(defun gulp--get-tasks-from-gulp (gulp-bin)
   "Ask gulp for a task list."
-  (process-lines "gulp" "--tasks-simple"))
+  (process-lines gulp-bin "--tasks-simple"))
 
 (defun gulp--get-tasks-from-cache (&optional gulpfile)
   "Lookup for a task list for GULPFILE in `gulp--task-cache'.
@@ -97,11 +98,11 @@ If GULPFILE is absent, its value is takend from
     (when gulpfiles
       (completing-read "Choose a gulpfile: " gulpfiles))))
 
-(defun gulp--get-tasks (gulpfile)
+(defun gulp--get-tasks (gulpfile gulp-bin)
   "Return a list of gulp tasks for GULPFILE.
 Either use `gulp--task-cache' or run gulp to get the tasks."
   (or (gulp--get-tasks-from-cache gulpfile)
-      (let ((tasks (gulp--get-tasks-from-gulp)))
+      (let ((tasks (gulp--get-tasks-from-gulp gulp-bin)))
         (gulp--add-to-cache gulpfile tasks)
         tasks)))
 
