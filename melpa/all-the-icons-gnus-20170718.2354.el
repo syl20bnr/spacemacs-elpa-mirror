@@ -2,7 +2,7 @@
 
 ;; Author: Nicolas Lamirault <nicolas.lamirault@gmail.com>
 ;; Version: 0.1.0
-;; Package-Version: 20170711.241
+;; Package-Version: 20170718.2354
 ;; Keywords: mail tools
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (all-the-icons "3.1.0"))
 
@@ -32,10 +32,6 @@
 ;;; Code:
 
 (require 'gnus)
-(require 'all-the-icons)
-(require 'dash)
-
-(require 'dash)
 (require 'all-the-icons)
 
 (setq pretty-gnus-article-alist nil)
@@ -73,6 +69,7 @@
               (add-face-text-property
                (match-beginning 1) (match-end 1) props))))))))
 
+
 (defun all-the-icons-gnus--set-format ()
   (setq gnus-topic-line-format "%i[  %(%{%n -- %A%}%) ]%v\n"
 
@@ -92,7 +89,7 @@
 ;;;###autoload
 (defun all-the-icons-gnus-setup ()
   "Add icons for Gnus."
-  (advice-add 'gnus-summary-next-article :after 'all-the-icons-gnus--add-faces)
+  ;; (advice-add 'gnus-summary-next-article :after 'all-the-icons-gnus--add-faces)
   (all-the-icons-gnus--set-format))
 
 

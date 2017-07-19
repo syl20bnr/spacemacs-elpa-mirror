@@ -4,7 +4,7 @@
 
 ;; Author: Kelvin Smith <oneKelvinSmith@gmail.com>
 ;; URL: http://github.com/oneKelvinSmith/monokai-emacs
-;; Package-Version: 20170705.1152
+;; Package-Version: 20170719.146
 ;; Version: 3.3.0
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -5184,7 +5184,7 @@ Also affects 'linum-mode' background."
    ;; tooltip. (NOTE: This setting has no effect on the os widgets for me
    ;; zencoding uses this)
    `(tooltip
-     ((,monokai-class (:background ,monokai-green-l
+     ((,monokai-class (:background ,monokai-yellow-hc
                                    :foreground ,monokai-background
                                    :inherit ,monokai-pitch))))
 

@@ -1,10 +1,10 @@
-;;; ob-coffeescript.el --- org-babel functions for Coffee evaluation
+;;; ob-coffeescript.el --- org-babel functions for coffee-script evaluation, and fully implementation!
 
 ;; Copyright (C) 2017 Brantou
 
 ;; Author: Brantou <brantou89@gmail.com>
 ;; URL: https://github.com/brantou/ob-coffeescript
-;; Package-Version: 20170713.2356
+;; Package-Version: 20170719.121
 ;; Keywords: coffee-script, literate programming, reproducible research
 ;; Homepage: http://orgmode.org
 ;; Version:  1.0.0
