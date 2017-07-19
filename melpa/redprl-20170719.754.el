@@ -5,7 +5,7 @@
 
 ;; Author: Jonathan Sterling <jon@jonmsterling.com>
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 20170718.1053
+;; Package-Version: 20170719.754
 ;; Version: 0.0.1
 ;; Keywords: languages
 
@@ -126,7 +126,8 @@
   "RedPRL's expression symbols.")
 
 (defconst redprl-tactic-keywords
-  '("auto" "auto-step" "cut-lemma" "elim" "fresh" "hyp" "lemma" "let" "unfold")
+  '("auto" "auto-step" "cut-lemma" "elim" "fresh" "head-expand" "hyp" "id"
+    "lemma" "let" "progress" "rec" "repeat" "rule" "symmetry" "unfold")
   "RedPRL's tactic keywords.")
 
 (defconst redprl-tactic-symbols

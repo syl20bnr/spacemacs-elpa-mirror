@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170717.1402
+;; Package-Version: 20170719.1102
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1444,11 +1444,32 @@ TREE is the selected candidate."
   "Return worktree from candidate TREE."
   (substring tree 0 (string-match " " tree)))
 
+(defun counsel-git-toplevel ()
+  "Return the base directory of the current git repository."
+  (let ((out (string-trim-right (shell-command-to-string "git rev-parse --show-toplevel"))))
+    (unless (string-match-p "Not a git repository" out) out)))
+
+(defun counsel-git-close-worktree-files-action (root-dir)
+  "Close all buffers from the worktree located at ROOT-DIR."
+  (setq root-dir (counsel-git-worktree-parse-root root-dir))
+  (save-excursion
+    (dolist (buf (buffer-list))
+      (set-buffer buf)
+      (let (top)
+        (and buffer-file-name
+             (setq top (counsel-git-toplevel))
+             (string= "." (file-relative-name root-dir top))
+             (kill-buffer buf))))))
+
+(ivy-set-actions
+ 'counsel-git-change-worktree
+ '(("k" counsel-git-close-worktree-files-action "kill all")))
+
 ;;;###autoload
 (defun counsel-git-change-worktree ()
   "Find the file corresponding to the current buffer on a different worktree."
   (interactive)
-  (let ((git-root-dir (string-trim-right (shell-command-to-string "git rev-parse --show-toplevel"))))
+  (let ((git-root-dir (counsel-git-toplevel)))
     (ivy-read "Select worktree: "
               (or (cl-delete git-root-dir (counsel-git-worktree-list)
                              :key #'counsel-git-worktree-parse-root :test #'string=)
