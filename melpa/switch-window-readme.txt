@@ -70,6 +70,7 @@ key to resume.
 #+BEGIN_EXAMPLE
 (setq switch-window-auto-resize-window t)
 (setq switch-window-default-window-size 0.8) ;80% of frame size
+(switch-window-mouse-mode) ;auto resize when switch window with mouse
 #+END_EXAMPLE
 
 Advanced usage:
