@@ -5,7 +5,7 @@
 ;; Author: Nicolas Petton <petton.nicolas@gmail.com>
 ;;         Damien Cassou <damien@cassou.me>
 ;; Version: 1.7
-;; Package-Version: 20170717.145
+;; Package-Version: 20170720.628
 ;; GIT: https://github.com/NicolasPetton/pass
 ;; Package-Requires: ((emacs "24") (password-store "0.1") (f "0.17"))
 ;; Created: 09 Jun 2015
@@ -176,12 +176,25 @@ Similar to `save-excursion' but only restore the point."
       (delete-region (point-min) (point-max))
       (pass-display-data))))
 
-(defun pass-insert ()
+(defun pass-insert (arg)
   "Insert an entry to the password-store.
-The password is read from user input."
-  (interactive)
-  (call-interactively #'password-store-insert)
-  (pass-update-buffer))
+The password is read from user input.
+
+When called with a prefix argument ARG, visit the entry file."
+  (interactive "P")
+  (if arg
+      (pass-insert-multiline)
+    (progn
+      (call-interactively #'password-store-insert)
+      (pass-update-buffer))))
+
+(defun pass-insert-multiline ()
+  "This function behaves similarly to `pass -m'.
+It creates an empty entry file, and visit it."
+  (let ((entry (format "%s.gpg" (read-string "Password entry: ")))
+        (default-directory (password-store-dir)))
+    (make-directory (file-name-directory entry) t)
+    (find-file (expand-file-name entry (password-store-dir)))))
 
 (defun pass-insert-generated ()
   "Insert an entry to the password-store.
@@ -243,13 +256,12 @@ the entries of the directory.  Add enough spaces so that each entry is
 indented according to INDENT-LEVEL."
   (let ((name (car directory))
         (items (cdr directory)))
-    (when (not (string= name ".git"))
-      (insert name)
-      (add-text-properties (point-at-bol) (point)
-                           `(face pass-mode-directory-face pass-directory ,name))
-      (newline)
-      (dolist (item items)
-        (pass-display-item item (1+ indent-level))))))
+    (insert name)
+    (add-text-properties (point-at-bol) (point)
+                         `(face pass-mode-directory-face pass-directory ,name))
+    (newline)
+    (dolist (item items)
+      (pass-display-item item (1+ indent-level)))))
 
 (defun pass-display-item-prefix (indent-level)
   "Display some indenting text according to INDENT-LEVEL."
@@ -292,10 +304,11 @@ If SUBDIR is nil, return the entries of `(password-store-dir)'."
   (unless subdir (setq subdir ""))
   (let ((path (f-join (password-store-dir) subdir)))
     (if (f-directory? path)
-        (cons (f-filename path)
-              (delq nil
-                    (mapcar 'pass--tree
-                            (f-entries path))))
+        (unless (string= (f-filename subdir) ".git")
+          (cons (f-filename path)
+                (delq nil
+                      (mapcar 'pass--tree
+                              (f-entries path)))))
       (when (equal (f-ext path) "gpg")
         (password-store--file-to-entry path)))))
 

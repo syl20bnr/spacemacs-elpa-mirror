@@ -8,7 +8,7 @@
 ;; Maintainer: Akinori MUSHA <knu@iDaemons.org>
 ;; Created: 6 Mar 2005
 ;; URL: https://github.com/knu/ruby-electric.el
-;; Package-Version: 20150424.752
+;; Package-Version: 20150713.752
 ;; Keywords: languages ruby
 ;; License: The same license terms as Ruby
 ;; Version: 2.2.3
@@ -390,6 +390,7 @@ enabled."
              (insert " "))
          (insert " "))
        (insert " ")
+       (backward-char 1)
        (and region-beginning
             (forward-char 1)))))
     ((ruby-electric-string-at-point-p)
