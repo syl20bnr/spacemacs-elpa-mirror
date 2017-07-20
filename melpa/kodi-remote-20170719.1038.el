@@ -4,7 +4,7 @@
 
 ;; Author: Stefan Huchler <stefan.huchler@mail.de>
 ;; URL: http://github.com/spiderbit/kodi-remote.el
-;; Package-Version: 20170716.1331
+;; Package-Version: 20170719.1038
 ;; Package-Requires: ((request "0.2.0")(let-alist "1.0.4")(json "1.4")(elnode "20140203.1506"))
 ;; Keywords: kodi tools convinience
 
@@ -224,46 +224,38 @@ Argument DIRECTION which direction and how big of step to seek."
 	  `(("params" . (("action" . ,action))))))
     (kodi-remote-post "Input.ExecuteAction" params)))
 
+(defun kodi-remote-input-direct (seek input)
+  "Move horizontal in menu or seek big forward/backward."
+  (kodi-remote-get-active-window)
+  (sit-for 0.01)
+  (if (string-equal kodi-active-window "Fullscreen video")
+      (kodi-remote-player-seek seek)
+    (kodi-remote-input input)))
+
 ;; todo: need to compare to other active windows (like musik) for actions.
 ;;;###autoload
 (defun kodi-remote-input-left ()
   "Move left in menu or seek small backward."
   (interactive)
-  (kodi-remote-get-active-window)
-  (sit-for 0.01)
-  (if (string-equal kodi-active-window "Fullscreen video")
-      (kodi-remote-player-seek "smallbackward")
-    (kodi-remote-input "Input.Left")))
+  (kodi-remote-input-direct "smallbackward" "Input.Left"))
 
 ;;;###autoload
 (defun kodi-remote-input-right ()
   "Move right in menu or seek small forward."
   (interactive)
-  (kodi-remote-get-active-window)
-  (sit-for 0.01)
-  (if (string-equal kodi-active-window "Fullscreen video")
-      (kodi-remote-player-seek "smallforward")
-    (kodi-remote-input "Input.Right")))
+  (kodi-remote-input-direct "smallforward" "Input.Right"))
 
 ;;;###autoload
 (defun kodi-remote-input-up ()
   "Move up in menu or seek big forward."
   (interactive)
-  (kodi-remote-get-active-window)
-  (sit-for 0.01)
-  (if (string-equal kodi-active-window "Fullscreen video")
-      (kodi-remote-player-seek "bigforward")
-    (kodi-remote-input "Input.Up")))
+  (kodi-remote-input-direct "bigforward" "Input.Up"))
 
 ;;;###autoload
 (defun kodi-remote-input-down ()
   "Move down in menu or seek big backward."
   (interactive)
-  (kodi-remote-get-active-window)
-  (sit-for 0.01)
-  (if (string-equal kodi-active-window "Fullscreen video")
-      (kodi-remote-player-seek "bigbackward")
-    (kodi-remote-input "Input.Down")))
+  (kodi-remote-input-direct "bigbackward" "Input.Down"))
 
 ;;;###autoload
 (defun kodi-remote-input-back ()
@@ -326,7 +318,6 @@ Optional argument ID limits to a specific artist."
 (defun kodi-remote-get-series-episodes (&optional show-id filter-watched)
   "Poll unwatches episodes from show.
 Optional argument SHOW-ID limits to a specific show."
-  ;; (setq show-id nil)
   (let* ((filter '("filter" . (("field" . "playcount")
 			       ("operator" . "lessthan")
 			       ("value" . "1" ))))
@@ -354,6 +345,7 @@ Optional argument SHOW-ID limits to a specific show."
 			  ["genre"]))))))
   (kodi-remote-get "AudioLibrary.GetArtists" params)))
 
+;;;###autoload
 (defun kodi-remote-playlist-add-episode ()
   "Add episode to playlist."
   (interactive)
@@ -363,6 +355,7 @@ Optional argument SHOW-ID limits to a specific show."
 		      (("episodeid" . ,(tabulated-list-get-id)))))))))
     (kodi-remote-post "Playlist.Add" params)))
 
+;;;###autoload
 (defun kodi-remote-playlist-play ()
   "Add episode to playlist."
   (interactive)
@@ -370,6 +363,7 @@ Optional argument SHOW-ID limits to a specific show."
 		    (("item" . (("playlistid" . 1))))))))
     (kodi-remote-post "Player.Open" params)))
 
+;;;###autoload
 (defun kodi-remote-playlist-clear ()
   "Add episode to playlist."
   (interactive)
@@ -384,7 +378,6 @@ Optional argument SHOW-ID limits to a specific show."
 ;;    (elnode-webserver-handler-maker "/tmp/webroot/")
 ;;    )
 
-
 (defun kodi-remote-playlist-add-url (url)
   "Add item/video to playlist."
   (interactive "sUrl: ")
@@ -392,14 +385,13 @@ Optional argument SHOW-ID limits to a specific show."
 				("item" . (("file" . ,url))))))))
     (kodi-remote-post "Playlist.Add" params)))
 
-
+;;;###autoload
 (defun kodi-remote-playlist-remove ()
   "Remove item/video from playlist."
   (interactive)
   (let* ((params `(("params" . (("playlistid" . 1)
 				("position" . ,(tabulated-list-get-id)))))))
     (kodi-remote-post "Playlist.Remove" params)))
-
 
 (defun kodi-remote-playlist-get ()
   "Requests playlist items."
@@ -408,33 +400,34 @@ Optional argument SHOW-ID limits to a specific show."
 			 ("playlistid" . 1))))))
     (kodi-remote-get "Playlist.GetItems" params)))
 
+(defun kodi-remote-playlist-swap (direction)
+  "Moves item/video up in the playlist."
+  (let* ((position1 (tabulated-list-get-id))
+	 (difference '(("up" . -1) ("down" . 1))))
+    (if position1
+	(let* ((position2 (+ position1 (assoc-default direction difference)))
+	      (max (length tabulated-list-entries))
+	      (positions `(,position1 ,position2)))
+	  (if (<= 0 (seq-min positions) (seq-max positions) max)
+	      (let* ((params `(("params"
+				. (("playlistid" . 1)
+				   ("position1" . ,position1)
+				   ("position2" . ,position2))))))
+		(kodi-remote-post "Playlist.Swap" params))
+	    ;; (kodi-remote-playlist-draw)
+	    )))))
+
+;;;###autoload
 (defun kodi-remote-playlist-move-up ()
   "Moves item/video up in the playlist."
   (interactive)
-  (let* ((position1 (tabulated-list-get-id))
-	 (position2 (1- position1)))
-    (if (>= position2 0)
-	(let* ((params `(("params"
-			  . (("playlistid" . 1)
-			     ("position1" . ,position1)
-			     ("position2" . ,position2))))))
-	  (kodi-remote-post "Playlist.Swap" params))
-      ;; (kodi-remote-playlist-draw)
-      )))
+  (kodi-remote-playlist-swap "up"))
 
+;;;###autoload
 (defun kodi-remote-playlist-move-down ()
   "Moves item/video up in the playlist."
   (interactive)
-  (let* ((position1 (tabulated-list-get-id))
-	 (position2 (1+ position1)))
-    (if (< position2 (length (cdr ( assoc 'items kodi-properties))))
-	(let* ((params `(("params"
-			  . (("playlistid" . 1)
-			     ("position1" . ,position1)
-			     ("position2" . ,position2))))))
-	  (kodi-remote-post "Playlist.Swap" params))
-      ;; (kodi-remote-playlist-draw)
-      )))
+  (kodi-remote-playlist-swap "down"))
 
 ;; (defun kodi-remote-playlists-get ()
 ;;   "Requests playlist items."
