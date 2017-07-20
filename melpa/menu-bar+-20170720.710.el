@@ -7,11 +7,11 @@
 ;; Copyright (C) 1996-2017, Drew Adams, all rights reserved.
 ;; Created: Thu Aug 17 10:05:46 1995
 ;; Version: 0
-;; Package-Version: 20170618.1417
+;; Package-Version: 20170720.710
 ;; Package-Requires: ()
-;; Last-Updated: Sun Jun 18 14:11:58 2017 (-0700)
+;; Last-Updated: Thu Jul 20 07:08:44 2017 (-0700)
 ;;           By: dradams
-;;     Update #: 3781
+;;     Update #: 3783
 ;; URL: https://www.emacswiki.org/emacs/download/menu-bar%2b.el
 ;; Doc URL: http://www.emacswiki.org/MenuBarPlus
 ;; Keywords: internal, local, convenience
@@ -129,6 +129,8 @@
 ;;
 ;;; Change Log:
 ;;
+;; 2017/07/20 dadams
+;;     menu-bar-options-menu: Protect edit-options entry with fboundp.
 ;; 2017/06/18 dadams
 ;;     menu-bar-apropos-menu: Added apropos-local-(value|variable).
 ;;     Renamed apropos-user-options to apropos-user-option.
@@ -1678,10 +1680,11 @@ setting the variable and displaying a status message (not MESSAGE)."
                           "Thumbifying instead of iconifying frames is %s"
                           "Thumbifying instead of iconifying frames")))
 
-(define-key menu-bar-options-menu [all-options-separator] '("--"))
-(define-key menu-bar-options-menu [edit-options]
-  '(menu-item "Show, Edit All Options" edit-options
-    :help "Edit a list of Emacs user option (variable) values"))
+(when (fboundp 'edit-options)
+  (define-key menu-bar-options-menu [all-options-separator] '("--"))
+  (define-key menu-bar-options-menu [edit-options]
+    '(menu-item "Show, Edit All Options" edit-options
+      :help "Edit a list of Emacs user option (variable) values")))
 
 ;; (when (boundp 'replace-w-completion-flag)
 ;;   (define-key-after menu-bar-options-menu [replace-w-completion-flag]
