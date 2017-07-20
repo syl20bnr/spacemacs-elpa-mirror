@@ -3,7 +3,7 @@
 
 ;; Author : Rich Alesi <https://github.com/ralesi>
 ;; Version: 0.9.8.5
-;; Package-Version: 20170522.2331
+;; Package-Version: 20170703.2135
 ;; Keywords: files, convenience, dired
 ;; Homepage: https://github.com/ralesi/ranger
 ;; Package-Requires: ((emacs "24.4"))
@@ -471,7 +471,6 @@ Selective hiding of specific attributes can be controlled by MASK."
     (define-key map (kbd "TAB")   'ranger-mark)
     (define-key map (kbd "\"")    'dired-mark-files-regexp)
     (define-key map (kbd "uv")    'dired-unmark-all-files)
-    (define-key map (kbd "t")     'dired-toggle-marks)
     (define-key map "t"           'ranger-toggle-mark)
 
     ;; dired commands
@@ -1560,7 +1559,7 @@ s   : /srv
 r,/ : /
 R   : ranger . el location
 > "
-     '(?e ?u ?d ?l ?L ?o ?v ?m ?M ?s ?r ?R ?/ ?h ?g ?D ?j ?k ?T ?t ?n ?c))))
+     '(?q ?e ?u ?d ?l ?L ?o ?v ?m ?M ?s ?r ?R ?/ ?h ?g ?D ?j ?k ?T ?t ?n ?c))))
   (message nil)
   (let* ((c (char-to-string path))
          (new-path
@@ -1590,6 +1589,8 @@ R   : ranger . el location
             ('t 'ranger-next-tab)
             ('c 'ranger-close-tab)
             ('g 'ranger-goto-top))))
+    (when (string-equal c "q")
+      (keyboard-quit))
     (when (and new-path (file-directory-p new-path))
       (ranger-find-file new-path))
     (when (eq system-type 'windows-nt)
@@ -2663,7 +2664,10 @@ properly provides the modeline in dired mode. "
 (defun ranger-disable ()
   "Interactively disable ranger-mode."
   (interactive)
-  (ranger-revert))
+  ;; don't kill ranger buffer if open somewhere else
+  (if (> (length (get-buffer-window-list)) 1)
+      (delete-window)
+    (ranger-revert)))
 
 (defun ranger-to-dired ()
   "toggle from ranger to dired in directory." ;
@@ -2733,6 +2737,9 @@ properly provides the modeline in dired mode. "
   (ranger-sort t)
   (ranger-show-flags)
   (ranger-filter-files)
+
+  ;; omit files after buffer refresh
+  (add-hook 'dired-after-readin-hook 'ranger-filter-files nil t)
 
   ;; open new tab if ranger is in multiple frames.
   (if (> (length ranger-f-alist) 1)
