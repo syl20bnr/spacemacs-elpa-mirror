@@ -4,7 +4,7 @@
 
 ;; Author: Lowe Thiderman <lowe.thiderman@gmail.com>
 ;; URL: https://github.com/thiderman/makefile-executor.el
-;; Package-Version: 20170718.731
+;; Package-Version: 20170720.1038
 ;; Package-X-Original-Version: 20170613
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.3") (dash "2.11.0") (f "0.11.0") (projectile "0.10.0") (s "1.10.0"))
@@ -153,14 +153,16 @@ If there are several Makefiles, a prompt to select one of them is shown."
        (completing-read "Makefile: " files)))))
 
 ;;;###autoload
-(defun makefile-executor-execute-last ()
+(defun makefile-executor-execute-last (arg)
   "Execute the most recently executed Makefile target.
 
-If none is set, prompt for it using `makefile-executor-execute-project-target'."
-  (interactive)
+If none is set, prompt for it using
+  `makefile-executor-execute-project-target'.  If the universal
+  argument is given, always prompt."
+  (interactive "P")
   (let ((targets (gethash (projectile-project-root)
                           makefile-executor-cache)))
-    (if (not targets)
+    (if (or arg (not targets))
         (makefile-executor-execute-project-target)
       (makefile-executor-execute-target (car targets)
                                         (cadr targets)))))

@@ -2,11 +2,12 @@
 
 ;; Copyright 2013 Kris Jenkins
 
+;; License: GNU General Public License version 3, or (at your option) any later version
 ;; Author: Kris Jenkins <krisajenkins@gmail.com>
 ;; Maintainer: Kris Jenkins <krisajenkins@gmail.com>
 ;; Author: Kris Jenkins
 ;; URL: https://github.com/krisajenkins/wispjs-mode
-;; Package-Version: 20140103.1432
+;; Package-Version: 20170720.1219
 ;; Created: 18th April 2013
 ;; Version: 0.2.0
 ;; Package-Requires: ((clojure-mode "0"))

@@ -1,10 +1,11 @@
 ;;; ob-mongo.el --- Execute mongodb queries within org-mode blocks.
 ;; Copyright 2013 Kris Jenkins
 
+;; License: GNU General Public License version 3, or (at your option) any later version
 ;; Author: Kris Jenkins <krisajenkins@gmail.com>
 ;; Maintainer: Kris Jenkins <krisajenkins@gmail.com>
 ;; Keywords: org babel mongo mongodb
-;; Package-Version: 20161130.152
+;; Package-Version: 20170720.1219
 ;; URL: https://github.com/krisajenkins/ob-mongo
 ;; Created: 17th July 2013
 ;; Version: 0.1.0

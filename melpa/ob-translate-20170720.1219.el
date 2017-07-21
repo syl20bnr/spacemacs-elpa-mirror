@@ -1,10 +1,11 @@
 ;;; ob-translate.el --- Translation of text blocks in org-mode.
 ;; Copyright 2013 Kris Jenkins
 
+;; License: GNU General Public License version 3, or (at your option) any later version
 ;; Author: Kris Jenkins <krisajenkins@gmail.com>
 ;; Maintainer: Kris Jenkins <krisajenkins@gmail.com>
 ;; Keywords: org babel translate translation
-;; Package-Version: 20160411.124
+;; Package-Version: 20170720.1219
 ;; URL: https://github.com/krisajenkins/ob-translate
 ;; Created: 16th July 2013
 ;; Version: 0.1.3
