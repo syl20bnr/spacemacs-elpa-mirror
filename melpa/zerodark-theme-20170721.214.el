@@ -4,7 +4,7 @@
 
 ;; Author: Nicolas Petton <nicolas@petton.fr>
 ;; Keywords: themes
-;; Package-Version: 20170709.1248
+;; Package-Version: 20170721.214
 ;; URL: https://github.com/NicolasPetton/zerodark-theme
 ;; Version: 4.3
 ;; Package: zerodark-theme
@@ -291,7 +291,7 @@ The result is cached for one second to avoid hiccups."
    `(line-number-current-line ((,class (:foreground ,blue :background ,background-darker))))
 
    ;; eshell
-   `(eshell-prompt ((,class (:foreground ,orange :background ,background :weight bold))))
+   `(eshell-prompt ((,class (:foreground ,blue :background ,background :weight bold))))
    `(eshell-ls-directory ((,class (:foreground ,purple :background ,background :weight bold))))
    `(eshell-ls-symlink ((,class (:foreground ,orange :background ,background :weight normal))))
    `(eshell-ls-executable ((,class (:foreground ,green :background ,background :weight bold))))

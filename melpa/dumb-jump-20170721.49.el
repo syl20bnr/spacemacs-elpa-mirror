@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015-2016 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.0
-;; Package-Version: 20170720.2009
+;; Package-Version: 20170721.49
 ;; Package-Requires: ((emacs "24.3") (f "0.17.3") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -626,6 +626,37 @@ using searcher git-grep."
                    "test :: PackageId -> Tar.Entry -> PkgIndexInfo")
            :not ("nottest :: FilePath -> HttpSession [PkgIndexIndex]"
                  "testnot :: PackageId -> Tar.Entry -> PkgIndexInfo"))
+
+    ;; ocaml
+    (:type "type" :supports ("ag" "rg") :language "ocaml"
+           :regex "^\\s*(and|type)\\s+.*\\bJJJ\\b"
+           :tests ("type test ="
+                   "and test ="
+                   "type 'a test ="
+                   "type ('a, _, 'c) test"))
+
+    (:type "variable" :supports ("ag" "rg") :language "ocaml"
+           :regex "let\\s+JJJ\\b"
+           :tests ("let test ="
+                   "let test x y ="))
+
+    (:type "variable" :supports ("ag" "rg") :language "ocaml"
+           :regex "let\\s+rec\\s+JJJ\\b"
+           :tests ("let rec test ="
+                   "let rec  test x y ="))
+
+    (:type "variable" :supports ("ag" "rg") :language "ocaml"
+           :regex "\\s*val\\s*\\bJJJ\\b\\s*"
+           :tests ("val test"))
+
+    (:type "module" :supports ("ag" "rg") :language "ocaml"
+           :regex "^\\s*module\\s*\\bJJJ\\b"
+           :tests ("module test ="))
+
+    (:type "module" :supports ("ag" "rg") :language "ocaml"
+           :regex "^\\s*module\\s*type\\s*\\bJJJ\\b"
+           :tests ("module type test ="))
+
     ;; lua
     (:type "variable" :supports ("ag" "grep" "rg" "git-grep") :language "lua"
            :regex "\\s*\\bJJJ\\s*=[^=\\n]+" :tests ("test = 1234") :not ("if test === 1234"))
@@ -780,6 +811,10 @@ using searcher git-grep."
     (:language "c++" :ext "c++" :agtype nil :rgtype nil)
     (:language "c++" :ext "h++" :agtype nil :rgtype nil)
     (:language "coq" :ext "v" :agtype nil :rgtype nil)
+    (:language "ocaml" :ext "ml" :agtype "ocaml" :rgtype "ocaml")
+    (:language "ocaml" :ext "mli" :agtype "ocaml" :rgtype "ocaml")
+    (:language "ocaml" :ext "mll" :agtype "ocaml" :rgtype "ocaml")
+    (:language "ocaml" :ext "mly" :agtype "ocaml" :rgtype "ocaml")
     (:language "haskell" :ext "hs" :agtype "haskell" :rgtype "haskell")
     (:language "haskell" :ext "lhs" :agtype "haskell" :rgtype "haskell")
     (:language "objc" :ext "m" :agtype "objc" :rgtype "objc")
