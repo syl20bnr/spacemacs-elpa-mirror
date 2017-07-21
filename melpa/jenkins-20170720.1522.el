@@ -4,7 +4,7 @@
 
 ;; Author: Rustem Muslimov <r.muslimov@gmail.com>
 ;; Keywords: jenkins, convenience
-;; Package-Version: 20170713.702
+;; Package-Version: 20170720.1522
 ;; Package-Requires: ((dash "2.12") (emacs "24.3") (json "1.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -115,7 +115,11 @@
 
 (defun get-jenkins-url ()
   "This function is for backward compatibility."
-  (or jenkins-url jenkins-hostname))
+  (let ((url (or jenkins-url jenkins-hostname)))
+    ;; Ensure URL ends with /.
+    (if (string-match-p (rx "/" string-end) url)
+        url
+      (concat url "/"))))
 
 
 (defvar *jenkins-jobs-list*

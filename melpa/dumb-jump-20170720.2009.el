@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015-2016 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.0
-;; Package-Version: 20170627.1309
+;; Package-Version: 20170720.2009
 ;; Package-Requires: ((emacs "24.3") (f "0.17.3") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -1109,14 +1109,17 @@ number when pressing C-j in helm."
       (goto-char (point-min))
       (forward-line (1- line)))))
 
+(defun dumb-jump--format-result (proj result)
+  (format "%s:%s %s"
+          (s-replace proj "" (plist-get result :path))
+          (plist-get result :line)
+          (s-trim (plist-get result :context))))
+
 (defun dumb-jump-prompt-user-for-choice (proj results)
   "Put a PROJ's list of RESULTS in a 'popup-menu' (or helm/ivy)
 for user to select.  Filters PROJ path from files for display."
   (let* ((choices (-map (lambda (result)
-                          (format "%s:%s %s"
-                                  (s-replace proj "" (plist-get result :path))
-                                  (plist-get result :line)
-                                  (s-trim (plist-get result :context))))
+                          (dumb-jump--format-result proj result))
                         results)))
     (cond
      ((and (eq dumb-jump-selector 'ivy) (fboundp 'ivy-read))
@@ -1574,16 +1577,13 @@ Ffrom the ROOT project CONFIG-FILE."
                   (car (car target-boundary))
                 (s-index-of (plist-get result :target) (plist-get result :context))))
 
-        (thef (plist-get result :path))
-        (line (plist-get result :line)))
+         (thef (plist-get result :path))
+         (line (plist-get result :line)))
     (when thef
       (if use-tooltip
-          (popup-tip (format "%s:%s %s"
-                                  (s-replace proj "" (plist-get result :path))
-                                  (plist-get result :line)
-                                  (s-trim (plist-get result :context))))
-          (dumb-jump-goto-file-line thef line pos)))
-    ; return the file for test
+          (popup-tip (dumb-jump--format-result proj result))
+        (dumb-jump-goto-file-line thef line pos)))
+    ;; return the file for test
     thef))
 
 

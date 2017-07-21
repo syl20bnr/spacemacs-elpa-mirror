@@ -4,7 +4,7 @@
 ;;
 ;; Author:     Rustem Muslimov <r.muslimov@gmail.com>
 ;; Version:    0.9.0
-;; Package-Version: 20170624.309
+;; Package-Version: 20170720.1518
 ;; Keywords:   github, gitlab, bitbucket, convenience
 ;; Package-Requires: ((f "0.17.2") (s "1.9.0") (cl-lib "0.5"))
 
@@ -67,7 +67,7 @@ When nil, uses the commit hash. The contents will never change."
 
 (defun browse-at-remote--parse-git-prefixed (remote-url)
   "Extract domain and slug from REMOTE-URL like git@... or git://..."
-  (cdr (s-match "git\\(?:@\\|://\\)\\([a-z.]+\\)\\(?::\\|/\\)\\([a-z0-9_.-]+/[a-z0-9_.-]+?\\)\\(?:\.git\\)?$" remote-url)))
+  (cdr (s-match "[git\\|ssh]\\(?:@\\|://\\)\\([a-z.]+\\)\\(?::\\|/\\)\\([a-z0-9_.-]+/[a-z0-9_.-]+?\\)\\(?:\.git\\)?$" remote-url)))
 
 (defun browse-at-remote--parse-https-prefixed (remote-url)
   "Extract domain and slug from REMOTE-URL like https://.... or http://...."
