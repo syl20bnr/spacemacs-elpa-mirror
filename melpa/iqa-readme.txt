@@ -26,9 +26,7 @@ For a full restart take a look at `restart-emacs' package.
 Installation with `quelpa-use-package':
 
 (use-package iqa
-  :ensure nil
-  :quelpa
-  (iqa :repo "a13/iqa.el" :fetcher github :version original)
+  :ensure t
   ;; for generated files only
   ;; :init
   ;; (setq iqa-user-init-file (concat user-emacs-directory "init.org"))

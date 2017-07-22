@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/worf
-;; Package-Version: 20170427.8
+;; Package-Version: 20170722.651
 ;; Version: 0.1.0
 ;; Package-Requires: ((swiper "0.7.0") (ace-link "0.1.0") (hydra "0.13.0") (zoutline "0.1.0"))
 ;; Keywords: lisp
@@ -746,7 +746,11 @@ automatically recenter."
 Positive ARG shifts the heading right.
 Negative ARG shifts the heading left."
   (interactive "p")
-  (let ((lvl (org-current-level)))
+  (let ((lvl (org-current-level))
+        (spacing (max (abs
+                       (save-excursion
+                         (skip-chars-backward "\n")))
+                      1)))
     (if (zo-down-visible)
         (progn
           (backward-char)
@@ -754,7 +758,8 @@ Negative ARG shifts the heading left."
           (insert "\n"))
       (outline-end-of-subtree)
       (skip-chars-backward "\n")
-      (insert "\n")
+      (dotimes (i spacing)
+        (insert "\n"))
       (reveal-post-command))
     (insert (concat (make-string lvl ?*) " "))
     (cond ((> arg 1)
