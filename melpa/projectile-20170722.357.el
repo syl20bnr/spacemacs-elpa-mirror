@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20170416.148
+;; Package-Version: 20170722.357
 ;; Keywords: project, convenience
 ;; Version: 0.15.0-cvs
 ;; Package-Requires: ((emacs "24.1") (pkg-info "0.4"))
@@ -301,9 +301,6 @@ If variable `projectile-project-name' is non-nil, this function will not be used
     "requirements.txt"   ; Pip file
     "setup.py"           ; Setuptools file
     "tox.ini"            ; Tox file
-    "gulpfile.js"        ; Gulp build file
-    "Gruntfile.js"       ; Grunt project file
-    "bower.json"         ; Bower project file
     "composer.json"      ; Composer project file
     "Cargo.toml"         ; Cargo project file
     "mix.exs"            ; Elixir mix project file
@@ -1139,6 +1136,12 @@ they are excluded from the results of this function."
     (when cmd
       (projectile-files-via-ext-command cmd))))
 
+(defun projectile-get-repo-ignored-directory (dir)
+  "Get a list of the files ignored in the project in the directory DIR."
+  (let ((cmd (projectile-get-ext-ignored-command)))
+    (when cmd
+      (projectile-files-via-ext-command (concat cmd " " dir)))))
+
 (defun projectile-call-process-to-string (program &rest args)
   "Invoke the executable PROGRAM with ARGS and return the output as a string."
   (with-temp-buffer
@@ -1183,14 +1186,12 @@ If PROJECT-PATH is a project, check this one instead."
 The list is composed of sublists~: (project-path, project-status).
 Raise an error if their is no dirty project."
   (let ((projects projectile-known-projects)
-        (status ())
-        (tmp-status nil))
+        (status ()))
     (dolist (project projects)
-      (condition-case nil
-          (setq tmp-status (projectile-check-vcs-status project))
-        (error nil))
-      (when tmp-status
-        (setq status (cons (list project tmp-status) status))))
+      (when (and (projectile-keep-project-p project) (not (string= 'none (projectile-project-vcs project))))
+        (let ((tmp-status (projectile-check-vcs-status project)))
+          (when tmp-status
+            (setq status (cons (list project tmp-status) status))))))
     (when (= (length status) 0)
       (message "No dirty projects have been found"))
     status))
@@ -1267,6 +1268,15 @@ SUBDIRECTORIES to a non-nil value."
        (cl-some (lambda (f) (string-prefix-p f file)) files))
      (projectile-get-repo-ignored-files))))
 
+(defun projectile-keep-ignored-directories (directories)
+  "Get ignored files within each of DIRECTORIES."
+  (when directories
+    (let (result)
+      (dolist (dir directories result)
+        (setq result (append result
+                             (projectile-get-repo-ignored-directory dir))))
+      result)))
+
 (defun projectile-add-unignored (files)
   "This adds unignored files to FILES.
 
@@ -1275,7 +1285,7 @@ this case unignored files will be absent from FILES."
   (let ((unignored-files (projectile-keep-ignored-files
                           (projectile-unignored-files-rel)))
         (unignored-paths (projectile-remove-ignored
-                          (projectile-keep-ignored-files
+                          (projectile-keep-ignored-directories
                            (projectile-unignored-directories-rel))
                           'subdirectories)))
     (append files unignored-files unignored-paths)))
@@ -2524,13 +2534,15 @@ regular expression."
          current-prefix-arg))
   (if (require 'ag nil 'noerror)
       (let ((ag-command (if arg 'ag-regexp 'ag))
-            (ag-ignore-list (unless (eq (projectile-project-vcs) 'git)
-                              ;; ag supports git ignore files
-                              (cl-union ag-ignore-list
+            (ag-ignore-list (cl-union ag-ignore-list
+                                      (projectile--globally-ignored-file-suffixes-glob)
+                                      ;; ag supports git ignore files directly
+                                      (unless (eq (projectile-project-vcs) 'git)
                                         (append
-                                         (projectile-ignored-files-rel) (projectile-ignored-directories-rel)
-                                         (projectile--globally-ignored-file-suffixes-glob)
-                                         grep-find-ignored-files grep-find-ignored-directories))))
+                                         (projectile-ignored-files-rel)
+                                         (projectile-ignored-directories-rel)
+                                         grep-find-ignored-files
+                                         grep-find-ignored-directories))))
             ;; reset the prefix arg, otherwise it will affect the ag-command
             (current-prefix-arg nil))
         (funcall ag-command search-term (projectile-project-root)))
