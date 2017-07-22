@@ -10,7 +10,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20170711.1415
+;; Package-Version: 20170721.1851
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -1981,9 +1981,10 @@ feature, kill this buffer.
          nil)))))
 
 (defun intero-start-process-in-buffer (buffer &optional targets source-buffer stack-yaml)
-  "Start an Intero worker in BUFFER, for the default or specified TARGETS
-and STACK-YAML file. Automatically performs initial actions in SOURCE-BUFFER,
-if specified."
+  "Start an Intero worker in BUFFER.
+Uses the specified TARGETS if supplied.
+Automatically performs initial actions in SOURCE-BUFFER, if specified.
+Uses the default stack config file, or STACK-YAML file if given."
   (if (buffer-local-value 'intero-give-up buffer)
       buffer
     (let* ((options
@@ -2263,9 +2264,9 @@ no such project-specific config exists."
             (intero-with-temp-buffer
               (cl-case (save-excursion
                          (intero-call-stack nil (current-buffer) nil stack-yaml
-                                "path"
-                                "--project-root"
-                                "--verbosity" "silent"))
+                                            "path"
+                                            "--project-root"
+                                            "--verbosity" "silent"))
                 (0 (buffer-substring (line-beginning-position) (line-end-position)))
                 (t (intero--warn "Couldn't get the Stack project root.
 
@@ -2520,7 +2521,7 @@ automatically."
   "Is hoogle ready to be started?"
   (intero-with-temp-buffer
     (cl-case (intero-call-stack nil (current-buffer) t intero-stack-yaml
-                                  "hoogle" "--no-setup" "--verbosity" "silent")
+                                "hoogle" "--no-setup" "--verbosity" "silent")
       (0 t))))
 
 (defun intero-hoogle-supported-p ()
@@ -2600,7 +2601,7 @@ suggestions are available."
           ;; Perhaps you want to add ‘foo’ to the import list
           ;; in the import of ‘Blah’
           ;; (/path/to/thing:19
-          (when (string-match "Perhaps you want to add [‘`‛]\\([^ ]+\\)['’][\n ]+to[\n ]+the[\n ]+import[\n ]+list[\n ]+in[\n ]+the[\n ]+import[\n ]+of[\n ]+[‘`‛]\\([^ ]+\\)['’][\n ]+(\\([^ ]+\\):\\([0-9]+\\):"
+          (when (string-match "Perhaps you want to add [‘`‛]\\([^ ]+\\)['’][\n ]+to[\n ]+the[\n ]+import[\n ]+list[\n ]+in[\n ]+the[\n ]+import[\n ]+of[\n ]+[‘`‛]\\([^ ]+\\)['’][\n ]+(\\([^ ]+\\):(?\\([0-9]+\\)[:,]"
                               text)
             (let ((ident (match-string 1 text))
                   (module (match-string 2 text))
@@ -2857,7 +2858,9 @@ suggestions are available."
                               (search-forward "(" nil t 1))
                      (insert (if (string-match "^[_a-zA-Z]" (plist-get suggestion :ident))
                                  (plist-get suggestion :ident)
-                               (concat "(" (plist-get suggestion :ident) ")")) ", "))))
+                               (concat "(" (plist-get suggestion :ident) ")")))
+                     (unless (looking-at "[:space:]*)")
+                       (insert ", ")))))
                 (redundant-import-item
                  (save-excursion
                    (goto-char (point-min))
