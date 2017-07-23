@@ -141,6 +141,7 @@
    `isearchp-assoc-delete-all', `isearchp-barf-if-use-minibuffer',
    `isearchp-columns-p' (Emacs 24.4+),
    `isearchp-complete-past-string',
+   `isearchp-constrain-to-rectangular-region' (Emacs 25+),
    `isearchp-current-filter-predicates' (Emacs 24.4+),
    `isearchp-fail-pos', `isearchp-ffap-guesser' (Emacs 24.4+),
    `isearchp-filter-bookmark-alist-only' (Emacs 24.4+),

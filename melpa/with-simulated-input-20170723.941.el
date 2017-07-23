@@ -6,7 +6,7 @@
 ;; Author: Ryan C. Thompson
 ;; Created: Thu Jul 20 11:56:23 2017 (-0700)
 ;; Version: 2.0
-;; Package-Version: 20170722.2149
+;; Package-Version: 20170723.941
 ;; Package-Requires: ((emacs "24.4") (seq "2.0") (s "0"))
 ;; URL:
 ;; Keywords: lisp, tools, extensions
@@ -211,7 +211,7 @@ in `progn'."
 
 (defvar wsi-simulated-idle-time nil)
 
-(defadvice current-idle-time (around simulat-idle-time activate)
+(defadvice current-idle-time (around simulate-idle-time activate)
   "Return the faked value while simulating idle time.
 
 While executing `wsi-simulate-idle-time', this advice causes the
