@@ -4,9 +4,9 @@
 
 ;; Author: Fritz Stelzer <brotzeitmacher@gmail.com>
 ;; URL: https://github.com/brotzeitmacher/arch-packer
-;; Package-Version: 20170506.1005
+;; Package-Version: 20170723.430
 ;; Version: 0.2
-;; Package-Requires: ((emacs "25.1") (s "1.11.0") (async "1.9.2"))
+;; Package-Requires: ((emacs "25.1") (s "1.11.0") (async "1.9.2") (dash "2.12.0"))
 
 ;;; License:
 
@@ -342,6 +342,10 @@
 (defvar arch-packer-process-output-buffer "*arch-packer-output*"
   "Buffer that displays subprocess output.")
 
+(define-derived-mode arch-packer-output-mode prog-mode "Process output"
+  "Major mode for browsing search results."
+  (setq truncate-lines t))
+
 (defun arch-packer-open-shell-process ()
   "Start shell process."
   (let ((buf arch-packer-process-buffer))
@@ -350,6 +354,7 @@
                    "/bin/bash")
     (let ((proc (get-buffer-process buf)))
       (set-process-filter proc 'arch-packer-process-filter)
+      (set-process-sentinel proc 'arch-packer-process-sentinel)
       (accept-process-output proc 0.1))))
 
 (defun arch-packer-process-filter (proc output)
@@ -382,8 +387,13 @@
                    (if (get-buffer-window buf)
                        (set-window-point (get-buffer-window buf) (point-max))
                      (goto-char (point-max)))
-                   (prog-mode)
+                   (arch-packer-output-mode)
                    (insert output))))))))))
+
+(defun arch-packer-process-sentinel (_proc _output)
+  "The sentinel for arch-packer-process."
+  (let ((buf arch-packer-process-output-buffer))
+    (when buf (kill-buffer buf))))
 
 (defun arch-packer-call-shell-process (proc string)
   "Send arch-packer shell-process PROC the contents of STRING as input."
@@ -660,8 +670,9 @@
   (if (arch-packer-shell-process-live-p)
       (unless (process-running-child-p arch-packer-process-name)
         (arch-packer-get-exit-status))
-    (progn (arch-packer-open-shell-process)
-           (arch-packer-refresh-database))))
+    (and (arch-packer-open-shell-process)
+           (arch-packer-refresh-database)
+           (arch-packer-get-exit-status))))
 
 (provide 'arch-packer)
 ;;; arch-packer.el ends here

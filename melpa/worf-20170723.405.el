@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/worf
-;; Package-Version: 20170722.651
+;; Package-Version: 20170723.405
 ;; Version: 0.1.0
 ;; Package-Requires: ((swiper "0.7.0") (ace-link "0.1.0") (hydra "0.13.0") (zoutline "0.1.0"))
 ;; Keywords: lisp
@@ -1113,7 +1113,9 @@ directory, the attachments will be moved."
                      (file-name-directory
                       (org-attach-dir t)) t)
         (when (equal (directory-files (file-name-directory adir1)) '("." ".."))
-          (dired-delete-file (file-name-directory adir1)))))))
+          (dired-delete-file (file-name-directory adir1)))))
+    (when (bound-and-true-p org-capture-mode)
+      (org-capture-kill))))
 
 (defun worf-refile-this (arg)
   "Interface to refile with :maxlevel set to ARG."

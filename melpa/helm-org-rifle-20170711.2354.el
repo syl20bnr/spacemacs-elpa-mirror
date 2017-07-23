@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/helm-org-rifle
-;; Package-Version: 20170518.312
+;; Package-Version: 20170711.2354
 ;; Version: 1.5.0-pre
 ;; Package-Requires: ((emacs "24.4") (dash "2.12") (f "0.18.1") (helm "1.9.4") (s "1.10.0"))
 ;; Keywords: hypermedia, outlines
@@ -1133,6 +1133,8 @@ Results is a list of strings with text-properties :NODE-BEG and :BUFFER."
 This helps the user remove unwanted results from the buffer."
   (interactive)
   ;; TODO: Test this more thoroughly.
+
+  ;; FIXME: This needs to be updated to use the source headers and entry separators.
 
   (with-current-buffer (get-buffer helm-org-rifle-occur-results-buffer-name)
     ;; Setting current buffer may be unnecessary, but good to be sure
