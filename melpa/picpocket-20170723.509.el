@@ -3,8 +3,8 @@
 ;; Copyright (C) 2017 Johan Claesson
 ;; Author: Johan Claesson <johanclaesson@bredband.net>
 ;; Maintainer: Johan Claesson <johanclaesson@bredband.net>
-;; Version: 30
-;; Package-Version: 20170305.259
+;; Version: 31
+;; Package-Version: 20170723.509
 ;; Keywords: multimedia
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -279,9 +279,20 @@ variable can be toggled with the command
 Specified in number of default line heigths."
   :type 'integer)
 
+(defcustom picpocket-scroll-pixels 10
+  "How many pixels to scroll.
+This affects commands `picpocket-scroll-up' and `picpocket-scroll-down'.
+Horisontal scrolling commands always scroll one column."
+  :type 'integer)
+
+(defcustom picpocket-scroll-factor 0.1
+  "How much to scroll as a part of the total picture heigth.
+This affects the commands `picpocket-scroll-some-*'."
+  :type 'number)
+
 ;;; Internal variables
 
-(defconst picpocket-version 30)
+(defconst picpocket-version 31)
 (defconst picpocket-buffer "*picpocket*")
 (defconst picpocket-undo-buffer "*picpocket-undo*")
 
@@ -326,9 +337,11 @@ not necessarily run with the picpocket window selected.")
     (define-key map [tab] 'completion-at-point)
     map)
   "Keymap used for completing tags in minibuffer.")
-
 (defvar picpocket-undo-list-size 25)
 (defvar picpocket-undo-ring nil)
+(defvar picpocket-fatal nil)
+(defvar picpocket-scroll-command nil)
+(defvar picpocket-old-fit nil)
 
 
 ;; Variables displayed in the header-line must be marked as risky.
@@ -535,7 +548,8 @@ This mode is not used directly.  Other modes inherit from this mode."
   (when (boundp 'image-map)
     (setq-local image-map nil))
   (setq truncate-lines t
-        auto-hscroll-mode nil))
+        auto-hscroll-mode nil
+        picpocket-fatal nil))
 
 (define-derived-mode picpocket-mode picpocket-base-mode "picpocket"
   "Major mode for the main *picpocket* buffer."
@@ -554,6 +568,7 @@ This mode is not used directly.  Other modes inherit from this mode."
   (add-hook 'kill-emacs-hook #'picpocket-delete-trashcan)
   (add-hook 'kill-buffer-hook #'picpocket-save-journal nil t)
   (add-hook 'kill-buffer-hook #'picpocket-cleanup-most-hooks nil t)
+  (add-hook 'kill-buffer-hook #'picpocket-cleanup-misc nil t)
   (add-hook 'window-size-change-functions
             #'picpocket-window-size-change-function)
   (add-hook 'buffer-list-update-hook #'picpocket-maybe-update-keymap)
@@ -587,10 +602,8 @@ This mode is not used directly.  Other modes inherit from this mode."
   (suppress-keymap map)
   (define-key map [tab] toggle-map)
   (define-key map [backspace] #'picpocket-previous)
-  (define-key map [prior] #'picpocket-previous)
   (define-key map [?p] #'picpocket-previous)
   (define-key map [?\s] #'picpocket-next)
-  (define-key map [next] #'picpocket-next)
   (define-key map [?n] #'picpocket-next)
   (define-key map [?d] #'picpocket-dired)
   (define-key map [?v] #'picpocket-visit-file)
@@ -613,7 +626,6 @@ This mode is not used directly.  Other modes inherit from this mode."
   (define-key map [?t] #'picpocket-edit-tags)
   (define-key map [?z] #'picpocket-repeat)
   (define-key map [?g] #'picpocket-revert)
-  (define-key map [(meta ?b)] #'picpocket-set-backdrop)
   (define-key map [?.] #'picpocket-dired-up-directory)
   (define-key map [?f] #'picpocket-set-filter)
   (define-key map [(meta ?f)] #'picpocket-set-filter-by-keystroke)
@@ -627,23 +639,38 @@ This mode is not used directly.  Other modes inherit from this mode."
   (define-key map [?=] #'picpocket-scale-in)
   (define-key map [?-] #'picpocket-scale-out)
   (define-key map [?0] #'picpocket-reset-scale)
-  (define-key map [(meta ?a)] #'picpocket-fit-to-width-and-height)
+  (define-key map [(meta ?b)] #'picpocket-fit-to-both-width-and-height)
   (define-key map [(meta ?w)] #'picpocket-fit-to-width)
   (define-key map [(meta ?h)] #'picpocket-fit-to-height)
   (define-key map [(meta ?n)] #'picpocket-no-fit)
-  (define-key map [?i ?a] #'picpocket-fit-to-width-and-height)
-  (define-key map [?i ?w] #'picpocket-fit-to-width)
-  (define-key map [?i ?h] #'picpocket-fit-to-height)
-  (define-key map [?i ?n] #'picpocket-no-fit)
-  (define-key map [??] #'picpocket-help)
-  (define-key map [left] #'scroll-right)
-  (define-key map [right] #'scroll-left)
-  (define-key map [(control ?b)] #'scroll-right)
-  (define-key map [(control ?f)] #'scroll-left)
+  (define-key map [left] #'picpocket-scroll-left)
+  (define-key map [right] #'picpocket-scroll-right)
+  (define-key map [(meta left)] #'picpocket-scroll-some-left)
+  (define-key map [(meta right)] #'picpocket-scroll-some-right)
+  (define-key map [(control left)] #'picpocket-scroll-to-max-left)
+  (define-key map [(control right)] #'picpocket-scroll-to-max-right)
+  (define-key map [up] #'picpocket-scroll-up)
+  (define-key map [down] #'picpocket-scroll-down)
+  (define-key map [(control up)] #'picpocket-scroll-to-top)
+  (define-key map [(control down)] #'picpocket-scroll-to-bottom)
+  (define-key map [(meta up)] #'picpocket-scroll-some-up)
+  (define-key map [(meta down)] #'picpocket-scroll-some-down)
+  (define-key map [(control meta down)] #'picpocket-start-scroll-down)
+  (define-key map [(control meta up)] #'picpocket-start-scroll-up)
+  (define-key map [(control meta left)] #'picpocket-start-scroll-left)
+  (define-key map [(control meta right)] #'picpocket-start-scroll-right)
+  (define-key map [(meta ?a)] #'picpocket-auto-scroll)
+  (define-key map [(meta ?s)] #'picpocket-stop-or-start-scroll)
+  (define-key map [mouse-4] #'picpocket-scroll-up)
+  (define-key map [mouse-5] #'picpocket-scroll-down)
+  (define-key map [mouse-6] #'picpocket-scroll-left)
+  (define-key map [mouse-7] #'picpocket-scroll-right)
   (define-key map [?u] #'picpocket-undo)
   (define-key map [(meta ?u)] #'picpocket-visit-undo-list)
   (define-key map [?j] #'picpocket-jump)
-  (define-key map [?o] #'picpocket-gimp-open)
+  (define-key map [?x ?g] #'picpocket-gimp-open)
+  (define-key map [?x ?t] #'picpocket-trim)
+  (define-key map [?x ?b] #'picpocket-set-backdrop)
   (define-key map [??] #'picpocket-help)
   (setq picpocket-mode-map map))
 
@@ -765,9 +792,11 @@ With prefix arg (ARG) read scale percent in minibuffer."
   (interactive "P")
   (picpocket-command
     (if arg
-        (setq picpocket-scale (read-number "Scale factor: " picpocket-scale))
+        (setq picpocket-scale (read-number "Scale factor: "
+                                           picpocket-scale))
       (picpocket-alter-scale -10))
     (picpocket-warn-if-scaling-is-unsupported)
+    (picpocket-avoid-overscroll)
     (picpocket-old-update-buffer)))
 
 (defun picpocket-reset-scale ()
@@ -776,9 +805,10 @@ With prefix arg (ARG) read scale percent in minibuffer."
   (picpocket-command
     (setq picpocket-scale 100)
     (message "Restore the scale to 100%%.")
+    (picpocket-avoid-overscroll)
     (picpocket-old-update-buffer)))
 
-(defun picpocket-fit-to-width-and-height ()
+(defun picpocket-fit-to-both-width-and-height ()
   "Fit the picture to both width and height of window.
 Fitting is done before applying the scaling factor.  That is, it
 will only really fit when the scaling is the default 100%.  The
@@ -786,6 +816,7 @@ scaling can be restored to 100% by typing \\[picpocket-reset-scale]
 \(bound to the command `picpocket-reset-scale')."
   (interactive)
   (picpocket-command
+    (picpocket-reset-scroll)
     (setq picpocket-fit :x-and-y)
     (message "Fit picture to both width and height")
     (picpocket-warn-if-scaling-is-unsupported)
@@ -799,6 +830,7 @@ scaling can be restored to 100% by typing \\[picpocket-reset-scale]
 \(bound to the command `picpocket-reset-scale')."
   (interactive)
   (picpocket-command
+    (picpocket-reset-scroll)
     (setq picpocket-fit :x)
     (message "Fit picture to width")
     (picpocket-warn-if-scaling-is-unsupported)
@@ -812,6 +844,7 @@ scaling can be restored to 100% by typing \\[picpocket-reset-scale]
 \(bound to the command `picpocket-reset-scale')."
   (interactive)
   (picpocket-command
+    (picpocket-reset-scroll)
     (setq picpocket-fit :y)
     (message "Fit picture to height")
     (picpocket-warn-if-scaling-is-unsupported)
@@ -821,6 +854,7 @@ scaling can be restored to 100% by typing \\[picpocket-reset-scale]
   "Do not fit the picture to the window."
   (interactive)
   (picpocket-command
+    (picpocket-reset-scroll)
     (setq picpocket-fit nil)
     (message "Do not fit picture to window size")
     (picpocket-old-update-buffer)))
@@ -1043,7 +1077,7 @@ This hook make sure it is fitted to `picpocket-frame'."
   (picpocket-command
     (let ((next (picpocket-next-pos)))
       (if next
-          (picpocket-list-set-pos next)
+          (picpocket-set-pos next)
         (picpocket-no-file "next")))
     (picpocket-old-update-buffer)))
 
@@ -1076,7 +1110,7 @@ This hook make sure it is fitted to `picpocket-frame'."
   (picpocket-command
     (let ((prev (picpocket-previous-pos)))
       (if prev
-          (picpocket-list-set-pos prev)
+          (picpocket-set-pos prev)
         (picpocket-no-file "previous")))
     (picpocket-old-update-buffer)))
 
@@ -1104,11 +1138,11 @@ This hook make sure it is fitted to `picpocket-frame'."
   "Move to the first picture in the current list."
   (interactive)
   (picpocket-command
-    (picpocket-list-set-pos (picpocket-first-pos))
+    (picpocket-set-pos (picpocket-first-pos))
     (unless (picpocket-filter-match-p picpocket-current)
       (let ((next (picpocket-next-pos)))
         (if next
-            (picpocket-list-set-pos next)
+            (picpocket-set-pos next)
           (picpocket-no-file))))
     (picpocket-old-update-buffer)))
 
@@ -1124,11 +1158,11 @@ This hook make sure it is fitted to `picpocket-frame'."
   "Move to the last picture in the current list."
   (interactive)
   (picpocket-command
-    (picpocket-list-set-pos (picpocket-last-pos))
+    (picpocket-set-pos (picpocket-last-pos))
     (unless (picpocket-filter-match-p picpocket-current)
       (let ((prev (picpocket-previous-pos)))
         (if prev
-            (picpocket-list-set-pos prev)
+            (picpocket-set-pos prev)
           (picpocket-no-file))))
     (picpocket-old-update-buffer)))
 
@@ -1491,8 +1525,8 @@ space-separated string."
   (when (string-match "^[0-9]+$" string)
     (let ((index (string-to-number string)))
       (picpocket-when-let (pic (picpocket-pic-by-index index))
-        (picpocket-list-set-pos (make-picpocket-pos :current pic
-                                                    :index index))
+        (picpocket-set-pos (make-picpocket-pos :current pic
+                                               :index index))
         t))))
 
 
@@ -1508,12 +1542,12 @@ space-separated string."
     (cond ((null pos-list)
            (user-error "Picture not found (%s)" file))
           ((eq 1 (length pos-list))
-           (picpocket-list-set-pos (car pos-list)))
+           (picpocket-set-pos (car pos-list)))
           (t
            (let ((prompt (format "%s is available in %s directories.  Select: "
                                  file (length pos-list))))
-             (picpocket-list-set-pos (picpocket-select-pos-by-dir pos-list
-                                                                  prompt))
+             (picpocket-set-pos (picpocket-select-pos-by-dir pos-list
+                                                             prompt))
              t)))))
 
 (defun picpocket-pos-list-by-file (file)
@@ -1545,6 +1579,298 @@ space-separated string."
                  nil
                  picpocket-gimp-executable
                  (picpocket-absfile)))
+
+(defun picpocket-trim ()
+  "Create a copy of picture with edges trimmed.
+
+The trim removes border areas of single color.
+The external tool convert is invoked.
+
+The trimmed file will inherit the file-name of the original with
+\".trim.\" appended before the extension.
+
+To undo this command simply delete the trimmed file.  (There is
+no explicit undo support in `picpocket-undo' for this command.)"
+  (interactive)
+  (picpocket-command
+    (picpocket-ensure-current-pic)
+    (let* ((file (picpocket-absfile))
+           (trimmed-file (concat (file-name-sans-extension file)
+                                 ".trim."
+                                 (file-name-extension file)))
+           (tags (picpocket-tags)))
+      (when (file-exists-p trimmed-file)
+        (unless (y-or-n-p (format "File %s exist.  Overwrite? "
+                                  trimmed-file))
+          (error "Abort")))
+      (unless (zerop (call-process "convert" nil nil nil
+                                   "-fuzz" "1%" "-trim" file trimmed-file))
+        (error "Failed to trim"))
+      (picpocket-list-insert-after-current (picpocket-make-pic
+                                            trimmed-file))
+      (picpocket-tags-set picpocket-current tags)
+      (message "Trim ok"))))
+
+
+
+;;; Scrolling and trolling
+
+(defun picpocket-auto-scroll ()
+  "Fit picture to one window edge and start continous scroll."
+  (interactive)
+  (unless picpocket-old-fit
+    (setq picpocket-old-fit picpocket-fit))
+  (picpocket-ensure-picpocket-buffer)
+  (picpocket-ensure-current-pic)
+  (setq picpocket-fit :x-and-y)
+  (set-window-hscroll nil 0)
+  (set-window-vscroll nil 0)
+  (pcase (picpocket-size-param picpocket-current
+                               (picpocket-current-window-size))
+    (`(:width . ,_) (progn
+                      (setq picpocket-fit :y)
+                      (picpocket-update-buffer)
+                      (picpocket-start-scroll-right)))
+    (`(:height . ,_) (progn
+                       (setq picpocket-fit :x)
+                       (picpocket-update-buffer)
+                       (picpocket-start-scroll-down)))))
+
+(defun picpocket-stop-or-start-scroll ()
+  "Pause or resume ongoing continous scroll."
+  (interactive)
+  (if picpocket-scroll-command
+      (if (memq last-command '(picpocket-start-scroll-down
+                               picpocket-start-scroll-up
+                               picpocket-start-scroll-left
+                               picpocket-start-scroll-right
+                               picpocket-auto-scroll))
+          (message "Pause")
+        (setq this-command picpocket-scroll-command)
+        (funcall picpocket-scroll-command))
+    (message "Not currently scrolling")))
+
+
+(defun picpocket-start-scroll-down ()
+  "Start continuous scroll down.
+
+Scroll can be paused with `picpocket-stop-or-start-scroll'.
+Scroll will also stop if any other command is invoked."
+  (interactive)
+  (setq picpocket-scroll-command #'picpocket-start-scroll-down)
+  (picpocket-vscroll 1 nil (picpocket-max-vscroll-pixels)))
+
+(defun picpocket-start-scroll-up ()
+  "Start continuous scroll up.
+
+Scroll can be paused with `picpocket-stop-or-start-scroll'.
+Scroll will also stop if any other command is invoked."
+  (interactive)
+  (setq picpocket-scroll-command #'picpocket-start-scroll-up)
+  (picpocket-vscroll -1 0 nil))
+
+(defun picpocket-vscroll (delta min max)
+  (cl-loop for i = (window-vscroll nil t) then (+ i delta)
+           do (set-window-vscroll nil i t)
+           do (sit-for 0.002)
+           until (and min (<= i min))
+           until (and max (>= i max))
+           until (input-pending-p))
+  (unless (input-pending-p)
+    (setq picpocket-scroll-command nil)))
+
+
+(defun picpocket-start-scroll-left ()
+  "Start continuous scroll to the left.
+
+Scroll can be paused with `picpocket-stop-or-start-scroll'.
+Scroll will also stop if any other command is invoked."
+  (interactive)
+  (setq picpocket-scroll-command #'picpocket-start-scroll-left)
+  (picpocket-hscroll -1 0 nil))
+
+(defun picpocket-start-scroll-right ()
+  "Start continuous scroll to the right.
+
+Scroll can be paused with `picpocket-stop-or-start-scroll'.
+Scroll will also stop if any other command is invoked."
+  (interactive)
+  (setq picpocket-scroll-command #'picpocket-start-scroll-right)
+  (picpocket-hscroll 1 nil (picpocket-max-hscroll-columns)))
+
+(defun picpocket-hscroll (delta min max)
+  (cl-loop for i = (window-hscroll nil) then (+ i delta)
+           do (set-window-hscroll nil i)
+           do (sit-for 0.033)
+           until (and min (<= i min))
+           until (and max (>= i max))
+           until (input-pending-p))
+  (unless (input-pending-p)
+    (setq picpocket-scroll-command nil)))
+
+
+(defun picpocket-scroll-up ()
+  "Scroll `picpocket-scroll-pixels' pixels up."
+  (interactive)
+  (let ((vscroll (window-vscroll nil t)))
+    (set-window-vscroll nil
+                        (max 0
+                             (- vscroll picpocket-scroll-pixels))
+                        t)))
+
+(defun picpocket-scroll-down ()
+  "Scroll `picpocket-scroll-pixels' pixels down."
+  (interactive)
+  (let* ((vscroll (window-vscroll nil t))
+         (scaled-y (cdr (picpocket-scaled-size)))
+         (max-vscroll (- scaled-y (cdr (picpocket-current-window-size)))))
+    (set-window-vscroll nil
+                        (min max-vscroll
+                             (+ vscroll picpocket-scroll-pixels))
+                        t)))
+
+(defun picpocket-scroll-some-up ()
+  "Jump scroll up.
+
+The length scrolled is the height of the picture multiplied with
+`picpocket-scroll-factor'."
+  (interactive)
+  (let ((vscroll (window-vscroll nil t)))
+    (set-window-vscroll nil
+                        (max 0
+                             (- vscroll (picpocket-some-pixels)))
+                        t)))
+
+(defun picpocket-scroll-some-down ()
+  "Jump scroll down.
+
+The length scrolled is the height of the picture multiplied with
+`picpocket-scroll-factor'."
+  (interactive)
+  (let* ((vscroll (window-vscroll nil t))
+         (max-vscroll (picpocket-max-vscroll-pixels)))
+    (set-window-vscroll nil
+                        (min max-vscroll
+                             (+ vscroll (picpocket-some-pixels)))
+                        t)))
+
+(defun picpocket-scroll-to-top ()
+  "Reset vertical scroll."
+  (interactive)
+  (set-window-vscroll nil 0 t))
+
+(defun picpocket-scroll-to-bottom ()
+  "Set vertical scroll to maximum."
+  (interactive)
+  (set-window-vscroll nil (picpocket-max-vscroll-pixels) t))
+
+
+(defun picpocket-some-pixels ()
+  (let ((scaled-y (cdr (picpocket-scaled-size))))
+    (* scaled-y picpocket-scroll-factor)))
+
+(defun picpocket-max-vscroll-pixels ()
+  (let* ((scaled-y (cdr (picpocket-scaled-size))))
+    (- scaled-y (cdr (picpocket-current-window-size)))))
+
+(defun picpocket-scaled-size ()
+  (pcase-let* ((`(,pic-x . ,pic-y) (picpocket-size-force)))
+    (pcase (picpocket-size-param picpocket-current
+                                 (picpocket-current-window-size))
+      (`(:width . ,param-x) (cons (picpocket-scale param-x)
+                                  (/ (* picpocket-scale param-x pic-y)
+                                     (* 100 pic-x))))
+      (`(:height . ,param-y) (cons (/ (* picpocket-scale param-y pic-x)
+                                      (* 100 pic-y))
+                                   (picpocket-scale param-y))))))
+
+
+(defun picpocket-scroll-left ()
+  "Scroll one column left."
+  (interactive)
+  (set-window-hscroll nil (1- (window-hscroll nil))))
+
+(defun picpocket-scroll-right ()
+  "Scroll one column right."
+  (interactive)
+  (let ((hscroll (window-hscroll nil))
+        (max-cols (picpocket-max-hscroll-columns)))
+    (set-window-hscroll nil (min max-cols
+                                 (1+ hscroll)))))
+
+(defun picpocket-scroll-some-left ()
+  "Jump scroll to the left.
+
+The length scrolled is the width of the picture multiplied with
+`picpocket-scroll-factor'."
+  (interactive)
+  (set-window-hscroll nil (- (window-hscroll nil)
+                             (picpocket-some-columns))))
+
+
+(defun picpocket-scroll-some-right ()
+  "Jump scroll to the right.
+
+The length scrolled is the width of the picture multiplied with
+`picpocket-scroll-factor'."
+  (interactive)
+  (pcase-let ((hscroll (window-hscroll nil))
+              (`(,some-cols . ,max-cols) (picpocket-some-and-max-columns)))
+    (set-window-hscroll nil (min max-cols
+                                 (+ hscroll some-cols)))))
+
+(defun picpocket-scroll-to-max-left ()
+  "Reset horisontal scroll."
+  (interactive)
+  (set-window-hscroll nil 0))
+
+(defun picpocket-scroll-to-max-right ()
+  "Set horisontal scroll to maximum."
+  (interactive)
+  (set-window-hscroll nil (picpocket-max-hscroll-columns)))
+
+(defun picpocket-some-columns ()
+  (car (picpocket-some-and-max-columns)))
+
+(defun picpocket-max-hscroll-columns ()
+  (cdr (picpocket-some-and-max-columns)))
+
+(defun picpocket-some-and-max-columns ()
+  (let* ((scaled-x (car (picpocket-scaled-size)))
+         (window-x (car (picpocket-current-window-size)))
+         (window-cols (window-width))
+         (pic-cols (/ (* scaled-x window-cols) window-x))
+         (some-cols (round (* picpocket-scroll-factor pic-cols)))
+         (max-cols (- pic-cols (window-width))))
+    (cons some-cols max-cols)))
+
+
+(defun picpocket-avoid-overscroll ()
+  (when (frame-parameter nil 'window-system)
+    (set-window-vscroll nil
+                        (min (window-vscroll nil t)
+                             (picpocket-max-vscroll-pixels))
+                        t)
+    (set-window-hscroll nil
+                        (min (window-hscroll nil)
+                             (picpocket-max-hscroll-columns)))))
+
+(defun picpocket-reset ()
+  (picpocket-reset-scroll)
+  (picpocket-list-reset))
+
+(defun picpocket-set-pos (pos)
+  (picpocket-reset-scroll)
+  (picpocket-list-set-pos pos))
+
+(defun picpocket-reset-scroll ()
+  (set-window-vscroll nil 0 t)
+  (set-window-hscroll nil 0)
+  (setq picpocket-scroll-command nil)
+  (when picpocket-old-fit
+    (setq picpocket-fit picpocket-old-fit)
+    (setq picpocket-old-fit nil)))
+
 
 
 ;;; Pic double-linked list functions
@@ -1614,15 +1940,15 @@ space-separated string."
         (progn
           (picpocket-set-prev (cdr pic) (picpocket-prev pic))
           (when (eq picpocket-current pic)
-            (picpocket-list-set-pos (make-picpocket-pos
-                                     :current (cdr pic)
-                                     :index picpocket-index))))
+            (picpocket-set-pos
+             (make-picpocket-pos :current (cdr pic)
+                                 :index picpocket-index))))
       (if (picpocket-prev pic)
           (when (eq picpocket-current pic)
-            (picpocket-list-set-pos (make-picpocket-pos
-                                     :current (picpocket-prev pic)
-                                     :index (1- picpocket-index))))
-        (picpocket-list-reset)))
+            (picpocket-set-pos
+             (make-picpocket-pos :current (picpocket-prev pic)
+                                 :index (1- picpocket-index))))
+        (picpocket-reset)))
     (and picpocket-filter
          filter-match
          (if picpocket-filter-match-count-done
@@ -1630,23 +1956,23 @@ space-separated string."
            (setq picpocket-filter-match-count nil)))))
 
 
-;; (defun picpocket-list-insert-after-current (p)
-;; "Insert P after current pic."
-;; (let ((inhibit-quit t)
-;; (prev picpocket-current)
-;; (next (cdr picpocket-current)))
-;; (setq picpocket-list-length (1+ picpocket-list-length))
-;; (setf (picpocket-pic-prev p) prev)
-;; (picpocket-list-set-pos (make-picpocket-pos :current (cons p next)
-;; :index (1+ picpocket-index)))
-;; (if prev
-;; (setcdr prev picpocket-current)
-;; (setq picpocket-list picpocket-current))
-;; (when next
-;; (picpocket-set-prev next picpocket-current))
-;; (and picpocket-filter
-;; (picpocket-filter-match-p picpocket-current)
-;; (cl-incf picpocket-filter-match-count))))
+(defun picpocket-list-insert-after-current (p)
+  "Insert P after current pic."
+  (let ((inhibit-quit t)
+        (prev picpocket-current)
+        (next (cdr picpocket-current)))
+    (setq picpocket-list-length (1+ picpocket-list-length))
+    (setf (picpocket-pic-prev p) prev)
+    (picpocket-set-pos (make-picpocket-pos :current (cons p next)
+                                           :index (1+ picpocket-index)))
+    (if prev
+        (setcdr prev picpocket-current)
+      (setq picpocket-list picpocket-current))
+    (when next
+      (picpocket-set-prev next picpocket-current))
+    (and picpocket-filter
+         (picpocket-filter-match-p picpocket-current)
+         (cl-incf picpocket-filter-match-count))))
 
 (defun picpocket-list-insert-before-current (p)
   "Insert P before current pic."
@@ -1656,8 +1982,8 @@ space-separated string."
         (next picpocket-current))
     (setq picpocket-list-length (1+ picpocket-list-length))
     (setf (picpocket-pic-prev p) prev)
-    (picpocket-list-set-pos (make-picpocket-pos :current (cons p next)
-                                                :index (max 1 picpocket-index)))
+    (picpocket-set-pos (make-picpocket-pos :current (cons p next)
+                                           :index (max 1 picpocket-index)))
     (if prev
         (setcdr prev picpocket-current)
       (setq picpocket-list picpocket-current))
@@ -1669,7 +1995,7 @@ space-separated string."
 
 
 (defun picpocket-create-picpocket-list (files &optional selected-file)
-  (picpocket-list-reset)
+  (picpocket-reset)
   (setq picpocket-list
         (cl-loop for path in files
                  if (file-exists-p path)
@@ -1680,18 +2006,18 @@ space-separated string."
            do (picpocket-set-prev pic prev)
            do (setq prev pic))
   (setq picpocket-list-length (length picpocket-list))
-  (picpocket-list-set-pos (or (and selected-file
-                                   (string-match (picpocket-picture-regexp)
-                                                 selected-file)
-                                   (cl-loop for pic on picpocket-list
-                                            for index = 1 then (1+ index)
-                                            when (equal selected-file
-                                                        (picpocket-absfile pic))
-                                            return (make-picpocket-pos
-                                                    :current pic
-                                                    :index index)))
-                              (make-picpocket-pos :current picpocket-list
-                                                  :index 1))))
+  (picpocket-set-pos (or (and selected-file
+                              (string-match (picpocket-picture-regexp)
+                                            selected-file)
+                              (cl-loop for pic on picpocket-list
+                                       for index = 1 then (1+ index)
+                                       when (equal selected-file
+                                                   (picpocket-absfile pic))
+                                       return (make-picpocket-pos
+                                               :current pic
+                                               :index index)))
+                         (make-picpocket-pos :current picpocket-list
+                                             :index 1))))
 
 
 
@@ -2265,11 +2591,17 @@ will end up replacing the deleted text."
                  (message "(hash-table-p old) %s" (hash-table-p old))
                  (message "db %s" db)
                  (message "old %s" old)
-                 ;; PENDING - kill picpocket buffer?
-                 (error "Cannot recover picpocket database"))))
+                 (picpocket-fatal "Cannot recover picpocket database in %s"
+                                  picpocket-db-dir))))
     (when (file-exists-p (picpocket-db-file :journal))
       (picpocket-db-read-journal)
       (picpocket-db-save))))
+
+(defun picpocket-fatal (format &rest args)
+  (let ((message (apply #'format format args)))
+    (setq picpocket-fatal message)
+    (error message)))
+
 
 (defun picpocket-db-new-hash-table ()
   (make-hash-table :test 'equal))
@@ -2285,7 +2617,8 @@ will end up replacing the deleted text."
                    (format (cadr (read)))
                    (ignored (cadr (read))))
               (unless (equal version picpocket-db-version)
-                (error "Unknown picpocket database version %s" version))
+                (error "Unknown picpocket database version %s in %s"
+                       version db-file))
               (cl-case format
                 (hash-table (picpocket-db-read-hash-table))
                 (list (picpocket-db-read-list))
@@ -2512,7 +2845,9 @@ will end up replacing the deleted text."
 (defun picpocket-ensure-cache (pic)
   (when (file-exists-p (picpocket-absfile pic))
     (picpocket-sha-force pic)
-    (picpocket-size-force pic)
+    ;; PENDING - picpocket-size-force eats a lot of memory and cpu
+    ;; when the pic list is long.  For very little use.
+    ;; (picpocket-size-force pic)
     (picpocket-bytes-force pic)))
 
 (defun picpocket-continue-or-start-over (state)
@@ -2615,14 +2950,27 @@ considered invalid and we start from the beginning again."
   (picpocket-ensure-picpocket-buffer)
   (let (buffer-read-only)
     (erase-buffer)
-    (if (picpocket-try-set-matching-picture)
-        (progn
-          (cd (picpocket-dir))
-          (if (file-exists-p (picpocket-absfile))
-              (picpocket-insert picpocket-current)
-            (insert "\n\nFile " (picpocket-file) " no longer exist.\n")))
-      (picpocket-no-pictures))
+    (cond (picpocket-fatal
+           (picpocket-show-fatal))
+          ((picpocket-try-set-matching-picture)
+           (cd (picpocket-dir))
+           (if (file-exists-p (picpocket-absfile))
+               (picpocket-insert picpocket-current)
+             (insert "\n\nFile " (picpocket-file) " no longer exist.\n")))
+          (t
+           (picpocket-no-pictures)))
     (force-mode-line-update)))
+
+(defun picpocket-show-fatal ()
+  (insert (propertize "\n\nFatal error: " 'face 'bold)
+          picpocket-fatal
+          "\n\n")
+  (picpocket-dired-hint))
+
+(defun picpocket-dired-hint ()
+  (insert (format "Type %s for dired in %s.\n"
+                  (picpocket-where-is 'picpocket-dired)
+                  (abbreviate-file-name default-directory))))
 
 (defun picpocket-try-set-matching-picture ()
   "Return nil if no matching picture was found."
@@ -2630,7 +2978,7 @@ considered invalid and we start from the beginning again."
     (or (picpocket-filter-match-p picpocket-current)
         (picpocket-when-let (pos (or (picpocket-next-pos)
                                      (picpocket-previous-pos)))
-          (picpocket-list-set-pos pos)
+          (picpocket-set-pos pos)
           t))))
 
 (defun picpocket-no-pictures ()
@@ -2648,9 +2996,8 @@ considered invalid and we start from the beginning again."
        (insert
         (format "Type %s to recursively include pictures in subdirectories.\n"
                 (picpocket-where-is 'picpocket-toggle-recursive))))
-  (insert (format "Type %s for dired in %s.\n"
-                  (picpocket-where-is 'picpocket-dired)
-                  (abbreviate-file-name default-directory))))
+  (picpocket-dired-hint))
+
 
 (defun picpocket-where-is (command)
   (let ((binding (where-is-internal command overriding-local-map t)))
@@ -2674,7 +3021,7 @@ considered invalid and we start from the beginning again."
     (picpocket-mode)
     (condition-case err
         (picpocket-create-picpocket-list files selected-file)
-      (quit (picpocket-list-reset)
+      (quit (picpocket-reset)
             (signal (car err) (cdr err))))
     (picpocket-update-buffer)
     (if (called-interactively-p 'any)
@@ -2757,7 +3104,9 @@ necessarily run with the picpocket window selected."
                (x-ratio (picpocket-ratio pic-x rot-x)))
     (cons :width (round (* x-ratio canvas-x)))))
 
-(defun picpocket-size-force (pic)
+(defun picpocket-size-force (&optional pic)
+  (unless pic
+    (setq pic picpocket-current))
   (or (picpocket-size pic)
       (picpocket-save-size-in-pic pic)))
 
@@ -2871,7 +3220,8 @@ necessarily run with the picpocket window selected."
 
 (defun picpocket-lookup-key-strict (key)
   (or (picpocket-lookup-key key)
-      (error "Keystroke %s is not defined in picpocket-keystroke-alist" key)))
+      (error "Keystroke %s is not defined in picpocket-keystroke-alist"
+             (key-description key))))
 
 (defun picpocket-lookup-key (x)
   (cl-loop for (key ignored arg) in (picpocket-keystroke-alist-nodups)
@@ -4291,6 +4641,10 @@ This command picks the first undoable command in that list."
   (remove-hook 'minibuffer-exit-hook
                #'picpocket-minibuffer-exit))
 
+(defun picpocket-cleanup-misc ()
+  (when picpocket-old-fit
+    (setq picpocket-fit picpocket-old-fit)
+    (setq picpocket-old-fit nil)))
 
 (defun picpocket-window-size-change-function (frame)
   (when picpocket-adapt-to-window-size-change
@@ -4298,8 +4652,10 @@ This command picks the first undoable command in that list."
       (when (eq (get-buffer picpocket-buffer) (window-buffer window))
         (with-selected-window window
           (with-current-buffer picpocket-buffer
-            (unless (equal picpocket-window-size (picpocket-save-window-size))
-              (picpocket-update-buffer))))))))
+            (picpocket-reset-scroll)
+            ;; (unless (equal picpocket-window-size
+            ;; (picpocket-save-window-size))
+            (picpocket-update-buffer)))))))
 
 (defun picpocket-maybe-update-keymap ()
   (and picpocket-keystroke-alist
@@ -4318,8 +4674,10 @@ This command picks the first undoable command in that list."
          ;; It is important to check and save window size here.
          ;; Otherwise the call to picpocket-old-update-buffer may trigger an
          ;; infinite loop via buffer-list-update-hook.
-         (not (equal picpocket-window-size (picpocket-save-window-size)))
-         (picpocket-update-buffer))))
+         (progn
+           ;; (picpocket-reset-scroll)
+           (unless (equal picpocket-window-size (picpocket-save-window-size))
+             (picpocket-update-buffer))))))
 
 (defun picpocket-delete-trashcan ()
   (when picpocket-trashcan
@@ -4403,8 +4761,8 @@ With the prev links it is harder to follow the list."
            (time (picpocket-time-string
                    (while (not (eq picpocket-current (cdr list)))
                      (setq list (cdr list))))))
-      (picpocket-list-set-pos (make-picpocket-pos :current list
-                                                  :index (1- picpocket-index)))
+      (picpocket-set-pos (make-picpocket-pos :current list
+                                             :index (1- picpocket-index)))
       (message "Back %s" time))))
 
 

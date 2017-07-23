@@ -6,9 +6,9 @@
 ;; Created: 31 Dec 2016
 ;; Homepage: https://github.com/raxod502/el-patch
 ;; Keywords: extensions
-;; Package-Version: 20170706.936
+;; Package-Version: 20170723.19
 ;; Package-Requires: ((emacs "25"))
-;; Version: 1.1.2
+;; Version: 1.2
 
 ;;; Commentary:
 
@@ -66,6 +66,16 @@ This means that `el-patch-defvar', `el-patch-defconst', and
 `el-patch-defcustom' will unbind the old variable definition
 before evaluating the new one."
   :type 'boolean
+  :group 'el-patch)
+
+(defcustom el-patch-require-function #'require
+  "Function to `require' a feature in `el-patch-pre-validate-hook'.
+This is passed all of the arguments of `el-patch-feature' as
+quoted literals, and it should load the feature. This function
+might be useful if, for example, some of your features are
+provided by lazy-installed packages, and those packages need to
+be installed before the features can be loaded."
+  :type 'function
   :group 'el-patch)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -316,7 +326,7 @@ whether the symbol is a function or variable."
 
 ;;;###autoload
 (defun el-patch-validate (name type &optional nomsg run-hooks)
-  "Validate the patch given by PATCH-DEFINITION.
+  "Validate the patch with given NAME and TYPE.
 This means el-patch will attempt to find the original definition
 for the function, and verify that it is the same as the original
 function assumed by the patch. A warning will be signaled if the
@@ -327,8 +337,8 @@ definitions.
 Interactively, use `completing-read' to select a function to
 inspect the patch of.
 
-PATCH-DEFINITION is a list beginning with `defun', `defmacro',
-etc.
+NAME is a symbol naming the object being patched; TYPE is a
+symbol `defun', `defmacro', etc.
 
 Returns nil if the patch is not valid, and otherwise returns t.
 If NOMSG is non-nil, does not signal a message when the patch is
@@ -398,12 +408,21 @@ See `el-patch-validate'."
          ((zerop patch-count)
           (user-error "No patches defined"))
          ((zerop warning-count)
-          (message "All %d patches are valid" patch-count))
+          (if (= patch-count 1)
+              (message "Patch is valid (only one defined)")
+            (message "All %d patches are valid" patch-count)))
          ((= patch-count warning-count)
-          (message "All %d patches are invalid" patch-count))
+          (if (= patch-count 1)
+              (message "Patch is invalid (only one defined)")
+            (message "All %d patches are invalid" patch-count)))
          (t
-          (message "%d patches are valid, %d patches are invalid"
-                   (- patch-count warning-count) warning-count))))
+          (message "%s valid, %s invalid"
+                   (if (= warning-count (1- patch-count))
+                       "1 patch is"
+                     (format "%d patches are" (- patch-count warning-count)))
+                   (if (= warning-count 1)
+                       "1 patch is"
+                     (format "%d patches are" warning-count))))))
     (run-hooks 'el-patch-post-validate-hook)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -516,6 +535,26 @@ etc., which may contain patch directives."
   (declare (doc-string 2)
            (indent defun))
   `(el-patch--definition ',(cons #'define-minor-mode args)))
+
+;; For convenience.
+
+;;;###autoload
+(defmacro el-patch-feature (feature &rest args)
+  "Declare that some patches are only defined after FEATURE is loaded.
+This is a convenience macro that creates a function for invoking
+`require' on that feature, and then adds it to
+`el-patch-pre-validate-hook' so that your patches are loaded and
+`el-patch' can properly validate them.
+
+FEATURE should be an unquoted symbol. ARGS, if given, are passed
+as quoted literals along with FEATURE to
+`el-patch-require-function' when `el-patch-validate-all' is
+called."
+  (let ((defun-name (intern (format "el-patch-require-%S" feature))))
+    `(progn
+       (defun ,defun-name ()
+         (apply el-patch-require-function ',feature ',args))
+       (add-hook 'el-patch-pre-validate-hook #',defun-name))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; Patch directives
