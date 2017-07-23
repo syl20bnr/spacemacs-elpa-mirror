@@ -5,13 +5,13 @@ to export bibliography to html.
 [[./snapshots/ox-bibtex-chinese.gif]]
 
 ** Installation
-ox-bibtex-chinese is now available from the famous emacs package repo
+ox-bibtex-chinese is now available from the famous Emacs package repo
 [[http://melpa.milkbox.net/][melpa]], so the recommended way is to install it
-through emacs package management system.
+through Emacs package management system.
 
 ** Usage
 1. Install bibtex2html to your system
-2. Configure emacs
+2. Configure Emacs
    #+BEGIN_EXAMPLE
    (require 'org)
    (require 'ox-bibtex)

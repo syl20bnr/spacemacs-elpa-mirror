@@ -5,8 +5,8 @@
 ;; Filename: with-simulated-input.el
 ;; Author: Ryan C. Thompson
 ;; Created: Thu Jul 20 11:56:23 2017 (-0700)
-;; Version: 1.0
-;; Package-Version: 20170722.2011
+;; Version: 2.0
+;; Package-Version: 20170722.2149
 ;; Package-Requires: ((emacs "24.4") (seq "2.0") (s "0"))
 ;; URL:
 ;; Keywords: lisp, tools, extensions
