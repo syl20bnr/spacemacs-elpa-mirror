@@ -5,7 +5,7 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/mixed-pitch
-;; Package-Version: 20170712.1049
+;; Package-Version: 20170722.214
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "25.2"))
 
@@ -29,8 +29,9 @@
 
 
 ;;; Commentary:
+
 ;; `mixed-pitch-mode' is a minor mode that enables mixing variable-pitch and
-;; fixed-pitch fonts in the same buffer. The list
+;; fixed-pitch fonts in the same buffer.  The list
 ;; `mixed-pitch-fixed-pitch-faces' defines the faces that are kept fixed-pitch,
 ;; everything else becomes variable-pitch.
 
@@ -109,12 +110,9 @@ When disabled, switch back to what it was before.
 
 See `cursor-type' for a list of acceptable types.")
 
-(make-variable-buffer-local
- (defvar mixed-pitch-fixed-cookie nil))
-(make-variable-buffer-local
- (defvar mixed-pitch-variable-cookie nil))
-(make-variable-buffer-local
- (defvar mixed-pitch-cursor-type nil))
+(defvar-local mixed-pitch-fixed-cookie nil)
+(defvar-local mixed-pitch-variable-cookie nil)
+(defvar-local mixed-pitch-cursor-type nil)
 
 ;;;###autoload
 (define-minor-mode mixed-pitch-mode

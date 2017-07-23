@@ -1,5 +1,5 @@
 `mixed-pitch-mode' is a minor mode that enables mixing variable-pitch and
-fixed-pitch fonts in the same buffer. The list
+fixed-pitch fonts in the same buffer.  The list
 `mixed-pitch-fixed-pitch-faces' defines the faces that are kept fixed-pitch,
 everything else becomes variable-pitch.
 
