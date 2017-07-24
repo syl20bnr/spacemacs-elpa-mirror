@@ -4,7 +4,7 @@
 
 ;; Author: Kelvin Smith <oneKelvinSmith@gmail.com>
 ;; URL: http://github.com/oneKelvinSmith/monokai-emacs
-;; Package-Version: 20170720.359
+;; Package-Version: 20170724.740
 ;; Version: 3.3.0
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -2907,6 +2907,11 @@ Also affects 'linum-mode' background."
    `(highlight-indentation-current-column-face
      ((,monokai-class (:background ,monokai-gray))
       (,monokai-256-class  (:background ,monokai-256-gray))))
+
+   ;; highlight-symbol
+   `(highlight-symbol-face
+     ((,monokai-class (:background ,monokai-highlight))
+      (,monokai-256-class  (:background ,monokai-256-highlight))))
 
    ;; hl-line-mode
    `(hl-line

@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 20170522.2154
+;; Package-Version: 20170723.2050
 ;; Version: 0.2
 ;; Package-Requires: ((helm "2.0") (rtags "2.10"))
 
@@ -35,7 +35,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (require 'rtags)
 (require 'helm)
-(require 'subr-x) ;; string-trim-*
+
+(defsubst helm-rtags-string-trim-left (string)
+  "Remove leading whitespace from STRING."
+  (if (string-match "\\`[ \t\n\r]+" string)
+      (replace-match "" t t string)
+    string))
+
+(defsubst helm-rtags-string-trim-right (string)
+  "Remove trailing whitespace from STRING."
+  (if (string-match "[ \t\n\r]+\\'" string)
+      (replace-match "" t t string)
+    string))
 
 (defvar helm-rtags-token nil)
 
@@ -130,11 +141,11 @@ Each element of the alist is a cons-cell of the form (DESCRIPTION . FUNCTION)."
                 (propertize file-name 'face 'helm-rtags-file-face)
                 (propertize line-num 'face 'helm-rtags-lineno-face)
                 (propertize column-num 'face 'helm-rtags-lineno-face)
-                (string-trim-left content-prefix)
+                (helm-rtags-string-trim-left content-prefix)
                 (if (string= content-token helm-rtags-token)
                     (propertize content-token 'face 'helm-rtags-token-face)
                   content-token)
-                (string-trim-right content-suffix))))))
+                (helm-rtags-string-trim-right content-suffix))))))
 
 (defvar helm-rtags-source nil)
 (setq helm-rtags-source '((name . "RTags Helm")
