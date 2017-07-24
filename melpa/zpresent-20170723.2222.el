@@ -1,7 +1,7 @@
 ;;; zpresent.el --- Simple presentation mode based on org files.  -*- lexical-binding: t; -*-
 
 ;; Version: 0.3
-;; Package-Version: 20170719.2104
+;; Package-Version: 20170723.2222
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright 2015-2017 Zachary Kanfer <zkanfer@gmail.com>
@@ -67,6 +67,7 @@
 (require 'cl-macs)
 (require 'dash)
 (require 'pcase)
+(require 'request)
 
 ;;;; Variables:
 (defvar zpresent-slides nil
@@ -103,10 +104,17 @@
 
 
 ;;;; Faces:
+
+;;zck add text color, see what that does to links.
+(defface zpresent-whole-screen-face '((t . (:background "#E0E0E0"))) "Face that should be put over the whole screen.")
 (defface zpresent-base '((t . (:height 4.0))) "The base face, so we can manage changing sizes only by changing this face." :group 'zpresent-faces)
 (defface zpresent-h1 '((t . (:height 1.0 :inherit zpresent-base))) "Face for the title of a regular slide." :group 'zpresent-faces)
 (defface zpresent-title-slide-title '((t . (:height 1.5 :inherit zpresent-base))) "Face for titles in a title slide." :group 'zpresent-faces)
 (defface zpresent-body '((t . (:height 0.66 :inherit zpresent-base))) "Face for the body." :group 'zpresent-faces)
+
+(defvar zpresent-whole-screen-overlay (with-current-buffer (get-buffer-create "zpresentation") (make-overlay 0 0))
+  "The overlay that's put over all the text in the screen.  Its purpose is to color the background color, and possibly other text properties too.")
+(overlay-put zpresent-whole-screen-overlay 'face 'zpresent-whole-screen-face)
 
 ;;;; Actual code:
 ;;;###autoload
@@ -593,7 +601,14 @@ for example, for the first slide of each top level org element."
   (if (equal (gethash :type slide)
              :title)
       (zpresent--present-title-slide slide)
-    (zpresent--present-normal-slide slide)))
+    (zpresent--present-normal-slide slide))
+  (let ((inhibit-read-only t))
+    (insert (propertize (make-string (window-total-height) ?\n)
+                        'face 'zpresent-base)))
+  (move-overlay zpresent-whole-screen-overlay
+                (point-min)
+                (point-max))
+  (goto-char (point-min)))
 
 (defun zpresent--present-normal-slide (slide)
   "Present SLIDE as a normal (read: non-title) slide."
@@ -773,7 +788,6 @@ each line, with the same face."
 
 (defun zpresent--cache-images-helper (slide)
   "Read or download all images in SLIDE, and put them into a cache."
-  (message "title is %s\nbody is %s" (gethash :title slide) (gethash :body slide))
   (dolist (line (append (gethash :title slide)
                         (gethash :body slide)))
     (when (and (listp line)

@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20170710.724
+;; Package-Version: 20170724.211
 ;; Package-Requires: ((emacs "25") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -111,6 +111,8 @@ overlay must not be displayed.")
        (>= (point-max) end beg)
        (not (evil-visual-state-p))
        (not (evil-insert-state-p))
+       ;; don't show overlay when evil-mc has multiple fake cursors
+       (not (and (fboundp 'evil-mc-has-cursors-p) (evil-mc-has-cursors-p)))
        ;; don't show overlay when the region has nothing but whitespace
        (not (null (string-match-p "[^ \t\n]" (buffer-substring-no-properties beg end))))))
 
