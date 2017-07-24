@@ -1,5 +1,5 @@
 ;;; cython-mode.el --- Major mode for editing Cython files
-;; Package-Version: 20140705.1229
+;; Package-Version: 20170723.1342
 
 ;;; Commentary:
 
@@ -290,7 +290,7 @@ Finds end of innermost nested class or method definition."
   (set (make-local-variable 'end-of-defun-function)
        #'cython-end-of-defun)
   (set (make-local-variable 'compile-command)
-       (format cython-default-compile-format (shell-quote-argument buffer-file-name)))
+       (format cython-default-compile-format (shell-quote-argument (or buffer-file-name ""))))
   (set (make-local-variable 'add-log-current-defun-function)
        #'cython-current-defun)
   (add-hook 'which-func-functions #'cython-current-defun nil t)

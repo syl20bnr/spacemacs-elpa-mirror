@@ -3,7 +3,7 @@
 
 ;; Author: Sean McLaughlin <seanmcl@gmail.com>
 ;; Version: 0.1
-;; Package-Version: 20170402.1846
+;; Package-Version: 20170723.1954
 ;; Keywords: languages, TQL
 ;; Package-Requires: ((emacs "24"))
 
@@ -25,7 +25,6 @@
 
 (defvar tql-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-c C-c") 'tql-run-current-query)
     map)
   "Keymap for `tql-mode'.")
 

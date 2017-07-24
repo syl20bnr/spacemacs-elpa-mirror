@@ -758,8 +758,13 @@ Overview of Features ---------------------------------------------
    `isearchp-toggle-region-restriction') during search to toggle
    `isearchp-restrict-to-region-flag'.
 
-   NOTE: For search to be limited to the active region in Info, you
-   must also use library `info+.el'.
+   Restriction of Isearch to the region works also for a
+   rectangular region (which you create using `M-x
+   rectangle-mark-mode').  The region is always deactivated in this
+   case.
+
+   NOTE: For search to be limited to the region in Info, you must
+   also use library `info+.el'.
 
  * Option and commands to let you select the last target occurrence
    (set the region around it):
