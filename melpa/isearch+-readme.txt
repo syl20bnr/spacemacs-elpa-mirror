@@ -750,9 +750,9 @@ Overview of Features ---------------------------------------------
    search: regexp, word, multiple-buffer, and whether searching has
    wrapped around the buffer (Emacs 22+ only).
 
- * Optional limiting of search to the active region, controlled by
-   option `isearchp-restrict-to-region-flag'.  Deactivation of the
-   active region is controlled by option
+ * Optional restriction of search to the active region, controlled
+   by option `isearchp-restrict-to-region-flag'.  Deactivation of
+   the active region is controlled by option
    `isearchp-deactivate-region-flag'.  Both of these are available
    for Emacs 24.3 and later.  You can use `C-x n' (command
    `isearchp-toggle-region-restriction') during search to toggle
@@ -760,8 +760,7 @@ Overview of Features ---------------------------------------------
 
    Restriction of Isearch to the region works also for a
    rectangular region (which you create using `M-x
-   rectangle-mark-mode').  The region is always deactivated in this
-   case.
+   rectangle-mark-mode').
 
    NOTE: For search to be limited to the region in Info, you must
    also use library `info+.el'.
