@@ -1,13 +1,13 @@
-;;; mixed-pitch.el --- Mix fixed and variable pitch -*- lexical-binding: t; -*-
+;;; mixed-pitch.el --- Use a variable pitch, keeping fixed pitch where it's sensible -*- lexical-binding: t; -*-
 
 ;;; Copyright (C) 2017 by J. Alexander Branham
 
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/mixed-pitch
-;; Package-Version: 20170722.214
+;; Package-Version: 20170723.955
 ;; Version: 0.1
-;; Package-Requires: ((emacs "25.2"))
+;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is not part of GNU Emacs.
 
