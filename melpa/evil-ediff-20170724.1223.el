@@ -4,7 +4,7 @@
 
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Package-Requires: ((evil "1.2.3"))
-;; Package-Version: 20170623.707
+;; Package-Version: 20170724.1223
 ;; Homepage: https://github.com/justbur/evil-ediff
 ;; Version: 0
 
@@ -162,7 +162,7 @@
 
 (defun evil-ediff-startup-hook ()
   "Place evil-ediff bindings in `ediff-mode-map'."
-  (evil-make-overriding-map ediff-mode-map 'normal)
+  (evil-make-overriding-map ediff-mode-map 'motion)
   (dolist (entry evil-ediff-bindings)
     (define-key ediff-mode-map (car entry) (cdr entry)))
   (unless (or ediff-3way-comparison-job
@@ -176,10 +176,12 @@
 (defun evil-ediff-init ()
   "Initialize evil-ediff."
   (interactive)
-  (evil-set-initial-state 'ediff-mode 'normal)
+  (evil-set-initial-state 'ediff-mode 'motion)
   (add-hook 'ediff-startup-hook 'evil-ediff-startup-hook)
   (evil-ediff-adjust-help))
-(evil-ediff-init)
+
+(unless (featurep 'evil-ediff)
+  (evil-ediff-init))
 
 (defun evil-ediff-revert ()
   "Revert changes made by evil-ediff."

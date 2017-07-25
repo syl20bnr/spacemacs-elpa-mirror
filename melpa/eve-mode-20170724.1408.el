@@ -5,7 +5,7 @@
 ;; Created: 28 Jun 2017
 ;; Modified: 19 Jul 2017
 ;; Version: 0.1.1
-;; Package-Version: 20170719.1707
+;; Package-Version: 20170724.1408
 ;; Package-Requires: ((emacs "25") (polymode "1.0") (markdown-mode "2.0"))
 ;; Keywords: languages wp tools
 ;; URL: https://github.com/witheve/emacs-eve-mode
@@ -53,36 +53,36 @@
 (defvar eve-indent-width 2 "Spaces per indentation level in Eve blocks.")
 (defvar eve-font-lock-keywords nil "Font lock setup for eve-block mode.")
 
-(setq eve-sections '("search" "bind" "commit" "watch" "end"))
-(setq eve-subblocks '("not" "if" "then" "else"))
-(setq eve-infix '("+" "-" "/" "*"))
-(setq eve-filter '("=" "!=" "<" "<=" ">=" ">"))
-(setq eve-update-operator '(":=" "+=" "-=" "<-"))
+(defconst eve-sections '("search" "bind" "commit" "watch" "end"))
+(defconst eve-subblocks '("not" "if" "then" "else"))
+(defconst eve-infix '("+" "-" "/" "*"))
+(defconst eve-filter '("=" "!=" "<" "<=" ">=" ">"))
+(defconst eve-update-operator '(":=" "+=" "-=" "<-"))
 
-(setq eve-comment-regexp "//.*$")
-(setq eve-sections-regexp (regexp-opt eve-sections 'words))
-(setq eve-subblocks-regexp (regexp-opt eve-subblocks 'words))
-(setq eve-infix-regexp (concat "\s" (regexp-opt eve-infix) "\s"))
-(setq eve-filter-regexp (concat "\s" (regexp-opt eve-filter) "\s"))
-(setq eve-update-operator-regexp (concat "\s" (regexp-opt eve-update-operator) "\s"))
-(setq eve-misc-regexp "[][,:.]")
+(defconst eve-comment-regexp "//.*$")
+(defconst eve-sections-regexp (regexp-opt eve-sections 'words))
+(defconst eve-subblocks-regexp (regexp-opt eve-subblocks 'words))
+(defconst eve-infix-regexp (concat "\s" (regexp-opt eve-infix) "\s"))
+(defconst eve-filter-regexp (concat "\s" (regexp-opt eve-filter) "\s"))
+(defconst eve-update-operator-regexp (concat "\s" (regexp-opt eve-update-operator) "\s"))
+(defconst eve-misc-regexp "[][,:.]")
 
-(setq eve-identifier-regexp "[^][\t\s|(){}\"',.:=#\n]+")
-(setq eve-tag-regexp (concat "#" eve-identifier-regexp))
-(setq eve-syntax-table (make-syntax-table))
+(defconst eve-identifier-regexp "[^][\t\s|(){}\"',.:=#\n]+")
+(defconst eve-tag-regexp (concat "#" eve-identifier-regexp))
+(defconst eve-mode-syntax-table (make-syntax-table))
 
-(setq eve-font-lock-keywords
-      `((,eve-sections-regexp . font-lock-keyword-face)
-        (,eve-subblocks-regexp . font-lock-keyword-face)
-        (,eve-update-operator-regexp . font-lock-type-face)
-        (,eve-filter-regexp . font-lock-type-face)
-        (,eve-infix-regexp . font-lock-type-face)
-        (,eve-tag-regexp . font-lock-variable-name-face)
-        (,eve-misc-regexp . font-lock-preprocessor-face)))
+(defconst eve-font-lock-keywords
+  `((,eve-sections-regexp . font-lock-keyword-face)
+    (,eve-subblocks-regexp . font-lock-keyword-face)
+    (,eve-update-operator-regexp . font-lock-type-face)
+    (,eve-filter-regexp . font-lock-type-face)
+    (,eve-infix-regexp . font-lock-type-face)
+    (,eve-tag-regexp . font-lock-variable-name-face)
+    (,eve-misc-regexp . font-lock-preprocessor-face)))
 
-(modify-syntax-entry ?\/ ". 12b" eve-syntax-table)
-(modify-syntax-entry ?\n "> b" eve-syntax-table)
-(modify-syntax-entry ?\r "> b" eve-syntax-table)
+(modify-syntax-entry ?\/ ". 12b" eve-mode-syntax-table)
+(modify-syntax-entry ?\n "> b" eve-mode-syntax-table)
+(modify-syntax-entry ?\r "> b" eve-mode-syntax-table)
 
 (defun eve-has-font-lock-face-at-p (face pos)
   (member face (get-text-property pos 'face)))
@@ -179,10 +179,8 @@
 (define-derived-mode eve-block-mode fundamental-mode "eve-block"
   "Major mode for editing Eve documents"
   (setq font-lock-multiline t)
-  (set-syntax-table eve-syntax-table)
   (setq font-lock-defaults '((eve-font-lock-keywords)))
-  (make-local-variable 'indent-line-function)
-  (setq indent-line-function 'eve-indent-line))
+  (set (make-local-variable 'indent-line-function) 'eve-indent-line))
 
 
 (defun eve-retrieve-block-type ()

@@ -4,7 +4,7 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20170723.1821
+;; Package-Version: 20170724.1123
 ;; Version: 1.3.1
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -1122,7 +1122,7 @@ Optional prefix ARG says how many lines to move; default is one line."
 		    (concat easy-hugo-postdir "/" (substring (thing-at-point 'line) easy-hugo--forward-char -1))
 		    easy-hugo-basedir)))
 	 (rename-file name (concat "content/" filename) 1)
-	 (easy-hugo))))))
+	 (easy-hugo-refresh))))))
 
 (defun easy-hugo-open ()
   "Open the file on the pointer."

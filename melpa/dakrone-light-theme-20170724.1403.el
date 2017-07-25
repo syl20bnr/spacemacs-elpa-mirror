@@ -3,7 +3,7 @@
 
 ;; Author: Lee Hinman <lee _AT_ writequit.org>
 ;; URL: https://github.com/dakrone/dakrone-light-theme
-;; Package-Version: 20170501.654
+;; Package-Version: 20170724.1403
 ;; Version: 1.0.0
 ;; Keywords: color themes faces
 ;; This file is not part of GNU Emacs.
@@ -108,6 +108,8 @@
  '(helm-header ((t (:background "#f0f0f0"))))
  '(helm-source-header
    ((t (:height 1.1 :foreground "black" :weight bold :background "#abd7f0"))))
+ '(helm-ls-git-added-copied-face ((t (:foreground "#007020"))))
+ '(helm-ls-git-modified-not-staged-face ((t (:foreground "#996633"))))
 
  ;; Mu4e
  '(mu4e-unread-face ((t (:foreground "#005588" :weight bold))))
