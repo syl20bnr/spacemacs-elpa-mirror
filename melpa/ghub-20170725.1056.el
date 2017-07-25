@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/tarsius/ghub
 ;; Keywords: tools
-;; Package-Version: 20170725.309
+;; Package-Version: 20170725.1056
 ;; Package-Requires: ((emacs "25"))
 
 ;; This file is not part of GNU Emacs.
@@ -149,14 +149,16 @@ PARAMS and/or DATA in the request.  Signal an error if the status
 code isn't in the 2xx class; unless optional NOERROR is non-nil,
 in which case return nil."
   (let* ((p (and params (concat "?" (ghub--url-encode-params params))))
-         (d (and data   (json-encode-list data)))
+         (d (and data   (encode-coding-string (json-encode-list data) 'utf-8)))
          (url-request-extra-headers
           `(("Content-Type"  . "application/json")
             ,@(and ghub-authenticate
                    `(("Authorization"
                       . ,(if (eq ghub-authenticate 'basic)
                              (ghub--basic-auth)
-                           (concat "token " (ghub--token))))))))
+                           (concat "token "
+                                   (encode-coding-string
+                                    (ghub--token) 'utf-8))))))))
          (url-request-method method)
          (url-request-data d))
     (with-current-buffer
@@ -198,7 +200,10 @@ in which case return nil."
           (json-key-type    'symbol)
           (json-false       nil)
           (json-null        nil))
-      (json-read))))
+      (json-encode-string
+       (decode-coding-string
+        (buffer-substring-no-properties (point) (point-max))
+        'utf-8)))))
 
 (defun ghub--url-encode-params (params)
   (mapconcat (pcase-lambda (`(,key . ,val))

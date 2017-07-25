@@ -4,11 +4,24 @@
 
 ;; Author: ZHOU Feng <zf.pascal@gmail.com>
 ;; URL: http://github.com/zweifisch/foreman-mode
-;; Package-Version: 20160520.737
+;; Package-Version: 20170725.722
 ;; Keywords: foreman
 ;; Version: 0.0.1
 ;; Created: 17th Apr 2015
 ;; Package-Requires: ((s "1.9.0") (dash "2.10.0") (dash-functional "1.2.0") (f "0.17.2") (emacs "24"))
+
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 3, or (at your option)
+;; any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 ;;
@@ -87,7 +100,7 @@
   (let ((procfile (foreman-find-procfile)))
     (when procfile
       (let ((procs (foreman-load-procfile (foreman-find-procfile))))
-        (-each procs 'foreman-start-proc-internal)
+        (-each procs 'foreman--start-proc)
         (switch-to-buffer
          (foreman-fill-buffer procs))))))
 
@@ -216,11 +229,11 @@
 (defun foreman-start-proc ()
   (interactive)
   (let ((task-id (get-text-property (point) 'tabulated-list-id)))
-    (foreman-start-proc-internal task-id)
+    (foreman--start-proc task-id)
     (revert-buffer)
     (display-buffer (foreman-get-in foreman-tasks task-id 'buffer) t)))
 
-(defun foreman-start-proc-internal (task-id)
+(defun foreman--start-proc (task-id)
   (if (not (process-live-p (foreman-get-in foreman-tasks task-id 'process)))
       (let* ((task (cdr (assoc task-id foreman-tasks)))
              (command (cdr (assoc 'command task)))
@@ -293,7 +306,7 @@
     (if (y-or-n-p (format "restart process %s? " (process-name process)))
         (progn
           (if (foreman-kill-process-timeout process 2)
-              (foreman-start-proc-internal task-id)
+              (foreman--start-proc task-id)
             (message "process still alive"))
           (revert-buffer)))))
 

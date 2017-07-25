@@ -5,7 +5,7 @@
 ;; Author:  Alexander Lamaison <alexander.lamaison@gmail>
 ;; Maintainer: Alexander Lamaison <alexander.lamaison@gmail>
 ;; URL: http://github.com/alamaison/emacs-cmake-project
-;; Package-Version: 20150720.1359
+;; Package-Version: 20170725.912
 ;; Version: 0.7
 ;; Keywords: c cmake languages tools
 
@@ -214,7 +214,11 @@ specified interactively."
          (expand-file-name source-directory))
         (if (string= "" generator)
             ""
-          (concat " -G " (shell-quote-argument generator)))))
+          (concat " -G " (shell-quote-argument
+			  (if (string= (substring generator (- (length generator) 7)) " [arch]")
+			      (substring generator 0 (- (length generator) 7))
+			    (concat generator ""))
+			  )))))
       (cmake-project--changed-build-directory build-directory))))
 
 ;;;###autoload

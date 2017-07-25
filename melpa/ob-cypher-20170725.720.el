@@ -4,11 +4,24 @@
 
 ;; Author: ZHOU Feng <zf.pascal@gmail.com>
 ;; URL: http://github.com/zweifisch/ob-cypher
-;; Package-Version: 20150224.1837
+;; Package-Version: 20170725.720
 ;; Keywords: org babel cypher neo4j
 ;; Version: 0.0.1
 ;; Created: 8th Feb 2015
 ;; Package-Requires: ((s "1.9.0") (cypher-mode "0.0.6") (dash "2.10.0") (dash-functional "1.2.0"))
+
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 3, or (at your option)
+;; any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 ;;

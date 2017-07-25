@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170719.1102
+;; Package-Version: 20170725.946
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1600,11 +1600,10 @@ When INITIAL-INPUT is non-nil, use it in the minibuffer during completion."
             :action
             (lambda (x)
               (with-ivy-window
-                (let ((find-file-hook (if (and
-                                           counsel-find-file-speedup-remote
-                                           (file-remote-p ivy--directory))
-                                          nil
-                                        find-file-hook)))
+                (if (and counsel-find-file-speedup-remote
+                         (file-remote-p ivy--directory))
+                    (let ((find-file-hook nil))
+                      (find-file (expand-file-name x ivy--directory)))
                   (find-file (expand-file-name x ivy--directory)))))
             :preselect (when counsel-find-file-at-point
                          (require 'ffap)
