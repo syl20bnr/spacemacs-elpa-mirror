@@ -4,7 +4,7 @@
 
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;; URL: https://github.com/magit/magit-imerge
-;; Package-Version: 20170716.2215
+;; Package-Version: 20170724.2157
 ;; Keywords: vc, tools
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.4") (magit "2.10.0"))
@@ -53,7 +53,12 @@
 ;; to them at a later time.  Calling `magit-imerge-suspend' will
 ;; suspend the current incremental merge.  You can resume it later
 ;; using `magit-imerge-resume'.
-
+;;
+;; When Magit-imerge is installed from MELPA, no additional setup is
+;; needed beyond installing git-imerge.  The imerge popup will be
+;; added under the Magit merge popup, and Magit-imerge will be loaded
+;; the first time that the imerge popup is invoked.
+;;
 ;; [*] https://github.com/mhagger/git-imerge
 
 ;;; Code:

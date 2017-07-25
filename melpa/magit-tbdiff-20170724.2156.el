@@ -4,7 +4,7 @@
 
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;; URL: https://github.com/magit/magit-tbdiff
-;; Package-Version: 20170627.2023
+;; Package-Version: 20170724.2156
 ;; Keywords: vc, tools
 ;; Version: 0.2.0
 ;; Package-Requires: ((emacs "24.4") (magit "2.10.0"))
@@ -46,10 +46,9 @@
 ;; keybindings, you can invoke the tbdiff popup with "di".
 ;;
 ;; When Magit-tbdiff is installed from MELPA, no additional setup is
-;; needed (aside installing git-tbdiff so that Git can find it [1]).
-;; The tbdiff popup will be added under the Magit diff popup, and
-;; Magit-tbdiff will be loaded the first time that the tbdiff popup is
-;; invoked.
+;; needed beyond installing git-tbdiff [1].  The tbdiff popup will be
+;; added under the Magit diff popup, and Magit-tbdiff will be loaded
+;; the first time that the tbdiff popup is invoked.
 ;;
 ;; [1] https://github.com/trast/tbdiff
 ;; [2] https://public-inbox.org/git/87ip2pfs19.fsf@linux-k42r.v.cablecom.net/

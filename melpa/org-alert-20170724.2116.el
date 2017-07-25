@@ -4,7 +4,7 @@
 
 ;; Author: Stephen Pegoraro <spegoraro@tutive.com>
 ;; Version: 0.1.0
-;; Package-Version: 20170701.1855
+;; Package-Version: 20170724.2116
 ;; Package-Requires: ((s "1.10.0") (dash "2.12.0") (alert "1.2"))
 ;; Keywords: org, org-mode, notify, notifications
 ;; URL: https://github.com/groksteve/org-alert
@@ -108,9 +108,11 @@
   "Check for active, due deadlines and initiate notifications."
   (interactive)
   (org-alert--preserve-agenda-buffer)
-  (let ((active (org-alert--filter-active (org-alert--get-headlines))))
-    (dolist (dl (org-alert--strip-states active))
-      (alert dl :title org-alert-notification-title)))
+  (save-excursion
+    (save-restriction
+      (let ((active (org-alert--filter-active (org-alert--get-headlines))))
+	(dolist (dl (org-alert--strip-states active))
+	  (alert dl :title org-alert-notification-title)))))
   (org-alert--restore-agenda-buffer))
 
 

@@ -20,10 +20,9 @@ default to "i" (for "interdiff").  So, with the default
 keybindings, you can invoke the tbdiff popup with "di".
 
 When Magit-tbdiff is installed from MELPA, no additional setup is
-needed (aside installing git-tbdiff so that Git can find it [1]).
-The tbdiff popup will be added under the Magit diff popup, and
-Magit-tbdiff will be loaded the first time that the tbdiff popup is
-invoked.
+needed beyond installing git-tbdiff [1].  The tbdiff popup will be
+added under the Magit diff popup, and Magit-tbdiff will be loaded
+the first time that the tbdiff popup is invoked.
 
 [1] https://github.com/trast/tbdiff
 [2] https://public-inbox.org/git/87ip2pfs19.fsf@linux-k42r.v.cablecom.net/

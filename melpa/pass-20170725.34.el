@@ -5,7 +5,7 @@
 ;; Author: Nicolas Petton <petton.nicolas@gmail.com>
 ;;         Damien Cassou <damien@cassou.me>
 ;; Version: 1.7
-;; Package-Version: 20170720.628
+;; Package-Version: 20170725.34
 ;; GIT: https://github.com/NicolasPetton/pass
 ;; Package-Requires: ((emacs "24") (password-store "0.1") (f "0.17"))
 ;; Created: 09 Jun 2015
@@ -357,8 +357,8 @@ If SUBDIR is nil, return the entries of `(password-store-dir)'."
     (remove-text-properties (point-min) (line-end-position)
                             '(display nil))))
 
-(defvar pass-view-font-lock-keywords '("^[^:\n]+:" . 'font-lock-keyword-face)
-  "Font lock keywords for pass-view-mode.")
+(defvar pass-view-font-lock-keywords '("^[^\s\n]+:" . 'font-lock-keyword-face)
+  "Font lock keywords for ‘pass-view-mode’.")
 
 (define-derived-mode pass-view-mode nil "Pass-View"
   "Major mode for viewing password-store entries.

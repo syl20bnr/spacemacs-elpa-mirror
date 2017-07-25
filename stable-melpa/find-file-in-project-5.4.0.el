@@ -3,8 +3,8 @@
 ;; Copyright (C) 2006-2009, 2011-2012, 2015, 2016, 2017
 ;;   Phil Hagelberg, Doug Alcorn, Will Farrington, Chen Bin
 ;;
-;; Version: 5.3.2
-;; Package-Version: 5.3.2
+;; Version: 5.4.0
+;; Package-Version: 5.4.0
 ;; Author: Phil Hagelberg, Doug Alcorn, and Will Farrington
 ;; Maintainer: Chen Bin <chenbin.sh@gmail.com>
 ;; URL: https://github.com/technomancy/find-file-in-project
@@ -72,7 +72,22 @@
 ;; all these variables may be overridden on a per-directory basis in
 ;; your .dir-locals.el.  See (info "(Emacs) Directory Variables") for
 ;; details.
-
+;;
+;; Sample .dir-locals.el,
+;;
+;; ((nil . ((ffip-project-root . "~/projs/PROJECT_DIR")
+;;          ;; ingore files bigger than 64k and directory "dist/"
+;;          (ffip-find-options . "-not -size +64k -not -iwholename '*/dist/*'")
+;;          ;; only search files with following extensions
+;;          (ffip-patterns . ("*.html" "*.js" "*.css" "*.java" "*.xml" "*.js"))
+;;          (eval . (progn
+;;                    (require 'find-file-in-project)
+;;                    ;; ingore directory ".tox/"
+;;                    (setq ffip-prune-patterns `("*/.tox/*" ,@ffip-prune-patterns))
+;;                    ;; Do NOT ignore directory "bin/"
+;;                    (setq ffip-prune-patterns `(delete "*/bin/*" ,@ffip-prune-patterns))))
+;;          )))
+;;
 ;; To find in *current directory*, use `find-file-in-current-directory'
 ;; and `find-file-in-current-directory-by-selected'.
 
@@ -152,10 +167,14 @@
 It's used by `find-file-with-similar-name'.")
 
 (defvar ffip-diff-find-file-before-hook nil
-  "Hook run before `ffip-diff-find-file' move focus out of *ffip-diff* buffer.")
+  "Hook before `ffip-diff-find-file' move focus out of *ffip-diff* buffer.")
 
 (defvar ffip-read-file-name-hijacked-p nil
   "Internal flag used by `ffip-diff-apply-hunk'.")
+
+(defvar ffip-diff-apply-hunk-hook nil
+  "Hook when `ffip-diff-apply-hunk' find the file to apply hunk.
+The file path is passed to the hook as the first argument.")
 
 ;;;###autoload
 (defun ffip-diff-backend-git-show-commit ()
@@ -326,7 +345,7 @@ This overrides variable `ffip-project-root' when set.")
                                       ffip-project-file)
                               (locate-dominating-file default-directory
                                                       ffip-project-file))))))
-    (or project-root
+    (or (file-name-as-directory project-root)
         (progn (message "No project was defined for the current file.")
                nil))))
 
@@ -525,21 +544,24 @@ If CHECK-ONLY is true, only do the check."
               :action action))))
 
 ;;;###autoload
-(defun ffip-project-search (keyword find-directory)
+(defun ffip-project-search (keyword is-finding-directory &optional directory-to-search)
   "Return an alist of all filenames in the project and their path.
 
 Files with duplicate filenames are suffixed with the name of the
 directory they are found in so that they are unique.
 
 If KEYWORD is string, it's the file name or file path to find file.
-If KEYWORD is list, it's the list of file names."
+If KEYWORD is list, it's the list of file names.
+IF IS-FINDING-DIRECTORY is t, we are searching directories, else files.
+DIRECTORY-TO-SEARCH specify the root directory to search."
   (let* (rlt
-         (root (ffip-get-project-root-directory))
+         (root (or directory-to-search
+                   (ffip-get-project-root-directory)))
          (default-directory (file-name-as-directory root))
          (cmd (format "%s . \\( %s \\) -prune -o -type %s %s %s %s -print"
                       (if ffip-find-executable ffip-find-executable (ffip--executable-find "find"))
                       (ffip--prune-patterns)
-                      (if find-directory "d" "f")
+                      (if is-finding-directory "d" "f")
                       (ffip--join-patterns ffip-patterns)
                       ;; When finding directory, the keyword is like:
                       ;; "proj/hello/world"
@@ -549,7 +571,7 @@ If KEYWORD is list, it's the list of file names."
                         (let* ((ffip-filename-rules nil))
                           (ffip--create-filename-pattern-for-gnufind keyword)))
                        (t
-                        (if find-directory (format "-iwholename \"*%s\"" keyword)
+                        (if is-finding-directory (format "-iwholename \"*%s\"" keyword)
                           (ffip--create-filename-pattern-for-gnufind keyword))))
                       ffip-find-options)))
 
@@ -927,24 +949,23 @@ NUM is zero based whose default value is zero."
 
 ;;;###autoload
 (defun ffip-diff-apply-hunk (&optional reverse)
-  "Apply current hunk in `diff-mode'. Try to locate the file to patch
-from `recentf-list'. If nothing is found in `recentf-list', user need
-specify the file path.
-
-It's same as `diff-apply-hunk' except finding file in `recentf-list'.
-So please read documenation of `diff-apply-hunk' to get more details."
+  "Apply current hunk in `diff-mode'. Try to locate the file to patch.
+It's similar to `diff-apply-hunk' except it find file by `ffip-project-root'.
+Please read documenation of `diff-apply-hunk' to get more details."
   (interactive "P")
-  (unless recentf-mode (recentf-mode 1))
   (setq ffip-read-file-name-hijacked-p t)
   (defadvice read-file-name (around ffip-read-file-name-hack activate)
     (cond
      (ffip-read-file-name-hijacked-p
       (let* ((args (ad-get-args 0))
              (file-name (file-name-nondirectory (nth 2 args)))
-             (cands (remove nil (mapcar (lambda (s) (if (string-match-p (format "%s$" file-name) s) s))
-                                        (mapcar #'substring-no-properties recentf-list))))
-             (rlt (ivy-read "Recentf: " cands)))
-        (if rlt (setq ad-return-value rlt) rlt ad-doit)))
+             (default-directory (ffip-project-root))
+             (cands (ffip-project-search file-name nil default-directory))
+             (rlt (if cands (ivy-read "Files: " cands))))
+        (when rlt
+          (setq rlt (file-truename rlt))
+          (run-hook-with-args 'ffip-diff-apply-hunk-hook rlt)
+          (setq ad-return-value rlt))))
      (t
       ad-do-it)))
   (diff-apply-hunk reverse)

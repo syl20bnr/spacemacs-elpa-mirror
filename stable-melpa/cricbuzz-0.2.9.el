@@ -3,8 +3,8 @@
 ;; Copyright (c) 2016 Abhinav Tushar
 
 ;; Author: Abhinav Tushar <abhinav.tushar.vs@gmail.com>
-;; Version: 0.2.8
-;; Package-Version: 0.2.8
+;; Version: 0.2.9
+;; Package-Version: 0.2.9
 ;; Package-Requires: ((enlive "0.0.1") (dash "2.13.0") (s "1.11.0"))
 ;; Keywords: cricket, score
 ;; URL: https://github.com/lepisma/cricbuzz.el
@@ -45,6 +45,13 @@
                                   "/cricket-match/live-scores"))
 (defvar cricbuzz-schedule-file (expand-file-name "~/cricket-schedule.org"))
 
+(defun -cricbuzz-clean-str (text)
+  (s-collapse-whitespace
+   (s-chop-prefix "-" (s-trim
+                       (s-replace-all '(("_" . " ")
+                                        (" " . " ")
+                                        ("•" . " ")) text)))))
+
 ;; Parse live scores
 
 (defun cricbuzz-get-url (match-node)
@@ -74,23 +81,25 @@
 (defun cricbuzz-get-properties (match-node)
   "Return description and venue in a list"
   (let ((gray-nodes (enlive-query-all match-node [div.text-gray])))
-    (list
-     (enlive-text (first gray-nodes))
-     (enlive-text (second gray-nodes)))))
+    (mapcar #'-cricbuzz-clean-str (list
+                                   (enlive-text (first gray-nodes))
+                                   (enlive-text (second gray-nodes))))))
 
 (defun cricbuzz-parse-scores (details-node)
   "Return scores of both teams"
   (let ((score-node (enlive-direct-children
                      (first (enlive-query-all details-node [div.text-black])))))
     (list
-     (concat
-      (enlive-text (first score-node))
-      " :: "
-      (enlive-text (second score-node)))
-     (concat
-      (enlive-text (fifth score-node))
-      " :: "
-      (enlive-text (sixth score-node))))))
+     (-cricbuzz-clean-str
+      (concat
+       (enlive-text (first score-node))
+       " :: "
+       (enlive-text (second score-node))))
+     (-cricbuzz-clean-str
+      (concat
+       (enlive-text (fifth score-node))
+       " :: "
+       (enlive-text (sixth score-node)))))))
 
 (defun cricbuzz-get-status (match-node)
   "Return status, status-text, score-one and score-two"
@@ -103,11 +112,11 @@
                             "cb-text-live"))))
     (if live-node
         (cons "LIVE" (cons
-                      (enlive-text live-node)
+                      (-cricbuzz-clean-str (enlive-text live-node))
                       (cricbuzz-parse-scores details-node)))
       (if complete-node
           (cons "FINISHED" (cons
-                            (enlive-text complete-node)
+                            (-cricbuzz-clean-str (enlive-text complete-node))
                             (cricbuzz-parse-scores details-node)))
         (list nil)))))
 
@@ -175,17 +184,15 @@
                      "cb-mtch-info-itm")))
     (insert "* Match Info \n")
     (--map (let* ((info-pair (enlive-direct-children it))
-                  (head (enlive-text (second info-pair)))
-                  (tail (enlive-text (fourth info-pair))))
-             (insert (s-replace " " " "
-                                (concat "+ " head
-                                        " :: " tail "\n")))) info-items)))
+                  (head (-cricbuzz-clean-str (enlive-text (second info-pair))))
+                  (tail (-cricbuzz-clean-str (enlive-text (fourth info-pair)))))
+             (insert (concat "+ " head " :: " tail "\n"))) info-items)))
 
 (defun cricbuzz-insert-row (row-node)
   "Insert a row of data in table"
   (--map (progn
            (org-table-next-field)
-           (insert (enlive-text it)))
+           (insert (-cricbuzz-clean-str (enlive-text it))))
          (-remove-item " " row-node)))
 
 (defun cricbuzz-insert-table (header-node row-nodes)
@@ -213,10 +220,10 @@
 
 (defun cricbuzz-insert-junk-rows (data-node)
   "Format extra rows in list form"
-  (let* ((items (-map 'enlive-text data-node))
+  (let* ((items (-map (lambda (x) (-cricbuzz-clean-str (enlive-text x))) data-node))
          (head (first items))
          (tail (s-join " " (cdr items))))
-    (insert (s-replace " " " " (concat "+ " head " :: " tail "\n")))))
+    (insert (concat "+ " head " :: " tail "\n"))))
 
 (defun cricbuzz-insert-batting (batting-node)
   "Insert batting card"
@@ -238,28 +245,29 @@
 
 (defun cricbuzz-insert-fow (inning-node)
   "Insert fall of wickets if present"
-  (if (equal "Fall of Wickets" (enlive-text (second
-                                             (enlive-get-elements-by-class-name
-                                              inning-node
-                                              "cb-scrd-sub-hdr"))))
+  (if (equal "Fall of Wickets"
+             (-cricbuzz-clean-str (enlive-text (second
+                                                (enlive-get-elements-by-class-name
+                                                 inning-node
+                                                 "cb-scrd-sub-hdr")))))
       (progn
         (insert "*** Fall of Wickets\n")
-        (insert (s-replace " " " " (enlive-text
-                                    (first
-                                     (enlive-get-elements-by-class-name
-                                      inning-node
-                                      "cb-col-rt")))))
+        (insert (-cricbuzz-clean-str (enlive-text
+                                      (first
+                                       (enlive-get-elements-by-class-name
+                                        inning-node
+                                        "cb-col-rt")))))
         (fill-paragraph)
         (insert "\n\n"))))
 
 (defun cricbuzz-insert-innings (inning-node)
   "Insert an inning"
   (insert (concat "* "
-                  (enlive-text
-                   (fourth
-                    (first (enlive-get-elements-by-class-name
-                            inning-node
-                            "cb-scrd-hdr-rw"))))
+                  (-cricbuzz-clean-str (enlive-text
+                                        (fourth
+                                         (first (enlive-get-elements-by-class-name
+                                                 inning-node
+                                                 "cb-scrd-hdr-rw")))))
                   "\n\n"))
   (let ((tables (enlive-get-elements-by-class-name inning-node
                                                    "cb-ltst-wgt-hdr")))
@@ -279,14 +287,13 @@
                              (enlive-get-elements-by-class-name
                               left-node
                               "cb-mtch-info-itm")))))
-         (match-name (s-trim (enlive-text match-name-node)))
-         (match-status (enlive-text (first (enlive-get-elements-by-class-name
-                                           left-node
-                                           "cb-scrcrd-status"))))
+         (match-name (-cricbuzz-clean-str (enlive-text match-name-node)))
+         (match-status (-cricbuzz-clean-str
+                        (enlive-text (first (enlive-get-elements-by-class-name
+                                             left-node
+                                             "cb-scrcrd-status")))))
          (buffer (get-buffer-create
-                  (concat "*"
-                          (s-truncate 20 match-name)
-                          "*"))))
+                  (concat "*" (s-truncate 20 match-name) "*"))))
     (set-buffer buffer)
     (setq buffer-read-only nil)
     (erase-buffer)
