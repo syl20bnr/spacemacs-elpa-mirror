@@ -4,7 +4,7 @@
 
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;; URL: https://github.com/magit/magit-tbdiff
-;; Package-Version: 20170724.2156
+;; Package-Version: 20170725.1850
 ;; Keywords: vc, tools
 ;; Version: 0.2.0
 ;; Package-Requires: ((emacs "24.4") (magit "2.10.0"))
@@ -214,6 +214,7 @@ $ git tbdiff [ARGS...] BASE..REV-A BASE..REV-B"
                        (concat base ".." rev-b)
                        args))
 
+;;;###autoload (autoload 'magit-tbdiff-popup "magit-tbdiff" nil t)
 (magit-define-popup magit-tbdiff-popup
   "Popup console for git tbdiff."
   'magit-popups
@@ -223,8 +224,6 @@ $ git tbdiff [ARGS...] BASE..REV-A BASE..REV-B"
              (?i "Compare revs" magit-tbdiff-revs)
              (?r "Compare ranges" magit-tbdiff-ranges))
   :max-action-columns 1)
-
-;;;###autoload (autoload 'magit-tbdiff-popup "magit-tbdiff" nil t)
 
 ;;;###autoload
 (eval-after-load 'magit

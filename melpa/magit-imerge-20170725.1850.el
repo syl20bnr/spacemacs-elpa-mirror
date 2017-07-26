@@ -4,7 +4,7 @@
 
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;; URL: https://github.com/magit/magit-imerge
-;; Package-Version: 20170724.2157
+;; Package-Version: 20170725.1850
 ;; Keywords: vc, tools
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.4") (magit "2.10.0"))
@@ -371,6 +371,7 @@ plan to return to this incremental merge later."
              (?g "Goal" "--goal=" magit-imerge-read-goal))
   :actions '((?s "Set finish arguments" magit-imerge-set-finish-arguments)))
 
+;;;###autoload (autoload 'magit-imerge-popup "magit-imerge" nil t)
 (magit-define-popup magit-imerge-popup
   "Popup console for git-imerge."
   'magit-popups
@@ -393,8 +394,6 @@ plan to return to this incremental merge later."
                       (?a "Abort" magit-imerge-abort))
   :sequence-predicate 'magit-imerge-in-progress-p
   :max-action-columns 4)
-
-;;;###autoload (autoload 'magit-imerge-popup "magit-imerge" nil t)
 
 ;;;###autoload
 (eval-after-load 'magit
