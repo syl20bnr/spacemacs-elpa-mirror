@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/pamparam
-;; Package-Version: 20170721.1905
+;; Package-Version: 20170725.1345
 ;; Version: 0.0.0
 ;; Package-Requires: ((emacs "24.3") (lispy "0.26.0") (worf "0.1.0") (hydra "0.13.4"))
 ;; Keywords: outlines, hypermedia, flashcards, memory
@@ -625,7 +625,7 @@ repository, while the new card will start with empty metadata."
 (defun pamparam-schedule-file (time)
   (let ((year (format-time-string "%Y" time))
         (current-year (format-time-string "%Y" (current-time)))
-        (base (format-time-string "pamparam-%Y-%m-%d.org" time)))
+        (base (format-time-string "pam-%Y-%m-%d.org" time)))
     (if (string= year current-year)
         base
       (let ((dir (expand-file-name
