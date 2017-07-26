@@ -9,7 +9,7 @@
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Artur Malabarba <bruce.connor.am@gmail.com>
 ;; URL: http://github.com/clojure-emacs/clojure-mode
-;; Package-Version: 20170712.349
+;; Package-Version: 20170725.1439
 ;; Keywords: languages clojure clojurescript lisp
 ;; Version: 5.7.0-snapshot
 ;; Package-Requires: ((emacs "24.4"))
@@ -2374,7 +2374,7 @@ With a numeric prefix argument the let is introduced N lists up."
                 (regexp-opt '("js-obj" "js-delete" "clj->js" "js->clj"))
                 "\\>")
        0 font-lock-builtin-face)))
-  "Additional font-locking for `clojurescrip-mode'.")
+  "Additional font-locking for `clojurescript-mode'.")
 
 ;;;###autoload
 (define-derived-mode clojurescript-mode clojure-mode "ClojureScript"

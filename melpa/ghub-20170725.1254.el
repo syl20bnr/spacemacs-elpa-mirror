@@ -3,9 +3,9 @@
 ;; Copyright (C) 2016-2017  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
-;; Homepage: https://github.com/tarsius/ghub
+;; Homepage: https://github.com/magit/ghub
 ;; Keywords: tools
-;; Package-Version: 20170725.1056
+;; Package-Version: 20170725.1254
 ;; Package-Requires: ((emacs "25"))
 
 ;; This file is not part of GNU Emacs.
@@ -194,16 +194,16 @@ in which case return nil."
           body)))))
 
 (defun ghub--read-response ()
-  (unless (eobp)
-    (let ((json-object-type 'alist)
-          (json-array-type  'list)
-          (json-key-type    'symbol)
-          (json-false       nil)
-          (json-null        nil))
-      (json-encode-string
-       (decode-coding-string
-        (buffer-substring-no-properties (point) (point-max))
-        'utf-8)))))
+  (and (not (eobp))
+       (let ((json-object-type 'alist)
+             (json-array-type  'list)
+             (json-key-type    'symbol)
+             (json-false       nil)
+             (json-null        nil))
+         (json-read-from-string
+          (decode-coding-string
+           (buffer-substring-no-properties (point) (point-max))
+           'utf-8)))))
 
 (defun ghub--url-encode-params (params)
   (mapconcat (pcase-lambda (`(,key . ,val))

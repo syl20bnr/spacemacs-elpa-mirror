@@ -4,7 +4,7 @@
 
 ;; Author: Ricardo Martins
 ;; URL: https://github.com/meqif/docker-compose-mode
-;; Package-Version: 20170722.941
+;; Package-Version: 20170725.1527
 ;; Version: 0.1.0
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.3") (dash "2.12.0"))
@@ -35,19 +35,7 @@
   :prefix "docker-compose-")
 
 (defcustom docker-compose-keywords
-  '("aliases" "args" "bridge" "build" "cache_from" "cap_add" "cap_drop"
-    "cgroup_parent" "command" "configs" "container_name" "context"
-    "credential_spec" "depends_on" "deploy" "devices" "dns" "dns_search"
-    "dockerfile" "domainname" "driver" "driver" "driver_opts" "driver_opts"
-    "enable_ipv6" "entrypoint" "env_file" "environment" "expose" "external"
-    "external" "external_links" "extra_hosts" "healthcheck" "hostname" "image"
-    "internal" "ipam" "ipc" "ipv4_address" "ipv6_address" "isolation" "labels"
-    "labels" "labels" "labels" "labels" "links" "logging" "mac_address" "mode"
-    "network_mode" "networks" "overlay" "pid" "placement" "ports" "privileged"
-    "read_only" "replicas" "resources" "restart" "restart_policy" "secrets"
-    "security_opt" "shm_size" "stdin_open" "stop_grace_period" "stop_signal"
-    "sysctls" "tmpfs" "tty" "ulimits" "update_config" "user" "userns_mode"
-    "volumes" "working_dir")
+  '("aliases" "args" "bridge" "build" "cache_from" "cap_add" "cap_drop" "cgroup_parent" "command" "configs" "container_name" "context" "credential_spec" "depends_on" "deploy" "devices" "dns" "dns_search" "dockerfile" "domainname" "driver" "driver_opts" "enable_ipv6" "entrypoint" "env_file" "environment" "expose" "external" "external_links" "extra_hosts" "healthcheck" "hostname" "image" "internal" "ipam" "ipc" "ipv4_address" "ipv6_address" "isolation" "labels" "links" "logging" "mac_address" "mode" "network_mode" "networks" "overlay" "pid" "placement" "ports" "privileged" "read_only" "replicas" "resources" "restart" "restart_policy" "secrets" "security_opt" "shm_size" "stdin_open" "stop_grace_period" "stop_signal" "sysctls" "tmpfs" "tty" "ulimits" "update_config" "user" "userns_mode" "volumes" "working_dir")
   "List of docker-compose keywords."
   :type '(repeat string)
   :group 'docker-compose)

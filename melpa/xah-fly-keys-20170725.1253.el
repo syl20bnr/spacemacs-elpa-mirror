@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2016, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 7.6.15
-;; Package-Version: 20170725.547
+;; Version: 7.6.16
+;; Package-Version: 20170725.1253
 ;; Created: 10 Sep 2013
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, emulations, vim, ergoemacs
@@ -113,6 +113,9 @@
 (require 'ido) ; in emacs
 
 
+
+(when (version<= emacs-version "26.0.50"  )
+  (defalias 'global-display-line-numbers-mode 'linum-mode ))
 
 (defvar
   xah-fly-key--current-layout
@@ -2544,7 +2547,7 @@ Version 2017-01-21"
    (";" . window-configuration-to-register)
    ("1" . set-input-method)
    ("2" . global-hl-line-mode)
-   ("4" . linum-mode)
+   ("4" . global-display-line-numbers-mode)
    ("5" . visual-line-mode)
    ("6" . calendar)
    ("7" . calc)
@@ -2563,10 +2566,10 @@ Version 2017-01-21"
    ("j" . flyspell-buffer)
    ("k" . menu-bar-open)
    ("l" . toggle-word-wrap)
-   ("m" . global-linum-mode)
+   ("m" . nil)
    ("n" . narrow-to-region)
    ("o" . variable-pitch-mode)
-   ("p" . read-only-mode) ; toggle-read-only
+   ("p" . read-only-mode)
    ("q" . nil)
    ("r" . nil)
    ("s" . nil)
