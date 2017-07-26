@@ -3,8 +3,8 @@
 ;; Copyright (c) 2016 Abhinav Tushar
 
 ;; Author: Abhinav Tushar <abhinav.tushar.vs@gmail.com>
-;; Version: 0.2.9
-;; Package-Version: 0.2.9
+;; Version: 0.2.10
+;; Package-Version: 0.2.10
 ;; Package-Requires: ((enlive "0.0.1") (dash "2.13.0") (s "1.11.0"))
 ;; Keywords: cricket, score
 ;; URL: https://github.com/lepisma/cricbuzz.el
@@ -49,6 +49,7 @@
   (s-collapse-whitespace
    (s-chop-prefix "-" (s-trim
                        (s-replace-all '(("_" . " ")
+                                        ("►" . " ")
                                         (" " . " ")
                                         ("•" . " ")) text)))))
 
