@@ -22,10 +22,10 @@
  Files `icicles-doc1.el' and `icicles-doc2.el' contain the doc for
  Icicles, including how to install and use Icicles.  You can also
  read the Icicles doc, in formatted form, on the Emacs-Wiki Web
- site: http://www.emacswiki.org/Icicles.  Emacs Wiki also has a few
- addtional pages about Icicles.  In particular, if you are new to
- Emacs, as well as Icicles, see this page:
- http://www.emacswiki.org/EmacsNewbieWithIcicles.
+ site: https://www.emacswiki.org/emacs/Icicles.  Emacs Wiki also
+ has a few addtional pages about Icicles.  In particular, if you
+ are new to Emacs, as well as Icicles, see this page:
+ https://www.emacswiki.org/emacs/EmacsNewbieWithIcicles.
 
  See also: Library `lacarte.el', which lets you execute menu
  commands, cycling and completing them.  It is not part of Icicles,
@@ -41,7 +41,7 @@
  navigate around the sections of this doc.  Linkd mode will
  highlight this Index, as well as the cross-references and section
  headings throughout this file.  You can get `linkd.el' here:
- http://www.emacswiki.org/emacs/download/linkd.el.
+ https://www.emacswiki.org/emacs/download/linkd.el.
 
  (@> "Things Defined in Icicles")
  (@> "Miscellaneous")
