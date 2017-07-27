@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20170724.1123
-;; Version: 1.3.1
+;; Package-Version: 20170726.2028
+;; Version: 1.3.2
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -92,6 +92,11 @@
   "Default setting to sort with charactor."
   :group 'easy-hugo
   :type 'integer)
+
+(defcustom easy-hugo-publish-chmod "Du=rwx,Dgo=rx,Fu=rw,Fog=r"
+  "Permission when publish.The default is drwxr-xr-x."
+  :group 'easy-hugo
+  :type 'string)
 
 (defcustom easy-hugo-markdown-extension "md"
   "Markdown extension.
@@ -544,7 +549,7 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
    (when (file-directory-p "public")
      (delete-directory "public" t nil))
    (shell-command-to-string "hugo --destination public")
-   (shell-command-to-string (concat "rsync -rtpl --delete public/ " easy-hugo-sshdomain ":" (shell-quote-argument easy-hugo-root)))
+   (shell-command-to-string (concat "rsync -rtpl --chmod=" easy-hugo-publish-chmod " --delete public/ " easy-hugo-sshdomain ":" (shell-quote-argument easy-hugo-root)))
    (message "Blog published")
    (when easy-hugo-url
      (browse-url easy-hugo-url))))
@@ -591,7 +596,7 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
    (when (file-directory-p "public")
      (delete-directory "public" t nil))
    (shell-command-to-string "hugo --destination public")
-   (shell-command-to-string (concat "rsync -rtpl --delete public/ " easy-hugo-sshdomain ":" (shell-quote-argument easy-hugo-root)))
+   (shell-command-to-string (concat "rsync -rtpl --chmod=" easy-hugo-publish-chmod " --delete public/ " easy-hugo-sshdomain ":" (shell-quote-argument easy-hugo-root)))
    (message "Blog published")
    (when easy-hugo-url
      (browse-url easy-hugo-url))

@@ -1,11 +1,11 @@
 ;;; love-minor-mode.el --- Minor mode for working on LÖVE projects
 ;;
-;; Copyright 2012, 2013 Eric James Michael Ritz
+;; Copyright 2012--2017 Eric James Michael Ritz
 ;;
 ;; Author: Eric James Michael Ritz
 ;; URL: https://github.com/ejmr/love-minor-mode
-;; Package-Version: 20130429.1459
-;; Version: 1.1
+;; Package-Version: 20170726.2236
+;; Version: 1.2
 ;; Package-Requires: ((lua-mode "20130419"))
 ;;
 ;;
@@ -55,7 +55,7 @@
 
 (require 'lua-mode)
 
-(defconst love-minor-mode-version-number "1.1"
+(defconst love-minor-mode-version-number "1.2"
   "The version number of the LÖVE minor mode.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -69,9 +69,13 @@
     (define-key map (kbd "C-c C-o p") 'love/create-project-configuration)
     (define-key map (kbd "C-c C-o f") 'love/search-forums)
     (define-key map (kbd "C-c C-o d") 'love/browse-documentation)
+    (define-key map (kbd "M-p") 'love/play)
     (define-key map [menu-bar] (make-sparse-keymap))
     (define-key map [menu-bar love]
       (cons "LÖVE" (make-sparse-keymap "LÖVE")))
+    (define-key map [menu-bar love play]
+      '("Playtest" . love/play))
+    (define-key map [menu-bar love --] '("--" . nil))
     (define-key map [menu-bar love browse-documentation]
       '("Browse Documentation" . love/browse-documentation))
     (define-key map [menu-bar love create-project]
@@ -235,6 +239,27 @@ opens the results in the user's web browser."
                       love-forum-url
                       search-terms)))
     (browse-url search-url)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Playtesting.
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defcustom love-exe (or (executable-find "love")
+			"c:/programs/love-0.10.2-win32/love.exe")
+  "Path to LÖVE executable for playtesting."
+  :type 'string
+  :group 'love)
+
+(defun love/play ()
+  "Run LÖVE externally for the sake of playtesting."
+  (interactive)
+  (message love-exe)
+  (call-process love-exe nil "*love-output*" t 
+		(file-name-directory (buffer-file-name))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;

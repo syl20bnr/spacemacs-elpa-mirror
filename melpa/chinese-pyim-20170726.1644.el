@@ -5,7 +5,7 @@
 
 ;; Author: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/chinese-pyim
-;; Package-Version: 20170726.824
+;; Package-Version: 20170726.1644
 ;; Version: 1.5.2
 ;; Package-Requires: ((pyim "1.5.2"))
 ;; Keywords: convenience, Chinese, pinyin, input-method
@@ -33,6 +33,9 @@
 ;; * 代码                                                                 :code:
 (require 'pyim)
 
+;; For compatible
+(register-input-method "chinese-pyim" "euc-cn" 'pyim-start pyim-title)
+
 (message "
 
 ------------------------------------------------------------------
@@ -44,6 +47,7 @@
 |    (require 'pyim)                                             |
 |    (require 'pyim-basedict)                                    |
 |    (pyim-basedict-enable)                                      |
+|    (setq default-input-method \"pyim\")                        |
 |                                                                |
 |  给大家带来的不便我深表歉意，感谢大家的支持和理解。            |
 ------------------------------------------------------------------

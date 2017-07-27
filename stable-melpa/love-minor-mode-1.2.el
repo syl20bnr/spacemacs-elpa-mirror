@@ -1,11 +1,12 @@
 ;;; love-minor-mode.el --- Minor mode for working on LÖVE projects
 ;;
-;; Copyright 2012, 2013 Eric James Michael Ritz
+;; Copyright 2012--2017 Eric James Michael Ritz
 ;;
-;;; Author: Eric James Michael Ritz
-;;; URL: https://github.com/ejmr/love-minor-mode
-;; Package-Version: 1.1
-;;; Version: 1.1
+;; Author: Eric James Michael Ritz
+;; URL: https://github.com/ejmr/love-minor-mode
+;; Package-Version: 1.2
+;; Version: 1.2
+;; Package-Requires: ((lua-mode "20130419"))
 ;;
 ;;
 ;;
@@ -26,9 +27,13 @@
 ;; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 ;; 02110-1301, USA.
 ;;
+;;; Commentary:
 ;;
+;; This project adds a minor mode for GNU Emacs that adds tools to help
+;; developing games using the `LÖVE' engine. This minor mode works in
+;; conjunction with and requires `lua-mode'.
 ;;
-;;; Usage:
+;; Usage:
 ;;
 ;; Put this file in your Emacs lisp path (i.e. site-lisp) and add
 ;; this to your `.emacs' file:
@@ -50,14 +55,39 @@
 
 (require 'lua-mode)
 
-(defconst love-minor-mode-version-number "1.1"
+(defconst love-minor-mode-version-number "1.2"
   "The version number of the LÖVE minor mode.")
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; Define a customize group for LÖVE, a keymap to use, and the minor
-;;; mode itself.
+;;; Create the keymap.
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defvar love-minor-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c C-o p") 'love/create-project-configuration)
+    (define-key map (kbd "C-c C-o f") 'love/search-forums)
+    (define-key map (kbd "C-c C-o d") 'love/browse-documentation)
+    (define-key map (kbd "M-p") 'love/play)
+    (define-key map [menu-bar] (make-sparse-keymap))
+    (define-key map [menu-bar love]
+      (cons "LÖVE" (make-sparse-keymap "LÖVE")))
+    (define-key map [menu-bar love play]
+      '("Playtest" . love/play))
+    (define-key map [menu-bar love --] '("--" . nil))
+    (define-key map [menu-bar love browse-documentation]
+      '("Browse Documentation" . love/browse-documentation))
+    (define-key map [menu-bar love create-project]
+      '("Create Project" . love/create-project-configuration))
+    (define-key map [menu-bar love search-forums]
+      '("Search Forums" . love/search-forums))
+    map)
+  "A keymap for LÖVE minor mode.")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Define a customize group for LÖVE and the minor mode itself.
 ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -65,9 +95,6 @@
   "The customization group for LÖVE minor mode."
   :prefix "love-"
   :group 'lua)
-
-(defvar love-minor-mode-map (make-sparse-keymap)
-  "A keymap for LÖVE minor mode.")
 
 ;;;###autoload
 (define-minor-mode love-minor-mode
@@ -79,7 +106,6 @@
   :group 'love
   :keymap love-minor-mode-map)
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; Automatically enable LÖVE minor mode if the current buffer
@@ -120,24 +146,27 @@
   "A regular expression matching built-in LÖVE callback functions
 and standard modules.")
 
-(defun love/automatically-enable ()
+;;;###autoload
+(defun love/possibly-enable-mode ()
   "This function determines whether or not to automatically
 enable `love-minor-mode'.  If the current buffer contains any
 LÖVE-specific functions then we enable the minor mode."
-  (if (re-search-forward love/built-in-names nil t)
-      (progn
-        (love-minor-mode t)
-        (goto-char (point-min)))))
+  (save-excursion
+    (goto-char (point-min))
+    (if (re-search-forward love/built-in-names nil t)
+        (love-minor-mode t))))
 
-(add-hook 'lua-mode-hook 'love/automatically-enable)
+;;;###autoload
+(progn
+  (add-hook 'lua-mode-hook 'love/possibly-enable-mode))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; This functionality helps to create a new LÖVE project.
 ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;###autoload
 (defun love/create-project-configuration (directory name identity)
   "This function creates a `conf.lua' file in a given directory.
 It automatically fills the file with the love.conf() function and
@@ -158,9 +187,6 @@ end\n" name identity))
       (indent-region (point-min) (point-max))
       (save-buffer))))
 
-(define-key love-minor-mode-map (kbd "C-c C-o p") 'love/create-project-configuration)
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; Provide commands for browsing documentation like the official wiki
@@ -190,9 +216,6 @@ Otherwise we open the browser to the online wiki."
       (browse-url love-wiki-url)
     (browse-url love-local-documentation-path)))
 
-(define-key love-minor-mode-map (kbd "C-c C-o d") 'love/browse-documentation)
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; Provides a command for searching the official forums.
@@ -208,7 +231,7 @@ Otherwise we open the browser to the online wiki."
   "Searchs the official LÖVE forums for the given `terms' and
 opens the results in the user's web browser."
   (interactive "sSearch For: ")
-  (let* ((search-terms (replace-regexp-in-string "\\s+" "+" terms))
+  (let* ((search-terms (replace-regexp-in-string "\\s-+" "+" terms))
          (search-url (format
                       (concat "%ssearch.php?keywords=%s"
                               "&terms=all&author=&sc=1&sf=all&sr=posts&sk=t&"
@@ -217,29 +240,27 @@ opens the results in the user's web browser."
                       search-terms)))
     (browse-url search-url)))
 
-(define-key love-minor-mode-map (kbd "C-c C-o f") 'love/search-forums)
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; Create a command menu.
+;;; Playtesting.
 ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define-key love-minor-mode-map [menu-bar] (make-sparse-keymap))
-(define-key love-minor-mode-map [menu-bar love]
-  (cons "LÖVE" (make-sparse-keymap "LÖVE")))
+(defcustom love-exe (or (executable-find "love")
+			"c:/programs/love-0.10.2-win32/love.exe")
+  "Path to LÖVE executable for playtesting."
+  :type 'string
+  :group 'love)
 
-(define-key love-minor-mode-map [menu-bar love browse-documentation]
-  '("Browse Documentation" . love/browse-documentation))
+(defun love/play ()
+  "Run LÖVE externally for the sake of playtesting."
+  (interactive)
+  (message love-exe)
+  (call-process love-exe nil "*love-output*" t 
+		(file-name-directory (buffer-file-name))))
 
-(define-key love-minor-mode-map [menu-bar love create-project]
-  '("Create Project" . love/create-project-configuration))
 
-(define-key love-minor-mode-map [menu-bar love search-forums]
-  '("Search Forums" . love/search-forums))
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; This section contains any wrap-up or clean-up code in the package
