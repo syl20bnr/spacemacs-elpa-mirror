@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 1.3.1
-;; Version: 1.3.1
+;; Package-Version: 20170727.529
+;; Version: 1.3.3
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -92,6 +92,11 @@
   "Default setting to sort with charactor."
   :group 'easy-hugo
   :type 'integer)
+
+(defcustom easy-hugo-publish-chmod "Du=rwx,Dgo=rx,Fu=rw,Fog=r"
+  "Permission when publish.The default is drwxr-xr-x."
+  :group 'easy-hugo
+  :type 'string)
 
 (defcustom easy-hugo-markdown-extension "md"
   "Markdown extension.
@@ -544,7 +549,7 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
    (when (file-directory-p "public")
      (delete-directory "public" t nil))
    (shell-command-to-string "hugo --destination public")
-   (shell-command-to-string (concat "rsync -rtpl --delete public/ " easy-hugo-sshdomain ":" (shell-quote-argument easy-hugo-root)))
+   (shell-command-to-string (concat "rsync -rtpl --chmod=" easy-hugo-publish-chmod " --delete public/ " easy-hugo-sshdomain ":" (shell-quote-argument easy-hugo-root)))
    (message "Blog published")
    (when easy-hugo-url
      (browse-url easy-hugo-url))))
@@ -591,7 +596,7 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
    (when (file-directory-p "public")
      (delete-directory "public" t nil))
    (shell-command-to-string "hugo --destination public")
-   (shell-command-to-string (concat "rsync -rtpl --delete public/ " easy-hugo-sshdomain ":" (shell-quote-argument easy-hugo-root)))
+   (shell-command-to-string (concat "rsync -rtpl --chmod=" easy-hugo-publish-chmod " --delete public/ " easy-hugo-sshdomain ":" (shell-quote-argument easy-hugo-root)))
    (message "Blog published")
    (when easy-hugo-url
      (browse-url easy-hugo-url))
@@ -627,15 +632,19 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
     (easy-hugo-with-env
      (when (file-exists-p (file-truename (concat "content/" filename)))
        (error "%s already exists!" (concat easy-hugo-basedir "content/" filename)))
-     (if (or (string-equal file-ext easy-hugo-markdown-extension)
-	     (string-equal file-ext easy-hugo-asciidoc-extension)
-	     (string-equal file-ext "rst")
-	     (string-equal file-ext "mmark")
-	     (string-equal file-ext easy-hugo-html-extension))
-	 (call-process "hugo" nil "*hugo*" t "new" filename))
+     (if (<= 0.25 (string-to-number (easy-hugo--version)))
+	 (call-process "hugo" nil "*hugo*" t "new" filename)
+       (progn
+	 (if (or (string-equal file-ext easy-hugo-markdown-extension)
+		 (string-equal file-ext easy-hugo-asciidoc-extension)
+		 (string-equal file-ext "rst")
+		 (string-equal file-ext "mmark")
+		 (string-equal file-ext easy-hugo-html-extension))
+	     (call-process "hugo" nil "*hugo*" t "new" filename))))
      (find-file (concat "content/" filename))
-     (if (string-equal file-ext "org")
-         (insert (easy-hugo--org-headers (file-name-base post-file))))
+     (when (and (> 0.25 (string-to-number (easy-hugo--version)))
+		(string-equal file-ext "org"))
+       (insert (easy-hugo--org-headers (file-name-base post-file))))
      (goto-char (point-max))
      (save-buffer))))
 
@@ -1122,7 +1131,7 @@ Optional prefix ARG says how many lines to move; default is one line."
 		    (concat easy-hugo-postdir "/" (substring (thing-at-point 'line) easy-hugo--forward-char -1))
 		    easy-hugo-basedir)))
 	 (rename-file name (concat "content/" filename) 1)
-	 (easy-hugo))))))
+	 (easy-hugo-refresh))))))
 
 (defun easy-hugo-open ()
   "Open the file on the pointer."

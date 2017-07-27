@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 ~ 2015 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; Package-Requires: ((helm "1.7.8"))
-;; Package-Version: 20170716.109
+;; Package-Version: 20170727.724
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -307,15 +307,16 @@ and launch git-grep from there.
 
 (defvar helm-ls-git--current-branch nil)
 (defun helm-ls-git--branch ()
-  (or helm-ls-git--current-branch
-      (with-temp-buffer
-        (let ((ret (call-process "git" nil t nil "symbolic-ref" "--short" "HEAD")))
-          ;; Use sha of HEAD when branch name is missing.
-          (unless (zerop ret)
-            (erase-buffer)
-            (call-process "git" nil t nil "rev-parse" "--short" "HEAD")))
-        (buffer-substring-no-properties (goto-char (point-min))
-                                        (line-end-position)))))
+  (when (helm-ls-git-root-dir)
+    (or helm-ls-git--current-branch
+        (with-temp-buffer
+          (let ((ret (call-process "git" nil t nil "symbolic-ref" "--short" "HEAD")))
+            ;; Use sha of HEAD when branch name is missing.
+            (unless (zerop ret)
+              (erase-buffer)
+              (call-process "git" nil t nil "rev-parse" "--short" "HEAD")))
+          (buffer-substring-no-properties (goto-char (point-min))
+                                          (line-end-position))))))
 
 (defun helm-ls-git-header-name (name)
   (format "%s (%s)" name (helm-ls-git--branch)))

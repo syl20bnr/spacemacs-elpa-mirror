@@ -4,7 +4,7 @@
 
 ;; Author: Fritz Stelzer <brotzeitmacher@gmail.com>
 ;; URL: https://github.com/brotzeitmacher/arch-packer
-;; Package-Version: 20170723.430
+;; Package-Version: 20170727.426
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "25.1") (s "1.11.0") (async "1.9.2") (dash "2.12.0"))
 
@@ -238,6 +238,7 @@
     (define-key map (kbd "i") 'arch-packer-install-package)
     (define-key map (kbd "r") 'arch-packer-list-packages)
     (define-key map (kbd "s") 'arch-packer-search-package)
+    (define-key map (kbd "RET") 'arch-packer-pkg-info)
     (define-key map (kbd "q") 'quit-window)
     map)
   "Local keymap for `arch-packer-search-mode' buffers.")
@@ -342,8 +343,8 @@
 (defvar arch-packer-process-output-buffer "*arch-packer-output*"
   "Buffer that displays subprocess output.")
 
-(define-derived-mode arch-packer-output-mode prog-mode "Process output"
-  "Major mode for browsing search results."
+(defvar arch-packer-no-shell-history "; history -d $((HISTCMD-1))"
+  "Prevents arch-packer shell commands from being appended to history.")
   (setq truncate-lines t))
 
 (defun arch-packer-open-shell-process ()
@@ -392,7 +393,7 @@
 
 (defun arch-packer-process-sentinel (_proc _output)
   "The sentinel for arch-packer-process."
-  (let ((buf arch-packer-process-output-buffer))
+  (let ((buf (get-buffer arch-packer-process-output-buffer)))
     (when buf (kill-buffer buf))))
 
 (defun arch-packer-call-shell-process (proc string)
@@ -427,9 +428,10 @@
   "Get exit status of pacman subprocess."
   (arch-packer-wait-shell-subprocess)
   (arch-packer-call-shell-process arch-packer-process-name
-                             "if [ `echo $?` -ne 0 ]; 
-                              then echo \"Pacman error\n\"; 
-                              else echo \"Pacman finished\n\" ;fi"))
+                                  (concat "if [ `echo $?` -ne 0 ];
+                                           then echo \"Pacman error\n\";
+                                           else echo \"Pacman finished\n\" ;fi"
+                                          arch-packer-no-shell-history)))
 
 (defun arch-packer-disable-status-reporter ()
   "Enable progress-reporter."
@@ -464,14 +466,17 @@
 (defun arch-packer-refresh-database ()
   "Download a fresh copy of the master package database."
   (let ((command (arch-packer-shell-command)))
-    (arch-packer-call-shell-process arch-packer-process-name (concat command " -Sy"))))
+    (arch-packer-call-shell-process arch-packer-process-name (concat command
+                                                                     " -Sy"
+                                                                     arch-packer-no-shell-history))))
 
 (defun arch-packer-delete-package (packages)
   "Uninstall provided PACKAGES."
   (let ((command (arch-packer-shell-command)))
   (arch-packer-call-shell-process arch-packer-process-name (concat command
                                                                    " -Rsn --noconfirm "
-                                                                   packages))
+                                                                   packages
+                                                                   arch-packer-no-shell-history))
   (arch-packer-wait-shell-subprocess)
   (arch-packer-get-exit-status)))
 
@@ -480,7 +485,8 @@
   (let ((command (arch-packer-shell-command)))
     (arch-packer-call-shell-process arch-packer-process-name (concat command
                                                                      " -S --noconfirm "
-                                                                     packages))
+                                                                     packages
+                                                                     arch-packer-no-shell-history))
     (arch-packer-wait-shell-subprocess)
     (arch-packer-get-exit-status)))
 

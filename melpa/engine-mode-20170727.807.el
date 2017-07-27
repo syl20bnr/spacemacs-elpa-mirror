@@ -2,8 +2,9 @@
 
 ;; Author: Harry R. Schwartz <hello@harryrschwartz.com>
 ;; Version: 2.0.0
-;; Package-Version: 20170508.828
+;; Package-Version: 20170727.807
 ;; URL: https://github.com/hrs/engine-mode/engine-mode.el
+;; Package-Requires: ((cl-lib "0.5"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -49,7 +50,7 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Code:
-(eval-when-compile (require 'cl))
+(require 'cl-lib)
 
 (defvar engine-mode-map (make-sparse-keymap))
 (defvar engine-mode-prefixed-map (make-sparse-keymap))
@@ -115,6 +116,7 @@ Defaults to `browse-url-browser-function'."
     `(define-key engine-mode-prefixed-map ,keybinding
        (quote ,(engine/function-name engine-name)))))
 
+;;;###autoload
 (cl-defmacro defengine (engine-name search-engine-url &key keybinding docstring (browser 'engine/browser-function) (term-transformation-hook 'identity))
   "Define a custom search engine.
 

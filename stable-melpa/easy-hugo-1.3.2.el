@@ -4,7 +4,7 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20170726.2028
+;; Package-Version: 1.3.2
 ;; Version: 1.3.2
 ;; Package-Requires: ((emacs "24.4"))
 
