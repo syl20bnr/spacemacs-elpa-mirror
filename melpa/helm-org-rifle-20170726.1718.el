@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/helm-org-rifle
-;; Package-Version: 20170711.2354
+;; Package-Version: 20170726.1718
 ;; Version: 1.5.0-pre
 ;; Package-Requires: ((emacs "24.4") (dash "2.12") (f "0.18.1") (helm "1.9.4") (s "1.10.0"))
 ;; Keywords: hypermedia, outlines
@@ -1237,6 +1237,7 @@ NODES is a list of plists as returned by `helm-org-rifle-transform-candidates-to
 
 (defun helm-org-rifle--listify (item)
   "If ITEM is an atom, return (list ITEM).  If ITEM is a list, return ITEM."
+  ;; TODO: This could simply be e.g. (defun listify (&rest args) args)
   (cl-typecase item
     (list item)
     (atom (list item))

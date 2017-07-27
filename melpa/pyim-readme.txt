@@ -46,6 +46,7 @@ pyim 的目标是： *尽最大的努力成为一个好用的 Emacs 中文输入
    (require 'pyim)
    (require 'pyim-basedict) ; 拼音词库设置，五笔用户 *不需要* 此行设置
    (pyim-basedict-enable)   ; 拼音词库，五笔用户 *不需要* 此行设置
+   (setq default-input-method "pyim")
    #+END_EXAMPLE
 
 ** 配置
@@ -361,8 +362,8 @@ pyim *内置* 了多种词条获取的方式：
 2. 选词框弹出位置不合理：减小变量值
 
 *** 如何查看 pyim 文档。
-pyim 开发使用 lentic 文学编程模式，代码文档隐藏在comment中，如
-果用户喜欢阅读 html 格式的文档，可以查看在线文档；
+pyim 的文档隐藏在 comment 中，如果用户喜欢阅读 html 格式的文档，
+可以查看在线文档；
 
   http://tumashu.github.io/pyim/
 
