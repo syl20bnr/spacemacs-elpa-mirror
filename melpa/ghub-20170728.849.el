@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/magit/ghub
 ;; Keywords: tools
-;; Package-Version: 20170725.1254
+;; Package-Version: 20170728.849
 ;; Package-Requires: ((emacs "25"))
 
 ;; This file is not part of GNU Emacs.
@@ -97,42 +97,43 @@
 (defvar ghub-token nil)
 (defvar ghub-username nil)
 (defvar ghub-unpaginate nil)
+(defvar ghub-extra-headers nil)
 
 (defun ghub-get (resource &optional params data noerror)
   "Make `GET' request for RESOURCE, optionally sending PARAMS and/or DATA.
 Signal an error if the status code isn't in the 2xx class;
 unless optional NOERROR is non-nil, in which case return nil."
-  (ghub--request "GET" resource params data noerror))
+  (ghub-request "GET" resource params data noerror))
 
 (defun ghub-put (resource &optional params data noerror)
   "Make `PUT' request for RESOURCE, optionally sending PARAMS and/or DATA.
 Signal an error if the status code isn't in the 2xx class;
 unless optional NOERROR is non-nil, in which case return nil."
-  (ghub--request "PUT" resource params data noerror))
+  (ghub-request "PUT" resource params data noerror))
 
 (defun ghub-head (resource &optional params data noerror)
   "Make `HEAD' request for RESOURCE, optionally sending PARAMS and/or DATA.
 Signal an error if the status code isn't in the 2xx class;
 unless optional NOERROR is non-nil, in which case return nil."
-  (ghub--request "HEAD" resource params data noerror))
+  (ghub-request "HEAD" resource params data noerror))
 
 (defun ghub-post (resource &optional params data noerror)
   "Make `POST' request for RESOURCE, optionally sending PARAMS and/or DATA.
 Signal an error if the status code isn't in the 2xx class;
 unless optional NOERROR is non-nil, in which case return nil."
-  (ghub--request "POST" resource params data noerror))
+  (ghub-request "POST" resource params data noerror))
 
 (defun ghub-patch (resource &optional params data noerror)
   "Make `PATCH' request for RESOURCE, optionally sending PARAMS and/or DATA.
 Signal an error if the status code isn't in the 2xx class;
 unless optional NOERROR is non-nil, in which case return nil."
-  (ghub--request "PATCH" resource params data noerror))
+  (ghub-request "PATCH" resource params data noerror))
 
 (defun ghub-delete (resource &optional params data noerror)
   "Make `DELETE' request for RESOURCE, optionally sending PARAMS and/or DATA.
 Signal an error if the status code isn't in the 2xx class; unless
 optional NOERROR is non-nil, in which case return nil."
-  (ghub--request "DELETE" resource params data noerror))
+  (ghub-request "DELETE" resource params data noerror))
 
 (define-error 'ghub-error "Ghub Error")
 (define-error 'ghub-auth-error "Auth Error" 'ghub-error)
@@ -142,7 +143,7 @@ optional NOERROR is non-nil, in which case return nil."
 (define-error 'ghub-404 "Not Found" 'ghub-http-error)
 (define-error 'ghub-422 "Unprocessable Entity" 'ghub-http-error)
 
-(defun ghub--request (method resource &optional params data noerror)
+(defun ghub-request (method resource &optional params data noerror)
   "Make a request using METHOD for RESOURCE.
 METHOD is a `HTTP' request method, a string.  If non-nil, send
 PARAMS and/or DATA in the request.  Signal an error if the status
@@ -152,6 +153,7 @@ in which case return nil."
          (d (and data   (encode-coding-string (json-encode-list data) 'utf-8)))
          (url-request-extra-headers
           `(("Content-Type"  . "application/json")
+            ,@ghub-extra-headers
             ,@(and ghub-authenticate
                    `(("Authorization"
                       . ,(if (eq ghub-authenticate 'basic)
@@ -187,11 +189,13 @@ in which case return nil."
                                method resource p d body)))))
         (if (and link ghub-unpaginate)
             (nconc body
-                   (ghub--request method resource
+                   (ghub-request method resource
                                   (cons (cons 'page link)
                                         (cl-delete 'page params :key #'car))
                                   data noerror))
           body)))))
+
+(define-obsolete-function-alias 'ghub--request 'ghub-request "Ghub 2.0")
 
 (defun ghub--read-response ()
   (and (not (eobp))

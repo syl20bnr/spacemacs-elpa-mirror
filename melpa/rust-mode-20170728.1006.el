@@ -1,7 +1,7 @@
 ;;; rust-mode.el --- A major emacs mode for editing Rust source code -*-lexical-binding: t-*-
 
 ;; Version: 0.3.0
-;; Package-Version: 20170719.1308
+;; Package-Version: 20170728.1006
 ;; Author: Mozilla
 ;; Url: https://github.com/rust-lang/rust-mode
 ;; Keywords: languages
@@ -164,6 +164,11 @@ function or trait.  When nil, where will be aligned with fn or trait."
 (defface rust-unsafe-face
   '((t :inherit font-lock-warning-face))
   "Face for the `unsafe' keyword."
+  :group 'rust-mode)
+
+(defface rust-question-mark-face
+  '((t :weight bold :inherit font-lock-builtin-face))
+  "Face for the question mark operator."
   :group 'rust-mode)
 
 (defun rust-paren-level () (nth 0 (syntax-ppss)))
@@ -604,6 +609,9 @@ the desired identifiers), but does not match type annotations \"foo::<\"."
 
      ;; CamelCase Means Type Or Constructor
      (,rust-re-type-or-constructor 1 font-lock-type-face)
+
+     ;; Question mark operator
+     ("\\?" . 'rust-question-mark-face)
      )
 
    ;; Item definitions
