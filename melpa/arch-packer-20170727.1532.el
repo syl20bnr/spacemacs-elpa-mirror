@@ -4,7 +4,7 @@
 
 ;; Author: Fritz Stelzer <brotzeitmacher@gmail.com>
 ;; URL: https://github.com/brotzeitmacher/arch-packer
-;; Package-Version: 20170727.426
+;; Package-Version: 20170727.1532
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "25.1") (s "1.11.0") (async "1.9.2") (dash "2.12.0"))
 
@@ -345,7 +345,17 @@
 
 (defvar arch-packer-no-shell-history "; history -d $((HISTCMD-1))"
   "Prevents arch-packer shell commands from being appended to history.")
+
+(define-derived-mode arch-packer-output-mode special-mode "Process output"
+  "Major mode for displaying process output."
+  (setq buffer-read-only nil)
   (setq truncate-lines t))
+
+(defvar arch-packer-output-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map special-mode-map)
+    map)
+  "Local keymap for `arch-packer-output-mode' buffer.")
 
 (defun arch-packer-open-shell-process ()
   "Start shell process."
@@ -383,13 +393,11 @@
        (t
         (unless (string-match "^\\[" output)
           (and (setq arch-packer-subprocess-output output)
-               (let ((buf (get-buffer-create arch-packer-process-output-buffer)))
-                 (with-current-buffer buf
+               (with-current-buffer (arch-packer-get-output-buffer-create)
                    (if (get-buffer-window buf)
                        (set-window-point (get-buffer-window buf) (point-max))
                      (goto-char (point-max)))
-                   (arch-packer-output-mode)
-                   (insert output))))))))))
+                   (insert output)))))))))
 
 (defun arch-packer-process-sentinel (_proc _output)
   "The sentinel for arch-packer-process."
@@ -453,6 +461,15 @@
                    (process-running-child-p arch-packer-process-name))
           (progress-reporter-update progress-reporter i)
           (sit-for 0.1))))))
+
+(defun arch-packer-get-output-buffer-create ()
+  "Return `arch-packer-process-output-buffer', creating one if needed."
+  (let ((buf (get-buffer arch-packer-process-output-buffer)))
+    (unless buf
+      (setq buf (get-buffer-create arch-packer-process-output-buffer))
+      (with-current-buffer buf
+        (arch-packer-output-mode)))
+    buf))
 
 ;;;;;;;;;;;;;
 ;;; Pacman
@@ -521,8 +538,7 @@
 (defun arch-packer-display-output-buffer ()
   "Display output of shell subprocess in seperate buffer."
   (interactive)
-  (get-buffer-create arch-packer-process-output-buffer)
-  (display-buffer arch-packer-process-output-buffer))
+  (display-buffer (arch-packer-get-output-buffer-create)))
 
 (defun arch-packer-menu-mark-upgrade ()
   "Mark upgradable package."

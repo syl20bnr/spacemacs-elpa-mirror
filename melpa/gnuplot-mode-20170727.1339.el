@@ -4,11 +4,25 @@
 ;;
 ;; Authors: Mike McCourt <mkmcc@astro.berkeley.edu>
 ;; URL: https://github.com/mkmcc/gnuplot
-;; Package-Version: 20151122.2339
+;; Package-Version: 20170727.1339
 ;; Version: 1.2.0
 ;; Keywords: gnuplot, plotting
 
 ;; This file is not part of GNU Emacs.
+
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 3, or (at your option)
+;; any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 
 ;;; Commentary:
 
@@ -17,8 +31,8 @@
 ;; and a command to plot the file.
 
 ;; Some of this code is adapted from a more full-featured version by
-;; Bruce Ravel (available here http://xafs.org/BruceRavel/GnuplotMode;
-;; CC license).
+;; Bruce Ravel (available here https://github.com/bruceravel/gnuplot-mode;
+;; GPLv2).
 
 ;; Thanks to everyone, including Christopher Gilbreth and Ralph Möritz,
 ;; for sending suggestions, improvements, and fixes.
