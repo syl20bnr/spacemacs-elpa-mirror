@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-recent-headings
-;; Package-Version: 20170722.1507
+;; Package-Version: 20170727.1633
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "24.4") (org "9.0.5") (dash "2.13.0"))
 ;; Keywords: hypermedia, outlines, Org
@@ -64,7 +64,7 @@
 
 ;;;; Requirements
 
-(require 'cl-seq)
+(require 'cl-lib)
 (require 'org)
 (require 'recentf)
 (require 'dash)
@@ -265,8 +265,8 @@ REAL is a plist with `:file', `:id', and `:regexp' entries.  If
   "Trim recent headings list."
   (when (> (length org-recent-headings-list)
            org-recent-headings-list-size)
-    (setq org-recent-headings-list (subseq org-recent-headings-list
-                                           0 org-recent-headings-list-size))))
+    (setq org-recent-headings-list (cl-subseq org-recent-headings-list
+                                              0 org-recent-headings-list-size))))
 
 ;;;; File saving/loading
 
@@ -356,17 +356,6 @@ With prefix argument ARG, turn on if positive, otherwise off."
       map)
     "Keymap for `helm-source-org-recent-headings'.")
 
-  (defun org-recent-headings--show-entry-indirect-helm-action ()
-    "Action to call `org-recent-headings--show-entry-indirect' from Helm session keymap."
-    (interactive)
-    (with-helm-alive-p
-      (helm-exit-and-execute-action 'org-recent-headings--show-entry-indirect)))
-
-  (defun org-recent-headings-helm ()
-    "Choose from recent Org headings with Helm."
-    (interactive)
-    (helm :sources helm-source-org-recent-headings))
-
   ;; This declaration is absolutely necessary for some reason.  Even
   ;; if `helm' is loaded before this package is loaded, an "invalid
   ;; function" error will be raised when this package is loaded,
@@ -401,6 +390,19 @@ With prefix argument ARG, turn on if positive, otherwise off."
                "Remove entry" 'org-recent-headings--remove-entries
                "Bookmark heading" 'org-recent-headings--bookmark-entry))
     "Helm source for `org-recent-headings'.")
+
+
+
+  (defun org-recent-headings--show-entry-indirect-helm-action ()
+    "Action to call `org-recent-headings--show-entry-indirect' from Helm session keymap."
+    (interactive)
+    (with-helm-alive-p
+      (helm-exit-and-execute-action 'org-recent-headings--show-entry-indirect)))
+
+  (defun org-recent-headings-helm ()
+    "Choose from recent Org headings with Helm."
+    (interactive)
+    (helm :sources helm-source-org-recent-headings))
 
   (defun org-recent-headings--truncate-candidates (candidates)
     "Return CANDIDATES with their DISPLAY string truncated to frame width."
