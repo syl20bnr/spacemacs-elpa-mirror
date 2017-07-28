@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20170727.602
+;; Package-Version: 20170727.2351
 ;; Keywords: project, convenience
 ;; Version: 0.15.0-cvs
 ;; Package-Requires: ((emacs "24.1") (pkg-info "0.4"))
@@ -2254,7 +2254,7 @@ TEST-PREFIX which specifies test file prefix."
                                   :compile "mix compile"
                                   :test "mix test")
 (projectile-register-project-type 'npm '("package.json")
-                                  :compile "npm build"
+                                  :compile "npm install"
                                   :test "npm test")
 
 (defvar-local projectile-project-type nil
