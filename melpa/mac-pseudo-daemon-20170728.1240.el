@@ -2,7 +2,7 @@
 
 ;; Author: Ryan C. Thompson
 ;; URL: https://github.com/DarwinAwardWinner/osx-pseudo-daemon
-;; Package-Version: 20170726.1431
+;; Package-Version: 20170728.1240
 ;; Version: 2.0
 ;; Package-Requires: ((cl-lib "0.1"))
 ;; Created: 2013-09-20
@@ -126,14 +126,20 @@ systems, it is safe to enable this mode unconditionally."
       1)))
 
 (defun macpd-make-new-default-frame (&optional parameters)
-  "Like `make-frame', but select the `*scratch*` buffer in that frame.
+  "Like `make-frame', but select the initial buffer in that frame.
 
 Also does not change the currently selected frame.
 
 Arguments PARAMETERS are the same as in `make-frame'."
   (with-selected-frame (make-frame)
     (delete-other-windows)
-    (switch-to-buffer "*scratch*")
+    (switch-to-buffer
+     (cond ((stringp initial-buffer-choice)
+            (find-file-noselect initial-buffer-choice))
+           ((functionp initial-buffer-choice)
+            (funcall initial-buffer-choice))
+           (t ;; Ignore unusual values; real startup will alert the user.
+            (get-buffer-create "*scratch*"))))
     ;; Return the new frame
     (selected-frame)))
 
