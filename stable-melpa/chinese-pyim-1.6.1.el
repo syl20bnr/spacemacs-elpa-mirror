@@ -5,8 +5,8 @@
 
 ;; Author: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/chinese-pyim
-;; Package-Version: 20170726.1644
-;; Version: 1.5.2
+;; Package-Version: 1.6.1
+;; Version: 1.6.0
 ;; Package-Requires: ((pyim "1.5.2"))
 ;; Keywords: convenience, Chinese, pinyin, input-method
 

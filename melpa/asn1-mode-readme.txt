@@ -2,22 +2,17 @@
 
 This is a major mode for editing ASN.1/GDMO files.
 
-** Setup
+** References
 
-For installation, please add the following lines to your ~/.emacs:
+- ITU-T X.680 Information technology – Abstract Syntax Notation
+  One (ASN.1): Specification of basic notation
+  (http://www.itu.int/ITU-T/recommendations/rec.aspx?rec=9604)
 
-: (add-to-list 'auto-mode-alist '("\\.asn1$" . asn1-mode))
-: (add-to-list 'auto-mode-alist '("\\.gdmo$" . asn1-mode))
+- ITU-T X.681 Information technology – Abstract Syntax Notation
+  One (ASN.1): Information object specification
+  (http://www.itu.int/ITU-T/recommendations/rec.aspx?rec=9605)
 
-** Reference
-
-- [[http://www.itu.int/ITU-T/recommendations/rec.aspx?rec=9604]
-   [ITU-T X.680 Information technology – Abstract Syntax Notation
-   One (ASN.1): Specification of basic notation]]
-- [[http://www.itu.int/ITU-T/recommendations/rec.aspx?rec=9605]
-   [ITU-T X.681 Information technology – Abstract Syntax Notation
-   One (ASN.1): Information object specification]]
-- [[http://www.itu.int/ITU-T/recommendations/rec.aspx?rec=3061]
-   [ITU-T X.722: INFORMATION TECHNOLOGY – OPEN SYSTEMS
-    INTERCONNECTION – STRUCTURE OF MANAGEMENT INFORMATION:
-    GUIDELINES FOR THE DEFINITION OF MANAGED OBJECTS]]
+- ITU-T X.722: Information Technology – Open Systems
+  Interconnection – Structure of Management Information:
+  Guidelines For The Definition of Managed Objects
+  (http://www.itu.int/ITU-T/recommendations/rec.aspx?rec=3061)

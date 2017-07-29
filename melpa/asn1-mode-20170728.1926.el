@@ -2,13 +2,13 @@
 
 ;; Filename: asn1-mode.el
 ;; Package-Requires: ((emacs "24.3") (s "1.10.0"))
-;; Package-Version: 20160626.2240
+;; Package-Version: 20170728.1926
 ;; Description: ASN.1/GDMO Editing Mode
 ;; Author: Taichi Kawabata <kawabata.taichi_at_gmail.com>
 ;; Created: 2013-11-22
-;; Modified: 2013-12-18
+;; Version: 1.170729
 ;; Keywords: languages, processes, tools
-;; Namespace: asn1-mode-
+;; Namespace: asn1-, gdmo-
 ;; URL: https://github.com/kawabata/asn1-mode/
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -30,25 +30,20 @@
 ;;
 ;; This is a major mode for editing ASN.1/GDMO files.
 ;;
-;; ** Setup
+;; ** References
 ;;
-;; For installation, please add the following lines to your ~/.emacs:
+;; - ITU-T X.680 Information technology – Abstract Syntax Notation
+;;   One (ASN.1): Specification of basic notation
+;;   (http://www.itu.int/ITU-T/recommendations/rec.aspx?rec=9604)
 ;;
-;; : (add-to-list 'auto-mode-alist '("\\.asn1$" . asn1-mode))
-;; : (add-to-list 'auto-mode-alist '("\\.gdmo$" . asn1-mode))
+;; - ITU-T X.681 Information technology – Abstract Syntax Notation
+;;   One (ASN.1): Information object specification
+;;   (http://www.itu.int/ITU-T/recommendations/rec.aspx?rec=9605)
 ;;
-;; ** Reference
-
-;; - [[http://www.itu.int/ITU-T/recommendations/rec.aspx?rec=9604]
-;;    [ITU-T X.680 Information technology – Abstract Syntax Notation
-;;    One (ASN.1): Specification of basic notation]]
-;; - [[http://www.itu.int/ITU-T/recommendations/rec.aspx?rec=9605]
-;;    [ITU-T X.681 Information technology – Abstract Syntax Notation
-;;    One (ASN.1): Information object specification]]
-;; - [[http://www.itu.int/ITU-T/recommendations/rec.aspx?rec=3061]
-;;    [ITU-T X.722: INFORMATION TECHNOLOGY – OPEN SYSTEMS
-;;     INTERCONNECTION – STRUCTURE OF MANAGEMENT INFORMATION:
-;;     GUIDELINES FOR THE DEFINITION OF MANAGED OBJECTS]]
+;; - ITU-T X.722: Information Technology – Open Systems
+;;   Interconnection – Structure of Management Information:
+;;   Guidelines For The Definition of Managed Objects
+;;   (http://www.itu.int/ITU-T/recommendations/rec.aspx?rec=3061)
 
 ;;; Code:
 
@@ -57,7 +52,7 @@
 (require 's)
 (require 'trace)
 
-(defvar asn1-mode-support-gdmo t) ;; defcustom?
+(declare-function untrace-function "trace.el")
 
 (defvar asn1-mode-map
   (let ((map (make-sparse-keymap)))
@@ -67,7 +62,7 @@
 
 (defvar asn1-mode-debug nil)
 
-(defvar asn1-mode-syntax-table
+(defconst asn1-mode-syntax-table
   ;; cf.  X.680 Sec. 12 Lexical Items (12.6 Comments, 12.37, etc.)
   (let ((syntax-table (make-syntax-table)))
     (modify-syntax-entry '(?A . ?Z) "w" syntax-table)
@@ -103,7 +98,7 @@
     (modify-syntax-entry ?   " "        syntax-table)
     syntax-table))
 
-(defvar asn1-mode-keywords
+(defconst asn1-mode-keywords
   '(;; ASN.1 (ITU-T X.680 12.38)
       "ABSENT"
       "ABSTRACT-SYNTAX"
@@ -199,8 +194,12 @@
       ;; ITU-T X.681
       "OBJECT IDENTIFIER"
       "IDENTIFIED BY"
-      "WITH SYNTAX"
-      ;; GDMO (duplicate keywords may appear)
+      "WITH SYNTAX"))
+
+(defconst gdmo-mode-keywords
+  (append
+   asn1-mode-keywords
+   '(;; GDMO (duplicate keywords may appear)
       "MANAGED OBJECT CLASS"
       "DERIVED FROM"
       "CHARACTERIZED BY"
@@ -265,7 +264,7 @@
       "FIXED"
       "DESCRIPTION"
       ;;
-      "BEHAVIOUR"
+      ;;"BEHAVIOUR" ; duplicate
       "DEFINED AS"
       ;;
       "ACTION"
@@ -273,11 +272,11 @@
       "WITH INFORMATION SYNTAX"
       "WITH REPLY SYNTAX"
       ;;
-      "NOTIFICATIONS"
+      ;;"NOTIFICATIONS" ; duplicate
       "AND ATTRIBUTE IDS"
-      ))
+      )))
 
-(defvar asn1-mode-keywords-regexp
+(defconst asn1-mode-keywords-regexp
   (concat
    "\\<"
    (regexp-opt
@@ -285,10 +284,21 @@
    "\\>")
   "Regexp to match ASN.1 reserved keywords against token.")
 
-(defvar asn1-mode-font-lock-keywords
+(defconst gdmo-mode-keywords-regexp
+  (concat
+   "\\<"
+   (regexp-opt
+    (apply 'nconc (mapcar 'split-string gdmo-mode-keywords)))
+   "\\>")
+  "Regexp to match GDMO reserved keywords against token.")
+
+(defconst asn1-mode-font-lock-keywords
   `(,asn1-mode-keywords-regexp ; font-lock-keyword-face
     ("([0-9]+)" . font-lock-constant-face)
-    ("^[[:space:]]*\\(\\w+\\).+?::=" 1 font-lock-variable-name-face)
+    ("^[[:space:]]*\\(\\w+\\).+?::=" 1 font-lock-variable-name-face)))
+
+(defconst gdmo-mode-font-lock-keywords
+  `(,@asn1-mode-font-lock-keywords
     (,(concat
        "\\(\\w+\\)[[:space:]]+"
        (regexp-opt
@@ -307,8 +317,10 @@
 ;;;; abbrev table
 (define-abbrev-table 'asn1-mode-abbrev-table ())
 
-;; automatically define abbrev table.
-(dolist (kw (sort (copy-sequence asn1-mode-keywords)
+;; abbrev table setup
+(defun asn1-mode-abbrev-table ()
+  ;; automatically define abbrev table.
+  (dolist (kw (sort (copy-sequence asn1-mode-keywords)
                   (lambda (a b) (< (length a) (length b)))))
   (let* ((i 1)
          (split (split-string (downcase kw) "[- ]"))
@@ -319,7 +331,7 @@
                 (< i (length last)))
       (setq i (1+ i))
       (setq abbrev (concat base (substring last 1 i))))
-    (define-abbrev asn1-mode-abbrev-table abbrev kw)))
+    (define-abbrev asn1-mode-abbrev-table abbrev kw))))
 
 ;; (insert-abbrev-table-description 'asn1-mode-abbrev-table)
 
@@ -333,90 +345,97 @@
 ;; -- 1.1 <subsection name>
 ;; -- 1.1.1 <subsubsection name>
 (defvar asn1-mode-outline-regexp "-- +[0-9]+\\(\\.[0-9]+\\)* ")
-(defun asn1-mode-outline-level () (1+ (cl-count ?. (match-string 0))))
+(defun asn1-mode-outline-level ()
+  "Calculcate outline level of ASN.1 text."
+  (1+ (cl-count ?. (match-string 0))))
 
 ;; Lexical Tokenizer
 
 (defun asn1-mode-regexp-opt (&rest list)
   (concat "\\b" (regexp-opt list t) "\\b"))
 
-(defvar asn1-mode-token-alist nil)
-(defvar asn1-mode-token-alist-2 nil) ; second group that may conflict with first group
-(defvar asn1-mode-token-regexp nil)
-(defvar asn1-mode-token-regexp-2 nil)
+(defvar asn1-mode-token-alist
+  `(("_TAG_KIND" . ,(asn1-mode-regexp-opt "IMPLICIT" "EXPLICIT" "AUTOMATIC"))
+    ("_WITH_SYNTAX" . "\\b\\(WITH SYNTAX\\)\\b")
+    ("_CLASS" . "\\(CLASS\\)")
+    ("TAGS" . "\\b\\(TAGS\\)\\b")
+    ("DEFINITIONS" . "\\b\\(DEFINITIONS\\)\\b")
+    ("EXPORTS" . "\\b\\(EXPORTS\\)\\b")
+    ("BEGIN" . "\\b\\(BEGIN\\)\\b")
+    ("END" . "\\b\\(END\\)\\b")
+    ("SIZE" . "\\b\\(SIZE\\)\\b")
+    ("OF" . "\\b\\(OF\\)\\b")
+    ("IMPORTS" . "\\b\\(IMPORTS\\)\\b")
+    ("_SET" . ,(asn1-mode-regexp-opt "SET OF" "SEQUENCE OF"))
+    ("_SEQ" . ,(asn1-mode-regexp-opt "SEQUENCE" "CHOICE" "ENUMERATED"))
+    ("_UCASE_ID" .
+     ,(asn1-mode-regexp-opt "OBJECT IDENTIFIER" "BIT STRING" "OCTET STRING"))
+    ("_LITERAL"  . "\\b\\([0-9]+\\)\\b")
+    ("_XML_OPENER" . "\\(<[^<>/]+>\\)")
+    ("_XML_CLOSER" . "\\(</[^<>/]+>\\)")
+    ("_XML_SINGLE" . "\\(<[^<>/]+/>\\)")
+    ("..." . "\\(\\.\\.\\.\\)")
+    ("::=" . "\\(::=\\)")))
 
-(defun asn1-mode-token-setup ()
-  (interactive)
-  (setq asn1-mode-token-alist
-        `(
-          ,@(when asn1-mode-support-gdmo
-              `(("_GDMO_OPEN"
-                 . ,(asn1-mode-regexp-opt
-                     ;; template
-                     "MANAGED OBJECT CLASS"
-                     "BEHAVIOUR"
-                     "NAME BINDING"
-                     "PACKAGE"
-                     ;;"ATTRIBUTE"
-                     "ACTION"
-                     "NOTIFICATION"
-                     "PARAMETER"
-                     "ATTRIBUTE GROUP"
-                     ;; supportings
-                     "DERIVED FROM"
-                     "CHARACTERIZED BY"
-                     "CONDITIONAL PACKAGES"
-                     "SUBORDINATE OBJECT CLASS"
-                     "NAMED BY SUPERIOR OBJECT CLASS"
-                     "WITH ATTRIBUTE"
-                     "CREATE"
-                     "DELETE"
-                     "ATTRIBUTES"
-                     "ATTRIBUTE GROUPS"
-                     "ACTIONS"
-                     "NOTIFICATIONS"
-                     "MODE CONFIRMED"
-                     "PARAMETERS"
-                     "WITH INFORMATION SYNTAX"
-                     "WITH REPLY SYNTAX"
-                     "CONTEXT"
-                     "GROUP ELEMENTS"
-                     "FIXED"
-                     "DESCRIPTION"))
-                ("_REGISTERED_AS" .
-                 "\\b\\(REGISTERED AS\\)\\b")))
-          ("_TAG_KIND" . ,(asn1-mode-regexp-opt "IMPLICIT" "EXPLICIT" "AUTOMATIC"))
-          ("_WITH_SYNTAX" . "\\b\\(WITH SYNTAX\\)\\b")
-          ("_CLASS" . "\\(CLASS\\)")
-          ("TAGS" . "\\b\\(TAGS\\)\\b")
-          ("DEFINITIONS" . "\\b\\(DEFINITIONS\\)\\b")
-          ("EXPORTS" . "\\b\\(EXPORTS\\)\\b")
-          ("BEGIN" . "\\b\\(BEGIN\\)\\b")
-          ("END" . "\\b\\(END\\)\\b")
-          ("IMPORTS" . "\\b\\(IMPORTS\\)\\b")
-          ("_SET" . ,(asn1-mode-regexp-opt "SET OF" "SEQUENCE OF"))
-          ("_SEQ" . ,(asn1-mode-regexp-opt "SEQUENCE" "CHOICE" "ENUMERATED"))
-          ("_UCASE_ID" . ,(asn1-mode-regexp-opt "OBJECT IDENTIFIER" "BIT STRING" "OCTET STRING"))
-          ("_LITERAL"  . "\\b\\([0-9]+\\)\\b")
-          ("_XML_OPENER" . "\\(<[^<>/]+>\\)")
-          ("_XML_CLOSER" . "\\(</[^<>/]+>\\)")
-          ("_XML_INDEPENDENT" . "\\(<[^<>/]+/>\\)")
-          ("..." . "\\(\\.\\.\\.\\)")
-          ("::=" . "\\(::=\\)")))
-  (setq asn1-mode-token-regexp
-        (mapconcat (lambda (p)
-                     (concat (cdr p) ))
-                   asn1-mode-token-alist "\\|"))
-  (setq asn1-mode-token-alist-2
-        `(,@(when asn1-mode-support-gdmo
-              '(("_GDMO_OPEN" . "\\b\\(ATTRIBUTE\\)\\b")))
-          ("FROM" . "\\b\\(FROM\\)\\b")
-          ("_LCASE_ID" . "\\b\\([a-z&]\\(?:\\w\\|\\s_\\)+\\)\\b")
-          ("_UCASE_ID" . "\\b\\([A-Z]\\(?:\\w\\|\\s_\\)+\\)\\b")))
-  (setq asn1-mode-token-regexp-2
-        (mapconcat (lambda (p)
-                     (concat (cdr p) ))
-                   asn1-mode-token-alist-2 "\\|")))
+(defvar gdmo-mode-token-alist
+  `(,@asn1-mode-token-alist
+    ("_GDMO_OPEN"
+     . ,(asn1-mode-regexp-opt
+         ;; template
+         "MANAGED OBJECT CLASS"
+         "BEHAVIOUR"
+         "NAME BINDING"
+         "PACKAGE"
+         ;; To avoid conflict with `WITH ATTRIBUTE', define separately.
+         ;; "ATTRIBUTE"
+         "ACTION"
+         "NOTIFICATION"
+         "PARAMETER"
+         "ATTRIBUTE GROUP"
+         ;; supportings
+         "DERIVED FROM"
+         "CHARACTERIZED BY"
+         "CONDITIONAL PACKAGES"
+         "SUBORDINATE OBJECT CLASS"
+         "NAMED BY SUPERIOR OBJECT CLASS"
+         "WITH ATTRIBUTE"
+         "CREATE"
+         "DELETE"
+         "ATTRIBUTES"
+         "ATTRIBUTE GROUPS"
+         "ACTIONS"
+         "NOTIFICATIONS"
+         "MODE CONFIRMED"
+         "PARAMETERS"
+         "WITH INFORMATION SYNTAX"
+         "WITH REPLY SYNTAX"
+         "CONTEXT"
+         "GROUP ELEMENTS"
+         "FIXED"
+         "DESCRIPTION"))
+    ("_REGISTERED_AS" .
+     "\\b\\(REGISTERED AS\\)\\b")))
+
+(defconst asn1-mode-token-alist-2
+  `(("FROM" . "\\b\\(FROM\\)\\b")
+    ("_LCASE_ID" . "\\b\\([a-z&]\\(?:\\w\\|\\s_\\)+\\)\\b")
+    ("_UCASE_ID" . "\\b\\([A-Z]\\(?:\\w\\|\\s_\\)+\\)\\b")))
+
+(defconst gdmo-mode-token-alist-2
+  `(,@asn1-mode-token-alist-2
+    ("_GDMO_OPEN" . "\\b\\(ATTRIBUTE\\)\\b")))
+
+(defconst asn1-mode-token-regexp
+  (mapconcat (lambda (p) (concat (cdr p) )) asn1-mode-token-alist "\\|"))
+
+(defconst asn1-mode-token-regexp-2
+  (mapconcat (lambda (p) (concat (cdr p) )) asn1-mode-token-alist-2 "\\|"))
+
+(defconst gdmo-mode-token-regexp
+  (mapconcat (lambda (p) (concat (cdr p) )) gdmo-mode-token-alist "\\|"))
+
+(defconst gdmo-mode-token-regexp-2
+  (mapconcat (lambda (p) (concat (cdr p) )) gdmo-mode-token-alist-2 "\\|"))
 
 (defun asn1-mode-token-match-group (match-data regexp-alist)
   (car (nth (/ (cl-position-if-not 'null (cddr (match-data))) 2)
@@ -452,15 +471,15 @@
     (condition-case nil ; for scan-error
         (cond
          ((bobp) nil)
-         ((looking-back asn1-mode-token-regexp)
+         ((looking-back asn1-mode-token-regexp nil)
           (goto-char (match-beginning 0))
           (asn1-mode-token-match-group (match-data) asn1-mode-token-alist))
-         ((looking-back asn1-mode-token-regexp-2)
+         ((looking-back asn1-mode-token-regexp-2 nil)
           (goto-char (match-beginning 0))
           (asn1-mode-token-match-group (match-data) asn1-mode-token-alist-2))
-         ((looking-back "\\s\"") (goto-char (scan-sexps (point) -1)) "_LITERAL")
-         ((looking-back "}")     (goto-char (scan-sexps (point) -1)) "_BRACE")
-         ((looking-back "[])]")  (goto-char (scan-sexps (point) -1)) "_PAREN")
+         ((looking-back "\\s\"" nil) (goto-char (scan-sexps (point) -1)) "_LITERAL")
+         ((looking-back "}" nil)     (goto-char (scan-sexps (point) -1)) "_BRACE")
+         ((looking-back "[])]" nil)  (goto-char (scan-sexps (point) -1)) "_PAREN")
          (t (buffer-substring-no-properties
              (point)
              (progn
@@ -471,73 +490,86 @@
 
 (defvar asn1-mode-smie-grammar
   (smie-prec2->grammar
-   (smie-merge-prec2s
-    (smie-bnf->prec2
-     `(
-       (module-body
-        ("DEFINITIONS" "_TAG_KIND" "TAGS" "::=" "BEGIN" module-body2 "END"))
-       (module-body2
-        (exports)
-        (imports)
-        (assignment))
-       (exports
-        ("EXPORTS" tokens ";"))
-       (imports
-        ("IMPORTS" imports-body ";"))
-       (imports-body
-        (tokens "FROM" "_UCASE_ID" paren))
-       (assignment
-        (ucase-id "::=" paren)
-        (ucase-id "::=" type)
-        (ucase-id "::=" value)
-        (ucase-id "::=" xmlvalue)
-        (ucase-id "::=" objectclass))
-       (ucase-id
-        ("_UCASE_ID"))
-       (lcase-id
-        ("_LCASE_ID"))
-       (objectclass
-        ("_CLASS" "_BRACE" with-syntax))
-       (with-syntax
-        ("_WITH_SYNTAX" paren))
-       (type
-        ("_UCASE_ID")
-        ("_SET" type)
-        ("_SEQ" paren))
-       (value
-        (type ":" value)
-        (type "." value)
-        ("_LCASE_ID")
-        ("_LITERAL"))
-       (tokens
-        (type)
-        (value)
-        (tokens "," tokens)
-        (tokens "|" tokens))
-       (token
-        ("_UCASE_ID")
-        ("_LCASE_ID"))
-       (paren
-        ("_BRACE")
-        ("_PAREN")
-        ("{" tokens "}")
-        ("[" value "]")
-        ("(" value ")"))
-       (xml-value
-        ("_XML_SINGLE")
-        ("_XML_OPENER" xml-value "_XML_CLOSER")
-        (tokens))
-       ;; GDMO
-       ;; cf. ITU-T X.722
-       (gdmo
-        ("_GDMO_OPEN" gdmo-inside ";")
-        ("_WITH_SYNTAX" gdmo-inside ";"))
-       (gdmo-inside
-        (gdmo)
-        (gdmo-inside "," gdmo-inside)
-        ("_LCASE_ID")
-        ("_UCASE_ID")))
-     '((assoc "_UCASE_ID" "_LCASE_ID" "," "|"))))))
+   (smie-bnf->prec2
+    `(
+      (empty)
+      (module-body
+       ("DEFINITIONS" tag "::=" begin-end))
+      (tag
+       (empty)
+       ("_TAG_KIND" "TAGS"))
+      (begin-end
+       ("BEGIN" module-body2 "END"))
+      (module-body2
+       (exports)
+       (imports)
+       (assignment))
+      (exports
+       ("EXPORTS" tokens ";"))
+      (imports
+       ("IMPORTS" imports-body ";"))
+      (imports-body
+       (import-labels "FROM" "_UCASE_ID" brace))
+      (assignment
+       (ucase-id "::=" brace)
+       (ucase-id "::=" type)
+       (ucase-id "::=" value)
+       (ucase-id "::=" xmlvalue)
+       (ucase-id "::=" objectclass)
+       (brace "::=" type))
+      (brace
+       ("_BRACE")
+       ;;("{" tokens "}")
+       )
+      (import-labels
+       (ucase-id)
+       (import-labels "," import-labels)
+       (import-labels "," import-labels))
+      (ucase-id
+       ("_UCASE_ID"))
+      (objectclass
+       ("_CLASS" "_BRACE" with-syntax))
+      (with-syntax
+       ("_WITH_SYNTAX" brace))
+      (type
+       ("_UCASE_ID")
+       ("_SET" type)
+       ("_SEQ" brace)
+       ("_SEQ" size "OF" brace))
+      (size
+       ("SIZE" paren))
+      (value
+       (type ":" value)
+       (type "." value)
+       ("_LCASE_ID")
+       ("_LITERAL"))
+      (tokens
+       (type)
+       (value)
+       (tokens "," tokens)
+       (tokens "|" tokens))
+      (token
+       ("_UCASE_ID")
+       ("_LCASE_ID"))
+      (paren
+       ("_PAREN")
+       ("[" value "]")
+       ("(" value ")"))
+      (xml-value
+       ("_XML_SINGLE")
+       ("_XML_OPENER" xml-value "_XML_CLOSER")
+       (tokens))
+      ;; GDMO
+      ;; cf. ITU-T X.722
+      (gdmo
+       ("_GDMO_OPEN" gdmo-inside ";")
+       ("_WITH_SYNTAX" gdmo-inside ";"))
+      (gdmo-inside
+       (gdmo)
+       (gdmo-inside "," gdmo-inside)
+       ("_LCASE_ID")
+       ("_UCASE_ID")))
+    '((assoc "_UCASE_ID" "_LCASE_ID" "," "|")))))
 
 (defun asn1-mode-debug (&rest message)
   (let ((message (apply 'format message)))
@@ -601,7 +633,7 @@
     ;; misc
     (`(:list-intro . ,_) t)
     (`(:elem . ,_) 0)
-    (t nil)))
+    (_ nil)))
 
 (defun asn1-mode-toggle-debug ()
   "Toggle variable `asn1-mode-debug'."
@@ -613,36 +645,58 @@
       (trace-function 'asn1-mode-smie-rules)
     (untrace-function 'asn1-mode-smie-rules)))
 
+(defun asn1-mode-common-setup ()
+  "Local variable settings common to ASN.1/GDMO."
+  ;; set local variables
+  (smie-setup asn1-mode-smie-grammar #'asn1-mode-smie-rules
+              :forward-token 'asn1-mode-forward-token
+              :backward-token 'asn1-mode-backward-token)
+  ;;(set-syntax-table asn1-mode-syntax-table)
+  (asn1-mode-abbrev-table)
+  (setq-local parse-sexp-ignore-comments t)
+  (setq-local tab-width 4)
+  (setq-local comment-start "--")
+  (setq-local comment-end "") ; comment ends at end of line
+  (setq-local comment-start-skip nil)
+  (setq-local outline-regexp asn1-mode-outline-regexp)
+  (setq-local outline-level 'asn1-mode-outline-level)
+  (setq-local imenu-generic-expression asn1-mode-imenu-expression))
+
 ;;;###autoload
-(define-derived-mode asn1-mode prog-mode "ASN.1/GDMO"
-  "Major mode for editing ASN.1/GDMO text files in Emacs.
+(define-derived-mode asn1-mode prog-mode "ASN.1"
+  "Major mode for editing ASN.1 text files in Emacs.
 
 \\{asn1-mode-map}
 Entry to this mode calls the value of `asn1-mode-hook'
 if that value is non-nil."
   :syntax-table asn1-mode-syntax-table
   :abbrev-table asn1-mode-abbrev-table
-  (asn1-mode-token-setup)
-  (smie-setup asn1-mode-smie-grammar #'asn1-mode-smie-rules
-              :forward-token 'asn1-mode-forward-token
-              :backward-token 'asn1-mode-backward-token)
-  (set-syntax-table asn1-mode-syntax-table)
-  ;; set local variables
-  (setq-local parse-sexp-ignore-comments t)
-  (setq-local tab-width 4)
-  (setq-local comment-start "--")
-  (setq-local comment-end "") ; comment ends at end of line
-  (setq-local comment-start-skip nil)
-  (setq-local font-lock-defaults '(asn1-mode-font-lock-keywords nil nil))
-  (setq-local outline-regexp asn1-mode-outline-regexp)
-  (setq-local outline-level 'asn1-mode-outline-level)
-  (setq-local imenu-generic-expression asn1-mode-imenu-expression))
+  (asn1-mode-common-setup)
+  (setq-local font-lock-defaults '(asn1-mode-font-lock-keywords nil nil)))
+
+
+;;;###autoload
+(define-derived-mode gdmo-mode prog-mode "GDMO"
+  "Major mode for editing GDMO text files in Emacs.
+
+\\{asn1-mode-map}
+Entry to this mode calls the value of `asn1-mode-hook'
+if that value is non-nil."
+  :syntax-table asn1-mode-syntax-table
+  :abbrev-table asn1-mode-abbrev-table
+  (asn1-mode-common-setup)
+  (setq-local font-lock-defaults '(gdmo-mode-font-lock-keywords nil nil)))
+
+;;;###autoload
+(add-to-list 'auto-mode-alist '("\\.asn1$" . asn1-mode))
+;;;###autoload
+(add-to-list 'auto-mode-alist '("\\.gdmo$" . gdmo-mode))
+;;(add-to-list 'auto-mode-alist '("\\.mo$" . gdmo-mode))
 
 (provide 'asn1-mode)
 
 ;; Local Variables:
-;; coding: utf-8-unix
-;; time-stamp-pattern: "10/Modified:\\\\?[ \t]+%:y-%02m-%02d\\\\?\n"
+;; time-stamp-pattern: "10/Version:\\\\?[ \t]+1.%02y%02m%02d\\\\?\n"
 ;; End:
 
 ;;; asn1-mode.el ends here
