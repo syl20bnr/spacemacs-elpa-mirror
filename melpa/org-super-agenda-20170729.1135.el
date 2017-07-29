@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-super-agenda
-;; Package-Version: 20170728.2252
+;; Package-Version: 20170729.1135
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "25.1") (s "1.10.0") (dash "2.13") (org "9.0"))
 ;; Keywords: hypermedia, outlines, Org, agenda
@@ -35,52 +35,47 @@
 ;; you can add it to your `org-agenda-custom-commands' list.  You can
 ;; also test it quickly like this:
 
-;; (let ((org-agenda-custom-commands
-;;        '(("u" "SUPER Agenda"
-;;           org-super-agenda ""
-;;           ((org-agenda-span 'day)
-;;            (org-super-agenda-groups
-;;             '(;; Each group has an implicit boolean OR operator between its selectors.
-;;               (:name "Today"  ; Optionally specify section name
-;;                      :time t  ; Items that have a time associated
-;;                      :todo "TODAY")  ; Items that have this TODO keyword
-;;               (:name "Important"
-;;                      ;; Single arguments given alone
-;;                      :tag "bills"
-;;                      :priority "A")
-;;               ;; Set order of multiple groups at once
-;;               (:order-multi (2 (:name "Shopping in town"
-;;                                       ;; Boolean AND group matches items that match all subgroups
-;;                                       :and (:tag "shopping" :tag "@town"))
-;;                                (:name "Food-related"
-;;                                       ;; Multiple args given in list with implicit OR
-;;                                       :tag ("food" "dinner"))
-;;                                (:name "Personal"
-;;                                       :habit t
-;;                                       :tag "personal")
-;;                                (:name "Space-related (non-moon-or-planet-related)"
-;;                                       ;; Regexps match case-insensitively on the entire entry
-;;                                       :and (:regexp ("space" "NASA")
-;;                                                     ;; Boolean NOT also has implicit OR between selectors
-;;                                                     :not (:regexp "moon" :tag "planet")))))
-;;               ;; Groups supply their own section names when none are given
-;;               (:todo "WAITING" :order 8)  ; Set order of this section
-;;               (:todo ("SOMEDAY" "TO-READ" "CHECK" "TO-WATCH" "WATCHING")
-;;                      ;; Show this group at the end of the agenda (since it has the
-;;                      ;; highest number). If you specified this group last, items
-;;                      ;; with these todo keywords that e.g. have priority A would be
-;;                      ;; displayed in that group instead, because items are grouped
-;;                      ;; out in the order the groups are listed.
-;;                      :order 9)
-;;               (:priority ("B" "C")
-;;                          ;; Show this section after "Today" and "Important", because
-;;                          ;; their order is unspecified, defaulting to 0.  Sections
-;;                          ;; are displayed lowest-number-first.
-;;                          :order 1)
-;;               ;; After the last group, the agenda will display items that didn't
-;;               ;; match any of these groups, with the default order position of 99
-;;               )))))))
-;;   (org-agenda nil "u"))
+;; (let ((org-super-agenda-groups
+;;        '(;; Each group has an implicit boolean OR operator between its selectors.
+;;          (:name "Today" ; Optionally specify section name
+;;                 :time t ; Items that have a time associated
+;;                 :todo "TODAY") ; Items that have this TODO keyword
+;;          (:name "Important"
+;;                 ;; Single arguments given alone
+;;                 :tag "bills"
+;;                 :priority "A")
+;;          ;; Set order of multiple groups at once
+;;          (:order-multi (2 (:name "Shopping in town"
+;;                                  ;; Boolean AND group matches items that match all subgroups
+;;                                  :and (:tag "shopping" :tag "@town"))
+;;                           (:name "Food-related"
+;;                                  ;; Multiple args given in list with implicit OR
+;;                                  :tag ("food" "dinner"))
+;;                           (:name "Personal"
+;;                                  :habit t
+;;                                  :tag "personal")
+;;                           (:name "Space-related (non-moon-or-planet-related)"
+;;                                  ;; Regexps match case-insensitively on the entire entry
+;;                                  :and (:regexp ("space" "NASA")
+;;                                                ;; Boolean NOT also has implicit OR between selectors
+;;                                                :not (:regexp "moon" :tag "planet")))))
+;;          ;; Groups supply their own section names when none are given
+;;          (:todo "WAITING" :order 8) ; Set order of this section
+;;          (:todo ("SOMEDAY" "TO-READ" "CHECK" "TO-WATCH" "WATCHING")
+;;                 ;; Show this group at the end of the agenda (since it has the
+;;                 ;; highest number). If you specified this group last, items
+;;                 ;; with these todo keywords that e.g. have priority A would be
+;;                 ;; displayed in that group instead, because items are grouped
+;;                 ;; out in the order the groups are listed.
+;;                 :order 9)
+;;          (:priority<= "B"
+;;                       ;; Show this section after "Today" and "Important", because
+;;                       ;; their order is unspecified, defaulting to 0. Sections
+;;                       ;; are displayed lowest-number-first.
+;;                       :order 1)
+;;          ;; After the last group, the agenda will display items that didn't
+;;          ;; match any of these groups, with the default order position of 99
+;;          ))))
 
 ;; You can adjust the `org-super-agenda-groups' to create as many different
 ;; groups as you like.
@@ -174,7 +169,7 @@ Matches `org-priority-regexp'."
 
 ;;;; Group selectors
 
-(cl-defmacro org-super-agenda--defgroup (name docstring &key section-name test)
+(cl-defmacro org-super-agenda--defgroup (name docstring &key section-name test let*)
   "Define an agenda-item group function.
 NAME is a symbol that will be appended to `org-super-agenda--group-' to
 construct the name of the group function.  A symbol like `:name'
@@ -190,6 +185,9 @@ the variable `items' available.
 `item' available.  Items passing this test are filtered into a
 separate list.
 
+:LET is a `let*' binding form that is bound around the function
+body after the ARGS are made a list.
+
 Finally a list of three items is returned, with the value
 returned by :SECTION-NAME as the first item, a list of items not
 matching the :TEST as the second, and a list of items matching as
@@ -204,12 +202,13 @@ the third."
          ,docstring
          (unless (listp args)
            (setq args (list args)))
-         (cl-loop with section-name = ,section-name
-                  for item in items
-                  if ,test
-                  collect item into matching
-                  else collect item into non-matching
-                  finally return (list section-name non-matching matching))))))
+         (let* ,let*
+           (cl-loop with section-name = ,section-name
+                    for item in items
+                    if ,test
+                    collect item into matching
+                    else collect item into non-matching
+                    finally return (list section-name non-matching matching)))))))
 
 (org-super-agenda--defgroup time
   "Group items that have a time associated.
@@ -237,6 +236,36 @@ Argument may be a string or list of strings, which should be,
 e.g. \"A\" or (\"B\" \"C\")."
   :section-name (concat "Priority " (s-join " and " args) " items")
   :test (cl-member (org-super-agenda--get-priority-cookie item) args :test 'string=))
+
+(cl-defmacro org-super-agenda--defpriority-group (name docstring &key section-name comparator)
+  (declare (indent defun))
+  `(org-super-agenda--defgroup ,(intern (concat "priority" (symbol-name name)))
+     ,(concat docstring "\nArgument is a string; it may also be a list of
+strings, in which case only the first will be used.
+The string should be the priority cookie letter, e.g. \"A\".")
+     :section-name (concat "Priority " ,(symbol-name name) " "
+                           (s-join " or " args) " items")
+     :let* ((priority-number (string-to-char (car args))))
+     :test (let ((item-priority (org-super-agenda--get-priority-cookie item)))
+             (when item-priority
+               ;; Higher priority means lower number
+               (,comparator (string-to-char item-priority) priority-number)))))
+
+(org-super-agenda--defpriority-group >
+  "Group items that are higher than the given priority."
+  :comparator <)
+
+(org-super-agenda--defpriority-group >=
+  "Group items that are greater than or equal to the given priority."
+  :comparator <=)
+
+(org-super-agenda--defpriority-group <
+  "Group items that are lower than the given priority."
+  :comparator >)
+
+(org-super-agenda--defpriority-group <=
+  "Group items that are lower than or equal to the given priority."
+  :comparator >=)
 
 (org-super-agenda--defgroup regexp
   "Group items that match a regular expression.
