@@ -202,8 +202,8 @@ pyim 支持五笔输入模式，用户可以通过变量 `pyim-default-scheme' �
 最简单的方式是从 melpa 中安装 pyim-wbdict 包，然后根据它的
 [[https://github.com/tumashu/pyim-wbdict][README]] 来配置。
 
-注意：为了简化代码和提高输入法响应速度，pyim 直接将拼音词库和五笔
-词库合并到同一个dcache 文件中，所以 pyim *强制规定* 在词库中，
+注意：为了简化代码和提高输入法响应速度，pyim 直接将拼音词库和其它输入法
+词库（比如：五笔词库）合并到同一个 dcache 文件中，所以 pyim *强制规定* 在词库中，
 五笔编码 *必须* 都以 '.' 开头，比如 '.aaaa' ,这样可以避免出现不必要
 的混乱。
 
@@ -239,7 +239,7 @@ pyim 的 tooltip 选词框默认使用 *双行显示* 的样式，在一些特
 (setq pyim-page-style 'one-line)
 #+END_EXAMPLE
 
-注：用户可以添加函数 pyim-page-style:style-name 来定义自己的选词框格式。
+注：用户可以添加函数 pyim-page-style-STYLENAME-style 来定义自己的选词框格式。
 
 *** 设置模糊音
 可以通过设置 `pyim-fuzzy-pinyin-alist' 变量来自定义模糊音。
@@ -247,23 +247,23 @@ pyim 的 tooltip 选词框默认使用 *双行显示* 的样式，在一些特
 *** 词条获取
 pyim *内置* 了多种词条获取的方式：
 
-1. `dcache-personal'     从 `pyim-dcache-icode2word' 中获取词条。
-2. `dcache-common'       从 `pyim-dcache-code2word' 中获取词条。
-3. `pinyin-chars'        逐一获取一个拼音对应的多个汉字。
-4. `pinyin-shortcode'    获取一个简拼对应的词条，
+1. `personal-dcache-words'  从 `pyim-dcache-icode2word' 中获取词条。
+2. `common-dcache-words'    从 `pyim-dcache-code2word' 中获取词条。
+3. `pinyin-chars'           逐一获取一个拼音对应的多个汉字。
+4. `jianpin-words'          获取一个简拼对应的词条，
     如果输入 \"ni-hao\" ，那么同时搜索 code 为 \"n-h\" 的词条。
-5. `pinyin-znabc'        类似智能ABC的词语获取方式(源于 emacs-eim)."
+5. `znabc-words'            类似智能ABC的词语获取方式(源于 emacs-eim)."
 
 用户可以通过下面的代码来调整 backends 设置，比如：
 
 #+BEGIN_EXAMPLE
-(setq pyim-backends '(dcache-personal dcache-common pinyin-chars pinyin-shortcode pinyin-znabc))
+(setq pyim-backends '(personal-dcache-words common-dcache-words pinyin-chars jianpin-words znabc-words))
 #+END_EXAMPLE
 
 一些 backends 可能会导致输入法卡顿，用户可以通过下面的方式关闭：
 
 #+BEGIN_EXAMPLE
-(setq pyim-backends '(dcache-personal dcache-common pinyin-chars))
+(setq pyim-backends '(personal-dcache-words common-dcache-words pinyin-chars))
 #+END_EXAMPLE
 
 *** 切换全角标点与半角标点
@@ -276,7 +276,7 @@ pyim *内置* 了多种词条获取的方式：
 
 *** 手动加词和删词
 
-1. `pyim-create-word-at-point:"N"char' 这是一组命令，从光标前提取N个汉
+1. `pyim-create-Ncchar-word-at-point 这是一组命令，从光标前提取N个汉
    字字符组成字符串，并将其加入个人词库。
 2. `pyim-translate-trigger-char' 以默认设置为例：在“我爱吃红烧肉”后输
    入“5v” 可以将“爱吃红烧肉”这个词条保存到用户个人词库。
