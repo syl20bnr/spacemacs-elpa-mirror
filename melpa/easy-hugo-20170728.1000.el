@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20170727.529
-;; Version: 1.3.3
+;; Package-Version: 20170728.1000
+;; Version: 1.3.4
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -95,6 +95,11 @@
 
 (defcustom easy-hugo-publish-chmod "Du=rwx,Dgo=rx,Fu=rw,Fog=r"
   "Permission when publish.The default is drwxr-xr-x."
+  :group 'easy-hugo
+  :type 'string)
+
+(defcustom easy-hugo-github-deploy-script "deploy.sh"
+  "Github-deploy-script file name."
   :group 'easy-hugo
   :type 'string)
 
@@ -632,7 +637,7 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
     (easy-hugo-with-env
      (when (file-exists-p (file-truename (concat "content/" filename)))
        (error "%s already exists!" (concat easy-hugo-basedir "content/" filename)))
-     (if (<= 0.25 (string-to-number (easy-hugo--version)))
+     (if (<= 0.25 (easy-hugo--version))
 	 (call-process "hugo" nil "*hugo*" t "new" filename)
        (progn
 	 (if (or (string-equal file-ext easy-hugo-markdown-extension)
@@ -642,7 +647,7 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
 		 (string-equal file-ext easy-hugo-html-extension))
 	     (call-process "hugo" nil "*hugo*" t "new" filename))))
      (find-file (concat "content/" filename))
-     (when (and (> 0.25 (string-to-number (easy-hugo--version)))
+     (when (and (> 0.25 (easy-hugo--version))
 		(string-equal file-ext "org"))
        (insert (easy-hugo--org-headers (file-name-base post-file))))
      (goto-char (point-max))
@@ -654,7 +659,7 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
 		 (with-temp-buffer
 		   (shell-command-to-string "hugo version"))
 		 " ")))
-    (substring (nth 4 source) 1)))
+    (string-to-number (substring (nth 4 source) 1))))
 
 ;;;###autoload
 (defun easy-hugo-preview ()
@@ -664,7 +669,7 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
    (if (process-live-p easy-hugo--server-process)
        (browse-url easy-hugo-preview-url)
      (progn
-       (if (<= 0.25 (string-to-number (easy-hugo--version)))
+       (if (<= 0.25 (easy-hugo--version))
 	   (setq easy-hugo--server-process
 	   	 (start-process "hugo-server" easy-hugo--preview-buffer "hugo" "server" "--navigateToChanged"))
 	 (setq easy-hugo--server-process
@@ -685,10 +690,10 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
 
 ;;;###autoload
 (defun easy-hugo-github-deploy ()
-  "Execute deploy.sh script locate at `easy-hugo-basedir'."
+  "Execute `easy-hugo-github-deploy-script' script locate at `easy-hugo-basedir'."
   (interactive)
   (easy-hugo-with-env
-   (let ((deployscript (file-truename (concat easy-hugo-basedir "deploy.sh"))))
+   (let ((deployscript (file-truename (concat easy-hugo-basedir easy-hugo-github-deploy-script))))
      (unless (executable-find deployscript)
        (error "%s do not execute" deployscript))
      (shell-command-to-string (shell-quote-argument deployscript))
@@ -715,13 +720,13 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
     (message "Easy-hugo-github-deploy-timer canceled")))
 
 (defun easy-hugo-github-deploy-on-timer ()
-  "Execute deploy.sh script on timer locate at `easy-hugo-basedir'."
+  "Execute `easy-hugo-github-deploy-script' script on timer locate at `easy-hugo-basedir'."
   (setq easy-hugo--github-deploy-basedir easy-hugo-basedir)
   (setq easy-hugo-basedir easy-hugo--github-deploy-basedir-timer)
   (setq easy-hugo--github-deploy-url easy-hugo-url)
   (setq easy-hugo-url easy-hugo--github-deploy-url-timer)
   (easy-hugo-with-env
-   (let ((deployscript (file-truename (concat easy-hugo-basedir "deploy.sh"))))
+   (let ((deployscript (file-truename (concat easy-hugo-basedir easy-hugo-github-deploy-script))))
      (unless (executable-find deployscript)
        (error "%s do not execute" deployscript))
      (shell-command-to-string (shell-quote-argument deployscript))
@@ -865,8 +870,6 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
   "Open Hugo's config file."
   (interactive)
   (easy-hugo-with-env
-   (unless easy-hugo-basedir
-     (error "Please set easy-hugo-basedir variable"))
    (cond ((file-exists-p (expand-file-name "config.toml" easy-hugo-basedir))
 	  (find-file (expand-file-name "config.toml" easy-hugo-basedir)))
 	 ((file-exists-p (expand-file-name "config.yaml" easy-hugo-basedir))
@@ -1149,7 +1152,8 @@ Optional prefix ARG says how many lines to move; default is one line."
 (defun easy-hugo-open-basedir ()
   "Open `easy-hugo-basedir' with dired."
   (interactive)
-  (switch-to-buffer (find-file-noselect easy-hugo-basedir)))
+  (easy-hugo-with-env
+   (switch-to-buffer (find-file-noselect easy-hugo-basedir))))
 
 (defun easy-hugo-view ()
   "Open the file on the pointer with 'view-mode'."

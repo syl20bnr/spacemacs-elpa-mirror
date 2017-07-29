@@ -1,6 +1,6 @@
-This package implements `fxrd-mode', a major mode for editing files with fixed
-field widths. These files are commonly used in the financial industry, such
-as in ACH transactions. This package provides:
+This package implements `fxrd-mode', a major mode for editing files with
+fixed field widths.  These files are commonly used in the financial
+industry, such as in ACH transactions.  This package provides:
 
 - `nacha-mode': a mode for editing NACHA (ACH transaction) files
 - `rm37-mode': a mode for editing RM37 (Mastercard rebate transaction) files
@@ -9,7 +9,7 @@ as in ACH transactions. This package provides:
 
 In each mode, the current field is highlighted with
 `fxrd-current-field-face', and the field's name is shown in the
-modeline. All fields with errors are highlighted with
+modeline.  All fields with errors are highlighted with
 `fxrd-invalid-field-face', and if the current field has an error, the error
 is also displayed in the modeline.
 

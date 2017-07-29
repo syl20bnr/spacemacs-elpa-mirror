@@ -137,6 +137,11 @@ use some logic in ; `f3--filter-buffer-candidates'?
 - make f3-default-directory be able to refer to a filename relative to a
 .dir-locals.el file or whatnot
 
+
+License:
+
+GPL 3.0+
+
 End Commentary
 
 
