@@ -25,6 +25,8 @@ made by the `org-agenda-list' command, but it also works for other
 agenda views, like `org-tags-view', `org-todo-list',
 `org-search-view', etc.
 
+Here's an example which you can test by evaluating the `let' form:
+
 (let ((org-super-agenda-groups
        '(;; Each group has an implicit boolean OR operator between its selectors.
          (:name "Today" ; Optionally specify section name
@@ -65,7 +67,8 @@ agenda views, like `org-tags-view', `org-todo-list',
                       :order 1)
          ;; After the last group, the agenda will display items that didn't
          ;; match any of these groups, with the default order position of 99
-         ))))
+         )))
+  (org-agenda nil "a"))
 
 You can adjust the `org-super-agenda-groups' to create as many different
 groups as you like.

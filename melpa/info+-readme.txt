@@ -40,6 +40,7 @@
    `Info-mouse-follow-nearest-node-new-window',
    `Info-persist-history-mode' (Emacs 24.4+),
    `Info-save-current-node', `Info-set-breadcrumbs-depth',
+   `Info-toggle-follow-bookmarked-xrefs' (Emacs 24.2+),
    `Info-toggle-fontify-angle-bracketed',
    `Info-toggle-fontify-bookmarked-xrefs' (Emacs 24.2+),
    `Info-toggle-fontify-emphasis',
@@ -63,7 +64,8 @@
 
    `Info-breadcrumbs-in-header-flag',
    `Info-display-node-header-fn', `Info-emphasis-regexp',
-   `Info-fit-frame-flag', `Info-fontify-angle-bracketed-flag',
+   `Info-fit-frame-flag', `Info-follow-xref-bookmarks-flag' (Emacs
+   24.2+), `Info-fontify-angle-bracketed-flag',
    `Info-fontify-bookmarked-xrefs-flag' (Emacs 24.2+),
    `Info-fontify-emphasis-flag', `Info-fontify-quotations-flag',
    `Info-fontify-reference-items-flag',
@@ -144,6 +146,9 @@
  `Info-set-mode-line' - Handles breadcrumbs in the mode line.
  `Info-mouse-follow-nearest-node' - With prefix arg, show node in
                                     a new Info buffer.
+ `Info-follow-nearest-node', `Info-try-follow-nearest-node' -
+    Invoke bookmark when follow bookmarked-node link, so  bookmark
+    data gets updated.
  `Info-isearch-search' - Respect restriction to active region.
  `Info-isearch-wrap' - Respect restriction to active region.
 
@@ -161,6 +166,11 @@
    describe the bookmark, which shows the tags for that node and
    the number of times you have visited it.  You need library
    Bookmark+ for this feature.
+
+ * If option `Info-follow-xref-bookmarks-flag' is non-nil then
+   following the link of a bookmarked node invokes the bookmark to
+   get to the node, so bookmark data gets updated.  Command
+   `Info-toggle-follow-bookmarked-xrefs' toggles the option value.
 
  * Additional, finer-grained highlighting.  This can make a big
    difference in readability.
