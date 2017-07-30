@@ -2,8 +2,8 @@
 
 ;; Author: ecraven
 ;; URL: https://github.com/ecraven/ivy-pass/
-;; Package-Version: 20170728.123
-;; Package-Requires: ((emacs "24") (ivy "0.8.0") (password-store "20151027.1449"))
+;; Package-Version: 20170730.332
+;; Package-Requires: ((emacs "24") (ivy "0.8.0") (password-store "1.6.5"))
 ;; Version: 0.1
 ;; Keywords: pass, password, convenience, data
 
@@ -85,7 +85,7 @@ Default PASSWORD-LENGTH is ‘password-store-password-length’."
 (defun ivy-pass ()
   "Select an entry and copy its password to the kill ring."
   (interactive)
-  (ivy-read "Kill password of entry: "
+  (ivy-read "Copy password of entry: "
                 (password-store-list (password-store-dir))
                 :require-match t
                 :action #'ivy-pass--password-action

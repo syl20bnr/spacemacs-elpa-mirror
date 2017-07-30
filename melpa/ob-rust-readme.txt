@@ -17,6 +17,8 @@ Requirements:
 - You must have rust and cargo installed and the rust and cargo should be in your `exec-path'
   rust command.
 
+- cargo-script
+
 - `rust-mode' is also recommended for syntax highlighting and
   formatting.  Not this particularly needs it, it just assumes you
   have it.
