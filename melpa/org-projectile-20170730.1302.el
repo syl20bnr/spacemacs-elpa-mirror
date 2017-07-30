@@ -4,7 +4,7 @@
 
 ;; Author: Ivan Malison <IvanMalison@gmail.com>
 ;; Keywords: org-mode projectile todo tools outlines
-;; Package-Version: 20170729.1214
+;; Package-Version: 20170730.1302
 ;; URL: https://github.com/IvanMalison/org-projectile
 ;; Version: 0.2.6
 ;; Package-Requires: ((projectile "0.11.0") (dash "2.10.0") (emacs "25") (s "1.9.0") (org-category-capture "0.0.0"))
@@ -304,12 +304,14 @@
 
 ;;;###autoload
 (defun org-projectile-single-file ()
+  "Set `org-projectile-strategy' so that captures occur in a single file."
   (interactive)
   (setq org-projectile-strategy
         (make-instance 'org-projectile-single-file-strategy)))
 
 ;;;###autoload
 (defun org-projectile-per-project ()
+  "Set `org-projectile-strategy' so that captures occur within each project."
   (interactive)
   (setq org-projectile-strategy
         (make-instance 'org-projectile-per-project-strategy)))

@@ -4,7 +4,7 @@
 
 ;; Author: Fritz Stelzer <brotzeitmacher@gmail.com>
 ;; URL: https://github.com/brotzeitmacher/arch-packer
-;; Package-Version: 20170728.239
+;; Package-Version: 20170730.621
 ;; Version: 0.3
 ;; Package-Requires: ((emacs "25.1") (s "1.11.0") (async "1.9.2") (dash "2.12.0"))
 
@@ -33,6 +33,7 @@
 (require 's)
 (require 'json)
 (require 'async)
+(require 'dash)
 
 (defgroup arch-packer nil
   "Manager for Arch Linux packages."
