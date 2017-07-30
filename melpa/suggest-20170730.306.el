@@ -1,10 +1,10 @@
 ;;; suggest.el --- suggest elisp functions that give the output requested  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2016
+;; Copyright (C) 2017
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Version: 0.4
-;; Package-Version: 20170729.243
+;; Package-Version: 20170730.306
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.4") (loop "1.3") (dash "2.13.0") (s "1.11.0") (f "0.18.2"))
 ;; URL: https://github.com/Wilfred/suggest.el
@@ -204,6 +204,7 @@
    #'s-reverse
    #'s-count-matches
    #'s-split-words
+   #'s-wrap
    ;; Symbols
    #'symbol-name
    #'symbol-value

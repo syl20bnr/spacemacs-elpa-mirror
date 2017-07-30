@@ -1,10 +1,10 @@
-;;; snoopy.el --- minor mode for editing parentheses  -*- Mode: Emacs-Lisp; lexical-binding: t -*-
+;;; snoopy.el --- minor mode for number row unshifted character insertion -*- Mode: Emacs-Lisp; lexical-binding: t -*-
 
 ;; Copyright (C) 2017 António Nuno Monteiro, Russell McQueeney
 
 ;; Author: António Nuno Monteiro <anmonteiro@gmail.com>
-;; Version: 0.1.0
-;; Package-Version: 0.1.0
+;; Version: 0.1.1
+;; Package-Version: 0.1.1
 ;; Package-Requires: ((emacs "24"))
 ;; Created: 2017-07-29
 ;; Keywords: lisp
@@ -25,7 +25,10 @@
 ;;; Commentary:
 
 ;;; The currently released version of snoopy-mode is available at
-;;;   <TODO>.
+;;;   <https://raw.githubusercontent.com/anmonteiro/snoopy-mode/v0.1.0/snoopy.el>
+;;;
+;;; The latest version of snoopy-mode is available at
+;;;   <https://raw.githubusercontent.com/anmonteiro/snoopy-mode/master/snoopy.el>
 ;;;
 ;;; The Git repository for snoopy-mode is available at
 ;;;   <https://github.com/anmonteiro/snoopy-mode>
@@ -70,24 +73,6 @@
     (interactive)
     (insert-char char 1)))
 
-(defun snoopy-insert-special (_prompt)
-  "Insert a special character.
-
-This function is called for opening and
-closing parentheses, `9' and `0', to make interaction with other minor
-modes such as Paredit work."
-  (let* ((cmd-ks (this-command-keys-vector))
-         (len (length cmd-ks)))
-    (if (and (= len 1)
-             (bound-and-true-p snoopy-mode))
-        (let ((k (aref cmd-ks 0)))
-          (pcase k
-            (?9 (kbd "("))
-            (?0 (kbd ")"))
-            (?\( (kbd "9"))
-            (?\) (kbd "0"))))
-      (vector (aref cmd-ks (1- len))))))
-
 (defvar snoopy-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "1") (snoopy-insert-char ?!))
@@ -122,6 +107,24 @@ With a prefix argument, enable Snoopy Mode.
 \\<snoopy-mode-map>"
   :lighter snoopy-lighter
   :keymap snoopy-mode-map)
+
+(defun snoopy-insert-special (_prompt)
+  "Insert a special character.
+
+This function is called for opening and
+closing parentheses, `9' and `0', to make interaction with other minor
+modes such as Paredit work."
+  (let* ((cmd-ks (this-command-keys-vector))
+         (len (length cmd-ks)))
+    (if (and (= len 1)
+             snoopy-mode)
+        (let ((k (aref cmd-ks 0)))
+          (pcase k
+            (?9 (kbd "("))
+            (?0 (kbd ")"))
+            (?\( (kbd "9"))
+            (?\) (kbd "0"))))
+      (vector (aref cmd-ks (1- len))))))
 
 (provide 'snoopy)
 
