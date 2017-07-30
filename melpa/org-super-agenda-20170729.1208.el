@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-super-agenda
-;; Package-Version: 20170729.1135
+;; Package-Version: 20170729.1208
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "25.1") (s "1.10.0") (dash "2.13") (org "9.0"))
 ;; Keywords: hypermedia, outlines, Org, agenda
@@ -18,9 +18,9 @@
 ;; agenda: items are no longer shown based on deadline/scheduled
 ;; timestamps, but are shown no-matter-what.
 
-;; So this `org-super-agenda' command essentially copies the
-;; `org-agenda-list' command, but right before it inserts the agenda
-;; items, it runs them through a set of filters that separate them
+;; So this package overrides the `org-agenda-finalize-entries'
+;; function, which runs just before items are inserted into agenda
+;; views.  It runs them through a set of filters that separate them
 ;; into groups.  Then the groups are inserted into the agenda buffer,
 ;; and any remaining items are inserted at the end.  Empty groups are
 ;; not displayed.
@@ -31,9 +31,10 @@
 ;; keywords in another, and items with certain priorities in another.
 ;; The possibilities are only limited by the grouping functions.
 
-;; The `org-super-agenda' command works as a custom agenda command, so
-;; you can add it to your `org-agenda-custom-commands' list.  You can
-;; also test it quickly like this:
+;; The primary use of this package is for the daily/weekly agenda,
+;; made by the `org-agenda-list' command, but it also works for other
+;; agenda views, like `org-tags-view', `org-todo-list',
+;; `org-search-view', etc.
 
 ;; (let ((org-super-agenda-groups
 ;;        '(;; Each group has an implicit boolean OR operator between its selectors.
@@ -151,7 +152,8 @@ Matches `org-priority-regexp'."
 
 ;;;###autoload
 (define-minor-mode org-super-agenda-mode
-  "Global minor mode to override standard Org agenda commands with modified versions that group according to `org-super-agenda-groups'.With prefix argument ARG, turn on if positive, otherwise off."
+  "Global minor mode to group items in Org agenda views according to `org-super-agenda-groups'.
+With prefix argument ARG, turn on if positive, otherwise off."
   :global t
   (let ((advice-function (if org-super-agenda-mode
                              (lambda (to fun)
@@ -185,7 +187,7 @@ the variable `items' available.
 `item' available.  Items passing this test are filtered into a
 separate list.
 
-:LET is a `let*' binding form that is bound around the function
+:LET* is a `let*' binding form that is bound around the function
 body after the ARGS are made a list.
 
 Finally a list of three items is returned, with the value
@@ -268,11 +270,13 @@ The string should be the priority cookie letter, e.g. \"A\".")
   :comparator >=)
 
 (org-super-agenda--defgroup regexp
-  "Group items that match a regular expression.
+  "Group items that match any of the given regular expressions.
 Argument may be a string or list of strings, each of which should
 be a regular expression.  You'll probably want to override the
 section name for this group."
-  :section-name (concat "Items matching regexps: " (s-join " and " args))
+  :section-name (concat "Items matching regexps: " (s-join " OR "
+                                                           (--map (s-wrap it "\"")
+                                                                  args)))
   :test (when-let ((case-fold-search t)
                    (marker (org-super-agenda--get-marker item))
                    (entry (with-current-buffer (marker-buffer marker)
@@ -280,6 +284,22 @@ section name for this group."
                             (buffer-substring (org-entry-beginning-position) (org-entry-end-position)))))
           (cl-loop for regexp in args
                    thereis (string-match-p regexp entry))))
+
+(org-super-agenda--defgroup heading-regexp
+  "Group items whose headings match any of the given regular expressions.
+Argument may be a string or list of strings, each of which should
+be a regular expression.  You'll probably want to override the
+section name for this group."
+  :section-name (concat "Headings matching regexps: " (s-join " OR "
+                                                              (--map (s-wrap it "\"")
+                                                                     args)))
+  :test (when-let ((case-fold-search t)
+                   (marker (org-super-agenda--get-marker item))
+                   (heading (with-current-buffer (marker-buffer marker)
+                              (goto-char marker)
+                              (org-get-heading 'no-tags 'no-todo))))
+          (cl-loop for regexp in args
+                   thereis (string-match-p regexp heading))))
 
 (org-super-agenda--defgroup deadline
   "Group items that have deadlines."
@@ -388,8 +408,8 @@ see."
            finally return (list (s-join " AND " (-non-nil names))
                                 final-non-matches
                                 final-matches)))
-;; FIXME: This must be done but is this the way to do it?  Do I need eval-when-compile?
-(setq org-super-agenda-group-types (plist-put org-super-agenda-group-types :and 'org-super-agenda--group-dispatch-and))
+(setq org-super-agenda-group-types (plist-put org-super-agenda-group-types
+                                              :and 'org-super-agenda--group-dispatch-and))
 
 (defun org-super-agenda--group-dispatch-not (items group)
   "Group ITEMS that match no selectors in GROUP."
@@ -397,7 +417,8 @@ see."
   ;; I think all I need to do is re-dispatch and reverse the results
   (-let (((name non-matching matching) (org-super-agenda--group-dispatch items group)))
     (list name matching non-matching)))
-(setq org-super-agenda-group-types (plist-put org-super-agenda-group-types :not 'org-super-agenda--group-dispatch-not))
+(setq org-super-agenda-group-types (plist-put org-super-agenda-group-types
+                                              :not 'org-super-agenda--group-dispatch-not))
 
 ;; TODO: Add example for :discard
 (defun org-super-agenda--group-dispatch-discard (items group)
@@ -419,7 +440,6 @@ Any groups processed after this will not see these items."
            finally return (list (s-join " and " (-non-nil names))
                                 items
                                 nil)))
-;; FIXME: This must be done but is this the way to do it?  Do I need eval-when-compile?
 (setq org-super-agenda-group-types (plist-put org-super-agenda-group-types
                                               :discard 'org-super-agenda--group-dispatch-discard))
 
@@ -441,7 +461,6 @@ actually the ORDER for the groups."
   (cl-loop with order = (pop groups)
            for group in groups
            collect (plist-put group :order order)))
-;; FIXME: Is there a better way to do this?  Maybe if I ever have any more transformers...
 (setq org-super-agenda-group-transformers (plist-put org-super-agenda-group-transformers
                                                      :order-multi 'org-super-agenda--transform-group-order))
 

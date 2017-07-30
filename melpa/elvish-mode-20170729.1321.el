@@ -4,7 +4,7 @@
 
 ;; Author: Adam Schwalm <adamschwalm@gmail.com>
 ;; Version: 0.1.0
-;; Package-Version: 20170728.2102
+;; Package-Version: 20170729.1321
 ;; URL: https://github.com/ALSchwalm/elvish-mode
 ;; Package-Requires: ((emacs "24.3"))
 
@@ -229,7 +229,12 @@ stable, this should probably be switched to using SMIE."
   (setq-local font-lock-defaults '(elvish-highlights))
   (setq-local indent-line-function #'elvish-indent-function)
   (setq-local comment-start "#")
-  (setq-local comment-end ""))
+  (setq-local comment-end "")
+
+  ;; Make electric-indent mode consider close curly brackets
+  (setq-local electric-indent-chars
+              (cons ?} (and (boundp 'electric-indent-chars)
+                            electric-indent-chars))))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.elv\\'" . elvish-mode))

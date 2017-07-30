@@ -1,10 +1,10 @@
 ;;; org-projectile-helm.el --- helm functions for org-projectile  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2014-2017 Ivan Malison
+;; Copyright (C) 2017 Ivan Malison
 
 ;; Author: Ivan Malison <IvanMalison@gmail.com>
 ;; Keywords: org projectile todo helm outlines
-;; Package-Version: 20170727.1649
+;; Package-Version: 20170729.1153
 ;; URL: https://github.com/IvanMalison/org-projectile
 ;; Version: 0.0.0
 ;; Package-Requires: ((org-projectile "1.0.0") (helm "2.3.1") (emacs "25"))

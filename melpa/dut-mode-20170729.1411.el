@@ -6,7 +6,7 @@
 
 ;; Author: The dut-mode Authors
 ;; Version: 1.0
-;; Package-Version: 20170721.2214
+;; Package-Version: 20170729.1411
 ;; Keywords: languages gut
 ;; URL: https://github.com/dut-lang/dut-mode
 ;; Package-Requires: ((emacs "24"))
@@ -29,7 +29,7 @@
 
 (defconst dut-font-lock-keywords
   (list
-   '("\\<\\(base\\|break\\|case\\|catch\\|clone\\|continue\\|const\\|default\\|delete\\|else\\|enum\\|extends\\|for\\|foreach\\|function\\|if\\|in\\|local\\|null\\|resume\\|return\\|switch\\|this\\|throw\\|try\\|typeof\\|while\\|yield\\|constructor\\|instanceof\\|true\\|false\\|static\\)\\>" . font-lock-builtin-face)
+   '("\\<\\(base\\|break\\|case\\|catch\\|clone\\|continue\\|const\\|default\\|delete\\|else\\|enum\\|extends\\|for\\|foreach\\|function\\|if\\|in\\|local\\|null\\|resume\\|return\\|switch\\|this\\|throw\\|try\\|typeof\\|while\\|yield\\|constructor\\|instanceof\\|true\\|false\\|static\\|include\\)\\>" . font-lock-builtin-face)
    '("\\<\\(class\\)\\s-+\\(\\w+\\)\\>" (1 font-lock-keyword-face) (2 font-lock-type-face))
    '("\\<\\(function\\)\\s-+\\(\\w+\\)\\>" (1 font-lock-keyword-face) (2 font-lock-function-name-face))
    ))

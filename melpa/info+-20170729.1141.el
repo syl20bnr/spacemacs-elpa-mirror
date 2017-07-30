@@ -7,13 +7,13 @@
 ;; Copyright (C) 1996-2017, Drew Adams, all rights reserved.
 ;; Created: Tue Sep 12 16:30:11 1995
 ;; Version: 0
-;; Package-Version: 20170303.1500
+;; Package-Version: 20170729.1141
 ;; Package-Requires: ()
-;; Last-Updated: Fri Mar  3 15:01:19 2017 (-0800)
+;; Last-Updated: Sat Jul 29 11:38:12 2017 (-0700)
 ;;           By: dradams
-;;     Update #: 5797
+;;     Update #: 5884
 ;; URL: https://www.emacswiki.org/emacs/download/info%2b.el
-;; Doc URL: http://www.emacswiki.org/InfoPlus
+;; Doc URL: https://www.emacswiki.org/emacs/InfoPlus
 ;; Keywords: help, docs, internal
 ;; Compatibility: GNU Emacs: 23.x, 24.x, 25.x
 ;;
@@ -62,13 +62,14 @@
 ;;
 ;;  Commands defined here:
 ;;
-;;    `Info-breadcrumbs-in-mode-line-mode',
+;;    `Info-breadcrumbs-in-mode-line-mode', `Info-describe-bookmark',
 ;;    `Info-follow-nearest-node-new-window', `Info-goto-node-web',
 ;;    `Info-history-clear', `info-manual', `Info-merge-subnodes',
 ;;    `Info-mouse-follow-nearest-node-new-window',
 ;;    `Info-persist-history-mode' (Emacs 24.4+),
 ;;    `Info-save-current-node', `Info-set-breadcrumbs-depth',
 ;;    `Info-toggle-fontify-angle-bracketed',
+;;    `Info-toggle-fontify-bookmarked-xrefs' (Emacs 24.2+),
 ;;    `Info-toggle-fontify-emphasis',
 ;;    `Info-toggle-fontify-quotations',
 ;;    `Info-toggle-fontify-single-quote',
@@ -84,13 +85,14 @@
 ;;    `info-single-quote', `info-special-form-ref-item',
 ;;    `info-string', `info-syntax-class-item',
 ;;    `info-user-option-ref-item', `info-variable-ref-item',
-;;    `info-xref'.
+;;    `info-xref-bookmarked' (Emacs 24.2+).
 ;;
 ;;  Options (user variables) defined here:
 ;;
 ;;    `Info-breadcrumbs-in-header-flag',
 ;;    `Info-display-node-header-fn', `Info-emphasis-regexp',
 ;;    `Info-fit-frame-flag', `Info-fontify-angle-bracketed-flag',
+;;    `Info-fontify-bookmarked-xrefs-flag' (Emacs 24.2+),
 ;;    `Info-fontify-emphasis-flag', `Info-fontify-quotations-flag',
 ;;    `Info-fontify-reference-items-flag',
 ;;    `Info-fontify-single-quote-flag', `Info-saved-history-file'
@@ -102,12 +104,14 @@
 ;;
 ;;  Non-interactive functions defined here:
 ;;
+;;    `Info-bookmark-for-node', `Info-bookmark-name-at-point',
+;;    `Info-bookmark-named-at-point', `Info-bookmark-name-for-node',
 ;;    `Info-display-node-default-header', `info-fontify-quotations',
 ;;    `info-fontify-reference-items',
 ;;    `Info-insert-breadcrumbs-in-mode-line',
-;;    `Info-restore-history-list' (Emacs 24.4+),
-;;    `Info-save-history-list' (Emacs 24.4+), `Info-isearch-search-p',
-;;    `Info-search-beg', `Info-search-end'.
+;;    `Info-node-name-at-point', `Info-restore-history-list' (Emacs
+;;    24.4+), `Info-save-history-list' (Emacs 24.4+),
+;;    `Info-isearch-search-p', `Info-search-beg', `Info-search-end'.
 ;;
 ;;  Internal variables defined here:
 ;;
@@ -178,6 +182,13 @@
 ;;
 ;;  Library `info+.el' extends the standard Emacs library `info.el' in
 ;;  several ways.  It provides:
+;;
+;;  * Coloring of links for nodes that have associated bookmarks using
+;;    a different face.  Option `Info-fontify-bookmarked-xrefs-flag'
+;;    controls whether this is done.  You can use `C-h C-b' to
+;;    describe the bookmark, which shows the tags for that node and
+;;    the number of times you have visited it.  You need library
+;;    Bookmark+ for this feature.
 ;;
 ;;  * Additional, finer-grained highlighting.  This can make a big
 ;;    difference in readability.
@@ -254,9 +265,9 @@
 ;;      option `Info-saved-history-file' when you quit Emacs (not
 ;;      Info) or when you kill an Info buffer.
 ;;
-;;      (If you also use library Bookmark+ then you can also bookmark
-;;      Info nodes, including automatically.  This records how many
-;;      times you have visited each node and when you last did so.)
+;;      (If you also use library Bookmark+ then you can bookmark Info
+;;      nodes, including automatically.  This records how many times
+;;      you have visited each node and when you last did so.)
 ;;
 ;;    - `Info-save-current-node' (bound to `.') – Save the name of the
 ;;      current node to list `Info-saved-nodes', for use by `v'
@@ -340,6 +351,12 @@
 ;;
 ;;; Change Log:
 ;;
+;; 2017/07/29 dadams
+;;     Added: Info-fontify-bookmarked-xrefs-flag, face info-xref-bookmarked, Info-describe-bookmark,
+;;            Info-bookmark-for-node, Info-bookmark-name-at-point, Info-bookmark-named-at-point,
+;;            Info-bookmark-name-for-node, Info-toggle-fontify-bookmarked-xrefs.
+;;     Info-fontify-node (24.2+): Respect Info-fontify-bookmarked-xrefs-flag.
+;;     Bind Info-describe-bookmark to C-h C-b.
 ;; 2017/02/20 dadams
 ;;     Added: Info-saved-history-file, Info-persist-history-mode, Info-save-history-list,
 ;;            Info-restore-history-list.
@@ -751,6 +768,7 @@
 (defvar Info-breadcrumbs-in-mode-line-mode)
 (defvar Info-current-node-virtual)
 (defvar isearch-filter-predicate)
+(defvar Info-fontify-bookmarked-xrefs-flag) ; Here, Emacs 24.2+, with Bookmark+.
 (defvar Info-fontify-visited-nodes)
 (defvar Info-hide-note-references)
 (defvar Info-history-list)
@@ -969,6 +987,18 @@ Don't forget to mention your Emacs and library versions."))
       (t (:foreground "FireBrick" :background "LightGray")))
   "*Face used for \"Variable:\" reference items in `info' manual."
   :group 'Info-Plus :group 'faces)
+
+(when (and (require 'bookmark+ nil t)
+           (or (> emacs-major-version 24) ; Emacs 24.2+ (do not bother for Emacs 23-24.1)
+               (and (= emacs-major-version 24)  (> emacs-minor-version 1))))
+
+  (defface info-xref-bookmarked
+      '((((background dark)) (:foreground "violet"))
+        (t (:foreground "DarkGreen")))
+    "Face for bookmarked Info nodes."
+    :group 'Info-Plus :group 'faces)
+
+  )
  
 ;;(@* "User Options (Customizable)")
 ;;; User Options (Customizable) --------------------------------------
@@ -1025,6 +1055,16 @@ of texts.  Set this flag to nil if you do not find this fontification
 useful.  You can use command `Info-toggle-fontify-angle-bracketed' to
 toggle the option value."
   :type 'boolean :group 'Info-Plus)
+
+(when (and (require 'bookmark+ nil t) ; Emacs 24.2+ (do not bother for prior)
+           (or (> emacs-major-version 24)  (and (= emacs-major-version 24)  (> emacs-minor-version 1))))
+
+  (defcustom Info-fontify-bookmarked-xrefs-flag t
+    "Non-nil means fontify references to bookmarked nodes.
+The face used is `info-xref-bookmarked'."
+    :type 'boolean :group 'Info-Plus)
+
+  )
 
 ;;;###autoload
 (defcustom Info-fontify-emphasis-flag t
@@ -1228,38 +1268,6 @@ If ... contains > then that character must be backslashed.")
            (advice-remove 'Info-kill-buffer 'Info-save-history-list)
            (advice-remove 'Info-directory 'Info-restore-history-list))))
 
-  (defun Info-save-history-list ()
-    "Save `Info-history-list' to `Info-saved-history-file'."
-    (when (and Info-persist-history-mode
-               (not (string= "" Info-saved-history-file))
-               (file-writable-p Info-saved-history-file)
-               (not (file-directory-p Info-saved-history-file)))
-      (let* ((ibuf  (catch 'Info-save-history-list
-                      (dolist (buf  (buffer-list))
-                        (with-current-buffer buf
-                          (when (derived-mode-p 'Info-mode) (throw 'Info-save-history-list buf))))
-                      nil))
-             (hist  (and ibuf  (with-current-buffer ibuf Info-history-list))))
-        (with-temp-file Info-saved-history-file
-          (print Info-history-list (current-buffer))))))
-
-  (defun Info-restore-history-list ()
-    "Restore `Info-history-list' from `Info-saved-history-file'."
-    (when (and Info-persist-history-mode
-               (not (string= "" Info-saved-history-file))
-               (file-readable-p Info-saved-history-file))
-      (let ((buf  (let ((enable-local-variables  ()))
-                    (find-file-noselect Info-saved-history-file)))
-            hist)
-        (unwind-protect
-             (with-current-buffer buf
-               (goto-char (point-min))
-               (setq hist  (ignore-errors (read (current-buffer)))))
-          (kill-buffer buf))
-        (when hist
-          (setq Info-history-list  hist)
-          (when Info-fontify-visited-nodes (Info-fontify-node))))))
-
   )
 
 ;; I made this a global minor mode and turned it on by default, contrary to "the rules".
@@ -1292,6 +1300,23 @@ line from non-nil `Info-use-header-line'."
 (defalias 'Info-toggle-breadcrumbs-in-header-line 'Info-toggle-breadcrumbs-in-header)
 (make-obsolete 'Info-toggle-breadcrumbs-in-header-line 'Info-toggle-breadcrumbs-in-header "2014/03/04")
 
+
+(when (and (require 'bookmark+ nil t) ; Emacs 24.2+ (do not bother for prior)
+           (or (> emacs-major-version 24)  (and (= emacs-major-version 24)  (> emacs-minor-version 1))))
+
+  (defun Info-toggle-fontify-bookmarked-xrefs (&optional msgp)
+    "Toggle option `Info-fontify-bookmarked-xrefs-flag'."
+    (interactive "p")
+    (setq Info-fontify-bookmarked-xrefs-flag  (not Info-fontify-bookmarked-xrefs-flag))
+    (when (eq major-mode 'Info-mode)
+      (font-lock-defontify)
+      (let ((modp               (buffer-modified-p))
+            (inhibit-read-only  t))
+        (Info-fontify-node))
+      (when msgp (message "`Info-fontify-bookmarked-xrefs-flag' is now %s"
+                          (if Info-fontify-bookmarked-xrefs-flag 'ON 'OFF)))))
+
+  )
 
 ;;;###autoload (autoload 'Info-toggle-fontify-emphasis "info+")
 (defun Info-toggle-fontify-emphasis (&optional msgp)
@@ -1356,6 +1381,21 @@ line from non-nil `Info-use-header-line'."
   (add-to-list 'Info-saved-nodes (concat "(" (file-name-nondirectory Info-current-file) ")"
                                          Info-current-node))
   (when msgp (message (format "Node `%s' saved" Info-current-node))))
+
+(when (require 'bookmark+ nil t)
+
+  (defun Info-describe-bookmark (&optional node show-definition-p)
+    "Describe bookmark for NODE.
+By default, NODE is the node named at point.
+With a prefix argument, show the internal definition of the bookmark."
+    (interactive (list (or (Info-node-name-at-point)  (Info-read-node-name "Node: " Info-current-node))
+                       current-prefix-arg))
+    (let* ((alist  (bmkp-info-alist-only))
+           (bmk    (or (bmkp-get-bookmark-in-alist node t alist)
+                       (bmkp-read-bookmark-for-type "Info" alist nil nil 'bmkp-info-history "Describe "))))
+      (bmkp-describe-bookmark bmk show-definition-p)))
+
+  )
 
 ;; Note: This is not super-clean code (it's kind of a hack job).
 ;;;###autoload (autoload 'Info-merge-subnodes "info+")
@@ -2467,6 +2507,7 @@ If key's command cannot be found by looking in indexes, then
 ;;    fontify <...> in face `info-quoted-name'.
 ;;
 (when (not (fboundp 'Info-breadcrumbs)) ; Emacs 23.1, not 23.2+
+
   (defun Info-fontify-node ()
     "Fontify the node."
     (save-excursion
@@ -2823,10 +2864,13 @@ If key's command cannot be found by looking in indexes, then
         (goto-char (point-max))
         (skip-chars-backward "\n") ; Hide any empty lines at the end of the node.
         (when (< (1+ (point)) (point-max)) (put-text-property (1+ (point)) (point-max) 'invisible t))
-        (set-buffer-modified-p nil)))))
+        (set-buffer-modified-p nil))))
+
+  )
 
 
 ;; REPLACES ORIGINAL in `info.el':
+;;
 ;; 1. File name in face `info-file'.
 ;; 2. If `Info-fontify-emphasis-flag', fontify _..._.
 ;; 3. If `Info-fontify-quotations-flag', fontify ‘...’ or `...' in face `info-quoted-name',
@@ -2838,8 +2882,8 @@ If key's command cannot be found by looking in indexes, then
 ;;
 (when (and (fboundp 'Info-breadcrumbs)  ; Emacs 23.2 through 24.1
            (or (= emacs-major-version 23)
-               (and (= emacs-major-version 24)  (= emacs-minor-version 1)
-                    (not (string-match "^[0-9]+\\.[0-9]+\\.[0-9]+" emacs-version)))))
+               (and (= emacs-major-version 24)  (= emacs-minor-version 1))))
+
   (defun Info-fontify-node ()
     "Fontify the node."
     (save-excursion
@@ -3133,7 +3177,9 @@ If key's command cannot be found by looking in indexes, then
                                       (setq res  (car hl)
                                             hl   nil)
                                     (setq hl  (cdr hl))))
-                                res))) 'info-xref-visited 'info-xref)))
+                                res)))
+                       'info-xref-visited
+                     'info-xref)))
                 (when (and not-fontified-p
                            (memq Info-hide-note-references '(t hide))
                            (not (Info-index-node)))
@@ -3175,7 +3221,9 @@ If key's command cannot be found by looking in indexes, then
         (goto-char (point-max))
         (skip-chars-backward "\n") ; Hide any empty lines at the end of the node.
         (when (< (1+ (point)) (point-max)) (put-text-property (1+ (point)) (point-max) 'invisible t))
-        (set-buffer-modified-p nil)))))
+        (set-buffer-modified-p nil))))
+
+  )
 
 
 ;; REPLACES ORIGINAL in `info.el':
@@ -3189,24 +3237,27 @@ If key's command cannot be found by looking in indexes, then
 ;; 5. If `Info-fontify-quotations-flag' and `Info-fontify-angle-bracketed-flag' then
 ;;    fontify <...> in face `info-quoted-name'.
 ;;
-(when (and (> emacs-major-version 23)   ; Emacs 24.1.N and 24.2+
-           (or (> emacs-major-version 24)  (string-match "^[0-9]+\\.[0-9]+\\.[0-9]+" emacs-version)))
+(when (or (> emacs-major-version 24)    ; Emacs 24.2+
+          (and (= emacs-major-version 24)  (> emacs-minor-version 1)))
+
   (defun Info-fontify-node ()
     "Fontify the node."
     (save-excursion
-      (let* ((inhibit-read-only  t)
-             (case-fold-search   t)
-             paragraph-markers
-             (not-fontified-p ; the node hasn't already been fontified
-              (not (let ((where  (next-single-property-change (point-min) 'font-lock-face)))
-                     (and where  (not (= where (point-max)))))))
-             (fontify-visited-p ; visited nodes need to be re-fontified
-              (and Info-fontify-visited-nodes
-                   ;; Don't take time to refontify visited nodes in huge nodes
-                   Info-fontify-maximum-menu-size
-                   (or (eq t Info-fontify-maximum-menu-size)
-                       (< (- (point-max) (point-min)) Info-fontify-maximum-menu-size))))
-             rbeg rend)
+      (let* ((inhibit-read-only     t)
+             (case-fold-search      t)
+             (fontify-bookmarked-p  (and (boundp 'Info-fontify-bookmarked-xrefs-flag)
+                                         Info-fontify-bookmarked-xrefs-flag))
+             (node-not-too-large    (and (or fontify-bookmarked-p  Info-fontify-visited-nodes)
+                                         ;; Don't take time to refontify xrefs in huge nodes
+                                         Info-fontify-maximum-menu-size
+                                         (or (eq t Info-fontify-maximum-menu-size)
+                                             (< (- (point-max) (point-min)) Info-fontify-maximum-menu-size))))
+             (fontify-bookmarked-p  (and node-not-too-large  fontify-bookmarked-p))
+             (fontify-visited-p     (and node-not-too-large  Info-fontify-visited-nodes))
+             (not-fontified-p       (not (let ((where  (next-single-property-change (point-min)
+                                                                                    'font-lock-face)))
+                                           (and where  (not (= where (point-max)))))))
+             paragraph-markers rbeg rend)
 
         ;; Fontify emphasis: _..._
         ;;
@@ -3319,7 +3370,7 @@ If key's command cannot be found by looking in indexes, then
 
         ;; Fontify cross references
         (goto-char (point-min))
-        (when (or not-fontified-p  fontify-visited-p)
+        (when (or not-fontified-p  fontify-bookmarked-p  fontify-visited-p)
           (while (re-search-forward
                   "\\(\\*Note[ \n\t]+\\)\\([^:]*\\)\\(:[ \t]*\\([^.,:(]*\\)\\(\\(([^)]\
 *)\\)[^.,:]*\\)?[,:]?\n?\\)"
@@ -3358,43 +3409,50 @@ If key's command cannot be found by looking in indexes, then
                                       (concat "mouse-2: go to " (or (match-string 5)  (match-string 4)))
                                     "mouse-2: go to this node")
                        'mouse-face 'highlight)))
-              (when (or not-fontified-p  fontify-visited-p)
+              (when (or not-fontified-p  fontify-bookmarked-p  fontify-visited-p)
                 (setq rbeg  (match-beginning 2)
                       rend  (match-end 2))
-                (put-text-property
-                 rbeg
-                 rend
-                 'font-lock-face
-                 (if (and Info-fontify-visited-nodes ; Display visited nodes in a different face
-                          (save-match-data
-                            (let* ((node             (replace-regexp-in-string
-                                                      "^[ \t]+" ""
-                                                      (replace-regexp-in-string
-                                                       "[ \t\n]+" " "
-                                                       (or (match-string-no-properties 5)
-                                                           (and (not (equal (match-string 4) ""))
-                                                                (match-string-no-properties 4))
-                                                           (match-string-no-properties 2)))))
-                                   (external-link-p  (string-match "(\\([^)]+\\))\\([^)]*\\)" node))
-                                   (file             (if external-link-p
-                                                         (file-name-nondirectory
-                                                          (match-string-no-properties 1 node))
-                                                       Info-current-file))
-                                   (hl               Info-history-list)
-                                   res)
-                              (when external-link-p
-                                (setq node  (if (equal (match-string 2 node) "")
-                                                "Top"
-                                              (match-string-no-properties 2 node))))
-                              (while hl
-                                (if (and (string-equal node (nth 1 (car hl)))
-                                         (equal file (if (and external-link-p  (stringp (caar hl)))
-                                                         (file-name-nondirectory (caar hl))
-                                                       (caar hl))))
-                                    (setq res  (car hl)
-                                          hl   nil)
-                                  (setq hl  (cdr hl))))
-                              res))) 'info-xref-visited 'info-xref))
+                (let (node)
+                  (put-text-property
+                   rbeg
+                   rend
+                   'font-lock-face
+                   (if (and (or Info-fontify-visited-nodes  fontify-bookmarked-p)
+                            (save-match-data
+                              (setq node  (replace-regexp-in-string
+                                           "^[ \t]+" ""
+                                           (replace-regexp-in-string
+                                            "[ \t\n]+" " "
+                                            (or (match-string-no-properties 5)
+                                                (and (not (equal (match-string 4) ""))
+                                                     (match-string-no-properties 4))
+                                                (match-string-no-properties 2)))))
+                              (let* ((external-link-p  (string-match "(\\([^)]+\\))\\([^)]*\\)" node))
+                                     (file             (if external-link-p
+                                                           (file-name-nondirectory
+                                                            (match-string-no-properties 1 node))
+                                                         Info-current-file))
+                                     (hl               Info-history-list)
+                                     res)
+                                (when external-link-p
+                                  (setq node  (if (equal (match-string 2 node) "")
+                                                  "Top"
+                                                (match-string-no-properties 2 node))))
+                                (or (and fontify-bookmarked-p  (Info-bookmark-name-for-node node))
+                                    (progn
+                                      (while hl
+                                        (if (and (string-equal node (nth 1 (car hl)))
+                                                 (equal file (if (and external-link-p  (stringp (caar hl)))
+                                                                 (file-name-nondirectory (caar hl))
+                                                               (caar hl))))
+                                            (setq res  (car hl)
+                                                  hl   nil)
+                                          (setq hl  (cdr hl))))
+                                      res)))))
+                       (if (and fontify-bookmarked-p  (Info-bookmark-name-for-node node))
+                           'info-xref-bookmarked
+                         'info-xref-visited)
+                     'info-xref)))
                 (save-excursion ; For multiline ref, unfontify newline and surrounding whitespace
                   (goto-char rbeg)
                   (save-match-data (while (re-search-forward "\\s-*\n\\s-*" rend t nil)
@@ -3438,7 +3496,7 @@ If key's command cannot be found by looking in indexes, then
 
         ;; Fontify menu items
         (goto-char (point-min))
-        (when (and (or not-fontified-p  fontify-visited-p)
+        (when (and (or not-fontified-p  fontify-bookmarked-p  fontify-visited-p)
                    (search-forward "\n* Menu:" nil t)
                    Info-fontify-maximum-menu-size ; Don't take time to annotate huge menus
                    (or (eq t Info-fontify-maximum-menu-size)
@@ -3461,35 +3519,42 @@ If key's command cannot be found by looking in indexes, then
                                                             (concat "mouse-2: go to " (match-string 3))
                                                           "mouse-2: go to this node")
                                              'mouse-face 'highlight)))
-                (when (or not-fontified-p  fontify-visited-p)
-                  (put-text-property
-                   (match-beginning 1) (match-end 1)
-                   'font-lock-face
-                   (if (and Info-fontify-visited-nodes ; Display visited menu items in a different face
-                            (save-match-data
-                              (let* ((node             (if (equal (match-string 3) "")
-                                                           (match-string-no-properties 1)
-                                                         (match-string-no-properties 3)))
-                                     (external-link-p  (string-match "(\\([^)]+\\))\\([^)]*\\)" node))
-                                     (file             (if external-link-p
-                                                           (file-name-nondirectory
-                                                            (match-string-no-properties 1 node))
-                                                         Info-current-file))
-                                     (hl               Info-history-list)
-                                     res)
-                                (when external-link-p
-                                  (setq node  (if (equal (match-string 2 node) "")
-                                                  "Top"
-                                                (match-string-no-properties 2 node))))
-                                (while hl
-                                  (if (and (string-equal node (nth 1 (car hl)))
-                                           (equal file (if (and external-link-p  (stringp (caar hl)))
-                                                           (file-name-nondirectory (caar hl))
-                                                         (caar hl))))
-                                      (setq res  (car hl)
-                                            hl   nil)
-                                    (setq hl  (cdr hl))))
-                                res))) 'info-xref-visited 'info-xref)))
+                (when (or not-fontified-p  fontify-bookmarked-p  fontify-visited-p)
+                  (let (node)
+                    (put-text-property
+                     (match-beginning 1) (match-end 1)
+                     'font-lock-face
+                     (if (and (or Info-fontify-visited-nodes  fontify-bookmarked-p)
+                              (save-match-data
+                                (setq node  (if (equal (match-string 3) "")
+                                                (match-string-no-properties 1)
+                                              (match-string-no-properties 3)))
+                                (let* ((external-link-p  (string-match "(\\([^)]+\\))\\([^)]*\\)" node))
+                                       (file             (if external-link-p
+                                                             (file-name-nondirectory
+                                                              (match-string-no-properties 1 node))
+                                                           Info-current-file))
+                                       (hl               Info-history-list)
+                                       res)
+                                  (when external-link-p
+                                    (setq node  (if (equal (match-string 2 node) "")
+                                                    "Top"
+                                                  (match-string-no-properties 2 node))))
+                                  (or (and fontify-bookmarked-p  (Info-bookmark-name-for-node node))
+                                      (progn
+                                        (while hl
+                                          (if (and (string-equal node (nth 1 (car hl)))
+                                                   (equal file (if (and external-link-p  (stringp (caar hl)))
+                                                                   (file-name-nondirectory (caar hl))
+                                                                 (caar hl))))
+                                              (setq res  (car hl)
+                                                    hl   nil)
+                                            (setq hl  (cdr hl))))
+                                        res)))))
+                         (if (and fontify-bookmarked-p  (Info-bookmark-name-for-node node))
+                             'info-xref-bookmarked
+                           'info-xref-visited)
+                       'info-xref))))
                 (when (and not-fontified-p
                            (memq Info-hide-note-references '(t hide))
                            (not (Info-index-node)))
@@ -3531,7 +3596,9 @@ If key's command cannot be found by looking in indexes, then
         (goto-char (point-max))
         (skip-chars-backward "\n") ; Hide any empty lines at the end of the node.
         (when (< (1+ (point)) (point-max)) (put-text-property (1+ (point)) (point-max) 'invisible t))
-        (set-buffer-modified-p nil)))))
+        (set-buffer-modified-p nil))))
+
+  )
 
 ;;;###autoload (autoload 'Info-set-breadcrumbs-depth "info+")
 (defun Info-set-breadcrumbs-depth ()
@@ -4109,6 +4176,84 @@ currently visited manuals."
           "\n")
   (goto-char (point-min))
   (center-line 2))
+
+(defun Info-node-name-at-point ()
+  "Return the Info node named at point, or nil if none."
+  (save-match-data
+    (cond ((Info-get-token (point) "\\*note[ \n\t]+"
+                           "\\*note[ \n\t]+\\([^:]*\\):\\(:\\|[ \n\t]*(\\)?"))
+          ((Info-get-token (point) "\\* +" "\\* +\\([^:]*\\)::")) ; Menu item: node name
+          ((Info-get-token (point) "\\* +" "\\* +\\(.*\\): ") ; menu item: node name or index entry
+           (beginning-of-line)
+           (forward-char 2)
+           (Info-extract-menu-node-name nil (Info-index-node)))
+          ((Info-get-token (point) "Up: " "Up: \\([^,\n\t]*\\)"))
+          ((Info-get-token (point) "Next: " "Next: \\([^,\n\t]*\\)"))
+          ((Info-get-token (point) "File: " "File: \\([^,\n\t]*\\)"))
+          ((Info-get-token (point) "Prev: " "Prev: \\([^,\n\t]*\\)")))))
+
+(when (require 'bookmark+ nil t)
+
+  (defun Info-bookmark-for-node (node)
+    "Return Info bookmark for NODE."
+    (bmkp-get-bookmark-in-alist node t (bmkp-info-alist-only)))
+
+  (defun Info-bookmark-name-for-node (node)
+    "Return name of Info bookmark for NODE."
+    (let ((bmk   (Info-bookmark-for-node node)))
+      (and bmk  (bmkp-bookmark-name-from-record bmk))))
+
+  ;; Not used yet
+  (defun Info-bookmark-named-at-point ()
+    "Return Info bookmark for node named at point."
+    (let ((node   (Info-node-name-at-point)))
+      (and node  (bmkp-get-bookmark-in-alist node t (bmkp-info-alist-only)))))
+
+  ;; Not used yet
+  (defun Info-bookmark-name-at-point ()
+    "Return name of Info bookmark for node named at point."
+    (let ((bmk   (Info-bookmark-named-at-point)))
+      (and bmk  (bmkp-bookmark-name-from-record bmk))))
+
+  (define-key Info-mode-map (kbd "C-h C-b") 'Info-describe-bookmark)
+
+  )
+
+(when (fboundp 'advice-add)             ; Emacs 24.4+
+
+  (defun Info-save-history-list ()
+    "Save `Info-history-list' to `Info-saved-history-file'."
+    (when (and Info-persist-history-mode
+               (not (string= "" Info-saved-history-file))
+               (file-writable-p Info-saved-history-file)
+               (not (file-directory-p Info-saved-history-file)))
+      (let* ((ibuf  (catch 'Info-save-history-list
+                      (dolist (buf  (buffer-list))
+                        (with-current-buffer buf
+                          (when (derived-mode-p 'Info-mode) (throw 'Info-save-history-list buf))))
+                      nil))
+             (hist  (and ibuf  (with-current-buffer ibuf Info-history-list))))
+        (with-temp-file Info-saved-history-file
+          (print Info-history-list (current-buffer))))))
+
+  (defun Info-restore-history-list ()
+    "Restore `Info-history-list' from `Info-saved-history-file'."
+    (when (and Info-persist-history-mode
+               (not (string= "" Info-saved-history-file))
+               (file-readable-p Info-saved-history-file))
+      (let ((buf  (let ((enable-local-variables  ()))
+                    (find-file-noselect Info-saved-history-file)))
+            hist)
+        (unwind-protect
+             (with-current-buffer buf
+               (goto-char (point-min))
+               (setq hist  (ignore-errors (read (current-buffer)))))
+          (kill-buffer buf))
+        (when hist
+          (setq Info-history-list  hist)
+          (when Info-fontify-visited-nodes (Info-fontify-node))))))
+
+  )
 
 ;;; ;; Not currently used.
 ;;; (defun Info-display-node-time-header ()

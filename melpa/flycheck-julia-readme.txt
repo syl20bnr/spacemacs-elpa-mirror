@@ -6,8 +6,11 @@ errors.
 
 Add the following to your init file:
 
-     ;; Enable Flycheck checker
+     (add-to-list 'load-path "/path/to/directory/containing/flycheck-julia.el/file")
+     (require 'flycheck-julia)
      (flycheck-julia-setup)
+     (add-to-list 'flycheck-global-modes 'julia-mode)
+     (add-to-list 'flycheck-global-modes 'ess-julia-mode)
 
 # Usage
 
