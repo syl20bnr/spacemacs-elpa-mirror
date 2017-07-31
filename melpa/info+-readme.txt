@@ -40,13 +40,13 @@
    `Info-mouse-follow-nearest-node-new-window',
    `Info-persist-history-mode' (Emacs 24.4+),
    `Info-save-current-node', `Info-set-breadcrumbs-depth',
-   `Info-toggle-follow-bookmarked-xrefs' (Emacs 24.2+),
+   `Info-toggle-breadcrumbs-in-header',
    `Info-toggle-fontify-angle-bracketed',
    `Info-toggle-fontify-bookmarked-xrefs' (Emacs 24.2+),
    `Info-toggle-fontify-emphasis',
    `Info-toggle-fontify-quotations',
    `Info-toggle-fontify-single-quote',
-   `Info-toggle-breadcrumbs-in-header', `Info-url-for-node',
+   `Info-toggle-node-access-invokes-bookmark', `Info-url-for-node',
    `Info-virtual-book'.
 
  Faces defined here:
@@ -64,13 +64,14 @@
 
    `Info-breadcrumbs-in-header-flag',
    `Info-display-node-header-fn', `Info-emphasis-regexp',
-   `Info-fit-frame-flag', `Info-follow-xref-bookmarks-flag' (Emacs
-   24.2+), `Info-fontify-angle-bracketed-flag',
+   `Info-fit-frame-flag', `Info-fontify-angle-bracketed-flag',
    `Info-fontify-bookmarked-xrefs-flag' (Emacs 24.2+),
    `Info-fontify-emphasis-flag', `Info-fontify-quotations-flag',
    `Info-fontify-reference-items-flag',
-   `Info-fontify-single-quote-flag', `Info-saved-history-file'
-   (Emacs 24.4+), `Info-saved-nodes', `Info-subtree-separator'.
+   `Info-fontify-single-quote-flag',
+   `Info-node-access-invokes-bookmark-flag',
+   `Info-saved-history-file' (Emacs 24.4+), `Info-saved-nodes',
+   `Info-subtree-separator'.
 
  Macros defined here:
 
@@ -136,6 +137,8 @@
     1. Added optional arg MSGP.
     2. If key's command not found, then `Info-search's for key
        sequence in text and displays message about repeating.
+ `Info-goto-node' - Respect option
+    `Info-node-access-invokes-bookmark-flag'.
  `Info-history' - A prefix arg clears the history.
  `Info-insert-dir' -
     Added optional arg NOMSG to inhibit showing progress msgs.
@@ -146,9 +149,6 @@
  `Info-set-mode-line' - Handles breadcrumbs in the mode line.
  `Info-mouse-follow-nearest-node' - With prefix arg, show node in
                                     a new Info buffer.
- `Info-follow-nearest-node', `Info-try-follow-nearest-node' -
-    Invoke bookmark when follow bookmarked-node link, so  bookmark
-    data gets updated.
  `Info-isearch-search' - Respect restriction to active region.
  `Info-isearch-wrap' - Respect restriction to active region.
 
@@ -167,10 +167,11 @@
    the number of times you have visited it.  You need library
    Bookmark+ for this feature.
 
- * If option `Info-follow-xref-bookmarks-flag' is non-nil then
-   following the link of a bookmarked node invokes the bookmark to
-   get to the node, so bookmark data gets updated.  Command
-   `Info-toggle-follow-bookmarked-xrefs' toggles the option value.
+ * If option `Info-node-access-invokes-bookmark-flag' is non-nil
+   then going to a bookmarked Info node invokes the bookmark, so
+   bookmark data gets updated.  Command
+   `Info-toggle-node-access-invokes-bookmark' toggles the option
+   value.  You need library Bookmark+ for this feature.
 
  * Additional, finer-grained highlighting.  This can make a big
    difference in readability.

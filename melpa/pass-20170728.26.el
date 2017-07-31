@@ -5,7 +5,7 @@
 ;; Author: Nicolas Petton <petton.nicolas@gmail.com>
 ;;         Damien Cassou <damien@cassou.me>
 ;; Version: 1.7
-;; Package-Version: 20170725.34
+;; Package-Version: 20170728.26
 ;; GIT: https://github.com/NicolasPetton/pass
 ;; Package-Requires: ((emacs "24") (password-store "0.1") (f "0.17"))
 ;; Created: 09 Jun 2015
@@ -226,6 +226,24 @@ user input."
   "Display the header in to the current buffer."
   (insert "Password-store directory:")
   (put-text-property (point-at-bol) (point) 'face 'pass-mode-header-face)
+  (insert "\n\n")
+  (insert (format "%8s %-12s \t\t\t " (format "[%s]" (propertize "w" 'face 'font-lock-constant-face)) "copy"))
+  (insert (format "%8s %-12s \t\t\t " (format "[%s]" (propertize "v/RET" 'face 'font-lock-constant-face)) "view"))
+  (insert (format "%8s %-12s \t\t\t " (format "[%s]" (propertize "I" 'face 'font-lock-constant-face)) "generate"))
+  (insert "\n")
+  (insert (format "%8s %-12s \t\t\t " (format "[%s]" (propertize "i" 'face 'font-lock-constant-face)) "insert"))
+  (insert (format "%8s %-12s \t\t\t " (format "[%s]" (propertize "k" 'face 'font-lock-constant-face)) "delete"))
+  (insert (format "%8s %-12s \t\t\t " (format "[%s]" (propertize "r" 'face 'font-lock-constant-face)) "rename"))
+  (insert "\n")
+  (insert (format "%8s %-12s \t\t\t " (format "[%s]" (propertize "n" 'face 'font-lock-constant-face)) "next"))
+  (insert (format "%8s %-12s \t\t\t " (format "[%s]" (propertize "p" 'face 'font-lock-constant-face)) "previous"))
+  (insert "\n")
+  (insert (format "%8s %-12s \t\t\t " (format "[%s]" (propertize "M-n" 'face 'font-lock-constant-face)) "next dir"))
+  (insert (format "%8s %-12s \t\t\t " (format "[%s]" (propertize "M-p" 'face 'font-lock-constant-face)) "prev dir"))
+  (insert "\n")
+  (insert (format "%8s %-12s \t\t\t " (format "[%s]" (propertize "g" 'face 'font-lock-constant-face)) "update"))
+  (insert (format "%8s %-12s \t\t\t " (format "[%s]" (propertize "?" 'face 'font-lock-constant-face)) "help"))
+  (insert (format "%8s %-12s \t\t\t " (format "[%s]" (propertize "q" 'face 'font-lock-constant-face)) "quit"))
   (newline)
   (newline))
 
