@@ -1,13 +1,13 @@
 ;;; rebecca-theme.el --- Rebecca Purple Theme
 
-;; Copyright 2016, All rights reserved
+;; Copyright 2016-2017, All rights reserved
 ;;
 ;; Code licensed under the MIT license
 ;; http://zenorocha.mit-license.org
 
 ;; Author: vic <vborja@apache.org>
 ;; Version: 1.2.1
-;; Package-Version: 20170406.2136
+;; Package-Version: 20170730.943
 ;; Package-Requires: ((emacs "24"))
 ;; URL: https://github.com/vic/rebecca-theme
 ;; Keywords: theme, dark
