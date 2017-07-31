@@ -4,7 +4,7 @@
 
 ;; Author: Kelvin Smith <oneKelvinSmith@gmail.com>
 ;; URL: http://github.com/oneKelvinSmith/monokai-emacs
-;; Package-Version: 20170724.740
+;; Package-Version: 20170731.504
 ;; Version: 3.3.0
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -403,7 +403,7 @@ Also affects 'linum-mode' background."
      ((,monokai-class (:inherit highlight
                                 :background ,monokai-highlight-alt))
       (,monokai-256-class  (:inherit highlight
-                                     :background ,monokai-256-comments))))
+                                     :background ,monokai-256-highlight-alt))))
 
    `(region
      ((,monokai-class (:inherit highlight
@@ -3219,9 +3219,11 @@ Also affects 'linum-mode' background."
    `(linum
      ((,monokai-class (:foreground ,monokai-line-number
                                    :background ,monokai-fringe-bg
+                                   :inherit default
                                    :underline nil))
       (,monokai-256-class  (:foreground ,monokai-256-line-number
                                         :background ,monokai-256-fringe-bg
+                                        :inherit default
                                         :underline nil))))
 
    ;; linum-relative-current-face
@@ -4183,7 +4185,7 @@ Also affects 'linum-mode' background."
      ((,monokai-class (:foreground ,monokai-comments
                                    :background ,monokai-gray-d
                                    :slant italic))
-      (,monokai-256-class  (:foreground ,monokai-256-emphasis
+      (,monokai-256-class  (:foreground ,monokai-256-comments
                                         :background ,monokai-256-gray-d
                                         :slant italic))))
 
@@ -4191,7 +4193,7 @@ Also affects 'linum-mode' background."
      ((,monokai-class (:foreground ,monokai-comments
                                    :background ,monokai-gray-d
                                    :slant italic))
-      (,monokai-256-class  (:foreground ,monokai-256-emphasis
+      (,monokai-256-class  (:foreground ,monokai-256-comments
                                         :background ,monokai-256-gray-d
                                         :slant italic))))
 

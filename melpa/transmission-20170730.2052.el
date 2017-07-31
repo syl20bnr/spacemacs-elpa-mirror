@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.10
-;; Package-Version: 20170729.1752
+;; Package-Version: 20170730.2052
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -631,6 +631,11 @@ Direction D should be a symbol, either \"up\" or \"down\"."
                                 (if throttle (format "%d kB/s" n) "disabled") "): ")))
            (transmission-throttle-torrent ids limit (read-number prompt))))
        "torrent-get" `(:ids ,ids :fields (,str ,(concat str "ed")))))))
+
+(defun transmission-torrent-honors-speed-limits-p ()
+  "Return non-nil if torrent honors session speed limits, otherwise nil."
+  (let ((torrent (elt transmission-torrent-vector 0)))
+    (eq t (cdr (assq 'honorsSessionLimits torrent)))))
 
 (defun transmission-prompt-speed-limit (upload)
   "Make a prompt to set transfer speed limit.
@@ -1477,7 +1482,7 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
 (defun transmission-unmark-all ()
   "Remove mark from all items."
   (interactive)
-  (let ((inhibit-read-only t) len n props)
+  (let ((inhibit-read-only t) len n)
     (when (> (setq len (length transmission-marked-ids)) 0)
       (setq n len)
       (save-excursion
@@ -1487,14 +1492,35 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
           (catch :eobp
             (while (> n 0)
               (when (= (following-char) ?>)
-                (setq props (text-properties-at (point)))
+                (insert-and-inherit ?\s)
                 (delete-region (point) (1+ (point)))
-                (insert (apply #'propertize "\s" props))
                 (cl-decf n))
              (when (not (zerop (forward-line))) (throw :eobp nil))))))
       (setq transmission-marked-ids nil)
       (set-buffer-modified-p nil)
       (message "%s removed" (transmission-plural len "mark")))))
+
+(defun transmission-invert-marks ()
+  "Toggle mark on all items."
+  (interactive)
+  (let ((inhibit-read-only t) ids tag key)
+    (when (setq key (cl-case major-mode
+                      (transmission-mode 'id)
+                      (transmission-files-mode 'index)))
+      (save-excursion
+        (save-restriction
+          (widen)
+          (goto-char (point-min))
+          (catch :eobp
+            (while t
+              (when (setq tag (car (memq (following-char) '(?> ?\s))))
+                (insert-and-inherit (if (= tag ?>) ?\s ?>))
+                (delete-region (point) (1+ (point)))
+                (when (= tag ?\s)
+                  (push (cdr (assq key (tabulated-list-get-id))) ids)))
+              (when (not (zerop (forward-line))) (throw :eobp nil))))))
+      (setq transmission-marked-ids ids)
+      (set-buffer-modified-p nil))))
 
 
 ;; Formatting
@@ -1860,12 +1886,12 @@ for explanation of the peer flags."
   (let ((map (make-sparse-keymap)))
     (define-key map "p" 'previous-line)
     (define-key map "n" 'next-line)
+    (define-key map "a" 'transmission-trackers-add)
     (define-key map "c" 'transmission-copy-magnet)
     (define-key map "d" 'transmission-set-torrent-download)
     (define-key map "e" 'transmission-peers)
     (define-key map "l" 'transmission-set-torrent-ratio)
-    (define-key map "t" 'transmission-trackers-add)
-    (define-key map "T" 'transmission-trackers-remove)
+    (define-key map "r" 'transmission-trackers-remove)
     (define-key map "u" 'transmission-set-torrent-upload)
     (define-key map "y" 'transmission-set-bandwidth-priority)
     map)
@@ -1882,10 +1908,11 @@ for explanation of the peer flags."
     ["Reannounce Torrent" transmission-reannounce]
     ["Set Bandwidth Priority" transmission-set-bandwidth-priority]
     ("Set Torrent Limits"
+     ["Honor Session Speed Limits" transmission-toggle-limits
+      :help "Toggle whether torrent honors session limits."
+      :style toggle :selected (transmission-torrent-honors-speed-limits-p)]
      ["Set Torrent Download Limit" transmission-set-torrent-download]
      ["Set Torrent Upload Limit" transmission-set-torrent-upload]
-     ["Toggle Torrent Speed Limits" transmission-toggle-limits
-      :help "Toggle whether torrent honors session limits."]
      ["Set Torrent Seed Ratio Limit" transmission-set-torrent-ratio])
     ["Verify Torrent" transmission-verify]
     "--"
@@ -1925,6 +1952,7 @@ for explanation of the peer flags."
     (define-key map "e" 'transmission-peers)
     (define-key map "i" 'transmission-info)
     (define-key map "m" 'transmission-toggle-mark)
+    (define-key map "t" 'transmission-invert-marks)
     (define-key map "u" 'transmission-files-unwant)
     (define-key map "U" 'transmission-unmark-all)
     (define-key map "v" 'transmission-view-file)
@@ -1945,9 +1973,15 @@ for explanation of the peer flags."
     ["Visit File In View Mode" transmission-view-file]
     ["Open File In WWW Browser" transmission-browse-url-of-file]
     "--"
-    ["Mark Files Unwanted" transmission-files-unwant]
-    ["Mark Files Wanted" transmission-files-want]
+    ["Unwant Files" transmission-files-unwant
+     :help "Tell Transmission not to download files at point or in region"]
+    ["Want Files" transmission-files-want
+     :help "Tell Transmission to download files at point or in region"]
     ["Set Files' Bandwidth Priority" transmission-files-priority]
+    "--"
+    ["Toggle Mark" transmission-toggle-mark]
+    ["Unmark All" transmission-unmark-all]
+    ["Invert Marks" transmission-invert-marks]
     "--"
     ["View Torrent Info" transmission-info]
     ["View Torrent Peers" transmission-peers]
@@ -1993,12 +2027,13 @@ for explanation of the peer flags."
     (define-key map "d" 'transmission-set-download)
     (define-key map "e" 'transmission-peers)
     (define-key map "i" 'transmission-info)
+    (define-key map "k" 'transmission-trackers-add)
     (define-key map "l" 'transmission-set-ratio)
     (define-key map "m" 'transmission-toggle-mark)
     (define-key map "r" 'transmission-remove)
     (define-key map "D" 'transmission-delete)
     (define-key map "s" 'transmission-toggle)
-    (define-key map "t" 'transmission-trackers-add)
+    (define-key map "t" 'transmission-invert-marks)
     (define-key map "u" 'transmission-set-upload)
     (define-key map "v" 'transmission-verify)
     (define-key map "q" 'transmission-quit)
@@ -2014,15 +2049,16 @@ for explanation of the peer flags."
     ["Start/Stop Torrent" transmission-toggle
      :help "Toggle pause on torrents at point or in region"]
     ["Set Bandwidth Priority" transmission-set-bandwidth-priority]
+    ["Add Tracker URLs" transmission-trackers-add]
     ("Set Global/Session Limits"
      ["Set Global Download Limit" transmission-set-download]
      ["Set Global Upload Limit" transmission-set-upload]
      ["Set Global Seed Ratio Limit" transmission-set-ratio])
     ("Set Torrent Limits"
-     ["Set Torrent Download Limit" transmission-set-torrent-download]
-     ["Set Torrent Upload Limit" transmission-set-torrent-upload]
      ["Toggle Torrent Speed Limits" transmission-toggle-limits
       :help "Toggle whether torrent honors session limits."]
+     ["Set Torrent Download Limit" transmission-set-torrent-download]
+     ["Set Torrent Upload Limit" transmission-set-torrent-upload]
      ["Set Torrent Seed Ratio Limit" transmission-set-torrent-ratio])
     ["Move Torrent" transmission-move]
     ["Remove Torrent" transmission-remove]
@@ -2033,6 +2069,8 @@ for explanation of the peer flags."
     "--"
     ["Toggle Mark" transmission-toggle-mark]
     ["Unmark All" transmission-unmark-all]
+    ["Invert Marks" transmission-invert-marks
+     :help "Toggle mark on all items"]
     "--"
     ["Query Free Space" transmission-free]
     ["Session Statistics" transmission-stats]
