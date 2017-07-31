@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 20170723.2050
+;; Package-Version: 20170730.1306
 ;; Version: 0.2
 ;; Package-Requires: ((helm "2.0") (rtags "2.10"))
 
@@ -131,9 +131,10 @@ Each element of the alist is a cons-cell of the form (DESCRIPTION . FUNCTION)."
       (let* ((file-name (match-string 1 line))
              (line-num (match-string 2 line))
              (column-num (match-string 3 line))
-             (token-begin (string-to-number column-num))
-             (token-end (+ token-begin (length helm-rtags-token)))
              (content (match-string 4 line))
+             (token-begin (string-to-number column-num))
+             (token-end (min (+ token-begin (length helm-rtags-token))
+                             (length content)))
              (content-prefix (substring content 0 token-begin))
              (content-token (substring content token-begin token-end))
              (content-suffix (substring content token-end (length content))))

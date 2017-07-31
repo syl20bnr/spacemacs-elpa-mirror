@@ -4,7 +4,7 @@
 
 ;; Author: António Nuno Monteiro <anmonteiro@gmail.com>
 ;; Version: 0.1.1
-;; Package-Version: 20170729.2350
+;; Package-Version: 20170730.1553
 ;; Package-Requires: ((emacs "24"))
 ;; Created: 2017-07-29
 ;; Keywords: lisp
@@ -95,6 +95,16 @@
     (define-key map (kbd "*") (snoopy-insert-char ?8))
     (define-key key-translation-map (kbd "(") 'snoopy-insert-special)
     (define-key key-translation-map (kbd ")") 'snoopy-insert-special)
+    (define-key map (kbd "<kp-1>") (snoopy-insert-char ?1))
+    (define-key map (kbd "<kp-2>") (snoopy-insert-char ?2))
+    (define-key map (kbd "<kp-3>") (snoopy-insert-char ?3))
+    (define-key map (kbd "<kp-4>") (snoopy-insert-char ?4))
+    (define-key map (kbd "<kp-5>") (snoopy-insert-char ?5))
+    (define-key map (kbd "<kp-6>") (snoopy-insert-char ?6))
+    (define-key map (kbd "<kp-7>") (snoopy-insert-char ?7))
+    (define-key map (kbd "<kp-8>") (snoopy-insert-char ?8))
+    (define-key map (kbd "<kp-9>") (snoopy-insert-char ?9))
+    (define-key map (kbd "<kp-0>") (snoopy-insert-char ?0))
     map))
 
 (defvar snoopy-lighter " Snoopy"

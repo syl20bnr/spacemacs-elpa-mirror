@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-super-agenda
-;; Package-Version: 20170729.2324
+;; Package-Version: 20170730.1801
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "25.1") (s "1.10.0") (dash "2.13") (org "9.0"))
 ;; Keywords: hypermedia, outlines, Org, agenda
@@ -41,7 +41,7 @@
 ;; (let ((org-super-agenda-groups
 ;;        '(;; Each group has an implicit boolean OR operator between its selectors.
 ;;          (:name "Today" ; Optionally specify section name
-;;                 :time t ; Items that have a time associated
+;;                 :time-grid t ; Items that appear on the time grid
 ;;                 :todo "TODAY") ; Items that have this TODO keyword
 ;;          (:name "Important"
 ;;                 ;; Single arguments given alone
@@ -266,6 +266,8 @@ the third."
 
 ;;;;; Date/time-related
 
+;; TODO: I guess these should be in a date-matcher macro
+
 (org-super-agenda--defgroup date
   "Group items that have a date associated.
 Argument can be `t' to match items with any date, `nil' to match
@@ -285,20 +287,55 @@ date.  The `ts-date' text-property is matched against. "
           (_ ;; Oops
            (user-error "Argument to `:date' must be `t', `nil', or `today'"))))
 
-(org-super-agenda--defgroup time
-  "Group items that have a time associated.
-Items with an associated timestamp that has a time (rather than
-just a date) are selected."
+;; TODO: The :time matcher uses the 'dotime text property added by the
+;; agenda command for items that are listed in the time grid.  This is
+;; faster than checking the date strings in the other matchers, so
+;; this is the quickest way to group items that are scheduled for a
+;; certain time today.  But users will probably naturally think they
+;; should use ":scheduled today".  So maybe this should be renamed to
+;; :time-grid or something like that.
+
+(org-super-agenda--defgroup time-grid
+  "Group items that appear on a time grid.
+This matches the `dotime' text-property, which, if NOT set to
+`time' (I know, this gets confusing), means it WILL appear in the
+agenda time grid. "
   :section-name "Timed items"  ; Note: this does not mean the item has a "SCHEDULED:" line
   :test (when-let ((time (org-find-text-property-in-string 'dotime item)))
           (not (eql time 'time))))
 
 (org-super-agenda--defgroup deadline
   "Group items that have a deadline.
-Argument can be `t' (to match items with any deadline),
-`nil' (to match items that have no deadline), or `today' to
-match items whose deadline is today."
-  :section-name "Deadline items"
+Argument can be `t' (to match items with any deadline), `nil' (to
+match items that have no deadline), `past` (to match items with a
+deadline in the past), `today' (to match items whose deadline is
+today), or `future' (to match items with a deadline in the
+future).  Argument may also be given like `before DATE' or `after
+DATE', where DATE is a date string that
+`org-time-string-to-absolute' can process."
+  :section-name (pcase (car args)
+                  ('t  ;; Check for any deadline info
+                   "Deadline items")
+                  ((pred not)  ;; Has no deadline info
+                   "Items without deadlines")
+                  ('past  ;; Deadline before today
+                   "Past due")
+                  ('today  ;; Deadline for today
+                   "Due today")
+                  ('future  ;; Deadline in the future
+                   "Due soon")
+                  ('before  ;; Before date given
+                   (concat "Due before " (second args)))
+                  ('on  ;; On date given
+                   (concat "Due on " (second args)))
+                  ('after  ;; After date given
+                   (concat "Due after " (second args))))
+  :let* ((today (pcase (car args)  ; Perhaps premature optimization
+                  ((or 'past 'today 'future 'before 'on 'after)
+                   (org-today))))
+         (target-date (pcase (car args)
+                        ((or 'before 'on 'after)
+                         (org-time-string-to-absolute (second args))))))
   :test (when-with-marker-buffer (org-super-agenda--get-marker item)
           (when-let ((time (org-entry-get (point) "DEADLINE")))
             (pcase (car args)
@@ -307,18 +344,50 @@ match items whose deadline is today."
               ((pred not)  ;; Has no deadline info
                (not time))
               ('past  ;; Deadline before today
-               (< (org-time-string-to-absolute time) (org-today)))
+               (< (org-time-string-to-absolute time) today))
               ('today  ;; Deadline for today
-               (= (org-today) (org-time-string-to-absolute time)))
+               (= today (org-time-string-to-absolute time)))
               ('future  ;; Deadline in the future
-               (< (org-today) (org-time-string-to-absolute time)))))))
+               (< today (org-time-string-to-absolute time)))
+              ('before  ;; Before date given
+               (< (org-time-string-to-absolute time) target-date))
+              ('on  ;; On date given
+               (= (org-time-string-to-absolute time) target-date))
+              ('after  ;; After date given
+               (> (org-time-string-to-absolute time) target-date))))))
 
 (org-super-agenda--defgroup scheduled
   "Group items that are scheduled.
-Argument can be `t' (to match items with any scheduled time),
-`nil' (to match items that have no scheduled time), or `today' to
-match items that are scheduled for today."
-  :section-name "Scheduled items"
+Argument can be `t' (to match items scheduled for any date),
+`nil' (to match items that are not schedule), `past` (to match
+items scheduled for the past), `today' (to match items scheduled
+for today), or `future' (to match items scheduled for the
+future).  Argument may also be given like `before DATE' or `after
+DATE', where DATE is a date string that
+`org-time-string-to-absolute' can process."
+  :section-name (pcase (car args)
+                  ('t  ;; Check for any deadline info
+                   "scheduled items")
+                  ((pred not)  ;; Has no deadline info
+                   "Unscheduled items ")
+                  ('past  ;; Deadline before today
+                   "Past scheduled")
+                  ('today  ;; Deadline for today
+                   "Scheduled today")
+                  ('future  ;; Deadline in the future
+                   "Scheduled soon")
+                  ('before  ;; Before date given
+                   (concat "Scheduled before " (second args)))
+                  ('on  ;; On date given
+                   (concat "Scheduled on " (second args)))
+                  ('after  ;; After date given
+                   (concat "Scheduled after " (second args))))
+  :let* ((today (pcase (car args)  ; Perhaps premature optimization
+                  ((or 'past 'today 'future 'before 'on 'after)
+                   (org-today))))
+         (target-date (pcase (car args)
+                        ((or 'before 'on 'after)
+                         (org-time-string-to-absolute (second args))))))
   :test (when-with-marker-buffer (org-super-agenda--get-marker item)
           (when-let ((time (org-entry-get (point) "SCHEDULED")))
             (pcase (car args)
@@ -327,11 +396,17 @@ match items that are scheduled for today."
               ((pred not)  ;; Has no scheduled info
                (not time))
               ('past  ;; Scheduled before today
-               (< (org-time-string-to-absolute time) (org-today)))
+               (< (org-time-string-to-absolute time) today))
               ('today  ;; Scheduled for today
-               (= (org-today) (org-time-string-to-absolute time)))
+               (= today (org-time-string-to-absolute time)))
               ('future  ;; Scheduled in the future
-               (< (org-today) (org-time-string-to-absolute time)))))))
+               (< today (org-time-string-to-absolute time)))
+              ('before  ;; Before date given
+               (< (org-time-string-to-absolute time) target-date))
+              ('on  ;; On date given
+               (= (org-time-string-to-absolute time) target-date))
+              ('after  ;; After date given
+               (> (org-time-string-to-absolute time) target-date))))))
 
 ;;;;; Misc
 
@@ -341,6 +416,8 @@ This is a catch-all, probably most useful with the `:discard'
 selector."
   :test t)
 
+;; TODO: Rename this to something like :family-tree and make a new
+;; one-level-deep-only :children matcher that will be much faster
 (org-super-agenda--defgroup children
   "Select any item that has child entries.
 Argument may be `t' to match if it has any children, `nil' to

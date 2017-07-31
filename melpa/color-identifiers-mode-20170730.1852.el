@@ -4,7 +4,7 @@
 
 ;; Author: Ankur Dave <ankurdave@gmail.com>
 ;; Url: https://github.com/ankurdave/color-identifiers-mode
-;; Package-Version: 20170615.1338
+;; Package-Version: 20170730.1852
 ;; Created: 24 Jan 2014
 ;; Version: 1.1
 ;; Keywords: faces, languages
@@ -158,10 +158,8 @@ SCAN-FN."
   "Extract a list of identifiers declared in the current buffer.
 For cc-mode support within color-identifiers-mode."
   (let ((result nil))
+    ;; Variables that cc-mode highlighted with font-lock-variable-name-face
     (save-excursion
-      ;; Ensure cc-mode has highlighted the whole buffer
-      (font-lock-ensure (point-min) (point-max))
-      ;; Find identifiers that cc-mode highlighted with font-lock-variable-name-face
       (goto-char (point-min))
       (catch 'end-of-file
         (while t
@@ -290,7 +288,6 @@ arguments, loops (for .. in), or for comprehensions."
                     (setq result (append params result)))))
             (wrong-type-argument nil))))
       ;; Variables that python-mode highlighted with font-lock-variable-name-face
-      (font-lock-ensure (point-min) (point-max))
       (save-excursion
         (goto-char (point-min))
         (catch 'end-of-file

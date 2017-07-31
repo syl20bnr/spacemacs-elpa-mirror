@@ -30,7 +30,7 @@ Here's an example which you can test by evaluating the `let' form:
 (let ((org-super-agenda-groups
        '(;; Each group has an implicit boolean OR operator between its selectors.
          (:name "Today" ; Optionally specify section name
-                :time t ; Items that have a time associated
+                :time-grid t ; Items that appear on the time grid
                 :todo "TODAY") ; Items that have this TODO keyword
          (:name "Important"
                 ;; Single arguments given alone
