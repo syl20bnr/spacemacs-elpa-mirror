@@ -4,7 +4,7 @@
 
 ;; Author: David Shepherd <davidshepherd7@gmail.com>
 ;; Version: 1.0.0
-;; Package-Version: 20170129.120
+;; Package-Version: 20170801.844
 ;; Package-Requires: ((emacs "24.4") (seq "2.3"))
 ;; Keywords: frames, windows
 ;; URL: https://github.com/davidshepherd7/frames-only-mode
@@ -66,11 +66,6 @@ To disable completion popups entirely use the variable
    ;; kill frames when a buffer is buried, makes most things play nice with
    ;; frames
    (list 'frame-auto-hide-function 'delete-frame)
-
-   ;; TODO: figure out why this didn't seem to work
-   ;; gdb (gud) does things with windows by default, this stops some of it:
-   ;; 'gdb-use-separate-io-buffer nil
-   ;; 'gdb-many-windows nil
 
    ;; org windows: Use frames not emacs windows
    (list 'org-agenda-window-setup 'other-frame)

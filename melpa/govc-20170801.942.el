@@ -2,7 +2,7 @@
 
 ;; Author: The govc developers
 ;; URL: https://github.com/vmware/govmomi/tree/master/govc/emacs
-;; Package-Version: 20170629.1129
+;; Package-Version: 20170801.942
 ;; Keywords: convenience
 ;; Version: 0.14.0
 ;; Package-Requires: ((emacs "24.3") (dash "1.5.0") (s "1.9.0") (magit-popup "2.0.50") (json-mode "1.6.0"))
@@ -542,6 +542,13 @@ returned, assuming that's what the user wanted."
    (govc-format-command "events"
                         (list "-n" govc-max-events (if current-prefix-arg "-f") (govc-selection)))))
 
+(defun govc-tasks ()
+  "Tasks via govc tasks."
+  (interactive)
+  (govc-shell-command
+   (govc-format-command "tasks"
+                        (list "-n" govc-max-events (if current-prefix-arg "-f") (govc-selection)))))
+
 (defun govc-logs ()
   "Logs via govc logs -n `govc-max-events'."
   (interactive)
@@ -932,6 +939,7 @@ Inherit SESSION if given."
     (define-key map "M" 'govc-metric)
     (define-key map "N" 'govc-host-esxcli-netstat)
     (define-key map "O" 'govc-object-info)
+    (define-key map "T" 'govc-tasks)
     (define-key map "c" 'govc-mode-new-session)
     (define-key map "p" 'govc-pool-with-session)
     (define-key map "s" 'govc-datastore-with-session)
@@ -1004,6 +1012,7 @@ Optionally filter by FILTER and inherit SESSION."
     (define-key map "J" 'govc-pool-json-info)
     (define-key map "M" 'govc-metric)
     (define-key map "O" 'govc-object-info)
+    (define-key map "T" 'govc-tasks)
     (define-key map "c" 'govc-mode-new-session)
     (define-key map "h" 'govc-host-with-session)
     (define-key map "s" 'govc-datastore-with-session)
@@ -1444,6 +1453,7 @@ Open via `eww' by default, via `browse-url' if ARG is non-nil."
     (define-key map "E" 'govc-events)
     (define-key map "J" 'govc-vm-json-info)
     (define-key map "O" 'govc-object-info)
+    (define-key map "T" 'govc-tasks)
     (define-key map "X" 'govc-vm-extra-config-table)
     (define-key map (kbd "RET") 'govc-vm-device-ls)
     (define-key map "C" 'govc-vm-screen-selection)

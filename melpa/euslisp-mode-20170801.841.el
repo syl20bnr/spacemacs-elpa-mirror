@@ -4,7 +4,7 @@
 ;; Maintainer: iory <ab.ioryz@gmail.com>
 ;; Created: April 13, 2016
 ;; Version: 0.0.8
-;; Package-Version: 20170731.943
+;; Package-Version: 20170801.841
 ;; Keywords: Euslisp, euslisp, GitHub
 ;; URL: https://github.com/iory/euslisp-mode
 ;; Package-Requires: ((emacs "23") (s "1.9") (exec-path-from-shell "0") (helm-ag 0.58))
@@ -331,8 +331,6 @@ t when called interactively."
   (interactive
    (list (read-string "Euslisp command: ") nil t))
   (let ((process (or process (euslisp-shell-get-process-or-error msg))))
-    (when (string-match ".\n+." string) ;; Multiline.
-      (setq string (replace-regexp-in-string "\n" " " string)))
     (comint-send-string process string)
     (when (or (not (string-match "\n\\'" string))
               (string-match "\n[ \t].*\n?\\'" string))
@@ -508,6 +506,11 @@ as described by `euslisp-path-from-shell-getenvs'."
     (mapc (lambda (pair)
             (exec-path-from-shell-setenv (car pair) (cdr pair)))
           pairs)))
+
+(defun euslisp-switch-to-shell ()
+  "Switch to inferior euslisp process buffer."
+  (interactive)
+  (pop-to-buffer (process-buffer (euslisp-shell-get-process-or-error))))
 
 (defun euslisp-change-env (env-directory)
   "Change default source path"
