@@ -2,7 +2,7 @@
 
 ;; Author: Harry R. Schwartz <hello@harryrschwartz.com>
 ;; Version: 2.1.0
-;; Package-Version: 20170727.1129
+;; Package-Version: 20170731.1304
 ;; URL: https://github.com/hrs/engine-mode
 ;; Package-Requires: ((cl-lib "0.5"))
 
@@ -50,7 +50,7 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Code:
-(require 'cl-lib)
+(eval-when-compile (require 'cl-macs))
 
 (defcustom engine/keybinding-prefix "C-x /"
   "The default engine-mode keybindings prefix."
@@ -78,7 +78,7 @@
   "Bind the engine-mode keymap to a new prefix.
 For example, to use \"C-c s\" instead of the default \"C-x /\":
 
-(engine/set-keymap-prefix (kbd \"C-c s\"))"
+\(engine/set-keymap-prefix (kbd \"C-c s\"))"
   (define-key engine-mode-map (kbd engine/keybinding-prefix) nil)
   (define-key engine-mode-map prefix-key engine-mode-prefixed-map))
 
@@ -138,7 +138,7 @@ function that will be applied to the search term before it's
 substituted into `search-engine-url'. For example, if we wanted
 to always upcase our search terms, we might use:
 
-(defengine duckduckgo
+\(defengine duckduckgo
   \"https://duckduckgo.com/?q=%s\"
   :term-transformation-hook 'upcase)
 
@@ -160,7 +160,7 @@ For example, to search Wikipedia, use:
 Hitting \"C-x / w\" will be bound to the newly-defined
 `engine/search-wikipedia' function."
 
-  (assert (symbolp engine-name))
+  (cl-assert (symbolp engine-name))
   `(prog1
      (defun ,(engine/function-name engine-name) (search-term)
        ,(or docstring (engine/docstring engine-name))

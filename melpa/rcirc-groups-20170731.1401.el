@@ -4,10 +4,11 @@
 ;;
 ;; Author: Dimitri Fontaine <dim@tapoueh.org>
 ;; URL: http://tapoueh.org/emacs/rcirc-groups.html
-;; Package-Version: 20160115.431
+;; Package-Version: 20170731.1401
 ;; Version: 0.5
 ;; Created: 2009-06-27
 ;; Keywords: comm, convenience
+;; License: WTFPL, grab your copy here: http://sam.zoy.org/wtfpl/
 ;;
 ;; This file is NOT part of GNU Emacs.
 ;;

@@ -3,8 +3,8 @@
 ;; Author: iory <ab.ioryz@gmail.com>
 ;; Maintainer: iory <ab.ioryz@gmail.com>
 ;; Created: April 13, 2016
-;; Version: 0.0.7
-;; Package-Version: 20170731.800
+;; Version: 0.0.8
+;; Package-Version: 20170731.943
 ;; Keywords: Euslisp, euslisp, GitHub
 ;; URL: https://github.com/iory/euslisp-mode
 ;; Package-Requires: ((emacs "23") (s "1.9") (exec-path-from-shell "0") (helm-ag 0.58))
@@ -16,7 +16,7 @@
 
 ;;; Constants =================================================================
 
-(defconst euslisp-mode-version "0.0.7"
+(defconst euslisp-mode-version "0.0.8"
   "Euslisp mode version number.")
 
 (defconst euslisp-output-buffer-name "*euslisp-output*"
@@ -437,11 +437,11 @@ to \"^euslisp-\"."
                                        (if (exec-path-from-shell--standard-shell-p shell)
                                            (format "source %s/setup.%s && %s" euslisp-path-ros-env shell-name printf-command)
                                          (if (string-equal shell-name "fish")
-                                             (format "sh -c bass source %s/setup.bash && %s" euslisp-path-ros-env printf-command)
+                                             (format "bass source %s/setup.bash; and sh -c %s" euslisp-path-ros-env (shell-quote-argument printf-command))
                                            (error "Not implemented %s" shell-name)))
                                      (if (exec-path-from-shell--standard-shell-p shell)
                                          printf-command
-                                       (format "sh -c %s" euslisp-path-ros-env printf-command)))))))
+                                       (format "sh -c %s" (shell-quote-argument printf-command))))))))
     (with-temp-buffer
       (exec-path-from-shell--debug "Invoking shell %s with args %S" shell shell-args)
       (let ((exit-code (apply #'call-process shell nil t nil shell-args)))
@@ -476,10 +476,7 @@ The result is a list of (NAME . VALUE) pairs."
                 names (cdr names))))
       result)))
 
-(defcustom euslisp-path-ros-env nil
-  "ROS environment."
-  :type 'string
-  :group 'euslisp)
+(defvar euslisp-path-ros-env nil)
 
 (defun euslisp-path-from-shell-getenv (name)
   "Get the environment variable NAME from the user's shell.
@@ -516,8 +513,7 @@ as described by `euslisp-path-from-shell-getenvs'."
   "Change default source path"
   (interactive (list (read-directory-name "CATKIN_PATH: " euslisp-choose-directory-default-directory)))
   (let ((env-path env-directory))
-    (custom-set-variables
-     '(euslisp-path-ros-env ))
+    (setq euslisp-path-ros-env env-path)
     (euslisp-path-from-shell-copy-envs
      (list "PATH" "PYTHONPATH" "LD_LIBRARY_PATH" "EUSDIR" "ARCHDIR" "ROS_ROOT" "ROS_PACKAGE_PATH" "ROS_MASTER_URI"
            "ROS_ETC_DIR" "ROSLISP_PACKAGE_DIRECTORIES" "ROS_DISTRO" "CMAKE_PREFIX_PATH"))))
