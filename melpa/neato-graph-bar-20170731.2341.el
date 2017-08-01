@@ -1,10 +1,10 @@
-;;; neato-graph-bar.el --- Neat-o graph bars for Emacs -*- lexical-binding: t -*-
+;;; neato-graph-bar.el --- Neat-o graph bars CPU/memory etc. -*- lexical-binding: t -*-
 
-;; Author: Robert Cochran <robert-git@cochranmail.com.
+;; Author: Robert Cochran <robert-git@cochranmail.com>.
 ;; URL: https://gitlab.com/RobertCochran/neato-graph-bar
-;; Package-Version: 20170301.816
+;; Package-Version: 20170731.2341
 ;; Version: 1.0.0
-;; Package-Requires: ((emacs "24.3") (cl-lib "0.5"))
+;; Package-Requires: ((emacs "24.3"))
 
 ;; Copyright (C) 2016 Robert Cochran <robert-git@cochranmail.com>
 ;;
@@ -20,6 +20,13 @@
 ;;
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; Provides htop-like graphs for CPU and memory consumption.  A good
+;; companion for proced.  Run `neato-graph-bar'.
+
+;;; Code:
 
 (require 'cl-lib)
 
@@ -51,7 +58,7 @@ When non-nil, draw a single unified CPU graph."
 
 (defcustom neato-graph-bar-label-padding
   4
-  "The number of character to pad graph labels to."
+  "The number of characters to pad graph labels to."
   :type 'wholenum
   :group 'neato-graph-bar)
 
@@ -175,7 +182,8 @@ alist.")
   (add-hook 'kill-buffer-hook
 	    (lambda ()
 	      (if (timerp neato-graph-bar--update-timer)
-		  (cancel-timer neato-graph-bar--update-timer)))))
+		  (cancel-timer neato-graph-bar--update-timer)))
+            nil t))
 
 (defun neato-graph-bar-update ()
   "Update the graphs."
@@ -213,7 +221,8 @@ end.  Unspecified, it defaults to a percentage, but can be any
 arbitrary string (good for doing things such as providing a
 \"30MB/100MB\" type counter for storage graphs)."
   (let* ((padded-label (concat (make-string (- neato-graph-bar-label-padding
-                                               (length label)) ?\s)
+                                               (length label))
+                                            ?\s)
                                label))
          (bar-width (- (window-body-width neato-graph-bar--current-window)
                        ;; Seems that Emacs will wrap the line if it extends
@@ -339,11 +348,11 @@ into key-value pairs as defined by `neato-graph-bar--cpu-field-names'."
     ;; Account for empty first run
     (unless neato-graph-bar--cpu-stats-previous
       (setq neato-graph-bar--cpu-stats-previous cpu-stat-list))
-    (cl-map 'list (lambda (n o)
-		    (cl-map 'list (lambda (x y)
-				    (rplacd x (- (cdr x) (cdr y))))
-			    (cdr n) (cdr o)))
-	    cpu-diff neato-graph-bar--cpu-stats-previous)
+    (cl-mapc (lambda (n o)
+	       (cl-mapc (lambda (x y)
+			  (rplacd x (- (cdr x) (cdr y))))
+		        (cdr n) (cdr o)))
+	     cpu-diff neato-graph-bar--cpu-stats-previous)
     (setq neato-graph-bar--cpu-stats-previous cpu-stat-list)
     cpu-diff))
 

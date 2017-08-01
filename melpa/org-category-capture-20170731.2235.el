@@ -4,7 +4,7 @@
 
 ;; Author: Ivan Malison <IvanMalison@gmail.com>
 ;; Keywords: org-mode todo tools outlines
-;; Package-Version: 20170727.1647
+;; Package-Version: 20170731.2235
 ;; URL: https://github.com/IvanMalison/org-projectile
 ;; Version: 0.0.0
 ;; Package-Requires: ((org "9.0.0") (emacs "24"))
@@ -23,6 +23,9 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
+
+;; This package provides an interface that can be used to capture TODOs with a
+;; category that is selected depending on a some piece of Emacs context.
 
 ;;; Code:
 
