@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-super-agenda
-;; Package-Version: 20170730.1801
+;; Package-Version: 20170731.1812
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "25.1") (s "1.10.0") (dash "2.13") (org "9.0"))
 ;; Keywords: hypermedia, outlines, Org, agenda
@@ -135,7 +135,7 @@ making it stretch across the screen."
 
 ;;;; Macros
 
-(defmacro when-with-marker-buffer (form &rest body)
+(defmacro org-super-agenda--when-with-marker-buffer (form &rest body)
   "When FORM is a marker, run BODY in the marker's buffer, with point starting at it."
   (declare (indent defun))
   (org-with-gensyms (marker)
@@ -195,7 +195,7 @@ Matches `org-priority-regexp'."
   "Get entry for ITEM.
 ITEM should be a string with the `org-marker' property set to a
 marker."
-  (when-with-marker-buffer (org-super-agenda--get-marker item)
+  (org-super-agenda--when-with-marker-buffer (org-super-agenda--get-marker item)
     (buffer-substring (org-entry-beginning-position)
                       (org-entry-end-position))))
 
@@ -287,21 +287,17 @@ date.  The `ts-date' text-property is matched against. "
           (_ ;; Oops
            (user-error "Argument to `:date' must be `t', `nil', or `today'"))))
 
-;; TODO: The :time matcher uses the 'dotime text property added by the
-;; agenda command for items that are listed in the time grid.  This is
-;; faster than checking the date strings in the other matchers, so
-;; this is the quickest way to group items that are scheduled for a
-;; certain time today.  But users will probably naturally think they
-;; should use ":scheduled today".  So maybe this should be renamed to
-;; :time-grid or something like that.
-
 (org-super-agenda--defgroup time-grid
   "Group items that appear on a time grid.
 This matches the `dotime' text-property, which, if NOT set to
 `time' (I know, this gets confusing), means it WILL appear in the
-agenda time grid. "
+agenda time-grid. "
   :section-name "Timed items"  ; Note: this does not mean the item has a "SCHEDULED:" line
   :test (when-let ((time (org-find-text-property-in-string 'dotime item)))
+          ;; For this to match, the 'dotime property must be set, and
+          ;; it must not be equal to 'time.  If it is not set, or if
+          ;; it is set and is equal to 'time, the item is not part of
+          ;; the time-grid.  Yes, this is confusing.  :)
           (not (eql time 'time))))
 
 (org-super-agenda--defgroup deadline
@@ -336,7 +332,7 @@ DATE', where DATE is a date string that
          (target-date (pcase (car args)
                         ((or 'before 'on 'after)
                          (org-time-string-to-absolute (second args))))))
-  :test (when-with-marker-buffer (org-super-agenda--get-marker item)
+  :test (org-super-agenda--when-with-marker-buffer (org-super-agenda--get-marker item)
           (when-let ((time (org-entry-get (point) "DEADLINE")))
             (pcase (car args)
               ('t  ;; Check for any deadline info
@@ -388,7 +384,7 @@ DATE', where DATE is a date string that
          (target-date (pcase (car args)
                         ((or 'before 'on 'after)
                          (org-time-string-to-absolute (second args))))))
-  :test (when-with-marker-buffer (org-super-agenda--get-marker item)
+  :test (org-super-agenda--when-with-marker-buffer (org-super-agenda--get-marker item)
           (when-let ((time (org-entry-get (point) "SCHEDULED")))
             (pcase (car args)
               ('t  ;; Check for any scheduled info
@@ -426,16 +422,16 @@ with any to-do keywords, or a string to match if it has specific
 to-do keywords."
   :section-name "Items with children"
   :let* ((case-fold-search t))
-  :test (when-with-marker-buffer (org-super-agenda--get-marker item)
+  :test (org-super-agenda--when-with-marker-buffer (org-super-agenda--get-marker item)
           (pcase (car args)
             ('todo ;; Match if entry has child to-dos
              (org-super-agenda--map-children
-               :form (org-entry-is-todo-p)
-               :any t))
+              :form (org-entry-is-todo-p)
+              :any t))
             ((pred stringp)  ;; Match child to-do keywords
              (org-super-agenda--map-children
-               :form (cl-member (org-get-todo-state) args :test #'string=)
-               :any t))
+              :form (cl-member (org-get-todo-state) args :test #'string=)
+              :any t))
             ('t  ;; Match if it has any children
              (org-goto-first-child))
             ((pred not)  ;; Match if it has no children
@@ -448,6 +444,19 @@ Habit items have a \"STYLE: habit\" Org property."
     :section-name "Habits"
     :test (org-is-habit-p (org-super-agenda--get-marker item))))
 
+(org-super-agenda--defgroup log
+  "Group items from log mode.
+Note that these items may also be matched by the :time-grid
+selector, so if you want these displayed in their own group, you
+may need to select them in a group before a group containing the
+:time-grid selector."
+  :section-name "Log"
+  ;; I don't know why the property's value is a string instead of a
+  ;; symbol, because `org-agenda-log-mode-items' is a list of symbols.
+  :test (cl-member (org-find-text-property-in-string 'type item)
+                   '("closed" "clock" "state")
+                   :test #'string=))
+
 (org-super-agenda--defgroup heading-regexp
   "Group items whose headings match any of the given regular expressions.
 Argument may be a string or list of strings, each of which should
@@ -458,7 +467,7 @@ section name for this group."
                                 (--map (s-wrap it "\"")
                                        args)))
   :let* ((case-fold-search t))
-  :test (when-with-marker-buffer (org-super-agenda--get-marker item)
+  :test (org-super-agenda--when-with-marker-buffer (org-super-agenda--get-marker item)
           (let ((heading (org-get-heading 'no-tags 'no-todo)))
             (cl-loop for regexp in args
                      thereis (string-match-p regexp heading)))))
