@@ -6,9 +6,9 @@
 ;; Author: Ryan Thompson
 ;; Created: Sat Apr  4 13:41:20 2015 (-0700)
 ;; Version: 4.2
-;; Package-Version: 20170801.46
-;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
-;; URL: https://github.com/DarwinAwardWinner/ido-ubiquitous
+;; Package-Version: 20170801.1633
+;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (s "0.1"))
+;; URL: https://github.com/DarwinAwardWinner/ido-completing-read-plus
 ;; Keywords: ido, completion, convenience
 
 ;; This file is NOT part of GNU Emacs.
@@ -87,6 +87,7 @@ not be updated until you restart Emacs.")
 (require 'ido)
 (require 'cl-lib)
 (require 'cus-edit)
+(require 's)
 
 ;;; Debug messages
 
@@ -251,7 +252,7 @@ disable fallback based on collection size, set this to nil."
 (defcustom ido-cr+-function-blacklist
   '(read-file-name-internal
     read-buffer
-    ;; https://github.com/DarwinAwardWinner/ido-ubiquitous/issues/60
+    ;; https://github.com/DarwinAwardWinner/ido-completing-read-plus/issues/60
     todo-add-category
     ;; Gnus already supports ido on its own
     gnus-emacs-completing-read
@@ -261,9 +262,9 @@ disable fallback based on collection size, set this to nil."
     magit-builtin-completing-read
     ;; ESS already supports ido on its own
     ess-completing-read
-    ;; https://github.com/DarwinAwardWinner/ido-ubiquitous/issues/39
+    ;; https://github.com/DarwinAwardWinner/ido-completing-read-plus/issues/39
     Info-read-node-name
-    ;; https://github.com/DarwinAwardWinner/ido-ubiquitous/issues/44
+    ;; https://github.com/DarwinAwardWinner/ido-completing-read-plus/issues/44
     tmm-prompt)
   "Functions & commands for which ido-cr+ should be disabled.
 
@@ -308,18 +309,20 @@ precedence over whitelisting."
     "\\`wl-"
     ;; https://github.com/mrkkrp/ebal/issues/12
     "\\`ebal-"
-    ;; https://github.com/DarwinAwardWinner/ido-ubiquitous/issues/4
+    ;; https://github.com/DarwinAwardWinner/ido-completing-read-plus/issues/4
     webjump
-    ;; https://github.com/DarwinAwardWinner/ido-ubiquitous/issues/83
+    ;; https://github.com/DarwinAwardWinner/ido-completing-read-plus/issues/83
     where-is
-     ;; https://github.com/DarwinAwardWinner/ido-ubiquitous/issues/51
+     ;; https://github.com/DarwinAwardWinner/ido-completing-read-plus/issues/51
     find-tag
-    ;; https://github.com/DarwinAwardWinner/ido-ubiquitous/issues/89
+    ;; https://github.com/DarwinAwardWinner/ido-completing-read-plus/issues/89
     "\\`etags-select-"
-    ;; https://github.com/DarwinAwardWinner/ido-ubiquitous/issues/58
+    ;; https://github.com/DarwinAwardWinner/ido-completing-read-plus/issues/58
     imenu--completion-buffer
-    ;; https://github.com/DarwinAwardWinner/ido-ubiquitous/issues/116
+    ;; https://github.com/DarwinAwardWinner/ido-completing-read-plus/issues/116
     project--completing-read-strict
+    ;; https://github.com/DarwinAwardWinner/ido-completing-read-plus/issues/127#issuecomment-319463217
+    bookmark-completing-read
     )
   "Functions & commands with alternate behavior when DEF is nil.
 
@@ -360,7 +363,7 @@ instead of leaving it as nil.")
 Enabling this may interfere with or cause errors in other
 packages that use `ido-completing-read'. If you discover any such
 incompatibilities, please file a bug report at
-https://github.com/DarwinAwardWinner/ido-ubiquitous/issues"
+https://github.com/DarwinAwardWinner/ido-completing-read-plus/issues"
   :type 'boolean)
 
 ;; Signal used to trigger fallback

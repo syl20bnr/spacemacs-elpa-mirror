@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-super-agenda
-;; Package-Version: 20170801.156
+;; Package-Version: 20170801.1945
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "25.1") (s "1.10.0") (dash "2.13") (org "9.0"))
 ;; Keywords: hypermedia, outlines, Org, agenda
@@ -18,12 +18,12 @@
 ;; agenda: items are no longer shown based on deadline/scheduled
 ;; timestamps, but are shown no-matter-what.
 
-;; So this package overrides the `org-agenda-finalize-entries'
-;; function, which runs just before items are inserted into agenda
-;; views.  It runs them through a set of filters that separate them
-;; into groups.  Then the groups are inserted into the agenda buffer,
-;; and any remaining items are inserted at the end.  Empty groups are
-;; not displayed.
+;; So this package filters the results from
+;; `org-agenda-finalize-entries', which runs just before items are
+;; inserted into agenda views.  It runs them through a set of filters
+;; that separate them into groups.  Then the groups are inserted into
+;; the agenda buffer, and any remaining items are inserted at the end.
+;; Empty groups are not displayed.
 
 ;; The end result is your standard daily/weekly agenda, but arranged
 ;; into groups defined by you.  You might put items with certain tags
@@ -107,11 +107,6 @@ Populated automatically by `org-super-agenda--defgroup'.")
 
 (defvar org-super-agenda-group-transformers nil
   "List of agenda group transformers.")
-
-(defvar org-super-agenda-function-overrides
-  '((org-agenda-finalize-entries . org-super-agenda--finalize-entries))
-  "List of alists mapping agenda functions to overriding
-  functions.")
 
 (defgroup org-super-agenda nil
   "Settings for `org-super-agenda'."
@@ -216,14 +211,14 @@ marker."
 With prefix argument ARG, turn on if positive, otherwise off."
   :global t
   (let ((advice-function (if org-super-agenda-mode
-                             (lambda (to fun)
+                             (lambda (to fn)
                                ;; Enable mode
-                               (advice-add to :override fun))
-                           (lambda (from fun)
+                               (advice-add to :filter-return fn))
+                           (lambda (from fn)
                              ;; Disable mode
-                             (advice-remove from fun)))))
-    (cl-loop for (target . override) in org-super-agenda-function-overrides
-             do (funcall advice-function target override))
+                             (advice-remove from fn)))))
+    (funcall advice-function #'org-agenda-finalize-entries
+             #'org-super-agenda--filter-finalize-entries)
     ;; Display message
     (if org-super-agenda-mode
         (message "org-super-agenda-mode enabled.")
@@ -435,12 +430,12 @@ to-do keywords."
           (pcase (car args)
             ('todo ;; Match if entry has child to-dos
              (org-super-agenda--map-children
-              :form (org-entry-is-todo-p)
-              :any t))
+               :form (org-entry-is-todo-p)
+               :any t))
             ((pred stringp)  ;; Match child to-do keywords
              (org-super-agenda--map-children
-              :form (cl-member (org-get-todo-state) args :test #'string=)
-              :any t))
+               :form (cl-member (org-get-todo-state) args :test #'string=)
+               :any t))
             ('t  ;; Match if it has any children
              (org-goto-first-child))
             ((pred not)  ;; Match if it has no children
@@ -776,49 +771,14 @@ actually the ORDER for the groups."
 (setq org-super-agenda-group-transformers (plist-put org-super-agenda-group-transformers
                                                      :order-multi 'org-super-agenda--transform-group-order))
 
-;;;; Finalize function
+;;;; Finalize filter
 
-(defun org-super-agenda--finalize-entries (list &optional type)
-  "Sort, limit and concatenate the LIST of agenda items.
-The optional argument TYPE tells the agenda type."
-  ;; This function is a copy of `org-agenda-finalize-entries', with
-  ;; the only change being that it groups items with
-  ;; `org-super-agenda--group-items' before it finally returns them.
-  (let ((max-effort (cond ((listp org-agenda-max-effort)
-			   (cdr (assoc type org-agenda-max-effort)))
-			  (t org-agenda-max-effort)))
-	(max-todo (cond ((listp org-agenda-max-todos)
-			 (cdr (assoc type org-agenda-max-todos)))
-			(t org-agenda-max-todos)))
-	(max-tags (cond ((listp org-agenda-max-tags)
-			 (cdr (assoc type org-agenda-max-tags)))
-			(t org-agenda-max-tags)))
-	(max-entries (cond ((listp org-agenda-max-entries)
-			    (cdr (assoc type org-agenda-max-entries)))
-			   (t org-agenda-max-entries))))
-    (when org-agenda-before-sorting-filter-function
-      (setq list
-	    (delq nil
-		  (mapcar
-		   org-agenda-before-sorting-filter-function list))))
-    (setq list (mapcar 'org-agenda-highlight-todo list)
-	  list (mapcar 'identity (sort list 'org-entries-lessp)))
-    (when max-effort
-      (setq list (org-agenda-limit-entries
-		  list 'effort-minutes max-effort
-		  (lambda (e) (or e (if org-sort-agenda-noeffort-is-high
-					32767 -1))))))
-    (when max-todo
-      (setq list (org-agenda-limit-entries list 'todo-state max-todo)))
-    (when max-tags
-      (setq list (org-agenda-limit-entries list 'tags max-tags)))
-    (when max-entries
-      (setq list (org-agenda-limit-entries list 'org-hd-marker max-entries)))
-
-    ;; Filter with super-groups
-    (setq list (org-super-agenda--group-items list))
-
-    (mapconcat 'identity list "\n")))
+(defun org-super-agenda--filter-finalize-entries (string)
+  "Filter the return of `org-agenda-finalize-entries' through `org-super-agenda--finalize-entries'."
+  (mapconcat 'identity
+             (org-super-agenda--group-items
+              (split-string string "\n" t))
+             "\n"))
 
 ;;;; Footer
 

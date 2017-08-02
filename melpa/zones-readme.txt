@@ -39,7 +39,8 @@
    `zz-add-zone-and-unite', `zz-clone-and-coalesce-zones',
    `zz-clone-and-unite-zones', `zz-clone-zones',
    `zz-coalesce-zones', `zz-delete-zone', `zz-narrow',
-   `zz-narrow-repeat', `zz-select-region',
+   `zz-narrow-repeat', `zz-query-replace-zones' (Emacs 25+),
+   `zz-query-replace-regexp-zones' (Emacs 25+), `zz-select-region',
    `zz-select-region-repeat', `zz-set-izones-var',
    `zz-unite-zones'.
 
@@ -106,7 +107,8 @@
 
  Some of the functions defined here are not available for Emacs
  versions prior to Emacs 22.  Others are not available for versions
- prior to Emacs 23.  This is mentioned where applicable.
+ prior to Emacs 23.  Still others are available only starting with
+ Emacs 25.  This is mentioned where applicable.
 
 
 (@* "Zones")
@@ -217,6 +219,8 @@
    bookmark to restore it in a subsequent Emacs session.  For this
    you need library `bookmark+.el'.
 
+ * Query-replace over them (Emacs 25 and later).
+
 
 (@* "Izone List Variables")
  ** Izone List Variables **
@@ -271,7 +275,7 @@
 (@* "Keys")
  ** Keys **
 
- Most of the commands that manipulate izones are bound on keymap
+ Many of the commands that manipulate izones are bound on keymap
  `narrow-map'.  They are available on prefix key `C-x n', along
  with the narrowing/widening keys `C-x n d', `C-x n n', `C-x n p',
  and `C-x n w':
