@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20170730.2031
-;; Version: 1.5.5
+;; Package-Version: 20170801.958
+;; Version: 1.5.6
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -924,6 +924,7 @@ Enjoy!
 (defvar easy-hugo-mode-map
   (let ((map (make-keymap)))
     (define-key map "n" 'easy-hugo-newpost)
+    (define-key map "w" 'easy-hugo-newpost)
     (define-key map "a" 'easy-hugo-helm-ag)
     (define-key map "c" 'easy-hugo-open-config)
     (define-key map "p" 'easy-hugo-preview)

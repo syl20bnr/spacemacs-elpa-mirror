@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20170726.1140
+;; Package-Version: 20170801.1304
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -406,7 +406,7 @@ CHECKER and BUFFER are added to each item parsed from STRING."
 ;; Source buffer operations
 
 (defun dante-thing-at-point ()
-  "Return (list START END) of something at the point."
+  "Return (list START END) of a relevant thing at the point, or the region if it is active."
   (if (region-active-p)
       (list (region-beginning) (region-end))
     (dante-ident-pos-at-point)))
@@ -881,13 +881,13 @@ a list is returned instead of failing with a nil result."
 ;; Auto-fix
 
 (defcustom dante-suggestible-extensions
-  '("AllowAmbiguousTypes" "BangPatterns" "ConstraintKinds" "DataKinds" "DeriveFoldable" "DeriveFunctor" "DeriveGeneric" "DeriveTraversable" "FlexibleContexts" "FlexibleInstances" "FunctionalDependencies" "GADTs" "GeneralizedNewtypeDeriving" "InstanceSigs" "KindSignatures" "MultiParamTypeClasses" "PolyKinds" "RankNTypes" "RecordWildCards" "ScopedTypeVariables" "StandaloneDeriving" "TupleSections" "TypeApplications" "TypeFamilies" "TypeInType" "TypeOperators" "TypeSynonymInstances" "UndecidableSuperClasses" "UndecidableInstances" "ViewPatterns")
+  '("AllowAmbiguousTypes" "BangPatterns" "ConstraintKinds" "DataKinds" "DeriveFoldable" "DeriveFunctor" "DeriveGeneric" "DeriveTraversable" "EmptyCase" "FlexibleContexts" "FlexibleInstances" "FunctionalDependencies" "GADTs" "GeneralizedNewtypeDeriving" "InstanceSigs" "KindSignatures" "MultiParamTypeClasses" "PolyKinds" "RankNTypes" "RecordWildCards" "ScopedTypeVariables" "StandaloneDeriving" "TupleSections" "TypeApplications" "TypeFamilies" "TypeInType" "TypeOperators" "TypeSynonymInstances" "UndecidableSuperClasses" "UndecidableInstances" "ViewPatterns")
   "Language extensions that Dante will use to fix errors."
   :group 'dante
   :type '(repeat string))
 
 (defun dante-auto-fix (pos)
-  "Attempt to fix the flycheck error at POS."
+  "Attempt to fix the flycheck error or warning at POS."
   (interactive "d")
   (let ((messages (delq nil (mapcar #'flycheck-error-message
                                     (flycheck-overlay-errors-at pos)))))
@@ -895,13 +895,32 @@ a list is returned instead of failing with a nil result."
       (let ((msg (car messages)))
         (save-excursion
           (cond
+           ((string-match "The type signature for ‘\\(.*\\)’ lacks an accompanying binding" msg)
+            (beginning-of-line)
+            (forward-line)
+            (insert (concat (match-string 1 msg) " = _\n")))
+           ((string-match "add (\\(.*\\)) to the context of[\n ]*the type signature for:[ \n]*\\([^ ]*\\) ::" msg)
+            (let ((missing-constraint (match-string 1 msg))
+                  (function-name (match-string 2 msg)))
+              (search-backward-regexp (concat (regexp-quote function-name) "[ \t]*::[ \t]*" )) ; find type sig
+              (goto-char (match-end 0))
+              (when (looking-at "forall\\|∀") ; skip quantifiers
+                (search-forward-regexp "[.][ \t]*"))
+              (insert (concat missing-constraint " => "))))
+           ((string-match "Unticked promoted constructor" msg)
+            (goto-char (car (dante-ident-pos-at-point)))
+            (insert "'"))
            ((string-match "Patterns not matched:" msg)
-            (let ((patterns (substring msg (match-end 0)))) ;; patterns to match
-            (end-of-line) ;; assuming that the case expression is on multiple lines and that "of" is at the end of the line
-            (dolist (pattern (split-string patterns "\n" t " ")) ;; for each pattern
-              (haskell-indentation-newline-and-indent) ;; insert a line
-              (insert (string-trim pattern)) ;; add the pattern
-              (insert " -> _")))) ;; and some placeholder expression
+            (let ((patterns (mapcar #'string-trim (split-string (substring msg (match-end 0)) "\n" t " ")))) ;; patterns to match
+            (if (string-match "In an equation for ‘\\(.*\\)’:" msg)
+                (let ((function-name (match-string 1 msg)))
+                  (end-of-line)
+                  (dolist (pattern patterns)
+                    (insert (concat "\n" function-name " " pattern " = _"))))
+              (end-of-line) ;; assuming that the case expression is on multiple lines and that "of" is at the end of the line
+              (dolist (pattern patterns)
+                (haskell-indentation-newline-and-indent)
+                (insert (concat pattern " -> _"))))))
            ((string-match "A do-notation statement discarded a result of type" msg)
             (goto-char (car (dante-ident-pos-at-point)))
             (insert "_ <- "))

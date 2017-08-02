@@ -3,8 +3,8 @@
 ;; Copyright © 2017
 
 ;; Author: Petter Storvik
-;; URL: https://github.com/storvik/lastpass
-;; Package-Version: 20170418.1102
+;; URL: https://github.com/storvik/emacs-lastpass
+;; Package-Version: 20170801.1214
 ;; Version: 0.2.0
 ;; Created: 2017-02-17
 ;; Package-Requires: ((emacs "24.4") (seq "1.9") (cl-lib "0.5"))

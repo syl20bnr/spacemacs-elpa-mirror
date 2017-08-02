@@ -4,7 +4,7 @@
 ;;
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/crux
-;; Package-Version: 20170626.632
+;; Package-Version: 20170801.1334
 ;; Version: 0.3.0
 ;; Keywords: convenience
 ;; Package-Requires: ((seq "1.11"))
@@ -232,7 +232,7 @@ Used by crux functions like crux-move-beginning-of-line to skip over whitespace"
   (let ((line-start-regex (cond ((eq major-mode 'term-mode) crux-line-start-regex-term-mode)
                                 ((eq major-mode 'eshell-mode) crux-line-start-regex-eshell-mode)
                                 (t crux-line-start-regex))))
-    (search-forward-regexp line-start-regex)))
+    (search-forward-regexp line-start-regex (line-end-position) t)))
 
 
 (defun crux-move-beginning-of-line (arg)
