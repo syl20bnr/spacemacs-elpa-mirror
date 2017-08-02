@@ -5,8 +5,8 @@
 ;; Authors: Damien Cassou <damien@cassou.me>
 ;;          Matus Goljer <matus.goljer@gmail.com>
 ;; Version: 2.0.0
-;; Package-Version: 20170714.709
-;; GIT: https://github.com/DamienCassou/beginend
+;; Package-Version: 20170801.2308
+;; URL: https://github.com/DamienCassou/beginend
 ;; Package-Requires: ((emacs "24.4"))
 ;; Created: 01 Jun 2015
 
@@ -331,6 +331,7 @@ modes are described in `beginend-modes'."
           (remove-hook (car pair) (cdr pair)))
         beginend-modes))
 
+;;;###autoload
 (define-minor-mode beginend-global-mode
   "Toggle beginend mode.
 Interactively with no argument, this command toggles the mode.  A positive

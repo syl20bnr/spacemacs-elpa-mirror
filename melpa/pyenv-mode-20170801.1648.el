@@ -4,7 +4,7 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/pyenv-mode
-;; Package-Version: 20160221.1123
+;; Package-Version: 20170801.1648
 ;; Version: 0.1.0
 ;; Package-Requires: ((pythonic "0.1.0"))
 
@@ -29,7 +29,7 @@
 
 (require 'pythonic)
 
-(defgroup pyenv-mode nil
+(defgroup pyenv nil
   "Pyenv virtualenv integration with python mode."
   :group 'languages)
 
@@ -38,7 +38,7 @@
     (when (pyenv-mode-version)
       (concat "Pyenv:" (pyenv-mode-version) " ")))
   "How `pyenv-mode' will indicate the current python version in the mode line."
-  :group 'pyenv-mode)
+  :group 'pyenv)
 
 (defun pyenv-mode-version ()
   "Return currently active pyenv version."

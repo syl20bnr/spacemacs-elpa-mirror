@@ -4,7 +4,7 @@
 
 ;; Author: Chunyang Xu <mail@xuchunyang.me>
 ;; URL: https://github.com/xuchunyang/shr-tag-pre-highlight.el
-;; Package-Version: 20170525.902
+;; Package-Version: 20170801.2029
 ;; Package-Requires: ((emacs "24") (language-detection "0.1.0"))
 ;; Keywords: html
 ;; Version: 1
@@ -218,9 +218,10 @@ Adapted from `org-src--get-lang-mode'."
                     (shr-tag-pre-highlight--get-lang-mode lang))))
     (shr-ensure-newline)
     (insert
-     (if (fboundp mode)
-         (shr-tag-pre-highlight-fontify code mode)
-       code))
+     (or (and (fboundp mode)
+              (with-demoted-errors "Error while fontifying: %S"
+                (shr-tag-pre-highlight-fontify code mode)))
+         code))
     (shr-ensure-newline)))
 
 (provide 'shr-tag-pre-highlight)
