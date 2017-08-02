@@ -3,13 +3,23 @@
 
 ;; Author: Dave Pearson <davep@davep.org>
 ;; Version: 3.5
-;; Package-Version: 20170425.331
+;; Package-Version: 20170802.426
 ;; Keywords: uptime
 ;; URL: https://github.com/davep/uptimes.el
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
 
-;; uptimes.el is free software distributed under the terms of the GNU
-;; General Public Licence, version 2. For details see the file COPYING.
+;; This program is free software: you can redistribute it and/or modify it
+;; under the terms of the GNU General Public License as published by the
+;; Free Software Foundation, either version 3 of the License, or (at your
+;; option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+;; Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License along
+;; with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 ;;
@@ -21,7 +31,7 @@
 ;;
 ;;   <URL:https://github.com/davep/uptimes.el>
 
-;;; THANKS:
+;;; Thanks:
 ;;
 ;; Istvan Marko <imarko@pacificnet.net> for pointing out that a default of
 ;; one second for `uptimes-auto-save-interval' was probably a little OTT.

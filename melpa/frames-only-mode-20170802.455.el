@@ -4,8 +4,8 @@
 
 ;; Author: David Shepherd <davidshepherd7@gmail.com>
 ;; Version: 1.0.0
-;; Package-Version: 20170801.844
-;; Package-Requires: ((emacs "24.4") (seq "2.3"))
+;; Package-Version: 20170802.455
+;; Package-Requires: ((emacs "24.4") (dash "2.13.0") (s "1.11.0"))
 ;; Keywords: frames, windows
 ;; URL: https://github.com/davidshepherd7/frames-only-mode
 
@@ -14,7 +14,8 @@
 
 ;;; Code:
 
-(require 'seq)
+(require 'dash)
+(require 's)
 
 
 
@@ -27,6 +28,7 @@
 (defcustom frames-only-mode-kill-frame-when-buffer-killed-buffer-list
   '("*RefTeX Select*" "*Help*" "*Popup Help*" "*Completions*")
   "Buffer names for which the containing frame should be killed when the buffer is killed."
+  :type '(repeat string)
   :group 'frames-only-mode)
 
 
@@ -41,6 +43,7 @@ Completion windows are always split horizontally (helm style).
 To disable completion popups entirely use the variable
 `completion-auto-help' for default Emacs completion or
 `ido-completion-buffer' for ido-based completion."
+  :type 'boolean
   :group 'frames-only-mode)
 
 (defcustom frames-only-mode-use-window-functions
@@ -48,6 +51,10 @@ To disable completion popups entirely use the variable
   "List of functions inside which new emacs windows should be created instead of frames.
 
 \(i.e. pop-up-frames is let bound to nil, the default value)."
+  ;; Type is symbol, not function, because we sometimes want to add functions to
+  ;; this list without requiring the library.
+  :type '(repeat symbol)
+
   :group 'frames-only-mode)
 
 
@@ -98,6 +105,22 @@ Each entry should be of the form `(list variable-symbol value)'.
 If you find any settings that you think will be useful to others using this
 mode please open an issue at https://github.com/davidshepherd7/frames-only-mode/issues
 to let me know."
+  :type '(repeat (list symbol sexp))
+  :group 'frames-only-mode)
+
+(defcustom frames-only-mode-reopen-frames-from-hidden-x11-virtual-desktops
+  ;; TODO: enable by default when this has had a bit more testing
+  ;; (not (null (and (eq window-system 'x)
+  ;;                 (executable-find "wmctrl"))))
+  nil
+  "When a frame is visible on a hidden virtual desktop, open a new copy of the frame.
+
+This will only work under X11 and when you have the wmctrl binary
+available on your path (you can probably install wmctrl from your
+operating system's package manager).
+
+It's a bit of a hack, so there may be some issues."
+  :type 'boolean
   :group 'frames-only-mode)
 
 
@@ -109,11 +132,11 @@ In accordance with https://www.gnu.org/software/emacs/manual/html_node/elisp/Hoo
 we even set variables that are not currently bound, but we unbind them again on revert."
   ;; Transform to list of (var value initial-value) and call helper function. I
   ;; wish we had a back-portable thread-last macro...
-  (let ((var-val-initials (seq-map (lambda (s) (append s
-                                                  (list (when (boundp (car s))
-                                                          (symbol-value (car s)))
-                                                        (boundp (car s)))))
-                                   var-vals)))
+  (let ((var-val-initials (-map (lambda (s) (append s
+                                               (list (when (boundp (car s))
+                                                       (symbol-value (car s)))
+                                                     (boundp (car s)))))
+                                var-vals)))
     (frames-only-mode--revertable-set-helper var-val-initials)))
 
 (defun frames-only-mode--revertable-set-helper (var-value-initials)
@@ -128,13 +151,13 @@ we even set variables that are not currently bound, but we unbind them again on 
                (makunbound (car s)))))))
 
     ;; Set each var
-    (seq-map (lambda (s) (set (car s) (cadr s))) var-value-initials)
+    (-map (lambda (s) (set (car s) (cadr s))) var-value-initials)
 
     ;; Return a function to revert the changes
     (lambda ()
       "Revert the variable values set by revertable-set"
       (when (not revert-done)
-        (seq-map revert-var-fn var-value-initials)
+        (-map revert-var-fn var-value-initials)
         (setq revert-done t)))))
 
 (defvar frames-only-mode--revert-fn #'ignore
@@ -199,6 +222,52 @@ Only if there are no other windows in the frame, and if the buffer is in frames-
 (defun frames-only-mode-flycheck-display-errors (errors)
   (message "%s" (mapcar 'flycheck-error-format-message-and-id errors)))
 
+
+
+
+;;; Interactions with wmctrl
+
+(defun frames-only-mode--call-process (process &rest args)
+  "Call a process with sensible error handling and output to a string"
+  (with-output-to-string
+    (let* ((exit-code (apply #'call-process process nil standard-output nil args)))
+      (when (not (equal exit-code 0))
+        (error "Process %s %s exited with error code %s" process args exit-code)))))
+
+(defun frames-only-mode--x-current-desktop ()
+  "Get the number of the X11 desktop which is visible"
+  (--> (frames-only-mode--call-process "wmctrl" "-d")
+       (s-split "\n" it)
+       (--map (split-string it "\\s-+") it)
+       (--first (equal (nth 1 it) "*") it)
+       (car it)))
+
+(defun frames-only-mode--x-visible-window-names ()
+  "Get a list of X11 windows which are on the visible desktop."
+  (let ((current-desktop (frames-only-mode--x-current-desktop)))
+    (--> (frames-only-mode--call-process "wmctrl" "-l")
+         (s-split "\n" it)
+         (--map (s-split-up-to "\\s-+" it 3) it)
+         (--filter (equal (nth 1 it) current-desktop) it)
+         (--map (nth 3 it) it))))
+
+(defun frames-only-mode--x-buffer-window-visible (buffer-name)
+  "Check buffer is currently displayed on a visible X11 virtual desktop."
+  (--some (equal it buffer-name)
+          (frames-only-mode--x-visible-window-names)))
+
+(defun frames-only-mode--should-force-new-frame (buffer-name _)
+  "See `frames-only-mode-reopen-frames-from-hidden-x11-virtual-desktops'."
+  (condition-case err
+      (and frames-only-mode-reopen-frames-from-hidden-x11-virtual-desktops
+           (not (frames-only-mode--x-buffer-window-visible buffer-name)))
+    (error
+     (progn
+       (message "frames-only-mode failed to get a list of visible buffers from X11 with the error: '%s'
+You may want to try installing `wmctrl', or disable this feature by setting `frames-only-mode-reopen-frames-from-hidden-x11-virtual-desktops' to nil"
+                err)
+       nil))))
+
 
 
 (defvar frames-only-mode-mode-map
@@ -244,7 +313,16 @@ Only if there are no other windows in the frame, and if the buffer is in frames-
   ;; Make sure completions buffer is buried after we are done with the minibuffer
   (if frames-only-mode
       (add-hook 'minibuffer-exit-hook #'frames-only-mode-bury-completions)
-    (remove-hook 'minibuffer-exit-hook #'frames-only-mode-bury-completions)))
+    (remove-hook 'minibuffer-exit-hook #'frames-only-mode-bury-completions))
+
+  ;; Set up hacks to pop up new frames for buffers when they are displayed on a
+  ;; virtual desktop which is not currently visible (X11 only).
+  (if frames-only-mode
+      (add-to-list 'display-buffer-alist
+                   (cons #'frames-only-mode--should-force-new-frame (cons #'display-buffer-pop-up-frame nil)))
+    (setq display-buffer-alist
+          (--remove (equal (car it) #'frames-only-mode--should-force-new-frame)
+                    display-buffer-alist))))
 
 
 

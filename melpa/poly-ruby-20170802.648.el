@@ -27,9 +27,9 @@
 
 ;; Author: Akinori MUSHA <knu@iDaemons.org>
 ;; URL: https://github.com/knu/poly-ruby.el
-;; Package-Version: 20170710.220
+;; Package-Version: 20170802.648
 ;; Created: 12 May 2017
-;; Version: 0.1.0
+;; Version: 0.2.0
 ;; Package-Requires: ((emacs "24.3") (polymode "1.0"))
 ;; Keywords: languages
 
@@ -43,6 +43,11 @@
 ;; necessary.
 ;;
 ;;   (define-key ruby-mode-map (kbd "C-c m") 'toggle-poly-ruby-mode)
+;;
+;; This package also has experimental support for enh-ruby-mode and
+;; defines poly-enh-ruby-mode and toggle-poly-enh-ruby-mode.
+;;
+;;   (define-key enh-ruby-mode-map (kbd "C-c m") 'toggle-poly-enh-ruby-mode)
 
 ;;; Code:
 
@@ -51,6 +56,12 @@
 (defcustom pm-host/ruby
   (pm-bchunkmode "ruby" :mode 'ruby-mode)
   "Ruby host chunkmode."
+  :group 'hostmodes
+  :type 'object)
+
+(defcustom pm-host/enh-ruby
+  (pm-bchunkmode "enh-ruby" :mode 'enh-ruby-mode)
+  "Enhanced Ruby host chunkmode."
   :group 'hostmodes
   :type 'object)
 
@@ -104,10 +115,14 @@
 (defun poly-ruby--heredoc-mode-retriever ()
   (save-match-data
     (poly-ruby--heredoc-head-matcher 1)
-    (let ((word (match-string 3))) ;; no need to downcase
-      (if (looking-back poly-ruby--heredoc-eval-regexp nil)
-          'ruby
-        (intern word)))))
+    (let* ((word (intern (downcase (match-string 3))))
+           (ruby (intern (replace-regexp-in-string
+                          "-mode\\'" ""
+                          (symbol-name (oref (oref pm/polymode -hostmode) mode)))))
+           (name (if (looking-back poly-ruby--heredoc-eval-regexp nil)
+                     ruby
+                   (if (eq word 'ruby) ruby word))))
+      name)))
 
 (defcustom pm-inner/ruby-heredoc
   (pm-hbtchunkmode-auto "ruby here-document"
@@ -128,8 +143,19 @@
   :group 'polymodes
   :type 'object)
 
+(defcustom pm-poly/enh-ruby
+  (pm-polymode-multi-auto "enh-ruby"
+                          :hostmode 'pm-host/enh-ruby
+                          :auto-innermode 'pm-inner/ruby-heredoc)
+  "Enhanced Ruby polymode."
+  :group 'polymodes
+  :type 'object)
+
 ;;;###autoload (autoload 'poly-ruby-mode "poly-ruby" "Ruby polymode." t)
 (define-polymode poly-ruby-mode pm-poly/ruby)
+
+;;;###autoload (autoload 'poly-enh-ruby-mode "poly-ruby" "Enhanced Ruby polymode." t)
+(define-polymode poly-enh-ruby-mode pm-poly/enh-ruby)
 
 (defun poly-ruby-mode-fix-indent-function ()
   ;; smie-indent-line does not work properly in polymode
@@ -140,10 +166,17 @@
   :type 'hook
   :group 'polymodes)
 
+(defcustom poly-enh-ruby-mode-hook nil
+  "Hook run when entering poly-enh-ruby-mode."
+  :type 'hook
+  :group 'polymodes)
+
 (add-hook 'polymode-init-host-hook
           (lambda ()
-            (when (eq major-mode 'ruby-mode)
-              (run-hooks 'poly-ruby-mode-hook))))
+            (cond ((eq major-mode 'ruby-mode)
+                   (run-hooks 'poly-ruby-mode-hook))
+                  ((eq major-mode 'enh-ruby-mode)
+                   (run-hooks 'poly-enh-ruby-mode-hook)))))
 
 ;;;###autoload
 (defun toggle-poly-ruby-mode ()
@@ -152,6 +185,14 @@
   (if (bound-and-true-p polymode-mode)
       (ruby-mode)
     (poly-ruby-mode)))
+
+;;;###autoload
+(defun toggle-poly-enh-ruby-mode ()
+  "Toggle poly-enh-ruby-mode."
+  (interactive)
+  (if (bound-and-true-p polymode-mode)
+      (enh-ruby-mode)
+    (poly-enh-ruby-mode)))
 
 (provide 'poly-ruby)
 ;;; poly-ruby.el ends here

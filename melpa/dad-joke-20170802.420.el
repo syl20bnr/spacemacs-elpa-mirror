@@ -3,14 +3,23 @@
 
 ;; Author: Dave Pearson <davep@davep.org>
 ;; Version: 1.2
-;; Package-Version: 20170626.252
+;; Package-Version: 20170802.420
 ;; Keywords: games
 ;; URL: https://github.com/davep/dad-joke.el
 ;; Package-Requires: ((emacs "24"))
 
-;; dad-joke.el is free software distributed under the terms of the GNU
-;; General Public Licence, version 2 or (at your option) any later version.
-;; For details see the file COPYING.
+;; This program is free software: you can redistribute it and/or modify it
+;; under the terms of the GNU General Public License as published by the
+;; Free Software Foundation, either version 3 of the License, or (at your
+;; option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+;; Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License along
+;; with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 ;;

@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20170801.1304
+;; Package-Version: 20170802.205
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -895,6 +895,12 @@ a list is returned instead of failing with a nil result."
       (let ((msg (car messages)))
         (save-excursion
           (cond
+           ((string-match "Redundant constraint: \\(.*\\)" msg)
+            (let ((constraint (match-string 1 msg)))
+              (search-forward constraint) ; find type sig
+              (delete-region (match-beginning 0) (match-end 0))
+              (when (looking-at "[ \t]*,")
+                (delete-region (point) (search-forward-regexp ",[\t ]")))))
            ((string-match "The type signature for ‘\\(.*\\)’ lacks an accompanying binding" msg)
             (beginning-of-line)
             (forward-line)
