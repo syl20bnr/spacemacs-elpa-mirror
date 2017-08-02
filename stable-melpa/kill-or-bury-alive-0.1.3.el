@@ -1,11 +1,11 @@
 ;;; kill-or-bury-alive.el --- Precise control over buffer killing in Emacs -*- lexical-binding: t; -*-
 ;;
-;; Copyright © 2015 Mark Karpov <markkarpov@openmailbox.org>
+;; Copyright © 2015–2017 Mark Karpov <markkarpov92@gmail.com>
 ;;
-;; Author: Mark Karpov <markkarpov@openmailbox.org>
+;; Author: Mark Karpov <markkarpov92@gmail.com>
 ;; URL: https://github.com/mrkkrp/kill-or-bury-alive
-;; Package-Version: 0.1.2
-;; Version: 0.1.2
+;; Package-Version: 0.1.3
+;; Version: 0.1.3
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
 ;; Keywords: buffer, killing, convenience
 ;;
@@ -26,20 +26,20 @@
 
 ;;; Commentary:
 
-;; Have you ever killed some buffer that you might want to leave alive?
+;; Have you ever killed a buffer that you might want to leave alive?
 ;; Motivation for killing is usually “get out of my way for now”, and
 ;; killing may be not the best choice in many cases unless your RAM is
-;; very-very limited. This package allows to teach Emacs which buffers we
-;; want to kill and which ones we prefer to bury alive.
+;; very-very limited.  This package allows to teach Emacs which buffers to
+;; kill and which to bury alive.
 ;;
 ;; When we really want to kill a buffer, it turns out that not all buffers
-;; would like to die the same way. The package allows to specify *how* to
-;; kill various kinds of buffers. This may be especially useful when you're
+;; would like to die the same way.  The package allows to specify *how* to
+;; kill various kinds of buffers.  This may be especially useful when you're
 ;; working with some buffer that has an associated process, for example.
 ;;
-;; But sometimes you may want to get rid of most buffers and bring Emacs to
-;; some more or less virgin state. You probably don't want to kill scratch
-;; buffer and maybe ERC-related buffers too. You can specify which buffers
+;; Sometimes you may want to get rid of most buffers and bring Emacs to some
+;; more-or-less virgin state.  You probably don't want to kill scratch
+;; buffer and maybe ERC-related buffers too.  You can specify which buffers
 ;; to purge.
 
 ;;; Code:
@@ -88,7 +88,7 @@ You can use `kill-or-bury-alive-kill-with' to add elements to this alist."
 (defcustom kill-or-bury-alive-long-lasting-list
   '("^\\*scratch\\*$"
     "^\\*Messages\\*$"
-    "^\\*git-credential-cache--daemon\\*$"
+    "^ ?\\*git-credential-cache--daemon\\*$"
     erc-mode)
   "List of buffer designators for buffers that should not be purged.
 
@@ -102,7 +102,7 @@ This variable is used by `kill-or-bury-alive-purge-buffers'."
                          (symbol :tag "Major Mode"))))
 
 (defcustom kill-or-bury-alive-killing-function nil
-  "Default function for buffer killing.
+  "The default function for buffer killing.
 
 This is used when nothing is found in
 `kill-or-bury-alive-killing-function-alist'.
@@ -128,7 +128,7 @@ If value of the variable is NIL,
                  (const :tag "Use Default" nil)))
 
 (defcustom kill-or-bury-alive-base-buffer "*scratch*"
-  "Name of buffer to switch to after `kill-or-bury-alive-purge-buffers'."
+  "Name of the buffer to switch to after `kill-or-bury-alive-purge-buffers'."
   :tag "Base buffer"
   :type 'string)
 
@@ -206,19 +206,19 @@ kill BUFFER.  If nothing special is found,
 (defun kill-or-bury-alive--bury-buffer (buffer)
   "Bury buffer BUFFER according to burying preferences.
 
-`kill-or-bury-alive-burying-function' is used to bury the buffer, see its
-description for more information."
+`kill-or-bury-alive-burying-function' is used to bury the buffer,
+see its description for more information."
   (funcall (or kill-or-bury-alive-burying-function
                #'kill-or-bury-alive--bury-buffer*)
            buffer))
 
 ;;;###autoload
 (defun kill-or-bury-alive (&optional arg)
-  "Kill or bury current buffer.
+  "Kill or bury the current buffer.
 
-This is universal killing mechanism.  When argument ARG is given
-and it's not NIL, kill current buffer.  Otherwise behavior of
-this command varies.  If current buffer matches a buffer
+This is a universal killing mechanism.  When argument ARG is
+given and it's not NIL, kill current buffer.  Otherwise behavior
+of this command varies.  If current buffer matches a buffer
 designator listed in `kill-or-bury-alive-must-die-list', kill it
 immediately, otherwise just bury it.
 
@@ -231,7 +231,7 @@ default."
     (if (or arg (kill-or-bury-alive--must-die-p buffer))
         (when (or (not (kill-or-bury-alive--long-lasting-p buffer))
                   (yes-or-no-p
-                   (format "Buffer ‘%s’ is long lasting one, kill?"
+                   (format "Buffer ‘%s’ is a long lasting one, kill?"
                            (buffer-name buffer))))
           (kill-or-bury-alive--kill-buffer buffer))
       (kill-or-bury-alive--bury-buffer buffer))))
@@ -254,7 +254,7 @@ every buffer."
                  (not (kill-or-bury-alive--long-lasting-p buffer))
                  (or (not arg)
                      (yes-or-no-p
-                      (format "Kill ‘%s’" buffer-name))))
+                      (format "Kill ‘%s’?" buffer-name))))
         (kill-or-bury-alive--kill-buffer buffer))))
   (when kill-or-bury-alive-base-buffer
     (switch-to-buffer kill-or-bury-alive-base-buffer)

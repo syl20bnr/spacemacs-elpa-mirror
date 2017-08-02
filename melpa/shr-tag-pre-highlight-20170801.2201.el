@@ -4,7 +4,7 @@
 
 ;; Author: Chunyang Xu <mail@xuchunyang.me>
 ;; URL: https://github.com/xuchunyang/shr-tag-pre-highlight.el
-;; Package-Version: 20170801.2029
+;; Package-Version: 20170801.2201
 ;; Package-Requires: ((emacs "24") (language-detection "0.1.0"))
 ;; Keywords: html
 ;; Version: 1
@@ -43,29 +43,16 @@
 
 ;; Installation:
 ;;
-;; Place this package somewhere in Emacs `load-path' and add the
-;; following lines to a suitable init file:
-;;
-;; (with-eval-after-load 'shr
-;;   (require 'shr-tag-pre-highlight)
-;;   (add-to-list 'shr-external-rendering-functions
-;;                '(pre . shr-tag-pre-highlight)))
-;;
-;; (when (version< emacs-version "26")
-;;   (with-eval-after-load 'eww
-;;     (advice-add 'eww-display-html :around
-;;                 'eww-display-html--override-shr-external-rendering-functions)))
-;;
-;; If you use `use-package' to manage your init file, you can use
-;; something like this:
+;; This package is available from MELPA. If you use
+;; [use-package](https://github.com/jwiegley/use-package) to manage the init
+;; file, use something like the following:
 ;;
 ;; (use-package shr-tag-pre-highlight
-;;   :load-path "~/src/shr-tag-pre-highlight.el"
+;;   :ensure t
 ;;   :after shr
 ;;   :config
 ;;   (add-to-list 'shr-external-rendering-functions
 ;;                '(pre . shr-tag-pre-highlight))
-;;
 ;;   (when (version< emacs-version "26")
 ;;     (with-eval-after-load 'eww
 ;;       (advice-add 'eww-display-html :around
