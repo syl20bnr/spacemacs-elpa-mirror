@@ -4,9 +4,9 @@
 
 ;; Author: 0rdy <mail@0rdy.com>
 ;; URL: https://github.com/0rdy/kaolin-theme
-;; Package-Version: 20170725.514
+;; Package-Version: 20170802.1135
 ;; Package-Requires: ((emacs "24"))
-;; Version: 0.8.6
+;; Version: 0.9.0
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -172,10 +172,10 @@
          (rb3 jade)
          (rb4 faded-blue)
          (rb5 green)
-         (rb6 light-brown)
          ;; TODO: change
-         (rb7 light-green)
-         (rb8 wheat)
+         (rb6 alt-lavender)
+         (rb7 blue)
+         (rb8 grayish-magenta)
          (rb9 lavender)
 
          (diff-add    light-green)
@@ -776,7 +776,7 @@
      ;; Evil ex
      `(evil-ex-info ((,c (:foreground ,orange))))
      `(evil-ex-substitute-matches ((,c (:background nil :foreground ,red :underline ,underline))))
-     `(evil-ex-substitute-replacement ((,c (:background nil :foreground ,light-green))))
+     `(evil-ex-substitute-replacement ((,c (:foreground ,light-green))))
      `(evil-ex-lazy-highlight ((t (:inherit lazy-highlight))))
 
      ;; Vimish-fold
@@ -798,19 +798,25 @@
      `(ivy-match-required-face ((,c (:background nil :foreground ,alt-red :bold nil))))
      `(ivy-confirm-face ((,c (:background nil :foreground ,light-orange))))
      `(ivy-action ((,c (:background nil :foreground ,teal-green :bold ,bold))))
-     `(ivy-minibuffer-match-face-1 ((,c (:background ,bg3 :foreground ,fg1))))
-     `(ivy-minibuffer-match-face-2 ((,c (:background ,dark-blue :foreground ,teal-blue :bold ,bold))))
-     `(ivy-minibuffer-match-face-3 ((,c (:background ,dark-yellow :foreground ,light-orange :bold ,bold))))
-     `(ivy-minibuffer-match-face-4 ((,c (:background ,dark-purple :foreground ,light-purple :bold ,bold))))
      ;; `(ivy-current-match ((,c (:inherit hl-line :foreground ,hl))))
+     `(ivy-minibuffer-match-face-1 ((,c (:background ,bg3 :foreground ,fg1))))
+     `(ivy-minibuffer-match-face-2 ((,c (:background ,bg3 :foreground ,light-green :bold ,bold))))
+     `(ivy-minibuffer-match-face-3 ((,c (:background ,bg3 :foreground ,light-orange :bold ,bold))))
+     `(ivy-minibuffer-match-face-4 ((,c (:background ,bg3 :foreground ,alt-lavender :bold ,bold))))
+     ;; TODO: fix override backgound in ivy minubuffer with current line
+     ;; OLD
+     ;; `(ivy-minibuffer-match-face-2 ((,c (:background ,dark-blue :foreground ,teal-blue :bold ,bold))))
+     ;; `(ivy-minibuffer-match-face-3 ((,c (:background ,dark-yellow :foreground ,light-orange :bold ,bold))))
+     ;; `(ivy-minibuffer-match-face-4 ((,c (:background ,dark-purple :foreground ,light-purple :bold ,bold))))
+
      `(swiper-match-face-1 ((,c (:background ,bg3 :foreground ,fg1))))
-     `(swiper-match-face-2 ((,c (:background ,dark-blue :foreground ,teal-blue :bold ,bold))))
-     `(swiper-match-face-3 ((,c (:background ,dark-yellow :foreground ,light-orange :bold ,bold))))
-     `(swiper-match-face-4 ((,c (:background ,dark-purple :foreground ,light-purple :bold ,bold))))
-     ;; TODO:
-     ;; `(swiper-match-face-2 ((,c (:background ,bg3 :foreground ,light-green :bold ,bold))))
-     ;; `(swiper-match-face-3 ((,c (:background ,bg3 :foreground ,light-orange :bold ,bold))))
-     ;; `(swiper-match-face-4 ((,c (:background ,bg3 :foreground ,alt-lavender :bold ,bold))))
+     `(swiper-match-face-2 ((,c (:background ,bg3 :foreground ,light-green :bold ,bold))))
+     `(swiper-match-face-3 ((,c (:background ,bg3 :foreground ,light-orange :bold ,bold))))
+     `(swiper-match-face-4 ((,c (:background ,bg3 :foreground ,alt-lavender :bold ,bold))))
+     ;; OLD
+     ;; `(swiper-match-face-2 ((,c (:background ,dark-blue :foreground ,teal-blue :bold ,bold))))
+     ;; `(swiper-match-face-3 ((,c (:background ,dark-yellow :foreground ,light-orange :bold ,bold))))
+     ;; `(swiper-match-face-4 ((,c (:background ,dark-purple :foreground ,light-purple :bold ,bold))))
 
      `(swiper-line-face ((,c (:inherit hl-line)))))))
 
