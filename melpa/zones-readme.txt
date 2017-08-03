@@ -54,15 +54,17 @@
 
  Non-interactive functions defined here:
 
-   `zz-buffer-of-markers', `zz-car-<', `zz-every',
+   `zz-buffer-of-markers', `zz-car-<', `zz-dot-pairs', `zz-every',
    `zz-izone-has-other-buffer-marker-p', `zz-izone-limits',
-   `zz-izone-limits-in-bufs', `zz-izones', `zz-izones-from-zones',
-   `zz-izones-p', `zz-izones-renumber', `zz-marker-from-object',
-   `zz-markerize', `zz-max', `zz-min', `zz-narrowing-lighter',
-   `zz-number-or-marker-p', `zz-rassoc-delete-all',
-   `zz-readable-marker', `zz-readable-marker-p',
-   `zz-read-any-variable', `zz-read-bufs', `zz-regexp-car-member',
-   `zz-remove-if', `zz-remove-if-not',
+   `zz-izone-limits-in-bufs', `zz-izones',
+   `zz-izones-from-noncontiguous-region' (Emacs 25+),
+   `zz-izones-from-zones', `zz-izones-p', `zz-izones-renumber',
+   `zz-marker-from-object', `zz-markerize', `zz-max', `zz-min',
+   `zz-narrowing-lighter', `zz-noncontiguous-region-from-izones',
+   `zz-noncontiguous-region-from-zones', `zz-number-or-marker-p',
+   `zz-rassoc-delete-all', `zz-readable-marker',
+   `zz-readable-marker-p', `zz-read-any-variable', `zz-read-bufs',
+   `zz-regexp-car-member', `zz-remove-if', `zz-remove-if-not',
    `zz-remove-izones-w-other-buffer-markers',
    `zz-remove-zones-w-other-buffer-markers', `zz-repeat-command',
    `zz-set-intersection', `zz-set-union', `zz-some',
@@ -70,8 +72,9 @@
    `zz-two-zone-union', `zz-zones-complement',
    `zz-zone-has-other-buffer-marker-p', `zz-zone-intersection',
    `zz-zone-intersection-1', `zz-zone-ordered',
-   `zz-zones-overlap-p', `zz-zones-same-buffer-p',
-   `zz-zone-union', `zz-zone-union-1'.
+   `zz-zones-from-noncontiguous-region' (Emacs 25+),
+   `zz-zones-overlap-p', `zz-zones-same-buffer-p', `zz-zone-union',
+   `zz-zone-union-1'.
 
  Internal variables defined here:
 

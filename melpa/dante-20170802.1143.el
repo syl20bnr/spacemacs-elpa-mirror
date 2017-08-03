@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20170802.205
+;; Package-Version: 20170802.1143
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -109,8 +109,8 @@ will be in different GHCi sessions."
 If `dante-project-root' is set as a variable, return that,
 otherwise look for a .cabal file, or use the current dir."
   (file-name-as-directory
-                (or dante-project-root
-                    (file-name-directory (or (dante-cabal-find-file) (dante-buffer-file-name))))))
+   (or dante-project-root
+       (setq dante-project-root (file-name-directory (or (dante-cabal-find-file) (dante-buffer-file-name)))))))
 
 (defun dante-repl-by-file (root files cmdline)
   "Return if ROOT / file exists for any file in FILES, return CMDLINE."
@@ -401,6 +401,35 @@ CHECKER and BUFFER are added to each item parsed from STRING."
   "In BUFFER, call FUNC with ARGS."
   (with-current-buffer buffer (apply func args)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Company integration (auto-completion)
+
+(defun company-dante (command &optional arg &rest ignored)
+  "Company source for dante, with the standard COMMAND and ARG args.
+Other arguments are IGNORED."
+  (interactive (list 'interactive))
+  (cl-case command
+    (interactive (company-begin-backend 'company-dante))
+    (prefix (current-word))
+    (candidates
+     (unless (eq (dante-state) 'dead)
+       (cons :async
+             (-partial 'dante-get-repl-completions
+                       (current-buffer)
+                       (current-word)))))))
+
+(defun dante-get-repl-completions (source-buffer prefix cont)
+  "Get REPL completions and send to SOURCE-BUFFER.
+Completions for PREFIX are passed to CONT in SOURCE-BUFFER."
+  (dante-cps-let ((reply (dante-async-call (format ":complete repl %S" prefix))))
+    (with-current-buffer
+        source-buffer
+      (funcall
+       cont
+       (mapcar
+        (lambda (x)
+          (replace-regexp-in-string "\\\"" "" x))
+        (cdr (split-string reply "\n" t)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Source buffer operations

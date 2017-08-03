@@ -6,9 +6,9 @@ Wellons, available online at
 
 Entry points are the `transmission' and `transmission-add'
 commands.  A variety of commands are available for manipulating
-torrents and their contents, some of which can be applied over
-multiple items by selecting them within a region.  The menus for
-each context provide good exposure.
+torrents and their contents, many of which can be applied over
+multiple items by selecting them with marks or within a region.
+The menus for each context provide good exposure.
 
 "M-x transmission RET" pops up a torrent list.  One can add,
 start/stop, verify, remove torrents, set speed limits, ratio
@@ -26,6 +26,6 @@ The design draws from a number of sources, including the command
 line utility transmission-remote(1), the ncurses interface
 transmission-remote-cli(1), and the rtorrent(1) client.  These can
 be found respectively at the following:
-<https://trac.transmissionbt.com/browser/trunk/daemon/remote.c>
+<https://github.com/transmission/transmission/blob/master/daemon/remote.c>
 <https://github.com/fagga/transmission-remote-cli>
 <https://rakshasa.github.io/rtorrent/>
