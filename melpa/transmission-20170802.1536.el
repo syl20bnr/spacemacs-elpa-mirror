@@ -3,8 +3,8 @@
 ;; Copyright (C) 2014-2017  Mark Oteiza <mvoteiza@udel.edu>
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
-;; Version: 0.10
-;; Package-Version: 20170730.2052
+;; Version: 0.11
+;; Package-Version: 20170802.1536
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -1278,23 +1278,26 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
        (let-alist (json-read-from-string content) (message .result)))
      "torrent-set" arguments)))
 
-(defun transmission-turtle-set-days (days)
+(defun transmission-turtle-set-days (days &optional disable)
   "Set DAYS on which turtle mode will be active.
 DAYS is a bitfield, the associations of which are in `transmission-schedules'.
-If DAYS is nil, disable turtle mode schedule."
+Empty input or non-positive DAYS makes no change to the schedule.
+With a prefix argument, disable turtle mode schedule."
   (interactive
    (let-alist (cdr (assq 'arguments (transmission-request "session-get")))
-     (let* ((prompt
-             (format "Days %s: "
-                     (if (not (eq t .alt-speed-time-enabled)) "(disabled)"
-                       (or (transmission-n->days .alt-speed-time-day) "(none)"))))
-            (names (transmission-read-strings prompt transmission-schedules))
-            (bits (cl-loop for x in names
-                           collect (cdr (assq (intern x) transmission-schedules)))))
-       (list (apply #'logior bits)))))
+     (let* ((alist transmission-schedules)
+            (prompt
+             (format "Days %s%s: "
+                     (or (transmission-n->days .alt-speed-time-day) "(none)")
+                     (if (eq t .alt-speed-time-enabled) "" " [disabled]")))
+            (names (transmission-read-strings prompt alist))
+            (bits 0))
+       (dolist (name names)
+         (setq bits (logior (cdr (assq (intern name) alist)) bits)))
+       (list bits current-prefix-arg))))
   (let ((arguments
-         (append `(:alt-speed-time-enabled ,(if (zerop days) json-false t))
-                 (unless (zerop days) `(:alt-speed-time-day ,days)))))
+         (append `(:alt-speed-time-enabled ,(if disable json-false t))
+                 (unless (> days 0) `(:alt-speed-time-day ,days)))))
     (transmission-request-async nil "session-set" arguments)))
 
 (defun transmission-turtle-set-times (begin end)
@@ -1344,7 +1347,8 @@ See `transmission-read-time' for details on time input."
         (if (eq .alt-speed-time-enabled t) "en" "dis")
         (transmission-format-minutes .alt-speed-time-begin)
         (transmission-format-minutes .alt-speed-time-end)
-        (mapconcat #'symbol-name (transmission-n->days .alt-speed-time-day) " "))))
+        (let ((bits (transmission-n->days .alt-speed-time-day)))
+          (if (null bits) "never" (mapconcat #'symbol-name bits " "))))))
    "session-get"))
 
 (defun transmission-turtle-toggle ()
@@ -1504,9 +1508,9 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
   "Toggle mark on all items."
   (interactive)
   (let ((inhibit-read-only t) ids tag key)
-    (when (setq key (cl-case major-mode
-                      (transmission-mode 'id)
-                      (transmission-files-mode 'index)))
+    (when (setq key (pcase major-mode
+                      (`transmission-mode 'id)
+                      (`transmission-files-mode 'index)))
       (save-excursion
         (save-restriction
           (widen)
@@ -1668,19 +1672,19 @@ indicates that the speed limit is enabled."
       (tabulated-list-init-header))))
 
 (defmacro transmission-do-entries (seq &rest body)
-  "Map over SEQ, pushing each element to `tabulated-list-entries'.
+  "Map over SEQ to generate a new value of `tabulated-list-entries'.
 Each form in BODY is a column descriptor."
   (declare (indent 1) (debug t))
-  `(mapc (lambda (x)
-           (let-alist x
-             (push (list x (vector ,@body)) tabulated-list-entries)))
-         ,seq))
+  (let ((res (make-symbol "res")))
+    `(let (,res)
+       (mapc (lambda (x) (let-alist x (push (list x (vector ,@body)) ,res)))
+             ,seq)
+       (setq tabulated-list-entries (nreverse ,res)))))
 
 (defun transmission-draw-torrents (_id)
   (let* ((arguments `(:fields ,transmission-draw-torrents-keys))
          (response (transmission-request "torrent-get" arguments)))
     (setq transmission-torrent-vector (transmission-torrents response)))
-  (setq tabulated-list-entries nil)
   (transmission-do-entries transmission-torrent-vector
     (transmission-eta .eta .percentDone)
     (transmission-size .sizeWhenDone)
@@ -1691,7 +1695,6 @@ Each form in BODY is a column descriptor."
     (if (not (zerop .error)) (propertize "error" 'font-lock-face 'error)
       (transmission-format-status .status .rateUpload .rateDownload))
     (propertize .name 'transmission-name t))
-  (setq tabulated-list-entries (reverse tabulated-list-entries))
   (tabulated-list-print))
 
 (defun transmission-draw-files (id)
@@ -1702,7 +1705,6 @@ Each form in BODY is a column descriptor."
          (names (transmission-refs files 'name))
          (dir (transmission-files-directory-base (car names)))
          (truncate (and dir (transmission-every-prefix-p dir names))))
-    (setq tabulated-list-entries nil)
     (transmission-do-entries files
       (format "%d%%" (transmission-percent .bytesCompleted .length))
       (symbol-name (car (rassq .priority transmission-priority-alist)))
@@ -1710,7 +1712,6 @@ Each form in BODY is a column descriptor."
       (transmission-size .length)
       (propertize (if truncate (string-remove-prefix dir .name) .name)
                   'transmission-name t)))
-  (setq tabulated-list-entries (reverse tabulated-list-entries))
   (tabulated-list-print))
 
 (defmacro transmission-insert-each-when (&rest body)
@@ -1765,7 +1766,6 @@ Each form in BODY is a column descriptor."
   (let* ((arguments `(:ids ,id :fields ("peers")))
          (response (transmission-request "torrent-get" arguments)))
     (setq transmission-torrent-vector (transmission-torrents response)))
-  (setq tabulated-list-entries nil)
   (transmission-do-entries (cdr (assq 'peers (elt transmission-torrent-vector 0)))
     .address
     .flagStr
@@ -1774,7 +1774,6 @@ Each form in BODY is a column descriptor."
     (format "%d" (transmission-rate .rateToPeer))
     .clientName
     (or (transmission-geoip-retrieve .address) ""))
-  (setq tabulated-list-entries (reverse tabulated-list-entries))
   (tabulated-list-print))
 
 (defun transmission-draw ()
