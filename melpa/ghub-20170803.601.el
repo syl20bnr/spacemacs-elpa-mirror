@@ -5,8 +5,8 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/magit/ghub
 ;; Keywords: tools
-;; Package-Version: 20170728.849
-;; Package-Requires: ((emacs "25"))
+;; Package-Version: 20170803.601
+;; Package-Requires: ((emacs "24.4"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -98,6 +98,9 @@
 (defvar ghub-username nil)
 (defvar ghub-unpaginate nil)
 (defvar ghub-extra-headers nil)
+(defvar ghub-read-response-function 'ghub--read-json-response)
+
+(defvar ghub-response-headers nil)
 
 (defun ghub-get (resource &optional params data noerror)
   "Make `GET' request for RESOURCE, optionally sending PARAMS and/or DATA.
@@ -140,6 +143,8 @@ optional NOERROR is non-nil, in which case return nil."
 (define-error 'ghub-http-error "HTTP Error" 'ghub-error)
 (define-error 'ghub-301 "Moved Permanently" 'ghub-http-error)
 (define-error 'ghub-400 "Bad Request" 'ghub-http-error)
+(define-error 'ghub-401 "Unauthorized" 'ghub-http-error)
+(define-error 'ghub-403 "Forbidden" 'ghub-http-error)
 (define-error 'ghub-404 "Not Found" 'ghub-http-error)
 (define-error 'ghub-422 "Unprocessable Entity" 'ghub-http-error)
 
@@ -168,51 +173,61 @@ in which case return nil."
       (set-buffer-multibyte t)
       (let (link body)
         (goto-char (point-min))
-        (save-restriction
-          (narrow-to-region (point) url-http-end-of-headers)
-          (and (setq link (mail-fetch-field "Link"))
+        (let (headers)
+          (while (re-search-forward "^\\([^:]*\\): \\(.+\\)"
+                                    url-http-end-of-headers t)
+            (push (cons (match-string 1)
+                        (match-string 2))
+                  headers))
+          (and (setq link (cdr (assoc "Link" headers)))
                (setq link (car (rassoc (list "rel=\"next\"")
                                        (mapcar (lambda (elt) (split-string elt "; "))
                                                (split-string link ",")))))
                (string-match "[?&]page=\\([^&>]+\\)" link)
-               (setq link (match-string 1 link))))
+               (setq link (match-string 1 link)))
+          (setq ghub-response-headers (nreverse headers)))
         (goto-char (1+ url-http-end-of-headers))
-        (setq body (ghub--read-response))
+        (setq body (funcall ghub-read-response-function))
         (unless (or noerror (= (/ url-http-response-status 100) 2))
-          (pcase url-http-response-status
-            (301 (signal 'ghub-301 (list method resource p d body)))
-            (400 (signal 'ghub-400 (list method resource p d body)))
-            (404 (signal 'ghub-404 (list method resource p d body)))
-            (422 (signal 'ghub-422 (list method resource p d body)))
-            (_   (signal 'ghub-http-error
-                         (list url-http-response-status
-                               method resource p d body)))))
+          (let ((data (list method resource p d body)))
+            (pcase url-http-response-status
+              (301 (signal 'ghub-301 data))
+              (400 (signal 'ghub-400 data))
+              (401 (signal 'ghub-401 data))
+              (403 (signal 'ghub-403 data))
+              (404 (signal 'ghub-404 data))
+              (422 (signal 'ghub-422 data))
+              (_   (signal 'ghub-http-error
+                           (cons url-http-response-status data))))))
         (if (and link ghub-unpaginate)
             (nconc body
                    (ghub-request method resource
-                                  (cons (cons 'page link)
-                                        (cl-delete 'page params :key #'car))
-                                  data noerror))
+                                 (cons (cons 'page link)
+                                       (cl-delete 'page params :key #'car))
+                                 data noerror))
           body)))))
 
 (define-obsolete-function-alias 'ghub--request 'ghub-request "Ghub 2.0")
 
-(defun ghub--read-response ()
+(defun ghub--read-json-response ()
   (and (not (eobp))
        (let ((json-object-type 'alist)
              (json-array-type  'list)
              (json-key-type    'symbol)
              (json-false       nil)
              (json-null        nil))
-         (json-read-from-string
-          (decode-coding-string
-           (buffer-substring-no-properties (point) (point-max))
-           'utf-8)))))
+         (json-read-from-string (ghub--read-raw-response)))))
+
+(defun ghub--read-raw-response ()
+  (and (not (eobp))
+       (decode-coding-string
+        (buffer-substring-no-properties (point) (point-max))
+        'utf-8)))
 
 (defun ghub--url-encode-params (params)
-  (mapconcat (pcase-lambda (`(,key . ,val))
-               (concat (url-hexify-string (symbol-name key)) "="
-                       (url-hexify-string val)))
+  (mapconcat (lambda (param)
+               (concat (url-hexify-string (symbol-name (car param))) "="
+                       (url-hexify-string (cdr param))))
              params "&"))
 
 (defun ghub--basic-auth ()
