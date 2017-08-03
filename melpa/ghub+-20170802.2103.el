@@ -6,7 +6,7 @@
 ;; Keywords: extensions, multimedia, tools
 ;; Homepage: https://github.com/vermiculus/ghub-plus
 ;; Package-Requires: ((emacs "25") (ghub "1.2") (apiwrap "0.1.2"))
-;; Package-Version: 20170801.1848
+;; Package-Version: 20170802.2103
 ;; Package-X-Original-Version: 0.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -86,18 +86,6 @@ See URL `http://emacs.stackexchange.com/a/31050/2264'."
                         (ghubp-keep-only (cdr el) (alist-get (car el) object)))
                 (cons el (alist-get el object))))
             structure)))
-
-;;; Repositories
-
-(defapiget-ghubp "/repos/:owner/:repo/collaborators"
-  "List collaborators."
-  "repos/collaborators/#list-collaborators"
-  (repo) "/repos/:repo.owner.login/:repo.name/comments")
-
-(defapiget-ghubp "/repos/:owner/:repo/comments"
-  "List commit comments for a repository."
-  "repos/comments/#list-commit-comments-for-a-repository"
-  (repo) "/repos/:repo.owner.login/:repo.name/comments")
 
 ;;; Issues
 
@@ -522,11 +510,55 @@ By default, Issue Comments are ordered by ascending ID."
   "reactions/#delete-a-reaction"
   (thread) "/reactions/:thread.id")
 
-;;; Unfiled
+;;; Repositories
+
+(defapiget-ghubp "/user/repos"
+  "List your repositories.
+List repositories that are accessible to the authenticated user.
+
+This includes repositories owned by the authenticated user,
+repositories where the authenticated user is a collaborator, and
+repositories that the authenticated user has access to through an
+organization membership."
+  "repos/#list-your-repositories")
+
+(defapiget-ghubp "/users/:username/repos"
+  "List user repositories.
+List public repositories for the specified user."
+  "repos/#list-user-repositories"
+  (user) "/users/:user.login/repos")
+
+(defapiget-ghubp "/orgs/:org/repos"
+  "List organization repositories.
+List repositories for the specified org."
+  "repos/#list-organization-repositories"
+  (org) "/orgs/:org.login/repos")
+
+(defapiget-ghubp "/repositories"
+  "List all public repositories.
+This provides a dump of every public repository, in the order
+that they were created."
+  "repos/#list-all-public-repositories")
+
+(defapipost-ghubp "/user/repos"
+  "Create.
+Create a new repository for the authenticated user.  (Currently
+not enabled for Integrations)."
+  "repos/#create")
+
+(defapipost-ghubp "/orgs/:org/repos"
+  "Create a new repository in this organization.
+The authenticated user must be a member of the specified
+organization."
+  "repos/#create"
+  (org) "/orgs/:org.login/repos")
+
 (defapiget-ghubp "/repos/:owner/:repo"
-  ""
-  ""
+  "Get a specific repository object."
+  "repos/#get"
   (repo) "/repos/:repo.owner.login/:repo.name")
+
+;;; Unfiled
 
 (defapiget-ghubp "/repos/:owner/:repo/commits/:ref/statuses"
   "List statuses for a specific ref"
@@ -542,10 +574,6 @@ By default, Issue Comments are ordered by ascending ID."
   "Return the currently authenticated user"
   "users/#get-the-authenticated-user")
 
-(defapiget-ghubp "/user/repos"
-  "Return repositories of the currently authenticated user"
-  "issues/#list-issues-for-a-repository")
-
 (defapiget-ghubp "/notifications"
   "List all notifications for the current user, grouped by repository"
   "activity/notifications/#list-your-notifications")
@@ -559,20 +587,6 @@ By default, Issue Comments are ordered by ascending ID."
   "Create a fork for the authenticated user."
   "repos/forks/#create-a-fork"
   (repo) "/repos/:repo.owner.login/:repo.name/forks")
-
-(defapipost-ghubp "/repos/:owner/:repo/pulls"
-  "Open a pull request."
-  "pulls/#create-a-pull-request"
-  (repo) "/repos/:repo.owner.login/:repo.name/pulls"
-  :validate-data
-  (lambda (o)
-    (--all? (let ((v (alist-get it o)))
-              (and v (stringp v) (< 0 (length v))))
-            '(title head base))))
-
-(defapipost-ghubp "/user/repos"
-  "Create a fork for the authenticated user."
-  "repos/forks/#create-a-fork")
 
 (defapiget-ghubp "/notifications/threads/:id"
   "Adds Mlatest_comment_url-callback and Murl-callback to .subject"

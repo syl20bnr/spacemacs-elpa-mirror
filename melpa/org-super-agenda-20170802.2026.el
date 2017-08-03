@@ -2,9 +2,9 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-super-agenda
-;; Package-Version: 20170801.1945
+;; Package-Version: 20170802.2026
 ;; Version: 0.1-pre
-;; Package-Requires: ((emacs "25.1") (s "1.10.0") (dash "2.13") (org "9.0"))
+;; Package-Requires: ((emacs "25.1") (s "1.10.0") (dash "2.13") (org "9.0") (ht "2.2"))
 ;; Keywords: hypermedia, outlines, Org, agenda
 
 ;;; Commentary:
@@ -94,6 +94,7 @@
 (require 'cl-lib)
 (require 'dash)
 (require 's)
+(require 'ht)
 
 ;; I think this is the right way to do this...
 (eval-when-compile
@@ -407,6 +408,26 @@ DATE', where DATE is a date string that
                (= (org-time-string-to-absolute time) target-date))
               ('after  ;; After date given
                (> (org-time-string-to-absolute time) target-date))))))
+
+;;;;; Effort
+
+(cl-defmacro org-super-agenda--defeffort-group (name docstring &key section-name comparator)
+  (declare (indent defun))
+  `(org-super-agenda--defgroup ,(intern (concat "effort" (symbol-name name)))
+     ,(concat docstring "\nArgument is a time-duration string, like \"5\" or \"0:05\" for 5 minutes.")
+     :section-name (concat "Effort " ,(symbol-name name) " "
+                           (s-join " or " args) " items")
+     :let* ((effort-minutes (org-duration-string-to-minutes (car args))))
+     :test (when-let ((item-effort (org-find-text-property-in-string 'effort item)))
+             (,comparator (org-duration-string-to-minutes item-effort) effort-minutes))))
+
+(org-super-agenda--defeffort-group <
+  "Group items that are less than (or equal to) the given effort."
+  :comparator <=)
+
+(org-super-agenda--defeffort-group >
+  "Group items that are higher than (or equal to) the given effort."
+  :comparator >=)
 
 ;;;;; Misc
 
@@ -727,7 +748,6 @@ see."
 (setq org-super-agenda-group-types (plist-put org-super-agenda-group-types
                                               :not 'org-super-agenda--group-dispatch-not))
 
-;; TODO: Add example for :discard
 (defun org-super-agenda--group-dispatch-discard (items group)
   "Discard items that match GROUP.
 Any groups processed after this will not see these items."

@@ -4,7 +4,7 @@
 
 ;; Author: Ryan Davis <ryand-ruby@zenspider.com>
 ;; Keywords: extensions, tools
-;; Package-Version: 20150319.1455
+;; Package-Version: 20170802.2039
 ;; Package-Requires: ()
 ;; URL: TBA
 ;; Doc URL: TBA
@@ -103,6 +103,10 @@
                  (car v)                ; emacs 24+
                v))))                    ; emacs 23
 
+  ;; TODO
+  ;; (cdr (assoc 'gh (append package-alist package-archive-contents)))
+  ;; (alist-get 'gh (append package-alist package-archive-contents))
+
   (defun package-version-for (name)
     "Returns the installed version for a package with a given NAME."
     (package-desc-version (package-details-for name)))
@@ -125,22 +129,61 @@
     (let ((v (package-details-for pkg)))
       (and v (package-desc-reqs v))))
 
+  (defun map-to-package-deps (pkg)
+    (cons pkg (sort (mapcar 'car (package-deps-for pkg)) 'symbol<)))
+
+  (defun flatten (lists)
+    (mapcan (lambda (x) (if (listp x) (flatten x) (list x))) lists))
+
   (defun package-transitive-closure (pkgs)
-    "Return a list of dependencies for PKGS, including dependencies of dependencies."
-    (let ((prev)
-          (deps pkgs))
-      (while (not (equal prev deps))
-        (setq prev deps)
-        (dolist (pkg deps)
-          (dolist (new-pkg (mapcar 'car (package-deps-for pkg)))
-            (add-to-list 'deps new-pkg))))
-      deps))
+    (car
+     (topological-sort
+      (mapcar 'map-to-package-deps
+              (sort (delete-duplicates
+                     (flatten (mapcar 'map-to-package-deps pkgs)))
+                    'symbol<)))))
+
+  (defun rwd-map-filter (pred map)
+    "FUCK YOU ORIGINAL map-filter FOR NOT BEING A MAP AT ALL"
+    (seq-filter (lambda (x) x)
+                (mapcar pred map)))
+
+  (defun package-installed-with-deps (&optional pkgs)
+    (sort
+     (rwd-map-filter (lambda (pair)
+                       (let ((x (and pair (cadr pair))))
+                         (and x (cons (package-desc-name x)
+                                      (sort (mapcar 'car (package-desc-reqs x))
+                                            'symbol<)))))
+                     (or pkgs package-alist))
+     'symbol-list<))
+
+  (defun package-manifest-with-deps (packages)
+    (sort
+     (rwd-map-filter (lambda (pkg)
+                       (let ((deps (package-deps-for pkg)))
+                         (and (assoc pkg package-alist)
+                              (cons pkg (sort (mapcar 'car deps)
+                                              'symbol<)))))
+                     (package-transitive-closure packages))
+     'symbol-list<))
+
+  (defun topo (lst)
+    (car (topological-sort lst)))
 
   (defun package-cleanup (packages)
     "Delete installed packages not explicitly declared in PACKAGES."
-    (let ((removes (set-difference (mapcar 'car package-alist)
-                                   (package-transitive-closure packages))))
-      (mapc 'package-delete-by-name removes))))
+    (let* ((haves (package-manifest-with-deps (mapcar 'car package-alist)))
+           (wants (package-manifest-with-deps packages))
+           (removes (seq-filter
+                     (lambda (name) (assoc name package-alist))
+                     (cl-set-difference
+                      (topo (package-manifest-with-deps (mapcar 'car package-alist)))
+                      (topo (package-manifest-with-deps my-manifest)))))) 
+      (message "Removing packages: %S" removes)
+      (mapc 'package-delete-by-name (reverse removes))
+      ))) ; (unless (fboundp 'package-cleanup)
+
 
 ;;;###autoload
 (defun package-manifest (&rest manifest)
@@ -155,13 +198,59 @@ having to have all the packages themselves under version
 control."
   (package-initialize)
 
-  (unless package-archive-contents      ; why? package-install has this.
+  (unless package-archive-contents    ; why? package-install has this.
     (package-refresh-contents))
 
-  (condition-case err
-      (mapc 'package-maybe-install (package-transitive-closure manifest))
-    (error (message "Couldn't install package: %s" err)))
+  (mapc 'package-maybe-install (package-transitive-closure manifest))
+
   (unless (boundp 'package-disable-cleanup) (package-cleanup manifest)))
+
+(defun symbol< (a b) (string< (symbol-name a) (symbol-name b)))
+
+(defun symbol-list< (a b) (symbol< (car a) (car b)))
+
+;; stolen (and modified) from:
+;; https://github.com/dimitri/el-get/blob/master/el-get-dependencies.el
+(defun topological-sort (graph)
+  (let* ((entries (make-hash-table))
+         ;; avoid obsolete `flet' & backward-incompatible `cl-flet'
+         (entry (lambda (v)
+                  "Return the entry for vertex.  Each entry is a cons whose
+              car is the number of outstanding dependencies of vertex
+              and whose cdr is a list of dependants of vertex."
+                  (or (gethash v entries)
+                      (puthash v (cons 0 '()) entries)))))
+    ;; populate entries initially
+    (dolist (gvertex graph)
+      (destructuring-bind (vertex &rest dependencies) gvertex
+        (let ((ventry (funcall entry vertex)))
+          (dolist (dependency dependencies)
+            (let ((dentry (funcall entry dependency)))
+              (unless (eql dependency vertex)
+                (incf (car ventry))
+                (push vertex (cdr dentry))))))))
+    ;; L is the list of sorted elements, and S the set of vertices
+    ;; with no outstanding dependencies.
+    (let ((L '())
+          (S (loop for entry being each hash-value of entries
+                   using (hash-key vertex)
+                   when (zerop (car entry)) collect vertex)))
+      ;; Until there are no vertices with no outstanding dependencies,
+      ;; process vertices from S, adding them to L.
+      (do* () ((endp S))
+        (let* ((v (pop S)) (ventry (funcall entry v)))
+          (remhash v entries)
+          (dolist (dependant (cdr ventry) (push v L))
+            (when (zerop (decf (car (funcall entry dependant))))
+              (push dependant S)))))
+      ;; return (1) the list of sorted items, (2) whether all items
+      ;; were sorted, and (3) if there were unsorted vertices, the
+      ;; hash table mapping these vertices to their dependants
+      (let ((all-sorted-p (zerop (hash-table-count entries))))
+        (values (nreverse L)
+                all-sorted-p
+                (unless all-sorted-p
+                  entries))))))
 
 (provide 'package+)
 
