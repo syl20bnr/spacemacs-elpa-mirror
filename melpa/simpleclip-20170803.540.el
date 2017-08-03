@@ -5,9 +5,9 @@
 ;; Author: Roland Walker <walker@pobox.com>
 ;; Homepage: http://github.com/rolandwalker/simpleclip
 ;; URL: http://raw.githubusercontent.com/rolandwalker/simpleclip/master/simpleclip.el
-;; Package-Version: 20170603.1542
-;; Version: 1.0.2
-;; Last-Updated:  3 Jun 2017
+;; Package-Version: 20170803.540
+;; Version: 1.0.4
+;; Last-Updated:  3 Aug 2017
 ;; Keywords: convenience
 ;;
 ;; Simplified BSD License
@@ -174,7 +174,7 @@
 ;;;###autoload
 (defgroup simpleclip nil
   "Simplified access to the system clipboard."
-  :version "1.0.2"
+  :version "1.0.4"
   :link '(emacs-commentary-link :tag "Commentary" "simpleclip")
   :link '(url-link :tag "GitHub" "http://github.com/rolandwalker/simpleclip")
   :link '(url-link :tag "EmacsWiki" "http://emacswiki.org/emacs/Simpleclip")
@@ -371,7 +371,7 @@ in GNU Emacs 24.1 or higher."
         ((fboundp 'w32-set-clipboard-data)
          (w32-set-clipboard-data str-val)
          (setq simpleclip-contents str-val))
-        ((fboundp 'guie-set-selection)
+        ((fboundp 'gui-set-selection)
          (gui-set-selection 'CLIPBOARD str-val))
         ((fboundp 'x-set-selection)
          (x-set-selection 'CLIPBOARD str-val))

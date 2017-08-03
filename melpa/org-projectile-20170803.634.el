@@ -4,7 +4,7 @@
 
 ;; Author: Ivan Malison <IvanMalison@gmail.com>
 ;; Keywords: org-mode projectile todo tools outlines
-;; Package-Version: 20170731.2333
+;; Package-Version: 20170803.634
 ;; URL: https://github.com/IvanMalison/org-projectile
 ;; Version: 1.0.0
 ;; Package-Requires: ((projectile "0.11.0") (dash "2.10.0") (emacs "24") (s "1.9.0") (org-category-capture "0.0.0"))
@@ -276,7 +276,7 @@
 (cl-defun org-projectile-project-todo-entry
     (&rest additional-options &key (capture-character "p")
            (capture-template org-projectile-capture-template)
-           (capture-heading "Project Todo"))
+           (capture-heading "Project Todo") &allow-other-keys)
   (let ((target-fn
          (lambda () (occ-capture-goto-marker
                      (make-instance 'occ-context

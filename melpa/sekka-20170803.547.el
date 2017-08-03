@@ -4,7 +4,7 @@
 ;;
 ;; Author: Kiyoka Nishiyama <kiyoka@sumibi.org>
 ;; Version: 1.8.0          ;;SEKKA-VERSION
-;; Package-Version: 20170801.658
+;; Package-Version: 20170803.547
 ;; Keywords: ime, skk, japanese
 ;; Package-Requires: ((cl-lib "0.3") (concurrent "0.3.1") (popup "0.5.2"))
 ;; URL: https://github.com/kiyoka/sekka
@@ -58,7 +58,7 @@
   :group 'input-method
   :group 'Japanese)
 
-(defcustom sekka-server-url "http://localhost:12929/"
+(defcustom sekka-server-url "http://127.0.0.1:12929/"
   "SekkaサーバーのURLを指定する。"
   :type  'string
   :group 'sekka)
