@@ -3,11 +3,11 @@
 ;; Copyright 2012-2013 OCamlPro
 
 ;; Keywords: ocaml languages
-;; Package-Version: 1.6.0
+;; Package-Version: 1.6.1
 ;; URL: http://www.typerex.org/ocp-indent.html
 
 ;; All rights reserved.This file is distributed under the terms of the
-;; GNU Lesser General Public License version 3.0 with linking
+;; GNU Lesser General Public License version 2.1 with linking
 ;; exception.
 
 ;; TypeRex is distributed in the hope that it will be useful,
@@ -114,14 +114,15 @@ are blanks."
 ;;;###autoload
 (defun ocp-setup-indent ()
   (interactive nil)
-  (unless (and (buffer-file-name)
-               (string= (file-name-extension (buffer-file-name)) "mly"))
-    (unless ocp-indent-allow-tabs (set 'indent-tabs-mode nil))
-    (when (string= (file-name-extension (buffer-file-name)) "mll")
-      (set (make-local-variable 'ocp-indent-syntax)
-           (cons "mll" ocp-indent-syntax)))
-    (set (make-local-variable 'indent-line-function) #'ocp-indent-line)
-    (set (make-local-variable 'indent-region-function) #'ocp-indent-region)))
+  (let ((buffer-extension (and (buffer-file-name)
+                               (file-name-extension (buffer-file-name)))))
+    (unless (string= buffer-extension "mly")
+      (unless ocp-indent-allow-tabs (set 'indent-tabs-mode nil))
+      (when (string= buffer-extension "mll")
+        (set (make-local-variable 'ocp-indent-syntax)
+             (cons "mll" ocp-indent-syntax)))
+      (set (make-local-variable 'indent-line-function) #'ocp-indent-line)
+      (set (make-local-variable 'indent-region-function) #'ocp-indent-region))))
 
 ;;;###autoload
 (defun ocp-indent-caml-mode-setup ()

@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-super-agenda
-;; Package-Version: 20170802.2026
+;; Package-Version: 20170802.2034
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "25.1") (s "1.10.0") (dash "2.13") (org "9.0") (ht "2.2"))
 ;; Keywords: hypermedia, outlines, Org, agenda
@@ -645,6 +645,8 @@ The string should be the priority cookie letter, e.g. \"A\".")
 ;; TODO: Refactor these, because they are essentially the same thing,
 ;; like the regular groups do essentially the same thing.  But this
 ;; already works, so I'm going to go ahead and release it.
+
+;; FIXME: Do I need to nreverse the items in each group?
 
 (defun org-super-agenda--auto-group-items (all-items &rest ignore)
   "Divide ALL-ITEMS into groups based on their AGENDA-GROUP property."

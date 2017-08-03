@@ -3,11 +3,11 @@
 ;; Copyright 2012-2013 OCamlPro
 
 ;; Keywords: ocaml languages
-;; Package-Version: 20170412.12
+;; Package-Version: 20170803.222
 ;; URL: http://www.typerex.org/ocp-indent.html
 
 ;; All rights reserved.This file is distributed under the terms of the
-;; GNU Lesser General Public License version 3.0 with linking
+;; GNU Lesser General Public License version 2.1 with linking
 ;; exception.
 
 ;; TypeRex is distributed in the hope that it will be useful,
