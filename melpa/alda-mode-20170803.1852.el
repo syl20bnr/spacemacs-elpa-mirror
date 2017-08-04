@@ -2,8 +2,8 @@
 
 ;; Copyright (C) 2016 Jay Kamat
 ;; Author: Jay Kamat <github@jgkamat.33mail.com>
-;; Version: 0.1.1
-;; Package-Version: 20170629.2153
+;; Version: 0.2.0
+;; Package-Version: 20170803.1852
 ;; Keywords: alda, highlight
 ;; URL: http://github.com/jgkamat/alda-mode
 ;; Package-Requires: ((emacs "24.0"))
@@ -43,14 +43,13 @@
 (defconst +alda-comment-str+ "#")
 
 ;;; Code:
-
-;;; -- Variables --
+;;;; -- Variables --
 (defvar *alda-history*
   ""
   "Holds the history to be sent to the alda server.
 If you are experiencing problems, try clearing your history with 'alda-history-clear'.")
 
-;;; -- Region playback functions --
+;;;; -- Region playback functions --
 
 (defgroup Alda nil
   "Alda customization options"
@@ -195,7 +194,7 @@ Because alda runs in the background, the only way to do this is with alda restar
   (shell-command (concat (alda-location) " down"))
   (delete-process +alda-output-buffer+))
 
-;;; -- Font Lock Regexes --
+;;;; -- Font Lock Regexes --
 (let
   ;; Prevent regexes from taking up memory
   ((alda-comment-regexp "\\(#.*$\\)\\|\\(?1:(comment\\_>\\)")
@@ -231,7 +230,7 @@ Because alda runs in the background, the only way to do this is with alda restar
        (,alda-grouping-regexp . (1 font-lock-builtin-face))
        (,alda-accidental-regexp . (1 font-lock-preprocessor-face)))))
 
-;;; -- Indention code --
+;;;; -- Indention code --
 
 ;; A duplicate of asm-mode.el with changes
 ;; changes were made to the naming convention and to how the labels are calculated.
@@ -302,7 +301,7 @@ Because alda runs in the background, the only way to do this is with alda restar
   (interactive)
   (alda-play-text (buffer-string)))
 
-;;; -- Alda Keymaps --
+;;;; -- Alda Keymaps --
 ;; TODO determine standard keymap for alda-mode
 
 (defvar alda-mode-map nil "Keymap for `alda-mode'.")
@@ -325,7 +324,7 @@ Because alda runs in the background, the only way to do this is with alda restar
     (define-key alda-mode-map "\C-c\C-b" 'alda-play-buffer)))
 
 
-;;; -- Alda Mode Definition --
+;;;; -- Alda Mode Definition --
 
 ;;;###autoload
 (define-derived-mode alda-mode prog-mode
