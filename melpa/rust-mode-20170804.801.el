@@ -1,7 +1,7 @@
 ;;; rust-mode.el --- A major emacs mode for editing Rust source code -*-lexical-binding: t-*-
 
 ;; Version: 0.3.0
-;; Package-Version: 20170801.637
+;; Package-Version: 20170804.801
 ;; Author: Mozilla
 ;; Url: https://github.com/rust-lang/rust-mode
 ;; Keywords: languages
@@ -1199,8 +1199,22 @@ This is written mainly to be used as `beginning-of-defun-function' for Rust.
 Don't move to the beginning of the line. `beginning-of-defun',
 which calls this, does that afterwards."
   (interactive "p")
-  (re-search-backward (concat "^\\(" rust-top-item-beg-re "\\)")
-                      nil 'move (or arg 1)))
+  (let* ((arg (or arg 1))
+	 (magnitude (abs arg))
+	 (sign (if (< arg 0) -1 1)))
+    ;; If moving forward, don't find the defun we might currently be
+    ;; on.
+    (when (< sign 0)
+      (end-of-line))
+    (catch 'done
+      (dotimes (_ magnitude)
+	;; Search until we find a match that is not in a string or comment.
+	(while (if (re-search-backward (concat "^\\(" rust-top-item-beg-re "\\)")
+				       nil 'move sign)
+		   (rust-in-str-or-cmnt)
+		 ;; Did not find it.
+		 (throw 'done nil)))))
+    t))
 
 (defun rust-end-of-defun ()
   "Move forward to the next end of defun.

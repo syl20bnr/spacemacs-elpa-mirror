@@ -5,7 +5,7 @@
 ;; Author: Tijs Mallaerts <tijs.mallaerts@gmail.com>
 
 ;; Package-Requires: ((emacs "25") (s "1.11.0"))
-;; Package-Version: 20170108.1301
+;; Package-Version: 20170804.635
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -61,7 +61,20 @@
   "Delete the input at the fixed prompt."
   (delete-region
    (eshell-fixed-prompt-input-start-position)
+   (line-end-position))
+  (remove-overlays
+   (eshell-fixed-prompt-prompt-start-position)
    (line-end-position)))
+
+(defun eshell-fixed-prompt-prompt-start-position ()
+  "Return the start position of the prompt at point."
+  (save-excursion
+    (forward-line (- 1 (eshell-fixed-prompt-prompt-line-count)))
+    (line-beginning-position)))
+
+(defun eshell-fixed-prompt-prompt-line-count ()
+  "Return the number of lines of the prompt."
+  (length (s-split "\n" (funcall eshell-prompt-function))))
 
 (defun eshell-fixed-prompt-remove-next-prompt ()
   "Remove the next eshell prompt."
@@ -75,14 +88,16 @@
     (when (and (/= first-prompt-line last-line)
                (save-excursion
                  (forward-line last-line)
-                 (s-contains? (funcall eshell-prompt-function)
-                              (buffer-substring-no-properties
-                               (line-beginning-position)
-                               (line-end-position)))))
+                 (let ((prompt (funcall eshell-prompt-function)))
+                   (s-contains? prompt
+                                (buffer-substring-no-properties
+                                 (eshell-fixed-prompt-prompt-start-position)
+                                 (line-end-position))))))
       (save-excursion
         (forward-line last-line)
-        (delete-region (line-beginning-position)
-                       (line-end-position))))))
+        (delete-region
+         (eshell-fixed-prompt-prompt-start-position)
+         (line-end-position))))))
 
 (defun eshell-fixed-prompt-goto-input-start ()
   "Move to start of input and remove other prompts."

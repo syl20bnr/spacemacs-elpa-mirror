@@ -4,11 +4,24 @@
 ;; Copyright (c) 2015 by crocket
 
 ;; Version:    0.1.3
-;; Package-Version: 20151230.1758
+;; Package-Version: 20170804.544
 ;; Author:     Joe Casadonte <emacs@northbound-train.com>
 ;; Maintainer: crocket <crockabiscuit@gmail.com>
 ;; Created:    August 17, 2000
 ;; Keywords:   dired, reuse, buffer
+
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; For a full copy of the GNU General Public License
+;; see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 ;;
