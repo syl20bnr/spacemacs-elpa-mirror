@@ -6,7 +6,7 @@
 ;; Keywords: extensions, multimedia, tools
 ;; Homepage: https://github.com/vermiculus/ghub-plus
 ;; Package-Requires: ((emacs "25") (ghub "1.2") (apiwrap "0.1.2"))
-;; Package-Version: 20170802.2103
+;; Package-Version: 20170803.1820
 ;; Package-X-Original-Version: 0.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -86,6 +86,26 @@ See URL `http://emacs.stackexchange.com/a/31050/2264'."
                         (ghubp-keep-only (cdr el) (alist-get (car el) object)))
                 (cons el (alist-get el object))))
             structure)))
+
+(defun ghubp-header (header)
+  "Get the value of HEADER from the last request as a string."
+  (cdr (assoc-string header ghub-response-headers)))
+
+(defun ghubp-ratelimit-reset-time ()
+  "Get the reset time for the rate-limit as a time object."
+  (ignore-errors
+    (seconds-to-time
+     (string-to-number
+      (ghubp-header "X-RateLimit-Reset")))))
+
+(defun ghubp-ratelimit-remaining ()
+  "Get the remaining number of requests available.
+Note that a return value of 'nil' does not mean the same thing as
+a return value of 0.  The latter implies that we do know how many
+requests remain while the former makes no such assertion."
+  (ignore-errors
+    (string-to-number
+     (ghubp-header "X-RateLimit-Remaining"))))
 
 ;;; Issues
 

@@ -4,7 +4,7 @@
 
 ;; Author: Derek Feichtinger <derek.feichtinger@psi.ch>
 ;; Keywords: org
-;; Package-Version: 20160306.915
+;; Package-Version: 20170803.1339
 ;; Homepage: https://github.com/dfeich/org8-wikiexporters
 ;; Package-Requires: ((org "8") (cl-lib "0.5"))
 ;; Version: 0.1.20160306
@@ -244,7 +244,11 @@ contextual information."
   (format "-%s-" contents))
 
 (defun org-twiki-table (table contents info)
-  contents)
+  (let ((caption (org-export-get-caption table)))
+    (concat
+     (when caption (format "%%TABLE{caption=\"%s\"}%%\n"
+			   (org-export-data caption info)))
+     contents)))
 
 (defun org-twiki-table-row  (table-row contents info)
   (concat
