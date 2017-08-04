@@ -4,14 +4,14 @@
 
 ;; Author: Henrik Jürges <juerges.henrik@gmail.com>
 ;; URL: https://github.com/santifa/pasp-mode
-;; Package-Version: 20170711.516
+;; Package-Version: 20170803.1301
 ;; Version: 0.1.0
 ;; Package-requires: ((emacs "24.3"))
 ;; Keywords: asp, pasp, Answer Set Programs, Potassco Answer Set Programs, Major mode, languages
 
 ;; You can redistribute this program and/or modify it under the terms of the GNU
 ;; General Public License as published by the Free Software Foundation; either
-;; GPL version 2 or 3.
+;; version 3 of the License, or (at your option) any later version..
 
 ;;; Commentary:
 

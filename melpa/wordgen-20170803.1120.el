@@ -2,8 +2,8 @@
 
 ;; Author: Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/Fanael/wordgen.el
-;; Package-Version: 20170803.1103
-;; Package-X-Original-Version: 0.1.3
+;; Package-Version: 20170803.1120
+;; Package-X-Original-Version: 0.1.4
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -111,6 +111,10 @@ EXPRESSION can be one of the following:
  * A list (unique-identifier PREFIX), which evaluates the expression PREFIX,
    then returns a unique string with the given PREFIX. For example:
    \(unique-identifier \"foo-\") may evaluate to \"foo-1234\".
+
+ * A list (int2string EXPR), which evaluate the integer expression EXPR and
+   returns its value converted to an integer. For example:
+   \(int2string 10) evalues to \"10\".
 
  * A list (lisp FUNC), where FUNC is an expression evaluating to a Lisp
    function. The function is called with two arguments (RULES RNG), where RULES
@@ -343,6 +347,10 @@ CHILDREN is sorted according to RUNNING-WEIGHT, ascending."
     (wordgen--expr-unique-identifier-make (prefix original-form))
   (prefix :read-only t))
 
+(wordgen--define-derived-expr-type (int2string 'string)
+    (wordgen--expr-int2string-make (expr original-form))
+  (expr :read-only t))
+
 (defun wordgen--parse-expression (expression)
   "Compile wordgen EXPRESSION to intermediate representation."
   (pcase expression
@@ -356,6 +364,7 @@ CHILDREN is sorted according to RUNNING-WEIGHT, ascending."
     (`(lisp . ,_) (wordgen--parse-lisp-call expression))
     (`(rand-int . ,_) (wordgen--parse-rand-int expression))
     (`(unique-identifier . ,_) (wordgen--parse-unique-identifier expression))
+    (`(int2string . ,_) (wordgen--parse-int2string expression))
     (_ (error "Invalid expression %S" expression))))
 
 (defun wordgen--parse-string (string)
@@ -487,6 +496,18 @@ EXPRESSION is the whole (unique-identifier ...) list."
       "Invalid unique-identifier expression %S: expects 1 argument, %d given"
       expression (length (cdr expression))))))
 
+(defun wordgen--parse-int2string (expression)
+  "Compile an int2string expression to intermediate representation.
+EXPRESSION is the whole (int2string ...) list."
+  (pcase (cdr expression)
+    (`(,expr)
+     (wordgen--expr-int2string-make
+      (wordgen--parse-expression expr)
+      expression))
+    (_
+     (error "Invalid int2string expression %S: expects 1 argument, %d given"
+            expression (length (cdr expression))))))
+
 
 ;;; IR-based type checking
 
@@ -517,7 +538,7 @@ The returned value is unspecified."
          (setf (wordgen--expr-type expr) type))
         ;; These types won't even reach this point.
         ((integer string rule-call concat replicate concat-reeval rand-int
-                  unique-identifier)
+                  unique-identifier int2string)
          nil)))
      (t
       (error "Expected type `%S', but %S is of type `%S'"
@@ -558,6 +579,10 @@ The returned value is unspecified."
      (let ((prefix (wordgen--expr-unique-identifier-prefix expr)))
        (wordgen--expr-expect-type prefix 'string)
        (wordgen--expr-typecheck-children prefix)))
+    (int2string
+     (let ((child (wordgen--expr-int2string-expr expr)))
+       (wordgen--expr-expect-type child 'integer)
+       (wordgen--expr-typecheck-children child)))
     ((integer string rule-call lisp-call)
      nil)))
 
@@ -623,7 +648,9 @@ instead."
     (rand-int
      (wordgen--expr-rand-int-compile expr))
     (unique-identifier
-     (wordgen--expr-unique-identifier-compile expr))))
+     (wordgen--expr-unique-identifier-compile expr))
+    (int2string
+     (wordgen--expr-int2string-compile expr))))
 
 (defun wordgen--expr-choice-compile (choice)
   "Compile a CHOICE expression to an Emacs Lisp form."
@@ -733,7 +760,7 @@ object."
     (integer
      (wordgen--expr-integer-value subexpr))
     ((concat rule-call lisp-call replicate concat-reeval choice rand-int
-             unique-identifier)
+             unique-identifier int2string)
      (wordgen--compile-elisp-to-lambda (wordgen--expr-compile subexpr)))))
 
 (cl-defsubst wordgen--eval-choice-subexpression (subexpr rules rng)
@@ -765,7 +792,7 @@ If all CHILDREN are string literals, integer literals, or lambdas, symbols
                  ((integer string)
                   child-type)
                  ((concat choice rule-call lisp-call replicate concat-reeval
-                          rand-int unique-identifier)
+                          rand-int unique-identifier int2string)
                   'lambda))))
           ;; Mixed-type list.
           (when (and type (not (eq child-type type)))
@@ -844,6 +871,13 @@ If all CHILDREN are string literals, integer literals, or lambdas, symbols
               (number-to-string
                (setq wordgen--unique-identifier-counter
                      (1+ wordgen--unique-identifier-counter)))))))
+
+(defun wordgen--expr-int2string-compile (int2string)
+  "Compile an INT2STRING expression to an Emacs Lisp form."
+  `(wordgen-print-string
+    (number-to-string
+     ,(wordgen--expr-compile
+       (wordgen--expr-int2string-expr int2string)))))
 
 
 ;;; PRNG helpers
