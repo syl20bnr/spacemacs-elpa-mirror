@@ -34,9 +34,10 @@
 
  Commands defined here:
 
-   `Info-breadcrumbs-in-mode-line-mode', `Info-describe-bookmark',
-   `Info-follow-nearest-node-new-window', `Info-goto-node-web',
-   `Info-history-clear', `info-manual', `Info-merge-subnodes',
+   `Info-breadcrumbs-in-mode-line-mode', `Info-describe-bookmark'
+   (Emacs 24.2+), `Info-follow-nearest-node-new-window',
+   `Info-goto-node-web', `Info-history-clear', `info-manual',
+   `Info-merge-subnodes',
    `Info-mouse-follow-nearest-node-new-window',
    `Info-persist-history-mode' (Emacs 24.4+),
    `Info-save-current-node', `Info-set-breadcrumbs-depth',
@@ -138,7 +139,7 @@
     2. If key's command not found, then `Info-search's for key
        sequence in text and displays message about repeating.
  `Info-goto-node' - Respect option
-    `Info-node-access-invokes-bookmark-flag'.
+    `Info-node-access-invokes-bookmark-flag' (Emacs 24.2+).
  `Info-history' - A prefix arg clears the history.
  `Info-insert-dir' -
     Added optional arg NOMSG to inhibit showing progress msgs.

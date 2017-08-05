@@ -7,7 +7,7 @@
 ;; Author: Feng Shu  <tumashu AT 163.com>
 ;; Homepage: https://github.com/tumashu/el2org
 ;; Keywords: convenience
-;; Package-Version: 20170502.550
+;; Package-Version: 20170804.1542
 ;; Package-Requires: ((emacs "25.1"))
 ;; Version: 0.10
 
@@ -132,11 +132,16 @@
             (setq status nil))))
       ;; Deal with first line if it prefix with ";;;"
       (goto-char (point-min))
-      (while (re-search-forward "^;;;[ ]+" (line-end-position) t)
+      (while (re-search-forward "^;;;.*---[ ]+" (line-end-position) t)
         (replace-match ";; #+TITLE: " nil t))
+      ;; Remove lexical-binding string
+      (goto-char (point-min))
+      (while (re-search-forward "[ ]*-\\*-[ ]+lexical-binding:[ ]+t;[ ]+-\\*-[ ]*"
+                                (line-end-position) t)
+        (replace-match "" nil t))
       ;; Indent the buffer, so ";;" and ";;;" in sexp will not be removed.
       (indent-region (point-min) (point-max))
-      ;; check file
+      ;; Add protect-mask to the beginning of "^;;[;]+" in string.
       (goto-char (point-min))
       (while (not (eobp))
         (beginning-of-line)
@@ -145,7 +150,9 @@
                         (line-end-position))))
           (when (and (el2org-in-src-block-p)
                      (string-match-p "^;;[; ]" content))
-            (warn "el2org convert \"%s\" error at line: \"%s\"" (file-name-nondirectory el-file) content)))
+            (goto-char (line-beginning-position))
+            (insert "&&el2org&&")
+            (goto-char (line-beginning-position))))
         (forward-line))
       ;; Deal with ";; Local Variables:" and ";; End:"
       (goto-char (point-min))
@@ -168,6 +175,10 @@
         (replace-match "" nil t))
       (goto-char (point-min))
       (while (re-search-forward "^#[+]END_SRC\n#[+]BEGIN_SRC[ ]+emacs-lisp\n" nil t)
+        (replace-match "" nil t))
+      ;; Remove protect-mark.
+      (goto-char (point-min))
+      (while (re-search-forward "^&&el2org&&" nil t)
         (replace-match "" nil t))
       ;; Export
       (org-mode)

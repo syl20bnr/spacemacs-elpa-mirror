@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Version: 0.4
-;; Package-Version: 20170802.1449
+;; Package-Version: 20170804.1358
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.4") (loop "1.3") (dash "2.13.0") (s "1.11.0") (f "0.18.2"))
 ;; URL: https://github.com/Wilfred/suggest.el
@@ -555,7 +555,7 @@ nil otherwise."
 
     ;; See if (func COMMON-CONSTANT value1 value2...) gives us a value.
     (when (zerop iteration)
-      (dolist (extra-arg (list nil -1 0 1 2))
+      (dolist (extra-arg (list nil t 0 1 -1 2))
         (dolist (position '(before after))
           (let ((args (if (eq position 'before)
                           (cons extra-arg input-values)
@@ -653,20 +653,27 @@ than their values."
   ;; We prefer fewer functions, and we prefer simpler functions. We
   ;; use a dumb but effective heuristic: concatenate the function
   ;; names and take the shortest.
-  (let* ((get-names (lambda (pos)
-                      (--map (symbol-name (plist-get it :sym))
-                             (plist-get pos :funcs))))
-         (func-names-1 (funcall get-names pos1))
-         (func-names-2 (funcall get-names pos2))
-         (length-1 (length (apply #'concat func-names-1)))
-         (length-2 (length (apply #'concat func-names-2))))
-    ;; Prefer fewer functions first, then concatenat symbol names as a
-    ;; tie breaker.
-    (if (= (length func-names-1)
-           (length func-names-2))
-        (< length-1 length-2)
-      (< (length func-names-1)
-         (length func-names-2)))))
+  (cond
+   ;; If we have the same number of function calls, with the same
+   ;; number of arguments, prefer functions with shorter names.
+   ((and
+     (= (length (plist-get pos1 :funcs)) (length (plist-get pos2 :funcs)))
+     (= (length (plist-get pos1 :literals)) (length (plist-get pos2 :literals))))
+    (let ((join-names (lambda (pos)
+                        (->> (plist-get pos :funcs)
+                             (--map (plist-get it :sym))
+                             (-map #'symbol-name)
+                             (apply #'concat)))))
+      (< (length (funcall join-names pos1)) (length (funcall join-names pos2)))))
+
+   ;; Prefer calls that don't have extra arguments, so prefer (1+ 1)
+   ;; over (+ 1 1).
+   ((= (length (plist-get pos1 :funcs)) (length (plist-get pos2 :funcs)))
+    (< (length (plist-get pos1 :literals)) (length (plist-get pos2 :literals))))
+
+   ;; Prefer fewer function calls over all else.
+   (t
+    (< (length (plist-get pos1 :funcs)) (length (plist-get pos2 :funcs))))))
 
 ;;;###autoload
 (defun suggest-update ()
