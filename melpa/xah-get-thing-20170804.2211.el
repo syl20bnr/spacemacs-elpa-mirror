@@ -3,8 +3,8 @@
 ;; Copyright © 2011-2016 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.0.6
-;; Package-Version: 20170713.628
+;; Version: 2.0.7
+;; Package-Version: 20170804.2211
 ;; Created: 22 May 2015
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: extensions, lisp, tools
@@ -57,12 +57,12 @@
 
 ;;; Code:
 
-(defun xah-get-bounds-of-thing (*unit )
-  "Return the boundary of *UNIT under cursor.
+(defun xah-get-bounds-of-thing (@unit )
+  "Return the boundary of @UNIT under cursor.
 
 Return a cons cell (START . END).
 
-*UNIT can be:
+@UNIT can be:
 
 • 'word — sequence of 0 to 9, A to Z, a to z, and hyphen.
 
@@ -83,7 +83,7 @@ Return a cons cell (START . END).
 This function is similar to `bounds-of-thing-at-point'.
 The main difference are:
 
-• This function's behavior does not depend on syntax table. e.g. for *units 「'word」, 「'block」, etc.
+• This function's behavior does not depend on syntax table. e.g. for @units 「'word」, 「'block」, etc.
 
 • 'line always returns the line without end of line character, avoiding inconsistency when the line is at end of buffer.
 
@@ -95,30 +95,30 @@ Version 2017-05-27"
   (let (p1 p2)
     (save-excursion
       (cond
-       ( (eq *unit 'word)
+       ( (eq @unit 'word)
          (let ((wordcharset "-A-Za-z0-9ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ"))
            (skip-chars-backward wordcharset)
            (setq p1 (point))
            (skip-chars-forward wordcharset)
            (setq p2 (point))))
 
-       ( (eq *unit 'glyphs)
+       ( (eq @unit 'glyphs)
          (progn
            (skip-chars-backward "[:graph:]")
            (setq p1 (point))
            (skip-chars-forward "[:graph:]")
            (setq p2 (point))))
 
-       ((eq *unit 'buffer)
+       ((eq @unit 'buffer)
         (progn
           (setq p1 (point-min))
           (setq p2 (point-max))))
 
-       ((eq *unit 'line)
+       ((eq @unit 'line)
         (progn
           (setq p1 (line-beginning-position))
           (setq p2 (line-end-position))))
-       ((eq *unit 'block)
+       ((eq @unit 'block)
         (progn
           (if (re-search-backward "\n[ \t]*\n" nil "move")
               (progn (re-search-forward "\n[ \t]*\n")
@@ -129,7 +129,7 @@ Version 2017-05-27"
                      (setq p2 (point)))
             (setq p2 (point)))))
 
-       ((eq *unit 'filepath)
+       ((eq @unit 'filepath)
         (let (p0)
           (setq p0 (point))
           ;; chars that are likely to be delimiters of full path, e.g. space, tabs, brakets.
@@ -139,7 +139,7 @@ Version 2017-05-27"
           (skip-chars-forward "^  \"\t\n'|()[]{}<>〔〕“”〈〉《》【】〖〗«»‹›·。\\'")
           (setq p2 (point))))
 
-       ((eq *unit 'url)
+       ((eq @unit 'url)
         (let (p0
               ;; ($delimitors "^ \t\n,()[]{}<>〔〕“”\"`'!$^*|\;")
               ($delimitors "!\"#$%&'*+,-./0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~"))
@@ -152,7 +152,7 @@ Version 2017-05-27"
 
        ;; • 'filepath-or-url — either file path or URL, with heuristics to detect which sequences of chars to grab. They cannot be distinguished correctly by just lexical form. For example, URL usually contains the colon, but file path not. Sometimes you need this, for example, the value of “href” attribute, which can be just a file path (e.g. relative path) or URL (e.g. http://example.com/)
 
-       ;; ((eq *unit 'filepath-or-url)
+       ;; ((eq @unit 'filepath-or-url)
        ;;  (let (p0
        ;;        $input
        ;;        (case-fold-search nil)
@@ -168,46 +168,46 @@ Version 2017-05-27"
        ;;        (progn )
        ;;      (progn ))))
 
-       ((vectorp *unit)
+       ((vectorp @unit)
         (let (p0)
           (setq p0 (point))
-          (skip-chars-backward (elt *unit 0))
+          (skip-chars-backward (elt @unit 0))
           (setq p1 (point))
           (goto-char p0)
-          (skip-chars-forward (elt *unit 1))
+          (skip-chars-forward (elt @unit 1))
           (setq p2 (point))))))
 
     (cons p1 p2 )))
 
-(defun xah-get-bounds-of-thing-or-region (*unit)
+(defun xah-get-bounds-of-thing-or-region (@unit)
   "Same as `xah-get-bounds-of-thing', except when (use-region-p) is t, return the region boundary instead.
 Version 2016-10-18"
   (if (use-region-p)
       (cons (region-beginning) (region-end))
-    (xah-get-bounds-of-thing *unit)))
+    (xah-get-bounds-of-thing @unit)))
 
-(defun xah-get-thing-at-point (*unit)
+(defun xah-get-thing-at-point (@unit)
   "Same as `xah-get-bounds-of-thing', but return the string.
 Version 2016-10-18T02:31:36-07:00"
-  (let ( ($bds (xah-get-bounds-of-thing *unit)) )
+  (let ( ($bds (xah-get-bounds-of-thing @unit)) )
     (buffer-substring-no-properties (car $bds) (cdr $bds))))
 
-(defun xah-get-thing-at-cursor (*unit)
+(defun xah-get-thing-at-cursor (@unit)
   "Same as `xah-get-bounds-of-thing', except this returns a vector [text a b], where text is the string and a b are its boundary.
 
 Version 2016-10-18T00:23:52-07:00"
   (let* (
-         ($bds (xah-get-bounds-of-thing *unit))
+         ($bds (xah-get-bounds-of-thing @unit))
          ($p1 (car $bds)) ($p2 (cdr $bds)))
     (vector (buffer-substring-no-properties $p1 $p2) $p1 $p2 )))
 
 (make-obsolete 'xah-get-thing-at-cursor 'xah-get-thing-at-point "2016-10-18")
 
-(defun xah-get-thing-or-selection (*unit)
+(defun xah-get-thing-or-selection (@unit)
   "Same as `xah-get-bounds-of-thing-or-region', except returns a vector [text a b], where text is the string and a b are its boundary."
   (interactive)
   (let* (
-         ($bds (xah-get-bounds-of-thing-or-region *unit))
+         ($bds (xah-get-bounds-of-thing-or-region @unit))
          ($p1 (car $bds)) ($p2 (cdr $bds)))
     (vector (buffer-substring-no-properties $p1 $p2) $p1 $p2 )))
 

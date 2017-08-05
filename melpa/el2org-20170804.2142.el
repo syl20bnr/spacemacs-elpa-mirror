@@ -7,7 +7,7 @@
 ;; Author: Feng Shu  <tumashu AT 163.com>
 ;; Homepage: https://github.com/tumashu/el2org
 ;; Keywords: convenience
-;; Package-Version: 20170804.1542
+;; Package-Version: 20170804.2142
 ;; Package-Requires: ((emacs "25.1"))
 ;; Version: 0.10
 
@@ -136,7 +136,7 @@
         (replace-match ";; #+TITLE: " nil t))
       ;; Remove lexical-binding string
       (goto-char (point-min))
-      (while (re-search-forward "[ ]*-\\*-[ ]+lexical-binding:[ ]+t;[ ]+-\\*-[ ]*"
+      (while (re-search-forward "[ ]*-\\*-.*-\\*-[ ]*$"
                                 (line-end-position) t)
         (replace-match "" nil t))
       ;; Indent the buffer, so ";;" and ";;;" in sexp will not be removed.

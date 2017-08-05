@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2016, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 3.1.10
-;; Package-Version: 20170725.420
+;; Version: 3.2.1
+;; Package-Version: 20170804.2206
 ;; Created: 23 Mar 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: lisp, languages
@@ -2792,12 +2792,12 @@ Version 2017-01-13"
             $abrSymbol)
         nil))))
 
-(defun xah-elisp--abbrev-position-cursor (&optional *pos)
+(defun xah-elisp--abbrev-position-cursor (&optional @pos)
   "Move cursor back to ▮ if exist, else put at end.
 Return true if found, else false.
 Version 2016-10-24"
   (interactive)
-  (let (($found-p (search-backward "▮" (if *pos *pos (max (point-min) (- (point) 100))) t )))
+  (let (($found-p (search-backward "▮" (if @pos @pos (max (point-min) (- (point) 100))) t )))
     (when $found-p (delete-char 1))
     $found-p
     ))
@@ -2856,36 +2856,36 @@ Version 2016-10-13"
             (xah-elisp-compact-blank-lines (point-min) (point-max))
             (delete-trailing-whitespace (point-min) (point-max))))))))
 
-(defun xah-elisp-compact-blank-lines (&optional *begin *end *n)
+(defun xah-elisp-compact-blank-lines (&optional @begin @end @n)
   "Replace repeated blank lines to just 1.
 Works on whole buffer or text selection, respects `narrow-to-region'.
 
-*N is the number of newline chars to use in replacement.
+@N is the number of newline chars to use in replacement.
 If 0, it means lines will be joined.
-By befault, *N is 2. It means, 1 visible blank line.
+By befault, @N is 2. It means, 1 visible blank line.
 
 Version 2017-01-27"
   (interactive
    (if (region-active-p)
        (list (region-beginning) (region-end))
      (list (point-min) (point-max))))
-  (when (not *begin)
-    (setq *begin (point-min) *end (point-max)))
+  (when (not @begin)
+    (setq @begin (point-min) @end (point-max)))
   (save-excursion
     (save-restriction
-      (narrow-to-region *begin *end)
+      (narrow-to-region @begin @end)
       (progn
         (goto-char (point-min))
         (while (search-forward-regexp "\n\n\n+" nil "noerror")
-          (replace-match (make-string (if *n *n 2) 10)))))))
+          (replace-match (make-string (if @n @n 2) 10)))))))
 
-(defun xah-elisp-goto-outmost-bracket (&optional *pos)
-  "Move cursor to the beginning of outer-most bracket, with respect to *pos.
+(defun xah-elisp-goto-outmost-bracket (&optional @pos)
+  "Move cursor to the beginning of outer-most bracket, with respect to @pos.
 Returns true if point is moved, else false."
   (interactive)
   (let (($i 0)
-        ($p0 (if (number-or-marker-p *pos)
-                 *pos
+        ($p0 (if (number-or-marker-p @pos)
+                 @pos
                (point))))
     (goto-char $p0)
     (while
@@ -2897,7 +2897,7 @@ Returns true if point is moved, else false."
       t
       )))
 
-(defun xah-elisp-compact-parens (&optional *begin *end)
+(defun xah-elisp-compact-parens (&optional @begin @end)
   "Remove whitespaces in ending repetition of parenthesises.
 If there's a text selection, act on the region, else, on defun block.
 Version 2017-01-27"
@@ -2907,20 +2907,20 @@ Version 2017-01-27"
      (save-excursion
        (xah-elisp-goto-outmost-bracket)
        (list (point) (scan-sexps (point) 1)))))
-  (let (($p1 *begin) ($p2 *end))
-    (when (not *begin)
+  (let (($p1 @begin) ($p2 @end))
+    (when (not @begin)
       (save-excursion
         (xah-elisp-goto-outmost-bracket)
         (setq $p1 (point))
         (setq $p2 (scan-sexps (point) 1))))
     (xah-elisp-compact-parens-region $p1 $p2)))
 
-(defun xah-elisp-compact-parens-region (*begin *end)
+(defun xah-elisp-compact-parens-region (@begin @end)
   "Remove whitespaces in ending repetition of parenthesises in region."
   (interactive "r")
   (let ($syntax-state)
     (save-restriction
-      (narrow-to-region *begin *end)
+      (narrow-to-region @begin @end)
       (goto-char (point-min))
       (while (search-forward-regexp ")[ \t\n]+)" nil t)
         (setq $syntax-state (syntax-ppss (match-beginning 0)))
@@ -3030,7 +3030,6 @@ Version 2017-01-27"
     ("urp" "use-region-p" xah-elisp--ahf)
     ("wcb" "with-current-buffer" xah-elisp--ahf)
     ("wtb" "with-temp-buffer" xah-elisp--ahf)
-
 
     ("bsnp" "(buffer-substring-no-properties START▮ END)" xah-elisp--ahf)
     ("fnse" "file-name-sans-extension" xah-elisp--ahf)
@@ -3363,7 +3362,7 @@ Version 2017-01-27"
     ("assoc-string" "(assoc-string key▮ alist &optional case-fold)" xah-elisp--ahf)
 
     ;;
-    )  
+    )
 
   "Abbrev table for `xah-elisp-mode'"
   )
@@ -3402,75 +3401,37 @@ Version 2017-01-27"
 ;;  'face-defface-spec
 ;;  )
 
-(defface xah-elisp-phi-word
-  '(
-    (t :foreground "black" :background "aquamarine")
-    ;; (t :foreground "dark blue")
-    ;; (t :foreground "black" :background "pink")
-)
-  "Face for function parameters."
-  :group 'xah-elisp-mode )
-
-(defface xah-elisp-star-word
-  '(
-    (t :foreground "red" :background "pink"))
-  "Face for function parameters."
+(defface xah-elisp-at-symbol
+  '((t :foreground "red" :weight bold))
+  "Face for @word."
   :group 'xah-elisp-mode )
 
 (face-spec-set
- 'xah-elisp-star-word
- '(
-   (t :foreground "red" :weight bold))
+ 'xah-elisp-at-symbol
+ '((t :foreground "red" :weight bold))
  'face-defface-spec
  )
 
-(face-spec-set
- 'xah-elisp-ttt
- '(
-   (t :foreground "blue" :background "pink"))
- 'face-defface-spec
- )
-
-(defface xah-elisp-gamma-word
-  '(
-    (t :foreground "red"))
-  "Face for global variable."
-  :group 'xah-elisp-mode )
-
-(defface xah-elisp-xi-word
-  '(
-    (t :foreground "dark green" :weight bold))
-   "Face for user variables."
+(defface xah-elisp-dollar-symbol
+  '((t :foreground "dark green" :weight bold))
+   "Face for ξsymbol."
   :group 'xah-elisp-mode )
 
 (face-spec-set
- 'xah-elisp-xi-word
- '(
-    (t :foreground "dark green" :weight bold))
+ 'xah-elisp-dollar-symbol
+ '((t :foreground "dark green" :weight bold))
  'face-defface-spec
  )
-
-(defface xah-elisp-dash-word
-  '(
-    (t :foreground "#ff00ff"))
-  "Face for user variables."
-  :group 'xah-elisp-mode )
 
 (defface xah-elisp-cap-variable
-  '(
-    (t :foreground "firebrick"))
+  '((t :foreground "firebrick" :weight bold))
   "Face for capitalized word."
   :group 'xah-elisp-mode )
 
 (setq xah-elisp-font-lock-keywords
       (let (
-            (phiWord "φ[-_?0-9A-Za-z]+" )
-            (starWord "\\_<\\*[-_?0-9A-Za-z]+" )
-            (funParamVar-tmp "\\_<_[-_?0-9A-Za-z]+" )
-            (globalVar "\\_<γ[-_?0-9A-Za-z]+" )
-            (userVars1 "\\_<ξ[-_?0-9A-Za-z]+" )
-            (userVars2 "\\_<-[-_A-Za-z]+[-_?0-9A-Za-z]*" )
-            (userVars3 "\\_<$[-_?0-9A-Za-z]+" )
+            (dollarSymbol "\\_<$[-_?0-9A-Za-z]+" )
+            (atSymbol "\\_<@[-_?0-9A-Za-z]+" )
             (capVars "\\_<[A-Z][-_?0-9A-Za-z]+" ))
         `(
           (,(regexp-opt xah-elisp-ampersand-words 'symbols) . font-lock-builtin-face)
@@ -3480,13 +3441,8 @@ Version 2017-01-27"
           (,(regexp-opt xah-elisp-commands 'symbols) . 'xah-elisp-command-face)
           (,(regexp-opt xah-elisp-user-options 'symbols) . font-lock-variable-name-face)
           (,(regexp-opt xah-elisp-variables 'symbols) . font-lock-variable-name-face)
-          (,phiWord . 'xah-elisp-phi-word)
-          (,starWord . 'xah-elisp-star-word)
-          (,funParamVar-tmp . 'xah-elisp-ttt)
-          (,globalVar . 'xah-elisp-gamma-word)
-          (,userVars1 . 'xah-elisp-xi-word)
-          (,userVars3 . 'xah-elisp-xi-word)
-          (,userVars2 . 'xah-elisp-dash-word)
+          (,dollarSymbol . 'xah-elisp-dollar-symbol)
+          (,atSymbol . 'xah-elisp-at-symbol)
           (,capVars . 'xah-elisp-cap-variable))))
 
 

@@ -3,8 +3,24 @@
 ;; Author: Pascal van Kooten <kootenpv@gmail.com>
 ;; Homepage: https://github.com/kootenvp/flymake-solidity
 ;; Package-Requires: ((flymake-easy "0.10"))
-;; Package-Version: 20160424.720
-;;
+;; Package-Version: 20170804.2344
+
+;; License: AGPL3 or later
+
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU Affero General Public License as
+;; published by the Free Software Foundation; either version 3, or
+;; (at your option) any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU Affero General Public License for more details.
+
+;; You should have received a copy of the GNU Affero General Public
+;; License along with this program.  If not, see
+;; <http://www.gnu.org/licenses/>.
+
 ;;; Commentary:
 ;;
 ;; This package requires the "solc" (solidity compiler) program, which can be installed
