@@ -1,4 +1,4 @@
-Magithub is an interface to GitHub.
+Magithub is a Magit-based interface to GitHub.
 
 Integrated into Magit workflows, Magithub allows easy GitHub
 repository management.  Supported actions include:
@@ -7,9 +7,8 @@ repository management.  Supported actions include:
  - creating forks of existing repositories
  - submitting pull requests upstream
  - viewing and creating issues
+ - seeing status checks
+
+all from the `magit-status' buffer.
 
 Press `H' in the status buffer to get started -- happy hacking!
-
-[1]: https://hub.github.com
-
-Requires hub 2.2.8

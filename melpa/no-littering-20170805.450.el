@@ -3,9 +3,9 @@
 ;; Copyright (C) 2016-2017  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
-;; Homepage: https://github.com/tarsius/no-littering
+;; Homepage: https://github.com/emacscollective/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 20170728.952
+;; Package-Version: 20170805.450
 
 ;; This file is not part of GNU Emacs.
 
@@ -302,6 +302,7 @@ directories."
     (setq tldr-directory-path              (var "tldr/"))
     (setq undo-tree-history-directory-alist (list (cons "." (var "undo-tree-hist/"))))
     (setq user-emacs-ensime-directory      (var "ensime/"))
+    (setq vimish-fold-dir                  (var "vimish-fold/"))
     (eval-after-load 'xkcd
       `(make-directory ,(var "xkcd/") t))
     (setq xkcd-cache-dir                   (var "xkcd/"))

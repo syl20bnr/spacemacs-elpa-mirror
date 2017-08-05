@@ -3,9 +3,9 @@
 ;; Copyright (C) 2012-2017  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
-;; Homepage: https://github.com/tarsius/packed
+;; Homepage: https://github.com/emacscollective/packed
 ;; Keywords: compile, convenience, lisp, package, library
-;; Package-Version: 20170314.1340
+;; Package-Version: 20170805.449
 ;; Package-Requires: ((emacs "24.3") (dash "2.12.1"))
 
 ;; This file is not part of GNU Emacs.

@@ -5,8 +5,8 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Created: 20081202
 ;; Package-Requires: ((emacs "24.4"))
-;; Package-Version: 20170712.510
-;; Homepage: https://github.com/tarsius/elx
+;; Package-Version: 20170805.449
+;; Homepage: https://github.com/emacscollective/elx
 ;; Keywords: docs, libraries, packages
 
 ;; This file is not part of GNU Emacs.
