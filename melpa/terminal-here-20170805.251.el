@@ -4,7 +4,7 @@
 
 ;; Author: David Shepherd <davidshepherd7@gmail.com>
 ;; Version: 1.0
-;; Package-Version: 20170426.48
+;; Package-Version: 20170805.251
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: tools, frames
 ;; URL: https://github.com/davidshepherd7/terminal-here
@@ -103,10 +103,10 @@ If projectile is installed the projectile root will be used,
   Otherwise `vc-root-dir' will be used."
   (interactive)
   (when (not terminal-here-project-root-function)
-    (signal 'user-error "No `terminal-here-project-root-function' is set."))
+    (user-error "No `terminal-here-project-root-function' is set."))
   (let ((root (funcall terminal-here-project-root-function)))
     (when (not root)
-      (signal 'user-error "Not in any project according to `terminal-here-project-root-function'"))
+      (user-error "Not in any project according to `terminal-here-project-root-function'"))
     (terminal-here-launch-in-directory root)))
 
 

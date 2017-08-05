@@ -3,8 +3,8 @@
 ;; Copyright © 2011-2017 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 3.2.6
-;; Package-Version: 20170713.615
+;; Version: 3.2.7
+;; Package-Version: 20170804.2259
 ;; Created: 14 Nov 2011
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: help, docs, convenience
@@ -60,12 +60,12 @@
 ;; You can also create your own lookup command to lookup ruby, php, clojure, etc.
 ;; For example:
 
-;; (defun my-lookup-php (&optional *word)
+;; (defun my-lookup-php (&optional @word)
 ;;   "lookup php doc of word under cursor"
 ;;   (interactive)
 ;;   (require 'xah-lookup)
 ;;   (xah-lookup-word-on-internet
-;;    *word
+;;    @word
 ;;    (get 'my-lookup-php 'xah-lookup-url )
 ;;    (get 'my-lookup-php 'xah-lookup-browser-function )))
 ;; (put 'my-lookup-php 'xah-lookup-url "http://us.php.net/word02051")
@@ -118,7 +118,7 @@
   "A vector of website URLs for lookup words. Used by `xah-lookup-all-dictionaries'. http://wordyenglish.com/words/dictionary_tools.html "
   :group 'xah-lookup)
 
-(defun xah-lookup--asciify-region (&optional *from *to)
+(defun xah-lookup--asciify-region (&optional @from @to)
   "Change some Unicode characters into equivalent ASCII ones.
 For example, “passé” becomes “passe”.
 
@@ -132,7 +132,7 @@ Version 2014-10-20"
      (list (line-beginning-position) (line-end-position))))
   (let ((case-fold-search t))
     (save-restriction
-      (narrow-to-region *from *to)
+      (narrow-to-region @from @to)
       (mapc
        (lambda ($pair)
          (goto-char (point-min))
@@ -153,24 +153,24 @@ Version 2014-10-20"
         ["æ" "ae"]
         ]))))
 
-(defun xah-lookup--asciify-string (*string)
+(defun xah-lookup--asciify-string (@string)
   "Change some Unicode characters into equivalent ASCII ones.
 For example, “passé” becomes “passe”.
 See `xah-lookup--asciify-region'
 Version 2014-10-20"
   (with-temp-buffer
-      (insert *string)
+      (insert @string)
       (xah-lookup--asciify-region (point-min) (point-max))
       (buffer-string)))
 
-(defun xah-lookup-word-on-internet (&optional *word *url *browser-function)
+(defun xah-lookup-word-on-internet (&optional @word @url @browser-function)
   "Look up current word or text selection in a online reference site.
 This command launches/switches you to default browser.
 
-*URL a is URL string in this form: 「http://en.wiktionary.org/wiki/word02051」.
+@URL a is URL string in this form: 「http://en.wiktionary.org/wiki/word02051」.
 the 「word02051」 is a placeholder for the query string.
 
-If *URL is nil, Google Search is used.
+If @URL is nil, Google Search is used.
 
 For a list of online reference sites, see:
  URL `http://ergoemacs.org/emacs/xah-lookup.html'
@@ -178,28 +178,28 @@ Version 2017-02-09"
   (interactive)
   (let ($word $refUrl $myUrl)
     (setq $word
-          (if *word
-              *word
+          (if @word
+              @word
             (if (region-active-p)
                 (buffer-substring-no-properties (region-beginning) (region-end))
               (current-word))))
     (setq $word (replace-regexp-in-string " " "%20" (xah-lookup--asciify-string $word)))
     (setq $refUrl
-          (if *url
-              *url
+          (if @url
+              @url
             "http://www.google.com/search?q=word02051" ))
     (setq $myUrl (replace-regexp-in-string "word02051" $word $refUrl t t))
-    (if *browser-function
-        (funcall *browser-function $myUrl)
+    (if @browser-function
+        (funcall @browser-function $myUrl)
       (funcall xah-lookup-browser-function $myUrl))))
 
 ;;;###autoload
-(defun xah-lookup-google (&optional *word)
+(defun xah-lookup-google (&optional @word)
   "Lookup current word or text selection in Google Search.
 Version 2017-02-09"
   (interactive)
   (xah-lookup-word-on-internet
-   *word
+   @word
    (get 'xah-lookup-google 'xah-lookup-url)
    (get 'xah-lookup-google 'xah-lookup-browser-function )))
 
@@ -207,12 +207,12 @@ Version 2017-02-09"
 (put 'xah-lookup-google 'xah-lookup-browser-function xah-lookup-browser-function)
 
 ;;;###autoload
-(defun xah-lookup-wikipedia (&optional *word)
+(defun xah-lookup-wikipedia (&optional @word)
   "Lookup current word or text selection in Wikipedia.
 Version 2017-02-09"
   (interactive)
   (xah-lookup-word-on-internet
-   *word
+   @word
    (get 'xah-lookup-wikipedia 'xah-lookup-url )
    (get 'xah-lookup-wikipedia 'xah-lookup-browser-function )))
 
@@ -220,12 +220,12 @@ Version 2017-02-09"
 (put 'xah-lookup-wikipedia 'xah-lookup-browser-function xah-lookup-browser-function)
 
 ;;;###autoload
-(defun xah-lookup-word-definition (&optional *word)
+(defun xah-lookup-word-definition (&optional @word)
   "Lookup definition of current word or text selection in URL `http://www.thefreedictionary.com/curlicue'.
 Version 2017-02-09"
   (interactive)
   (xah-lookup-word-on-internet
-   *word
+   @word
    (get 'xah-lookup-word-definition 'xah-lookup-url )
    (get 'xah-lookup-word-definition 'xah-lookup-browser-function ))
   ;;
@@ -236,43 +236,43 @@ Version 2017-02-09"
 
 (put 'xah-lookup-word-definition 'xah-lookup-browser-function 'browse-url)
 
-(defun xah-lookup-word-dict-org (&optional *word)
+(defun xah-lookup-word-dict-org (&optional @word)
   "Lookup definition of current word or text selection in URL `http://dict.org/'.
 Version 2017-02-09"
   (interactive)
   (xah-lookup-word-on-internet
-   *word
+   @word
    (get 'xah-lookup-word-dict-org 'xah-lookup-url )
    (get 'xah-lookup-word-dict-org 'xah-lookup-browser-function )))
 
 (put 'xah-lookup-word-dict-org 'xah-lookup-url "http://www.dict.org/bin/Dict?Form=Dict2&Database=*&Query=word02051")
 (put 'xah-lookup-word-dict-org 'xah-lookup-browser-function 'eww)
 
-(defun xah-lookup-wiktionary (&optional *word)
+(defun xah-lookup-wiktionary (&optional @word)
   "Lookup definition of current word or text selection in URL `http://en.wiktionary.org/'
 Version 2017-02-09"
   (interactive)
   (xah-lookup-word-on-internet
-   *word
+   @word
    (get 'xah-lookup-wiktionary 'xah-lookup-url )
    (get 'xah-lookup-wiktionary 'xah-lookup-browser-function )))
 
 (put 'xah-lookup-wiktionary 'xah-lookup-url "http://en.wikipedia.org/wiki/word02051")
 (put 'xah-lookup-wiktionary 'xah-lookup-browser-function xah-lookup-browser-function)
 
-(defun xah-lookup-etymology (&optional *word)
+(defun xah-lookup-etymology (&optional @word)
   "Lookup etymology of current word or text selection in URL `http://www.etymonline.com/index.php?search=curlicue'.
 Version 2017-02-27"
   (interactive)
   (xah-lookup-word-on-internet
-   *word
+   @word
    (get 'xah-lookup-etymology 'xah-lookup-url )
    (get 'xah-lookup-etymology 'xah-lookup-browser-function )))
 
 (put 'xah-lookup-etymology 'xah-lookup-url "http://www.etymonline.com/index.php?search=word02051")
 (put 'xah-lookup-etymology 'xah-lookup-browser-function 'eww)
 
-(defun xah-lookup-all-dictionaries (&optional *word)
+(defun xah-lookup-all-dictionaries (&optional @word)
   "Lookup definition in many dictionaries.
 Current word or text selection is used as input.
 The dictionaries used are in `xah-lookup-dictionary-list'."
@@ -280,7 +280,7 @@ The dictionaries used are in `xah-lookup-dictionary-list'."
   (mapc
    (lambda ($url)
      (xah-lookup-word-on-internet
-      *word
+      @word
       $url
       (get 'xah-lookup-all-dictionaries 'xah-lookup-browser-function )))
    xah-lookup-dictionary-list))

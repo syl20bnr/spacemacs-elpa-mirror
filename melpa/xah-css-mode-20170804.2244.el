@@ -1,10 +1,10 @@
 ;;; xah-css-mode.el --- Major mode for editing CSS code. -*- coding: utf-8; lexical-binding: t; -*-
 
-;; Copyright © 2013-2016 by Xah Lee
+;; Copyright © 2013-2017 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.4.16
-;; Package-Version: 20170801.1511
+;; Version: 2.4.17
+;; Package-Version: 20170804.2244
 ;; Created: 18 April 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: languages, convenience, css, color
@@ -125,14 +125,14 @@ Version 2016-07-19"
       (progn
         (user-error "The current word 「%s」 is not of the form #rrggbb." $currentWord)))))
 
-(defun xah-css-hex-to-hsl-color (*hex-str)
-  "Convert *hex-str color to CSS HSL format.
+(defun xah-css-hex-to-hsl-color (@hex-str)
+  "Convert @hex-str color to CSS HSL format.
 Return a string. Example:  \"ffefd5\" ⇒ \"hsl(37,100%,91%)\"
 Note: The input string must NOT start with “#”.
 URL `http://ergoemacs.org/emacs/emacs_CSS_colors.html'
 Version 2016-07-19"
   (let* (
-         ($colorVec (xah-css-convert-color-hex-to-vec *hex-str))
+         ($colorVec (xah-css-convert-color-hex-to-vec @hex-str))
          ($R (elt $colorVec 0))
          ($G (elt $colorVec 1))
          ($B (elt $colorVec 2))
@@ -142,8 +142,8 @@ Version 2016-07-19"
          ($L (elt $hsl 2)))
     (format "hsl(%d,%d%%,%d%%)" (* $H 360) (* $S 100) (* $L 100))))
 
-(defun xah-css-convert-color-hex-to-vec (*rrggbb)
-  "Convert color *rrggbb from “\"rrggbb\"” string to a elisp vector [r g b], where the values are from 0 to 1.
+(defun xah-css-convert-color-hex-to-vec (@rrggbb)
+  "Convert color @rrggbb from “\"rrggbb\"” string to a elisp vector [r g b], where the values are from 0 to 1.
 Example:
  (xah-css-convert-color-hex-to-vec \"00ffcc\") ⇒ [0.0 1.0 0.8]
 
@@ -151,25 +151,25 @@ Note: The input string must NOT start with “#”.
 URL `http://ergoemacs.org/emacs/emacs_CSS_colors.html'
 Version 2016-07-19"
   (vector
-   (xah-css-normalize-number-scale (string-to-number (substring *rrggbb 0 2) 16) 255)
-   (xah-css-normalize-number-scale (string-to-number (substring *rrggbb 2 4) 16) 255)
-   (xah-css-normalize-number-scale (string-to-number (substring *rrggbb 4) 16) 255)))
+   (xah-css-normalize-number-scale (string-to-number (substring @rrggbb 0 2) 16) 255)
+   (xah-css-normalize-number-scale (string-to-number (substring @rrggbb 2 4) 16) 255)
+   (xah-css-normalize-number-scale (string-to-number (substring @rrggbb 4) 16) 255)))
 
-(defun xah-css-normalize-number-scale (*val *range-max)
-  "Scale *val from range [0, *range-max] to [0, 1]
+(defun xah-css-normalize-number-scale (@val @range-max)
+  "Scale @val from range [0, @range-max] to [0, 1]
 The arguments can be int or float.
 Return value is float.
 URL `http://ergoemacs.org/emacs/emacs_CSS_colors.html'
 Version 2016-07-19"
-  (/ (float *val) (float *range-max)))
+  (/ (float @val) (float @range-max)))
 
 
 ;;; functions
 
-(defun xah-css--replace-regexp-pairs-region (*begin *end pairs &optional fixedcase-p literal-p)
+(defun xah-css--replace-regexp-pairs-region (@begin @end pairs &optional fixedcase-p literal-p)
   "Replace regex string find/replace PAIRS in region.
 
-*BEGIN *END are the region boundaries.
+@BEGIN @END are the region boundaries.
 
 PAIRS is
  [[regexStr1 replaceStr1] [regexStr2 replaceStr2] …]
@@ -179,7 +179,7 @@ The optional arguments FIXEDCASE-P and LITERAL-P is the same as in `replace-matc
 
 Find strings case sensitivity depends on `case-fold-search'. You can set it locally, like this: (let ((case-fold-search nil)) …)"
   (save-restriction
-      (narrow-to-region *begin *end)
+      (narrow-to-region @begin @end)
       (mapc
        (lambda ($x)
          (goto-char (point-min))
@@ -187,8 +187,8 @@ Find strings case sensitivity depends on `case-fold-search'. You can set it loca
            (replace-match (elt $x 1) fixedcase-p literal-p)))
        pairs)))
 
-(defun xah-css--replace-pairs-region (*begin *end pairs)
-  "Replace multiple PAIRS of find/replace strings in region *BEGIN *END.
+(defun xah-css--replace-pairs-region (@begin @end pairs)
+  "Replace multiple PAIRS of find/replace strings in region @BEGIN @END.
 
 PAIRS is a sequence of pairs
  [[findStr1 replaceStr1] [findStr2 replaceStr2] …]
@@ -213,7 +213,7 @@ Note: the region's text or any string in PAIRS is assumed to NOT contain any cha
         (setq $i (1+ $i))))
     (save-excursion
       (save-restriction
-        (narrow-to-region *begin *end)
+        (narrow-to-region @begin @end)
         (progn
           ;; replace each find string by corresponding item in $tempMapPoints
           (setq $i 0)
@@ -258,7 +258,7 @@ Version 2015-06-29"
       (while (search-forward-regexp "  +" nil t)
         (replace-match " ")))))
 
-(defun xah-css-compact-css-region (&optional *begin *end)
+(defun xah-css-compact-css-region (&optional @begin @end)
   "Remove unnecessary whitespaces of CSS source code in region.
 If there's text selection, work on that region.
 Else, work on whole buffer.
@@ -270,7 +270,7 @@ Version 2016-10-02"
        (list (region-beginning) (region-end))
      (list (point-min) (point-max))))
   (save-restriction
-    (narrow-to-region *begin *end)
+    (narrow-to-region @begin @end)
     (xah-css--replace-regexp-pairs-region
      (point-min)
      (point-max)
@@ -290,7 +290,7 @@ Version 2016-10-02"
        ["}" "}\n"]
        ))))
 
-(defun xah-css-expand-to-multi-lines (&optional *begin *end)
+(defun xah-css-expand-to-multi-lines (&optional @begin @end)
   "Expand minified CSS code to multiple lines.
 If there's text selection, work on that region.
 Else, work on whole buffer.
@@ -302,7 +302,7 @@ Version 2016-10-02"
        (list (region-beginning) (region-end))
      (list (point-min) (point-max))))
   (save-restriction
-    (narrow-to-region *begin *end)
+    (narrow-to-region @begin @end)
     (xah-css--replace-pairs-region
      (point-min)
      (point-max)
@@ -936,12 +936,12 @@ Version 2016-10-24"
             $abrSymbol)
         nil))))
 
-(defun xah-css--abbrev-position-cursor (&optional *pos)
+(defun xah-css--abbrev-position-cursor (&optional @pos)
   "Move cursor back to ▮ if exist, else put at end.
 Return true if found, else false.
 Version 2016-10-24"
   (interactive)
-  (let (($found-p (search-backward "▮" (if *pos *pos (max (point-min) (- (point) 100))) t )))
+  (let (($found-p (search-backward "▮" (if @pos @pos (max (point-min) (- (point) 100))) t )))
     (when $found-p (forward-char ))
     $found-p
     ))
