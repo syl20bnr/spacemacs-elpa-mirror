@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Version: 0.5
-;; Package-Version: 20170805.412
+;; Package-Version: 20170805.1113
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.4") (loop "1.3") (dash "2.13.0") (s "1.11.0") (f "0.18.2"))
 ;; URL: https://github.com/Wilfred/suggest.el
@@ -583,8 +583,10 @@ than their values."
     (setq this-iteration
           (-map (-lambda ((values . literals))
                   (list :funcs nil :values values :literals literals))
-                (-zip-pair (suggest--permutations input-values)
-                           (suggest--permutations input-literals))))
+                ;; Only consider unique permutations.
+                (-distinct
+                 (-zip-pair (suggest--permutations input-values)
+                            (suggest--permutations input-literals)))))
     (catch 'done
       (dotimes (iteration suggest--search-depth)
         (catch 'done-iteration

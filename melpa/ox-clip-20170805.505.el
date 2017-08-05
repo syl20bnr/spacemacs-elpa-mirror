@@ -1,11 +1,11 @@
-;;; ox-clip.el --- Cross-platform Formatted copy commands for org-mode
+;;; ox-clip.el --- Cross-platform formatted copying for org-mode
 
 ;; Copyright(C) 2016 John Kitchin
 
 ;; Author: John Kitchin <jkitchin@andrew.cmu.edu>
-;; URL: https://github.com/jkitchin/scimax/ox-clip.el
-;; Package-Version: 20170108.1348
-;; Version: 0.2
+;; URL: https://github.com/jkitchin/ox-clip/ox-clip.el
+;; Package-Version: 20170805.505
+;; Version: 0.3
 ;; Keywords: org-mode
 ;; Package-Requires: ((org "8.2") (htmlize "0"))
 
@@ -365,52 +365,52 @@ R1 and R2 define the selected region."
   (copy-region-as-kill r1 r2)
   (if (equal major-mode 'org-mode)
       (save-window-excursion
-	(let* ((buf (org-export-to-buffer 'html "*Formatted Copy*" nil nil t t))
-	       (html (with-current-buffer buf (buffer-string))))
-	  (cond
-	   ((eq system-type 'windows-nt)
-	    (with-current-buffer buf
-	      (shell-command-on-region
-	       (point-min)
-	       (point-max)
-	       ox-clip-w32-cmd)))
-	   ((eq system-type 'darwin)
-	    (with-current-buffer buf
-	      (shell-command-on-region
-	       (point-min)
-	       (point-max)
-	       ox-clip-osx-cmd)))
-	   ((eq system-type 'gnu/linux)
-	    ;; For some reason shell-command on region does not work with xclip.
-	    (with-temp-file "/tmp/ox-clip-org.html"
-	      (insert (with-current-buffer buf (buffer-string))))
-	    (apply
-	     'start-process "ox-clip" "*ox-clip*"
-	     (split-string ox-clip-linux-cmd " ")))) 
-	  (kill-buffer buf)))
+        (let* ((buf (org-export-to-buffer 'html "*Formatted Copy*" nil nil t t))
+               (html (with-current-buffer buf (buffer-string))))
+          (cond
+           ((eq system-type 'windows-nt)
+            (with-current-buffer buf
+              (shell-command-on-region
+               (point-min)
+               (point-max)
+               ox-clip-w32-cmd)))
+           ((eq system-type 'darwin)
+            (with-current-buffer buf
+              (shell-command-on-region
+               (point-min)
+               (point-max)
+               ox-clip-osx-cmd)))
+           ((eq system-type 'gnu/linux)
+            ;; For some reason shell-command on region does not work with xclip.
+            (with-temp-file "/tmp/ox-clip-org.html"
+              (insert (with-current-buffer buf (buffer-string))))
+            (apply
+             'start-process "ox-clip" "*ox-clip*"
+             (split-string ox-clip-linux-cmd " "))))
+          (kill-buffer buf)))
     ;; Use htmlize when not in org-mode.
     (let ((html (htmlize-region-for-paste r1 r2)))
       (cond
        ((eq system-type 'windows-nt)
-	(with-temp-buffer
-	  (insert html)
-	  (shell-command-on-region
-	   (point-min)
-	   (point-max)
-	   ox-clip-w32-cmd)))
+        (with-temp-buffer
+          (insert html)
+          (shell-command-on-region
+           (point-min)
+           (point-max)
+           ox-clip-w32-cmd)))
        ((eq system-type 'darwin)
-	(with-temp-buffer
-	  (insert html)
-	  (shell-command-on-region
-	   (point-min)
-	   (point-max)
-	   ox-clip-osx-cmd)))
+        (with-temp-buffer
+          (insert html)
+          (shell-command-on-region
+           (point-min)
+           (point-max)
+           ox-clip-osx-cmd)))
        ((eq system-type 'gnu/linux)
-	(with-temp-file "/tmp/ox-clip-org.html"
-	  (insert html))
-	(apply
-	 'start-process "ox-clip" "*ox-clip*"
-	 (split-string ox-clip-linux-cmd " ")))))))
+        (with-temp-file "/tmp/ox-clip-org.html"
+          (insert html))
+        (apply
+         'start-process "ox-clip" "*ox-clip*"
+         (split-string ox-clip-linux-cmd " ")))))))
 
 (provide 'ox-clip)
 
