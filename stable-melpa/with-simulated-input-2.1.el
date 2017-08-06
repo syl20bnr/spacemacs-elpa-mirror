@@ -5,8 +5,8 @@
 ;; Filename: with-simulated-input.el
 ;; Author: Ryan C. Thompson
 ;; Created: Thu Jul 20 11:56:23 2017 (-0700)
-;; Version: 2.0
-;; Package-Version: 2.0
+;; Version: 2.1
+;; Package-Version: 2.1
 ;; Package-Requires: ((emacs "24.4") (seq "2.0") (s "0"))
 ;; URL:
 ;; Keywords: lisp, tools, extensions
@@ -54,16 +54,16 @@ This function checks every keymap in `obarray' for a binding for
 KEY, and returns t if it finds and and nil otherwise. Note that
 this checks ALL keymaps, not just currently active ones."
   (catch 'bound
-  (mapatoms
-   (lambda (sym)
-     (let ((keymap
-            (when (boundp sym)
-              (symbol-value sym))))
-       (when (keymapp keymap)
-         (let ((binding (lookup-key keymap (kbd key))))
-           (when binding
-             (throw 'bound t)))))))
-  (throw 'bound nil)))
+    (mapatoms
+     (lambda (sym)
+       (let ((keymap
+              (when (boundp sym)
+                (symbol-value sym))))
+         (when (keymapp keymap)
+           (let ((binding (lookup-key keymap (kbd key))))
+             (when binding
+               (throw 'bound t)))))))
+    (throw 'bound nil)))
 
 (cl-defun wsi-get-unbound-key
     (&optional (modifiers '("C-M-A-s-H-" "C-M-A-s-" "C-M-A-H-"))
@@ -110,7 +110,7 @@ to check.
    if (stringp action)
    collect action into full-key-sequence
    else
-   collect action into action-list and
+   collect `(lambda () ,action) into action-list and
    collect exec-form-keybind into full-key-sequence
    finally return
    (list :keys (s-join " " full-key-sequence)
@@ -119,7 +119,7 @@ to check.
 (defvar wsi-action-list nil)
 
 (defun wsi-run-next-action ()
-  "Pop and eval the next element in `wsi-action-list'.
+  "Pop and call the next function in `wsi-action-list'.
 
 If the action list is empty, run `(keyboard-quit)' instead."
   (interactive)
@@ -127,7 +127,7 @@ If the action list is empty, run `(keyboard-quit)' instead."
       (if wsi-action-list
           (let ((next-action (pop wsi-action-list)))
             ;; (message "Executing `%S'" next-action)
-            (eval next-action))
+            (funcall next-action))
         (error "Reached end of `wsi-action-list'."))
     (error (throw 'wsi-threw-error err))))
 
@@ -211,7 +211,7 @@ in `progn'."
 
 (defvar wsi-simulated-idle-time nil)
 
-(defadvice current-idle-time (around simulat-idle-time activate)
+(defadvice current-idle-time (around simulate-idle-time activate)
   "Return the faked value while simulating idle time.
 
 While executing `wsi-simulate-idle-time', this advice causes the
@@ -222,18 +222,37 @@ simulated idle time to be returned instead of the real value."
               wsi-simulated-idle-time))
     ad-do-it))
 
-(cl-defun wsi-simulate-idle-time (secs &optional actually-wait)
+(cl-defun wsi-simulate-idle-time (&optional secs actually-wait)
   "Run all idle timers with delay less than SECS.
 
 This simulates resetting the idle time to zero and then being
-idle for SECS seconds. If ACTUALLY-WAIT is non-nil, this function
-will also wait for the specified amount of time before running
-each timers.
+idle for SECS seconds. Hence calling this function twice with
+SECS = 1 is not equivalent to 2 seconds of idle time.
+
+If ACTUALLY-WAIT is non-nil, this function will also wait for the
+specified amount of time before running each timer.
+
+If SECS is nil, simulate enough idle time to run each timer in
+`timer-idle-list' at least once. (It's possible that some timers
+will be run more than once, since each timer could potentially
+add new timers to the list.)
 
 While each timer is running, `current-idle-time' will be
-overridden to return the current simulated idle time."
+overridden to return the current simulated idle time.
+
+This function does not run any timers in `timer-list', even
+though they would run during real idle time."
   (interactive
    "nSeconds of idle time: \nP")
+  ;; SECS defaults to the maximum idle time of any currently active
+  ;; timer.
+  (unless secs
+    (setq secs
+          (cl-loop for timer in timer-idle-list
+                   maximize (float-time (timer--time timer)))))
+  ;; Add a small fudge factor to deal with SECS being exactly equal to
+  ;; a timer's time, to avoid floating point issues.
+  (setq secs (+ secs 0.0001))
   (cl-loop
    with already-run-timers = nil
    with stop-time = (seconds-to-time secs)
@@ -250,7 +269,7 @@ overridden to return the current simulated idle time."
    if (time-less-p wsi-simulated-idle-time
                    (timer--time next-timer))
    do (setq wsi-simulated-idle-time
-                   (timer--time next-timer))
+            (timer--time next-timer))
    when actually-wait
    do (sleep-for (float-time (time-subtract wsi-simulated-idle-time
                                             previous-idle-time)))

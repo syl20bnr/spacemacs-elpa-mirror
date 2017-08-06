@@ -12,4 +12,4 @@ By default `imenu-anywhere' uses plain `completing-read'. `ido-imenu-anywhere',
 
 Several filtering strategies are available - same-mode buffers, same-project
 buffers and user defined friendly buffers. See
-`imenu-anywhere-buffer-filter-functions'.
+`imenu-anywhere-buffer-filter-functions' and `imenu-anywhere-friendly-modes'.
