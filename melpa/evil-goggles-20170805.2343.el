@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20170724.211
+;; Package-Version: 20170805.2343
 ;; Package-Requires: ((emacs "25") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -38,6 +38,8 @@
 ;;; Code:
 
 (require 'evil)
+;; TODO try not to depend on cl-lib
+(require 'cl-lib)
 
 (defcustom evil-goggles-duration 0.200
   "Time if floating seconds that the goggles overlay should last."
@@ -164,7 +166,9 @@ FACE-DOC is the docstring for FACE-NAME."
   (custom-set-faces
    '(evil-goggles-delete-face ((t (:inherit 'diff-removed))))
    '(evil-goggles-paste-face ((t (:inherit 'diff-added))))
-   '(evil-goggles-yank-face ((t (:inherit 'diff-changed))))))
+   '(evil-goggles-yank-face ((t (:inherit 'diff-changed))))
+   '(evil-goggles-undo-redo-remove-face ((t (:inherit 'diff-refine-removed))))
+   '(evil-goggles-undo-redo-add-face ((t (:inherit 'diff-refine-added))))))
 
 ;; delete
 
@@ -207,6 +211,120 @@ ORIG-FUN is the original function.
 BEG END &OPTIONAL TYPE REGISTER YANK-HANDLER are the arguments of the original function."
   (evil-goggles--with-goggles beg end 'evil-goggles-yank-face
     (evil-goggles--funcall-preserve-interactive orig-fun beg end type register yank-handler)))
+
+;; undo & redo
+
+(defcustom evil-goggles-enable-undo nil  ;; experimental, disabled by default
+  "If non-nil, enable undo support.
+This variable must be set before `evil-goggles-mode' is enabled"
+  :type 'boolean :group 'evil-goggles)
+
+(defcustom evil-goggles-enable-redo nil ;; experimental, disabled by default
+  "If non-nil, enable redo support.
+This variable must be set before `evil-goggles-mode' is enabled"
+  :type 'boolean :group 'evil-goggles)
+
+(defface evil-goggles-undo-redo-add-face
+  '((t
+     (:inherit evil-goggles-default-face)))
+  "Face for undo/redo add action" :group 'evil-goggles-faces)
+
+(defface evil-goggles-undo-redo-remove-face
+  '((t
+     (:inherit evil-goggles-default-face)))
+  "Face for undo/redo remove action" :group 'evil-goggles-faces)
+
+(defun evil-goggles--undo-tree-undo-advice (orig-fun &optional arg)
+  "Advice for function `undo-tree-undo` and function `undo-tree-redo`.
+
+ORIG-FUN is the original function.
+ARG is the arguments of the original function."
+  (unwind-protect
+      (progn
+        (advice-add 'primitive-undo :around 'evil-goggles--primitive-undo-advice)
+        (funcall orig-fun arg))
+    (advice-remove 'primitive-undo 'evil-goggles--primitive-undo-advice)))
+
+(defun evil-goggles--primitive-undo-advice (orig-fun n list)
+  "Advice for function `primitive-undo`.
+
+ORIG-FUN is the original function.
+N and LIST are the arguments of the original function."
+  (let ((undo-item (evil-goggles--get-undo-item list)))
+    ;; show hint on the text which will be removed before undo/redo removes it
+    (pcase undo-item
+      (`(text-added ,beg ,end)
+       (when (evil-goggles--show-p beg end)
+         (evil-goggles--show beg end 'evil-goggles-undo-redo-remove-face))))
+
+    ;; call the undo/redo function
+    (funcall orig-fun n list)
+
+    ;; show hint on the text which will be added after undo/redo addes it
+    (pcase undo-item
+      (`(text-removed ,beg ,end)
+       (when (evil-goggles--show-p beg end)
+         (evil-goggles--show beg end 'evil-goggles-undo-redo-add-face))))))
+
+(defun evil-goggles--get-undo-item (list)
+  "Process LIST.
+
+The LIST is the input variable to function primitive-undo.
+
+This function tries to return a single list, either:
+('text-added beg end), or:
+('text-removed beg end)"
+  (let* ((processed-list
+          (cl-remove-if #'null (mapcar #'evil-goggles--undo-elt list))))
+    (message "processed-list %s" processed-list)
+    (cond
+     ;; if there's only item in the list, return it
+     ((eq 1 (length processed-list))
+      (car processed-list))
+
+     ;; check if first and second region are connected:
+     ;; if we have: ((text-added 2 6) (text-added 1 2))
+     ;; then return: ((text-added 1 6))
+     ;;
+     ;; or, if we have: ((text-removed 1 2) (text-removed 2 6))
+     ;; then return: ((text-removed 1 6))
+     ;;
+     ;; TODO this could be more generic, it could work for any number of items in processed-list
+     ;; for example, this should be handled as well:
+     ;;    ((text-added 43 46) (text-added 22 43) (text-added 1 22))
+     ;; should become:
+     ;;    ((text-added 1 46))
+
+     ;; TODO how can this be handled, reprodcued with Otext<esc>u:
+     ;;    ((text-added 1 5) (text-added 1 2))
+     ((and (eq 2 (length processed-list))
+           (eq (caadr processed-list) (caar processed-list)))
+      (let (
+            (change-type (caadr processed-list))
+            (start-of-first-region  (nth 1 (nth 0 processed-list)))
+            (end-of-first-region    (nth 2 (nth 0 processed-list)))
+            (start-of-second-region (nth 1 (nth 1 processed-list)))
+            (end-of-second-region   (nth 2 (nth 1 processed-list))))
+        (message "here1 %s %s" start-of-first-region end-of-second-region)
+        (cond
+         ((eq start-of-first-region end-of-second-region)
+          `(,change-type ,start-of-second-region ,end-of-first-region))
+         ((eq end-of-first-region start-of-second-region)
+          `(,change-type ,start-of-first-region ,end-of-second-region))))))))
+
+(defun evil-goggles--undo-elt (undo-elt)
+  "Process UNDO-ELT.
+
+Return a list: either ('text-added beg end) or ('text-removed beg end)"
+  (pcase undo-elt
+    ;; (BEG . END) means text added
+    (`(,(and beg (pred integerp)) . ,(and end (pred integerp)))
+     `(text-added ,beg ,end))
+    ;; (TEXT . POSITION) means text inserted
+    (`(,(and text (pred stringp)) . ,(and pos (pred integerp)))
+     (list 'text-removed pos (+ pos (length text))))
+    ;; All others return nil
+    (_ nil)))
 
 ;; join
 
@@ -389,7 +507,11 @@ BEG END &OPTIONAL TYPE are the arguments of the original function."
 ORIG-FUN is the original function.
 COUNT BEG &OPTIONAL END TYPE REGISTER are the arguments of the original function."
   (evil-goggles--with-goggles beg end 'evil-goggles-replace-with-register-face
-    (evil-goggles--funcall-preserve-interactive orig-fun count beg end type register)))
+    (evil-goggles--funcall-preserve-interactive orig-fun count beg end type register))
+
+  ;; good good
+
+  (evil-goggles--show beg (point) 'diff-added))
 
 ;;; mode defined below ;;;
 
@@ -417,6 +539,11 @@ COUNT BEG &OPTIONAL END TYPE REGISTER are the arguments of the original function
 
     (when evil-goggles-enable-yank
       (advice-add 'evil-yank :around 'evil-goggles--evil-yank-advice))
+
+    (when evil-goggles-enable-undo
+      (advice-add 'undo-tree-undo :around 'evil-goggles--undo-tree-undo-advice))
+    (when evil-goggles-enable-redo
+      (advice-add 'undo-tree-redo :around 'evil-goggles--undo-tree-undo-advice))
 
     (when evil-goggles-enable-join
       (advice-add 'evil-join :around 'evil-goggles--evil-join-advice)
@@ -453,6 +580,8 @@ COUNT BEG &OPTIONAL END TYPE REGISTER are the arguments of the original function
     (advice-remove 'evil-delete 'evil-goggles--evil-delete-advice)
     (advice-remove 'evil-indent 'evil-goggles--evil-indent-advice)
     (advice-remove 'evil-yank 'evil-goggles--evil-yank-advice)
+    (advice-remove 'undo-tree-undo 'evil-goggles--undo-tree-undo-advice)
+    (advice-remove 'undo-tree-redo 'evil-goggles--undo-tree-undo-advice)
     (advice-remove 'evil-join 'evil-goggles--evil-join-advice)
     (advice-remove 'evil-join-whitespace 'evil-goggles--evil-join-advice)
     (advice-remove 'evil-fill-and-move 'evil-goggles--evil-fill-and-move-advice)
