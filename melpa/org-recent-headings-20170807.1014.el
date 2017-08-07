@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-recent-headings
-;; Package-Version: 20170727.1633
+;; Package-Version: 20170807.1014
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "24.4") (org "9.0.5") (dash "2.13.0"))
 ;; Keywords: hypermedia, outlines, Org
@@ -380,7 +380,7 @@ With prefix argument ARG, turn on if positive, otherwise off."
   (defvar helm-source-org-recent-headings
     (helm-build-sync-source " Recent Org headings"
       :candidates (lambda () org-recent-headings-list)
-      :candidate-number-limit org-recent-headings-candidate-number-limit
+      :candidate-number-limit 'org-recent-headings-candidate-number-limit
       :candidate-transformer 'org-recent-headings--truncate-candidates
       :keymap org-recent-headings-helm-map
       :action (helm-make-actions
