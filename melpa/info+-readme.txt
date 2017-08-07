@@ -41,6 +41,7 @@
    `Info-mouse-follow-nearest-node-new-window',
    `Info-persist-history-mode' (Emacs 24.4+),
    `Info-save-current-node', `Info-set-breadcrumbs-depth',
+   `Info-set-face-for-bookmarked-xref' (Emacs 24.2+),
    `Info-toggle-breadcrumbs-in-header',
    `Info-toggle-fontify-angle-bracketed',
    `Info-toggle-fontify-bookmarked-xrefs' (Emacs 24.2+),
@@ -63,6 +64,7 @@
 
  Options (user variables) defined here:
 
+   `Info-bookmarked-node-xref-faces' (Emacs 24.2+),
    `Info-breadcrumbs-in-header-flag',
    `Info-display-node-header-fn', `Info-emphasis-regexp',
    `Info-fit-frame-flag', `Info-fontify-angle-bracketed-flag',
@@ -84,10 +86,11 @@
    `Info-bookmark-named-at-point', `Info-bookmark-name-for-node',
    `Info-display-node-default-header', `info-fontify-quotations',
    `info-fontify-reference-items',
-   `Info-insert-breadcrumbs-in-mode-line',
-   `Info-node-name-at-point', `Info-restore-history-list' (Emacs
-   24.4+), `Info-save-history-list' (Emacs 24.4+),
-   `Info-isearch-search-p', `Info-search-beg', `Info-search-end'.
+   `Info-insert-breadcrumbs-in-mode-line', `Info-isearch-search-p',
+   `Info-node-name-at-point', `Info-read-bookmarked-node-name',
+   `Info-restore-history-list' (Emacs 24.4+),
+   `Info-save-history-list' (Emacs 24.4+), `Info-search-beg',
+   `Info-search-end'.
 
  Internal variables defined here:
 
@@ -161,21 +164,55 @@
  Library `info+.el' extends the standard Emacs library `info.el' in
  several ways.  It provides:
 
- * Coloring of links for nodes that have associated bookmarks using
-   a different face.  Option `Info-fontify-bookmarked-xrefs-flag'
-   controls whether this is done.  You can use `C-h C-b' to
-   describe the bookmark, which shows the tags for that node and
-   the number of times you have visited it.  You need library
-   Bookmark+ for this feature.
+ * Association of additional information (metadata) with Info
+   nodes.  You do this by bookmarking the nodes.  Library Bookmark+
+   gives you the following features in combination with `info+.el'.
+   In many ways an Info node and its default bookmark can be
+   thought of as the same animal.
 
- * If option `Info-node-access-invokes-bookmark-flag' is non-nil
-   then going to a bookmarked Info node invokes the bookmark, so
-   bookmark data gets updated.  Command
-   `Info-toggle-node-access-invokes-bookmark' toggles the option
-   value.  You need library Bookmark+ for this feature.
+   - Rich node metadata.  In particular, you can tag nodes with any
+     number of arbitrary tags, to classify them in different and
+     overlapping ways.  You can also annotate them (in Org mode, by
+     default).
 
- * Additional, finer-grained highlighting.  This can make a big
-   difference in readability.
+   - You can use `C-h C-b' to show the metadata for a (bookmarked)
+     node.  This is all of the associated bookmark information,
+     including the annotation and tags for that node and the number
+     of times you have visited it.  If invoked with point on a
+     link, the targeted node is described; otherwise, you are
+     prompted for the node name.
+
+   - Links for bookmarked nodes can have a different face, to let
+     you know that those nodes have associated metadata.  Option
+     `Info-fontify-bookmarked-xrefs-flag' controls whether this is
+     done.
+
+   - The face for this is `info-xref-bookmarked' by default, but
+     you can set the face to use for a given Info bookmark using
+     `C-x f' (command `Info-set-face-for-bookmarked-xref').  This
+     gives you an easy way to classify nodes and show the class of
+     a node by its links.  Uses faces to make clear which nodes are
+     most important to you, or which are related to this or that
+     general topic.
+
+   - If option `Info-node-access-invokes-bookmark-flag' is non-nil
+     then going to a bookmarked Info node invokes its bookmark, so
+     that the node metadata (such as number of visits) gets
+     updated.  Command `Info-toggle-node-access-invokes-bookmark'
+     toggles the option value.
+
+   - You can automatically bookmark nodes you visit, by enabling
+     mode `bmkp-info-auto-bookmark-mode'.  Toggle the mode off
+     anytime you do not want to record Info visits.
+
+   - In the bookmark-list display (from `C-x r l') you can sort
+     bookmarks by the time of last visit (`s d') or by the number
+     of visits (`s v').  This gives you an easy way to see which
+     parts of which Info manuals you have visited most recently and
+     how much you have visited them.
+
+ * Additional, finer-grained Info highlighting.  This can make a
+   big difference in readability.
 
    - Quoted names, like this: `name-stands-out' or
      `name-stands-out', and strings, like this: "string-stands-out"
