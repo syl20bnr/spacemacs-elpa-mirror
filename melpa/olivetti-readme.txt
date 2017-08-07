@@ -29,14 +29,14 @@ Requirements
 Installation
 ------------
 
-Olivetti is available through [MELPA][] and [MELPA-stable][]. I
+Olivetti is available through [MELPA] and [MELPA-stable]. I
 encourage installing the stable version.
 
-Alternately, download the [latest release][] and put it in your
+Alternately, download the [latest release] and put it in your
 `load-path`.
 
 [melpa]: https://melpa.org/ "MELPA"
-[melpa-stable]: https://stable.melpa.org/ "MELPA"
+[melpa-stable]: https://stable.melpa.org/ "MELPA Stable"
 [latest release]: https://github.com/rnkn/olivetti/releases/latest "Olivetti latest release"
 
 Known Bugs
@@ -46,14 +46,14 @@ Known Bugs
   making it incompatible with Olivetti. More information here:
   <http://debbugs.gnu.org/20674>.
 
-Please report bugs on GitHub [Issues][] page.
+Please report bugs on GitHub [Issues] page.
 
 [issues]: https://github.com/rnkn/olivetti/issues "Olivetti issues"
 
 History
 -------
 
-See [Releases][].
+See [Releases].
 
 [releases]: https://github.com/rnkn/olivetti/releases "Olivetti releases"
 
