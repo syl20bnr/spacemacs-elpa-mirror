@@ -3,8 +3,8 @@
 
 ;; Copyright 2011-2017 François-Xavier Bois
 
-;; Version: 15.0.3
-;; Package-Version: 20170709.922
+;; Version: 15.0.5
+;; Package-Version: 20170807.903
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; Package-Requires: ((emacs "23.1"))
@@ -25,7 +25,7 @@
 
 ;;---- CONSTS ------------------------------------------------------------------
 
-(defconst web-mode-version "15.0.3"
+(defconst web-mode-version "15.0.5"
   "Web Mode version.")
 
 ;;---- GROUPS ------------------------------------------------------------------
@@ -783,6 +783,7 @@ Must be used in conjunction with web-mode-enable-block-face."
     ("python"           . ())
     ("razor"            . ("play" "play2"))
     ("riot"             . ())
+    ("spip"             . ())
     ("template-toolkit" . ())
     ("smarty"           . ())
     ("thymeleaf"        . ())
@@ -867,8 +868,14 @@ Must be used in conjunction with web-mode-enable-block-face."
     )
   "Engine file extensions.")
 
+(defvar web-mode-content-types-alist nil
+  "A list of filename patterns and corresponding web-mode content types. For example,
+(setq web-mode-content-types-alist
+  '((\"json\" . \"/some/path/.*\\.api\\'\")
+    (\"jsx\"  . \"/some/react/path/.*\\.js[x]?\\'\")))")
+
 (defvar web-mode-engines-alist nil
-  "Alist of filename patterns and corresponding web-mode engine. For example,
+  "A list of filename patterns and corresponding web-mode engine. For example,
 (setq web-mode-engines-alist
       '((\"php\"    . \"\\\\.phtml\\\\'\")
         (\"blade\"  . \"\\\\.blade\\\\.\")))")
@@ -1162,6 +1169,7 @@ Must be used in conjunction with web-mode-enable-block-face."
    '("razor"            . "@.\\|^[ \t]*}")
    '("riot"             . "{.")
    '("smarty"           . "{[[:alpha:]#$/*\"]")
+   '("spip"             . "\\[(#REM)\\|(\\|#[A-Z0-9_]\\|{\\|<:")
    '("template-toolkit" . "\\[%.\\|%%#")
    '("underscore"       . "<%")
    '("velocity"         . "#[[:alpha:]#*]\\|$[[:alpha:]!{]")
@@ -2077,6 +2085,14 @@ shouldn't be moved back.)")
    '("\\_<\\([$]\\)\\([[:alnum:]_]*\\)" (1 nil) (2 'web-mode-variable-name-face))
    ))
 
+(defvar web-mode-spip-font-lock-keywords
+  (list
+   '("<:.+:>" 0 'web-mode-block-string-face)
+   '("#[A-Z0-9_]+" 0 'web-mode-variable-name-face)
+   '("|[a-z0-9_=!?<>]+" 0 'web-mode-function-call-face)
+   '("(\\([[:alnum:]_ ]+\\))" 1 'web-mode-constant-face)
+   ))
+
 (defvar web-mode-latex-font-lock-keywords
   (list
    '("[[:alnum:]_]+" 0 'web-mode-function-name-face t t)
@@ -2108,6 +2124,7 @@ shouldn't be moved back.)")
     ("razor"            . web-mode-razor-font-lock-keywords)
     ("riot"             . web-mode-riot-font-lock-keywords)
     ("smarty"           . web-mode-smarty-font-lock-keywords)
+    ("spip"             . web-mode-spip-font-lock-keywords)
     ("template-toolkit" . web-mode-template-toolkit-font-lock-keywords)
     ("underscore"       . web-mode-underscore-font-lock-keywords)
     ("web2py"           . web-mode-web2py-font-lock-keywords)
@@ -2972,6 +2989,21 @@ another auto-completion with different ac-sources (e.g. ac-php)")
                 delim-close "}")
           ) ;riot
 
+         ((string= web-mode-engine "spip")
+          (cond
+           ((and (string= sub1 "#")
+                 (looking-at "[A-Z0-9_]+"))
+            (setq closing-string (match-string-no-properties 0)))
+           ((string= sub1 "(")
+            (setq closing-string '("(" . ")")))
+           ((string= sub1 "{")
+            (setq closing-string '("{" . "}")))
+           ((string= sub2 "<:")
+            (setq closing-string ":>"))
+           (t
+            (setq closing-string "]"))
+            ))
+
          ((string= web-mode-engine "marko")
           (setq closing-string "}"
                 delim-open "${"
@@ -3443,6 +3475,13 @@ another auto-completion with different ac-sources (e.g. ac-php)")
        (t
         (setq regexp "\"\\|'")))
       ) ;xoops
+
+     ((string= web-mode-engine "spip")
+      (if (string= (buffer-substring-no-properties
+                    block-beg (+ block-beg 7))
+                   "[(#REM)")
+          (setq token-type 'comment
+                regexp "\\]")))
 
      ((string= web-mode-engine "dust")
       (cond
@@ -7577,7 +7616,7 @@ another auto-completion with different ac-sources (e.g. ac-php)")
          ;;((and (member language '("javascript" "jsx" "ejs" "php"))
          ((and (member language '("php"))
                (or (and (eq prev-char ?\))
-                        (string-match-p "^\\(for\\|if\\|while\\)[ ]*(" prev-line))
+                        (string-match-p "^\\(for\\|if\\|else[ ]*if\\|while\\)[ ]*(" prev-line))
                    (and is_js
                         (web-mode-part-is-opener prev-pos reg-beg))
                    (string-match-p "^else$" prev-line))
@@ -10554,6 +10593,10 @@ Prompt user if TAG-NAME isn't provided."
         ) ;let
       ) ;when
     ) ;while
+  ;; Delete a potential space before the closing ">".
+  (if (and (looking-at ">")
+           (looking-back " "))
+        (delete-char -1))
   )
 
 (defun web-mode-block-close (&optional pos)
@@ -12712,6 +12755,9 @@ Prompt user if TAG-NAME isn't provided."
       (setq web-mode-django-control-blocks-regexp
             (regexp-opt web-mode-django-control-blocks t))
       )
+
+    (when (string= web-mode-engine "spip")
+      (modify-syntax-entry ?# "w" (syntax-table)))
 
 ;;    (message "%S" (symbol-value (cdr (assoc web-mode-engine web-mode-engines-font-lock-keywords))))
 

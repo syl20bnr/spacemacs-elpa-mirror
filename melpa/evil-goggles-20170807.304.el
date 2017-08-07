@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20170805.2343
+;; Package-Version: 20170807.304
 ;; Package-Requires: ((emacs "25") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -298,9 +298,9 @@ This function tries to return a single list, either:
      ;; TODO how can this be handled, reprodcued with Otext<esc>u:
      ;;    ((text-added 1 5) (text-added 1 2))
      ((and (eq 2 (length processed-list))
-           (eq (caadr processed-list) (caar processed-list)))
+           (eq (car (car (cdr processed-list))) (caar processed-list)))
       (let (
-            (change-type (caadr processed-list))
+            (change-type (car (car (cdr processed-list))))
             (start-of-first-region  (nth 1 (nth 0 processed-list)))
             (end-of-first-region    (nth 2 (nth 0 processed-list)))
             (start-of-second-region (nth 1 (nth 1 processed-list)))

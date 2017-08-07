@@ -5,7 +5,7 @@
 ;; Author: Eric Schulte
 ;; Maintainer: Chen Bin (redguardtoo)
 ;; Keywords: mime, mail, email, html
-;; Package-Version: 20170506.2244
+;; Package-Version: 20170807.549
 ;; Homepage: http://github.com/org-mime/org-mime
 ;; Version: 0.0.7
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
@@ -81,6 +81,9 @@
 ;;   (add-hook 'org-mode-hook
 ;;             (lambda ()
 ;;               (local-set-key (kbd "C-c M-o") 'org-mime-org-buffer-htmlize)))
+;;
+;; In order to embed image into your mail, use below org syntax,
+;;   [[/full/path/to/your.jpg]]
 
 ;;; Code:
 (require 'cl-lib)

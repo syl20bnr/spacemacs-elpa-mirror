@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/helm-org-rifle
-;; Package-Version: 20170807.101
+;; Package-Version: 20170807.611
 ;; Version: 1.5.0-pre
 ;; Package-Requires: ((emacs "24.4") (dash "2.12") (f "0.18.1") (helm "1.9.4") (s "1.10.0"))
 ;; Keywords: hypermedia, outlines
@@ -733,175 +733,189 @@ POSITION is the position in BUFFER where the candidate heading
 begins.
 
 This is how the sausage is made."
-  (-let* ((buffer-name (buffer-name buffer))
-          ((includes excludes tags todo-keywords) (helm-org-rifle--parse-input input))
-          (excludes-re (when excludes
-                         ;; NOTE: Excludes only match against whole
-                         ;; words.  This probably makes sense.
-                         ;; TODO: Might be worth mentioning in docs.
-                         (rx-to-string `(seq bow (or ,@excludes) eow) t)))
-          (tags (--map (s-wrap it ":") tags))  ; Wrap tags in ":" for the regexp
-          (positive-tokens (append includes tags))
-          (positive-re (rx-to-string `(seq (or ,@positive-tokens))))
-          (positive-re-list (mapcar #'regexp-quote positive-tokens))
-          (context-re (rx-to-string `(seq (repeat 0 ,helm-org-rifle-context-characters not-newline)
-                                          (or ,@positive-tokens)
-                                          (repeat 0 ,helm-org-rifle-context-characters not-newline))
-                                    t))
-          ;; TODO: Turn off case folding if tokens contains mixed case
-          (case-fold-search t)
-          (results nil))
-    (with-current-buffer buffer
+  (with-current-buffer buffer
+    ;; Run this in the buffer so we can get its todo-keywords (i.e. `org-todo-keywords-1')
+    (-let* ((buffer-name (buffer-name buffer))
+            ((includes excludes include-tags exclude-tags todo-keywords) (helm-org-rifle--parse-input input))
+            (excludes-re (when excludes
+                           ;; NOTE: Excludes only match against whole words.  This probably makes sense.
+                           ;; TODO: Might be worth mentioning in docs.
+                           (rx-to-string `(seq (or ,@excludes)) t)))
+            (include-tags (--map (s-wrap it ":") include-tags))  ; Wrap include-tags in ":" for the regexp
+            (positive-re (rx-to-string `(seq (or ,@(append includes include-tags todo-keywords)))))
+            ;; NOTE: We leave todo-keywords out of the required-positive-re-list,
+            ;; because that is used to verify that all positive tokens
+            ;; are matched in an entry, and we want todo-keywords to
+            ;; match OR-wise.
+            (required-positive-re-list (mapcar #'regexp-quote (append includes include-tags)))
+            (context-re (rx-to-string `(seq (repeat 0 ,helm-org-rifle-context-characters not-newline)
+                                            (or ,@(append includes include-tags todo-keywords))
+                                            (repeat 0 ,helm-org-rifle-context-characters not-newline))
+                                      t))
+            ;; TODO: Turn off case folding if tokens contains mixed case
+            (case-fold-search t)
+            (results nil))
       (save-excursion
-
         ;; Go to first heading
         (goto-char (point-min))
         (when (org-before-first-heading-p)
           (outline-next-heading))
-
         ;; Search for matching nodes
-        (while (re-search-forward positive-re nil t)
-          (catch 'negated  ; Skip node if excludes found
-            (let* ((node-beg (or (save-excursion
-                                   (save-match-data
-                                     (outline-previous-heading)))
-                                 (point)))
-                   (node-end (or (save-match-data  ; HACK: This is confusing; should these be reversed here?  Does it matter?
-                                   (save-excursion
-                                     (outline-next-heading)))
-                                 (point-max)))
-                   (components (org-heading-components))
-                   (path (when helm-org-rifle-show-path
-                           (org-get-outline-path)))
-                   (priority (when (nth 3 components)
-                               ;; TODO: Is there a better way to do this?  The
-                               ;; s-join leaves an extra space when there's no
-                               ;; priority.
-                               (concat "[#" (char-to-string (nth 3 components)) "]")))
-                   (tags (nth 5 components))
-                   (heading (s-trim (if helm-org-rifle-show-todo-keywords
-                                        (s-join " " (list (nth 2 components) priority (nth 4 components)))
-                                      (nth 4 components))))
-                   matching-positions-in-node
-                   matching-lines-in-node
-                   matched-words-with-context)
+        (cl-loop while (re-search-forward positive-re nil t)
+                 for result = (save-excursion
+                                (helm-org-rifle--test-entry))
+                 when result
+                 collect result
+                 do (outline-next-heading))))))
 
-              ;; Goto beginning of node
-              (when node-beg
-                (goto-char node-beg))
+(defun helm-org-rifle--test-entry ()
+  "Return list of entry data if entry at point matches.
+This is to be called from `helm-org-rifle--get-candidates-in-buffer',
+because it uses variables in its outer scope."
+  (-let* ((node-beg (org-entry-beginning-position))
+          (node-end (org-entry-end-position))
+          ((level reduced-level todo-keyword priority-char heading tags priority) (org-heading-components))
+          (path (when helm-org-rifle-show-path
+                  (org-get-outline-path)))
+          (priority (when priority-char
+                      ;; TODO: Is there a better way to do this?  The
+                      ;; s-join leaves an extra space when there's no
+                      ;; priority.
+                      (format "[#%c]" priority-char)))
+          (heading (s-trim (if helm-org-rifle-show-todo-keywords
+                               (s-join " " (list todo-keyword priority heading))
+                             heading)))
+          (matching-positions-in-node nil)
+          (matching-lines-in-node nil)
+          (matched-words-with-context nil))
+    ;; Goto beginning of node
+    (goto-char node-beg)
 
-              ;; Check excludes
-              (when excludes
-                ;; TODO: Maybe match against a heading's inherited tags, if it's not too slow.
+    (unless
+        (or  ;; Check to-do keywords and excludes
+         (when todo-keywords
+           (not (member todo-keyword todo-keywords)))
+         (when (and exclude-tags tags)
+           (cl-intersection (org-split-string tags ":") exclude-tags
+                            :test #'string=))
+         ;; Check normal excludes
+         (when excludes
+           ;; TODO: Maybe match against a heading's inherited tags, if it's not too slow.
 
-                ;; FIXME: Partial excludes seem to put the partially
-                ;; negated entry at the end of results.  Not sure why.
-                ;; Could it actually be a good feature, though?
-                (when (or (cl-loop for elem in (or path (org-get-outline-path))
-                                   thereis (string-match-p excludes-re elem))
-                          ;; FIXME: Doesn't quite match properly with
-                          ;; special chars, e.g. negating "!scratch"
-                          ;; properly excludes the "*scratch*" buffer,
-                          ;; but negating "!*scratch*" doesn't'.
-                          (string-match excludes-re buffer-name)
-                          (save-excursion
-                            (re-search-forward excludes-re node-end t)))
-                  (throw 'negated (goto-char node-end))))
+           ;; FIXME: Partial excludes seem to put the partially
+           ;; negated entry at the end of results.  Not sure why.
+           ;; Could it actually be a good feature, though?
+           (or (cl-loop for elem in (or path (org-get-outline-path))
+                        thereis (string-match-p excludes-re elem))
+               ;; FIXME: Doesn't quite match properly with
+               ;; special chars, e.g. negating "!scratch"
+               ;; properly excludes the "*scratch*" buffer,
+               ;; but negating "!*scratch*" doesn't'.
+               (string-match excludes-re buffer-name)
+               (save-excursion
+                 (re-search-forward excludes-re node-end t)))))
 
+      ;; No excludes match; collect entry data
+      (let (matching-positions-in-node matching-lines-in-node matched-words-with-context entry)
+        (setq matching-positions-in-node
               ;; Get beginning-of-line positions for matching lines in node
-              (setq matching-positions-in-node
-                    (cl-loop
-                     ;; FIXME: This goto-char should be unnecessary now
-                     initially (goto-char node-beg)
-                     while (re-search-forward positive-re node-end t)
-                     collect (line-beginning-position) into result
-                     do (end-of-line)
-                     finally return (sort (delete-dups result) '<)))
+              (save-excursion
+                (cl-loop
+                 while (re-search-forward positive-re node-end t)
+                 collect (line-beginning-position) into result
+                 do (end-of-line)
+                 finally return (sort (delete-dups result) '<))))
 
+        (setq matching-lines-in-node
               ;; Get list of line-strings containing any token
-              (setq matching-lines-in-node
-                    (cl-loop with string
-                             for pos in matching-positions-in-node
-                             do (goto-char pos)
-                             unless (org-at-heading-p) ; Leave headings out of list of matched lines
-                             ;; Get text of each matching line
-                             ;; (DISPLAY . REAL) format for Helm
-                             collect `(,(buffer-substring-no-properties (line-beginning-position)
-                                                                        (line-end-position))
-                                       . (,buffer ,pos))))
+              (cl-loop with string
+                       for pos in matching-positions-in-node
+                       do (goto-char pos)
+                       unless (org-at-heading-p) ; Leave headings out of list of matched lines
+                       ;; Get text of each matching line
+                       ;; (DISPLAY . REAL) format for Helm
+                       collect (cons (buffer-substring-no-properties (line-beginning-position)
+                                                                     (line-end-position))
+                                     (cons buffer pos))))
 
-              ;; Verify all tokens are contained in each matching node
-              (when (cl-loop with targets = (append (-non-nil (list buffer-name
-                                                                    heading
-                                                                    tags))
-                                                    (mapcar 'car matching-lines-in-node))
-                             for re in positive-re-list
-                             always (cl-loop for target in targets
-                                             thereis (s-matches? re target)))
+        ;; Verify all tokens are contained in each matching node
+        (when (cl-loop with targets = (append (-non-nil (list buffer-name
+                                                              heading
+                                                              tags))
+                                              (mapcar 'car matching-lines-in-node))
+                       for re in required-positive-re-list
+                       always (cl-loop for target in targets
+                                       thereis (s-matches? re target)))
 
-                ;; Node matches all tokens
-                (unless helm-org-rifle-show-full-contents
-                  (setq matched-words-with-context
-                        (or (cl-loop for line in (mapcar 'car matching-lines-in-node)
-                                     ;; Matching entry text found
-                                     do (when helm-org-rifle-unlinkify-entry-links
-                                          (setq line (helm-org-rifle-replace-links-in-string line)))
-                                     append (cl-loop with end
-                                                     for match = (string-match context-re line end)
-                                                     while match
-                                                     do (setq end (match-end 0))
-                                                     and collect (s-trim (match-string-no-properties 0 line))))
-                            (when (> helm-org-rifle-always-show-entry-contents-chars 0)
-                              ;; No match in entry text; add desired entry text
-                              (list (s-truncate helm-org-rifle-always-show-entry-contents-chars (helm-org-rifle--get-entry-text buffer node-beg)))))))
+          ;; All tokens match; collect and return data
+          (setq matched-words-with-context
+                (if helm-org-rifle-show-full-contents
+                    ""  ; Don't collect context
+                  (or (cl-loop for line in (mapcar 'car matching-lines-in-node)
+                               ;; Matching entry text found
+                               do (when helm-org-rifle-unlinkify-entry-links
+                                    (setq line (helm-org-rifle-replace-links-in-string line)))
+                               append (cl-loop with end
+                                               for match = (string-match context-re line end)
+                                               while match
+                                               do (setq end (match-end 0))
+                                               and collect (s-trim (match-string-no-properties 0 line))))
+                      (when (> helm-org-rifle-always-show-entry-contents-chars 0)
+                        ;; No match in entry text; add desired entry text
+                        (list (s-truncate helm-org-rifle-always-show-entry-contents-chars
+                                          (helm-org-rifle--get-entry-text buffer node-beg)))))))
 
-                ;; Return list in format: (text-for-display node-beg)
-                (let* ((heading (if path
-                                    (if helm-org-rifle-fontify-headings
-                                        (concat (org-format-outline-path
-                                                 ;; Replace links in path elements with plain text, otherwise
-                                                 ;; they will be truncated by `org-format-outline-path' and only
-                                                 ;; show part of the URL.  FIXME: Use org-link-display-format function
-                                                 (-map 'helm-org-rifle-replace-links-in-string (append path (list heading))))
-                                                (if tags
-                                                    (concat " " (helm-org-rifle-fontify-like-in-org-mode tags))
-                                                  ""))
-                                      ;; Not fontifying
-                                      (s-join "/" (append path
-                                                          (list heading)
-                                                          tags)))
-                                  ;; No path or not showing path
-                                  (if helm-org-rifle-fontify-headings
-                                      (helm-org-rifle-fontify-like-in-org-mode
-                                       (s-join " " (list (s-repeat (nth 0 components) "*")
-                                                         heading
-                                                         (concat tags " "))))
-                                    ;; Not fontifying
-                                    (s-join " " (list (s-repeat (nth 0 components) "*")
-                                                      heading
-                                                      tags)))))
-                       (entry (if helm-org-rifle-show-full-contents
-                                  (s-join helm-org-rifle-heading-contents-separator (list heading (buffer-substring (save-excursion
-                                                                                                                      (goto-char node-beg)
-                                                                                                                      (forward-line 1)
-                                                                                                                      (point))
-                                                                                                                    node-end)))
-                                ;; Show context strings
-                                (s-join helm-org-rifle-heading-contents-separator (list heading (s-join helm-org-rifle-ellipsis-string matched-words-with-context))))))
-                  (push (cons entry (cons buffer node-beg))
-                        results)))
-              ;; Go to end of node
-              (goto-char node-end))))))
-    ;; Return results in the order they appear in the org file
-    (nreverse results)))
+          (setq heading
+                (if path
+                    (if helm-org-rifle-fontify-headings
+                        (concat (org-format-outline-path
+                                 ;; Replace links in path elements with plain text, otherwise
+                                 ;; they will be truncated by `org-format-outline-path' and only
+                                 ;; show part of the URL.  FIXME: Use org-link-display-format function
+                                 (-map 'helm-org-rifle-replace-links-in-string (append path (list heading))))
+                                (if tags
+                                    (concat " " (helm-org-rifle-fontify-like-in-org-mode tags))
+                                  ""))
+                      ;; Not fontifying
+                      (s-join "/" (append path (list heading) tags)))
+                  ;; No path or not showing path
+                  (if helm-org-rifle-fontify-headings
+                      (helm-org-rifle-fontify-like-in-org-mode
+                       (s-join " " (list (s-repeat level "*") heading (concat tags " "))))
+                    ;; Not fontifying
+                    (s-join " " (list (s-repeat level "*") heading tags)))))
+
+          (setq entry
+                (if helm-org-rifle-show-full-contents
+                    (s-join helm-org-rifle-heading-contents-separator
+                            (list heading
+                                  (buffer-substring (save-excursion
+                                                      (goto-char node-beg)
+                                                      (org-end-of-meta-data)
+                                                      (point))
+                                                    node-end)))
+                  ;; Show context strings
+                  (s-join helm-org-rifle-heading-contents-separator
+                          (list heading
+                                (s-join helm-org-rifle-ellipsis-string
+                                        matched-words-with-context)))))
+          ;; Return list in format: text-for-display node-beg
+          (cons entry (cons buffer node-beg)))))))
 
 (defun helm-org-rifle--parse-input (input)
   "Return list of token types in INPUT string.
-Returns (INCLUDES EXCLUDES TAGS TODO-KEYWORDS)."
-  (let ((tags-regexp (rx bos (1+ ":" (1+ (char alnum "_"))) ":" eos))
-        includes excludes tags todo-keywords)
+Returns (INCLUDES EXCLUDES INCLUDE-TAGS EXCLUDE-TAGS TODO-KEYWORDS)."
+  (let ((tags-regexp (rx bos (optional "!") (1+ ":" (1+ (char alnum "_"))) ":" eos))
+        includes excludes include-tags exclude-tags todo-keywords)
     (dolist (token (split-string input " " t))
       (pcase token
+        ;; Tags
+        ((pred (string-match tags-regexp))
+         (if (string-match "^!" token)
+             ;; Exclude tag
+             (setq exclude-tags (append exclude-tags (org-split-string (cl-subseq token 1) ":")))
+           ;; Match tag
+           (setq include-tags (append include-tags (org-split-string token ":")))))
         ;; Negation
         ((pred (string-match "^!")
                ;; Ignore bare "!"
@@ -910,12 +924,9 @@ Returns (INCLUDES EXCLUDES TAGS TODO-KEYWORDS)."
         ;; TODO keyword
         ((guard (member token org-todo-keywords-1))
          (push token todo-keywords))
-        ;; Tags
-        ((pred (string-match tags-regexp))
-         (setq tags (append tags (org-split-string token ":"))))
         ;; Positive terms
         (otherwise (push token includes))))
-    (list includes excludes tags todo-keywords)))
+    (list includes excludes include-tags exclude-tags todo-keywords)))
 
 ;;;;; Occur-style
 
