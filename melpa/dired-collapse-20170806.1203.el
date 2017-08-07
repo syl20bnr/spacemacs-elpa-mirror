@@ -5,7 +5,7 @@
 ;; Author: Matúš Goljer <matus.goljer@gmail.com>
 ;; Maintainer: Matúš Goljer <matus.goljer@gmail.com>
 ;; Version: 0.0.1
-;; Package-Version: 20170803.158
+;; Package-Version: 20170806.1203
 ;; Created: 15th July 2017
 ;; Package-requires: ((dash "2.10.0") (f "0.19.0"))
 ;; Keywords: files
@@ -123,11 +123,11 @@ COLUMN-INFO is a data structure returned by
      (make-string
       (save-excursion
         (when has-link-count-p (forward-word))
-        (- user-column (current-column)))
+	(max 0 (- user-column (current-column))))
       32))
     (when has-link-count-p (forward-word))
     (forward-word)
-    (insert (make-string (- group-column (current-column)) 32))
+    (insert (make-string (max 0 (- group-column (current-column))) 32))
     (insert
      (make-string
       (progn

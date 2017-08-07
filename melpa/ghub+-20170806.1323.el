@@ -6,7 +6,7 @@
 ;; Keywords: extensions, multimedia, tools
 ;; Homepage: https://github.com/vermiculus/ghub-plus
 ;; Package-Requires: ((emacs "25") (ghub "1.2") (apiwrap "0.1.2"))
-;; Package-Version: 20170803.1820
+;; Package-Version: 20170806.1323
 ;; Package-X-Original-Version: 0.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -60,7 +60,10 @@
      (label . "LABEL is a label object of the form returned by `ghubp-get-repos-owner-repo-issues-number-labels'.")
      (ref . "REF is a string and can be a SHA, a branch name, or a tag name.")
      (milestone . "MILESTONE is a milestone object.")
-     (user . "USER is a user object."))
+     (user . "USER is a user object.")
+     (user-1 . "USER-1 is a user object.")
+     (user-2 . "USER-2 is a user object.")
+     (key . "KEY is a key object."))
    :get #'ghub-get :put #'ghub-put :head #'ghub-head
    :post #'ghub-post :patch #'ghub-patch :delete #'ghub-delete
 
@@ -578,6 +581,128 @@ organization."
   "repos/#get"
   (repo) "/repos/:repo.owner.login/:repo.name")
 
+;;; Users
+(defapiget-ghubp "/users/:username"
+  "Get a single user."
+  "users/#get-a-single-user"
+  (user) "/users/:user.login")
+
+(defapiget-ghubp "/user"
+  "Get the authenticated user."
+  "users/#get-the-authenticated-user")
+
+(defapipatch-ghubp "/user"
+  "Update the authenticated user."
+  "users/#update-the-authenticated-user")
+
+(defapiget-ghubp "/users"
+  "Get all users.
+Lists all users, in the order that they signed up on GitHub. This
+list includes personal user accounts and organization accounts."
+  "users/#get-all-users")
+
+;; Users - Emails
+
+(defapiget-ghubp "/user/emails"
+  "List email addresses for a user."
+  "users/emails/#list-email-addresses-for-a-user")
+
+(defapiget-ghubp "/user/public_emails"
+  "List public email addresses for a user."
+  "users/emails/#list-public-email-addresses-for-a-user")
+
+(defapipost-ghubp "/user/emails"
+  "Add email address(es).
+You can post a single email address or an array of addresses."
+  "users/emails/#add-email-addresses")
+
+(defapidelete-ghubp "/user/emails"
+  "Delete email address(es).
+You can post a single email address or an array of addresses."
+  "users/emails/#add-email-addresses")
+
+(defapipatch-ghubp "/user/email/visibility"
+  "Toggle primary email visibility."
+  "users/emails/#toggle-primary-email-visibility")
+
+;; Users - Followers
+
+(defapiget-ghubp "/users/:username/followers"
+  "List a user's followers."
+  "users/followers/#list-followers-of-a-user"
+  (user) "/users/:user.login/followers")
+
+(defapiget-ghubp "/user/followers"
+  "List the authenticated user's followers."
+  "users/followers/#list-followers-of-a-user")
+
+(defapiget-ghubp "/users/:username/following"
+  "List who USER is following."
+  "users/followers/#list-users-followed-by-another-user"
+  (user) "/users/:user.login/following")
+
+(defapiget-ghubp "/user/following"
+  "List who the authenticated user is following."
+  "users/followers/#list-users-followed-by-another-user")
+
+(defapiget-ghubp "/user/following/:username"
+  "Check if you are following USER."
+  "users/followers/#check-if-you-are-following-a-user"
+  (user) "/user/following/:user.login")
+
+(defapiget-ghubp "/users/:username/following/:target_user"
+  "Check if USER-1 follows USER-2."
+  "users/followers/#check-if-you-are-following-a-user"
+  (user-1 user-2) "/users/:user-1.login/following/:user-2.login")
+
+(defapiput-ghubp "/user/following/:username"
+  "Follow USER."
+  "users/followers/#follow-a-user"
+  (user) "/user/following/:user.login")
+
+(defapidelete-ghubp "/user/following/:username"
+  "Unfollow USER."
+  "users/followers/#unfollow-a-user"
+  (user) "/user/following/:user.login")
+
+;; Users - Git SSH Keys
+
+(defapiget-ghubp "/users/:username/keys"
+  "Lists the verified public keys for a user.
+This is accessible by anyone."
+  "users/keys/#list-public-keys-for-a-user"
+  (user) "/users/:user.login/keys")
+
+(defapiget-ghubp "/user/keys"
+  "List your public keys."
+  "users/keys/#list-your-public-keys")
+
+(defapiget-ghubp "/user/keys/:id"
+  "Get a single public key."
+  "users/keys/#get-a-single-public-key"
+  (key) "/user/keys/:key.id")
+
+(defapiput-ghubp "/user/keys"
+  "Create a public key."
+  "users/keys/#create-a-public-key")
+
+(defapidelete-ghubp "/user/keys/:id"
+  "Delete a single public key."
+  "users/keys/#get-a-single-public-key"
+  (key) "/user/keys/:key.id")
+
+;; Users - GPG Keys
+
+;; TODO: Currently in preview.
+
+;; https://developer.github.com/v3/users/gpg_keys/
+
+;; Users - Blocking
+
+;; TODO: Currently in preview.
+
+;; https://developer.github.com/v3/users/blocking/
+
 ;;; Unfiled
 
 (defapiget-ghubp "/repos/:owner/:repo/commits/:ref/statuses"
@@ -589,10 +714,6 @@ organization."
   "Get the combined status for a specific ref"
   "repos/statuses/#get-the-combined-status-for-a-specific-ref"
   (repo ref) "/repos/:repo.owner.login/:repo.name/commits/:ref/status")
-
-(defapiget-ghubp "/user"
-  "Return the currently authenticated user"
-  "users/#get-the-authenticated-user")
 
 (defapiget-ghubp "/notifications"
   "List all notifications for the current user, grouped by repository"
