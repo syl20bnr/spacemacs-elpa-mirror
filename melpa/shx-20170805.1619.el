@@ -3,10 +3,10 @@
 ;; Authors: Chris Rayner (dchrisrayner @ gmail)
 ;; Created: May 23 2011
 ;; Keywords: processes, tools
-;; Package-Version: 20170714.1041
+;; Package-Version: 20170805.1619
 ;; Homepage: https://github.com/riscy/shx-for-emacs
 ;; Package-Requires: ((emacs "24.4"))
-;; Version: 0.0.8
+;; Version: 0.0.9
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -395,7 +395,7 @@ FILES can have various styles of quoting and escaping."
 (defun shx--quote-regexp (delimiter &optional escape max-length)
   "Regexp matching strings delimited by DELIMITER.
 ESCAPE is the string that can be used to escape the delimiter.
-MAX-LENGTH is the length of the longest match (default 80)."
+MAX-LENGTH is the length of the longest match (default 300)."
   (concat delimiter
           "\\("
           (when escape
@@ -403,7 +403,7 @@ MAX-LENGTH is the length of the longest match (default 80)."
                     escape delimiter "\\|")) ; escaped delimiter
           "[^" delimiter "]"
           "\\)"
-          "\\{0," (format "%d" (or max-length 80)) "\\}"
+          "\\{0," (format "%d" (or max-length 300)) "\\}"
           delimiter))
 
 (defun shx--safe-as-markup-p (command)
@@ -908,7 +908,9 @@ See the function `shx-mode' for details."
     (unless shx--old-undo-disabled (buffer-disable-undo)))
   ;; do this one with a delay because spacemacs tries to set this variable too:
   (shx--asynch-funcall (lambda () (setq comint-input-sender 'shx-filter-input)))
-  (add-hook 'comint-output-filter-functions #'shx-parse-output-hook nil t))
+  (add-hook 'comint-output-filter-functions #'shx-parse-output-hook nil t)
+  (unless (derived-mode-p 'comint-mode)
+    (message "WARNING: shx is incompatible with `%s'" major-mode)))
 
 (defun shx--deactivate ()
   "Remove font-locks and hooks, and restore variable defaults."
@@ -934,6 +936,13 @@ This function only works when the shx minor mode is active."
     ;; `recenter'ing errors when this isn't the active buffer:
     (ignore-errors (comint-show-maximum-output))))
 
+(defun shx-flash-prompt (&rest _args)
+  "Flash the text on the line with the highlight face."
+  (setq-local shx-prompt-overlay (make-overlay (point) (point-at-eol)))
+  (overlay-put shx-prompt-overlay 'face 'highlight)
+  (sit-for 1)
+  (delete-overlay shx-prompt-overlay))
+
 (defun shx-snap-to-top (&rest _args)
   "Recenter window so the current line is at the top.
 This function only works when the shx minor mode is active."
@@ -957,7 +966,9 @@ This function only works when the shx minor mode is active."
   (advice-add #'comint-kill-input :before #'shx-show-output)
   (advice-add #'comint-send-eof :before #'shx-show-output)
   (advice-add #'comint-previous-prompt :after #'shx-snap-to-top)
-  (advice-add #'comint-next-prompt :after #'shx-snap-to-top))
+  (advice-add #'comint-previous-prompt :after #'shx-flash-prompt)
+  (advice-add #'comint-next-prompt :after #'shx-snap-to-top)
+  (advice-add #'comint-next-prompt :after #'shx-flash-prompt))
 
 (provide 'shx)
 ;;; shx.el ends here

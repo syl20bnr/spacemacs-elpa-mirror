@@ -2,13 +2,13 @@
 
 ;; Copyright (C) 2015 - 2017 Paul Landes
 
-;; Version: 0.1
-;; Package-Version: 0.1
+;; Version: 0.2
+;; Package-Version: 20170806.1446
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: interactive shell management
 ;; URL: https://github.com/plandes/bshell
-;; Package-Requires: ((emacs "25") (buffer-manage "0.1"))
+;; Package-Requires: ((emacs "25") (buffer-manage "0.2"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -74,24 +74,25 @@
 		(file-name-directory file))))
     (buffer-entry-insert this (format "cd %s" dir) t)))
 
-(defclass bshell-manager (buffer-manager) ())
 
-(cl-defmethod buffer-manager-conical-name ((this bshell-manager)) "bshell")
+(defclass bshell-manager (buffer-manager)
+  ())
 
-(cl-defmethod buffer-manager-name ((this bshell-manager)) "shell")
+(cl-defmethod config-manager-entry-default-name ((this bshell-manager))
+  "bshell")
 
-(cl-defmethod buffer-manager-create-entry ((this bshell-manager) &rest args)
-  (apply 'bshell-entry nil args))
+(cl-defmethod config-manager-new-entry ((this bshell-manager) &optional slots)
+  (apply #'bshell-entry slots))
 
 (cl-defmethod buffer-manager-start-dir ((this bshell-manager)) default-directory)
 
 (cl-defmethod buffer-manage-read-working-directory ((this bshell-manager))
   "Read an entry name by prompting the user by the entry's working directory."
   (cl-flet ((entry-wd
-	      (entry)
-	      (with-current-buffer (buffer-entry-buffer entry)
-		(let ((dir (abbreviate-file-name default-directory)))
-		  (format "%s (%s)" dir (buffer-entry-name entry))))))
+	     (entry)
+	     (with-current-buffer (buffer-entry-buffer entry)
+	       (let ((dir (abbreviate-file-name default-directory)))
+		 (format "%s (%s)" dir (config-entry-name entry))))))
     (let ((completion-ignore-case t))
       (buffer-manager-read-name this "Switch by dir" t nil #'entry-wd))))
 
@@ -101,16 +102,16 @@
    (cl-call-next-method this singleton-variable-sym)
    `(("jump-directory"
       (defun ,(intern (format "%s-jump-directory"
-			      (buffer-manager-conical-name this)))
+			      (config-manager-entry-default-name this)))
 	  (bookmark)
 	"Jump to a bookmark in the current buffer."
 	(interactive (list (bookmark-completing-read "Jump to directory")))
 	(let* ((this ,singleton-variable-sym)
-	       (entry (buffer-manager-current-instance this)))
+	       (entry (config-manager-current-instance this)))
 	  (if entry (buffer-manage-entry-jump-directory entry bookmark)))))
      ("switch-by-working-directory"
       (defun ,(intern (format "%s-switch-by-working-directory"
-			      (buffer-manager-conical-name this)))
+			      (config-manager-entry-default-name this)))
 	  (name)
 	"Switch to an entry prompting by working directory."
 	(interactive
@@ -123,6 +124,7 @@
 	  '(("jump-directory" shell-mode-map "C-c C-g")
 	    ("rename" shell-mode-map "C-c C-t")
 	    ("switch-by-working-directory" shell-mode-map "C-c C-q"))))
+
 
 (defgroup bshell nil
   "Interactive Object Oriented Shell"

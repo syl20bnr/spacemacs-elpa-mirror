@@ -4,7 +4,7 @@
 ;; Maintainer: iory <ab.ioryz@gmail.com>
 ;; Created: April 13, 2016
 ;; Version: 0.0.8
-;; Package-Version: 20170801.841
+;; Package-Version: 20170807.1433
 ;; Keywords: Euslisp, euslisp, GitHub
 ;; URL: https://github.com/iory/euslisp-mode
 ;; Package-Requires: ((emacs "23") (s "1.9") (exec-path-from-shell "0") (helm-ag 0.58))
@@ -506,6 +506,11 @@ as described by `euslisp-path-from-shell-getenvs'."
     (mapc (lambda (pair)
             (exec-path-from-shell-setenv (car pair) (cdr pair)))
           pairs)))
+
+(defun euslisp-shell-send-reset-command ()
+  "Send (reset) command to shell."
+  (interactive)
+  (euslisp-shell-send-string "(reset)"))
 
 (defun euslisp-switch-to-shell ()
   "Switch to inferior euslisp process buffer."
