@@ -8,7 +8,7 @@
 ;; Maintainer: Akinori MUSHA <knu@iDaemons.org>
 ;; Created: 6 Mar 2005
 ;; URL: https://github.com/knu/ruby-electric.el
-;; Package-Version: 20170807.552
+;; Package-Version: 20170807.2102
 ;; Keywords: languages ruby
 ;; License: The same license terms as Ruby
 ;; Version: 2.2.3
@@ -341,7 +341,9 @@ enabled."
 
 (defun ruby-electric--fontify-region (beg end)
   (if (eq major-mode 'enh-ruby-mode)
-      (enh-ruby-fontify-buffer)
+      ;; enh-ruby-fontify-buffer causes error in erm-req-parse and
+      ;; font-lock-fontify-region does not take effect.
+      (sit-for 0.03)
     (font-lock-fontify-region beg end)))
 
 (defmacro ruby-electric-insert (arg &rest body)
