@@ -5,8 +5,8 @@
 ;; Filename: ido-completing-read+.el
 ;; Author: Ryan Thompson
 ;; Created: Sat Apr  4 13:41:20 2015 (-0700)
-;; Version: 4.2
-;; Package-Version: 20170801.1633
+;; Version: 4.3
+;; Package-Version: 20170807.1445
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (s "0.1"))
 ;; URL: https://github.com/DarwinAwardWinner/ido-completing-read-plus
 ;; Keywords: ido, completion, convenience
@@ -78,7 +78,7 @@
 ;;
 ;;; Code:
 
-(defconst ido-completing-read+-version "4.2"
+(defconst ido-completing-read+-version "4.3"
   "Currently running version of ido-completing-read+.
 
 Note that when you update ido-completing-read+, this variable may
@@ -758,12 +758,17 @@ This advice only activates if the current ido completion was
 called through ido-cr+."
   (if (and
        ;; Only override C-j behavior if...
-       ;; We're using ico-cr+
+       ;; We're using ico-cr+, and...
        (ido-cr+-active)
-       ;; Require-match is non-nil
+       ;; Require-match is non-nil, and...
        ido-require-match
-       ;; Current text is incomplete
-       (not (member ido-text ido-cur-list)))
+       ;; The current input doesn't exactly match a known option, and...
+       (not (member ido-text ido-cur-list))
+       ;; The current input doesn't exactly match an option according
+       ;; to `try-completion' (or the collection is not dynamic).
+       (or (not ido-cr+-dynamic-collection)
+           (eq t (try-completion ido-text ido-cr+-dynamic-collection
+                                 (nth 2 ido-cr+-orig-completing-read-args)))))
       (progn
         (ido-cr+--debug-message
          "Overriding C-j behavior for require-match: performing completion instead of exiting with current text. (This might still exit with a match if `ido-confirm-unique-completion' is nil)")

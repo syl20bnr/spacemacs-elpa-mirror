@@ -36,7 +36,8 @@
 
    `Info-breadcrumbs-in-mode-line-mode', `Info-describe-bookmark'
    (Emacs 24.2+), `Info-follow-nearest-node-new-window',
-   `Info-goto-node-web', `Info-history-clear', `info-manual',
+   `Info-goto-node-web', `Info-history-clear',
+   `Info-make-node-unvisited', `info-manual',
    `Info-merge-subnodes',
    `Info-mouse-follow-nearest-node-new-window',
    `Info-persist-history-mode' (Emacs 24.4+),
@@ -289,6 +290,12 @@
      (If you also use library Bookmark+ then you can bookmark Info
      nodes, including automatically.  This records how many times
      you have visited each node and when you last did so.)
+
+   - `Info-make-node-unvisited' (bound to `C-x DEL') - Reset the
+     visited status of a node to unvisited.  Useful if you use
+     `Info-fontify-visited-nodes' to show you which nodes you have
+     visited and you want to consider that you have not yet visited
+     some.
 
    - `Info-save-current-node' (bound to `.') – Save the name of the
      current node to list `Info-saved-nodes', for use by `v'

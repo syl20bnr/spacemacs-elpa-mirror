@@ -9,7 +9,7 @@
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Artur Malabarba <bruce.connor.am@gmail.com>
 ;; URL: http://github.com/clojure-emacs/clojure-mode
-;; Package-Version: 20170725.2307
+;; Package-Version: 20170807.1610
 ;; Keywords: languages clojure clojurescript lisp
 ;; Version: 5.7.0-snapshot
 ;; Package-Requires: ((emacs "24.4"))
@@ -1768,11 +1768,10 @@ Returns a list pair, e.g. (\"defn\" \"abc\") or (\"deftest\" \"some-test\")."
 ;;; Sexp navigation
 (defun clojure--looking-at-non-logical-sexp ()
   "Return non-nil if text after point is \"non-logical\" sexp.
-
 \"Non-logical\" sexp are ^metadata and #reader.macros."
   (comment-normalize-vars)
   (comment-forward (point-max))
-  (looking-at-p "\\^\\|#[?[:alpha:]]"))
+  (looking-at-p "\\^\\|#[[:alpha:]]"))
 
 (defun clojure-forward-logical-sexp (&optional n)
   "Move forward N logical sexps.

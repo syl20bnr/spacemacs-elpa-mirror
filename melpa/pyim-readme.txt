@@ -222,8 +222,9 @@ pyim 支持仓颉输入法，用户可以通过变量 `pyim-default-scheme' 来�
 @aaah 曑
 #+END_EXAMPLE
 
-最简单的方式是从 melpa 中安装 pyim-cangjie5dict 包，然后根据它的
-[[https://github.com/erstern/pyim-cangjie5dict][README]] 来配置。
+如果用户使用仓颉第五代，最简单的方式是从 melpa 中安装 pyim-cangjie5dict 包，
+然后根据它的 [[https://github.com/erstern/pyim-cangjie5dict][README]] 来配置。
+pyim 支持其它版本的仓颉，但需要用户自己创建词库文件。
 
 用户可以使用命令：`pyim-search-word-code' 来查询当前选择词条的仓颉编码
 
@@ -343,7 +344,7 @@ pyim 的 tooltip 选词框默认使用 *双行显示* 的样式，在一些特
 
 *** 如何将个人词条导出到一个文件
 
-使用命令：pyim-personal-dcache-export
+使用命令：pyim-dcache-export-personal-dcache
 
 *** pyim 出现错误时，如何开启 debug 模式
 
