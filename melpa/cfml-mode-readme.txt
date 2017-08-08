@@ -3,20 +3,20 @@ This file contains definitions of CFML submode classes.
 Usage:
 
 (require 'mmm-mode)
-(require 'cfml-mode)
+(require 'cftag-mode)
 
 (add-to-list 'magic-mode-alist
-             '("<cfcomponent" . cfml-mode))
+             '("<cfcomponent" . cftag-mode))
 (add-to-list 'magic-mode-alist
-             '("<!---" . cfml-mode))
+             '("<!---" . cftag-mode))
 (add-to-list 'auto-mode-alist
-             '("\\.cfm\\'" . cfml-mode))
+             '("\\.cfm\\'" . cftag-mode))
 (add-to-list 'auto-mode-alist
              '("\\.cfc\\'" . cfml-cfscript-mode))
 
 (setq mmm-global-mode 'maybe)
-(mmm-add-mode-ext-class nil "\\.cfm\\'" 'html-cfm)
-(mmm-add-mode-ext-class nil "\\.cfc\\'" 'html-cfm)
+(mmm-add-mode-ext-class nil "\\.cfm\\'" 'cfml-cftag)
+(mmm-add-mode-ext-class nil "\\.cfc\\'" 'cfml-cftag)
 
 Optional settings:
 

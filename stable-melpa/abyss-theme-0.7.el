@@ -1,12 +1,13 @@
 ;;; abyss-theme.el --- A dark theme with contrasting colours.
 
 ;; Author: Matt Russell <matt@mgrbyte.co.uk>
-;; Version: 0.5
-;; Package-Version: 0.5
+;; Version: 0.7
+;; Package-Version: 0.7
 ;; Filename: abyss-theme.el
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: theme, dark, contrasting colours
 ;; URL: https://github.com/mgrbyte/emacs-abyss-theme
+;; License: GPL-3+
 
 ;;; Commentary:
 

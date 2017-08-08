@@ -1,4 +1,4 @@
-js-comint.el is a comint mode for Emacs which allows you to run a
+This program is a comint mode for Emacs which allows you to run a
 compatible javascript repl like Node.js/Spidermonkey/Rhino inside Emacs.
 It also defines a few functions for sending javascript input to it
 quickly.

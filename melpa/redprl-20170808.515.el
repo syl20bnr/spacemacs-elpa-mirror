@@ -5,7 +5,7 @@
 
 ;; Author: Jonathan Sterling <jon@jonmsterling.com>
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 20170719.754
+;; Package-Version: 20170808.515
 ;; Version: 0.0.1
 ;; Keywords: languages
 
@@ -105,29 +105,29 @@
   "RedPRL's keywords.")
 
 (defconst redprl-sort-keywords
-  '("exp" "exn" "dim" "num")
+  '("dim" "hyp" "exp" "tac" "triv" "jdg")
   "RedPRL's built-in sorts.")
 
 (defconst redprl-expression-keywords
-  '("ax" "fcom"
-    "wbool" "wool" "tt" "ff" "bool-rec" "wif" "bool" "if"
-    "int" "nat"
+  '("tv" "ax" "fcom"
+    "bool" "tt" "ff" "if" "wbool" "wool" "bool-rec" "wif"
+    "nat" "zero" "succ" "nat-rec" "int" "negsucc"
     "void"
-    "S1" "base" "loop" "s1-elim"
+    "S1" "base" "loop" "S1-rec"
     "lam" "app"
-    "pair" "fst" "snd"
     "record" "tuple"
     "path" "abs"
     "hcom" "coe" "com")
   "RedPRL's expression keywords.")
 
 (defconst redprl-expression-symbols
-  '("->" "*" "!" "@")
+  '("->" "*" "$" "!" "@")
   "RedPRL's expression symbols.")
 
 (defconst redprl-tactic-keywords
-  '("auto" "auto-step" "cut-lemma" "elim" "fresh" "head-expand" "hyp" "id"
-    "lemma" "let" "progress" "rec" "repeat" "rule" "symmetry" "unfold")
+  '("auto" "auto-step" "case" "cut-lemma" "elim" "else" "exact" "fresh" "goal"
+    "head-expand" "hyp" "id" "lemma" "let" "match" "of" "print" "progress"
+    "query" "rec" "repeat" "symmetry" "then" "unfold" "use" "with")
   "RedPRL's tactic keywords.")
 
 (defconst redprl-tactic-symbols
@@ -135,7 +135,7 @@
   "RedPRL's tactic symbols.")
 
 (defconst redprl-sequent-keywords
-  '("type")
+  '("true" "type" "synth" "discrete" "kan" "hcom" "coe" "cubical")
   "RedPRL's sequent keywords.")
 
 (defconst redprl-sequent-symbols

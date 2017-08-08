@@ -4,7 +4,7 @@
 
 ;; Author: Chunyang Xu <mail@xuchunyang.me>
 ;; URL: https://github.com/xuchunyang/helm-lastpass
-;; Package-Version: 20170731.1037
+;; Package-Version: 20170808.511
 ;; Package-Requires: ((emacs "24.1") (helm-core "2.8.1") (csv "2.1"))
 ;; Keywords: LastPass
 ;; Version: 0
@@ -32,6 +32,14 @@
 ;; Prerequisites:
 ;;
 ;; - lpass(1), see https://github.com/lastpass/lastpass-cli
+
+;; Installation:
+;;
+;; [![MELPA](https://melpa.org/packages/helm-lastpass-badge.svg)](https://melpa.org/#/helm-lastpass)
+;;
+;; This package is available from MELPA, thus you can easily install it with
+;; `package.el'. If you decide to install it manually, you are on your own
+;; (Don't forget the dependencies, i.e., helm and csv).
 
 ;; Usage:
 ;;
