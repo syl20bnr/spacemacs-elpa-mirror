@@ -4,7 +4,7 @@
 ;;
 ;; Author: Gergely Nagy
 ;; URL: https://github.com/algernon/kaleidoscope.el
-;; Package-Version: 20170731.350
+;; Package-Version: 20170808.117
 ;; Version: 0.1.0
 ;; Package-Requires: ((s "1.11.0"))
 ;;
@@ -19,8 +19,6 @@
 ;;; License: GPLv3+
 
 ;;; Code:
-
-(provide 'kaleidoscope)
 
 ;;;; Settings
 
@@ -69,5 +67,7 @@ string."
 
   (delete-process "kaleidoscope")
   (kill-buffer "*kaleidoscope*"))
+
+(provide 'kaleidoscope)
 
 ;;; kaleidoscope.el ends here
