@@ -3,7 +3,7 @@
 ;;; Author: Jason Milkins <jasonm23@gmail.com>
 
 ;;; Version: 1.2.4
-;; Package-Version: 20161016.1827
+;; Package-Version: 20170808.602
 
 ;;; Commentary:
 ;;
@@ -93,8 +93,8 @@
 
 ;;; Package-Requires: ((emacs "24.1") (s "1.0"))
 
-;;; Licence:
-;;  GNU / GPL2
+;;; Licence: MIT
+
 
 ;;; Code:
 

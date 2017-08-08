@@ -2,7 +2,7 @@
 ;;
 ;;; Author: Jason Milkins
 ;;; Version: 20141122.0000
-;; Package-Version: 20141122.642
+;; Package-Version: 20170808.615
 ;;; Url: https://github.com/emacsfodder/tmtheme-to-deftheme
 ;;; Package-Requires: ((emacs "24.0"))
 ;;
@@ -10,6 +10,7 @@
 ;;
 ;;  Re-edit don't fade away...
 ;;
+;;; Licence: MIT
 ;;; Code:
 
 (deftheme mbo70s "mbo70s-theme")
