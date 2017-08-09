@@ -2,8 +2,8 @@
 ;; Copyright 2001-2017 by Dave Pearson <davep@davep.org>
 
 ;; Author: Dave Pearson <davep@davep.org>
-;; Version: 2.0
-;; Package-Version: 20170802.433
+;; Version: 2.1
+;; Package-Version: 20170809.824
 ;; Keywords: convenience, web, text
 ;; URL: https://github.com/davep/obfusurl.el
 ;; Package-Requires: ((cl-lib "0.5"))
@@ -101,18 +101,16 @@ the text are preserved."
 
 ;;;###autoload
 (defun obfusurl ()
-  "Obfuscate an URL under `point'.
+  "Obfuscate a URL under `point'.
 
-This might be useful if you're writing out an URL for someone but the URL
-itself is a spoiler. The URL will still work but it won't be readable (by
-most mortals anyway)."
+This might be useful if you're writing out a URL for someone but
+the URL itself is a spoiler. The URL will still work but it won't
+be readable (by most mortals anyway)."
   (interactive "*")
-  (let ((url (thing-at-point 'url)))
+  (let ((url (thing-at-point 'url))
+        (bounds (bounds-of-thing-at-point 'url)))
     (if url
-        (let ((bounds (bounds-of-thing-at-point 'url)))
-          (setf (point) (car bounds))
-          (delete-region (car bounds) (cdr bounds))
-          (insert (obfusurl-hexify-url url)))
+        (setf (buffer-substring (car bounds) (cdr bounds)) (obfusurl-hexify-url url))
       (error "I can't see an URL here"))))
 
 (provide 'obfusurl)

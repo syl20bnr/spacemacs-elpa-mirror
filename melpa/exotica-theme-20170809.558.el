@@ -5,7 +5,7 @@
 ;; Author: Bharat Joshi <jbharat@outlook.com>
 ;; Maintainer: Bharat Joshi <jbharat@outlook.com>
 ;; URL: https://github.com/jbharat/exotica-theme
-;; Package-Version: 20170808.1647
+;; Package-Version: 20170809.558
 ;; Created: 22th July 2017
 ;; Keywords: faces, theme, dark, vibrant colors
 ;; Version: 1.0.1
@@ -46,10 +46,11 @@
      (face2                  "#A6E22E")
      (face3                  "#FF3DB1")
      (face4                  "#AE81FF")
-     (face5                  "#A2DAE5")
-     (face6                  "#D3F296")
+     (face5                  "#4577D7")
+     (face6                  "#2ee267")
      (face7                  "#FF5996")
-     (face8                  "#D9C4FF")
+     (face8                  "#60FCEC")
+     (face9                  "#16101E")
      (bg1                    "#403D3D")
      (m1                     "#C1CAFF")
      (m2                     "#FD971F")
@@ -63,10 +64,10 @@
      (ml-active-face         "#050302")
      (comment-face           "#465457")
      (warning-bg-face        "#333333")
-     (fullWhite             "#FFFFFF")
-     (fullBlack             "#000000")
-     (whiteSmoke            "white-smoke")
-     (hightlight             "#E7F221")
+     (fullWhite              "#FFFFFF")
+     (fullBlack              "#000000")
+     (whiteSmoke         "white-smoke")
+     (highlighter            "#E7F221")
      (line-highlight         "#271C33")
    )
 
@@ -84,7 +85,7 @@
  `(custom-face-tag ((t (:foreground ,face1 :weight bold))))
  `(custom-state ((t (:foreground ,face2))))
  `(italic ((t (:slant italic))))
- `(region ((t (:background ,bg1))))
+ `(region ((t (:background ,face9))))
  `(underline ((t (:underline t))))
 
  ;; diff
@@ -135,12 +136,12 @@
  `(js2-function-param ((t (:inherit default :foreground ,face7))))
 
  ;; highlighting
- `(highlight ((t (:foreground ,fullBlack :background ,hightlight))))
+ `(highlight ((t (:foreground ,highlighter :background ,face9))))
  `(hl-line ((t (:background ,line-highlight))))
  `(lazy-highlight ((t (:foreground ,comment-face :background ,fullBlack))))
 
  ;; isearch
- `(isearch ((t (:foreground ,hightlight :background ,fullBlack))))
+ `(isearch ((t (:foreground ,highlighter :background ,face9))))
  `(isearch-fail ((t (:foreground ,fullWhite :background ,warning-bg-face))))
 
  ;; org

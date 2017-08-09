@@ -2,14 +2,24 @@
 ;; Copyright 2001-2017 by Dave Pearson <davep@davep.org>
 
 ;; Author: Dave Pearson <davep@davep.org>
-;; Version: 2.0
-;; Package-Version: 2.0
+;; Version: 2.1
+;; Package-Version: 2.1
 ;; Keywords: convenience, web, text
 ;; URL: https://github.com/davep/obfusurl.el
 ;; Package-Requires: ((cl-lib "0.5"))
 
-;; obfusurl.el is free software distributed under the terms of the GNU
-;; General Public Licence, version 2. For details see the file COPYING.
+;; This program is free software: you can redistribute it and/or modify it
+;; under the terms of the GNU General Public License as published by the
+;; Free Software Foundation, either version 3 of the License, or (at your
+;; option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+;; Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License along
+;; with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 ;;
@@ -91,18 +101,16 @@ the text are preserved."
 
 ;;;###autoload
 (defun obfusurl ()
-  "Obfuscate an URL under `point'.
+  "Obfuscate a URL under `point'.
 
-This might be useful if you're writing out an URL for someone but the URL
-itself is a spoiler. The URL will still work but it won't be readable (by
-most mortals anyway)."
+This might be useful if you're writing out a URL for someone but
+the URL itself is a spoiler. The URL will still work but it won't
+be readable (by most mortals anyway)."
   (interactive "*")
-  (let ((url (thing-at-point 'url)))
+  (let ((url (thing-at-point 'url))
+        (bounds (bounds-of-thing-at-point 'url)))
     (if url
-        (let ((bounds (bounds-of-thing-at-point 'url)))
-          (setf (point) (car bounds))
-          (delete-region (car bounds) (cdr bounds))
-          (insert (obfusurl-hexify-url url)))
+        (setf (buffer-substring (car bounds) (cdr bounds)) (obfusurl-hexify-url url))
       (error "I can't see an URL here"))))
 
 (provide 'obfusurl)

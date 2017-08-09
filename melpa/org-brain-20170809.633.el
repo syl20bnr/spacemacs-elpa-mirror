@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; URL: http://github.com/Kungsgeten/org-brain
-;; Package-Version: 20170706.447
+;; Package-Version: 20170809.633
 ;; Keywords: outlines hypermedia
 ;; Package-Requires: ((emacs "25") (org "9"))
 ;; Version: 0.4
@@ -961,7 +961,7 @@ function."
                (car (split-string (org-element-property :path link) "::"))))))))))
 
 ;;* Visualize
-
+;;;###autoload
 (defun org-brain-visualize (entry &optional nofocus nohistory)
   "View a concept map with ENTRY at the center.
 
