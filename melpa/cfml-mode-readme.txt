@@ -3,7 +3,7 @@ This file contains definitions of CFML submode classes.
 Usage:
 
 (require 'mmm-mode)
-(require 'cftag-mode)
+(require 'cfml-mode)
 
 (add-to-list 'magic-mode-alist
              '("<cfcomponent" . cftag-mode))
