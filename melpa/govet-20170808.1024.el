@@ -1,7 +1,20 @@
 ;;; govet.el --- linter/problem finder for the Go source code
 
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 3, or (at your option)
+;; any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 ;; URL: https://godoc.org/golang.org/x/tools/cmd/vet
-;; Package-Version: 20150428.1159
+;; Package-Version: 20170808.1024
 
 ;;; Commentary:
 
