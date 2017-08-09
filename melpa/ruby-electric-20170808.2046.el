@@ -8,10 +8,10 @@
 ;; Maintainer: Akinori MUSHA <knu@iDaemons.org>
 ;; Created: 6 Mar 2005
 ;; URL: https://github.com/knu/ruby-electric.el
-;; Package-Version: 20170808.50
+;; Package-Version: 20170808.2046
 ;; Keywords: languages ruby
 ;; License: The same license terms as Ruby
-;; Version: 2.2.3
+;; Version: 2.3.0
 
 ;;; Commentary:
 ;;

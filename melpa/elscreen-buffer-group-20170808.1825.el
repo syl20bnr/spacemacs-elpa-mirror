@@ -5,13 +5,26 @@
 ;; Author: Jeff Gran <jeff@jeffgran.com>
 ;;	Author: Ryan C. Thompson
 ;; URL: https://github.com/jeffgran/elscreen-buffer-group
-;; Package-Version: 20160105.803
+;; Package-Version: 20170808.1825
 ;; Created: 7 Nov 2012
 ;; Keywords: buffer
 ;; Version: 1.0.1
 ;; Package-Requires: ((emacs "24.4") (elscreen "0") (cl-lib "0.5"))
 
 ;; This file is not part of GNU Emacs.
+
+;; This code is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published
+;; by the Free Software Foundation; either version 3, or (at your
+;; option) any later version.
+;;
+;; This code is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+;; General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with Emacs. If not, see http://www.gnu.org/licenses.
 
 ;;; Commentary:
 
