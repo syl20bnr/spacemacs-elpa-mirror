@@ -5,9 +5,9 @@
 ;; Authors: Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Olin Shivers <shivers@cs.cmu.edu>
 ;; URL: http://github.com/clojure-emacs/inf-clojure
-;; Package-Version: 20170807.1053
+;; Package-Version: 20170809.114
 ;; Keywords: processes, clojure
-;; Version: 2.0.1
+;; Version: 2.1.0-snapshot
 ;; Package-Requires: ((emacs "24.4") (clojure-mode "5.6"))
 
 ;; This file is part of GNU Emacs.
@@ -78,7 +78,7 @@
   :link '(url-link :tag "GitHub" "https://github.com/clojure-emacs/inf-clojure")
   :link '(emacs-commentary-link :tag "Commentary" "inf-clojure"))
 
-(defconst inf-clojure-version "2.0.1"
+(defconst inf-clojure-version "2.1.0-snapshot"
   "The current version of `inf-clojure'.")
 
 (defcustom inf-clojure-prompt-read-only t
@@ -754,6 +754,13 @@ If you are using REPL types, it will pickup the most approapriate
   :safe #'stringp
   :package-version '(inf-clojure . "2.0.0"))
 
+(defcustom inf-clojure-arglists-form-planck
+  "(planck.repl/get-arglists \"%s\""
+  "Planck form to query inferior Clojure for a function's arglists."
+  :type 'string
+  :safe #'stringp
+  :package-version '(inf-clojure . "2.1.0"))
+
 (defun inf-clojure-arglists-form ()
   "Return the form to query inferior Clojure for arglists of a var.
 If you are using REPL types, it will pickup the most approapriate
@@ -761,6 +768,7 @@ If you are using REPL types, it will pickup the most approapriate
   (inf-clojure--sanitize-command
    (pcase (inf-clojure--set-repl-type (inf-clojure-proc))
      (`lumo inf-clojure-arglists-form-lumo)
+     (`planck inf-clojure-arglists-form-planck)
      (_ inf-clojure-arglists-form))))
 
 (defcustom inf-clojure-completion-form

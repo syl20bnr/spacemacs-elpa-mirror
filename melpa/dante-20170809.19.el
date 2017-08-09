@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20170807.132
+;; Package-Version: 20170809.19
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -925,13 +925,15 @@ a list is returned instead of failing with a nil result."
       (let ((msg (car messages)))
         (save-excursion
           (cond
-           ;; use (set-selective-display 12) to see all possible matches
-           ((string-match "Redundant constraint: \\(.*\\)" msg)
+           ;; use (set-selective-display 12) to see an outline of all possible matches
+           ((string-match "Redundant constraints?: (?\\([^,)\n]*\\)" msg)
             (let ((constraint (match-string 1 msg)))
               (search-forward constraint) ; find type sig
               (delete-region (match-beginning 0) (match-end 0))
               (when (looking-at "[ \t]*,")
-                (delete-region (point) (search-forward-regexp ",[\t ]")))))
+                (delete-region (point) (search-forward-regexp ",")))
+              (when (looking-at "[ \t]*=>")
+                (delete-region (point) (search-forward-regexp "=>")))))
            ((string-match "The type signature for ‘\\(.*\\)’ lacks an accompanying binding" msg)
             (beginning-of-line)
             (forward-line)
@@ -942,7 +944,8 @@ a list is returned instead of failing with a nil result."
               (search-backward-regexp (concat (regexp-quote function-name) "[ \t]*::[ \t]*" )) ; find type sig
               (goto-char (match-end 0))
               (when (looking-at "forall\\|∀") ; skip quantifiers
-                (search-forward-regexp "[.][ \t]*"))
+                (search-forward-regexp "\\."))
+              (skip-chars-forward "\n\t ") ; skip spaces
               (insert (concat missing-constraint " => "))))
            ((string-match "Unticked promoted constructor" msg)
             (goto-char (car (dante-ident-pos-at-point)))
@@ -981,19 +984,23 @@ a list is returned instead of failing with a nil result."
               ;; ^^ delete-region may garble the matches
               (apply #'delete-region (dante-ident-pos-at-point))
               (insert replacement)))
-           ((--any? (string-match it msg) dante-suggestible-extensions)
-            (goto-char 1)
-            (insert (concat "{-# LANGUAGE " (car (--filter (string-match it msg) dante-suggestible-extensions)) " #-}\n")))
            ((string-match "Top-level binding with no type signature:[\n ]*" msg)
             (beginning-of-line)
             (insert (concat (substring msg (match-end 0)) "\n")))
            ((string-match "Defined but not used" msg)
             (goto-char (car (dante-ident-pos-at-point)))
             (insert "_"))
+           ((string-match "Unused quantified type variable ‘\\(.*\\)’" msg)
+            ;; note there can be a kind annotation, not just a variable.
+            (delete-region (point) (+ (point) (- (match-end 1) (match-beginning 1)))))
            ((string-match "The import of ‘.*’ is redundant" msg)
             (beginning-of-line)
             (delete-region (point) (progn (next-logical-line) (point))))
-           (t (error "Cannot fix the issue at point automatically. Perhaps customize `dante-suggestible-extensions'."))))))))
+           ((--any? (string-match it msg) dante-suggestible-extensions)
+            (goto-char 1)
+            (insert (concat "{-# LANGUAGE " (car (--filter (string-match it msg) dante-suggestible-extensions)) " #-}\n")))
+           (t (error "Cannot fix the issue at point automatically. Perhaps customize `dante-suggestible-extensions'.")))
+          (when (looking-back "[ \t]") (delete-region (point) (+ (point) (skip-chars-forward " \t")))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Reploid
