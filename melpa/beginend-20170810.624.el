@@ -5,7 +5,7 @@
 ;; Authors: Damien Cassou <damien@cassou.me>
 ;;          Matus Goljer <matus.goljer@gmail.com>
 ;; Version: 2.0.0
-;; Package-Version: 20170801.2308
+;; Package-Version: 20170810.624
 ;; URL: https://github.com/DamienCassou/beginend
 ;; Package-Requires: ((emacs "24.4"))
 ;; Created: 01 Jun 2015
@@ -164,10 +164,12 @@ BEGIN-BODY and END-BODY are two `progn' expressions passed to respectively
       (when (and (boundp 'dired-omit-mode) dired-omit-mode)
         ;; dired-omit-mode hides `.' and `..'.
         (setf move (- move 2)))
-      (when (and (boundp 'dired-hide-details-hide-information-lines)
-                 dired-hide-details-hide-information-lines
-                 (boundp 'dired-hide-details-mode)
-                 dired-hide-details-mode)
+      (when (or (and (boundp 'dired-hide-details-hide-information-lines)
+                     dired-hide-details-hide-information-lines
+                     (boundp 'dired-hide-details-mode)
+                     dired-hide-details-mode)
+                (and (boundp 'dired-details-state)
+                     (equal dired-details-state 'hidden)))
         ;; 1 line containing directory size
         (setf move (- move 1)))
       (dired-next-line move)))

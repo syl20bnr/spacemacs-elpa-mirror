@@ -4,8 +4,8 @@
 ;;
 ;; Author: Mark Karpov <markkarpov92@gmail.com>
 ;; URL: https://github.com/mrkkrp/ebal
-;; Package-Version: 20170810.424
-;; Version: 0.3.0
+;; Package-Version: 20170810.631
+;; Version: 0.3.1
 ;; Package-Requires: ((emacs "24.4") (f "0.18.0"))
 ;; Keywords: convenience, cabal, haskell
 ;;
@@ -336,19 +336,21 @@ This is used by `ebal--prepare'."
      ebal--project-targets
      (append
       ;; library
-      (mapcar (lambda (_) (format "lib:%s" ebal--project-name))
+      (mapcar (lambda (_) (format "%s:lib" ebal--project-name))
               (ebal--all-matches
                "^[[:blank:]]*library[[:blank:]]*"))
-      ;; executable
-      (mapcar (lambda (x) (format "exe:%s" x))
+      ;; executables
+      (mapcar (lambda (x) (format "%s:exe:%s" ebal--project-name x))
               (ebal--all-matches
                "^[[:blank:]]*executable[[:blank:]]+\\([[:word:]-]+\\)"))
       ;; test suites
-      (ebal--all-matches
-       "^[[:blank:]]*test-suite[[:blank:]]+\\([[:word:]-]+\\)")
+      (mapcar (lambda (x) (format "%s:test:%s" ebal--project-name x))
+              (ebal--all-matches
+               "^[[:blank:]]*test-suite[[:blank:]]+\\([[:word:]-]+\\)"))
       ;; benchmarks
-      (ebal--all-matches
-       "^[[:blank:]]*benchmark[[:blank:]]+\\([[:word:]-]+\\)")))))
+      (mapcar (lambda (x) (format "%s:bench:%s" ebal--project-name x))
+              (ebal--all-matches
+               "^[[:blank:]]*benchmark[[:blank:]]+\\([[:word:]-]+\\)"))))))
 
 (defun ebal--parse-ebal-file (filename)
   "Parse \"*.ebal\" file with name FILENAME and set some variables.
@@ -686,7 +688,7 @@ choose command with `ebal-select-command-function'."
             (when fnc
               (funcall fnc)))
         (message "Cannot locate ‘.cabal’ file."))
-    (message "Cannot local Cabal executable on this system.")))
+    (message "Cannot locate Cabal executable on this system.")))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

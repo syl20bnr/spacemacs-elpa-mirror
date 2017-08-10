@@ -4,7 +4,7 @@
 ;;
 ;; Author: Nicolas Lamirault <nicolas.lamirault@gmail.com>
 ;; Version: 0.4.0
-;; Package-Version: 20170602.152
+;; Package-Version: 20170810.1118
 ;; Keywords : ripgrep ack pt ag sift grep search
 ;; Homepage: https://github.com/nlamirault/ripgrep.el
 
@@ -154,7 +154,7 @@ This function is called from `compilation-filter-hook'."
         (when (< (point) end)
           (setq end (copy-marker end))
           ;; Highlight rg matches and delete marking sequences.
-          (while (re-search-forward "\033\\[30;43m\\(.*?\\)\033\\[[0-9]*m" end 1)
+          (while (re-search-forward "\033\\[m\033\\[31m\033\\[1m\\(.*?\\)\033\\[[0-9]*m" end 1)
             (replace-match (propertize (match-string 1)
                                        'face nil 'font-lock-face 'ripgrep-match-face)
                            t t))
@@ -183,6 +183,7 @@ This function is called from `compilation-filter-hook'."
                         ripgrep-arguments
                         args
                         '("--no-heading --vimgrep -n")
+                        (when ripgrep-highlight-search '("--color=always"))
                         (list (shell-quote-argument regexp) ".")) " ")
      'ripgrep-search-mode)))
 

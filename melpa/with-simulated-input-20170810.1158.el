@@ -5,8 +5,8 @@
 ;; Filename: with-simulated-input.el
 ;; Author: Ryan C. Thompson
 ;; Created: Thu Jul 20 11:56:23 2017 (-0700)
-;; Version: 2.2
-;; Package-Version: 20170807.1512
+;; Version: 2.3
+;; Package-Version: 20170810.1158
 ;; Package-Requires: ((emacs "24.4") (seq "2.0") (s "0"))
 ;; URL:
 ;; Keywords: lisp, tools, extensions
@@ -105,6 +105,8 @@ to check.
 (defmacro wsi-current-lexical-environment ()
   "Return the current lexical environment.
 
+If `lexical-binding' is not enabled, return nil.
+
 This macro expands to a lisp form that evaluates to the current
 lexical environment. It works by creating a closure and then
 extracting and returning its lexical environment.
@@ -112,11 +114,13 @@ extracting and returning its lexical environment.
 This can be used to manually construct closures in that
 environment."
   `(let ((temp-closure (lambda () t)))
-     (cl-assert (eq (car temp-closure) 'closure) t)
-     (cadr temp-closure)))
+     (when (eq (car temp-closure) 'closure)
+       (cadr temp-closure))))
 
 (defun wsi-make-closure (expr env)
-  `(closure ,env () ,expr))
+  (if env
+      `(closure ,env () ,expr)
+    `(lambda () ,expr)))
 
 ;;;###autoload
 (defmacro with-simulated-input (keys &rest body)

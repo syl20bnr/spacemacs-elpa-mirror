@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170728.855
+;; Package-Version: 20170809.2208
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -196,16 +196,21 @@ EVENT is a string describing the change."
            (setq ivy--old-cands ivy--all-candidates)
            (ivy--exhibit)))))
 
+(defcustom counsel-async-filter-update-time 500000
+  "The amount of time in microseconds to wait until updating
+`counsel--async-filter'."
+  :type 'integer
+  :group 'ivy)
+
 (defun counsel--async-filter (process str)
   "Receive from PROCESS the output STR.
 Update the minibuffer with the amount of lines collected every
-0.5 seconds since the last update."
+`counsel-async-filter-update-time' microseconds since the last update."
   (with-current-buffer (process-buffer process)
     (insert str))
   (let (size)
     (when (time-less-p
-           ;; 0.5s
-           '(0 0 500000 0)
+           `(0 0 ,counsel-async-filter-update-time 0)
            (time-since counsel--async-time))
       (with-current-buffer (process-buffer process)
         (goto-char (point-min))
