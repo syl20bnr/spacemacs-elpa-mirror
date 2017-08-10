@@ -8,10 +8,10 @@
 ;; Maintainer: Akinori MUSHA <knu@iDaemons.org>
 ;; Created: 6 Mar 2005
 ;; URL: https://github.com/knu/ruby-electric.el
-;; Package-Version: 2.3.0
+;; Package-Version: 2.3.1
 ;; Keywords: languages ruby
 ;; License: The same license terms as Ruby
-;; Version: 2.3.0
+;; Version: 2.3.1
 
 ;;; Commentary:
 ;;
@@ -172,6 +172,7 @@ cons, ACTION can be set to one of the following values:
     (define-key map [remap newline] 'ruby-electric-space/return)
     (define-key map [remap newline-and-indent] 'ruby-electric-space/return)
     (define-key map [remap electric-newline-and-maybe-indent] 'ruby-electric-space/return)
+    (define-key map [remap reindent-then-newline-and-indent] 'ruby-electric-space/return)
     (dolist (x ruby-electric-delimiters-alist)
       (let* ((delim   (car x))
              (plist   (cdr x))

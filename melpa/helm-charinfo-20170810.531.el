@@ -3,10 +3,11 @@
 ;; created [2016-04-15T12:59:30+0900]
 ;;
 ;; Copyright (c) 2016-2017 Christian Wittern
+;; License: GPL v3, or any later version
 ;;
 ;; Author: Christian Wittern <cwittern@gmail.com>
 ;; URL: https://github.com/cwittern/helm-charinfo
-;; Package-Version: 20170611.1746
+;; Package-Version: 20170810.531
 ;; Version: 0.01
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24") (helm "1.7.0") (cl-lib "0.5"))
