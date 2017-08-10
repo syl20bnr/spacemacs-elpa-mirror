@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20170809.19
+;; Package-Version: 20170809.1326
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -911,8 +911,8 @@ a list is returned instead of failing with a nil result."
 ;; Auto-fix
 
 (defcustom dante-suggestible-extensions
-  '("AllowAmbiguousTypes" "BangPatterns" "ConstraintKinds" "DataKinds" "DeriveFoldable" "DeriveFunctor" "DeriveGeneric" "DeriveTraversable" "EmptyCase" "FlexibleContexts" "FlexibleInstances" "FunctionalDependencies" "GADTs" "GeneralizedNewtypeDeriving" "InstanceSigs" "KindSignatures" "MultiParamTypeClasses" "PolyKinds" "RankNTypes" "RecordWildCards" "ScopedTypeVariables" "StandaloneDeriving" "TupleSections" "TypeApplications" "TypeFamilies" "TypeInType" "TypeOperators" "TypeSynonymInstances" "UndecidableSuperClasses" "UndecidableInstances" "ViewPatterns")
-  "Language extensions that Dante will use to fix errors."
+  '("AllowAmbiguousTypes" "BangPatterns" "ConstraintKinds" "DataKinds" "DeriveFoldable" "DeriveFunctor" "DeriveGeneric" "DeriveTraversable" "EmptyCase" "FlexibleContexts" "FlexibleInstances" "FunctionalDependencies" "GADTs" "GeneralizedNewtypeDeriving" "InstanceSigs" "KindSignatures" "MultiParamTypeClasses" "PartialTypeSignatures" "PolyKinds" "RankNTypes" "RecordWildCards" "ScopedTypeVariables" "StandaloneDeriving" "TupleSections" "TypeApplications" "TypeFamilies" "TypeInType" "TypeOperators" "TypeSynonymInstances" "UndecidableSuperClasses" "UndecidableInstances" "ViewPatterns")
+  "Language extensions that Dante can use to fix errors."
   :group 'dante
   :type '(repeat string))
 
@@ -931,9 +931,9 @@ a list is returned instead of failing with a nil result."
               (search-forward constraint) ; find type sig
               (delete-region (match-beginning 0) (match-end 0))
               (when (looking-at "[ \t]*,")
-                (delete-region (point) (search-forward-regexp ",")))
+                (delete-region (point) (search-forward ",")))
               (when (looking-at "[ \t]*=>")
-                (delete-region (point) (search-forward-regexp "=>")))))
+                (delete-region (point) (search-forward "=>")))))
            ((string-match "The type signature for ‘\\(.*\\)’ lacks an accompanying binding" msg)
             (beginning-of-line)
             (forward-line)
@@ -944,7 +944,7 @@ a list is returned instead of failing with a nil result."
               (search-backward-regexp (concat (regexp-quote function-name) "[ \t]*::[ \t]*" )) ; find type sig
               (goto-char (match-end 0))
               (when (looking-at "forall\\|∀") ; skip quantifiers
-                (search-forward-regexp "\\."))
+                (search-forward "."))
               (skip-chars-forward "\n\t ") ; skip spaces
               (insert (concat missing-constraint " => "))))
            ((string-match "Unticked promoted constructor" msg)
@@ -993,9 +993,16 @@ a list is returned instead of failing with a nil result."
            ((string-match "Unused quantified type variable ‘\\(.*\\)’" msg)
             ;; note there can be a kind annotation, not just a variable.
             (delete-region (point) (+ (point) (- (match-end 1) (match-beginning 1)))))
-           ((string-match "The import of ‘.*’ is redundant" msg)
+           ((string-match "The import of ‘[^’]*’ is redundant" msg)
             (beginning-of-line)
             (delete-region (point) (progn (next-logical-line) (point))))
+           ((string-match "The import of ‘\\(.*\\)’ from ‘[^’]*’ is redundant" msg)
+            (let ((redundant (match-string 1 msg)))
+              (search-forward redundant)))
+           ((string-match "Found type wildcard ‘.*’[ \t\n]*standing for ‘\\(.*\\)’" msg)
+            (let ((type-expr (match-string 1 msg)))
+            (apply #'delete-region (dante-ident-pos-at-point))
+            (insert type-expr)))
            ((--any? (string-match it msg) dante-suggestible-extensions)
             (goto-char 1)
             (insert (concat "{-# LANGUAGE " (car (--filter (string-match it msg) dante-suggestible-extensions)) " #-}\n")))

@@ -4,8 +4,8 @@
 
 ;; Author: Shea Levy
 ;; URL: https://github.com/shlevy/nix-buffer/tree/master/
-;; Package-Version: 20170520.553
-;; Version: 3.0.1
+;; Package-Version: 20170809.1128
+;; Version: 3.1.0
 ;; Package-Requires: ((f "0.17.3") (emacs "24.4"))
 
 ;;; Commentary:
@@ -26,7 +26,7 @@
 (defgroup nix-buffer nil "Customization for nix-buffer."
   :prefix "nix-buffer-"
   :group 'environment
-  :package-version '('nix-buffer . "2.3.0"))
+  :package-version '('nix-buffer . "3.1.0"))
 
 (defun nix-buffer--directory-name-setter (opt val)
   "Defcustom setter for nix-buffer-directory-name.
@@ -162,27 +162,31 @@ EXPR-FILE The file containing the nix expression to build."
 	 (out-link (f-join state-dir "result"))
 	 (current-out (file-symlink-p out-link))
 	 (err (generate-new-buffer " nix-buffer-nix-build-stderr")))
-    (progn
-      (ignore-errors (make-directory state-dir t))
-      (make-process
-       :name "nix-buffer-nix-build"
-       :buffer (generate-new-buffer " nix-buffer-nix-build-stdout")
-       :command (list
-		 "nix-build"
-		 "--arg" "root" root
-		 "--out-link" out-link
-		 expr-file
-		 )
-       :noquery t
-       :sentinel (apply-partially 'nix-buffer--sentinel
-				  out-link
-				  current-out
-				  expr-file
-				  (current-buffer)
-				  err)
-       :stderr err)
-      (when current-out
-	(nix-buffer--load-result expr-file current-out)))))
+    (ignore-errors (make-directory state-dir t))
+    (make-process
+     :name "nix-buffer-nix-build"
+     :buffer (generate-new-buffer " nix-buffer-nix-build-stdout")
+     :command (list
+	       "nix-build"
+	       "--arg" "root" root
+	       "--out-link" out-link
+	       expr-file
+	       )
+     :noquery t
+     :sentinel (apply-partially 'nix-buffer--sentinel
+				out-link
+				current-out
+				expr-file
+				(current-buffer)
+				err)
+     :stderr err)
+    (when current-out
+      (nix-buffer--load-result expr-file current-out))))
+
+(defcustom nix-buffer-root-file "dir-locals.nix"
+  "File name to use for determining Nix expression to use."
+  :group 'nix-buffer
+  :type '(string))
 
 ;;;###autoload
 (defun nix-buffer ()
@@ -216,10 +220,10 @@ evaluates to {}), then nothing is loaded and the cached result, if any,
 is removed."
   (interactive)
   (let* ((root (directory-file-name (or (buffer-file-name) default-directory)))
-	 (expr-dir (locate-dominating-file root "dir-locals.nix")))
+	 (expr-dir (locate-dominating-file root nix-buffer-root-file)))
     (when expr-dir
-	 (let ((expr-file (f-expand "dir-locals.nix" expr-dir)))
-	   (nix-buffer--nix-build root expr-file)))))
+      (let ((expr-file (f-expand nix-buffer-root-file expr-dir)))
+	(nix-buffer--nix-build root expr-file)))))
 
 (add-hook 'kill-emacs-hook 'nix-buffer-unload-function)
 

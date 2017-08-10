@@ -5,7 +5,7 @@
 ;; Author: Serghei Iakovlev (serghei@phalconphp.com)
 ;; Maintainer: Serghei Iakovlev
 ;; Version: 0.3.4
-;; Package-Version: 20170808.1302
+;; Package-Version: 20170809.1543
 ;; URL: https://github.com/sergeyklay/zephir-mode
 ;; Keywords: languages
 ;; Package-Requires: ((cl-lib "0.5") (pkg-info "0.4") (emacs "24.3"))
@@ -354,8 +354,22 @@ will be handled.
 Do not try to modify this list for end user customizations; the
 `*-font-lock-extra-types' variable, where `*' is the mode prefix, is
 the appropriate place for that."
-  zephir '("uint" "int" "bool" "boolean" "float" "double" "long"
-           "ulong" "char" "string" "resource" "void" "null"))
+  zephir '(
+           "int"
+           "uint"
+           "bool"
+           "boolean"
+           "float"
+           "double"
+           "long"
+           "ulong"
+           "char"
+           "uchar"
+           "string"
+           "resource"
+           "var"
+           "void"
+           "null"))
 
 (c-lang-defconst c-class-decl-kwds
   "Keywords introducing declarations where the following block (if any)

@@ -3,9 +3,10 @@
 ;; Copyright (C) 2015  The Tramp HDFS Developers
 ;;
 ;; Version: 0.3.0
-;; Package-Version: 20151028.2036
+;; Package-Version: 20170809.1508
 ;; Author: Raghav Kumar Gautam <raghav@apache.org>
 ;; Keywords: tramp, emacs, hdfs, hadoop, webhdfs, rest
+;; Package-Requires: ((emacs "24.4"))
 ;; Acknowledgements: Thanks to tramp-smb.el, tramp-sh.el for inspiration & code.
 ;;
 ;; Contains code from GNU Emacs <https://www.gnu.org/software/emacs/>,

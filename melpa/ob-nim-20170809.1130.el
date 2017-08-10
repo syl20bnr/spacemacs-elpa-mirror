@@ -1,7 +1,7 @@
 ;;; ob-nim.el --- Babel Functions for nim -*- lexical-binding: t; -*-
 
 ;; Author: Lompik
-;; Package-Version: 20160830.220
+;; Package-Version: 20170809.1130
 ;; Package-X-Original-Version: 0.0.1
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; Keywords: literate programming, reproducible research
@@ -111,7 +111,6 @@ header arguments."
 	    (concat tmp-bin-file cmdline)
 	    "")))
       (when results
-	(setq results (org-trim (org-remove-indentation results))) ; 4f63cfabb38d92e83f1c3e2f8aa2f33bafbdd1d8 org-babel-trim deprecated
 	(org-babel-reassemble-table
 	 (org-babel-result-cond (cdr (assoc :result-params params))
 	   (org-babel-read results t)
