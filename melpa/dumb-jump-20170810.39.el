@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015-2016 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.0
-;; Package-Version: 20170725.1803
+;; Package-Version: 20170810.39
 ;; Package-Requires: ((emacs "24.3") (f "0.17.3") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -779,7 +779,34 @@ using searcher git-grep."
 
     (:type "type" :supports ("ag" "grep" "rg" "git-grep") :language "rust"
            :regex "mod\\s+JJJ\\s*[{]?"
-           :tests ("mod test;" "pub mod test {")))
+           :tests ("mod test;" "pub mod test {"))
+
+    ;; elixir
+    (:type "function" :supports ("ag" "grep" "rg" "git-grep") :language "elixir"
+           :regex "\\bdef(p)?\\s+JJJ\\s*[ ,\\\(]"
+           :tests ("def test do"
+                   "def test, do:"
+                   "def test() do"
+                   "def test(), do:"
+                   "def test(foo, bar) do"
+                   "def test(foo, bar), do:"
+                   "defp test do"
+                   "defp test(), do:"))
+
+    (:type "variable" :supports ("ag" "grep" "rg" "git-grep") :language "elixir"
+           :regex "\\s*JJJ\\s*=[^=\\n]+"
+           :tests ("test = 1234")
+           :not ("if test == 1234"))
+
+    (:type "module" :supports ("ag" "grep" "rg" "git-grep") :language "elixir"
+           :regex "defmodule\\s+(\\w+\\.)*JJJ\\s+"
+           :tests ("defmodule test do"
+                   "defmodule Foo.Bar.test do"))
+
+    (:type "module" :supports ("ag" "grep" "rg" "git-grep") :language "elixir"
+           :regex "defprotocol\\s+(\\w+\\.)*JJJ\\s+"
+           :tests ("defprotocol test do"
+                   "defprotocol Foo.Bar.test do")))
 
   "List of regex patttern templates organized by language and type to use for generating the grep command."
   :group 'dumb-jump
@@ -877,7 +904,11 @@ using searcher git-grep."
     (:language "shell" :ext "csh" :agtype nil :rgtype nil)
     (:language "shell" :ext "ksh" :agtype nil :rgtype nil)
     (:language "shell" :ext "tcsh" :agtype nil :rgtype nil)
-    (:language "swift" :ext "swift" :agtype nil :rgtype "swift"))
+    (:language "swift" :ext "swift" :agtype nil :rgtype "swift")
+    (:language "elixir" :ext "ex" :agtype "elixir" :rgtype "elixir")
+    (:language "elixir" :ext "exs" :agtype "elixir" :rgtype "elixir")
+    (:language "elixir" :ext "eex" :agtype "elixir" :rgtype "elixir"))
+
   "Mapping of programming language(s) to file extensions."
   :group 'dumb-jump
   :type
@@ -1441,7 +1472,8 @@ current file."
     (:comment "//" :language "scala")
     (:comment ";" :language "scheme")
     (:comment "#" :language "shell")
-    (:comment "//" :language "swift"))
+    (:comment "//" :language "swift")
+    (:comment "#" :language "elixir"))
   "List of one-line comments organized by language."
   :group 'dumb-jump
   :type

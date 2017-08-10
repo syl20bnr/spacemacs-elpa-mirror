@@ -5,7 +5,7 @@
 ;; Author: Serghei Iakovlev (serghei@phalconphp.com)
 ;; Maintainer: Serghei Iakovlev
 ;; Version: 0.3.4
-;; Package-Version: 20170809.1543
+;; Package-Version: 20170810.114
 ;; URL: https://github.com/sergeyklay/zephir-mode
 ;; Keywords: languages
 ;; Package-Requires: ((cl-lib "0.5") (pkg-info "0.4") (emacs "24.3"))
@@ -131,6 +131,7 @@
 (require 'custom)
 (require 'speedbar)
 (require 'cl-lib)
+(require 'pkg-info)
 
 
 ;;; Customization
@@ -400,7 +401,7 @@ Zephir does not have an \"enum\"-like keyword."
 
 (c-lang-defconst c-protection-kwds
   "Access protection label keywords in classes."
-  zephir '("private" "protected" "public"))
+  zephir '("internal" "private" "protected" "public"))
 
 (c-lang-defconst c-postfix-decl-spec-kwds
   zephir '("implements" "extends"))
@@ -880,9 +881,12 @@ this ^ lineup"
 (define-derived-mode zephir-mode c-mode "Zephir"
   "A major mode for editing Zephir code.
 
+See https://zephir-lang.com for more information about the Zephir language.
+
 Key bindings:
 \\{zephir-mode-map}
 "
+  :group 'zephir-mode
   ;; Initialize CC Mode for use in the current buffer.
   (c-initialize-cc-mode t)
   ;; `c-init-language-vars' is a macro that is expanded at compile
@@ -896,6 +900,7 @@ Key bindings:
   ;; analysis and similar things working.
   (c-common-init 'zephir-mode)
 
+  ;; Local vars
   (set (make-local-variable font-lock-string-face) 'zephir-string)
   (set (make-local-variable font-lock-keyword-face) 'zephir-keyword)
   (set (make-local-variable font-lock-builtin-face) 'zephir-builtin)

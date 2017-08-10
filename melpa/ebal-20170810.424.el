@@ -4,7 +4,7 @@
 ;;
 ;; Author: Mark Karpov <markkarpov92@gmail.com>
 ;; URL: https://github.com/mrkkrp/ebal
-;; Package-Version: 20170802.113
+;; Package-Version: 20170810.424
 ;; Version: 0.3.0
 ;; Package-Requires: ((emacs "24.4") (f "0.18.0"))
 ;; Keywords: convenience, cabal, haskell
@@ -121,12 +121,12 @@ project-local settings that user might have.")
 (defvar ebal--cabal-mod-time nil
   "Time of last modification of \"*.cabal\" file.
 
-This is usually set by `ebal-prepare'.")
+This is usually set by `ebal--prepare'.")
 
 (defvar ebal--ebal-mod-time nil
   "Time of last modification of \"*.ebal\" file.
 
-This is usually set by `ebal-prepare'.")
+This is usually set by `ebal--prepare'.")
 
 (defvar ebal--project-name nil
   "Name of current project extracted from \"*.cabal\" file.
@@ -304,7 +304,7 @@ Name of the command is available in `ebal--actual-command'."
 ;; Various utilities
 
 (defun ebal--all-matches (regexp)
-  "Return list of all stirngs matching REGEXP in current buffer."
+  "Return list of all strings matching REGEXP in current buffer."
   (let (matches)
     (goto-char (point-min))
     (while (re-search-forward regexp nil t)
@@ -388,7 +388,7 @@ failure.  Returned path is guaranteed to have trailing slash."
   (nth 5 (file-attributes filename 'integer)))
 
 (defun ebal--target-executable ()
-  "Return path to target program is it's available, and NIL otherwise."
+  "Return path to target program if it's available, and NIL otherwise."
   (cl-destructuring-bind (default . custom)
       (if (ebal--cabal-mode-p)
           (cons "cabal" ebal-cabal-executable)
@@ -446,7 +446,7 @@ If `ebal--operation-mode' is not stack, return NIL."
 
 This commands searches for first \"*.cabal\" files traversing
 directories upwards beginning with `default-directory'.  When
-Cabal files is found, the following variables are set:
+Cabal file is found, the following variables are set:
 
   `ebal--project-name'
   `ebal--project-version'
@@ -871,7 +871,7 @@ taken for compatibility and have no effect."
 ;; Wizard that helps to create new Cabal projects.
 
 (defun ebal--init-query (prompt &optional collection require-match)
-  "Read users' input using `ebal-completing-read-function'.
+  "Read user's input using `ebal-completing-read-function'.
 
 PROMPT is the prompt to show and COLLECTION represents valid
 choices.  If REQUIRE-MATCH is not NIL, don't let user input

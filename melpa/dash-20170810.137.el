@@ -4,7 +4,7 @@
 
 ;; Author: Magnar Sveen <magnars@gmail.com>
 ;; Version: 2.13.0
-;; Package-Version: 20170727.212
+;; Package-Version: 20170810.137
 ;; Keywords: lists
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -1032,6 +1032,36 @@ value. Apply FN to each item in LIST, splitting it each time FN
 returns the header value, but only after seeing at least one
 other value (the body)."
   (--partition-by-header (funcall fn it) list))
+
+(defun -partition-after-pred (pred list)
+  "Partition directly after each time PRED is true on an element of LIST."
+  (when list
+    (let ((rest (-partition-after-pred pred
+                                       (cdr list))))
+      (if (funcall pred (car list))
+          ;;split after (car list)
+          (cons (list (car list))
+                rest)
+
+        ;;don't split after (car list)
+        (cons (cons (car list)
+                    (car rest))
+              (cdr rest))))))
+
+(defun -partition-before-pred (pred list)
+  "Partition directly before each time PRED is true on an element of LIST."
+  (nreverse (-map #'reverse
+                  (-partition-after-pred pred (reverse list)))))
+
+(defun -partition-after-item (item list)
+  "Partition directly after each time ITEM appears in LIST."
+  (-partition-after-pred (lambda (ele) (equal ele item))
+                         list))
+
+(defun -partition-before-item (item list)
+  "Partition directly before each time ITEM appears in LIST."
+  (-partition-before-pred (lambda (ele) (equal ele item))
+                          list))
 
 (defmacro --group-by (form list)
   "Anaphoric form of `-group-by'."
