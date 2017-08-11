@@ -4,7 +4,7 @@
 
 ;; Author: Chunyang Xu <xuchunyang56@gmail.com>
 ;; URL: https://github.com/xuchunyang/chinese-word-at-point.el
-;; Package-Version: 20150618.1838
+;; Package-Version: 20170811.241
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; Version: 0.2.3
 ;; Created: 9 Jan 2015
@@ -80,8 +80,8 @@ Return Chinese words as a string separated by one space"
                (current-pos (point))
                (index beginning-pos)
                (old-index beginning-pos))
-          (dolist (word (split-string (chinese-word--split-by-space
-                                       current-word)))
+          (cl-dolist (word (split-string (chinese-word--split-by-space
+                                          current-word)))
             (cl-incf index (length word))
             (if (and (>= current-pos old-index)
                      (< current-pos index))

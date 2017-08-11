@@ -5,7 +5,7 @@
 ;; Author: Marcin Swieczkowski <scatman@bu.edu>
 ;; Created: Thu Mar  2 22:19:19 CET 2017
 ;; Version: 1.0.0
-;; Package-Version: 20170725.415
+;; Package-Version: 20170811.646
 ;; Last-Updated: Wed Apr 12 16:11:07 CEST 2017
 ;;           By: Marcin Swieczkowski
 ;;     Update #: 3
@@ -195,7 +195,7 @@
      ((t (:foreground ,nimbus/yellow))))
 
    ;; line numbers
-   `(linum          ((t (:inherit fringe :foreground ,nimbus/dark-green))))
+   `(linum          ((t (:inherit fringe :foreground ,nimbus/dark-gray))))
 
    `(popup-tip-face ((t (:background ,nimbus/fg :foreground ,nimbus/bg))))
 
