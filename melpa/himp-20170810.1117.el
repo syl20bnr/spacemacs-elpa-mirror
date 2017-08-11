@@ -5,7 +5,7 @@
 ;;
 ;; Author: Michał Kondraciuk <k.michal@zoho.com>
 ;; URL: http://github.com/mkcms/himp/
-;; Package-Version: 20170808.1022
+;; Package-Version: 20170810.1117
 ;; Package-Requires: ((emacs "24.3") (vimish-fold "0.1.0"))
 ;; Version: 0.1
 ;; Keywords: convenience, tools
@@ -320,10 +320,12 @@ should be hidden or 2 empty lines."
         (let ((start (car region))
               (end (cdr region))
               (marker (make-marker)))
-          (himp--make-fold start end)
-          (set-marker marker start)
-          (set-marker-insertion-type marker t)
-          (add-to-list 'himp--regions marker))))))
+          (unless (= (line-number-at-pos start)
+                     (line-number-at-pos end))
+            (himp--make-fold start end)
+            (set-marker marker start)
+            (set-marker-insertion-type marker t)
+            (add-to-list 'himp--regions marker)))))))
 
 (defun himp-handle-save ()
   "Rescan buffer if `himp-rescan-on-save' is non-nil."
