@@ -2,7 +2,7 @@
 
 ;; Author: Nicolas Lamirault <nicolas.lamirault@gmail.com>
 ;; URL: https://github.com/nlamirault/gotest.el
-;; Package-Version: 20170522.53
+;; Package-Version: 20170811.0
 ;; Version: 0.13.0
 ;; Keywords: languages, go, tests
 
@@ -480,7 +480,10 @@ For example, if the current buffer is `foo.go', the buffer for
   (interactive)
   (if (go-test--is-gb-project)
       (go-test--gb-start "all -test.v=true")
-    (go-test--go-test "./...")))
+    (let ((packages (cl-remove-if (lambda (s) (s-contains? "/vendor/" s))
+                                  (s-split "\n"
+                                           (shell-command-to-string "go list ./...")))))
+      (go-test--go-test (s-join " " packages)))))
 
 
 

@@ -4,7 +4,7 @@
 
 ;; Author: Stefan Huchler <stefan.huchler@mail.de>
 ;; URL: http://github.com/spiderbit/kodi-remote.el
-;; Package-Version: 20170719.1038
+;; Package-Version: 20170811.105
 ;; Package-Requires: ((request "0.2.0")(let-alist "1.0.4")(json "1.4")(elnode "20140203.1506"))
 ;; Keywords: kodi tools convinience
 
@@ -43,12 +43,22 @@
 (require 'let-alist)
 (require 'subr-x)
 (require 'elnode)
-
 (defcustom kodi-host-name "localhost:8080"
   "Host to access Kodi remote control."
   :type 'string
   :group 'kodi-remote)
-
+(defcustom kodi-dangerous-options nil
+  "Option to give access for destructive operations."
+  :type 'boolean
+  :group 'kodi-remote)
+(defcustom kodi-access-host nil
+  "Host to access media over tramp."
+  :type 'string
+  :group 'kodi-remote)
+(defcustom kodi-access-method "ssh"
+  "Method to access media over tramp."
+  :type 'string
+  :group 'kodi-remote)
 (defvar kodi-active-player -1)
 (defvar kodi-active-window nil)
 (defvar kodi-fullscreen nil)
@@ -60,9 +70,9 @@
 (defvar-local kodi-remote-refresh-function nil
   "The name of the function used to redraw a buffer.")
 (defvar kodi-network-interface nil
-  "network interface connecting to kodi.")
+  "Network interface connecting to kodi.")
 (defvar kodi-elnode-directory nil
-  "the temp dir to use for serving streams to kodi.")
+  "The temp dir to use for serving streams to kodi.")
 
 (defun kodi-client-ip ()
   "Function to create the local client ip address."
@@ -173,7 +183,7 @@ Argument DIRECTION which direction and how big of step to seek."
     (kodi-remote-post "Player.Open" params)))
 
 (defun kodi-remote-play-playlist-item (position)
-  "Play series in playlist position with given ID."
+  "Play series in playlist POSITION with given ID."
   (let* ((params
 	  `(("params" . (("item" . (("playlistid" . 1)
 				    ("position" . ,position))))))))
@@ -225,7 +235,9 @@ Argument DIRECTION which direction and how big of step to seek."
     (kodi-remote-post "Input.ExecuteAction" params)))
 
 (defun kodi-remote-input-direct (seek input)
-  "Move horizontal in menu or seek big forward/backward."
+  "Move horrizontal or seek.
+Depending on current window move horizontal in menu (INPUT)
+ or SEEK big forward/backward."
   (kodi-remote-get-active-window)
   (sit-for 0.01)
   (if (string-equal kodi-active-window "Fullscreen video")
@@ -317,7 +329,8 @@ Optional argument ID limits to a specific artist."
 
 (defun kodi-remote-get-series-episodes (&optional show-id filter-watched)
   "Poll unwatches episodes from show.
-Optional argument SHOW-ID limits to a specific show."
+Optional argument SHOW-ID limits to a specific show.
+Optional argument FILTER-WATCHED filters watched episodes."
   (let* ((filter '("filter" . (("field" . "playcount")
 			       ("operator" . "lessthan")
 			       ("value" . "1" ))))
@@ -379,7 +392,8 @@ Optional argument SHOW-ID limits to a specific show."
 ;;    )
 
 (defun kodi-remote-playlist-add-url (url)
-  "Add item/video to playlist."
+  "Add item/video to playlist.
+Argument URL the file url to the media."
   (interactive "sUrl: ")
   (let* ((params `(("params" . (("playlistid" . 1)
 				("item" . (("file" . ,url))))))))
@@ -401,31 +415,31 @@ Optional argument SHOW-ID limits to a specific show."
     (kodi-remote-get "Playlist.GetItems" params)))
 
 (defun kodi-remote-playlist-swap (direction)
-  "Moves item/video up in the playlist."
-  (let* ((position1 (tabulated-list-get-id))
-	 (difference '(("up" . -1) ("down" . 1))))
-    (if position1
-	(let* ((position2 (+ position1 (assoc-default direction difference)))
-	      (max (length tabulated-list-entries))
-	      (positions `(,position1 ,position2)))
-	  (if (<= 0 (seq-min positions) (seq-max positions) max)
-	      (let* ((params `(("params"
-				. (("playlistid" . 1)
-				   ("position1" . ,position1)
-				   ("position2" . ,position2))))))
-		(kodi-remote-post "Playlist.Swap" params))
-	    ;; (kodi-remote-playlist-draw)
-	    )))))
+  "Move item/video up in the playlist.
+Argument DIRECTION can be up or down."
+  (if-let ((position1 (tabulated-list-get-id))
+	   (difference '(("up" . -1) ("down" . 1)))
+	   (position2 (+ position1 (assoc-default direction difference)))
+	   (max (length tabulated-list-entries))
+	   (positions (list position1 position2))
+	   (eval (cons 'and (mapcar (lambda (x)(<= 0 x max)) positions)))
+	   (params `(("params"
+		      . (("playlistid" . 1)
+			 ("position1" . ,position1)
+			 ("position2" . ,position2))))))
+      (kodi-remote-post "Playlist.Swap" params)
+    ;; (kodi-remote-playlist-draw)
+    ))
 
 ;;;###autoload
 (defun kodi-remote-playlist-move-up ()
-  "Moves item/video up in the playlist."
+  "Move item/video up in the playlist."
   (interactive)
   (kodi-remote-playlist-swap "up"))
 
 ;;;###autoload
 (defun kodi-remote-playlist-move-down ()
-  "Moves item/video up in the playlist."
+  "Move item/video up in the playlist."
   (interactive)
   (kodi-remote-playlist-swap "down"))
 
@@ -536,7 +550,7 @@ supports.  Argument VIDEO-URL A Url from a youtube video."
 ;FIXME: use quvi instead of youtube-dl
 ;;;###autoload
 (defun kodi-remote-append-video-url (video-url)
-  "Appends urls from videos like youtube to kodi playlists.
+  "Append urls from videos like youtube to kodi playlists.
 Could be used for other sites, too.  whatever youtube-dl
 supports.  Argument VIDEO-URL A Url from a youtube video."
   (interactive "surl: ")
@@ -551,7 +565,7 @@ supports.  Argument VIDEO-URL A Url from a youtube video."
 
 
 (defun kodi-setup-elnode ()
-  "starts elnode deamon and sets up everything if not done already"
+  "Start elnode deamon and set up everything if not done already."
   ;; (print (elnode-ports))
   (if (not (member 8028 (elnode-ports)))
       (progn
@@ -562,7 +576,9 @@ supports.  Argument VIDEO-URL A Url from a youtube video."
 	(elnode-start kodi-elnode-handler :port 8028 :host "*"))))
 
 (defun kodi-remote-playlist-add-url-pls (url &optional label)
-  "Add item/video to playlist."
+  "Add item/video to playlist.
+Argument URL the video url.
+Optional argument LABEL a custom label for the file."
   ;; (interactive "sUrl: ")
   (kodi-setup-elnode)
   (with-temp-file (expand-file-name
@@ -587,7 +603,9 @@ supports.  Argument VIDEO-URL A Url from a youtube video."
 
 
 (defun kodi-remote-playlist-add-url-strm (url &optional label)
-  "Add item/video to playlist."
+  "Add item/video to playlist.
+Argument URL the url to the media.
+Optional argument LABEL cutom name of the entry."
   ;; (interactive "sUrl: ")
   (kodi-setup-elnode)
   ;; (print kodi-elnode-directory)
@@ -673,11 +691,34 @@ Key bindings:
   (kodi-remote-draw-shows))
 
 (defun kodi-remote-delete ()
-  "Deletes episode."
+  "Delete episode over tramp.
+For it to work ‘kodi-dangerous-options’ must be set to t
+and ‘kodi-access-host’ must be set to the hostname of your kodi-file host."
   (interactive)
-  (let* ((params
-	  `(("params" . (("episodeid" . ,(tabulated-list-get-id)))))))
-    (kodi-remote-post "VideoLibrary.RemoveEpisode" params)))
+  (if (and kodi-dangerous-options (boundp 'kodi-access-host))
+      (progn
+	(let* ((params
+		`(("params" .
+		   (("episodeid" . ,(tabulated-list-get-id))
+		    ("properties" . ("file")))))))
+	  (kodi-remote-get "VideoLibrary.GetEpisodeDetails" params))
+	(kodi-remote-sit-for-done)
+	(let* ((default-directory
+		 (concat "/" kodi-access-method
+			 ":" kodi-access-host ":/"))
+	       (file-name
+		(substring
+		 (decode-coding-string
+		  (let-alist
+		      kodi-properties .episodedetails.file)
+		  'utf-8)
+		 1)))
+	  (if (file-writable-p file-name )
+	      (delete-file file-name)))
+	(let* ((params
+		`(("params" . (("episodeid" .
+				,(tabulated-list-get-id)))))))
+	  (kodi-remote-post "VideoLibrary.RemoveEpisode" params)))))
 
 (defun kodi-remote-series-clean ()
   "Cleans video library."
@@ -769,6 +810,8 @@ Argument ITEM the media data form kodi"
 
 (defun kodi-generate-entry (action id item)
   "Generate tabulated-list entry for kodi media buffers.
+Argument ACTION button action.
+Argument ID button/entry id.
 Argument ITEM the media data form kodi"
   (let* ((number-of-nodes 5)
 	 (subitemid (assoc-default id item))
