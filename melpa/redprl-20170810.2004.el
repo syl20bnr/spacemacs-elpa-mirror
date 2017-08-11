@@ -5,7 +5,7 @@
 
 ;; Author: Jonathan Sterling <jon@jonmsterling.com>
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 20170808.515
+;; Package-Version: 20170810.2004
 ;; Version: 0.0.1
 ;; Keywords: languages
 
@@ -101,7 +101,7 @@
   "Syntax table for RedPRL.")
 
 (defconst redprl-declaration-keywords
-  '("Def" "Thm" "Tac" "Sym" "Record" "Print" "Extract")
+  '("Def" "Extract" "Print" "Rule" "Tac" "Thm")
   "RedPRL's keywords.")
 
 (defconst redprl-sort-keywords
@@ -121,13 +121,13 @@
   "RedPRL's expression keywords.")
 
 (defconst redprl-expression-symbols
-  '("->" "*" "$" "!" "@")
+  '("->" "$" "*" "!" "@" "=")
   "RedPRL's expression symbols.")
 
 (defconst redprl-tactic-keywords
   '("auto" "auto-step" "case" "cut-lemma" "elim" "else" "exact" "fresh" "goal"
     "head-expand" "hyp" "id" "lemma" "let" "match" "of" "print" "progress"
-    "query" "rec" "repeat" "symmetry" "then" "unfold" "use" "with")
+    "query" "rec" "refine" "repeat" "symmetry" "then" "unfold" "use" "with")
   "RedPRL's tactic keywords.")
 
 (defconst redprl-tactic-symbols
