@@ -3,8 +3,8 @@
 ;; Copyright © 2012-2017 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 3.1.3
-;; Package-Version: 20170804.2234
+;; Version: 3.1.20170811
+;; Package-Version: 20170811.2149
 ;; Created: 02 April 2012
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, extensions, files, tools, unix

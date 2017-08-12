@@ -1,10 +1,10 @@
 ;;; xah-elisp-mode.el --- Major mode for editing emacs lisp. -*- coding: utf-8; lexical-binding: t; -*-
 
-;; Copyright © 2013-2016, by Xah Lee
+;; Copyright © 2013-2017, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 3.2.1
-;; Package-Version: 20170804.2206
+;; Version: 3.2.20170811
+;; Package-Version: 20170811.2138
 ;; Created: 23 Mar 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: lisp, languages

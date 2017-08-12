@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2017 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.4.17
-;; Package-Version: 20170804.2244
+;; Version: 2.5.20170811
+;; Package-Version: 20170811.2157
 ;; Created: 18 April 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: languages, convenience, css, color

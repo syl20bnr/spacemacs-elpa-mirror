@@ -1,10 +1,10 @@
 ;;; xah-replace-pairs.el --- Multi-pair find/replace in strings and region.  -*- coding: utf-8; lexical-binding: t; -*-
 
-;; Copyright © 2010-2016, by Xah Lee
+;; Copyright © 2010-2017, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.2.6
-;; Package-Version: 20170804.2216
+;; Version: 2.2.20170811
+;; Package-Version: 20170811.2151
 ;; Created: 17 Aug 2010
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: lisp, tools, find replace

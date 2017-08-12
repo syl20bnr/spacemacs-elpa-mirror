@@ -1,7 +1,7 @@
 ;;; org-parser.el --- parse org files into structured datatypes.  -*- lexical-binding: t; -*-
 
 ;; Version: 0.3
-;; Package-Version: 20170728.2120
+;; Package-Version: 20170811.2231
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright (C) 2016-2017 Zachary Kanfer
@@ -277,11 +277,9 @@ list of items itself, and a block is just a hash."
       ;;properties are not part of the body, so we drop properties
       (mapcar #'org-parser--parse-for-markup
               ;;zck maybe keeping property lines together should be done in the split-body-text-into-groups.
-              (if (string-collate-equalp ":PROPERTIES:"
-                                         (cl-second lines)
-                                         nil
-                                         t)
-                  (cdr (-drop-while (lambda (line) (not (string-collate-equalp ":END:" line nil t)))
+              (if (string-match-p "^\s*:PROPERTIES:$"
+                                  (upcase (cl-second lines)))
+                  (cdr (-drop-while (lambda (line) (not (string-match-p "^\s*:END:$" line)))
                                     (cddr lines)))
                 (cdr lines))))))
 
@@ -339,14 +337,17 @@ consist of \"letters, numbers, ‘_’, and ‘@’.\""
 
 Property text is the text between :PROPERTIES: and :END: of a
   string."
-  (let* ((begin-token "\n:PROPERTIES:\n")
-         (end-regexp "\n:END:\\(:?\n\\|$\\)")
-         (begin-match (string-match-p (regexp-quote begin-token) text))
-         (end-match (string-match-p end-regexp text begin-match)))
+  (let* ((begin-regexp "\n\s*:PROPERTIES:\n")
+         (end-regexp "\n\s*:END:\\(:?\n\\|$\\)")
+         (begin-match (string-match begin-regexp text))
+         (beginning-of-drawer-internals (match-end 0))
+         (end-match (string-match end-regexp text begin-match))
+         (end-of-drawer-internals (match-beginning 0)))
     (when (and begin-match end-match)
       (substring text
-                 (+ begin-match (length begin-token))
-                 end-match))))
+                 beginning-of-drawer-internals
+                 end-of-drawer-internals))))
+
 
 (defun org-parser--make-text-tree (blocks)
   "Organize BLOCKS, a list of text blocks, into the overall tree structure.

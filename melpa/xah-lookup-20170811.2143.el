@@ -3,8 +3,8 @@
 ;; Copyright © 2011-2017 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 3.2.7
-;; Package-Version: 20170804.2259
+;; Version: 3.2.20170811
+;; Package-Version: 20170811.2143
 ;; Created: 14 Nov 2011
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: help, docs, convenience
