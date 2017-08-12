@@ -4,7 +4,7 @@
 
 ;; Author: Donald Ephraim Curtis <dcurtis@milkbox.net>
 ;; URL: http://github.com/milkypostman/hl-sentence
-;; Package-Version: 20140802.920
+;; Package-Version: 20170812.646
 ;; Version: 3
 ;; Keywords: highlighting
 
@@ -50,8 +50,7 @@
   :group 'convenience)
 
 ;;;###autoload
-(defface hl-sentence-face
-  '((t))
+(defface hl-sentence '((t :inherit highlight))
   "The face used to highlight the current sentence."
   :group 'hl-sentence)
 
@@ -79,28 +78,26 @@
 (define-minor-mode hl-sentence-mode
   "Enable highlighting of currentent sentence."
   :init-value nil
-  (progn
-    (if hl-sentence-mode
-          (add-hook 'post-command-hook 'hl-sentence-current nil t)
-      (move-overlay hl-sentence-extent 0 0 (current-buffer))
-      (remove-hook 'post-command-hook 'hl-sentence-current t))))
+  (if hl-sentence-mode
+      (add-hook 'post-command-hook 'hl-sentence-current nil t)
+    (move-overlay hl-sentence-extent 0 0 (current-buffer))
+    (remove-hook 'post-command-hook 'hl-sentence-current t)))
 
 (defun hl-sentence-current ()
   "Highlight current sentence."
   (and hl-sentence-mode (> (buffer-size) 0)
-       (progn
-         (and (boundp 'hl-sentence-extent)
-              hl-sentence-extent
-              (move-overlay hl-sentence-extent
-                            (hl-sentence-begin-pos)
-                            (hl-sentence-end-pos)
-                            (current-buffer))))))
+       (boundp 'hl-sentence-extent)
+       hl-sentence-extent
+       (move-overlay hl-sentence-extent
+		     (hl-sentence-begin-pos)
+		     (hl-sentence-end-pos)
+		     (current-buffer))))
 
 (setq hl-sentence-extent (make-overlay 0 0))
 (overlay-put hl-sentence-extent 'face 'hl-sentence-face)
 
-
-
 (provide 'hl-sentence)
-
+;; Local Variables:
+;; indent-tabs-mode: nil
+;; End:
 ;;; hl-sentence.el ends here
