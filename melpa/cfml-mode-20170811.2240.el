@@ -1,10 +1,10 @@
-;;; cfml-mode.el --- CFML editing support
+;;; cfml-mode.el --- Emacs mode for editing CFML files
 
 ;; Copyright 2017 Andrew Myers
 
 ;; Author: Andrew Myers <am2605@gmail.com>
 ;; URL: https://github.com/am2605/cfml-mode
-;; Package-Version: 20170808.1635
+;; Package-Version: 20170811.2240
 ;; Version: 1.0.1
 ;; Package-Requires: ((emacs "25") (mmm-mode "0.5.4") (cftag-mode "1.0.0"))
 
