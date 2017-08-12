@@ -4,7 +4,7 @@
 
 ;; Author: Junpeng Qiu <qjpchmail@gmail.com>
 ;; Keywords: extensions
-;; Package-Version: 20170615.1143
+;; Package-Version: 20170812.819
 ;; URL: https://github.com/cute-jumper/fcitx.el
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -476,6 +476,8 @@
   (declare-function fcitx-eval-expression-turn-on "fcitx")
   (declare-function fcitx-read-char-turn-on "fcitx")
   (declare-function fcitx-read-char-turn-off "fcitx")
+  (declare-function fcitx-read-quoted-char-turn-on "fcitx")
+  (declare-function fcitx-read-quoted-char-turn-off "fcitx")
   (declare-function fcitx-read-key-turn-on "fcitx")
   (declare-function fcitx-read-key-turn-off "fcitx")
   (declare-function fcitx-read-key-sequence-turn-on "fcitx")
@@ -867,6 +869,7 @@ Re-run the setup function after `fcitx' is started.")))
 ;; `read-*' support ;;
 ;; ---------------- ;;
 (fcitx-defun-minibuffer-on-off "read-char" 'read-char)
+(fcitx-defun-minibuffer-on-off "read-quoted-char" 'read-quoted-char)
 (fcitx-defun-minibuffer-on-off "read-key" 'read-key)
 (fcitx-defun-minibuffer-on-off "read-key-sequence" 'read-key-sequence)
 (fcitx-defun-minibuffer-on-off "read-key-sequence-vector" 'read-key-sequence-vector)
@@ -875,6 +878,7 @@ Re-run the setup function after `fcitx' is started.")))
 (defun fcitx-read-funcs-turn-on ()
   (interactive)
   (fcitx-read-char-turn-on)
+  (fcitx-read-quoted-char-turn-on)
   (fcitx-read-key-turn-on)
   (fcitx-read-key-sequence-turn-on)
   (fcitx-read-key-sequence-vector-turn-on))
@@ -883,6 +887,7 @@ Re-run the setup function after `fcitx' is started.")))
 (defun fcitx-read-funcs-turn-off ()
   (interactive)
   (fcitx-read-char-turn-off)
+  (fcitx-read-quoted-char-turn-off)
   (fcitx-read-key-turn-off)
   (fcitx-read-key-sequence-turn-off)
   (fcitx-read-key-sequence-vector-turn-off))
@@ -947,11 +952,12 @@ Re-run the setup function after `fcitx' is started.")))
 (fcitx--defun-maybe "org-speed-command")
 
 (defun fcitx--org-post-command-hook ()
-  (when (bound-and-true-p org-use-speed-commands)
-    (if (and (bolp) (looking-at org-outline-regexp))
-        (fcitx--org-speed-command-maybe-deactivate)
-      (unless (fcitx--evil-should-disable-fcitx-p)
-        (fcitx--org-speed-command-maybe-activate)))))
+  (and (bound-and-true-p org-use-speed-commands)
+       (bound-and-true-p org-outline-regexp)
+       (if (and (bolp) (looking-at org-outline-regexp))
+           (fcitx--org-speed-command-maybe-deactivate)
+         (unless (fcitx--evil-should-disable-fcitx-p)
+           (fcitx--org-speed-command-maybe-activate)))))
 
 (defun fcitx--org-mode-hook ()
   (add-hook 'post-command-hook 'fcitx--org-post-command-hook nil t))

@@ -3,7 +3,7 @@
 
 ;; Author: Dave Pearson <davep@davep.org>
 ;; Version: 1.0
-;; Package-Version: 20170801.617
+;; Package-Version: 20170812.407
 ;; Keywords: docs
 ;; URL: https://github.com/davep/eg.el
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
@@ -537,13 +537,13 @@ ensures that it is closed again after BODY has been evaluated."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Guide viewer "internals".
 
-(defvar eg--current-guide nil
+(defvar-local eg--current-guide nil
   "The current guide being viewed in an EG buffer.")
 
-(defvar eg--current-entry nil
+(defvar-local eg--current-entry nil
   "The entry currently being viewed in an EG buffer.")
 
-(defvar eg--currently-displaying nil
+(defvar-local eg--currently-displaying nil
   "Informs the display code what it is we're displaying.")
 
 (defvar eg--undosify-map nil
@@ -1117,9 +1117,9 @@ The key bindings for `eg-mode' are:
           (switch-to-buffer buffer)
           (with-current-buffer buffer
             (eg-mode)
-            (set (make-local-variable 'eg--current-guide)        guide)
-            (set (make-local-variable 'eg--current-entry)        nil)
-            (set (make-local-variable 'eg--currently-displaying) nil)
+            (setq eg--current-guide        guide)
+            (setq eg--current-entry        nil)
+            (setq eg--currently-displaying nil)
             (eg--view-entry)))
       (eg-close guide)
       (error "%s isn't a valid Norton Guide file" file))))
