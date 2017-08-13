@@ -7,7 +7,7 @@
 ;; Created: 17 Jun 2012
 ;; Modified: 17 Oct 2016
 ;; Version: 2.3
-;; Package-Version: 20170710.1234
+;; Package-Version: 20170812.2256
 ;; Package-Requires: ((bind-key "1.0") (diminish "0.44"))
 ;; Keywords: dotemacs startup speed config package
 ;; URL: https://github.com/jwiegley/use-package
@@ -678,11 +678,12 @@ If the package is installed, its entry is removed from
               use-package--deferred-packages)
      (if packages
          (list
-          (completing-read
-           "Select package: "
-           packages
-           nil
-           'require-match)
+          (intern
+           (completing-read
+            "Select package: "
+            packages
+            nil
+            'require-match))
           :interactive)
        (user-error "No packages with deferred installation"))))
   (let ((spec (gethash name use-package--deferred-packages)))

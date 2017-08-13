@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/avy
-;; Package-Version: 20170804.1135
+;; Package-Version: 20170813.254
 ;; Version: 0.4.0
 ;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
 ;; Keywords: point, location
@@ -538,6 +538,39 @@ multiple DISPLAY-FN invokations."
           (unless alist
             (funcall avy-handler-function char))))
       (cdar alist))))
+
+;; ** Org-mode
+
+(defun avy-org-refile-as-child ()
+  "Refile current heading as first child of heading selected with `avy.'"
+  ;; Inspired by `org-teleport': http://kitchingroup.cheme.cmu.edu/blog/2016/03/18/Org-teleport-headlines/
+  (interactive)
+  (let ((rfloc (save-excursion
+                 (let* ((org-reverse-note-order t)
+                        (pos (avy-with avy-goto-line
+                               (avy--generic-jump (rx bol (1+ "*") (1+ space))
+                                                  nil avy-style)
+                               (point)))
+                        (filename (buffer-file-name (or (buffer-base-buffer (current-buffer))
+                                                        (current-buffer)))))
+                   (list nil filename nil pos)))))
+    ;; org-refile must be called outside of the excursion
+    (org-refile nil nil rfloc)))
+
+(defun avy-org-goto-heading-timer (&optional arg)
+  "Read one or many characters and jump to matching Org headings.
+The window scope is determined by `avy-all-windows' (ARG negates it)."
+  (interactive "P")
+  (let ((avy-all-windows (if arg
+                             (not avy-all-windows)
+                           avy-all-windows)))
+    (avy-with avy-goto-char-timer
+      (avy--process
+       (avy--read-candidates
+        (lambda (input)
+          (format "^\\*+ .*\\(%s\\)" input)))
+       (avy--style-fn avy-style))
+      (org-back-to-heading))))
 
 ;;** Rest
 (defun avy-window-list ()
@@ -1760,7 +1793,7 @@ newline."
   "How many seconds to wait for the second char."
   :type 'float)
 
-(defun avy--read-candidates ()
+(defun avy--read-candidates (&optional re-builder)
   "Read as many chars as possible and return their occurences.
 At least one char must be read, and then repeatedly one next char
 may be read if it is entered before `avy-timeout-seconds'.  `C-h'
@@ -1768,8 +1801,14 @@ or `DEL' deletes the last char entered, and `RET' exits with the
 currently read string immediately instead of waiting for another
 char for `avy-timeout-seconds'.
 The format of the result is the same as that of `avy--regex-candidates'.
-This function obeys `avy-all-windows' setting."
-  (let ((str "") char break overlays regex)
+This function obeys `avy-all-windows' setting.
+RE-BUILDER is a function that takes a string and returns a regex.
+When nil, `regexp-quote' is used.
+If a group is captured, the first group is highlighted.
+Otherwise, the whole regex is highlighted."
+  (let ((str "")
+        (re-builder (or re-builder #'regexp-quote))
+        char break overlays regex)
     (unwind-protect
          (progn
            (while (and (not break)
@@ -1807,12 +1846,12 @@ This function obeys `avy-all-windows' setting."
                                   (window-end (selected-window) t)))
                      (save-excursion
                        (goto-char (car pair))
-                       (setq regex (regexp-quote str))
+                       (setq regex (funcall re-builder str))
                        (while (re-search-forward regex (cdr pair) t)
                          (unless (get-char-property (1- (point)) 'invisible)
-                           (let ((ov (make-overlay
-                                      (match-beginning 0)
-                                      (match-end 0))))
+                           (let* ((idx (if (= (length (match-data)) 4) 1 0))
+                                  (ov (make-overlay
+                                       (match-beginning idx) (match-end idx))))
                              (setq found t)
                              (push ov overlays)
                              (overlay-put

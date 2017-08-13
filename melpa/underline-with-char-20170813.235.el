@@ -2,22 +2,40 @@
 
 ;; THIS FILE HAS BEEN GENERATED.
 
+;; Copyright (C) 2017 Marco Wahl
+;;
+;; Version: 3.0.1
+;; Package-Version: 20170813.235
+;; Package-Requires: ((emacs "24"))
+;; Keywords: convenience
+;; Maintainer: marcowahlsoft@gmail.com
+
+;; This file is not part of GNU Emacs.
+
+;; This program is free software: you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+;; General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see
+;; <http://www.gnu.org/licenses/>.
+
 ;; Program
 ;; :PROPERTIES:
 ;; :ID:       17c5897e-3413-4576-aa83-3869e0cb1053
 ;; :END:
 
 
-;; [[file:~/p/elisp/mw/underline-with-char/underline-with-char.org::*Program][Program:1]]
+;; [[id:17c5897e-3413-4576-aa83-3869e0cb1053][Program:1]]
 ;; THIS FILE HAS BEEN GENERATED.
 
 
-;;
-;; Version: 3.0.0
-;; Package-Version: 20170714.1511
-;; Package-Requires: ((emacs "24"))
-;; Keywords: convenience
-
 ;;; Commentary:
 ;;
 ;; This program supports underlining with a certain character.

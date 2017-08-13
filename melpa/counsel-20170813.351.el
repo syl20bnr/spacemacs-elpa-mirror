@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170809.2208
+;; Package-Version: 20170813.351
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -2952,7 +2952,8 @@ And insert it into the minibuffer.  Useful during `eval-expression'."
   (setq ivy-completion-end (point))
   (ivy-read "Symbol name: "
             (delete-dups
-             (ring-elements elements))
+             (when (> (ring-size elements) 0)
+               (ring-elements elements)))
             :action #'ivy-completion-in-region-action))
 
 (defvar eshell-history-ring)
