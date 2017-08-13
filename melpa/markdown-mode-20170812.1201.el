@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.3-dev
-;; Package-Version: 20170803.1101
+;; Package-Version: 20170812.1201
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: http://jblevins.org/projects/markdown-mode/
@@ -6586,7 +6586,7 @@ the surrounding context in light of Markdown syntax.  For that, see
   "Move the point to the start of the current paragraph.
 With argument ARG, do it ARG times; a negative argument ARG = -N
 means move forward N blocks."
-  (interactive "p")
+  (interactive "^p")
   (or arg (setq arg 1))
   (if (< arg 0)
       (markdown-forward-paragraph (- arg))
@@ -6640,7 +6640,7 @@ means move forward N blocks."
   "Move forward to the next end of a paragraph.
 With argument ARG, do it ARG times; a negative argument ARG = -N
 means move backward N blocks."
-  (interactive "p")
+  (interactive "^p")
   (or arg (setq arg 1))
   (if (< arg 0)
       (markdown-backward-paragraph (- arg))
@@ -6691,7 +6691,7 @@ Moves across complete code blocks, list items, and blockquotes,
 but otherwise stops at blank lines, headers, and horizontal
 rules.  With argument ARG, do it ARG times; a negative argument
 ARG = -N means move forward N blocks."
-  (interactive "p")
+  (interactive "^p")
   (or arg (setq arg 1))
   (if (< arg 0)
       (markdown-forward-block (- arg))
@@ -6738,7 +6738,7 @@ Moves across complete code blocks, list items, and blockquotes,
 but otherwise stops at blank lines, headers, and horizontal
 rules.  With argument ARG, do it ARG times; a negative argument
 ARG = -N means move backward N blocks."
-  (interactive "p")
+  (interactive "^p")
   (or arg (setq arg 1))
   (if (< arg 0)
       (markdown-backward-block (- arg))

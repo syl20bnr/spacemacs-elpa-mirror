@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20170807.2147
+;; Package-Version: 20170812.1029
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -71,7 +71,7 @@
   :group 'haskell)
 
 (defcustom intero-package-version
-  "0.1.20"
+  "0.1.21"
   "Package version to auto-install.
 
 This version does not necessarily have to be the latest version

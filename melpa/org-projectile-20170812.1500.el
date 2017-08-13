@@ -4,7 +4,7 @@
 
 ;; Author: Ivan Malison <IvanMalison@gmail.com>
 ;; Keywords: org-mode projectile todo tools outlines
-;; Package-Version: 20170803.634
+;; Package-Version: 20170812.1500
 ;; URL: https://github.com/IvanMalison/org-projectile
 ;; Version: 1.0.0
 ;; Package-Requires: ((projectile "0.11.0") (dash "2.10.0") (emacs "24") (s "1.9.0") (org-category-capture "0.0.0"))
@@ -271,7 +271,9 @@
       (make-instance 'org-projectile-single-file-strategy))
 
 (defun org-projectile-location-for-project (project)
-  (org-projectile-category-to-project-path org-projectile-strategy project))
+  (cdr (assoc project
+              (org-projectile-category-to-project-path
+               org-projectile-strategy))))
 
 (cl-defun org-projectile-project-todo-entry
     (&rest additional-options &key (capture-character "p")
@@ -301,6 +303,20 @@
 
 (defun org-projectile-todo-files ()
   (occ-get-todo-files org-projectile-strategy))
+
+;;;###autoload
+(defun org-projectile-goto-location-for-project (project)
+  (interactive
+   (list
+    (projectile-completing-read
+     "Select which project's TODOs you would like to go to."
+     (occ-get-categories org-projectile-strategy))))
+  (occ-capture-goto-marker
+   (make-instance 'occ-context
+                  :category project
+                  :template org-projectile-capture-template
+                  :strategy org-projectile-strategy
+                  :options nil)))
 
 ;;;###autoload
 (defun org-projectile-single-file ()

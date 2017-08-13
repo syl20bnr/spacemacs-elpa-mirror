@@ -4,7 +4,7 @@
 
 ;; Author: Junpeng Qiu <qjpchmail@gmail.com>
 ;; Keywords: extensions
-;; Package-Version: 20170812.819
+;; Package-Version: 20170812.1131
 ;; URL: https://github.com/cute-jumper/fcitx.el
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -459,6 +459,8 @@
 
 ;; To get rid of byte compilation warnings
 (eval-when-compile
+  ;; org
+  (defvar org-outline-regexp)
   ;; evil-related
   (defvar evil-mode)
   (defvar evil-previous-state)
@@ -952,12 +954,11 @@ Re-run the setup function after `fcitx' is started.")))
 (fcitx--defun-maybe "org-speed-command")
 
 (defun fcitx--org-post-command-hook ()
-  (and (bound-and-true-p org-use-speed-commands)
-       (bound-and-true-p org-outline-regexp)
-       (if (and (bolp) (looking-at org-outline-regexp))
-           (fcitx--org-speed-command-maybe-deactivate)
-         (unless (fcitx--evil-should-disable-fcitx-p)
-           (fcitx--org-speed-command-maybe-activate)))))
+  (when (bound-and-true-p org-use-speed-commands)
+    (if (and (bolp) (looking-at org-outline-regexp))
+        (fcitx--org-speed-command-maybe-deactivate)
+      (unless (fcitx--evil-should-disable-fcitx-p)
+        (fcitx--org-speed-command-maybe-activate)))))
 
 (defun fcitx--org-mode-hook ()
   (add-hook 'post-command-hook 'fcitx--org-post-command-hook nil t))

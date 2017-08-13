@@ -2,7 +2,7 @@
 
 ;; Author: ecraven
 ;; URL: https://github.com/ecraven/ivy-pass/
-;; Package-Version: 20170730.2153
+;; Package-Version: 20170812.1255
 ;; Package-Requires: ((emacs "24") (ivy "0.8.0") (password-store "1.6.5"))
 ;; Version: 0.1
 ;; Keywords: pass, password, convenience, data
@@ -79,7 +79,7 @@ Default PASSWORD-LENGTH is ‘password-store-password-length’."
     (password-store-rename key new-name)))
 
 (defun ivy-pass--password-action (key)
-  "Kill the password of the entry for KEY."
+  "Add password for KEY to kill ring."
   (password-store-copy key))
 
 ;;;###autoload

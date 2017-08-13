@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015-2016 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.0
-;; Package-Version: 20170810.39
+;; Package-Version: 20170812.1308
 ;; Package-Requires: ((emacs "24.3") (f "0.17.3") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -1230,7 +1230,7 @@ to keep looking for another root."
 
 (defun dumb-jump-get-language-from-mode ()
   "Extract the language from the 'major-mode' name.  Currently just everything before '-mode'."
-  (let ((lookup '(sh "shell"))
+  (let ((lookup '(sh "shell" cperl "perl"))
         (m (s-replace "-mode" "" (symbol-name major-mode))))
         (or (plist-get lookup (intern m)) m)))
 
