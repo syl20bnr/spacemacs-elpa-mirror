@@ -5,7 +5,7 @@
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;;         Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/purcell/package-lint
-;; Package-Version: 20170813.314
+;; Package-Version: 20170813.720
 ;; Keywords: lisp
 ;; Version: 0
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
@@ -293,20 +293,6 @@ This is bound dynamically while the checks run.")
               (when message
                 (package-lint--error (line-number-at-pos) (current-column)
                                      'warning message)))))))))
-
-(defun package-lint--extract-key-sequence (form)
-  "Extract the key sequence from FORM."
-  (let (seq)
-    (pcase form
-      (`(kbd ,seq)
-       (package-lint--extract-key-sequence seq))
-      ((or `(global-set-key ,seq ,_) `(local-set-key ,seq ,_))
-       (package-lint--extract-key-sequence seq))
-      (`(define-key ,_ ,seq ,_)
-       (package-lint--extract-key-sequence seq))
-      ((pred stringp)
-       (listify-key-sequence (read-kbd-macro form)))
-      ((pred vectorp) (listify-key-sequence form)))))
 
 (defun package-lint--check-commentary-existence ()
   "Warn about nonexistent or empty commentary section."
@@ -687,20 +673,34 @@ DESC is a struct as returned by `package-buffer-info'."
 
 ;;; Helpers
 
+(defun package-lint--extract-key-sequence (form)
+  "Extract the key sequence from FORM."
+  (pcase form
+    (`(kbd ,seq)
+     (package-lint--extract-key-sequence seq))
+    ((or `(global-set-key ,seq ,_) `(local-set-key ,seq ,_))
+     (package-lint--extract-key-sequence seq))
+    (`(define-key ,_ ,seq ,_)
+     (package-lint--extract-key-sequence seq))
+    ((pred stringp)
+     (listify-key-sequence (read-kbd-macro form)))
+    ((pred vectorp)
+     (listify-key-sequence form))))
+
 (defun package-lint--test-keyseq (lks)
   "Return a message if the listified key sequence LKS is invalid, otherwise nil."
   (let* ((modifiers (event-modifiers lks))
          (basic-type (event-basic-type lks)))
-    (when (or (equal (car (last lks)) 7)
-              (and (equal (car (last lks)) 27)
+    (when (or (equal (car (last lks)) ?\C-g)
+              (and (equal (car (last lks)) ?\e)
                    (not (equal (nthcdr (- (length lks) 2) lks)
-                               '(27 27))))
+                               '(?\e ?\e))))
               (and (equal modifiers '(control))
-                   (= 99 basic-type)
-                   (= 1 (length (cdr lks)))
-                   (not (equal '(control) (event-modifiers (aref (vconcat lks) 1)))))
+                   (= ?c basic-type)
+                   (not (null (cdr lks)))
+                   (not (equal '(control) (event-modifiers (nth 1 lks)))))
               (member basic-type '(f5 f6 f7 f8 f9))
-              (equal (car (last lks)) 8))
+              (equal (car (last lks)) ?\C-h))
       "This key sequence is reserved (see Key Binding Conventions in the Emacs Lisp manual)")))
 
 (defun package-lint--region-empty-p (start end)

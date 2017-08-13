@@ -5,9 +5,9 @@
 ;; Filename: ido-completing-read+.el
 ;; Author: Ryan Thompson
 ;; Created: Sat Apr  4 13:41:20 2015 (-0700)
-;; Version: 4.4
-;; Package-Version: 20170813.15
-;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (s "0.1"))
+;; Version: 4.5
+;; Package-Version: 4.5
+;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (s "0.1") (memoize "1.1"))
 ;; URL: https://github.com/DarwinAwardWinner/ido-completing-read-plus
 ;; Keywords: ido, completion, convenience
 
@@ -78,7 +78,7 @@
 ;;
 ;;; Code:
 
-(defconst ido-completing-read+-version "4.4"
+(defconst ido-completing-read+-version "4.5"
   "Currently running version of ido-completing-read+.
 
 Note that when you update ido-completing-read+, this variable may
@@ -136,6 +136,7 @@ using it, so the initial value shouldn't matter.")))
 (define-ido-internal-var ido-cur-list)
 (define-ido-internal-var ido-cur-item)
 (define-ido-internal-var ido-require-match)
+(define-ido-internal-var ido-process-ignore-lists)
 
 ;;;###autoload
 (defvar ido-cr+-minibuffer-depth -1
@@ -870,12 +871,12 @@ result."
    for restriction-matches =
    (let ((ido-text text)
          (ido-cur-item (or ido-cur-item 'list)))
-     (ido-set-matches-1 collection t))
-   for filtered-collection =
-   (if removep
-       (seq-difference filtered-collection restriction-matches)
-     (setq need-reverse (not need-reverse))
-     restriction-matches)
+     (ido-set-matches-1 filtered-collection t))
+   do (setq filtered-collection
+            (if removep
+                (seq-difference filtered-collection restriction-matches)
+              (setq need-reverse (not need-reverse))
+              restriction-matches))
    ;; Each run of `ido-set-matches-1' reverses the order, so reverse
    ;; it one more time if it had an odd number of reverses
    finally return

@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 20170730.1306
+;; Package-Version: 20170812.2111
 ;; Version: 0.2
 ;; Package-Requires: ((helm "2.0") (rtags "2.10"))
 
@@ -76,7 +76,7 @@ Each element of the alist is a cons-cell of the form (DESCRIPTION . FUNCTION)."
               (if (= (point-at-eol) (point-max))
                   (setq done t)
                 (forward-line 1)))))))
-    ret))
+    (nreverse ret)))
 
 (defun helm-rtags-select (candidate)
   "Select CANDIDATE."
