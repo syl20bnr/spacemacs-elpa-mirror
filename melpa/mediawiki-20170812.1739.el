@@ -8,11 +8,11 @@
 ;; Author: Mark A. Hershberger <mah@everybody.org>
 ;; Created: Sep 17 2004
 ;; Keywords: mediawiki wikipedia network wiki
-;; Package-Version: 20170418.1035
+;; Package-Version: 20170812.1739
 ;; URL: https://github.com/hexmode/mediawiki-el
-;; Last Modified: <2017-04-18 12:34:27 hershm>
+;; Last Modified: <2017-08-12 20:38:31 mah>
 
-(defconst mediawiki-version "2.2.8"
+(defconst mediawiki-version "2.2.9"
   "Current version of mediawiki.el.")
 
 ;; This file is NOT (yet) part of GNU Emacs.
@@ -212,7 +212,7 @@
 				    'url-http-proxy-basic-auth-storage))
 			       (url-get-authentication url-http-target-url nil 'any nil))))
 	       (real-fname (concat (url-filename url-http-target-url)
-				   (with-no-warnings 
+				   (with-no-warnings
                                     (url-recreate-url-attributes url-http-target-url))))
 	       (host (url-host url-http-target-url))
 	       (auth (if (cdr-safe (assoc "Authorization" url-http-extra-headers))
@@ -984,8 +984,13 @@ Right now, this only means replacing \"_\" with \" \"."
 
 (defun mediawiki-make-api-url (&optional sitename)
   "Translate SITENAME (or MEDIAWIKI-SITE if not given) to a URL."
-  (format (concat (mediawiki-site-url (or sitename mediawiki-site))
-                  "api.php")))
+  (format (let* ((my-parsed (url-generic-parse-url
+                             (mediawiki-site-url (or sitename mediawiki-site))))
+                 (my-path (url-filename my-parsed)))
+	 (when (or (string= my-path "") (not (string= (substring my-path -1) "/")))
+	   (setq my-path (concat my-path "/")))
+	 (setf (url-filename my-parsed) (concat my-path "api.php"))
+	 (url-recreate-url my-parsed))))
 
 (defun mediawiki-raise (result type notif)
   "Show a TYPE of information from the RESULT to the user using NOTIF"
@@ -1425,6 +1430,7 @@ If BUFFER is not given, the current buffer is used."
         mediawiki-site
       answer)))
 
+;;;###autoload
 (defun mediawiki-site (&optional site)
   "Set up mediawiki.el for a SITE.
 Without an argument, use `mediawiki-site-default'.
@@ -1981,7 +1987,6 @@ mediawiki-draft-data-file, or send the buffer using
     (mediawiki-mode)
     (message " C-c C-k sends to draft file, C-c C-c sends to org buffer.")))
 
-;;;###autoload
 (defun mediawiki-draft-page ()
   "Set the current buffer as a draft buffer."
   (interactive)
@@ -2006,7 +2011,6 @@ region, will be mediawiki-drafted."
       (mediawiki-debug (current-buffer) "mediawiki-draft-region")
       (jump-to-register mediawiki-draft-register)))))
 
-;;;###autoload
 (defun mediawiki-draft-buffer ()
   "Mediawiki-draft-buffer sends the contents of the current (temporary)
 buffer to the mediawiki-draft-buffer, see the variable

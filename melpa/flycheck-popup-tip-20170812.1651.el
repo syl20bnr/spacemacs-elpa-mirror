@@ -5,9 +5,9 @@
 ;; Author: Saša Jovanić <sasa@simplify.ba>
 ;; URL: https://github.com/flycheck/flycheck-popup-tip/
 ;; Keywords: convenience, tools, flycheck, tooltip
-;; Version: 0.12.1
-;; Package-Version: 20170730.651
-;; Package-X-Original-Version: 0.12.1
+;; Version: 0.12.2
+;; Package-Version: 20170812.1651
+;; Package-X-Original-Version: 0.12.2
 ;; Package-Requires: ((flycheck "0.22") (popup "0.5") (emacs "24"))
 
 ;; This file is not part of GNU Emacs.
@@ -96,8 +96,8 @@
 
 (defun flycheck-popup-tip-show-popup (errors)
   "Display ERRORS, using popup.el library."
+  (flycheck-popup-tip-delete-popup)
   (when errors
-    (flycheck-popup-tip-delete-popup)
     (setq flycheck-popup-tip-object
           (popup-tip
            (flycheck-popup-tip-format-errors errors)
