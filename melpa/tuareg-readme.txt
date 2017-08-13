@@ -1,6 +1,6 @@
 Description:
 Tuareg helps editing OCaml code, to highlight important parts of
-the code, to run an OCaml toplevel, and to run the OCaml debugger
+the code, to run an OCaml REPL, and to run the OCaml debugger
 within Emacs.
 
 Installation:

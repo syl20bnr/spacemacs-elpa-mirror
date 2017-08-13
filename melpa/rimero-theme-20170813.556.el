@@ -1,4 +1,4 @@
-;;; rimero-theme.el --- Theme with a dark background.
+;;; rimero-theme.el --- Theme with a dark background suitable for UI and terminal usage.
 
 ;; Copyright (C) 2017 , Yves Zoundi
 
@@ -6,7 +6,7 @@
 ;; Maintainer: Yves Zoundi <yveszoundi@users.sf.net>
 ;; Created: 12th August 2017
 ;; URL: https://github.com/yveszoundi/emacs-rimero-theme
-;; Package-Version: 20170812.918
+;; Package-Version: 20170813.556
 ;; Keywords: faces, theme, dark, light colors
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "24"))
