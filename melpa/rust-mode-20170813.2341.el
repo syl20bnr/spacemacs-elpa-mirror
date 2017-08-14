@@ -1,7 +1,7 @@
 ;;; rust-mode.el --- A major emacs mode for editing Rust source code -*-lexical-binding: t-*-
 
 ;; Version: 0.3.0
-;; Package-Version: 20170805.952
+;; Package-Version: 20170813.2341
 ;; Author: Mozilla
 ;; Url: https://github.com/rust-lang/rust-mode
 ;; Keywords: languages
@@ -682,6 +682,9 @@ match data if found. Returns nil if not within a Rust string."
      ;; Field names like `foo:`, highlight excluding the :
      (,(concat (rust-re-grab rust-re-ident) ":[^:]") 1 font-lock-variable-name-face)
 
+     ;; Type-inferred binding
+     (,(concat "\\_<\\(?:let\\|ref\\)\\s-+\\(?:mut\\s-+\\)?" (rust-re-grab rust-re-ident) "\\_>") 1 font-lock-variable-name-face)
+
      ;; Type names like `Foo::`, highlight excluding the ::
      (,(rust-path-font-lock-matcher rust-re-uc-ident) 1 font-lock-type-face)
 
@@ -810,6 +813,9 @@ match data if found. Returns nil if not within a Rust string."
        ;; it to be an expression.
        ((and (equal token 'open-brace) (rust-looking-back-macro)) t)
        
+       ;; In a brace context a "]" introduces an expression.
+       ((and (eq token 'open-brace) (rust-looking-back-str "]")))
+
        ;; An identifier is right after an ending paren, bracket, angle bracket
        ;; or curly brace.  It's a type if the last sexp was a type.
        ((and (equal token 'ident) (equal 5 (rust-syntax-class-before-point)))

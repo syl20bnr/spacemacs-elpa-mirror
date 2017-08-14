@@ -5,7 +5,7 @@
 ;; Copyright (C) 2017 Marco Wahl
 ;;
 ;; Version: 3.0.1
-;; Package-Version: 20170813.235
+;; Package-Version: 20170814.223
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: convenience
 ;; Maintainer: marcowahlsoft@gmail.com
@@ -43,7 +43,13 @@
 ;; When point is in an empty line then fill the line with a character
 ;; making it as long as the line above.
 ;;
-;; This program provides just command =underline-with-char=.
+;; This program provides just command `underline-with-char' and
+;; variable `underline-with-char-fill-char'.
+
+;; You can change the default underline character via
+;;
+;; M-x customize-variable underline-with-char-fill-char
+
 ;;
 
 ;; Examples

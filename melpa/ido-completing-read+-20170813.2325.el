@@ -6,7 +6,7 @@
 ;; Author: Ryan Thompson
 ;; Created: Sat Apr  4 13:41:20 2015 (-0700)
 ;; Version: 4.5
-;; Package-Version: 20170813.946
+;; Package-Version: 20170813.2325
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (s "0.1") (memoize "1.1"))
 ;; URL: https://github.com/DarwinAwardWinner/ido-completing-read-plus
 ;; Keywords: ido, completion, convenience
@@ -138,6 +138,10 @@ using it, so the initial value shouldn't matter.")))
 (define-ido-internal-var ido-require-match)
 (define-ido-internal-var ido-process-ignore-lists)
 
+;; Vars and functions from flx-ido package
+(defvar flx-ido-mode)
+(declare-function flx-ido-reset "ext:flx-ido.el")
+
 ;;;###autoload
 (defvar ido-cr+-minibuffer-depth -1
   "Minibuffer depth of the most recent ido-cr+ activation.
@@ -172,13 +176,6 @@ either of those functions directly won't set `this-command'.")
 
 This allows ido-cr+ to update the set of completion candidates
 dynamically.")
-
-(defvar ido-cr+-previous-dynamic-update-texts nil
-  "Values of `ido-text' for the last few dynamic collection updates.
-
-This is used in `ido-cr+-update-dynamic-collection' as an LRU
-cache of recent values of `ido-text' in order to skip re-checking
-prefixes of these strings.")
 
 (defvar ido-cr+-dynamic-update-idle-time 0.25
   "Time to wait before updating dynamic completion list.")
@@ -488,10 +485,13 @@ completion for them."
          (ido-cr+-orig-completing-read-args
           (list prompt collection predicate require-match
                 initial-input hist def inherit-input-method))
-         ;; Need to save this since activating the minibuffer once will
-         ;; clear out any temporary minibuffer hooks, which need to get
-         ;; restored before falling back.
-         (orig-minibuffer-setup-hook minibuffer-setup-hook)
+         ;; Need to save a copy of this since activating the
+         ;; minibuffer once will clear out any temporary minibuffer
+         ;; hooks, which need to get restored before falling back so
+         ;; that they will trigger again when the fallback function
+         ;; uses the minibuffer. We make a copy in case the original
+         ;; list gets modified in place.
+         (orig-minibuffer-setup-hook (cl-copy-list minibuffer-setup-hook))
          ;; Need just the string part of INITIAL-INPUT
          (initial-input-string
           (cond
@@ -694,13 +694,9 @@ completion for them."
           ;; Finally ready to do actual ido completion
           (prog1
               (let ((ido-cr+-minibuffer-depth (1+ (minibuffer-depth)))
-                    ;; Initialize dynamic update vars
-                    (ido-cr+-previous-dynamic-update-texts
-                     (list initial-input-string))
                     (ido-cr+-dynamic-update-timer nil)
                     (ido-cr+-exhibit-pending t)
-                    ;; Reset these for the next call to ido-cr+
-                    (ido-cr+-no-default-action 'prepend-empty-string)
+                    ;; Reset this for recursive calls to ido-cr+
                     (ido-cr+-assume-static-collection nil))
                 (unwind-protect
                     (ido-completing-read
@@ -719,8 +715,7 @@ completion for them."
       (ido-cr+-fallback
        (let (;; Reset `minibuffer-setup-hook' to original value
              (minibuffer-setup-hook orig-minibuffer-setup-hook)
-             ;; Reset these for the next call to ido-cr+
-             (ido-cr+-no-default-action 'prepend-empty-string)
+             ;; Reset this for recursive calls to ido-cr+
              (ido-cr+-assume-static-collection nil))
          (ido-cr+--explain-fallback sig)
          (apply ido-cr+-fallback-function ido-cr+-orig-completing-read-args))))))
@@ -878,7 +873,7 @@ result."
               (setq need-reverse (not need-reverse))
               restriction-matches))
    ;; Each run of `ido-set-matches-1' reverses the order, so reverse
-   ;; it one more time if it had an odd number of reverses
+   ;; it one more time if it had an odd number of reverses.
    finally return
    (if need-reverse
        (nreverse filtered-collection)
@@ -918,7 +913,11 @@ This has no effect unless `ido-cr+-dynamic-collection' is non-nil."
               string ido-cr+-dynamic-collection predicate)
              into result
              finally return result)))
-      (when new-completions
+      (when (not (equal new-completions ido-cur-list))
+        (when (and (bound-and-true-p flx-ido-mode)
+                   (functionp 'flx-ido-reset))
+          ;; Reset flx-ido since the set of completions has changed
+          (funcall 'flx-ido-reset))
         (setq ido-cur-list (delete-dups new-completions))
         (when ido-cr+-active-restrictions
           (setq ido-cur-list (ido-cr+-apply-restrictions
