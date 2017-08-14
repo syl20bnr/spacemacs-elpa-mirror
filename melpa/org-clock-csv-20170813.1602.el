@@ -4,7 +4,7 @@
 
 ;; Author: Aaron Jacobs <atheriel@gmail.com>
 ;; URL: https://github.com/atheriel/org-clock-csv
-;; Package-Version: 20170326.1041
+;; Package-Version: 20170813.1602
 ;; Keywords: calendar, data, org
 ;; Version: 1.0
 ;; Package-Requires: ((org "8.3") (s "1.0"))
@@ -45,6 +45,15 @@
 
 (eval-when-compile
   (require 'cl-lib))
+
+;; This is a simplified shim for `org-element-lineage', as needed for this
+;; package, for very old versions of `org':
+(when (version< (org-version) "8.3")
+  (defun org-element-lineage (blob &optional types)
+    (let ((up (org-element-property :parent blob)))
+      (while (and up (not (memq (org-element-type up) types)))
+        (setq up (org-element-property :parent up)))
+      up)))
 
 ;;;; Configuration options:
 
@@ -233,19 +242,31 @@ for use in batch mode."
     (switch-to-buffer buffer)))
 
 ;;;###autoload
-(defun org-clock-csv-batch (&optional infile)
-  "Export clock entries from INFILE in CSV format to standard output.
+(defun org-clock-csv-batch-and-exit ()
+  "Export clock entries in CSV format to standard output.
 
 This function is identical in function to `org-clock-csv' except
 that it directs output to `standard-output'. It is intended for
 use in batch mode."
-  (let* ((filelist (if (null infile) (org-agenda-files)
-                     (if (listp infile) infile (list infile))))
-         (entries (org-clock-csv--get-entries filelist)))
-    (princ (concat org-clock-csv-header "\n"))
-    (mapc (lambda (entry)
-            (princ (concat (funcall org-clock-csv-row-fmt entry) "\n")))
-          entries)))
+  (or noninteractive
+      (error "`org-clock-csv-batch' is designed for use in batch mode."))
+  (let* ((filelist (if (= (length command-line-args-left) 0)
+                       (org-agenda-files)
+                     command-line-args-left))
+         entries)
+    (unwind-protect
+        (progn
+          (setq entries (org-clock-csv--get-entries filelist t))
+          (princ (concat org-clock-csv-header "\n"))
+          (mapc (lambda (entry)
+                  (princ (concat (funcall org-clock-csv-row-fmt entry) "\n")))
+                entries)
+          (kill-emacs 0))
+      (backtrace)
+      (message "Error converting clock entries to CSV format.")
+      (kill-emacs 2))))
+
+(defalias 'org-clock-csv-batch 'org-clock-csv-batch-and-exit)
 
 (provide 'org-clock-csv)
 

@@ -4,7 +4,7 @@
 
 ;; Author: Adam Schwalm <adamschwalm@gmail.com>
 ;; Version: 0.1.0
-;; Package-Version: 20170808.1511
+;; Package-Version: 20170813.1301
 ;; URL: https://github.com/ALSchwalm/elvish-mode
 ;; Package-Requires: ((emacs "24.3"))
 
@@ -133,7 +133,7 @@ the syntax table, so `forward-word' works as expected.")
     ;; Trivial builtin
     "nop"
     ;; Introspection
-    "kind-of" "is" "eq"
+    "kind-of" "is" "eq" "not-eq"
     ;; Value output
     "put"
     ;; Bytes output
@@ -153,7 +153,7 @@ the syntax table, so `forward-word' works as expected.")
     ;; Sequence primitives
     "explode" "take" "range" "count" "has-key" "has-value"
     ;; String
-    "joins" "splits"
+    "joins" "splits" "replaces"
     ;; String operations
     "ord" "base" "wcswidth" "-override-wcwidth"
     ;; Map operations
