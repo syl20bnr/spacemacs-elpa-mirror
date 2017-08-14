@@ -4,7 +4,7 @@
 
 ;; Author:            Adam Sokolnicki <adam.sokolnicki@gmail.com>
 ;; URL:               https://github.com/asok/projectile-rails
-;; Package-Version: 20170704.2358
+;; Package-Version: 20170814.522
 ;; Version:           0.15.0
 ;; Keywords:          rails, projectile
 ;; Package-Requires:  ((emacs "24.3") (projectile "0.12.0") (inflections "1.1") (inf-ruby "2.2.6") (f "0.13.0") (rake "0.3.2"))
@@ -42,6 +42,7 @@
 (require 'inflections)
 (require 'f)
 (require 'rake)
+(require 'json)
 
 (defgroup projectile-rails nil
   "Rails mode based on projectile"

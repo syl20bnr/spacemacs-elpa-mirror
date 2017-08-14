@@ -4,7 +4,7 @@
 ;;
 ;; Author: Mark Karpov <markkarpov92@gmail.com>
 ;; URL: https://github.com/hasky-mode/hasky-stack
-;; Package-Version: 20170811.349
+;; Package-Version: 20170814.417
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.4") (f "0.18.0") (magit-popup "2.10"))
 ;; Keywords: tools, haskell
@@ -498,6 +498,7 @@ This uses `compile' internally."
    #'hasky-stack--exec-command
    hasky-stack--last-directory
    "upload"
+   "."
    args))
 
 (magit-define-popup hasky-stack-sdist-popup

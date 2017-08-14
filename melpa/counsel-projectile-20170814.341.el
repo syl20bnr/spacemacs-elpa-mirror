@@ -4,7 +4,7 @@
 
 ;; Author: Eric Danan
 ;; URL: https://github.com/ericdanan/counsel-projectile
-;; Package-Version: 20170216.1426
+;; Package-Version: 20170814.341
 ;; Created: 2016-04-11
 ;; Keywords: project, convenience
 ;; Version: 0.1
@@ -291,6 +291,12 @@ invokes `projectile-commander' instead of
           (let ((projectile-switch-project-action 'counsel-projectile-find-file))
             (projectile-switch-project-by-name dir arg)))
     "find file")
+   ("F" (lambda (dir)
+          (let ((projectile-switch-project-action
+                 (lambda ()
+                   (counsel-find-file dir))))
+            (projectile-switch-project-by-name dir arg)))
+    "find file manually")
    ("d" (lambda (dir)
           (let ((projectile-switch-project-action 'counsel-projectile-find-dir))
             (projectile-switch-project-by-name dir arg)))
@@ -309,7 +315,11 @@ invokes `projectile-commander' instead of
     "kill all buffers")
    ("r" (lambda (dir)
           (let ((projectile-switch-project-action
-                 'projectile-remove-current-project-from-known-projects))
+                 (lambda ()
+                   (projectile-remove-known-project dir)
+                   (setq ivy--all-candidates
+                         (delete dir ivy--all-candidates))
+                   (ivy--reset-state ivy-last))))
             (projectile-switch-project-by-name dir arg)))
     "remove from known projects")
    ("l" (lambda (dir)
