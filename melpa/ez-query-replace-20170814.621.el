@@ -5,7 +5,7 @@
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Created: 21 August 2013
 ;; Version: 0.4
-;; Package-Version: 20170814.539
+;; Package-Version: 20170814.621
 ;; Package-Requires: ((dash "1.2.0") (s "1.11.0"))
 
 ;;; Commentary:
@@ -107,7 +107,11 @@ to the symbol at point."
 
     (ez-query-replace/backward from-string)
 
-    (unless (member history-entry ez-query-replace/history)
+    (if (member history-entry ez-query-replace/history)
+        ;; Move this item to the head of the list.
+        (setq ez-query-replace/history
+              (cons history-entry
+                    (-remove-item history-entry ez-query-replace/history)))
       (push history-entry ez-query-replace/history))
     
     (deactivate-mark)
@@ -130,7 +134,12 @@ to the symbol at point."
 
     (deactivate-mark)
     (perform-replace from-string to-string
-                   t nil nil)))
+                     t nil nil)))
+
+;; Ivy sorts options alphabetically by default, override that.
+(eval-after-load 'ivy
+  '(add-to-list 'ivy-sort-functions-alist
+                (list #'ez-query-replace-repeat)))
 
 (provide 'ez-query-replace)
 ;;; ez-query-replace.el ends here

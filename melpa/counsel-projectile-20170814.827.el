@@ -4,7 +4,7 @@
 
 ;; Author: Eric Danan
 ;; URL: https://github.com/ericdanan/counsel-projectile
-;; Package-Version: 20170814.341
+;; Package-Version: 20170814.827
 ;; Created: 2016-04-11
 ;; Keywords: project, convenience
 ;; Version: 0.1
@@ -163,9 +163,10 @@ With a prefix ARG invalidates the cache first."
 
 Like `projectile-project-buffer-names', but propertize buffer
 names as in `ivy--buffer-list'."
-  (ivy--buffer-list "" nil
-                    (lambda (x)
-                      (member (car x) (projectile-project-buffer-names)))))
+  (let ((buffer-names (projectile-project-buffer-names)))
+    (ivy--buffer-list "" nil
+                      (lambda (x)
+                        (member (car x) buffer-names)))))
 
 (defun counsel-projectile--switch-buffer-action (buffer &optional other-window)
   "Switch to BUFFER.
@@ -255,7 +256,7 @@ BUFFER may be a string or nil."
              (options
               (concat options " "
                       (mapconcat (lambda (i)
-                                   (concat "--ignore-file " (shell-quote-argument i)))
+                                   (concat "--glob " (shell-quote-argument (concat "!" i))))
                                  ignored
                                  " "))))
         (counsel-rg nil

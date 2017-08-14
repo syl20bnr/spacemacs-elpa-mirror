@@ -2,8 +2,8 @@
 ;; Copyright 2017 by Dave Pearson <davep@davep.org>
 
 ;; Author: Dave Pearson <davep@davep.org>
-;; Version: 1.2
-;; Package-Version: 20170802.420
+;; Version: 1.3
+;; Package-Version: 20170814.824
 ;; Keywords: games
 ;; URL: https://github.com/davep/dad-joke.el
 ;; Package-Requires: ((emacs "24"))
@@ -46,7 +46,9 @@
     (when buffer
       (with-current-buffer buffer
         (set-buffer-multibyte t)
-        (buffer-substring-no-properties (point) (point-max))))))
+        (setf (point) (point-min))
+        (when (search-forward-regexp "^$" nil t)
+          (buffer-substring-no-properties (1+ (point)) (point-max)))))))
 
 ;;;###autoload
 (defun dad-joke (&optional insert)

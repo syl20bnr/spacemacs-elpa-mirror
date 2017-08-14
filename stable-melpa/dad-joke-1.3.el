@@ -2,15 +2,24 @@
 ;; Copyright 2017 by Dave Pearson <davep@davep.org>
 
 ;; Author: Dave Pearson <davep@davep.org>
-;; Version: 1.2
-;; Package-Version: 1.2
+;; Version: 1.3
+;; Package-Version: 1.3
 ;; Keywords: games
 ;; URL: https://github.com/davep/dad-joke.el
 ;; Package-Requires: ((emacs "24"))
 
-;; dad-joke.el is free software distributed under the terms of the GNU
-;; General Public Licence, version 2 or (at your option) any later version.
-;; For details see the file COPYING.
+;; This program is free software: you can redistribute it and/or modify it
+;; under the terms of the GNU General Public License as published by the
+;; Free Software Foundation, either version 3 of the License, or (at your
+;; option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+;; Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License along
+;; with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 ;;
@@ -37,7 +46,9 @@
     (when buffer
       (with-current-buffer buffer
         (set-buffer-multibyte t)
-        (buffer-substring-no-properties (point) (point-max))))))
+        (setf (point) (point-min))
+        (when (search-forward-regexp "^$" nil t)
+          (buffer-substring-no-properties (1+ (point)) (point-max)))))))
 
 ;;;###autoload
 (defun dad-joke (&optional insert)
