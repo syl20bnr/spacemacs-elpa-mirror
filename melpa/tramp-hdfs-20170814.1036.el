@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015  The Tramp HDFS Developers
 ;;
 ;; Version: 0.3.0
-;; Package-Version: 20170809.1508
+;; Package-Version: 20170814.1036
 ;; Author: Raghav Kumar Gautam <raghav@apache.org>
 ;; Keywords: tramp, emacs, hdfs, hadoop, webhdfs, rest
 ;; Package-Requires: ((emacs "24.4"))
@@ -128,7 +128,7 @@
     (file-notify-add-watch . tramp-handle-file-notify-add-watch)
     (file-notify-rm-watch . tramp-handle-file-notify-rm-watch)
     (file-ownership-preserved-p . ignore)
-    (file-readable-p . tramp-sh-handle-file-readable-p)
+    (file-readable-p . tramp-hdfs-handle-file-readable-p)
     (file-regular-p . tramp-handle-file-regular-p)
     (file-remote-p . tramp-handle-file-remote-p)
     ;; `file-selinux-context' performed by default handler.
@@ -167,6 +167,15 @@ Operations not mentioned here will be handled by the default Emacs primitives.")
   (string= (tramp-file-name-method (tramp-dissect-file-name filename))
 	   tramp-hdfs-method))
 
+(defun tramp-hdfs-handle-file-readable-p (filename)
+  "Like `file-readable-p' for Tramp files."
+  (with-parsed-tramp-file-name filename nil
+    (with-tramp-file-property v localname "file-readable-p"
+      ;; Examine `file-attributes' cache to see if request can be
+      ;; satisfied without remote operation.
+      (tramp-check-cached-permissions v ?r))))
+
+
 ;;;###tramp-autoload
 (defun tramp-hdfs-file-name-handler (operation &rest args)
   "Invoke the hdfs related OPERATION.
@@ -198,8 +207,8 @@ Optional argument ARGS is a list of arguments to pass to the OPERATION."
   "Run a get request for the URL and get the content."
   (let ((url-http-attempt-keepalives nil)
 	(content (with-current-buffer (url-retrieve-synchronously url)
-		  (tramp-hdfs-delete-http-header* (current-buffer))
-		  (buffer-string))))
+		   (tramp-hdfs-delete-http-header* (current-buffer))
+		   (buffer-string))))
     (tramp-message vec 10 "Fetched %s to get: %s" url content)
     content))
 

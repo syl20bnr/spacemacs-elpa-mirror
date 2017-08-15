@@ -4,7 +4,7 @@
 
 ;; Author: Ankur Dave <ankurdave@gmail.com>
 ;; Url: https://github.com/ankurdave/color-identifiers-mode
-;; Package-Version: 20170730.1852
+;; Package-Version: 20170814.1121
 ;; Created: 24 Jan 2014
 ;; Version: 1.1
 ;; Keywords: faces, languages
@@ -176,7 +176,7 @@ For cc-mode support within color-identifiers-mode."
     (delete-dups result)
     result))
 
-(dolist (maj-mode '(c-mode c++-mode java-mode))
+(dolist (maj-mode '(c-mode c++-mode java-mode rust-mode))
   (color-identifiers:set-declaration-scan-fn
    maj-mode 'color-identifiers:cc-mode-get-declarations)
   (add-to-list
@@ -652,10 +652,15 @@ major mode, identifiers are saved to
     (cond
      ((eq color-identifiers-coloring-method 'sequential)
       (setq color-identifiers:color-index-for-identifier
-            (-map-indexed
-             (lambda (i identifier)
-               (cons identifier (% i color-identifiers:num-colors)))
-             (color-identifiers:list-identifiers))))
+            (append (-map-indexed
+                     (lambda (i identifier)
+                       ;; to make sure subsequently added vars aren't colorized the same add a (point)
+                       (cons identifier (% (+ (point) i) color-identifiers:num-colors)))
+                     (-filter (lambda (e)
+                                (cl-notany (lambda (d) (equal e (car d)))
+                                           color-identifiers:color-index-for-identifier))
+                              (color-identifiers:list-identifiers)))
+                    color-identifiers:color-index-for-identifier)))
      ((and (eq color-identifiers-coloring-method 'hash)
            (color-identifiers:get-declaration-scan-fn major-mode))
       (setq color-identifiers:identifiers
