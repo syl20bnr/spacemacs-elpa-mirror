@@ -23,4 +23,4 @@ for every connection, and is exposed through the callbacks.
 (require 'bindat)
 (require 'url-parse)
 (require 'url-cookie)
-(eval-when-compile (require 'cl))
+(eval-when-compile (require 'cl-lib))
