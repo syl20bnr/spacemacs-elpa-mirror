@@ -5,7 +5,7 @@
 ;; Author: Nicolas Petton <petton.nicolas@gmail.com>
 ;;         Damien Cassou <damien@cassou.me>
 ;; Version: 1.7
-;; Package-Version: 20170802.253
+;; Package-Version: 20170815.225
 ;; GIT: https://github.com/NicolasPetton/pass
 ;; Package-Requires: ((emacs "24") (password-store "0.1") (f "0.17"))
 ;; Created: 09 Jun 2015
@@ -31,11 +31,17 @@
 ;;; Code:
 (require 'password-store)
 (require 'imenu)
+(require 'button)
 (require 'f)
 
 (defgroup pass '()
   "Major mode for password-store."
   :group 'password-store)
+
+(defcustom pass-show-keybindings t
+  "Whether the keybindings should be displayed in the pass buffer."
+  :group 'pass
+  :type 'boolean)
 
 (defvar pass-buffer-name "*Password-Store*"
   "Name of the pass buffer.")
@@ -226,25 +232,43 @@ user input."
   "Display the header in to the current buffer."
   (insert "Password-store directory:")
   (put-text-property (point-at-bol) (point) 'face 'pass-mode-header-face)
+  (insert " ")
+  (pass--display-keybindings-toggle)
   (insert "\n\n")
-  (pass--display-keybindings '((pass-copy . "Copy password")
-                               (pass-view . "View entry")
-                               (pass-update-buffer . "Update")))
-  (insert "\n")
-  (pass--display-keybindings '((pass-insert . "Insert")
-                               (pass-next-entry . "Next")
-                               (describe-mode . "Help")))
-  (insert "\n")
-  (pass--display-keybindings '((pass-insert-generated . "Generate")
-                               (pass-prev-entry . "Previous")))
-  (insert "\n")
-  (pass--display-keybindings '((pass-rename . "Rename")
-                               (pass-next-directory . "Next dir")))
-  (insert "\n")
-  (pass--display-keybindings '((pass-kill . "Delete")
-                               (pass-prev-directory . "Previous dir")))
-  (newline)
-  (newline))
+  (when pass-show-keybindings
+    (pass--display-keybindings '((pass-copy . "Copy password")
+                                 (pass-view . "View entry")
+                                 (pass-update-buffer . "Update")))
+    (insert "\n")
+    (pass--display-keybindings '((pass-insert . "Insert")
+                                 (pass-next-entry . "Next")
+                                 (describe-mode . "Help")))
+    (insert "\n")
+    (pass--display-keybindings '((pass-insert-generated . "Generate")
+                                 (pass-prev-entry . "Previous")))
+    (insert "\n")
+    (pass--display-keybindings '((pass-rename . "Rename")
+                                 (pass-next-directory . "Next dir")))
+    (insert "\n")
+    (pass--display-keybindings '((pass-kill . "Delete")
+                                 (pass-prev-directory . "Previous dir")))
+    (newline)
+    (newline)))
+
+(defun pass--display-keybindings-toggle ()
+  "Display a button to toggle whether keybindings should be displayed."
+  (let ((label (if pass-show-keybindings
+                   "[Hide keybindings]"
+                 "[Show keybindings]")))
+    (insert-button label 'action #'pass--toggle-display-keybindings)))
+
+(defun pass--toggle-display-keybindings (&rest _)
+  "Toggle displaying the keybindings and update the buffer."
+  (setq pass-show-keybindings (not pass-show-keybindings))
+  (put pass-show-keybindings
+       'customized-value
+       (list (custom-quote (symbol-value pass-show-keybindings))))
+  (pass-update-buffer))
 
 (defun pass--display-keybindings (bindings)
   "Display the keybinding in each item of BINDINGS.

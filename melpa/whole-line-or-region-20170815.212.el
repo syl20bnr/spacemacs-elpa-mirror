@@ -7,7 +7,7 @@
 ;; Maintainer:      Steve Purcell <steve@sanityinc.com>
 ;; Created:         July 1, 2001
 ;; Keywords:        convenience wp
-;; Package-Version: 20170814.20
+;; Package-Version: 20170815.212
 ;; Package-X-Original-Version: 0
 ;; Latest Version:  https://github.com/purcell/whole-line-or-region
 
@@ -157,28 +157,10 @@
 ;;
 ;;  o Nothing, at the moment.
 
-;;; Comments:
-;;
-;;  Any comments, suggestions, bug reports or upgrade requests are welcome.
-;;  Please send them to Joe Casadonte (emacs@northbound-train.com).
-;;
-;;  This version of whole-line-or-region was developed and tested with NTEmacs
-;;  22.2.1 under Windows XP Pro.  Please, let me know if it works with
-;;  other OS and versions of Emacs.
-
-;;; Change Log:
-;;
-;;  see http://www.northbound-train.com/emacs/whole-line-or-region.log
-
-;;; **************************************************************************
-;;; **************************************************************************
-;;; **************************************************************************
-;;; **************************************************************************
-;;; **************************************************************************
 ;;; Code:
 
 ;;; Keymap
-(defvar whole-line-or-region-mode-map (make-sparse-keymap)
+(defvar whole-line-or-region-local-mode-map (make-sparse-keymap)
   "Minor mode map for `whole-line-or-region-mode'.")
 
 ;;; **************************************************************************
@@ -196,17 +178,28 @@
   (customize-group "whole-line-or-region"))
 
 ;; ---------------------------------------------------------------------------
-(defcustom whole-line-or-region-extensions-alist '(
-                                                   (copy-region-as-kill whole-line-or-region-copy-region-as-kill nil)
-                                                   (kill-region whole-line-or-region-kill-region nil)
-                                                   (kill-ring-save whole-line-or-region-kill-ring-save nil)
-                                                   (yank whole-line-or-region-yank nil)
-                                                   )
+(defun whole-line-or-region-bind-keys ()
+  "Bind keys according to `whole-line-or-region-extensions-alist'."
+  (dolist (elem whole-line-or-region-extensions-alist)
+    (substitute-key-definition
+     (nth 0 elem)
+     (nth 1 elem)
+     whole-line-or-region-local-mode-map
+     (or (nth 2 elem) (current-global-map)))))
+
+;;;###autoload
+(defcustom whole-line-or-region-extensions-alist
+  '(
+    (copy-region-as-kill whole-line-or-region-copy-region-as-kill nil)
+    (kill-region whole-line-or-region-kill-region nil)
+    (kill-ring-save whole-line-or-region-kill-ring-save nil)
+    (yank whole-line-or-region-yank nil)
+    )
   "List of functions for whole-line-or-region to swap.
 
 When whole-line-or-region is activated, all original functions
 will be bound to their whole-line counterparts in
-`whole-line-or-region-mode-map', with the bindings taken from
+`whole-line-or-region-local-mode-map', with the bindings taken from
 global keymap, or the optionally specified keymap.
 
 The default is to map the following:
@@ -239,25 +232,10 @@ If you set this through other means than customize be sure to run
          (set symbol newval)
          (whole-line-or-region-bind-keys)))
 
-
-;;;###autoload
-(defun whole-line-or-region-bind-keys ()
-  "Bind keys according to `whole-line-or-region-extensions-alist'."
-  (dolist (elem whole-line-or-region-extensions-alist)
-    (substitute-key-definition
-     (nth 0 elem)
-     (nth 1 elem)
-     whole-line-or-region-mode-map
-     (or (nth 2 elem) (current-global-map)))))
-
-
-;; ---------------------------------------------------------------------------
-
 ;;; **************************************************************************
 ;;; ***** minor mode definitions
 ;;; **************************************************************************
 
-;;; --------------------------------------------------------------------------
 ;;;###autoload
 (define-minor-mode whole-line-or-region-local-mode
   "Toggle use of whole-line-or-region minor mode.
@@ -269,7 +247,7 @@ undefined.
 Optional ARG turns mode on iff ARG is a positive integer."
   :group 'whole-line-or-region
   :lighter " WLR"
-  :keymap 'whole-line-or-region-mode-map)
+  :keymap 'whole-line-or-region-local-mode-map)
 
 ;;;###autoload
 (define-globalized-minor-mode whole-line-or-region-global-mode
@@ -292,24 +270,18 @@ Optional ARG turns mode on iff ARG is a positive integer."
   (interactive "p")
   (whole-line-or-region-call-with-region 'copy-region-as-kill prefix t))
 
-;;; --------------------------------------------------------------------------
-;; (defalias 'whole-line-or-region-copy 'whole-line-or-region-copy-region-as-kill)
-
-;;; **************************************************************************
 ;;;###autoload
 (defun whole-line-or-region-kill-region (prefix)
   "Kill (cut) region or PREFIX whole lines."
   (interactive "*p")
   (whole-line-or-region-call-with-region 'kill-region prefix t))
 
-;;; **************************************************************************
 ;;;###autoload
 (defun whole-line-or-region-kill-ring-save (prefix)
   "Copy region or PREFIX whole lines."
   (interactive "p")
   (whole-line-or-region-call-with-region 'kill-ring-save prefix t))
 
-;;; **************************************************************************
 ;;;###autoload
 (defun whole-line-or-region-yank (raw-prefix &optional string-in)
   "Yank (paste) previously killed text.
@@ -364,7 +336,6 @@ Optionally, pass in string to be \"yanked\" via STRING-IN."
         (yank raw-prefix)))
     ))
 
-;;; --------------------------------------------------------------------------
 ;; in case delete-selection-mode (delsel.el) is being used
 (put 'whole-line-or-region-yank 'delete-selection t)
 
@@ -377,7 +348,6 @@ Optionally, pass in string to be \"yanked\" via STRING-IN."
   (interactive "*p")
   (whole-line-or-region-call-with-region 'delete-region prefix))
 
-;;; **************************************************************************
 ;;;###autoload
 (defun whole-line-or-region-comment-dwim (raw-prefix)
   "Call `comment-dwim' on current region or current line.
@@ -386,7 +356,6 @@ See `comment-dwim' for details of RAW-PREFIX usage."
   (interactive "*P")
   (whole-line-or-region-call-with-prefix 'comment-dwim 1 nil t raw-prefix))
 
-;;; **************************************************************************
 ;;;###autoload
 (defun whole-line-or-region-comment-dwim-2 (prefix)
   "Call `comment-dwim' on region or PREFIX whole lines."
@@ -416,7 +385,6 @@ In either case, if SEND-PREFIX is non-nil, then PREFIX is passed into
 FN as a third argument."
   (whole-line-or-region-base-call fn fn t nil nil cnt mark-as-whole send-prefix prefix))
 
-;;; **************************************************************************
 (defun whole-line-or-region-call-with-prefix (fn &optional cnt mark-as-whole send-prefix prefix)
   "Calls FN on region or CNT whole lines.
 
@@ -436,7 +404,6 @@ In either case, if SEND-PREFIX is non-nil, then PREFIX is passed into
 FN as the sole argument."
   (whole-line-or-region-base-call fn fn nil nil nil cnt mark-as-whole send-prefix prefix))
 
-;;; **************************************************************************
 (defun whole-line-or-region-base-call (norm-fn wlr-fn
                                                &optional beg-end pre-args post-args
                                                cnt mark-as-whole send-prefix prefix)
@@ -525,9 +492,6 @@ is passed into FN before POST-ARGS."
       (move-to-column saved-column))
     ))
 
-;;; **************************************************************************
-;;; ***** we're done
-;;; **************************************************************************
 
 ;; FIXME, is just running it here once the reasonable thing to do?
 (whole-line-or-region-bind-keys)

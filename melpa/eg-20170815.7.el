@@ -3,7 +3,7 @@
 
 ;; Author: Dave Pearson <davep@davep.org>
 ;; Version: 1.0
-;; Package-Version: 20170812.407
+;; Package-Version: 20170815.7
 ;; Keywords: docs
 ;; URL: https://github.com/davep/eg.el
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
@@ -546,6 +546,9 @@ ensures that it is closed again after BODY has been evaluated."
 (defvar-local eg--currently-displaying nil
   "Informs the display code what it is we're displaying.")
 
+(defvar-local eg--viewing-source nil
+  "T if we're viewing the source of entries, NIL if not.")
+
 (defvar eg--undosify-map nil
   "Hash table of text translations.")
 
@@ -839,7 +842,8 @@ show for the link."
     (setf (buffer-string) "")
     (eg--insert-entry-text)
     (eg--linkify-entry-text)
-    (eg--decorate-buffer)
+    (unless eg--viewing-source
+      (eg--decorate-buffer))
     (eg--add-top-nav)
     (eg--add-bottom-nav)))
 
@@ -941,6 +945,7 @@ might change in the future."
     (define-key map "k"         #'eg-goto-parent-entry-maybe)
     (define-key map "w"         #'eg-goto-parent-entry-maybe)
     (define-key map "f"         #'eg-goto-first-entry)
+    (define-key map "s"         #'eg-toggle-view-source)
     (define-key map "m"         #'eg-view-menu)
     (define-key map "c"         #'eg-view-credits)
     (define-key map "q"         #'eg-quit)
@@ -1100,6 +1105,12 @@ The key bindings for `eg-mode' are:
                 do (insert (eg--undosify-string line) "\n")))
           (eg--add-top-nav))))
 
+(defun eg-toggle-view-source ()
+  "Toggle viewing of guide source."
+  (interactive)
+  (setq eg--viewing-source (not eg--viewing-source))
+  (eg--view-entry))
+
 (defun eg-quit ()
   "Quit the EG buffer."
   (interactive)
@@ -1120,6 +1131,7 @@ The key bindings for `eg-mode' are:
             (setq eg--current-guide        guide)
             (setq eg--current-entry        nil)
             (setq eg--currently-displaying nil)
+            (setq eg--viewing-source       nil)
             (eg--view-entry)))
       (eg-close guide)
       (error "%s isn't a valid Norton Guide file" file))))
