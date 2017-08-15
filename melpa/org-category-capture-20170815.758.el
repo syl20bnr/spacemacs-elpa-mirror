@@ -4,7 +4,7 @@
 
 ;; Author: Ivan Malison <IvanMalison@gmail.com>
 ;; Keywords: org-mode todo tools outlines
-;; Package-Version: 20170731.2235
+;; Package-Version: 20170815.758
 ;; URL: https://github.com/IvanMalison/org-projectile
 ;; Version: 0.0.0
 ;; Package-Requires: ((org "9.0.0") (emacs "24"))
@@ -108,16 +108,18 @@
     (category &rest args &key do-tree &allow-other-keys)
   "Find a heading with text or category CATEGORY."
   (save-excursion
-    (let (result)
-      (org-map-entries
-       (lambda ()
-         (when (and (not result)
-                    (equal (apply 'occ-get-heading-category args) category))
-           (setq result (point))))
-       nil (when do-tree 'tree)
-       (1+ (org-current-level))
-       (occ-level-filter (if do-tree (1+ (org-current-level)) 1)))
-      result)))
+    (if (equal major-mode 'org-mode)
+        (let (result)
+          (org-map-entries
+           (lambda ()
+             (when (and (not result)
+                        (equal (apply 'occ-get-heading-category args) category))
+               (setq result (point))))
+           nil (when do-tree 'tree)
+           (1+ (org-current-level))
+           (occ-level-filter (if do-tree (1+ (org-current-level)) 1)))
+          result)
+      (error "Can't get category heading in non org-mode file"))))
 
 (defun occ-insert-after-current-heading ()
   (org-end-of-line)

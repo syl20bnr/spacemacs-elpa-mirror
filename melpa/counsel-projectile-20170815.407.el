@@ -4,7 +4,7 @@
 
 ;; Author: Eric Danan
 ;; URL: https://github.com/ericdanan/counsel-projectile
-;; Package-Version: 20170814.827
+;; Package-Version: 20170815.407
 ;; Created: 2016-04-11
 ;; Keywords: project, convenience
 ;; Version: 0.1
@@ -209,6 +209,20 @@ BUFFER may be a string or nil."
 
 ;;; counsel-projectile-ag
 
+(defvar counsel-projectile-ag-initial-input nil
+  "Initial minibuffer input for `counsel-projectile-ag'.  If non-nil, it should be a form whose evaluation yields the initial input string, e.g.
+
+    (setq counsel-projectile-ag-initial-input
+          '(projectile-symbol-or-selection-at-point))
+
+or
+
+    (setq counsel-projectile-ag-initial-input 
+          '(thing-at-point 'symbol t))
+
+Note that you can always insert the value of `(ivy-thing-at-point)' by
+hitting \"M-n\" in the minibuffer.")
+
 ;;;###autoload
 (defun counsel-projectile-ag (&optional options)
   "Ivy version of `projectile-ag'."
@@ -230,13 +244,16 @@ BUFFER may be a string or nil."
                                    (concat "--ignore " (shell-quote-argument i)))
                                  ignored
                                  " "))))
-        (counsel-ag nil
+        (counsel-ag (eval counsel-projectile-ag-initial-input)
                     (projectile-project-root)
                     options
                     (projectile-prepend-project-name "ag")))
     (user-error "You're not in a project")))
 
 ;;; counsel-projectile-rg
+
+(defvar counsel-projectile-rg-initial-input nil
+  "Initial minibuffer input for `counsel-projectile-rg'.  See `counsel-projectile-ag-initial-input' for details.")
 
 ;;;###autoload
 (defun counsel-projectile-rg (&optional options)
@@ -259,7 +276,7 @@ BUFFER may be a string or nil."
                                    (concat "--glob " (shell-quote-argument (concat "!" i))))
                                  ignored
                                  " "))))
-        (counsel-rg nil
+        (counsel-rg (eval counsel-projectile-rg-initial-input)
                     (projectile-project-root)
                     options
                     (projectile-prepend-project-name "rg")))
@@ -338,7 +355,11 @@ invokes `projectile-commander' instead of
    ("a" (lambda (dir)
           (let ((projectile-switch-project-action 'counsel-projectile-ag))
             (projectile-switch-project-by-name dir arg)))
-    "search with ag")))
+    "search with ag")
+   ("R" (lambda (dir)
+          (let ((projectile-switch-project-action 'counsel-projectile-rg))
+            (projectile-switch-project-by-name dir arg)))
+    "search with rg")))
 
 ;;; counsel-projectile
 

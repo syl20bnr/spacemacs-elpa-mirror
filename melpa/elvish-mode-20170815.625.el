@@ -4,7 +4,7 @@
 
 ;; Author: Adam Schwalm <adamschwalm@gmail.com>
 ;; Version: 0.1.0
-;; Package-Version: 20170813.1301
+;; Package-Version: 20170815.625
 ;; URL: https://github.com/ALSchwalm/elvish-mode
 ;; Package-Requires: ((emacs "24.3"))
 
@@ -151,7 +151,7 @@ the syntax table, so `forward-word' works as expected.")
     ;; Container primitives.
     "assoc"
     ;; Sequence primitives
-    "explode" "take" "range" "count" "has-key" "has-value"
+    "explode" "take" "drop" "range" "count" "has-key" "has-value"
     ;; String
     "joins" "splits" "replaces"
     ;; String operations
