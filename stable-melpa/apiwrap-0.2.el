@@ -6,8 +6,8 @@
 ;; Keywords: tools, maint, convenience
 ;; Homepage: https://github.com/vermiculus/apiwrap.el
 ;; Package-Requires: ((emacs "25"))
-;; Package-Version: 0.1.2
-;; Package-X-Original-Version: 0.1
+;; Package-Version: 0.2
+;; Package-X-Original-Version: 0.2
 
 ;; This file is not part of GNU Emacs.
 
@@ -207,7 +207,7 @@ precedence over the defaults provided to `apiwrap-new-backend'."
          (upcase (symbol-name method))
          (make-list 2 service-name)))
 
-(defun apiwrap-genfunsym (prefix api-method &optional resource)
+(defun apiwrap-gensym (prefix api-method &optional resource)
   "Generate a symbol for a macro/function."
   (let ((api-method (symbol-name (apiwrap--kw->sym api-method))))
     (intern
@@ -224,8 +224,8 @@ precedence over the defaults provided to `apiwrap-new-backend'."
 
 (defconst apiwrap-primitives
   '(get put head post patch delete)
-  "List of primitive methods.  These are required to be
-configured.")
+  "List of primitive methods.
+These are required to be configured.")
 
 (defun apiwrap-genmacros (name prefix standard-parameters functions)
   "Validate arguments and generate all macro forms"
@@ -245,14 +245,14 @@ configured.")
 
   ;; Build the macros
   (let (super-form)
-    (dolist (primitive (reverse apiwrap-primitives))
-      (let ((macrosym (apiwrap-genfunsym prefix primitive)))
+    (dolist (method (reverse apiwrap-primitives))
+      (let ((macrosym (apiwrap-gensym prefix method)))
         (push `(defmacro ,macrosym (resource doc link
                                              &optional objects internal-resource
                                              &rest functions)
-                 ,(apiwrap--docmacro name (apiwrap--kw->sym primitive))
+                 ,(apiwrap--docmacro name method)
                  (declare (indent defun) (doc-string 2))
-                 (apiwrap-gendefun ,name ,prefix ',standard-parameters ',primitive
+                 (apiwrap-gendefun ,name ,prefix ',standard-parameters ',method
                                    resource doc link objects internal-resource
                                    ',functions functions))
               super-form)))
@@ -261,9 +261,9 @@ configured.")
 (defun apiwrap-gendefun (name prefix standard-parameters method resource doc link objects internal-resource std-functions override-functions)
   "Generate a single defun form"
   (let ((args '(&optional data &rest params))
-        (funsym (apiwrap-genfunsym prefix method resource))
+        (funsym (apiwrap-gensym prefix method resource))
         resolved-resource form functions
-        primitive-func link-func post-process-func pre-process-params-func)
+        primitive-func link-func)
 
     ;; Be smart about when configuration starts.  Neither `objects' nor
     ;; `internal-resource' can be keywords, so we know that if they
@@ -282,48 +282,30 @@ configured.")
     (when objects (setq args (append objects args)))
 
     (setq internal-resource (or internal-resource resource)
-          primitive-func (alist-get method functions)
-          post-process-func (alist-get 'post-process functions)
-          pre-process-params-func (alist-get 'pre-process-params functions)
+          primitive-func (alist-get 'request functions)
           link-func (alist-get 'link functions))
 
     ;; If our functions are already functions (and not quoted), we'll
     ;; have to quote them for the actual defun
     (when (functionp primitive-func)
       (setq primitive-func `(function ,primitive-func)))
-    (when (functionp post-process-func)
-      (setq post-process-func `(function ,post-process-func)))
-    (when (functionp pre-process-params-func)
-      (setq pre-process-params-func `(function ,pre-process-params-func)))
 
     ;; Alright, we're ready to build our function
     (setq resolved-resource (apiwrap-resolve-api-params
                                 `(list ,@(mapcar (lambda (o) `(cons ',o ,o)) objects))
                               internal-resource)
           form
-          (if pre-process-params-func
-              `(apply ,primitive-func ,resolved-resource
-                      (if (keywordp data)
-                          (list (funcall ,pre-process-params-func (apiwrap-plist->alist (cons data params))))
-                        (list (funcall ,pre-process-params-func (apiwrap-plist->alist params)) data)))
-            `(apply ,primitive-func ,resolved-resource
-                    (if (keywordp data)
-                        (list (apiwrap-plist->alist (cons data params)))
-                      (list (apiwrap-plist->alist params) data)))))
-
-    (when post-process-func
-      (setq form `(funcall ,post-process-func ,form)))
+          `(apply ,primitive-func ',method ,resolved-resource
+                  (if (keywordp data)
+                      (list (cons data params) nil)
+                    (list params data))))
 
     (let ((props `((prefix   . ,prefix)
                    (method   . ',method)
                    (endpoint . ,resource)
                    (link     . ,link)))
           fn-form)
-      (dolist (p props)
-        (push `(put ',funsym
-                    ',(intern (concat "apiwrap-" (symbol-name (car p))))
-                    ,(cdr p))
-              fn-form))
+      (push `(put ',funsym 'apiwrap ',props) fn-form)
       (push `(defun ,funsym ,args
                ,(apiwrap--docfn name doc (alist-get objects standard-parameters) method resource
                                 (funcall link-func props))
@@ -351,15 +333,28 @@ macros.
 
   Required:
 
-    :get :put :head :post :patch :delete
+    :request
 
-        API primitives.  See package `ghub' as an example of the
-        kinds of primitives these macros are design for; you may
-        wish to consider writing wrappers.  Each function is
-        expected to take a resource-string as the first
-        parameter.  The second parameter should be an alist of
-        parameters to the resource.  The third parameter should
-        be an alist of data for the resource (e.g., for posting).
+        API request primitive.  This function is expected to take
+        the following required arguments:
+
+          (METHOD RESOURCE PARAMS DATA)
+
+        METHOD is provided as a symbol, one of `apiwrap-primitives',
+        that specifies which HTTP method to use for the request.
+
+        RESOURCE is the resource being accessed as a string.
+        This will be passed through from each method macro after
+        being resolved in the context of its parameters.  See the
+        generated macro documentation (or `apiwrap--docmacro')
+        for more details.
+
+        PARAMS is provided as a property list of parameters.
+        This will be passed in from each method function call.
+
+        DATA is provided as an alist of data (e.g., for posting
+        data to RESOURCE).  This will be passed in from each
+        method function call.
 
   Optional:
 
@@ -378,23 +373,8 @@ macros.
           method    symbol  one of `get', `put', etc.
           prefix    string  the prefix used to generate wrappers
 
-        The default is `apiwrap-stdgenlink'.
-
-    :post-process
-
-        Function to process the responses of the API before
-        returning.
-
-        The default is `identity'.
-
-    :pre-process-params
-
-        Function to pre-process arguments passed as the
-        parameters to the generated wrappers.  The function is
-        passed an alist based on the plist of keyword arguments
-        given to the wrapper function and should return an alist
-
-        The default is `identity'."
+        The default is `apiwrap-stdgenlink'."
+  (declare (indent 2))
   (let ((sname (cl-gensym)) (sprefix (cl-gensym))
         (sstdp (cl-gensym)) (sfuncs (cl-gensym)))
     `(let ((,sname ,name)

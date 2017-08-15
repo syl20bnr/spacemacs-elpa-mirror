@@ -7,7 +7,7 @@
 ;;          Andrew Pennebaker
 ;;          Alpha Tan <alphatan.zh@gmail.com>
 ;; URL: https://github.com/mcandre/vimrc-mode
-;; Package-Version: 20150607.913
+;; Package-Version: 20170814.1837
 ;; Version: 0.3.1
 ;; Keywords: languages, vim
 ;; Package-Requires: ()
@@ -1242,6 +1242,7 @@ With argument, repeat ARG times."
 (defvar vimrc-mode-syntax-table
   (let ((table (make-syntax-table)))
     (modify-syntax-entry ?\" "." table)
+    (modify-syntax-entry ?# "_" table)
     table))
 
 ;;;###autoload (add-to-list 'auto-mode-alist '("\\.vim\\'" . vimrc-mode))
