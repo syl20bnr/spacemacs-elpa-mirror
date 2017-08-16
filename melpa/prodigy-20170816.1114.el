@@ -5,7 +5,7 @@
 ;; Author: Johan Andersson <johan.rejeep@gmail.com>
 ;; Maintainer: Johan Andersson <johan.rejeep@gmail.com>
 ;; Version: 0.7.0
-;; Package-Version: 20160929.2302
+;; Package-Version: 20170816.1114
 ;; URL: http://github.com/rejeep/prodigy.el
 ;; Package-Requires: ((s "1.8.0") (dash "2.4.0") (f "0.14.0") (emacs "24"))
 
@@ -1383,7 +1383,25 @@ The old service process is transfered to the new service."
   (hl-line-mode 1)
   (when (featurep 'discover)
     (prodigy-discover-initialize))
+  (setq imenu-prev-index-position-function
+        #'prodigy--imenu-prev-index-position-function)
+  (setq imenu-extract-index-name-function
+        #'prodigy--imenu-extract-index-name-function)
   (run-mode-hooks 'prodigy-mode-hook))
+
+(defun prodigy--imenu-prev-index-position-function ()
+  "Move point to previous line in prodigy buffer.
+This function is used as a value for
+`imenu-prev-index-position-function'."
+  (unless (bobp)
+    (forward-line -1)))
+
+(defun prodigy--imenu-extract-index-name-function ()
+  "Return imenu name for line at point.
+This function is used as a value for
+`imenu-extract-index-name-function'.  Point should be at the
+beginning of the line."
+  (elt (tabulated-list-get-entry) 1))
 
 ;;;###autoload
 (define-derived-mode prodigy-view-mode special-mode "Prodigy-view"

@@ -4,7 +4,7 @@
 
 ;; Author:  Atila Neves <atila.neves@gmail.com>
 ;; Version: 0.11
-;; Package-Version: 20170403.1116
+;; Package-Version: 20170816.648
 ;; Package-Requires: ((flycheck "0.24") (f "0.18.2"))
 ;; Keywords: languages
 ;; URL: http://github.com/atilaneves/flycheck-dmd-dub
@@ -196,6 +196,8 @@ If FILE does not exist, return nil."
 
 (defun fldd--set-variables (import-paths string-import-paths)
   "Set IMPORT-PATHS and STRING-IMPORT-PATHS to flycheck-dmd variables."
+  (make-local-variable 'flycheck-dmd-include-path)
+  (make-local-variable 'flycheck-dmd-args)
   (setq flycheck-dmd-include-path import-paths)
   (let ((flags (mapcar #'(lambda (x) (concat "-J" x)) string-import-paths)))
     (setq flycheck-dmd-args (if (member "-unittest" flags) flags (cons "-unittest" flags)))))
@@ -226,6 +228,7 @@ If FILE does not exist, return nil."
   "Set `flycheck-dmd-include-path' from dub info if available."
   (let* ((basedir (fldd--get-project-dir)))
     (when basedir
+      (make-local-variable 'flycheck-dmd-include-path)
       (setq flycheck-dmd-include-path (fldd--get-dub-package-dirs)))))
 
 ;;;###autoload
@@ -233,6 +236,7 @@ If FILE does not exist, return nil."
   "Set all flycheck-dmd variables.
 It also outputs the values of `import-paths' and `string-import-paths'
 to `fldd--cache-file' to reuse the result of dub describe."
+  (interactive)
   (let* ((basedir (fldd--get-project-dir)))
     (when basedir
       (let* ((default-directory basedir))
