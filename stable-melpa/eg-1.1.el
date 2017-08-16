@@ -2,15 +2,24 @@
 ;; Copyright 2017 by Dave Pearson <davep@davep.org>
 
 ;; Author: Dave Pearson <davep@davep.org>
-;; Version: 1.0
-;; Package-Version: 1.0
+;; Version: 1.1
+;; Package-Version: 1.1
 ;; Keywords: docs
 ;; URL: https://github.com/davep/eg.el
-;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
+;; Package-Requires: ((cl-lib "0.5") (emacs "24.3"))
 
-;; eg.el is free software distributed under the terms of the GNU General
-;; Public Licence, version 2 or (at your option) any later version. For
-;; details see the file COPYING.
+;; This program is free software: you can redistribute it and/or modify it
+;; under the terms of the GNU General Public License as published by the
+;; Free Software Foundation, either version 3 of the License, or (at your
+;; option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+;; Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License along
+;; with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 ;;
@@ -528,14 +537,17 @@ ensures that it is closed again after BODY has been evaluated."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Guide viewer "internals".
 
-(defvar eg--current-guide nil
+(defvar-local eg--current-guide nil
   "The current guide being viewed in an EG buffer.")
 
-(defvar eg--current-entry nil
+(defvar-local eg--current-entry nil
   "The entry currently being viewed in an EG buffer.")
 
-(defvar eg--currently-displaying nil
+(defvar-local eg--currently-displaying nil
   "Informs the display code what it is we're displaying.")
+
+(defvar-local eg--viewing-source nil
+  "T if we're viewing the source of entries, NIL if not.")
 
 (defvar eg--undosify-map nil
   "Hash table of text translations.")
@@ -742,6 +754,7 @@ ensures that it is closed again after BODY has been evaluated."
         (if eg--current-entry
             (concat
              (eg-entry-type-description eg--current-entry)
+             (if eg--viewing-source " (Source)" "")
              " | "
              (eg--entry-menu-path eg--current-entry))))
        (:eg-menu
@@ -824,13 +837,14 @@ show for the link."
   "View the entry at OFFSET."
   (when offset
     (eg-goto eg--current-guide offset))
-  (setq eg--current-entry (eg-load-entry eg--current-guide))
-  (setq eg--currently-displaying :eg-entry)
+  (setq eg--current-entry        (eg-load-entry eg--current-guide)
+        eg--currently-displaying :eg-entry)
   (let ((buffer-read-only nil))
     (setf (buffer-string) "")
     (eg--insert-entry-text)
     (eg--linkify-entry-text)
-    (eg--decorate-buffer)
+    (unless eg--viewing-source
+      (eg--decorate-buffer))
     (eg--add-top-nav)
     (eg--add-bottom-nav)))
 
@@ -932,6 +946,7 @@ might change in the future."
     (define-key map "k"         #'eg-goto-parent-entry-maybe)
     (define-key map "w"         #'eg-goto-parent-entry-maybe)
     (define-key map "f"         #'eg-goto-first-entry)
+    (define-key map "s"         #'eg-toggle-view-source)
     (define-key map "m"         #'eg-view-menu)
     (define-key map "c"         #'eg-view-credits)
     (define-key map "q"         #'eg-quit)
@@ -1003,10 +1018,10 @@ The key bindings for `eg-mode' are:
 \\{eg-mode-map}"
   (kill-all-local-variables)
   (use-local-map eg-mode-map)
-  (setq major-mode       'eg-mode
-        mode-name        "Expert Guide"
-        buffer-read-only t
-        truncate-lines   t
+  (setq major-mode         'eg-mode
+        mode-name          "Expert Guide"
+        buffer-read-only   t
+        truncate-lines     t
         header-line-format (eg--header-line))
   (buffer-disable-undo))
 
@@ -1059,8 +1074,8 @@ The key bindings for `eg-mode' are:
   (eg--with-valid-buffer
    (let ((buffer-read-only nil))
      (setf (buffer-string) "")
-     (setq eg--current-entry nil)
-     (setq eg--currently-displaying :eg-menu)
+     (setq eg--current-entry        nil
+           eg--currently-displaying :eg-menu)
      (save-excursion
        (cl-loop for menu in (eg-guide-menus eg--current-guide)
                 do
@@ -1084,12 +1099,18 @@ The key bindings for `eg-mode' are:
   (eg--with-valid-buffer
    (let ((buffer-read-only nil))
      (setf (buffer-string) "")
-     (setq eg--current-entry nil)
-     (setq eg--currently-displaying :eg-credits)
+     (setq eg--current-entry        nil
+           eg--currently-displaying :eg-credits)
      (save-excursion
        (cl-loop for line in (eg-guide-credits eg--current-guide)
                 do (insert (eg--undosify-string line) "\n")))
           (eg--add-top-nav))))
+
+(defun eg-toggle-view-source ()
+  "Toggle viewing of guide source."
+  (interactive)
+  (setq eg--viewing-source (not eg--viewing-source))
+  (eg--view-entry))
 
 (defun eg-quit ()
   "Quit the EG buffer."
@@ -1108,9 +1129,10 @@ The key bindings for `eg-mode' are:
           (switch-to-buffer buffer)
           (with-current-buffer buffer
             (eg-mode)
-            (set (make-local-variable 'eg--current-guide)        guide)
-            (set (make-local-variable 'eg--current-entry)        nil)
-            (set (make-local-variable 'eg--currently-displaying) nil)
+            (setq eg--current-guide        guide
+                  eg--current-entry        nil
+                  eg--currently-displaying nil
+                  eg--viewing-source       nil)
             (eg--view-entry)))
       (eg-close guide)
       (error "%s isn't a valid Norton Guide file" file))))

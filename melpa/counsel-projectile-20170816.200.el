@@ -4,7 +4,7 @@
 
 ;; Author: Eric Danan
 ;; URL: https://github.com/ericdanan/counsel-projectile
-;; Package-Version: 20170815.407
+;; Package-Version: 20170816.200
 ;; Created: 2016-04-11
 ;; Keywords: project, convenience
 ;; Version: 0.1
@@ -66,22 +66,6 @@
 
 ;;; counsel-projectile-find-file
 
-(defun counsel-projectile--file-list (&optional no-buffer)
-  "Return a list of files for the current project.
-
-Like `projectile-current-project-files', but fontifies
-non-visited file names with the `ivy-virtual' face.  With optional
-argument NO-BUFFER, only list non-visited files."
-  (let ((root (projectile-project-root)))
-    (cl-loop
-     for name in (projectile-current-project-files)
-     for file = (expand-file-name name root)
-     if (not (get-file-buffer file))
-     collect (propertize name 'face 'ivy-virtual)
-     else
-     unless no-buffer
-     collect name)))
-
 (defun counsel-projectile--find-file-action (file &optional other-window)
   "Find FILE and run `projectile-find-file-hook'."
   (funcall (if other-window
@@ -95,6 +79,12 @@ argument NO-BUFFER, only list non-visited files."
 `projectile-find-file-hook'."
   (counsel-projectile--find-file-action file t))
 
+(defun counsel-projectile--find-file-transformer (name)
+  "Transform non-visited file names with `ivy-virtual' face."
+  (if (not (get-file-buffer (expand-file-name name (projectile-project-root))))
+      (propertize name 'face 'ivy-virtual)
+    name))
+
 ;;;###autoload
 (defun counsel-projectile-find-file (&optional arg)
   "Jump to a project's file using completion.
@@ -104,7 +94,7 @@ invalidates the cache first."
   (interactive "P")
   (projectile-maybe-invalidate-cache arg)
   (ivy-read (projectile-prepend-project-name "Find file: ")
-            (counsel-projectile--file-list)
+            (projectile-current-project-files)
             :matcher #'counsel--find-file-matcher
             :require-match t
             :keymap counsel-projectile-map
@@ -115,6 +105,10 @@ invalidates the cache first."
  'counsel-projectile-find-file
  '(("j" counsel-projectile--find-file-other-window-action
     "other window")))
+
+(ivy-set-display-transformer
+ 'counsel-projectile-find-file
+ 'counsel-projectile--find-file-transformer)
 
 ;;; counsel-projectile-find-dir
 
@@ -363,6 +357,18 @@ invokes `projectile-commander' instead of
 
 ;;; counsel-projectile
 
+(defun counsel-projectile--unvisited-file-list ()
+  "Return a list of unvisited files for the current project.
+
+Like `projectile-current-project-files', but skips any files
+already being visited by a buffer."
+  (let ((root (projectile-project-root)))
+    (cl-loop
+     for name in (projectile-current-project-files)
+     for file = (expand-file-name name root)
+     if (not (get-file-buffer file))
+     collect name)))
+
 (defun counsel-projectile--global-list ()
   "Get a list of project buffers and files."
   (append
@@ -371,15 +377,17 @@ invokes `projectile-commander' instead of
          (counsel-projectile--buffer-list))
    (mapc (lambda (file)
            (add-text-properties 0 1 '(type file) file))
-         (counsel-projectile--file-list t))))
+         (counsel-projectile--unvisited-file-list))))
 
 (defun counsel-projectile--transformer (str)
   "Fontifies modified, file-visiting buffers.
 
 Relies on `ivy-switch-buffer-transformer'."
-  (if (eq (get-text-property 0 'type str) 'buffer)
-      (ivy-switch-buffer-transformer str)
-    str))
+  (let ((type (get-text-property 0 'type str)))
+    (cond
+     ((eq type 'buffer) (ivy-switch-buffer-transformer str))
+     ((eq type 'file) (propertize str 'face 'ivy-virtual))
+     (t str))))
 
 (defun counsel-projectile--matcher (regexp candidates)
   "Return REGEXP-matching CANDIDATES.

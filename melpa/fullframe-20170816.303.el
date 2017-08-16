@@ -4,8 +4,8 @@
 
 ;; Author: Tom Regner <tom@goochesa.de>
 ;; Maintainer: Tom Regner <tom@goochesa.de>
-;; Version: 0.4.9
-;; Package-Version: 20170815.223
+;; Version: 0.5.0
+;; Package-Version: 20170816.303
 ;; Keywords: fullscreen
 ;; Package-Requires: ((cl-lib "0.5"))
 
