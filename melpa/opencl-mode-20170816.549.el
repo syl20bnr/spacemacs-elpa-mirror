@@ -4,7 +4,7 @@
 ;;
 ;; Author: Salmane Bah <salmane.bah@u-bordeaux.fr>
 ;; Keywords: c, opencl
-;; Package-Version: 20160220.909
+;; Package-Version: 20170816.549
 ;; URL: https://github.com/salmanebah/opencl-mode
 ;; Version: 1.0
 
@@ -95,7 +95,7 @@
     (,opencl-extension-regexp . 'font-lock-opencl-face))
   "Font-lock for opencl keywords")
 
-
+;;;###autoload
 (define-derived-mode opencl-mode c-mode "Opencl"
   "Major mode for opencl kernel editing"
   (setcar font-lock-defaults (append c-font-lock-keywords opencl-font-lock-keywords)))

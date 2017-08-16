@@ -4,10 +4,10 @@
 
 ;; Author: James Wong <jianwang.academic@gmail.com>
 ;; URL: https://github.com/et2010/org-edit-latex
-;; Package-Version: 20170816.28
+;; Package-Version: 20170816.114
 ;; Keywords: org, LaTeX
 ;; Version: 0.8.0
-;; Package-Requires: ((emacs "24.4") (org "9.0") (auctex "11.90"))
+;; Package-Requires: ((emacs "24.4") (auctex "11.90"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -30,11 +30,13 @@
 ;; Install
 ;; =======
 
-;; First, download this package and include its path in your load-path. Then, you can add following in your init file:
+;; First, download this package and include its path in your load-path. Then,
+;; you can add following in your init file:
 
 ;; (require 'org-edit-latex)
 
-;; And don't forget to add latex to `org-babel-load-languages' (below is for demonstration, your languages list may differ from it.)
+;; And don't forget to add latex to `org-babel-load-languages' (below is for
+;; demonstration, your languages list may differ from it.)
 
 ;; (org-babel-do-load-languages
 ;;  'org-babel-load-languages
@@ -61,17 +63,24 @@
 ;;; Code:
 
 (require 'org)
-(require 'org-element)
 (require 'ox-latex)
 (require 'preview)
 
 (defcustom org-edit-latex-frag-master "frag-master.tex"
   "Master file for LaTeX fragments."
+  :type 'string
   :group 'org-edit-latex
   :version "24.4")
 
 (defcustom org-edit-latex-create-master t
   "Decide whether we should create a TeX-master file."
+  :type 'boolean
+  :group 'org-edit-latex
+  :version "24.4")
+
+(defcustom org-edit-latex-show-hint t
+  "Whether we should show hint message in the echo area."
+  :type 'boolean
   :group 'org-edit-latex
   :version "24.4")
 
@@ -90,13 +99,14 @@
       (progn
         (advice-add #'org-edit-special :around #'org-edit-latex--wrap-maybe)
         (advice-add #'org-edit-src-exit :around #'org-edit-latex--unwrap-maybe)
-        (add-hook 'post-command-hook #'org-edit-latex-smart-hint t t)
+        (when org-edit-latex-show-hint
+          (add-hook 'post-command-hook #'org-edit-latex-smart-hint t t))
         (org-edit-latex-create-master-maybe)
-        (add-hook 'org-src-mode-hook 'org-edit-latex--set-TeX-master))
+        (add-hook 'org-src-mode-hook #'org-edit-latex--set-TeX-master))
     (advice-remove #'org-edit-special #'org-edit-latex--wrap-maybe)
     (advice-remove #'org-edit-src-exit #'org-edit-latex--unwrap-maybe)
     (remove-hook 'post-command-hook #'org-edit-latex-smart-hint t)
-    (remove-hook 'org-src-mode-hook 'org-edit-latex--set-TeX-master)))
+    (remove-hook 'org-src-mode-hook #'org-edit-latex--set-TeX-master)))
 
 
 ;; TeX-master

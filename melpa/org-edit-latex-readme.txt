@@ -4,11 +4,13 @@ block.
 Install
 =======
 
-First, download this package and include its path in your load-path. Then, you can add following in your init file:
+First, download this package and include its path in your load-path. Then,
+you can add following in your init file:
 
 (require 'org-edit-latex)
 
-And don't forget to add latex to `org-babel-load-languages' (below is for demonstration, your languages list may differ from it.)
+And don't forget to add latex to `org-babel-load-languages' (below is for
+demonstration, your languages list may differ from it.)
 
 (org-babel-do-load-languages
  'org-babel-load-languages
