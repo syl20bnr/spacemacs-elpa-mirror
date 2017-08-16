@@ -3,7 +3,7 @@
 ;; Author: Alexandre Vassalotti <alexandre@peadrop.com>
 ;; Created: 23-Apr-2009
 ;; Version: 0.3
-;; Package-Version: 3.3.2
+;; Package-Version: 3.4.0
 ;; Keywords: google protobuf languages
 
 ;; Redistribution and use in source and binary forms, with or without
@@ -65,9 +65,11 @@
 ;;; Code:
 
 (require 'cc-mode)
-(require 'cl)
 
 (eval-when-compile
+  (and (= emacs-major-version 24)
+       (>= emacs-minor-version 4)
+       (require 'cl))
   (require 'cc-langs)
   (require 'cc-fonts))
 

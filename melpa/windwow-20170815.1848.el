@@ -4,7 +4,7 @@
 
 ;; Author: Viju Mathew <viju.jm@gmail.com>
 ;; Version: 0.1
-;; Package-Version: 20170803.1748
+;; Package-Version: 20170815.1848
 ;; Created: 12 May 2017
 ;; Package-Requires: ((dash "2.11.0") (cl-lib "0.6.1") (emacs "24"))
 ;; Keywords: frames
@@ -154,8 +154,8 @@ BUFFERS is a list of buffers.  Used internally by autoloaded functions."
 (defun windwow-load-buffer-from-list (buffer-list buffer)
   "Load BUFFER-LIST and switch to a BUFFER from that list."
   (interactive
-   (let* ((list-name (completing-read "choose buffer-list: " windwow-list-of-buffer-lists))
-          (b-cur (completing-read "choose buffer: " (cdr (assoc list-name
+   (let* ((list-name (completing-read "Choose buffer-list: " windwow-list-of-buffer-lists))
+          (b-cur (completing-read "Choose buffer: " (cdr (assoc list-name
                                                                 windwow-list-of-buffer-lists)))))
      (list list-name b-cur)))
   (switch-to-buffer buffer))
@@ -335,28 +335,58 @@ The split-bundles are '(split-command (h . h) (v . v)).
 This is named 'parse because the split-bundles are used to generate
 the switch commands."
   (windwow-parse-matches-recur split-bundles nil 0 (list (cons (car window-config)
-                                                         (cadr window-config)))))
+                                                               (cadr window-config)))
+                               (apply '-zip (cddr window-config))))
 
-(defun windwow-parse-matches-recur (matches commands index window-list)
+(defun windwow-parse-matches-recur (matches commands index window-list final-list)
   "Recursive call for getting split and switch commands.
 MATCHES are the unused split-commands, COMMANDS are a list of split and switch
 commands.  INDEX is used to track the step of recursion and WINDOW-LIST is a
 list of windows."
   (if (windwow-is-empty matches)
-      commands
+      (if (windwow-window-lists-equal window-list final-list)
+          commands
+        nil)
     (let* ((current (nth index window-list))
            (match (car matches))
            (command (car match))
            (pair (windwow-split-window-pair-in-direction command current)))
       (if (equal pair (windwow-merge-pair (cdr match)))
-          (windwow-parse-matches-recur (cdr matches)
-                                       (cons command commands)
-                                       index
-                                       (windwow-insert-split-window-at-index index pair window-list))
+          (let ((answer
+                 (windwow-parse-matches-recur (cdr matches)
+                                              (cons command commands)
+                                              index
+                                              (windwow-insert-split-window-at-index index pair window-list)
+                                              final-list)))
+            (if answer answer
+              (windwow-parse-matches-recur matches
+                                           (cons 'switch commands)
+                                           (windwow-increment-window-index index window-list)
+                                           window-list
+                                           final-list)))
         (windwow-parse-matches-recur matches
                                      (cons 'switch commands)
                                      (windwow-increment-window-index index window-list)
-                                     window-list)))))
+                                     window-list
+                                     final-list)))))
+
+(defun windwow-window-lists-equal (list-1 list-2)
+  (when (eq (length list-1) (length list-2))
+    (windwow-window-lists-equal-recur list-1 list-2 t)))
+
+(defun windwow-window-lists-equal-recur (list-1 list-2 val)
+  (if (or list-1 list-2)
+      (let ((item-1 (car list-1))
+            (item-2 (car list-2)))
+        (if (equal item-1 item-2)
+            (windwow-window-lists-equal-recur (cdr list-1) (cdr list-2) val)
+          (let ((next-item-1 (cadr list-1))
+                (next-item-2 (cadr list-2)))
+            (if (and (equal next-item-1 item-2)
+                     (equal next-item-2 item-1))
+                (windwow-window-lists-equal-recur (cddr list-1) (cddr list-2) val)
+              (windwow-window-lists-equal-recur nil nil nil)))))
+    val))
 
 (defun windwow-merge-pair (cells)
   "Change '((A . B) (C . D)) to '((A . C) (B . D)) of CELLS."
@@ -434,7 +464,7 @@ Preserves buffers."
   "Save current window arrangement as NAME.
 Load window arrangement with 'window-load-window-arrangement."
   (interactive
-   (list (completing-read "Enter split window command list name: "
+   (list (completing-read "Enter window arrangement name: "
                           windwow-list-of-window-commands)))
   (let ((window-commands (windwow-get-usable-commands (windwow-current-frame-data))))
     (windwow-save-window-configuration-commands name window-commands)))
@@ -449,7 +479,7 @@ Saves (NAME . WINDOW-COMMANDS) pair."
 (defun windwow-load-window-arrangement (name)
   "Load NAME, a previously saved window arrangement."
   (interactive
-   (list (completing-read "Load split window command list: "
+   (list (completing-read "Load window arrangement: "
                           windwow-list-of-window-commands
                           nil t "")))
   (windwow-load-window-configuration-commands (cdr (assoc name windwow-list-of-window-commands))))
@@ -459,9 +489,9 @@ Saves (NAME . WINDOW-COMMANDS) pair."
 (defun windwow-load-window-arrangement-and-buffer-list (commands buffers)
   "Load a window arrangement, COMMANDS,  and a buffer list, BUFFERS."
   (interactive
-   (let* ((split-commands-name (completing-read "choose window commands: "
+   (let* ((split-commands-name (completing-read "Choose window arrangement: "
                                                 windwow-list-of-window-commands nil t ""))
-          (list-name (completing-read "choose buffer-list: " windwow-list-of-buffer-lists nil t "")))
+          (list-name (completing-read "Choose buffer-list: " windwow-list-of-buffer-lists nil t "")))
      (list (assoc split-commands-name
                   windwow-list-of-window-commands)
            (assoc list-name

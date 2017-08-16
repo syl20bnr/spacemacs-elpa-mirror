@@ -2,7 +2,7 @@
 
 ;; Author: Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/Fanael/highlight-numbers
-;; Package-Version: 20160717.1228
+;; Package-Version: 20170815.1412
 ;; Version: 0.2.3
 ;; Package-Requires: ((emacs "24") (parent-mode "2.0"))
 
@@ -150,6 +150,30 @@ It is used when no mode-specific one is available.")
                          digit
                          (*? any)
                          symbol-end))
+                table)
+       (puthash 'julia-mode
+                (rx (and
+                     symbol-start
+                     (or (and (+ digit)
+                              (? (and "." (* digit)))
+                              (? (and (any "eE")
+                                      (? (any "-+"))
+                                      (+ digit))))
+                         (and "0"
+                              (any "xX")
+                              (+ hex-digit)))))
+                table)
+       (puthash 'ess-julia-mode
+                (rx (and
+                     symbol-start
+                     (or (and (+ digit)
+                              (? (and "." (* digit)))
+                              (? (and (any "eE")
+                                      (? (any "-+"))
+                                      (+ digit))))
+                         (and "0"
+                              (any "xX")
+                              (+ hex-digit)))))
                 table)
        table)))
   "Hash table storing the mode-specific number highlighting regexps.

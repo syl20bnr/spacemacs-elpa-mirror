@@ -4,7 +4,7 @@
 
 ;; Author: Ryan Davis <ryand-ruby@zenspider.com>
 ;; Keywords: extensions, tools
-;; Package-Version: 20170802.2039
+;; Package-Version: 20170815.1527
 ;; Package-Requires: ()
 ;; URL: TBA
 ;; Doc URL: TBA
@@ -78,9 +78,9 @@
 ;; If automatic package cleanup is not desired (for example, if you have
 ;; locally-installed packages you want to keep), you can disable this
 ;; functionality by setting package-disable-cleanup, like so:
-;; 
+;;
 ;;    (setq package-disable-cleanup 1)
-;;    (package manifest 'foo
+;;    (package-manifest 'foo
 ;;                      'bar
 ;;                      ... )
 
@@ -96,6 +96,10 @@
 
 (unless (fboundp 'package-cleanup)
   (require 'cl)
+
+  (defun symbol< (a b) (string< (symbol-name a) (symbol-name b)))
+
+  (defun symbol-list< (a b) (symbol< (car a) (car b)))
 
   (defun package-details-for (name)
     (let ((v (cdr (assoc name (append package-alist package-archive-contents)))))
@@ -137,7 +141,7 @@
 
   (defun package-transitive-closure (pkgs)
     (car
-     (topological-sort
+     (package+/topological-sort
       (mapcar 'map-to-package-deps
               (sort (delete-duplicates
                      (flatten (mapcar 'map-to-package-deps pkgs)))
@@ -169,7 +173,7 @@
      'symbol-list<))
 
   (defun topo (lst)
-    (car (topological-sort lst)))
+    (car (package+/topological-sort lst)))
 
   (defun package-cleanup (packages)
     "Delete installed packages not explicitly declared in PACKAGES."
@@ -179,7 +183,7 @@
                      (lambda (name) (assoc name package-alist))
                      (cl-set-difference
                       (topo (package-manifest-with-deps (mapcar 'car package-alist)))
-                      (topo (package-manifest-with-deps my-manifest)))))) 
+                      (topo (package-manifest-with-deps packages))))))
       (message "Removing packages: %S" removes)
       (mapc 'package-delete-by-name (reverse removes))
       ))) ; (unless (fboundp 'package-cleanup)
@@ -205,13 +209,9 @@ control."
 
   (unless (boundp 'package-disable-cleanup) (package-cleanup manifest)))
 
-(defun symbol< (a b) (string< (symbol-name a) (symbol-name b)))
-
-(defun symbol-list< (a b) (symbol< (car a) (car b)))
-
 ;; stolen (and modified) from:
 ;; https://github.com/dimitri/el-get/blob/master/el-get-dependencies.el
-(defun topological-sort (graph)
+(defun package+/topological-sort (graph)
   (let* ((entries (make-hash-table))
          ;; avoid obsolete `flet' & backward-incompatible `cl-flet'
          (entry (lambda (v)
