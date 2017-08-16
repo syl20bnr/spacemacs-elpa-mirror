@@ -4,7 +4,7 @@
 
 ;; Author: James Wong <jianwang.academic@gmail.com>
 ;; URL: https://github.com/et2010/org-edit-latex
-;; Package-Version: 20170621.758
+;; Package-Version: 20170816.28
 ;; Keywords: org, LaTeX
 ;; Version: 0.8.0
 ;; Package-Requires: ((emacs "24.4") (org "9.0") (auctex "11.90"))
@@ -90,10 +90,12 @@
       (progn
         (advice-add #'org-edit-special :around #'org-edit-latex--wrap-maybe)
         (advice-add #'org-edit-src-exit :around #'org-edit-latex--unwrap-maybe)
+        (add-hook 'post-command-hook #'org-edit-latex-smart-hint t t)
         (org-edit-latex-create-master-maybe)
         (add-hook 'org-src-mode-hook 'org-edit-latex--set-TeX-master))
     (advice-remove #'org-edit-special #'org-edit-latex--wrap-maybe)
     (advice-remove #'org-edit-src-exit #'org-edit-latex--unwrap-maybe)
+    (remove-hook 'post-command-hook #'org-edit-latex-smart-hint t)
     (remove-hook 'org-src-mode-hook 'org-edit-latex--set-TeX-master)))
 
 
@@ -297,6 +299,15 @@ latex-environment."
                 (apply oldfun args)))
           (apply oldfun args)))
     (apply oldfun args)))
+
+;;;###autoload
+(defun org-edit-latex-smart-hint ()
+  "Show a hint message in echo-area when user is in LaTeX environment."
+  (if (and (equal major-mode 'org-mode)
+           (member (car (org-element-context))
+                   '(latex-fragment latex-environment)))
+      (message (substitute-command-keys
+                "Enter edit buffer with `\\[org-edit-special]'."))))
 
 
 (provide 'org-edit-latex)

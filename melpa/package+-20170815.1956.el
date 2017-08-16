@@ -4,7 +4,7 @@
 
 ;; Author: Ryan Davis <ryand-ruby@zenspider.com>
 ;; Keywords: extensions, tools
-;; Package-Version: 20170815.1527
+;; Package-Version: 20170815.1956
 ;; Package-Requires: ()
 ;; URL: TBA
 ;; Doc URL: TBA
@@ -166,7 +166,7 @@
     (sort
      (rwd-map-filter (lambda (pkg)
                        (let ((deps (package-deps-for pkg)))
-                         (and (assoc pkg package-alist)
+                         (and (assoc pkg package-archive-contents)
                               (cons pkg (sort (mapcar 'car deps)
                                               'symbol<)))))
                      (package-transitive-closure packages))

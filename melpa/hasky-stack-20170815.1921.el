@@ -4,7 +4,7 @@
 ;;
 ;; Author: Mark Karpov <markkarpov92@gmail.com>
 ;; URL: https://github.com/hasky-mode/hasky-stack
-;; Package-Version: 20170814.417
+;; Package-Version: 20170815.1921
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.4") (f "0.18.0") (magit-popup "2.10"))
 ;; Keywords: tools, haskell
@@ -347,6 +347,7 @@ This uses `compile' internally."
   :switches '((?r "Dry run"           "--dry-run")
               (?t "Pedantic"          "--pedantic")
               (?f "Fast"              "--fast")
+              (?F "File watch"        "--file-watch")
               (?s "Only snapshot"     "--only-snapshot")
               (?d "Only dependencies" "--only-dependencies")
               (?p "Profile"           "--profile")
