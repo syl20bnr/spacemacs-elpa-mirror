@@ -1,11 +1,26 @@
 ;;; js2-closure.el --- Google Closure dependency manager
 
-;; Copyright (C) 2016 Google, Inc.
+;; Copyright 2017 Google Inc. All rights reserved.
+
 ;; Author: Justine Tunney <jart@google.com>
 ;; Version: 2.0
-;; Package-Version: 2.1
+;; Package-Version: 20170816.1218
+;; License: Apache 2.0
 ;; URL: http://github.com/jart/js2-closure
 ;; Package-Requires: ((js2-mode "20150909"))
+;; Keywords: javascript closure
+
+;; Licensed under the Apache License, Version 2.0 (the "License");
+;; you may not use this file except in compliance with the License.
+;; You may obtain a copy of the License at
+;;
+;;    http://www.apache.org/licenses/LICENSE-2.0
+;;
+;; Unless required by applicable law or agreed to in writing, software
+;; distributed under the License is distributed on an "AS IS" BASIS,
+;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;; See the License for the specific language governing permissions and
+;; limitations under the License.
 
 ;;; Commentary:
 ;;
@@ -19,7 +34,7 @@
 ;; even if you have a big project.
 ;;
 ;; This tool only works on files using traditional namespacing,
-;; i.e. `goog.provide` and `goog.require`. However js2-closure is smart enough
+;; i.e. `goog.provide` and `goog.require`.  However js2-closure is smart enough
 ;; to turn itself off in files that use `goog.module` or ES6 imports.
 
 ;;; Installation:
@@ -89,8 +104,9 @@
 
 (defcustom js2-closure-remove-unused t
   "Determines if unused goog.require statements should be auto-removed.
-You might want to consider using `js2-closure-whitelist' rather than
-disabling this feature."
+You might want to consider using `js2-closure-whitelist' rather
+than disabling this feature.  Or you can add a @suppress
+{extraRequire} JSDoc before before the require."
   :type 'boolean
   :group 'js2-mode)
 
@@ -160,7 +176,6 @@ disabling this feature."
 
 (defun js2--closure-prune-provides (list)
   "Remove identifiers from LIST that shouldn't be required.
-
 Nested namespaces such as `goog.Foo.Bar` are provided in the
 Closure Library source code on several occasions.  However if you
 try to require these namespaces, then `gjslint` will complain,
@@ -213,7 +228,6 @@ because it only wants us to require `goog.Foo`."
 
 (defun js2--closure-crawl (ast on-call on-identifier on-identifier-jsdoc)
   "Crawl `js2-mode' AST and invoke callbacks on nodes.
-
 ON-CALL will be invoked for all `js2-call-node' nodes, passing
 the node itself as the first argument.
 
@@ -277,7 +291,6 @@ JSDoc comments."
 
 (defun js2--closure-determine-requires (ast)
   "Return closure namespaces in AST to be imported.
-
 The result is a cons cell containing two sorted lists.  The first
 is namespaces that should be required.  The second is namespaces
 referenced only in JSDoc that should be forward-declared."
@@ -289,28 +302,20 @@ referenced only in JSDoc that should be forward-declared."
                    (arg1 (car (js2-call-node-args node))))
                (cond ((and (equal funk '(goog provide))
                            (js2-string-node-p arg1))
-                      (let ((item (js2--closure-make-identifier
-                                   (js2-string-node-value arg1))))
-                        (when (not (member item provides))
-                          (push item provides))))
+                      (add-to-list 'provides (js2--closure-make-identifier
+                                              (js2-string-node-value arg1))))
                      ((and (equal funk '(goog require))
                            (js2-string-node-p arg1))
-                      (let ((item (js2--closure-make-identifier
-                                   (js2-string-node-value arg1))))
-                        (when (not (member item requires))
-                          (push item requires))))
+                      (add-to-list 'requires (js2--closure-make-identifier
+                                              (js2-string-node-value arg1))))
                      ((and (equal funk '(goog module get))
                            (js2-string-node-p arg1))
-                      (let ((item (js2--closure-make-identifier
-                                   (js2-string-node-value arg1))))
-                        (when (not (member item references))
-                          (push item references))))
+                      (add-to-list 'references (js2--closure-make-identifier
+                                                (js2-string-node-value arg1))))
                      ((and (equal funk '(goog forwardDeclare))
                            (js2-string-node-p arg1))
-                      (let ((item (js2--closure-make-identifier
-                                   (js2-string-node-value arg1))))
-                        (when (not (member item forwards))
-                          (push item forwards))))))))
+                      (add-to-list 'forwards (js2--closure-make-identifier
+                                              (js2-string-node-value arg1))))))))
           (on-identifier
            (lambda (node)
              (let ((item (js2--closure-make-identifier node)))
@@ -318,12 +323,10 @@ referenced only in JSDoc that should be forward-declared."
                  (cond ((member item provides)
                         (setq item nil))
                        ((member item requires)
-                        (when (not (member item references))
-                          (push item references))
+                        (add-to-list 'references item)
                         (setq item nil))
                        ((js2--closure-member-tree item js2-closure-provides)
-                        (when (not (member item references))
-                          (push item references))
+                        (add-to-list 'references item)
                         (setq item nil)))
                  (setq item (butlast item))))))
           (on-identifier-jsdoc
@@ -333,8 +336,7 @@ referenced only in JSDoc that should be forward-declared."
                  (cond ((or (member item provides))
                         (setq item nil))
                        ((js2--closure-member-tree item js2-closure-provides)
-                        (when (not (member item references-jsdoc))
-                          (push item references-jsdoc))
+                        (add-to-list 'references-jsdoc item)
                         (setq item nil)))
                  (setq item (butlast item)))))))
       (js2--closure-crawl ast on-call on-identifier on-identifier-jsdoc))
@@ -348,8 +350,7 @@ referenced only in JSDoc that should be forward-declared."
                     (push namespace result))))
               (dolist (item references result)
                 (let ((namespace (js2--closure-identifier-to-string item)))
-                  (when (not (member namespace result))
-                    (push namespace result))))))
+                  (add-to-list 'result namespace)))))
            (to-forward
             (let (result)
               (dolist (item forwards)
@@ -360,9 +361,8 @@ referenced only in JSDoc that should be forward-declared."
                     (push namespace result))))
               (dolist (item references-jsdoc result)
                 (let ((namespace (js2--closure-identifier-to-string item)))
-                  (when (and (not (member namespace to-require))
-                             (not (member namespace result)))
-                    (push namespace result)))))))
+                  (when (not (member namespace to-require))
+                    (add-to-list 'result namespace)))))))
       (cons (sort to-require 'string<)
             (sort to-forward 'string<)))))
 
@@ -381,7 +381,6 @@ referenced only in JSDoc that should be forward-declared."
 
 (defun js2--closure-replace (type namespaces after1 after2)
   "Replace section of goog.require or goog.forwardDeclare statements.
-
 This replaces the current section of TYPE statements with
 NAMESPACES, which should come after the AFTER1 or AFTER2
 sections."
@@ -402,15 +401,21 @@ sections."
                    (insert "\n"))))))
     (while (search-forward-regexp
             (format "^%s('\\([^']+\\)');" type) nil t)
-      (if namespaces
+      (beginning-of-line)
+      (if (looking-back "@suppress {extraRequire}[^*]*\\*/\n")
           (progn
-            (when (not (string= (match-string 1) (car namespaces)))
-              (replace-match (car namespaces) t t nil 1))
+            (setq namespaces (delete (match-string 1) namespaces))
             (forward-line))
         (progn
-          (beginning-of-line)
-          (delete-region (point) (progn (forward-line 1) (point)))))
-      (setq namespaces (cdr namespaces)))
+          (if namespaces
+              (progn
+                (when (not (string= (match-string 1) (car namespaces)))
+                  (replace-match (car namespaces) t t nil 1))
+                (forward-line))
+            (progn
+              (beginning-of-line)
+              (delete-region (point) (progn (forward-line 1) (point)))))
+          (setq namespaces (cdr namespaces)))))
     (while namespaces
       (insert (format "%s('%s');\n" type (pop namespaces))))))
 
@@ -466,7 +471,6 @@ sections."
 ;;;###autoload
 (defun js2-closure-fix ()
   "Fix the `goog.require` statements in the current buffer.
-
 This function assumes that all the requires are in one place and
 sorted, without indentation or blank lines.  If you don't have
 any requires, they'll be added after your provide statements.  If
@@ -488,7 +492,6 @@ memory if it was modified or not yet loaded."
 ;;;###autoload
 (defun js2-closure-save-hook ()
   "Global save hook to invoke `js2-closure-fix' if in `js2-mode'.
-
 To use this feature, add it to `before-save-hook'."
   (interactive)
   (when (eq major-mode 'js2-mode)

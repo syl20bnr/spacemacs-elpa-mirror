@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-super-agenda
-;; Package-Version: 20170805.1106
+;; Package-Version: 20170816.1459
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "25.1") (s "1.10.0") (dash "2.13") (org "9.0") (ht "2.2"))
 ;; Keywords: hypermedia, outlines, Org, agenda
@@ -186,9 +186,11 @@ If ANY is non-nil, return as soon as FORM returns non-nil."
 
 (defun org-super-agenda--make-agenda-header (s)
   "Return agenda header containing string S and a newline."
-  (setq s (concat " " s))
-  (org-add-props s nil 'face 'org-agenda-structure)
-  (concat "\n" s))
+  (pcase s
+    ('none "")
+    (_ (setq s (concat " " s))
+       (org-add-props s nil 'face 'org-agenda-structure)
+       (concat "\n" s))))
 
 (defsubst org-super-agenda--get-priority-cookie (s)
   "Return priority character for string S.
