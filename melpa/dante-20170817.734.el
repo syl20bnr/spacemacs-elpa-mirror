@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20170809.1326
+;; Package-Version: 20170817.734
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -982,6 +982,15 @@ a list is returned instead of failing with a nil result."
            ((string-match "Perhaps you meant ‘\\([^‘]*\\)’" msg)
             (let ((replacement (match-string 1 msg)))
               ;; ^^ delete-region may garble the matches
+              (apply #'delete-region (dante-ident-pos-at-point))
+              (insert replacement)))
+           ((string-match "Perhaps you meant one of these:" msg)
+            (let* ((replacements
+                    (-map (lambda (r)
+                            (string-match "‘\\(.*\\)’ (line [0-9]*)" r)
+                            (match-string 1 r))
+                          (split-string (substring msg (match-end 0)) "," t " ")))
+                   (replacement (completing-read "replacement: " replacements)))
               (apply #'delete-region (dante-ident-pos-at-point))
               (insert replacement)))
            ((string-match "Top-level binding with no type signature:[\n ]*" msg)

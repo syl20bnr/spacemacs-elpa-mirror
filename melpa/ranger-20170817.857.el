@@ -3,7 +3,7 @@
 
 ;; Author : Rich Alesi <https://github.com/ralesi>
 ;; Version: 0.9.8.5
-;; Package-Version: 20170703.2135
+;; Package-Version: 20170817.857
 ;; Keywords: files, convenience, dired
 ;; Homepage: https://github.com/ralesi/ranger
 ;; Package-Requires: ((emacs "24.4"))
@@ -540,6 +540,11 @@ Selective hiding of specific attributes can be controlled by MASK."
     ;; TODO paste link - pl
     (define-key map "p?"            'ranger-show-copy-contents)
 
+    ;; copy names and paths
+    (define-key map "yp"            'ranger-copy-absolute-file-paths)
+    (define-key map "yd"            'ranger-copy-current-dir-path)
+    (define-key map "yn"            'ranger-copy-filename)
+
     ;; settings
     (define-key map "o"             'ranger-sort-criteria)
     (define-key map "z+"            'ranger-more-parents)
@@ -585,7 +590,8 @@ Selective hiding of specific attributes can be controlled by MASK."
     ;; file opening
     (define-key map "ws"            'ranger-open-file-vertically)
     (define-key map "wv"            'ranger-open-file-horizontally)
-    (define-key map "wf"            'ranger-open-file-frame)
+    (define-key map "wf"            'ranger-open-file-new-frame)
+    (define-key map "wj"            'ranger-open-file-other-window)
     (define-key map "we"            'ranger-open-in-external-app)
 
     ;; mouse
@@ -901,6 +907,32 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
              (propertize (string-join fileset "\n") 'face 'font-lock-comment-face)
              )))
 
+
+;;; copy names and paths
+
+(defun ranger-copy-absolute-file-paths (&optional arg)
+  "Copy absolute file path(s) into the kill ring.
+
+Copies either the paths of the marked files (separated by spaces)
+or the path of the currently selected file. See
+`dired-copy-filename-as-kill'."
+  (interactive "P")
+  (dired-copy-filename-as-kill (or arg 0)))
+
+(defun ranger-copy-current-dir-path ()
+  "Copy the current directory's (`default-directory''s) absolute
+path."
+  (interactive)
+  (message (kill-new (expand-file-name default-directory))))
+
+(defalias 'ranger-copy-filename 'dired-copy-filename-as-kill
+  "Copy file name(s) into the kill ring.
+
+Copies either the names of the marked files (separated by spaces)
+or the name of the currently selected file.")
+
+
+
 (defun ranger-pop-eshell (&optional arg)
   "Create an eshell window below selected window, working directory."
   (interactive)
@@ -1087,9 +1119,10 @@ the idle timer fires are ignored."
 ranger-`CHAR'."
   (interactive "cm-")
   (let ((mark-letter (char-to-string mark)))
-    (bookmark-set (concat "ranger-" mark-letter))
-    (message "Bookmarked directory %s as `ranger-%s'"
-             default-directory mark-letter)))
+    (unless (string= mark-letter "")
+      (bookmark-set (concat "ranger-" mark-letter))
+      (message "Bookmarked directory %s as `ranger-%s'"
+               default-directory mark-letter))))
 
 (defun ranger-remove-mark ()
   (interactive)
@@ -1416,30 +1449,35 @@ currently selected file in ranger. `IGNORE-HISTORY' will not update history-ring
 
 ;; TODO closing one deer window disables both
 (defun ranger-open-file (&optional mode)
-  "Find file in ranger buffer.  `ENTRY' can be used as path or filename, else will use
+      "Find file in ranger buffer.  `ENTRY' can be used as path or filename, else will use
 currently selected file in ranger. `IGNORE-HISTORY' will not update history-ring on change"
-  (let ((marked-files (dired-get-marked-files)))
-    (cl-loop for find-name in marked-files do
-             (let ((dir-p (file-directory-p find-name))
-                   (min (r--fget ranger-minimal)))
-               (when (and find-name)
-                 (cl-case mode
-                   ('frame
-                    (let ((goto-frame (make-frame)))
-                      (select-frame-set-input-focus goto-frame)))
-                   ('horizontal
-                    (when (or min (not  dir-p))
-                      (unless min
-                        (ranger-disable))
-                      (split-window-right)
-                      (windmove-right)))
-                   ('vertical
-                    (when (or min (not dir-p))
-                      (unless min
-                        (ranger-disable))
-                      (split-window-below)
-                      (windmove-down))))
-                 (ranger-find-file find-name))))))
+      (let ((marked-files (dired-get-marked-files)))
+        (cl-loop for find-name in marked-files do
+                 (let ((dir-p (file-directory-p find-name))
+                       (min (r--fget ranger-minimal)))
+                   (when (and find-name)
+                     (cl-case mode
+                       ('frame
+                        (let ((goto-frame (make-frame)))
+                          (select-frame-set-input-focus goto-frame)))
+                       ('horizontal
+                        (when (or min (not  dir-p))
+                          (unless min
+                            (ranger-disable))
+                          (split-window-right)
+                          (windmove-right)))
+                       ('vertical
+                        (when (or min (not dir-p))
+                          (unless min
+                            (ranger-disable))
+                          (split-window-below)
+                          (windmove-down)))
+                       ('other
+                        (when (or min (not dir-p))
+                          (unless min
+                            (ranger-disable))
+                          (other-window 1))))
+                     (ranger-find-file find-name))))))
 
 ;; idea taken from http://ergoemacs.org/emacs/emacs_dired_open_file_in_ext_apps.html
 (defun ranger-open-in-external-app ()
@@ -1470,10 +1508,15 @@ currently selected file in ranger. `IGNORE-HISTORY' will not update history-ring
   (interactive)
   (ranger-open-file 'vertical))
 
-(defun ranger-open-file-frame ()
-  "Open current file as a split with previously opened window"
+(defun ranger-open-file-new-frame ()
+  "Open current file in a new frame."
   (interactive)
   (ranger-open-file 'frame))
+
+(defun ranger-open-file-other-window ()
+  "Open current file in `other-window'."
+  (interactive)
+  (ranger-open-file 'other))
 
 (defun ranger-insert-subdir ()
   "Insert subdir from selected folder."
@@ -2596,11 +2639,13 @@ properly provides the modeline in dired mode. "
   "Launch dired in a minimal ranger window in other window."
   (interactive)
   (let* ((win-num (length (window-list-1)))
+         (buffer-dir (file-name-directory
+                             (or buffer-file-name
+                                 default-directory)))
          (next-buffer (and (> win-num 1)
-                           (window-buffer (next-window))))
-         (current-file-path (file-name-directory buffer-file-name)))
+                           (window-buffer (next-window)))))
     (switch-to-buffer-other-window next-buffer)
-    (deer (or path current-file-path))
+    (deer (or path buffer-dir))
     (cond
      ;; if window was added, delete
      ((not (eq win-num (length (window-list-1))))
@@ -2608,7 +2653,8 @@ properly provides the modeline in dired mode. "
       (add-hook 'kill-buffer-hook #'delete-window t t))
      ;; else restore previous buffer
      (t
-      (add-hook 'kill-buffer-hook `(lambda ()(pop-to-buffer ,oth-buf)) t t)))))
+      (add-hook 'kill-buffer-hook
+                `(lambda () (pop-to-buffer ,next-buffer)) t t)))))
 
 (defun deer-dual-pane (&optional left right)
   "Launch dired in a minimal ranger window in other window."

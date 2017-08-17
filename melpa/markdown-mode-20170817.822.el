@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.3-dev
-;; Package-Version: 20170817.502
+;; Package-Version: 20170817.822
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: http://jblevins.org/projects/markdown-mode/
@@ -354,7 +354,7 @@
 ;;     `markdown-live-preview-window-function' can be customized to open
 ;;     in a browser other than `eww'.  If you want to force the
 ;;     preview window to appear at the bottom or right, you can
-;;     customize `markdown-split-window-direction`.
+;;     customize `markdown-split-window-direction'.
 ;;
 ;;     To summarize:
 ;;
@@ -2308,7 +2308,15 @@ is non-nil.
 Set this to a non-nil value to turn this feature on by default.
 You can interactively toggle the value of this variable with
 `markdown-toggle-markup-hiding', \\[markdown-toggle-markup-hiding],
-or from the Markdown > Show & Hide menu."
+or from the Markdown > Show & Hide menu.
+
+Markup hiding works by adding text properties to positions in the
+buffer---either the `invisible' property or the `display' property
+in cases where alternative glyphs are used (e.g., list bullets).
+This does not, however, affect printing or other output.
+Functions such as `htmlfontify-buffer' and `ps-print-buffer' will
+not honor these text properties.  For printing, it would be better
+to first convert to HTML or PDF (e.g,. using Pandoc)."
   :group 'markdown
   :type 'boolean
   :safe 'booleanp
@@ -2318,7 +2326,8 @@ or from the Markdown > Show & Hide menu."
 (defun markdown-toggle-markup-hiding (&optional arg)
   "Toggle the display or hiding of markup.
 With a prefix argument ARG, enable markup hiding if ARG is positive,
-and disable it otherwise."
+and disable it otherwise.
+See `markdown-hide-markup' for additional details."
   (interactive (list (or current-prefix-arg 'toggle)))
   (setq markdown-hide-markup
         (if (eq arg 'toggle)

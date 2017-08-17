@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170804.1038
+;; Package-Version: 20170817.1000
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.1") (ivy "0.9.0"))
 ;; Keywords: matching
@@ -467,7 +467,6 @@ line numbers.  For the buffer, use `ivy--regex' instead."
                 (setq ivy--subexps 0)
                 ".")
                ((string-match "^\\^" str)
-                (setq ivy--old-re "")
                 (let ((re (funcall re-builder (substring str 1))))
                   (if (zerop ivy--subexps)
                       (prog1 (format "^ ?\\(%s\\)" re)
@@ -477,15 +476,7 @@ line numbers.  For the buffer, use `ivy--regex' instead."
                 (mapconcat #'char-fold-to-regexp (ivy--split str) ".*"))
                (t
                 (funcall re-builder str)))))
-    (cond ((stringp re)
-           (replace-regexp-in-string "\t" "    " re))
-          ((and (consp re)
-                (consp (car re)))
-           (setf (caar re)
-                 (replace-regexp-in-string "\t" "    " (caar re)))
-           re)
-          (t
-           (error "Unexpected")))))
+    re))
 
 (defvar swiper-history nil
   "History for `swiper'.")

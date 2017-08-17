@@ -4,7 +4,7 @@
 
 ;; Author: Adam Niederer <adam.niederer@gmail.com>
 ;; URL: http://github.com/AdamNiederer/ssass-mode
-;; Package-Version: 20170310.2024
+;; Package-Version: 20170817.1216
 ;; Version: 0.1
 ;; Keywords: languages sass
 ;; Package-Requires: ((emacs "24.3"))
@@ -51,11 +51,18 @@
 (defconst ssass-key-regex
   "^\s+[a-z\-]+:")
 
+(defconst ssass-directive-noindent-regex
+  "@\\(include\\|extend\\|import\\|warn\\|debug\\|error\\)"
+  "Matches all directives which do not require indentation.")
+
 (defconst ssass-variable-regex
   "\$[A-z\-]+")
 
 (defconst ssass-builtin-regex
   "@[A-z]+")
+
+(defconst ssass-comment-regex
+  "^\s+/[/*].*") ; TODO: Make better or use syntax table
 
 (defconst ssass-function-regex
   "\\([A-z\-]+?\\)\\((.*)\\)")
@@ -112,18 +119,25 @@ Use --sass for sassc, and --indented-syntax for node-sass."
     map)
   "Keymap for ‘ssass-mode’.")
 
+(defun ssass--selector-p (line)
+  "Return whether LINE is a selector."
+  (not (or (string-empty-p line)
+           (string-match-p ssass-key-regex line)
+           (string-match-p ssass-directive-noindent-regex line)
+           (string-match-p ssass-comment-regex line))))
+
+(defun ssass--goto-last-selector-line ()
+  "Move point to the line of the last selector, or the beginning of the buffer."
+  (forward-line -1)
+  (while (not (or (equal (point-min) (point-at-bol))
+                  (ssass--selector-p (buffer-substring (point-at-bol) (point-at-eol)))))
+    (forward-line -1)))
+
 (defun ssass--last-selector-line-indent-level ()
   "Return the number of spaces indenting the line of the last selector."
   (save-excursion
-    (forward-line -1)
-    (while (string-match-p ": " (buffer-substring (point-at-bol) (point-at-eol)))
-      (forward-line -1))
-    (- (save-excursion
-         (back-to-indentation)
-         (current-column))
-       (save-excursion
-         (beginning-of-line)
-         (current-column)))))
+    (ssass--goto-last-selector-line)
+    (ssass--indent-level)))
 
 (defun ssass--indent-level ()
   "Return the number of spaces indenting the current line."
@@ -140,12 +154,27 @@ Use --sass for sassc, and --indented-syntax for node-sass."
     (forward-line -1)
     (string-match-p "^[[:space:]]*$" (buffer-substring (point-at-bol) (point-at-eol)))))
 
+(defun ssass--comma-before-p ()
+  "Return whether the previous line has a comma at its end."
+  (save-excursion
+    (forward-line -1)
+    (string-match-p ".*," (buffer-substring (point-at-bol) (point-at-eol)))))
+
+(defun ssass--no-selector-line-p ()
+  "Return whether there is no proper selector or keyword above this line."
+  (save-excursion
+    (ssass--goto-last-selector-line)
+    (not (ssass--selector-p (buffer-substring (point-at-bol) (point-at-eol))))))
+
 (defun ssass-indent ()
   "Indent the current line."
   (interactive)
-  (if (ssass--whitespace-before-p)
-      (indent-line-to 0)
-    (indent-line-to (+ ssass-tab-width (ssass--last-selector-line-indent-level)))))
+  (indent-line-to
+   (cond
+    ((ssass--whitespace-before-p) 0)
+    ((ssass--no-selector-line-p) 0)
+    ((ssass--comma-before-p) (ssass--last-selector-line-indent-level))
+    (t (+ ssass-tab-width (ssass--last-selector-line-indent-level))))))
 
 (defun ssass-dedent ()
   "Remove one level of indentation from the current line."
@@ -179,6 +208,7 @@ If FILENAME is nil, it will open the current buffer's file"
 ;;;###autoload
 (define-derived-mode ssass-mode prog-mode "Ssass"
   "Major mode for Sass"
+  (setq-local electric-indent-mode nil)
   (setq tab-width ssass-tab-width)
   (setq indent-line-function 'ssass-indent)
   (font-lock-add-keywords nil ssass-font-lock-keywords)
