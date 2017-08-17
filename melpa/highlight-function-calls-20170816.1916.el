@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/highlight-function-calls
-;; Package-Version: 20170812.1913
+;; Package-Version: 20170816.1916
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: faces, highlighting
@@ -32,7 +32,7 @@
   :group 'highlight-function-calls)
 
 (defface highlight-function-calls--not-face
-  '((t (:inherit warning)))
+  '((t (:inherit font-lock-negation-char-face)))
   "Face for highlighting `not'."
   :group 'highlight-function-calls)
 
@@ -58,13 +58,16 @@
   :type '(repeat symbol))
 
 (defcustom highlight-function-calls-macro-calls nil
-  "Whether to highlight macro calls.")
+  "Whether to highlight macro calls."
+  :type 'boolean)
 
 (defcustom highlight-function-calls-special-forms nil
-  "Whether to highlight special-forms calls.")
+  "Whether to highlight special-forms calls."
+  :type 'boolean)
 
 (defcustom highlight-function-calls-not nil
-  "Whether to highlight `not'.")
+  "Whether to highlight `not'."
+  :type 'boolean)
 
 (defconst highlight-function-calls--keywords
   '((

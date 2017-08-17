@@ -1,11 +1,12 @@
 ;;; latex-extra.el --- Adds several useful functionalities to LaTeX-mode.
 
-;; Copyright (C) 2013 Artur Malabarba <bruce.connor.am@gmail.com>
+;; Copyright (C) 2013, 2017 Artur Malabarba <artur@endlessparentheses.com>
 
-;; Author: Artur Malabarba <bruce.connor.am@gmail.com>>
+;; Author: Artur Malabarba <artur@endlessparentheses.com>
 ;; URL: http://github.com/Malabarba/latex-extra
-;; Package-Version: 20160328.1721
+;; Package-Version: 1.14
 ;; Version: 1.13
+;; License: GNU General Public License v3 or newer
 ;; Keywords: tex
 ;; Package-Requires: ((auctex "11.86.1") (cl-lib "0.5"))
 ;;
@@ -171,7 +172,8 @@
     (define-key map [backtab] #'latex/hide-show-all)
     (define-key map "" #'latex/next-section)
     (define-key map "" #'latex/up-section)
-    (define-key map "" #'latex/compile-commands-until-done)
+    (unless (fboundp 'TeX-command-run-all)
+      (define-key map "" #'latex/compile-commands-until-done))
     (define-key map "" #'latex/beginning-of-line)
     (define-key map "\C-\M-e" #'latex/end-of-environment)
     (define-key map "\C-\M-a" #'latex/beginning-of-environment)
