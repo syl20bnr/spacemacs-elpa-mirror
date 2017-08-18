@@ -7,7 +7,7 @@
 ;; Original Author: bzg AT altern DOT org
 ;; Author: Tyler Smith <tyler@plantarum.ca>
 ;; Version: 0.3
-;; Package-Version: 20170221.1757
+;; Package-Version: 20170817.1219
 ;; Keywords: bibtex
 ;; URL: https://github.com/plantarum/bibtex-utils
 
@@ -160,7 +160,7 @@ See also `bu-doi-prefix',
   (let* ((start-pos (point))
          (bpe (progn (bibtex-beginning-of-entry)
                      (bibtex-parse-entry)))
-         (file-name (concat bu-pdf-dir
+         (file-name (concat (file-name-as-directory bu-pdf-dir)
                             (cdr (assoc "=key=" bpe))
                             ".pdf"))
          (doi (assoc "doi" bpe))
