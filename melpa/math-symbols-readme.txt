@@ -14,8 +14,11 @@ Also, you can convert character to TeX names by the following command.
 - M-x math-symbols-to-tex-unicode-region
 
 You can also input various styled mathematical symbols by input
-methods, or by specifying region or string, as shown in the
-following examples.
+methods, or by specifying region or string.
+
+- M-x toggle-input-method + math-symbols-italic (or script, etc.)
+- M-x math-symbols-italic-region
+- (math-symbols-italic-string "target string")
 
 
 * Examples:
@@ -41,7 +44,8 @@ from [[STIX website][http://www.stixfonts.org]].
 * Licenses
 
 This program incorporates `unimathsymbols.txt' data file which is
-based upon "LaTeX Project Public License".  This program is GPL.
+licensed under "LaTeX Project Public License".  This program is
+GPL.
 
 * Math Symbols Support Table
 
