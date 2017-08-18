@@ -1,20 +1,28 @@
 ;;; sequences.el --- Ports of some Clojure sequence functions.
 
-;; CC BY Tim Visher
+;; Copyright (C) 2013 Tim Visher <tim.visher@gmail.com>
 
 ;; Author: Tim Visher <tim.visher@gmail.com>
 ;; Keywords: convenience
-;; Package-Version: 20130908.1122
+;; Package-Version: 20170818.552
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 0.1.0
 
 ;; This file is not part of GNU Emacs.
 
-;; This work is licensed under the Creative Commons Attribution 3.0
-;; Unported License. To view a copy of this license, visit
-;; <http://creativecommons.org/licenses/by/3.0/> or send a letter to
-;; Creative Commons, 444 Castro Street, Suite 900, Mountain View,
-;; California, 94041, USA.
+;; This program is free software; you can redistribute it and/or modify it
+;; under the terms of the GNU General Public License as published by the
+;; Free Software Foundation; either version 3, or (at your option) any
+;; later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License along
+;; with this program; if not, write to the Free Software Foundation, Inc.,
+;; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 ;;; Commentary:
 

@@ -5,7 +5,7 @@
 ;; Author: DarkSun <lujun9972@gmail.com>
 ;; Created: 2016-05-23
 ;; Version: 0.1
-;; Package-Version: 20170315.1934
+;; Package-Version: 20170818.533
 ;; Keywords: convenience, pocket
 ;; Package-Requires: ((emacs "24.4") (request "0.2"))
 ;; URL: https://github.com/lujun9972/pocket-api.el
@@ -162,7 +162,7 @@
                      )))
 
 ;;;###autoload
-(cl-defun pocket-api-get (&key (offset 1) (count 10))
+(cl-defun pocket-api-get (&key (offset 0) (count 10))
   "Gets things from your pocket."
   (unless (pocket-api-access-granted-p)
     (pocket-api-authorize))
