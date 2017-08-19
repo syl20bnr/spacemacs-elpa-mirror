@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/emacscollective/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 20170805.450
+;; Package-Version: 20170815.119
 
 ;; This file is not part of GNU Emacs.
 
@@ -266,6 +266,7 @@ directories."
     (setq helm-github-stars-cache-file     (var "helm/github-stars-cache.el"))
     (setq historian-save-file              (var "historian-save.el"))
     (setq indium-workspace-file            (var "indium/workspaces.el"))
+    (setq irfc-directory                   (var "irfc/"))
     (setq irony-user-dir                   (var "irony/"))
     (setq jabber-avatar-cache-directory    (var "jabber/avatar-cache"))
     (eval-after-load 'jabber

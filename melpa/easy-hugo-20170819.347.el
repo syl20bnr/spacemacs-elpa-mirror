@@ -4,7 +4,7 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20170818.1952
+;; Package-Version: 20170819.347
 ;; Version: 1.7.7
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -627,7 +627,7 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
      (copy-file file (concat easy-hugo-basedir "static/" easy-hugo-image-dirctory "/" (file-name-nondirectory file)))
      (insert (concat (format "<img src=\"%s%s\""
 			     easy-hugo-url
-			     (concat "/" (file-name-nondirectory file)))
+			     (concat "/" easy-hugo-image-dirctory "/" (file-name-nondirectory file)))
 		     " alt=\"\" width=\"100%\"/>")))))
 
 ;;;###autoload
@@ -642,7 +642,7 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
      (url-copy-file url file t)
      (insert (concat (format "<img src=\"%s%s\""
 			     easy-hugo-url
-			     (concat "/" (file-name-nondirectory file)))
+			     (concat "/" easy-hugo-image-dirctory "/" (file-name-nondirectory file)))
 		     " alt=\"\" width=\"100%\"/>")))))
 
 ;;;###autoload
