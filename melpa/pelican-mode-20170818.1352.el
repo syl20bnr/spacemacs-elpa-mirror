@@ -3,7 +3,7 @@
 ;; Copyright 2013-2017 Joe Wreschnig
 ;;
 ;; Author: Joe Wreschnig <joe.wreschnig@gmail.com>
-;; Package-Version: 20170808.252
+;; Package-Version: 20170818.1352
 ;; Package-X-Original-Version: 20170808
 ;; Package-Requires: ((emacs "25"))
 ;; URL: https://git.korewanetadesu.com/pelican-mode.git
@@ -48,6 +48,13 @@
 ;;
 ;;     (require 'pelican-mode)
 ;;     (pelican-global-mode)
+;;
+;; Or with ``use-package'' and deferred loading:
+;;
+;;     (use-package pelican-mode
+;;       :after (:any org rst markdown-mode adoc-mode)
+;;       :config
+;;       (pelican-global-mode))
 ;;
 ;; Or, register `pelican-mode' or `pelican-mode-enable-if-site'
 ;; as hook functions for more direct control.
