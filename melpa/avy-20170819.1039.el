@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/avy
-;; Package-Version: 20170813.254
+;; Package-Version: 20170819.1039
 ;; Version: 0.4.0
 ;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
 ;; Keywords: point, location
@@ -538,39 +538,6 @@ multiple DISPLAY-FN invokations."
           (unless alist
             (funcall avy-handler-function char))))
       (cdar alist))))
-
-;; ** Org-mode
-
-(defun avy-org-refile-as-child ()
-  "Refile current heading as first child of heading selected with `avy.'"
-  ;; Inspired by `org-teleport': http://kitchingroup.cheme.cmu.edu/blog/2016/03/18/Org-teleport-headlines/
-  (interactive)
-  (let ((rfloc (save-excursion
-                 (let* ((org-reverse-note-order t)
-                        (pos (avy-with avy-goto-line
-                               (avy--generic-jump (rx bol (1+ "*") (1+ space))
-                                                  nil avy-style)
-                               (point)))
-                        (filename (buffer-file-name (or (buffer-base-buffer (current-buffer))
-                                                        (current-buffer)))))
-                   (list nil filename nil pos)))))
-    ;; org-refile must be called outside of the excursion
-    (org-refile nil nil rfloc)))
-
-(defun avy-org-goto-heading-timer (&optional arg)
-  "Read one or many characters and jump to matching Org headings.
-The window scope is determined by `avy-all-windows' (ARG negates it)."
-  (interactive "P")
-  (let ((avy-all-windows (if arg
-                             (not avy-all-windows)
-                           avy-all-windows)))
-    (avy-with avy-goto-char-timer
-      (avy--process
-       (avy--read-candidates
-        (lambda (input)
-          (format "^\\*+ .*\\(%s\\)" input)))
-       (avy--style-fn avy-style))
-      (org-back-to-heading))))
 
 ;;** Rest
 (defun avy-window-list ()
@@ -1905,6 +1872,42 @@ The window scope is determined by `avy-all-windows' (ARG negates it)."
             (goto-char (car res))))
       (error
        (set-mark-command 4)))))
+
+;; ** Org-mode
+(defvar org-reverse-note-order)
+(declare-function org-refile "org")
+(declare-function org-back-to-heading "org")
+
+(defun avy-org-refile-as-child ()
+  "Refile current heading as first child of heading selected with `avy.'"
+  ;; Inspired by `org-teleport': http://kitchingroup.cheme.cmu.edu/blog/2016/03/18/Org-teleport-headlines/
+  (interactive)
+  (let ((rfloc (save-excursion
+                 (let* ((org-reverse-note-order t)
+                        (pos (avy-with avy-goto-line
+                               (avy--generic-jump (rx bol (1+ "*") (1+ space))
+                                                  nil avy-style)
+                               (point)))
+                        (filename (buffer-file-name (or (buffer-base-buffer (current-buffer))
+                                                        (current-buffer)))))
+                   (list nil filename nil pos)))))
+    ;; org-refile must be called outside of the excursion
+    (org-refile nil nil rfloc)))
+
+(defun avy-org-goto-heading-timer (&optional arg)
+  "Read one or many characters and jump to matching Org headings.
+The window scope is determined by `avy-all-windows' (ARG negates it)."
+  (interactive "P")
+  (let ((avy-all-windows (if arg
+                             (not avy-all-windows)
+                           avy-all-windows)))
+    (avy-with avy-goto-char-timer
+      (avy--process
+       (avy--read-candidates
+        (lambda (input)
+          (format "^\\*+ .*\\(%s\\)" input)))
+       (avy--style-fn avy-style))
+      (org-back-to-heading))))
 
 (provide 'avy)
 

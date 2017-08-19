@@ -10,10 +10,10 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 1.2
+;; Package-Version: 1.3
 ;; Created: October 2016
 ;; Keywords: haskell, tools
-;; Package-Requires: ((flycheck "0.30") (emacs "25.1") (dash "2.13.0"))
+;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -40,12 +40,15 @@
 
 ;;; Code:
 
-(require 'json)
 (require 'cl-lib)
-(require 'eldoc)
 (require 'dash)
-(require 'xref)
+(require 'eldoc)
+(require 'f)
 (require 'flycheck)
+(require 'haskell-mode)
+(require 'json)
+(require 's)
+(require 'xref)
 (eval-when-compile
   (require 'wid-edit))
 
@@ -80,8 +83,10 @@ expands to: (fun1 arg1 (λ (x) (fun2 arg2 (λ (x y) body))))."
 
 (defcustom dante-repl-command-line nil
   "Command line to start GHCi, as a list: the executable and its arguments.
-When nil, dante will guess the value depending on `dante-project-root' contents.
-Customize as a file or directory variable."
+When nil, dante will guess the value depending on
+`dante-project-root' contents.  Customize as a file or directory
+variable.  Each element of the list is evaluated before being
+passed to the shell."
   :group 'dante
   :type '(repeat string))
 
@@ -94,38 +99,51 @@ Customize as a file or directory variable."
 
 (defcustom dante-target nil
   "The target to demand from cabal repl, as a string or nil.
-Customize as a file or directory variable."
+Customize as a file or directory variable.  Different targets
+will be in different GHCi sessions."
   :group 'dante
   :type '(choice (const nil) string))
 
 (defun dante-project-root ()
-  "Get the root directory for the project (if
-`dante-project-root' is set as a variable, return that, otherwise
-look for a .cabal file, or use the current dir)."
-  (or dante-project-root
-      (file-name-directory (or (dante-cabal-find-file) (dante-buffer-file-name)))))
+  "Get the root directory for the project.
+If `dante-project-root' is set as a variable, return that,
+otherwise look for a .cabal file, or use the current dir."
+  (file-name-as-directory
+   (or dante-project-root
+       (set (make-local-variable 'dante-project-root)
+            (file-name-directory (or (dante-cabal-find-file) (dante-buffer-file-name)))))))
 
-(defun dante-repl-by-file (root file cmdline)
-  (when (file-exists-p (concat root file)) cmdline))
+(defun dante-repl-by-file (root files cmdline)
+  "Return if ROOT / file exists for any file in FILES, return CMDLINE."
+  (when (-any? (lambda (file) (file-exists-p (concat root file))) files) cmdline))
 
 (defconst dante-repl-command-line-default-methods
-  `((styx  . ,(lambda (root) (dante-repl-by-file root "styx.yaml" '("styx" "repl"))))
-    (nix   . ,(lambda (root) (dante-repl-by-file root "shell.nix" '("nix-shell" "--run" "cabal repl"))))
-    (stack . ,(lambda (root) (dante-repl-by-file root "stack.yaml" '("stack" "repl"))))
-    (bare  . ,(lambda (_) '("cabal" "repl"))))
+  `((styx  . ,(lambda (root) (dante-repl-by-file root '("styx.yaml") '("styx" "repl" dante-target))))
+    (nix   . ,(lambda (root) (dante-repl-by-file root '("shell.nix" "default.nix")
+                                                      '("nix-shell" "--run" (if dante-target (concat "cabal repl " dante-target) "cabal repl")))))
+    (stack . ,(lambda (root) (dante-repl-by-file root '("stack.yaml") '("stack" "repl" dante-target))))
+    (mafia . ,(lambda (root) (dante-repl-by-file root '("mafia") '("mafia" "repl" dante-target))))
+    (new-build . ,(lambda (root)
+                    (when (or (directory-files root nil ".*\\.cabal$")
+                              (file-exists-p "cabal.project"))
+                      '("cabal" "new-repl" dante-target))))
+    (bare  . ,(lambda (_) '("cabal" "repl" dante-target))))
   "Default GHCi launch command lines.")
 
 (defcustom dante-repl-command-line-methods-alist dante-repl-command-line-default-methods
-  "GHCi launch command lines. This is an alist from method name
-  to a function taking the root directory and returning either a
-  command line or nil if the method should not apply. The first
-  non-nil result will be used as a command line. Customize this
-  if you do not want certain methods to be used by default by
-  dante. If you want a specific configuration for your project,
-  customize `dante-repl-command-line' directly, f as a
-  directory-local variable."
+"GHCi launch command lines.
+This is an alist from method name to a function taking the root
+directory and returning either a command line or nil if the
+method should not apply.  The first non-nil result will be used as
+a command line.  Customize this if you do not want certain methods
+to be used by default by dante.  If you want a specific
+configuration for your project, customize
+`dante-repl-command-line' directly, f as a directory-local
+variable."
   :type '(alist :key-type symbol :value-type function))
 ;; (setq dante-repl-command-line-methods-alist dante-repl-command-line-default-methods)
+
+(defvar dante-command-line)
 
 (defun dante-repl-command-line ()
   "Return the command line for running GHCi.
@@ -133,7 +151,7 @@ If `dante-repl-command-line' is non-nil, it will be returned.
 Otherwise, use `dante-repl-command-line-methods-alist'."
   (or dante-repl-command-line
       (let ((root (dante-project-root)))
-            (--first it (--map (funcall (cdr it) (dante-project-root))
+            (--first it (--map (funcall (cdr it) root)
                                dante-repl-command-line-methods-alist)))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mode
@@ -172,7 +190,7 @@ if the argument is omitted or nil or a positive integer).
 (define-key dante-mode-map (kbd "C-c .") 'dante-type-at)
 (define-key dante-mode-map (kbd "C-c ,") 'dante-info)
 (define-key dante-mode-map (kbd "C-c /") 'dante-auto-fix)
-(define-key dante-mode-map (kbd "C-c '") 'dante-eval-block)
+(define-key dante-mode-map (kbd "C-c \"") 'dante-eval-block)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Buffer-local variables/state
@@ -231,13 +249,16 @@ If `haskell-mode' is loaded, just return EXPRESSION."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Type and info at point
 
-(defun dante-type-at ()
-  "Get the type of the thing or selection at point."
-  (interactive)
+(defun dante-type-at (insert)
+  "Get the type of the thing or selection at point.
+When the universal argument INSERT is non-nil, insert the type in the buffer."
+  (interactive "P")
   (let ((tap (dante--ghc-subexp (dante-thing-at-point))))
     (dante-cps-let ((_load-messages (dante-async-load-current-buffer nil))
               (ty (dante-async-call (concat ":type-at " tap))))
-      (message "%s" (dante-fontify-expression ty)))))
+      (if insert (save-excursion (goto-char (line-beginning-position))
+                                 (insert (dante-fontify-expression ty) "\n"))
+                 (message "%s" (dante-fontify-expression ty))))))
 
 (defun dante-info (ident)
   "Get the info about the IDENT at point."
@@ -246,7 +267,7 @@ If `haskell-mode' is loaded, just return EXPRESSION."
         (help-xref-following nil)
         (origin (buffer-name)))
     (dante-cps-let ((_load-message (dante-async-load-current-buffer t))
-              (info (dante-async-call (format ":i %s" ident))))
+                    (info (dante-async-call (format ":i %s" ident))))
       (help-setup-xref (list #'dante-call-in-buffer (current-buffer) #'dante-info ident)
                        (called-interactively-p 'interactive))
       (save-excursion
@@ -381,12 +402,41 @@ CHECKER and BUFFER are added to each item parsed from STRING."
   "In BUFFER, call FUNC with ARGS."
   (with-current-buffer buffer (apply func args)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Company integration (auto-completion)
+
+(defun company-dante (command &optional arg &rest ignored)
+  "Company source for dante, with the standard COMMAND and ARG args.
+Other arguments are IGNORED."
+  (interactive (list 'interactive))
+  (cl-case command
+    (interactive (company-begin-backend 'company-dante))
+    (prefix (current-word))
+    (candidates
+     (unless (eq (dante-state) 'dead)
+       (cons :async
+             (-partial 'dante-get-repl-completions
+                       (current-buffer)
+                       (current-word)))))))
+
+(defun dante-get-repl-completions (source-buffer prefix cont)
+  "Get REPL completions and send to SOURCE-BUFFER.
+Completions for PREFIX are passed to CONT in SOURCE-BUFFER."
+  (dante-cps-let ((reply (dante-async-call (format ":complete repl %S" prefix))))
+    (with-current-buffer
+        source-buffer
+      (funcall
+       cont
+       (mapcar
+        (lambda (x)
+          (replace-regexp-in-string "\\\"" "" x))
+        (cdr (split-string reply "\n" t)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Source buffer operations
 
 (defun dante-thing-at-point ()
-  "Return (list START END) of something at the point."
+  "Return (list START END) of a relevant thing at the point, or the region if it is active."
   (if (region-active-p)
       (list (region-beginning) (region-end))
     (dante-ident-pos-at-point)))
@@ -527,7 +577,11 @@ x:\\foo\\bar (i.e., Windows)."
   "Restart the process with the same configuration as before."
   (interactive)
   (when (dante-buffer-p) (dante-destroy))
-  (dante-start (lambda (_buffer done) (funcall done))))
+  (let ((fm-enabled flycheck-mode))
+    (flycheck-mode -1) ;; because flycheck gets confused when dante is restarted.
+    (dante-cps-let (((_buffer done) (dante-start)))
+      (when fm-enabled (flycheck-mode 1))
+      (funcall done))))
 
 (defun dante-start (cont) ;; TODO: rename to "dante-session"
   "Run the CONT in a valid GHCi session for the current (source) buffer.
@@ -546,7 +600,7 @@ when it is done."
   "Start a Dante worker in BUFFER for SOURCE-BUFFER."
   (if (eq (buffer-local-value 'dante-state buffer) 'dead)
       buffer
-    (let* ((args (append (dante-repl-command-line) (list (or dante-target ""))))
+    (let* ((args (-non-nil (-map #'eval (dante-repl-command-line))))
            (process (with-current-buffer buffer
                       (when (memq 'command-line dante-debug)
                         (message "GHCi command line: %s" (combine-and-quote-strings args)))
@@ -637,7 +691,7 @@ This is a standard process sentinel function."
   (insert
    (propertize
     (concat
-     "This where GHCi output is bufferized. This buffer is normally hidden,
+     "This is where GHCi output is bufferized. This buffer is normally hidden,
 but a problem occcured.
 
 EXTRA TROUBLESHOOTING INFO
@@ -661,7 +715,7 @@ You can always run M-x dante-restart to make it try again.
 
 (defun dante-wait-for-prompt (source-buf cmd acc cont s-in)
   "Loop waiting for a GHCi prompt for SOURCE-BUF after CMD.
-Text is ACC umulated.  CONT is call with all concatenated S-IN."
+Text is ACC umulated.  CONT is called with all concatenated S-IN."
   (let ((s (concat acc s-in)))
     (if (string-match "\4\\(.*\\)|" s)
         (progn
@@ -682,7 +736,8 @@ Text is ACC umulated.  CONT is call with all concatenated S-IN."
     (funcall callback string)))
 
 (defun dante-schedule-next (buffer)
-  "Run the next GHCi sub-session for BUFFER, if any."
+  "Run the next GHCi sub-session for BUFFER, if any.
+Note that sub-sessions are not interleaved."
   (unless dante-callback
     (let ((req (pop dante-queue)))
       (if (not req)
@@ -799,40 +854,56 @@ a list is returned instead of failing with a nil result."
   nil)
 
 (defun dante-expand-filename (filename)
+  "Prepend FILENAME with the dante running directory."
   (concat (with-current-buffer (dante-buffer-p) default-directory) filename))
 
-(defun dante--make-xref (string nm)
-  "Turn the GHCi reference STRING in to an xref with description NM."
+(defun dante--make-xref (summary file line col)
+  "Make an xref object for the location FILE LINE COL with the given SUMMARY."
+  (let ((file (if (string= file (dante-temp-file-name (current-buffer)))
+                  (buffer-file-name)
+                file)))
+    (xref-make summary (xref-make-file-location file line (1- col)))))
+
+(defun dante--match-src-span (string)
+  "Extract a list of source spans from a STRING."
   (when (string-match "\\(.*?\\):(\\([0-9]+\\),\\([0-9]+\\))-(\\([0-9]+\\),\\([0-9]+\\))$"
                       string)
     (let ((file (match-string 1 string))
           (line (string-to-number (match-string 2 string)))
           (col (string-to-number (match-string 3 string))))
-      (xref-make nm (xref-make-file-location
-                     (if (string= file (dante-temp-file-name (current-buffer)))
-                         (buffer-file-name)
-                       (dante-expand-filename file))
-                     line
-                     (1- col))))))
+      (list file line col))))
+
+(defun dante--summarize-src-spans (file &rest spans)
+  "Add summary strings to a list of source SPANS in FILE."
+  (when file
+    (let* ((lines (s-lines (f-read file)))
+           (wanted (--map (1- (nth 1 it)) spans))
+           (lines (-select-by-indices wanted lines)))
+      (-zip-with #'cons lines spans))))
+
+(defun dante--make-xrefs (string)
+  "Make xref objects for the source spans in STRING."
+  (let* ((lines (s-lines string))
+         (matches (-map #'dante--match-src-span lines))
+         (grouped (-group-by #'car matches))
+         (summarized (--mapcat (--sort (< (nth 2 it) (nth 2 other))
+                                       (apply #'dante--summarize-src-spans it))
+                               grouped)))
+    (--map (apply #'dante--make-xref it) summarized)))
 
 (cl-defmethod xref-backend-definitions ((_backend (eql dante)) symbol)
   (dante-cps-let ((ret (blocking-call))
             (_load-messages (dante-async-load-current-buffer nil))
             (target (dante-async-call (concat ":loc-at " symbol))))
-    (let ((xref (dante--make-xref target "def")))
-      (funcall ret (when xref (list xref))))))
+    (let ((xrefs (dante--make-xrefs target)))
+      (funcall ret xrefs))))
 
 (cl-defmethod xref-backend-references ((_backend (eql dante)) symbol)
   (dante-cps-let ((ret (blocking-call))
             (_load-messages (dante-async-load-current-buffer nil))
             (result (dante-async-call (concat ":uses " symbol))))
-    (let* ((xref (dante--make-xref result "ref"))
-           (refs nil))
-      (while xref
-        (setq result (substring result (match-end 0)))
-        (push xref refs)
-        (setq xref (dante--make-xref result "ref")))
-      (funcall ret (nreverse refs)))))
+    (let ((xrefs (dante--make-xrefs result)))
+      (funcall ret xrefs))))
 
 (add-hook 'xref-backend-functions 'dante--xref-backend)
 
@@ -840,13 +911,13 @@ a list is returned instead of failing with a nil result."
 ;; Auto-fix
 
 (defcustom dante-suggestible-extensions
-  '("AllowAmbiguousTypes" "BangPatterns" "ConstraintKinds" "DataKinds" "DeriveFoldable" "DeriveFunctor" "DeriveGeneric" "DeriveTraversable" "FlexibleContexts" "FlexibleInstances" "FunctionalDependencies" "GADTs" "GeneralizedNewtypeDeriving" "InstanceSigs" "KindSignatures" "MultiParamTypeClasses" "PolyKinds" "RankNTypes" "RecordWildCards" "ScopedTypeVariables" "TypeApplications" "TypeFamilies" "TypeInType" "TypeOperators" "TypeSynonymInstances" "UndecidableSuperClasses" "UndecidableInstances" "ViewPatterns")
-  "Language extensions that Dante will use to fix errors."
+  '("AllowAmbiguousTypes" "BangPatterns" "ConstraintKinds" "DataKinds" "DeriveFoldable" "DeriveFunctor" "DeriveGeneric" "DeriveTraversable" "EmptyCase" "FlexibleContexts" "FlexibleInstances" "FunctionalDependencies" "GADTs" "GeneralizedNewtypeDeriving" "InstanceSigs" "KindSignatures" "MultiParamTypeClasses" "PartialTypeSignatures" "PolyKinds" "RankNTypes" "RecordWildCards" "ScopedTypeVariables" "StandaloneDeriving" "TupleSections" "TypeApplications" "TypeFamilies" "TypeInType" "TypeOperators" "TypeSynonymInstances" "UndecidableSuperClasses" "UndecidableInstances" "ViewPatterns")
+  "Language extensions that Dante can use to fix errors."
   :group 'dante
   :type '(repeat string))
 
 (defun dante-auto-fix (pos)
-  "Attempt to fix the flycheck error at POS."
+  "Attempt to fix the flycheck error or warning at POS."
   (interactive "d")
   (let ((messages (delq nil (mapcar #'flycheck-error-message
                                     (flycheck-overlay-errors-at pos)))))
@@ -854,33 +925,98 @@ a list is returned instead of failing with a nil result."
       (let ((msg (car messages)))
         (save-excursion
           (cond
+           ;; use (set-selective-display 12) to see an outline of all possible matches
+           ((string-match "Redundant constraints?: (?\\([^,)\n]*\\)" msg)
+            (let ((constraint (match-string 1 msg)))
+              (search-forward constraint) ; find type sig
+              (delete-region (match-beginning 0) (match-end 0))
+              (when (looking-at "[ \t]*,")
+                (delete-region (point) (search-forward ",")))
+              (when (looking-at "[ \t]*=>")
+                (delete-region (point) (search-forward "=>")))))
+           ((string-match "The type signature for ‘\\(.*\\)’ lacks an accompanying binding" msg)
+            (beginning-of-line)
+            (forward-line)
+            (insert (concat (match-string 1 msg) " = _\n")))
+           ((string-match "add (\\(.*\\)) to the context of[\n ]*the type signature for:[ \n]*\\([^ ]*\\) ::" msg)
+            (let ((missing-constraint (match-string 1 msg))
+                  (function-name (match-string 2 msg)))
+              (search-backward-regexp (concat (regexp-quote function-name) "[ \t]*::[ \t]*" )) ; find type sig
+              (goto-char (match-end 0))
+              (when (looking-at "forall\\|∀") ; skip quantifiers
+                (search-forward "."))
+              (skip-chars-forward "\n\t ") ; skip spaces
+              (insert (concat missing-constraint " => "))))
+           ((string-match "Unticked promoted constructor" msg)
+            (goto-char (car (dante-ident-pos-at-point)))
+            (insert "'"))
+           ((string-match "Patterns not matched:" msg)
+            (let ((patterns (mapcar #'string-trim (split-string (substring msg (match-end 0)) "\n" t " ")))) ;; patterns to match
+            (if (string-match "In an equation for ‘\\(.*\\)’:" msg)
+                (let ((function-name (match-string 1 msg)))
+                  (end-of-line)
+                  (dolist (pattern patterns)
+                    (insert (concat "\n" function-name " " pattern " = _"))))
+              (end-of-line) ;; assuming that the case expression is on multiple lines and that "of" is at the end of the line
+              (dolist (pattern patterns)
+                (haskell-indentation-newline-and-indent)
+                (insert (concat pattern " -> _"))))))
            ((string-match "A do-notation statement discarded a result of type" msg)
             (goto-char (car (dante-ident-pos-at-point)))
             (insert "_ <- "))
-           ((string-match "Failed to load interface for ‘\\(.*\\)’\n[ ]*Perhaps you meant \\([^ ]*\\)" msg)
+           ((string-match "Failed to load interface for ‘\\(.*\\)’\n[ ]*Perhaps you meant[ \n]*\\([^ ]*\\)" msg)
             (let ((replacement (match-string 2 msg)))
-              (search-forward (match-string 1 msg))
               ;; ^^ delete-region may garble the matches
+              (search-forward (match-string 1 msg))
               (delete-region (match-beginning 0) (point))
               (insert replacement)))
+           ((string-match "Perhaps you want to add ‘\\(.*\\)’ to the import list in the import of[ \n\t]*‘.*’ ([^:]*:\\([0-9]*\\):[0-9]*-\\([0-9]*\\))" msg)
+            (let ((missing (match-string 1 msg))
+                  (line (string-to-number (match-string 2 msg)))
+                  (end-col (string-to-number (match-string 3 msg))))
+            (goto-line line)
+            (move-to-column (1- end-col))
+            (skip-chars-backward " \t")
+            (unless (looking-back "(") (insert ","))
+            (insert missing)))
            ((string-match "Perhaps you meant ‘\\([^‘]*\\)’" msg)
             (let ((replacement (match-string 1 msg)))
               ;; ^^ delete-region may garble the matches
               (apply #'delete-region (dante-ident-pos-at-point))
               (insert replacement)))
-           ((--any? (string-match it msg) dante-suggestible-extensions)
-            (goto-char 1)
-            (insert (concat "{-# LANGUAGE " (car (--filter (string-match it msg) dante-suggestible-extensions)) " #-}\n")))
+           ((string-match "Perhaps you meant one of these:" msg)
+            (let* ((replacements
+                    (-map (lambda (r)
+                            (string-match "‘\\(.*\\)’ (line [0-9]*)" r)
+                            (match-string 1 r))
+                          (split-string (substring msg (match-end 0)) "," t " ")))
+                   (replacement (completing-read "replacement: " replacements)))
+              (apply #'delete-region (dante-ident-pos-at-point))
+              (insert replacement)))
            ((string-match "Top-level binding with no type signature:[\n ]*" msg)
             (beginning-of-line)
             (insert (concat (substring msg (match-end 0)) "\n")))
            ((string-match "Defined but not used" msg)
             (goto-char (car (dante-ident-pos-at-point)))
             (insert "_"))
-           ((string-match "The import of ‘.*’ is redundant" msg)
+           ((string-match "Unused quantified type variable ‘\\(.*\\)’" msg)
+            ;; note there can be a kind annotation, not just a variable.
+            (delete-region (point) (+ (point) (- (match-end 1) (match-beginning 1)))))
+           ((string-match "The import of ‘[^’]*’ is redundant" msg)
             (beginning-of-line)
             (delete-region (point) (progn (next-logical-line) (point))))
-           (t (message "Cannot fix the issue at point automatically. Perhaps customize `dante-suggestible-extensions'."))))))))
+           ((string-match "The import of ‘\\(.*\\)’ from ‘[^’]*’ is redundant" msg)
+            (let ((redundant (match-string 1 msg)))
+              (search-forward redundant)))
+           ((string-match "Found type wildcard ‘.*’[ \t\n]*standing for ‘\\(.*\\)’" msg)
+            (let ((type-expr (match-string 1 msg)))
+            (apply #'delete-region (dante-ident-pos-at-point))
+            (insert type-expr)))
+           ((--any? (string-match it msg) dante-suggestible-extensions)
+            (goto-char 1)
+            (insert (concat "{-# LANGUAGE " (car (--filter (string-match it msg) dante-suggestible-extensions)) " #-}\n")))
+           (t (error "Cannot fix the issue at point automatically. Perhaps customize `dante-suggestible-extensions'.")))
+          (when (looking-back "[ \t]") (delete-region (point) (+ (point) (skip-chars-forward " \t")))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Reploid

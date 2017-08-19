@@ -4,7 +4,7 @@
 
 ;; Author: Ivan Malison <IvanMalison@gmail.com>
 ;; Keywords: org projectile todo helm outlines
-;; Package-Version: 1.0.0
+;; Package-Version: 1.1.0
 ;; URL: https://github.com/IvanMalison/org-projectile
 ;; Version: 0.0.0
 ;; Package-Requires: ((org-projectile "1.0.0") (helm "2.3.1") (emacs "25"))
@@ -62,7 +62,7 @@
 
 ;;;###autoload
 (defun org-projectile-helm-template-or-project (&optional arg)
-  "Select a project or org capture template and record a TODO.
+  "Select a project or `org-capture' template and record a TODO.
 
 If ARG is provided use `org-projectile-linked-capture-template'
 as the capture template."

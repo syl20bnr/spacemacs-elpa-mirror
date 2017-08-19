@@ -4,9 +4,9 @@
 
 ;; Author: Ivan Malison <IvanMalison@gmail.com>
 ;; Keywords: org-mode projectile todo tools outlines
-;; Package-Version: 1.0.0
+;; Package-Version: 1.1.0
 ;; URL: https://github.com/IvanMalison/org-projectile
-;; Version: 1.0.0
+;; Version: 1.1.0
 ;; Package-Requires: ((projectile "0.11.0") (dash "2.10.0") (emacs "24") (s "1.9.0") (org-category-capture "0.0.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -156,39 +156,39 @@
       (org-projectile-category-from-project-root project-path))))
 
 (defun org-projectile-get-project-file-categories ()
-  (mapcar 'org-projectile-get-category-from-project-todo-file
+  (mapcar 'org-projectile-category-from-project-root
           projectile-known-projects))
 
 (defclass org-projectile-per-project-strategy nil nil)
 
-(cl-defmethod occ-get-categories ((_ org-projectile-per-project-strategy))
+(defmethod occ-get-categories ((_ org-projectile-per-project-strategy))
   (org-projectile-get-project-file-categories))
 
-(cl-defmethod occ-get-todo-files ((_ org-projectile-per-project-strategy))
+(defmethod occ-get-todo-files ((_ org-projectile-per-project-strategy))
   (mapcar 'org-projectile-get-project-todo-file projectile-known-projects))
 
-(cl-defmethod occ-get-capture-file
+(defmethod occ-get-capture-file
     ((s org-projectile-per-project-strategy) category)
   (let ((project-root
          (cdr (assoc category
                      (org-projectile-category-to-project-path s)))))
     (org-projectile-get-project-todo-file project-root)))
 
-(cl-defmethod occ-get-capture-marker
+(defmethod occ-get-capture-marker
     ((strategy org-projectile-per-project-strategy) context)
   (with-slots (category) context
     (let ((filepath (occ-get-capture-file strategy category)))
       (with-current-buffer (find-file-noselect filepath)
         (point-max-marker)))))
 
-(cl-defmethod occ-target-entry-p
+(defmethod occ-target-entry-p
     ((_ org-projectile-per-project-strategy) _context)
   nil)
 
-(cl-defmethod org-projectile-category-to-project-path
+(defmethod org-projectile-category-to-project-path
     ((_ org-projectile-per-project-strategy))
   (mapcar (lambda (path)
-            (cons (org-projectile-get-category-from-project-todo-file
+            (cons (org-projectile-category-from-project-root
                    path) path)) projectile-known-projects))
 
 
@@ -199,11 +199,11 @@
 
 (defclass org-projectile-top-level-heading-files-strategy nil nil)
 
-(cl-defmethod org-projectile-category-to-project-path
+(defmethod org-projectile-category-to-project-path
     ((_s org-projectile-top-level-heading-files-strategy))
   (org-projectile-default-project-categories))
 
-(cl-defmethod occ-get-categories
+(defmethod occ-get-categories
     ((_s org-projectile-top-level-heading-files-strategy))
   (cl-remove-if
    'null
@@ -225,7 +225,7 @@
 (defclass org-projectile-single-file-strategy
   (org-projectile-top-level-heading-files-strategy) nil)
 
-(cl-defmethod occ-get-categories ((_s org-projectile-single-file-strategy))
+(defmethod occ-get-categories ((_s org-projectile-single-file-strategy))
   (cl-remove-if
    'null
    (delete-dups
@@ -235,13 +235,13 @@
       org-projectile-projects-file
       :get-category-from-element 'org-projectile-get-category-from-heading)))))
 
-(cl-defmethod occ-get-todo-files ((_ org-projectile-single-file-strategy))
+(defmethod occ-get-todo-files ((_ org-projectile-single-file-strategy))
   (list org-projectile-projects-file))
 
-(cl-defmethod occ-get-capture-file ((_ org-projectile-single-file-strategy) _c)
+(defmethod occ-get-capture-file ((_ org-projectile-single-file-strategy) _c)
   org-projectile-projects-file)
 
-(cl-defmethod occ-get-capture-marker
+(defmethod occ-get-capture-marker
     ((strategy org-projectile-single-file-strategy) context)
   (with-slots (category) context
     (let ((filepath (occ-get-capture-file strategy category)))
@@ -256,10 +256,10 @@
 (defun org-projectile-linked-heading-regexp (heading)
   (format "\\[\\[.*?]\\[%s]]" heading))
 
-(cl-defmethod occ-target-entry-p ((_ org-projectile-single-file-strategy) _c)
+(defmethod occ-target-entry-p ((_ org-projectile-single-file-strategy) _c)
   t)
 
-(cl-defmethod org-projectile-category-to-project-path
+(defmethod org-projectile-category-to-project-path
     ((_ org-projectile-single-file-strategy))
   (mapcar (lambda (path)
             (cons (org-projectile-category-from-project-root
@@ -271,12 +271,14 @@
       (make-instance 'org-projectile-single-file-strategy))
 
 (defun org-projectile-location-for-project (project)
-  (org-projectile-category-to-project-path org-projectile-strategy project))
+  (cdr (assoc project
+              (org-projectile-category-to-project-path
+               org-projectile-strategy))))
 
 (cl-defun org-projectile-project-todo-entry
     (&rest additional-options &key (capture-character "p")
            (capture-template org-projectile-capture-template)
-           (capture-heading "Project Todo"))
+           (capture-heading "Project Todo") &allow-other-keys)
   (let ((target-fn
          (lambda () (occ-capture-goto-marker
                      (make-instance 'occ-context
@@ -301,6 +303,21 @@
 
 (defun org-projectile-todo-files ()
   (occ-get-todo-files org-projectile-strategy))
+
+;;;###autoload
+(defun org-projectile-goto-location-for-project (project)
+  "Goto the location at which TODOs for PROJECT are stored."
+  (interactive
+   (list
+    (projectile-completing-read
+     "Select which project's TODOs you would like to go to:"
+     (occ-get-categories org-projectile-strategy))))
+  (occ-capture-goto-marker
+   (make-instance 'occ-context
+                  :category project
+                  :template org-projectile-capture-template
+                  :strategy org-projectile-strategy
+                  :options nil)))
 
 ;;;###autoload
 (defun org-projectile-single-file ()

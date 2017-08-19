@@ -4,9 +4,9 @@
 
 ;; Author: Ivan Malison <IvanMalison@gmail.com>
 ;; Keywords: org-mode todo tools outlines
-;; Package-Version: 1.0.0
+;; Package-Version: 1.1.0
 ;; URL: https://github.com/IvanMalison/org-projectile
-;; Version: 0.0.0
+;; Version: 0.0.1
 ;; Package-Requires: ((org "9.0.0") (emacs "24"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -38,14 +38,14 @@
 
 (defclass occ-strategy nil nil)
 
-(cl-defmethod occ-get-categories ((_ occ-strategy)))
+(defmethod occ-get-categories ((_ occ-strategy)))
 
-(cl-defmethod occ-get-todo-files ((_ occ-strategy)))
+(defmethod occ-get-todo-files ((_ occ-strategy)))
 
-(cl-defmethod occ-get-capture-marker ((_ occ-strategy) _context)
+(defmethod occ-get-capture-marker ((_ occ-strategy) _context)
   "Return a marker that corresponds to the capture location for CONTEXT.")
 
-(cl-defmethod occ-target-entry-p ((_ occ-strategy) _context))
+(defmethod occ-target-entry-p ((_ occ-strategy) _context))
 
 (defclass occ-context ()
   ((category :initarg :category)
@@ -53,7 +53,8 @@
    (options :initarg :options)
    (strategy :initarg :strategy)))
 
-(cl-defmethod occ-build-capture-template
+;; This is needed becaused cl-defmethod doesn't exist in emacs24
+(cl-defun occ-build-capture-template-emacs-24-hack
     (context &key (character "p") (heading "Category TODO"))
   (with-slots (template options strategy) context
     (apply 'list character heading 'entry
@@ -61,7 +62,10 @@
                  (apply-partially 'occ-get-capture-location strategy context))
            template options)))
 
-(cl-defmethod occ-capture ((context occ-context))
+(defmethod occ-build-capture-template ((context occ-context) &rest args)
+  (apply 'occ-build-capture-template-emacs-24-hack context args))
+
+(defmethod occ-capture ((context occ-context))
   (with-slots (category template options strategy)
       context
     (org-capture-set-plist (occ-build-capture-template context))
@@ -101,23 +105,25 @@
     (switch-to-buffer (marker-buffer marker))
     (goto-char (marker-position marker))))
 
-(cl-defmethod occ-get-capture-marker ((context occ-context))
+(defmethod occ-get-capture-marker ((context occ-context))
   (occ-get-capture-marker (oref context strategy) context))
 
 (cl-defun occ-get-category-heading-location
     (category &rest args &key do-tree &allow-other-keys)
   "Find a heading with text or category CATEGORY."
   (save-excursion
-    (let (result)
-      (org-map-entries
-       (lambda ()
-         (when (and (not result)
-                    (equal (apply 'occ-get-heading-category args) category))
-           (setq result (point))))
-       nil (when do-tree 'tree)
-       (1+ (org-current-level))
-       (occ-level-filter (if do-tree (1+ (org-current-level)) 1)))
-      result)))
+    (if (equal major-mode 'org-mode)
+        (let (result)
+          (org-map-entries
+           (lambda ()
+             (when (and (not result)
+                        (equal (apply 'occ-get-heading-category args) category))
+               (setq result (point))))
+           nil (when do-tree 'tree)
+           (1+ (or (org-current-level) 0))
+           (occ-level-filter (if do-tree (1+ (org-current-level)) 1)))
+          result)
+      (error "Can't get category heading in non org-mode file"))))
 
 (defun occ-insert-after-current-heading ()
   (org-end-of-line)

@@ -6,9 +6,8 @@
 ;; Author: Zhang Weize (zwz)
 ;; Maintainer: Carlo Sciolla (skuro)
 ;; Keywords: uml plantuml ascii
-;; Package-Version: 1.2.4
+;; Package-Version: 1.2.5
 ;; Version: 1.2.3
-;; Package-Requires: ((emacs "24"))
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -37,6 +36,8 @@
 
 ;;; Change log:
 ;;
+;; version 1.2.5, 2017-08-19 #53 Fixed installation warnings
+;; version 1.2.4, 2017-08-18 #60 Licensed with GPLv3+ to be compatible with Emacs
 ;; version 1.2.3, 2016-12-25 #50 unicode support in generated output
 ;; version 1.2.2, 2016-11-11 Fixed java commands handling under windows; support spaces in `plantuml-jar-path'
 ;; version 1.2.1, 2016-11-11 Support for paths like `~/.plantuml/plantuml.jar' for `plantuml-jar-path' (the tilde was previously unsupported)
@@ -87,8 +88,9 @@
 (defcustom plantuml-java-command "java"
   "The java command used to execute PlantUML.")
 
-(defcustom plantuml-java-args '("-Djava.awt.headless=true" "-jar")
-  "The parameters passed to `plantuml-java-command' when executing PlantUML.")
+(eval-and-compile
+  (defcustom plantuml-java-args '("-Djava.awt.headless=true" "-jar")
+    "The parameters passed to `plantuml-java-command' when executing PlantUML."))
 
 (defcustom plantuml-suppress-deprecation-warning t
   "To silence the deprecation warning when `puml-mode' is found upon loading.")
@@ -277,16 +279,17 @@ Uses prefix (as PREFIX) to choose where to display it:
   (interactive "p")
   (plantuml-preview-string prefix (buffer-string)))
 
-(defun plantuml-preview-region (prefix)
-  "Preview diagram from the PlantUML sources in the current region.
+(defun plantuml-preview-region (prefix begin end)
+  "Preview diagram from the PlantUML sources in from BEGIN to END.
+Uses the current region when called interactively.
 Uses prefix (as PREFIX) to choose where to display it:
 - 4  (when prefixing the command with C-u) -> new window
 - 16 (when prefixing the command with C-u C-u) -> new frame.
 - else -> new buffer"
-  (interactive "p")
+  (interactive "p\nr")
   (plantuml-preview-string prefix (concat "@startuml\n"
                                       (buffer-substring-no-properties
-                                       (region-beginning) (region-end))
+                                       begin end)
                                       "\n@enduml")))
 
 (defun plantuml-preview-current-block (prefix)
@@ -310,7 +313,7 @@ Uses prefix (as PREFIX) to choose where to display it:
 - else -> new buffer"
   (interactive "p")
   (if mark-active
-      (plantuml-preview-region prefix)
+      (plantuml-preview-region prefix (region-beginning) (region-end))
       (plantuml-preview-buffer prefix)))
 
 (defun plantuml-init-once ()

@@ -5,8 +5,8 @@
 ;; Filename: ido-completing-read+.el
 ;; Author: Ryan Thompson
 ;; Created: Sat Apr  4 13:41:20 2015 (-0700)
-;; Version: 4.5
-;; Package-Version: 20170815.1038
+;; Version: 4.6
+;; Package-Version: 20170819.1045
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (s "0.1") (memoize "1.1"))
 ;; URL: https://github.com/DarwinAwardWinner/ido-completing-read-plus
 ;; Keywords: ido, completion, convenience
@@ -78,7 +78,7 @@
 ;;
 ;;; Code:
 
-(defconst ido-completing-read+-version "4.5"
+(defconst ido-completing-read+-version "4.6"
   "Currently running version of ido-completing-read+.
 
 Note that when you update ido-completing-read+, this variable may
@@ -403,10 +403,6 @@ https://github.com/DarwinAwardWinner/ido-completing-read-plus/issues"
   "Returns non-nil if ido-cr+ is currently using the minibuffer."
   (>= ido-cr+-minibuffer-depth (minibuffer-depth)))
 
-(defsubst ido-cr+-default-was-provided ()
-  "Returns non-nil if ido-cr+ was passed a non-nil default argument."
-  (and (nth 6 ido-cr+-orig-completing-read-args)))
-
 (defun ido-cr+--called-from-completing-read ()
   "Returns non-nil if the most recent call to ido-cr+ was from `completing-read'."
   (equal (cadr (backtrace-frame 1 'ido-completing-read+))
@@ -526,12 +522,9 @@ completion for them."
     (condition-case sig
         (progn
           ;; Check a bunch of fallback conditions
-          (when inherit-input-method
+          (when (and inherit-input-method current-input-method)
             (signal 'ido-cr+-fallback
-                    '("ido cannot handle non-nil INHERIT-INPUT-METHOD")))
-          (when (bound-and-true-p completion-extra-properties)
-            (signal 'ido-cr+-fallback
-                    '("ido cannot handle non-nil `completion-extra-properties'")))
+                    '("ido cannot handle alternate input methods")))
 
           ;; Check for black/white-listed collection function
           (when (functionp collection)
@@ -725,10 +718,6 @@ completion for them."
   "This advice allows ido-cr+ to completely replace `ido-completing-read'.
 
 See the varaible `ido-cr+-replace-completely' for more information."
-  ;; If this advice is autoloaded, then we need to force loading of
-  ;; the rest of the file so all the variables will be defined.
-  (when (not (featurep 'ido-completing-read+))
-    (require 'ido-completing-read+))
   (if (or (ido-cr+-active)
           (not ido-cr+-replace-completely))
       ;; ido-cr+ has either already activated or isn't going to
@@ -792,10 +781,10 @@ called through ido-cr+."
        ;; The current input doesn't exactly match a known option, and...
        (not (member ido-text ido-cur-list))
        ;; The current input doesn't exactly match an option according
-       ;; to `try-completion' (or the collection is not dynamic).
+       ;; to `test-completion' (or the collection is not dynamic).
        (or (not ido-cr+-dynamic-collection)
-           (eq t (try-completion ido-text ido-cr+-dynamic-collection
-                                 (nth 2 ido-cr+-orig-completing-read-args)))))
+           (test-completion ido-text ido-cr+-dynamic-collection
+                            (nth 2 ido-cr+-orig-completing-read-args))))
       (progn
         (ido-cr+--debug-message
          "Overriding C-j behavior for require-match: performing completion instead of exiting with current text. (This might still exit with a match if `ido-confirm-unique-completion' is nil)")
@@ -1152,7 +1141,7 @@ blacklist was modified."
   (if ido-cr+-auto-update-blacklist
       (let* ((curval ido-cr+-function-blacklist)
              (defval (eval (car (get 'ido-cr+-function-blacklist 'standard-value))))
-             (new-entries (cl-set-difference curval defval :test #'equal)))
+             (new-entries (cl-set-difference defval curval :test #'equal)))
         (if new-entries
             (if (eq ido-cr+-auto-update-blacklist 'notify)
                 (display-warning 'ido-completing-read+ "There are %s new blacklist entries available. Use `M-x ido-cr+-update-blacklist' to install them. (See `ido-cr+-auto-update-blacklist' for more information.)")
