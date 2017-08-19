@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/worf
-;; Package-Version: 20170724.1132
+;; Package-Version: 20170818.1105
 ;; Version: 0.1.0
 ;; Package-Requires: ((swiper "0.7.0") (ace-link "0.1.0") (hydra "0.13.0") (zoutline "0.1.0"))
 ;; Keywords: lisp
@@ -1125,6 +1125,15 @@ directory, the attachments will be moved."
   (let ((org-refile-targets `((nil :maxlevel . ,arg))))
     (call-interactively 'org-refile)))
 
+(defun worf-refile-other-window ()
+  (interactive)
+  (let* ((fname (save-window-excursion
+                  (other-window 1)
+                  (buffer-file-name)))
+         (org-agenda-files nil)
+         (org-refile-targets `(((,fname) :maxlevel . 3))))
+    (call-interactively 'org-refile)))
+
 (defun worf-refile-last ()
   "Refile to the last location without prompting."
   (interactive)
@@ -1154,6 +1163,7 @@ _t_his
 
 "
   ("t" worf-refile-this)
+  ("w" worf-refile-other-window)
   ("o" worf-refile-other)
   ("l" worf-refile-last)
   ("k" (setq org-refile-keep (not org-refile-keep))

@@ -4,7 +4,7 @@
 
 ;; Author: Vasilij Schneidermann <v.schneidermann@gmail.com>
 ;; URL: https://github.com/wasamasa/zone-nyan
-;; Package-Version: 20161014.154
+;; Package-Version: 20170818.944
 ;; Version: 0.2.2
 ;; Package-Requires: ((esxml "0.3.1"))
 ;; Keywords: zone
@@ -65,7 +65,8 @@
     (bread  :gui "#ffcc99" :term "color-216" :ascii "##")
   "Palette for GUI, 256 color and ASCII display of nyan cat."))
 
-(defcustom zone-nyan-gui-type 'svg
+(defcustom zone-nyan-gui-type
+  (if (image-type-available-p 'svg) 'svg 'text)
   "Rendering type on graphical displays."
   :type '(choice (const :tag "SVG" svg)
                  (const :tag "Text" text))
