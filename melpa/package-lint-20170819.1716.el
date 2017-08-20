@@ -5,7 +5,7 @@
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;;         Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/purcell/package-lint
-;; Package-Version: 20170818.1946
+;; Package-Version: 20170819.1716
 ;; Keywords: lisp
 ;; Version: 0
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
@@ -253,6 +253,8 @@ This is bound dynamically while the checks run.")
           (package-lint--check-objects-by-regexp
            "(define-global\\(?:ized\\)?-minor-mode\\s-"
            #'package-lint--check-globalized-minor-mode)
+          (package-lint--check-objects-by-regexp
+           "(defgroup\\s-" #'package-lint--check-defgroup)
           (let ((desc (package-lint--check-package-el-can-parse)))
             (when desc
               (package-lint--check-package-summary desc)
@@ -697,6 +699,17 @@ DESC is a struct as returned by `package-buffer-info'."
        'error
        (format
         "Global minor modes must `:require' their defining file (i.e. \":require '%s\"), to support the customization variable of the same name." feature)))))
+
+(defun package-lint--check-defgroup (def)
+  "Offer up concerns about the customization group definition DEF."
+  (when (symbolp (cadr def))
+    (let ((group-name (symbol-name (cadr def))))
+      (when (string-match "\\(.*\\)-mode$" group-name)
+        (let ((parent (intern (match-string 1 group-name))))
+          (unless (cl-search `(:group ',parent) def :test #'equal)
+            (package-lint--error-at-point
+             'error
+             "Customization groups should not end in \"-mode\" unless that name would conflict with their parent group.")))))))
 
 
 ;;; Helpers
