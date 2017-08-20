@@ -1,7 +1,7 @@
 ;;; rust-mode.el --- A major emacs mode for editing Rust source code -*-lexical-binding: t-*-
 
 ;; Version: 0.3.0
-;; Package-Version: 20170813.2341
+;; Package-Version: 20170820.651
 ;; Author: Mozilla
 ;; Url: https://github.com/rust-lang/rust-mode
 ;; Keywords: languages
@@ -545,6 +545,7 @@ buffer."
     "u16" "i16"
     "u32" "i32"
     "u64" "i64"
+    "u128" "i128"
 
     "f32" "f64"
     "float" "int" "uint" "isize" "usize"
@@ -754,7 +755,7 @@ match data if found. Returns nil if not within a Rust string."
   can have a where clause, rewind back to just before the name of
   the subject of that where clause and return the new point.
   Otherwise return nil"
-  
+
   (let* ((ident-pos (point))
          (newpos (save-excursion
                    (rust-rewind-irrelevant)
@@ -797,7 +798,7 @@ match data if found. Returns nil if not within a Rust string."
       ;; A type alias or ascription could have a type param list.  Skip backwards past it.
       (when (member token '(ambiguous-operator open-brace))
         (rust-rewind-type-param-list))
-      
+
       (cond
 
        ;; Certain keywords always introduce expressions
@@ -812,7 +813,7 @@ match data if found. Returns nil if not within a Rust string."
        ;; An ident! followed by an open brace is a macro invocation.  Consider
        ;; it to be an expression.
        ((and (equal token 'open-brace) (rust-looking-back-macro)) t)
-       
+
        ;; In a brace context a "]" introduces an expression.
        ((and (eq token 'open-brace) (rust-looking-back-str "]")))
 
@@ -829,7 +830,7 @@ match data if found. Returns nil if not within a Rust string."
         (backward-sexp)
         (rust-rewind-irrelevant)
         (looking-back "[{;]" (1- (point))))
-       
+
        ((rust-looking-back-ident)
         (rust-rewind-qualified-ident)
         (rust-rewind-irrelevant)
@@ -852,7 +853,7 @@ match data if found. Returns nil if not within a Rust string."
                         (rust-rewind-irrelevant)
                         (rust-looking-back-symbols '("enum" "struct" "union" "trait" "type"))))))
            ))
-         
+
          ((equal token 'ambiguous-operator)
           (cond
            ;; An ampersand after an ident has to be an operator rather than a & at the beginning of a ref type
@@ -883,7 +884,7 @@ match data if found. Returns nil if not within a Rust string."
                   (rust-rewind-irrelevant)
                   (rust-looking-back-str "enum")))))
             t)
-           
+
            ;; Otherwise the ambiguous operator is a type if the identifier is a type
            ((rust-is-in-expression-context 'ident) t)))
 
@@ -932,7 +933,7 @@ match data if found. Returns nil if not within a Rust string."
 
        ;; A :: introduces a type (or module, but not an expression in any case)
        ((rust-looking-back-str "::") nil)
-       
+
        ((rust-looking-back-str ":")
         (backward-char)
         (rust-is-in-expression-context 'colon))
@@ -971,7 +972,7 @@ match data if found. Returns nil if not within a Rust string."
 (defun rust-is-lt-char-operator ()
   "Return t if the < sign just after point is an operator rather
   than an opening angle bracket, otherwise nil."
-  
+
   (let ((case-fold-search nil))
     (save-excursion
       (rust-rewind-irrelevant)
@@ -983,7 +984,7 @@ match data if found. Returns nil if not within a Rust string."
        ((and (rust-looking-back-str "<")
              (not (equal 4 (rust-syntax-class-before-point)))
              (not (rust-looking-back-str "<<"))))
-       
+
        ;; On the other hand, if we are after a closing paren/brace/bracket it
        ;; can only be an operator, not an angle bracket.  Likewise, if we are
        ;; after a string it's an operator.  (The string case could actually be
@@ -1011,7 +1012,7 @@ match data if found. Returns nil if not within a Rust string."
          ;; The special types can't take type param lists, so a < after one is
          ;; always an operator
          (looking-at rust-re-special-types)
-         
+
          (rust-is-in-expression-context 'ident)))
 
        ;; Otherwise, assume it's an angle bracket
@@ -1046,7 +1047,7 @@ should be considered a paired angle bracket."
    ;; to balance regardless of the < and >, so if we don't treat any < or >
    ;; as angle brackets it won't mess up any paren balancing.
    ((rust-in-macro) t)
-   
+
    ((looking-at "<")
     (rust-is-lt-char-operator))
 
