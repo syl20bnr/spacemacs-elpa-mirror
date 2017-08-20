@@ -5,7 +5,7 @@
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;;         Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/purcell/package-lint
-;; Package-Version: 20170819.1716
+;; Package-Version: 20170820.408
 ;; Keywords: lisp
 ;; Version: 0
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
@@ -337,11 +337,14 @@ This is bound dynamically while the checks run.")
   "Verify package does not refer to \"\.emacs\.d\" literally.
 Instead it should use `user-emacs-directory' or `locate-user-emacs-file'."
   (goto-char (point-min))
-  (while (re-search-forward "\\.emacs\\.d" nil t)
+  ;; \b won't find a word boundary between a symbol and the "." in
+  ;; ".emacs.d". / is a valid symbol constituent in Emacs Lisp, so
+  ;; must be explicitly blacklisted.
+  (while (re-search-forward "\\(?:\\_<\\|/\\)\\.emacs\\.d\\b" nil t)
     (unless (nth 4 (syntax-ppss))
       ;; Not in a comment
-      (package-lint--error
-       (line-number-at-pos) (current-column) 'warning
+      (package-lint--error-at-point
+       'warning
        "Use variable `user-emacs-directory' or function `locate-user-emacs-file' instead of a literal path to the Emacs user directory or files."))))
 
 (defun package-lint--check-keywords-list ()
