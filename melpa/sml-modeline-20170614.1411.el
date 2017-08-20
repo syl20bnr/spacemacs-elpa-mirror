@@ -3,7 +3,7 @@
 ;; Author: Lennart Borgman (lennart O borgman A gmail O com)
 ;; Created: 2010-03-16 Tue
 ;; Version: 0.5
-;; Package-Version: 20120110.1240
+;; Package-Version: 20170614.1411
 ;; Last-Updated: 2010-03-18 Thu
 ;; URL: http://bazaar.launchpad.net/~nxhtml/nxhtml/main/annotate/head%3A/util/sml-modeline.el
 ;; Keywords:

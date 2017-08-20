@@ -7,15 +7,15 @@
 ;; Copyright (C) 1996-2017, Drew Adams, all rights reserved.
 ;; Created: Tue Mar  5 16:30:45 1996
 ;; Version: 0
-;; Package-Version: 20170506.945
+;; Package-Version: 20170819.1358
 ;; Package-Requires: ((frame-fns "0"))
-;; Last-Updated: Sat May  6 09:46:33 2017 (-0700)
+;; Last-Updated: Sat Aug 19 13:57:40 2017 (-0700)
 ;;           By: dradams
-;;     Update #: 3070
+;;     Update #: 3074
 ;; URL: https://www.emacswiki.org/emacs/download/frame-cmds.el
-;; Doc URL: http://emacswiki.org/FrameModes
-;; Doc URL: http://www.emacswiki.org/OneOnOneEmacs
-;; Doc URL: http://www.emacswiki.org/Frame_Tiling_Commands
+;; Doc URL: https://emacswiki.org/emacs/FrameModes
+;; Doc URL: https://www.emacswiki.org/emacs/OneOnOneEmacs
+;; Doc URL: https://www.emacswiki.org/emacs/Frame_Tiling_Commands
 ;; Keywords: internal, extensions, mouse, frames, windows, convenience
 ;; Compatibility: GNU Emacs: 20.x, 21.x, 22.x, 23.x, 24.x, 25.x
 ;;
@@ -284,6 +284,9 @@
 ;;
 ;;; Change Log:
 ;;
+;; 2017/08/19 dadams
+;;     delete-window: Use with-selected-window for Emacs 22+.
+;;     Updated Emacs-Wiki URLs.
 ;; 2017/05/06 dadams
 ;;     maximize-frame: Sidestep nil frame parameters.
 ;; 2017/02/07 dadams
@@ -600,21 +603,21 @@ frame-cmds.el bug: \
 &body=Describe bug here, starting with `emacs -q'.  \
 Don't forget to mention your Emacs and library versions."))
   :link '(url-link :tag "Other Libraries by Drew"
-          "http://www.emacswiki.org/DrewsElispLibraries")
+          "https://www.emacswiki.org/emacs/DrewsElispLibraries")
   :link '(url-link :tag "Download"
-          "http://www.emacswiki.org/frame-cmds.el")
+          "https://www.emacswiki.org/emacs/frame-cmds.el")
   :link '(url-link :tag "Description - `delete-window'"
-          "http://www.emacswiki.org/FrameModes")
+          "https://www.emacswiki.org/emacs/FrameModes")
   :link '(url-link :tag "Description - Frame Renaming"
-          "http://www.emacswiki.org/FrameTitle")
+          "https://www.emacswiki.org/emacs/FrameTitle")
   :link '(url-link :tag "Description - Frame Resizing"
-          "http://www.emacswiki.org/Shrink-Wrapping_Frames")
+          "https://www.emacswiki.org/emacs/Shrink-Wrapping_Frames")
   :link '(url-link :tag "Description - Frame Customization"
-          "http://www.emacswiki.org/CustomizingAndSaving")
+          "https://www.emacswiki.org/emacs/CustomizingAndSaving")
   :link '(url-link :tag "Description - Frame Tiling"
-          "http://www.emacswiki.org/Frame_Tiling_Commands")
+          "https://www.emacswiki.org/emacs/Frame_Tiling_Commands")
   :link '(url-link :tag "Description - General"
-          "http://www.emacswiki.org/FrameModes")
+          "https://www.emacswiki.org/emacs/FrameModes")
   :link '(emacs-commentary-link :tag "Commentary" "frame-cmds"))
 
 (defcustom rename-frame-when-iconify-flag t
@@ -810,9 +813,13 @@ A negative prefix arg deiconifies all iconified frames."
 ;; If WINDOW is the only one in its frame, `delete-frame'.
 (defadvice delete-window (around delete-frame-if-one-win activate)
   "If WINDOW is the only one in its frame, then `delete-frame' too."
-  (save-current-buffer
-    (select-window (or (ad-get-arg 0)  (selected-window)))
-    (if (one-window-p t) (delete-frame) ad-do-it)))
+  (if (fboundp 'with-selected-window)   ; Emacs 22+
+      (with-selected-window
+          (or (ad-get-arg 0)  (selected-window))
+        (if (one-window-p t) (delete-frame) ad-do-it))
+    (save-current-buffer
+      (select-window (or (ad-get-arg 0)  (selected-window)))
+      (if (one-window-p t) (delete-frame) ad-do-it))))
 
 ;;;###autoload
 (defun delete-windows-for (&optional buffer)

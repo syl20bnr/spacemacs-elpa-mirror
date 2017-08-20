@@ -6,8 +6,8 @@
 ;;
 ;; Author: David Landell <david.landell@sunnyhill.email>
 ;;         Roland McGrath <roland@gnu.org>
-;; Version: 1.3.0
-;; Package-Version: 1.3.0
+;; Version: 1.3.1
+;; Package-Version: 1.3.1
 ;; Homepage: https://github.com/dajva/rg.el
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24") (s "1.10.0") (seq "2.19"))
 ;; Keywords: matching, tools
@@ -184,7 +184,7 @@ for special purposes.")
      (2 'rg-error-face nil t))
     ;; "filename-linenumber-" or "linenumber-" format is used for
     ;; context lines in rg
-    ("^\\(?:.+?-\\)*?[0-9]+-.*\n" (0 'rg-context-face))))
+    ("^\\(?:.+?-\\)?[0-9]+-.*\n" (0 'rg-context-face))))
 
 (defvar rg-mode-map
   (let ((map (copy-keymap grep-mode-map)))
@@ -224,7 +224,7 @@ added as a '--type-add' parameter to the rg command line."
                (rg-build-type-add-args)
                rg-command-line-flags
                rg-toggle-command-line-flags
-               (list "<R>"))))
+               (list "-e" "<R>"))))
     (when rg-show-columns
       (setq args (cons "--column" args)))
     (when type
