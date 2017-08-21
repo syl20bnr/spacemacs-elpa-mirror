@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015  The Tramp HDFS Developers
 ;;
 ;; Version: 0.3.0
-;; Package-Version: 20170814.1036
+;; Package-Version: 20170821.620
 ;; Author: Raghav Kumar Gautam <raghav@apache.org>
 ;; Keywords: tramp, emacs, hdfs, hadoop, webhdfs, rest
 ;; Package-Requires: ((emacs "24.4"))
@@ -70,6 +70,11 @@
   "Port number of WebHDFS server."
   :group 'tramp-hdfs
   :type 'integer)
+
+(defcustom webhdfs-protocol "http"
+  "Port number of WebHDFS server."
+  :group 'tramp-hdfs
+  :type 'string)
 
 (defcustom webhdfs-endpoint "/webhdfs/v1"
   "Port number of WebHDFS server."
@@ -173,6 +178,7 @@ Operations not mentioned here will be handled by the default Emacs primitives.")
     (with-tramp-file-property v localname "file-readable-p"
       ;; Examine `file-attributes' cache to see if request can be
       ;; satisfied without remote operation.
+      ;;TODO we need to do actual check using rest calls
       (tramp-check-cached-permissions v ?r))))
 
 
@@ -205,20 +211,47 @@ Optional argument ARGS is a list of arguments to pass to the OPERATION."
 ;;hadoop rest api https://hadoop.apache.org/docs/r1.0.4/webhdfs.html
 (defun tramp-hdfs-get-url-content (url vec)
   "Run a get request for the URL and get the content."
-  (let ((url-http-attempt-keepalives nil)
-	(content (with-current-buffer (url-retrieve-synchronously url)
-		   (tramp-hdfs-delete-http-header* (current-buffer))
-		   (buffer-string))))
-    (tramp-message vec 10 "Fetched %s to get: %s" url content)
-    content))
+  (tramp-hdfs-do-rest-call "GET" url vec))
 
-(defun tramp-hdfs-delete-url (url)
+(defun tramp-hdfs-delete-url (url vec)
   "Run a http delete request at the URL and get the content returned."
-  (let ((url-request-method "DELETE")
-	(url-http-attempt-keepalives nil))
-    (with-current-buffer (url-retrieve-synchronously url)
-      (tramp-hdfs-delete-http-header* (current-buffer))
-      (buffer-string))))
+  (tramp-hdfs-do-rest-call "DELETE" url vec))
+
+(defun tramp-hdfs-put-url-get-redirect (url vec)
+  "Run a put request at the URL and get the redirected url."
+  (tramp-hdfs-do-rest-call "PUT" url vec))
+;;(tramp-hdfs-put-url-get-redirect "http://node-1:50070/webhdfs/v1/tmp/test2.txt?user.name=rgautam&op=CREATE")
+
+(require 'subr-x)
+(defconst tramp-hdfs-curl-path
+  (let ((curl-bin (string-trim (shell-command-to-string "which curl"))))
+    (when (>= (length curl-bin) 4)
+	curl-bin)))
+
+;;(tramp-hdfs-do-rest-call "GET" "http://node-1:50070/webhdfs/v1/?user.name=root&op=LISTSTATUS" nil)
+;;(tramp-hdfs-do-rest-call "GET" "http://node-1:50070/webhdfs/v1/?user.name=hdfs&op=GETFILESTATUS" nil)
+;;(tramp-hdfs-do-rest-call "GET" "http://node-1:50070/webhdfs/v1/?user.name=hdfs&op=LISTSTATUS" nil)
+;;(let ((tramp-hdfs-curl-path nil))(tramp-hdfs-do-rest-call "GET" "http://google.com" nil))
+(defun tramp-hdfs-do-rest-call (method url vec)
+  "Do a rest call using method METHOD to the url & return the results."
+  (tramp-message vec 10 "Method: %s Url: %s" method url)
+  (let ((response
+	 (if tramp-hdfs-curl-path
+	     (progn
+	       (tramp-message vec 10 "Command: %s -k -sSL --negotiate -u : -X %s %s" tramp-hdfs-curl-path method url)
+	       (string-trim (with-output-to-string
+			      (with-current-buffer
+				  standard-output
+				(call-process tramp-hdfs-curl-path nil t nil "-k" "-sSL" "--negotiate" "-u" ":"  "-X" method url)))))
+	   (let* ((url-request-method method)
+		  (url-http-attempt-keepalives nil)
+		  (buff (url-retrieve-synchronously url))
+		  (response-headers '()))
+	     (with-current-buffer (url-retrieve-synchronously url)
+	       (tramp-hdfs-delete-http-header* (current-buffer))
+	       (buffer-string))))))
+    (tramp-message vec 10 "Method: %s Url: %s Reponse: %s" method url response)
+    response))
 
 (defconst http-header-regexp "^\\([^ :]+\\): \\(.*\\)$")
 
@@ -241,17 +274,6 @@ Optional argument ARGS is a list of arguments to pass to the OPERATION."
 	  (forward-line)
 	  (delete-region (point-min) (point))
 	  (list response-status response-headers)))))
-
-(defun tramp-hdfs-put-url-get-redirect (url)
-  "Run a put request at th URL and get the redirected url."
-  (let* ((url-request-method "PUT")
-	 (url-http-attempt-keepalives nil)
-	 (buff (url-retrieve-synchronously url))
-	 (response-headers '()))
-    (with-current-buffer (url-retrieve-synchronously url)
-      (tramp-hdfs-delete-http-header* (current-buffer)))))
-
-;;(tramp-hdfs-put-url-get-redirect "http://node-1:50070/webhdfs/v1/tmp/test2.txt?user.name=rgautam&op=CREATE")
 
 (defun tramp-hdfs-handle-expand-file-name (name &optional dir)
   "Like `expand-file-name' for Tramp files.
@@ -327,7 +349,7 @@ Optional argument SUFFIX extra arguments to be appended to url."
     (setq path (concat "/" path)))
   (let ((url (concat
 	      ;;http://node-1:57000/webhdfs/v1
-	      (format "http://%s:%s%s" (tramp-file-name-real-host v) (number-to-string webhdfs-port) webhdfs-endpoint)
+	      (format "%s://%s:%s%s" webhdfs-protocol (tramp-file-name-real-host v) (or (tramp-file-name-port v) (number-to-string webhdfs-port)) webhdfs-endpoint)
 	      ;;/tmp?user.name=root&op=OPEN
 	      (format "%s?user.name=%s&op=%s"  path (tramp-file-name-user v) op)
 	      (when suffix "&") suffix)))
@@ -486,7 +508,7 @@ These are all file names in directory DIRECTORY which begin with FILE."
 		hdfs-delete-op
 		v
 		(if recursive "recursive=true" "recursive=false"))))
-      (tramp-hdfs-json-to-lisp (tramp-hdfs-delete-url url) v))))
+      (tramp-hdfs-json-to-lisp (tramp-hdfs-delete-url url v) v))))
 
 (defun tramp-hdfs-handle-delete-file (filename &optional _trash)
   "Like `delete-file' for Tramp files."
@@ -502,7 +524,7 @@ These are all file names in directory DIRECTORY which begin with FILE."
 		hdfs-delete-op
 		v
 		"recursive=false")))
-	(tramp-hdfs-json-to-lisp (tramp-hdfs-delete-url url) v)))))
+	(tramp-hdfs-json-to-lisp (tramp-hdfs-delete-url url v) v)))))
 
 ;; Internal file name functions.
 (defun tramp-hdfs-get-filename (vec)
