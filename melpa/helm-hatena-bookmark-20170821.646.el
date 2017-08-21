@@ -4,9 +4,9 @@
 
 ;; Author: Takashi Masuda <masutaka.net@gmail.com>
 ;; URL: https://github.com/masutaka/emacs-helm-hatena-bookmark
-;; Package-Version: 20160528.614
-;; Version: 2.2.2
-;; Package-Requires: ((helm "1.9.5"))
+;; Package-Version: 20170821.646
+;; Version: 2.2.3
+;; Package-Requires: ((helm "2.8.2"))
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -88,13 +88,22 @@ DO NOT SET VALUE MANUALLY.")
 (defvar helm-hatena-bookmark-http-debug-start-time nil)
 (defvar helm-hatena-bookmark-filter-debug-start-time nil)
 
+;;; Macro
+
+(defmacro helm-hatena-bookmark-file-check (&rest body)
+  `(if (file-exists-p helm-hatena-bookmark-file)
+       ,@body
+     (message "%s not found. Please wait up to %d minutes."
+	      helm-hatena-bookmark-file (/ helm-hatena-bookmark-interval 60))))
+
 ;;; Helm source
 
 (defun helm-hatena-bookmark-load ()
   "Load `helm-hatena-bookmark-file'."
-  (with-current-buffer (helm-candidate-buffer 'global)
-    (let ((coding-system-for-read 'utf-8))
-      (insert-file-contents helm-hatena-bookmark-file))))
+  (helm-hatena-bookmark-file-check
+   (with-current-buffer (helm-candidate-buffer 'global)
+     (let ((coding-system-for-read 'utf-8))
+       (insert-file-contents helm-hatena-bookmark-file)))))
 
 (defvar helm-hatena-bookmark-action
   '(("Browse URL" . helm-hatena-bookmark-browse-url)
@@ -136,10 +145,9 @@ Argument CANDIDATE a line string of a bookmark."
   "Search Hatena::Bookmark using `helm'."
   (interactive)
   (let ((helm-full-frame helm-hatena-bookmark-full-frame))
-    (unless (file-exists-p helm-hatena-bookmark-file)
-      (error (format "%s not found" helm-hatena-bookmark-file)))
-    (helm :sources helm-hatena-bookmark-source
-	  :prompt "Find Bookmark: ")))
+    (helm-hatena-bookmark-file-check
+     (helm :sources helm-hatena-bookmark-source
+	   :prompt "Find Bookmark: "))))
 
 ;;; Process handler
 

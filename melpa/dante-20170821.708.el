@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20170820.1239
+;; Package-Version: 20170821.708
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -405,22 +405,30 @@ CHECKER and BUFFER are added to each item parsed from STRING."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Company integration (auto-completion)
 
-(defun dante-company (command &rest _args)
+(defun dante-company (command &optional _arg &rest _ignored)
   "Company backend for dante.
 See ``company-backends'' for the meaning of COMMAND and _ARGS."
-  (let ((prefix (buffer-substring-no-properties (car (dante-indent-pos-at-point)) (point))))
+  (let ((prefix (when (and dante-mode (dante-ident-pos-at-point))
+                  (let* ((id-start (car (dante-ident-pos-at-point)))
+                         (import-found (save-excursion (re-search-backward "import[\t ]*" (line-beginning-position) t)))
+                         (import-end (match-end 0))
+                         (import-start (match-beginning 0))
+                         (is-import (eq import-end id-start)))
+                    (message "found %s end %s start %s id-start %s" import-found import-end import-start id-start)
+                    (buffer-substring-no-properties (if is-import import-start id-start) (point)))))) ;; todo: pref len
     (cl-case command
       (interactive (company-begin-backend 'company-dante))
       (sorted t)
-      (prefix (when dante-mode prefix))
-    (candidates
-     (unless (eq (dante-state) 'dead)
-       (cons :async
-             (lambda (ret)
-               (dante-cps-let ((_load-messages (dante-async-load-current-buffer nil))
-                               (reply (dante-async-call (format ":complete repl %S" prefix))))
-                 (funcall ret (--map (replace-regexp-in-string "\\\"" "" it)
-                                     (cdr (s-lines reply))))))))))))
+      (prefix prefix)
+      (candidates
+       (unless (eq (dante-state) 'dead)
+         (cons :async
+               (lambda (ret)
+                 (dante-cps-let ((_load-messages (dante-async-load-current-buffer nil))
+                                 (reply (dante-async-call (format ":complete repl %S" prefix))))
+                   (let* ((lines (s-lines reply))
+                          (common (nth 2 (read (concat "(" (car lines) ")")))))
+                     (funcall ret (--map (replace-regexp-in-string "\\\"" "" (concat common it)) (cdr lines))))))))))))
 
 (with-eval-after-load 'company
   (add-to-list 'company-backends 'dante-company))

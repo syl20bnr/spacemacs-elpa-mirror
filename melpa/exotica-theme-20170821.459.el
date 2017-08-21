@@ -5,10 +5,10 @@
 ;; Author: Bharat Joshi <jbharat@outlook.com>
 ;; Maintainer: Bharat Joshi <jbharat@outlook.com>
 ;; URL: https://github.com/jbharat/exotica-theme
-;; Package-Version: 20170820.30
+;; Package-Version: 20170821.459
 ;; Created: 22th July 2017
 ;; Keywords: faces, theme, dark, vibrant colors
-;; Version: 1.0.1
+;; Version: 1.0.2
 ;; Package-Requires: ((emacs "24"))
 
 ;; License: GPL3
@@ -53,7 +53,7 @@
      (cursor                 "#F8F8F0")
      (face1                  "#66D9EF")
      (face2                  "#A6E22E")
-     (face3                  "#FF3DB1")
+     (face3                  "#FF84C9")
      (face4                  "#AE81FF")
      (face5                  "#4577D7")
      (face6                  "#2ee267")
@@ -243,7 +243,7 @@
   `(treemacs-directory-face ((t (:foreground ,face7 :slant ,slantType))))
 
   ;; parentheses matching
-  `(show-paren-match ((t (:background ,face7 :foreground ,fullBlack))))
+  `(show-paren-match ((t (:background ,m1 :foreground ,fullBlack :weight bold))))
   `(show-paren-mismatch ((t (:background ,m7 :foreground ,fullWhite))))
 
   ;; dired
