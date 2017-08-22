@@ -4,7 +4,7 @@
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
 ;; Keywords: convenience
-;; Package-Version: 20170612.1308
+;; Package-Version: 20170821.1306
 ;; Version: 1.0.0
 ;; URL: https://github.com/Sarcasm/company-irony/
 ;; Package-Requires: ((emacs "24.1") (company "0.8.0") (irony "1.0.0") (cl-lib "0.5"))
@@ -44,8 +44,12 @@
   :group 'irony)
 
 (defcustom company-irony-ignore-case nil
-  "Non-nil to ignore case when collecting completion candidates."
-  :type 'boolean)
+  "If t, ignore case when collecting completion candidates.
+If this value is `smart', ignore case only when there is no
+uppercase letters."
+  :type '(choice (const :tag "off" nil)
+		 (const smart)
+		 (other :tag "on" t)))
 
 (defsubst company-irony--irony-candidate (candidate)
   (get-text-property 0 'company-irony candidate))
@@ -62,11 +66,15 @@
                 (cons prefix t)
               prefix)))))))
 
-(defun company-irony--filter-candidates (prefix candidates)
+(defun company-irony--make-candidates (candidates)
   (cl-loop for candidate in candidates
-           when (string-prefix-p prefix (car candidate)
-                                 company-irony-ignore-case)
            collect (propertize (car candidate) 'company-irony candidate)))
+
+(defun company-irony--get-matching-style ()
+  (pcase company-irony-ignore-case
+    ('smart 'smart-case)
+    ('nil 'exact)
+    (other 'case-insensitive)))
 
 (defun company-irony--candidates (prefix)
   (cons :async
@@ -74,7 +82,9 @@
           (irony-completion-candidates-async
            (lambda (candidates) ;; closure, lexically bound
              (funcall callback
-                      (company-irony--filter-candidates prefix candidates)))))))
+                      (company-irony--make-candidates candidates)))
+           prefix
+           (company-irony--get-matching-style)))))
 
 (defun company-irony--annotation (candidate)
   (concat

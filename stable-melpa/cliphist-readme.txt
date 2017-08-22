@@ -6,6 +6,7 @@ Read clipboard items from following clipboard managers,
 Usage:
   Make sure clipboard manager is running.
   `M-x cliphist-paste-item' to paste item from history
+  `C-u M-x cliphist-paste-item' rectangle paste item
   `M-x cliphist-select-item' to select item
   In popup, press `C-n' or `C-p' to navigate, other keys
   to filter.
