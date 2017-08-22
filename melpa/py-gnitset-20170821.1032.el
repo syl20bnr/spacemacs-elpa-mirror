@@ -1,7 +1,7 @@
 ;;; py-gnitset.el --- Run your Python tests any way you'd like
 ;;
 ;; Version: 0.1
-;; Package-Version: 20170819.1604
+;; Package-Version: 20170821.1032
 ;; Copyright (C) 2014 Brandon W Maister
 ;; Author: Brandon W Maister <quodlibetor@gmail.com>
 ;; URL: https://www.github.com/quodlibetor/py-gnitset
@@ -267,9 +267,14 @@ Look in the current dir, all the ancestors, and the virtualenv."
 Tries to get py-gnitset for the local virtualenv, falling back to global.
 
 Doesn't work in compilation buffers because dir-local variables aren't set"
-  (if (boundp 'virtualenv-workon)
-      (format "*py-gnitset-%s*" virtualenv-workon)
-    "*py-gnitset*"))
+  (cond
+   ((boundp 'venv-current-name)
+    (format "*py-gnitset-%s*" venv-current-name))
+   ((boundp 'pyvenv-virtual-env)
+    (format "*py-gnitset-%s*" pyvenv-virtual-env))
+   ((boundp 'virtualenv-workon)
+    (format "*py-gnitset-%s*" virtualenv-workon))
+   (t "*py-gnitset*")))
 
 (defun py-gnitset-term-sentinel (proc msg)
   "Function to monitor the py-gnitset-term.

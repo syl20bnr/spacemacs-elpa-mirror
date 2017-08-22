@@ -4,7 +4,7 @@
 ;;; Copyright (C) 1997 Mikael Sjödin (mic@docs.uu.se)
 
 ;; Version: 3.13
-;; Package-Version: 20150110.1816
+;; Package-Version: 20170731.1207
 ;; Released: 2014-09-27
 ;; Author: Mikael Sjödin (mic@docs.uu.se)
 ;;         Klaus Berndl  <berndl@sdm.de>
@@ -1315,7 +1315,6 @@ should be a list of the form (CHAR SYNTAX-STRING)."
       (error nil)))
 
 (provide 'mic-paren)
-(provide 'paren)
 
 ;;; Local variables:
 ;;; coding: utf-8
