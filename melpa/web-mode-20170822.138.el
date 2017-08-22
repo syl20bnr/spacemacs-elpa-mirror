@@ -4,7 +4,7 @@
 ;; Copyright 2011-2017 François-Xavier Bois
 
 ;; Version: 15.0.5
-;; Package-Version: 20170807.903
+;; Package-Version: 20170822.138
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; Package-Requires: ((emacs "23.1"))
@@ -10117,7 +10117,11 @@ Prompt user if TAG-NAME isn't provided."
         (if (= web-mode-auto-quote-style 2)
             (insert "''")
           (insert "\"\""))
-        (backward-char)
+        (if (looking-at-p "[ \n]")
+            (backward-char)
+          (insert " ")
+          (backward-char 2)
+          )
         (setq auto-quoted t))
        ((and (eq char ?\")
              (looking-back "=[ ]*\"" (point-min))

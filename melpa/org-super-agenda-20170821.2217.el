@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-super-agenda
-;; Package-Version: 20170819.2228
+;; Package-Version: 20170821.2217
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "25.1") (s "1.10.0") (dash "2.13") (org "9.0") (ht "2.2"))
 ;; Keywords: hypermedia, outlines, Org, agenda
@@ -117,6 +117,11 @@
 
 ;;;; Variables
 
+(defconst org-super-agenda-special-selectors
+  '(:name :order)
+  ;; This needs to be manually updated if any are added.
+  "Special, non-grouping selectors.")
+
 (defvar org-super-agenda-group-types nil
   "List of agenda grouping keywords and associated functions.
 Populated automatically by `org-super-agenda--defgroup'.")
@@ -135,7 +140,7 @@ See readme for information."
   :type 'list)
 
 (defcustom org-super-agenda-properties-inherit t
-  "Use property inheritance when checking properties with the :auto-groups selector.
+  "Use property inheritance when checking properties with the :auto-group selector.
 With this enabled, you can set the \"agenda-group\" property for
 an entire subtree, and every entry below it will inherit the
 agenda group.  It seems most natural for it to be enabled, so the
@@ -172,7 +177,7 @@ If ANY is non-nil, return as soon as FORM returns non-nil."
   (declare (indent defun))
   (org-with-gensyms (tree-start tree-end result all-results)
     `(let ((,tree-start (point))
-           ,tree-end)
+           ,tree-end ,all-results)
        (when (org-goto-first-child)
          (goto-char ,tree-start)
          ,(when any
@@ -595,7 +600,7 @@ The string should be the priority cookie letter, e.g. \"A\".")
                  for (auto-section-name non-matching matching) = (org-super-agenda--group-dispatch all-items filter)
 
                  ;; Auto groups
-                 if (eql auto-section-name :auto-groups)
+                 if (eql auto-section-name :auto-group)
                  do (setq section-name (or custom-section-name "Auto groups"))
                  and append (cl-loop for group in matching
                                      collect (list :name (plist-get group :name)
@@ -657,14 +662,14 @@ The string should be the priority cookie letter, e.g. \"A\".")
            if group
            do (ht-set! groups group (cons item (ht-get groups group)))
            else collect item into non-matching
-           finally return (list :auto-groups
+           finally return (list :auto-group
                                 non-matching
                                 (cl-loop for key in (sort (ht-keys groups) #'string<)
                                          for name = (concat "Group: " key)
                                          collect (list :name name
                                                        :items (ht-get groups key))))))
 (setq org-super-agenda-group-types (plist-put org-super-agenda-group-types
-                                              :auto-groups #'org-super-agenda--auto-group-items))
+                                              :auto-group #'org-super-agenda--auto-group-items))
 
 (defun org-super-agenda--auto-group-category (all-items &rest ignore)
   "Divide ALL-ITEMS into groups based on their org-category property."
@@ -686,12 +691,24 @@ The string should be the priority cookie letter, e.g. \"A\".")
 
 ;;;;; Dispatchers
 
+(defun org-super-agenda--get-selector-fn (selector)
+  "Return function for SELECTOR.  Raise error if invalid selector."
+  (cond
+   ((cl-member selector org-super-agenda-special-selectors)
+    ;; Special selector, so no associated function; return nil
+    nil)
+   (t (or
+       ;; Valid selector: return function
+       (plist-get org-super-agenda-group-types selector)
+       ;; Invalid selector: raise error
+       (user-error "Invalid org-agenda-super-groups selector: %s" selector)))))
+
 (defun org-super-agenda--group-dispatch (items group)
   "Group ITEMS with the appropriate grouping functions for GROUP.
 Grouping functions are listed in `org-super-agenda-group-types', which
 see."
-  (cl-loop for (group-type args) on group by 'cddr  ; plist access
-           for fn = (plist-get org-super-agenda-group-types group-type)
+  (cl-loop for (selector args) on group by 'cddr  ; plist access
+           for fn = (org-super-agenda--get-selector-fn selector)
            ;; This double "when fn" is an ugly hack, but it lets us
            ;; use the destructuring-bind; otherwise we'd have to put
            ;; all the collection logic in a progn, or do the
@@ -719,8 +736,8 @@ see."
   ;; Used for the `:and' selector.
   (cl-loop with final-non-matches with final-matches
            with all-items = items  ; Save for later
-           for (group-type args) on group by 'cddr  ; plist access
-           for fn = (plist-get org-super-agenda-group-types group-type)
+           for (selector args) on group by 'cddr  ; plist access
+           for fn = (org-super-agenda--get-selector-fn selector)
            ;; This double "when fn" is an ugly hack, but it lets us
            ;; use the destructuring-bind; otherwise we'd have to put
            ;; all the collection logic in a progn, or do the
@@ -752,8 +769,8 @@ see."
 (defun org-super-agenda--group-dispatch-discard (items group)
   "Discard items that match GROUP.
 Any groups processed after this will not see these items."
-  (cl-loop for (group-type args) on group by 'cddr  ; plist access
-           for fn = (plist-get org-super-agenda-group-types group-type)
+  (cl-loop for (selector args) on group by 'cddr  ; plist access
+           for fn = (org-super-agenda--get-selector-fn selector)
            ;; This double "when fn" is an ugly hack, but it lets us
            ;; use the destructuring-bind; otherwise we'd have to put
            ;; all the collection logic in a progn, or do the

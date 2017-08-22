@@ -12,7 +12,7 @@
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 
 ;; Package-Requires: ((emacs "24.4") (dash "20170207.2056") (with-editor "20170111.609"))
-;; Package-Version: 20170821.1159
+;; Package-Version: 20170821.2057
 ;; Keywords: git tools vc
 ;; Homepage: https://github.com/magit/magit
 
@@ -378,7 +378,7 @@ already using it, then you probably shouldn't start doing so."
 ;;;###autoload
 (defconst git-commit-filename-regexp "/\\(\
 \\(\\(COMMIT\\|NOTES\\|PULLREQ\\|TAG\\)_EDIT\\|MERGE_\\|\\)MSG\
-\\|BRANCH_DESCRIPTION\\)\\'")
+\\|\\(BRANCH\\|EDIT\\)_DESCRIPTION\\)\\'")
 
 (eval-after-load 'recentf
   '(add-to-list 'recentf-exclude git-commit-filename-regexp))

@@ -4,7 +4,7 @@
 ;; (current maintainer)
 ;;
 ;; URL: http://github.com/djohnson/inverse-acme-theme
-;; Package-Version: 20170716.1100
+;; Package-Version: 20170821.2156
 ;; Version: 1.0
 ;; Package-Requires: ((autothemer "0.2") (cl-lib "0.5"))
 
@@ -190,6 +190,7 @@
   ;; coq via proof general
   (coq-solve-tactics-face (:foreground acme-light0))
   (proof-tactics-name-face (:foreground acme-light0))
+  (proof-tacticals-name-face (:foreground acme-light0))
   
   ;; linum-relative
   (linum-relative-current-face               (:background acme-dark1 :foreground acme-light4))
