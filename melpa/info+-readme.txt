@@ -40,6 +40,7 @@
    `Info-make-node-unvisited', `info-manual',
    `Info-merge-subnodes',
    `Info-mouse-follow-nearest-node-new-window',
+   `Info-outline-demote', `Info-outline-promote',
    `Info-persist-history-mode' (Emacs 24.4+),
    `Info-save-current-node', `Info-set-breadcrumbs-depth',
    `Info-set-face-for-bookmarked-xref' (Emacs 24.2+),
@@ -50,7 +51,7 @@
    `Info-toggle-fontify-quotations',
    `Info-toggle-fontify-single-quote',
    `Info-toggle-node-access-invokes-bookmark' (Emacs 24.4+),
-   `Info-url-for-node', `Info-virtual-book'.
+   `Info-toc-outline', `Info-url-for-node', `Info-virtual-book'.
 
  Faces defined here:
 
@@ -75,7 +76,7 @@
    `Info-fontify-single-quote-flag',
    `Info-node-access-invokes-bookmark-flag' (Emacs 24.4+),
    `Info-saved-history-file' (Emacs 24.4+), `Info-saved-nodes',
-   `Info-subtree-separator'.
+   `Info-subtree-separator', `Info-toc-outline-no-redundancy-flag'.
 
  Macros defined here:
 
@@ -91,13 +92,15 @@
    `Info-node-name-at-point', `Info-read-bookmarked-node-name',
    `Info-restore-history-list' (Emacs 24.4+),
    `Info-save-history-list' (Emacs 24.4+), `Info-search-beg',
-   `Info-search-end'.
+   `Info-search-end', `Info-toc-outline-find-node',
+   `Info-toc-outline-refontify-links'.
 
  Internal variables defined here:
 
    `Info-breadcrumbs-depth-internal', `info-fontify-emphasis',
    `Info-merged-map', `Info-mode-syntax-table',
-   `info-quotation-regexp', `info-quoted+<>-regexp'.
+   `info-quotation-regexp', `info-quoted+<>-regexp',
+   `Info-toc-outline-map'.
 
 
  ***** NOTE: The following standard faces defined in `info.el'
@@ -157,6 +160,12 @@
  `Info-isearch-search' - Respect restriction to active region.
  `Info-isearch-wrap' - Respect restriction to active region.
 
+
+ ***** NOTE: The following standard function
+             has been REDEFINED HERE:
+
+ `outline-invisible-p' - Fixes Emacs bug #28080.
+
 (@* "Documentation")
 
  Documentation
@@ -211,6 +220,33 @@
      of visits (`s v').  This gives you an easy way to see which
      parts of which Info manuals you have visited most recently and
      how much you have visited them.
+
+ * Editable, outline-enabled tables of contents (TOCs).  Command
+   `Info-toc-outline' (bound to `O') opens a separate Info buffer
+   showing the table of contents (TOC).  This is similar to the
+   standard command `Info-toc' (bound to `T'), but the buffer is
+   cloned from the manual and is in `outline-minor-mode'.  Also,
+   there is no redundancy, by default: each TOC entry is listed
+   only once, not multiple times.  (This is controlled by option
+   `Info-toc-outline-no-redundancy-flag'.)
+
+   You can have any number of such TOCs, for the same manual or for
+   different manuals.
+
+   Outline minor mode lets you hide and show, and promote and
+   demote, various parts of the TOC tree for a manual.  And since
+   the TOC is editable you can make other changes to it: sort parts
+   of it, delete parts of it, duplicate parts of it, move parts
+   aroundin an ad hoc way, and so on.  Info+ makes the outlining
+   commands behave, so that hidden Info text (e.g. markup text such
+   as `*note'...`::' surrounding links) is kept hidden.
+
+   Especially when combined with `Info-persist-history-mode',
+   command `Info-make-node-unvisited' (`C-x DEL', see below), and
+   the Info+ bookmarking enhancements (e.g., special link
+   highlighting and persistently tracking the number of visits per
+   node), `Info-toc-outline' gives you a way to organize access and
+   visibility of a manual's nodes, to reflect how you use it.
 
  * Additional, finer-grained Info highlighting.  This can make a
    big difference in readability.
@@ -322,6 +358,7 @@
    `.'              `Info-save-current-node'
    `a'              `info-apropos'
    `G'              `Info-goto-node-web'
+   `O'              `Info-toc-outline'
    `v'              `Info-virtual-book'
    `mouse-4'        `Info-history-back'
    `mouse-5'        `Info-history-forward'

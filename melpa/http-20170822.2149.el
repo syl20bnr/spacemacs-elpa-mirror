@@ -4,7 +4,7 @@
 
 ;; Author: Mario Rodas <marsam@users.noreply.github.com>
 ;; URL: https://github.com/emacs-pe/http.el
-;; Package-Version: 20170603.1107
+;; Package-Version: 20170822.2149
 ;; Keywords: convenience
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "24.4") (request "0.2.0") (edit-indirect "0.1.4"))
@@ -200,6 +200,9 @@ Used only when was not possible to guess a response content-type."
 (defconst http-header-body-sep-regexp
   (rx line-start (* blank) line-end))
 
+(defconst http-variable-decl-regexp
+  (rx line-start (* space) "#+" (group (+ (in "_-" alnum))) ":" (* space) (group (+ not-newline))))
+
 (defvar http-content-type-mode-alist
   '(("text/css"                 . css-mode)
     ("text/xml"                 . xml-mode)
@@ -285,15 +288,14 @@ Used to fontify the response buffer and comment the response headers.")
               (insert-image image))
           (when (stringp data)
             (setq data (decode-coding-string data (or coding-system 'utf-8)))
-            (let* ((text (if http-prettify-response
-                             (condition-case err
-                                 (http-prettify-text data pretty-callback)
-                               (error
-                                (message "Error while prettifying response: %S" err)
-                                data))
-                           data))
-                   (fontified (http-fontify-text text guessed-mode)))
-              (insert fontified)))))
+            (let ((text (or (and http-prettify-response
+                                 (fboundp pretty-callback)
+                                 (with-demoted-errors "Error while prettifying: %S"
+                                   (http-prettify-text data pretty-callback)))
+                            data)))
+              (insert (if (fboundp guessed-mode)
+                          (http-fontify-text text guessed-mode)
+                        text))))))
       (when http-show-response-headers
         (goto-char (if http-show-response-headers-top (point-min) (point-max)))
         (or http-show-response-headers-top (insert "\n"))
@@ -314,13 +316,34 @@ Used to fontify the response buffer and comment the response headers.")
 
 (defun http-prettify-text (text object)
   "Prettify using TEXT using calling OBJECT in a temporal buffer."
-  (if (not (functionp object))
-      text
-    (with-temp-buffer
-      (erase-buffer)
-      (insert text)
-      (funcall object)
-      (buffer-string))))
+  (with-temp-buffer
+    (insert text)
+    (funcall object)
+    (buffer-string)))
+
+(defun http-collect-variables (&optional limit)
+  "Collect variable declarations before current point until LIMIT."
+  (save-excursion
+    (cl-loop while (re-search-backward http-variable-decl-regexp limit 'no-error)
+             collect (cons (match-string-no-properties 1) (match-string-no-properties 2)))))
+
+(defun http-string-format (template &optional extra)
+  "Format TEMPLATE with the function and EXTRA."
+  (let ((saved-match-data (match-data)))
+    (unwind-protect
+        (replace-regexp-in-string
+         ":\\([-_[:alnum:]]+\\)"
+         (lambda (md)
+           (let ((var (match-string 1 md))
+                 (replacer-match-data (match-data)))
+             (unwind-protect
+                 (let ((value (assoc-default var extra)))
+                   (if value (format "%s" value) (signal 's-format-resolve md)))
+               (set-match-data replacer-match-data))))
+         template
+         ;; Need literal to make sure it works
+         t t)
+      (set-match-data saved-match-data))))
 
 (defun http-mode-from-headers (headers)
   "Return a major mode from HEADERS based on its content-type."
@@ -328,24 +351,23 @@ Used to fontify the response buffer and comment the response headers.")
       (rfc2231-parse-string (or (assoc-default "content-type" headers) ""))
     (or (assoc-default ctype http-content-type-mode-alist) #'normal-mode)))
 
-(defun http-in-request-line-p (&optional pos)
-  "Whether current point POS is at the request line."
+(defun http-in-context (&optional pos)
+  "Return the context of the point POS."
   (save-excursion
     (and pos (goto-char pos))
-    (beginning-of-line)
-    (looking-at http-request-line-regexp)))
-
-(defun http-in-headers-line-p (&optional pos)
-  "Whether current point POS is at the request headers line."
-  (save-excursion
-    (and pos (goto-char pos))
-    (beginning-of-line)
-    (looking-at http-header-regexp)))
+    (forward-line 0)
+    (cond
+     ((looking-at-p http-header-regexp)        'header)
+     ((looking-at-p http-request-line-regexp)  'request)
+     ((looking-at-p http-variable-decl-regexp) 'variable)
+     ((looking-at-p "^[ \t]*#")                'comment)
+     (t                                        'body))))
 
 (defun http-indent-line ()
   "Indent current line as http mode."
   (interactive)
-  (and (or (http-in-request-line-p) (http-in-headers-line-p)) (indent-line-to 0)))
+  (cl-case (http-in-context)
+    ((header request variable comment) (indent-line-to 0))))
 
 ;; Stolen from `ansible-doc'.
 (defun http-fontify-text (text mode)
@@ -353,29 +375,25 @@ Used to fontify the response buffer and comment the response headers.")
 
 Return a fontified copy of TEXT."
   ;; Graciously inspired by http://emacs.stackexchange.com/a/5408/227
-  (if (not (fboundp mode))
-      text
-    (with-temp-buffer
-      (erase-buffer)
-      (insert text)
-      ;; Run mode without any hooks
-      (delay-mode-hooks
-        (funcall mode)
-        (font-lock-mode))
-      (if (fboundp 'font-lock-ensure)
-          (font-lock-ensure)
-        (with-no-warnings
-          ;; Suppress warning about non-interactive use of
-          ;; `font-lock-fontify-buffer' in Emacs 25.
-          (font-lock-fontify-buffer)))
-      ;; Convert `face' to `font-lock-face' to play nicely with font lock
-      (goto-char (point-min))
-      (while (not (eobp))
-        (let ((pos (point)))
-          (goto-char (next-single-property-change pos 'face nil (point-max)))
-          (put-text-property pos (point) 'font-lock-face
-                             (get-text-property pos 'face))))
-      (buffer-string))))
+  (with-temp-buffer
+    (insert text)
+    (delay-mode-hooks                   ; Run mode without any hooks
+      (funcall mode)
+      (font-lock-mode))
+    (if (fboundp 'font-lock-ensure)
+        (font-lock-ensure)
+      (with-no-warnings
+        ;; Suppress warning about non-interactive use of
+        ;; `font-lock-fontify-buffer' in Emacs 25.
+        (font-lock-fontify-buffer)))
+    ;; Convert `face' to `font-lock-face' to play nicely with font lock
+    (goto-char (point-min))
+    (while (not (eobp))
+      (let ((pos (point)))
+        (goto-char (next-single-property-change pos 'face nil (point-max)))
+        (put-text-property pos (point) 'font-lock-face
+                           (get-text-property pos 'face))))
+    (buffer-string)))
 
 (defun http-nav-beginning-of-defun ()
   "Move point to the beginning of a HTTP request definition."
@@ -390,9 +408,10 @@ Return a fontified copy of TEXT."
   "Capture a http request.
 
 Return a list of the form: \(URL TYPE PARAMS DATA HEADERS\)"
-  (let* ((start (http-start-definition))
+  (let* ((vars (http-collect-variables))
+         (start (http-start-definition))
          (type (match-string-no-properties 1))
-         (endpoint (match-string-no-properties 2))
+         (endpoint (http-string-format (match-string-no-properties 2) vars))
          (url (if (and http-hostname (not (string-match-p url-nonrelative-link endpoint)))
                   ;; FIXME: endpoint needs to be escaped here, else
                   ;;        `url-expand-file-name' strips whitespaces
@@ -405,7 +424,12 @@ Return a list of the form: \(URL TYPE PARAMS DATA HEADERS\)"
       (let ((params (and query (http-query-alist query))))
         ;; XXX: remove the query string to make it compatible with `request'
         (setf (url-filename urlobj) path)
-        (cl-multiple-value-bind (headers data) (http-capture-headers-and-body start end)
+        (cl-multiple-value-bind (headers data)
+            ;; TODO: cleanup this
+            (let ((data (http-string-format (buffer-substring-no-properties start end) vars)))
+              (with-temp-buffer
+                (insert data)
+                (http-capture-headers-and-body (point-min) (point-max))))
           (list (url-recreate-url urlobj) type params data headers))))))
 
 ;;;###autoload

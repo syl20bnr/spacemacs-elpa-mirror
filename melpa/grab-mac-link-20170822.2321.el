@@ -15,7 +15,7 @@
 
 ;; Author: Chunyang Xu <xuchunyang.me@gmail.com>
 ;; URL: https://github.com/xuchunyang/grab-mac-link.el
-;; Package-Version: 20170228.1039
+;; Package-Version: 20170822.2321
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: Markdown, mac, hyperlink
@@ -125,7 +125,8 @@ This will use the command `open' with the message URL."
            "set frontmostApplication to path to frontmost application\n"
            "tell application \"Google Chrome\"\n"
            "	set theUrl to get URL of active tab of first window\n"
-           "	set theResult to (get theUrl) & \"::split::\" & (get name of window 1)\n"
+           "	set theTitle to get title of active tab of first window\n"
+           "	set theResult to (get theUrl) & \"::split::\" & theTitle\n"
            "end tell\n"
            "activate application (frontmostApplication as text)\n"
            "set links to {}\n"
