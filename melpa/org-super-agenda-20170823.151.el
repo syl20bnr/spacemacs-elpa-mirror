@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-super-agenda
-;; Package-Version: 20170823.24
+;; Package-Version: 20170823.151
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "25.1") (s "1.10.0") (dash "2.13") (org "9.0") (ht "2.2"))
 ;; Keywords: hypermedia, outlines, Org, agenda
@@ -162,7 +162,7 @@ making it stretch across the screen."
 
 (defmacro org-super-agenda--when-with-marker-buffer (form &rest body)
   "When FORM is a marker, run BODY in the marker's buffer, with point starting at it."
-  (declare (indent defun))
+  (declare (indent defun) (debug (form body)))
   (org-with-gensyms (marker)
     `(let ((,marker ,form))
        (when (markerp ,marker)
@@ -357,16 +357,17 @@ DATE', where DATE is a date string that
                         ((or 'before 'on 'after)
                          (org-time-string-to-absolute (second args))))))
   :test (org-super-agenda--when-with-marker-buffer (org-super-agenda--get-marker item)
-          (when-let ((entry-time (org-entry-get (point) "DEADLINE")))
+          (let ((entry-time (org-entry-get (point) "DEADLINE")))
             (pcase (car args)
-              ('t t)  ; Has any deadline info
+              ('t entry-time)  ; Has any deadline info
               ((pred not) (not entry-time))  ; Has no deadline info
               (comparison
-               (let ((entry-time (org-time-string-to-absolute entry-time))
-                     (compare-date (pcase comparison
-                                     ((or 'past 'today 'future) today)
-                                     ((or 'before 'on 'after) target-date))))
-                 (org-super-agenda--compare-dates comparison entry-time compare-date)))))))
+               (when entry-time
+                 (let ((entry-time (org-time-string-to-absolute entry-time))
+                       (compare-date (pcase comparison
+                                       ((or 'past 'today 'future) today)
+                                       ((or 'before 'on 'after) target-date))))
+                   (org-super-agenda--compare-dates comparison entry-time compare-date))))))))
 
 (org-super-agenda--defgroup scheduled
   "Group items that are scheduled.
@@ -393,16 +394,17 @@ DATE', where DATE is a date string that
                         ((or 'before 'on 'after)
                          (org-time-string-to-absolute (second args))))))
   :test (org-super-agenda--when-with-marker-buffer (org-super-agenda--get-marker item)
-          (when-let ((entry-time (org-entry-get (point) "SCHEDULED")))
+          (let ((entry-time (org-entry-get (point) "SCHEDULED")))
             (pcase (car args)
-              ('t t)  ; Has any scheduled info
+              ('t entry-time)  ; Has any scheduled info
               ((pred not) (not entry-time))  ; Has no scheduled info
               (comparison
-               (let ((entry-time (org-time-string-to-absolute entry-time))
-                     (compare-date (pcase comparison
-                                     ((or 'past 'today 'future) today)
-                                     ((or 'before 'on 'after) target-date))))
-                 (org-super-agenda--compare-dates comparison entry-time compare-date)))))))
+               (when entry-time
+                 (let ((entry-time (org-time-string-to-absolute entry-time))
+                       (compare-date (pcase comparison
+                                       ((or 'past 'today 'future) today)
+                                       ((or 'before 'on 'after) target-date))))
+                   (org-super-agenda--compare-dates comparison entry-time compare-date))))))))
 
 (defun org-super-agenda--compare-dates (comparison date-a date-b)
   "Compare DATE-A and DATE-B according to COMPARISON.
