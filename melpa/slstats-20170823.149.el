@@ -2,8 +2,8 @@
 ;; Copyright 2017 by Dave Pearson <davep@davep.org>
 
 ;; Author: Dave Pearson <davep@davep.org>
-;; Version: 1.9
-;; Package-Version: 20170822.904
+;; Version: 1.10
+;; Package-Version: 20170823.149
 ;; Keywords: games
 ;; URL: https://github.com/davep/slstats.el
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
@@ -156,9 +156,15 @@ SEP is an optional separator that is passed to `split-string'."
   (format slstats-texture-url uuid))
 
 (defmacro slstats-with-stats (name data &rest body)
-  "Check that DATA is good, execute BODY if it is.
+  "Execute code, after having checked some SL stats are good.
 
-Throws an error if the data doesn't look good."
+NAME is the name of the stats being checked; this will be used
+when reporting any kind of error.
+
+DATA is the stats data being checked and used.
+
+BODY will be executed if everything is good, the final value will
+be returned as the result."
   (declare (indent 2))
   `(let ((,name ,data))
      (if ,name

@@ -2,15 +2,24 @@
 ;; Copyright 2017 by Dave Pearson <davep@davep.org>
 
 ;; Author: Dave Pearson <davep@davep.org>
-;; Version: 1.9
-;; Package-Version: 1.9
+;; Version: 1.10
+;; Package-Version: 1.10
 ;; Keywords: games
 ;; URL: https://github.com/davep/slstats.el
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
 
-;; slstats.el is free software distributed under the terms of the GNU
-;; General Public Licence, version 2 or (at your option) any later version.
-;; For details see the file COPYING.
+;; This program is free software: you can redistribute it and/or modify it
+;; under the terms of the GNU General Public License as published by the
+;; Free Software Foundation, either version 3 of the License, or (at your
+;; option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+;; Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License along
+;; with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 ;;
@@ -147,9 +156,15 @@ SEP is an optional separator that is passed to `split-string'."
   (format slstats-texture-url uuid))
 
 (defmacro slstats-with-stats (name data &rest body)
-  "Check that DATA is good, execute BODY if it is.
+  "Execute code, after having checked some SL stats are good.
 
-Throws an error if the data doesn't look good."
+NAME is the name of the stats being checked; this will be used
+when reporting any kind of error.
+
+DATA is the stats data being checked and used.
+
+BODY will be executed if everything is good, the final value will
+be returned as the result."
   (declare (indent 2))
   `(let ((,name ,data))
      (if ,name
@@ -233,7 +248,6 @@ This includes information available about the state of the grid and the SL econo
   (let ((lab-stats (slstats-load-lab-data))
         (grid-size (slstats-load-grid-size-data))
         (grid-conc (slstats-load-concurrency-data)))
-    (message "%s" lab-stats)
     (if (and lab-stats grid-size grid-conc)
         (with-help-window "*Second Life Stats*"
           (with-current-buffer standard-output

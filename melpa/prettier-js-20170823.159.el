@@ -1,7 +1,7 @@
 ;;; prettier-js.el --- Minor mode to format JS code on file save
 
 ;; Version: 0.1.0
-;; Package-Version: 20170712.2334
+;; Package-Version: 20170823.159
 
 ;; Copyright (c) 2014 The go-mode Authors. All rights reserved.
 ;; Portions Copyright (c) 2015-present, Facebook, Inc. All rights reserved.
@@ -186,7 +186,7 @@ a `before-save-hook'."
                              prettier-js-command bufferfile (list (list :file outputfile) errorfile)
                              nil (append prettier-js-args width-args (list "--stdin" "--stdin-filepath" buffer-file-name))))
                (progn
-                 (call-process-region (point-min) (point-max) "diff" nil patchbuf nil "-n" "-"
+                 (call-process-region (point-min) (point-max) "diff" nil patchbuf nil "-n" "--strip-trailing-cr" "-"
                                       outputfile)
                  (prettier-js--apply-rcs-patch patchbuf)
                  (message "Applied prettier with args `%s'" prettier-js-args)
@@ -203,7 +203,7 @@ a `before-save-hook'."
 ;;;###autoload
 (define-minor-mode prettier-js-mode
   "Runs prettier on file save when this mode is turned on"
-  :lighter " prettier"
+  :lighter " Prettier"
   :global nil
   (if prettier-js-mode
       (add-hook 'before-save-hook 'prettier-js nil 'local)

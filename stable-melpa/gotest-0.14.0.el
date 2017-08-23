@@ -2,13 +2,13 @@
 
 ;; Author: Nicolas Lamirault <nicolas.lamirault@gmail.com>
 ;; URL: https://github.com/nlamirault/gotest.el
-;; Package-Version: 0.13.0
-;; Version: 0.13.0
+;; Package-Version: 0.14.0
+;; Version: 0.14.0
 ;; Keywords: languages, go, tests
 
-;; Package-Requires: ((emacs "24.3") (s "1.11.0") (f "0.19.0") (go-mode "1.4.0"))
+;; Package-Requires: ((emacs "24.3") (s "1.11.0") (f "0.19.0") (go-mode "1.5.0"))
 
-;; Copyright (C) 2014, 2015, 2016 Nicolas Lamirault <nicolas.lamirault@gmail.com>
+;; Copyright (C) 2014, 2015, 2016, 2017 Nicolas Lamirault <nicolas.lamirault@gmail.com>
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -168,7 +168,7 @@ arguments in that order.")
   '((go-test-testing . ("^\t\\([[:alnum:]-_/.]+\\.go\\):\\([0-9]+\\): .*$" 1 2)) ;; stdlib package testing
     (go-test-testify . ("^\tLocation:\t\\([[:alnum:]-_/.]+\\.go\\):\\([0-9]+\\)$" 1 2)) ;; testify package assert
     (go-test-gopanic . ("^\t\\([[:alnum:]-_/.]+\\.go\\):\\([0-9]+\\) \\+0x\\(?:[0-9a-f]+\\)" 1 2)) ;; panic()
-    (go-test-compile . ("^\\([[:alnum:]-_/.]+\\.go\\):\\([0-9]+\\):\\([0-9]+\\): .*$" 1 2 3)) ;; go compiler
+    (go-test-compile . ("^\\([[:alnum:]-_/.]+\\.go\\):\\([0-9]+\\):\\(?:\\([0-9]+\\):\\)? .*$" 1 2 3)) ;; go compiler
     (go-test-linkage . ("^\\([[:alnum:]-_/.]+\\.go\\):\\([0-9]+\\): undefined: .*$" 1 2))) ;; go linker
   "Alist of values for `go-test-compilation-error-regexp-alist'.
 See also: `compilation-error-regexp-alist-alist'.")
@@ -480,7 +480,10 @@ For example, if the current buffer is `foo.go', the buffer for
   (interactive)
   (if (go-test--is-gb-project)
       (go-test--gb-start "all -test.v=true")
-    (go-test--go-test "./...")))
+    (let ((packages (cl-remove-if (lambda (s) (s-contains? "/vendor/" s))
+                                  (s-split "\n"
+                                           (shell-command-to-string "go list ./...")))))
+      (go-test--go-test (s-join " " packages)))))
 
 
 
@@ -528,7 +531,7 @@ For example, if the current buffer is `foo.go', the buffer for
     (let ((args (s-concat
                  "--coverprofile="
                  (expand-file-name
-                  (read-file-name "Coverage file" nil "cover.out")) " ./...")))
+                  (read-file-name "Coverage file" nil "cover.out")) " ./.")))
       (go-test--go-test args))))
 
 
