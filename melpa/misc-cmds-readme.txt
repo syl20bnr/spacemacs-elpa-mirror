@@ -15,15 +15,16 @@
    `indent-rigidly-tab-stops', `indirect-buffer',
    `kill-buffer-and-its-windows', `list-colors-nearest',
    `list-colors-nearest-color-at', `mark-buffer-after-point',
-   `mark-buffer-before-point', `mark-line', `narrow-to-line',
-   `next-buffer-repeat' (Emacs 22+), `old-rename-buffer',
-   `previous-buffer-repeat' (Emacs 22+), `quit-window-delete',
-   `recenter-top-bottom', `recenter-top-bottom-1',
-   `recenter-top-bottom-2', `region-length', `region-to-buffer',
-   `region-to-file', `resolve-file-name',
-   `reversible-transpose-sexps', `revert-buffer-no-confirm',
-   `selection-length', `split-para-at-sentence-ends' (Emacs 21+),
-   `split-para-mode' (Emacs 21+), `switch-to-alternate-buffer',
+   `mark-buffer-before-point', `mark-line', `mark-whole-word',
+   `narrow-to-line', `next-buffer-repeat' (Emacs 22+),
+   `old-rename-buffer', `previous-buffer-repeat' (Emacs 22+),
+   `quit-window-delete', `recenter-top-bottom',
+   `recenter-top-bottom-1', `recenter-top-bottom-2',
+   `region-length', `region-to-buffer', `region-to-file',
+   `resolve-file-name', `reversible-transpose-sexps',
+   `revert-buffer-no-confirm', `selection-length',
+   `split-para-at-sentence-ends' (Emacs 21+), `split-para-mode'
+   (Emacs 21+), `switch-to-alternate-buffer',
    `switch-to-alternate-buffer-other-window',
    `to-indentation-repeat-backward',
    `to-indentation-repeat-forward', `undo-repeat' (Emacs 24.3+),
@@ -68,6 +69,7 @@
   (global-set-key "\M-m"           'to-indentation-repeat-backward)
   (global-set-key "\M-n"           'to-indentation-repeat-forward)
 
+  (global-set-key [remap mark-word]       'mark-whole-word)
   (global-set-key [remap previous-buffer] 'previous-buffer-repeat)
   (global-set-key [remap next-buffer]     'next-buffer-repeat)
   (global-set-key [remap undo]            'undo-repeat)

@@ -21,7 +21,7 @@
 ;; -------------------------------------------------------------------------------------------
 
 ;; URL: http://github.com/ananthakumaran/typescript.el
-;; Package-Version: 20170813.1541
+;; Package-Version: 20170823.1000
 ;; Version: 0.1
 ;; Keywords: typescript languages
 ;; Package-Requires: ()
@@ -692,7 +692,6 @@ macro as normal text."
 (defun typescript--re-search-backward-inner (regexp &optional bound count)
   "Auxiliary function for `typescript--re-search-backward'."
   (let ((parse)
-        str-terminator
         (orig-macro-start
          (save-excursion
            (and (typescript--beginning-of-macro)
@@ -703,22 +702,18 @@ macro as normal text."
                  (save-excursion (backward-char) (looking-at "/[/*]")))
         (forward-char))
       (setq parse (syntax-ppss))
-      (cond ((setq str-terminator (nth 3 parse))
-             (when (eq str-terminator t)
-               (setq str-terminator ?/))
-             (re-search-backward
-              (concat "\\([^\\]\\|^\\)" (string str-terminator))
-              (save-excursion (beginning-of-line) (point)) t))
-            ((nth 7 parse)
-             (goto-char (nth 8 parse)))
-            ((or (nth 4 parse)
-                 (and (eq (char-before) ?/) (eq (char-after) ?*)))
-             (re-search-backward "/\\*"))
-            ((and (not (and orig-macro-start
-                            (>= (point) orig-macro-start)))
-                  (typescript--beginning-of-macro)))
-            (t
-             (setq count (1- count))))))
+      (cond
+       ;; If we are in a comment or a string, jump back to the start
+       ;; of the comment or string.
+       ((nth 8 parse)
+        (goto-char (nth 8 parse)))
+       ((and (eq (char-before) ?/) (eq (char-after) ?*))
+        (re-search-backward "/\\*"))
+       ((and (not (and orig-macro-start
+                       (>= (point) orig-macro-start)))
+             (typescript--beginning-of-macro)))
+       (t
+        (setq count (1- count))))))
   (point))
 
 

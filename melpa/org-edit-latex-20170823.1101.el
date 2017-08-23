@@ -4,7 +4,7 @@
 
 ;; Author: James Wong <jianwang.academic@gmail.com>
 ;; URL: https://github.com/et2010/org-edit-latex
-;; Package-Version: 20170816.114
+;; Package-Version: 20170823.1101
 ;; Keywords: org, LaTeX
 ;; Version: 0.8.0
 ;; Package-Requires: ((emacs "24.4") (auctex "11.90"))
@@ -100,12 +100,12 @@
         (advice-add #'org-edit-special :around #'org-edit-latex--wrap-maybe)
         (advice-add #'org-edit-src-exit :around #'org-edit-latex--unwrap-maybe)
         (when org-edit-latex-show-hint
-          (add-hook 'post-command-hook #'org-edit-latex-smart-hint t t))
+          (setq-local eldoc-documentation-function 'org-edit-latex-hinter))
         (org-edit-latex-create-master-maybe)
         (add-hook 'org-src-mode-hook #'org-edit-latex--set-TeX-master))
     (advice-remove #'org-edit-special #'org-edit-latex--wrap-maybe)
     (advice-remove #'org-edit-src-exit #'org-edit-latex--unwrap-maybe)
-    (remove-hook 'post-command-hook #'org-edit-latex-smart-hint t)
+    (setq-local eldoc-documentation-function 'org-eldoc-documentation-function)
     (remove-hook 'org-src-mode-hook #'org-edit-latex--set-TeX-master)))
 
 
@@ -310,14 +310,19 @@ latex-environment."
           (apply oldfun args)))
     (apply oldfun args)))
 
-;;;###autoload
-(defun org-edit-latex-smart-hint ()
-  "Show a hint message in echo-area when user is in LaTeX environment."
-  (if (and (equal major-mode 'org-mode)
-           (member (car (org-element-context))
-                   '(latex-fragment latex-environment)))
-      (message (substitute-command-keys
-                "Enter edit buffer with `\\[org-edit-special]'."))))
+(defun org-edit-latex-hinter ()
+  "An Eldoc documentation function used as a replacement of the
+default one in Org mode."
+  (or (org-eldoc-documentation-function)
+      (org-edit-latex-eldoc-function)))
+
+(defun org-edit-latex-eldoc-function ()
+  "Eldoc function used to generate a hint when cursor on latex."
+  (let ((ele-type (org-element-type (org-element-context))))
+    (when (or (eq ele-type 'latex-fragment)
+              (eq ele-type 'latex-environment))
+      (substitute-command-keys
+       "Enter edit buffer with `\\[org-edit-special]'."))))
 
 
 (provide 'org-edit-latex)

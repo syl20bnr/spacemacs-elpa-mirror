@@ -5,7 +5,7 @@
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;;         Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/purcell/package-lint
-;; Package-Version: 20170820.524
+;; Package-Version: 20170823.919
 ;; Keywords: lisp
 ;; Version: 0
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
@@ -245,6 +245,7 @@ This is bound dynamically while the checks run.")
           (widen)
           (package-lint--check-reserved-keybindings)
           (package-lint--check-keywords-list)
+          (package-lint--check-url-header)
           (package-lint--check-package-version-present)
           (package-lint--check-lexical-binding-is-on-first-line)
           (package-lint--check-objects-by-regexp
@@ -355,6 +356,22 @@ Instead it should use `user-emacs-directory' or `locate-user-emacs-file'."
         (package-lint--error
          line-no 1 'warning
          (format "You should include standard keywords: see the variable `finder-known-keywords'."))))))
+
+(defun package-lint--check-url-header ()
+  "Verify that the package has an HTTPS or HTTP URL header."
+  (if (package-lint--goto-header "URL")
+      (let ((url (match-string 3))
+            (url-start (match-beginning 3)))
+        (unless (and (equal (thing-at-point 'url) url)
+                     (string-match-p "^https?://" url))
+          (package-lint--error
+           (line-number-at-pos)
+           (1+ (- url-start (line-beginning-position)))
+           'error
+           "Package URLs should be a single HTTPS or HTTP URL.")))
+    (package-lint--error
+     1 1 'error
+     "Package should have a URL header.")))
 
 (defun package-lint--check-dependency-list ()
   "Check the contents of the \"Package-Requires\" header.
@@ -626,7 +643,7 @@ DESC is a struct as returned by `package-buffer-info'."
        "The package summary is too long. It should be at most 50 characters.")))
     (when (save-match-data
             (let ((case-fold-search t))
-              (and (string-match "\\<emacs\\>" summary)
+              (and (string-match "[^.]\\<emacs\\>" summary)
                    (not (string-match-p "[[:space:]]+lisp" summary (match-end 0))))))
       (package-lint--error
        1 1
