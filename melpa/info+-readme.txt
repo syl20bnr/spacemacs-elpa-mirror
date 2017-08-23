@@ -49,8 +49,8 @@
    `Info-toggle-fontify-emphasis',
    `Info-toggle-fontify-quotations',
    `Info-toggle-fontify-single-quote',
-   `Info-toggle-node-access-invokes-bookmark', `Info-url-for-node',
-   `Info-virtual-book'.
+   `Info-toggle-node-access-invokes-bookmark' (Emacs 24.4+),
+   `Info-url-for-node', `Info-virtual-book'.
 
  Faces defined here:
 
@@ -73,7 +73,7 @@
    `Info-fontify-emphasis-flag', `Info-fontify-quotations-flag',
    `Info-fontify-reference-items-flag',
    `Info-fontify-single-quote-flag',
-   `Info-node-access-invokes-bookmark-flag',
+   `Info-node-access-invokes-bookmark-flag' (Emacs 24.4+),
    `Info-saved-history-file' (Emacs 24.4+), `Info-saved-nodes',
    `Info-subtree-separator'.
 
@@ -143,7 +143,7 @@
     2. If key's command not found, then `Info-search's for key
        sequence in text and displays message about repeating.
  `Info-goto-node' - Respect option
-    `Info-node-access-invokes-bookmark-flag' (Emacs 24.2+).
+    `Info-node-access-invokes-bookmark-flag' (Emacs 24.4+).
  `Info-history' - A prefix arg clears the history.
  `Info-insert-dir' -
     Added optional arg NOMSG to inhibit showing progress msgs.

@@ -4,7 +4,7 @@
 
 ;; Author: Fritz Stelzer <brotzeitmacher@gmail.com>
 ;; URL: https://github.com/brotzeitmacher/helm-xref
-;; Package-Version: 20170725.546
+;; Package-Version: 20170822.1708
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "25.1") (helm "1.9.4"))
 
@@ -72,20 +72,20 @@ Use FUNC to display buffer."
     :candidate-transformer (lambda (candidates)
                              (let (group
                                    result)
-                               (loop for x in (reverse (cl-sort candidates #'string-lessp :key #'car))
-                                     do (cond
-                                         ((or (= (length group) 0)
-                                              (string= (nth 0 (split-string (car x) ":"))
-                                                       (nth 0 (split-string (car (nth -1 group)) ":"))))
-                                          (push x group))
-                                         (t
-                                          (dolist (xref (cl-sort group #'> :key #'cdr))
-                                            (push xref result))
-                                          (setq group nil)
-                                          (push x group)))
-                                     finally (when (> (length group) 0)
-                                               (dolist (xref (cl-sort group #'> :key #'cdr))
-                                                 (push xref result))))
+                               (cl-loop for x in (reverse (cl-sort candidates #'string-lessp :key #'car))
+					do (cond
+					    ((or (= (length group) 0)
+						 (string= (nth 0 (split-string (car x) ":"))
+							  (nth 0 (split-string (car (nth -1 group)) ":"))))
+					     (push x group))
+					    (t
+					     (dolist (xref (cl-sort group #'> :key #'cdr))
+					       (push xref result))
+					     (setq group nil)
+					     (push x group)))
+					finally (when (> (length group) 0)
+						  (dolist (xref (cl-sort group #'> :key #'cdr))
+						    (push xref result))))
                                result))
     :candidate-number-limit 9999))
 

@@ -3,9 +3,9 @@
 ;; Author: Joshua Cole <joshuafcole@gmail.com>
 ;; Maintainer: Joshua Cole <joshuafcole@gmail.com>
 ;; Created: 28 Jun 2017
-;; Modified: 21 Aug 2017
-;; Version: 0.1.2
-;; Package-Version: 20170821.2028
+;; Modified: 22 Aug 2017
+;; Version: 0.1.3
+;; Package-Version: 20170822.1531
 ;; Package-Requires: ((emacs "25") (polymode "1.0") (markdown-mode "2.0"))
 ;; Keywords: languages wp tools
 ;; URL: https://github.com/witheve/emacs-eve-mode
@@ -229,11 +229,6 @@
 
 (define-polymode eve-future-mode eve-pm-poly-eve)
 (define-polymode eve-mode eve-pm-poly-markdown-eve)
-
-(setq auto-mode-alist
-      (append
-       '(("\\.eve\\'" . eve-mode))))
-
 
 ;;; FIXES:
 ;; source <https://github.com/vspinu/polymode/blob/master/modes/poly-markdown.el>

@@ -5,7 +5,7 @@
 ;;
 ;; Author: Arun I <arunisaac@systemreboot.net>
 ;; Version: 0.3
-;; Package-Version: 20170613.1342
+;; Package-Version: 20170822.1432
 ;; Keywords: data
 ;; Homepage: https://git.systemreboot.net/exiftool.el
 ;; Package-Requires: ((emacs "25"))
@@ -107,7 +107,7 @@ value. If no TAGS are specified, read all tags from FILE.
 
 If no TAGS are specified, copy all tags from SOURCE."
   (apply 'exiftool-command
-	 "-overwrite_original"
+	 "-m" "-overwrite_original"
 	 "-tagsFromFile" source
 	 (append
 	  (if tags
