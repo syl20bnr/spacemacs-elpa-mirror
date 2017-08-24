@@ -3,11 +3,11 @@
 ;; Copyright (C) 2016 Ivan Malison
 
 ;; Author: Ivan Malison <IvanMalison@gmail.com>
-;; Keywords: github search clone api gh magit
-;; Package-Version: 20160822.1328
+;; Keywords: github search clone api gh magit vc tools
+;; Package-Version: 20170823.2023
 ;; URL: https://github.com/IvanMalison/github-search
 ;; Version: 0.0.1
-;; Package-Requires: ((magit "2.1.0") (gh "1.0.0"))
+;; Package-Requires: ((magit "0.8.1") (gh "1.0.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
