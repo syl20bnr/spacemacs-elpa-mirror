@@ -3,7 +3,7 @@
 ;; Maintainer: Matthew Bauer <mjbauer95@gmail.com>
 ;; Homepage: https://github.com/matthewbauer/nix-mode
 ;; Version: 1.2.1
-;; Package-Version: 20170811.1927
+;; Package-Version: 20170824.815
 ;; Keywords: nix, languages, tools, unix
 ;; Package-Requires: ((emacs "24.3"))
 
@@ -484,9 +484,6 @@ The hook `nix-mode-hook' is run when Nix mode is started.
   (setq-local adaptive-fill-mode t)
   (setq-local paragraph-start "[ \t]*\\(#+[ \t]*\\)?$")
   (setq-local paragraph-separate paragraph-start)
-
-  ;; Case sensitive searching
-  (setq-local case-fold-search nil)
 
   (easy-menu-add nix-mode-menu nix-mode-map))
 

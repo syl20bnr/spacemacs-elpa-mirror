@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 by Bailey Ling
 ;; Author: Bailey Ling
 ;; URL: https://github.com/bling/fzf.el
-;; Package-Version: 20170527.2120
+;; Package-Version: 20170824.904
 ;; Filename: fzf.el
 ;; Description: A front-end for fzf
 ;; Created: 2015-09-18
@@ -38,6 +38,7 @@
 ;;
 ;; M-x fzf
 ;; M-x fzf-directory
+;; M-x fzf-git
 ;;
 ;;; Code:
 
@@ -65,6 +66,20 @@
   :type 'bool
   :group 'fzf)
 
+(defcustom fzf/directory-start nil
+  "The path of the default start directory for fzf-directory."
+  :type 'string
+  :group 'fzf)
+
+(require 'cl)
+(defun* fzf/get-closest-git (&optional (file ".git"))
+  (let ((root (expand-file-name "/")))
+    (loop for d = default-directory
+          then (expand-file-name ".." d)
+          if (file-exists-p
+	      (expand-file-name file d)) return d
+          if (equal d root) return nil)))
+
 (defun fzf/after-term-handle-exit (process-name msg)
   (let* ((text (buffer-substring-no-properties (point-min) (point-max)))
          (lines (split-string text "\n" t "\s*>\s+"))
@@ -91,7 +106,6 @@
       (make-term "fzf" fzf/executable))
     (switch-to-buffer buf)
     (linum-mode 0)
-    (set-window-margins nil 1)
 
     ;; disable various settings known to cause artifacts, see #1 for more details
     (setq-local scroll-margin 0)
@@ -114,10 +128,19 @@
     (fzf/start default-directory)))
 
 ;;;###autoload
-(defun fzf-directory (directory)
+(defun fzf-directory ()
   "Starts a fzf session at the specified directory."
-  (interactive "D")
-  (fzf/start directory))
+  (interactive)
+  (fzf/start (ido-read-directory-name "Directory: " fzf/directory-start)))
+
+;;;###autoload
+(defun fzf-git ()
+  "Starts a fzf session at the root of the current git."
+  (interactive)
+  (setq gitpath (fzf/get-closest-git))
+  (if gitpath
+      (fzf/start gitpath)
+    (fzf/start (ido-read-directory-name "Directory: "))))
 
 (provide 'fzf)
 ;;; fzf.el ends here

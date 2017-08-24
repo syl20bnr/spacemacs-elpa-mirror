@@ -3,10 +3,10 @@
 ;; Author: Ricardo Banffy <rbanffy@gmail.com>
 ;; Maintainer: Ricardo Banffy <rbanffy@gmail.com>
 ;; URL: https://github.com/rbanffy/green-screen-emacs
-;; Package-Version: 20170824.548
-;; Package-X-Original-Version: 20170706.1404
+;; Package-Version: 20170824.728
+;; Package-X-Original-Version: 20170824.1427
 ;; Keywords: faces, theme
-;; Version: 1.0.1a
+;; Version: 1.0.23
 
 ;; Copyright (C) 2017  Ricardo Bánffy
 
@@ -66,7 +66,7 @@
  '(font-lock-constant-face ((t (:foreground "#BFFF7F" :weight bold))))
  '(font-lock-doc-face ((t (:inherit (font-lock-string-face)))))
  '(font-lock-function-name-face ((t (:foreground "#407F00" :weight normal))))
- '(font-lock-keyword-face ((t (:foreground "b0ff00" :weight extra-bold))))
+ '(font-lock-keyword-face ((t (:foreground "#A6FF4C" :weight extra-bold))))
  '(font-lock-negation-char-face ((t nil)))
  '(font-lock-regexp-grouping-backslash ((t (:inherit (bold)))))
  '(font-lock-regexp-grouping-construct ((t (:inherit (bold)))))
@@ -101,7 +101,7 @@
  )
 
 (custom-theme-set-variables 'green-screen
- 'fci-rule-color "dark green")
+ '(fci-rule-color "dark green"))
 
 (provide-theme 'green-screen)
 ;;; green-screen-theme.el ends here
