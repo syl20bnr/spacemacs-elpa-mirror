@@ -1,8 +1,8 @@
 ;;; scheme-complete.el --- Smart auto completion for Scheme in Emacs
 
 ;;; Author: Alex Shinn
-;;; Version: 0.9.6
-;; Package-Version: 20170410.617
+;;; Version: 0.9.7
+;; Package-Version: 20170824.713
 
 ;;; This code is written by Alex Shinn and placed in the Public
 ;;; Domain.  All warranties are disclaimed.
@@ -61,6 +61,8 @@
 ;;; That's all there is to it.
 
 ;;; History:
+;;;  0.9.7: 2017/08/24 - improving caching, adding some missing (scheme char)
+;;;                       bindings
 ;;;  0.9.6: 2017/04/10 - fix possible inf loop in enclosing-2-sexp-prefixes
 ;;;  0.9.5: 2017/04/02 - completiong for only/except/export, better caching
 ;;;  0.9.4: 2017/04/01 - don't open non-existant files
@@ -483,12 +485,28 @@ at that location, and `beep' will just beep and do nothing."
     ((scheme case-lambda)
      (case-lambda (syntax (clauses \.\.\.) procedure)))
     ((scheme char)
+     (digit-value (lambda (ch) n))
+     (char-downcase (lambda (ch) ch))
+     (char-foldcase (lambda (ch) ch))
+     (char-upcase (lambda (ch) ch))
      (char-alphabetic? (lambda (ch) bool))
+     (char-lower-case? (lambda (ch) bool))
+     (char-upper-case? (lambda (ch) bool))
+     (char-numeric? (lambda (ch) bool))
+     (char-whitespace? (lambda (ch) bool))
      (char-ci<=? (lambda (ch1 ch2 \.\.\.) bool))
      (char-ci<? (lambda (ch1 ch2 \.\.\.) bool))
      (char-ci=? (lambda (ch1 ch2 \.\.\.) bool))
      (char-ci>=? (lambda (ch1 ch2 \.\.\.) bool))
-     (char-ci>? (lambda (ch1 ch2 \.\.\.) bool)))
+     (char-ci>? (lambda (ch1 ch2 \.\.\.) bool))
+     (string-downcase (lambda (str) str))
+     (string-foldcase (lambda (str) str))
+     (string-upcase (lambda (str) str))
+     (string-ci<=? (lambda (str1 str2 \.\.\.) bool))
+     (string-ci<? (lambda (str1 str2 \.\.\.) bool))
+     (string-ci=? (lambda (str1 str2 \.\.\.) bool))
+     (string-ci>=? (lambda (str1 str2 \.\.\.) bool))
+     (string-ci>? (lambda (str1 str2 \.\.\.) bool)))
     ((scheme complex)
      (angle (lambda (z) x1))
      (imag-part (lambda (z) x1))
@@ -606,7 +624,7 @@ at that location, and `beep' will just beep and do nothing."
            '((exact->inexact (lambda (z) z))
              (inexact->exact (lambda (z) z)))
            (mapcar #'(lambda (x)
-                       (list x (scheme-env-lookup *scheme-r7rs-info* x)))
+                       (scheme-env-lookup *scheme-r7rs-info* x))
                    *scheme-r5rs-bindings*))))
   *scheme-r5rs-info*)
 
@@ -2747,15 +2765,21 @@ at that location, and `beep' will just beep and do nothing."
                 (or scheme-default-implementation 'chibi)
               impl)))))
 
-(defvar *scheme-complete-module-cache* '()
+(defun scheme-mtime>? (a b)
+  (or (> (car a) (car b))
+      (and (= (car a) (car b))
+           (> (cadr a) (cadr b)))))
+
+(defvar *scheme-complete-module-cache* (make-hash-table :test #'equal)
   "Cache of module exports.")
 
 (defun scheme-complete-clear-cache ()
   "Clear all scheme-complete caches."
   (interactive)
   (setq *scheme-imported-modules* '())
-  (setq *scheme-complete-module-cache* '())
-  (setq *scheme-library-includes-cache* '()))
+  (setq *scheme-complete-module-cache* (make-hash-table :test #'equal))
+  (setq *scheme-library-includes-cache* (make-hash-table :test #'equal))
+  (setq *scheme-include-globals-cache* (make-hash-table :test #'equal)))
 
 (defun scheme-module-exports (mod)
   (unless (member mod *scheme-imported-modules*)
@@ -2782,21 +2806,16 @@ at that location, and `beep' will just beep and do nothing."
    ((and (symbolp mod)
          (cdr (assq mod *scheme-implementation-exports*))))
    (t
-    (let ((cached (assoc mod *scheme-complete-module-cache*)))
-      ;; remove stale caches
-      (when (and cached
-                 (stringp (cadr cached))
-                 (ignore-errors
-                   (let ((mtime (nth 5 (file-attributes (cadr cached))))
-                         (ptime (caddr cached)))
-                     (or (> (car mtime) (car ptime))
-                         (and (= (car mtime) (car ptime))
-                              (> (cadr mtime) (cadr ptime)))))))
-        (setq *scheme-complete-module-cache*
-              (scheme-assoc-delete-all mod *scheme-complete-module-cache*))
-        (setq cached nil))
-      (if cached
-          (cadddr cached)
+    (let ((cached (gethash mod *scheme-complete-module-cache*)))
+      ;; check cache
+      (if (and cached
+               (stringp (car cached))
+               (not
+                (ignore-errors
+                  (let ((mtime (nth 5 (file-attributes (car cached))))
+                        (ptime (cadr cached)))
+                    (scheme-mtime>? mtime ptime)))))
+          (caddr cached)
         ;; (re)compute module exports
         (let ((export-fun
                (if (consp mod)
@@ -2809,11 +2828,12 @@ at that location, and `beep' will just beep and do nothing."
             (let ((res (funcall export-fun mod)))
               (when res
                 (when (and scheme-complete-cache-p (car res))
-                  (push (list mod
-                              (car res)
-                              (nth 5 (file-attributes (car res)))
-                              (cadr res))
-                        *scheme-complete-module-cache*))
+                  (puthash mod
+                           (list
+                            (car res)
+                            (nth 5 (file-attributes (car res)))
+                            (cadr res))
+                           *scheme-complete-module-cache*))
                 (cadr res))))))))))
 
 (defun scheme-module-exports/r7rs (mod)
@@ -3174,7 +3194,7 @@ at that location, and `beep' will just beep and do nothing."
      (if (string-match "[0-9]" (string (char-after)))
          'number
        (let ((sym (scheme-symbol-at-point)))
-         (scheme-env-lookup env sym))))
+         (cadr (scheme-env-lookup env sym)))))
     (t
      nil)))
 
@@ -3644,13 +3664,35 @@ at that location, and `beep' will just beep and do nothing."
             (looking-at "\\s-*(define"))
           (point)))))
 
+(defvar *scheme-include-globals-cache* (make-hash-table :test #'equal)
+  "Cache for included unmodified files.")
+
+(defun scheme-include-globals (file from-file env)
+  (let* ((key (cons file from-file))
+         (mtime (nth 5 (file-attributes file)))
+         (cached (gethash key *scheme-include-globals-cache*)))
+    (if (and cached
+             (not (or (and mtime (scheme-mtime>? mtime (caadr cached)))
+                      (let ((buf (get-buffer file)))
+                        (and buf
+                             (equal (buffer-file-name buf)
+                                    (file-truename file))
+                             (buffer-modified-p buf))))))
+        (caddr cached)
+      (let ((res (ignore-errors
+                   (scheme-with-find-file file
+                     (scheme-current-globals env)))))
+        (puthash key (list mtime res) *scheme-include-globals-cache*)
+        res))))
+
 ;; a little more liberal than -extract-definitions, we try to scan to
 ;; a new top-level form (i.e. a line beginning with an open paren) if
 ;; there's an error during normal sexp movement
 (defun scheme-current-globals (&optional env)
   (let ((res '())
         (in-mod-p nil)
-        (skip (scheme-in-define-name)))
+        (skip (scheme-in-define-name))
+        (from-file (buffer-file-name (current-buffer))))
     (save-excursion
       (goto-char (point-min))
       (or (ignore-errors (end-of-defun) (beginning-of-defun) t)
@@ -3668,9 +3710,7 @@ at that location, and `beep' will just beep and do nothing."
                (let* ((files (cdr (scheme-nth-sexp-at-point 0)))
                       (defs (scheme-append-map
                              #'(lambda (file)
-                                 (ignore-errors
-                                   (scheme-with-find-file file
-                                     (scheme-current-globals env))))
+                                 (scheme-include-globals file from-file env))
                              files)))
                  (setq res (append defs res))))
               ((begin)
@@ -3994,7 +4034,7 @@ at that location, and `beep' will just beep and do nothing."
     (t
      (list '() '()))))
 
-(defvar *scheme-library-includes-cache* nil)
+(defvar *scheme-library-includes-cache* (make-hash-table :test #'equal))
 
 (defun scheme-library-includes/uncached (base &optional flatp)
   (let ((decls '())
@@ -4016,23 +4056,18 @@ at that location, and `beep' will just beep and do nothing."
 
 (defun scheme-library-includes (base &optional flatp)
   (let ((cached (and (not flatp)
-                     (assoc base *scheme-library-includes-cache*))))
-    ;; remove stale caches
-    (when (and cached
-               (ignore-errors
-                 (let ((mtime (nth 5 (file-attributes base)))
-                       (ptime (cadr cached)))
-                   (or (> (car mtime) (car ptime))
-                       (and (= (car mtime) (car ptime))
-                            (> (cadr mtime) (cadr ptime)))))))
-      (setq *scheme-library-includes-cache*
-            (scheme-assoc-delete-all base *scheme-library-includes-cache*))
-      (setq cached nil))
-    (if cached
-        (cddr cached)
+                     (gethash base *scheme-library-includes-cache*))))
+    (if (and cached
+               (not
+                (ignore-errors
+                  (let ((mtime (nth 5 (file-attributes base)))
+                        (ptime (car cached)))
+                    (scheme-mtime>? mtime ptime)))))
+        (cdr cached)
       (let ((res (scheme-library-includes/uncached base flatp)))
-        (push (cons base (cons (nth 5 (file-attributes base)) res))
-              *scheme-library-includes-cache*)
+        (puthash base
+                 (cons (nth 5 (file-attributes base)) res)
+                 *scheme-library-includes-cache*)
         res))))
 
 (defun scheme-library-include-type (base file)

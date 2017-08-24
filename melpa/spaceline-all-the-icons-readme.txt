@@ -31,6 +31,7 @@ this is a list of them and their required packages.
 
 - `bookmark' [`bookmark']                           Whether or not the current buffer has been modified
 - `window-number' [`winum' or `window-numbering']   The current window number
+- `eyebrowse' [`eyebrowse']                         The Eyebrowse workspace
 - `projectile' [`projectile']                       The current project you're working in
 - `multiple-cursors' [`multiple-cursors']           Show the number of active multiple cursors in use
 - `git-status' [`git-gutter']                       Number of added/removed lines in current buffer

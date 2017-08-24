@@ -12,7 +12,7 @@
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 
 ;; Package-Requires: ((emacs "24.4") (dash "20170207.2056") (with-editor "20170111.609"))
-;; Package-Version: 20170821.2057
+;; Package-Version: 20170823.2103
 ;; Keywords: git tools vc
 ;; Homepage: https://github.com/magit/magit
 
@@ -357,7 +357,7 @@ already using it, then you probably shouldn't start doing so."
     ["Sign-Off" git-commit-signoff :active t
      :help "Insert a 'Signed-off-by' header"]
     ["Modified-by" git-commit-modified :active t
-     :help "Insert an 'Modified-by' header"]
+     :help "Insert a 'Modified-by' header"]
     ["Tested-by" git-commit-test :active t
      :help "Insert a 'Tested-by' header"]
     ["Reviewed-by" git-commit-review :active t
