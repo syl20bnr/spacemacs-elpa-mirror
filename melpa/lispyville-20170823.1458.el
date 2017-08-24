@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/lispyville
-;; Package-Version: 20170822.1618
+;; Package-Version: 20170823.1458
 ;; Created: March 03, 2016
 ;; Keywords: vim, evil, lispy, lisp, parentheses
 ;; Package-Requires: ((lispy "0") (evil "1.2.12") (cl-lib "0.5") (emacs "24.4"))
@@ -113,6 +113,15 @@ mode."
   :group 'lispyville
   :type 'boolean)
 
+(defcustom lispyville-no-alter-lispy-options nil
+  "Whether to to change certain lispy options when entering `lispyville-mode'.
+By default, lispyville will set `lispy-safe-delte', `lispy-safe-copy',
+`lispy-safe-delete', and `lispy-safe-actions-no-pull-delimiters-into-comments'
+to t. To prevent lispyville from changing any lispy options, set this variable
+to a non-nil value."
+  :group 'lispyville
+  :type 'boolean)
+
 (with-eval-after-load 'evil-surround
   (add-to-list 'evil-surround-operator-alist '(lispyville-change . change))
   (add-to-list 'evil-surround-operator-alist '(lispyville-delete . delete)))
@@ -122,7 +131,13 @@ mode."
     "A minor mode for integrating evil with lispy."
   :lighter " LYVLE"
   :keymap (make-sparse-keymap)
-  (evil-normalize-keymaps))
+  (when lispyville-mode
+    (evil-normalize-keymaps)
+    (unless lispyville-no-alter-lispy-options
+      (setq lispy-safe-delete t
+            lispy-safe-copy t
+            lispy-safe-paste t
+            lispy-safe-actions-no-pull-delimiters-into-comments t))))
 
 ;;; * Helpers
 (defun lispyville--in-string-p ()

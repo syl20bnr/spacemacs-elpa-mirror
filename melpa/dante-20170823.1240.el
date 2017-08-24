@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20170822.1250
+;; Package-Version: 20170823.1240
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -113,7 +113,7 @@ otherwise look for a .cabal file, or use the current dir."
   "Return if ROOT / file exists for any file in FILES, return CMDLINE."
   (when (-any? (lambda (file) (file-exists-p (concat root file))) files) cmdline))
 
-(defconst dante-repl-command-line-default-methods
+(defcustom dante-repl-command-line-methods-alist
   `((styx  . ,(lambda (root) (dante-repl-by-file root '("styx.yaml") '("styx" "repl" dante-target))))
     (nix   . ,(lambda (root) (dante-repl-by-file root '("shell.nix" "default.nix")
                                                       '("nix-shell" "--run" (if dante-target (concat "cabal repl " dante-target) "cabal repl")))))
@@ -124,9 +124,6 @@ otherwise look for a .cabal file, or use the current dir."
                               (file-exists-p "cabal.project"))
                       '("cabal" "new-repl" dante-target))))
     (bare  . ,(lambda (_) '("cabal" "repl" dante-target))))
-  "Default GHCi launch command lines.")
-
-(defcustom dante-repl-command-line-methods-alist dante-repl-command-line-default-methods
 "GHCi launch command lines.
 This is an alist from method name to a function taking the root
 directory and returning either a command line or nil if the
@@ -137,7 +134,6 @@ configuration for your project, customize
 `dante-repl-command-line' directly, f as a directory-local
 variable."
   :type '(alist :key-type symbol :value-type function))
-;; (setq dante-repl-command-line-methods-alist dante-repl-command-line-default-methods)
 
 (defvar dante-command-line)
 
@@ -152,8 +148,7 @@ Otherwise, use `dante-repl-command-line-methods-alist'."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mode
 
-(defvar dante-mode-map (make-sparse-keymap)
-  "Dante minor mode's map.")
+(defvar dante-mode-map (make-sparse-keymap) "Dante minor mode's map.")
 
 (defun dante-status ()
   "Return dante's status for the current source buffer."
@@ -208,8 +203,7 @@ to destroy the buffer and create a fresh one without this variable enabled.")
 (defun dante-state ()
   "Return dante-state for the current source buffer."
   (let ((bp (dante-buffer-p)))
-    (when bp
-      (buffer-local-value 'dante-state bp))))
+    (when bp (buffer-local-value 'dante-state bp))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interactive utils
@@ -229,7 +223,6 @@ You can use this to kill them or look inside."
           buffers))
       (error "There are no Dante process buffers"))))
 
-(defvar haskell-mode-hook)
 (defun dante-fontify-expression (expression)
   "Return a haskell-fontified version of EXPRESSION.
 If `haskell-mode' is loaded, just return EXPRESSION."
@@ -849,6 +842,7 @@ a list is returned instead of failing with a nil result."
 
 (defun dante--match-src-span (string)
   "Extract a location from a ghc span STRING."
+  ;; On external symbols, GHC may return a location such as integer-gmp-1.0.0.1:integer-gmp-1.0.0.1:GHC.Integer.Type
   (when (string-match "\\(.*?\\):(\\([0-9]+\\),\\([0-9]+\\))-(\\([0-9]+\\),\\([0-9]+\\))$" string)
     (let ((file (match-string 1 string))
           (line (string-to-number (match-string 2 string)))
@@ -871,8 +865,8 @@ a list is returned instead of failing with a nil result."
 (defun dante--make-xrefs (string)
   "Make xref objects for the source spans in STRING."
   (--mapcat (funcall #'dante--summarize-src-spans (cdr it) (car it))
-            (--group-by (oref it file) (-map #'dante--match-src-span
-                                             (lines (s-lines string))))))
+            (--group-by (oref it file) (-non-nil (-map #'dante--match-src-span
+                                                       (s-lines string))))))
 
 (cl-defmethod xref-backend-definitions ((_backend (eql dante)) symbol)
   (dante-cps-let ((ret (blocking-call))
