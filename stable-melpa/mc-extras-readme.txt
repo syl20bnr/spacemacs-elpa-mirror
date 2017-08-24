@@ -8,11 +8,13 @@ Here is a list of the interactive commands provided by mc-extras:
 * mc/cua-rectangle-to-multiple-cursors
 * mc/rect-rectangle-to-multiple-cursors
 * mc/remove-current-cursor
+* mc/remove-cursors-at-eol
 * mc/remove-duplicated-cursors
 
 Suggested key bindings are as follows:
 
   (define-key mc/keymap (kbd "C-. C-d") 'mc/remove-current-cursor)
+  (define-key mc/keymap (kbd "C-. C-k") 'mc/remove-cursors-at-eol)
   (define-key mc/keymap (kbd "C-. d")   'mc/remove-duplicated-cursors)
 
   (define-key mc/keymap (kbd "C-. =")   'mc/compare-chars)
