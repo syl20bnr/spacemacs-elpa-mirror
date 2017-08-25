@@ -4,7 +4,7 @@
 
 ;; Author: Sachin Patil <iclcoolster@gmail.com>
 ;; URL: http://github.com/psachin/insert-shebang
-;; Package-Version: 20160626.409
+;; Package-Version: 20170809.1445
 ;; Keywords: shebang, tool, convenience
 ;; Version: 0.9.5
 
@@ -48,11 +48,17 @@ terminal."
 
 (defcustom insert-shebang-file-types
   '(("py" . "python")
+    ("groovy" . "groovy")
+    ("fish" . "fish")
+    ("robot" . "robot")
+    ("rb" . "ruby")
+    ("lua" . "lua")
+    ("php" . "php")
     ("sh" . "bash")
     ("pl" . "perl"))
   "*If nil, add all your file extensions and file types here."
   :type '(alist :key-type (string :tag "Extension")
-		:value-type (string :tag "Interpreter"))
+                :value-type (string :tag "Interpreter"))
   :group 'insert-shebang)
 
 (defcustom insert-shebang-ignore-extensions
@@ -77,11 +83,11 @@ Header: program
 File type: f95
 Header: program"
   :type '(alist :key-type (string :tag "Extension")
-		:value-type (string :tag "Header"))
+                :value-type (string :tag "Header"))
   :group 'insert-shebang)
 
 (defcustom insert-shebang-header-scan-limit 6
-"Define how much initial characters to scan from starting for custom headers.
+  "Define how much initial characters to scan from starting for custom headers.
 This is to avoid differentiating header `#include <stdio.h>` with
 `#include <linux/modules.h>` or `#include <strings.h>`."
   :type '(integer :tag "Limit")
@@ -98,37 +104,37 @@ Set to nil if you do not want to keep log of ignored files."
 FILENAME is a buffer name from which the extension is to be
 extracted."
   (if (file-name-extension filename)
-  (let ((file-extn (replace-regexp-in-string "[\<0-9\>]" ""
-					     (file-name-extension filename))))
-  ;; check if this extension is ignored
-  (if (car (member file-extn insert-shebang-ignore-extensions))
-      (progn (message "Extension ignored"))
-    ;; if not, check in extension list
-    (progn
-      (if (car (assoc file-extn insert-shebang-custom-headers))
-	  (progn ;; insert custom header
-	    (let ((val (cdr (assoc file-extn insert-shebang-custom-headers))))
-	    (if (= (point-min) (point-max))
-		;; insert custom-header at (point-min)
-		(insert-shebang-custom-header val)
-	      (progn
-		(insert-shebang-scan-first-line-custom-header val)))))
-	(progn
-	;; get value against the key
-      (if (car (assoc file-extn insert-shebang-file-types))
-	  ;; if key exists in list 'insert-shebang-file-types'
-	  (progn
-	    ;; set variable val to value of key
-	    (let ((val (cdr (assoc file-extn insert-shebang-file-types))))
-	    ;; if buffer is new
-	    (if (= (point-min) (point-max))
-		(insert-shebang-eval val)
-	      ;; if buffer has something, then
-	      (progn
-		(insert-shebang-scan-first-line-eval val)))))
-	;; if key don't exists
-	(progn
-	  (message "Can't guess file type. Type: 'M-x customize-group RET \
+      (let ((file-extn (replace-regexp-in-string "[\<0-9\>]" ""
+                                                 (file-name-extension filename))))
+        ;; check if this extension is ignored
+        (if (car (member file-extn insert-shebang-ignore-extensions))
+            (progn (message "Extension ignored"))
+          ;; if not, check in extension list
+          (progn
+            (if (car (assoc file-extn insert-shebang-custom-headers))
+                (progn ;; insert custom header
+                  (let ((val (cdr (assoc file-extn insert-shebang-custom-headers))))
+                    (if (= (point-min) (point-max))
+                        ;; insert custom-header at (point-min)
+                        (insert-shebang-custom-header val)
+                      (progn
+                        (insert-shebang-scan-first-line-custom-header val)))))
+              (progn
+                ;; get value against the key
+                (if (car (assoc file-extn insert-shebang-file-types))
+                    ;; if key exists in list 'insert-shebang-file-types'
+                    (progn
+                      ;; set variable val to value of key
+                      (let ((val (cdr (assoc file-extn insert-shebang-file-types))))
+                        ;; if buffer is new
+                        (if (= (point-min) (point-max))
+                            (insert-shebang-eval val)
+                          ;; if buffer has something, then
+                          (progn
+                            (insert-shebang-scan-first-line-eval val)))))
+                  ;; if key don't exists
+                  (progn
+                    (message "Can't guess file type. Type: 'M-x customize-group RET \
 insert-shebang' to add/customize"))))))))))
 
 (defun insert-shebang-eval (val)
@@ -158,35 +164,35 @@ With VAL as an argument and look if it has matching shebang-line."
     (goto-char (point-min))
     ;; search for shebang pattern
     (if (ignore-errors (re-search-forward "^#![ ]?\\([a-zA-Z_./]+\\)"))
-	(message "insert-shebang: File has shebang line")
+        (message "insert-shebang: File has shebang line")
       ;; prompt user
       (if (y-or-n-p "File do not have shebang line, \
 do you want to insert it now? ")
-	  (progn
-	    (insert-shebang-eval val))
-	(progn
-	  (insert-shebang-log-ignored-files
-	   (replace-regexp-in-string "[\<0-9\>]" "" (original-buffer-name))))))))
+          (progn
+            (insert-shebang-eval val))
+        (progn
+          (insert-shebang-log-ignored-files
+           (replace-regexp-in-string "[\<0-9\>]" "" (original-buffer-name))))))))
 
 (defun insert-shebang-scan-first-line-custom-header (val)
   "Scan very first line of the file and look if it has matching header.
 With VAL as an argument."
-    (save-excursion
-      (goto-char (point-min))
-      ;; search for shebang pattern
-      (if (ignore-errors
-	    (re-search-forward
-	     (format "^%s"
-		     (substring val 0 insert-shebang-header-scan-limit))))
-	  (message "insert-shebang: File has header")
-	;; prompt user
-	(if (y-or-n-p "File do not have header, do you want to insert it now? ")
-	    (progn
-	      (goto-char (point-min))
-	      (insert-shebang-custom-header val))
-	  (progn
-	    (insert-shebang-log-ignored-files
-	     (replace-regexp-in-string "[\<0-9\>]" "" (original-buffer-name))))))))
+  (save-excursion
+    (goto-char (point-min))
+    ;; search for shebang pattern
+    (if (ignore-errors
+          (re-search-forward
+           (format "^%s"
+                   (substring val 0 insert-shebang-header-scan-limit))))
+        (message "insert-shebang: File has header")
+      ;; prompt user
+      (if (y-or-n-p "File do not have header, do you want to insert it now? ")
+          (progn
+            (goto-char (point-min))
+            (insert-shebang-custom-header val))
+        (progn
+          (insert-shebang-log-ignored-files
+           (replace-regexp-in-string "[\<0-9\>]" "" (original-buffer-name))))))))
 
 (defun insert-shebang-read-log-file (log-file-path)
   "Return a list of ignored files.
@@ -205,8 +211,8 @@ and LOG-FILE-LIST is a list of ignored files with fullpath."
     (insert (mapconcat 'identity log-file-list "\n"))
     (when (file-writable-p log-file-path)
       (write-region (point-min)
-		    (point-max)
-		    log-file-path))))
+                    (point-max)
+                    log-file-path))))
 
 (defun insert-shebang-create-log-file (logfile)
   "Function to create log file if does not exist.
@@ -222,17 +228,17 @@ FILENAME is `buffer-name'."
   ;; ignored files.
   (if (not (equal insert-shebang-track-ignored-filename nil))
       (progn
-	;; if file not exist, create it
-	(insert-shebang-create-log-file insert-shebang-track-ignored-filename)
-	;; set variables
-	(let* ((log-file-path (expand-file-name
-			       insert-shebang-track-ignored-filename))
-	       (log-file-list (insert-shebang-read-log-file log-file-path)))
-	  ;; add new 'ignored' file to the list
-	  (add-to-list 'log-file-list (expand-file-name filename))
-	  ;; Updated list in the log-file
-	  ;; (message "%s" log-file-list)
-	  (insert-shebang-write-log-file log-file-path log-file-list)))))
+        ;; if file not exist, create it
+        (insert-shebang-create-log-file insert-shebang-track-ignored-filename)
+        ;; set variables
+        (let* ((log-file-path (expand-file-name
+                               insert-shebang-track-ignored-filename))
+               (log-file-list (insert-shebang-read-log-file log-file-path)))
+          ;; add new 'ignored' file to the list
+          (add-to-list 'log-file-list (expand-file-name filename))
+          ;; Updated list in the log-file
+          ;; (message "%s" log-file-list)
+          (insert-shebang-write-log-file log-file-path log-file-list)))))
 
 (defun insert-shebang-open-log-buffer ()
   "Open log of ignored file(s) in a separate buffer for editing."
@@ -254,21 +260,21 @@ Calls function `insert-shebang-get-extension-and-insert'.  With argument as
   ;; ignored files.
   (if (not (equal insert-shebang-track-ignored-filename nil))
       (progn
-	;; if file not exist, create it
-	(insert-shebang-create-log-file insert-shebang-track-ignored-filename)
-	;; ignore current-buffer, if it's path exist in ignored file list.
-	(let* ((log-file-path (expand-file-name
-			       insert-shebang-track-ignored-filename))
-	       (log-file-list (insert-shebang-read-log-file log-file-path))
-	       (filename (replace-regexp-in-string "[\<0-9\>]" ""
-						   (expand-file-name
-						    (original-buffer-name)))))
-	  (if (member filename log-file-list)
-	      ;; do nothing.
-	      (progn)
-	    ;; call `insert-shebang-get-extension-and-insert'.
-	    (progn
-	      (insert-shebang-get-extension-and-insert (original-buffer-name))))))
+        ;; if file not exist, create it
+        (insert-shebang-create-log-file insert-shebang-track-ignored-filename)
+        ;; ignore current-buffer, if it's path exist in ignored file list.
+        (let* ((log-file-path (expand-file-name
+                               insert-shebang-track-ignored-filename))
+               (log-file-list (insert-shebang-read-log-file log-file-path))
+               (filename (replace-regexp-in-string "[\<0-9\>]" ""
+                                                   (expand-file-name
+                                                    (original-buffer-name)))))
+          (if (member filename log-file-list)
+              ;; do nothing.
+              (progn)
+            ;; call `insert-shebang-get-extension-and-insert'.
+            (progn
+              (insert-shebang-get-extension-and-insert (original-buffer-name))))))
     (insert-shebang-get-extension-and-insert (original-buffer-name))))
 
 ;;;###autoload(add-hook 'find-file-hook 'insert-shebang)

@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 2.12
+;; Package-Version: 2.13
 ;; Version: 2.10
 
 ;; This file is not part of GNU Emacs.
@@ -69,7 +69,7 @@
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defconst rtags-protocol-version 124)
-(defconst rtags-package-version "2.12")
+(defconst rtags-package-version "2.13")
 (defconst rtags-popup-available (require 'popup nil t))
 (defconst rtags-supported-major-modes '(c-mode c++-mode objc-mode) "Major modes RTags supports.")
 (defconst rtags-verbose-results-delimiter "------------------------------------------")
@@ -1293,7 +1293,8 @@ to only call this when `rtags-socket-file' is defined.
                        (error (concat "RTags protocol version mismatch. This is usually caused by getting rtags.el from melpa\n"
                                       "and installing a new rtags build that modified the protocol. They need to be in sync."))))
                     ((= result rtags-exit-code-not-indexed)
-                     (message "%s not indexed" (or path "buffer"))
+                     (unless silent
+                       (message "%s not indexed" (or path "buffer")))
                      (erase-buffer)
                      (setq rtags-last-request-not-indexed t))
                     (t)))) ;; other error
@@ -1409,7 +1410,7 @@ Uses `completing-read' to ask for the project."
     (let* ((path (rtags-buffer-file-name))
            (object (with-temp-buffer
                      (and location
-                          (rtags-call-rc :path path :noerror t :silent-query silent "-U" location "--elisp"
+                          (rtags-call-rc :path path :noerror t :silent-query silent :silent silent "-U" location "--elisp"
                                          (unless relative-filenames "-K")
                                          (when parents "--symbol-info-include-parents")
                                          (when references "--symbol-info-include-references")
@@ -1964,6 +1965,7 @@ instead of file from `current-buffer'.
           (rtags-delete-rtags-windows)
           (rtags-location-stack-push)
           (rtags-switch-to-buffer ref-buffer)
+          (setq rtags-results-buffer-type 'references-tree)
           (rtags-references-tree-mode)
           (setq rtags-current-project project)
           (setq buffer-read-only nil)
@@ -2055,7 +2057,7 @@ instead of file from `current-buffer'.
         (goto-char (point-min))
         (insert "Functions called from: " (cdr (assoc 'location container)) " " (cdr (assoc 'symbolName container)) "\n")
         (goto-char (point-min))
-        (rtags-handle-results-buffer nil nil nil file)))))
+        (rtags-handle-results-buffer nil nil nil file 'functions-called-by-this-function)))))
 
 ;;;###autoload
 (defun rtags-find-all-functions-called-this-function ()
@@ -2517,19 +2519,24 @@ If called with prefix, open first match in other window"
                            (rtags-call-rc :path-filter pathfilter :path fn "-F" tagname "--definition-only" "-M" "1" "--dependency-filter" fn)
                            (when (= (rtags-buffer-lines) 0)
                              (rtags-call-rc :path fn :path-filter pathfilter "-F" tagname "-M" "1" "--dependency-filter" fn)))
-                         (cons (buffer-string) (rtags-buffer-lines)))))
+                         (cons (buffer-string) (rtags-buffer-lines))))
+              (buffer (get-buffer rtags-buffer-name)))
+          (when (and buffer
+                     (eq (buffer-local-value 'rtags-results-buffer-type buffer) 'find-symbol-at-point))
+            (rtags-delete-rtags-windows)
+            (kill-buffer buffer))
           (cond ((= (cdr results) 0) nil)
                 ((= (cdr results) 1)
                  (with-temp-buffer
                    (insert (car results))
                    (goto-char (point-min))
-                   (rtags-handle-results-buffer tagname nil nil fn otherwindow)))
+                   (rtags-handle-results-buffer tagname nil nil fn otherwindow 'find-symbol-at-point)))
                 (t
                  (rtags-delete-rtags-windows)
                  (with-current-buffer (rtags-get-buffer)
                    (insert (car results))
                    (goto-char (point-min))
-                   (rtags-handle-results-buffer tagname nil nil fn otherwindow)))))))))
+                   (rtags-handle-results-buffer tagname nil nil fn otherwindow 'find-symbol-at-point)))))))))
 
 ;;;###autoload
 (defun rtags-find-references-at-point (&optional prefix)
@@ -2553,7 +2560,7 @@ treated as references to the referenced symbol."
         (with-current-buffer (rtags-get-buffer)
           (rtags-call-rc :path fn :path-filter pathfilter "-r" arg
                          (unless rtags-sort-references-by-input "--no-sort-references-by-input"))
-          (rtags-handle-results-buffer tagname nil nil fn otherwindow))))))
+          (rtags-handle-results-buffer tagname nil nil fn otherwindow 'find-references-at-point))))))
 
 ;;;###autoload
 (defun rtags-find-virtuals-at-point (&optional prefix)
@@ -2576,7 +2583,7 @@ This includes both declarations and definitions."
                          "-k"
                          (unless rtags-sort-references-by-input "--no-sort-references-by-input")
                          (unless rtags-print-filenames-relative "-K"))
-          (rtags-handle-results-buffer tagname nil nil fn otherwindow))))))
+          (rtags-handle-results-buffer tagname nil nil fn otherwindow 'find-virtuals-at-point))))))
 
 ;;;###autoload
 (defun rtags-find-all-references-at-point (&optional prefix)
@@ -2597,7 +2604,7 @@ This includes both declarations and definitions."
                          "-e"
                          (unless rtags-sort-references-by-input "--no-sort-references-by-input")
                          (unless rtags-print-filenames-relative "-K"))
-          (rtags-handle-results-buffer tagname nil nil fn otherwindow))))))
+          (rtags-handle-results-buffer tagname nil nil fn otherwindow 'find-all-references-at-point))))))
 
 ;;;###autoload
 (defun rtags-guess-function-at-point ()
@@ -2611,7 +2618,7 @@ This includes both declarations and definitions."
         (rtags-reparse-file-if-needed)
         (with-current-buffer (rtags-get-buffer)
           (rtags-call-rc :path fn "-G" "-F" token)
-          (rtags-handle-results-buffer token t nil fn))))))
+          (rtags-handle-results-buffer token t nil fn 'guess-function-at-point))))))
 
 (defun rtags-current-token ()
   (save-excursion
@@ -3460,13 +3467,18 @@ This includes both declarations and definitions."
     (when startpos
       (goto-char startpos))))
 
-(defun rtags-handle-results-buffer (&optional token noautojump quiet path other-window)
+(defvar rtags-results-buffer-type nil)
+(make-variable-buffer-local 'rtags-results-buffer-type)
+(put 'rtags-results-buffer-type 'permanent-local t)
+
+(defun rtags-handle-results-buffer (&optional token noautojump quiet path other-window type)
   "Handle results from RTags. Should be called with the results buffer
 as current.
 
 The option OTHER-WINDOW is only applicable if RTags is configured not to
 show the results immediately. If non-nil, show the first match in the
 other window instead of the current one."
+  (setq rtags-results-buffer-type type)
   (rtags-reset-bookmarks)
   (set-text-properties (point-min) (point-max) nil)
   (when path
@@ -4087,7 +4099,7 @@ definition."
                      (when rtags-wildcard-symbol-names "--wildcard-symbol-names")
                      (when rtags-symbolnames-case-insensitive "-I")
                      (unless rtags-print-filenames-relative "-K"))
-      (rtags-handle-results-buffer tagname nil nil path other-window))))
+      (rtags-handle-results-buffer tagname nil nil path other-window 'find-symbols-by-name-internal))))
 
 (defun rtags-symbolname-completion-get (string)
   (with-temp-buffer
