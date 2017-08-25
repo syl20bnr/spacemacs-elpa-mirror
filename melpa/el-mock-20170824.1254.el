@@ -5,7 +5,7 @@
 ;; Author: rubikitch <rubikitch@ruby-lang.org>
 ;; Maintainer: Johan Andersson <johan.rejeep@gmail.com>
 ;; Version: 1.25.1
-;; Package-Version: 20170501.1123
+;; Package-Version: 20170824.1254
 ;; Keywords: lisp, testing, unittest
 ;; URL: http://github.com/rejeep/el-mock.el
 
@@ -196,6 +196,7 @@ Synopsis:
 * (stub FUNCTION => RETURN-VALUE)
   Create a FUNCTION stub which returns RETURN-VALUE.
 
+RETURN-VALUE is evaluated when executing the mocked function.
 
 Example:
   (with-mock
@@ -231,6 +232,11 @@ Synopsis:
 
 Wildcard:
 The `*' is a special symbol: it accepts any value for that argument position.
+
+ARGS that are not `*' are evaluated when the mock is verified,
+i.e. upon leaving the enclosing `with-mock' form.  ARGS are
+evaluated using dynamic scoping.  The RETURN-VALUE is evaluated
+when executing the mocked function.
 
 Example:
   (with-mock
@@ -307,6 +313,11 @@ Spec is arguments of `mock', `not-called' or `stub'.
 * (FUNCTION)                            : stub which returns nil
 * (FUNCTION => RETURN-VALUE)            ; stub which returns RETURN-VALUE
 * (FUNCTION not-called)                 ; not-called FUNCTION
+
+ARGS that are not `*' are evaluated when the mock is verified,
+i.e. upon leaving the enclosing `with-mock' form.  ARGS are
+evaluated using dynamic scoping.  The RETURN-VALUE is evaluated
+when executing the mocked function.
 
 Example:
   (mocklet (((mock-nil 1))
