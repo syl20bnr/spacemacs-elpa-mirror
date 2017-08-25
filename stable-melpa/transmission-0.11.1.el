@@ -3,8 +3,8 @@
 ;; Copyright (C) 2014-2017  Mark Oteiza <mvoteiza@udel.edu>
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
-;; Version: 0.11
-;; Package-Version: 0.11
+;; Version: 0.11.1
+;; Package-Version: 0.11.1
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -150,7 +150,7 @@ See `file-size-human-readable'."
 (defcustom transmission-refresh-interval 2
   "Period in seconds of the refresh timer."
   :type '(number :validate (lambda (w)
-                             (unless (> (widget-value w) 0)
+                             (when (<= (widget-value w) 0)
                                (widget-put w :error "Value must be positive")
                                w))))
 
@@ -380,7 +380,7 @@ Return JSON object parsed from content."
   (transmission-wait process))
 
 (defun transmission-process-sentinel (process _message)
-  "Sentinel for network processes made by `transmission-make-network-process'."
+  "Sentinel for PROCESS made by `transmission-make-network-process'."
   (setq transmission-network-process-pool
         (delq process transmission-network-process-pool))
   (when (buffer-live-p (process-buffer process))
@@ -399,7 +399,7 @@ custom variables `transmission-host' and `transmission-service'."
                   process
                   (make-network-process
                    :name "transmission" :buffer buffer
-                   :host (unless socket transmission-host)
+                   :host (when (null socket) transmission-host)
                    :service (or socket transmission-service)
                    :family (when socket 'local) :noquery t))
           (set-process-sentinel process #'transmission-process-sentinel)
@@ -429,6 +429,8 @@ Details regarding the Transmission RPC can be found here:
 <https://github.com/transmission/transmission/blob/master/extras/rpc-spec.txt>"
   (let ((process (transmission-get-network-process))
         (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
+    (set-process-plist process nil)
+    (set-process-filter process nil)
     (unwind-protect
         (condition-case nil
             (transmission-send process content)
@@ -446,9 +448,7 @@ Details regarding the Transmission RPC can be found here:
   "Call PROCESS's callback if it has one."
   (let ((callback (process-get process :callback)))
     (when callback
-      (run-at-time 0 nil callback (buffer-substring (point) (point-max)))
-      (set-process-plist process nil)
-      (set-process-filter process nil))))
+      (run-at-time 0 nil callback (buffer-substring (point) (point-max))))))
 
 (defun transmission-process-filter (process text)
   "Handle PROCESS's output TEXT and trigger handlers."
@@ -463,7 +463,6 @@ Details regarding the Transmission RPC can be found here:
           (transmission-conflict
            (transmission-http-post process (process-get process :request)))
           (error
-           (process-put process :callback nil)
            (stop-process process)
            (signal (car e) (cdr e))))))))
 
@@ -555,7 +554,7 @@ The result can have no more elements than STRING.
       (nreverse result))))
 
 (defun transmission-text-property-all (beg end prop)
-  "Return a list of non-nil values of a text property in a range.
+  "Return a list of non-nil values of a text property PROP between BEG and END.
 If none are found, return nil."
   (let (res pos)
     (save-excursion
@@ -959,7 +958,7 @@ point or in region, otherwise a `user-error' is signalled."
                         `(transmission-read-strings (concat ,prompt ,x) ,@rest))))
                     ((or (listp form) (null form))
                      (mapcar (lambda (subexp) (expand subexp x)) form))
-                    (t (error "bad syntax: %S" form)))))
+                    (t (error "Bad syntax: %S" form)))))
               (expand spec
                       `(cond
                         (,marked (format "[%d marked] " (length ,marked)))
@@ -1297,7 +1296,7 @@ With a prefix argument, disable turtle mode schedule."
        (list bits current-prefix-arg))))
   (let ((arguments
          (append `(:alt-speed-time-enabled ,(if disable json-false t))
-                 (unless (> days 0) `(:alt-speed-time-day ,days)))))
+                 (when (> days 0) `(:alt-speed-time-day ,days)))))
     (transmission-request-async nil "session-set" arguments)))
 
 (defun transmission-turtle-set-times (begin end)
@@ -1496,7 +1495,9 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
           (catch :eobp
             (while (> n 0)
               (when (= (following-char) ?>)
-                (insert-and-inherit ?\s)
+                (save-excursion
+                  (forward-char)
+                  (insert-and-inherit ?\s))
                 (delete-region (point) (1+ (point)))
                 (cl-decf n))
              (when (not (zerop (forward-line))) (throw :eobp nil))))))
@@ -1518,7 +1519,9 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
           (catch :eobp
             (while t
               (when (setq tag (car (memq (following-char) '(?> ?\s))))
-                (insert-and-inherit (if (= tag ?>) ?\s ?>))
+                (save-excursion
+                  (forward-char)
+                  (insert-and-inherit (if (= tag ?>) ?\s ?>)))
                 (delete-region (point) (1+ (point)))
                 (when (= tag ?\s)
                   (push (cdr (assq key (tabulated-list-get-id))) ids)))
@@ -1850,7 +1853,8 @@ of column descriptors."
 
 (define-derived-mode transmission-peers-mode tabulated-list-mode "Transmission-Peers"
   "Major mode for viewing peer information.
-See https://github.com/transmission/transmission/wiki/Peer-Status-Text
+See the \"--peer-info\" option in transmission-remote(1) or
+https://github.com/transmission/transmission/wiki/Peer-Status-Text
 for explanation of the peer flags."
   :group 'transmission
   (setq-local line-move-visual nil)

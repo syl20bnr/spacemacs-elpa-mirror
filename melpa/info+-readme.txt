@@ -34,10 +34,11 @@
 
  Commands defined here:
 
-   `Info-breadcrumbs-in-mode-line-mode', `Info-describe-bookmark'
-   (Emacs 24.2+), `Info-follow-nearest-node-new-window',
-   `Info-goto-node-web', `Info-history-clear',
-   `Info-make-node-unvisited', `info-manual',
+   `Info-breadcrumbs-in-mode-line-mode',
+   `Info-change-visited-status' (Emacs 24+),
+   `Info-describe-bookmark' (Emacs 24.2+),
+   `Info-follow-nearest-node-new-window', `Info-goto-node-web',
+   `Info-history-clear', `Info-make-node-unvisited', `info-manual',
    `Info-merge-subnodes',
    `Info-mouse-follow-nearest-node-new-window',
    `Info-outline-demote', `Info-outline-promote',
@@ -242,7 +243,7 @@
    as `*note'...`::' surrounding links) is kept hidden.
 
    Especially when combined with `Info-persist-history-mode',
-   command `Info-make-node-unvisited' (`C-x DEL', see below), and
+   command `Info-change-visited-status' (`C-x DEL', see below), and
    the Info+ bookmarking enhancements (e.g., special link
    highlighting and persistently tracking the number of visits per
    node), `Info-toc-outline' gives you a way to organize access and
@@ -327,11 +328,12 @@
      nodes, including automatically.  This records how many times
      you have visited each node and when you last did so.)
 
-   - `Info-make-node-unvisited' (bound to `C-x DEL') - Reset the
-     visited status of a node to unvisited.  Useful if you use
+   - `Info-change-visited-status' (bound to `C-x DEL') - Toggle or
+     set the visited status of the node at point or the nodes in
+     the active region.  Useful if you use
      `Info-fontify-visited-nodes' to show you which nodes you have
-     visited and you want to consider that you have not yet visited
-     some.
+     visited.  No prefix arg: toggle.  Non-negative prefix arg: set
+     to visited.  Negative prefix arg: set to unvisited.
 
    - `Info-save-current-node' (bound to `.') – Save the name of the
      current node to list `Info-saved-nodes', for use by `v'

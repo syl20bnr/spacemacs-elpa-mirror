@@ -1,3 +1,3 @@
-Read HackerNews from Emacs
+Read Hacker News from Emacs.
 
 Enjoy!
