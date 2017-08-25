@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.11
-;; Package-Version: 20170824.45
+;; Package-Version: 20170824.1726
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -429,6 +429,8 @@ Details regarding the Transmission RPC can be found here:
 <https://github.com/transmission/transmission/blob/master/extras/rpc-spec.txt>"
   (let ((process (transmission-get-network-process))
         (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
+    (set-process-plist process nil)
+    (set-process-filter process nil)
     (unwind-protect
         (condition-case nil
             (transmission-send process content)
@@ -446,9 +448,7 @@ Details regarding the Transmission RPC can be found here:
   "Call PROCESS's callback if it has one."
   (let ((callback (process-get process :callback)))
     (when callback
-      (run-at-time 0 nil callback (buffer-substring (point) (point-max)))
-      (set-process-plist process nil)
-      (set-process-filter process nil))))
+      (run-at-time 0 nil callback (buffer-substring (point) (point-max))))))
 
 (defun transmission-process-filter (process text)
   "Handle PROCESS's output TEXT and trigger handlers."
@@ -463,7 +463,6 @@ Details regarding the Transmission RPC can be found here:
           (transmission-conflict
            (transmission-http-post process (process-get process :request)))
           (error
-           (process-put process :callback nil)
            (stop-process process)
            (signal (car e) (cdr e))))))))
 
