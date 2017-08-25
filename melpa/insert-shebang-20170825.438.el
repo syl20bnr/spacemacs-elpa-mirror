@@ -1,12 +1,12 @@
 ;;; insert-shebang.el --- Insert shebang line automatically.
 
-;; Copyright (C) 2013-2016  Sachin Patil
+;; Copyright (C) 2013-2017  Sachin Patil
 
 ;; Author: Sachin Patil <iclcoolster@gmail.com>
 ;; URL: http://github.com/psachin/insert-shebang
-;; Package-Version: 20170809.1445
+;; Package-Version: 20170825.438
 ;; Keywords: shebang, tool, convenience
-;; Version: 0.9.5
+;; Version: 0.9.6
 
 ;; This file is NOT a part of GNU Emacs.
 

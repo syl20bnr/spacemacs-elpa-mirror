@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.3-dev
-;; Package-Version: 20170824.1038
+;; Package-Version: 20170825.613
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: http://jblevins.org/projects/markdown-mode/
@@ -9008,5 +9008,6 @@ position."
 (provide 'markdown-mode)
 ;; Local Variables:
 ;; indent-tabs-mode: nil
+;; coding: utf-8
 ;; End:
 ;;; markdown-mode.el ends here

@@ -4,10 +4,10 @@
 
 ;; Author: James Wong <jianwang.academic@gmail.com>
 ;; URL: https://github.com/et2010/org-edit-latex
-;; Package-Version: 0.8.0
+;; Package-Version: 0.8.2
 ;; Keywords: org, LaTeX
-;; Version: 0.8.0
-;; Package-Requires: ((emacs "24.4") (org "9.0") (auctex "11.90"))
+;; Version: 0.8.2
+;; Package-Requires: ((emacs "24.4") (auctex "11.90"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -30,11 +30,13 @@
 ;; Install
 ;; =======
 
-;; First, download this package and include its path in your load-path. Then, you can add following in your init file:
+;; First, download this package and include its path in your load-path. Then,
+;; you can add following in your init file:
 
 ;; (require 'org-edit-latex)
 
-;; And don't forget to add latex to `org-babel-load-languages' (below is for demonstration, your languages list may differ from it.)
+;; And don't forget to add latex to `org-babel-load-languages' (below is for
+;; demonstration, your languages list may differ from it.)
 
 ;; (org-babel-do-load-languages
 ;;  'org-babel-load-languages
@@ -61,19 +63,30 @@
 ;;; Code:
 
 (require 'org)
-(require 'org-element)
 (require 'ox-latex)
 (require 'preview)
 
 (defcustom org-edit-latex-frag-master "frag-master.tex"
   "Master file for LaTeX fragments."
+  :type 'string
   :group 'org-edit-latex
   :version "24.4")
 
 (defcustom org-edit-latex-create-master t
   "Decide whether we should create a TeX-master file."
+  :type 'boolean
   :group 'org-edit-latex
   :version "24.4")
+
+(defcustom org-edit-latex-show-hint t
+  "Whether we should show hint message in the echo area."
+  :type 'boolean
+  :group 'org-edit-latex
+  :version "24.4")
+
+;; silence byte compiler
+(defvar TeX-auto-update)
+(defvar latex-mode-hook)
 
 (defvar-local org-edit-latex--before-type nil
   "Element type before wrapping.")
@@ -90,11 +103,14 @@
       (progn
         (advice-add #'org-edit-special :around #'org-edit-latex--wrap-maybe)
         (advice-add #'org-edit-src-exit :around #'org-edit-latex--unwrap-maybe)
+        (when org-edit-latex-show-hint
+          (setq-local eldoc-documentation-function 'org-edit-latex-hinter))
         (org-edit-latex-create-master-maybe)
-        (add-hook 'org-src-mode-hook 'org-edit-latex--set-TeX-master))
+        (add-hook 'org-src-mode-hook #'org-edit-latex--set-TeX-master))
     (advice-remove #'org-edit-special #'org-edit-latex--wrap-maybe)
     (advice-remove #'org-edit-src-exit #'org-edit-latex--unwrap-maybe)
-    (remove-hook 'org-src-mode-hook 'org-edit-latex--set-TeX-master)))
+    (setq-local eldoc-documentation-function 'org-eldoc-documentation-function)
+    (remove-hook 'org-src-mode-hook #'org-edit-latex--set-TeX-master)))
 
 
 ;; TeX-master
@@ -194,10 +210,12 @@ header."
          (pb (org-element-property :post-blank ele))
          (pa (org-element-property :post-affiliated ele))
          (type (cond
-                ((eq (car ele) 'latex-environment) 'environment)
+                ((eq (car ele) 'latex-environment)
+                 'environment)
                 ((save-excursion
                    (goto-char beg)
-                   (looking-at-p org-edit-latex-inline-beg-regexp)) 'inline)
+                   (looking-at-p org-edit-latex-inline-beg-regexp))
+                 'inline)
                 (t nil)))
          (pt (point)))
     (save-excursion
@@ -232,8 +250,7 @@ header."
 
 (defun org-edit-latex--unwrap-latex (ele)
   "Unwrap latex fragment."
-  (let* ((lang (org-element-property :language ele))
-         (beg (org-element-property :begin ele))
+  (let* ((beg (org-element-property :begin ele))
          (end (org-element-property :end ele))
          (pa (org-element-property :post-affiliated ele))
          (pb (org-element-property :post-blank ele))
@@ -264,15 +281,15 @@ header."
 
 (defun org-edit-latex--unwrap-maybe (oldfun &rest args)
   "Unwrap latex fragment only if it meets certain predicates."
-  (if (and (boundp 'org-src--beg-marker)
-           (let ((beg org-src--beg-marker))
-             (save-excursion
-               (set-buffer (marker-buffer beg))
+  (if (and (not (version< org-version "9.0"))
+           (let* ((beg org-src--beg-marker)
+                  (buf (marker-buffer beg)))
+             (with-current-buffer buf
                (goto-char beg)
                (eq 'inline-src-block (car (org-element-context))))))
       (let ((org-src--remote t))
-        (funcall oldfun))
-    (funcall oldfun))
+        (apply oldfun args))
+    (apply oldfun args))
   (when (and org-edit-latex-mode
              (memq org-edit-latex--before-type
                    '(latex-fragment latex-environment)))
@@ -297,6 +314,20 @@ latex-environment."
                 (apply oldfun args)))
           (apply oldfun args)))
     (apply oldfun args)))
+
+(defun org-edit-latex-hinter ()
+  "An Eldoc documentation function used as a replacement of the
+default one in Org mode."
+  (or (org-eldoc-documentation-function)
+      (org-edit-latex-eldoc-function)))
+
+(defun org-edit-latex-eldoc-function ()
+  "Eldoc function used to generate a hint when cursor on latex."
+  (let ((ele-type (org-element-type (org-element-context))))
+    (when (or (eq ele-type 'latex-fragment)
+              (eq ele-type 'latex-environment))
+      (substitute-command-keys
+       "Enter edit buffer with `\\[org-edit-special]'."))))
 
 
 (provide 'org-edit-latex)

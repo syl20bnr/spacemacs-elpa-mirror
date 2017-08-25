@@ -1,13 +1,13 @@
 A minor mode that guesses the indentation offset and
 `indent-tabs-mode' originally used for creating source code files and
 transparently adjusts the corresponding settings in Emacs, making it
-more convenient to edit foreign files.
+more convenient to edit others' files.
 
-This hooks into many major modes - c-mode, java-mode, shell-mode
-and ruby-mode, to name but a few - and makes an educated guess on
-which offset is appropriate by analyzing indentation levels in the
-file.  (Notably, it does not touch python-mode, which includes its own
-offset guessing.)
+This hooks into many major modes - c-mode, java-mode and ruby-mode, to
+name but a few - and makes an educated guess on which offset is
+appropriate by analyzing indentation levels in the file.  Modes that have
+their own indentation offset guessing, such as python-mode, are not dealt
+with.  In modes based on SMIE, dtrt-indent delegates to smie-config-guess.
 
 Heuristics are used to estimate the proper indentation offset and
 therefore this system is not infallible, however adjustments will
@@ -17,7 +17,7 @@ should leave you off no worse than before.
 To install, M-x customize-variable dtrt-indent-mode, and turn it on.
 
 The default settings have been carefully chosen and tested to work
-reliably on a wide range of source files. However, if it doesn't work
+reliably on a wide range of source files.  However, if it doesn't work
 for you they can be fine tuned using M-x customize-group dtrt-indent.
 You can use `dtrt-indent-diagnosis' to see dtrt-indent's
 measurements, `dtrt-indent-highlight' to show indentation that was
@@ -58,7 +58,7 @@ Configuration settings used at this stage:
 Histogram Generation
 
 For the remaining lines - those eligible within the fixed range - a
-histogram is generated. The histogram informs dtrt-indent about how
+histogram is generated.  The histogram informs dtrt-indent about how
 many lines are indented with one space, how many with two spaces, how
 many with three spaces, etc.
 
@@ -105,7 +105,7 @@ Configuration settings used at this stage: `dtrt-indent-min-quality'.
 For determining hard vs. soft tabs, dtrt-indent counts the number of
 lines out of the eligible lines in the fixed segment that are
 indented using hard tabs, and the number of lines indented using
-spaces. If either count is significantly higher than the other count,
+spaces.  If either count is significantly higher than the other count,
 `indent-tabs-mode' will be modified.
 
 Configuration settings used at this stage:
