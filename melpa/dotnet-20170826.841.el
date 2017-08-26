@@ -4,7 +4,7 @@
 
 ;; Author: Julien BLANCHARD <julien@sideburns.eu>
 ;; URL: https://github.com/julienXX/dotnet.el
-;; Package-Version: 20170826.534
+;; Package-Version: 20170826.841
 ;; Version: 0.10
 ;; Keywords: .net, tools
 
@@ -172,7 +172,7 @@ language (see `dotnet-langs')."
     (define-key map (kbd "s n") #'dotnet-sln-new)
     (define-key map (kbd "s r") #'dotnet-sln-remove)
     (define-key map (kbd "t")   #'dotnet-test)
-    (define-key map (kbd "t r") #'dotnet-test-rerun)
+    (define-key map (kbd "T")   #'dotnet-test-rerun)
     map)
   "Keymap for dotnet-mode commands after `dotnet-mode-keymap-prefix'.")
 

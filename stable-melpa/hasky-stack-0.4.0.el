@@ -4,8 +4,8 @@
 ;;
 ;; Author: Mark Karpov <markkarpov92@gmail.com>
 ;; URL: https://github.com/hasky-mode/hasky-stack
-;; Package-Version: 0.3.0
-;; Version: 0.3.0
+;; Package-Version: 0.4.0
+;; Version: 0.4.0
 ;; Package-Requires: ((emacs "24.4") (f "0.18.0") (magit-popup "2.10"))
 ;; Keywords: tools, haskell
 ;;
@@ -733,7 +733,9 @@ This uses `compile' internally."
               (?p "Upload"  hasky-stack-upload-popup)
               (?d "SDist"   hasky-stack-sdist-popup)
               (?x "Exec"    hasky-stack-exec)
-              (?c "Clean"   hasky-stack-clean-popup))
+              (?c "Clean"   hasky-stack-clean-popup)
+              (?l "Edit Cabal file" hasky-stack-edit-cabal)
+              (?y "Edit stack.yaml" hasky-stack-edit-stack-yaml))
   :default-action 'hasky-stack-build-popup
   :max-action-columns 3)
 
@@ -744,6 +746,24 @@ This uses `compile' internally."
    hasky-stack--project-name
    hasky-stack--last-directory
    "update"))
+
+(defun hasky-stack-edit-cabal ()
+  "Open Cabal file of current project for editing."
+  (interactive)
+  (let ((cabal-file
+         (car (and hasky-stack--last-directory
+                   (f-glob "*.cabal" hasky-stack--last-directory)))))
+    (when cabal-file
+      (find-file cabal-file))))
+
+(defun hasky-stack-edit-stack-yaml ()
+  "Open \"stack.yaml\" of current project for editing."
+  (interactive)
+  (let ((stack-yaml-file
+         (car (and hasky-stack--last-directory
+                   (f-glob "stack.yaml" hasky-stack--last-directory)))))
+    (when stack-yaml-file
+      (find-file stack-yaml-file))))
 
 (magit-define-popup hasky-stack-project-action-popup
   "Show project action popup."

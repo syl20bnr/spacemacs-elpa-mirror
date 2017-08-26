@@ -4,7 +4,7 @@
 
 ;; Author: Jorgen Schaefer <contact@jorgenschaefer.de>
 ;; URL: http://github.com/jorgenschaefer/pyvenv
-;; Package-Version: 20170224.538
+;; Package-Version: 20170826.812
 ;; Version: 1.10
 ;; Keywords: Python, Virtualenv, Tools
 
@@ -363,12 +363,11 @@ CAREFUL! This will modify your `process-environment' and
     (with-temp-buffer
       (let ((tmpfile (make-temp-file "pyvenv-virtualenvwrapper-")))
         (unwind-protect
-            (progn
+            (let ((default-directory (pyvenv-workon-home)))
               (apply #'call-process
                      pyvenv-virtualenvwrapper-python
                      nil t nil
-                     "-c"
-                     "from virtualenvwrapper.hook_loader import main; main()"
+                     "-m" "virtualenvwrapper.hook_loader"
                      "--script" tmpfile
                      (if (getenv "HOOK_VERBOSE_OPTION")
                          (cons (getenv "HOOK_VERBOSE_OPTION")
