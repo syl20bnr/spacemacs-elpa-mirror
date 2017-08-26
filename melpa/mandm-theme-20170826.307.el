@@ -5,7 +5,7 @@
 
 ;; Author: Christian Hopps <chopps@gmail.com>
 ;; URL: https://github.com/choppsv1/emacs-mandm-theme.git
-;; Package-Version: 20170304.1401
+;; Package-Version: 20170826.307
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: http://github.com/bbatsov/zenburn
@@ -48,15 +48,41 @@
  mmorange-color "#FF7509"             ; "#FF7509"
  mmred-color "#EE3932"                ; "#EE3932"
  mmbrown-color "#441B02"              ; I made this up
- mmfg-color "#dcdcdc"                 ; fg based on zenburn
- )
-
-;; Background from brown
-(setq mmbg-color (color-darken-name (color-desaturate-name mmbrown-color 80) 2))
+ mmfg-color "#dcdcdc"                 ; zenburn fg
+ mmbg-color "#002b36"
+ )                ; zenburn bg
+                                      ; ("zenburn"     . "#2f2f2f")
+(setq mmbg-color (color-darken-name (color-desaturate-name mmbrown-color 90) 2))
 
 ; #50301B
 
 (deftheme mandm "The M&M color theme")
+
+(defcustom mandm-height-minus-1 0.8
+  "Font size -1."
+  :type 'number
+  :group 'mandm)
+
+(defcustom mandm-height-plus-1 1.1
+  "Font size +1."
+  :type 'number
+  :group 'mandm)
+
+(defcustom mandm-height-plus-2 1.15
+  "Font size +2."
+  :type 'number
+  :group 'mandm)
+
+(defcustom mandm-height-plus-3 1.2
+  "Font size +3."
+  :type 'number
+  :group 'mandm)
+
+(defcustom mandm-height-plus-4 1.3
+  "Font size +4."
+  :type 'number
+  :group 'mandm)
+
 
 ;;; Color Palette
 
@@ -753,14 +779,14 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(org-formula ((t (:foreground ,mandm-yellow-2))))
    `(org-headline-done ((t (:foreground ,mandm-green+3))))
    `(org-hide ((t (:foreground ,mandm-bg-1))))
-   `(org-level-1 ((t (:foreground ,mandm-green+2 :height 145))))
-   `(org-level-2 ((t (:foreground ,mandm-green+2 :height 140))))
-   `(org-level-3 ((t (:foreground ,mandm-green+2 :height 135))))
-   `(org-level-4 ((t (:foreground ,mandm-green+2 :height 130))))
-   `(org-level-5 ((t (:foreground ,mandm-green+2 :height 125))))
-   `(org-level-6 ((t (:foreground ,mandm-green+2 :height 120))))
-   `(org-level-7 ((t (:foreground ,mandm-green+2 :height 115))))
-   `(org-level-8 ((t (:foreground ,mandm-green+2 :height 110))))
+   `(org-level-1 ((t (:foreground ,mandm-green+2 :height ,mandm-height-plus-4))))
+   `(org-level-2 ((t (:foreground ,mandm-green+2 :height ,mandm-height-plus-3))))
+   `(org-level-3 ((t (:foreground ,mandm-green+2 :height ,mandm-height-plus-2))))
+   `(org-level-4 ((t (:foreground ,mandm-green+2 :height ,mandm-height-plus-1))))
+   `(org-level-5 ((t (:foreground ,mandm-green+2 :weight bold))))
+   `(org-level-6 ((t (:foreground ,mandm-green+1 :weight bold))))
+   `(org-level-7 ((t (:foreground ,mandm-green :weight bold))))
+   `(org-level-8 ((t (:foreground ,mandm-green))))
    `(org-link ((t (:foreground ,mandm-yellow-2 :underline t))))
    `(org-scheduled ((t (:foreground ,mandm-green+4))))
    `(org-scheduled-previously ((t (:foreground ,mandm-red))))
