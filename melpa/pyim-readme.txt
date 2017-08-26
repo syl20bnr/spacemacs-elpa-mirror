@@ -112,33 +112,7 @@ pyim 当前的默认的拼音词库是 pyim-basedict, 这个词库的词条量
 1. libpinyin 项目的内置词库
 2. pyim 用户贡献的个人词库
 
-注意： 这个词库只能确保 pyim 可以正常工作，如果用户想让
-pyim 更加顺手，需要添加附加的词库，一个比较好的选择是安装
-pyim-greatdict:
-
-  https://github.com/tumashu/pyim-greatdict
-
-pyim-greatdict 包对应的词库由 [[https://github.com/xiaowl][WenLiang Xiao]] 同学开发制作，
-词条有 300 万条，词库文件大约 80M, 是一个 *大而全* 的词库，
-用户可以通过 Melpa 来安装它：
-
-1. 配置melpa源，参考：http://melpa.org/#/getting-started
-2. M-x package-install RET pyim-greatdict RET
-3. 在emacs配置文件中（比如: ~/.emacs）添加如下代码：
-
-   #+BEGIN_EXAMPLE
-   (require 'pyim-greatdict)
-   (pyim-greatdict-enable)
-   #+END_EXAMPLE
-
-但值得注意的是：
-
-1. 如果机器性能不好，安装 pyim-greatdict 会导致 pyim 启动
-   非常缓慢，请仔细考虑。
-2. 这个词库使用 gzip 压缩，非 Linux 用户需要安装 [[http://www.gzip.org/][gzip]] 程序，
-   并配置好系统 PATH 。
-
-如果 pyim-greatdict 不能满足需求，用户可以使用其他方式为 pyim 添加拼音词库，
+如果 pyim-basedict 不能满足需求，用户可以使用其他方式为 pyim 添加拼音词库，
 具体方式请参考 [[如何添加自定义拼音词库]] 小结。
 
 *** 激活 pyim
@@ -266,6 +240,13 @@ pyim 的 tooltip 选词框默认使用 *双行显示* 的样式，在一些特
 *** 切换全角标点与半角标点
 
 1. 第一种方法：使用命令 `pyim-punctuation-toggle'，全局切换。
+   这个命令主要用来设置变量： `pyim-punctuation-translate-p', 用户也可以
+   手动设置这个变量， 比如：
+   #+BEGIN_EXAMPLE
+   (setq pyim-punctuation-translate-p '(yes no auto))   ;使用全角标点。
+   (setq pyim-punctuation-translate-p '(no yes auto))   ;使用半角标点。
+   (setq pyim-punctuation-translate-p '(auto yes no))   ;中文使用全角标点，英文使用半角标点。
+   #+END_EXAMPLE
 2. 第二种方法：使用命令 `pyim-punctuation-translate-at-point' 只切换光
    标处标点的样式。
 3. 第三种方法：设置变量 `pyim-translate-trigger-char' ，输入变量设定的
