@@ -2,7 +2,7 @@
 
 ;; Author: stardiviner <numbchild@gmail.com>
 ;; Keywords: eldoc overlay
-;; Package-Version: 20170123.6
+;; Package-Version: 20170826.434
 ;; URL: https://github.com/stardiviner/eldoc-overlay-mode
 ;; Created: 14th Jan 2017
 ;; Version: 0.0.1
@@ -19,6 +19,14 @@
   (let ((map (make-sparse-keymap)))
     map))
 
+(defcustom eldoc-overlay-function 'inline-docs
+  "Specify the function for displaying eldoc.
+Two functions currently supported: `inline-docs', and `eldoc-overlay-mode-quick-peek'.")
+
+(defun eldoc-overlay-disable-in-org-mode ()
+  (setq-local eldoc-message-function #'eldoc-minibuffer-message))
+
+
 ;;;###autoload
 (define-minor-mode eldoc-overlay-mode
   "Minor mode for displaying eldoc with contextual documentation overlay."
@@ -27,7 +35,9 @@
   :keymap eldoc-overlay-mode-map
   :global t
   (if eldoc-overlay-mode
-      (setq eldoc-message-function #'inline-docs)
+      (progn
+        (setq eldoc-message-function eldoc-overlay-function)
+        (add-hook 'org-mode-hook #'eldoc-overlay-disable-in-org-mode))
     (setq eldoc-message-function #'eldoc-minibuffer-message)
     )
   )

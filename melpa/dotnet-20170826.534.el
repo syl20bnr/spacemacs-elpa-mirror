@@ -4,7 +4,7 @@
 
 ;; Author: Julien BLANCHARD <julien@sideburns.eu>
 ;; URL: https://github.com/julienXX/dotnet.el
-;; Package-Version: 20170819.642
+;; Package-Version: 20170826.534
 ;; Version: 0.10
 ;; Keywords: .net, tools
 
@@ -134,11 +134,23 @@ language (see `dotnet-langs')."
   (let ((solution-path (read-directory-name "Solution path: ")))
     (dotnet-command (concat "dotnet new sln -o " solution-path))))
 
+(defvar dotnet-test-last-test-dir nil
+  "Last runned unit test directory.")
+
 ;;;###autoload
 (defun dotnet-test ()
   "Launch project unit-tests."
   (interactive)
-  (dotnet-command "dotnet test"))
+  (dotnet-command "dotnet test")
+  (setq dotnet-test-last-test-dir default-directory))
+
+;;;###autoload
+(defun dotnet-test-rerun ()
+  "Relaunch last project unit-tests."
+  (interactive)
+  (if dotnet-test-last-test-dir
+    (dotnet-command (concat "dotnet test " dotnet-test-last-test-dir))
+  (dotnet-command "dotnet test")))
 
 (defun dotnet-command (cmd)
   "Run CMD in an async buffer."
@@ -160,6 +172,7 @@ language (see `dotnet-langs')."
     (define-key map (kbd "s n") #'dotnet-sln-new)
     (define-key map (kbd "s r") #'dotnet-sln-remove)
     (define-key map (kbd "t")   #'dotnet-test)
+    (define-key map (kbd "t r") #'dotnet-test-rerun)
     map)
   "Keymap for dotnet-mode commands after `dotnet-mode-keymap-prefix'.")
 
