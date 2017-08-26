@@ -7,11 +7,11 @@
 ;; Copyright (C) 1996-2017, Drew Adams, all rights reserved.
 ;; Created: Tue Sep 12 16:30:11 1995
 ;; Version: 0
-;; Package-Version: 20170825.924
+;; Package-Version: 20170825.1538
 ;; Package-Requires: ()
-;; Last-Updated: Fri Aug 25 09:22:11 2017 (-0700)
+;; Last-Updated: Fri Aug 25 15:37:57 2017 (-0700)
 ;;           By: dradams
-;;     Update #: 6204
+;;     Update #: 6214
 ;; URL: https://www.emacswiki.org/emacs/download/info%2b.el
 ;; Doc URL: https://www.emacswiki.org/emacs/InfoPlus
 ;; Keywords: help, docs, internal
@@ -457,6 +457,7 @@
 ;; 2017/08/25 dadams
 ;;     Added: Info-change-visited-status.  Bound to `C-x DEL (instead of Info-make-node-unvisited).
 ;;     Info-node-name-at-point: Replace newline chars by spaces.
+;;     Info-toc-outline: Pass NEWNAME arg to clone-buffer, instead of explicitly renaming buffer.
 ;; 2017/08/22 dadams
 ;;     Added: Info-toc-outline, Info-outline-demote, Info-outline-promote, Info-toc-outline-no-redundancy-flag,
 ;;            Info-toc-outline-find-node, Info-toc-outline-map, Info-toc-outline-refontify-links, redefinition of
@@ -1767,8 +1768,7 @@ possible.
   (if (and (not arg)  (get-buffer (format "*TOC Outline* (%s)" (file-name-nondirectory Info-current-file))))
       (pop-to-buffer (format "*TOC Outline* (%s)" (file-name-nondirectory Info-current-file)))
     (when (or (not arg)  (eq arg 'clone))
-      (clone-buffer nil t)
-      (rename-buffer (format "*TOC Outline* (%s)" (file-name-nondirectory Info-current-file)) 'UNIQUIFY))
+      (clone-buffer (format "*TOC Outline* (%s)" (file-name-nondirectory Info-current-file)) t))
     (setq mark-ring  ()) ;`clone-buffer' causes this to be needed, if `*info*' buffer has no mark.
     (Info-find-node Info-current-file (format "*TOC Outline* (%s)" (file-name-nondirectory Info-current-file)))
     (let ((prev-node  (nth 1 (car Info-history)))
@@ -1780,7 +1780,7 @@ possible.
 
 ;;;###autoload (autoload 'Info-toc-outline-find-node "info+")
 (defun Info-toc-outline-find-node (filename nodename &optional _no-going-back)
-  "Toc-specific implementation of `Info-find-node-2'."
+  "TOC-specific implementation of `Info-find-node-2'."
   (let* ((curr-file  (substring-no-properties (or filename Info-current-file)))
 	 (curr-node  (substring-no-properties (or nodename Info-current-node)))
 	 (node-list  (Info-toc-nodes curr-file)))
@@ -1801,7 +1801,7 @@ possible.
   (set (make-local-variable 'inhibit-read-only) t)
   (goto-char (point-min))
   (search-forward "Contents" nil t)
-  (forward-line 2)
+  (forward-line 3)
   ;; If `Info-toc-outline-no-redundancy-flag' is non-nil then remove redundancies.  Else give non-links face `info-title-4'.
   (save-excursion
     (let ((note-re  "^[\t]*[*]Note "))
@@ -3925,8 +3925,7 @@ If key's command cannot be found by looking in indexes, then
                                              (< (- (point-max) (point-min)) Info-fontify-maximum-menu-size))))
              (fontify-bookmarked-p  (and node-not-too-large  fontify-bookmarked-p))
              (fontify-visited-p     (and node-not-too-large  Info-fontify-visited-nodes))
-             (not-fontified-p       (not (let ((where  (next-single-property-change (point-min)
-                                                                                    'font-lock-face)))
+             (not-fontified-p       (not (let ((where  (next-single-property-change (point-min) 'font-lock-face)))
                                            (and where  (not (= where (point-max)))))))
              paragraph-markers rbeg rend)
 
