@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20170812.1029
+;; Package-Version: 20170826.2220
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -218,7 +218,8 @@ and blacklist match, then the whitelist entry wins, and
 
 ;;;###autoload
 (define-globalized-minor-mode intero-global-mode
-  intero-mode intero-mode-maybe)
+  intero-mode intero-mode-maybe
+  :require 'intero)
 
 (define-obsolete-function-alias 'global-intero-mode 'intero-global-mode)
 
@@ -2419,7 +2420,6 @@ Each option is a plist of (:key :default :title) wherein:
            (let ((map (copy-keymap widget-keymap)))
              (define-key map (kbd "C-c C-c") 'exit-recursive-edit)
              (define-key map (kbd "C-c C-k") 'abort-recursive-edit)
-             (define-key map (kbd "C-g") 'abort-recursive-edit)
              map))
           (widget-setup)
           (recursive-edit)
@@ -3088,7 +3088,6 @@ Equivalent to 'warn', but label the warning as coming from intero."
     (define-key map (kbd "<backtab>") 'intero-highlight-uses-mode-prev)
     (define-key map (kbd "RET") 'intero-highlight-uses-mode-stop-here)
     (define-key map (kbd "r") 'intero-highlight-uses-mode-replace)
-    (define-key map (kbd "C-g") 'intero-highlight-uses-mode)
     (define-key map (kbd "q") 'intero-highlight-uses-mode)
     map)
   "Keymap for using `intero-highlight-uses-mode'.")

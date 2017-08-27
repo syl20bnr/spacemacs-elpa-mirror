@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/pamparam
-;; Package-Version: 20170808.1219
+;; Package-Version: 20170827.121
 ;; Version: 0.0.0
 ;; Package-Requires: ((emacs "24.3") (lispy "0.26.0") (worf "0.1.0") (hydra "0.13.4"))
 ;; Keywords: outlines, hypermedia, flashcards, memory
@@ -499,10 +499,10 @@ When called interactively, use today's schedule file."
                 "'" "'\\''"
                 (format "* %s\\n%s" card-front card-body)
                 t t)))
-             (cmd (format "mkdir -p %s && echo -e %s > %s"
-                          (shell-quote-argument (file-name-directory full-card-file))
+             (cmd (format "echo -e %s > %s"
                           (shell-quote-argument txt)
                           (shell-quote-argument full-card-file))))
+        (make-directory (file-name-directory full-card-file) t)
         (if (= 0 (call-process-shell-command cmd))
             (cons (if metadata
                       'update
