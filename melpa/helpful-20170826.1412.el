@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Keywords: help, lisp
-;; Package-Version: 20170826.748
+;; Package-Version: 20170826.1412
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2"))
 
@@ -95,6 +95,7 @@ This allows us to distinguish strings from symbols."
 (define-button-type 'helpful-forget-button
   'action #'helpful--forget
   'symbol nil
+  'callable-p nil
   'follow-link t
   'help-echo "Unbind this function")
 
@@ -170,25 +171,30 @@ This allows us to distinguish strings from symbols."
 (define-button-type 'helpful-all-references-button
   'action #'helpful--all-references
   'symbol nil
+  'callable-p nil
   'follow-link t
   'help-echo "Find all references to this symbol")
 
 (defun helpful--all-references (button)
   "Find all the references to the symbol that this BUTTON represents."
-  (let ((sym (button-get button 'symbol)))
+  (let ((sym (button-get button 'symbol))
+        (callable-p (button-get button 'callable-p)))
     (cond
+     ((not callable-p)
+      (elisp-refs-variable sym))
      ((functionp sym)
       (elisp-refs-function sym))
      ((macrop sym)
       (elisp-refs-macro sym)))))
 
-(defun helpful--all-references-button (sym)
+(defun helpful--all-references-button (sym callable-p)
   "Return a button that finds all references to SYM."
   (with-temp-buffer
     (insert-text-button
      "All references"
      :type 'helpful-all-references-button
-     'symbol sym)
+     'symbol sym
+     'callable-p callable-p)
     (buffer-string)))
 
 (define-button-type 'helpful-describe-button
@@ -308,10 +314,11 @@ If the source code cannot be found, return the sexp used."
         ;; If it's defined interactively, it may have an edebug property
         ;; that tells us where it's defined.
         (-when-let (marker (get sym 'edebug))
-          (cons (marker-buffer marker)
-                (marker-position marker)))))
+          (setq buf-and-pos
+                (cons (marker-buffer marker)
+                      (marker-position marker))))))
     (when (not callable-p)
-      (let ((filename (find-lisp-object-file-name sym 'defvar)))
+      (-when-let (filename (find-lisp-object-file-name sym 'defvar))
         (setq buf-and-pos (find-variable-noselect sym filename))))
     buf-and-pos))
 
@@ -325,13 +332,17 @@ If the source code cannot be found, return the sexp used."
   (-when-let ((buf . pos) (helpful--definition sym callable-p))
     pos))
 
-(defun helpful--reference-positions (sym buf)
+(defun helpful--reference-positions (sym callable-p buf)
   "Return all the buffer positions of references to SYM in BUF."
   (-let* ((forms-and-bufs
            (elisp-refs--search-1
             (list buf)
             (lambda (buf)
-              (elisp-refs--read-and-find buf sym #'elisp-refs--function-p))))
+              (elisp-refs--read-and-find
+               buf sym
+               (if callable-p
+                   #'elisp-refs--function-p
+                 #'elisp-refs--variable-p)))))
           ;; Since we only searched one buffer, we know that
           ;; forms-and-bufs has only one item.
           (forms-and-buf (-first-item forms-and-bufs))
@@ -443,9 +454,14 @@ POSITION-HEADS takes the form ((123 (defun foo)) (456 (defun bar)))."
                (helpful--format-reference head count pos path)))
        (s-join "\n")))
 
-(defun helpful--primitive-p (sym)
+(defun helpful--primitive-p (sym callable-p)
   "Return t if SYM is defined in C."
-  (subrp (symbol-function sym)))
+  (if callable-p
+      (subrp (symbol-function sym))
+    (let ((filename (find-lisp-object-file-name sym 'defvar)))
+      (or (eq filename 'C-source)
+          (and (stringp filename)
+               (equal (file-name-extension filename) "c"))))))
 
 (defun helpful-update ()
   "Update the current *Helpful* buffer to the latest
@@ -454,7 +470,9 @@ state of the current symbol."
   (cl-assert (not (null helpful--sym)))
   (let* ((inhibit-read-only t)
          (start-pos (point))
-         (look-for-src (or (not (helpful--primitive-p helpful--sym))
+         (primitive-p (helpful--primitive-p
+                       helpful--sym helpful--callable-p))
+         (look-for-src (or (not primitive-p)
                            find-function-C-source-directory))
          (source (when look-for-src
                    (helpful--source helpful--sym helpful--callable-p)))
@@ -464,9 +482,10 @@ state of the current symbol."
     (when source-path
       (let* ((buf (elisp-refs--contents-buffer source-path))
              (positions
-              (if (helpful--primitive-p helpful--sym)
+              (if primitive-p
                   nil
-                (helpful--reference-positions helpful--sym buf))))
+                (helpful--reference-positions
+                 helpful--sym helpful--callable-p buf))))
         (setq references
               (--map (helpful--position-head buf it) positions))
         (kill-buffer buf)))
@@ -477,11 +496,12 @@ state of the current symbol."
         (if (macrop helpful--sym)
             "Macro Signature\n"
           "Function Signature\n"))
-       (helpful--signature helpful--sym)
-       "\n\n"))
+       (helpful--signature helpful--sym)))
 
     (-when-let (docstring (helpful--docstring
                            helpful--sym helpful--callable-p))
+      (when helpful--callable-p
+        (insert "\n\n"))
       (insert
        (helpful--heading "Documentation\n")
        ;; TODO: a link to find this symbol in the manual, much like
@@ -499,18 +519,18 @@ state of the current symbol."
      (helpful--heading "\n\nReferences\n")
      (cond
       ((and source-path references)
-       (format "Callers in %s:\n%s"
+       (format "References in %s:\n%s"
                (helpful--navigate-button source-path 0)
                (helpful--format-position-heads references source-path)))
       (source-path
-       (format "No callers found in %s."
+       (format "No references found in %s."
                (helpful--navigate-button source-path 0)))
       ((null find-function-C-source-directory)
        "C code is not yet loaded.")
       (t
        "Could not find source file."))
      "\n\n"
-     (helpful--all-references-button helpful--sym))
+     (helpful--all-references-button helpful--sym helpful--callable-p))
 
     (-when-let (formatted-props (helpful--format-properties helpful--sym))
       (insert
@@ -525,9 +545,7 @@ state of the current symbol."
 
     (insert
      (helpful--heading "\n\nDebugging\n")
-     (if (or
-          (not helpful--callable-p)
-          (helpful--primitive-p helpful--sym))
+     (if (or (not helpful--callable-p) primitive-p)
          ""
        (concat
         (helpful--disassemble-button)
@@ -539,15 +557,13 @@ state of the current symbol."
       (source-path
        (concat
         (propertize
-         (if (helpful--primitive-p helpful--sym)
-             "// Defined in "
-           ";; Defined in ")
+         (if primitive-p "// Defined in " ";; Defined in ")
          'face 'font-lock-comment-face)
         (helpful--navigate-button
          source-path
          (helpful--source-pos helpful--sym helpful--callable-p))
         "\n"))
-      ((helpful--primitive-p helpful--sym)
+      (primitive-p
        (propertize
         "C code is not yet loaded."
         'face 'font-lock-comment-face))
@@ -559,8 +575,7 @@ state of the current symbol."
        (if (stringp source)
            (helpful--syntax-highlight
             source
-            (if (helpful--primitive-p helpful--sym)
-                'c-mode))
+            (if primitive-p 'c-mode))
          (helpful--syntax-highlight (helpful--pretty-print source)))))
     (goto-char start-pos)))
 
@@ -651,15 +666,19 @@ For example, \"(some-func FOO &optional BAR)\"."
   (switch-to-buffer (helpful--buffer symbol t))
   (helpful-update))
 
-;; ;; checking if something is a variable.
-;; (or (get vv 'variable-documentation)
-;;     (and (boundp vv) (not (keywordp vv))))
+(defun helpful--variable-p (symbol)
+  "Return non-nil if SYMBOL is a variable."
+  (or (get symbol 'variable-documentation)
+      (and (boundp symbol)
+           (not (keywordp symbol))
+           (not (eq symbol nil))
+           (not (eq symbol t)))))
 
 ;;;###autoload
 (defun helpful-variable (symbol)
   "Show help for variable named SYMBOL."
   (interactive
-   (list (helpful--read-symbol "Variable:" #'boundp)))
+   (list (helpful--read-symbol "Variable:" #'helpful--variable-p)))
   (switch-to-buffer (helpful--buffer symbol nil))
   (helpful-update))
 

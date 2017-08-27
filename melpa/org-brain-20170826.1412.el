@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; URL: http://github.com/Kungsgeten/org-brain
-;; Package-Version: 20170814.404
+;; Package-Version: 20170826.1412
 ;; Keywords: outlines hypermedia
 ;; Package-Requires: ((emacs "25") (org "9"))
 ;; Version: 0.4
@@ -118,6 +118,11 @@ Only applies to headline entries."
 
 (defcustom org-brain-exclude-children-tag "childless"
   "`org-mode' tag which exclude the headline's children from org-brain's entries."
+  :group 'org-brain
+  :type '(string))
+
+(defcustom org-brain-show-children-tag "showchildren"
+  "`org-mode' tag which get entire subtree from headline entry during `org-brain-text'."
   :group 'org-brain
   :type '(string))
 
@@ -331,7 +336,8 @@ For PREDICATE, REQUIRE-MATCH and INITIAL-INPUT, see `completing-read'."
                 (end-of-line)
                 (let (end)
                   (save-excursion
-                    (or (and (not (member "childless" tags))
+                    (or (and (not (member org-brain-exclude-children-tag tags))
+                             (not (member org-brain-show-children-tag tags))
                              (org-goto-first-child))
                         (org-end-of-subtree t))
                     (setq end (point)))
