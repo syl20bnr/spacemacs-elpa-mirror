@@ -4,7 +4,7 @@
 
 ;; Author: Iqbal Ansari <iqbalansari02@yahoo.com>
 ;; URL: https://github.com/iqbalansari/mu4e-alert
-;; Package-Version: 20170429.816
+;; Package-Version: 20170827.735
 ;; Keywords: mail, convenience
 ;; Version: 1.0
 ;; Package-Requires: ((alert "1.2") (s "1.10.0") (ht "2.0") (emacs "24.1"))
@@ -222,22 +222,23 @@ The buffer holds the emails received from mu in sexp format"
 
 This is used internally by `mu4e-alert--get-mu-unread-emails' which throttles
 the requests for unread emails."
-  (set-process-sentinel (apply #'start-process
-                               "mu4e-alert-unread-mails"
-                               (mu4e-alert--get-mail-output-buffer)
-                               mu4e-mu-binary
-                               (append (list "find"
-                                             "--nocolor"
-                                             "-o"
-                                             "sexp"
-                                             "--sortfield=d"
-                                             (format "--maxnum=%d" mu4e-alert-max-messages-to-process))
-                                       (when mu4e-headers-skip-duplicates
-                                         (list "-u"))
-                                       (when mu4e-mu-home
-                                         (list (concat "--muhome=" mu4e-mu-home)))
-                                       (split-string mu4e-alert-interesting-mail-query)))
-                        (mu4e-alert--get-mail-sentinel callback)))
+  (let ((default user-emacs-directory))
+    (set-process-sentinel (apply #'start-process
+                                 "mu4e-alert-unread-mails"
+                                 (mu4e-alert--get-mail-output-buffer)
+                                 mu4e-mu-binary
+                                 (append (list "find"
+                                               "--nocolor"
+                                               "-o"
+                                               "sexp"
+                                               "--sortfield=d"
+                                               (format "--maxnum=%d" mu4e-alert-max-messages-to-process))
+                                         (when mu4e-headers-skip-duplicates
+                                           (list "-u"))
+                                         (when mu4e-mu-home
+                                           (list (concat "--muhome=" mu4e-mu-home)))
+                                         (split-string mu4e-alert-interesting-mail-query)))
+                          (mu4e-alert--get-mail-sentinel callback))))
 
 (defvar mu4e-alert--fetch-timer nil
   "The scheduled fetching of mails from mu.")
