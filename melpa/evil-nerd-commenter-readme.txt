@@ -2,7 +2,8 @@ This program emulates nerd-commenter.vim by Marty Grenfell.
 
 It helps you comment/uncomment multiple lines without selecting them.
 
-`M-x evilnc-default-hotkeys` assigns hotkey `M-;` to `evilnc-comment-or-uncomment-lines`
+`M-x evilnc-default-hotkeys` assigns hotkey `M-;` to
+`evilnc-comment-or-uncomment-lines'
 
 `M-x evilnc-comment-or-uncomment-lines` comment or uncomment lines.
 
@@ -35,21 +36,25 @@ insert below setup into your ~/.emacs instead,
   "ci" 'evilnc-comment-or-uncomment-lines
   "cl" 'evilnc-quick-comment-or-uncomment-to-the-line
   "ll" 'evilnc-quick-comment-or-uncomment-to-the-line
-  "cc" 'evilnc-copy-and-comment-lines ; Or use `evilnc-comment-and-kill-ring-save' instead
+  ;; Or use `evilnc-comment-and-kill-ring-save' instead
+  "cc" 'evilnc-copy-and-comment-lines
   "cp" 'evilnc-comment-or-uncomment-paragraphs
   "cr" 'comment-or-uncomment-region
   "cv" 'evilnc-toggle-invert-comment-line-by-line
   "."  'evilnc-copy-and-comment-operator
   "\\" 'evilnc-comment-operator)
 
-You can setup `evilnc-original-above-comment-when-copy-and-comment' to decide which
-style to use when `evilnc-copy-and-comment-lines' or `evilnc-copy-and-comment-operator',
+You can setup `evilnc-original-above-comment-when-copy-and-comment'
+to decide which style to use when `evilnc-copy-and-comment-lines'
+or `evilnc-copy-and-comment-operator',
   - Place the commented out text above original text
   - Or place the original text above commented out text
 
 We defined comment text object "c" which can have multi-lines.
 Press "vac" to select outer object (comment with limiters).
 Press "vic" to select inner object (comment without limiter).
+Please note in order to select innner object precisel,x
+either the first or last line is the longest line.
 You can assign other key instead of "c" to the text object by
 customizing `evilnc-comment-text-object'.
 
