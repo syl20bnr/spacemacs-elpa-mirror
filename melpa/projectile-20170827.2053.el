@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20170820.2210
+;; Package-Version: 20170827.2053
 ;; Keywords: project, convenience
 ;; Version: 0.15.0-cvs
 ;; Package-Requires: ((emacs "24.1") (pkg-info "0.4"))
@@ -211,6 +211,11 @@ Otherwise consider the current directory the project root."
 (defcustom projectile-cache-file
   (expand-file-name "projectile.cache" user-emacs-directory)
   "The name of Projectile's cache file."
+  :group 'projectile
+  :type 'string)
+
+(defcustom projectile-build-dir "build"
+  "The directory Projectile will use for build systems that build out of tree."
   :group 'projectile
   :type 'string)
 
@@ -2215,6 +2220,48 @@ TEST-PREFIX which specifies test file prefix."
     (puthash project-type project-plist
              projectile-project-types)))
 
+(defun projectile-cmake-run-target (target)
+  "Run CMake TARGET, generating build dir if needed."
+  (interactive "sTarget: ")
+  (let ((configure-cmd (format "cmake -E chdir %s cmake .."
+                               projectile-build-dir))
+        (build-cmd (format "cmake --build %s --target %s"
+                           projectile-build-dir
+                           target)))
+    (compile (if (file-accessible-directory-p projectile-build-dir)
+                 build-cmd
+               (mkdir projectile-build-dir)
+               (format "%s && %s" configure-cmd build-cmd)))))
+
+(defun projectile-cmake-compile ()
+  "Compile the current cmake project."
+  (interactive)
+  (projectile-cmake-run-target ""))
+
+(defun projectile-cmake-test ()
+  "Run the current cmake projects test suite."
+  (interactive)
+  (projectile-cmake-run-target "test"))
+
+(defun projectile-meson-run-target (target)
+  "Run meson TARGET, generating build dir if needed."
+  (interactive "sTarget: ")
+  (let* ((configure-cmd (format "meson %s" projectile-build-dir))
+         (build-cmd (format "ninja -C %s %s" projectile-build-dir target)))
+    (compile (if (file-accessible-directory-p projectile-build-dir)
+                 build-cmd
+               (format "%s && %s" configure-cmd build-cmd)))))
+
+(defun projectile-meson-compile ()
+  "Compile the current meson project."
+  (interactive)
+  (projectile-meson-run-target ""))
+
+(defun projectile-meson-test ()
+  "Run the current meson projects test suite."
+  (interactive)
+  (projectile-meson-run-target "test"))
+
 (defun projectile-cabal ()
   "Check if a project contains *.cabal files but no stack.yaml file."
   (and (projectile-verify-file "*.cabal")
@@ -2323,6 +2370,12 @@ TEST-PREFIX which specifies test file prefix."
 (projectile-register-project-type 'npm '("package.json")
                                   :compile "npm install"
                                   :test "npm test")
+(projectile-register-project-type 'meson '("meson.build")
+                                  :compile #'projectile-meson-compile
+                                  :test #'projectile-meson-test)
+(projectile-register-project-type 'cmake '("CMakeLists.txt")
+                                  :compile #'projectile-cmake-compile
+                                  :test #'projectile-cmake-test)
 
 (defvar-local projectile-project-type nil
   "Buffer local var for overriding the auto-detected project type.
