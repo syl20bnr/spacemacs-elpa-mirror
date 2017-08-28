@@ -17,8 +17,18 @@ _________________
 4 Contribute
 
 
+[[file:https://melpa.org/packages/pinyinlib-badge.svg]]
+[[file:https://stable.melpa.org/packages/pinyinlib-badge.svg]]
+
 Library for converting first letter of Pinyin to Simplified/Traditional
 Chinese characters.
+
+
+[[file:https://melpa.org/packages/pinyinlib-badge.svg]]
+https://melpa.org/#/pinyinlib
+
+[[file:https://stable.melpa.org/packages/pinyinlib-badge.svg]]
+https://stable.melpa.org/#/pinyinlib
 
 
 1 Functions
@@ -29,12 +39,12 @@ Chinese characters.
 
   `pinyinlib-build-regexp-char' converts a letter to a regular
   expression containing all the Chinese characters whose pinyins start
-  with the letter. It accepts four parameters:
+  with the letter.  It accepts four parameters:
   ,----
   | char &optional no-punc-p tranditional-p only-chinese-p
   `----
 
-  The first parameter `char' is the letter to be converted. The latter
+  The first parameter `char' is the letter to be converted.  The latter
   three parameters are optional.
   - If `no-punc-p' is `t': it will not convert English punctuations to
     Chinese punctuations.
@@ -80,6 +90,8 @@ Chinese characters.
 
   - [ace-pinyin]
   - [evil-find-char-pinyin]
+  - [find-by-pinyin-dired]
+  - [pinyin-search]
 
 
 [ace-pinyin] https://github.com/cute-jumper/ace-pinyin
@@ -87,19 +99,24 @@ Chinese characters.
 [evil-find-char-pinyin]
 https://github.com/cute-jumper/evil-find-char-pinyin
 
+[find-by-pinyin-dired]
+https://github.com/redguardtoo/find-by-pinyin-dired
+
+[pinyin-search] https://github.com/xuchunyang/pinyin-search.el
+
 
 3 Acknowledgment
 ================
 
   - The ASCII char to Chinese character
-        table(`pinyinlib--simplified-char-table' in code) is from
-        [https://github.com/redguardtoo/find-by-pinyin-dired].
+    table(`pinyinlib--simplified-char-table' in code) is from
+    [https://github.com/redguardtoo/find-by-pinyin-dired].
   - @erstern adds the table for traditional Chinese characters.
 
 
 4 Contribute
 ============
 
-  Contributions are always welcome. If you want to add some common
+  Contributions are always welcome.  If you want to add some common
   pinyin related functions that might be useful for other packages,
   please send me a PR.

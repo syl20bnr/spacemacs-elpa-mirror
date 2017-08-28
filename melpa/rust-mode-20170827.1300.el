@@ -1,7 +1,7 @@
 ;;; rust-mode.el --- A major emacs mode for editing Rust source code -*-lexical-binding: t-*-
 
 ;; Version: 0.3.0
-;; Package-Version: 20170822.533
+;; Package-Version: 20170827.1300
 ;; Author: Mozilla
 ;; Url: https://github.com/rust-lang/rust-mode
 ;; Keywords: languages
@@ -1610,7 +1610,7 @@ See `compilation-error-regexp-alist' for help on their format.")
    the compilation window until the top of the error is visible."
   (save-selected-window
     (when (eq major-mode 'rust-mode)
-      (select-window (get-buffer-window next-error-last-buffer))
+      (select-window (get-buffer-window next-error-last-buffer 'visible))
       (when (save-excursion
               (beginning-of-line)
               (looking-at " *-->"))

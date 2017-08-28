@@ -1,5 +1,34 @@
-Provides font-lock, indentation, and navigation for the Hy
-language. (http://hylang.org)
+;;; hy-mode.el --- Major mode for Hylang
+
+;; Copyright © 2013 Julien Danjou <julien@danjou.info>
+;;           © 2017 Eric Kaschalk <ekaschalk@gmail.com>
+;;
+;; Authors: Julien Danjou <julien@danjou.info>
+;;          Eric Kaschalk <ekaschalk@gmail.com>
+;; URL: http://github.com/hylang/hy-mode
+;; Package-Version: 20170827.1406
+;; Version: 1.0
+;; Keywords: languages, lisp, python
+
+;; hy-mode is free software; you can redistribute it and/or modify it
+;; under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 3, or (at your option)
+;; any later version.
+;;
+;; hy-mode is distributed in the hope that it will be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+;; or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+;; License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with hy-mode.  If not, see <http://www.gnu.org/licenses/>.
+
+;; This file is not part of GNU Emacs.
+
+;;; Commentary:
+
+;; Provides font-lock, indentation, and navigation for the Hy
+;; language. (http://hylang.org)
 
 (defgroup hy-mode nil
   "A mode for Hy"
@@ -11,7 +40,7 @@ language. (http://hylang.org)
   :type 'string
   :group 'hy-mode)
 
-Keywords
+;;; Keywords
 
 (defconst hy--kwds-builtins
   '("*map" "accumulate" "and" "assoc" "butlast" "calling-module-name" "car"
@@ -82,8 +111,8 @@ Keywords
 
   "Hy special forms keywords.")
 
-Font Locks
-Definitions
+;;; Font Locks
+;;;; Definitions
 
 (defconst hy--font-lock-kwds-builtins
   (list
@@ -129,7 +158,7 @@ Definitions
 
   "Hy special forms keywords.")
 
-Static
+;;;; Static
 
 (defconst hy--font-lock-kwds-aliases
   (list
@@ -174,7 +203,7 @@ Static
 
   "Hy self keyword.")
 
-Misc
+;;;; Misc
 
 (defconst hy--font-lock-kwds-func-modifiers
   (list
@@ -200,7 +229,7 @@ Misc
 
   "Hy shebang line.")
 
-Grouped
+;;;; Grouped
 
 (defconst hy-font-lock-kwds
   (list hy--font-lock-kwds-aliases
@@ -217,7 +246,7 @@ Grouped
 
   "All Hy font lock keywords.")
 
-Indentation
+;;; Indentation
 
 (defcustom hy-indent-specform
   '(("for" . 1)
@@ -274,7 +303,7 @@ Lisp function does not specify a special indentation."
               ((string-match-p "\\`\\(?:\\S +/\\)?\\(def\\|with-\\|with_\\|fn\\|lambda\\)" function)
                (lisp-indent-defform state indent-point)))))))
 
-Syntax
+;;; Syntax
 
 (defvar hy-mode-syntax-table
   (let ((table (copy-syntax-table lisp-mode-syntax-table)))
@@ -284,18 +313,18 @@ Syntax
     (modify-syntax-entry ?\] ")[" table)
     table))
 
-Hy-mode
+;;; Hy-mode
 
 (unless (fboundp 'setq-local)
   (defmacro setq-local (var val)
     `(set (make-local-variable ',var) ,val)))
 
-###autoload
+;;;###autoload
 (progn
   (add-to-list 'auto-mode-alist '("\\.hy\\'" . hy-mode))
   (add-to-list 'interpreter-mode-alist '("hy" . hy-mode)))
 
-###autoload
+;;;###autoload
 (define-derived-mode hy-mode prog-mode "Hy"
   "Major mode for editing Hy files."
   (setq font-lock-defaults
@@ -324,21 +353,21 @@ Hy-mode
                       "(import-file-to-module \"__main__\" \"%s\")\n"))
   (setenv "PYTHONIOENCODING" "UTF-8"))
 
-Utilities
+;;; Utilities
 
-###autoload
+;;;###autoload
 (defun hy-insert-pdb ()
   "Import and set pdb trace at point."
   (interactive)
   (insert "(do (import pdb) (pdb.set-trace))"))
 
-###autoload
+;;;###autoload
 (defun hy-insert-pdb-threaded ()
   "Import and set pdb trace at point for a threading macro."
   (interactive)
   (insert "((fn [x] (import pdb) (pdb.set-trace) x))"))
 
-Keybindings
+;;; Keybindings
 
 (set-keymap-parent hy-mode-map lisp-mode-shared-map)
 (define-key hy-mode-map (kbd "C-M-x")   'lisp-eval-defun)
@@ -351,4 +380,4 @@ Keybindings
 
 (provide 'hy-mode)
 
-hy-mode.el ends here
+;;; hy-mode.el ends here
