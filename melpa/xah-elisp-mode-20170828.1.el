@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2017, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 3.2.20170820
-;; Package-Version: 20170821.357
+;; Version: 3.2.20170828
+;; Package-Version: 20170828.1
 ;; Created: 23 Mar 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: lisp, languages
@@ -2994,7 +2994,6 @@ Version 2017-01-27"
     ("ss" "split-string" xah-elisp--ahf)
     ("wg" "widget-get" xah-elisp--ahf)
 
-
     ("bfn" "buffer-file-name" xah-elisp--ahf)
     ("bmp" "buffer-modified-p" xah-elisp--ahf)
     ("bol" "beginning-of-line" xah-elisp--ahf)
@@ -3024,7 +3023,7 @@ Version 2017-01-27"
     ("scf" "skip-chars-forward" xah-elisp--ahf)
     ("sfm" "set-file-modes" xah-elisp--ahf)
     ("sfr" "search-forward-regexp" xah-elisp--ahf)
-    ("stn" "string-to-number" xah-elisp--ahf)
+    ("ste" "(string-equal str1▮ str2)" xah-elisp--ahf)
     ("tap" "thing-at-point" xah-elisp--ahf)
     ("urp" "use-region-p" xah-elisp--ahf)
     ("wcb" "with-current-buffer" xah-elisp--ahf)
@@ -3344,7 +3343,7 @@ Version 2017-01-27"
     ("yes-or-no-p" "(yes-or-no-p \"PROMPT▮ \")" xah-elisp--ahf)
 
     ("make-string" "(make-string count character)" xah-elisp--ahf)
-    ("string" "(string &rest characters)" xah-elisp--ahf)
+    ;; ("string" "(string &rest characters)" xah-elisp--ahf)
     ("backward-up-list" "(backward-up-list &optional ARG▮ 'ESCAPE-STRINGS 'NO-SYNTAX-CROSSING)" xah-elisp--ahf)
 
     ("char-equal" "(char-equal char1▮ char1)" xah-elisp--ahf)
