@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Version: 1.2
-;; Package-Version: 20170528.1223
+;; Package-Version: 20170828.1027
 ;; Keywords: lisp
 ;; Package-Requires: ((dash "2.12.0") (f "0.18.2") (list-utils "0.4.4") (loop "2.1") (s "1.11.0"))
 
@@ -338,7 +338,7 @@ Where the file was a .elc, return the path to the .el file instead."
   "Read PATH into a disposable buffer, and return it.
 Works around the fact that Emacs won't allow multiple buffers
 visiting the same file."
-  (let ((fresh-buffer (generate-new-buffer (format "refs-%s" path))))
+  (let ((fresh-buffer (generate-new-buffer (format " *refs-%s*" path))))
     (with-current-buffer fresh-buffer
       (setq-local elisp-refs--path path)
       (insert-file-contents path)
