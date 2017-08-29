@@ -4,7 +4,7 @@
 
 ;; Author: Andrew Hyatt <ahyatt@gmail.com>
 ;; Keywords: Communication, Websocket, Server
-;; Package-Version: 20170819.1111
+;; Package-Version: 20170829.457
 ;; Version: 1.8
 ;; Package-Requires: ((cl-lib "0.5"))
 ;;
@@ -682,9 +682,8 @@ describing the invalid header received from the server.
 `websocket-unparseable-frame': Data in the error is a string
 describing the problem with the frame.
 
-`nowait': If NOWAIT is non-nil,
-return without waiting for the connection to complete.
-Default nil.
+`nowait': If NOWAIT is true, return without waiting for the
+connection to complete.
 "
   (let* ((name (format "websocket to %s" url))
          (url-struct (url-generic-parse-url url))
