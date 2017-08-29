@@ -1,11 +1,11 @@
-;;; php-runtime.el --- Language binding bridge to PHP -*- lexical-binding:t -*-
+;;; php-runtime.el --- Language binding bridge to PHP -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2017 USAMI Kenta
 
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 28 Aug 2017
 ;; Version: 0.0.1
-;; Package-Version: 20170826.2144
+;; Package-Version: 20170828.2343
 ;; Keywords: processes php
 ;; URL: https://github.com/emacs-php/php-runtime.el
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))

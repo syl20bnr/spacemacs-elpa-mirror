@@ -1,11 +1,11 @@
-;;; page-break-lines.el --- Display ugly ^L page breaks as tidy horizontal lines
+;;; page-break-lines.el --- Display ^L page breaks as tidy horizontal lines
 
 ;; Copyright (C) 2012-2015 Steve Purcell
 
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;; URL: https://github.com/purcell/page-break-lines
-;; Package-Version: 20170517.235
-;; Package-X-Original-Version: DEV
+;; Package-Version: 20170829.157
+;; Package-X-Original-Version: 0
 ;; Keywords: convenience, faces
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -37,7 +37,7 @@
 
 ;; If `page-break-lines-char' is displayed at a different width to
 ;; regular characters, the rule may be either too short or too long:
-;; rules may then wrap if `truncate-lines' is nil. On some systems,
+;; rules may then wrap if `truncate-lines' is nil.  On some systems,
 ;; Emacs may erroneously choose a different font for the page break
 ;; symbol, which choice can be overridden using code such as:
 
@@ -108,7 +108,8 @@ horizontal line of `page-break-string-char' characters."
 
 (dolist (hook '(window-configuration-change-hook
                 window-size-change-functions
-                after-setting-font-hook))
+                after-setting-font-hook
+                display-line-numbers-mode-hook))
   (add-hook hook 'page-break-lines--update-display-tables))
 
 
@@ -118,28 +119,32 @@ horizontal line of `page-break-string-char' characters."
 If the buffer inside WINDOW has `page-break-lines-mode' enabled,
 its display table will be modified as necessary."
   (with-current-buffer (window-buffer window)
-    (if page-break-lines-mode
-        (progn
-          (unless buffer-display-table
-            (setq buffer-display-table (make-display-table)))
-          (let ((default-height (face-attribute 'default :height nil 'default)))
-            (set-face-attribute 'page-break-lines nil :height default-height)
-            (let* ((cwidth (char-width page-break-lines-char))
-                   (wwidth (window-width window))
-                   (width (if (zerop (% wwidth cwidth))
-                              (1- (/ wwidth cwidth))
-                            (/ wwidth cwidth)))
-                   (glyph (make-glyph-code page-break-lines-char 'page-break-lines))
-                   (new-display-entry (vconcat (make-list width glyph))))
-              (unless (equal new-display-entry (elt buffer-display-table ?\^L))
-                (aset buffer-display-table ?\^L new-display-entry)))))
-      (when (and (member major-mode page-break-lines-modes)
-                 buffer-display-table)
-        (aset buffer-display-table ?\^L nil)))))
+    (with-selected-window window
+      (if page-break-lines-mode
+          (progn
+            (unless buffer-display-table
+              (setq buffer-display-table (make-display-table)))
+            (let ((default-height (face-attribute 'default :height nil 'default)))
+              (set-face-attribute 'page-break-lines nil :height default-height)
+              (let* ((cwidth (char-width page-break-lines-char))
+                     (wwidth (- (window-width)
+                                (if (bound-and-true-p display-line-numbers)
+                                    (+ (line-number-display-width) 2)
+                                  0)
+                                (if (display-graphic-p) 0 1)))
+                     (width (/ wwidth cwidth))
+                     (glyph (make-glyph-code page-break-lines-char 'page-break-lines))
+                     (new-display-entry (vconcat (make-list width glyph))))
+                (unless (equal new-display-entry (elt buffer-display-table ?\^L))
+                  (aset buffer-display-table ?\^L new-display-entry)))))
+        (when (and (member major-mode page-break-lines-modes)
+                   buffer-display-table)
+          (aset buffer-display-table ?\^L nil))))))
 
 (defun page-break-lines--update-display-tables  (&optional frame)
   "Function called for updating display table in windows of FRAME."
-  (mapc 'page-break-lines--update-display-table (window-list frame 'no-minibuffer)))
+  (unless (minibufferp)
+    (mapc 'page-break-lines--update-display-table (window-list frame 'no-minibuffer))))
 
 
 
@@ -155,6 +160,7 @@ When `major-mode' is listed in `page-break-lines-modes', then
 ;;;###autoload
 (define-global-minor-mode global-page-break-lines-mode
   page-break-lines-mode page-break-lines-mode-maybe
+  :require 'page-break-lines
   :group 'page-break-lines)
 
 

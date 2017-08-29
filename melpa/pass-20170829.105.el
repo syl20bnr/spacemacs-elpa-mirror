@@ -5,7 +5,7 @@
 ;; Author: Nicolas Petton <petton.nicolas@gmail.com>
 ;;         Damien Cassou <damien@cassou.me>
 ;; Version: 1.7
-;; Package-Version: 20170815.225
+;; Package-Version: 20170829.105
 ;; GIT: https://github.com/NicolasPetton/pass
 ;; Package-Requires: ((emacs "24") (password-store "0.1") (f "0.17"))
 ;; Created: 09 Jun 2015
@@ -428,7 +428,7 @@ If SUBDIR is nil, return the entries of `(password-store-dir)'."
    (substitute-command-keys
     "Press <\\[pass-view-toggle-password]> to display & edit the password")))
 
-(add-to-list 'auto-mode-alist '("\\.password-store/" . pass-view-mode))
+(add-to-list 'auto-mode-alist '("\\.password-store/.*\\.gpg\\'" . pass-view-mode))
 
 (provide 'pass)
 ;;; pass.el ends here
