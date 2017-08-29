@@ -144,5 +144,5 @@ Acknowledgements
 Thanks to Ami Fischman, Christopher Genovese, Michael Hoffman, José
 Alfredo Romero L., R. Lange, Joe Lisee, José Lombera, Frank Meffert,
 Mitchell Peabody, sheijk, and an anonymous BT subscriber for bug reports
-and suggestions.  Special thanks to lomew, John Lamp, David Röthlisberger,
-and Pär Wieslander for code contributions.
+and suggestions.  Special thanks for code contributions: lomew, John Lamp,
+Sean Perry, David Röthlisberger, Pär Wieslander.
