@@ -4,7 +4,7 @@
 
 ;; Author: Tomoya Tanjo <ttanjo@gmail.com>
 ;; URL: https://github.com/tom-tan/esh-help/
-;; Package-Version: 1.0.0
+;; Package-Version: 1.0.1
 ;; Package-Requires: ((dash "1.4.0"))
 ;; Keywords: eshell, extensions
 
@@ -44,6 +44,7 @@
 (require 'eldoc)
 (require 'env)
 (require 'dash)
+(require 'man)
 
 ;;;###autoload
 (defun setup-esh-help-eldoc ()
@@ -95,6 +96,7 @@ It comes from Zsh."
 (defun esh-help-eldoc-help-string (cmd)
   "Return minibuffer help string for CMD."
   (cond
+    ((string-match-p "^[/.]" cmd) nil)
     ((eshell-find-alias-function cmd)
      (esh-help--get-fnsym-args-string (eshell-find-alias-function cmd)))
     ((string-match-p "^\\*." cmd)
@@ -106,7 +108,8 @@ It comes from Zsh."
   "Return help string for the shell command CMD."
   (let ((lang (getenv "LANG")))
     (setenv "LANG" "C")
-    (let ((str (shell-command-to-string (format "man %s | col -b" cmd))))
+    (let ((str (shell-command-to-string (format "%s %s | col -b"
+                                                manual-program cmd))))
       (setenv "LANG" lang)
       str)))
 

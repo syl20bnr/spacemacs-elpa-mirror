@@ -4,7 +4,7 @@
 
 ;; Author: Tomoya Tanjo <ttanjo@gmail.com>
 ;; URL: https://github.com/tom-tan/esh-help/
-;; Package-Version: 20170730.2157
+;; Package-Version: 20170829.2111
 ;; Package-Requires: ((dash "1.4.0"))
 ;; Keywords: eshell, extensions
 
@@ -96,6 +96,7 @@ It comes from Zsh."
 (defun esh-help-eldoc-help-string (cmd)
   "Return minibuffer help string for CMD."
   (cond
+    ((string-match-p "^[/.]" cmd) nil)
     ((eshell-find-alias-function cmd)
      (esh-help--get-fnsym-args-string (eshell-find-alias-function cmd)))
     ((string-match-p "^\\*." cmd)

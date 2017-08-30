@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 2.13
+;; Package-Version: 2.14
 ;; Version: 2.10
 
 ;; This file is not part of GNU Emacs.
@@ -69,7 +69,7 @@
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defconst rtags-protocol-version 124)
-(defconst rtags-package-version "2.13")
+(defconst rtags-package-version "2.14")
 (defconst rtags-popup-available (require 'popup nil t))
 (defconst rtags-supported-major-modes '(c-mode c++-mode objc-mode) "Major modes RTags supports.")
 (defconst rtags-verbose-results-delimiter "------------------------------------------")
@@ -178,7 +178,7 @@
 
 (defcustom rtags-reindex-on-save nil
   "Explicitly reindex files on save.
-This is only be useful, if your file system watching is not working."
+This is only useful if your file system watching is not working."
   :group 'rtags
   :type 'boolean
   :safe 'booleanp)
@@ -1293,7 +1293,7 @@ to only call this when `rtags-socket-file' is defined.
                        (error (concat "RTags protocol version mismatch. This is usually caused by getting rtags.el from melpa\n"
                                       "and installing a new rtags build that modified the protocol. They need to be in sync."))))
                     ((= result rtags-exit-code-not-indexed)
-                     (unless silent
+                     (unless noerror
                        (message "%s not indexed" (or path "buffer")))
                      (erase-buffer)
                      (setq rtags-last-request-not-indexed t))
@@ -1410,7 +1410,7 @@ Uses `completing-read' to ask for the project."
     (let* ((path (rtags-buffer-file-name))
            (object (with-temp-buffer
                      (and location
-                          (rtags-call-rc :path path :noerror t :silent-query silent :silent silent "-U" location "--elisp"
+                          (rtags-call-rc :path path :noerror t :silent-query silent "-U" location "--elisp"
                                          (unless relative-filenames "-K")
                                          (when parents "--symbol-info-include-parents")
                                          (when references "--symbol-info-include-references")
