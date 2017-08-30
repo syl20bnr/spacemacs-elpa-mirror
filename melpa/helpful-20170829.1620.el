@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Keywords: help, lisp
-;; Package-Version: 20170827.556
+;; Package-Version: 20170829.1620
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2"))
 
@@ -681,7 +681,7 @@ For example, \"(some-func FOO &optional BAR)\"."
 (defun helpful-function (symbol)
   "Show help for function named SYMBOL."
   (interactive
-   (list (helpful--read-symbol "Function:" #'functionp)))
+   (list (helpful--read-symbol "Function: " #'functionp)))
   (switch-to-buffer (helpful--buffer symbol t))
   (helpful-update))
 
@@ -689,7 +689,7 @@ For example, \"(some-func FOO &optional BAR)\"."
 (defun helpful-command (symbol)
   "Show help for interactive function named SYMBOL."
   (interactive
-   (list (helpful--read-symbol "Command:" #'commandp)))
+   (list (helpful--read-symbol "Command: " #'commandp)))
   (switch-to-buffer (helpful--buffer symbol t))
   (helpful-update))
 
@@ -697,7 +697,7 @@ For example, \"(some-func FOO &optional BAR)\"."
 (defun helpful-macro (symbol)
   "Show help for macro named SYMBOL."
   (interactive
-   (list (helpful--read-symbol "Macro:" #'macrop)))
+   (list (helpful--read-symbol "Macro: " #'macrop)))
   (switch-to-buffer (helpful--buffer symbol t))
   (helpful-update))
 
@@ -713,7 +713,7 @@ For example, \"(some-func FOO &optional BAR)\"."
 (defun helpful-variable (symbol)
   "Show help for variable named SYMBOL."
   (interactive
-   (list (helpful--read-symbol "Variable:" #'helpful--variable-p)))
+   (list (helpful--read-symbol "Variable: " #'helpful--variable-p)))
   (switch-to-buffer (helpful--buffer symbol nil))
   (helpful-update))
 

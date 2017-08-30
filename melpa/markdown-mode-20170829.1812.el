@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.3-dev
-;; Package-Version: 20170829.1243
+;; Package-Version: 20170829.1812
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: http://jblevins.org/projects/markdown-mode/
@@ -7171,7 +7171,9 @@ Calls `markdown-cycle' with argument t."
 (defun markdown-outline-level ()
   "Return the depth to which a statement is nested in the outline."
   (cond
-   ((markdown-code-block-at-point-p) 7) ;; Only 6 header levels are defined.
+   ((and (match-beginning 0)
+         (markdown-code-block-at-pos (match-beginning 0)))
+    7) ;; Only 6 header levels are defined.
    ((match-end 2) 1)
    ((match-end 3) 2)
    ((match-end 4)
@@ -7927,6 +7929,7 @@ Otherwise, open with `find-file' after stripping anchor and/or query string."
            ;; Markup part
            (mp (list 'face 'markdown-markup-face
                      'invisible 'markdown-markup
+                     'rear-nonsticky t
                      'font-lock-multiline t))
            ;; Link part
            (lp (list 'keymap markdown-mode-mouse-map
@@ -7965,6 +7968,7 @@ Otherwise, open with `find-file' after stripping anchor and/or query string."
            ;; Markup part
            (mp (list 'face 'markdown-markup-face
                      'invisible 'markdown-markup
+                     'rear-nonsticky t
                      'font-lock-multiline t))
            ;; Link part
            (lp (list 'keymap markdown-mode-mouse-map
@@ -7998,6 +8002,7 @@ Otherwise, open with `find-file' after stripping anchor and/or query string."
            ;; Markup part
            (mp (list 'face 'markdown-markup-face
                      'invisible 'markdown-markup
+                     'rear-nonsticky t
                      'font-lock-multiline t))
            ;; URI part
            (up (list 'keymap markdown-mode-mouse-map
@@ -8017,6 +8022,7 @@ Otherwise, open with `find-file' after stripping anchor and/or query string."
            (props (list 'keymap markdown-mode-mouse-map
                         'face 'markdown-plain-url-face
                         'mouse-face 'markdown-highlight-face
+                        'rear-nonsticky t
                         'font-lock-multiline t)))
       (add-text-properties start end props)
       t)))
