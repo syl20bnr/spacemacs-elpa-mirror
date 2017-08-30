@@ -3,7 +3,7 @@
 
 ;; Author: Dave Pearson <davep@davep.org>
 ;; Version: 1.1
-;; Package-Version: 20170816.235
+;; Package-Version: 20170830.115
 ;; Keywords: docs
 ;; URL: https://github.com/davep/eg.el
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24.3"))
@@ -876,7 +876,8 @@ might change in the future."
     (while (search-forward "^" nil t)
       (let ((token (downcase (buffer-substring-no-properties (point) (1+ (point))))))
         (delete-char -1)
-        (cond ((string= token "a")      ; Colour attribute.
+        (cond ((string= token "^"))      ; ^ character (we ignore it)
+              ((string= token "a")      ; Colour attribute.
                (delete-char 3))
               ((string= token "b")      ; Bold.
                (delete-char 1)
@@ -892,10 +893,7 @@ might change in the future."
                (eg--decorate-until "r" 'eg-viewer-reverse-text-face))
               ((string= token "u")      ; Underline.
                (delete-char 1)
-               (eg--decorate-until "u" 'eg-viewer-underline-text-face))
-              ((string= token "^")      ; ^ character.
-               ;; GNDN
-               ))))))
+               (eg--decorate-until "u" 'eg-viewer-underline-text-face)))))))
 
 (defun eg--insert-entry-text ()
   "Insert the text of the current entry."
