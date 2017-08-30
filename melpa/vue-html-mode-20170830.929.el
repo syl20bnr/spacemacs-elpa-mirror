@@ -4,7 +4,7 @@
 
 ;; Author: Adam Niederer <adam.niederer@gmail.com>
 ;; URL: http://github.com/AdamNiederer/vue-html-mode
-;; Package-Version: 20170804.1723
+;; Package-Version: 20170830.929
 ;; Version: 0.1
 ;; Keywords: languages vue template
 ;; Package-Requires: ()
@@ -52,7 +52,7 @@
   "\\({{\\)[A-z0-9 !@#$%^&*,.;'+-_/?\<\>\(\)]*\\(}}\\)")
 
 (defconst vue-html-shorthand-regex
-  " +\\([@:]\\)\\([A-z0-9.]+\\)=.*?")
+  "\\s+\\([@:]\\)\\([A-z0-9.]+\\)=.*?")
 
 (defconst vue-html-directive-regex
   "\\b\\(v-\\w+\\)\\(:[A-z.]\\)?=")

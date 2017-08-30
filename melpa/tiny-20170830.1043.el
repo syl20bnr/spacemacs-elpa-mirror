@@ -4,8 +4,8 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/tiny
-;; Package-Version: 20160811.246
-;; Version: 0.1.1
+;; Package-Version: 20170830.1043
+;; Version: 0.2.0
 ;; Keywords: convenience
 
 ;; This file is part of GNU Emacs.
@@ -27,7 +27,7 @@
 ;;
 ;; To set it up, just bind e.g.:
 ;;
-;;     (global-set-key (kbd "C-;") 'tiny-expand)
+;;     (global-set-key (kbd "C-;") #'tiny-expand)
 ;;
 ;; Usage:
 ;; This extension's main command is `tiny-expand'.
@@ -40,54 +40,68 @@
 ;; You can still do the full thing, but +x2 would save you some
 ;; key strokes.
 ;;
-;; You can test out the following snippets
-;; by positioning the point at the end of the expression
-;; and calling `tiny-expand' (default shortcut is C-;):
+;; You can test out the following snippets by positioning the point at
+;; the end of the expression and calling `tiny-expand':
 ;;
-;; m10
-;; m5 10
-;; m5,10
-;; m5 10*xx
-;; m5 10*xx%x
-;; m5 10*xx|0x%x
-;; m25+x?a%c
-;; m25+x?A%c
-;; m97,122(string x)
-;; m97,122stringxx
-;; m97,120stringxupcasex
-;; m97,120stringxupcasex)x
-;; m\n;; 10|%(+ x x) and %(* x x) and %s
-;; m10*2+3x
-;; m\n;; 10expx
-;; m5\n;; 20expx%014.2f
-;; m7|%(expt 2 x)
-;; m, 7|0x%02x
-;; m10|%0.2f
-;; m1\n14|*** TODO http://emacsrocks.com/e%02d.html
-;; m1\n10|convert img%s.jpg -monochrome -resize 50%% -rotate 180 img%s_mono.pdf
-;; (setq foo-list '(m1 11+x96|?%c))
-;; m1\n10listx+x96|convert img%s.jpg -monochrome -resize 50%% -rotate 180 img%c_mono.pdf
-;; m1\n10listxnthxfoo-list|convert img%s.jpg -monochrome -resize 50%% -rotate 180 img%c_mono.pdf
-;; m\n;; 16list*xxx)*xx%s:%s:%s
-;; m\n8|**** TODO Learning from Data Week %(+ x 2) \nSCHEDULED: <%(date "Oct 7" (* x 7))> DEADLINE: <%(date "Oct 14" (* x 7))>
+;;   m10
+;;   m5 10
+;;   m5,10
+;;   m5 10*xx
+;;   m5 10*xx%x
+;;   m5 10*xx|0x%x
+;;   m25+x?a%c
+;;   m25+x?A%c
+;;   m97,122(string x)
+;;   m97,122stringxx
+;;   m97,120stringxupcasex
+;;   m97,120stringxupcasex)x
+;;   m\n;; 10|%(+ x x) and %(* x x) and %s
+;;   m10*2+3x
+;;   m\n;; 10expx
+;;   m5\n;; 20expx%014.2f
+;;   m7|%(expt 2 x)
+;;   m, 7|0x%02x
+;;   m10|%0.2f
+;;   m1\n14|*** TODO http://emacsrocks.com/e%02d.html
+;;   m1\n10|convert img%s.jpg -monochrome -resize 50%% -rotate 180 img%s_mono.pdf
+;;   (setq foo-list '(m1 11+x96|?%c))
+;;   m1\n10listx+x96|convert img%s.jpg -monochrome -resize 50%% -rotate 180 img%c_mono.pdf
+;;   m1\n10listxnthxfoo-list|convert img%s.jpg -monochrome -resize 50%% -rotate 180 img%c_mono.pdf
+;;   m\n;; 16list*xxx)*xx%s:%s:%s
+;;   m\n8|**** TODO Learning from Data Week %(+ x 2) \nSCHEDULED: <%(date "Oct 7" (* x 7))> DEADLINE: <%(date "Oct 14" (* x 7))>
 ;;
 ;; As you might have guessed, the syntax is as follows:
-;; m[<range start:=0>][<separator:= >]<range end>[Lisp expr]|[format expr]
 ;;
-;; x is the default var in the elisp expression.  It will take one by one
-;; the value of all numbers in the range.
+;;   m[<range start:=0>][<separator:= >]<range end>[Lisp expr]|[format expr]
 ;;
-;; | means that elisp expr has ended and format expr has begun.
-;; It can be omitted if the format expr starts with %.
-;; The keys are the same as for format.
-;; In addition %(sexp) forms are allowed.  The sexp can depend on x.
+;;     x is the default var in the elisp expression.  It will take one by one
+;;     the value of all numbers in the range.
 ;;
-;; Note that multiple % can be used in the format expression.
-;; In that case:
-;; * if the Lisp expression returns a list, the members of this list
-;;   are used in the appropriate place.
-;; * otherwise, it's just the result of the expression repeated as
-;;   many times as necessary.
+;;     | means that elisp expr has ended and format expr has begun.
+;;     It can be omitted if the format expr starts with %.
+;;     The keys are the same as for format.
+;;     In addition %(sexp) forms are allowed.  The sexp can depend on x.
+;;
+;;   Note that multiple % can be used in the format expression.
+;;   In that case:
+;;   - if the Lisp expression returns a list, the members of this list
+;;     are used in the appropriate place.
+;;   - otherwise, it's just the result of the expression repeated as
+;;     many times as necessary.
+;;
+;; Alternatively, if user does not want to type in the "tiny
+;; expressions", they can call the `tiny-helper' command that helps
+;; construct the "tiny expression", and then expands that.
+;;
+;; For example, the below two are equivalent:
+;;
+;;  - Type "m2_9+1*x2"
+;;  - M-x tiny-expand
+;;
+;; OR
+;;
+;;  - M-x tiny-helper
+;;  - 9 RET 2 RET _ RET +1*x2 RET RET (user entry in the interactive prompts)
 
 ;;; Code:
 
@@ -423,6 +437,104 @@ Optional SHIFT argument is the integer amount of days to shift."
     (when shift
       (setq time (time-add time (days-to-time shift))))
     (format-time-string formatter time)))
+
+;;;###autoload
+(defun tiny-helper (&optional end-val begin-val sep op fmt)
+  "Helper function for `tiny-expand'.
+
+The arguments to this function construct a “tiny expression”
+\"mBSEO|F\" where
+  E is the end value (END-VAL)     - defaults to 0 internally if nil or \"\",
+                                      or 9 if BEGIN-VAL is nil or \"\" too.
+  B is the begin value (BEGIN-VAL) - defaults to 0 internally if nil or \"\".
+  S is the separator (SEP)         - defaults to \" \" if nil or \"\".
+  O is the elisp operation (OP)    - defaults to \"\" if nil.
+  F is the format (FMT)            - defaults to \"\" if nil.
+
+If `tiny' expansion is possible at point, do it.
+Otherwise activate the helper to generate a valid “tiny
+expression” and expand that.
+
+Usage: Call TINY-HELPER, ↵↵↵↵↵            -> 0 1 2 3 4 5 6 7 8 9
+       Call TINY-HELPER, 9↵2↵_↵+1*x2↵↵    -> 5_7_9_11_13_15_17_19
+       Call TINY-HELPER, 15↵1↵↵-30*2x↵%x↵ -> 1c 1a 18 16 14 12 10 e c a 8 6 4 2 0"
+  (interactive
+   (when (and (null (barf-if-buffer-read-only)) ;Use the helper only if tiny expansion is not
+              (null (tiny-mapconcat))) ;possible at point and if the buffer is editable.
+     (let ((prompt (propertize "tiny-helper: " 'face 'font-lock-function-name-face)))
+       (list (read-string (concat prompt
+                                  "END value "
+                                  "[Hit RET for default=0; "
+                                  "Auto-set to 9 if both begin and end values are 0]: "))
+             (read-string (concat prompt
+                                  "BEGIN value "
+                                  "[Hit RET for default=0; "
+                                  "Has to be *smaller* than the end value]: "))
+             (read-string (concat prompt
+                                  "Separator "
+                                  "[Hit RET for default=Space; "
+                                  "eg: \\n; No math operators like - or = allowed]: "))
+             (read-string (concat prompt
+                                  "Lisp Operation "
+                                  "[Hit RET for default=\"\" (no Lisp operation); "
+                                  "Parentheses are optional; eg: *xx | (+ x ?A) | *2+3x]: "))
+             (read-string (concat prompt
+                                  "Format "
+                                  "[Hit RET for default=\"\" (%0d); "
+                                  "eg: %x | 0x%x | %c | %s | %(+ x x) | "
+                                  "%014.2f | %03d; Parentheses required here for sexps]: "))))))
+  (barf-if-buffer-read-only)  ;Proceed only if the buffer is editable.
+  ;; Use the helper to derive a "tiny expression" if tiny expansion is
+  ;; not possible at point.
+  (when (null (tiny-mapconcat))
+    (let* ((tiny-key-binding (or (substitute-command-keys "\\[tiny-helper]")
+                                 (substitute-command-keys "\\[tiny-expand]")))
+           (end-val (if (null end-val) "" end-val)) ;Initialize to empty strings for non-interactive use.
+           (begin-val (if (null begin-val) "" begin-val))
+           (sep (if (null sep) "" sep))
+           (op (if (null op) "" op))
+           (fmt (if (null fmt) "" fmt))
+           (end-val-num (string-to-number end-val)) ;Note that (string-to-number "") -> 0
+           (begin-val-num (string-to-number begin-val))
+           tiny-expr)
+      ;; BEGIN-VAL and END-VAL sanity check.
+      (cond
+        ((= end-val-num begin-val-num)
+         (if (zerop end-val-num)
+             ;; If both are zero, set the end value to 9 (arbitrarily chosen).
+             (setq end-val "9")
+           (user-error (format "Begin value (%s) and End value (%s) cannot be the same"
+                               begin-val end-val))))
+        ((< end-val-num begin-val-num)
+         (user-error (format "End value (%s) has to be greater than the begin value (%s)"
+                             begin-val end-val))))
+      ;; SEP cannot be an empty string if BEGIN-VAL is a non-empty string.
+      ;; It is OK to not specify BEGIN-VAL if it is 0.
+      (when (and (not (string= begin-val ""))
+                 (string= sep ""))
+        (setq sep " "))
+      ;; When non-empty, prefix FMT with the | char for reading clarity.
+      (when (not (string= fmt ""))
+        (setq fmt (concat "|" fmt)))
+      (setq tiny-expr (concat "m" begin-val sep end-val op fmt))
+      (message (format "This %s expansion can also be done by typing %s and then %s"
+                       (propertize "tiny"
+                                   'face 'font-lock-function-name-face)
+                       (propertize tiny-expr
+                                   'face 'font-lock-keyword-face)
+                       (if (stringp tiny-key-binding)
+                           (propertize tiny-key-binding
+                                       'face 'font-lock-keyword-face)
+                         (concat
+                          (propertize "M-x tiny-helper"
+                                      'face 'font-lock-keyword-face)
+                          " or "
+                          (propertize "M-x tiny-expand"
+                                      'face 'font-lock-keyword-face)))))
+      (insert tiny-expr)
+      (undo-boundary)))
+  (tiny-expand))
+
 
 (provide 'tiny)
 ;;; tiny.el ends here

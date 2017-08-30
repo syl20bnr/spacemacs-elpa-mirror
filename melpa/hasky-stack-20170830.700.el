@@ -4,7 +4,7 @@
 ;;
 ;; Author: Mark Karpov <markkarpov92@gmail.com>
 ;; URL: https://github.com/hasky-mode/hasky-stack
-;; Package-Version: 20170826.1029
+;; Package-Version: 20170830.700
 ;; Version: 0.4.0
 ;; Package-Requires: ((emacs "24.4") (f "0.18.0") (magit-popup "2.10"))
 ;; Keywords: tools, haskell
@@ -197,8 +197,15 @@ This is used by `hasky-stack--prepare'."
   "Parse package home page from \"*.cabal\" file with FILENAME."
   (with-temp-buffer
     (insert-file-contents filename)
-    (car (hasky-stack--all-matches
-          "^[[:blank:]]*homepage:[[:blank:]]+\\(.+\\)"))))
+    (or
+     (car (hasky-stack--all-matches
+           "^[[:blank:]]*homepage:[[:blank:]]+\\(.+\\)"))
+     (let ((without-scheme
+            (car
+             (hasky-stack--all-matches
+              "^[[:blank:]]*location:[[:blank:]]+.*:\\(.+\\)\\(\\.git\\)?"))))
+       (when without-scheme
+         (concat "https:" without-scheme))))))
 
 (defun hasky-stack--find-dir-of-file (regexp)
   "Find file whose name satisfies REGEXP traversing upwards.

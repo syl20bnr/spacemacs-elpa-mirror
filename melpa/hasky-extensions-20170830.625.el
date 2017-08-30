@@ -4,8 +4,8 @@
 ;;
 ;; Author: Mark Karpov <markkarpov92@gmail.com>
 ;; URL: https://github.com/hasky-mode/hasky-extensions
-;; Package-Version: 20170520.149
-;; Version: 0.1.1
+;; Package-Version: 20170830.625
+;; Version: 0.2.0
 ;; Package-Requires: ((emacs "24.4") (avy-menu "0.2"))
 ;; Keywords: programming
 ;;
@@ -101,8 +101,96 @@
     "TypeSynonymInstances"
     "UndecidableInstances")
   "List of commonly used Haskell extensions."
-  :tag "List of commonly used Haskell extensions."
+  :tag "List of commonly used Haskell extensions"
   :type '(repeat (string :tag "Extension name")))
+
+(defcustom hasky-extensions-docs
+  '(("AllowAmbiguousTypes"        "ambiguous-types-and-the-ambiguity-check")
+    ("ApplicativeDo"              "applicative-do-notation")
+    ("Arrows"                     "arrow-notation")
+    ("BangPatterns"               "bang-patterns-informal")
+    ("BinaryLiterals"             "ghc-flag--XBinaryLiterals")
+    ("ConstrainedClassMethods"    "constrained-class-method-types")
+    ("ConstraintKinds"            "the-constraint-kind")
+    ("DataKinds"                  "datatype-promotion")
+    ("DefaultSignatures"          "default-method-signatures")
+    ("DeriveAnyClass"             "deriving-any-other-class")
+    ("DeriveDataTypeable"         "deriving-data-instances")
+    ("DeriveFoldable"             "deriving-instances-of-extra-classes-data-etc")
+    ("DeriveFunctor"              "deriving-instances-of-extra-classes-data-etc")
+    ("DeriveGeneric"              "deriving-instances-of-extra-classes-data-etc")
+    ("DeriveLift"                 "deriving-instances-of-extra-classes-data-etc")
+    ("DeriveTraversable"          "deriving-instances-of-extra-classes-data-etc")
+    ("DisambiguateRecordFields"   "record-field-disambiguation")
+    ("EmptyCase"                  "empty-case-alternatives")
+    ("EmptyDataDecls"             "data-types-with-no-constructors")
+    ("ExistentialQuantification"  "existentially-quantified-data-constructors")
+    ("ExplicitForAll"             "explicit-universal-quantification-forall")
+    ("ExplicitNamespaces"         "explicit-namespaces-in-import-export")
+    ("FlexibleContexts"           "the-superclasses-of-a-class-declaration")
+    ("FlexibleInstances"          "relaxed-rules-for-the-instance-head")
+    ("FunctionalDependencies"     "functional-dependencies")
+    ("GADTSyntax"                 "declaring-data-types-with-explicit-constructor-signatures")
+    ("GADTs"                      "generalised-algebraic-data-types-gadts")
+    ("GeneralizedNewtypeDeriving" "generalised-derived-instances-for-newtypes")
+    ("ImplicitParams"             "implicit-parameters")
+    ("ImpredicativeTypes"         "impredicative-polymorphism")
+    ("IncoherentInstances"        "overlapping-instances")
+    ("InstanceSigs"               "instance-signatures-type-signatures-in-instance-declarations")
+    ("KindSignatures"             "explicitly-kinded-quantification")
+    ("LambdaCase"                 "lambda-case")
+    ("LiberalTypeSynonyms"        "liberalised-type-synonyms")
+    ("MagicHash"                  "the-magic-hash")
+    ("MonadComprehensions"        "monad-comprehensions")
+    ("MonoLocalBinds"             "let-generalisation")
+    ("MultiParamTypeClasses"      "multi-parameter-type-classes")
+    ("MultiWayIf"                 "multi-way-if-expressions")
+    ("NamedFieldPuns"             "record-puns")
+    ("NamedWildCards"             "named-wildcards")
+    ("NegativeLiterals"           "negative-literals")
+    ("NoImplicitPrelude"          "rebindable-syntax-and-the-implicit-prelude-import")
+    ("NoMonomorphismRestriction"  "switching-off-the-dreaded-monomorphism-restriction")
+    ("NoTraditionalRecordSyntax"  "traditional-record-syntax")
+    ("NullaryTypeClasses"         "nullary-type-classes")
+    ("NumDecimals"                "fractional-looking-integer-literals")
+    ("OverlappingInstances"       "overlapping-instances")
+    ("OverloadedLists"            "overloaded-lists")
+    ("OverloadedStrings"          "overloaded-string-literals")
+    ("PackageImports"             "package-qualified-imports")
+    ("ParallelListComp"           "parallel-list-comprehensions")
+    ("PartialTypeSignatures"      "partial-type-signatures")
+    ("PatternSynonyms"            "pattern-synonyms")
+    ("PolyKinds"                  "kind-polymorphism-and-type-in-type")
+    ("PostfixOperators"           "postfix-operators")
+    ("QuasiQuotes"                "template-haskell-quasi-quotation")
+    ("Rank2Types"                 "arbitrary-rank-polymorphism")
+    ("RankNTypes"                 "arbitrary-rank-polymorphism")
+    ("RebindableSyntax"           "rebindable-syntax-and-the-implicit-prelude-import")
+    ("RecordWildCards"            "record-wildcards")
+    ("RecursiveDo"                "the-recursive-do-notation")
+    ("RoleAnnotations"            "role-annotations")
+    ("Safe"                       "safe-imports")
+    ("ScopedTypeVariables"        "lexically-scoped-type-variables")
+    ("StandaloneDeriving"         "stand-alone-deriving-declarations")
+    ("StrictData"                 "strict-by-default-data-types")
+    ("TemplateHaskell"            "template-haskell")
+    ("TransformListComp"          "generalised-sql-like-list-comprehensions")
+    ("Trustworthy"                "safe-imports")
+    ("TupleSections"              "tuple-sections")
+    ("TypeFamilies"               "type-families")
+    ("TypeFamilyDependencies"     "injective-type-families")
+    ("TypeInType"                 "kind-polymorphism-and-type-in-type")
+    ("TypeOperators"              "type-operators")
+    ("TypeSynonymInstances"       "relaxed-rules-for-the-instance-head")
+    ("UnboxedTuples"              "unboxed-tuples")
+    ("UndecidableInstances"       "instance-termination-rules")
+    ("UnicodeSyntax"              "unicode-syntax")
+    ("Unsafe"                     "safe-imports")
+    ("ViewPatterns"               "view-patterns"))
+  "A collection of extensions with links to GHC user guide."
+  :tag "List of all Haskell extensions with links to docs"
+  :type '(repeat (list (string :tag "Extension name")
+                       (string :tag "Anchor"))))
 
 (defcustom hasky-extensions-reach 5000
   "Max number of characters from beginning of file to search.
@@ -272,6 +360,21 @@ with “default-extensions” or similar settings."
                 (setq exts (cl-delete ext exts :test #'string=)))
             (hasky-extensions-add ext)
             (cl-pushnew ext exts :test #'string=)))))))
+
+;;;###autoload
+(defun hasky-extensions-browse-docs (extension)
+  "Browse documentation about EXTENSION from GHC user guide in browser."
+  (interactive
+   (list
+    (let ((exts (mapcar #'car hasky-extensions-docs)))
+      (completing-read
+       "Extension: "
+       exts
+       nil t nil nil
+       (car exts)))))
+  (browse-url
+   (concat "https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#"
+           (cadr (assoc extension hasky-extensions-docs)))))
 
 (provide 'hasky-extensions)
 
