@@ -3,8 +3,8 @@
 
 ;; Author: Dave Pearson <davep@davep.org>
 ;; Version: 3.5
-;; Package-Version: 20170802.426
-;; Keywords: uptime
+;; Package-Version: 20170830.533
+;; Keywords: processes, uptime
 ;; URL: https://github.com/davep/uptimes.el
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
 
@@ -100,7 +100,7 @@
 ;; Non-customize variables.
 
 (defvar uptimes-boottime (uptimes-float-time before-init-time)
-  "The time that uptimes.el came into existance.
+  "The time that uptimes.el came into existence.
 
 Normaly populated from `before-init-time'.")
 
@@ -154,23 +154,6 @@ The result is returned as the following `list':
   (cl-multiple-value-bind (days hours mins secs)
       (uptimes-uptime-values boottime endtime)
     (format "%d.%02d:%02d:%02d" days hours mins secs)))
-
-(cl-defun uptimes-wordy-uptime (&optional (boottime uptimes-boottime)
-                                          (endtime (uptimes-float-time)))
-  "Return `uptimes-uptime-values' as a \"wordy\" string."
-  (cl-multiple-value-bind (days hours mins secs)
-      (uptimes-uptime-values boottime endtime)
-    ;; Yes, I know cl-flet* would make more sense here; this is what I used
-    ;; to use here. However: https://github.com/davep/uptimes.el/issues/2
-    (cl-flet ((mul (n word) (concat word (unless (= n 1) "s"))))
-      (cl-flet ((say (n word) (format "%d %s" n (mul n word))))
-        (concat (say days "day")
-                ", "
-                (say hours "hour")
-                ", "
-                (say mins "minute")
-                " and "
-                (say secs "second"))))))
 
 (defun uptimes-read-uptimes ()
   "Read the uptimes database into `uptimes-last-n' and `uptimes-top-n'."
@@ -257,7 +240,10 @@ The result is returned as the following `list':
   "Display the uptime for the current Emacs session."
   (interactive)
   (uptimes-save)
-  (message "emacs has been up and running for %s" (uptimes-wordy-uptime)))
+  (message "Emacs has been up and running for %s"
+           (format-seconds
+            "%Y, %D, %H, %M and %z%S"
+            (- (uptimes-float-time) uptimes-boottime))))
 
 ;; Register our presence and, if `uptimes-auto-save' is true, kick off the
 ;; auto-save process.

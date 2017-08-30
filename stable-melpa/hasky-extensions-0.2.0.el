@@ -1,11 +1,11 @@
 ;;; hasky-extensions.el --- Toggle Haskell language extensions -*- lexical-binding: t; -*-
 ;;
-;; Copyright © 2016 Mark Karpov <markkarpov@openmailbox.org>
+;; Copyright © 2016–2017 Mark Karpov <markkarpov92@gmail.com>
 ;;
-;; Author: Mark Karpov <markkarpov@openmailbox.org>
+;; Author: Mark Karpov <markkarpov92@gmail.com>
 ;; URL: https://github.com/hasky-mode/hasky-extensions
-;; Package-Version: 0.1.1
-;; Version: 0.1.1
+;; Package-Version: 0.2.0
+;; Version: 0.2.0
 ;; Package-Requires: ((emacs "24.4") (avy-menu "0.2"))
 ;; Keywords: programming
 ;;
@@ -65,7 +65,6 @@
     "FlexibleInstances"
     "TemplateHaskell"
     "Arrows"
-    "AutoDeriveTypeable"
     "BangPatterns"
     "DataKinds"
     "DeriveAnyClass"
@@ -83,6 +82,7 @@
     "GeneralizedNewtypeDeriving"
     "InstanceSigs"
     "KindSignatures"
+    "LambdaCase"
     "MagicHash"
     "MultiParamTypeClasses"
     "MultiWayIf"
@@ -95,23 +95,111 @@
     "ScopedTypeVariables"
     "StandaloneDeriving"
     "TupleSections"
+    "TypeApplications"
     "TypeFamilies"
     "TypeOperators"
     "TypeSynonymInstances"
-    "UndecidableInstances"
-    "ViewPatterns")
+    "UndecidableInstances")
   "List of commonly used Haskell extensions."
-  :tag "List of commonly used Haskell extensions."
+  :tag "List of commonly used Haskell extensions"
   :type '(repeat (string :tag "Extension name")))
+
+(defcustom hasky-extensions-docs
+  '(("AllowAmbiguousTypes"        "ambiguous-types-and-the-ambiguity-check")
+    ("ApplicativeDo"              "applicative-do-notation")
+    ("Arrows"                     "arrow-notation")
+    ("BangPatterns"               "bang-patterns-informal")
+    ("BinaryLiterals"             "ghc-flag--XBinaryLiterals")
+    ("ConstrainedClassMethods"    "constrained-class-method-types")
+    ("ConstraintKinds"            "the-constraint-kind")
+    ("DataKinds"                  "datatype-promotion")
+    ("DefaultSignatures"          "default-method-signatures")
+    ("DeriveAnyClass"             "deriving-any-other-class")
+    ("DeriveDataTypeable"         "deriving-data-instances")
+    ("DeriveFoldable"             "deriving-instances-of-extra-classes-data-etc")
+    ("DeriveFunctor"              "deriving-instances-of-extra-classes-data-etc")
+    ("DeriveGeneric"              "deriving-instances-of-extra-classes-data-etc")
+    ("DeriveLift"                 "deriving-instances-of-extra-classes-data-etc")
+    ("DeriveTraversable"          "deriving-instances-of-extra-classes-data-etc")
+    ("DisambiguateRecordFields"   "record-field-disambiguation")
+    ("EmptyCase"                  "empty-case-alternatives")
+    ("EmptyDataDecls"             "data-types-with-no-constructors")
+    ("ExistentialQuantification"  "existentially-quantified-data-constructors")
+    ("ExplicitForAll"             "explicit-universal-quantification-forall")
+    ("ExplicitNamespaces"         "explicit-namespaces-in-import-export")
+    ("FlexibleContexts"           "the-superclasses-of-a-class-declaration")
+    ("FlexibleInstances"          "relaxed-rules-for-the-instance-head")
+    ("FunctionalDependencies"     "functional-dependencies")
+    ("GADTSyntax"                 "declaring-data-types-with-explicit-constructor-signatures")
+    ("GADTs"                      "generalised-algebraic-data-types-gadts")
+    ("GeneralizedNewtypeDeriving" "generalised-derived-instances-for-newtypes")
+    ("ImplicitParams"             "implicit-parameters")
+    ("ImpredicativeTypes"         "impredicative-polymorphism")
+    ("IncoherentInstances"        "overlapping-instances")
+    ("InstanceSigs"               "instance-signatures-type-signatures-in-instance-declarations")
+    ("KindSignatures"             "explicitly-kinded-quantification")
+    ("LambdaCase"                 "lambda-case")
+    ("LiberalTypeSynonyms"        "liberalised-type-synonyms")
+    ("MagicHash"                  "the-magic-hash")
+    ("MonadComprehensions"        "monad-comprehensions")
+    ("MonoLocalBinds"             "let-generalisation")
+    ("MultiParamTypeClasses"      "multi-parameter-type-classes")
+    ("MultiWayIf"                 "multi-way-if-expressions")
+    ("NamedFieldPuns"             "record-puns")
+    ("NamedWildCards"             "named-wildcards")
+    ("NegativeLiterals"           "negative-literals")
+    ("NoImplicitPrelude"          "rebindable-syntax-and-the-implicit-prelude-import")
+    ("NoMonomorphismRestriction"  "switching-off-the-dreaded-monomorphism-restriction")
+    ("NoTraditionalRecordSyntax"  "traditional-record-syntax")
+    ("NullaryTypeClasses"         "nullary-type-classes")
+    ("NumDecimals"                "fractional-looking-integer-literals")
+    ("OverlappingInstances"       "overlapping-instances")
+    ("OverloadedLists"            "overloaded-lists")
+    ("OverloadedStrings"          "overloaded-string-literals")
+    ("PackageImports"             "package-qualified-imports")
+    ("ParallelListComp"           "parallel-list-comprehensions")
+    ("PartialTypeSignatures"      "partial-type-signatures")
+    ("PatternSynonyms"            "pattern-synonyms")
+    ("PolyKinds"                  "kind-polymorphism-and-type-in-type")
+    ("PostfixOperators"           "postfix-operators")
+    ("QuasiQuotes"                "template-haskell-quasi-quotation")
+    ("Rank2Types"                 "arbitrary-rank-polymorphism")
+    ("RankNTypes"                 "arbitrary-rank-polymorphism")
+    ("RebindableSyntax"           "rebindable-syntax-and-the-implicit-prelude-import")
+    ("RecordWildCards"            "record-wildcards")
+    ("RecursiveDo"                "the-recursive-do-notation")
+    ("RoleAnnotations"            "role-annotations")
+    ("Safe"                       "safe-imports")
+    ("ScopedTypeVariables"        "lexically-scoped-type-variables")
+    ("StandaloneDeriving"         "stand-alone-deriving-declarations")
+    ("StrictData"                 "strict-by-default-data-types")
+    ("TemplateHaskell"            "template-haskell")
+    ("TransformListComp"          "generalised-sql-like-list-comprehensions")
+    ("Trustworthy"                "safe-imports")
+    ("TupleSections"              "tuple-sections")
+    ("TypeFamilies"               "type-families")
+    ("TypeFamilyDependencies"     "injective-type-families")
+    ("TypeInType"                 "kind-polymorphism-and-type-in-type")
+    ("TypeOperators"              "type-operators")
+    ("TypeSynonymInstances"       "relaxed-rules-for-the-instance-head")
+    ("UnboxedTuples"              "unboxed-tuples")
+    ("UndecidableInstances"       "instance-termination-rules")
+    ("UnicodeSyntax"              "unicode-syntax")
+    ("Unsafe"                     "safe-imports")
+    ("ViewPatterns"               "view-patterns"))
+  "A collection of extensions with links to GHC user guide."
+  :tag "List of all Haskell extensions with links to docs"
+  :type '(repeat (list (string :tag "Extension name")
+                       (string :tag "Anchor"))))
 
 (defcustom hasky-extensions-reach 5000
   "Max number of characters from beginning of file to search.
 
 Very large files can either slow down the process of extensions
 detection or cause stack overflows, thus we limit number of
-characters the package will traverse.  The default value should
-be appropriate for most users since language extension pragmas
-are typically placed in the beginning of file.  If you wish to
+characters the package traverses.  The default value should be
+appropriate for most users since language extension pragmas are
+typically placed at the beginning of a file.  If you wish to
 disable the limitation, set this value to NIL (not recommended)."
   :tag "How many characters from beginning of file to scan"
   :type 'integer)
@@ -136,7 +224,7 @@ disable the limitation, set this value to NIL (not recommended)."
 ;; The editing itself
 
 (defun hasky-extensions--next-ext (&optional ext)
-  "Find and return name of next extensions in the file or NIL.
+  "Find and return name of next extension in the file or NIL.
 
 If EXT is supplied, find this particular extension."
   (re-search-forward
@@ -191,7 +279,7 @@ with “default-extensions” or similar settings."
   ;; module declaration (with one empty line between them).  If The file
   ;; contains no module declaration yet, place the new extension after
   ;; header.  If the file has no header, place the new extension at the
-  ;; beginning of file.
+  ;; beginning of the file.
   (save-excursion
     (let ((ext (format "{-# LANGUAGE %s #-}\n" extension)))
       (cond ((progn
@@ -238,7 +326,7 @@ with “default-extensions” or similar settings."
 
 ;;;###autoload
 (defun hasky-extensions ()
-  "Invoke the menu that allows to add and remove Haskell language extensions."
+  "Invoke a menu for managing Haskell language extensions."
   (interactive)
   (let ((exts (hasky-extensions-list))
         (selected t))
@@ -272,6 +360,21 @@ with “default-extensions” or similar settings."
                 (setq exts (cl-delete ext exts :test #'string=)))
             (hasky-extensions-add ext)
             (cl-pushnew ext exts :test #'string=)))))))
+
+;;;###autoload
+(defun hasky-extensions-browse-docs (extension)
+  "Browse documentation about EXTENSION from GHC user guide in browser."
+  (interactive
+   (list
+    (let ((exts (mapcar #'car hasky-extensions-docs)))
+      (completing-read
+       "Extension: "
+       exts
+       nil t nil nil
+       (car exts)))))
+  (browse-url
+   (concat "https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/glasgow_exts.html#"
+           (cadr (assoc extension hasky-extensions-docs)))))
 
 (provide 'hasky-extensions)
 
