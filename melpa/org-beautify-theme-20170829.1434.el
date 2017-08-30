@@ -1,16 +1,32 @@
 ;;; org-beautify-theme.el --- A sub-theme to make org-mode more beautiful.
-;; Copyright (C) 2014-2016 Jonathan Arkell
+;; Copyright (C) 2014-2017 Jonathan Arkell
 
 ;; Author: Jonathan Arkell <jonnay@jonnay.net>
-;; Version: 0.3.1
-;; Package-Version: 20161019.1524
+;; Version: 0.3.2
+;; Package-Version: 20170829.1434
 ;; Created: 5 Oct 2012
 ;; Keywords: org theme
 
 ;; This file is not part of GNU Emacs.
 ;; Released under the GPL v3.0
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 3, or (at your option)
+;; any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
+;; #+title: Read Me
+;; 
+;; [[./screenshot.png]]
+;; 
 ;; * Making Org-mode Beautiful
 ;; ** This theme is dedicated to my wife Shell
 ;;   Who—in her beauty, her love, and her love for beauty—has shown me
@@ -30,6 +46,8 @@
 ;;   and then reload it, and everything will be fine again.
 ;; 
 ;; * Changelog
+;;    - v0.3.2 [2017-08-29]
+;;      - Update License
 ;;    - v0.3.1 [2016-10-19]
 ;;      - Fix load path issues (Thanks PierreTechoueyres!)
 ;;      - reverse chronological changelog, because ah-doy!
@@ -41,7 +59,7 @@
 ;;    - v0.1.1 :: [2014-01-06]
 ;;      - Fix checkboxes
 ;;    - v0.1 :: First Release
-;;          - Make the colors suck a lot less, and the buffers look a lot nicer.
+;; 	 - Make the colors suck a lot less, and the buffers look a lot nicer.
 ;; 
 
 ;;; Code:

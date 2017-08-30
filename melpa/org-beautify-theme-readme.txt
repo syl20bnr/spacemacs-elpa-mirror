@@ -1,3 +1,7 @@
+#+title: Read Me
+
+[[./screenshot.png]]
+
 * Making Org-mode Beautiful
 ** This theme is dedicated to my wife Shell
   Who—in her beauty, her love, and her love for beauty—has shown me
@@ -17,6 +21,8 @@
   and then reload it, and everything will be fine again.
 
 * Changelog
+   - v0.3.2 [2017-08-29]
+     - Update License
    - v0.3.1 [2016-10-19]
      - Fix load path issues (Thanks PierreTechoueyres!)
      - reverse chronological changelog, because ah-doy!
@@ -28,4 +34,4 @@
    - v0.1.1 :: [2014-01-06]
      - Fix checkboxes
    - v0.1 :: First Release
-         - Make the colors suck a lot less, and the buffers look a lot nicer.
+	 - Make the colors suck a lot less, and the buffers look a lot nicer.
