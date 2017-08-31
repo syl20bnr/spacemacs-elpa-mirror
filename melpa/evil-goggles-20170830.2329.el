@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20170808.404
+;; Package-Version: 20170830.2329
 ;; Package-Requires: ((emacs "25") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -168,7 +168,8 @@ FACE-DOC is the docstring for FACE-NAME."
    '(evil-goggles-paste-face ((t (:inherit 'diff-added))))
    '(evil-goggles-yank-face ((t (:inherit 'diff-changed))))
    '(evil-goggles-undo-redo-remove-face ((t (:inherit 'diff-refine-removed))))
-   '(evil-goggles-undo-redo-add-face ((t (:inherit 'diff-refine-added))))))
+   '(evil-goggles-undo-redo-add-face ((t (:inherit 'diff-refine-added))))
+   '(evil-goggles-undo-redo-change-face ((t (:inherit 'diff-changed))))))
 
 ;; delete
 
@@ -234,6 +235,11 @@ This variable must be set before `evil-goggles-mode' is enabled"
      (:inherit evil-goggles-default-face)))
   "Face for undo/redo remove action" :group 'evil-goggles-faces)
 
+(defface evil-goggles-undo-redo-change-face
+  '((t
+     (:inherit evil-goggles-default-face)))
+  "Face for undo/redo change action" :group 'evil-goggles-faces)
+
 (defun evil-goggles--undo-tree-undo-advice (orig-fun &optional arg)
   "Advice for function `undo-tree-undo` and function `undo-tree-redo`.
 
@@ -264,7 +270,10 @@ N and LIST are the arguments of the original function."
     (pcase undo-item
       (`(text-removed ,beg ,end)
        (when (evil-goggles--show-p beg end)
-         (evil-goggles--show beg end 'evil-goggles-undo-redo-add-face))))))
+         (evil-goggles--show beg end 'evil-goggles-undo-redo-add-face)))
+      (`(text-changed ,beg ,end)
+       (when (evil-goggles--show-p beg end)
+         (evil-goggles--show beg end 'evil-goggles-undo-redo-change-face))))))
 
 (defun evil-goggles--get-undo-item (list)
   "Process LIST.
@@ -290,6 +299,7 @@ This function tries to return a single list, either:
       (cond ((and (eq (car last) 'text-added)
                   (eq (car last) (car this))
                   (eq (nth 1 last) (nth 1 this)))
+             ;; combine 2 overlapping 'text-added elements
              (setcar result (list
                              (car this)
                              (nth 1 this)
@@ -298,10 +308,22 @@ This function tries to return a single list, either:
                   (or
                    (eq (nth 1 last) (nth 2 this))
                    (eq (nth 2 last) (nth 1 this))))
+             ;; combine 2 connecting text-added/text-deleted elements
              (setcar result (list
                              (car this)
                              (min (nth 1 this) (nth 2 this) (nth 1 last) (nth 2 last))
                              (max (nth 1 this) (nth 2 this) (nth 1 last) (nth 2 last)))))
+            ((and
+              (eq (car last) 'text-added)
+              (eq (car this) 'text-removed)
+              (eq (nth 1 last) (nth 1 this)))
+             ;; combine overlapping text-added with text-removed which start at the same point
+             (setcar result (list
+                             'text-changed
+                             (nth 1 last)
+                             (if (< (nth 2 last) (nth 2 this))
+                                 (max (nth 2 last) (nth 2 this))
+                               (min (nth 2 last) (nth 2 this))))))
             (t (push this result)))
       (setq last (car result)))))
 
