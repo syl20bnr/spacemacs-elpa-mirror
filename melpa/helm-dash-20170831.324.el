@@ -6,7 +6,7 @@
 ;;         Toni Reina  <areina0@gmail.com>
 ;;
 ;; URL: http://github.com/areina/helm-dash
-;; Package-Version: 20170531.135
+;; Package-Version: 20170831.324
 ;; Version: 1.3.0
 ;; Package-Requires: ((helm "1.9.2") (cl-lib "0.5"))
 ;; Keywords: docs
@@ -244,7 +244,8 @@ See here the reason: https://github.com/areina/helm-dash/issues/17.")
   (let ((docset-path (helm-dash-docsets-path)))
     (cl-loop for dir in (directory-files docset-path nil "^[^.]")
              for full-path = (expand-file-name dir docset-path)
-             for subdir = (cl-first (directory-files full-path t "\\.docset\\'"))
+             for subdir = (and (file-directory-p full-path)
+                               (cl-first (directory-files full-path t "\\.docset\\'")))
              when (or (string-match-p "\\.docset\\'" dir)
                       (file-directory-p (expand-file-name (format "%s.docset" dir) full-path))
                       (and subdir (file-directory-p subdir)))
