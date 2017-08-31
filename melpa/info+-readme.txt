@@ -37,8 +37,7 @@
    `Info-breadcrumbs-in-mode-line-mode',
    `Info-change-visited-status' (Emacs 24+),
    `Info-describe-bookmark' (Emacs 24.2+),
-   `Info-follow-nearest-node-new-window',
-   `Info-refontify-toc-outline-region', `Info-goto-node-web',
+   `Info-follow-nearest-node-new-window', `Info-goto-node-web',
    `Info-history-clear', `Info-make-node-unvisited', `info-manual',
    `Info-merge-subnodes',
    `Info-mouse-follow-nearest-node-new-window',
@@ -53,7 +52,8 @@
    `Info-toggle-fontify-quotations',
    `Info-toggle-fontify-single-quote',
    `Info-toggle-node-access-invokes-bookmark' (Emacs 24.4+),
-   `Info-toc-outline', `Info-url-for-node', `Info-virtual-book'.
+   `Info-toc-outline', `Info-toc-outline-refontify-region',
+   `Info-url-for-node', `Info-virtual-book'.
 
  Faces defined here:
 
