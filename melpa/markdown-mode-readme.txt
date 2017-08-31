@@ -1,33 +1,32 @@
 markdown-mode is a major mode for editing [Markdown][]-formatted
-text. The latest stable version is markdown-mode 2.2, released on
-May 26, 2017. See the [release notes][] for details.
-markdown-mode is free software, licensed under the GNU GPL v2.
+text.  The latest stable version is markdown-mode 2.3, released on
+August 31, 2017.  See the [release notes][] for details.
+markdown-mode is free software, licensed under the GNU GPL,
+version 3 or later.
 
-![Markdown Mode Screenshot](http://jblevins.org/projects/markdown-mode/screenshots/20160108-001.png)
+![Markdown Mode Screenshot](https://jblevins.org/projects/markdown-mode/screenshots/20170818-001.png)
 
 [Markdown]: http://daringfireball.net/projects/markdown/
-[release notes]: http://jblevins.org/projects/markdown-mode/rev-2-2
+[release notes]: https://jblevins.org/projects/markdown-mode/rev-2-3
 
 Documentation:
 
-<a href="https://leanpub.com/markdown-mode"><img src="http://jblevins.org/projects/markdown-mode/guide-v2.2.png" align="right" height="350" width="252"></a>
+<a href="https://leanpub.com/markdown-mode">
+<img src="https://jblevins.org/projects/markdown-mode/guide-v2.3.png" align="right" height="350" width="231">
+</a>
 
-Documentation for Markdown Mode is available below, but Emacs is also
-a self-documenting editor.  That means that the source code itself
-contains additional documentation: each function has its own docstring
-available via `C-h f` (`describe-function'), individual keybindings
-can be investigated with `C-h k` (`describe-key'), and a complete list
-of keybindings is available using `C-h m` (`describe-mode').
-
-Additionally, to celebrate Markdown Mode's 10th birthday the package
-creator is writing a [Guide to Markdown Mode for Emacs][guide].  This
-ebook will supplement the existing documentation with in-depth
-discussion of advanced movement and editing commands, configuration
-examples, tips and tricks, and a survey of other packages that work
-with Markdown Mode.  It will be [published at Leanpub][guide] and
-possibly available through other channels.  Please visit
-the [book homepage][guide] to sign up to be notified when it is ready
-and to help determine the price.
+The primary documentation for Markdown Mode is available below, and
+is generated from comments in the source code.  For a more in-depth
+treatment, the [_Guide to Markdown Mode for Emacs_][guide] covers
+Markdown syntax, advanced movement and editing in Emacs,
+extensions, configuration examples, tips and tricks, and a survey
+of other packages that work with Markdown Mode.  Finally, Emacs is
+also a self-documenting editor.  This means that the source code
+itself contains additional documentation: each function has its own
+docstring available via `C-h f` (`describe-function'), individual
+keybindings can be investigated with `C-h k` (`describe-key'), and
+a complete list of keybindings is available using `C-h m`
+(`describe-mode').
 
  [guide]: https://leanpub.com/markdown-mode
 
@@ -98,7 +97,7 @@ to load automatically by adding the following to your init file:
 (add-to-list 'auto-mode-alist '("README\\.md\\'" . gfm-mode))
 ```
 
-[markdown-mode.el]: http://jblevins.org/projects/markdown-mode/markdown-mode.el
+[markdown-mode.el]: https://jblevins.org/projects/markdown-mode/markdown-mode.el
 
 **Development Version**
 
