@@ -4,7 +4,7 @@
 
 ;; Author: James Wong <jianwang.academic@gmail.com>
 ;; URL: https://github.com/et2010/org-edit-latex
-;; Package-Version: 20170830.1549
+;; Package-Version: 20170830.1628
 ;; Keywords: org, LaTeX
 ;; Version: 0.8.2
 ;; Package-Requires: ((emacs "24.4") (auctex "11.90"))
@@ -105,18 +105,18 @@
         (advice-add #'org-edit-src-exit :around #'org-edit-latex--unwrap-maybe)
         (when org-edit-latex-show-hint
           (setq-local eldoc-documentation-function
-                      (if (version< org-version "9.0")
-                          #'org-edit-latex-eldoc-function
-                        #'org-edit-latex-hinter)))
+                      (if (featurep 'org-eldoc)
+                          #'org-edit-latex-hinter
+                        #'org-edit-latex-eldoc-function)))
         (org-edit-latex-create-master-maybe)
         (add-hook 'org-src-mode-hook #'org-edit-latex--set-TeX-master))
     (advice-remove #'org-edit-special #'org-edit-latex--wrap-maybe)
     (advice-remove #'org-edit-src-exit #'org-edit-latex--unwrap-maybe)
     (when org-edit-latex-show-hint
       (setq-local eldoc-documentation-function
-                  (if (version< org-version "9.0")
-                      'ignore
-                    #'org-eldoc-documentation-function)))
+                  (if (featurep 'org-eldoc)
+                      #'org-eldoc-documentation-function
+                    'ignore)))
     (remove-hook 'org-src-mode-hook #'org-edit-latex--set-TeX-master)))
 
 
