@@ -5,7 +5,7 @@
 
 ;; Author: Jonathan Sterling <jon@jonmsterling.com>
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 20170810.2004
+;; Package-Version: 20170831.807
 ;; Version: 0.0.1
 ;; Keywords: languages
 
@@ -50,6 +50,10 @@
 
 (defface redprl-metavar-face
   '((t (:inherit font-lock-variable-name-face))) "Face for RedPRL's meta variables."
+  :group 'redprl)
+
+(defface redprl-number-face
+  '((t (:inherit font-lock-constant-face))) "Face for RedPRL's numbers."
   :group 'redprl)
 
 (defface redprl-expression-keyword-face
@@ -105,7 +109,7 @@
   "RedPRL's keywords.")
 
 (defconst redprl-sort-keywords
-  '("dim" "hyp" "exp" "tac" "triv" "jdg")
+  '("dim" "hyp" "exp" "lvl" "tac" "triv" "jdg")
   "RedPRL's built-in sorts.")
 
 (defconst redprl-expression-keywords
@@ -117,11 +121,13 @@
     "lam" "app"
     "record" "tuple"
     "path" "abs"
+    "box" "cap"
+    "univ"
     "hcom" "coe" "com")
   "RedPRL's expression keywords.")
 
 (defconst redprl-expression-symbols
-  '("->" "$" "*" "!" "@" "=")
+  '("->" "~>" "<~" "$" "*" "!" "@" "=")
   "RedPRL's expression symbols.")
 
 (defconst redprl-tactic-keywords
@@ -174,6 +180,9 @@
 
     ;; Meta variables
     (,(rx "#" (+ word)) 0 'redprl-metavar-face)
+
+    ;; Numbers
+    (,(rx (? "-") (+ digit)) 0 'redprl-number-face)
 
     ;; Built-in expressions
     (,(regexp-opt redprl-expression-keywords 'words) 0 'redprl-expression-keyword-face)
