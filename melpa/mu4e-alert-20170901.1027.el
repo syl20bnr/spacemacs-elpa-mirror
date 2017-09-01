@@ -4,7 +4,7 @@
 
 ;; Author: Iqbal Ansari <iqbalansari02@yahoo.com>
 ;; URL: https://github.com/iqbalansari/mu4e-alert
-;; Package-Version: 20170827.735
+;; Package-Version: 20170901.1027
 ;; Keywords: mail, convenience
 ;; Version: 1.0
 ;; Package-Requires: ((alert "1.2") (s "1.10.0") (ht "2.0") (emacs "24.1"))
@@ -222,7 +222,7 @@ The buffer holds the emails received from mu in sexp format"
 
 This is used internally by `mu4e-alert--get-mu-unread-emails' which throttles
 the requests for unread emails."
-  (let ((default user-emacs-directory))
+  (let ((default-directory (expand-file-name "~")))
     (set-process-sentinel (apply #'start-process
                                  "mu4e-alert-unread-mails"
                                  (mu4e-alert--get-mail-output-buffer)

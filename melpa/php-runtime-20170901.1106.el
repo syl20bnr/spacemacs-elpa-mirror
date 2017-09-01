@@ -5,7 +5,7 @@
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 28 Aug 2017
 ;; Version: 0.0.1
-;; Package-Version: 20170828.2343
+;; Package-Version: 20170901.1106
 ;; Keywords: processes php
 ;; URL: https://github.com/emacs-php/php-runtime.el
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
@@ -90,7 +90,7 @@ for example, (get-buffer \"foo-buffer\"), '(:file . \"/path/to/file\")."
    (stdout :initarg :stdout :type (or null buffer-live list) :initform nil)
    (stderr :initarg :stderr :type (or null buffer-live list) :initform nil)))
 
-(defmethod php-runtime-run ((php php-runtime-execute))
+(cl-defmethod php-runtime-run ((php php-runtime-execute))
   "Execute PHP process using `php -r' with code.
 
 This execution method is affected by the number of character limit of OS command arguments.
@@ -100,7 +100,7 @@ You can check the limitation by command, for example \(shell-command-to-string \
         (php-runtime--call-php-process-with-input-buffer php args)
       (php-runtime--call-php-process php args))))
 
-(defmethod php-runtime--call-php-process ((php php-runtime-execute) args)
+(cl-defmethod php-runtime--call-php-process ((php php-runtime-execute) args)
   "Execute PHP Process by php-execute `PHP' and `ARGS'."
   (apply #'call-process (oref php executable)
          (php-runtime--get-input php) ;input
@@ -109,7 +109,7 @@ You can check the limitation by command, for example \(shell-command-to-string \
          nil ; suppress display
          args))
 
-(defmethod php-runtime--call-php-process-with-input-buffer ((php php-runtime-execute) args)
+(cl-defmethod php-runtime--call-php-process-with-input-buffer ((php php-runtime-execute) args)
   "Execute PHP Process with STDIN by php-execute `PHP' and `ARGS'."
   (unless (buffer-live-p (oref php stdin))
     (error "STDIN buffer is not available"))
@@ -122,26 +122,26 @@ You can check the limitation by command, for example \(shell-command-to-string \
            nil ; suppress display
            args)))
 
-(defmethod php-runtime--get-command-line-arg ((php php-runtime-execute))
+(cl-defmethod php-runtime--get-command-line-arg ((php php-runtime-execute))
   "Return command line string"
   (let ((code (oref php code)))
     (cl-case (car code)
       (:file (cdr code))
       (:string (concat "-r" (cdr code))))))
 
-(defmethod php-runtime--stdin-by-file-p ((php php-runtime-execute))
+(cl-defmethod php-runtime--stdin-by-file-p ((php php-runtime-execute))
   "Return T if \(oref php stdin) is file."
   (let ((stdin (oref php stdin)))
     (and (consp stdin)
          (eq :file (car stdin)))))
 
-(defmethod php-runtime--get-input ((php php-runtime-execute))
+(cl-defmethod php-runtime--get-input ((php php-runtime-execute))
   ""
   (if (php-runtime--stdin-by-file-p php)
       (cdr (oref php stdin))
     nil))
 
-(defmethod php-runtime-stdout-buffer ((php php-runtime-execute))
+(cl-defmethod php-runtime-stdout-buffer ((php php-runtime-execute))
   "Return output buffer."
   (let ((buf (oref php stdout)))
     (if (and buf (buffer-live-p buf))

@@ -6,7 +6,7 @@
 ;; Keywords: tools, maint, convenience
 ;; Homepage: https://github.com/vermiculus/apiwrap.el
 ;; Package-Requires: ((emacs "25"))
-;; Package-Version: 20170814.1842
+;; Package-Version: 20170901.648
 ;; Package-X-Original-Version: 0.2
 
 ;; This file is not part of GNU Emacs.
@@ -301,7 +301,7 @@ These are required to be configured.")
                     (list params data))))
 
     (let ((props `((prefix   . ,prefix)
-                   (method   . ',method)
+                   (method   . ,method)
                    (endpoint . ,resource)
                    (link     . ,link)))
           fn-form)

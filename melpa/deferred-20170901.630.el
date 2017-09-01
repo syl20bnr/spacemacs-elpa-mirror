@@ -4,7 +4,7 @@
 
 ;; Author: SAKURAI Masashi <m.sakurai at kiwanami.net>
 ;; Version: 0.5.1
-;; Package-Version: 20170531.2135
+;; Package-Version: 20170901.630
 ;; Keywords: deferred, async
 ;; Package-Requires: ((emacs "24.4"))
 ;; URL: https://github.com/kiwanami/emacs-deferred
@@ -199,7 +199,7 @@ in the asynchronous tasks.")
 (defvar deferred:tick-time 0.001
   "Waiting time between asynchronous tasks (second).
 The shorter waiting time increases the load of Emacs. The end
-user can tune this paramter. However, applications should not
+user can tune this parameter. However, applications should not
 modify it because the applications run on various environments.")
 
 (defvar deferred:queue nil
