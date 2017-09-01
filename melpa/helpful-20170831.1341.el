@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Keywords: help, lisp
-;; Package-Version: 20170829.1620
+;; Package-Version: 20170831.1341
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2"))
 
@@ -653,7 +653,8 @@ For example, \"(some-func FOO &optional BAR)\"."
 ;; TODO: Info mentions, e.g. `define-derived-mode' or `defface'.
 (defun helpful--docstring (sym callable-p)
   "Get the docstring for SYM."
-  (let (docstring)
+  (let ((text-quoting-style 'grave)
+        docstring)
     (if callable-p
         (progn
           (setq docstring (documentation sym))

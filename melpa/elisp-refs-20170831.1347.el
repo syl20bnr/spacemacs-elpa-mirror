@@ -3,8 +3,8 @@
 ;; Copyright (C) 2016  
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
-;; Version: 1.2
-;; Package-Version: 20170828.1027
+;; Version: 1.3
+;; Package-Version: 20170831.1347
 ;; Keywords: lisp
 ;; Package-Requires: ((dash "2.12.0") (f "0.18.2") (list-utils "0.4.4") (loop "2.1") (s "1.11.0"))
 

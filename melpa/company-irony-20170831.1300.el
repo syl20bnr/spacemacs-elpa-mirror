@@ -4,7 +4,7 @@
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
 ;; Keywords: convenience
-;; Package-Version: 20170821.1306
+;; Package-Version: 20170831.1300
 ;; Version: 1.0.0
 ;; URL: https://github.com/Sarcasm/company-irony/
 ;; Package-Requires: ((emacs "24.1") (company "0.8.0") (irony "1.0.0") (cl-lib "0.5"))
@@ -71,10 +71,10 @@ uppercase letters."
            collect (propertize (car candidate) 'company-irony candidate)))
 
 (defun company-irony--get-matching-style ()
-  (pcase company-irony-ignore-case
-    ('smart 'smart-case)
-    ('nil 'exact)
-    (other 'case-insensitive)))
+  (cl-case company-irony-ignore-case
+    (smart 'smart-case)
+    (nil 'exact)
+    (t 'case-insensitive)))
 
 (defun company-irony--candidates (prefix)
   (cons :async
@@ -132,7 +132,8 @@ uppercase letters."
            (company-irony--irony-candidate arg)))
     (post-completion (company-irony--post-completion
                       (company-irony--irony-candidate arg)))
-    (ignore-case company-irony-ignore-case)
+    (ignore-case (eq company-irony-ignore-case t))
+    (no-cache (eq company-irony-ignore-case 'smart))
     (sorted t)))
 
 ;;;###autoload
