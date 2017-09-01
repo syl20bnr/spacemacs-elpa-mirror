@@ -89,7 +89,7 @@ pyim 的目标是： *尽最大的努力成为一个好用的 Emacs 中文输入
                   pyim-probe-punctuation-after-punctuation))
 
   ;; 开启拼音搜索功能
-  (setq pyim-isearch-enable-pinyin-search t)
+  (pyim-isearch-enable)
 
   ;; 使用 pupup-el 来绘制选词框
   (setq pyim-page-tooltip 'popup)
@@ -276,7 +276,7 @@ pyim 的 tooltip 选词框默认使用 *双行显示* 的样式，在一些特
 |-----------------------------------+-----------------------------------------------------------------------------------|
 | pyim-probe-org-speed-commands     | 解决 org-speed-commands 与 pyim 冲突问题                                          |
 | pyim-probe-isearch-mode           | 使用 isearch 搜索时，强制开启英文输入模式                                         |
-|                                   | 注意：想要使用这个功能，pyim-isearch-enable-pinyin-search 必须设置为 t            |
+|                                   | 注意：想要使用这个功能，pyim-isearch-enable 必须激活                              |
 |-----------------------------------+-----------------------------------------------------------------------------------|
 | pyim-probe-org-structure-template | 使用 org-structure-template 时，关闭中文输入模式                                  |
 |-----------------------------------+-----------------------------------------------------------------------------------|
@@ -471,7 +471,7 @@ pyim 包含了一个简单的命令：`pyim-cwords-at-point', 这个命令
 pyim 安装后，可以通过下面的设置开启拼音搜索功能：
 
 #+BEGIN_EXAMPLE
-(setq pyim-isearch-enable-pinyin-search t)
+(pyim-isearch-enable)
 #+END_EXAMPLE
 
 值得注意的是：这个功能有一些限制：搜索字符串中只能出现 “a-z” 和 “’”，如果有
