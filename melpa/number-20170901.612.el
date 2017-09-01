@@ -1,5 +1,5 @@
 ;;; number.el --- Working with numbers at point.
-;; Package-Version: 20141127.1004
+;; Package-Version: 20170901.612
 
 ;; Copyright (c) 2014 Chris Done. All rights reserved.
 
@@ -127,12 +127,15 @@
 (defun number/mark ()
   "Mark the number at point."
   (interactive)
-  (when (looking-back "[0-9.]+")
-    (skip-chars-backward "[0-9.]+"))
+  (skip-chars-backward "0-9.")
   (when (looking-back "[+\\-]")
-    (skip-chars-backward "[+\\-]"))
+    (goto-char (1- (point))))
   (let ((point (point)))
-    (skip-chars-forward "[+\\-]?[0-9.]+")
+    (skip-chars-forward "+-")
+    (skip-chars-forward "0-9")
+    (when (looking-at "\\.[0-9]")
+      (skip-chars-forward ".")
+      (skip-chars-forward "0-9"))
     (set-mark (point))
     (goto-char point)))
 
@@ -148,10 +151,11 @@
 (defun number-transform (f)
   "Transform the number at point in some way."
   (let ((point (point)))
-    (let* ((beg-end (progn (unless (region-active-p)
+    (let* ((beg-end (prog2 (unless (region-active-p)
                              (number/mark))
                            (list (region-beginning)
-                                 (region-end))))
+                                 (region-end))
+                           (deactivate-mark)))
            (string (apply 'buffer-substring-no-properties beg-end)))
       (let ((new (number-format (funcall f (number-read string)))))
         (apply 'delete-region beg-end)
@@ -177,8 +181,10 @@
                            (number-get number :decimal-padding)
                            (number-get number :number))))
     (integral
-     (format (format "%%0.%dd" (number-get number :padding))
-             (number-get number :number)))))
+     (if (= 0 (number-get number :number))
+         "0"
+       (format (format "%%0.%dd" (number-get number :padding))
+               (number-get number :number))))))
 
 (defun number-pad-decimal (left-pad right-pad n)
   "Pad a decimal on the left- and right-hand side of the decimal
