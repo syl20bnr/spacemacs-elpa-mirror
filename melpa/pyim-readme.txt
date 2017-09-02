@@ -89,7 +89,7 @@ pyim 的目标是： *尽最大的努力成为一个好用的 Emacs 中文输入
                   pyim-probe-punctuation-after-punctuation))
 
   ;; 开启拼音搜索功能
-  (pyim-isearch-enable)
+  (pyim-isearch-mode 1)
 
   ;; 使用 pupup-el 来绘制选词框
   (setq pyim-page-tooltip 'popup)
@@ -276,7 +276,7 @@ pyim 的 tooltip 选词框默认使用 *双行显示* 的样式，在一些特
 |-----------------------------------+-----------------------------------------------------------------------------------|
 | pyim-probe-org-speed-commands     | 解决 org-speed-commands 与 pyim 冲突问题                                          |
 | pyim-probe-isearch-mode           | 使用 isearch 搜索时，强制开启英文输入模式                                         |
-|                                   | 注意：想要使用这个功能，pyim-isearch-enable 必须激活                              |
+|                                   | 注意：想要使用这个功能，pyim-isearch-mode 必须激活                                |
 |-----------------------------------+-----------------------------------------------------------------------------------|
 | pyim-probe-org-structure-template | 使用 org-structure-template 时，关闭中文输入模式                                  |
 |-----------------------------------+-----------------------------------------------------------------------------------|
@@ -471,13 +471,16 @@ pyim 包含了一个简单的命令：`pyim-cwords-at-point', 这个命令
 pyim 安装后，可以通过下面的设置开启拼音搜索功能：
 
 #+BEGIN_EXAMPLE
-(pyim-isearch-enable)
+(pyim-isearch-mode 1)
 #+END_EXAMPLE
 
-值得注意的是：这个功能有一些限制：搜索字符串中只能出现 “a-z” 和 “’”，如果有
+注意：这个功能有一些限制，搜索字符串中只能出现 “a-z” 和 “’”，如果有
 其他字符（比如 regexp 操作符），则自动关闭拼音搜索功能。
 
-如果用户开启了拼音搜索功能，可以使用下面的方式 *强制关闭* isearch 搜索框中文输入
+开启这个功能后，一些 isearch 扩展有可能失效，如果遇到这种问题，
+只能禁用这个 Minor-mode，然后联系 pyim 的维护者，看有没有法子实现兼容。
+
+用户激活这个 mode 后，可以使用下面的方式 *强制关闭* isearch 搜索框中文输入
 （即使在 pyim 激活的时候）。
 
 #+BEGIN_EXAMPLE
