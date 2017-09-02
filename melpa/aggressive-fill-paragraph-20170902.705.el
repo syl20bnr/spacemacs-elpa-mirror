@@ -2,7 +2,7 @@
 
 ;; Author: David Shepherd <davidshepherd7@gmail.com>
 ;; Version: 0.0.1
-;; Package-Version: 20170901.1257
+;; Package-Version: 20170902.705
 ;; Package-Requires: ((dash "2.10.0"))
 ;; URL: https://github.com/davidshepherd7/aggressive-fill-paragraph-mode
 ;; Keywords: fill-paragraph, automatic, comments
@@ -68,12 +68,20 @@ Bulleted by *, + or -."
        (or (eql (org-element-type (org-element-at-point)) 'table)
            (eql (org-element-type (org-element-at-point)) 'table-row))))
 
+(defun afp-in-org-src-block-header? ()
+  (let ((case-fold-search t))
+    (and (derived-mode-p 'org-mode)
+         (save-excursion
+           (beginning-of-line)
+           (looking-at-p "^[ \t]*#\\+\\(\\(begin\\|end\\)_src\\|header\\|name\\)")))))
+
 (defcustom afp-suppress-fill-pfunction-list
   (list
    #'afp-repeated-whitespace?
    #'afp-markdown-inside-code-block?
    #'afp-bullet-list-in-comments?
    #'afp-in-org-table?
+   #'afp-in-org-src-block-header?
    )
   "Functions to check if filling should be suppressed.
 
