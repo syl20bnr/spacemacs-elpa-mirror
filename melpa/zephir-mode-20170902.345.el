@@ -5,7 +5,7 @@
 ;; Author: Serghei Iakovlev (serghei@phalconphp.com)
 ;; Maintainer: Serghei Iakovlev
 ;; Version: 0.4.0
-;; Package-Version: 20170831.2229
+;; Package-Version: 20170902.345
 ;; URL: https://github.com/sergeyklay/zephir-mode
 ;; Keywords: languages
 ;; Package-Requires: ((cl-lib "0.5") (pkg-info "0.4") (emacs "24.3"))
@@ -34,23 +34,31 @@
 ;;   GNU Emacs major mode for editing Zephir code.  Provides font-locking,
 ;; indentation, alignment and navigation support.
 ;;
-;;   Syntax checking: Flymake support is not provided.  See Flycheck at
-;; http://www.flycheck.org for on-the-fly validation and liniting of Zephir
-;; code.
-;;
 ;;   Zephir -- is a high level language that eases the creation and
 ;; maintainability of extensions for PHP.  Zephir extensions are
 ;; exported to C code that can be compiled and optimized by major C
 ;; compilers such as gcc/clang/vc++.  Functionality is exposed to the
 ;; PHP language.  For more information see https://zephir-lang.com
 ;;
+;; Syntax checking:
+;;
+;;   Flymake support is not provided.  See Flycheck at
+;; http://www.flycheck.org for on-the-fly validation and liniting of Zephir
+;; code.
+;;
+;; Bugs:
+;;
 ;;   Bug tracking is currently handled using the GitHub issue tracker at
 ;; https://github.com/sergeyklay/zephir-mode/issues
+;;
+;; History:
 ;;
 ;;   History is tracked in the Git repository rather than in this file.
 ;; See https://github.com/sergeyklay/zephir-mode/blob/master/CHANGELOG.md
 ;;
-;;   Movement: Move to the beginning or end of the current block with
+;; Movement:
+;;
+;;   Move to the beginning or end of the current block with
 ;; `beginning-of-defun' (C-M-a) and `end-of-defun' (C-M-e) respectively.
 ;;
 ;; Usage:
@@ -216,11 +224,10 @@ matching the opening character."
                       "function"
                       symbol-end))
       ;; Namespace, class or interface name.
-      (classlike . ,(rx (optional "\\")
-                        symbol-start
+      (classlike . ,(rx symbol-start
                         (optional ?$)
                         (any "A-Z" "a-z" ?_)
-                        (+ (any "A-Z" "a-z" "0-9" ?_))
+                        (zero-or-more (any "A-Z" "a-z" "0-9" ?_))
                         (zero-or-more
                          (and "\\"
                               (any "A-Z" "a-z" ?_)
@@ -271,7 +278,7 @@ are available:
      A function declaraion.
 
 `classlike'
-     A valid namespace, class or interface name with leading \.
+     A valid namespace, class or interface name without leading \.
 
 `visibility'
      Any valid visibility modifier.
@@ -393,15 +400,26 @@ the comment syntax tokens handle both line style \"//\" and block style
                         (or "namespace" "interface" "use")
                         symbol-end)
                  (+ (syntax whitespace))
-                 (group classlike))
+                 (group (optional "\\") classlike))
      (1 font-lock-keyword-face)
      (2 font-lock-type-face))
     ;; Highlight class name after "use ... as"
-    (,(zephir-rx classlike
+    (,(zephir-rx (optional "\\")
+                 classlike
                  (+ (syntax whitespace))
                  (group symbol-start "as" symbol-end)
                  (+ (syntax whitespace))
                  (group identifier))
+     (1 font-lock-keyword-face)
+     (2 font-lock-type-face))
+    ;; Highlight extends
+    (,(zephir-rx classlike
+                 (+ (syntax whitespace))
+                 (group symbol-start "extends" symbol-end)
+                 (+ (syntax whitespace))
+                 (group classlike)
+                 (optional (+ (syntax whitespace)))
+                 (or ";" (group (or "implements" "as"))))
      (1 font-lock-keyword-face)
      (2 font-lock-type-face))
     ;; Booleans
