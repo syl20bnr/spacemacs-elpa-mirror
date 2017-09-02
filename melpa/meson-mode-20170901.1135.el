@@ -4,7 +4,7 @@
 
 ;; Author: Michal Sojka <sojkam1@fel.cvut.cz>
 ;; Version: 0.1
-;; Package-Version: 20170501.1310
+;; Package-Version: 20170901.1135
 ;; Keywords: languages, tools
 ;; URL: https://github.com/wentasah/meson-mode
 ;; Package-Requires: ((emacs "24.3"))
@@ -541,7 +541,7 @@ comments."
 	       ;; After handling parentheses (inside strings), we can
 	       ;; handle strings
 	       ((or (when (nth 3 ppss)		; If inside string
-		      (goto-char (nth 8 ppss))	; goto begining
+		      (goto-char (nth 8 ppss))	; goto beginning
 		      nil)
 		    (looking-at meson-string-regexp)) ; Match the whole string
 		"string")
