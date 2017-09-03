@@ -5,8 +5,8 @@
 ;; Author: Manuel Alonso <manuteali@gmail.com>
 ;; Maintainer: Manuel Alonso <manuteali@gmail.com>
 ;; URL: http://www.github.com/manute/gorepl-mode
-;; Package-Version: 20151121.422
-;; Version: 0.1.0
+;; Package-Version: 20170903.641
+;; Version: 1.0.0
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: languages, go, golang, gorepl
 
@@ -53,7 +53,7 @@
   :group 'gorepl)
 
 
-(defconst gorepl-version "0.1.0-snapshot")
+(defconst gorepl-version "1.0.0")
 (defconst gorepl-buffer "*Go REPL*")
 (defconst gorepl-buffer-name "Go REPL")
 
@@ -95,9 +95,10 @@
   "Evaluate region selected."
   (interactive "r")
   (gorepl-mode t)
-  (comint-send-region gorepl-buffer begin end)
-  (comint-send-string gorepl-buffer "\n"))
-
+  (let ((cmd (buffer-substring begin end)))
+    (with-current-buffer gorepl-buffer
+      (insert cmd)
+      (comint-send-input))))
 
 (defun gorepl-eval-line (&optional arg)
   "Evaluate current line."

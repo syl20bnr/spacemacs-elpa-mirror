@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017 by Julien Blanchard
 ;; Author: Julien Blanchard <https://github.com/julienXX>
 ;; URL: https://github.com/julienXX/ivy-lobsters
-;; Package-Version: 20170829.1418
+;; Package-Version: 20170903.445
 ;; Package: ivy-lobsters
 ;; Package-Requires: ((ivy "0.8.0") (cl-lib "0.5"))
 ;; Version: 0.1
@@ -87,6 +87,7 @@
     (ivy-lobsters-extract 'title story))
    'utf-8))
 
+;;;###autoload
 (defun ivy-lobsters ()
   "Show latest lobste.rs stories."
   (interactive)

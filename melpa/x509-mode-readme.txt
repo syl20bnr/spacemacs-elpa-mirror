@@ -1,4 +1,4 @@
-Minor mode for viewing certificates, CRLs, keys and DH-parameters.
+Major for viewing certificates, CRLs, keys and DH-parameters.
 
 Uses OpenSSL for viewing PEM and DER encoded PKI entities.
 
