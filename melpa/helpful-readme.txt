@@ -7,6 +7,7 @@ The full set of commands you can try is:
 * helpful-function
 * helpful-command
 * helpful-macro
+* helpful-callable
 * helpful-variable
 * helpful-at-point
 

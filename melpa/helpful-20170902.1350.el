@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20170901.1432
+;; Package-Version: 20170902.1350
 ;; Keywords: help, lisp
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2"))
@@ -33,6 +33,7 @@
 ;; * helpful-function
 ;; * helpful-command
 ;; * helpful-macro
+;; * helpful-callable
 ;; * helpful-variable
 ;; * helpful-at-point
 ;;
@@ -538,6 +539,11 @@ state of the current symbol."
        ;; helpfns+ or counsel-info-lookup-symbol.
        (helpful--format-docstring docstring)))
 
+    (when (not helpful--callable-p)
+      (insert
+       (helpful--heading "\n\nValue\n")
+       (helpful--pretty-print (symbol-value helpful--sym))))
+
     ;; Show keybindings.
     ;; TODO: allow users to conveniently add and remove keybindings.
     (when (commandp helpful--sym)
@@ -700,6 +706,15 @@ For example, \"(some-func FOO &optional BAR)\"."
   "Show help for macro named SYMBOL."
   (interactive
    (list (helpful--read-symbol "Macro: " #'macrop)))
+  (switch-to-buffer (helpful--buffer symbol t))
+  (helpful-update))
+
+(defun helpful-callable (symbol)
+  "Show help for function or macro named SYMBOL.
+
+See also `helpful-macro' and `helpful-function'."
+  (interactive
+   (list (helpful--read-symbol "Function/macro: " #'fboundp)))
   (switch-to-buffer (helpful--buffer symbol t))
   (helpful-update))
 
