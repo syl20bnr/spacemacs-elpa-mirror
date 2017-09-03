@@ -5,7 +5,7 @@
 
 ;; Author: Jonathan Sterling <jon@jonmsterling.com>
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 20170902.2122
+;; Package-Version: 20170903.911
 ;; Version: 0.0.1
 ;; Keywords: languages
 
@@ -126,8 +126,8 @@
     "record" "tuple"
     "path" "abs"
     "box" "cap"
-    "ua" "uain" "uaproj"
-    "univ"
+    "univalence" "univalence-in" "univalence-proj"
+    "universe" "U"
     "hcom" "coe" "com")
   "RedPRL's expression keywords.")
 
@@ -138,7 +138,7 @@
 (defconst redprl-tactic-keywords
   '("auto" "auto-step" "case" "cut-lemma" "elim" "else" "exact" "fresh" "goal"
     "head-expand" "hyp" "id" "lemma" "let" "match" "of" "print" "progress"
-    "query" "rec" "refine" "repeat" "symmetry" "then" "unfold" "use" "with")
+    "query" "rec" "refine" "repeat" "rewrite" "symmetry" "then" "unfold" "use" "with")
   "RedPRL's tactic keywords.")
 
 (defconst redprl-tactic-symbols

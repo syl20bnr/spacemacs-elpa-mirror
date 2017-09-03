@@ -6,7 +6,7 @@
 ;; Authors: Julien Danjou <julien@danjou.info>
 ;;          Eric Kaschalk <ekaschalk@gmail.com>
 ;; URL: http://github.com/hylang/hy-mode
-;; Package-Version: 1.0
+;; Package-Version: 1.0.1
 ;; Version: 1.0
 ;; Keywords: languages, lisp, python
 
@@ -42,28 +42,69 @@
 
 ;;; Keywords
 
+(defconst hy--kwds-anaphorics
+  '("ap-if" "ap-each" "ap-each-while" "ap-map" "ap-map-when" "ap-filter"
+    "ap-reject" "ap-dotimes" "ap-first" "ap-last" "ap-reduce" "ap-pipe"
+    "ap-compose" "xi")
+
+  "Hy anaphoric contrib keywords.")
+
 (defconst hy--kwds-builtins
   '("*map" "accumulate" "and" "assoc" "butlast" "calling-module-name" "car"
-    "cdr" "chain" "coll?" "combinations" "compress" "cons" "cons?" "count" "cut"
-    "cycle" "dec" "def" "defmain" "del" "disassemble" "distinct" "drop"
-    "drop-last" "drop-while" "empty?" "eval" "even?" "every?" "filter" "first"
-    "flatten" "float?" "fraction" "gensym" "get" "group-by" "identity" "in"
-    "inc" "input" "instance?" "integer" "integer-char?" "integer?" "interleave"
-    "interpose" "is" "is-not" "is_not" "islice" "iterable?" "iterate"
-    "iterator?" "keyword" "keyword?" "last" "list*" "list-comp" "macroexpand"
-    "macroexpand-1" "map" "merge-with" "multicombinations" "name" "neg?" "nil?"
-    "none?" "not" "not-in" "not_in" "nth" "numeric?" "odd?" "or" "partition"
-    "permutations" "pos?" "print" "product" "quasiquote" "quote" "range" "read"
-    "read-str" "reduce" "remove" "repeat" "repeatedly" "rest" "second" "setv"
+    "cdr" "chain" "coll?" "combinations" "comp" "complement" "compress" "cons"
+    "cons?" "constantly" "count" "cut" "cycle" "dec" "def" "defmain" "del"
+    "dict-comp" "disassemble" "distinct" "doto" "drop" "drop-last" "drop-while"
+    "empty?" "even?" "every?" "filter" "first" "flatten" "float?" "fraction"
+    "genexpr" "gensym" "get" "group-by" "identity" "in" "inc" "input"
+    "instance?" "integer" "integer-char?" "integer?" "interleave" "interpose"
+    "is" "is-not" "is_not" "islice" "iterable?" "iterate" "iterator?" "juxt"
+    "keyword" "keyword?" "last" "list*" "list-comp" "macroexpand"
+    "macroexpand-1" "map" "merge-with" "multicombinations" "name" "neg?" "none?"
+    "not" "not-in" "nth" "numeric?" "odd?" "or" "partition" "permutations"
+    "pos?" "print" "product" "quasiquote" "quote" "range" "read" "read-str"
+    "reduce" "remove" "repeat" "repeatedly" "rest" "second" "setv" "set-comp"
     "slice" "some" "string" "string?" "symbol?" "take" "take-nth" "take-while"
-    "tee" "unquote" "unquote-splice" "zero?" "zip" "zip-longest")
+    "tee" "unquote" "unquote-splice" "xor" "zero?" "zip" "zip-longest"
+
+    ;; Pure python builtins
+    "abs" "all" "any" "bin" "bool" "callable" "chr"
+    "compile" "complex" "delattr" "dict" "dir" "divmod" "enumerate"
+    "eval" "float" "format" "frozenset" "getattr" "globals" "hasattr"
+    "hash" "help" "hex" "id" "isinstance" "issubclass" "iter" "len"
+    "list" "locals" "max" "memoryview" "min" "next" "object" "oct" "open"
+    "ord" "pow" "repr" "reversed" "round" "set" "setattr"
+    "sorted" "str" "sum" "super" "tuple" "type" "vars"
+    "ascii" "bytearray" "bytes" "exec"
+    "--package--" "__package__" "--import--" "__import__"
+    "--all--" "__all__" "--doc--" "__doc__" "--name--" "__name__")
 
   "Hy builtin keywords.")
 
 (defconst hy--kwds-constants
-  '("True" "False" "None" "nil")
+  '("True" "False" "None"
+    "Ellipsis"
+    "NotImplemented"
+    "nil"  ; For those that alias None as nil
+    )
 
   "Hy constant keywords.")
+
+(defconst hy--kwds-exceptions
+  '("ArithmeticError" "AssertionError" "AttributeError" "BaseException"
+    "DeprecationWarning" "EOFError" "EnvironmentError" "Exception"
+    "FloatingPointError" "FutureWarning" "GeneratorExit" "IOError"
+    "ImportError" "ImportWarning" "IndexError" "KeyError"
+    "KeyboardInterrupt" "LookupError" "MemoryError" "NameError"
+    "NotImplementedError" "OSError" "OverflowError"
+    "PendingDeprecationWarning" "ReferenceError" "RuntimeError"
+    "RuntimeWarning" "StopIteration" "SyntaxError" "SyntaxWarning"
+    "SystemError" "SystemExit" "TypeError" "UnboundLocalError"
+    "UnicodeDecodeError" "UnicodeEncodeError" "UnicodeError"
+    "UnicodeTranslateError" "UnicodeWarning" "UserWarning" "VMSError"
+    "ValueError" "Warning" "WindowsError" "ZeroDivisionError"
+    "BufferError" "BytesWarning" "IndentationError" "ResourceWarning" "TabError")
+
+  "Hy exception keywords.")
 
 (defconst hy--kwds-defs
   '("defn" "defun"
@@ -75,7 +116,7 @@
 (defconst hy--kwds-operators
   '("!=" "%" "%=" "&" "&=" "*" "**" "**=" "*=" "+" "+=" "," "-"
     "-=" "/" "//" "//=" "/=" "<" "<<" "<<=" "<=" "=" ">" ">=" ">>" ">>="
-    "^" "^=" "_=" "|" "|=" "~")
+    "^" "^=" "|" "|=" "~")
 
   "Hy operator keywords.")
 
@@ -85,10 +126,12 @@
     "for" "for*"
 
     ;; Threading
-    "_>" "->" "_>>" "->>" "as->" "as_>"
+    "->" "->>" "as->"
 
     ;; Flow control
-    "if" "if-not" "else" "unless" "when"
+    "return"
+    "if" "if*" "if-not" "lif" "lif-not"
+    "else" "unless" "when"
     "break" "continue"
     "while" "cond"
     "do" "progn"
@@ -97,17 +140,17 @@
     "lambda" "fn"
     "yield" "yield-from"
     "with" "with*"
-    "with-decorator" "with_decorator" "with-gensyms" "with_gensyms"
+    "with-gensyms"
 
     ;; Error Handling
     "except" "try" "throw" "raise" "catch" "finally" "assert"
 
     ;; Misc
-    "global"
-    "eval-and-compile"
+    "global" "nonlocal"
+    "eval" "eval-and-compile" "eval-when-compile"
 
-    ;; Discontinued
-    "apply" "kwapply" "let")
+    ;; Discontinued in Master
+    "apply" "kwapply")
 
   "Hy special forms keywords.")
 
@@ -117,10 +160,12 @@
 (defconst hy--font-lock-kwds-builtins
   (list
    (rx-to-string
-    `(: word-start
+    `(: (not (any "#"))
+        symbol-start
         (or ,@hy--kwds-operators
-            ,@hy--kwds-builtins)
-        word-end))
+            ,@hy--kwds-builtins
+            ,@hy--kwds-anaphorics)
+        symbol-end))
 
    '(0 font-lock-builtin-face))
 
@@ -147,12 +192,23 @@
 
   "Hy definition keywords.")
 
+(defconst hy--font-lock-kwds-exceptions
+  (list
+   (rx-to-string
+    `(: symbol-start
+        (or ,@hy--kwds-exceptions)
+        symbol-end))
+
+   '(0 font-lock-type-face))
+
+  "Hy exception keywords.")
+
 (defconst hy--font-lock-kwds-special-forms
   (list
    (rx-to-string
-    `(: word-start
+    `(: symbol-start
         (or ,@hy--kwds-special-forms)
-        word-end))
+        symbol-end))
 
    '(0 font-lock-keyword-face))
 
@@ -184,6 +240,21 @@
 
   "Hy class keywords.")
 
+(defconst hy--font-lock-kwds-decorators
+  (list
+   (rx
+    (or (: "#@"
+           (syntax open-parenthesis))
+        (: symbol-start
+           "with-decorator"
+           symbol-end
+           (1+ space)))
+    (1+ word))
+
+   '(0 font-lock-type-face))
+
+  "Hylight the symbol after `#@' or `with-decorator' macros.")
+
 (defconst hy--font-lock-kwds-imports
   (list
    (rx (or "import" "require" ":as")
@@ -195,19 +266,29 @@
 
 (defconst hy--font-lock-kwds-self
   (list
-   (rx word-start
+   (rx symbol-start
        (group "self")
-       (or "." word-end))
+       (or "." symbol-end))
 
    '(1 font-lock-keyword-face))
 
   "Hy self keyword.")
 
+(defconst hy--font-lock-kwds-tag-macros
+  (list
+   (rx "#"
+       (not (any "*" "@"))
+       (0+ word))
+
+   '(0 font-lock-function-name-face))
+
+  "Hylight tag macros, ie. `#tag-macro', so they stand out.")
+
 ;;;; Misc
 
 (defconst hy--font-lock-kwds-func-modifiers
   (list
-   (rx word-start "&" (1+ word))
+   (rx symbol-start "&" (1+ word))
 
    '(0 font-lock-type-face))
 
@@ -215,7 +296,7 @@
 
 (defconst hy--font-lock-kwds-kwargs
   (list
-   (rx word-start ":" (1+ word))
+   (rx symbol-start ":" (1+ word))
 
    '(0 font-lock-constant-face))
 
@@ -229,6 +310,15 @@
 
   "Hy shebang line.")
 
+(defconst hy--font-lock-kwds-unpacking
+  (list
+   (rx (or "#*" "#**")
+       symbol-end)
+
+   '(0 font-lock-keyword-face))
+
+  "Hy #* arg and #** kwarg unpacking keywords.")
+
 ;;;; Grouped
 
 (defconst hy-font-lock-kwds
@@ -237,12 +327,16 @@
         hy--font-lock-kwds-class
         hy--font-lock-kwds-constants
         hy--font-lock-kwds-defs
+        hy--font-lock-kwds-decorators
+        hy--font-lock-kwds-exceptions
         hy--font-lock-kwds-func-modifiers
         hy--font-lock-kwds-imports
         hy--font-lock-kwds-kwargs
         hy--font-lock-kwds-self
         hy--font-lock-kwds-shebang
-        hy--font-lock-kwds-special-forms)
+        hy--font-lock-kwds-special-forms
+        hy--font-lock-kwds-tag-macros
+        hy--font-lock-kwds-unpacking)
 
   "All Hy font lock keywords.")
 
@@ -313,6 +407,42 @@ Lisp function does not specify a special indentation."
     (modify-syntax-entry ?\] ")[" table)
     table))
 
+;;; Font Lock Docs
+
+(defun hy-string-in-doc-position-p (listbeg startpos)
+   "Return true if a doc string may occur at STARTPOS inside a list.
+LISTBEG is the position of the start of the innermost list
+containing STARTPOS."
+   (if (= 1 startpos)  ; Uniquely identifies module docstring
+       t
+     (let* ((firstsym (and listbeg
+                           (save-excursion
+                             (goto-char listbeg)
+                             (and (looking-at
+                                   (eval-when-compile
+                                     (concat "([ \t\n]*\\("
+                                             lisp-mode-symbol-regexp "\\)")))
+                                  (match-string-no-properties 1))))))
+
+       (or (member firstsym hy--kwds-defs)
+           (string= firstsym "defclass")))))
+
+(defun hy-font-lock-syntactic-face-function (state)
+  "Return syntactic face function for the position represented by STATE.
+STATE is a `parse-partial-sexp' state, and the returned function is the
+Lisp font lock syntactic face function."
+  (if (nth 3 state)
+      ;; This might be a (doc)string or a |...| symbol.
+      (let ((startpos (nth 8 state)))
+        (if (eq (char-after startpos) ?|)
+            ;; This is not a string, but a |...| symbol.
+            nil
+          (let ((listbeg (nth 1 state)))
+            (if (hy-string-in-doc-position-p listbeg startpos)
+                font-lock-doc-face
+              font-lock-string-face))))
+    font-lock-comment-face))
+
 ;;; Hy-mode
 
 (unless (fboundp 'setq-local)
@@ -334,7 +464,8 @@ Lisp function does not specify a special indentation."
           nil
           (font-lock-mark-block-function . mark-defun)
           (font-lock-syntactic-face-function
-           . lisp-font-lock-syntactic-face-function)))
+           . hy-font-lock-syntactic-face-function)))
+
   ;; Comments
   (setq-local comment-start ";")
   (setq-local comment-start-skip
