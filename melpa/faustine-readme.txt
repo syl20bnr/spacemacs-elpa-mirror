@@ -46,4 +46,4 @@ Use `faustine-mode` ; Optionally, add something like this to your init file:
 to put any new Faust file in the mode.
 
 ### Commands
-Every interactive command is documented in [the README](https://bitbucket.org/yassinphilip/faustine/src/master/README.md?at=master&fileviewer=file-view-default) file.
+Every interactive command is documented in [the README](https://bitbucket.org/yassinphilip/faustine/src/master/README.md) file.
