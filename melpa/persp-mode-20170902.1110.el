@@ -4,7 +4,7 @@
 
 ;; Author: Constantin Kulikov (Bad_ptr) <zxnotdead@gmail.com>
 ;; Version: 2.9.6
-;; Package-Version: 20170509.829
+;; Package-Version: 20170902.1110
 ;; Package-Requires: ()
 ;; Keywords: perspectives, session, workspace, persistence, windows, buffers, convenience
 ;; URL: https://github.com/Bad-ptr/persp-mode.el
@@ -129,7 +129,7 @@
                    (persp-frames-and-windows-with-persp
                     (persp-get-by-name persp-nil-name *persp-hash* nil))
                  (dolist (win windows)
-                   (when (string= persp-nil-name (get-window-persp* win))
+                   (when (equal persp-nil-name (get-window-persp* win))
                      (set-window-persp* win val))))
                (run-hook-with-args
                 'persp-renamed-functions nil persp-nil-name val))
@@ -681,7 +681,8 @@ will be added to a temporary hash)."
 
 (defcustom persp-renamed-functions nil
   "Functions to run if a perspective was renamed.
-Each must take three arguments: 1) perspective; 2) old name; 3) new name."
+Each must take three arguments: 1) perspective; 2) old name; 3) new name.
+These functions only run when renaming a perspective from `*persp-hash*'."
   :group 'persp-mode
   :type 'hook)
 
@@ -797,16 +798,16 @@ second -- a root window(default is the root window of the selected frame)."
       #'(lambda (pwc &optional frame rwin)
           (when (or frame (setq frame (selected-frame)))
             (with-selected-frame frame
-              (flet ((wg-switch-to-window-buffer
-                      (win)
-                      "Switch to a buffer determined from WIN's fname and bname.
+              (letf (((symbol-function 'wg-switch-to-window-buffer)
+                      #'(lambda (win)
+                          "Switch to a buffer determined from WIN's fname and bname.
 Return the buffer if it was found, nil otherwise."
-                      (wg-abind
-                       win (fname bname)
-                       (cond ((wg-awhen (get-buffer bname)
-                                        (persp-switch-to-buffer it)))
-                             (t (persp-switch-to-buffer wg-default-buffer)
-                                nil)))))
+                          (wg-abind
+                           win (fname bname)
+                           (cond ((wg-awhen (get-buffer bname)
+                                            (persp-switch-to-buffer it)))
+                                 (t (persp-switch-to-buffer wg-default-buffer)
+                                    nil))))))
                 (wg-restore-wconfig pwc)))))
     #'(lambda (pwc &optional frame rwin)
         (when (or rwin (setq rwin (frame-root-window
@@ -859,11 +860,29 @@ otherwise nil.")
   "Menu for the persp-mode.")
 
 (defvar *persp-hash* nil
-  "The hash table that contain perspectives")
+  "The hash table that contain perspectives.")
+
+(defvar persp-names-cache (when *persp-hash* (persp-names))
+  "List of perspective names.
+Used by the `persp-read-persp' and other UI functions, so it can be used
+to alter the order of perspective names present to user. To achieve that
+you must add functions to `persp-created-functions', `persp-renamed-functions',
+`persp-before-kill-functions', `persp-before-switch-functions' and
+`persp-after-load-state-functions' or just set the
+`persp-names-sort-before-read-function'.")
+
+(defcustom persp-names-sort-before-read-function nil
+  "Function(or nil) to sort `persp-names-cache' before prompting a user for a
+perspective name(s). The function must take a list of perspective names and
+return a sorted list."
+  :group 'persp-mode
+  :type '(choice
+          (const :tag "No sort." :value nil)
+          (function :tag "Function" :value #'identity)))
 
 (defvar persp-temporarily-display-buffer nil
   "This variable dynamically bound to t inside
-the `persp-temporarily-display-buffer'")
+the `persp-temporarily-display-buffer'.")
 
 (defvar persp-saved-read-buffer-function read-buffer-function
   "Save the `read-buffer-function' to restore it on deactivation.")
@@ -1058,17 +1077,21 @@ the selected window to a wrong buffer.")
                  (funcall persp-buffer-list-function frame))
                 (0
                  (if cpersp
-                     (append (persp-buffers cpersp) nil)
+                     (copy-list (persp-buffers cpersp))
                    (funcall persp-buffer-list-function frame)))
                 (1
                  (let ((ret (if cpersp
-                                (let ((pbs (persp-buffers cpersp)))
+                                (let ((pbs (copy-list (persp-buffers cpersp))))
                                   (delete-if
-                                   #'(lambda (b) (memq b pbs))
+                                   #'(lambda (b) (let ((cns (memq b pbs)))
+                                              (when cns
+                                                (setcar cns (cadr cns))
+                                                (setcdr cns (cddr cns))
+                                                t)))
                                    (funcall persp-buffer-list-function frame)))
                               nil)))
                    (unless (persp-contain-buffer-p curbuf cpersp)
-                     (setq ret (cons curbuf (delete curbuf ret))))
+                     (setq ret (cons curbuf (delete* curbuf ret :count 1))))
                    ret))
                 (2
                  (let ((ret
@@ -1078,7 +1101,7 @@ the selected window to a wrong buffer.")
                               b cpersp
                               persp-dont-count-weaks-in-restricted-buffer-list))
                          (if cpersp
-                             (append (persp-buffers cpersp) nil)
+                             (copy-list (persp-buffers cpersp))
                            (funcall persp-buffer-list-function frame)))))
                    ret))
                 (3
@@ -1124,13 +1147,18 @@ the selected window to a wrong buffer.")
            (persp-restrict-buffers-to-if-foreign-buffer
             ,restriction-foreign-override)
            ,@(if cache `(persp-buffer-list-cache) nil))
-       (flet ((buffer-list (&optional frame)
-                           ,(if cache
-                                `(if persp-buffer-list-cache
-                                     persp-buffer-list-cache
-                                   (setq persp-buffer-list-cache ,pblf-body))
-                              pblf-body)))
+       (letf (((symbol-function 'buffer-list)
+               #'(lambda (&optional frame)
+                   ,(if cache
+                        `(if persp-buffer-list-cache
+                             persp-buffer-list-cache
+                           (setq persp-buffer-list-cache ,pblf-body))
+                      pblf-body))))
          ,@body))))
+
+(defmacro* with-persp-read-buffer ((&key multiple (default-mode t)) &rest body)
+  `(let ((read-buffer-function #'persp-read-buffer))
+     ,@body))
 
 (defmacro with-persp-ido-hooks (&rest body)
   `(let ((ido-make-buffer-list-hook ido-make-buffer-list-hook)
@@ -1729,6 +1757,7 @@ Here is a keymap of this minor mode:
 
           (setq *persp-hash* (make-hash-table :test #'equal :size 10))
           (setq persp-buffer-props-hash (make-hash-table :test #'eq :size 10))
+          (setq persp-names-cache nil)
 
           (push '(persp . writable) window-persistent-parameters)
 
@@ -1810,7 +1839,8 @@ Here is a keymap of this minor mode:
 
     ;; TODO: do it properly -- remove buffers, kill perspectives
     (setq *persp-hash* nil)
-    (setq persp-buffer-props-hash nil)))
+    (setq persp-buffer-props-hash nil)
+    (setq persp-names-cache nil)))
 
 
 ;; Hooks:
@@ -1892,7 +1922,8 @@ killed, but just removed from a perspective(s)."
                  t)
                 (not-foreign
                  (if (persp-buffer-in-other-p* buffer persp)
-                     (persp--remove-buffer-2 persp buffer)
+                     (progn (persp--remove-buffer-2 persp buffer)
+                            nil)
                    (if (or (not (buffer-live-p buffer))
                            (persp--buffer-in-persps buffer))
                        nil
@@ -2060,12 +2091,12 @@ killed, but just removed from a perspective(s)."
     (set-frame-persp persp)))
 
 (defun persp-names-current-frame-fast-ordered ()
-  (or (mapcar #'caddr (cddddr persp-minor-mode-menu))
-      (list persp-nil-name)))
+  (copy-list persp-names-cache))
 
-
+;; TODO: remove this
 (defsubst* persp-names-sorted (&optional (phash *persp-hash*))
   (sort (persp-names phash nil) #'string<))
+(make-obsolete 'persp-names-sorted "it will be removed." "persp-mode 2.9.6")
 
 (defun persp-group-by (keyf lst &optional reverse)
   (let (result)
@@ -2263,14 +2294,15 @@ Return the removed perspective."
   "Create a new perspective with the given `NAME'. Add it to `PHASH'.
 Return the created perspective."
   (interactive "sA name for the new perspective: ")
-  (if (and name (not (string= "" name)))
+  (if (and name (not (equal "" name)))
       (destructuring-bind (e . p)
           (persp-by-name-and-exists name phash)
         (if e p
-          (setq p (if (string= persp-nil-name name)
+          (setq p (if (equal persp-nil-name name)
                       nil (make-persp :name name)))
+          (persp-add p phash)
           (run-hook-with-args 'persp-created-functions p phash)
-          (persp-add p phash)))
+          p))
     (message "[persp-mode] Error: Can't create a perspective with empty name.")
     nil))
 
@@ -2473,13 +2505,19 @@ from the PERSP. On success return removed buffers otherwise nil."
 
 (defun persp-switch-to-buffer (buffer-or-name
                                &optional norecord force-same-window)
+
   "Switch to buffer, read buffer with restriction to current perspective."
+
   (interactive (list
                 (let ((*persp-restrict-buffers-to* 0)
                       persp-restrict-buffers-to-if-foreign-buffer)
                   (if persp-mode
-                      (persp-read-buffer "Switch to buffer: " (current-buffer) t)
-                    (read-buffer "Switch to buffer: " (current-buffer) t)))))
+                      (let ((dflt (other-buffer (current-buffer))))
+                        (unless (memq dflt (safe-persp-buffers
+                                            (get-current-persp)))
+                          (psetq dflt (current-buffer)))
+                        (persp-read-buffer "Switch to buffer: " dflt t))
+                    (read-buffer-to-switch "Switch to buffer: ")))))
   (when (and buffer-or-name
              (persp-get-buffer-or-null (get-buffer buffer-or-name)))
     (switch-to-buffer buffer-or-name norecord force-same-window)))
@@ -2547,7 +2585,7 @@ cause it already contain all buffers.")))
            (new-buffers
             (if (and current-persp
                      (not (and called-interactively-p current-prefix-arg)))
-                (append (persp-buffers current-persp) nil)
+                (copy-list (persp-buffers current-persp))
               (delete-if-not
                (destructuring-bind (char &rest _)
                    (read-multiple-choice
@@ -2573,7 +2611,7 @@ cause it already contain all buffers.")))
                    (?a nil)
                    (t nil)))
                (if current-persp
-                   (append (persp-buffers current-persp) nil)
+                   (copy-list (persp-buffers current-persp))
                  (safe-persp-buffers current-persp)))))
            (new-persp (persp-add-new new-name)))
       (when new-persp
@@ -2581,7 +2619,7 @@ cause it already contain all buffers.")))
         (setf (persp-window-conf new-persp)
               (safe-persp-window-conf current-persp)
               (persp-parameters new-persp)
-              (append (safe-persp-parameters current-persp) nil)
+              (copy-list (safe-persp-parameters current-persp))
               (persp-weak new-persp)
               (if current-persp (persp-weak current-persp) nil))
         (when (listp choosen-buffers)
@@ -2802,15 +2840,17 @@ Return old name on success, otherwise nil."
                 (read-string
                  (concat "New name for the " old-name " perspective: "))))
         (if (and (not (persp-p opersp)) new-name
-                 (not (string= old-name new-name)))
+                 (not (equal old-name new-name)))
             (progn
-              (persp-remove-from-menu persp)
+              (when (eq phash *persp-hash*)
+                (persp-remove-from-menu persp))
               (remhash old-name phash)
               (setf (persp-name persp) new-name)
               (puthash new-name persp phash)
-              (persp-add-to-menu persp)
-              (run-hook-with-args
-               'persp-renamed-functions persp old-name new-name)
+              (when (eq phash *persp-hash*)
+                (persp-add-to-menu persp)
+                (run-hook-with-args
+                 'persp-renamed-functions persp old-name new-name))
               old-name)
           (message
            "[persp-mode] Error: There is already a perspective with that name: %s."
@@ -2897,7 +2937,7 @@ Return `NAME'."
          (persp-frame-save-state
           frame-or-window
           (if persp-set-last-persp-for-new-frames
-              (string= (safe-persp-name persp) persp-last-persp-name)
+              (equal (safe-persp-name persp) persp-last-persp-name)
             (null persp)))))
       (window
        (setq persp (get-window-persp frame-or-window))
@@ -2949,12 +2989,12 @@ Return `NAME'."
   (let ((persp-init-frame-behaviour
          (cond
           ((and client
-                (not (eq -1 persp-emacsclient-init-frame-behaviour-override)))
+                (not (eql -1 persp-emacsclient-init-frame-behaviour-override)))
            persp-emacsclient-init-frame-behaviour-override)
           ((and (eq this-command 'make-frame)
-                (not (eq -1 persp-interactive-init-frame-behaviour-override)))
+                (not (eql -1 persp-interactive-init-frame-behaviour-override)))
            persp-interactive-init-frame-behaviour-override)
-          ((and new-frame-p (not (eq -1 persp-init-new-frame-behaviour-override)))
+          ((and new-frame-p (not (eql -1 persp-init-new-frame-behaviour-override)))
            persp-init-new-frame-behaviour-override)
           (t persp-init-frame-behaviour))))
     (let (persp-name persp)
@@ -3030,12 +3070,15 @@ Return `NAME'."
       "-")))
 
 (defun persp-remove-from-menu (persp)
-  (easy-menu-remove-item persp-minor-mode-menu nil (safe-persp-name persp))
-  (when persp
-    (easy-menu-remove-item persp-minor-mode-menu '("kill") (persp-name persp))))
+  (let ((name (safe-persp-name persp)))
+    (psetq persp-names-cache (delete* name persp-names-cache :count 1))
+    (easy-menu-remove-item persp-minor-mode-menu nil name)
+    (when persp
+      (easy-menu-remove-item persp-minor-mode-menu '("kill") name))))
 
 (defun persp-add-to-menu (persp)
   (let ((name (safe-persp-name persp)))
+    (push name persp-names-cache)
     (lexical-let ((str_name name))
       (easy-menu-add-item persp-minor-mode-menu nil
                           (vector str_name #'(lambda () (interactive)
@@ -3048,101 +3091,113 @@ Return `NAME'."
 (defun* persp-read-persp
     (&optional action multiple default require-match delnil delcur persp-list
                show-hidden (default-mode t))
-  (let ((persps (or persp-list
-                    (persp-names-current-frame-fast-ordered))))
-    (when delnil
-      (setq persps (delete persp-nil-name persps)))
-    (when delcur
-      (setq persps (delete (safe-persp-name (get-current-persp)) persps)))
-    (unless show-hidden
-      (setq persps
-            (delete-if #'safe-persp-hidden persps :key #'persp-get-by-name)))
-    (when (and default (not (member default persps)))
-      (setq default nil))
-    (let (retlst)
-      (macrolet
-          ((call-pif
-            ()
-            `(funcall
-              persp-interactive-completion-function
-              (concat
-               "Perspective name" (and multiple "s") (and action " ") action
-               (if default (concat " (default " default ")") "")
-               (when retlst
-                 (concat "< " (mapconcat #'identity retlst " ") " > "))
-               ": ")
-              persps nil require-match nil nil default)))
-        (if multiple
-            (let ((done_str "[>done<]") (not-finished default-mode)
-                  exit-minibuffer-function mb-local-key-map
-                  (push-keys (alist-get 'push-item persp-read-multiple-keys))
-                  (pop-keys (alist-get 'pop-item persp-read-multiple-keys))
-                  push-keys-backup pop-keys-backup)
-              (while (member done_str persps)
-                (setq done_str (concat ">" done_str)))
-              (let ((persp-minibuffer-setup
-                     #'(lambda ()
-                         (setq mb-local-key-map (current-local-map))
-                         (when (keymapp mb-local-key-map)
-                           (unless exit-minibuffer-function
-                             (setq exit-minibuffer-function
-                                   (or (lookup-key mb-local-key-map (kbd "RET"))
-                                       persp-read-multiple-exit-minibuffer-function)))
-                           (unless push-keys-backup
-                             (setq push-keys-backup
-                                   (lookup-key mb-local-key-map push-keys)))
-                           (define-key mb-local-key-map push-keys
-                             #'(lambda () (interactive)
-                                 (setq not-finished 'push)
-                                 (funcall exit-minibuffer-function)))
-                           (unless pop-keys-backup
-                             (setq pop-keys-backup
-                                   (lookup-key mb-local-key-map pop-keys)))
-                           (define-key mb-local-key-map pop-keys
-                             #'(lambda () (interactive)
-                                 (setq not-finished 'pop)
-                                 (funcall exit-minibuffer-function))))))
-                    cp)
-                (unwind-protect
-                    (progn
-                      (add-hook 'minibuffer-setup-hook persp-minibuffer-setup t)
-                      (while not-finished
-                        (setq cp (call-pif))
-                        (case not-finished
-                          (push
-                           (when (and cp (member cp persps))
-                             (if retlst
-                                 (when (string= cp done_str)
-                                   (setq not-finished nil))
-                               (push done_str persps))
-                             (when not-finished
-                               (if (eq 'reverse multiple)
-                                   (setq retlst (append retlst (list cp)))
-                                 (push cp retlst))
-                               (setq persps (delete cp persps)
-                                     default done_str)))
+
+  "Read perspective name(s)."
+
+  (when persp-names-sort-before-read-function
+    (psetq persp-names-cache
+           (funcall persp-names-sort-before-read-function
+                    persp-names-cache)))
+
+  (psetq persp-list
+         (if persp-list
+             (delete-if-not #'(lambda (pn) (member pn persp-list))
+                            (persp-names-current-frame-fast-ordered))
+           (persp-names-current-frame-fast-ordered)))
+
+  (when delnil
+    (setq persp-list (delete* persp-nil-name persp-list :count 1)))
+  (when delcur
+    (setq persp-list (delete* (safe-persp-name (get-current-persp)) persp-list :count 1)))
+  (unless show-hidden
+    (setq persp-list
+          (delete-if #'safe-persp-hidden persp-list :key #'persp-get-by-name)))
+  (when (and default (not (member default persp-list)))
+    (setq default nil))
+  (let (retlst)
+    (macrolet
+        ((call-pif
+          ()
+          `(funcall
+            persp-interactive-completion-function
+            (concat
+             "Perspective name" (and multiple "s") (and action " ") action
+             (if default (concat " (default " default ")") "")
+             (when retlst
+               (concat "< " (mapconcat #'identity retlst " ") " > "))
+             ": ")
+            persp-list nil require-match nil nil default)))
+      (if multiple
+          (let ((done_str "[>done<]") (not-finished default-mode)
+                exit-minibuffer-function mb-local-key-map
+                (push-keys (alist-get 'push-item persp-read-multiple-keys))
+                (pop-keys (alist-get 'pop-item persp-read-multiple-keys))
+                push-keys-backup pop-keys-backup)
+            (while (member done_str persp-list)
+              (setq done_str (concat ">" done_str)))
+            (let ((persp-minibuffer-setup
+                   #'(lambda ()
+                       (setq mb-local-key-map (current-local-map))
+                       (when (keymapp mb-local-key-map)
+                         (unless exit-minibuffer-function
+                           (setq exit-minibuffer-function
+                                 (or (lookup-key mb-local-key-map (kbd "RET"))
+                                     persp-read-multiple-exit-minibuffer-function)))
+                         (unless push-keys-backup
+                           (setq push-keys-backup
+                                 (lookup-key mb-local-key-map push-keys)))
+                         (define-key mb-local-key-map push-keys
+                           #'(lambda () (interactive)
+                               (setq not-finished 'push)
+                               (funcall exit-minibuffer-function)))
+                         (unless pop-keys-backup
+                           (setq pop-keys-backup
+                                 (lookup-key mb-local-key-map pop-keys)))
+                         (define-key mb-local-key-map pop-keys
+                           #'(lambda () (interactive)
+                               (setq not-finished 'pop)
+                               (funcall exit-minibuffer-function))))))
+                  cp)
+              (unwind-protect
+                  (progn
+                    (add-hook 'minibuffer-setup-hook persp-minibuffer-setup t)
+                    (while not-finished
+                      (setq cp (call-pif))
+                      (case not-finished
+                        (push
+                         (when (and cp (member cp persp-list))
+                           (if retlst
+                               (when (string= cp done_str)
+                                 (setq not-finished nil))
+                             (push done_str persp-list))
                            (when not-finished
-                             (setq not-finished default-mode)))
-                          (pop
-                           (let ((last-item (pop retlst)))
-                             (unless retlst (setq persps (delete done_str persps)
-                                                  default nil))
-                             (when last-item
-                               (push last-item persps)))
-                           (setq not-finished default-mode))
-                          (t
-                           (when (and cp (not (string= cp done_str))
-                                      (member cp persps))
-                             (push cp retlst))
-                           (setq not-finished nil)))))
-                  (remove-hook 'minibuffer-setup-hook persp-minibuffer-setup)
-                  (when (keymapp mb-local-key-map)
-                    (when (lookup-key mb-local-key-map push-keys)
-                      (define-key mb-local-key-map push-keys push-keys-backup))
-                    (when (lookup-key mb-local-key-map pop-keys)
-                      (define-key mb-local-key-map pop-keys pop-keys-backup)))))
-              retlst)
-          (call-pif))))))
+                             (if (eq 'reverse multiple)
+                                 (setq retlst (append retlst (list cp)))
+                               (push cp retlst))
+                             (setq persp-list (delete* cp persp-list :count 1)
+                                   default done_str)))
+                         (when not-finished
+                           (setq not-finished default-mode)))
+                        (pop
+                         (let ((last-item (pop retlst)))
+                           (unless retlst (setq persp-list (delete* done_str persp-list :count 1)
+                                                default nil))
+                           (when last-item
+                             (push last-item persp-list)))
+                         (setq not-finished default-mode))
+                        (t
+                         (when (and cp (not (string= cp done_str))
+                                    (member cp persp-list))
+                           (push cp retlst))
+                         (setq not-finished nil)))))
+                (remove-hook 'minibuffer-setup-hook persp-minibuffer-setup)
+                (when (keymapp mb-local-key-map)
+                  (when (lookup-key mb-local-key-map push-keys)
+                    (define-key mb-local-key-map push-keys push-keys-backup))
+                  (when (lookup-key mb-local-key-map pop-keys)
+                    (define-key mb-local-key-map pop-keys pop-keys-backup)))))
+            retlst)
+        (call-pif)))))
 (define-obsolete-function-alias 'persp-prompt 'persp-read-persp "persp-mode 2.9")
 
 (defsubst persp--set-frame-buffer-predicate-buffer-list-cache (buflist)
@@ -3334,7 +3389,9 @@ Return `NAME'."
 
 (defun* persp-read-buffer
     (prompt &optional default require-match predicate multiple (default-mode t))
+
   "Read buffers with restriction."
+
   (setq persp-disable-buffer-restriction-once nil)
 
   (when default
@@ -3427,13 +3484,13 @@ Return `NAME'."
                    (if (eq 'reverse multiple)
                        (setq retlst (append retlst (list cp)))
                      (push cp retlst))
-                   (setq buffer-names (delete cp buffer-names)
+                   (setq buffer-names (delete* cp buffer-names :count 1)
                          default done_str)))
                (when not-finished
                  (setq not-finished default-mode)))
               (pop
                (let ((last-item (pop retlst)))
-                 (unless retlst (setq buffer-names (delete done_str buffer-names)
+                 (unless retlst (setq buffer-names (delete* done_str buffer-names :count 1)
                                       default nil))
                  (when last-item
                    (push last-item buffer-names)))
@@ -3605,9 +3662,17 @@ of the perspective %s can't be saved."
      ,(safe-persp-hidden persp)))
 
 (defun persps-to-savelist (&optional phash names-regexp)
-  (mapcar #'persp-to-savelist
-          (delete-if (apply-partially #'persp-parameter 'dont-save-to-file)
-                     (persp-persps (or phash *persp-hash*) names-regexp t))))
+  (mapcar
+   #'persp-to-savelist
+   (delete-if
+    (apply-partially #'persp-parameter 'dont-save-to-file)
+    (if (eq phash *persp-hash*)
+        (mapcar #'(lambda (pn)
+                    (when (or (not names-regexp)
+                              (persp-string-match-p names-regexp pn))
+                      (persp-get-by-name pn *persp-hash* nil)))
+                (nreverse (persp-names-current-frame-fast-ordered)))
+      (persp-persps (or phash *persp-hash*) names-regexp t)))))
 
 (defsubst persp-save-with-backups (fname)
   (when (and (string= fname
@@ -3907,7 +3972,7 @@ of the perspective %s can't be saved."
                       0)))
     (list
      (format "%S" version)
-     (if (eq version 0)
+     (if (eql version 0)
          savelist
        (cdr savelist)))))
 

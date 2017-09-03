@@ -18,18 +18,32 @@ Faustine allows the edition of Faust (http://faust.grame.fr) code.
 
 ## Installation
 
-### Simple
+### Easy
 
 - Install it from [MELPA](https://melpa.org).
 
 ### Hard
 
 - Copy/clone this repository in `load-path`
-- Add `  (require 'faustine)` to you init file
-
-Optionally, add something like this to your init file:
+- Add
+```elisp
+(require 'faustine)
 ```
+to your init file
+
+### Faust
+Oh, and of course install [the latest Faust](http://faust.grame.fr/download/) and ensure it's in the PATH.
+
+## Usage
+
+### Enter the mode
+
+Use `faustine-mode` ; Optionally, add something like this to your init file:
+```elisp
 (add-to-list 'auto-mode-alist
              '("\\.dsp\\'" . faustine-mode))
 ```
 to put any new Faust file in the mode.
+
+### Commands
+Every interactive command is documented in [the README](https://bitbucket.org/yassinphilip/faustine/src/master/README.md?at=master&fileviewer=file-view-default) file.
