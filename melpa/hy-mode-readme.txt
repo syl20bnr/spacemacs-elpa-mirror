@@ -523,6 +523,17 @@ Hy-mode
           (font-lock-syntactic-face-function
            . hy-font-lock-syntactic-face-function)))
 
+  ;; Smartparens
+  (when (fboundp 'sp-local-pair)
+    (sp-local-pair '(hy-mode) "`" "`" :actions nil)
+    (sp-local-pair '(hy-mode) "'" "'" :actions nil))
+
+  ;; Fixes #43: inferior lisp history getting corrupted
+  ;; Ideally change so original comint-stored-incomplete-input functionality
+  ;; is preserved for terminal case, but not big deal.
+  (advice-add 'comint-previous-input :before
+              (lambda (&rest args) (setq-local comint-stored-incomplete-input "")))
+
   ;; Comments
   (setq-local comment-start ";")
   (setq-local comment-start-skip
@@ -539,6 +550,7 @@ Hy-mode
   (setq-local inferior-lisp-load-command
               (concat "(import [hy.importer [import-file-to-module]])\n"
                       "(import-file-to-module \"__main__\" \"%s\")\n"))
+
   (setenv "PYTHONIOENCODING" "UTF-8"))
 
 Utilities
