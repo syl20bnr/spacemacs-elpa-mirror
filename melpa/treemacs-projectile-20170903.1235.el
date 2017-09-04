@@ -4,7 +4,7 @@
 
 ;; Author: Alexander Miller <alexanderm@web.de>
 ;; Package-Requires: ((projectile "0.14.0") (treemacs "0"))
-;; Package-Version: 20170827.311
+;; Package-Version: 20170903.1235
 ;; Package-X-Original-Version: 0
 ;; Homepage: https://github.com/Alexander-Miller/treemacs
 
@@ -47,7 +47,7 @@ the project from among `projectile-known-projects'."
   "If a treemacs buffer exists and is visible hide it.
 If a treemacs buffer exists, but is not visible bring it to the foreground
 and select it.
-If no treemacs buffer exists call `treemacs'."
+If no treemacs buffer exists call `treemacs-projectile'."
   (interactive)
   (cond
    ((treemacs--is-visible?)
@@ -60,7 +60,7 @@ If no treemacs buffer exists call `treemacs'."
     (treemacs--select-not-visible)
     (treemacs--refresh-on-ui-change))
    (t
-    (treemacs))))
+    (treemacs-projectile))))
 
 (defun treemacs-projectile-create-header (root)
   "Try to use the projectile project name for ROOT as treemacs' header.

@@ -3,8 +3,9 @@
 ;; Copyright (C) 2017 Johan Claesson
 ;; Author: Johan Claesson <johanclaesson@bredband.net>
 ;; Maintainer: Johan Claesson <johanclaesson@bredband.net>
-;; Version: 35
-;; Package-Version: 20170820.309
+;; URL: https://github.com/johanclaesson/picpocket
+;; Package-Version: 20170903.1254
+;; Version: 37
 ;; Keywords: multimedia
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -298,11 +299,14 @@ This affects the commands `picpocket-scroll-some-*'."
   "Background color of picpocket fullscreen frame."
   :type 'color)
 
+(defcustom picpocket-fullscreen-hook nil
+  "Normal hook that runs in newly created fullscreen frames."
+  :type 'hook)
 
 
 ;;; Internal variables
 
-(defconst picpocket-version 35)
+(defconst picpocket-version 37)
 (defconst picpocket-buffer "*picpocket*")
 (defconst picpocket-undo-buffer "*picpocket-undo*")
 
@@ -1030,28 +1034,34 @@ this frame and go back to the old frame."
       (setq picpocket-old-frame (selected-frame))
       ;; Do not disable scroll bars and fringes, they are disabled
       ;; on buffer level instead.
-      (let ((inhibit-quit t)
-            (foreground (or picpocket-frame-foreground-color
-                            (frame-parameter nil 'foreground-color)))
-            (background (or picpocket-frame-background-color
-                            (frame-parameter nil 'background-color))))
-        (setq picpocket-frame (make-frame `((name . "picpocket")
-                                            (menu-bar-lines . 0)
-                                            (tool-bar-lines . 0)
-                                            (minibuffer . nil)
-                                            (fullscreen . fullboth)
-                                            (foreground-color . ,foreground)
-                                            (background-color . ,background))))
+      (let ((inhibit-quit t))
+        (setq picpocket-frame (picpocket-fullscreen-frame))
         (picpocket-select-frame picpocket-frame)
         (switch-to-buffer picpocket-buffer)
         (with-current-buffer picpocket-buffer
           (setq mode-line-format nil)
           (add-hook 'focus-in-hook #'picpocket-focus)
           (add-hook 'minibuffer-setup-hook #'picpocket-minibuffer-setup)
-          (add-hook 'minibuffer-exit-hook #'picpocket-minibuffer-exit)))
+          (add-hook 'minibuffer-exit-hook #'picpocket-minibuffer-exit)
+          (with-selected-frame picpocket-frame
+            (run-hooks 'picpocket-fullscreen-hook))))
       ;; Resdisplay seem to be needed to get accurate return value from
       ;; window-inside-pixel-edges.
       (redisplay))))
+
+
+(defun picpocket-fullscreen-frame ()
+  (let ((foreground (or picpocket-frame-foreground-color
+                        (frame-parameter nil 'foreground-color)))
+        (background (or picpocket-frame-background-color
+                        (frame-parameter nil 'background-color))))
+    (make-frame `((name . "picpocket")
+                  (menu-bar-lines . 0)
+                  (tool-bar-lines . 0)
+                  (minibuffer . nil)
+                  (fullscreen . fullboth)
+                  (foreground-color . ,foreground)
+                  (background-color . ,background)))))
 
 
 (defun picpocket-focus ()
@@ -2771,8 +2781,8 @@ will end up replacing the deleted text."
     (picpocket-compute-filter-index 0.5)
     (picpocket-compute-filter-match-count 1)
     (picpocket-traverse-pic-list 3)
-    (picpocket-save-journal 60)
-    (picpocket-update-header picpocket-update-header-seconds)))
+    (picpocket-save-journal 60)))
+;; (picpocket-update-header picpocket-update-header-seconds)))
 (defvar picpocket-inhibit-timers nil)
 (defvar picpocket-idle-timer-deadline 0.1)
 
@@ -3168,9 +3178,6 @@ necessarily run with the picpocket window selected."
   (setq picpocket-scale
         (max 10 (+ picpocket-scale delta)))
   (message "Scaling factor is %s%%" picpocket-scale))
-
-(defun picpocket-imagemagick-p ()
-  (picpocket-picture-regexp))
 
 (defun picpocket-picture-regexp ()
   (or picpocket-picture-regexp
@@ -4471,54 +4478,63 @@ This command picks the first undoable command in that list."
 
 ;;; Header line functions
 
-(defvar picpocket-last-msg nil)
-(defvar picpocket-last-msg-timestamp nil)
-(defvar picpocket-show-msg-seconds 1.5)
-
-(defun picpocket-update-header-seconds ()
-  (+ picpocket-show-msg-seconds 0.1))
 
 (defun picpocket-header-line ()
   (if (eq (selected-frame) picpocket-frame)
       (picpocket-fullscreen-header-line)
     (picpocket-header-pic-info)))
 
+
 (defun picpocket-fullscreen-header-line ()
-  (let ((msg (picpocket-escape-percent (current-message))))
-    (picpocket-msg "  msg " msg)
-    (cond ((null msg)
-           (if (or (null picpocket-last-msg)
-                   (picpocket-last-msg-too-old-p))
-               (progn
-                 (picpocket-msg "  null msg - nothing")
-                 (setq picpocket-last-msg nil)
-                 (picpocket-header-pic-info))
-             (picpocket-msg "  null msg - show picpocket-last-msg")
-             picpocket-last-msg))
-          ((null picpocket-current)
-           (setq picpocket-last-msg nil)
-           msg)
-          ((not (string-equal msg picpocket-last-msg))
-           (picpocket-msg "  fresh msg")
-           (setq picpocket-last-msg msg
-                 picpocket-last-msg-timestamp (current-time))
-           msg)
-          ((not (picpocket-last-msg-too-old-p))
-           (picpocket-msg "  keep msg")
-           msg)
-          (t
-           (picpocket-msg "  pic-info")
-           (picpocket-header-pic-info)))))
+  (concat (picpocket-header-pic-info)
+          (let ((msg (picpocket-escape-percent (current-message))))
+            (if msg
+                (concat " - " msg)
+              ""))))
 
-(defun picpocket-last-msg-too-old-p ()
-  (time-less-p (seconds-to-time picpocket-show-msg-seconds)
-               (time-since picpocket-last-msg-timestamp)))
+;; (defun picpocket-update-header-seconds ()
+;; (+ picpocket-show-msg-seconds 0.1))
+;;
+;; (defvar picpocket-last-msg nil)
+;; (defvar picpocket-last-msg-timestamp nil)
+;; (defvar picpocket-show-msg-seconds 1.5)
+;;
+;; (defun picpocket-fullscreen-header-line ()
+;; (let ((msg (picpocket-escape-percent (current-message))))
+;; (picpocket-msg "  msg " msg)
+;; (cond ((null msg)
+;; (if (or (null picpocket-last-msg)
+;; (picpocket-last-msg-too-old-p))
+;; (progn
+;; (picpocket-msg "  null msg - nothing")
+;; (setq picpocket-last-msg nil)
+;; (picpocket-header-pic-info))
+;; (picpocket-msg "  null msg - show picpocket-last-msg")
+;; picpocket-last-msg))
+;; ((null picpocket-current)
+;; (setq picpocket-last-msg nil)
+;; msg)
+;; ((not (string-equal msg picpocket-last-msg))
+;; (picpocket-msg "  fresh msg")
+;; (setq picpocket-last-msg msg
+;; picpocket-last-msg-timestamp (current-time))
+;; msg)
+;; ((not (picpocket-last-msg-too-old-p))
+;; (picpocket-msg "  keep msg")
+;; msg)
+;; (t
+;; (picpocket-msg "  pic-info")
+;; (picpocket-header-pic-info)))))
+;;
+;; (defun picpocket-last-msg-too-old-p ()
+;; (time-less-p (seconds-to-time picpocket-show-msg-seconds)
+;; (time-since picpocket-last-msg-timestamp)))
 
-(defun picpocket-update-header (&rest ignored)
-  (picpocket-msg "picpocket-update-header: called")
-  (when (eq (selected-frame) picpocket-frame)
-    (picpocket-msg "picpocket-update-header: fullscreen")
-    (force-mode-line-update)))
+;; (defun picpocket-update-header (&rest ignored)
+;; (picpocket-msg "picpocket-update-header: called")
+;; (when (eq (selected-frame) picpocket-frame)
+;; (picpocket-msg "picpocket-update-header: fullscreen")
+;; (force-mode-line-update)))
 
 ;; PENDING - keeping this debug stuff for now.
 (defvar picpocket-start (current-time))
@@ -4716,31 +4732,55 @@ This command picks the first undoable command in that list."
                                         (picpocket-sec-string picpocket-sum)))
     (message "picpocket-debug: %s" picpocket-header-text)))
 
+(defvar picpocket-dump-buffer "*picpocket-dump*")
+
 (defun picpocket-dump ()
   "Print some picpocket variables."
   (interactive)
-  (picpocket-command
-    (picpocket-print 'picpocket-list)
-    (picpocket-print 'picpocket-current)
-    (picpocket-print 'picpocket-index)
-    (picpocket-print 'picpocket-list-length)
-    (message "")
-    (view-echo-area-messages)
-    t))
+  (picpocket-bye-command
+    (with-current-buffer (get-buffer-create picpocket-dump-buffer)
+      (erase-buffer))
+    (picpocket-dump-var 'picpocket-list)
+    (picpocket-dump-var 'picpocket-current)
+    (picpocket-dump-var 'picpocket-index)
+    (picpocket-dump-var 'picpocket-list-length)
+    (picpocket-dump-var 'picpocket-filter)
+    (picpocket-dump-var 'picpocket-filter-index)
+    (picpocket-dump-var 'picpocket-filter-match-count)
+    (picpocket-dump-var 'picpocket-fatal)
+    (picpocket-dump-var 'picpocket-recursive)
+    (picpocket-dump-var 'picpocket-version)
+    (picpocket-dump-var 'picpocket-entry-function)
+    (picpocket-dump-var 'picpocket-entry-args)
+    (picpocket-dump-var 'picpocket-picture-regexp)
+    (picpocket-dump-var 'image-type-file-name-regexps)
+    (picpocket-dump-some "current-pos"
+                         (picpocket-simplify-pos (picpocket-current-pos)))
+    (picpocket-dump-some "next-pos"
+                         (picpocket-simplify-pos (picpocket-next-pos)))
+    (picpocket-dump-some "prev-pos"
+                         (picpocket-simplify-pos (picpocket-previous-pos)))
+    (switch-to-buffer picpocket-dump-buffer)))
 
-(defun picpocket-print (var)
+(defun picpocket-dump-some (name value)
+  (with-current-buffer picpocket-dump-buffer
+    (insert (format "%-20s %s\n"
+                    (replace-regexp-in-string "^picpocket" "pp" name)
+                    (with-temp-buffer
+                      (pp value (current-buffer))
+                      (goto-char (point-min))
+                      (forward-line)
+                      (indent-rigidly (point) (point-max) 20)
+                      (buffer-string))))))
+
+(defun picpocket-dump-var (var)
   (let ((value (symbol-value var)))
     (and (listp value)
          (picpocket-pic-p (car value))
          (setq value (picpocket-simplify-list value)))
-    (message "%-20s%s"
-             var
-             (with-temp-buffer
-               (pp value (current-buffer))
-               (goto-char (point-min))
-               (forward-line)
-               (indent-rigidly (point) (point-max) 20)
-               (buffer-string)))))
+    (picpocket-dump-some (symbol-name var) value)))
+
+
 
 (defun picpocket-simplify-list (&optional list)
   "Print the LIST or current picture list without the prev links.
@@ -4749,6 +4789,13 @@ With the prev links it is harder to follow the list."
            for copy = (copy-picpocket-pic pic)
            do (setf (picpocket-pic-prev copy) :prev)
            collect copy))
+
+(defun picpocket-simplify-pos (pos)
+  (when pos
+    (make-picpocket-pos :current (picpocket-pic-file
+                                  (car (picpocket-pos-current pos)))
+                        :index (picpocket-pos-index pos)
+                        :filter-index (picpocket-pos-filter-index pos))))
 
 (defun picpocket-dump-list (&optional list)
   (pp (picpocket-simplify-list list)))

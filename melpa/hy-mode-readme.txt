@@ -31,7 +31,7 @@ Keywords
     "is" "is-not" "is_not" "islice" "iterable?" "iterate" "iterator?" "juxt"
     "keyword" "keyword?" "last" "list*" "list-comp" "macroexpand"
     "macroexpand-1" "map" "merge-with" "multicombinations" "name" "neg?" "none?"
-    "not" "not-in" "nth" "numeric?" "odd?" "or" "partition" "permutations"
+    "not-in" "nth" "numeric?" "odd?" "or" "partition" "permutations"
     "pos?" "print" "product" "quasiquote" "quote" "range" "read" "read-str"
     "reduce" "remove" "repeat" "repeatedly" "rest" "second" "setv" "set-comp"
     "slice" "some" "string" "string?" "symbol?" "take" "take-nth" "take-while"
@@ -101,6 +101,7 @@ Keywords
 
     ;; Flow control
     "return"
+    "not"
     "if" "if*" "if-not" "lif" "lif-not"
     "else" "unless" "when"
     "break" "continue"
@@ -111,7 +112,7 @@ Keywords
     "lambda" "fn"
     "yield" "yield-from"
     "with" "with*"
-    "with-decorator" "with-gensyms"
+    "with-gensyms"
 
     ;; Error Handling
     "except" "try" "throw" "raise" "catch" "finally" "assert"
@@ -131,7 +132,8 @@ Definitions
 (defconst hy--font-lock-kwds-builtins
   (list
    (rx-to-string
-    `(: symbol-start
+    `(: (not (any "#"))
+        symbol-start
         (or ,@hy--kwds-operators
             ,@hy--kwds-builtins
             ,@hy--kwds-anaphorics)
@@ -171,7 +173,7 @@ Definitions
 
    '(0 font-lock-type-face))
 
-  "Hy builtin keywords.")
+  "Hy exception keywords.")
 
 (defconst hy--font-lock-kwds-special-forms
   (list
@@ -210,6 +212,21 @@ Static
 
   "Hy class keywords.")
 
+(defconst hy--font-lock-kwds-decorators
+  (list
+   (rx
+    (or (: "#@"
+           (syntax open-parenthesis))
+        (: symbol-start
+           "with-decorator"
+           symbol-end
+           (1+ space)))
+    (1+ word))
+
+   '(0 font-lock-type-face))
+
+  "Hylight the symbol after `#@' or `with-decorator' macros.")
+
 (defconst hy--font-lock-kwds-imports
   (list
    (rx (or "import" "require" ":as")
@@ -228,6 +245,28 @@ Static
    '(1 font-lock-keyword-face))
 
   "Hy self keyword.")
+
+(defconst hy--font-lock-kwds-tag-macros
+  (list
+   (rx "#"
+       (not (any "*" "@"))
+       (0+ word))
+
+   '(0 font-lock-function-name-face))
+
+  "Hylight tag macros, ie. `#tag-macro', so they stand out.")
+
+(defconst hy--font-lock-kwds-variables
+  (list
+   (rx symbol-start
+       (or "setv" "def")
+       symbol-end
+       (1+ space)
+       (group (1+ word)))
+
+   '(1 font-lock-variable-name-face))
+
+  "Hylight variable names in setv/def, only first name.")
 
 Misc
 
@@ -255,6 +294,15 @@ Misc
 
   "Hy shebang line.")
 
+(defconst hy--font-lock-kwds-unpacking
+  (list
+   (rx (or "#*" "#**")
+       symbol-end)
+
+   '(0 font-lock-keyword-face))
+
+  "Hy #* arg and #** kwarg unpacking keywords.")
+
 Grouped
 
 (defconst hy-font-lock-kwds
@@ -263,13 +311,17 @@ Grouped
         hy--font-lock-kwds-class
         hy--font-lock-kwds-constants
         hy--font-lock-kwds-defs
+        hy--font-lock-kwds-decorators
         hy--font-lock-kwds-exceptions
         hy--font-lock-kwds-func-modifiers
         hy--font-lock-kwds-imports
         hy--font-lock-kwds-kwargs
         hy--font-lock-kwds-self
         hy--font-lock-kwds-shebang
-        hy--font-lock-kwds-special-forms)
+        hy--font-lock-kwds-special-forms
+        hy--font-lock-kwds-tag-macros
+        hy--font-lock-kwds-unpacking
+        hy--font-lock-kwds-variables)
 
   "All Hy font lock keywords.")
 
