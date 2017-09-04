@@ -5,7 +5,7 @@
 ;; Author: Serghei Iakovlev (serghei@phalconphp.com)
 ;; Maintainer: Serghei Iakovlev
 ;; Version: 0.4.0
-;; Package-Version: 20170902.345
+;; Package-Version: 20170904.145
 ;; URL: https://github.com/sergeyklay/zephir-mode
 ;; Keywords: languages
 ;; Package-Requires: ((cl-lib "0.5") (pkg-info "0.4") (emacs "24.3"))
@@ -40,30 +40,14 @@
 ;; compilers such as gcc/clang/vc++.  Functionality is exposed to the
 ;; PHP language.  For more information see https://zephir-lang.com
 ;;
-;; Syntax checking:
-;;
-;;   Flymake support is not provided.  See Flycheck at
+;; Syntax checking: Flymake support is not provided.  See Flycheck at
 ;; http://www.flycheck.org for on-the-fly validation and liniting of Zephir
 ;; code.
 ;;
-;; Bugs:
-;;
-;;   Bug tracking is currently handled using the GitHub issue tracker at
-;; https://github.com/sergeyklay/zephir-mode/issues
-;;
-;; History:
-;;
-;;   History is tracked in the Git repository rather than in this file.
-;; See https://github.com/sergeyklay/zephir-mode/blob/master/CHANGELOG.md
-;;
-;; Movement:
-;;
-;;   Move to the beginning or end of the current block with
+;; Movement: Move to the beginning or end of the current block with
 ;; `beginning-of-defun' (C-M-a) and `end-of-defun' (C-M-e) respectively.
 ;;
-;; Usage:
-;;
-;;   Put this file in your Emacs Lisp path (eg. site-lisp) and add to
+;; Usage:  Put this file in your Emacs Lisp path (eg. site-lisp) and add to
 ;; your .emacs file:
 ;;
 ;;   (require 'zephir-mode)
@@ -74,6 +58,12 @@
 ;;
 ;; Many options available under Help:Customize
 ;; Options specific to zephir-mode are in Programming/Languages/Zephir
+;;
+;; Bugs: Bug tracking is currently handled using the GitHub issue tracker at
+;; https://github.com/sergeyklay/zephir-mode/issues
+;;
+;; History: History is tracked in the Git repository rather than in this file.
+;; See https://github.com/sergeyklay/zephir-mode/blob/master/CHANGELOG.md
 
 ;;; Code:
 
@@ -211,18 +201,14 @@ matching the opening character."
                                "final")
                           symbol-end))
       ;; Predefined boolean constants
-      (bool-const . ,(rx symbol-start
-                      (or "true" "false")
-                      symbol-end))
+      (bool-const . ,(rx symbol-start (or "true" "false") symbol-end))
       ;; Constants
       (constant . ,(rx symbol-start
                        (any "A-Z" ?_)
                        (+ (any "A-Z" "0-9" ?_))
                        symbol-end))
       ;; Function declaraion.
-      (fn-decl . ,(rx symbol-start
-                      "function"
-                      symbol-end))
+      (fn-decl . ,(rx symbol-start "function" symbol-end))
       ;; Namespace, class or interface name.
       (classlike . ,(rx symbol-start
                         (optional ?$)
@@ -419,7 +405,7 @@ the comment syntax tokens handle both line style \"//\" and block style
                  (+ (syntax whitespace))
                  (group classlike)
                  (optional (+ (syntax whitespace)))
-                 (or ";" (group (or "implements" "as"))))
+                 (or ?{ "implements"))
      (1 font-lock-keyword-face)
      (2 font-lock-type-face))
     ;; Booleans
