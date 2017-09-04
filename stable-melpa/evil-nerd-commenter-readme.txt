@@ -53,8 +53,7 @@ or `evilnc-copy-and-comment-operator',
 We defined comment text object "c" which can have multi-lines.
 Press "vac" to select outer object (comment with limiters).
 Press "vic" to select inner object (comment without limiter).
-Please note in order to select innner object precisel,x
-either the first or last line is the longest line.
+
 You can assign other key instead of "c" to the text object by
 customizing `evilnc-comment-text-object'.
 
