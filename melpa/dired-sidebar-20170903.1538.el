@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/dired-sidebar
-;; Package-Version: 20170903.1142
+;; Package-Version: 20170903.1538
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: dired, files, tools
@@ -131,6 +131,19 @@ This needs to be set before calling command `dired-sidebar-mode'
 for the first time.
 
 If using `use-package', set this in :init."
+  :type 'boolean
+  :group 'dired-sidebar)
+
+(defcustom dired-sidebar-use-magit-integration t
+  "Whether to integrate with `magit-mode'.
+
+When true:
+
+When finding file to point at for
+`dired-sidebar-follow-file-at-point-on-toggle-open', use file at point
+in `magit' buffer.
+
+When finding root directory for sidebar, use directory specified by `magit'."
   :type 'boolean
   :group 'dired-sidebar)
 
@@ -302,39 +315,45 @@ will check if buffer is stale through `auto-revert-mode'.")
 ;;;###autoload
 (defun dired-sidebar-toggle-sidebar (&optional dir)
   "Toggle the project explorer window.
-Optional argument DIR Use DIR as sidebar root if available."
+Optional argument DIR Use DIR as sidebar root if available.
+
+With universal argument, use current directory."
   (interactive)
   (if (dired-sidebar-showing-sidebar-in-frame-p)
       (dired-sidebar-hide-sidebar)
-    (dired-sidebar-show-sidebar (when dir
-                                  (dired-sidebar-get-or-create-buffer dir)))
-    (if (and dired-sidebar-follow-file-at-point-on-toggle-open
-             buffer-file-name)
-        (if dired-sidebar-pop-to-sidebar-on-toggle-open
-            (dired-sidebar-point-at-file buffer-file-name dir)
-          (with-selected-window (selected-window)
-            (dired-sidebar-point-at-file buffer-file-name dir)))
-      (when dired-sidebar-pop-to-sidebar-on-toggle-open
-        (pop-to-buffer (dired-sidebar-sidebar-buffer-in-frame))))))
+    (let* ((file-to-show (dired-sidebar-get-file-to-show))
+           (dir-to-show (or dir
+                            (when current-prefix-arg default-directory)
+                            (dired-sidebar-get-dir-to-show)))
+           (sidebar-buffer (dired-sidebar-get-or-create-buffer dir-to-show)))
+      (dired-sidebar-show-sidebar sidebar-buffer)
+      (if (and dired-sidebar-follow-file-at-point-on-toggle-open
+               file-to-show)
+          (if dired-sidebar-pop-to-sidebar-on-toggle-open
+              (dired-sidebar-point-at-file file-to-show dir-to-show)
+            (with-selected-window (selected-window)
+              (dired-sidebar-point-at-file file-to-show dir-to-show)))
+        (when dired-sidebar-pop-to-sidebar-on-toggle-open
+          (pop-to-buffer (dired-sidebar-sidebar-buffer-in-frame)))))))
 
-(defun dired-sidebar-point-at-file (name &optional parent)
+(defun dired-sidebar-point-at-file (name root)
   "Try to point at NAME from sidebar.
 
-Keep `dired' pointed at PARENT or function `dired-sidebar-sidebar-root'
-while cycling directories until NAME is found in PARENT path.
+Keep `dired' pointed at ROOT while cycling directories until
+NAME is found in ROOT path.
 
 This is dependent on `dired-subtree-cycle'."
   (let ((sidebar (dired-sidebar-sidebar-buffer-in-frame)))
     (pop-to-buffer sidebar)
     (when (and name
                (fboundp 'dired-subtree-cycle)
+               (or (featurep 'dired-subtree) (require 'dired-subtree nil t))
                ;; Checking for a private method. *shrug*
                (fboundp 'dired-subtree--is-expanded-p))
       (progn
         (pop-to-buffer sidebar)
         (goto-char 0)
-        (let* ((root (or parent (dired-sidebar-sidebar-root)))
-               (path root)
+        (let* ((path root)
                ;; Imagine root is /root/var/ and name is
                ;; /root/var/a/b/c.
                ;; This will return a list of '\("a" "b" "c"\).
@@ -366,13 +385,17 @@ This is dependent on `dired-subtree-cycle'."
 (defun dired-sidebar-toggle-with-current-directory ()
   "Like `dired-sidebar-toggle-sidebar' but use current-directory."
   (interactive)
-  (dired-sidebar-toggle-sidebar default-directory))
+  (let ((current-prefix-arg '(4))) ; C-u
+    (call-interactively #'dired-sidebar-toggle-sidebar)))
 
 ;;;###autoload
 (defun dired-sidebar-show-sidebar (&optional b)
-  "Show sidebar using B or use currect project root in the selected frame."
+  "Show sidebar displaying buffer B."
   (interactive)
-  (let ((buffer (or b (dired-sidebar-get-or-create-buffer))))
+  (let ((buffer (or b
+                    ;; Only expect this to be hit when called interactively.
+                    (dired-sidebar-get-or-create-buffer
+                     (dired-sidebar-get-dir-to-show)))))
     (display-buffer-in-side-window buffer '((side . left)))
     (let ((window (get-buffer-window buffer)))
       (set-window-dedicated-p window t)
@@ -514,11 +537,10 @@ the relevant file-directory clicked on by the mouse."
              dir))))
     (concat ":" (abbreviate-file-name b))))
 
-(defun dired-sidebar-get-or-create-buffer (&optional dir)
-  "Get or create a `dired-sidebar' buffer matching DIR."
+(defun dired-sidebar-get-or-create-buffer (root)
+  "Get or create a `dired-sidebar' buffer matching ROOT."
   (interactive)
-  (let* ((root (or dir (dired-sidebar-sidebar-root)))
-         (name (dired-sidebar-sidebar-buffer-name root)))
+  (let ((name (dired-sidebar-sidebar-buffer-name root)))
     (if-let ((existing-buffer (get-buffer name)))
         existing-buffer
       (let ((buffer (dired-noselect root)))
@@ -636,6 +658,27 @@ Optional argument NOCONFIRM Pass NOCONFIRM on to `dired-buffer-stale-p'."
   (if (fboundp 'aw-select)
       (aw-select "Select Window")
     (next-window)))
+
+(defun dired-sidebar-get-dir-to-show ()
+  "Return the directory `dired-sidebar' should open to."
+  (cond
+   ((and dired-sidebar-use-magit-integration
+         (derived-mode-p 'magit-mode)
+         (fboundp 'magit-toplevel))
+    (magit-toplevel))
+   (:default
+    (dired-sidebar-sidebar-root))))
+
+(defun dired-sidebar-get-file-to-show ()
+  "Return the file `dired-sidebar' should open to."
+  (cond
+   ((and dired-sidebar-use-magit-integration
+         (derived-mode-p 'magit-mode)
+         (fboundp 'magit-file-at-point)
+         (magit-file-at-point))
+    (expand-file-name (magit-file-at-point)))
+   (:default
+    buffer-file-name)))
 
 (provide 'dired-sidebar)
 ;;; dired-sidebar.el ends here

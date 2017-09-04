@@ -1,11 +1,16 @@
  This enhances the functionality of library `dired-details.el'.
 
 
-   NOTE: If you use Emacs 24.4 or later then you DO NOT NEED this
-   library or library `dired-details.el'.  Instead, use
-   `dired-hide-details-mode'.  Library `dired+.el' enhances
-   `dired-hide-details-mode' to give it the save features as
-   `dired-details+.el' provides.  Just use `(require 'dired+.el)'.
+   NOTE: If you use Emacs 24.4 or later, and if you use library
+         `dired+.el', then you do not need this library or library
+         `dired-details.el'.
+
+         Instead, you can use `dired-hide-details-mode'.  Library
+         `dired+.el' enhances `dired-hide-details-mode' to give it
+         the same features as `dired-details+.el' provides.  In
+         that case, use `(require 'dired+.el)', and use option
+         `diredp-hide-details-propagate-flag' instead of option
+         `dired-details-propagate-flag'.
 
 
  `dired-details+.el' enhances `dired-details.el' in these ways:
