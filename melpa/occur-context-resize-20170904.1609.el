@@ -1,11 +1,11 @@
 ;;; occur-context-resize.el --- dynamically resize context around matches in occur-mode
 
-;; Copyright (C) 2014-2016 Charles L.G. Comstock
+;; Copyright (C) 2014-2017  Charles L.G. Comstock
 
 ;; Author: Charles L.G. Comstock <dgtized@gmail.com>
 ;; Created: 19 Aug 2014
 ;; Version: 0.1
-;; Package-Version: 20151227.2002
+;; Package-Version: 20170904.1609
 ;; URL: https://github.com/dgtized/occur-context-resize.el
 ;; Keywords: matching
 

@@ -2,9 +2,9 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/link-hint.el
-;; Package-Version: 20170313.1945
+;; Package-Version: 20170904.1442
 ;; Keywords: url
-;; Package-Requires: ((avy "0.3.0") (emacs "24.1") (cl-lib "0.5"))
+;; Package-Requires: ((avy "0.3.0") (emacs "24.4") (cl-lib "0.5"))
 ;; Version: 0.1
 
 ;; This file is not part of GNU Emacs.
@@ -212,6 +212,13 @@ These commands are `link-hint-open-all-links' and
 
 (defcustom link-hint-message t
   "Whether to message information for commands."
+  :group 'link-hint
+  :type 'boolean)
+
+(defcustom link-hint-delete-trailing-paren t
+  "Whether to delete a ) at the end of a url.
+This is a workaround for emacs libraries including unwanted parens in urls.
+See issue #15 for more information."
   :group 'link-hint
   :type 'boolean)
 
@@ -579,6 +586,13 @@ GET-NEXT-LINK will be repeatedly called with END-BOUND as an argument."
        customize-link
        other-button-link)))
 
+(defun link-hint--process-url (url)
+  "Maybe delete trailing parens in URL."
+  (if link-hint-delete-trailing-paren
+      ;; 24.4
+      (string-trim-right url ")*")
+    url))
+
 ;;;###autoload
 (defun link-hint-open-link-at-point ()
   "Open a link of any supported type at the point."
@@ -608,8 +622,8 @@ GET-NEXT-LINK will be repeatedly called with END-BOUND as an argument."
                             (not (string-match (rx bol "id:") uri)))
                  (setq no-restore-position t))
                uri))
-            (text-url (browse-url text-url)
-                      text-url)
+            (text-url (browse-url (link-hint--process-url text-url))
+                      (link-hint--process-url text-url))
             ;; distinguish between opening in browser and view-attachment?
             (mu4e-url (mu4e~view-browse-url-from-binding)
                       mu4e-url)
@@ -653,7 +667,7 @@ types."
    (link-hint--types-at-point-let-wrapper
     (cond (shr-url (kill-new shr-url))
           (org-link (kill-new (plist-get org-link :uri)))
-          (text-url (kill-new text-url))
+          (text-url (kill-new (link-hint--process-url text-url)))
           (file-link (kill-new (ffap-file-at-point)))
           (mu4e-url (kill-new mu4e-url))
           (mu4e-att (mu4e-view-save-attachment-single nil mu4e-att)
