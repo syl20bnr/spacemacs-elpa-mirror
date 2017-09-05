@@ -3,8 +3,8 @@
 ;; Author: Dan Harms <danielrharms@gmail.com>
 ;; Created: Wednesday, June  1, 2016
 ;; Version: 0.1
-;; Package-Version: 20170818.1835
-;; Modified Time-stamp: <2017-08-18 20:31:36 dharms>
+;; Package-Version: 20170904.511
+;; Modified Time-stamp: <2017-09-04 07:11:00 dharms>
 ;; Modified by: Dan Harms
 ;; Keywords: tools c++ namespace
 ;; URL: https://github.com/articuluxe/outrespace.git
@@ -105,30 +105,31 @@
                             (throw 'found elt) nil)))))
                   (cadr (outrespace--get-ns-names parent))
                 nil))
-        (setq curr (outrespace-parse-namespace beg cont))
-        (if (outrespace--namespace-nested-p curr)
-            (let* ((name-pos (outrespace--get-ns-name-pos curr))
-                   (posb (car name-pos))
-                   (pose (cadr name-pos)))
-              (mapc
-               (lambda (elt)
-                 (setq lst
-                       (cons
-                        (list
-                         (list (car elt)
-                               (setq cont
-                                     (if cont
-                                         (concat cont "::" (car elt))
-                                       (car elt))))
-                         (outrespace--get-ns-tag-pos curr)
-                         (list
-                          (+ posb (cdr elt))
-                          (+ posb (cdr elt) (length (car elt))))
-                         (outrespace--get-ns-delimiter-pos curr))
-                        lst)))
-               (outrespace--flatten-nested-names
-                (buffer-substring-no-properties posb pose))))
-          (setq lst (cons curr lst))))
+        (catch 'invalid
+          (setq curr (outrespace-parse-namespace beg cont))
+          (if (outrespace--namespace-nested-p curr)
+              (let* ((name-pos (outrespace--get-ns-name-pos curr))
+                     (posb (car name-pos))
+                     (pose (cadr name-pos)))
+                (mapc
+                 (lambda (elt)
+                   (setq lst
+                         (cons
+                          (list
+                           (list (car elt)
+                                 (setq cont
+                                       (if cont
+                                           (concat cont "::" (car elt))
+                                         (car elt))))
+                           (outrespace--get-ns-tag-pos curr)
+                           (list
+                            (+ posb (cdr elt))
+                            (+ posb (cdr elt) (length (car elt))))
+                           (outrespace--get-ns-delimiter-pos curr))
+                          lst)))
+                 (outrespace--flatten-nested-names
+                  (buffer-substring-no-properties posb pose))))
+            (setq lst (cons curr lst)))))
       lst)))
 
 (defun outrespace-scan-buffer ()
@@ -149,7 +150,8 @@ Store in result `outrespace-list'."
     (when (catch 'found
             (save-excursion
               (let ((beg (outrespace--find-ns-next)))
-                (setq ns (and beg (outrespace-parse-namespace beg)))
+                (setq ns (catch 'invalid
+                           (and beg (outrespace-parse-namespace beg))))
                 (if ns
                     (throw 'found t)
                   (message "no namespace following point")
@@ -166,7 +168,8 @@ Store in result `outrespace-list'."
             (save-excursion
               (let ((beg (outrespace--find-ns-previous))
                     delim)
-                (setq ns (and beg (outrespace-parse-namespace beg)))
+                (setq ns (catch 'invalid
+                           (and beg (outrespace-parse-namespace beg))))
                 (setq delim (and ns (outrespace--get-ns-delimiter-pos ns)))
                 ;; If between delimiters, choose current.
                 ;; If outside (before) delimiters, search for previous.
@@ -176,7 +179,8 @@ Store in result `outrespace-list'."
                 (when delim
                   (unless (< (car delim) pt)
                     (setq beg (outrespace--find-ns-previous))
-                    (setq ns (and beg (outrespace-parse-namespace beg)))))
+                    (setq ns (catch 'invalid
+                               (and beg (outrespace-parse-namespace beg))))))
                 (if ns
                     (throw 'found t)
                   (message "no namespace preceding point")
@@ -199,7 +203,12 @@ Store in result `outrespace-list'."
 
 (defun outrespace--at-ns-begin-p ()
   "Evaluate whether location LOC is at the beginning of a namespace."
-  (looking-at "namespace"))
+  (save-excursion
+    (and
+     (looking-at "namespace")
+     (progn
+       (backward-word)
+       (not (looking-at "using\\s-+"))))))
 
 (defun outrespace--namespace-nested-p (ns)
   "Return whether the namespace NS is a nested namespace (C++17)."
@@ -257,7 +266,8 @@ PARENT contains any enclosing namespaces."
     (let (tag-pos name-pos delimiter-pos title beg end title-trimmed)
       (goto-char loc)
       (unless (outrespace--at-ns-begin-p)
-        (error "Not looking at valid namespace"))
+        ;; not looking at valid namespace
+        (throw 'invalid nil))
       ;; get bounds of namespace tag
       (setq beg (point))
       (forward-sexp)
@@ -323,12 +333,14 @@ stored in `outrespace-list', if any."
     (catch 'found
       (let* ((pt (point))
              (beg (outrespace--find-ns-previous))
-             (ns (and beg (outrespace-parse-namespace beg))))
+             (ns (and beg (catch 'invalid
+                            (outrespace-parse-namespace beg)))))
         (while ns
           (when (outrespace--get-distance-from-begin pt ns)
             (throw 'found ns))
           (setq beg (outrespace--find-ns-previous))
-          (setq ns (and beg (outrespace-parse-namespace beg))))))))
+          (setq ns (and beg (catch 'invalid
+                              (outrespace-parse-namespace beg)))))))))
 
 (defun outrespace--find-enclosing-ns ()
   "Return the namespace around point, if any.
