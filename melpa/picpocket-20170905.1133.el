@@ -4,8 +4,8 @@
 ;; Author: Johan Claesson <johanclaesson@bredband.net>
 ;; Maintainer: Johan Claesson <johanclaesson@bredband.net>
 ;; URL: https://github.com/johanclaesson/picpocket
-;; Package-Version: 20170903.1254
-;; Version: 37
+;; Package-Version: 20170905.1133
+;; Version: 38
 ;; Keywords: multimedia
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -306,7 +306,7 @@ This affects the commands `picpocket-scroll-some-*'."
 
 ;;; Internal variables
 
-(defconst picpocket-version 37)
+(defconst picpocket-version 38)
 (defconst picpocket-buffer "*picpocket*")
 (defconst picpocket-undo-buffer "*picpocket-undo*")
 
@@ -4760,6 +4760,10 @@ This command picks the first undoable command in that list."
                          (picpocket-simplify-pos (picpocket-next-pos)))
     (picpocket-dump-some "prev-pos"
                          (picpocket-simplify-pos (picpocket-previous-pos)))
+    (picpocket-dump-some "dir-files"
+                         (directory-files default-directory nil "[^.]" t))
+    (picpocket-dump-some "p-file-list"
+                         (picpocket-file-list default-directory))
     (switch-to-buffer picpocket-dump-buffer)))
 
 (defun picpocket-dump-some (name value)

@@ -4,7 +4,7 @@
 
 ;; Author: Sam Halliday <Sam.Halliday@gmail.com>
 ;; Keywords: faces
-;; Package-Version: 20161004.2218
+;; Package-Version: 20170905.941
 ;; URL: https://github.com/fommil/darcula-theme-emacs
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -145,6 +145,8 @@
  '(company-tooltip-common ((t (:inherit 'mode-line-emphasis))))
  '(company-tooltip-common-selection ((t (:inherit 'highlight))))
  '(company-tooltip-annotation ((t (:inherit 'mode-line))))
+ '(markdown-code-face ((t (:background "#3B3B3B"))))
+ '(markdown-pre-face ((t (:inherit 'markdown-code-face))))
  ;; http://www.gnu.org/software/emacs/manual/html_node/ediff/Highlighting-Difference-Regions.html
  '(ediff-current-diff-A ((t (:background "#3B2B2B"))))
  '(ediff-current-diff-B ((t (:background "#2B3B2B"))))
