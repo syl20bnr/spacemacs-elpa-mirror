@@ -2,7 +2,7 @@
 
 ;; Author: Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/Fanael/highlight-numbers
-;; Package-Version: 20170815.1412
+;; Package-Version: 20170905.342
 ;; Version: 0.2.3
 ;; Package-Requires: ((emacs "24") (parent-mode "2.0"))
 
@@ -105,6 +105,45 @@ It is used when no mode-specific one is available.")
                               (+ hex-digit)))
                      (? (and (any "_" "A-Z" "a-z")
                              (* (any "_" "A-Z" "a-z" "0-9"))))
+                     symbol-end))
+                table)
+       (puthash 'lisp-mode
+                (rx (and
+                     (or (and
+                          symbol-start
+                          (or
+                           (and
+                            (? (any "-+"))
+                            (+ digit)
+                            (? (or (and (any "eE")
+                                        (? (any "-+"))
+                                        (+ digit))
+                                   (and "."
+                                        (? (and (+ digit)
+                                                (? (and
+                                                    (any "eE")
+                                                    (? (any "-+"))
+                                                    (+ digit))))))
+                                   (and "/"
+                                        (+ digit)))))
+                           (and
+                            "."
+                            (+ digit)
+                            (? (and
+                                (any "eE")
+                                (? (any "-+"))
+                                (+ digit))))))
+                         (and "#"
+                              symbol-start
+                              (or (and (any "bB")
+                                       (? (any "-+"))
+                                       (+ (any "01")))
+                                  (and (any "oO")
+                                       (? (any "-+"))
+                                       (+ (any "0-7")))
+                                  (and (any "xX")
+                                       (? (any "-+"))
+                                       (+ hex-digit)))))
                      symbol-end))
                 table)
        (puthash 'emacs-lisp-mode
