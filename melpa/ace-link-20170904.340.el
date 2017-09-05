@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/ace-link
-;; Package-Version: 20170528.1158
+;; Package-Version: 20170904.340
 ;; Version: 0.4.0
 ;; Package-Requires: ((avy "0.2.0"))
 ;; Keywords: convenience, links
@@ -422,7 +422,10 @@
        (define-key eww-mode-map ,key 'ace-link-eww)))
   (eval-after-load 'cus-edit
     `(progn
-       (define-key custom-mode-map ,key 'ace-link-custom))))
+       (define-key custom-mode-map ,key 'ace-link-custom)))
+  (eval-after-load "helpful"
+    `(progn
+       (define-key helpful-mode-map ,key 'ace-link-help))))
 
 (provide 'ace-link)
 

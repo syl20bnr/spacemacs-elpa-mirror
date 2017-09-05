@@ -4,7 +4,7 @@
 
 ;; Author: Alp Aker <alp.tekin.aker@gmail.com>
 ;; Version: 1.88
-;; Package-Version: 20170901.528
+;; Package-Version: 20170904.1534
 ;; Keywords: convenience
 
 ;; This program is free software; you can redistribute it and/or
@@ -414,7 +414,8 @@ U+E000-U+F8FF, inclusive)."
 (defun fci-determine-padding ()
   "Decide how much padding the overlay needs.
 When `display-line-numbers` is true, pad by the size of the line number display."
-  (if (and (boundp 'display-line-numbers) display-line-numbers)
+  (if (and (bound-and-true-p display-line-numbers)
+           (fboundp 'line-number-display-width))
       (+ (line-number-display-width) 2)
     0))
 
@@ -903,4 +904,7 @@ rough heuristic.)"
 
 (provide 'fill-column-indicator)
 
+;; Local Variables:
+;; indent-tabs-mode: nil
+;; End:
 ;;; fill-column-indicator.el ends here

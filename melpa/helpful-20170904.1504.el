@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20170902.1350
+;; Package-Version: 20170904.1504
 ;; Keywords: help, lisp
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2"))
@@ -527,7 +527,7 @@ state of the current symbol."
         (if (macrop helpful--sym)
             "Macro Signature\n"
           "Function Signature\n"))
-       (helpful--signature helpful--sym)))
+       (helpful--syntax-highlight (helpful--signature helpful--sym))))
 
     (-when-let (docstring (helpful--docstring
                            helpful--sym helpful--callable-p))
@@ -700,6 +700,18 @@ For example, \"(some-func FOO &optional BAR)\"."
    (list (helpful--read-symbol "Command: " #'commandp)))
   (switch-to-buffer (helpful--buffer symbol t))
   (helpful-update))
+
+;;;###autoload
+(defun helpful-key (key-sequence)
+  "Show help for interactive command bound to KEY-SEQUENCE."
+  (interactive
+   (list (read-key-sequence "Press key: ")))
+  (let ((sym (key-binding key-sequence)))
+    (unless sym
+      (user-error "No command is bound to %s"
+                  (key-description key-sequence)))
+    (switch-to-buffer (helpful--buffer sym t))
+    (helpful-update)))
 
 ;;;###autoload
 (defun helpful-macro (symbol)

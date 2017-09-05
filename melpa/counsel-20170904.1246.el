@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170830.1025
+;; Package-Version: 20170904.1246
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1038,7 +1038,7 @@ INITIAL-INPUT can be given as the initial minibuffer input."
 ;;** `counsel-git-grep'
 (defvar counsel-git-grep-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-l") 'counsel-git-grep-recenter)
+    (define-key map (kbd "C-l") 'ivy-call-and-recenter)
     (define-key map (kbd "M-q") 'counsel-git-grep-query-replace)
     (define-key map (kbd "C-c C-m") 'counsel-git-grep-switch-cmd)
     map))
@@ -1377,13 +1377,6 @@ When REVERT is non-nil, regenerate the current *ivy-occur* buffer."
                      (find-file file-name)
                      (goto-char (point-min)))
                    (perform-replace from to t t nil)))))))))))
-
-(defun counsel-git-grep-recenter ()
-  "Recenter window according to the selected candidate."
-  (interactive)
-  (counsel-git-grep-action (ivy-state-current ivy-last))
-  (with-ivy-window
-    (recenter-top-bottom)))
 
 ;;** `counsel-git-stash'
 (defun counsel-git-stash-kill-action (x)
@@ -1858,7 +1851,8 @@ INITIAL-DIRECTORY, if non-nil, is used as the root directory for search."
   (let* ((default-directory (or initial-directory default-directory)))
     (ivy-read "Find file: "
               (split-string
-               (shell-command-to-string "find * -type f -not -path '*\/.git*'")
+               (shell-command-to-string
+                (concat find-program " * -type f -not -path '*\/.git*'"))
                "\n" t)
               :matcher #'counsel--find-file-matcher
               :initial-input initial-input
@@ -1888,7 +1882,8 @@ INITIAL-DIRECTORY, if non-nil, is used as the root directory for search."
   (let* ((default-directory (or initial-directory default-directory)))
     (ivy-read "Directory: "
               (split-string
-               (shell-command-to-string "find * -type d -not -path '*\/.git*'")
+               (shell-command-to-string
+                (concat find-program " * -type d -not -path '*\/.git*'"))
                "\n" t)
               :initial-input initial-input
               :action (lambda (d) (dired-jump nil (expand-file-name d)))
@@ -1922,7 +1917,7 @@ It applies no filtering to ivy--all-candidates."
 ;;** `counsel-ag'
 (defvar counsel-ag-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-l") 'counsel-git-grep-recenter)
+    (define-key map (kbd "C-l") 'ivy-call-and-recenter)
     (define-key map (kbd "M-q") 'counsel-git-grep-query-replace)
     map))
 
@@ -2846,6 +2841,11 @@ PREFIX is used to create the key."
                                            (cdr elm))))))))
              alist))
 
+(defvar counsel-imenu-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-l") 'ivy-call-and-recenter)
+    map))
+
 ;;;###autoload
 (defun counsel-imenu ()
   "Jump to a buffer position indexed by imenu."
@@ -2866,6 +2866,7 @@ PREFIX is used to create the key."
                           ;; In org-mode, (imenu candidate) will expand child node
                           ;; after jump to the candidate position
                           (imenu (cdr candidate))))
+              :keymap counsel-imenu-map
               :caller 'counsel-imenu)))
 
 ;;** `counsel-list-processes'
