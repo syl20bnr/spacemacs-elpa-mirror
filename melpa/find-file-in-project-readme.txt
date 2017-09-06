@@ -55,6 +55,9 @@ Sample .dir-locals.el,
 To find in *current directory*, use `find-file-in-current-directory'
 and `find-file-in-current-directory-by-selected'.
 
+`ffip-split-window-horizontally' and `ffip-split-window-vertically' find&open file
+in split window.
+
 `ffip-show-diff-by-description' and `ffip-show-diff' execute the
 backend from `ffip-diff-backends'.
 `ffip-show-diff-by-description' has more friendly UI.
