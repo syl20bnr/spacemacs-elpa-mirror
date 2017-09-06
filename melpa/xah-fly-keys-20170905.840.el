@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2017, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 7.11.20170901
-;; Package-Version: 20170901.805
+;; Version: 7.11.20170905
+;; Package-Version: 20170905.840
 ;; Created: 10 Sep 2013
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, emulations, vim, ergoemacs
@@ -508,7 +508,7 @@ Version 2017-07-25"
       (delete-region (region-beginning) (region-end)))
     (if current-prefix-arg
         (progn
-          (dotimes ($i (prefix-numeric-value current-prefix-arg))
+          (dotimes (_ (prefix-numeric-value current-prefix-arg))
             (yank)))
       (if (eq real-last-command this-command)
           (yank-pop 1)
@@ -1146,7 +1146,7 @@ If in dired, copy the file/dir cursor is on, or marked files.
 If a buffer is not file and not dired, copy value of `default-directory' (which is usually the “current” dir when that buffer was created)
 
 URL `http://ergoemacs.org/emacs/emacs_copy_file_path.html'
-Version 2017-08-25"
+Version 2017-09-01"
   (interactive "P")
   (let (($fpath
          (if (string-equal major-mode 'dired-mode)
@@ -2060,8 +2060,10 @@ Version 2017-09-01"
             ":\\'" "" $inputStr))))
     (if (string-match-p "\\`https?://" $path)
         (if (fboundp 'xahsite-url-to-filepath)
-            (progn
-              (find-file (xahsite-url-to-filepath $path)))
+            (let (($x (xahsite-url-to-filepath $path)))
+              (if (string-match "^http" $x )
+                  (browse-url $x)
+                (find-file $x)))
           (progn (browse-url $path)))
       (progn ; not starting “http://”
         (if (string-match "^\\`\\(.+?\\):\\([0-9]+\\)\\'" $path)

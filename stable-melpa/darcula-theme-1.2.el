@@ -1,12 +1,11 @@
-;;; intellij-theme.el --- Inspired by IntelliJ's default theme
+;;; darcula-theme.el --- Inspired by IntelliJ's Darcula theme
 
-;; Copyright (C) 2016 Vladimir Polushin
-;; Copyright (C) 2015 - 2016  Sam Halliday
+;; Copyright (C) 2014  Sam Halliday
 
-;; Author: Vladimir Polushin <vovapolu@gmail.com>
-;; Author of base darcula theme: Sam Halliday <Sam.Halliday@gmail.com>
+;; Author: Sam Halliday <Sam.Halliday@gmail.com>
 ;; Keywords: faces
-;; Package-Version: 1.1
+;; Package-Version: 1.2
+;; URL: https://github.com/fommil/darcula-theme-emacs
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -25,8 +24,8 @@
 
 ;;; Code:
 
-(deftheme intellij
-  "Inspired by IntelliJ's default theme")
+(deftheme darcula
+  "Inspired by IntelliJ's Darcula theme")
 
 ;; NOTE: https://github.com/alezost/alect-themes/#emacs-2431-and-earlier
 (when (version< emacs-version "24.4")
@@ -51,36 +50,36 @@
 ;; "M-x list-faces-display" useful for listing everything that new major modes introduce.
 
 (custom-theme-set-variables
- 'intellij
+ 'darcula
  '(ensime-sem-high-faces
    ;; NOTE: Inconsolata doesn't have italics
    ;; FURTHER NOTE: these are overlays, not faces
-   '((var . (:foreground "#000000" :underline (:style wave :color "yellow")))
-     (val . (:foreground "#000000"))
-     (varField . (:foreground "#600e7a" :slant italic))
-     (valField . (:foreground "#600e7a" :slant italic))
-     (functionCall . (:foreground "#000000" :slant italic))
-     (implicitConversion . (:underline (:color "#c0c0c0")))
-     (implicitParams . (:underline (:color "#c0c0c0")))
-     (operator . (:foreground "#000080"))
-     (param . (:foreground "#000000"))
-     (class . (:foreground "#20999d"))
-     (trait . (:foreground "#20999d" :slant italic))
-     (object . (:foreground "#5974ab" :slant italic))
-     (package . (:foreground "#000000"))
-     (deprecated . (:strike-through "#000000"))
+   '((var . (:foreground "#9876aa" :underline (:style wave :color "yellow")))
+     (val . (:foreground "#9876aa"))
+     (varField . (:slant italic))
+     (valField . (:foreground "#9876aa" :slant italic))
+     (functionCall . (:foreground "#a9b7c6"))
+     (implicitConversion . (:underline (:color "#808080")))
+     (implicitParams . (:underline (:color "#808080")))
+     (operator . (:foreground "#cc7832"))
+     (param . (:foreground "#a9b7c6"))
+     (class . (:foreground "#4e807d"))
+     (trait . (:foreground "#4e807d" :slant italic))
+     (object . (:foreground "#6897bb" :slant italic))
+     (package . (:foreground "#cc7832"))
+     (deprecated . (:strike-through "#a9b7c6"))
      )))
 
 (custom-theme-set-faces
- 'intellij
- '(default ((t (:inherit nil :stipple nil :background "#ffffff" :foreground "#000000"
+ 'darcula
+ '(default ((t (:inherit nil :stipple nil :background "#2B2B2B" :foreground "#a9b7c6"
                          :inverse-video nil :box nil :strike-through nil :overline nil
                          :underline nil :slant normal :weight normal
                          :width normal :foundry nil))))
- '(cursor ((t (:foreground "#ffffff" :background "#5974ab"))))
+ '(cursor ((t (:foreground "#042028" :background "#708183"))))
  '(error ((t (:inherit 'default :underline (:style wave :color "red")))))
  '(compilation-error ((t (:inherit 'default :foreground "red" :underline "red"))))
- '(scala-font-lock:var-face ((t (:foreground "#600e7a" :underline (:style wave :color "yellow") :inherit 'font-lock-variable-name-face))))
+ '(scala-font-lock:var-face ((t (:foreground "#9876aa" :underline (:style wave :color "yellow") :inherit 'font-lock-variable-name-face))))
  '(sbt:error ((t (:inherit 'default :foreground "red"))))
  '(maker:error ((t (:inherit 'default :foreground "red"))))
  '(ensime-warnline-highlight ((t (:inherit 'font-lock-warning-face))))
@@ -88,27 +87,27 @@
  ;; http://www.gnu.org/software/emacs/manual/html_node/elisp/Faces-for-Font-Lock.html
  '(font-lock-warning-face ((t (:underline (:style wave :color "orange" :inherit 'default)))))
                                         ;for a construct that is peculiar, or that greatly changes the meaning of other text.
- '(font-lock-function-name-face ((t (:foreground "#000000" :inherit 'default :weight bold))))
+ '(font-lock-function-name-face ((t (:foreground "#fec66c" :inherit 'default))))
                                         ;for the name of a function being defined or declared.
  '(font-lock-variable-name-face ((t (:inherit 'default))))
                                         ;for the name of a variable being defined or declared.
- '(font-lock-keyword-face ((t (:foreground "#000090" :weight bold :inherit 'default))))
+ '(font-lock-keyword-face ((t (:foreground "#cc7832" :inherit 'default))))
                                         ;for a keyword with special syntactic significance, like ‘for’ and ‘if’ in C.
- '(font-lock-comment-face ((t (:foreground "#808080" :slant italic :inherit 'default))))
+ '(font-lock-comment-face ((t (:foreground "#808080" :inherit 'default))))
                                         ;for comments.
- '(font-lock-comment-delimiter-face ((t (:foreground "#808080" :inherit 'default))))
+ '(font-lock-comment-delimiter-face ((t (:inherit 'font-lock-comment-face))))
                                         ;for comments delimiters, like ‘/*’ and ‘*/’ in C.
- '(font-lock-type-face ((t (:foreground "#20999d" :inherit 'default))))
+ '(font-lock-type-face ((t (:foreground "#4e807d" :inherit 'default))))
                                         ;for the names of user-defined data types.
- '(font-lock-constant-face ((t (:foreground "#5974ab" :weight bold :inherit 'font-lock-variable-name-face))))
+ '(font-lock-constant-face ((t (:foreground "#6897bb" :weight bold :inherit 'font-lock-variable-name-face))))
                                         ;for the names of constants, like ‘NULL’ in C.
  '(font-lock-builtin-face ((t (:inherit 'font-lock-keyword-face))))
                                         ;for the names of built-in functions.
- '(font-lock-preprocessor-face ((t (:inherit 'font-lock-builtin-face :foreground "#a57705"))))
+ '(font-lock-preprocessor-face ((t (:inherit 'font-lock-builtin-face))))
                                         ;for preprocessor commands.
- '(font-lock-string-face ((t (:foreground "#008000" :weight bold :inherit 'default))))
+ '(font-lock-string-face ((t (:foreground "#a6c25c" :inherit 'default))))
                                         ;for string constants.
- '(font-lock-doc-face ((t (:foreground "#808080" :inherit 'font-lock-comment-face))))
+ '(font-lock-doc-face ((t (:foreground "#629755" :inherit 'font-lock-comment-face))))
                                         ;for documentation strings in the code.
  '(font-lock-negation-char-face ((t (:underline (:color foreground-color :style line) :inherit 'default))))
                                         ;for easily-overlooked negation characters.
@@ -116,8 +115,8 @@
  '(flymake-warnline ((t (:inherit 'warning))))
  '(escape-glyph ((((background dark)) (:foreground "cyan")) (((type pc)) (:foreground "magenta")) (t (:foreground "brown"))))
  '(minibuffer-prompt ((t (:weight bold :slant normal :underline nil :inverse-video nil :foreground "#259185"))))
- '(highlight ((t (:background "#f6ecba"))))
- '(region ((t (:weight normal :slant normal :underline nil :inverse-video t :foreground "#5974ab" :background "#ffffff"))))
+ '(highlight ((t (:background "#0a2832"))))
+ '(region ((t (:weight normal :slant normal :underline nil :inverse-video t :foreground "#465a61" :background "#042028"))))
  '(shadow ((t (:foreground "#465a61"))))
  '(secondary-selection ((t (:background "#0a2832"))))
  '(trailing-whitespace ((t (:weight normal :slant normal :underline nil :inverse-video t :foreground "#c60007" :background "red1"))))
@@ -127,8 +126,8 @@
  '(fringe ((t (:background nil :foreground nil))))
  '(header-line ((t (:weight normal :slant normal :underline nil :box nil :inverse-video t :foreground "#708183" :background "#0a2832" :inherit (mode-line)))))
  '(tooltip ((((class color)) (:foreground "black" :background "lightyellow"))))
- '(mode-line ((t (:weight normal :slant normal :underline nil :box nil :inverse-video t :foreground "#000000" :background "#ffffff"))))
- '(mode-line-inactive ((t (:weight normal :slant normal :underline nil :box nil :inverse-video t :foreground "#888888" :background "#ffffff" :inherit (mode-line)))))
+ '(mode-line ((t (:weight normal :slant normal :underline nil :box nil :inverse-video t :foreground "#3c3f41" :background "#a9b7c6"))))
+ '(mode-line-inactive ((t (:weight normal :slant normal :underline nil :box nil :inverse-video t :foreground "#3c3f41" :background "#313335" :inherit (mode-line)))))
  '(mode-line-buffer-id ((t (:weight bold))))
  '(mode-line-emphasis ((t (:weight bold))))
  '(mode-line-highlight ((((class color) (min-colors 88))) (t (:inherit (highlight)))))
@@ -146,13 +145,15 @@
  '(company-tooltip-common ((t (:inherit 'mode-line-emphasis))))
  '(company-tooltip-common-selection ((t (:inherit 'highlight))))
  '(company-tooltip-annotation ((t (:inherit 'mode-line))))
+ '(markdown-code-face ((t (:background "#3B3B3B"))))
+ '(markdown-pre-face ((t (:inherit 'markdown-code-face))))
  ;; http://www.gnu.org/software/emacs/manual/html_node/ediff/Highlighting-Difference-Regions.html
- '(ediff-current-diff-A ((t (:background "#CBBBBB"))))
- '(ediff-current-diff-B ((t (:background "#BBCBBB"))))
- '(ediff-current-diff-C ((t (:background "#BBBBCB"))))
- '(ediff-fine-diff-A ((t (:weight ultra-bold :background "#DBBBBB"))))
- '(ediff-fine-diff-B ((t (:weight ultra-bold :background "#BBDBBB"))))
- '(ediff-fine-diff-C ((t (:weight ultra-bold :background "#BBBBDB"))))
+ '(ediff-current-diff-A ((t (:background "#3B2B2B"))))
+ '(ediff-current-diff-B ((t (:background "#2B3B2B"))))
+ '(ediff-current-diff-C ((t (:background "#2B2B3B"))))
+ '(ediff-fine-diff-A ((t (:weight ultra-bold :background "#5B2B2B"))))
+ '(ediff-fine-diff-B ((t (:weight ultra-bold :background "#2B5B2B"))))
+ '(ediff-fine-diff-C ((t (:weight ultra-bold :background "#2B2B5B"))))
  '(ediff-odd-diff-A ((t nil)))
  '(ediff-odd-diff-B ((t (:inherit 'ediff-odd-diff-A))))
  '(ediff-odd-diff-C ((t (:inherit 'ediff-odd-diff-A))))
@@ -186,6 +187,7 @@
   (add-to-list 'custom-theme-load-path
                (file-name-as-directory (file-name-directory load-file-name))))
 
-(provide-theme 'intellij)
 
-;;; intellij-theme.el ends here
+(provide-theme 'darcula)
+
+;;; darcula-theme.el ends here

@@ -3,8 +3,8 @@
 ;; Copyright © 2010-2017 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.2.20170811
-;; Package-Version: 20170821.406
+;; Version: 2.2.20170905
+;; Package-Version: 20170905.849
 ;; Created: 08 Dec 2010
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: abbrev, convenience, unicode, math, LaTex
@@ -143,7 +143,7 @@
   ["euro" "€"]
   ["trade" "™"]
 
-  ["image" "ℑ"] ["weierp" "℘"] ["real" "ℜ"] ["alefsym" "ℵ"]
+  ["im" "ℑ"] ["weierp" "℘"] ["re" "ℜ"] ["alefsym" "ℵ"]
 
   ["larr" "←"] ["uarr" "↑"] ["rarr" "→"] ["darr" "↓"] ["harr" "↔"] ["crarr" "↵"] ["lArr" "⇐"] ["uArr" "⇑"] ["rArr" "⇒"] ["dArr" "⇓"] ["hArr" "⇔"]
 

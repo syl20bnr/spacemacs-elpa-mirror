@@ -4,10 +4,10 @@
 
 ;; Author: Guillaume Papin <guillaume.papin@epitech.eu>
 ;; Keywords: convenience
-;; Package-Version: 1.0.0
-;; Version: 1.0.0
+;; Package-Version: 1.1.0
+;; Version: 1.1.0
 ;; URL: https://github.com/Sarcasm/company-irony/
-;; Package-Requires: ((emacs "24.1") (company "0.8.0") (irony "1.0.0") (cl-lib "0.5"))
+;; Package-Requires: ((emacs "24.1") (company "0.8.0") (irony "1.1.0") (cl-lib "0.5"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -44,28 +44,37 @@
   :group 'irony)
 
 (defcustom company-irony-ignore-case nil
-  "Non-nil to ignore case when collecting completion candidates."
-  :type 'boolean)
+  "If t, ignore case when collecting completion candidates.
+If this value is `smart', ignore case only when there is no
+uppercase letters."
+  :type '(choice (const :tag "off" nil)
+		 (const smart)
+		 (other :tag "on" t)))
 
 (defsubst company-irony--irony-candidate (candidate)
   (get-text-property 0 'company-irony candidate))
 
 (defun company-irony-prefix ()
-  (let ((symbol-start (irony-completion-beginning-of-symbol)))
-    (if symbol-start
+  (pcase-let ((`(,symbol-start . ,symbol-end) (irony-completion-symbol-bounds)))
+    (if (and symbol-end (> symbol-end (point)))
+        'stop
+      (when symbol-start
         (let ((prefix (buffer-substring-no-properties symbol-start (point))))
           (save-excursion
             (goto-char symbol-start)
             (if (irony-completion-at-trigger-point-p)
                 (cons prefix t)
-              prefix)))
-      'stop)))
+              prefix)))))))
 
-(defun company-irony--filter-candidates (prefix candidates)
+(defun company-irony--make-candidates (candidates)
   (cl-loop for candidate in candidates
-           when (string-prefix-p prefix (car candidate)
-                                 company-irony-ignore-case)
            collect (propertize (car candidate) 'company-irony candidate)))
+
+(defun company-irony--get-matching-style ()
+  (cl-case company-irony-ignore-case
+    (smart 'smart-case)
+    (nil 'exact)
+    (t 'case-insensitive)))
 
 (defun company-irony--candidates (prefix)
   (cons :async
@@ -73,7 +82,9 @@
           (irony-completion-candidates-async
            (lambda (candidates) ;; closure, lexically bound
              (funcall callback
-                      (company-irony--filter-candidates prefix candidates)))))))
+                      (company-irony--make-candidates candidates)))
+           prefix
+           (company-irony--get-matching-style)))))
 
 (defun company-irony--annotation (candidate)
   (concat
@@ -121,7 +132,8 @@
            (company-irony--irony-candidate arg)))
     (post-completion (company-irony--post-completion
                       (company-irony--irony-candidate arg)))
-    (ignore-case company-irony-ignore-case)
+    (ignore-case (eq company-irony-ignore-case t))
+    (no-cache (eq company-irony-ignore-case 'smart))
     (sorted t)))
 
 ;;;###autoload
