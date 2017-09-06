@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/lispyville
-;; Package-Version: 20170823.1458
+;; Package-Version: 20170905.1516
 ;; Created: March 03, 2016
 ;; Keywords: vim, evil, lispy, lisp, parentheses
 ;; Package-Requires: ((lispy "0") (evil "1.2.12") (cl-lib "0.5") (emacs "24.4"))
@@ -926,7 +926,7 @@ run in lispy special without an active region or when it is not the default 1."
   (if (region-active-p)
       (cond ((evil-visual-state-p)
              (lispyville--state-transition t))
-            ((memq evil-state '(insert emacs))
+            ((memq evil-state '(insert emacs hybrid iedit-insert))
              (cond ((= arg 1)
                     (setq lispyville--inhibit-next-special-force t)
                     (lispyville--state-transition))

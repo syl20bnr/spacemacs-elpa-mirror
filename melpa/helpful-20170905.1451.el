@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20170904.1504
+;; Package-Version: 20170905.1451
 ;; Keywords: help, lisp
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2"))
@@ -48,6 +48,7 @@
 (require 's)
 (require 'find-func)
 (require 'nadvice)
+(require 'info-look)
 
 (defvar-local helpful--sym nil)
 (defvar-local helpful--callable-p nil)
@@ -214,6 +215,26 @@ This allows us to distinguish strings from symbols."
      'callable-p callable-p)
     (buffer-string)))
 
+(define-button-type 'helpful-manual-button
+  'action #'helpful--manual
+  'symbol nil
+  'follow-link t
+  'help-echo "Describe this symbol")
+
+(defun helpful--manual-button (sym)
+  "Return a button that shows SYM in the Info manul."
+  (with-temp-buffer
+    (insert-text-button
+     "View in manual"
+     :type 'helpful-manual-button
+     'symbol sym)
+    (buffer-string)))
+
+(defun helpful--manual (button)
+  "Open the manual for the system that this BUTTON represents."
+  (let ((sym (button-get button 'symbol)))
+    (info-lookup 'symbol sym #'emacs-lisp-mode)))
+
 (define-button-type 'helpful-describe-button
   'action #'helpful--describe
   'symbol nil
@@ -225,7 +246,7 @@ This allows us to distinguish strings from symbols."
   (let ((sym (button-get button 'symbol)))
     (if (fboundp sym)
         (helpful-function sym)
-      (describe-variable sym))))
+      (helpful-variable sym))))
 
 (defun helpful--describe-button (sym)
   "Return a button that describes SYM."
@@ -319,6 +340,13 @@ If the source code cannot be found, return the sexp used."
     ;; TODO: verify that the source hasn't changed before showing.
     ;; TODO: offer to download C sources for current version.
     (indirect-function sym)))
+
+(defun helpful--in-manual-p (sym)
+  "Return non-nil if SYM is in an Info manual."
+  (let ((completions
+         (info-lookup->completions 'symbol 'emacs-lisp-mode)))
+    (or (assoc sym completions)
+        (assoc-string sym completions))))
 
 (defun helpful--definition (sym callable-p)
   "Return a pair (BUF . POS) where SYM is defined."
@@ -535,9 +563,11 @@ state of the current symbol."
         (insert "\n\n"))
       (insert
        (helpful--heading "Documentation\n")
-       ;; TODO: a link to find this symbol in the manual, much like
-       ;; helpfns+ or counsel-info-lookup-symbol.
-       (helpful--format-docstring docstring)))
+       (helpful--format-docstring docstring))
+      (when (helpful--in-manual-p helpful--sym)
+        (insert
+         "\n\n"
+         (helpful--manual-button helpful--sym))))
 
     (when (not helpful--callable-p)
       (insert
@@ -561,7 +591,7 @@ state of the current symbol."
       (source-path
        (format "No references found in %s."
                (helpful--navigate-button source-path 0)))
-      ((null find-function-C-source-directory)
+      ((and primitive-p (null find-function-C-source-directory))
        "C code is not yet loaded.")
       (t
        "Could not find source file."))
