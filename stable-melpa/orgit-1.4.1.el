@@ -6,12 +6,8 @@
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 
 ;; Package-Requires: ((emacs "24.4") (dash "2.13.0") (magit "2.10.0") (org "8.3.3"))
-;; Package-Version: 1.4.0
+;; Package-Version: 1.4.1
 ;; Homepage: https://github.com/magit/orgit
-
-;; This library was inspired by `org-magit.el' which was written by
-;; Yann Hodique <yann.hodique@gmail.com> and is distributed under the
-;; GNU General Public License version 2 or later.
 
 ;; This library is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -25,6 +21,10 @@
 ;;
 ;; You should have received a copy of the GNU General Public License
 ;; along with this library.  If not, see http://www.gnu.org/licenses.
+
+;; This library was inspired by `org-magit.el' which was written by
+;; Yann Hodique <yann.hodique@gmail.com> and is distributed under the
+;; GNU General Public License version 2 or later.
 
 ;;; Commentary:
 

@@ -19,7 +19,8 @@ color-theme; a "path-theme" if you will.
 We still have a long way to go until most built-in and many third-
 party path variables are properly "themed".  Like a color-theme,
 this package depends on user contributions to accomplish decent
-coverage.  Pull requests are highly welcome.
+coverage.  Pull requests are highly welcome (but please follow the
+conventions described below and in the pull request template).
 
 Usage:
 
@@ -79,7 +80,7 @@ Conventions:
    the package in most cases.  The subdirectory name may serve as the
    package prefix of the file name.
 
-4. A package that provides a "framework" for other packages to use,
+4. If a package provides a "framework" for other packages to use,
    then we may reuse its directories for other packages that make use
    of that framework or otherwise "extend" the "main package".
    E.g. we place all `helm` related files in `helm/`.

@@ -4,9 +4,9 @@
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Created: 20080830
-;; Package-Requires: ((emacs "24.3") (dash "2.13.0") (packed "2.0.0"))
-;; Package-Version: 1.4.0
-;; Homepage: https://github.com/tarsius/auto-compile
+;; Package-Requires: ((emacs "24.3") (packed "2.0.0"))
+;; Package-Version: 1.4.1
+;; Homepage: https://github.com/emacscollective/auto-compile
 ;; Keywords: compile, convenience, lisp
 
 ;; This file is not part of GNU Emacs.
@@ -113,7 +113,6 @@
 
 (require 'bytecomp)
 (require 'cl-lib)
-(require 'dash)
 (require 'packed)
 
 (declare-function autoload-rubric "autoload")
@@ -380,8 +379,8 @@ multiple files is toggled as follows:
   containing a file named \".nosearch\"."
   (interactive
    (let* ((buf  (current-buffer))
-          (file (when (eq major-mode 'emacs-lisp-mode)
-                  (buffer-file-name)))
+          (file (and (eq major-mode 'emacs-lisp-mode)
+                     (buffer-file-name)))
           (action
            (cond
             (current-prefix-arg
@@ -393,9 +392,9 @@ multiple files is toggled as follows:
                  'quit
                'start))
             (t
-             (cl-case (read-char-choice
-                       "Toggle automatic compilation (s=tart, q=uit, C-g)? "
-                       '(?s ?q))
+             (pcase (read-char-choice
+                     "Toggle automatic compilation (s=tart, q=uit, C-g)? "
+                     '(?s ?q))
                (?s 'start)
                (?q 'quit))))))
      (list (read-file-name (concat (capitalize (symbol-name action))
@@ -409,8 +408,9 @@ multiple files is toggled as follows:
         (`start (auto-compile-byte-compile file t))
         (`quit  (auto-compile-delete-dest (byte-compile-dest-file file))))
     (when (called-interactively-p 'any)
-      (--when-let (get-buffer byte-compile-log-buffer)
-        (kill-buffer it)))
+      (let ((buffer (get-buffer byte-compile-log-buffer)))
+        (when buffer
+          (kill-buffer buffer))))
     (dolist (f (directory-files file t))
       (cond
        ((file-directory-p f)
@@ -478,8 +478,8 @@ pretend the byte code file exists.")
                (y-or-n-p (format "Save buffer %s first? " (buffer-name buf))))
       (with-current-buffer buf (save-buffer)))
     (unless file
-      (setq file (buffer-file-name)
-            buf  (get-file-buffer file)))
+      (setq file (buffer-file-name))
+      (setq buf  (get-file-buffer file)))
     (setq default-directory (file-name-directory file))
     (setq auto-compile-file-buffer buf)
     (with-current-buffer buf
@@ -540,9 +540,10 @@ pretend the byte code file exists.")
 
 (defun auto-compile-delete-dest (dest &optional failurep)
   (unless failurep
-    (--when-let (get-file-buffer (packed-el-file dest))
-      (with-current-buffer it
-        (kill-local-variable 'auto-compile-pretend-byte-compiled))))
+    (let ((buffer (get-file-buffer (packed-el-file dest))))
+      (when buffer
+        (with-current-buffer buffer
+          (kill-local-variable 'auto-compile-pretend-byte-compiled)))))
   (condition-case nil
       (when (file-exists-p dest)
         (message "Deleting %s..." dest)
@@ -685,9 +686,10 @@ This is especially useful during rebase sessions."
 (defun auto-compile-display-log ()
   "Display the *Compile-Log* buffer."
   (interactive)
-  (--if-let (get-buffer byte-compile-log-buffer)
-      (pop-to-buffer it)
-    (user-error "Buffer %s doesn't exist" byte-compile-log-buffer)))
+  (let ((buffer (get-buffer byte-compile-log-buffer)))
+    (if buffer
+        (pop-to-buffer buffer)
+      (user-error "Buffer %s doesn't exist" byte-compile-log-buffer))))
 
 (defun mode-line-toggle-auto-compile (event)
   "Toggle automatic compilation from the mode-line."

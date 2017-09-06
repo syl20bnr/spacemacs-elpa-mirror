@@ -3,10 +3,10 @@
 ;; Copyright (C) 2012-2017  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
-;; Homepage: https://github.com/tarsius/packed
+;; Homepage: https://github.com/emacscollective/packed
 ;; Keywords: compile, convenience, lisp, package, library
-;; Package-Version: 2.0.1
-;; Package-Requires: ((emacs "24.3") (dash "2.12.1"))
+;; Package-Version: 2.0.2
+;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -41,7 +41,6 @@
 
 (require 'bytecomp)
 (require 'cl-lib)
-(require 'dash)
 
 (declare-function autoload-rubric "autoload")
 (declare-function autoload-find-destination "autoload")
@@ -205,12 +204,12 @@ relative to DIRECTORY.
 
 If optional NONRECURSIVE only return libraries directly located
 in DIRECTORY."
-  (-keep (-lambda ((library . feature))
-           (and feature
-                (if full
-                    library
-                  (file-relative-name library directory))))
-         (packed-libraries-1 directory nonrecursive)))
+  (cl-mapcan (pcase-lambda (`(,library . ,feature))
+               (and feature
+                    (list (if full
+                              library
+                            (file-relative-name library directory)))))
+             (packed-libraries-1 directory nonrecursive)))
 
 (defun packed-libraries-1 (directory &optional nonrecursive)
   "Return a list of Emacs lisp files DIRECTORY and its subdirectories.
@@ -293,25 +292,26 @@ non-nil return nil."
 
 (defun packed-main-library-2 (package libraries)
   (let ((regexp (concat "^" (regexp-quote package) (packed-el-regexp) "$")))
-    (--first (string-match regexp (file-name-nondirectory
-                                   (if (consp it) (car it) it)))
-             libraries)))
+    (cl-find-if (lambda (lib)
+                  (string-match regexp (file-name-nondirectory
+                                        (if (consp lib) (car lib) lib))))
+                libraries)))
 
 ;;; Load Path
 
 (defun packed-add-to-load-path (directory)
   "Add DIRECTORY and subdirectories to `load-path' if they contain libraries."
-  (--each (packed-load-path directory)
-    (add-to-list 'load-path it)))
+  (dolist (d (packed-load-path directory))
+    (add-to-list 'load-path d)))
 
 (defun packed-remove-from-load-path (directory)
   "Remove DIRECTORY and its subdirectories from `load-path'.
 Elements of `load-path' which no longer exist are not removed."
   (setq directory (directory-file-name (expand-file-name directory)))
   (setq load-path (delete directory load-path))
-  (--each (directory-files directory t "^[^.]" t)
-    (when (file-directory-p it)
-      (packed-remove-from-load-path it))))
+  (dolist (f (directory-files directory t "^[^.]" t))
+    (when (file-directory-p f)
+      (packed-remove-from-load-path f))))
 
 (defun packed-load-path (directory)
   "Return a list of directories below DIRECTORY that contain libraries."
@@ -378,14 +378,15 @@ Elements of `load-path' which no longer exist are not removed."
 ;;; Autoloads
 
 (defun packed-loaddefs-file (&optional directory)
-  (--when-let (locate-dominating-file (or directory default-directory)
-                                      packed-loaddefs-filename)
-    (expand-file-name packed-loaddefs-filename it)))
+  (let ((file (locate-dominating-file (or directory default-directory)
+                                      packed-loaddefs-filename)))
+    (and file (expand-file-name packed-loaddefs-filename file))))
 
 (defun packed-load-loaddefs (&optional directory)
-  (--if-let (packed-loaddefs-file directory)
-      (load it)
-    (message "Cannot locate loaddefs file for %s" directory)))
+  (let ((file (packed-loaddefs-file directory)))
+    (if  file
+        (load file)
+      (message "Cannot locate loaddefs file for %s" directory))))
 
 (defmacro packed-with-loaddefs (dest &rest body)
   (declare (indent 1))
@@ -409,11 +410,11 @@ Elements of `load-path' which no longer exist are not removed."
     ;; anymore (which is the case here because it is empty).
     (with-temp-buffer
       (let ((autoload-modified-buffers (list (current-buffer))))
-        (--each path
-          (when (file-directory-p it)
-            (--each (directory-files it t (packed-el-regexp))
+        (dolist (d path)
+          (when (file-directory-p d)
+            (dolist (f (directory-files d t (packed-el-regexp)))
               (autoload-find-destination
-               it (autoload-file-load-name it)))))))))
+               f (autoload-file-load-name f)))))))))
 
 ;;; Features
 
@@ -430,10 +431,10 @@ Elements of `load-path' which no longer exist are not removed."
         (unless (save-match-data
                   (or (nth 3 (syntax-ppss))   ; in string
                       (nth 4 (syntax-ppss)))) ; in comment
-          (--each (cons (match-string 1)
-                        (--when-let (match-string 2)
-                          (split-string it " " t)))
-            (add-to-list 'features (intern it))))))
+          (dolist (feature (cons (match-string 1)
+                                 (let ((f (match-string 2)))
+                                   (and f (split-string f " " t)))))
+            (add-to-list 'features (intern feature))))))
     (or features
         (and (goto-char (point-min))
              (re-search-forward
@@ -465,11 +466,11 @@ library.  If a file lacks an expected feature then loading it using
   (let* ((file (expand-file-name file))
          (sans (file-name-sans-extension (file-name-sans-extension file)))
          (last (file-name-nondirectory sans)))
-    (-first (lambda (feature)
-              (setq feature (symbol-name feature))
-              (or (equal feature last)
-                  (string-suffix-p (concat "/" feature) sans)))
-            (packed-with-file file (packed-provided)))))
+    (cl-find-if (lambda (feature)
+                  (setq feature (symbol-name feature))
+                  (or (equal feature last)
+                      (string-suffix-p (concat "/" feature) sans)))
+                (packed-with-file file (packed-provided)))))
 
 (defconst packed-required-regexp "\
 \(\\(?:cc-\\)?require[\s\t\n]+'\

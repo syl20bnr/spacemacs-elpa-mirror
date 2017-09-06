@@ -5,7 +5,7 @@
 ;; Author: Serghei Iakovlev (serghei@phalconphp.com)
 ;; Maintainer: Serghei Iakovlev
 ;; Version: 0.4.0
-;; Package-Version: 20170904.145
+;; Package-Version: 20170906.320
 ;; URL: https://github.com/sergeyklay/zephir-mode
 ;; Keywords: languages
 ;; Package-Requires: ((cl-lib "0.5") (pkg-info "0.4") (emacs "24.3"))
@@ -190,7 +190,7 @@ matching the opening character."
       (identifier . ,(rx symbol-start
                          (optional ?$)
                          (any "A-Z" "a-z" ?_)
-                         (zero-or-more (any "A-Z" "a-z" "0-9" ?_))
+                         (0+ (any "A-Z" "a-z" "0-9" ?_))
                          symbol-end))
       ;; Builtin declaraion.
       (builtin-decl . ,(rx symbol-start
@@ -213,8 +213,8 @@ matching the opening character."
       (classlike . ,(rx symbol-start
                         (optional ?$)
                         (any "A-Z" "a-z" ?_)
-                        (zero-or-more (any "A-Z" "a-z" "0-9" ?_))
-                        (zero-or-more
+                        (0+ (any "A-Z" "a-z" "0-9" ?_))
+                        (0+
                          (and "\\"
                               (any "A-Z" "a-z" ?_)
                               (+ (any "A-Z" "a-z" "0-9" ?_))))
@@ -286,7 +286,7 @@ See `rx' documentation for more information about REGEXPS param."
 
 (defconst zephir-beginning-of-defun-regexp
   (zephir-rx line-start
-             (zero-or-more (syntax whitespace))
+             (0+ (syntax whitespace))
              (optional "deprecated" (+ (syntax whitespace)))
              (optional symbol-start
                        (or "abstract" "final")
@@ -297,7 +297,7 @@ See `rx' documentation for more information about REGEXPS param."
              (group fn-decl)
              (+ (syntax whitespace))
              (group identifier)
-             (zero-or-more (syntax whitespace))
+             (0+ (syntax whitespace))
              "(")
   "Regular expression for a Zephir function.")
 
@@ -416,7 +416,7 @@ the comment syntax tokens handle both line style \"//\" and block style
      1 font-lock-constant-face)
     ;; Highlight special variables
     (,(zephir-rx (group symbol-start "this" word-end)
-          (zero-or-more "->" identifier))
+          (0+ "->" identifier))
      1 font-lock-constant-face)
     ;; Visibility
     (,(zephir-rx (group symbol-start visibility symbol-end))

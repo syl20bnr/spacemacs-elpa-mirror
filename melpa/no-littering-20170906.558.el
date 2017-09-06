@@ -3,9 +3,9 @@
 ;; Copyright (C) 2016-2017  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
-;; Homepage: https://github.com/tarsius/no-littering
+;; Homepage: https://github.com/emacscollective/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 0.5.9
+;; Package-Version: 20170906.558
 
 ;; This file is not part of GNU Emacs.
 
@@ -45,7 +45,8 @@
 ;; We still have a long way to go until most built-in and many third-
 ;; party path variables are properly "themed".  Like a color-theme,
 ;; this package depends on user contributions to accomplish decent
-;; coverage.  Pull requests are highly welcome.
+;; coverage.  Pull requests are highly welcome (but please follow the
+;; conventions described below and in the pull request template).
 
 ;; Usage:
 
@@ -67,7 +68,7 @@
 
 ;; Conventions:
 
-;; * File names
+;; * A) File names
 ;;
 ;; 1. File names are based on the name of the respective Emacs Lisp
 ;;    variables and the name of the respective Emacs package.
@@ -89,7 +90,7 @@
 ;;    E.g.  if a file contains an S-expression, then the suffix should be
 ;;    `*.el`.
 
-;; * File location and subdirectories
+;; * B) File location and subdirectories
 ;;
 ;; 1. If a package has only one data file, then that is usually placed in
 ;;    `no-littering-var-directory` itself.  Likewise if a package has
@@ -105,7 +106,7 @@
 ;;    the package in most cases.  The subdirectory name may serve as the
 ;;    package prefix of the file name.
 ;;
-;; 4. A package that provides a "framework" for other packages to use,
+;; 4. If a package provides a "framework" for other packages to use,
 ;;    then we may reuse its directories for other packages that make use
 ;;    of that framework or otherwise "extend" the "main package".
 ;;    E.g. we place all `helm` related files in `helm/`.
@@ -122,7 +123,7 @@
 ;;    when the name of the variable is `<package>-directory`, in which
 ;;    case we would use just `<package>/` as the path.
 
-;; * Ordering and alignment
+;; * C) Ordering and alignment
 ;;
 ;; 1. The code that sets the values of themed variables is split into two
 ;;    groups.  The first group sets the value of variables that belong to
@@ -138,7 +139,7 @@
 ;;    If it turns out that this happens very often, then we will adjust
 ;;    the alignment eventually.
 
-;; * Commit messages
+;; * D) Commit messages
 ;;
 ;; 1. Please theme each package using a separate commit and use commit
 ;;    messages of the form "<package>: theme <variable".
@@ -149,10 +150,22 @@
 ;; 3. If the variable names do not fit nicely on the summary line, then
 ;;    use a message such as:
 ;;
-;;   foo: theme variables
+;;      foo: theme variables
 ;;
-;;   Theme `foo-config-file', `foo-cache-directory',
-;;   and `foo-persistent-file'.
+;;      Theme `foo-config-file', `foo-cache-directory',
+;;      and `foo-persistent-file'.
+;; 4. When appropriate add statements like the following to the commit
+;;    message:
+;;
+;;    - This file is used to store an s-expression.
+;;    - This file is used to store raw text.
+;;    - This is the only configuration/data file of the package.
+;;    - This package does/doesn't take care of creating the containing
+;;      directory if necessary. (If the package does not do it, then you
+;;      should also fix that and submit an upstream pull request.)
+;;
+;; 5. If you are uncertain, then be explicit about it by adding a comment
+;;    to the pull-request.
 
 ;;; Code:
 
@@ -206,6 +219,7 @@ This variable has to be set before `no-littering' is loaded.")
     (setq image-dired-gallery-dir          (var "image-dired/gallery/"))
     (setq image-dired-temp-image-file      (var "image-dired/temp-image"))
     (setq image-dired-temp-rotate-image-file (var "image-dired/temp-rotate-image"))
+    (setq kkc-init-file-name               (var "kkc-init.el"))
     (eval-after-load 'newsticker
       `(make-directory ,(var "newsticker/") t))
     (setq newsticker-cache-filename        (var "newsticker/cache.el"))
@@ -231,6 +245,7 @@ This variable has to be set before `no-littering' is loaded.")
 
     (setq ac-comphist-file                 (var "ac-comphist.el"))
     (setq anaconda-mode-installation-directory (etc "anaconda-mode/"))
+    (setq async-byte-compile-log-file      (var "async-bytecomp.log"))
     (eval-after-load 'bbdb
       `(make-directory ,(var "bbdb/") t))
     (setq bbdb-file                        (var "bbdb/bbdb.el"))
@@ -244,7 +259,7 @@ This variable has to be set before `no-littering' is loaded.")
       `(make-directory ,(var "company/") t))
     (setq company-statistics-file          (var "company/statistics.el"))
     (eval-after-load 'elfeed
-       `(make-directory ,(var "elfeed/") t))
+      `(make-directory ,(var "elfeed/") t))
     (setq elfeed-db-directory              (var "elfeed/db/"))
     (setq elfeed-enclosure-default-dir     (var "elfeed/enclosures/"))
     (eval-after-load 'x-win
@@ -260,12 +275,16 @@ directories."
     (eval-after-load 'emojify
       `(make-directory ,(var "emojify/") t))
     (setq emojify-emojis-dir               (var "emojify/"))
+    (eval-after-load 'geiser
+      `(make-directory ,(var "geiser/") t))
+    (setq geiser-repl-history-filename     (var "geiser/repl-history"))
     (eval-after-load 'helm
       `(make-directory ,(var "helm/") t))
     (setq helm-adaptive-history-file       (var "helm/adaptive-history.el"))
     (setq helm-github-stars-cache-file     (var "helm/github-stars-cache.el"))
     (setq historian-save-file              (var "historian-save.el"))
     (setq indium-workspace-file            (var "indium/workspaces.el"))
+    (setq irfc-directory                   (var "irfc/"))
     (setq irony-user-dir                   (var "irony/"))
     (setq jabber-avatar-cache-directory    (var "jabber/avatar-cache"))
     (eval-after-load 'jabber
@@ -273,10 +292,17 @@ directories."
     (setq jabber-history-dir               (var "jabber/history"))
     (eval-after-load 'jabber
       `(make-directory ,(var "jabber/history/") t))
+    (eval-after-load 'lookup
+      `(make-directory ,(etc "lookup/") t))
+    (setq lookup-init-directory            (etc "lookup/"))
     (setq magithub-dir                     (var "magithub/"))
     (setq magithub-cache-file              (var "magithub/cache.el"))
     (setq mc/list-file                     (var "mc-list.el"))
     (setq multi-compile-history-file       (var "multi-compile-history.el"))
+    ;; The value of this variable MUST NOT end with ".el" but the
+    ;; actual file name MUST end with ".el".  Use "git blame" for
+    ;; more information.
+    (setq notmuch-init-file                (etc "notmuch-init"))
     (setq org-gcal-dir                     (var "org/gcal/"))
     (eval-after-load 'org-caldav
       `(make-directory ,(var "org/caldav/save") t))
@@ -289,6 +315,7 @@ directories."
       `(make-directory ,(var "projectile/") t))
     (setq projectile-cache-file            (var "projectile/cache.el"))
     (setq projectile-known-projects-file   (var "projectile/known-projects.el"))
+    (setq quack-dir                        (var "quack/"))
     (setq request-storage-directory        (var "request/storage/"))
     (setq rmh-elfeed-org-files             (list (var "elfeed/rmh-elfeed.org")))
     (setq runner-init-file                 (var "runner-init.el"))
@@ -302,6 +329,7 @@ directories."
     (setq tldr-directory-path              (var "tldr/"))
     (setq undo-tree-history-directory-alist (list (cons "." (var "undo-tree-hist/"))))
     (setq user-emacs-ensime-directory      (var "ensime/"))
+    (setq vimish-fold-dir                  (var "vimish-fold/"))
     (eval-after-load 'xkcd
       `(make-directory ,(var "xkcd/") t))
     (setq xkcd-cache-dir                   (var "xkcd/"))
