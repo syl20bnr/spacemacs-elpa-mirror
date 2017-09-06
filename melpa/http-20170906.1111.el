@@ -4,7 +4,7 @@
 
 ;; Author: Mario Rodas <marsam@users.noreply.github.com>
 ;; URL: https://github.com/emacs-pe/http.el
-;; Package-Version: 20170822.2149
+;; Package-Version: 20170906.1111
 ;; Keywords: convenience
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "24.4") (request "0.2.0") (edit-indirect "0.1.4"))
@@ -169,6 +169,8 @@ Used only when was not possible to guess a response content-type."
 ;;;###autoload
 (put 'http-hostname 'safe-local-variable #'stringp)
 
+(define-error 'http-format-error "Unknown http format error")
+
 (defvar http-methods-list
   '("GET" "POST" "DELETE" "PUT" "HEAD" "OPTIONS" "PATCH")
   "List of http methods.")
@@ -201,7 +203,7 @@ Used only when was not possible to guess a response content-type."
   (rx line-start (* blank) line-end))
 
 (defconst http-variable-decl-regexp
-  (rx line-start (* space) "#+" (group (+ (in "_-" alnum))) ":" (* space) (group (+ not-newline))))
+  (rx line-start (* space) "#+" (group alpha (* (in "_-" alnum))) ":" (* space) (group (+ not-newline))))
 
 (defvar http-content-type-mode-alist
   '(("text/css"                 . css-mode)
@@ -332,13 +334,13 @@ Used to fontify the response buffer and comment the response headers.")
   (let ((saved-match-data (match-data)))
     (unwind-protect
         (replace-regexp-in-string
-         ":\\([-_[:alnum:]]+\\)"
+         ":\\([[:alpha:]][-_[:alnum:]]*\\)"
          (lambda (md)
            (let ((var (match-string 1 md))
                  (replacer-match-data (match-data)))
              (unwind-protect
                  (let ((value (assoc-default var extra)))
-                   (if value (format "%s" value) (signal 's-format-resolve md)))
+                   (if value (format "%s" value) (signal 'http-format-error md)))
                (set-match-data replacer-match-data))))
          template
          ;; Need literal to make sure it works
