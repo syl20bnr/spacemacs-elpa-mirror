@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 by Bailey Ling
 ;; Author: Bailey Ling
 ;; URL: https://github.com/bling/fzf.el
-;; Package-Version: 20170824.904
+;; Package-Version: 20170906.1423
 ;; Filename: fzf.el
 ;; Description: A front-end for fzf
 ;; Created: 2015-09-18
@@ -39,8 +39,12 @@
 ;; M-x fzf
 ;; M-x fzf-directory
 ;; M-x fzf-git
+;; M-x fzf-hg
+;; M-x fzf-projectile
 ;;
 ;;; Code:
+
+(require 'subr-x)
 
 (defgroup fzf nil
   "Configuration options for fzf.el"
@@ -70,15 +74,6 @@
   "The path of the default start directory for fzf-directory."
   :type 'string
   :group 'fzf)
-
-(require 'cl)
-(defun* fzf/get-closest-git (&optional (file ".git"))
-  (let ((root (expand-file-name "/")))
-    (loop for d = default-directory
-          then (expand-file-name ".." d)
-          if (file-exists-p
-	      (expand-file-name file d)) return d
-          if (equal d root) return nil)))
 
 (defun fzf/after-term-handle-exit (process-name msg)
   (let* ((text (buffer-substring-no-properties (point-min) (point-max)))
@@ -116,6 +111,12 @@
     (term-char-mode)
     (setq mode-line-format (format "   FZF  %s" directory))))
 
+(defun fzf/vcs (match)
+  (let ((path (locate-dominating-file default-directory match)))
+    (if path
+        (fzf/start path)
+      (fzf-directory))))
+
 ;;;###autoload
 (defun fzf ()
   "Starts a fzf session."
@@ -137,10 +138,20 @@
 (defun fzf-git ()
   "Starts a fzf session at the root of the current git."
   (interactive)
-  (setq gitpath (fzf/get-closest-git))
-  (if gitpath
-      (fzf/start gitpath)
-    (fzf/start (ido-read-directory-name "Directory: "))))
+  (fzf/vcs ".git"))
+
+;;;###autoload
+(defun fzf-hg ()
+  "Starts a fzf session at the root of the curreng hg."
+  (interactive)
+  (fzf/vcs ".hg"))
+
+;;;###autoload
+(defun fzf-projectile ()
+  "Starts a fzf session at the root of the projectile project."
+  (interactive)
+  (require 'projectile)
+  (fzf/start (projectile-project-root)))
 
 (provide 'fzf)
 ;;; fzf.el ends here
