@@ -4,7 +4,7 @@
 
 ;; Author: Yasushi SHOJI <yasushi.shoji@gmail.com>
 ;; URL: https://github.com/yashi/org-textile
-;; Package-Version: 20151114.2025
+;; Package-Version: 20170907.351
 ;; Package-Requires: ((org "8.1"))
 ;; Keywords: org, textile
 
@@ -103,6 +103,10 @@
 	      (if a (org-textile-export-to-textile t s v)
 		(org-open-file (org-textile-export-to-textile nil s v))))))))
 
+(defcustom org-textile-use-thead t
+  "Whether to use <thead> constructs `|^.' and `|-.'"
+  :group 'org-export-textile
+  :type 'boolean)
 
 (defun org-textile-identity (blob contents info)
   "Transcode BLOB element or object back into Org syntax.
@@ -194,11 +198,11 @@ information."
      (concat
       (if header-start
           (concat
-           "|^.\n"
+           (when org-textile-use-thead "|^.\n")
            (replace-regexp-in-string "|" "|_." contents))
         contents)
       " |\n"
-      (if header-end
+      (when (and header-end org-textile-use-thead)
           "|-.\n")))))
 
 (defun org-textile-table-cell (table-cell contents info)

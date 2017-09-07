@@ -5,7 +5,7 @@
 
 ;; Author: Christian Hopps <chopps@gmail.com>
 ;; URL: https://github.com/choppsv1/emacs-mandm-theme.git
-;; Package-Version: 20170826.307
+;; Package-Version: 20170903.306
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: http://github.com/bbatsov/zenburn
@@ -438,37 +438,17 @@ Also bind `class' to ((class color) (min-colors 89))."
 ;;;;; flx
    `(flx-highlight-face ((t (:foreground ,mandm-green+2 :weight bold))))
 ;;;;; flycheck
-   `(flycheck-error
-     ((((supports :underline (:style wave)))
-       (:underline (:style wave :color ,mandm-red-1) :inherit unspecified))
-      (t (:foreground ,mandm-red-1 :weight bold :underline t))))
-   `(flycheck-warning
-     ((((supports :underline (:style wave)))
-       (:underline (:style wave :color ,mandm-yellow) :inherit unspecified))
-      (t (:foreground ,mandm-yellow :weight bold :underline t))))
-   `(flycheck-info
-     ((((supports :underline (:style wave)))
-       (:underline (:style wave :color ,mandm-cyan) :inherit unspecified))
-      (t (:foreground ,mandm-cyan :weight bold :underline t))))
-   `(flycheck-fringe-error ((t (:foreground ,mandm-red-1 :weight bold))))
+   ;; I like color-"inverse" otherwise I completely miss the fact that it's set.
+   `(flycheck-error   ((t (:background ,mandm-red-4 :foreground ,mandm-fg :weight bold))))
+   `(flycheck-warning ((t (:background ,mandm-yellow-2 :foreground ,mandm-fg :weight bold))))
+   `(flycheck-info    ((t (:background ,mandm-cyan :foreground ,mandm-fg :weight bold ))))
+   `(flycheck-fringe-error   ((t (:foreground ,mandm-red :weight bold))))
    `(flycheck-fringe-warning ((t (:foreground ,mandm-yellow :weight bold))))
-   `(flycheck-fringe-info ((t (:foreground ,mandm-cyan :weight bold))))
+   `(flycheck-fringe-info    ((t (:foreground ,mandm-cyan :weight bold))))
 ;;;;; flymake
-   `(flymake-errline
-     ((((supports :underline (:style wave)))
-       (:underline (:style wave :color ,mandm-red)
-                   :inherit unspecified :foreground unspecified :background unspecified))
-      (t (:foreground ,mandm-red-1 :weight bold :underline t))))
-   `(flymake-warnline
-     ((((supports :underline (:style wave)))
-       (:underline (:style wave :color ,mandm-orange)
-                   :inherit unspecified :foreground unspecified :background unspecified))
-      (t (:foreground ,mandm-orange :weight bold :underline t))))
-   `(flymake-infoline
-     ((((supports :underline (:style wave)))
-       (:underline (:style wave :color ,mandm-green)
-                   :inherit unspecified :foreground unspecified :background unspecified))
-      (t (:foreground ,mandm-green-1 :weight bold :underline t))))
+   `(flymake-errline  ((t (:background ,mandm-red-4 :foreground ,mandm-fg :weight bold))))
+   `(flymake-warnline ((t (:background ,mandm-yellow-2 :foreground ,mandm-fg :weight bold))))
+   `(flymake-infoline ((t (:background ,mandm-cyan :foreground ,mandm-fg :weight bold ))))
 ;;;;; flyspell
    `(flyspell-duplicate
      ((((supports :underline (:style wave)))

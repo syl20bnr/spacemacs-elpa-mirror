@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20170826.2220
+;; Package-Version: 20170907.133
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -2420,6 +2420,7 @@ Each option is a plist of (:key :default :title) wherein:
            (let ((map (copy-keymap widget-keymap)))
              (define-key map (kbd "C-c C-c") 'exit-recursive-edit)
              (define-key map (kbd "C-c C-k") 'abort-recursive-edit)
+             (define-key map (kbd "C-g") 'abort-recursive-edit)
              map))
           (widget-setup)
           (recursive-edit)
