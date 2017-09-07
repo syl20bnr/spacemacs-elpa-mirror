@@ -1,11 +1,11 @@
 ;;; tinkerer.el --- Elisp wrapper for Tinkerer Blogging Engine.
 
-;; Copyright (C) 2015, 2016 Yagnesh Raghava Yakkala
+;; Copyright (C) 2015, 2016, 2017 Yagnesh Raghava Yakkala
 
 ;; Author: Yagnesh Raghava Yakkala <hi@yagnesh.org>
 ;; Created: 19 Feb 2015
 ;; Version: 0.1
-;; Package-Version: 20161102.531
+;; Package-Version: 20170906.524
 ;; Package-Requires: ((s "1.2.0"))
 ;; Keywords: Tinkerer, blog, wrapper
 ;; X-URL: https://github.com/yyr/tinkerer.el
@@ -48,6 +48,7 @@
   :group 'tinkerer
   :type 'string)
 
+;;;###autoload
 (defcustom tinkerer-prefix-key (kbd "C-c C-t")
  "Tinkerer keymap prefix."
  :group 'tinkerer

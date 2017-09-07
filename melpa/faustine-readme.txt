@@ -3,7 +3,7 @@ Faustine allows the edition of Faust (http://faust.grame.fr) code.
 ## Features
 
 - Project-based (inter-linked Faust files)
-- Faust code syntax hightlighting, indentation and keyword completion
+- Faust code syntax hightlighting, indentation and keyword completion (using faust-mode)
 - Build/compile with output window
 - Graphic diagrams generation and vizualisation in the (default) browser
 - Browse generated C++ code inside Emacs
@@ -26,9 +26,11 @@ Faustine allows the edition of Faust (http://faust.grame.fr) code.
 ### Hard
 
 - Copy/clone this repository in `load-path`
+- Copy/clone [Faust-mode](https://github.com/rukano/emacs-faust-mode) in `load-path`
 - Add
 ```elisp
 (require 'faustine)
+(require 'faust-mode)
 ```
 to your init file
 

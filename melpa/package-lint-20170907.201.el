@@ -5,7 +5,7 @@
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;;         Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/purcell/package-lint
-;; Package-Version: 20170828.452
+;; Package-Version: 20170907.201
 ;; Keywords: lisp
 ;; Version: 0
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
@@ -753,7 +753,7 @@ DESC is a struct as returned by `package-buffer-info'."
   "Return a message if the listified key sequence LKS is invalid, otherwise nil."
   (let* ((modifiers (event-modifiers lks))
          (basic-type (event-basic-type lks)))
-    (when (or (equal (car (last lks)) ?\C-g)
+    (when (or (and (> (length lks) 1) (equal (car (last lks)) ?\C-g))
               (and (equal (car (last lks)) ?\e)
                    (not (equal (nthcdr (- (length lks) 2) lks)
                                '(?\e ?\e))))

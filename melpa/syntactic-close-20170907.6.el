@@ -4,7 +4,7 @@
 ;; Emacs User Group Berlin <emacs-berlin@emacs-berlin.org>
 
 ;; Version: 0.1
-;; Package-Version: 20170903.130
+;; Package-Version: 20170907.6
 ;; Keywords: languages, convenience
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -417,14 +417,15 @@ Check if list opener inside a string. "
 	 (match-end 0))
 	(t (point-min))))
 
-(defun syntactic-close--common (orig closer padding)
+(defun syntactic-close--common (orig closer padding pps)
   (let (done)
     (unless (and (eq closer ?})(member major-mode syntactic-close--semicolon-separator-modes))
-      (syntactic-close-fix-whitespace-maybe orig)
-      ;; closer might  set
-	(when padding (insert padding))
-	(insert closer)
-	(setq done t))
+      (unless (nth 3 pps)
+	(syntactic-close-fix-whitespace-maybe orig)
+	;; closer might set
+	(when padding (insert padding)))
+      (insert closer)
+      (setq done t))
     done))
 
 (defun syntactic-close-fetch-delimiter (pps)
@@ -659,7 +660,7 @@ Check if list opener inside a string. "
     (cond
      ((nth 4 pps)
       (setq done (syntactic-close--insert-comment-end-maybe pps)))
-     ((and closer (setq done (when closer (syntactic-close--common orig closer padding)))))
+     ((and closer (setq done (when closer (syntactic-close--common orig closer padding pps)))))
      ((setq done (syntactic-close--modes orig pps closer force padding)))
      ((setq done (syntactic-close--others orig closer pps padding))))
     (or (< orig (point)) (and iact verbose (message "%s" "nil")))
