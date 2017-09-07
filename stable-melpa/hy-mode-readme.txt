@@ -1,6 +1,10 @@
 Provides font-lock, indentation, and navigation for the Hy
 language. (http://hylang.org)
 
+(require 'dash)
+(require 'dash-functional)
+(require 's)
+
 (defgroup hy-mode nil
   "A mode for Hy"
   :prefix "hy-mode-"
@@ -26,13 +30,13 @@ Keywords
     "cons?" "constantly" "count" "cut" "cycle" "dec" "def" "defmain" "del"
     "dict-comp" "disassemble" "distinct" "doto" "drop" "drop-last" "drop-while"
     "empty?" "even?" "every?" "filter" "first" "flatten" "float?" "fraction"
-    "genexpr" "gensym" "get" "group-by" "identity" "in" "inc" "input"
+    "genexpr" "gensym" "get" "group-by" "identity" "inc" "input"
     "instance?" "integer" "integer-char?" "integer?" "interleave" "interpose"
     "is" "is-not" "is_not" "islice" "iterable?" "iterate" "iterator?" "juxt"
     "keyword" "keyword?" "last" "list*" "list-comp" "macroexpand"
     "macroexpand-1" "map" "merge-with" "multicombinations" "name" "neg?" "none?"
-    "not" "not-in" "nth" "numeric?" "odd?" "or" "partition" "permutations"
-    "pos?" "print" "product" "quasiquote" "quote" "range" "read" "read-str"
+    "nth" "numeric?" "odd?" "or" "partition" "permutations"
+    "pos?" "product" "quasiquote" "quote" "range" "read" "read-str"
     "reduce" "remove" "repeat" "repeatedly" "rest" "second" "setv" "set-comp"
     "slice" "some" "string" "string?" "symbol?" "take" "take-nth" "take-while"
     "tee" "unquote" "unquote-splice" "xor" "zero?" "zip" "zip-longest"
@@ -115,6 +119,11 @@ Keywords
 
     ;; Error Handling
     "except" "try" "throw" "raise" "catch" "finally" "assert"
+
+    ;; Special
+    "print"
+    "not"
+    "in" "not-in"
 
     ;; Misc
     "global" "nonlocal"
@@ -255,6 +264,18 @@ Static
 
   "Hylight tag macros, ie. `#tag-macro', so they stand out.")
 
+(defconst hy--font-lock-kwds-variables
+  (list
+   (rx symbol-start
+       (or "setv" "def")
+       symbol-end
+       (1+ space)
+       (group (1+ word)))
+
+   '(1 font-lock-variable-name-face))
+
+  "Hylight variable names in setv/def, only first name.")
+
 Misc
 
 (defconst hy--font-lock-kwds-func-modifiers
@@ -307,96 +328,165 @@ Grouped
         hy--font-lock-kwds-shebang
         hy--font-lock-kwds-special-forms
         hy--font-lock-kwds-tag-macros
-        hy--font-lock-kwds-unpacking)
+        hy--font-lock-kwds-unpacking
+        hy--font-lock-kwds-variables)
 
   "All Hy font lock keywords.")
 
 Indentation
+Specform
 
-(defcustom hy-indent-specform
-  '(("for" . 1)
-    ("for*" . 1)
-    ("while" . 1)
-    ("except" . 1)
-    ("catch" . 1)
-    ("let" . 1)
-    ("if" . 1)
-    ("when" . 1)
-    ("unless" . 1))
-  "How to indent specials specform."
-  :group 'hy-mode)
+(defconst hy-indent-special-forms
+  '(:exact
+    ("if" "if-not"
+     "when" "unless"
+     "for" "for*"
+     "while"
+     "except" "catch")
+
+    :fuzzy
+    ("def"
+     "with"
+     "fn"
+     "lambda"))
+  "Special forms to indent 1.")
+
+Utilities
+
+Aliases for `parse-partial-sexp' value
+(defun hy--sexp-inermost-char (state)
+  (nth 1 state))
+(defun hy--start-of-last-sexp (state)
+  (nth 2 state))
+(defun hy--prior-sexp? (state)
+  (number-or-marker-p (hy--start-of-last-sexp state)))
+
+(defun hy--anything-before? (pos)
+  "Determine if chars before POS in current line."
+  (s-matches? (rx (not blank))
+              (buffer-substring (line-beginning-position) pos)))
+
+(defun hy--anything-after? (pos)
+  "Determine if POS is before line-end-position."
+  (when pos
+    (< pos (line-end-position))))
+
+(defun hy--check-non-symbol-sexp (pos)
+  "Check for a non-symbol yet symbol-like (tuple constructor comma) at POS."
+  (member (char-after pos) '(?\,)))
+
+Normal Indent
+
+(defun hy--normal-indent (last-sexp)
+  "Determine normal indentation column of LAST-SEXP.
+
+Example:
+ (a (b c d
+       e
+       f))
+
+1. Indent e => start at d -> c -> b.
+Then backwards-sexp will throw error trying to jump to a.
+Observe 'a' need not be on the same line as the ( will cause a match.
+Then we determine indentation based on whether there is an arg or not.
+
+2. Indenting f will go to e.
+Now since there is a prior sexp d but we have no sexps-before on same line,
+the loop will terminate without error and the prior lines indentation is it."
+  (goto-char last-sexp)
+  (-let [last-sexp-start nil]
+    (if (ignore-errors
+          (while (hy--anything-before? (point))
+            (setq last-sexp-start (prog1
+                                      ;; Indentation should ignore quote chars
+                                      (if (-contains? '(?\' ?\` ?\~)
+                                                      (char-before))
+                                          (1- (point))
+                                        (point))
+                                    (backward-sexp))))
+          t)
+        (current-column)
+      (if (not (hy--anything-after? last-sexp-start))
+          (1+ (current-column))
+        (goto-char last-sexp-start)  ; Align with function argument
+        (current-column)))))
+
+Function or form
+
+(defun hy--not-function-form-p ()
+  "Non-nil if form at point doesn't represent a function call."
+  (unless (hy--check-non-symbol-sexp (1+ (point)))  ; tuple constructor special
+    (or (-contains? '(?\[ ?\{) (char-after))
+        (not (looking-at (rx anything  ; Skips form opener
+                             (or (syntax symbol) (syntax word))))))))
+
+Hy find indent spec
+
+(defun hy--find-indent-spec (state)
+  "Return integer for special indentation of form or nil to use normal indent.
+
+Note that `hy--not-function-form-p' filters out forms that are lists and dicts.
+Point is always at the start of a function."
+  (-when-let
+      (function (and (hy--prior-sexp? state)
+                     (thing-at-point 'symbol)))
+
+    (or (-contains? (plist-get hy-indent-special-forms :exact)
+                    function)
+        (-some (-cut s-matches? <> function)
+               (plist-get hy-indent-special-forms :fuzzy)))))
+
+Hy indent function
 
 (defun hy-indent-function (indent-point state)
-  "This function is the normal value of the variable `lisp-indent-function' for `hy-mode'.
-It is used when indenting a line within a function call, to see
-if the called function says anything special about how to indent
-the line.
+  "Indent at INDENT-POINT where STATE is `parse-partial-sexp' for INDENT-POINT."
+  (goto-char (hy--sexp-inermost-char state))
 
-INDENT-POINT is the position at which the line being indented begins.
-Point is located at the point to indent under (for default indentation);
-STATE is the `parse-partial-sexp' state for that position.
+  (if (hy--not-function-form-p)
+      (1+ (current-column))  ; Indent after [, {, ... is always 1
+    (forward-char 1)  ; Move to start of sexp
 
-This function returns either the indentation to use, or nil if the
-Lisp function does not specify a special indentation."
-  (let ((normal-indent (current-column)))
-    (goto-char (1+ (elt state 1)))
-    (parse-partial-sexp (point) calculate-lisp-indent-last-sexp 0 t)
-    (if (and (elt state 2)
-             (not (looking-at "\\sw\\|\\s_")))
-        ;; car of form doesn't seem to be a symbol
-        (progn
-          (if (not (> (save-excursion (forward-line 1) (point))
-                      calculate-lisp-indent-last-sexp))
-              (progn (goto-char calculate-lisp-indent-last-sexp)
-                     (beginning-of-line)
-                     (parse-partial-sexp (point)
-                                         calculate-lisp-indent-last-sexp 0 t)))
-          ;; Indent under the list or under the first sexp on the same
-          ;; line as calculate-lisp-indent-last-sexp.  Note that first
-          ;; thing on that line has to be complete sexp since we are
-          ;; inside the innermost containing sexp.
-          (backward-prefix-chars))
-      (let* ((open-paren (elt state 1))
-             (function (buffer-substring (point)
-                                         (progn (forward-sexp 1) (point))))
-             (specform (cdr (assoc function hy-indent-specform))))
-        (cond ((member (char-after open-paren) '(?\[ ?\{))
-               (goto-char open-paren)
-               (1+ (current-column)))
-              (specform
-               (lisp-indent-specform specform state indent-point normal-indent))
-              ((string-match-p "\\`\\(?:\\S +/\\)?\\(def\\|with-\\|with_\\|fn\\|lambda\\)" function)
-               (lisp-indent-defform state indent-point)))))))
+    (cond ((hy--check-non-symbol-sexp (point))  ; Comma tuple constructor
+           (+ 2 (current-column)))
+
+          ((hy--find-indent-spec state)  ; Special form uses fixed indendation
+           (1+ (current-column)))
+
+          (t
+           (hy--normal-indent calculate-lisp-indent-last-sexp)))))
 
 Syntax
 
-(defvar hy-mode-syntax-table
-  (let ((table (copy-syntax-table lisp-mode-syntax-table)))
+(defconst hy-mode-syntax-table
+  (-let [table (copy-syntax-table lisp-mode-syntax-table)]
     (modify-syntax-entry ?\{ "(}" table)
     (modify-syntax-entry ?\} "){" table)
     (modify-syntax-entry ?\[ "(]" table)
     (modify-syntax-entry ?\] ")[" table)
-    table))
+    (modify-syntax-entry ?\~ "'" table)
+
+    table)
+  "Hy modes syntax table.")
 
 Font Lock Docs
 
 (defun hy-string-in-doc-position-p (listbeg startpos)
-   "Return true if a doc string may occur at STARTPOS inside a list.
+  "Return true if a doc string may occur at STARTPOS inside a list.
 LISTBEG is the position of the start of the innermost list
 containing STARTPOS."
-   (if (= 1 startpos)  ; Uniquely identifies module docstring
-       t
-     (let* ((firstsym (and listbeg
-                           (save-excursion
-                             (goto-char listbeg)
-                             (and (looking-at
-                                   (eval-when-compile
-                                     (concat "([ \t\n]*\\("
-                                             lisp-mode-symbol-regexp "\\)")))
-                                  (match-string-no-properties 1))))))
+  (if (= 1 startpos)  ; Uniquely identifies module docstring
+      t
+    (let* ((firstsym (and listbeg
+                          (save-excursion
+                            (goto-char listbeg)
+                            (and (looking-at
+                                  (eval-when-compile
+                                    (concat "([ \t\n]*\\("
+                                            lisp-mode-symbol-regexp "\\)")))
+                                 (match-string-no-properties 1))))))
 
-       (or (member firstsym hy--kwds-defs)
-           (string= firstsym "defclass")))))
+      (or (member firstsym hy--kwds-defs)
+          (string= firstsym "defclass")))))
 
 (defun hy-font-lock-syntactic-face-function (state)
   "Return syntactic face function for the position represented by STATE.
@@ -416,10 +506,6 @@ Lisp font lock syntactic face function."
 
 Hy-mode
 
-(unless (fboundp 'setq-local)
-  (defmacro setq-local (var val)
-    `(set (make-local-variable ',var) ,val)))
-
 ###autoload
 (progn
   (add-to-list 'auto-mode-alist '("\\.hy\\'" . hy-mode))
@@ -437,6 +523,20 @@ Hy-mode
           (font-lock-syntactic-face-function
            . hy-font-lock-syntactic-face-function)))
 
+  (setq-local ahs-include "^[0-9A-Za-z/_.,:;*+=&%|$#@!^?-~]+$")
+
+  ;; Smartparens
+  (when (fboundp 'sp-local-pair)
+    (sp-local-pair '(hy-mode) "`" "`" :actions nil)
+    (sp-local-pair '(hy-mode) "'" "'" :actions nil))
+
+  ;; Fixes #43: inferior lisp history getting corrupted
+  ;; Ideally change so original comint-stored-incomplete-input functionality
+  ;; is preserved for terminal case, but not big deal.
+  ;; TODO This should only operate on hy mode comints!
+  (advice-add 'comint-previous-input :before
+              (lambda (&rest args) (setq-local comint-stored-incomplete-input "")))
+
   ;; Comments
   (setq-local comment-start ";")
   (setq-local comment-start-skip
@@ -453,6 +553,7 @@ Hy-mode
   (setq-local inferior-lisp-load-command
               (concat "(import [hy.importer [import-file-to-module]])\n"
                       "(import-file-to-module \"__main__\" \"%s\")\n"))
+
   (setenv "PYTHONIOENCODING" "UTF-8"))
 
 Utilities

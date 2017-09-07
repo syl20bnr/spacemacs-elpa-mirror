@@ -4,7 +4,7 @@
 
 ;; Author:            Adam Sokolnicki <adam.sokolnicki@gmail.com>
 ;; URL:               https://github.com/asok/projectile-rails
-;; Package-Version: 0.15.0
+;; Package-Version: 0.16.0
 ;; Version:           0.15.0
 ;; Keywords:          rails, projectile
 ;; Package-Requires:  ((emacs "24.3") (projectile "0.12.0") (inflections "1.1") (inf-ruby "2.2.6") (f "0.13.0") (rake "0.3.2"))
@@ -42,6 +42,7 @@
 (require 'inflections)
 (require 'f)
 (require 'rake)
+(require 'json)
 
 (defgroup projectile-rails nil
   "Rails mode based on projectile"
@@ -54,7 +55,7 @@
     "serialize" "exempt_from_layout" "filter_parameter_logging" "hide_action"
     "cache_sweeper" "protect_from_forgery" "caches_page" "cache_page"
     "caches_action" "expire_page" "expire_action" "rescue_from" "params"
-    "request" "response" "session" "flash" "head" "redirect_to"
+    "request" "response" "session" "flash" "head" "redirect_to" "redirect_back"
     "render_to_string" "respond_with" "before_filter" "append_before_filter"
     "before_action" "append_before_action"
     "prepend_before_filter" "after_filter" "append_after_filter"
@@ -93,7 +94,7 @@
     "validates_format_of" "validates_inclusion_of" "validates_length_of"
     "validates_numericality_of" "validates_presence_of" "validates_size_of"
     "validates_existence_of" "validates_uniqueness_of" "validates_with"
-    "enum")
+    "enum" "after_create_commit" "after_update_commit" "after_destroy_commit")
   "List of keywords to highlight for models."
   :group 'projectile-rails
   :type '(repeat string))
@@ -730,12 +731,25 @@ The mode of the output buffer will be `projectile-rails-compilation-mode'."
   (interactive "P")
   (rake arg 'projectile-rails-compilation-mode))
 
+(defvar projectile-rails-cache-data
+  (make-hash-table :test 'equal)
+  "A hash table that is used for caching information about the current project.")
+
+(defun projectile-rails-cache-key (key)
+  "Generate a cache key based on the current directory and the given KEY."
+  (format "%s-%s" default-directory key))
+
 (defun projectile-rails-root ()
   "Returns rails root directory if this file is a part of a Rails application else nil"
-  (ignore-errors
-    (let ((root (projectile-locate-dominating-file default-directory projectile-rails-root-file)))
-      (when (file-exists-p (expand-file-name projectile-rails-verify-root-file root))
-        root))))
+  (let* ((dir default-directory)
+         (cache-key (projectile-rails-cache-key "root"))
+         (cache-value (gethash cache-key projectile-rails-cache-data)))
+    (or cache-value
+        (ignore-errors
+          (let ((root (projectile-locate-dominating-file default-directory projectile-rails-root-file)))
+            (when (file-exists-p (expand-file-name projectile-rails-verify-root-file root))
+              (puthash cache-key root projectile-rails-cache-data)
+              root))))))
 
 (defun projectile-rails-root-relative-to-project-root ()
   "Return the location of the rails root relative to `projectile-project-root'."
@@ -872,6 +886,13 @@ This only works when yas package is installed."
       (s-join "" (make-list (1- (length parts)) "\nend")))
      (-last-item parts))))
 
+(defun projectile-rails--snippet-for-model (name)
+  (format
+   (if (projectile-rails--file-exists-p "app/models/application_record.rb")
+       "class %s < ${1:ApplicationRecord}\n$2\nend"
+     "class %s < ${1:ActiveRecord::Base}\n$2\nend")
+   (s-join "::" (projectile-rails-classify name))))
+
 (defun projectile-rails--expand-snippet (snippet)
   "Turn on `yas-minor-mode' and expand SNIPPET."
   (yas-minor-mode +1)
@@ -897,9 +918,7 @@ This only works when yas package is installed."
              (s-join "::" (projectile-rails-classify (match-string 1 name))))))
           ((string-match "app/models/\\(.+\\)\\.rb$" name)
            (projectile-rails--expand-snippet
-            (format
-             "class %s < ${1:ActiveRecord::Base}\n$2\nend"
-             (s-join "::" (projectile-rails-classify (match-string 1 name))))))
+            (projectile-rails--snippet-for-model (match-string 1 name))))
           ((string-match "app/helpers/\\(.+\\)_helper\\.rb$" name)
            (projectile-rails--expand-snippet
             (format

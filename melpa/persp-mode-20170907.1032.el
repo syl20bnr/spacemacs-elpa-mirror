@@ -4,7 +4,7 @@
 
 ;; Author: Constantin Kulikov (Bad_ptr) <zxnotdead@gmail.com>
 ;; Version: 2.9.6
-;; Package-Version: 20170902.1110
+;; Package-Version: 20170907.1032
 ;; Package-Requires: ()
 ;; Keywords: perspectives, session, workspace, persistence, windows, buffers, convenience
 ;; URL: https://github.com/Bad-ptr/persp-mode.el
@@ -3078,7 +3078,8 @@ Return `NAME'."
 
 (defun persp-add-to-menu (persp)
   (let ((name (safe-persp-name persp)))
-    (push name persp-names-cache)
+    (psetq persp-names-cache
+           (append persp-names-cache (list name)))
     (lexical-let ((str_name name))
       (easy-menu-add-item persp-minor-mode-menu nil
                           (vector str_name #'(lambda () (interactive)

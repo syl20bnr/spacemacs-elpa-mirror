@@ -4,7 +4,7 @@
 
 ;; Author: Mikhail <tensai@cirno.in> Kuryshev
 ;; Keywords: languages
-;; Package-Version: 20150303
+;; Package-Version: 20170907
 ;; Package-Requires: ((auto-complete "1.4.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -36,8 +36,11 @@
 ;;; Code:
 
 (eval-when-compile
-  (require 'cl)
-  (require 'auto-complete))
+  (require 'cl))
+
+(require 'auto-complete)
+
+(declare-function yas-expand-snippet "yasnippet")
 
 (defgroup go-autocomplete nil
   "auto-complete for go language."
@@ -47,6 +50,11 @@
 (defcustom ac-go-expand-arguments-into-snippets t
   "Expand function arguments into snippets. This feature requires `yasnippet'."
   :type 'boolean
+  :group 'go-autocomplete)
+
+(defcustom ac-go-gocode-bin "gocode"
+  "Overwrite path to gocode binary"
+  :type 'string
   :group 'go-autocomplete)
 
 ;; Close gocode daemon at exit unless it was already running
@@ -93,7 +101,7 @@
         (progn
           (call-process-region (point-min)
                                (point-max)
-                               "gocode"
+                               ac-go-gocode-bin
                                nil
                                temp-buffer
                                nil
@@ -112,10 +120,12 @@
 
 (defun ac-go-get-candidates (strings)
   (let ((prop (lambda (entry)
-		(let ((name (nth 0 entry))
-		      (summary (nth 1 entry)))
+		(let* ((name (nth 0 entry))
+		       (summary (nth 1 entry))
+		       (symbol (substring summary 0 1)))
 		  (propertize name
-			      'summary summary))))
+			      'summary summary
+			      'symbol symbol))))
 	(split (lambda (strings)
 		 (mapcar (lambda (str)
 			   (split-string str ",," t))
@@ -125,10 +135,10 @@
 (defun ac-go-action ()
   (let ((item (cdr ac-last-completion)))
     (when (stringp item)
-      (setq symbol (get-text-property 0 'summary item))
-      (message "%s" symbol)
-      (when (and (featurep 'yasnippet) ac-go-expand-arguments-into-snippets)
-        (ac-go-insert-yas-snippet-string symbol)))))
+      (let ((symbol (get-text-property 0 'summary item)))
+        (message "%s" symbol)
+        (when (and (featurep 'yasnippet) ac-go-expand-arguments-into-snippets)
+          (ac-go-insert-yas-snippet-string symbol))))))
 
 (defun ac-go-insert-yas-snippet-string (s)
   (let ((ret "") (pos (point)) match-res match args)
@@ -174,7 +184,13 @@
         nil)))
 
 (defun ac-go-candidates ()
-  (ac-go-get-candidates (ac-go-format-autocomplete (ac-go-invoke-autocomplete))))
+  (let ((candidates (ac-go-get-candidates
+                     (ac-go-format-autocomplete (ac-go-invoke-autocomplete)))))
+    (if (equal candidates '("PANIC"))
+        (progn
+          (message "GOCODE PANIC: Please check your code by \"go build\"")
+          nil)
+      candidates)))
 
 (defun ac-go-prefix ()
   (or (ac-prefix-symbol)
@@ -190,8 +206,7 @@
     (action . ac-go-action)
     (prefix . ac-go-prefix)
     (requires . 0)
-    (cache)
-    (symbol . "g")))
+    (cache)))
 
 (add-to-list 'ac-modes 'go-mode)
 

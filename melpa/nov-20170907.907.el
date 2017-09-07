@@ -4,7 +4,7 @@
 
 ;; Author: Vasilij Schneidermann <mail@vasilij.de>
 ;; URL: https://github.com/wasamasa/nov.el
-;; Package-Version: 20170906.217
+;; Package-Version: 20170907.907
 ;; Version: 0.1
 ;; Package-Requires: ((dash "2.12.0") (esxml "0.3.3") (emacs "24.4"))
 ;; Keywords: hypermedia, multimedia, epub
@@ -59,34 +59,27 @@
   :type '(file :must-match t)
   :group 'nov)
 
-(defvar nov-temp-dir nil
+(defvar-local nov-temp-dir nil
   "Temporary directory containing the buffer's EPUB files.")
-(make-variable-buffer-local 'nov-temp-dir)
 
-(defvar nov-content-file nil
+(defvar-local nov-content-file nil
   "Path of the EPUB buffer's .opf file.")
-(make-variable-buffer-local 'nov-content-file)
 
-(defvar nov-epub-version nil
+(defvar-local nov-epub-version nil
   "Version string of the EPUB buffer.")
-(make-variable-buffer-local 'nov-epub-version)
 
-(defvar nov-metadata nil
+(defvar-local nov-metadata nil
   "Metadata of the EPUB buffer.")
-(make-variable-buffer-local 'nov-metadata)
 
-(defvar nov-documents nil
+(defvar-local nov-documents nil
   "Alist for the EPUB buffer's documents.
 Each alist item consists of the identifier and full path.")
-(make-variable-buffer-local 'nov-documents)
 
-(defvar nov-documents-index 0
+(defvar-local nov-documents-index 0
   "Index of the currently rendered document in the EPUB buffer.")
-(make-variable-buffer-local 'nov-documents-index)
 
-(defvar nov-toc-id nil
+(defvar-local nov-toc-id nil
   "TOC identifier of the EPUB buffer.")
-(make-variable-buffer-local 'nov-toc-id)
 
 (defun nov-make-path (directory file)
   "Create a path from DIRECTORY and FILE."
@@ -479,7 +472,7 @@ the HTML is rendered with `shr-render-region'."
               (insert (propertize "None" 'face 'italic)))
             (insert "\n")))
         (goto-char (point-min))))
-    (display-buffer buffer)))
+    (pop-to-buffer buffer)))
 
 (defun nov-next-chapter ()
   "Go to the next chapter and render its document."

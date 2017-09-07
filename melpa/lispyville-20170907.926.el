@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/lispyville
-;; Package-Version: 20170905.1516
+;; Package-Version: 20170907.926
 ;; Created: March 03, 2016
 ;; Keywords: vim, evil, lispy, lisp, parentheses
 ;; Package-Requires: ((lispy "0") (evil "1.2.12") (cl-lib "0.5") (emacs "24.4"))
@@ -125,6 +125,10 @@ to a non-nil value."
 (with-eval-after-load 'evil-surround
   (add-to-list 'evil-surround-operator-alist '(lispyville-change . change))
   (add-to-list 'evil-surround-operator-alist '(lispyville-delete . delete)))
+
+;; https://github.com/noctuid/lispyville/pull/26
+(when (boundp 'evil-change-commands)
+  (add-to-list 'evil-change-commands #'lispyville-change))
 
 ;;;###autoload
 (define-minor-mode lispyville-mode
