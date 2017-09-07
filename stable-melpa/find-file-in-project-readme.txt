@@ -64,8 +64,8 @@ backend from `ffip-diff-backends'.
 `ffip-show-diff' has optional parameter as index of selected backend.
 The output of execution is expected be in Unified Diff Format.
 The output is inserted into *ffip-diff* buffer.
-In the buffer, press "o/C-c C-c"/ENTER" or `M-x ffip-diff-find-file'
-to open correspong file.
+Press "o" or "C-c C-c" or "ENTER" or `M-x ffip-diff-find-file' in the
+buffer to open corresponding file.
 
 `ffip-diff-find-file-before-hook' is called before `ffip-diff-find-file'.
 
