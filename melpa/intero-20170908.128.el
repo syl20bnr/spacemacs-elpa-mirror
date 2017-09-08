@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20170907.133
+;; Package-Version: 20170908.128
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -2392,7 +2392,12 @@ Each option is a plist of (:key :default :title) wherein:
                        (lambda (&rest ignore)
                          (exit-recursive-edit))
                        "C-c C-c")
-        (widget-insert (propertize " to apply these choices.\n\n" 'face 'font-lock-comment-face))
+        (widget-insert (propertize " to apply these choices, or hit " 'face 'font-lock-comment-face))
+        (widget-create 'push-button :notify
+                       (lambda (&rest ignore)
+                         (abort-recursive-edit))
+                       "C-c C-k")
+        (widget-insert (propertize " to cancel.\n\n" 'face 'font-lock-comment-face))
         (let* ((me (current-buffer))
                (choices (mapcar (lambda (option)
                                   (append option (list :value (plist-get option :default))))

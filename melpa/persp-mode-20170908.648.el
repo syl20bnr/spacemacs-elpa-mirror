@@ -4,7 +4,7 @@
 
 ;; Author: Constantin Kulikov (Bad_ptr) <zxnotdead@gmail.com>
 ;; Version: 2.9.6
-;; Package-Version: 20170907.1032
+;; Package-Version: 20170908.648
 ;; Package-Requires: ()
 ;; Keywords: perspectives, session, workspace, persistence, windows, buffers, convenience
 ;; URL: https://github.com/Bad-ptr/persp-mode.el
@@ -3672,7 +3672,7 @@ of the perspective %s can't be saved."
                     (when (or (not names-regexp)
                               (persp-string-match-p names-regexp pn))
                       (persp-get-by-name pn *persp-hash* nil)))
-                (nreverse (persp-names-current-frame-fast-ordered)))
+                (persp-names-current-frame-fast-ordered))
       (persp-persps (or phash *persp-hash*) names-regexp t)))))
 
 (defsubst persp-save-with-backups (fname)

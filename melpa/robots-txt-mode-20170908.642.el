@@ -5,8 +5,9 @@
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 9 Mar 2016
 ;; Version: 0.0.2
-;; Package-Version: 20160820.202
-;; Keywords: web
+;; Package-Version: 20170908.642
+;; Keywords: languages, comm, web
+;; URL: https://github.com/emacs-php/robots-txt-mode
 
 ;; This file is NOT part of GNU Emacs.
 

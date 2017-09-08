@@ -1,4 +1,4 @@
-;;; faust-mode.el --- Basic faust syntax colorizer for emacs.
+;;; faust-mode.el --- Faust syntax colorizer for Emacs.
 
 ;; Copyright (C) 2016 Juan A. Romero
 
@@ -6,13 +6,13 @@
 ;; Author: Juan A. Romero <rukano@gmail.com>
 ;; Author: Yassin Philip <xaccrocheur@gmail.com>
 ;; Maintainer: Yassin Philip <xaccrocheur@gmail.com>
-;; Maintainer: Juan A. Romero <rukano@gmail.com>
 ;; Keywords: languages, faust
-;; Package-Version: 20170907.421
+;; Package-Version: 20170908.542
 ;; Version: 0.2
 ;; URL: https://github.com/rukano/emacs-faust-mode
 ;; License: GPLv3
 ;; MELPA: yes
+;; MELPA-stable: yes
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -29,18 +29,40 @@
 
 ;;; Commentary:
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; FAUST Mode (very simple syntax colorizing!)
-;; by rukano
-;; based on the tutorial on:
-;; http://xahlee.org/emacs/elisp_syntax_coloring.html
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ## Features
+
+;; - Syntax highlighting of *all* the Faust commands and operators
+;; - Indentation rules
+;; - [Compatible](https://github.com/syl20bnr/spacemacs/tree/develop/layers/%2Blang/faust) with SpaceEmacs
+
+;; ## Installation
+
+;; ### Easy
+
+;; - Install it from [MELPA](https://melpa.org).
+
+;; ### Hard
+
+;; - Copy/clone this repository in `load-path`
+;; - Add
+;; ```elisp
+;; (require 'faust-mode)
+;; ```
+;; to your init file
+
+;; ### Faust
+
+;; Oh, and of course install [the latest
+;; Faust](http://faust.grame.fr/download/) and ensure it's in the
+;; PATH.
+
+;; ### Faustine
+
+;; Based on faust-mode, [Faustine](https://bitbucket.org/yassinphilip/faustine) goes even further into turning Emacs into a full-fledged Faust IDE.
 
 ;;; Code:
 
 (require 'smie)
-
-(defvar ac-sources)
 
 (defconst faust-keywords-statements
   '("process" "with" "case" "seq" "par" "sum" "prod" "include" "import" "component" "library" "environment" "declare" "define" "undef" "error" "pragma" "ident" "if" "def" "else" "elif" "endif" "line" "warning"))
@@ -138,9 +160,6 @@
    faust-keywords-lib-vaeffect)
   "All the Faust library function keywords.")
 
-(defvar faust-mode-ac-source
-  '((candidates . faust-keywords-lib)))
-
 (defvar faust-regexp-keywords-function (regexp-opt faust-keywords-functions 'words))
 (defvar faust-regexp-keywords-statement (regexp-opt faust-keywords-statements 'words))
 (defvar faust-regexp-keywords-ui (regexp-opt faust-keywords-ui 'words))
@@ -178,18 +197,12 @@
 [Faust](http://faust.grame.fr) (Functional AUdio STream) files.
 
 Syntax highlighting of *all* the Faust commands and operators, as
-well as indentation rules. "
+well as indentation rules."
 
   (setq
    comment-start "//"
    comment-end ""
    font-lock-defaults '(faust-mode-font-lock-keywords))
-
-  (if (boundp 'ac-sources)
-      (progn
-        (add-to-list 'ac-modes 'faustine-mode)
-        (add-to-list 'ac-sources 'faustine-mode-ac-source))
-    (message "You really should install and use auto-complete"))
 
   (smie-setup nil #'ignore)
 

@@ -4,7 +4,7 @@
 
 ;; Author: Dmitry Galinsky, Howard Yeh
 ;; URL: https://github.com/eschulte/jump.el
-;; Package-Version: 20161126.1727
+;; Package-Version: 20170908.149
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
 ;; Version: 1.1
 ;; Created: 2007-11-02
@@ -50,20 +50,21 @@
   "Regex matching similar to the =~ operator found in other languages."
   (let ((str (cl-gensym)))
     `(let ((,str ,string))
-       (when (string-match ,regex ,str)
-         (cl-symbol-macrolet ,(cl-loop for i to 9 collect
-                                       (let ((sym (intern (concat "$" (number-to-string i)))))
-                                         `(,sym (match-string ,i ,str))))
-           (cl-flet (($ (i) (match-string i ,str))
-                     (sub (replacement &optional (i 0) &key fixedcase literal-string)
-                          (replace-match replacement fixedcase literal-string ,str i)))
-             (cl-symbol-macrolet ( ;;before
-                                  ($b (substring ,str 0 (match-beginning 0)))
-                                  ;;match
-                                  ($m (match-string 0 ,str))
-                                  ;;after
-                                  ($a (substring ,str (match-end 0) (length ,str))))
-               ,@body)))))))
+       (save-match-data
+         (when (string-match ,regex ,str)
+           (cl-symbol-macrolet ,(cl-loop for i to 9 collect
+                                         (let ((sym (intern (concat "$" (number-to-string i)))))
+                                           `(,sym (match-string ,i ,str))))
+             (cl-flet (($ (i) (match-string i ,str))
+                       (sub (replacement &optional (i 0) &key fixedcase literal-string)
+                            (replace-match replacement fixedcase literal-string ,str i)))
+               (cl-symbol-macrolet ( ;;before
+                                    ($b (substring ,str 0 (match-beginning 0)))
+                                    ;;match
+                                    ($m (match-string 0 ,str))
+                                    ;;after
+                                    ($a (substring ,str (match-end 0) (length ,str))))
+                 ,@body))))))))
 
 (define-inflectors
   (:plural "$" "s")
