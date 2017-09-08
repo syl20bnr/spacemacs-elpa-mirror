@@ -1,5 +1,5 @@
 ;;; cython-mode.el --- Major mode for editing Cython files
-;; Package-Version: 20170723.1342
+;; Package-Version: 20170907.1648
 
 ;;; Commentary:
 
@@ -53,7 +53,7 @@
        symbol-start (group "ctypedef")
        ;; type specifier: at least 1 non-identifier symbol + 1 identifier
        ;; symbol and anything but a comment-starter after that.
-       (opt (regexp "[^a-zA-z0-9_\n]+[a-zA-Z0-9_][^#\n]*")
+       (opt (regexp "[^a-zA-Z0-9_\n]+[a-zA-Z0-9_][^#\n]*")
             ;; type alias: an identifier
             symbol-start (group (regexp "[a-zA-Z_]+[a-zA-Z0-9_]*"))
             ;; space-or-comments till the end of the line
