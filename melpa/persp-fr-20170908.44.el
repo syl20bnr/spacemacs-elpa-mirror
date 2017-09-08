@@ -4,8 +4,8 @@
 
 ;; Author: Francesc Rocher <francesc.rocher@gmail.com>
 ;; URL: http://github.com/rocher/persp-fr
-;; Package-Version: 20170907.617
-;; Version: 0.0.2
+;; Package-Version: 20170908.44
+;; Version: 0.0.3
 ;; Package-Requires: ((emacs "25.0") (persp-mode "2.9.6"))
 ;; Keywords: perspectives, workspace, windows, convenience
 
@@ -106,7 +106,7 @@
     (unless (and (eq hook 'persp-before-kill-functions)
                  (eq (car rest) current))
       (setq current (safe-persp-name current))
-      (let ((persp-list (reverse (persp-names-current-frame-fast-ordered)))
+      (let ((persp-list (persp-names-current-frame-fast-ordered))
             title)
         (when (eq hook 'persp-before-kill-functions)
           (setq persp-list
