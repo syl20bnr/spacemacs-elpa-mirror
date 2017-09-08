@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 by Bailey Ling
 ;; Author: Bailey Ling
 ;; URL: https://github.com/bling/fzf.el
-;; Package-Version: 20170906.1423
+;; Package-Version: 20170908.945
 ;; Filename: fzf.el
 ;; Description: A front-end for fzf
 ;; Created: 2015-09-18
@@ -101,6 +101,7 @@
       (make-term "fzf" fzf/executable))
     (switch-to-buffer buf)
     (linum-mode 0)
+    (visual-line-mode 0)
 
     ;; disable various settings known to cause artifacts, see #1 for more details
     (setq-local scroll-margin 0)
