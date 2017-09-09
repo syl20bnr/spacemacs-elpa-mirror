@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20170908.1627
+;; Package-Version: 20170909.36
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -660,8 +660,7 @@ running context across :load/:reloads in Intero."
                       'interrupted)
     (let* ((file-buffer (current-buffer))
            (staging-file (intero-localize-path (intero-staging-file-name)))
-           (temp-file (intero-localize-path (intero-temp-file-name)))
-           (hash (intero-check-calculate-hash)))
+           (temp-file (intero-localize-path (intero-temp-file-name))))
       ;; We queue up to :move the staging file to the target temp
       ;; file, which also updates its modified time.
       (intero-async-call
@@ -676,7 +675,6 @@ running context across :load/:reloads in Intero."
        (concat ":l " temp-file)
        (list :cont cont
              :file-buffer file-buffer
-             :hash hash
              :checker checker)
        (lambda (state string)
          (with-current-buffer (plist-get state :file-buffer)
@@ -690,8 +688,7 @@ running context across :load/:reloads in Intero."
              (let ((results (cl-remove-if (lambda (msg)
                                             (eq 'splice (flycheck-error-level msg)))
                                           msgs)))
-               (setq intero-check-last-hash (plist-get state :hash)
-                     intero-check-last-results results)
+               (setq intero-check-last-results results)
                (funcall (plist-get state :cont) 'finished results))
              (when compile-ok
                (intero-async-call 'backend
@@ -2088,9 +2085,9 @@ default when nil)."
             (list "--ghci-options" "-ignore-dot-ghci"))
           (let ((dir (intero-localize-path (intero-make-temp-file "intero" t))))
             (list "--ghci-options"
-                  (concat "-odir=" dir)
+                  (concat "-odir=" (shell-quote-argument dir))
                   "--ghci-options"
-                  (concat "-hidir=" dir)))
+                  (concat "-hidir=" (shell-quote-argument dir))))
           targets))
 
 (defun intero-sentinel (process change)

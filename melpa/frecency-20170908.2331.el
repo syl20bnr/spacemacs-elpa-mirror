@@ -1,10 +1,10 @@
-;;; frecency.el --- Library for sorting recently accessed items based on frequency and recency -*- lexical-binding: t; -*-
+;;; frecency.el --- Library for sorting items by frequency and recency of access -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2017 Adam Porter
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; URL: http://github.com/alphapapa/frecency.el
-;; Package-Version: 20170907.2158
+;; Package-Version: 20170908.2331
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "25.1") (a "0.1") (dash "2.13.0"))
 ;; Keywords: libraries recency recent frequency frequent
