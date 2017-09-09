@@ -7,7 +7,7 @@
 ;; Author: Jon de Andrés Frías <jondeandres@gmail.com>
 ;;         Raimon Grau Cuscó <raimonster@gmail.com>
 ;; Version: 0.9
-;; Package-Version: 20170713.1438
+;; Package-Version: 20170909.312
 ;; Keywords: multimedia
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -60,12 +60,6 @@
 (defcustom erc-image-regex-alist
   '(("http://\\(www\\.\\)?imgur\\.com" .
      erc-image-get-imgur-url)
-    ("http://\\(www\\.\\)?memecaptain\\.com/gend_image_pages/" .
-     erc-image-get-memecaptain-url)
-    ("http://\\(www\\.\\)?memecrunch\\.com/meme/[^.]*$" .
-     erc-image-get-memecrunch-url)
-    ("http://\\(www\\.\\)?quickmeme.com/meme/[^.]*$" .
-     erc-image-get-quickmeme-url)
     ("\\.\\(png\\|jpg\\|jpeg\\|gif\\|svg\\)$" .
      erc-image-show-url-image))
   "Pairs of regex and function to match URLs to be downloaded.
@@ -189,24 +183,6 @@ If several regex match prior occurring have higher priority."
   (let ((id (progn (string-match "/\\([^/]*?\\)$" url)
                    (match-string 1 url))))
     (erc-image-show-url-image (format "http://imgur.com/download/%s" id))))
-
-(defun erc-image-get-memecrunch-url (url)
-  "Return the download URL for the memecrunch `url'."
-  (let ((id (progn (string-match "memecrunch.com/meme/\\(.*?\\)$" url)
-                   (match-string 1 url))))
-    (erc-image-show-url-image (format "http://memecrunch.com/meme/%s/image.png" id))))
-
-(defun erc-image-get-memecaptain-url (url)
-  "Return the download URL for the memecaptain `url'."
-  (let ((id (progn (string-match "/\\([^/]*?\\)$" url)
-                   (match-string 1 url))))
-    (erc-image-show-url-image (format "http://memecaptain.com/gend_images/%s" id))))
-
-(defun erc-image-get-quickmeme-url (url)
-  "Return the download URL for the quickmeme `url'."
-  (let ((id (progn (string-match "quickmeme.com/meme/\\(.*?\\)/*$" url)
-                   (match-string 1 url))))
-    (erc-image-show-url-image (format "http://i.qkme.me/%s.jpg" id))))
 
 ;;;###autoload
 (eval-after-load 'erc

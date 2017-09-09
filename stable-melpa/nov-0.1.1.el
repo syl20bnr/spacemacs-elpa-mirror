@@ -4,8 +4,8 @@
 
 ;; Author: Vasilij Schneidermann <mail@vasilij.de>
 ;; URL: https://github.com/wasamasa/nov.el
-;; Package-Version: 20170907.907
-;; Version: 0.1
+;; Package-Version: 0.1.1
+;; Version: 0.1.1
 ;; Package-Requires: ((dash "2.12.0") (esxml "0.3.3") (emacs "24.4"))
 ;; Keywords: hypermedia, multimedia, epub
 
@@ -299,8 +299,8 @@ Each alist item consists of the identifier and full path."
     (define-key map (kbd "v") 'nov-view-source)
     (define-key map (kbd "V") 'nov-view-content-source)
     (define-key map (kbd "m") 'nov-display-metadata)
-    (define-key map (kbd "n") 'nov-next-chapter)
-    (define-key map (kbd "p") 'nov-previous-chapter)
+    (define-key map (kbd "n") 'nov-next-document)
+    (define-key map (kbd "p") 'nov-previous-document)
     (define-key map (kbd "t") 'nov-goto-toc)
     (define-key map (kbd "RET") 'nov-browse-url)
     (define-key map (kbd "<follow-link>") 'mouse-face)
@@ -474,15 +474,15 @@ the HTML is rendered with `shr-render-region'."
         (goto-char (point-min))))
     (pop-to-buffer buffer)))
 
-(defun nov-next-chapter ()
-  "Go to the next chapter and render its document."
+(defun nov-next-document ()
+  "Go to the next document and render it."
   (interactive)
   (when (< nov-documents-index (1- (length nov-documents)))
     (setq nov-documents-index (1+ nov-documents-index))
     (nov-render-document)))
 
-(defun nov-previous-chapter ()
-  "Go to the previous chapter and render its document."
+(defun nov-previous-document ()
+  "Go to the previous document and render it."
   (interactive)
   (when (> nov-documents-index 0)
     (setq nov-documents-index (1- nov-documents-index))
@@ -492,7 +492,7 @@ the HTML is rendered with `shr-render-region'."
   "Scroll with `scroll-up' or visit next chapter if at bottom."
   (interactive "P")
   (if (>= (window-end) (point-max))
-      (nov-next-chapter)
+      (nov-next-document)
     (scroll-up arg)))
 
 (defun nov-scroll-down (arg)
@@ -501,7 +501,7 @@ the HTML is rendered with `shr-render-region'."
   (if (and (<= (window-start) (point-min))
            (> nov-documents-index 0))
       (progn
-        (nov-previous-chapter)
+        (nov-previous-document)
         (goto-char (point-max)))
     (scroll-down arg)))
 
@@ -510,8 +510,8 @@ the HTML is rendered with `shr-render-region'."
   (let* ((current-path (cdr (aref nov-documents nov-documents-index)))
          (directory (file-name-directory current-path))
          (path (file-truename (nov-make-path directory filename)))
-         (index (nov-find-document (lambda (doc)
-                                     (string-suffix-p path (cdr doc))))))
+         (index (nov-find-document
+                 (lambda (doc) (equal path (file-truename (cdr doc)))))))
     (when (not index)
       (error "Couldn't locate document"))
     (setq nov-documents-index index)

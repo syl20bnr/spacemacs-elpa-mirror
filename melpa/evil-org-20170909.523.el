@@ -4,7 +4,7 @@
 ;; Maintainer: Somelauw
 ;; Original-author: Edward Tjörnhammar
 ;; URL: https://github.com/Somelauw/evil-org-mode.git
-;; Package-Version: 20170802.1428
+;; Package-Version: 20170909.523
 ;; Git-Repository: git://github.com/Somelauw/evil-org-mode.git
 ;; Created: 2012-06-14
 ;; Forked-since: 2017-02-12
@@ -69,7 +69,7 @@
 (defcustom evil-org-key-theme
   (if (bound-and-true-p evil-disable-insert-state-bindings)
       '(textobjects navigation additional)
-      '(textobjects navigation insert additional))
+    '(textobjects navigation insert additional))
   "Which key themes to enable.
 If you use this variable, you should call `evil-org-set-key-theme' with zero
 arguments."
@@ -113,7 +113,7 @@ By default, o and O are bound to ‘evil-org-open-above’ and ‘evil-org-open-
   :lighter " EvilOrg"
   :keymap evil-org-mode-map
   :group 'evil-org
-)
+  )
 
 (defun evil-org-eol-call (fun &rest arguments)
   "Go to end of line and call provided function.
@@ -367,8 +367,8 @@ Argument INCOG whether to open in incognito mode."
             (throw 'break 0))
           (if (not (null incog))
               (evil-org-open-incognito)
-             (let ((browse-url-generic-args '("")))
-               (org-open-at-point '(16)))))))))
+            (let ((browse-url-generic-args '("")))
+              (org-open-at-point '(16)))))))))
 
 (defun evil-org-open-incognito ()
   "Open link in new incognito window."
@@ -595,7 +595,7 @@ Includes tables, list items and subtrees."
   "Bindings with meta and control."
   (let-alist evil-org-movement-bindings
     (let ((state (if evil-org-use-additional-insert
-                     '('normal visual insert)
+                     '(normal visual insert)
                    '(normal visual))))
       (evil-define-key state evil-org-mode-map
         (kbd (concat "M-" .left)) 'org-metaleft
