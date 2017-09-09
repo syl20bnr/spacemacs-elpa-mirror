@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20170909.125
+;; Package-Version: 0.1.23
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -71,7 +71,7 @@
   :group 'haskell)
 
 (defcustom intero-package-version
-  "0.1.22"
+  "0.1.23"
   "Package version to auto-install.
 
 This version does not necessarily have to be the latest version
@@ -505,7 +505,7 @@ If the problem persists, please report this as a bug!")))
     (intero-with-dump-splices
      (let* ((output (intero-blocking-call
                      'backend
-                     (concat ":l " (intero-localize-path (intero-temp-file-name)))))
+                     (concat ":load " (intero-localize-path (intero-temp-file-name)))))
             (msgs (intero-parse-errors-warnings-splices nil (current-buffer) output))
             (line (line-number-at-pos))
             (column (if (save-excursion
@@ -624,10 +624,10 @@ running context across :load/:reloads in Intero."
         (message "Reloading ...")
         (intero-async-call
          'backend
-         ":l DevelMain"
+         ":load DevelMain"
          (current-buffer)
          (lambda (buffer reply)
-           (if (string-match "^OK, modules loaded" reply)
+           (if (string-match "^O[Kk], modules loaded" reply)
                (intero-async-call
                 'backend
                 "DevelMain.update"
@@ -672,13 +672,13 @@ running context across :load/:reloads in Intero."
       ;; by the copy above.
       (intero-async-call
        'backend
-       (concat ":l " temp-file)
+       (concat ":load " temp-file)
        (list :cont cont
              :file-buffer file-buffer
              :checker checker)
        (lambda (state string)
          (with-current-buffer (plist-get state :file-buffer)
-           (let* ((compile-ok (string-match "OK, modules loaded: \\(.*\\)\\.$" string))
+           (let* ((compile-ok (string-match "O[Kk], modules loaded: \\(.*\\)\\.$" string))
                   (modules (match-string 1 string))
                   (msgs (intero-parse-errors-warnings-splices
                          (plist-get state :checker)
@@ -692,8 +692,8 @@ running context across :load/:reloads in Intero."
                (funcall (plist-get state :cont) 'finished results))
              (when compile-ok
                (intero-async-call 'backend
-                                  (concat ":m + "
-                                          (replace-regexp-in-string modules "," ""))
+                                  (concat ":module + "
+                                          (replace-regexp-in-string "," "" modules))
                                   nil
                                   (lambda (_st _))))))))
       ;; We sleep for at least one second to allow a buffer period
@@ -1115,7 +1115,7 @@ If PROMPT-OPTIONS is non-nil, prompt with an options list."
     (intero-with-repl-buffer prompt-options
       (comint-simple-send
        (get-buffer-process (current-buffer))
-       (concat ":l " file))
+       (concat ":load " file))
       (setq intero-repl-last-loaded file))))
 
 (defun intero-repl-eval-region (begin end &optional prompt-options)
@@ -1725,7 +1725,7 @@ type as arguments."
           "\n$" ""
           (intero-blocking-call
            'backend
-           (format ":i %s" thing)))))
+           (format ":info %s" thing)))))
     (if (string-match "^<interactive>" optimistic-result)
         ;; Load the module Interpreted so that we get information,
         ;; then restore bytecode.
@@ -1737,7 +1737,7 @@ type as arguments."
                (unless (member 'save flycheck-check-syntax-automatically)
                  (intero-async-call
                   'backend
-                  (concat ":l " (intero-localize-path (intero-temp-file-name)))))
+                  (concat ":load " (intero-localize-path (intero-temp-file-name)))))
                (intero-async-call
                 'backend
                 ":set -fobject-code")
@@ -1745,7 +1745,7 @@ type as arguments."
                 "\n$" ""
                 (intero-blocking-call
                  'backend
-                 (format ":i %s" thing))))
+                 (format ":info %s" thing))))
       optimistic-result)))
 
 (defun intero-get-loc-at (beg end)

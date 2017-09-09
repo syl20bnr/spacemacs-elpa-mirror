@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 0.1.21
+;; Package-Version: 20170909.1116
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -71,7 +71,7 @@
   :group 'haskell)
 
 (defcustom intero-package-version
-  "0.1.21"
+  "0.1.23"
   "Package version to auto-install.
 
 This version does not necessarily have to be the latest version
@@ -218,7 +218,8 @@ and blacklist match, then the whitelist entry wins, and
 
 ;;;###autoload
 (define-globalized-minor-mode intero-global-mode
-  intero-mode intero-mode-maybe)
+  intero-mode intero-mode-maybe
+  :require 'intero)
 
 (define-obsolete-function-alias 'global-intero-mode 'intero-global-mode)
 
@@ -504,7 +505,7 @@ If the problem persists, please report this as a bug!")))
     (intero-with-dump-splices
      (let* ((output (intero-blocking-call
                      'backend
-                     (concat ":l " (intero-localize-path (intero-temp-file-name)))))
+                     (concat ":load " (intero-localize-path (intero-temp-file-name)))))
             (msgs (intero-parse-errors-warnings-splices nil (current-buffer) output))
             (line (line-number-at-pos))
             (column (if (save-excursion
@@ -623,10 +624,10 @@ running context across :load/:reloads in Intero."
         (message "Reloading ...")
         (intero-async-call
          'backend
-         ":l DevelMain"
+         ":load DevelMain"
          (current-buffer)
          (lambda (buffer reply)
-           (if (string-match "^OK, modules loaded" reply)
+           (if (string-match "^O[Kk], modules loaded" reply)
                (intero-async-call
                 'backend
                 "DevelMain.update"
@@ -643,34 +644,12 @@ running context across :load/:reloads in Intero."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Flycheck integration
 
-(defvar-local intero-check-last-hash nil
-  "Most recent hash for the current buffer when flycheck was last triggered.")
-
-(defvar-local intero-check-last-results nil
-  "Most recent flycheck results for the current buffer.")
-
-(defun intero-check-reuse-last-results (hash cont)
-  "If HASH is not new, return non-nil and call CONT with `intero-check-last-results'."
-  (let ((reuse (and intero-check-last-hash
-                    (equal hash intero-check-last-hash))))
-    (progn
-      (when reuse
-        (funcall cont 'finished intero-check-last-results))
-      reuse)))
-
 (defun intero-flycheck-enable ()
   "Enable intero's flycheck support in this buffer."
   (flycheck-select-checker 'intero)
   (setq intero-check-last-mod-time nil
         intero-check-last-results nil)
   (flycheck-mode))
-
-(defun intero-check-calculate-hash ()
-  "Calculate a hash for the current buffer that will change when it needs re-checking."
-  (secure-hash
-   'md5
-   (concat (prin1-to-string intero-start-time) ; Force re-check after intero-restart
-           (buffer-substring-no-properties (point-min) (point-max)))))
 
 (defun intero-check (checker cont)
   "Run a check with CHECKER and pass the status onto CONT."
@@ -680,40 +659,50 @@ running context across :load/:reloads in Intero."
                       cont
                       'interrupted)
     (let* ((file-buffer (current-buffer))
-           (temp-file (intero-localize-path (intero-temp-file-name)))
-           (hash (intero-check-calculate-hash)))
-      (unless (intero-check-reuse-last-results hash cont)
-        (intero-async-call
-         'backend
-         (concat ":l " temp-file)
-         (list :cont cont
-               :file-buffer file-buffer
-               :hash hash
-               :checker checker)
-         (lambda (state string)
-           (with-current-buffer (plist-get state :file-buffer)
-             (unless (intero-check-reuse-last-results (plist-get state :hash)
-                                                      (plist-get state :cont))
-               (let* ((compile-ok (string-match "OK, modules loaded: \\(.*\\)\\.$" string))
-                      (modules (match-string 1 string))
-                      (msgs (intero-parse-errors-warnings-splices
-                             (plist-get state :checker)
-                             (current-buffer)
-                             string)))
-                 (intero-collect-compiler-messages msgs)
-                 (let ((results (cl-remove-if (lambda (msg)
-                                                (eq 'splice (flycheck-error-level msg)))
-                                              msgs)))
-                   (setq intero-check-last-hash (plist-get state :hash)
-                         intero-check-last-results results)
-                   (funcall (plist-get state :cont) 'finished results))
-                 (when compile-ok
-                   (intero-async-call 'backend
-                                      (concat ":m + "
-                                              (replace-regexp-in-string modules "," ""))
-                                      nil
-                                      (lambda (_st _)))))))))))))
-
+           (staging-file (intero-localize-path (intero-staging-file-name)))
+           (temp-file (intero-localize-path (intero-temp-file-name))))
+      ;; We queue up to :move the staging file to the target temp
+      ;; file, which also updates its modified time.
+      (intero-async-call
+       'backend
+       (format ":move \"%s\" \"%s\""
+               staging-file
+               temp-file))
+      ;; We load up the target temp file, which has only been updated
+      ;; by the copy above.
+      (intero-async-call
+       'backend
+       (concat ":load " temp-file)
+       (list :cont cont
+             :file-buffer file-buffer
+             :checker checker)
+       (lambda (state string)
+         (with-current-buffer (plist-get state :file-buffer)
+           (let* ((compile-ok (string-match "O[Kk], modules loaded: \\(.*\\)\\.$" string))
+                  (modules (match-string 1 string))
+                  (msgs (intero-parse-errors-warnings-splices
+                         (plist-get state :checker)
+                         (current-buffer)
+                         string)))
+             (intero-collect-compiler-messages msgs)
+             (let ((results (cl-remove-if (lambda (msg)
+                                            (eq 'splice (flycheck-error-level msg)))
+                                          msgs)))
+               (setq intero-check-last-results results)
+               (funcall (plist-get state :cont) 'finished results))
+             (when compile-ok
+               (intero-async-call 'backend
+                                  (concat ":module + "
+                                          (replace-regexp-in-string "," "" modules))
+                                  nil
+                                  (lambda (_st _))))))))
+      ;; We sleep for at least one second to allow a buffer period
+      ;; between module updates. GHCi will consider a module Foo to be
+      ;; unchanged even if its filename has changed or timestmap has
+      ;; changed, if the timestamp is less than 1 second.
+      (intero-async-call
+       'backend
+       ":sleep 1"))))
 
 (flycheck-define-generic-checker 'intero
   "A syntax and type checker for Haskell using an Intero worker
@@ -1126,7 +1115,7 @@ If PROMPT-OPTIONS is non-nil, prompt with an options list."
     (intero-with-repl-buffer prompt-options
       (comint-simple-send
        (get-buffer-process (current-buffer))
-       (concat ":l " file))
+       (concat ":load " file))
       (setq intero-repl-last-loaded file))))
 
 (defun intero-repl-eval-region (begin end &optional prompt-options)
@@ -1630,30 +1619,34 @@ path."
     temporary-file-directory))
 
 (defun intero-temp-file-name (&optional buffer)
+  "Return the name of a temp file pertaining to BUFFER."
+  (with-current-buffer (or buffer (current-buffer))
+    (or intero-temp-file-name
+        (progn (setq intero-temp-file-name
+                     (intero-canonicalize-path
+                      (intero-make-temp-file
+                       "intero" nil
+                       (concat "-TEMP." (if (buffer-file-name)
+                                       (file-name-extension (buffer-file-name))
+                                     "hs")))))
+               (puthash intero-temp-file-name
+                        (current-buffer)
+                        intero-temp-file-buffer-mapping)
+               intero-temp-file-name))))
+
+(defun intero-staging-file-name (&optional buffer)
   "Return the name of a temp file containing an up-to-date copy of BUFFER's contents."
   (with-current-buffer (or buffer (current-buffer))
-    (prog1
-        (or intero-temp-file-name
-            (progn (setq intero-temp-file-name
-                         (intero-canonicalize-path
-                          (intero-make-temp-file
-                           "intero" nil
-                           (concat "." (if (buffer-file-name)
-                                           (file-name-extension (buffer-file-name))
-                                         "hs")))))
-                   (puthash intero-temp-file-name
-                            (current-buffer)
-                            intero-temp-file-buffer-mapping)
-                   intero-temp-file-name))
-      (let* ((contents (buffer-string))
-             (fname intero-temp-file-name)
-             (prev-contents (and (file-readable-p fname)
-                                 (with-temp-buffer
-                                   (insert-file-contents fname)
-                                   (buffer-string)))))
-        (unless (and prev-contents (string-equal contents prev-contents))
-          (with-temp-file intero-temp-file-name
-            (insert contents)))))))
+    (let* ((contents (buffer-string))
+           (fname (intero-canonicalize-path
+                   (intero-make-temp-file
+                    "intero" nil
+                    (concat "-STAGING." (if (buffer-file-name)
+                                    (file-name-extension (buffer-file-name))
+                                  "hs"))))))
+      (with-temp-file fname
+        (insert contents))
+      fname)))
 
 (defun intero-localize-path (path)
   "Turn a possibly-remote PATH to a purely local one.
@@ -1732,7 +1725,7 @@ type as arguments."
           "\n$" ""
           (intero-blocking-call
            'backend
-           (format ":i %s" thing)))))
+           (format ":info %s" thing)))))
     (if (string-match "^<interactive>" optimistic-result)
         ;; Load the module Interpreted so that we get information,
         ;; then restore bytecode.
@@ -1744,7 +1737,7 @@ type as arguments."
                (unless (member 'save flycheck-check-syntax-automatically)
                  (intero-async-call
                   'backend
-                  (concat ":l " (intero-localize-path (intero-temp-file-name)))))
+                  (concat ":load " (intero-localize-path (intero-temp-file-name)))))
                (intero-async-call
                 'backend
                 ":set -fobject-code")
@@ -1752,7 +1745,7 @@ type as arguments."
                 "\n$" ""
                 (intero-blocking-call
                  'backend
-                 (format ":i %s" thing))))
+                 (format ":info %s" thing))))
       optimistic-result)))
 
 (defun intero-get-loc-at (beg end)
@@ -2391,7 +2384,12 @@ Each option is a plist of (:key :default :title) wherein:
                        (lambda (&rest ignore)
                          (exit-recursive-edit))
                        "C-c C-c")
-        (widget-insert (propertize " to apply these choices.\n\n" 'face 'font-lock-comment-face))
+        (widget-insert (propertize " to apply these choices, or hit " 'face 'font-lock-comment-face))
+        (widget-create 'push-button :notify
+                       (lambda (&rest ignore)
+                         (abort-recursive-edit))
+                       "C-c C-k")
+        (widget-insert (propertize " to cancel.\n\n" 'face 'font-lock-comment-face))
         (let* ((me (current-buffer))
                (choices (mapcar (lambda (option)
                                   (append option (list :value (plist-get option :default))))
@@ -3088,7 +3086,6 @@ Equivalent to 'warn', but label the warning as coming from intero."
     (define-key map (kbd "<backtab>") 'intero-highlight-uses-mode-prev)
     (define-key map (kbd "RET") 'intero-highlight-uses-mode-stop-here)
     (define-key map (kbd "r") 'intero-highlight-uses-mode-replace)
-    (define-key map (kbd "C-g") 'intero-highlight-uses-mode)
     (define-key map (kbd "q") 'intero-highlight-uses-mode)
     map)
   "Keymap for using `intero-highlight-uses-mode'.")

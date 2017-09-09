@@ -4,8 +4,8 @@
 
 ;; Author: Vasilij Schneidermann <mail@vasilij.de>
 ;; URL: https://github.com/wasamasa/nov.el
-;; Package-Version: 0.1.1
-;; Version: 0.1.1
+;; Package-Version: 0.1.2
+;; Version: 0.1.2
 ;; Package-Requires: ((dash "2.12.0") (esxml "0.3.3") (emacs "24.4"))
 ;; Keywords: hypermedia, multimedia, epub
 
@@ -57,6 +57,12 @@
 (defcustom nov-unzip-program (executable-find "unzip")
   "Path to `unzip` executable."
   :type '(file :must-match t)
+  :group 'nov)
+
+(defcustom nov-variable-pitch t
+  "Non-nil if a variable pitch face should be used.
+Otherwise the default face is used."
+  :type 'boolean
   :group 'nov)
 
 (defvar-local nov-temp-dir nil
@@ -414,7 +420,8 @@ the HTML is rendered with `shr-render-region'."
     (when (not imagep)
       (let (;; HACK: make buttons use our own commands
             (shr-map nov-mode-map)
-            (shr-external-rendering-functions nov-rendering-functions))
+            (shr-external-rendering-functions nov-rendering-functions)
+            (shr-use-fonts nov-variable-pitch))
         (shr-render-region (point-min) (point-max))))
     (goto-char (point-min))))
 

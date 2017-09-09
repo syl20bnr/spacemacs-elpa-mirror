@@ -8,7 +8,7 @@
 ;;	Michal Nazarewicz <mina86@mina86.com>
 ;; Maintainer: Michal Nazarewicz <mina86@mina86.com>
 ;; URL: https://github.com/mina86/auto-dim-other-buffers.el
-;; Package-Version: 20161004.539
+;; Package-Version: 20170909.848
 ;; Version: 1.6.4
 
 ;; This file is not part of GNU Emacs.
@@ -75,19 +75,22 @@ Currently only mini buffer and echo areas are ignored."
       (string-match "^ \\*Echo Area" (buffer-name buffer))))
 
 ;; current remapping cookie for adob
-(defvar-local adob--face-mode-remapping nil)
+(defvar-local adob--face-mode-remapping nil
+  "Current remapping cookie for `auto-dim-other-buffers-mode'.")
 
 (defun adob--dim-buffer (dim)
   "Dim (if DIM is non-nil) or undim (otherwise) current buffer."
-  (if dim
-      (setq adob--face-mode-remapping
-            (face-remap-add-relative 'default 'auto-dim-other-buffers-face))
-    (when adob--face-mode-remapping
-      (face-remap-remove-relative adob--face-mode-remapping)
-      (setq adob--face-mode-remapping nil)))
-  (force-window-update (current-buffer)))
+  (when (cond ((and dim (not adob--face-mode-remapping))
+               (setq adob--face-mode-remapping
+                     (face-remap-add-relative 'default
+                                              'auto-dim-other-buffers-face)))
+              ((and (not dim) adob--face-mode-remapping)
+               (face-remap-remove-relative adob--face-mode-remapping)
+               (setq adob--face-mode-remapping nil)
+               t))
+    (force-window-update (current-buffer)))
 
-(defun adob--post-command-hook ()
+(defun adob--buffer-list-update-hook ()
   "If buffer has changed, dim the last one and undim the new one."
   (let ((buf (window-buffer)))
     ;; if we haven't switched buffers, do nothing
@@ -128,7 +131,7 @@ function."
 (defun adob--hooks (callback)
   "Add (if CALLBACK is `add-hook') or remove (if `remove-hook') adob hooks."
   (dolist (args
-           '((post-command-hook adob--post-command-hook)
+           '((buffer-list-update-hook adob--buffer-list-update-hook)
              (focus-out-hook adob--focus-out-hook)
              (focus-in-hook adob--focus-in-hook)))
     (apply callback args)))
