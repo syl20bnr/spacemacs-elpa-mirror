@@ -6,8 +6,8 @@
 ;;
 ;; Author: David Landell <david.landell@sunnyhill.email>
 ;;         Roland McGrath <roland@gnu.org>
-;; Version: 1.3.1
-;; Package-Version: 20170809.1107
+;; Version: 1.3.2
+;; Package-Version: 20170908.2359
 ;; Homepage: https://github.com/dajva/rg.el
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24") (s "1.10.0") (seq "2.19"))
 ;; Keywords: matching, tools
@@ -470,6 +470,11 @@ Example:
          (setq rg-last-search (list ,regexp ,files ,dir))
          (rg-rerun)))))
 
+(defun rg-regexp-quote (regexp)
+"Return an 'rg' regexp string which matches exactly STRING
+and nothing else."
+  (replace-regexp-in-string "[][*.^\\|+?{}$()\]" "\\\\\\&" regexp))
+
 (defun rg-read-regexp (prompt default history)
 "Read regexp argument from user.  PROMPT is the read prompt, DEFAULT is the
 default regexp and HISTORY is search history list."
@@ -686,7 +691,7 @@ With \\[universal-argument] prefix, search is done in current dir
 instead of project root."
   (interactive)
   (let* ((curdir (equal current-prefix-arg '(4)))
-         (regexp (grep-tag-default))
+         (regexp (rg-regexp-quote (grep-tag-default)))
         (files (car (rg-default-alias)))
         (dir (or (when curdir default-directory)
                  (rg-project-root buffer-file-name))))
