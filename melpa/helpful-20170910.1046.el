@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20170907.1320
+;; Package-Version: 20170910.1046
 ;; Keywords: help, lisp
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2"))
@@ -516,7 +516,13 @@ POSITION-HEADS takes the form ((123 (defun foo)) (456 (defun bar)))."
 (defun helpful--primitive-p (sym callable-p)
   "Return t if SYM is defined in C."
   (if callable-p
-      (subrp (symbol-function sym))
+      (let ((fn sym))
+        ;; Find the function value associated with this symbol. If
+        ;; it's an alias, follow the alias chain to the function
+        ;; value.
+        (while (symbolp fn)
+          (setq fn (symbol-function fn)))
+        (subrp fn))
     (let ((filename (find-lisp-object-file-name sym 'defvar)))
       (or (eq filename 'C-source)
           (and (stringp filename)

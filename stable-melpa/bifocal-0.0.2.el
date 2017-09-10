@@ -3,7 +3,7 @@
 ;; Authors: Chris Rayner (dchrisrayner @ gmail)
 ;; Created: May 23 2011
 ;; Keywords: frames, processes, tools
-;; Package-Version: 20170625.1258
+;; Package-Version: 0.0.2
 ;; Homepage: https://github.com/riscy/bifocal-mode
 ;; Package-Requires: ((emacs "24.4"))
 ;; Version: 0.0.1
@@ -124,7 +124,6 @@ If this scrolls to the last line, remove the split."
   (interactive)
   (if (not (bifocal--find-head))
       (bifocal--move-point-down)
-    (move-to-window-line -1)
     (bifocal--move-point-down)
     (if (bifocal--last-line-p)
         (bifocal-end)
@@ -189,6 +188,7 @@ Return nil if the head window is not identifiable."
 
 (defun bifocal--move-point-down ()
   "Move the point down `bifocal-tail-size' rows, and recenter."
+  (move-to-window-line -1)
   (let ((line-move-visual t))
     (ignore-errors (line-move bifocal-tail-size)))
   (recenter -1))
@@ -247,6 +247,7 @@ That is, START-WINDOW is selected, moving in direction DIR (via
 (defun bifocal--splittable-p ()
   "Whether the current window is able to be split."
   (and (bifocal--last-line-p)
+       (>= (line-number-at-pos) (window-screen-lines))
        (or (bifocal--find-head)
            (>= (window-height) bifocal-minimum-rows-before-splitting))))
 
@@ -262,6 +263,7 @@ That is, START-WINDOW is selected, moving in direction DIR (via
   (bifocal--recenter-at-point-max))
 
 (defun bifocal--turn-on ()
+  "Call the function `bifocal-mode' if appropriate."
   (when (derived-mode-p 'comint-mode) (bifocal-mode +1)))
 
 (defun bifocal--unset-scroll-options ()
