@@ -4,8 +4,8 @@
 
 ;; Author: Vasilij Schneidermann <mail@vasilij.de>
 ;; URL: https://github.com/wasamasa/nov.el
-;; Package-Version: 20170909.727
-;; Version: 0.1.1
+;; Package-Version: 20170909.1312
+;; Version: 0.1.4
 ;; Package-Requires: ((dash "2.12.0") (esxml "0.3.3") (emacs "24.4"))
 ;; Keywords: hypermedia, multimedia, epub
 
@@ -41,6 +41,7 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'dash)
 (require 'esxml)
 (require 'esxml-query)
@@ -57,6 +58,21 @@
 (defcustom nov-unzip-program (executable-find "unzip")
   "Path to `unzip` executable."
   :type '(file :must-match t)
+  :group 'nov)
+
+(defcustom nov-variable-pitch t
+  "Non-nil if a variable pitch face should be used.
+Otherwise the default face is used."
+  :type 'boolean
+  :group 'nov)
+
+(defcustom nov-text-width nil
+  "Width filled text shall occupy.
+An integer is interpreted as the number of columns.  If nil, use
+the full window's width.  Note that this variable only has an
+effect in Emacs 25.1 or greater."
+  :type '(choice (integer :tag "Fixed width in characters")
+                 (const   :tag "Use the width of the window" nil))
   :group 'nov)
 
 (defvar-local nov-temp-dir nil
@@ -355,13 +371,19 @@ This function honors `shr-max-image-proportion' if possible."
                                                    (nth 1 edges)))))))
     (insert-image (create-image path nil nil :ascent 100))))
 
+(defvar nov-original-shr-tag-img-function
+  (symbol-function 'shr-tag-img))
+
 (defun nov-render-img (dom)
   "Custom <img> rendering function for DOM.
 Uses `shr-tag-img' for external paths and `nov-insert-image' for
 internal ones."
   (let ((url (cdr (assq 'src (cadr dom)))))
     (if (nov-external-url-p url)
-        (funcall 'shr-tag-img dom)
+        ;; HACK: avoid hanging in an infinite loop when using
+        ;; `cl-letf' to override `shr-tag-img' with a function that
+        ;; might call `shr-tag-img' again
+        (funcall nov-original-shr-tag-img-function dom)
       (setq url (expand-file-name url))
       (nov-insert-image url))))
 
@@ -414,8 +436,13 @@ the HTML is rendered with `shr-render-region'."
     (when (not imagep)
       (let (;; HACK: make buttons use our own commands
             (shr-map nov-mode-map)
-            (shr-external-rendering-functions nov-rendering-functions))
-        (shr-render-region (point-min) (point-max))))
+            (shr-external-rendering-functions nov-rendering-functions)
+            (shr-use-fonts nov-variable-pitch)
+            (shr-width nov-text-width))
+        ;; HACK: `shr-external-rendering-functions' doesn't cover
+        ;; every usage of `shr-tag-img'
+        (cl-letf (((symbol-function 'shr-tag-img) 'nov-render-img))
+          (shr-render-region (point-min) (point-max)))))
     (goto-char (point-min))))
 
 (defun nov-find-document (predicate)

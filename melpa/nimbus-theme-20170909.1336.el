@@ -5,7 +5,7 @@
 ;; Author: Marcin Swieczkowski <scatman@bu.edu>
 ;; Created: Thu Mar  2 22:19:19 CET 2017
 ;; Version: 1.0.0
-;; Package-Version: 20170906.447
+;; Package-Version: 20170909.1336
 ;; Last-Updated: Wed Apr 12 16:11:07 CEST 2017
 ;;           By: Marcin Swieczkowski
 ;;     Update #: 3
@@ -127,7 +127,7 @@
      ((t (:foreground ,nimbus/green))))
    ;; highlight-operators
    `(highlight-operators-face
-     ((t (:foreground ,nimbus/orange))))
+     ((t (:foreground ,nimbus/dark-green))))
 
    ;; mode line & powerline
    `(powerline-active1
@@ -1399,7 +1399,7 @@
    `(guide-key/key-face               ((t (:foreground ,nimbus/gray))))
 
    ;; indent-guide
-   `(indent-guide-face ((t (:foreground ,nimbus/gray))))
+   `(indent-guide-face ((t (:foreground ,nimbus/darker-gray))))
 
    ;; highlight-indent-guide
    `(highlight-indent-guides-character-face
