@@ -8,7 +8,7 @@
 ;;	Michal Nazarewicz <mina86@mina86.com>
 ;; Maintainer: Michal Nazarewicz <mina86@mina86.com>
 ;; URL: https://github.com/mina86/auto-dim-other-buffers.el
-;; Package-Version: 20170909.848
+;; Package-Version: 20170910.214
 ;; Version: 1.6.4
 
 ;; This file is not part of GNU Emacs.
@@ -88,7 +88,7 @@ Currently only mini buffer and echo areas are ignored."
                (face-remap-remove-relative adob--face-mode-remapping)
                (setq adob--face-mode-remapping nil)
                t))
-    (force-window-update (current-buffer)))
+    (force-window-update (current-buffer))))
 
 (defun adob--buffer-list-update-hook ()
   "If buffer has changed, dim the last one and undim the new one."
