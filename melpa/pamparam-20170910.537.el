@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/pamparam
-;; Package-Version: 20170829.939
+;; Package-Version: 20170910.537
 ;; Version: 0.0.0
 ;; Package-Requires: ((emacs "24.3") (lispy "0.26.0") (worf "0.1.0") (hydra "0.13.4"))
 ;; Keywords: outlines, hypermedia, flashcards, memory
@@ -310,19 +310,21 @@ When SB has multiple lines, SA may match one of them."
   (mapcar #'downcase
           (split-string str "[.,?! ]" t)))
 
-(defvar pamparam-alist
-  '(("/home/oleh/Dropbox/org/wiki/dutch.org" . "/home/oleh/Dropbox/source/site-lisp/git/dutch.pam"))
-  "Map a master file to the corresponding repository.
-Otherwise, the repository will be in the same directory as the master file.")
-
 (defvar pamparam-load-file-name (or load-file-name
-                               (buffer-file-name)))
+                                    (buffer-file-name)))
 
 (defvar pamparam-path (expand-file-name
-                  "doc/sets/capitals/capitals.pam"
-                  (file-name-directory pamparam-load-file-name))
+                       "doc/sets/capitals/capitals.pam"
+                       (file-name-directory pamparam-load-file-name))
   "Point to a default repository. In case you call `pamparam-drill'
 while not in any repo, this repo will be selected.")
+
+(defvar pamparam-alist
+  (list (cons (expand-file-name "capitals.org"
+                                (file-name-directory pamparam-path))
+              pamparam-path))
+  "Map a master file to the corresponding repository.
+Otherwise, the repository will be in the same directory as the master file.")
 
 ;;* Schedule files
 (defun pamparam-repo-directory (file)

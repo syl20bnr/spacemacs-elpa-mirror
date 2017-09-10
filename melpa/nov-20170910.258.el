@@ -4,8 +4,8 @@
 
 ;; Author: Vasilij Schneidermann <mail@vasilij.de>
 ;; URL: https://github.com/wasamasa/nov.el
-;; Package-Version: 20170909.1413
-;; Version: 0.1.5
+;; Package-Version: 20170910.258
+;; Version: 0.1.6
 ;; Package-Requires: ((dash "2.12.0") (esxml "0.3.3") (emacs "24.4"))
 ;; Keywords: hypermedia, multimedia, epub
 
@@ -147,6 +147,10 @@ Unnecessary nesting is removed with `nov-unnest-directory'."
 
 (defun nov-slurp (filename)
   "Return the contents of FILENAME."
+  ;; HACK: unzip preserves file permissions, no matter how silly they
+  ;; are, so ensure files are readable
+  (when (not (file-readable-p filename))
+    (set-file-modes filename #o444))
   (with-temp-buffer
     (insert-file-contents filename)
     (buffer-string)))
