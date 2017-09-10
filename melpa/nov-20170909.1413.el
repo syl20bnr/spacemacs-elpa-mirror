@@ -4,8 +4,8 @@
 
 ;; Author: Vasilij Schneidermann <mail@vasilij.de>
 ;; URL: https://github.com/wasamasa/nov.el
-;; Package-Version: 20170909.1312
-;; Version: 0.1.4
+;; Package-Version: 20170909.1413
+;; Version: 0.1.5
 ;; Package-Requires: ((dash "2.12.0") (esxml "0.3.3") (emacs "24.4"))
 ;; Keywords: hypermedia, multimedia, epub
 
@@ -73,6 +73,21 @@ the full window's width.  Note that this variable only has an
 effect in Emacs 25.1 or greater."
   :type '(choice (integer :tag "Fixed width in characters")
                  (const   :tag "Use the width of the window" nil))
+  :group 'nov)
+
+(defcustom nov-render-html-function 'nov-render-html
+  "Function used to render HTML.
+It's called without arguments with a buffer containing HTML and
+should change it to contain the rendered version of it.")
+
+(defcustom nov-pre-html-render-hook nil
+  "Hook run before `nov-render-html'."
+  :type 'hook
+  :group 'nov)
+
+(defcustom nov-post-html-render-hook nil
+  "Hook run after `nov-render-html'."
+  :type 'hook
   :group 'nov)
 
 (defvar-local nov-temp-dir nil
@@ -400,18 +415,32 @@ chapter title."
       (setq title '(:propertize "No title" face italic)))
     (setq header-line-format (list title ": " chapter-title))))
 
-(defvar nov-rendering-functions
+(defvar nov-shr-rendering-functions
   '(;; default function uses url-retrieve and fails on local images
     (img . nov-render-img)
     ;; titles are rendered *inside* the document by default
     (title . nov-render-title))
   "Alist of rendering functions used with `shr-render-region'.")
 
+(defun nov-render-html ()
+  "Render HTML in current buffer with shr."
+  (run-hooks 'nov-pre-html-render-hook)
+  (let (;; HACK: make buttons use our own commands
+        (shr-map nov-mode-map)
+        (shr-external-rendering-functions nov-shr-rendering-functions)
+        (shr-use-fonts nov-variable-pitch)
+        (shr-width nov-text-width))
+    ;; HACK: `shr-external-rendering-functions' doesn't cover
+    ;; every usage of `shr-tag-img'
+    (cl-letf (((symbol-function 'shr-tag-img) 'nov-render-img))
+      (shr-render-region (point-min) (point-max))))
+  (run-hooks 'nov-post-html-render-hook))
+
 (defun nov-render-document ()
   "Render the document referenced by `nov-documents-index'.
 If the document path refers to an image (as determined by
 `image-type-file-name-regexps'), an image is inserted, otherwise
-the HTML is rendered with `shr-render-region'."
+the HTML is rendered with `nov-render-html-function'."
   (interactive)
   (let* ((document (aref nov-documents nov-documents-index))
          (id (car document))
@@ -434,15 +463,7 @@ the HTML is rendered with `shr-render-region'."
       (insert (nov-slurp path))))
 
     (when (not imagep)
-      (let (;; HACK: make buttons use our own commands
-            (shr-map nov-mode-map)
-            (shr-external-rendering-functions nov-rendering-functions)
-            (shr-use-fonts nov-variable-pitch)
-            (shr-width nov-text-width))
-        ;; HACK: `shr-external-rendering-functions' doesn't cover
-        ;; every usage of `shr-tag-img'
-        (cl-letf (((symbol-function 'shr-tag-img) 'nov-render-img))
-          (shr-render-region (point-min) (point-max)))))
+      (funcall nov-render-html-function))
     (goto-char (point-min))))
 
 (defun nov-find-document (predicate)
