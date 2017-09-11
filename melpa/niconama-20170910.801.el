@@ -18,8 +18,8 @@
 ;; If not, see <http://www.gnu.org/licenses/>.
 
 ;; Created: 18 June 2016
-;; Version: 2.0
-;; Package-Version: 20170906.549
+;; Version: 2.1
+;; Package-Version: 20170910.801
 ;; URL: https://github.com/NOBUTOKA/niconama.el
 
 ;; Keywords: comm
@@ -409,21 +409,21 @@ If (NUM.someinfo) is exist in the list, replace this."
 							 (cdr userlist)
 						       nil))
 						 niconama--kotehan-list))))
-		    (cond (username (progn
-				      (goto-char (point-min))
-				      (while (re-search-forward (format "%s" commentuserid) nil t)
-					(replace-match (format "%s" username)))
-				      (goto-char (point-max))))
-			  ((string-match "[@\uff20]" (cl-caddr comment))
+		    (cond ((string-match "[@\uff20]" (cl-caddr comment))
 			   (niconama--add-kotehan-to-list
 			    (cons commentuserid (setq username (cdr (split-string (cl-caddr comment) "[@\uff20]"))))
 			    ))
+			  (username (goto-char (point-min))
+				    (while (re-search-forward (format "%s" commentuserid) nil t)
+				      (replace-match (format "%s" username)))
+				    (goto-char (point-max))
+				    )
 			  ((> (string-to-number commentuserid) 10000)
 			   (progn
 			     (setq niconama--comment-userid (string-to-number commentuserid))
 			     (niconama--get-nickname-from-userid)
 			     (setq username commentuserid)))
-			  (t (setq username commentuserid)))
+			  ((not username) (setq username commentuserid)))
 		    (insert (format "%d\t%02d:%02d\t%s\t%s\n"
 				    (niconama--find-broadcast-info
 				     (setq niconama--comment-last-comment-number
@@ -450,7 +450,8 @@ If (NUM.someinfo) is exist in the list, replace this."
 (defun niconama--add-kotehan-to-list (atmic-kotehan-list)
   "If there are no list equals to ATMIC-KOTEHAN-LIST in kotehan-list, add ATMIC-KOTEHAN-LIST to kotehan-list."
   (if (null (niconama--delete-nillist-from-list (mapcar #'(lambda (list)
-							    (equal atmic-kotehan-list list)) niconama--kotehan-list)))
+							    (equal atmic-kotehan-list list))
+							niconama--kotehan-list)))
       (progn (setq niconama--kotehan-list (cons atmic-kotehan-list niconama--kotehan-list))
 	     (niconama--save-kotehan-list))
     nil
@@ -459,7 +460,7 @@ If (NUM.someinfo) is exist in the list, replace this."
 (defun niconama--save-kotehan-list ()
   "Save Hundlename list."
   (with-temp-buffer
-    (insert (format "(setq niconama--kotehan-list '%s)" niconama--kotehan-list))
+    (insert (format "(setq niconama--kotehan-list '%S)" niconama--kotehan-list))
     (write-file (concat user-emacs-directory "kotehan.el"))))
 
 (defun niconama--get-nickname-from-userid ()
@@ -470,8 +471,8 @@ If (NUM.someinfo) is exist in the list, replace this."
 	   :success (cl-function (lambda (&key response &allow-other-keys)
 				   (let ((data (request-response-data response)) nickname)
 				     (string-match "<title>\\(.*\\)\u3055\u3093" (decode-coding-string data 'utf-8-unix))
-				     (setq nickname (match-string 1 (decode-coding-string data 'utf-8-unix)))
-				     (niconama--add-kotehan-to-list (cons (first (last(split-string (request-response-url response) "/"))) nickname))
+				     (setq nickname (format "%s" (match-string 1 (decode-coding-string data 'utf-8-unix))))
+				     (niconama--add-kotehan-to-list (cons (first (last (split-string (request-response-url response) "/"))) nickname))
 				     )))
 	   :error (cl-function (lambda (&key response &allow-other-keys)
 				 (message "%s" (request-response-status-code response))))
@@ -481,3 +482,4 @@ If (NUM.someinfo) is exist in the list, replace this."
 
 (provide 'niconama)
 ;;; niconama.el ends here
+

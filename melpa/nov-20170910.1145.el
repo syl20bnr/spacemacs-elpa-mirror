@@ -4,8 +4,8 @@
 
 ;; Author: Vasilij Schneidermann <mail@vasilij.de>
 ;; URL: https://github.com/wasamasa/nov.el
-;; Package-Version: 20170910.258
-;; Version: 0.1.6
+;; Package-Version: 20170910.1145
+;; Version: 0.1.7
 ;; Package-Requires: ((dash "2.12.0") (esxml "0.3.3") (emacs "24.4"))
 ;; Keywords: hypermedia, multimedia, epub
 
@@ -43,10 +43,12 @@
 
 (require 'cl-lib)
 (require 'dash)
-(require 'esxml)
 (require 'esxml-query)
 (require 'shr)
 (require 'url-parse)
+
+(when (not (fboundp 'libxml-parse-xml-region))
+  (message "Your Emacs wasn't compiled with libxml support"))
 
 
 ;;; EPUB preparation
@@ -116,9 +118,14 @@ Each alist item consists of the identifier and full path.")
   "Create a path from DIRECTORY and FILE."
   (concat (file-name-as-directory directory) file))
 
+(defun nov-directory-files (directory)
+  "Returns a list of files in DIRECTORY except for . and .."
+  (--remove (string-match-p "/\\.\\(?:\\.\\)?\\'" it)
+            (directory-files directory t)))
+
 (defun nov-contains-nested-directory-p (directory)
   "Non-nil if DIRECTORY contains exactly one directory."
-  (let* ((files (directory-files directory t "^[^.]"))
+  (let* ((files (nov-directory-files directory))
          (file (car files)))
     (and (= (length files) 1)
          (file-directory-p file)
@@ -127,9 +134,22 @@ Each alist item consists of the identifier and full path.")
 (defun nov-unnest-directory (directory child)
   "Move contents of CHILD into DIRECTORY, then delete CHILD."
   ;; FIXME: this will most certainly fail for con/con
-  (dolist (item (directory-files child t "^[^.]"))
+  (dolist (item (nov-directory-files child))
     (rename-file item directory))
   (delete-directory child))
+
+(defun nov--fix-permissions (file-or-directory)
+  (->> (file-modes file-or-directory)
+       (file-modes-symbolic-to-number "+r")
+       (set-file-modes file-or-directory)))
+
+(defun nov-fix-permissions (directory)
+  "Iterate recursively through DIRECTORY to fix its files."
+  (nov--fix-permissions directory)
+  (dolist (file (nov-directory-files directory))
+    (if (file-directory-p file)
+        (nov-fix-permissions file)
+      (nov--fix-permissions file))))
 
 (defun nov-unzip-epub (directory filename)
   "Extract FILENAME into DIRECTORY.
@@ -139,21 +159,23 @@ Unnecessary nesting is removed with `nov-unnest-directory'."
         child)
     (while (setq child (nov-contains-nested-directory-p directory))
       (nov-unnest-directory directory child))
+    ;; HACK: unzip preserves file permissions, no matter how silly they
+    ;; are, so ensure files and directories are readable
+    (nov-fix-permissions directory)
     status))
 
 (defmacro nov-ignore-file-errors (&rest body)
   "Like `ignore-errors', but for file errors."
   `(condition-case nil (progn ,@body) (file-error nil)))
 
-(defun nov-slurp (filename)
-  "Return the contents of FILENAME."
-  ;; HACK: unzip preserves file permissions, no matter how silly they
-  ;; are, so ensure files are readable
-  (when (not (file-readable-p filename))
-    (set-file-modes filename #o444))
+(defun nov-slurp (filename &optional parse-xml-p)
+  "Return the contents of FILENAME.
+If PARSE-XML-P is t, return the contents as parsed by libxml."
   (with-temp-buffer
     (insert-file-contents filename)
-    (buffer-string)))
+    (if parse-xml-p
+        (libxml-parse-xml-region (point-min) (point-max))
+      (buffer-string))))
 
 (defun nov-mimetype-valid-p (directory)
   "Return t if DIRECTORY contains a valid EPUB mimetype file."
@@ -176,7 +198,7 @@ Unnecessary nesting is removed with `nov-unnest-directory'."
   "Return t if DIRECTORY holds a valid EPUB container."
   (let ((filename (nov-container-filename directory)))
     (when (and filename (file-exists-p filename))
-      (let* ((content (xml-to-esxml (nov-slurp filename)))
+      (let* ((content (nov-slurp filename t))
              (content-file (nov-container-content-filename content)))
         (when (and content content-file)
           (file-exists-p (nov-make-path directory content-file)))))))
@@ -320,7 +342,7 @@ Each alist item consists of the identifier and full path."
 
 (defun nov-ncx-to-html (path)
   "Convert NCX document at PATH to HTML."
-  (let ((root (esxml-query "navMap" (xml-to-esxml (nov-slurp path)))))
+  (let ((root (esxml-query "navMap" (nov-slurp path t))))
     (with-temp-buffer
       (nov--walk-ncx-node root 0)
       (buffer-string))))
@@ -608,14 +630,11 @@ Internal URLs are visited with `nov-visit-relative-file'."
   (when (not (nov-epub-valid-p nov-temp-dir))
     (nov-clean-up)
     (error "Invalid EPUB file"))
-  (let* ((content (-> (nov-container-filename nov-temp-dir)
-                      (nov-slurp)
-                      (xml-to-esxml)))
+  (let* ((content (nov-slurp (nov-container-filename nov-temp-dir) t))
          (content-file (->> (nov-container-content-filename content)
                             (nov-make-path nov-temp-dir)))
          (work-dir (file-name-directory content-file))
-         (content (-> (nov-slurp content-file)
-                      (xml-to-esxml))))
+         (content (nov-slurp content-file t)))
     (setq nov-content-file content-file)
     (setq nov-epub-version (nov-content-version content))
     (setq nov-metadata (nov-content-metadata content))

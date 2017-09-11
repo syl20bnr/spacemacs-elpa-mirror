@@ -2,7 +2,7 @@
 ;; Copyright (C) 2015-2017 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.0
-;; Package-Version: 20170907.1810
+;; Package-Version: 20170910.1353
 ;; Package-Requires: ((emacs "24.3") (f "0.17.3") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -613,12 +613,20 @@ or most optimal searcher."
 
     ;; julia
     (:type "function" :supports ("ag" "grep" "rg" "git-grep") :language "julia"
-           :regex "function\\s*JJJ\\s*\\\("
-           :tests ("function test()" "function test ()"))
+           :regex "(@noinline|@inline)?\\s*function\\s*JJJ\\s*\\\("
+           :tests ("function test()" "function test ()" "@noinline function test()"))
 
     (:type "variable" :supports ("ag" "rg") :language "julia"
            :regex "const\\s+JJJ\\b"
            :tests ("const test = "))
+
+    (:type "type" :supports ("ag","rg") :language "julia"
+           :regex "(mutable)?\\s*struct\\s*JJJ"
+           :tests ("struct test"))
+
+    (:type "type" :supports ("ag","rg") :language "julia"
+           :regex "(type|immutable|abstract)\\s*JJJ"
+           :tests ("type test" "immutable test" "abstract test <:Testable" ))
 
     ;; haskell
     (:type "function" :supports ("ag") :language "haskell"
@@ -876,6 +884,7 @@ or most optimal searcher."
     (:language "javascript" :ext "vue" :agtype "js" :rgtype "js")
     (:language "javascript" :ext "html" :agtype "html" :rgtype "html")
     (:language "javascript" :ext "css" :agtype "css" :rgtype "css")
+    (:language "julia" :ext "jl" :agtype "jl" :rgtype "jl")
     (:language "lisp" :ext "lisp" :agtype "lisp" :rgtype "lisp")
     (:language "lisp" :ext "lsp" :agtype "lisp" :rgtype "lisp")
     (:language "lua" :ext "lua" :agtype "lua" :rgtype "lua")
@@ -1462,6 +1471,7 @@ current file."
     (:comment "--" :language "haskell")
     (:comment "--" :language "lua")
     (:comment "//" :language "rust")
+    (:comment "#"  :language "julia")
     (:comment "//" :language "objc")
     (:comment "//" :language "csharp")
     (:comment "//" :language "java")
