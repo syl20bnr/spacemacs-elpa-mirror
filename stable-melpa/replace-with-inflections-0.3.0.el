@@ -27,9 +27,9 @@
 
 ;; Author: Akinori MUSHA <knu@iDaemons.org>
 ;; URL: https://github.com/knu/replace-with-inflections.el
-;; Package-Version: 20170909.847
+;; Package-Version: 0.3.0
 ;; Created: 7 Seq 2017
-;; Version: 0.2.2
+;; Version: 0.3.0
 ;; Package-Requires: ((string-inflection "1.0.5") (inflections "1.1"))
 ;; Keywords: matching
 
@@ -37,7 +37,7 @@
 ;;
 ;; This package currently provides the following function:
 ;;
-;; * `query-replace-names-with-inflections'
+;; * `query-replace-with-inflections'
 ;;
 ;; Tis is an inflection aware version of `query-replace'.  For
 ;; example, replacing "foo_bar" with "baz_quux" will also replace
@@ -54,7 +54,7 @@
 ;;
 ;; Here's my suggested settings:
 ;;
-;;   (define-key search-map "n" 'query-replace-names-with-inflections)
+;;   (define-key search-map "n" 'query-replace-with-inflections)
 
 ;;; Code:
 
@@ -62,14 +62,6 @@
   (require 'cl))
 (require 'string-inflection)
 (require 'inflections)
-
-;; monkey-patch these until https://github.com/eschulte/jump.el/pull/13 is merged
-(defadvice inflection-singularize-string
-    (around save-match-data activate)
-  (save-match-data ad-do-it))
-(defadvice inflection-pluralize-string
-    (around save-match-data activate)
-  (save-match-data ad-do-it))
 
 (defun replace-with-inflections--format-string-like (str model-str)
   "Format STR like MODEL-STR."
@@ -103,7 +95,7 @@
     (replace-with-inflections--format-string-like plural str)))
 
 ;;;###autoload
-(defun query-replace-names-with-inflections (from-string to-string &optional delimited start end)
+(defun query-replace-with-inflections (from-string to-string &optional delimited start end)
   "\
 Interactively replace various forms of FROM-STRING with those of TO-STRING.
 

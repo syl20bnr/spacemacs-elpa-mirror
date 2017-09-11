@@ -1,6 +1,6 @@
 This package currently provides the following function:
 
-* `query-replace-names-with-inflections'
+* `query-replace-with-inflections'
 
 Tis is an inflection aware version of `query-replace'.  For
 example, replacing "foo_bar" with "baz_quux" will also replace
@@ -17,4 +17,4 @@ library depends on:
 
 Here's my suggested settings:
 
-  (define-key search-map "n" 'query-replace-names-with-inflections)
+  (define-key search-map "n" 'query-replace-with-inflections)
