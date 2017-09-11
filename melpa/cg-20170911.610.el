@@ -4,8 +4,8 @@
 
 ;; Author: Kevin Brubeck Unhammer <unhammer@fsfe.org>
 ;; Version: 0.3.0
-;; Package-Version: 20170201.347
-;; Url: http://beta.visl.sdu.dk/constraint_grammar.html
+;; Package-Version: 20170911.610
+;; Url: https://visl.sdu.dk/constraint_grammar.html
 ;; Keywords: languages
 
 ;; This file is not part of GNU Emacs.
@@ -58,7 +58,7 @@
 ;; - run vislcg3 --show-unused-sets and buttonise with line numbers (like Occur does)
 ;; - indentation function (based on prolog again?)
 ;; - the rest of the keywords
-;; - http://beta.visl.sdu.dk/cg3/single/#regex-icase
+;; - https://visl.sdu.dk/cg3/single/#regex-icase
 ;; - keyword tab-completion
 ;; - `font-lock-syntactic-keywords' is obsolete since 24.1
 ;; - goto-set/list
@@ -198,7 +198,7 @@ Don't change without re-evaluating `cg-kw-re' (or all of cg.el)." )
 			     "SUB"
 			     "OUTPUT")
   "Rule flags used for highlighting.
-from http://visl.sdu.dk/svn/visl/tools/vislcg3/trunk/src/Strings.cpp
+from https://visl.sdu.dk/svn/visl/tools/vislcg3/trunk/src/Strings.cpp
 Don't change without re-evaluating the file.")
 (defconst cg-kw-context-flags '("NOT"
 				"NEGATE"

@@ -4,7 +4,7 @@
 ;; Maintainer: Somelauw
 ;; Original-author: Edward Tjörnhammar
 ;; URL: https://github.com/Somelauw/evil-org-mode.git
-;; Package-Version: 20170909.736
+;; Package-Version: 20170911.1135
 ;; Git-Repository: git://github.com/Somelauw/evil-org-mode.git
 ;; Created: 2012-06-14
 ;; Forked-since: 2017-02-12
@@ -618,7 +618,6 @@ Includes tables, list items and subtrees."
 
 (defun evil-org--populate-rsi-bindings ()
   "Define key bindings to use in hybrid state."
-  (obsolete "Please create a github issue if you want to keep RSI bindings." "0.9.1")
   (define-key org-mode-map (kbd "C-d")
     (lambda (n)
       (interactive "p")

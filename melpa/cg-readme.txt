@@ -31,7 +31,7 @@ TODO:
 - run vislcg3 --show-unused-sets and buttonise with line numbers (like Occur does)
 - indentation function (based on prolog again?)
 - the rest of the keywords
-- http://beta.visl.sdu.dk/cg3/single/#regex-icase
+- https://visl.sdu.dk/cg3/single/#regex-icase
 - keyword tab-completion
 - `font-lock-syntactic-keywords' is obsolete since 24.1
 - goto-set/list
