@@ -4,7 +4,7 @@
 
 ;; Author: Lowe Thiderman <lowe.thiderman@gmail.com>
 ;; URL: https://github.com/thiderman/makefile-executor.el
-;; Package-Version: 20170912.125
+;; Package-Version: 20170912.404
 ;; Package-X-Original-Version: 20170613
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.3") (dash "2.11.0") (f "0.11.0") (s "1.10.0"))
@@ -137,8 +137,9 @@ FILENAME defaults to current buffer."
   (let ((target (or target
                     (completing-read "target: " (makefile-executor-get-targets filename)))))
     (makefile-executor-store-cache filename target)
-    (compile (format "make -f %s %s"
+    (compile (format "make -f %s -C %s %s"
                      (shell-quote-argument filename)
+                     (file-name-directory filename)
                      target))))
 
 (defun makefile-executor-store-cache (filename target)
@@ -160,6 +161,10 @@ If `projectile' is installed, use the `projectile-project-root'. If
              (file-truename buffer-file-name))
            makefile-executor-cache))
 
+(defun makefile-executor-get-makefiles ()
+  (-filter (lambda (f) (s-suffix? "makefile" (s-downcase f)))
+           (projectile-current-project-files)))
+
 ;;;###autoload
 (defun makefile-executor-execute-project-target ()
   "Choose a Makefile target from all of the Makefiles in the project.
@@ -170,8 +175,7 @@ If there are several Makefiles, a prompt to select one of them is shown."
   (when (not (featurep 'projectile))
     (error "You need to install 'projectile' for this function to work"))
 
-  (let ((files (-filter (lambda (f) (s-suffix? "makefile" (s-downcase f)))
-                        (projectile-current-project-files))))
+  (let ((files (makefile-executor-get-makefiles)))
     (makefile-executor-execute-target
      (if (= (length files) 1)
          (car files)
@@ -194,6 +198,18 @@ argument is given, always prompt."
           (makefile-executor-execute-target))
       (makefile-executor-execute-target (car targets)
                                         (cadr targets)))))
+
+;;;###autoload
+(defun makefile-executor-goto-makefile ()
+  "Interactively choose a Makefile to visit."
+  (interactive)
+
+  (when (not (featurep 'projectile))
+    (error "You need to install 'projectile' for this function to work"))
+
+  (find-file
+   (concat (projectile-project-root)
+           (completing-read "Makefile: " (makefile-executor-get-makefiles)))))
 
 ;; This is so that the library is useful even if one does not have
 ;; `projectile' installed.

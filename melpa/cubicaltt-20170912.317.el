@@ -1,6 +1,6 @@
 ;;; cubicaltt.el --- Mode for cubical type theory -*- lexical-binding: t -*-
 ;; URL: https://github.com/mortberg/cubicaltt
-;; Package-Version: 20170421.1132
+;; Package-Version: 20170912.317
 ;; Package-X-Original-version: 1.0
 ;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
 ;; Keywords: languages
@@ -59,6 +59,10 @@
     "with" "module" "where" "U" "opaque" "transparent" "transparent_all")
   "Keywords for cubical.")
 
+(defvar cubicaltt-operations
+  '("PathP" "comp" "transport" "fill" "Glue" "glue" "unglue" "Id" "idC" "idJ")
+  "Operations for cubical.")
+
 (defvar cubicaltt-special
   '("undefined" "primitive")
   "Special operators for cubical.")
@@ -66,6 +70,10 @@
 (defvar cubicaltt-keywords-regexp
   (regexp-opt cubicaltt-keywords 'words)
   "Regexp that recognizes keywords for cubical.")
+
+(defvar cubicaltt-operations-regexp
+  (regexp-opt cubicaltt-operations 'words)
+  "Regexp that recognizes operations for cubical.")
 
 (defvar cubicaltt-operators-regexp
   (regexp-opt '(":" "->" "=" "|" "\\" "*" "_" "<" ">" "\\/" "/\\" "-" "@") t)
@@ -79,7 +87,8 @@
   "Regexp that recognizes the beginning of a cubical definition.")
 
 (defvar cubicaltt-font-lock-keywords
-  `((,cubicaltt-keywords-regexp . font-lock-type-face)
+  `((,cubicaltt-keywords-regexp . font-lock-keyword-face)
+    (,cubicaltt-operations-regexp . font-lock-builtin-face)
     (,cubicaltt-operators-regexp . font-lock-variable-name-face)
     (,cubicaltt-special-regexp . font-lock-warning-face)
     (,cubicaltt-def-regexp . font-lock-function-name-face))
@@ -112,6 +121,9 @@ If no buffer is loaded, then this variable is nil.")
       cubicaltt-cubical-process
     (let ((process (make-comint "cubical" cubicaltt-command)))
       (setq cubicaltt-cubical-process process)
+      (save-current-buffer
+	(set-buffer process)
+	(set-syntax-table cubicaltt-syntax-table))
       process)))
 
 (defun cubicaltt-load ()

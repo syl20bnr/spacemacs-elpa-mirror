@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20170911.241
+;; Package-Version: 20170912.648
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -2543,7 +2543,7 @@ automatically."
 This may update in-place the MSGS objects to hint that
 suggestions are available."
   (setq intero-suggestions nil)
-  (let ((extension-regex (regexp-opt (intero-extensions)))
+  (let ((extension-regex (concat " " (regexp-opt (intero-extensions) t) "\\>"))
         (quoted-symbol-regex "[‘`‛]\\([^ ]+\\)['’]"))
     (cl-loop
      for msg in msgs
@@ -2560,7 +2560,7 @@ suggestions are available."
               (setq note t)
               (add-to-list 'intero-suggestions
                            (list :type 'add-extension
-                                 :extension (match-string 0 text)))
+                                 :extension (match-string 1 text)))
               (setq start (min (length text) (1+ (match-end 0))))))
           ;; Messages of this format:
           ;;
@@ -2813,7 +2813,10 @@ suggestions are available."
                          :title (concat "Add {-# OPTIONS_GHC "
                                         (plist-get suggestion :option)
                                         " #-}")
-                         :default t))
+                         :default (not
+                                   (string=
+                                    (plist-get suggestion :option)
+                                    "-fno-warn-name-shadowing"))))
                   (add-package
                    (list :key suggestion
                          :title (concat "Enable package: " (plist-get suggestion :package))
@@ -2976,15 +2979,22 @@ suggestions are available."
                 (add-extension
                  (save-excursion
                    (goto-char (point-min))
+                   (intero-skip-shebangs)
                    (insert "{-# LANGUAGE "
                            (plist-get suggestion :extension)
                            " #-}\n")))
                 (add-ghc-option
                  (save-excursion
                    (goto-char (point-min))
+                   (intero-skip-shebangs)
                    (insert "{-# OPTIONS_GHC "
                            (plist-get suggestion :option)
                            " #-}\n"))))))))))
+
+(defun intero-skip-shebangs ()
+  "Skip #! and -- shebangs used in Haskell scripts."
+  (when (looking-at "#!") (forward-line 1))
+  (when (looking-at "-- stack ") (forward-line 1)))
 
 (defun intero--warn (message &rest args)
   "Display a warning message made from (format MESSAGE ARGS...).

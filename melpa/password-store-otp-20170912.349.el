@@ -4,7 +4,7 @@
 ;; Author: Daniel Barreto
 ;; Created: Tue Aug 22 13:46:01 2017 (+0200)
 ;; Version: 0.1.0
-;; Package-Version: 20170911.457
+;; Package-Version: 20170912.349
 ;; Package-Requires: ((emacs "25") (s "1.9.0") (password-store "0.1"))
 ;; URL: https://github.com/volrath/password-store-otp.el
 ;; Keywords: tools, pass
@@ -42,7 +42,8 @@
 (defcustom password-store-otp-screenshots-path nil
   "OTP screenshots directory."
   :group 'password-store
-  :type 'string)
+  :type '(choice (const :tag "Off" nil)
+                 (file :tag "Expandable file name")))
 
 (defun password-store-otp--otpauth-lines (lines)
   "Return from LINES those that are OTP urls."
@@ -84,8 +85,8 @@ after `password-store-timeout' seconds."
         (let ((fname (format "%s-%s.png"
                              entry-base
                              (format-time-string "%Y-%m-%dT%T"))))
-          (concat (file-name-as-directory password-store-otp-screenshots-path)
-                  fname))
+          (expand-file-name fname
+                            password-store-otp-screenshots-path))
       (format "/tmp/%s.png" (make-temp-name entry-base)))))
 
 (defmacro password-store-otp--related-error (body)
@@ -159,7 +160,7 @@ after `password-store-timeout' seconds."
     (with-temp-buffer
       (condition-case err
           (call-process "zbarimg" nil t nil "-q" "--raw"
-                        (shell-quote-argument qr-image-filename))
+                        qr-image-filename)
         (error
          (error "It seems you don't have `zbar-tools' installed")))
       (password-store-otp-append

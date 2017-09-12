@@ -1,7 +1,7 @@
 ;;; org-mind-map.el --- Creates a directed graph from org-mode files
 ;; Author: Ted Wiles <theodore.wiles@gmail.com>
 ;; Keywords: orgmode, extensions, graphviz, dot
-;; Package-Version: 20170911.1551
+;; Package-Version: 20170912.741
 ;; Version: 0.2
 ;; URL: https://github.com/theodorewiles/org-mind-map/org-mind-map.el
 ;; Package-Requires: ((emacs "24") (dash "1.8.0") (org "8.2.10"))
@@ -137,7 +137,7 @@
 (defun org-mind-map-write-tags (h el)
   "Use H as the hash-map of colors and takes an element EL and extracts the title and tags.  Then, formats the titles and tags so as to be usable within DOT's graphviz language."
   (let* ((wrapped-title (org-mind-map-wrap-lines (org-element-property :title el)))
-         (title (replace-regexp-in-string "&" "&amp;" title nil t))
+         (title (replace-regexp-in-string "&" "&amp;" wrapped-title nil t))
          (color (org-element-property :OMM-COLOR el))
 	(tags (org-element-property :tags el)))
     (concat "<table>"
