@@ -2,7 +2,7 @@
 ;; Copyright (C) 2015-2017 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.0
-;; Package-Version: 20170911.304
+;; Package-Version: 20170911.1951
 ;; Package-Requires: ((emacs "24.3") (f "0.17.3") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -613,18 +613,20 @@ or most optimal searcher."
 
     ;; julia
     (:type "function" :supports ("ag" "grep" "rg" "git-grep") :language "julia"
-           :regex "(@noinline|@inline)?\\s*function\\s*JJJ\\("
-           :tests ("function test()" "@inline function test()"))
+           :regex "(@noinline|@inline)?\\s*function\\s*JJJ(\\{[^\\}]*\\})?\\("
+           :tests ("function test()" "@inline function test()"
+                   "function test{T}(h)"))
 
     (:type "function" :supports ("ag" "grep" "rg" "git-grep") :language "julia"
-           :regex "(@noinline|@inline)?JJJ\\([^\\)]*\\)\s*="
-           :tests ("test(a)=1" "test(a,b)=1*8" "@noinline test()=1"))
+           :regex "(@noinline|@inline)?JJJ(\\{[^\\}]*\\})?\\([^\\)]*\\)\s*="
+           :tests ("test(a)=1" "test(a,b)=1*8"
+                   "@noinline test()=1" "test{T}(x)=x"))
 
     (:type "function" :supports ("ag" "grep" "rg" "git-grep") :language "julia"
            :regex "macro\\s*JJJ\\("
            :tests ("macro test(a)=1" " macro test(a,b)=1*8"))
 
-    (:type "variable" :supports ("ag" "rg") :language "julia"
+    (:type "variable" :supports ("ag" "rg") :language "julia" 
            :regex "const\\s+JJJ\\b"
            :tests ("const test = "))
 
