@@ -1,7 +1,7 @@
 ;;; org-mind-map.el --- Creates a directed graph from org-mode files
 ;; Author: Ted Wiles <theodore.wiles@gmail.com>
 ;; Keywords: orgmode, extensions, graphviz, dot
-;; Package-Version: 20170827.1554
+;; Package-Version: 20170911.1551
 ;; Version: 0.2
 ;; URL: https://github.com/theodorewiles/org-mind-map/org-mind-map.el
 ;; Package-Requires: ((emacs "24") (dash "1.8.0") (org "8.2.10"))
@@ -125,11 +125,9 @@
      s2
      "<br></br>")))
 
-(defun org-mind-map-delete-space (s)
+(defun org-mind-map-dot-node-name (s)
   "Make string S formatted to be usable within dot node names."
-  (replace-regexp-in-string "[^A-z0-9 ]" ""
-                            (replace-regexp-in-string "[ \\{}|\n]" "" s nil t)
-  nil t))
+  (replace-regexp-in-string "[^A-z0-9]" "" s nil t))
 
 (defun org-mind-map-add-color (h tag)
   "Add the color text H after tag TAG."
@@ -138,7 +136,8 @@
 
 (defun org-mind-map-write-tags (h el)
   "Use H as the hash-map of colors and takes an element EL and extracts the title and tags.  Then, formats the titles and tags so as to be usable within DOT's graphviz language."
-  (let* ((title (org-mind-map-wrap-lines (org-element-property :title el)))
+  (let* ((wrapped-title (org-mind-map-wrap-lines (org-element-property :title el)))
+         (title (replace-regexp-in-string "&" "&amp;" title nil t))
          (color (org-element-property :OMM-COLOR el))
 	(tags (org-element-property :tags el)))
     (concat "<table>"
@@ -225,7 +224,7 @@
    splines=true;
    node [shape=plaintext];\n"
    (mapconcat 'identity (mapcar #'(lambda (x)
-                                    (concat (org-mind-map-delete-space x)
+                                    (concat (org-mind-map-dot-node-name x)
                                             " [label=<"
                                             x
                                             ">];\n"))
@@ -236,8 +235,8 @@
     'identity
     (mapcar #'(lambda (x)
                 (format "%s -> %s;\n"
-                        (org-mind-map-delete-space (first x))
-                        (org-mind-map-delete-space (second x))))
+                        (org-mind-map-dot-node-name (first x))
+                        (org-mind-map-dot-node-name (second x))))
             table)
     " ")
    (org-mind-map-make-legend legend)
