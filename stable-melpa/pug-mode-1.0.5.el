@@ -3,7 +3,7 @@
 ;; Copyright (c) 2007, 2008 Nathan Weizenbaum
 ;; Copyright (c) 2009-2013 Daniel Mendler
 ;; Copyright (c) 2012-2014 Bozhidar Batsov
-;; Copyright (c) 2016 Henrik Lissner
+;; Copyright (c) 2016-2017 Henrik Lissner
 ;;
 ;; Author: Nathan Weizenbaum
 ;; Author: Daniel Mendler
@@ -11,12 +11,12 @@
 ;; Author: Henrik Lissner
 ;; Maintainer: Henrik Lissner <henrik@lissner.net>
 ;; Created: February 18, 2016
-;; Modified: September 15, 2016
-;; Version: 1.0.4
-;; Package-Version: 1.0.4
+;; Modified: September 12, 2017
+;; Version: 1.0.5
+;; Package-Version: 1.0.5
 ;; Homepage: https://github.com/hlissner/emacs-pug-mode
 ;; Keywords: markup, language, jade, pug
-;; Package-Requires: ((cl-lib "0.5"))
+;; Package-Requires: ((emacs "24.3"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -49,7 +49,7 @@ the backspaced line be re-indented along with the line itself."
   :type 'boolean
   :group 'pug)
 
-(defvar pug-indent-function 'pug-indent-p
+(defvar pug-indent-function #'pug-indent-p
   "This function should look at the current line and return true if the next
 line could be nested within this line.")
 
@@ -60,10 +60,10 @@ line could be nested within this line.")
              "audio" "b" "base" "basefont" "bdo" "big" "blockquote" "body" "br"
              "button" "canvas" "caption" "center" "cite" "code" "col" "colgroup"
              "command" "datalist" "dd" "del" "details" "dialog" "dfn" "dir"
-             "div" "dl" "dt" "em" "embed" "fieldset" "figure" "font" "footer"
+             "div" "dl" "dt" "em" "embed" "fieldset" "figure" "figcaption" "font" "footer"
              "form" "frame" "frameset" "h1" "h2" "h3" "h4" "h5" "h6" "head"
              "header" "hgroup" "hr" "html" "i" "iframe" "img" "input" "ins"
-             "keygen" "kbd" "label" "legend" "li" "link" "map" "mark" "menu"
+             "keygen" "kbd" "label" "legend" "li" "link" "map" "main" "mark" "menu"
              "meta" "meter" "nav" "noframes" "noscript" "object" "ol" "optgroup"
              "option" "output" "p" "param" "pre" "progress" "q" "rp" "rt" "ruby"
              "s" "samp" "script" "section" "select" "small" "source" "span"
@@ -75,21 +75,17 @@ line could be nested within this line.")
 (defconst pug-selfclosing-tags-re
   (concat "^ *"
           (regexp-opt
-           '("meta" "title" "img" "area" "base" "br" "col" "command" "embed"
+           '("meta" "img" "area" "base" "br" "col" "command" "embed"
              "hr" "input" "link" "param" "source" "track" "wbr") t)))
 
-(defconst pug-keywords-re
-  (concat "^ *\\(?:- \\)?" (regexp-opt '("extends" "block") t)))
-
 (defconst pug-control-re
-  (concat "^ *\\(- \\)?\\("
+  (concat "^ *\\(- \\)?\\<\\("
           (regexp-opt
-           '("if" "unless" "while" "until" "else" "for" "begin" "elsif" "when"
-             "default" "case" "var'"
+           '("if" "unless" "while" "until" "else" "for" "each" "in" "begin"
+             "elsif" "when" "default" "case" "var'"
 
-             "extends" "block" "mixin"
-             ) 'words)
-          "\\)"))
+             "extends" "mixin" "append" "prepend"))
+          "\\|\\(block\\(?:\\s-+\\(append\\|prepend\\)\\)?\\)\\)\\>"))
 
 (defconst pug-embedded-re "^ *:[a-z0-9_-]+"
   "Regexp matching filter and embedded elements.")
@@ -99,7 +95,6 @@ line could be nested within this line.")
 
 (defconst pug-tag-declaration-char-re "[-a-zA-Z0-9_.#+]"
   "Regexp used to match a character in a tag declaration")
-
 
 ;; Helper for nested blocks (comment, embedded, text)
 (defun pug-nested-re (re)
@@ -137,43 +132,57 @@ line could be nested within this line.")
     ("<!--.*-->"
      (0 font-lock-comment-face))
     ;; filters
-    (,(pug-nested-re "\\(:[a-z0-9_]+\\)")
-     (0 font-lock-preprocessor-face prepend))
+    (,(pug-nested-re "\\(:[a-z0-9:_-]+\\)\\(?:(\\|$\\|\n\\)")
+     (2 font-lock-preprocessor-face prepend))
     ;; block keywords
     (,pug-control-re
      (2 font-lock-keyword-face append))
+    ;; "in" keyword in "each" statement
+    ("each\\s-+\\w*\\s-+\\(in\\)" (1 font-lock-keyword-face))
 
     ;; Single quote string
     ("[^a-z]\\('[^'\n]*'\\)"
-     1 font-lock-string-face append)
+     1 font-lock-string-face t)
     ;; Double quoted string
-    ;; ("\\(\"[^\"]*\"\\)"
-    ;;  1 font-lock-string-face append)
+    ("\\(\"[^\"]*\"\\)"
+     1 font-lock-string-face t)
+    ;; Backtick string
+    ("=\\s-*\\(\`[^\`]*\`\\)"
+     1 font-lock-string-face t)
 
     ;; plain text block
-    (,(pug-nested-re "[\\.#+a-z][^ \t]*\\(?:(.+)\\)?\\(\\.\\)")
-     (3 font-lock-string-face t))
-    ;; Plain text inline
-    ("^ *|.*" (0 font-lock-string-face t))
+    ;;(,(pug-nested-re "[\\.#+a-z][^ \t]*\\(?:(.+)\\)?\\(\\.\\)")
+    ;; (3 font-lock-string-face t))
 
-    ;; interpolation
-    ("[#!]\\({[^}]+}\\|\\[[^]]+\\]\\)"
-     (0 font-lock-preprocessor-face prepend))
+    ;; Plain text inline
+    ("^\\s-*\\(|\\).*$"
+     (1 font-lock-function-name-face t))
+
+    ;; String interpolation
+    ("[#!]{\\([^}]+\\)}"
+     (1 font-lock-preprocessor-face))
+
+    ;; Tag interpolation
+    ("#\\[\\(\\sw+\\).*?\\]"
+     (1 font-lock-function-name-face))
 
     ;; doctype
     ("^\\(doctype .*$\\)"
      1 font-lock-comment-face)
-    ;; include statements
-    ("\\<\\(include\\)\\(:[^ \t]+\\|\\s-+\\)\\([^\n]+\\)\n"
+
+    ;; include/extends statements
+    ("\\<\\(include\\|extends\\)\\(:[^ \t]+\\|\\s-+\\)\\([^\n]+\\)\n"
      (1 font-lock-keyword-face)
      (2 font-lock-preprocessor-face)
      (3 font-lock-string-face))
 
     ;; attributes
-    ("[a-z0-9-_]("
-     ("\\(?:(\\|,\\s-*\\)\\([[:alnum:]_-]+\\)\\(\\s-*=\\s-*\\('[^']+'\\|\"[^\"]+\"\\|[^,]+\\)\\)?"
-      (backward-char) (forward-char)
-      (1 font-lock-constant-face)))
+    ;; FIXME Doesn't take inline js or multiline attributes into account
+    ;; FIXME Possibly needs a real parser
+    ;; ("[a-z0-9-_]("
+    ;;  ("\\(?:(\\|,?\\s-*\\)\\([[:alnum:]_-]+\\)\\(\\s-*=\\s-*\\('[^']+'\\|\"[^\"]+\"\\)\\)?"
+    ;;   (backward-char) (forward-char)
+    ;;   (1 font-lock-constant-face)))
 
     ;; ==', =', -
     ("^\\s-*\\(!?==?'?\\|-\\)\\s-"
@@ -191,7 +200,7 @@ line could be nested within this line.")
       nil nil
       (1 font-lock-function-name-face)))))
 
-(cl-defun pug-extend-region ()
+(defun pug-extend-region ()
   "Extend the font-lock region to encompass embedded engines and comments."
   (let ((old-beg font-lock-beg)
         (old-end font-lock-end))
@@ -242,13 +251,13 @@ declaration"
 
 (defvar pug-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map "\177" 'pug-electric-backspace)
-    (define-key map "\C-?" 'pug-electric-backspace)
-    (define-key map "\C-c\C-f" 'pug-forward-sexp)
-    (define-key map "\C-c\C-b" 'pug-backward-sexp)
-    (define-key map "\C-c\C-u" 'pug-up-list)
-    (define-key map "\C-c\C-d" 'pug-down-list)
-    (define-key map "\C-c\C-k" 'pug-kill-line-and-indent)
+    (define-key map "\177" #'pug-electric-backspace)
+    (define-key map "\C-?" #'pug-electric-backspace)
+    (define-key map "\C-c\C-f" #'pug-forward-sexp)
+    (define-key map "\C-c\C-b" #'pug-backward-sexp)
+    (define-key map "\C-c\C-u" #'pug-up-list)
+    (define-key map "\C-c\C-d" #'pug-down-list)
+    (define-key map "\C-c\C-k" #'pug-kill-line-and-indent)
     map))
 
 ;; For compatibility with Emacs < 24, derive conditionally
@@ -261,12 +270,12 @@ declaration"
 
 \\{pug-mode-map}"
   (set-syntax-table pug-mode-syntax-table)
-  (add-to-list 'font-lock-extend-region-functions 'pug-extend-region)
+  (add-to-list 'font-lock-extend-region-functions #'pug-extend-region)
   (setq-local font-lock-multiline t)
-  (setq-local indent-line-function 'pug-indent-line)
-  (setq-local indent-region-function 'pug-indent-region)
+  (setq-local indent-line-function #'pug-indent-line)
+  (setq-local indent-region-function #'pug-indent-region)
   (setq-local parse-sexp-lookup-properties t)
-  (setq-local electric-indent-chars '(?| ?+))
+  (setq-local electric-indent-chars '(?|))
   (setq-local comment-start "//")
   (setq-local comment-start-skip "//+ *")
   (setq-local comment-end "")
@@ -403,7 +412,7 @@ the sexp rather than the first non-whitespace character of the next line."
       (looking-at-p pug-embedded-re)
       (and (save-excursion
              (back-to-indentation)
-             (not (memq (face-at-point) '(font-lock-preprocessor-face))))
+             (not (eq (face-at-point) 'font-lock-preprocessor-face)))
            (not (looking-at-p pug-selfclosing-tags-re))
            (cl-loop for opener in `(,(concat "\\(^ *[\\.#+]\\|" pug-tags-re "\\)[^ \t]*\\((.+)\\)?\n")
                                     "^ *[\\.#+a-z][^ \t]*\\(?:(.+)\\)?\\.\n"
@@ -515,10 +524,11 @@ line."
 
 (defun pug-indent-string ()
   "Return the indentation string for `tab-width'."
-  (mapconcat 'identity (make-list tab-width " ") ""))
+  (mapconcat #'identity (make-list tab-width " ") ""))
 
 ;;;###autoload
 (defun pug-compile ()
+  "Compile the current pug file into html, using the pug cli."
   (interactive)
   (if (memq major-mode '(pug-mode jade-mode))
       (compile (format "pug %s" buffer-file-name))
