@@ -4,7 +4,7 @@
 
 ;; Author: Lowe Thiderman <lowe.thiderman@gmail.com>
 ;; URL: https://github.com/thiderman/makefile-executor.el
-;; Package-Version: 20170721.13
+;; Package-Version: 20170912.125
 ;; Package-X-Original-Version: 20170613
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.3") (dash "2.11.0") (f "0.11.0") (s "1.10.0"))
@@ -175,7 +175,8 @@ If there are several Makefiles, a prompt to select one of them is shown."
     (makefile-executor-execute-target
      (if (= (length files) 1)
          (car files)
-       (completing-read "Makefile: " files)))))
+       (concat (projectile-project-root)
+               (completing-read "Makefile: " files))))))
 
 ;;;###autoload
 (defun makefile-executor-execute-last (arg)
