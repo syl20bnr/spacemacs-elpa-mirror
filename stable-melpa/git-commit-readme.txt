@@ -50,7 +50,8 @@ Some support for pseudo headers as used in some projects is
 provided by these commands:
 
   C-c C-s  Insert a Signed-off-by header.
-  C-C C-a  Insert a Acked-by header.
+  C-c C-a  Insert a Acked-by header.
+  C-c C-m  Insert a Modified-by header.
   C-c C-t  Insert a Tested-by header.
   C-c C-r  Insert a Reviewed-by header.
   C-c C-o  Insert a Cc header.

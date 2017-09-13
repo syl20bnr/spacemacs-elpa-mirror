@@ -4,7 +4,7 @@
 
 ;; Author: Lowe Thiderman <lowe.thiderman@gmail.com>
 ;; URL: https://github.com/thiderman/makefile-executor.el
-;; Package-Version: 20170912.404
+;; Package-Version: 20170913.56
 ;; Package-X-Original-Version: 20170613
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.3") (dash "2.11.0") (f "0.11.0") (s "1.10.0"))
@@ -161,15 +161,20 @@ If `projectile' is installed, use the `projectile-project-root'. If
              (file-truename buffer-file-name))
            makefile-executor-cache))
 
+(defun makefile-executor-makefile-p (f)
+  (s-suffix? "makefile" (s-downcase f)))
+
 (defun makefile-executor-get-makefiles ()
-  (-filter (lambda (f) (s-suffix? "makefile" (s-downcase f)))
+  (-filter 'makefile-executor-makefile-p
            (projectile-current-project-files)))
 
 ;;;###autoload
 (defun makefile-executor-execute-project-target ()
   "Choose a Makefile target from all of the Makefiles in the project.
 
-If there are several Makefiles, a prompt to select one of them is shown."
+If there are several Makefiles, a prompt to select one of them is shown.
+If so, the parent directory of the closest Makefile is added
+as initial input for convenience in executing the most relevant Makefile."
   (interactive)
 
   (when (not (featurep 'projectile))
@@ -179,8 +184,13 @@ If there are several Makefiles, a prompt to select one of them is shown."
     (makefile-executor-execute-target
      (if (= (length files) 1)
          (car files)
-       (concat (projectile-project-root)
-               (completing-read "Makefile: " files))))))
+       ;; Get the dominating file dir so we can use that as initial input
+       (let* ((bn (or (buffer-file-name) default-directory))
+              (fn (or (locate-dominating-file bn "Makefile")
+                      (locate-dominating-file bn "makefile")))
+              (init (file-relative-name fn (projectile-project-root))))
+         (concat (projectile-project-root)
+                 (completing-read "Makefile: " files nil t init)))))))
 
 ;;;###autoload
 (defun makefile-executor-execute-last (arg)

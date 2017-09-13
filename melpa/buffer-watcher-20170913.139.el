@@ -1,11 +1,11 @@
-;;; buffer-watcher.el --- Makes it easy to run shell scripts per filetype/directory when a buffer is saved.
+;;; buffer-watcher.el --- Easily run shell scripts per filetype/directory when a buffer is saved
 
 ;; Copyright (C) 2014-2017 Nicolas Petton
 
 ;; Author: Nicolas Petton <nicolas@petton.fr>
 ;; Package: buffer-watcher
 ;; Package-Requires: ((f "0.16.2") (cl-lib "0.5"))
-;; Package-Version: 20170620.801
+;; Package-Version: 20170913.139
 ;; Version: 0.1
 
 ;; This file is not part of GNU Emacs.
