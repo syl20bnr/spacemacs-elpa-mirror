@@ -4,7 +4,7 @@
 
 ;; Author: Lee Hinman <lee@writequit.org>
 ;; URL: http://www.github.com/dakrone/emacs-java-imports
-;; Package-Version: 20160311.1515
+;; Package-Version: 20170913.710
 ;; Version: 0.1.1
 ;; Keywords: java
 ;; Package-Requires: ((emacs "24.4") (s "1.10.0") (pcache "0.3.2"))
@@ -275,6 +275,34 @@ package and cache it for future statements."
   (let ((class (or (thing-at-point 'symbol)
                    (read-string "Class name: "))))
     (java-imports-add-import (s-chop-prefix "@" class))))
+
+;;;###autoload
+(defun java-imports-scan-local-jars (&optional local-repo)
+  (interactive)
+  "scan the local repository, find local jars and add them to the cache.
+if a class is found in multiple packages, any such package may be registered
+for that class in the cache.
+This is currently a synchronous and potentially slow operation, but
+hopefully faster than adding imports manually or using eclipse"
+  (cl-labels ((shell-command-to-lines
+               (cmd)
+               (s-split "\n" (shell-command-to-string cmd) t)))
+    (let* ((local-repo (or local-repo (expand-file-name
+                                       "~/.m2/repository/")))
+           (jars (shell-command-to-lines
+                  (format "find '%s' -name '*.jar'"
+                          local-repo)))
+           (cache (pcache-repository java-imports-cache-name)))
+      (dolist (jar jars)
+        (dolist (line (shell-command-to-lines (concat "jar -tf " jar)))
+          (when (string-match "\\(.*\\)/\\(.*\\)[.]class" line)
+            (let ((class (intern (match-string 2 line)))
+                  (package-name
+                   (replace-regexp-in-string "/" "." (match-string 1 line))))
+              (if (pcache-get cache class)
+                  (message "skipping %s -> %s" class package-name)
+                (progn (message "adding %s -> %s..." class package-name)
+                       (pcache-put cache class package-name))))))))))
 
 (provide 'java-imports)
 

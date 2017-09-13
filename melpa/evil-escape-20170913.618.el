@@ -4,9 +4,9 @@
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; Keywords: convenience editing evil
-;; Package-Version: 20170115.1343
+;; Package-Version: 20170913.618
 ;; Created: 22 Oct 2014
-;; Version: 3.14
+;; Version: 3.15
 ;; Package-Requires: ((emacs "24") (evil "1.0.9") (cl-lib "0.5"))
 ;; URL: https://github.com/syl20bnr/evil-escape
 
@@ -48,6 +48,7 @@
 ;;   - quit gist-list menu
 ;;   - quit helm-ag-edit
 ;;   - hide neotree buffer
+;;   - quit evil-multiedit
 ;; And more to come !
 
 ;; Configuration:
@@ -167,6 +168,8 @@ with a key sequence."
     (`lisp 'evil-lisp-state/quit)
     (`iedit 'evil-iedit-state/quit-iedit-mode)
     (`iedit-insert 'evil-iedit-state/quit-iedit-mode)
+    (`multiedit 'evil-multiedit-abort)
+    (`multiedit-insert 'evil-multiedit-abort)
     (_ (evil-escape--escape-normal-state))))
 
 (defun evil-escape-pre-command-hook ()
@@ -188,7 +191,10 @@ with a key sequence."
                           (equal (this-command-keys) (evil-escape--second-key))
                           (char-equal evt fkey))))
             (evil-repeat-stop)
-            (when (evil-escape-func) (setq this-command (evil-escape-func))))
+            (let ((esc-fun (evil-escape-func)))
+              (when esc-fun
+                (setq this-command esc-fun)
+                (setq this-original-command esc-fun))))
            ((null evt))
            (t (setq unread-command-events
                     (append unread-command-events (list evt)))))))))
