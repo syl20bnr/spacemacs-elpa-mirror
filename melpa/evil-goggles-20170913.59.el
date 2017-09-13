@@ -4,8 +4,8 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20170830.2329
-;; Package-Requires: ((emacs "25") (evil "1.0.0"))
+;; Package-Version: 20170913.59
+;; Package-Requires: ((emacs "24.4") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
 
@@ -38,7 +38,6 @@
 ;;; Code:
 
 (require 'evil)
-;; TODO try not to depend on cl-lib
 (require 'cl-lib)
 
 (defcustom evil-goggles-duration 0.200
@@ -132,10 +131,18 @@ displayed while its running."
          (progn ,@body))
      (progn ,@body)))
 
+(defun evil-goggles--funcall-interactively (f &rest args)
+  "Call F with ARGS interactively.
+
+This function mimics `funcall-interactively', available in Emacs 25,
+so this package can work with Emacs 24"
+  (cl-letf (((symbol-function 'called-interactively-p) (lambda (_) t)))
+    (apply f args)))
+
 (defmacro evil-goggles--funcall-preserve-interactive (fun &rest args)
   "Call FUN with ARGS with `funcall' or `funcall-interactively'."
   `(if (called-interactively-p 'any)
-       (funcall-interactively ,fun ,@args)
+       (evil-goggles--funcall-interactively ,fun ,@args)
      (funcall ,fun ,@args)))
 
 (defmacro evil-goggles--define-switch-and-face (switch-name switch-doc face-name face-doc)
@@ -278,7 +285,7 @@ N and LIST are the arguments of the original function."
 (defun evil-goggles--get-undo-item (list)
   "Process LIST.
 
-The LIST is the input variable to function primitive-undo.
+The LIST is the input variable to function `primitive-undo'.
 
 This function tries to return a single list, either:
  ('text-added beg end), or:
@@ -541,6 +548,7 @@ COUNT BEG &OPTIONAL END TYPE REGISTER are the arguments of the original function
   "evil-goggles global minor mode."
   :lighter evil-goggles-lighter
   :global t
+  :require 'evil-goggles
   (cond
    (evil-goggles-mode
 

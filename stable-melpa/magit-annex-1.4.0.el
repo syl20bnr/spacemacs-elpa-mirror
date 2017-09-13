@@ -4,11 +4,11 @@
 
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;;         Rémi Vanicat <vanicat@debian.org>
-;; URL: https://github.com/kyleam/magit-annex
-;; Package-Version: 1.3.1
+;; URL: https://github.com/magit/magit-annex
+;; Package-Version: 1.4.0
 ;; Keywords: vc tools
-;; Version: 1.3.1
-;; Package-Requires: ((cl-lib "0.3") (magit "2.3.0"))
+;; Version: 1.4.0
+;; Package-Requires: ((cl-lib "0.3") (magit "2.11.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -88,11 +88,14 @@
   "Whether to confirm before adding all changes to the annex."
   :type 'boolean)
 
-(defcustom magit-annex-standard-options nil
-  "Call git-annex with these options.
+(defcustom magit-annex-global-arguments nil
+  "Arguments that are added to every git-annex call.
 These are placed after \"annex\" in the call, whereas values from
-`magit-git-standard-options' are placed after \"git\"."
+`magit-git-global-arguments' are placed after \"git\"."
   :type '(repeat string))
+
+(define-obsolete-variable-alias 'magit-annex-standard-options
+  'magit-annex-global-arguments "1.4.0")
 
 (defcustom magit-annex-limit-file-choices t
   "Limit choices for file commands based on state of repo.
@@ -227,39 +230,30 @@ program used to open the unused file."
   "Call git-annex synchronously in a separate process, and refresh.
 
 Before ARGS are passed to git-annex,
-`magit-annex-standard-options' will be prepended.
+`magit-annex-global-arguments' will be prepended.
 
 See `magit-run-git' for more details on the git call."
-  (magit-run-git "annex" magit-annex-standard-options args))
+  (magit-run-git "annex" magit-annex-global-arguments args))
 
 (defun magit-annex-run-async (&rest args)
   "Call git-annex asynchronously with ARGS.
 See `magit-annex-run' and `magit-run-git-async' for more
 information."
-  (magit-run-git-async "annex" magit-annex-standard-options args))
+  (magit-run-git-async "annex" magit-annex-global-arguments args))
 
-(defun magit-annex-command ()
-  "Execute a git-annex subcommand asynchronously, displaying the output.
-With a prefix argument, run git-annex from repository root."
-  (interactive)
-  (apply #'magit-git-command (magit-annex-command-read-args)))
+(defun magit-annex-command (command)
+  "Execute COMMAND asynchonously, displaying output.
+This is like `magit-git-command', but \"git annex \" rather than
+\"git \" is used as the initial input."
+  (interactive (list (magit-read-shell-command nil "git annex ")))
+  (magit-git-command command))
 
-(defun magit-annex-command-topdir ()
-  "Execute a git-annex subcommand asynchronously, displaying the output.
-Run git-annex in the root of the current repository."
-  (interactive)
-  (apply #'magit-git-command (magit-annex-command-read-args t)))
-
-(defun magit-annex-command-read-args (&optional root)
-  ;; Modified from `magit-git-command-read-args'.
-  (let ((dir (if (or root current-prefix-arg)
-                 (or (magit-toplevel)
-                     (user-error "Not inside a Git repository"))
-               default-directory)))
-    (list (concat "annex " (read-string (format "git-annex subcommand (in %s): "
-                                                (abbreviate-file-name dir))
-                                        nil 'magit-git-command-history))
-          dir)))
+(defun magit-annex-command-topdir (command)
+  "Execute COMMAND asynchronously from top directory, displaying output.
+This is like `magit-git-command-topdir', but \"git annex \"
+rather than \"git \" is used as the initial input."
+  (interactive (list (magit-read-shell-command t "git annex ")))
+  (magit-git-command-topdir command))
 
 
 ;;; Initialization
