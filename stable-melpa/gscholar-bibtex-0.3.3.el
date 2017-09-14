@@ -4,7 +4,7 @@
 
 ;; Author: Junpeng Qiu <qjpchmail@gmail.com>
 ;; Keywords: extensions
-;; Package-Version: 0.3.2
+;; Package-Version: 0.3.3
 ;; Version: 0.3.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -637,9 +637,17 @@
           (url-generic-parse-url "http://scholar.google.com")))
     (url-cookie-handle-set-cookie my-cookie)
     (gscholar-bibtex--url-retrieve-as-string
-     (concat "http://scholar.google.com/scholar?q="
-             (url-hexify-string
-              (replace-regexp-in-string " " "\+" query))))))
+     (concat "https://scholar.google.com/scholar?q="
+             ;; To prepare the query string, we need to:
+             ;; 1. Remove some extraneous puncutation.
+             ;; 2. Hex-encode it.
+             ;; 3. Convert encoded spaces to +
+             ;; If we encode spaces as + first, url-hexify-string
+             ;; hex-encodes the + symbols, and they are not interpreted
+             ;; properly as spaces on the server.
+             (replace-regexp-in-string "%20" "\+"
+                                       (url-hexify-string
+                                        (replace-regexp-in-string "[:,]" "" query)))))))
 
 (defun gscholar-bibtex-google-scholar-bibtex-urls (buffer-content)
   (gscholar-bibtex-re-search buffer-content "\\(/scholar\.bib.*?\\)\"" 1))
@@ -654,7 +662,7 @@
 
 (defun gscholar-bibtex-google-scholar-bibtex-content (bibtex-url)
   (gscholar-bibtex--url-retrieve-as-string
-   (concat "http://scholar.google.com" bibtex-url)))
+   (concat "https://scholar.google.com" bibtex-url)))
 
 ;;; DBLP
 (defun gscholar-bibtex-dblp-search-results (query)
@@ -707,9 +715,7 @@
   (interactive)
   (gscholar-bibtex--source-on-off-interactive-impl :off))
 
-;;;###autoload
-(defun gscholar-bibtex ()
-  (interactive)
+(defun gscholar-bibtex-select-source ()
   (if (= 1 (length gscholar-bibtex-enabled-sources))
       (setq gscholar-bibtex-selected-source
             (caar gscholar-bibtex-enabled-sources))
@@ -728,11 +734,21 @@
             (if (string= "" selected-source)
                 gscholar-bibtex-default-source
               selected-source))))
-  (unless (assoc gscholar-bibtex-selected-source
-                 gscholar-bibtex-enabled-sources)
-    (error "Please select an installed source!"))
-  (let* ((query (read-string
-                 (concat "Query[" gscholar-bibtex-selected-source "]: ")))
+  (if (not (assoc gscholar-bibtex-selected-source
+		  gscholar-bibtex-enabled-sources))
+      (error "Please select an installed source!")
+    gscholar-bibtex-selected-source))
+
+;;;###autoload
+(defun gscholar-bibtex (&optional source query)
+  "Look up on a bibliographic SOURCE such as Google Scholar for the given QUERY.
+When called interactively, prompts for SOURCE and QUERY string.
+Can be called programmatically with SOURCE (to prompt for QUERY
+only or SOURCE and QUERY for non-interactive lookup."
+  (interactive)
+  (setq gscholar-bibtex-selected-source (or source (gscholar-bibtex-select-source)))
+  (let* ((query (or query (read-string
+			   (concat "Query[" gscholar-bibtex-selected-source "]: "))))
          (search-results (gscholar-bibtex-dispatcher :search-results query))
          (titles (gscholar-bibtex-dispatcher :titles search-results))
          (subtitles (gscholar-bibtex-dispatcher :subtitles search-results))
