@@ -4,7 +4,7 @@
 
 ;; Author: Chunyang Xu <mail@xuchunyang.me>
 ;; URL: https://github.com/xuchunyang/helm-lastpass
-;; Package-Version: 20170808.511
+;; Package-Version: 20170914.142
 ;; Package-Requires: ((emacs "24.1") (helm-core "2.8.1") (csv "2.1"))
 ;; Keywords: LastPass
 ;; Version: 0
@@ -60,7 +60,8 @@
   :group 'helm-lastpass)
 
 (defun helm-lastpass-cli ()
-  (executable-find helm-lastpass-cli))
+  (or (executable-find helm-lastpass-cli)
+      (error "Error: `lpass' is not found, please install it first")))
 
 (defun helm-lastpass-logged-in-p ()
   (zerop (call-process (helm-lastpass-cli) nil nil nil "status")))

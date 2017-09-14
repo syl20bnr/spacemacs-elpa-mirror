@@ -12,7 +12,7 @@
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 
 ;; Package-Requires: ((emacs "24.4") (dash "20170810") (with-editor "20170817"))
-;; Package-Version: 20170913.343
+;; Package-Version: 20170914.258
 ;; Keywords: git tools vc
 ;; Homepage: https://github.com/magit/magit
 
@@ -734,7 +734,8 @@ Added to `font-lock-extend-region-functions'."
             (with-current-buffer buffer
               (prog1 (buffer-substring-no-properties (point) (point-max))
                 (delete-region (point) (point-max)))))
-           (diff-mode)
+           (let ((diff-default-read-only nil))
+             (diff-mode))
            (let (font-lock-verbose font-lock-support-mode)
              (if (fboundp 'font-lock-ensure)
                  (font-lock-ensure)
