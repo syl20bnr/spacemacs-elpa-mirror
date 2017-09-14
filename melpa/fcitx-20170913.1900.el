@@ -4,7 +4,7 @@
 
 ;; Author: Junpeng Qiu <qjpchmail@gmail.com>
 ;; Keywords: extensions
-;; Package-Version: 20170812.1131
+;; Package-Version: 20170913.1900
 ;; URL: https://github.com/cute-jumper/fcitx.el
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -972,6 +972,26 @@ Re-run the setup function after `fcitx' is started.")))
 (defun fcitx-org-speed-command-turn-off ()
   (interactive)
   (remove-hook 'org-mode-hook #'fcitx--org-mode-hook))
+
+;; ----------------- ;;
+;; read-only buffers ;;
+;; ----------------- ;;
+(fcitx--defun-maybe "read-only")
+
+(defun fcitx--read-only-mode-toggle ()
+  (if buffer-read-only
+      (fcitx--read-only-maybe-deactivate)
+    (fcitx--read-only-maybe-activate)))
+
+;;;###autoload
+(defun fcitx-read-only-turn-on ()
+  (interactive)
+  (add-hook 'read-only-mode-hook #'fcitx--read-only-mode-toggle))
+
+;;;###autoload
+(defun fctix-read-only-turn-off ()
+  (interactive)
+  (remove-hook 'read-only-mode-hook #'fcitx--read-only-mode-toggle))
 
 ;; -------------- ;;
 ;; Setup commands ;;
