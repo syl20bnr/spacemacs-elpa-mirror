@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.11.1
-;; Package-Version: 20170906.1911
+;; Package-Version: 20170913.2125
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -421,7 +421,8 @@ custom variables `transmission-host' and `transmission-service'."
                    :name "transmission" :buffer buffer
                    :host (when (null socket) transmission-host)
                    :service (or socket transmission-service)
-                   :family (when socket 'local) :noquery t))
+                   :family (when socket 'local) :noquery t
+                   :coding 'binary :filter-multibyte nil))
           (set-process-sentinel process #'transmission-process-sentinel)
           (setq buffer nil process nil))
       (when (process-live-p process) (kill-process process))
@@ -733,7 +734,7 @@ Days are the keys of `transmission-schedules'."
 
 (defun transmission-unique-announce-urls ()
   "Return a list of unique announce URLs from all current torrents."
-  (let ((response (transmission-request "torrent-get" '(:fields "trackers")))
+  (let ((response (transmission-request "torrent-get" '(:fields ("trackers"))))
         torrents trackers res)
     (dotimes (i (length (setq torrents (transmission-torrents response))))
       (dotimes (j (length (setq trackers (cdr (assq 'trackers (aref torrents i))))))
@@ -810,19 +811,16 @@ If the file named \"foo\" does not exist, try \"foo.part\" before returning."
     (if filename (abbreviate-file-name filename)
       (user-error "File does not exist"))))
 
-(defun transmission-files-sort (torrent)
+(defun transmission-files-index (torrent)
   "Return a list derived from the \"files\" and \"fileStats\" arrays in TORRENT.
 The two are spliced together with indices for each file, sorted by file name."
   (let* ((alist (elt torrent 0))
          (files (cdr (assq 'files alist)))
          (stats (cdr (assq 'fileStats alist))))
-    (sort (cl-loop for f across files
-                   for s across stats
-                   for i below (length files)
-                   collect (append f s (list (cons 'index i))))
-          (lambda (a b)
-            (string< (cdr (assq 'name a))
-                     (cdr (assq 'name b)))))))
+    (cl-loop for f across files
+             for s across stats
+             for i below (length files)
+             collect (append f s (list (cons 'index i))))))
 
 (defun transmission-geoiplookup (ip)
   "Return country name associated with IP using geoiplookup(1)."
@@ -1742,7 +1740,7 @@ Each form in BODY is a column descriptor."
   (let* ((arguments `(:ids ,id :fields ,transmission-draw-files-keys))
          (response (transmission-request "torrent-get" arguments)))
     (setq transmission-torrent-vector (transmission-torrents response)))
-  (let* ((files (transmission-files-sort transmission-torrent-vector))
+  (let* ((files (transmission-files-index transmission-torrent-vector))
          (names (transmission-refs files 'name))
          (dir (transmission-files-directory-base (car names)))
          (truncate (and dir (transmission-every-prefix-p dir names))))
