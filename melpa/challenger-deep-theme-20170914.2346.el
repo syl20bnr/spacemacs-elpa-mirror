@@ -2,7 +2,7 @@
 
 ;; Author: MaxSt
 ;; Version: 0.0.2
-;; Package-Version: 20170623.311
+;; Package-Version: 20170914.2346
 ;; Package-Requires: ((emacs "24"))
 ;; URL: https://github.com/MaxSt/challenger-deep
 
@@ -181,6 +181,10 @@
      ;; Global
      `(default                ((,c (:background ,bg :foreground ,fg))
                                (,ct (:background ,ct-bg :foreground ,ct-fg))))
+     `(line-number            ((,c (:background ,black :foreground ,grey-dd))
+                               (,ct (:background ,ct-black :foreground ,ct-grey-dd))))
+     `(line-number-current-line ((,c (:background ,blue :foreground ,black))
+                                 (,ct (:background ,ct-blue :foreground ,ct-black))))
      `(fringe                 ((,c (:inherit default :foreground ,comments))
                                (,ct (:inherit default :foreground ,ct-comments))))
      `(region                 ((,c (:background ,region))
