@@ -5,7 +5,7 @@
 ;; Author: Eric Schulte
 ;; Maintainer: Chen Bin (redguardtoo)
 ;; Keywords: mime, mail, email, html
-;; Package-Version: 20170807.549
+;; Package-Version: 20170914.2134
 ;; Homepage: http://github.com/org-mime/org-mime
 ;; Version: 0.0.7
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
@@ -82,8 +82,16 @@
 ;;             (lambda ()
 ;;               (local-set-key (kbd "C-c M-o") 'org-mime-org-buffer-htmlize)))
 ;;
-;; In order to embed image into your mail, use below org syntax,
+;; Extra Tips:
+;; 1. In order to embed image into your mail, use below org syntax,
 ;;   [[/full/path/to/your.jpg]]
+;;
+;; 2. It's easy to add your own emphasis symbol.  For example, in order to render
+;; text between "@" in red color, you can use `org-mime-html-hook':
+;;   (add-hook 'org-mime-html-hook
+;;             (lambda ()
+;;               (while (re-search-forward "@\\([^@]*\\)@" nil t)
+;;                 (replace-match "<span style=\"color:red\">\\1</span>"))))
 
 ;;; Code:
 (require 'cl-lib)

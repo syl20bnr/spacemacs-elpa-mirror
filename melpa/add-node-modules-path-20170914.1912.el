@@ -6,7 +6,7 @@
 
 ;; Author: Neri Marschik <marschik_neri@cyberagent.co.jp>
 ;; Version: 1.0
-;; Package-Version: 20170501.151
+;; Package-Version: 20170914.1912
 ;; Package-Requires: ()
 ;; Keywords: javascript, node, node_modules, eslint
 ;; URL: https://github.com/codesuki/add-node-modules-path
@@ -40,6 +40,7 @@
 (defun add-node-modules-path ()
   "Search the current buffer's parent directories for `node_modules/.bin`.
 If it's found, then add it to the `exec-path'."
+  (interactive)
   (let* ((root (locate-dominating-file
                 (or (buffer-file-name) default-directory)
                 "node_modules"))

@@ -1,11 +1,13 @@
 ;;; eshell-prompt-extras.el --- Display extra information for your eshell prompt.
 
-;; Copyright (C) 2014 Wei Zhao
+;; Copyright (C) 2014-2016 Wei Zhao
+
 ;; Author: Wei Zhao <kaihaosw@gmail.com>
-;; Git: https://github.com/hiddenlotus/eshell-prompt-extras
 ;; Contributors: Lee Hinman
+;; Maintainer: Chunyang Xu <mail@xuchunyang.me>
+;; URL: https://github.com/hiddenlotus/eshell-prompt-extras
+;; Package-Version: 20170914.1955
 ;; Version: 0.96
-;; Package-Version: 20170713.11
 ;; Created: 2014-08-16
 ;; Keywords: eshell, prompt
 
@@ -237,7 +239,11 @@ length of PATH (sans directory slashes) down to MAX-LEN."
 
 (defun epe-remote-host ()
   "Return remote host."
-  (tramp-file-name-real-host (tramp-dissect-file-name default-directory)))
+  ;; `tramp-file-name-real-host' is removed and replaced by
+  ;; `tramp-file-name-host' in Emacs 26, see issue #18
+  (if (fboundp 'tramp-file-name-real-host)
+      (tramp-file-name-real-host (tramp-dissect-file-name default-directory))
+    (tramp-file-name-host (tramp-dissect-file-name default-directory))))
 
 
 ;; git info
