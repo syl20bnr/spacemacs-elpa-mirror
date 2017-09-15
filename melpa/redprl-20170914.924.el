@@ -5,7 +5,7 @@
 
 ;; Author: Jonathan Sterling <jon@jonmsterling.com>
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 20170903.911
+;; Package-Version: 20170914.924
 ;; Version: 0.0.1
 ;; Keywords: languages
 
@@ -126,7 +126,7 @@
     "record" "tuple"
     "path" "abs"
     "box" "cap"
-    "univalence" "univalence-in" "univalence-proj"
+    "V" "Vin" "Vproj"
     "universe" "U"
     "hcom" "coe" "com")
   "RedPRL's expression keywords.")
@@ -137,8 +137,9 @@
 
 (defconst redprl-tactic-keywords
   '("auto" "auto-step" "case" "cut-lemma" "elim" "else" "exact" "fresh" "goal"
-    "head-expand" "hyp" "id" "lemma" "let" "match" "of" "print" "progress"
-    "query" "rec" "refine" "repeat" "rewrite" "symmetry" "then" "unfold" "use" "with")
+    "hyp" "id" "internalize" "lemma" "let" "match" "of" "print" "progress"
+    "query" "rec" "reduce" "refine" "repeat" "rewrite" "rewrite-hyp" "symmetry"
+    "then" "unfold" "use" "with")
   "RedPRL's tactic keywords.")
 
 (defconst redprl-tactic-symbols
@@ -146,7 +147,7 @@
   "RedPRL's tactic symbols.")
 
 (defconst redprl-sequent-keywords
-  '("true" "type" "synth" "discrete" "kan" "hcom" "coe" "cubical")
+  '("in" "true" "type" "synth" "discrete" "kan" "hcom" "coe" "cubical")
   "RedPRL's sequent keywords.")
 
 (defconst redprl-sequent-symbols
