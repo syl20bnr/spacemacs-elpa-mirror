@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.11.1
-;; Package-Version: 20170915.1803
+;; Package-Version: 20170916.905
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -214,7 +214,7 @@ caching built in or is otherwise slow."
                  (string :tag "Some string"))
   :set (lambda (symbol value)
          (set-default symbol value)
-         (transmission-turtle-poll))
+         (when (fboundp 'transmission-turtle-poll) (transmission-turtle-poll)))
   :link '(info-link "(elisp) Defining Minor Modes"))
 
 (defconst transmission-schedules
