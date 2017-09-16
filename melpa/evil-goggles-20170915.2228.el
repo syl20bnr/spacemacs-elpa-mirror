@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20170913.59
+;; Package-Version: 20170915.2228
 ;; Package-Requires: ((emacs "24.4") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -174,8 +174,8 @@ FACE-DOC is the docstring for FACE-NAME."
    '(evil-goggles-delete-face ((t (:inherit 'diff-removed))))
    '(evil-goggles-paste-face ((t (:inherit 'diff-added))))
    '(evil-goggles-yank-face ((t (:inherit 'diff-changed))))
-   '(evil-goggles-undo-redo-remove-face ((t (:inherit 'diff-refine-removed))))
-   '(evil-goggles-undo-redo-add-face ((t (:inherit 'diff-refine-added))))
+   '(evil-goggles-undo-redo-remove-face ((t (:inherit 'diff-removed))))
+   '(evil-goggles-undo-redo-add-face ((t (:inherit 'diff-added))))
    '(evil-goggles-undo-redo-change-face ((t (:inherit 'diff-changed))))))
 
 ;; delete
@@ -222,12 +222,12 @@ BEG END &OPTIONAL TYPE REGISTER YANK-HANDLER are the arguments of the original f
 
 ;; undo & redo
 
-(defcustom evil-goggles-enable-undo nil  ;; experimental, disabled by default
+(defcustom evil-goggles-enable-undo t
   "If non-nil, enable undo support.
 This variable must be set before `evil-goggles-mode' is enabled"
   :type 'boolean :group 'evil-goggles)
 
-(defcustom evil-goggles-enable-redo nil ;; experimental, disabled by default
+(defcustom evil-goggles-enable-redo t
   "If non-nil, enable redo support.
 This variable must be set before `evil-goggles-mode' is enabled"
   :type 'boolean :group 'evil-goggles)
