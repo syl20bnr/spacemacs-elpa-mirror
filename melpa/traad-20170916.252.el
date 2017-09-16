@@ -4,7 +4,7 @@
 ;;
 ;; Author: Austin Bingham <austin.bingham@gmail.com>
 ;; Version: 0.10
-;; Package-Version: 20170713.2320
+;; Package-Version: 20170916.252
 ;; URL: https://github.com/abingham/traad
 ;; Package-Requires: ((deferred "0.3.2") (popup "0.5.0") (request "0.2.0") (request-deferred "0.2.0") (virtualenvwrapper "20151123"))
 ;;
@@ -155,31 +155,29 @@ want to use."
     (read-directory-name "Directory: ")))
   (traad-close)
   (let ((proc-buff (get-buffer-create "*traad-server*")))
-    (set-buffer proc-buff)
-    (erase-buffer)
-    (let* ((program (traad--server-command))
-           (program (if (listp program) program (list program)))
-	   (args (append traad-server-args
-			 (list "-p" (number-to-string traad-server-port))
-			 (list directory)))
-	   (program+args (append program args))
-	   (default-directory "~/")
-	   (proc (apply #'start-process "traad-server" proc-buff program+args))
-	   (cont 1))
-      (while cont
-	(set-process-query-on-exit-flag proc nil)
-	(accept-process-output proc 0 100 t)
-	(let ((proc-output (with-current-buffer proc-buff
-			     (buffer-string))))
-	  (cond
-	   ((string-match "^Listening on http://.*:\\\([0-9]+\\\)/$" proc-output)
-	    (setq traad-server-port-actual (string-to-number (match-string 1 proc-output))
-		  cont nil))
-	   (t
-	    (incf cont)
-	    (when (< 30 cont) ; timeout after 3 seconds
-	      (error "Server timeout."))))))
-      (traad-check-protocol-version))))
+    (with-current-buffer proc-buff
+      (erase-buffer)
+      (let* ((program (traad--server-command))
+             (program (if (listp program) program (list program)))
+             (args (append traad-server-args
+                           (list "-p" (number-to-string traad-server-port))
+                           (list directory)))
+             (program+args (append program args))
+             (default-directory "~/")
+             (proc (apply #'start-process "traad-server" proc-buff program+args))
+             (cont 1))
+        (while cont
+          (set-process-query-on-exit-flag proc nil)
+          (accept-process-output proc 0 100 t)
+          (cond
+           ((string-match "^Listening on http://.*:\\\([0-9]+\\\)/$" (buffer-string))
+            (setq traad-server-port-actual (string-to-number (match-string 1 (buffer-string)))
+                  cont nil))
+           (t
+            (incf cont)
+            (when (< 30 cont) ; timeout after 3 seconds
+              (error "Server timeout.")))))))
+    (traad-check-protocol-version)))
 
 (defun traad-check-protocol-version ()
   (deferred:$

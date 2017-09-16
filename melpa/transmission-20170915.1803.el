@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.11.1
-;; Package-Version: 20170914.1622
+;; Package-Version: 20170915.1803
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -206,6 +206,17 @@ Useful if `transmission-geoip-function' does not have its own
 caching built in or is otherwise slow."
   :type 'boolean)
 
+(defcustom transmission-turtle-lighter " turtle"
+  "Lighter for `transmission-turtle-mode'."
+  :type `(choice (const :tag "Default" " turtle")
+                 (const :tag "ASCII" " ,=,e")
+                 (const :tag "Emoji" ,(string ?\s #x1f422))
+                 (string :tag "Some string"))
+  :set (lambda (symbol value)
+         (set-default symbol value)
+         (transmission-turtle-poll))
+  :link '(info-link "(elisp) Defining Minor Modes"))
+
 (defconst transmission-schedules
   (eval-when-compile
     (pcase-let*
@@ -398,6 +409,7 @@ Return JSON object parsed from content."
       (accept-process-output process 1))
     (transmission--status)
     (transmission--move-to-content)
+    (search-forward "\"arguments\":" nil t)
     (json-read)))
 
 (defun transmission-send (process content)
@@ -446,7 +458,8 @@ the pool."
         process)))
 
 (defun transmission-request (method &optional arguments tag)
-  "Send a request to Transmission.
+  "Send a request to Transmission and return a JSON object.
+The JSON is the \"arguments\" object decoded Transmission's response.
 
 METHOD is a string.
 ARGUMENTS is a plist having keys corresponding to METHOD.
@@ -477,7 +490,9 @@ Details regarding the Transmission RPC can be found here:
   "Call PROCESS's callback if it has one."
   (let ((callback (process-get process :callback)))
     (when callback
-      (run-at-time 0 nil callback (buffer-substring (point) (point-max))))))
+      (transmission--move-to-content)
+      (search-forward "\"arguments\":" nil t)
+      (run-at-time 0 nil callback (json-read)))))
 
 (defun transmission-process-filter (process text)
   "Handle PROCESS's output TEXT and trigger handlers."
@@ -500,7 +515,7 @@ Details regarding the Transmission RPC can be found here:
 (defun transmission-request-async (callback method &optional arguments tag)
   "Send a request to Transmission asynchronously.
 
-CALLBACK accepts one argument, the HTTP response content.
+CALLBACK accepts one argument, the response \"arguments\" JSON object.
 METHOD, ARGUMENTS, and TAG are the same as in `transmission-request'."
   (let ((process (transmission-get-network-process))
         (content (json-encode `(:method ,method :arguments ,arguments :tag ,tag))))
@@ -514,10 +529,12 @@ METHOD, ARGUMENTS, and TAG are the same as in `transmission-request'."
 ;; Response parsing
 
 (defun transmission-torrents (response)
-  "Return the \"torrents\" array in RESPONSE.
+  "Return the \"torrents\" array in RESPONSE, otherwise nil.
 Each element is an alist with keys corresponding to the elements
-of \"fields\" in the arguments of the \"torrent-get\" request."
-  (cdr (assq 'torrents (cdr (assq 'arguments response)))))
+of \"fields\" in the arguments of the \"torrent-get\" request.
+If the array is empty or not found, return nil."
+  (let ((obj (cdr (assq 'torrents response))))
+    (and (vectorp obj) (< 0 (length obj)) obj)))
 
 
 ;; Timer management
@@ -652,9 +669,8 @@ Direction D should be a symbol, either \"up\" or \"down\"."
         (let ((prompt (concat "Set torrents' " (symbol-name d) "load limit: ")))
           (transmission-throttle-torrent ids limit (read-number prompt)))
       (transmission-request-async
-       (lambda (content)
-         (let* ((torrents (transmission-torrents (json-read-from-string content)))
-                (torrent (elt torrents 0))
+       (lambda (response)
+         (let* ((torrent (elt (transmission-torrents response) 0))
                 (n (cdr (assq limit torrent)))
                 (throttle (eq t (cdr (assq limited torrent))))
                 (prompt (concat "Set torrent's " (symbol-name d) "load limit ("
@@ -671,7 +687,7 @@ Direction D should be a symbol, either \"up\" or \"down\"."
   "Make a prompt to set transfer speed limit.
 If UPLOAD is non-nil, make a prompt for upload rate, otherwise
 for download rate."
-  (let-alist (cdr (assq 'arguments (transmission-request "session-get")))
+  (let-alist (transmission-request "session-get")
     (let ((limit (if upload .speed-limit-up .speed-limit-down))
           (enabled (eq t (if upload .speed-limit-up-enabled
                            .speed-limit-down-enabled))))
@@ -681,7 +697,7 @@ for download rate."
 
 (defun transmission-prompt-ratio-limit ()
   "Make a prompt to set global seed ratio limit."
-  (let-alist (cdr (assq 'arguments (transmission-request "session-get")))
+  (let-alist (transmission-request "session-get")
     (let ((limit .seedRatioLimit)
           (enabled (eq t .seedRatioLimited)))
       (list (read-number (concat "Set global seed ratio limit ("
@@ -731,6 +747,28 @@ Days are the keys of `transmission-schedules'."
           (push k res)
           (cl-decf n v)))
       (nreverse res)))))
+
+(defun transmission-levi-civita (a b c)
+  "Return Levi-Civita symbol value for three numbers A, B, C."
+  (cond
+   ((or (< a b c) (< b c a) (< c a b)) 1)
+   ((or (< c b a) (< a c b) (< b a c)) -1)
+   ((or (= a b) (= b c) (= c a)) 0)
+   (t (error "how u do dat: (%d, %d, %d)" a b c))))
+
+(defun transmission-turtle-when (beg end &optional now)
+  "Calculate the time in seconds until the next schedule change.
+BEG END are minutes after midnight of schedules start and end.
+NOW is a time, defaulting to `current-time'."
+  (let* ((time (or now (current-time)))
+         (hours (string-to-number (format-time-string "%H" time)))
+         (minutes (+ (* 60 hours)
+                     (string-to-number (format-time-string "%M" time)))))
+    (pcase (transmission-levi-civita minutes beg end)
+      (1 (* 60 (if (> beg minutes) (- beg minutes) (+ beg minutes))))
+      (-1 (* 60 (if (> end minutes) (- end minutes) (+ end minutes))))
+      ;; FIXME this should probably just return 0 because of inaccuracy
+      (0 (* 60 (or (and (= minutes beg) end) (and (= minutes end) beg)))))))
 
 (defun transmission-tracker-url-p (str)
   "Return non-nil if STR is not just a number."
@@ -1075,8 +1113,8 @@ When called with a prefix, prompt for DIRECTORY."
            (if current-prefix-arg
                (read-directory-name "Target directory: ")))))
   (transmission-request-async
-   (lambda (content)
-     (let-alist (cdr (assq 'arguments (json-read-from-string content)))
+   (lambda (response)
+     (let-alist response
        (or (and .torrent-added.name
                 (message "Added %s" .torrent-added.name))
            (and .torrent-duplicate.name
@@ -1096,8 +1134,8 @@ When called with a prefix, prompt for DIRECTORY."
   "Show in the echo area how much free space is in DIRECTORY."
   (interactive (list (read-directory-name "Directory: " nil nil t)))
   (transmission-request-async
-   (lambda (content)
-     (let-alist (cdr (assq 'arguments (json-read-from-string content)))
+   (lambda (response)
+     (let-alist response
        (message "%s free in %s" (transmission-format-size .size-bytes)
                 (abbreviate-file-name .path))))
    "free-space" (list :path (expand-file-name directory))))
@@ -1106,8 +1144,8 @@ When called with a prefix, prompt for DIRECTORY."
   "Message some information about the session."
   (interactive)
   (transmission-request-async
-   (lambda (content)
-     (let-alist (cdr (assq 'arguments (json-read-from-string content)))
+   (lambda (response)
+     (let-alist response
        (message (concat "%d kB/s down, %d kB/s up; %d/%d torrents active; "
                         "%s received, %s sent; uptime %s")
                 (transmission-rate .downloadSpeed)
@@ -1218,8 +1256,8 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (transmission-interactive (list ids))
   (when ids
     (transmission-request-async
-     (lambda (content)
-       (let* ((torrents (transmission-torrents (json-read-from-string content)))
+     (lambda (response)
+       (let* ((torrents (transmission-torrents response))
               (honor (pcase (cdr (assq 'honorsSessionLimits (elt torrents 0)))
                        (:json-false t) (_ :json-false))))
          (transmission-request-async nil "torrent-set"
@@ -1231,8 +1269,8 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
   (transmission-interactive (list ids))
   (when ids
     (transmission-request-async
-     (lambda (content)
-       (let* ((torrents (transmission-torrents (json-read-from-string content)))
+     (lambda (response)
+       (let* ((torrents (transmission-torrents response))
               (status (and (< 0 (length torrents))
                            (cdr (assq 'status (elt torrents 0)))))
               (method (and status
@@ -1258,8 +1296,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
            (cl-loop for url in urls
                     unless (member url trackers) collect url))))
   (transmission-request-async
-   (lambda (_content)
-     (message "Added %s" (mapconcat #'identity urls ", ")))
+   (lambda (_) (message "Added %s" (mapconcat #'identity urls ", ")))
    "torrent-set" (list :ids ids :trackerAdd urls)))
 
 (defun transmission-trackers-remove ()
@@ -1285,8 +1322,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                         collect (cdr (assq 'id alist))))
          (arguments (list :ids id :trackerRemove tids)))
     (transmission-request-async
-     (lambda (_content)
-       (message "Removed %s" (mapconcat #'identity urls ", ")))
+     (lambda (_) (message "Removed %s" (mapconcat #'identity urls ", ")))
      "torrent-set" arguments)))
 
 (defun transmission-trackers-replace ()
@@ -1316,8 +1352,7 @@ When called with a prefix UNLINK, also unlink torrent data on disk."
                            transmission-tracker-history-variable))
          (arguments (list :ids id :trackerReplace (vector tid replacement))))
     (transmission-request-async
-     (lambda (_content)
-       (message "Replaced #%d with %s" tid replacement))
+     (lambda (_) (message "Replaced #%d with %s" tid replacement))
      "torrent-set" arguments)))
 
 (defun transmission-turtle-set-days (days &optional disable)
@@ -1326,7 +1361,7 @@ DAYS is a bitfield, the associations of which are in `transmission-schedules'.
 Empty input or non-positive DAYS makes no change to the schedule.
 With a prefix argument, disable turtle mode schedule."
   (interactive
-   (let-alist (cdr (assq 'arguments (transmission-request "session-get")))
+   (let-alist (transmission-request "session-get")
      (let* ((alist transmission-schedules)
             (prompt
              (format "Days %s%s: "
@@ -1340,13 +1375,13 @@ With a prefix argument, disable turtle mode schedule."
   (let ((arguments
          (append `(:alt-speed-time-enabled ,(if disable json-false t))
                  (when (> days 0) `(:alt-speed-time-day ,days)))))
-    (transmission-request-async nil "session-set" arguments)))
+    (transmission-request-async #'transmission-turtle-poll "session-set" arguments)))
 
 (defun transmission-turtle-set-times (begin end)
   "Set BEGIN and END times for turtle mode.
 See `transmission-read-time' for details on time input."
   (interactive
-   (let-alist (cdr (assq 'arguments (transmission-request "session-get")))
+   (let-alist (transmission-request "session-get")
      (let* ((begs (transmission-format-minutes .alt-speed-time-begin))
             (ends (transmission-format-minutes .alt-speed-time-end))
             (start (or (transmission-read-time (format "Begin (%s): " begs))
@@ -1363,26 +1398,26 @@ See `transmission-read-time' for details on time input."
     (let ((arguments
            (append (when begin (list :alt-speed-time-begin begin))
                    (when end (list :alt-speed-time-end end)))))
-      (transmission-request-async nil "session-set" arguments))))
+      (transmission-request-async #'transmission-turtle-poll "session-set" arguments))))
 
 (defun transmission-turtle-set-speeds (up down)
   "Set UP and DOWN speed limits (kB/s) for turtle mode."
   (interactive
-   (let-alist (cdr (assq 'arguments (transmission-request "session-get")))
+   (let-alist (transmission-request "session-get")
      (let ((p1 (format "Set turtle upload limit (%d kB/s): " .alt-speed-up))
            (p2 (format "Set turtle download limit (%d kB/s): " .alt-speed-down)))
        (list (read-number p1) (read-number p2)))))
   (let ((arguments
          (append (when down (list :alt-speed-down down))
                  (when up (list :alt-speed-up up)))))
-    (transmission-request-async nil "session-set" arguments)))
+    (transmission-request-async #'transmission-turtle-poll "session-set" arguments)))
 
 (defun transmission-turtle-status ()
   "Message details about turtle mode configuration."
   (interactive)
   (transmission-request-async
-   (lambda (content)
-     (let-alist (cdr (assq 'arguments (json-read-from-string content)))
+   (lambda (response)
+     (let-alist response
        (message
         "%sabled; %d kB/s down, %d kB/s up; schedule %sabled, %s-%s, %s"
         (if (eq .alt-speed-enabled t) "En" "Dis") .alt-speed-down .alt-speed-up
@@ -1391,19 +1426,6 @@ See `transmission-read-time' for details on time input."
         (transmission-format-minutes .alt-speed-time-end)
         (let ((bits (transmission-n->days .alt-speed-time-day)))
           (if (null bits) "never" (mapconcat #'symbol-name bits " "))))))
-   "session-get"))
-
-(defun transmission-turtle-toggle ()
-  "Toggle turtle mode."
-  (interactive)
-  (transmission-request-async
-   (lambda (content)
-     (let* ((arguments (cdr (assq 'arguments (json-read-from-string content))))
-            (enable (equal json-false (cdr (assq 'alt-speed-enabled arguments)))))
-       (transmission-request-async
-        (lambda (_content)
-          (message (concat "Turtle mode " (if enable "en" "dis") "abled")))
-        "session-set" `(:alt-speed-enabled ,(or enable json-false)))))
    "session-get"))
 
 (defun transmission-verify (ids)
@@ -1566,6 +1588,51 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
               (when (not (zerop (forward-line))) (throw :eobp nil))))))
       (setq transmission-marked-ids ids)
       (set-buffer-modified-p nil))))
+
+
+;; Turtle mode
+
+(defvar transmission-turtle-poll-callback
+  (let (timer enabled next lighter)
+    (lambda (response)
+       (let-alist response
+         (setq enabled (eq t .alt-speed-enabled))
+         (setq next (transmission-turtle-when .alt-speed-time-begin
+                                              .alt-speed-time-end))
+         (set-default 'transmission-turtle-mode enabled)
+         (setq lighter
+               (if enabled
+                   (concat transmission-turtle-lighter
+                           (format ":%d/%d" .alt-speed-down .alt-speed-up))
+                 nil))
+         (transmission-register-turtle-mode lighter)
+         (when timer (cancel-timer timer))
+         (setq timer (run-at-time next nil #'transmission-turtle-poll)))))
+  "Closure checking turtle mode status and marshaling a timer.")
+
+(defun transmission-turtle-poll (&rest _args)
+  (transmission-request-async
+   transmission-turtle-poll-callback "session-get"
+   '(:fields ("alt-speed-enabled" "alt-speed-down" "alt-speed-up"))))
+
+(defvar transmission-turtle-mode-lighter nil
+  "Lighter for `transmission-turtle-mode'. ")
+
+(define-minor-mode transmission-turtle-mode
+  "Toggle alternative speed limits (turtle mode)."
+  :group 'transmission
+  :global t
+  :lighter transmission-turtle-mode-lighter
+  (transmission-request-async
+   #'transmission-turtle-poll
+   "session-set" `(:alt-speed-enabled ,(or transmission-turtle-mode json-false))))
+
+(defun transmission-register-turtle-mode (lighter)
+  "Add LIGHTER to buffers with a transmission-* major mode."
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (when (string-prefix-p "transmission" (symbol-name major-mode))
+        (setq-local transmission-turtle-mode-lighter lighter)))))
 
 
 ;; Formatting
@@ -1842,6 +1909,7 @@ Also run the timer for timer object `transmission-timer'."
        (if (not id) (user-error "No torrent selected")
          (let ((buffer (or (get-buffer ,name)
                            (generate-new-buffer ,name))))
+           (transmission-turtle-poll)
            (with-current-buffer buffer
              (let ((old-id (or transmission-torrent-id
                                (cdr (assq 'id (tabulated-list-get-id))))))
@@ -2117,7 +2185,7 @@ for explanation of the peer flags."
     ["Session Statistics" transmission-stats]
     ("Turtle Mode" :help "Set and schedule alternative speed limits"
      ["Turtle Mode Status" transmission-turtle-status]
-     ["Toggle Turtle Mode" transmission-turtle-toggle]
+     ["Toggle Turtle Mode" transmission-turtle-mode]
      ["Set Active Days" transmission-turtle-set-days]
      ["Set Active Time Span" transmission-turtle-set-times]
      ["Set Turtle Speed Limits" transmission-turtle-set-speeds])
@@ -2164,6 +2232,7 @@ Transmission."
   (let* ((name "*transmission*")
          (buffer (or (get-buffer name)
                      (generate-new-buffer name))))
+    (transmission-turtle-poll)
     (unless (eq buffer (current-buffer))
       (with-current-buffer buffer
         (unless (eq major-mode 'transmission-mode)
