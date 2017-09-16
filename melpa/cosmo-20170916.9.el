@@ -5,7 +5,7 @@
 ;; Author: Francesco Montanari <fmnt@fmnt.info>
 ;; Created: 22 April 2017
 ;; Version: 0.1
-;; Package-Version: 20170910.644
+;; Package-Version: 20170916.9
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: tools
 ;; URL: https://gitlab.com/montanari/cosmo-el
@@ -124,15 +124,6 @@
          (unless (>= value 0.0)
            (error "Error: density parameter must be positive")))))
 
-;;;###autoload
-(defun cosmo-set-params ()
-  "Change the values of cosmological parameters."
-  (interactive)
-  (maphash (lambda (key _value)
-             (cosmo--put-param key)
-             (cosmo--check-param key (gethash key cosmo--params)))
-           cosmo--params))
-
 ;;; Numerical utilities.
 
 (defun cosmo-sinh (x)
@@ -227,34 +218,15 @@ Optional argument JMAX maximum number of steps."
   (let ((H0 (gethash "H0 [Km/s/Mpc]" cosmo--params)))
     (* H0 (cosmo-efunc redshift))))
 
-;;;###autoload
-(defun cosmo-hubble ()
-  "Display Hubble parameter in mini-buffer."
-  (interactive)
-  (let ((z (cosmo--read-param "redshift")))
-    (message (format "%s km/s/Mpc" (cosmo-get-hubble z)))))
-
 (defun cosmo-get-hubble-distance ()
   "Hubble distance c/H0 [Mpc] for Lambda-CDM."
   (let ((H0 (gethash "H0 [Km/s/Mpc]" cosmo--params)))
     (/ 3.0e5 H0)))
 
-;;;###autoload
-(defun cosmo-hubble-distance ()
-  "Display Hubble distance c/H0 in mini-buffer."
-  (interactive)
-  (message (format "%s Mpc" (cosmo-get-hubble-distance))))
-
 (defun cosmo-get-hubble-time ()
   "Hubble time 1/H0 [Gyr] for Lambda-CDM."
   (let ((H0 (gethash "H0 [Km/s/Mpc]" cosmo--params)))
     (/ 9.78e2 H0)))
-
-;;;###autoload
-(defun cosmo-hubble-time ()
-  "Display Hubble time 1/H0 in mini-buffer."
-  (interactive)
-  (message (format "%s Gyr" (cosmo-get-hubble-time))))
 
 (defun cosmo-get-los-comoving-distance (redshift)
   "Line-of-sight comoving distance [Mpc] for Lambda-CDM at a given REDSHIFT."
@@ -262,13 +234,6 @@ Optional argument JMAX maximum number of steps."
         (int (cosmo-qsimp #'cosmo-inv-efunc 0.0 redshift
                           cosmo-int-prec cosmo-int-maxsteps)))
     (* DH int)))
-
-;;;###autoload
-(defun cosmo-los-comoving-distance ()
-  "Display line-of-sight comoving distance in mini-buffer."
-  (interactive)
-  (let ((z (cosmo--read-param "redshift")))
-    (message (format "%s Mpc" (cosmo-get-los-comoving-distance z)))))
 
 (defun cosmo-get-transverse-comoving-distance (redshift)
   "Line-of-sight comoving distance [Mpc] for Lambda-CDM at a given REDSHIFT."
@@ -284,39 +249,15 @@ Optional argument JMAX maximum number of steps."
           ((< ocurvature 0)
            (* DH-over-sqrtok (sin (/ DC DH-over-sqrtok)))))))
 
-;;;###autoload
-(defun cosmo-transverse-comoving-distance ()
-  "Display transverse comoving distance in mini-buffer."
-  (interactive)
-  (let ((z (cosmo--read-param "redshift")))
-    (message (format "%s Mpc"
-                     (cosmo-get-transverse-comoving-distance z)))))
-
 (defun cosmo-get-angular-diameter-distance (redshift)
   "Angular diameter distance [Mpc] for Lambda-CDM at a given REDSHIFT."
   (let* ((DM (cosmo-get-transverse-comoving-distance redshift)))
     (/ DM (1+ redshift))))
 
-;;;###autoload
-(defun cosmo-angular-diameter-distance ()
-  "Display angular diameter distance in mini-buffer."
-  (interactive)
-  (let ((z (cosmo--read-param "redshift")))
-    (message (format "%s Mpc"
-                     (cosmo-get-angular-diameter-distance z)))))
-
 (defun cosmo-get-luminosity-distance (redshift)
   "Luminosity distance [Mpc] for Lambda-CDM at a given REDSHIFT."
   (let* ((DM (cosmo-get-transverse-comoving-distance redshift)))
     (* DM (1+ redshift))))
-
-;;;###autoload
-(defun cosmo-luminosity-distance ()
-  "Display luminosity distance in mini-buffer."
-  (interactive)
-  (let ((z (cosmo--read-param "redshift")))
-    (message (format "%s Mpc"
-                     (cosmo-get-luminosity-distance z)))))
 
 (defun cosmo-get-parallax-distance (redshift)
   "Parallax distance [Mpc] for Lambda-CDM at a given REDSHIFT."
@@ -325,14 +266,6 @@ Optional argument JMAX maximum number of steps."
          (dM (/ DM DH))
          (ocurvature (cosmo-get-ocurvature)))
     (/ DM (+ dM (sqrt (1+ (* ocurvature dM dM)))))))
-
-;;;###autoload
-(defun cosmo-parallax-distance ()
-  "Display parallax distance in mini-buffer."
-  (interactive)
-  (let ((z (cosmo--read-param "redshift")))
-    (message (format "%s Mpc"
-                     (cosmo-get-parallax-distance z)))))
 
 (defun cosmo--get-comoving-volume-nonflat (DM DH ocurvature)
   "Return the comoving volume for non-vanishing curvature.
@@ -361,14 +294,6 @@ Argument OCURVATURE curvature density parameter."
         (* (/ 4.0 3.0) float-pi (expt DM 3.0))
         (cosmo--get-comoving-volume-nonflat DM DH ocurvature))))
 
-;;;###autoload
-(defun cosmo-comoving-volume ()
-  "Display comoving volume in mini-buffer."
-  (interactive)
-  (let ((z (cosmo--read-param "redshift")))
-    (message (format "%s Mpc^3"
-                     (cosmo-get-comoving-volume z)))))
-
 (defun cosmo--age-integrand (redshift)
   "Universe age integrand at a given REDSHIFT."
   (/ (cosmo-inv-efunc redshift) (1+ redshift)))
@@ -379,14 +304,6 @@ Argument OCURVATURE curvature density parameter."
         (int (cosmo-qsimp #'cosmo--age-integrand 0.0 redshift
                           cosmo-int-prec cosmo-int-maxsteps)))
     (* tH int)))
-
-;;;###autoload
-(defun cosmo-lookback-time ()
-  "Display lookback time in mini-buffer."
-  (interactive)
-  (let ((z (cosmo--read-param "redshift")))
-    (message (format "%s Gyr"
-                     (cosmo-get-lookback-time z)))))
 
 (defun cosmo-get-age (redshift)
   ;; This is much slower than other functions.
@@ -400,14 +317,6 @@ This is approximated as the age since equality redshift."
          (int (cosmo-qsimp #'cosmo--age-integrand redshift zeq
                            cosmo-int-prec cosmo-int-maxsteps)))
     (* tH int)))
-
-;;;###autoload
-(defun cosmo-age ()
-  "Display age of the Universe in mini-buffer."
-  (interactive)
-  (let ((z (cosmo--read-param "redshift")))
-    (message (format "%s Gyr"
-                     (cosmo-get-age z)))))
 
 ;;; Handle output.
 
@@ -483,6 +392,99 @@ Argument LOOKBACK-TIME lookback time at given redshift."
           (format "- Lookback time [Gyr]:                     %s\n"
                   lookback-time))
   nil)
+
+;;; Pulic interface.
+
+;;;###autoload
+(defun cosmo-set-params ()
+  "Change the values of cosmological parameters."
+  (interactive)
+  (maphash (lambda (key _value)
+             (cosmo--put-param key)
+             (cosmo--check-param key (gethash key cosmo--params)))
+           cosmo--params))
+
+;;;###autoload
+(defun cosmo-hubble ()
+  "Display Hubble parameter in mini-buffer."
+  (interactive)
+  (let ((z (cosmo--read-param "redshift")))
+    (message (format "%s km/s/Mpc" (cosmo-get-hubble z)))))
+
+;;;###autoload
+(defun cosmo-hubble-distance ()
+  "Display Hubble distance c/H0 in mini-buffer."
+  (interactive)
+  (message (format "%s Mpc" (cosmo-get-hubble-distance))))
+
+;;;###autoload
+(defun cosmo-hubble-time ()
+  "Display Hubble time 1/H0 in mini-buffer."
+  (interactive)
+  (message (format "%s Gyr" (cosmo-get-hubble-time))))
+
+;;;###autoload
+(defun cosmo-los-comoving-distance ()
+  "Display line-of-sight comoving distance in mini-buffer."
+  (interactive)
+  (let ((z (cosmo--read-param "redshift")))
+    (message (format "%s Mpc" (cosmo-get-los-comoving-distance z)))))
+
+;;;###autoload
+(defun cosmo-transverse-comoving-distance ()
+  "Display transverse comoving distance in mini-buffer."
+  (interactive)
+  (let ((z (cosmo--read-param "redshift")))
+    (message (format "%s Mpc"
+                     (cosmo-get-transverse-comoving-distance z)))))
+
+;;;###autoload
+(defun cosmo-angular-diameter-distance ()
+  "Display angular diameter distance in mini-buffer."
+  (interactive)
+  (let ((z (cosmo--read-param "redshift")))
+    (message (format "%s Mpc"
+                     (cosmo-get-angular-diameter-distance z)))))
+
+;;;###autoload
+(defun cosmo-luminosity-distance ()
+  "Display luminosity distance in mini-buffer."
+  (interactive)
+  (let ((z (cosmo--read-param "redshift")))
+    (message (format "%s Mpc"
+                     (cosmo-get-luminosity-distance z)))))
+
+;;;###autoload
+(defun cosmo-parallax-distance ()
+  "Display parallax distance in mini-buffer."
+  (interactive)
+  (let ((z (cosmo--read-param "redshift")))
+    (message (format "%s Mpc"
+                     (cosmo-get-parallax-distance z)))))
+
+;;;###autoload
+(defun cosmo-comoving-volume ()
+  "Display comoving volume in mini-buffer."
+  (interactive)
+  (let ((z (cosmo--read-param "redshift")))
+    (message (format "%s Mpc^3"
+                     (cosmo-get-comoving-volume z)))))
+
+;;;###autoload
+(defun cosmo-lookback-time ()
+  "Display lookback time in mini-buffer."
+  (interactive)
+  (let ((z (cosmo--read-param "redshift")))
+    (message (format "%s Gyr"
+                     (cosmo-get-lookback-time z)))))
+
+;;;###autoload
+(defun cosmo-age ()
+  "Display age of the Universe in mini-buffer."
+  (interactive)
+  (let ((z (cosmo--read-param "redshift")))
+    (message (format "%s Gyr"
+                     (cosmo-get-age z)))))
 
 ;;;###autoload
 (defun cosmo-calculator ()
