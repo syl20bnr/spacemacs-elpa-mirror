@@ -5,7 +5,7 @@
 
 ;; Author: Jonathan Sterling <jon@jonmsterling.com>
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 20170914.924
+;; Package-Version: 20170915.749
 ;; Version: 0.0.1
 ;; Keywords: languages
 
@@ -147,7 +147,7 @@
   "RedPRL's tactic symbols.")
 
 (defconst redprl-sequent-keywords
-  '("in" "true" "type" "synth" "discrete" "kan" "hcom" "coe" "cubical")
+  '("at" "by" "in" "true" "type" "synth" "discrete" "kan" "hcom" "coe" "cubical")
   "RedPRL's sequent keywords.")
 
 (defconst redprl-sequent-symbols
