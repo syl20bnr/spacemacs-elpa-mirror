@@ -5,8 +5,8 @@
 ;; Author: Guido Schmidt
 ;; Maintainer: Guido Schmidt <guido.schmidt.2912@gmail.com>
 ;; URL: https://github.com/GuidoSchmidt/circadian
-;; Package-Version: 20170912.2
-;; Version: 0.2.1
+;; Package-Version: 0.2.2
+;; Version: 0.2.2
 ;; Keywords: circadian, themes
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -38,10 +38,16 @@
 
 ;;; Change Log:
 
+;; 0.2.2
+;; - Added testing (+ configuration for travis CI)
+;; - Changed arguments of `circadian-filter-inactivate-themes' to accept
+;;   the current time string + themes asoc list due to gain testability
+;;   of that function with various time strings (see `tests/').
+;;
 ;; 0.2.1
 ;; - Add function to load the latest overdue theme to `circadian-setup'
 ;;
-;; 0.2
+;; 0.2.0
 ;; - nyx-theme and hemera-theme live in their own repos from now on:
 ;;   nyx: https://github.com/GuidoSchmidt/emacs-nyx-theme
 ;;   hemera: https://github.com/GuidoSchmidt/emacs-hemera-theme
@@ -49,7 +55,7 @@
 ;; - Re-implemented configuration using associated list and timers
 ;;   (thanks to Steve Purcell for pointing me into this direction)
 ;;
-;; 0.1
+;; 0.1.0
 ;; - Initial release
 ;; - Variables for day/night hour
 ;; - Themes included: hemera-theme, nyx-theme
@@ -98,18 +104,17 @@
     (and (circadian-compare-hours (third parsed-time-b) (third parsed-time-a))
          (circadian-compare-minutes (second parsed-time-b) (second parsed-time-a)))))
 
-(defun circadian-filter-inactivate-themes ()
-  "Find themes that need to be activated due to time is before now."
+(defun circadian-filter-inactivate-themes (now-time theme-list)
+  "Find themes form THEME-LIST that need activation due to time is before now."
   (remove-if (lambda (entry)
-               (let ((theme-time (first entry))
-                     (now-time (circadian-now-time-string)))
+               (let ((theme-time (first entry)))
                  (not (circadian-compare-time-strings theme-time now-time))))
-             circadian-themes))
+             theme-list))
 
 (defun circadian-activate-latest-theme ()
   "Check which themes are overdue to be activated and load the last.
 `circadian-themes' is expected to be sorted by time for now."
-  (let ((entry (first (last (circadian-filter-inactivate-themes)))))
+  (let ((entry (first (last (circadian-filter-inactivate-themes (circadian-now-time-string) circadian-themes)))))
     (let ((time (first entry)))
       (let ((theme (cdr (assoc time circadian-themes))))
         (load-theme theme t)))))
