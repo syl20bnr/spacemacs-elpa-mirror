@@ -4,7 +4,7 @@
 
 ;; Author:    Iku Iwasa <iku.iwasa@gmail.com>
 ;; URL:       https://github.com/iquiw/company-ghc
-;; Package-Version: 20160315.710
+;; Package-Version: 20170916.1954
 ;; Version:   1.2.2
 ;; Package-Requires: ((cl-lib "0.5") (company "0.8.0") (ghc "5.4.0.0") (emacs "24"))
 ;; Keywords:  haskell, completion
@@ -151,10 +151,10 @@ If enabled, \"C.M\" to match with module \"Control.Monad\", etc."
     (cond
      ((nth 3 ppss) 'stop)
      ((nth 4 ppss)
-      (if (looking-back company-ghc-pragma-regexp)
+      (if (looking-back company-ghc-pragma-regexp nil)
           (match-string-no-properties 1)
         (company-grab "[[:space:],]\\([^[:space:]]*\\>\\|\\)" 1)))
-     ((looking-back "^[^[:space:]]*") nil)
+     ((looking-back "^[^[:space:]]*" nil) nil)
      ((let ((case-fold-search nil))
         (and (save-excursion
                (forward-line 0)
