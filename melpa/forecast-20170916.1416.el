@@ -4,7 +4,7 @@
 ;;
 ;; Author: Göktuğ Kayaalp <self@gkayaalp.com>
 ;; Keywords: weather, forecast
-;; Package-Version: 0.6.2
+;; Package-Version: 20170916.1416
 ;; Version: 0.6.2
 ;; URL: http://gkayaalp.com/emacs.html#forecast.el
 ;; Package-Requires: ((emacs "24.4"))
@@ -149,7 +149,11 @@
 
 ;;; Changes:
 ;;
-;; 0.6.2
+;; next
+;;   - Don't kill all local variables when setting up the mode.
+;;   - Fix day names misaligned in the Upcoming week graph.
+;;   - Fix arithmetic error on 32bit OSes.
+;; 0.6.2, 22 Feb 2017
 ;;   - Allow customisations of rain and snow symbols in the Upcoming
 ;;     table.
 ;;   - Replace calls to ‘oddp’ w/ ‘cl-oddp’.
@@ -669,7 +673,7 @@ wind directions."
        hi lo precip hum pres wind max-hi min-lo time)
     ;; Collect data
     (dolist  (b data)
-      (push (truncate (forecast--assoca '(time) b)) time)
+      (push (forecast--assoca '(time) b) time)
       (push (truncate (forecast--assoca '(temperatureMax) b)) hi)
       (push (truncate (forecast--assoca '(temperatureMin) b)) lo)
       (push (forecast--assoca '(humidity) b) hum)
@@ -713,8 +717,10 @@ wind directions."
                       (t " |   | "))))
       (newline))
     (forecast--insert-format
-     "Day:  %s\n" (mapconcat (lambda (tm)
-                               (format-time-string "%5a  " (seconds-to-time tm))) time ""))
+     "Day:    %s\n" (mapconcat 
+                     (lambda (tm)
+                       (format-time-string
+                        "%3a    " (seconds-to-time tm))) time ""))
     ;; precipitation
     (insert "      ")
     (mapc (lambda (p)
@@ -933,7 +939,6 @@ Keybindings for `forecast-mode':
   "Major mode for weather forecast buffers.
 Keybindings for `forecast-mode':
 \\{forecast-mode-map}"
-  (kill-all-local-variables)
   (use-local-map forecast-mode-map)
   (buffer-disable-undo))
 

@@ -5,7 +5,7 @@
 ;; Author: Marcwebbie <marcwebbie@gmail.com>
 ;;         Robert Zaremba <robert-zaremba@scale-it.pl>
 ;; Version: 1.0
-;; Package-Version: 20170618.52
+;; Package-Version: 20170916.1304
 ;; Package-X-Original-Version: 20170518
 ;; Keywords: Python, Virtualenv, Tools
 ;; Package-Requires: ((cl-lib "0.6") (s "1.10.0") (virtualenvwrapper "0"))
@@ -83,9 +83,9 @@
 
 (defun auto-virtualenvwrapper--project-root-vc ()
   "Return vc root if file is in version control."
-  (when (or
-         (vc-find-root (or (buffer-file-name) "") ".git")
-         (vc-find-root (or (buffer-file-name) "") ".hg"))))
+  (or
+   (vc-find-root (or (buffer-file-name) "") ".git")
+   (vc-find-root (or (buffer-file-name) "") ".hg")))
 
 
 (defun auto-virtualenvwrapper--project-root-traverse ()

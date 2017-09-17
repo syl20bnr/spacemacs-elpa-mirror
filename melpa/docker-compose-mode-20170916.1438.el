@@ -4,8 +4,8 @@
 
 ;; Author: Ricardo Martins
 ;; URL: https://github.com/meqif/docker-compose-mode
-;; Package-Version: 0.3.5
-;; Version: 0.3.5
+;; Package-Version: 20170916.1438
+;; Version: 1.0.0
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.3") (dash "2.12.0") (yaml-mode "0.0.12"))
 
@@ -141,7 +141,7 @@ variable for additional information about STRING and STATUS."
     (when (looking-at "^[\t ]*\\([a-zA-Z][a-zA-Z0-9_]+\\)$")
       (list (match-string-no-properties 1) (match-beginning 1) (match-end 1)))))
 
-(defun docker-compose--keyword-complete-at-point ()
+(defun docker-compose-keyword-complete-at-point ()
   "`completion-at-point-functions' function for docker-compose keywords."
   (-when-let* (((prefix start end) (docker-compose--prefix)))
     (list start end (docker-compose--candidates prefix)
@@ -153,7 +153,7 @@ variable for additional information about STRING and STATUS."
 (define-derived-mode docker-compose-mode yaml-mode "docker-compose"
   "Major mode to edit docker-compose files."
   (setq-local completion-at-point-functions
-              '(docker-compose--keyword-complete-at-point)))
+              '(docker-compose-keyword-complete-at-point)))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist
