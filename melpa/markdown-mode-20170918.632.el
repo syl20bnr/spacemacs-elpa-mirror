@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.3
-;; Package-Version: 20170830.2131
+;; Package-Version: 20170918.632
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -8595,6 +8595,13 @@ BEG and END are the limits of scanned region."
        (progn (goto-char beg) (beginning-of-line) (point))
        (progn (goto-char end) (forward-line 1) (point))))))
 
+(defun markdown-remove-gfm-checkbox-overlays ()
+  "Remove all GFM checkbox overlays in buffer."
+  (save-excursion
+    (save-restriction
+      (widen)
+      (remove-overlays nil nil 'face 'markdown-gfm-checkbox-face))))
+
 
 ;;; Display inline image =================================================
 
@@ -8973,7 +8980,8 @@ position."
   ;; Make checkboxes buttons
   (when markdown-make-gfm-checkboxes-buttons
     (markdown-make-gfm-checkboxes-buttons (point-min) (point-max))
-    (add-hook 'after-change-functions #'markdown-gfm-checkbox-after-change-function t t))
+    (add-hook 'after-change-functions #'markdown-gfm-checkbox-after-change-function t t)
+    (add-hook 'change-major-mode-hook #'markdown-remove-gfm-checkbox-overlays t t))
 
   ;; edit-indirect
   (add-hook 'edit-indirect-after-commit-functions

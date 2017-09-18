@@ -1,10 +1,10 @@
 ;;; company-ghc.el --- company-mode ghc-mod backend -*- lexical-binding: t -*-
 
-;; Copyright (C) 2014-2016 by Iku Iwasa
+;; Copyright (C) 2014-2017 by Iku Iwasa
 
 ;; Author:    Iku Iwasa <iku.iwasa@gmail.com>
 ;; URL:       https://github.com/iquiw/company-ghc
-;; Package-Version: 20170916.1954
+;; Package-Version: 20170918.133
 ;; Version:   1.2.2
 ;; Package-Requires: ((cl-lib "0.5") (company "0.8.0") (ghc "5.4.0.0") (emacs "24"))
 ;; Keywords:  haskell, completion
