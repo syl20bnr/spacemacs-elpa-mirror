@@ -338,8 +338,7 @@ Specform
 
 (defconst hy-indent-special-forms
   '(:exact
-    ("if" "if-not"
-     "when" "unless"
+    ("when" "unless"
      "for" "for*"
      "while"
      "except" "catch")
@@ -378,7 +377,7 @@ Aliases for `parse-partial-sexp' value
 
 (defun hy--check-non-symbol-sexp (pos)
   "Check for a non-symbol yet symbol-like (tuple constructor comma) at POS."
-  (member (char-after pos) '(?\,)))
+  (member (char-after pos) '(?\, ?\|)))
 
 Normal Indent
 
@@ -420,10 +419,9 @@ Function or form
 
 (defun hy--not-function-form-p ()
   "Non-nil if form at point doesn't represent a function call."
-  (unless (hy--check-non-symbol-sexp (1+ (point)))  ; tuple constructor special
-    (or (-contains? '(?\[ ?\{) (char-after))
-        (not (looking-at (rx anything  ; Skips form opener
-                             (or (syntax symbol) (syntax word))))))))
+  (or (-contains? '(?\[ ?\{) (char-after))
+      (not (looking-at (rx anything  ; Skips form opener
+                           (or (syntax symbol) (syntax word)))))))
 
 Hy find indent spec
 
@@ -468,7 +466,17 @@ Syntax
     (modify-syntax-entry ?\} "){" table)
     (modify-syntax-entry ?\[ "(]" table)
     (modify-syntax-entry ?\] ")[" table)
+
+    ;; Quote characters are prefixes
     (modify-syntax-entry ?\~ "'" table)
+    (modify-syntax-entry ?\@ "'" table)
+
+    ;; "," is treated as a symbol, the tuple constructor
+    (modify-syntax-entry ?\, "_ p" table)
+    ;; "#" denotes tag macro, we include # in the symbol
+    (modify-syntax-entry ?\# "_ p" table)
+
+    (modify-syntax-entry ?\| "_ p" table)
 
     table)
   "Hy modes syntax table.")
@@ -592,7 +600,7 @@ Hy-mode
           (font-lock-syntactic-face-function
            . hy-font-lock-syntactic-face-function)))
 
-  (setq-local ahs-include "^[0-9A-Za-z/_.,:;*+=&%|$#@!^?-~]+$")
+  (setq-local ahs-include "^[0-9A-Za-z/_.,:;*+=&%|$#@!^?-~\-]+$")
 
   ;; Smartparens
   (when (fboundp 'sp-local-pair)
