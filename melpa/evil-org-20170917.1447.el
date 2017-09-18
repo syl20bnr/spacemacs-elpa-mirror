@@ -4,11 +4,11 @@
 ;; Maintainer: Somelauw
 ;; Original-author: Edward Tjörnhammar
 ;; URL: https://github.com/Somelauw/evil-org-mode.git
-;; Package-Version: 20170911.1135
+;; Package-Version: 20170917.1447
 ;; Git-Repository: git://github.com/Somelauw/evil-org-mode.git
 ;; Created: 2012-06-14
 ;; Forked-since: 2017-02-12
-;; Version: 0.9.5
+;; Version: 0.9.6
 ;; Package-Requires: ((emacs "24.4") (evil "1.0") (org "8.0.0"))
 ;; Keywords: evil vim-emulation org-mode key-bindings presets
 
@@ -258,7 +258,7 @@ Passing in any prefix argument, executes the command without special behavior."
          (e (org-element-lineage (org-element-at-point) elements t)))
     (cl-case (org-element-type e)
       ((table-row) (org-table-insert-row '(4)) (evil-insert nil))
-      ((item) (org-insert-item) (evil-insert nil))
+      ((item) (org-insert-item (org-at-item-checkbox-p)) (evil-insert nil))
       (otherwise (evil-open-below count)))))
 
 (defun evil-org-open-above (count)
@@ -274,7 +274,10 @@ Passing in any prefix argument, executes the command without special behavior."
          (e (org-element-lineage (org-element-at-point) elements t)))
     (cl-case (org-element-type e)
       ((table-row) (org-table-insert-row) (evil-insert nil))
-      ((item) (beginning-of-line) (org-insert-item) (evil-insert nil))
+      ((item)
+       (beginning-of-line)
+       (org-insert-item (org-at-item-checkbox-p))
+       (evil-insert nil))
       (otherwise (evil-open-above count)))))
 
 (defmacro evil-org-define-eol-command (cmd)
@@ -618,6 +621,7 @@ Includes tables, list items and subtrees."
 
 (defun evil-org--populate-rsi-bindings ()
   "Define key bindings to use in hybrid state."
+  (declare (obsolete "Please create a github issue if you want to keep RSI bindings." "0.9.1"))
   (define-key org-mode-map (kbd "C-d")
     (lambda (n)
       (interactive "p")
