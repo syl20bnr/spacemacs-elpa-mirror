@@ -6,7 +6,7 @@
 ;; Author: Chaoji Li <lichaoji AT gmail DOT com>
 ;;         Anand Reddy Pandikunta <anand21nanda AT gmail DOT com>
 ;; Version: 0.4
-;; Package-Version: 20150701.815
+;; Package-Version: 20170918.730
 ;; Date: January 27, 2015
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -80,9 +80,12 @@
   (progn
     (save-excursion
       (dolist (elem real-auto-save-buffers-list)
-        (set-buffer elem)
-        (if (buffer-modified-p)
-            (save-buffer))))
+        (if (get-buffer elem)
+            (progn
+              (set-buffer elem)
+              (if (buffer-modified-p)
+                  (save-buffer)))
+          (delete elem real-auto-save-buffers-list))))
     (real-auto-save-restart-timer)))
 
 (defun real-auto-save-remove-buffer-from-list ()
@@ -95,7 +98,7 @@
   "Save your buffers automatically."
   :lighter " RAS"
   :keymap nil
-  :version "0.4"
+  :version "0.5"
 
   (when (not real-auto-save-mode) ;; OFF
     (when (buffer-file-name)
