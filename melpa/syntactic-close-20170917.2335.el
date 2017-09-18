@@ -1,10 +1,10 @@
-;; syntactic-close.el --- Insert closing delimiter -*- lexical-binding: t; -*-
+;;; syntactic-close.el --- Insert closing delimiter -*- lexical-binding: t; -*-
 
-;; Authored and maintained by
-;; Emacs User Group Berlin <emacs-berlin@emacs-berlin.org>
-
+;; Author: Emacs User Group Berlin <emacs-berlin@emacs-berlin.org>
+;; Maintainer: Emacs User Group Berlin <emacs-berlin@emacs-berlin.org>
 ;; Version: 0.1
-;; Package-Version: 20170907.6
+;; Package-Version: 20170917.2335
+;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: languages, convenience
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -20,7 +20,9 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-;;; Commentary: M-x syntactic-close RET: close any syntactic element.
+;;; Commentary:
+
+;; M-x syntactic-close RET: close any syntactic element.
 
 ;; ['a','b' ==> ['a','b']
 
@@ -254,7 +256,7 @@ Does not require parenthesis syntax WRT \"{[(\" "
 	      (t (skip-chars-backward "^\"{\(\[\]\)}")))))
     (insert closer)))
 
-(defun nth-1-pps-complement-char-maybe (pps)
+(defun syntactic-close--nth-1-pps-complement-char-maybe (pps)
   "Return complement character from (nth 1 pps). "
   (save-excursion
     (goto-char (nth 1 pps))
@@ -274,7 +276,7 @@ Check if list opener inside a string. "
 				     ;; opener inside string?
 				     (parse-partial-sexp (1+ (nth 8 pps)) (point)))))
 	      (< (nth 8 pps) erg))
-	     (setq erg (nth-1-pps-complement-char-maybe last)))
+	     (setq erg (syntactic-close--nth-1-pps-complement-char-maybe last)))
 	    ((save-excursion (and (skip-chars-backward (concat "^" syntactic-close--paired-opening-delimiter) (nth 8 pps)) (not (eq (char-after) (nth 3 pps)))   (member (char-before) syntactic-close-known-string-inpolation-opener) (< (nth 8 pps) (1- (point))) (setq last (char-before))
 	      (not (eq (char-before) (syntactic-close--return-complement-char-maybe last)))))
 	     (setq erg (syntactic-close--return-complement-char-maybe last)))
