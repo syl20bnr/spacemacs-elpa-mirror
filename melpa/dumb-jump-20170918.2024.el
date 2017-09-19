@@ -2,7 +2,7 @@
 ;; Copyright (C) 2015-2017 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.1
-;; Package-Version: 20170917.1529
+;; Package-Version: 20170918.2024
 ;; Package-Requires: ((emacs "24.3") (f "0.17.3") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -830,7 +830,26 @@ or most optimal searcher."
     (:type "module" :supports ("ag" "grep" "rg" "git-grep") :language "elixir"
            :regex "defprotocol\\s+(\\w+\\.)*JJJ\\s+"
            :tests ("defprotocol test do"
-                   "defprotocol Foo.Bar.test do")))
+                   "defprotocol Foo.Bar.test do"))
+
+    ;; erlang
+    (:type "function" :supports ("ag" "grep" "rg" "git-grep") :language "erlang"
+           :regex "^JJJ\\b\\s*\\\("
+           :tests ("test() ->"
+                   "test()->"
+                   "test(Foo) ->"
+                   "test (Foo,Bar) ->"
+                   "test(Foo, Bar)->"))
+
+    (:type "variable" :supports ("ag" "grep" "rg" "git-grep") :language "erlang"
+           :regex "\\s*JJJ\\s*=[^:=\\n]+"
+           :tests ("test = 1234")
+           :not ("if test =:= 1234"
+                 "if test == 1234"))
+
+    (:type "module" :supports ("ag" "grep" "rg" "git-grep") :language "erlang"
+           :regex "^-module\\\(JJJ\\\)"
+           :tests ("-module(test).")))
 
   "List of regex patttern templates organized by language and type to use for generating the grep command."
   :group 'dumb-jump
@@ -934,7 +953,8 @@ or most optimal searcher."
     (:language "swift" :ext "swift" :agtype nil :rgtype "swift")
     (:language "elixir" :ext "ex" :agtype "elixir" :rgtype "elixir")
     (:language "elixir" :ext "exs" :agtype "elixir" :rgtype "elixir")
-    (:language "elixir" :ext "eex" :agtype "elixir" :rgtype "elixir"))
+    (:language "elixir" :ext "eex" :agtype "elixir" :rgtype "elixir")
+    (:language "erlang" :ext "erl" :agtype "erlang" :rgtype "erlang"))
 
   "Mapping of programming language(s) to file extensions."
   :group 'dumb-jump
@@ -1499,7 +1519,8 @@ current file."
     (:comment ";" :language "scheme")
     (:comment "#" :language "shell")
     (:comment "//" :language "swift")
-    (:comment "#" :language "elixir"))
+    (:comment "#" :language "elixir")
+    (:comment "%" :language "erlang"))
   "List of one-line comments organized by language."
   :group 'dumb-jump
   :type

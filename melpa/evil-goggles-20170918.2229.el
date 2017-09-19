@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20170917.815
+;; Package-Version: 20170918.2229
 ;; Package-Requires: ((emacs "24.4") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -58,7 +58,7 @@ This option is experimental."
   :group 'evil-goggles)
 
 (defface evil-goggles--pulse-face nil
-  "Temporary face used when pulsing.
+  "Temporary face used when pulsing, should not be modified.
 
 This is needed because the pulse package expects to receive a face, it
 can't work with input such as (backgound . \"red\")."
@@ -78,15 +78,15 @@ otherwise - a region."
 (defun evil-goggles--show-region (beg end face)
   "Show overlay in region from BEG to END with FACE.
 
-The overlay will either pulse if variable `evil-goggles-pulse' is t or
-appear and disappear."
+The overlay will pulse if variable `evil-goggles-pulse' is t,
+otherwise it will just appear and disappear."
   (let ((ov (evil-goggles--make-overlay beg end))
         (bg (evil-goggles--face-background face)))
     (unwind-protect
         (progn
           (if evil-goggles-pulse
               (evil-goggles--pulse-overlay ov bg) ;; pulse the overlay
-            (overlay-put ov 'face `(:background ,bg))) ;; just put the background color on the overlay
+            (overlay-put ov 'face face)) ;; just put the face on the overlay
           (sit-for evil-goggles-duration))
       (delete-overlay ov))))
 

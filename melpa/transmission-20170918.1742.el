@@ -3,8 +3,8 @@
 ;; Copyright (C) 2014-2017  Mark Oteiza <mvoteiza@udel.edu>
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
-;; Version: 0.11.1
-;; Package-Version: 20170917.1714
+;; Version: 0.12
+;; Package-Version: 20170918.1742
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -68,6 +68,7 @@
 (require 'url-util)
 
 (eval-when-compile
+  (cl-declaim (optimize (speed 3)))
   (require 'cl-lib)
   (require 'let-alist)
   (require 'subr-x))
@@ -184,7 +185,8 @@ to `savehist-additional-variables'."
   :type 'variable
   :link '(emacs-commentary-link "savehist"))
 
-(defcustom transmission-torrent-functions '(transmission-ffap)
+(defcustom transmission-torrent-functions
+  '(transmission-ffap transmission-ffap-selection transmission-ffap-last-killed)
   "List of functions to use for guessing torrents for `transmission-add'.
 Each function should accept no arguments, and return a string or nil."
   :type 'hook
@@ -361,11 +363,11 @@ update `transmission-session-id' and signal the error."
                  (when (and (search-forward "\"result\":")
                             (not (equal "success" (setq result (json-read)))))
                    (signal 'transmission-failure (list result))))))
-        ((or 301 404 405) (signal 'transmission-wrong-rpc-path status))
-        (401 (signal 'transmission-unauthorized status))
+        ((or 301 404 405) (signal 'transmission-wrong-rpc-path (list status)))
+        (401 (signal 'transmission-unauthorized (list status)))
         (409 (when (search-forward (format "%s: " transmission-session-header))
                (setq transmission-session-id (read buffer))
-               (signal 'transmission-conflict status)))))))
+               (signal 'transmission-conflict (list status))))))))
 
 (defun transmission--auth-source-secret (user)
   "Return the secret for USER at found in `auth-sources'.
