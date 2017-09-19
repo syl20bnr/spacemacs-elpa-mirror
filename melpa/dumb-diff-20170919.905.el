@@ -2,7 +2,7 @@
 ;; Copyright (C) 2017 jack angers
 ;; Author: jack angers
 ;; Version: 0.1.0
-;; Package-Version: 20170917.1348
+;; Package-Version: 20170919.905
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: programming, diff
 
@@ -22,10 +22,6 @@
 ;;; Commentary:
 
 ;; Dumb Diff is an Emacs "diff to definition" package for fast arbitrary diffs.
-
-;; TODO: submit to MELPA
-;; TODO: add more tests
-;; TODO: (dumb-diff-clear)
 
 ;;; Code:
 
