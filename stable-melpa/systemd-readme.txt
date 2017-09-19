@@ -1,6 +1,6 @@
 Major mode for editing systemd units.
 
-Similar to `conf-mode' but with added highlighting; e.g. for
+Similar to `conf-mode' but with enhanced highlighting; e.g. for
 specifiers and booleans.  Employs strict regex for whitespace.
 Features a facility for browsing documentation: use C-c C-o to open
 links to documentation in a unit (cf. systemctl help).
