@@ -1,5 +1,5 @@
 ;;; cython-mode.el --- Major mode for editing Cython files
-;; Package-Version: 0.27.1.1
+;; Package-Version: 0.27.2.1
 
 ;;; Commentary:
 
