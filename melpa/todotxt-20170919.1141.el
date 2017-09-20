@@ -9,7 +9,7 @@
 
 ;; Created: 14 March 2011
 ;; Version: 0.2.4
-;; Package-Version: 20160919.2238
+;; Package-Version: 20170919.1141
 ;; URL: https://github.com/rpdillon/todotxt.el
 ;; Keywords: todo.txt, todotxt, todotxt.el
 ;; Compatibility: GNU Emacs 22 ~ 25
@@ -150,6 +150,7 @@ performed.  Defaults to 't."
         (,todotxt-priority-c-regexp 1 todotxt-priority-c-face t)))
 
 ;; Setup a major mode for todotxt
+;;;###autoload
 (define-derived-mode todotxt-mode text-mode "todotxt"
   "Major mode for working with todo.txt files. \\{todotxt-mode-map}"
   (setq font-lock-defaults '(todotxt-highlight-regexps))
@@ -357,6 +358,7 @@ format."
         (concat head declaration tail)))))
 
 ;;; externally visible functions
+;;;###autoload
 (defun todotxt ()
   "Open the todo.txt buffer.  If one already exists, bring it to
 the front and focus it.  Otherwise, create one and load the data

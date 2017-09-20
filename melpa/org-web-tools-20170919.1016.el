@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-web-tools
-;; Package-Version: 20170906.102
+;; Package-Version: 20170919.1016
 ;; Version: 0.1.0-pre
 ;; Package-Requires: ((emacs "25.1") (org "9.0") (dash "2.12") (s "1.10.0"))
 ;; Keywords: hypermedia, outlines, Org, Web
@@ -272,7 +272,7 @@ Returns list (TITLE . HTML).  Based on `eww-readable'."
   (let* ((dom (with-temp-buffer
                 (insert html)
                 (libxml-parse-html-region (point-min) (point-max))))
-         (title (caddr (car (dom-by-tag dom 'title)))))
+         (title (cl-caddr (car (dom-by-tag dom 'title)))))
     (eww-score-readability dom)
     (cons title
           (with-temp-buffer
@@ -310,7 +310,7 @@ Uses the `dom' library."
   (let* ((dom (with-temp-buffer
                 (insert html)
                 (libxml-parse-html-region (point-min) (point-max))))
-         (title (caddr (car (dom-by-tag dom 'title)))))
+         (title (cl-caddr (car (dom-by-tag dom 'title)))))
     (org-web-tools--cleanup-title title)))
 
 (defun org-web-tools--url-as-readable-org (&optional url)
