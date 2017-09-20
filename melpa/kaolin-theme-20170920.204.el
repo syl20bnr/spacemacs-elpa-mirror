@@ -4,7 +4,7 @@
 
 ;; Author: 0rdy <mail@0rdy.com>
 ;; URL: https://github.com/0rdy/kaolin-theme
-;; Package-Version: 20170917.1008
+;; Package-Version: 20170920.204
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 0.9.0
 
@@ -674,7 +674,7 @@
      `(speedbar-file-face ((,c (:foreground ,green))))
      `(speedbar-tag-face ((,c (:foreground ,faded-blue))))
      `(speedbar-selected-face ((,c (:foreground ,teal-green))))
-     `(speedbar-highlight-face ((,c (:foreground cyan))))
+     `(speedbar-highlight-face ((,c (:foreground ,cyan))))
      `(speedbar-button-face ((,c (:foreground ,jade))))
 
      ;; Haskell mode
