@@ -3,7 +3,7 @@
 ;; Author: Emacs User Group Berlin <emacs-berlin@emacs-berlin.org>
 ;; Maintainer: Emacs User Group Berlin <emacs-berlin@emacs-berlin.org>
 ;; Version: 0.1
-;; Package-Version: 20170917.2335
+;; Package-Version: 20170920.11
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: languages, convenience
 
@@ -186,7 +186,7 @@ See http://debbugs.gnu.org/cgi/bugreport.cgi?bug=7115"
   :type 'regexp
   :group 'convenience)
 
-(setq syntactic-close-known-delimiter-chars (list ?< ?` ?* ?\\ ?= ?_ ?$ ?% ?§ ?? ?! ?+ ?- ?# ?: ?\; ?,))
+(setq syntactic-close--unary-delimiter-chars (list ?< ?` ?* ?\\ ?= ?_ ?$ ?% ?§ ?? ?! ?+ ?- ?# ?: ?\; ?,))
 
 (defun syntactic-close-toggle-verbosity ()
   "If `syntactic-close-verbose-p' is nil, switch it on.
@@ -211,7 +211,7 @@ Otherwise switch it off. "
     (?{ ?})
     (_ erg)))
 
-(defun syntactic-close--in-string-p-intern (pps)
+(defun syntactic-close--string-delim-intern (pps)
   "Return the delimiting string. "
   (goto-char (nth 8 pps))
   (buffer-substring-no-properties (point) (progn  (skip-chars-forward (char-to-string (char-after))) (point))))
@@ -224,13 +224,13 @@ Return delimiting chars "
   (save-excursion
     (let* ((pps (or pps (parse-partial-sexp (point-min) (point))))
 	   (erg (when (nth 3 pps)
-		  (syntactic-close--in-string-p-intern pps))))
+		  (syntactic-close--string-delim-intern pps))))
       (unless erg
 	(when (looking-at "\"")
 	  (forward-char 1)
 	  (setq pps (parse-partial-sexp (line-beginning-position) (point)))
 	  (when (nth 3 pps)
-	    (setq erg (syntactic-close--in-string-p-intern pps)))))
+	    (setq erg (syntactic-close--string-delim-intern pps)))))
       (when (and syntactic-close-verbose-p (called-interactively-p 'any)) (message "%s" erg))
       erg)))
 
@@ -262,27 +262,28 @@ Does not require parenthesis syntax WRT \"{[(\" "
     (goto-char (nth 1 pps))
     (syntactic-close--return-complement-char-maybe (char-after))))
 
-(defun syntactic-close-in-string-interpolation-maybe (&optional pps)
-  "Return nearest openener.
+;; no syntax
+;; (defun syntactic-close-in-string-interpolation-maybe (&optional pps)
+;;   "Return nearest openener.
 
-Check if list opener inside a string. "
-  (interactive)
-  (let ((pps (or pps (parse-partial-sexp (point-min) (point))))
-	erg last)
-    (when (nth 3 pps)
-      ;; paren inside string maybe
-      (cond ((and
-	      (setq erg (nth 1 (setq last
-				     ;; opener inside string?
-				     (parse-partial-sexp (1+ (nth 8 pps)) (point)))))
-	      (< (nth 8 pps) erg))
-	     (setq erg (syntactic-close--nth-1-pps-complement-char-maybe last)))
-	    ((save-excursion (and (skip-chars-backward (concat "^" syntactic-close--paired-opening-delimiter) (nth 8 pps)) (not (eq (char-after) (nth 3 pps)))   (member (char-before) syntactic-close-known-string-inpolation-opener) (< (nth 8 pps) (1- (point))) (setq last (char-before))
-	      (not (eq (char-before) (syntactic-close--return-complement-char-maybe last)))))
-	     (setq erg (syntactic-close--return-complement-char-maybe last)))
-	    (t
-	     (setq erg (syntactic-close-in-string-maybe pps)))))
-    erg))
+;; Check if list opener inside a string. "
+;;   (interactive)
+;;   (let ((pps (or pps (parse-partial-sexp (point-min) (point))))
+;; 	erg last)
+;;     (when (nth 3 pps)
+;;       ;; paren inside string maybe
+;;       (cond ((and
+;; 	      (setq erg (nth 1 (setq last
+;; 				     ;; opener inside string?
+;; 				     (parse-partial-sexp (1+ (nth 8 pps)) (point)))))
+;; 	      (< (nth 8 pps) erg))
+;; 	     (setq erg (syntactic-close--nth-1-pps-complement-char-maybe last)))
+;; 	    ((save-excursion (and (skip-chars-backward (concat "^" syntactic-close--paired-opening-delimiter) (nth 8 pps)) (not (eq (char-after) (nth 3 pps)))   (member (char-before) syntactic-close-known-string-inpolation-opener) (< (nth 8 pps) (1- (point))) (setq last (char-before))
+;; 	      (not (eq (char-before) (syntactic-close--return-complement-char-maybe last)))))
+;; 	     (setq erg (syntactic-close--return-complement-char-maybe last)))
+;; 	    (t
+;; 	     (setq erg (syntactic-close-in-string-maybe pps)))))
+;;     erg))
 
 (defun syntactic-close--list-inside-string-maybe (strg)
   (with-temp-buffer
@@ -291,35 +292,34 @@ Check if list opener inside a string. "
       (when (nth 1 pps)
 	(save-excursion
 	  (goto-char (nth 1 pps))
-	  (guess-what--return-complement-char-maybe (char-after)))))))
+	  (syntactic-close--return-complement-char-maybe (char-after)))))))
 
 (defun syntactic-close--fetch-delimiter-maybe (pps)
   "Close the innermost list resp. string. "
-  (let (erg closer strg padding)
-    (cond
-     ((nth 3 pps)
-      (cond ((setq closer (syntactic-close-in-string-interpolation-maybe pps)))
-	    (t (save-excursion
-		 (setq strg (buffer-substring-no-properties (1+ (nth 8 pps)) (point)))
-		 (if (setq closer (syntactic-close--list-inside-string-maybe strg))
-		     closer
-		   ;; returns a list to construct TQS maybe
-		   (and (setq erg (syntactic-close--in-string-p-intern pps))
-			(setq closer (make-string (nth 2 erg)(nth 1 erg)))))
-		 closer))))
-     ;; ((and (member major-mode syntactic-close--singlequote-modes) (eq (char-before (1- (point))) ?'))
-     ;;  "'")
-     ((nth 1 pps)
-      (save-excursion
-	(goto-char (nth 1 pps))
-	(when (looking-at "[\[{(][ \t]+")
-	  (setq padding (substring (match-string-no-properties 0) 1)))
-	(setq closer (syntactic-close--return-complement-char-maybe (char-after)))))
-     (t (unless (member (char-before) syntactic-close-known-delimiter-chars)
-	  (save-excursion
-	    (backward-word)
-	    (setq closer (syntactic-close-reverse-char (car-safe (member (char-before) syntactic-close-known-delimiter-chars))))))))
-    (and closer (list closer padding))))
+  (save-excursion
+    (let* (erg
+	   strg
+	   padding
+	   (closer
+	    (cond
+	     ((nth 3 pps)
+	      ;; returns a list to construct TQS maybe
+	      (and (setq erg (syntactic-close--string-delim-intern pps))
+		   (or (and (stringp erg)
+			    erg)
+		       (make-string (nth 2 erg)(nth 1 erg)))))
+	     ((nth 1 pps)
+	      (goto-char (nth 1 pps))
+	      (when (looking-at "[\[{(][ \t]+")
+		(setq padding (substring (match-string-no-properties 0) 1)))
+	      (syntactic-close--return-complement-char-maybe (char-after)))
+	     ;; not in list
+	     (t (save-excursion
+		  (and (skip-chars-backward (concat "^" syntactic-close--paired-opening-delimiter) (nth 8 pps))
+		       (member (char-before) syntactic-close--unary-delimiter-chars)
+		       (setq erg (char-before))))
+		(syntactic-close--return-complement-char-maybe erg)))))
+      (and closer (list closer padding)))))
 
 (defun syntactic-close-fix-whitespace-maybe (orig &optional padding)
   (save-excursion
@@ -370,8 +370,9 @@ Check if list opener inside a string. "
      ((nth 3 pps)
       (cond ((characterp (nth 3 pps))
 	     (insert (nth 3 pps)))
-	    ((setq erg (syntactic-close-in-string-interpolation-maybe pps))
-	     (syntactic-close--return-complement-char-maybe erg))
+	    ;; restrict to syntax
+	    ;; ((setq erg (syntactic-close-in-string-interpolation-maybe pps))
+	    ;;  (syntactic-close--return-complement-char-maybe erg))
 	    (t (syntactic-close--return-complement-char-maybe (nth 8 pps))))
       (setq done t))
      (closer (setq done (syntactic-close--insert-delimiter-char-maybe orig closer padding))))
@@ -427,6 +428,7 @@ Check if list opener inside a string. "
 	;; closer might set
 	(when padding (insert padding)))
       (insert closer)
+      (indent-according-to-mode)
       (setq done t))
     done))
 
@@ -522,7 +524,7 @@ Check if list opener inside a string. "
       (setq done t)))
     done))
 
-(defun syntactic-close-python-close (b-of-st b-of-bl padding)
+(defun syntactic-close-python-close (b-of-st b-of-bl &optional padding)
   "Might deliver equivalent to `py-dedent'"
   (interactive "*")
   (let* ((syntactic-close-beginning-of-statement
@@ -533,7 +535,7 @@ Check if list opener inside a string. "
 	 (syntactic-close-beginning-of-block-re (or b-of-bl "[ 	]*\\_<\\(class\\|def\\|async def\\|async for\\|for\\|if\\|try\\|while\\|with\\|async with\\)\\_>[:( \n	]*"))
 	 done)
     (cond
-     ((and (not (char-equal ?: (char-before)))
+     ((and (not (bolp)) (not (char-equal ?: (char-before)))
 	   (save-excursion
 	     (funcall syntactic-close-beginning-of-statement)
 	     (looking-at syntactic-close-beginning-of-block-re)))
