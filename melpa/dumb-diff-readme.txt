@@ -1,1 +1,1 @@
-Dumb Diff is an Emacs "diff to definition" package for fast arbitrary diffs.
+Dumb Diff is an Emacs package for fast arbitrary diffs.
