@@ -1,7 +1,7 @@
 ;;; rust-mode.el --- A major emacs mode for editing Rust source code -*-lexical-binding: t-*-
 
 ;; Version: 0.3.0
-;; Package-Version: 20170914.1132
+;; Package-Version: 20170920.1919
 ;; Author: Mozilla
 ;; Url: https://github.com/rust-lang/rust-mode
 ;; Keywords: languages
@@ -538,7 +538,8 @@ buffer."
     "true" "trait" "type"
     "use"
     "virtual"
-    "where" "while"))
+    "where" "while"
+    "yield"))
 
 (defconst rust-special-types
   '("u8" "i8"
