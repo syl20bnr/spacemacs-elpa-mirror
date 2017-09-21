@@ -30,7 +30,7 @@ Modify existing contact styles; change the labels used to map contact details in
 
 ## Installation
 
-Install [org-vcard from MELPA](http://melpa.org/#/org-vcard), or put the `org-vcard' folder in your load-path and do a `(require 'org-vcard)'.
+Install `org-vcard' from [MELPA](http://melpa.org/#/org-vcard), [MELPA Stable](http://stable.melpa.org/#/org-vcard), or put the `org-vcard' folder in your load-path and do a `(require 'org-vcard)'.
 
 ## Usage
 
@@ -122,6 +122,8 @@ As the `tree' style uses a heading's FIELDTYPE property to associate fields with
 * Add support for one-vCard-per-file export.
 
 * Add support for line folding when exporting.
+
+* Add support for multiple instances of EMAIL property.
 
 * Add support for vCard PREF for style `flat'.
 

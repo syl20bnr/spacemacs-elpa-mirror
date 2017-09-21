@@ -2,7 +2,7 @@
 
 ;; Author: MaxSt
 ;; Version: 0.0.2
-;; Package-Version: 20170914.2346
+;; Package-Version: 20170921.116
 ;; Package-Requires: ((emacs "24"))
 ;; URL: https://github.com/MaxSt/challenger-deep
 
@@ -213,8 +213,8 @@
                                (,ct (:background ,ct-blue-d :foreground ,ct-white))))
      `(match                  ((,c (:foreground ,green :background ,black :bold ,bold))
                                (,ct (:foreground ,ct-green :background ,ct-black :bold ,bold))))
-     `(trailing-whitespace    ((,c (:background ,doc-comments))
-                               (,ct (:background ,ct-doc-comments))))
+     `(trailing-whitespace    ((,c (:background ,red-d))
+                               (,ct (:background ,ct-red-d))))
      `(vertical-border        ((,c (:foreground ,vertical-bar :background ,vertical-bar))
                                (,ct (:foreground ,ct-vertical-bar :background ,ct-vertical-bar))))
      `(show-paren-match       ((,c (:background ,blue-d :foreground ,black))
