@@ -4,7 +4,7 @@
 
 ;; Author:            Adam Sokolnicki <adam.sokolnicki@gmail.com>
 ;; URL:               https://github.com/asok/rake.el
-;; Package-Version: 20161114.605
+;; Package-Version: 20170921.801
 ;; Version:           0.3.3
 ;; Keywords:          rake, ruby
 ;; Package-Requires:  ((f "0.13.0") (dash "1.5.0") (cl-lib "0.5"))
@@ -209,11 +209,24 @@ If `rake-enable-caching' is t look in the cache, if not fallback to calling rake
   (let ((inhibit-read-only t))
     (ansi-color-apply-on-region compilation-filter-start (point))))
 
-(defun rake-compile (root task mode)
+(defun rake--compile (root task mode)
   (setq rake--last-root root
         rake--last-task task
         rake--last-mode mode)
   (rake--with-root root (compile task mode)))
+
+;;;###autoload
+(defun rake-compile (task-name &optional mode)
+  "Runs TASK-NAME from the directory returned by `rake--root'.
+The optional MODE can be passed to specify
+which mode the compilation buffer should run in."
+  (let* ((root (rake--root))
+         (prefix (rake--choose-command-prefix root
+                                              (list :spring  "bundle exec spring rake "
+                                                    :zeus    "zeus rake "
+                                                    :bundler "bundle exec rake "
+                                                    :vanilla "rake "))))
+    (rake--compile root (concat prefix task-name) (or mode 'rake-compilation-mode))))
 
 ;;;###autoload
 (defun rake-rerun ()
@@ -221,7 +234,7 @@ If `rake-enable-caching' is t look in the cache, if not fallback to calling rake
   (interactive)
   (when (not rake--last-root)
     (error "No task was run"))
-  (rake-compile rake--last-root rake--last-task rake--last-mode))
+  (rake--compile rake--last-root rake--last-task rake--last-mode))
 
 (define-derived-mode rake-compilation-mode compilation-mode "Rake Compilation"
   "Compilation mode used by `rake' command."
@@ -269,7 +282,7 @@ If `rake-enable-caching' is t look in the cache, if not fallback to calling rake
                    (read-string "Rake command: " (concat prefix task " "))
                  (concat prefix task)))
          (mode (or compilation-mode 'rake-compilation-mode)))
-    (rake-compile root task mode)))
+    (rake--compile root task mode)))
 
 (provide 'rake)
 

@@ -4,7 +4,7 @@
 
 ;; Author: Feng Zhou <zf.pascal@gmail.com>
 ;; URL: http://github.com/zweifisch/ob-swift
-;; Package-Version: 20151204.2311
+;; Package-Version: 20170921.625
 ;; Keywords: org babel swift
 ;; Version: 0.0.1
 ;; Created: 4th Dec 2015
@@ -37,8 +37,16 @@
 
 (defun org-babel-execute:swift (body params)
   (let ((session (cdr (assoc :session params))))
-    (ob-swift--ensure-session session)
-    (ob-swift-eval-in-repl session body)))
+    (if (string= "none" session)
+        (ob-swift--eval body)
+      (ob-swift--ensure-session session)
+      (ob-swift--eval-in-repl session body))))
+
+(defun ob-swift--eval (body)
+  (with-temp-buffer
+    (insert body)
+    (shell-command-on-region (point-min) (point-max) "swift -" nil 't)
+    (buffer-string)))
 
 (defun ob-swift--ensure-session (session)
   (let ((name (format "*ob-swift-%s*" session)))
@@ -46,7 +54,6 @@
                  (process-live-p (get-process name)))
       (let ((process (with-current-buffer (get-buffer-create name)
                        (start-process name name "swift"))))
-        (sit-for 1)
         (set-process-filter process 'ob-swift--process-filter)
         (ob-swift--wait "Welcome to Swift")))))
 
@@ -55,9 +62,9 @@
 
 (defun ob-swift--wait (pattern)
   (while (not (string-match-p pattern ob-swift-process-output))
-    (sit-for 0.2)))
+    (sit-for 0.5)))
 
-(defun ob-swift-eval-in-repl (session body)
+(defun ob-swift--eval-in-repl (session body)
   (let ((name (format "*ob-swift-%s*" session)))
     (setq ob-swift-process-output "")
     (process-send-string name (format "%s\n\"%s\"\n" body ob-swift-eoe))
