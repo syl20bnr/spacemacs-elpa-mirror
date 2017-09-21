@@ -6,7 +6,7 @@
 ;; Authors: Julien Danjou <julien@danjou.info>
 ;;          Eric Kaschalk <ekaschalk@gmail.com>
 ;; URL: http://github.com/hylang/hy-mode
-;; Package-Version: 20170917.1123
+;; Package-Version: 20170920.1616
 ;; Version: 1.0
 ;; Keywords: languages, lisp, python
 ;; Package-Requires: ((dash "2.13.0") (dash-functional "1.2.0") (s "1.11.0") (emacs "24"))
@@ -287,7 +287,7 @@
 (defconst hy--font-lock-kwds-tag-macros
   (list
    (rx "#"
-       (not (any "*" "@"))
+       (not (any "*" "@" "["))  ; #* is unpacking, #@ decorator, #[ bracket str
        (0+ word))
 
    '(0 font-lock-function-name-face))
@@ -488,6 +488,42 @@ Point is always at the start of a function."
           (t
            (hy--normal-indent calculate-lisp-indent-last-sexp)))))
 
+;;; Bracket String Literals
+
+(defun hy--match-bracket-string (limit)
+  "Search forward for a bracket string literal."
+  (re-search-forward
+   (rx "#["
+       (0+ not-newline)
+       "["
+       (group (1+ (not (any "]"))))
+       "]"
+       (0+ not-newline)
+       "]")
+   limit
+   t))
+
+(defun hy-syntax-propertize-function (start end)
+  "Implements context sensitive syntax highlighting beyond `font-lock-keywords'.
+
+In particular this implements bracket string literals.
+START and END are the limits with which to search for bracket strings passed
+and determined by `font-lock-mode' internals when making an edit to a buffer.
+"
+  (save-excursion
+    (goto-char start)
+
+    ;; Start goes to current line, need to go to start of #[[ block
+    (when (nth 1 (syntax-ppss))  ; when inermost-char go to [ => [ => #
+      (goto-char (- (hy--sexp-inermost-char (syntax-ppss)) 2)))
+
+    (while (hy--match-bracket-string end)
+      (put-text-property (1- (match-beginning 1)) (match-beginning 1)
+                         'syntax-table (string-to-syntax "|"))
+
+      (put-text-property (match-end 1) (1+ (match-end 1))
+                         'syntax-table (string-to-syntax "|")))))
+
 ;;; Syntax
 
 (defconst hy-mode-syntax-table
@@ -506,6 +542,7 @@ Point is always at the start of a function."
     ;; "#" denotes tag macro, we include # in the symbol
     (modify-syntax-entry ?\# "_ p" table)
 
+    ;; "|" is an operator in hy
     (modify-syntax-entry ?\| "_ p" table)
 
     table)
@@ -629,6 +666,9 @@ a string or comment."
           (font-lock-mark-block-function . mark-defun)
           (font-lock-syntactic-face-function
            . hy-font-lock-syntactic-face-function)))
+
+  (setq-local syntax-propertize-function 'hy-syntax-propertize-function)
+  ;; (setq-local syntax-propertize-function 'puppet-syntax-propertize-function)
 
   (setq-local ahs-include "^[0-9A-Za-z/_.,:;*+=&%|$#@!^?-~\-]+$")
 
