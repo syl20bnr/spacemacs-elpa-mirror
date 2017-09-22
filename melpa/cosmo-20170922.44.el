@@ -5,7 +5,7 @@
 ;; Author: Francesco Montanari <fmnt@fmnt.info>
 ;; Created: 22 April 2017
 ;; Version: 0.1
-;; Package-Version: 20170916.9
+;; Package-Version: 20170922.44
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: tools
 ;; URL: https://gitlab.com/montanari/cosmo-el
@@ -27,27 +27,31 @@
 
 ;;; Commentary:
 
-;; This package provides a cosmological calculator for Lambda-CDM
-;; models.  Such a framework describes a homogeneous and isotropic
-;; universe containing a cosmological constant (Lambda) and a Cold
-;; Dark Matter (CDM) component, besides ordinary species.  The
-;; model is characterized by the following parameters:
+;; Cosmological calculator for Lambda-CDM models.
 ;;
-;; - H_0 :: Hubble parameter (expansion rate) today.
-;; - Omega_m0 :: Matter density parameter today.
-;; - Omega_Lambda :: Cosmological constant density parameter.
-;; - Omega_r0 :: Relativistic species (e.g., photons plus
-;;               neutrinos) density parameter today.
-;; - Omega_k0 :: Curvature density parameter today.  This
-;;               parameter is derived from the others above
-;;               according to Friedmann's equation
-;;               Omega_m0 + Omega_Lambda + Omega_r0 + Omega_k0 = 1.
+;; The package provides interactive commands for handy computation of
+;; cosmological distance measures.  For instance, to display a summary
+;; table, type:
 ;;
-;; All cosmological quantities are computed at a given redshift
-;; value:
+;;   M-x cosmo-calculator
 ;;
-;; - redshift :: Gravitational redshift of photons frequency due to the
-;;               expansion of the Universe.
+;; All cosmological quantities are computed at a given value of the
+;; gravitational `redshift' of photons frequency due to the expansion
+;; of the Universe.
+;;
+;; To set the cosmological parameters, type:
+;;
+;;   M-x cosmo-set-params
+;;
+;; The Lambda-CDM model is characterized by the following parameters:
+;;
+;; - `H0': Hubble parameter (expansion rate) today (e.g., 70 km/s/Mpc).
+;; - `omatter': Matter density parameter today (e.g., 0.3).
+;; - `olambda': Cosmological constant density parameter (e.g., 0.7).
+;; - `orel': Relativistic species density parameter today (e.g., 0.0001).
+;;
+;; The curvature density parameter today is derived from the others
+;; above according to Friedmann's equation.
 ;;
 ;; Definitions follow Hogg (1999)
 ;; <https://arxiv.org/abs/astro-ph/9905116>.
