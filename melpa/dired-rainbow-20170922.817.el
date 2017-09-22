@@ -5,7 +5,7 @@
 ;; Author: Matus Goljer <matus.goljer@gmail.com>
 ;; Maintainer: Matus Goljer <matus.goljer@gmail.com>
 ;; Keywords: files
-;; Package-Version: 20170531.816
+;; Package-Version: 20170922.817
 ;; Version: 0.0.3
 ;; Created: 16th February 2014
 ;; Package-requires: ((dash "2.5.0") (dired-hacks-utils "0.0.1"))
@@ -140,6 +140,7 @@ the entire file name."
          ,(concat "dired-rainbow face matching " (symbol-name symbol) " files.")
          :group 'dired-rainbow)
        (font-lock-add-keywords 'dired-mode '((,regexp 1 ',face-name)))
+       (font-lock-add-keywords 'wdired-mode '((,regexp 1 ',face-name)))
        ,(if (listp matcher) `(push
                               '(,matcher ,face-name ,(concat "\\." (regexp-opt matcher)))
                               dired-rainbow-ext-to-face)))))
@@ -177,7 +178,8 @@ matches any file with executable flag set for user, group or everyone."
          '((t ,(dired-rainbow--get-face face-props)))
          ,(concat "dired-rainbow face matching " (symbol-name symbol) " files.")
          :group 'dired-rainbow)
-       (font-lock-add-keywords 'dired-mode '((,regexp 1 ',face-name))))))
+       (font-lock-add-keywords 'dired-mode '((,regexp 1 ',face-name)))
+       (font-lock-add-keywords 'wdired-mode '((,regexp 1 ',face-name))))))
 
 (provide 'dired-rainbow)
 
