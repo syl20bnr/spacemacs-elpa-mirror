@@ -11,9 +11,9 @@
 ;; Author: Henrik Lissner
 ;; Maintainer: Henrik Lissner <henrik@lissner.net>
 ;; Created: February 18, 2016
-;; Modified: September 12, 2017
-;; Version: 1.0.5
-;; Package-Version: 20170914.208
+;; Modified: September 22, 2017
+;; Version: 1.0.6
+;; Package-Version: 20170922.609
 ;; Homepage: https://github.com/hlissner/emacs-pug-mode
 ;; Keywords: markup, language, jade, pug
 ;; Package-Requires: ((emacs "24.3"))
@@ -138,9 +138,14 @@ line could be nested within this line.")
     ;; comment line
     ("^[ \t]*\\(-//\\|//-?\\).*"
      (0 font-lock-comment-face t))
-    ;; html comment block
-    ("<!--.*-->"
+    ;; html comment line
+    ("<![-[][^>]+>"
      (0 font-lock-comment-face))
+    ;; html tags
+    ("\\(</?\\)\\([^> ]+\\)[^>]*\\(>\\)"
+     (1 font-lock-preprocessor-face)
+     (2 font-lock-type-face)
+     (3 font-lock-preprocessor-face))
     ;; filters
     (,(pug-nested-re "\\(:[a-z0-9:_-]+\\)\\(?:(\\|$\\|\n\\)")
      (2 font-lock-preprocessor-face prepend))
@@ -168,7 +173,7 @@ line could be nested within this line.")
 
     ;; doctype
     ("^\\(doctype .*$\\)"
-     1 font-lock-comment-face)
+     1 font-lock-type-face)
 
     ;; include/extends statements
     ("\\<\\(include\\|extends\\)\\(:[^ \t]+\\|[ \t]+\\)\\([^\n]+\\)\n"
@@ -259,37 +264,33 @@ declaration"
     (define-key map "\C-c\C-k" #'pug-kill-line-and-indent)
     map))
 
-;; For compatibility with Emacs < 24, derive conditionally
-(defalias 'pug-parent-mode
-  (if (fboundp 'prog-mode) 'prog-mode 'fundamental-mode))
-
 ;;;###autoload
-(define-derived-mode pug-mode pug-parent-mode "Pug"
+(define-derived-mode pug-mode prog-mode "Pug"
   "Major mode for editing Pug files.
 
 \\{pug-mode-map}"
   (set-syntax-table pug-mode-syntax-table)
   (add-to-list 'font-lock-extend-region-functions #'pug-extend-region)
-  (setq-local font-lock-multiline t)
   (setq-local indent-line-function #'pug-indent-line)
   (setq-local indent-region-function #'pug-indent-region)
   (setq-local parse-sexp-lookup-properties t)
   (setq-local electric-indent-chars '(?|))
-  (setq-local comment-start "//")
+  (setq-local comment-start "//-")
   (setq-local comment-start-skip "//+ *")
   (setq-local comment-end "")
   (setq-local comment-end-skip "[ 	]*\\(\\s>\\|\n\\)")
-  (setq-local indent-tabs-mode nil)
-  (setq font-lock-defaults '((pug-font-lock-keywords) nil t)))
+  (setq-local comment-use-syntax nil)
+  (setq font-lock-multiline t
+        font-lock-defaults '((pug-font-lock-keywords) t t)))
 
 ;; Useful functions
-(defun pug-comment-block ()
+(defun pug-comment-block (&optional arg)
   "Comment the current block of Pug code."
-  (interactive)
+  (interactive "P")
   (save-excursion
     (let ((indent (current-indentation)))
       (back-to-indentation)
-      (insert "//")
+      (insert "//" (if arg "" "-"))
       (newline)
       (indent-to indent)
       (beginning-of-line)
