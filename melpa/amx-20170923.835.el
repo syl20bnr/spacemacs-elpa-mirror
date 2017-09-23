@@ -8,7 +8,7 @@
 ;;         Cornelius Mika <cornelius.mika@gmail.com>
 ;; Maintainer: Ryan C. Thompson <rct@thompsonclan.org>
 ;; URL: http://github.com/DarwinAwardWinner/amx/
-;; Package-Version: 20170810.1842
+;; Package-Version: 20170923.835
 ;; Package-Requires: ((emacs "24.4"))
 ;; Version: 4.0
 ;; Keywords: convenience, usability
@@ -961,14 +961,17 @@ This is roughly the inverse of
    ;; First try getting it from the hash table
    (and amx-command-keybind-hash
         (gethash command-name amx-command-keybind-hash))
-   ;; Otherwise chop chars off the end until the result is a command
+   ;; Next, chop chars off the end until the result is a command
    (cl-loop
     for s = (cl-copy-seq command-name) then (substring s 0 -1)
     for sym = (intern-soft s)
     if (and sym (commandp sym))
     return sym
     if (= 0 (length s))
-    do (error "Could not find command: %S" command-name))))
+    return nil)
+   ;; Finally, just take everything up to the first space
+   (car (s-match "\\`[^[:space:]]+" command-name))
+   (error "Could not find command: %S" command-name)))
 
 ;;--------------------------------------------------------------------------------
 ;; Ignored commands
