@@ -3,8 +3,8 @@
 ;; Copyright (C) 2012-2015 Magnar Sveen
 
 ;; Author: Magnar Sveen <magnars@gmail.com>
-;; Version: 1.10.0
-;; Package-Version: 20170906.1304
+;; Version: 1.12.0
+;; Package-Version: 20170922.900
 ;; Keywords: strings
 
 ;; This program is free software; you can redistribute it and/or modify
