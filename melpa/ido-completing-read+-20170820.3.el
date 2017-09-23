@@ -6,7 +6,7 @@
 ;; Author: Ryan Thompson
 ;; Created: Sat Apr  4 13:41:20 2015 (-0700)
 ;; Version: 4.6
-;; Package-Version: 20170819.1045
+;; Package-Version: 20170820.3
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (s "0.1") (memoize "1.1"))
 ;; URL: https://github.com/DarwinAwardWinner/ido-completing-read-plus
 ;; Keywords: ido, completion, convenience
@@ -85,10 +85,16 @@ Note that when you update ido-completing-read+, this variable may
 not be updated until you restart Emacs.")
 
 (require 'ido)
+(require 'minibuf-eldef)
 (require 'cl-lib)
 (require 'cus-edit)
 (require 's)
 (require 'memoize)
+
+;; Silence some byte-compiler warnings
+(eval-when-compile
+  (require 'minibuf-eldef)
+  (require 'flx-ido nil t))
 
 ;;; Debug messages
 

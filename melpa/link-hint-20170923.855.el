@@ -2,9 +2,9 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/link-hint.el
-;; Package-Version: 20170904.1442
+;; Package-Version: 20170923.855
 ;; Keywords: url
-;; Package-Requires: ((avy "0.3.0") (emacs "24.4") (cl-lib "0.5"))
+;; Package-Requires: ((avy "0.3.0") (emacs "24.1") (cl-lib "0.5"))
 ;; Version: 0.1
 
 ;; This file is not part of GNU Emacs.
@@ -589,8 +589,7 @@ GET-NEXT-LINK will be repeatedly called with END-BOUND as an argument."
 (defun link-hint--process-url (url)
   "Maybe delete trailing parens in URL."
   (if link-hint-delete-trailing-paren
-      ;; 24.4
-      (string-trim-right url ")*")
+      (replace-regexp-in-string ")*$" "" url)
     url))
 
 ;;;###autoload

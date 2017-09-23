@@ -2,7 +2,7 @@
 
 ;; Author: Yuri D'Elia <wavexx@thregr.org>
 ;; Version: 1.0
-;; Package-Version: 20170912.253
+;; Package-Version: 20170923.622
 ;; URL: https://github.com/wavexx/mu4e-query-fragments.el
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: mu4e, mail, convenience
@@ -99,6 +99,9 @@ Example:
 		 (setq tmp (mu4e-query-fragments--expand-1 frags query))
 		 query))
       (setq query tmp)))
+  ;; cleanup whitespace and newlines
+  (setq query (replace-regexp-in-string "[[:space:]\n]+" " " query))
+  ;; show the expansion if interactive
   (when (called-interactively-p 'interactive)
     (message "%s" query))
   query)
