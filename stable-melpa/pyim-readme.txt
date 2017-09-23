@@ -34,7 +34,7 @@ pyim 的目标是： *尽最大的努力成为一个好用的 Emacs 中文输入
    的难度和复杂度。
 
 ** 特点
-1. pyim 支持全拼，双拼和五笔，其中对全拼的支持最好。
+1. pyim 支持全拼，双拼，五笔和仓颉，其中对全拼的支持最好。
 2. pyim 通过添加词库的方式优化输入法。
 3. pyim 使用文本词库格式，方便处理。
 
@@ -89,7 +89,7 @@ pyim 的目标是： *尽最大的努力成为一个好用的 Emacs 中文输入
                   pyim-probe-punctuation-after-punctuation))
 
   ;; 开启拼音搜索功能
-  (setq pyim-isearch-enable-pinyin-search t)
+  (pyim-isearch-mode 1)
 
   ;; 使用 pupup-el 来绘制选词框
   (setq pyim-page-tooltip 'popup)
@@ -112,33 +112,7 @@ pyim 当前的默认的拼音词库是 pyim-basedict, 这个词库的词条量
 1. libpinyin 项目的内置词库
 2. pyim 用户贡献的个人词库
 
-注意： 这个词库只能确保 pyim 可以正常工作，如果用户想让
-pyim 更加顺手，需要添加附加的词库，一个比较好的选择是安装
-pyim-greatdict:
-
-  https://github.com/tumashu/pyim-greatdict
-
-pyim-greatdict 包对应的词库由 [[https://github.com/xiaowl][WenLiang Xiao]] 同学开发制作，
-词条有 300 万条，词库文件大约 80M, 是一个 *大而全* 的词库，
-用户可以通过 Melpa 来安装它：
-
-1. 配置melpa源，参考：http://melpa.org/#/getting-started
-2. M-x package-install RET pyim-greatdict RET
-3. 在emacs配置文件中（比如: ~/.emacs）添加如下代码：
-
-   #+BEGIN_EXAMPLE
-   (require 'pyim-greatdict)
-   (pyim-greatdict-enable)
-   #+END_EXAMPLE
-
-但值得注意的是：
-
-1. 如果机器性能不好，安装 pyim-greatdict 会导致 pyim 启动
-   非常缓慢，请仔细考虑。
-2. 这个词库使用 gzip 压缩，非 Linux 用户需要安装 [[http://www.gzip.org/][gzip]] 程序，
-   并配置好系统 PATH 。
-
-如果 pyim-greatdict 不能满足需求，用户可以使用其他方式为 pyim 添加拼音词库，
+如果 pyim-basedict 不能满足需求，用户可以使用其他方式为 pyim 添加拼音词库，
 具体方式请参考 [[如何添加自定义拼音词库]] 小结。
 
 *** 激活 pyim
@@ -202,12 +176,31 @@ pyim 支持五笔输入模式，用户可以通过变量 `pyim-default-scheme' �
 最简单的方式是从 melpa 中安装 pyim-wbdict 包，然后根据它的
 [[https://github.com/tumashu/pyim-wbdict][README]] 来配置。
 
-注意：为了简化代码和提高输入法响应速度，pyim 直接将拼音词库和五笔
-词库合并到同一个dcache 文件中，所以 pyim *强制规定* 在词库中，
-五笔编码 *必须* 都以 '.' 开头，比如 '.aaaa' ,这样可以避免出现不必要
-的混乱。
+*** 使用仓颉输入法
+pyim 支持仓颉输入法，用户可以通过变量 `pyim-default-scheme' 来设定：
 
-用户可以使用命令：`pyim-search-word-code' 来查询当前选择词条的五笔编码。
+#+BEGIN_EXAMPLE
+(setq pyim-default-scheme 'cangjie)
+#+END_EXAMPLE
+
+在使用仓颉输入法之前，请用 pyim-dicts-manager 添加一个仓颉词库，词库的格式类似：
+
+#+BEGIN_EXAMPLE
+-*- coding: utf-8-unix -*-
+@a 日
+@a 曰
+@aa 昌
+@aa 昍
+@aaa 晶
+@aaa 晿
+@aaah 曑
+#+END_EXAMPLE
+
+如果用户使用仓颉第五代，最简单的方式是从 melpa 中安装 pyim-cangjie5dict 包，
+然后根据它的 [[https://github.com/erstern/pyim-cangjie5dict][README]] 来配置。
+pyim 支持其它版本的仓颉，但需要用户自己创建词库文件。
+
+用户可以使用命令：`pyim-search-word-code' 来查询当前选择词条的仓颉编码
 
 *** 让选词框跟随光标
 用户可以通过下面的设置让 pyim 在 *光标处* 显示一个选词框：
@@ -244,31 +237,16 @@ pyim 的 tooltip 选词框默认使用 *双行显示* 的样式，在一些特
 *** 设置模糊音
 可以通过设置 `pyim-fuzzy-pinyin-alist' 变量来自定义模糊音。
 
-*** 词条获取
-pyim *内置* 了多种词条获取的方式：
-
-1. `personal-dcache-words'  从 `pyim-dcache-icode2word' 中获取词条。
-2. `common-dcache-words'    从 `pyim-dcache-code2word' 中获取词条。
-3. `pinyin-chars'           逐一获取一个拼音对应的多个汉字。
-4. `jianpin-words'          获取一个简拼对应的词条，
-    如果输入 \"ni-hao\" ，那么同时搜索 code 为 \"n-h\" 的词条。
-5. `znabc-words'            类似智能ABC的词语获取方式(源于 emacs-eim)."
-
-用户可以通过下面的代码来调整 backends 设置，比如：
-
-#+BEGIN_EXAMPLE
-(setq pyim-backends '(personal-dcache-words common-dcache-words pinyin-chars jianpin-words znabc-words))
-#+END_EXAMPLE
-
-一些 backends 可能会导致输入法卡顿，用户可以通过下面的方式关闭：
-
-#+BEGIN_EXAMPLE
-(setq pyim-backends '(personal-dcache-words common-dcache-words pinyin-chars))
-#+END_EXAMPLE
-
 *** 切换全角标点与半角标点
 
 1. 第一种方法：使用命令 `pyim-punctuation-toggle'，全局切换。
+   这个命令主要用来设置变量： `pyim-punctuation-translate-p', 用户也可以
+   手动设置这个变量， 比如：
+   #+BEGIN_EXAMPLE
+   (setq pyim-punctuation-translate-p '(yes no auto))   ;使用全角标点。
+   (setq pyim-punctuation-translate-p '(no yes auto))   ;使用半角标点。
+   (setq pyim-punctuation-translate-p '(auto yes no))   ;中文使用全角标点，英文使用半角标点。
+   #+END_EXAMPLE
 2. 第二种方法：使用命令 `pyim-punctuation-translate-at-point' 只切换光
    标处标点的样式。
 3. 第三种方法：设置变量 `pyim-translate-trigger-char' ，输入变量设定的
@@ -298,7 +276,7 @@ pyim *内置* 了多种词条获取的方式：
 |-----------------------------------+-----------------------------------------------------------------------------------|
 | pyim-probe-org-speed-commands     | 解决 org-speed-commands 与 pyim 冲突问题                                          |
 | pyim-probe-isearch-mode           | 使用 isearch 搜索时，强制开启英文输入模式                                         |
-|                                   | 注意：想要使用这个功能，pyim-isearch-enable-pinyin-search 必须设置为 t            |
+|                                   | 注意：想要使用这个功能，pyim-isearch-mode 必须激活                                |
 |-----------------------------------+-----------------------------------------------------------------------------------|
 | pyim-probe-org-structure-template | 使用 org-structure-template 时，关闭中文输入模式                                  |
 |-----------------------------------+-----------------------------------------------------------------------------------|
@@ -347,7 +325,7 @@ pyim *内置* 了多种词条获取的方式：
 
 *** 如何将个人词条导出到一个文件
 
-使用命令：pyim-personal-dcache-export
+使用命令：pyim-dcache-export-personal-dcache
 
 *** pyim 出现错误时，如何开启 debug 模式
 
@@ -493,13 +471,16 @@ pyim 包含了一个简单的命令：`pyim-cwords-at-point', 这个命令
 pyim 安装后，可以通过下面的设置开启拼音搜索功能：
 
 #+BEGIN_EXAMPLE
-(setq pyim-isearch-enable-pinyin-search t)
+(pyim-isearch-mode 1)
 #+END_EXAMPLE
 
-值得注意的是：这个功能有一些限制：搜索字符串中只能出现 “a-z” 和 “’”，如果有
+注意：这个功能有一些限制，搜索字符串中只能出现 “a-z” 和 “’”，如果有
 其他字符（比如 regexp 操作符），则自动关闭拼音搜索功能。
 
-如果用户开启了拼音搜索功能，可以使用下面的方式 *强制关闭* isearch 搜索框中文输入
+开启这个功能后，一些 isearch 扩展有可能失效，如果遇到这种问题，
+只能禁用这个 Minor-mode，然后联系 pyim 的维护者，看有没有法子实现兼容。
+
+用户激活这个 mode 后，可以使用下面的方式 *强制关闭* isearch 搜索框中文输入
 （即使在 pyim 激活的时候）。
 
 #+BEGIN_EXAMPLE

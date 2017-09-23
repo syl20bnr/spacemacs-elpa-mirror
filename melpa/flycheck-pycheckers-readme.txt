@@ -37,10 +37,10 @@ In your `init.el':
 (with-eval-after-load 'flycheck
   (add-hook 'flycheck-mode-hook #'flycheck-pycheckers-setup))
 
-`flycheck-pycheckers` attempts to make itself the preferred Flycheck checker
-for python by adding itself to the beginning of `flycheck-checkers`, which
+`flycheck-pycheckers' attempts to make itself the preferred Flycheck checker
+for python by adding itself to the beginning of `flycheck-checkers', which
 is traversed in order until a valid checker is found.  The error list
-(viewable with `flycheck-list-errors`, bound to `C-c ! l` by default) shows
+(viewable with `flycheck-list-errors', bound to `C-c ! l' by default) shows
 a unified view of all errors found by all checkers, with line and column
 information where available.
 
