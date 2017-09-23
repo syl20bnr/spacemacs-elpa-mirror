@@ -1,6 +1,7 @@
 Provides font-lock, indentation, and navigation for the Hy
 language. (http://hylang.org)
 
+(require 'cl)
 (require 'dash)
 (require 'dash-functional)
 (require 's)
@@ -615,8 +616,154 @@ Autocompletion
   :backends hy-company
   :modes hy-mode)
 
-`inferior-python-mode'
-`python-shell-make-comint'
+Shell Integration
+
+(defconst hy-shell-buffer-name "Hy"
+  "Default buffer name for Hy interpreter.")
+
+(defconst hy-shell-interpreter "hy"
+  "Default Hy interpreter for shell.")
+
+(defconst hy-shell-internal-buffer-name "Hy Internal"
+  "Default buffer name for the Internal Hy interpreter.")
+
+(defconst hy-shell-interpreter-args "--spy"
+  "Default arguments for the Hy interpreter.")
+
+(defvar hy-shell-buffer nil)
+
+(defun hy-shell-get-process ()
+  (get-buffer-process "*Hy*"))
+
+(defun hy-shell-get-or-create-buffer ()
+  "Get or create a font-lock buffer for current inferior process."
+  (hy-shell-with-shell-buffer
+    (if hy-shell-buffer
+        hy-shell-buffer
+      (let ((process-name
+             (process-name (get-buffer-process (current-buffer)))))
+        (generate-new-buffer process-name)))))
+
+(defun hy-shell-kill-buffer ()
+  (when (and hy-shell-buffer
+             (buffer-live-p hy-shell-buffer))
+    (kill-buffer hy-shell-buffer)
+    (when (derived-mode-p 'inferior-hy-mode)
+      (setq hy-shell-buffer nil))))
+
+(defmacro hy-shell-with-shell-buffer (&rest body)
+  "Execute the forms in BODY with the shell buffer temporarily current."
+  (let ((shell-process (gensym)))
+    `(let ((,shell-process (hy-shell-get-process)))
+       (with-current-buffer (process-buffer ,shell-process)
+         ,@body))))
+
+(defmacro hy-shell-font-lock-with-font-lock-buffer (&rest body)
+  `(hy-shell-with-shell-buffer
+    (save-current-buffer
+      (when (not (and hy-shell-buffer
+                      (get-buffer hy-shell-buffer)))
+        (setq hy-shell-buffer
+              (hy-shell-get-or-create-buffer)))
+      (set-buffer hy-shell-buffer)
+      (when (not font-lock-mode)
+        (font-lock-mode 1))
+      (when (not (derived-mode-p 'hy-mode))
+        (hy-mode))
+      ,@body)))
+
+(defun hy-shell-post-command-hook ()
+  "Fontifies current line in shell buffer."
+  (let ((prompt-end (cdr comint-last-prompt)))
+    (when (and prompt-end (> (point) prompt-end)
+               (process-live-p (get-buffer-process (current-buffer))))
+      (let* ((input (buffer-substring-no-properties
+                     prompt-end (point-max)))
+             (deactivate-mark nil)
+             (start-pos prompt-end)
+             (buffer-undo-list t)
+             (font-lock-buffer-pos nil)
+             (replacement
+              (hy-shell-font-lock-with-font-lock-buffer
+                (delete-region (line-beginning-position)
+                               (point-max))
+                (setq font-lock-buffer-pos (point))
+                (insert input)
+                (funcall 'font-lock-ensure)
+                (buffer-substring font-lock-buffer-pos
+                                  (point-max))))
+             (replacement-length (length replacement))
+             (i 0))
+        ;; Inject text properties to get input fontified.
+        (while (not (= i replacement-length))
+          (let* ((plist (text-properties-at i replacement))
+                 (next-change (or (next-property-change i replacement)
+                                  replacement-length))
+                 (plist (let ((face (plist-get plist 'face)))
+                          (if (not face)
+                              plist
+                            ;; Replace FACE text properties with
+                            ;; FONT-LOCK-FACE so input is fontified.
+                            (plist-put plist 'face nil)
+                            (plist-put plist 'font-lock-face face)))))
+            (set-text-properties
+             (+ start-pos i) (+ start-pos next-change) plist)
+            (setq i next-change)))))))
+
+(defun hy-shell-font-lock-turn-on (&optional msg)
+  "Turn on shell font-lock."
+  (interactive "p")
+  (hy-shell-with-shell-buffer
+   (hy-shell-kill-buffer)
+   (set (make-local-variable 'hy-shell-buffer) nil)
+   (add-hook 'post-command-hook
+             #'hy-shell-post-command-hook nil 'local)
+   (add-hook 'kill-buffer-hook
+             #'hy-shell-kill-buffer nil 'local)))
+
+(define-derived-mode inferior-hy-mode comint-mode "Inferior Hy"
+  "Major mode for Hy inferior process."
+  (set (make-local-variable 'indent-tabs-mode) nil)
+  (set (make-local-variable 'comint-prompt-read-only) t)
+
+  (ansi-color-for-comint-mode-on)
+  (set (make-local-variable 'comint-output-filter-functions)
+       '(ansi-color-process-output))
+
+  (setq mode-line-process '(":%s"))
+  (hy-shell-font-lock-turn-on))
+
+(defun hy-shell-make-comint (cmd proc-name &optional show internal)
+  (save-excursion
+    (let* ((proc-buffer-name
+            (format (if (not internal) "*%s*" " *%s*") proc-name)))
+      (when (not (comint-check-proc proc-buffer-name))
+        (let* ((cmdlist (split-string-and-unquote cmd))
+               (interpreter (car cmdlist))
+               (args (cdr cmdlist))
+               (buffer (apply #'make-comint-in-buffer proc-name proc-buffer-name
+                              interpreter nil args))
+               (process (get-buffer-process buffer)))
+          (with-current-buffer buffer
+            (inferior-hy-mode))
+          (when show (display-buffer buffer))
+          (and internal (set-process-query-on-exit-flag process nil))))
+      proc-buffer-name)))
+
+(defun hy-shell-calculate-command ()
+  "Calculate the string used to execute the inferior Hy process."
+  (format "%s %s"
+          (shell-quote-argument hy-shell-interpreter)
+          hy-shell-interpreter-args))
+
+(defun run-hy (&optional cmd dedicated show)
+  "Run an inferior Hy process."
+  (interactive)
+  (get-buffer-process
+   (hy-shell-make-comint
+    (or cmd (hy-shell-calculate-command))
+    hy-shell-buffer-name
+    t)))
 
 Hy-mode
 
@@ -645,7 +792,9 @@ Hy-mode
   ;; Smartparens
   (when (fboundp 'sp-local-pair)
     (sp-local-pair '(hy-mode) "`" "`" :actions nil)
-    (sp-local-pair '(hy-mode) "'" "'" :actions nil))
+    (sp-local-pair '(hy-mode) "'" "'" :actions nil)
+    (sp-local-pair '(inferior-hy-mode) "`" "" :actions nil)
+    (sp-local-pair '(inferior-hy-mode) "'" "" :actions nil))
 
   ;; Fixes #43: inferior lisp history getting corrupted
   ;; Ideally change so original comint-stored-incomplete-input functionality
@@ -694,6 +843,8 @@ Keybindings
 (define-key hy-mode-map (kbd "C-x C-e") 'lisp-eval-last-sexp)
 (define-key hy-mode-map (kbd "C-c C-z") 'switch-to-lisp)
 (define-key hy-mode-map (kbd "C-c C-l") 'lisp-load-file)
+
+(define-key hy-mode-map (kbd "C-c C-e") 'run-hy)
 
 (define-key hy-mode-map (kbd "C-c C-t") 'hy-insert-pdb)
 (define-key hy-mode-map (kbd "C-c C-S-t") 'hy-insert-pdb-threaded)

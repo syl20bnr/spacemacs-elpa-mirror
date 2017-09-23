@@ -2,10 +2,10 @@
 
 ;; Author: Masahiro Hayashi <mhayashi1120@gmail.com>
 ;; Keywords: docs
-;; Package-Version: 20170606.432
+;; Package-Version: 20170917.2154
 ;; URL: https://github.com/mhayashi1120/Emacs-langtool
 ;; Emacs: GNU Emacs 24 or later
-;; Version: 1.6.0
+;; Version: 1.7.0
 ;; Package-Requires: ((cl-lib "0.3"))
 
 ;; This program is free software; you can redistribute it and/or
@@ -67,6 +67,12 @@
 ;;   Please change the variable to your favorite java executable.
 ;;
 ;;     (setq langtool-java-bin "/path/to/java")
+
+;; * Maybe your LanguageTool have launcher. (e.g. Gentoo)
+;;   You need to set `langtool-bin'.
+;;   See https://github.com/mhayashi1120/Emacs-langtool/issues/24
+;;
+;;     (setq langtool-bin "/usr/bin/languagetool")
 
 ;; * Maybe you want to specify your mother tongue.
 ;;
@@ -195,6 +201,11 @@
 
 (defcustom langtool-java-bin "java"
   "Executing java command."
+  :group 'langtool
+  :type 'file)
+
+(defcustom langtool-bin nil
+  "Executing LanguageTool command."
   :group 'langtool
   :type 'file)
 
@@ -517,15 +528,41 @@ Do not change this variable if you don't understand what you are doing.
                  ",")))))
 
 (defun langtool--check-command ()
-  (when (or (null langtool-java-bin)
-            (not (executable-find langtool-java-bin)))
-    (error "java command is not found"))
-  (unless langtool-java-classpath
-    (when (or (null langtool-language-tool-jar)
-              (not (file-readable-p langtool-language-tool-jar)))
-      (error "langtool jar file is not found")))
+  (cond
+   (langtool-bin
+    (unless (executable-find langtool-bin)
+      (error "LanguageTool command not executable")))
+   ((or (null langtool-java-bin)
+        (not (executable-find langtool-java-bin)))
+    (error "java command is not found")))
+  (cond
+   (langtool-java-classpath)
+   (langtool-language-tool-jar
+    (unless (file-readable-p langtool-language-tool-jar)
+      (error "langtool jar file is not readable"))))
   (when langtool-buffer-process
     (error "Another process is running")))
+
+(defun langtool--basic-command&args ()
+  (let (command args)
+    (cond
+     (langtool-bin
+      (setq command langtool-bin))
+     (t
+      (setq command langtool-java-bin)
+      ;; Construct arguments pass to java command
+      (setq args (langtool--custom-arguments 'langtool-java-user-arguments))
+      (cond
+       (langtool-java-classpath
+        (setq args (append
+                    args
+                    (list "-cp" langtool-java-classpath
+                          "org.languagetool.commandline.Main"))))
+       (langtool-language-tool-jar
+        (setq args (append
+                    args
+                    (list "-jar" (langtool--process-file-name langtool-language-tool-jar))))))))
+    (list command args)))
 
 (defun langtool--process-create-buffer ()
   (generate-new-buffer " *LanguageTool* "))
@@ -665,18 +702,8 @@ Ordinary no need to change this."
     (add-to-list 'mode-line-process '(t langtool-mode-line-message)))
   ;; clear previous check
   (langtool--clear-buffer-overlays)
-  (let ((command langtool-java-bin)
-        args)
-    ;; Construct arguments pass to java command
-    (setq args (langtool--custom-arguments 'langtool-java-user-arguments))
-    (if langtool-java-classpath
-        (setq args (append
-                    args
-                    (list "-cp" langtool-java-classpath
-                          "org.languagetool.commandline.Main")))
-      (setq args (append
-                  args
-                  (list "-jar" (langtool--process-file-name langtool-language-tool-jar)))))
+  (cl-destructuring-bind (command args)
+      (langtool--basic-command&args)
     ;; Construct arguments pass to jar file.
     (setq args (append
                 args
@@ -744,6 +771,10 @@ Ordinary no need to change this."
         (kill-buffer pbuf)))))
 
 (defun langtool--cleanup-process ()
+  ;; cleanup mode-line
+  (let ((cell (rassoc '(langtool-mode-line-message) mode-line-process)))
+    (when cell
+      (remq cell mode-line-process)))
   (when langtool-buffer-process
     (delete-process langtool-buffer-process))
   (kill-local-variable 'langtool-buffer-process)
@@ -810,28 +841,20 @@ Ordinary no need to change this."
     (coding-system-get coding-system 'alias-coding-systems)))
 
 (defun langtool--available-languages ()
-  (let ((command langtool-java-bin)
-        args res)
-    (cond
-     ((null langtool-language-tool-jar))
-     (langtool-java-classpath
-      (setq args (append args
-                         (list "-cp" langtool-java-classpath
-                               "org.languagetool.commandline.Main"))))
-     (t
-      (setq args (append
-                  args
-                  (list "-jar" (langtool--process-file-name langtool-language-tool-jar))
-                  (list "--list")))))
-    (with-temp-buffer
-      (when (and command args
-                 (executable-find command)
-                 (= (langtool--with-java-environ
-                     (apply 'call-process command nil t nil args) 0)))
-        (goto-char (point-min))
-        (while (re-search-forward "^\\([^\s\t]+\\)" nil t)
-          (setq res (cons (match-string 1) res)))
-        (nreverse res)))))
+  (cl-destructuring-bind (command args)
+      (langtool--basic-command&args)
+    ;; Construct arguments pass to jar file.
+    (setq args (append args (list "--list")))
+    (let (res)
+      (with-temp-buffer
+        (when (and command args
+                   (executable-find command)
+                   (= (langtool--with-java-environ
+                       (apply 'call-process command nil t nil args) 0)))
+          (goto-char (point-min))
+          (while (re-search-forward "^\\([^\s\t]+\\)" nil t)
+            (setq res (cons (match-string 1) res)))
+          (nreverse res))))))
 
 ;;
 ;; interactive correction
