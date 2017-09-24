@@ -4,8 +4,8 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/anaconda-mode
-;; Package-Version: 0.1.8
-;; Version: 0.1.8
+;; Package-Version: 0.1.9
+;; Version: 0.1.9
 ;; Package-Requires: ((emacs "24") (pythonic "0.1.0") (dash "2.6.0") (s "1.9") (f "0.16.2"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -94,7 +94,7 @@
 
 ;;; Server.
 
-(defvar anaconda-mode-server-version "0.1.8"
+(defvar anaconda-mode-server-version "0.1.9"
   "Server version needed to run anaconda-mode.")
 
 (defvar anaconda-mode-server-command "
@@ -115,7 +115,8 @@ anaconda_mode.main(sys.argv[1:])
 
 (defun anaconda-mode-show-process-buffer ()
   "Display `anaconda-mode-process-buffer'."
-  (pop-to-buffer anaconda-mode-process-buffer))
+  (let ((buffer (get-buffer-create anaconda-mode-process-buffer)))
+    (display-buffer buffer)))
 
 (defvar anaconda-mode-process-fail-hook nil
   "Hook running when any of `anaconda-mode' fails by some reason.")

@@ -5,7 +5,7 @@
 ;; Author: Guido Schmidt
 ;; Maintainer: Guido Schmidt <guido.schmidt.2912@gmail.com>
 ;; URL: https://github.com/GuidoSchmidt/circadian
-;; Package-Version: 20170917.700
+;; Package-Version: 20170924.707
 ;; Version: 0.2.2
 ;; Keywords: circadian, themes
 ;; Package-Requires: ((emacs "24.4"))
@@ -69,7 +69,7 @@
 
 (defun circadian-enable-theme (theme)
   "Clear previous `custom-enabled-themes' and load THEME."
-  (setq custom-enabled-themes '())
+  (mapc 'disable-theme custom-enabled-themes)
   (load-theme theme t))
 
 (defun circadian-mapcar (entry)
