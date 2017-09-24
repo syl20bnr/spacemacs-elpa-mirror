@@ -17,6 +17,7 @@ The following functions are provided:
   + avy-migemo-goto-subword-1
   + avy-migemo-goto-word-1
   + avy-migemo-isearch
+  + avy-migemo-org-goto-heading-timer
   + avy-migemo--overlay-at
   + avy-migemo--overlay-at-full
   + avy-migemo--read-candidates
