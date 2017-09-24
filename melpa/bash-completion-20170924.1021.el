@@ -1,5 +1,5 @@
 ;;; bash-completion.el --- BASH completion for the shell buffer
-;; Package-Version: 20170913.1127
+;; Package-Version: 20170924.1021
 
 ;; Copyright (C) 2009 Stephane Zermatten
 
@@ -173,7 +173,9 @@ on the minibuffer to make it clear what's happening. Set to nil
 to never display any such message. 0 to always display it.
 
 Only relevant when using bash completion in a shell, through
-`bash-completion-dynamic-complete'.")
+`bash-completion-dynamic-complete'."
+  :type '(float)
+  :group 'bash-completion)
 
 (defcustom bash-completion-initial-timeout 30
   "Timeout value to apply when talking to bash for the first time.
@@ -374,7 +376,7 @@ passed to the parameter OPEN-QUOTE.
 
 This function is not meant to be called outside of
 `bash-completion-dynamic-complete'."
-  (let* ((wordbreak-split (bash-completion-last-wordbreak-split stub))
+  (let* ((wordbreak-split (bash-completion-last-wordbreak-split parsed-stub))
          (before-wordbreak (nth 0 wordbreak-split))
 	 (after-wordbreak (nth 1 wordbreak-split))
          (separator (nth 2 wordbreak-split))
@@ -838,7 +840,7 @@ for directory name detection to work."
             (eq ?/ last-char))
         (setq suffix ""))
        ((and
-         (memq completion-type '(command default wordbreak))
+         (memq completion-type '(command default wordbreak custom))
          (file-accessible-directory-p
           (expand-file-name (bash-completion-unescape
                              open-quote (concat parsed-prefix rest))
@@ -1239,7 +1241,8 @@ Call `bash-completion-dynamic' or `bash-completion-nocomint'."
           result)))
 (make-obsolete
  'bash-completion-dynamic-complete-0
- "call bash-completion-dynamic or bash-completion-dynamic-nocomint")
+ "call bash-completion-dynamic or bash-completion-dynamic-nocomint"
+ "2.1")
 
 (defun bash-completion-dynamic-try-wordbreak-complete (stub stub-start pos open-quote)
   "Obsolete function, kept for backward compatibility.
@@ -1253,7 +1256,8 @@ be called from outside bash-completion.
     (cons (buffer-substring-no-properties (car result) pos) result)))
 (make-obsolete
  'bash-completion-dynamic-try-wordbreak-complete
- 'bash-completion--try-wordbreak-complete)
+ 'bash-completion--try-wordbreak-complete
+ "2.1")
 
 (provide 'bash-completion)
 ;;; bash-completion.el ends here

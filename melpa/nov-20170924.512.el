@@ -4,8 +4,8 @@
 
 ;; Author: Vasilij Schneidermann <mail@vasilij.de>
 ;; URL: https://github.com/wasamasa/nov.el
-;; Package-Version: 20170915.829
-;; Version: 0.2.0
+;; Package-Version: 20170924.512
+;; Version: 0.2.1
 ;; Package-Requires: ((dash "2.12.0") (esxml "0.3.3") (emacs "24.4"))
 ;; Keywords: hypermedia, multimedia, epub
 
@@ -430,16 +430,16 @@ This function honors `shr-max-image-proportion' if possible."
 (defvar nov-original-shr-tag-img-function
   (symbol-function 'shr-tag-img))
 
-(defun nov-render-img (dom)
+(defun nov-render-img (dom &optional url)
   "Custom <img> rendering function for DOM.
 Uses `shr-tag-img' for external paths and `nov-insert-image' for
 internal ones."
-  (let ((url (cdr (assq 'src (cadr dom)))))
+  (let ((url (or url (cdr (assq 'src (cadr dom))))))
     (if (nov-external-url-p url)
         ;; HACK: avoid hanging in an infinite loop when using
         ;; `cl-letf' to override `shr-tag-img' with a function that
         ;; might call `shr-tag-img' again
-        (funcall nov-original-shr-tag-img-function dom)
+        (funcall nov-original-shr-tag-img-function dom url)
       (setq url (expand-file-name url))
       (nov-insert-image url))))
 
