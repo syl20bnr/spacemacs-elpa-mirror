@@ -1,12 +1,12 @@
 ;;; org-autolist.el --- Improved list management in org-mode
 
-;; Copyright (C) 2014 Calvin Young
+;; Copyright (C) 2017 Calvin Young
 
 ;; Author: Calvin Young
 ;; Keywords: lists, checklists, org-mode
-;; Package-Version: 0.13
+;; Package-Version: 0.14
 ;; Homepage: https://github.com/calvinwyoung/org-autolist
-;; Version: 0.12
+;; Version: 0.14
 
 ;; This file is not part of GNU Emacs.
 
@@ -78,8 +78,14 @@ automatically insert new list items.
 - Pressing return at the beginning of an empty list or checkbox item
   outdents the item, or clears it if it's already at the outermost
   indentation level."
-  ;; We should only invoke our custom logic if we're in a list item.
-  (if (org-at-item-p)
+  ;; We should only invoke our custom logic if we're in a list item. However,
+  ;; there is an exception if we're on a URL in a list item, and
+  ;; `org-return-follows-link` is enabled -- in this case, we should just let
+  ;; org mode default to following the link.
+  (if (and (org-at-item-p)
+           (not
+            (and org-return-follows-link
+                 (eq 'org-link (get-text-property (point) 'face)))))
       ;; If we're at the beginning of an empty list item, then try to outdent
       ;; it. If it can't be outdented (b/c it's already at the outermost
       ;; indentation level), then delete it.
