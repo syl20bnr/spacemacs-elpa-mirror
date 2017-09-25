@@ -3,7 +3,7 @@
 ;; Copyright (C) 2009   Fredrik Appelberg
 ;;
 ;; Package-Requires: ((eclim "0.3") (auto-complete "1.5"))
-;; Package-Version: 20170921.1317
+;; Package-Version: 20170924.1339
 ;;
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -92,7 +92,7 @@
   (add-hook 'ruby-mode-hook 'ac-emacs-eclim-ruby-setup)
   (add-hook 'c-mode-hook 'ac-emacs-eclim-c-setup)
   (add-hook 'c++-mode-hook 'ac-emacs-eclim-c-setup)
-  (add-hook 'scala-mode-hook 'ac-emacs-eclim-scala-setup))
+  (add-hook 'scala-mode-hook 'ac-emacs-eclim-scala-setup)
   (add-hook 'python-mode-hook 'ac-emacs-eclim-python-setup))
 
 (provide 'ac-emacs-eclim)

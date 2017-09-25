@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.3
-;; Package-Version: 20170923.508
+;; Package-Version: 20170924.1720
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -976,6 +976,7 @@
 (require 'url-parse)
 (require 'button)
 (require 'color)
+(require 'rx)
 
 (defvar jit-lock-start)
 (defvar jit-lock-end)
@@ -4736,7 +4737,9 @@ region.  The characters PREFIX will appear at the beginning
 of each line."
   (save-excursion
     (let* ((end-marker (make-marker))
-           (beg-marker (make-marker)))
+           (beg-marker (make-marker))
+           (prefix-without-trailing-whitespace
+            (replace-regexp-in-string (rx (+ blank) eos) "" prefix)))
       ;; Ensure blank line after and remove extra whitespace
       (goto-char end)
       (skip-syntax-backward "-")
@@ -4753,7 +4756,8 @@ of each line."
       (goto-char beg-marker)
       (while (and (< (line-beginning-position) end-marker)
                   (not (eobp)))
-        (insert prefix)
+        ;; Don’t insert trailing whitespace.
+        (insert (if (eolp) prefix-without-trailing-whitespace prefix))
         (forward-line)))))
 
 (defun markdown-blockquote-region (beg end)
