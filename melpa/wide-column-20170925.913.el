@@ -9,13 +9,13 @@
 ;; Author: Phillip Lord <p.lord@russet.org.uk>
 ;; Maintainer: Phillip Lord <p.lord@russet.org.uk>
 ;; Keywords: minor mode, cursor colour, column width
-;; Package-Version: 20120814.112
+;; Package-Version: 20170925.913
 
 ;; COPYRIGHT NOTICE
 ;;
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License as
-;; published by the Free Software Foundationl; either version 2 or (at
+;; published by the Free Software Foundation; either version 2 or (at
 ;; your option) any later version.
 
 ;; This program is distributed in the hope that it will be useful,

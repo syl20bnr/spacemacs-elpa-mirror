@@ -2,7 +2,7 @@
 
 ;; This file is not part of Emacs
 
-;; Copyright (C) 2000-2013 Jari Aalto
+;; Copyright (C) 2000-2016 Jari Aalto
 ;; Copyright (C) 1995, 1996, 1997, 1998, 1999 Jari Aalto, Anders Lindgren.
 ;; Copyright (C) 1994 Jari Aalto
 ;; Copyright (C) 1992, 1993 Jamie Lokier, All rights reserved.
@@ -13,7 +13,7 @@
 ;; Maintainer:  Jari Aalto <jari aalto A T cante dt net>
 ;; Created:     1992
 ;; Keywords:    tools
-;; Package-Version: 20140401.3
+;; Package-Version: 20170925.838
 ;;
 ;; [Latest devel version]
 ;; Vcs-URL:     http://savannah.nongnu.org/projects/emacs-tiny-tools
@@ -23,10 +23,10 @@
 
 ;;{{{ GPL
 
-;; This program is free software; you can redistribute it and/or
-;; modify it under the terms of the GNU General Public License as
-;; published by the Free Software Foundation,
-;; or (at your option) any later version.
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
 ;;
 ;; GNU Emacs is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
