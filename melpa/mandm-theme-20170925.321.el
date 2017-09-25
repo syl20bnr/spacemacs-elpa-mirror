@@ -5,7 +5,7 @@
 
 ;; Author: Christian Hopps <chopps@gmail.com>
 ;; URL: https://github.com/choppsv1/emacs-mandm-theme.git
-;; Package-Version: 20170903.306
+;; Package-Version: 20170925.321
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: http://github.com/bbatsov/zenburn
@@ -116,6 +116,7 @@
     ("mandm-yellow"   . ,mmyellow-color)
     ("mandm-yellow-1" . ,(color-darken-name mmyellow-color 3))
     ("mandm-yellow-2" . ,(color-darken-name mmyellow-color 6))
+    ("mandm-yellow-5" . ,(color-darken-name mmyellow-color 20))
     ("mandm-green+4"  . ,(color-lighten-name mmgreen-color 12))
     ("mandm-green+3"  . ,(color-lighten-name mmgreen-color 8))
     ("mandm-green+2"  . ,(color-lighten-name mmgreen-color 6))
@@ -440,14 +441,14 @@ Also bind `class' to ((class color) (min-colors 89))."
 ;;;;; flycheck
    ;; I like color-"inverse" otherwise I completely miss the fact that it's set.
    `(flycheck-error   ((t (:background ,mandm-red-4 :foreground ,mandm-fg :weight bold))))
-   `(flycheck-warning ((t (:background ,mandm-yellow-2 :foreground ,mandm-fg :weight bold))))
+   `(flycheck-warning ((t (:background ,mandm-yellow-5 :foreground ,mandm-fg :weight bold))))
    `(flycheck-info    ((t (:background ,mandm-cyan :foreground ,mandm-fg :weight bold ))))
    `(flycheck-fringe-error   ((t (:foreground ,mandm-red :weight bold))))
    `(flycheck-fringe-warning ((t (:foreground ,mandm-yellow :weight bold))))
    `(flycheck-fringe-info    ((t (:foreground ,mandm-cyan :weight bold))))
 ;;;;; flymake
    `(flymake-errline  ((t (:background ,mandm-red-4 :foreground ,mandm-fg :weight bold))))
-   `(flymake-warnline ((t (:background ,mandm-yellow-2 :foreground ,mandm-fg :weight bold))))
+   `(flymake-warnline ((t (:background ,mandm-yellow-5 :foreground ,mandm-fg :weight bold))))
    `(flymake-infoline ((t (:background ,mandm-cyan :foreground ,mandm-fg :weight bold ))))
 ;;;;; flyspell
    `(flyspell-duplicate

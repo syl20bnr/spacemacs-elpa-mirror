@@ -5,7 +5,7 @@
 ;; Authors: Damien Cassou <damien@cassou.me>
 ;;          Matus Goljer <matus.goljer@gmail.com>
 ;; Version: 2.0.0
-;; Package-Version: 20170810.624
+;; Package-Version: 20170925.43
 ;; URL: https://github.com/DamienCassou/beginend
 ;; Package-Requires: ((emacs "24.4"))
 ;; Created: 01 Jun 2015
@@ -344,6 +344,7 @@ state.
 When beginend mode is enabled, modes such as `dired-mode', `message-mode'
 and `compilation-mode' will have their \\[beginning-of-buffer] and
 \\[end-of-buffer] keys adapted to go to meaningful places."
+  :require 'beginend
   :lighter " be"
   :global t
   (if beginend-global-mode

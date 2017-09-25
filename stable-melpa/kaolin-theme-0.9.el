@@ -4,7 +4,7 @@
 
 ;; Author: 0rdy <mail@0rdy.com>
 ;; URL: https://github.com/0rdy/kaolin-theme
-;; Package-Version: 20170920.204
+;; Package-Version: 0.9
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 0.9.0
 
@@ -54,6 +54,7 @@
 
 ;; TODO: move light-green to separated hl var and (??) change to lavender
 ;; TODO: (??) add base(terminal) colors
+
 ;; Kaolin color palette
 (let ((c '((class color) (min-colors 89)))
       (black1          "#1b1b1b")
@@ -645,10 +646,10 @@
      `(company-scrollbar-bg ((,c (:background ,bg1))))
      `(company-scrollbar-fg ((,c (:foreground ,keyword))))
      ;; TODO: read about template
-     `(company-template-field ((,c (:inherit region))))
+     `(company-template-field ((,c (:background ,bg3))))
      `(company-echo-common ((,c (:background ,bg1 :foreground ,light-yellow))))
-     `(company-preview ((,c (:background ,bg1 :foreground ,key2))))
-     `(company-preview-common ((,c (:foreground ,bg2 :foreground ,fg3))))
+     `(company-preview ((,c (:background nil :foreground ,key2))))
+     `(company-preview-common ((,c (:background ,bg2 :foreground ,light-orange))))
      `(company-preview-search ((,c (:background ,bg1 :foreground ,blue))))
      `(company-tooltip-mouse ((,c (:background ,bg3 :foreground ,fg3))))
 
