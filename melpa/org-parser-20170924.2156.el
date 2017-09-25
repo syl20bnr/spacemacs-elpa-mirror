@@ -1,7 +1,7 @@
 ;;; org-parser.el --- parse org files into structured datatypes.  -*- lexical-binding: t; -*-
 
-;; Version: 0.3
-;; Package-Version: 20170814.2016
+;; Version: 0.4
+;; Package-Version: 20170924.2156
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright (C) 2016-2017 Zachary Kanfer
@@ -24,7 +24,7 @@
 ;; Homepage: https://bitbucket.org/zck/org-parser.el
 
 
-;; Package-Requires: ((emacs "25.1") (dash "2.12.0"))
+;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (ht "2.1"))
 
 ;;; Commentary:
 
@@ -34,6 +34,7 @@
 (require 'subr-x)
 (require 'cl-lib)
 (require 'dash)
+(require 'ht)
 
 ;;;###autoload
 (defun org-parser-parse-buffer (buffer)
@@ -51,17 +52,20 @@
 ;;;###autoload
 (defun org-parser-parse-string (string)
   "Parse STRING into a list of structure items."
-  (org-parser--convert-text-tree (org-parser--make-text-tree (org-parser--split-into-blocks (substring-no-properties string)))))
+  (destructuring-bind (settings content) (-split-with (lambda (ele) (string-prefix-p "#+" ele))
+                                                      (split-string (string-remove-suffix "\n" (substring-no-properties string))
+                                                                    "\n"))
+    (ht (:in-buffer-settings (org-parser--get-in-buffer-settings settings))
+        (:content (org-parser--convert-text-tree (org-parser--make-text-tree (org-parser--split-into-blocks content)))))))
 
-(defun org-parser--split-into-blocks (text)
-  "Split TEXT into blocks; one block for each headline or plain list.
+(defun org-parser--split-into-blocks (lines)
+  "Split LINES into blocks; one block for each headline or plain list.
 
 A block is a single string (with newlines in it if necessary) that,
 optionally, begins with a headline or plain list, but otherwise has
 no headlines or plain lists in it."
-  (when text
-    (org-parser--split-into-blocks-helper (split-string (string-remove-suffix "\n" text)
-                                                        "\n"))))
+  (when lines
+    (org-parser--split-into-blocks-helper lines)))
 
 (defun org-parser--split-into-blocks-helper (lines)
   "Split LINES into blocks; one block for each headline or plain list.
@@ -92,6 +96,17 @@ no headlines or plain lists in it."
                 (1- (length string-list))
               (length string-list)))))
 
+(defun org-parser--get-in-buffer-settings (lines)
+  "Get the buffer settings out of the initial lines of LINES.
+
+In-buffer settings are described at http://orgmode.org/manual/In_002dbuffer-settings.html#In_002dbuffer-settings"
+  (when lines
+    (destructuring-bind (first . rest) lines
+      (if (string-match "#\\+\\([[:graph:]]+\\):\\(.*\\)" first)
+          (cons (cons (match-string 1 first)
+                      (split-string (match-string 2 first)))
+                (org-parser--get-in-buffer-settings rest))
+        (org-parser--get-in-buffer-settings rest)))))
 
 (defun org-parser--guess-level (text)
   "Attempts to guess the level of the TEXT.
@@ -463,14 +478,30 @@ BULLET can be the bullet for a plain list or a headline."
                      ?\s)
       "")))
 
-(defun org-parser--to-string (structure-list)
-  "Convert STRUCTURE-LIST, a list of structure hash tables, to a string.
+(defun org-parser--to-string (org-file-structure)
+  "Convert ORG-FILE-STRUCTURE to a string.
 
-This should be identical to the org file parsed to create the structure."
-  (org-parser--to-string-helper structure-list ""))
+ORG-FILE-STRUCTURE is a structure created by org-parser
+representing an org file.
 
-(defun org-parser--to-string-helper (structure-list parent-bullet)
-  "Convert STRUCTURE-LIST, a list of structure hash tables, to a string.
+The result should be identical to the org file parsed to create the
+structure."
+  (concat (when (gethash :in-buffer-settings org-file-structure)
+            (concat (org-parser--in-buffer-settings-to-string (gethash :in-buffer-settings org-file-structure))
+                    "\n"))
+          (org-parser--to-string-helper (gethash :content org-file-structure) "")))
+
+(defun org-parser--in-buffer-settings-to-string (in-buffer-properties-list)
+  "Convert the IN-BUFFER-PROPERTIES-LIST to a string."
+  (string-join (mapcar (lambda (property)
+                         (format "#+%s: %s"
+                                 (first property)
+                                 (string-join (rest property) " ")))
+                       in-buffer-properties-list)
+               "\n"))
+
+(defun org-parser--to-string-helper (org-file-structure parent-bullet)
+  "Convert ORG-FILE-STRUCTURE, a list of structure hash tables, to a string.
 
 These structure hash tables all have the same parent, whose bullet
 is PARENT-BULLET.
@@ -478,9 +509,9 @@ is PARENT-BULLET.
 This should be identical to the org file parsed to create the structure."
   (string-join (cl-mapcar (lambda (structure siblings-before-this-one)
                             (org-parser--single-to-string structure parent-bullet siblings-before-this-one))
-                          structure-list
+                          org-file-structure
                           (number-sequence 0
-                                           (1- (length structure-list))))))
+                                           (1- (length org-file-structure))))))
 
 (defun org-parser--single-to-string (structure parent-headline siblings-before-this-one)
   "Create the string for STRUCTURE, with parent having PARENT-HEADLINE.
