@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 20170919.1345
+;; Package-Version: 20170925.2242
 ;; Version: 2.10
 
 ;; This file is not part of GNU Emacs.
@@ -248,7 +248,6 @@ If you're running Emacs in cygwin you might have to set this to nil."
           (run-with-idle-timer rtags-periodic-reparse-timeout t
                                #'rtags-reparse-file-if-needed nil t))))
 
-(defvar rtags-periodic-reparse-timer nil)
 ;;;###autoload
 (defun rtags-set-periodic-reparse-timeout (time)
   "Set `rtags-periodic-reparse-timeout' to TIME."

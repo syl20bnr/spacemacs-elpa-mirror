@@ -977,14 +977,26 @@ Utilities
     (run-hy)))
 
 ###autoload
-(defun hy-eval-buffer ()
+(defun hy-shell-eval-buffer ()
   (interactive)
   (-let [text
          (buffer-string)]
     (unless (hy-shell-buffer?)
-      (hy-shell-start))
+      (hy-shell-start-or-switch-to-shell))
     (hy-shell-with-shell-buffer
      (hy-shell-send-string-no-output text))))
+
+###autoload
+(defun hy-shell-eval-region ()
+  (interactive)
+  (when (and (region-active-p)
+             (not (region-noncontiguous-p)))
+    (-let [text
+           (buffer-substring (region-beginning) (region-end))]
+      (unless (hy-shell-buffer?)
+        (hy-shell-start-or-switch-to-shell))
+      (hy-shell-with-shell-buffer
+       (hy-shell-send-string-no-output text)))))
 
 Keybindings
 
@@ -995,7 +1007,7 @@ Keybindings
 (define-key hy-mode-map (kbd "C-c C-l") 'lisp-load-file)
 
 (define-key hy-mode-map (kbd "C-c C-e") 'hy-shell-start-or-switch-to-shell)
-(define-key hy-mode-map (kbd "C-c C-b") 'hy-eval-buffer)
+(define-key hy-mode-map (kbd "C-c C-b") 'hy-shell-eval-buffer)
 
 (define-key hy-mode-map (kbd "C-c C-t") 'hy-insert-pdb)
 (define-key hy-mode-map (kbd "C-c C-S-t") 'hy-insert-pdb-threaded)
