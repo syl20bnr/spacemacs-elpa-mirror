@@ -4,8 +4,8 @@
 
 ;; Author: Goichi Hirakawa <gooichi@gyazsquare.com>
 ;; URL: https://github.com/GyazSquare/flycheck-swift3
-;; Package-Version: 20170409.25
-;; Version: 1.1.0
+;; Package-Version: 20170926.317
+;; Version: 2.0.0
 ;; Keywords: convenience, languages, tools
 ;; Package-Requires: ((emacs "24.4") (flycheck "26"))
 
@@ -43,8 +43,8 @@
 ;; Features:
 ;;
 ;; - Apple swift-mode.el support
-;; - Apple Swift 3.1 support
-;;   If you use the toolchain option, you can use Swift 2.x.
+;; - Apple Swift 4 support
+;;   If you use the toolchain option, you can use the old version of Swift.
 ;; - The `xcrun' command support (only on macOS)
 ;;
 ;; Usage:
@@ -57,7 +57,7 @@
 (require 'flycheck)
 
 (flycheck-def-option-var flycheck-swift3-xcrun-sdk nil swift
-  "Specifies which SDK to search for tools.
+  "Specify which SDK to search for tools.
 
 When non-nil, set the SDK name to find the tools, via `--sdk'.
 The option is available only on macOS.
@@ -67,7 +67,7 @@ Use `xcodebuild -showsdks' to list the available SDK names."
   :safe #'stringp)
 
 (flycheck-def-option-var flycheck-swift3-xcrun-toolchain nil swift
-  "Specifies which toolchain to use to perform the lookup.
+  "Specify which toolchain to use to perform the lookup.
 
 When non-nil, set the toolchain identifier or name to use to
 perform the lookup, via `--toolchain'.
@@ -76,11 +76,20 @@ The option is available only on macOS."
   :safe #'stringp)
 
 (flycheck-def-option-var flycheck-swift3-conditional-compilation-flags nil swift
-  "Specifies conditional compilation flags marked as true.
+  "Specify conditional compilation flags marked as true.
 
 When non-nil, add the specified conditional compilation flags via
 `-D'."
   :type '(repeat (string :tag "Conditional compilation flag"))
+  :safe #'flycheck-string-list-p)
+
+(flycheck-def-option-var flycheck-swift3-system-framework-search-paths nil swift
+  "Add directory to system framework search paths.
+
+When non-nil, add the specified directory to the search path for
+system framework include files, via `-Fsystem'.
+The option is available in Swift 4.0 or later."
+  :type '(repeat (directory :tag "System Framework directory"))
   :safe #'flycheck-string-list-p)
 
 (flycheck-def-option-var flycheck-swift3-framework-search-paths nil swift
@@ -100,7 +109,7 @@ import files, via `-I'."
   :safe #'flycheck-string-list-p)
 
 (flycheck-def-option-var flycheck-swift3-module-name nil swift
-  "Specifies name of the module to build.
+  "Specify name of the module to build.
 
 When non-nil, set the name of the module to build, via
 `-module-name'."
@@ -108,10 +117,21 @@ When non-nil, set the name of the module to build, via
   :safe #'stringp)
 
 (flycheck-def-option-var flycheck-swift3-sdk-path nil swift
-  "Specifies which SDK to compile against.
+  "Specify which SDK to compile against.
 
 When non-nil, set the SDK path to compile against, via `-sdk'."
   :type '(directory :tag "SDK path")
+  :safe #'stringp)
+
+(flycheck-def-option-var flycheck-swift3-swift-version nil swift
+  "Interpret input according to a specific Swift language version
+number.
+
+When non-nil, set the specific Swift language version to
+interpret input, via `-swift-version'.
+
+The option is available in Swift 3.1 or later."
+  :type 'string
   :safe #'stringp)
 
 (flycheck-def-option-var flycheck-swift3-target nil swift
@@ -119,8 +139,17 @@ When non-nil, set the SDK path to compile against, via `-sdk'."
   :type 'string
   :safe #'stringp)
 
+(flycheck-def-option-var flycheck-swift3-swift3-objc-inference nil swift
+  "Control how the Swift compiler infers @objc for declarations.
+
+The option is available in Swift 4.0 or later."
+  :type '(choice (const :tag "Default" nil)
+                 (const :tag "On" on)
+                 (const :tag "Off" off))
+  :safe #'symbolp)
+
 (flycheck-def-option-var flycheck-swift3-import-objc-header nil swift
-  "Implicitly imports an Objective-C header file.
+  "Implicitly import an Objective-C header file.
 
 When non-nil, import an Objective-C header file via
 `-import-objc-header'.
@@ -140,7 +169,7 @@ C/C++/Objective-C compiler, via `-Xcc'."
   :safe #'flycheck-string-list-p)
 
 (flycheck-def-option-var flycheck-swift3-inputs nil swfit
-  "Specifies input files to parse.
+  "Specify input files to parse.
 
 When non-nil, set the input files to parse."
   :type '(repeat (string :tag "Input file"))
@@ -208,6 +237,8 @@ input files using `DIRECTORY' as the default directory."
                        (flycheck-swift3--swiftc-version ,xcrun-path) "3.1")
                       "-parse" "-typecheck"))
             (option-list "-D" flycheck-swift3-conditional-compilation-flags)
+            (option-list "-Fsystem"
+                         flycheck-swift3-system-framework-search-paths)
             (option-list "-F" flycheck-swift3-framework-search-paths)
             (option-list "-I" flycheck-swift3-import-search-paths)
             (option "-module-name" flycheck-swift3-module-name)
@@ -215,7 +246,13 @@ input files using `DIRECTORY' as the default directory."
                                          ,xcrun-path
                                          flycheck-swift3-xcrun-sdk)))
                     (when swift-sdk-path `("-sdk" ,swift-sdk-path))))
+            (option "-swift-version" flycheck-swift3-swift-version)
             (option "-target" flycheck-swift3-target)
+            (eval (cond ((eq flycheck-swift3-swift3-objc-inference 'on)
+                         '("-enable-swift3-objc-inference"
+                           "-warn-swift3-objc-inference-minimal"))
+                        ((eq flycheck-swift3-swift3-objc-inference 'off)
+                         "-disable-swift3-objc-inference")))
             (option "-import-objc-header" flycheck-swift3-import-objc-header)
             (option-list "-Xcc" flycheck-swift3-xcc-args)
             (eval (let ((file-name (or load-file-name buffer-file-name)))

@@ -1,7 +1,7 @@
 ;;; zpresent.el --- Simple presentation mode based on org files.  -*- lexical-binding: t; -*-
 
 ;; Version: 0.3
-;; Package-Version: 20170914.917
+;; Package-Version: 20170925.2157
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright 2015-2017 Zachary Kanfer <zkanfer@gmail.com>
@@ -22,7 +22,7 @@
 
 ;; Homepage: https://bitbucket.org/zck/zpresent.el
 
-;; Package-Requires: ((emacs "25.1") (org-parser "0.3") (dash "2.12.0") (request "0.3.0"))
+;; Package-Requires: ((emacs "25.1") (org-parser "0.4") (dash "2.12.0") (request "0.3.0"))
 
 ;; Keywords: comm
 
@@ -123,7 +123,7 @@
 
   (setq zpresent-source (org-parser-parse-buffer (current-buffer)))
   (setq zpresent-position 0)
-  (setq zpresent-slides (zpresent--format (-filter #'hash-table-p zpresent-source)))
+  (setq zpresent-slides (zpresent--format (-filter #'hash-table-p (gethash :content zpresent-source))))
 
   (setq zpresent-images (make-hash-table :test #'equal))
   (zpresent--cache-images zpresent-slides)
@@ -137,6 +137,8 @@
 
   (when zpresent-delete-other-windows
     (delete-other-windows))
+
+  (setq cursor-type nil)
 
   (visual-line-mode)
 
