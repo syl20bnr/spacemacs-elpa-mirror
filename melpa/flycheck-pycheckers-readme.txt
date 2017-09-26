@@ -1,6 +1,3 @@
-[![MELPA](https://melpa.org/packages/flycheck-pycheckers-badge.svg)](https://melpa.org/#/flycheck-pycheckers)
-[![MELPA](https://stable.melpa.org/packages/flycheck-pycheckers-badge.svg)](https://stable.melpa.org/#/flycheck-pycheckers)
-
 Copyright Marc Sherry <msherry@gmail.com>
 
 This package provides a way to run multiple syntax checkers on Python code,
@@ -43,5 +40,3 @@ is traversed in order until a valid checker is found.  The error list
 (viewable with `flycheck-list-errors', bound to `C-c ! l' by default) shows
 a unified view of all errors found by all checkers, with line and column
 information where available.
-
-![flycheck-list-errors](docs/flycheck-list-errors.png "flycheck-list-errors")
