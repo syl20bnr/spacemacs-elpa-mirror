@@ -562,80 +562,6 @@ a string or comment."
         font-lock-string-face)
     font-lock-comment-face))
 
-Autocompletion
-
-(do (import [hy.completer [Completer]]) (setv completer (Completer)))
-
-(defun hy-current-process ()
-  (get-buffer-process inferior-lisp-buffer))
-
-(defun hy-comint-redirect-results-list-from-process (process command regexp regexp-group)
-  "Execute `comint-redirect-results-list-from-process' with timeout for company."
-  (let ((output-buffer " *Comint Redirect Work Buffer*")
-        results)
-    (with-current-buffer (get-buffer-create output-buffer)
-      (erase-buffer)
-      (comint-redirect-send-command-to-process command
-                                               output-buffer process nil t)
-      ;; Wait for the process to complete
-      (set-buffer (process-buffer process))
-      (while (and (null comint-redirect-completed)
-                  (accept-process-output process nil 100 t)))
-      ;; Collect the output
-      (set-buffer output-buffer)
-      (goto-char (point-min))
-      ;; Skip past the command, if it was echoed
-      (and (looking-at command)
-           (forward-line))
-      (while (and (not (eobp))
-                  (re-search-forward regexp nil t))
-        (push (buffer-substring-no-properties
-               (match-beginning regexp-group)
-               (match-end regexp-group))
-              results))
-      (nreverse results))))
-
-(defun hy-get-matches (&optional str)
-  "Return matches for STR."
-  (hy-comint-redirect-results-list-from-process
-   (hy-current-process)
-   (concat
-    ;; Currently always importing, determine if can do at start
-    "(do (import [hy.completer [Completer]]) (setv completer (Completer))"
-    "(completer."
-    (cond ((s-starts-with? "#" str)  ; Hy not recording tag macros atm
-           "tag-matches")
-
-          ((s-contains? "." str)
-           "attr-matches")
-
-          (t
-           "global-matches"))
-    " \"" str "\")"
-    ")")
-   (rx "'"
-       (group (1+ (or word (any "!@#$%^&*-_+=?~`'<>,.\|"))))
-       "'"
-       (any "," "]"))  ; filters out "completer.global_matches('str')" from --spy
-   1))
-
-(defun hy-company (command &optional arg &rest ignored)
-  (interactive (list 'interactive))
-  (cl-case command
-    (interactive (company-begin-backend 'hy-company))
-    (prefix (company-grab-symbol))
-    (candidates (cons :async
-                      (lexical-let ((prfx arg))
-                        (lambda (cb)
-                          (let ((res (hy-get-matches prfx)))
-                            (funcall cb res))))))
-    ;; (meta (format "This value is named %s" arg))
-    ))
-
-(spacemacs|add-company-backends
-  :backends hy-company
-  :modes hy-mode)
-
 Shell Integration
 Configuration
 
@@ -651,20 +577,24 @@ Configuration
 (defconst hy--spy-delim-uuid "#cbb4fcbe-b6ba-4812-afa3-4a5ac7b20501"
   "UUID denoting end of python block in `--spy --control-categories' output")
 
+(setq hy-shell-font-lock-enable t)
+
 Shell buffer utilities
 
 (defun hy-shell-format-process-name (proc-name &optional internal)
   "Format a PROC-NAME with closing astericks."
-  (-let [formatted-name
-         (->> proc-name (s-prepend "*") (s-append "*"))]
-    (if internal
-        (s-prepend " " formatted-name)
-      formatted-name)))
+  (->> proc-name (s-prepend "*") (s-append "*")))
 
 (defun hy-shell-get-process ()
   "Get the Hy process corresponding to `hy-shell-buffer-name'."
-  (->> hy-shell-buffer-name
+  (-> hy-shell-buffer-name
      hy-shell-format-process-name
+     get-buffer-process))
+
+(defun hy-shell-get-internal-process ()
+  "Get the Hy internal process corresponding to `hy-shell-internal-buffer-name'."
+  (-> hy-shell-internal-buffer-name
+     (hy-shell-format-process-name t)
      get-buffer-process))
 
 (defun hy-shell-get-or-create-buffer ()
@@ -850,11 +780,13 @@ Shell creation
       (s-concat hy-shell-interpreter-args " --control-codes")
     hy-shell-interpreter-args))
 
-(defun hy-shell-calculate-command ()
+(defun hy-shell-calculate-command (&optional internal)
   "Calculate the string used to execute the inferior Hy process."
   (format "%s %s"
           (shell-quote-argument hy-shell-interpreter)
-          (hy-shell-calculate-interpreter-args)))
+          (if internal
+              ""
+            (hy-shell-calculate-interpreter-args))))
 
 (defun run-hy (&optional cmd)
   "Run an inferior Hy process.
@@ -865,6 +797,83 @@ CMD defaults to the result of `hy-shell-calculate-command'."
          (hy-shell-calculate-command))
      (hy-shell-make-comint hy-shell-buffer-name t)
      get-buffer-process))
+
+(defun run-hy-internal ()
+  "Start an inferior hy process in the background for autocompletion."
+  (when (and (not (hy-shell-get-internal-process))
+             (executable-find "hy"))
+    (-let [hy-shell--font-lock-enable
+           nil]
+      (-> (hy-shell-calculate-command t)
+         (hy-shell-make-comint hy-shell-internal-buffer-name nil t)
+         get-buffer-process))))
+
+Autocompletion
+
+(defun hy-comint-redirect-results-list-from-process (process command regexp regexp-group)
+  "Execute `comint-redirect-results-list-from-process' with timeout for company."
+  (let ((output-buffer " *Comint Redirect Work Buffer*")
+        results)
+    (with-current-buffer (get-buffer-create output-buffer)
+      (erase-buffer)
+      (comint-redirect-send-command-to-process command
+                                               output-buffer process nil t)
+      ;; Wait for the process to complete
+      (set-buffer (process-buffer process))
+      (while (and (null comint-redirect-completed)
+                  (accept-process-output process nil 100 t)))
+      ;; Collect the output
+      (set-buffer output-buffer)
+
+      (goto-char (point-min))
+      ;; Skip past the command, if it was echoed
+      (and (looking-at command)
+           (forward-line))
+      (while (and (not (eobp))
+                  (re-search-forward regexp nil t))
+        (push (buffer-substring-no-properties
+               (match-beginning regexp-group)
+               (match-end regexp-group))
+              results))
+      (nreverse results))))
+
+(defun hy-get-matches (&optional str)
+  "Return matches for STR."
+  (when (hy-shell-get-internal-process)
+    (hy-comint-redirect-results-list-from-process
+     (hy-shell-get-internal-process)
+     (concat
+      ;; Currently always importing, determine if can do at start
+      "(do (import [hy.completer [Completer]]) (setv completer (Completer))"
+      "(completer."
+      (cond ((s-starts-with? "#" str)  ; Hy not recording tag macros atm
+             "tag-matches")
+
+            ((s-contains? "." str)
+             "attr-matches")
+
+            (t
+             "global-matches"))
+      " \"" str "\")"
+      ")")
+     (rx "'"
+         (group (1+ (or word (any "!@#$%^&*-_+=?~`'<>,.\|"))))
+         "'"
+         (any "," "]"))
+     1)))
+
+(defun hy-company (command &optional arg &rest ignored)
+  (interactive (list 'interactive))
+  (cl-case command
+    (interactive (company-begin-backend 'hy-company))
+    (prefix (company-grab-symbol))
+    (candidates (cons :async
+                      (lexical-let ((prfx arg))
+                        (lambda (cb)
+                          (let ((res (hy-get-matches prfx)))
+                            (funcall cb res))))))
+    ;; (meta (format "This value is named %s" arg))
+    ))
 
 hy-mode and inferior-hy-mode
 Hy-mode setup
@@ -911,7 +920,10 @@ Hy-mode setup
   (setq-local inferior-lisp-program hy-mode-inferior-lisp-command)
   (setq-local inferior-lisp-load-command
               (concat "(import [hy.importer [import-file-to-module]])\n"
-                      "(import-file-to-module \"__main__\" \"%s\")\n")))
+                      "(import-file-to-module \"__main__\" \"%s\")\n"))
+
+  (run-hy-internal)
+  (add-hook 'pyvenv-post-activate-hooks 'run-hy-internal nil t))
 
 Inferior-hy-mode setup
 
@@ -925,11 +937,11 @@ Inferior-hy-mode setup
   (setq-local comint-output-filter-functions
               '(ansi-color-process-output))
 
-  (setq-local comint-preoutput-filter-functions
-              '(xterm-color-filter hy-shell-font-lock-spy-output))
-
-  ;; Choosing to always enable font lock for hy shells
-  (hy-shell-font-lock-turn-on)
+  ;; Don't startup font lock for internal processes
+  (when hy-shell-font-lock-enable
+    (setq-local comint-preoutput-filter-functions
+                `(xterm-color-filter hy-shell-font-lock-spy-output))
+    (hy-shell-font-lock-turn-on))
 
   ;; Fixes issue with "=>", no side effects from this advice
   (advice-add 'comint-previous-input :before
@@ -978,6 +990,7 @@ Utilities
 
 ###autoload
 (defun hy-shell-eval-buffer ()
+  "Send the buffer to the shell, inhibiting output."
   (interactive)
   (-let [text
          (buffer-string)]
@@ -988,6 +1001,7 @@ Utilities
 
 ###autoload
 (defun hy-shell-eval-region ()
+  "Send highlighted region to shell, inhibiting output."
   (interactive)
   (when (and (region-active-p)
              (not (region-noncontiguous-p)))
