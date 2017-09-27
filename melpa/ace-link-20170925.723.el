@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/ace-link
-;; Package-Version: 20170904.340
+;; Package-Version: 20170925.723
 ;; Version: 0.4.0
 ;; Package-Requires: ((avy "0.2.0"))
 ;; Keywords: convenience, links
@@ -63,6 +63,8 @@
          (ace-link-gnus))
         ((eq major-mode 'org-mode)
          (ace-link-org))
+        ((eq major-mode 'org-agenda-mode)
+         (ace-link-org-agenda))
         ((eq major-mode 'Custom-mode)
          (ace-link-org))
         ((and ace-link-fallback-function
@@ -323,6 +325,38 @@
            res)))
       (nreverse res))))
 
+;;* `ace-link-org-agenda'
+;;;###autoload
+(defun ace-link-org-agenda ()
+  "Open a visible link in an `org-mode-agenda' buffer."
+  (interactive)
+  (require 'org-agenda)
+  (let ((pt (avy-with ace-link-org-agenda
+              (avy--process
+               (mapcar #'cdr (ace-link--org-agenda-collect))
+               (avy--style-fn avy-style)))))
+    (ace-link--org-agenda-action pt)))
+
+(declare-function org-agenda-goto "org-agenda")
+
+(defun ace-link--org-agenda-action (pt)
+  (when (numberp pt)
+    (goto-char pt)
+    (org-agenda-goto)))
+
+(defun ace-link--org-agenda-collect ()
+  (let ((skip (text-property-any
+               (window-start) (window-end) 'org-marker nil))
+        candidates)
+    (save-excursion
+      (while (setq skip (text-property-not-all
+                         skip (window-end) 'org-marker nil))
+        (goto-char skip)
+        (push (cons (get-char-property (point) 'txt) skip) candidates)
+        (setq skip (text-property-any (point) (window-end)
+                                      'org-marker nil))))
+    (nreverse candidates)))
+
 ;;* `ace-link-custom'
 ;;;###autoload
 (defun ace-link-custom ()
@@ -404,6 +438,8 @@
                '(ace-link-gnus . post))
   (add-to-list 'avy-styles-alist
                '(ace-link-org . pre))
+  (add-to-list 'avy-styles-alist
+               '(ace-link-org-agenda . pre))
   (add-to-list 'avy-styles-alist
                '(ace-link-custom . pre))
   (add-to-list 'avy-styles-alist
