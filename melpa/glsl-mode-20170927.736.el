@@ -6,7 +6,7 @@
 ;; Authors: Xavier.Decoret@imag.fr, 
 ;;          Jim Hourihan <jimhourihan ~at~ gmail.com> (updated for 4.5, etc)
 ;; Keywords: languages
-;; Package-Version: 20160209.833
+;; Package-Version: 20170927.736
 ;; Version: 2.0
 ;; X-URL: http://artis.inrialpes.fr/~Xavier.Decoret/resources/glsl-mode/
 ;;
@@ -309,7 +309,7 @@
        nil nil nil nil word))))
   (save-excursion
     (browse-url
-     (concat glsl-man-pages-base-url thing ".xtml"))))
+     (concat glsl-man-pages-base-url thing ".xhtml"))))
 
 ;;;###autoload
 (define-derived-mode glsl-mode c-mode "GLSL"
