@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170926.929
+;; Package-Version: 20170927.1139
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1536,8 +1536,9 @@ Does not list the currently checked out one."
     (define-key map (kbd "C-<backspace>") 'counsel-up-directory)
     map))
 
-(add-to-list 'ivy-ffap-url-functions 'counsel-github-url-p)
-(add-to-list 'ivy-ffap-url-functions 'counsel-emacs-url-p)
+(when (executable-find "git")
+  (add-to-list 'ivy-ffap-url-functions 'counsel-github-url-p)
+  (add-to-list 'ivy-ffap-url-functions 'counsel-emacs-url-p))
 (add-to-list 'ivy-ffap-url-functions 'counsel-url-expand)
 (defun counsel-find-file-cd-bookmark-action (_)
   "Reset `counsel-find-file' from selected directory."

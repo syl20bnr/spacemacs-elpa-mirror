@@ -5,7 +5,7 @@
 ;; Created    : Feburary 2005
 ;; Modified   : 2016
 ;; Version    : 0.9.1
-;; Package-Version: 20170926.305
+;; Package-Version: 20170927.816
 ;; Keywords   : c# languages oop mode
 ;; X-URL      : https://github.com/josteink/csharp-mode
 ;; Last-saved : 2017-Jan-11
@@ -365,6 +365,10 @@
 ;;              ops)
 ;;      :test 'equal)))
 
+
+(defgroup csharp nil
+  "Major mode for editing C# code."
+  :group 'prog-mode)
 
 
 ;; Custom variables
