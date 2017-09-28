@@ -4,7 +4,7 @@
 
 ;; Author: codefalling <code.falling@gmail.com>
 ;; Keywords: languages
-;; Package-Version: 20170927.938
+;; Package-Version: 20170927.1207
 
 ;; Version: 0.3.1
 ;; Package-Requires: ((mmm-mode "0.5.4") (vue-html-mode "0.1") (ssass-mode "0.1") (edit-indirect "0.1.4"))
@@ -96,6 +96,7 @@
           " +lang=\"%s\""              ; The language specifier
           "\\(?: +\\w+=\".*?\" *?\\)*" ; More optional key-value pairs
           "\\(?: +scoped\\)?"          ; The optional "scoped" attribute
+          "\\(?: +module\\)?"          ; The optional "module" attribute
           " *>\n")                     ; The end of the tag
   "A regular expression for the starting tags of template areas with languages.
 To be formatted with the tag name, and the language.")
@@ -105,6 +106,7 @@ To be formatted with the tag name, and the language.")
           "\\(?: +" vue--not-lang-key "\".*?\" *?\\)*" ; Any optional key-value pairs like type="foo/bar".
           ;; ^ Disallow "lang" in k/v pairs to avoid matching regions with non-default languages
           "\\(?: +scoped\\)?"          ; The optional "scoped" attribute
+          "\\(?: +module\\)?"          ; The optional "module" attribute
           " *>\n")                     ; The end of the tag
   "A regular expression for the starting tags of template areas.
 To be formatted with the tag name.")
