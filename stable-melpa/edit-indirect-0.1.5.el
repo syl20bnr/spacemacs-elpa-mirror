@@ -2,13 +2,13 @@
 
 ;; Author: Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/Fanael/edit-indirect
-;; Package-Version: 0.1.4
-;; Version: 0.1.4
+;; Package-Version: 0.1.5
+;; Version: 0.1.5
 ;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is NOT part of GNU Emacs.
 
-;; Copyright (c) 2014-2016, Fanael Linithien
+;; Copyright (c) 2014-2017, Fanael Linithien
 ;; All rights reserved.
 ;;
 ;; Redistribution and use in source and binary forms, with or without
@@ -61,6 +61,16 @@ The functions are called with the edit-indirect buffer as the
 current buffer.
 
 Note that the buffer-local value from the parent buffer is used."
+  :type 'hook
+  :group 'edit-indirect)
+
+(defcustom edit-indirect-before-commit-hook nil
+  "Functions called before the edit-indirect buffer is committed.
+The functions are called with the edit-indirect buffer as the
+current buffer.
+
+Note that the buffer-local value from the edit-indirect buffer is
+used."
   :type 'hook
   :group 'edit-indirect)
 
@@ -297,6 +307,7 @@ No error is signaled if `inhibit-read-only' or
 
 (defun edit-indirect--commit ()
   "Commit the modifications done in an edit-indirect buffer."
+  (run-hooks 'edit-indirect-before-commit-hook)
   (let ((beg (overlay-start edit-indirect--overlay))
         (end (overlay-end edit-indirect--overlay))
         (buffer (current-buffer))
@@ -307,9 +318,11 @@ No error is signaled if `inhibit-read-only' or
               (end-marker (copy-marker end)))
           (edit-indirect--run-hook-with-positions
            'edit-indirect-before-commit-functions beg-marker end-marker)
-          (delete-region beg-marker end-marker)
-          (goto-char beg-marker)
-          (insert-buffer-substring-no-properties buffer 1 (1+ (buffer-size buffer)))
+          (save-match-data
+            (set-match-data (list beg-marker end-marker))
+            (replace-match (with-current-buffer buffer
+                             (buffer-substring-no-properties 1 (1+ (buffer-size))))
+                           t t))
           (edit-indirect--run-hook-with-positions
            'edit-indirect-after-commit-functions beg-marker (point))
           (set-marker beg-marker nil)

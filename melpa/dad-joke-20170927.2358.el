@@ -2,8 +2,8 @@
 ;; Copyright 2017 by Dave Pearson <davep@davep.org>
 
 ;; Author: Dave Pearson <davep@davep.org>
-;; Version: 1.3
-;; Package-Version: 20170814.824
+;; Version: 1.4
+;; Package-Version: 20170927.2358
 ;; Keywords: games
 ;; URL: https://github.com/davep/dad-joke.el
 ;; Package-Requires: ((emacs "24"))
@@ -42,13 +42,10 @@
   "Acquire a dad joke from the dad joke server."
   (let* ((url-mime-accept-string "text/plain")
          (url-request-extra-headers `(("User-Agent" . ,dad-joke-user-agent)))
-         (buffer (url-retrieve-synchronously dad-joke-server-url t t)))
-    (when buffer
-      (with-current-buffer buffer
-        (set-buffer-multibyte t)
-        (setf (point) (point-min))
-        (when (search-forward-regexp "^$" nil t)
-          (buffer-substring-no-properties (1+ (point)) (point-max)))))))
+         (url-show-status nil))
+    (with-temp-buffer
+      (url-insert-file-contents dad-joke-server-url)
+      (buffer-string))))
 
 ;;;###autoload
 (defun dad-joke (&optional insert)

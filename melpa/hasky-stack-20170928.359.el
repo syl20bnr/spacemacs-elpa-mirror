@@ -4,8 +4,8 @@
 ;;
 ;; Author: Mark Karpov <markkarpov92@gmail.com>
 ;; URL: https://github.com/hasky-mode/hasky-stack
-;; Package-Version: 20170901.154
-;; Version: 0.5.0
+;; Package-Version: 20170928.359
+;; Version: 0.6.0
 ;; Package-Requires: ((emacs "24.4") (f "0.18.0") (magit-popup "2.10"))
 ;; Keywords: tools, haskell
 ;;
@@ -26,14 +26,18 @@
 
 ;;; Commentary:
 
-;; This is an Interface to the Stack Haskell development tool.  Bind just
-;; two commands, like this:
+;; This is an Emacs interface to the Stack Haskell development tool.  Bind
+;; the following useful commands:
 ;;
 ;;     (global-set-key (kbd "<next> h e") #'hasky-stack-execute)
+;;     (global-set-key (kbd "<next> h h") #'hasky-stack-package-action)
 ;;     (global-set-key (kbd "<next> h i") #'hasky-stack-new)
 ;;
 ;; * `hasky-stack-execute' opens a popup with a collection of stack commands
-;;   you can run.  Many commands have their own popups like in Magit.
+;;   you can run.  Many commands have their own sub-popups like in Magit.
+;;
+;; * `hasky-stack-package-action' allows to perform actions on package that
+;;   the user selects from the list of all available packages.
 ;;
 ;; * `hasky-stack-new' allows to create a new project in current directory
 ;;   using a Stack template.
@@ -140,7 +144,7 @@ being used to compose command line."
 (defcustom hasky-stack-auto-newest-version nil
   "Whether to install newest version of package without asking.
 
-This is used in `hasky-stack-project-action'."
+This is used in `hasky-stack-package-action'."
   :tag  "Automatically install newest version"
   :type 'boolean)
 
@@ -785,8 +789,8 @@ This uses `compile' internally."
     (when stack-yaml-file
       (find-file stack-yaml-file))))
 
-(magit-define-popup hasky-stack-project-action-popup
-  "Show project action popup."
+(magit-define-popup hasky-stack-package-action-popup
+  "Show package action popup."
   'hasky-stack
   :variables `((?a "auto-newest-version"
                    ,(hasky-stack--acp
@@ -921,7 +925,7 @@ a Windows machine)."
           (hasky-stack--packages)
           t)))
   (setq hasky-stack--package-action-package package)
-  (hasky-stack-project-action-popup))
+  (hasky-stack-package-action-popup))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

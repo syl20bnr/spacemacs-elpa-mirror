@@ -2,8 +2,8 @@
 
 ;; Author: Bastian Bechtold
 ;; URL: http://github.com/bastibe/org-journal
-;; Package-Version: 1.12.1
-;; Version: 1.12.1
+;; Package-Version: 1.12.2
+;; Version: 1.12.2
 
 ;;; Commentary:
 
@@ -272,8 +272,7 @@ Whenever a journal entry is created the
       (funcall org-journal-find-file entry-path))
     (org-journal-decrypt)
     (goto-char (point-max))
-    (let ((unsaved (buffer-modified-p))
-          (new-file-p (equal (point-max) 1)))
+    (let ((new-file-p (equal (point-max) 1)))
 
       ;; empty file? Add a date timestamp
       (when new-file-p
@@ -310,9 +309,7 @@ Whenever a journal entry is created the
 
       ;; open the recent entry when the prefix is given
       (when should-add-entry-p
-        (show-entry))
-
-      (set-buffer-modified-p unsaved))))
+        (show-entry)))))
 
 (defun org-journal-carryover ()
   "Moves all items matching org-journal-carryover-items from the
@@ -652,7 +649,7 @@ org-journal-time-prefix."
     (dolist (file files)
       (let ((filetime (org-journal-calendar-date->time
                        (org-journal-file-name->calendar-date
-                        (file-name-base file)))))
+                        (file-name-nondirectory file)))))
         (cond ((not (and period-start period-end))
                (push file result))
 
@@ -701,7 +698,7 @@ org-journal-time-prefix."
            (fullstr (nth 2 res))
            (time (org-journal-calendar-date->time
                   (org-journal-file-name->calendar-date
-                   (file-name-base fname))))
+                   (file-name-nondirectory fname))))
            (label (format-time-string org-journal-date-format time))
 
            (label-end (format-time-string org-journal-date-format period-start)))
@@ -726,7 +723,7 @@ org-journal-time-prefix."
          (lnum (cdr target)))
     (org-journal-read-or-display-entry
      (org-journal-calendar-date->time
-      (org-journal-file-name->calendar-date (file-name-base fname))))
+      (org-journal-file-name->calendar-date (file-name-nondirectory fname))))
     (show-all) ; TODO: could not find out a proper way to go to a hidden line
     (goto-char (point-min))
     (forward-line (1- lnum))))
