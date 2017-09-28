@@ -1,38 +1,38 @@
 ;;; password-store-otp.el --- Password store (pass) OTP extension support           -*- lexical-binding: t -*-
-;; 
+;;
 ;; Filename: password-store-otp.el
 ;; Author: Daniel Barreto
 ;; Created: Tue Aug 22 13:46:01 2017 (+0200)
 ;; Version: 0.1.0
-;; Package-Version: 20170912.349
+;; Package-Version: 20170927.1440
 ;; Package-Requires: ((emacs "25") (s "1.9.0") (password-store "0.1"))
 ;; URL: https://github.com/volrath/password-store-otp.el
 ;; Keywords: tools, pass
-;; 
+;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 
+;;
 ;;; Commentary:
-;; 
+;;
 ;; This package provides functions for working with the pass-otp
 ;; extension for pass ("the standard Unix password manager").
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 
+;;
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or (at
 ;; your option) any later version.
-;; 
+;;
 ;; This program is distributed in the hope that it will be useful, but
 ;; WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 ;; General Public License for more details.
-;; 
+;;
 ;; You should have received a copy of the GNU General Public License
 ;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
-;; 
+;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 
+;;
 ;;; Code:
 
 (require 'password-store)
@@ -70,14 +70,6 @@ after `password-store-timeout' seconds."
   (setq password-store-timeout-timer
         (run-at-time (password-store-timeout) nil 'password-store-clear)))
 
-(defun password-store-otp--insert (entry secret &optional append)
-  "Insert in ENTRY a SECRET, optionally APPEND it."
-  (message "%s" (shell-command-to-string (format "echo %s | %s otp %s -f %s"
-                                                 (shell-quote-argument secret)
-                                                 password-store-executable
-                                                 (if append "append" "insert")
-                                                 (shell-quote-argument entry)))))
-
 (defun password-store-otp--get-qr-image-filename (entry)
   "Return a qr-image-filename for given ENTRY."
   (let ((entry-base (file-name-nondirectory entry)))
@@ -89,11 +81,11 @@ after `password-store-timeout' seconds."
                             password-store-otp-screenshots-path))
       (format "/tmp/%s.png" (make-temp-name entry-base)))))
 
-(defmacro password-store-otp--related-error (body)
+(defmacro password-store-otp--related-error (&rest body)
   "Catch otp related errors in BODY and displays a better error message."
   (declare (indent defun))
   `(condition-case err
-       ,body
+       ,@body
      (error
       (let ((error-msg (error-message-string err)))
         (if (string= error-msg "Error: otp is not in the password store.")
@@ -119,6 +111,19 @@ after `password-store-timeout' seconds."
     (password-store-otp--related-error
       (password-store--run "otp" "uri" "-q" entry))))
 
+(defun password-store-otp-add-uri (method entry uri)
+  "Using METHOD, add in ENTRY a URI.
+
+METHOD can be either `append' or `insert', and it will be used as the
+primary \"pass otp\" command line verb."
+  (unless (memq method '(append insert))
+    (error (format "Unrecognized method %s" method)))
+  (message "%s" (shell-command-to-string (format "echo %s | %s otp %s -f %s"
+                                                 (shell-quote-argument uri)
+                                                 password-store-executable
+                                                 method
+                                                 (shell-quote-argument entry)))))
+
 
 ;;; Interactive functions
 
@@ -141,14 +146,14 @@ after `password-store-timeout' seconds."
   "Insert a new ENTRY containing OTP-URI."
   (interactive (list (read-string "Password entry: ")
                      (read-passwd "OTP URI: " t)))
-  (password-store-otp--insert entry otp-uri))
+  (password-store-otp-add-uri 'insert entry otp-uri))
 
 ;;;###autoload
 (defun password-store-otp-append (entry otp-uri)
   "Append to an ENTRY the given OTP-URI."
   (interactive (list (read-string "Password entry: ")
                      (read-passwd "OTP URI: " t)))
-  (password-store-otp--insert entry otp-uri t))
+  (password-store-otp-add-uri 'append entry otp-uri))
 
 ;;;###autoload
 (defun password-store-otp-append-from-image (entry)
@@ -158,7 +163,7 @@ after `password-store-timeout' seconds."
     (when (not (zerop (call-process "import" nil nil nil qr-image-filename)))
       (error "Couldn't get image from clipboard"))
     (with-temp-buffer
-      (condition-case err
+      (condition-case nil
           (call-process "zbarimg" nil t nil "-q" "--raw"
                         qr-image-filename)
         (error
