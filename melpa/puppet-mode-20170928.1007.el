@@ -10,7 +10,7 @@
 ;; Maintainer: Bozhidar Batsov <bozhidar@batsov.com>
 ;;     Sebastian Wiesner <swiesner@lunaryorn.com>
 ;; URL: https://github.com/voxpupuli/puppet-mode
-;; Package-Version: 20170719.752
+;; Package-Version: 20170928.1007
 ;; Keywords: languages
 ;; Version: 0.4-cvs
 ;; Package-Requires: ((emacs "24.1") (pkg-info "0.4"))
@@ -157,7 +157,7 @@ buffer-local wherever it is set."
 (defcustom puppet-lint-command
   (concat
    "puppet-lint --with-context "
-   "--log-format \"%{path}:%{linenumber}: %{kind}: %{message} (%{check})\"")
+   "--log-format \"%{path}:%{line}: %{kind}: %{message} (%{check})\"")
   "Command to lint a Puppet manifest."
   :type 'string
   :group 'puppet

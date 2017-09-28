@@ -4,7 +4,7 @@
 
 ;; Author: Nicolas Petton <nicolas@petton.fr>
 ;; Keywords: themes
-;; Package-Version: 20170830.57
+;; Package-Version: 20170928.827
 ;; URL: https://github.com/NicolasPetton/zerodark-theme
 ;; Version: 4.3
 ;; Package: zerodark-theme
@@ -585,6 +585,11 @@ The result is cached for one second to avoid hiccups."
    `(helm-ff-symlink ((,class (:foreground ,orange))))
    `(helm-ff-invalid-symlink ((,class (:foreground ,red :weight bold :background ,background-red))))
    `(helm-history-deleted ((,class (:foreground ,red :weight bold :background ,background-red))))
+
+   `(helm-swoop-target-line-face ((,class (:foreground ,comment :background ,background-lighter))))
+   `(helm-swoop-target-line-block-face ((,class (:foreground ,comment :background ,background-lighter :weight bold))))
+   `(helm-swoop-target-word-face ((,class (:foreground ,purple :background ,background-purple :weight bold))))
+   `(helm-swoop-line-number-face ((,class (:foreground ,comment))))
 
    ;; visible mark
    `(visible-mark-face1 ((,class (:foreground ,orange-light :inverse-video t))))

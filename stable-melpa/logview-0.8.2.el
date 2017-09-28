@@ -4,11 +4,11 @@
 
 ;; Author:     Paul Pogonyshev <pogonyshev@gmail.com>
 ;; Maintainer: Paul Pogonyshev <pogonyshev@gmail.com>
-;; Version:    0.8.1
-;; Package-Version: 0.8.1
+;; Version:    0.8.2
+;; Package-Version: 0.8.2
 ;; Keywords:   files, tools
 ;; Homepage:   https://github.com/doublep/logview
-;; Package-Requires: ((emacs "24.1") (datetime "0.2"))
+;; Package-Requires: ((emacs "24.1") (datetime "0.3"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License as
@@ -78,20 +78,22 @@ This alist value is used as the fallback for customizable
 `logview-additional-level-mappings'.")
 
 (defvar logview-std-timestamp-formats
-  ;; General notices: we silently handle both common decimal
-  ;; separators (dot and comma).  In several cases there is optional
-  ;; space if the day/hour number is single-digit.
   (let (formats)
-    (dolist (data '(("ISO 8601 datetime + millis"  "yyyy-MM-dd HH:mm:ss.SSS")
-                    ("ISO 8601 datetime + micros"  "yyyy-MM-dd HH:mm:ss.SSSSSS")
-                    ("ISO 8601 datetime"           "yyyy-MM-dd HH:mm:ss")
-                    ("ISO 8601 time only + millis" "HH:mm:ss.SSS")
-                    ("ISO 8601 time only + micros" "HH:mm:ss.SSSSSS")
-                    ("ISO 8601 time only"          "HH:mm:ss")
-                    (nil                           "MMM d HH:mm:ss")
-                    (nil                           "MMM d h:mm:ss a")
-                    (nil                           "h:mm:ss a")))
+    (dolist (data '(("ISO 8601 datetime + millis"             "yyyy-MM-dd HH:mm:ss.SSS")
+                    ("ISO 8601 datetime + micros"             "yyyy-MM-dd HH:mm:ss.SSSSSS")
+                    ("ISO 8601 datetime"                      "yyyy-MM-dd HH:mm:ss")
+                    ("ISO 8601 datetime (with 'T') + millis"  "yyyy-MM-dd'T'HH:mm:ss.SSS")
+                    ("ISO 8601 datetime (with 'T') + micros"  "yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
+                    ("ISO 8601 datetime (with 'T')"           "yyyy-MM-dd'T'HH:mm:ss")
+                    ("ISO 8601 time only + millis"            "HH:mm:ss.SSS")
+                    ("ISO 8601 time only + micros"            "HH:mm:ss.SSSSSS")
+                    ("ISO 8601 time only"                     "HH:mm:ss")
+                    (nil                                      "MMM d HH:mm:ss")
+                    (nil                                      "MMM d h:mm:ss a")
+                    (nil                                      "h:mm:ss a")))
       (push (list (or (car data) (cadr data)) (cons 'java-pattern (cadr data))) formats)
+      (when (string-match "\\." (cadr data))
+        (nconc (car formats) '((datetime-options :any-decimal-separator t))))
       (when (car data)
         (nconc (car formats) (list (list 'aliases (cadr data))))))
     (nreverse formats))
@@ -282,9 +284,10 @@ work just as the name."
   :type  '(repeat (cons (string :tag "Name")
                         (list :tag "Definition"
                               (set :inline t
-                                   (cons :tag "" (const :tag "Java pattern:"       java-pattern) string)
-                                   (cons :tag "" (const :tag "Locale:"             locale)       symbol)
-                                   (cons :tag "" (const :tag "Regular expression:" regexp)       regexp)
+                                   (cons :tag "" (const :tag "Java pattern:"       java-pattern)     string)
+                                   (cons :tag "" (const :tag "Locale:"             locale)           symbol)
+                                   (cons :tag "" (const :tag "Datetime options:"   datetime-options) plist)
+                                   (cons :tag "" (const :tag "Regular expression:" regexp)           regexp)
                                    (cons :tag "" (const :tag "Aliases:" aliases) (repeat string))))))
   :set   'logview--set-submode-affecting-variable)
 
@@ -1575,14 +1578,8 @@ minibuffer."
                                                         (setq submodes (append (cdr (assq 'aliases definition)) submodes)))
                                                       logview-additional-submodes logview-std-submodes)
                        (logview--completing-read "Submode name: " submodes nil t nil 'logview--submode-name-history))))
-  (let ((submode-definition (catch 'found
-                              (logview--iterate-split-alists (lambda (name definition)
-                                                               (when (string= submode name)
-                                                                 (throw 'found definition)))
-                                                             logview-additional-submodes logview-std-submodes)))
+  (let ((submode-definition (logview--get-split-alists submode "submode" logview-additional-submodes logview-std-submodes))
         timestamp-definition)
-    (unless submode-definition
-      (error "Unknown submode `%s'" submode))
     (when (string-match logview--timestamp-entry-part-regexp (cdr (assq 'format submode-definition)))
       (unless timestamp
         (unless (called-interactively-p 'interactive)
@@ -1596,13 +1593,9 @@ minibuffer."
                             (unless (datetime-pattern-locale-dependent-p 'java (car format))
                               (push (car format) timestamps)))
                           (logview--completing-read "Timestamp format: " timestamps nil nil nil 'logview--timestamp-format-history))))
-      (setq timestamp-definition (catch 'found
-                                   (logview--iterate-split-alists (lambda (name definition)
-                                                                    (when (string= timestamp name)
-                                                                      (throw 'found definition)))
-                                                                  logview-additional-timestamp-formats logview-std-timestamp-formats)
-                                   ;; Unlike with submodes, allow unrecognized timestamps.
-                                   `(,timestamp (java-pattern . ,timestamp)))))
+      (setq timestamp-definition (or (logview--get-split-alists timestamp nil logview-additional-timestamp-formats logview-std-timestamp-formats)
+                                     ;; Unlike with submodes, allow unrecognized timestamps.
+                                     `(,timestamp (java-pattern . ,timestamp)))))
     (catch 'success
       (logview--initialize-submode submode submode-definition (list timestamp-definition))
       ;; This must not happen.
@@ -1911,7 +1904,8 @@ returns non-nil."
                (timestamp-regexp  (if timestamp-pattern
                                       (condition-case error
                                           (apply #'datetime-matching-regexp 'java (cdr timestamp-pattern)
-                                                 :locale (cdr (assq 'locale timestamp-option)) logview--datetime-options)
+                                                 :locale (cdr (assq 'locale timestamp-option))
+                                                 (append (cdr (assq 'datetime-options timestamp-option)) logview--datetime-options))
                                         ;; 'datetime' doesn't mention the erroneous pattern to keep
                                         ;; the error message concise.  Let's do it ourselves.
                                         (error (warn "In Java timestamp pattern '%s': %s"
@@ -2450,12 +2444,15 @@ next line, which is usually one line beyond END."
             (puthash alias t seen)))))))
 
 (defun logview--get-split-alists (key type &rest alists)
+  ;; If nothing is found: if TYPE is nil, just return nil, else signal
+  ;; a user error with TYPE as missing thing description.
   (catch 'found
     (apply 'logview--iterate-split-alists (lambda (name value)
                                             (when (or (equal name key) (member key (cdr (assq 'aliases value))))
                                               (throw 'found value)))
            alists)
-    (user-error "Unknown %s '%s'" type key)))
+    (when type
+      (user-error "Unknown %s '%s'" type key))))
 
 (defun logview--views ()
   "Return the list of all defined views.
