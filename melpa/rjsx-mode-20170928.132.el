@@ -4,7 +4,7 @@
 
 ;; Author: Felipe Ochoa <felipe@fov.space>
 ;; URL: https://github.com/felipeochoa/rjsx-mode/
-;; Package-Version: 20170808.634
+;; Package-Version: 20170928.132
 ;; Package-Requires: ((emacs "24.4") (js2-mode "20170504"))
 ;; Version: 1.1
 ;; Keywords: languages
@@ -37,6 +37,14 @@
 (defgroup rjsx-mode nil
   "Support for JSX."
   :group 'js2-mode)
+
+(defcustom rjsx-max-size-for-frequent-reparse 100000
+  "Buffers with fewer than this many characters will be parsed more frequently.
+Set this to 0 to disable the reparsing altogether.  The frequent
+parsing supports the magic `rjsx-electric-lt' and
+`rjsx-delete-creates-full-tag' behaviors."
+  :group 'rjsx-mode
+  :type 'integer)
 
 ;;;###autoload
 (define-derived-mode rjsx-mode js2-jsx-mode "RJSX"
@@ -768,8 +776,18 @@ closing tag was parsed."
           (throw 'rjsx-eof-while-parsing t))
          (t (js2-add-to-string c)))))))
 
+(defun rjsx-maybe-reparse ()
+  "Called before accessing the parse tree.
+For small buffers, will do an immediate reparse to ensure the
+parse tree is up to date."
+  ;; TODO: We could look at the last parse time and the last buffer
+  ;; modification time to avoid some reparsing
+  (when (<= (point-max) rjsx-max-size-for-frequent-reparse)
+    (js2-reparse)))
+
 (defun rjsx--tag-at-point ()
   "Return the JSX tag at point, if any, or nil."
+  (rjsx-maybe-reparse)
   (let ((node (js2-node-at-point (point) t)))
     (while (and node (not (rjsx-node-p node)))
       (setq node (js2-node-parent node)))

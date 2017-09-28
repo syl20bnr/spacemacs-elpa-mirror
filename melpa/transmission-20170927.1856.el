@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.12
-;; Package-Version: 20170925.1724
+;; Package-Version: 20170927.1856
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -977,13 +977,6 @@ Registers the change in `transmission-marked-ids'."
       (push id transmission-marked-ids)
       (tabulated-list-put-tag ">"))
     (set-buffer-modified-p nil)))
-
-(defun transmission-tabulated-list-pred (key)
-  "Return a sorting predicate comparing values of KEY.
-KEY should be a key in an element of `tabulated-list-entries'."
-  (lambda (a b)
-    (> (cdr (assq key (car a)))
-       (cdr (assq key (car b))))))
 
 (defun transmission-move-to-file-name ()
   "Move to the beginning of the filename on the current line."
