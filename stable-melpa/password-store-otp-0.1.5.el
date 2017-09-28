@@ -4,7 +4,7 @@
 ;; Author: Daniel Barreto
 ;; Created: Tue Aug 22 13:46:01 2017 (+0200)
 ;; Version: 0.1.0
-;; Package-Version: 20170927.1440
+;; Package-Version: 0.1.5
 ;; Package-Requires: ((emacs "25") (s "1.9.0") (password-store "0.1"))
 ;; URL: https://github.com/volrath/password-store-otp.el
 ;; Keywords: tools, pass
@@ -118,6 +118,8 @@ METHOD can be either `append' or `insert', and it will be used as the
 primary \"pass otp\" command line verb."
   (unless (memq method '(append insert))
     (error (format "Unrecognized method %s" method)))
+  (password-store-otp--related-error
+    (password-store--run "otp" "--help"))  ;; make sure otp extension is installed.
   (message "%s" (shell-command-to-string (format "echo %s | %s otp %s -f %s"
                                                  (shell-quote-argument uri)
                                                  password-store-executable
