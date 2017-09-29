@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-web-tools
-;; Package-Version: 20170919.1016
+;; Package-Version: 20170928.2149
 ;; Version: 0.1.0-pre
 ;; Package-Requires: ((emacs "25.1") (org "9.0") (dash "2.12") (s "1.10.0"))
 ;; Keywords: hypermedia, outlines, Org, Web
@@ -203,12 +203,13 @@ Page is processed with `eww-readable'."
       t)))
 
 ;;;###autoload
-(defun org-web-tools-read-url-as-org (url)
-  "Read URL's readable content in an Org buffer."
+(cl-defun org-web-tools-read-url-as-org (url &key (show-buffer-fn #'switch-to-buffer))
+  "Read URL's readable content in an Org buffer.
+Buffer is displayed using SHOW-BUFFER-FN."
   (interactive (list (org-web-tools--get-first-url)))
   (let ((entry (org-web-tools--url-as-readable-org url)))
     (when entry
-      (switch-to-buffer url)
+      (funcall show-buffer-fn url)
       (org-mode)
       (insert entry)
       ;; Set buffer title
