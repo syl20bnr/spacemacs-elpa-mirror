@@ -1,7 +1,7 @@
 ;;; zpresent.el --- Simple presentation mode based on org files.  -*- lexical-binding: t; -*-
 
 ;; Version: 0.3
-;; Package-Version: 20170925.2157
+;; Package-Version: 20170927.2118
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright 2015-2017 Zachary Kanfer <zkanfer@gmail.com>
@@ -599,10 +599,10 @@ for example, for the first slide of each top level org element."
 
 (defun zpresent--slide (slide)
   "Present SLIDE."
-  (if (equal (gethash :type slide)
-             :title)
-      (zpresent--present-title-slide slide)
-    (zpresent--present-normal-slide slide))
+  (cl-case (gethash :type slide)
+    (:full-screen-image (zpresent--present-full-screen-image slide))
+    (:title (zpresent--present-title-slide slide))
+    (otherwise (zpresent--present-normal-slide slide)))
   (let ((inhibit-read-only t))
     (insert (propertize (make-string (window-total-height) ?\n)
                         'face 'zpresent-base)))
@@ -646,6 +646,16 @@ for example, for the first slide of each top level org element."
       (insert (propertize (format "\n%s" (string-trim date))
                           'face
                           'zpresent-h1)))))
+
+(defun zpresent--present-full-screen-image (slide)
+  "Present SLIDE as a full screen image."
+  (switch-to-buffer "zpresentation")
+  (buffer-disable-undo "zpresentation")
+  (let ((inhibit-read-only t))
+    (erase-buffer)
+    (insert "full image!")
+    (message (hash-table-keys slide))
+    (insert "done")))
 
 (defun zpresent--lines-in-window (face &optional window)
   "Calculate how many lines of text with face FACE can fit in WINDOW."
@@ -895,6 +905,13 @@ If you want to insert an image, use '#'zpresent--insert-image'."
   (let ((unique-key (cl-gensym)))
     (not (equal (gethash key hash unique-key)
                 unique-key))))
+
+
+(defun zpresent--make-keyword (name)
+  "Make a keyword from NAME.
+
+Given \"pants\", returns a keyword that's equal to :pants."
+  (intern (format ":%s" name)))
 
 
 (provide 'zpresent)
