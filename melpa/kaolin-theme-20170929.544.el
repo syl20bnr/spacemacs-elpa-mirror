@@ -4,7 +4,7 @@
 
 ;; Author: 0rdy <mail@0rdy.com>
 ;; URL: https://github.com/0rdy/kaolin-theme
-;; Package-Version: 20170926.725
+;; Package-Version: 20170929.544
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 0.9.0
 
@@ -127,7 +127,7 @@
       (midnight-blue   "#1e2528")
       (grayish-blue    "#36454f")
       (dark-blue       "#2a4661")
-      ;; TODO: Change blue color
+      ;; TODO: (!!) Change blue color
       (blue            "#5077a5")
       (alt-blue        "#267fb5")
       (dark-cyan       "#008b8b")
@@ -265,6 +265,7 @@
      `(vertical-border ((,c (:foreground ,win-border))))
      `(minibuffer-prompt ((,c (:foreground ,keyword :bold ,bold))))
      `(default-italic ((,c (:italic ,italic))))
+     ;; TODO: (??) change to blue
      `(link ((,c (:foreground ,lavender :underline ,underline))))
      `(link-visited ((,c (:inherit link :underline nil))))
      `(success ((,c (:background nil :foreground ,light-green))))
@@ -495,8 +496,12 @@
      `(slime-repl-inputed-output-face ((,c (:foreground ,type))))
 
      ;; Rainbow delimeters
-     ;; TODO: change color
-     `(show-paren-match-face ((,c (:background nil :foreground ,hl :bold ,bold))))
+     ;; TODO: change color & rewrite
+     `(show-paren-match-face ((,c (:background nil :foreground ,orange :bold ,bold))))
+     ;; (if (eq show-paren-style 'expression)
+     ;;  `(show-paren-match-face ((,c (:background ,bg3 :foreground nil))))
+     ;;  `(show-paren-match-face ((,c (:background nil :foreground ,orange :bold ,bold)))))
+
      `(show-paren-mismatch-face ((,c (:background ,red :foreground ,bg2))))
      `(rainbow-delimiters-unmatched-face ((,c :foreground ,warning)))
      `(rainbow-delimiters-depth-1-face ((,c (:foreground ,rb1))))
