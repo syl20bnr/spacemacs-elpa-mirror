@@ -4,7 +4,7 @@
 
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;; URL: https://github.com/purcell/disable-mouse
-;; Package-Version: 0.2
+;; Package-Version: 0.3
 ;; Package-X-Original-Version: 0
 ;; Keywords: mouse
 
@@ -39,6 +39,16 @@
   :group 'disable-mouse
   :type 'function)
 
+(defcustom disable-mouse-mode-lighter " NoMouse"
+  "Mode-line lighter for `disable-mouse-mode'."
+  :group 'disable-mouse
+  :type 'string)
+
+(defcustom global-disable-mouse-mode-lighter " NoMouse!"
+  "Mode-line lighter for `global-disable-mouse-mode'."
+  :group 'disable-mouse
+  :type 'string)
+
 (defconst disable-mouse--bindings-modifier-combos
   '("C-" "M-" "S-" "C-M-" "C-S-" "M-S-" "M-C-S-"))
 
@@ -50,11 +60,18 @@
   '("mouse-1" "mouse-2" "mouse-3"
     "up-mouse-1" "up-mouse-2" "up-mouse-3"
     "down-mouse-1" "down-mouse-2" "down-mouse-3"
+    "drag-mouse-1" "drag-mouse-2" "drag-mouse-3"
+    "mouse-4" "mouse-5"
+    "up-mouse-4" "up-mouse-5"
+    "down-mouse-4" "down-mouse-5"
+    "drag-mouse-4" "drag-mouse-5"
     "wheel-up" "wheel-down" "wheel-left" "wheel-right"
     ))
 
 (defun disable-mouse--all-bindings (include-targets)
-  "Return an extensive list of mouse-related keybindings."
+  "Return an extensive list of mouse-related keybindings.
+When INCLUDE-TARGETS is non-nil, also return bindings that target
+the elements in `disable-mouse--bindings-targets'."
   (let ((bindings))
     (dolist (target (append '(nil)
                             (when include-targets
@@ -97,14 +114,14 @@
 You can still use the mouse to click into other buffers or
 interact with GUI elements such as divider lines."
   nil
-  :lighter " NoMouse")
+  :lighter disable-mouse-mode-lighter)
 
 ;;;###autoload
 (define-minor-mode global-disable-mouse-mode
   "Disable the mouse globally.
 Interact with GUI elements such as divider lines will also be prevented."
   nil
-  :lighter " NoMouse!"
+  :lighter global-disable-mouse-mode-lighter
   :global t)
 
 (provide 'disable-mouse)

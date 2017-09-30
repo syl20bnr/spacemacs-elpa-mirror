@@ -4,7 +4,7 @@
 
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;; URL: https://github.com/purcell/disable-mouse
-;; Package-Version: 20160630.1903
+;; Package-Version: 20170929.1353
 ;; Package-X-Original-Version: 0
 ;; Keywords: mouse
 
@@ -61,6 +61,10 @@
     "up-mouse-1" "up-mouse-2" "up-mouse-3"
     "down-mouse-1" "down-mouse-2" "down-mouse-3"
     "drag-mouse-1" "drag-mouse-2" "drag-mouse-3"
+    "mouse-4" "mouse-5"
+    "up-mouse-4" "up-mouse-5"
+    "down-mouse-4" "down-mouse-5"
+    "drag-mouse-4" "drag-mouse-5"
     "wheel-up" "wheel-down" "wheel-left" "wheel-right"
     ))
 
