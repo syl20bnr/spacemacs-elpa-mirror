@@ -4,7 +4,7 @@
 ;;
 ;; Author: Göktuğ Kayaalp <self@gkayaalp.com>
 ;; Keywords: weather, forecast
-;; Package-Version: 20170923.1333
+;; Package-Version: 20170924.1440
 ;; Version: 0.6.3
 ;; URL: http://gkayaalp.com/emacs.html#forecast.el
 ;; Package-Requires: ((emacs "24.4"))
@@ -42,7 +42,7 @@
 ;;
 ;; Report bugs to the Issues page in the Github repo:
 ;;
-;; https://github.com/cadadr/forecast.el/issues
+;; https://github.com/cadadr/elisp/issues
 ;;
 
 ;;; Installation:
@@ -148,6 +148,7 @@
 ;;
 
 ;;; Changes:
+;; (this section won't be updated anymore)
 ;;
 ;; 0.6.4, 23 Sep 2017
 ;;   - (forecast--get-forecast) Fix truncation of coordinates in request

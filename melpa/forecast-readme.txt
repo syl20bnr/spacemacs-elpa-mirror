@@ -8,7 +8,7 @@ See Installation section for installation and setup instructions.
 
 Report bugs to the Issues page in the Github repo:
 
-https://github.com/cadadr/forecast.el/issues
+https://github.com/cadadr/elisp/issues
 
 
 Installation:

@@ -1,11 +1,11 @@
-;;; omni-kill.el --- Kill all the things
+;;; omni-kill.el --- Kill all the things  -*-no-byte-compile: t; -*-
 
 ;; Copyright (C) 2014-2015  Adrien Becchis
 
 ;; Author: Adrien Becchis <adriean.khisbe@live.fr>
 ;; Created:  2014-09-06
 ;; Version: 0.2.3
-;; Package-Version: 20150526.2349
+;; Package-Version: 20170930.641
 ;; Keywords: convenience, editing, tools
 
 ;; This program is free software; you can redistribute it and/or modify
