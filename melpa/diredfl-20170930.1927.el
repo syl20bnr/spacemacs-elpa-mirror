@@ -7,7 +7,7 @@
 ;; Keywords: faces
 ;; URL: https://github.com/purcell/diredfl
 ;; Package-Requires: ((emacs "24"))
-;; Package-Version: 20170929.2159
+;; Package-Version: 20170930.1927
 ;; Package-X-Original-Version: 0
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -29,7 +29,11 @@
 ;; Adams' `dired+' package, but published via a modern means, and with
 ;; support for older Emacsen removed.
 
-;; (add-hook 'dired-mode-hook 'diredfl-mode)
+;; Enable in all dired buffers by calling or customising `diredfl-global-mode'.
+
+;; Alternatively:
+
+;;     (add-hook 'dired-mode-hook 'diredfl-mode)
 
 ;;; Code:
 
@@ -356,6 +360,11 @@ In particular, inode number, number of hard links, and file size."
           '(dired-font-lock-keywords t nil nil beginning-of-line)))
   (font-lock-refresh-defaults))
 
+;;;###autoload
+(define-globalized-minor-mode diredfl-global-mode diredfl-mode
+  (lambda ()
+    (when (derived-mode-p 'dired-mode)
+      (diredfl-mode))))
 
 
 (provide 'diredfl)
