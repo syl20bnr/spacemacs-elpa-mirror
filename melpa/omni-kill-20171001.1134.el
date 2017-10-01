@@ -1,11 +1,11 @@
-;;; omni-kill.el --- Kill all the things  -*-no-byte-compile: t; -*-
+;;; omni-kill.el --- Kill all the things  -*- no-byte-compile: t; -*-
 
 ;; Copyright (C) 2014-2017  Adrien Becchis
 
 ;; Author: Adrien Becchis <adriean.khisbe@live.fr>
 ;; Created:  2014-09-06
-;; Version: 0.3.0
-;; Package-Version: 20171001.234
+;; Version: 0.4.0
+;; Package-Version: 20171001.1134
 ;; Keywords: convenience, editing, tools
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -55,9 +55,13 @@ Changing this would only have effect at next startup."
   :type '(restricted-sexp
           :match-alternatives
           ((lambda (x) (and (stringp x)
-                            (string-match-p "\\s_*%s\\s_*%s\\s_*" x)
-                            ;; ¤note: hack since did not managed to make the anchors work
+                            (numberp (string-match-p "\\s_*%s\\(\\s_\\|\\sw\\)*%s\\s_*" x))
                             (not (string-match-p "\\s-" x))))))
+  :initialize 'custom-initialize-default
+  :set (lambda (symb val)
+         (omni-kill-destroy-all-the-things)
+         (set-default symb val)
+         (omni-kill-get-all-the-things))
   :group 'omni-kill)
 ;; §name: maybe copy-this-THING rather than omny-copy by default
 
@@ -84,7 +88,9 @@ Changing this would only have effect at next startup."
   '(("kill" . kill-region)
     ("delete" . delete-region)
     ("select" .  select-region)
-    ("copy" . copy-region)))
+    ("copy" . copy-region)
+    ("narrow" . narrow-to-region)
+    ("save" . register-region)))
 
 ;; kill-thing at point
 (defun omni-kill--do-thing-at-point (action thing)
@@ -93,7 +99,6 @@ Changing this would only have effect at next startup."
 Returns nil."
   (let ((frontier (bounds-of-thing-at-point thing)))
     ;; §later: try catch error?
-    (message "%s %s" thing action)
     (if frontier
         (funcall action (car frontier) (cdr frontier))
       (message "There is not a %s at point!" thing))
@@ -114,6 +119,11 @@ Returns nil."
     (kill-new (buffer-string))
     (widen)))
 
+(defun register-region (start end)
+  "Save region between START END to queries register."
+  (let ((register (register-read-with-preview "Specify Register:")))
+    (copy-to-register register start end)))
+
 ;; §later:  make it in the clipboard.
 ;; §see: clipboard function: clipboard-yank, etc!!!!!
 ;; §see: xsel
@@ -121,13 +131,7 @@ Returns nil."
 ;; §later: store-thing! :)
 
 ;;; ¤> Function generators
-(defun omni-kill-generate-all-the-fun (thing)
-  "Generate all the functions associated with the given THING."
-  (mapc (lambda (action)
-          (omni-kill--generate-dispatch-command action)
-          (omni-kill--generate-command action thing))
-        '("copy" "delete" "kill" "select")))
-;; §later: factorize macros + §next bump: two level multiplexer!!! on action, then on thing!!
+;; §maybe: next bump: two level multiplexer!!! on action, then on thing!!
 
 (defun omni-kill-help ()
   "Display the letter to thing associations for the omni-dispatch functions."
@@ -151,6 +155,9 @@ Association are stored in the `omni-kill-thing-to-letter-alist' variable" (capit
            (progn (message "No thing is associated at letter '%s' (for memory refresh, run `omni-help')" (char-to-string char))
            nil)))))
 
+(defun omni-kill--destroy-dispatch-command (command)
+  "Generate a dispath command for the given COMMAND."
+  (fmakunbound (intern (format "omni-%s" command))))
 
 (defmacro omni-kill--generate-command (command symb)
   "Generate a COMMAND command for the given SYMB."
@@ -161,14 +168,35 @@ Association are stored in the `omni-kill-thing-to-letter-alist' variable" (capit
         ',(cdr (assoc (eval command) omni-kill-action-alist))
         ',(eval symb))))
 
+(defun omni-kill--destroy-command (command symb)
+  "Generate a dispath command for the given COMMAND."
+  (fmakunbound (intern (format omni-kill-naming-scheme command symb))))
+
 
 (defun omni-kill-get-all-the-things()
   "Generate all the omni functions for the list of things."
   ;; §tofix: eager macro expansion failure
   ;; §wtf: does not happen when manually load.
-  (mapc (lambda (arg) (omni-kill-generate-all-the-fun arg))
-        omni-kill-thing-list))
+  (mapc (lambda (action)
+          (omni-kill--generate-all-the-fun action))
+        (mapcar 'car omni-kill-action-alist)))
 ;; §maybe: user custom for list?
+
+(defun omni-kill--generate-all-the-fun (action)
+  "Generate all the functions associated with the given ACTION."
+  (omni-kill--generate-dispatch-command action)
+  (mapc (lambda (thing)
+          (omni-kill--generate-command action thing))
+        omni-kill-thing-list))
+
+(defun omni-kill-destroy-all-the-things ()
+  "Unenerate all the omni functions for the list of things."
+  (mapc (lambda (action)
+          (omni-kill--destroy-dispatch-command action)
+          (mapc (lambda (thing)
+                  (omni-kill--destroy-command action thing))
+                omni-kill-thing-list))
+        (mapcar 'car omni-kill-action-alist)))
 
 ;; set up all commands:
 (omni-kill-get-all-the-things)

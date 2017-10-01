@@ -4,7 +4,7 @@
 
 ;; Author: 0rdy <mail@0rdy.com>
 ;; URL: https://github.com/0rdy/kaolin-theme
-;; Package-Version: 20170929.544
+;; Package-Version: 20171001.1030
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 0.9.0
 
@@ -127,8 +127,8 @@
       (midnight-blue   "#1e2528")
       (grayish-blue    "#36454f")
       (dark-blue       "#2a4661")
-      ;; TODO: (!!) Change blue color
-      (blue            "#5077a5")
+      ;; (blue            "#5077a5")
+      (blue            "#3B6FA3")
       (alt-blue        "#267fb5")
       (dark-cyan       "#008b8b")
       (cyan            "#54b6b6")
@@ -395,6 +395,12 @@
      `(hydra-face-amaranth ((,c (:foreground ,purple))))
 
      ;; Org-mode
+     ;; TODO
+     ;; `(org-level-1 ((,c (:foreground ,green :bold ,bold :height 1.1))))
+     ;; `(org-level-2 ((,c (:foreground ,teal-blue :bold nil))))
+     ;; `(org-level-3 ((,c (:foreground ,light-jade :bold nil))))
+     ;; `(org-level-4 ((,c (:foreground ,lime :bold nil))))
+     ;; OLD
      `(org-level-1 ((,c (:foreground ,teal-green :bold ,bold :height 1.1))))
      `(org-level-2 ((,c (:foreground ,teal-blue :bold nil))))
      `(org-level-3 ((,c (:inherit org-level-2))))
