@@ -4,7 +4,7 @@
 
 ;; Author: Stig Brautaset <stig@brautaset.org>
 ;; Version: 0.1-SNAPSHOT
-;; Package-Version: 20170930.1632
+;; Package-Version: 20171001.216
 ;; Keywords: outlines, hypermedia, wp
 ;; Homepage: https://github.com/stig/ox-jira.el
 ;; Package-Requires: ((org "8.3"))
@@ -213,8 +213,8 @@ information."
 CONTENTS is nil.  INFO is a plist holding contextual
 information."
   (let* ((anchor (ox-jira--footnote-anchor footnote-reference))
-        (ref (ox-jira--footnote-ref anchor)))
-    (format "{anchor:back%s}[^%s^|#%s]"
+         (ref (ox-jira--footnote-ref anchor)))
+    (format "{anchor:fnr%s}[^%s^|#fn%s]"
             anchor ref anchor)))
 
 (defun ox-jira-footnote-definition (footnote-definition contents info)
@@ -223,7 +223,7 @@ CONTENTS is nil.  INFO is a plist holding contextual
 information."
   (let* ((anchor (ox-jira--footnote-anchor footnote-definition))
          (ref (ox-jira--footnote-ref anchor)))
-    (format "{anchor:%s}[^%s^|#back%s] %s"
+    (format "{anchor:fn%s}[^%s^|#fnr%s] %s"
             anchor ref anchor contents)))
 
 ;; Headlines are a little bit more complex. I'm not even attempting to support

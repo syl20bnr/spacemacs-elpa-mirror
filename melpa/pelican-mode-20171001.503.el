@@ -3,7 +3,7 @@
 ;; Copyright 2013-2017 Joe Wreschnig
 ;;
 ;; Author: Joe Wreschnig <joe.wreschnig@gmail.com>
-;; Package-Version: 20170917.1441
+;; Package-Version: 20171001.503
 ;; Package-X-Original-Version: 20170808
 ;; Package-Requires: ((emacs "25"))
 ;; URL: https://git.korewanetadesu.com/pelican-mode.git
@@ -74,7 +74,7 @@
 For more information about Pelican see URL https://blog.getpelican.com/."
   :group 'convenience)
 
-(defcustom pelican-mode-keymap-prefix (kbd "C-c P")
+(defcustom pelican-mode-keymap-prefix (kbd "C-c =")
   "Pelican mode keymap prefix."
   :group 'pelican
   :type 'string)
@@ -381,9 +381,3 @@ has no status."
 
 (provide 'pelican-mode)
 ;;; pelican-mode.el ends here
-
-
-
-;; Local Variables:
-;; sentence-end-double-space: t
-;; End:
