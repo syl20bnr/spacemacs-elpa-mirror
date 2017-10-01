@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170927.1139
+;; Package-Version: 20170930.737
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1993,7 +1993,10 @@ It applies no filtering to ivy--all-candidates."
     (define-key map (kbd "M-q") 'counsel-git-grep-query-replace)
     map))
 
-(defcustom counsel-ag-base-command "ag --nocolor --nogroup %s"
+(defcustom counsel-ag-base-command
+  (if (memq system-type '(ms-dos windows-nt))
+      "ag --vimgrep %s"
+    "ag --nocolor --nogroup %s")
   "Format string to use in `counsel-ag-function' to construct the command.
 The %s will be replaced by optional extra ag arguments followed by the
 regex string.  The default is \"ag --nocolor --nogroup %s\"."
