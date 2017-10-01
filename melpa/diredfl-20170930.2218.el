@@ -7,7 +7,7 @@
 ;; Keywords: faces
 ;; URL: https://github.com/purcell/diredfl
 ;; Package-Requires: ((emacs "24"))
-;; Package-Version: 20170930.1927
+;; Package-Version: 20170930.2218
 ;; Package-X-Original-Version: 0
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -364,7 +364,8 @@ In particular, inode number, number of hard links, and file size."
 (define-globalized-minor-mode diredfl-global-mode diredfl-mode
   (lambda ()
     (when (derived-mode-p 'dired-mode)
-      (diredfl-mode))))
+      (diredfl-mode)))
+  :require 'diredfl)
 
 
 (provide 'diredfl)

@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20170925.1519
-;; Version: 1.9.8
+;; Package-Version: 20170930.2152
+;; Version: 1.9.9
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -825,7 +825,12 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
 	     (progn
 	       (setq easy-hugo--preview-loop nil)
 	       (easy-hugo--preview-open)))
-	 (sleep-for 0 100))
+	 (sleep-for 0 100)
+	 (if (and (eq (process-status easy-hugo--server-process) 'exit)
+		  (equal (process-exit-status easy-hugo--server-process) 255))
+	     (progn
+	       (switch-to-buffer easy-hugo--preview-buffer)
+	       (error "Hugo error look at %s buffer" easy-hugo--preview-buffer))))
        (setq easy-hugo--preview-loop t)
        (run-at-time easy-hugo-previewtime nil 'easy-hugo--preview-end)))))
 
@@ -875,7 +880,9 @@ If not applicable, return the default preview."
   (unless (null easy-hugo--server-process)
     (delete-process easy-hugo--server-process))
   (when (get-buffer easy-hugo--preview-buffer)
-    (kill-buffer easy-hugo--preview-buffer)))
+    (kill-buffer easy-hugo--preview-buffer))
+  (when (get-buffer "*hugo*")
+    (kill-buffer "*hugo*")))
 
 (defun easy-hugo--orgtime-format (x)
   "Format orgtime as X."
