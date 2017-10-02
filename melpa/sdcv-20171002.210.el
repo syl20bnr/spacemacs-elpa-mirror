@@ -6,7 +6,7 @@
 ;; Copyright (C) 2009, Andy Stewart, all rights reserved.
 ;; Created: 2009-02-05 22:04:02
 ;; Version: 1.5.2
-;; Package-Version: 20170801.2216
+;; Package-Version: 20171002.210
 ;; Last-Updated: 2009-04-04 09:11:00
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/sdcv.el
@@ -387,8 +387,9 @@ The result will be displayed in buffer named with
            (unless (eq (current-buffer) (sdcv-get-buffer))
              (sdcv-goto-sdcv))
            (let ((str (sdcv-filter (buffer-string))))
-             (erase-buffer)
-             (insert str))
+             (let ((inhibit-read-only t))
+               (erase-buffer)
+               (insert str)))
            (sdcv-mode-reinit))))))
 
   ;; pronounce the word (Add by me)

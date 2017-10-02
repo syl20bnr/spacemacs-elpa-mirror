@@ -4,7 +4,7 @@ extensions.
 
 Evil lives in a Git repository. To obtain Evil, do
 
-     git clone git://gitorious.org/evil/evil.git
+     git clone git://github.com/emacs-evil/evil.git
 
 Move Evil to ~/.emacs.d/evil (or somewhere else in the `load-path').
 Then add the following lines to ~/.emacs:
