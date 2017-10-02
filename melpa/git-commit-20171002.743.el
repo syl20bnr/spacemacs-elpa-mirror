@@ -12,7 +12,7 @@
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 
 ;; Package-Requires: ((emacs "24.4") (dash "20170810") (with-editor "20170817"))
-;; Package-Version: 20170914.258
+;; Package-Version: 20171002.743
 ;; Keywords: git tools vc
 ;; Homepage: https://github.com/magit/magit
 
@@ -421,7 +421,9 @@ already using it, then you probably shouldn't start doing so."
                                        git-commit-major-mode))))
       (normal-mode t)))
   (setq with-editor-show-usage nil)
-  (with-editor-mode 1)
+  (unless with-editor-mode
+    ;; Maybe already enabled when using `shell-command' or an Emacs shell.
+    (with-editor-mode 1))
   (add-hook 'with-editor-finish-query-functions
             'git-commit-finish-query-functions nil t)
   (add-hook 'with-editor-pre-finish-hook
