@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; URL: http://github.com/Kungsgeten/org-brain
-;; Package-Version: 20170914.734
+;; Package-Version: 20171002.407
 ;; Keywords: outlines hypermedia
 ;; Package-Requires: ((emacs "25") (org "9"))
 ;; Version: 0.4
@@ -254,7 +254,7 @@ If RELATIVE is t, then return relative paths and remove file extension."
 The identifier is an id if ENTRY is a headline.
 If ENTRY is file, then the identifier is the relative file name."
   (if (org-brain-filep entry)
-      entry
+      (org-entry-protect-space entry)
     (nth 2 entry)))
 
 (defun org-brain-entry-at-pt ()
@@ -545,7 +545,7 @@ PROPERTY could for instance be BRAIN_CHILDREN."
           (if (re-search-forward "^#\\+BRAIN_CHILDREN:.*$" nil t)
               (insert (concat " " (org-brain-entry-identifier child)))
             (insert (concat "#+BRAIN_CHILDREN: "
-                            (org-entry-protect-space (org-brain-entry-identifier child))
+                            (org-brain-entry-identifier child)
                             "\n\n")))
           (save-buffer))
       ;; Parent = Headline
@@ -559,7 +559,7 @@ PROPERTY could for instance be BRAIN_CHILDREN."
           (if (re-search-forward "^#\\+BRAIN_PARENTS:.*$" nil t)
               (insert (concat " " (org-brain-entry-identifier parent)))
             (insert (concat "#+BRAIN_PARENTS: "
-                            (org-entry-protect-space (org-brain-entry-identifier parent))
+                            (org-brain-entry-identifier parent)
                             "\n\n")))
           (save-buffer))
       ;; Child = Headline
@@ -698,7 +698,7 @@ If ONEWAY is t, add ENTRY2 as friend of ENTRY1, but not the other way around."
           (if (re-search-forward "^#\\+BRAIN_FRIENDS:.*$" nil t)
               (insert (concat " " (org-brain-entry-identifier entry2)))
             (insert (concat "#+BRAIN_FRIENDS: "
-                            (org-entry-protect-space (org-brain-entry-identifier entry2))
+                            (org-brain-entry-identifier entry2)
                             "\n\n")))
           (save-buffer))
       ;; Entry1 = Headline
