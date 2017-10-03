@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 20171002.1516
+;; Package-Version: 20171003.1221
 ;; Version: 2.10
 
 ;; This file is not part of GNU Emacs.
@@ -3173,6 +3173,8 @@ This includes both declarations and definitions."
 ;;;###autoload
 (defun rtags-fix-fixit-at-point ()
   (interactive)
+  (unless (rtags-has-diagnostics)
+    (error "rtags-fix-fixit-at-point requires diagnostics to be running. Consider setting rtags-autostart-diagnostics to t"))
   (when (or (not (rtags-called-interactively-p)) (rtags-sandbox-id-matches))
     (let ((current-overlays (overlays-at (point))))
       (while (and current-overlays (not (rtags-fix-fixit-overlay (car current-overlays))))

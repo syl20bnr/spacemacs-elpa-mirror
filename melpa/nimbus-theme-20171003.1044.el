@@ -5,7 +5,7 @@
 ;; Author: Marcin Swieczkowski <scatman@bu.edu>
 ;; Created: Thu Mar  2 22:19:19 CET 2017
 ;; Version: 1.0.0
-;; Package-Version: 20171002.401
+;; Package-Version: 20171003.1044
 ;; Last-Updated: Wed Apr 12 16:11:07 CEST 2017
 ;;           By: Marcin Swieczkowski
 ;;     Update #: 3
@@ -748,6 +748,27 @@
    `(rainbow-delimiters-depth-9-face
      ((t (:foreground ,nimbus/yellow))))
    `(rainbow-delimiters-unmatched-face ((t (:inherit error))))
+
+   ;; rainbow blocks
+   `(rainbow-blocks-depth-1-face
+     ((t (:foreground ,nimbus/purple))))
+   `(rainbow-blocks-depth-2-face
+     ((t (:foreground ,nimbus/orange))))
+   `(rainbow-blocks-depth-3-face
+     ((t (:foreground ,nimbus/green))))
+   `(rainbow-blocks-depth-4-face
+     ((t (:foreground ,nimbus/yellow))))
+   `(rainbow-blocks-depth-5-face
+     ((t (:foreground ,nimbus/lighter-blue))))
+   `(rainbow-blocks-depth-6-face
+     ((t (:foreground ,nimbus/purple))))
+   `(rainbow-blocks-depth-7-face
+     ((t (:foreground ,nimbus/orange))))
+   `(rainbow-blocks-depth-8-face
+     ((t (:foreground ,nimbus/green))))
+   `(rainbow-blocks-depth-9-face
+     ((t (:foreground ,nimbus/yellow))))
+   `(rainbow-blocks-unmatched-face ((t (:inherit error))))
 
    ;; auto complete
    `(ac-candidate-face
