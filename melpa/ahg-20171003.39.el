@@ -4,7 +4,7 @@
 
 ;; Author: Alberto Griggio <agriggio@users.sourceforge.net>
 ;; URL: https://bitbucket.org/agriggio/ahg
-;; Package-Version: 20161110.455
+;; Package-Version: 20171003.39
 ;; Version: 1.0.0
 
 ;; This program is free software: you can redistribute it and/or modify
@@ -635,14 +635,25 @@ Commands:
 
 (defvar ahg-status-consider-extra-switches nil)
 
+(defun ahg-status-get-root (is-interactive)
+  (if is-interactive
+      (condition-case nil (ahg-root)
+        (error
+         (with-temp-buffer
+           (setq default-directory
+                 (file-name-as-directory
+                  (read-directory-name "Hg repository: " default-directory)))
+           (ahg-root))))
+    (ahg-root)))
+
 (defun ahg-status (&rest extra-switches)
   "Run hg status. When called non-interactively, it is possible
 to pass extra switches to hg status."
   (interactive)
   (let ((buf (get-buffer-create "*aHg-status*"))
-        (curdir default-directory)
+        (curdir (expand-file-name (file-name-as-directory default-directory)))
         (show-message (called-interactively-p 'interactive))
-        (root (ahg-root)))
+        (root (ahg-status-get-root (called-interactively-p 'interactive))))
     (when ahg-status-consider-extra-switches
       (let ((sbuf (ahg-get-status-buffer root)))
         (when sbuf
@@ -651,17 +662,17 @@ to pass extra switches to hg status."
     (with-current-buffer buf
       (let ((inhibit-read-only t))
         (erase-buffer))
-      (setq default-directory (file-name-as-directory curdir))
+      (setq default-directory root)
       (set (make-local-variable 'ahg-root) root)
       (set (make-local-variable 'ahg-status-extra-switches) extra-switches)
-      (ahg-push-window-configuration))
-    (ahg-generic-command
-     "status" extra-switches
-     (lexical-let ((no-pop ahg-status-no-pop)
-                   (point-pos ahg-status-point-pos))
-       (lambda (process status)
-         (ahg-status-sentinel process status no-pop point-pos))) buf
-         nil (not show-message))))
+      (ahg-push-window-configuration)
+      (ahg-generic-command
+       "status" extra-switches
+       (lexical-let ((no-pop ahg-status-no-pop)
+                     (point-pos ahg-status-point-pos))
+         (lambda (process status)
+           (ahg-status-sentinel process status no-pop point-pos))) buf
+           nil (not show-message)))))
 
 (defun ahg-status-pp (data)
   "Pretty-printer for data elements in a *hg status* buffer."

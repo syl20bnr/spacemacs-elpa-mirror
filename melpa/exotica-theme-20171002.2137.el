@@ -5,7 +5,7 @@
 ;; Author: Bharat Joshi <jbharat@outlook.com>
 ;; Maintainer: Bharat Joshi <jbharat@outlook.com>
 ;; URL: https://github.com/jbharat/exotica-theme
-;; Package-Version: 20171002.349
+;; Package-Version: 20171002.2137
 ;; Created: 22th July 2017
 ;; Keywords: faces, theme, dark, vibrant colors
 ;; Version: 1.0.2
@@ -78,7 +78,7 @@
      (fullBlack              "#000000")
      (whiteSmoke         "white-smoke")
      (highlighter            "#E7F221")
-     (line-highlight         "#0F2139")
+     (line-highlight         "#213354")
 
      (slantType (if exotica-theme-enable-italics 'italic 'normal))
 

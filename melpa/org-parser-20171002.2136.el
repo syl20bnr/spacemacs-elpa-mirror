@@ -1,7 +1,7 @@
 ;;; org-parser.el --- parse org files into structured datatypes.  -*- lexical-binding: t; -*-
 
 ;; Version: 0.4
-;; Package-Version: 20170924.2156
+;; Package-Version: 20171002.2136
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright (C) 2016-2017 Zachary Kanfer
@@ -327,7 +327,7 @@ value is the property value."
         (property-text (org-parser--extract-property-text text)))
     (when property-text
       (dolist (line (split-string property-text "\n" t))
-        (when (string-match ":\\(.*\\):\s*\\(.*\\)"
+        (when (string-match ":\\([^:]*\\):\s*\\(.*\\)"
                             line)
           (push (cons (match-string 1 line)
                       (match-string 2 line))
