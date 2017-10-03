@@ -1,9 +1,16 @@
-This package provides a major mode for editing BASIC code. This
-includes syntax highlighting and indentation.
+This package provides a major mode for editing BASIC code,
+including syntax highlighting and indentation.
 
 Installation:
 
-Install basic-mode from MELPA at https://melpa.org
+The easiest way to install basic-mode is from MELPA, please see
+https://melpa.org.
+
+To install manually, place basic-mode.el in your load-path, and add
+the following lines of code to your init file:
+
+(autoload 'basic-mode "basic-mode" "Major mode for editing BASIC code." t)
+(add-to-list 'auto-mode-alist '("\\.bas\\'" . basic-mode))
 
 Configuration:
 

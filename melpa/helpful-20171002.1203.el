@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20170928.2101
+;; Package-Version: 20171002.1203
 ;; Keywords: help, lisp
 ;; Version: 0.3
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2"))
@@ -748,6 +748,10 @@ For example, \"(some-func FOO &optional BAR)\"."
     (unless sym
       (user-error "No command is bound to %s"
                   (key-description key-sequence)))
+    (unless (commandp sym)
+      (user-error "%s is bound to symbol %s which is not a command"
+                  (key-description key-sequence)
+                  sym))
     (pop-to-buffer (helpful--buffer sym t))
     (helpful-update)))
 

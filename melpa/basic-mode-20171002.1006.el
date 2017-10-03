@@ -4,8 +4,8 @@
 
 ;; Author: Johan Dykstrom
 ;; Created: Sep 2017
-;; Version: 0.1.0
-;; Package-Version: 20170929.1237
+;; Version: 0.1.1
+;; Package-Version: 20171002.1006
 ;; Keywords: basic, languages
 ;; URL: https://github.com/dykstrom/basic-mode
 ;; Package-Requires: ((emacs "24.3"))
@@ -25,12 +25,19 @@
 
 ;;; Commentary:
 
-;; This package provides a major mode for editing BASIC code. This
-;; includes syntax highlighting and indentation.
+;; This package provides a major mode for editing BASIC code,
+;; including syntax highlighting and indentation.
 
 ;; Installation:
 
-;; Install basic-mode from MELPA at https://melpa.org
+;; The easiest way to install basic-mode is from MELPA, please see
+;; https://melpa.org.
+;;
+;; To install manually, place basic-mode.el in your load-path, and add
+;; the following lines of code to your init file:
+;;
+;; (autoload 'basic-mode "basic-mode" "Major mode for editing BASIC code." t)
+;; (add-to-list 'auto-mode-alist '("\\.bas\\'" . basic-mode))
 
 ;; Configuration:
 
@@ -42,6 +49,7 @@
 
 ;;; Change Log:
 
+;;  0.1.1  2017-10-02  Fixed review comments and autoload problems.
 ;;  0.1.0  2017-09-28  Initial version.
 
 ;;; Code:
@@ -82,7 +90,7 @@ the actual code. Set this variable to 0 if you do not use line numbers."
 ;; Variables:
 ;; ----------------------------------------------------------------------------
 
-(defconst basic-mode-version "0.1.0"
+(defconst basic-mode-version "0.1.1"
   "The current version of `basic-mode'.")
 
 (defconst basic-increase-indent-keywords (regexp-opt '("else" "ELSE"
@@ -96,23 +104,56 @@ the actual code. Set this variable to 0 if you do not use line numbers."
                                                        "wend" "WEND"))
   "Regexp string of keywords that decrease indentation.")
 
+(defconst basic-linenum-regexp
+  "^[ \t]*\\([0-9]+\\)"
+  "Regexp string of symbols to highlight as line numbers.")
+
 (defconst basic-constant-regexp
-  (concat "\\_<" (regexp-opt '("false" "FALSE" "true" "TRUE") t) "\\_>")
+  (concat "\\_<" (regexp-opt '("false" "true") t) "\\_>")
   "Regexp string of symbols to highlight as constants.")
 
 (defconst basic-builtin-regexp
   (concat "\\_<" (regexp-opt '("abs") t) "\\_>")
   "Regexp string of symbols to highlight as builtins.")
 
+(defconst basic-keyword-regexp
+  (concat "\\_<"
+          (regexp-opt '("and"
+                        "do"
+                        "else"
+                        "elseif"
+                        "end"
+                        "endif"
+                        "exit"
+                        "gosub"
+                        "goto"
+                        "if"
+                        "input"
+                        "let"
+                        "loop"
+                        "mod"
+                        "not"
+                        "or"
+                        "print"
+                        "return"
+                        "then"
+                        "wend"
+                        "while"
+                        "xor")
+                      t)
+          "\\_>")
+  "Regexp string of symbols to highlight as keywords.")
+
+(defconst basic-font-lock-keywords
+  (list (list basic-linenum-regexp 0 'font-lock-constant-face)
+        (list basic-constant-regexp 0 'font-lock-constant-face)
+        (list basic-keyword-regexp 0 'font-lock-keyword-face)
+        (list basic-builtin-regexp 0 'font-lock-builtin-face))
+  "Describes how to syntax highlight keywords in `basic-mode' buffers.")
+
 ;; ----------------------------------------------------------------------------
 ;; Mode specific functions:
 ;; ----------------------------------------------------------------------------
-
-(defun basic-comment-or-string-p ()
-  "Return non-nil if point is in a comment or string."
-  (let ((text-properties (format "%s" (text-properties-at (point)))))
-    (or (string-match "font-lock-comment" text-properties)
-        (string-match "font-lock-string" text-properties))))
 
 (defun basic-message (string &rest args)
   "Display a message at the bottom of the screen if tracing is ON.
@@ -178,12 +219,16 @@ Keywords that end a block are defined in `basic-decrease-indent-keywords'."
               (if increase-indent-p basic-indent-offset 0)
               (if decrease-indent-p (- basic-indent-offset) 0)))))
 
+(defun basic-comment-or-string-p ()
+  "Return non-nil if point is in a comment or string."
+  (save-match-data (nth 8 (syntax-ppss))))
+
 (defun basic-code-search-backward ()
   "Search backward from point for a line containing code."
   (beginning-of-line)
-  (re-search-backward "[^ \t\n]" nil t)
+  (re-search-backward "[^ \t\n\"]" nil t)
   (while (and (not (bobp)) (basic-comment-or-string-p))
-    (re-search-backward "[^ \t\n]" nil t)))
+    (re-search-backward "[^ \t\n\"]" nil t)))
 
 (defun basic-match-symbol-at-point-p (regexp)
   "Return non-nil if the symbol at point does match REGEXP."
@@ -288,63 +333,30 @@ non-blank character after the line number."
 ;; BASIC mode:
 ;; ----------------------------------------------------------------------------
 
-;; Create basic-mode syntax table, and set syntax entries that are specific for
-;; BASIC identifiers. Setting this syntax table overwrites the syntax table
-;; created by generic mode.
-(defvar basic-mode-syntax-table nil
-  "Syntax table used while in ‘basic-mode'.")
-(unless basic-mode-syntax-table
+(defvar basic-mode-syntax-table
   (let ((table (make-syntax-table)))
     (modify-syntax-entry ?_   "w   " table)
     (modify-syntax-entry ?\.  "w   " table)
     (modify-syntax-entry ?'   "<   " table)
     (modify-syntax-entry ?\n  ">   " table)
     (modify-syntax-entry ?\^m ">   " table)
-    (setq basic-mode-syntax-table table)))
+    table)
+  "Syntax table used while in ‘basic-mode'.")
 
-(defun basic-init-basic-mode ()
-  "Initialize ‘basic-mode'."
-  (set-syntax-table basic-mode-syntax-table)
-  (setq-local syntax-propertize-function (syntax-propertize-rules ("\\(rem\\)" (1 "<"))))
-  (setq-local indent-line-function 'basic-indent-line))
-
-(define-generic-mode 'basic-mode
-  nil
-  ;; Keywords
-  (list "and" "AND"
-        "else" "ELSE"
-        "elseif" "ELSEIF"
-        "end" "END"
-        "endif" "ENDIF"
-        "goto" "GOTO"
-        "if" "IF"
-        "let" "LET"
-        "mod" "MOD"
-        "or" "OR"
-        "print" "PRINT"
-        "then" "THEN"
-        "wend" "WEND"
-        "while" "WHILE")
-  (list
-   ;; Line numbers
-   (list "^[ \t]*\\([0-9]+\\)" 1 'font-lock-constant-face)
-   ;; Constants
-   (list basic-constant-regexp 1 'font-lock-constant-face)
-   ;; Built-in functions
-   (list basic-builtin-regexp 1 'font-lock-builtin-face)
-   )
-  (list "\\.bas$")
-  (list 'basic-init-basic-mode)
+;;;###autoload
+(define-derived-mode basic-mode prog-mode "Basic"
   "Major mode for editing BASIC code.
 
-Commands:
+\\{basic-mode-map}"
+  :group 'basic
+  (setq-local indent-line-function 'basic-indent-line)
+  (setq-local comment-start "'")
+  (setq-local syntax-propertize-function (syntax-propertize-rules ("\\(rem\\)" (1 "<"))))
+  (setq-local font-lock-defaults '(basic-font-lock-keywords nil t))
+  (when (not font-lock-mode)
+      (font-lock-mode 1)))
 
-key             binding
----             -------
-
-C-c             Prefix Command
-TAB             basic-indent-line
-")
+;;;###autoload (add-to-list 'auto-mode-alist '("\\.bas\\'" . basic-mode))
 
 ;; ----------------------------------------------------------------------------
 
