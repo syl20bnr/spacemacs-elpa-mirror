@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20170918.2229
+;; Package-Version: 20171002.2303
 ;; Package-Requires: ((emacs "24.4") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -157,15 +157,40 @@ overlay must not be displayed.")
   "Show goggles overlay from BEG to END if the conditions are met.
 
 OVERLAY-FACE is the face to use for the overlay.
-The goggles overlay will be displayed briefly before BODY is executed.
+The goggles overlay will be displayed before BODY is executed.
 BODY will be executed but an overlay will not be allowed to be
 displayed while its running."
   (declare (indent defun) (debug t))
   `(if (evil-goggles--show-p ,beg ,end)
-       (let* ((evil-goggles--on t))
+       (let ((evil-goggles--on t))
          (evil-goggles--show ,beg ,end ,overlay-face)
-         (progn ,@body))
-     (progn ,@body)))
+         ,@body)
+     ,@body))
+
+(defmacro evil-goggles--with-after-goggles (beg end overlay-face &rest body)
+  "Add an overlay from BEG to END, make it visible with OVERLAY-FACE after BODY."
+  (declare (indent defun) (debug t))
+  `(if (evil-goggles--show-p ,beg ,end)
+       (let ((evil-goggles--on t)
+             (ov (evil-goggles--make-overlay ,beg ,end 'insert-behind-hooks '(evil-goggles--overlay-insert-behind-hook)))
+             (bg (evil-goggles--face-background ,overlay-face)))
+         (unwind-protect
+             (progn
+               (if evil-goggles-pulse
+                   (evil-goggles--pulse-overlay ov bg) ;; pulse the overlay
+                 (overlay-put ov 'face ,overlay-face)) ;; just put the face on the overlay
+               ,@body
+               (sit-for evil-goggles-duration))
+           (delete-overlay ov)))
+     ,@body))
+
+(defun evil-goggles--overlay-insert-behind-hook (o afterp beg end &optional len)
+  (when afterp
+    (if (zerop len)
+        (progn
+          (setq len (- end beg))
+          (move-overlay o (overlay-start o) (+ len (overlay-end o))))
+      (move-overlay o (overlay-start o) (- (overlay-end o) len) ))))
 
 (defun evil-goggles--funcall-interactively (f &rest args)
   "Call F with ARGS interactively.
@@ -422,7 +447,7 @@ BEG END are the arguments of the original function."
 
 ORIG-FUN is the original function.
 BEG END are arguments of the original function."
-  (evil-goggles--with-goggles beg end 'evil-goggles-fill-and-move-face
+  (evil-goggles--with-after-goggles beg end 'evil-goggles-fill-and-move-face
     (evil-goggles--funcall-preserve-interactive orig-fun beg end)))
 
 ;; paste before and after
@@ -586,12 +611,8 @@ BEG END &OPTIONAL TYPE are the arguments of the original function."
 
 ORIG-FUN is the original function.
 COUNT BEG &OPTIONAL END TYPE REGISTER are the arguments of the original function."
-  (evil-goggles--with-goggles beg end 'evil-goggles-replace-with-register-face
-    (evil-goggles--funcall-preserve-interactive orig-fun count beg end type register))
-
-  ;; good good
-
-  (evil-goggles--show beg (point) 'diff-added))
+  (evil-goggles--with-after-goggles beg end 'evil-goggles-nerd-commenter-face
+    (evil-goggles--funcall-preserve-interactive orig-fun count beg end type register)))
 
 ;;; mode defined below ;;;
 
