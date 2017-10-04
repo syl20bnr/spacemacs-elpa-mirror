@@ -5,7 +5,7 @@
 ;; Author: Roman Bataev <roman.bataev@gmail.com>
 ;; Created: 12 February 2017
 ;; Version: 0.1
-;; Package-Version: 1.0.0
+;; Package-Version: 1.1.0
 ;; Package-Requires: ((flycheck "0.18"))
 
 ;;; Commentary:
@@ -15,8 +15,16 @@
 
 ;; (require 'flycheck-joker)
 
-;; Make sure Joker executable is on your path.  The latest version
-;; of Joker can be downloaded from https://github.com/candid82/joker/releases
+;; Make sure Joker binary is on your path.
+;; Joker installation instructions are here: https://github.com/candid82/joker#installation
+;;
+;; Please read about Joker's linter mode to understand its capabilities and limitations:
+;; https://github.com/candid82/joker#linter-mode
+;; Specifically, it's important to configure Joker to reduce false positives:
+;; https://github.com/candid82/joker#reducing-false-positives
+;;
+;; Please see examples of the errors Joker can catch here:
+;; https://github.com/candid82/SublimeLinter-contrib-joker#examples
 
 ;;; License:
 
@@ -45,23 +53,26 @@
   "A Clojure syntax checker using Joker.
 
   See URL `https://github.com/candid82/joker'."
-  :command ("joker" "--lint" source)
+  :command ("joker" "--lint" "--")
+  :standard-input t
   :error-patterns
-  ((error line-start (file-name) ":" line ":" column ": " (0+ not-newline) (or "error: " "Exception: ") (message) line-end)
-   (warning line-start (file-name) ":" line ":" column ": " (0+ not-newline) "warning: " (message) line-end))
+  ((error line-start "<stdin>:" line ":" column ": " (0+ not-newline) (or "error: " "Exception: ") (message) line-end)
+   (warning line-start "<stdin>:" line ":" column ": " (0+ not-newline) "warning: " (message) line-end))
   :modes (clojure-mode clojurec-mode))
 
 (flycheck-define-checker clojurescript-joker
   "A ClojureScript syntax checker using Joker.
 
   See URL `https://github.com/candid82/joker'."
-  :command ("joker" "--lintcljs" source)
+  :command ("joker" "--lintcljs" "--")
+  :standard-input t
   :error-patterns
-  ((error line-start (file-name) ":" line ":" column ": " (0+ not-newline) (or "error: " "Exception: ") (message) line-end)
-   (warning line-start (file-name) ":" line ":" column ": " (0+ not-newline) "warning: " (message) line-end))
+  ((error line-start "<stdin>:" line ":" column ": " (0+ not-newline) (or "error: " "Exception: ") (message) line-end)
+   (warning line-start "<stdin>:" line ":" column ": " (0+ not-newline) "warning: " (message) line-end))
   :modes (clojurescript-mode))
 
 (add-to-list 'flycheck-checkers 'clojure-joker)
 (add-to-list 'flycheck-checkers 'clojurescript-joker)
+
 (provide 'flycheck-joker)
 ;;; flycheck-joker.el ends here

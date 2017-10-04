@@ -5,7 +5,7 @@
 ;; Author: Bharat Joshi <jbharat@outlook.com>
 ;; Maintainer: Bharat Joshi <jbharat@outlook.com>
 ;; URL: https://github.com/jbharat/exotica-theme
-;; Package-Version: 20171003.231
+;; Package-Version: 20171003.2029
 ;; Created: 22th July 2017
 ;; Keywords: faces, theme, dark, vibrant colors
 ;; Version: 1.0.2
@@ -159,6 +159,7 @@
  `(isearch-fail ((t (:foreground ,fullWhite :background ,warning-bg-face))))
  `(ahs-plugin-whole-buffer-face ((t (:background ,bg :foreground ,highlighter ))))
  `(ahs-face ((t (:background ,face9 :foreground ,highlighter))))
+ `(ahs-definition-face ((t (:background ,face9 :foreground ,highlighter :underline t))))
 
  ;; org
  `(outline-1 ((t (:foreground ,face1))))

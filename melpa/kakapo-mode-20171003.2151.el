@@ -17,7 +17,7 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;; Version: 1.3
-;; Package-Version: 20170924.2135
+;; Package-Version: 20171003.2151
 ;; Keywords: indentation
 ;; URL: https://github.com/listx/kakapo-mode
 ;; Package-Requires: ((cl-lib "0.5"))
@@ -758,7 +758,7 @@ indentation level found above).
 (define-minor-mode kakapo-mode
 	"Stupid TAB character."
 	:init-value nil
-	:lighter "/kkp"
+	:lighter " kkp"
 	:global nil
 	:keymap (let ((map (make-sparse-keymap)))
 			(define-key map (kbd "TAB") 'kakapo-tab)
