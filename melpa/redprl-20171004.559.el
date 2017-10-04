@@ -5,7 +5,7 @@
 
 ;; Author: Jonathan Sterling <jon@jonmsterling.com>
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 20170915.749
+;; Package-Version: 20171004.559
 ;; Version: 0.0.1
 ;; Keywords: languages
 
@@ -137,7 +137,7 @@
 
 (defconst redprl-tactic-keywords
   '("auto" "auto-step" "case" "cut-lemma" "elim" "else" "exact" "fresh" "goal"
-    "hyp" "id" "internalize" "lemma" "let" "match" "of" "print" "progress"
+    "hyp" "id" "lemma" "let" "match" "of" "print" "progress"
     "query" "rec" "reduce" "refine" "repeat" "rewrite" "rewrite-hyp" "symmetry"
     "then" "unfold" "use" "with")
   "RedPRL's tactic keywords.")

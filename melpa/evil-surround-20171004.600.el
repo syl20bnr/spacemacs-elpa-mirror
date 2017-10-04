@@ -10,7 +10,7 @@
 ;; Current Maintainer: ninrod (github.com/ninrod)
 ;; Created: July 23 2011
 ;; Version: 0.1
-;; Package-Version: 20170910.1952
+;; Package-Version: 20171004.600
 ;; Package-Requires: ((evil "1.2.12"))
 ;; Mailing list: <implementations-list at lists.ourproject.org>
 ;;      Subscribe: http://tinyurl.com/implementations-list
@@ -44,6 +44,10 @@
   "surround.vim for Emacs"
   :prefix "surround-"
   :group 'evil)
+
+;; make surround's `ysw' work like `cw', not `ce'
+(when (boundp 'evil-change-commands)
+  (add-to-list 'evil-change-commands 'evil-surround-region))
 
 (defcustom evil-surround-pairs-alist
   '((?\( . ("( " . " )"))
@@ -246,6 +250,12 @@ This is necessary because `evil-yank' operator is not repeatable (:repeat nil)"
   (evil-repeat-start)
   (evil-repeat-record "y")
   (evil-repeat-record (this-command-keys))
+
+  ;; set `this-command-keys' to the command that will be executed
+  ;; interactively; as a result, `evil-this-operator' will be
+  ;; correctly set to, for example, `evil-surround-region' instead of
+  ;; `evil-yank' when surround has been invoked by `ys'
+  (setq this-command callback)
   (call-interactively callback)
   (evil-repeat-keystrokes 'post)
   (evil-repeat-stop))
@@ -310,8 +320,8 @@ Becomes this:
                   ((eq type 'line)
                    (setq force-new-line
                          (or force-new-line
-                             ;; Force newline if not invoked from an operator, e.g. VS)
-                             (eq evil-this-operator 'evil-surround-region)
+                             ;; Force newline if not invoked from an operator, e.g. visual line mode with VS)
+                             (evil-visual-state-p)
                              ;; Or on multi-line operator surrounds (like 'ysj]')
                              (/= (line-number-at-pos) (line-number-at-pos (1- end)))))
 
