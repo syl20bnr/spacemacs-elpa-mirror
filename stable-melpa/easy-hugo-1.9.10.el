@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 1.9.9
-;; Version: 1.9.9
+;; Package-Version: 1.9.10
+;; Version: 1.9.10
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -252,7 +252,7 @@ Because only two are supported by hugo."
   :type 'string)
 
 (defcustom easy-hugo-basedir-4 nil
-  "Blog1 base directory."
+  "Blog4 base directory."
   :group 'easy-hugo
   :type 'string)
 
@@ -437,7 +437,7 @@ Because only two are supported by hugo."
   :type 'string)
 
 (defcustom easy-hugo-root-9 nil
-  "Blog1 root."
+  "Blog9 root."
   :group 'easy-hugo
   :type 'string)
 
@@ -693,6 +693,8 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
 			       (concat easy-hugo-basedir "static/" easy-hugo-image-dirctory "/")
 			       (car (last (split-string (substring-no-properties (gui-get-selection)) "/")))
 			       nil)))
+     (when (file-exists-p (file-truename file))
+       (error "%s already exists!" (file-truename file)))
      (url-copy-file url file t)
      (insert (concat (format "<img src=\"%s%s\""
 			     easy-hugo-url

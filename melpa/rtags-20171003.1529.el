@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 20171003.1221
+;; Package-Version: 20171003.1529
 ;; Version: 2.10
 
 ;; This file is not part of GNU Emacs.
@@ -490,6 +490,12 @@ return t if RTags is allowed to modify this file."
 
 (defcustom rtags-path nil
   "Path to RTags executables."
+  :group 'rtags
+  :type '(choice (const :tag "Unset" nil) directory)
+  :risky t)
+
+(defcustom rtags-rc-config-path nil
+  "Path to for configuration file for rc."
   :group 'rtags
   :type '(choice (const :tag "Unset" nil) directory)
   :risky t)
@@ -1228,6 +1234,8 @@ to only call this when `rtags-socket-file' is defined.
                         (with-current-buffer unsaved
                           (rtags-buffer-size)))
                 arguments))
+        (when rtags-rc-config-path
+          (push (concat "--config=" (expand-file-name rtags-rc-config-path)) arguments))
         (when rtags-completions-enabled
           (push "-b" arguments))
         (when silent
@@ -2274,6 +2282,25 @@ See `rtags-current-location' for loc-arg format."
       (when (> (length rtags-location-stack) rtags-max-bookmark-count)
         (nbutlast rtags-location-stack (- (length rtags-location-stack) rtags-max-bookmark-count)))
       (run-hooks 'rtags-jump-hook))))
+
+;;;###autoload
+(defun rtags-location-stack-filter (path/lambda/rx)
+  (interactive "Mregex or path: ")
+  "Filter out undesired entries from rtags-location-stack.
+The argument can either be:
+- An absolute path which gets compared against the path component of each location,
+- A string which is used as a regex to match the whole location
+- A defun which gets passed a single argument of the whole location and which should return non-nil to filter the location out"
+  (let ((old (length rtags-location-stack)))
+    (setq rtags-location-stack (cl-remove-if (cond ((functionp path/lambda/rx) path/lambda/rx)
+                                                   ((file-name-absolute-p path/lambda/rx)
+                                                    (lambda (location)
+                                                      (and (string-match "\\(.*?\\):\\([0-9]+\\):\\([0-9]+\\):?" location)
+                                                           (string= location (match-string-no-properties 1 location)))))
+                                                   (t (lambda (location) (string-match path/lambda/rx location))))
+                                             rtags-location-stack))
+    (when (rtags-called-interactively-p)
+      (message "Removed %d locations" (- old (length rtags-location-stack))))))1
 
 ;;;###autoload
 (defun rtags-location-stack-jump (by)
