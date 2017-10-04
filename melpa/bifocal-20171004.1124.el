@@ -3,10 +3,10 @@
 ;; Authors: Chris Rayner (dchrisrayner @ gmail)
 ;; Created: May 23 2011
 ;; Keywords: frames, processes, tools
-;; Package-Version: 0.0.2
-;; Homepage: https://github.com/riscy/bifocal-mode
+;; Package-Version: 20171004.1124
+;; URL: https://github.com/riscy/bifocal-mode
 ;; Package-Requires: ((emacs "24.4"))
-;; Version: 0.0.1
+;; Version: 0.0.3
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -303,7 +303,7 @@ buffers that support it.\n
     (bifocal--turn-off)))
 
 ;;;###autoload
-(define-globalized-minor-mode bifocal-global-mode bifocal-mode bifocal--turn-on)
+(define-globalized-minor-mode bifocal-global-mode bifocal-mode bifocal--turn-on :require 'bifocal)
 
 (provide 'bifocal)
 ;;; bifocal.el ends here

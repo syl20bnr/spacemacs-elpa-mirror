@@ -15,7 +15,8 @@ the following lines of code to your init file:
 Configuration:
 
 You can customize the indentation of code blocks, see variable
-`basic-indent-offset'. The default value is 4. You can also
-customize the number of columns to use for line numbers, see
-variable `basic-line-number-cols'. The default value is 0, which
-means not using line numbers at all.
+`basic-indent-offset'. The default value is 4.
+
+You can also customize the number of columns to use for line
+numbers, see variable `basic-line-number-cols'. The default value
+is 0, which means not using line numbers at all.

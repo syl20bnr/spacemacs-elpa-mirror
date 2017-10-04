@@ -3,10 +3,10 @@
 ;; Authors: Chris Rayner (dchrisrayner @ gmail)
 ;; Created: May 23 2011
 ;; Keywords: processes, tools
-;; Package-Version: 20170805.1619
-;; Homepage: https://github.com/riscy/shx-for-emacs
+;; Package-Version: 0.0.10
+;; URL: https://github.com/riscy/shx-for-emacs
 ;; Package-Requires: ((emacs "24.4"))
-;; Version: 0.0.9
+;; Version: 0.0.10
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -139,6 +139,9 @@
 
 (defvar-local shx-buffer nil
   "Local reference to the shx buffer.")
+
+(defvar-local shx-prompt-overlay nil
+  "Overlay used to highlight the prompt.")
 
 (defvar-local shx-urls nil
   "Local record of URLs seen.")
@@ -312,8 +315,8 @@ buffer's `process-mark'."
 
 (defun shx-point-on-input-p ()
   "Check if point is on the input region."
-  (>= (point-marker)
-      (process-mark (get-buffer-process (current-buffer)))))
+  (let ((process (get-buffer-process (current-buffer))))
+    (and process (>= (point-marker) (process-mark process)))))
 
 (defun shx--all-commands (&optional without-prefix)
   "Return a list of all shx commands.
@@ -687,6 +690,20 @@ may take a while and unfortunately blocks Emacs in the meantime.
                (split-string (string-remove-suffix "\n" output) "\n"))
         (insert "\n")))))
 
+(defun shx-cmd-pipe (command)
+  "Pipe the output of COMMAND to a compilation buffer.
+\nExamples:\n
+  :pipe make
+  :pipe git repack -a -d --depth=250 --window=250"
+  (if (equal command "")
+      (shx-insert 'error "cap <command>\n")
+    (let ((compilation-buffer-name-function
+           (lambda (_mode) "*shx-pipe*")))
+      (shx-insert "Piping "
+                  'comint-highlight-input command 'default
+                  " to " "*shx-pipe*\n")
+      (compile command t))))
+
 (defun shx-cmd-g (pattern)
   "Launch a recursive grep for PATTERN."
   (grep (format "grep -irnH '%s' *" pattern)))
@@ -782,6 +799,12 @@ commands like :pwd and :edit will work correctly.
     (let* ((host (replace-regexp-in-string ":" "#" host))
            (default-directory (concat "/" host ":~")))
       (shx))))
+
+(defun shx-cmd-sedit (file)
+  "Open local FILE using sudo (i.e. as super-user).
+\nExample:\n
+  :sedit /etc/passwd"
+  (shx-cmd-edit (concat "/sudo::" (expand-file-name file))))
 
 
 ;;; graphical user commands
@@ -880,7 +903,7 @@ comint-mode in general.  Use `shx-global-mode' to enable
   (if shx-mode (shx--activate) (shx--deactivate)))
 
 ;;;###autoload
-(define-globalized-minor-mode shx-global-mode shx-mode shx--turn-on)
+(define-globalized-minor-mode shx-global-mode shx-mode shx--turn-on :require 'shx)
 
 (defun shx (&optional name)
   "Create a new shx-enhanced shell session.

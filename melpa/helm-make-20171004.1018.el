@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/helm-make
-;; Package-Version: 20170430.1053
+;; Package-Version: 20171004.1018
 ;; Version: 0.2.0
 ;; Package-Requires: ((helm "1.5.3") (projectile "0.11.0"))
 ;; Keywords: makefile
@@ -344,7 +344,9 @@ setting the buffer local variable `helm-make-build-dir'."
         (error "No Makefile found for project %s" (projectile-project-root))
       (setq helm-make-command (format (concat "%s -C %s " helm-make-arguments " %%s")
                                       helm-make-executable
-                                      (file-name-directory makefile)
+                                      (replace-regexp-in-string
+                                       "^/\\(scp\\|ssh\\).+?:" ""
+                                       (file-name-directory makefile))
                                       arg))
       (helm--make makefile))))
 
