@@ -3,7 +3,7 @@
 ;; Copyright (C) 2016  Tamas K. Papp
 ;; Author: Tamas Papp <tkpapp@gmail.com>
 ;; Keywords: languages
-;; Package-Version: 20170708.2324
+;; Package-Version: 20171005.123
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25"))
 
@@ -115,7 +115,8 @@ This should be the standard entry point."
     (display-buffer buffer)
     (with-current-buffer buffer
       (term-send-raw-string (string-trim string))
-      (term-send-raw-string "\^M"))))
+      (unless current-prefix-arg
+        (term-send-raw-string "\^M")))))
 
 (defun julia-repl-send-line ()
   "Send the current line to the Julia REPL term buffer."

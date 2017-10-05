@@ -7,7 +7,7 @@
 ;; Keywords: faces
 ;; URL: https://github.com/purcell/diredfl
 ;; Package-Requires: ((emacs "24"))
-;; Package-Version: 20171001.23
+;; Package-Version: 20171005.39
 ;; Package-X-Original-Version: 0
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -221,6 +221,7 @@ In particular, inode number, number of hard links, and file size."
     (t                   (:foreground "DarkOrange")))
   "*Face used for symbolic links in Dired buffers."
   :group 'diredfl)
+(defvar diredfl-symlink 'diredfl-symlink)
 
 (defface diredfl-tagged-autofile-name
   '((((background dark)) (:background "#328C0411328C")) ; Very dark magenta

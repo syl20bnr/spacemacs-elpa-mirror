@@ -3,8 +3,8 @@
 ;; Copyright (C) 2017
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
-;; Version: 0.5
-;; Package-Version: 20171004.1509
+;; Version: 0.6
+;; Package-Version: 20171005.32
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.4") (loop "1.3") (dash "2.13.0") (s "1.11.0") (f "0.18.2"))
 ;; URL: https://github.com/Wilfred/suggest.el
@@ -61,6 +61,7 @@
    ;; Built-in functions that create lists.
    #'make-list
    #'number-sequence
+   #'mapcar
    ;; Sequence functions
    #'elt
    #'aref
@@ -112,6 +113,8 @@
    #'-first-item
    #'-last-item
    #'-butlast
+   #'-map
+   #'-mapcat
    ;; dash.el folding/unfolding
    #'-reduce
    #'-reduce-r
@@ -583,6 +586,8 @@ This is primarily for quoting symbols."
   (cond
    ((consp value)
     (format "'%S" value))
+   ((functionp value)
+    (format "#'%s" value))
    ((and
      (symbolp value)
      (not (keywordp value))
@@ -590,7 +595,7 @@ This is primarily for quoting symbols."
      (not (eq value t)))
     (format "'%s" value))
    (t
-    (format "%s" value))))
+    (format "%S" value))))
 
 (defun suggest--try-call (iteration func input-values input-literals)
   "Try to call FUNC with INPUT-VALUES, and return a list of outputs"
