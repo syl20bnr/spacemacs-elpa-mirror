@@ -18,7 +18,7 @@
 
 ;; Author: Masanao Igarashi <syoux2@gmail.com>
 ;; Keywords: org, rst, reST, reStructuredText
-;; Package-Version: 20170418.758
+;; Package-Version: 20171004.1553
 ;; Version: 0.2
 ;; URL: https://github.com/masayuko/ox-rst
 ;; Package-Requires: ((emacs "24.4") (org "8.2.4"))
@@ -1086,7 +1086,7 @@ contextual information."
   ;; Protect ..
   (setq text (replace-regexp-in-string "^[\s-]*\\.\\. [^\\[]" "\\\\.. " text))
   ;; Protect ^\d+.
-  (setq text (replace-regexp-in-string "^\\(\\d\\)+\\." "\\1\\." text))
+  (setq text (replace-regexp-in-string "^\\([[:digit:]]\\)+\\." "\\1\\." text))
   ;; Return value.
   text)
 
