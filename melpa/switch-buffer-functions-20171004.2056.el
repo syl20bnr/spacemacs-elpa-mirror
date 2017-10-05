@@ -2,7 +2,7 @@
 
 ;; Author: 10sr <8slashes+el [at] gmail [dot] com>
 ;; URL: https://github.com/10sr/switch-buffer-functions-el
-;; Package-Version: 20160702.2157
+;; Package-Version: 20171004.2056
 ;; Version: 0.0.1
 ;; Keywords: hook utility
 
@@ -36,9 +36,7 @@
 ;;; Commentary:
 
 ;; This package provides a hook variable `switch-buffer-functions'.
-
-;; This hook will be run when the current buffer has been changed after each
-;; interactive command, i.e. `post-command-hook' is called.
+;; This hook will be run when the current buffer has been changed.
 
 ;; When functions are hooked, they will be called with the previous buffer and
 ;; the current buffer.  For example, if you eval:
@@ -62,6 +60,10 @@ Each is passed two arguments, the previous buffer and the current buffer.")
   nil
   "The last current buffer.")
 
+(defvar switch-buffer-functions--running-p
+  nil
+  "Non-nil if currently inside of run `switch-buffer-functions-run'.")
+
 ;;;###autoload
 (defun switch-buffer-functions-run ()
   "Run `switch-buffer-functions' if needed.
@@ -70,19 +72,21 @@ This function checks the result of `current-buffer', and run
 `switch-buffer-functions' when it has been changed from
 the last buffer.
 
-This function should be hooked to `post-command-hook'."
-  (unless (eq (current-buffer)
-              switch-buffer-functions--last-buffer)
-    (let ((current (current-buffer))
+This function should be hooked to `buffer-list-update-hook'."
+  (unless switch-buffer-functions--running-p
+    (let ((switch-buffer-functions--running-p t)
+          (current (current-buffer))
           (previous switch-buffer-functions--last-buffer))
-      (setq switch-buffer-functions--last-buffer
-            current)
-      (run-hook-with-args 'switch-buffer-functions
-                          previous
-                          current))))
+      (unless (eq previous
+                  current)
+        (run-hook-with-args 'switch-buffer-functions
+                            previous
+                            current)
+        (setq switch-buffer-functions--last-buffer
+              (current-buffer))))))
 
 ;;;###autoload
-(add-hook 'post-command-hook
+(add-hook 'buffer-list-update-hook
           'switch-buffer-functions-run)
 
 (provide 'switch-buffer-functions)
