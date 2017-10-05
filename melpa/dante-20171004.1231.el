@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20171003.1243
+;; Package-Version: 20171004.1231
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -406,7 +406,7 @@ See ``company-backends'' for the meaning of COMMAND and _ARGS."
                          (import-end (match-end 0))
                          (import-start (match-beginning 0))
                          (is-import (eq import-end id-start)))
-                    (message "found %s end %s start %s id-start %s" import-found import-end import-start id-start)
+                    ;; (message "found %s end %s start %s id-start %s" import-found import-end import-start id-start)
                     (buffer-substring-no-properties (if is-import import-start id-start) (point)))))) ;; todo: pref len
     (cl-case command
       (interactive (company-begin-backend 'company-dante))

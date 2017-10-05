@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Version: 0.5
-;; Package-Version: 20170918.1556
+;; Package-Version: 20171004.1509
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.4") (loop "1.3") (dash "2.13.0") (s "1.11.0") (f "0.18.2"))
 ;; URL: https://github.com/Wilfred/suggest.el
@@ -37,13 +37,12 @@
 (eval-when-compile
   (require 'cl-lib)) ;; cl-incf
 
-;; TODO: add #'read, but don't prompt for input when the example is nil.
-;;
 ;; See also `cl--simple-funcs' and `cl--safe-funcs'.
 (defvar suggest-functions
   (list
    ;; TODO: add funcall, apply and map?
    ;; Built-in functions that access or examine lists.
+   ;; TODO: why isn't car marked as pure?
    #'car
    #'cdr
    #'cadr
@@ -113,6 +112,10 @@
    #'-first-item
    #'-last-item
    #'-butlast
+   ;; dash.el folding/unfolding
+   #'-reduce
+   #'-reduce-r
+   #'-iterate
    ;; alist functions
    #'assoc
    #'alist-get
@@ -168,6 +171,7 @@
    #'split-string
    #'capitalize
    #'replace-regexp-in-string
+   #'format
    ;; Quoting strings
    #'shell-quote-argument
    #'regexp-quote
@@ -211,6 +215,7 @@
    #'symbol-value
    #'symbol-file
    #'intern
+   #'read
    ;; Converting between types
    #'string-to-list
    #'string-to-number
@@ -260,19 +265,47 @@ arguments, and no arguments are functions. For other functions,
 the likelihood of users discovering them is too low.
 
 Likewise, we avoid predicates of one argument, as those generally
-need multiple examples to ensure they do what the user wants.")
+need multiple examples to ensure they do what the user wants.
+
+See also `suggest-extra-args'.")
+
+(defvar suggest-extra-args
+  (list
+   ;; There's no special values for `list', and it produces silly
+   ;; results when we add values.
+   #'list '()
+   ;; Similarly, we can use nil with `car' to build a list, but
+   ;; otherwise we're just building an irrelevant list if we use the
+   ;; default values.
+   #'car '(nil)
+   ;; `format' has specific formatting strings that are worth trying.
+   #'format '("%d" "%o" "%x" "%X" "%e" "%c" "%f" "%s" "%S")
+   ;; `-iterate' is great for building incrementing/decrementing lists.
+   ;; (an alternative to `number-sequence'.
+   #'-iterate '(1+ 1-)
+   ;; These common values often set flags in interesting ways.
+   t '(nil t -1 0 1 2))
+  "Some functions work best with a special extra argument.
+
+This plist associates functions with particular arguments that
+produce good results. If a function isn't explicitly mentioned,
+we look up `t' instead.")
 
 (defun suggest--safe (fn args)
-  "Is FN safe to call with ARGS?
-Due to Emacs bug #25684, some string functions cause Emacs to segfault
-when given negative integers."
+  "Is FN safe to call with ARGS?"
   (not
-   ;; These functions call caseify_object in casefiddle.c.
-   (and (memq fn '(upcase downcase capitalize upcase-initials))
-        (consp args)
-        (null (cdr args))
-        (integerp (car args))
-        (< (car args) 0))))
+   (or
+    ;; Due to Emacs bug #25684, string functions that call
+    ;; caseify_object in casefiddle.c cause Emacs to segfault when
+    ;; given negative integers.
+    (and (memq fn '(upcase downcase capitalize upcase-initials))
+         (consp args)
+         (null (cdr args))
+         (integerp (car args))
+         (< (car args) 0))
+    ;; If `read' is called with nil or t, it prompts interactively.
+    (and (eq fn 'read)
+         (member args '(nil (nil) (t)))))))
 
 (defface suggest-heading
   '((((class color) (background light)) :foreground "DarkGoldenrod4" :weight bold)
@@ -544,6 +577,21 @@ nil otherwise."
               :variadic-p variadic-p
               :literals literals)))))
 
+(defun suggest--unread (value)
+  "Convert VALUE to a string that can be read to obtain VALUE.
+This is primarily for quoting symbols."
+  (cond
+   ((consp value)
+    (format "'%S" value))
+   ((and
+     (symbolp value)
+     (not (keywordp value))
+     (not (eq value nil))
+     (not (eq value t)))
+    (format "'%s" value))
+   (t
+    (format "%s" value))))
+
 (defun suggest--try-call (iteration func input-values input-literals)
   "Try to call FUNC with INPUT-VALUES, and return a list of outputs"
   (let (outputs)
@@ -558,14 +606,16 @@ nil otherwise."
 
     ;; See if (func COMMON-CONSTANT value1 value2...) gives us a value.
     (when (zerop iteration)
-      (dolist (extra-arg (list nil t 0 1 -1 2))
+      (dolist (extra-arg (if (plist-member suggest-extra-args func)
+                             (plist-get suggest-extra-args func)
+                           (plist-get suggest-extra-args t)))
         (dolist (position '(after before))
           (let ((args (if (eq position 'before)
                           (cons extra-arg input-values)
                         (-snoc input-values extra-arg)))
                 (literals (if (eq position 'before)
-                              (cons (format "%S" extra-arg) input-literals)
-                            (-snoc input-literals (format "%S" extra-arg)))))
+                              (cons (suggest--unread extra-arg) input-literals)
+                            (-snoc input-literals (suggest--unread extra-arg)))))
             (-when-let (result (suggest--call func args literals))
               (push result outputs))))))
     ;; Return results in ascending order of preference, so we prefer
@@ -655,30 +705,43 @@ than their values."
 (defun suggest--cmp-relevance (pos1 pos2)
   "Compare two possibilities such that the more relevant result
   is smaller."
-  ;; We prefer fewer functions, and we prefer simpler functions. We
-  ;; use a dumb but effective heuristic: concatenate the function
-  ;; names and take the shortest.
-  (cond
-   ;; If we have the same number of function calls, with the same
-   ;; number of arguments, prefer functions with shorter names.
-   ((and
-     (= (length (plist-get pos1 :funcs)) (length (plist-get pos2 :funcs)))
-     (= (length (plist-get pos1 :literals)) (length (plist-get pos2 :literals))))
-    (let ((join-names (lambda (pos)
-                        (->> (plist-get pos :funcs)
-                             (--map (plist-get it :sym))
-                             (-map #'symbol-name)
-                             (apply #'concat)))))
-      (< (length (funcall join-names pos1)) (length (funcall join-names pos2)))))
+  (let ((pos1-func-count (length (plist-get pos1 :funcs)))
+        (pos2-func-count (length (plist-get pos2 :funcs)))
+        (pos1-arg-count (length (plist-get pos1 :literals)))
+        (pos2-arg-count (length (plist-get pos2 :literals)))
+        (pos1-apply-count (length (--filter (plist-get it :variadic-p)
+                                            (plist-get pos1 :funcs))))
+        (pos2-apply-count (length (--filter (plist-get it :variadic-p)
+                                            (plist-get pos2 :funcs)))))
+    (cond
+     ;; If we have the same number of function calls, with the same
+     ;; number of arguments, prefer functions with shorter names. This
+     ;; is a dumb but surprisingly effective heuristic.
+     ((and
+       (= pos1-func-count pos2-func-count)
+       (= pos1-arg-count pos2-arg-count)
+       (= pos1-apply-count pos2-apply-count))
+      (let ((join-names (lambda (pos)
+                          (->> (plist-get pos :funcs)
+                               (--map (plist-get it :sym))
+                               (-map #'symbol-name)
+                               (apply #'concat)))))
+        (< (length (funcall join-names pos1)) (length (funcall join-names pos2)))))
 
-   ;; Prefer calls that don't have extra arguments, so prefer (1+ 1)
-   ;; over (+ 1 1).
-   ((= (length (plist-get pos1 :funcs)) (length (plist-get pos2 :funcs)))
-    (< (length (plist-get pos1 :literals)) (length (plist-get pos2 :literals))))
+     ;; Prefer direct function calls to using apply.
+     ((and
+       (= pos1-func-count pos2-func-count)
+       (= pos1-arg-count pos2-arg-count))
+      (< pos1-apply-count pos2-apply-count))
 
-   ;; Prefer fewer function calls over all else.
-   (t
-    (< (length (plist-get pos1 :funcs)) (length (plist-get pos2 :funcs))))))
+     ;; Prefer calls that don't have extra arguments, so prefer (1+ 1)
+     ;; over (+ 1 1).
+     ((= pos1-func-count pos2-func-count)
+      (< pos1-arg-count pos2-arg-count))
+
+     ;; Prefer fewer function calls over all else.
+     (t
+      (< (length (plist-get pos1 :funcs)) (length (plist-get pos2 :funcs)))))))
 
 ;;;###autoload
 (defun suggest-update ()

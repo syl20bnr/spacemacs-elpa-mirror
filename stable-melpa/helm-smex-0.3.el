@@ -3,8 +3,8 @@
 ;; Copyright (C) 2016  Peter Vasil
 
 ;; Author: Peter Vasil <mail@petervasil.net>
-;; Version: 0.2
-;; Package-Version: 0.2
+;; Version: 0.3
+;; Package-Version: 0.3
 ;; Package-Requires: ((emacs "24") (smex "3.0") (helm "1.7.7"))
 ;; Keywords: convenience
 
@@ -55,6 +55,13 @@
        (smex-update)))
 
 (defun helm-smex--execute-command (command)
+  (unless (commandp command)
+    (error "`%s' is not a valid command name" command))
+  (setq this-command command)
+  ;; Normally `real-this-command' should never be changed, but here we really
+  ;; want to pretend that M-x <cmd> RET is nothing more than a "key binding" for
+  ;; <cmd>.
+  (setq real-this-command command)
   (let ((prefix-arg current-prefix-arg))
     (unwind-protect
         (command-execute command 'record)

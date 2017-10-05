@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; URL: http://github.com/Kungsgeten/org-brain
-;; Package-Version: 20171003.1448
+;; Package-Version: 20171004.1305
 ;; Keywords: outlines hypermedia
 ;; Package-Requires: ((emacs "25") (org "9"))
 ;; Version: 0.4
@@ -1187,7 +1187,8 @@ If ENTRY is omitted, try to get it from context or prompt for it."
                      (setq description linkdesc))
                    (setq link (match-string 1 link))))
                (setq description (read-string "Description: " description)))
-             (insert (format "\n- %s" (org-make-link-string link description)))
+             (newline-and-indent)
+             (insert (format "- %s" (org-make-link-string link description)))
              (save-buffer)))
     (if (org-brain-filep entry)
         ;; File entry
@@ -1209,7 +1210,10 @@ If ENTRY is omitted, try to get it from context or prompt for it."
         (if (looking-at org-brain-resources-start-re)
             (end-of-line)
           (open-line 1)
-          (insert ":RESOURCES:\n:END:")
+          (indent-for-tab-command)
+          (insert ":RESOURCES:\n")
+          (indent-for-tab-command)
+          (insert ":END:")
           (re-search-backward org-brain-resources-start-re nil t)
           (end-of-line))
         (insert-resource-link))))
