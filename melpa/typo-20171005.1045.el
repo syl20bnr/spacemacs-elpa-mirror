@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 Jorgen Schaefer
 
 ;; Version: 1.1
-;; Package-Version: 20160121.330
+;; Package-Version: 20171005.1045
 ;; Author: Jorgen Schaefer <forcer@forcix.cx>
 ;; URL: https://github.com/jorgenschaefer/typoel
 ;; Created: 6 Feb 2012
@@ -162,6 +162,8 @@ This can be used to disable the electric keys in e.g. XML tags."
     (define-key map (kbd ">>") 'typo-cycle-right-angle-brackets)
     (define-key map (kbd "*") 'typo-cycle-multiplication-signs)
     (define-key map (kbd "SPC") 'typo-cycle-spaces)
+    (define-key map (kbd "?") 'typo-cycle-question-mark)
+    (define-key map (kbd "!") 'typo-cycle-exclamation-mark)
     (define-key map (kbd "/=") "≠")
     (define-key map (kbd "//") "÷")
     (define-key map (kbd ">=") "≥")
@@ -356,6 +358,7 @@ NAME is the name of the command to define.
 DOCSTRING is the docstring for that command.
 
 CYCLE is a list of strings to cycle through."
+  (declare (indent 1) (doc-string 2))
   `(defun ,name (arg)
      ,docstring
      (interactive "P")
@@ -449,6 +452,14 @@ If used with a numeric prefix argument N, N greater-than signs will be inserted.
    ;; " " ; EN SPACE
    " " ; SPACE
   ))
+
+(define-typo-cycle typo-cycle-question-mark
+  "Cycle through various interrogatory marks."
+  ("?" "¿" "‽" "⸘" "⸮"))
+
+(define-typo-cycle typo-cycle-exclamation-mark
+  "Cycle through various exclamatory marks."
+  ("!" "¡" "‽" "⸘"))
 
 (provide 'typo)
 ;;; typo.el ends here

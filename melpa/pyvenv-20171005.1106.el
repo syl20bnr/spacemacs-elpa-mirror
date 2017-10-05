@@ -4,7 +4,7 @@
 
 ;; Author: Jorgen Schaefer <contact@jorgenschaefer.de>
 ;; URL: http://github.com/jorgenschaefer/pyvenv
-;; Package-Version: 20170826.812
+;; Package-Version: 20171005.1106
 ;; Version: 1.10
 ;; Keywords: Python, Virtualenv, Tools
 
@@ -85,6 +85,8 @@ is active, after every command."
 (defcustom pyvenv-virtualenvwrapper-python
   (or (getenv "VIRTUALENVWRAPPER_PYTHON")
       (executable-find "python")
+      (executable-find "py")
+      (executable-find "pythonw")
       "python")
   "The python process which has access to the virtualenvwrapper module.
 

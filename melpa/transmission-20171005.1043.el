@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.12
-;; Package-Version: 20171001.628
+;; Package-Version: 20171005.1043
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -193,6 +193,13 @@ Each function should accept no arguments, and return a string or nil."
   :options '(transmission-ffap
              transmission-ffap-selection
              transmission-ffap-last-killed))
+
+(defcustom transmission-files-command-functions '(mailcap-file-default-commands)
+  "List of functions to use for guessing default applications.
+Each function should accept one argument, a list of file names,
+and return a list of strings or nil."
+  :type 'hook
+  :options '(mailcap-file-default-commands))
 
 (defcustom transmission-geoip-function nil
   "Function used to translate an IP address into a location name.
@@ -400,7 +407,7 @@ and port default to `transmission-host' and
       (dolist (elt headers)
         (insert (format "%s: %s\r\n" (car elt) (cdr elt))))
       (insert "\r\n" content)
-      (process-send-string process (buffer-string)))))
+      (process-send-region process (point-min) (point-max)))))
 
 (defun transmission-wait (process)
   "Wait to receive HTTP response from PROCESS.
@@ -579,9 +586,8 @@ If the array is empty or not found, return nil."
 
 (defun transmission-files-directory-base (filename)
   "Return the top-most parent directory in string FILENAME."
-  (let ((index (and (stringp filename)
-                    (string-match-p "/" filename))))
-    (when index (substring filename 0 (1+ index)))))
+  (let ((index (and (stringp filename) (string-match "/" filename))))
+    (when index (substring filename 0 (match-end 0)))))
 
 (defun transmission-every-prefix-p (prefix list)
   "Return t if PREFIX is a prefix to every string in LIST, otherwise nil."
@@ -774,7 +780,7 @@ NOW is a time, defaulting to `current-time'."
 (defun transmission-tracker-url-p (str)
   "Return non-nil if STR is not just a number."
   (let ((match (string-match "[^[:blank:]]" str)))
-    (when match (aref str match))))
+    (when match (null (< ?0 (aref str match) ?9)))))
 
 (defun transmission-tracker-stats (id)
   "Return the \"trackerStats\" array for torrent id ID."
@@ -793,7 +799,7 @@ NOW is a time, defaulting to `current-time'."
 
 (defun transmission-btih-p (string)
   "Return non-nil if STRING is a BitTorrent info hash, otherwise nil."
-  (if (and string (string-match-p "\\`[[:xdigit:]]\\{40\\}\\'" string)) string))
+  (and string (string-match (rx bos (= 40 xdigit) eos) string) string))
 
 (defun transmission-directory-name-p (name)
   "Return non-nil if NAME ends with a directory separator character."
@@ -1034,16 +1040,16 @@ point or in region, otherwise a `user-error' is signalled."
                         (,marked (format "[%d marked] " (length ,marked)))
                         (,region (format "[%d in region] " (length ids)))))))))))
 
-(defun transmission-collect-hook (hook)
-  "Run HOOK and return a list of non-nil results from calling its elements."
+(defun transmission-collect-hook (hook &rest args)
+  "Run HOOK with ARGS and return a list of non-nil results from its elements."
   (let (res)
-    (run-hook-wrapped
-     hook
-     (lambda (fun)
-       (let ((val (funcall fun)))
-         (when val (cl-pushnew val res :test #'equal)))
-       nil))
-    (nreverse res)))
+    (cl-flet
+        ((collect (fun &rest args)
+           (let ((val (apply fun args)))
+             (when val (cl-pushnew val res :test #'equal))
+             nil)))
+      (apply #'run-hook-wrapped hook #'collect args)
+      (nreverse res))))
 
 (defmacro transmission-with-window-maybe (window &rest body)
   "If WINDOW is non-nil, execute BODY with WINDOW current.
@@ -1117,7 +1123,7 @@ When called with a prefix, prompt for DIRECTORY."
    "torrent-add"
    (append (if (and (file-readable-p torrent) (not (file-directory-p torrent)))
                `(:metainfo ,(with-temp-buffer
-                              (insert-file-contents torrent)
+                              (insert-file-contents-literally torrent)
                               (base64-encode-string (buffer-string))))
              (setq torrent (string-trim torrent))
              `(:filename ,(if (transmission-btih-p torrent)
@@ -1461,8 +1467,10 @@ See `transmission-read-time' for details on time input."
   "Run a command COMMAND on the FILE at point."
   (interactive
    (let* ((fap (run-hook-with-args-until-success 'file-name-at-point-functions))
-          (def (mailcap-file-default-commands
-                (list (replace-regexp-in-string "\\.part\\'" "" fap))))
+          (fn (replace-regexp-in-string "\\.part\\'" "" fap))
+          (def (let ((lists (transmission-collect-hook
+                             'transmission-files-command-functions (list fn))))
+                 (delete-dups (apply #'append lists))))
           (prompt (and fap (concat "! on " (file-name-nondirectory fap)
                                    (when def (format " (default %s)" (car def)))
                                    ": ")))
@@ -1699,8 +1707,8 @@ PIECES and COUNT are the same as in `transmission-format-pieces'."
   "Format piece data into a string.
 PIECES and COUNT are the same as in `transmission-format-pieces'.
 SIZE is the file size in bytes of a single piece."
-  (let ((have (apply #'+ (mapcar #'transmission-hamming-weight
-                                 (base64-decode-string pieces)))))
+  (let ((have (cl-loop for b across (base64-decode-string pieces)
+                       sum (transmission-hamming-weight b))))
     (concat
      "Piece count: " (transmission-group-digits have)
      " / " (transmission-group-digits count)

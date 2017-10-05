@@ -4,8 +4,8 @@
 
 ;; Author: Adrien Becchis <adriean.khisbe@live.fr>
 ;; Created:  2014-09-06
-;; Version: 0.5.0
-;; Package-Version: 0.5.0
+;; Version: 0.5.1
+;; Package-Version: 0.5.1
 ;; Keywords: convenience, editing, tools
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -153,11 +153,12 @@ Returns nil."
 
 (defmacro omni-kill--generate-dispatch-command (command)
   "Generate a dispath command for the given COMMAND."
- `(defun ,(intern (format "omni-%s" (eval command))) (char)
-       ,(format "%s the thing associated with the given CHAR.
+ `(defun ,(intern (format "omni-%s" (eval command))) (char-or-thing)
+       ,(format "%s the thing associated with the given CHAR-OR-THING.
 Association are stored in the `omni-kill-thing-to-letter-alist' variable" (capitalize (eval command))) ;§todo: doc
        (interactive "cPick a thing:");§later: recap list
-       (let ((thing (cdr-safe (assoc char omni-kill-thing-to-letter-alist))))
+       (let ((thing (if (symbolp char-or-thing) char-or-thing
+                      (cdr-safe (assoc char-or-thing omni-kill-thing-to-letter-alist)))))
          (if thing
              (,(intern "omni-kill--do-thing-at-point")
               ',(cdr (assoc (eval command) omni-kill-action-alist))
