@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171005.1310
+;; Package-Version: 20171005.1530
 ;; Keywords: help, lisp
 ;; Version: 0.3
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2"))
@@ -817,7 +817,7 @@ See also `helpful-callable' and `helpful-variable'."
 
 ;;;###autoload
 (defun helpful-at-point ()
-  "Show help for the symbol point."
+  "Show help for the symbol at point."
   (interactive)
   (-if-let (symbol (symbol-at-point))
       (helpful-symbol symbol)
