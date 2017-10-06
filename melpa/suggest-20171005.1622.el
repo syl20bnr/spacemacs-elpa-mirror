@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Version: 0.6
-;; Package-Version: 20171005.32
+;; Package-Version: 20171005.1622
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.4") (loop "1.3") (dash "2.13.0") (s "1.11.0") (f "0.18.2"))
 ;; URL: https://github.com/Wilfred/suggest.el
@@ -50,6 +50,7 @@
    #'last
    #'cons
    #'nth
+   #'nthcdr
    #'list
    #'length
    #'safe-length
@@ -277,16 +278,44 @@ See also `suggest-extra-args'.")
    ;; There's no special values for `list', and it produces silly
    ;; results when we add values.
    #'list '()
-   ;; Similarly, we can use nil with `car' to build a list, but
-   ;; otherwise we're just building an irrelevant list if we use the
-   ;; default values.
-   #'car '(nil)
+   ;; Similarly, we can use nil when building a list, but otherwise
+   ;; we're just building an irrelevant list if we use the default
+   ;; values.
+   #'cons '(nil)
+   #'-cons* '(nil)
+   #'-snoc '(nil)
+   #'append '(nil)
    ;; `format' has specific formatting strings that are worth trying.
    #'format '("%d" "%o" "%x" "%X" "%e" "%c" "%f" "%s" "%S")
    ;; `-iterate' is great for building incrementing/decrementing lists.
-   ;; (an alternative to `number-sequence'.
+   ;; (an alternative to `number-sequence').
    #'-iterate '(1+ 1-)
-   ;; These common values often set flags in interesting ways.
+   ;; For indexing functions, just use non-negative numbers. This
+   ;; avoids confusing results like (last nil 5) => nil.
+   #'elt '(0 1 2)
+   #'nth '(0 1 2)
+   #'nthcdr '(0 1 2)
+   #'last '(0 1 2)
+   #'-drop '(0 1 2)
+   #'-drop-last '(0 1 2)
+   #'-take '(0 1 2)
+   ;; For functions that look up a value, don't supply any extra
+   ;; arguments.
+   #'plist-member '()
+   #'assoc '()
+   ;; Likewise for comparisons, there's no interesting extra value we can offer.
+   #'-is-suffix-p '()
+   #'-is-prefix-p '()
+   #'-is-infix-p '()
+   ;; Remove has some weird behaviours with t: (remove 'foo t) => t.
+   ;; Only use nil as an extra value, so we can discover remove as an
+   ;; alternative to `-non-nil'.
+   #'remove '(nil)
+   ;; mapcar with identity is a fun way to convert sequences (strings,
+   ;; vectors) to lists.
+   #'mapcar '(identity)
+   ;; These common values often set flags in interesting
+   ;; ways.
    t '(nil t -1 0 1 2))
   "Some functions work best with a special extra argument.
 
@@ -308,7 +337,10 @@ we look up `t' instead.")
          (< (car args) 0))
     ;; If `read' is called with nil or t, it prompts interactively.
     (and (eq fn 'read)
-         (member args '(nil (nil) (t)))))))
+         (member args '(nil (nil) (t))))
+    ;; Work around https://github.com/magnars/dash.el/issues/241
+    (and (memq fn '(-interleave -zip))
+         (null args)))))
 
 (defface suggest-heading
   '((((class color) (background light)) :foreground "DarkGoldenrod4" :weight bold)

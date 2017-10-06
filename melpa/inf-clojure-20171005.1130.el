@@ -5,7 +5,7 @@
 ;; Authors: Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Olin Shivers <shivers@cs.cmu.edu>
 ;; URL: http://github.com/clojure-emacs/inf-clojure
-;; Package-Version: 20170910.30
+;; Package-Version: 20171005.1130
 ;; Keywords: processes, clojure
 ;; Version: 2.1.0-snapshot
 ;; Package-Requires: ((emacs "24.4") (clojure-mode "5.6"))
@@ -1240,7 +1240,7 @@ See variable `inf-clojure-buffer'."
       (inf-clojure--read-or-nil)
       (inf-clojure--list-or-nil))))
 
-(defconst inf-clojure-clojure-expr-break-chars " \t\n\"\'`><,;|&{(")
+(defconst inf-clojure-clojure-expr-break-chars " \t\n\"\'`><,;|&{()[]")
 
 (defun inf-clojure-completion-bounds-of-expr-at-point ()
   "Return bounds of expression at point to complete."
@@ -1248,7 +1248,9 @@ See variable `inf-clojure-buffer'."
     (save-excursion
       (let ((end (point)))
         (skip-chars-backward (concat "^" inf-clojure-clojure-expr-break-chars))
-        (cons (point) end)))))
+        (let ((first-char (substring-no-properties (thing-at-point 'symbol) 0 1)))
+          (when (string-match-p "[^0-9]" first-char)
+            (cons (point) end)))))))
 
 (defun inf-clojure-completion-expr-at-point ()
   "Return expression at point to complete."
