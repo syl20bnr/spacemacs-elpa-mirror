@@ -4,7 +4,7 @@
 
 ;; Author: Magnar Sveen <magnars@gmail.com>
 ;; Version: 2.13.0
-;; Package-Version: 20170924.2240
+;; Package-Version: 20171006.328
 ;; Keywords: lists
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -1105,11 +1105,12 @@ elements of LIST.  Keys are compared by `equal'."
 (defun -interleave (&rest lists)
   "Return a new list of the first item in each list, then the second etc."
   (declare (pure t) (side-effect-free t))
-  (let (result)
-    (while (-none? 'null lists)
-      (--each lists (!cons (car it) result))
-      (setq lists (-map 'cdr lists)))
-    (nreverse result)))
+  (when lists
+    (let (result)
+      (while (-none? 'null lists)
+        (--each lists (!cons (car it) result))
+        (setq lists (-map 'cdr lists)))
+      (nreverse result))))
 
 (defmacro --zip-with (form list1 list2)
   "Anaphoric form of `-zip-with'.
@@ -1151,16 +1152,17 @@ of cons cells. Otherwise, return the groupings as a list of lists.
 Please note! This distinction is being removed in an upcoming 3.0
 release of Dash. If you rely on this behavior, use -zip-pair instead."
   (declare (pure t) (side-effect-free t))
-  (let (results)
-    (while (-none? 'null lists)
-      (setq results (cons (mapcar 'car lists) results))
-      (setq lists (mapcar 'cdr lists)))
-    (setq results (nreverse results))
-    (if (= (length lists) 2)
-        ;; to support backward compatability, return
-        ;; a cons cell if two lists were provided
-        (--map (cons (car it) (cadr it)) results)
-      results)))
+  (when lists
+    (let (results)
+      (while (-none? 'null lists)
+        (setq results (cons (mapcar 'car lists) results))
+        (setq lists (mapcar 'cdr lists)))
+      (setq results (nreverse results))
+      (if (= (length lists) 2)
+          ;; to support backward compatability, return
+          ;; a cons cell if two lists were provided
+          (--map (cons (car it) (cadr it)) results)
+        results))))
 
 (defalias '-zip-pair '-zip)
 

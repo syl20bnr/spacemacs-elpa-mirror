@@ -4,7 +4,7 @@
 
 ;; Author: DarkSun <lujun9972@gmail.com>
 ;; Keywords: lisp, baidu
-;; Package-Version: 20160426.519
+;; Package-Version: 20171006.648
 ;; Version:0.1
 ;; Package-Requires: ((cl-lib "0.5"))
 
@@ -40,6 +40,7 @@
 (require 'cl-lib)
 (require 'url)
 (require 'json)
+(require 'subr-x)
 (defgroup baidu-life nil
   "爱生活,爱百度"
   :prefix "baidu-life-")
@@ -89,8 +90,8 @@
               json-string)
           (goto-char (point-min))
           (when (search-forward "charset=" nil t)
-            (setq charset (intern (downcase (buffer-substring-no-properties (point) (progn (end-of-line)
-                                                                                           (point)))))))
+            (setq charset (intern (string-trim (downcase (buffer-substring-no-properties (point) (progn (search-forward "\"" nil t)
+                                                                                           (- (point) 1))))))))
           (goto-char (point-min))
           (search-forward-regexp "^$")
           (setq json-string (buffer-substring (point) (point-max)))

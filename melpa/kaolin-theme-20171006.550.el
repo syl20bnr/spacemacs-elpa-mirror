@@ -1,12 +1,12 @@
 ;;; kaolin-theme.el --- A dark jade theme inspired by Sierra.vim
 
-;; Copyright (C) 2017 0rdy
+;; Copyright (C) 2017 ogdenwebb
 
-;; Author: 0rdy <mail@0rdy.com>
-;; URL: https://github.com/0rdy/kaolin-theme
-;; Package-Version: 20171005.1058
+;; Author: ogdenwebb <ogdenwebb@gmail.com>
+;; URL: https://github.com/ogdenwebb/kaolin-theme
+;; Package-Version: 20171006.550
 ;; Package-Requires: ((emacs "24"))
-;; Version: 0.9.0
+;; Version: 0.9.1
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
