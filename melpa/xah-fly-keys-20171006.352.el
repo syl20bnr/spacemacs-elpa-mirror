@@ -4,7 +4,7 @@
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
 ;; Version: 8.2.20170924
-;; Package-Version: 20170924.2151
+;; Package-Version: 20171006.352
 ;; Created: 10 Sep 2013
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, emulations, vim, ergoemacs
@@ -2478,6 +2478,9 @@ Version 2017-01-29"
     ("'" . "q")
     (";" . "y")
     ("/" . "ü")
+	("[" . "ß")
+    ("]" . "´")
+	("=" . "+")
     ("-" . "ä")
 
     ("a" . "a")
@@ -2876,6 +2879,13 @@ Version 2017-01-21"
 ;;    ("x" . set-selection-coding-system)))
 
 (xah-fly--define-keys
+ ;; kinda replacement related
+ (define-prefix-command 'xah-fly-comma-keymap)
+ '(
+   ("t" . xref-find-definitions)
+   ("n" . xref-pop-marker-stack)))
+
+(xah-fly--define-keys
  (define-prefix-command 'xah-fly-leader-key-map)
  '(
    ("SPC" . xah-fly-insert-mode-activate)
@@ -2885,7 +2895,7 @@ Version 2017-01-21"
 
    ("." . xah-fly-dot-keymap)
    ("'" . xah-fill-or-unfill)
-   ("," . nil)
+   ("," . xah-fly-comma-keymap)
    ("-" . xah-display-form-feed-as-line)
    ("/" . nil)
    (";" . nil)

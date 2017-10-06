@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Version: 0.6
-;; Package-Version: 20171005.1622
+;; Package-Version: 20171006.25
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.4") (loop "1.3") (dash "2.13.0") (s "1.11.0") (f "0.18.2"))
 ;; URL: https://github.com/Wilfred/suggest.el
@@ -41,6 +41,12 @@
 (defvar suggest-functions
   (list
    ;; TODO: add funcall, apply and map?
+   ;; Boolean functions
+   #'not
+   #'booleanp
+   #'consp
+   #'numberp
+   #'stringp
    ;; Built-in functions that access or examine lists.
    ;; TODO: why isn't car marked as pure?
    #'car
@@ -635,7 +641,7 @@ This is primarily for quoting symbols."
     ;; See if (func value1 value2...) gives us a value.
     (-when-let (result (suggest--call func input-values input-literals))
       (push result outputs))
-    
+
     ;; See if (apply func input-values) gives us a value.
     (when (and (eq (length input-values) 1) (listp (car input-values)))
       (-when-let (result (suggest--call func input-values input-literals t))
@@ -700,7 +706,7 @@ than their values."
                        (cl-incf possibilities-count)
                        (when (>= possibilities-count suggest--max-possibilities)
                          (throw 'done nil))
-                       
+
                        ;; If we're on the first iteration, we're just
                        ;; searching all input permutations. Don't try any
                        ;; other permutations, or we end up showing e.g. both
@@ -795,7 +801,7 @@ than their values."
     (setq possibilities
           (-take 5
                  (-sort #'suggest--cmp-relevance possibilities)))
-    
+
     (if possibilities
         (suggest--write-suggestions
          possibilities
