@@ -1,8 +1,8 @@
 ;;; evil-colemak-minimal.el --- Minimal Colemak key bindings for evil-mode
 
 ;; Author: Bryan Allred <bryan@revolvingcow.com>
-;; Version: 1.0.0
-;; Package-Version: 20160922.226
+;; Version: 1.1.0
+;; Package-Version: 20171006.617
 ;; Package-Requires: ((emacs "24") (evil "1.2.12"))
 ;; Keywords: colemak evil
 ;; URL: https://github.com/bmallred/evil-colemak-minimal
@@ -44,44 +44,58 @@
 
 ;; Helper functions to set maps
 (defun evil-colemak-minimal-set-for-all (key def &optional maps)
+  "Binds keymaps to all states or only those provided.
+
+KEY is the key, or key chord, to bind
+DEF is the defined function to execute
+MAPS (optional) is a list of states to bind to"
   (unless maps
     (setq maps (list 'normal
                      'visual
                      'insert
-                     'emacs
                      'motion)))
   (while maps
     (evil-define-minor-mode-key (pop maps) 'evil-colemak-minimal-mode key def)))
 
 (defun evil-colemak-minimal-set-for-all-but-insert (key def)
+  "Binds keymaps to all states except insert.
+
+KEY is the key, or key chord, to bind
+DEF is the defined function to execute"
   (evil-colemak-minimal-set-for-all key def (list 'normal
                                                   'visual
-                                                  'emacs
                                                   'motion)))
 
 (defun evil-colemak-minimal-set-for-all-but-insert-and-motion (key def)
+  "Binds keymaps to all states except insert and motion (visual).
+
+KEY is the key, or key chord, to bind
+DEF is the defined function to execute"
   (evil-colemak-minimal-set-for-all key def (list 'normal
-                                                  'visual
-                                                  'emacs)))
+                                                  'visual)))
 
 (defun evil-colemak-minimal-set-for-normal (key def)
+  "Binds keymaps to all states except normal.
+
+KEY is the key, or key chord, to bind
+DEF is the defined function to execute"
   (evil-colemak-minimal-set-for-all key def (list 'normal)))
 
 ;; Major keys which were replaced
 (defconst evil-colemak-minimal-left "s"
-  "Movement left normally mapped to 'h'")
+  "Movement left normally mapped to 'h'.")
 (defconst evil-colemak-minimal-down "n"
-  "Movement down normally mapped to 'j'")
+  "Movement down normally mapped to 'j'.")
 (defconst evil-colemak-minimal-up "e"
-  "Movement up normally mapped to 'k'")
+  "Movement up normally mapped to 'k'.")
 (defconst evil-colemak-minimal-right "t"
-  "Movement right normally mapped to 'l'")
+  "Movement right normally mapped to 'l'.")
 (defconst evil-colemak-minimal-next "h"
-  "Movement to the next/previous search result normally mapped to 'n'")
+  "Movement to the next/previous search result normally mapped to 'n'.")
 (defconst evil-colemak-minimal-end "l"
-  "Movement to the end of a word normally mapped to 'e'")
+  "Movement to the end of a word normally mapped to 'e'.")
 (defconst evil-colemak-minimal-towards "k"
-  "Movement towards a character normally mapped to 't'")
+  "Movement towards a character normally mapped to 't'.")
 
 ;; Left, Down, Up, Right
 (evil-colemak-minimal-set-for-all-but-insert evil-colemak-minimal-left 'evil-backward-char)
@@ -111,12 +125,6 @@
 ;; (K)in of character
 (evil-colemak-minimal-set-for-all-but-insert evil-colemak-minimal-towards 'evil-find-char-to)
 (evil-colemak-minimal-set-for-all-but-insert (upcase evil-colemak-minimal-towards) 'evil-find-char-to-backward)
-
-;; Code folding
-(evil-colemak-minimal-set-for-normal (kbd "zM") 'hs-hide-all)
-(evil-colemak-minimal-set-for-normal (kbd "zm") 'hs-hide-level)
-(evil-colemak-minimal-set-for-normal (kbd "zR") 'hs-show-all)
-(evil-colemak-minimal-set-for-normal (kbd "zr") 'hs-show-block)
 
 (provide 'evil-colemak-minimal)
 
