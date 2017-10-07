@@ -4,7 +4,7 @@
 
 ;; Author: Ivan Malison <IvanMalison@gmail.com>
 ;; Keywords: org-mode projectile todo tools outlines
-;; Package-Version: 20170819.1047
+;; Package-Version: 20171006.1230
 ;; URL: https://github.com/IvanMalison/org-projectile
 ;; Version: 1.1.0
 ;; Package-Requires: ((projectile "0.11.0") (dash "2.10.0") (emacs "24") (s "1.9.0") (org-category-capture "0.0.0"))
@@ -54,11 +54,6 @@
 
 (defcustom org-projectile-capture-template "* TODO %?\n"
   "The default capture template to use for org-projectile TODOs."
-  :type '(string)
-  :group 'org-projectile)
-
-(defcustom org-projectile-linked-capture-template "* TODO %? %A\n"
-  "The default linked capture template to use for org-projectile TODOs."
   :type '(string)
   :group 'org-projectile)
 
@@ -334,8 +329,8 @@
         (make-instance 'org-projectile-per-project-strategy)))
 
 ;;;###autoload
-(defun org-projectile-project-todo-completing-read
-    (&optional capture-template &rest additional-options)
+(cl-defun org-projectile-project-todo-completing-read
+    (&rest additional-options &key capture-template)
   "Select a project using a `projectile-completing-read' and record a TODO.
 
 If CAPTURE-TEMPLATE is provided use it as the capture template
@@ -353,8 +348,8 @@ were part of the capture template definition."
                   :options additional-options)))
 
 ;;;###autoload
-(defun org-projectile-capture-for-current-project
-    (&optional capture-template &rest additional-options)
+(cl-defun org-projectile-capture-for-current-project
+    (&rest additional-options &key capture-template)
   "Capture a TODO for the current active projectile project.
 
 If CAPTURE-TEMPLATE is provided use it as the capture template

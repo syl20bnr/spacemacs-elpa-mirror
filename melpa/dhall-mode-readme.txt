@@ -5,8 +5,8 @@ Some of its major features include:
 
  - syntax highlighting (font lock),
 
- - Basic indendation
+ - Basic indendation, multi line string support
 
- - Error highlighting on unbalanced record, parenthesis in functions
+ - Automatic formatting on save (configuratle via variable)
 
-Todo: Add REPL support and automatic formatting on save
+ - Error highlighting

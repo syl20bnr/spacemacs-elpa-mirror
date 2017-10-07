@@ -5,8 +5,8 @@
 ;; Author: Sibi Prabakaran <sibi@psibi.in>
 ;; Maintainer: Sibi Prabakaran <sibi@psibi.in>
 ;; Keywords: languages
-;; Package-Version: 20170930.309
-;; Version: 0.1.1
+;; Package-Version: 20171006.1233
+;; Version: 0.1.3
 ;; Package-Requires: ((emacs "24.4") (ansi-color "3.0"))
 ;; URL: https://github.com/psibi/dhall-mode
 
@@ -34,17 +34,17 @@
 ;;
 ;;  - syntax highlighting (font lock),
 ;;
-;;  - Basic indendation
+;;  - Basic indendation, multi line string support
 ;;
-;;  - Error highlighting on unbalanced record, parenthesis in functions
+;;  - Automatic formatting on save (configuratle via variable)
 ;;
-;; Todo: Add REPL support and automatic formatting on save
+;;  - Error highlighting
 ;;
 ;;; Code:
 
 (require 'ansi-color)
 
-(defconst dhall-mode-version "0.1.1" 
+(defconst dhall-mode-version "0.1.3" 
   "Dhall Mode version.")
 
 (defgroup dhall nil 
@@ -57,20 +57,21 @@
 ;; Create the syntax table for this mode.
 (defvar dhall-mode-syntax-table 
   (let ((st (make-syntax-table))) 
-    (modify-syntax-entry ?\  " " st) 
-    (modify-syntax-entry ?\t " " st)
-    (modify-syntax-entry ?\\ "_" st) 
-    (modify-syntax-entry ?\" "\"" st) 
-    (modify-syntax-entry ?\[  "(]" st) 
-    (modify-syntax-entry ?\]  ")[" st) 
-    (modify-syntax-entry ?\( "()" st) 
-    (modify-syntax-entry ?\) ")(" st) 
-    (modify-syntax-entry ?- ". 12" st) 
-    ;; Taken from haskell-mode: https://stackoverflow.com/a/20845468/1651941
+        ;; Taken from haskell-mode: https://stackoverflow.com/a/20845468/1651941
     (modify-syntax-entry ?\{  "(}1nb" st)
     (modify-syntax-entry ?\}  "){4nb" st)
     (modify-syntax-entry ?-  "_ 123" st)
     (modify-syntax-entry ?\n ">" st)
+    (modify-syntax-entry ?\  " " st) 
+    (modify-syntax-entry ?\t " " st)
+    (modify-syntax-entry ?\[  "(]" st) 
+    (modify-syntax-entry ?\]  ")[" st) 
+    (modify-syntax-entry ?\( "()" st) 
+    (modify-syntax-entry ?\) ")(" st) 
+    ;; Let us handle escapes and string
+    (modify-syntax-entry ?\\ "." st)
+    (modify-syntax-entry ?\" "." st)
+    ;; End
     st)
   "Syntax table used while in `dhall-mode'.")
 
@@ -166,16 +167,68 @@ Should be dhall or the complete path to your dhall executable,
   (if dhall-format-at-save
       (dhall-format)))
 
+(defun dhall--get-parse-state (pos)
+  "Get the result of `syntax-ppss' at POS."
+  (save-excursion (save-match-data (syntax-ppss pos))))
+
+(defun dhall--get-string-type (parse-state)
+  "Get the type of string based on PARSE-STATE."
+  (let ((string-start (nth 8 parse-state)))
+    (and string-start (get-text-property string-start 'dhall-string-type))))
+
+(defun dhall--mark-string (pos string-type)
+  "Mark string as a Dhall string.
+
+POS position of start of string
+STRING-TYPE type of string based off of Emacs syntax table types"
+  (put-text-property pos (1+ pos)
+                     'syntax-table (string-to-syntax "|"))
+  (put-text-property pos (1+ pos)
+                     'dhall-string-type string-type))
+
+(defun dhall--double-quotes ()
+  "Handle Dhall double quotes."
+  (let* ((pos (match-beginning 0))
+          (ps (dhall--get-parse-state pos))
+          (string-type (dhall--get-string-type ps)))
+    (dhall--mark-string pos ?\")))
+
+(defun dhall--single-quotes ()
+  "Handle Dhall single quotes"
+  (let* ((pos (match-beginning 0))
+          (ps (dhall--get-parse-state pos))
+          (string-type (dhall--get-string-type ps)))
+    (dhall--mark-string pos ?\")))
+
+(defun dhall-syntax-propertize (start end)
+  "Special syntax properties for Dhall from START to END"
+  (goto-char start)
+  (remove-text-properties start end '(syntax-table nil dhall-string-type nil))
+  (funcall
+   (syntax-propertize-rules
+    ("'\\{2,\\}"
+     (0 (ignore (dhall--single-quotes))))
+    ("\""
+     (0 (ignore (dhall--double-quotes))))
+    )start end))
+
 ;; The main mode functions
 ;;;###autoload
 (define-derived-mode dhall-mode prog-mode 
   "Dhall"
   "Major mode for editing Dhall files." 
   :group 'dhall 
-  (setq font-lock-defaults '((dhall-mode-font-lock-keywords) nil nil)) 
+  :syntax-table dhall-mode-syntax-table
+  (setq font-lock-defaults '(dhall-mode-font-lock-keywords))
   (setq-local indent-tabs-mode t) 
   (setq-local tab-width 4) 
-  (set-syntax-table dhall-mode-syntax-table) 
+  (setq-local comment-start "-- ")
+  (setq-local comment-end "")
+  ;; Special syntax properties for Dhall
+  (setq-local syntax-propertize-function 'dhall-syntax-propertize)
+  
+  ;; Look at text properties when parsing
+  ;; (setq-local parse-sexp-lookup-properties t)
   (add-hook 'after-save-hook 'dhall-format-maybe nil t))
 
 ;; Automatically use dhall-mode for .dhall files.

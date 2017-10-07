@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 20171003.1529
+;; Package-Version: 20171006.1343
 ;; Version: 2.10
 
 ;; This file is not part of GNU Emacs.
@@ -2986,13 +2986,25 @@ This includes both declarations and definitions."
 
 (defvar rtags-last-check-style nil)
 
-(defun rtags-parse-check-style (checkstyle)
+(defun rtags-visible-buffers ()
+  (let ((ret))
+    (dolist (frame (frame-list))
+      (dolist (window (window-list frame))
+        (let* ((buf (window-buffer window))
+               (name (and buf (rtags-trampify (buffer-file-name buf)))))
+          (when name
+            (push (cons name buf) ret)))))
+    ret))
+
+(defun rtags-parse-check-style (buffers checkstyle)
   (when checkstyle
     (setq rtags-last-check-style checkstyle))
   (dolist (cur checkstyle)
     (let* ((file (rtags-trampify (car cur)))
-           (diags (cdr cur))
-           (buf (find-buffer-visiting file)))
+           (buf (cdr (assoc file buffers)))
+           (diags (cdr cur)))
+      ;; (unless buf
+      ;;   (message "ditched %d diags for %s" (length diags) file))
       (when buf
         (with-current-buffer buf
           (rtags-overlays-remove)
@@ -3014,37 +3026,36 @@ This includes both declarations and definitions."
 (defvar rtags-diagnostics-errors nil
   "List of diagnostics errors.")
 
-(defun rtags-parse-diagnostics (&optional buffer)
+(defun rtags-parse-diagnostics ()
   (save-excursion
-    (with-current-buffer (or buffer (rtags-get-buffer-create-no-undo rtags-diagnostics-raw-buffer-name))
-      (while (and (goto-char (point-min))
-                  (search-forward "\n" (point-max) t))
-        (let* ((pos (1- (point)))
-               (data (and (> (1- pos) (point-min))
-                          (save-restriction
-                            (narrow-to-region (point-min) pos)
-                            (save-excursion
-                              (goto-char (point-min))
-                              (unless (looking-at "Can't seem to connect to server")
-                                (condition-case nil
-                                    (eval (read (current-buffer)))
-                                  (error
-                                   (message "****** Got Diagnostics Error ******")
-                                   (setq rtags-diagnostics-errors
-                                         (append rtags-diagnostics-errors
-                                                 (list (buffer-substring-no-properties (point-min) (point-max)))))))))))))
-          (cond ((not (listp data)))
-                ((eq (car data) 'checkstyle)
-                 (when rtags-spellcheck-enabled
-                   (rtags-parse-check-style (cdr data))))
-                ((eq (car data) 'progress)
-                 (setq rtags-last-index (nth 1 data)
-                       rtags-last-total (nth 2 data)
-                       rtags-remaining-jobs (nth 3 data)))
-                (t))
-          (run-hooks 'rtags-diagnostics-hook)
-          (forward-char 1)
-          (delete-region (point-min) (point)))))))
+    (while (and (goto-char (point-min))
+                (search-forward "\n" (point-max) t))
+      (let* ((pos (1- (point)))
+             (data (and (> (1- pos) (point-min))
+                        (save-restriction
+                          (narrow-to-region (point-min) pos)
+                          (save-excursion
+                            (goto-char (point-min))
+                            (unless (looking-at "Can't seem to connect to server")
+                              (condition-case nil
+                                  (eval (read (current-buffer)))
+                                (error
+                                 (message "****** Got Diagnostics Error ******")
+                                 (setq rtags-diagnostics-errors
+                                       (append rtags-diagnostics-errors
+                                               (list (buffer-substring-no-properties (point-min) (point-max)))))))))))))
+        (cond ((not (listp data)))
+              ((eq (car data) 'checkstyle)
+               (when rtags-spellcheck-enabled
+                 (rtags-parse-check-style (rtags-visible-buffers) (cdr data))))
+              ((eq (car data) 'progress)
+               (setq rtags-last-index (nth 1 data)
+                     rtags-last-total (nth 2 data)
+                     rtags-remaining-jobs (nth 3 data)))
+              (t))
+        (run-hooks 'rtags-diagnostics-hook)
+        (forward-char 1)
+        (delete-region (point-min) (point))))))
 
 (defun rtags-check-overlay (overlay)
   (when (and (overlayp overlay)
@@ -3341,9 +3352,8 @@ This includes both declarations and definitions."
   ;;   (insert output))
   (with-current-buffer (rtags-get-buffer-create-no-undo rtags-diagnostics-raw-buffer-name)
     (goto-char (point-max))
-    (insert output))
-  ;; only try to process diagnostics if we detect an end condition
-  (rtags-parse-diagnostics))
+    (insert output)
+    (rtags-parse-diagnostics)))
 
 (defvar rtags-diagnostics-mode-map (make-sparse-keymap))
 (define-key rtags-diagnostics-mode-map (kbd "q") 'rtags-call-bury-or-delete)

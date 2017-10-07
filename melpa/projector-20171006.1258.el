@@ -4,7 +4,7 @@
 ;;
 ;; Author: Justin Talbott <justin@waymondo.com>
 ;; URL: https://github.com/waymondo/projector
-;; Package-Version: 20170717.1151
+;; Package-Version: 20171006.1258
 ;; Version: 0.3.1
 ;; Package-Requires: ((alert "1.1") (projectile "0.11.0") (cl-lib "0.5"))
 ;; License: GNU General Public License version 3, or (at your option) any later version
@@ -154,11 +154,12 @@ This is usually most helpful to set on a directoy local level via a
 https://github.com/abo-abo/swiper")))
      (t (funcall projector-completion-system prompt choices)))))
 
-(ivy-set-actions
- 'projector-run-command-buffer-prompt
- '(("D" (lambda (cmd)
-          (delete cmd projector-command-history))
-    "remove from history")))
+(with-eval-after-load "ivy"
+  (ivy-set-actions
+   'projector-run-command-buffer-prompt
+   '(("D" (lambda (cmd)
+            (delete cmd projector-command-history))
+      "remove from history"))))
 
 ;;;###autoload
 (defun projector-rerun-buffer-process ()
