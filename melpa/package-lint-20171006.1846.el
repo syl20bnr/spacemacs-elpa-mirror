@@ -5,7 +5,7 @@
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;;         Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/purcell/package-lint
-;; Package-Version: 20170907.201
+;; Package-Version: 20171006.1846
 ;; Keywords: lisp
 ;; Version: 0
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
@@ -358,8 +358,8 @@ Instead it should use `user-emacs-directory' or `locate-user-emacs-file'."
          (format "You should include standard keywords: see the variable `finder-known-keywords'."))))))
 
 (defun package-lint--check-url-header ()
-  "Verify that the package has an HTTPS or HTTP URL header."
-  (if (package-lint--goto-header "URL")
+  "Verify that the package has an HTTPS or HTTP Homepage/URL header."
+  (if (package-lint--goto-header "\\(?:URL\\|Homepage\\)")
       (let ((url (match-string 3))
             (url-start (match-beginning 3)))
         (unless (and (equal (thing-at-point 'url) url)
@@ -371,7 +371,7 @@ Instead it should use `user-emacs-directory' or `locate-user-emacs-file'."
            "Package URLs should be a single HTTPS or HTTP URL.")))
     (package-lint--error
      1 1 'error
-     "Package should have a URL header.")))
+     "Package should have a Homepage or URL header.")))
 
 (defun package-lint--check-dependency-list ()
   "Check the contents of the \"Package-Requires\" header.
@@ -966,4 +966,7 @@ otherwise."
          nil t)))))
 
 (provide 'package-lint)
+;; Local Variables:
+;; indent-tabs-mode: nil
+;; End:
 ;;; package-lint.el ends here
