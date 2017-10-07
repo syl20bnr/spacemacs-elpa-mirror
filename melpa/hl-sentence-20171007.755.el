@@ -4,7 +4,7 @@
 
 ;; Author: Donald Ephraim Curtis <dcurtis@milkbox.net>
 ;; URL: http://github.com/milkypostman/hl-sentence
-;; Package-Version: 20170812.646
+;; Package-Version: 20171007.755
 ;; Version: 3
 ;; Keywords: highlighting
 
@@ -94,7 +94,7 @@
 		     (current-buffer))))
 
 (setq hl-sentence-extent (make-overlay 0 0))
-(overlay-put hl-sentence-extent 'face 'hl-sentence-face)
+(overlay-put hl-sentence-extent 'face 'hl-sentence)
 
 (provide 'hl-sentence)
 ;; Local Variables:

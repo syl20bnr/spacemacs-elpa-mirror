@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Version: 0.6
-;; Package-Version: 20171006.25
+;; Package-Version: 20171007.930
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.4") (loop "1.3") (dash "2.13.0") (s "1.11.0") (f "0.18.2"))
 ;; URL: https://github.com/Wilfred/suggest.el
@@ -34,6 +34,7 @@
 (require 's)
 (require 'f)
 (require 'subr-x)
+(require 'cl-extra) ;; cl-prettyprint
 (eval-when-compile
   (require 'cl-lib)) ;; cl-incf
 
