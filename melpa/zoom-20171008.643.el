@@ -22,7 +22,7 @@
 
 ;; Author: Andrea Cardaci <cyrus.and@gmail.com>
 ;; Version: 0.1.0
-;; Package-Version: 20171007.1841
+;; Package-Version: 20171008.643
 ;; URL: https://github.com/cyrus-and/zoom
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: frames
@@ -148,11 +148,14 @@ ARGUMENTS is ignored."
 
 (defun zoom--update ()
   "Update the window layout in the current frame."
-  ;; temporarily disables this mode during resize to avoid infinite recursion
-  ;; and enable `window-combination-resize' too ensure that other windows are
-  ;; resized nicely after resizing the selected one
+  ;; temporarily disables this mode during resize to avoid infinite recursion,
+  ;; enable `window-combination-resize' to make sure that other windows are
+  ;; resized nicely after resizing the selected one and enable
+  ;; `window-resize-pixelwise' to make sure that the exact same amount of pixels
+  ;; is assigned to siblings
   (let ((zoom-mode nil)
-        (window-combination-resize t))
+        (window-combination-resize t)
+        (window-resize-pixelwise t))
     ;; start from a balanced layout anyway
     (balance-windows)
     ;; check if the selected window is not ignored

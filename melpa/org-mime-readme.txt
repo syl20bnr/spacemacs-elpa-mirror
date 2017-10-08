@@ -62,6 +62,6 @@ text between "@" in red color, you can use `org-mime-html-hook':
               (while (re-search-forward "@\\([^@]*\\)@" nil t)
                 (replace-match "<span style=\"color:red\">\\1</span>"))))
 
-3. Since v0.0.8, the quoted mail uses modern style (like Gmail).
+3. Since v0.0.9, the quoted mail uses modern style (like Gmail).
 So replyed mail looks clean and modern. If you prefer old style, please set
 `org-mime-beautify-quoted-mail' to nil.

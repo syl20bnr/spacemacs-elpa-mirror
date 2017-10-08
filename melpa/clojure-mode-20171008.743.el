@@ -9,7 +9,7 @@
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Artur Malabarba <bruce.connor.am@gmail.com>
 ;; URL: http://github.com/clojure-emacs/clojure-mode
-;; Package-Version: 20171007.1444
+;; Package-Version: 20171008.743
 ;; Keywords: languages clojure clojurescript lisp
 ;; Version: 5.7.0-snapshot
 ;; Package-Requires: ((emacs "24.4"))
@@ -192,6 +192,12 @@ Out-of-the box `clojure-mode' understands lein, boot and gradle."
   :safe (lambda (value)
           (and (listp value)
                (cl-every 'stringp value))))
+
+(defcustom clojure-project-root-function #'clojure-project-root-path
+  "Function to locate clojure project root directory."
+  :type 'function
+  :risky t
+  :package-version '(clojure-mode . "5.7.0"))
 
 (defcustom clojure-refactor-map-prefix (kbd "C-c C-r")
   "Clojure refactor keymap prefix."
@@ -1603,6 +1609,13 @@ nil."
 
 
 (defun clojure-project-dir (&optional dir-name)
+  "Return the absolute path to the project's root directory.
+
+Call is delegated down to `clojure-project-root-function' with
+optional DIR-NAME as argument."
+  (funcall clojure-project-root-function dir-name))
+
+(defun clojure-project-root-path (&optional dir-name)
   "Return the absolute path to the project's root directory.
 
 Use `default-directory' if DIR-NAME is nil.

@@ -5,7 +5,7 @@
 
 ;; Author: Jonathan Sterling <jon@jonmsterling.com>
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 20171004.559
+;; Package-Version: 20171008.409
 ;; Version: 0.0.1
 ;; Keywords: languages
 
@@ -113,7 +113,7 @@
   "RedPRL's built-in sorts.")
 
 (defconst redprl-parameter-keywords
-  '("labove" "lsucc" "lmax")
+  '("+" "++" "lmax")
   "RedPRL's parameter keywords.")
 
 (defconst redprl-expression-keywords

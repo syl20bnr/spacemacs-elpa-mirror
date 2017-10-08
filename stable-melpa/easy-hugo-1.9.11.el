@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 1.9.10
-;; Version: 1.9.10
+;; Package-Version: 1.9.11
+;; Version: 1.9.11
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -716,7 +716,12 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
   (easy-hugo-with-env
    (when (file-directory-p "public")
      (delete-directory "public" t nil))
-   (shell-command-to-string "hugo --destination public")
+   (let ((ret (call-process "hugo" nil "*hugo-publish*" t "--destination" "public")))
+     (unless (zerop ret)
+       (switch-to-buffer (get-buffer "*hugo-publish*"))
+       (error "'hugo --destination public' command does not end normally")))
+   (when (get-buffer "*hugo-publish*")
+     (kill-buffer "*hugo-publish*"))
    (shell-command-to-string (concat "rsync -rtpl --chmod=" easy-hugo-publish-chmod " --delete public/ " easy-hugo-sshdomain ":" (shell-quote-argument easy-hugo-root)))
    (message "Blog published")
    (when easy-hugo-url
@@ -898,7 +903,12 @@ If not applicable, return the default preview."
    (let ((deployscript (file-truename (concat easy-hugo-basedir easy-hugo-github-deploy-script))))
      (unless (executable-find deployscript)
        (error "%s do not execute" deployscript))
-     (shell-command-to-string (shell-quote-argument deployscript))
+     (let ((ret (call-process (shell-quote-argument deployscript) nil "*hugo-github-deploy*" t)))
+       (unless (zerop ret)
+	 (switch-to-buffer (get-buffer "*hugo-github-deploy*"))
+	 (error "%s command does not end normally" deployscript)))
+     (when (get-buffer "*hugo-github-deploy*")
+       (kill-buffer "*hugo-github-deploy*"))
      (message "Blog deployed")
      (when easy-hugo-url
        (browse-url easy-hugo-url)))))
@@ -942,7 +952,12 @@ If not applicable, return the default preview."
      (error "Please set 'easy-hugo-amazon-s3-bucket-name' variable"))
    (when (file-directory-p "public")
      (delete-directory "public" t nil))
-   (shell-command-to-string "hugo --destination public")
+   (let ((ret (call-process "hugo" nil "*hugo-amazon-s3-deploy*" t "--destination" "public")))
+     (unless (zerop ret)
+       (switch-to-buffer (get-buffer "*hugo-amazon-s3-deploy*"))
+       (error "'hugo --destination public' command does not end normally")))
+   (when (get-buffer "*hugo-amazon-s3-deploy*")
+     (kill-buffer "*hugo-amazon-s3-deploy*"))
    (shell-command-to-string (concat "aws s3 sync --delete public s3://" easy-hugo-amazon-s3-bucket-name "/"))
    (message "Blog deployed")
    (when easy-hugo-url
@@ -991,7 +1006,12 @@ If not applicable, return the default preview."
      (error "Please set 'easy-hugo-google-cloud-storage-bucket-name' variable"))
    (when (file-directory-p "public")
      (delete-directory "public" t nil))
-   (shell-command-to-string "hugo --destination public")
+   (let ((ret (call-process "hugo" nil "*hugo-google-cloud-storage-deploy*" t "--destination" "public")))
+     (unless (zerop ret)
+       (switch-to-buffer (get-buffer "*hugo-google-cloud-storage-deploy*"))
+       (error "'hugo --destination public' command does not end normally")))
+   (when (get-buffer "*hugo-google-cloud-storage-deploy*")
+     (kill-buffer "*hugo-google-cloud-storage-deploy*"))
    (shell-command-to-string (concat "gsutil -m rsync -d -r public gs://" easy-hugo-google-cloud-storage-bucket-name "/"))
    (message "Blog deployed")
    (when easy-hugo-url
@@ -1649,7 +1669,7 @@ Optional prefix ARG says how many lines to move; default is one line."
 		  (with-temp-buffer
 		    (let ((ret (call-process-shell-command "hugo list drafts" nil t)))
 		      (unless (zerop ret)
-			(error "'Hugo list drafts' comaand does not end normally"))
+			(error "'Hugo list drafts' command does not end normally"))
 		      (buffer-string)))
 		  "\n"))
 	 (lists (list))
