@@ -9,7 +9,7 @@
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Artur Malabarba <bruce.connor.am@gmail.com>
 ;; URL: http://github.com/clojure-emacs/clojure-mode
-;; Package-Version: 20170819.2159
+;; Package-Version: 20171007.1444
 ;; Keywords: languages clojure clojurescript lisp
 ;; Version: 5.7.0-snapshot
 ;; Package-Requires: ((emacs "24.4"))
@@ -525,7 +525,11 @@ replacement for `cljr-expand-let`."
 \\{clojure-mode-map}"
   (clojure-mode-variables)
   (clojure-font-lock-setup)
-  (add-hook 'paredit-mode-hook #'clojure-paredit-setup))
+  (add-hook 'paredit-mode-hook #'clojure-paredit-setup)
+  ;; `electric-layout-post-self-insert-function' prevents indentation in strings
+  ;; and comments, force indentation in docstrings:
+  (add-hook 'electric-indent-functions
+            (lambda (char) (if (clojure-in-docstring-p) 'do-indent))))
 
 (defcustom clojure-verify-major-mode t
   "If non-nil, warn when activating the wrong `major-mode'."

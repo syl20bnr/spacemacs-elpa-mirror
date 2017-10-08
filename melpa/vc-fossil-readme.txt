@@ -15,12 +15,13 @@ BACKEND PROPERTIES
 STATE-QUERYING FUNCTIONS
 * registered (file)
 * state (file) - 'up-to-date 'edited 'needs-patch 'needs-merge
+* dir-status-files (dir files uf)
 * workfile-version (file)
 * checkout-model (file)
 - workfile-unchanged-p (file)
 STATE-CHANGING FUNCTIONS
 * register (file &optional rev comment)
-* checkin (file rev comment)
+* checkin (file comment &optional rev)
 * find-version (file rev buffer)
 * checkout (file &optional editable rev)
 * revert (file &optional contents-done)
@@ -28,7 +29,7 @@ STATE-CHANGING FUNCTIONS
 - responsible-p (file)
 HISTORY FUNCTIONS
 * print-log (file &optional buffer)
-* diff (file &optional rev1 rev2 buffer)
+* diff (file &optional rev1 rev2 buffer async)
 MISCELLANEOUS
 - delete-file (file)
 - rename-file (old new)
