@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20171007.2348
+;; Package-Version: 20171008.135
 ;; Keywords: project, convenience
 ;; Version: 0.15.0-cvs
 ;; Package-Requires: ((emacs "24.1") (pkg-info "0.4"))
@@ -2265,22 +2265,24 @@ TEST-PREFIX which specifies test file prefix."
   (interactive)
   (projectile-meson-run-target "test"))
 
-(defun projectile-cabal ()
+(defun projectile-cabal-project-p ()
   "Check if a project contains *.cabal files but no stack.yaml file."
   (and (projectile-verify-file "*.cabal")
        (not (projectile-verify-file "stack.yaml"))))
 
-(defun projectile-go ()
+(defun projectile-go-project-p ()
   "Check if a project contains Go source files."
   (cl-some
    (lambda (file)
      (string= (file-name-extension file) "go"))
    (projectile-current-project-files)))
 
-(defcustom projectile-go-function 'projectile-go
+(defcustom projectile-go-project-test-function #'projectile-go-project-p
   "Function to determine if project's type is go."
   :group 'projectile
   :type 'function)
+
+(define-obsolete-variable-alias 'projectile-go-function 'projectile-go-project-test-function "0.15")
 
 (projectile-register-project-type 'emacs-cask '("Cask")
                                   :compile "cask install")
@@ -2353,7 +2355,7 @@ TEST-PREFIX which specifies test file prefix."
 (projectile-register-project-type 'haskell-stack '("stack.yaml")
                                   :compile "stack build"
                                   :test "stack build --test")
-(projectile-register-project-type 'haskell-cabal #'projectile-cabal
+(projectile-register-project-type 'haskell-cabal #'projectile-cabal-project-p
                                   :compile "cabal build"
                                   :test "cabal test")
 (projectile-register-project-type 'rust-cargo '("Cargo.toml")
@@ -2362,7 +2364,7 @@ TEST-PREFIX which specifies test file prefix."
 (projectile-register-project-type 'r '("DESCRIPTION")
                                   :compile "R CMD INSTALL --with-keep.source ."
                                   :test (concat "R CMD check -o " temporary-file-directory " ."))
-(projectile-register-project-type 'go projectile-go-function
+(projectile-register-project-type 'go projectile-go-project-test-function
                                   :compile "go build ./..."
                                   :test "go test ./...")
 (projectile-register-project-type 'racket '("info.rkt")
@@ -2450,6 +2452,7 @@ PROJECT-ROOT is the targeted directory.  If nil, use
    (t 'none)))
 
 (defun projectile--test-name-for-impl-name (impl-file-path)
+  "Determine the name of the test file for IMPL-FILE-PATH."
   (let* ((project-type (projectile-project-type))
          (impl-file-name (file-name-sans-extension (file-name-nondirectory impl-file-path)))
          (impl-file-ext (file-name-extension impl-file-path))
@@ -2458,9 +2461,10 @@ PROJECT-ROOT is the targeted directory.  If nil, use
     (cond
      (test-prefix (concat test-prefix impl-file-name "." impl-file-ext))
      (test-suffix (concat impl-file-name test-suffix "." impl-file-ext))
-     (t (error "Project type not supported!")))))
+     (t (error "Project type `%s' not supported!" project-type)))))
 
 (defun projectile-create-test-file-for (impl-file-path)
+  "Create a test file for IMPL-FILE-PATH."
   (let* ((test-file (projectile--test-name-for-impl-name impl-file-path))
          (project-root (projectile-project-root))
          (relative-dir (file-name-directory (file-relative-name impl-file-path project-root)))
@@ -2481,21 +2485,27 @@ It assumes the test/ folder is at the same level as src/."
   :type 'boolean)
 
 (defun projectile-find-implementation-or-test (file-name)
-  "Given a FILE-NAME return the matching implementation or test filename."
+  "Given a FILE-NAME return the matching implementation or test filename.
+
+If `projectile-create-missing-test-files' is non-nil, create the missing
+test file."
   (unless file-name (error "The current buffer is not visiting a file"))
   (if (projectile-test-file-p file-name)
       ;; find the matching impl file
       (let ((impl-file (projectile-find-matching-file file-name)))
         (if impl-file
             (projectile-expand-root impl-file)
-          (error "No matching source file found")))
+          (error
+           "No matching source file found for project type `%s'"
+           (projectile-project-type))))
     ;; find the matching test file
     (let ((test-file (projectile-find-matching-test file-name)))
       (if test-file
           (projectile-expand-root test-file)
         (if projectile-create-missing-test-files
             (projectile-create-test-file-for file-name)
-          (error "No matching test file found"))))))
+          (error "No matching test file found for project type `%s'"
+                 (projectile-project-type)))))))
 
 ;;;###autoload
 (defun projectile-find-implementation-or-test-other-window ()
@@ -3789,7 +3799,9 @@ is chosen."
 
 ;;;###autoload
 (defcustom projectile-mode-line
-  '(:eval (format " Projectile[%s]" (projectile-project-name)))
+  '(:eval (format " Projectile[%s(%s)]"
+                  (projectile-project-name)
+                  (projectile-project-type)))
   "Mode line lighter for Projectile.
 
 The value of this variable is a mode line template as in
@@ -3798,7 +3810,7 @@ details about mode line templates.
 
 Customize this variable to change how Projectile displays its
 status in the mode line.  The default value displays the project
-name.  Set this variable to nil to disable the mode line
+name and type.  Set this variable to nil to disable the mode line
 entirely."
   :group 'projectile
   :type 'sexp
