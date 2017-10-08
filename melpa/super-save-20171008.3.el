@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/super-save
-;; Package-Version: 20160426.729
+;; Package-Version: 20171008.3
 ;; Keywords: convenience
 ;; Version: 0.2.0
 ;; Package-Requires: ((emacs "24.4"))
@@ -40,7 +40,7 @@
   "super-save mode's keymap.")
 
 (defcustom super-save-triggers
-  '("switch-to-buffer" "other-window" "windmove-up" "windmove-down" "windmove-left" "windmove-right")
+  '("switch-to-buffer" "other-window" "windmove-up" "windmove-down" "windmove-left" "windmove-right" "next-buffer" "previous-buffer")
   "A list of commands which would trigger `super-save-command'."
   :group 'super-save
   :type '(repeat string))

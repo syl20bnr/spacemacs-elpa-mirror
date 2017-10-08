@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20170917.410
+;; Package-Version: 20171007.2348
 ;; Keywords: project, convenience
 ;; Version: 0.15.0-cvs
 ;; Package-Requires: ((emacs "24.1") (pkg-info "0.4"))
@@ -2202,17 +2202,20 @@ With a prefix ARG invalidates the cache first."
     (project-type marker-files &key compile test run test-suffix test-prefix)
   "Register a project type with projectile.
 
-A project type is defined by PROJECT-TYPE, a set of MARKER-FILES, and optional keyword arguments
-COMPILE which specifies a command that builds the project,
-TEST which specified a command that tests the project,
-RUN which specifies a command that runs the project,
-TEST-SUFFIX which specifies test file suffix, and
+A project type is defined by PROJECT-TYPE, a set of MARKER-FILES,
+and optional keyword arguments COMPILE which specifies a command
+that builds the project, TEST which specified a command that
+tests the project, RUN which specifies a command that runs the
+project, TEST-SUFFIX which specifies test file suffix, and
 TEST-PREFIX which specifies test file prefix."
   (let ((project-plist (list 'marker-files marker-files
                               'compile-command compile
                               'test-command test
                               'run-command run)))
-    ;; There is no way for the function to distinguish between an explicit argument of nil and an omitted argument. However, the body of the function is free to consider nil an abbreviation for some other meaningful value
+    ;; There is no way for the function to distinguish between an
+    ;; explicit argument of nil and an omitted argument. However, the
+    ;; body of the function is free to consider nil an abbreviation
+    ;; for some other meaningful value
     (when test-suffix
       (plist-put project-plist 'test-suffix test-suffix))
     (when test-prefix
@@ -2472,7 +2475,7 @@ PROJECT-ROOT is the targeted directory.  If nil, use
   "During toggling, if non-nil enables creating test files if not found.
 
 When not-nil, every call to projectile-find-implementation-or-test-*
-creates test files if not found on the file system. Defaults to nil.
+creates test files if not found on the file system.  Defaults to nil.
 It assumes the test/ folder is at the same level as src/."
   :group 'projectile
   :type 'boolean)
@@ -2516,8 +2519,9 @@ It assumes the test/ folder is at the same level as src/."
    (projectile-find-implementation-or-test (buffer-file-name))))
 
 
-(defun projectile--registration-value-or-default (project-type key &optional default-value)
-  "Returs project registration value for a KEY for a project PROJECT-TYPE or if nothing DEFAULT-VALUE"
+(defun projectile-project-type-attribute (project-type key &optional default-value)
+  "Return the value of some PROJECT-TYPE attribute identified by KEY.
+Fallback to DEFAULT-VALUE for missing attributes."
   (let ((project (gethash project-type projectile-project-types)))
     (if (and project (plist-member project key))
         (plist-get project key)
@@ -2526,7 +2530,7 @@ It assumes the test/ folder is at the same level as src/."
 (defun projectile-test-prefix (project-type)
   "Find default test files prefix based on PROJECT-TYPE."
   (cl-flet ((prefix (&optional pfx)
-                    (projectile--registration-value-or-default project-type 'test-prefix pfx)))
+                    (projectile-project-type-attribute project-type 'test-prefix pfx)))
       (cond
        ((member project-type '(django python-pip python-pkg python-tox))  (prefix "test_"))
        ((member project-type '(emacs-cask)) (prefix "test-"))
@@ -2536,7 +2540,7 @@ It assumes the test/ folder is at the same level as src/."
 (defun projectile-test-suffix (project-type)
   "Find default test files suffix based on PROJECT-TYPE."
   (cl-flet ((suffix (&optional sfx)
-                    (projectile--registration-value-or-default project-type 'test-suffix sfx)))
+                    (projectile-project-type-attribute project-type 'test-suffix sfx)))
     (cond
      ((member project-type '(rebar)) (suffix "_SUITE"))
      ((member project-type '(emacs-cask)) (suffix "-test"))

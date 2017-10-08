@@ -22,7 +22,7 @@
 
 ;; Author: Andrea Cardaci <cyrus.and@gmail.com>
 ;; Version: 0.1.0
-;; Package-Version: 20171007.353
+;; Package-Version: 20171007.1841
 ;; URL: https://github.com/cyrus-and/zoom
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: frames
@@ -100,7 +100,7 @@ are not called."
 
 ;;;###autoload
 (define-minor-mode zoom-mode
-  "Enforce a fixed and automatic balanced window layout."
+  "Perform `zoom' automatically as the selected window changes."
   :global t
   :lighter " Z"
   :require 'zoom
@@ -110,7 +110,7 @@ are not called."
 
 ;;;###autoload
 (defun zoom ()
-  "Zoom the current window and balance the others."
+  "Zoom the current window and balance the others according to `zoom-size'."
   (interactive)
   ;; manual invocation only works when this mode is disabled
   (if zoom-mode
