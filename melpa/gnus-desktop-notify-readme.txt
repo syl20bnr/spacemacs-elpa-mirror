@@ -10,9 +10,9 @@ with `gnus-daemon', put the following:
 
 into your ``.gnus`` file. The default is to use `alert' if available, which
 works on every operating system and allows the user to customize the
-notification through emacs. See https://github.com/jwiegley/alert#for-users
+notification through Emacs. See https://github.com/jwiegley/alert#for-users
 for further info. If not available, the `notifications' library (part of
-emacs >= 24) is used, so no external dependencies are required. With emacs
+Emacs >= 24) is used, so no external dependencies are required. With Emacs
 <= 23 instead the generic ``notify-send`` program is used, which (in Debian
 or Ubuntu) is available in the ``libnotify-bin`` package.
 

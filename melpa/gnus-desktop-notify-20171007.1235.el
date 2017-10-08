@@ -4,7 +4,7 @@
 ;; Contributors: Philipp Haselwarter <philipp.haselwarter AT gmx.de>
 ;;               Basil L. Contovounesios <contovob AT tcd.ie>
 ;; Version: 1.4
-;; Package-Version: 20170305.1215
+;; Package-Version: 20171007.1235
 ;; URL: http://www.thregr.org/~wavexx/software/gnus-desktop-notify.el/
 ;; GIT: git://src.thregr.org/gnus-desktop-notify.el/
 ;; Package-Requires: ((gnus "1.0"))
@@ -55,9 +55,9 @@
 ;;
 ;; into your ``.gnus`` file. The default is to use `alert' if available, which
 ;; works on every operating system and allows the user to customize the
-;; notification through emacs. See https://github.com/jwiegley/alert#for-users
+;; notification through Emacs. See https://github.com/jwiegley/alert#for-users
 ;; for further info. If not available, the `notifications' library (part of
-;; emacs >= 24) is used, so no external dependencies are required. With emacs
+;; Emacs >= 24) is used, so no external dependencies are required. With Emacs
 ;; <= 23 instead the generic ``notify-send`` program is used, which (in Debian
 ;; or Ubuntu) is available in the ``libnotify-bin`` package.
 ;;
@@ -105,7 +105,7 @@ The backend is passed the notification content as a single,
 potentially multi-line string argument.
 
 The default is to use `gnus-desktop-notify-alert' if the `alert'
-package is available, `gnus-desktop-notify-dbus' on emacs >= 24,
+package is available, `gnus-desktop-notify-dbus' on Emacs >= 24,
 or fallback to the generic `gnus-desktop-notify-send' otherwise.
 
 The following functions are available (whose documentation see):
@@ -117,9 +117,9 @@ The following functions are available (whose documentation see):
   :type 'function)
 
 (defcustom gnus-desktop-notify-exec-program "xmessage"
-  "Executable called by the `gnus-desktop-notify-exec'
-function. Each argument will be formatted according to
-`gnus-desktop-notify-format'"
+  "Executable called by the `gnus-desktop-notify-exec' function.
+Each argument will be formatted according to
+`gnus-desktop-notify-format'."
   :type 'file)
 
 (defcustom gnus-desktop-notify-send-program "notify-send"
@@ -134,8 +134,9 @@ See `gnus-desktop-notify-send-program'."
   :type '(repeat (string :tag "Argument")))
 
 (defcustom gnus-desktop-notify-behavior 'gnus-desktop-notify-multi
-  "Desktop notification behavior. Can be either:
+  "Desktop notification aggregation behavior.
 
+Can be either:
 `gnus-desktop-notify-single': Display a separate notification per
                               gnus group.
 `gnus-desktop-notify-multi':  Display a multi-line notification
@@ -150,18 +151,21 @@ supported (awesome and KDE are known to work)."
   :type 'string)
 
 (defcustom gnus-desktop-notify-format "%n:%G"
-  "Format used to generate the notification text. When using
-notifications, some agents may support HTML formatting (awesome
-and KDE are known to work).
+  "Format used to generate the notification text.
+When using notifications, some agents may support HTML
+formatting (awesome and KDE are known to work).
 
 %n    Number of new messages in the group
 %G    Group name"
   :type 'string)
 
 (defcustom gnus-desktop-notify-uncollapsed-levels gnus-group-uncollapsed-levels
-  "Number of group name elements to leave alone when making a shortened name
-for display from a group name.
-Value can be `gnus-group-uncollapsed-levels', an integer or `nil'
+  "Number of group name elements to preserve when collapsing.
+This variable is similar to `gnus-group-uncollapsed-levels'
+\(which see) and comes into effect when shortening group names
+for display.
+
+Value can be `gnus-group-uncollapsed-levels', an integer or nil
 to deactivate shortening completely."
   :type `(choice (const :tag "Standard `gnus-group-uncollapsed-levels'"
                         ,gnus-group-uncollapsed-levels)
@@ -169,14 +173,15 @@ to deactivate shortening completely."
                  integer))
 
 (defcustom gnus-desktop-notify-groups 'gnus-desktop-notify-all-except
-  "Determine which gnus groups to monitor. Can be either:
+  "Determine which gnus groups to monitor.
 
+Can be either:
 `gnus-desktop-notify-all-except': Monitor all groups by default
                                   except excluded ones.
 `gnus-desktop-notify-explicit':   Monitor only specified groups.
 
 Groups can be included or excluded by setting the `group-notify'
-group or topic parameter to `t' or `nil', respectively. Group
+group or topic parameter to t or nil, respectively. Group
 parameters can be set collectively in the `gnus-parameters'
 variable or per group in the group buffer. When point is over the
 desired group, `G c' and `G p' give interactive and programmatic
@@ -274,18 +279,14 @@ multiple uniline strings."
 ;;; Notification backends
 
 (defun gnus-desktop-notify-exec (body)
-  "Call a program defined by `gnus-desktop-notify-exec-program'.
-with each argument being a group formatted according to
-`gnus-desktop-notify-format' and calling behavior is defined by
-`gnus-desktop-notify-behavior'."
+  "Invoke `gnus-desktop-notify-exec-program' with BODY."
   (funcall #'gnus-desktop-notify--shell-command
            gnus-desktop-notify-exec-program body))
 
 (defun gnus-desktop-notify-send (body)
-  "Invoke the configured `notify-send' program.
-See `gnus-desktop-notify-send-program',
-`gnus-desktop-notify-send-switches' and
-`gnus-desktop-notify-behavior' for configuration options."
+  "Invoke the configured `notify-send' program with BODY.
+See `gnus-desktop-notify-send-program' and
+`gnus-desktop-notify-send-switches' for configuration options."
   (apply #'gnus-desktop-notify--shell-command
          `(,gnus-desktop-notify-send-program
            ,@gnus-desktop-notify-send-switches
@@ -294,13 +295,11 @@ See `gnus-desktop-notify-send-program',
            ,body)))
 
 (defun gnus-desktop-notify-dbus (body)
-  "Generate a notification directly using `notifications' with
-the behavior defined by `gnus-desktop-notify-behavior'."
+  "Generate a notification with BODY using `notifications'."
   (notifications-notify :title gnus-desktop-notify-send-subject :body body))
 
 (defun gnus-desktop-notify-alert (body)
-  "Generate a notification directly using `alert' with
-the behavior defined by `gnus-desktop-notify-behavior'."
+  "Generate a notification with BODY using `alert'."
   (alert body :title gnus-desktop-notify-send-subject))
 
 ;;; Minor mode
