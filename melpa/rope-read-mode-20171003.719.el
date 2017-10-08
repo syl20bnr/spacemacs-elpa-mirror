@@ -9,7 +9,7 @@
 ;; Maintainer: Marco Wahl <marcowahlsoft@gmail.com>
 ;; Created: 4 Jan 2015
 ;; Version: 0.4.1
-;; Package-Version: 20170620.237
+;; Package-Version: 20171003.719
 ;; Keywords: reading, convenience, chill
 ;; URL: https://github.com/marcowahl/rope-read-mode
 
@@ -155,7 +155,7 @@ out something new.")
     (define-key map "q" #'rope-read-quit)
     (define-key map "?" #'describe-mode)
     map)
-  "Keymap for ‘rope-read-mode’.")
+  "Keymap for `rope-read-mode'.")
 
 
 ;; The mode
