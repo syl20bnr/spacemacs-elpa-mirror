@@ -1,5 +1,5 @@
 The currently released version of snoopy-mode is available at
-  <https://raw.githubusercontent.com/anmonteiro/snoopy-mode/v0.1.1/snoopy.el>
+  <https://raw.githubusercontent.com/anmonteiro/snoopy-mode/v0.2.0/snoopy.el>
 
 The latest version of snoopy-mode is available at
   <https://raw.githubusercontent.com/anmonteiro/snoopy-mode/master/snoopy.el>

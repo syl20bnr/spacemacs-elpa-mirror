@@ -3,6 +3,11 @@ system.
 
 Installation:
 
+1. Install this vc-fossil package.
+2. Add "Fossil" to the list of VC backends using
+   M-x customize-variable vc-handled-backends
+
+Alternative manual installation
 1. Put this file somewhere in the Emacs load-path.
 2. Tell Emacs to load it when needed:
    (autoload 'vc-fossil-registered "vc-fossil")
@@ -19,6 +24,7 @@ STATE-QUERYING FUNCTIONS
 * workfile-version (file)
 * checkout-model (file)
 - workfile-unchanged-p (file)
+- root (file)
 STATE-CHANGING FUNCTIONS
 * register (file &optional rev comment)
 * checkin (file comment &optional rev)
@@ -26,6 +32,7 @@ STATE-CHANGING FUNCTIONS
 * checkout (file &optional editable rev)
 * revert (file &optional contents-done)
 * pull (prompt)
+- push (prompt)
 - responsible-p (file)
 HISTORY FUNCTIONS
 * print-log (file &optional buffer)
