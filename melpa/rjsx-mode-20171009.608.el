@@ -4,7 +4,7 @@
 
 ;; Author: Felipe Ochoa <felipe@fov.space>
 ;; URL: https://github.com/felipeochoa/rjsx-mode/
-;; Package-Version: 20170928.132
+;; Package-Version: 20171009.608
 ;; Package-Requires: ((emacs "24.4") (js2-mode "20170504"))
 ;; Version: 1.1
 ;; Keywords: languages
@@ -796,14 +796,14 @@ parse tree is up to date."
 
 ;;;; Interactive commands and keybindings
 (defun rjsx-electric-lt (n)
-    "Insert a context-sensitive less-than sign.
+  "Insert a context-sensitive less-than sign.
 Optional prefix argument N indicates how many signs to insert.
 If N is greater than one, no special handling takes place.
 Otherwise, if the less-than sign would start a JSX block, it
-inserts `< />' and places the cursor inside the new tag."
+inserts `</>' and places the cursor inside the new tag."
     (interactive "p")
     (if (/= n 1)
-        (insert (make-string n "<"))
+        (insert (make-string n ?<))
       (let ((inhibit-changing-match-data t))
         (if (looking-back (rx (or "=" "(" "?" ":" ">" "}" "&" "|" "{" ","
                                   "return")
@@ -814,6 +814,28 @@ inserts `< />' and places the cursor inside the new tag."
           (insert "<")))))
 
 (define-key rjsx-mode-map "<" 'rjsx-electric-lt)
+
+(defun rjsx-electric-gt (n)
+  "Insert a context-sensitive greater-than sign.
+Optional prefix argument N indicates how many signs to insert.
+If N is greater than one, no special handling takes place.
+Otherwise, if point is in a self-closing JSX tag just before the
+slash, it creates a matching end-tag and places point just inside
+the tags."
+  (interactive "p")
+  (if (or (/= n 1)
+          (not (eq (get-char-property (point) 'rjsx-class) 'self-closing-slash)))
+      (insert (make-string n ?>))
+    (let ((node (rjsx--tag-at-point)))
+      (if node
+          (progn
+            (delete-char 1)
+            (search-forward ">")
+            (save-excursion
+              (insert "</" (rjsx-node-opening-tag-name node) ">")))
+        (insert (make-string n ?>))))))
+
+(define-key rjsx-mode-map ">" 'rjsx-electric-gt)
 
 (defun rjsx-delete-creates-full-tag (n &optional killflag)
   "N and KILLFLAG are as in `delete-char'.
