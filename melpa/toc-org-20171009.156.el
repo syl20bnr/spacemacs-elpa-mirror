@@ -4,7 +4,7 @@
 
 ;; Author: Sergei Nosov <sergei.nosov [at] gmail.com>
 ;; Version: 1.0
-;; Package-Version: 20171006.43
+;; Package-Version: 20171009.156
 ;; Keywords: org-mode org-toc toc-org org toc table of contents
 ;; URL: https://github.com/snosov1/toc-org
 
@@ -335,7 +335,7 @@ Note that :noexport: is also used by Org-mode's exporter, but
 not :noexport_#:."
 
   (interactive)
-  (when (eq major-mode 'org-mode)
+  (when (derived-mode-p major-mode 'org-mode)
     (save-excursion
       (goto-char (point-min))
       (let ((case-fold-search t))
