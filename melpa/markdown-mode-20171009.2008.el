@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171001.730
+;; Package-Version: 20171009.2008
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -883,7 +883,9 @@
 ;;   (and it is set to t by default).  These checkboxes can be
 ;;   toggled by clicking `mouse-1`, pressing `RET` over the button,
 ;;   or by pressing `C-c C-d` (`markdown-do`) with the point anywhere
-;;   in the task list item.
+;;   in the task list item.  A normal list item can be turned to a
+;;   check list item by the same command, or more specifically
+;;   `C-c C-s [` (`markdown-insert-gfm-checkbox`).
 ;;
 ;; * **Wiki links:** Generic wiki links are supported in
 ;;   `markdown-mode', but in `gfm-mode' specifically they will be
@@ -5766,6 +5768,7 @@ Assumes match data is available for `markdown-regex-italic'."
     (define-key map (kbd "Q") 'markdown-blockquote-region)
     (define-key map (kbd "w") 'markdown-insert-wiki-link)
     (define-key map (kbd "-") 'markdown-insert-hr)
+    (define-key map (kbd "[") 'markdown-insert-gfm-checkbox)
     ;; Deprecated keys that may be removed in a future version
     (define-key map (kbd "e") 'markdown-insert-italic)
     map)
@@ -5969,7 +5972,8 @@ See also `markdown-mode-map'.")
      ["Indent Subtree" markdown-demote :keys "C-c <right>"]
      ["Outdent Subtree" markdown-promote :keys "C-c <left>"]
      ["Renumber List" markdown-cleanup-list-numbers]
-     ["Toggle Task List Item" markdown-toggle-gfm-checkbox :keys "C-c C-d"])
+     ["Insert Task List Item" markdown-insert-gfm-checkbox :keys "C-c C-x ["]
+     ["Toggle Task List Item" markdown-toggle-gfm-checkbox (markdown-gfm-task-list-item-at-point) :keys "C-c C-d"])
     ("Links & Images"
      ["Insert Link" markdown-insert-link]
      ["Insert Image" markdown-insert-image]
@@ -8303,7 +8307,7 @@ markers and footnote text."
     (markdown-toggle-gfm-checkbox))
    ;; Otherwise
    (t
-    (user-error "Nothing to do in context at point"))))
+    (markdown-insert-gfm-checkbox))))
 
 
 ;;; Miscellaneous =============================================================
@@ -8568,6 +8572,45 @@ is found, the return value is the same value returned by
   (unless bounds
     (setq bounds (markdown-cur-list-item-bounds)))
   (> (length (nth 5 bounds)) 0))
+
+(defun markdown-insert-gfm-checkbox ()
+  "Add GFM checkbox at point.
+Returns t if added.
+Returns nil if non-applicable."
+  (interactive)
+    (let ((bounds (markdown-cur-list-item-bounds)))
+      (if bounds
+          (unless (cl-sixth bounds)
+            (let ((pos (+ (cl-first bounds) (cl-fourth bounds)))
+                  (markup "[ ] "))
+              (if (< pos (point))
+                  (save-excursion
+                    (goto-char pos)
+                    (insert markup))
+                (goto-char pos)
+                (insert markup))
+              t))
+        (unless (save-excursion
+                  (back-to-indentation)
+                  (or (markdown-list-item-at-point-p)
+                      (markdown-heading-at-point)
+                      (markdown-in-comment-p)
+                      (markdown-code-block-at-point-p)))
+          (let ((pos (save-excursion
+                       (back-to-indentation)
+                       (point)))
+                (markup (concat (or (save-excursion
+                                      (beginning-of-line 0)
+                                      (cl-fifth (markdown-cur-list-item-bounds)))
+                                    markdown-unordered-list-item-prefix)
+                                "[ ] ")))
+            (if (< pos (point))
+                (save-excursion
+                  (goto-char pos)
+                  (insert markup))
+              (goto-char pos)
+              (insert markup))
+            t)))))
 
 (defun markdown-toggle-gfm-checkbox ()
   "Toggle GFM checkbox at point.
