@@ -4,7 +4,7 @@
 
 ;; Author: Felipe Ochoa <felipe@fov.space>
 ;; URL: https://github.com/felipeochoa/rjsx-mode/
-;; Package-Version: 20171009.608
+;; Package-Version: 20171009.1220
 ;; Package-Requires: ((emacs "24.4") (js2-mode "20170504"))
 ;; Version: 1.1
 ;; Keywords: languages
@@ -776,14 +776,16 @@ closing tag was parsed."
           (throw 'rjsx-eof-while-parsing t))
          (t (js2-add-to-string c)))))))
 
+(js2-deflocal rjsx-buffer-chars-modified-tick 0 "Variable holding the last per-buffer value of `buffer-chars-modified-tick'.")
+
 (defun rjsx-maybe-reparse ()
   "Called before accessing the parse tree.
 For small buffers, will do an immediate reparse to ensure the
 parse tree is up to date."
-  ;; TODO: We could look at the last parse time and the last buffer
-  ;; modification time to avoid some reparsing
-  (when (<= (point-max) rjsx-max-size-for-frequent-reparse)
-    (js2-reparse)))
+  (when (and (<= (point-max) rjsx-max-size-for-frequent-reparse)
+             (/= rjsx-buffer-chars-modified-tick (buffer-chars-modified-tick)))
+    (js2-reparse)
+    (setq rjsx-buffer-chars-modified-tick (buffer-chars-modified-tick))))
 
 (defun rjsx--tag-at-point ()
   "Return the JSX tag at point, if any, or nil."

@@ -5,7 +5,7 @@
 ;; Author: Titus von der Malsburg <malsburg@posteo.de>
 ;; Maintainer: Titus von der Malsburg <malsburg@posteo.de>
 ;; URL: https://github.com/emacs-helm/helm-mu
-;; Package-Version: 20161010.102
+;; Package-Version: 20171009.1022
 ;; Version: 1.0.0
 ;; Package-Requires: ((helm "1.5.5"))
 
@@ -54,7 +54,7 @@
 ;;
 ;; Copy helm-mu.el to a directory in your load-path or install helm-mu
 ;; from MELPA (preferred).  Then add the following to your init file:
-;;  
+;;
 ;;     (require 'helm-mu)
 ;;
 ;; Alternatively, you can use the autoload facility:
@@ -401,10 +401,7 @@ address.  The name column has a predefined width."
 
 (defun helm-mu-display-email (candidate)
   "Open an email using mu4e."
-  (let ((view-buffer (get-buffer "*mu4e-view*")))
-    (when view-buffer
-      (kill-buffer view-buffer)))
-  (mu4e-view-message-with-msgid (plist-get candidate :message-id)))
+  (mu4e-headers-search (helm-mu-get-search-pattern) nil nil nil (plist-get candidate :message-id) t))
 
 (defun helm-mu-compose-mail (candidate)
   "Compose a new email directed to the selected contacts."

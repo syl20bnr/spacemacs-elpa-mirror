@@ -4,8 +4,8 @@
 
 ;; Author: Adrien Becchis <adriean.khisbe@live.fr>
 ;; Created:  2014-07-27
-;; Version: 0.5.0
-;; Package-Version: 0.5.0
+;; Version: 0.6.0
+;; Package-Version: 0.6.0
 ;; Keywords: convenience, languages, tools
 ;; Url: https://github.com/AdrieanKhisbe/omni-scratch.el
 
@@ -29,16 +29,30 @@
 ;; copy on quit, etc, might be added over time.
 
 ;;; Code:
+(require 'color)
 
 (defcustom omni-scratch-default-mode 'fundamental-mode
   "Default omni-scratch mode for the scratch buffer."
   :type 'symbol :group 'omni-scratch)
 
+(defcustom omni-scratch-lighter " β"
+  "Lighter of omni-scratch-mode."
+  :type 'string :group 'omni-scratch)
+
+(defcustom omni-scratch-pale-background t
+  "If true, scratch buffer are more pale than standard buffer."
+  :type 'boolean :group 'omni-scratch)
+
+(defcustom omni-scratch-pale-percent 10
+  "Percent more pale are scratch buffer."
+  :type 'integer :group 'omni-scratch)
+
+
 (defvar omni-scratch-latest-scratch-buffer (get-buffer "*scratch*")
   "The Latest scratch buffer used.")
 
 (defvar omni-scratch-origin-buffer nil
-  "The last normal buffer from which command was invoked")
+  "The last normal buffer from which command was invoked.")
 
 (defvar omni-scratch-buffers-list '()
   "List of scratch buffers.")
@@ -49,15 +63,17 @@
   ;; §maybe: create or also switch to?
   ;; §TODO: rename?, kill interactive?
   (let ((buffer (get-buffer-create name)))
-    (switch-to-buffer buffer)
-    (setq omni-scratch-latest-scratch-buffer buffer)
-    (when (> (length text) 0)
-      (erase-buffer)
-      (insert text))
-    (funcall mode)
-    (omni-scratch-mode)
-    ;; §later: apply eventual modification to local modes.
-    ;; [and var: maybe identify the scratch buffer]: local var and register in alist or so
+    (with-current-buffer buffer
+      (setq omni-scratch-latest-scratch-buffer buffer)
+      (when (> (length text) 0)
+        (erase-buffer)
+        (insert text))
+      (funcall mode)
+      (when omni-scratch-pale-background
+        (omni-scratch--set-pale-color))
+      (omni-scratch-mode))
+      ;; §later: apply eventual modification to local modes.
+      ;; [and var: maybe identify the scratch buffer]: local var and register in alist or so
     buffer))
 
 (defun omni-scratch-goto-latest ()
@@ -72,9 +88,9 @@
 ;; §maybe: specific background
 
 (defun omni-scratch--interactive-arguments ()
-  (if (mark) ; was active-region-p but not working wwith ecukes
-      (list (prefix-numeric-value t) (region-beginning) (region-end))
-    (list (prefix-numeric-value t))))
+  (if (mark)                  ; was active-region-p but not working wwith ecukes
+      (list current-prefix-arg (region-beginning) (region-end))
+    (list current-prefix-arg)))
 
 (defun omni-scratch--buffer-switch (buffer-name mode universal-arg &optional point mark)
   "Create a new scratch buffer and switch to. Unless if in scratch buffer already"
@@ -83,11 +99,11 @@
              (setq omni-scratch-origin-buffer nil))
     (let ((current-buffer (current-buffer))
           (buffer (omni-scratch-create-scratch-buffer
-                  buffer-name mode
+                   buffer-name mode
                    (if point (buffer-substring point mark) ""))))
       (setq omni-scratch-origin-buffer current-buffer)
       (if (equal universal-arg '(4))
-                         (switch-to-buffer-other-window buffer)
+          (switch-to-buffer-other-window buffer)
         (switch-to-buffer buffer)))))
 
 ;;;###autoload
@@ -138,9 +154,42 @@
                :buffer "*omni-scratch-buffers*")))
     (switch-to-buffer (get-buffer buffer-name))))
 
+(defun omni-scratch--set-pale-color ()
+  (face-remap-add-relative
+   'default
+   `((:slant italic
+             :background ,(pcase (frame-parameter nil 'background-mode)
+                            (`dark (omni-scratch--pale-light (face-attribute 'default :background) omni-scratch-pale-percent))
+                            (`light (omni-scratch--pale-dark (face-attribute 'default :background) omni-scratch-pale-percent))
+                            (_ nil))))))
+
+(defun omni-scratch--pale-dark (color percent)
+  "Give PERCENT darker and desature COLOR."
+  (when (and color (not (equal "unspecified-bg" color)))
+    (color-darken-name
+     (color-desaturate-name color percent)
+     percent)))
+
+(defun omni-scratch--pale-light (color percent)
+  "Give PERCENT lighter and desature COLOR."
+  (when (and color (not (equal "unspecified-bg" color)))
+    (color-lighten-name
+     (color-desaturate-name color percent)
+     percent)))
+
 (define-minor-mode omni-scratch-mode
   "Scratch buffer mode."
-  :lighter " β")
+  :lighter omni-scratch-lighter
+  :keymap
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "M-s $ w") 'write-file)
+    (define-key map (kbd "M-s $ e") 'erase-buffer)
+    (define-key map (kbd "M-s $ b") 'omni-scratch-buffers)
+    (define-key map (kbd "M-s $ q") 'omni-scratch-quit)
+    (if (fboundp 'spacemacs/paste-transient-state/body)
+        (define-key map (kbd "M-s $ p") 'spacemacs/paste-transient-state/body)
+      (define-key map (kbd "M-s $ p") 'yank))
+    map))
 
 
 (provide 'omni-scratch)
