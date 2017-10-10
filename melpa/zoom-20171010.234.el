@@ -22,7 +22,7 @@
 
 ;; Author: Andrea Cardaci <cyrus.and@gmail.com>
 ;; Version: 0.1.0
-;; Package-Version: 20171009.729
+;; Package-Version: 20171010.234
 ;; URL: https://github.com/cyrus-and/zoom
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: frames
@@ -196,10 +196,10 @@ used when this function is called via `advice-add'."
   (let ((size-hint-cons
          ;; either use the cons as is or call the custom function
          (if (functionp zoom-size) (funcall zoom-size) zoom-size)))
-    (zoom--resize-one-side size-hint-cons t)
-    (zoom--resize-one-side size-hint-cons nil)))
+    (zoom--resize-one-dimension size-hint-cons t)
+    (zoom--resize-one-dimension size-hint-cons nil)))
 
-(defun zoom--resize-one-side (size-hint-cons horizontal)
+(defun zoom--resize-one-dimension (size-hint-cons horizontal)
   "Resize one dimension of the selected window according to the user preference.
 
 Argument SIZE-HINT-CONS is the size hint provided by the user.
