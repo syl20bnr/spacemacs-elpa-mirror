@@ -4,7 +4,7 @@
 ;;
 ;; Author: Austin Bingham <austin.bingham@gmail.com>
 ;; Version: 0.10
-;; Package-Version: 20170916.252
+;; Package-Version: 20171010.1156
 ;; URL: https://github.com/abingham/traad
 ;; Package-Requires: ((deferred "0.3.2") (popup "0.5.0") (request "0.2.0") (request-deferred "0.2.0") (virtualenvwrapper "20151123"))
 ;;
@@ -426,24 +426,23 @@ necessary. Return the history buffer."
 		(dirname (file-name-directory buffer-file-name))
 		(extension (file-name-extension buffer-file-name)))
     (deferred:$
-
       (traad-deferred-request
        "/refactor/rename"
+       :type "POST"
        :data data)
 
-					; TODO: This should actually
-					; poll until the operation is
-					; complete. But then so should
-					; other stuff, I suppose...
+      ;; TODO: This is a hack. We just assume that the renaming happens and
+      ;; switch to that buffer. The refactoring could fail, and we don't check
+      ;; for that. But it kinda works.
       (deferred:nextc it
-	(lambda (_)
-	  (switch-to-buffer
-	   (find-file
-	    (expand-file-name
-	     (concat new-name "." extension)
-	     dirname)))
-	  (kill-buffer old-buff)
-	  (traad-update-history-buffer))))))
+        (lambda (_)
+          (switch-to-buffer
+           (find-file
+            (expand-file-name
+             (concat new-name "." extension)
+             dirname)))
+          (kill-buffer old-buff)
+          (traad-update-history-buffer))))))
 
 ;;;###autoload
 (defun traad-rename (new-name)

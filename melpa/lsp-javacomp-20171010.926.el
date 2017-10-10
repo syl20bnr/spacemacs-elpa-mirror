@@ -1,8 +1,8 @@
 ;;; lsp-javacomp.el --- Java support for lsp-mode
 
 ;; Version: 1.0
-;; Package-Version: 20171005.659
-;; Package-Requires: ((emacs "25.1") (lsp-mode "2.0"))
+;; Package-Version: 20171010.926
+;; Package-Requires: ((emacs "25.1") (lsp-mode "2.0") (s))
 ;; Keywords: java
 ;; URL: https://github.com/tigersoldier/lsp-javacomp
 
@@ -34,11 +34,15 @@
 
 (require 'cc-mode)
 (require 'lsp-mode)
+(require 'json)
+(require 's)
 
-(defcustom lsp-javacomp-server-jar "~/bin/JavaComp_deploy.jar"
-  "Name of JavaComp jar file to run."
-  :type '(choice (const nil) string)
-  :group 'lsp-javacomp)
+(defcustom lsp-javacomp-server-install-dir (locate-user-emacs-file "javacomp/")
+  "Install directory for JavaComp server.
+Requires to be ended with a slash."
+  :group 'lsp-javacomp
+  :risky t
+  :type 'directory)
 
 (defcustom lsp-javacomp-java-executable "java"
   "Name or path of the java executable binary file."
@@ -50,12 +54,20 @@
   :type '(set string)
   :group 'lsp-javacomp)
 
+(defconst lsp-javacomp-latest-release-url
+  "https://api.github.com/repos/tigersoldier/JavaComp/releases/latest"
+  "URL to retrieve the latest release of JavaComp server.")
+
+(defun lsp-javacomp--server-jar-path ()
+  "Return the path to the JavaComp server JAR file."
+  (expand-file-name "javacomp.jar" lsp-javacomp-server-install-dir))
+
 (defun lsp-javacomp--command ()
   "Return a list of the command and arguments to launch the JavaComp server."
   `( ,lsp-javacomp-java-executable
      ,@lsp-javacomp-java-options
      "-jar"
-     ,(expand-file-name lsp-javacomp-server-jar)))
+     ,(lsp-javacomp--server-jar-path)))
 
 (defun lsp-javacomp--get-root ()
   "Retrieves the root directory of the java project root if available.
@@ -67,6 +79,46 @@ The current directory is assumed to be the java project’s root otherwise."
    (t (let ((project-types '("pom.xml" "build.gradle" ".project" "WORKSPACE")))
         (or (seq-some (lambda (file) (locate-dominating-file default-directory file)) project-types)
             default-directory)))))
+
+;;;###autoload
+(defun lsp-javacomp-install-server (&optional prompt-exists)
+  "Download the JavaComp server JAR file if it does not exist."
+  (interactive '(t))
+  (let ((jar-file (lsp-javacomp--server-jar-path)))
+    (if (file-exists-p jar-file)
+        (and prompt-exists (message "JavaComp server already exists."))
+      (lsp-javacomp--download-server))))
+
+;;;###autoload
+(defun lsp-javacomp-update-server ()
+  (interactive)
+  (lsp-javacomp--download-server))
+
+(defun lsp-javacomp--download-server ()
+  (message "Getting the latest JavaComp server...")
+  (url-retrieve lsp-javacomp-latest-release-url #'lsp-javacomp--latest-release-callback))
+
+(defun lsp-javacomp--latest-release-callback (stats)
+  "Handle the `url-retrive' callback for JavaComp latest release request.
+
+See https://developer.github.com/v3/repos/releases/#get-the-latest-release
+"
+  (search-forward "\n\n")
+  (if-let (err (plist-get stats :error))
+      (error "Failed to get the latest release of JavaComp server: %s" (car err))
+    (let* ((release (json-read))
+           (assets (alist-get 'assets release))
+           (jar-asset (seq-find (lambda (asset)
+                                  (s-match "^javacomp.*\\.jar$" (alist-get 'name asset)))
+                                assets))
+           (jar-url (alist-get 'browser_download_url jar-asset))
+           (release-version (alist-get 'tag_name release)))
+      (if jar-url
+          (progn
+            (message "Found JavaComp %s, downloading..." release-version)
+            (make-directory (expand-file-name lsp-javacomp-server-install-dir) t)
+            (url-copy-file jar-url (lsp-javacomp--server-jar-path) t))
+        (error "Fail to get the URL of the JavaComp server.")))))
 
 (lsp-define-stdio-client 'java-mode "javacomp" 'stdio #'lsp-javacomp--get-root
 			 "JavaComp Server"
