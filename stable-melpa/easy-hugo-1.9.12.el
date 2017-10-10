@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 1.9.11
-;; Version: 1.9.11
+;; Package-Version: 1.9.12
+;; Version: 1.9.12
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -799,6 +799,8 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
 		 (string-equal file-ext "mmark")
 		 (string-equal file-ext easy-hugo-html-extension))
 	     (call-process "hugo" nil "*hugo*" t "new" filename))))
+     (when (get-buffer "*hugo*")
+       (kill-buffer "*hugo*"))
      (find-file (concat "content/" filename))
      (when (and (> 0.25 (easy-hugo--version))
 		(string-equal file-ext "org"))
@@ -887,9 +889,7 @@ If not applicable, return the default preview."
   (unless (null easy-hugo--server-process)
     (delete-process easy-hugo--server-process))
   (when (get-buffer easy-hugo--preview-buffer)
-    (kill-buffer easy-hugo--preview-buffer))
-  (when (get-buffer "*hugo*")
-    (kill-buffer "*hugo*")))
+    (kill-buffer easy-hugo--preview-buffer)))
 
 (defun easy-hugo--orgtime-format (x)
   "Format orgtime as X."
@@ -1678,7 +1678,7 @@ Optional prefix ARG says how many lines to move; default is one line."
        (when (string-match ".*/\\(.+?\\)$" file)
 	 (push (match-string 1 file) files)))
      (unless (file-directory-p (expand-file-name easy-hugo-postdir easy-hugo-basedir))
-       (error "Did you execute hugo new site bookshelf?"))
+       (error "%s%s doesn't exist!" easy-hugo-basedir easy-hugo-postdir))
      (setq easy-hugo--mode-buffer (get-buffer-create easy-hugo--buffer-name))
      (switch-to-buffer easy-hugo--mode-buffer)
      (setq-local default-directory easy-hugo-basedir)
@@ -1723,7 +1723,7 @@ Optional prefix ARG says how many lines to move; default is one line."
   (interactive)
   (easy-hugo-with-env
    (unless (file-directory-p (expand-file-name easy-hugo-postdir easy-hugo-basedir))
-     (error "Did you execute hugo new site bookshelf?"))
+     (error "%s%s doesn't exist!" easy-hugo-basedir easy-hugo-postdir))
    (setq easy-hugo--mode-buffer (get-buffer-create easy-hugo--buffer-name))
    (setq easy-hugo--draft-list nil)
    (switch-to-buffer easy-hugo--mode-buffer)

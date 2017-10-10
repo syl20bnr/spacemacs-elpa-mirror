@@ -5,7 +5,7 @@
 ;; Author: Nicolas Petton <petton.nicolas@gmail.com>
 ;;         Damien Cassou <damien@cassou.me>
 ;; Version: 1.8
-;; Package-Version: 20170928.1118
+;; Package-Version: 20171010.410
 ;; GIT: https://github.com/NicolasPetton/pass
 ;; Package-Requires: ((emacs "24.3") (password-store "0.1") (password-store-otp "0.1.5") (f "0.17"))
 ;; Created: 09 Jun 2015
@@ -88,8 +88,24 @@
 
 \\{pass-mode-map}"
   (setq default-directory (password-store-dir))
-  (setq-local imenu-generic-expression '((nil "├──\\ \\(.*\\)" 1)))
+  (setq imenu-prev-index-position-function
+        'pass--imenu-prev-index-position-function)
+  (setq imenu-extract-index-name-function
+        'pass--imenu-extract-index-name-function)
   (read-only-mode))
+
+(defun pass--imenu-prev-index-position-function ()
+  "Move point to previous line in current buffer.
+This function is used as a value for
+`imenu-prev-index-position-function'."
+  (pass-prev-entry)
+  (not (bobp)))
+
+(defun pass--imenu-extract-index-name-function ()
+  "Return imenu name for pass entry at point.
+This function is used as a value for
+`imenu-extract-index-name-function'."
+  (pass-entry-at-point))
 
 (defun pass-setup-buffer ()
   "Setup the password-store buffer."

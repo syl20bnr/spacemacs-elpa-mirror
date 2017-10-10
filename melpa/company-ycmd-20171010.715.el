@@ -5,7 +5,7 @@
 ;; Authors: Austin Bingham <austin.bingham@gmail.com>
 ;;          Peter Vasil <mail@petervasil.net>
 ;; version: 0.2
-;; Package-Version: 20170926.2252
+;; Package-Version: 20171010.715
 ;; URL: https://github.com/abingham/emacs-ycmd
 ;; Package-Requires: ((ycmd "1.3") (company "0.9.3") (deferred "0.5.1") (s "1.11.0") (dash "2.13.0") (let-alist "1.0.5") (f "0.19.0"))
 ;;
@@ -123,13 +123,13 @@ When 0, do not use synchronous completion request at all."
   "Check if candidate's EXTRA-INFO indicates a identifier completion."
   (s-equals? "[ID]" extra-info))
 
-(defmacro company-ycmd--with-destructured-candidate (candidate body)
+(defmacro company-ycmd--with-destructured-candidate (candidate &rest body)
   (declare (indent 1) (debug t))
   `(let-alist ,candidate
      (if (or (company-ycmd--identifier-completer-p .extra_menu_info)
              (company-ycmd--filename-completer-p .extra_menu_info))
          (propertize .insertion_text 'return_type .extra_menu_info)
-       ,body)))
+       ,@body)))
 
 (defun company-ycmd--extract-params-clang (function-signature)
   "Extract parameters from FUNCTION-SIGNATURE if possible."

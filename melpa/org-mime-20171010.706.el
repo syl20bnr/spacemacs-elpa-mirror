@@ -5,7 +5,7 @@
 ;; Author: Eric Schulte
 ;; Maintainer: Chen Bin (redguardtoo)
 ;; Keywords: mime, mail, email, html
-;; Package-Version: 20171008.644
+;; Package-Version: 20171010.706
 ;; Homepage: http://github.com/org-mime/org-mime
 ;; Version: 0.0.9
 ;; Package-Requires: ((emacs "24.3") (cl-lib "0.5"))
@@ -283,11 +283,21 @@ You could use either `org-up-heading-safe' or `org-back-to-heading'.")
                  "<p>[\n\r]*&gt;&gt;&gt;&gt;&gt; .* == \\([^\r\n]*\\)[\r\n]*</p>"
                  "<div class=\"gmail_quote\">\\1</div>"
                  html))
-        (setq info (org-mime-encode-quoted-mail-body))
-        (delete-region (nth 0 info) (nth 1 info))
-        (goto-char (nth 0 info))
-        (insert (nth 2 info))
-        (buffer-substring-no-properties (point-min) (point-max)))))
+        (unwind-protect
+            (let (retval)
+              (condition-case ex
+                  (setq info (org-mime-encode-quoted-mail-body))
+                  (setq retval info)
+                ('error (setq info nil)))
+              retval))
+        (cond
+         (info
+          (delete-region (nth 0 info) (nth 1 info))
+          (goto-char (nth 0 info))
+          (insert (nth 2 info))
+          (buffer-substring-no-properties (point-min) (point-max)))
+         (t
+          html)))))
    (t
     html)))
 
@@ -296,13 +306,13 @@ You could use either `org-up-heading-safe' or `org-back-to-heading'.")
 If html portion of message includes IMAGES they are wrapped in multipart/related part."
   (cl-case org-mime-library
     (mml (concat "<#multipart type=alternative><#part type=text/plain>"
-		  plain
-		  (when images "<#multipart type=related>")
-		  "<#part type=text/html>"
-		  (org-mime-cleanup-quoted html)
-		  images
-		  (when images "<#/multipart>\n")
-		  "<#/multipart>\n"))
+                 plain
+                 (when images "<#multipart type=related>")
+                 "<#part type=text/html>"
+                 (org-mime-cleanup-quoted html)
+                 images
+                 (when images "<#/multipart>\n")
+                 "<#/multipart>\n"))
     (semi (concat
             "--" "<<alternative>>-{\n"
             "--" "[[text/plain]]\n" plain
