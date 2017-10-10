@@ -5,8 +5,8 @@
 ;; Author: Matthew Carter <m@ahungry.com>
 ;; Maintainer: Matthew Carter <m@ahungry.com>
 ;; URL: https://github.com/ahungry/color-theme-ahungry
-;; Package-Version: 1.5.0
-;; Version: 1.5.0
+;; Package-Version: 20171009.1931
+;; Version: 1.6.0
 ;; Keywords: ahungry palette color theme emacs color-theme deftheme
 ;; Package-Requires: ((emacs "24"))
 
@@ -36,6 +36,10 @@
 ;; to a dark background.
 
 ;;; News:
+
+;;;; Changes since 1.5.0:
+;; - Bump up font size
+;; - Make dark blues a little brighter.
 
 ;;;; Changes since 1.4.0:
 ;; - Add Man faces
@@ -96,7 +100,7 @@
 (defvar ahungry-theme-font-settings
   '(:family "Terminus" :foundry "xos4"
             :slant normal :weight normal
-            :height 100 :width normal)
+            :height 130 :width normal)
   "If set to nil, will avoid overriding the user font settings.
 Leave this alone to retain defaults.
 
@@ -105,7 +109,7 @@ Default value:
             :slant normal :weight normal
             :height 100 :width normal)")
 
-(let ((mainbg (when (display-graphic-p) "#222222")));; "default")))
+(let ((mainbg (when (display-graphic-p) "#101010")));; "default")))
   (custom-theme-set-faces
    'ahungry ;; This is the theme name
    `(default ((t (:foreground "#ffffff" :background ,mainbg
@@ -134,14 +138,14 @@ Default value:
    '(tooltip ((t (:inherit 'variable-pitch :foreground "black" :background "#ffff33"))))
    '(bold ((t (:bold t :underline nil :background nil))))
    '(italic ((t (:italic t :underline nil :background nil))))
-   '(font-lock-builtin-face ((t (:foreground "#0055ff"))))
+   '(font-lock-builtin-face ((t (:foreground "#0099ff"))))
    '(font-lock-comment-face ((t (:foreground "#888a85" :bold nil :italic t))))
    '(font-lock-constant-face ((t (:foreground "#fff900"))))
    '(font-lock-doc-face ((t (:foreground "#777700" :bold t :italic t))))
    '(font-lock-keyword-face ((t (:foreground "#3cff00" :bold t))))
    '(font-lock-string-face ((t (:foreground "#ff0077" :italic nil :bold nil))))
    '(font-lock-type-face ((t (:foreground "#deff00" :bold t))))
-   '(font-lock-variable-name-face ((t (:foreground "#0033ff" :bold t))))
+   '(font-lock-variable-name-face ((t (:foreground "#0066ff" :bold t))))
    '(font-lock-warning-face ((t (:bold t :foreground "#ff0000"))))
    '(font-lock-function-name-face ((t (:foreground "#ffee00" :bold t))))
    '(comint-highlight-input ((t (:italic t :bold t))))
