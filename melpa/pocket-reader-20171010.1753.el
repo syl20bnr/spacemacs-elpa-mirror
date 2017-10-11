@@ -5,7 +5,7 @@
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Created: 2017-09-25
 ;; Version: 0.1-pre
-;; Package-Version: 20171009.2359
+;; Package-Version: 20171010.1753
 ;; Keywords: pocket
 ;; Package-Requires: ((emacs "25.1") (dash "2.13.0") (kv "0.0.19") (pocket-lib "0.1") (s "1.10") (ov "1.0.6") (rainbow-identifiers "0.2.2") (org-web-tools "0.1"))
 ;; URL: https://github.com/alphapapa/pocket-reader.el
@@ -56,10 +56,15 @@
 ;; "U" pocket-reader-unmark-all
 ;; "o" pocket-reader-more
 ;; "l" pocket-reader-limit
+;; "r" pocket-reader-random-item
 ;; "ta" pocket-reader-add-tags
 ;; "tr" pocket-reader-remove-tags
 ;; "tt" pocket-reader-set-tags
 ;; "ts" pocket-reader-tag-search
+;;
+;; In eww, Org, w3m, and some other major modes,
+;; `pocket-reader-add-link' can be used to add a link at point to
+;; Pocket.
 
 ;;; Code:
 
@@ -68,6 +73,7 @@
 (require 'cl-lib)
 (require 'url-parse)
 (require 'seq)
+(require 'thing-at-pt)
 
 (require 'dash)
 (require 'kv)
@@ -100,6 +106,7 @@
                     "U" pocket-reader-unmark-all
                     "o" pocket-reader-more
                     "l" pocket-reader-limit
+                    "r" pocket-reader-random-item
                     "ta" pocket-reader-add-tags
                     "tr" pocket-reader-remove-tags
                     "tt" pocket-reader-set-tags
@@ -334,6 +341,22 @@ alist, get the `item-id' from it."
                  do (forward-line 1)))
     ;; No query; show all entries
     (ov-clear 'display "")))
+
+(defun pocket-reader-random-item (prefix)
+  "Open a random item from the current list.
+With universal prefix, read a key and call the command bound to
+that keystroke on a random item."
+  (interactive "p")
+  (let ((fn (or (and (> prefix 1)
+                     (let ((key (read-key "Key: ")))
+                       (alist-get key pocket-reader-mode-map)))
+                #'pocket-reader-open-url)))
+    (with-pocket-reader
+     (cl-loop do (progn
+                   (goto-char (random (buffer-size)))
+                   (beginning-of-line))
+              while (not (pocket-reader--item-visible-p))
+              finally do (funcall fn)))))
 
 (defun pocket-reader-excerpt ()
   "Show excerpt for marked or current items."
@@ -959,6 +982,59 @@ Returns list with these values:
          (column-width (elt col-data 1))
          (end-col (+ start-col column-width)))
     (list col-num start-col end-col column-width)))
+
+;;;;; URL-adding helpers
+
+(defun pocket-reader-add-link ()
+  "Add link at point to Pocket.
+This function tries to work in multiple major modes, such as w3m,
+eww, and Org."
+  (interactive)
+  (cl-case major-mode
+    ('eww-mode (pocket-reader-eww-add-link))
+    ('org-mode (pocket-reader-org-add-link))
+    ('w3m-mode (pocket-reader-w3m-lnum-add-link))
+    (t (pocket-reader-generic-add-link))))
+
+(defun pocket-reader-eww-add-link ()
+  "Add link at point to Pocket in eww buffers."
+  (interactive)
+  ;; `eww-links-at-point' returns a list of links, but we only use the
+  ;; first one.  I think this is the right thing to do in most, if not
+  ;; all, cases.
+  (when-let ((url (car (eww-links-at-point))))
+    (when (pocket-lib-add-urls url)
+      (message "Added: %s" url))))
+
+(defun pocket-reader-org-add-link ()
+  "Add link at point to Pocket in Org buffers."
+  (interactive)
+  (when-let ((url (when (org-in-regexp org-bracket-link-regexp)
+                    (org-link-unescape (match-string-no-properties 1)))))
+    (when (pocket-lib-add-urls url)
+      (message "Added: %s" url))))
+
+(cl-defun pocket-reader-w3m-lnum-add-link (&key (type 1))
+  "Add link to Pocket with lnum in w3m buffers."
+  (interactive)
+  (w3m-with-lnum
+   type ""
+   (when-let ((num (car (w3m-lnum-read-interactive
+                         "Anchor number: "
+                         'w3m-lnum-highlight-anchor
+                         type last-index w3m-current-url)))
+              (info (w3m-lnum-get-anchor-info num))
+              (url (car info)))
+     (when (pocket-lib-add-urls url)
+       (message "Added: %s" url)))))
+
+(defun pocket-reader-generic-add-link ()
+  "Try to add URL at point to Pocket using `thing-at-pt'."
+  (interactive)
+  (when-let ((url (thing-at-point-url-at-point)))
+    (when (pocket-lib-add-urls url)
+      (message "Added: %s" url))))
+
 
 ;;;; Footer
 
