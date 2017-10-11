@@ -788,6 +788,13 @@ Shell creation
               ""
             (hy-shell-calculate-interpreter-args))))
 
+(defun hy--shell-send-internal-setup-code ()
+  (-let [process
+         (hy-shell-get-internal-process)]
+    (comint-send-string process
+                        (concat hy-eldoc-setup-code hy-company-setup-code))
+    (while (accept-process-output process nil 100 t))))
+
 (defun run-hy (&optional cmd)
   "Run an inferior Hy process.
 
@@ -802,15 +809,91 @@ CMD defaults to the result of `hy-shell-calculate-command'."
   "Start an inferior hy process in the background for autocompletion."
   (when (and (not (hy-shell-get-internal-process))
              (executable-find "hy"))
-    (-let [hy-shell--font-lock-enable
+    (-let [hy-shell-font-lock-enable
            nil]
-      (-> (hy-shell-calculate-command t)
-         (hy-shell-make-comint hy-shell-internal-buffer-name nil t)
-         get-buffer-process))))
+      (prog1
+          (-> (hy-shell-calculate-command t)
+             (hy-shell-make-comint hy-shell-internal-buffer-name nil t)
+             get-buffer-process)
+        (hy--shell-send-internal-setup-code)))))
+
+Eldoc
+
+(defconst hy-eldoc-setup-code
+  "(import inspect)
+(defn get-help [obj]
+  (try
+   (do (setv doc (inspect.getdoc obj))
+       (if (and (not doc) (callable obj))
+           (do
+               (setv target None)
+               (if (and (inspect.isclass obj)
+                        (hasattr obj \"__init__\"))
+                   (setv target obj.--init--
+                         objtype \"class\")
+                 (setv target obj
+                       objtype \"def\"))
+             (when target
+               (setv args (inspect.formatargspec
+                           #* (inspect.getargspec target))
+                     name obj.--name--
+                     doc (.format \"{} {}{}\" objtype name args))))
+         (setv doc (get (doc.splitlines) 0))))
+   (except [e Exception]
+           (setv doc (str))))
+  doc)"
+  "Symbol introspection code to send to the internal process for eldoc.")
+
+(defun hy--send-eldoc (command)
+  "Send command for eldoc to internal process."
+  (let ((output-buffer " *Comint Redirect Work Buffer*")
+        (process (hy-shell-get-internal-process))
+        results)
+    (with-current-buffer (get-buffer-create output-buffer)
+      (erase-buffer)
+
+      (comint-redirect-send-command-to-process
+       command output-buffer process nil t)
+
+      (set-buffer (process-buffer process))
+      (while (and (null comint-redirect-completed)
+                  (accept-process-output process nil 100 t)))
+      (set-buffer output-buffer)
+
+      (buffer-substring-no-properties (point-min) (- (point-max) 4)))))
+
+(defun hy--eldoc-format-command (symbol)
+  (format "(try (get-help %s) (except [e Exception] (str)))" symbol))
+
+(defun hy--eldoc-get-inner-symbol ()
+  (save-excursion
+    (-when-let* ((_ (hy-shell-get-internal-process))
+                 (state (syntax-ppss))
+                 (start-pos (hy--sexp-inermost-char state))
+                 (_ (progn (goto-char start-pos)
+                           (not (hy--not-function-form-p))))
+                 (function (progn (forward-char)
+                                  (thing-at-point 'symbol)))
+                 ;; TODO attribute methods like .format cause lexexception
+                 (_ (not (s-starts-with? "." function))))
+      function)))
+
+(defun hy-eldoc-documentation-function ()
+  (when-let (function (hy--eldoc-get-inner-symbol))
+    (->> function
+       hy--eldoc-format-command
+       hy--send-eldoc
+       (s-chop-prefixes '("\"" "'"))
+       (s-chop-suffixes '("\"" "'")))))
 
 Autocompletion
 
-(defun hy-comint-redirect-results-list-from-process (process command regexp regexp-group)
+(defconst hy-company-setup-code
+  "(import [hy.completer [Completer]])
+(setv completer (Completer))"
+  "Autocompletion setup code to send to the internal process.")
+
+(defun hy--company-redirect-results-list-from-process (process command regexp regexp-group)
   "Execute `comint-redirect-results-list-from-process' with timeout for company."
   (let ((output-buffer " *Comint Redirect Work Buffer*")
         results)
@@ -837,14 +920,12 @@ Autocompletion
               results))
       (nreverse results))))
 
-(defun hy-get-matches (&optional str)
+(defun hy--company-get-matches (&optional str)
   "Return matches for STR."
   (when (hy-shell-get-internal-process)
-    (hy-comint-redirect-results-list-from-process
+    (hy--company-redirect-results-list-from-process
      (hy-shell-get-internal-process)
      (concat
-      ;; Currently always importing, determine if can do at start
-      "(do (import [hy.completer [Completer]]) (setv completer (Completer))"
       "(completer."
       (cond ((s-starts-with? "#" str)  ; Hy not recording tag macros atm
              "tag-matches")
@@ -855,7 +936,7 @@ Autocompletion
             (t
              "global-matches"))
       " \"" str "\")"
-      ")")
+      )
      (rx "'"
          (group (1+ (or word (any "!@#$%^&*-_+=?~`'<>,.\|"))))
          "'"
@@ -870,7 +951,7 @@ Autocompletion
     (candidates (cons :async
                       (lexical-let ((prfx arg))
                         (lambda (cb)
-                          (let ((res (hy-get-matches prfx)))
+                          (let ((res (hy--company-get-matches prfx)))
                             (funcall cb res))))))
     ;; (meta (format "This value is named %s" arg))
     ))
@@ -925,6 +1006,11 @@ Hy-mode setup
   (run-hy-internal)
   (add-hook 'pyvenv-post-activate-hooks 'run-hy-internal nil t))
 
+(defun hy--mode-setup-eldoc ()
+  (make-local-variable 'eldoc-documentation-function)
+  (setq-local eldoc-documentation-function 'hy-eldoc-documentation-function)
+  (eldoc-mode +1))
+
 Inferior-hy-mode setup
 
 (defun hy--inferior-mode-setup ()
@@ -960,6 +1046,7 @@ Core
 ###autoload
 (define-derived-mode hy-mode prog-mode "Hy"
   "Major mode for editing Hy files."
+  (hy--mode-setup-eldoc)
   (hy--mode-setup-font-lock)
   (hy--mode-setup-smartparens)
   (hy--mode-setup-syntax)
