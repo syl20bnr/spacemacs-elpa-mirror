@@ -2,9 +2,9 @@
 
 ;; Copyright (c) 2017 Volodymyr Yevtushenko
 
-;; Author: Volodymyr Yevtushenko <vol.yevtushenko@ukr.net>
+;; Author: Volodymyr Yevtushenko <voloyev@vivaldi.net>
 ;; Keywords: themes
-;; Package-Version: 20171010.1244
+;; Package-Version: 20171011.536
 ;; URL: https://github.com/voloyev/sexy-monochrome-theme
 ;; Version: 2.0
 
@@ -34,6 +34,9 @@
 ;; Based on the Xavier Noria monochrome-theme
 ;; https://github.com/fxn/monochrome-theme.el/
 
+;; And impressed by "Monochrome color scheme for Vim" 
+;; https://github.com/fxn/vim-monochrome
+
 ;;; Code:
 
 (deftheme sexy-monochrome
@@ -53,7 +56,7 @@
       (foreground "#e5e5e5")
       (region "#3d3d3d")
       (comment "#616161")
-      (string "#6495ed")
+      (string "#4682b4")
       (linum "#696969")
       (paren-match "#483d8b")
       (paren-mismatch "#ff0000"))
