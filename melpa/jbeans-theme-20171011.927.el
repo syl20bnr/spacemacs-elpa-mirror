@@ -5,7 +5,7 @@
 ;; Version: 1.3
 ;; Package-Requires: ((emacs "24"))
 ;; Based On: ujelly by Mark Tran
-;; Package-Version: 20170816.754
+;; Package-Version: 20171011.927
 ;; Package-X-Original-Version: 20151208.2136
 ;; "What do you mean, no one calls you JBeans?!  I call you JBeans!"
 ;; -- Wilbur
@@ -13,28 +13,6 @@
 ;; Based on ujelly by Mark Tran <mark.tran@gmail.com>
 ;; Orig-URL: http://github.com/marktran/color-theme-ujelly
 ;; Inspired by jellybeans: http://www.vim.org/scripts/script.php?script_id=2555.
-
-
-;; Copyright (c) 2017 Adam Olsen <arolsen@gmail.com>
-;; 
-;; Permission is hereby granted, free of charge, to any person obtaining a copy
-;; of this software and associated documentation files (the "Software"), to deal
-;; in the Software without restriction, including without limitation the rights
-;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-;; copies of the Software, and to permit persons to whom the Software is
-;; furnished to do so, subject to the following conditions:
-;; 
-;; The above copyright notice and this permission notice shall be included in all
-;; copies or substantial portions of the Software.
-;; 
-;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-;; SOFTWARE.
-
 (deftheme jbeans "The jbeans color theme")
 
 (let ((class '((class color) (min-colors 89)))
@@ -54,6 +32,7 @@
       (jbeans-purple-2   (if (display-graphic-p) "#a40073" "#a40073"))
       (jbeans-purple-3   (if (display-graphic-p) "#540063" "#540063"))
       (jbeans-purple-4   (if (display-graphic-p) "#474e90" "#474e90"))
+      (jbeans-purple-5   (if (display-graphic-p) "#2d2e3a" "#2d2e3a"))
       (jbeans-blue-0     (if (display-graphic-p) "#8197bf" "#8197bf"))
       (jbeans-blue-1     (if (display-graphic-p) "#8fbfdc" "#8fbfdc"))
       (jbeans-blue-2     (if (display-graphic-p) "#b2e2fe" "#b2e2fe"))
@@ -192,7 +171,7 @@
        `(helm-ff-executable                  ((,class (:foreground ,jbeans-green-5))))
 ;;;;; Highlight
        `(highlight                           ((,class (:background ,jbeans-grey-3))))
-       `(hl-line                             ((,class (:background ,jbeans-grey-2))))
+       `(hl-line                             ((,class (:background ,jbeans-purple-5))))
 ;;;;; iSearch
        `(isearch                             ((,class (:foreground ,jbeans-fg :background ,jbeans-red-4))))
        `(isearch-fail                        ((,class (:background ,jbeans-red-4))))

@@ -4,8 +4,8 @@
 
 ;; Author: Johan Dykstrom
 ;; Created: Sep 2017
-;; Version: 0.1.2
-;; Package-Version: 20171004.1218
+;; Version: 0.1.3
+;; Package-Version: 20171011.1126
 ;; Keywords: basic, languages
 ;; URL: https://github.com/dykstrom/basic-mode
 ;; Package-Requires: ((seq "2.20") (emacs "24.3"))
@@ -50,6 +50,7 @@
 
 ;;; Change Log:
 
+;;  0.1.3  2017-10-11  Even more syntax highlighting.
 ;;  0.1.2  2017-10-04  More syntax highlighting.
 ;;  0.1.1  2017-10-02  Fixed review comments and autoload problems.
 ;;  0.1.0  2017-09-28  Initial version.
@@ -94,18 +95,29 @@ the actual code. Set this variable to 0 if you do not use line numbers."
 ;; Variables:
 ;; ----------------------------------------------------------------------------
 
-(defconst basic-mode-version "0.1.2"
+(defconst basic-mode-version "0.1.3"
   "The current version of `basic-mode'.")
 
-(defconst basic-increase-indent-keywords
+(defconst basic-increase-indent-keywords-bol
+  (regexp-opt '("do" "for" "repeat" "sub" "while")
+              'symbols)
+  "Regexp string of keywords that increase indentation.
+These keywords increase indentation when found at the
+beginning of a line.")
+
+(defconst basic-increase-indent-keywords-eol
   (regexp-opt '("else" "then")
               'symbols)
-  "Regexp string of keywords that increase indentation.")
+  "Regexp string of keywords that increase indentation.
+These keywords increase indentation when found at the
+end of a line.")
 
-(defconst basic-decrease-indent-keywords
-  (regexp-opt '("else" "elseif" "endif" "end" "loop" "next" "wend")
+(defconst basic-decrease-indent-keywords-bol
+  (regexp-opt '("else" "elseif" "endif" "end" "loop" "next" "until" "wend")
               'symbols)
-  "Regexp string of keywords that decrease indentation.")
+  "Regexp string of keywords that decrease indentation.
+These keywords decrease indentation when found at the
+beginning of a line.")
 
 (defconst basic-comment-and-string-faces
   '(font-lock-comment-face font-lock-comment-delimiter-face font-lock-string-face)
@@ -125,19 +137,23 @@ the actual code. Set this variable to 0 if you do not use line numbers."
   "Regexp string of symbols to highlight as constants.")
 
 (defconst basic-function-regexp
-  (regexp-opt '("abs")
+  (regexp-opt '("abs" "asc" "atn" "chr$" "command$" "cos" "exp" "fix" "int"
+                "lcase$" "len" "left$" "log" "log10" "mid$" "pi" "right$"
+                "rnd" "sgn" "sin" "sqr" "str$" "tab" "tan" "ucase$" "usr"
+                "val")
               'symbols)
   "Regexp string of symbols to highlight as functions.")
 
 (defconst basic-builtin-regexp
-  (regexp-opt '("and" "data" "gosub" "goto" "input" "let" "mod" "not"
-                "or" "print" "read" "return" "xor")
+  (regexp-opt '("and" "cls" "data" "dim" "input" "let" "mat" "mod" "not" "or"
+                "peek" "poke" "print" "read" "restore" "troff" "tron" "xor")
               'symbols)
   "Regexp string of symbols to highlight as builtins.")
 
 (defconst basic-keyword-regexp
-  (regexp-opt '("do" "else" "elseif" "end" "endif" "exit" "for" "if"
-                "loop" "next" "step" "then" "to" "until" "wend" "while")
+  (regexp-opt '("call" "def" "do" "else" "elseif" "end" "endif" "error" "exit"
+                "fn" "for" "gosub" "goto" "if" "loop" "next" "on" "step"
+                "repeat" "return" "sub" "then" "to" "until" "wend" "while")
               'symbols)
   "Regexp string of symbols to highlight as keywords.")
 
@@ -220,7 +236,7 @@ Code inside a block is indented `basic-indent-offset' extra characters."
   (let ((faces (get-text-property (point) 'face)))
     (unless (listp faces)
       (setq faces (list faces)))
-    (seq-some (lambda (x) (seq-contains faces x)) basic-comment-and-string-faces)))
+    (seq-some (lambda (x) (memq x faces)) basic-comment-and-string-faces)))
 
 (defun basic-code-search-backward ()
   "Search backward from point for a line containing code."
@@ -244,21 +260,21 @@ while other keywords do it when found at the beginning of a line."
     (basic-code-search-backward)
     (unless (bobp)
       ;; Keywords at the end of the line
-      (if (basic-match-symbol-at-point-p basic-increase-indent-keywords)
+      (if (basic-match-symbol-at-point-p basic-increase-indent-keywords-eol)
           't
         ;; Keywords at the beginning of the line
         (beginning-of-line)
         (re-search-forward "[^0-9 \t\n]" (point-at-eol) t)
-        (basic-match-symbol-at-point-p (regexp-opt '("do" "for" "while") 'symbols))))))
+        (basic-match-symbol-at-point-p basic-increase-indent-keywords-bol)))))
 
 (defun basic-decrease-indent-p ()
   "Return non-nil if indentation should be decreased.
 Some keywords trigger un-indentation when found at the beginning
-of a line, see `basic-decrease-indent-keywords'."
+of a line, see `basic-decrease-indent-keywords-bol'."
   (save-excursion
     (beginning-of-line)
     (re-search-forward "[^0-9 \t\n]" (point-at-eol) t)
-    (basic-match-symbol-at-point-p basic-decrease-indent-keywords)))
+    (basic-match-symbol-at-point-p basic-decrease-indent-keywords-bol)))
 
 (defun basic-current-indent ()
   "Return the indent column of the current code line.
