@@ -1,7 +1,7 @@
 ;;; lsp-haskell.el --- Haskell support for lsp-mode
 
 ;; Version: 1.0
-;; Package-Version: 20170919.626
+;; Package-Version: 20171010.2245
 ;; Package-Requires: ((lsp-mode "2.0") (haskell-mode "1.0"))
 ;; Keywords: haskell
 ;; URL: https://github.com/emacs-lsp/lsp-haskell
@@ -250,7 +250,6 @@ Each option is a plist of (:key :default :title) wherein:
              (set (make-local-variable v) (buffer-local-value v buffer)))))
 ;; ---------------------------------------------------------------------
 
-;;;###autoload
 (lsp-define-stdio-client 'haskell-mode "haskell" 'stdio #'lsp-haskell--get-root
 			  "Haskell Language Server"
 			 '("hie" "--lsp" "-d" "-l" "/tmp/hie.log"))

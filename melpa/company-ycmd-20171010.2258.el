@@ -5,7 +5,7 @@
 ;; Authors: Austin Bingham <austin.bingham@gmail.com>
 ;;          Peter Vasil <mail@petervasil.net>
 ;; version: 0.2
-;; Package-Version: 20171010.715
+;; Package-Version: 20171010.2258
 ;; URL: https://github.com/abingham/emacs-ycmd
 ;; Package-Requires: ((ycmd "1.3") (company "0.9.3") (deferred "0.5.1") (s "1.11.0") (dash "2.13.0") (let-alist "1.0.5") (f "0.19.0"))
 ;;
@@ -497,7 +497,7 @@ If CB is non-nil, call it with candidates."
   "Prefix-command handler for the company backend."
   (and ycmd-mode
        buffer-file-name
-       (ycmd-running?)
+       (ycmd-running-p)
        (or (not (company-in-string-or-comment))
            (company-ycmd--in-include))
        (or (company-grab-symbol-cons "\\.\\|->\\|::\\|/" 2)
