@@ -4,7 +4,7 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20171010.727
+;; Package-Version: 20171010.1140
 ;; Version: 1.9.12
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -137,12 +137,12 @@ Because only two are supported by hugo."
   :type 'string)
 
 (defcustom easy-hugo-postdir "content/post"
-  "Directory where the theme store it's posts."
+  "Directory where the theme stores its posts."
   :group 'easy-hugo
   :type 'string)
 
 (defcustom easy-hugo-blog-number nil
-  "Number of your blog which you managed."
+  "Number of blogs you want to manage."
   :group 'easy-hugo
   :type 'integer)
 

@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 20171006.1343
+;; Package-Version: 20171010.1544
 ;; Version: 2.10
 
 ;; This file is not part of GNU Emacs.
@@ -137,6 +137,12 @@
   :set (lambda (var val)
          (set var val)
          (rtags-set-suspend-during-compilation-enabled)))
+
+(defcustom rtags-use-mark-as-current-symbol nil
+  "Use mark, when visible as default for rtags-find-symbol."
+  :group 'rtags
+  :type 'boolean
+  :safe 'booleanp)
 
 (rtags-set-suspend-during-compilation-enabled)
 
@@ -1074,7 +1080,7 @@ to case differences."
 
 (defun rtags-combine-strings (list)
   (mapconcat (lambda (str)
-               (cond ((string-match "\"" str) (concat "\"" (replace-regexp-in-string "\"" "\\\"" str) "\""))
+               (cond ((string-match "\"" str) (concat "\"" (replace-regexp-in-string "\"" "\\\\\"" str) "\""))
                      ((string-match " " str) (concat "\"" str "\""))
                      (t str)))
              list
@@ -1404,7 +1410,9 @@ Uses `completing-read' to ask for the project."
       (find-file project))))
 
 (defun rtags-current-symbol (&optional no-symbol-name)
-  (or (and mark-active (buffer-substring-no-properties (point) (mark)))
+  (or (and rtags-use-mark-as-current-symbol
+           mark-active
+           (buffer-substring-no-properties (point) (mark)))
       (and (not no-symbol-name) (rtags-current-symbol-name))
       (thing-at-point 'symbol)))
 
@@ -1416,8 +1424,10 @@ Uses `completing-read' to ask for the project."
                                           (base-classes nil)
                                           (piece nil)
                                           (relative-filenames nil)
-                                          (location (rtags-current-location))
+                                          (location nil)
                                           (silent nil))
+  (unless location
+    (setq location (rtags-current-location)))
   (when location
     (let* ((path (rtags-buffer-file-name))
            (object (with-temp-buffer

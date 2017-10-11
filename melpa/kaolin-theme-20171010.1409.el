@@ -4,7 +4,7 @@
 
 ;; Author: ogdenwebb <ogdenwebb@gmail.com>
 ;; URL: https://github.com/ogdenwebb/kaolin-theme
-;; Package-Version: 20171009.1130
+;; Package-Version: 20171010.1409
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 0.9.1
 
@@ -29,7 +29,6 @@
 
 (defgroup kaolin-theme nil
   "Kaolin theme properties"
-  :prefix "kaolin-"
   :group 'faces)
 
 (defcustom kaolin-bold t
@@ -57,6 +56,8 @@
 ;; TODO: (??) add base(terminal) colors
 ;; TODO: (??) colorful comments
 ;; TODO: treemacs
+;; TODO: custom-set face
+;; TODO: check all faces with cyan
 
 ;; Kaolin color palette
 (let ((c '((class color) (min-colors 89)))
@@ -134,6 +135,7 @@
 
       ;; TODO: #062732
       (midnight-blue   "#1e2528")
+      (alt-midnigh-blue "#062732")
       ;; (grayish-blue    "#36454f")
       (grayish-blue    "#687184")
       (dark-blue       "#2a4661")
@@ -193,7 +195,7 @@
          (rb3 jade)
          (rb4 faded-blue)
          (rb5 green)
-         (rb6 alt-lavender)
+         (rb6 light-violet)
          (rb7 grayish-orange)
          (rb8 grayish-magenta)
          (rb9 lavender)
@@ -295,13 +297,12 @@
      `(isearch-fail ((,c (:background nil :foreground ,red))))
 
      ;; Interface
-     ;; TODO: change button face
-     `(button ((,c (:background ,bg4 :foreground ,teal :box (:line-width 3 :color ,bg3 :style nil)))))
-     `(custom-button ((,c (:background ,bg4 :foreground ,teal :box (:line-width 3 :color ,bg3 :style nil)))))
-     `(custom-button-mouse ((,c (:background ,bg3 :foreground ,cyan :box (:line-width 3 :color ,bg2 :style nil)))))
-     `(custom-button-pressed ((,c (:background ,bg3 :foreground ,cyan :box (:line-width 3 :color ,bg2 :style pressed-button)))))
+     `(button ((,c (:inherit link))))
+     `(custom-button ((,c (:background ,bg3 :foreground ,grayish-orange :box (:line-width 2 :color ,bg2 :style released-button)))))
+     `(custom-button-mouse ((,c (:background ,bg4 :foreground ,light-orange :box (:line-width 2 :color ,bg2 :style released-button)))))
+     `(custom-button-pressed ((,c (:background ,bg4 :foreground ,light-orange :box (:line-width 2 :color ,bg2 :style pressed-button)))))
      `(custom-visibility ((,c (:background nil :foreground ,cyan :height 0.9 :underline ,underline))))
-     `(custom-state ((,c (:background nil :foreground ,light-green))))
+     `(custom-state ((,c (:background nil :foreground ,green))))
      `(custom-changed ((,c (:background nil :foreground ,orange))))
      `(custom-invalid ((,c (:background nil :foreground ,red))))
      `(custom-face-tag ((,c (:background nil :foreground ,purple :bold ,bold))))
@@ -314,6 +315,7 @@
      `(package-name ((,c (:background nil :foreground ,cyan))))
 
      ;; Additional highlighting
+     ;; TODO: Also uses to highlight buttons in describe
      `(highlight ((,c (:background ,bg2 :foreground ,cyan))))
      `(lazy-highlight ((,c (:background ,bg3 :foreground ,fg2))))
      `(hl-line ((,c (:background ,bg2))))
@@ -422,6 +424,7 @@
      `(org-headline-done ((,c (:foreground ,teal-blue  :bold nil))))
      `(org-checkbox-statistics-todo ((,c (:foreground ,faded-blue :bold ,bold))))
      `(org-checkbox-statistics-done ((,c (:foreground ,lime :bold ,bold))))
+     ;; TODO:
      `(org-code ((,c (:foreground ,green))))
      `(org-verbatim ((,c (:foreground ,light-yellow))))
      `(org-hide ((,c (:foreground ,bg2))))

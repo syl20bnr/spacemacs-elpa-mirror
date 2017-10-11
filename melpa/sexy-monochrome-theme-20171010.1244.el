@@ -4,7 +4,7 @@
 
 ;; Author: Volodymyr Yevtushenko <vol.yevtushenko@ukr.net>
 ;; Keywords: themes
-;; Package-Version: 20170611.859
+;; Package-Version: 20171010.1244
 ;; URL: https://github.com/voloyev/sexy-monochrome-theme
 ;; Version: 2.0
 
@@ -45,32 +45,32 @@
                         t)
 
 (let ((class '((class color) (min-colors 10)))
-      (black "#000000")
-      (white "white")
-      (lgray "light gray")
-      (dgray "dark gray")
-      (sgray "light slate gray")
-      (foreground "grey90")
-      (region "light slate gray")
-      (comment "grey36")
-      (string "light slate gray")
-      (linum "dim gray")
-      (paren-match "dark slate blue")
-      (paren-mismatch "red"))
+      (gblack "#000000")
+      (gwhite "#ffffff")
+      (lgray "#d3d3d3")
+      (dgray "#a9a9a9")
+      (sgray "#778899")
+      (foreground "#e5e5e5")
+      (region "#3d3d3d")
+      (comment "#616161")
+      (string "#6495ed")
+      (linum "#696969")
+      (paren-match "#483d8b")
+      (paren-mismatch "#ff0000"))
 
   (custom-theme-set-faces
    'sexy-monochrome
 
-   `(default ((,class (:foreground ,lgray :background ,black))))
+   `(default ((,class (:foreground ,lgray :background ,gblack))))
    `(cursor ((,class (:background ,lgray))))
 
    ;; Highlighting faces
    `(fringe ((t (:background "black" :foreground "light gray"))))
    `(highlight ((t (:background "gray9"))))
    `(region ((t (:background ,region))))
-   `(secondary-selection ((,class (:foreground: ,black :background ,sgray))))
-   `(isearch ((,class (:foreground ,black :background ,lgray))))
-   `(lazy-highlight ((,class (:foreground ,black :background ,lgray))))
+   `(secondary-selection ((,class (:foreground: ,gblack :background ,sgray))))
+   `(isearch ((,class (:foreground ,gblack :background ,lgray))))
+   `(lazy-highlight ((,class (:foreground ,gblack :background ,lgray))))
    `(linum ((t (:foreground ,linum))))
    `(trailing-whitespace ((,class (:background "red"))))
 
@@ -85,7 +85,7 @@
    `(whitespace-tab ((t (:foreground ,dgray))))
 
    ;; Escape and prompt faces
-   `(minibuffer-prompt ((,class (:weight bold :foreground ,white))))
+   `(minibuffer-prompt ((,class (:weight bold :foreground ,gwhite))))
    `(escape-glyph ((,class (:foreground ,lgray))))
    `(error ((,class (:weight bold :slant italic :foreground "red"))))
    `(warning ((,class (:foreground "yellow"))))
@@ -93,7 +93,7 @@
 
    ;; Font lock faces
    `(font-lock-builtin-face ((,class (:foreground ,foreground :weight bold))))
-   `(font-lock-constant-face ((,class (:foreground ,sgray :weight bold))))
+   `(font-lock-constant-face ((,class (:foreground ,foreground :weight bold))))
    `(font-lock-keyword-face ((,class (:foreground ,foreground :weight bold))))
    `(font-lock-type-face ((,class (:foreground ,foreground :slant italic))))
    `(font-lock-function-name-face ((,class (:foreground ,foreground :weight bold))))
@@ -122,26 +122,26 @@
    ;; Speedbar
    `(speedbar-button-face ((,class (:foreground ,dgray))))
    `(speedbar-file-face ((,class (:foreground ,lgray))))
-   `(speedbar-directory-face ((,class (:weight bold :foreground ,white))))
+   `(speedbar-directory-face ((,class (:weight bold :foreground ,gwhite))))
    `(speedbar-tag-face ((,class (:foreground ,dgray))))
    `(speedbar-selected-face ((,class (:underline ,lgray :foreground ,lgray))))
-   `(speedbar-highlight-face ((,class (:weight bold :background ,black :foreground ,white))))
+   `(speedbar-highlight-face ((,class (:weight bold :background ,gblack :foreground ,gwhite))))
 
    ;; ido
    `(ido-first-match ((,class (:foreground ,lgray))))
    `(ido-only-match ((,class (:underline ,lgray :foreground ,lgray))))
-   `(ido-subdir ((,class (:weight bold :foreground ,white))))
+   `(ido-subdir ((,class (:weight bold :foreground ,gwhite))))
 
    ;; MuMaMo
-   `(mumamo-background-chunk-major ((,class (:background ,black))))
-   `(mumamo-background-chunk-submode1 ((,class (:background ,black))))
-   `(mumamo-background-chunk-submode2 ((,class (:background ,black))))
-   `(mumamo-background-chunk-submode3 ((,class (:background ,black))))
-   `(mumamo-background-chunk-submode4 ((,class (:background ,black))))
+   `(mumamo-background-chunk-major ((,class (:background ,gblack))))
+   `(mumamo-background-chunk-submode1 ((,class (:background ,gblack))))
+   `(mumamo-background-chunk-submode2 ((,class (:background ,gblack))))
+   `(mumamo-background-chunk-submode3 ((,class (:background ,gblack))))
+   `(mumamo-background-chunk-submode4 ((,class (:background ,gblack))))
    `(mumamo-border-face-in ((,class (:slant unspecified :underline unspecified
-                                            :weight bold :foreground ,white))))
+                                            :weight bold :foreground ,gwhite))))
    `(mumamo-border-face-out ((,class (:slant unspecified :underline unspecified
-                                             :weight bold :foreground ,white))))
+                                             :weight bold :foreground ,gwhite))))
 
    ;; Gnus faces
    `(gnus-group-news-1 ((,class (:weight bold :foreground ,lgray))))
@@ -178,7 +178,7 @@
    `(message-separator ((,class (:weight bold :foreground ,lgray))))
 
    ;; EShell
-   `(eshell-prompt ((,class (:foreground ,white :bold t))))
+   `(eshell-prompt ((,class (:foreground ,gwhite :bold t))))
    `(eshell-ls-archive ((,class (:inherit eshell-ls-unreadable))))
    `(eshell-ls-backup ((,class (:inherit eshell-ls-unreadable))))
    `(eshell-ls-clutter ((,class (:inherit eshell-ls-unreadable))))
@@ -200,46 +200,46 @@
    `(org-verbatim ((t (:foreground "dim gray"))))
 
    ;; helm
-   `(helm-header ((t (:foreground ,dgray :background ,black :underline nil :box nil))))
+   `(helm-header ((t (:foreground ,dgray :background ,gblack :underline nil :box nil))))
    `(helm-source-header
-     ((t (:foreground ,white
-                      :background ,black
+     ((t (:foreground ,gwhite
+                      :background ,gblack
                       :underline nil
                       :weight bold
                       :box (:line-width 1 :style released-button)))))
-   `(helm-selection-line ((t (:background ,black))))
-   `(helm-visible-mark ((t (:foreground ,black :background ,white))))
-   `(helm-candidate-number ((t (:foreground ,lgray :background ,black))))
-   `(helm-separator ((t (:foreground ,white :background ,black))))
-   `(helm-time-zone-current ((t (:foreground ,lgray :background ,black))))
-   `(helm-time-zone-home ((t (:foreground ,white :background ,black))))
-   `(helm-bookmark-addressbook ((t (:foreground ,lgray :background ,black))))
+   `(helm-selection-line ((t (:background ,gblack))))
+   `(helm-visible-mark ((t (:foreground ,gblack :background ,gwhite))))
+   `(helm-candidate-number ((t (:foreground ,lgray :background ,gblack))))
+   `(helm-separator ((t (:foreground ,gwhite :background ,gblack))))
+   `(helm-time-zone-current ((t (:foreground ,lgray :background ,gblack))))
+   `(helm-time-zone-home ((t (:foreground ,gwhite :background ,gblack))))
+   `(helm-bookmark-addressbook ((t (:foreground ,lgray :background ,gblack))))
    `(helm-bookmark-directory ((t (:foreground nil :background nil :inherit helm-ff-directory))))
    `(helm-bookmark-file ((t (:foreground nil :background nil :inherit helm-ff-file))))
-   `(helm-bookmark-gnus ((t (:foreground ,white :background ,black))))
-   `(helm-bookmark-info ((t (:foreground ,lgray :background ,black))))
-   `(helm-bookmark-man ((t (:foreground ,white :background ,black))))
-   `(helm-bookmark-w3m ((t (:foreground ,white :background ,black))))
-   `(helm-buffer-directory ((t (:background ,white :foreground ,sgray :weight bold))))
-   `(helm-buffer-not-saved ((t (:foreground ,white :background ,black))))
-   `(helm-buffer-process ((t (:foreground ,white :background ,black))))
-   `(helm-buffer-saved-out ((t (:foreground ,lgray :background ,black))))
-   `(helm-buffer-size ((t (:foreground ,lgray :background ,black))))
-   `(helm-ff-directory ((t (:foreground ,white :background ,black :weight bold))))
-   `(helm-ff-file ((t (:foreground ,lgray :background ,black :weight normal))))
-   `(helm-ff-executable ((t (:foreground ,lgray :background ,black :weight normal))))
-   `(helm-ff-invalid-symlink ((t (:foreground ,white :background ,black :weight bold))))
-   `(helm-ff-symlink ((t (:foreground ,white :background ,black :weight bold))))
-   `(helm-ff-prefix ((t (:foreground ,black :background ,white :weight normal))))
-   `(helm-grep-cmd-line ((t (:foreground ,white :background ,black))))
-   `(helm-grep-file ((t (:foreground ,lgray :background ,black))))
-   `(helm-grep-finish ((t (:foreground ,lgray :background ,black))))
-   `(helm-grep-lineno ((t (:foreground ,lgray :background ,black))))
+   `(helm-bookmark-gnus ((t (:foreground ,gwhite :background ,gblack))))
+   `(helm-bookmark-info ((t (:foreground ,lgray :background ,gblack))))
+   `(helm-bookmark-man ((t (:foreground ,gwhite :background ,gblack))))
+   `(helm-bookmark-w3m ((t (:foreground ,gwhite :background ,gblack))))
+   `(helm-buffer-directory ((t (:background ,gwhite :foreground ,sgray :weight bold))))
+   `(helm-buffer-not-saved ((t (:foreground ,gwhite :background ,gblack))))
+   `(helm-buffer-process ((t (:foreground ,gwhite :background ,gblack))))
+   `(helm-buffer-saved-out ((t (:foreground ,lgray :background ,gblack))))
+   `(helm-buffer-size ((t (:foreground ,lgray :background ,gblack))))
+   `(helm-ff-directory ((t (:foreground ,gwhite :background ,gblack :weight bold))))
+   `(helm-ff-file ((t (:foreground ,lgray :background ,gblack :weight normal))))
+   `(helm-ff-executable ((t (:foreground ,lgray :background ,gblack :weight normal))))
+   `(helm-ff-invalid-symlink ((t (:foreground ,gwhite :background ,gblack :weight bold))))
+   `(helm-ff-symlink ((t (:foreground ,gwhite :background ,gblack :weight bold))))
+   `(helm-ff-prefix ((t (:foreground ,gblack :background ,gwhite :weight normal))))
+   `(helm-grep-cmd-line ((t (:foreground ,gwhite :background ,gblack))))
+   `(helm-grep-file ((t (:foreground ,lgray :background ,gblack))))
+   `(helm-grep-finish ((t (:foreground ,lgray :background ,gblack))))
+   `(helm-grep-lineno ((t (:foreground ,lgray :background ,gblack))))
    `(helm-grep-match ((t (:foreground nil :background nil :inherit helm-match))))
-   `(helm-grep-running ((t (:foreground ,white :background ,black))))
-   `(helm-moccur-buffer ((t (:foreground ,white :background ,black))))
-   `(helm-mu-contacts-address-face ((t (:foreground ,lgray :background ,black))))
-   `(helm-mu-contacts-name-face ((t (:foreground ,lgray :background ,black))))
+   `(helm-grep-running ((t (:foreground ,gwhite :background ,gblack))))
+   `(helm-moccur-buffer ((t (:foreground ,gwhite :background ,gblack))))
+   `(helm-mu-contacts-address-face ((t (:foreground ,lgray :background ,gblack))))
+   `(helm-mu-contacts-name-face ((t (:foreground ,lgray :background ,gblack))))
    `(helm-match ((t (:background "dim gray"))))
    `(helm-selection ((t (:background "#3b3b3b" :underline nil))))
 
@@ -309,10 +309,10 @@
                                           :slant unspecified :underline ,lgray))))
    `(flyspell-incorrect ((,class (:weight unspecified :foreground unspecified
                                           :slant unspecified :underline ,sgray)))))
-
+   
   (custom-theme-set-variables
    'sexy-monochrome
-   `(ansi-color-names-vector [,black ,lgray ,dgray ,sgray])))
+   `(ansi-color-names-vector [,gblack ,lgray ,dgray ,sgray])))
 
 ;;;###autoload
 (when (and (boundp 'custom-theme-load-path) load-file-name)
