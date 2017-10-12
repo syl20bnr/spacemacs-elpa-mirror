@@ -3,10 +3,8 @@ See the BBDB info manual for documentation.
 
  -----------------------------------------------------------------------
 |  There is a mailing list for discussion of BBDB:                      |
-|         bbdb-info@lists.sourceforge.net                               |
-|  To join, send mail to bbdb-info-request@lists.sourceforge.net        |
-|  (do not forget the "-request" part or you'll look silly in front of  |
-|  lots of people who have the ability to remember it indefinitely...)  |
+|         bbdb-user@nongnu.org                                          |
+|  To join, go to https://lists.nongnu.org/mailman/listinfo/bbdb-user   |
 |                                                                       |
 |  When joining this list or reporting bugs, please mention which       |
 |  version of BBDB you have.                                            |

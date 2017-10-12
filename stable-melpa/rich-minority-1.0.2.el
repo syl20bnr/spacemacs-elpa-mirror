@@ -4,9 +4,10 @@
 
 ;; Author: Artur Malabarba <emacs@endlessparentheses.com>
 ;; URL: https://github.com/Malabarba/rich-minority
-;; Package-Version: 1.0.1
+;; Package-Version: 1.0.2
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; Version: 1.0.1
+;; License: GNU General Public License v3 or newer
 ;; Keywords: mode-line faces
 
 ;;; Commentary:
@@ -178,16 +179,31 @@ These properties take priority over those defined in
 (defvar-local rm--help-echo nil
   "Used to set the help-echo string dynamically.")
 
+(defun rm-format-mode-line-entry (entry)
+  "Format an ENTRY of `minor-mode-alist'.
+Return a cons of the mode line string and the mode name, or nil
+if the mode line string is empty."
+  (let ((mode-symbol (car entry))
+        (mode-string (format-mode-line entry)))
+    (unless (string= mode-string "")
+      (cons mode-string mode-symbol))))
+
 ;;;###autoload
 (defun rm--mode-list-as-string-list ()
   "Return `minor-mode-list' as a simple list of strings."
-  (let ((full-list (delete "" (mapcar #'format-mode-line minor-mode-alist))))
+  (let ((full-list (delq nil (mapcar #'rm-format-mode-line-entry
+                                     minor-mode-alist)))
+        (spacer (propertize " " 'display '(space :align-to 15))))
     (setq rm--help-echo
-          (format "Full list:\n   %s\n\n%s"
-                  (mapconcat 'identity full-list "\n   ")
+          (format "Full list:\n%s\n\n%s"
+                  (mapconcat (lambda (pair)
+                               (format "   %s%s(%S)"
+                                       (car pair) spacer (cdr pair)))
+                             full-list "\n")
                   rm--help-echo-bottom))
     (mapcar #'rm--propertize
-            (rm--remove-hidden-modes full-list))))
+            (rm--remove-hidden-modes
+             (mapcar #'car full-list)))))
 
 (defcustom rm-base-text-properties
   '('help-echo 'rm--help-echo
