@@ -5,7 +5,7 @@
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Created: 2017-09-25
 ;; Version: 0.1-pre
-;; Package-Version: 20171010.2021
+;; Package-Version: 20171011.1454
 ;; Keywords: pocket
 ;; Package-Requires: ((emacs "25.1") (dash "2.13.0") (kv "0.0.19") (pocket-lib "0.1") (s "1.10") (ov "1.0.6") (rainbow-identifiers "0.2.2") (org-web-tools "0.1"))
 ;; URL: https://github.com/alphapapa/pocket-reader.el
@@ -148,6 +148,7 @@ item ID and second is the overlay used to mark it.")
     :has_video
     :has_image
     :word_count
+    :given_url
     :amp_url
     :resolved_url)
   "Keys to use in Pocket API responses, optionally with function to filter each one through.")
@@ -205,6 +206,15 @@ REGEXP REGEXP ...)."
   :type 'hook
   :options '(pocket-reader--apply-faces
              pocket-reader--add-spacers))
+
+(defcustom pocket-reader-url-priorities
+  '(:amp_url :resolved_url)
+  "URLs for each item are chosen in this order.
+Pocket provides multiple URLs for each item, depending on what it
+can find.  This allows users to choose which URLs they prefer to
+use when opening, copying, etc."
+  :type '(repeat symbol)
+  :options '(:amp_url :resolved_url))
 
 ;;;;;; Faces
 
@@ -495,7 +505,7 @@ other special keywords."
   "Open URL of current item with default function."
   (interactive)
   (pocket-reader--at-marked-or-current-items
-    (let* ((url (pocket-reader--get-property :resolved_url))
+    (let* ((url (pocket-reader--get-url))
            (fn (or fn (pocket-reader--map-url-open-fn url))))
       (when (funcall fn url)
         ;; Item opened successfully
@@ -522,7 +532,7 @@ The `browse-url-default-browser' function is used."
 (defun pocket-reader-copy-url ()
   "Copy URL of current item to kill-ring/clipboard."
   (interactive)
-  (when-let ((url (pocket-reader--get-property :resolved_url)))
+  (when-let ((url (pocket-reader--get-url)))
     (kill-new url)
     (message url)))
 
@@ -561,6 +571,14 @@ The `browse-url-default-browser' function is used."
                         (apply #'pocket-reader--archive-items archives))))
 
 ;;;;; Helpers
+
+(defun pocket-reader--get-url ()
+  "Return URL for current item.
+Chooses URL fields as configured by `pocket-reader-url-priorities'."
+  (cl-loop for key in pocket-reader-url-priorities
+           for url = (pocket-reader--get-property key)
+           when url
+           return url))
 
 (defun pocket-reader--item-visible-p ()
   "Return non-nil if current item is visible (i.e. not hidden by an overlay)."
@@ -675,7 +693,9 @@ QUERY is a string which may contain certain keywords:
                            (vector (pocket-reader--format-timestamp (string-to-number (plist-get it :time_added)))
                                    (pocket-reader--favorite-string (plist-get it :favorite))
                                    title
-                                   (pocket-reader--url-domain (plist-get it :resolved_url))
+                                   (pocket-reader--url-domain (or (plist-get it :resolved_url)
+                                                                  (plist-get it :amp_url)
+                                                                  (plist-get it :given_url)))
                                    tags)))))
 
 (defun pocket-reader--action (action &optional arg)
