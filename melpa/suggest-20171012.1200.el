@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Version: 0.6
-;; Package-Version: 20171007.930
+;; Package-Version: 20171012.1200
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.4") (loop "1.3") (dash "2.13.0") (s "1.11.0") (f "0.18.2"))
 ;; URL: https://github.com/Wilfred/suggest.el
@@ -345,6 +345,11 @@ we look up `t' instead.")
     ;; If `read' is called with nil or t, it prompts interactively.
     (and (eq fn 'read)
          (member args '(nil (nil) (t))))
+    ;; Work around https://github.com/Wilfred/suggest.el/issues/37 on
+    ;; Emacs 24, where it's possible to crash `read' with a list.
+    (and (eq fn 'read)
+         (eq emacs-major-version 24)
+         (consp (car args)))
     ;; Work around https://github.com/magnars/dash.el/issues/241
     (and (memq fn '(-interleave -zip))
          (null args)))))

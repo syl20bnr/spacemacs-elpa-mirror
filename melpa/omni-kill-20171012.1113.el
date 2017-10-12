@@ -1,11 +1,11 @@
-;;; omni-kill.el --- Kill all the things  -*- no-byte-compile: t; -*-
+;;; omni-kill.el --- Kill all the things  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2014-2017  Adrien Becchis
 
 ;; Author: Adrien Becchis <adriean.khisbe@live.fr>
 ;; Created:  2014-09-06
 ;; Version: 0.5.1
-;; Package-Version: 20171005.955
+;; Package-Version: 20171012.1113
 ;; Keywords: convenience, editing, tools
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -151,33 +151,37 @@ Returns nil."
            (mapconcat (lambda (cs) (format "%c:%s" (car cs) (cdr cs)))
                       omni-kill-thing-to-letter-alist " ")))
 
-(defmacro omni-kill--generate-dispatch-command (command)
+(defun omni-kill--generate-dispatch-command (command)
   "Generate a dispath command for the given COMMAND."
- `(defun ,(intern (format "omni-%s" (eval command))) (char-or-thing)
-       ,(format "%s the thing associated with the given CHAR-OR-THING.
-Association are stored in the `omni-kill-thing-to-letter-alist' variable" (capitalize (eval command))) ;§todo: doc
-       (interactive "cPick a thing:");§later: recap list
-       (let ((thing (if (symbolp char-or-thing) char-or-thing
-                      (cdr-safe (assoc char-or-thing omni-kill-thing-to-letter-alist)))))
-         (if thing
-             (,(intern "omni-kill--do-thing-at-point")
-              ',(cdr (assoc (eval command) omni-kill-action-alist))
-              thing)
-           (progn (message "No thing is associated at letter '%s' (for memory refresh, run `omni-help')" (char-to-string char))
-           nil)))))
+  (let ((command-name (intern (format "omni-%s" command))))
+    (defalias command-name
+      (lambda (char-or-thing)
+        (interactive "cPick a thing:")  ;§later: recap list
+        (let ((thing (if (symbolp char-or-thing) char-or-thing
+                       (cdr-safe (assoc char-or-thing omni-kill-thing-to-letter-alist)))))
+          (if thing
+              (omni-kill--do-thing-at-point (cdr (assoc command omni-kill-action-alist)) thing)
+            (progn
+              (message "No thing is associated at letter '%s' (for memory refresh, run `omni-help')" (char-to-string char))
+              nil)))))
+    (put command-name 'function-documentation (format "%s the thing associated with the given CHAR-OR-THING.
+Association are stored in the `omni-kill-thing-to-letter-alist' variable" (capitalize command)))))
+
+
 
 (defun omni-kill--destroy-dispatch-command (command)
   "Generate a dispath command for the given COMMAND."
   (fmakunbound (intern (format "omni-%s" command))))
 
-(defmacro omni-kill--generate-command (command symb)
+(defun omni-kill--generate-command (command symb)
   "Generate a COMMAND command for the given SYMB."
- `(defun ,(intern (format omni-kill-naming-scheme (eval command) (eval symb))) ()
-       ,(format "Copy the %s at point" (eval symb))
-       (interactive)
-       (omni-kill--do-thing-at-point
-        ',(cdr (assoc (eval command) omni-kill-action-alist))
-        ',(eval symb))))
+  (let ((command-name (intern (format omni-kill-naming-scheme command symb))))
+    (defalias command-name
+      (lambda ()
+        (interactive)
+        (omni-kill--do-thing-at-point (cdr (assoc command omni-kill-action-alist)) symb)))
+    (put command-name 'function-documentation
+         (format "%s the %s at point." (capitalize command) symb))))
 
 (defun omni-kill--destroy-command (command symb)
   "Generate a dispath command for the given COMMAND."

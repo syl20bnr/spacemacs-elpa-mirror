@@ -3,8 +3,8 @@
 ;; Copyright (C) 2014 Artur Malabarba <bruce.connor.am@gmail.com>
 
 ;; Author: Artur Malabarba <bruce.connor.am@gmail.com>
-;; URL: http://github.com/Bruce-Connor/fancy-narrow-region
-;; Package-Version: 0.9.4
+;; URL: http://github.com/Bruce-Connor/fancy-narrow
+;; Package-Version: 0.9.5
 ;; Version: 0.9.4
 ;; Keywords: faces convenience
 ;; Prefix: fancy-narrow
@@ -70,7 +70,8 @@ Please include your emacs and fancy-narrow-region versions."
   (browse-url "https://github.com/Bruce-Connor/fancy-narrow/issues/new"))
 (defgroup fancy-narrow nil
   "Customization group for fancy-narrow."
-  :prefix "fancy-narrow-")
+  :prefix "fancy-narrow-"
+  :group 'editing)
 
 (defconst fancy-narrow--help-string
   "This region is blocked from editing while buffer is narrowed."
@@ -85,6 +86,10 @@ Please include your emacs and fancy-narrow-region versions."
   "List of properties given to text beyond the narrowed region."
   :type 'list
   :group 'fancy-narrow-region)
+
+(defvar fancy-narrow--was-semantic nil
+  "")
+(make-variable-buffer-local 'fancy-narrow--was-semantic)
 
 ;;;###autoload
 (defun fancy-narrow-active-p ()
@@ -193,8 +198,7 @@ strings don't deemphasize correctly.
 
 To widen the region again afterwards use `fancy-widen'."
   (interactive "r")
-  (let ((modified (buffer-modified-p))
-        (l (min start end))
+  (let ((l (min start end))
         (r (max start end)))
     ;; If it was already active, just become narrower.
     (when fancy-narrow--beginning (setq l (max l fancy-narrow--beginning)))
@@ -205,24 +209,26 @@ To widen the region again afterwards use `fancy-widen'."
       ;; unless it was already active, patch font-lock and flyspell
       (unless font-lock-mode
         (setq fancy-narrow--wasnt-font-lock t))
-      (when flyspell-mode
+      (when (and (boundp 'flyspell-mode) flyspell-mode)
         (setq fancy-narrow--was-flyspell t)
-        (flyspell-mode 0)))
+        (flyspell-mode 0))
+      (when (and (boundp 'semantic-mode) semantic-mode)
+        (setq fancy-narrow--was-semantic t)
+        (semantic-mode 0)))
     (add-hook 'post-command-hook 'fancy-narrow--motion-function t t)
-    (add-text-properties (point-min) l fancy-narrow-properties-stickiness)
-    (fancy-narrow--propertize-region (point-min) l)
-    (fancy-narrow--propertize-region r (point-max))
-    (if fancy-narrow--wasnt-font-lock
-        (progn
-          (font-lock-fontify-region r (point-max))
-          (font-lock-fontify-region (point-min) l))
-      ;; We have to ask to refontify the region, because apparently we
-      ;; broke fontlocking somewhere above.
-      (font-lock-fontify-region l r))
-    (setq fancy-narrow--beginning (copy-marker l nil))
-    (setq fancy-narrow--end (copy-marker r t))
-    (unless modified
-      (set-buffer-modified-p nil))))
+    (with-silent-modifications
+      (add-text-properties (point-min) l fancy-narrow-properties-stickiness)
+      (fancy-narrow--propertize-region (point-min) l)
+      (fancy-narrow--propertize-region r (point-max))
+      (if fancy-narrow--wasnt-font-lock
+          (progn
+            (font-lock-fontify-region r (point-max))
+            (font-lock-fontify-region (point-min) l))
+        ;; We have to ask to refontify the region, because apparently we
+        ;; broke fontlocking somewhere above.
+        (font-lock-fontify-region l r))
+      (setq fancy-narrow--beginning (copy-marker l nil))
+      (setq fancy-narrow--end (copy-marker r t)))))
 
 (defvar fancy-narrow--overlay-left nil "")
 (make-variable-buffer-local 'fancy-narrow--overlay-left)
@@ -241,23 +247,23 @@ To widen the region again afterwards use `fancy-widen'."
 (defun fancy-widen ()
   "Undo narrowing from `fancy-narrow-to-region'."
   (interactive)
-  (let ((modified (buffer-modified-p))
-        (inhibit-point-motion-hooks t)
-        (inhibit-read-only t))
+  (with-silent-modifications
     (when fancy-narrow--wasnt-font-lock
       (setq fancy-narrow--wasnt-font-lock nil)
       (font-lock-mode -1))
     (when fancy-narrow--was-flyspell
       (setq fancy-narrow--was-flyspell nil)
       (flyspell-mode 1))
+    (when fancy-narrow--was-semantic
+      (setq fancy-narrow--was-semantic nil)
+      (semantic-mode 1))
     (setq fancy-narrow--beginning nil
           fancy-narrow--end nil)
     (delete-overlay fancy-narrow--overlay-left)
     (delete-overlay fancy-narrow--overlay-right)
     (remove-hook 'post-command-hook 'fancy-narrow--motion-function t)
     (remove-text-properties (point-min) (point-max) fancy-narrow-properties)
-    (remove-text-properties (point-min) (point-max) fancy-narrow-properties-stickiness)
-    (unless modified (set-buffer-modified-p nil))))
+    (remove-text-properties (point-min) (point-max) fancy-narrow-properties-stickiness)))
 
 (defcustom fancy-narrow-lighter " *"
   "Lighter used in the mode-line while the mode is active."
