@@ -5,7 +5,7 @@
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Created: 2017-09-25
 ;; Version: 0.1-pre
-;; Package-Version: 20171011.1454
+;; Package-Version: 20171012.1612
 ;; Keywords: pocket
 ;; Package-Requires: ((emacs "25.1") (dash "2.13.0") (kv "0.0.19") (pocket-lib "0.1") (s "1.10") (ov "1.0.6") (rainbow-identifiers "0.2.2") (org-web-tools "0.1"))
 ;; URL: https://github.com/alphapapa/pocket-reader.el
@@ -511,7 +511,7 @@ other special keywords."
         ;; Item opened successfully
         (when pocket-reader-archive-on-open
           (pocket-reader--with-pocket-reader-buffer
-            (pocket-reader-toggle-archived)))))))
+            (pocket-reader--archive-items (pocket-reader--current-item))))))))
 
 (defun pocket-reader-pop-to-url ()
   "Open URL of current item with default pop-to function."

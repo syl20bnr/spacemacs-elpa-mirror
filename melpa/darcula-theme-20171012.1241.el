@@ -4,7 +4,7 @@
 
 ;; Author: Sam Halliday <Sam.Halliday@gmail.com>
 ;; Keywords: faces
-;; Package-Version: 20170905.941
+;; Package-Version: 20171012.1241
 ;; URL: https://github.com/fommil/darcula-theme-emacs
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -171,6 +171,7 @@
  '(ido-subdir ((t (:inherit 'font-lock-string-face))))
  '(isearch ((t (:weight normal :slant normal :underline nil :inverse-video t :foreground "#bd3612" :background "#042028"))))
  '(isearch-fail ((t (:weight normal :slant normal :underline nil :inverse-video t :foreground "#bd3612" :background "#042028"))))
+ '(font-latex-sectioning-5-face ((t (:foreground "#9876aa"))))
  '(lazy-highlight ((t (:weight normal :slant normal :underline nil :inverse-video t :foreground "#a57705" :background "#042028"))))
  '(compilation-info ((t (:weight bold :foreground "#a6c25c" :underline nil))))
  '(match ((((class color) (min-colors 88) (background light)) (:background "yellow1"))
