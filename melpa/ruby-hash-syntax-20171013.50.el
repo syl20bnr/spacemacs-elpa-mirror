@@ -1,10 +1,10 @@
 ;;; ruby-hash-syntax.el --- Toggle ruby hash syntax between classic and 1.9 styles
 
-;; Copyright (C) 2013-2014  Steve Purcell
+;; Copyright (C) 2013-2017  Steve Purcell
 
 ;; Author: Steve Purcell <steve@sanityinc.com>
-;; Version: DEV
-;; Package-Version: 0.4
+;; Package-Version: 20171013.50
+;; Package-X-Original-Version: 0
 ;; URL: https://github.com/purcell/ruby-hash-syntax
 ;; Keywords: languages
 
@@ -32,19 +32,23 @@
 ;; Borrowed from https://github.com/textmate/ruby.tmbundle/blob/master/Commands/Convert%20Ruby%20hash%20to%201_9%20syntax.tmCommand
 
 ;;;###autoload
-(defun ruby-toggle-hash-syntax (beg end)
+(defun ruby-hash-syntax-toggle (beg end)
   "Toggle syntax of ruby hash literal in region from BEG to END between ruby 1.8 and 1.9 styles."
   (interactive "r")
   (unless (use-region-p)
     (error "The region is not active"))
   (save-excursion
-    (let ((limit (copy-marker (max beg end))))
+    (let ((limit (copy-marker (max beg end)))
+          (hashrocket-pattern "[^:]:\\([a-zA-Z0-9_]+\\) *=> *"))
       (goto-char (min beg end))
       (cond
-       ((ruby-hash-syntax--code-has-pattern "=>" limit)
-        (ruby-hash-syntax--replace ":\\([a-zA-Z0-9_]+\\) *=> *" "\\1: " limit))
+       ((ruby-hash-syntax--code-has-pattern hashrocket-pattern limit)
+        (ruby-hash-syntax--replace hashrocket-pattern "\\1: " limit))
        ((ruby-hash-syntax--code-has-pattern "\\w+:" limit)
         (ruby-hash-syntax--replace "\\([a-zA-Z0-9_]+\\):\\( *\\(?:\"\\(?:\\\"\\|[^\"]\\)*\"\\|'\\(?:\\'\\|[^']\\)*'\\|[a-zA-Z0-9_]+([^)]*)\\|[^,]+\\)\\)" ":\\1 =>\\2" limit))))))
+
+;;;###autoload
+(define-obsolete-function-alias 'ruby-toggle-hash-syntax 'ruby-hash-syntax-toggle)
 
 (defun ruby-hash-syntax--code-has-pattern (pat limit)
   "A version of `search-forward' which skips over string literals.

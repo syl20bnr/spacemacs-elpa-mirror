@@ -5,7 +5,7 @@
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Created: 2017-09-25
 ;; Version: 0.1-pre
-;; Package-Version: 20171012.1816
+;; Package-Version: 20171013.19
 ;; Keywords: pocket
 ;; Package-Requires: ((emacs "25.1") (dash "2.13.0") (kv "0.0.19") (pocket-lib "0.1") (s "1.10") (ov "1.0.6") (rainbow-identifiers "0.2.2") (org-web-tools "0.1"))
 ;; URL: https://github.com/alphapapa/pocket-reader.el
@@ -186,6 +186,10 @@ item ID and second is the overlay used to mark it.")
 
 (defcustom pocket-reader-show-count 50
   "Show this many items in the list."
+  :type 'integer)
+
+(defcustom pocket-reader-site-column-max-width 22
+  "Maximum width of the site column."
   :type 'integer)
 
 (defcustom pocket-reader-url-open-fn-map
@@ -724,6 +728,8 @@ action in the Pocket API."
   (when-let ((site-width (cl-loop for item in pocket-reader-items
                                   maximizing (length (elt (cadr item) 3))))
              (title-width (- (window-text-width) 11 2 site-width 10 1)))
+    (when (> site-width pocket-reader-site-column-max-width)
+      (setq site-width pocket-reader-site-column-max-width))
     (setq tabulated-list-format (vector (list "Added" 10 t)
                                         (list "*" 1 t)
                                         (list "Title" title-width t)
@@ -984,7 +990,7 @@ COLUMN may be the column name or number."
   (-let* (((num start end width) (pocket-reader--column-data column))
           ;; Convert column positions to buffer positions
           (start (+ (line-beginning-position) start))
-          (end (+ start width)))
+          (end (+ start width (1- num))))
     (pocket-reader--with-pocket-reader-buffer
       (add-face-text-property start end face t))))
 
