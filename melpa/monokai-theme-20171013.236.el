@@ -4,7 +4,7 @@
 
 ;; Author: Kelvin Smith <oneKelvinSmith@gmail.com>
 ;; URL: http://github.com/oneKelvinSmith/monokai-emacs
-;; Package-Version: 20170731.504
+;; Package-Version: 20171013.236
 ;; Version: 3.3.0
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -800,9 +800,11 @@ Also affects 'linum-mode' background."
    ;; isearch
    `(isearch
      ((,monokai-class (:inherit region
-                                :background ,monokai-green))
+                                :foreground ,monokai-background
+                                :background ,monokai-yellow))
       (,monokai-256-class  (:inherit region
-                                     :background ,monokai-256-green))))
+                                     :foreground ,monokai-256-background
+                                     :background ,monokai-256-yellow))))
 
    `(isearch-fail
      ((,monokai-class (:inherit isearch
@@ -5261,10 +5263,8 @@ Also affects 'linum-mode' background."
 
    ;; volatile highlights
    `(vhl/default-face
-     ((,monokai-class (:background ,monokai-green-lc
-                                   :foreground ,monokai-green-hc))
-      (,monokai-256-class  (:background ,monokai-256-green-lc
-                                        :foreground ,monokai-256-green-hc))))
+      ((,monokai-class (:background ,monokai-highlight-alt))
+        (,monokai-256-class  (:background ,monokai-256-highlight-alt))))
 
    ;; w3m
    `(w3m-anchor
