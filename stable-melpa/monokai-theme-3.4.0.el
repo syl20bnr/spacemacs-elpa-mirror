@@ -4,7 +4,7 @@
 
 ;; Author: Kelvin Smith <oneKelvinSmith@gmail.com>
 ;; URL: http://github.com/oneKelvinSmith/monokai-emacs
-;; Package-Version: 3.3.0
+;; Package-Version: 3.4.0
 ;; Version: 3.3.0
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -403,7 +403,7 @@ Also affects 'linum-mode' background."
      ((,monokai-class (:inherit highlight
                                 :background ,monokai-highlight-alt))
       (,monokai-256-class  (:inherit highlight
-                                     :background ,monokai-256-comments))))
+                                     :background ,monokai-256-highlight-alt))))
 
    `(region
      ((,monokai-class (:inherit highlight
@@ -800,9 +800,11 @@ Also affects 'linum-mode' background."
    ;; isearch
    `(isearch
      ((,monokai-class (:inherit region
-                                :background ,monokai-green))
+                                :foreground ,monokai-background
+                                :background ,monokai-yellow))
       (,monokai-256-class  (:inherit region
-                                     :background ,monokai-256-green))))
+                                     :foreground ,monokai-256-background
+                                     :background ,monokai-256-yellow))))
 
    `(isearch-fail
      ((,monokai-class (:inherit isearch
@@ -2908,6 +2910,11 @@ Also affects 'linum-mode' background."
      ((,monokai-class (:background ,monokai-gray))
       (,monokai-256-class  (:background ,monokai-256-gray))))
 
+   ;; highlight-symbol
+   `(highlight-symbol-face
+     ((,monokai-class (:background ,monokai-highlight))
+      (,monokai-256-class  (:background ,monokai-256-highlight))))
+
    ;; hl-line-mode
    `(hl-line
      ((,monokai-class (:background ,monokai-highlight-line))
@@ -3214,9 +3221,11 @@ Also affects 'linum-mode' background."
    `(linum
      ((,monokai-class (:foreground ,monokai-line-number
                                    :background ,monokai-fringe-bg
+                                   :inherit default
                                    :underline nil))
       (,monokai-256-class  (:foreground ,monokai-256-line-number
                                         :background ,monokai-256-fringe-bg
+                                        :inherit default
                                         :underline nil))))
 
    ;; linum-relative-current-face
@@ -4178,7 +4187,7 @@ Also affects 'linum-mode' background."
      ((,monokai-class (:foreground ,monokai-comments
                                    :background ,monokai-gray-d
                                    :slant italic))
-      (,monokai-256-class  (:foreground ,monokai-256-emphasis
+      (,monokai-256-class  (:foreground ,monokai-256-comments
                                         :background ,monokai-256-gray-d
                                         :slant italic))))
 
@@ -4186,7 +4195,7 @@ Also affects 'linum-mode' background."
      ((,monokai-class (:foreground ,monokai-comments
                                    :background ,monokai-gray-d
                                    :slant italic))
-      (,monokai-256-class  (:foreground ,monokai-256-emphasis
+      (,monokai-256-class  (:foreground ,monokai-256-comments
                                         :background ,monokai-256-gray-d
                                         :slant italic))))
 
@@ -4610,6 +4619,45 @@ Also affects 'linum-mode' background."
       (,monokai-256-class  (:foreground ,monokai-256-foreground
                                         :background ,monokai-256-background
                                         :inverse-video t))))
+
+   ;; realgud
+   `(realgud-overlay-arrow1
+     ((,monokai-class (:foreground ,monokai-green-d))
+      (,monokai-256-class  (:foreground ,monokai-256-green-d))))
+
+   `(realgud-overlay-arrow2
+     ((,monokai-class (:foreground ,monokai-yellow-d))
+      (,monokai-256-class  (:foreground ,monokai-256-yellow-d))))
+
+   `(realgud-overlay-arrow3
+     ((,monokai-class (:foreground ,monokai-orange-d))
+      (,monokai-256-class  (:foreground ,monokai-256-orange-d))))
+
+   `(realgud-bp-enabled-face
+     ((,monokai-class (:inherit error)))
+     ((,monokai-256-class (:inherit error))))
+
+   `(realgud-bp-disabled-face
+     ((,monokai-class (:inherit secondary-selection)))
+     ((,monokai-256-class (:inherit secondary-selection))))
+
+   `(realgud-bp-line-enabled-face
+     ((,monokai-class (:foreground ,monokai-red-d)))
+     ((,monokai-256-class (:foreground ,monokai-256-red-d))))
+
+   `(realgud-bp-line-disabled-face
+     ((,monokai-class (:inherit secondary-selection)))
+     ((,monokai-256-class (:inherit secondary-selection))))
+
+   `(realgud-line-number
+     ((,monokai-class (:inerhit monokai-line-number)))
+     ((,monokai-256-class (:inerhit monokai-line-number))))
+
+   `(realgud-backtrace-number
+     ((,monokai-class (:foreground ,monokai-yellow-d
+                                   :weight bold)))
+     ((,monokai-256-class (:foreground ,monokai-256-yellow
+                                       :weight bold))))
 
    ;; rhtm-mode
    `(erb-face
@@ -5145,7 +5193,7 @@ Also affects 'linum-mode' background."
    ;; tooltip. (NOTE: This setting has no effect on the os widgets for me
    ;; zencoding uses this)
    `(tooltip
-     ((,monokai-class (:background ,monokai-green-l
+     ((,monokai-class (:background ,monokai-yellow-hc
                                    :foreground ,monokai-background
                                    :inherit ,monokai-pitch))))
 
@@ -5215,10 +5263,8 @@ Also affects 'linum-mode' background."
 
    ;; volatile highlights
    `(vhl/default-face
-     ((,monokai-class (:background ,monokai-green-lc
-                                   :foreground ,monokai-green-hc))
-      (,monokai-256-class  (:background ,monokai-256-green-lc
-                                        :foreground ,monokai-256-green-hc))))
+      ((,monokai-class (:background ,monokai-highlight-alt))
+        (,monokai-256-class  (:background ,monokai-256-highlight-alt))))
 
    ;; w3m
    `(w3m-anchor
@@ -5856,7 +5902,7 @@ Also affects 'linum-mode' background."
 
    ;; pos-tip
    `(pos-tip-foreground-color ,monokai-background)
-   `(pos-tip-background-color ,monokai-green)
+   `(pos-tip-background-color ,monokai-yellow-hc)
 
    ;; vc
    `(vc-annotate-color-map
