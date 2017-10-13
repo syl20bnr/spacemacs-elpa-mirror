@@ -5,7 +5,7 @@
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Created: 2017-09-25
 ;; Version: 0.1-pre
-;; Package-Version: 20171012.1612
+;; Package-Version: 20171012.1816
 ;; Keywords: pocket
 ;; Package-Requires: ((emacs "25.1") (dash "2.13.0") (kv "0.0.19") (pocket-lib "0.1") (s "1.10") (ov "1.0.6") (rainbow-identifiers "0.2.2") (org-web-tools "0.1"))
 ;; URL: https://github.com/alphapapa/pocket-reader.el
@@ -50,6 +50,7 @@
 ;; "*" pocket-reader-toggle-favorite
 ;; "f" pocket-reader-toggle-favorite
 ;; "F" pocket-reader-show-unread-favorites
+;; "g" pocket-reader-refresh
 ;; "s" pocket-reader-search
 ;; "m" pocket-reader-toggle-mark
 ;; "M" pocket-reader-mark-all
@@ -100,6 +101,7 @@
                     "*" pocket-reader-toggle-favorite
                     "f" pocket-reader-toggle-favorite
                     "F" pocket-reader-show-unread-favorites
+                    "g" pocket-reader-refresh
                     "s" pocket-reader-search
                     "m" pocket-reader-toggle-mark
                     "M" pocket-reader-mark-all
@@ -323,6 +325,11 @@ alist, get the `item-id' from it."
     (pocket-reader--add-items items)
     (unless items
       (message "No items for query: %s" query))))
+
+(defun pocket-reader-refresh ()
+  "Refresh list using current query."
+  (interactive)
+  (pocket-reader-search pocket-reader-query))
 
 (defun pocket-reader-show-unread-favorites ()
   "Show unread favorite items."

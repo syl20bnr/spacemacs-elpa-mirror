@@ -21,6 +21,7 @@ These keys can be used in the pocket-reader buffer:
 "*" pocket-reader-toggle-favorite
 "f" pocket-reader-toggle-favorite
 "F" pocket-reader-show-unread-favorites
+"g" pocket-reader-refresh
 "s" pocket-reader-search
 "m" pocket-reader-toggle-mark
 "M" pocket-reader-mark-all

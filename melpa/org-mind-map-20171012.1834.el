@@ -1,7 +1,7 @@
 ;;; org-mind-map.el --- Creates a directed graph from org-mode files
 ;; Author: Ted Wiles <theodore.wiles@gmail.com>
 ;; Keywords: orgmode, extensions, graphviz, dot
-;; Package-Version: 20170912.1411
+;; Package-Version: 20171012.1834
 ;; Version: 0.3
 ;; URL: https://github.com/theodorewiles/org-mind-map/org-mind-map.el
 ;; Package-Requires: ((emacs "24") (dash "1.8.0") (org "8.2.10"))
@@ -281,8 +281,8 @@ TAGS consistent."
     'identity
     (mapcar #'(lambda (x)
                 (format "%s -> %s;\n"
-                        (org-mind-map-dot-node-name (first x))
-                        (org-mind-map-dot-node-name (second x))))
+                        (org-mind-map-dot-node-name (nth 0 x))
+                        (org-mind-map-dot-node-name (nth 1 x))))
             table)
     " ")
    (org-mind-map-make-legend legend)
