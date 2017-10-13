@@ -7,7 +7,7 @@
 ;; Author: Donald Ephraim Curtis <dcurtis@milkbox.net>
 ;; Created: 2011-09-30
 ;; Version: 0.1
-;; Package-Version: 20171008.2352
+;; Package-Version: 20171013.1125
 ;; Keywords: tools
 ;; Package-Requires: ((cl-lib "0.5"))
 
@@ -721,13 +721,13 @@ to build the recipe."
     pkg-info))
 
 (defun package-build--read-recipes ()
-  "Return a list of data structures for all recipes in `package-build-recipes-dir'."
-  (cl-loop for file-name in (directory-files  package-build-recipes-dir t "^[^.]")
+  "Return a list of data structures for all recipes."
+  (cl-loop for file-name in (directory-files package-build-recipes-dir t "^[^.]")
            collect (package-build--read-recipe file-name)))
 
 (defun package-build--read-recipes-ignore-errors ()
-  "Return a list of data structures for all recipes in `package-build-recipes-dir'."
-  (cl-loop for file-name in (directory-files  package-build-recipes-dir t "^[^.]")
+  "Return a list of data structures for all recipes."
+  (cl-loop for file-name in (directory-files package-build-recipes-dir t "^[^.]")
            for pkg-info = (condition-case err
                               (package-build--read-recipe file-name)
                             (error (package-build--message
