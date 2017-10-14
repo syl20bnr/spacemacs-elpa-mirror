@@ -4,7 +4,7 @@
 
 ;; Author: Vasilij Schneidermann <v.schneidermann@gmail.com>
 ;; URL: https://github.com/wasamasa/gotham-theme
-;; Package-Version: 20171007.0
+;; Package-Version: 20171013.1216
 ;; Version: 1.1.8
 
 ;; This file is NOT part of GNU Emacs.
@@ -130,6 +130,8 @@ depending on DISPLAY for keys which are either :foreground or
    (region :foreground unspecified :background base3)
    (secondary-selection :foreground unspecified :background violet)
    (linum :foreground base4 :background base1)
+   (line-number :foreground base4 :background base1)
+   (line-number-current-line :inherit highlight)
    (fringe :foreground base6 :background base1)
    (vertical-border :foreground base4)
    (tooltip :foreground base6 :background base0)

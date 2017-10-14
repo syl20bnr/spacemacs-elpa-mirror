@@ -4,7 +4,7 @@
 
 ;; Author: Sam Halliday <Sam.Halliday@gmail.com>
 ;; Keywords: faces
-;; Package-Version: 1.2
+;; Package-Version: 1.3
 ;; URL: https://github.com/fommil/darcula-theme-emacs
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -145,7 +145,8 @@
  '(company-tooltip-common ((t (:inherit 'mode-line-emphasis))))
  '(company-tooltip-common-selection ((t (:inherit 'highlight))))
  '(company-tooltip-annotation ((t (:inherit 'mode-line))))
- '(markdown-code-face ((t (:background "#3B3B3B"))))
+ '(org-verbatim ((t (:background "#2F2F2F"))))
+ '(markdown-code-face ((t (:inherit 'org-verbatim))))
  '(markdown-pre-face ((t (:inherit 'markdown-code-face))))
  ;; http://www.gnu.org/software/emacs/manual/html_node/ediff/Highlighting-Difference-Regions.html
  '(ediff-current-diff-A ((t (:background "#3B2B2B"))))
@@ -171,6 +172,7 @@
  '(ido-subdir ((t (:inherit 'font-lock-string-face))))
  '(isearch ((t (:weight normal :slant normal :underline nil :inverse-video t :foreground "#bd3612" :background "#042028"))))
  '(isearch-fail ((t (:weight normal :slant normal :underline nil :inverse-video t :foreground "#bd3612" :background "#042028"))))
+ '(font-latex-sectioning-5-face ((t (:foreground "#9876aa"))))
  '(lazy-highlight ((t (:weight normal :slant normal :underline nil :inverse-video t :foreground "#a57705" :background "#042028"))))
  '(compilation-info ((t (:weight bold :foreground "#a6c25c" :underline nil))))
  '(match ((((class color) (min-colors 88) (background light)) (:background "yellow1"))

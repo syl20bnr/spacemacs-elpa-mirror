@@ -4,7 +4,7 @@
 
 ;; Author: Adam Niederer <adam.niederer@gmail.com>
 ;; URL: https://github.com/AdamNiederer/s12cpuv2-mode
-;; Package-Version: 20170828.1901
+;; Package-Version: 20171013.1336
 ;; Version: 0.1
 ;; Keywords: s12cpuv2 assembly languages
 ;; Package-Requires: ((emacs "24.3"))
@@ -113,14 +113,23 @@
 (defconst s12cpuv2-empty-label-re
   (concat s12cpuv2-label-re " *$"))
 
+(defconst s12cpuv2-instruction-re
+  (regexp-opt s12cpuv2-instructions 'words))
+
+(defconst s12cpuv2-register-re
+  (regexp-opt s12cpuv2-instructions 'words))
+
+(defconst s12cpuv2-ops-re
+  (regexp-opt s12cpuv2-ops 'words))
+
 (defconst s12cpuv2-font-lock-defaults
   `((;; labels
      (,s12cpuv2-label-re . font-lock-function-name-face)
      ;; Instructions and operations
-     (,(regexp-opt s12cpuv2-instructions 'words) . font-lock-keyword-face)
-     (,(regexp-opt s12cpuv2-ops 'words) . font-lock-keyword-face)
+     (,s12cpuv2-instruction-re . font-lock-keyword-face)
+     (,s12cpuv2-ops-re . font-lock-keyword-face)
      ;; registers
-     (,(regexp-opt s12cpuv2-registers 'words) . font-lock-variable-name-face))))
+     (,s12cpuv2-register-re . font-lock-variable-name-face))))
 
 (defcustom s12cpuv2-tab-width 16
   "Width of a tab for S12CPUV2 mode."
@@ -165,7 +174,7 @@
     (save-excursion
       ;; Align instruction to `s12cpuv2-tab-width' characters
       (beginning-of-line)
-      (forward-word 2)
+      (re-search-forward s12cpuv2-instruction-re)
       (backward-word)
       (let ((instr-space-delta (- (point) (point-at-bol) 16)))
         (if (> instr-space-delta 0)
