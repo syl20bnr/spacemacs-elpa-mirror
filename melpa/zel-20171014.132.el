@@ -4,8 +4,8 @@
 
 ;; Author: Sebastian Christ <rudolfo.christ@gmail.com>
 ;; URL: https://github.com/rudolfochrist/zel
-;; Package-Version: 20171007.1319
-;; Version: 0.1.2-pre
+;; Package-Version: 20171014.132
+;; Version: 0.1.3-pre
 ;; Package-Requires: ((emacs "25") (frecency "0.1"))
 ;; Keywords: convenience, files, matching
 
@@ -185,18 +185,6 @@ When CREATE-ENTRY-P is non-nil create new entries."
       (setq zel--frecent-list
             (cl-sort zel--frecent-list #'> :key #'zel--entry-score)))))
 
-(defun zel--frecent-file-paths ()
-  "List frecent file paths in descending order by their rank."
-  (mapcar #'car zel--frecent-list))
-
-
-(defun zel--frecent-file-paths-with-score ()
-  "List all frecent file paths with their scrore."
-  (mapcar (lambda (entry)
-            (cons (car entry)
-                  (zel--entry-score entry)))
-          zel--frecent-list))
-
 
 (defun zel--frecent-sum ()
   "Calculates the sum of items in the frecent list."
@@ -214,6 +202,19 @@ When CREATE-ENTRY-P is non-nil create new entries."
                    #'>
                    :key #'zel--entry-score))))
 
+;;;;; Public
+
+(defun zel-frecent-file-paths ()
+  "List frecent file paths in descending order by their rank."
+  (mapcar #'car zel--frecent-list))
+
+
+(defun zel-frecent-file-paths-with-score ()
+  "List all frecent file paths with their scrore."
+  (mapcar (lambda (entry)
+            (cons (car entry)
+                  (zel--entry-score entry)))
+          zel--frecent-list))
 
 ;;;;; Commands
 
@@ -248,7 +249,7 @@ When CREATE-ENTRY-P is non-nil create new entries."
 (defun zel-diplay-rankings ()
   "Show the current ranking of files."
   (interactive)
-  (let ((items (zel--frecent-file-paths-with-score)))
+  (let ((items (zel-frecent-file-paths-with-score)))
     (with-output-to-temp-buffer "*zel-frecent-rankings*"
       (set-buffer "*zel-frecent-rankings*")
       (erase-buffer)
@@ -277,7 +278,7 @@ When OPEN-DIRECTORY-P is non-nil (or by calling it with a prefix
 argument) the files directory will be opened i `dired'."
   (interactive
    (list (completing-read "Frecent: "
-                          (zel--frecent-file-paths)
+                          (zel-frecent-file-paths)
                           nil
                           t
                           zel--completing-read-history)
@@ -330,7 +331,7 @@ Registers `zel' on the following hooks:
   "Current installed version of `zel'."
   (interactive)
   (message "zel %s on %s"
-           "0.1.2-pre"
+           "0.1.3-pre"
            (emacs-version)))
 
 ;;;; Footer

@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/avy
-;; Package-Version: 20170819.1039
+;; Package-Version: 20171014.20
 ;; Version: 0.4.0
 ;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
 ;; Keywords: point, location
@@ -124,7 +124,8 @@ keys different than the following: a, e, i, o, u, y"
   "Words to use in case `avy-style' is set to `words'.
 Every word should contain at least one vowel i.e. one of the following
 characters: a, e, i, o, u, y
-They do not have to be sorted but no word should be a prefix of another one.")
+They do not have to be sorted but no word should be a prefix of another one."
+  :type '(repeat string))
 
 (defcustom avy-style 'at-full
   "The default method of displaying the overlays.
