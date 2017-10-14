@@ -4,7 +4,7 @@
 
 ;; Author: Adam Niederer <adam.niederer@gmail.com>
 ;; URL: https://github.com/AdamNiederer/s12cpuv2-mode
-;; Package-Version: 20171013.1336
+;; Package-Version: 20171013.1351
 ;; Version: 0.1
 ;; Keywords: s12cpuv2 assembly languages
 ;; Package-Requires: ((emacs "24.3"))
@@ -139,6 +139,7 @@
 
 (defvar s12cpuv2-mode-map
   (let ((map (make-keymap)))
+    (define-key map (kbd "<backtab>") 's12cpuv2-dedent)
     (define-key map (kbd "C-c C-l") 's12cpuv2-goto-label-at-cursor)
     (define-key map (kbd "C-c C-k") 's12cpuv2-goto-label)
     map)
@@ -180,7 +181,15 @@
         (if (> instr-space-delta 0)
             (delete-char (- instr-space-delta))
           (insert (make-string (- instr-space-delta) ?\s))))))
-   ;; Probably a comment line
+   ;; Line is in a large block of instructions
+   ((string-match-p s12cpuv2-instruction-re
+                    (buffer-substring (save-excursion
+                                        (forward-line -1)
+                                        (point-at-bol))
+                                      (save-excursion
+                                        (forward-line -1)
+                                        (point-at-eol))))
+    (indent-line-to s12cpuv2-tab-width))
    (t (indent-line-to 0))))
 
 (defun s12cpuv2-dedent ()
@@ -193,7 +202,7 @@
   (interactive)
   (let ((label (or label (read-minibuffer "Go to Label: "))))
     (goto-char (point-min))
-    (re-search-forward (format "^%s" label))))
+    (re-search-forward (format "^%s " label))))
 
 (defun s12cpuv2-goto-label-at-cursor ()
   "Go to the definition of the label under point."

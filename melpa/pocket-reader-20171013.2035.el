@@ -5,7 +5,7 @@
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Created: 2017-09-25
 ;; Version: 0.1-pre
-;; Package-Version: 20171013.250
+;; Package-Version: 20171013.2035
 ;; Keywords: pocket
 ;; Package-Requires: ((emacs "25.1") (dash "2.13.0") (kv "0.0.19") (pocket-lib "0.1") (s "1.10") (ov "1.0.6") (rainbow-identifiers "0.2.2") (org-web-tools "0.1"))
 ;; URL: https://github.com/alphapapa/pocket-reader.el
@@ -372,12 +372,12 @@ that keystroke on a random item."
                      (let ((key (read-key "Key: ")))
                        (alist-get key pocket-reader-mode-map)))
                 #'pocket-reader-open-url)))
-    (with-pocket-reader
-     (cl-loop do (progn
-                   (goto-char (random (buffer-size)))
-                   (beginning-of-line))
-              while (not (pocket-reader--item-visible-p))
-              finally do (funcall fn)))))
+    (pocket-reader--with-pocket-reader-buffer
+      (cl-loop do (progn
+                    (goto-char (random (buffer-size)))
+                    (beginning-of-line))
+               while (not (pocket-reader--item-visible-p))
+               finally do (funcall fn)))))
 
 (defun pocket-reader-excerpt ()
   "Show excerpt for marked or current items."
@@ -738,7 +738,7 @@ action in the Pocket API."
              (title-width (- (window-text-width) 11 2 site-width 10 1)))
     (when (> site-width pocket-reader-site-column-max-width)
       (setq site-width pocket-reader-site-column-max-width))
-    (setq tabulated-list-format (vector (list "Added" 10 t)
+    (setq tabulated-list-format (vector (list "Added" 10 #'pocket-reader--added<)
                                         (list "*" 1 t)
                                         (list "Title" title-width t)
                                         (list "Site" site-width t)
@@ -1023,6 +1023,16 @@ Returns list with these values:
          (column-width (elt col-data 1))
          (end-col (+ start-col column-width)))
     (list col-num start-col end-col column-width)))
+
+(defun pocket-reader--added< (a b)
+  "Return non-nil if A's :time_added timestamp is less than B's.
+Suitable for sorting `tabulated-list-entries'."
+  (cl-flet ((added (it) (get-text-property 0 :time_added (aref (cadr it) 2))))
+    (let ((a-added (added a))
+          (b-added (added b)))
+      ;; Everything returned from the Pocket API is a string, even the timestamps, so I guess we might
+      ;; as well use `string<' rather than converting them to integers first.
+      (string< a-added b-added))))
 
 ;;;;; URL-adding helpers
 

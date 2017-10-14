@@ -4,7 +4,7 @@
 
 ;; Author: codefalling <code.falling@gmail.com>
 ;; Keywords: languages
-;; Package-Version: 20171004.744
+;; Package-Version: 20171013.1728
 
 ;; Version: 0.3.1
 ;; Package-Requires: ((mmm-mode "0.5.4") (vue-html-mode "0.1") (ssass-mode "0.1") (edit-indirect "0.1.4"))
@@ -141,6 +141,28 @@ To be formatted with the tag name.")
                               (1- (overlay-end mmm-current-overlay)) ;; Work around edit-indirect-mode bug
                               (current-buffer)))
     (user-error "Not in a template subsection")))
+
+;;;###autoload
+(defun vue-mode-edit-all-indirect (&optional keep-windows)
+  "Open all subsections with `edit-indirect-mode' in seperate windows.
+If KEEP-WINDOWS is set, do not delete other windows and keep the root window
+open in a window."
+  (interactive "P")
+  (when (not keep-windows)
+    (delete-other-windows))
+  (save-selected-window
+    (dolist (ol (mmm-overlays-contained-in (point-min) (point-max)))
+      (let* ((window (split-window-below))
+             (mode (overlay-get ol 'mmm-mode))
+             (buffer (edit-indirect-region (overlay-start ol) (overlay-end ol))))
+        (maximize-window)
+        (with-current-buffer buffer
+          (funcall mode))
+        (set-window-buffer window buffer)))
+    (balance-windows))
+  (when (not keep-windows)
+    (delete-window)
+    (balance-windows)))
 
 ;;;###autoload
 (define-derived-mode vue-mode html-mode "vue"
