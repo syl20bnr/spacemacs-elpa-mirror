@@ -2,7 +2,7 @@
 ;; Copyright (C) 2015-2017 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.1
-;; Package-Version: 20170918.2024
+;; Package-Version: 20171013.2105
 ;; Package-Requires: ((emacs "24.3") (f "0.17.3") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -66,6 +66,10 @@
   :type '(choice (const :tag "Popup" popup)
                  (const :tag "Helm" helm)
                  (const :tag "Ivy" ivy)))
+
+(defcustom dumb-jump-ivy-jump-to-selected-function
+  #'dumb-jump-ivy-jump-to-selected
+  "Prompts user for a choice using ivy then dumb-jump to that choice")
 
 (defcustom dumb-jump-prefer-searcher
   nil
@@ -1220,10 +1224,16 @@ Optionally pass t for RUN-NOT-TESTS to see a list of all failed rules"
       (forward-line (1- line)))))
 
 (defun dumb-jump--format-result (proj result)
-  (format "%s:%s %s"
+  (format "%s:%s: %s"
           (s-replace proj "" (plist-get result :path))
           (plist-get result :line)
           (s-trim (plist-get result :context))))
+
+(defun dumb-jump-ivy-jump-to-selected (results choices proj)
+  "Offer CHOICES as canidates through ivy-read then execute
+dumb-jump-to-selected on RESULTS CHOICES and selected choice.
+Ignore PROJ"
+  (dumb-jump-to-selected results choices (ivy-read "Jump to: " choices)))
 
 (defun dumb-jump-prompt-user-for-choice (proj results)
   "Put a PROJ's list of RESULTS in a 'popup-menu' (or helm/ivy)
@@ -1233,7 +1243,7 @@ for user to select.  Filters PROJ path from files for display."
                         results)))
     (cond
      ((and (eq dumb-jump-selector 'ivy) (fboundp 'ivy-read))
-      (dumb-jump-to-selected results choices (ivy-read "Jump to: " choices)))
+      (funcall dumb-jump-ivy-jump-to-selected-function results choices proj))
      ((and (eq dumb-jump-selector 'helm) (fboundp 'helm))
       (dumb-jump-to-selected results choices
                              (helm :sources
