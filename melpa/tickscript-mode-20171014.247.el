@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017  Marc Sherry
 ;; Homepage: https://github.com/msherry/tickscript-mode
 ;; Version: 0.1
-;; Package-Version: 20171014.150
+;; Package-Version: 20171014.247
 ;; Author: Marc Sherry <msherry@gmail.com>
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "24.1"))
@@ -147,7 +147,7 @@ If unset, defaults to \"http://localhost:9092\"."
 
 (setq tickscript-properties
       '("align" "alignGroup" "as" "buffer" "byMeasurement" "cluster" "create"
-        "cron" "database" "every" "field" "fill" "flushInterval" "groupBy"
+        "crit" "cron" "database" "every" "field" "fill" "flushInterval" "groupBy"
         "groupByMeasurement" "keep" "measurement" "offset" "period" "precision"
         "quiet" "retentionPolicy" "tag" "tags" "writeConsistency"))
 
@@ -175,10 +175,11 @@ If unset, defaults to \"http://localhost:9092\"."
         ;; Time units
         (,(rx symbol-start (? "-") (1+ digit) (or "u" "µ" "ms" "s" "m" "h" "d" "w") symbol-end) . 'tickscript-duration)
         (,(rx symbol-start (? "-") (1+ digit) (optional "\." (1+ digit))) . 'tickscript-number)
-        ;; Operators
-        (,(rx (or "/" "\|")) . 'tickscript-operator)
         ;; Variable declarations
-        ("\\_<\\(?:var\\)\\_>[[:space:]]+\\([[:alpha:]]\\(?:[[:alnum:]]\\|_\\)*\\)" (1 'tickscript-variable nil nil))))
+        ("\\_<\\(?:var\\)\\_>[[:space:]]+\\([[:alpha:]]\\(?:[[:alnum:]]\\|_\\)*\\)" (1 'tickscript-variable nil nil))
+        ;; Operators
+        (,(rx (or "\|" "\+" "\-" "\*" "/")) . 'tickscript-operator)
+        ))
 
 (defconst tickscript-mode-syntax-table
   (let ((table (make-syntax-table)))
@@ -339,6 +340,7 @@ meaning always increase indent on TAB and decrease on S-TAB."
   "Indentation for comment lines."
   (save-excursion
     (beginning-of-line)
+    (forward-to-indentation 0)
     (when (looking-at "//")
       ;; (message "COMMENT LINE")
       ;; Match previous line's indentation if non-empty (not just whitespace),

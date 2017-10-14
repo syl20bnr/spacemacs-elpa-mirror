@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-web-tools
-;; Package-Version: 20171008.2128
+;; Package-Version: 20171014.804
 ;; Version: 0.1.0-pre
 ;; Package-Requires: ((emacs "25.1") (org "9.0") (dash "2.12") (s "1.10.0"))
 ;; Keywords: hypermedia, outlines, Org, Web
@@ -138,8 +138,8 @@
               ;; `nil', which will cause this function to run again and
               ;; set the const when a capture is run.
               (set-process-query-on-exit-flag process nil)
-              (error "Unable to test Pandoc!  Please report this bug! (include the output of \"pandoc --dump-args --no-wrap\")"))
-          (sleep-for 0.2)
+              (error "Unable to test Pandoc.  Try increasing `org-web-tools-pandoc-sleep-time'.  If it still doesn't work, please report this bug! (Include the output of \"pandoc --dump-args --no-wrap\")"))
+          (sleep-for org-web-tools-pandoc-sleep-time)
           (cl-incf checked)))
       (if (and (zerop (process-exit-status process))
                (not (string-match "--no-wrap is deprecated" (buffer-string))))
@@ -184,6 +184,13 @@ Pandoc >= 1.16 deprecates `--no-wrap' in favor of
 Used to clean output from Pandoc."
   :type '(alist :key-type string
                 :value-type string))
+
+(defcustom org-web-tools-pandoc-sleep-time 0.2
+  "When testing Pandoc the first time it's used in a session, wait this long for Pandoc to start.
+Normally this should not need to be changed, but if Pandoc takes
+unusually long to start on your system (which it seems to on
+FreeBSD, for some reason), you may need to increase this."
+  :type 'float)
 
 ;;;; Commands
 
