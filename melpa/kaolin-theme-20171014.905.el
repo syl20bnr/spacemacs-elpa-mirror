@@ -4,7 +4,7 @@
 
 ;; Author: ogdenwebb <ogdenwebb@gmail.com>
 ;; URL: https://github.com/ogdenwebb/kaolin-theme
-;; Package-Version: 20171012.738
+;; Package-Version: 20171014.905
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 0.9.1
 
@@ -51,13 +51,10 @@
   "Face to highlight boolean values"
   :group 'kaolin-theme)
 
-;; TODO: (??) change hl to lavender
-;; TODO: add evil-goggles support
 ;; TODO: (??) add base(terminal) colors
 ;; TODO: (??) colorful comments
 ;; TODO: treemacs
-;; TODO: custom-set face
-;; TODO: check all faces with cyan
+;; TODO: `custom-set` face
 ;; TODO: (??) color cornflower blue
 
 ;; Kaolin color palette
@@ -240,6 +237,7 @@
          (type       alt-orange)
          ;; TODO: ?? light-yellow
          (const      violet)
+         ;; TODO: more brighter or change
          (var        faded-blue)
          ;; TODO: change number color ??  pink ?? light-yellow ?? alt-orange
          (num        red)
@@ -276,6 +274,7 @@
      `(shadow ((,c (:foreground ,alt-gray))))
      `(file-name-shadow ((,c (:inherit shadow))))
      `(region ((,c (:background ,bg3))))
+     ;; TODO: M-Drag-mouse-1
      `(secondary-selection ((,c (:background ,green :foreground ,bg1))))
      `(fringe ((,c (:background ,bg1 :foreground ,fg1))))
      `(cursor ((,c (:background ,cursor))))
@@ -314,7 +313,7 @@
 
      `(package-name ((,c (:inherit link :underline nil))))
 
-     ;; Additional highlighting
+     ;; Highlighting
      ;; TODO: Also uses to highlight buttons in describe
      `(highlight ((,c (:background ,bg2 :foreground ,light-orange))))
      `(lazy-highlight ((,c (:background ,bg3 :foreground ,fg2))))
@@ -814,6 +813,9 @@
      ;; Vimish-fold
      `(vimish-fold-overlay ((,c (:background ,bg2 :foreground ,comment))))
      `(vimish-fold-fringe ((,c (:background nil :foreground ,jade))))
+
+     ;; TODO: Evil-goggles
+     `(evil-goggles-default-face ((,c (:background ,dark-jade))))
 
      ;; Avy
      `(avy-lead-face ((,c (:background ,dark-red :foreground ,fg1))))
