@@ -1,19 +1,9 @@
-# Setup
+Usage:
 
-Install `Node.js' and `ESLint':
+  (add-hook 'js-mode-hook #'js-auto-format-mode)
 
-   npm install -g eslint
+To customize:
 
-Put `~/.eslintrc.json'. See `http://eslint.org/'.
+  M-x customize-group RET js-auto-format RET
 
-Enable `js-auto-format-mode':
-
-   (add-hook 'js-mode-hook 'js-auto-format-mode)
-
-# Change settings
-
-   M-x customize-group RET js-auto-format RET
-
-# Disabled in any directories
-
-   M-x add-dir-local-variable RET js-mode RET js-auto-format-disabled RET t
+For details, please see `https://github.com/ybiquitous/js-auto-format-mode'.

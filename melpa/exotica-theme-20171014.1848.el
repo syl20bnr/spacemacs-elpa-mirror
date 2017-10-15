@@ -5,7 +5,7 @@
 ;; Author: Bharat Joshi <jbharat@outlook.com>
 ;; Maintainer: Bharat Joshi <jbharat@outlook.com>
 ;; URL: https://github.com/jbharat/exotica-theme
-;; Package-Version: 20171011.128
+;; Package-Version: 20171014.1848
 ;; Created: 22th July 2017
 ;; Keywords: faces, theme, dark, vibrant colors
 ;; Version: 1.0.2
@@ -183,14 +183,14 @@
  `(org-level-6 ((t (:inherit outline-6 :weight bold :height 1.0))))
  `(org-level-7 ((t (:inherit outline-7 :weight bold :height 1.0))))
  `(org-level-8 ((t (:inherit outline-8 :weight bold :height 1.0))))
- `(rainbow-delimiters-depth-1-face ((t (:inherit org-level-1))))
- `(rainbow-delimiters-depth-2-face ((t (:inherit org-level-2))))
- `(rainbow-delimiters-depth-3-face ((t (:inherit org-level-3))))
- `(rainbow-delimiters-depth-4-face ((t (:inherit org-level-4))))
- `(rainbow-delimiters-depth-5-face ((t (:inherit org-level-5))))
- `(rainbow-delimiters-depth-6-face ((t (:inherit org-level-6))))
- `(rainbow-delimiters-depth-7-face ((t (:inherit org-level-7))))
- `(rainbow-delimiters-depth-8-face ((t (:inherit org-level-8))))
+ `(rainbow-delimiters-depth-1-face ((t (:inherit outline-1))))
+ `(rainbow-delimiters-depth-2-face ((t (:inherit outline-2))))
+ `(rainbow-delimiters-depth-3-face ((t (:inherit outline-3))))
+ `(rainbow-delimiters-depth-4-face ((t (:inherit outline-4))))
+ `(rainbow-delimiters-depth-5-face ((t (:inherit outline-5))))
+ `(rainbow-delimiters-depth-6-face ((t (:inherit outline-6))))
+ `(rainbow-delimiters-depth-7-face ((t (:inherit outline-7))))
+ `(rainbow-delimiters-depth-8-face ((t (:inherit outline-8))))
  `(rainbow-delimiters-depth-9-face ((t (:foreground ,face1))))
 
  ;; others
