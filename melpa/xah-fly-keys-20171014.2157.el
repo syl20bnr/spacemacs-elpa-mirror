@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2017, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 8.3.20171009
-;; Package-Version: 20171009.422
+;; Version: 8.3.20171014
+;; Package-Version: 20171014.2157
 ;; Created: 10 Sep 2013
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, emulations, vim, ergoemacs
@@ -3155,7 +3155,7 @@ Version 2017-01-21"
 
   (progn
     (when xah-fly-use-meta-key
-      (define-key xah-fly-key-map (kbd "M-SPC") 'xah-fly-command-mode-activate)))
+      (define-key xah-fly-key-map (kbd "M-SPC") 'xah-fly-command-mode-activate-no-hook)))
   ;;
   )
 
