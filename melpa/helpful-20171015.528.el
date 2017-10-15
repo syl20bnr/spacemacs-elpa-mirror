@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171008.1448
+;; Package-Version: 20171015.528
 ;; Keywords: help, lisp
 ;; Version: 0.3
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2"))
@@ -739,7 +739,7 @@ For example, \"(some-func FOO &optional BAR)\"."
 (defun helpful--read-symbol (prompt predicate)
   (let ((sym-here (symbol-at-point)))
     (read (completing-read prompt obarray
-                           predicate nil nil nil
+                           predicate t nil nil
                            (when (funcall predicate sym-here)
                              (symbol-name sym-here))))))
 

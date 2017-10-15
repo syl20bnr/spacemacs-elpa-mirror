@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/helm-org-rifle
-;; Package-Version: 1.4.1
+;; Package-Version: 1.4.2
 ;; Version: 1.4.1
 ;; Package-Requires: ((emacs "24.4") (dash "2.12") (f "0.18.1") (helm "1.9.4") (s "1.10.0"))
 ;; Keywords: hypermedia, outlines
@@ -988,7 +988,7 @@ Results is a list of strings with text-properties :NODE-BEG and :BUFFER."
   (with-current-buffer buffer
     (unless (eq major-mode 'org-mode)
       (error "Buffer %s is not an Org buffer." buffer)))
-  (cl-loop for (text pos) in (helm-org-rifle--get-candidates-in-buffer buffer input)
+  (cl-loop for (text . (_ .  pos)) in (helm-org-rifle--get-candidates-in-buffer buffer input)
            collect (list :text text :buffer buffer :node-beg pos)))
 
 (defun helm-org-rifle-occur-goto-entry ()

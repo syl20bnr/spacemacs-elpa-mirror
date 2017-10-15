@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 20170823.1754
+;; Package-Version: 1.5.8
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -147,7 +147,7 @@ exiting. The reverse is not true."
 
 ;;; Set Environment
 
-(defun olivetti-set-environment ()
+(defun olivetti-set-environment (&optional frame)
   "Set text body width to `olivetti-body-width' with relative margins.
 
 Cycle through all windows displaying current buffer and first
@@ -155,7 +155,7 @@ find the `olivetti-safe-width' to which to set
 `olivetti-body-width', then find the appropriate margin size
 relative to each window. Finally set the window margins, taking
 care that the maximum size is 0."
-  (dolist (window (get-buffer-window-list nil nil t))
+  (dolist (window (get-buffer-window-list nil nil (or frame t)))
     (let* ((n (olivetti-safe-width (if (integerp olivetti-body-width)
                                        (olivetti-scale-width olivetti-body-width)
                                      olivetti-body-width)
@@ -335,6 +335,7 @@ hidden."
   (if olivetti-mode
       (progn
         (dolist (hook '(window-configuration-change-hook
+                        window-size-change-functions
                         after-setting-font-hook
                         text-scale-mode-hook))
           (add-hook hook 'olivetti-set-environment t t))
@@ -346,6 +347,7 @@ hidden."
         (unless olivetti--visual-line-mode (visual-line-mode 1))
         (olivetti-set-environment))
     (dolist (hook '(window-configuration-change-hook
+                    window-size-change-functions
                     after-setting-font-hook
                     text-scale-mode-hook))
       (remove-hook hook 'olivetti-set-environment t))
