@@ -7,7 +7,7 @@
 ;; Keywords: faces
 ;; URL: https://github.com/purcell/diredfl
 ;; Package-Requires: ((emacs "24"))
-;; Package-Version: 0.3
+;; Package-Version: 20171014.1402
 ;; Package-X-Original-Version: 0
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -238,7 +238,7 @@ In particular, inode number, number of hard links, and file size."
 (defvar diredfl-write-priv 'diredfl-write-priv)
 
 ;;; Define second level of fontifying.
-(defvar diredfl-font-lock-keywords-1
+(defconst diredfl-font-lock-keywords-1
   (list
    '("^  \\(.+:\\)$" 1 diredfl-dir-heading) ; Directory headers
    '("^  wildcard.*$" 0 'default)       ; Override others, e.g. `l' for `diredfl-other-priv'.
@@ -276,7 +276,7 @@ In particular, inode number, number of hard links, and file size."
 
    ;; Inode, hard-links, & file size (. and , are for the decimal point, depending on locale)
    ;; See comment for `directory-listing-before-filename-regexp' in `files.el' or `files+.el'.
-   '("\\(\\([0-9]+\\([.,][0-9]+\\)?\\)[BkKMGTPEZY]?[ /]?\\)" 1 'diredfl-number)
+   '("\\_<\\(\\([0-9]+\\([.,][0-9]+\\)?\\)[BkKMGTPEZY]?[ /]?\\)" 1 'diredfl-number)
 
    ;; Directory names - exclude d:/..., Windows drive letter in a dir heading.
    (list (concat dired-re-maybe-mark dired-re-inode-size "\\(d\\)[^:]")

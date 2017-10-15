@@ -1,5 +1,7 @@
 * README                                                             :README:
 ** 简介
+NOTE: This project is obsoleted, please use org2ctex instead.
+
 ox-latex-chinese 是一个 org-mode 工具，它可以帮助 org-mode 中文用户简单快速的
 配置 "org->latex->pdf" 工作环境。
 

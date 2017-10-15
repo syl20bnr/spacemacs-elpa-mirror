@@ -1,4 +1,4 @@
-;;; ox-latex-chinese.el --- An example org latex exporter configure for Chinese users
+;;; ox-latex-chinese.el --- Obsoleted, please use org2ctex
 
 ;; * Header
 ;; #+BEGIN_EXAMPLE
@@ -6,7 +6,7 @@
 
 ;; Author: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/ox-latex-chinese
-;; Package-Version: 20170401.439
+;; Package-Version: 20171014.1532
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
 
@@ -34,6 +34,8 @@
 
 ;; * README                                                             :README:
 ;; ** 简介
+;; NOTE: This project is obsoleted, please use org2ctex instead.
+
 ;; ox-latex-chinese 是一个 org-mode 工具，它可以帮助 org-mode 中文用户简单快速的
 ;; 配置 "org->latex->pdf" 工作环境。
 
