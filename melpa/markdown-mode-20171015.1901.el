@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171009.2008
+;; Package-Version: 20171015.1901
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -2518,11 +2518,6 @@ See `markdown-hide-markup' for additional details."
     `((default :inherit fixed-pitch)
       (((type graphic) (class color) (background dark)) (:background ,dark-bg))
       (((type graphic) (class color) (background light)) (:background ,light-bg))))
-  "Face for inline code, pre blocks, and fenced code blocks."
-  :group 'markdown-faces)
-
-(defface markdown-code-face
-  `((t (:inherit fixed-pitch)))
   "Face for inline code, pre blocks, and fenced code blocks."
   :group 'markdown-faces)
 
