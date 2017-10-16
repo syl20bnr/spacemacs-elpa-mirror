@@ -4,7 +4,7 @@
 
 ;; Author: ogdenwebb <ogdenwebb@gmail.com>
 ;; URL: https://github.com/ogdenwebb/kaolin-theme
-;; Package-Version: 20171015.714
+;; Package-Version: 20171015.1243
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 0.9.1
 
@@ -45,6 +45,10 @@
 
 (defcustom kaolin-wave nil
   "When t, use the wave underline style instead of regular underline."
+  :group 'kaolin-theme)
+
+(defcustom kaolin-hl-line-colored nil
+  "When t, will display colored hl-line style instead dim gray"
   :group 'kaolin-theme)
 
 (defface kaolin-boolean nil
@@ -179,7 +183,8 @@
          (dim-buffer alt-black)
          ;; (hl         alt-lavender)
          (hl         light-green)
-         (hl-line    bg2)
+         ;; (hl-line    bg2)
+         (hl-line    (if kaolin-hl-line-colored midnight-blue bg2))
          (hl-indent  gray)
          (tooltip-bg bg2)
          (tooltip-fg light-gray)
@@ -316,7 +321,7 @@
      ;; Highlighting
      `(highlight ((,c (:background ,bg2 :foreground ,light-orange))))
      `(lazy-highlight ((,c (:background ,bg3 :foreground ,fg2))))
-     `(hl-line ((,c (:background ,bg2))))
+     `(hl-line ((,c (:background ,hl-line))))
      `(highlight-numbers-number ((,c (:foreground ,num))))
      `(highlight-quoted-quote ((t (:foreground ,teal))))
      `(highlight-quoted-symbol ((t (:foreground ,green))))

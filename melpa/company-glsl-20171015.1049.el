@@ -8,7 +8,7 @@
 ;; Created: 08 October 2017
 ;; Original Created: 11 January 2015
 ;; Version: 0.2
-;; Package-Version: 20171009.1055
+;; Package-Version: 20171015.1049
 ;; Package-Requires: ((company "0.9.4") (glsl-mode "2.0") (emacs "24.4"))
 ;; URL: https://github.com/guidoschmidt/company-glsl
 
@@ -175,6 +175,7 @@
     (cl-remove-if-not (lambda (type) (company-glsl--match-arg arg type))
                       candidates)))
 
+;;;###autoload
 (defun company-glsl (command &optional arg &rest ignored)
   "Provide GLSL completion info according to prefix COMMAND and ARG.  IGNORED is not used."
   (interactive (list 'interactive))
