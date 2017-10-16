@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Free Software Foundation, Inc.
 ;; Author: Vitalie Spinu
 ;; URL: https://github.com/vspinu/company-math
-;; Package-Version: 20170804.1202
+;; Package-Version: 20171016.814
 ;; Keywords:  Unicode, symbols, completion
 ;; Version: 1.3
 ;; Package-Requires: ((company "0.8.0") (math-symbol-lists "1.2"))
@@ -89,7 +89,7 @@ When set to special value t, allow on all faces except those in
   :type '(choice (const t)
                  (repeat :tag "Faces" symbol)))
 
-(defcustom company-math-allow-latex-symbols-in-faces '(tex-math font-latex-math-face)
+(defcustom company-math-allow-latex-symbols-in-faces '(tex-math font-latex-math-face org-latex-and-related)
   "List of faces to disallow the insertion of latex mathematical symbols.
 When set to special value t, allow on all faces except those in
 `company-math-disallow-latex-symbols-in-faces'."

@@ -4,7 +4,7 @@
 
 ;; Author: Troy Hinckley <troy.hinckley@gmail.com>
 ;; URL: https://github.com/CeleritasCelery/company-plsense
-;; Package-Version: 20171001.1200
+;; Package-Version: 20171016.1013
 ;; Version: 0.1.0
 ;; Package-Requires: ((company "0.9.3") (cl-lib "0.5.0") (dash "2.12.0") (s "1.12") (emacs "24"))
 
@@ -369,7 +369,7 @@ Move all points if they are after CHANGE-START by SIZE."
                                                (buffer-substring-no-properties
                                                 start
                                                 (line-end-position))))))
-                (end-of-defun)
+                (ignore-errors (end-of-defun))
                 (backward-char)
                 (beginning-of-line-text)
                 (forward-char)

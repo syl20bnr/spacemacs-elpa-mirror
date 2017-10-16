@@ -9,7 +9,7 @@
 ;; Maintainer: Roman Scherer <roman.scherer@burningswell.com>
 ;; Created: 09.02.08
 ;; Version: 1.7
-;; Package-Version: 20171006.944
+;; Package-Version: 20171016.931
 ;; Keywords: ruby unit test rspec
 ;; Package-Requires: ((ruby-mode "1.0") (pcre2el "1.8"))
 
@@ -303,7 +303,7 @@ and replace the match with the second element."
       (end-of-line)
       (message "%s:%s" (current-buffer) (point))
       (if (re-search-backward (concat "^[ \t]*\\(def\\|test\\|it\\|should\\)[ \t]+"
-                                      "\\([\"']\\(.*?\\)[\"']\\|" ruby-symbol-re "*\\)"
+                                      "\\(\\([\"'].*?[\"']\\)\\|" ruby-symbol-re "*\\)"
                                       "[ \t]*") nil t)
           (let ((name (or (match-string 3)
                           (match-string 2)))

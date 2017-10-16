@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171010.105
+;; Package-Version: 20171016.501
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -2114,7 +2114,7 @@ AG-PROMPT, if non-nil, is passed as `ivy-read' prompt argument."
 (defun counsel-ag-occur ()
   "Generate a custom occur buffer for `counsel-ag'."
   (counsel-grep-like-occur
-   "ag --nocolor --nogroup %s"))
+   "ag --nocolor --nogroup \"%s\""))
 
 ;;** `counsel-pt'
 (defcustom counsel-pt-base-command "pt --nocolor --nogroup -e %s"

@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20171011.655
+;; Package-Version: 20171016.740
 ;; Package-Requires: ((emacs "24.4") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -275,7 +275,7 @@ BEG END &OPTIONAL TYPE REGISTER YANK-HANDLER are the arguments of the original f
 
 ORIG-FUN is the original function.
 BEG END are the arguments of the original function."
-  (evil-goggles--with-goggles beg end 'evil-goggles-indent-face
+  (evil-goggles--with-after-goggles beg end 'evil-goggles-indent-face
     (evil-goggles--funcall-preserve-interactive orig-fun beg end)))
 
 ;; yank
