@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20171012.606
+;; Package-Version: 20171016.103
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -997,7 +997,7 @@ a list is returned instead of failing with a nil result."
                    (replacement (completing-read "replacement: " replacements)))
               (apply #'delete-region (dante-ident-pos-at-point))
               (insert replacement)))
-           ((string-match "Top-level binding with no type signature:[\n ]*" msg)
+           ((string-match "\\(Top-level binding\\|Pattern synonym\\) with no type signature:[\n ]*" msg)
             (beginning-of-line)
             (insert (concat (substring msg (match-end 0)) "\n")))
            ((string-match "Defined but not used" msg)

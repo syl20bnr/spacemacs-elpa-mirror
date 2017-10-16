@@ -1,11 +1,11 @@
 ;;; evil-visual-replace.el --- search/replace commands for evil visual state, inc. blocks
 
-;; Copyright (C) 2016 Troy Pracy
+;; Copyright (C) 2016-2017 Troy Pracy
 
 ;; Author: Troy Pracy
 ;; URL: https://github.com/troyp/evil-visual-replace
-;; Package-Version: 20170201.1920
-;; Version: 0.0.4
+;; Package-Version: 20171015.2313
+;; Version: 0.0.5
 ;; Keywords: evil search replace regexp block rectangular region visual
 ;; Package-Requires: ((evil "1.0.0"))
 
@@ -177,7 +177,7 @@ For non-visual-state replacements, use `replace-regexp'."
     (start end type regexp tostr  &optional delimited backward)
     "Replace pcre REGEXP with TOSTR from START to END with CHAR.
 
-Similar to `evil-visual-replace-query-replace', but uses PCRE regexps rather
+Similar to `evil-visual-replace-replace-regexp', but uses PCRE regexps rather
 than native elisp regexps. Requires the package pcre2el, to provide the
 function `pcre-to-elisp'.
 

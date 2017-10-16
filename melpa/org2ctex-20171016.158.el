@@ -6,7 +6,7 @@
 
 ;; Author: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/org2ctex
-;; Package-Version: 20170923.2302
+;; Package-Version: 20171016.158
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -158,6 +158,22 @@
 ;;    #+END_EXAMPLE
 
 ;; ** 常见错误排查和解决
+
+;; *** 我使用 MSYS2 内置的 Emacs, 无法找到 texlive 相关的命令
+
+;; MSYS2 默认不读取 window 系统的 PATH 设置，用户可以更改
+;; MSYS2 的快捷方式，为快捷方式添加 "-full-path" 参数
+;; （右击快捷方式，选择 “属性”，更改 “目标”）
+
+;; 比如：
+
+;; #+BEGIN_EXAMPLE
+;; "C:\msys32\msys2_shell.cmd -mingw32 -full-path"
+;; #+END_EXAMPLE
+
+;; *** 转换时字体名字乱码
+
+;; 确保 org 源文件保存为 UTF-8 格式，GBK 格式的文件处理起来有问题。
 
 ;; *** 中文目录下的 org 文件无法转换为 pdf 文件
 ;; 这个问题可以使用 latexmk 命令配合 "%b.tex" (仅仅使用文件名，而不是文件的绝对路径) 来规避，比如：
