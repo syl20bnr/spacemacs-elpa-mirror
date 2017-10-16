@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/emacscollective/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 20170906.558
+;; Package-Version: 20171015.2358
 
 ;; This file is not part of GNU Emacs.
 
@@ -227,6 +227,7 @@ This variable has to be set before `no-littering' is loaded.")
     (setq nsm-settings-file                (var "nsm-settings.el"))
     (eval-after-load 'org
       `(make-directory ,(var "org/") t))
+    (setq omnisharp-cache-directory        (var "omnisharp/cache"))
     (setq org-clock-persist-file           (var "org/clock-persist.el"))
     (setq org-id-locations-file            (var "org/id-locations.el"))
     (setq org-publish-timestamp-directory  (var "org/timestamps/"))
