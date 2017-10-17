@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 20171015.730
+;; Package-Version: 20171017.210
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -62,9 +62,13 @@
 ;; Known Bugs
 ;; ----------
 
-;; - `linum-mode` currently has a bug that overwrites margin settings,
-;;   making it incompatible with Olivetti. More information here:
-;;   <http://debbugs.gnu.org/20674>.
+;; - `display-line-numbers-mode` (included in Emacs 26.1) has a poor implementation
+;;   that causes problems with modes that work with the text body width or margins.
+;;   Discussion at <https://debbugs.gnu.org/28248> and
+;;   <https://debbugs.gnu.org/28844>. Use `linum-mode` instead.
+;; - `linum-mode` in Emacs versions earlier than 26.1 has a bug that overwrites
+;;   margin settings, making it incompatible with modes that work with margins.
+;;   More information here: <https://debbugs.gnu.org/20674>.
 
 ;; Please report bugs on GitHub [Issues] page.
 

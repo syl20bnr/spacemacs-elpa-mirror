@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017  Marc Sherry
 ;; Homepage: https://github.com/msherry/tickscript-mode
 ;; Version: 0.1
-;; Package-Version: 20171016.1905
+;; Package-Version: 20171016.2253
 ;; Author: Marc Sherry <msherry@gmail.com>
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "24.1"))
@@ -179,6 +179,7 @@ If unset, defaults to \"http://localhost:9092\"."
         "first" "holtWinters" "holtWintersWithFit" "last" "max" "mean" "median"
         "min" "mode" "movingAverage" "percentile" "spread" "stddev" "sum" "top"))
 
+(puthash "groupBy" "group_by" tickscript-webhelp-case-map)
 (puthash "httpOut" "http_out" tickscript-webhelp-case-map)
 (puthash "httpPost" "http_post" tickscript-webhelp-case-map)
 (puthash "influxDBOut" "influx_d_b_out" tickscript-webhelp-case-map)
@@ -187,8 +188,8 @@ If unset, defaults to \"http://localhost:9092\"."
       `(,
         ;; General keywords
         (rx symbol-start (or "var") symbol-end)
-        ;; Node properties
-        (,(concat "\\_<" (regexp-opt tickscript-properties t) "\\_>") . 'tickscript-property)
+        ;; Node properties - start with "." to avoid collisions for e.g. "groupBy"
+        (,(concat "\\.\\_<" (regexp-opt tickscript-properties t) "\\_>") . 'tickscript-property)
         ;; Chaining methods - like nodes, but not
         (,(concat "\\_<" (regexp-opt tickscript-chaining-methods t) "\\_>") . 'tickscript-chaining-method)
         ;; Nodes
@@ -259,7 +260,7 @@ KW-LIST is a list of strings."
                   (tickscript--in-string)))
          word)))
 
-(defun tickscript-at-node (&optional toplevel-only)
+(defun tickscript-node-at-point (&optional toplevel-only)
   "Return the word at point if it is a node.
 
 To be a node, it must be a keyword in the nodes list, and either
@@ -269,7 +270,7 @@ are both properties and nodes.  If TOPLEVEL-ONLY is specified,
 only toplevel nodes \"batch\" and \"stream\" are checked."
   ;; Skip over any sigil, if present
   (save-excursion
-    (when (looking-at "|")
+    (when (looking-at "\|")
       (forward-char))
     (let* ((word-bounds (bounds-of-thing-at-point 'word))
            (word-start (and word-bounds
@@ -282,15 +283,15 @@ only toplevel nodes \"batch\" and \"stream\" are checked."
                                        tickscript-toplevel-nodes
                                      tickscript-nodes))))))
 
-(defun tickscript-at-chaining-method ()
+(defun tickscript-chaining-method-at-point ()
   "Return the word at point if it is a chaining method.
 
 Chaining methods act much like nodes, but are only available
-under certain nodes.  See `tickscript-at-node' for details on how
+under certain nodes.  See `tickscript-node-at-point' for details on how
 this function works."
     ;; Skip over any sigil, if present
   (save-excursion
-    (when (looking-at "|")
+    (when (looking-at "\|")
       (forward-char))
     (let* ((word-bounds (bounds-of-thing-at-point 'word))
            (word-start (and word-bounds
@@ -301,13 +302,13 @@ this function works."
                (not (equal (char-before word-start) ?.)))
            (tickscript--at-keyword tickscript-chaining-methods)))))
 
-(defun tickscript-at-property ()
+(defun tickscript-property-at-point ()
   "Return the word at point if it is a property.
 
 To be a property, it must be a keyword in the properties list, and
 be preceded by the \".\" sigil."
   (save-excursion
-    (when (looking-at ".")
+    (when (looking-at "\\.")
       (forward-char))
     (let* ((word-bounds (bounds-of-thing-at-point 'word))
            (word-start (and word-bounds
@@ -327,83 +328,50 @@ be preceded by the \".\" sigil."
 
 (defun tickscript-at-node-instance ()
   "Return whether word at point is an instance of a previously-defined node."
-  (not (or (tickscript-at-node)
-           (tickscript-at-property)
+  (not (or (tickscript-node-at-point)
+           (tickscript-property-at-point)
            (tickscript--in-string)
            (tickscript--in-comment))))
 
-(defun tickscript-last-node-pos (&optional min)
-  "Return the position of the last node, if found.
-Do not move back beyond position MIN."
-  (unless min
-    (setq min 0))
+(defun tickscript--last-identifier-pos (fn stop-at-node)
+  "Internal method to find the last identifier matching FN.
+If STOP-AT-NODE is true, the search stops once a node is hit."
   (save-excursion
-    (let ((count 0))
-      (while (not (or (> count 0) (<= (point) min)))
+    ;; Skip the sigil, if we're on one
+    (if (looking-at "\\.|\|")
+        (forward-char))
+    (let ((count 0)
+          (node-count 0))
+      (while (not (or (> count 0) (> node-count 0) (<= (point) 0)))
         (tickscript-safe-backward-sexp)
-        (setq count
-              (cond ((tickscript-at-node)
-                     (+ count 1))
-                    (t count))))
+        (when (funcall fn)
+          (setq count (1+ count)))
+        (when (and stop-at-node
+                   (tickscript-node-at-point))
+          (setq node-count (1+ node-count))))
       (if (> count 0)
           (point)
         nil))))
 
-(defun tickscript-last-chaining-method-pos (&optional min)
-  "Return the position of the last chaining method, if found.
-Do not move back beyond the current node, or position MIN."
-  (unless min
-    (setq min 0))
-  (save-excursion
-    (let ((count 0)
-          (node-count 0))
-      (while (not (or (> count 0) (> node-count 0) (<= (point) min)))
-        (tickscript-safe-backward-sexp)
-        (if (tickscript-at-chaining-method)
-            (setq count (1+ count)))
-        (if (tickscript-at-node)
-            (setq node-count (1+ node-count))))
-      (if (> count 0)
-          (point)
-        nil))))
+(defun tickscript-last-node-pos ()
+  "Return the position of the last node, if found."
+  (tickscript--last-identifier-pos #'tickscript-node-at-point nil))
 
-(defun tickscript-last-property-pos (&optional min)
-  "Return the position of the last property, if found.
-Do not move back beyond the current node, or position MIN."
-  (unless min
-    (setq min 0))
-  (save-excursion
-    (let ((count 0)
-          (node-count 0))
-      (while (not (or (> count 0) (> node-count 0) (<= (point) min)))
-        (tickscript-safe-backward-sexp)
-        (if (tickscript-at-property)
-            (setq count (1+ count)))
-        (if (tickscript-at-node)
-            (setq node-count (1+ node-count))))
-      (if (> count 0)
-          (point)
-        nil))))
+(defun tickscript-last-chaining-method-pos ()
+  "Return the position of the last chaining method, if found."
+  (tickscript--last-identifier-pos #'tickscript-chaining-method-at-point t))
+
+(defun tickscript-last-property-pos ()
+  "Return the position of the last property, if found."
+  (tickscript--last-identifier-pos #'tickscript-property-at-point t))
 
 (defun tickscript-current-node ()
-  "Return the name of the current node -- under point, or the last node in the current chain."
+  "Return the name of the current node.
+Returns the name of the node under point, or the last node in the
+current chain if point is not on a node."
   (save-excursion
     (goto-char (tickscript-last-node-pos))
     (tickscript--at-keyword tickscript-nodes)))
-
-(defun tickscript-current-chaining-method ()
-  "Return the name of the current chaining method, if any."
-  (when (tickscript-last-chaining-method-pos)
-    (save-excursion
-      (goto-char (tickscript-last-chaining-method-pos))
-      (tickscript--at-keyword tickscript-chaining-methods))))
-
-(defun tickscript-current-property ()
-  "Return the name of the current property -- under point, or the currently-open property."
-  (when (tickscript-last-property-pos)
-    (save-excursion
-      (goto-char (tickscript-last-property-pos))
-      (tickscript--at-keyword tickscript-properties))))
 
 (defun tickscript--node-indentation (&optional min)
   "Return indentation level for items under the last node.
@@ -468,22 +436,22 @@ meaning always increase indent on TAB and decrease on S-TAB."
  \"batch\" or \"stream\", with optional \"var\" declarations."
   (tickscript--at-bol
    (when (or (looking-at "var")
-             (tickscript-at-node t))
+             (tickscript-node-at-point t))
      ;; (message "TOPLEVEL")
      0)))
 
 (defun tickscript-indent-non-toplevel-node ()
   "Indentation for non-toplevel nodes."
   (tickscript--at-bol
-   (when (or (tickscript-at-node)
-             (tickscript-at-chaining-method))
+   (when (or (tickscript-node-at-point)
+             (tickscript-chaining-method-at-point))
      ;; (message "NODE")
      tickscript-indent-offset)))
 
 (defun tickscript-indent-property ()
   "Indentation for property members."
   (tickscript--at-bol
-   (when (tickscript-at-property)
+   (when (tickscript-property-at-point)
      ;; (message "PROP")
      (* 2 tickscript-indent-offset))))
 
@@ -686,10 +654,13 @@ file comments for later re-use."
   "Gets help for the node or property at point, if any."
   (interactive)
   (let* ((node (tickscript-current-node))
-         (chaining-method-or-property (or (tickscript-current-chaining-method)
-                                          (tickscript-current-property)))
+         (chaining-method-or-property (or (tickscript-chaining-method-at-point)
+                                          (tickscript-property-at-point)))
          (url (format "https://docs.influxdata.com/kapacitor/v1.3/nodes/%s_node/"
                       (tickscript--downcase-for-webhelp node))))
+    (unless (or (tickscript-node-at-point)
+                chaining-method-or-property)
+      (error "Could not find help topic for thing at point"))
     (when chaining-method-or-property
       (setq url (format "%s#%s" url (tickscript--downcase-for-webhelp chaining-method-or-property))))
     (browse-url url)))
