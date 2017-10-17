@@ -6,7 +6,7 @@
 
 ;; Author: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/org2ctex
-;; Package-Version: 20171016.2021
+;; Package-Version: 20171016.2343
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -486,7 +486,8 @@ Argument FONTCLASS"
 这个表达式中，变量位置插入 VARIABLE, 取值位置插入 VALUE."
   (let ((value (or value
                    (symbol-value
-                    (intern (concat "org2ctex-" (symbol-name variable)))))))
+                    (intern (replace-regexp-in-string
+                             "^org-" "org2ctex-" (symbol-name variable)))))))
     (insert
      (cond ((stringp value) (format "(setq %S %S)\n" variable value))
            ((symbolp value) (format "(setq %S '%S)\n" variable value))
