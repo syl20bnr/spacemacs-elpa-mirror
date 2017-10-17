@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171015.1901
+;; Package-Version: 20171017.1148
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -7838,6 +7838,7 @@ update this buffer's contents."
   (if (stringp markdown-open-command)
       (if (not buffer-file-name)
           (user-error "Must be visiting a file")
+        (save-buffer)
         (call-process markdown-open-command nil nil nil buffer-file-name))
     (funcall markdown-open-command))
   nil)

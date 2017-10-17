@@ -5,7 +5,7 @@
 ;; Author: USAMI Kenta <tadsan@pixiv.com>
 ;; Created: 28 Jan 2017
 ;; Version: 0.0.2
-;; Package-Version: 20171017.813
+;; Package-Version: 20171017.915
 ;; Keywords: tools php
 ;; Package-Requires: ((emacs "24") (composer "0.0.8") (f "0.17"))
 ;; URL: https://github.com/emacs-php/phan.el
@@ -29,6 +29,19 @@
 
 ;; Phan is static analizer for PHP.  https://github.com/etsy/phan
 ;; This package has utilities and major mode for phan log format.
+;;
+;; # Major modes
+;;
+;; ## phan-log-mode
+;;
+;; A major mode for viewing Phan log format.
+;;
+;; # Commands
+;;
+;; ## phan-find-config-file
+;;
+;; Open `.phan/config.php' of current directory.
+;;
 
 
 ;;; Code:
@@ -225,6 +238,14 @@
          '(1 font-lock-function-name-face))
    (cons "\\(?:\\$\\|->\\)\\(\\sw\\|\\s_\\)+"
          '(0 font-lock-variable-name-face))))
+
+;; Utility functions
+(defun phan--base-dir (directory)
+  "Return path to current project root in `DIRECTORY'."
+  (or (locate-dominating-file directory ".phan/config.php")
+      (composer--find-composer-root directory)))
+
+;; Major modes
 
 ;;;###autoload
 (define-derived-mode phan-log-mode prog-mode "Phan-Log"
@@ -234,6 +255,8 @@
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("/phan.*\\.log\\'" . phan-log-mode))
+
+;; Commands
 
 ;;;###autoload
 (defun phan-find-config-file ()
@@ -241,10 +264,7 @@
   (interactive)
   (if (null default-directory)
       (error "A variable `default-directory' is not set")
-    (let ((base-dir
-           (or (locate-dominating-file default-directory ".phan/config.php")
-               (composer--find-composer-root default-directory))))
-      (find-file (f-join base-dir ".phan/config.php")))))
+    (find-file (f-join (phan--base-dir default-directory) ".phan/config.php"))))
 
 (provide 'phan)
 ;;; phan.el ends here

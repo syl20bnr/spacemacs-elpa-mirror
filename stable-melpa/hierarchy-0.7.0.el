@@ -3,10 +3,11 @@
 ;; Copyright (C) 2017 Damien Cassou
 
 ;; Author: Damien Cassou <damien@cassou.me>
-;; Version: 0.6.0
-;; Package-Version: 0.6.0
+;; Version: 0.7.0
+;; Package-Version: 0.7.0
 ;; Package-Requires: ((emacs "25.1"))
 ;; GIT: https://github.com/DamienCassou/hierarchy
+;; URL: https://github.com/DamienCassou/hierarchy
 ;;
 ;; This file is not part of GNU Emacs.
 
@@ -85,7 +86,7 @@
 SORTFN is a function taking two items of the hierarchy as parameter and
 returning non-nil if the first parameter is lower than the second."
   (setf (hierarchy--roots hierarchy)
-        (sort (hierarchy--roots hierarchy)
+        (sort (hierarchy--compute-roots hierarchy)
               sortfn)))
 
 (defun hierarchy--add-relation (hierarchy item parent acceptfn)
@@ -102,6 +103,17 @@ should be an item of the hierarchy."
      ((not has-parent-p)
       (push item (map-elt (hierarchy--children hierarchy) parent (list)))
       (map-put (hierarchy--parents hierarchy) item parent)))))
+
+(defun hierarchy--set-equal (list1 list2 &rest cl-keys)
+  "Return non-nil if LIST1 and LIST2 have same elements.
+
+I.e., if every element of LIST1 also appears in LIST2 and if
+every element of LIST2 also appears in LIST1.
+
+CL-KEYS are key-value pairs just like in `cl-subsetp'.  Supported
+keys are :key and :test."
+  (and (apply 'cl-subsetp list1 list2 cl-keys)
+       (apply 'cl-subsetp list2 list1 cl-keys)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -153,19 +165,18 @@ PARENTFN, CHILDRENFN and ACCEPTFN have the same meaning as in `hierarchy-add'."
              (hierarchy-add-tree hierarchy item parentfn childrenfn acceptfn))
            items))
 
-(defun hierarchy-from-list (list &optional wrap childrenfn)
-  "Create and return a hierarchy built from LIST.
+(defun hierarchy-add-list (hierarchy list &optional wrap childrenfn)
+  "Add to HIERARCHY the sub-lists in LIST.
 
-If WRAP is non-nil, allow duplicate items in LIST by wraping
-each item in a cons (id . item).  The root's id is 1.
+If WRAP is non-nil, allow duplicate items in LIST by wraping each
+item in a cons (id . item).  The root's id is 1.
 
 CHILDRENFN is a function (defaults to `cdr') taking LIST as a
 parameter which should return LIST's children (a list).  Each
 child is (recursively) passed as a parameter to CHILDRENFN to get
 its own children.  Because of this parameter, LIST can be
 anything, not necessarily a list."
-  (let* ((hierarchy (hierarchy-new))
-         (childrenfn (or childrenfn #'cdr))
+  (let* ((childrenfn (or childrenfn #'cdr))
          (id 0)
          (wrapfn (lambda (item)
                    (if wrap
@@ -174,9 +185,17 @@ anything, not necessarily a list."
          (unwrapfn (if wrap #'cdr #'identity)))
     (hierarchy-add-tree
      hierarchy (funcall wrapfn list) nil
-     (lambda (item) (mapcar wrapfn (funcall childrenfn
-                                            (funcall unwrapfn item)))))
+     (lambda (item)
+       (mapcar wrapfn (funcall childrenfn
+                               (funcall unwrapfn item)))))
     hierarchy))
+
+(defun hierarchy-from-list (list &optional wrap childrenfn)
+  "Create and return a hierarchy built from LIST.
+
+This function passes LIST, WRAP and CHILDRENFN unchanged to
+`hierarchy-add-list'."
+  (hierarchy-add-list (hierarchy-new) list wrap childrenfn))
 
 (defun hierarchy-sort (hierarchy &optional sortfn)
   "Modify HIERARCHY so that its roots and item's children are sorted.
@@ -199,9 +218,10 @@ default, SORTFN is `string-lessp'."
     (let ((tree (hierarchy-new)))
       (hierarchy-add-tree tree item
                           (lambda (each) (hierarchy-parent hierarchy each))
-                          (lambda (each) (when (or (equal each item)
-                                              (hierarchy-descendant-p hierarchy each item))
-                                      (hierarchy-children hierarchy each))))
+                          (lambda (each)
+                            (when (or (equal each item)
+                                      (hierarchy-descendant-p hierarchy each item))
+                              (hierarchy-children hierarchy each))))
       tree)))
 
 (defun hierarchy-copy (hierarchy)
@@ -285,17 +305,6 @@ and either:
     (hierarchy-child-p hierarchy item1 item2)
     (hierarchy-descendant-p hierarchy (hierarchy-parent hierarchy item1) item2))))
 
-(defun hierarchy--set-equal (list1 list2 &rest cl-keys)
-  "Return non-nil if LIST1 and LIST2 have same elements.
-
-I.e., if every element of LIST1 also appears in LIST2 and if
-every element of LIST2 also appears in LIST1.
-
-CL-KEYS are key-value pairs just like in `cl-subsetp'.  Supported
-keys are :key and :test."
-  (and (apply 'cl-subsetp list1 list2 cl-keys)
-       (apply 'cl-subsetp list2 list1 cl-keys)))
-
 (defun hierarchy-equal (hierarchy1 hierarchy2)
   "Return t if HIERARCHY1 and HIERARCHY2 are equal.
 
@@ -376,7 +385,11 @@ root if nil)."
                      (hierarchy-children hierarchy item)))))
 
 (defun hierarchy-map-hierarchy (function hierarchy)
-  "Apply FUNCTION to each item of HIERARCHY in a new hierarchy."
+  "Apply FUNCTION to each item of HIERARCHY in a new hierarchy.
+
+FUNCTION should take 2 parameters, the current item and its
+indentation level (a number), and should return an item to be
+added to the new hierarchy."
   (let* ((items (make-hash-table :test #'equal))
          (transform (lambda (item) (map-elt items item))))
     ;; Make 'items', a table mapping original items to their
@@ -516,8 +529,8 @@ nil.  The buffer is returned."
   "Return a tree-widget for HIERARCHY.
 
 LABELFN is a function taking an item of HIERARCHY and an indentation
-value (a number) as parameter and returning a string to be displayed as a
-button label."
+value (a number) as parameter and inserting a string to be displayed as a
+node label."
   (require 'wid-edit)
   (require 'tree-widget)
   (hierarchy-map-tree (lambda (item indent children)
