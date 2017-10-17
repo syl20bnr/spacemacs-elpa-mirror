@@ -5,8 +5,8 @@
 ;; Author: Sean Allred <code@seanallred.com>
 ;; Keywords: extensions, multimedia, tools
 ;; Homepage: https://github.com/vermiculus/ghub-plus
-;; Package-Requires: ((emacs "25") (ghub "1.2") (apiwrap "0.2"))
-;; Package-Version: 20171014.2102
+;; Package-Requires: ((emacs "25") (ghub "1.2") (apiwrap "0.3"))
+;; Package-Version: 20171016.1821
 ;; Package-X-Original-Version: 0.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -73,6 +73,16 @@ It is expected to have the same signature as `ghub-request'.")
     "Get the current context with `ghubp-contextualize-function'."
     (when (functionp ghubp-contextualize-function)
       (funcall ghubp-contextualize-function)))
+
+  (defun ghubp-get-in-all (props object-list)
+    "Follow property-path PROPS in OBJECT-LIST.
+Returns a list of the property-values."
+    (declare (indent 1))
+    (if (or (null props) (not (consp props)))
+        object-list
+      (ghubp-get-in-all (cdr props)
+        (mapcar (lambda (o) (alist-get (car props) o))
+                object-list))))
 
   (defun ghubp-request (method resource params data)
     "Using METHOD, get RESOURCE with PARAMS and DATA.
@@ -174,19 +184,70 @@ See URL `http://emacs.stackexchange.com/a/31050/2264'."
 
 (defun ghubp-ratelimit-reset-time ()
   "Get the reset time for the rate-limit as a time object."
-  (ignore-errors
-    (seconds-to-time
-     (string-to-number
-      (ghubp-header "X-RateLimit-Reset")))))
+  (declare (obsolete 'ghubp-ratelimit "2017-10-17"))
+  (alist-get 'reset (ghubp-ratelimit)))
 
 (defun ghubp-ratelimit-remaining ()
-  "Get the remaining number of requests available.
-Note that a return value of 'nil' does not mean the same thing as
-a return value of 0.  The latter implies that we do know how many
-requests remain while the former makes no such assertion."
-  (ignore-errors
-    (string-to-number
-     (ghubp-header "X-RateLimit-Remaining"))))
+  "Get the remaining number of requests available."
+  (declare (obsolete 'ghubp-ratelimit "2017-10-17"))
+  (alist-get 'remaining (ghubp-ratelimit)))
+
+(defun ghubp-ratelimit ()
+  "Get `/rate_limit.rate' using `ghub-response-headers'.
+Returns nil if the service is not rate-limited.  Otherwise,
+returns an alist with the following properties:
+
+  `.limit'
+     number of requests we're allowed to make per hour.
+
+  `.remaining'
+     number of requests remaining for this hour.
+
+  `.reset'
+     time value of instant `.remaining' resets to `.limit'."
+  (when (and ghub-response-headers
+             (assoc-string "X-RateLimit-Limit" ghub-response-headers))
+    (let* ((headers (list "X-RateLimit-Limit" "X-RateLimit-Remaining" "X-RateLimit-Reset"))
+           (headers (mapcar (lambda (x) (string-to-number (ghubp-header x))) headers)))
+      `((limit     . ,(nth 0 headers))
+        (remaining . ,(nth 1 headers))
+        (reset     . ,(seconds-to-time
+                       (nth 2 headers)))))))
+
+(defun ghubp--follow (method resource &optional params data)
+  "Using METHOD, follow the RESOURCE link with PARAMS and DATA.
+This method is intended for use with callbacks."
+  (when (string-prefix-p ghub-base-url resource)
+    (setq resource (url-filename (url-generic-parse-url resource))))
+  (ghubp-request method resource params data))
+
+(defun ghubp-follow-get    (resource &optional params data)
+  "GET wrapper for `ghubp-follow'."
+  (ghubp--follow 'get    resource params data))
+(defun ghubp-follow-put    (resource &optional params data)
+  "PUT wrapper for `ghubp-follow'."
+  (ghubp--follow 'put    resource params data))
+(defun ghubp-follow-head   (resource &optional params data)
+  "HEAD wrapper for `ghubp-follow'."
+  (ghubp--follow 'head   resource params data))
+(defun ghubp-follow-post   (resource &optional params data)
+  "POST wrapper for `ghubp-follow'."
+  (ghubp--follow 'post   resource params data))
+(defun ghubp-follow-patch  (resource &optional params data)
+  "PATCH wrapper for `ghubp-follow'."
+  (ghubp--follow 'patch  resource params data))
+(defun ghubp-follow-delete (resource &optional params data)
+  "DELETE wrapper for `ghubp-follow'."
+  (ghubp--follow 'delete resource params data))
+
+(defun ghubp-base-html-url ()
+  "Get the base HTML URL from `ghub-base-url'"
+  (cond
+   ((string= ghub-base-url "https://api.github.com")
+    "https://github.com")
+   ((string-match (rx bos (group (* any)) "/api/v3" eos)
+                  ghub-base-url)
+    (match-string 1 ghub-base-url))))
 
 ;;; Issues
 
@@ -259,19 +320,24 @@ a repository."
   (repo user) "/repos/:repo.owner.login/:repo.name/assignees/:user.login")
 
 (defapipost-ghubp "/repos/:owner/:repo/issues/:number/assignees"
-  ;; todo: sugar to filter users in DATA down to just the usernames
   "Add assignees to an Issue.
 This call adds the users passed in the assignees key (as their
 logins) to the issue."
-  "issues/assignees/#add-assignees-to-an-issue")
+  "issues/assignees/#add-assignees-to-an-issue"
+  (repo issue) "/repos/:repo.owner.login/:repo.name/issues/:issue.number/assignees"
+  :pre-process-data
+  (lambda (users)
+    `((assignees . ,(ghubp-get-in-all '(login) users)))))
 
 (defapidelete-ghubp "/repos/:owner/:repo/issues/:number/assignees"
-  ;; todo: sugar to filter users in DATA down to just the usernames
   "Remove assignees from an Issue.
 This call removes the users passed in the assignees key (as their
 logins) from the issue."
   "issues/assignees/#remove-assignees-from-an-issue"
-  (repo issue) "/repos/:repo.owner.login/:repo.name/issues/:issue.number/assignees")
+  (repo issue) "/repos/:repo.owner.login/:repo.name/issues/:issue.number/assignees"
+  :pre-process-data
+  (lambda (users)
+    `((assignees . ,(ghubp-get-in-all '(login) users)))))
 
 ;;; Issue Comments
 
@@ -358,10 +424,10 @@ By default, Issue Comments are ordered by ascending ID."
   (repo issue) "/repos/:repo.owner.login/:repo.name/issues/:issue.number/labels")
 
 (defapipost-ghubp "/repos/:owner/:repo/issues/:number/labels"
-  ;; todo: sugar to filter labels in DATA down to just the names
   "Add labels to an issue."
   "issues/labels/#add-labels-to-an-issue"
-  (repo issue) "/repos/:repo.owner.login/:repo.name/issues/:issue.number/labels")
+  (repo issue) "/repos/:repo.owner.login/:repo.name/issues/:issue.number/labels"
+  :pre-process-data (apply-partially #'ghubp-get-in-all '(name)))
 
 (defapidelete-ghubp "/repos/:owner/:repo/issues/:number/labels/:name"
   "Remove a label from an issue."
@@ -369,10 +435,10 @@ By default, Issue Comments are ordered by ascending ID."
   (repo issue label) "/repos/:repo.owner.login/:repo.name/issues/:issue.number/labels/:label.name")
 
 (defapipatch-ghubp "/repos/:owner/:repo/issues/:number/labels"
-  ;; todo: sugar to filter labels in DATA down to just the names
   "Replace all labels for an issue."
   "issues/labels/#replace-all-labels-for-an-issue"
-  (repo issue) "/repos/:repo.owner.login/:repo.name/issues/:issue.number/labels")
+  (repo issue) "/repos/:repo.owner.login/:repo.name/issues/:issue.number/labels"
+  :pre-process-data (apply-partially #'ghubp-get-in-all '(name)))
 
 (defapidelete-ghubp "/repos/:owner/:repo/issues/:number/labels"
   "Remove all labels from an issue."

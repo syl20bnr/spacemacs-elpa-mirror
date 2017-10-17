@@ -1,7 +1,9 @@
-;; Copyright (C) 2016 Chen Bin
+;;; counsel-bbdb.el --- Quick search&input email from BBDB based on ivy
+
+;; Copyright (C) 2016,2017 Chen Bin
 ;;
 ;; Version: 0.0.2
-;; Package-Version: 20171013.1925
+;; Package-Version: 20171016.1545
 ;; Author: Chen Bin <chenbin.sh AT gmail>
 ;; URL: https://github.com/redguard/counsel-bbdb
 ;; Package-Requires: ((ivy "0.8.0") (emacs "24.3"))
