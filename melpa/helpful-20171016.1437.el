@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171015.528
+;; Package-Version: 20171016.1437
 ;; Keywords: help, lisp
 ;; Version: 0.3
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2"))
@@ -272,18 +272,19 @@ blank line afterwards."
 ;; in the docstring for `--map'.
 (defun helpful--format-docstring (docstring)
   "Replace cross-references with links in DOCSTRING."
-  (replace-regexp-in-string
-   (rx "`" symbol-start (+? anything) symbol-end "'")
-   (lambda (it)
-     (let* ((sym-name
-             (s-chop-prefix "`" (s-chop-suffix "'" it)))
-            (sym (intern sym-name)))
-       (if (or (boundp sym) (fboundp sym))
-           (helpful--describe-button (read sym-name))
-         (propertize sym-name
-                     'face 'font-lock-constant-face))))
-   (helpful--split-first-line docstring)
-   t t))
+  (s-trim
+   (replace-regexp-in-string
+    (rx "`" symbol-start (+? anything) symbol-end "'")
+    (lambda (it)
+      (let* ((sym-name
+              (s-chop-prefix "`" (s-chop-suffix "'" it)))
+             (sym (intern sym-name)))
+        (if (or (boundp sym) (fboundp sym))
+            (helpful--describe-button (read sym-name))
+          (propertize sym-name
+                      'face 'font-lock-constant-face))))
+    (helpful--split-first-line docstring)
+    t t)))
 
 (defconst helpful--highlighting-funcs
   '(ert--activate-font-lock-keywords
@@ -466,17 +467,13 @@ Ensures global keybindings are shown first."
           (s-join "\n" lines)
         "This command is not in any keymaps."))))
 
-(defun helpful--position-head (buf pos)
+(defun helpful--outer-sexp (buf pos)
   "Find position POS in BUF, and return the name of the outer sexp,
 along with its position."
   (with-current-buffer buf
     (goto-char pos)
-    (let (finished)
-      (while (not finished)
-        (condition-case _err
-            (backward-up-list)
-          (error (setq finished t))))
-      (list (point) (-take 2 (read buf))))))
+    (beginning-of-defun)
+    (list (point) (-take 2 (read buf)))))
 
 (defun helpful--count-values (items)
   "Return an alist of the count of each value in ITEMS.
@@ -564,7 +561,7 @@ state of the current symbol."
                 (helpful--reference-positions
                  helpful--sym helpful--callable-p buf))))
         (setq references
-              (--map (helpful--position-head buf it) positions))
+              (--map (helpful--outer-sexp buf it) positions))
         (kill-buffer buf)))
     (erase-buffer)
     (when helpful--callable-p

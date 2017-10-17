@@ -4,8 +4,8 @@
 
 ;; Author: Adrien Becchis <adriean.khisbe@live.fr>
 ;; Created:  2014-09-06
-;; Version: 0.5.1
-;; Package-Version: 20171012.1113
+;; Version: 0.6.0
+;; Package-Version: 20171016.1440
 ;; Keywords: convenience, editing, tools
 
 ;; This program is free software; you can redistribute it and/or modify

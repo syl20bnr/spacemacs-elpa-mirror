@@ -4,7 +4,7 @@
 ;; Copyright 2011-2017 François-Xavier Bois
 
 ;; Version: 15.0.14
-;; Package-Version: 20171002.1316
+;; Package-Version: 20171016.1216
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; Package-Requires: ((emacs "23.1"))
@@ -7238,8 +7238,10 @@ another auto-completion with different ac-sources (e.g. ac-php)")
               )
              ((looking-at-p "<!--\\[if")
               (setq offset (+ offset web-mode-markup-indent-offset)))
-             ((string-match-p "-->" curr-line)
+             ((string-match-p "^-->" curr-line)
               (setq offset offset))
+             ((string-match-p "^-" curr-line)
+              (setq offset (+ offset 3)))
              (t
               (setq offset (+ offset 5)))
              ) ;cond
@@ -7280,8 +7282,10 @@ another auto-completion with different ac-sources (e.g. ac-php)")
             (setq reg-col (current-indentation))
             (setq offset (current-column))))
 
-         ((and (get-text-property pos 'tag-beg)
-               (eq (get-text-property pos 'tag-type) 'end))
+         ((or (and (get-text-property pos 'tag-beg)
+                   (eq (get-text-property pos 'tag-type) 'end))
+              (and (eq (get-text-property pos 'tag-type) 'comment)
+                   (string-match-p "<!--#\\(else\\|elif\\|endif\\)" curr-line)))
           (when debug (message "I170(%S) tag-match" pos))
           (when (web-mode-tag-match)
             (setq offset (current-indentation))))
@@ -7910,23 +7914,32 @@ another auto-completion with different ac-sources (e.g. ac-php)")
     offset))
 
 (defun web-mode-markup-indentation (pos)
-  (let ((offset 0) beg ret jsx-depth)
-    (when (setq jsx-depth (get-text-property pos 'jsx-depth))
-      (when (and (get-text-property pos 'jsx-beg)
-                 (not (get-text-property pos 'tag-beg)))
-        (setq jsx-depth (1- jsx-depth))))
-    (when (setq beg (web-mode-markup-indentation-origin pos jsx-depth))
-      ;;(message "beg=%S jsx-depth=%S" beg jsx-depth)
-      (cond
-       ((null (setq ret (web-mode-element-is-opened beg pos)))
-        (setq offset (web-mode-indentation-at-pos beg)))
-       ((eq ret t)
-        (setq offset (+ (web-mode-indentation-at-pos beg)
-                        web-mode-markup-indent-offset)))
-       (t
-        (setq offset ret))
-       ) ;cond
-      ) ;when beg
+  (let (offset beg ret jsx-depth)
+
+    ;;(when (setq jsx-depth (get-text-property pos 'jsx-depth))
+    ;;  (when (and (get-text-property pos 'jsx-beg)
+    ;;             (not (get-text-property pos 'tag-beg)))
+    ;;    (setq jsx-depth (1- jsx-depth))))
+
+    (when (and (setq jsx-depth (get-text-property pos 'jsx-depth))
+               (get-text-property pos 'jsx-beg)
+               (not (get-text-property pos 'tag-beg)))
+      (setq jsx-depth (1- jsx-depth)))
+
+    ;;(when (setq beg (web-mode-markup-indentation-origin pos jsx-depth))
+    (cond
+     ((not (setq beg (web-mode-markup-indentation-origin pos jsx-depth)))
+      (setq offset 0))
+     ((null (setq ret (web-mode-element-is-opened beg pos)))
+      (setq offset (web-mode-indentation-at-pos beg)))
+     ((eq ret t)
+      (setq offset (+ (web-mode-indentation-at-pos beg)
+                      web-mode-markup-indent-offset)))
+     (t
+      (setq offset ret))
+     ) ;cond
+    ;;(message "markup-indentation-origin=%S (jsx-depth=%S)" beg jsx-depth)
+    ;;) ;when beg
     offset))
 
 (defun web-mode-css-indentation (pos initial-column language-offset language &optional limit)
@@ -8384,6 +8397,12 @@ another auto-completion with different ac-sources (e.g. ac-php)")
                                (get-text-property pos 'tag-beg)
                                (member type types)
                                (null (get-text-property (1- pos) 'invisible)))
+                          (and (null jsx-depth)
+                               (null (get-text-property pos 'part-side))
+                               (eq (get-text-property pos 'tag-type) 'comment)
+                               ;;(web-mode-looking-at-p "<!--#\\(elif\\|else\\|endif\\|if\\)" pos)
+                               (web-mode-looking-at-p "<!--#\\(endif\\|if\\)" pos)
+                               (null (get-text-property (1- pos) 'invisible)))
                           (and jsx-depth
                                (get-text-property pos 'tag-beg)
                                (member type types)
@@ -8423,6 +8442,16 @@ another auto-completion with different ac-sources (e.g. ac-php)")
             tag nil)
 
       (cond
+       ((and (eq (get-text-property pos 'tag-type) 'comment)
+             (web-mode-looking-at "<!--#\\(endif\\|if\\)" pos))
+        ;;(message "pos=%S" pos)
+        (setq tag "#if")
+        (setq n (gethash tag h 0))
+        (if (string= (match-string-no-properties 1) "if")
+            (puthash tag (1+ n) h)
+          (puthash tag (1- n) h))
+        ;;(setq tag-pos pos)
+        )
        ((get-text-property pos 'tag-beg)
         (when (member (get-text-property pos 'tag-type) '(start end))
           (setq tag (get-text-property pos 'tag-name)
@@ -8506,7 +8535,7 @@ another auto-completion with different ac-sources (e.g. ac-php)")
         (setq continue nil))
       ) ;while
 
-;;    (message "hashtable=%S" h)
+    ;;(message "hashtable=%S" h)
     (maphash (lambda (k v) (if (> v 0) (setq ret t))) h)
 
     (when (and (null ret)
@@ -9498,30 +9527,30 @@ Prompt user if TAG-NAME isn't provided."
 
        ((member language '("html" "xml"))
         (cond
-           ((and (= web-mode-comment-style 2) (string= web-mode-engine "django"))
-            (setq content (concat "{# " sel " #}")))
-           ((and (= web-mode-comment-style 2) (member web-mode-engine '("ejs" "erb")))
-            (setq content (concat "<%# " sel " %>")))
-           ((and (= web-mode-comment-style 2) (string= web-mode-engine "aspx"))
-            (setq content (concat "<%-- " sel " --%>")))
-           ((and (= web-mode-comment-style 2) (string= web-mode-engine "smarty"))
-            (setq content (concat "{* " sel " *}")))
-           ((and (= web-mode-comment-style 2) (string= web-mode-engine "xoops"))
-            (setq content (concat "<{* " sel " *}>")))
-           ((and (= web-mode-comment-style 2) (string= web-mode-engine "hero"))
-            (setq content (concat "<%# " sel " %>")))
-           ((and (= web-mode-comment-style 2) (string= web-mode-engine "blade"))
-            (setq content (concat "{{-- " sel " --}}")))
-           ((and (= web-mode-comment-style 2) (string= web-mode-engine "ctemplate"))
-            (setq content (concat "{{!-- " sel " --}}")))
-           ((and (= web-mode-comment-style 2) (string= web-mode-engine "razor"))
-            (setq content (concat "@* " sel " *@")))
-           (t
-            (setq content (concat "<!-- " sel " -->"))
-            (when (< (length sel) 1)
-              (search-backward " -->")
-              (setq pos-after nil))
-            ))
+         ((and (= web-mode-comment-style 2) (string= web-mode-engine "django"))
+          (setq content (concat "{# " sel " #}")))
+         ((and (= web-mode-comment-style 2) (member web-mode-engine '("ejs" "erb")))
+          (setq content (concat "<%# " sel " %>")))
+         ((and (= web-mode-comment-style 2) (string= web-mode-engine "aspx"))
+          (setq content (concat "<%-- " sel " --%>")))
+         ((and (= web-mode-comment-style 2) (string= web-mode-engine "smarty"))
+          (setq content (concat "{* " sel " *}")))
+         ((and (= web-mode-comment-style 2) (string= web-mode-engine "xoops"))
+          (setq content (concat "<{* " sel " *}>")))
+         ((and (= web-mode-comment-style 2) (string= web-mode-engine "hero"))
+          (setq content (concat "<%# " sel " %>")))
+         ((and (= web-mode-comment-style 2) (string= web-mode-engine "blade"))
+          (setq content (concat "{{-- " sel " --}}")))
+         ((and (= web-mode-comment-style 2) (string= web-mode-engine "ctemplate"))
+          (setq content (concat "{{!-- " sel " --}}")))
+         ((and (= web-mode-comment-style 2) (string= web-mode-engine "razor"))
+          (setq content (concat "@* " sel " *@")))
+         (t
+          (setq content (concat "<!-- " sel " -->"))
+          (when (< (length sel) 1)
+            (search-backward " -->")
+            (setq pos-after nil))
+          ))
         ) ;case html
 
        ((member language '("php" "javascript" "java" "jsx"))
@@ -9688,7 +9717,12 @@ Prompt user if TAG-NAME isn't provided."
          ((string= sub2 "{/") ;jsx comments
           (setq comment (replace-regexp-in-string "\\(^{/\\*[ ]?\\|[ ]?\\*/}$\\)" "" comment)))
          ((string= sub2 "/*")
-          (setq comment (replace-regexp-in-string "\\(^/\\*[ ]?\\|[ ]?\\*/$\\|^[ \t]*\\*\\)" "" comment)))
+          (message "%S" comment)
+          ;;(setq comment (replace-regexp-in-string "\\(\\*/\\|^/\\*[ ]?\\|^[ \t]*\\*\\)" "" comment))
+          (setq comment (replace-regexp-in-string "\\([ ]?\\*/$\\|^/\\*[ ]?\\)" "" comment))
+          (setq comment (replace-regexp-in-string "\\(^[ \t]*\\*\\)" "" comment))
+          (message "%S" comment)
+          )
          ((string= sub2 "//")
           (setq comment (replace-regexp-in-string "\\(//\\)" "" comment)))
          ) ;cond
@@ -9723,8 +9757,16 @@ Prompt user if TAG-NAME isn't provided."
   (let (beg end)
     (setq beg (web-mode-block-beginning-position pos)
           end (web-mode-block-end-position pos))
-    (web-mode-remove-text-at-pos 2 (1- end))
-    (web-mode-remove-text-at-pos 2 beg)))
+    (cond
+     ((web-mode-looking-at-p "{#[{%]" beg)
+      (web-mode-remove-text-at-pos 1 (1- end))
+      (web-mode-remove-text-at-pos 1 (1+ beg))
+      )
+     (t
+      (web-mode-remove-text-at-pos 2 (1- end))
+      (web-mode-remove-text-at-pos 2 beg))
+     ) ;cond
+    ))
 
 (defun web-mode-uncomment-ctemplate-block (pos)
   (let (beg end)
@@ -9933,6 +9975,15 @@ Prompt user if TAG-NAME isn't provided."
     (cond
      ((eq (get-text-property pos 'tag-type) 'void)
       (web-mode-tag-beginning))
+     ((and (eq (get-text-property pos 'tag-type) 'comment)
+           (web-mode-looking-at-p "<!--#\\(elif\\|else\\|endif\\|if\\)" pos))
+
+      (setq regexp "<!--#\\(end\\)?if")
+      (if (web-mode-looking-at-p "<!--#if" pos)
+          (web-mode-tag-fetch-closing regexp pos)
+        (web-mode-tag-fetch-opening regexp pos))
+
+      )
      (t
       (setq regexp (concat "</?" (get-text-property pos 'tag-name)))
       (when (member (get-text-property pos 'tag-type) '(start end))
@@ -9946,13 +9997,21 @@ Prompt user if TAG-NAME isn't provided."
     t))
 
 (defun web-mode-tag-fetch-opening (regexp pos)
-  (let ((counter 1) (n 0) (type nil))
+  (let ((counter 1) (n 0) (is-comment nil) (types '(start end)))
+    (when (eq (aref regexp 1) ?\!)
+      (setq types '(comment)
+            is-comment t))
     (goto-char pos)
     (while (and (> counter 0) (re-search-backward regexp nil t))
       (when (and (get-text-property (point) 'tag-beg)
-                 (member (get-text-property (point) 'tag-type) '(start end)))
+                 (member (get-text-property (point) 'tag-type) types))
         (setq n (1+ n))
         (cond
+         ((and is-comment
+               (eq (aref (match-string-no-properties 0) 5) ?e))
+          (setq counter (1+ counter)))
+         (is-comment
+          (setq counter (1- counter)))
          ((eq (get-text-property (point) 'tag-type) 'end)
           (setq counter (1+ counter)))
          (t
@@ -9965,16 +10024,27 @@ Prompt user if TAG-NAME isn't provided."
     ))
 
 (defun web-mode-tag-fetch-closing (regexp pos)
-  (let ((counter 1) (n 0))
+  (let ((counter 1) (is-comment nil) (n 0))
+    (when (eq (aref regexp 1) ?\!)
+      (setq is-comment t))
     (goto-char pos)
     (web-mode-tag-end)
     (while (and (> counter 0) (re-search-forward regexp nil t))
       (when (get-text-property (match-beginning 0) 'tag-beg)
         (setq n (1+ n))
-        (if (eq (get-text-property (point) 'tag-type) 'end)
-            (setq counter (1- counter))
-          (setq counter (1+ counter))))
-      )
+        (cond
+         ((and is-comment
+               (eq (aref (match-string-no-properties 0) 5) ?e))
+          (setq counter (1- counter)))
+         (is-comment
+          (setq counter (1+ counter)))
+         ((eq (get-text-property (point) 'tag-type) 'end)
+          (setq counter (1- counter)))
+         (t
+          (setq counter (1+ counter)))
+         )
+        ) ;when
+      ) ;while
     (if (> n 0)
         (web-mode-tag-beginning)
       (goto-char pos))
