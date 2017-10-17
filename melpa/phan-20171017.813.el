@@ -5,9 +5,10 @@
 ;; Author: USAMI Kenta <tadsan@pixiv.com>
 ;; Created: 28 Jan 2017
 ;; Version: 0.0.2
-;; Package-Version: 20170205.604
+;; Package-Version: 20171017.813
 ;; Keywords: tools php
 ;; Package-Requires: ((emacs "24") (composer "0.0.8") (f "0.17"))
+;; URL: https://github.com/emacs-php/phan.el
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -37,6 +38,8 @@
 (defgroup phan nil
   "Utilities for Phan (PHP static analizer)"
   :prefix "phan-"
+  :link '(url-link :tag "Phan Wiki" "https://github.com/phan/phan/wiki")
+  :link '(url-link :tag "phan.el site" "https://github.com/emacs-php/phan.el")
   :group 'tools
   :group 'php)
 
@@ -174,7 +177,10 @@
 
 (defconst phan-log-class-prefix-keywords
   '(":" "but" "class" "for" "function" "is" "method" "property" "return" "takes" "to" "type"
-    "Class" "Property" "Method"))
+    "Class" "Property"))
+
+(defconst phan-log-function-prefix-keywords
+  '("Function" "Method"))
 
 (defconst phan-log-mode-syntax-table
   (let ((table (make-syntax-table)))
@@ -202,8 +208,11 @@
                  (rx (group (? "\\") (+ (or "|" (syntax word) (syntax symbol))) "()")))
          '(1 font-lock-function-name-face))
    (cons (concat "\\(?:|\\|, \\| " (regexp-opt phan-log-class-prefix-keywords) " \\)"
-                 (rx (group "\\" (+ (or "|" (syntax word) (syntax symbol))))))
+                 (rx (group "\\" (+ (or "?" "|" "[]" (syntax word) (syntax symbol))))))
          '(1 font-lock-type-face))
+   (cons (concat "\\(?:|\\|, \\| " (regexp-opt phan-log-function-prefix-keywords) " \\)"
+                 (rx (group "\\" (+ (or (syntax word) (syntax symbol))))))
+         '(1 font-lock-function-name-face))
    (cons " constant \\(\\(?:\\sw\\|\\s_\\)+\\)"
          '(1 font-lock-constant-face))
    (cons "\\(?:::\\|->\\)\\(\\(?:\\sw\\|\\s_\\)+()\\)"
@@ -230,7 +239,12 @@
 (defun phan-find-config-file ()
   "Open Phan config file of the project."
   (interactive)
-  (find-file (f-join (composer--find-composer-root default-directory) ".phan/config.php")))
+  (if (null default-directory)
+      (error "A variable `default-directory' is not set")
+    (let ((base-dir
+           (or (locate-dominating-file default-directory ".phan/config.php")
+               (composer--find-composer-root default-directory))))
+      (find-file (f-join base-dir ".phan/config.php")))))
 
 (provide 'phan)
 ;;; phan.el ends here

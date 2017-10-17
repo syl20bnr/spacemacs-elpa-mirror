@@ -6,7 +6,7 @@
 ;; Author: Vladimir Polushin <vovapolu@gmail.com>
 ;; Author of base darcula theme: Sam Halliday <Sam.Halliday@gmail.com>
 ;; Keywords: faces
-;; Package-Version: 20170905.941
+;; Package-Version: 1.3
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -146,8 +146,12 @@
  '(company-tooltip-common ((t (:inherit 'mode-line-emphasis))))
  '(company-tooltip-common-selection ((t (:inherit 'highlight))))
  '(company-tooltip-annotation ((t (:inherit 'mode-line))))
- '(markdown-code-face ((t (:background "#EEEEEE"))))
- '(markdown-pre-face ((t (:inherit 'markdown-code-face))))
+ '(org-code ((t (:inherit 'default))))
+ '(org-block ((t (:inherit 'org-code))))
+ '(org-verbatim ((t (:foreground "#444444"))))
+ ;; WORKAROUND https://github.com/jrblevin/markdown-mode/issues/273
+ '(markdown-code-face ((t (:inherit 'org-code :background "#EEEEEE"))))
+ '(markdown-pre-face ((t (:inherit 'org-verbatim))))
  ;; http://www.gnu.org/software/emacs/manual/html_node/ediff/Highlighting-Difference-Regions.html
  '(ediff-current-diff-A ((t (:background "#CBBBBB"))))
  '(ediff-current-diff-B ((t (:background "#BBCBBB"))))

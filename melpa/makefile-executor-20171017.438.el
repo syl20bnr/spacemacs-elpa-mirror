@@ -4,7 +4,7 @@
 
 ;; Author: Lowe Thiderman <lowe.thiderman@gmail.com>
 ;; URL: https://github.com/thiderman/makefile-executor.el
-;; Package-Version: 20170913.56
+;; Package-Version: 20171017.438
 ;; Package-X-Original-Version: 20170613
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.3") (dash "2.11.0") (f "0.11.0") (s "1.10.0"))
@@ -90,6 +90,10 @@ Bindings in `makefile-mode':
           (const :tag "Run most recently executed target"
                  makefile-executor-execute-last)))
 
+(defcustom makefile-executor-ignore "vendor/"
+  "Regexp of paths that should be filtered when looking for Makefiles."
+  :type 'string)
+
 ;; Based on http://stackoverflow.com/a/26339924/983746
 (defvar makefile-executor-list-target-code
   (format
@@ -162,7 +166,8 @@ If `projectile' is installed, use the `projectile-project-root'. If
            makefile-executor-cache))
 
 (defun makefile-executor-makefile-p (f)
-  (s-suffix? "makefile" (s-downcase f)))
+  (and (s-suffix? "makefile" (s-downcase f))
+       (not (string-match makefile-executor-ignore f))))
 
 (defun makefile-executor-get-makefiles ()
   (-filter 'makefile-executor-makefile-p
@@ -180,17 +185,24 @@ as initial input for convenience in executing the most relevant Makefile."
   (when (not (featurep 'projectile))
     (error "You need to install 'projectile' for this function to work"))
 
-  (let ((files (makefile-executor-get-makefiles)))
+  (let* ((files (makefile-executor-get-makefiles))
+         (filename
+          (if (= (length files) 1)
+              (car files)
+            ;; Get the dominating file dir so we can use that as initial input
+            ;; This means that if we are in a large project with a lot
+            ;; of Makefiles, the closest one will be the initial suggestion.
+            (let* ((bn (or (buffer-file-name) default-directory))
+                   (fn (or (locate-dominating-file bn "Makefile")
+                           (locate-dominating-file bn "makefile")))
+                   (relpath (file-relative-name fn (projectile-project-root)))
+                   ;; If we are at the root, we don't need the initial
+                   ;; input. If we have it as `./`, the Makefile at
+                   ;; the root will not be selectable, which is confusing.
+                   (init (if (not (s-equals? relpath "./")) relpath "")))
+              (completing-read "Makefile: " files nil t init)))))
     (makefile-executor-execute-target
-     (if (= (length files) 1)
-         (car files)
-       ;; Get the dominating file dir so we can use that as initial input
-       (let* ((bn (or (buffer-file-name) default-directory))
-              (fn (or (locate-dominating-file bn "Makefile")
-                      (locate-dominating-file bn "makefile")))
-              (init (file-relative-name fn (projectile-project-root))))
-         (concat (projectile-project-root)
-                 (completing-read "Makefile: " files nil t init)))))))
+     (concat (projectile-project-root) filename))))
 
 ;;;###autoload
 (defun makefile-executor-execute-last (arg)

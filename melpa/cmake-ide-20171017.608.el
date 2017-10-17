@@ -4,7 +4,7 @@
 
 ;; Author:  Atila Neves <atila.neves@gmail.com>
 ;; Version: 0.6
-;; Package-Version: 20170922.231
+;; Package-Version: 20171017.608
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (seq "1.11") (levenshtein "0") (s "1.11.0"))
 ;; Keywords: languages
 ;; URL: http://github.com/atilaneves/cmake-ide
@@ -142,6 +142,13 @@
 (defcustom cmake-ide-header-search-first-including
   t
   "Whether or not to search for the first source file to include a header when setting flags for them."
+  :group 'cmake-ide
+  :type 'booleanp
+  :safe #'booleanp)
+
+(defcustom cmake-ide-header-no-flags
+  nil
+  "Whether to apply compiler flags to header files.  In some projects this takes too long."
   :group 'cmake-ide
   :type 'booleanp
   :safe #'booleanp)
@@ -368,7 +375,7 @@ This works by calling cmake in a temporary directory (or cmake-ide-build-dir)
 
 (defun cmake-ide--set-flags-for-hdr-file (idb buffer sys-includes)
   "Set the compiler flags from IDB for header BUFFER with SYS-INCLUDES."
-  (when (not (string-empty-p (cmake-ide--buffer-string buffer)))
+  (when (and (not (string-empty-p (cmake-ide--buffer-string buffer))) (not cmake-ide-header-no-flags))
     (cond
      ;; try all unique compiler flags until one successfully compiles the header
      (cmake-ide-try-unique-compiler-flags-for-headers (cmake-ide--hdr-try-unique-compiler-flags idb buffer sys-includes))

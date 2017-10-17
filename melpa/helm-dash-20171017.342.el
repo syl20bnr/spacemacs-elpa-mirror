@@ -6,7 +6,7 @@
 ;;         Toni Reina  <areina0@gmail.com>
 ;;
 ;; URL: http://github.com/areina/helm-dash
-;; Package-Version: 20170913.345
+;; Package-Version: 20171017.342
 ;; Version: 1.3.0
 ;; Package-Requires: ((helm "1.9.2") (cl-lib "0.5"))
 ;; Keywords: docs
@@ -585,7 +585,8 @@ If INPUT-PATTERN is non-nil, use it as an initial input in helm search."
 (defun helm-dash-at-point ()
   "Bring up a `helm-dash' search interface with symbol at point."
   (interactive)
-  (helm-dash (thing-at-point 'symbol)))
+  (helm-dash
+   (substring-no-properties (thing-at-point 'symbol))))
 
 
 (provide 'helm-dash)
