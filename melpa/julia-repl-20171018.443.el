@@ -3,7 +3,7 @@
 ;; Copyright (C) 2016  Tamas K. Papp
 ;; Author: Tamas Papp <tkpapp@gmail.com>
 ;; Keywords: languages
-;; Package-Version: 20171005.123
+;; Package-Version: 20171018.443
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25"))
 
@@ -103,6 +103,7 @@ Buffer is not raised."
         (julia-repl--start-and-setup))
     (julia-repl--start-and-setup)))
 
+;;;###autoload
 (defun julia-repl ()
   "Raise the Julia REPL term buffer, creating one if it does not exist.
 This should be the standard entry point."

@@ -4,7 +4,7 @@
 
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Package-Requires: ((evil "1.2.3") (magit "2.6.0"))
-;; Package-Version: 0.4.1
+;; Package-Version: 0.4.2
 ;; Homepage: https://github.com/justbur/evil-magit
 ;; Version: 0.4.1
 
@@ -276,9 +276,6 @@ moment.")
        (,states magit-mode-map "C-f"   evil-scroll-page-down)
        (,states magit-mode-map "C-b"   evil-scroll-page-up)
        (,states magit-mode-map ":"     evil-ex)
-       (,states magit-mode-map "/"     evil-search-forward)
-       (,states magit-mode-map "n"     evil-search-next)
-       (,states magit-mode-map "N"     evil-search-previous)
 
        ;; these are to fix the priority of the log mode map and the magit mode map
        ;; FIXME: Conflict between this and revert. Revert seems more important here
@@ -290,6 +287,14 @@ moment.")
 
        ((,evil-magit-state) magit-mode-map "C-z"      evil-emacs-state)
        ((,evil-magit-state) magit-mode-map "<escape>" magit-mode-bury-buffer))
+
+     (if (eq evil-search-module 'evil-search)
+         `((,states magit-mode-map "/" evil-ex-search-forward)
+           (,states magit-mode-map "n" evil-ex-search-next)
+           (,states magit-mode-map "N" evil-ex-search-previous))
+       `((,states magit-mode-map "/" evil-search-forward)
+         (,states magit-mode-map "n" evil-search-next)
+         (,states magit-mode-map "N" evil-search-previous)))
 
      `((,states magit-status-mode-map "gz"  magit-jump-to-stashes                  "jz")
        (,states magit-status-mode-map "gt"  magit-jump-to-tracked                  "jt")
@@ -480,69 +485,36 @@ evil-magit affects.")
 (defvar evil-magit-popup-changes
   (append
    (when evil-magit-want-horizontal-movement
-     '((magit-dispatch-popup :actions "l" "L" magit-log-popup)))
+     '((magit-dispatch-popup :actions "L" "\C-l" magit-log-refresh-popup)
+       (magit-dispatch-popup :actions "l" "L" magit-log-popup)))
    '((magit-branch-popup :actions "x" "X" magit-branch-reset)
      (magit-branch-popup :actions "k" "x" magit-branch-delete)
+     (magit-dispatch-popup :actions "o" "'" magit-submodule-popup)
+     (magit-dispatch-popup :actions "O" "\"" magit-subtree-popup)
+     (magit-dispatch-popup :actions "V" "_" magit-revert-popup)
+     (magit-dispatch-popup :actions "X" "O" magit-reset-popup)
+     (magit-dispatch-popup :actions "v" "-" magit-reverse)
+     (magit-dispatch-popup :actions "k" "x" magit-discard)
      (magit-remote-popup :actions "k" "x" magit-remote-remove)
      (magit-revert-popup :actions "v" "o" magit-revert-no-commit)
      (magit-revert-popup :actions "V" "O" magit-revert)
      (magit-revert-popup :sequence-actions "V" "O" magit-sequencer-continue)
      (magit-tag-popup    :actions "k" "x" magit-tag-delete)))
-  "Changes to popup keys, excluding `magit-dispatch-popup'.")
+  "Changes to popup keys")
+
+(defun evil-magit-change-popup-key (popup type from to _)
+  "Wrap `magit-change-popup-key'."
+  (magit-change-popup-key popup type (string-to-char from) (string-to-char to))
+  ;; Support C-a -- C-z
+  (when (and (>= (string-to-char to) 1)
+             (<= (string-to-char to) 26))
+    (define-key magit-popup-mode-map to #'magit-invoke-popup-action)))
 
 (defun evil-magit-adjust-popups ()
   "Adjust popup keys to match evil-magit."
-  (plist-put magit-dispatch-popup
-             :actions '("Popup and dwim commands"
-                        (?A "Cherry-picking"  magit-cherry-pick-popup)
-                        (?b "Branching"       magit-branch-popup)
-                        (?B "Bisecting"       magit-bisect-popup)
-                        (?c "Committing"      magit-commit-popup)
-                        (?d "Diffing"         magit-diff-popup)
-                        (?D "Change diffs"    magit-diff-refresh-popup)
-                        (?e "Ediff dwimming"  magit-ediff-dwim)
-                        (?E "Ediffing"        magit-ediff-popup)
-                        (?f "Fetching"        magit-fetch-popup)
-                        (?F "Pulling"         magit-pull-popup)
-                        (?l "Logging"         magit-log-popup)
-                        (?L "Change logs"     magit-log-refresh-popup)
-                        (?m "Merging"         magit-merge-popup)
-                        (?M "Remoting"        magit-remote-popup)
-                        (?O "Resetting"       magit-reset-popup)
-                        (?P "Pushing"         magit-push-popup)
-                        (?r "Rebasing"        magit-rebase-popup)
-                        (?t "Tagging"         magit-tag-popup)
-                        (?T "Notes"           magit-notes-popup)
-                        (?w "Apply patches"   magit-am-popup)
-                        (?W "Format patches"  magit-patch-popup)
-                        (?y "Show Refs"       magit-show-refs-popup)
-                        (?z "Stashing"        magit-stash-popup)
-                        (?! "Running"         magit-run-popup)
-                        (?' "Submodules"      magit-submodule-popup)
-                        (?\" "Subtrees"       magit-subtree-popup)
-                        (?_ "Reverting"       magit-revert-popup)
-                        "Applying changes"
-                        (?a "Apply"           magit-apply)
-                        (?s "Stage"           magit-stage)
-                        (?u "Unstage"         magit-unstage)
-                        nil
-                        (?- "Reverse"         magit-reverse)
-                        (?S "Stage all"       magit-stage-modified)
-                        (?U "Unstage all"     magit-unstage-all)
-                        nil
-                        (?x "Discard"         magit-discard)
-                        "\
- gr     refresh current buffer
- TAB    toggle section at point
- RET    visit thing at point
-
- C-h m  show all key bindings" nil))
-
   (unless evil-magit-popup-keys-changed
     (dolist (change evil-magit-popup-changes)
-      (magit-change-popup-key
-       (nth 0 change) (nth 1 change)
-       (string-to-char (nth 2 change)) (string-to-char (nth 3 change))))
+      (apply #'evil-magit-change-popup-key change))
     (setq evil-magit-popup-keys-changed t)))
 
 (defun evil-magit-revert-popups ()
@@ -583,9 +555,11 @@ using `evil-magit-toggle-text-mode'"
   :keymap (make-sparse-keymap))
 
 (evil-define-key 'normal evil-magit-toggle-text-minor-mode-map
-  "\C-t" 'evil-magit-toggle-text-mode)
+  "\C-t" 'evil-magit-toggle-text-mode
+  "\\"   'evil-magit-toggle-text-mode)
 (evil-define-key evil-magit-state magit-mode-map
-  "\C-t" 'evil-magit-toggle-text-mode)
+  "\C-t" 'evil-magit-toggle-text-mode
+  "\\"   'evil-magit-toggle-text-mode)
 
 (defvar evil-magit-last-mode nil
   "Used to store last magit mode before entering text mode using

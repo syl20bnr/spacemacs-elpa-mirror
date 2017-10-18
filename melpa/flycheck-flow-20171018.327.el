@@ -5,7 +5,7 @@
 ;; Author: Lorenzo Bolla <lbolla@gmail.com>
 ;; Created: 16 Septermber 2015
 ;; Version: 1.1
-;; Package-Version: 20170604.811
+;; Package-Version: 20171018.327
 ;; Package-Requires: ((flycheck "0.18") (json "1.4"))
 
 ;;; Commentary:
@@ -82,10 +82,12 @@
           (setq message-code-reason .descr
                 message-filename .loc.source
                 message-line .loc.start.line
+                message-descr .descr
                 message-column .loc.start.column))
 
         (let-alist (car (cdr .message))
-          (setq message-descr .descr)))
+          (when (string= .type "Comment")
+            (setq message-descr .descr))))
 
       (when (string= message-kind "parse")
         (setq message-descr message-kind))
@@ -135,7 +137,6 @@ See URL `http://flowtype.org/'."
             "flow"
             "coverage"
             (eval flycheck-javascript-flow-args)
-            "--quiet"
             "--json"
             "--from" "emacs"
             "--path" source-original)

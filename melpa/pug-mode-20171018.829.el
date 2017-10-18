@@ -11,9 +11,9 @@
 ;; Author: Henrik Lissner
 ;; Maintainer: Henrik Lissner <henrik@lissner.net>
 ;; Created: February 18, 2016
-;; Modified: October 08, 2017
+;; Modified: October 18, 2017
 ;; Version: 1.0.7
-;; Package-Version: 20171007.1642
+;; Package-Version: 20171018.829
 ;; Homepage: https://github.com/hlissner/emacs-pug-mode
 ;; Keywords: markup, language, jade, pug
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
@@ -220,10 +220,10 @@ blocks)."
         (old-end font-lock-end))
     (save-excursion
       (goto-char font-lock-beg)
-      (unless (looking-at "\\.$")
+      (unless (looking-at-p "\\.$")
         (beginning-of-line)
-        (unless (or (looking-at pug-embedded-re)
-                    (looking-at pug-comment-re))
+        (unless (or (looking-at-p pug-embedded-re)
+                    (looking-at-p pug-comment-re))
           (cl-return-from pug-extend-region)))
       (setq font-lock-beg (point))
       (pug-forward-sexp)

@@ -6,7 +6,7 @@
 ;; Keywords: extensions, multimedia, tools
 ;; Homepage: https://github.com/vermiculus/ghub-plus
 ;; Package-Requires: ((emacs "25") (ghub "1.2") (apiwrap "0.3"))
-;; Package-Version: 20171016.1821
+;; Package-Version: 20171018.605
 ;; Package-X-Original-Version: 0.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -42,8 +42,10 @@
   (defun ghubp--stringify-params (params)
     "Process PARAMS from textual data to Lisp structures."
     (mapcar (lambda (p)
-              (let ((k (car p)) (v (cdr p)))
-                (cons k (alist-get v '((t . "true") (nil . "false")) v))))
+              (if (listp p)
+		  (let ((k (car p)) (v (cdr p)))
+		    (cons k (alist-get v '((t . "true") (nil . "false")) v)))
+		p))
             params))
 
   (defun ghubp--pre-process-params (params)
