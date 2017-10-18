@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017  Marc Sherry
 ;; Homepage: https://github.com/msherry/tickscript-mode
 ;; Version: 0.1
-;; Package-Version: 0.2
+;; Package-Version: 0.2.1
 ;; Author: Marc Sherry <msherry@gmail.com>
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "24.1"))
@@ -491,7 +491,7 @@ be part of user-defined functions."
    (when (or (tickscript-property-at-point)
              ;; for now, anything starting with "." is a property, because of
              ;; UDFs. TODO: tighten this up to only work under real UDFs?
-             (looking-at "\."))
+             (looking-at "\\."))
      ;; (message "PROP")
      (* 2 tickscript-indent-offset))))
 
