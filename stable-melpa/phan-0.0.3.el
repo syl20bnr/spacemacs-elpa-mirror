@@ -4,8 +4,8 @@
 
 ;; Author: USAMI Kenta <tadsan@pixiv.com>
 ;; Created: 28 Jan 2017
-;; Version: 0.0.2
-;; Package-Version: 20171017.915
+;; Version: 0.0.3
+;; Package-Version: 0.0.3
 ;; Keywords: tools php
 ;; Package-Requires: ((emacs "24") (composer "0.0.8") (f "0.17"))
 ;; URL: https://github.com/emacs-php/phan.el
@@ -62,15 +62,22 @@
 (defconst phan-issues
   '("PhanSyntaxError"
     ;; Issue::CATEGORY_UNDEFINED
+    "PhanAmbiguousTraitAliasSource"
+    "PhanClassContainsAbstractMethodInternal"
+    "PhanClassContainsAbstractMethod"
     "PhanEmptyFile"
     "PhanParentlessClass"
+    "PhanRequiredTraitNotAdded"
     "PhanTraitParentReference"
+    "PhanUndeclaredAliasedMethodOfTrait"
     "PhanUndeclaredClass"
+    "PhanUndeclaredClassAliasOriginal"
     "PhanUndeclaredClassCatch"
     "PhanUndeclaredClassConstant"
     "PhanUndeclaredClassInstanceof"
     "PhanUndeclaredClassMethod"
     "PhanUndeclaredClassReference"
+    "PhanUndeclaredClosureScope"
     "PhanUndeclaredConstant"
     "PhanUndeclaredExtendedClass"
     "PhanUndeclaredFunction"
@@ -81,33 +88,50 @@
     "PhanUndeclaredStaticProperty"
     "PhanUndeclaredTrait"
     "PhanUndeclaredTypeParameter"
+    "PhanUndeclaredTypeReturnType"
     "PhanUndeclaredTypeProperty"
     "PhanUndeclaredVariable"
+    "PhanUndeclaredVariableDim"
+    "PhanUndeclaredClassInCallable"
+    "PhanUndeclaredStaticMethodInCallable"
+    "PhanUndeclaredFunctionInCallable"
+    "PhanUndeclaredMethodInCallable"
 
     ;; Issue::CATEGORY_TYPE
     "PhanNonClassMethodCall"
     "PhanTypeArrayOperator"
     "PhanTypeArraySuspicious"
+    "PhanTypeSuspiciousIndirectVariable"
     "PhanTypeComparisonFromArray"
     "PhanTypeComparisonToArray"
     "PhanTypeConversionFromArray"
     "PhanTypeInstantiateAbstract"
     "PhanTypeInstantiateInterface"
+    "PhanTypeInvalidClosureScope"
     "PhanTypeInvalidLeftOperand"
     "PhanTypeInvalidRightOperand"
+    "PhanTypeMagicVoidWithReturn"
     "PhanTypeMismatchArgument"
     "PhanTypeMismatchArgumentInternal"
     "PhanTypeMismatchDefault"
+    "PhanMismatchVariadicComment"
+    "PhanMismatchVariadicParam"
     "PhanTypeMismatchForeach"
     "PhanTypeMismatchProperty"
     "PhanTypeMismatchReturn"
+    "PhanTypeMismatchDeclaredReturn"
+    "PhanTypeMismatchDeclaredParam"
     "PhanTypeMissingReturn"
     "PhanTypeNonVarPassByRef"
     "PhanTypeParentConstructorCalled"
     "PhanTypeVoidAssignment"
+    "PhanTypeInvalidCallableArraySize"
+    "PhanTypeInvalidCallableArrayKey"
+    "PhanTypeInvalidCallableObjectOfMethod"
 
     ;; Issue::CATEGORY_ANALYSIS
     "PhanUnanalyzable"
+    "PhanUnanalyzableInheritance"
 
     ;; Issue::CATEGORY_VARIABLE
     "PhanVariableUseClause"
@@ -120,7 +144,10 @@
 
     ;; Issue::CATEGORY_DEPRECATED
     "PhanDeprecatedClass"
+    "PhanDeprecatedInterface"
+    "PhanDeprecatedTrait"
     "PhanDeprecatedFunction"
+    "PhanDeprecatedFunctionInternal"
     "PhanDeprecatedProperty"
 
     ;; Issue::CATEGORY_PARAMETER
@@ -138,6 +165,37 @@
     "PhanParamSignatureMismatchInternal"
     "PhanParamRedefined"
 
+    "PhanParamSignatureRealMismatchReturnType"
+    "PhanParamSignatureRealMismatchReturnTypeInternal"
+    "PhanParamSignaturePHPDocMismatchReturnType"
+    "PhanParamSignatureRealMismatchTooManyRequiredParameters"
+    "PhanParamSignatureRealMismatchTooManyRequiredParametersInternal"
+    "PhanParamSignaturePHPDocMismatchTooManyRequiredParameters"
+    "PhanParamSignatureRealMismatchTooFewParameters"
+    "PhanParamSignatureRealMismatchTooFewParametersInternal"
+    "PhanParamSignaturePHPDocMismatchTooFewParameters"
+    "PhanParamSignatureRealMismatchHasParamType"
+    "PhanParamSignatureRealMismatchHasParamTypeInternal"
+    "PhanParamSignaturePHPDocMismatchHasParamType"
+    "PhanParamSignatureRealMismatchHasNoParamType"
+    "PhanParamSignatureRealMismatchHasNoParamTypeInternal"
+    "PhanParamSignaturePHPDocMismatchHasNoParamType"
+    "PhanParamSignatureRealMismatchParamIsReference"
+    "PhanParamSignatureRealMismatchParamIsReferenceInternal"
+    "PhanParamSignaturePHPDocMismatchParamIsReference"
+    "PhanParamSignatureRealMismatchParamIsNotReference"
+    "PhanParamSignatureRealMismatchParamIsNotReferenceInternal"
+    "PhanParamSignaturePHPDocMismatchParamIsNotReference"
+    "PhanParamSignatureRealMismatchParamVariadic"
+    "PhanParamSignatureRealMismatchParamVariadicInternal"
+    "PhanParamSignaturePHPDocMismatchParamVariadic"
+    "PhanParamSignatureRealMismatchParamNotVariadic"
+    "PhanParamSignatureRealMismatchParamNotVariadicInternal"
+    "PhanParamSignaturePHPDocMismatchParamNotVariadic"
+    "PhanParamSignatureRealMismatchParamType"
+    "PhanParamSignatureRealMismatchParamTypeInternal"
+    "PhanParamSignaturePHPDocMismatchParamType"
+
     ;; Issue::CATEGORY_NOOP
     "PhanNoopArray"
     "PhanNoopClosure"
@@ -145,12 +203,14 @@
     "PhanNoopProperty"
     "PhanNoopVariable"
     "PhanUnreferencedClass"
+    "PhanUnreferencedFunction"
     "PhanUnreferencedMethod"
     "PhanUnreferencedProperty"
     "PhanUnreferencedConstant"
 
     ;; Issue::CATEGORY_REDEFINE
     "PhanRedefineClass"
+    "PhanRedefineClassAlias"
     "PhanRedefineClassInternal"
     "PhanRedefineFunction"
     "PhanRedefineFunctionInternal"
@@ -161,11 +221,30 @@
     "PhanAccessPropertyPrivate"
     "PhanAccessPropertyProtected"
     "PhanAccessMethodPrivate"
+    "PhanAccessMethodPrivateWithCallMagicMethod"
     "PhanAccessMethodProtected"
+    "PhanAccessMethodProtectedWithCallMagicMethod"
     "PhanAccessSignatureMismatch"
     "PhanAccessSignatureMismatchInternal"
     "PhanAccessStaticToNonStatic"
     "PhanAccessNonStaticToStatic"
+    "PhanAccessClassConstantPrivate"
+    "PhanAccessClassConstantProtected"
+    "PhanAccessPropertyStaticAsNonStatic"
+    "PhanAccessOwnConstructor"
+
+    "PhanAccessConstantInternal"
+    "PhanAccessClassInternal"
+    "PhanAccessClassConstantInternal"
+    "PhanAccessPropertyInternal"
+    "PhanAccessMethodInternal"
+    "PhanAccessWrongInheritanceCategory"
+    "PhanAccessWrongInheritanceCategoryInternal"
+    "PhanAccessExtendsFinalClass"
+    "PhanAccessExtendsFinalClassInternal"
+    "PhanAccessOverridesFinalMethod"
+    "PhanAccessOverridesFinalMethodInternal"
+    "PhanAccessOverridesFinalMethodPHPDoc"
 
     ;; Issue::CATEGORY_COMPATIBLE
     "PhanCompatibleExpressionPHP7"
@@ -177,16 +256,32 @@
     "PhanTemplateTypeStaticProperty"
     "PhanGenericGlobalVariable"
     "PhanGenericConstructorTypes"
-    ))
+
+    ;; Issue::CATEGORY_COMMENT
+    "PhanInvalidCommentForDeclarationType"
+    "PhanMisspelledAnnotation"
+    "PhanUnextractableAnnotation"
+    "PhanUnextractableAnnotationPart"
+    "PhanCommentParamWithoutRealParam"
+    "PhanCommentParamOnEmptyParamList"
+    "PhanCommentOverrideOnNonOverrideMethod"
+    "PhanCommentOverrideOnNonOverrideConstant"
+    )
+  "Issue names of Phan.
+
+https://github.com/etsy/phan/blob/master/src/Phan/Issue.php
+https://github.com/etsy/phan/wiki/Issue-Types-Caught-by-Phan")
 
 (defconst phan-log-warning-keywords
   '("can't be"
     "deprecated"
     "has no return value"
+    "not found"
     "only takes"
     "should be compatible"
     "Suspicious"
-    "undeclared"))
+    "undeclared"
+    "unextractable annotation"))
 
 (defconst phan-log-class-prefix-keywords
   '(":" "but" "class" "for" "function" "is" "method" "property" "return" "takes" "to" "type"
@@ -201,7 +296,11 @@
     (modify-syntax-entry ?\\ "_" table)
     (modify-syntax-entry ?$  "_" table)
     (modify-syntax-entry ?|  "." table)
+    (modify-syntax-entry ?\( "_" table)
+    (modify-syntax-entry ?\) "_" table)
     (modify-syntax-entry ?-  "." table)
+    (modify-syntax-entry ?.  "_" table)
+    (modify-syntax-entry ?:  "." table)
     (modify-syntax-entry ?>  "." table)
     table))
 
@@ -215,7 +314,7 @@
    (cons "\\[]" '(0 font-lock-type-face))
    (cons (concat " " (regexp-opt phan-issues) " ")
          '(0 font-lock-keyword-face))
-   (cons (concat "\\(?:\\`\\| \\)\\(" (regexp-opt phan-log-warning-keywords) "\\)\\(?: \\|$\\)")
+   (cons (concat "\\(?:\\`\\| \\)\\(" (regexp-opt phan-log-warning-keywords) "\\)[ $,]")
          '(1 font-lock-warning-face))
    (cons (concat "\\(?:|\\|, \\| " (regexp-opt phan-log-class-prefix-keywords) " \\)"
                  (rx (group (? "\\") (+ (or "|" (syntax word) (syntax symbol))) "()")))
@@ -232,6 +331,8 @@
          '(1 font-lock-function-name-face))
    (cons "::\\(\\(?:\\sw\\|\\s_\\)+\\)"
          '(1 font-lock-constant-face))
+   (cons " \\(?:Argument [0-9]+\\|annotation for\\) (\\(\\(?:\\sw\\|\\s_\\)+\\))"
+         '(1 font-lock-variable-name-face))
    (cons " Argument [0-9]+ (\\(\\(?:\\sw\\|\\s_\\)+\\))"
          '(1 font-lock-variable-name-face))
    (cons " Call to method \\([^\n\\][^\n ]*\\) "

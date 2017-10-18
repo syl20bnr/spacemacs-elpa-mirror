@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017  Marc Sherry
 ;; Homepage: https://github.com/msherry/tickscript-mode
 ;; Version: 0.1
-;; Package-Version: 20171017.1259
+;; Package-Version: 20171017.1644
 ;; Author: Marc Sherry <msherry@gmail.com>
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "24.1"))
@@ -177,8 +177,9 @@ If unset, defaults to \"http://localhost:9092\"."
 (setq tickscript-nodes
       '("alert" "batch" "combine" "deadman" "default" "delete" "derivative"
         "eval" "exclude" "flatten" "from" "groupBy" "httpOut" "httpPost"
-        "influxDBOut" "join" "kapacitorLoopback" "log" "query" "sample" "shift"
-        "stateCount" "stateDuration" "stats" "stream" "union" "where" "window"))
+        "influxDBOut" "join" "kapacitorLoopback" "log" "noOp" "query" "sample"
+        "shift" "stateCount" "stateDuration" "stats" "stream" "union" "where"
+        "window"))
 
 (setq tickscript-chaining-methods
       '("bottom" "count" "cumulativeSum" "difference" "distinct" "elapsed"
@@ -189,6 +190,7 @@ If unset, defaults to \"http://localhost:9092\"."
 (puthash "httpOut" "http_out" tickscript-webhelp-case-map)
 (puthash "httpPost" "http_post" tickscript-webhelp-case-map)
 (puthash "influxDBOut" "influx_d_b_out" tickscript-webhelp-case-map)
+(puthash "noOp" "no_op" tickscript-webhelp-case-map)
 
 (setq tickscript-font-lock-keywords
       `(,
@@ -321,7 +323,7 @@ this function works."
                             (car word-bounds))))
       (and word-start
            (equal (char-before word-start) ?@)
-           (thing-at-point 'symbol)))))
+           (substring-no-properties (thing-at-point 'symbol))))))
 
 (defun tickscript-property-at-point ()
   "Return the word at point if it is a property.
@@ -356,7 +358,7 @@ be preceded by the \".\" sigil."
 
 (defun tickscript--last-identifier-pos (fn stop-at-node)
   "Internal method to find the last identifier matching FN.
-If STOP-AT-NODE is true, the search stops once a node is hit."
+If STOP-AT-NODE is true, the search stops once a node (or UDF) is hit."
   (save-excursion
     ;; Skip the sigil, if we're on one
     (if (looking-at "\\.|\|")
@@ -368,15 +370,18 @@ If STOP-AT-NODE is true, the search stops once a node is hit."
         (when (funcall fn)
           (setq count (1+ count)))
         (when (and stop-at-node
-                   (tickscript-node-at-point))
+                   (or (tickscript-node-at-point)
+                       (tickscript-udf-at-point)))
           (setq node-count (1+ node-count))))
       (if (> count 0)
           (point)
         nil))))
 
-(defun tickscript-last-node-pos ()
-  "Return the position of the last node, if found."
-  (tickscript--last-identifier-pos #'tickscript-node-at-point nil))
+(defun tickscript-last-node-pos (&optional stop-at-node)
+  "Return the position of the last node, if found.
+Optional arg STOP-AT-NODE tells the parser to stop at the first
+node boundary found (which includes UDFs)."
+  (tickscript--last-identifier-pos #'tickscript-node-at-point stop-at-node))
 
 (defun tickscript-last-chaining-method-pos ()
   "Return the position of the last chaining method, if found."
@@ -390,9 +395,11 @@ If STOP-AT-NODE is true, the search stops once a node is hit."
   "Return the name of the current node.
 Returns the name of the node under point, or the last node in the
 current chain if point is not on a node."
-  (save-excursion
-    (goto-char (tickscript-last-node-pos))
-    (tickscript--at-keyword tickscript-nodes)))
+  (let ((last-node-pos (tickscript-last-node-pos t)))
+    (if last-node-pos
+        (save-excursion
+          (goto-char (tickscript-last-node-pos t))
+          (tickscript--at-keyword tickscript-nodes)))))
 
 (defun tickscript--node-indentation (&optional min)
   "Return indentation level for items under the last node.
@@ -640,6 +647,26 @@ file comments for later re-use."
     (message results)))
 
 
+(defun tickscript-render-task-dot-to-buffer ()
+  "Extract the DOT graph from the current buffer, render it with Graphviz, and insert the image."
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (re-search-forward "^DOT:$")
+    (forward-line 1)
+    (let* ((beg (point))
+           (end (point-max))
+           (region (buffer-substring-no-properties beg end))
+           (tmpfile (format "/%s/%s.png" temporary-file-directory (make-temp-name "tickscript-")))
+           (cmd (format "echo \"%s\" | dot -T png -o %s" region tmpfile)))
+      (message "%s %s: %s" beg end region)
+      (shell-command cmd)
+      (goto-char (point-max))
+      (insert-char ?\n)
+      (let ((inhibit-read-only t))
+        (insert-image (create-image tmpfile))))))
+
+
 (defun tickscript-show-task ()
   "Use Kapacitor to show the definition of the current task."
   (interactive)
@@ -649,9 +676,11 @@ file comments for later re-use."
          (buffer-name "*tickscript-task*"))
     (with-output-to-temp-buffer buffer-name
       (switch-to-buffer-other-window buffer-name)
+      (erase-buffer)
       (set (make-local-variable 'font-lock-defaults) '(tickscript-font-lock-keywords))
       (font-lock-mode)
-      (insert task))))
+      (insert task)
+      (tickscript-render-task-dot-to-buffer))))
 
 
 (defun tickscript--list-things (noun)
@@ -690,15 +719,18 @@ file comments for later re-use."
   (interactive)
   (let* ((node (tickscript-current-node))
          (chaining-method-or-property (or (tickscript-chaining-method-at-point)
-                                          (tickscript-property-at-point)))
-         (url (format "https://docs.influxdata.com/kapacitor/v1.3/nodes/%s_node/"
-                      (tickscript--downcase-for-webhelp node))))
-    (unless (or (tickscript-node-at-point)
-                chaining-method-or-property)
+                                          (tickscript-property-at-point))))
+    ;; We must have found a containing node, and either be pointing at it, or
+    ;; have found a legitimate chaining method/property child
+    (unless (and node
+                 (or (tickscript-node-at-point)
+                     chaining-method-or-property))
       (error "Could not find help topic for thing at point"))
-    (when chaining-method-or-property
-      (setq url (format "%s#%s" url (tickscript--downcase-for-webhelp chaining-method-or-property))))
-    (browse-url url)))
+    (let ((url (format "https://docs.influxdata.com/kapacitor/v1.3/nodes/%s_node/"
+                       (tickscript--downcase-for-webhelp node))))
+      (when chaining-method-or-property
+        (setq url (format "%s#%s" url (tickscript--downcase-for-webhelp chaining-method-or-property))))
+      (browse-url url))))
 
 ;;;###autoload
 (define-derived-mode tickscript-mode prog-mode "Tickscript"

@@ -5,7 +5,7 @@
 ;; Author: Alex Murray <murray.alex@gmail.com>
 ;; Maintainer: Alex Murray <murray.alex@gmail.com>
 ;; URL: https://github.com/alexmurray/flycheck-plantuml
-;; Package-Version: 20161122.219
+;; Package-Version: 20171017.1811
 ;; Version: 0.1
 ;; Package-Requires: ((flycheck "0.24") (emacs "24.4") (plantuml-mode "1.2.2"))
 
@@ -43,10 +43,9 @@
   "A checker using plantuml.
 
 See `http://plantuml.com"
-  :command ("java" "-Djava.awt.headless=true" "-jar" (eval plantuml-jar-path)
-            "-checkonly" "-failfast2" source)
-  :error-patterns ((error line-start (message (minimal-match (one-or-more not-newline)))
-                          " line " line " in file: " (file-name) line-end))
+  :command ("java" "-Djava.awt.headless=true" "-jar" (eval plantuml-jar-path) "-syntax")
+  :standard-input t
+  :error-patterns ((error line-start "ERROR" "\n" line "\n" (message) line-end))
   :modes plantuml-mode)
 
 ;;;###autoload

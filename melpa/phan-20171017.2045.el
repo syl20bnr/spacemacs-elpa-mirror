@@ -4,10 +4,11 @@
 
 ;; Author: USAMI Kenta <tadsan@pixiv.com>
 ;; Created: 28 Jan 2017
-;; Version: 0.0.2
-;; Package-Version: 0.0.2
+;; Version: 0.0.3
+;; Package-Version: 20171017.2045
 ;; Keywords: tools php
 ;; Package-Requires: ((emacs "24") (composer "0.0.8") (f "0.17"))
+;; URL: https://github.com/emacs-php/phan.el
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -28,14 +29,30 @@
 
 ;; Phan is static analizer for PHP.  https://github.com/etsy/phan
 ;; This package has utilities and major mode for phan log format.
+;;
+;; # Major modes
+;;
+;; ## phan-log-mode
+;;
+;; A major mode for viewing Phan log format.
+;;
+;; # Commands
+;;
+;; ## phan-find-config-file
+;;
+;; Open `.phan/config.php' of current directory.
+;;
 
 
 ;;; Code:
 (require 'composer)
+(require 'f)
 
 (defgroup phan nil
   "Utilities for Phan (PHP static analizer)"
   :prefix "phan-"
+  :link '(url-link :tag "Phan Wiki" "https://github.com/phan/phan/wiki")
+  :link '(url-link :tag "phan.el site" "https://github.com/emacs-php/phan.el")
   :group 'tools
   :group 'php)
 
@@ -45,15 +62,22 @@
 (defconst phan-issues
   '("PhanSyntaxError"
     ;; Issue::CATEGORY_UNDEFINED
+    "PhanAmbiguousTraitAliasSource"
+    "PhanClassContainsAbstractMethodInternal"
+    "PhanClassContainsAbstractMethod"
     "PhanEmptyFile"
     "PhanParentlessClass"
+    "PhanRequiredTraitNotAdded"
     "PhanTraitParentReference"
+    "PhanUndeclaredAliasedMethodOfTrait"
     "PhanUndeclaredClass"
+    "PhanUndeclaredClassAliasOriginal"
     "PhanUndeclaredClassCatch"
     "PhanUndeclaredClassConstant"
     "PhanUndeclaredClassInstanceof"
     "PhanUndeclaredClassMethod"
     "PhanUndeclaredClassReference"
+    "PhanUndeclaredClosureScope"
     "PhanUndeclaredConstant"
     "PhanUndeclaredExtendedClass"
     "PhanUndeclaredFunction"
@@ -64,33 +88,50 @@
     "PhanUndeclaredStaticProperty"
     "PhanUndeclaredTrait"
     "PhanUndeclaredTypeParameter"
+    "PhanUndeclaredTypeReturnType"
     "PhanUndeclaredTypeProperty"
     "PhanUndeclaredVariable"
+    "PhanUndeclaredVariableDim"
+    "PhanUndeclaredClassInCallable"
+    "PhanUndeclaredStaticMethodInCallable"
+    "PhanUndeclaredFunctionInCallable"
+    "PhanUndeclaredMethodInCallable"
 
     ;; Issue::CATEGORY_TYPE
     "PhanNonClassMethodCall"
     "PhanTypeArrayOperator"
     "PhanTypeArraySuspicious"
+    "PhanTypeSuspiciousIndirectVariable"
     "PhanTypeComparisonFromArray"
     "PhanTypeComparisonToArray"
     "PhanTypeConversionFromArray"
     "PhanTypeInstantiateAbstract"
     "PhanTypeInstantiateInterface"
+    "PhanTypeInvalidClosureScope"
     "PhanTypeInvalidLeftOperand"
     "PhanTypeInvalidRightOperand"
+    "PhanTypeMagicVoidWithReturn"
     "PhanTypeMismatchArgument"
     "PhanTypeMismatchArgumentInternal"
     "PhanTypeMismatchDefault"
+    "PhanMismatchVariadicComment"
+    "PhanMismatchVariadicParam"
     "PhanTypeMismatchForeach"
     "PhanTypeMismatchProperty"
     "PhanTypeMismatchReturn"
+    "PhanTypeMismatchDeclaredReturn"
+    "PhanTypeMismatchDeclaredParam"
     "PhanTypeMissingReturn"
     "PhanTypeNonVarPassByRef"
     "PhanTypeParentConstructorCalled"
     "PhanTypeVoidAssignment"
+    "PhanTypeInvalidCallableArraySize"
+    "PhanTypeInvalidCallableArrayKey"
+    "PhanTypeInvalidCallableObjectOfMethod"
 
     ;; Issue::CATEGORY_ANALYSIS
     "PhanUnanalyzable"
+    "PhanUnanalyzableInheritance"
 
     ;; Issue::CATEGORY_VARIABLE
     "PhanVariableUseClause"
@@ -103,7 +144,10 @@
 
     ;; Issue::CATEGORY_DEPRECATED
     "PhanDeprecatedClass"
+    "PhanDeprecatedInterface"
+    "PhanDeprecatedTrait"
     "PhanDeprecatedFunction"
+    "PhanDeprecatedFunctionInternal"
     "PhanDeprecatedProperty"
 
     ;; Issue::CATEGORY_PARAMETER
@@ -121,6 +165,37 @@
     "PhanParamSignatureMismatchInternal"
     "PhanParamRedefined"
 
+    "PhanParamSignatureRealMismatchReturnType"
+    "PhanParamSignatureRealMismatchReturnTypeInternal"
+    "PhanParamSignaturePHPDocMismatchReturnType"
+    "PhanParamSignatureRealMismatchTooManyRequiredParameters"
+    "PhanParamSignatureRealMismatchTooManyRequiredParametersInternal"
+    "PhanParamSignaturePHPDocMismatchTooManyRequiredParameters"
+    "PhanParamSignatureRealMismatchTooFewParameters"
+    "PhanParamSignatureRealMismatchTooFewParametersInternal"
+    "PhanParamSignaturePHPDocMismatchTooFewParameters"
+    "PhanParamSignatureRealMismatchHasParamType"
+    "PhanParamSignatureRealMismatchHasParamTypeInternal"
+    "PhanParamSignaturePHPDocMismatchHasParamType"
+    "PhanParamSignatureRealMismatchHasNoParamType"
+    "PhanParamSignatureRealMismatchHasNoParamTypeInternal"
+    "PhanParamSignaturePHPDocMismatchHasNoParamType"
+    "PhanParamSignatureRealMismatchParamIsReference"
+    "PhanParamSignatureRealMismatchParamIsReferenceInternal"
+    "PhanParamSignaturePHPDocMismatchParamIsReference"
+    "PhanParamSignatureRealMismatchParamIsNotReference"
+    "PhanParamSignatureRealMismatchParamIsNotReferenceInternal"
+    "PhanParamSignaturePHPDocMismatchParamIsNotReference"
+    "PhanParamSignatureRealMismatchParamVariadic"
+    "PhanParamSignatureRealMismatchParamVariadicInternal"
+    "PhanParamSignaturePHPDocMismatchParamVariadic"
+    "PhanParamSignatureRealMismatchParamNotVariadic"
+    "PhanParamSignatureRealMismatchParamNotVariadicInternal"
+    "PhanParamSignaturePHPDocMismatchParamNotVariadic"
+    "PhanParamSignatureRealMismatchParamType"
+    "PhanParamSignatureRealMismatchParamTypeInternal"
+    "PhanParamSignaturePHPDocMismatchParamType"
+
     ;; Issue::CATEGORY_NOOP
     "PhanNoopArray"
     "PhanNoopClosure"
@@ -128,12 +203,14 @@
     "PhanNoopProperty"
     "PhanNoopVariable"
     "PhanUnreferencedClass"
+    "PhanUnreferencedFunction"
     "PhanUnreferencedMethod"
     "PhanUnreferencedProperty"
     "PhanUnreferencedConstant"
 
     ;; Issue::CATEGORY_REDEFINE
     "PhanRedefineClass"
+    "PhanRedefineClassAlias"
     "PhanRedefineClassInternal"
     "PhanRedefineFunction"
     "PhanRedefineFunctionInternal"
@@ -144,11 +221,30 @@
     "PhanAccessPropertyPrivate"
     "PhanAccessPropertyProtected"
     "PhanAccessMethodPrivate"
+    "PhanAccessMethodPrivateWithCallMagicMethod"
     "PhanAccessMethodProtected"
+    "PhanAccessMethodProtectedWithCallMagicMethod"
     "PhanAccessSignatureMismatch"
     "PhanAccessSignatureMismatchInternal"
     "PhanAccessStaticToNonStatic"
     "PhanAccessNonStaticToStatic"
+    "PhanAccessClassConstantPrivate"
+    "PhanAccessClassConstantProtected"
+    "PhanAccessPropertyStaticAsNonStatic"
+    "PhanAccessOwnConstructor"
+
+    "PhanAccessConstantInternal"
+    "PhanAccessClassInternal"
+    "PhanAccessClassConstantInternal"
+    "PhanAccessPropertyInternal"
+    "PhanAccessMethodInternal"
+    "PhanAccessWrongInheritanceCategory"
+    "PhanAccessWrongInheritanceCategoryInternal"
+    "PhanAccessExtendsFinalClass"
+    "PhanAccessExtendsFinalClassInternal"
+    "PhanAccessOverridesFinalMethod"
+    "PhanAccessOverridesFinalMethodInternal"
+    "PhanAccessOverridesFinalMethodPHPDoc"
 
     ;; Issue::CATEGORY_COMPATIBLE
     "PhanCompatibleExpressionPHP7"
@@ -160,20 +256,39 @@
     "PhanTemplateTypeStaticProperty"
     "PhanGenericGlobalVariable"
     "PhanGenericConstructorTypes"
-    ))
+
+    ;; Issue::CATEGORY_COMMENT
+    "PhanInvalidCommentForDeclarationType"
+    "PhanMisspelledAnnotation"
+    "PhanUnextractableAnnotation"
+    "PhanUnextractableAnnotationPart"
+    "PhanCommentParamWithoutRealParam"
+    "PhanCommentParamOnEmptyParamList"
+    "PhanCommentOverrideOnNonOverrideMethod"
+    "PhanCommentOverrideOnNonOverrideConstant"
+    )
+  "Issue names of Phan.
+
+https://github.com/etsy/phan/blob/master/src/Phan/Issue.php
+https://github.com/etsy/phan/wiki/Issue-Types-Caught-by-Phan")
 
 (defconst phan-log-warning-keywords
   '("can't be"
     "deprecated"
     "has no return value"
+    "not found"
     "only takes"
     "should be compatible"
     "Suspicious"
-    "undeclared"))
+    "undeclared"
+    "unextractable annotation"))
 
 (defconst phan-log-class-prefix-keywords
   '(":" "but" "class" "for" "function" "is" "method" "property" "return" "takes" "to" "type"
-    "Class" "Property" "Method"))
+    "Class" "Property"))
+
+(defconst phan-log-function-prefix-keywords
+  '("Function" "Method"))
 
 (defconst phan-log-mode-syntax-table
   (let ((table (make-syntax-table)))
@@ -181,7 +296,11 @@
     (modify-syntax-entry ?\\ "_" table)
     (modify-syntax-entry ?$  "_" table)
     (modify-syntax-entry ?|  "." table)
+    (modify-syntax-entry ?\( "_" table)
+    (modify-syntax-entry ?\) "_" table)
     (modify-syntax-entry ?-  "." table)
+    (modify-syntax-entry ?.  "_" table)
+    (modify-syntax-entry ?:  "." table)
     (modify-syntax-entry ?>  "." table)
     table))
 
@@ -195,26 +314,39 @@
    (cons "\\[]" '(0 font-lock-type-face))
    (cons (concat " " (regexp-opt phan-issues) " ")
          '(0 font-lock-keyword-face))
-   (cons (concat "\\(?:\\`\\| \\)\\(" (regexp-opt phan-log-warning-keywords) "\\)\\(?: \\|$\\)")
+   (cons (concat "\\(?:\\`\\| \\)\\(" (regexp-opt phan-log-warning-keywords) "\\)[ $,]")
          '(1 font-lock-warning-face))
    (cons (concat "\\(?:|\\|, \\| " (regexp-opt phan-log-class-prefix-keywords) " \\)"
                  (rx (group (? "\\") (+ (or "|" (syntax word) (syntax symbol))) "()")))
          '(1 font-lock-function-name-face))
    (cons (concat "\\(?:|\\|, \\| " (regexp-opt phan-log-class-prefix-keywords) " \\)"
-                 (rx (group "\\" (+ (or "|" (syntax word) (syntax symbol))))))
+                 (rx (group "\\" (+ (or "?" "|" "[]" (syntax word) (syntax symbol))))))
          '(1 font-lock-type-face))
+   (cons (concat "\\(?:|\\|, \\| " (regexp-opt phan-log-function-prefix-keywords) " \\)"
+                 (rx (group "\\" (+ (or (syntax word) (syntax symbol))))))
+         '(1 font-lock-function-name-face))
    (cons " constant \\(\\(?:\\sw\\|\\s_\\)+\\)"
          '(1 font-lock-constant-face))
    (cons "\\(?:::\\|->\\)\\(\\(?:\\sw\\|\\s_\\)+()\\)"
          '(1 font-lock-function-name-face))
    (cons "::\\(\\(?:\\sw\\|\\s_\\)+\\)"
          '(1 font-lock-constant-face))
+   (cons " \\(?:Argument [0-9]+\\|annotation for\\) (\\(\\(?:\\sw\\|\\s_\\)+\\))"
+         '(1 font-lock-variable-name-face))
    (cons " Argument [0-9]+ (\\(\\(?:\\sw\\|\\s_\\)+\\))"
          '(1 font-lock-variable-name-face))
    (cons " Call to method \\([^\n\\][^\n ]*\\) "
          '(1 font-lock-function-name-face))
    (cons "\\(?:\\$\\|->\\)\\(\\sw\\|\\s_\\)+"
          '(0 font-lock-variable-name-face))))
+
+;; Utility functions
+(defun phan--base-dir (directory)
+  "Return path to current project root in `DIRECTORY'."
+  (or (locate-dominating-file directory ".phan/config.php")
+      (composer--find-composer-root directory)))
+
+;; Major modes
 
 ;;;###autoload
 (define-derived-mode phan-log-mode prog-mode "Phan-Log"
@@ -224,12 +356,16 @@
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("/phan.*\\.log\\'" . phan-log-mode))
+
+;; Commands
 
 ;;;###autoload
 (defun phan-find-config-file ()
   "Open Phan config file of the project."
   (interactive)
-  (find-file (f-join (composer--find-composer-root default-directory) ".phan/config.php")))
+  (if (null default-directory)
+      (error "A variable `default-directory' is not set")
+    (find-file (f-join (phan--base-dir default-directory) ".phan/config.php"))))
 
 (provide 'phan)
 ;;; phan.el ends here
