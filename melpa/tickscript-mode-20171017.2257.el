@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017  Marc Sherry
 ;; Homepage: https://github.com/msherry/tickscript-mode
 ;; Version: 0.1
-;; Package-Version: 0.1
+;; Package-Version: 20171017.2257
 ;; Author: Marc Sherry <msherry@gmail.com>
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "24.1"))
@@ -64,6 +64,12 @@
 ;;
 ;;   Query Kapacitor for information about the specified objects.
 ;;
+;;
+;; Support is also provided for looking up node and property definitions:
+;;
+;; * `C-c C-d' -- `tickscript-get-help'
+;;
+;;   Look up the node, and possibly property, currently under point online.
 
 ;;; Code:
 
@@ -75,6 +81,8 @@
 (defvar tickscript-series-name nil)
 (defvar tickscript-series-type nil)
 (defvar tickscript-series-dbrp nil)
+
+(defvar tickscript-webhelp-case-map (make-hash-table :test 'equal))
 
 (defgroup tickscript nil
   "TICKscript support for Emacs."
@@ -119,6 +127,18 @@ If unset, defaults to \"http://localhost:9092\"."
   :tag "tickscript-node"
   :group 'tickscript)
 
+(defface tickscript-chaining-method
+  '((t :inherit font-lock-type-face))
+  "Face for chaining methods in TICKscript, like median, mean, etc."
+  :tag "tickscript-chaining-method"
+  :group 'tickscript)
+
+(defface tickscript-udf
+  '((t :inherit font-lock-type-face))
+  "Face for user-defined functions in TICKscript."
+  :tag "tickscript-udf"
+  :group 'tickscript)
+
 (defface tickscript-variable
   '((t :inherit font-lock-variable-name-face))
   "Face for variables in TICKscript."
@@ -147,47 +167,62 @@ If unset, defaults to \"http://localhost:9092\"."
 
 (setq tickscript-properties
       '("align" "alignGroup" "as" "buffer" "byMeasurement" "cluster" "create"
-        "cron" "database" "every" "field" "fill" "flushInterval" "groupBy"
-        "groupByMeasurement" "keep" "measurement" "offset" "period" "precision"
-        "quiet" "retentionPolicy" "tag" "tags" "writeConsistency"))
+        "crit" "cron" "database" "every" "field" "fill" "flushInterval" "groupBy"
+        "groupByMeasurement" "keep" "level" "measurement" "offset" "period" "precision"
+        "quiet" "retentionPolicy" "tag" "tags" "usePointTimes" "writeConsistency"))
 
 (setq tickscript-toplevel-nodes
       '("batch" "stream"))
 
 (setq tickscript-nodes
-      '("alert" "batch" "bottom" "combine" "count" "cumulativeSum" "deadman"
-        "default" "delete" "derivative" "difference" "distinct" "elapsed"
-        "eval" "exclude" "first" "flatten" "from" "groupBy" "holtWinters"
-        "holtWintersWithFit" "httpOut" "httpPost" "influxDBOut" "join"
-        "kapacitorLoopback" "last" "log" "max" "mean" "median" "min" "mode"
-        "movingAverage" "percentile" "query" "sample" "shift" "spread"
-        "stateCount" "stateDuration" "stats" "stddev" "stream" "sum" "top"
-        "union" "where" "window"))
+      '("alert" "batch" "combine" "deadman" "default" "delete" "derivative"
+        "eval" "exclude" "flatten" "from" "groupBy" "httpOut" "httpPost"
+        "influxDBOut" "join" "kapacitorLoopback" "log" "noOp" "query" "sample"
+        "shift" "stateCount" "stateDuration" "stats" "stream" "union" "where"
+        "window"))
+
+(setq tickscript-chaining-methods
+      '("bottom" "count" "cumulativeSum" "difference" "distinct" "elapsed"
+        "first" "holtWinters" "holtWintersWithFit" "last" "max" "mean" "median"
+        "min" "mode" "movingAverage" "percentile" "spread" "stddev" "sum" "top"))
+
+(puthash "groupBy" "group_by" tickscript-webhelp-case-map)
+(puthash "httpOut" "http_out" tickscript-webhelp-case-map)
+(puthash "httpPost" "http_post" tickscript-webhelp-case-map)
+(puthash "influxDBOut" "influx_d_b_out" tickscript-webhelp-case-map)
+(puthash "noOp" "no_op" tickscript-webhelp-case-map)
 
 (setq tickscript-font-lock-keywords
       `(,
         ;; General keywords
         (rx symbol-start (or "var") symbol-end)
-        ;; Node properties
-        (,(concat "\\_<" (regexp-opt tickscript-properties t) "\\_>") . 'tickscript-property)
+        ;; Node properties - start with "." to avoid collisions for e.g. "groupBy"
+        (,(concat "\\.\\_<" (regexp-opt tickscript-properties t) "\\_>") . 'tickscript-property)
+        ;; Chaining methods - like nodes, but not
+        (,(concat "\\_<" (regexp-opt tickscript-chaining-methods t) "\\_>") . 'tickscript-chaining-method)
         ;; Nodes
         (,(concat "\\_<" (regexp-opt tickscript-nodes t) "\\_>") . 'tickscript-node)
+        ;; UDFs
+        (,(rx "@" (+ (or alnum "_"))) . 'tickscript-udf)
         ;; Time units
         (,(rx symbol-start (? "-") (1+ digit) (or "u" "µ" "ms" "s" "m" "h" "d" "w") symbol-end) . 'tickscript-duration)
         (,(rx symbol-start (? "-") (1+ digit) (optional "\." (1+ digit))) . 'tickscript-number)
-        ;; Operators
-        (,(rx (or "/" "\|")) . 'tickscript-operator)
         ;; Variable declarations
-        ("\\_<\\(?:var\\)\\_>[[:space:]]+\\([[:alpha:]]\\(?:[[:alnum:]]\\|_\\)*\\)" (1 'tickscript-variable nil nil))))
+        ("\\_<\\(?:var\\)\\_>[[:space:]]+\\([[:alpha:]]\\(?:[[:alnum:]]\\|_\\)*\\)" (1 'tickscript-variable nil nil))
+        ;; Operators
+        (,(rx (or "\|" "\+" "\-" "\*" "/")) . 'tickscript-operator)
+        ))
 
 (defconst tickscript-mode-syntax-table
   (let ((table (make-syntax-table)))
     ;; ' is a string delimiter
     (modify-syntax-entry ?' "\"" table)
     ;; " is a dereferencing string delimiter
-    (modify-syntax-entry ?\" "$" table)
+    (modify-syntax-entry ?\" "\"" table)
     ;; | is punctuation?
     (modify-syntax-entry ?| "." table)
+    ;; @ is punctuation?
+    (modify-syntax-entry ?@ "." table)
     ;; / is punctuation, but // is a comment starter
     (modify-syntax-entry ?/ ". 12" table)
      ;; \n is a comment ender
@@ -208,6 +243,8 @@ If unset, defaults to \"http://localhost:9092\"."
     ;; Movement
     (define-key map (kbd "<M-down>") #'tickscript-move-line-or-region-down)
     (define-key map (kbd "<M-up>") #'tickscript-move-line-or-region-up)
+    ;; Help
+    (define-key map (kbd "C-c C-d") #'tickscript-get-help)
     ;; Util
     (define-key map (kbd "C-c C-c") #'tickscript-define-task)
     (define-key map (kbd "C-c C-v") #'tickscript-show-task)
@@ -218,7 +255,9 @@ If unset, defaults to \"http://localhost:9092\"."
 
 ;; if backward-sexp gives an error, move back 1 char to move over the '('
 (defun tickscript-safe-backward-sexp ()
-  "Move backward by one sexp, ignoring errors."
+  "Move backward by one sexp, ignoring errors.  Jump out of strings first."
+  (when (tickscript--in-string)
+    (goto-char (nth 8 (syntax-ppss))))
   (if (condition-case nil (backward-sexp) (error t))
       (ignore-errors (backward-char))))
 
@@ -226,15 +265,14 @@ If unset, defaults to \"http://localhost:9092\"."
   "Return the word at point if it matches any keyword in KW-LIST.
 
 KW-LIST is a list of strings."
-  ;; It is assumed that this is always called at the beginning of a word --
-  ;; either after backward-sexp or forward-to-indentation.
-  (save-excursion
-    (and (member (current-word t) kw-list)
+  (let ((word (current-word t)))
+    (and (member word kw-list)
          (not (looking-at "("))
          (not (or (tickscript--in-comment)
-                  (tickscript--in-string))))))
+                  (tickscript--in-string)))
+         word)))
 
-(defun tickscript-at-node (&optional toplevel-only)
+(defun tickscript-node-at-point (&optional toplevel-only)
   "Return the word at point if it is a node.
 
 To be a node, it must be a keyword in the nodes list, and either
@@ -244,26 +282,64 @@ are both properties and nodes.  If TOPLEVEL-ONLY is specified,
 only toplevel nodes \"batch\" and \"stream\" are checked."
   ;; Skip over any sigil, if present
   (save-excursion
-    (when (looking-at "|")
+    (when (looking-at "\|")
       (forward-char))
-    (and (or (= (point) 1)
-             (equal (char-before (point)) ?|)
-             (not (equal (char-before (point)) ?.)))
-         (tickscript--at-keyword (if toplevel-only
-                                    tickscript-toplevel-nodes
-                                  tickscript-nodes)))))
+    (let* ((word-bounds (bounds-of-thing-at-point 'word))
+           (word-start (and word-bounds
+                            (car word-bounds))))
+      (and word-start
+       (or (= word-start 1)
+               (equal (char-before word-start) ?|)
+               (not (equal (char-before word-start) ?.)))
+           (tickscript--at-keyword (if toplevel-only
+                                       tickscript-toplevel-nodes
+                                     tickscript-nodes))))))
 
-(defun tickscript-at-property ()
+(defun tickscript-chaining-method-at-point ()
+  "Return the word at point if it is a chaining method.
+
+Chaining methods act much like nodes, but are only available
+under certain nodes.  See `tickscript-node-at-point' for details on how
+this function works."
+    ;; Skip over any sigil, if present
+  (save-excursion
+    (when (looking-at "\|")
+      (forward-char))
+    (let* ((word-bounds (bounds-of-thing-at-point 'word))
+           (word-start (and word-bounds
+                            (car word-bounds))))
+      (and word-start
+           (equal (char-before word-start) ?|)
+           (tickscript--at-keyword tickscript-chaining-methods)))))
+
+(defun tickscript-udf-at-point ()
+  "Return the symbol at point if it is a user-defined function."
+  ;; Skip over any sigil, if present
+  (save-excursion
+    (when (looking-at "@")
+      (forward-char))
+    (let* ((word-bounds (bounds-of-thing-at-point 'symbol))
+           (word-start (and word-bounds
+                            (car word-bounds))))
+      (and word-start
+           (equal (char-before word-start) ?@)
+           (substring-no-properties (thing-at-point 'symbol))))))
+
+(defun tickscript-property-at-point ()
   "Return the word at point if it is a property.
 
 To be a property, it must be a keyword in the properties list, and
 be preceded by the \".\" sigil."
   (save-excursion
-    (when (looking-at ".")
+    (when (looking-at "\\.")
       (forward-char))
-    (and (> (point) 1)
-         (equal (char-before (point)) ?.)
-         (tickscript--at-keyword tickscript-properties))))
+    (let* ((word-bounds (bounds-of-thing-at-point 'word))
+           (word-start (and word-bounds
+                            (car word-bounds))))
+      (and word-start
+           (> word-start 1)
+           (equal (char-before word-start) ?.)
+           (tickscript--at-keyword tickscript-properties)))))
 
 (defun tickscript--in-string ()
   "Return non-nil if point is inside a string."
@@ -275,27 +351,55 @@ be preceded by the \".\" sigil."
 
 (defun tickscript-at-node-instance ()
   "Return whether word at point is an instance of a previously-defined node."
-  (not (or (tickscript-at-node)
-           (tickscript-at-property)
+  (not (or (tickscript-node-at-point)
+           (tickscript-property-at-point)
            (tickscript--in-string)
            (tickscript--in-comment))))
 
-(defun tickscript-last-node-pos (&optional min)
-  "Return the position of the last node, if found.
-Do not move back beyond position MIN."
-  (unless min
-    (setq min 0))
+(defun tickscript--last-identifier-pos (fn stop-at-node)
+  "Internal method to find the last identifier matching FN.
+If STOP-AT-NODE is true, the search stops once a node (or UDF) is hit."
   (save-excursion
-    (let ((count 0))
-      (while (not (or (> count 0) (<= (point) min)))
+    ;; Skip the sigil, if we're on one
+    (if (looking-at "\\.|\|")
+        (forward-char))
+    (let ((count 0)
+          (node-count 0))
+      (while (not (or (> count 0) (> node-count 0) (<= (point) 0)))
         (tickscript-safe-backward-sexp)
-        (setq count
-              (cond ((tickscript-at-node)
-                     (+ count 1))
-                    (t count))))
+        (when (funcall fn)
+          (setq count (1+ count)))
+        (when (and stop-at-node
+                   (or (tickscript-node-at-point)
+                       (tickscript-udf-at-point)))
+          (setq node-count (1+ node-count))))
       (if (> count 0)
           (point)
         nil))))
+
+(defun tickscript-last-node-pos (&optional stop-at-node)
+  "Return the position of the last node, if found.
+Optional arg STOP-AT-NODE tells the parser to stop at the first
+node boundary found (which includes UDFs)."
+  (tickscript--last-identifier-pos #'tickscript-node-at-point stop-at-node))
+
+(defun tickscript-last-chaining-method-pos ()
+  "Return the position of the last chaining method, if found."
+  (tickscript--last-identifier-pos #'tickscript-chaining-method-at-point t))
+
+(defun tickscript-last-property-pos ()
+  "Return the position of the last property, if found."
+  (tickscript--last-identifier-pos #'tickscript-property-at-point t))
+
+(defun tickscript-current-node ()
+  "Return the name of the current node.
+Returns the name of the node under point, or the last node in the
+current chain if point is not on a node."
+  (let ((last-node-pos (tickscript-last-node-pos t)))
+    (if last-node-pos
+        (save-excursion
+          (goto-char (tickscript-last-node-pos t))
+          (tickscript--at-keyword tickscript-nodes)))))
 
 (defun tickscript--node-indentation (&optional min)
   "Return indentation level for items under the last node.
@@ -335,10 +439,16 @@ meaning always increase indent on TAB and decrease on S-TAB."
         ;; indenting inside strings
         (current-indentation)))))
 
+(defun tickscript-indent-in-continuation ()
+  "Indentation for statements/expressions broken across multiple lines."
+  ;; TODO:
+  nil)
+
 (defun tickscript-indent-comment-line ()
   "Indentation for comment lines."
   (save-excursion
     (beginning-of-line)
+    (forward-to-indentation 0)
     (when (looking-at "//")
       ;; (message "COMMENT LINE")
       ;; Match previous line's indentation if non-empty (not just whitespace),
@@ -354,21 +464,34 @@ meaning always increase indent on TAB and decrease on S-TAB."
  \"batch\" or \"stream\", with optional \"var\" declarations."
   (tickscript--at-bol
    (when (or (looking-at "var")
-             (tickscript-at-node t))
+             (tickscript-node-at-point t))
      ;; (message "TOPLEVEL")
      0)))
 
 (defun tickscript-indent-non-toplevel-node ()
   "Indentation for non-toplevel nodes."
   (tickscript--at-bol
-   (when (tickscript-at-node)
+   (when (or (tickscript-node-at-point)
+             (tickscript-chaining-method-at-point))
      ;; (message "NODE")
      tickscript-indent-offset)))
 
-(defun tickscript-indent-property ()
-  "Indentation for property members."
+(defun tickscript-indent-udf ()
+  "Indentation for user-defined functions."
   (tickscript--at-bol
-   (when (tickscript-at-property)
+   (when (tickscript-udf-at-point)
+     ;; (message "UDF")
+     tickscript-indent-offset)))
+
+(defun tickscript-indent-property ()
+  "Indentation for property members.
+Properties can either be standard tickscript property names, or
+be part of user-defined functions."
+  (tickscript--at-bol
+   (when (or (tickscript-property-at-point)
+             ;; for now, anything starting with "." is a property, because of
+             ;; UDFs. TODO: tighten this up to only work under real UDFs?
+             (looking-at "\."))
      ;; (message "PROP")
      (* 2 tickscript-indent-offset))))
 
@@ -393,12 +516,16 @@ current indentation context."
      (or
       ;; Within a string
       (tickscript-indent-in-string)
+      ;; Continuation line
+      (tickscript-indent-in-continuation)
       ;; Comment lines
       (tickscript-indent-comment-line)
       ;; Top-level node w/optional var declaration
       (tickscript-indent-toplevel-node)
-      ;; A child node
+      ;; A child node or chaining method
       (tickscript-indent-non-toplevel-node)
+      ;; A UDF
+      (tickscript-indent-udf)
       ;; A property
       (tickscript-indent-property)
       ;; Previously-defined node
@@ -508,6 +635,7 @@ calls Kapacitor to define it.  This information is cached in the
 file comments for later re-use."
   (interactive)
   (save-buffer)
+  ;; Reload file-local variables in case the user has changed them manually
   (hack-local-variables)
   (let* ((name (tickscript--deftask-get-series-name))
          (type (tickscript--deftask-get-series-type))
@@ -519,6 +647,30 @@ file comments for later re-use."
     (message results)))
 
 
+(defun tickscript-render-task-dot-to-buffer ()
+  "Extract the DOT graph from the current buffer, render it with Graphviz, and insert the image."
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (re-search-forward "^DOT:$")
+    (forward-line 1)
+    (let* ((beg (point))
+           (end (point-max))
+           (region (buffer-substring-no-properties beg end))
+           (escaped (replace-regexp-in-string
+                     "\\]" "\"\\]"
+                     (replace-regexp-in-string
+                      "\\[" "\\[\""
+                      (replace-regexp-in-string "\"" "\\\"" region))))
+           (tmpfile (format "/%s/%s.png" temporary-file-directory (make-temp-name "tickscript-")))
+           (cmd (format "echo \"%s\" | dot -T png -o %s" escaped tmpfile)))
+      (shell-command cmd)
+      (goto-char (point-max))
+      (insert-char ?\n)
+      (let ((inhibit-read-only t))
+        (insert-image (create-image tmpfile))))))
+
+
 (defun tickscript-show-task ()
   "Use Kapacitor to show the definition of the current task."
   (interactive)
@@ -528,9 +680,11 @@ file comments for later re-use."
          (buffer-name "*tickscript-task*"))
     (with-output-to-temp-buffer buffer-name
       (switch-to-buffer-other-window buffer-name)
+      (erase-buffer)
       (set (make-local-variable 'font-lock-defaults) '(tickscript-font-lock-keywords))
       (font-lock-mode)
-      (insert task))))
+      (insert task)
+      (tickscript-render-task-dot-to-buffer))))
 
 
 (defun tickscript--list-things (noun)
@@ -561,6 +715,27 @@ file comments for later re-use."
   (interactive)
   (tickscript--list-things "replays"))
 
+(defun tickscript--downcase-for-webhelp (word)
+  (or (gethash word tickscript-webhelp-case-map) (downcase word)))
+
+(defun tickscript-get-help ()
+  "Gets help for the node or property at point, if any."
+  (interactive)
+  (let* ((node (tickscript-current-node))
+         (chaining-method-or-property (or (tickscript-chaining-method-at-point)
+                                          (tickscript-property-at-point))))
+    ;; We must have found a containing node, and either be pointing at it, or
+    ;; have found a legitimate chaining method/property child
+    (unless (and node
+                 (or (tickscript-node-at-point)
+                     chaining-method-or-property))
+      (error "Could not find help topic for thing at point"))
+    (let ((url (format "https://docs.influxdata.com/kapacitor/v1.3/nodes/%s_node/"
+                       (tickscript--downcase-for-webhelp node))))
+      (when chaining-method-or-property
+        (setq url (format "%s#%s" url (tickscript--downcase-for-webhelp chaining-method-or-property))))
+      (browse-url url))))
+
 ;;;###autoload
 (define-derived-mode tickscript-mode prog-mode "Tickscript"
   "Major mode for editing TICKscript files
@@ -568,6 +743,7 @@ file comments for later re-use."
 \\{tickscript-mode-map}"
   :syntax-table tickscript-mode-syntax-table
 
+  (set (make-local-variable 'indent-tabs-mode) nil)
   (set (make-local-variable 'font-lock-defaults) '(tickscript-font-lock-keywords))
 
   (set (make-local-variable 'comment-start) "// ")

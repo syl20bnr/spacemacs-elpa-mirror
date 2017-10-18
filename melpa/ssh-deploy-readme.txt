@@ -1,7 +1,7 @@
 ssh-deploy enables automatic deploys on explicit-save, manual uploads, renaming,
 deleting, downloads, file differences, remote terminals, detection of remote changes and remote directory browsing via TRAMP.
 
-To do this it progressively uses tramp-term and async.
+For asynchrous operations it uses async.el,
 
 By setting the variables (globally, per directory or per file):
 ssh-deploy-root-local,ssh-deploy-root-remote, ssh-deploy-on-explicit-save

@@ -4,7 +4,7 @@
 ;; Author: stardiviner <numbchild@gmail.com>
 ;; Maintainer: stardiviner <numbchild@gmail.com>
 ;; Keywords: org babel php
-;; Package-Version: 20170819.245
+;; Package-Version: 20171017.2206
 ;; URL: https://github.com/stardiviner/ob-php
 ;; Created: 04th May 2016
 ;; Version: 0.0.1
@@ -22,7 +22,6 @@
   "org-mode blocks for PHP."
   :group 'org)
 
-;; todo
 (defcustom ob-php:inf-php-buffer "*php*"
   "Default PHP inferior buffer."
   :group 'ob-php
@@ -30,15 +29,19 @@
 
 ;;;###autoload
 (defun org-babel-execute:php (body params)
-  "org-babel PHP hook."
-  ;; FIXME command `php' options: "-r " cause eval issue.
-  (let* ((cmd (mapconcat 'identity (list "php") " ")))
+  "Orgmode Babel PHP evaluate function for `BODY' with `PARAMS'."
+  (let* ((cmd (mapconcat 'identity (list "php" "-r ") " ")))
     (org-babel-eval cmd body)
     ))
 
 ;;;###autoload
 (eval-after-load "org"
   '(add-to-list 'org-src-lang-modes '("php" . php)))
+
+(defvar org-babel-default-header-args:php '())
+
+(add-to-list 'org-babel-default-header-args:php
+             '(:results . "output"))
 
 (provide 'ob-php)
 

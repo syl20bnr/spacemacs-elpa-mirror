@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171017.2005
+;; Package-Version: 20171017.2102
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -2536,13 +2536,12 @@ See `markdown-hide-markup' for additional details."
   :group 'markdown-faces)
 
 (defface markdown-code-face
-  (let* ((default-bg (or (face-background 'default) "unspecified-bg"))
-         (light-bg (if (equal default-bg "unspecified-bg")
-                       "unspecified-bg"
-                     (color-darken-name default-bg 3)))
-         (dark-bg (if (equal default-bg "unspecified-bg")
-                       "unspecified-bg"
-                     (color-lighten-name default-bg 3))))
+  (let ((default-bg (face-background 'default))
+        light-bg dark-bg)
+    (if (member default-bg '(nil unspecified "unspecified-bg" "SystemWindow"))
+        (setq light-bg "unspecified-bg" dark-bg "unspecified-bg")
+      (setq light-bg (color-darken-name default-bg 3)
+            dark-bg (color-lighten-name default-bg 3)))
     `((default :inherit fixed-pitch)
       (((type graphic) (class color) (background dark)) (:background ,dark-bg))
       (((type graphic) (class color) (background light)) (:background ,light-bg))))
