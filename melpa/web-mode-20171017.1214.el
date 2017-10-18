@@ -3,8 +3,8 @@
 
 ;; Copyright 2011-2017 François-Xavier Bois
 
-;; Version: 15.0.14
-;; Package-Version: 20171016.1216
+;; Version: 15.0.15
+;; Package-Version: 20171017.1214
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; Package-Requires: ((emacs "23.1"))
@@ -25,7 +25,7 @@
 
 ;;---- CONSTS ------------------------------------------------------------------
 
-(defconst web-mode-version "15.0.14"
+(defconst web-mode-version "15.0.15"
   "Web Mode version.")
 
 ;;---- GROUPS ------------------------------------------------------------------
@@ -10660,7 +10660,7 @@ Prompt user if TAG-NAME isn't provided."
   (interactive)
   (let (attr attr-name attr-value)
     (cond
-     ((not (eq (get-text-property (point) 'tag-type) 'start))
+     ((not (member (get-text-property (point) 'tag-type) '(start void)))
       (message "attribute-insert ** invalid context **"))
      ((not (and (setq attr-name (read-from-minibuffer "Attribute name? "))
                 (> (length attr-name) 0)))
@@ -10670,9 +10670,11 @@ Prompt user if TAG-NAME isn't provided."
       (when (setq attr-value (read-from-minibuffer "Attribute value? "))
         (setq attr (concat attr "=\"" attr-value "\"")))
       (web-mode-tag-end)
-      (re-search-backward "/?>")
+      (if (looking-back "/>")
+          (backward-char 2)
+        (backward-char))
       (insert attr)
-      )
+      ) ;t
      ) ;cond
     ))
 

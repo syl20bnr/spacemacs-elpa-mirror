@@ -7,7 +7,7 @@
 ;; Created: 2013-08-17
 ;; Last: 2015-08-16
 ;; Version: 1.5.0
-;; Package-Version: 20150816.2029
+;; Package-Version: 20171017.1343
 ;; License: C0 (public domain)
 ;; URL: https://github.com/pmarinov/clean-aindent-mode
 ;; Doc URL: http://www.emacswiki.org/emacs/CleanAutoIndent
@@ -295,7 +295,7 @@ align with that smaller indentation"
 (defvar clean-aindent--last-indent-len 0)
 
 (defvar clean-aindent-mode--keymap (make-keymap) "clean-aindent-mode keymap.")
-(define-key clean-aindent-mode--keymap (kbd "M-DEL") 'clean-aindent--bsunindent)
+(define-key clean-aindent-mode--keymap [remap backward-kill-word] 'clean-aindent--bsunindent)
 
 ;;;###autoload
 (define-minor-mode clean-aindent-mode

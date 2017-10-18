@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017  Marc Sherry
 ;; Homepage: https://github.com/msherry/tickscript-mode
 ;; Version: 0.1
-;; Package-Version: 20171016.2253
+;; Package-Version: 20171017.1259
 ;; Author: Marc Sherry <msherry@gmail.com>
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "24.1"))
@@ -133,6 +133,12 @@ If unset, defaults to \"http://localhost:9092\"."
   :tag "tickscript-chaining-method"
   :group 'tickscript)
 
+(defface tickscript-udf
+  '((t :inherit font-lock-type-face))
+  "Face for user-defined functions in TICKscript."
+  :tag "tickscript-udf"
+  :group 'tickscript)
+
 (defface tickscript-variable
   '((t :inherit font-lock-variable-name-face))
   "Face for variables in TICKscript."
@@ -194,6 +200,8 @@ If unset, defaults to \"http://localhost:9092\"."
         (,(concat "\\_<" (regexp-opt tickscript-chaining-methods t) "\\_>") . 'tickscript-chaining-method)
         ;; Nodes
         (,(concat "\\_<" (regexp-opt tickscript-nodes t) "\\_>") . 'tickscript-node)
+        ;; UDFs
+        (,(rx "@" (+ (or alnum "_"))) . 'tickscript-udf)
         ;; Time units
         (,(rx symbol-start (? "-") (1+ digit) (or "u" "µ" "ms" "s" "m" "h" "d" "w") symbol-end) . 'tickscript-duration)
         (,(rx symbol-start (? "-") (1+ digit) (optional "\." (1+ digit))) . 'tickscript-number)
@@ -211,6 +219,8 @@ If unset, defaults to \"http://localhost:9092\"."
     (modify-syntax-entry ?\" "\"" table)
     ;; | is punctuation?
     (modify-syntax-entry ?| "." table)
+    ;; @ is punctuation?
+    (modify-syntax-entry ?@ "." table)
     ;; / is punctuation, but // is a comment starter
     (modify-syntax-entry ?/ ". 12" table)
      ;; \n is a comment ender
@@ -297,10 +307,21 @@ this function works."
            (word-start (and word-bounds
                             (car word-bounds))))
       (and word-start
-       (or (= word-start 1)
-               (equal (char-before word-start) ?|)
-               (not (equal (char-before word-start) ?.)))
+           (equal (char-before word-start) ?|)
            (tickscript--at-keyword tickscript-chaining-methods)))))
+
+(defun tickscript-udf-at-point ()
+  "Return the symbol at point if it is a user-defined function."
+  ;; Skip over any sigil, if present
+  (save-excursion
+    (when (looking-at "@")
+      (forward-char))
+    (let* ((word-bounds (bounds-of-thing-at-point 'symbol))
+           (word-start (and word-bounds
+                            (car word-bounds))))
+      (and word-start
+           (equal (char-before word-start) ?@)
+           (thing-at-point 'symbol)))))
 
 (defun tickscript-property-at-point ()
   "Return the word at point if it is a property.
@@ -448,10 +469,22 @@ meaning always increase indent on TAB and decrease on S-TAB."
      ;; (message "NODE")
      tickscript-indent-offset)))
 
-(defun tickscript-indent-property ()
-  "Indentation for property members."
+(defun tickscript-indent-udf ()
+  "Indentation for user-defined functions."
   (tickscript--at-bol
-   (when (tickscript-property-at-point)
+   (when (tickscript-udf-at-point)
+     ;; (message "UDF")
+     tickscript-indent-offset)))
+
+(defun tickscript-indent-property ()
+  "Indentation for property members.
+Properties can either be standard tickscript property names, or
+be part of user-defined functions."
+  (tickscript--at-bol
+   (when (or (tickscript-property-at-point)
+             ;; for now, anything starting with "." is a property, because of
+             ;; UDFs. TODO: tighten this up to only work under real UDFs?
+             (looking-at "\."))
      ;; (message "PROP")
      (* 2 tickscript-indent-offset))))
 
@@ -484,6 +517,8 @@ current indentation context."
       (tickscript-indent-toplevel-node)
       ;; A child node or chaining method
       (tickscript-indent-non-toplevel-node)
+      ;; A UDF
+      (tickscript-indent-udf)
       ;; A property
       (tickscript-indent-property)
       ;; Previously-defined node

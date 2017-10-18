@@ -21,7 +21,7 @@
 ;; -------------------------------------------------------------------------------------------
 
 ;; URL: http://github.com/ananthakumaran/typescript.el
-;; Package-Version: 20171016.2329
+;; Package-Version: 20171017.1128
 ;; Version: 0.1
 ;; Keywords: typescript languages
 ;; Package-Requires: ()
@@ -1907,8 +1907,10 @@ See `font-lock-keywords'.")
     (and (looking-at typescript--indent-operator-re)
          (or (not (looking-at ":"))
              (save-excursion
-               (and (typescript--re-search-backward "[?:{]\\|\\_<case\\_>" nil t)
-                    (looking-at "?"))))
+               (backward-sexp)
+               (and
+                (typescript--re-search-backward "[?:{]\\|\\_<case\\_>" nil t)
+                (looking-at "?"))))
          ;; Do not identify forward slashes appearing in a "list" as
          ;; an operator. The lists are: arrays, or lists of
          ;; arguments. In this context, they must be part of regular
