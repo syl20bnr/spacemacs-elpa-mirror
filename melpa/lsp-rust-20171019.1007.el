@@ -4,10 +4,28 @@
 
 ;; Author: Vibhav Pant <vibhavp@gmail.com>
 ;; Version: 1.0
-;; Package-Version: 20170829.142
+;; Package-Version: 20171019.1007
 ;; Package-Requires: ((lsp-mode "2.0") (rust-mode "0.3.0"))
 ;; Keywords: rust
 ;; URL: https://github.com/emacs-lsp/lsp-rust
+
+;;; Commentary:
+
+;; lsp-mode client for the Rust Language Server (RLS).
+;; See https://github.com/rust-lang-nursery/rls
+;;
+;; # Setup
+;;
+;; You can load lsp-rust after lsp-mode by adding the following to your init
+;; file:
+;;
+;;    (with-eval-after-load 'lsp-mode
+;;      (require 'lsp-rust))
+;;
+;; You may want to customize the command that lsp-rust uses to launch the RLS.
+;; See `lsp-rust-rust-command'.
+
+;;; Code:
 
 (require 'rust-mode)
 (require 'lsp-mode)

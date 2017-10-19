@@ -6,8 +6,8 @@
 ;; Keywords: extensions, multimedia, tools
 ;; Homepage: https://github.com/vermiculus/ghub-plus
 ;; Package-Requires: ((emacs "25") (ghub "1.2") (apiwrap "0.3"))
-;; Package-Version: 20171018.605
-;; Package-X-Original-Version: 0.1
+;; Package-Version: 0.2
+;; Package-X-Original-Version: 0.2
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by

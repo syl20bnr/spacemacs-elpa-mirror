@@ -6,8 +6,8 @@
 ;; Keywords: tools, maint, convenience
 ;; Homepage: https://github.com/vermiculus/apiwrap.el
 ;; Package-Requires: ((emacs "25"))
-;; Package-Version: 20171014.2048
-;; Package-X-Original-Version: 0.2
+;; Package-Version: 20171019.916
+;; Package-X-Original-Version: 0.3
 
 ;; This file is not part of GNU Emacs.
 

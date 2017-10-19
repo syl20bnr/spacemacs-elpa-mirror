@@ -5,9 +5,9 @@
 ;; Author: Sean Allred <code@seanallred.com>
 ;; Keywords: extensions, multimedia, tools
 ;; Homepage: https://github.com/vermiculus/ghub-plus
-;; Package-Requires: ((emacs "25") (ghub "1.2") (apiwrap "0.2"))
-;; Package-Version: 0.1.5
-;; Package-X-Original-Version: 0.1
+;; Package-Requires: ((emacs "25") (ghub "1.2") (apiwrap "0.3"))
+;; Package-Version: 20171019.944
+;; Package-X-Original-Version: 0.2
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 ;;; Code:
 
 (require 'url)
+(require 'cl-lib)
 (require 'ghub)
 (require 'apiwrap)
 
@@ -41,19 +42,90 @@
   (defun ghubp--stringify-params (params)
     "Process PARAMS from textual data to Lisp structures."
     (mapcar (lambda (p)
-              (let ((k (car p)) (v (cdr p)))
-                (cons k (alist-get v '((t . "true") (nil . "false")) v))))
+              (if (listp p)
+		  (let ((k (car p)) (v (cdr p)))
+		    (cons k (alist-get v '((t . "true") (nil . "false")) v)))
+		p))
             params))
 
   (defun ghubp--pre-process-params (params)
     (ghubp--stringify-params params))
 
-  (defun ghubp--request (method resource params data)
-    (ghub-request (upcase (symbol-name method))
-                  resource (apiwrap-plist->alist params) data))
+  (defvar ghubp-contextualize-function nil
+    "Function to contextualize `ghub' requests.
+Can return an alist with any of the following properties:
 
-  (apiwrap-new-backend
-      "GitHub" "ghubp"
+* `root'
+* `auth'
+* `user'
+* `unpaginate'
+* `extra-headers'
+
+If (and only if) these properties are non-nil, they will override
+the eponymous `ghub' variables.
+
+The function should be callable with no arguments.")
+
+  (defvar ghubp-request-override-function nil
+    "Function to use instead of `ghub-request' for base calls.
+
+It is expected to have the same signature as `ghub-request'.")
+
+  (defun ghubp-get-context ()
+    "Get the current context with `ghubp-contextualize-function'."
+    (when (functionp ghubp-contextualize-function)
+      (funcall ghubp-contextualize-function)))
+
+  (defun ghubp-get-in-all (props object-list)
+    "Follow property-path PROPS in OBJECT-LIST.
+Returns a list of the property-values."
+    (declare (indent 1))
+    (if (or (null props) (not (consp props)))
+        object-list
+      (ghubp-get-in-all (cdr props)
+        (mapcar (lambda (o) (alist-get (car props) o))
+                object-list))))
+
+  (defun ghubp-request (method resource params data)
+    "Using METHOD, get RESOURCE with PARAMS and DATA.
+
+`ghubp-contextualize-function' is used to contextualize this
+request.
+
+If non-nil, `ghubp-request-override-function' is used instead of
+`ghub-request'.
+
+METHOD is one of `get', `put', `post', `head', `patch', and
+`delete'.
+
+RESOURCE is a string.
+
+PARAMS is a plist.
+
+DATA is an alist."
+    (let-alist (ghubp-get-context)
+      (let ((method (upcase (symbol-name method)))
+            (params (apiwrap-plist->alist params)))
+        (if (fboundp 'ghub-create-token)
+            ;; working with the new version of ghub, still in dev
+            ;; https://github.com/magit/ghub/blob/pu
+            (funcall (or ghubp-request-override-function
+                         #'ghub-request)
+                     method resource params data
+                     .extra-headers .unpaginate
+                     nil nil   ; pass errors up ; use default `json-read'
+                     .user .auth .root)
+          ;; working with the old version
+          (let ((ghub-extra-headers (or .extra-headers ghub-extra-headers))
+                (ghub-unpaginate    (or .unpaginate    ghub-unpaginate))
+                (ghub-username      (or .user          ghub-username))
+                (ghub-authenticate  (or .auth          ghub-authenticate))
+                (ghub-base-url      (or .root          ghub-base-url)))
+            (funcall (or ghubp-request-override-function
+                         #'ghub-request)
+                     method resource params data))))))
+
+  (apiwrap-new-backend "GitHub" "ghubp"
     '((repo . "REPO is a repository alist of the form returned by `ghubp-get-user-repos'.")
       (org  . "ORG is an organization alist of the form returned by `ghubp-get-user-orgs'.")
       (thread . "THREAD is a thread object of the form returned by `ghubp-get-repos-owner-repo-comments'.")
@@ -67,17 +139,33 @@
       (user-1 . "USER-1 is a user object.")
       (user-2 . "USER-2 is a user object.")
       (key . "KEY is a key object."))
-    :request #'ghubp--request
-
+    :request #'ghubp-request
     :link #'ghubp--make-link
     :pre-process-params #'ghubp--pre-process-params))
 
 ;;; Utilities
 
 (defmacro ghubp-unpaginate (&rest body)
-  "Unpaginate API responses and execute BODY.
-See `ghub-unpaginate'."
-  `(let ((ghub-unpaginate t)) ,@body))
+  "Unpaginate API responses while executing BODY."
+  `(ghubp-override-context unpaginate t ,@body))
+
+(defmacro ghubp-override-context (context new-value &rest body)
+  "Execute body while manually overriding CONTEXT with NEW-VALUE.
+NEW-VALUE takes precedence over anything that
+`ghubp-contextualize-function' provides for CONTEXT, but
+`ghubp-contextualize-function' is otherwise respected."
+  (declare (indent 2))
+  (unless (memq context '(root auth user unpaginate extra-headers))
+    (error (concat "`ghubp-override-context' should only override one "
+                   "of the symbols from `ghubp-contextualize-function'.")))
+  (let ((sym-other-context (cl-gensym)))
+    `(let ((,sym-other-context (ghubp-get-context))
+           ghubp-contextualize-function)
+       ;; override any existing value for CONTEXT
+       (push (cons ',context ,new-value) ,sym-other-context)
+       ;; and box the whole thing back into the var
+       (setq ghubp-contextualize-function (lambda () ,sym-other-context))
+       ,@body)))
 
 (defun ghubp-keep-only (structure object)
   "Keep a specific STRUCTURE in OBJECT.
@@ -98,19 +186,70 @@ See URL `http://emacs.stackexchange.com/a/31050/2264'."
 
 (defun ghubp-ratelimit-reset-time ()
   "Get the reset time for the rate-limit as a time object."
-  (ignore-errors
-    (seconds-to-time
-     (string-to-number
-      (ghubp-header "X-RateLimit-Reset")))))
+  (declare (obsolete 'ghubp-ratelimit "2017-10-17"))
+  (alist-get 'reset (ghubp-ratelimit)))
 
 (defun ghubp-ratelimit-remaining ()
-  "Get the remaining number of requests available.
-Note that a return value of 'nil' does not mean the same thing as
-a return value of 0.  The latter implies that we do know how many
-requests remain while the former makes no such assertion."
-  (ignore-errors
-    (string-to-number
-     (ghubp-header "X-RateLimit-Remaining"))))
+  "Get the remaining number of requests available."
+  (declare (obsolete 'ghubp-ratelimit "2017-10-17"))
+  (alist-get 'remaining (ghubp-ratelimit)))
+
+(defun ghubp-ratelimit ()
+  "Get `/rate_limit.rate' using `ghub-response-headers'.
+Returns nil if the service is not rate-limited.  Otherwise,
+returns an alist with the following properties:
+
+  `.limit'
+     number of requests we're allowed to make per hour.
+
+  `.remaining'
+     number of requests remaining for this hour.
+
+  `.reset'
+     time value of instant `.remaining' resets to `.limit'."
+  (when (and ghub-response-headers
+             (assoc-string "X-RateLimit-Limit" ghub-response-headers))
+    (let* ((headers (list "X-RateLimit-Limit" "X-RateLimit-Remaining" "X-RateLimit-Reset"))
+           (headers (mapcar (lambda (x) (string-to-number (ghubp-header x))) headers)))
+      `((limit     . ,(nth 0 headers))
+        (remaining . ,(nth 1 headers))
+        (reset     . ,(seconds-to-time
+                       (nth 2 headers)))))))
+
+(defun ghubp--follow (method resource &optional params data)
+  "Using METHOD, follow the RESOURCE link with PARAMS and DATA.
+This method is intended for use with callbacks."
+  (when (string-prefix-p ghub-base-url resource)
+    (setq resource (url-filename (url-generic-parse-url resource))))
+  (ghubp-request method resource params data))
+
+(defun ghubp-follow-get    (resource &optional params data)
+  "GET wrapper for `ghubp-follow'."
+  (ghubp--follow 'get    resource params data))
+(defun ghubp-follow-put    (resource &optional params data)
+  "PUT wrapper for `ghubp-follow'."
+  (ghubp--follow 'put    resource params data))
+(defun ghubp-follow-head   (resource &optional params data)
+  "HEAD wrapper for `ghubp-follow'."
+  (ghubp--follow 'head   resource params data))
+(defun ghubp-follow-post   (resource &optional params data)
+  "POST wrapper for `ghubp-follow'."
+  (ghubp--follow 'post   resource params data))
+(defun ghubp-follow-patch  (resource &optional params data)
+  "PATCH wrapper for `ghubp-follow'."
+  (ghubp--follow 'patch  resource params data))
+(defun ghubp-follow-delete (resource &optional params data)
+  "DELETE wrapper for `ghubp-follow'."
+  (ghubp--follow 'delete resource params data))
+
+(defun ghubp-base-html-url ()
+  "Get the base HTML URL from `ghub-base-url'"
+  (cond
+   ((string= ghub-base-url "https://api.github.com")
+    "https://github.com")
+   ((string-match (rx bos (group (* any)) "/api/v3" eos)
+                  ghub-base-url)
+    (match-string 1 ghub-base-url))))
 
 ;;; Issues
 
@@ -183,19 +322,24 @@ a repository."
   (repo user) "/repos/:repo.owner.login/:repo.name/assignees/:user.login")
 
 (defapipost-ghubp "/repos/:owner/:repo/issues/:number/assignees"
-  ;; todo: sugar to filter users in DATA down to just the usernames
   "Add assignees to an Issue.
 This call adds the users passed in the assignees key (as their
 logins) to the issue."
-  "issues/assignees/#add-assignees-to-an-issue")
+  "issues/assignees/#add-assignees-to-an-issue"
+  (repo issue) "/repos/:repo.owner.login/:repo.name/issues/:issue.number/assignees"
+  :pre-process-data
+  (lambda (users)
+    `((assignees . ,(ghubp-get-in-all '(login) users)))))
 
 (defapidelete-ghubp "/repos/:owner/:repo/issues/:number/assignees"
-  ;; todo: sugar to filter users in DATA down to just the usernames
   "Remove assignees from an Issue.
 This call removes the users passed in the assignees key (as their
 logins) from the issue."
   "issues/assignees/#remove-assignees-from-an-issue"
-  (repo issue) "/repos/:repo.owner.login/:repo.name/issues/:issue.number/assignees")
+  (repo issue) "/repos/:repo.owner.login/:repo.name/issues/:issue.number/assignees"
+  :pre-process-data
+  (lambda (users)
+    `((assignees . ,(ghubp-get-in-all '(login) users)))))
 
 ;;; Issue Comments
 
@@ -282,10 +426,10 @@ By default, Issue Comments are ordered by ascending ID."
   (repo issue) "/repos/:repo.owner.login/:repo.name/issues/:issue.number/labels")
 
 (defapipost-ghubp "/repos/:owner/:repo/issues/:number/labels"
-  ;; todo: sugar to filter labels in DATA down to just the names
   "Add labels to an issue."
   "issues/labels/#add-labels-to-an-issue"
-  (repo issue) "/repos/:repo.owner.login/:repo.name/issues/:issue.number/labels")
+  (repo issue) "/repos/:repo.owner.login/:repo.name/issues/:issue.number/labels"
+  :pre-process-data (apply-partially #'ghubp-get-in-all '(name)))
 
 (defapidelete-ghubp "/repos/:owner/:repo/issues/:number/labels/:name"
   "Remove a label from an issue."
@@ -293,10 +437,10 @@ By default, Issue Comments are ordered by ascending ID."
   (repo issue label) "/repos/:repo.owner.login/:repo.name/issues/:issue.number/labels/:label.name")
 
 (defapipatch-ghubp "/repos/:owner/:repo/issues/:number/labels"
-  ;; todo: sugar to filter labels in DATA down to just the names
   "Replace all labels for an issue."
   "issues/labels/#replace-all-labels-for-an-issue"
-  (repo issue) "/repos/:repo.owner.login/:repo.name/issues/:issue.number/labels")
+  (repo issue) "/repos/:repo.owner.login/:repo.name/issues/:issue.number/labels"
+  :pre-process-data (apply-partially #'ghubp-get-in-all '(name)))
 
 (defapidelete-ghubp "/repos/:owner/:repo/issues/:number/labels"
   "Remove all labels from an issue."
@@ -705,6 +849,70 @@ This is accessible by anyone."
 
 ;; https://developer.github.com/v3/users/blocking/
 
+;; Activity - Notifications
+
+;; TODO: It would be nice if ghub+ could offer 'smart' polling for
+;; notifications to trim down on API requests.  This smart polling is
+;; supported by GitHub for notifications in particular.  If done
+;; right, we could offer a 'push'-type interface to handle when new
+;; notifications are received.
+
+;; (ghubp-notifications-{start,stop}-polling)
+;; ghubp-notifications-received-hook
+
+(defapiget-ghubp "/notifications"
+  "Get the user's notifications."
+  "activity/notifications/#list-your-notifications")
+
+(defapiget-ghubp
+  "/repos/:owner/:repo/notifications"
+  "List your notifications in a repository."
+  "activity/notifications/#list-your-notifications-in-a-repository"
+  (user repo) "/repos/:user.login/:repo.name/notifications")
+
+(defapiput-ghubp "/notifications"
+  "Mark as read.
+Marking a notification as \"read\" removes it from the default
+view on GitHub."
+  "activity/notifications/#mark-as-read")
+
+(defapiput-ghubp "/repos/:owner/:repo/notifications"
+  "Mark notifications as read in a repository.
+Marking all notifications in a repository as \"read\" removes
+them from the default view on GitHub."
+  "activity/notifications/#mark-notifications-as-read-in-a-repository"
+  (user repo) "/repos/:user.login/:repo.name/notifications")
+
+(defapiget-ghubp "/notifications/threads/:id"
+  "View a single thread."
+  "activity/notifications/#view-a-single-thread"
+  (thread) "/notifications/threads/:thread.id")
+
+(defapipatch-ghubp "/notifications/threads/:id"
+  "Mark a thread as read."
+  "activity/notifications/#mark-a-thread-as-read"
+  (thread) "/notifications/threads/:thread.id")
+
+(defapiget-ghubp "/notifications/threads/:id/subscription"
+  "Get a thread subscription.
+This checks to see if the current user is subscribed to a
+thread."
+  "activity/notifications/#get-a-thread-subscription"
+  (thread) "/notifications/threads/:thread.id/subscription")
+
+(defapiput-ghubp "/notifications/threads/:id/subscription"
+  "Set a thread subscription.
+This lets you subscribe or unsubscribe from a conversation.
+Unsubscribing from a conversation mutes all future
+notifications (until you comment or get @mentioned once more)."
+  "activity/notifications/#set-a-thread-subscription"
+  (thread) "/notifications/threads/:thread.id/subscription")
+
+(defapidelete-ghubp "/notifications/threads/:id/subscription"
+  "Delete a thread subscription."
+  "activity/notifications/#delete-a-thread-subscription"
+  (thread) "/notifications/threads/:thread.id/subscription")
+
 ;;; Unfiled
 
 (defapiget-ghubp "/repos/:owner/:repo/commits/:ref/statuses"
@@ -717,24 +925,10 @@ This is accessible by anyone."
   "repos/statuses/#get-the-combined-status-for-a-specific-ref"
   (repo ref) "/repos/:repo.owner.login/:repo.name/commits/:ref/status")
 
-(defapiget-ghubp "/notifications"
-  "List all notifications for the current user, grouped by repository"
-  "activity/notifications/#list-your-notifications")
-
-(defapipatch-ghubp "/notifications/threads/:id"
-  ""
-  "activity/notifications/#mark-a-thread-as-read"
-  (thread) "/notifications/threads/:thread.id")
-
 (defapipost-ghubp "/repos/:owner/:repo/forks"
   "Create a fork for the authenticated user."
   "repos/forks/#create-a-fork"
   (repo) "/repos/:repo.owner.login/:repo.name/forks")
-
-(defapiget-ghubp "/notifications/threads/:id"
-  "Adds Mlatest_comment_url-callback and Murl-callback to .subject"
-  "activity/notifications/#view-a-single-thread"
-  (thread) "/notifications/threads/:thread.id")
 
 (defapipost-ghubp "/repos/:owner/:repo/issues/:number/comments"
   "Post a comment to an issue"
