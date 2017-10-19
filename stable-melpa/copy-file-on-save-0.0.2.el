@@ -4,8 +4,8 @@
 
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 27 Jul 2017
-;; Version: 0.0.1
-;; Package-Version: 0.0.1
+;; Version: 0.0.2
+;; Package-Version: 0.0.2
 ;; Keywords: files comm deploy
 ;; Package-Requires: ((emacs "24.3") (cl-lib "0.5") (f "0.17") (s "1.7.0"))
 
@@ -72,10 +72,15 @@
 (defvar copy-file-on-save-dest-dir nil
   "Path to deployment directory or convert (mapping) function.")
 (make-local-variable 'copy-file-on-save-dest-dir)
+(put 'copy-file-on-save-dest-dir 'safe-local-variable #'stringp)
 
 (defvar copy-file-on-save-ignore-patterns '("/\\.dir-locals\\.el\\'" "/\\.git/")
   "Ignore deploy when buffer-filename matched by these patterns.")
 (make-local-variable 'copy-file-on-save-ignore-patterns)
+(put 'copy-file-on-save-ignore-patterns 'safe-local-variable
+     (lambda (obj)
+       (and (listp obj)
+            (cl-loop for o in obj always (stringp o)))))
 
 (defvar copy-file-on-save-base-dir nil
   "Path to base directory for deployment.")
