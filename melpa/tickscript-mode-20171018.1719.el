@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017  Marc Sherry
 ;; Homepage: https://github.com/msherry/tickscript-mode
 ;; Version: 0.1
-;; Package-Version: 20171017.2257
+;; Package-Version: 20171018.1719
 ;; Author: Marc Sherry <msherry@gmail.com>
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "24.1"))
@@ -54,7 +54,9 @@
 ;;
 ;; * `C-c C-v' -- `tickscript-show-task'
 ;;
-;;   View the current task's definition with `kapacitor show <task>'
+;;   View the current task's definition with `kapacitor show <task>'.  This
+;;   will also render the DOT output inline, for easier visualization of the
+;;   nodes involved.
 ;;
 ;; * `C-c C-l p' -- `tickscript-list-replays'
 ;;
@@ -108,6 +110,12 @@ If unset, defaults to \"http://localhost:9092\"."
   :type 'string
   :group 'tickscript
   :safe 'stringp)
+
+(defcustom tickscript-render-dot-output t
+  "Whether to render DOT output with Graphviz when executing tickscript-show-task."
+  :type 'boolean
+  :group 'tickscript
+  :safe 'booleanp)
 
 (defcustom tickscript-indent-trigger-commands
   '(indent-for-tab-command yas-expand yas/expand)
@@ -167,9 +175,11 @@ If unset, defaults to \"http://localhost:9092\"."
 
 (setq tickscript-properties
       '("align" "alignGroup" "as" "buffer" "byMeasurement" "cluster" "create"
-        "crit" "cron" "database" "every" "field" "fill" "flushInterval" "groupBy"
-        "groupByMeasurement" "keep" "level" "measurement" "offset" "period" "precision"
-        "quiet" "retentionPolicy" "tag" "tags" "usePointTimes" "writeConsistency"))
+        "crit" "cron" "database" "delimiter" "every" "field" "fill"
+        "flushInterval" "groupBy" "groupByMeasurement" "keep" "level"
+        "measurement" "offset" "on" "period" "precision" "quiet"
+        "retentionPolicy" "streamName" "tag" "tags" "tolerance" "usePointTimes"
+        "writeConsistency"))
 
 (setq tickscript-toplevel-nodes
       '("batch" "stream"))
@@ -195,7 +205,7 @@ If unset, defaults to \"http://localhost:9092\"."
 (setq tickscript-font-lock-keywords
       `(,
         ;; General keywords
-        (rx symbol-start (or "var") symbol-end)
+        (rx symbol-start (or "var" "lambda") symbol-end)
         ;; Node properties - start with "." to avoid collisions for e.g. "groupBy"
         (,(concat "\\.\\_<" (regexp-opt tickscript-properties t) "\\_>") . 'tickscript-property)
         ;; Chaining methods - like nodes, but not
@@ -441,8 +451,16 @@ meaning always increase indent on TAB and decrease on S-TAB."
 
 (defun tickscript-indent-in-continuation ()
   "Indentation for statements/expressions broken across multiple lines."
-  ;; TODO:
-  nil)
+  (let ((open-paren (nth 1 (syntax-ppss)))
+        (linum (line-number-at-pos)))
+    (save-excursion
+      (when open-paren
+        (goto-char open-paren)
+        ;; If open paren is on the current line, we're not in a continuation
+        (unless (eq linum (line-number-at-pos))
+          ;; (message "CONTINUATION")
+          ;; Found the open paren, indent to right after it
+          (1+ (current-column)))))))
 
 (defun tickscript-indent-comment-line ()
   "Indentation for comment lines."
@@ -491,7 +509,7 @@ be part of user-defined functions."
    (when (or (tickscript-property-at-point)
              ;; for now, anything starting with "." is a property, because of
              ;; UDFs. TODO: tighten this up to only work under real UDFs?
-             (looking-at "\."))
+             (looking-at "\\."))
      ;; (message "PROP")
      (* 2 tickscript-indent-offset))))
 
@@ -667,8 +685,12 @@ file comments for later re-use."
       (shell-command cmd)
       (goto-char (point-max))
       (insert-char ?\n)
-      (let ((inhibit-read-only t))
-        (insert-image (create-image tmpfile))))))
+      (let ((inhibit-read-only t)
+            (image (if (image-type-available-p 'imagemagick)
+                       (create-image tmpfile 'imagemagick nil
+                                     :max-width (truncate (* .9 (window-pixel-width))))
+                     (create-image tmpfile))))
+        (insert-image image)))))
 
 
 (defun tickscript-show-task ()
@@ -684,7 +706,8 @@ file comments for later re-use."
       (set (make-local-variable 'font-lock-defaults) '(tickscript-font-lock-keywords))
       (font-lock-mode)
       (insert task)
-      (tickscript-render-task-dot-to-buffer))))
+      (when tickscript-render-dot-output
+        (tickscript-render-task-dot-to-buffer)))))
 
 
 (defun tickscript--list-things (noun)

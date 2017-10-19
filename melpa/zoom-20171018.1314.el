@@ -22,7 +22,7 @@
 
 ;; Author: Andrea Cardaci <cyrus.and@gmail.com>
 ;; Version: 0.1.0
-;; Package-Version: 20171017.1104
+;; Package-Version: 20171018.1314
 ;; URL: https://github.com/cyrus-and/zoom
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: frames
@@ -60,7 +60,7 @@ above."
                                (float :tag "Width ratio"))
                        (choice (integer :tag "Lines")
                                (float :tag "Height ratio"))))
-  :safe 'consp
+  :safe #'consp
   :group 'zoom)
 
 (defcustom zoom-ignored-major-modes nil
@@ -129,24 +129,26 @@ than few lines."
 
 (defun zoom--on ()
   "Enable hooks and advices and update the layout."
-  (add-hook 'window-size-change-functions 'zoom--hook-handler)
-  (advice-add 'select-window :after 'zoom--hook-handler)
-  (add-hook 'minibuffer-setup-hook 'zoom--hook-handler)
+  ;; register the zoom handler
+  (add-hook 'window-size-change-functions #'zoom--handler)
+  (add-hook 'minibuffer-setup-hook #'zoom--handler)
+  (advice-add 'select-window :after #'zoom--handler)
   ;; update the layout once loaded
   (dolist (frame (frame-list))
     (with-selected-frame frame
-      (zoom--hook-handler))))
+      (zoom--handler))))
 
 (defun zoom--off ()
   "Disable hooks and advices and evenly balance the windows."
-  (remove-hook 'window-size-change-functions 'zoom--hook-handler)
-  (remove-hook 'minibuffer-setup-hook 'zoom--hook-handler)
-  (advice-remove 'select-window 'zoom--hook-handler)
+  ;; unregister the zoom handler
+  (remove-hook 'window-size-change-functions #'zoom--handler)
+  (remove-hook 'minibuffer-setup-hook #'zoom--handler)
+  (advice-remove 'select-window #'zoom--handler)
   ;; leave with a clean layout
   (dolist (frame (frame-list))
     (balance-windows frame)))
 
-(defun zoom--hook-handler (&optional window norecord)
+(defun zoom--handler (&optional window norecord)
   "Handle an update event.
 
 WINDOW and NORECORD are according `select-window' and are only
@@ -158,10 +160,12 @@ used when this function is called via `advice-add'."
               ;; selection happens
               norecord)
     ;; zoom the selected window or the most recently used one if the minibuffer
-    ;; is selected (according to the user preference)
+    ;; is selected (according to the user preference) or if there is a mouse
+    ;; tracking action in progress (the selected window will be zoomed after)
     (with-selected-window
-        (if (and zoom-minibuffer-preserve-layout (window-minibuffer-p))
-            (get-mru-window) (selected-window))
+        (if (or track-mouse
+                (and zoom-minibuffer-preserve-layout (window-minibuffer-p)))
+            (get-mru-window nil nil t) (selected-window))
       (zoom--update))))
 
 (defun zoom--update ()

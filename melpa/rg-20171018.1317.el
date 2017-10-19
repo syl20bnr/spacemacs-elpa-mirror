@@ -7,7 +7,7 @@
 ;; Author: David Landell <david.landell@sunnyhill.email>
 ;;         Roland McGrath <roland@gnu.org>
 ;; Version: 1.4.0
-;; Package-Version: 20170930.653
+;; Package-Version: 20171018.1317
 ;; URL: https://github.com/dajva/rg.el
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24") (s "1.10.0"))
 ;; Keywords: matching, tools
@@ -379,7 +379,7 @@ If NOSPECIAL is non nil the `rg-special-type-aliases' will not be
 included."
   (unless rg-builtin-type-aliases
     (setq rg-builtin-type-aliases (rg-list-builtin-type-aliases)))
-  (append rg-builtin-type-aliases rg-custom-type-aliases
+  (append rg-custom-type-aliases rg-builtin-type-aliases
           (unless nospecial rg-special-type-aliases)))
 
 (defun rg-default-alias ()

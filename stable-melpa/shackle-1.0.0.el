@@ -4,8 +4,8 @@
 
 ;; Author: Vasilij Schneidermann <v.schneidermann@gmail.com>
 ;; URL: https://github.com/wasamasa/shackle
-;; Package-Version: 20170213.1534
-;; Version: 0.9.2
+;; Package-Version: 1.0.0
+;; Version: 1.0.0
 ;; Keywords: convenience
 ;; Package-Requires: ((cl-lib "0.5"))
 
@@ -462,6 +462,37 @@ popups in Emacs."
           (remove '(shackle-display-buffer-condition
                     shackle-display-buffer-action)
                   display-buffer-alist))))
+
+
+;; debugging support
+
+(require 'trace)
+
+(defcustom shackle-trace-buffer "*shackle trace*"
+  "Name of the buffer for tracing `shackle-traced-functions'."
+  :type 'string
+  :group 'shackle)
+
+(defcustom shackle-traced-functions
+  '(display-buffer
+    pop-to-buffer
+    pop-to-buffer-same-window
+    switch-to-buffer-other-window
+    switch-to-buffer-other-frame)
+  "List of `display-buffer'-style functions to trace."
+  :type '(list function))
+
+(defun shackle-trace-functions ()
+  "Enable tracing `shackle-traced-functions'."
+  (interactive)
+  (dolist (function shackle-traced-functions)
+    (trace-function-background function shackle-trace-buffer)))
+
+(defun shackle-untrace-functions ()
+  "Enable tracing `shackle-traced-functions'."
+  (interactive)
+  (dolist (function shackle-traced-functions)
+    (untrace-function function shackle-trace-buffer)))
 
 (provide 'shackle)
 ;;; shackle.el ends here
