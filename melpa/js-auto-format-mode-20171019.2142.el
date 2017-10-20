@@ -4,7 +4,7 @@
 
 ;; Author:  ybiquitous <ybiquitous@gmail.com>
 ;; Version: 1.0.0
-;; Package-Version: 20171014.911
+;; Package-Version: 20171019.2142
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: languages
 ;; URL: https://github.com/ybiquitous/js-auto-format-mode
@@ -82,7 +82,7 @@
 (defun js-auto-format-execute ()
   "Format JavaScript source code."
   (interactive)
-  (unless js-auto-format-disabled
+  (unless (or js-auto-format-disabled buffer-read-only)
     (let* ((command (js-auto-format-full-command)))
       (message "js-auto-format-execute: %s" command)
       (shell-command command js-auto-format-buffer)
@@ -94,7 +94,6 @@
   "Minor mode for auto-formatting JavaScript code"
   :init-value nil
   :lighter " AutoFmt"
-  :after-hook (js-auto-format-execute)
   (if js-auto-format-mode
       (add-hook 'after-save-hook 'js-auto-format-execute t t)
     (remove-hook 'after-save-hook 'js-auto-format-execute t)))
