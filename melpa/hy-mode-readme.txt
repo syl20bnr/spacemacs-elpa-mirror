@@ -466,7 +466,7 @@ Function or form
   "Non-nil if form at point doesn't represent a function call."
   (or (-contains? '(?\[ ?\{) (char-after))
       (not (looking-at (rx anything  ; Skips form opener
-                           (or (syntax symbol) (syntax word)))))))
+                           (or "(" (syntax symbol) (syntax word)))))))
 
 Hy find indent spec
 
