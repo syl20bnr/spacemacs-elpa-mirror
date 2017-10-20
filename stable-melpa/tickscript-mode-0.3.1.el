@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017  Marc Sherry
 ;; Homepage: https://github.com/msherry/tickscript-mode
 ;; Version: 0.1
-;; Package-Version: 0.3
+;; Package-Version: 0.3.1
 ;; Author: Marc Sherry <msherry@gmail.com>
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "24.1"))
@@ -123,12 +123,6 @@ If unset, defaults to \"http://localhost:9092\"."
   :type '(repeat symbol)
   :group 'tickscript)
 
-(defface tickscript-property
-  '((t :inherit font-lock-keyword-face))
-  "Face for properties in TICKscript, like align, groupBy, period, etc."
-  :tag "tickscript-property"
-  :group 'tickscript)
-
 (defface tickscript-node
   '((t :inherit font-lock-type-face))
   "Face for nodes in TICKscript, like alert, batch, query, groupBy, etc."
@@ -145,6 +139,25 @@ If unset, defaults to \"http://localhost:9092\"."
   '((t :inherit font-lock-type-face))
   "Face for user-defined functions in TICKscript."
   :tag "tickscript-udf"
+  :group 'tickscript)
+
+(defface tickscript-property
+  '((t :inherit font-lock-keyword-face))
+  "Face for properties in TICKscript, like align, groupBy, period, etc."
+  :tag "tickscript-property"
+  :group 'tickscript)
+
+(defface tickscript-chaining-method
+  '((t :inherit font-lock-type-face))
+  "Face for chaining methods in TICKscript, like median, mean, etc."
+  :tag "tickscript-chaining-method"
+  :group 'tickscript)
+
+(defface tickscript-udf-param
+  '((t :inherit font-lock-keyword-face
+     :foreground "#cb4b16"))
+  "Face for parameters to user-defined functions in TICKscript."
+  :tag "tickscript-udf-param"
   :group 'tickscript)
 
 (defface tickscript-variable
@@ -208,25 +221,34 @@ If unset, defaults to \"http://localhost:9092\"."
 (puthash "stateDuration" "state_duration" tickscript-webhelp-case-map)
 
 (setq tickscript-font-lock-keywords
-      `(,
-        ;; General keywords
-        (rx symbol-start (or "var" "lambda") symbol-end)
-        ;; Node properties - start with "." to avoid collisions for e.g. "groupBy"
-        (,(concat "\\.\\_<" (regexp-opt tickscript-properties t) "\\_>") . 'tickscript-property)
-        ;; Chaining methods - like nodes, but not
-        (,(concat "\\_<" (regexp-opt tickscript-chaining-methods t) "\\_>") . 'tickscript-chaining-method)
-        ;; Nodes
-        (,(concat "\\_<" (regexp-opt tickscript-nodes t) "\\_>") . 'tickscript-node)
-        ;; UDFs
-        (,(rx "@" (+ (or alnum "_"))) . 'tickscript-udf)
-        ;; Time units
-        (,(rx symbol-start (? "-") (1+ digit) (or "u" "µ" "ms" "s" "m" "h" "d" "w") symbol-end) . 'tickscript-duration)
-        (,(rx symbol-start (? "-") (1+ digit) (optional "\." (1+ digit))) . 'tickscript-number)
-        ;; Variable declarations
-        ("\\_<\\(?:var\\)\\_>[[:space:]]+\\([[:alpha:]]\\(?:[[:alnum:]]\\|_\\)*\\)" (1 'tickscript-variable nil nil))
-        ;; Operators
-        (,(rx (or "\|" "\+" "\-" "\*" "/")) . 'tickscript-operator)
-        ))
+    `(;; General keywords
+      ,(rx symbol-start (or "var" "lambda") symbol-end)
+       ;; UDF parameters. Takes precedence over node properties, which match
+       ;; similarly.  Inspired by python.el
+       (,(lambda (limit)
+           (let ((re (rx ?. (group (+ letter) (* alnum))))
+                 (res nil))
+             (while (and (setq res (re-search-forward re limit t))
+                         (not (tickscript-current-udf))))
+             res))
+         (1 'tickscript-udf-param nil nil))
+       ;; Node properties - start with "." to avoid collisions for e.g. "groupBy"
+       (,(concat "\\.\\_<" (regexp-opt tickscript-properties t) "\\_>") .
+         'tickscript-property)
+       ;; Chaining methods - like nodes, but not
+       (,(concat "\\_<" (regexp-opt tickscript-chaining-methods t) "\\_>") . 'tickscript-chaining-method)
+       ;; Nodes
+       (,(concat "\\_<" (regexp-opt tickscript-nodes t) "\\_>") . 'tickscript-node)
+       ;; UDFs
+       (,(rx "@" (+ (or alnum "_"))) . 'tickscript-udf)
+       ;; Time units
+       (,(rx symbol-start (? "-") (1+ digit) (or "u" "µ" "ms" "s" "m" "h" "d" "w") symbol-end) . 'tickscript-duration)
+       (,(rx symbol-start (? "-") (1+ digit) (optional "\." (1+ digit))) . 'tickscript-number)
+       ;; Variable declarations
+       ("\\_<\\(?:var\\)\\_>[[:space:]]+\\([[:alpha:]]\\(?:[[:alnum:]]\\|_\\)*\\)" (1 'tickscript-variable nil nil))
+       ;; Operators
+       (,(rx (or "\|" "\+" "\-" "\*" "/")) . 'tickscript-operator)
+       ))
 
 (defconst tickscript-mode-syntax-table
   (let ((table (make-syntax-table)))
@@ -268,10 +290,12 @@ If unset, defaults to \"http://localhost:9092\"."
     map)
   "Keymap for `tickscript-mode'.")
 
-;; if backward-sexp gives an error, move back 1 char to move over the '('
+;; if backward-sexp gives an error, move back 1 char to move over the open
+;; paren.
 (defun tickscript-safe-backward-sexp ()
-  "Move backward by one sexp, ignoring errors.  Jump out of strings first."
-  (when (tickscript--in-string)
+  "Move backward by one sexp, ignoring errors.  Jump out of strings/comments first."
+  (when (or (tickscript--in-string)
+            (tickscript--in-comment))
     (goto-char (nth 8 (syntax-ppss))))
   (if (condition-case nil (backward-sexp) (error t))
       (ignore-errors (backward-char))))
@@ -376,7 +400,7 @@ be preceded by the \".\" sigil."
 If STOP-AT-NODE is true, the search stops once a node (or UDF) is hit."
   (save-excursion
     ;; Skip the sigil, if we're on one
-    (if (looking-at "\\.|\|")
+    (if (looking-at "\\.|\|@")
         (forward-char))
     (let ((count 0)
           (node-count 0))
@@ -398,6 +422,12 @@ Optional arg STOP-AT-NODE tells the parser to stop at the first
 node boundary found (which includes UDFs)."
   (tickscript--last-identifier-pos #'tickscript-node-at-point stop-at-node))
 
+(defun tickscript-last-udf-pos (&optional stop-at-node)
+  "Return the position of the last UDF, if found.
+Optional arg STOP-AT-NODE tells the parser to stop at the first
+node boundary found (which includes UDFs)."
+  (tickscript--last-identifier-pos #'tickscript-udf-at-point stop-at-node))
+
 (defun tickscript-last-chaining-method-pos ()
   "Return the position of the last chaining method, if found."
   (tickscript--last-identifier-pos #'tickscript-chaining-method-at-point t))
@@ -413,8 +443,20 @@ current chain if point is not on a node."
   (let ((last-node-pos (tickscript-last-node-pos t)))
     (if last-node-pos
         (save-excursion
-          (goto-char (tickscript-last-node-pos t))
+          (goto-char last-node-pos)
           (tickscript--at-keyword tickscript-nodes)))))
+
+(defun tickscript-current-udf ()
+  "Return the name of the current UDF.
+Returns the name of the UDF under point, or the last UDF in the
+current chain if point is not on a UDF."
+  (save-excursion
+    ;; This function is used in font-locking, so must preserve match data
+     (save-match-data
+     (let ((last-udf-pos (tickscript-last-udf-pos t)))
+       (if last-udf-pos
+           (goto-char last-udf-pos)
+         (tickscript-udf-at-point))))))
 
 (defun tickscript--node-indentation (&optional min)
   "Return indentation level for items under the last node.
@@ -456,8 +498,7 @@ meaning always increase indent on TAB and decrease on S-TAB."
 
 (defun tickscript-indent-in-continuation ()
   "Indentation for statements/expressions broken across multiple lines."
-  (save-excursion
-    (beginning-of-line)
+   (tickscript--at-bol
     (let ((open-paren (nth 1 (syntax-ppss)))
           (linum (line-number-at-pos)))
       (when open-paren
@@ -470,17 +511,15 @@ meaning always increase indent on TAB and decrease on S-TAB."
 
 (defun tickscript-indent-comment-line ()
   "Indentation for comment lines."
-  (save-excursion
-    (beginning-of-line)
-    (forward-to-indentation 0)
-    (when (looking-at "//")
-      ;; (message "COMMENT LINE")
-      ;; Match previous line's indentation if non-empty (not just whitespace),
-      ;; otherwise 0 indentation
-      (if (eq (line-number-at-pos) 1)
-          0
-        (forward-line -1)
-        (current-indentation)))))
+  (tickscript--at-bol
+   (when (looking-at "//")
+     ;; (message "COMMENT LINE")
+     ;; Match previous line's indentation if non-empty (not just whitespace),
+     ;; otherwise 0 indentation
+     (if (eq (line-number-at-pos) 1)
+         0
+       (forward-line -1)
+       (current-indentation)))))
 
 (defun tickscript-indent-toplevel-node ()
   "Indentation for toplevel nodes, which are always at level 0.

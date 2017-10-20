@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017  Marc Sherry
 ;; Homepage: https://github.com/msherry/tickscript-mode
 ;; Version: 0.1
-;; Package-Version: 20171020.56
+;; Package-Version: 20171020.1313
 ;; Author: Marc Sherry <msherry@gmail.com>
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "24.1"))
@@ -290,10 +290,12 @@ If unset, defaults to \"http://localhost:9092\"."
     map)
   "Keymap for `tickscript-mode'.")
 
-;; if backward-sexp gives an error, move back 1 char to move over the '('
+;; if backward-sexp gives an error, move back 1 char to move over the open
+;; paren.
 (defun tickscript-safe-backward-sexp ()
-  "Move backward by one sexp, ignoring errors.  Jump out of strings first."
-  (when (tickscript--in-string)
+  "Move backward by one sexp, ignoring errors.  Jump out of strings/comments first."
+  (when (or (tickscript--in-string)
+            (tickscript--in-comment))
     (goto-char (nth 8 (syntax-ppss))))
   (if (condition-case nil (backward-sexp) (error t))
       (ignore-errors (backward-char))))
@@ -402,7 +404,7 @@ If STOP-AT-NODE is true, the search stops once a node (or UDF) is hit."
         (forward-char))
     (let ((count 0)
           (node-count 0))
-      (while (not (or (> count 0) (> node-count 0) (<= (point) 0)))
+      (while (not (or (> count 0) (> node-count 0) (<= (point) 1)))
         (tickscript-safe-backward-sexp)
         (when (funcall fn)
           (setq count (1+ count)))
