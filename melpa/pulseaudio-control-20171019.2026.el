@@ -8,7 +8,7 @@
 ;; URL: https://github.com/flexibeast/pulseaudio-control
 ;; Keywords: multimedia, hardware, sound, PulseAudio
 ;; Version: 0.1
-;; Package-Version: 20171004.428
+;; Package-Version: 20171019.2026
 ;; Package-X-Original-Version: 0.1
 
 ;;
@@ -141,7 +141,7 @@ e.g. 'list short sinks'."
   (let ((args `("" nil
                 ,pulseaudio-control-pactl-path
                 nil t nil
-                ,@(split-string command " "))))
+                ,@(append '("--") (split-string command " ")))))
     (apply #'call-process-region args)))
 
 (defun pulseaudio-control--get-sinks ()
