@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20170926.911
+;; Package-Version: 20171020.213
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -532,10 +532,10 @@ If the problem persists, please report this as a bug!")))
   "Simply restart the process with the same configuration as before."
   (interactive)
   (when (intero-buffer-p 'backend)
-    (let ((targets (with-current-buffer (intero-buffer 'backend)
-                     intero-targets))
-          (stack-yaml (with-current-buffer (intero-buffer 'backend)
-                        intero-stack-yaml)))
+    (let ((targets (buffer-local-value 'intero-targets
+                                       (intero-buffer 'backend)))
+          (stack-yaml (buffer-local-value 'intero-stack-yaml
+                                          (intero-buffer 'backend))))
       (intero-destroy 'backend)
       (intero-get-worker-create 'backend targets (current-buffer) stack-yaml)
       (intero-repl-restart))))
@@ -543,8 +543,7 @@ If the problem persists, please report this as a bug!")))
 (defun intero-read-targets ()
   "Read a list of stack targets."
   (let ((old-targets
-         (with-current-buffer (intero-buffer 'backend)
-           intero-targets))
+         (buffer-local-value 'intero-targets (intero-buffer 'backend)))
         (available-targets (intero-get-targets)))
     (if available-targets
         (intero-multiswitch
@@ -2173,6 +2172,15 @@ The process ended. Here is the reason that Emacs gives us:
      (format "  %s %s"
              intero-stack-executable
              (combine-and-quote-strings intero-arguments))
+
+     "
+
+It's worth checking that the correct stack executable is being
+found on your path, or has been set via
+`intero-stack-executable'.  The executable being used now is:
+
+  "
+     (executable-find intero-stack-executable)
      "
 
 WHAT TO DO NEXT

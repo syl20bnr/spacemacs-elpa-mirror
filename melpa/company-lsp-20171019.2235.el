@@ -1,7 +1,7 @@
 ;;; company-lsp.el --- Company completion backend for lsp-mode.
 
 ;; Version: 1.0
-;; Package-Version: 20171018.2238
+;; Package-Version: 20171019.2235
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "2.0") (company "0.9.0") (s "1.2.0"))
 ;; URL: https://github.com/tigersoldier/company-lsp
 
@@ -65,16 +65,13 @@ as the prefix to be completed, or a cons cell of (prefix . t) to bypass
       (let* ((max-trigger-len (apply 'max (mapcar (lambda (trigger-char)
                                                     (length trigger-char))
                                                   trigger-chars)))
-             (trigger-regex (cl-reduce (lambda (accum elem)
-                                         (concat accum "|" (regexp-quote elem)))
-                                       trigger-chars
-                                       :initial-value (regexp-quote (car trigger-chars))
-                                       :start 1))
+             (trigger-regex (s-join "\\|" trigger-chars))
              (symbol-cons (company-grab-symbol-cons trigger-regex max-trigger-len)))
-        ;; Some major modes define trigger characters as part of the symbol.
-        ;; Company will consider the trigger character as part of the prefix
-        ;; while the server doesn't. Remove the leading trigger character to
-        ;; solve this issue.
+        ;; Some major modes define trigger characters as part of the symbol. For
+        ;; example "@" is considered a vaild part of symbol in java-mode.
+        ;; Company will grab the trigger character as part of the prefix while
+        ;; the server doesn't. Remove the leading trigger character to solve
+        ;; this issue.
         (let* ((symbol (if (consp symbol-cons)
                            (car symbol-cons)
                          symbol-cons))
@@ -83,7 +80,7 @@ as the prefix to be completed, or a cons cell of (prefix . t) to bypass
                                        trigger-chars)))
           (if trigger-char
               (cons (substring symbol (length trigger-char)) t)
-            symbol)))
+            symbol-cons)))
     (company-grab-symbol)))
 
 (defun company-lsp--make-candidate (item)
@@ -117,8 +114,7 @@ See the documentation of `company-backends' for COMMAND and ARG."
   (interactive (list 'interactive))
   (cl-case command
     (interactive (company-begin-backend #'company-lsp))
-    (prefix
-     (and
+    (prefix (and
              (bound-and-true-p lsp-mode)
              (lsp--capability "completionProvider")
              (or (company-lsp--completion-prefix) 'stop)))
