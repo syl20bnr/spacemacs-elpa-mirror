@@ -4,8 +4,8 @@
 ;; Matthew K. Junker
 
 ;; Author: Matthew K. Junker <junker@alum.mit.edu>
-;; Package-Version: 20171018.1234
-;; Package-X-Original-Version: 20171018.132209
+;; Package-Version: 20171020.319
+;; Package-X-Original-Version: 20171020.51809
 ;; Keywords: local, docs
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -1377,8 +1377,6 @@ Optional argument PROMPT is the prompt to show."
             ((looking-at "[[]") (delete-char 1))
             ((looking-at "[]]") (delete-char 1))
             (t (forward-char))))))
-
-    (if (looking-at "\".*"")
 
 (provide 'abc-mode)
 ;;; abc-mode.el ends here

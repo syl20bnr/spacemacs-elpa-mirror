@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 2.0.13
-;; Version: 2.0.13
+;; Package-Version: 2.0.15
+;; Version: 2.0.15
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -572,9 +572,6 @@ Because only two are supported by hugo."
 (defconst easy-hugo--delete-line 12
   "Easy-hugo-delete line number.")
 
-(defconst easy-hugo--buffer-name "*Hugo Server*"
-  "Easy-hugo buffer name.")
-
 (defconst easy-hugo--preview-buffer "*Hugo Preview*"
   "Easy-hugo preview buffer name.")
 
@@ -855,17 +852,29 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
 (defun easy-hugo--preview-open ()
   "Open preview at the file name on the pointer.
 If not applicable, return the default preview."
-  (unless (or (string-match "^$" (thing-at-point 'line))
-	      (eq (point) (point-max))
-	      (> (+ 1 easy-hugo--forward-char) (length (thing-at-point 'line))))
-    (let ((file (expand-file-name
-		 (concat easy-hugo-postdir "/" (substring (thing-at-point 'line) easy-hugo--forward-char -1))
-		 easy-hugo-basedir)))
-      (when (and (file-exists-p file)
-		 (not (file-directory-p file)))
-	(if (equal (easy-hugo--preview-http-status-code (file-name-sans-extension (file-relative-name file (expand-file-name (concat easy-hugo-basedir "content"))))) "200")
-	    (browse-url (concat easy-hugo-preview-url (file-name-sans-extension (file-relative-name file (expand-file-name (concat easy-hugo-basedir "content"))))))
-	  (browse-url easy-hugo-preview-url))))))
+  (if (equal (buffer-name (current-buffer)) easy-hugo--buffer-name)
+      (if (not (or (string-match "^$" (thing-at-point 'line))
+		   (eq (point) (point-max))
+		   (> (+ 1 easy-hugo--forward-char) (length (thing-at-point 'line)))))
+	  (progn
+	    (let ((file (expand-file-name
+			 (concat easy-hugo-postdir "/" (substring (thing-at-point 'line) easy-hugo--forward-char -1))
+			 easy-hugo-basedir)))
+	      (when (and (file-exists-p file)
+			 (not (file-directory-p file)))
+		(if (equal (easy-hugo--preview-http-status-code
+			    (file-name-sans-extension
+			     (file-relative-name file (expand-file-name
+						       (concat easy-hugo-basedir "content")))))
+			   "200")
+		    (browse-url (concat easy-hugo-preview-url
+					(file-name-sans-extension
+					 (file-relative-name file
+							     (expand-file-name
+							      (concat easy-hugo-basedir "content"))))))
+		  (browse-url easy-hugo-preview-url)))))
+	(browse-url easy-hugo-preview-url))
+    (browse-url easy-hugo-preview-url)))
 
 (defun easy-hugo--preview-http-status-code (url)
   "Return the http status code of the preview URL."
@@ -1683,9 +1692,9 @@ Optional prefix ARG says how many lines to move; default is one line."
   "Go to next postdir."
   (interactive)
   (setq easy-hugo--postdir-list (easy-hugo--directory-list (easy-hugo--directory-files-recursively (expand-file-name (concat easy-hugo-basedir "content")) "" t)))
-  (setq easy-hugo--postdir-list (delete (expand-file-name (concat easy-hugo-basedir "content/post")) easy-hugo--postdir-list))
+  (setq easy-hugo--postdir-list (delete (expand-file-name (concat easy-hugo-basedir easy-hugo-postdir)) easy-hugo--postdir-list))
   (add-to-list 'easy-hugo--postdir-list (expand-file-name (concat easy-hugo-basedir "content")) t)
-  (add-to-list 'easy-hugo--postdir-list (expand-file-name (concat easy-hugo-basedir "content/post")))
+  (add-to-list 'easy-hugo--postdir-list (expand-file-name (concat easy-hugo-basedir easy-hugo-postdir)))
   (if (eq (- (length easy-hugo--postdir-list) 1) easy-hugo--current-postdir)
       (setq easy-hugo--current-postdir 0)
     (setq easy-hugo--current-postdir (+ easy-hugo--current-postdir 1)))
