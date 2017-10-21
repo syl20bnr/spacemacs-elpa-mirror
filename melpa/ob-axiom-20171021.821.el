@@ -4,7 +4,7 @@
 
 ;; Author: Paul Onions
 ;; Keywords: Axiom, OpenAxiom, FriCAS
-;; Package-Version: 20161122.1222
+;; Package-Version: 20171021.821
 
 ;; This file is free software, see the LICENCE file in this directory
 ;; for copying terms.
@@ -45,6 +45,7 @@
 ;;;
 (defun org-babel-axiom-initiate-session (session params)
   "Start an Axiom session for use by org-babel."
+  ;;(message "org-babel-axiom-initiate-session\n %S\n %S" session params)
   (unless (string= session "none")
     (let ((session-name (org-babel-axiom-starify-name session)))
       (let ((axiom-process-buffer-name session-name)) ; dynamic binding
@@ -55,14 +56,18 @@
 (defun org-babel-axiom-var-to-axiom (val)
   "Convert an elisp var into a string of Axiom source code
 specifying a var of the same value."
+  ;;(message "org-babel-axiom-var-to-axiom\n %S" val)
   (if (listp val)
       (concat "[" (mapconcat #'org-babel-axiom-var-to-axiom val ", ") "]")
     (format "%S" val)))
 
 (defun org-babel-variable-assignments:axiom (params)
-  "Return a list of Axiom statements assigning the block's variables.
-This function called by `org-babel-expand-src-block'."
-  (let ((vars (mapcar #'cdr (org-babel-get-header params :var))))
+  "Return a list of Axiom statements assigning the block's variables."
+  ;;(message "org-babel-variable-assignments:axiom\n %S" params)
+  (let ((vars (mapcan (lambda (param)
+                        (and (eql :var (car param))
+                             (list (cdr param))))
+                      params)))
     (mapcar
      (lambda (pair)
        (format "%S := %s" (car pair) (org-babel-axiom-var-to-axiom (cdr pair))))
@@ -70,6 +75,7 @@ This function called by `org-babel-expand-src-block'."
 
 (defun org-babel-expand-body:axiom (body params)
   "Expand BODY with PARAMS."
+  ;;(message "org-babel-expand-body:axiom\n %S\n %S" body params)
   (mapconcat #'identity (append (org-babel-variable-assignments:axiom params)
                                 (list body))
              "\n"))
@@ -77,6 +83,7 @@ This function called by `org-babel-expand-src-block'."
 (defun org-babel-execute:axiom (body params)
   "Execute a block of Axiom code with org-babel.
 This function is called by `org-babel-execute-src-block'."
+  ;;(message "org-babel-execute:axiom\n %S\n %S" body params)
   (let* ((lines (split-string (org-babel-expand-body:axiom body params) "\n"))
          (session (org-babel-axiom-initiate-session (cdr (assoc :session params)) params)))
     (let ((axiom-process-buffer-name session))  ; dynamic binding
