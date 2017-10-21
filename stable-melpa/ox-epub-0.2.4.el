@@ -6,7 +6,7 @@
 ;; Maintainer: Mark Meyer <mark@ofosos.org>
 
 ;; URL: http://github.com/ofosos/org-epub
-;; Package-Version: 0.2.3
+;; Package-Version: 0.2.4
 ;; Keywords: hypermedia
 
 ;; Version: 0.1.0
@@ -45,8 +45,6 @@
 (require 'ox-publish)
 (require 'ox-html)
 (require 'org-element)
-
-org-export-options-alist
 
 (org-export-define-derived-backend 'epub 'html
   :options-alist
@@ -240,7 +238,7 @@ holding export options."
 		   (org-element-property :level headline)
 		   (org-export-get-reference headline info)))
 		(org-export-collect-headlines info 2)))
-  (let ((styles (org-split-string (or (plist-get org-epub-metadata :epub-style) " "))))
+  (let ((styles (split-string (or (plist-get org-epub-metadata :epub-style) " "))))
     (mapc #'(lambda (style)
 	      (let* ((stylenum (cl-incf org-epub-style-counter))
 		     (stylename (concat "style-" (format "%d" stylenum)))
@@ -289,17 +287,18 @@ holding export options."
    "<div id=\"content\">"
    ;; Document title.
    (when (plist-get info :with-title)
-     (let ((title (plist-get info :title))
+     (let ((ftitle (plist-get info :title))
 	   (subtitle (plist-get info :subtitle)))
-       (when title
+       (when ftitle
+	 (message (org-export-data ftitle info))
 	 (format
-	  "<h1 class=\"title\">%s%Es</h1>\n")
-	  (org-export-data title info)
+	  "<h1 class=\"title\">%s</h1>%s\n"
+	  (org-export-data ftitle info)
 	  (if subtitle
 	      (format
 	       "<p class=\"subtitle\">%s</p>\n"
 	       (org-export-data subtitle info))
-	    ""))))
+	    "")))))
      contents
      "</div>"
      ;   (format "</%s>\n" (nth 1 (assq 'content (plist-get info :html-divs))))
@@ -345,11 +344,11 @@ holding export options."
 		   (push men org-epub-manifest))
 		 (let ((men (org-epub-manifest-entry "cover-image" cover-name 'coverimg (concat "image/" cover-type) cover-path)))
 		   (push men org-epub-manifest)))))
-	   (with-current-buffer (find-file (concat org-epub-zip-dir "META-INF/container.xml"))
+	   (with-current-buffer (find-file (expand-file-name "META-INF/container.xml" org-epub-zip-dir))
 	     (erase-buffer)
 	     (insert (org-epub-template-container))
-	     (unless (file-exists-p (expand-file-name "META-INF" org-epub-zip-dir))
-	       (make-directory (expand-file-name "META-INF" org-epub-zip-dir)))
+	     (unless (file-exists-p (file-name-as-directory (expand-file-name "META-INF" org-epub-zip-dir)))
+	       (make-directory (file-name-as-directory (expand-file-name "META-INF" org-epub-zip-dir))))
 	     (save-buffer 0)
 	     (kill-buffer))
 	   (with-current-buffer (find-file (concat org-epub-zip-dir "mimetype"))
@@ -400,6 +399,8 @@ you to export only visible parts of the document, EXT-PLIST is
 the property list for the export process."
   (interactive)
   (let* ((outfile (org-export-output-file-name ".epub" subtreep)))
+    (message "Output to:")
+    (message outfile)
     (if async
 	(org-export-async-start (lambda (f) (org-export-add-to-stack f 'odt))
 	  (org-epub--export-wrapper

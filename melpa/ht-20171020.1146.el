@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Version: 2.2
-;; Package-Version: 20161015.1945
+;; Package-Version: 20171020.1146
 ;; Keywords: hash table, hash map, hash
 ;; Package-Requires: ((dash "2.12.0"))
 
@@ -87,6 +87,14 @@ user-supplied test created via `define-hash-table-test'."
   "Look up KEY in TABLE, and return the matching value.
 If KEY isn't present, return DEFAULT (nil if not specified)."
   (gethash key table default))
+
+(defun ht-get* (table &rest keys)
+  "Look up KEYS in nested hash tables, starting with TABLE.
+The lookup for each key should return another hash table, except
+for the final key, which may return any value."
+  (if (cdr keys)
+      (apply #'ht-get* (ht-get table (car keys)) (cdr keys))
+    (ht-get table (car keys))))
 
 (defun ht-set! (table key value)
   "Associate KEY in TABLE with VALUE."

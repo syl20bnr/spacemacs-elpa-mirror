@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20171020.213
+;; Package-Version: 20171020.1447
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -1217,7 +1217,7 @@ STORE-PREVIOUS is non-nil, note the caller's buffer in
     (forward-char (1- char))))
 
 (defun intero-linkify-file-line-char (begin end)
-  "Linkify all occurences of <file>:<line>:<char>: betwen BEGIN and END."
+  "Linkify all occurences of <file>:<line>:<char>: between BEGIN and END."
   (when (> end begin)
     (let ((end-marker (copy-marker end))
           ;; match - /path/to/file.ext:<line>:<char>:
