@@ -6,7 +6,7 @@
 ;; Maintainer: Mark Meyer <mark@ofosos.org>
 
 ;; URL: http://github.com/ofosos/org-epub
-;; Package-Version: 20171020.1618
+;; Package-Version: 20171020.1659
 ;; Keywords: hypermedia
 
 ;; Version: 0.1.0
@@ -344,11 +344,11 @@ holding export options."
 		   (push men org-epub-manifest))
 		 (let ((men (org-epub-manifest-entry "cover-image" cover-name 'coverimg (concat "image/" cover-type) cover-path)))
 		   (push men org-epub-manifest)))))
+           (unless (file-directory-p (expand-file-name "META-INF" org-epub-zip-dir))
+             (make-directory (file-name-as-directory (expand-file-name "META-INF" org-epub-zip-dir))))
 	   (with-current-buffer (find-file (expand-file-name "META-INF/container.xml" org-epub-zip-dir))
 	     (erase-buffer)
 	     (insert (org-epub-template-container))
-	     (unless (file-exists-p (file-name-as-directory (expand-file-name "META-INF" org-epub-zip-dir)))
-	       (make-directory (file-name-as-directory (expand-file-name "META-INF" org-epub-zip-dir))))
 	     (save-buffer 0)
 	     (kill-buffer))
 	   (with-current-buffer (find-file (concat org-epub-zip-dir "mimetype"))
