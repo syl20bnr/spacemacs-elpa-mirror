@@ -4,7 +4,7 @@
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; Keywords: convenience language tools
-;; Package-Version: 20170929.1513
+;; Package-Version: 20171020.2128
 ;; Version: 0.3
 ;; Package-Requires: ((flycheck "0.15") (dash "1.2") (emacs "24.1"))
 
@@ -115,8 +115,9 @@ Used to restore the original mode line face.")
                    'flycheck-color-mode-line-success-face)))
                 (`running
                  'flycheck-color-mode-line-running-face))))
-    (setq flycheck-color-mode-line-cookie
-          (face-remap-add-relative flycheck-color-mode-line-face-to-color face))))
+    (when face
+      (setq flycheck-color-mode-line-cookie
+            (face-remap-add-relative flycheck-color-mode-line-face-to-color face)))))
 
 ;;;###autoload
 (define-minor-mode flycheck-color-mode-line-mode

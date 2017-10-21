@@ -6,7 +6,7 @@
 ;; Contributors: Lee Hinman
 ;; Maintainer: Chunyang Xu <mail@xuchunyang.me>
 ;; URL: https://github.com/hiddenlotus/eshell-prompt-extras
-;; Package-Version: 20170914.1955
+;; Package-Version: 20171020.2207
 ;; Version: 0.96
 ;; Created: 2014-08-16
 ;; Keywords: eshell, prompt
@@ -255,8 +255,9 @@ length of PATH (sans directory slashes) down to MAX-LEN."
 
 (defun epe-git-p ()
   "If you installed git and in a git project."
-  (and (eshell-search-path "git")
-       (vc-find-root (eshell/pwd) ".git")))
+  (unless (epe-remote-p)                ; Work-around for issue #20
+    (and (eshell-search-path "git")
+         (vc-find-root (eshell/pwd) ".git"))))
 
 (defun epe-git-short-sha1 ()
   (epe-trim-newline (shell-command-to-string "git rev-parse --short HEAD")))

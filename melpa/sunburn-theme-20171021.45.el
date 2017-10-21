@@ -5,7 +5,7 @@
 
 ;; Author: Martín Varela (martin@varela.fi)
 ;; URL: http://github.com/mvarela/Sunburn-Theme
-;; Package-Version: 20171014.8
+;; Package-Version: 20171021.45
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "24"))
 
@@ -107,7 +107,8 @@ Also bind `class' to ((class color) (min-colors 89))."
    'sunburn
 ;;;; Built-in
 ;;;;; basic coloring
-   '(button ((t (:underline t))))
+   `(button ((t (:foreground ,sunburn-yellow-2 :underline t))))
+   `(widget-button ((t (:foreground ,sunburn-yellow-2 :underline t))))
    `(link ((t (:foreground ,sunburn-yellow :underline t :weight bold))))
    `(link-visited ((t (:foreground ,sunburn-yellow-2 :underline t :weight normal))))
    `(default ((t (:foreground ,sunburn-fg :background ,sunburn-bg))))
