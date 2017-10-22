@@ -8,7 +8,7 @@
 ;; Original author:  wandad guscheh <wandad.guscheh@fh-hagenberg.at>
 ;; Author:           Cayetano Santos
 ;; Keywords: vhdl
-;; Package-Version: 20170928.822
+;; Package-Version: 20171021.1257
 
 ;; Filename: vhdl-tools.el
 ;; Description: Utilities for navigating vhdl sources.
@@ -16,7 +16,7 @@
 ;; Keywords: convenience
 ;; Compatibility: GNU Emacs >= 25.2
 ;; Version: 5.7
-;; Package-Requires: ((ggtags "0.8.12") (emacs "25.2") (outshine "2.0") (helm "2.8.1"))
+;; Package-Requires: ((ggtags "0.8.12") (emacs "25.2") (outshine "2.0") (helm "2.8.5"))
 
 ;;; License:
 ;;
@@ -37,12 +37,14 @@
 
 ;;; Commentary:
 ;;
-;; Vhdl-tools provide a minor mode to be used under `vhdl-mode' major mode.
-;; It adds a layer of functionality on top of `ggtags' and relies on and extends
-;; `imenu' and `outshine' features to ease navigating vhdl sources.  It expects
-;; a working setup of `ggtags'.
+;; `Vhdl-tools' provide a derived major mode based on the great `vhdl-mode'.
+;; It adds an extra layer of functionality on top of the later, extensively
+;; using `ggtags' to manage a vhdl project.  `Vhdl-tools' relies on `projectile',
+;; `imenu' and `outshine' features to ease navigating vhdl
+;; sources.  Additionally, it provides `vOrg' mode too, which benefits of all
+;; `Org' features.
 ;;
-;; For details, refer to  https://csantosb.github.io/vhdl-tools/
+;; For details, refer to  https://github.com/csantosb/vhdl-tools/wiki
 
 ;;; Install:
 ;;
@@ -196,20 +198,19 @@ Needed to determine end of name."
 (defun vhdl-tools--cleanup-tangled ()
   "Make invisible reference comments after tangling."
   (interactive)
-  (when vhdl-tools-vorg-tangle-comments-link
-    (save-excursion
-      (when vhdl-tools-use-outshine
-	(outline-show-all)
-	(goto-char (point-min)))
-      (while (re-search-forward (format "^-- %s.*$" vhdl-tools-vorg-tangle-comment-format-beg) nil t nil)
-	(let ((endp (point))
-	      (begp (progn (beginning-of-line) (point))))
-	  (overlay-put (make-overlay begp endp)
-		       'invisible
-		       (intern "vhdl-tangled")))
-	(forward-line))
-      (add-to-invisibility-spec 'vhdl-tangled)
-      (vhdl-tools--fold))))
+  (save-excursion
+    (when vhdl-tools-use-outshine
+      (outline-show-all)
+      (goto-char (point-min)))
+    (while (re-search-forward (format "^-- %s.*$" vhdl-tools-vorg-tangle-comment-format-beg) nil t nil)
+      (let ((endp (point))
+	    (begp (progn (beginning-of-line) (point))))
+	(overlay-put (make-overlay begp endp)
+		     'invisible
+		     (intern "vhdl-tangled")))
+      (forward-line))
+    (add-to-invisibility-spec 'vhdl-tangled)
+    (vhdl-tools--fold)))
 
 (defun vhdl-tools--fold ()
   "Fold to current heading level."
@@ -1037,13 +1038,15 @@ Beautifies source code blocks before editing."
 
 ;;;; Outshine - imenu
 
-(defun vhdl-tools-outshine-imenu-headers(arg)
-  (interactive "P")
-  (if (equal arg '(4))
-      (outshine-imenu nil)
-    (vhdl-tools-imenu-headers))
-  (vhdl-tools--fold)
-  (vhdl-tools--post-jump-function))
+(defun vhdl-tools-outshine-imenu-headers()
+  (interactive)
+  (let ((helm-split-window-default-side
+	 (if (> (window-width) 100)
+	     'right
+	   'below )))
+    (helm-navi-headings)
+    (vhdl-tools--fold)
+    (vhdl-tools--post-jump-function)))
 
 ;;;; All
 
@@ -1112,14 +1115,16 @@ Key bindings:
 	  ;; (outshine-hook-function)
 	  ;; custom outline regexp
 	  (setq-local outline-regexp vhdl-tools-outline-regexp)
-	  (define-key vhdl-tools-imenu-map (kbd "SPC") #'vhdl-tools-outshine-imenu-headers))
+	  (define-key vhdl-tools-imenu-map (kbd "h")
+	    #'vhdl-tools-outshine-imenu-headers))
 	;; required
 	(ggtags-mode 1)
 	;; inheritate prog mode hooks: vhdl-mode doesn't
 	(run-hook-with-args 'prog-mode-hook)
 	;; puts the reference comments around in the source
 	;; vhdl file out of sight
-	(vhdl-tools--cleanup-tangled)
+	(when vhdl-tools-vorg-tangle-comments-link
+	  (vhdl-tools--cleanup-tangled))
         ;; a bit of feedback
 	(when vhdl-tools-verbose
 	  (message "VHDL Tools enabled.")))
@@ -1136,8 +1141,8 @@ Key bindings:
   (define-key vhdl-tools-mode-map (kbd "C-c M-y") #'vhdl-tools-paste-link)
   (define-key vhdl-tools-mode-map (kbd "C-c M-.") #'vhdl-tools-jump-into-module)
   (define-key vhdl-tools-mode-map (kbd "C-c M-a") #'vhdl-tools-jump-first)
-  (define-key vhdl-tools-mode-map (kbd "C-c M-^") #'vhdl-tools-jump-upper)
-  (define-key vhdl-tools-mode-map (kbd "C-c M-u") (lambda(&optional arg)
+  (define-key vhdl-tools-mode-map (kbd "C-c M-u") #'vhdl-tools-jump-upper)
+  (define-key vhdl-tools-mode-map (kbd "C-c M-^") (lambda(&optional arg)
 						    (interactive "P")
 						    (if (equal arg '(4))
 							(vhdl-tools-vorg-detangle)
@@ -1153,7 +1158,7 @@ Key bindings:
     (define-key vhdl-tools-imenu-map (kbd "i") #'vhdl-tools-imenu-instance)
     (define-key vhdl-tools-imenu-map (kbd "p") #'vhdl-tools-imenu-processes)
     (define-key vhdl-tools-imenu-map (kbd "c") #'vhdl-tools-imenu-component)
-    (define-key vhdl-tools-imenu-map (kbd "SPC") #'vhdl-tools-imenu-headers)
+    (define-key vhdl-tools-imenu-map (kbd "h") #'vhdl-tools-imenu-headers)
     (define-key vhdl-tools-imenu-map (kbd "a") #'vhdl-tools-imenu-all)))
 
 ;;; Derived Mode - vOrg
@@ -1174,9 +1179,9 @@ Key bindings:
 	#'vhdl-tools-vorg-smcn-next)
       (define-key vhdl-tools-vorg-mode-map [remap smartscan-symbol-go-backward]
 	#'vhdl-tools-vorg-smcn-prev))
-    ;; make the hook local and complete it
+    ;; make the hook local and add defun
     (add-to-list (make-local-variable 'org-src-mode-hook)
-		 'vhdl-tools-vorg-src-edit-beautify)
+    		 'vhdl-tools-vorg-src-edit-beautify)
     ;; This auto removes any mode line on top of the vorg file before exporting
     (add-hook 'org-export-before-processing-hook
 	      (lambda (arg) (save-excursion

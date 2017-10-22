@@ -4,7 +4,7 @@
 
 ;; Author: Paul Onions
 ;; Keywords: Axiom, OpenAxiom, FriCAS
-;; Package-Version: 20171021.821
+;; Package-Version: 20171021.1448
 
 ;; This file is free software, see the LICENCE file in this directory
 ;; for copying terms.

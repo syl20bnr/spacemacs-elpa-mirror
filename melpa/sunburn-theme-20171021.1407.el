@@ -5,7 +5,7 @@
 
 ;; Author: Martín Varela (martin@varela.fi)
 ;; URL: http://github.com/mvarela/Sunburn-Theme
-;; Package-Version: 20171021.45
+;; Package-Version: 20171021.1407
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "24"))
 
@@ -1031,8 +1031,9 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(org-footnote ((t (:foreground ,sunburn-cyan :underline t))))
    `(org-date ((t (:foreground ,sunburn-cyan :underline t))))
    `(org-property-value ((t (:foreground ,sunburn-magenta :underline t))))
-   `(org-document-title ((t (:foreground ,sunburn-blue))))
-   `(org-document-info ((t (:foreground ,sunburn-blue))))
+   `(org-document-title ((t (:foreground ,sunburn-blue :height 1.4))))
+   `(org-document-info ((t (:foreground ,sunburn-blue :height 1.2))))
+   `(org-document-info-keyword ((t (:foreground ,sunburn-green :height 1.2))))
    `(org-habit-ready-face ((t :background ,sunburn-green)))
    `(org-habit-alert-face ((t :background ,sunburn-yellow-1 :foreground ,sunburn-bg)))
    `(org-habit-clear-face ((t :background ,sunburn-blue-3)))
