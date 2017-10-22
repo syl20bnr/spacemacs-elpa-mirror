@@ -4,7 +4,7 @@
 
 ;; Author: alpha22jp <alpha22jp@gmail.com>
 ;; Package-Requires: ((emacs "24.3") (let-alist "1.0.4") (websocket "1.4"))
-;; Package-Version: 20161213.730
+;; Package-Version: 20171022.107
 ;; Keywords: chrome edit textarea
 ;; URL: https://github.com/alpha22jp/atomic-chrome
 ;; Version: 2.0.0
@@ -229,7 +229,8 @@ TITLE is used for the buffer name and TEXT is inserted to the buffer."
 where FRAME show raw data received."
   (let ((msg (json-read-from-string
               (decode-coding-string
-               (string-make-unibyte (websocket-frame-payload frame)) 'utf-8))))
+               (encode-coding-string (websocket-frame-payload frame) 'utf-8)
+	       'utf-8))))
     (let-alist msg
       (if (eq (websocket-server-conn socket) atomic-chrome-server-ghost-text)
           (if (atomic-chrome-get-buffer-by-socket socket)

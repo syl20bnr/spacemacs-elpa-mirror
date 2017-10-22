@@ -4,7 +4,7 @@
 
 ;; Author: Antonio N. Monteiro <anmonteiro@gmail.com>
 ;; Version: 1.0
-;; Package-Version: 20171021.1819
+;; Package-Version: 20171022.308
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "3.0"))
 ;; Keywords: languages, ocaml, reason, lsp
 ;; URL: https://github.com/anmonteiro/lsp-ocaml
@@ -35,7 +35,7 @@
   "Retrieves the root directory of the OCaml project root if available.
 The current directory is assumed to be the OCaml project’s root otherwise."
   (cond
-   ((and (bound-and-true-p 'projectile-mode) (projectile-project-p)) (projectile-project-root))
+   ((and (bound-and-true-p projectile-mode) (projectile-project-p)) (projectile-project-root))
    ((vc-backend default-directory) (expand-file-name (vc-root-dir)))
    (t (let ((project-types '("opam" ".merlin" "package.json")))
 	      (or (seq-some (lambda (file) (locate-dominating-file default-directory file)) project-types)

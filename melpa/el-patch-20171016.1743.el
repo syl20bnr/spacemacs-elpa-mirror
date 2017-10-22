@@ -6,7 +6,7 @@
 ;; Created: 31 Dec 2016
 ;; Homepage: https://github.com/raxod502/el-patch
 ;; Keywords: extensions
-;; Package-Version: 20170729.1712
+;; Package-Version: 20171016.1743
 ;; Package-Requires: ((emacs "25"))
 ;; Version: 1.2
 
@@ -50,6 +50,16 @@
 
 (require 'subr-x)
 (require 'cl-lib)
+
+;;;; Compatibility
+
+(eval-and-compile
+  (when (version< emacs-version "26")
+    (with-no-warnings
+      (defalias 'if-let* #'if-let)
+      (defalias 'when-let* #'when-let)
+      (function-put #'if-let* 'lisp-indent-function 2)
+      (function-put #'when-let* 'lisp-indent-function 1))))
 
 ;;;; User-facing variables
 
@@ -441,7 +451,7 @@ Return a list of those items. Beware, uses heuristics."
        (list name))
       ((quote define-minor-mode)
        (list (cons 'defun name)
-             (or (when-let ((rest (member :variable body)))
+             (or (when-let* ((rest (member :variable body)))
                    (cadr rest))
                  name)))
       (_ (error "Unexpected definition type %S" type)))))
@@ -454,17 +464,22 @@ DEFINITION should be an unquoted list beginning with `defun',
                                (member item current-load-list))
                              (el-patch--compute-load-history-items
                               definition))))
-    `(progn
-       ,@(when (and el-patch-use-aggressive-defvar
-                    (eq (el-patch--classify-definition-type
-                         (car definition))
-                        'variable))
-           ;; Note that this won't necessarily handle
-           ;; `define-minor-mode' correctly if a custom `:variable' is
-           ;; specified. However, I'm not going to handle that edge
-           ;; case until somebody else complains about it.
-           `((makunbound ',(cadr definition))))
-       ,definition
+    `(prog2
+         ;; Using a `progn' here so that the `prog2' above will
+         ;; correctly cause the evaluated definition to be returned,
+         ;; even if `el-patch-use-aggressive-defvar' is nil.
+         (progn
+           ,@(when (and el-patch-use-aggressive-defvar
+                        (eq (el-patch--classify-definition-type
+                             (car definition))
+                            'variable))
+               ;; Note that this won't necessarily handle
+               ;; `define-minor-mode' correctly if a custom
+               ;; `:variable' is specified. However, I'm not going to
+               ;; handle that edge case until somebody else complains
+               ;; about it.
+               `((makunbound ',(cadr definition)))))
+         ,definition
        ,@(mapcar (lambda (item)
 		   `(setq current-load-list
 			  (remove ',item current-load-list)))
@@ -708,7 +723,7 @@ two buffers wordwise."
   "Show the patch for an object in Ediff.
 NAME and TYPE are as returned by `el-patch-get'."
   (interactive (el-patch--select-patch))
-  (if-let ((patch-definition (el-patch-get name type)))
+  (if-let* ((patch-definition (el-patch-get name type)))
       (let* ((old-definition (el-patch--resolve-definition
                               patch-definition nil))
              (new-definition (el-patch--resolve-definition
@@ -727,7 +742,7 @@ This is a diff between the expected and actual values of a
 patch's original definition. NAME and TYPE are as returned by
 `el-patch-get'."
   (interactive (el-patch--select-patch))
-  (if-let ((patch-definition (el-patch-get name type)))
+  (if-let* ((patch-definition (el-patch-get name type)))
       (let* ((expected-definition (el-patch--resolve-definition
                                    patch-definition nil))
              (name (cadr expected-definition))
@@ -748,7 +763,7 @@ patch's original definition. NAME and TYPE are as returned by
 This restores the original functionality of the object being
 patched. NAME and TYPE are as returned by `el-patch-get'."
   (interactive (el-patch--select-patch))
-  (if-let ((patch-definition (el-patch-get name type)))
+  (if-let* ((patch-definition (el-patch-get name type)))
       (eval `(el-patch--stealthy-eval ,(el-patch--resolve-definition
                                         patch-definition nil)))
     (error "There is no patch for %S %S" type name)))
