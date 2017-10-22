@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171021.1428
+;; Package-Version: 20171021.1714
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -711,9 +711,9 @@
 ;;     indentation (default: `markdown-indent-line').
 ;;
 ;;   * `markdown-indent-on-enter' - Set to a non-nil value to
-;;     automatically indent new lines when `RET' is pressed.
+;;     automatically indent new lines when `RET` is pressed.
 ;;     Set to `indent-and-new-item' to additionally continue lists
-;;     when `RET' is pressed (default: `t').
+;;     when `RET` is pressed (default: `t').
 ;;
 ;;   * `markdown-enable-wiki-links' - syntax highlighting for wiki
 ;;     links (default: `nil').  Set this to a non-nil value to turn on
