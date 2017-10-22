@@ -4,7 +4,7 @@
 
 ;; Author: David Shepherd <davidshepherd7@gmail.com>
 ;; Version: 1.0.0
-;; Package-Version: 20170311.533
+;; Package-Version: 20171022.625
 ;; Package-Requires: ((dash "2.10.0") (names "20150618.0") (emacs "24.4"))
 ;; Keywords: electric
 ;; URL: https://github.com/davidshepherd7/electric-operator
@@ -231,8 +231,12 @@ Whitespace before the operator is captured for possible use later.
         ;; If action was a function which eval-d to nil then we do nothing.
         (when spaced-string
 
-          ;; Record the fact we are inserting something for passing fixup functions
+          ;; Record the fact we are inserting something for passing to fixup
+          ;; functions
           (setq operator-just-inserted t)
+
+          ;; Set an undo boundary for easy undo-ing of the automatic insertion
+          (undo-boundary)
 
           ;; Delete the characters matching this rule before point
           (delete-region op-match-beginning op-match-end)
@@ -419,6 +423,7 @@ Any better ideas would be welcomed."
 
                     ;; Lambdas
                     (cons "->" #'c++-mode-->)
+                    (cons "=" #'c++-mode-=)
 
                     ;; Templates are hard to deal with sensibly
                     (cons "<" nil)
@@ -560,7 +565,9 @@ Using `cc-mode''s syntactic analysis."
    (t " & ")))
 
 (defun c-mode-* ()
-  "Handle C dereference operator and pointer types"
+  "Handle C dereference operator and pointer types
+
+Also handles C++ lambda capture by reference."
   (cond
    ;; Pointer types
    ((or (c-after-type?) (c-is-function-or-class-definition?))
@@ -598,6 +605,13 @@ Using `cc-mode''s syntactic analysis."
   (if (c++-probably-lambda-arrow)
       " -> "
     "->"))
+
+(defun c++-mode-= ()
+  "Handle capture-by-value in lamdas"
+  (cond
+   ((probably-unary-operator?) " =")
+   ((just-inside-bracket) "=")
+   (t " = ")))
 
 
 

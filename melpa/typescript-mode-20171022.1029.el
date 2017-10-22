@@ -21,7 +21,7 @@
 ;; -------------------------------------------------------------------------------------------
 
 ;; URL: http://github.com/ananthakumaran/typescript.el
-;; Package-Version: 20171017.1128
+;; Package-Version: 20171022.1029
 ;; Version: 0.1
 ;; Keywords: typescript languages
 ;; Package-Requires: ()
@@ -1872,7 +1872,7 @@ This performs fontification according to `typescript--class-styles'."
 ;; as the newline is escaped with \. Account for that in the regexp
 ;; below.
 (defconst typescript--regexp-literal
-  "[=(,:]\\(?:\\s-\\|\n\\)*\\(/\\)\\(?:\\\\/\\|[^/*]\\)\\(?:\\\\/\\|[^/]\\)*\\(/\\)"
+  "[=(,:]\\(?:\\s-\\|\n\\)*\\(/\\)[^/]*\\(/\\)"
   "Regexp matching a typescript regular expression literal.
 Match groups 1 and 2 are the characters forming the beginning and
 end of the literal.")
