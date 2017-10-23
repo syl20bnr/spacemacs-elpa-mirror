@@ -11,7 +11,7 @@
 
 ;; Author: Peter Vasil <mail@petervasil.net>
 ;; Version: 1.3.0
-;; Package-Version: 20150217.432
+;; Package-Version: 20171022.1602
 ;; Keywords: languages, snippets
 ;; URL: https://github.com/ptrv/processing2-emacs
 ;;
@@ -300,7 +300,7 @@ When calle interactively, prompt the user for QUERY."
 (defun processing-find-in-reference ()
   "Find word under cursor in Processing reference."
   (interactive)
-  (processing--open-query-in-reference (thing-at-point 'word)))
+  (processing--open-query-in-reference (thing-at-point 'symbol)))
 
 (defun processing-open-reference ()
   "Open Processing reference."

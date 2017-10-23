@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171021.1714
+;; Package-Version: 20171022.1736
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -579,8 +579,12 @@
 ;;       - `C-c S-LEFT` - Kill the current column.
 ;;       - `C-c S-RIGHT` - Insert a new column to the left of the current one.
 ;;       - `C-c C-d` - Re-align the current table (`markdown-do`).
-;;       - `C-c C-c ^` - Sort table lines alphabetically or numerically.
-;;       - `C-c C-c |` - Convert selected region to a table.
+;;       - `C-c C-c ^` - Sort the rows of a table by a specified column.
+;;         This command prompts you for the column number and a sort
+;;         method (alphabetical or numerical, optionally in reverse).
+;;       - `C-c C-c |` - Convert the region to a table.  This function
+;;         attempts to recognize comma, tab, and space separated data
+;;         and then splits the data into cells accordingly.
 ;;       - `C-c C-c t` - Transpose table at point.
 ;;
 ;;     The table editing functions try to handle markup hiding
@@ -9189,7 +9193,7 @@ a table."
               val (replace-regexp-in-string "[ \t]+\\'" "" val)))
     (forward-char 1) ""))
 
-(defun markdown-table-goto-dline (N)
+(defun markdown-table-goto-dline (n)
   "Go to the Nth data line in the table at point.
 Return t when the line exists, nil otherwise. This function
 assumes point is on a table."
@@ -9197,8 +9201,8 @@ assumes point is on a table."
   (let ((end (markdown-table-end)) (cnt 0))
     (while (and (re-search-forward
                  markdown-table-dline-regexp end t)
-                (< (setq cnt (1+ cnt)) N)))
-    (= cnt N)))
+                (< (setq cnt (1+ cnt)) n)))
+    (= cnt n)))
 
 (defun markdown-table-goto-column (n &optional on-delim)
   "Go to the Nth column in the table line at point.
