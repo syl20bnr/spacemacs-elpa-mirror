@@ -5,8 +5,9 @@
 ;; Author: Rémi Attab <remi.attab@gmail.com>
 ;; Created: 2013-09-29
 ;; Version: 0.1
-;; Package-Version: 20131004.1644
+;; Package-Version: 20171023.722
 ;; Keywords:: tools
+;; License: BSD-2-clause
 ;; Url: https://github.com/RAttab/iasm-mode
 
 ;; This file is not part of GNU Emacs.

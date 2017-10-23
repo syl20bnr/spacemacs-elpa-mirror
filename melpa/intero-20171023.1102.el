@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20171020.1447
+;; Package-Version: 20171023.1102
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -129,6 +129,12 @@ To use this, use the following mode hook:
   "Name or path to the Stack executable to use."
   :group 'intero
   :type 'string)
+
+(defcustom intero-pop-to-repl
+  t
+  "When non-nil, pop to REPL when code is sent to it."
+  :group 'intero
+  :type 'boolean)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Modes
@@ -1110,7 +1116,8 @@ be activated after evaluation.  PROMPT-OPTIONS are passed to
     `(let ((,repl-buffer (intero-repl-buffer ,prompt-options t)))
        (with-current-buffer ,repl-buffer
          ,@body)
-       (pop-to-buffer ,repl-buffer))))
+       (when intero-pop-to-repl
+         (pop-to-buffer ,repl-buffer)))))
 
 (defun intero-repl-load (&optional prompt-options)
   "Load the current file in the REPL.
