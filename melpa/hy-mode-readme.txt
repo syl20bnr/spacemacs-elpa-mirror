@@ -952,7 +952,7 @@ Utilities
 (defun hy--eldoc-chomp-output (text)
   "Chomp prefixes and suffixes from eldoc process output."
   (->> text
-     (s-chop-suffixes '("\n=> " "=> "))
+     (s-chop-suffixes '("\n=> " "=> " "\n"))
      (s-chop-prefixes '("\"" "'" "\"'" "'\""))
      (s-chop-suffixes '("\"" "'" "\"'" "'\""))))
 
@@ -971,23 +971,20 @@ Utilities
                   (accept-process-output process nil 100 t)))
       (set-buffer output-buffer)
 
-      (hy--eldoc-chomp-output (buffer-string)))))
+      (-> (buffer-string) hy--eldoc-chomp-output hy--str-or-nil))))
 
-(defun hy--eldoc-format-command (symbol)
-  (format "(try (--HYDOC \"%s\") (except [e Exception] (str)))" symbol))
+(defun hy--str-or-nil (text)
+  "If TEXT is non-blank, return TEXT else nil."
+  (and (not (s-blank? text)) text))
 
-(defun hy--eldoc-format-command-raw-obj (symbol)
-  (format "(try (--HYDOC %s) (except [e Exception] (str)))" symbol))
-
-(defun hy--thing-at-point-command (symbol)
-  (format "(try (--HYDOC \"%s\" :full True) (except [e Exception] (str)))"
-          symbol))
-
-(defun hy--thing-at-point-command-raw-obj (symbol)
-  (format "(try (--HYDOC %s :full True) (except [e Exception] (str)))"
-          symbol))
+(defun hy--eldoc-format-command (symbol &optional full raw)
+  "Inspect SYMBOL with hydoc, optionally include FULL docs for a buffer."
+  (format "(try (--HYDOC %s :full %s) (except [e Exception] (str)))"
+          (if raw symbol (s-concat "\"" symbol "\""))
+          (if full "True" "False")))
 
 (defun hy--eldoc-get-inner-symbol ()
+  "Traverse and inspect innermost sexp and return formatted string for eldoc."
   (save-excursion
     (-when-let* ((_ (hy-shell-get-internal-process))
                  (state (syntax-ppss))
@@ -1019,46 +1016,65 @@ Utilities
 
 (defun hy--eldoc-fontify-text (text)
   "Fontify eldoc strings."
-  (-each
-      (s-matched-positions-all (rx string-start (1+ (not (any space ":"))) ":")
-                               text)
-    (-lambda ((beg . end))
-      (add-face-text-property beg end 'font-lock-keyword-face nil text)))
+  (when text
+    (-each
+        (s-matched-positions-all (rx string-start
+                                     (1+ (not (any space ":")))
+                                     ":")
+                                 text)
+      (-lambda ((beg . end))
+        (add-face-text-property beg end 'font-lock-keyword-face nil text)))
 
-  (-each
-      (s-matched-positions-all (rx symbol-start "&" (1+ word)) text)
-    (-lambda ((beg . end))
-      (add-face-text-property beg end 'font-lock-type-face nil text)))
+    (-each
+        (s-matched-positions-all (rx symbol-start
+                                     "&"
+                                     (1+ word))
+                                 text)
+      (-lambda ((beg . end))
+        (add-face-text-property beg end 'font-lock-type-face nil text)))
 
-  (-each
-      (s-matched-positions-all (rx "`" (1+ (not space)) "`") text)
-    (-lambda ((beg . end))
-      (add-face-text-property beg end 'font-lock-constant-face nil text)
-      (add-face-text-property beg end 'bold-italic nil text)))
+    (-each
+        (s-matched-positions-all (rx "`"
+                                     (1+ (not space))
+                                     "`")
+                                 text)
+      (-lambda ((beg . end))
+        (add-face-text-property beg end 'font-lock-constant-face nil text)
+        (add-face-text-property beg end 'bold-italic nil text)))
 
-  text)
+    text))
 
-Documentation Function
+Documentation Functions
+
+(defun hy--eldoc-get-docs (obj &optional full)
+  "Get eldoc or optionally buffer-formatted docs for `obj'."
+  (when obj
+    (hy--eldoc-fontify-text
+     (or (-> obj (hy--eldoc-format-command full) hy--send-eldoc)
+         (-> obj (hy--eldoc-format-command full t) hy--send-eldoc)))))
 
 (defun hy-eldoc-documentation-function ()
-  (when-let (function (hy--eldoc-get-inner-symbol))
-    (-let [result
-           (-> function hy--eldoc-format-command hy--send-eldoc)]
-      (when (s-blank? result)
-        (setq result
-              (-> function hy--eldoc-format-command-raw-obj hy--send-eldoc)))
-      (hy--eldoc-fontify-text result))))
-
-Describe thing at point
+  "Drives `eldoc-mode', retrieves eldoc msg string for inner-most symbol."
+  (-> (hy--eldoc-get-inner-symbol)
+     hy--eldoc-get-docs))
 
 (defun hy--docs-for-thing-at-point ()
-  (-when-let (function (thing-at-point 'symbol))
-    (-let [result
-           (-> function hy--thing-at-point-command hy--send-eldoc)]
-      (when (s-blank? result)
-        (setq result
-              (-> function hy--thing-at-point-command-raw-obj hy--send-eldoc)))
-      (hy--eldoc-fontify-text result))))
+  "Mirrors `hy-eldoc-documentation-function' formatted for a buffer, not a msg."
+  (-> (thing-at-point 'symbol)
+     (hy--eldoc-get-docs t)
+     hy--format-docs-for-buffer))
+
+(defun hy--format-docs-for-buffer (text)
+  "Format raw hydoc TEXT for inserting into hyconda buffer."
+  (when text
+    (-let [kwarg-newline-regexp
+           (rx ","
+               (1+ (not (any "," ")")))
+               (group-n 1 "\\\n")
+               (1+ (not (any "," ")"))))]
+      (--> text
+         (s-replace "\\n" "\n" it)
+         (replace-regexp-in-string kwarg-newline-regexp "newline" it nil t 1)))))
 
 (defun hy-describe-thing-at-point ()
   "Implement shift-k docs lookup for `spacemacs/evil-smart-doc-lookup'."
@@ -1066,8 +1082,20 @@ Describe thing at point
   (-when-let* ((text (hy--docs-for-thing-at-point))
                (doc-buffer "*Hyconda*"))
     (with-current-buffer (get-buffer-create doc-buffer)
+      (erase-buffer)
       (switch-to-buffer-other-window doc-buffer)
-      (insert text))))
+
+      (insert text)
+      (goto-char (point-min))
+      (forward-line)
+
+      (insert "------\n")
+      (fill-region (point) (point-max))
+
+      ;; Eventually make hyconda-view-minor-mode, atm this is sufficient
+      (local-set-key "q" 'quit-window)
+      (when (fboundp 'evil-local-set-key)
+        (evil-local-set-key 'normal "q" 'quit-window)))))
 
 Autocompletion
 
@@ -1187,6 +1215,7 @@ Hy-mode setup
               (concat "(import [hy.importer [import-file-to-module]])\n"
                       "(import-file-to-module \"__main__\" \"%s\")\n"))
 
+  ;; TODO Should fail silently if hy executable not found on this call
   (run-hy-internal)
   (add-hook 'pyvenv-post-activate-hooks 'run-hy-internal nil t))
 

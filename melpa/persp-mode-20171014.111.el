@@ -4,7 +4,7 @@
 
 ;; Author: Constantin Kulikov (Bad_ptr) <zxnotdead@gmail.com>
 ;; Version: 2.9.6
-;; Package-Version: 20170908.648
+;; Package-Version: 20171014.111
 ;; Package-Requires: ()
 ;; Keywords: perspectives, session, workspace, persistence, windows, buffers, convenience
 ;; URL: https://github.com/Bad-ptr/persp-mode.el
@@ -3702,8 +3702,11 @@ of the perspective %s can't be saved."
      (respect-persp-file-parameter persp-auto-save-persps-to-their-file)
      (keep-others-in-non-parametric-file 'no))
   (interactive (list (read-file-name "Save perspectives to a file: "
-                                     persp-save-dir)))
-  (when (and fname phash)
+                                     persp-save-dir "")))
+  (when (and (stringp fname) phash)
+    (when (< (string-width (file-name-nondirectory fname)) 1)
+      (message "[persp-mode] Error: You must provide nonempty filename to save perspectives.")
+      (return-from persp-save-state-to-file nil))
     (let* ((p-save-dir (or (file-name-directory fname)
                            (expand-file-name persp-save-dir)))
            (p-save-file (concat p-save-dir (file-name-nondirectory fname))))

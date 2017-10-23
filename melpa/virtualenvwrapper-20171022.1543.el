@@ -4,7 +4,7 @@
 
 ;; Author: James J Porter <porterjamesj@gmail.com>
 ;; URL: http://github.com/porterjamesj/virtualenvwrapper.el
-;; Package-Version: 20161002.1515
+;; Package-Version: 20171022.1543
 ;; Version: 20151123
 ;; Keywords: python, virtualenv, virtualenvwrapper
 ;; Package-Requires: ((dash "1.5.0") (s "1.6.1"))
@@ -214,7 +214,7 @@ prompting the user with the string PROMPT"
 (defun venv--activate-dir (dir)
   "Given a directory corresponding to a virtualenv, activate it"
   (run-hooks 'venv-preactivate-hook)
-  (setq venv-current-dir dir)
+  (setq venv-current-dir (file-name-as-directory dir))
   ;; setup the python shell
   (setq python-shell-virtualenv-path venv-current-dir)
   ;; setup emacs exec-path
@@ -255,7 +255,7 @@ prompting the user with the string PROMPT"
 This is useful e.g. when using tox."
   (interactive)
   (when (not location)
-    (setq location (read-directory-name "New virtualenv: ")))
+    (setq location (read-directory-name "New virtualenv location: " venv-location)))
   (venv-deactivate)
   (setq venv-location location)
   (when (called-interactively-p 'interactive)

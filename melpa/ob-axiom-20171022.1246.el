@@ -1,15 +1,15 @@
-;;; ob-axiom.el --- org-babel for the axiom-environment system -*- lexical-binding: t -*-
+;;; ob-axiom.el --- An org-babel backend for the axiom-environment system -*- lexical-binding: t -*-
 
-;; Copyright (C) 2014 - 2015 Paul Onions
+;; Copyright (C) 2014 - 2017 Paul Onions
 
 ;; Author: Paul Onions
 ;; Keywords: Axiom, OpenAxiom, FriCAS
-;; Package-Version: 20171021.1448
+;; Package-Version: 20171022.1246
 
 ;; This file is free software, see the LICENCE file in this directory
 ;; for copying terms.
 
-;; Package-Requires: ((emacs "24.2") (axiom-environment "20150801"))
+;; Package-Requires: ((emacs "24.2") (axiom-environment "20171021"))
 
 ;;; Commentary:
 
@@ -18,11 +18,19 @@
 ;; development & presentation style with easy publishing to HTML, PDF,
 ;; etc.
 
+;; To enable this extension put
+;;
+;;  (require 'ob-axiom)
+;;
+;; in your ~/.emacs initialisation file.
+
 ;;; Code:
 (require 'ob)
 (require 'ob-ref)
 (require 'ob-comint)
 (require 'ob-eval)
+
+(require 'cl-lib)
 
 (require 'axiom-environment)
 
