@@ -8,7 +8,7 @@
 ;; Original author:  wandad guscheh <wandad.guscheh@fh-hagenberg.at>
 ;; Author:           Cayetano Santos
 ;; Keywords: vhdl
-;; Package-Version: 20171021.1257
+;; Package-Version: 20171023.808
 
 ;; Filename: vhdl-tools.el
 ;; Description: Utilities for navigating vhdl sources.
@@ -830,14 +830,15 @@ Beautifies source code blocks before editing."
 (defun vhdl-tools-vorg-prologue-header-argument ()
   "To be used as def argument to `prologue' in source block header."
   (save-excursion
-    (org-back-to-heading nil)
-    (let ((heading (car (cdr (org-element-headline-parser (point))))))
-      (format "\n-- %s %s\n"
-	      (if (> (plist-get heading ':level) 1)
-		  (make-string (- (plist-get heading ':level) 1)
-			       ?*)
-		(make-string 1 ?*))
-	      (plist-get heading ':raw-value)))))
+    (let ((debug-on-error nil))
+      (when (org-back-to-heading nil)
+	(let ((heading (car (cdr (org-element-headline-parser (point))))))
+	  (format "\n-- %s %s\n"
+		  (if (> (plist-get heading ':level) 1)
+		      (make-string (- (plist-get heading ':level) 1)
+				   ?*)
+		    (make-string 1 ?*))
+		  (plist-get heading ':raw-value)))))))
 
 ;;; Links
 ;;
@@ -1094,10 +1095,12 @@ Key bindings:
   (if (and (require 'ggtags)
 	   (require 'vc)
 	   (buffer-file-name)
+	   (executable-find "global")
 	   (file-exists-p
 	    (format "%sGTAGS"
 		    (vc-find-root (buffer-file-name) ".git"))))
       (progn
+
         ;; optional smartscan remapping
 	(when (and (require 'outshine)
 		   vhdl-tools-use-outshine
@@ -1108,6 +1111,7 @@ Key bindings:
 	    #'vhdl-tools-smcn-next)
 	  (define-key vhdl-mode-map [remap smartscan-symbol-go-backward]
 	    #'vhdl-tools-smcn-prev))
+
 	;; optional outshine use
 	(when (and (require 'outshine)
 		   vhdl-tools-use-outshine)
@@ -1117,17 +1121,39 @@ Key bindings:
 	  (setq-local outline-regexp vhdl-tools-outline-regexp)
 	  (define-key vhdl-tools-imenu-map (kbd "h")
 	    #'vhdl-tools-outshine-imenu-headers))
+
 	;; required
 	(ggtags-mode 1)
+
 	;; inheritate prog mode hooks: vhdl-mode doesn't
 	(run-hook-with-args 'prog-mode-hook)
+
 	;; puts the reference comments around in the source
 	;; vhdl file out of sight
 	(when vhdl-tools-vorg-tangle-comments-link
 	  (vhdl-tools--cleanup-tangled))
-        ;; a bit of feedback
+
+	;; I need to redefine the variable `vhdl-align-alist' as it expects a
+	;; hard-coded vhdl-mode major mode. I am just replacing here `vhdl-mode' by
+	;; `vhdl-tools-mode'.
+	(setq-local vhdl-align-alist
+		    (reverse
+		     (let ((orig-alist (copy-alist vhdl-align-alist))
+			   (new-vhdl-align-alist nil))
+		       ;;(message (format "\n\n" ))
+		       (while orig-alist
+			 (let* ((element (nth 0 orig-alist))
+				(element-content (cons 'vhdl-tools-mode
+						       (cdr element))))
+			   (setq new-vhdl-align-alist
+				 (push element-content new-vhdl-align-alist))
+			   (setq orig-alist (cdr orig-alist))))
+		       new-vhdl-align-alist)))
+
+	;; a bit of feedback
 	(when vhdl-tools-verbose
 	  (message "VHDL Tools enabled.")))
+
     ;; a bit of feedback
     (when vhdl-tools-verbose
       (message "VHDL Tools NOT enabled."))))

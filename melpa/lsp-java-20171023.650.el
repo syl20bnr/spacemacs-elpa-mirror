@@ -1,7 +1,7 @@
 ;;; lsp-java.el --- Java support for lsp-mode
 
 ;; Version: 1.0
-;; Package-Version: 20171021.330
+;; Package-Version: 20171023.650
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "3.0"))
 ;; Keywords: java
 ;; URL: https://github.com/emacs-lsp/lsp-java
@@ -84,7 +84,7 @@ The current directory is assumed to be the java project’s root otherwise."
 	(or (seq-some (lambda (file) (locate-dominating-file default-directory file)) project-types)
 	    default-directory)))))
 
-(lsp-define-stdio-client lsp-java "java" #'lsp-java-get--root (lsp-java--ls-command)
+(lsp-define-stdio-client lsp-java "java" #'lsp-java--get-root  (lsp-java--ls-command)
 			 :ignore-regexps
 			 '("^SLF4J: "
 			   "^Listening for transport dt_socket at address: "))

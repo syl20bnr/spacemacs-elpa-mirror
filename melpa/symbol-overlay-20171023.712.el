@@ -4,7 +4,7 @@
 
 ;; Author: wolray <wolray@foxmail.com>
 ;; Version: 3.6
-;; Package-Version: 20170825.2047
+;; Package-Version: 20171023.712
 ;; URL: https://github.com/wolray/symbol-overlay/
 ;; Keywords: faces, matching
 ;; Package-Requires: ((emacs "24.3"))
@@ -250,8 +250,7 @@ This only effects symbols in the current displayed window."
 If COLOR is non-nil, use it as the overlay face's background color.
 Otherwise use `symbol-overlay-temp-face' as the face."
   (let ((ov (make-overlay (match-beginning 0) (match-end 0))))
-    (if color (progn (overlay-put ov 'face `((:background ,color)
-					     (:foreground "black")))
+    (if color (progn (overlay-put ov 'face `(:background ,color :foreground "black"))
 		     (overlay-put ov 'keymap symbol-overlay-map)
 		     (overlay-put ov 'evaporate t)
 		     (overlay-put ov 'symbol symbol))
@@ -521,14 +520,16 @@ DIR must be 1 or -1."
                              (substring symbol 3 -3))
 	    new (symbol-overlay-get-symbol txt))
       (unless (string= new symbol)
-	(symbol-overlay-maybe-remove (symbol-overlay-assoc new))
-	(save-excursion
-	  (save-restriction
-	    (symbol-overlay-narrow scope)
-	    (goto-char (point-min))
-	    (let ((inhibit-modification-hooks t))
-	      (while (re-search-forward symbol nil t) (replace-match txt t)))))
-	(setq keyword (symbol-overlay-put-all new scope keyword)))
+        (let ((prev-overlay (symbol-overlay-assoc new)))
+	  (symbol-overlay-maybe-remove prev-overlay)
+	  (save-excursion
+	    (save-restriction
+	      (symbol-overlay-narrow scope)
+	      (goto-char (point-min))
+	      (let ((inhibit-modification-hooks t))
+	        (while (re-search-forward symbol nil t) (replace-match txt t)))))
+          (when prev-overlay
+	    (setq keyword (symbol-overlay-put-all new scope keyword)))))
       (when (string= new (symbol-overlay-get-symbol nil t))
 	(symbol-overlay-maybe-count keyword)))))
 
