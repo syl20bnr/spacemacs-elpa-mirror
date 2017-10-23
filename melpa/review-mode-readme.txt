@@ -42,6 +42,8 @@ C-c C-f a 等幅イタリックタグ(@<tti>)で囲む
 C-c C-f C-a 同上
 C-c C-f C-h ハイパーリンクタグ(@<href>)で囲む
 C-c C-f C-c コードタグ(@<code>)で囲む
+C-c C-f m 数式タグ(@<m>)で囲む
+C-c C-f C-m 同上
 C-c C-f C-n 出力付き索引化(@<idx>)する
 
 C-c C-p =見出し挿入(レベルを指定)
