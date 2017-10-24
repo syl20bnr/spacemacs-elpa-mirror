@@ -8,7 +8,7 @@
 ;; Original author:  wandad guscheh <wandad.guscheh@fh-hagenberg.at>
 ;; Author:           Cayetano Santos
 ;; Keywords: vhdl
-;; Package-Version: 20171023.808
+;; Package-Version: 20171024.149
 
 ;; Filename: vhdl-tools.el
 ;; Description: Utilities for navigating vhdl sources.
@@ -539,9 +539,11 @@ When no symbol at point, move point to indentation."
   (let ((vhdl-tools-thing (vhdl-tools--get-name)))
     (vhdl-tools--push-marker)
     (save-excursion
-      ;; get back to entity
-      (search-backward-regexp "^entity")
-      (forward-word)
+      ;; first, try to search forward
+      (when (not (search-forward-regexp "^entity" nil t))
+	;; if not found, try to search backward
+	(search-backward-regexp "^entity")
+	(forward-word))
       (forward-char 2)
       ;; Jump by searching with prefilling minubuffer
       (funcall `(lambda ()
@@ -550,11 +552,16 @@ When no symbol at point, move point to indentation."
 			;; (insert (format "^.* : \\(entity work.\\)*%s$" ,(vhdl-tools--get-name)))
 			(insert (format "^.*: %s$ vhd" ,(vhdl-tools--get-name))))
 		    (call-interactively 'helm-grep-do-git-grep (vc-find-root (buffer-file-name) ".git") nil))))
-      ;; search, when nil, do nothing
+      ;; search except if nil
       (when vhdl-tools-thing
-	(search-forward-regexp (format "%s " vhdl-tools-thing) nil t)
-	(vhdl-tools--fold)
-	(vhdl-tools--post-jump-function)))))
+	;; limit the search to end of paragraph (end of instance)
+	(let ((max-point (save-excursion
+			   (end-of-paragraph-text)
+			   (point))))
+	  (search-forward-regexp
+	   (format "%s " vhdl-tools-thing) max-point t)
+	  (vhdl-tools--fold)
+	  (vhdl-tools--post-jump-function))))))
 
 ;;; SmartScan
 

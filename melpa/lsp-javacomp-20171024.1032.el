@@ -1,8 +1,8 @@
-;;; lsp-javacomp.el --- Provide Java IDE features powered by JavaComp.
+;;; lsp-javacomp.el --- Provide Java IDE features powered by JavaComp.  -*- lexical-binding: t -*-
 
 ;; Version: 1.0
-;; Package-Version: 20171011.422
-;; Package-Requires: ((emacs "25.1") (lsp-mode "2.0") (s "1.2.0"))
+;; Package-Version: 20171024.1032
+;; Package-Requires: ((emacs "25.1") (lsp-mode "3.0") (s "1.2.0"))
 ;; Keywords: java
 ;; URL: https://github.com/tigersoldier/lsp-javacomp
 
@@ -125,8 +125,7 @@ See https://developer.github.com/v3/repos/releases/#get-the-latest-release
             (url-copy-file jar-url (lsp-javacomp--server-jar-path) t))
         (error "Fail to get the URL of the JavaComp server")))))
 
-(lsp-define-stdio-client 'java-mode "javacomp" 'stdio #'lsp-javacomp--get-root
-			 "JavaComp Server"
+(lsp-define-stdio-client lsp-java "java" #'lsp-javacomp--get-root
 			 (lsp-javacomp--command)
 			 :ignore-regexps '("^SLF4J: "
 					   "^Listening for transport dt_socket at address: "))
