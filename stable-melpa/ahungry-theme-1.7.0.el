@@ -5,8 +5,8 @@
 ;; Author: Matthew Carter <m@ahungry.com>
 ;; Maintainer: Matthew Carter <m@ahungry.com>
 ;; URL: https://github.com/ahungry/color-theme-ahungry
-;; Package-Version: 1.6.0
-;; Version: 1.6.0
+;; Package-Version: 1.7.0
+;; Version: 1.7.0
 ;; Keywords: ahungry palette color theme emacs color-theme deftheme
 ;; Package-Requires: ((emacs "24"))
 
@@ -36,6 +36,9 @@
 ;; to a dark background.
 
 ;;; News:
+
+;;;; Changes since 1.6.0:
+;; - Add man/woman faces.
 
 ;;;; Changes since 1.5.0:
 ;; - Bump up font size
@@ -291,6 +294,8 @@ Default value:
    '(button ((t (:foreground "#0055ff" :bold t :underline t))))
    '(Man-overstrike ((t (:foreground "yellow" :bold t))))
    '(Man-underline ((t (:foreground "orange" :underline t))))
+   '(woman-bold ((t (:foreground "yellow" :bold t))))
+   '(woman-italic ((t (:foreground "orange" :underline t))))
    )
   (custom-theme-set-variables
    'ahungry

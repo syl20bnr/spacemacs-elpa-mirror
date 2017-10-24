@@ -2,7 +2,7 @@
 
 ;; Author: Ono Hiroko <azazabc123@gmail.com>
 ;; Keywords: tools, docs
-;; Package-Version: 20170702.1859
+;; Package-Version: 20171023.1929
 ;; Package-Requires: ((emacs "24.3"))
 ;; X-URL: https://github.com/kuanyui/tldr.el
 ;; Version: {{VERSION}}
@@ -65,11 +65,16 @@
   :group 'tldr
   :type 'string)
 
-(defcustom tldr-enabled-categories '()
-  "If nil, search tldr files according to your system-type automatically."
+(defcustom tldr-enabled-categories
+  (cond ((member system-type '(gnu gnu/linux gnu/kfreebsd cygwin))
+         '("common" "linux"))
+        ((member system-type '(darwin))
+         '("common" "osx"))
+        (t
+         '("common")))
+  "List of enabled tldr categories."
   :group 'tldr
-  :type 'list  ; [HELP] I don't know how to make checkbox for a string list
-  :options '("common" "linux" "osx" "sunos"))
+  :type '(repeat string))  ; [HELP] I don't know how to make checkbox for a string list
 
 (define-derived-mode tldr-mode help-mode "tldr"
   "Lookup tldr in Emacs"
@@ -144,16 +149,6 @@
         (message "Now tldr docs is updated!"))))
 
 
-
-(defun tldr-get-system-name ()
-  (or tldr-enabled-categories
-      (cond ((member system-type '(gnu gnu/linux gnu/kfreebsd cygwin))
-             '("common" "linux"))
-            ((member system-type '(darwin))
-             '("common" "osx"))
-            (t
-             '("common")))))
-
 (defun tldr-get-commands-list ()
   "For `completing-read'"
   (mapcar (lambda (file.md) (substring file.md 0 -3))
@@ -164,7 +159,7 @@
                                        (convert-standard-filename
                                         (concat "pages/" x))
                                        tldr-directory-path)))
-                                   (tldr-get-system-name)))))
+                                   tldr-enabled-categories))))
 
 (defun tldr-get-file-path-from-command-name (command)
   (cl-find-if #'file-exists-p
@@ -173,7 +168,7 @@
                          (convert-standard-filename
                           (format "pages/%s/%s.md" system command))
                          tldr-directory-path))
-                      (tldr-get-system-name))))
+                      tldr-enabled-categories)))
 
 (defun tldr-render-markdown (command)
   (let* ((file-path (tldr-get-file-path-from-command-name command))
