@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20171020.503
-;; Version: 2.0.15
+;; Package-Version: 20171025.1028
+;; Version: 2.0.16
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -673,7 +673,7 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
 				(concat easy-hugo-basedir "static/" easy-hugo-image-directory "/")))))
      (insert (concat (format "<img src=\"%s%s\""
 			     easy-hugo-url
-			     (replace-regexp-in-string ".*/static/\\(.*\\)" "/\\1" file))
+			     (concat "/" easy-hugo-image-directory "/" (file-name-nondirectory file)))
 		     " alt=\"\" width=\"100%\"/>")))))
 
 ;;;###autoload
@@ -684,7 +684,7 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
 			       (expand-file-name easy-hugo-default-picture-directory)
 			       t
 			       (expand-file-name easy-hugo-default-picture-directory))))
-     (copy-file file (concat easy-hugo-basedir "static/" easy-hugo-image-directory "/" (file-name-nondirectory file)))
+     (copy-file file (expand-file-name (concat easy-hugo-basedir "static/" easy-hugo-image-directory "/" (file-name-nondirectory file))))
      (insert (concat (format "<img src=\"%s%s\""
 			     easy-hugo-url
 			     (concat "/" easy-hugo-image-directory "/" (file-name-nondirectory file)))
@@ -696,7 +696,7 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
   (interactive
    (let ((url (read-string "URL: " (if (fboundp 'gui-get-selection) (gui-get-selection))))
 	 (file (read-file-name "Save as: "
-			       (concat easy-hugo-basedir "static/" easy-hugo-image-directory "/")
+			       (expand-file-name (concat easy-hugo-basedir "static/" easy-hugo-image-directory "/"))
 			       (car (last (split-string (substring-no-properties (gui-get-selection)) "/")))
 			       nil)))
      (when (file-exists-p (file-truename file))
@@ -789,7 +789,7 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
   "Create a new post with hugo.
 POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mmark' or '.html'."
   (interactive (list (read-from-minibuffer "Filename: " `(,easy-hugo-default-ext . 1) nil nil nil)))
-  (let ((filename (concat easy-hugo-postdir "/" post-file))
+  (let ((filename (expand-file-name (concat easy-hugo-postdir "/" post-file)))
         (file-ext (file-name-extension post-file)))
     (when (not (member file-ext easy-hugo--formats))
       (error "Please enter .%s or .org or .%s or .rst or .mmark or .%s file name" easy-hugo-markdown-extension easy-hugo-asciidoc-extension easy-hugo-html-extension))
@@ -797,14 +797,14 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
      (when (file-exists-p (file-truename filename))
        (error "%s already exists!" (concat easy-hugo-basedir filename)))
      (if (<= 0.25 (easy-hugo--version))
-	 (call-process "hugo" nil "*hugo*" t "new" (replace-regexp-in-string "^content/" "" filename t t))
+	 (call-process "hugo" nil "*hugo*" t "new" (file-relative-name filename (expand-file-name "content" easy-hugo-basedir)))
        (progn
 	 (if (or (string-equal file-ext easy-hugo-markdown-extension)
 		 (string-equal file-ext easy-hugo-asciidoc-extension)
 		 (string-equal file-ext "rst")
 		 (string-equal file-ext "mmark")
 		 (string-equal file-ext easy-hugo-html-extension))
-	     (call-process "hugo" nil "*hugo*" t "new" (replace-regexp-in-string "^content/" "" filename t t)))))
+	     (call-process "hugo" nil "*hugo*" t "new" (file-relative-name filename (expand-file-name "content" easy-hugo-basedir))))))
      (when (get-buffer "*hugo*")
        (kill-buffer "*hugo*"))
      (find-file filename)
@@ -918,7 +918,7 @@ If not applicable, return the default preview."
   "Execute `easy-hugo-github-deploy-script' script locate at `easy-hugo-basedir'."
   (interactive)
   (easy-hugo-with-env
-   (let ((deployscript (file-truename (concat easy-hugo-basedir easy-hugo-github-deploy-script))))
+   (let ((deployscript (file-truename (expand-file-name easy-hugo-github-deploy-script easy-hugo-basedir))))
      (unless (executable-find deployscript)
        (error "%s do not execute" deployscript))
      (let ((ret (call-process (shell-quote-argument deployscript) nil "*hugo-github-deploy*" t)))
@@ -1328,47 +1328,51 @@ Optional prefix ARG says how many lines to move; default is one line."
         (file-ext (file-name-extension post-file)))
     (when (not (member file-ext easy-hugo--formats))
       (error "Please enter .%s or .org or .%s or .rst or .mmark or .%s file name" easy-hugo-markdown-extension easy-hugo-asciidoc-extension easy-hugo-html-extension))
-    (easy-hugo-with-env
-     (when (file-exists-p (file-truename filename))
-       (error "%s already exists!" (concat easy-hugo-basedir filename)))
-     (unless (or (string-match "^$" (thing-at-point 'line))
-		 (eq (point) (point-max))
-		 (> (+ 1 easy-hugo--forward-char) (length (thing-at-point 'line))))
-       (let ((name (expand-file-name
-		    (concat easy-hugo-postdir "/" (substring (thing-at-point 'line) easy-hugo--forward-char -1))
-		    easy-hugo-basedir)))
-	 (rename-file name filename 1)
-	 (easy-hugo-refresh))))))
+    (when (equal (buffer-name (current-buffer)) easy-hugo--buffer-name)
+      (easy-hugo-with-env
+       (when (file-exists-p (file-truename filename))
+	 (error "%s already exists!" (concat easy-hugo-basedir filename)))
+       (unless (or (string-match "^$" (thing-at-point 'line))
+		   (eq (point) (point-max))
+		   (> (+ 1 easy-hugo--forward-char) (length (thing-at-point 'line))))
+	 (let ((name (expand-file-name
+		      (concat easy-hugo-postdir "/" (substring (thing-at-point 'line) easy-hugo--forward-char -1))
+		      easy-hugo-basedir)))
+	   (rename-file name filename 1)
+	   (easy-hugo-refresh)))))))
 
 (defun easy-hugo-undraft ()
   "Undraft file on the pointer."
   (interactive)
-  (easy-hugo-with-env
-   (when (> 0.25 (easy-hugo--version))
-     (error "'easy-hugo-undraft' requires hugo 0.25 or higher"))
-   (unless (or (string-match "^$" (thing-at-point 'line))
-	       (eq (point) (point-max))
-	       (> (+ 1 easy-hugo--forward-char) (length (thing-at-point 'line))))
-     (let ((file (expand-file-name
-		  (concat easy-hugo-postdir "/" (substring (thing-at-point 'line) easy-hugo--forward-char -1))
-		  easy-hugo-basedir)))
-       (when (and (file-exists-p file)
-		  (not (file-directory-p file)))
-	 (shell-command-to-string (concat "hugo undraft " file))
-	 (easy-hugo-refresh))))))
+  (when (equal (buffer-name (current-buffer)) easy-hugo--buffer-name)
+    (easy-hugo-with-env
+     (when (> 0.25 (easy-hugo--version))
+       (error "'easy-hugo-undraft' requires hugo 0.25 or higher"))
+     (unless (or (string-match "^$" (thing-at-point 'line))
+		 (eq (point) (point-max))
+		 (> (+ 1 easy-hugo--forward-char) (length (thing-at-point 'line))))
+       (let ((file (expand-file-name
+		    (concat easy-hugo-postdir "/" (substring (thing-at-point 'line) easy-hugo--forward-char -1))
+		    easy-hugo-basedir)))
+	 (when (and (file-exists-p file)
+		    (not (file-directory-p file)))
+	   (shell-command-to-string (concat "hugo undraft " file))
+	   (easy-hugo-refresh)))))))
 
 (defun easy-hugo-open ()
   "Open the file on the pointer."
   (interactive)
-  (unless (or (string-match "^$" (thing-at-point 'line))
-	      (eq (point) (point-max))
-	      (> (+ 1 easy-hugo--forward-char) (length (thing-at-point 'line))))
-    (let ((file (expand-file-name
-		 (concat easy-hugo-postdir "/" (substring (thing-at-point 'line) easy-hugo--forward-char -1))
-		 easy-hugo-basedir)))
-      (when (and (file-exists-p file)
-		 (not (file-directory-p file)))
-	(find-file file)))))
+  (when (equal (buffer-name (current-buffer)) easy-hugo--buffer-name)
+    (easy-hugo-with-env
+     (unless (or (string-match "^$" (thing-at-point 'line))
+		 (eq (point) (point-max))
+		 (> (+ 1 easy-hugo--forward-char) (length (thing-at-point 'line))))
+       (let ((file (expand-file-name
+		    (concat easy-hugo-postdir "/" (substring (thing-at-point 'line) easy-hugo--forward-char -1))
+		    easy-hugo-basedir)))
+	 (when (and (file-exists-p file)
+		    (not (file-directory-p file)))
+	   (find-file file)))))))
 
 (defun easy-hugo-open-basedir ()
   "Open `easy-hugo-basedir' with dired."
