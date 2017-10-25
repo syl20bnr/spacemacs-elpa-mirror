@@ -5,8 +5,8 @@
 ;; Author: Matthew Carter <m@ahungry.com>
 ;; Maintainer: Matthew Carter <m@ahungry.com>
 ;; URL: https://github.com/ahungry/color-theme-ahungry
-;; Package-Version: 20171023.1953
-;; Version: 1.7.0
+;; Package-Version: 20171024.2208
+;; Version: 1.8.0
 ;; Keywords: ahungry palette color theme emacs color-theme deftheme
 ;; Package-Requires: ((emacs "24"))
 
@@ -36,6 +36,9 @@
 ;; to a dark background.
 
 ;;; News:
+
+;;;; Changes since 1.7.0:
+;; - Make helm faces easier on the eyes (less backgrounds).
 
 ;;;; Changes since 1.6.0:
 ;; - Add man/woman faces.
@@ -264,11 +267,18 @@ Default value:
    '(magit-section-highlight ((t (:weight bold))));;:foreground "#ffffff"))))
    '(minibuffer-prompt ((t (:foreground "#0055ff" :bold t))))
    '(web-mode-html-tag-bracket-face ((t (:foreground "#666666"))))
+   '(helm-ff-directory ((t (:background "gold1" :foreground "#000000" :bold t))))
+   '(helm-ff-dotted-directory ((t (:foreground "#666"))))
+   '(helm-ff-dotted-symlink-directory ((t (:foreground "#999"))))
    '(helm-grep-cmd-line ((t (:foreground "#0022aa"))))
    '(helm-grep-finish ((t (:foreground "#0022aa"))))
-   '(helm-selection ((t (:foreground "#ff0099" :italic t :bold t :background "#f2e997"))))
+   '(helm-selection ((t (:foreground "#cf0066" :bold t))))
    '(helm-match ((t (:foreground "gold1"))))
-   '(helm-visible-mark ((t (:background "#f2e997" :foreground "#ff0099" :bold nil :italic nil))))
+   '(helm-visible-mark ((t (:foreground "#cf0066" :bold nil :italic t))))
+   '(helm-source-header ((t (:foreground "#36c" :bold t :italic t))))
+   '(helm-swoop-target-line-block-face ((t (:foreground "#ff6" :italic t))))
+   '(helm-swoop-target-line-face ((t (:foreground "#ff6" :italic t))))
+   '(helm-swoop-target-word-face ((t (:background "#000" :bold nil :italic t :underline t))))
    '(erc-nick-default-face ((t (:foreground "#ff0099"))))
    '(erc-current-nick-face ((t (:foreground "#0099ff"))))
    '(erc-input-face ((t (:foreground "#0099ff"))))
@@ -296,6 +306,7 @@ Default value:
    '(Man-underline ((t (:foreground "orange" :underline t))))
    '(woman-bold ((t (:foreground "yellow" :bold t))))
    '(woman-italic ((t (:foreground "orange" :underline t))))
+   '(evil-ex-lazy-highlight ((t (:foreground "orange" :italic t :bold t))))
    )
   (custom-theme-set-variables
    'ahungry

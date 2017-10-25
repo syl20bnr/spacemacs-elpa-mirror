@@ -2,8 +2,8 @@
 
 ;; Author: Natalie Weizenbaum
 ;; URL: https://github.com/nex3/dart-mode
-;; Package-Version: 20171024.1706
-;; Version: 1.0.1
+;; Package-Version: 20171024.2137
+;; Version: 1.0.2
 ;; Package-Requires: ((emacs "24.5") (cl-lib "0.5") (dash "2.10.0") (flycheck "0.23") (s "1.11"))
 ;; Keywords: language
 
@@ -792,11 +792,14 @@ directory or the current file directory to the analysis roots."
   (add-to-list 'flycheck-checkers 'dart-analysis-server))
 
 (defun dart-start-analysis-server ()
-  "Start the Dart analysis server."
+  "Start the Dart analysis server.
+
+Initializes analysis server support for all `dart-mode' buffers."
   (when dart--analysis-server
-    (kill-process
-     (dart--analysis-server-process dart--analysis-server))
+    (-let [process (dart--analysis-server-process dart--analysis-server)]
+      (when (process-live-p process) (kill-process process)))
     (kill-buffer (dart--analysis-server-buffer dart--analysis-server)))
+
   (let* ((process-connection-type nil)
          (dart-process
           (start-process "dart-analysis-server"
@@ -806,7 +809,13 @@ directory or the current file directory to the analysis roots."
                          "--no-error-notification")))
     (set-process-query-on-exit-flag dart-process nil)
     (setq dart--analysis-server
-          (dart--analysis-server-create dart-process))))
+          (dart--analysis-server-create dart-process)))
+
+  (dolist (buffer (buffer-list))
+    (with-current-buffer buffer
+      (when (eq major-mode 'dart-mode)
+        (dart--start-analysis-server-for-current-buffer)
+        (when (buffer-modified-p buffer) (dart-add-analysis-overlay))))))
 
 (defun dart--analysis-server-create (process)
   "Create a Dart analysis server from PROCESS."
@@ -918,6 +927,14 @@ The constructed request will call METHOD with optional PARAMS."
     (push (cons dart--analysis-server-next-id
                 (or callback #'dart--analysis-server-on-error-callback))
           dart--analysis-server-callbacks)
+
+    (cond
+     ((not dart--analysis-server)
+      (message "Starting Dart analysis server.")
+      (dart-start-analysis-server))
+     ((not (process-live-p (dart--analysis-server-process dart--analysis-server)))
+      (message "Dart analysis server crashed, restarting.")
+      (dart-start-analysis-server)))
 
     (dart-info (concat "Sent: " request))
     (process-send-string (dart--analysis-server-process dart--analysis-server)
