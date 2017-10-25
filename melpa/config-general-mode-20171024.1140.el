@@ -19,8 +19,8 @@
 ;; Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 ;; USA
 
-;; Version: 0.02
-;; Package-Version: 20170719.446
+;; Version: 0.03
+;; Package-Version: 20171024.1140
 ;; Author: T.v.Dein <tlinden@cpan.org>
 ;; Keywords: files
 ;; URL: https://github.com/tlinden/config-general-mode
@@ -325,6 +325,7 @@ Argument LIMIT limits the search."
     (modify-syntax-entry ?\` "\"\"" st) ;; make ` electric too
     (modify-syntax-entry ?< "." st)
     (modify-syntax-entry ?> "." st)
+    (modify-syntax-entry ?\; "." st)
     st)
   "Syntax table for `config-general-mode'.")
 

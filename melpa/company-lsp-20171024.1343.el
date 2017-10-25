@@ -1,7 +1,7 @@
 ;;; company-lsp.el --- Company completion backend for lsp-mode.  -*- lexical-binding: t -*-
 
 ;; Version: 1.0
-;; Package-Version: 20171023.1426
+;; Package-Version: 20171024.1343
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "2.0") (company "0.9.0") (s "1.2.0"))
 ;; URL: https://github.com/tigersoldier/company-lsp
 
@@ -65,7 +65,7 @@ as the prefix to be completed, or a cons cell of (prefix . t) to bypass
       (let* ((max-trigger-len (apply 'max (mapcar (lambda (trigger-char)
                                                     (length trigger-char))
                                                   trigger-chars)))
-             (trigger-regex (s-join "\\|" trigger-chars))
+             (trigger-regex (s-join "\\|" (mapcar #'regexp-quote trigger-chars)))
              (symbol-cons (company-grab-symbol-cons trigger-regex max-trigger-len)))
         ;; Some major modes define trigger characters as part of the symbol. For
         ;; example "@" is considered a vaild part of symbol in java-mode.

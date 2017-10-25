@@ -1,7 +1,7 @@
 ;;; lsp-javacomp.el --- Provide Java IDE features powered by JavaComp.  -*- lexical-binding: t -*-
 
 ;; Version: 1.0
-;; Package-Version: 20171024.1032
+;; Package-Version: 20171024.1547
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "3.0") (s "1.2.0"))
 ;; Keywords: java
 ;; URL: https://github.com/tigersoldier/lsp-javacomp
@@ -26,9 +26,8 @@
 
 ;; To use it, add the code below to your .emacs file:
 
-;;   (with-eval-after-load 'lsp-mode
-;;     (require 'lsp-javacomp))
-;;   (add-hook 'java-mode-hook 'lsp-mode)
+;;    (require 'lsp-javacomp)
+;;    (add-hook 'java-mode-hook #'lsp-javacomp-enable)
 
 ;;; Code:
 
@@ -125,10 +124,10 @@ See https://developer.github.com/v3/repos/releases/#get-the-latest-release
             (url-copy-file jar-url (lsp-javacomp--server-jar-path) t))
         (error "Fail to get the URL of the JavaComp server")))))
 
-(lsp-define-stdio-client lsp-java "java" #'lsp-javacomp--get-root
-			 (lsp-javacomp--command)
-			 :ignore-regexps '("^SLF4J: "
-					   "^Listening for transport dt_socket at address: "))
+(lsp-define-stdio-client lsp-javacomp "java" #'lsp-javacomp--get-root nil
+                         :command-fn #'lsp-javacomp--command
+                         :ignore-regexps '("^SLF4J: "
+                                           "^Listening for transport dt_socket at address: "))
 
 (provide 'lsp-javacomp)
 ;;; lsp-javacomp.el ends here
