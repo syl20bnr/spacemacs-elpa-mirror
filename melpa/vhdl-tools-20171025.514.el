@@ -8,7 +8,7 @@
 ;; Original author:  wandad guscheh <wandad.guscheh@fh-hagenberg.at>
 ;; Author:           Cayetano Santos
 ;; Keywords: vhdl
-;; Package-Version: 20171024.149
+;; Package-Version: 20171025.514
 
 ;; Filename: vhdl-tools.el
 ;; Description: Utilities for navigating vhdl sources.
@@ -179,6 +179,20 @@ Needed to determine end of name."
   :type 'boolean :group 'vhdl-tools)
 
 ;;;; Internal Variables
+
+(defconst vhdl-tools-vorg-vhdl-align-alist
+  (reverse
+   (let ((orig-alist (copy-alist vhdl-align-alist))
+	 (new-vhdl-align-alist nil))
+     ;;(message (format "\n\n" ))
+     (while orig-alist
+       (let* ((element (nth 0 orig-alist))
+	      (element-content (cons 'vhdl-tools-mode
+				     (cdr element))))
+	 (setq new-vhdl-align-alist
+	       (push element-content new-vhdl-align-alist))
+	 (setq orig-alist (cdr orig-alist))))
+     new-vhdl-align-alist)))
 
 (defvar vhdl-tools--jump-into-module-name nil)
 
@@ -470,7 +484,7 @@ Declare a key-bind to get back to the original point."
     (save-excursion
       ;; case of component instantiation
       ;; locate component name to jump into
-      (if (search-backward-regexp "port map" nil t)
+      (if (search-backward-regexp "\\(?:\\(?:generic\\|port\\) map\\)" nil t)
 	  (progn
 	    (search-backward-regexp "\\s-*:\\s-"  nil t)
 	    ;; in case there is a comment at the end of the entity line
@@ -1091,6 +1105,11 @@ Beautifies source code blocks before editing."
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.vhd" . vhdl-tools-mode))
 
+;; I need to redefine the variable `vhdl-align-alist' as it expects a
+;; hard-coded vhdl-mode major mode. I am just replacing here `vhdl-mode' by
+;; `vhdl-tools-mode'.
+(setq vhdl-align-alist vhdl-tools-vorg-vhdl-align-alist)
+
 ;;;###autoload
 (define-derived-mode vhdl-tools-mode vhdl-mode "vtool"
   "Utilities for navigating vhdl sources.
@@ -1139,23 +1158,6 @@ Key bindings:
 	;; vhdl file out of sight
 	(when vhdl-tools-vorg-tangle-comments-link
 	  (vhdl-tools--cleanup-tangled))
-
-	;; I need to redefine the variable `vhdl-align-alist' as it expects a
-	;; hard-coded vhdl-mode major mode. I am just replacing here `vhdl-mode' by
-	;; `vhdl-tools-mode'.
-	(setq-local vhdl-align-alist
-		    (reverse
-		     (let ((orig-alist (copy-alist vhdl-align-alist))
-			   (new-vhdl-align-alist nil))
-		       ;;(message (format "\n\n" ))
-		       (while orig-alist
-			 (let* ((element (nth 0 orig-alist))
-				(element-content (cons 'vhdl-tools-mode
-						       (cdr element))))
-			   (setq new-vhdl-align-alist
-				 (push element-content new-vhdl-align-alist))
-			   (setq orig-alist (cdr orig-alist))))
-		       new-vhdl-align-alist)))
 
 	;; a bit of feedback
 	(when vhdl-tools-verbose
@@ -1212,9 +1214,10 @@ Key bindings:
 	#'vhdl-tools-vorg-smcn-next)
       (define-key vhdl-tools-vorg-mode-map [remap smartscan-symbol-go-backward]
 	#'vhdl-tools-vorg-smcn-prev))
-    ;; make the hook local and add defun
-    (add-to-list (make-local-variable 'org-src-mode-hook)
-    		 'vhdl-tools-vorg-src-edit-beautify)
+
+    ;; update hook
+    (add-to-list 'org-src-mode-hook 'vhdl-tools-vorg-src-edit-beautify)
+
     ;; This auto removes any mode line on top of the vorg file before exporting
     (add-hook 'org-export-before-processing-hook
 	      (lambda (arg) (save-excursion
@@ -1222,6 +1225,7 @@ Key bindings:
 			 (re-search-forward "-\\*- mode: vhdl-tools-vorg -\\*-")
 			 (delete-region (point-min) (point))))
 	      nil t)
+
     ;; a bit of feedback
     (when vhdl-tools-verbose
       (message "VHDL Tools Vorg enabled."))))

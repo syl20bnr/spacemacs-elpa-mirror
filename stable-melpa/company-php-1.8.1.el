@@ -2,7 +2,7 @@
 ;; Copyright (C) 2014 - 2016 jim
 ;; Author: xcwenn@qq.com [https://github.com/xcwen]
 ;; URL: https://github.com/xcwen/ac-php
-;; Package-Version: 1.8
+;; Package-Version: 1.8.1
 ;; Keywords: completion, convenience, intellisense
 ;; Package-Requires: ( (cl-lib "0.5") (ac-php-core "1") (company "0.9")  )
 
