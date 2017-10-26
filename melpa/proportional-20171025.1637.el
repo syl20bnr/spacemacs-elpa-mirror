@@ -3,8 +3,8 @@
 ;; Author: Johannes Goslar
 ;; Created: 30 June 2016
 ;; Version: 0.1.0
-;; Package-Version: 20170628.137
-;; Package-Requires: ((emacs "25.1") (use-package "2.3"))
+;; Package-Version: 20171025.1637
+;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: faces
 ;; URL: https://github.com/ksjogo/proportional
 
