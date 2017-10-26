@@ -4,7 +4,7 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20171025.1340
+;; Package-Version: 20171025.1516
 ;; Version: 2.0.16
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -798,13 +798,13 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
   "Create a new post with hugo.
 POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mmark' or '.html'."
   (interactive (list (read-from-minibuffer "Filename: " `(,easy-hugo-default-ext . 1) nil nil nil)))
-  (let ((filename (expand-file-name (concat easy-hugo-postdir "/" post-file)))
-        (file-ext (file-name-extension post-file)))
-    (when (not (member file-ext easy-hugo--formats))
-      (error "Please enter .%s or .org or .%s or .rst or .mmark or .%s file name" easy-hugo-markdown-extension easy-hugo-asciidoc-extension easy-hugo-html-extension))
-    (easy-hugo-with-env
+  (easy-hugo-with-env
+   (let ((filename (expand-file-name post-file easy-hugo-postdir))
+	 (file-ext (file-name-extension post-file)))
+     (when (not (member file-ext easy-hugo--formats))
+       (error "Please enter .%s or .org or .%s or .rst or .mmark or .%s file name" easy-hugo-markdown-extension easy-hugo-asciidoc-extension easy-hugo-html-extension))
      (when (file-exists-p (file-truename filename))
-       (error "%s already exists!" (concat easy-hugo-basedir filename)))
+       (error "%s already exists!" filename))
      (if (<= 0.25 (easy-hugo--version))
 	 (call-process "hugo" nil "*hugo*" t "new" (file-relative-name filename (expand-file-name "content" easy-hugo-basedir)))
        (progn
@@ -1333,21 +1333,21 @@ Optional prefix ARG says how many lines to move; default is one line."
 (defun easy-hugo-rename (post-file)
   "Renames file on the pointer to POST-FILE."
   (interactive (list (read-from-minibuffer "Rename: " `(,easy-hugo-default-ext . 1) nil nil nil)))
-  (let ((filename (expand-file-name post-file easy-hugo-postdir))
+  (let ((newname (expand-file-name post-file easy-hugo-postdir))
         (file-ext (file-name-extension post-file)))
     (when (not (member file-ext easy-hugo--formats))
       (error "Please enter .%s or .org or .%s or .rst or .mmark or .%s file name" easy-hugo-markdown-extension easy-hugo-asciidoc-extension easy-hugo-html-extension))
     (when (equal (buffer-name (current-buffer)) easy-hugo--buffer-name)
       (easy-hugo-with-env
-       (when (file-exists-p (file-truename filename))
-	 (error "%s already exists!" filename))
+       (when (file-exists-p (file-truename newname))
+	 (error "%s already exists!" newname))
        (unless (or (string-match "^$" (thing-at-point 'line))
 		   (eq (point) (point-max))
 		   (> (+ 1 easy-hugo--forward-char) (length (thing-at-point 'line))))
-	 (let ((name (expand-file-name
-		      (concat easy-hugo-postdir "/" (substring (thing-at-point 'line) easy-hugo--forward-char -1))
-		      easy-hugo-basedir)))
-	   (rename-file name filename 1)
+	 (let ((oldname (expand-file-name
+			 (substring (thing-at-point 'line) easy-hugo--forward-char -1)
+			 easy-hugo-postdir)))
+	   (rename-file oldname newname 1)
 	   (easy-hugo-refresh)))))))
 
 (defun easy-hugo-undraft ()

@@ -1,7 +1,7 @@
 ;;; company-lsp.el --- Company completion backend for lsp-mode.  -*- lexical-binding: t -*-
 
 ;; Version: 1.0
-;; Package-Version: 20171024.1343
+;; Package-Version: 20171025.1757
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "2.0") (company "0.9.0") (s "1.2.0"))
 ;; URL: https://github.com/tigersoldier/company-lsp
 
@@ -47,6 +47,14 @@ to nil, each incremental completion triggers a completion request
 to the language server."
   :type 'boolean
   :group 'company-lsp)
+
+(defcustom company-lsp-async nil
+  "Whether or not to use async operations to fetch data."
+  :type 'boolean
+  :group 'company-lsp)
+
+(defvar-local company-lsp--pending-requests (make-hash-table)
+  "Hash table where keys are requests id and values are company's callback.")
 
 (defun company-lsp--trigger-characters ()
   "Return a list of completion trigger characters specified by server."
@@ -106,6 +114,31 @@ CANDIDATE is a string returned by `company-lsp--make-candidate'."
       (delete-char (length label))
       (insert insert-text))))
 
+(defun company-lsp--on-completion (response callback)
+  "Give the server RESPONSE to company's CALLBACK."
+  (let* ((items (cond ((hash-table-p response) (gethash "items" response nil))
+		      ((sequencep response) response))))
+    (funcall callback (mapcar #'company-lsp--make-candidate
+			      (lsp--sort-completions items)))))
+
+(defun company-lsp--on-message (p msg)
+  "Function called just after `lsp--parser-on-message' using `advice-add'.
+This hook processes all the responses and filter the ones with an id that is in
+`company-lsp-ids'.
+P and MSG are the parameters from `lsp--parser-on-message'."
+  (let* ((json-array-type 'list)
+	 (json-object-type 'hash-table)
+	 (json-false nil)
+	 (json-data (json-read-from-string msg)))
+    (pcase (lsp--get-message-type json-data)
+      ('response
+       (when-let* ((id-msg (gethash "id" json-data nil))
+		   (callback (gethash id-msg company-lsp--pending-requests)))
+	 (remhash id-msg company-lsp--pending-requests)
+	 (company-lsp--on-completion (lsp--parser-response-result p) callback))))))
+
+(advice-add 'lsp--parser-on-message :after 'company-lsp--on-message)
+
 ;;;###autoload
 (defun company-lsp (command &optional arg &rest _)
   "Define a company backend for lsp-mode.
@@ -120,17 +153,16 @@ See the documentation of `company-backends' for COMMAND and ARG."
              (or (company-lsp--completion-prefix) 'stop)))
     (candidates
      (cons :async
-           #'(lambda (callback)
-               (lsp--send-changes lsp--cur-workspace)
-               (let* ((resp (lsp--send-request (lsp--make-request
-                                                "textDocument/completion"
-                                                (lsp--text-document-position-params))))
-                      (items (cond
-                              ((null resp) nil)
-                              ((hash-table-p resp) (gethash "items" resp nil))
-                              ((sequencep resp) resp))))
-                 (funcall callback (mapcar #'company-lsp--make-candidate
-                                           (lsp--sort-completions items)))))))
+	   #'(lambda (callback)
+	       (lsp--send-changes lsp--cur-workspace)
+	       (let* ((resp (lsp--send-request (lsp--make-request
+						"textDocument/completion"
+						(lsp--text-document-position-params))
+					       company-lsp-async))
+		      (id (lsp--workspace-last-id lsp--cur-workspace)))
+		 (if company-lsp-async
+		     (puthash id callback company-lsp--pending-requests)
+		   (company-lsp--on-completion resp callback))))))
     (sorted t)
     (no-cache (not company-lsp-cache-candidates))
     (annotation (lsp--annotate arg))
