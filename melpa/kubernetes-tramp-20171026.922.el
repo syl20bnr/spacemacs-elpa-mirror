@@ -3,8 +3,8 @@
 ;; Copyright (C) 2017 Giovanni Ruggiero <giovanni.ruggiero+github@gmail.com>
 
 ;; Author: Giovanni Ruggiero <giovanni.ruggiero+github@gmail.com>
-;; URL: https://github.com/gruggiero/kubernetes-tramp.el
-;; Package-Version: 20171021.1443
+;; URL: https://github.com/gruggiero/kubernetes-tramp
+;; Package-Version: 20171026.922
 ;; Keywords: kubernetes, convenience
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
