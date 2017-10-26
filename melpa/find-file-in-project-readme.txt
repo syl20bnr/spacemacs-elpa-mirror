@@ -58,12 +58,8 @@ and `find-file-in-current-directory-by-selected'.
 `ffip-split-window-horizontally' and `ffip-split-window-vertically' find&open file
 in split window.
 
-`ffip-show-diff-by-description' and `ffip-show-diff' execute the
-backend from `ffip-diff-backends'.
-`ffip-show-diff-by-description' has more friendly UI.
-`ffip-show-diff' has optional parameter as index of selected backend.
-The output of execution is expected be in Unified Diff Format.
-The output is inserted into *ffip-diff* buffer.
+`ffip-show-diff' execute the backend from `ffip-diff-backends'.
+The output is in Unified Diff Format and inserted into *ffip-diff* buffer.
 Press "o" or "C-c C-c" or "ENTER" or `M-x ffip-diff-find-file' in the
 buffer to open corresponding file.
 
