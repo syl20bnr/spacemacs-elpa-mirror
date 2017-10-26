@@ -5,7 +5,7 @@
 ;; Author: Matúš Goljer <matus.goljer@gmail.com>
 ;; Maintainer: Matúš Goljer <matus.goljer@gmail.com>
 ;; Version: 0.0.1
-;; Package-Version: 20171010.1222
+;; Package-Version: 20171026.159
 ;; Created: 15th July 2017
 ;; Package-requires: ((dash "2.10.0") (f "0.19.0"))
 ;; Keywords: files
@@ -110,6 +110,7 @@
       (while (not (eobp))
         (when (and (looking-at-p dired-re-dir)
                    (not (member (dired-get-filename 'no-dir t) (list "." "..")))
+                   (file-readable-p (dired-get-filename nil t))
                    (not (eolp)))
           (let ((path (dired-get-filename nil t))
                 files)
