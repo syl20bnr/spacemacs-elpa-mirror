@@ -1,11 +1,11 @@
-;;; counsel-etags.el ---  Fast and complete Ctags/Etags solution using ivy-completion
+;;; counsel-etags.el ---  Fast and complete Ctags/Etags solution using ivy
 
 ;; Copyright (C) 2017  Free Software Foundation, Inc.
 
 ;; Author: Chen Bin <chenbin.sh@gmail.com>
 ;; Maintainer: Chen Bin <chenbin.sh@gmail.com>
 ;; URL: http://github.com/redguardtoo/counsel-etags
-;; Package-Version: 20171020.2305
+;; Package-Version: 20171026.435
 ;; Package-Requires: ((emacs "24.3") (counsel "0.9.1"))
 ;; Keywords: tools, convenience
 ;; Version: 1.2.0
