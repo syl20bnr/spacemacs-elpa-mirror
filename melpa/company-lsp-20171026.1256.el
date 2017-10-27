@@ -1,7 +1,7 @@
 ;;; company-lsp.el --- Company completion backend for lsp-mode.  -*- lexical-binding: t -*-
 
 ;; Version: 1.0
-;; Package-Version: 20171025.1757
+;; Package-Version: 20171026.1256
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "2.0") (company "0.9.0") (s "1.2.0"))
 ;; URL: https://github.com/tigersoldier/company-lsp
 
@@ -132,10 +132,11 @@ P and MSG are the parameters from `lsp--parser-on-message'."
 	 (json-data (json-read-from-string msg)))
     (pcase (lsp--get-message-type json-data)
       ('response
-       (when-let* ((id-msg (gethash "id" json-data nil))
-		   (callback (gethash id-msg company-lsp--pending-requests)))
-	 (remhash id-msg company-lsp--pending-requests)
-	 (company-lsp--on-completion (lsp--parser-response-result p) callback))))))
+       (let* ((id-msg (gethash "id" json-data nil))
+              (callback (gethash id-msg company-lsp--pending-requests)))
+         (when (and id-msg callback)
+           (remhash id-msg company-lsp--pending-requests)
+           (company-lsp--on-completion (lsp--parser-response-result p) callback)))))))
 
 (advice-add 'lsp--parser-on-message :after 'company-lsp--on-message)
 
