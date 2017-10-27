@@ -4,8 +4,8 @@
 
 ;; Author: Johan Dykstrom
 ;; Created: Sep 2017
-;; Version: 0.1.3
-;; Package-Version: 20171011.1126
+;; Version: 0.2.0
+;; Package-Version: 20171027.1114
 ;; Keywords: basic, languages
 ;; URL: https://github.com/dykstrom/basic-mode
 ;; Package-Requires: ((seq "2.20") (emacs "24.3"))
@@ -27,6 +27,8 @@
 
 ;; This package provides a major mode for editing BASIC code,
 ;; including syntax highlighting and indentation.
+;;
+;; You can format the region, or the entire buffer, by typing C-c C-f.
 
 ;; Installation:
 
@@ -47,9 +49,14 @@
 ;; You can also customize the number of columns to use for line
 ;; numbers, see variable `basic-line-number-cols'. The default value
 ;; is 0, which means not using line numbers at all.
+;;
+;; Formatting is also affected by the customizable variables
+;; `basic-delete-trailing-whitespace' and `delete-trailing-lines'
+;; (from simple.el).
 
 ;;; Change Log:
 
+;;  0.2.0  2017-10-27  Format region/buffer.
 ;;  0.1.3  2017-10-11  Even more syntax highlighting.
 ;;  0.1.2  2017-10-04  More syntax highlighting.
 ;;  0.1.1  2017-10-02  Fixed review comments and autoload problems.
@@ -86,8 +93,8 @@ the actual code. Set this variable to 0 if you do not use line numbers."
   :type 'integer
   :group 'basic)
 
-(defcustom basic-trace-flag nil
-  "*Non-nil means that tracing is ON. A nil value means that tracing is OFF."
+(defcustom basic-delete-trailing-whitespace 't
+  "*Delete trailing whitespace while formatting code."
   :type 'boolean
   :group 'basic)
 
@@ -95,7 +102,7 @@ the actual code. Set this variable to 0 if you do not use line numbers."
 ;; Variables:
 ;; ----------------------------------------------------------------------------
 
-(defconst basic-mode-version "0.1.3"
+(defconst basic-mode-version "0.2.0"
   "The current version of `basic-mode'.")
 
 (defconst basic-increase-indent-keywords-bol
@@ -137,10 +144,10 @@ beginning of a line.")
   "Regexp string of symbols to highlight as constants.")
 
 (defconst basic-function-regexp
-  (regexp-opt '("abs" "asc" "atn" "chr$" "command$" "cos" "exp" "fix" "int"
-                "lcase$" "len" "left$" "log" "log10" "mid$" "pi" "right$"
-                "rnd" "sgn" "sin" "sqr" "str$" "tab" "tan" "ucase$" "usr"
-                "val")
+  (regexp-opt '("abs" "asc" "atn" "chr$" "command$" "cos" "exp" "fix"
+                "instr" "int" "lcase$" "len" "left$" "log" "log10" "mid$"
+                "pi" "right$" "rnd" "sgn" "sin" "sqr" "str$" "tab" "tan"
+                "ucase$" "usr" "val")
               'symbols)
   "Regexp string of symbols to highlight as functions.")
 
@@ -165,40 +172,6 @@ beginning of a line.")
         (list basic-function-regexp 0 'font-lock-function-name-face)
         (list basic-builtin-regexp 0 'font-lock-builtin-face))
   "Describes how to syntax highlight keywords in `basic-mode' buffers.")
-
-;; ----------------------------------------------------------------------------
-;; Mode specific functions:
-;; ----------------------------------------------------------------------------
-
-(defun basic-message (string &rest args)
-  "Display a message at the bottom of the screen if tracing is ON.
-The message also goes into the `*Messages*' buffer. STRING is a format
-control string, and ARGS is data to be formatted under control of the
-string. See `format' for details. See `basic-trace-flag' on how to
-turn tracing ON and OFF."
-  (when basic-trace-flag
-    (save-excursion
-      (save-match-data
-
-        ;; Get name of calling function
-        (let* ((frame-number 0)
-               (function-list (backtrace-frame frame-number))
-               (function-name nil))
-          (while function-list
-            (if (symbolp (cadr function-list))
-                (setq function-name (symbol-name (cadr function-list)))
-              (setq function-name "<not a symbol>"))
-            (if (and (string-match "^basic-" function-name)
-                     (not (string-match "^basic-message$" function-name)))
-                (setq function-list nil)
-              (setq frame-number (1+ frame-number))
-              (setq function-list (backtrace-frame frame-number))))
-
-          ;; Update argument list
-          (setq args (append (list (concat "%s:\t" string) function-name) args)))
-
-        ;; Print message
-        (apply 'message args)))))
 
 ;; ----------------------------------------------------------------------------
 ;; Indentation:
@@ -351,8 +324,62 @@ non-blank character after the line number."
     (insert formatted-number)))
 
 ;; ----------------------------------------------------------------------------
+;; Formatting:
+;; ----------------------------------------------------------------------------
+
+(defun basic-delete-trailing-whitespace-line ()
+  "Delete any trailing whitespace on the current line."
+  (beginning-of-line)
+  (when (re-search-forward "\\s-*$" (line-end-position) t)
+    (replace-match "")))
+
+(defun basic-format-code ()
+  "Format all lines in region, or entire buffer if region is not active.
+Indent lines, and also remove any trailing whitespace if the
+variable `basic-delete-trailing-whitespace' is non-nil.
+
+If this command acts on the entire buffer it also deletes all
+trailing lines at the end of the buffer if the variable
+`delete-trailing-lines' is non-nil."
+  (interactive)
+  (let* ((entire-buffer (not (use-region-p)))
+         (point-start (if (use-region-p) (region-beginning) (point-min)))
+         (point-end (if (use-region-p) (region-end) (point-max)))
+         (line-end (line-number-at-pos point-end)))
+
+    (save-excursion
+      ;; Don't format last line if region ends on first column
+      (goto-char point-end)
+      (when (= (current-column) 0)
+        (setq line-end (1- line-end)))
+
+      ;; Loop over all lines and format
+      (goto-char point-start)
+      (while (and (<= (line-number-at-pos) line-end) (not (eobp)))
+        (basic-indent-line)
+        (when basic-delete-trailing-whitespace
+          (basic-delete-trailing-whitespace-line))
+        (forward-line))
+
+      ;; Delete trailing empty lines
+      (when (and entire-buffer
+                 delete-trailing-lines
+                 (= (point-max) (1+ (buffer-size)))) ;; Really end of buffer?
+        (goto-char (point-max))
+        (backward-char)
+        (while (eq (char-before) ?\n)
+          (delete-char -1))
+        ))))
+
+;; ----------------------------------------------------------------------------
 ;; BASIC mode:
 ;; ----------------------------------------------------------------------------
+
+(defvar basic-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "\C-c\C-f" 'basic-format-code)
+    map)
+  "Keymap used in ‘basic-mode'.")
 
 (defvar basic-mode-syntax-table
   (let ((table (make-syntax-table)))
@@ -367,6 +394,8 @@ non-blank character after the line number."
 ;;;###autoload
 (define-derived-mode basic-mode prog-mode "Basic"
   "Major mode for editing BASIC code.
+Commands:
+TAB indents for BASIC code.
 
 \\{basic-mode-map}"
   :group 'basic

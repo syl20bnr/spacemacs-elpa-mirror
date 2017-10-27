@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 20171023.2014
+;; Package-Version: 20171027.1028
 ;; Version: 2.10
 
 ;; This file is not part of GNU Emacs.
@@ -72,7 +72,7 @@
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defconst rtags-protocol-version 124)
-(defconst rtags-package-version "2.14")
+(defconst rtags-package-version "2.15")
 (defconst rtags-popup-available (require 'popup nil t))
 (defconst rtags-supported-major-modes '(c-mode c++-mode objc-mode) "Major modes RTags supports.")
 (defconst rtags-verbose-results-delimiter "------------------------------------------")
@@ -4222,13 +4222,14 @@ definition."
     (setq rtags-symbol-history (rtags-remove-last-if-duplicated rtags-symbol-history))
     (when (not (equal "" input))
       (setq tagname input))
-    (with-current-buffer (rtags-get-buffer)
-      (rtags-call-rc :path path switch tagname :path-filter filter
-                     :path-filter-regex regexp-filter
-                     (when rtags-wildcard-symbol-names "--wildcard-symbol-names")
-                     (when rtags-symbolnames-case-insensitive "-I")
-                     (unless rtags-print-filenames-relative "-K"))
-      (rtags-handle-results-buffer tagname nil nil path other-window 'find-symbols-by-name-internal))))
+    (when (not (equal "" tagname))
+      (with-current-buffer (rtags-get-buffer)
+        (rtags-call-rc :path path switch tagname :path-filter filter
+                       :path-filter-regex regexp-filter
+                       (when rtags-wildcard-symbol-names "--wildcard-symbol-names")
+                       (when rtags-symbolnames-case-insensitive "-I")
+                       (unless rtags-print-filenames-relative "-K"))
+        (rtags-handle-results-buffer tagname nil nil path other-window 'find-symbols-by-name-internal)))))
 
 (defun rtags-symbolname-completion-get (string)
   (with-temp-buffer

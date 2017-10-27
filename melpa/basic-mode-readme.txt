@@ -1,6 +1,8 @@
 This package provides a major mode for editing BASIC code,
 including syntax highlighting and indentation.
 
+You can format the region, or the entire buffer, by typing C-c C-f.
+
 Installation:
 
 The easiest way to install basic-mode is from MELPA, please see
@@ -20,3 +22,7 @@ You can customize the indentation of code blocks, see variable
 You can also customize the number of columns to use for line
 numbers, see variable `basic-line-number-cols'. The default value
 is 0, which means not using line numbers at all.
+
+Formatting is also affected by the customizable variables
+`basic-delete-trailing-whitespace' and `delete-trailing-lines'
+(from simple.el).
