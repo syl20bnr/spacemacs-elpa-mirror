@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017  Marc Sherry
 ;; Homepage: https://github.com/msherry/tickscript-mode
 ;; Version: 0.1
-;; Package-Version: 20171026.1458
+;; Package-Version: 0.4
 ;; Author: Marc Sherry <msherry@gmail.com>
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "24.1"))
@@ -773,12 +773,22 @@ Escapes it properly so `dot' will actually render it."
       (insert-image image))))
 
 
-(defun tickscript-show-task ()
-  "Use Kapacitor to show the definition of the current task."
-  (interactive)
-  (let* ((name (tickscript--deftask-get-series-name))
-         (task (shell-command-to-string (format "%s show %s"
-                                                (tickscript--kapacitor-base-cmd) name)))
+(defun tickscript-show-task (task-name)
+  "Use Kapacitor to show a task -- either the current buffer, or TASK-NAME.
+
+When called interactively, shows the definition of the current
+task, unless a prefix argument is given, in which case prompt for
+the task name.
+
+If `tickscript-render-dot-output' is non-nil, uses Graphviz to
+render the .dot output into a graph in the buffer."
+  (interactive (list (if current-prefix-arg
+                         (read-from-minibuffer "Task name: ")
+                       nil)))
+  (if (not task-name)
+      (setq task-name (tickscript--deftask-get-series-name)))
+  (let* ((task (shell-command-to-string (format "%s show %s"
+                                                (tickscript--kapacitor-base-cmd) task-name)))
          (buffer-name "*tickscript-task*"))
     (with-output-to-temp-buffer buffer-name
       (switch-to-buffer-other-window buffer-name)

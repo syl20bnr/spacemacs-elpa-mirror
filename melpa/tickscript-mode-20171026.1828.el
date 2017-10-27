@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017  Marc Sherry
 ;; Homepage: https://github.com/msherry/tickscript-mode
 ;; Version: 0.1
-;; Package-Version: 0.3.1
+;; Package-Version: 20171026.1828
 ;; Author: Marc Sherry <msherry@gmail.com>
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "24.1"))
@@ -178,6 +178,12 @@ If unset, defaults to \"http://localhost:9092\"."
   :tag "tickscript-duration"
   :group 'tickscript)
 
+(defface tickscript-boolean
+  '((t :inherit font-lock-constant-face))
+  "Face for boolean TRUE and FALSE."
+  :tag "tickscript-boolean"
+  :group 'tickscript)
+
 (defface tickscript-operator
   '((t :inherit font-lock-warning-face
      :foreground "#bf3d5e"))
@@ -198,16 +204,17 @@ If unset, defaults to \"http://localhost:9092\"."
       '("batch" "stream"))
 
 (setq tickscript-nodes
-      '("alert" "batch" "combine" "deadman" "default" "delete" "derivative"
-        "eval" "exclude" "flatten" "from" "groupBy" "httpOut" "httpPost"
-        "influxDBOut" "influxQL" "join" "k8sAutoscale" "kapacitorLoopback" "log" "noOp"
-        "query" "sample" "shift" "stateCount" "stateDuration" "stats" "stream"
-        "union" "where" "window"))
+      '("alert" "batch" "combine" "default" "delete" "derivative" "eval"
+        "exclude" "flatten" "from" "groupBy" "httpOut" "httpPost" "influxDBOut"
+        "influxQL" "join" "k8sAutoscale" "kapacitorLoopback" "log" "noOp"
+        "query" "sample" "stateCount" "stateDuration" "stats" "stream" "union"
+        "where" "window"))
 
 (setq tickscript-chaining-methods
-      '("bottom" "count" "cumulativeSum" "difference" "distinct" "elapsed"
-        "first" "holtWinters" "holtWintersWithFit" "last" "max" "mean" "median"
-        "min" "mode" "movingAverage" "percentile" "spread" "stddev" "sum" "top"))
+      '("bottom" "count" "cumulativeSum" "deadman" "difference" "distinct"
+        "elapsed" "first" "holtWinters" "holtWintersWithFit" "last" "max"
+        "mean" "median" "min" "mode" "movingAverage" "percentile" "shift"
+        "spread" "stddev" "sum" "top"))
 
 (puthash "groupBy" "group_by" tickscript-webhelp-case-map)
 (puthash "httpOut" "http_out" tickscript-webhelp-case-map)
@@ -222,7 +229,7 @@ If unset, defaults to \"http://localhost:9092\"."
 
 (setq tickscript-font-lock-keywords
     `(;; General keywords
-      ,(rx symbol-start (or "var" "lambda") symbol-end)
+      ,(rx symbol-start (or "if" "lambda" "var") symbol-end)
        ;; UDF parameters. Takes precedence over node properties, which match
        ;; similarly.  Inspired by python.el
        (,(lambda (limit)
@@ -243,7 +250,10 @@ If unset, defaults to \"http://localhost:9092\"."
        (,(rx "@" (+ (or alnum "_"))) . 'tickscript-udf)
        ;; Time units
        (,(rx symbol-start (? "-") (1+ digit) (or "u" "µ" "ms" "s" "m" "h" "d" "w") symbol-end) . 'tickscript-duration)
+       ;; Numbers
        (,(rx symbol-start (? "-") (1+ digit) (optional "\." (1+ digit))) . 'tickscript-number)
+       ;; Booleans
+       (,(rx symbol-start (or "TRUE" "FALSE" symbol-end)) . 'tickscript-boolean)
        ;; Variable declarations
        ("\\_<\\(?:var\\)\\_>[[:space:]]+\\([[:alpha:]]\\(?:[[:alnum:]]\\|_\\)*\\)" (1 'tickscript-variable nil nil))
        ;; Operators
@@ -404,7 +414,7 @@ If STOP-AT-NODE is true, the search stops once a node (or UDF) is hit."
         (forward-char))
     (let ((count 0)
           (node-count 0))
-      (while (not (or (> count 0) (> node-count 0) (<= (point) 0)))
+      (while (not (or (> count 0) (> node-count 0) (<= (point) 1)))
         (tickscript-safe-backward-sexp)
         (when (funcall fn)
           (setq count (1+ count)))
@@ -535,7 +545,8 @@ meaning always increase indent on TAB and decrease on S-TAB."
   "Indentation for non-toplevel nodes."
   (tickscript--at-bol
    (when (or (tickscript-node-at-point)
-             (tickscript-chaining-method-at-point))
+             (tickscript-chaining-method-at-point)
+             (looking-at "|"))
      ;; (message "NODE")
      tickscript-indent-offset)))
 
@@ -553,7 +564,7 @@ be part of user-defined functions."
   (tickscript--at-bol
    (when (or (tickscript-property-at-point)
              ;; for now, anything starting with "." is a property, because of
-             ;; UDFs. TODO: tighten this up to only work under real UDFs?
+             ;; UDFs. TODO: split this out into tickscript-indent-udf-param?
              (looking-at "\\."))
      ;; (message "PROP")
      (* 2 tickscript-indent-offset))))
@@ -748,8 +759,7 @@ Escapes it properly so `dot' will actually render it."
 (defun tickscript-render-task-dot-to-buffer ()
   "Extract the DOT graph from the current buffer, render it with Graphviz, and insert the image."
   (interactive)
-  (let* ((dot (tickscript--extract-dot-from-buffer))
-         (cleaned (tickscript--cleanup-dot dot))
+  (let* ((cleaned (tickscript--cleanup-dot (tickscript--extract-dot-from-buffer)))
          (tmpfile (format "/%s/%s.png" temporary-file-directory (make-temp-name "tickscript-")))
          (cmd (format "echo \"%s\" | dot -T png -o %s" cleaned tmpfile)))
     (shell-command cmd)
@@ -763,17 +773,29 @@ Escapes it properly so `dot' will actually render it."
       (insert-image image))))
 
 
-(defun tickscript-show-task ()
-  "Use Kapacitor to show the definition of the current task."
-  (interactive)
-  (let* ((name (tickscript--deftask-get-series-name))
-         (task (shell-command-to-string (format "%s show %s"
-                                                tickscript-kapacitor-prog-name name)))
+(defun tickscript-show-task (task-name)
+  "Use Kapacitor to show a task -- either the current buffer, or TASK-NAME.
+
+When called interactively, shows the definition of the current
+task, unless a prefix argument is given, in which case prompt for
+the task name.
+
+If `tickscript-render-dot-output' is non-nil, uses Graphviz to
+render the .dot output into a graph in the buffer."
+  (interactive (list (if current-prefix-arg
+                         (read-from-minibuffer "Task name: ")
+                       nil)))
+  (if (not task-name)
+      (setq task-name (tickscript--deftask-get-series-name)))
+  (let* ((task (shell-command-to-string (format "%s show %s"
+                                                (tickscript--kapacitor-base-cmd) task-name)))
          (buffer-name "*tickscript-task*"))
     (with-output-to-temp-buffer buffer-name
       (switch-to-buffer-other-window buffer-name)
       (erase-buffer)
       (set (make-local-variable 'font-lock-defaults) '(tickscript-font-lock-keywords))
+      (set (make-local-variable 'comment-start) "// ")
+      (set-syntax-table tickscript-mode-syntax-table)
       (font-lock-mode)
       (insert task)
       (when tickscript-render-dot-output
@@ -782,7 +804,7 @@ Escapes it properly so `dot' will actually render it."
 
 (defun tickscript--list-things (noun)
   (let ((things
-         (shell-command-to-string (format "%s list %s" tickscript-kapacitor-prog-name noun)))
+         (shell-command-to-string (format "%s list %s" (tickscript--kapacitor-base-cmd) noun)))
         (buffer-name (format "*tickscript-%s*" noun)))
     (with-output-to-temp-buffer buffer-name
       (unless (equal (buffer-name) buffer-name)
