@@ -5,8 +5,8 @@
 ;; Author: Yuta Yamada <cokesboy"at"gmail.com>
 
 ;; Version: 0.8.1
-;; Package-Version: 20171025.135
-;; Package-Requires: ((flycheck "0.23") (nim-mode "0.4.1") (emacs "24.3"))
+;; Package-Version: 20171027.1508
+;; Package-Requires: ((flycheck "0.23") (emacs "24.3"))
 ;; URL: https://github.com/yuutayamada/flycheck-nimsuggest
 
 ;;; License:
@@ -46,8 +46,11 @@
 ;;; Code:
 
 (require 'flycheck)
-(require 'nim-suggest)
 (require 'cl-lib)
+
+;;; Defined at nim-mode
+(autoload 'nimsuggest--call-epc   "nim-suggest")
+(autoload 'nimsuggest-available-p "nim-suggest")
 
 ;;;###autoload
 (add-hook 'nimsuggest-mode-hook 'flycheck-nimsuggest-setup)
@@ -116,7 +119,7 @@ CHECKER and BUFFER are passed to flycheck's function."
   "Setup flycheck configuration for nimsuggest."
   (when (and (bound-and-true-p nim-use-flycheck-nimsuggest)
              (not (bound-and-true-p flymake-mode))
-             (funcall 'nimsuggest-available-p)
+             (nimsuggest-available-p)
              (not flycheck-checker))
     (add-to-list 'flycheck-checkers 'nim-nimsuggest)
     (flycheck-select-checker 'nim-nimsuggest)))
