@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171017.1029
+;; Package-Version: 20171028.1043
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -89,10 +89,10 @@
 
 (defun counsel-require-program (program)
   "Check system for PROGRAM, printing error if unfound."
-  (when (and (stringp program)
-             (not (string= program ""))
-             (not (executable-find program)))
-    (user-error "Required program \"%s\" not found in your path" program)))
+  (or (and (stringp program)
+           (not (string= program ""))
+           (executable-find program))
+      (user-error "Required program \"%s\" not found in your path" program)))
 
 ;;* Async Utility
 (defvar counsel--async-time nil

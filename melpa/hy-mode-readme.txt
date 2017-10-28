@@ -29,6 +29,11 @@ Keep nil unless using specific Hy branch.")
 (defvar hy-shell-spy-delim ""
   "If using `--spy' interpreter arg then delimit spy ouput by this string.")
 
+Highlighting
+
+(defvar hy-font-lock-highlight-percent-args? t
+  "Whether to highlight '%i' symbols in Hy's clojure-like syntax for lambdas.")
+
 Indentation
 
 (defvar hy-indent-special-forms
@@ -337,6 +342,14 @@ Static
 
 Misc
 
+(defconst hy--font-lock-kwds-anonymous-funcs
+  (list
+   (rx symbol-start "%" (1+ digit) symbol-end)
+
+   '(0 font-lock-variable-name-face))
+
+  "Hy '#%(print %1 %2)' styling anonymous variables.")
+
 (defconst hy--font-lock-kwds-func-modifiers
   (list
    (rx symbol-start "&" (1+ word))
@@ -388,7 +401,11 @@ Grouped
         hy--font-lock-kwds-special-forms
         hy--font-lock-kwds-tag-macros
         hy--font-lock-kwds-unpacking
-        hy--font-lock-kwds-variables)
+        hy--font-lock-kwds-variables
+
+        (when hy-font-lock-highlight-percent-args?
+          hy--font-lock-kwds-anonymous-funcs)
+        )
   "All Hy font lock keywords.")
 
 Utilities
@@ -986,9 +1003,19 @@ Utilities
      (s-chop-prefixes '("\"" "'" "\"'" "'\""))
      (s-chop-suffixes '("\"" "'" "\"'" "'\""))))
 
+(defun hy--eldoc-remove-syntax-errors (text)
+  "Quick fix to address parsing an incomplete dot-dsl."
+  (if (< 1 (-> text s-lines length))
+      ""
+    text))
+
 (defun hy--eldoc-send (string)
-  "Send STRING for eldoc to internal process."
-  (-> string hy--shell-send-async hy--eldoc-chomp-output hy--str-or-nil))
+  "Send STRING for eldoc to internal process returning output."
+  (-> string
+     hy--shell-send-async
+     hy--eldoc-chomp-output
+     hy--eldoc-remove-syntax-errors
+     hy--str-or-nil))
 
 (defun hy--eldoc-format-command (symbol &optional full raw)
   "Inspect SYMBOL with hydoc, optionally include FULL docs for a buffer."
