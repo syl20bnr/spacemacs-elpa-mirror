@@ -5,7 +5,7 @@
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 19 Oct 2017
 ;; Version: 0.0.1
-;; Package-Version: 0.0.1
+;; Package-Version: 20171027.2055
 ;; Keywords: tools php
 ;; Package-Requires: ((emacs "24.3") (cl-lib "0.5") (f "0.17"))
 ;; URL: https://github.com/emacs-php/jetbrains.el
@@ -105,8 +105,10 @@
     ((css-mode html-mode nxml-mode scss-mode sql-mode web-mode)
      . (charm mine pstorm wstrom))))
 
-(defvar-local jetbrains-ide nil)
-(put 'jetbrains-ide 'safe-local-variable #'jetbrains-ide-symbol)
+;;;###autoload
+(progn
+  (defvar-local jetbrains-ide nil)
+  (put 'jetbrains-ide 'safe-local-variable #'jetbrains-ide-symbol))
 
 (defun jetbrains-ide-symbol (name)
   "Return symbol of IDE by `NAME'."
@@ -144,9 +146,10 @@
   (let ((ide-helper (jetbrains-ide-symbol ide)))
     (when ide-helper
       (shell-command
-       (apply #'format "%s %s"
-              (mapcar #'shell-quote-argument
-                      (list (symbol-name ide-helper) (f-expand ide-root))))))))
+       (mapconcat #'shell-quote-argument
+                  (list (symbol-name ide-helper)
+                        (f-expand ide-root))
+                  " ")))))
 
 ;;;###autoload
 (defun jetbrains-open-buffer-file ()
@@ -156,9 +159,12 @@
     (let ((ide-helper (jetbrains--detect-ide buffer-file-name major-mode)))
       (when ide-helper
         (shell-command
-         (apply #'format "%s %s"
-                (mapcar #'shell-quote-argument
-                        (list ide-helper buffer-file-name))))))))
+         (mapconcat #'shell-quote-argument
+                    (list (symbol-name ide-helper)
+                          buffer-file-name
+                          "--line"
+                          (int-to-string (line-number-at-pos)))
+                    " "))))))
 
 (provide 'jetbrains)
 ;;; jetbrains.el ends here
