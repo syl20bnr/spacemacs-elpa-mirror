@@ -1,9 +1,9 @@
 ;;; conda.el --- Work with your conda environments
 
-;; Copyright (C) 2016 Rami Chowdhury
+;; Copyright (C) 2016-2017 Rami Chowdhury
 ;; Author: Rami Chowdhury <rami.chowdhury@gmail.com>
 ;; URL: http://github.com/necaris/conda.el
-;; Package-Version: 0.0.7
+;; Package-Version: 20171028.617
 ;; Version: 20160914
 ;; Keywords: python, environment, conda
 ;; Package-Requires: ((emacs "24.4") (pythonic "0.1.0") (dash "2.13.0") (s "1.11.0") (f "0.18.2"))
@@ -45,22 +45,16 @@ environment variable."
     (setq gud-pdb-command-name "python -m pdb"))
   "Whatever `gud-pdb-command-name' is (usually \\[pdb]).")
 
+(defcustom conda-env-home-directory conda-anaconda-home
+  "Location of the directory containing the environments directory.")
+
 (defcustom conda-env-subdirectory "envs"
   "Location of the environments subdirectory relative to ANACONDA_HOME.")
 
-;; hooks
+(defcustom conda-message-on-environment-switch t
+  "Whether to message when switching environments. Default true.")
 
-;; (defvar venv-premkvirtualenv-hook nil
-;;   "Hook run before creating a new virtualenv.")
-
-;; (defvar venv-postmkvirtualenv-hook nil
-;;   "Hook run after creating a new virtualenv.")
-
-;; (defvar venv-prermvirtualenv-hook nil
-;;   "Hook run before deleting a virtualenv.")
-
-;; (defvar venv-postrmvirtualenv-hook nil
-;;   "Hook run after deleting a virtualenv.")
+;; hooks -- TODO once we actually have environment creation / deletion
 
 (defcustom conda-preactivate-hook nil
   "Hook run before a conda environment is activated.")
@@ -137,7 +131,7 @@ environment variable."
     common cause of problems like this is GUI Emacs not having environment
     variables set up like the shell.  Check out
     https://github.com/purcell/exec-path-from-shell for a robust solution to
-    this problem.")))
+    this problem")))
 
 (defun conda--find-env-yml (dir)
   "Find an environment.yml in DIR or its parent directories."
@@ -168,6 +162,16 @@ environment variable."
   (if (boundp 'python-shell-virtualenv-root)
       (setq python-shell-virtualenv-root location)
     (setq python-shell-virtualenv-path location)))
+
+(defun conda--get-path-prefix (env-dir)
+  "Get a platform-specific path string to utilize the conda env in ENV-DIR.
+It's platform specific in that it uses the platform's native path separator."
+  (string-trim (shell-command-to-string
+                (format "conda ..activate \"%s\" \"%s\""
+                        (if (eq system-type 'windows-nt)
+                            "cmd.exe"
+                          "bash")
+                        env-dir))))
 
 (defun conda-env-clear-history ()
   "Clear the history of conda environments that have been activated."
@@ -218,7 +222,8 @@ environment variable."
   (let* ((xp-location (expand-file-name (conda-env-location)))
          (proper-location (file-name-as-directory xp-location)))
     (-filter (lambda (p)
-               (conda--includes-path-element proper-location p))
+	       (and (not (null p))
+		    (conda--includes-path-element proper-location p)))
              path)))
 
 (defun conda-env-is-valid (name)
@@ -282,15 +287,18 @@ environment variable."
         (pythonic-activate env-dir)
         ;; setup the python shell
         (conda--set-python-shell-virtualenv-var env-dir)
-        ;; setup emacs exec-path
-        (add-to-list 'exec-path env-exec-dir)
-        ;; setup the environment for subprocesses, eshell, etc
-        (setenv "PATH" (concat env-exec-dir path-separator (getenv "PATH")))
+        (let ((path-prefix (conda--get-path-prefix env-dir)))
+          ;; setup emacs exec-path
+          (dolist (env-exec-dir (parse-colon-path path-prefix))
+            (add-to-list 'exec-path env-exec-dir))
+          ;; setup the environment for subprocesses, eshell, etc
+          (setenv "PATH" (concat path-prefix path-separator (getenv "PATH"))))
         (setq eshell-path-env (getenv "PATH"))
         (setenv "VIRTUAL_ENV" env-dir)
         (conda--set-env-gud-pdb-command-name)
         (run-hooks 'conda-postactivate-hook)))
-      (message "Switched to conda environment: %s" env-name)))
+    (if (or conda-message-on-environment-switch (called-interactively-p 'interactive))
+	(message "Switched to conda environment: %s" env-name))))
 
 
 ;; for hilarious reasons to do with bytecompiling, this has to be here
@@ -308,67 +316,6 @@ environment variable."
              (conda-env-activate prev-env)
            (conda-env-deactivate))))))
 
-;; ;;;###autoload
-;; (defun venv-mkvirtualenv (&rest names)
-;; "Create new virtualenvs NAMES. If venv-location is a single
-;; directory, the new virtualenvs are made there; if it is a list of
-;; directories, the new virtualenvs are made in the current
-;; default-directory."
-;;   (interactive)
-;;   (venv--check-executable)
-;;   (let ((parent-dir (if (stringp venv-location)
-;;                         (file-name-as-directory
-;;                          (expand-file-name venv-location))
-;;                       default-directory))
-;;         (python-exe-arg (when current-prefix-arg
-;;                           (concat "--python="
-;;                                   (read-string "Python executable: " "python"))))
-;;         (names (if names names
-;;                  (list (read-from-minibuffer "New virtualenv: ")))))
-;;     ;; map over all the envs we want to make
-;;     (--each names
-;;       ;; error if this env already exists
-;;       (when (-contains? (venv-get-candidates) it)
-;;         (error "A virtualenv with this name already exists!"))
-;;       (run-hooks 'venv-premkvirtualenv-hook)
-;;       (shell-command (concat "virtualenv " python-exe-arg " " parent-dir it))
-;;       (when (listp venv-location)
-;;         (add-to-list 'venv-location (concat parent-dir it)))
-;;       (venv-with-virtualenv it
-;;                             (run-hooks 'venv-postmkvirtualenv-hook))
-;;       (when (called-interactively-p 'interactive)
-;;         (message (concat "Created virtualenv: " it))))
-;;     ;; workon the last venv we made
-;;     (venv-workon (car (last names)))))
-
-;; ;;;###autoload
-;; (defun venv-rmvirtualenv (&rest names)
-;;   "Delete virtualenvs NAMES."
-;;   (interactive)
-;;   ;; deactivate first
-;;   (venv-deactivate)
-;;   ;; check validity and read names if necessary
-;;   (if names
-;;       (--map (when (not (venv-is-valid it))
-;;                (error "Invalid virtualenv specified!"))
-;;              names)
-;;     (setq names (list (venv-read-name "Virtualenv to delete: "))))
-;;   ;; map over names, deleting the appropriate directory
-;;   (--each names
-;;     (run-hooks 'venv-prermvirtualenv-hook)
-;;     (delete-directory (venv-name-to-dir it) t)
-;;     ;; get it out of the history so it doesn't show up in completing reads
-;;     (setq venv-history (-filter
-;;                         (lambda (s) (not (s-equals? s it))) venv-history))
-;;     ;; if location is a list, delete it from the list
-;;     (when (listp venv-location)
-;;       (setq venv-location
-;;             (-filter (lambda (locs) (not (s-equals?
-;;                                           it
-;;                                           (venv-dir-to-name locs))))
-;;                      venv-location)))
-;;     (run-hooks 'venv-postrmvirtualenv-hook)
-;;     (message (concat "Deleted virtualenv: " it))))
 
 ;;;###autoload
 (defun conda-env-list ()
@@ -378,47 +325,11 @@ environment variable."
       "*Conda envs*"
       (princ (s-join "\n" (conda-env-candidates)))))
 
-;; ;;;###autoload
-;; (defun venv-cdvirtualenv (&optional subdir)
-;;   "Change to the directory of current virtualenv. If
-;; SUBDIR is passed, append that to the path such that
-;; we are immediately in that directory."
-;;   (interactive)
-;;   (if venv-current-dir
-;;       (let ((going-to (concat (file-name-as-directory
-;;                                (expand-file-name venv-current-dir))
-;;                               subdir)))
-;;         (cd going-to)
-;;         (when (called-interactively-p 'interactive)
-;;           (message (concat "Now in directory: " going-to))))
-;;     (error "No virtualenv is currently active!")))
-
-;; ;; macros and functions supporting executing elisp or
-;; ;; shell commands in a particular venv
-
-;; (defmacro venv-allvirtualenv (&rest forms)
-;;   "For each virtualenv, activate it, switch to its directory,
-;; and then evaluate FORMS."
-;;   `(progn
-;;      (--each (venv-get-candidates)
-;;              (venv-with-virtualenv it
-;;                                    ,@forms))))
 
 ;;;###autoload
-(defun conda-with-env-shell-command (name command)
+(defun conda-with-env-shell-command (name command) ;; FIXME
   "With environment NAME active, execute the shell string COMMAND."
   (conda-with-env name (shell-command command)))
-
-;; (defun venv-allvirtualenv-shell-command (&optional command)
-;;   "Just like venv-allvirtulenv, but executes a shell
-;; command (COMMAND) rather than elisp forms."
-;;   (interactive)
-;;   (when (not command)
-;;     (setq command (read-from-minibuffer "Shell command to execute: ")))
-;;   (-map (lambda (name)
-;;           (venv-with-virtualenv-shell-command name command))
-;;         (venv-get-candidates))
-;;   (message (concat "Executed " command " in all virtualenvs")))
 
 
 ;; Code for setting up interactive shell and eshell
@@ -432,15 +343,12 @@ environment variable."
    process
    (concat "source activate " conda-env-current-name)))
 
-;;;###autoload
-(defun conda-env-initialize-interactive-shells ()
-  "Configure interactive shells for use with conda.el."
-  (defadvice shell (around strip-env ())
-    "Use the environment without the env to start up a new shell."
-    (let* ((buffer-name (or buffer "*shell*"))
+(defun conda--shell-strip-env (orig-fun &rest args)
+  "Use the environment without env to start a new shell, passing ORIG-FUN ARGS."
+  (let* ((buffer-name (or buffer "*shell*"))
            (buffer-exists-already (get-buffer buffer-name)))
       (if (or buffer-exists-already (not conda-env-current-name))
-          ad-do-it
+          (apply orig-fun args)
         (progn (setenv "PATH"
                        (s-join
                         path-separator
@@ -455,9 +363,12 @@ environment variable."
                         conda-env-executables-dir
                         path-separator
                         (getenv "PATH")))
-               (setenv "VIRTUAL_ENV" (conda-env-name-to-dir conda-env-current-name))))
-      (ad-activate 'shell))))
+               (setenv "VIRTUAL_ENV" (conda-env-name-to-dir conda-env-current-name))))))
 
+;;;###autoload
+(defun conda-env-initialize-interactive-shells ()
+  "Configure interactive shells for use with conda.el."
+  (advice-add 'shell :around #'conda--shell-strip-env))
 
 ;; eshell
 
@@ -499,7 +410,8 @@ This can be set by a buffer-local or project-local variable (e.g. a
                       conda-project-env-name
                     (conda--infer-env-from-buffer))))
     (if (not env-name)
-        (message "No conda environment for file <%s>" (buffer-file-name))
+      (if conda-message-on-environment-switch
+        (message "No conda environment for <%s>" (buffer-file-name)))
       (conda-env-activate env-name))))
 
 (defun conda--switch-buffer-auto-activate (&rest args)

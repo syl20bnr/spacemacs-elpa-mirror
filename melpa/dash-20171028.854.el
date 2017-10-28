@@ -4,7 +4,7 @@
 
 ;; Author: Magnar Sveen <magnars@gmail.com>
 ;; Version: 2.13.0
-;; Package-Version: 20171010.131
+;; Package-Version: 20171028.854
 ;; Keywords: lists
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -235,6 +235,38 @@ See also: `-reduce-r-from', `-reduce'"
   "Anaphoric version of `-reduce-r'."
   (declare (debug (form form)))
   `(-reduce-r (lambda (&optional it acc) ,form) ,list))
+
+(defun -reductions-from (fn init list)
+  "Return a list of the intermediate values of the reduction.
+
+See `-reduce-from' for explanation of the arguments.
+
+See also: `-reductions', `-reductions-r', `-reduce-r'"
+  (nreverse (--reduce-from (cons (funcall fn (car acc) it) acc) (list init) list)))
+
+(defun -reductions (fn list)
+  "Return a list of the intermediate values of the reduction.
+
+See `-reduce' for explanation of the arguments.
+
+See also: `-reductions-from', `-reductions-r', `-reduce-r'"
+  (-reductions-from fn (car list) (cdr list)))
+
+(defun -reductions-r-from (fn init list)
+  "Return a list of the intermediate values of the reduction.
+
+See `-reduce-r-from' for explanation of the arguments.
+
+See also: `-reductions-r', `-reductions', `-reduce'"
+  (--reduce-r-from (cons (funcall fn it (car acc)) acc) (list init) list))
+
+(defun -reductions-r (fn list)
+  "Return a list of the intermediate values of the reduction.
+
+See `-reduce-r' for explanation of the arguments.
+
+See also: `-reductions-r-from', `-reductions', `-reduce'"
+  (-reductions-r-from fn (-last-item list) (-butlast list)))
 
 (defmacro --filter (form list)
   "Anaphoric form of `-filter'.
@@ -2076,6 +2108,14 @@ or with `-compare-fn' if that's non-nil."
                              (-permutations (remove x list))))
                    list))))
 
+(defun -inits (list)
+  "Return all prefixes of LIST."
+  (nreverse (-map 'reverse (-tails (nreverse list)))))
+
+(defun -tails (list)
+  "Return all suffixes of LIST"
+  (-reductions-r-from 'cons nil list))
+
 (defun -contains? (list element)
   "Return non-nil if LIST contains ELEMENT.
 
@@ -2179,10 +2219,28 @@ Return nil if N is less than 1."
   (declare (pure t) (side-effect-free t))
   (apply '+ list))
 
+(defun -running-sum (list)
+  "Return a list with running sums of items in LIST.
+
+LIST must be non-empty."
+  (declare (pure t) (side-effect-free t))
+  (unless (consp list)
+    (error "LIST must be non-empty"))
+  (-reductions '+ list))
+
 (defun -product (list)
   "Return the product of LIST."
   (declare (pure t) (side-effect-free t))
   (apply '* list))
+
+(defun -running-product (list)
+  "Return a list with running products of items in LIST.
+
+LIST must be non-empty."
+  (declare (pure t) (side-effect-free t))
+  (unless (consp list)
+    (error "LIST must be non-empty"))
+  (-reductions '* list))
 
 (defun -max (list)
   "Return the largest value from LIST of numbers or markers."
@@ -2463,6 +2521,10 @@ structure such as plist or alist."
                              "--reduce-r-from"
                              "-reduce-r"
                              "--reduce-r"
+                             "-reductions-from"
+                             "-reductions-r-from"
+                             "-reductions"
+                             "-reductions-r"
                              "-filter"
                              "--filter"
                              "-select"
@@ -2622,6 +2684,10 @@ structure such as plist or alist."
                              "-union"
                              "-intersection"
                              "-difference"
+                             "-powerset"
+                             "-permutations"
+                             "-inits"
+                             "-tails"
                              "-contains?"
                              "-contains-p"
                              "-same-items?"
@@ -2637,7 +2703,9 @@ structure such as plist or alist."
                              "-list"
                              "-repeat"
                              "-sum"
+                             "-running-sum"
                              "-product"
+                             "-running-product"
                              "-max"
                              "-min"
                              "-max-by"

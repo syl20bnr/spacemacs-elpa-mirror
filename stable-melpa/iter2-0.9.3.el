@@ -4,8 +4,8 @@
 
 ;; Author:     Paul Pogonyshev <pogonyshev@gmail.com>
 ;; Maintainer: Paul Pogonyshev <pogonyshev@gmail.com>
-;; Version:    0.9.2
-;; Package-Version: 20171028.227
+;; Version:    0.9.3
+;; Package-Version: 0.9.3
 ;; Keywords:   elisp, extensions
 ;; Homepage:   https://github.com/doublep/iter2
 ;; Package-Requires: ((emacs "25.1"))
@@ -679,6 +679,19 @@ See `iter2-defun' for details."
         (print-level     (if (eq iter2-tracing-print-level  t) print-level  iter2-tracing-print-level))
         (print-length    (if (eq iter2-tracing-print-length t) print-length iter2-tracing-print-length)))
     (apply #'message (concat "%siter2: " format-string) (cons (apply #'concat (make-list iter2--tracing-depth "    ")) arguments))))
+
+
+;; Make sure that we are still compatible with `generator'.  I couldn't make it work like
+;; I wanted with fewer `eval's.
+(eval-after-load 'iter2
+  (eval `(unless (let* ((it (funcall (iter2-lambda () (iter-yield 1)))))
+                   (and (equal (iter-next it) 1) (condition-case error (progn (iter-next it 2) nil) (iter-end-of-sequence (equal (cdr error) 2)))))
+           (warn "Compatibility of `iter2' with `generator' package appears broken; please report this to maintainer (Emacs version: %s)" (emacs-version)))
+        t))
+
+;; Work around missing Edebug specification for `iter-do' macro.
+(when (and (fboundp 'iter-do) (null (get 'iter-do 'edebug-form-spec)))
+  (put 'iter-do 'edebug-form-spec '((symbolp form) body)))
 
 
 (provide 'iter2)

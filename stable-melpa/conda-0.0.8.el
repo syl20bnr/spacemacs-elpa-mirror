@@ -3,7 +3,7 @@
 ;; Copyright (C) 2016-2017 Rami Chowdhury
 ;; Author: Rami Chowdhury <rami.chowdhury@gmail.com>
 ;; URL: http://github.com/necaris/conda.el
-;; Package-Version: 20171009.1921
+;; Package-Version: 0.0.8
 ;; Version: 20160914
 ;; Keywords: python, environment, conda
 ;; Package-Requires: ((emacs "24.4") (pythonic "0.1.0") (dash "2.13.0") (s "1.11.0") (f "0.18.2"))
@@ -50,6 +50,9 @@ environment variable."
 
 (defcustom conda-env-subdirectory "envs"
   "Location of the environments subdirectory relative to ANACONDA_HOME.")
+
+(defcustom conda-message-on-environment-switch t
+  "Whether to message when switching environments. Default true.")
 
 ;; hooks -- TODO once we actually have environment creation / deletion
 
@@ -159,6 +162,16 @@ environment variable."
   (if (boundp 'python-shell-virtualenv-root)
       (setq python-shell-virtualenv-root location)
     (setq python-shell-virtualenv-path location)))
+
+(defun conda--get-path-prefix (env-dir)
+  "Get a platform-specific path string to utilize the conda env in ENV-DIR.
+It's platform specific in that it uses the platform's native path separator."
+  (string-trim (shell-command-to-string
+                (format "conda ..activate \"%s\" \"%s\""
+                        (if (eq system-type 'windows-nt)
+                            "cmd.exe"
+                          "bash")
+                        env-dir))))
 
 (defun conda-env-clear-history ()
   "Clear the history of conda environments that have been activated."
@@ -274,15 +287,18 @@ environment variable."
         (pythonic-activate env-dir)
         ;; setup the python shell
         (conda--set-python-shell-virtualenv-var env-dir)
-        ;; setup emacs exec-path
-        (add-to-list 'exec-path env-exec-dir)
-        ;; setup the environment for subprocesses, eshell, etc
-        (setenv "PATH" (concat env-exec-dir path-separator (getenv "PATH")))
+        (let ((path-prefix (conda--get-path-prefix env-dir)))
+          ;; setup emacs exec-path
+          (dolist (env-exec-dir (parse-colon-path path-prefix))
+            (add-to-list 'exec-path env-exec-dir))
+          ;; setup the environment for subprocesses, eshell, etc
+          (setenv "PATH" (concat path-prefix path-separator (getenv "PATH"))))
         (setq eshell-path-env (getenv "PATH"))
         (setenv "VIRTUAL_ENV" env-dir)
         (conda--set-env-gud-pdb-command-name)
         (run-hooks 'conda-postactivate-hook)))
-      (message "Switched to conda environment: %s" env-name)))
+    (if (or conda-message-on-environment-switch (called-interactively-p 'interactive))
+	(message "Switched to conda environment: %s" env-name))))
 
 
 ;; for hilarious reasons to do with bytecompiling, this has to be here
@@ -394,7 +410,8 @@ This can be set by a buffer-local or project-local variable (e.g. a
                       conda-project-env-name
                     (conda--infer-env-from-buffer))))
     (if (not env-name)
-        (message "No conda environment for file <%s>" (buffer-file-name))
+      (if conda-message-on-environment-switch
+        (message "No conda environment for <%s>" (buffer-file-name)))
       (conda-env-activate env-name))))
 
 (defun conda--switch-buffer-auto-activate (&rest args)
