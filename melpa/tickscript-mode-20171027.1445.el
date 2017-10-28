@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017  Marc Sherry
 ;; Homepage: https://github.com/msherry/tickscript-mode
 ;; Version: 0.1
-;; Package-Version: 20171026.1828
+;; Package-Version: 20171027.1445
 ;; Author: Marc Sherry <msherry@gmail.com>
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "24.1"))
@@ -113,6 +113,14 @@ If unset, defaults to \"http://localhost:9092\"."
 
 (defcustom tickscript-render-dot-output t
   "Whether to render DOT output with Graphviz when executing tickscript-show-task."
+  :type 'boolean
+  :group 'tickscript
+  :safe 'booleanp)
+
+(defcustom tickscript-scale-images t
+  "Whether to scale the rendered DOT graphs to fit within the window bounds.
+
+Requires Emacs to be compiled with Imagemagick support."
   :type 'boolean
   :group 'tickscript
   :safe 'booleanp)
@@ -740,7 +748,9 @@ Escapes it properly so `dot' will actually render it."
   "Extract and return the DOT graph from the current buffer."
   (save-excursion
     (goto-char (point-min))
-    (re-search-forward "^DOT:$")
+    (condition-case nil
+        (re-search-forward "^DOT:$")
+      (error nil))
     (forward-line 1)
     (let* ((beg (point))
            (end (point-max))
@@ -757,7 +767,11 @@ Escapes it properly so `dot' will actually render it."
       (insert dot))))
 
 (defun tickscript-render-task-dot-to-buffer ()
-  "Extract the DOT graph from the current buffer, render it with Graphviz, and insert the image."
+  "Extract the DOT graph from buffer, render it with Graphviz, and display it.
+
+If Emacs is compiled with Imagemagick support and
+`tickscript-scale-images' is t, scales the image appropriately to
+fit within the bounds of the window."
   (interactive)
   (let* ((cleaned (tickscript--cleanup-dot (tickscript--extract-dot-from-buffer)))
          (tmpfile (format "/%s/%s.png" temporary-file-directory (make-temp-name "tickscript-")))
@@ -765,11 +779,14 @@ Escapes it properly so `dot' will actually render it."
     (shell-command cmd)
     (goto-char (point-max))
     (insert-char ?\n)
-    (let ((inhibit-read-only t)
-          (image (if (image-type-available-p 'imagemagick)
-                     (create-image tmpfile 'imagemagick nil
-                                   :max-width (truncate (* .9 (window-pixel-width))))
-                   (create-image tmpfile))))
+    (let* ((inhibit-read-only t)
+           (extra-args (if (and tickscript-scale-images (image-type-available-p 'imagemagick))
+                           `(imagemagick
+                            nil
+                            :max-width ,(truncate (* .9 (window-pixel-width)))
+                            :max-height ,(truncate (* 1.0 (window-pixel-width))))
+                         nil))
+           (image (apply #'create-image tmpfile extra-args)))
       (insert-image image))))
 
 
