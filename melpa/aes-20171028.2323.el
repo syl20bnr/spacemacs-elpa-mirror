@@ -1,12 +1,12 @@
 ;;; aes.el --- Implementation of AES
 
-;; Copyright (C) 2008, 2009, 2013, 2014, 2015, 2017 Markus Sauermann
+;; Copyright (C) 2008-2017 Markus Sauermann
 
 ;; Author: Markus Sauermann <emacs-aes@sauermann-consulting.de>
 ;; Maintainer: Markus Sauermann <emacs-aes@sauermann-consulting.de>
 ;; Created: 15 Feb 2008
 ;; Version: 0.9
-;; Package-Version: 20170607.157
+;; Package-Version: 20171028.2323
 ;; Keywords: data, tools
 ;; URL: https://github.com/Sauermann/emacs-aes
 
@@ -42,12 +42,8 @@
 ;; in the applications group.
 
 ;; Emacs compatibility:
-;; Version 25 is not tested
-;; Version 24.4 and 24.5 are recommended
-;; Version 24.3 should only be used, if the patch described in [11]
-;; is applied, because there is a bug that causes passwords to be
-;; shown in the minibuffer.
-;; Versions 24.2 and earlier have not been tested in years.
+;; Version 25.3.1 is recommended
+;; Versions 25.3 and earlier have not been tested for quite some time
 
 ;; This implementation allows additionally to the AES specification
 ;; blocklengths of 24 and 32 bytes.

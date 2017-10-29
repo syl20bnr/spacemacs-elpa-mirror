@@ -1,12 +1,12 @@
 ;;; aes.el --- Implementation of AES
 
-;; Copyright (C) 2008, 2009, 2013, 2014, 2015 Markus Sauermann
+;; Copyright (C) 2008-2017 Markus Sauermann
 
 ;; Author: Markus Sauermann <emacs-aes@sauermann-consulting.de>
 ;; Maintainer: Markus Sauermann <emacs-aes@sauermann-consulting.de>
 ;; Created: 15 Feb 2008
-;; Version: 0.8
-;; Package-Version: 0.8
+;; Version: 0.9
+;; Package-Version: 0.9
 ;; Keywords: data, tools
 ;; URL: https://github.com/Sauermann/emacs-aes
 
@@ -41,13 +41,9 @@
 ;; For customizing this library, there is the customization group aes
 ;; in the applications group.
 
-;; Version 24.4 is recommended
-;; Version 24.3 should only be used, if the patch described in [11]
-;; is applied, because there is a bug that causes passwords to be
-;; shown in the minibuffer.
-;; Versions 24.1 and 24.2 were not tested.
-;; Versions 22 to 23 are recommended.
-;; Version 21 and below are no longer supported.
+;; Emacs compatibility:
+;; Version 25.3.1 is recommended
+;; Versions 25.3 and earlier have not been tested for quite some time
 
 ;; This implementation allows additionally to the AES specification
 ;; blocklengths of 24 and 32 bytes.
@@ -398,7 +394,7 @@ than 12."
 
 (defsubst aes-SubShiftMixKeys (state copy keys)
   "Apply one round of the aes encryption destructively to the string STATE.
-COPY msut contain a duplicate of STATE, but they must not be `eq'.
+COPY must contain a duplicate of STATE, but they must not be `eq'.
 KEYS is a list containing a part of the expanded key schedule.  See
 `aes-KeyExpansion' for how KEYS looks like.
 The relevant keys for this round are stored in the first Nb elements of KEYS,
@@ -850,7 +846,7 @@ With A the password B can be refered to.")
 (defun aes-clear-plaintext-keys ()
   "Remove all stored plaintext passwords."
   (interactive)
-  (setq aes--plaintext-passwords))
+  (setq aes--plaintext-passwords nil))
 
 (defvar aes-idle-timer-value nil
   "Reference to idle timer.
@@ -862,7 +858,7 @@ all stored plaintext passwords.")
 This function is called, when idle-password-clearing is activated.
 This function also clears the message buffer, as it might contain confidential
 content."
-  (setq aes--plaintext-passwords)
+  (setq aes--plaintext-passwords nil)
   (setq aes-idle-timer-value nil)
   (with-current-buffer "*Messages*"
     (erase-buffer))
@@ -1276,7 +1272,7 @@ Return t, if a buffer was encrypted and otherwise the encrypted string."
                      (erase-buffer)
                      (insert enc)
                      (if aes-discard-undo-after-encryption
-                         (setq buffer-undo-list))
+                         (setq buffer-undo-list nil))
                      t)
           enc)))))
 
@@ -1358,13 +1354,35 @@ The test is done by looking at the first line of the buffer."
     (goto-char (point-min))
     (looking-at "aes-encrypted V [0-9]+.[0-9]+-.+\n")))
 
-(defun aes-encrypt-current-buffer-check ()
+(defvar aes--save-temp-buffer nil
+  "Temporary storage variable for buffer content.")
+
+(defun aes--encrypt-current-buffer-check ()
   "Encrypt current buffer, if it is not encrypted.
 Return nil."
   (if (not (aes-is-encrypted))
       (progn
+        (setq aes--save-temp-buffer (point))
         (aes-encrypt-buffer-or-string (current-buffer))
+        (add-hook 'after-save-hook
+                  'aes--restore-buffer-from-temp-var)
         nil)))
+
+(defun aes--restore-buffer-from-temp-var ()
+  "Restore Buffer content from temp variable."
+  (remove-hook 'after-save-hook
+               'aes--restore-buffer-from-temp-var)
+  (aes-decrypt-current-buffer)
+  (goto-char aes--save-temp-buffer)
+  (setq aes--save-temp-buffer nil)
+;  (erase-buffer)
+;  (insert aes--save-temp-buffer)
+;  (setq buffer-file-coding-system
+;        (car (find-coding-systems-region
+;              (point-min) (point-max))))
+  (set-buffer-modified-p nil)
+;  (setq aes--save-temp-buffer nil)
+  )
 
 (defun aes-encrypt-current-buffer (&optional password)
   "Encrypt current buffer.
@@ -1390,7 +1408,7 @@ Preserve modification status of buffer during decryption."
           (aes-decrypt-buffer-or-string (current-buffer))
           (set-buffer-modified-p mod-flag)
           (add-hook 'write-file-functions
-                    'aes-encrypt-current-buffer-check nil t))
+                    'aes--encrypt-current-buffer-check nil t))
       (aes-encrypt-buffer-or-string (current-buffer)))
     (goto-char p)))
 
@@ -1399,7 +1417,7 @@ Preserve modification status of buffer during decryption."
 This allows saving a previously encrypted buffer in plaintext."
   (interactive)
   (remove-hook 'write-file-functions
-               'aes-encrypt-current-buffer-check t)
+               'aes--encrypt-current-buffer-check t)
   (message "Encryption Hook removed."))
 
 (defun aes-auto-decrypt (&rest x)
@@ -1412,7 +1430,8 @@ decrypts the whole file and not just the region indicated in X."
         (aes-decrypt-buffer-or-string (current-buffer))
         (set-buffer-modified-p mod-flag)
         (add-hook 'write-file-functions
-                  'aes-encrypt-current-buffer-check nil t)))
+                  'aes--encrypt-current-buffer-check nil t)
+        ))
   (goto-char (point-min))
   (point-max))
 
