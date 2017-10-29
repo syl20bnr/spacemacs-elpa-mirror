@@ -2,8 +2,8 @@
 
 ;; Copyright (C) 2017 Skye Shaw
 ;; Author: Skye Shaw <skye.shaw@gmail.com>
-;; Version: 0.0.1
-;; Package-Version: 20170323.1621
+;; Version: 0.0.2 (unreleased)
+;; Package-Version: 20171029.1035
 ;; Keywords: mode-line, ci, circleci, travis-ci
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; URL: http://github.com/sshaw/build-status
@@ -28,6 +28,11 @@
 ;;; Commentary:
 
 ;; Global minor mode that shows a buffer's build status in the mode line.
+
+;;; Change Log:
+
+;; 2017-XX-XX - v0.0.2
+;; * Add support for CircleCI 2.0
 
 ;;; Code:
 
@@ -186,7 +191,8 @@ If `FILENAME' is not part of a CI project return nil."
               branch)))))
 
 (defun build-status--circle-ci-project-root (path)
-  (build-status--project-root path "circle.yml"))
+  (or (build-status--project-root path "circle.yml")
+      (build-status--project-root path ".circleci")))
 
 (defun build-status--travis-ci-project-root (path)
   (build-status--project-root path ".travis.yml"))

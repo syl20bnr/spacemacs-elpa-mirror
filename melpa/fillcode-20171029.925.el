@@ -1,7 +1,7 @@
 ;;; fillcode.el --- Fill (wrap) function calls and expressions in source code
 ;;
 ;; Version: 1.0.1
-;; Package-Version: 20171029.723
+;; Package-Version: 20171029.925
 ;; Author: Ryan Barrett <fillcode@ryanb.org>
 ;; URL: https://snarfed.org/fillcode
 ;;
@@ -38,7 +38,10 @@
 (defconst fillcode-version "1.0.2")
 
 (require 'cc-bytecomp)  ;; for c-in-literal and c-literal-limits
+(require 'cc-cmds)
 (require 'cc-engine)
+(require 'cc-mode)
+(require 'python)
 
 ;; gnu emacs supports optional forms as the last arguments to
 ;; define-minor-mode; they're evaluated when the minor mode is enabled or
@@ -67,8 +70,6 @@ For more information, see https://snarfed.org/fillcode"
   (message "Using fillcode mode version %s" fillcode-version))
 
 (defvar fillcode-wrapped-fill-function)
-(defvar py-indent-offset)
-(defvar c-indent-offset)
 
 (defadvice fillcode-mode (after fillcode-mode-setup-and-teardown)
  ;; run these when fillcode-mode is enabled or disabled. the fillcode-mode var
@@ -676,7 +677,7 @@ return non-nil if we're past the first char of the start token, so
   "Returns the indent offset, ie the number of columns to indent, in the
 current mode."
   (if (eq major-mode 'python-mode)
-      py-indent-offset
+      python-indent-offset
     c-basic-offset))
 
 (defun fillcode-get-last-line-indent-offset ()
