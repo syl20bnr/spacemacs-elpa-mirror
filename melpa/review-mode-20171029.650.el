@@ -3,7 +3,7 @@
 
 ;; Author: Kenshi Muto <kmuto@debian.org>
 ;; URL: https://github.com/kmuto/review-el
-;; Package-Version: 20171025.48
+;; Package-Version: 20171029.650
 
 ;;; Commentary:
 
@@ -359,6 +359,7 @@
     ("@<chap>{.*?}" . review-mode-ref-face)
     ("@<title>{.*?}" . review-mode-ref-face)
     ("@<chapref>{.*?}" . review-mode-ref-face)
+    ("@<bib>{.*?}" . review-mode-ref-face)
     ("@<u>{.*?}" . underline)
     ("@<tt>{.*?}" . font-lock-type-face)
     ("@<ttbold>{.*?}" . review-mode-underlinebold-face)

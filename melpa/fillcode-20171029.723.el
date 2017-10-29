@@ -1,7 +1,7 @@
 ;;; fillcode.el --- Fill (wrap) function calls and expressions in source code
 ;;
 ;; Version: 1.0.1
-;; Package-Version: 20150812.941
+;; Package-Version: 20171029.723
 ;; Author: Ryan Barrett <fillcode@ryanb.org>
 ;; URL: https://snarfed.org/fillcode
 ;;
@@ -65,6 +65,10 @@ For more information, see https://snarfed.org/fillcode"
   "Echo the current version of fillcode mode in the minibuffer."
   (interactive)
   (message "Using fillcode mode version %s" fillcode-version))
+
+(defvar fillcode-wrapped-fill-function)
+(defvar py-indent-offset)
+(defvar c-indent-offset)
 
 (defadvice fillcode-mode (after fillcode-mode-setup-and-teardown)
  ;; run these when fillcode-mode is enabled or disabled. the fillcode-mode var
