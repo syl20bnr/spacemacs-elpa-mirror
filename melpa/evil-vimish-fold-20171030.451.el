@@ -5,8 +5,8 @@
 ;; Author: Alex Murray <murray.alex@gmail.com>
 ;; Maintainer: Alex Murray <murray.alex@gmail.com>
 ;; URL: https://github.com/alexmurray/evil-vimish-fold
-;; Package-Version: 20161103.333
-;; Version: 0.2
+;; Package-Version: 20171030.451
+;; Version: 0.3
 ;; Package-Requires: ((emacs "24.4") (evil "1.0.0") (vimish-fold "0.2.0"))
 
 ;; This file is not part of GNU Emacs.
@@ -58,6 +58,11 @@ See also `evil-delete-fold'."
 See also `evil-create-fold'."
   (evil-fold-action evil-fold-list :delete))
 
+(evil-define-command evil-vimish-fold/delete-all ()
+  "Delete all folds."
+  (when vimish-fold-mode
+    (vimish-fold-delete-all)))
+
 (evil-define-motion evil-vimish-fold/next-fold (count)
   "Go to the start of the next fold."
   :type inclusive
@@ -87,6 +92,7 @@ See also `evil-create-fold'."
             (evil-define-key 'normal map "zk" 'evil-vimish-fold/previous-fold)
             (evil-define-key 'motion map "zk" 'evil-vimish-fold/previous-fold)
             (evil-define-key 'motion map "zd" 'evil-vimish-fold/delete)
+            (evil-define-key 'normal map "zE" 'evil-vimish-fold/delete-all)
             (evil-define-key 'motion map "zf" 'evil-vimish-fold/create)
             (evil-define-key 'motion map "zF" 'evil-vimish-fold/create-line)
             map)

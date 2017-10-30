@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017 by Tomoya Tanjo
 
 ;; Version: 0.2.2
-;; Package-Version: 20171022.2215
+;; Package-Version: 20171030.230
 ;; Author: Tomoya Tanjo <ttanjo@gmail.com>
 ;; URL: https://github.com/tom-tan/cwl-mode
 ;; Package-Requires: ((yaml-mode "0.0.13") (emacs "24.4"))
@@ -39,6 +39,7 @@
 ;;; Code:
 
 (require 'yaml-mode)
+(require 'rx)
 
 (defconst cwl-mode-keywords
   '("inputs" "outputs" "class" "steps" "id"
@@ -49,7 +50,7 @@
     "outputEval" "merge_nested" "merge_flattened"
     "location" "path" "basename" "dirname"
     "nameroot" "nameext" "checksum" "size" "format"
-    "contents" "listing" "fields" "symbols" "items"
+    "contents" "listing" "fields" "name" "symbols" "items"
     "in" "out" "run" "scatter" "scatterMethod"
     "source" "default" "valueFrom" "expressionLib"
     "types" "linkMerge" "inputBinding" "position"
@@ -69,13 +70,15 @@
 (define-derived-mode cwl-mode
     yaml-mode "CWL"
     "Major mode for Common Workflow Language"
-    :syntax-table nil
+    :syntax-table cwl-mode-syntax-table
     :keymap cwl-mode-map
     (font-lock-add-keywords
      nil
      (list
       (cons
-       (concat "\\b\\(" (regexp-opt cwl-mode-keywords) "\\):")
+       (eval `(rx word-boundary
+                  (group (regexp ,(regexp-opt cwl-mode-keywords)))
+                  (zero-or-more blank) ":"))
        '(1 font-lock-keyword-face)))))
 
 ;;;###autoload
@@ -84,6 +87,12 @@
 (defvar cwl-mode-map
   (let ((map (copy-keymap yaml-mode-map)))
     map))
+
+(defvar cwl-mode-syntax-table
+  (let ((table (copy-syntax-table yaml-mode-syntax-table)))
+    (modify-syntax-entry ?_ "w" table)
+    (modify-syntax-entry ?- "w" table)
+    table))
 
 ;;;###autoload
 (with-eval-after-load 'flycheck
