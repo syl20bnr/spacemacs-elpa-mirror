@@ -4,7 +4,7 @@
 
 ;; Author: codefalling <code.falling@gmail.com>
 ;; Keywords: languages
-;; Package-Version: 20171029.1137
+;; Package-Version: 20171029.1905
 
 ;; Version: 0.3.1
 ;; Package-Requires: ((mmm-mode "0.5.4") (vue-html-mode "0.1") (ssass-mode "0.1") (edit-indirect "0.1.4"))
@@ -29,6 +29,7 @@
 ;;; Code:
 
 (require 'mmm-mode)
+(require 'mmm-cmds)
 (require 'vue-html-mode)
 (require 'ssass-mode)
 (require 'edit-indirect)
