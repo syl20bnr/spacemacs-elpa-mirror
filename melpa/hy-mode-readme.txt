@@ -805,6 +805,22 @@ Send strings
       (set-buffer output-buffer)
       (buffer-string))))
 
+Update internal process
+
+(defun hy--shell-update-imports ()
+  "Send imports/requires to the current internal process.
+
+This is currently done manually as I'm not sure of the consequences of doing
+so automatically through eg. regular intervals. Sending the imports allows
+Eldoc to function (and will allow autocompletion once modules are completed).
+
+Right now the keybinding is not publically exposed."
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (while (re-search-forward (rx "(" (0+ space) (or "import" "require")) nil t)
+      (hy-shell-send-string-internal (hy--current-form-string)))))
+
 Shell creation
 
 (defun hy--shell-calculate-interpreter-args ()
@@ -1137,8 +1153,74 @@ Describe thing at point
 Autocompletion
 
 (defconst hy-company-setup-code
-  "(import [hy.completer [Completer]])
-(setv --HYCOMPANY (Completer))"
+  "(import builtins)
+(import ast)
+(import [hy.lex.parser [hy-symbol-unmangle]])
+(import [hy.macros [-hy-macros]])
+(import [hy.compiler [-compile-table]])
+(import [hy.core.shadow [*]])
+(import [hy.core.language [*]])
+
+(defn --HYCOMPANY-get-obj [text]
+  (when (in \".\" text)
+    (.join \".\" (-> text (.split \".\") butlast))))
+
+(defn --HYCOMPANY-get-attr [text]
+  (if (in \".\" text)
+      (-> text (.split \".\") last)
+      text))
+
+(defn --HYCOMPANY-get-obj-candidates [obj]
+  (try
+    (->> obj builtins.eval dir (map hy-symbol-unmangle) list)
+    (except [e Exception]
+      [])))
+
+(defn --HYCOMPANY-get-macros []
+  \"Extract macro names from all namespaces and compile-table symbols.\"
+  (->> -hy-macros
+     (.values)
+     (map dict.keys)
+     (chain -compile-table)
+     flatten
+     (map --HYCOMPANY-get-name)
+     (map hy-symbol-unmangle)
+     distinct
+     list))
+
+(defn --HYCOMPANY-get-global-candidates []
+  (->> (globals)
+     (.keys)
+     (map hy-symbol-unmangle)
+     (chain (--HYCOMPANY-get-macros))
+     flatten
+     distinct
+     list))
+
+(defn --HYCOMPANY-get-name [x]
+  \"Return the candidate name for x.\"
+  (if (isinstance x str)
+      x
+      x.--name--))
+
+(defn --HYCOMPANY-trim-candidates [candidates attr]
+  \"Limit list of candidates to those starting with attr.\"
+  (list (filter (fn [cand] (.startswith cand attr)) candidates)))
+
+(defn --HYCOMPANY [text]
+  (setv obj (--HYCOMPANY-get-obj text))
+  (setv attr (--HYCOMPANY-get-attr text))
+
+  (if obj
+      (setv candidates (--HYCOMPANY-get-obj-candidates obj))
+      (setv candidates (--HYCOMPANY-get-global-candidates)))
+
+  (setv choices (--HYCOMPANY-trim-candidates candidates attr))
+
+  (if obj
+      (list (map (fn [x] (+ obj \".\" x))
+                 choices))
+      choices))"
   "Autocompletion setup code to send to the internal process.")
 
 (defconst hy--company-regexp
@@ -1151,18 +1233,12 @@ Autocompletion
 (defun hy--company-format-str (string)
   "Format STRING to send to hy for completion candidates."
   (when string
-    (format "(.%s --HYCOMPANY \"%s\")"
-            (cond ((s-starts-with? "#" string)  ; Tag matches broken in Hy atm
-                   "tag-matches")
-                  ((s-contains? "." string)
-                   "attr-matches")
-                  (t
-                   "global-matches"))
-            string)))
+    (format "(--HYCOMPANY \"%s\")" string)))
 
 (defun hy--company-candidates (string)
   "Get candidates for completion of STRING."
   (-when-let* ((command (hy--company-format-str string))
+               (_ (not (s-starts-with? "." string)))  ; dot dsl not impl yet
                (candidates (hy--shell-send-async command))
                (matches (s-match-strings-all hy--company-regexp candidates)))
     (-select-column 1 matches)))  ; Get match-data-1 for each match
