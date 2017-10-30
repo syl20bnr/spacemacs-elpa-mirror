@@ -17,7 +17,7 @@ Set permissions to this file to 700 with you as the owner.
 - To setup a upload hook on save do this:
     (add-hook 'after-save-hook (lambda() (if ssh-deploy-on-explicit-save (ssh-deploy-upload-handler)) ))
 
-- To setup automatic storing of base revisions and detection of external changes do this:
+- To setup automatic storing of base revisions and detection of remote changes do this:
     (add-hook 'find-file-hook (lambda() (if ssh-deploy-automatically-detect-remote-changes (ssh-deploy-remote-changes-handler)) ))
 
 - To set key-bindings do something like this:
@@ -52,7 +52,7 @@ Now when you are in a directory which is deployed via SSH or FTP you can access 
 Here is a list of other variables you can set globally or per directory:
 
 * ssh-deploy-root-local - The local root that should be under deployment *(string)*
-* ssh-deploy-root-remote - The remote root that should be under deployment, should follow a `/protocol:user@host:path` format *(string)*
+* ssh-deploy-root-remote - The remote TRAMP root that is used for deployment *(string)*
 * ssh-deploy-debug - Enables debugging messages *(boolean)*
 * ssh-deploy-revision-folder - The folder used for storing local revisions *(string)*
 * ssh-deploy-automatically-detect-remote-changes - Enables automatic detection of remote changes *(boolean)*
