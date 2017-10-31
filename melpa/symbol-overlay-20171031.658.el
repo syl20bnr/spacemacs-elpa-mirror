@@ -4,7 +4,7 @@
 
 ;; Author: wolray <wolray@foxmail.com>
 ;; Version: 3.6
-;; Package-Version: 20171023.712
+;; Package-Version: 20171031.658
 ;; URL: https://github.com/wolray/symbol-overlay/
 ;; Keywords: faces, matching
 ;; Package-Requires: ((emacs "24.3"))
@@ -491,7 +491,7 @@ DIR must be 1 or -1."
       (and scope (user-error "Query-replace invalid in scope"))
       (beginning-of-thing 'symbol)
       (push-mark nil t)
-      (setq txt (read-string "Replacement: ")
+      (setq txt (read-string "Replacement: " (substring symbol 3 -3))
 	    new (symbol-overlay-get-symbol txt)
 	    defaults (cons symbol txt))
       (unless (string= new symbol)
