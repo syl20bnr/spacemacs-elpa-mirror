@@ -4,8 +4,8 @@
 
 ;; Author:     Paul Pogonyshev <pogonyshev@gmail.com>
 ;; Maintainer: Paul Pogonyshev <pogonyshev@gmail.com>
-;; Version:    0.9.3
-;; Package-Version: 20171028.607
+;; Version:    0.9.4
+;; Package-Version: 20171031.755
 ;; Keywords:   elisp, extensions
 ;; Homepage:   https://github.com/doublep/iter2
 ;; Package-Requires: ((emacs "25.1"))
@@ -25,15 +25,20 @@
 
 
 ;;; Commentary:
-;; Fully compatible fast reimplementation `generator' built-in Emacs package.
 
-
-;; Use `iter-yield' etc. from the original generator package.
-(require 'generator)
-(require 'macroexp)
+;; Fully compatible fast reimplementation `generator' built-in Emacs
+;; package.  The package provides `iter2-defun` and `iter2-lambda`
+;; forms that can be used instead of `iter-defun` and `iter-lambda`.
+;; All other functions and macros (e.g. `iter-yield`, `iter-next`) are
+;; intentionally not duplicated: just use the original ones.
 
 
 ;;; Code:
+
+;; For `iter-yield' etc. from the original `generator' package.
+(require 'generator)
+(require 'macroexp)
+
 
 (defgroup iter2 nil
   "Reimplementation of Elisp generators"
@@ -223,7 +228,7 @@ See `iter2-defun' for details."
           converted
           new-continuations)
       (while (and body never-yields)
-        (let ((form (macroexpand-1 (pop body))))
+        (let ((form (macroexpand (pop body))))
           ;; Simplify certain forms, rewrite certain others using
           ;; special forms that we handle below.
           ;;

@@ -4,7 +4,7 @@
 ;;
 ;; Author: Justin Talbott <justin@waymondo.com>
 ;; URL: https://github.com/waymondo/ace-jump-buffer
-;; Package-Version: 20170828.2153
+;; Package-Version: 20171031.850
 ;; Version: 0.4.1
 ;; Package-Requires: ((avy "0.4.0") (dash "2.4.0"))
 ;; License: GNU General Public License version 3, or (at your option) any later version
@@ -50,6 +50,16 @@
 (defface ajb-face '((t :background unspecified :foreground unspecified))
   "Customizable face to use within the `ace-jump-buffer' menu. The default is unspecified."
   :group 'ace-jump-buffer)
+
+(defcustom ajb-style 'at-full
+  "The default method of displaying the overlays for `ace-jump-buffer'."
+  :type '(choice
+          (const :tag "Pre" pre)
+          (const :tag "At" at)
+          (const :tag "At Full" at-full)
+          (const :tag "Post" post)
+          (const :tag "De Bruijn" de-bruijn)
+          (const :tag "Words" words)))
 
 ;; interval settings
 (defvar ajb/showing nil)
@@ -120,6 +130,7 @@
         (avy-all-windows nil)
         (bs-attributes-list ajb/bs-attributes-list)
         (avy-handler-function 'ajb/exit)
+        (avy-style ajb-style)
         (ajb/showing t))
     (save-excursion
       (bs--show-with-configuration ajb-bs-configuration)

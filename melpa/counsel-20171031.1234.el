@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171030.1331
+;; Package-Version: 20171031.1234
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -44,6 +44,7 @@
 (require 'swiper)
 (require 'etags)
 (require 'esh-util)
+(require 'compile)
 
 ;;* Utility
 (defun counsel-more-chars (n)
@@ -1166,14 +1167,14 @@ Typical value: '(recenter)."
 (defun counsel-git-grep-transformer (str)
   "Higlight file and line number in STR."
   (when (string-match "\\`\\([^:]+\\):\\([^:]+\\):" str)
-    (set-text-properties (match-beginning 1)
-                         (match-end 1)
-                         '(face compilation-info)
-                         str)
-    (set-text-properties (match-beginning 2)
-                         (match-end 2)
-                         '(face compilation-line-number)
-                         str))
+    (add-face-text-property (match-beginning 1)
+                            (match-end 1)
+                            'compilation-info
+                            nil str)
+    (add-face-text-property (match-beginning 2)
+                            (match-end 2)
+                            'compilation-line-number
+                            nil str))
   str)
 
 (defvar counsel-git-grep-projects-alist nil
@@ -1913,8 +1914,9 @@ INITIAL-INPUT can be given as the initial minibuffer input."
      (format counsel-fzf-cmd
              (if (string-equal str "")
                  "\"\""
-               (counsel-unquote-regex-parens
-                (ivy--regex str))))))
+               (progn
+                 (setq ivy--old-re (ivy--regex-fuzzy str))
+                 str)))))
   nil)
 
 ;;;###autoload
@@ -1923,14 +1925,16 @@ INITIAL-INPUT can be given as the initial minibuffer input."
 INITIAL-INPUT can be given as the initial minibuffer input."
   (interactive)
   (counsel-require-program (car (split-string counsel-fzf-cmd)))
-  (setq counsel--fzf-dir (if (and
-                              (fboundp 'projectile-project-p)
-                              (fboundp 'projectile-project-root)
-                              (projectile-project-p))
-                             (projectile-project-root)
-                           default-directory))
+  (setq counsel--fzf-dir
+        (if (and
+             (fboundp 'projectile-project-p)
+             (fboundp 'projectile-project-root)
+             (projectile-project-p))
+            (projectile-project-root)
+          default-directory))
   (ivy-read "> " #'counsel-fzf-function
             :initial-input initial-input
+            :re-builder #'ivy--regex-fuzzy
             :dynamic-collection t
             :action #'counsel-fzf-action
             :unwind #'counsel-delete-process
