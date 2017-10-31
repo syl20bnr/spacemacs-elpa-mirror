@@ -9,7 +9,7 @@
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Artur Malabarba <bruce.connor.am@gmail.com>
 ;; URL: http://github.com/clojure-emacs/clojure-mode
-;; Package-Version: 20171008.743
+;; Package-Version: 20171031.357
 ;; Keywords: languages clojure clojurescript lisp
 ;; Version: 5.7.0-snapshot
 ;; Package-Requires: ((emacs "24.4"))
@@ -1764,6 +1764,10 @@ no namespaces above point, return the first one in the buffer."
   (save-excursion
     (save-restriction
       (widen)
+
+      ;; Move to top-level to avoid searching from inside ns
+      (ignore-errors (while t (up-list nil t t)))
+
       ;; The closest ns form above point.
       (when (or (re-search-backward clojure-namespace-name-regex nil t)
                 ;; Or any form at all.

@@ -17,13 +17,13 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ;;
 ;; Author: Thomas de Beauchêne <thomas.de.beauchene@gmail.com>
-;; Version: 1.0
-;; Package-Version: 1.0.2
+;; Version: 2.0.0
+;; Package-Version: 2.0.0
 ;; Keywords: convenience, frames, windows, multi-screen
 ;; URL: http://github.com/deb0ch/winum.el
 ;; Created: 2016
 ;; Compatibility: GNU Emacs 24.x
-;; Package-requires: ((cl-lib "0.5"))
+;; Package-requires: ((cl-lib "0.5") (dash "2.13.0"))
 ;;
 ;; This file is NOT part of GNU Emacs.
 ;;
@@ -40,12 +40,11 @@
 ;;
 ;;; Code:
 ;;
-;; FIXME: when `winum-scope' is changed from frame-local to non-local in
-;;        customize, the mode-line is messed up until next `winum-update'.
 ;; FIXME: The mode-line's window number is not always up to date in all frames.
 ;;
 
 (eval-when-compile (require 'cl-lib))
+(require 'dash)
 
 ;; Configuration variables -----------------------------------------------------
 
@@ -94,6 +93,44 @@ Example: always assign *Calculator* the number 9 and *NeoTree* the number 0:
   (setq winum-assign-func 'my-winum-assign-func)"
   :group 'winum
   :type  'function)
+
+(make-obsolete-variable 'winum-assign-func 'winum-assign-functions "2.0.0")
+
+(defcustom winum-assign-functions nil
+  "List of functions called for each window by `winum-mode'.
+
+These functions allow for deterministic assignment of numbers to windows. Each
+function is called for every window. A function should return the number to be
+assigned to a window or nil. The *first* function to output a number for
+a given window will determine this window's number.
+
+If the list is empty or if every functions returns nil for a given window winum
+will proceed to automatic number assignment.
+
+Since this list is meant to allow custom window assignment for *mutiple*
+packages at once it should never be directly set, only added to and removed
+from.
+
+These functions, along with `winum-auto-assign-0-to-minibuffer', are the only
+way to have 0 assigned to a window.
+
+Example: always assign *Calculator* the number 9, *Flycheck-errors* the number 8
+and *NeoTree* the number 0:
+
+  (defun winum-assign-9-to-calculator-8-to-flycheck-errors ()
+    (cond
+     ((equal (buffer-name) \"*Calculator*\") 9)
+     ((equal (buffer-name) \"*Flycheck errors*\") 8)))
+
+  (defun winum-assign-0-to-neotree ()
+    (when (string-match-p (buffer-name) \".*\\*NeoTree\\*.*\") 10))
+
+  (add-to-list
+    'winum-assign-functions #'winum-assign-9-to-calculator-8-to-flycheck-errors)
+  (add-to-list
+    'winum-assign-functions #'winum-assign-0-to-neotree)"
+  :group 'winum
+  :type  'list)
 
 (defcustom winum-auto-setup-mode-line t
   "When nil, `winum-mode' will not display window numbers in the mode-line.
@@ -171,6 +208,10 @@ To get a window given a number, use the `car' of a value.
 To get a number given a window, use the `cdr' of a value.
 
 Such a structure allows for per-frame bidirectional fast access.")
+
+(defvar winum--last-used-scope winum-scope
+  "Tracks the last used `winum-scope'.
+Needed to detect scope changes at runtime.")
 
 ;; Interactive functions -------------------------------------------------------
 
@@ -397,20 +438,31 @@ POSITION: position in the mode-line."
           winum--remaining (winum--available-numbers))
     (winum--set-window-vector (make-vector (1+ winum--window-count) nil))
     (clrhash (winum--get-numbers-table))
-    (when winum-assign-func
-      (mapc (lambda (w)
-              (with-selected-window w
-                (with-current-buffer (window-buffer w)
-                  (let ((num (funcall winum-assign-func)))
-                    (when num
-                      (winum--assign w num))))))
-            windows))
+    (when winum-assign-functions
+      (-each windows #'winum--try-to-find-custom-number))
     (when (and winum-auto-assign-0-to-minibuffer
                (active-minibuffer-window)
                (not (winum-get-window-by-number 0)))
       (winum--assign (active-minibuffer-window) 0))
     (dolist (w windows)
       (winum--assign w))))
+
+(defun winum--try-to-find-custom-number (window)
+  "Try to find and assign a custom number for WINDOW.
+Do so by trying every function in `winum-assign-functions' and assign the
+*first* non nil integer.
+When multiple functions assign a number to a window log a warning and use the
+first number anyway."
+  (with-selected-window window
+    (with-current-buffer (window-buffer window)
+      (let* ((nums (->> winum-assign-functions
+                        (--map (cons it (funcall it)))
+                        (--remove (null (cdr it)))))
+             (num (-> nums (cl-first) (cdr))))
+        (when (> (length nums) 1)
+          (message "Winum conflict - window %s was assigned a number by multiple custom assign functions: '%s'"
+                   window (--map (format "%s -> %s" (car it) (cdr it)) nums)))
+        (when (integerp num) (winum--assign window num))))))
 
 (defun winum--assign (window &optional number)
   "Assign to window WINDOW the number NUMBER.
@@ -480,6 +532,7 @@ windows, however a higher number can be reserved by the user-defined
 
 (defun winum--set-window-vector (window-vector)
   "Set WINDOW-VECTOR according to the current `winum-scope'."
+  (winum--check-for-scope-change)
   (if (eq winum-scope 'frame-local)
       (puthash (selected-frame)
                (cons window-vector
@@ -490,6 +543,7 @@ windows, however a higher number can be reserved by the user-defined
 (defun winum--get-window-vector ()
   "Return the window vector used to get a window given a number.
 This vector is not stored the same way depending on the value of `winum-scope'."
+  (winum--check-for-scope-change)
   (if (eq winum-scope 'frame-local)
       (car (gethash (selected-frame) winum--frames-table))
     winum--window-vector))
@@ -498,9 +552,24 @@ This vector is not stored the same way depending on the value of `winum-scope'."
   "Return the numbers hashtable used to get a number given a window.
 This hashtable is not stored the same way depending on the value of
 `winum-scope'"
+  (winum--check-for-scope-change)
+  (winum--check-frames-table)
   (if (eq winum-scope 'frame-local)
       (cdr (gethash (selected-frame) winum--frames-table))
     winum--numbers-table))
+
+(defun winum--check-frames-table ()
+  "Make sure `winum--frames-table' exists and is correctly equipped.
+Verifies 2 things (when `winum-scope' is frame local):
+ * When `winum-scope' is frame-local for the first time it may be necessary to
+   instantiate `winum--frames-table'.
+ * A table entry for the current frame must be made when the frame has just
+   been created."
+  (when (eq winum-scope 'frame-local)
+    (unless winum--frames-table
+      (setq winum--frames-table (make-hash-table :size winum--max-frames)))
+    (unless (gethash (selected-frame) winum--frames-table)
+      (winum--update))))
 
 (defun winum--available-numbers ()
   "Return a list of numbers from 1 to `winum--window-count'.
@@ -520,6 +589,21 @@ using the `winum-assign-func', or using `winum-auto-assign-0-to-minibuffer'."
     (if (window-live-p window)
         (select-window window)
       (error "Got a dead window %S" window))))
+
+(defun winum--check-for-scope-change ()
+  "Check whether the `winum-scope' has been changed.
+If a change is detected run `winum--init' to reinitialize all
+internal data structures according to the new scope."
+  (unless (eq winum-scope winum--last-used-scope)
+    (setq winum--last-used-scope winum-scope)
+    (winum--init)))
+
+(defun winum--remove-deleted-frame-from-frames-table (frame)
+  "Remove FRAME from `winum--frames-table' after it was deleted."
+  (when winum--frames-table
+    (remhash frame winum--frames-table)))
+
+(add-hook 'delete-frame-functions #'winum--remove-deleted-frame-from-frames-table)
 
 (push "^No window numbered .$"     debug-ignored-errors)
 (push "^Got a dead window .$"      debug-ignored-errors)
