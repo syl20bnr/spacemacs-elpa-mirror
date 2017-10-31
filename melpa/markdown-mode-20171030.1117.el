@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171022.1736
+;; Package-Version: 20171030.1117
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -1336,7 +1336,7 @@ Math support can be enabled, disabled, or toggled later using
 (defcustom markdown-css-paths nil
   "URL of CSS file to link to in the output XHTML."
   :group 'markdown
-  :type 'list)
+  :type '(repeat (string :tag "CSS File Path")))
 
 (defcustom markdown-content-type ""
   "Content type string for the http-equiv header in XHTML output.

@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/orca
-;; Package-Version: 20171028.1336
+;; Package-Version: 20171030.1216
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: org, convenience
@@ -120,6 +120,9 @@ Try to remove superfluous information, like the website title."
                  (save-excursion
                    (goto-char (point-min))
                    (re-search-forward heading nil t))))
+      (org-capture-put
+       :immediate-finish t
+       :jump-to-captured t)
       (switch-to-buffer orig-buffer)
       (goto-char (match-end 0)))))
 

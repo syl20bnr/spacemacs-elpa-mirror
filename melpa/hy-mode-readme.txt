@@ -348,7 +348,7 @@ Misc
 
 (defconst hy--font-lock-kwds-anonymous-funcs
   (list
-   (rx symbol-start "%" (1+ digit) symbol-end)
+   (rx symbol-start "%" (1+ digit))
 
    '(0 font-lock-variable-name-face))
 

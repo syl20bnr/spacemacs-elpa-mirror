@@ -5,7 +5,7 @@
 
 ;; Author: Jonathan Sterling <jon@jonmsterling.com>
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 20171008.409
+;; Package-Version: 20171030.1346
 ;; Version: 0.0.1
 ;; Keywords: languages
 
@@ -119,7 +119,7 @@
 (defconst redprl-expression-keywords
   '("tv" "ax" "fcom"
     "bool" "tt" "ff" "if" "wbool" "wool" "bool-rec" "wif"
-    "nat" "zero" "succ" "nat-rec" "int" "negsucc"
+    "nat" "zero" "succ" "nat-rec" "int" "negsucc" "int-rec"
     "void"
     "S1" "base" "loop" "S1-rec"
     "lam" "app"
@@ -128,7 +128,7 @@
     "box" "cap"
     "V" "Vin" "Vproj"
     "universe" "U"
-    "hcom" "coe" "com")
+    "hcom" "ghcom" "coe" "com" "gcom")
   "RedPRL's expression keywords.")
 
 (defconst redprl-expression-symbols
