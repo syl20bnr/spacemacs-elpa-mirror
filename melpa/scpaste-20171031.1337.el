@@ -4,7 +4,7 @@
 
 ;; Author: Phil Hagelberg
 ;; URL: https://github.com/technomancy/scpaste
-;; Package-Version: 20160613.1943
+;; Package-Version: 20171031.1337
 ;; Version: 0.6.5
 ;; Created: 2008-04-02
 ;; Keywords: convenience hypermedia
@@ -124,6 +124,10 @@ Corresponds to ssh’s `-i` option Example: \"~/.ssh/id.pub\"")
   nil
   "Link to the user’s homebase (can be a mailto:).")
 
+(defvar scpaste-make-name-function
+  'buffer-name
+  "The function used to generate file names, unless the user provides one.")
+
 ;; To set defvar while developing: (load-file (buffer-file-name))
 (defvar scpaste-el-location (replace-regexp-in-string "\.elc$" ".el"
                                                       load-file-name))
@@ -139,19 +143,41 @@ Corresponds to ssh’s `-i` option Example: \"~/.ssh/id.pub\"")
           " using <a href='http://p.hagelb.org'>scpaste</a> at %s. "
           (cadr (current-time-zone)) ". (<a href='%s'>original</a>)</p>"))
 
+(defun scpaste-read-name (&optional suffix)
+  "Read the paste name from the minibuffer.
+
+Defaults to the return value of `scpaste-make-name-function'
+with SUFFIX as argument."
+  (let* ((default (funcall scpaste-make-name-function suffix))
+         (input (read-from-minibuffer (format "Name: (defaults to %s) " default))))
+    (if (equal "" input) default input)))
+
+(defun scpaste-make-name-from-buffer-name (&optional suffix)
+  "Make a name from current timestamp and current buffer's extension.
+
+If provided, SUFFIX is inserted between name and extension."
+  (concat
+   (file-name-sans-extension (buffer-name))
+   suffix
+   (file-name-extension (buffer-name) t)))
+
+(defun scpaste-make-name-from-timestamp (&optional _)
+  "Make a name from current timestamp and current buffer's extension."
+  (concat
+   (format-time-string "%s")
+   (file-name-extension (buffer-name) t)))
 
 ;;;###autoload
 (defun scpaste (original-name)
   "Paste the current buffer via `scp' to `scpaste-http-destination'.
 If ORIGINAL-NAME is an empty string, then the buffer name is used
 for the file name."
-  (interactive "MName (defaults to buffer name): ")
+  (interactive (list (scpaste-read-name)))
+
   (let* ((b (generate-new-buffer (generate-new-buffer-name "b")))
          (hb (htmlize-buffer))
          (name (replace-regexp-in-string "[/\\%*:|\"<>  ]+" "_"
-                                         (if (equal "" original-name)
-                                             (buffer-name)
-                                           original-name)))
+                                         original-name))
          (full-url (concat scpaste-http-destination
                            "/" (url-hexify-string name) ".html"))
          (scp-destination (concat scpaste-scp-destination
@@ -209,7 +235,9 @@ for the file name."
 (defun scpaste-region (name)
   "Paste the current region via `scpaste'.
 NAME is used for the file name."
-  (interactive "MName: ")
+  (interactive (list (scpaste-read-name (concat "-" (number-to-string (region-beginning))
+                                                "-"
+                                                (number-to-string (region-end))))))
   (let ((region-contents (buffer-substring (mark) (point))))
     (with-temp-buffer
       (insert region-contents)

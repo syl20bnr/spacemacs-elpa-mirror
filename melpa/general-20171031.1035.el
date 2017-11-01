@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/general.el
-;; Package-Version: 20171029.1852
+;; Package-Version: 20171031.1035
 ;; Created: February 17, 2016
 ;; Keywords: vim, evil, leader, keybindings, keys
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
@@ -518,7 +518,7 @@ run on it)."
            (keys (key-description keys))
            (keys-regexp (concat (when (general--getf def kargs :wk-full-keys)
                                   "\\`")
-                                keys
+                                (regexp-quote keys)
                                 "\\'"))
            (prefix (cl-getf kargs :prefix))
            (binding (or (general--getf2 def :def :prefix-command)
