@@ -4,7 +4,7 @@
 
 ;; Author: Lars Andersen <expez@expez.com>
 ;; URL: https://www.github.com/expez/evil-smartparens
-;; Package-Version: 20161010.322
+;; Package-Version: 20171101.13
 ;; Keywords: evil smartparens
 ;; Version: 0.3.0
 ;; Package-Requires: ((evil "1.0") (emacs "24.4") (smartparens "1.6.3"))
@@ -76,14 +76,12 @@ list of (fn args) to pass to `apply''"
 (defun evil-sp--get-endpoint-for-sp-kill-sexp ()
   (unwind-protect
       (progn
-        (push major-mode sp-navigate-consider-stringlike-sexp)
         (evil-sp--new-ending (point)
                              (or (ignore-errors
                                    (evil-sp--point-after '(sp-up-sexp 1)
                                                          '(sp-backward-down-sexp 1)))
                                  (point))
-                             :no-error))
-    (pop sp-navigate-consider-stringlike-sexp)))
+                             :no-error))))
 
 (defun evil-sp--get-endpoint-for-killing ()
   "Return the endpoint from POINT upto which `sp-kill-sexp' would kill."
@@ -153,6 +151,7 @@ list of (fn args) to pass to `apply''"
       (kbd "S") #'evil-sp-change-whole-line
       (kbd "X") #'evil-sp-backward-delete-char
       (kbd "x") #'evil-sp-delete-char)
+    (add-to-list 'evil-change-commands #'evil-sp-change)
     (evil-define-key 'visual evil-smartparens-mode-map
       (kbd "X") #'evil-sp-delete
       (kbd "x") #'evil-sp-delete))
@@ -199,9 +198,6 @@ list of (fn args) to pass to `apply''"
 (evil-define-operator evil-sp-change (beg end type register yank-handler)
   "Call `evil-change' with a balanced region"
   (interactive "<R><x><y>")
-  ;; #20 don't delete the space after a word
-  (when (save-excursion (goto-char end) (looking-back " " (- (point) 5)))
-    (setq end (1- end)))
   (if (or (evil-sp--override)
           (= beg end)
           (and (eq type 'block)
@@ -332,11 +328,9 @@ Strings affect depth."
           (goto-char point))
         (unwind-protect
             (progn
-              (push major-mode sp-navigate-consider-stringlike-sexp)
               (while (and (not (sp-point-in-comment))
                           (ignore-errors (sp-backward-up-sexp)))
-                (cl-incf depth)))
-          (pop sp-navigate-consider-stringlike-sexp))))
+                (cl-incf depth))))))
     depth))
 
 (defun evil-sp--new-ending (beg end &optional no-error)

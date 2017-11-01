@@ -3,8 +3,8 @@
 ;; Copyright (C) 2017 ybiquitous <ybiquitous@gmail.com>
 
 ;; Author:  ybiquitous <ybiquitous@gmail.com>
-;; Version: 1.0.0
-;; Package-Version: 20171024.827
+;; Version: 1.0.3
+;; Package-Version: 20171031.1819
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: languages
 ;; URL: https://github.com/ybiquitous/js-auto-format-mode
