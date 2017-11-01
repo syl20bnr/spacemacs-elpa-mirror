@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171030.1117
+;; Package-Version: 20171031.1725
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -860,6 +860,9 @@
 ;;     This is useful for compatibility with `org-mode', which doesn't
 ;;     recognize the lowercase variant.
 ;;
+;;   * `markdown-translate-filename-function' - A function to be used to
+;;     translate filenames in links.
+;;
 ;; Additionally, the faces used for syntax highlighting can be modified to
 ;; your liking by issuing `M-x customize-group RET markdown-faces`
 ;; or by using the "Markdown Faces" link at the bottom of the mode
@@ -1502,6 +1505,21 @@ or from the menu Markdown > Links & Images menu."
   :safe 'booleanp
   :package-version '(markdown-mode . "2.3"))
 (make-variable-buffer-local 'markdown-hide-urls)
+
+(defcustom markdown-translate-filename-function #'identity
+  "Function to use to translate filenames when following links.
+\\<markdown-mode-map>\\[markdown-follow-thing-at-point] and \\[markdown-follow-link-at-point]
+call this function with the filename as only argument whenever
+they encounter a filename (instead of a URL) to be visited and
+use its return value instead of the filename in the link.  For
+example, if absolute filenames are actually relative to a server
+root directory, you can set
+`markdown-translate-filename-function' to a function that
+prepends the root directory to the given filename."
+  :group 'markdown
+  :type 'function
+  :risky t
+  :package-version '(markdown-mode . "2.4"))
 
 
 ;;; Regular Expressions =======================================================
@@ -8086,7 +8104,8 @@ returns nil."
 (defun markdown-follow-link-at-point ()
   "Open the current non-wiki link.
 If the link is a complete URL, open in browser with `browse-url'.
-Otherwise, open with `find-file' after stripping anchor and/or query string."
+Otherwise, open with `find-file' after stripping anchor and/or query string.
+Translate filenames using `markdown-filename-translate-function'."
   (interactive)
   (if (markdown-link-p)
       (let* ((url (markdown-link-url))
@@ -8102,7 +8121,8 @@ Otherwise, open with `find-file' after stripping anchor and/or query string."
         ;; Open full URLs in browser, files in Emacs
         (if full
             (browse-url url)
-          (when (and file (> (length file) 0)) (find-file file))))
+          (when (and file (> (length file) 0))
+            (find-file (funcall markdown-translate-filename-function file)))))
     (user-error "Point is not at a Markdown link or URL")))
 
 (defun markdown-fontify-inline-links (last)

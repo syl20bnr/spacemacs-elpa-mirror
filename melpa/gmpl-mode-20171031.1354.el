@@ -4,7 +4,7 @@
 
 ;; Author: Junpeng Qiu <qjpchmail@gmail.com>
 ;; Package-Requires: ((emacs "24"))
-;; Package-Version: 20151116.1149
+;; Package-Version: 20171031.1354
 ;; Keywords: extensions
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -269,6 +269,8 @@
 (defvar gmpl--glpsol-output-file-name (make-temp-file "gmpl-glpsol-output"))
 (defvar gmpl--glpsol-ranges-file-name (make-temp-file "gmpl-glpsol-ranges"))
 (defvar gmpl--glpsol-temp-buffer-name "*glpsol*")
+(defvar gmpl--glpsol-process-name "Run glpsol")
+(defvar gmpl--glpsol-process-buffer-name "*glpsol-output*")
 (defvar gmpl--separator-width 80)
 (defvar gmpl--separator-char ?=)
 
@@ -315,33 +317,57 @@ exact location of `glpsol'.")
     (goto-char (point-max))
     (newline)))
 
+(defmacro gmpl--with-glpsol-output-buffer (&rest body)
+  `(with-current-buffer (get-buffer-create gmpl--glpsol-temp-buffer-name)
+     (let ((inhibit-read-only t))
+       ,@body)))
+
+(defun gmpl--glpsol-output-setup ()
+  (gmpl--with-glpsol-output-buffer
+   (special-mode)
+   (font-lock-add-keywords nil gmpl--glpsol-buffer-font-lock-keywords)
+   (erase-buffer)
+   (insert (gmpl--generate-separator gmpl--separator-width
+                                     gmpl--separator-char
+                                     "Terminal Output"))
+   (newline)
+   (save-excursion
+     (goto-char (point-min))
+     (if (fboundp 'font-lock-ensure)
+         (font-lock-ensure)
+       (with-no-warnings
+         (font-lock-fontify-buffer))))))
+
+(defun gmpl--glpsol-output-filter (proc output)
+  (gmpl--with-glpsol-output-buffer
+   (goto-char (point-max))
+   (insert output)))
+
+(defun gmpl--glpsol-output-exit (proc event)
+  (when (string= event "finished\n")
+    (gmpl--with-glpsol-output-buffer
+     (newline)
+     (gmpl--maybe-insert-file-with-title gmpl--glpsol-output-file-name "Solution Details")
+     (newline)
+     (gmpl--maybe-insert-file-with-title gmpl--glpsol-ranges-file-name "Sensitivity Analysis"))))
+
 (defun gmpl--send-region-to-glpsol (beg end)
   "Send the region from BEG to END to `glpsol'."
   (write-region beg end gmpl--glpsol-input-file-name)
-  (let ((extra-args gmpl-glpsol-extra-args))
-    (with-current-buffer (get-buffer-create gmpl--glpsol-temp-buffer-name)
-      (special-mode)
-      (let ((inhibit-read-only t))
-        (erase-buffer)
-        (insert (gmpl--generate-separator gmpl--separator-width
-                                          gmpl--separator-char
-                                          "Terminal Output"))
-        (newline)
-        (insert (shell-command-to-string
-                 (concat gmpl-glpsol-program " -m " gmpl--glpsol-input-file-name
-                         " -o " gmpl--glpsol-output-file-name
-                         " --ranges " gmpl--glpsol-ranges-file-name
-                         " " extra-args)))
-        (newline)
-        (gmpl--maybe-insert-file-with-title gmpl--glpsol-output-file-name "Solution Details")
-        (newline)
-        (gmpl--maybe-insert-file-with-title gmpl--glpsol-ranges-file-name "Sensitivity Analysis")
-        (goto-char (point-min))
-        (font-lock-add-keywords nil gmpl--glpsol-buffer-font-lock-keywords)
-        (if (fboundp 'font-lock-ensure)
-            (font-lock-ensure)
-          (with-no-warnings
-            (font-lock-fontify-buffer)))))))
+  (message "")
+  (let ((args (list gmpl-glpsol-program "-m" gmpl--glpsol-input-file-name
+                    "-o" gmpl--glpsol-output-file-name
+                    "--ranges" gmpl--glpsol-ranges-file-name))
+        proc)
+    (when gmpl-glpsol-extra-args
+      (setq args (cons gmpl-glpsol-extra-args args)))
+    (gmpl--glpsol-output-setup)
+    (set-process-filter
+     (setq proc (apply #'start-process gmpl--glpsol-process-name
+                       gmpl--glpsol-process-buffer-name
+                       args))
+     #'gmpl--glpsol-output-filter)
+    (set-process-sentinel proc #'gmpl--glpsol-output-exit)))
 
 ;;;###autoload
 (defun gmpl-glpsol-solve-dwim ()

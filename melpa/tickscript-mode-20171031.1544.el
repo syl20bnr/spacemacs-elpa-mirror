@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017  Marc Sherry
 ;; Homepage: https://github.com/msherry/tickscript-mode
 ;; Version: 0.4
-;; Package-Version: 20171031.1538
+;; Package-Version: 20171031.1544
 ;; Author: Marc Sherry <msherry@gmail.com>
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "24.1"))
@@ -384,8 +384,7 @@ only toplevel nodes \"batch\" and \"stream\" are checked."
   "Return the word at point if it is a chaining method.
 
 Chaining methods act much like nodes, but are only available
-under certain nodes.  See `tickscript-node-at-point' for details on how
-this function works."
+under certain nodes."
   (tickscript--thing-at-point 'chaining-method ?| t))
 
 (defun tickscript-udf-at-point ()
