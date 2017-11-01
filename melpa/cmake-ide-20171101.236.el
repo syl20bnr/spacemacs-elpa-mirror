@@ -4,7 +4,7 @@
 
 ;; Author:  Atila Neves <atila.neves@gmail.com>
 ;; Version: 0.6
-;; Package-Version: 20171017.608
+;; Package-Version: 20171101.236
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (seq "1.11") (levenshtein "0") (s "1.11.0"))
 ;; Keywords: languages
 ;; URL: http://github.com/atilaneves/cmake-ide
@@ -651,9 +651,10 @@ the object file's name just above."
 (defun cmake-ide--get-build-dir ()
   "Return the directory name to run CMake in."
   ;; build the directory key for the project
-  (let ((build-dir (cmake-ide--build-dir-var)))
-    (when (not build-dir)
-      (setq build-dir (cmake-ide--get-build-dir-from-hash)))
+  (let ((build-dir
+         (expand-file-name (or (cmake-ide--build-dir-var)
+                               (cmake-ide--get-build-dir-from-hash))
+                           (cmake-ide--locate-project-dir))))
     (when (not (file-accessible-directory-p build-dir))
       (cmake-ide--message "Making directory %s" build-dir)
       (make-directory build-dir))
