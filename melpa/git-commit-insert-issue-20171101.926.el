@@ -4,7 +4,7 @@
 
 ;; Author: Vindarel
 ;; URL: https://gitlab.com/emacs-stuff/git-commit-insert-issue/
-;; Package-Version: 20170502.1027
+;; Package-Version: 20171101.926
 ;; Keywords: git, github, gitlab, bitbucket, commit, issues
 ;; Version: 0.2.0
 ;; Package-Requires: ((helm "0") (projectile "0") (s "0") (github-issues "0") (gitlab "0") (bitbucket "0"))
@@ -139,14 +139,14 @@
   ;; This helm call doesn't work alone, but isn't actually needed.
   ;; (helm :sources '(issues-helm-source)))
   (let ((ido-separator "\n"))
-    (insert (ido-completing-read "Choose the issue: "
+    (insert (completing-read "Choose the issue: "
                                (git-commit-insert-issue-get-issues-github-or-gitlab-or-bitbucket-format)))))
 
 (defun git-commit-insert-issue-gitlab-insert ()
   "Choose and insert the issue id"
   (interactive)
   (let ((ido-separator "\n"))
-    (insert (ido-completing-read "Gitlab issue ? " (git-commit-insert-issue-gitlab-issues-format)))))
+    (insert (completing-read "Gitlab issue ? " (git-commit-insert-issue-gitlab-issues-format)))))
 
 (defun insert-issue--get-remotes ()
   "Get this repo's remote names"
