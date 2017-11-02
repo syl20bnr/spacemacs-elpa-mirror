@@ -4,7 +4,7 @@
 
 ;; Author: Raphaël Cauderlier
 ;; Version: 0.1
-;; Package-Version: 20170407.258
+;; Package-Version: 20171102.707
 ;; License: CeCILL-B
 ;; Package-Requires: ((flycheck "0.19") (dedukti-mode "0.1"))
 
@@ -20,12 +20,8 @@
 ;; To enable this checker in all files visited by dedukti-mode, add
 ;; the following code to your Emacs configuration file:
 ;;
-;; (eval-after-load 'dedukti-mode '(progn
-;;   (require 'flycheck-dedukti)
-;;   (add-hook 'dedukti-mode-hook (lambda ()
-;;      (flycheck-select-checker 'dedukti)
-;;      (flycheck-mode)
-;;      ))))
+;; (eval-after-load 'dedukti-mode
+;;   '(add-hook 'dedukti-mode-hook 'flycheck-dedukti-hook))
 
 ;;; Code:
 
@@ -63,6 +59,18 @@
   :modes dedukti-mode)
 
 (add-to-list 'flycheck-checkers 'dedukti)
+
+;;;###autoload
+(defun flycheck-dedukti-hook ()
+  "Hook to activate flycheck in a dedukti-mode buffers.
+
+To activate flycheck in all dedukti-mode buffers, add this hook
+to `dedukti-mode-hook' like this:
+
+(eval-after-load 'dedukti-mode
+  '(add-hook 'dedukti-mode-hook 'flycheck-dedukti-hook))"
+  (flycheck-select-checker 'dedukti)
+  (flycheck-mode 1))
 
 (provide 'flycheck-dedukti)
 ;;; flycheck-dedukti.el ends here

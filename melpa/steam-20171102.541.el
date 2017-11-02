@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand
 ;; URL: http://github.com/Kungsgeten/steam.el
-;; Package-Version: 20171008.1327
+;; Package-Version: 20171102.541
 ;; Version: 1.00
 ;; Keywords: games
 ;; Package-Requires: ((cl-lib "0.5"))
@@ -59,12 +59,13 @@
 
 (defun steam-launch-id (id)
   "Launch game with ID in Steam client."
-  (shell-command
-   (concat (cl-case system-type
-             ('windows-nt "explorer ")
-             ('gnu/linux "steam ")
-             ('darwin "open "))
-           (shell-quote-argument (format "steam://rungameid/%s" id)))))
+  (start-process "Steam"
+                 nil
+                 (cl-case system-type
+                   ('windows-nt "explorer")
+                   ('gnu/linux "steam")
+                   ('darwin "open"))
+                 (format "steam://rungameid/%s" id)))
 
 ;;;###autoload
 (defun steam-launch ()
