@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 ~ 2015 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; Version: 1.6.8
-;; Package-Version: 20170918.1017
+;; Package-Version: 20171102.216
 ;; Package-Requires: ((helm "1.5") (w3m "0.0") (cl-lib "0.5") (emacs "24.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -49,7 +49,7 @@
                               "Browse Url Externally"
                               (lambda (candidate)
                                 (helm-w3m-browse-bookmark candidate t))
-                              "Delete Bookmark"
+                              "Delete Bookmarks"
                               (lambda (candidate)
                                 (helm-w3m-delete-bookmark candidate))
                               "Rename Bookmark"
@@ -114,7 +114,7 @@ http://emacs-w3m.namazu.org/")
   (with-current-buffer
       (find-file-noselect w3m-bookmark-file)
     (goto-char (point-min))
-    (when (re-search-forward elm nil t)
+    (when (search-forward elm nil t)
       (forward-line 0)
       (delete-region (point)
                      (line-end-position))
@@ -133,7 +133,7 @@ http://emacs-w3m.namazu.org/")
     (with-current-buffer
         (find-file-noselect w3m-bookmark-file)
       (goto-char (point-min))
-      (when (re-search-forward (concat elm "<") nil t)
+      (when (search-forward (concat elm "<") nil t)
         (goto-char (1- (point)))
         (delete-char (- (length old-title)))
         (insert new-title))

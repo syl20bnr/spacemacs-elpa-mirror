@@ -4,7 +4,7 @@
 
 ;; Author: Magnar Sveen <magnars@gmail.com>
 ;; Version: 1.12.0
-;; Package-Version: 20171101.219
+;; Package-Version: 20171102.227
 ;; Keywords: strings
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -367,6 +367,8 @@ This is a simple wrapper around the built-in `string-match-p'."
   "Replaces OLD with NEW in S."
   (declare (pure t) (side-effect-free t))
   (replace-regexp-in-string (regexp-quote old) new s t t))
+
+(defalias 's-replace-regexp 'replace-regexp-in-string)
 
 (defun s--aget (alist key)
   (declare (pure t) (side-effect-free t))

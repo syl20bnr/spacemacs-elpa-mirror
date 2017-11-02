@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20171031.456
+;; Package-Version: 20171102.55
 ;; Keywords: project, convenience
 ;; Version: 0.15.0-cvs
 ;; Package-Requires: ((emacs "24.1") (pkg-info "0.4"))
@@ -2569,7 +2569,7 @@ Fallback to DEFAULT-VALUE for missing attributes."
      ((member project-type '(scons)) (suffix "test"))
      ((member project-type '(maven symfony)) (suffix "Test"))
      ((member project-type '(gradle gradlew grails)) (suffix "Spec"))
-     ((member project-type '(sbt)) (suffix "Spec"))
+     ((member project-type '(haskell-cabal haskell-stack sbt)) (suffix "Spec"))
      (t (suffix)))))
 
 (defun projectile-dirname-matching-count (a b)
