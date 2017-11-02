@@ -59,7 +59,7 @@ When in command mode, the 【SPACE】 is a leader key.
 
 globally, the leader key is the 【f9】 key. 【f9】 is leader key regardless it's in command mode or insert mode.
 
-the following stardard keys with Control are supported:
+the following standard keys with Control are supported:
 
  ;; 【Ctrl+tab】 'xah-next-user-buffer
  ;; 【Ctrl+shift+tab】 'xah-previous-user-buffer
@@ -70,7 +70,7 @@ the following stardard keys with Control are supported:
  ;; 【Ctrl+o】 open
  ;; 【Ctrl+s】 save
  ;; 【Ctrl+shift+s】 save as
- ;; 【Ctrl+shift+t】 open last clased
+ ;; 【Ctrl+shift+t】 open last closed
  ;; 【Ctrl++】 'text-scale-increase
  ;; 【Ctrl+-】 'text-scale-decrease
  ;; 【Ctrl+0】 (lambda () (interactive) (text-scale-set 0))))

@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2017, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 8.3.20171101
-;; Package-Version: 20171101.1104
+;; Version: 8.4.20171101
+;; Package-Version: 20171101.1546
 ;; Created: 10 Sep 2013
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, emulations, vim, ergoemacs
@@ -76,7 +76,7 @@
 
 ;; globally, the leader key is the 【f9】 key. 【f9】 is leader key regardless it's in command mode or insert mode.
 
-;; the following stardard keys with Control are supported:
+;; the following standard keys with Control are supported:
 
  ;; 【Ctrl+tab】 'xah-next-user-buffer
  ;; 【Ctrl+shift+tab】 'xah-previous-user-buffer
@@ -87,7 +87,7 @@
  ;; 【Ctrl+o】 open
  ;; 【Ctrl+s】 save
  ;; 【Ctrl+shift+s】 save as
- ;; 【Ctrl+shift+t】 open last clased
+ ;; 【Ctrl+shift+t】 open last closed
  ;; 【Ctrl++】 'text-scale-increase
  ;; 【Ctrl+-】 'text-scale-decrease
  ;; 【Ctrl+0】 (lambda () (interactive) (text-scale-set 0))))
@@ -1063,7 +1063,7 @@ Version 2016-12-22"
     (user-error "Not in dired")))
 
 (defun xah-cycle-hyphen-underscore-space ( &optional @begin @end )
-  "Cycle {underscore, space, hypen} chars in selection or inside quote/bracket or line.
+  "Cycle {underscore, space, hyphen} chars in selection or inside quote/bracket or line.
 When called repeatedly, this command cycles the {“_”, “-”, “ ”} characters, in that order.
 
 The region to work on is by this order:
@@ -1701,11 +1701,16 @@ Version 2017-07-02"
 If region is active, extend selection downward by block.
 
 URL `http://ergoemacs.org/emacs/modernization_mark-word.html'
-Version 2017-05-27"
+Version 2017-11-01"
   (interactive)
   (if (region-active-p)
       (re-search-forward "\n[ \t]*\n" nil "move")
-    (xah-select-current-block)))
+    (progn
+      (skip-chars-forward " \n\t")
+      (when (re-search-backward "\n[ \t]*\n" nil "move")
+        (re-search-forward "\n[ \t]*\n"))
+      (push-mark (point) t t)
+      (re-search-forward "\n[ \t]*\n" nil "move"))))
 
 (defun xah-select-current-line ()
   "Select current line.
@@ -1718,13 +1723,15 @@ Version 2016-07-22"
 (defun xah-select-line ()
   "Select current line. If region is active, extend selection downward by line.
 URL `http://ergoemacs.org/emacs/modernization_mark-word.html'
-Version 2016-07-22"
+Version 2017-11-01"
   (interactive)
   (if (region-active-p)
       (progn
         (forward-line 1)
         (end-of-line))
-    (xah-select-current-line)))
+    (progn
+      (end-of-line)
+      (set-mark (line-beginning-position)))))
 
 (defun xah-extend-selection ()
   "Select the current word, bracket/quote expression, or expand selection.
@@ -2040,7 +2047,7 @@ If there is text selection, uses the text selection for path.
 If the path starts with “http://”, open the URL in browser.
 Input path can be {relative, full path, URL}.
 Path may have a trailing “:‹n›” that indicates line number. If so, jump to that line number.
-If path does not have a file extention, automatically try with “.el” for elisp files.
+If path does not have a file extension, automatically try with “.el” for elisp files.
 This command is similar to `find-file-at-point' but without prompting for confirmation.
 
 URL `http://ergoemacs.org/emacs/emacs_open_file_path_fast.html'
@@ -3220,7 +3227,7 @@ Version 2017-01-21"
      ("4" . split-window-below)
      ("5" . delete-char)
      ("6" . xah-select-block)
-     ("7" . xah-select-current-line)
+     ("7" . xah-select-line)
      ("8" . xah-extend-selection)
      ("9" . xah-select-text-in-quote)
      ("0" . nil)
@@ -3259,7 +3266,7 @@ Version 2017-01-21"
      '(
        ("8" . pop-global-mark)
        ("7" . xah-pop-local-mark-ring)
-       ("2" . xah-select-current-line)
+       ("2" . xah-select-line)
        ("1" . xah-extend-selection))))
 
   (progn
