@@ -4,7 +4,7 @@
 
 ;; Author:            Adam Sokolnicki <adam.sokolnicki@gmail.com>
 ;; URL:               https://github.com/asok/projectile-rails
-;; Package-Version: 20170901.47
+;; Package-Version: 20171103.1004
 ;; Version:           0.15.0
 ;; Keywords:          rails, projectile
 ;; Package-Requires:  ((emacs "24.3") (projectile "0.12.0") (inflections "1.1") (inf-ruby "2.2.6") (f "0.13.0") (rake "0.3.2"))
@@ -741,8 +741,7 @@ The mode of the output buffer will be `projectile-rails-compilation-mode'."
 
 (defun projectile-rails-root ()
   "Returns rails root directory if this file is a part of a Rails application else nil"
-  (let* ((dir default-directory)
-         (cache-key (projectile-rails-cache-key "root"))
+  (let* ((cache-key (projectile-rails-cache-key "root"))
          (cache-value (gethash cache-key projectile-rails-cache-data)))
     (or cache-value
         (ignore-errors
@@ -1156,7 +1155,7 @@ DIRS are directories where to look for assets."
 
 (defun projectile-rails--ignore-buffer-p ()
   "Returns t if `projectile-rails' should not be enabled for the current buffer"
-  (string-match-p "\\*\\(Minibuf-[0-9]+\\|helm mini\\)\\*" (buffer-name)))
+  (string-match-p "\\*\\(Minibuf-[0-9]+\\|helm mini\\|helm projectile\\)\\*" (buffer-name)))
 
 (defun projectile-rails-extract-region (partial-name)
   "Extract region to a partial called PARTIAL-NAME.
@@ -1518,8 +1517,8 @@ If file does not exist and ASK in not nil it will ask user to proceed."
 (defun projectile-rails-on ()
   "Enable `projectile-rails-mode' minor mode if this is a rails project."
   (when (and
-         (projectile-project-p)
          (not (projectile-rails--ignore-buffer-p))
+         (projectile-project-p)
          (projectile-rails-root))
     (projectile-rails-mode +1)))
 

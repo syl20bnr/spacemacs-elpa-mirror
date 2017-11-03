@@ -9,7 +9,7 @@
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Artur Malabarba <bruce.connor.am@gmail.com>
 ;; URL: http://github.com/clojure-emacs/clojure-mode
-;; Package-Version: 20171031.357
+;; Package-Version: 20171103.1150
 ;; Keywords: languages clojure clojurescript lisp
 ;; Version: 5.7.0-snapshot
 ;; Package-Requires: ((emacs "24.4"))
@@ -524,6 +524,15 @@ replacement for `cljr-expand-let`."
   (setq-local prettify-symbols-alist clojure--prettify-symbols-alist)
   (setq-local open-paren-in-column-0-is-defun-start nil))
 
+(defsubst clojure-in-docstring-p ()
+  "Check whether point is in a docstring."
+  (let ((ppss (syntax-ppss)))
+    ;; are we in a string?
+    (when (nth 3 ppss)
+      ;; check font lock at the start of the string
+      (eq (get-text-property (nth 8 ppss) 'face)
+          'font-lock-doc-face))))
+
 ;;;###autoload
 (define-derived-mode clojure-mode prog-mode "Clojure"
   "Major mode for editing Clojure code.
@@ -535,7 +544,7 @@ replacement for `cljr-expand-let`."
   ;; `electric-layout-post-self-insert-function' prevents indentation in strings
   ;; and comments, force indentation in docstrings:
   (add-hook 'electric-indent-functions
-            (lambda (char) (if (clojure-in-docstring-p) 'do-indent))))
+            (lambda (_char) (if (clojure-in-docstring-p) 'do-indent))))
 
 (defcustom clojure-verify-major-mode t
   "If non-nil, warn when activating the wrong `major-mode'."
@@ -574,15 +583,6 @@ This could cause problems.
                  problem)))))
 
 (add-hook 'clojure-mode-hook #'clojure--check-wrong-major-mode)
-
-(defsubst clojure-in-docstring-p ()
-  "Check whether point is in a docstring."
-  (let ((ppss (syntax-ppss)))
-    ;; are we in a string?
-    (when (nth 3 ppss)
-      ;; check font lock at the start of the string
-      (eq (get-text-property (nth 8 ppss) 'face)
-          'font-lock-doc-face))))
 
 (defsubst clojure-docstring-fill-prefix ()
   "The prefix string used by `clojure-fill-paragraph'.
@@ -1043,6 +1043,7 @@ point) to check."
 (put 'defmacro 'clojure-doc-string-elt 2)
 (put 'definline 'clojure-doc-string-elt 2)
 (put 'defprotocol 'clojure-doc-string-elt 2)
+(put 'deftask 'clojure-doc-string-eld 2) ;; common Boot macro
 
 ;;; Vertical alignment
 (defcustom clojure-align-forms-automatically nil

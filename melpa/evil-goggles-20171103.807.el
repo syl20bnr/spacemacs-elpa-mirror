@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20171103.537
+;; Package-Version: 20171103.807
 ;; Package-Requires: ((emacs "24.4") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -235,8 +235,11 @@ will be adjusted if BODY modifies the text in it."
   "Show hint from BEG to END with face FACE for DUR sec.
 
 The hint will be a vertical block if FORCE-BLOCK is non-nil."
-  (let ((evil-goggles--force-block force-block))
-    (evil-goggles--with-blocking-hint beg end face)))
+  (if force-block
+      (let ((evil-goggles--force-block force-block))
+        ;; use blocking hint for blocks, async hint doesn't support blocks
+        (evil-goggles--with-blocking-hint beg end face))
+    (evil-goggles--with-async-hint beg end face)))
 
 (defun evil-goggles--show-block-overlay (beg end face dur)
   "Show overlay from BEG to END with face FACE for DUR seconds.

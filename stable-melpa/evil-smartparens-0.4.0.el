@@ -4,10 +4,10 @@
 
 ;; Author: Lars Andersen <expez@expez.com>
 ;; URL: https://www.github.com/expez/evil-smartparens
-;; Package-Version: 20171101.13
+;; Package-Version: 0.4.0
 ;; Keywords: evil smartparens
-;; Version: 0.3.0
-;; Package-Requires: ((evil "1.0") (emacs "24.4") (smartparens "1.6.3"))
+;; Version: 0.4.0
+;; Package-Requires: ((evil "1.0") (emacs "24.4") (smartparens "1.10.1"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -74,14 +74,13 @@ list of (fn args) to pass to `apply''"
     (point)))
 
 (defun evil-sp--get-endpoint-for-sp-kill-sexp ()
-  (unwind-protect
-      (progn
-        (evil-sp--new-ending (point)
-                             (or (ignore-errors
-                                   (evil-sp--point-after '(sp-up-sexp 1)
-                                                         '(sp-backward-down-sexp 1)))
-                                 (point))
-                             :no-error))))
+  (progn
+    (evil-sp--new-ending (point)
+                         (or (ignore-errors
+                               (evil-sp--point-after '(sp-up-sexp 1)
+                                                     '(sp-backward-down-sexp 1)))
+                             (point))
+                         :no-error)))
 
 (defun evil-sp--get-endpoint-for-killing ()
   "Return the endpoint from POINT upto which `sp-kill-sexp' would kill."
@@ -298,7 +297,7 @@ proper dispatching."
   "Finds the depth at POINT using native code.
 
 Unfortunately this only works for lisps."
-  (when (memq major-mode sp--lisp-modes)
+  (when (memq major-mode sp-lisp-modes)
     (let ((point (or point (point))))
       (ignore-errors
         (save-excursion
@@ -326,11 +325,10 @@ Strings affect depth."
       (save-excursion
         (when point
           (goto-char point))
-        (unwind-protect
-            (progn
-              (while (and (not (sp-point-in-comment))
-                          (ignore-errors (sp-backward-up-sexp)))
-                (cl-incf depth))))))
+        (progn
+          (while (and (not (sp-point-in-comment))
+                      (ignore-errors (sp-backward-up-sexp)))
+            (cl-incf depth)))))
     depth))
 
 (defun evil-sp--new-ending (beg end &optional no-error)

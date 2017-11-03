@@ -4,10 +4,10 @@
 
 ;; Author: Lars Andersen <expez@expez.com>
 ;; URL: https://www.github.com/expez/evil-smartparens
-;; Package-Version: 0.3.0
+;; Package-Version: 20171103.941
 ;; Keywords: evil smartparens
-;; Version: 0.3.0
-;; Package-Requires: ((evil "1.0") (cl-lib "0.3") (emacs "24.4") (smartparens "1.6.3"))
+;; Version: 0.4.0
+;; Package-Requires: ((evil "1.0") (emacs "24.4") (smartparens "1.10.1"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -33,6 +33,7 @@
 (require 'evil)
 (require 'smartparens)
 (require 'subr-x)
+(require 'cl-lib)
 
 (defgroup evil-smartparens nil
   "`evil-mode' compat for `smartparens-mode'"
@@ -73,16 +74,13 @@ list of (fn args) to pass to `apply''"
     (point)))
 
 (defun evil-sp--get-endpoint-for-sp-kill-sexp ()
-  (unwind-protect
-      (progn
-        (push major-mode sp-navigate-consider-stringlike-sexp)
-        (evil-sp--new-ending (point)
-                             (or (ignore-errors
-                                   (evil-sp--point-after '(sp-up-sexp 1)
-                                                         '(sp-backward-down-sexp 1)))
-                                 (point))
-                             :no-error))
-    (pop sp-navigate-consider-stringlike-sexp)))
+  (progn
+    (evil-sp--new-ending (point)
+                         (or (ignore-errors
+                               (evil-sp--point-after '(sp-up-sexp 1)
+                                                     '(sp-backward-down-sexp 1)))
+                             (point))
+                         :no-error)))
 
 (defun evil-sp--get-endpoint-for-killing ()
   "Return the endpoint from POINT upto which `sp-kill-sexp' would kill."
@@ -136,15 +134,23 @@ list of (fn args) to pass to `apply''"
         (evil-sp-delete beg end type register))
     ('error (progn (goto-char beg) (evil-sp--fail)))))
 
+(evil-define-operator evil-sp-substitute (beg end type register)
+  :motion evil-forward-char
+  (interactive "<R><x>")
+  (evil-sp-delete-char beg end type register)
+  (evil-insert-state))
+
 (defun evil-sp--add-bindings ()
   (when smartparens-strict-mode
     (evil-define-key 'normal evil-smartparens-mode-map
       (kbd "d") #'evil-sp-delete
       (kbd "c") #'evil-sp-change
       (kbd "y") #'evil-sp-yank
+      (kbd "s") #'evil-sp-substitute
       (kbd "S") #'evil-sp-change-whole-line
       (kbd "X") #'evil-sp-backward-delete-char
       (kbd "x") #'evil-sp-delete-char)
+    (add-to-list 'evil-change-commands #'evil-sp-change)
     (evil-define-key 'visual evil-smartparens-mode-map
       (kbd "X") #'evil-sp-delete
       (kbd "x") #'evil-sp-delete))
@@ -182,18 +188,15 @@ list of (fn args) to pass to `apply''"
           (if (and (= new-end end)
                    (= new-beg beg))
               (evil-delete beg end type register yank-handler)
-            (evil-delete new-beg new-end 'inclusive register yank-handler)))
+            (evil-delete (evil-sp--safe-beginning new-beg)
+                         new-end 'inclusive register yank-handler)))
       (error (let* ((beg (evil-sp--new-beginning beg end :shrink))
                     (end (evil-sp--new-ending beg end)))
-               (evil-delete beg end type register yank-handler)))))
-  (indent-according-to-mode))
+               (evil-delete beg end type register yank-handler))))))
 
 (evil-define-operator evil-sp-change (beg end type register yank-handler)
   "Call `evil-change' with a balanced region"
   (interactive "<R><x><y>")
-  ;; #20 don't delete the space after a word
-  (when (save-excursion (goto-char end) (looking-back " " (- (point) 5)))
-    (setq end (1- end)))
   (if (or (evil-sp--override)
           (= beg end)
           (and (eq type 'block)
@@ -205,11 +208,11 @@ list of (fn args) to pass to `apply''"
           (if (and (= new-end end)
                    (= new-beg beg))
               (evil-change beg end type register yank-handler)
-            (evil-change new-beg new-end 'inclusive register yank-handler)))
+            (evil-change (evil-sp--safe-beginning new-beg)
+                         new-end 'inclusive register yank-handler)))
       (error (let* ((beg (evil-sp--new-beginning beg end :shrink))
                     (end (evil-sp--new-ending beg end)))
-               (evil-change beg end type register yank-handler)))))
-  (indent-according-to-mode))
+               (evil-change beg end type register yank-handler))))))
 
 (evil-define-operator evil-sp-yank (beg end type register yank-handler)
   :move-point nil
@@ -294,7 +297,7 @@ proper dispatching."
   "Finds the depth at POINT using native code.
 
 Unfortunately this only works for lisps."
-  (when (memq major-mode sp--lisp-modes)
+  (when (memq major-mode sp-lisp-modes)
     (let ((point (or point (point))))
       (ignore-errors
         (save-excursion
@@ -302,7 +305,7 @@ Unfortunately this only works for lisps."
           (let ((parse-state (parse-partial-sexp (point) point)))
             (when parse-state
               (let ((in-string-p (nth 3 parse-state))
-                    (depth (first parse-state)))
+                    (depth (cl-first parse-state)))
                 (if in-string-p
                     (1+ depth)
                   depth)))))))))
@@ -322,13 +325,10 @@ Strings affect depth."
       (save-excursion
         (when point
           (goto-char point))
-        (unwind-protect
-            (progn
-              (push major-mode sp-navigate-consider-stringlike-sexp)
-              (while (and (not (sp-point-in-comment))
-                          (ignore-errors (sp-backward-up-sexp)))
-                (cl-incf depth)))
-          (pop sp-navigate-consider-stringlike-sexp))))
+        (progn
+          (while (and (not (sp-point-in-comment))
+                      (ignore-errors (sp-backward-up-sexp)))
+            (cl-incf depth)))))
     depth))
 
 (defun evil-sp--new-ending (beg end &optional no-error)
@@ -373,6 +373,14 @@ by decrementing BEG."
       (when (= beg end)
         (evil-sp--fail)))
     beg))
+
+(defun evil-sp--safe-beginning (beg)
+  "Return a new value for BEG that does not include indentation."
+  (max beg
+       (save-excursion
+         (goto-char beg)
+         (back-to-indentation)
+         (point))))
 
 (defun evil-sp--fail ()
   "Error out with a friendly message."
