@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/helm-make
-;; Package-Version: 20171101.1137
+;; Package-Version: 20171102.1156
 ;; Version: 0.2.0
 ;; Package-Requires: ((helm "1.5.3") (projectile "0.11.0"))
 ;; Keywords: makefile
@@ -132,7 +132,10 @@ An exception is \"GNUmakefile\", only GNU make understands it.")
 (defun helm--make-action (target)
   "Make TARGET."
   (let* ((targets (and (eq helm-make-completion-method 'helm)
-                       (> (length (helm-marked-candidates)) 1)
+                       (or (> (length (helm-marked-candidates)) 1)
+                           ;; Give single marked candidate precedence over current selection.
+                           (unless (equal (car (helm-marked-candidates)) target)
+                             (setq target (car (helm-marked-candidates)))))
                        (mapconcat 'identity (helm-marked-candidates) " ")))
          (make-command (format helm-make-command (or targets target)))
          (compile-buffer (compile make-command helm-make-comint)))
@@ -153,6 +156,10 @@ An exception is \"GNUmakefile\", only GNU make understands it.")
     (with-current-buffer buffer
       (rename-buffer buffer-name))))
 
+(defvar helm--make-build-system nil
+  "Will be 'ninja if the file name is `build.ninja',
+and if the file exists 'make otherwise.")
+
 (defun helm--make-construct-command (arg file)
   "Construct the `helm-make-command'.
 
@@ -161,10 +168,10 @@ ARG should be universal prefix value passed to `helm-make' or
 ninja.build file."
   (format (concat "%s -C %s " helm-make-arguments " %%s")
           (cond
-           ((equal helm--make-build-system 'ninja)
-            helm-make-ninja-executable)
-           (t
-            helm-make-executable))
+            ((equal helm--make-build-system 'ninja)
+             helm-make-ninja-executable)
+            (t
+             helm-make-executable))
           (replace-regexp-in-string
            "^/\\(scp\\|ssh\\).+?:" ""
            (file-name-directory file))
@@ -239,10 +246,6 @@ targets, and hence no `defcustom'."
           (const :tag "Default" default)
           (const :tag "make -qp" qp)))
 
-(defvar helm--make-build-system nil
-  "Will be 'ninja if the file name is `build.ninja',
-and if the file exists 'make otherwise.")
-
 (defun helm--make-makefile-exists (base-dir &optional dir-list)
   "Check if one of `helm-make-makefile-names' and `helm-make-ninja-filename'
  exist in BASE-DIR.
@@ -265,10 +268,10 @@ If DIR-LIST is non-nil, also search for `helm-make-makefile-names' and
          (makefile (cl-find-if 'file-exists-p makefiles)))
     (when makefile
       (cond
-       ((string-match "build\.ninja$" makefile)
-        (setq helm--make-build-system 'ninja))
-       (t
-        (setq helm--make-build-system 'make))))
+        ((string-match "build\.ninja$" makefile)
+         (setq helm--make-build-system 'ninja))
+        (t
+         (setq helm--make-build-system 'make))))
     makefile))
 
 (defvar helm-make-db (make-hash-table :test 'equal)

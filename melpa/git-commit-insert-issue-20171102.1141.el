@@ -4,7 +4,7 @@
 
 ;; Author: Vindarel
 ;; URL: https://gitlab.com/emacs-stuff/git-commit-insert-issue/
-;; Package-Version: 20171102.1050
+;; Package-Version: 20171102.1141
 ;; Keywords: git, github, gitlab, bitbucket, commit, issues
 ;; Version: 0.2.0
 ;; Package-Requires: ((projectile "0") (s "0") (github-issues "0") (gitlab "0") (bitbucket "0"))
@@ -31,7 +31,6 @@
 
 ;;; Code:
 
-(require 'helm)
 (require 'projectile)
 (require 's)
 (require 'github-issues)
@@ -47,18 +46,6 @@
 
 (defvar git-commit-insert-issue-bitbucket-keywords '("see" "for")
   "Similar to Gitlab, Bitbucket can reference issues with or without keywords, see: https://confluence.atlassian.com/bitbucket/resolve-issues-automatically-when-users-push-code-221451126.html")
-
-;; (defvar git-commit-insert-issue-helm-source
-(setq git-commit-insert-issue-helm-source
-      '((name . "Select an issue")
-        (candidates . git-commit-insert-issue-get-issues-github-or-gitlab-or-bitbucket-format)
-        (action . (lambda (candidate)
-                    candidate))))
-
-(defun git-commit-insert-issue-helm ()
-  (interactive)
-  (helm :sources '(git-commit-insert-issue-helm-source))
-)
 
 (defun git-username ()
   (s-trim (shell-command-to-string "git config user.name")))
@@ -136,8 +123,6 @@
 (defun git-commit-insert-issue-ask-issues ()
   "Ask for the issue to insert."
   (interactive)
-  ;; This helm call doesn't work alone, but isn't actually needed.
-  ;; (helm :sources '(issues-helm-source)))
   (let ((ido-separator "\n"))
     (insert (completing-read "Choose the issue: "
                                (git-commit-insert-issue-get-issues-github-or-gitlab-or-bitbucket-format)))))
@@ -215,7 +200,6 @@
                   (git-commit-insert-issue--construct-regexp (append
                                                               git-commit-insert-issue-github-keywords
                                                               git-commit-insert-issue-gitlab-keywords)))
-                 ;; (insert (git-commit-insert-issue-helm)) ;; broken helm
                  (insert (git-commit-insert-issue-ask-issues))
                (self-insert-command 1)))))
     (define-key git-commit-mode-map "#" (insert "#"))))
