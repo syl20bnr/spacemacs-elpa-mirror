@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017 Chen Bin
 ;;
 ;; Version: 1.0.2
-;; Package-Version: 20171028.258
+;; Package-Version: 20171103.436
 ;; Author: Chen Bin <chenbin DOT sh AT gmail DOT com>
 ;; URL: http://github.com/redguardtoo/eacl
 ;; Package-Requires: ((emacs "24.3") (ivy "0.9.1"))
@@ -176,7 +176,7 @@ next text.
 If REGEX is not nil, complete statement."
   (let* ((default-directory (or (funcall eacl-project-root-callback) default-directory))
          (quoted-keyword (eacl-shell-quote-argument keyword))
-         (cmd (format (if regex "%s -rshzoI %s \"%s\" *" "%s -rshI %s \"%s\" *")
+         (cmd (format (if regex "%s -rshzoI %s -- \"%s\" *" "%s -rshI %s -- \"%s\" *")
                       eacl-grep-program
                       (eacl-grep-exclude-opts)
                       (if regex (concat quoted-keyword regex) quoted-keyword)))
