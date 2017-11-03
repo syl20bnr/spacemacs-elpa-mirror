@@ -4,7 +4,7 @@
 
 ;; Author: David Vazquez Pua <davazp@gmail.com>
 ;; Keywords: languages
-;; Package-Version: 20170929.4
+;; Package-Version: 20171102.1606
 ;; Package-Requires: ((emacs "24.3") (request "20170131.1747"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -23,7 +23,7 @@
 ;;; Commentary:
 
 ;; This package implements a major mode to edit GraphQL schemas and
-;; query. The basic functionality includes:
+;; query.  The basic functionality includes:
 ;;
 ;;    - Syntax highlight
 ;;    - Automatic indentation
@@ -70,7 +70,7 @@
   :group 'graphql)
 
 (defun graphql-encode-json (query &optional operation variables)
-  "Put together a json like object with query, operation, and variables."
+  "Put together a json like object with QUERY, OPERATION, and VARIABLES."
   (let* ((body '()))
     (push (cons 'query query) body)
     (when operation
@@ -88,8 +88,9 @@ mutation or subscription).  OPERATION is a name for the
 operation.  VARIABLES is the JSON string that specifies the values
 of the variables used in the query."
   (let* ((body (graphql-encode-json query operation variables))
-	 (url (format "%s?query=%s" graphql-url (url-encode-url body))))
-    (with-temp-buffer (graphql-post-request url query operation variables))))
+         (url graphql-url))
+    (with-temp-buffer
+      (graphql-post-request url query operation variables))))
 
 (defun graphql-post-request (url query &optional operation variables)
   "Make post request to graphql server with url and body.
@@ -99,18 +100,16 @@ QUERY query definition(s) of query, mutation, and/or subscription
 OPERATION name of the operation if multiple definition is given in QUERY
 VARIABLES list of variables for query operation"
   (let* ((body (graphql-encode-json query operation variables))
-	 (endpoint (car (split-string url "?")))
-	 (response (request
-                    url
-                    :type "POST"
-                    :data body
-                    :headers '(("Content-Type" . "application/json"))
-                    :parser 'json-read
-                    :sync t
-                    :complete (lambda (&rest _)
-                                (message "%s" (if (string-equal "" operation)
-                                                  endpoint
-                                                (format "%s?operationName=%s" endpoint operation)))))))
+         (response (request url
+                            :type "POST"
+                            :data body
+                            :headers '(("Content-Type" . "application/json"))
+                            :parser 'json-read
+                            :sync t
+                            :complete (lambda (&rest _)
+                                        (message "%s" (if (string-equal "" operation)
+                                                          url
+                                                        (format "%s?operationName=%s" endpoint operation)))))))
     (json-encode (request-response-data response))))
 
 (defun graphql-beginning-of-query ()
@@ -242,6 +241,19 @@ VARIABLES list of variables for query operation"
     (when (< position indent-pos)
       (goto-char indent-pos))))
 
+(defvar graphql-keywords
+  '("type" "input" "interface" "fragment" "query" "enum" "mutation" "subscription"
+    "Int" "Float" "String" "Boolean" "ID"
+	"true" "false" "null"))
+
+(defun graphql-completion-at-point ()
+  "Return the list of candidates for completion.
+This is the function to be used for the hook `completion-at-point-functions'."
+  (let* ((bds (bounds-of-thing-at-point 'symbol))
+         (start (car bds))
+         (end (cdr bds)))
+    (list start end graphql-keywords . nil)))
+
 
 (defvar graphql-definition-regex
   (concat "\\(" (regexp-opt '("type" "input" "interface" "fragment" "query" "mutation" "subscription" "enum")) "\\)"
@@ -250,11 +262,11 @@ VARIABLES list of variables for query operation"
 
 (defvar graphql-builtin-types
   '("Int" "Float" "String" "Boolean" "ID")
-  "Buildin Types")
+  "Built-in GraphQL Types.")
 
 (defvar graphql-constants
   '("true" "false" "null")
-  "Constant Types.")
+  "Constant GraphQL Types.")
 
 
 ;;; Check if the point is in an argument list.
@@ -334,8 +346,8 @@ VARIABLES list of variables for query operation"
           nil
           nil
           nil))
-  (setq imenu-generic-expression
-        `((nil ,graphql-definition-regex 2))))
+  (setq imenu-generic-expression `((nil ,graphql-definition-regex 2)))
+  (add-hook 'completion-at-point-functions 'graphql-completion-at-point nil 'local))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.graphql\\'" . graphql-mode))
