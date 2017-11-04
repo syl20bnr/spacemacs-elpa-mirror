@@ -1,9 +1,9 @@
-;;; erc-scrolltoplace.el --- An Erc module to scroll to bottom better -*- lexical-binding: t; -*-
+;;; erc-scrolltoplace.el --- An Erc module to scrolltobottom better with keep-place -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2017 Jay Kamat
 ;; Author: Jay Kamat <jaygkamat@gmail.com>
 ;; Version: 0.0.1
-;; Package-Version: 20171102.2213
+;; Package-Version: 20171104.936
 ;; Keywords: erc, module, comm, scrolltobottom, keep-place
 ;; URL: http://github.com/jgkamat/erc-scrolltoplace
 ;; Package-Requires: ((emacs "24.0") (switch-buffer-functions "0.0.1"))
@@ -22,11 +22,17 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; erc-scrolltoplace provices an erc module called 'scrolltoplace' which
+;; erc-scrolltoplace provides an erc module called 'scrolltoplace' which
 ;; tries to keep as many messages visible as possible in ERC while never moving
 ;; point.
 ;;
-;; Add erc-scrolltoplace to `erc-modules' and run `erc-update-modules' to enable this!
+;; This module allows you to see the last-viewed point in your erc buffers while
+;; still seeing newer messages as they come in.
+;;
+;; Add the following to your init to enable erc-scrolltoplace:
+;; (require 'scrolltoplace)
+;; (add-to-list 'erc-modules 'scrolltoplace)
+;; (erc-update-modules)
 
 ;;; Constants:
 

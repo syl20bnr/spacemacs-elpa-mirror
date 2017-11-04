@@ -6,7 +6,7 @@
 ;; Maintainer: Mark Meyer <mark@ofosos.org>
 
 ;; URL: http://github.com/ofosos/org-epub
-;; Package-Version: 20171020.1659
+;; Package-Version: 20171104.913
 ;; Keywords: hypermedia
 
 ;; Version: 0.1.0
@@ -140,6 +140,15 @@
 
 "
   "Default style declarations for org epub")
+
+(defvar org-epub-zip-command "zip"
+  "Command to call to create zip files.")
+
+(defvar org-epub-zip-no-compress (list "-Xu0")
+  "Zip command option list to pass for no compression.")
+
+(defvar org-epub-zip-compress (list "-Xu9")
+  "Zip command option list to pass for compression.")
 
 (defvar org-epub-metadata nil
   "EPUB export metadata")
@@ -579,14 +588,14 @@ their proper place."
 	files)
   (let ((default-directory target-dir)
 	(meta-files '("META-INF/container.xml" "content.opf" "toc.ncx")))
-    (call-process "zip" nil '(:file "zip.log") nil
-		  "-Xu0"
-		  epub-file
-		  "mimetype")
-    (apply 'call-process "zip" nil '(:file "zip.log") nil
-	   "-Xu9"
-	   epub-file
-	   (append meta-files (mapcar #'(lambda (el) (plist-get el :filename)) files))))
+    (call-process org-epub-zip-command nil '(:file "zip.log") nil
+		  (append org-epub-no-compress
+			  (list epub-file
+				"mimetype")))
+    (apply 'call-process org-epub-zip-command nil '(:file "zip.log") nil
+	   (append org-epub-zip-compress
+		   (list epub-file)
+		   (append meta-files (mapcar #'(lambda (el) (plist-get el :filename)) files))))
   (copy-file (concat target-dir epub-file) default-directory t))
 
 (defun org-epub-generate-toc-single (headlines filename)
