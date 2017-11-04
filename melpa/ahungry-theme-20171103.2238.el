@@ -5,7 +5,7 @@
 ;; Author: Matthew Carter <m@ahungry.com>
 ;; Maintainer: Matthew Carter <m@ahungry.com>
 ;; URL: https://github.com/ahungry/color-theme-ahungry
-;; Package-Version: 20171029.2107
+;; Package-Version: 20171103.2238
 ;; Version: 1.8.0
 ;; Keywords: ahungry palette color theme emacs color-theme deftheme
 ;; Package-Requires: ((emacs "24"))
@@ -276,9 +276,9 @@ Default value:
    '(helm-match ((t (:foreground "gold1"))))
    '(helm-visible-mark ((t (:foreground "#cf0066" :bold nil :italic t))))
    '(helm-source-header ((t (:foreground "#36c" :bold t :italic t))))
-   '(helm-swoop-target-line-block-face ((t (:foreground "#ff6" :italic t))))
-   '(helm-swoop-target-line-face ((t (:foreground "#ff6" :italic t))))
-   '(helm-swoop-target-word-face ((t (:background "#000" :bold nil :italic t :underline t))))
+   '(helm-swoop-target-line-block-face ((t (:background "#ff6" :foreground "#000" :italic t))))
+   '(helm-swoop-target-line-face ((t (:background "#ff6" :foreground "#000" :italic t))))
+   '(helm-swoop-target-word-face ((t (:background "#000" :foreground "#ff6" :bold nil :italic t :underline t))))
    '(erc-nick-default-face ((t (:foreground "#ff0099"))))
    '(erc-current-nick-face ((t (:foreground "#0099ff"))))
    '(erc-input-face ((t (:foreground "#0099ff"))))
@@ -309,6 +309,10 @@ Default value:
    '(evil-ex-lazy-highlight ((t (:foreground "orange" :italic t :bold t))))
    '(dired-filetype-program ((t (:foreground "#0066ff"))))
    '(diredp-compressed-file-suffix ((t (:foreground "#0066ff"))))
+   '(avy-lead-face ((t (:foreground "#f09" :bold t))))
+   '(avy-lead-face-0 ((t (:foreground "#cf0" :bold t))))
+   '(avy-lead-face-1 ((t (:foreground "#09f" :bold t))))
+   '(avy-lead-face-2 ((t (:foreground "#0ff" :bold t))))
    )
   (custom-theme-set-variables
    'ahungry

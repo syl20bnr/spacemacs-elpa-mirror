@@ -4,7 +4,7 @@
 ;;
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;; Keywords: themes
-;; Package-Version: 20161103.2358
+;; Package-Version: 20171103.2005
 ;; Package-Requires: ((cl-lib "0.2"))
 ;; X-URL: http://github.com/purcell/ibuffer-vc
 ;; URL: http://github.com/purcell/ibuffer-vc
@@ -118,9 +118,8 @@ This option can be used to exclude certain files from the grouping mechanism."
   "Return a cons cell (backend-name . root-dir) for BUF.
 If the file is not under version control, nil is returned instead."
   (let ((file-name (with-current-buffer buf
-                     (or (when buffer-file-name
-                           (file-truename buffer-file-name))
-                         default-directory))))
+                     (file-truename (or buffer-file-name
+					default-directory)))))
     (when (ibuffer-vc--include-file-p file-name)
       (let ((backend (ibuffer-vc--deduce-backend file-name)))
         (when backend
@@ -138,7 +137,7 @@ If the file is not under version control, nil is returned instead."
 (define-ibuffer-filter vc-root
     "Toggle current view to buffers with vc root dir QUALIFIER."
   (:description "vc root dir"
-                :reader (read-from-minibuffer "Filter by vc root dir (regexp): "))
+                :reader (read-regexp "Filter by vc root dir: "))
   (ibuffer-awhen (ibuffer-vc-root buf)
     (equal qualifier it)))
 
