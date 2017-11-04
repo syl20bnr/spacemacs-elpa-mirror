@@ -3,7 +3,7 @@
 ;; Copyright (C) 2016-2017 Jay Kamat
 ;; Author: Jay Kamat <jaygkamat@gmail.com>
 ;; Version: 0.3.0
-;; Package-Version: 20171102.2145
+;; Package-Version: 20171103.1548
 ;; Keywords: alda, highlight
 ;; URL: http://github.com/jgkamat/alda-mode
 ;; Package-Requires: ((emacs "24.0"))
@@ -109,8 +109,7 @@ This must be a _full_ path to your alda binary."
   "Run a Alda interpreter in an Emacs buffer"
   (interactive)
   (let* ((cmd-line (alda-repl))
-          (alda-interpreter cmd-line)
-          (cmd/args (split-string cmd-line)))
+         (cmd/args (split-string cmd-line)))
     (unless (alda-interpreter-running-p-1)
       (set-buffer
         (apply 'make-comint "inferior-alda" (car cmd/args) nil (cdr cmd/args)))

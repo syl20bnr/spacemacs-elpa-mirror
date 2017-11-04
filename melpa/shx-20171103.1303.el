@@ -3,10 +3,10 @@
 ;; Authors: Chris Rayner (dchrisrayner @ gmail)
 ;; Created: May 23 2011
 ;; Keywords: processes, tools
-;; Package-Version: 0.0.10
+;; Package-Version: 20171103.1303
 ;; URL: https://github.com/riscy/shx-for-emacs
 ;; Package-Requires: ((emacs "24.4"))
-;; Version: 0.0.10
+;; Version: 0.0.11
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -66,7 +66,7 @@
   :prefix "shx-"
   :group 'comint
   :link '(url-link
-          :tag "shx on Github"
+          :tag "shx on GitHub"
           "https://github.com/riscy/shx-for-emacs"))
 
 (defcustom shx-disable-undo nil
@@ -385,15 +385,15 @@ With non-nil WITHOUT-PREFIX, strip `shx-cmd-prefix' from each."
    (match-beginning 0) (match-end 0)
    `(keymap ,shx-click-file mouse-face link font-lock-face font-lock-doc-face)))
 
-(defun shx--parse-filenames (files)
-  "Turn a string of FILES into a list of filename strings.
-FILES can have various styles of quoting and escaping."
+(defun shx-tokenize (string)
+  "Turn STRING into a list of tokens, or nil if parsing fails.
+This is robust to various styles of quoting and escaping."
   (let* ((tmp-space "")
-         (requoted (replace-regexp-in-string "'" "\"" files))
+         (requoted (replace-regexp-in-string "'" "\"" string))
          (escaped (replace-regexp-in-string "\\\\ " tmp-space requoted)))
-    (mapcar (lambda (filename)
-              (replace-regexp-in-string tmp-space " " filename))
-            (split-string-and-unquote escaped))))
+    (mapcar (lambda (token)
+              (replace-regexp-in-string tmp-space " " token))
+            (ignore-errors (split-string-and-unquote escaped)))))
 
 (defun shx--quote-regexp (delimiter &optional escape max-length)
   "Regexp matching strings delimited by DELIMITER.
@@ -642,11 +642,11 @@ therefore ensure `comint-prompt-read-only' is nil."
   "(SAFE) Launch an Emacs `ediff' between FILES.
 \nExample:\n
   :diff file1.txt file2.csv"
-  (let ((file-list (shx--parse-filenames files)))
-    (if (not (eq (length file-list) 2))
-        (shx-insert 'error "diff <file1> <file2>\n")
-      (shx-insert "Invoking ediff " files "\n")
-      (shx--asynch-funcall #'ediff (mapcar 'expand-file-name file-list)))))
+  (setq files (shx-tokenize files))
+  (if (not (eq (length files) 2))
+      (shx-insert 'error "diff <file1> <file2>\n")
+    (shx-insert "invoking ediff...\n")
+    (shx--asynch-funcall #'ediff (mapcar 'expand-file-name files))))
 
 (defun shx-cmd-edit (file)
   "(SAFE) open FILE in the current window.
@@ -654,10 +654,10 @@ therefore ensure `comint-prompt-read-only' is nil."
   :e directory/to/file
 \nOr edit a remote file using `tramp':\n
   :e /user@server#port:directory/to/file"
-  (if (equal file "")
-      (shx--asynch-funcall #'find-file (list "" t))
-    (let ((name (expand-file-name (car (shx--parse-filenames file)))))
-      (shx--asynch-funcall #'find-file (list name t)))))
+  (setq file (car (shx-tokenize file)))
+  (if file
+      (shx--asynch-funcall #'find-file (list (expand-file-name file) t))
+    (shx--asynch-funcall #'find-file (list "" t))))
 (defalias 'shx-cmd-e #'shx-cmd-edit)
 
 (defun shx-cmd-eval (sexp)
@@ -696,7 +696,7 @@ may take a while and unfortunately blocks Emacs in the meantime.
   :pipe make
   :pipe git repack -a -d --depth=250 --window=250"
   (if (equal command "")
-      (shx-insert 'error "cap <command>\n")
+      (shx-insert 'error "pipe <command>\n")
     (let ((compilation-buffer-name-function
            (lambda (_mode) "*shx-pipe*")))
       (shx-insert "Piping "
@@ -777,10 +777,10 @@ See `Man-notify-method' for what happens when the page is ready."
 \nExamples:\n
   :oedit directory/to/file
   :oedit /username@server:~/directory/to/file"
-  (if (equal file "")
-      (find-file-other-window "")
-    (find-file-other-window
-     (expand-file-name (car (shx--parse-filenames file))))))
+  (setq file (car (shx-tokenize file)))
+  (if file
+      (find-file-other-window (expand-file-name file))
+    (find-file-other-window "")))
 
 (defun shx-cmd-pwd (_args)
   "(SAFE) Show what Emacs thinks the default directory is.
@@ -815,7 +815,7 @@ commands like :pwd and :edit will work correctly.
   \"Topic 1\" YHEIGHT1
   \"Topic 2\" YHEIGHT2
   \"Topic 3\" YHEIGHT3"
-  (shx-insert-plot (car (shx--parse-filenames filename))
+  (shx-insert-plot (car (shx-tokenize filename))
                    (concat "set boxwidth 1.5 relative;"
                            "set style data histograms;"
                            "set xtic rotate by -40 scale 0 font \",10\";"
@@ -828,7 +828,7 @@ commands like :pwd and :edit will work correctly.
   "(SAFE) Show heatmap of FILENAME.
 \nFor example, \":plotmatrix file.dat\" where file.dat contains:\n
   1.5   2    3\n  4     5    6\n  7     8    9.5"
-  (shx-insert-plot (car (shx--parse-filenames filename))
+  (shx-insert-plot (car (shx-tokenize filename))
                    (concat "set view map; unset xtics; unset ytics;"
                            "unset title; set colorbox; set palette defined"
                            "(0 \"#ffffff\", 1 \"#d5e585\", 2 \"#8cc555\","
@@ -842,14 +842,14 @@ commands like :pwd and :edit will work correctly.
   1 2\n  2 4\n  4 8\n
 Or just a single column:
   1\n  2\n  3\n  5"
-  (shx-insert-plot (car (shx--parse-filenames filename))
+  (shx-insert-plot (car (shx-tokenize filename))
                    "plot" "w l lw 1 notitle"))
 
 (defun shx-cmd-plot3d (filename)
   "(SAFE) Show surface plot of FILENAME.
 Read about gnuplot's expectations of the data here:
 http://www.gnuplotting.org/tag/pm3d/"
-  (shx-insert-plot (car (shx--parse-filenames filename))
+  (shx-insert-plot (car (shx-tokenize filename))
                    "unset tics;set view 4, 20, 1.4, 1;splot"
                    "w pm3d notitle"))
 
@@ -859,7 +859,7 @@ http://www.gnuplotting.org/tag/pm3d/"
   1 2\n  2 4\n  4 8\n
 Or just a single column:
   1\n  2\n  3\n  5"
-  (shx-insert-plot (car (shx--parse-filenames filename))
+  (shx-insert-plot (car (shx-tokenize filename))
                    "plot" "w p ps 2 pt 7 notitle"))
 (defalias 'shx-cmd-plot #'shx-cmd-plotscatter)
 
