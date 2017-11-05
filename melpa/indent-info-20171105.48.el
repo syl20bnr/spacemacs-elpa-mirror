@@ -5,7 +5,7 @@
 
 ;; Author: Terje Larsen <terlar@gmail.com>
 ;; URL: https://github.com/terlar/indent-info.el
-;; Package-Version: 20171104.1604
+;; Package-Version: 20171105.48
 ;; Keywords: convenience, tools
 ;; Version: 0.1
 
@@ -115,19 +115,10 @@ Each element is a list of the form (NUMBER . SYMBOL).")
         (format fmt (cdr (assoc tab-width indent-info-number-symbol-alist)))
       (format fmt (int-to-string tab-width)))))
 
-;;;###autoload
-(define-minor-mode indent-info-mode
-  "Toggle indent-info mode
-With no argument, this command toggles the mode.
-A non-null prefix argument turns the mode on.
-A null prefix argument turns it off.
-
-When enabled, information about the currently configured `indent-tabs-mode' and
-`tab-width' is displayed in the mode line."
-  :lighter nil :global nil
-  (when indent-info-mode
-    (add-to-list 'mode-line-position
-                 '(indent-info-mode (:eval (indent-info-mode-line))))))
+(defun indent-info-mode-enable ()
+  "Enable `indent-info-mode' in the current buffer."
+  (unless (minibufferp)
+    (indent-info-mode 1)))
 
 ;;;###autoload
 (defun indent-info-toggle-indent-mode ()
@@ -161,12 +152,19 @@ When reaching `indent-info-tab-width-min' it won't do anything."
       (message "Set tab-width to %d." width)
       (force-mode-line-update))))
 
-
 ;;;###autoload
-(defun indent-info-mode-enable ()
-  "Enable `indent-info-mode' in the current buffer."
-  (unless (minibufferp)
-    (indent-info-mode 1)))
+(define-minor-mode indent-info-mode
+  "Toggle indent-info mode
+With no argument, this command toggles the mode.
+A non-null prefix argument turns the mode on.
+A null prefix argument turns it off.
+
+When enabled, information about the currently configured `indent-tabs-mode' and
+`tab-width' is displayed in the mode line."
+  :lighter nil :global nil
+  (when indent-info-mode
+    (add-to-list 'mode-line-position
+                 '(indent-info-mode (:eval (indent-info-mode-line))))))
 
 ;;;###autoload
 (define-global-minor-mode global-indent-info-mode

@@ -4,7 +4,7 @@
 
 ;; Author: GB Gardner <gbgar@users.noreply.github.com>
 ;; Version: 1.0
-;; Package-Version: 20170125.2135
+;; Package-Version: 20171104.2344
 ;; Package-Requires: ((company "0.9.0") (cl-lib "0.5") (parsebib "1.0"))
 ;; Keywords: company-mode, bibtex
 ;; URL: https://github.com/gbgar/company-bibtex
@@ -98,20 +98,18 @@ Prepend the appropriate part of PREFIX to each item."
                     (list company-bibtex-bibliography))))
     (with-temp-buffer
       (mapc #'insert-file-contents bib-paths)
-      (let ((prefixprefix (company-bibtex-get-candidate-citation-style prefix)))
-        (progn (mapcar (function (lambda (l) (concat prefixprefix l)))
-                       (mapcar (function (lambda (x) (company-bibtex-build-candidate x)))
-                               (company-bibtex-parse-bibliography))))))))
+      (mapcar (function (lambda (x) (company-bibtex-build-candidate x)))
+              (company-bibtex-parse-bibliography)))))
 
-(defun company-bibtex-get-candidate-citation-style (candidate)
-  "Get prefix for CANDIDATE."
-  (string-match (format "\\(%s\\|%s\\|%s\\)%s"
-                          company-bibtex-org-citation-regex
-                          company-bibtex-latex-citation-regex
-                          company-bibtex-pandoc-citation-regex
-                          company-bibtex-key-regex)
-		candidate)
-  (match-string 1 candidate))
+;; (defun company-bibtex-get-candidate-citation-style (candidate)
+;;   "Get prefix for CANDIDATE."
+;;   (string-match (format "\\(%s\\|%s\\|%s\\)%s"
+;;                           company-bibtex-org-citation-regex
+;;                           company-bibtex-latex-citation-regex
+;;                           company-bibtex-pandoc-citation-regex
+;;                           company-bibtex-key-regex)
+;; 		candidate)
+;;   (match-string 1 candidate))
 
 (defun company-bibtex-build-candidate (bibentry)
 "Build a string---the bibtex key---with author and title properties attached.
@@ -138,17 +136,17 @@ appeared in the BibTeX files."
 
 (defun company-bibtex-get-annotation (candidate)
   "Get annotation from CANDIDATE."
-  (let ((prefix-length (length (company-bibtex-get-candidate-citation-style candidate))))
+  (let ((prefix-length 0))
     (replace-regexp-in-string "{\\|}" ""
 			      (format " | %s"
 				      (get-text-property prefix-length :author candidate)))))
 
 (defun company-bibtex-get-metadata (candidate)
   "Get metadata from CANDIDATE."
-  (let ((prefix-length (length (company-bibtex-get-candidate-citation-style candidate))))
-  (replace-regexp-in-string "{\\|}" ""
-			    (format "%s"
-				    (get-text-property prefix-length :title candidate)))))
+  (let ((prefix-length 0))
+    (replace-regexp-in-string "{\\|}" ""
+			      (format "%s"
+				      (get-text-property prefix-length :title candidate)))))
 
 ;;;###autoload
 (defun company-bibtex (command &optional arg &rest ignored)
@@ -162,15 +160,24 @@ COMMAND, ARG, and IGNORED are used by `company-mode'."
   (interactive (list 'interactive))
   (cl-case command
     (interactive (company-begin-backend 'company-bibtex))
-    (prefix (and (or (derived-mode-p 'markdown-mode)
-                     (derived-mode-p 'latex-mode)
-                     (derived-mode-p 'org-mode))
-                 (company-grab
-                  (format "\\(%s\\|%s\\|%s\\)%s"
-                          company-bibtex-org-citation-regex
-                          company-bibtex-latex-citation-regex
-                          company-bibtex-pandoc-citation-regex
-                          company-bibtex-key-regex))))
+    (prefix (cond ((derived-mode-p 'latex-mode)
+		   (company-grab (format "%s\\(%s,\\)*\\(%s\\)"
+					 company-bibtex-latex-citation-regex
+					 company-bibtex-key-regex
+					 company-bibtex-key-regex)
+				 2))
+		  ((derived-mode-p 'org-mode)
+		   (company-grab (format "%s\\(%s,\\)*\\(%s\\)"
+					 company-bibtex-org-citation-regex
+					 company-bibtex-key-regex
+					 company-bibtex-key-regex)
+				 2))
+		  ((derived-mode-p 'markdown-mode)
+		   (company-grab (format "%s\\(%s\\)"
+					 company-bibtex-pandoc-citation-regex
+					 company-bibtex-key-regex)
+				 1))
+		  ))
     (candidates
      (cl-remove-if-not
       (lambda (c) (string-prefix-p arg c))
