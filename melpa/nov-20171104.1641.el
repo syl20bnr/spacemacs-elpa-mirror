@@ -4,7 +4,7 @@
 
 ;; Author: Vasilij Schneidermann <mail@vasilij.de>
 ;; URL: https://github.com/wasamasa/nov.el
-;; Package-Version: 20170924.512
+;; Package-Version: 20171104.1641
 ;; Version: 0.2.1
 ;; Package-Requires: ((dash "2.12.0") (esxml "0.3.3") (emacs "24.4"))
 ;; Keywords: hypermedia, multimedia, epub
@@ -242,7 +242,7 @@ UUID."
          (id (car (esxml-node-children (esxml-query selector content)))))
     (when (not id)
       (error "Unique identifier not found by its name: %s" name))
-    (intern (replace-regexp-in-string "^urn:uuid:" "" id))))
+    (intern id)))
 
 ;; NOTE: unique identifier is queried separately as identifiers can
 ;; appear more than once and only one of them can be the unique one
@@ -557,7 +557,7 @@ the HTML is rendered with `nov-render-html-function'."
                     (let ((beg (point)))
                       (insert value)
                       (shr-render-region beg (point)))
-                  (insert value))
+                  (insert (format "%s" value)))
               (insert (propertize "None" 'face 'italic)))
             (insert "\n")))
         (goto-char (point-min))))
