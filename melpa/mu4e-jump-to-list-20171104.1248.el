@@ -2,7 +2,7 @@
 
 ;; Author: Yuri D'Elia <wavexx@thregr.org>
 ;; Version: 1.0
-;; Package-Version: 20171101.934
+;; Package-Version: 20171104.1248
 ;; URL: https://github.com/wavexx/mu4e-jump-to-list.el
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
 ;; Keywords: mu4e, mail, convenience
@@ -24,7 +24,7 @@
 ;; `mu4e-jump-to-list' allows to select and view mailing lists
 ;; automatically using existing List-ID headers in your mu database.
 ;;
-;; `mu4e-jump-to-list' is bound to "l" by default in both the mu4e hello
+;; `mu4e-jump-to-list' is bound to "l" by default in both the mu4e main
 ;; and header views and shows active lists in recency order by default,
 ;; with lists with new messages first.
 ;;

@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017 Jay Kamat
 ;; Author: Jay Kamat <jaygkamat@gmail.com>
 ;; Version: 0.0.1
-;; Package-Version: 20171104.936
+;; Package-Version: 20171104.1346
 ;; Keywords: erc, module, comm, scrolltobottom, keep-place
 ;; URL: http://github.com/jgkamat/erc-scrolltoplace
 ;; Package-Requires: ((emacs "24.0") (switch-buffer-functions "0.0.1"))
@@ -30,7 +30,7 @@
 ;; still seeing newer messages as they come in.
 ;;
 ;; Add the following to your init to enable erc-scrolltoplace:
-;; (require 'scrolltoplace)
+;; (require 'erc-scrolltoplace)
 ;; (add-to-list 'erc-modules 'scrolltoplace)
 ;; (erc-update-modules)
 
