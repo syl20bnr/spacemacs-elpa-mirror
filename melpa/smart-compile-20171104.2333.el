@@ -3,8 +3,8 @@
 ;; Copyright (C) 1998-2017  by Seiji Zenitani
 
 ;; Author: Seiji Zenitani <zenitani@mac.com>
-;; Version: 20170828
-;; Package-Version: 20170827.1050
+;; Version: 20171105
+;; Package-Version: 20171104.2333
 ;; Keywords: tools, unix
 ;; Created: 1998-12-27
 ;; Compatibility: Emacs 21 or later
@@ -55,19 +55,20 @@
   ("\\.c\\'"          . "gcc -O2 %f -lm -o %n")
 ;;  ("\\.c\\'"          . "gcc -O2 %f -lm -o %n && ./%n")
   ("\\.[Cc]+[Pp]*\\'" . "g++ -O2 %f -lm -o %n")
-  ("\\.m\\'"          . "gcc -O2 %f -lobjc -lpthread -o %n")
-  ("\\.java\\'"       . "javac %f")
-  ("\\.php\\'"        . "php -l %f")
-  ("\\.f90\\'"        . "gfortran %f -o %n")
-  ("\\.[Ff]\\'"       . "gfortran %f -o %n")
   ("\\.cron\\(tab\\)?\\'" . "crontab %f")
-  ("\\.tex\\'"        . (tex-file))
-  ("\\.texi\\'"       . "makeinfo %f")
+  ("\\.[Ff]\\'"       . "gfortran %f -o %n")
+  ("\\.f90\\'"        . "gfortran %f -o %n")
+  ("\\.hs\\'"         . "ghc %f -o %n")
+  ("\\.java\\'"       . "javac %f")
+  ("\\.m\\'"          . "gcc -O2 %f -lobjc -lpthread -o %n")
   ("\\.mp\\'"         . "mptopdf %f")
+  ("\\.php\\'"        . "php -l %f")
   ("\\.pl\\'"         . "perl %f")
   ("\\.py\\'"         . "python %f")
   ("\\.rb\\'"         . "ruby %f")
   ("Rakefile\\'"      . "rake")
+  ("\\.tex\\'"        . (tex-file))
+  ("\\.texi\\'"       . "makeinfo %f")
 ;;  ("\\.pl\\'"         . "perl -cw %f") ; syntax check
 ;;  ("\\.rb\\'"         . "ruby -cw %f") ; syntax check
 )  "Alist of filename patterns vs corresponding format control strings.

@@ -6,7 +6,7 @@
 ;; Maintainer: Mark Meyer <mark@ofosos.org>
 
 ;; URL: http://github.com/ofosos/org-epub
-;; Package-Version: 20171104.913
+;; Package-Version: 20171105.0
 ;; Keywords: hypermedia
 
 ;; Version: 0.1.0
@@ -588,14 +588,15 @@ their proper place."
 	files)
   (let ((default-directory target-dir)
 	(meta-files '("META-INF/container.xml" "content.opf" "toc.ncx")))
-    (call-process org-epub-zip-command nil '(:file "zip.log") nil
-		  (append org-epub-no-compress
-			  (list epub-file
-				"mimetype")))
+    (apply 'call-process
+	   (append (list org-epub-zip-command nil '(:file "zip.log") nil)
+		   org-epub-zip-no-compress
+		   (list epub-file
+			 "mimetype")))
     (apply 'call-process org-epub-zip-command nil '(:file "zip.log") nil
 	   (append org-epub-zip-compress
 		   (list epub-file)
-		   (append meta-files (mapcar #'(lambda (el) (plist-get el :filename)) files))))
+		   (append meta-files (mapcar #'(lambda (el) (plist-get el :filename)) files)))))
   (copy-file (concat target-dir epub-file) default-directory t))
 
 (defun org-epub-generate-toc-single (headlines filename)
