@@ -3,7 +3,7 @@
 ;; Author: Sarah Iovan <sarah@hwaetageek.com>
 ;;         Campbell Barton <ideasman42@gmail.com>
 ;; URL: https://github.com/ideasman42/emacs-inkpot-theme
-;; Package-Version: 20170709.1858
+;; Package-Version: 20171106.640
 ;; Version: 0.1
 ;; Keywords: color, theme
 
@@ -59,6 +59,11 @@
  '(show-paren-match-face ((t (:background "#4e4e8f"))))
  '(link ((t (:foreground "#ff8bff"))))
  '(link-visited ((t (:foreground "#cb6ecbv"))))  ; not a vim color, just a little darker
+
+ ;; white-space
+ '(whitespace-trailing ((nil (:background "#343443" :foreground nil))))
+ '(whitespace-space ((nil (:background nil :foreground "#434357"))))
+ '(whitespace-tab ((nil (:background nil :foreground "#434357"))))
 
  ; additions that fit in with the general theme
  '(button ((t (:underline t :foreground "#ff8bff"))))

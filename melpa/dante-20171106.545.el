@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20171021.1009
+;; Package-Version: 20171106.545
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -937,7 +937,7 @@ a list is returned instead of failing with a nil result."
                 (delete-region (point) (search-forward ",")))
               (when (looking-at "[ \t]*=>")
                 (delete-region (point) (search-forward "=>")))))
-           ((string-match "The type signature for ‘\\(.*\\)’ lacks an accompanying binding" msg)
+           ((string-match "The type signature for ‘\\(.*\\)’[ \t\n]*lacks an accompanying binding" msg)
             (beginning-of-line)
             (forward-line)
             (insert (concat (match-string 1 msg) " = _\n")))

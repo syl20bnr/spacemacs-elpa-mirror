@@ -7,7 +7,7 @@
 ;;; Author: Paul Huff <paul.huff@gmail.com>, Stefano Mazzucco <MY FIRST NAME - AT - CURSO - DOT - RE>
 ;;; Created: 28 September 2016
 ;;; Version: 0.0.1
-;; Package-Version: 20161006.1034
+;; Package-Version: 20171105.2247
 ;;; URL: https://github.com/josteink/ts-comint
 ;;; Package-Requires: ()
 ;;; Keywords: typescript, node, inferior-mode, convenience
@@ -80,7 +80,7 @@
   :group 'ts-comint)
 
 (defcustom ts-comint-mode-hook nil
-  "*Hook for customizing inferior-ts mode."
+  "*Hook for customizing `ts-comint-mode'."
   :type 'hook
   :group 'ts-comint)
 
@@ -251,7 +251,7 @@ Typescript source.
     switch-to-ts switches the current buffer to the Typescript process buffer.
     ts-send-region sends the current region to the Typescript process.
 "
-  :group 'inferior-ts
+  :group 'ts-comint
   ;; no specific initialization needed.
   )
 
