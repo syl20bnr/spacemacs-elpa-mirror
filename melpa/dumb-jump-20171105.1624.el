@@ -2,7 +2,7 @@
 ;; Copyright (C) 2015-2017 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.1
-;; Package-Version: 20171103.2104
+;; Package-Version: 20171105.1624
 ;; Package-Requires: ((emacs "24.3") (f "0.17.3") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -126,25 +126,25 @@ or most optimal searcher."
   :type 'string)
 
 (defcustom dumb-jump-ag-word-boundary
-  "(?![\\w-])"
+  "(?![\\w\\?-])"
   "`\\b` thinks `-` is a word boundary.  When this matters use `\\j` instead and ag will use this value."
   :group 'dumb-jump
   :type 'string)
 
 (defcustom dumb-jump-rg-word-boundary
-  "($|[^\\w-])"
+  "($|[^\\w\\?-])"
   "`\\b` thinks `-` is a word boundary.  When this matters use `\\j` instead and rg will use this value."
   :group 'dumb-jump
   :type 'string)
 
 (defcustom dumb-jump-git-grep-word-boundary
-  "($|[^\\w-])"
+  "($|[^\\w\\?-])"
   "`\\b` thinks `-` is a word boundary.  When this matters use `\\j` instead and git grep will use this value."
   :group 'dumb-jump
   :type 'string)
 
 (defcustom dumb-jump-grep-word-boundary
-  "($|[^\\w-])"
+  "($|[^\\w\\?-])"
   "`\\b` thinks `-` is a word boundary.  When this matters use `\\j` instead and grep will use this value."
   :group 'dumb-jump
   :type 'string)
@@ -265,7 +265,8 @@ or most optimal searcher."
 
     (:type "function" :supports ("ag" "grep" "rg" "git-grep") :language "clojure"
            :regex "\\(defn-?\\s+JJJ\\j"
-           :tests ("(defn test [foo]" "(defn- test [foo]"))
+           :tests ("(defn test [foo]" "(defn- test [foo]")
+           :not ("(defn test? [foo]" "(defn- test? [foo]"))
 
     (:type "function" :supports ("ag" "grep" "rg" "git-grep") :language "clojure"
            :regex "\\(defmacro\\s+JJJ\\j"
