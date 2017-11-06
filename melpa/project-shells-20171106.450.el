@@ -6,7 +6,7 @@
 ;; Maintainer: "Huang, Ying" <huang.ying.caritas@gmail.com>
 ;; URL: https://github.com/hying-caritas/project-shells
 ;; Version: 20170311
-;; Package-Version: 20170312.1912
+;; Package-Version: 20171106.450
 ;; Package-X-Original-Version: 20170311
 ;; Package-Type: simple
 ;; Keywords: processes, terminals
@@ -57,8 +57,6 @@
 
 (defvar-local project-shells-project-name nil)
 (defvar-local project-shells-project-root nil)
-
-(defconst project-shells-eshell-histfile-env "HISTFILE")
 
 (defvar project-shells--dest-history nil)
 
@@ -254,13 +252,14 @@ used in shell initialized function."
 	(list (list env (getenv env)))
       (setenv env val))))
 
+(cl-defun project-shells--histfile-name (session-dir)
+  (when project-shells-histfile-name
+    (expand-file-name project-shells-histfile-name session-dir)))
+
 (cl-defun project-shells--set-shell-env (session-dir)
   (when project-shells-histfile-name
-    (let ((histfile (expand-file-name project-shells-histfile-name
-				      session-dir)))
-      (append
-       (project-shells--setenv project-shells-histfile-env histfile)
-       (project-shells--setenv project-shells-eshell-histfile-env histfile)))))
+    (project-shells--setenv project-shells-histfile-env
+			    (project-shells--histfile-name session-dir))))
 
 (cl-defun project-shells--restore-shell-env (saved-env)
   (cl-loop
@@ -317,8 +316,13 @@ name, and the project root directory."
 	    (progn
 	      (mkdir session-dir t)
 	      (project-shells--create shell-name dir type)
-	      (when (eq type 'term)
-		(term-send-raw-string (project-shells--term-command-string)))
+	      (cl-ecase type
+		(term
+		 (term-send-raw-string (project-shells--term-command-string)))
+		(eshell
+		 (setq-local eshell-history-file-name
+			     (project-shells--histfile-name session-dir))
+		 (eshell-read-history)))
 	      (when (or (string-prefix-p "/ssh:" dir)
 			(string-prefix-p "/sudo:" dir))
 		(set-process-sentinel (get-buffer-process (current-buffer))
