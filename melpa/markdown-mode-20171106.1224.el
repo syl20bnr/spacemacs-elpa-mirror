@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171106.752
+;; Package-Version: 20171106.1224
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -1742,13 +1742,13 @@ Group 1 matches the text to become a button.")
   "\\(?:^\\|[^\\]\\)\\(\\$\\)\\(\\(?:[^\\$]\\|\\\\.\\)*\\)\\(\\$\\)"
   "Regular expression for itex $..$ math mode expressions.
 Groups 1 and 3 match the opening and closing dollar signs.
-Group 3 matches the mathematical expression contained within.")
+Group 2 matches the mathematical expression contained within.")
 
 (defconst markdown-regex-math-inline-double
   "\\(?:^\\|[^\\]\\)\\(\\$\\$\\)\\(\\(?:[^\\$]\\|\\\\.\\)*\\)\\(\\$\\$\\)"
   "Regular expression for itex $$..$$ math mode expressions.
 Groups 1 and 3 match opening and closing dollar signs.
-Group 3 matches the mathematical expression contained within.")
+Group 2 matches the mathematical expression contained within.")
 
 (defconst markdown-regex-math-display
   "^\\(\\\\\\[\\)\\(\\(?:.\\|\n\\)*?\\)?\\(\\\\\\]\\)$"
@@ -2900,7 +2900,8 @@ Depending on your font, some reasonable choices are:
     (markdown-fontify-sub-superscripts)
     (markdown-match-inline-attributes . ((0 markdown-markup-properties prepend)))
     (markdown-match-leanpub-sections . ((0 markdown-markup-properties)))
-    (markdown-fontify-blockquotes))
+    (markdown-fontify-blockquotes)
+    (markdown-match-wiki-link . ((0 markdown-link-face prepend))))
   "Syntax highlighting for Markdown files.")
 
 (defvar markdown-mode-font-lock-keywords nil
@@ -4018,6 +4019,23 @@ is \"\n\n\""
 
 (defun markdown-match-yaml-metadata-key (last)
   (markdown-match-propertized-text 'markdown-metadata-key last))
+
+(defun markdown-match-wiki-link (last)
+  "Match wiki links from point to LAST."
+  (when (and markdown-enable-wiki-links
+             (not markdown-wiki-link-fontify-missing)
+             (markdown-match-inline-generic markdown-regex-wiki-link last))
+    (let ((begin (match-beginning 1)) (end (match-end 1)))
+      (if (or (markdown-in-comment-p begin)
+              (markdown-in-comment-p end)
+              (markdown-inline-code-at-pos-p begin)
+              (markdown-inline-code-at-pos-p end)
+              (markdown-code-block-at-pos begin))
+          (progn (goto-char (min (1+ begin) last))
+                 (when (< (point) last)
+                   (markdown-match-wiki-link last)))
+        (set-match-data (list begin end))
+        t))))
 
 (defun markdown-match-inline-attributes (last)
   "Match inline attributes from point to LAST."
@@ -8622,8 +8640,7 @@ or span."
     (setq markdown-mode-font-lock-keywords
           (append
            (markdown-mode-font-lock-keywords-math)
-           markdown-mode-font-lock-keywords-basic
-           (markdown-mode-font-lock-keywords-wiki-links)))
+           markdown-mode-font-lock-keywords-basic))
     ;; Update font lock defaults
     (setq font-lock-defaults
           '(markdown-mode-font-lock-keywords
@@ -8684,15 +8701,6 @@ These are only enabled when `markdown-wiki-link-fontify-missing' is non-nil."
     (remove-hook 'window-configuration-change-hook
                  'markdown-fontify-buffer-wiki-links t)
   (markdown-unfontify-region-wiki-links (point-min) (point-max))))
-
-(defun markdown-mode-font-lock-keywords-wiki-links ()
-  "Return wiki-link lock keywords if support is enabled.
-If `markdown-wiki-link-fontify-missing' is also enabled, we use
-hooks in `markdown-setup-wiki-link-hooks' for fontification instead."
-  (when (and markdown-enable-wiki-links
-             (not markdown-wiki-link-fontify-missing))
-    (list
-     (cons markdown-regex-wiki-link '((1 markdown-link-face prepend))))))
 
 
 ;;; Math Support ==============================================================

@@ -2,7 +2,7 @@
 ;; Copyright (C) 2017 jack angers
 ;; Author: jack angers
 ;; Version: 0.1.0
-;; Package-Version: 20170924.2036
+;; Package-Version: 20171106.1659
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: programming, diff
 
@@ -86,6 +86,7 @@
 
 (defvar dumb-diff--saved-window-config nil)
 (defvar dumb-diff--show-comparison-buffers t)
+(defvar dumb-diff-hunk-header-re-unified "^@@ -\\([0-9]+\\)\\(?:,\\([0-9]+\\)\\)? \\+\\([0-9]+\\)\\(?:,\\([0-9]+\\)\\)? @@") ;; from diff-mode
 
 ;;;###autoload
 (defun dumb-diff ()
@@ -146,7 +147,13 @@
 (defun dumb-diff-select-result ()
   "Switch to the result buffer."
   (interactive)
-  (switch-to-buffer (get-buffer-create dumb-diff-buf-result-name)))
+  (let ((buf (get-buffer-create dumb-diff-buf-result-name)))
+    (switch-to-buffer buf)
+    (with-current-buffer buf
+      ; on EVERY hunk do "refine" so we get word diffs!
+      (while (re-search-forward dumb-diff-hunk-header-re-unified nil t)
+        (funcall-interactively 'diff-refine-hunk)))))
+
 
 (defun dumb-diff-get-buffer-contents (b)
   "Return the results of buffer B."
