@@ -2,7 +2,7 @@
 
 ;; Author: John Del Rosario <john2x@gmail.com>
 ;; URL: https://github.com/john2x/nameframe
-;; Package-Version: 20160927.2103
+;; Package-Version: 20171106.1656
 ;; Version: 0.4.1-beta
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -40,6 +40,7 @@
 (defun nameframe-make-frame (frame-name)
   "Make a new frame with name FRAME-NAME."
   (let ((frame (make-frame `((name . ,frame-name)))))
+    (select-frame-set-input-focus frame)
     (run-hook-with-args 'nameframe-make-frame-hook frame)))
 
 (defun nameframe-frame-exists-p (frame-name &optional frame-alist)

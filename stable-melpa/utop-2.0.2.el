@@ -3,7 +3,7 @@
 ;; Copyright: (c) 2011, Jeremie Dimino <jeremie@dimino.org>
 ;; Author: Jeremie Dimino <jeremie@dimino.org>
 ;; URL: https://github.com/diml/utop
-;; Package-Version: 2.0.1
+;; Package-Version: 2.0.2
 ;; Licence: BSD3
 ;; Version: 1.11
 ;; Package-Requires: ((emacs "24"))
