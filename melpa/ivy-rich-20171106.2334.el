@@ -4,8 +4,8 @@
 
 ;; Author: Yevgnen Koh <wherejoystarts@gmail.com>
 ;; Package-Requires: ((emacs "24.4") (ivy "0.8.0"))
-;; Package-Version: 20170716.1924
-;; Version: 0.0.3
+;; Package-Version: 20171106.2334
+;; Version: 0.0.4
 ;; Keywords: ivy
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -78,16 +78,37 @@ to hold the project name."
   "Whether to align virtual buffers just as true buffers or not."
   :type 'boolean)
 
-(defcustom ivy-rich-abbreviate-paths
+(defcustom ivy-rich-path-style
+  'relative
+  "File path style.
+
+When set to 'full or 'absolute, absolute path will be used.
+When set to 'abbrev or 'abbreviate, abbreviated will be used. This
+may not affect remote files since `abbreviate-file-name' does not
+take care of them.
+When set to 'relative or any other value, path relative to project
+home will be used."
+  :type 'symbol)
+
+(defcustom ivy-rich-parse-remote-file-path
   nil
-  "Abbreviate paths using `abbreviate-file-name'."
+  "Whether `ivy-rich-path-style' should take care of remote file.
+
+When `nil', always show absolute path of remote files,
+otherwise, treat remote files as local files.
+
+Sometimes when you are editing files with same names and same
+directory structures in local and remote machines, setting this
+option to `nil' would make the candidates easier to be
+distinguished."
   :type 'boolean)
 
 (defvar ivy-rich-switch-buffer-buffer-size-length 7)
-(defvar ivy-rich-switch-buffer-indicator-length 3)
+(defvar ivy-rich-switch-buffer-indicator-length 4)
 
-(defun ivy-rich-string-empty-p (str)
-  (string-empty-p (string-trim str)))
+(defun ivy-rich-empty-p (str)
+  (or (null str)
+      (string-empty-p (string-trim str))))
 
 (defun ivy-rich-switch-buffer-pad (str len &optional left)
   "Use space to pad STR to LEN of length.
@@ -112,11 +133,18 @@ When LEFT is not nil, pad from left side."
   (not (memq major-mode modes)))
 
 (defun ivy-rich-switch-buffer-shorten-path (file len)
-  "Shorten the path of FILE.
+  "Shorten the path of FILE until the length of FILE <= LEN.
 
-For example, a path /a/b/c/d/e/f.el will be shortened to /a/…/e/f.el."
+For example, a path /a/b/c/d/e/f.el will be shortened to
+   /a/…/c/d/e/f.el
+or /a/…/d/e/f.el
+or /a/…/e/f.el
+or /a/…/f.el."
   (if (> (length file) len)
-      (replace-regexp-in-string "\\/?.+?\\/\\(.+\\)\\/.+?\\/.*" "…" file nil nil 1)
+      (let ((new-file (replace-regexp-in-string "\\/?.+?\\/\\(\\(…\\/\\)?.+?\\)\\/.*" "…" file nil nil 1)))
+        (if (string= new-file file)
+            file
+          (ivy-rich-switch-buffer-shorten-path new-file len)))
     file))
 
 (defun ivy-rich-switch-buffer-format (columns)
@@ -138,9 +166,12 @@ For example, a path /a/b/c/d/e/f.el will be shortened to /a/…/e/f.el."
                     ""))
         (process (if (get-buffer-process (current-buffer))
                      "&"
-                   "")))
+                   ""))
+        (remote (if (file-remote-p (or (buffer-file-name) default-directory))
+                    "@"
+                  "")))
     (propertize
-     (ivy-rich-switch-buffer-pad (format "%s%s%s" readonly modified process) ivy-rich-switch-buffer-indicator-length)
+     (ivy-rich-switch-buffer-pad (format "%s%s%s%s" remote readonly modified process) ivy-rich-switch-buffer-indicator-length)
      'face
      'error)))
 
@@ -180,22 +211,8 @@ For example, a path /a/b/c/d/e/f.el will be shortened to /a/…/e/f.el."
      'face
      'success)))
 
-(defun ivy-rich-abbreviate-path (path)
-  "Return a shortened version of PATH if `ivy-rich-abbreviate-paths' is set."
-  (if ivy-rich-abbreviate-paths
-      (abbreviate-file-name path)
-    path))
-
 (defun ivy-rich-switch-buffer-path (project)
-  (let* ((project-home (if (or (not project)
-                               (file-remote-p (or (buffer-file-name)
-                                                  (and (eq major-mode 'dired-mode)
-                                                       (dired-current-directory))
-                                                  ""))
-                               (not (projectile-project-p)))
-                           ""
-                         (file-truename (projectile-project-root))))
-         (path-max-length (- (window-width (minibuffer-window))
+  (let* ((path-max-length (- (window-width (minibuffer-window))
                              ivy-rich-switch-buffer-name-max-length
                              ivy-rich-switch-buffer-indicator-length
                              ivy-rich-switch-buffer-buffer-size-length
@@ -203,17 +220,34 @@ For example, a path /a/b/c/d/e/f.el will be shortened to /a/…/e/f.el."
                              (if project ivy-rich-switch-buffer-project-max-length 0)
                              (* 4 (length ivy-rich-switch-buffer-delimiter))
                              2))        ; Fixed the unexpected wrapping in terminal
-         (path (if (and (buffer-file-name)
-                        (string-match "^https?:\\/\\/" (buffer-file-name))
-                        (not (file-exists-p (buffer-file-name))))
-                   ""
-                 (file-truename (or (buffer-file-name) default-directory))))
-         (path (ivy-rich-abbreviate-path path))
-         ;; If we're in project, we find the relative path
-         (path (if (or (not project)
-                       (ivy-rich-string-empty-p project))
-                   path
-                 (substring-no-properties path (length (ivy-rich-abbreviate-path project-home))))))
+         ;; Find the project root directory or `default-directory'
+         (root (file-truename
+                (if (or (not project)
+                        (not (projectile-project-p)))
+                    default-directory
+                  (projectile-project-root))))
+         ;; Find the file name or `nil'
+         (filename
+          (if (buffer-file-name)
+              (if (and (buffer-file-name)
+                       (string-match "^https?:\\/\\/" (buffer-file-name))
+                       (not (file-exists-p (buffer-file-name))))
+                  nil
+                (file-truename (buffer-file-name)))
+            (if (eq major-mode 'dired-mode)
+                (dired-current-directory)
+              nil)))
+         (path (cond ((or (memq ivy-rich-path-style '(full absolute))
+                          (and (null ivy-rich-parse-remote-file-path)
+                               (or (file-remote-p root))))
+                      (expand-file-name (or filename root)))
+                     ((memq ivy-rich-path-style '(abbreviate abbrev))
+                      (abbreviate-file-name (or filename root)))
+                     ((or (eq ivy-rich-path-style 'relative)
+                          t)            ; make 'relative default
+                      (if filename
+                          (substring-no-properties filename (length root))
+                        "")))))
     (ivy-rich-switch-buffer-pad
      (ivy-rich-switch-buffer-shorten-path path path-max-length)
      path-max-length)))

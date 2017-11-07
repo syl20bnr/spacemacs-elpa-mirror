@@ -6,7 +6,7 @@
 ;; Maintainer: "Huang, Ying" <huang.ying.caritas@gmail.com>
 ;; URL: https://github.com/hying-caritas/project-shells
 ;; Version: 20170311
-;; Package-Version: 20171106.450
+;; Package-Version: 20171107.51
 ;; Package-X-Original-Version: 20170311
 ;; Package-Type: simple
 ;; Keywords: processes, terminals
@@ -316,7 +316,7 @@ name, and the project root directory."
 	    (progn
 	      (mkdir session-dir t)
 	      (project-shells--create shell-name dir type)
-	      (cl-ecase type
+	      (cl-case type
 		(term
 		 (term-send-raw-string (project-shells--term-command-string)))
 		(eshell
