@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 2.14
+;; Package-Version: 2.15
 ;; Version: 0.5
 ;; Package-Requires: ((emacs "24.3") (company "0.8.1") (rtags "2.10"))
 
@@ -34,6 +34,9 @@
 
 (require 'company)
 (require 'company-template)
+
+(eval-when-compile
+  (require 'cl))
 
 (declare-function company-doc-buffer "ext:company")
 (declare-function company-manual-begin "ext:company")
@@ -73,8 +76,8 @@ and `c-electric-colon', for automatic completion right after \">\" and
   (let ((symbol (company-grab-symbol)))
     (if symbol
         (cond ((looking-back "# *include *[<\"]\\([A-Za-z0-9-_./\\]*\\)" (point-at-bol)) (match-string 1))
+              ((company-in-string-or-comment) nil)
               ((and company-rtags-begin-after-member-access
-                    (not (company-in-string-or-comment))
                     (save-excursion
                       (forward-char (- (length symbol)))
                       (cond ((looking-back "\\." (1- (point))))

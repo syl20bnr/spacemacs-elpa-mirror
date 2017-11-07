@@ -4,7 +4,7 @@
 
 ;; Author: Christian Schwarzgruber <c.schwarzgruber.cs@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 2.14
+;; Package-Version: 2.15
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "24") (flycheck "0.23") (rtags "2.10"))
 

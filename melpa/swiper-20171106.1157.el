@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171105.42
+;; Package-Version: 20171106.1157
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.1") (ivy "0.9.0"))
 ;; Keywords: matching
@@ -277,6 +277,7 @@
     occur-edit-mode
     bongo-mode
     bongo-library-mode
+    magit-popup-mode
     bongo-playlist-mode
     eww-mode
     treemacs-mode
