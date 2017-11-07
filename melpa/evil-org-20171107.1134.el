@@ -4,11 +4,11 @@
 ;; Maintainer: Somelauw
 ;; Original-author: Edward Tjörnhammar
 ;; URL: https://github.com/Somelauw/evil-org-mode.git
-;; Package-Version: 20170917.1447
+;; Package-Version: 20171107.1134
 ;; Git-Repository: git://github.com/Somelauw/evil-org-mode.git
 ;; Created: 2012-06-14
 ;; Forked-since: 2017-02-12
-;; Version: 0.9.6
+;; Version: 1.0.0
 ;; Package-Requires: ((emacs "24.4") (evil "1.0") (org "8.0.0"))
 ;; Keywords: evil vim-emulation org-mode key-bindings presets
 
@@ -52,20 +52,21 @@
 ;;; Customizations
 (defcustom evil-org-key-theme
   (if (bound-and-true-p evil-disable-insert-state-bindings)
-      '(navigation textobjects additional)
-      '(navigation insert textobjects additional))
+      '(navigation textobjects additional calendar)
+    '(navigation insert textobjects additional calendar))
   "Which key themes to enable.
 If you use this variable, you should call `evil-org-set-key-theme' with zero
 arguments."
   :group 'evil-org
   :type '(set (const navigation)
               (const insert)
+              (const return)
               (const textobjects)
-              (const rsi)
               (const additional)
               (const shift)
               (const todo)
-              (const heading)))
+              (const heading)
+              (const calendar)))
 
 (defcustom evil-org-movement-bindings
   '((up . "k")
@@ -94,13 +95,6 @@ By default, o and O are bound to ‘evil-org-open-above’ and ‘evil-org-open-
   "Whether < and > should retain selection when used in visual state."
   :group 'evil-org
   :type 'boolean)
-
-;; Constants
-(defconst evil-org-special-o/O-ignore
-  (append '(latex-environment drawer property-drawer)
-          (cl-remove-if-not (lambda (s) (string-suffix-p "block" (symbol-name s)))
-                            org-element-all-elements))
-  "Org elements on which o/O should not special.")
 
 ;;; Variable declarations
 (defvar browse-url-generic-program)
@@ -251,15 +245,14 @@ Argument COUNT number of lines to insert.
 The behavior in items and tables can be controlled using ‘evil-org-special-o/O’.
 Passing in any prefix argument, executes the command without special behavior."
   (interactive "P")
-  (end-of-visible-line)
-  (let* ((special (and (null count) evil-org-special-o/O))
-         (ignore (when (memq 'item special) evil-org-special-o/O-ignore))
-         (elements (append special ignore))
-         (e (org-element-lineage (org-element-at-point) elements t)))
-    (cl-case (org-element-type e)
-      ((table-row) (org-table-insert-row '(4)) (evil-insert nil))
-      ((item) (org-insert-item (org-at-item-checkbox-p)) (evil-insert nil))
-      (otherwise (evil-open-below count)))))
+  (cond ((and (memq 'table-row evil-org-special-o/O) (org-at-table-p))
+         (org-table-insert-row '(4))
+         (evil-insert nil))
+        ((and (memq 'item evil-org-special-o/O) (org-at-item-p)
+              (progn (end-of-visible-line)
+                     (org-insert-item (org-at-item-checkbox-p))))
+         (evil-insert nil))
+        ((evil-open-below count))))
 
 (defun evil-org-open-above (count)
   "Clever insertion of org item.
@@ -267,18 +260,39 @@ Argument COUNT number of lines to insert.
 The behavior in items and tables can be controlled using ‘evil-org-special-o/O’.
 Passing in any prefix argument, executes the command without special behavior."
   (interactive "P")
-  (end-of-visible-line)
-  (let* ((special (and (null count) evil-org-special-o/O))
-         (ignore (when (memq 'item special) evil-org-special-o/O-ignore))
-         (elements (append special ignore))
-         (e (org-element-lineage (org-element-at-point) elements t)))
-    (cl-case (org-element-type e)
-      ((table-row) (org-table-insert-row) (evil-insert nil))
-      ((item)
-       (beginning-of-line)
-       (org-insert-item (org-at-item-checkbox-p))
-       (evil-insert nil))
-      (otherwise (evil-open-above count)))))
+  (cond ((and (memq 'table-row evil-org-special-o/O) (org-at-table-p))
+         (org-table-insert-row)
+         (evil-insert nil))
+        ((and (memq 'item evil-org-special-o/O) (org-at-item-p)
+              (progn (beginning-of-line)
+                     (org-insert-item (org-at-item-checkbox-p))))
+         (evil-insert nil))
+        ((evil-open-above count))))
+
+(defun evil-org-return (arg)
+  "Like `org-return', but continues items and tables like `evil-open-below'.
+Pressing return twice cancels the continuation of the itemlist or table.
+If ARG is set it will not cancel the continuation.
+The behavior of this function can be controlled using `evil-org-special-o/O’."
+  (interactive "P")
+  (cond ((and (not arg) (evil-org--empty-element-p))
+         (delete-region (line-beginning-position) (line-end-position)))
+        ((eolp)
+         (call-interactively #'evil-org-open-below))
+        ('otherwise
+         (call-interactively #'org-return-indent))))
+
+(defun evil-org--empty-element-p ()
+  "Return if pointer is on an empty element."
+  (cond ((org-at-table-p)
+         (let* ((rows (cl-remove 'hline (org-table-to-lisp)))
+                (row (nth (1- (org-table-current-line)) rows)))
+           (cl-every 'string-empty-p row)))
+        ((org-at-item-p)
+         (let ((e (org-element-at-point)))
+           (or (not (org-element-property :contents-begin e))
+               (> (org-element-property :contents-begin e)
+                  (line-end-position)))))))
 
 (defmacro evil-org-define-eol-command (cmd)
   "Return a function that executes CMD at eol and then enters insert state.
@@ -405,6 +419,17 @@ If ARG < 0, move column END to BEG"
     (evil-set-register ?- (filter-buffer-substring beg end))
     (evil-yank beg end type register)
     (org-delete-char count)))
+
+(evil-define-operator evil-org-delete (beg end type register yank-handler)
+  "Like evil-delete, but realigns tags and numbered lists."
+  (interactive "<R><x><y>")
+  (let ((renumber-lists-p (or (< beg (line-beginning-position))
+                              (> end (line-end-position)))))
+    (evil-delete beg end type register yank-handler)
+    (cond ((and renumber-lists-p (org-at-item-p))
+           (org-list-repair))
+          ((org-at-heading-p)
+           (org-fix-tags-on-the-fly)))))
 
 (defun evil-org-generic-open-links (beg end incog)
   "Open org mode links in visual selection.
@@ -589,6 +614,7 @@ Includes tables, list items and subtrees."
     (kbd "A") 'evil-org-append-line
     (kbd "o") 'evil-org-open-below
     (kbd "O") 'evil-org-open-above
+    (kbd "d") 'evil-org-delete
     (kbd "x") 'evil-org-delete-char
     (kbd "X") 'evil-org-delete-backward-char
     (kbd "<C-return>") (evil-org-define-eol-command
@@ -618,22 +644,6 @@ Includes tables, list items and subtrees."
   (evil-define-key 'insert evil-org-mode-map
     (kbd "C-t") 'org-metaright
     (kbd "C-d") 'org-metaleft))
-
-(defun evil-org--populate-rsi-bindings ()
-  "Define key bindings to use in hybrid state."
-  (declare (obsolete "Please create a github issue if you want to keep RSI bindings." "0.9.1"))
-  (define-key org-mode-map (kbd "C-d")
-    (lambda (n)
-      (interactive "p")
-      (if (and (org-at-heading-or-item-p) (eolp))
-          (org-metaleft)
-        (org-delete-char n))))
-  (define-key org-mode-map (kbd "C-f")
-    (lambda (n)
-      (interactive "p")
-      (if (and (org-at-heading-or-item-p) (eolp))
-          (org-metaright)
-        (forward-char n)))))
 
 (defun evil-org--populate-navigation-bindings ()
   "Configures gj/gk/gh/gl for navigation."
@@ -687,6 +697,42 @@ Includes tables, list items and subtrees."
     (kbd "O") (evil-org-define-eol-command org-insert-heading)
     (kbd "M-o") (evil-org-define-eol-command org-insert-subheading)))
 
+(defun evil-org--populate-calendar-bindings ()
+  "Bindings for easy date selection."
+  (define-key org-read-date-minibuffer-local-map
+    (kbd "C-f") (lambda () (interactive)
+                  (org-eval-in-calendar
+                   '(calendar-scroll-left-three-months 1))))
+  (define-key org-read-date-minibuffer-local-map
+    (kbd "C-b") (lambda () (interactive)
+                  (org-eval-in-calendar
+                   '(calendar-scroll-right-three-months 1))))
+  (let-alist evil-org-movement-bindings
+    (define-key org-read-date-minibuffer-local-map
+      (kbd (concat "M-" .left)) (lambda () (interactive)
+                    (org-eval-in-calendar '(calendar-backward-day 1))))
+    (define-key org-read-date-minibuffer-local-map
+      (kbd (concat "M-" .right)) (lambda () (interactive)
+                    (org-eval-in-calendar '(calendar-forward-day 1))))
+    (define-key org-read-date-minibuffer-local-map
+      (kbd (concat "M-" .up)) (lambda () (interactive)
+                    (org-eval-in-calendar '(calendar-backward-week 1))))
+    (define-key org-read-date-minibuffer-local-map
+      (kbd (concat "M-" .down)) (lambda () (interactive)
+                    (org-eval-in-calendar '(calendar-forward-week 1))))
+    (define-key org-read-date-minibuffer-local-map
+      (kbd (concat "M-" (capitalize .left))) (lambda () (interactive)
+                      (org-eval-in-calendar '(calendar-backward-month 1))))
+    (define-key org-read-date-minibuffer-local-map
+      (kbd (concat "M-" (capitalize .right))) (lambda () (interactive)
+                      (org-eval-in-calendar '(calendar-forward-month 1))))
+    (define-key org-read-date-minibuffer-local-map
+      (kbd (concat "M-" (capitalize .up))) (lambda () (interactive)
+                      (org-eval-in-calendar '(calendar-backward-year 1))))
+    (define-key org-read-date-minibuffer-local-map
+      (kbd (concat "M-" (capitalize .down))) (lambda () (interactive)
+                      (org-eval-in-calendar '(calendar-forward-year 1))))))
+
 (defun evil-org-set-key-theme (&optional theme)
   "Select what keythemes to enable.
 Optional argument THEME list of themes. See evil-org-keytheme for a list of values."
@@ -695,12 +741,15 @@ Optional argument THEME list of themes. See evil-org-keytheme for a list of valu
     (evil-org--populate-base-bindings)
     (when (memq 'navigation theme) (evil-org--populate-navigation-bindings))
     (when (memq 'insert theme) (evil-org--populate-insert-bindings))
+    (when (memq 'return theme)
+      (evil-define-key 'insert evil-org-mode-map (kbd "RET") 'evil-org-return)
+      (define-key evil-org-mode-map (kbd "RET") 'evil-org-return))
     (when (memq 'textobjects theme) (evil-org--populate-textobjects-bindings))
-    (when (memq 'rsi theme) (evil-org--populate-rsi-bindings))
     (when (memq 'additional theme) (evil-org--populate-additional-bindings))
     (when (memq 'shift theme) (evil-org--populate-shift-bindings))
     (when (memq 'todo theme) (evil-org--populate-todo-bindings))
     (when (memq 'heading theme) (evil-org--populate-heading-bindings))
+    (when (memq 'calendar theme) (evil-org--populate-calendar-bindings))
     (setcdr
      (assq 'evil-org-mode minor-mode-map-alist)
      evil-org-mode-map)))
