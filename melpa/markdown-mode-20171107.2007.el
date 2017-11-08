@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171107.821
+;; Package-Version: 20171107.2007
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -1355,6 +1355,15 @@ Defaults to `buffer-file-coding-system' (and falling back to
 and `iso-latin-1'.  Use `list-coding-systems' for more choices."
   :group 'markdown
   :type 'coding-system)
+
+(defcustom markdown-export-kill-buffer t
+  "Kill output buffer after HTML export.
+When non-nil, kill the HTML output buffer after
+exporting with `markdown-export'."
+  :group 'markdown
+  :type 'boolean
+  :safe 'booleanp
+  :package-version '(markdown-mode . "2.4"))
 
 (defcustom markdown-xhtml-header-content ""
   "Additional content to include in the XHTML <head> block."
@@ -7844,7 +7853,8 @@ current filename, but with the extension removed and replaced with .html."
       (markdown-standalone output-buffer-name)
       (with-current-buffer output-buffer
         (run-hooks 'markdown-after-export-hook)
-        (save-buffer))
+        (save-buffer)
+        (when markdown-export-kill-buffer (kill-buffer)))
       ;; if modified, restore initial buffer
       (when (buffer-modified-p init-buf)
         (erase-buffer)
