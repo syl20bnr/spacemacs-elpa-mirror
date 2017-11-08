@@ -6,7 +6,7 @@
 
 ;; Compatibility: GNU Emacs 24.1+
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5") (async "1.9.2"))
-;; Package-Version: 20171107.410
+;; Package-Version: 20171107.2313
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -229,7 +229,15 @@ Arg CONF is an entry in `psession--winconf-alist'."
                (progress-reporter-update progress-reporter count)))
     (progress-reporter-done progress-reporter)))
 
+
+;;; Auto saving psession
+;;
+(defun psession--get-variables-regexp ()
+  (regexp-opt (cl-loop for (k . _v) in psession-object-to-save-alist
+                       collect (symbol-name k))))
+
 (defun psession-save-all-async ()
+  "Save current emacs session asynchronously."
   (message "Psession: auto saving session...")
   (psession-save-last-winconf)
   (psession--dump-some-buffers-to-list)
@@ -238,12 +246,13 @@ Arg CONF is an entry in `psession--winconf-alist'."
       (add-to-list 'load-path
                    ,(file-name-directory (locate-library "psession")))
       (require 'psession)
-      ,(async-inject-variables "\\`\\(psession\\)-.*")
+      ,(async-inject-variables (format "\\`%s" (psession--get-variables-regexp)))
       (psession--dump-object-to-file-save-alist))
    (lambda (_result)
      (message "Psession: auto saving session done"))))
 
 (defun psession-save-all ()
+  "Save current emacs session."
   (interactive)
   (psession-save-last-winconf)
   (psession--dump-some-buffers-to-list)
@@ -251,11 +260,13 @@ Arg CONF is an entry in `psession--winconf-alist'."
 
 (defvar psession--auto-save-timer nil)
 (defun psession-start-auto-save ()
+  "Start auto-saving emacs session in background."
   (setq psession--auto-save-timer
         (run-with-idle-timer
          psession-auto-save-delay t #'psession-save-all-async)))
 
 (defun psession-auto-save-cancel-timer ()
+  "Cancel psession auto-saving."
   (interactive)
   (when psession--auto-save-timer
     (cancel-timer psession--auto-save-timer)

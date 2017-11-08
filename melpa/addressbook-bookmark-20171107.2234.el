@@ -6,7 +6,7 @@
 
 ;; Compatibility: GNU Emacs 24.1+
 ;; Package-Requires: ((emacs "24"))
-;; Package-Version: 20170424.808
+;; Package-Version: 20171107.2234
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -343,6 +343,7 @@ When CONTACT arg is provided add only contact CONTACT and exit."
 
 ;;;###autoload
 (defun addressbook-mu4e-bookmark ()
+  "Record an addressbook bookmark from a mu4e view buffer."
   (interactive)
   (addressbook--bookmark-from-mail
    (addressbook-get-mu4e-from-field)))
