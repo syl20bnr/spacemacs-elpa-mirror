@@ -29,7 +29,7 @@ f - find-file in another window/frame.
 
 m - compose mail in another window/frame.
 
-o - move to another window/frame.
+o - select another window/frame.
 
 r - find-file-read-only in another window/frame.
 

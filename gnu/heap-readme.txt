@@ -17,8 +17,8 @@ vector. Therefore, the maximum size of the heap has to be specified in
 advance. Although the heap will grow dynamically if it becomes full, this
 requires copying the entire heap, so insertion has worst-case complexity
 O(n) instead of O(log n), though the amortized complexity is still
-O(n). (For applications where the maximum size of the heap is not known in
-advance, an implementation based on binary trees might be more suitable,
+O(log n). (For applications where the maximum size of the heap is not known
+in advance, an implementation based on binary trees might be more suitable,
 but is not currently implemented in this package.)
 
 You create a heap using `make-heap', add elements to it using `heap-add',

@@ -1,40 +1,30 @@
-Emacs Ada mode version 5.2.1
+Emacs Ada mode version 5.3.1
 
-Ada mode requires Emacs 24.2 or greater
+Ada mode provides auto-casing, fontification, navigation, and
+indentation for Ada source code files.
 
-See ada-mode.texi (or a compiled version) for help on using and
-customizing Ada mode, upgrading from previous versions, and notes for
-Ada mode developers.
+Cross-reference information output by the compiler is used to provide
+powerful code navigation (jump to definition, find all uses, etc). By
+default, only the AdaCore GNAT compiler is supported; other compilers
+can be supported. Ada mode uses gpr_query to query compiler-generated
+cross reference information. gpr_query is provided as Ada source code
+that must be compiled and installed; see ada-mode.info section
+Installation for instructions.
 
-Ada mode is provided as a Gnu ELPA package; to install the package,
-add to ~./emacs:
+Ada mode will be automatically loaded when you open a file
+with a matching extension (default *.ads, *.adb).
 
-(package-initialize)
+Ada mode uses project files to define large (multi-directory)
+projects, and to define casing exceptions.
 
-then invoke M-x list-packages, install Ada mode.
+Ada mode uses a parser implemented in elisp, which can be slow on
+large files. In addition, the parser does not recover from syntax
+errors. There is support for running the AdaCore GPS indentation
+engine in a subprocess, either as a backup when the elisp parser
+fails, or as the primary indentation engine. The GPS indentation
+engine must be compiled; see ada-mode.info section ada-gps for
+instructions.
+   
+See ada-mode.info for help on using and customizing Ada mode, and
+notes for Ada mode developers.
 
-Note that you must have the Emacs lisp sources installed; that's a
-separate package in some distributions.
-
-To install Ada mode, gpr mode, and associated utilities from this distribution:
-
-Unzip to a convenient place (we will use ~/ada-mode in the following).
-
-In a shell:
-$ cd ~/ada-mode/build/wisi
-$ make byte-compile
-
-Edit your ~/.emacs, add:
-
-(add-to-list 'load-path (expand-file-name "~/ada-mode"))
-
-
-Ada mode will be automatically loaded when you open a file with a
-matching extension (default *.ads, *.adb).
-
-
-By default ada-mode uses gnat find for cross-reference functions.
-There is support for an alternative: gpr_query. See ada-mode.texi
-section Installation for more.
-
-(end of file)

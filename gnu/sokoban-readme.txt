@@ -11,8 +11,6 @@ Modified: 1998-06-04, added `undo' feature
   added number of blocks done/total to score and modeline
 Modified: 2003-06-14, update email address, remove URL
 
-Tested with XEmacs 20.3/4/5 and Emacs 19.34
-
 The game is based upon XSokoban, by
 Michael Bischoff <mbi@mo.math.nat.tu-bs.de>
 

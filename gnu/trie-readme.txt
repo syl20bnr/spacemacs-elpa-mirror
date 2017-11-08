@@ -7,20 +7,29 @@ time-efficient. But, more importantly, a variety of more advanced queries
 can also be performed efficiently: for example, returning all strings with
 a given prefix, searching for keys matching a given wildcard pattern or
 regular expression, or searching for all keys that match any of the above
-to within a given Lewenstein distance (though this last is not yet
-implemented in this package - code contributions welcome!).
+to within a given Lewenstein distance.
 
 You create a trie using `make-trie', create an association using
 `trie-insert', retrieve an association using `trie-lookup', and map over a
 trie using `trie-map', `trie-mapc', `trie-mapcar', or `trie-mapf'. You can
-find completions of a prefix sequence using `trie-complete', or search for
-keys matching a regular expression using `trie-regexp-search'. Using
-`trie-stack', you can create an object that allows the contents of the trie
-to be used like a stack, useful for building other algorithms on top of
-tries; `trie-stack-pop' pops elements off the stack one-by-one, in
-"lexical" order, whilst `trie-stack-push' pushes things onto the
-stack. Similarly, `trie-complete-stack', and `trie-regexp-stack' create
-"lexically-ordered" stacks of query results.
+find completions of a prefix sequence using `trie-complete', search for
+keys matching a regular expression using `trie-regexp-search', find fuzzy
+matches within a given Lewenstein distance (edit distance) of a string
+using `trie-fuzzy-match', and find completions of prefixes within a given
+distance using `trie-fuzzy-complete'.
+
+Using `trie-stack', you can create an object that allows the contents of
+the trie to be used like a stack, useful for building other algorithms on
+top of tries; `trie-stack-pop' pops elements off the stack one-by-one, in
+"lexicographic" order, whilst `trie-stack-push' pushes things onto the
+stack. Similarly, `trie-complete-stack', `trie-regexp-stack',
+`trie-fuzzy-match-stack' and `trie-fuzzy-complete-stack' create
+"lexicographicly-ordered" stacks of query results.
+
+Very similar to trie-stacks, `trie-iter', `trie-complete-iter',
+`trie-regexp-iter', `trie-fuzzy-match-iter' and `trie-fuzzy-complete-iter'
+generate iterator objects, which can be used to retrieve successive
+elements by calling `iter-next' on them.
 
 Note that there are two uses for a trie: as a lookup table, in which case
 only the presence or absence of a key in the trie is significant, or as an
@@ -32,7 +41,7 @@ a comparison function that only compares the key part). For a trie,
 however, the underlying data structures naturally support associative
 arrays at no extra cost, so this package does the opposite: it implements
 associative arrays, and leaves it up to you to use them as lookup tables if
-you so desire.
+you so desire, by ignoring the associated data.
 
 
 Different Types of Trie
@@ -69,12 +78,12 @@ for lookup operations than red-black trees, at a cost of slightly less
 efficienct insertion operations, and less efficient deletion
 operations. Splay trees give good average-case complexity and are simpler
 to implement than AVL or red-black trees (which can mean they're faster in
-practice!), at the expense of poor worst-case complexity.
+practice), at the expense of poor worst-case complexity.
 
 If your tries are going to be static (i.e. created once and rarely
 modified), then using perfectly balanced binary search trees might be
 appropriate. Perfectly balancing the binary trees is very inefficient, but
-it only has to be when the trie is first created or modified. Lookup
+it only has to be done when the trie is first created or modified. Lookup
 operations will then be as efficient as possible for ternary search trees,
 and the implementation will also be simpler (so probably faster) than a
 self-balancing tree, without the space and time overhead required to keep
