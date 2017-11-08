@@ -5,7 +5,7 @@
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; Maintainer: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/ace-window
-;; Package-Version: 20170801.1334
+;; Package-Version: 20171107.1124
 ;; Version: 0.9.0
 ;; Package-Requires: ((avy "0.2.0"))
 ;; Keywords: window, location
@@ -264,6 +264,7 @@ LEAF is (PT . WND)."
   '((?x aw-delete-window " Ace - Delete Window")
     (?m aw-swap-window " Ace - Swap Window")
     (?M aw-move-window " Ace - Move Window")
+    (?j aw-switch-buffer-in-window " Ace - Select Buffer")
     (?n aw-flip-window)
     (?c aw-split-window-fair " Ace - Split Fair Window")
     (?v aw-split-window-vert " Ace - Split Vert Window")
@@ -466,6 +467,11 @@ Windows are numbered top down, left to right."
       (if (window-live-p window)
           (delete-window window)
         (error "Got a dead window %S" window)))))
+
+(defun aw-switch-buffer-in-window (window)
+  "Select buffer in WINDOW."
+  (aw-switch-to-window window)
+  (call-interactively 'switch-to-buffer))
 
 (defcustom aw-swap-invert nil
   "When non-nil, the other of the two swapped windows gets the point."

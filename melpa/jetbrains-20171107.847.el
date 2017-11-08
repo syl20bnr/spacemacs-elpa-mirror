@@ -5,7 +5,7 @@
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 19 Oct 2017
 ;; Version: 0.0.1
-;; Package-Version: 20171027.2055
+;; Package-Version: 20171107.847
 ;; Keywords: tools php
 ;; Package-Requires: ((emacs "24.3") (cl-lib "0.5") (f "0.17"))
 ;; URL: https://github.com/emacs-php/jetbrains.el
@@ -165,6 +165,14 @@
                           "--line"
                           (int-to-string (line-number-at-pos)))
                     " "))))))
+
+;;;###autoload
+(defun jetbrains-create-dir-local-file ()
+  "Create project file `.dir-locals.el' for `jetbrains.el'."
+  (interactive)
+  (add-dir-local-variable nil 'jetbrains-ide
+                          (completing-read "Select JetBrains IDE: "
+                                           (mapcar 'car jetbrains-known-ide-alist))))
 
 (provide 'jetbrains)
 ;;; jetbrains.el ends here

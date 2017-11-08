@@ -3,10 +3,23 @@
 ;; Copyright (C) 2017  John Allen <oss@porcnick.com>
 
 ;; Author: John Allen <oss@porcnick.com>
-;; Version: 1.0
-;; Package-Version: 20171030.1159
+;; Version: 1.1
+;; Package-Version: 20171107.901
 ;; Package-Requires: ((lsp-mode "3.1"))
 ;; URL: https://github.com/jra3/lsp-hack
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 ;; A simple LSP client for hooking up hack's hh_client/hh_server to lsp-mode
@@ -19,8 +32,7 @@
 (defgroup lsp_hack nil
   "Major mode `hack-mode' for editing Hack code."
   :prefix "lsp-hack-"
-  :group 'languages
-  )
+  :group 'languages)
 
 (defcustom lsp-hack--binary
   "hh_client"
@@ -29,10 +41,8 @@
   :type 'string)
 
 (defconst lsp-hack--handlers
-  '(("telemetry/event" . (lambda (_w _p)))
-    )
-  "Handlers for custom messages from hh."
-  )
+  '(("telemetry/event" . (lambda (_w _p))))
+  "Handlers for custom messages from hh.")
 
 (defun lsp-hack--initialize (client)
   "Initialization callback for hack.

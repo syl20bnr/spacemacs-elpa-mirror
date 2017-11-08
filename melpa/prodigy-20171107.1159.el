@@ -5,7 +5,7 @@
 ;; Author: Johan Andersson <johan.rejeep@gmail.com>
 ;; Maintainer: Johan Andersson <johan.rejeep@gmail.com>
 ;; Version: 0.7.0
-;; Package-Version: 20170816.1114
+;; Package-Version: 20171107.1159
 ;; URL: http://github.com/rejeep/prodigy.el
 ;; Package-Requires: ((s "1.8.0") (dash "2.4.0") (f "0.14.0") (emacs "24"))
 
@@ -162,6 +162,9 @@ The list is a property list with the following properties:
 
 `cwd'
   Run command with this as `default-directory'.
+
+`sudo'
+  Run command as `sudo'
 
 `port'
   Specify service port for use with open function.
@@ -958,6 +961,20 @@ Note that the return value is always a list."
 
 ;;;; Process handling
 
+(defun prodigy-start-sudo-process (name buffer program &rest program-args)
+  "Prompt the user for a password and start a process with sudo.
+NAME, BUFFER, PROGRAM, and PROGRAM-ARGS are as in `start-process.'"
+  (let* ((sudo-args (cons program program-args))
+         (pwd (read-passwd (concat "Sudo password for `" (mapconcat #'identity sudo-args " ") "': ")))
+         (process
+         (start-process-shell-command
+          name buffer (concat "sudo " (mapconcat #'shell-quote-argument sudo-args " ")))))
+    (process-send-string process pwd)
+    (clear-string pwd)
+    (process-send-string process "\r")
+    (process-send-eof process)
+    process))
+
 (defun prodigy-start-service (service &optional callback)
   "Start process associated with SERVICE unless already started.
 
@@ -975,6 +992,7 @@ the process is put in failed status."
                  (f-full cwd)
                default-directory))
            (name (plist-get service :name))
+           (sudo (plist-get service :sudo))
            (command (prodigy-service-command service))
            (args (prodigy-service-args service))
            (exec-path (append (prodigy-service-path service) exec-path))
@@ -984,7 +1002,8 @@ the process is put in failed status."
            (create-process
             (lambda ()
               (unless process
-                (setq process (apply 'start-process (append (list name nil command) args)))))))
+                (setq process (apply (if sudo 'prodigy-start-sudo-process 'start-process)
+                                     (append (list name nil  command) args)))))))
       (-when-let (init (prodigy-service-init service))
         (funcall init))
       (-when-let (init-async (prodigy-service-init-async service))

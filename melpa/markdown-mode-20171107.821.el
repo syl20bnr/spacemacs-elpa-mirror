@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171106.1224
+;; Package-Version: 20171107.821
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -1751,10 +1751,16 @@ Groups 1 and 3 match opening and closing dollar signs.
 Group 2 matches the mathematical expression contained within.")
 
 (defconst markdown-regex-math-display
-  "^\\(\\\\\\[\\)\\(\\(?:.\\|\n\\)*?\\)?\\(\\\\\\]\\)$"
-  "Regular expression for itex \[..\] display mode expressions.
-Groups 1 and 3 match the opening and closing delimiters.
-Group 2 matches the mathematical expression contained within.")
+  (rx line-start
+      (group (group (repeat 1 2 "\\")) "[")
+      (group (*? anything))
+      (group (backref 2) "]")
+      line-end)
+  "Regular expression for \[..\] or \\[..\\] display math.
+Groups 1 and 4 match the opening and closing markup.
+Group 3 matches the mathematical expression contained within.
+Group 2 matches the opening slashes, and is used internally to
+match the closing slashes.")
 
 (defsubst markdown-make-tilde-fence-regex (num-tildes &optional end-of-line)
   "Return regexp matching a tilde code fence at least NUM-TILDES long.
@@ -2887,6 +2893,10 @@ Depending on your font, some reasonable choices are:
     (markdown-match-math-double . ((1 markdown-markup-face prepend)
                                    (2 markdown-math-face append)
                                    (3 markdown-markup-face prepend)))
+    ;; Math mode \[..\] and \\[..\\]
+    (markdown-match-math-display . ((1 markdown-markup-face prepend)
+                                    (3 markdown-math-face append)
+                                    (4 markdown-markup-face prepend)))
     (markdown-match-bold . ((1 markdown-markup-properties prepend)
                             (2 markdown-bold-face append)
                             (3 markdown-markup-properties prepend)))
@@ -2903,11 +2913,6 @@ Depending on your font, some reasonable choices are:
     (markdown-fontify-blockquotes)
     (markdown-match-wiki-link . ((0 markdown-link-face prepend))))
   "Syntax highlighting for Markdown files.")
-
-(defvar markdown-mode-font-lock-keywords nil
-  "Default highlighting expressions for Markdown mode.
-This variable is defined as a buffer-local variable for dynamic
-extension support.")
 
 ;; Footnotes
 (defvar markdown-footnote-counter 0
@@ -3775,6 +3780,10 @@ $..$ or `markdown-regex-math-inline-double' for matching $$..$$."
 (defun markdown-match-math-double (last)
   "Match double quoted $$..$$ math from point to LAST."
   (markdown-match-math-generic markdown-regex-math-inline-double last))
+
+(defun markdown-match-math-display (last)
+  "Match bracketed display math \[..\] and \\[..\\] from point to LAST."
+  (markdown-match-math-generic markdown-regex-math-display last))
 
 (defun markdown-match-propertized-text (property last)
   "Match text with PROPERTY from point to LAST.
@@ -8636,20 +8645,9 @@ or span."
   "Check settings, update font-lock keywords and hooks, and re-fontify buffer."
   (interactive)
   (when (member major-mode '(markdown-mode gfm-mode))
-    ;; Update font lock keywords with extensions
-    (setq markdown-mode-font-lock-keywords
-          (append
-           (markdown-mode-font-lock-keywords-math)
-           markdown-mode-font-lock-keywords-basic))
-    ;; Update font lock defaults
-    (setq font-lock-defaults
-          '(markdown-mode-font-lock-keywords
-            nil nil nil nil
-            (font-lock-syntactic-face-function . markdown-syntactic-face)))
     ;; Refontify buffer
     (when (and font-lock-mode (fboundp 'font-lock-refresh-defaults))
       (font-lock-refresh-defaults))
-
     ;; Add or remove hooks related to extensions
     (markdown-setup-wiki-link-hooks)))
 
@@ -8658,8 +8656,10 @@ or span."
 Checks to see if there is actually a ‘markdown-mode’ file local variable
 before regenerating font-lock rules for extensions."
   (when (and (boundp 'file-local-variables-alist)
-             (assoc 'markdown-enable-wiki-links file-local-variables-alist)
-             (assoc 'markdown-enable-math file-local-variables-alist))
+             (or (assoc 'markdown-enable-wiki-links file-local-variables-alist)
+                 (assoc 'markdown-enable-math file-local-variables-alist)))
+    (when (assoc 'markdown-enable-math file-local-variables-alist)
+      (markdown-toggle-math markdown-enable-math))
     (markdown-reload-extensions)))
 
 
@@ -8707,6 +8707,18 @@ These are only enabled when `markdown-wiki-link-fontify-missing' is non-nil."
 
 (make-obsolete 'markdown-enable-math 'markdown-toggle-math "v2.1")
 
+(defconst markdown-mode-font-lock-keywords-math
+  (list
+   ;; Equation reference (eq:foo)
+   '("\\((eq:\\)\\([[:alnum:]:_]+\\)\\()\\)" . ((1 markdown-markup-face)
+                                                (2 markdown-reference-face)
+                                                (3 markdown-markup-face)))
+   ;; Equation reference \eqref{foo}
+   '("\\(\\\\eqref{\\)\\([[:alnum:]:_]+\\)\\(}\\)" . ((1 markdown-markup-face)
+                                                      (2 markdown-reference-face)
+                                                      (3 markdown-markup-face))))
+  "Font lock keywords to add and remove when toggling math support.")
+
 (defun markdown-toggle-math (&optional arg)
   "Toggle support for inline and display LaTeX math expressions.
 With a prefix argument ARG, enable math mode if ARG is positive,
@@ -8718,26 +8730,14 @@ if ARG is omitted or nil."
             (not markdown-enable-math)
           (> (prefix-numeric-value arg) 0)))
   (if markdown-enable-math
-      (message "markdown-mode math support enabled")
+      (progn
+        (font-lock-add-keywords
+         'markdown-mode markdown-mode-font-lock-keywords-math)
+        (message "markdown-mode math support enabled"))
+    (font-lock-remove-keywords
+     'markdown-mode markdown-mode-font-lock-keywords-math)
     (message "markdown-mode math support disabled"))
   (markdown-reload-extensions))
-
-(defun markdown-mode-font-lock-keywords-math ()
-  "Return math font lock keywords if support is enabled."
-  (when markdown-enable-math
-    (list
-     ;; Display mode equations with brackets: \[ \]
-     (cons markdown-regex-math-display '((1 markdown-markup-face prepend)
-                                         (2 markdown-math-face append)
-                                         (3 markdown-markup-face prepend)))
-     ;; Equation reference (eq:foo)
-     (cons "\\((eq:\\)\\([[:alnum:]:_]+\\)\\()\\)" '((1 markdown-markup-face)
-                                                     (2 markdown-reference-face)
-                                                     (3 markdown-markup-face)))
-     ;; Equation reference \eqref{foo}
-     (cons "\\(\\\\eqref{\\)\\([[:alnum:]:_]+\\)\\(}\\)" '((1 markdown-markup-face)
-                                                           (2 markdown-reference-face)
-                                                           (3 markdown-markup-face))))))
 
 
 ;;; GFM Checkboxes ============================================================
@@ -9770,7 +9770,6 @@ spaces, or alternatively a TAB should be used as the separator."
             #'markdown-font-lock-extend-region-function t t)
   (setq-local syntax-propertize-function #'markdown-syntax-propertize)
   ;; Font lock.
-  (setq-local markdown-mode-font-lock-keywords nil)
   (setq-local font-lock-defaults nil)
   (setq-local font-lock-multiline t)
   (setq-local font-lock-extra-managed-props
@@ -9779,8 +9778,14 @@ spaces, or alternatively a TAB should be used as the separator."
   (if markdown-hide-markup
       (add-to-invisibility-spec 'markdown-markup)
     (remove-from-invisibility-spec 'markdown-markup))
-  ;; Reload extensions
-  (markdown-reload-extensions)
+  (setq font-lock-defaults
+        '(markdown-mode-font-lock-keywords-basic
+          nil nil nil nil
+          (font-lock-syntactic-face-function . markdown-syntactic-face)))
+  ;; Wiki links
+  (markdown-setup-wiki-link-hooks)
+  ;; Math mode
+  (when markdown-enable-math (markdown-toggle-math t))
   ;; Add a buffer-local hook to reload after file-local variables are read
   (add-hook 'hack-local-variables-hook #'markdown-handle-local-variables nil t)
   ;; For imenu support
