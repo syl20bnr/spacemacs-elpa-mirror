@@ -3,8 +3,8 @@
 ;; Copyright © 2011-2017 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 3.2.20170820
-;; Package-Version: 20170821.405
+;; Version: 3.3.20171108
+;; Package-Version: 20171108.241
 ;; Created: 14 Nov 2011
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: help, docs, convenience
@@ -38,10 +38,10 @@
 
 ;;; CUSTOMIZATION
 
-;; If you prefer to use emacs 24.4's builtin eww browser, put the following in your emacs init
-;; (require 'xah-lookup)
+;; If you prefer to use emacs builtin browser eww, put the following in your emacs init
+;; (setq xah-lookup-browser-function 'eww) ; must come before loading xah-lookup
 ;; (require 'eww)
-;; (setq xah-lookup-browser-function 'eww)
+;; (require 'xah-lookup)
 
 ;; for operating system's default browser, use 'browse-url instead of 'eww
 

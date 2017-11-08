@@ -1,6 +1,6 @@
 ;;; cubicaltt.el --- Mode for cubical type theory -*- lexical-binding: t -*-
 ;; URL: https://github.com/mortberg/cubicaltt
-;; Package-Version: 20170912.317
+;; Package-Version: 20171108.602
 ;; Package-X-Original-version: 1.0
 ;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
 ;; Keywords: languages
@@ -64,7 +64,7 @@
   "Operations for cubical.")
 
 (defvar cubicaltt-special
-  '("undefined" "primitive")
+  '("undefined")
   "Special operators for cubical.")
 
 (defvar cubicaltt-keywords-regexp

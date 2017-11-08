@@ -5,9 +5,9 @@
 ;; Author: Adam Porter <adam@alphapapa.net
 ;; Created: 2017-08-18
 ;; Version: 0.1-pre
-;; Package-Version: 20171026.1610
+;; Package-Version: 20171108.421
 ;; Keywords: pocket
-;; Package-Requires: ((emacs "25.1") (request "0.2") (dash "2.13.0") (kv "0.0.19"))
+;; Package-Requires: ((emacs "25.1") (request "0.2") (dash "2.13.0") (kv "0.0.19") (s "1.12.0"))
 ;; URL: https://github.com/alphapapa/pocket-lib.el
 
 ;; This file is NOT part of GNU Emacs.
@@ -45,6 +45,7 @@
 
 (require 'dash)
 (require 'kv)
+(require 's)
 
 ;;;; Variables
 
@@ -240,13 +241,15 @@ Action may be a symbol or a string."
                    :item_id (alist-get 'item_id it))
              items))))
 
-(cl-defun pocket-lib-add-urls (&rest urls &key tags &allow-other-keys)
-  "Add URLs to Pocket.
-TAGS may be a list of strings or nil."
-  (cl-loop for item in urls
-           if (keywordp item)
-           do (set (intern-soft (substring (symbol-name cur) 1)))
-           and do (delete item urls))
+(cl-defun pocket-lib-add-urls (urls &optional &key tags)
+  "Add one or more URLs to Pocket.
+URLS may be a string or a list of strings.  If set, TAGS may be a list of
+strings or a comma-separated string."
+  (when (atom urls)
+    (setq urls (list urls)))
+  (when (and (listp tags)
+             (> (length tags) 0))
+    (setq tags (s-join "," tags)))
   (pocket-lib--send
     (--map (list :action 'add
                  :url it
