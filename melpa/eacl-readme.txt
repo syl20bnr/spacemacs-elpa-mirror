@@ -51,9 +51,10 @@ The content of ".dir-locals.el":
                                   "*.log"))
                        (add-to-list 'grep-find-ignored-files v)))))))
 
-GNU Grep, Emacs 24.3 and counsel (https://github.com/abo-abo/swiper)
+GNU Grep v3.1+, Emacs v24.3 and Ivy (https://github.com/abo-abo/swiper)
 are required.
 
-Please use HomeBrew (https://brew.sh/) to install GNU Grep on macOS.
-Then insert `(setq eacl-grep-program "ggrep")' into "~/.emacs".
-The bundled "BSD Grep" on macOS is too outdated to use.
+On macOS:
+  - Use HomeBrew (https://brew.sh/) to install latest GNU Grep on macOS
+  - Insert `(setq eacl-grep-program "ggrep")' into "~/.emacs".
+  - Bundled "BSD Grep" is too outdated to use
