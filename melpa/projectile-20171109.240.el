@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20171102.55
+;; Package-Version: 20171109.240
 ;; Keywords: project, convenience
 ;; Version: 0.15.0-cvs
 ;; Package-Requires: ((emacs "24.1") (pkg-info "0.4"))
@@ -182,6 +182,14 @@ file on a local file system.
 file on a remote file system such as tramp.
 
  A value of nil disables this cache."
+  :group 'projectile
+  :type '(choice (const :tag "Disabled" nil)
+                 (integer :tag "Seconds")))
+
+(defcustom projectile-files-cache-expire nil
+  "Number of seconds before files list cache expires.
+
+ A value of nil means the cache never expires."
   :group 'projectile
   :type '(choice (const :tag "Disabled" nil)
                  (integer :tag "Seconds")))
@@ -522,6 +530,9 @@ The saved data can be restored with `projectile-unserialize'."
 (defvar projectile-projects-cache nil
   "A hashmap used to cache project file names to speed up related operations.")
 
+(defvar projectile-projects-cache-time nil
+  "A hashmap used to record when we populated `projectile-projects-cache'.")
+
 (defvar projectile-project-root-cache (make-hash-table :test 'equal)
   "Cached value of function `projectile-project-root`.")
 
@@ -675,6 +686,7 @@ to invalidate."
     (setq projectile-project-root-cache (make-hash-table :test 'equal))
     (remhash project-root projectile-project-type-cache)
     (remhash project-root projectile-projects-cache)
+    (remhash project-root projectile-projects-cache-time)
     (projectile-serialize-cache)
     (when projectile-verbose
       (message "Invalidated Projectile cache for %s."
@@ -682,11 +694,17 @@ to invalidate."
   (when (fboundp 'recentf-cleanup)
     (recentf-cleanup)))
 
+(defun projectile-time-seconds ()
+  "Return the number of seconds since the unix epoch."
+  (cl-destructuring-bind (high low _usec _psec) (current-time)
+    (+ (lsh high 16) low)))
+
 (defun projectile-cache-project (project files)
   "Cache PROJECTs FILES.
 The cache is created both in memory and on the hard drive."
   (when projectile-enable-caching
     (puthash project files projectile-projects-cache)
+    (puthash project (projectile-time-seconds) projectile-projects-cache-time)
     (projectile-serialize-cache)))
 
 ;;;###autoload
@@ -1745,18 +1763,33 @@ https://github.com/abo-abo/swiper")))
 
 (defun projectile-current-project-files ()
   "Return a list of files for the current project."
-  (let ((files (and projectile-enable-caching
-                    (gethash (projectile-project-root) projectile-projects-cache))))
-    ;; nothing is cached
-    (unless files
+  (let (files)
+    ;; If the cache is too stale, don't use it.
+    (when projectile-files-cache-expire
+      (let ((cache-time
+             (gethash (projectile-project-root) projectile-projects-cache-time)))
+        (when (or (null cache-time)
+                  (< (+ cache-time projectile-files-cache-expire)
+                     (projectile-time-seconds)))
+          (remhash (projectile-project-root) projectile-projects-cache)
+          (remhash (projectile-project-root) projectile-projects-cache-time))))
+
+    ;; Use the cache, if requested and available.
+    (when projectile-enable-caching
+      (setq files (gethash (projectile-project-root) projectile-projects-cache)))
+
+    ;; Calculate the list of files.
+    (when (null files)
       (when projectile-enable-caching
-        (message "Empty cache. Projectile is initializing cache..."))
+        (message "Projectile is initializing cache..."))
       (setq files (cl-mapcan
                    #'projectile-dir-files
                    (projectile-get-project-directories)))
-      ;; cache the resulting list of files
+
+      ;; Save the cached list.
       (when projectile-enable-caching
         (projectile-cache-project (projectile-project-root) files)))
+
     (projectile-sort-files files)))
 
 (defun projectile-process-current-project-files (action)
@@ -3862,6 +3895,9 @@ Otherwise behave as if called interactively.
       (setq projectile-projects-cache
             (or (projectile-unserialize projectile-cache-file)
                 (make-hash-table :test 'equal))))
+    (unless projectile-projects-cache-time
+      (setq projectile-projects-cache-time
+            (make-hash-table :test 'equal)))
     (add-hook 'find-file-hook 'projectile-find-file-hook-function)
     (add-hook 'projectile-find-dir-hook #'projectile-track-known-projects-find-file-hook t)
     (add-hook 'dired-before-readin-hook #'projectile-track-known-projects-find-file-hook t t)
