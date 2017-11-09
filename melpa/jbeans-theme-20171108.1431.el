@@ -5,7 +5,7 @@
 ;; Version: 1.3
 ;; Package-Requires: ((emacs "24"))
 ;; Based On: ujelly by Mark Tran
-;; Package-Version: 20171101.1641
+;; Package-Version: 20171108.1431
 ;; Package-X-Original-Version: 20151208.2136
 ;; "What do you mean, no one calls you JBeans?!  I call you JBeans!"
 ;; -- Wilbur
@@ -325,7 +325,7 @@
        `(minibuffer-prompt                   ((,class (:foreground ,jbeans-yellow-3))))
 ;;;;; Modeline
        `(mode-line                           ((,class (:foreground ,jbeans-fg :background ,jbeans-grey-3))))
-       `(mode-line-inactive                  ((,class (:foreground ,jbeans-grey-6 :background ,jbeans-grey-0))))
+       `(mode-line-inactive                  ((,class (:foreground ,jbeans-grey-6 :background ,jbeans-grey-2))))
 ;;;;; NeoTree
        `(neo-dir-link-face                   ((,class (:foreground ,jbeans-blue-0))))
        `(neo-file-link-face                  ((,class (:foreground ,jbeans-fg))))

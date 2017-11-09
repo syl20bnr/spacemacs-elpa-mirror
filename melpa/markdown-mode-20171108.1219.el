@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171107.2007
+;; Package-Version: 20171108.1219
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -596,7 +596,10 @@
 ;;     When the [`edit-indirect'][ei] package is installed, `C-c '`
 ;;     (`markdown-edit-code-block`) can be used to edit a code block
 ;;     in an indirect buffer in the native major mode. Press `C-c C-c`
-;;     to commit changes and return or `C-c C-k` to cancel.
+;;     to commit changes and return or `C-c C-k` to cancel.  You can
+;;     also give a prefix argument to the insertion command, as in
+;;     `C-u C-c C-s C`, to edit the code block in an indirect buffer
+;;     upon insertion.
 ;;
 ;; As noted, many of the commands above behave differently depending
 ;; on whether Transient Mark mode is enabled or not.  When it makes
@@ -1490,6 +1493,14 @@ This applies to insertions done with
 `markdown-electric-backquote'."
   :group 'markdown
   :type 'boolean)
+
+(defcustom markdown-edit-code-block-default-mode 'normal-mode
+  "Default mode to use for editing code blocks.
+This mode is used when automatic detection fails, such as for GFM
+code blocks with no language specified."
+  :group 'markdown
+  :type 'symbol
+  :package-version '(markdown-mode . "2.4"))
 
 (defcustom markdown-gfm-uppercase-checkbox nil
   "If non-nil, use [X] for completed checkboxes, [x] otherwise."
@@ -5109,12 +5120,14 @@ opening code fence and an info string."
   :safe #'natnump
   :package-version '(markdown-mode . "2.3"))
 
-(defun markdown-insert-gfm-code-block (&optional lang)
+(defun markdown-insert-gfm-code-block (&optional lang edit)
   "Insert GFM code block for language LANG.
 If LANG is nil, the language will be queried from user.  If a
 region is active, wrap this region with the markup instead.  If
 the region boundaries are not on empty lines, these are added
-automatically in order to have the correct markup."
+automatically in order to have the correct markup.  When EDIT is
+non-nil (e.g., when \\[universal-argument] is given), edit the
+code block in an indirect buffer after insertion."
   (interactive
    (list (let ((completion-ignore-case nil))
            (condition-case nil
@@ -5124,13 +5137,14 @@ automatically in order to have the correct markup."
                  (markdown-gfm-get-corpus)
                  nil 'confirm (car markdown-gfm-used-languages)
                  'markdown-gfm-language-history))
-             (quit "")))))
+             (quit "")))
+         current-prefix-arg))
   (unless (string= lang "") (markdown-gfm-add-used-language lang))
   (when (> (length lang) 0)
     (setq lang (concat (make-string markdown-spaces-after-code-fence ?\s)
                        lang)))
   (if (markdown-use-region-p)
-      (let* ((b (region-beginning)) (e (region-end))
+      (let* ((b (region-beginning)) (e (region-end)) end
              (indent (progn (goto-char b) (current-indentation))))
         (goto-char e)
         ;; if we're on a blank line, don't newline, otherwise the ```
@@ -5140,6 +5154,7 @@ automatically in order to have the correct markup."
         (indent-to indent)
         (insert "```")
         (markdown-ensure-blank-line-after)
+        (setq end (point))
         (goto-char b)
         ;; if we're on a blank line, insert the quotes here, otherwise
         ;; add a new line first
@@ -5148,18 +5163,22 @@ automatically in order to have the correct markup."
           (forward-line -1))
         (markdown-ensure-blank-line-before)
         (indent-to indent)
-        (insert "```" lang))
-    (let ((indent (current-indentation)))
+        (insert "```" lang)
+        (markdown-syntax-propertize-fenced-block-constructs (point-at-bol) end))
+    (let ((indent (current-indentation)) start)
       (delete-horizontal-space :backward-only)
       (markdown-ensure-blank-line-before)
       (indent-to indent)
+      (setq start (point))
       (insert "```" lang "\n")
       (indent-to indent)
-      (insert ?\n)
+      (unless edit (insert ?\n))
       (indent-to indent)
       (insert "```")
-      (markdown-ensure-blank-line-after))
-    (end-of-line 0)))
+      (markdown-ensure-blank-line-after)
+      (markdown-syntax-propertize-fenced-block-constructs start (point)))
+    (end-of-line 0)
+    (when edit (markdown-edit-code-block))))
 
 (defun markdown-code-block-lang (&optional pos-prop)
   "Return the language name for a GFM or tilde fenced code block.
@@ -9060,7 +9079,9 @@ position."
                (end (and bounds (goto-char (nth 1 bounds)) (point-at-bol 1))))
           (if (and begin end)
               (let* ((lang (markdown-code-block-lang))
-                     (mode (and lang (markdown-get-lang-mode lang)))
+                     (mode (if lang
+                               (markdown-get-lang-mode lang)
+                             markdown-edit-code-block-default-mode))
                      (edit-indirect-guess-mode-function
                       (lambda (_parent-buffer _beg _end)
                         (funcall mode))))

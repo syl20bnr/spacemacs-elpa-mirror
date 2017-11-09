@@ -5,7 +5,7 @@
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; Maintainer: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/ace-window
-;; Package-Version: 20171107.1124
+;; Package-Version: 20171108.1053
 ;; Version: 0.9.0
 ;; Package-Requires: ((avy "0.2.0"))
 ;; Keywords: window, location
@@ -116,10 +116,10 @@ the reverse of `frame-list'"
   :type 'boolean)
 
 (defface aw-leading-char-face
-    '((((class color)) (:foreground "red"))
-      (((background dark)) (:foreground "gray100"))
-      (((background light)) (:foreground "gray0"))
-      (t (:foreground "gray100" :underline nil)))
+  '((((class color)) (:foreground "red"))
+    (((background dark)) (:foreground "gray100"))
+    (((background light)) (:foreground "gray0"))
+    (t (:foreground "gray100" :underline nil)))
   "Face for each window's leading char.")
 
 (defface aw-background-face
@@ -127,8 +127,12 @@ the reverse of `frame-list'"
   "Face for whole window background during selection.")
 
 (defface aw-mode-line-face
-    '((t (:inherit mode-line-buffer-id)))
+  '((t (:inherit mode-line-buffer-id)))
   "Face used for displaying the ace window key in the mode-line.")
+
+(defface aw-key-face
+  '((t :inherit font-lock-builtin-face))
+  "Face used by `aw-show-dispatch-help'.")
 
 ;;* Implementation
 (defun aw-ignored-p (window)
@@ -261,28 +265,34 @@ LEAF is (PT . WND)."
   (force-mode-line-update))
 
 (defvar aw-dispatch-alist
-  '((?x aw-delete-window " Ace - Delete Window")
-    (?m aw-swap-window " Ace - Swap Window")
-    (?M aw-move-window " Ace - Move Window")
-    (?j aw-switch-buffer-in-window " Ace - Select Buffer")
+  '((?x aw-delete-window "Delete Window")
+    (?m aw-swap-window "Swap Window")
+    (?M aw-move-window "Move Window")
+    (?j aw-switch-buffer-in-window "Select Buffer")
     (?n aw-flip-window)
-    (?c aw-split-window-fair " Ace - Split Fair Window")
-    (?v aw-split-window-vert " Ace - Split Vert Window")
-    (?b aw-split-window-horz " Ace - Split Horz Window")
-    (?i delete-other-windows " Ace - Delete Other Windows")
-    (?o delete-other-windows))
+    (?c aw-split-window-fair "Split Fair Window")
+    (?v aw-split-window-vert "Split Vert Window")
+    (?b aw-split-window-horz "Split Horz Window")
+    (?i delete-other-windows "Delete Other Windows")
+    (?o delete-other-windows)
+    (?? aw-show-dispatch-help))
   "List of actions for `aw-dispatch-default'.")
+
+(defun aw--dispatch-action (char)
+  "Return item from `aw-dispatch-alist' matching CHAR."
+  (assoc char aw-dispatch-alist))
 
 (defun aw-dispatch-default (char)
   "Perform an action depending on CHAR."
-  (let ((val (cdr (assoc char aw-dispatch-alist))))
-    (if val
-        (if (and (car val) (cadr val))
-            (prog1 (setq aw-action (car val))
-              (aw-set-mode-line (cadr val)))
-          (funcall (car val))
-          (throw 'done 'exit))
-      (avy-handler-default char))))
+  (let ((action (aw--dispatch-action char)))
+    (cl-destructuring-bind (_key fn &optional description) (aw--dispatch-action char)
+      (if action
+          (if (and fn description)
+              (prog1 (setq aw-action fn)
+                (aw-set-mode-line (format " Ace - %s" description)))
+            (funcall fn)
+            (throw 'done 'exit))
+        (avy-handler-default char)))))
 
 (defun aw-select (mode-line &optional action)
   "Return a selected other window.
@@ -369,7 +379,7 @@ Amend MODE-LINE to the mode line for the duration of the selection."
              #'delete-other-windows))
 
 (define-obsolete-function-alias
-  'ace-maximize-window 'ace-delete-other-windows "0.10.0")
+    'ace-maximize-window 'ace-delete-other-windows "0.10.0")
 
 ;;;###autoload
 (defun ace-window (arg)
@@ -455,6 +465,21 @@ Windows are numbered top down, left to right."
   "Switch to the window you were previously in."
   (interactive)
   (aw-switch-to-window (aw--pop-window)))
+
+(defun aw-show-dispatch-help ()
+  "Display action shortucts in echo area."
+  (interactive)
+  (message "%s" (mapconcat
+                 (lambda (action)
+                   (cl-destructuring-bind (key fn &optional description) action
+                     (format "%s: %s"
+                             (propertize
+                              (char-to-string key)
+                              'face 'aw-key-face)
+                             (or description fn))))
+                 aw-dispatch-alist
+                 "\n"))
+  (call-interactively 'ace-window))
 
 (defun aw-delete-window (window)
   "Delete window WINDOW."
@@ -552,7 +577,7 @@ The point is writable, i.e. it's not part of space after newline."
 ;;* Mode line
 ;;;###autoload
 (define-minor-mode ace-window-display-mode
-    "Minor mode for showing the ace window key in the mode line."
+  "Minor mode for showing the ace window key in the mode line."
   :global t
   (if ace-window-display-mode
       (progn
