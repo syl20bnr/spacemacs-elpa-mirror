@@ -22,7 +22,7 @@
 
 ;; Author: Andrea Cardaci <cyrus.and@gmail.com>
 ;; Version: 0.2.1
-;; Package-Version: 20171109.1017
+;; Package-Version: 20171110.715
 ;; URL: https://github.com/cyrus-and/zoom
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: frames
@@ -132,11 +132,11 @@ than few lines."
   ;; register the zoom handler
   (add-hook 'window-size-change-functions #'zoom--handler)
   (add-hook 'minibuffer-setup-hook #'zoom--handler)
-  (advice-add 'select-window :after #'zoom--handler)
+  (advice-add #'select-window :after #'zoom--handler)
   ;; disable mouse resizing
-  (advice-add 'mouse-drag-mode-line :override #'ignore)
-  (advice-add 'mouse-drag-vertical-line :override #'ignore)
-  (advice-add 'mouse-drag-header-line :override #'ignore)
+  (advice-add #'mouse-drag-mode-line :override #'ignore)
+  (advice-add #'mouse-drag-vertical-line :override #'ignore)
+  (advice-add #'mouse-drag-header-line :override #'ignore)
   ;; update the layout once loaded
   (dolist (frame (frame-list))
     (with-selected-frame frame
@@ -147,11 +147,11 @@ than few lines."
   ;; unregister the zoom handler
   (remove-hook 'window-size-change-functions #'zoom--handler)
   (remove-hook 'minibuffer-setup-hook #'zoom--handler)
-  (advice-remove 'select-window #'zoom--handler)
+  (advice-remove #'select-window #'zoom--handler)
   ;; enable mouse resizing
-  (advice-remove 'mouse-drag-mode-line #'ignore)
-  (advice-remove 'mouse-drag-vertical-line #'ignore)
-  (advice-remove 'mouse-drag-header-line #'ignore)
+  (advice-remove #'mouse-drag-mode-line #'ignore)
+  (advice-remove #'mouse-drag-vertical-line #'ignore)
+  (advice-remove #'mouse-drag-header-line #'ignore)
   ;; leave with a clean layout
   (dolist (frame (frame-list))
     (balance-windows frame)))
