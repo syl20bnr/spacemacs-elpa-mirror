@@ -1,10 +1,10 @@
 ;;; pcmpl-pip.el --- pcomplete for pip
 
-;; Copyright (C) 2014 Wei Zhao
+;; Copyright (C) 2014-2017 Wei Zhao
 ;; Author: Wei Zhao <kaihaosw@gmail.com>
 ;; Git: https://github.com/kaihaosw/pcmpl-pip.git
 ;; Version: 0.4
-;; Package-Version: 20141024.148
+;; Package-Version: 20171109.1932
 ;; Created: 2014-09-10
 ;; Keywords: pcomplete, pip, python, tools
 
@@ -199,6 +199,12 @@
             (pcomplete-here all-packages))
            ((member command pcmpl-pip-local-commands)
             (pcomplete-here all-installed)))))))
+
+;;;###autoload
+(defalias 'pcomplete/pip2 'pcomplete/pip)
+
+;;;###autoload
+(defalias 'pcomplete/pip3 'pcomplete/pip)
 
 (provide 'pcmpl-pip)
 
