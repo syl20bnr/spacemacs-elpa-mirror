@@ -5,7 +5,7 @@
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Created: 11 September 2014
 ;; Version: 0.6
-;; Package-Version: 20160930.2032
+;; Package-Version: 20171109.1439
 ;; Package-Requires: ((dash "2.8.0"))
 
 ;;; License:
@@ -87,6 +87,9 @@
   (let ((table (make-syntax-table)))
     (modify-syntax-entry ?# "<" table)
     (modify-syntax-entry ?\n ">" table)
+    (modify-syntax-entry ?> "." table)
+    (modify-syntax-entry ?< "." table)
+    (modify-syntax-entry ?= "." table)
     table))
 
 (defvar pip-http-buffer nil)
