@@ -4,7 +4,7 @@
 ;; Author: Bastian Bechtold
 ;; Maintainer: Bastian Bechtold
 ;; URL: https://github.com/bastibe/annotate.el
-;; Package-Version: 20170227.23
+;; Package-Version: 20171110.2336
 ;; Created: 2015-06-10
 ;; Version: 0.4.7
 
@@ -69,43 +69,36 @@
 (define-key annotate-mode-map (kbd "C-c ]") 'annotate-next-annotation)
 (define-key annotate-mode-map (kbd "C-c [") 'annotate-previous-annotation)
 
-;;;###autoload
 (defcustom annotate-file "~/.annotations"
   "File where annotations are stored."
   :type 'file
   :group 'annotate)
 
-;;;###autoload
 (defface annotate-highlight
   '((t (:underline "coral")))
   "Face for annotation highlights."
   :group 'annotate)
 
-;;;###autoload
 (defface annotate-annotation
   '((t (:background "coral" :foreground "black")))
   "Face for annotations."
   :group 'annotate)
 
-;;;###autoload
 (defcustom annotate-annotation-column 85
   "Where annotations appear."
   :type 'number
   :group 'annotate)
 
-;;;###autoload
 (defcustom annotate-diff-export-context 2
   "How many lines of context to include in diff export."
   :type 'number
   :group 'annotate)
 
-;;;###autoload
 (defcustom annotate-use-messages t
   "Whether status messages may appear in the minibuffer."
   :type 'boolean
   :group 'annotate)
 
-;;;###autoload
 (defcustom annotate-integrate-marker " ANNOTATION: "
   "Marker that is written before every integrated annotation."
   :type 'string
@@ -129,7 +122,6 @@
    nil '((annotate--font-lock-matcher (2 (annotate--annotation-builder))
                                       (1 (annotate--change-guard))))))
 
-;;;###autoload
 (defun annotate-annotate ()
   "Create, modify, or delete annotation."
   (interactive)
@@ -142,7 +134,6 @@
   (font-lock-fontify-block 1)
   (set-buffer-modified-p t))
 
-;;;###autoload
 (defun annotate-next-annotation ()
   "Move point to the next annotation."
   (interactive)
@@ -165,7 +156,6 @@
       ;; jump to first overlay list
       (goto-char (overlay-start (nth 0 overlays))))))
 
-;;;###autoload
 (defun annotate-previous-annotation ()
   "Move point to the previous annotation."
   (interactive)
@@ -185,7 +175,6 @@
       ;; jump to first overlay in list
       (goto-char (overlay-start (nth 0 overlays))))))
 
-;;;###autoload
 (defun annotate-save-annotations ()
   "Save all annotations to disk."
   (interactive)
@@ -209,7 +198,6 @@
     (if annotate-use-messages
         (message "Annotations saved."))))
 
-;;;###autoload
 (defun annotate-integrate-annotations ()
   "Write all annotations into the file as comments below the annotated line.
 An example might look like this:"
@@ -269,7 +257,6 @@ An example might look like this:"
       (remove-text-properties
          (point) (1+ (point)) '(display nil)))))
 
-;;;###autoload
 (defun annotate-export-annotations ()
   "Export all annotations as a unified diff file.
 An example might look like this:
@@ -529,7 +516,6 @@ an overlay and it's annotation."
                       (1+ (- (line-number-at-pos end) (line-number-at-pos start))))))
   (format "-%i,%i +%i,%i" start-line diff-size start-line diff-size)))
 
-;;;###autoload
 (defun annotate-load-annotations ()
   "Load all annotations from disk."
   (interactive)
@@ -554,7 +540,6 @@ an overlay and it's annotation."
     (if annotate-use-messages
         (message "Annotations loaded."))))
 
-;;;###autoload
 (defun annotate-clear-annotations ()
   "Clear all current annotations."
   (interactive)
