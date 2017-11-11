@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171110.1028
+;; Package-Version: 20171110.1137
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -3723,8 +3723,7 @@ When FACELESS is non-nil, do not return matches where faces have been applied."
                begin begin 'face '(markdown-url-face
                                    markdown-plain-url-face))
               (markdown-range-property-any
-               begin end 'face '(markdown-inline-code-face
-                                 markdown-math-face)))
+               begin end 'face '(markdown-math-face)))
           (progn (goto-char (min (1+ begin) last))
                  (when (< (point) last)
                    (markdown-match-italic last)))
@@ -3747,8 +3746,6 @@ When FACELESS is non-nil, do not return matches where faces have been applied."
                 (markdown-range-property-any
                  begin begin 'face '(markdown-url-face
                                      markdown-plain-url-face))
-                (markdown-inline-code-at-pos-p begin)
-                (markdown-inline-code-at-pos-p end)
                 (markdown-range-property-any
                  begin end 'face '(markdown-bold-face
                                    markdown-list-face
