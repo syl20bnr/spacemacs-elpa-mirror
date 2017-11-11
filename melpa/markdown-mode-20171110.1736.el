@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171110.1137
+;; Package-Version: 20171110.1736
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -8702,8 +8702,12 @@ or span."
   (interactive)
   (when (member major-mode '(markdown-mode gfm-mode))
     ;; Refontify buffer
-    (when (and font-lock-mode (fboundp 'font-lock-refresh-defaults))
-      (font-lock-refresh-defaults))
+    (if (eval-when-compile (fboundp 'font-lock-flush))
+        ;; Use font-lock-flush in Emacs >= 25.1
+        (font-lock-flush)
+      ;; Backwards compatibility for Emacs 24.3-24.5
+      (when (and font-lock-mode (fboundp 'font-lock-refresh-defaults))
+        (font-lock-refresh-defaults)))
     ;; Add or remove hooks related to extensions
     (markdown-setup-wiki-link-hooks)))
 
