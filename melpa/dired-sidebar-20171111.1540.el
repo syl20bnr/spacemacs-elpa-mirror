@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/dired-sidebar
-;; Package-Version: 20170904.2004
+;; Package-Version: 20171111.1540
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: dired, files, tools
@@ -144,6 +144,19 @@ When finding file to point at for
 in `magit' buffer.
 
 When finding root directory for sidebar, use directory specified by `magit'."
+  :type 'boolean
+  :group 'dired-sidebar)
+
+(defcustom dired-sidebar-use-term-integration nil
+  "Whether to integrate with `term-mode'.
+
+When true:
+
+When finding root directory for sidebar, use PWD of `term-mode'. This is turned
+off by default due to the experimental nature of getting the PWD from the
+terminal.
+
+Look at `dired-sidebar-term-get-pwd' for implementation."
   :type 'boolean
   :group 'dired-sidebar)
 
@@ -676,10 +689,13 @@ Optional argument NOCONFIRM Pass NOCONFIRM on to `dired-buffer-stale-p'."
 (defun dired-sidebar-get-dir-to-show ()
   "Return the directory `dired-sidebar' should open to."
   (cond
-   ((and dired-sidebar-use-magit-integration
-         (derived-mode-p 'magit-mode)
+   ((and (derived-mode-p 'magit-mode)
+         dired-sidebar-use-magit-integration
          (fboundp 'magit-toplevel))
     (magit-toplevel))
+   ((and (eq major-mode 'term-mode)
+         dired-sidebar-use-term-integration)
+    (dired-sidebar-term-get-pwd))
    (:default
     (dired-sidebar-sidebar-root))))
 
@@ -693,6 +709,24 @@ Optional argument NOCONFIRM Pass NOCONFIRM on to `dired-buffer-stale-p'."
     (expand-file-name (magit-file-at-point)))
    (:default
     buffer-file-name)))
+
+(defun dired-sidebar-term-get-pwd ()
+  "Get current directory of `term-mode'.
+
+This is somewhat experimental/hacky."
+  (interactive)
+  (forward-paragraph)
+  (when (fboundp 'term-previous-prompt)
+    (term-previous-prompt 1))
+  (when (fboundp 'term-simple-send)
+    (term-simple-send (get-buffer-process (current-buffer)) "pwd"))
+  (sleep-for 0 50)
+  (forward-line 1)
+  (let ((result (string-trim (thing-at-point 'line))))
+    (kill-whole-line)
+    (forward-line -1)
+    (kill-whole-line)
+    result))
 
 (provide 'dired-sidebar)
 ;;; dired-sidebar.el ends here

@@ -4,8 +4,8 @@
 
 ;; Author:     Paul Pogonyshev <pogonyshev@gmail.com>
 ;; Maintainer: Paul Pogonyshev <pogonyshev@gmail.com>
-;; Version:    0.9.4
-;; Package-Version: 20171111.730
+;; Version:    0.9.5
+;; Package-Version: 20171111.1104
 ;; Keywords:   elisp, extensions
 ;; Homepage:   https://github.com/doublep/iter2
 ;; Package-Requires: ((emacs "25.1"))
@@ -537,6 +537,59 @@ See `iter2-defun' for details."
                  (iter2--add-converted-form converted converted-value)
                  (push `(iter-yield ,iter2--value) body)))
              (setq never-yields nil))
+
+            ;; Handle `save-excursion'.
+            (`(save-excursion . ,body)
+             (let ((converted-body (iter2--convert-progn body)))
+               (if (cdr converted-body)
+                   (push `(save-excursion ,@(macroexp-unprogn (car converted-body))) converted)
+                 (push (iter2--catcher-continuation-adding-form `(save-excursion
+                                                                   (set-buffer buffer)
+                                                                   (goto-char  point)
+                                                                   (prog1 ,(iter2--continuation-invocation-form iter2--value)
+                                                                     (unless (eq ,iter2--continuations ,iter2--done)
+                                                                       (setq buffer (current-buffer)
+                                                                             point  (point))
+                                                                       (push ,iter2--catcher ,iter2--continuations))))
+                                                                (car converted-body)
+                                                                '(buffer (current-buffer))
+                                                                '(point  (point)))
+                       converted)
+                 (setq never-yields nil))))
+
+            ;; Handle `save-current-buffer'.
+            (`(save-current-buffer . ,body)
+             (let ((converted-body (iter2--convert-progn body)))
+               (if (cdr converted-body)
+                   (push `(save-current-buffer ,@(macroexp-unprogn (car converted-body))) converted)
+                 (push (iter2--catcher-continuation-adding-form `(save-current-buffer
+                                                                   (set-buffer buffer)
+                                                                   (prog1 ,(iter2--continuation-invocation-form iter2--value)
+                                                                     (unless (eq ,iter2--continuations ,iter2--done)
+                                                                       (setq buffer (current-buffer))
+                                                                       (push ,iter2--catcher ,iter2--continuations))))
+                                                                (car converted-body)
+                                                                '(buffer (current-buffer)))
+                       converted)
+                 (setq never-yields nil))))
+
+            ;; Handle `save-restriction'.
+            (`(save-restriction . ,body)
+             (let ((converted-body (iter2--convert-progn body)))
+               (if (cdr converted-body)
+                   (push `(save-restriction ,@(macroexp-unprogn (car converted-body))) converted)
+                 (push (iter2--catcher-continuation-adding-form `(save-restriction
+                                                                   (narrow-to-region point-min point-max)
+                                                                   (prog1 ,(iter2--continuation-invocation-form iter2--value)
+                                                                     (unless (eq ,iter2--continuations ,iter2--done)
+                                                                       (setq point-min (point-min)
+                                                                             point-max (point-max))
+                                                                       (push ,iter2--catcher ,iter2--continuations))))
+                                                                (car converted-body)
+                                                                '(point-min (point-min))
+                                                                '(point-max (point-max)))
+                       converted)
+                 (setq never-yields nil))))
 
             ;; Handle all other non-atomic forms.
             (`(,name . ,arguments)
