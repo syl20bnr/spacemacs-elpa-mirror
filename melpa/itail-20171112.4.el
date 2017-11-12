@@ -1,12 +1,12 @@
 ;;; itail.el --- An interactive tail mode
 
-;; Copyright (C) 2012-2014 @re5et
+;; Copyright (C) 2012-2017 @re5et
 
 ;; Author: atom smith
 ;; URL: https://github.com/re5et/itail
-;; Package-Version: 20170823.1629
+;; Package-Version: 20171112.4
 ;; Created: 26 Dec 2012
-;; Version: 0.0.7
+;; Version: 0.0.8
 ;; Keywords: tail
 
 ;; This file is NOT part of GNU Emacs.
@@ -167,7 +167,8 @@ clearing and filtering
 Very useful when the tail has had a great deal of information dumped
 to it and emacs can not keep up"
   (interactive)
-  (insert (concat "reloading " (buffer-name (current-buffer))))
+  (let ((inhibit-read-only t))
+    (insert (concat "reloading " (buffer-name (current-buffer)) "\n")))
   (itail-kill-with-process-sentinel 'itail-internal-reload))
 
 (defun itail-internal-reload (&rest ignored)
@@ -178,8 +179,9 @@ to it and emacs can not keep up"
   "Kill the tail process and close the buffer"
   (interactive)
   (when (yes-or-no-p "Really kill itail? ")
-    (insert (concat "killing " (buffer-name (current-buffer))))
-    (itail-kill-with-process-sentinel 'itail-internal-kill)))
+    (let ((inhibit-read-only t))
+      (insert (concat "killing " (buffer-name (current-buffer)) "\n"))
+      (itail-kill-with-process-sentinel 'itail-internal-kill))))
 
 (defun itail-internal-kill (&rest ignored)
   (kill-buffer (current-buffer)))
@@ -195,8 +197,8 @@ to it and emacs can not keep up"
 (defun itail-clear ()
   "Clear out the tail buffer"
   (interactive)
-  (mark-whole-buffer)
-  (delete-region (point-min) (point-max)))
+  (let ((inhibit-read-only t))
+    (delete-region (point-min) (point-max))))
 
 (defun itail-toggle-filter (filter)
   "Add or remove FILTER to filter pipeline. For example, a filter of
