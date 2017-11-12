@@ -1,8 +1,8 @@
 ;;; pastery.el --- paste snippets to pastery.net. -*- lexical-binding: t; -*-
 
 ;; Author: Bruno Dias <dias.h.bruno@gmail.com>
-;; Version: 0.1.13
-;; Package-Version: 0.1.14
+;; Version: 0.1.15
+;; Package-Version: 0.1.15
 ;; Package-Requires: ((emacs "24.4") (request "0.2.0"))
 ;; Keywords: tools
 ;; Homepage: https://github.com/diasbruno/pastery.el
@@ -21,7 +21,7 @@
   "Publish to pastery.net."
   :group 'application)
 
-(defconst pastery-version "0.1.13"
+(defconst pastery-version "0.1.15"
   "Pastery for emacs version.")
 
 (defvar pastery-url "https://www.pastery.net/api/paste/"
@@ -122,12 +122,21 @@
            :error err
            :success succ))
 
+(defun pastery--check-content (content)
+  "Print to buffer empty message if the CONTENT is empty."
+  (if (string= content "")
+      "No 'pastes' available."
+    content))
+
 (defun pastery--write-to-buffer (paste-buffer-name title content)
   "Place the data to a buffer."
-  (when content
-    (with-current-buffer (get-buffer-create paste-buffer-name)
+  (with-current-buffer (get-buffer-create paste-buffer-name)
+    (progn
+      (message title)
       (erase-buffer)
-      (insert (concat title "\n\n" content "\n"))
+      (insert title "\n\n"
+              (pastery--check-content content)
+              "\n")
       (view-buffer (current-buffer))
       (pop-to-buffer (current-buffer)))))
 

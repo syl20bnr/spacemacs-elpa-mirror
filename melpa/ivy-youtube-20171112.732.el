@@ -4,7 +4,7 @@
 
 ;; Author: Brunno dos Santos
 ;; Version: 0.3.1
-;; Package-Version: 20170822.659
+;; Package-Version: 20171112.732
 ;; Package-Requires: ((request "0.2.0") (ivy "0.8.0") (cl-lib "0.5"))
 ;; URL: https://github.com/squiter/ivy-youtube
 ;; Created: 2017-Jan-02
@@ -68,14 +68,20 @@
   :type '(string)
   :group 'ivy-youtube)
 
+(defun ivy-youtube-read-lines (filePath)
+  "Return a list of lines of a file at FILEPATH."
+  (with-temp-buffer
+    (insert-file-contents filePath)
+    (split-string (buffer-string) "\n" t)))
+
 (defun ivy-youtube-history-list ()
   "Return a list with content of file or an empty list."
   (if (file-readable-p ivy-youtube-history-file)
-      (read-lines ivy-youtube-history-file)
+      (ivy-youtube-read-lines ivy-youtube-history-file)
     '()))
 
 ;;;###autoload
-(defun ivy-youtube()
+(defun ivy-youtube ()
   (interactive)
   (unless ivy-youtube-key
     (error "You must set `ivy-youtube-key' to use this command"))
