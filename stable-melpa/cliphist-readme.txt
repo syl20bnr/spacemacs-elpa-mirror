@@ -8,14 +8,8 @@ Usage:
   `M-x cliphist-paste-item' to paste item from history
   `C-u M-x cliphist-paste-item' rectangle paste item
   `M-x cliphist-select-item' to select item
-  In popup, press `C-n' or `C-p' to navigate, other keys
-  to filter.
 
-  By default, we use popup.el to provides candidates window.
-  But you can use ivy-mode instead by installing Swiper and
-  `(setq cliphist-use-ivy t)'.
-
-  You can customize the behavior of cliphist-select-item,
+You can customize the behavior of cliphist-select-item,
     (setq cliphist-select-item-callback
        (lambda (num str) (cliphist-copy-to-clipboard str)))
 
