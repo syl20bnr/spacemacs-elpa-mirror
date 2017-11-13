@@ -5,7 +5,7 @@
 ;; Author: Chen Bin <chenbin.sh@gmail.com>
 ;; Maintainer: Chen Bin <chenbin.sh@gmail.com>
 ;; URL: http://github.com/redguardtoo/counsel-etags
-;; Package-Version: 20171111.608
+;; Package-Version: 20171112.1500
 ;; Package-Requires: ((emacs "24.3") (counsel "0.9.1"))
 ;; Keywords: tools, convenience
 ;; Version: 1.3.1
@@ -583,6 +583,7 @@ Focus on TAGNAME if it's not nil."
 (defun counsel-etags-find-tag ()
   "Input tagname to find tag."
   (interactive)
+  (counsel-etags-tags-file-must-exist)
   (let* ((tagname (read-string "Please input tag name:")))
     (when (and tagname (not (string= tagname "")))
         (counsel-etags-find-tag-api tagname))))

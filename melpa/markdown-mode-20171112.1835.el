@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171110.1927
+;; Package-Version: 20171112.1835
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -741,6 +741,9 @@
 ;;     interactively later using `C-c C-x C-e`
 ;;     (`markdown-toggle-math').
 ;;
+;;   * `markdown-enable-html' - font lock for HTML tags and attributes
+;;     (default: `t').
+;;
 ;;   * `markdown-css-paths' - CSS files to link to in XHTML output
 ;;     (default: `nil`).
 ;;
@@ -1342,6 +1345,13 @@ Math support can be enabled, disabled, or toggled later using
   :safe 'booleanp)
 (make-variable-buffer-local 'markdown-enable-math)
 
+(defcustom markdown-enable-html t
+  "Enable font-lock support for HTML tags and attributes."
+  :group 'markdown
+  :type 'boolean
+  :safe 'booleanp
+  :package-version '(markdown-mode . "2.4"))
+
 (defcustom markdown-css-paths nil
   "URL of CSS file to link to in the output XHTML."
   :group 'markdown
@@ -1673,7 +1683,7 @@ Groups 3 and 5 matches the opening and closing delimiters.
 Group 4 matches the text inside the delimiters.")
 
 (defconst markdown-regex-italic
-  "\\(?:^\\|[^\\]\\)\\(\\([*_]\\)\\([^ \n\t\\]\\|[^ \n\t]\\(?:.\\|\n[^\n]\\)*?[^\\ ]\\)\\(\\2\\)\\)"
+  "\\(?:^\\|[^\\]\\)\\(\\([*_]\\)\\([^ \n\t\\]\\|[^ \n\t*]\\(?:.\\|\n[^\n]\\)*?[^\\ ]\\)\\(\\2\\)\\)"
   "Regular expression for matching italic text.
 The leading unnumbered matches the character before the opening
 asterisk or underscore, if any, ensuring that it is not a
@@ -1886,6 +1896,26 @@ Group 1 matches the opening caret.
 Group 2 matches the opening square bracket.
 Group 3 matches the footnote text, without the surrounding markup.
 Group 4 matches the closing square bracket.")
+
+(defconst markdown-regex-html-attr
+  "\\(\\<[[:alpha:]:-]+\\>\\)\\(\\s-*\\(=\\)\\s-*\\(\".*?\"\\|'.*?'\\|[^'\">[:space:]]+\\)?\\)?"
+  "Regular expression for matching HTML attributes and values.
+Group 1 matches the attribute name.
+Group 2 matches the following whitespace, equals sign, and value, if any.
+Group 3 matches the equals sign, if any.
+Group 4 matches single-, double-, or un-quoted attribute values.")
+
+(defconst markdown-regex-html-tag
+  (concat "\\(</?\\)\\(\\w+\\)\\(\\(\\s-+" markdown-regex-html-attr
+          "\\)+\\s-*\\|\\s-*\\)\\(/?>\\)")
+  "Regular expression for matching HTML tags.
+Groups 1 and 9 match the beginning and ending angle brackets and slashes.
+Group 2 matches the tag name.
+Group 3 matches all attributes and whitespace following the tag name.")
+
+(defconst markdown-regex-html-entity
+  "\\(&#?[[:alnum:]]+;\\)"
+  "Regular expression for matching HTML entities.")
 
 
 ;;; Syntax ====================================================================
@@ -2764,6 +2794,31 @@ For example, this applies to plain angle bracket URLs:
   "Face for horizontal rules."
   :group 'markdown-faces)
 
+(defface markdown-html-tag-name-face
+  '((t (:inherit font-lock-type-face)))
+  "Face for HTML tag names."
+  :group 'markdown-faces)
+
+(defface markdown-html-tag-delimiter-face
+  '((t (:inherit markdown-markup-face)))
+  "Face for HTML tag delimiters."
+  :group 'markdown-faces)
+
+(defface markdown-html-attr-name-face
+  '((t (:inherit font-lock-variable-name-face)))
+  "Face for HTML attribute names."
+  :group 'markdown-faces)
+
+(defface markdown-html-attr-value-face
+  '((t (:inherit font-lock-string-face)))
+  "Face for HTML attribute values."
+  :group 'markdown-faces)
+
+(defface markdown-html-entity-face
+  '((t (:inherit font-lock-variable-name-face)))
+  "Face for HTML entities."
+  :group 'markdown-faces)
+
 (defcustom markdown-header-scaling nil
   "Whether to use variable-height faces for headers.
 When non-nil, `markdown-header-face' will inherit from
@@ -2882,6 +2937,20 @@ Depending on your font, some reasonable choices are:
                             (3 markdown-markup-properties)))
     (markdown-fontify-angle-uris)
     (,markdown-regex-email . 'markdown-plain-url-face)
+    (markdown-match-html-tag . ((1 'markdown-html-tag-delimiter-face t)
+                                (2 'markdown-html-tag-name-face t)
+                                (3 'markdown-html-tag-delimiter-face t)
+                                ;; Anchored matcher for HTML tag attributes
+                                (,markdown-regex-html-attr
+                                 ;; Before searching, move past tag
+                                 ;; name; set limit at tag close.
+                                 (progn
+                                   (goto-char (match-end 2)) (match-end 3))
+                                 nil
+                                 . ((1 'markdown-html-attr-name-face)
+                                    (3 'markdown-html-tag-delimiter-face nil t)
+                                    (4 'markdown-html-attr-value-face nil t)))))
+    (,markdown-regex-html-entity . 'markdown-html-entity-face)
     (markdown-fontify-list-items)
     (,markdown-regex-footnote . ((0 markdown-inline-footnote-properties)
                                  (1 markdown-markup-properties)    ; [^
@@ -4149,6 +4218,16 @@ Group 7: closing filename delimiter"
         (when (< (point) last)
           (setq valid (markdown-match-includes last)))))
       valid)))
+
+(defun markdown-match-html-tag (last)
+  "Match HTML tags from point to LAST."
+  (when (and markdown-enable-html
+             (markdown-match-inline-generic markdown-regex-html-tag last t))
+    (set-match-data (list (match-beginning 0) (match-end 0)
+                          (match-beginning 1) (match-end 1)
+                          (match-beginning 2) (match-end 2)
+                          (match-beginning 9) (match-end 9)))
+    t))
 
 
 ;;; Markdown Font Fontification Functions =====================================
@@ -5559,10 +5638,7 @@ Positions are calculated by `markdown-calc-indents'."
         (indent-line-to (car positions))
       (setq positions (sort (delete-dups positions) '<))
       (let* ((next-pos (markdown-indent-find-next-position cur-pos positions))
-             (new-point-pos
-              (if (< cur-pos next-pos)
-                  (+ point-pos (- next-pos cur-pos))
-                (- point-pos cur-pos))))
+             (new-point-pos (max (+ point-pos (- next-pos cur-pos)) 0)))
         (indent-line-to next-pos)
         (move-to-column new-point-pos)))))
 
