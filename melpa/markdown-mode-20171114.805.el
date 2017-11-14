@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171112.1835
+;; Package-Version: 20171114.805
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -9183,9 +9183,8 @@ position."
                (end (and bounds (goto-char (nth 1 bounds)) (point-at-bol 1))))
           (if (and begin end)
               (let* ((lang (markdown-code-block-lang))
-                     (mode (if lang
-                               (markdown-get-lang-mode lang)
-                             markdown-edit-code-block-default-mode))
+                     (mode (or (and lang (markdown-get-lang-mode lang))
+                               markdown-edit-code-block-default-mode))
                      (edit-indirect-guess-mode-function
                       (lambda (_parent-buffer _beg _end)
                         (funcall mode))))

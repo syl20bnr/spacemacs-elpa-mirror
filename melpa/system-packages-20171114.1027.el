@@ -5,7 +5,7 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/system-packages
-;; Package-Version: 20170831.1239
+;; Package-Version: 20171114.1027
 ;; Version: 0.1
 ;; Package-Requires: ((cl-lib "0.5"))
 
@@ -245,7 +245,7 @@ default."
     (when system-packages-usesudo
       (setq command (mapcar (lambda (part) (concat "sudo " part)) command)))
     (setq command (mapconcat 'identity command " && "))
-    (async-shell-command (mapconcat 'identity (list command pack) " "))))
+    (async-shell-command (mapconcat 'identity (list command pack) " ") "*system-packages*")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; functions on named packages

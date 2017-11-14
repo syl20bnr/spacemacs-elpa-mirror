@@ -5,7 +5,7 @@
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; Maintainer: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/ace-window
-;; Package-Version: 20171113.1017
+;; Package-Version: 20171114.1010
 ;; Version: 0.9.0
 ;; Package-Requires: ((avy "0.2.0"))
 ;; Keywords: window, location
@@ -284,15 +284,17 @@ LEAF is (PT . WND)."
 
 (defun aw-dispatch-default (char)
   "Perform an action depending on CHAR."
-  (let ((action (aw--dispatch-action char)))
-    (cl-destructuring-bind (_key fn &optional description) (aw--dispatch-action char)
-      (if action
-          (if (and fn description)
-              (prog1 (setq aw-action fn)
-                (aw-set-mode-line (format " Ace - %s" description)))
-            (funcall fn)
-            (throw 'done 'exit))
-        (avy-handler-default char)))))
+  (if (= char (aref (kbd "C-g") 0))
+      (throw 'done 'exit)
+    (let ((action (aw--dispatch-action char)))
+      (cl-destructuring-bind (_key fn &optional description) (aw--dispatch-action char)
+        (if action
+            (if (and fn description)
+                (prog1 (setq aw-action fn)
+                  (aw-set-mode-line (format " Ace - %s" description)))
+              (funcall fn)
+              (throw 'done 'exit))
+          (avy-handler-default char))))))
 
 (defun aw-select (mode-line &optional action)
   "Return a selected other window.

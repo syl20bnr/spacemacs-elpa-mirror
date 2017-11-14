@@ -4,7 +4,7 @@
 
 ;; Author: Alexander Miller <alexanderm@web.de>
 ;; Package-Requires: ((projectile "0.14.0") (treemacs "0"))
-;; Package-Version: 20170903.1235
+;; Package-Version: 20171114.1009
 ;; Package-X-Original-Version: 0
 ;; Homepage: https://github.com/Alexander-Miller/treemacs
 
@@ -49,18 +49,17 @@ If a treemacs buffer exists, but is not visible bring it to the foreground
 and select it.
 If no treemacs buffer exists call `treemacs-projectile'."
   (interactive)
-  (cond
-   ((treemacs--is-visible?)
-    (treemacs--select-visible)
-    (treemacs--refresh-on-ui-change)
-    (if (one-window-p)
-        (switch-to-buffer (other-buffer))
-      (bury-buffer)))
-   ((treemacs--buffer-exists?)
-    (treemacs--select-not-visible)
-    (treemacs--refresh-on-ui-change))
-   (t
-    (treemacs-projectile))))
+  (pcase (treemacs--current-visibility)
+    ('visible
+     (treemacs--select-visible)
+     (if (one-window-p)
+         (switch-to-buffer (other-buffer))
+       (bury-buffer)))
+    ('exists
+     (treemacs--select-not-visible))
+    ('none
+     (treemacs-projectile))
+    (_ (error "[Treemacs] Invalid visibility value: %s" (treemacs--current-visibility)))))
 
 (defun treemacs-projectile-create-header (root)
   "Try to use the projectile project name for ROOT as treemacs' header.

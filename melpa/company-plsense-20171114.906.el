@@ -4,7 +4,7 @@
 
 ;; Author: Troy Hinckley <troy.hinckley@gmail.com>
 ;; URL: https://github.com/CeleritasCelery/company-plsense
-;; Package-Version: 20171016.1013
+;; Package-Version: 20171114.906
 ;; Version: 0.1.0
 ;; Package-Requires: ((company "0.9.3") (cl-lib "0.5.0") (dash "2.12.0") (s "1.12") (emacs "24"))
 
@@ -159,7 +159,7 @@ that does some post processing before TIMEOUT."
                 t)
     (while (and (< counter limit) (not done))
       (accept-process-output company-plsense--process 0.2 nil t)
-      (incf counter))
+      (cl-incf counter))
     (if done
         (replace-regexp-in-string "\n?>\\s-\\'" "" reply)
       (setcar company-plsense--queue nil))))
