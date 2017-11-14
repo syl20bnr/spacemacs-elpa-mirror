@@ -5,7 +5,7 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-which-key
-;; Package-Version: 20171113.1221
+;; Package-Version: 20171114.700
 ;; Version: 3.0.2
 ;; Keywords:
 ;; Package-Requires: ((emacs "24.4"))
@@ -1400,7 +1400,7 @@ no title exists."
              (if alternate alternate
                (concat "Following " keys)))
             (t ""))))
-    (which-key--using-top-level "Top-level bindings")
+    (which-key--using-top-level which-key--using-top-level)
     (which-key--current-show-keymap-name
      which-key--current-show-keymap-name)
     (t "")))
@@ -1526,19 +1526,18 @@ alists. Returns a list (key separator description)."
            new-list))))
     (nreverse new-list)))
 
-(defun which-key--get-keymap-bindings (keymap &optional filter)
+(defun which-key--get-keymap-bindings (keymap)
   "Retrieve top-level bindings from KEYMAP."
   (let (bindings)
     (map-keymap
      (lambda (ev def)
-       (unless (and (functionp filter) (funcall filter ev def))
-         (cl-pushnew
-          (cons (key-description (list ev))
-                (cond ((keymapp def) "Prefix Command")
-                      ((symbolp def) (copy-sequence (symbol-name def)))
-                      ((eq 'lambda (car-safe def)) "lambda")
-                      (t (format "%s" def))))
-          bindings :test (lambda (a b) (string= (car a) (car b))))))
+       (cl-pushnew
+        (cons (key-description (list ev))
+              (cond ((keymapp def) "Prefix Command")
+                    ((symbolp def) (copy-sequence (symbol-name def)))
+                    ((eq 'lambda (car-safe def)) "lambda")
+                    (t (format "%s" def))))
+        bindings :test (lambda (a b) (string= (car a) (car b)))))
      keymap)
     bindings))
 
@@ -2034,7 +2033,7 @@ after first page."
 (defun which-key-show-top-level ()
   "Show top-level bindings."
   (interactive)
-  (setq which-key--using-top-level t)
+  (setq which-key--using-top-level "Top-level bindings")
   (which-key--create-buffer-and-show nil))
 
 ;;;###autoload
@@ -2045,7 +2044,7 @@ This function will also detect evil bindings made using
 `evil-define-key' in this map. These bindings will depend on the
 current evil state. "
   (interactive)
-  (setq which-key--using-top-level t)
+  (setq which-key--using-top-level "Major-mode bindings")
   (let ((map-sym (intern (format "%s-map" major-mode))))
     (if (and (boundp map-sym) (keymapp (symbol-value map-sym)))
         (which-key--create-buffer-and-show
@@ -2205,9 +2204,10 @@ is selected interactively by mode in `minor-mode-map-alist'."
                                    (cons keymap-name keymap)))
           (t (which-key--hide-popup)))))
 
-(defun which-key--evil-operator-filter (_ev def)
-  (and (functionp def)
-       (evil-get-command-property def :suppress-operator)))
+(defun which-key--evil-operator-filter (binding)
+  (let ((def (intern (cdr binding))))
+    (and (functionp def)
+         (not (evil-get-command-property def :suppress-operator)))))
 
 (defun which-key--show-evil-operator-keymap ()
   (if which-key--inhibit-next-operator-popup
@@ -2221,8 +2221,8 @@ is selected interactively by mode in `minor-mode-map-alist'."
             which-key--using-show-operator-keymap t)
       (when (keymapp keymap)
         (let ((formatted-keys (which-key--get-formatted-key-bindings
-                               (which-key--get-keymap-bindings
-                                keymap 'which-key--evil-operator-filter))))
+                               (which-key--get-keymap-bindings keymap)
+                               #'which-key--evil-operator-filter)))
           (cond ((= (length formatted-keys) 0)
                  (message "which-key: Keymap empty"))
                 ((listp which-key-side-window-location)

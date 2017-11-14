@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/magit/ghub
 ;; Keywords: tools
-;; Package-Version: 20170803.601
+;; Package-Version: 20171114.338
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This file is not part of GNU Emacs.
@@ -92,6 +92,9 @@
 (defvar url-http-end-of-headers)
 (defvar url-http-response-status)
 
+;;; Request
+;;;; API
+
 (defvar ghub-base-url "https://api.github.com")
 (defvar ghub-authenticate t)
 (defvar ghub-token nil)
@@ -139,7 +142,6 @@ optional NOERROR is non-nil, in which case return nil."
   (ghub-request "DELETE" resource params data noerror))
 
 (define-error 'ghub-error "Ghub Error")
-(define-error 'ghub-auth-error "Auth Error" 'ghub-error)
 (define-error 'ghub-http-error "HTTP Error" 'ghub-error)
 (define-error 'ghub-301 "Moved Permanently" 'ghub-http-error)
 (define-error 'ghub-400 "Bad Request" 'ghub-http-error)
@@ -156,58 +158,76 @@ code isn't in the 2xx class; unless optional NOERROR is non-nil,
 in which case return nil."
   (let* ((p (and params (concat "?" (ghub--url-encode-params params))))
          (d (and data   (encode-coding-string (json-encode-list data) 'utf-8)))
-         (url-request-extra-headers
-          `(("Content-Type"  . "application/json")
-            ,@ghub-extra-headers
-            ,@(and ghub-authenticate
-                   `(("Authorization"
-                      . ,(if (eq ghub-authenticate 'basic)
-                             (ghub--basic-auth)
-                           (concat "token "
-                                   (encode-coding-string
-                                    (ghub--token) 'utf-8))))))))
-         (url-request-method method)
-         (url-request-data d))
-    (with-current-buffer
-        (url-retrieve-synchronously (concat ghub-base-url resource p))
-      (set-buffer-multibyte t)
-      (let (link body)
-        (goto-char (point-min))
-        (let (headers)
-          (while (re-search-forward "^\\([^:]*\\): \\(.+\\)"
-                                    url-http-end-of-headers t)
-            (push (cons (match-string 1)
-                        (match-string 2))
-                  headers))
-          (and (setq link (cdr (assoc "Link" headers)))
-               (setq link (car (rassoc (list "rel=\"next\"")
-                                       (mapcar (lambda (elt) (split-string elt "; "))
-                                               (split-string link ",")))))
-               (string-match "[?&]page=\\([^&>]+\\)" link)
-               (setq link (match-string 1 link)))
-          (setq ghub-response-headers (nreverse headers)))
-        (goto-char (1+ url-http-end-of-headers))
-        (setq body (funcall ghub-read-response-function))
-        (unless (or noerror (= (/ url-http-response-status 100) 2))
-          (let ((data (list method resource p d body)))
-            (pcase url-http-response-status
-              (301 (signal 'ghub-301 data))
-              (400 (signal 'ghub-400 data))
-              (401 (signal 'ghub-401 data))
-              (403 (signal 'ghub-403 data))
-              (404 (signal 'ghub-404 data))
-              (422 (signal 'ghub-422 data))
-              (_   (signal 'ghub-http-error
-                           (cons url-http-response-status data))))))
-        (if (and link ghub-unpaginate)
-            (nconc body
-                   (ghub-request method resource
-                                 (cons (cons 'page link)
-                                       (cl-delete 'page params :key #'car))
-                                 data noerror))
-          body)))))
+         (buf (let ((url-request-extra-headers
+                     `(("Content-Type"  . "application/json")
+                       ,@(and ghub-authenticate
+                              (list (cons "Authorization"
+                                          (ghub--auth ghub-authenticate))))
+                       ,@ghub-extra-headers))
+                    (url-request-method method)
+                    (url-request-data d))
+                (url-retrieve-synchronously (concat ghub-base-url resource p)))))
+    (unwind-protect
+        (with-current-buffer buf
+          (set-buffer-multibyte t)
+          (let (link body)
+            (goto-char (point-min))
+            (let (headers)
+              (while (re-search-forward "^\\([^:]*\\): \\(.+\\)"
+                                        url-http-end-of-headers t)
+                (push (cons (match-string 1)
+                            (match-string 2))
+                      headers))
+              (and (setq link (cdr (assoc "Link" headers)))
+                   (setq link (car (rassoc
+                                    (list "rel=\"next\"")
+                                    (mapcar (lambda (elt) (split-string elt "; "))
+                                            (split-string link ",")))))
+                   (string-match "[?&]page=\\([^&>]+\\)" link)
+                   (setq link (match-string 1 link)))
+              (setq ghub-response-headers (nreverse headers)))
+            (unless url-http-end-of-headers
+              (error "ghub: url-http-end-of-headers is nil when it shouldn't"))
+            (goto-char (1+ url-http-end-of-headers))
+            (setq body (funcall ghub-read-response-function))
+            (unless (or noerror (= (/ url-http-response-status 100) 2))
+              (let ((data (list method resource p d body)))
+                (pcase url-http-response-status
+                  (301 (signal 'ghub-301 data))
+                  (400 (signal 'ghub-400 data))
+                  (401 (signal 'ghub-401 data))
+                  (403 (signal 'ghub-403 data))
+                  (404 (signal 'ghub-404 data))
+                  (422 (signal 'ghub-422 data))
+                  (_   (signal 'ghub-http-error
+                               (cons url-http-response-status data))))))
+            (if (and link ghub-unpaginate)
+                (nconc body
+                       (ghub-request method resource
+                                     (cons (cons 'page link)
+                                           (cl-delete 'page params :key #'car))
+                                     data noerror))
+              body)))
+      (kill-buffer buf))))
 
 (define-obsolete-function-alias 'ghub--request 'ghub-request "Ghub 2.0")
+
+(defun ghub-wait (resource)
+  "Busy-wait until RESOURCE becomes available."
+  (with-local-quit
+    (let ((for 0.5)
+          (total 0))
+      (while (not (ignore-errors (ghub-get resource)))
+        (setq for (truncate (* 2 for)))
+        (setq total (+ total for))
+        (when (= for 128)
+          (signal 'ghub-error
+                  (list (format "Github is taking too long to create %s"
+                                resource))))
+        (message "Waiting for %s (%ss)..." resource total)
+        (sit-for for)))))
+
+;;;; Internal
 
 (defun ghub--read-json-response ()
   (and (not (eobp))
@@ -230,17 +250,22 @@ in which case return nil."
                        (url-hexify-string (cdr param))))
              params "&"))
 
+;;; Authentication
+;;;; Internal
+
+(defun ghub--auth (auth)
+  (encode-coding-string
+   (if (eq auth 'basic)
+       (ghub--basic-auth)
+     (concat "token "
+             (ghub--token)))
+   'utf-8))
+
 (defun ghub--basic-auth ()
   (let ((url (url-generic-parse-url ghub-base-url)))
     (setf (url-user url)
           (ghub--username))
     (url-basic-auth url t)))
-
-(defun ghub--hostname ()
-  (save-match-data
-    (if (string-match "\\`https?://\\([^/]+\\)" ghub-base-url)
-        (match-string 1 ghub-base-url)
-      (signal 'ghub-auth-error '("Invalid value for ghub-base-url")))))
 
 (defun ghub--token ()
   "Return the configured token.
@@ -256,7 +281,13 @@ by `ghub--username' and a host based on `ghub-base-url'.  When
         (or (if (functionp secret)
                 (funcall secret)
               secret)
-            (signal 'ghub-auth-error '("Token not found"))))))
+            (signal 'ghub-error '("Token not found"))))))
+
+(defun ghub--hostname ()
+  (save-match-data
+    (if (string-match "\\`https?://\\([^/]+\\)" ghub-base-url)
+        (match-string 1 ghub-base-url)
+      (signal 'ghub-error '("Invalid value for ghub-base-url")))))
 
 (defun ghub--username ()
   "Return the configured username.
@@ -270,22 +301,7 @@ variable `github.HOST.user'."
         (condition-case nil
             (car (process-lines "git" "config" var))
           (error
-           (signal 'ghub-auth-error (list (format "%s is undefined" var))))))))
-
-(defun ghub-wait (resource)
-  "Busy-wait until RESOURCE becomes available."
-  (with-local-quit
-    (let ((for 0.5)
-          (total 0))
-      (while (not (ignore-errors (ghub-get resource)))
-        (setq for (truncate (* 2 for)))
-        (setq total (+ total for))
-        (when (= for 128)
-          (signal 'ghub-error
-                  (list (format "Github is taking too long to create %s"
-                                resource))))
-        (message "Waiting for %s (%ss)..." resource total)
-        (sit-for for)))))
+           (signal 'ghub-error (list (format "%s is undefined" var))))))))
 
 ;;; ghub.el ends soon
 (provide 'ghub)
