@@ -4,7 +4,7 @@
 ;;
 ;; Author: Austin Bingham <austin.bingham@gmail.com>
 ;; Version: 0.10
-;; Package-Version: 20171112.1435
+;; Package-Version: 20171113.1323
 ;; URL: https://github.com/abingham/traad
 ;; Package-Requires: ((dash "2.13.0") (deferred "0.3.2") (popup "0.5.0") (request "0.2.0") (request-deferred "0.2.0") (virtualenvwrapper "20151123"))
 ;;
@@ -239,27 +239,28 @@ Returns `traad--server' struct.
 
 (defun traad--unredo (location idx)
   "Common implementation for undo and redo."
-  (lexical-let ((data (list (cons "index" idx))))
+  (when (traad--all-changes-saved)
+    (lexical-let ((data (list (cons "index" idx))))
 
-    (deferred:$
+      (deferred:$
 
-      (traad--deferred-request
-       (buffer-file-name)
-       location
-       :data data
-       :type "POST")
+        (traad--deferred-request
+         (buffer-file-name)
+         location
+         :data data
+         :type "POST")
 
-      (deferred:nextc it
-        (lambda (rsp)
-          (let* ((response (request-response-data rsp))
-                 (changesets (assoc-default 'changes response)))
-            (-map
-             (lambda (changeset)
-               (dolist (path (traad--change-set-to-paths changeset))
-                 (let ((buff (get-file-buffer path)))
-                   (if buff
-                       (with-current-buffer buff (revert-buffer t t))))))
-             changesets))))))
+        (deferred:nextc it
+          (lambda (rsp)
+            (let* ((response (request-response-data rsp))
+                   (changesets (assoc-default 'changes response)))
+              (-map
+               (lambda (changeset)
+                 (dolist (path (traad--change-set-to-paths changeset))
+                   (let ((buff (get-file-buffer path)))
+                     (if buff
+                         (with-current-buffer buff (revert-buffer t t))))))
+               changesets)))))))
   )
 
 ;;;###autoload
@@ -952,7 +953,11 @@ saved in the process of this function.
 "
   (let ((save-all (lambda () (save-some-buffers 'no-confirm) t)))
     (or
-     (not (-any 'buffer-modified-p (buffer-list)))
+     (not (-any
+           (lambda (buff)
+             (and (buffer-file-name buff)
+                  (buffer-modified-p buff)))
+           (buffer-list)))
      (case traad-save-unsaved-buffers
        ('never nil)
        ('always

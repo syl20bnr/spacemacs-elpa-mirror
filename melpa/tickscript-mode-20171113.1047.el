@@ -2,8 +2,8 @@
 
 ;; Copyright (C) 2017  Marc Sherry
 ;; Homepage: https://github.com/msherry/tickscript-mode
-;; Version: 0.4
-;; Package-Version: 20171106.1731
+;; Version: 0.4.1
+;; Package-Version: 20171113.1047
 ;; Author: Marc Sherry <msherry@gmail.com>
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "24.1"))

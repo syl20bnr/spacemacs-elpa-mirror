@@ -3,8 +3,8 @@
 ;; Copyright (C) 2007-2017 Joel Rosdahl
 ;;
 ;; Author: Joel Rosdahl <joel@rosdahl.net>
-;; Version: 1.3
-;; Package-Version: 20171102.1336
+;; Version: 1.4
+;; Package-Version: 20171113.1244
 ;; License: BSD-3-clause
 ;; URL: https://github.com/jrosdahl/iflipb
 ;;
@@ -223,7 +223,7 @@ of iflipb-current-buffer-index.")
   "Returns a list of buffer names not matching a filter."
   (iflipb-filter
    (lambda (b) (not (iflipb-match-filter (buffer-name b) filter)))
-   (buffer-list)))
+   (buffer-list (selected-frame))))
 
 (defun iflipb-interesting-buffers ()
   "Returns buffers that should be included in the displayed
