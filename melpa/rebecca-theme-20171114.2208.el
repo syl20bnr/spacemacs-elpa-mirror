@@ -6,8 +6,8 @@
 ;; http://zenorocha.mit-license.org
 
 ;; Author: vic <vborja@apache.org>
-;; Version: 1.2.1
-;; Package-Version: 20170730.943
+;; Version: 1.3.0
+;; Package-Version: 20171114.2208
 ;; Package-Requires: ((emacs "24"))
 ;; URL: https://github.com/vic/rebecca-theme
 ;; Keywords: theme, dark
@@ -101,8 +101,8 @@
    `(info-string ((,class (:foreground ,str))))
    `(lazy-highlight ((,class (:foreground ,fg2 :background ,bg3))))
    `(link ((,class (:foreground ,const :underline t))))
-   `(linum ((,class (:foreground ,comment :background ,bg1 :height 0.9))))
-   `(linum-relative-current ((,class (:foreground ,fg1 :background ,bg1 :height 0.9))))
+   `(linum ((,class (:foreground ,comment :background ,bg1 :height 0.9 :inherit default))))
+   `(linum-relative-current ((,class (:foreground ,fg1 :background ,bg1 :height 0.9 :inherit default))))
    `(minibuffer-prompt ((,class (:bold t :foreground ,fg2))))
    `(region ((,class (:background ,rebecca))))
    `(show-paren-match-face ((,class (:background ,warning))))
@@ -475,7 +475,16 @@
    `(icicle-complete-input                     ((,class (:foreground ,builtin))))
    `(icicle-common-match-highlight-Completions ((,class (:foreground ,type))))
    `(icicle-candidate-part                     ((,class (:foreground ,var))))
-   `(icicle-annotation                         ((,class (:foreground ,fg4)))))
+   `(icicle-annotation                         ((,class (:foreground ,fg4))))
+   ;; Markdown mode
+   `(markdown-code-face ((,class (:inherit org-code))))
+   `(markdown-pre-face ((,class (:inherit org-block))))
+   `(markdown-header-face-1 ((,class (:inherit org-level-1))))
+   `(markdown-header-face-2 ((,class (:inherit org-level-2))))
+   `(markdown-header-face-3 ((,class (:inherit org-level-3))))
+   `(markdown-header-face-4 ((,class (:inherit org-level-4))))
+   `(markdown-header-face-5 ((,class (:inherit org-level-5))))
+   `(markdown-header-face-6 ((,class (:inherit org-level-6)))))
 
   (custom-theme-set-variables
    'rebecca

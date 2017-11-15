@@ -5,7 +5,7 @@
 ;; Author: Andrew Stahlman <andrewstahlman@gmail.com>
 ;; Created: 10 Feb 2017
 ;; Version: 0.1
-;; Package-Version: 20170705.2131
+;; Package-Version: 20171114.1936
 
 ;; Keywords: tools
 ;; Homepage: https://github.com/astahlman/ob-async
@@ -65,7 +65,7 @@ block."
   (cond
    ;; If this function is not called as advice, do nothing
    ((not orig-fun)
-    (warn "ob-async-org-babel-execute-src-block is longer needed in org-ctrl-c-ctrl-c-hook")
+    (warn "ob-async-org-babel-execute-src-block is no longer needed in org-ctrl-c-ctrl-c-hook")
     nil)
    ;; If there is no :async parameter, call the original function
    ((not (assoc :async (nth 2 (or info (org-babel-get-src-block-info)))))
@@ -145,7 +145,11 @@ block."
 			(goto-char (point-min))
 			(re-search-forward ,placeholder)
 			(org-backward-element)
-			(org-backward-element)
+			(let ((result-block (split-string (thing-at-point 'line t))))
+			  ;; If block has name, search by name
+			  (-if-let (block-name (nth 1 result-block))
+			      (org-babel-goto-named-src-block block-name)
+			    (org-backward-element)))
 			(let ((file (cdr (assq :file ',params))))
                           ;; If non-empty result and :file then write to :file.
                           (when file
