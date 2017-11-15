@@ -208,8 +208,7 @@ Definitions
 (defconst hy--font-lock-kwds-builtins
   (list
    (rx-to-string
-    `(: (not (any "#"))
-        symbol-start
+    `(: symbol-start
         (or ,@hy--kwds-operators
             ,@hy--kwds-builtins
             ,@hy--kwds-anaphorics)
@@ -222,7 +221,9 @@ Definitions
 (defconst hy--font-lock-kwds-constants
   (list
    (rx-to-string
-    `(: (or ,@hy--kwds-constants)))
+    `(: symbol-start
+        (or ,@hy--kwds-constants)
+        symbol-end))
 
    '(0 font-lock-constant-face))
 
@@ -231,7 +232,8 @@ Definitions
 (defconst hy--font-lock-kwds-defs
   (list
    (rx-to-string
-    `(: (group-n 1 (or ,@hy--kwds-defs))
+    `(: symbol-start
+        (group-n 1 (or ,@hy--kwds-defs))
         (1+ space)
         (group-n 2 (1+ word))))
 
@@ -305,8 +307,9 @@ Static
 
 (defconst hy--font-lock-kwds-imports
   (list
-   (rx (or "import" "require" ":as")
-       (or (1+ space) eol))
+   (rx symbol-start
+       (or "import" "require" ":as")
+       symbol-end)
 
    '(0 font-lock-keyword-face))
 
@@ -348,9 +351,11 @@ Misc
 
 (defconst hy--font-lock-kwds-anonymous-funcs
   (list
-   (rx symbol-start "%" (1+ digit))
+   (rx symbol-start
+       (group "%" (1+ digit))
+       (or "." symbol-end))
 
-   '(0 font-lock-variable-name-face))
+   '(1 font-lock-variable-name-face))
 
   "Hy '#%(print %1 %2)' styling anonymous variables.")
 
@@ -438,7 +443,7 @@ General purpose
   (if text text ""))
 
 (defun hy--current-form-string ()
-  "Get form containing current point as string."
+  "Get form containing current point as string plus a trailing newline."
   (save-excursion
     (-when-let* ((state (syntax-ppss))
                  (start-pos (hy--sexp-inermost-char state)))
@@ -633,6 +638,10 @@ Configuration
 
 Shell buffer utilities
 
+(defun hy-installed? ()
+  "Is the `hy-shell-interpreter' command available?"
+  (when (executable-find hy-shell-interpreter) t))
+
 (defun hy--shell-format-process-name (proc-name)
   "Format a PROC-NAME with closing astericks."
   (->> proc-name (s-prepend "*") (s-append "*")))
@@ -640,8 +649,8 @@ Shell buffer utilities
 (defun hy-shell-get-process (&optional internal)
   "Get process corr. to `hy-shell-buffer-name'/`hy-shell-internal-buffer-name'."
   (-> (if internal hy-shell-internal-buffer-name hy-shell-buffer-name)
-      hy--shell-format-process-name
-      get-buffer-process))
+     hy--shell-format-process-name
+     get-buffer-process))
 
 (defun hy--shell-current-buffer-process ()
   "Get process associated with current buffer."
@@ -777,7 +786,8 @@ Send strings
 
 (defun hy--shell-send-string (string &optional process internal)
   "Internal implementation of shell send string functionality."
-  (let ((process (or process (hy-shell-get-process internal)))
+  (let ((process (or process
+                     (hy-shell-get-process internal)))
         (hy--shell-output-filter-in-progress t))
     (comint-send-string process string)
     (while hy--shell-output-filter-in-progress
@@ -878,12 +888,12 @@ Run Shell
 (defun run-hy-internal ()
   "Start an inferior hy process in the background for autocompletion."
   (interactive)
-  (unless (executable-find "hy")
+  (unless (hy-installed?)
     (message "Hy not found, activate a virtual environment containing Hy to use
 Eldoc, Anaconda, and other hy-mode features."))
 
   (when (and (not (hy-shell-get-process 'internal))
-             (executable-find "hy"))
+             (hy-installed?))
     (-let [hy--shell-font-lock-enable
            nil]
       (prog1
@@ -898,7 +908,7 @@ Eldoc, Anaconda, and other hy-mode features."))
 
 CMD defaults to the result of `hy--shell-calculate-command'."
   (interactive)
-  (unless (executable-find "hy")
+  (unless (hy-installed?)
     (message "Hy not found, activate a virtual environment with Hy."))
 
   (-> (or cmd (hy--shell-calculate-command))
