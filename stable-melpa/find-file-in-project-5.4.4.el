@@ -3,8 +3,8 @@
 ;; Copyright (C) 2006-2009, 2011-2012, 2015, 2016, 2017
 ;;   Phil Hagelberg, Doug Alcorn, Will Farrington, Chen Bin
 ;;
-;; Version: 5.4.3
-;; Package-Version: 5.4.3
+;; Version: 5.4.4
+;; Package-Version: 5.4.4
 ;; Author: Phil Hagelberg, Doug Alcorn, and Will Farrington
 ;; Maintainer: Chen Bin <chenbin.sh@gmail.com>
 ;; URL: https://github.com/technomancy/find-file-in-project
@@ -94,12 +94,8 @@
 ;; `ffip-split-window-horizontally' and `ffip-split-window-vertically' find&open file
 ;; in split window.
 
-;; `ffip-show-diff-by-description' and `ffip-show-diff' execute the
-;; backend from `ffip-diff-backends'.
-;; `ffip-show-diff-by-description' has more friendly UI.
-;; `ffip-show-diff' has optional parameter as index of selected backend.
-;; The output of execution is expected be in Unified Diff Format.
-;; The output is inserted into *ffip-diff* buffer.
+;; `ffip-show-diff' execute the backend from `ffip-diff-backends'.
+;; The output is in Unified Diff Format and inserted into *ffip-diff* buffer.
 ;; Press "o" or "C-c C-c" or "ENTER" or `M-x ffip-diff-find-file' in the
 ;; buffer to open corresponding file.
 ;;
@@ -358,9 +354,10 @@ This overrides variable `ffip-project-root' when set.")
                                       ffip-project-file)
                               (locate-dominating-file default-directory
                                                       ffip-project-file))))))
-    (or (file-name-as-directory project-root)
-        (progn (message "No project was defined for the current file.")
-               nil))))
+    (or (and project-root (file-name-as-directory project-root))
+        (progn
+          (message "Since NO project was found, use `default-directory' instead.")
+          default-directory))))
 
 (defun ffip--read-file-text (file)
   (read (decode-coding-string
@@ -974,7 +971,7 @@ Keyword to search new file is selected text or user input."
     rlt))
 
 ;;;###autoload
-(defun ffip-show-diff (&optional num)
+(defun ffip-show-diff-internal (&optional num)
   "Show the diff output by excuting selected `ffip-diff-backends'.
 NUM is the index selected backend from `ffip-diff-backends'.
 NUM is zero based whose default value is zero."
@@ -992,24 +989,32 @@ NUM is zero based whose default value is zero."
     (ffip-diff-execute-backend backend)))
 
 ;;;###autoload
-(defun ffip-show-diff-by-description ()
-  "Show the diff output by excuting selected `ffip-diff-backends. "
-  (interactive)
-  (let* (descriptions
-         (i 0))
-    ;; format backend descriptions
-    (dolist (b ffip-diff-backends)
-      (add-to-list 'descriptions
-                   (format "%s: %s"
-                           i
-                           (ffip-backend-description b)) t)
-      (setq i (+ 1 i)))
-    (ffip-completing-read
-     "Run diff backend:"
-     descriptions
-     `(lambda (d)
-        (if (string-match "^\\([0-9]+\\): " d)
-            (ffip-show-diff (string-to-number (match-string 1 d))))))))
+(defun ffip-show-diff-by-description (&optional num)
+  "Show the diff output by excuting selected `ffip-diff-backends.
+ NUM is the backend index of `ffip-diff-backends'.
+If NUM is not nil, the corresponding backend is executed directly."
+  (interactive "P")
+  (cond
+   (num
+    (ffip-show-diff-internal num))
+   (t
+    (let* (descriptions
+           (i 0))
+      ;; format backend descriptions
+      (dolist (b ffip-diff-backends)
+        (add-to-list 'descriptions
+                     (format "%s: %s"
+                             i
+                             (ffip-backend-description b)) t)
+        (setq i (+ 1 i)))
+      (ffip-completing-read
+       "Run diff backend:"
+       descriptions
+       `(lambda (d)
+          (if (string-match "^\\([0-9]+\\): " d)
+              (ffip-show-diff-internal (string-to-number (match-string 1 d))))))))))
+
+(defalias 'ffip-show-diff 'ffip-show-diff-by-description)
 
 ;;;###autoload
 (defun ffip-diff-apply-hunk (&optional reverse)

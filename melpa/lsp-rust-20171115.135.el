@@ -4,8 +4,8 @@
 
 ;; Author: Vibhav Pant <vibhavp@gmail.com>
 ;; Version: 1.0
-;; Package-Version: 20171021.241
-;; Package-Requires: ((lsp-mode "3.0"))
+;; Package-Version: 20171115.135
+;; Package-Requires: ((lsp-mode "3.0") (rust-mode "0.3.0"))
 ;; Keywords: rust
 ;; URL: https://github.com/emacs-lsp/lsp-rust
 
@@ -31,6 +31,7 @@
 (require 'lsp-mode)
 (require 'cl-lib)
 (require 'json)
+(require 'font-lock)
 
 (defvar lsp-rust--config-options (make-hash-table))
 (defvar lsp-rust--diag-counters (make-hash-table))
@@ -69,9 +70,17 @@
        (cl-incf (gethash w lsp-rust--diag-counters 0))
        (message "RLS: working")))))
 
+(defun lsp-rust--render-string (str)
+  (with-temp-buffer
+    (delay-mode-hooks (rust-mode))
+    (insert str)
+    (font-lock-ensure)
+    (buffer-string)))
+
 (defun lsp-rust--initialize-client (client)
   (mapcar #'(lambda (p) (lsp-client-on-notification client (car p) (cdr p)))
-	  lsp-rust--handlers))
+	  lsp-rust--handlers)
+  (lsp-provide-marked-string-renderer client "rust" #'lsp-rust--render-string))
 
 (lsp-define-stdio-client lsp-rust "rust" #'lsp-rust--get-root nil
 			 :command-fn #'lsp-rust--rls-command

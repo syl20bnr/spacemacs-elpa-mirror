@@ -4,8 +4,8 @@
 
 ;; Author: Troy Hinckley <troy.hinckley@gmail.com>
 ;; URL: https://github.com/CeleritasCelery/company-plsense
-;; Package-Version: 20171114.906
-;; Version: 0.1.0
+;; Package-Version: 20171114.2316
+;; Version: 0.2.0
 ;; Package-Requires: ((company "0.9.3") (cl-lib "0.5.0") (dash "2.12.0") (s "1.12") (emacs "24"))
 
 ;; This file is not part of GNU Emacs.
@@ -96,6 +96,10 @@ the current scope the user is operating in.")
 (defvar company-plsense--package-list '()
   "A list of all the packages in the current file that PlSense knows about.
 This list has the same form as `company-plsense--function-list' above.")
+(defvar company-plsense--changed-regions nil
+  "Has the same form as `company-plsense--function-list' but contains changed regions.")
+(defvar company-plsense--prev-symbol nil
+  "Symbol surrounding previous changed region.")
 
 (defvar company-plsense--opened-files '()
   "A list of all files that have been opened this session.
@@ -103,13 +107,15 @@ Every file needs to be opened before it can provide completion candidates.")
 
 (defvar company-plsense--done-re "Done"
   "Regular expression matching a done repsonse from the server.")
-(defvar company-plsense--package-re (rx-to-string `(and bol (* space) "package" (+ space) (group (+ (any "a-zA-Z0-9:_"))) (* space) ";"))
+(defvar company-plsense--package-re (rx bol (* space) "package" (+ space) (group (+ (any alnum "_:"))) (* space) ";")
   "Regular expression matching a package name.")
-(defvar company-plsense--sub-re (rx-to-string `(and bol (* space) "sub" (+ space) (group (+ (any "a-zA-Z0-9_")))))
+(defvar company-plsense--sub-re (rx bol (* space) "sub" (+ space) (group (+ (any alnum "_"))))
   "Regular expression matching a function name.")
 
 (make-variable-buffer-local 'company-plsense--function-list)
 (make-variable-buffer-local 'company-plsense--package-list)
+(make-variable-buffer-local 'company-plsense--changed-regions)
+(make-variable-buffer-local 'company-plsense--prev-symbol)
 
 
 ;;; Server interface commands
@@ -127,9 +133,9 @@ that does some post processing and returns CALLBACK."
   (unless (company-plsense--process-running-p)
     (company-plsense--start-process))
   (company-plsense--async-request cmd (if callback
-                                          (lambda (_closure resp)
-                                            (funcall callback (replace-regexp-in-string "\n?>\\s-\\'" "" resp)))
-                                        nil)))
+                           (lambda (_closure resp)
+                             (funcall callback (replace-regexp-in-string "\n?>\\s-\\'" "" resp)))
+                         nil)))
 
 (defun company-plsense--server-query (cmd &optional timeout)
   "Post a synchronous CMD to the PlSense server.
@@ -227,7 +233,8 @@ Every file must be loaded once per session."
   (company-plsense--reset-location)
   (setq company-plsense--opened-files '())
   (setq company-plsense--last-error "")
-  (tq-close company-plsense--queue))
+  (when (company-plsense--process-running-p)
+    (tq-close company-plsense--queue)))
 
 (defun company-plsense-start-server ()
   "Start the PlSense server if it is not already running."
@@ -241,6 +248,7 @@ Every file must be loaded once per session."
           "serverstart"
           (lambda (resp)
             (setq company-plsense--opened-files '())
+            (setq company-plsense--changed-regions nil)
             (company-plsense--reset-location)
             (when (string-match company-plsense--done-re resp)
               (message "plsense server started"))))
@@ -251,9 +259,11 @@ Every file must be loaded once per session."
 If it takes longer then 5 seconds, force kill it."
   (interactive)
   (message "Stopping plsense server...")
-  (company-plsense--sync-request "serverstop" 5)
+  (when (company-plsense--process-running-p)
+    (company-plsense--sync-request "serverstop" 5))
   (company-plsense--kill-process)
-  (message "plsense server stopped"))
+  (message "plsense server stopped")
+  t)
 
 (defun company-plsense-restart-server ()
   "Restart PlSense server.
@@ -272,6 +282,7 @@ reveals that not all work servers are running."
   "Update causes PlSense to reanalyze the given file."
   (company-plsense--get-function-scopes)
   (company-plsense--get-package-scopes)
+  (setq company-plsense--changed-regions nil)
   (let ((file (buffer-file-name (current-buffer))))
     (if (-contains? company-plsense--opened-files file)
         (company-plsense--server-request
@@ -348,7 +359,7 @@ Move all points if they are after CHANGE-START by SIZE."
           (if (re-search-forward company-plsense--package-re nil t)
               (let ((start (match-beginning 1))
                     (pkg-name (match-string-no-properties 1)))
-                (setf (cddar company-plsense--package-list) start)
+                (setf (cl-cddar company-plsense--package-list) start)
                 (push (cons pkg-name (cons start (+ 1 (point-max)))) company-plsense--package-list))
             (setq done-parsing-p t)))))))
 
@@ -376,22 +387,84 @@ Move all points if they are after CHANGE-START by SIZE."
                 (add-to-list 'company-plsense--function-list (cons sub-name (cons start (point)))))
             (setq done-parsing-p t)))))))
 
-(defun company-plsense--get-current-scope (list)
-  "Return the name of the scope LIST `point' is currently in."
+(defun company-plsense--get-current-scope (list &optional point)
+  "Return the name of the scope LIST POINT is currently in."
+  (unless point (setq point (point)))
   (--if-let
-      (--first (and (> (point) (cadr it))
-                    (<= (point) (cddr it)))
+      (--first (and (>= point (cadr it))
+                    (<= point (cddr it)))
                list)
       (car it)
     ""))
+
+(defun company-plsense--add-code ()
+  "Sends the lines of code found in `company-plsense--changed-regions' to resolver.
+Any symbols found in the added lines will be available until buffer save."
+  (dolist (range company-plsense--changed-regions)
+    (let* ((start (cadr range))
+           (end (cddr range))
+           (new-code (save-restriction
+                       (widen)
+                       (buffer-substring (max start (point-min))
+                                         (min end (point-max))))))
+      (setq new-code (replace-regexp-in-string "#.*$" "" (s-trim new-code))) ;; remove comments
+      (setq new-code (replace-regexp-in-string "\n" "" new-code)) ;; put all code one one line.
+      (when (and (s-present? new-code)
+                 (>= 1000 (length new-code)))
+        (company-plsense--server-request
+         (concat "codeadd " new-code)))))
+  (setq company-plsense--changed-regions nil))
+
+(defun company-plsense--create-code-range (beg end)
+  "Create an object holding the position of the most code change.
+Contains all lines from BEG to END."
+  (cons "range"
+        (save-excursion
+          (cons (progn (goto-char beg)
+                       (line-beginning-position))
+                (progn (goto-char end)
+                       (line-end-position))))))
+
+(defun company-plsense--get-symbol ()
+  "Get the symbol around point.
+This is used to handle redundant edits like
+regexp replace, iedit, or multiple cursors. We don't
+want to send uncompleted symbols to the resolver."
+  (let (pre post (point (point)))
+    (save-excursion
+      (skip-syntax-backward "w_")
+      (setq pre (buffer-substring-no-properties point (point)))
+      (skip-syntax-forward "w_")
+      (setq post (buffer-substring point (point))))
+    (cons pre post)))
 
 (defun company-plsense--handle-change (beg end len)
   "Hanlder for `after-change-functions' which update all scopes.
 BEG and END are locations of the change with LEN the size of the
 previous TEXT."
-  (let ((size (- end beg len)))
-    (dolist (scope (list company-plsense--function-list company-plsense--package-list))
-      (company-plsense--update-scopes scope beg size))))
+  (let ((current-symbol (company-plsense--get-symbol)))
+    (let ((size (- end beg len)))
+      ;; update all scope lists
+      (dolist (scope (list company-plsense--function-list
+                           company-plsense--package-list
+                           company-plsense--changed-regions))
+        (company-plsense--update-scopes scope beg size))
+      (unless company-plsense--changed-regions
+        (setq company-plsense--changed-regions (list (company-plsense--create-code-range beg end)))))
+    (if (s-present? (company-plsense--get-current-scope company-plsense--changed-regions end))
+        (when (and (not (nth 3 (syntax-ppss))) ;; not inside string
+                   (s-matches? "\n" (buffer-substring beg end)))
+          (company-plsense--add-code)) ;; if a newline was added, send the code to the server
+      (let ((prev company-plsense--prev-symbol)
+            (curr current-symbol))
+        (if (and (not (equal curr '("" . ""))) ;; no symbol at point
+                 (s-equals? (car prev) (car curr))
+                 (s-equals? (cdr prev) (cdr curr)))
+            ;; handle multiple edits (regexp replace, iedit, multiple cursors etc.)
+            (add-to-list 'company-plsense--changed-regions (company-plsense--create-code-range beg end))
+          (company-plsense--add-code)
+          (setq company-plsense--changed-regions (list (company-plsense--create-code-range beg end))))))
+    (setq company-plsense--prev-symbol current-symbol)))
 
 
 ;;; Hanlders for company-plense backend
@@ -408,6 +481,14 @@ previous TEXT."
     (company-plsense--open-file (buffer-file-name (current-buffer)))
     (add-hook 'after-save-hook #'company-plsense--update nil t)
     (add-hook 'after-change-functions #'company-plsense--handle-change nil t)))
+
+(defun company-plsense-teardown ()
+  "Teardown the current buffer hooks.
+This is required to completely stop `company-plsense'
+even if `company-mode' is disabled."
+  (interactive)
+  (remove-hook 'after-save-hook #'company-plsense--update t)
+  (remove-hook 'after-change-functions #'company-plsense--handle-change t))
 
 (defun company-plsense--prefix ()
   "Grab prefix at point.
@@ -542,10 +623,12 @@ to a tcp server on another machine."
 
 (defun company-plsense--handle-errors (msg)
   "Handle errors from the PlSense server in MSG."
-  (let ((error-re "\\(?:FATAL\\|ERROR\\): .*\n"))
+  (let ((error-regexp (rx (or (and (or "FATAL" "ERROR") ":") ;; standard PlSense errors
+                              (and bol (*? nonl) "Segmentation fault")) ;; analysis failure
+                          (* nonl) "\n"))) ;; grab rest of line
     (save-match-data
       (let ((pos 0))
-        (while (string-match error-re msg pos)
+        (while (string-match error-regexp msg pos)
           (let ((error (match-string 0 msg)))
             (cond
              ((s-prefix? "ERROR: Not yet set current" error)
@@ -561,7 +644,7 @@ to a tcp server on another machine."
              ((not (s-equals? company-plsense--last-error error))
               (company-plsense--post-error error))))
           (setq pos (match-end 0)))))
-    (replace-regexp-in-string error-re "" msg)))
+    (replace-regexp-in-string error-regexp "" msg)))
 
 (provide 'company-plsense)
 
