@@ -3,8 +3,8 @@
 ;; Copyright (C) 2006-2009, 2011-2012, 2015, 2016, 2017
 ;;   Phil Hagelberg, Doug Alcorn, Will Farrington, Chen Bin
 ;;
-;; Version: 5.4.3
-;; Package-Version: 20171025.1943
+;; Version: 5.4.4
+;; Package-Version: 20171115.316
 ;; Author: Phil Hagelberg, Doug Alcorn, and Will Farrington
 ;; Maintainer: Chen Bin <chenbin.sh@gmail.com>
 ;; URL: https://github.com/technomancy/find-file-in-project
@@ -354,9 +354,10 @@ This overrides variable `ffip-project-root' when set.")
                                       ffip-project-file)
                               (locate-dominating-file default-directory
                                                       ffip-project-file))))))
-    (or (file-name-as-directory project-root)
-        (progn (message "No project was defined for the current file.")
-               nil))))
+    (or (and project-root (file-name-as-directory project-root))
+        (progn
+          (message "Since NO project was found, use `default-directory' instead.")
+          default-directory))))
 
 (defun ffip--read-file-text (file)
   (read (decode-coding-string
