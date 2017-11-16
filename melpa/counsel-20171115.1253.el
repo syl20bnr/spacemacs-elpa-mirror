@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171113.1019
+;; Package-Version: 20171115.1253
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1908,6 +1908,17 @@ INITIAL-INPUT can be given as the initial minibuffer input."
 (defvar counsel--fzf-dir nil
   "Store the base fzf directory.")
 
+(defvar counsel-fzf-dir-function 'counsel-fzf-dir-function-projectile
+  "Function that returns a directory for fzf to use.")
+
+(defun counsel-fzf-dir-function-projectile ()
+  (if (and
+       (fboundp 'projectile-project-p)
+       (fboundp 'projectile-project-root)
+       (projectile-project-p))
+      (projectile-project-root)
+    default-directory))
+
 (defun counsel-fzf-function (str)
   (let ((default-directory counsel--fzf-dir))
     (counsel--async-command
@@ -1925,13 +1936,7 @@ INITIAL-INPUT can be given as the initial minibuffer input."
 INITIAL-INPUT can be given as the initial minibuffer input."
   (interactive)
   (counsel-require-program (car (split-string counsel-fzf-cmd)))
-  (setq counsel--fzf-dir
-        (if (and
-             (fboundp 'projectile-project-p)
-             (fboundp 'projectile-project-root)
-             (projectile-project-p))
-            (projectile-project-root)
-          default-directory))
+  (setq counsel--fzf-dir (funcall counsel-fzf-dir-function))
   (ivy-read "> " #'counsel-fzf-function
             :initial-input initial-input
             :re-builder #'ivy--regex-fuzzy
@@ -1945,6 +1950,11 @@ INITIAL-INPUT can be given as the initial minibuffer input."
   (with-ivy-window
     (let ((default-directory counsel--fzf-dir))
       (find-file x))))
+
+(ivy-set-actions
+ 'counsel-fzf
+ '(("x" counsel-locate-action-extern "xdg-open")
+   ("d" counsel-locate-action-dired "dired")))
 
 (counsel-set-async-exit-code 'counsel-fzf 1 "Nothing found")
 

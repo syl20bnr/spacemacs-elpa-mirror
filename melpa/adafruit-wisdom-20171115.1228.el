@@ -1,8 +1,8 @@
 ;;; adafruit-wisdom.el --- Get/display adafruit.com quotes
 
 ;; Author: Neil Okamoto <neil.okamoto+melpa@gmail.com>
-;; Version: 0.1
-;; Package-Version: 20171109.914
+;; Version: 0.2
+;; Package-Version: 20171115.1228
 ;; Keywords: games
 ;; URL: https://github.com/gonewest818/adafruit-wisdom.el
 ;; Package-Requires: ((emacs "24"))
@@ -33,14 +33,33 @@
 (require 'xml)
 
 (defconst adafruit-wisdom-quote-url "https://www.adafruit.com/feed/quotes.xml"
-  "URL for the RSS quote feed on Adafruit.com.")
+  "URL for the RSS quote feed served on adafruit.com.")
 
-(defun adafruit-wisdom-get ()
-  "Fetch the quotes.xml from adafruit.com and select one at random."
-  (let* ((root (with-temp-buffer
-                 (url-insert-file-contents adafruit-wisdom-quote-url)
-                 (xml-parse-region (point-min) (point-max))))
-         ;; parse the following form:
+(defconst adafruit-wisdom-cache-file "adafruit-wisdom.cache"
+  "Location for the local copy of the quotes file.")
+
+(defconst adafruit-wisdom-cache-ttl (* 3600.0 24.0) ; 24 hours
+  "Time-to-live for the local cache file.")
+
+(defun adafruit-wisdom-cached-get ()
+  "Retrieves RSS from adafruit.com, or from cache if TTL hasn't expired.
+Returns the parsed XML."
+  (let* ((cache (locate-user-emacs-file adafruit-wisdom-cache-file))
+         (mtime (nth 5 (file-attributes cache)))
+         (age   (and mtime (- (float-time (current-time))
+                              (float-time mtime)))))
+    (if (and age (< age adafruit-wisdom-cache-ttl))
+        (with-temp-buffer
+          (insert-file-contents cache)
+          (xml-parse-region (point-min) (point-max)))
+      (with-temp-file cache
+        (url-insert-file-contents adafruit-wisdom-quote-url)
+        (xml-parse-region (point-min) (point-max))))))
+
+(defun adafruit-wisdom-select ()
+  "Select a quote at random."
+  (let* ((root  (adafruit-wisdom-cached-get))
+         ;; parse assuming the following RSS format:
          ;; ((rss (channel (item ...) (item ...) (item ...) ...)))
          ;; where each item contains (item (title nil "the quote") ...)
          ;; and we need just "the quote"
@@ -57,12 +76,12 @@
 If INSERT is non-nil the joke will be inserted into the current
 buffer rather than shown in the minibuffer."
   (interactive "P")
-  (let ((quote (adafruit-wisdom-get)))
-    (if (zerop (length quote))
+  (let ((quote (adafruit-wisdom-select)))
+    (if (null quote)
         (error "Couldn't retrieve a quote from adafruit")
       (if insert
           (insert quote)
-        (message "%s" quote)))))
+        (message quote)))))
 
 (provide 'adafruit-wisdom)
 

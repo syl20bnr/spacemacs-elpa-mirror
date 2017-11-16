@@ -1,7 +1,7 @@
 ;;; company-lsp.el --- Company completion backend for lsp-mode.  -*- lexical-binding: t -*-
 
 ;; Version: 1.0
-;; Package-Version: 20171115.854
+;; Package-Version: 20171115.1013
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "3.1") (company "0.9.0") (s "1.2.0") (dash "2.11.0"))
 ;; URL: https://github.com/tigersoldier/company-lsp
 
@@ -65,6 +65,9 @@ snippet, company-lsp will replace the label of the completion
 item with the snippet and use yas-snippet to expand it."
   :type 'boolean
   :group 'company-lsp)
+
+(defvar company-lsp--snippet-functions '(("rust" . company-lsp--rust-completion-snippet))
+  "Alist of functions to insert our snippets for each language.")
 
 (defvar-local company-lsp--completion-cache nil
   "Cached completion. It's an alist of (prefix . completion).
@@ -169,7 +172,7 @@ to expand its arguments."
 (defun company-lsp--try-expand-snippet (item)
   "Fallback function used when the language server doesn't provide snippet.
 It looks for function corresponding to the language in
-`company-lsp--rust-completion-snippet'.
+`company-lsp--snippet-functions'.
 ITEM is a CompletionItem."
   (-when-let* ((language-id-fn (lsp--client-language-id (lsp--workspace-client lsp--cur-workspace)))
                (language-id (funcall language-id-fn (current-buffer)))

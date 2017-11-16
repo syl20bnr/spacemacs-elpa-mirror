@@ -55,6 +55,10 @@ most are of the form Control-Shift-Letter:
     Resume the last search from the position of the last visited
     match, or (with prefix arg) prompt for an old search to resume.
 
+  C-H (el-search-this-sexp)
+    Grab the symbol or sexp under point and initiate an el-search
+    for other occurrences.
+
 
 These bindings may not work in a console (if you have a good idea
 for nice alternative bindings please mail me).
@@ -114,6 +118,14 @@ whose first line is longer than 70 characters:
            s
            (guard (< 70 (length (car (split-string s "\n")))))))
 
+Put simply, el-search is a tool to match representations of
+symbolic expressions written in a buffer or file.  Most of the
+time, but not necessarily, this is Elisp code.  El-search has no
+semantic understanding of the meaning of these s-exps as a program.
+For example, if you define a macro `my-defvar' that expands to
+`defvar' forms, the pattern `(defvar ,_) will not match any
+equivalent `my-defvar' form, it just matches any lists of two
+elements with the first element being the symbol `defvar'.
 
 You can define your own pattern types with `el-search-defpattern'
 which is analogue to `defmacro'.  See C-h f `el-search-pattern' for
@@ -206,21 +218,30 @@ This will do it:
 
 Type y to replace a match and go to the next one, r to replace
 without moving, SPC or n to go to the next match and ! to replace
-all remaining matches automatically.  q quits.
+all remaining matches automatically.  q quits.  And ? shows a quick
+help summarizing all of these keys.
 
-It is possible to replace a match with multiple expressions using
-"splicing mode".  When it is active, the replacement expression
-must evaluate to a list, and is spliced into the buffer for any
-match.  Use s from the prompt to toggle splicing mode in an
+It is possible to replace a match with more than one expression
+using "splicing mode".  When it is active, the replacement
+expression must evaluate to a list, and is spliced into the buffer
+for any match.  Use s from the prompt to toggle splicing mode in an
 `el-search-query-replace' session.
 
-There are no special multi-file query-replace commands currently
-implemented; I don't know if it would be that useful anyway.  If
-you want to query-replace in multiple buffers or files, just call
-an appropriate multi-search command, and every time a first match
-is found in any buffer, start an ordinary
-`el-search-query-replace'; after finishing, check that everything
-is ok, save etc, and resume the multi search.
+
+Multi query-replace
+===================
+
+To query-replace in multiple files or buffers at once, call
+`el-search-query-replace' directly after starting a search whose
+search domain is the set of files and buffers you want to treat.
+Answer "yes" to the prompt asking whether you want the started
+search drive the query-replace.  The user interface is
+self-explanatory.
+
+You can resume an aborted search-driven query-replace in the
+obvious way: call `el-search-jump-to-search-head' followed by
+`el-search-query-replace' (C-J C-%).  This will continue the
+query-replace session from where you left.
 
 
 Advanced usage: Replacement rules for semi-automatic code rewriting
@@ -291,8 +312,6 @@ TODO:
 
 - The default keys are not available in the terminal
 
-- Handle buffers killed/files closed when resuming a search
-
 - Make searching work in comments, too? (->
   `parse-sexp-ignore-comments').  Related: should the pattern
   `symbol' also match strings that contain matches for a symbol so
@@ -302,10 +321,6 @@ TODO:
 - Port this package to non Emacs Lisp modes?  How?  Would it
   already work using only syntax tables, sexp scanning and
   font-lock?
-
-- For query-replace, maybe we should save the original buffer
-  string in a buffer-local variable, and make that ediff'able
-  against the new version.
 
 - Replace: pause and warn when replacement might be wrong
   (ambiguous reader syntaxes; lost comments, comments that can't
