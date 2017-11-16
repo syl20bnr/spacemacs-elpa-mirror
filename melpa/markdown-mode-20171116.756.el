@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171115.1802
+;; Package-Version: 20171116.756
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -249,8 +249,12 @@
 ;;
 ;;     Local images associated with image links may be displayed
 ;;     inline in the buffer by pressing `C-c C-x C-i`
-;;     (`markdown-toggle-inline-images'). This is a toggle command, so
-;;     pressing this once again will remove inline images.
+;;     (`markdown-toggle-inline-images').  This is a toggle command, so
+;;     pressing this once again will remove inline images.  Large
+;;     images may be scaled down to fit in the buffer using
+;;     `markdown-max-image-size', a cons cell of the form
+;;     `(max-width . max-height)`.  Resizing requires Emacs to be
+;;     built with ImageMagick support.
 ;;
 ;;   * Text Styles: `C-c C-s`
 ;;
@@ -1422,6 +1426,17 @@ nil to disable this."
                  (const :tag "Don't set display property" nil))
   :package-version '(markdown-mode . "2.4"))
 
+(defcustom markdown-sub-superscript-display
+  '(((raise -0.3) (height 0.7)) . ((raise 0.3) (height 0.7)))
+  "Display specification for subscript and superscripts.
+The car is used for subscript, the cdr is used for superscripts."
+  :group 'markdown
+  :type '(cons (choice (sexp :tag "Subscript form")
+		       (const :tag "No lowering" nil))
+	       (choice (sexp :tag "Superscript form")
+		       (const :tag "No raising" nil)))
+  :package-version '(markdown-mode . "2.4"))
+
 (defcustom markdown-unordered-list-item-prefix "  * "
   "String inserted before unordered list items."
   :group 'markdown
@@ -1562,6 +1577,21 @@ prepends the root directory to the given filename."
   :type 'function
   :risky t
   :package-version '(markdown-mode . "2.4"))
+
+(defcustom markdown-max-image-size nil
+  "Maximum width and height for displayed inline images.
+This variable may be nil or a cons cell (MAX-WIDTH . MAX-HEIGHT).
+When nil, use the actual size.  Otherwise, use ImageMagick to
+resize larger images to be of the given maximum dimensions.  This
+requires Emacs to be built with ImageMagick support."
+  :group 'markdown
+  :package-version '(markdown-mode . "2.4")
+  :type '(choice
+          (const :tag "Use actual image width" nil)
+          (cons (choice (sexp :tag "Maximum width in pixels")
+                        (const :tag "No maximum width" nil))
+                (choice (sexp :tag "Maximum height in pixels")
+                        (const :tag "No maximum height" nil)))))
 
 
 ;;; Regular Expressions =======================================================
@@ -1793,7 +1823,7 @@ Groups 1 and 3 match opening and closing dollar signs.
 Group 2 matches the mathematical expression contained within.")
 
 (defconst markdown-regex-math-display
-  (rx line-start
+  (rx line-start (* blank)
       (group (group (repeat 1 2 "\\")) "[")
       (group (*? anything))
       (group (backref 2) "]")
@@ -4392,13 +4422,15 @@ SEQ may be an atom or a sequence."
                          (not (markdown-in-comment-p))))
          markdown-regex-sub-superscript last t)
     (let* ((subscript-p (string= (match-string 2) "~"))
-           (index (if subscript-p 0 1))
+           (props
+            (if subscript-p
+                (car markdown-sub-superscript-display)
+              (cdr markdown-sub-superscript-display)))
            (mp (list 'face 'markdown-markup-face
                      'invisible 'markdown-markup)))
       (when markdown-hide-markup
         (put-text-property (match-beginning 3) (match-end 3)
-                           'display
-                           (nth index markdown-sub-superscript-display)))
+                           'display props))
       (add-text-properties (match-beginning 2) (match-end 2) mp)
       (add-text-properties (match-beginning 4) (match-end 4) mp)
       t)))
@@ -9036,7 +9068,7 @@ or \\[markdown-toggle-inline-images]."
 This can be toggled with `markdown-toggle-inline-images'
 or \\[markdown-toggle-inline-images]."
   (interactive)
-  (unless (display-graphic-p)
+  (unless (display-images-p)
     (error "Cannot show images"))
   (save-excursion
     (save-restriction
@@ -9050,7 +9082,14 @@ or \\[markdown-toggle-inline-images]."
             (let* ((abspath (if (file-name-absolute-p file)
                                 file
                               (concat default-directory file)))
-                   (image (create-image abspath)))
+                   (image
+                    (if (and markdown-max-image-size
+                             (image-type-available-p 'imagemagick))
+                        (create-image
+                         abspath 'imagemagick nil
+                         :max-width (car markdown-max-image-size)
+                         :max-height (cdr markdown-max-image-size))
+                      (create-image abspath))))
               (when image
                 (let ((ov (make-overlay start end)))
                   (overlay-put ov 'display image)
@@ -9378,7 +9417,7 @@ This function assumes point is on a table."
     (while (and (not (bobp))
                 (markdown-table-at-point-p))
       (forward-line -1))
-    (unless (bobp)
+    (unless (eobp)
       (forward-line 1))
     (point)))
 

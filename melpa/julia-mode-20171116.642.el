@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2009-2014 Julia contributors
 ;; URL: https://github.com/JuliaLang/julia
-;; Package-Version: 20170916.628
+;; Package-Version: 20171116.642
 ;; Version: 0.3
 ;; Keywords: languages
 
@@ -438,7 +438,7 @@ symbol, gives up when this is not true."
         (module nil))                   ; found "Module:"
     (save-excursion
       (beginning-of-line)
-      (while (and (not done) (< 0 (point)))
+      (while (and (not done) (< (point-min) (point)))
         (julia-safe-backward-sexp)
         (cond
          ((looking-at (rx (or "import" "export" "using")))
