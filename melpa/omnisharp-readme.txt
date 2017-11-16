@@ -6,9 +6,10 @@ that works in the background.
 See the project home page for more information.
 
 
+(require 'cl)
+(require 'cl-lib)
 (require 'csharp-mode)
 (require 'json)
-(require 'cl-lib)
 (require 'files)
 (require 'ido)
 (require 'thingatpt)
