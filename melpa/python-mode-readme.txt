@@ -11,7 +11,7 @@ available commands, also a menu is provided
 as for `py-add-abbrev':
 Similar to `add-mode-abbrev', but uses
 `py-partial-expression' before point for expansion to
-store, not `word'. Also provides a proposal for new
+store, not `word'.  Also provides a proposal for new
 abbrevs.
 
 Proposal for an abbrev is composed from the downcased

@@ -531,7 +531,7 @@
 	 ((:keywords "bindings")
 	  (:url . "https://github.com/abo-abo/hydra"))])
  (hyperbole .
-	    [(6 0 2)
+	    [(7 0 0)
 	     ((emacs
 	       (24 4)))
 	     "GNU Hyperbole: The Everyday Hypertextual Information Manager" tar
