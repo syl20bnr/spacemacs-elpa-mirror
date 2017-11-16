@@ -6,7 +6,7 @@
 ;; Author: Alex Schroeder <alex@gnu.org>
 ;; Maintainer: Alex Schroeder <alex@gnu.org>
 ;; Version: 1.1.4
-;; Package-Version: 20121026.1418
+;; Package-Version: 20171115.2331
 ;; Keywords: games
 ;; URL: http://www.emacswiki.org/emacs/TypingOfEmacs
 
