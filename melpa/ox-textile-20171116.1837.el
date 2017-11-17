@@ -4,7 +4,7 @@
 
 ;; Author: Yasushi SHOJI <yasushi.shoji@gmail.com>
 ;; URL: https://github.com/yashi/org-textile
-;; Package-Version: 20170907.351
+;; Package-Version: 20171116.1837
 ;; Package-Requires: ((org "8.1"))
 ;; Keywords: org, textile
 
@@ -147,9 +147,12 @@ CONTENTS is the contents of the list.  INFO is a plist holding
 contextual information."
   contents)
 
-(defun org-textile-item-list-depth (item)
-  (let ((parent item)
-	(depth 0))
+(defun org-textile-item-list-depth (item info)
+  (let* ((headline (org-export-get-parent-headline item))
+	 (parent item)
+	 (depth (or (and headline
+		     (org-export-low-level-p headline info))
+		0 )))
     (while (and (setq parent (org-export-get-parent parent))
 		(cl-case (org-element-type parent)
 		  (item t)
@@ -160,10 +163,10 @@ contextual information."
   '((unordered . ?*)
     (ordered . ?#)))
 
-(defun org-textile-list-item-delimiter (item)
+(defun org-textile-list-item-delimiter (item info)
   (let* ((plain-list (org-export-get-parent item))
 	 (type (org-element-property :type plain-list))
-	 (depth (org-textile-item-list-depth item))
+	 (depth (org-textile-item-list-depth item info))
 	 (bullet (cdr (assq type org-textile-list-bullets))))
     (when bullet
      (make-string depth bullet))))
@@ -172,7 +175,7 @@ contextual information."
   "Transcode an ITEM element into Textile format.
 CONTENTS holds the contents of the item.  INFO is a plist holding
 contextual information."
-  (format "%s %s" (org-textile-list-item-delimiter item) contents))
+  (format "%s %s" (org-textile-list-item-delimiter item info) contents))
 
 
 ;;; Example Block

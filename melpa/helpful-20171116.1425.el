@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171112.1321
+;; Package-Version: 20171116.1425
 ;; Keywords: help, lisp
 ;; Version: 0.3
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2"))
@@ -356,6 +356,8 @@ If the source code cannot be found, return the sexp used."
   "Return non-nil if SYM is in an Info manual."
   (let ((completions
          (info-lookup->completions 'symbol 'emacs-lisp-mode)))
+    (-when-let (buf (get-buffer " temp-info-look"))
+      (kill-buffer buf))
     (or (assoc sym completions)
         (assoc-string sym completions))))
 
@@ -379,8 +381,9 @@ for cleaning up."
                 (cons (marker-buffer marker)
                       (marker-position marker))))))
     (when (not callable-p)
-      (-when-let (filename (find-lisp-object-file-name sym 'defvar))
-        (setq buf-and-pos (find-variable-noselect sym filename))))
+      (condition-case err
+          (setq buf-and-pos (find-definition-noselect sym 'defvar))
+        (search-failed nil)))
     buf-and-pos))
 
 (defun helpful--source-path (sym callable-p)

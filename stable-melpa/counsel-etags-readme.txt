@@ -10,8 +10,14 @@ Usage:
 That's all!
 
 Tips:
-You can use ivy's negative pattern to filter candidates.
-For example, input "keyword1 !keyword2 keyword3" means:
+- Add below code into "~/.emacs" to auto-update scan code:
+  (add-hook 'prog-mode-hook
+    (lambda ()
+      (add-hook 'after-save-hook
+                'counsel-etags-virtual-update-tags 'append 'local)))
+
+- You can use ivy's negative pattern to filter candidates.
+  For example, input "keyword1 !keyword2 keyword3" means:
   "(keyword1 and (not (keyword2 or keyword3))"
 
 See https://github.com/redguardtoo/counsel-etags/ for more advanced tips.
