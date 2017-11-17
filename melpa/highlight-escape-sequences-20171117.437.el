@@ -1,13 +1,13 @@
 ;;; highlight-escape-sequences.el --- Highlight escape sequences -*- lexical-binding: t -*-
 
-;; Copyright (C) 2013, 2015, 2016  Free Software Foundation, Inc.
+;; Copyright (C) 2013, 2015-2017  Free Software Foundation, Inc.
 
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;;	Pavel Matcula <dev.plvlml@gmail.com>
 ;; URL:      https://github.com/dgutov/highlight-escape-sequences
-;; Package-Version: 20161028.1617
+;; Package-Version: 20171117.437
 ;; Keywords: convenience
-;; Version:  0.3
+;; Version:  0.4
 
 ;; This file is part of GNU Emacs.
 
@@ -33,8 +33,9 @@
 ;; `font-lock-regexp-grouping-backslash' by default, respectively.
 
 ;; It currently supports `ruby-mode', `emacs-lisp-mode', JS escape
-;; sequences in both popular modes, C escapes is `c-mode', `c++-mode'
-;; and `objc-mode', and Java escapes in `java-mode' and `clojure-mode'.
+;; sequences in both popular modes, C escapes is `c-mode', `c++-mode',
+;; `objc-mode' and `go-mode',
+;; and Java escapes in `java-mode' and `clojure-mode'.
 
 ;; To enable it elsewhere, customize `hes-mode-alist'.
 
@@ -188,6 +189,7 @@ Currently handles:
   `((c-mode          . ,hes-c/c++/objc-escape-sequence-re)
     (c++-mode        . ,hes-c/c++/objc-escape-sequence-re)
     (objc-mode       . ,hes-c/c++/objc-escape-sequence-re)
+    (go-mode         . ,hes-c/c++/objc-escape-sequence-re)
     (java-mode       . ,hes-java-escape-sequence-re)
     (clojure-mode    . ,hes-java-escape-sequence-re)
     (js-mode         . ,hes-js-escape-sequence-re)
