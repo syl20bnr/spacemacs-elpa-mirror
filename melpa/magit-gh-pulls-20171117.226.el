@@ -1,13 +1,13 @@
 ;;; magit-gh-pulls.el --- GitHub pull requests extension for Magit
 
-;; Copyright (C) 2011-2015  Yann Hodique, Alexander Yakushev
+;; Copyright (C) 2011-2017  Yann Hodique, Alexander Yakushev
 
 ;; Author: Yann Hodique <yann.hodique@gmail.com>
 ;; Keywords: git tools
-;; Package-Version: 20161020.249
-;; Version: 0.5.2
+;; Package-Version: 20171117.226
+;; Version: 0.5.3
 ;; URL: https://github.com/sigma/magit-gh-pulls
-;; Package-Requires: ((emacs "24") (gh "0.9.1") (magit "2.1.0") (pcache "0.2.3") (s "1.6.1"))
+;; Package-Requires: ((emacs "24.4") (gh "0.9.1") (magit "2.1.0") (pcache "0.2.3") (s "1.6.1"))
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -368,20 +368,26 @@ option, or inferred from remotes."
     (invalid-pull
      (error "This pull request refers to invalid reference"))))
 
+(defun magit-gh-pulls-github-merge-message (pr)
+  "Generate a default merge commit message, the same as Github does."
+  (format "Merge pull request #%d from %s/%s\n\n%s"
+          (oref pr :number)
+          (oref (oref (oref pr :head) :user) :login)
+          (oref (oref pr :head) :ref)
+          (oref pr :title)))
+
 (defun magit-gh-pulls-merge-pull-request ()
   (interactive)
   (magit-section-case
     (pull
      (let* ((req (magit-gh-section-req-data))
-            (branch (magit-gh-pulls-guess-topic-name req))
             (base (oref (oref req :base) :ref))
             (inhibit-magit-refresh t))
-       (magit-branch-and-checkout branch base)
-       (magit-merge (oref (oref req :head) :sha))
        (magit-checkout base)
-       (magit-merge branch (when (member "--no-ff" (magit-gh-pulls-arguments))
-                             '("--no-ff")))
-       (magit-call-git "branch" "-D" branch))
+       (magit-merge (oref (oref req :head) :sha)
+                    (append (list "-m" (magit-gh-pulls-github-merge-message req))
+                            (when (member "--no-ff" (magit-gh-pulls-arguments))
+                              '("--no-ff")))))
      (magit-refresh))
     (unfetched-pull
      (error "Please fetch pull request commits first"))
@@ -583,11 +589,16 @@ option, or inferred from remotes."
   (or (derived-mode-p 'magit-mode)
       (error "This mode only makes sense with magit"))
   (if magit-gh-pulls-mode
-      (magit-add-section-hook
-       'magit-status-sections-hook
-       'magit-gh-pulls-insert-gh-pulls
-       'magit-insert-stashes)
-    (remove-hook 'magit-status-sections-hook 'magit-gh-pulls-insert-gh-pulls))
+      (progn
+        (magit-add-section-hook
+         'magit-status-sections-hook
+         'magit-gh-pulls-insert-gh-pulls
+         'magit-insert-stashes)
+        (magit-define-popup-action 'magit-dispatch-popup
+          ?# "Github PR" 'magit-gh-pulls-popup ?!))
+    (progn
+      (remove-hook 'magit-status-sections-hook 'magit-gh-pulls-insert-gh-pulls)
+      (magit-remove-popup-key 'magit-dispatch-popup :action ?#)))
   (when (called-interactively-p 'any)
     (magit-refresh)))
 

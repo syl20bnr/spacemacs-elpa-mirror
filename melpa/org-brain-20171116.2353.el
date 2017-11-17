@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; URL: http://github.com/Kungsgeten/org-brain
-;; Package-Version: 20171116.756
+;; Package-Version: 20171116.2353
 ;; Keywords: outlines hypermedia
 ;; Package-Requires: ((emacs "25") (org "9"))
 ;; Version: 0.4
@@ -217,12 +217,13 @@ Doing so allows for adding multiple entries at once."
 
 (defun org-brain-files (&optional relative)
   "Get all org files (recursively) in `org-brain-path'.
-If RELATIVE is t, then return relative paths and remove file extension."
+If RELATIVE is t, then return relative paths and remove file extension.
+Ignores \"dotfiles\"."
   (make-directory org-brain-path t)
   (if relative
       (mapcar #'org-brain-path-entry-name (org-brain-files))
     (directory-files-recursively
-     org-brain-path (format "\\.%s$" org-brain-files-extension))))
+     org-brain-path (format "^[^.].*\\.%s$" org-brain-files-extension))))
 
 (defun org-brain-headline-entries ()
   "Get all org-brain headline entries."
