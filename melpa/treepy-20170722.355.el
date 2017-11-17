@@ -1,4 +1,4 @@
-;;; treepy.el --- Generic tree traversing tools           -*- lexical-binding: t -*-
+;;; treepy.el --- Generic tree traversal tools           -*- lexical-binding: t -*-
 ;;
 ;; Filename: treepy.el
 ;; 
@@ -7,7 +7,7 @@
 ;; Description: Generic Tree Traversing Tools
 ;; Author: Daniel Barreto <daniel.barreto.n@gmail.com>
 ;; Keywords: lisp, maint, tools
-;; Package-Version: 20170721.913
+;; Package-Version: 20170722.355
 ;; Created: Mon Jul 10 15:17:36 2017 (+0200)
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "25.1"))
@@ -17,7 +17,7 @@
 ;; 
 ;;; Commentary:
 ;; 
-;; Generic tools for recursive and iterative tree traversing based on
+;; Generic tools for recursive and iterative tree traversal based on
 ;; clojure.walk and clojure.zip respectively.  Depends on `map', a map
 ;; manipulation library built in Emacs 25.1.  All functions are prefixed
 ;; with "treepy-"
@@ -43,7 +43,7 @@
 
 (require 'map)
 
-;;; Walk (recursive tree traversing)
+;;; Walk (recursive tree traversal)
 
 (defun treepy-walk (inner outer form)
   "Using INNER and OUTER, traverse FORM, an arbitrary data structure.
@@ -104,7 +104,7 @@ parameter is the function to be used by `map-contains-key'."
                   form))
 
 
-;;; Zipper (iterative tree traversing)
+;;; Zipper (iterative tree traversal)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun treepy--context (loc &optional key)

@@ -15,7 +15,7 @@
 
 ;; Author: Chunyang Xu <xuchunyang.me@gmail.com>
 ;; URL: https://github.com/xuchunyang/grab-mac-link.el
-;; Package-Version: 20170822.2321
+;; Package-Version: 20171117.1047
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: Markdown, mac, hyperlink
@@ -181,19 +181,26 @@ This will use the command `open' with the message URL."
 
 ;; Finder.app
 
-(defun grab-mac-link-finder-1 ()
-  (grab-mac-link-split
+(defun grab-mac-link-finder-selected-items ()
+  (split-string
    (do-applescript
     (concat
      "tell application \"Finder\"\n"
      " set theSelection to the selection\n"
      " set links to {}\n"
      " repeat with theItem in theSelection\n"
-     " set theLink to \"file://\" & (POSIX path of (theItem as string)) & \"::split::\" & (get the name of theItem)\n"
+     " set theLink to \"file://\" & (POSIX path of (theItem as string)) & \"::split::\" & (get the name of theItem) & \"\n\"\n"
      " copy theLink to the end of links\n"
      " end repeat\n"
      " return links as string\n"
-     "end tell\n"))))
+     "end tell\n"))
+   "\n" t))
+
+(defun grab-mac-link-finder-1 ()
+  "Return selected file in Finder.
+If there are more than more selected files, just return the first one.
+If there is none, return nil."
+  (car (mapcar #'grab-mac-link-split (grab-mac-link-finder-selected-items))))
 
 
 ;; Mail.app
