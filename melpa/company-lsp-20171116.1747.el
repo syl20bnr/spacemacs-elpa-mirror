@@ -1,7 +1,7 @@
 ;;; company-lsp.el --- Company completion backend for lsp-mode.  -*- lexical-binding: t -*-
 
 ;; Version: 1.0
-;; Package-Version: 20171115.1013
+;; Package-Version: 20171116.1747
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "3.1") (company "0.9.0") (s "1.2.0") (dash "2.11.0"))
 ;; URL: https://github.com/tigersoldier/company-lsp
 
@@ -65,6 +65,8 @@ snippet, company-lsp will replace the label of the completion
 item with the snippet and use yas-snippet to expand it."
   :type 'boolean
   :group 'company-lsp)
+
+(declare-function yas-expand-snippet "ext:yasnippet.el")
 
 (defvar company-lsp--snippet-functions '(("rust" . company-lsp--rust-completion-snippet))
   "Alist of functions to insert our snippets for each language.")
@@ -165,20 +167,25 @@ to expand its arguments."
            (snippet (when (and detail (s-matches? "^\\(pub \\)?\\(unsafe \\)?fn " detail))
                       (-some--> (substring detail (1+ (s-index-of "(" detail)) (s-index-of ")" detail))
                                 (replace-regexp-in-string "^[^,]*self\\(, \\)?" "" it)
+                                (and (not (s-blank-str? it)) it)
                                 (s-split ", " it)
                                 (mapconcat (lambda (x) (format "${%s}" x)) it ", ")))))
       (concat "(" (or snippet "$1") ")$0"))))
 
-(defun company-lsp--try-expand-snippet (item)
-  "Fallback function used when the language server doesn't provide snippet.
+(defun company-lsp--fallback-snippet (item)
+  "Return the fallback snippet to expand for ITEM.
+
 It looks for function corresponding to the language in
 `company-lsp--snippet-functions'.
-ITEM is a CompletionItem."
+
+ITEM is a hashtable of the CompletionItem message.
+
+Return a string of the snippet to expand, or nil if no snippet is available."
   (-when-let* ((language-id-fn (lsp--client-language-id (lsp--workspace-client lsp--cur-workspace)))
                (language-id (funcall language-id-fn (current-buffer)))
-               (fn (alist-get language-id company-lsp--snippet-functions nil nil 'equal))
-               (snippet (funcall fn item)))
-    (yas-expand-snippet snippet)))
+               (fn-cons (assoc language-id company-lsp--snippet-functions))
+               (fn (cdr fn-cons)))
+    (funcall fn item)))
 
 (defun company-lsp--post-completion (candidate)
   "Replace a CompletionItem's label with its insertText. Apply text edits.
@@ -209,7 +216,8 @@ CANDIDATE is a string returned by `company-lsp--make-candidate'."
                (fboundp 'yas-expand-snippet))
       (if (and insert-text (eq insert-text-format 2))
           (yas-expand-snippet insert-text start (point))
-        (company-lsp--try-expand-snippet item)))))
+        (-when-let ((fallback-snippet (company-lsp--fallback-snippet item)))
+          (yas-expand-snippet snippet))))))
 
 (defun company-lsp--on-completion (response prefix callback)
   "Give the server RESPONSE to company's CALLBACK.

@@ -1,5 +1,5 @@
 ;;; pianobar.el --- thin wrapper for Pianobar, a Pandora Radio client
-;; Package-Version: 20120128.1301
+;; Package-Version: 20171116.2330
 
 ;; Copyright (c) 2011, Aaron Griffith
 ;; This file is licensed under the GNU GPL -- see below.
@@ -66,6 +66,9 @@
 (defvar pianobar-command
   "pianobar"
   "The command to run pianobar.")
+
+(defvar pianobar-config nil
+  "If not nil, pianobar will load the Pandora username and password from config without prompting.")
 
 (defvar pianobar-username nil
   "The Pandora username to use, or nil to prompt.")
@@ -204,7 +207,7 @@ Returns t on success, nil on error."
   (interactive "p")
   (if pianobar-is-prompting
 	  (self-insert-command N)
-	(pianobar-send-command last-input-char)))
+	(pianobar-send-command last-input-event)))
 
 (defun pianobar-love-current-song ()
   "Tell pianobar you love the current song."
@@ -246,6 +249,7 @@ Returns t on success, nil on error."
   (add-hook 'comint-output-filter-functions 'pianobar-output-filter nil t)
   (add-hook 'comint-preoutput-filter-functions 'pianobar-preoutput-filter nil t))
 
+;;;###autoload
 (defun pianobar ()
   (interactive)
   ;; if we're already running, calling pianobar again will
@@ -253,32 +257,24 @@ Returns t on success, nil on error."
   (if (comint-check-proc pianobar-buffer)
 	  (set-window-buffer (selected-window) pianobar-buffer)
 
-	(let ((username pianobar-username)
-		  (password pianobar-password))
+    (let ((buffer (get-buffer-create pianobar-buffer)))
+      (with-current-buffer buffer
+        (make-comint-in-buffer "pianobar" buffer pianobar-command)
+        (unless pianobar-config
+          (comint-send-string buffer (concat (or (stringp pianobar-username) (read-from-minibuffer "Pandora username: ")) "\n"))
+          (comint-send-string buffer (concat (or (stringp pianobar-password) (read-passwd "Pandora password: ")) "\n")))
+        (if (stringp pianobar-station)
+            (comint-send-string buffer (concat pianobar-station "\n")))
+        (buffer-disable-undo)
+        (pianobar-mode))
 
-	  (unless username
-		(setq username (read-from-minibuffer "Pandora username: ")))
-	  (unless password
-		(setq password (read-passwd "Pandora password: ")))
+      (cond ((boundp 'mode-line-modes)
+             (add-to-list 'mode-line-modes pianobar-modeline-object t))
+            ((boundp 'global-mode-string)
+             (add-to-list 'global-mode-string pianobar-modeline-object t)))
 
-	  (if (and (stringp username) (stringp password))
-		  (let ((buffer (get-buffer-create pianobar-buffer)))
-			(with-current-buffer buffer
-			  (make-comint-in-buffer "pianobar" buffer pianobar-command)
-			  (comint-send-string buffer (concat username "\n"))
-			  (comint-send-string buffer (concat password "\n"))
-			  (if (stringp pianobar-station)
-				  (comint-send-string buffer (concat pianobar-station "\n")))
-			  (buffer-disable-undo)
-			  (pianobar-mode))
-
-			(cond ((boundp 'mode-line-modes)
-				   (add-to-list 'mode-line-modes pianobar-modeline-object t))
-				  ((boundp 'global-mode-string)
-				   (add-to-list 'global-mode-string pianobar-modeline-object t)))
-
-			(if (not pianobar-run-in-background)
-				(set-window-buffer (selected-window) buffer)))))))
+      (if (not pianobar-run-in-background)
+          (set-window-buffer (selected-window) buffer)))))
 
 (provide 'pianobar)
 
