@@ -43,3 +43,7 @@ Setting Example 2
   (add-hook 'java-mode-hook
             '(lambda ()
                (local-set-key (kbd "C-c C-u") 'string-inflection-java-style-cycle)))
+
+You may also consider setting `string-inflection-skip-backward-when-done' to
+`t' if you don't like `string-inflect' moving your point to the end of the
+word

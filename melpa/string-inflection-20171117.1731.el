@@ -1,11 +1,11 @@
 ;;; string-inflection.el --- underscore -> UPCASE -> CamelCase -> lowerCamelCase conversion of names
 
-;; Copyright (C) 2004,2014,2016 Free Software Foundation, Inc.
+;; Copyright (C) 2004,2014,2016,2017 Free Software Foundation, Inc.
 
 ;; Author: akicho8 <akicho8@gmail.com>
 ;; Keywords: elisp
-;; Package-Version: 1.0.5
-;; Version: 1.0.5
+;; Package-Version: 20171117.1731
+;; Version: 1.0.6
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
 ;;   (global-unset-key (kbd "C-q"))
 ;;   ;; C-q C-u is the key bindings similar to Vz Editor.
 ;;   (global-set-key (kbd "C-q C-u") 'my-string-inflection-cycle-auto)
-;;   
+;;
 ;;   (defun my-string-inflection-cycle-auto ()
 ;;     "switching by major-mode"
 ;;     (interactive)
@@ -51,29 +51,35 @@
 ;;      (t
 ;;       ;; default
 ;;       (string-inflection-ruby-style-cycle))))
-;; 
+;;
 ;;
 ;; Setting Example 2
 ;;
 ;;   (require 'string-inflection)
-;;   
+;;
 ;;   ;; default
 ;;   (global-set-key (kbd "C-c C-u") 'string-inflection-all-cycle)
-;;   
+;;
 ;;   ;; for ruby
 ;;   (add-hook 'ruby-mode-hook
 ;;             '(lambda ()
 ;;                (local-set-key (kbd "C-c C-u") 'string-inflection-ruby-style-cycle)))
-;;   
+;;
 ;;   ;; for java
 ;;   (add-hook 'java-mode-hook
 ;;             '(lambda ()
 ;;                (local-set-key (kbd "C-c C-u") 'string-inflection-java-style-cycle)))
 ;;
+;; You may also consider setting `string-inflection-skip-backward-when-done' to
+;; `t' if you don't like `string-inflect' moving your point to the end of the
+;; word
 
 ;;; Code:
 
 (defconst string-inflection-word-chars "a-zA-Z0-9_-")
+
+(defvar string-inflection-skip-backward-when-done nil
+  "Whether point just move backward to the beginning of the word after inflecting.")
 
 ;; --------------------------------------------------------------------------------
 
@@ -81,7 +87,8 @@
 (defun string-inflection-ruby-style-cycle ()
   "foo_bar => FOO_BAR => FooBar => foo_bar"
   (interactive)
-  (insert (string-inflection-ruby-style-cycle-function (string-inflection-get-current-word))))
+  (string-inflection-insert
+   (string-inflection-ruby-style-cycle-function (string-inflection-get-current-word))))
 
 (fset 'string-inflection-cycle 'string-inflection-ruby-style-cycle)
 
@@ -89,53 +96,65 @@
 (defun string-inflection-java-style-cycle ()
   "fooBar => FOO_BAR => FooBar => fooBar"
   (interactive)
-  (insert (string-inflection-java-style-cycle-function (string-inflection-get-current-word))))
+  (string-inflection-insert
+   (string-inflection-java-style-cycle-function (string-inflection-get-current-word))))
 
 ;;;###autoload
 (defun string-inflection-all-cycle ()
   "foo_bar => FOO_BAR => FooBar => fooBar => foo-bar => foo_bar"
   (interactive)
-  (insert (string-inflection-all-cycle-function (string-inflection-get-current-word))))
+  (string-inflection-insert
+   (string-inflection-all-cycle-function (string-inflection-get-current-word))))
 
 ;;;###autoload
 (defun string-inflection-toggle ()
   "toggle foo_bar <=> FooBar"
   (interactive)
-  (insert (string-inflection-toggle-function (string-inflection-get-current-word))))
+  (string-inflection-insert
+   (string-inflection-toggle-function (string-inflection-get-current-word))))
 
 ;;;###autoload
 (defun string-inflection-camelcase ()
   "FooBar format"
   (interactive)
-  (insert (string-inflection-camelcase-function (string-inflection-get-current-word t))))
+  (string-inflection-insert
+   (string-inflection-camelcase-function (string-inflection-get-current-word t))))
 
 ;;;###autoload
 (defun string-inflection-lower-camelcase ()
   "fooBar format"
   (interactive)
-  (insert (string-inflection-lower-camelcase-function (string-inflection-get-current-word t))))
+  (string-inflection-insert
+   (string-inflection-lower-camelcase-function (string-inflection-get-current-word t))))
 
 ;;;###autoload
 (defun string-inflection-underscore ()
   "foo_bar format"
   (interactive)
-  (insert (string-inflection-underscore-function (string-inflection-get-current-word t))))
+  (string-inflection-insert
+   (string-inflection-underscore-function (string-inflection-get-current-word t))))
 
 ;;;###autoload
 (defun string-inflection-upcase ()
   "FOO_BAR format"
   (interactive)
-  (insert (string-inflection-upcase-function (string-inflection-get-current-word t))))
+  (string-inflection-insert
+   (string-inflection-upcase-function (string-inflection-get-current-word t))))
 
 ;;;###autoload
 (defun string-inflection-kebab-case ()
   "foo-bar format"
   (interactive)
-  (insert (string-inflection-kebab-case-function (string-inflection-get-current-word t))))
+  (string-inflection-insert
+   (string-inflection-kebab-case-function (string-inflection-get-current-word t))))
 
 (fset 'string-inflection-lisp 'string-inflection-kebab-case)
 
 ;; --------------------------------------------------------------------------------
+
+(defun string-inflection-insert (s)
+  (insert s)
+  (when string-inflection-skip-backward-when-done (skip-chars-backward string-inflection-word-chars)))
 
 (defun string-inflection-non-word-chars ()
   (concat "^" string-inflection-word-chars))
@@ -145,14 +164,21 @@
   (interactive)
   (and skip
        (skip-chars-forward (string-inflection-non-word-chars)))
-  (let ((start (progn
-                 (skip-chars-forward string-inflection-word-chars)
-                 (point)))
-        (end (progn
-               (skip-chars-backward string-inflection-word-chars)
-               (point))))
+  (let* ((start (if mark-active
+                    (region-end)
+                  (progn
+                    (skip-chars-forward string-inflection-word-chars)
+                    (point))))
+         (end (if mark-active
+                  (region-beginning)
+                (progn
+                  (skip-chars-backward string-inflection-word-chars)
+                  (point))))
+         (str (buffer-substring start end)))
     (prog1
-        (buffer-substring start end)
+        (if mark-active
+            (replace-regexp-in-string "[[:space:]]+" "_" str)
+          str)
       (delete-region start end))))
 
 ;; --------------------------------------------------------------------------------

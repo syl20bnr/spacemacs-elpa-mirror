@@ -1,5 +1,5 @@
 ;;; pianobar.el --- thin wrapper for Pianobar, a Pandora Radio client
-;; Package-Version: 20171117.1222
+;; Package-Version: 20171117.1522
 
 ;; Copyright (c) 2011, Aaron Griffith
 ;; This file is licensed under the GNU GPL -- see below.
@@ -292,8 +292,8 @@ Returns t on success, nil on error."
       (with-current-buffer buffer
         (make-comint-in-buffer "pianobar" buffer pianobar-command)
         (unless pianobar-config
-          (comint-send-string buffer (concat (or (stringp pianobar-username) (read-from-minibuffer "Pandora username: ")) "\n"))
-          (comint-send-string buffer (concat (or (stringp pianobar-password) (read-passwd "Pandora password: ")) "\n")))
+          (comint-send-string buffer (concat (or pianobar-username (read-from-minibuffer "Pandora username: ")) "\n"))
+          (comint-send-string buffer (concat (or pianobar-password (read-passwd "Pandora password: ")) "\n")))
         (if (stringp pianobar-station)
             (comint-send-string buffer (concat pianobar-station "\n")))
         (buffer-disable-undo)
