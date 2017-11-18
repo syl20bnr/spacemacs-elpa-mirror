@@ -1,5 +1,5 @@
 ;;; pianobar.el --- thin wrapper for Pianobar, a Pandora Radio client
-;; Package-Version: 20171116.2330
+;; Package-Version: 20171117.1222
 
 ;; Copyright (c) 2011, Aaron Griffith
 ;; This file is licensed under the GNU GPL -- see below.
@@ -56,6 +56,7 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Code:
+;;;; Variables
 
 (require 'comint)
 
@@ -104,8 +105,8 @@ or nil to let you select.")
 
 (defvar pianobar-mode-font-lock-defaults
   '(("\\[\\?\\] \\(.*: \\)\\(.*\\)" (1 'pianobar-mode-prompt-face t) (2 'pianobar-mode-input-face t))
-	("|> \\(.*\\)" 1 'pianobar-mode-info-face t)
-	("# +\\(-[0-9]+:[0-9]+/[0-9]+:[0-9]+\\)\\(.*\\)" (1 'pianobar-mode-time-face t) (2 'pianobar-mode-input-face t)))
+    ("|> \\(.*\\)" 1 'pianobar-mode-info-face t)
+    ("# +\\(-[0-9]+:[0-9]+/[0-9]+:[0-9]+\\)\\(.*\\)" (1 'pianobar-mode-time-face t) (2 'pianobar-mode-input-face t)))
   "The default syntax-highlighting rules for pianobar-mode.")
 
 (defvar pianobar-prompt-regex
@@ -126,8 +127,8 @@ or nil to let you select.")
 
 (defvar pianobar-info-extract-rules
   '(("|> +Station \"\\(.+\\)\" +([0-9]*)$" (1 . pianobar-current-station))
-	("|> +\"\\(.*\\)\" by \"\\(.*\\)\" on \"\\(.*\\)\""
-	 (1 . pianobar-current-song) (2 . pianobar-current-artist) (3 . pianobar-current-album)))
+    ("|> +\"\\(.*\\)\" by \"\\(.*\\)\" on \"\\(.*\\)\""
+     (1 . pianobar-current-song) (2 . pianobar-current-artist) (3 . pianobar-current-album)))
   "A list of cells of the form (regex . matchrules), where
 matchrules is a list of cells of the form (group#
 . symbol). After matching the regexp on new input from pianobar,
@@ -135,8 +136,8 @@ the groups matched will be stored in the associated symbol.")
 
 (defvar pianobar-mode-map
   (let ((map (nconc (make-keymap) comint-mode-map)))
-	(substitute-key-definition 'self-insert-command 'pianobar-self-insert-command map global-map)
-	map))
+    (substitute-key-definition 'self-insert-command 'pianobar-self-insert-command map global-map)
+    map))
 
 (defvar pianobar-is-prompting nil
   "Whether pianobar is currently prompting, or not.
@@ -149,28 +150,35 @@ Set this with (pianobar-set-is-prompting ...).")
 (defvar pianobar-status nil
   "String (or mode-line construct) used in global pianobar mode line.")
 
-(defvar pianobar-global-modeline t
-  "Set to t to make pianobar status modeline global, or nil otherwise.
-Right now, this setting does not really work. At all.")
+(defvar pianobar-enable-modeline t
+  "Set to nil to hide updates in the modeline.")
+
+(defalias 'pianobar-global-modeline 'pianobar-enable-modeline
+  "`pianobar-global-modeline' never worked properly, so it was removed
+in favor of pianobar-enable-modeline.")
+
+(make-obsolete 'pianobar-global-modeline 'pianobar-enable-modeline "2017-11-17")
+
+;;;; Helper Functions
 
 (defun pianobar-set-is-prompting (prompting)
   "Set whether pianobar is currently prompting for a string, or not."
   (with-current-buffer pianobar-buffer
-	(set (make-local-variable 'pianobar-is-prompting) prompting)
-	(setq buffer-read-only (not prompting))))
+    (set (make-local-variable 'pianobar-is-prompting) prompting)
+    (setq buffer-read-only (not prompting))))
 
 (defun pianobar-update-modeline ()
   "Update the pianobar modeline with current information."
-  (if (or pianobar-global-modeline (equal (buffer-name) pianobar-buffer))
-	  (setq pianobar-status `("  " ,(pianobar-make-modeline) "  "))
-	(setq pianobar-status nil))
+  (if pianobar-enable-modeline
+      (setq pianobar-status `("  " ,(pianobar-make-modeline) "  "))
+    (setq pianobar-status nil))
   (force-mode-line-update))
 
 (defun pianobar-make-modeline ()
   "Return the new modeline for pianobar-status. Override for custom modeline."
   (if (and pianobar-current-song pianobar-current-artist)
-	  '("" pianobar-current-song " / " pianobar-current-artist)
-	nil))
+      '("" pianobar-current-song " / " pianobar-current-artist)
+    nil))
 
 (defun pianobar-preoutput-filter (str)
   "Preoutput filter for pianobar-mode. Cleans up unhandled ANSI escapes."
@@ -184,9 +192,9 @@ Right now, this setting does not really work. At all.")
   (pianobar-set-is-prompting (string-match pianobar-prompt-regex str))
 
   (dolist (rule pianobar-info-extract-rules)
-	(if (string-match (car rule) str)
-		(dolist (symbol-map (cdr rule))
-		  (set (cdr symbol-map) (match-string (car symbol-map) str)))))
+    (if (string-match (car rule) str)
+        (dolist (symbol-map (cdr rule))
+          (set (cdr symbol-map) (match-string (car symbol-map) str)))))
 
   (pianobar-update-modeline))
 
@@ -194,32 +202,53 @@ Right now, this setting does not really work. At all.")
   "Send a command character to pianobar, if it's running.
 Returns t on success, nil on error."
   (if (not (comint-check-proc pianobar-buffer))
-	  (progn (message "Pianobar is not running.") nil)
-	(if pianobar-is-prompting
-		(progn (message "Pianobar is expecting input -- command not sent.") nil)
-	  (comint-send-string pianobar-buffer (char-to-string char))
-	  (if set-active
-		  (set-window-buffer (selected-window) pianobar-buffer))
-	  t)))
+      (progn (message "Pianobar is not running.") nil)
+    (if pianobar-is-prompting
+        (progn (message "Pianobar is expecting input -- command not sent.") nil)
+      (comint-send-string pianobar-buffer (char-to-string char))
+      (if set-active
+          (set-window-buffer (selected-window) pianobar-buffer))
+      t)))
 
 (defun pianobar-self-insert-command (N)
   "Custom key-press handler for pianobar mode."
   (interactive "p")
   (if pianobar-is-prompting
-	  (self-insert-command N)
-	(pianobar-send-command last-input-event)))
+      (self-insert-command N)
+    (pianobar-send-command last-input-event)))
+
+;;;; Interactive Functions
 
 (defun pianobar-love-current-song ()
   "Tell pianobar you love the current song."
   (interactive)
   (if (and pianobar-current-song (pianobar-send-command ?+))
-	  (message (concat "Pianobar: Love'd " pianobar-current-song))))
+      (message (concat "Pianobar: Love'd " pianobar-current-song))))
 
 (defun pianobar-ban-current-song ()
   "Tell pianobar to ban the current song."
   (interactive)
-  (if (and pianobar-current-song (pianobar-send-command ?-))
-	  (message (concat "Pianobar: Banned " pianobar-current-song))))
+  (if (and pianobar-current-song
+           (pianobar-send-command ?-))
+      (message (concat "Pianobar: Banned " pianobar-current-song))))
+
+(defun pianobar-shelve-current-song ()
+  "Tell pianobar to shelve  the current song for a month (tired)."
+  (interactive)
+  (if (and pianobar-current-song (pianobar-send-command ?t))
+	  (message (concat "Pianobar: Shelved " pianobar-current-song))))
+
+(defun pianobar-volume-up ()
+  "Tell pianobar increase the volume."
+  (interactive)
+  ;; volume up is )
+  (pianobar-send-command ?\) ))
+
+(defun pianobar-volume-down ()
+  "Tell pianobar to lower the volume."
+  (interactive)
+  ;; volume up is )
+  (pianobar-send-command ?\( ))
 
 (defun pianobar-next-song ()
   "Tell pianobar to skip to the next song."
@@ -241,7 +270,7 @@ Returns t on success, nil on error."
 \\{pianobar-mode-map}"
 
   (set (make-local-variable 'font-lock-defaults)
-	   '(pianobar-mode-font-lock-defaults t))
+       '(pianobar-mode-font-lock-defaults t))
 
   (set (make-local-variable 'comint-process-echoes) t)
   (pianobar-set-is-prompting nil)
@@ -249,13 +278,15 @@ Returns t on success, nil on error."
   (add-hook 'comint-output-filter-functions 'pianobar-output-filter nil t)
   (add-hook 'comint-preoutput-filter-functions 'pianobar-preoutput-filter nil t))
 
+;;;; Main Definition
+
 ;;;###autoload
 (defun pianobar ()
   (interactive)
   ;; if we're already running, calling pianobar again will
   ;; just make the pianobar buffer the visible one
   (if (comint-check-proc pianobar-buffer)
-	  (set-window-buffer (selected-window) pianobar-buffer)
+      (set-window-buffer (selected-window) pianobar-buffer)
 
     (let ((buffer (get-buffer-create pianobar-buffer)))
       (with-current-buffer buffer
