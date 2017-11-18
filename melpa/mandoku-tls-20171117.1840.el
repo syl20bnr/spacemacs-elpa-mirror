@@ -6,7 +6,7 @@
 ;;
 ;; Author: Christian Wittern <cwittern@gmail.com>
 ;; URL: https://github.com/mandoku/mandoku-tls
-;; Package-Version: 20170822.1138
+;; Package-Version: 20171117.1840
 ;; Version: 0.1
 ;; License: GPL v3, or any later version
 ;; Keywords: convenience
@@ -124,7 +124,7 @@
       (with-current-buffer (find-file-noselect ct)
 	(dolist (l (split-string (buffer-substring-no-properties (point-min) (point-max)) "\n"))
 	  (let* ((tmp (split-string l "\t"))
-		 (char (format "%c" (string-to-int (nth 0 tmp) 16))))
+		 (char (format "%c" (string-to-number (nth 0 tmp) 16))))
 	    (puthash char (format "(%s,%s/%s)" (nth 2 tmp) (nth 3 tmp) (nth 4 tmp) )
 		     mandoku-tls-character-tab)))))))
 
@@ -636,39 +636,39 @@ When called without argument, use the current buffer file."
 		       (helm-build-dummy-source "New concept:"
 			 :action '(("Create new concept:" . mandoku-tls-create-new-annot))))))
 
-(defhydra hydra-tls-view (:color blue)
+(defhydra hydra-tls-view (:color blue :exit t)
   "TLS functions\n"
-  ("c" mandoku-tls-concepts-helm "Lookup TLS concepts by name\n" :exit t)
-  ("g" mandoku-tls-grep "Search for selected word in the text files\n" : exit t)
-  ("r" mandoku-tls-select-readings "TLS: Select readings\n" :exit t)
-  ("s" mandoku-tls-syn-func-helm "Lookup TLS syntactic functions\n" :exit t)
-  ("w" mandoku-tls-show-words "TLS: Show attributions for this word.\n" :exit t)
-;  ("a" mandoku-tls-make-attribution "TLS: Make new attribution\n" :exit t)
-;  ("n" mandoku-tls-new-swl "TLS: Assosiate new annotation with location in text\n" :exit t)
-  ("z" mandoku-tls-new-syntactic-word "TLS: Make new syntactic word" :exit t)
-;  ("i" mandoku-tls-insert-new-annot "TLS insert new annotation\n" :exit t)
+  ("c" mandoku-tls-concepts-helm "Lookup TLS concepts by name\n")
+  ("g" mandoku-tls-grep "Search for selected word in the text files\n")
+  ("r" mandoku-tls-select-readings "TLS: Select readings\n")
+  ("s" mandoku-tls-syn-func-helm "Lookup TLS syntactic functions\n" )
+  ("w" mandoku-tls-show-words "TLS: Show attributions for this word.\n")
+;  ("a" mandoku-tls-make-attribution "TLS: Make new attribution\n" )
+;  ("n" mandoku-tls-new-swl "TLS: Assosiate new annotation with location in text\n" )
+  ("z" mandoku-tls-new-syntactic-word "TLS: Make new syntactic word" )
+;  ("i" mandoku-tls-insert-new-annot "TLS insert new annotation\n" )
 )
 
-(defhydra hydra-tls-dict (:color blue)
+(defhydra hydra-tls-dict (:color blue :exit t)
   "TLS functions in dictionary mode\n"
-  ("h" mandoku-tls-dict-immediate-capture "Attribute citation in HYDCD: Put cursor before the + !" :exit t))
+  ("h" mandoku-tls-dict-immediate-capture "Attribute citation in HYDCD: Put cursor before the + !" ))
 ;(define-key mandoku-dict-mode-map (kbd "<f8>") 'hydra-tls-dict/body)
 (define-key mandoku-dict-mode-map (kbd "<f8>") 'hydra-tls/body)
    
-(defhydra hydra-tls (:color blue)
+(defhydra hydra-tls (:color blue :exit t)
   "TLS functions\n"
-  ("c" mandoku-tls-concepts-helm "Lookup TLS concepts by name\n" :exit t)
-  ("g" mandoku-tls-grep "Search for selected word in the text files\n" : exit t)
-  ("n" mandoku-tls-new-concept-maybe "TLS: Add word to concept (maybe create new one)\n" :exit t)
-  ("r" mandoku-tls-select-readings "TLS: Select readings\n" :exit t)
-  ("l" mandoku-tls-procline "TLS: Lookup all characters/terms on line\n" :exit t)
-  ("v" mandoku-tls-procline-short "TLS: Overview of concepts for characters on line\n" :exit t)
-  ("s" mandoku-tls-syn-func-helm "Lookup TLS syntactic functions\n" :exit t)
-  ("a" mandoku-tls-add-attribution-for-char "Add attribution for selected word" :exit t)
-;  ("a" mandoku-tls-make-attribution "TLS: Make new attribution\n" :exit t)
-;  ("n" mandoku-tls-new-swl "TLS: Assosiate new annotation with location in text\n" :exit t)
-;  ("z" mandoku-tls-new-syntactic-word "TLS: Make new syntactic word\n" :exit t)
-;  ("i" mandoku-tls-insert-new-annot "TLS insert new annotation\n" :exit t)
+  ("c" mandoku-tls-concepts-helm "Lookup TLS concepts by name\n" )
+  ("g" mandoku-tls-grep "Search for selected word in the text files\n" )
+  ("n" mandoku-tls-new-concept-maybe "TLS: Add word to concept (maybe create new one)\n" )
+  ("r" mandoku-tls-select-readings "TLS: Select readings\n")
+  ("l" mandoku-tls-procline "TLS: Lookup all characters/terms on line\n" )
+  ("v" mandoku-tls-procline-short "TLS: Overview of concepts for characters on line\n" )
+  ("s" mandoku-tls-syn-func-helm "Lookup TLS syntactic functions\n" )
+  ("a" mandoku-tls-add-attribution-for-char "Add attribution for selected word")
+;  ("a" mandoku-tls-make-attribution "TLS: Make new attribution\n" )
+;  ("n" mandoku-tls-new-swl "TLS: Assosiate new annotation with location in text\n" )
+;  ("z" mandoku-tls-new-syntactic-word "TLS: Make new syntactic word\n" )
+;  ("i" mandoku-tls-insert-new-annot "TLS insert new annotation\n")
 )
 
 (defun mandoku-tls-helm-syn-func-candidates ()
@@ -875,8 +875,8 @@ Optional argument ATT The attribution to use when called from a lisp function."
 		  (mandoku-remove-punct-and-markup
 		   (mandoku-get-line))))
 	 mandoku-tls-concept
-	 (start (- (string-to-int (read-from-minibuffer (concat inp ": Please enter position of first character to use: ") "1" nil )) 1))
-	 (slength (string-to-int (read-from-minibuffer (concat inp ": Please enter number of characters to use: ") "1" nil )))
+	 (start (- (string-to-number (read-from-minibuffer (concat inp ": Please enter position of first character to use: ") "1" nil )) 1))
+	 (slength (string-to-number (read-from-minibuffer (concat inp ": Please enter number of characters to use: ") "1" nil )))
 	 (word (substring inp start (+ start slength)))
 	 ;;
 	 concept readings)
@@ -1770,7 +1770,7 @@ By default, all subentries are counted; restrict with LEVEL."
     (helm :sources (list (helm-build-sync-source (format "Grep %s" search-string)
 			   :action '(("Open file" . (lambda (s)
                                                 (find-file-other-window (car s))
-                                                (goto-line (string-to-int (cadr s)))
+                                                (goto-line (string-to-number (cadr s)))
 						(hi-lock-mode t)
 						(highlight-regexp
 						 (mapconcat 'char-to-string (string-to-list (nth 2 s)) "\\(<[^>]*>\\|¶\\)*")
@@ -1821,7 +1821,7 @@ By default, all subentries are counted; restrict with LEVEL."
     (helm :sources (helm-build-sync-source (format "Grep %s" search-string)
                      :action '(("Open file" . (lambda (s)
                                                 (find-file-other-window (car s))
-                                                (goto-line (string-to-int (cadr s)))
+                                                (goto-line (string-to-number (cadr s)))
 						(hi-lock-mode t)
 						(highlight-regexp (nth 2 s))))
                                )
