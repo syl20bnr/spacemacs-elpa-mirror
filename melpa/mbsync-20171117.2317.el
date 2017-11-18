@@ -4,7 +4,7 @@
 
 ;; Author: Dimitri Fontaine <dim@tapoueh.org>
 ;; Version: 0.1.1
-;; Package-Version: 20171117.1343
+;; Package-Version: 20171117.2317
 ;; URL: https://github.com/dimitri/mbsync-el
 
 ;; This file is NOT part of GNU Emacs.
@@ -18,9 +18,15 @@
 ;;; News:
 
 ;;;; Changes since 0.0.1:
-;; - Ensure only one process runs at a time.
-;;   If you wish to run several at a time (e.g. with different configurations),
-;;   let-bind `mbsync-buffer-name' around invocations to keep them unique.
+;;
+;; - Update status line regex and make it customizable. (#4, #10)
+;;   New defcustom mbsync-status-line-re – thanks Matthew Carter and
+;;   Ivan Stefanischin!
+;;
+;; - Ensure only one process runs at a time. (#8, #9)
+;;   If you wish to run several at a time (e.g. with different
+;;   configurations), let-bind `mbsync-buffer-name' around invocations
+;;   to keep them unique.  Thanks Matthew Carter!
 
 ;;; Code:
 
@@ -57,6 +63,15 @@
   "Face description for all errors."
   :group 'mbsync)
 
+;; Newer versions of mbsync just report C:, B:, M:, or S: for progress.
+(defcustom mbsync-status-line-re (rx (or "Channel "
+                                         (and (any ?m ?c ?b ?s) ": "))
+                                     (+ (any alnum ?/)))
+                                 ;; (rx bol "Channel " (+ (any alnum)) eol)
+  "Regex which matches an output line to show it in the echo-area."
+  :group 'mbsync
+  :type 'string)
+
 (defvar mbsync-process-filter-pos nil)
 
 (defvar mbsync-buffer-name "*mbsync*")
@@ -87,10 +102,10 @@ Arguments PROC, STRING as in `set-process-filter'."
             (message "mbsync blocked, waiting for certificate acceptance")))))
 
     (save-excursion
-	;; message progress
-	(goto-char mbsync-process-filter-pos)
-	(while (re-search-forward (rx bol "Channel " (+ (any alnum)) eol) nil t)
-	  (mbsync-info "%s" (match-string 0))))
+      ;; message progress
+      (goto-char mbsync-process-filter-pos)
+      (while (re-search-forward mbsync-status-line-re nil t)
+        (mbsync-info "mbsync progress: %s" (match-string 0))))
 
     (let (err-pos)
       (save-excursion
