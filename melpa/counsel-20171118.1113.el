@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171117.1213
+;; Package-Version: 20171118.1113
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -45,6 +45,7 @@
 (require 'etags)
 (require 'esh-util)
 (require 'compile)
+(require 'dired)
 
 ;;* Utility
 (defun counsel-more-chars (n)
@@ -1059,6 +1060,45 @@ INITIAL-INPUT can be given as the initial minibuffer input."
     (let ((default-directory counsel--git-dir))
       (find-file x))))
 
+(defun counsel-git-occur ()
+  "Occur function for `counsel-git' using `counsel-cmd-to-dired'."
+  (cd counsel--git-dir)
+  (counsel-cmd-to-dired
+   (format "%s | grep -i -E '%s' | xargs ls"
+           counsel-git-cmd ivy--old-re)))
+
+(defvar counsel-dired-listing-switches "-alh"
+  "Switches passed to `ls' for `counsel-cmd-to-dired'.")
+
+(defun counsel-cmd-to-dired (cmd)
+  "Adapted from `find-dired'."
+  (let ((inhibit-read-only t)
+        (full-cmd (format "%s %s | sed -e 's/^/  /'"
+                          cmd
+                          counsel-dired-listing-switches)))
+    (erase-buffer)
+    (dired-mode default-directory counsel-dired-listing-switches)
+    (insert "  " default-directory ":\n")
+    (let ((point (point)))
+      (insert "  " cmd "\n")
+      (dired-insert-set-properties point (point)))
+    (setq-local dired-sort-inhibit t)
+    (setq-local revert-buffer-function
+                (lambda (_1 _2) (counsel-cmd-to-dired cmd)))
+    (setq-local dired-subdir-alist
+                (list (cons default-directory (point-min-marker))))
+    (let ((proc (start-process-shell-command
+                 "counsel-cmd" (current-buffer) full-cmd)))
+      (set-process-sentinel
+       proc
+       (lambda (_ state)
+         (when (equal state "finished\n")
+           (goto-char (point-min))
+           (forward-line 2)
+           (dired-move-to-filename)))))))
+
+(ivy-set-occur 'counsel-git 'counsel-git-occur)
+
 ;;** `counsel-git-grep'
 (defvar counsel-git-grep-map
   (let ((map (make-sparse-keymap)))
@@ -1674,6 +1714,14 @@ When INITIAL-INPUT is non-nil, use it in the minibuffer during completion."
             :keymap counsel-find-file-map
             :caller 'counsel-find-file))
 
+(ivy-set-occur 'counsel-find-file 'counsel-find-file-occur)
+
+(defun counsel-find-file-occur ()
+  (cd ivy--directory)
+  (counsel-cmd-to-dired
+   (format
+    "ls | grep -i -E '%s' | xargs ls" ivy--old-re)))
+
 (defun counsel-up-directory ()
   "Go to the parent directory preselecting the current one.
 
@@ -1950,6 +1998,16 @@ INITIAL-INPUT can be given as the initial minibuffer input."
   (with-ivy-window
     (let ((default-directory counsel--fzf-dir))
       (find-file x))))
+
+(defun counsel-fzf-occur ()
+  "Occur function for `counsel-fzf' using `counsel-cmd-to-dired'."
+  (cd counsel--fzf-dir)
+  (counsel-cmd-to-dired
+   (format
+    "%s --print0 | xargs -0 ls"
+    (format counsel-fzf-cmd ivy-text))))
+
+(ivy-set-occur 'counsel-fzf 'counsel-fzf-occur)
 
 (ivy-set-actions
  'counsel-fzf
