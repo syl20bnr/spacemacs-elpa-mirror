@@ -4,7 +4,7 @@
 ;; Copyright 2011-2017 François-Xavier Bois
 
 ;; Version: 15.0.16
-;; Package-Version: 20171112.1324
+;; Package-Version: 20171118.1132
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; Package-Requires: ((emacs "23.1"))
@@ -141,7 +141,7 @@
   :group 'web-mode)
 
 (defcustom web-mode-enable-current-element-highlight nil
-  "Disable element highlight."
+  "Enable current element highlight."
   :type 'boolean
   :group 'web-mode)
 

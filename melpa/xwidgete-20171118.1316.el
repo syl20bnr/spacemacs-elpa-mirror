@@ -7,7 +7,7 @@
 ;; Author: Tu, Do Hoang <tuhdo1710@gmail.com>
 ;; Maintainer: Tu, Do Hoang
 ;; Version: 0.3
-;; Package-Version: 20161029.1112
+;; Package-Version: 20171118.1316
 ;; Package-Requires: ((emacs "25"))
 ;; URL: https://github.com/tuhdo/xwidgete
 ;; Doc URL:
@@ -314,8 +314,9 @@ then simply returns *xwidgete-current-active-element*'. Otherwise create new ins
   (interactive)
   (xwidget-set-adjustment (xwidget-webkit-last-session) 'vertical t 300))
 
-(defun xwidgete-get-selection ()
+(defun xwidgete-copy-selection-as-kill ()
   "Get the webkit selection."
+  (interactive)
   (xwidget-webkit-execute-script (xwidget-webkit-current-session)
                                  xwidgete-get-html-selection-js)
   (let* ((html-content (xwidget-webkit-execute-script-rv (xwidget-webkit-current-session)
@@ -326,7 +327,7 @@ then simply returns *xwidgete-current-active-element*'. Otherwise create new ins
          (rendered-content (with-temp-buffer
                              (shr-insert-document html-content-sexp)
                              (buffer-substring-no-properties (point-min) (point-max)))))
-    rendered-content))
+    (kill-new rendered-content)))
 
 ;; make these keys behave like normal browser
 (define-key xwidget-webkit-mode-map [mouse-4] 'xwidgete-page-up)
@@ -348,8 +349,8 @@ then simply returns *xwidgete-current-active-element*'. Otherwise create new ins
 
 (define-key xwidget-webkit-mode-map (kbd "M-w") 'xwidgete-copy-selection-as-kill)
 ;; (define-key xwidget-webkit-mode-map (kbd "C-c") 'xwidgete-copy-selection-as-kill)
-(define-key xwidget-webkit-mode-map (kbd "M-b") 'xwidgete-back)
-(define-key xwidget-webkit-mode-map (kbd "M-r") 'xwidgete-reload)
+(define-key xwidget-webkit-mode-map (kbd "M-b") 'xwidget-webkit-back)
+(define-key xwidget-webkit-mode-map (kbd "M-r") 'xwidget-webkit-reload)
 (define-key xwidget-webkit-mode-map (kbd "M-g") 'xwidget-webkit-browse-url)
 (define-key xwidget-webkit-mode-map (kbd "M-u") 'xwidgete-current-url)
 

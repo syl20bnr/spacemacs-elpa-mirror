@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20171103.2328
+;; Package-Version: 20171118.904
 ;; Package-Requires: ((emacs "24.4") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -101,8 +101,8 @@ can't work with input such as (backgound . \"red\")."
 
 This function returns immediately, it doesn't wait for the pulse
 animation to end."
-  (let* ((pulse-delay 0.03)
-         (pulse-iterations (round dur pulse-delay)))
+  (let* ((pulse-iterations 10)
+         (pulse-delay (/ (float dur) pulse-iterations) ))
     (ignore pulse-iterations) ;; silence compile warning Unused lexical variable
     (set-face-attribute 'evil-goggles--pulse-face nil :background background)
     (pulse-momentary-highlight-overlay ov 'evil-goggles--pulse-face)))
