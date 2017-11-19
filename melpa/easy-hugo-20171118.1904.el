@@ -4,7 +4,7 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20171118.1622
+;; Package-Version: 20171118.1904
 ;; Version: 2.2.17
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -883,6 +883,7 @@ Enjoy!
     (define-key map "e" 'easy-hugo-open)
     (define-key map "f" 'easy-hugo-open)
     (define-key map "N" 'easy-hugo-no-help)
+    (define-key map "J" 'easy-hugo-nth-blog)
     (define-key map "j" 'easy-hugo-next-line)
     (define-key map "k" 'easy-hugo-previous-line)
     (define-key map "h" 'easy-hugo-backward-char)
@@ -1359,7 +1360,10 @@ Optional prefix ARG says how many lines to move; default is one line."
 
 (defun easy-hugo-nth-blog (n)
   "Go to nth blog as N."
-  (interactive "nCount:")
+  (interactive "nBlog number:")
+  (when (or (< n 0)
+	    (>= n (length easy-hugo-bloglist)))
+    (error "Blog %s does not exist" n))
   (when (and (< 1 (length easy-hugo-bloglist))
 	     (< n (length easy-hugo-bloglist)))
     (setq easy-hugo--current-blog n)

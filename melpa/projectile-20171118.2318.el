@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20171109.240
+;; Package-Version: 20171118.2318
 ;; Keywords: project, convenience
 ;; Version: 0.15.0-cvs
 ;; Package-Requires: ((emacs "24.1") (pkg-info "0.4"))
@@ -910,7 +910,8 @@ will return the current directory, otherwise it'd raise an error."
   ;; cl-subst to replace this 'none value with nil so a nil value is used
   ;; instead
   (or (cl-subst nil 'none
-                (or (and (equal projectile-cached-buffer-file-name buffer-file-name)
+                (or (and projectile-cached-buffer-file-name
+                         (equal projectile-cached-buffer-file-name buffer-file-name)
                          projectile-cached-project-root)
                     (progn
                       (setq projectile-cached-buffer-file-name buffer-file-name)
@@ -989,7 +990,8 @@ function `projectile-project-name' is called."
 (defun projectile-project-name ()
   "Return project name."
   (or projectile-project-name
-      (and (equal projectile-cached-buffer-file-name buffer-file-name)
+      (and projectile-cached-buffer-file-name
+           (equal projectile-cached-buffer-file-name buffer-file-name)
            projectile-cached-project-name)
       (progn
         (setq projectile-cached-buffer-file-name buffer-file-name)

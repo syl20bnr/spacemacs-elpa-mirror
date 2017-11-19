@@ -3,7 +3,7 @@
 ;; Copyright (C) DIKU 2013-2017, University of Copenhagen
 ;;
 ;; URL: https://github.com/HIPERFIT/futhark
-;; Package-Version: 0.1.0
+;; Package-Version: 0.2.0
 ;; Keywords: languages
 ;; Version: 0.1
 ;; Package-Requires: ((cl-lib "0.5"))
@@ -54,7 +54,7 @@
     "All Futhark keywords.")
 
   (defconst futhark-builtin-functions
-    '("iota" "shape" "replicate" "reshape" "rearrange" "transpose" "rotate"
+    '("reshape" "rearrange" "rotate"
       "split" "concat" "zip" "unzip" "unsafe" "copy" "map" "reduce"
       "reduce_comm" "scan" "filter" "partition" "scatter" "stream_map"
       "stream_map_per" "stream_red" "stream_map_per" "stream_seq")
