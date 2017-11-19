@@ -6,7 +6,7 @@
 
 ;; Filename: mu4e-maildirs-extension.el
 ;; Version: 0.1
-;; Package-Version: 20170217.40
+;; Package-Version: 20171119.1125
 ;; Author: Andreu Gil Pàmies <agpchil@gmail.com>
 ;; Created: 22-07-2013
 ;; Description: Show mu4e maildirs summary in mu4e-main-view with unread and
@@ -609,7 +609,9 @@ clicked."
               (let ((maildir ,(plist-get m :path)))
                 (if prefix
                     (mu4e~headers-search-execute
-                     (format "%s AND flag:unread" maildir) nil)
+                     (format "%s AND flag:unread"
+                             (shell-quote-argument (concat "maildir:" maildir)))
+                     nil)
                   (mu4e~headers-jump-to-maildir maildir)))))))
 
 (defun mu4e-maildirs-extension-new-maildir (path)

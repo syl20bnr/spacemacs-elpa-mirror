@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20171106.545
+;; Package-Version: 20171119.622
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -152,9 +152,10 @@ Otherwise, use `dante-repl-command-line-methods-alist'."
 
 (defun dante-status ()
   "Return dante's status for the current source buffer."
-  (if (eq (dante-state) 'ready)
-      (buffer-local-value 'dante-loaded-modules (dante-buffer-p))
-    (symbol-name (dante-state))))
+  (pcase (dante-get-var 'dante-state)
+    ('started (if (dante-get-var 'dante-callback) (format "busy(%s)" (1+ (length (dante-get-var 'dante-queue))))
+                (dante-get-var 'dante-loaded-modules)))
+    (state (symbol-name state))))
 
 ;;;###autoload
 (define-minor-mode dante-mode
@@ -193,17 +194,16 @@ if the argument is omitted or nil or a positive integer).
 (defvar-local dante-state nil
   "nil: initial state
 - starting: GHCi starting
-- ready: GHCi ready to accept requests
-- busy: GHCi currently processing a request
+- started: GHCi started
 - deleting: The process of the buffer is being deleted.
 - dead: GHCi died on its own. Do not try restarting
 automatically. The user will have to manually run `dante-restart'
 to destroy the buffer and create a fresh one without this variable enabled.")
 
-(defun dante-state ()
-  "Return dante-state for the current source buffer."
+(defun dante-get-var (symbol)
+  "Return the value of SYMBOL in the GHCi process buffer."
   (let ((bp (dante-buffer-p)))
-    (when bp (buffer-local-value 'dante-state bp))))
+    (when bp (buffer-local-value symbol bp))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interactive utils
@@ -280,9 +280,9 @@ When the universal argument INSERT is non-nil, insert the type in the buffer."
 
 (defun dante-async-load-current-buffer (interpret cont)
   "Load and maybe INTERPRET the temp file for current buffer and run CONT in a session.
-The continuation must call its first argument; see `dante-start'."
+The continuation must call its first argument; see `dante-session'."
   (let ((fname (dante-local-name (dante-temp-file))))
-    (dante-cps-let (((buffer done) (dante-start))
+    (dante-cps-let (((buffer done) (dante-session))
                     (_ (dante-async-call (if interpret ":set -fbyte-code" ":set -fobject-code")))
                     (load-message
                      (dante-async-call
@@ -293,7 +293,7 @@ The continuation must call its first argument; see `dante-start'."
 
 (defun dante-check (checker cont)
   "Run a check with CHECKER and pass the status onto CONT."
-  (if (eq (dante-state) 'dead)
+  (if (eq (dante-get-var 'dante-state) 'dead)
       (run-with-timer 0 nil cont 'interrupted)
     (dante-cps-let (((done string) (dante-async-load-current-buffer nil)))
       (funcall done)
@@ -413,7 +413,7 @@ See ``company-backends'' for the meaning of COMMAND and _ARGS."
       (sorted t)
       (prefix prefix)
       (candidates
-       (unless (eq (dante-state) 'dead)
+       (unless (eq (dante-get-var 'dante-state) 'dead)
          (cons :async
                (lambda (ret)
                  (dante-cps-let (((done _load-messages) (dante-async-load-current-buffer nil))
@@ -572,7 +572,7 @@ x:\\foo\\bar (i.e., Windows)."
   "Stop GHCi and kill its associated process buffer."
   (interactive)
   (when (dante-buffer-p)
-    (set-dante-state 'deleting)
+    (dante-set-state 'deleting)
     (with-current-buffer (dante-buffer-p)
       (when (get-buffer-process (current-buffer))
         (kill-process (get-buffer-process (current-buffer)))
@@ -588,51 +588,47 @@ x:\\foo\\bar (i.e., Windows)."
     (car result)))
 
 (defun dante-restart ()
-  "Restart the process with the same configuration as before."
+  "Restart GHCi with the same configuration as before."
   (interactive)
   (when (dante-buffer-p) (dante-destroy))
   (let ((fm-enabled flycheck-mode))
     (flycheck-mode -1) ;; because flycheck gets confused when dante is restarted.
-    (dante-cps-let (((_buffer done) (dante-start)))
+    (dante-cps-let (((_buffer done) (dante-session)))
       (when fm-enabled (flycheck-mode 1))
       (funcall done))))
 
-(defun dante-start (cont) ;; TODO: rename to "dante-session"
+(defun dante-session (cont)
   "Run the CONT in a valid GHCi session for the current (source) buffer.
-CONT is called as (CONT process-buffer done).  CONT must call done
-when it is done sending commands. Only by calling done can other sub-sessions start running. This also ensures that "
+CONT is called as (CONT process-buffer done).  CONT must call
+done when it is done sending commands.  (Only by calling done can
+other sub-sessions start running.)"
   (let ((source-buffer (current-buffer))
-        (buffer (dante-get-buffer-create)))
-    (push (list :func cont :source-buffer source-buffer) dante-queue)
+        (buffer (or (dante-buffer-p) (dante-start))))
+    (with-current-buffer buffer (push (list :func cont :source-buffer source-buffer) dante-queue))
     ;; TODO: test process-live-p
-    (if (get-buffer-process buffer)
-        (dante-schedule-next buffer)
-      (dante-start-process-in-buffer buffer source-buffer))))
+    (dante-schedule-next buffer)))
 
-(defun dante-start-process-in-buffer (buffer source-buffer)
-  "Start a Dante worker in BUFFER for SOURCE-BUFFER."
-  (if (eq (buffer-local-value 'dante-state buffer) 'dead)
-      buffer
-    (let* ((args (-non-nil (-map #'eval (dante-repl-command-line))))
-           (process (with-current-buffer buffer
-                      (when (memq 'command-line dante-debug)
-                        (message "GHCi command line: %s" (combine-and-quote-strings args)))
-                      (message "Dante: Starting GHCi ...")
-                      (apply #'start-file-process "dante" buffer args))))
+(defun dante-start ()
+  "Start a GHCi worker and return its buffer."
+  (let* ((args (-non-nil (-map #'eval (dante-repl-command-line))))
+         (buffer (dante-buffer-create))
+         (process (with-current-buffer buffer
+                    (when (memq 'command-line dante-debug)
+                      (message "GHCi command line: %s" (combine-and-quote-strings args)))
+                    (message "Dante: Starting GHCi ...")
+                    (apply #'start-file-process "dante" buffer args))))
       (set-process-query-on-exit-flag process nil)
       (with-current-buffer buffer
         (erase-buffer)
-        (setq dante-callback nil) ;; todo: necessary?
         (setq-local dante-command-line (process-command process)))
-      (with-current-buffer source-buffer
-        (set-dante-state 'starting)
-        (dante-cps-let
-            ((_start-messages (dante-async-call
-                               (concat ":set -Wall\n" ;; TODO: configure
-                                       ":set +c\n" ;; collect type info
-                                       ":set prompt \"\\4%s|\""))))
-          (message "GHCi started!")
-          (dante-schedule-next buffer)))
+      (dante-set-state 'starting)
+      (dante-cps-let
+          ((_start-messages (dante-async-call
+                             (concat ":set -Wall\n" ;; TODO: configure
+                                     ":set +c\n" ;; collect type info
+                                     ":set prompt \"\\4%s|\""))))
+        (dante-set-state 'started)
+        (message "GHCi started!"))
       (set-process-filter
        process
        (lambda (process string)
@@ -645,7 +641,7 @@ when it is done sending commands. Only by calling done can other sub-sessions st
              (dante-report-ghci-progress)
              (dante-read-buffer)))))
       (set-process-sentinel process 'dante-sentinel)
-      buffer)))
+      buffer))
 
 (defun dante-report-ghci-progress ()
   "In the dante buffer, look for GHCi process and inform the user."
@@ -670,9 +666,9 @@ The result is passed to CONT as (CONT REPLY).  Can only be called
 from a valid session."
   (when (memq 'outputs dante-debug) (message "[Dante] -> %s" cmd))
   (let ((source-marker (point-marker)))
-  (with-current-buffer (dante-buffer-p)
-    (process-send-string (get-buffer-process (current-buffer)) (concat cmd "\n"))
-    (dante-async (apply-partially #'dante-wait-for-prompt source-marker cmd "" cont)))))
+    (with-current-buffer (dante-buffer-p)
+      (process-send-string (get-buffer-process (current-buffer)) (concat cmd "\n"))
+      (dante-async (apply-partially #'dante-wait-for-prompt source-marker cmd "" cont)))))
 
 (defun dante-sentinel (process change)
   "Handle when PROCESS reports a CHANGE.
@@ -723,8 +719,10 @@ You can always run M-x dante-restart to make it try again.
     'face 'compilation-error)))
 
 (defun dante-wait-for-prompt (source-marker cmd acc cont s-in)
-  "Loop waiting for a GHCi prompt for SOURCE-MARKER after CMD.
-Text is ACC umulated.  CONT is called with all concatenated S-IN."
+  "Loop waiting for a GHCi prompt.
+Text from S-IN is ACC umulated.  CONT eventually is called with
+all concatenated text, after jumping back to SOURCE-MARKER. (CMD
+is remembered for debug.)"
   (let ((s (concat acc s-in)))
     (if (string-match "\4\\(.*\\)|" s)
         (progn
@@ -739,7 +737,7 @@ Text is ACC umulated.  CONT is called with all concatenated S-IN."
   "Process GHCi output."
   (let ((callback dante-callback)
         (string (dante--strip-carriage-returns (buffer-string))))
-    (unless dante-callback (error "Received output in %s (%s) but no callback" (current-buffer) string))
+    (unless dante-callback (error "Received output in %s (%s) but no callback is installed" (current-buffer) string))
     (delete-region (point-min) (point-max))
     (setq dante-callback nil)
     (funcall callback string)))
@@ -747,14 +745,14 @@ Text is ACC umulated.  CONT is called with all concatenated S-IN."
 (defun dante-schedule-next (buffer)
   "If GHCi is idle, run the next queued GHCi sub-session for BUFFER, if any.
 Note that sub-sessions are not interleaved."
-  (unless dante-callback
-    (let ((req (pop dante-queue)))
-      (if (not req)
-          (set-dante-state 'ready)
-        (set-dante-state 'busy)
-        (with-current-buffer (plist-get req :source-buffer)
-          (funcall (plist-get req :func) buffer
-                   (apply-partially #'dante-schedule-next buffer)))))))
+  (with-current-buffer buffer
+    (unless dante-callback
+      (let ((req (pop dante-queue)))
+        (force-mode-line-update)
+        (when req
+          (with-current-buffer (plist-get req :source-buffer)
+            (funcall (plist-get req :func) buffer
+                     (apply-partially #'dante-schedule-next buffer))))))))
 
 (defun dante--strip-carriage-returns (string)
   "Return the STRING stripped of its \\r occurences."
@@ -764,22 +762,21 @@ Note that sub-sessions are not interleaved."
   "Strip the last newline character in STRING."
   (replace-regexp-in-string "\n$" "" string))
 
-(defun dante-get-buffer-create ()
-  "Get or create the buffer for GHCi.
-Uses the directory of the current buffer for context."
+(defun dante-buffer-name ()
+  "Create a dante process buffer name."
   (let* ((root (dante-project-root))
-         (cabal-file (dante-cabal-find-file))
-         (package-name (if cabal-file
-                           (dante-package-name cabal-file)
-                         ""))
-         (buffer-name (dante-buffer-name)))
-    (with-current-buffer (get-buffer-create buffer-name)
-      (setq dante-package-name package-name)
-      (fundamental-mode)
+         (package-name (dante-package-name)))
+    (concat " dante:" package-name ":" dante-target ":" root)))
+
+(defun dante-buffer-create ()
+  "Create the buffer for GHCi."
+  (let* ((root (dante-project-root)))
+    (with-current-buffer (get-buffer-create (dante-buffer-name))
       (cd root)
+      (fundamental-mode) ;; note: this has several effects, including resetting the local variables
       (current-buffer))))
 
-(defun set-dante-state (state)
+(defun dante-set-state (state)
   "Set the dante-state to STATE and redisplay the modeline."
   (with-current-buffer (dante-buffer-p) (setq-local dante-state state))
   (force-mode-line-update))
@@ -787,12 +784,6 @@ Uses the directory of the current buffer for context."
 (defun dante-buffer-p ()
   "Return the GHCi buffer if it exists, nil otherwise."
   (get-buffer (dante-buffer-name)))
-
-(defun dante-buffer-name ()
-  "Create a dante process buffer name."
-  (let* ((root (dante-project-root))
-         (package-name (dante-package-name)))
-    (concat " dante:" package-name ":" dante-target " " root)))
 
 (defun dante-package-name (&optional cabal-file)
   "Get the current package name from a nearby .cabal file.
