@@ -5,7 +5,7 @@
 
 ;; Author: Jonathan Sterling <jon@jonmsterling.com>
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 20171030.1346
+;; Package-Version: 20171118.1634
 ;; Version: 0.0.1
 ;; Keywords: languages
 
@@ -124,7 +124,8 @@
     "S1" "base" "loop" "S1-rec"
     "lam" "app"
     "record" "tuple"
-    "path" "abs"
+    "path" "line" "abs"
+    "pushout" "left" "right" "glue" "pushout-rec"
     "box" "cap"
     "V" "Vin" "Vproj"
     "universe" "U"
