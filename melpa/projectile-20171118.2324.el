@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20171118.2318
+;; Package-Version: 20171118.2324
 ;; Keywords: project, convenience
 ;; Version: 0.15.0-cvs
 ;; Package-Requires: ((emacs "24.1") (pkg-info "0.4"))
@@ -1302,10 +1302,6 @@ function is executing."
   "First remove ignored files from FILES, then add back unignored files."
   (projectile-add-unignored (projectile-remove-ignored files)))
 
-(defun projectile--stringi= (string1 string2)
-  "Match STRING1 and STRING2 case insensitively."
-  (equal (compare-strings string1 nil nil string2 nil nil t) t))
-
 (defun projectile-remove-ignored (files)
   "Remove ignored files and folders from FILES.
 
@@ -1335,7 +1331,7 @@ otherwise operates relative to project root."
             ignored-dirs)
            (cl-some
             (lambda (suf)
-              (projectile--stringi= suf (file-name-extension file t)))
+              (string-suffix-p suf file t))
             projectile-globally-ignored-file-suffixes)))
      files)))
 
@@ -2325,12 +2321,6 @@ TEST-PREFIX which specifies test file prefix."
 
 (projectile-register-project-type 'emacs-cask '("Cask")
                                   :compile "cask install")
-(projectile-register-project-type 'rails-rspec '("Gemfile" "app" "lib" "db" "config" "spec")
-                                  :compile "bundle exec rails server"
-                                  :test "bundle exec rspec")
-(projectile-register-project-type 'rails-test '("Gemfile" "app" "lib" "db" "config" "test")
-                                  :compile "bundle exec rails server"
-                                  :test "bundle exec rake test")
 (projectile-register-project-type 'symfony '("composer.json" "app" "src" "vendor")
                                   :compile "app/console server:run"
                                   :test "phpunit -c app ")
@@ -2423,6 +2413,16 @@ TEST-PREFIX which specifies test file prefix."
 (projectile-register-project-type 'nix '("default.nix")
                                   :compile "nix-build"
                                   :test "nix-build")
+
+;; Project detection goes in reverse order of registration.
+;; Rails needs to be registered after npm, otherwise `package.json` makes it `npm`.
+;; https://github.com/bbatsov/projectile/pull/1191
+(projectile-register-project-type 'rails-test '("Gemfile" "app" "lib" "db" "config" "test")
+                                  :compile "bundle exec rails server"
+                                  :test "bundle exec rake test")
+(projectile-register-project-type 'rails-rspec '("Gemfile" "app" "lib" "db" "config" "spec")
+                                  :compile "bundle exec rails server"
+                                  :test "bundle exec rspec")
 
 (defvar-local projectile-project-type nil
   "Buffer local var for overriding the auto-detected project type.
