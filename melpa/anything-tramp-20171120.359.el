@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-anything-tramp
-;; Package-Version: 20170708.1834
-;; Version: 0.5.4
+;; Package-Version: 20171120.359
+;; Version: 0.6.4
 ;; Package-Requires: ((emacs "24.3") (anything "1.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -72,9 +72,16 @@
 			       (concat "/docker:" (car info) ":/")
 			       hosts)
 			      (unless (null anything-tramp-docker-user)
-				(push
-				 (concat "/docker:" anything-tramp-docker-user "@" (car info) ":/")
-				 hosts)))))
+				(if (listp anything-tramp-docker-user)
+				    (let ((docker-user anything-tramp-docker-user))
+				      (while docker-user
+					(push
+					 (concat "/docker:" (car docker-user) "@" (car info) ":/")
+					 hosts)
+					(pop docker-user)))
+				  (push
+				   (concat "/docker:" anything-tramp-docker-user "@" (car info) ":/")
+				   hosts))))))
     (when (package-installed-p 'vagrant-tramp)
       (cl-loop for box-name in (map 'list 'cadr (vagrant-tramp--completions))
                do (progn

@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171116.1425
+;; Package-Version: 20171120.321
 ;; Keywords: help, lisp
 ;; Version: 0.3
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2"))
@@ -328,7 +328,6 @@ hooks.")
         (font-lock-fontify-buffer)))
     (buffer-string)))
 
-;; TODO: allow RET to go the relevant line of code.
 (defun helpful--source (sym callable-p)
   "Return the source code of SYM.
 If the source code cannot be found, return the sexp used."
@@ -345,6 +344,11 @@ If the source code cannot be found, return the sexp used."
           ;; If we've just created this buffer, close it.
           (unless (-contains-p initial-buffers buf)
             (kill-buffer buf))
+          (when (and source (buffer-file-name buf))
+            (setq source (propertize source
+                                     'helpful-path (buffer-file-name buf)
+                                     'helpful-pos start-pos
+                                     'helpful-pos-is-start t)))
           source)
       ;; Could not find source -- probably defined interactively, or via
       ;; a macro, or file has changed.
@@ -861,8 +865,27 @@ See also `helpful-callable' and `helpful-variable'."
   "Go to the reference at point."
   (interactive)
   (let* ((path (get-text-property (point) 'helpful-path))
-         (pos (get-text-property (point) 'helpful-pos)))
+         (pos (get-text-property (point) 'helpful-pos))
+         (pos-is-start (get-text-property (point) 'helpful-pos-is-start)))
     (when (and path pos)
+      ;; If we're looking at a source excerpt, calculate the offset of
+      ;; point, so we don't just go the start of the excerpt.
+      (when pos-is-start
+        (save-excursion
+          (let ((offset 0))
+            (while (and
+                    (get-text-property (point) 'helpful-pos)
+                    (not (eobp)))
+              (backward-char 1)
+              (setq offset (1+ offset)))
+            ;; On the last iteration we moved outside the source
+            ;; excerpt, so we overcounted by one character.
+            (setq offset (1- offset))
+
+            ;; Set POS so we go to exactly the place in the source
+            ;; code where point was in the helpful excerpt.
+            (setq pos (+ pos offset)))))
+
       (find-file path)
       (goto-char pos))))
 
