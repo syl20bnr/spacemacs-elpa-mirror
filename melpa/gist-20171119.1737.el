@@ -9,7 +9,7 @@
 ;;               Dan McKinley
 ;;               Marcelo Muñoz Araya <ma.munoz.araya@gmail.com>
 ;; Version: 1.4.0
-;; Package-Version: 20170604.1834
+;; Package-Version: 20171119.1737
 ;; Package-Requires: ((emacs "24.1") (gh "0.10.0"))
 ;; Keywords: tools
 ;; Homepage: https://github.com/defunkt/gist.el
@@ -539,7 +539,12 @@ for the gist."
 
 (defun gist-current-url ()
   "Helper function to fetch current gist url"
-  (let* ((id (tabulated-list-get-id))
+  (let* ((id (or (and (boundp 'gist-list-mode)
+                      gist-list-mode
+                      (tabulated-list-get-id))
+                 (and (boundp 'gist-mode)
+                      gist-mode
+                      gist-id)))
          (gist (gist-list-db-get-gist id)))
     (oref gist :html-url)))
 
