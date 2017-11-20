@@ -1,4 +1,4 @@
-This library implements a generic interface for toggling switches
+This package implements a generic interface for toggling switches
 and setting options and then invoking an Emacs command which does
 something with these arguments.  The prototypical use is for the
 command to call an external process, passing on the arguments as
