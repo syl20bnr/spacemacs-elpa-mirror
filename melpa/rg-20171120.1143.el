@@ -6,8 +6,8 @@
 ;;
 ;; Author: David Landell <david.landell@sunnyhill.email>
 ;;         Roland McGrath <roland@gnu.org>
-;; Version: 1.4.0
-;; Package-Version: 20171018.1317
+;; Version: 1.4.1
+;; Package-Version: 20171120.1143
 ;; URL: https://github.com/dajva/rg.el
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24") (s "1.10.0"))
 ;; Keywords: matching, tools
@@ -849,11 +849,11 @@ optional DEFAULT parameter is non nil the flag will be enabled by default."
   (rg-rerun-with-changes (:pattern pattern)
     ;; Override read-from-minibuffer in order to insert the original
     ;; pattern in the input area.
-    (cl-letf* ((read-from-minibuffer-orig (symbol-function 'read-from-minibuffer))
-               ((symbol-function #'read-from-minibuffer)
-                (lambda (prompt &optional _ &rest args)
-                  (apply read-from-minibuffer-orig prompt pattern args))))
-      (setq pattern (rg-read-pattern pattern)))))
+    (let ((read-from-minibuffer-orig (symbol-function 'read-from-minibuffer)))
+      (cl-letf (((symbol-function #'read-from-minibuffer)
+                  (lambda (prompt &optional _ &rest args)
+                    (apply read-from-minibuffer-orig prompt pattern args))))
+        (setq pattern (rg-read-pattern pattern))))))
 
 (defun rg-rerun-change-regexp ()
   "Rerun last search but prompt for new regexp."

@@ -5,7 +5,7 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/system-packages
-;; Package-Version: 20171114.1027
+;; Package-Version: 20171120.1205
 ;; Version: 0.1
 ;; Package-Requires: ((cl-lib "0.5"))
 
@@ -68,6 +68,23 @@
            (list-installed-packages . "brew list --installed")
            (list-installed-packages-all . "brew list")
            (list-dependencies-of . "brew deps")))
+    (port .
+          ((default-sudo . t)
+           (install . "port install")
+           (search . "port search")
+           (uninstall . "port uninstall")
+           (update . ("port sync" "port upgrade outdated"))
+           (clean-cache . "port clean --all")
+           (log . "port log")
+           (get-info . "port info")
+           (get-info-remote . nil)
+           (list-files-provided-by . "port contents")
+           (verify-all-packages . nil)
+           (verify-all-dependencies . nil)
+           (remove-orphaned . "port uninstall leaves")
+           (list-installed-packages . "port installed")
+           (list-installed-packages-all . "port installed")
+           (list-dependencies-of . "port deps")))
     ;; Arch-based systems
     (pacaur .
             ((default-sudo . nil)

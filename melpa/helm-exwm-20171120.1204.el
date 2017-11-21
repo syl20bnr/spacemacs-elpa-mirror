@@ -4,7 +4,7 @@
 
 ;; Author: Pierre Neidhardt <ambrevar@gmail.com>
 ;; URL: https://github.com/emacs-helm/helm-exwm
-;; Package-Version: 20171109.59
+;; Package-Version: 20171120.1204
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.2") (helm "2.8.5") (exwm "0.15"))
 ;; Keywords: helm, exwm
@@ -133,10 +133,8 @@ If FILTER is nil, then list all EXWM buffers."
   "Build a Helm source for all non-EXWM buffers."
   (helm-make-source "Emacs buffers" 'helm-source-buffers
     :buffer-list (lambda ()
-                   (delete nil
-                           (mapcar (lambda (b)
-                                     (with-current-buffer b (unless (eq major-mode 'exwm-mode) b)))
-                                   (helm-buffer-list))))))
+                   (seq-filter (lambda (b) (with-current-buffer b (not (eq major-mode 'exwm-mode))))
+                               (helm-buffer-list)))))
 
 (defun helm-exwm-build-source (&optional filter)
   "Build source for EXWM buffers.

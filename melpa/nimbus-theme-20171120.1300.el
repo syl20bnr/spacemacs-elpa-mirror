@@ -5,7 +5,7 @@
 ;; Author: Marcin Swieczkowski <scatman@bu.edu>
 ;; Created: Thu Mar  2 22:19:19 CET 2017
 ;; Version: 1.0.0
-;; Package-Version: 20171118.1141
+;; Package-Version: 20171120.1300
 ;; Last-Updated: Wed Apr 12 16:11:07 CEST 2017
 ;;           By: Marcin Swieczkowski
 ;;     Update #: 3
@@ -17,11 +17,11 @@
 ;;
 ;; About
 ;;
-;; I made this theme because I liked the colors in ample theme but
-;; didn't like how much gray there was. So I started with a few tweaks
-;; here and there until it ended up looking quite a bit different, and
-;; this is the result. The theme is being worked on actively and I add
-;; new faces all the time.
+;; I made this theme because I liked the colors in Ample but didn't
+;; like how much gray there was. So I started with a few tweaks here
+;; and there until it ended up looking quite a bit different, and this
+;; is the result. The theme is being worked on actively and I add new
+;; faces all the time.
 ;;
 ;; Installing:
 ;;
@@ -64,7 +64,7 @@
       (nimbus/blue           "#5180b3")
       (nimbus/light-blue     "#68a5e9")
       (nimbus/blue-bg        "#102843")
-      (nimbus/orange         "#dF9522")
+      (nimbus/orange         "#df9522")
       (nimbus/tan            "#bdbc61")
       (nimbus/dark-tan       "#7d7c61")
       (nimbus/yellow         "#baba36")
@@ -1428,7 +1428,7 @@
 
    ;; highlight-indent-guides
    `(highlight-indent-guides-character-face
-     ((t (:foreground ,nimbus/darkest-gray))))
+     ((t (:foreground ,nimbus/darker-gray))))
 
    ;; trailing whitespace
    `(trailing-whitespace ((t (:background ,nimbus/white :bold t))))

@@ -1,10 +1,10 @@
 About
 
-I made this theme because I liked the colors in ample theme but
-didn't like how much gray there was. So I started with a few tweaks
-here and there until it ended up looking quite a bit different, and
-this is the result. The theme is being worked on actively and I add
-new faces all the time.
+I made this theme because I liked the colors in Ample but didn't
+like how much gray there was. So I started with a few tweaks here
+and there until it ended up looking quite a bit different, and this
+is the result. The theme is being worked on actively and I add new
+faces all the time.
 
 Installing:
 
