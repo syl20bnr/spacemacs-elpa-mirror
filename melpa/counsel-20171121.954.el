@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171118.1113
+;; Package-Version: 20171121.954
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1720,7 +1720,8 @@ When INITIAL-INPUT is non-nil, use it in the minibuffer during completion."
   (cd ivy--directory)
   (counsel-cmd-to-dired
    (format
-    "ls | grep -i -E '%s' | xargs ls" ivy--old-re)))
+    "ls | grep -i -E '%s' | xargs ls"
+    (counsel-unquote-regex-parens ivy--old-re))))
 
 (defun counsel-up-directory ()
   "Go to the parent directory preselecting the current one.

@@ -5,7 +5,7 @@
 ;; Author: Johan Andersson <johan.rejeep@gmail.com>
 ;; Maintainer: Johan Andersson <johan.rejeep@gmail.com>
 ;; Version: 0.7.0
-;; Package-Version: 20171107.1159
+;; Package-Version: 20171121.512
 ;; URL: http://github.com/rejeep/prodigy.el
 ;; Package-Requires: ((s "1.8.0") (dash "2.4.0") (f "0.14.0") (emacs "24"))
 
@@ -1405,8 +1405,7 @@ The old service process is transfered to the new service."
   (setq imenu-prev-index-position-function
         #'prodigy--imenu-prev-index-position-function)
   (setq imenu-extract-index-name-function
-        #'prodigy--imenu-extract-index-name-function)
-  (run-mode-hooks 'prodigy-mode-hook))
+        #'prodigy--imenu-extract-index-name-function))
 
 (defun prodigy--imenu-prev-index-position-function ()
   "Move point to previous line in prodigy buffer.
