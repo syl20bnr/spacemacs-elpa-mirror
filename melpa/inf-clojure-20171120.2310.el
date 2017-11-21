@@ -5,7 +5,7 @@
 ;; Authors: Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Olin Shivers <shivers@cs.cmu.edu>
 ;; URL: http://github.com/clojure-emacs/inf-clojure
-;; Package-Version: 20171029.40
+;; Package-Version: 20171120.2310
 ;; Keywords: processes, clojure
 ;; Version: 2.1.0-snapshot
 ;; Package-Requires: ((emacs "24.4") (clojure-mode "5.6"))
@@ -368,6 +368,7 @@ This should usually be a combination of `inf-clojure-prompt' and
   "Controls whether to display the REPL buffer in the current window or not."
   :type '(choice (const :tag "same" t)
                  (const :tag "different" nil))
+  :safe #'booleanp
   :package-version '(inf-clojure . "2.0.0"))
 
 (defvar inf-clojure-buffer nil
