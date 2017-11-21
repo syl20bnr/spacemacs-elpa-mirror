@@ -4,7 +4,7 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20171120.609
+;; Package-Version: 20171121.532
 ;; Version: 2.2.18
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -822,7 +822,7 @@ If not applicable, return the default preview."
 	  (find-file (expand-file-name "config.json" easy-hugo-basedir)))
 	 (t (error "Hugo config file not found at %s" easy-hugo-basedir)))))
 
-(defconst easy-hugo--help
+(defcustom easy-hugo-help
   (if (null easy-hugo-sort-default-char)
       (progn
 	"n .. New blog post    R .. Rename file   G .. Deploy GitHub    D .. Draft list
@@ -844,7 +844,9 @@ P .. Publish server   C .. Deploy GCS    a .. Search helm-ag   H .. GitHub timer
 O .. Open basedir     W .. AWS S3 timer  ? .. Help easy-hugo   q .. Quit easy-hugo
 
 "))
-  "Help of easy-hugo.")
+  "Help of easy-hugo."
+  :group 'easy-hugo
+  :type 'string)
 
 (defconst easy-hugo--first-help
   "Welcome to Easy-hugo
@@ -1571,7 +1573,7 @@ output directories whose names match REGEXP."
 		'face
 		'easy-hugo-help-face)))
      (unless easy-hugo-no-help
-       (insert (propertize easy-hugo--help 'face 'easy-hugo-help-face)))
+       (insert (propertize easy-hugo-help 'face 'easy-hugo-help-face)))
      (unless easy-hugo--refresh
        (setq easy-hugo--cursor (point)))
      (cond ((eq 1 easy-hugo--sort-char-flg) (setq files (reverse (sort files 'string<))))
@@ -1626,7 +1628,7 @@ output directories whose names match REGEXP."
 	      'face
 	      'easy-hugo-help-face)))
    (unless easy-hugo-no-help
-     (insert (propertize easy-hugo--help 'face 'easy-hugo-help-face)))
+     (insert (propertize easy-hugo-help 'face 'easy-hugo-help-face)))
    (unless easy-hugo--refresh
      (setq easy-hugo--cursor (point)))
    (let ((files (directory-files (expand-file-name easy-hugo-postdir easy-hugo-basedir)))

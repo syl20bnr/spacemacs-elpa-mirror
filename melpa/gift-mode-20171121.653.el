@@ -17,7 +17,7 @@
 
 ;; Author: Christophe Rhodes <christophe@rhodes.io>
 ;; URL: https://github.com/csrhodes/gift-mode
-;; Package-Version: 20170809.130
+;; Package-Version: 20171121.653
 ;; Version: 0.1
 
 ;;; Commentary:
@@ -81,13 +81,54 @@
 (defvar gift-font-lock-keywords
   '(
     ("\\_<=\\(\\([^\\~=\n}#%]\\|\\\\[}~=#%]\\)*\\)\\(#\\(.*\\)\\)?" (1 'gift-right keep) (4 'gift-feedback keep t))
-    ("{#\\([0-9.:]+\\)" (1 'gift-right keep))
+    ("{#\\(-?[0-9.:]+\\)" (1 'gift-right keep))
     ("\\_<~\\(%\\([0-9.]+\\)%\\)\\(\\([^\\~=%}\n#]\\|\\\\[A-Za-z0-9}~=#%]\\)*\\)\\(#\\(.*\\)\\)?" (2 'gift-right-credit) (3 'gift-right keep) (6 'gift-feedback keep t))
     ("\\_<~\\(%\\(-[0-9.]+\\)%\\)\\(\\([^\\~=%}\n#]\\|\\\\[A-Za-z0-9}~=#%]\\)*\\)\\(#\\(.*\\)\\)?" (2 'gift-wrong-credit) (3 'gift-wrong keep) (6 'gift-feedback keep t))
     ("\\_<~\\(\\([^\\~=%}\n#]\\|\\\\[}~=#%]\\)*\\)\\(#\\(.*\\)\\)?" (1 'gift-wrong keep) (4 'gift-feedback keep t))
     ("\\$\\$\\([^$]\\|\\\\$\\)*[^\\]\\$\\$" (0 'gift-latex-math t)) ; doesn't handle \$$$O(n)$$ correctly; think about font-lock-multiline
     ("\\(\\$CATEGORY\\):\s-*\\(\\$course\\$/?\\|\\)\\(.*?\\)\\(//\\|$\\)" (1 'gift-keyword) (2 'gift-keyword) (3 'gift-category))
     ("::\\([^:]\\|\\\\:\\)+::" . 'gift-question-name)))
+
+(defvar gift-credit '("-100" "-50" "-33.3333" "-25" "-20" "-16.6667" "16.6667" "20" "25" "33.3333" "50" "100"))
+
+(defun gift-decrease-credit ()
+  (interactive)
+  (save-excursion
+    (save-match-data
+      (let ((bol (save-excursion (beginning-of-line) (point)))
+	    (eol (save-excursion (end-of-line) (point))))
+	(if (search-forward-regexp "~%\\(-?[0-9.]+\\)%" eol t)
+	    (let* ((current (match-string 1))
+		   (cpos (position current gift-credit :test 'equal)))
+	      (when (and cpos (> cpos 0))
+		(replace-match (elt gift-credit (1- cpos)) t t nil 1)))
+	  (beginning-of-line)
+	  (when (search-forward-regexp "~%\\(-?[0-9.]+\\)%" eol t)
+	    (let* ((current (match-string 1))
+		   (cpos (position current gift-credit :test 'equal)))
+	      (when (and cpos (> cpos 0))
+		(replace-match (elt gift-credit (1- cpos)) t t nil 1)))))))))
+
+(defun gift-increase-credit ()
+  (interactive)
+  (save-excursion
+    (save-match-data
+      (let ((bol (save-excursion (beginning-of-line) (point)))
+	    (eol (save-excursion (end-of-line) (point))))
+	(if (search-forward-regexp "~%\\(-?[0-9.]+\\)%" eol t)
+	    (let* ((current (match-string 1))
+		   (cpos (position current gift-credit :test 'equal)))
+	      (when (and cpos (< cpos (1- (length gift-credit))))
+		(replace-match (elt gift-credit (1+ cpos)) t t nil 1)))
+	  (beginning-of-line)
+	  (when (search-forward-regexp "~%\\(-?[0-9.]+\\)%" eol t)
+	    (let* ((current (match-string 1))
+		   (cpos (position current gift-credit :test 'equal)))
+	      (when (and cpos (< cpos (1- (length gift-credit))))
+		(replace-match (elt gift-credit (1+ cpos)) t t nil 1)))))))))
+
+(define-key gift-mode-map (kbd "<C-left>") 'gift-decrease-credit)
+(define-key gift-mode-map (kbd "<C-right>") 'gift-increase-credit)
 
 ;;;###autoload
 (define-derived-mode gift-mode text-mode "GIFT"

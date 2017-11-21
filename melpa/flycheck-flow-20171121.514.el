@@ -5,7 +5,7 @@
 ;; Author: Lorenzo Bolla <lbolla@gmail.com>
 ;; Created: 16 Septermber 2015
 ;; Version: 1.1
-;; Package-Version: 20171018.327
+;; Package-Version: 20171121.514
 ;; Package-Requires: ((flycheck "0.18") (json "1.4"))
 
 ;;; Commentary:
@@ -127,7 +127,7 @@ See URL `http://flowtype.org/'."
     :predicate flycheck-flow--predicate
     :error-parser flycheck-flow--parse-json
     ;; js3-mode doesn't support jsx
-    :modes (js-mode js-jsx-mode js2-mode js2-jsx-mode js3-mode))
+    :modes (js-mode js-jsx-mode js2-mode js2-jsx-mode js3-mode web-mode))
 
 (flycheck-define-checker javascript-flow-coverage
   "A coverage checker for Flow.

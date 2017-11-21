@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20171118.904
+;; Package-Version: 20171121.445
 ;; Package-Requires: ((emacs "24.4") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -57,21 +57,24 @@ See also `evil-goggles-async-duration' and `evil-goggles-blocking-duration'."
   :group 'evil-goggles)
 
 (defcustom evil-goggles-async-duration nil
-  "Time in floating seconds the async goggles hint should last.
+  "Time in floating seconds the async hint should last.
 
-If nil, the value of `evil-goggles-duration' will be used.
+This affects the hints which are displayed after the operation has been
+executed, highlighting the result of the operation.
 
-This affects the hints which are displayed before the operation."
+If nil, the value of `evil-goggles-duration' will be used."
   :type 'number
   :group 'evil-goggles)
 
 (defcustom evil-goggles-blocking-duration nil
-  "Time in floating seconds the blocking goggles hint should last.
+  "Time in floating seconds the blocking hint should last.
 
-If nil, the value of `evil-goggles-duration' will be used.
+This affects the blocking hints. Such hints are displayed before the
+operation, then the UI is blocked for the specified duration, then the
+operation is executed. Such an operation is delete, where the hint
+only makes sense to be displayed before text is deleted.
 
-This affects the hints which are displayed before the operation, when
-the operation is executed after the hint disappears."
+If nil, the value of `evil-goggles-duration' will be used."
   :type 'number
   :group 'evil-goggles)
 
@@ -171,7 +174,7 @@ visualized by the hint.
 
 The hint is displayed for `evil-goggles-async-duration' seconds if
 non-nil, else for `evil-goggles-duration' seconds."
-  (declare (indent 4) (debug t))
+  (declare (indent 3) (debug t))
   `(evil-goggles--if-hint-on ,beg ,end (progn ,@body)
      (evil-goggles--show-overlay ,beg ,end ,face (or evil-goggles-async-duration evil-goggles-duration)
        ,@body)))
@@ -210,7 +213,7 @@ BODY is executed after the hint has been removed, hence the hint is
 
 The hint is displayed for `evil-goggles-blocking-duration' seconds if
 non-nil, else for `evil-goggles-duration' seconds."
-  (declare (indent 4) (debug t))
+  (declare (indent 3) (debug t))
   `(evil-goggles--if-hint-on ,beg ,end (progn ,@body)
      (if (or (eq evil-this-type 'block) evil-goggles--force-block)
          (evil-goggles--show-block-overlay ,beg ,end ,face (or evil-goggles-blocking-duration evil-goggles-duration))
@@ -224,12 +227,12 @@ If BODY is non-nil, run BODY before removing the overlay.  The overlay
 will be adjusted if BODY modifies the text in it."
   (declare (indent 4) (debug t))
   `(let ((ov (evil-goggles--make-overlay ,beg ,end 'insert-behind-hooks '(evil-goggles--overlay-insert-behind-hook))))
-    (unwind-protect
-        (progn
-          (evil-goggles--show-or-pulse-overlay ov ,face ,dur)
-          ,@body
-          (sit-for ,dur))
-      (delete-overlay ov))))
+     (unwind-protect
+         (progn
+           (evil-goggles--show-or-pulse-overlay ov ,face ,dur)
+           ,@body
+           (sit-for ,dur))
+       (delete-overlay ov))))
 
 (defun evil-goggles--show-hint (beg end face &optional force-vertical-hint blocking)
   "Show hint from BEG to END with face FACE for DUR sec.
