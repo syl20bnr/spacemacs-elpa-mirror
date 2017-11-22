@@ -3,7 +3,7 @@
 ;; Copyright (C) 2016-2017 Rami Chowdhury
 ;; Author: Rami Chowdhury <rami.chowdhury@gmail.com>
 ;; URL: http://github.com/necaris/conda.el
-;; Package-Version: 20171109.903
+;; Package-Version: 20171122.716
 ;; Version: 20160914
 ;; Keywords: python, environment, conda
 ;; Package-Requires: ((emacs "24.4") (pythonic "0.1.0") (dash "2.13.0") (s "1.11.0") (f "0.18.2"))
@@ -166,7 +166,7 @@ environment variable."
 (defun conda--get-path-prefix (env-dir)
   "Get a platform-specific path string to utilize the conda env in ENV-DIR.
 It's platform specific in that it uses the platform's native path separator."
-  (string-trim (shell-command-to-string
+  (s-trim (shell-command-to-string
                 (format "conda ..activate \"%s\" \"%s\""
                         (if (eq system-type 'windows-nt)
                             "cmd.exe"

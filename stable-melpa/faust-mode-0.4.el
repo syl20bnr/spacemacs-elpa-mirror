@@ -7,7 +7,7 @@
 ;; Author: Yassin Philip <xaccrocheur@gmail.com>
 ;; Maintainer: Yassin Philip <xaccrocheur@gmail.com>
 ;; Keywords: languages, faust
-;; Package-Version: 20170908.542
+;; Package-Version: 0.4
 ;; Version: 0.2
 ;; URL: https://github.com/rukano/emacs-faust-mode
 ;; License: GPLv3
