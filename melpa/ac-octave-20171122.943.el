@@ -4,10 +4,10 @@
 ;;
 ;; Author: coldnew <coldnew.tw@gmail.com>
 ;; Keywords: Octave, auto-complete, completion
-;; Package-Version: 20170220.1728
+;; Package-Version: 20171122.943
 ;; Package-Requires: ((auto-complete "1.4.0"))
 ;; URL: https://github.com/coldnew/ac-octave
-;; Version: 0.6
+;; Version: 0.7
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -37,10 +37,8 @@
 ;;
 ;; ```elisp
 ;; (require 'ac-octave)
-;; (defun ac-octave-mode-setup ()
-;;   (setq ac-sources '(ac-complete-octave)))
 ;; (add-hook 'octave-mode-hook
-;;           '(lambda () (ac-octave-mode-setup)))
+;;           '(lambda () (ac-octave-setup)))
 ;; ```
 
 ;;; Note:
@@ -128,14 +126,19 @@
 
 ;;;###autoload
 (ac-define-source octave
-                  '((candidates . ac-octave-candidate)
-                    (document . ac-octave-documentation)
-                    (candidate-face . ac-octave-candidate-face)
-                    (selection-face . ac-octave-selection-face)
-                    (init . ac-octave-init)
-                    (requires . 0)
-                    (cache)
-                    (symbol . "f")))
+  '((candidates . ac-octave-candidate)
+    (document . ac-octave-documentation)
+    (candidate-face . ac-octave-candidate-face)
+    (selection-face . ac-octave-selection-face)
+    (init . ac-octave-init)
+    (requires . 0)
+    (cache)
+    (symbol . "f")))
+
+;;;###autoload
+(defun ac-octave-setup ()
+  "Add the Octave completion source to the front of `ac-sources'."
+  (add-to-list 'ac-sources 'ac-source-octave))
 
 (provide 'ac-octave)
 ;;; ac-octave.el ends here

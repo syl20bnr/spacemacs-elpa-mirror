@@ -8,8 +8,6 @@ Add following lines to your init file:
 
 ```elisp
 (require 'ac-octave)
-(defun ac-octave-mode-setup ()
-  (setq ac-sources '(ac-complete-octave)))
 (add-hook 'octave-mode-hook
-          '(lambda () (ac-octave-mode-setup)))
+          '(lambda () (ac-octave-setup)))
 ```
