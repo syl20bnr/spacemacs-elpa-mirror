@@ -5,7 +5,7 @@
 ;; Author: Chen Bin <chenbin.sh@gmail.com>
 ;; Maintainer: Chen Bin <chenbin.sh@gmail.com>
 ;; URL: http://github.com/redguardtoo/counsel-etags
-;; Package-Version: 20171117.534
+;; Package-Version: 20171121.1515
 ;; Package-Requires: ((emacs "24.3") (counsel "0.9.1"))
 ;; Keywords: tools, convenience
 ;; Version: 1.3.5
@@ -39,6 +39,11 @@
 ;;
 ;; Tips:
 ;; - Add below code into "~/.emacs" to auto-update scan code:
+;;
+;;   ;; Don't ask before rereading the TAGS files if they have changed
+;;   (setq tags-revert-without-query t)
+;;   ;; Don't warn when TAGS files are large
+;;   (setq large-file-warning-threshold nil)
 ;;   (add-hook 'prog-mode-hook
 ;;     (lambda ()
 ;;       (add-hook 'after-save-hook
@@ -48,7 +53,36 @@
 ;;   For example, input "keyword1 !keyword2 keyword3" means:
 ;;   "(keyword1 and (not (keyword2 or keyword3))"
 ;;
-;; See https://github.com/redguardtoo/counsel-etags/ for more advanced tips.
+;; - Use `grep-find-ignored-directories', `grep-find-ignored-files' to ignore directories/files,
+;;
+;;   (eval-after-load 'grep
+;;     '(progn
+;;        (dolist (v '("auto"
+;;                     "target"
+;;                     "node_modules"
+;;                     "bower_components"
+;;                     "*dist"
+;;                     ".sass_cache"
+;;                     ".cache"
+;;                     ".npm"
+;;                     "elpa"))
+;;          (add-to-list 'grep-find-ignored-directories v))
+
+;;        (dolist (v '("*.min.js"
+;;                     "*.map"
+;;                     "*.bundle.js"
+;;                     "*.min.css"
+;;                     "tags"
+;;                     "TAGS"
+;;                     "GTAGS"
+;;                     "GRTAGS"
+;;                     "GPATH"
+;;                     "cscope.files"
+;;                     "*.json"
+;;                     "*.log"))
+;;        (add-to-list 'grep-find-ignored-files v))))
+;;
+;; See https://github.com/redguardtoo/counsel-etags/ for more tips.
 
 ;;; Code:
 

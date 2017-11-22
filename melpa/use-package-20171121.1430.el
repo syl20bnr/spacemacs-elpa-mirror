@@ -7,7 +7,7 @@
 ;; Created: 17 Jun 2012
 ;; Modified: 17 Oct 2016
 ;; Version: 2.3
-;; Package-Version: 20171120.1542
+;; Package-Version: 20171121.1430
 ;; Package-Requires: ((bind-key "1.0") (diminish "0.44"))
 ;; Keywords: dotemacs startup speed config package
 ;; URL: https://github.com/jwiegley/use-package
@@ -1424,7 +1424,8 @@ deferred until the prefix key sequence is pressed."
             (value (nth 1 def))
             (comment (nth 2 def)))
         (when (or (not variable)
-                  (not value)
+                  (and (not value)
+                       (not (eq value nil)))
                   (> (length def) 3)
                   (and comment (not (stringp comment))))
           (use-package-error error-msg))))))

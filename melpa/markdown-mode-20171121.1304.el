@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171121.1230
+;; Package-Version: 20171121.1304
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -2101,7 +2101,7 @@ giving the bounds of the current and parent list items."
                  (marker (cl-fifth cur-bounds)))
             (setq bounds (markdown--append-list-item-bounds
                           marker indent cur-bounds bounds))
-          (when (<= start (point) end)
+          (when (and (<= start (point)) (<= (point) end))
             (put-text-property first last 'markdown-list-item bounds)))))
         (end-of-line)))))
 
@@ -4221,7 +4221,7 @@ the beginning of the buffer and ends with a blank line (or the end of
 the buffer)."
   (let* ((first (point))
          (end-re "\n[ \t]*\n\\|\n\\'\\|\\'")
-         (block-begin 1)
+         (block-begin (goto-char 1))
          (block-end (re-search-forward end-re nil t)))
     (if (and block-end (> first block-end))
         ;; Don't match declarations if there is no metadata block or if
