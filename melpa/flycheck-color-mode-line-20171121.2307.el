@@ -4,7 +4,7 @@
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; Keywords: convenience language tools
-;; Package-Version: 20171020.2128
+;; Package-Version: 20171121.2307
 ;; Version: 0.3
 ;; Package-Requires: ((flycheck "0.15") (dash "1.2") (emacs "24.1"))
 
@@ -73,6 +73,12 @@ Customize this to actively mark buffers in which Flycheck has run
 but not reported any issues."
   :group 'flycheck-faces)
 
+(defcustom flycheck-color-mode-line-show-running t
+  "When non-nil, apply `flycheck-color-mode-line-running-face' when Flycheck is running."
+  :type 'boolean)
+
+(put 'flycheck-color-mode-line-show-running 'safe-local-variable 'booleanp)
+
 (defface flycheck-color-mode-line-running-face
   '((t :inherit font-lock-comment-face))
   "Face remapping for the modeline in buffers where Flycheck is running.
@@ -100,8 +106,7 @@ Used to restore the original mode line face.")
     (setq flycheck-color-mode-line-cookie nil)))
 
 (defun flycheck-color-mode-line-update (status)
-  "Update the mode line face according to the Flycheck status."
-  (flycheck-color-mode-line-reset)
+  "Update the mode line face according to the Flycheck STATUS."
   (let ((face (pcase status
                 (`finished
                  (cond
@@ -114,8 +119,10 @@ Used to restore the original mode line face.")
                   (t
                    'flycheck-color-mode-line-success-face)))
                 (`running
-                 'flycheck-color-mode-line-running-face))))
+                 (when flycheck-color-mode-line-show-running
+                   'flycheck-color-mode-line-running-face)))))
     (when face
+      (flycheck-color-mode-line-reset)
       (setq flycheck-color-mode-line-cookie
             (face-remap-add-relative flycheck-color-mode-line-face-to-color face)))))
 
