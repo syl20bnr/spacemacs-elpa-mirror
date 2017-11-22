@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20171121.445
+;; Package-Version: 20171121.2306
 ;; Package-Requires: ((emacs "24.4") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -106,7 +106,7 @@ This function returns immediately, it doesn't wait for the pulse
 animation to end."
   (let* ((pulse-iterations 10)
          (pulse-delay (/ (float dur) pulse-iterations) ))
-    (ignore pulse-iterations) ;; silence compile warning Unused lexical variable
+    (ignore pulse-delay pulse-iterations) ;; silence compile warnings for Unused lexical variable
     (set-face-attribute 'evil-goggles--pulse-face nil :background background)
     (pulse-momentary-highlight-overlay ov 'evil-goggles--pulse-face)))
 
@@ -542,12 +542,10 @@ COUNT REGISTER YANK-HANDLER are the arguments of the original function."
   (prog1
       (evil-goggles--funcall-preserve-interactive orig-fun count register yank-handler)
     (when (evil-normal-state-p)
-      (let* ((beg (save-excursion (evil-goto-mark ?\[) (point)))
-             (end (save-excursion (evil-goto-mark ?\]) (point)))
-             (is-beg-at-eol (save-excursion (goto-char beg) (eolp)))
-             (beg-corrected (if is-beg-at-eol (1+ beg) beg))
+      (let* ((beg (save-excursion (evil-goto-mark ?\[) (if (eolp) (1+ (point)) (point))))
+             (end (save-excursion (evil-goto-mark ?\]) (if (eolp) (1+ (point)) (point))))
              (use-block-hint (evil-goggles--evil-paste-block-p register yank-handler)))
-        (evil-goggles--show-hint beg-corrected end 'evil-goggles-paste-face use-block-hint)))))
+        (evil-goggles--show-hint beg end 'evil-goggles-paste-face use-block-hint)))))
 
 (defun evil-goggles--evil-paste-block-p (register yank-handler)
   "Return t if the paste was a vertical block.

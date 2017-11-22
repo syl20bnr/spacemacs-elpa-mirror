@@ -2,7 +2,7 @@
 ;; Copyright (C) 2015-2017 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.1
-;; Package-Version: 20171115.2055
+;; Package-Version: 20171121.2345
 ;; Package-Requires: ((emacs "24.3") (f "0.17.3") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -587,8 +587,9 @@ or most optimal searcher."
            :tests ("const test = (foo) => " "test: (foo) => {" "  test: (foo) => {"))
 
     (:type "function" :supports ("ag" "grep" "rg" "git-grep") :language "javascript"
-           :regex "\\bJJJ\\s*\\\([^\\\)]*\\\)\\s*[{]" :tags ("es6")
-           :tests ("test(foo) {" "test (foo){" "test(foo){"))
+           :regex "\\bJJJ\\s*\\([^()]*\\)\\s*[{]" :tags ("es6")
+           :tests ("test(foo) {" "test (foo){" "test(foo){")
+           :not ("test = blah.then(function(){"))
 
     (:type "function" :supports ("ag" "grep" "rg" "git-grep") :language "javascript" :tags ("es6")
            :regex "class\\s*JJJ\\s*[\\\(\\\{]"
