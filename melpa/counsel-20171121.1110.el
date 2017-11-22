@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171121.954
+;; Package-Version: 20171121.1110
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1065,7 +1065,8 @@ INITIAL-INPUT can be given as the initial minibuffer input."
   (cd counsel--git-dir)
   (counsel-cmd-to-dired
    (format "%s | grep -i -E '%s' | xargs ls"
-           counsel-git-cmd ivy--old-re)))
+           counsel-git-cmd
+           (counsel-unquote-regex-parens ivy--old-re))))
 
 (defvar counsel-dired-listing-switches "-alh"
   "Switches passed to `ls' for `counsel-cmd-to-dired'.")

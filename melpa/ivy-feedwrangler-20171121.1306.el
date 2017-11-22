@@ -2,8 +2,8 @@
 ;; -*- lexical-binding: t; -*-
 
 ;; Adam Simpson <adam@adamsimpson.net>
-;; Version: 0.2.4
-;; Package-Version: 20171120.1251
+;; Version: 0.2.5
+;; Package-Version: 20171121.1306
 ;; Package-Requires: ((ivy "9.0"))
 ;; Keywords: rss, url, ivy
 ;; URL: https://github.com/asimpson/ivy-feedwrangler
@@ -35,7 +35,7 @@
 (defun ivy-feedwrangler--parse-feed(feed)
   "Returns feed items in format: 'Site Title - Post title' format."
   (mapcar (lambda (x)
-            (cons (format "%s - %s" (alist-get 'feed_name x) (alist-get 'title x))
+            (cons (string-trim (format "%s - %s" (alist-get 'feed_name x) (alist-get 'title x)))
                   (list :url (alist-get 'url x) :id (alist-get 'feed_item_id x) :body (alist-get 'body x)))) feed))
 
 (defun ivy-feedwrangler--get-token()

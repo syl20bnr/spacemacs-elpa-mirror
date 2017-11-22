@@ -7,7 +7,7 @@
 ;; Author: David Landell <david.landell@sunnyhill.email>
 ;;         Roland McGrath <roland@gnu.org>
 ;; Version: 1.4.1
-;; Package-Version: 20171120.1143
+;; Package-Version: 20171121.1151
 ;; URL: https://github.com/dajva/rg.el
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24") (s "1.10.0"))
 ;; Keywords: matching, tools
@@ -858,14 +858,20 @@ optional DEFAULT parameter is non nil the flag will be enabled by default."
 (defun rg-rerun-change-regexp ()
   "Rerun last search but prompt for new regexp."
   (interactive)
-  (setq rg-literal nil)
-  (rg-rerun-change-search-string))
+  (let ((rg-literal-orig rg-literal))
+    (setq rg-literal nil)
+    (condition-case nil
+        (rg-rerun-change-search-string)
+      ((error quit) (setq rg-literal rg-literal-orig)))))
 
 (defun rg-rerun-change-literal ()
   "Rerun last search but prompt for new literal."
   (interactive)
-  (setq rg-literal t)
-  (rg-rerun-change-search-string))
+  (let ((rg-literal-orig rg-literal))
+    (setq rg-literal t)
+    (condition-case nil
+        (rg-rerun-change-search-string)
+      ((error quit) (setq rg-literal rg-literal-orig)))))
 
 (defun rg-rerun-change-files()
   "Rerun last search but prompt for new files."
