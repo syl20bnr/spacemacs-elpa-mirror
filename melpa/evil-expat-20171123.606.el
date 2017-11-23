@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-expat
-;; Package-Version: 20171105.2
+;; Package-Version: 20171123.606
 ;; Package-Requires: ((emacs "24.3") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim
@@ -102,13 +102,13 @@ If NEW-NAME is a directory, the file is moved there."
     (when (string-equal (expand-file-name filename) (expand-file-name new-name))
       (user-error "%s and %s are the same file" buffer-file-name new-name))
     (when (and (file-exists-p new-name) (not bang))
-      (user-error "File %s exists, use :rename to overwrite it" new-name))
+      (user-error "File %s exists, use :rename! to overwrite it" new-name))
 
     (condition-case err
         (rename-file filename new-name bang)
       (error
        (if (and (string-match-p "File already exists" (error-message-string err)) (not bang))
-           (user-error "File %s exists, use :rename to overwrite it" new-name)
+           (user-error "File %s exists, use :rename! to overwrite it" new-name)
          (user-error (error-message-string err)))))
     (set-visited-file-name new-name t)
     (set-buffer-modified-p nil)))
@@ -151,7 +151,7 @@ BANG forces removal of files with modifications"
     ;; call magit to remove the file
     (let ((magit-process-raise-error t))
       (condition-case err
-          (magit-file-delete filename bang)
+          (magit-call-git "rm" (when bang "--force") "--" filename)
         (magit-git-error
          (if (string-match-p "the following file has local modifications" (error-message-string err))
              (user-error "File %s has modifications, use :gremove! to force" (buffer-name))

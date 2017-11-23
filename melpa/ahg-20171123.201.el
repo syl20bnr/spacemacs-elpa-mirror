@@ -4,7 +4,7 @@
 
 ;; Author: Alberto Griggio <agriggio@users.sourceforge.net>
 ;; URL: https://bitbucket.org/agriggio/ahg
-;; Package-Version: 20171003.39
+;; Package-Version: 20171123.201
 ;; Version: 1.0.0
 
 ;; This program is free software: you can redistribute it and/or modify
@@ -967,44 +967,6 @@ wrt. its parent revision, using Ediff."
                  (kill-buffer buffer))))
         (message "hg rm aborted")))))
 
-(defun ahg-status-merge ()
-  "Runs hg merge on the repo.  Called when user clicks on or presses RET on 
-the `merge' text in the status view. See propertize-summary-info below." 
-  (interactive)
-  (lexical-let ((status-buffer (current-buffer))
-                (merge-buffer 
-                 (get-buffer-create
-                  (concat "*hg merge: " (ahg-root)))))
-    (pop-to-buffer merge-buffer)
-    (ahg-generic-command 
-     "merge" nil
-     (lambda (process status)
-       (if (string= status "finished\n")
-           (progn
-             (pop-to-buffer status-buffer)
-             (ahg-status-refresh)
-             (ahg-status-commit "Merge"))
-         (ahg-show-error process)))
-     merge-buffer)))
-
-(defun propertize-summary-info (summary)
-  "If the repo is in need of a merge, then the summary info will contain the
-text `heads (merge)'.  This function makes that text active, so that clicking
-it or pressing RET on it will initiate a merge."
-  (let ((map (make-sparse-keymap)))
-    (define-key map [mouse-1] 'ahg-status-merge)
-    (define-key map (kbd "RET") 'ahg-status-merge)
-    (replace-regexp-in-string 
-     "heads (merge)" 
-     (concat "heads " 
-             (propertize 
-              "(merge)" 
-              'mouse-face 'highlight 
-              'help-echo "Run hg merge"
-              'face 'info-xref
-              'keymap map))
-     summary))
-  )
 
 (defun ahg-get-status-ewoc (root)
   "Returns an *hg status* buffer for ROOT. The buffer's major mode is
@@ -1016,8 +978,7 @@ ahg-status, and it has an ewoc associated with it."
                  (propertize root 'face ahg-header-line-root-face) "\n"))
         (footer (concat "\n"
                         (make-string (1- (window-width (selected-window))) ?-)
-                        "\n" (propertize-summary-info
-                              (ahg-summary-info root)))))
+                        "\n" (ahg-summary-info root))))
     (with-current-buffer buf
       (erase-buffer)
       (let ((ew (ewoc-create 'ahg-status-pp
