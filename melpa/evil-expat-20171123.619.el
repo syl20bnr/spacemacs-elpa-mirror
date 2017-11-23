@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-expat
-;; Package-Version: 20171123.606
+;; Package-Version: 20171123.619
 ;; Package-Requires: ((emacs "24.3") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim
@@ -134,6 +134,8 @@ If NEW-NAME is a directory, the file is moved there."
   '(progn
      (evil-ex-define-cmd "gblame" 'evil-expat-gblame)
      (autoload 'evil-expat-gblame "evil-expat" nil t)))
+
+(declare-function magit-call-git "ext:magit")
 
 (evil-define-command evil-expat-gremove (bang)
   "Remove current file and its buffer.

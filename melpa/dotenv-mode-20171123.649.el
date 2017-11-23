@@ -2,8 +2,8 @@
 
 ;; Author: Preetpal S. Sohal
 ;; URL: https://github.com/preetpalS/emacs-dotenv-mode
-;; Package-Version: 20171122.1618
-;; Version: 0.2.0
+;; Package-Version: 20171123.649
+;; Version: 0.2.1
 ;; Package-Requires: ((emacs "24.3"))
 ;; License: GNU General Public License Version 3
 
@@ -64,8 +64,8 @@
                        (and (+ (any alnum "_")))
                        (and (any "*" "@" "#" "?" "-" "$" "!" "0" "_")))))
               limit t)
-        (-when-let (string-syntax (nth 3 (syntax-ppss)))
-          (when (= string-syntax 34)
+        (let ((string-syntax (nth 3 (syntax-ppss))))
+          (when (and string-syntax (= string-syntax 34))
             (throw 'done (point))))))))
 
 (defvar dotenv-mode-keywords
