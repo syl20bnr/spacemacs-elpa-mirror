@@ -4,9 +4,9 @@
 
 ;; Author: Damien Cassou <damien.cassou@gmail.com>
 ;; Url: https://github.com/DamienCassou/unify-opening
-;; Package-Version: 2.0.0
+;; Package-Version: 2.1.0
 ;; GIT: https://github.com/DamienCassou/unify-opening
-;; Version: 2.0.0
+;; Version: 2.1.0
 ;; Package-Requires: ((emacs "24.4"))
 ;; Created: 16 Jan 2015
 
@@ -45,7 +45,8 @@
   (declare-function helm "ext:helm")
   (declare-function mm-handle-filename "mm-decode")
   (declare-function mm-interactively-view-part "mm-decode")
-  (declare-function mm-save-part-to-file "mm-decode"))
+  (declare-function mm-save-part-to-file "mm-decode")
+  (declare-function counsel-locate-action-extern "counsel"))
 
 (defun unify-opening-find-cmd (file)
   "Return a string representing the best command to open FILE.
@@ -95,23 +96,25 @@ This method will be triggered when typing\\<helm-find-files-map> \\[helm-ff-run-
    :override
    'unify-opening-helm-get-default-program-for-file))
 
-;;; Make sure to use Helm (if it is loaded) when choosing an application to open
-;;; a file.
+(defun unify-opening-guess-shell-command (files)
+  "Ask user which command to use to open FILES.
+
+Guess a list of suited commands to open FILES, then present the list to the
+user so s·he can choose."
+  (let ((commands (dired-guess-default files)))
+    (when (consp commands)
+      (completing-read "command: " commands nil))))
+
 (defun unify-opening-dired-guess-shell-command (original-fun prompt files)
   "Advice ORIGINAL-FUN to ask user with PROMPT for a shell command, guessing a default from FILES."
-  (let ((default (dired-guess-default files)))
-    (if (or (null default) (not (listp default)))
-        (funcall original-fun prompt files)
-      (let ((choice (helm
-                     :prompt "command: "
-                     :sources `(((name . "Commands")
-                                 (candidates . ,default)
-                                 (action . (("Execute" . identity))))))))
-        (or choice (funcall original-fun prompt files))))))
+  (or (unify-opening-guess-shell-command files)
+      (funcall original-fun prompt files)))
 
-(with-eval-after-load "helm"
-  (with-eval-after-load "dired-x"
-    (advice-add #'dired-guess-shell-command :around #'unify-opening-dired-guess-shell-command)))
+(with-eval-after-load "dired-x"
+  (advice-add #'dired-guess-shell-command :around #'unify-opening-dired-guess-shell-command))
+
+(with-eval-after-load "counsel"
+  (advice-add #'counsel-locate-action-extern :override #'unify-opening-open))
 
 (provide 'unify-opening)
 

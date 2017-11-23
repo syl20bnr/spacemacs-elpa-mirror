@@ -3,7 +3,7 @@
 ;; Author: Vegard Øye <vegard_oye at hotmail.com>
 ;; Maintainer: Vegard Øye <vegard_oye at hotmail.com>
 ;; Package-Requires: ((evil "1.2.13"))
-;; Package-Version: 20171002.135
+;; Package-Version: 20171122.1206
 ;; Version: 1.2.13
 
 ;; This file is NOT part of GNU Emacs.
@@ -154,7 +154,7 @@ raised.  Remaining forms are evaluated as-is.
                                    ',visual-start ',visual-end))
                                 ((eq (car-safe form) 'file)
                                  `(evil-test-file-contents ,(cadr form)
-                                                           ,(caddr form)))
+                                                           ,(car (cddr form))))
                                 ((or (stringp (car-safe form))
                                      (vectorp (car-safe form))
                                      (memq (car-safe (car-safe form))
