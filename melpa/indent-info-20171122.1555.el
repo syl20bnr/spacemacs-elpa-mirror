@@ -5,7 +5,7 @@
 
 ;; Author: Terje Larsen <terlar@gmail.com>
 ;; URL: https://github.com/terlar/indent-info.el
-;; Package-Version: 20171105.153
+;; Package-Version: 20171122.1555
 ;; Keywords: convenience, tools
 ;; Version: 0.1
 
@@ -35,6 +35,18 @@
 (defgroup indent-info nil
   "Display indentation information in mode line."
   :group 'modeline)
+
+(defcustom indent-info-insert-target 'mode-line-position
+  "Target list for insertion of `indent-info-mode'."
+  :type 'symbol
+  :group 'indent-info)
+
+(defcustom indent-info-insert-position 'before
+  "Position for insertion of `indent-info-mode'.
+Choices are `before', `after'."
+  :type '(choice (const :tag "Before insert target" before)
+                 (const :tag "After insert target" after))
+  :group 'indent-info)
 
 (defcustom indent-info-prefix " "
   "Text to display before the indentation info in the mode line."
@@ -163,9 +175,11 @@ When enabled, information about the currently configured `indent-tabs-mode' and
 `tab-width' is displayed in the mode line."
   :lighter nil :global nil
   (if indent-info-mode
-      (add-to-list 'mode-line-position
-                   '(indent-info-mode (:eval (indent-info-mode-line))))
-    (setq mode-line-position (assq-delete-all 'indent-info-mode mode-line-position))))
+      (add-to-list indent-info-insert-target
+                   '(indent-info-mode (:eval (indent-info-mode-line)))
+                   (eq indent-info-insert-position 'after))
+    (set indent-info-insert-target
+         (assq-delete-all 'indent-info-mode (symbol-value indent-info-insert-target)))))
 
 ;;;###autoload
 (define-global-minor-mode global-indent-info-mode
@@ -174,10 +188,5 @@ When enabled, information about the currently configured `indent-tabs-mode' and
   :group 'indent-info)
 
 (provide 'indent-info)
-
-;; Local Variables:
-;; coding: utf-8
-;; checkdoc-minor-mode: t
-;; End:
 
 ;;; indent-info.el ends here

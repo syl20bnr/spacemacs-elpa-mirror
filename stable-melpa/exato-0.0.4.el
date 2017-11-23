@@ -1,13 +1,10 @@
-;;; exato.el --- EXATO: Evil-mode XML Attributes Text Object
-;; header {{{
+;;; exato.el --- EXATO: Evil XML/HTML Attributes Text Object -*- lexical-binding: t -*-
 
-;;; exato.el --- EXATO: Evil Xml Attributes Text Object ;; -*- lexical-binding: t -*-
+;; Copyright (C) 2015 by Filipe Silva (ninrod)
 
-;; Copyright (C) 2015 by Filipe Correa Lima da Silva
-
-;; Author: Filipe Correa Lima da Silva <filipe.silva@gmail.com>
+;; Author: Filipe Silva <filipe.silva@gmail.com>
 ;; URL: https://github.com/ninrod/exato
-;; Package-Version: 0.0.3
+;; Package-Version: 0.0.4
 ;; Version: 0.0.1
 ;; Package-Requires: ((evil "1.2.13") (thingatpt+ "0"))
 
@@ -26,24 +23,28 @@
 
 ;;; Commentary:
 
-;; this is a scratch implementaion for an evil text object for hmtl/xml tag attributes,
-;; inspired by https://github.com/whatyouhide/vim-textobj-xmlattr
+;; This package provides the `x` text object to manipulate html/xml tag attributes.
+;; it is a port of https://github.com/whatyouhide/vim-textobj-xmlattr vim plugin.
 
-;; examples:
-;; dax: delete around xml tag attribute
-;; dix: delete inside xml tag attribute
+;; Try using `dax`, `vix` and `gUix`. You can customize the binding.
+
+;; To install the package, Just use https://melpa.org.
+;; Here's an oneliner using https://github.com/jwiegley/use-package:
+;; (use-package exato :ensure t)
+
+;; *customization*: to change the bind from `x` to your liking, you can customize exato-key:
+
+;; (use-package exato
+;;   :ensure t
+;;   :init
+;;   (setq exato-key "h"))
 
 ;;; Code:
 
-;; }}}
-;; declarations {{{
+;;; Settings:
 
 (require 'evil)
 (require 'thingatpt+)
-
-;; close declarations }}}
-
-;; settings {{{
 
 (defgroup exato nil
   "Provides a xml tag attribute text object."
@@ -55,9 +56,7 @@
   :type 'string
   :group 'exato)
 
-;; }}}
-
-;; exato--find-str-start {{{
+;;; Core functions
 
 (defun exato--find-str-start ()
   "Find the beggining of the string."
@@ -67,9 +66,6 @@
         (point))
     (error nil)))
 
-;; }}}
-;; exato--find-str-end {{{
-
 (defun exato--find-str-end ()
   "Find the end of the string."
   (condition-case nil
@@ -77,10 +73,6 @@
         (end-of-thing 'string)
         (1- (point)))
     (error nil)))
-
-;; }}}
-
-;; exato--find-delimiter-backward {{{
 
 (defun exato--find-delimiter-backward ()
   "Backward search the occurence of the delimiter."
@@ -102,9 +94,6 @@
                     nil))))
           (t nil))))
 
-;; }}}
-;; exato--find-delimiter-forward {{{
-
 (defun exato--find-delimiter-forward ()
   "Forward search the occurence of the delimiter."
   (save-excursion
@@ -123,9 +112,6 @@
             (t
              nil)))))
 
-;; }}}
-;; exato--find-delimiter {{{
-
 (defun exato--find-delimiter ()
   "Try to find the delimiter around point."
   (let* ((backward (exato--find-delimiter-backward))
@@ -133,10 +119,6 @@
     (cond (backward backward)
           (forward forward)
           (t nil))))
-
-;; }}}
-
-;; exato--find-xml-attr-start {{{
 
 (defun exato--find-xml-attr-start ()
   "Try to pinpoint the start of the xml attribute."
@@ -148,9 +130,6 @@
              (point)))
           (t
            nil))))
-
-;; }}}
-;; exato--find-xml-attr-end {{{
 
 (defun exato--find-xml-attr-end ()
   "Try to pinpoint the end of the xml attribute."
@@ -170,9 +149,7 @@
                            nil))))))
           (t nil))))
 
-;; }}}
-
-;; connect to evil machinery {{{
+;;; Connect to evil machinery:
 
 (defun exato--evil-xml-attr-inner-range ()
   "Define the inner xml attr text object."
@@ -201,7 +178,5 @@
 (define-key evil-inner-text-objects-map exato-key 'evil-inner-xml-attr)
 
 (provide 'exato)
-
-;; }}}
 
 ;;; exato.el ends here
