@@ -5,7 +5,7 @@
 ;; Author: Matthew M. Keeler <keelerm84@gmail.com>
 ;; Maintainer: Matthew M. Keeler <keelerm84@gmail.com>
 ;; URL: https://github.com/keelerm84/php-refactor-mode.el
-;; Package-Version: 20160417.1446
+;; Package-Version: 20171123.2235
 ;; Keywords: php, refactor
 ;; Created: 26th March 2014
 ;; Version: 0.0.1
@@ -80,7 +80,7 @@
    "convert-local-to-instance-variable"
    (buffer-file-name)
    (php-refactor--get-effective-line-number-as-string)
-   (thing-at-point 'symbol)))
+   (thing-at-point 'sexp)))
 
 (defun php-refactor--optimize-use ()
   "Optimizes the use of Fully qualified names in a file."
@@ -112,7 +112,7 @@ END is the ending position of the selected region."
      "rename-local-variable"
      (buffer-file-name)
      (php-refactor--get-effective-line-number-as-string)
-     (thing-at-point 'symbol)
+     (thing-at-point 'sexp)
      renamed)))
 
 (defun php-refactor--get-effective-line-number-as-string ()
