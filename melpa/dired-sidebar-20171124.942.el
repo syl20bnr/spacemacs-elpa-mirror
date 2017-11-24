@@ -5,9 +5,9 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/dired-sidebar
-;; Package-Version: 20171120.2229
+;; Package-Version: 20171124.942
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "25.1") (dired-subtree "0.0.1"))
 ;; Keywords: dired, files, tools
 ;; HomePage: https://github.com/jojojames/dired-sidebar
 
@@ -29,12 +29,6 @@
 ;; but leverages `dired' to do the job of display.
 
 ;;
-;; (use-package dired-subtree
-;;   :ensure t
-;;   :commands (dired-subtree-toggle dired-subtree-cycle)
-;;   :config
-;;   (setq dired-subtree-use-backgrounds nil))
-;;
 ;; (use-package dired-sidebar
 ;;   :bind (("C-x C-n" . dired-sidebar-toggle-sidebar))
 ;;   :ensure nil
@@ -49,6 +43,7 @@
 ;;; Code:
 
 (require 'dired)
+(require 'dired-subtree)
 (require 'evil nil t)
 (require 'face-remap)
 (eval-when-compile (require 'subr-x))
@@ -118,9 +113,7 @@ This is used in conjunction with `dired-sidebar-toggle-sidebar'."
 
 Similar to `dired-jump'.  This moves point inside sidebar buffer
 to where current-buffer-file is \(if it exists\) but does not necessarily
-select the sidebar window.
-
-This only takes effect if `dired-subtree' is installed."
+select the sidebar window."
   :type 'boolean
   :group 'dired-sidebar)
 
@@ -161,9 +154,7 @@ Look at `dired-sidebar-term-get-pwd' for implementation."
   :group 'dired-sidebar)
 
 (defcustom dired-sidebar-cycle-subtree-on-click t
-  "Whether to cycle subtree on click.
-
-This only takes effect if `dired-subtree' is installed."
+  "Whether to cycle subtree on click."
   :type 'boolean
   :group 'dired-sidebar)
 
@@ -289,6 +280,9 @@ will check if buffer is stale through `auto-revert-mode'.")
 
   (setq window-size-fixed 'width)
 
+  ;; Match backgrounds.
+  (setq-local dired-subtree-use-backgrounds nil)
+
   ;; We don't want extra details in the sidebar.
   (dired-hide-details-mode)
 
@@ -376,7 +370,6 @@ This is dependent on `dired-subtree-cycle'."
     (pop-to-buffer sidebar)
     (when (and name
                (fboundp 'dired-subtree-cycle)
-               (or (featurep 'dired-subtree) (require 'dired-subtree nil t))
                ;; Checking for a private method. *shrug*
                (fboundp 'dired-subtree--is-expanded-p))
       (pop-to-buffer sidebar)
@@ -398,7 +391,7 @@ This is dependent on `dired-subtree-cycle'."
                   ;; Making sure there's a space in front of the name
                   ;; skips matches that contains the name as a
                   ;; substring which is probably good enough...
-                  (re-search-forward (concat "^.*[[:space:]]\\"
+                  (re-search-forward (concat "^.*[[:space:]]"
                                              (regexp-quote dir)))))
             (re-search-forward (concat "^.*[[:space:]]" (regexp-quote dir)))
             ;; Check if subtree has already been expanded.
@@ -441,7 +434,7 @@ This is dependent on `dired-subtree-cycle'."
 (defun dired-sidebar-hide-sidebar ()
   "Hide the sidebar in the selected frame."
   (interactive)
-  (let ((buffer (dired-sidebar-sidebar-buffer-in-frame)))
+  (when-let ((buffer (dired-sidebar-sidebar-buffer-in-frame)))
     (delete-window (get-buffer-window buffer))
     (dired-sidebar-update-state-in-frame nil)))
 
@@ -511,8 +504,8 @@ Select alternate window using `dired-sidebar-alternate-select-window-function'."
 (defun dired-sidebar-mouse-subtree-cycle-or-find-file (event)
   "Handle a mouse click EVENT in `dired-sidebar'.
 
-For directories, if `dired-sidebar-cycle-subtree-on-click' is true and
-`dired-subtree' is installed, cycle the directory.
+For directories, if `dired-sidebar-cycle-subtree-on-click' is true,
+cycle the directory.
 
 Otherwise, behaves the same as if user clicked on a file.
 

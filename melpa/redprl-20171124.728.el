@@ -5,7 +5,7 @@
 
 ;; Author: Jonathan Sterling <jon@jonmsterling.com>
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 20171121.831
+;; Package-Version: 20171124.728
 ;; Version: 0.0.1
 ;; Keywords: languages
 
@@ -122,6 +122,7 @@
     "record" "tuple"
     "path" "line" "abs"
     "pushout" "left" "right" "glue" "pushout-rec"
+    "mem" "ni"
     "box" "cap"
     "V" "Vin" "Vproj"
     "universe" "U"
@@ -134,7 +135,7 @@
   "RedPRL's expression symbols.")
 
 (defconst redprl-tactic-keywords
-  '("auto" "auto-step" "case" "cut-lemma" "elim" "else" "exact" "fresh" "goal"
+  '("auto" "auto-step" "case" "concl" "cut-lemma" "elim" "else" "exact" "fresh" "goal"
     "hyp" "id" "lemma" "let" "claim" "match" "of" "print" "progress"
     "query" "rec" "reduce" "refine" "repeat" "rewrite" "rewrite-hyp" "symmetry"
     "then" "unfold" "use" "with")

@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171121.1110
+;; Package-Version: 20171124.717
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1892,6 +1892,7 @@ string - the full shell command to run."
                   (format "%s %s"
                           (cl-case system-type
                             (darwin "open")
+                            (cygwin "cygstart")
                             (t "xdg-open"))
                           (shell-quote-argument x)))))
 
@@ -2401,8 +2402,9 @@ substituted by the search regexp and file, respectively.  Neither
 (counsel-set-async-exit-code 'counsel-grep 1 "")
 
 ;;;###autoload
-(defun counsel-grep ()
-  "Grep for a string in the current file."
+(defun counsel-grep (&optional initial-input)
+  "Grep for a string in the current file.
+When non-nil, INITIAL-INPUT is the initial search pattern."
   (interactive)
   (counsel-require-program (car (split-string counsel-grep-base-command)))
   (setq counsel-grep-last-line nil)
@@ -2414,6 +2416,7 @@ substituted by the search regexp and file, respectively.  Neither
         res)
     (unwind-protect
          (setq res (ivy-read "grep: " 'counsel-grep-function
+                             :initial-input initial-input
                              :dynamic-collection t
                              :preselect (format "%d:%s"
                                                 (line-number-at-pos)
@@ -2440,8 +2443,9 @@ substituted by the search regexp and file, respectively.  Neither
   :group 'ivy)
 
 ;;;###autoload
-(defun counsel-grep-or-swiper ()
-  "Call `swiper' for small buffers and `counsel-grep' for large ones."
+(defun counsel-grep-or-swiper (&optional initial-input)
+  "Call `swiper' for small buffers and `counsel-grep' for large ones.
+When non-nil, INITIAL-INPUT is the initial search pattern."
   (interactive)
   (if (or (not buffer-file-name)
           (buffer-narrowed-p)
@@ -2451,10 +2455,10 @@ substituted by the search regexp and file, respectively.  Neither
           (<= (buffer-size)
               (/ counsel-grep-swiper-limit
                  (if (eq major-mode 'org-mode) 4 1))))
-      (swiper)
+      (swiper initial-input)
     (when (file-writable-p buffer-file-name)
       (save-buffer))
-    (counsel-grep)))
+    (counsel-grep initial-input)))
 
 ;;** `counsel-recoll'
 (defun counsel-recoll-function (string)
