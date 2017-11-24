@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20171124.133
+;; Package-Version: 20171124.520
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -155,7 +155,7 @@ will be returned.  Otherwise, use
 (defun dante-status ()
   "Return dante's status for the current source buffer."
   (pcase (dante-get-var 'dante-state)
-    ('started (if (dante-get-var 'dante-callback) (format "busy(%s)" (1+ (length (dante-get-var 'dante-queue))))
+    ('running (if (dante-get-var 'dante-callback) (format "busy(%s)" (1+ (length (dante-get-var 'dante-queue))))
                 (dante-get-var 'dante-loaded-modules)))
     (state (symbol-name state))))
 
@@ -196,7 +196,7 @@ if the argument is omitted or nil or a positive integer).
 (defvar-local dante-state nil
   "nil: initial state
 - starting: GHCi starting
-- started: GHCi started
+- running: GHCi running
 - deleting: The process of the buffer is being deleted.
 - dead: GHCi died on its own. Do not try restarting
 automatically. The user will have to manually run `dante-restart'
@@ -300,9 +300,7 @@ The continuation must call its first argument; see `dante-session'."
                    string)))
         (funcall cont
                  'finished
-                 (cl-remove-if (lambda (msg)
-                                 (eq 'splice (flycheck-error-level msg)))
-                               msgs))))))
+                 (--remove (eq 'splice (flycheck-error-level it)) msgs))))))
 
 (flycheck-define-generic-checker 'haskell-dante
   "A syntax and type checker for Haskell using a Dante worker
@@ -620,8 +618,9 @@ other sub-sessions start running.)"
                              (concat ":set -Wall\n" ;; TODO: configure
                                      ":set +c\n" ;; collect type info
                                      ":set prompt \"\\4%s|\""))))
-        (dante-set-state 'started)
-        (message "GHCi started!"))
+        (dante-set-state 'running)
+        (message "GHCi running!")
+        (dante-schedule-next buffer))
       (set-process-filter
        process
        (lambda (process string)
@@ -741,11 +740,11 @@ Note that sub-sessions are not interleaved."
   (with-current-buffer buffer
     (unless dante-callback
       (let ((req (pop dante-queue)))
-        (force-mode-line-update)
         (when req
           (with-current-buffer (plist-get req :source-buffer)
             (funcall (plist-get req :func) buffer
-                     (apply-partially #'dante-schedule-next buffer))))))))
+                     (apply-partially #'dante-schedule-next buffer)))))))
+  (force-mode-line-update))
 
 (defun dante--strip-carriage-returns (string)
   "Return the STRING stripped of its \\r occurences."

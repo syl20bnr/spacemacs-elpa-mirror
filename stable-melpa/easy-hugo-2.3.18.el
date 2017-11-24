@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 2.2.18
-;; Version: 2.2.18
+;; Package-Version: 2.3.18
+;; Version: 2.3.18
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -100,13 +100,18 @@
   :group 'easy-hugo
   :type 'integer)
 
+(defcustom easy-hugo-additional-help nil
+  "Additional help flg of easy-hugo."
+  :group 'easy-hugo
+  :type 'integer)
+
 (defcustom easy-hugo-sort-default-char nil
   "Default setting to sort with charactor."
   :group 'easy-hugo
   :type 'integer)
 
 (defcustom easy-hugo-publish-chmod "Du=rwx,Dgo=rx,Fu=rw,Fog=r"
-  "Permission when publish.The default is drwxr-xr-x."
+  "Permission when publish. The default is drwxr-xr-x."
   :group 'easy-hugo
   :type 'string)
 
@@ -248,9 +253,6 @@ Because only two are supported by hugo."
 
 (defconst easy-hugo--unmovable-line-default easy-hugo--unmovable-line
   "Default value of impossible to move below this line.")
-
-(defconst easy-hugo--delete-line 12
-  "Easy-hugo-delete line number.")
 
 (defconst easy-hugo--preview-buffer "*Hugo Preview*"
   "Easy-hugo preview buffer name.")
@@ -472,10 +474,12 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
 (defun easy-hugo-cancel-publish-timer ()
   "Cancel timer that publish after the specified number of minutes has elapsed."
   (interactive)
-  (when easy-hugo--publish-timer
-    (cancel-timer easy-hugo--publish-timer)
-    (setq easy-hugo--publish-timer nil)
-    (message "Easy-hugo-publish-timer canceled")))
+  (if easy-hugo--publish-timer
+      (progn
+	(cancel-timer easy-hugo--publish-timer)
+	(setq easy-hugo--publish-timer nil)
+	(message "Publish-timer canceled"))
+    (message "There is no reserved publish-timer")))
 
 (defun easy-hugo-publish-on-timer ()
   "Adapt local change to the server with hugo on timer."
@@ -677,10 +681,12 @@ If not applicable, return the default preview."
 (defun easy-hugo-cancel-github-deploy-timer ()
   "Cancel timer that github-deploy after the specified number of minutes has elapsed."
   (interactive)
-  (when easy-hugo--github-deploy-timer
-    (cancel-timer easy-hugo--github-deploy-timer)
-    (setq easy-hugo--github-deploy-timer nil)
-    (message "Easy-hugo-github-deploy-timer canceled")))
+  (if easy-hugo--github-deploy-timer
+      (progn
+	(cancel-timer easy-hugo--github-deploy-timer)
+	(setq easy-hugo--github-deploy-timer nil)
+	(message "Github-deploy-timer canceled"))
+    (message "There is no reserved github-deploy-timer")))
 
 (defun easy-hugo-github-deploy-on-timer ()
   "Execute `easy-hugo-github-deploy-script' script on timer locate at `easy-hugo-basedir'."
@@ -728,10 +734,12 @@ If not applicable, return the default preview."
 (defun easy-hugo-cancel-amazon-s3-deploy-timer ()
   "Cancel timer that amazon-s3-deploy after the specified number of minutes has elapsed."
   (interactive)
-  (when easy-hugo--amazon-s3-timer
-    (cancel-timer easy-hugo--amazon-s3-timer)
-    (setq easy-hugo--amazon-s3-timer nil)
-    (message "Easy-hugo-amazon-s3-deploy-timer canceled")))
+  (if easy-hugo--amazon-s3-timer
+      (progn
+	(cancel-timer easy-hugo--amazon-s3-timer)
+	(setq easy-hugo--amazon-s3-timer nil)
+	(message "AWS-s3-deploy-timer canceled"))
+    (message "There is no reserved AWS-s3-deploy-timer")))
 
 (defun easy-hugo-amazon-s3-deploy-on-timer ()
   "Deploy hugo source at Amazon S3 on timer."
@@ -782,10 +790,12 @@ If not applicable, return the default preview."
 (defun easy-hugo-cancel-google-cloud-storage-deploy-timer ()
   "Cancel timer that google-cloud-storage-deploy after the specified number of minutes has elapsed."
   (interactive)
-  (when easy-hugo--google-cloud-storage-timer
-    (cancel-timer easy-hugo--google-cloud-storage-timer)
-    (setq easy-hugo--google-cloud-storage-timer nil)
-    (message "Easy-hugo-google-cloud-storage-deploy-timer canceled")))
+  (if easy-hugo--google-cloud-storage-timer
+      (progn
+	(cancel-timer easy-hugo--google-cloud-storage-timer)
+	(setq easy-hugo--google-cloud-storage-timer nil)
+	(message "GCS-timer canceled"))
+    (message "There is no reserved GCS-timer")))
 
 (defun easy-hugo-google-cloud-storage-deploy-on-timer ()
   "Deploy hugo source at Google Cloud Storage on timer."
@@ -822,7 +832,7 @@ If not applicable, return the default preview."
 	  (find-file (expand-file-name "config.json" easy-hugo-basedir)))
 	 (t (error "Hugo config file not found at %s" easy-hugo-basedir)))))
 
-(defconst easy-hugo--help
+(defcustom easy-hugo-help
   (if (null easy-hugo-sort-default-char)
       (progn
 	"n .. New blog post    R .. Rename file   G .. Deploy GitHub    D .. Draft list
@@ -831,8 +841,7 @@ v .. Open view-mode   s .. Sort time     T .. Publish timer    N .. No help-mode
 d .. Delete post      c .. Open config   W .. AWS S3 timer     I .. GCS timer
 P .. Publish server   C .. Deploy GCS    a .. Search helm-ag   H .. GitHub timer
 < .. Previous blog    > .. Next blog     , .. Pre postdir      . .. Next postdir
-O .. Open basedir     S .. Sort char     ? .. Help easy-hugo   q .. Quit easy-hugo
-
+F .. Full help [tab]  S .. Sort char     ? .. Describe-mode    q .. Quit easy-hugo
 ")
     (progn
       "n .. New blog post    R .. Rename file   G .. Deploy GitHub    D .. Draft list
@@ -841,10 +850,11 @@ v .. Open view-mode   u .. Undraft file  T .. Publish timer    N .. No help-mode
 d .. Delete post      c .. Open config   S .. Sort time        I .. GCS timer
 P .. Publish server   C .. Deploy GCS    a .. Search helm-ag   H .. GitHub timer
 < .. Previous blog    > .. Next blog     , .. Pre postdir      . .. Next postdir
-O .. Open basedir     W .. AWS S3 timer  ? .. Help easy-hugo   q .. Quit easy-hugo
-
+F .. Full help [tab]  W .. AWS S3 timer  ? .. Describe-mode    q .. Quit easy-hugo
 "))
-  "Help of easy-hugo.")
+  "Help of easy-hugo."
+  :group 'easy-hugo
+  :type 'string)
 
 (defconst easy-hugo--first-help
   "Welcome to Easy-hugo
@@ -858,6 +868,16 @@ Enjoy!
 
 "
   "Help of easy-hugo first time.")
+
+(defcustom easy-hugo-add-help
+  "O .. Open basedir     r .. Refresh       b .. X github timer   t .. X publish-timer
+m .. X s3-timer       i .. X GCS timer   f .. File open        J .. Jump blog-number
+k .. Previous-line    j .. Next line     h .. backward-char    l .. forward-char
+w .. Write post       o .. Open file     - .. Pre postdir      + .. Next postdir
+"
+  "Add help of easy-hugo."
+  :group 'easy-hugo
+  :type 'string)
 
 (defvar easy-hugo-mode-map
   (let ((map (make-keymap)))
@@ -882,6 +902,9 @@ Enjoy!
     (define-key map "d" 'easy-hugo-delete)
     (define-key map "e" 'easy-hugo-open)
     (define-key map "f" 'easy-hugo-open)
+    (define-key map "F" 'easy-hugo-full-help)
+    (define-key map [tab] 'easy-hugo-full-help)
+    (define-key map [backtab] 'easy-hugo-no-help)
     (define-key map "N" 'easy-hugo-no-help)
     (define-key map "J" 'easy-hugo-nth-blog)
     (define-key map "j" 'easy-hugo-next-line)
@@ -945,7 +968,23 @@ Enjoy!
 	(setq easy-hugo--unmovable-line easy-hugo--unmovable-line-default))
     (progn
       (setq easy-hugo-no-help 1)
+      (setq easy-hugo-additional-help nil)
       (setq easy-hugo--unmovable-line 3)))
+  (if easy-hugo--draft-list
+      (easy-hugo-draft-list)
+    (easy-hugo)))
+
+(defun easy-hugo-full-help ()
+  "Full help mode of easy hugo."
+  (interactive)
+  (if easy-hugo-additional-help
+      (progn
+	(setq easy-hugo-additional-help nil)
+	(setq easy-hugo--unmovable-line easy-hugo--unmovable-line-default))
+    (progn
+      (setq easy-hugo-additional-help 1)
+      (setq easy-hugo-no-help nil)
+      (setq easy-hugo--unmovable-line 15)))
   (if easy-hugo--draft-list
       (easy-hugo-draft-list)
     (easy-hugo)))
@@ -964,7 +1003,7 @@ Enjoy!
       (easy-hugo-draft-list))))
 
 (defun easy-hugo-refresh ()
-  "Refresh easy hugo."
+  "Refresh easy-hugo-mode."
   (interactive)
   (setq easy-hugo--cursor (point))
   (setq easy-hugo--refresh 1)
@@ -974,7 +1013,7 @@ Enjoy!
   (setq easy-hugo--refresh nil))
 
 (defun easy-hugo-sort-time ()
-  "Sort time easy hugo."
+  "Sort time on easy-hugo-mode."
   (interactive)
   (if easy-hugo--draft-list
       (progn
@@ -991,7 +1030,7 @@ Enjoy!
       (easy-hugo))))
 
 (defun easy-hugo-sort-char ()
-  "Sort char easy hugo."
+  "Sort char on easy-hugo-mode."
   (interactive)
   (if easy-hugo--draft-list
       (progn
@@ -1008,13 +1047,15 @@ Enjoy!
       (easy-hugo))))
 
 (defun easy-hugo-forward-char (arg)
-  "Forward-char as ARG."
+  "Forward-char on easy-hugo-mode.
+Optional prefix ARG says how many lines to move; default is one line."
   (interactive "^p")
   (when (not (eolp))
     (forward-char (or arg 1))))
 
 (defun easy-hugo-backward-char (arg)
-  "Backward-char as ARG."
+  "Backward-char on easy-hugo-mode.
+Optional prefix ARG says how many lines to move; default is one line."
   (interactive "^p")
   (when (not (bolp))
     (backward-char (or arg 1))))
@@ -1027,7 +1068,8 @@ Enjoy!
   (forward-char easy-hugo--forward-char))
 
 (defun easy-hugo-backward-word (&optional arg)
-  "Easy-hugo backward-word as ARG."
+  "Easy-hugo backward-word.
+Optional prefix ARG says how many lines to move; default is one line."
   (interactive "^p")
   (forward-word (- (or arg 1)))
   (if (< (line-number-at-pos) easy-hugo--unmovable-line)
@@ -1147,7 +1189,7 @@ Optional prefix ARG says how many lines to move; default is one line."
 	   (when (y-or-n-p (concat "Delete " file))
 	     (if easy-hugo-no-help
 		 (setq easy-hugo--line (- (line-number-at-pos) 4))
-	       (setq easy-hugo--line (- (line-number-at-pos) easy-hugo--delete-line)))
+	       (setq easy-hugo--line (- (line-number-at-pos) (+ easy-hugo--unmovable-line 1))))
 	     (delete-file file)
 	     (if easy-hugo--draft-list
 		 (easy-hugo-draft-list)
@@ -1359,7 +1401,7 @@ Optional prefix ARG says how many lines to move; default is one line."
     (easy-hugo)))
 
 (defun easy-hugo-nth-blog (n)
-  "Go to nth blog as N."
+  "Go to blog of number N."
   (interactive "nBlog number:")
   (when (or (< n 0)
 	    (>= n (length easy-hugo-bloglist)))
@@ -1533,7 +1575,7 @@ output directories whose names match REGEXP."
     (nconc result (nreverse files))))
 
 (defun easy-hugo-draft-list ()
-  "List drafts."
+  "Drafts list mode of easy-hugo."
   (easy-hugo-with-env
    (when (> 0.25 (easy-hugo--version))
      (error "'List draft' requires hugo 0.25 or higher"))
@@ -1571,7 +1613,10 @@ output directories whose names match REGEXP."
 		'face
 		'easy-hugo-help-face)))
      (unless easy-hugo-no-help
-       (insert (propertize easy-hugo--help 'face 'easy-hugo-help-face)))
+       (insert (propertize easy-hugo-help 'face 'easy-hugo-help-face))
+       (when easy-hugo-additional-help
+	 (insert (propertize easy-hugo-add-help 'face 'easy-hugo-help-face)))
+       (insert (propertize (concat "\n")'face 'easy-hugo-help-face)))
      (unless easy-hugo--refresh
        (setq easy-hugo--cursor (point)))
      (cond ((eq 1 easy-hugo--sort-char-flg) (setq files (reverse (sort files 'string<))))
@@ -1605,7 +1650,7 @@ output directories whose names match REGEXP."
 
 ;;;###autoload
 (defun easy-hugo ()
-  "Easy hugo."
+  "Easy hugo mode."
   (interactive)
   (easy-hugo-with-env
    (unless (file-directory-p (expand-file-name easy-hugo-postdir easy-hugo-basedir))
@@ -1626,7 +1671,10 @@ output directories whose names match REGEXP."
 	      'face
 	      'easy-hugo-help-face)))
    (unless easy-hugo-no-help
-     (insert (propertize easy-hugo--help 'face 'easy-hugo-help-face)))
+     (insert (propertize easy-hugo-help 'face 'easy-hugo-help-face))
+     (when easy-hugo-additional-help
+       (insert (propertize easy-hugo-add-help 'face 'easy-hugo-help-face)))
+     (insert (propertize (concat "\n")'face 'easy-hugo-help-face)))
    (unless easy-hugo--refresh
      (setq easy-hugo--cursor (point)))
    (let ((files (directory-files (expand-file-name easy-hugo-postdir easy-hugo-basedir)))
