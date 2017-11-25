@@ -5,7 +5,7 @@
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; Maintainer: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/ace-window
-;; Package-Version: 20171124.716
+;; Package-Version: 20171125.30
 ;; Version: 0.9.0
 ;; Package-Requires: ((avy "0.2.0"))
 ;; Keywords: window, location
@@ -274,6 +274,7 @@ LEAF is (PT . WND)."
     (?M aw-move-window "Move Window")
     (?j aw-switch-buffer-in-window "Select Buffer")
     (?n aw-flip-window)
+    (?u aw-switch-buffer-other-window "Switch Buffer Other Window")
     (?c aw-split-window-fair "Split Fair Window")
     (?v aw-split-window-vert "Split Vert Window")
     (?b aw-split-window-horz "Split Horz Window")
@@ -503,9 +504,17 @@ Windows are numbered top down, left to right."
 (defun aw-switch-buffer-in-window (window)
   "Select buffer in WINDOW."
   (aw-switch-to-window window)
-  (if (bound-and-true-p ivy-mode)
-      (ivy-switch-buffer)
-    (call-interactively 'switch-to-buffer)))
+  (aw--switch-buffer))
+
+(declare-function ivy-switch-buffer "ext:ivy")
+
+(defun aw--switch-buffer ()
+  (cond ((bound-and-true-p ivy-mode)
+         (ivy-switch-buffer))
+        ((bound-and-true-p ido-mode)
+         (ido-switch-buffer))
+        (t
+         (call-interactively 'switch-to-buffer))))
 
 (defcustom aw-swap-invert nil
   "When non-nil, the other of the two swapped windows gets the point."
@@ -564,6 +573,12 @@ Modify `aw-fair-aspect-ratio' to tweak behavior."
     (if (< (* h aw-fair-aspect-ratio) w)
         (aw-split-window-horz window)
       (aw-split-window-vert window))))
+
+(defun aw-switch-buffer-other-window (window)
+  "Switch buffer in WINDOW without selecting WINDOW."
+  (aw-switch-to-window window)
+  (aw--switch-buffer)
+  (aw-flip-window))
 
 (defun aw-offset (window)
   "Return point in WINDOW that's closest to top left corner.
