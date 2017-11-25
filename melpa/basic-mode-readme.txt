@@ -11,7 +11,7 @@ any jumps in the code.
 
 Installation:
 
-The easiest way to install basic-mode is from MELPA, please see
+The recommended way to install basic-mode is from MELPA, please see
 https://melpa.org.
 
 To install manually, place basic-mode.el in your load-path, and add

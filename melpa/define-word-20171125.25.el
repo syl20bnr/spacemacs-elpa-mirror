@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/define-word
-;; Package-Version: 20171001.1616
+;; Package-Version: 20171125.25
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: dictionary, convenience
@@ -42,18 +42,25 @@
   :group 'convenience
   :prefix "define-word-")
 
-(defconst define-word-limit 10
+(defvar define-word-limit 10
   "Maximum amount of results to display.")
 
 (defcustom define-word-unpluralize t
   "When non-nil, change the word to singular when appropriate.
-The rule is that all definitions must contain \"Plural of\".")
+The rule is that all definitions must contain \"Plural of\"."
+  :type 'boolean)
+
+(defcustom define-word-url "http://wordnik.com/words/"
+  "URL for looking up words."
+  :type '(choice
+          (const :tag "http" "http://wordnik.com/words/")
+          (const :tag "https" "https://wordnik.com/words/")))
 
 ;;;###autoload
 (defun define-word (word)
   "Define WORD using the Wordnik website."
   (interactive (list (read-string "Word: ")))
-  (let ((link (concat "https://wordnik.com/words/" (downcase word))))
+  (let ((link (concat define-word-url (downcase word))))
     (save-match-data
       (url-retrieve
        link

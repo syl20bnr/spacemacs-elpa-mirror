@@ -4,7 +4,7 @@
 
 ;; Author: David Shepherd <davidshepherd7@gmail.com>
 ;; Version: 1.0.0
-;; Package-Version: 20171124.1326
+;; Package-Version: 20171125.148
 ;; Package-Requires: ((dash "2.10.0") (names "20150618.0") (emacs "24.4"))
 ;; Keywords: electric
 ;; URL: https://github.com/davidshepherd7/electric-operator
@@ -987,6 +987,9 @@ Also handles C++ lambda capture by reference."
 
                     (cons "=" #'julia-mode-kwargs-=)
                     (cons ";" "; ")
+
+                    ;; Subtype comparison
+                    (cons "<:" " <: ")
 
                     ;; Cool! Unicode!
                     (cons "÷" " ÷ ")

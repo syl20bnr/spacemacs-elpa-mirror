@@ -1,19 +1,20 @@
-This program searches the web for BibTeX entries matching the given
-Author end/or Title.  It displays then a selection buffer, that permits
-to examine and choose entries to add to the bibliography file, or to
-insert into the current buffer.
+Usage: call
+  M-x bibretrieve
+Enter (part of) the author's name and/or title.
+Matching BibTeX entries are fetched using the configured backends
+and displayed in a selection buffer.
+The entries can then be appended to the bibliography file
+or inserted into the current buffer.
 
-The function is called through "M-x bibretrieve".  Then it prompts for
-author and title.  For an advanced use, that permits to select which
-backend to use, call it with "C-u M-x bibretrieve".
+Configuration:
+To select which backends to use customize the variable "bibretrieve-backends".
+To select a backend for a single invocation call the function with
+  C-u M-x bibretrieve
 
-The configuration is done with the variable bibretrieve-backends, that
-is an alist with pairs containing the backend to use and the timeout
-for it.  See the README file for the list of supported backends.
-
+Extension:
 To create a new backend define a new function
 "bibretrieve-backend-NAME" that takes as input author and title
-and returns a buffer that contains some bibtex entries.
+and returns a buffer that contains bibtex entries.
 The function should be defined in "bibretrieve-base.el".
 It is then necessary to advise bibretrieve of the new backend,
 adding NAME to the list "bibretrieve-installed-backends".
