@@ -2,7 +2,7 @@
 
 ;; Copyright (c) 2013 Spotify AB
 ;; Package-Requires: ((emacs "24") (s "1.12"))
-;; Package-Version: 20171105.435
+;; Package-Version: 20171124.1647
 ;; Homepage: https://github.com/spotify/dockerfile-mode
 ;;
 ;; Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -44,7 +44,9 @@
   :group 'dockerfile)
 
 (defcustom dockerfile-use-sudo nil
-  "Runs docker builder command with sudo.")
+  "Runs docker builder command with sudo."
+  :type 'boolean
+  :group 'dockerfile)
 
 (defcustom dockerfile-build-args nil
   "List of --build-arg to pass to docker build.
@@ -64,7 +66,7 @@ Each element of the list will be passed as a separate
     ,@(sh-font-lock-keywords)
     ,@(sh-font-lock-keywords-2)
     ,@(sh-font-lock-keywords-1))
-  "Default font-lock-keywords for `dockerfile mode'.")
+  "Default `font-lock-keywords' for `dockerfile mode'.")
 
 (defvar dockerfile-mode-map
   (let ((map (make-sparse-keymap))
@@ -106,9 +108,9 @@ Each element of the list will be passed as a separate
              dockerfile-build-args " "))
 
 (defun dockerfile-standard-filename (file)
-  "Convert the file name to OS standard.
+  "Convert the FILE name to OS standard.
 If in Cygwin environment, uses Cygwin specific function to convert the
-file name. Otherwise, uses Emacs' standard conversion function."
+file name.  Otherwise, uses Emacs' standard conversion function."
   (if (fboundp 'cygwin-convert-file-name-to-windows)
       (s-replace "\\" "\\\\" (cygwin-convert-file-name-to-windows file))
     (convert-standard-filename file)))
