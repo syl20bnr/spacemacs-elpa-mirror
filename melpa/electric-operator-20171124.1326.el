@@ -4,7 +4,7 @@
 
 ;; Author: David Shepherd <davidshepherd7@gmail.com>
 ;; Version: 1.0.0
-;; Package-Version: 20171022.625
+;; Package-Version: 20171124.1326
 ;; Package-Requires: ((dash "2.10.0") (names "20150618.0") (emacs "24.4"))
 ;; Keywords: electric
 ;; URL: https://github.com/davidshepherd7/electric-operator
@@ -972,6 +972,90 @@ Also handles C++ lambda capture by reference."
                     (cons ":" ": ")
                     (cons "," ", "))
 
+
+
+
+;;; Julia mode
+
+(defun julia-mode-kwargs-= ()
+  (cond
+   ((eq (enclosing-paren) ?\() "=")
+   (t " = ")))
+
+(apply #'add-rules-for-mode 'julia-mode prog-mode-rules)
+(add-rules-for-mode 'julia-mode
+
+                    (cons "=" #'julia-mode-kwargs-=)
+                    (cons ";" "; ")
+
+                    ;; Cool! Unicode!
+                    (cons "÷" " ÷ ")
+                    (cons "≠" " ≠ ")
+                    (cons "≤" " ≤ ")
+                    (cons "≥" " ≥ ")
+
+                    ;; something about fractions
+                    (cons "//" " // ")
+                    (cons ".//" " .// ")
+                    (cons "//=" " //= ")
+
+                    ;; pipe
+                    (cons "|>" " |> ")
+
+                    (cons "*" " * ")
+                    (cons "/" " / ")
+                    (cons "%" " % ")
+                    (cons "&" " & ")
+
+                    ;; \ (escaped), for solving matrix multiplies
+                    (cons "\\" " \\ ")
+                    (cons "\\=" " \\= ")
+                    (cons ".\\" " .\\ ")
+
+                    ;; XOR
+                    (cons "$" " $ ")
+
+                    ;; Even more equal!
+                    (cons "===" " === ")
+                    (cons "!==" " !== ")
+
+                    ;; vector operations and assign-operators
+                    (cons ".^" " .^ ")
+                    (cons ".*" " .* ")
+                    (cons "./" " ./ ")
+                    (cons ".%" " .% ")
+                    (cons "<<" " << ")
+                    (cons ">>" " >> ")
+                    (cons ">>>" " >>> ")
+                    (cons ".<<" " .<< ")
+                    (cons ".>>" " .>> ")
+                    (cons ".>>>" " .>>> ")
+                    (cons ".+" " .+ ")
+                    (cons ".-" " .- ")
+                    (cons ".>" " .> ")
+                    (cons ".<" " .< ")
+                    (cons ".>=" " .>= ")
+                    (cons ".<=" " .<= ")
+                    (cons ".==" " .== ")
+                    (cons ".!=" " .!= ")
+                    (cons "^=" " ^= ")
+                    (cons "÷=" " ÷= ")
+                    (cons "%=" " %= ")
+                    (cons "|=" " |= ")
+                    (cons "&=" " &= ")
+                    (cons "$=" " $= ")
+                    (cons "<<=" " <<= ")
+                    (cons ">>=" " >>= ")
+                    (cons ">>>=" " >>>= ")
+                    (cons ".+=" " .+= ")
+                    (cons ".-=" " .-= ")
+                    (cons ".*=" " .*= ")
+                    (cons "./=" " ./= ")
+                    (cons ".//=" " .//= ")
+                    (cons ".\\=" " .\\= ")
+                    (cons ".^=" " .^= ")
+                    (cons ".÷=" " .÷= ")
+                    (cons ".%=" " .%= "))
 
 
 ) ; end of namespace

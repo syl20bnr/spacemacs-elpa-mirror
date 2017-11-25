@@ -4,7 +4,7 @@
 ;; the LICENSE file in the root directory of this source tree.
 
 ;; Version: 0.2
-;; Package-Version: 20171113.954
+;; Package-Version: 20171124.1238
 ;; URL: https://github.com/an-sh/flow-minor-mode
 
 ;; Package-Requires: ((emacs "25.1"))
@@ -278,8 +278,9 @@ BODY progn"
       (while (not stop)
         (when (not (re-search-forward "[^\n[:space:]]" nil t))
           (setq stop t))
-        (backward-char)
-
+        (if (equal (point) (point-min))
+            (setq stop t)
+          (backward-char))
         (cond ((or (looking-at "//+[ ]*@flow")
                    (looking-at "/\\**[ ]*@flow"))
                (setq found t)
