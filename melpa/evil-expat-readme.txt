@@ -13,8 +13,9 @@ Then the following ex commands will be available:
 :remove       remove current file and its buffer; like vim-eunuch's :Remove
 :rename       rename or move current file and its buffer; lime vim-eunuch's :Rename
 :reverse      reverse visually selected lines
-:colorscheme  change emacs color theme; like vim's ex command of the same name
+:colorscheme  change Emacs color theme; like vim's ex command of the same name
 :diff-orig    get a diff of unsaved changes; like vim's common `:DiffOrig` from the official example vimrc
+:gdiff        git-diff current file, requires `magit` and `vdiff-magit`; like vim-fugitive's :Gblame
 :gblame       git-blame current file, requires `magit`; like vim-fugitive's :Gblame
 :gremove      git remove current file, requires `magit`; like vim-fugitive's :Gremove
 :tyank        copy range into tmux paste buffer, requires running under `tmux`; like vim-tbone's :Tyank

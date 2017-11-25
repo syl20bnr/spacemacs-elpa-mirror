@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-expat
-;; Package-Version: 20171123.619
+;; Package-Version: 20171125.752
 ;; Package-Requires: ((emacs "24.3") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim
@@ -43,8 +43,9 @@
 ;; :remove       remove current file and its buffer; like vim-eunuch's :Remove
 ;; :rename       rename or move current file and its buffer; lime vim-eunuch's :Rename
 ;; :reverse      reverse visually selected lines
-;; :colorscheme  change emacs color theme; like vim's ex command of the same name
+;; :colorscheme  change Emacs color theme; like vim's ex command of the same name
 ;; :diff-orig    get a diff of unsaved changes; like vim's common `:DiffOrig` from the official example vimrc
+;; :gdiff        git-diff current file, requires `magit` and `vdiff-magit`; like vim-fugitive's :Gblame
 ;; :gblame       git-blame current file, requires `magit`; like vim-fugitive's :Gblame
 ;; :gremove      git remove current file, requires `magit`; like vim-fugitive's :Gremove
 ;; :tyank        copy range into tmux paste buffer, requires running under `tmux`; like vim-tbone's :Tyank
@@ -53,6 +54,62 @@
 ;;; Code:
 
 (require 'evil)
+
+;;; utils
+
+(defmacro evil-expat--define-ex-argument (name-str name body)
+  "Define ex argument with name NAME-STR.
+
+NAME should be the same as NAME-STR but without the
+angle-brackets.  BODY must return a list of completions.
+
+Ideally, NAME-STR should be depraced and derived from NAME."
+  (declare (indent 2) (debug t))
+  `(progn
+
+     (evil-define-interactive-code ,name-str
+       :ex-arg ,name
+       (list (when (and (evil-ex-p) evil-ex-argument)
+               (intern evil-ex-argument))))
+
+     (evil-ex-define-argument-type ,name
+       :collection
+       (lambda (arg predicate flag)
+         (let ((completions
+                (,@body)))
+           (when arg
+             (cond
+              ((eq flag nil)
+               (try-completion arg completions predicate))
+              ((eq flag t)
+               (all-completions arg completions predicate))
+              ((eq flag 'lambda)
+               (test-completion arg completions predicate))
+              ((eq (car-safe flag) 'boundaries)
+               (cons 'boundaries
+                     (completion-boundaries arg
+                                            completions
+                                            predicate
+                                            (cdr flag)))))))))))
+
+(declare-function magit-file-tracked-p "ext:magit")
+
+(defun evil-expat--filename-or-user-error (&optional check-magit-trackedp)
+  "Return the current buffer file name or a call `user-error'.
+
+If CHECK-MAGIT-TRACKEDP is non-nil, check if the file is tracked in
+git."
+  (let ((filename (buffer-file-name)))
+    (unless filename
+      (user-error "Buffer %s is not visiting a file" (buffer-name)))
+    (unless (magit-file-tracked-p filename)
+      (user-error "File %s is not tracked by git" filename))
+    filename))
+
+;;; :reverse
+
+;;;###autoload
+(eval-after-load 'evil '(progn (evil-ex-define-cmd "rev[erse]" 'evil-expat-reverse) (autoload 'evil-expat-reverse "evil-expat" nil t)))
 
 (evil-define-command evil-expat-reverse (beg end)
   "Reverse the lines between BEG and END."
@@ -63,11 +120,10 @@
     (user-error "More than one lines must be selected"))
   (reverse-region beg end))
 
+;;; :remove
+
 ;;;###autoload
-(eval-after-load 'evil
-  '(progn
-     (evil-ex-define-cmd "rev[erse]" 'evil-expat-reverse)
-     (autoload 'evil-expat-reverse "evil-expat" nil t)))
+(eval-after-load 'evil '(progn (evil-ex-define-cmd "remove" 'evil-expat-remove) (autoload 'evil-expat-remove "evil-expat" nil t)))
 
 ;; :remove to delete file and buffer
 (defun evil-expat-remove ()
@@ -80,11 +136,10 @@
     (kill-buffer)
     (message "Removed %s and its buffer" filename)))
 
+;;; :rename
+
 ;;;###autoload
-(eval-after-load 'evil
-  '(progn
-     (evil-ex-define-cmd "remove" 'evil-expat-remove)
-     (autoload 'evil-expat-remove "evil-expat" nil t)))
+(eval-after-load 'evil '(progn (evil-ex-define-cmd "rename" 'evil-expat-rename) (autoload 'evil-expat-rename "evil-expat" nil t)))
 
 (evil-define-command evil-expat-rename (bang new-name)
   "Rename the current file and its buffer to NEW-NAME.
@@ -113,14 +168,10 @@ If NEW-NAME is a directory, the file is moved there."
     (set-visited-file-name new-name t)
     (set-buffer-modified-p nil)))
 
-;;;###autoload
-(eval-after-load 'evil
-  '(progn
-     (evil-ex-define-cmd "rename" 'evil-expat-rename)
-     (autoload 'evil-expat-rename "evil-expat" nil t)))
+;;; :gblame
 
-(declare-function magit-file-tracked-p "ext:magit")
-(declare-function magit-file-delete "ext:magit")
+;;;###autoload
+(eval-after-load 'evil '(progn (evil-ex-define-cmd "gblame" 'evil-expat-gblame) (autoload 'evil-expat-gblame "evil-expat" nil t)))
 
 (defun evil-expat-gblame ()
   "The ex :gblame command."
@@ -129,11 +180,10 @@ If NEW-NAME is a directory, the file is moved there."
     (user-error "Package magit isn't installed"))
   (call-interactively 'magit-blame))
 
+;;; :gremove
+
 ;;;###autoload
-(eval-after-load 'evil
-  '(progn
-     (evil-ex-define-cmd "gblame" 'evil-expat-gblame)
-     (autoload 'evil-expat-gblame "evil-expat" nil t)))
+(eval-after-load 'evil '(progn (evil-ex-define-cmd "gremove" 'evil-expat-gremove) (autoload 'evil-expat-gremove "evil-expat" nil t)))
 
 (declare-function magit-call-git "ext:magit")
 
@@ -161,11 +211,12 @@ BANG forces removal of files with modifications"
     (when (not (file-exists-p filename))
       (kill-buffer))))
 
+;;; :tyank and :tput
+
 ;;;###autoload
-(eval-after-load 'evil
-  '(progn
-     (evil-ex-define-cmd "gremove" 'evil-expat-gremove)
-     (autoload 'evil-expat-gremove "evil-expat" nil t)))
+(eval-after-load 'evil '(progn (evil-ex-define-cmd "tyank" 'evil-expat-tyank) (autoload 'evil-expat-tyank "evil-expat" nil t)))
+;;;###autoload
+(eval-after-load 'evil '(progn (evil-ex-define-cmd "tput" 'evil-expat-tput) (autoload 'evil-expat-tput "evil-expat" nil t)))
 
 ;; define :tyank and :tput only when running under tmux
 (when (and (getenv "TMUX") (executable-find "tmux"))
@@ -182,56 +233,24 @@ BANG forces removal of files with modifications"
       (newline)
       (insert (shell-command-to-string "tmux show-buffer")))))
 
-;;;###autoload
-(eval-after-load 'evil
-  '(progn
-     (evil-ex-define-cmd "tyank" 'evil-expat-tyank)
-     (autoload 'evil-expat-tyank "evil-expat" nil t)))
+;;; diff-orig
 
 ;;;###autoload
-(eval-after-load 'evil
-  '(progn
-     (evil-ex-define-cmd "tput" 'evil-expat-tput)
-     (autoload 'evil-expat-tput "evil-expat" nil t)))
+(eval-after-load 'evil '(progn (evil-ex-define-cmd "diff-orig" 'evil-expat-diff-orig) (autoload 'evil-expat-diff-orig "evil-expat" nil t)))
 
 (defun evil-expat-diff-orig ()
   "Call function `diff-buffer-with-file' non-interactively."
   (interactive)
   (diff-buffer-with-file))
 
+;;; :colorscheme
+
+(evil-expat--define-ex-argument "<expat-theme>" expat-theme
+  (append '("default")
+          (mapcar 'symbol-name (custom-available-themes))))
+
 ;;;###autoload
-(eval-after-load 'evil
-  '(progn
-     (evil-ex-define-cmd "diff-orig" 'evil-expat-diff-orig)
-     (autoload 'evil-expat-diff-orig "evil-expat" nil t)))
-
-(evil-define-interactive-code "<expat-theme>"
-  "A color theme ex argument."
-  :ex-arg expat-theme
-  (list (when (and (evil-ex-p) evil-ex-argument)
-          (intern evil-ex-argument))))
-
-(evil-ex-define-argument-type expat-theme
-  "Defines an argument type which can take a color theme name."
-  :collection
-  (lambda (arg predicate flag)
-    (let ((completions
-           (append '("default") ;; append "default" theme
-                   (mapcar 'symbol-name (custom-available-themes)))))
-      (when arg
-        (cond
-         ((eq flag nil)
-          (try-completion arg completions predicate))
-         ((eq flag t)
-          (all-completions arg completions predicate))
-         ((eq flag 'lambda)
-          (test-completion arg completions predicate))
-         ((eq (car-safe flag) 'boundaries)
-          (cons 'boundaries
-                (completion-boundaries arg
-                                       completions
-                                       predicate
-                                       (cdr flag)))))))))
+(eval-after-load 'evil '(progn (evil-ex-define-cmd "colo[rscheme]" 'evil-expat-colorscheme) (autoload 'evil-expat-colorscheme "evil-expat" nil t)))
 
 (evil-define-command evil-expat-colorscheme (theme)
   "The ex :colorscheme command"
@@ -240,11 +259,35 @@ BANG forces removal of files with modifications"
   (unless (string-equal "default" theme)
     (load-theme theme t)))
 
+;;; :gdiff
+
+(evil-expat--define-ex-argument "<expat-git-branch>" expat-git-branch
+  (progn
+    (unless (require 'magit nil 'noerror)
+      (user-error "Package magit isn't installed"))
+    (magit-list-local-branch-names)))
+
 ;;;###autoload
-(eval-after-load 'evil
-  '(progn
-     (evil-ex-define-cmd "colo[rscheme]" 'evil-expat-colorscheme)
-     (autoload 'evil-expat-colorscheme "evil-expat" nil t)))
+(eval-after-load 'evil '(progn (evil-ex-define-cmd "gdiff" 'evil-expat-gdiff) (autoload 'evil-expat-gdiff "evil-expat" nil t)))
+
+(declare-function vdiff-magit-compare "ext:vdiff-magit")
+(declare-function vdiff-magit-show-unstaged "ext:vdiff-magit")
+
+(evil-define-command evil-expat-gdiff (&optional revision)
+  "Diff the current file with the current file in REVISION.
+
+If REVISION is null, show unstaged changes."
+  (interactive "<expat-git-branch>")
+
+  (unless (require 'vdiff-magit nil 'noerror)
+    (user-error "Package vdiff-magit isn't installed"))
+
+  (let ((filename (evil-expat--filename-or-user-error t)))
+    ;; TODO revision should be given as a string by the interactive ex arg <expat-git-branch>
+    (if revision
+        (vdiff-magit-compare "HEAD" (symbol-name revision) filename filename)
+      (vdiff-magit-show-unstaged filename))
+    ))
 
 (provide 'evil-expat)
 
