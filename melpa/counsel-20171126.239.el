@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171125.36
+;; Package-Version: 20171126.239
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -500,6 +500,11 @@ COUNT defaults to 1."
          (push (symbol-name vv) cands))))
     (delete "" cands)))
 
+(defcustom counsel-describe-variable-function 'describe-variable
+  "Function to call to describe a variable passed as parameter."
+  :type 'function
+  :group 'ivy)
+
 (defun counsel-describe-variable-transformer (var)
   "Propertize VAR if it's a custom variable."
   (if (custom-variable-p (intern var))
@@ -526,8 +531,7 @@ Variables declared using `defcustom' are highlighted according to
      :require-match t
      :sort t
      :action (lambda (x)
-               (describe-variable
-                (intern x)))
+               (funcall counsel-describe-variable-function (intern x)))
      :caller 'counsel-describe-variable)))
 
 ;;** `counsel-describe-function'
@@ -535,6 +539,11 @@ Variables declared using `defcustom' are highlighted according to
  'counsel-describe-function
  '(("I" counsel-info-lookup-symbol "info")
    ("d" counsel--find-symbol "definition")))
+
+(defcustom counsel-describe-function-function 'describe-function
+  "Function to call to describe a function passed as parameter."
+  :type 'function
+  :group 'ivy)
 
 (defun counsel-describe-function-transformer (function-name)
   "Propertize FUNCTION-NAME if it's an interactive function."
@@ -566,8 +575,7 @@ to `ivy-highlight-face'."
               :require-match t
               :sort t
               :action (lambda (x)
-                        (describe-function
-                         (intern x)))
+                        (funcall counsel-describe-function-function (intern x)))
               :caller 'counsel-describe-function)))
 
 ;;** `counsel-set-variable'

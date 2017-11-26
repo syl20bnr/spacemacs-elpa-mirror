@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/avy
-;; Package-Version: 20171111.921
+;; Package-Version: 20171126.815
 ;; Version: 0.4.0
 ;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
 ;; Keywords: point, location
@@ -1769,6 +1769,10 @@ newline."
   "How many seconds to wait for the second char."
   :type 'float)
 
+(defcustom avy-enter-times-out t
+  "Whether enter exits avy-goto-char-timer early. If nil it matches newline"
+  :type 'boolean)
+
 (defun avy--read-candidates (&optional re-builder)
   "Read as many chars as possible and return their occurences.
 At least one char must be read, and then repeatedly one next char
@@ -1803,7 +1807,9 @@ Otherwise, the whole regex is highlighted."
              (cond
                ;; Handle RET
                ((= char 13)
-                (setq break t))
+                (if avy-enter-times-out
+                    (setq break t)
+                  (setq str (concat str (list ?\n)))))
                ;; Handle C-h, DEL
                ((memq char '(8 127))
                 (let ((l (length str)))
