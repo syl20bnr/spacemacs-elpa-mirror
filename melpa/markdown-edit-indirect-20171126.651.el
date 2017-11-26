@@ -4,7 +4,7 @@
 
 ;; Author: Mario Rodas <marsam@users.noreply.github.com>
 ;; URL: https://github.com/emacs-pe/markdown-edit-indirect.el
-;; Package-Version: 20170607.1244
+;; Package-Version: 20171126.651
 ;; Keywords: convenience
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "24.3") (markdown-mode "2.2") (edit-indirect "0.1.4"))
@@ -27,6 +27,9 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
+
+;; > **NOTE:** THIS PACKAGE IS DEPRECATED, as `markdown-mode' includes
+;; > `markdown-edit-code-block' since v2.3 which offers the same functionality.
 
 ;; Edit markdown code block in a separate buffer like `org-edit-src-code'.
 ;;
