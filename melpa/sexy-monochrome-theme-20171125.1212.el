@@ -4,7 +4,7 @@
 
 ;; Author: Volodymyr Yevtushenko <voloyev@vivaldi.net>
 ;; Keywords: themes
-;; Package-Version: 20171011.536
+;; Package-Version: 20171125.1212
 ;; URL: https://github.com/voloyev/sexy-monochrome-theme
 ;; Version: 2.0
 
@@ -95,11 +95,11 @@
    `(success ((,class (:foreground "green"))))
 
    ;; Font lock faces
-   `(font-lock-builtin-face ((,class (:foreground ,foreground :weight bold))))
-   `(font-lock-constant-face ((,class (:foreground ,foreground :weight bold))))
-   `(font-lock-keyword-face ((,class (:foreground ,foreground :weight bold))))
+   `(font-lock-builtin-face ((,class (:foreground ,foreground :weight semi-bold))))
+   `(font-lock-constant-face ((,class (:foreground ,foreground :weight semi-bold))))
+   `(font-lock-keyword-face ((,class (:foreground ,foreground :weight semi-bold))))
    `(font-lock-type-face ((,class (:foreground ,foreground :slant italic))))
-   `(font-lock-function-name-face ((,class (:foreground ,foreground :weight bold))))
+   `(font-lock-function-name-face ((,class (:foreground ,foreground :weight semi-bold))))
    `(font-lock-variable-name-face ((,class (:foreground ,foreground))))
    `(font-lock-comment-delimiter-face ((,class (:foreground ,comment))))
    `(font-lock-comment-face ((,class (:foreground ,comment))))
