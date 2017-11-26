@@ -1,13 +1,13 @@
 Description:
 
-This extension allows you to use the codesearch code indexing
-system in emacs.
+This extension provides basic support for executing the codesearch tools and
+for managing codesearch indices.
 
 For more details, see the project page at
-https://github.com/abingham/codesearch.el.
+https://github.com/abingham/emacs-codesearch
 
 For more details on codesearch, see its project page at
-http://code.google.com/p/codesearch/
+https://github.com/google/codesearch
 
 Installation:
 

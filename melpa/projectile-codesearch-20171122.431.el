@@ -1,15 +1,15 @@
 ;;; projectile-codesearch.el --- Integration of codesearch into projectile
 ;;
 ;; Author: Austin Bingham <austin.bingham@gmail.com>
-;; Version: 1
-;; Package-Version: 20151228.20
-;; URL: https://github.com/abingham/codesearch.el
+;; Version: 2
+;; Package-Version: 20171122.431
+;; URL: https://github.com/abingham/emacs-codesearch
 ;; Keywords: tools, development, search
-;; Package-Requires: ((codesearch "20141019.625") (projectile "20150405.126"))
+;; Package-Requires: ((listing-codesearch "20141019.625") (projectile "20150405.126"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
-;; Copyright (c) 2014-2016 Austin Bingham
+;; Copyright (c) 2014-2017 Austin Bingham
 ;;
 ;;; Commentary:
 ;;
@@ -19,7 +19,7 @@
 ;; projectile projects.
 ;;
 ;; For more details, see the project page at
-;; https://github.com/abingham/codesearch.el.
+;; https://github.com/abingham/emacs-codesearch.
 ;;
 ;; For more details on projectile, see its project page at
 ;; http://github.com/bbatsov/projectile
@@ -62,7 +62,7 @@
 
 ;;; Code:
 
-(require 'codesearch)
+(require 'listing-codesearch)
 
 (defun projectile-codesearch-search (pattern file-pattern)
   (interactive
@@ -71,7 +71,7 @@
     (read-string "File pattern: " ".*")))
   (unless (projectile-project-root) (error "Not in a projectile project."))
   (let ((fpatt (concat (projectile-project-root) file-pattern)))
-    (codesearch-search pattern fpatt)))
+    (listing-codesearch-search pattern fpatt)))
 
 (provide 'projectile-codesearch)
 

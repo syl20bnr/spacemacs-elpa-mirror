@@ -4,7 +4,7 @@ This extension makes it convenient to use codesearch with
 projectile projects.
 
 For more details, see the project page at
-https://github.com/abingham/codesearch.el.
+https://github.com/abingham/emacs-codesearch.
 
 For more details on projectile, see its project page at
 http://github.com/bbatsov/projectile
