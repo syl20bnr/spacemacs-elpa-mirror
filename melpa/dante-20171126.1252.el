@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20171126.1001
+;; Package-Version: 20171126.1252
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -273,19 +273,19 @@ When the universal argument INSERT is non-nil, insert the type in the buffer."
 ;; Flycheck checker
 
 (defvar-local dante-loaded-file "<DANTE:NO-FILE-LOADED>")
-(defvar-local dante-loaded-interpreted nil)
 
 (defun dante-async-load-current-buffer (interpret cont)
   "Load and maybe INTERPRET the temp file for current buffer and run CONT in a session.
 The continuation must call its first argument; see `dante-session'."
+;; Note that the GHCi doc appears to be wrong. TEST before changing this code.
   (let ((fname (dante-local-name (dante-temp-file))))
     (dante-cps-let (((buffer done) (dante-session))
                     (_ (dante-async-call (if interpret ":set -fbyte-code" ":set -fobject-code")))
                     (load-message
                      (dante-async-call
                       (if (string-equal (buffer-local-value 'dante-loaded-file buffer) fname)
-                          ":r" (concat ":l *" fname)))))
-      (with-current-buffer buffer (setq dante-loaded-interpreted interpret))
+                          ":r" (concat ":l " fname)))))
+      (with-current-buffer buffer (setq dante-loaded-file fname))
       (funcall cont done load-message))))
 
 (defun dante-check (checker cont)
@@ -324,12 +324,12 @@ CHECKER and BUFFER are added to each item parsed from STRING."
     (while (and
             (not (string-prefix-p "\nOk, modules loaded:" string)) ;; after that GHC may repeat already output messages.
             (string-match
-             "[\n]\\([A-Z]?:?[^ \n:][^:\n\r]+\\):\\([0-9()-:]+\\): \\(.*\n\\([ ]+.*\n\\)*\\)"
+             "^\\([A-Z]?:?[^ \n:][^:\n\r]+\\):\\([0-9()-:]+\\): \\(.*\\(\n[ ]+.*\\)*\\)"
              string))
       (let* ((file (dante-canonicalize-path (match-string 1 string)))
              (location-raw (match-string 2 string))
              (msg (s-trim (match-string 3 string)))
-             (s (substring string (1- (match-end 0))))
+             (s (substring string (match-end 0)))
              (type (cond
                     ((string-match-p "^warning: \\[-W\\(typed-holes\\|deferred-\\(type-errors\\|out-of-scope-variables\\)\\)\\]" msg) 'error)
                     ((string-match-p "^warning:" msg) 'warning)
@@ -598,6 +598,8 @@ other sub-sessions start running.)"
     (with-current-buffer buffer (push (list :func cont :source-buffer source-buffer) dante-queue))
     (dante-schedule-next buffer)))
 
+(defcustom dante-load-flags '("-Wall" "+c")
+"Flags to set whenever GHCi is started. Consider also: -fdefer-type-errors -fdefer-typed-holes" :type '(repeat string))
 (defun dante-start ()
   "Start a GHCi worker and return its buffer."
   (let* ((args (-non-nil (-map #'eval (dante-repl-command-line))))
@@ -613,13 +615,11 @@ other sub-sessions start running.)"
         (setq-local dante-command-line (process-command process)))
       (dante-set-state 'starting)
       (dante-cps-let
-          ((_start-messages (dante-async-call
-                             (concat ":set -Wall\n" ;; TODO: configure
-                                     ":set +c\n" ;; collect type info
-                                     ":set prompt \"\\4%s|\""))))
+          ((_start-messages
+            (dante-async-call (s-join "\n" (--map (concat ":set " it) (-snoc dante-load-flags "prompt \"\\4%s|\""))))))
         (dante-set-state 'running)
-        (message "GHCi running!")
-        (dante-schedule-next buffer))
+        (dante-schedule-next buffer) ;; make sure that the desired continuation is run
+        (message "GHCi running!"))
       (set-process-filter
        process
        (lambda (process string)
@@ -892,6 +892,22 @@ a list is returned instead of failing with a nil result."
       (funcall ret xrefs))))
 
 (add-hook 'xref-backend-functions 'dante--xref-backend)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Idle-hook draft
+
+;; (setq dante-timer (run-with-idle-timer 2 t #'dante-idle-function))
+;; (defun dante-idle-function ()
+;;   (when dante-mode
+;;     (let ((tap (dante--ghc-subexp (dante-thing-at-point))))
+;;       (unless (or (nth 4 (syntax-ppss)) (s-blank? tap))
+;;         (setq-local dante-idle-point (point))
+;;         (dante-cps-let (((done _load-messages) (dante-async-load-current-buffer t))
+;;                         (ty (dante-async-call (concat ":type-at " tap))))
+;;           (when (eq (point) dante-idle-point)
+;;             (message "%s" (s-collapse-whitespace (dante-fontify-expression ty))))
+;;           (funcall done))))))
+;; (cancel-timer dante-timer)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Auto-fix

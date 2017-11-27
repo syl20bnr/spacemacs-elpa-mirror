@@ -4,7 +4,7 @@
 
 ;; Author: Nicolas Petton <nicolas@petton.fr>
 ;; Keywords: themes
-;; Package-Version: 20171016.59
+;; Package-Version: 20171126.1202
 ;; URL: https://github.com/NicolasPetton/zerodark-theme
 ;; Version: 4.3
 ;; Package: zerodark-theme
@@ -550,6 +550,7 @@ The result is cached for one second to avoid hiccups."
    `(ivy-match-required-face ((,class (:foreground ,red :background ,background-red :weight bold))))
    `(ivy-modified-buffer ((,class (:foreground ,red))))
    `(ivy-remote ((,class (:foreground ,blue))))
+   `(ivy-highlight-face ((,class (:foreground ,blue :weight bold))))
 
    ;; helm
    `(helm-candidate-number ((,class (:weight bold))))
