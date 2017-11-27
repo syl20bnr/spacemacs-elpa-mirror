@@ -4,7 +4,7 @@
 ;;
 ;; Author: Mark Karpov <markkarpov92@gmail.com>
 ;; URL: https://github.com/mrkkrp/cyphejor
-;; Package-Version: 20171120.116
+;; Package-Version: 20171127.753
 ;; Version: 0.1.2
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: mode-line major-mode
@@ -136,7 +136,7 @@ mode name."
 
 Only do so when the buffer is in fundamental mode."
   (with-current-buffer buffer
-    (when (string= mode-name "Fundamental")
+    (when (eq major-mode 'fundamental-mode)
       (cyphejor--hook))))
 
 ;;;###autoload
