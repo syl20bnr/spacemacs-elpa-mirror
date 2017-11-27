@@ -21,7 +21,7 @@
 
 ;;; Author: Satoshi Egi <egisatoshi@gmail.com>
 ;;; URL: https://github.com/egisatoshi/egison3/blob/master/elisp/egison-mode.el
-;; Package-Version: 3.7.5
+;; Package-Version: 3.7.9
 ;;; Version: 0.1.5
 
 ;;; Commentary:
