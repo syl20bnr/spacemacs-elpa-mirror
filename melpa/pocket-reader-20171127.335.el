@@ -4,10 +4,10 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Created: 2017-09-25
-;; Version: 0.1.1
-;; Package-Version: 20171023.737
+;; Version: 0.2-pre
+;; Package-Version: 20171127.335
 ;; Keywords: pocket
-;; Package-Requires: ((emacs "25.1") (dash "2.13.0") (kv "0.0.19") (pocket-lib "0.1") (s "1.10") (ov "1.0.6") (rainbow-identifiers "0.2.2") (org-web-tools "0.1"))
+;; Package-Requires: ((emacs "25.1") (dash "2.13.0") (kv "0.0.19") (pocket-lib "0.1") (s "1.10") (ov "1.0.6") (rainbow-identifiers "0.2.2") (org-web-tools "0.1") (ht "2.2"))
 ;; URL: https://github.com/alphapapa/pocket-reader.el
 
 ;; This file is NOT part of GNU Emacs.
@@ -44,13 +44,15 @@
 ;; "a" pocket-reader-toggle-archived
 ;; "b" pocket-reader-open-in-external-browser
 ;; "c" pocket-reader-copy-url
+;; "d" pocket-reader (return to default view)
 ;; "D" pocket-reader-delete
 ;; "e" pocket-reader-excerpt
 ;; "E" pocket-reader-excerpt-all
 ;; "*" pocket-reader-toggle-favorite
 ;; "f" pocket-reader-toggle-favorite
 ;; "F" pocket-reader-show-unread-favorites
-;; "g" pocket-reader-refresh
+;; "g" pocket-reader-resort
+;; "G" pocket-reader-refresh
 ;; "s" pocket-reader-search
 ;; "m" pocket-reader-toggle-mark
 ;; "M" pocket-reader-mark-all
@@ -78,6 +80,7 @@
 
 (require 'dash)
 (require 'kv)
+(require 'ht)
 (require 'ov)
 (require 's)
 (require 'rainbow-identifiers)
@@ -95,17 +98,19 @@
                     "a" pocket-reader-toggle-archived
                     "b" pocket-reader-open-in-external-browser
                     "c" pocket-reader-copy-url
+                    "d" pocket-reader ; Return to default view
                     "D" pocket-reader-delete
                     "e" pocket-reader-excerpt
                     "E" pocket-reader-excerpt-all
                     "*" pocket-reader-toggle-favorite
                     "f" pocket-reader-toggle-favorite
                     "F" pocket-reader-show-unread-favorites
-                    "g" pocket-reader-refresh
+                    "g" pocket-reader-resort
+                    "G" pocket-reader-refresh
                     "s" pocket-reader-search
                     "m" pocket-reader-toggle-mark
                     "M" pocket-reader-mark-all
-                    "U" pocket-reader-unmark-all
+                    "u" pocket-reader-unmark-all
                     "o" pocket-reader-more
                     "l" pocket-reader-limit
                     "r" pocket-reader-random-item
@@ -128,8 +133,8 @@ not be used outside of functions that already use it.")
 (defvar pocket-reader-offset 0
   "The current offset.")
 
-(defvar pocket-reader-query nil
-  "The current query string.")
+(defvar pocket-reader-queries nil
+  "List of current query strings.")
 
 (defvar pocket-reader-mark-overlays nil
   "List of overlays used to mark items.
@@ -160,6 +165,10 @@ item ID and second is the overlay used to mark it.")
 (defgroup pocket-reader nil
   "Library for accessing GetPocket.com API."
   :group 'external)
+
+(defcustom pocket-reader-default-queries nil
+  "Default queries, used for initial view."
+  :type '(repeat string))
 
 (defcustom pocket-reader-open-url-default-function
   #'org-web-tools-read-url-as-org
@@ -205,6 +214,15 @@ REGEXP REGEXP ...)."
   :type '(alist :key-type function
                 :value-type (repeat string)))
 
+(defcustom pocket-reader-domain-url-type-map
+  '((resolved_url "reddit.com"))
+  "A list mapping URL types from `pocket-reader-url-priorities' to domains.
+
+This is useful when certain sites should have certain URL types
+preferred (e.g. if you prefer not to load AMP URLs for Reddit)."
+  :type '(alist :key-type symbol
+                :value-type (repeat string)))
+
 (defcustom pocket-reader-finalize-hook
   '(pocket-reader--apply-faces
     pocket-reader--add-spacers)
@@ -214,13 +232,19 @@ REGEXP REGEXP ...)."
              pocket-reader--add-spacers))
 
 (defcustom pocket-reader-url-priorities
-  '(:amp_url :resolved_url :given_url)
+  '(amp_url resolved_url given_url)
   "URLs for each item are chosen in this order.
 Pocket provides multiple URLs for each item, depending on what it
 can find.  This allows users to choose which URLs they prefer to
 use when opening, copying, etc."
   :type '(repeat symbol)
-  :options '(:amp_url :resolved_url :given_url))
+  :options '(amp_url resolved_url given_url))
+
+(defcustom pocket-reader-added-column-sort-function #'pocket-reader--added-fancy<
+  "Function to sort the \"Added\" column."
+  :type '(radio (function-item :tag "Default (by date, then favorite, then tags, then domain)" pocket-reader--added-fancy<)
+                (function-item :tag "By date only" pocket-reader--added<)
+                (function :tag "Custom function")))
 
 ;;;;;; Faces
 
@@ -255,14 +279,13 @@ use when opening, copying, etc."
 
 (defmacro pocket-reader--at-item (id-or-item &rest body)
   "Eval BODY with point at item ID-OR-ITEM.
-If ID-OR-ITEM is an integer, convert it to a string.  If it's an
-alist, get the `item-id' from it."
+ID-OR-ITEM should be an integer or an alist.  If it's an alist,
+get the `item-id' from it."
   (declare (indent defun) (debug (symbolp body)))
   `(pocket-reader--with-pocket-reader-buffer
      (let ((id (cl-typecase ,id-or-item
-                 (list (number-to-string (alist-get 'item_id ,id-or-item)))
-                 (integer (number-to-string ,id-or-item))
-                 (string ,id-or-item))))
+                 (integer ,id-or-item)
+                 (list (alist-get 'item_id ,id-or-item)))))
        (save-excursion
          (goto-char (point-min))
          (cl-loop while (not (eobp))
@@ -299,7 +322,8 @@ alist, get the `item-id' from it."
             'append 'local)
 
   (setq tabulated-list-sort-key '("Added" . nil))
-  (pocket-reader-search)
+  (setq pocket-reader-queries pocket-reader-default-queries)
+  (pocket-reader-refresh)
   (unless (cdr tabulated-list-sort-key)
     ;; Invert initial sort order, putting most recent items on top
     (tabulated-list-sort 0)))
@@ -315,25 +339,53 @@ alist, get the `item-id' from it."
   (switch-to-buffer (get-buffer-create "*pocket-reader*"))
   (pocket-reader-mode))
 
-(defun pocket-reader-search (&optional query)
-  "Search Pocket items with QUERY."
+(cl-defun pocket-reader-search (&optional query &key add)
+  "Search Pocket items with QUERY.
+If QUERY is nil, show default list.  With prefix or ADD non-nil,
+add items instead of replacing."
   ;; This function is the main one used to get and display items.
-  ;; When QUERY is nil, it simply shows the default list of unread items.
   (interactive (list (read-from-minibuffer "Query: ")))
-  (custom-reevaluate-setting 'pocket-reader-show-count)
-  (pocket-reader-unmark-all)
-  (setq pocket-reader-offset 0
-        pocket-reader-query query
-        pocket-reader-items nil)
+  (unless (or current-prefix-arg add)
+    ;; Not adding; reset everything
+    (goto-char (point-min))
+    (custom-reevaluate-setting 'pocket-reader-show-count)
+    (pocket-reader-unmark-all)
+    (setq pocket-reader-offset 0
+          pocket-reader-queries nil
+          pocket-reader-items (ht)))
   (let ((items (pocket-reader--get-items query)))
-    (pocket-reader--add-items items)
-    (unless items
-      (message "No items for query: %s" query))))
+    (if items
+        (progn
+          (cl-pushnew query pocket-reader-queries :test #'string=)
+          (pocket-reader--add-items items))
+      ;; No items found
+      (cl-case pocket-reader-offset
+        (0 (message "No items for query: %s" query))
+        (t (message "No more items for query: %s" query))))))
 
 (defun pocket-reader-refresh ()
-  "Refresh list using current query."
+  "Refresh list using current queries."
   (interactive)
-  (pocket-reader-search pocket-reader-query))
+  ;; TODO: Can we use the API's "since" option to just get changes?
+  (let ((first-line-visible-p (pos-visible-in-window-p (point-min))))
+    (cl-case (length pocket-reader-queries)
+      (1 (pocket-reader-search (car pocket-reader-queries)))
+      (t (let ((queries (cdr pocket-reader-queries)))
+           ;; Run the first query as a replacing search, then the rest
+           ;; as adding ones.  We save the queries, because the
+           ;; replacing search overwrites them.
+           (pocket-reader-search (car pocket-reader-queries))
+           (--each queries
+             (pocket-reader-search it :add t)))))
+    (when first-line-visible-p
+      ;; If point is on the first item, and new items are added above
+      ;; it, the new items will be off-screen, and the user won't
+      ;; realize they have been added.  So, if we started on what was
+      ;; the first line, show what's now the first line.
+      (let ((pos (point)))
+        (goto-char (point-min))
+        (redisplay)
+        (goto-char pos)))))
 
 (defun pocket-reader-show-unread-favorites ()
   "Show unread favorite items."
@@ -345,9 +397,10 @@ alist, get the `item-id' from it."
   (interactive "p")
   (let* ((count (if (= 1 count)
                     pocket-reader-show-count
-                  count))
-         (offset (incf pocket-reader-offset count)))
-    (pocket-reader--add-items (pocket-reader--get-items pocket-reader-query))))
+                  count)))
+    (incf pocket-reader-offset count)
+    (--each pocket-reader-queries
+      (pocket-reader-search it :add t))))
 
 (defun pocket-reader-limit (query)
   "Limit display to items matching QUERY."
@@ -355,11 +408,12 @@ alist, get the `item-id' from it."
   (interactive (list (read-from-minibuffer "Query: ")))
   (if (s-present? query)
       (save-excursion
+        (pocket-reader-unmark-all)
         (goto-char (point-min))
-        (cl-loop while (not (eobp))
-                 unless (re-search-forward query (line-end-position) t)
-                 do (ov (line-beginning-position) (1+ (line-end-position)) 'display "")
-                 do (forward-line 1)))
+        (while (not (eobp))
+          (unless (re-search-forward query (line-end-position) t)
+            (ov (line-beginning-position) (1+ (line-end-position)) 'display ""))
+          (forward-line 1)))
     ;; No query; show all entries
     (ov-clear 'display "")))
 
@@ -369,8 +423,7 @@ With universal prefix, read a key and call the command bound to
 that keystroke on a random item."
   (interactive "p")
   (let ((fn (or (and (> prefix 1)
-                     (let ((key (read-key "Key: ")))
-                       (alist-get key pocket-reader-mode-map)))
+                     (alist-get (read-key "Key: ") pocket-reader-mode-map))
                 #'pocket-reader-open-url)))
     (pocket-reader--with-pocket-reader-buffer
       (cl-loop do (progn
@@ -383,7 +436,7 @@ that keystroke on a random item."
   "Show excerpt for marked or current items."
   (interactive)
   (pocket-reader--at-marked-or-current-items
-    (let ((excerpt (pocket-reader--get-property :excerpt)))
+    (let ((excerpt (pocket-reader--get-property 'excerpt)))
       (unless (s-blank-str? excerpt)
         (let* ((start-col (1+ (cl-second (pocket-reader--column-data "Title"))))
                (prefix (s-repeat start-col " "))
@@ -406,7 +459,7 @@ that keystroke on a random item."
   (save-excursion
     (goto-char (point-min))
     (let ((first-excerpt (cl-loop while (not (eobp))
-                                  for excerpt = (pocket-reader--get-property :excerpt)
+                                  for excerpt = (pocket-reader--get-property 'excerpt)
                                   when excerpt
                                   return excerpt
                                   do (forward-line 1)
@@ -489,7 +542,7 @@ other special keywords."
   ;; FIXME: Get all tags with a function.
   (interactive (list (completing-read "Tags: " (let (tags)
                                                  (pocket-reader--at-marked-or-current-items
-                                                   (setq tags (append (pocket-reader--get-property :tags) tags)))
+                                                   (setq tags (append (pocket-reader--get-property 'tags) tags)))
                                                  (-sort #'string< (-uniq tags))))))
   (let* ((tags (s-split (rx (or space ",")) tags 'omit-nulls))
          (remove-tags-string (s-join "," tags)))
@@ -517,7 +570,9 @@ other special keywords."
   "Open URL of current item with default function."
   (interactive)
   (pocket-reader--at-marked-or-current-items
-    (let* ((url (pocket-reader--get-url))
+    (let* ((id (tabulated-list-get-id))
+           (item (ht-get pocket-reader-items id))
+           (url (pocket-reader--get-url item))
            (fn (or fn (pocket-reader--map-url-open-fn url))))
       (when (funcall fn url)
         ;; Item opened successfully
@@ -544,7 +599,9 @@ The `browse-url-default-browser' function is used."
 (defun pocket-reader-copy-url ()
   "Copy URL of current item to kill-ring/clipboard."
   (interactive)
-  (when-let ((url (pocket-reader--get-url)))
+  (when-let ((id (tabulated-list-get-id))
+             (item (ht-get pocket-reader-items id))
+             (url (pocket-reader--get-url item)))
     (kill-new url)
     (message url)))
 
@@ -555,6 +612,12 @@ The `browse-url-default-browser' function is used."
   (interactive)
   (when (yes-or-no-p "Delete item(s)?")
     (apply #'pocket-reader--delete-items (pocket-reader--marked-or-current-items))))
+
+(defun pocket-reader-resort ()
+  "Re-sort list."
+  (interactive)
+  (tabulated-list-sort 0)
+  (tabulated-list-sort 0))
 
 (defun pocket-reader-toggle-favorite ()
   "Toggle current or marked items' favorite status."
@@ -584,13 +647,27 @@ The `browse-url-default-browser' function is used."
 
 ;;;;; Helpers
 
-(defun pocket-reader--get-url ()
-  "Return URL for current item.
-Chooses URL fields as configured by `pocket-reader-url-priorities'."
-  (cl-loop for key in pocket-reader-url-priorities
-           for url = (pocket-reader--get-property key)
-           when url
-           return url))
+(defun pocket-reader--get-url (item &optional &key first)
+  "Return URL for ITEM.
+If FIRST is non-nil, return the first URL found, not the best
+one.  ITEM should be a hash-table with the appropriate keys, one
+of which is chosen as configured by
+`pocket-reader-url-priorities'."
+  (let ((prioritized-url (cl-loop for key in pocket-reader-url-priorities
+                                  when (ht-get item key) ; Gets the URL
+                                  return it)))
+    (if first
+        prioritized-url
+      (if-let ((domain (pocket-reader--url-domain prioritized-url))
+               (key (cl-loop for (key . vals) in pocket-reader-domain-url-type-map
+                             when (member domain vals)
+                             return key))
+               (domain-preferred-url (ht-get item key)))
+          ;; Return domain-specific URL type
+          domain-preferred-url
+        ;; Return standard, prioritized URL type
+        (or prioritized-url
+            (error "No URL for item: %s" item))))))
 
 (defun pocket-reader--item-visible-p ()
   "Return non-nil if current item is visible (i.e. not hidden by an overlay)."
@@ -598,8 +675,16 @@ Chooses URL fields as configured by `pocket-reader-url-priorities'."
            never (string= "" (ov-val ov 'display))))
 
 (defun pocket-reader--add-items (items)
-  "Add and display ITEMS."
-  (setq pocket-reader-items (append pocket-reader-items items))
+  "Add ITEMS to `pocket-reader-items' and update display."
+  (--each items
+    (let* ((item (ht<-alist (cdr it) #'eq))
+           (id (string-to-number (ht-get item 'item_id)))
+           (domain (pocket-reader--url-domain (pocket-reader--get-url item)))
+           (tags (pocket-lib--process-tags (ht-get item 'tags))))
+      (ht-set item 'domain domain)
+      (ht-set item 'tags tags)
+      (ht-set pocket-reader-items id item)))
+
   (pocket-reader--set-tabulated-list-format)
 
   ;; Use a copy of the list.  Otherwise, when the tabulated list is sorted, `pocket-reader-items'
@@ -608,46 +693,16 @@ Chooses URL fields as configured by `pocket-reader-url-priorities'."
   ;; when `pocket-reader-more' is called.  This is a very strange bug, but it's basically caused by
   ;; `sort' modifying lists by side effects.  Making `tabulated-list-entries' a copy avoids this
   ;; problem while allowing them to share the underlying items, which aren't changed.
-  (setq tabulated-list-entries (copy-sequence pocket-reader-items))
+  (setq tabulated-list-entries (pocket-reader--items-to-tabulated-list-entries pocket-reader-items))
 
   (tabulated-list-init-header)
-  (tabulated-list-revert)
+  (tabulated-list-print 'remember-pos)
   (pocket-reader--finalize))
 
-(defun pocket-reader--delete-items (&rest items)
-  "Delete ITEMS.
-Items should be a list of items as returned by
-`pocket-reader--marked-or-current-items'."
-  (when (apply #'pocket-lib-delete items)
-    (cl-loop for item in items
-             for id = (number-to-string (alist-get 'item_id item))
-             do (progn
-                  (pocket-reader--unmark-item id)
-                  (setq pocket-reader-items (cl-remove id pocket-reader-items
-                                                       :test #'string= :key #'car))
-                  (setq tabulated-list-entries pocket-reader-items)
-                  (pocket-reader--at-item id
-                    (tabulated-list-delete-entry))))))
+(defun pocket-reader--items-to-tabulated-list-entries (items)
+  "Convert ITEMS to a list of vectors of lists, suitable for `tabulated-list-entries'."
+  ;; NOTE: From Emacs docs:
 
-(defun pocket-reader--finalize (&rest ignore)
-  "Finalize the buffer after adding or sorting items."
-  ;; Because we have to add this function as advice to
-  ;; `tabulated-list--sort-by-column-name', causing it to run in every
-  ;; tabulated-list buffer, we must make sure it's the pocket-reader
-  ;; buffer.
-  (when (string= "*pocket-reader*" (buffer-name))
-    (run-hooks 'pocket-reader-finalize-hook)))
-
-(defun pocket-reader--get-items (&optional query)
-  "Return Pocket items for QUERY.
-QUERY is a string which may contain certain keywords:
-
-:*, :favorite  Return only favorited items.
-:archive       Return only archived items.
-:unread        Return only unread items (default).
-:all           Return all items.
-:COUNT         Return at most COUNT (a number) items.
-:t:TAG, t:TAG  Return items with TAG (only one tag may be searched for)."
   ;; This buffer-local variable specifies the entries displayed in the
   ;; Tabulated List buffer.  Its value should be either a list, or a
   ;; function.
@@ -667,8 +722,60 @@ QUERY is a string which may contain certain keywords:
   ;;   arguments (*note Making Buttons::).
   ;;
   ;;   There should be no newlines in any of these strings.
+  (cl-loop for it being the hash-values of items
+           collect (let ((id (string-to-number (ht-get it 'item_id)))
+                         (added (pocket-reader--format-timestamp (string-to-number (ht-get it 'time_added))))
+                         (favorite (pocket-reader--favorite-string (ht-get it 'favorite)))
+                         (title (pocket-reader--not-empty-string (pocket-reader--or-string-not-blank
+                                                                  (ht-get it 'resolved_title)
+                                                                  (ht-get it 'given_title)
+                                                                  "[untitled]")))
+                         (domain (pocket-reader--url-domain
+                                  ;; Don't use --get-url here, because, e.g. we don't want an "amp." to be shown in the list
+                                  (pocket-reader--or-string-not-blank (ht-get it 'resolved_url)
+                                                                      (ht-get it 'given_url))))
+                         (tags (pocket-reader--not-empty-string (s-join "," (ht-get it 'tags)))))
+                     (list id (vector added favorite title domain tags)))))
 
-  ;; FIXME: Add error handling.
+(defun pocket-reader--delete-items (&rest items)
+  "Delete ITEMS.
+Items should be a list of items as returned by
+`pocket-reader--marked-or-current-items'."
+  (when (apply #'pocket-lib-delete items)
+    (cl-loop for item in items
+             for id = (alist-get 'item_id item)
+             do (progn
+                  (ht-remove! pocket-reader-items id)
+                  (pocket-reader--unmark-item id)
+                  (pocket-reader--at-item id
+                    (tabulated-list-delete-entry))))
+    ;; Do this once, at the end, not for each item
+
+    ;; TODO: Is this even necessary?  If so, should we just use
+    ;; `cl-delete' instead of rebuilding it from scratch?  Or is it
+    ;; better, safer, to do this?
+    (setq tabulated-list-entries (pocket-reader--items-to-tabulated-list-entries pocket-reader-items))))
+
+(defun pocket-reader--finalize (&rest _)
+  "Finalize the buffer after adding or sorting items."
+  ;; Because we have to add this function as advice to
+  ;; `tabulated-list--sort-by-column-name', causing it to run in every
+  ;; tabulated-list buffer, we must make sure it's the pocket-reader
+  ;; buffer.
+  (when (string= "*pocket-reader*" (buffer-name))
+    (run-hooks 'pocket-reader-finalize-hook)))
+
+(defun pocket-reader--get-items (&optional query)
+  "Return Pocket items for QUERY.
+QUERY is a string which may contain certain keywords:
+
+:*, :favorite  Return only favorited items.
+:archive       Return only archived items.
+:unread        Return only unread items (default).
+:all           Return all items.
+:COUNT         Return at most COUNT (a number) items.
+:t:TAG, t:TAG  Return items with TAG (only one tag may be searched for)."
+  ;; NOTE: ht version
   (let* ((query (or query ""))
          ;; Parse query
          (query-words (s-split " " query))
@@ -684,41 +791,12 @@ QUERY is a string which may contain certain keywords:
          (query-string (s-join " " query-words))
          ;; Get items with query
          (items (cdr (cl-third (pocket-lib-get :detail-type "complete" :count count :offset pocket-reader-offset
-                                 :search query-string :state state :favorite favorite :tag tag))))
-         ;; Convert list of alists to plists with selected keys
-         (item-plists (--map (cl-loop with item = (kvalist->plist (cdr it))
-                                      for key in pocket-reader-keys
-                                      for fn = nil
-                                      when (consp key)
-                                      do (setq fn (cdr key)
-                                               key (car key))
-                                      for val = (if fn
-                                                    (funcall fn (plist-get item key))
-                                                  (plist-get item key))
-                                      when val
-                                      append (list key val))
-                             items)))
-    ;; Collect data from plists and return as list of vectors for tabulated-list
-    (cl-loop for it in item-plists
-             for title = (pocket-reader--not-empty-string (apply #'propertize (pocket-reader--or-string-not-blank
-                                                                               (plist-get it :resolved_title)
-                                                                               (plist-get it :given_title)
-                                                                               "[untitled]")
-                                                                 (cl-loop for key in pocket-reader-keys
-                                                                          when (consp key)
-                                                                          do (setq key (car key))
-                                                                          append (list key (plist-get it key)))))
-             for tags = (pocket-reader--not-empty-string (s-join "," (plist-get it :tags)))
-             collect (list (plist-get it :item_id)
-                           (vector (pocket-reader--format-timestamp (string-to-number (plist-get it :time_added)))
-                                   (pocket-reader--favorite-string (plist-get it :favorite))
-                                   title
-                                   (pocket-reader--url-domain (or (plist-get it :resolved_url)
-                                                                  (plist-get it :amp_url)
-                                                                  (plist-get it :given_url)))
-                                   tags)))))
+                                 :search query-string :state state :favorite favorite :tag tag)))))
+    (when (> (length items) 0)
+      ;; Empty results return an empty vector, which evaluates non-nil, which isn't useful, so in that case we return nil instead.
+      items)))
 
-(defun pocket-reader--action (action &optional arg)
+(defun pocket-reader--action (action &rest _)
   "Execute ACTION on marked or current items.
 ACTION should be a string or symbol which is the name of an
 action in the Pocket API."
@@ -729,20 +807,20 @@ action in the Pocket API."
 (defun pocket-reader--marked-or-current-items ()
   "Return marked or current items, suitable for passing to `pocket-lib' functions."
   (or (cl-loop for (id . ov) in pocket-reader-mark-overlays
-               collect (list (cons 'item_id (string-to-number id))))
+               collect (list (cons 'item_id id)))
       (list (pocket-reader--current-item))))
 
 (defun pocket-reader--set-tabulated-list-format ()
   "Set `tabulated-list-format' according to the maximum width of items about to be displayed."
-  (when-let ((site-width (cl-loop for item in pocket-reader-items
-                                  maximizing (length (elt (cadr item) 3))))
-             (title-width (- (window-text-width) 11 2 site-width 10 1)))
-    (when (> site-width pocket-reader-site-column-max-width)
-      (setq site-width pocket-reader-site-column-max-width))
-    (setq tabulated-list-format (vector (list "Added" 10 #'pocket-reader--added<)
+  (when-let ((domain-width (cl-loop for item being the hash-values of pocket-reader-items
+                                    maximizing (length (ht-get item 'domain))))
+             (title-width (- (window-text-width) 11 2 domain-width 10 1)))
+    (when (> domain-width pocket-reader-site-column-max-width)
+      (setq domain-width pocket-reader-site-column-max-width))
+    (setq tabulated-list-format (vector (list "Added" 10 pocket-reader-added-column-sort-function)
                                         (list "*" 1 t)
                                         (list "Title" title-width t)
-                                        (list "Site" site-width t)
+                                        (list "Site" domain-width t)
                                         (list "Tags" 10 t)))))
 
 (defun pocket-reader--map-url-open-fn (url)
@@ -759,27 +837,25 @@ none is found, returns `pocket-reader-open-url-default-function'."
 
 (defun pocket-reader--current-item ()
   "Return list containing cons of current item's ID, suitable for passing to pocket-lib."
-  (let* ((id (string-to-number (tabulated-list-get-id))))
+  (let* ((id (tabulated-list-get-id)))
     (list (cons 'item_id id))))
 
 (defun pocket-reader--get-property (property)
   "Return value of PROPERTY for current item."
-  (get-text-property 0 property (elt (tabulated-list-get-entry) 2)))
+  (let ((id (tabulated-list-get-id)))
+    (ht-get* pocket-reader-items id property)))
 
 (defun pocket-reader--set-property (property value)
   "Set current item's PROPERTY to VALUE."
-  ;; Properties are stored in the title column
   (pocket-reader--with-pocket-reader-buffer
-    (let ((title (elt (tabulated-list-get-entry) 2)))
-      (put-text-property 0 (length title)
-                         property value
-                         title)
-      (tabulated-list-set-col 2 title))))
+    (let* ((id (tabulated-list-get-id))
+           (item (ht-get pocket-reader-items id)))
+      (ht-set! item property value))))
 
 (defun pocket-reader--url-domain (url)
   "Return domain for URL.
 Common prefixes like www are removed."
-  (replace-regexp-in-string (rx bos (and (or "www") ".")) ""
+  (replace-regexp-in-string (rx bos (and (or "www" "amp") ".")) ""
                             (url-host (url-generic-parse-url url))))
 
 (defun pocket-reader--format-timestamp (timestamp)
@@ -818,7 +894,7 @@ no spacers will be inserted. "
   "Mark ITEMS as archived."
   (when (apply #'pocket-lib-archive items)
     (--map (pocket-reader--at-item it
-             (pocket-reader--set-property :status "1")
+             (pocket-reader--set-property 'status "1")
              (pocket-reader--apply-faces-to-line))
            items)))
 
@@ -826,13 +902,13 @@ no spacers will be inserted. "
   "Readd ITEMS."
   (when (apply #'pocket-lib-readd items)
     (--map (pocket-reader--at-item it
-             (pocket-reader--set-property :status "0")
+             (pocket-reader--set-property 'status "0")
              (pocket-reader--apply-faces-to-line))
            items)))
 
 (defun pocket-reader--is-archived ()
   "Return non-nil if current item is archived."
-  (string= "1" (pocket-reader--get-property :status)))
+  (string= "1" (pocket-reader--get-property 'status)))
 
 ;;;;;; Favorites
 
@@ -840,7 +916,7 @@ no spacers will be inserted. "
   "Mark ITEMS as favorites."
   (when (apply #'pocket-lib-favorite items)
     (--map (pocket-reader--at-item it
-             (pocket-reader--set-property :favorite "1")
+             (pocket-reader--set-property 'favorite "1")
              (pocket-reader--update-favorite-display t))
            items)))
 
@@ -848,13 +924,13 @@ no spacers will be inserted. "
   "Unmark ITEMS as favorites."
   (when (apply #'pocket-lib-unfavorite items)
     (--map (pocket-reader--at-item it
-             (pocket-reader--set-property :favorite "0")
+             (pocket-reader--set-property 'favorite "0")
              (pocket-reader--update-favorite-display nil))
            items)))
 
 (defun pocket-reader--is-favorite ()
   "Return non-nil if current item is a favorite."
-  (string= "1" (pocket-reader--get-property :favorite)))
+  (string= "1" (pocket-reader--get-property 'favorite)))
 
 (defun pocket-reader--update-favorite-display (is-favorite)
   "Update favorite star for current item, depending on value of IS-FAVORITE."
@@ -869,7 +945,7 @@ no spacers will be inserted. "
     (save-excursion
       (goto-char (point-min))
       (cl-loop while (not (eobp))
-               for tags = (pocket-reader--get-property :tags)
+               for tags = (pocket-reader--get-property 'tags)
                when tags
                append tags into list
                do (forward-line 1)
@@ -878,14 +954,14 @@ no spacers will be inserted. "
 (defun pocket-reader--add-tags (tags)
   "Add TAGS to current item.
 TAGS should be a list of strings."
-  (let* ((old-tags (pocket-reader--get-property :tags))
+  (let* ((old-tags (pocket-reader--get-property 'tags))
          (new-tags (append old-tags tags)))
     (pocket-reader--set-tags new-tags)))
 
 (defun pocket-reader--remove-tags (tags)
   "Remove TAGS from current item.
 TAGS should be a list of strings."
-  (let* ((old-tags (pocket-reader--get-property :tags))
+  (let* ((old-tags (pocket-reader--get-property 'tags))
          (new-tags (seq-difference old-tags tags #'string=)))
     (pocket-reader--set-tags new-tags)))
 
@@ -894,14 +970,14 @@ TAGS should be a list of strings."
 TAGS should be a list of strings.  Tags are sorted and
 deduplicated."
   (let* ((tags (-sort #'string< (-uniq tags))))
-    (pocket-reader--set-property :tags tags)
+    (pocket-reader--set-property 'tags tags)
     (pocket-reader--set-tags-column)
     (pocket-reader--apply-faces-to-line)))
 
 (defun pocket-reader--set-tags-column ()
   "Set tags column for current entry.
 Gets tags from text property."
-  (tabulated-list-set-col 4 (s-join "," (pocket-reader--get-property :tags))))
+  (tabulated-list-set-col 4 (s-join "," (pocket-reader--get-property 'tags)) 'change-entry-data))
 
 ;;;;;; Marking
 
@@ -916,13 +992,103 @@ Gets tags from text property."
   "Unmark item by ID."
   (let ((ov (alist-get id pocket-reader-mark-overlays)))
     (ov-reset ov))
-  (setq pocket-reader-mark-overlays (cl-remove id pocket-reader-mark-overlays :test #'string= :key #'car)))
+  (setq pocket-reader-mark-overlays (cl-remove id pocket-reader-mark-overlays :test #'= :key #'car)))
 
 (defun pocket-reader--item-marked-p ()
   "Return non-nil if current item is marked."
   (let ((id (tabulated-list-get-id)))
     (cl-member id pocket-reader-mark-overlays
-               :test #'string= :key #'car)))
+               :test #'= :key #'car)))
+
+;;;;;; Sorting
+
+(defun pocket-reader--added-fancy< (a b)
+  "Return non-nil if A should be sorted before B.
+Items are compared by date, then favorite status, then tags, then
+domain.  Suitable for sorting `tabulated-list-entries'."
+  (cl-flet ((day (it) (let* ((id (car it))
+                             (added-string (ht-get* pocket-reader-items id 'time_added)) )
+                        (time-to-days (string-to-number added-string)))))
+    (let* ((a-day (day a))
+           (b-day (day b)))
+      (if (= a-day b-day)
+          ;; Same day: compare favorite, then tags, then domain
+          (cl-case (pocket-reader--compare-favorite a b)
+            ('< nil)
+            ('> t)
+            ('= (cl-case (pocket-reader--compare-tags a b)
+                  ('< nil)
+                  ('> t)
+                  ('=
+                   ;; Same tags; compare domain (invert since the default order is descending)
+                   (not (pocket-reader--domain< a b))))))
+        ;; Different day: compare day
+        (< a-day b-day)))))
+
+(defun pocket-reader--added< (a b)
+  "Return non-nil if A's `time_added' timestamp is before B's.
+Suitable for sorting `tabulated-list-entries'."
+  (cl-flet ((added (it) (let ((id (car it)))
+                          (string-to-number (ht-get* pocket-reader-items id 'time_added)))))
+    (let ((a-added (added a))
+          (b-added (added b)))
+      (< a-added b-added))))
+
+(defun pocket-reader--domain< (a b)
+  "Return non-nil if A's domain is alphabetically before B's."
+  (cl-flet ((domain (it) (let ((id (car it)))
+                           (pocket-reader--url-domain (pocket-reader--get-url (ht-get pocket-reader-items id)
+                                                                              :first t)))))
+    (string< (domain a) (domain b))))
+
+(defun pocket-reader--compare-favorite (a b)
+  "Compare A's and B's favorite statuses.
+If both are the same, return `='.  If only A is a favorite,
+return `>'.  If only B, return `<'."
+  (cl-flet ((fav (it) (let ((id (car it)))
+                        (pcase (ht-get* pocket-reader-items id 'favorite)
+                          ("0" nil)
+                          ("1" t)))))
+    (let ((a-fav (fav a))
+          (b-fav (fav b)))
+      (cond ((eq a-fav b-fav) '=)
+            (a-fav '<)
+            (b-fav '>)))))
+
+(defun pocket-reader--compare-tags (a b)
+  "Compare A's and B's lists of tags.
+If they are the same, return `='.  If they have different numbers
+of tags, return `<' if A has more, or `>' if B has more.  If they
+have the same number of tags, join each list into a single string
+and compare them with `string='."
+  (cl-flet ((tags (it) (let ((id (car it)))
+                         (ht-get* pocket-reader-items id 'tags))))
+    (let ((a-tags (tags a))
+          (b-tags (tags b)))
+      (if (not (or a-tags b-tags))
+          ;; No tags
+          '=
+        ;; Some tags
+        (if (not (and a-tags b-tags))
+            ;; One item has no tags
+            (if a-tags
+                '<
+              '>)
+          ;; Both items have tags
+          (let ((a-length (length a-tags))
+                (b-length (length b-tags)))
+            (if (/= a-length b-length)
+                ;; Different number of tags: sort by number of tags
+                (if (< a-length b-length)
+                    ;; Entries with more tags should be sorted earlier
+                    '>
+                  '<)
+              ;; Same number of tags: sort string of tags alphabetically
+              (let ((a-string (s-join "" a-tags))
+                    (b-string (s-join "" b-tags)))
+                (cond ((string= a-string b-string) '=)
+                      ((string< a-string b-string) '<)
+                      (t '>))))))))))
 
 ;;;;;; Strings
 
@@ -963,20 +1129,21 @@ Gets tags from text property."
   "Apply faces to buffer."
   ;; TODO: Maybe we should use a custom print function but this is simpler
   (pocket-reader--with-pocket-reader-buffer
-    (goto-char (point-min))
-    (while (not (eobp))
-      (pocket-reader--apply-faces-to-line)
-      (forward-line 1))
-    (goto-char (point-min))))
+    (save-excursion
+      (goto-char (point-min))
+      (while (not (eobp))
+        (pocket-reader--apply-faces-to-line)
+        (forward-line 1))
+      (goto-char (point-min)))))
 
 (defun pocket-reader--apply-faces-to-line ()
   "Apply faces to current line."
   (pocket-reader--with-pocket-reader-buffer
     (add-text-properties (line-beginning-position) (line-end-position)
-                         (list 'face (pcase (pocket-reader--get-property :status)
+                         (list 'face (pcase (pocket-reader--get-property 'status)
                                        ("0" 'pocket-reader-unread)
                                        ("1" 'pocket-reader-archived)) ))
-    (when (pocket-reader--get-property :favorite)
+    (when (pocket-reader--get-property 'favorite)
       (pocket-reader--set-column-face "*" 'pocket-reader-favorite-star))
     (when (or pocket-reader-color-site
               pocket-reader-color-title)
@@ -999,7 +1166,12 @@ COLUMN may be the column name or number."
   (-let* (((num start end width) (pocket-reader--column-data column))
           ;; Convert column positions to buffer positions
           (start (+ (line-beginning-position) start))
-          (end (+ start width (1- num))))
+          (end (+ start width (1- num)))
+          ;; If the last column of the last item is empty or shorter
+          ;; than the column width, this will probably give an
+          ;; args-out-of-range error, so don't try to go past the end
+          ;; of the buffer.
+          (end (min end (point-max))))
     (pocket-reader--with-pocket-reader-buffer
       (add-face-text-property start end face t))))
 
@@ -1025,29 +1197,24 @@ Returns list with these values:
          (end-col (+ start-col column-width)))
     (list col-num start-col end-col column-width)))
 
-(defun pocket-reader--added< (a b)
-  "Return non-nil if A's :time_added timestamp is less than B's.
-Suitable for sorting `tabulated-list-entries'."
-  (cl-flet ((added (it) (get-text-property 0 :time_added (aref (cadr it) 2))))
-    (let ((a-added (added a))
-          (b-added (added b)))
-      ;; Everything returned from the Pocket API is a string, even the timestamps, so I guess we might
-      ;; as well use `string<' rather than converting them to integers first.
-      (string< a-added b-added))))
-
 ;;;;; URL-adding helpers
 
+;;;###autoload
 (defun pocket-reader-add-link ()
   "Add link at point to Pocket.
 This function tries to work in multiple major modes, such as w3m,
-eww, and Org."
+eww, elfeed, and Org."
   (interactive)
   (cl-case major-mode
     ('eww-mode (pocket-reader-eww-add-link))
     ('org-mode (pocket-reader-org-add-link))
-    ('w3m-mode (pocket-reader-w3m-lnum-add-link))
+    ('w3m-mode (pocket-reader-w3m-add-link))
+    ('shr-mode (pocket-reader-shr-add-link))
+    ('elfeed-search-mode (pocket-reader-elfeed-search-add-link))
+    ('elfeed-show-mode (pocket-reader-elfeed-entry-add-link))
     (t (pocket-reader-generic-add-link))))
 
+;;;###autoload
 (defun pocket-reader-eww-add-link ()
   "Add link at point to Pocket in eww buffers."
   (interactive)
@@ -1058,6 +1225,7 @@ eww, and Org."
     (when (pocket-lib-add-urls url)
       (message "Added: %s" url))))
 
+;;;###autoload
 (defun pocket-reader-org-add-link ()
   "Add link at point to Pocket in Org buffers."
   (interactive)
@@ -1066,26 +1234,81 @@ eww, and Org."
     (when (pocket-lib-add-urls url)
       (message "Added: %s" url))))
 
-(cl-defun pocket-reader-w3m-lnum-add-link (&key (type 1))
-  "Add link to Pocket with lnum in w3m buffers."
-  (interactive)
-  (w3m-with-lnum
-   type ""
-   (when-let ((num (car (w3m-lnum-read-interactive
-                         "Anchor number: "
-                         'w3m-lnum-highlight-anchor
-                         type last-index w3m-current-url)))
-              (info (w3m-lnum-get-anchor-info num))
-              (url (car info)))
-     (when (pocket-lib-add-urls url)
-       (message "Added: %s" url)))))
+(declare-function 'w3m-with-lnum 'w3m-lnum)
+(declare-function 'w3m-lnum-read-interactive 'w3m-lnum)
+(declare-function 'w3m-lnum-get-anchor-info 'w3m-lnum)
+;;;###autoload
+(with-eval-after-load 'w3m-lnum
+  (cl-defun pocket-reader-w3m-lnum-add-link (&key (type 1))
+    "Add link to Pocket with lnum in w3m buffers."
+    (interactive)
+    (w3m-with-lnum
+     type ""
+     (when-let ((num (car (w3m-lnum-read-interactive
+                           "Anchor number: "
+                           'w3m-lnum-highlight-anchor
+                           type last-index w3m-current-url)))
+                (info (w3m-lnum-get-anchor-info num))
+                (url (car info)))
+       (when (pocket-lib-add-urls url)
+         (message "Added: %s" url))))))
 
+;;;###autoload
+(with-eval-after-load 'w3m
+  (defun pocket-reader-w3m-add-link ()
+    "Add link at point to Pocket in w3m buffers."
+    (interactive)
+    (if-let ((url (or (get-text-property (point) 'w3m-href-anchor)
+                      (unless (bolp)
+                        (save-excursion
+                          (get-text-property (1- (point)) 'w3m-href-anchor)))
+                      (unless (eolp)
+                        (save-excursion
+                          (get-text-property (1+ (point)) 'w3m-href-anchor))))))
+        (when (pocket-lib-add-urls url)
+          (message "Added: %s" url))
+      (if (member 'w3m-lnum-mode minor-mode-list)
+          ;; No URL found around point: use lnum if loaded
+          (pocket-reader-w3m-lnum-add-link)
+        ;; We tried.
+        (message "No URL found around point.")))))
+
+;;;###autoload
+(defun pocket-reader-shr-add-link ()
+  "Add link at point in `shr-mode' buffer to Pocket."
+  (interactive)
+  (if-let ((url (get-text-property (point) 'shr-url)))
+      (when (pocket-lib-add-urls url)
+        (message "Added: %s" url))
+    (message "No URL found at point.")))
+
+;;;###autoload
+(with-eval-after-load 'elfeed
+  (defun pocket-reader-elfeed-search-add-link ()
+    "Add links for selected entries in Elfeed search-mode buffer to Pocket.
+This is only for the elfeed-search buffer, not for entry buffers."
+    (interactive)
+    (when-let ((entries (elfeed-search-selected))
+               (links (mapcar #'elfeed-entry-link entries)))
+      (when (pocket-lib-add-urls links)
+        (message "Added: %s" (s-join ", " links)))))
+
+  (defun pocket-reader-elfeed-entry-add-link ()
+    "Add links for selected entries in elfeed-show-mode buffer to Pocket.
+This is only for the elfeed-entry buffer, not for search buffers."
+    (interactive)
+    (when-let ((link (elfeed-entry-link elfeed-show-entry)))
+      (when (pocket-lib-add-urls link)
+        (message "Added: %s" link)))))
+
+;;;###autoload
 (defun pocket-reader-generic-add-link ()
   "Try to add URL at point to Pocket using `thing-at-pt'."
   (interactive)
-  (when-let ((url (thing-at-point-url-at-point)))
-    (when (pocket-lib-add-urls url)
-      (message "Added: %s" url))))
+  (if-let ((url (thing-at-point-url-at-point)))
+      (when (pocket-lib-add-urls url)
+        (message "Added: %s" url))
+    (message "No URL found at point.")))
 
 
 ;;;; Footer

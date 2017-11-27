@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171121.1304
+;; Package-Version: 20171126.929
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -1663,7 +1663,11 @@ Group 6 matches the closing whitespace and hash marks of an atx heading.")
   "Regular expression for generic atx-style (hash mark) headers.")
 
 (defconst markdown-regex-hr
-  "^\\(\\*[ ]?\\*[ ]?\\*[ ]?[\\* ]*\\|-[ ]?-[ ]?-[--- ]*\\)$"
+  (rx line-start
+      (group (or (and (repeat 3 (and "*" (? " "))) (* (any "* ")))
+                 (and (repeat 3 (and "-" (? " "))) (* (any "- ")))
+                 (and (repeat 3 (and "_" (? " "))) (* (any "_ ")))))
+      line-end)
   "Regular expression for matching Markdown horizontal rules.")
 
 (defconst markdown-regex-code
@@ -1716,7 +1720,9 @@ Group 2 matches any whitespace and the final newline.")
       (group (or (and (+ (any "0-9#")) ".")
                  (any "*+:-")))
       ;; 3. Trailing whitespace
-      (group (+ blank)))
+      (group (+ blank))
+      ;; 4. Optional checkbox for GFM task list items
+      (opt (group (and "[" (any " xX") "]" (* blank)))))
   "Regular expression for matching list items.")
 
 (defconst markdown-regex-bold
@@ -1808,6 +1814,10 @@ Group 6 matches the closing square brackets.")
   " \\(\\[[ xX]\\]\\) "
   "Regular expression for matching GFM checkboxes.
 Group 1 matches the text to become a button.")
+
+(defconst markdown-regex-blank-line
+  "^[[:blank:]]*$"
+  "Regular expression that matches a blank line.")
 
 (defconst markdown-regex-block-separator
   "\n[\n\t\f ]*\n"
@@ -2023,14 +2033,13 @@ the returned list."
   (save-excursion
     (let* ((begin (match-beginning 0))
            (indent (length (match-string-no-properties 1)))
-           (nonlist-indent (length (match-string 0)))
-           (marker (concat (match-string-no-properties 2)
-                           (match-string-no-properties 3)))
-           (checkbox (progn (goto-char (match-end 0))
-                            (when (looking-at "\\[[xX ]\\]\\s-*")
-                              (match-string-no-properties 0))))
+           (nonlist-indent (- (match-end 3) (match-beginning 0)))
+           (marker (buffer-substring-no-properties
+                    (match-beginning 2) (match-end 3)))
+           (checkbox (match-string-no-properties 4))
+           (match (butlast (match-data t)))
            (end (markdown-cur-list-item-end nonlist-indent)))
-      (list begin end indent nonlist-indent marker checkbox))))
+      (list begin end indent nonlist-indent marker checkbox match))))
 
 (defun markdown--append-list-item-bounds (marker indent cur-bounds bounds)
   "Update list item BOUNDS given list MARKER, block INDENT, and CUR-BOUNDS.
@@ -2088,7 +2097,7 @@ giving the bounds of the current and parent list items."
         (cond
          ;; Reset at headings, horizontal rules, and top-level blank lines.
          ;; Propertize baseline when in range.
-         ((markdown-new-baseline-p)
+         ((markdown-new-baseline)
           (setq bounds nil))
          ;; Make sure this is not a line from a pre block
          ((looking-at-p pre-regexp))
@@ -2125,11 +2134,10 @@ giving the bounds of the current and parent list items."
          ;; Move past blank lines
          ((markdown-cur-line-blank-p) (forward-line))
          ;; At headers and horizontal rules, reset levels
-         ((markdown-new-baseline-p) (forward-line) (setq levels nil))
+         ((markdown-new-baseline) (forward-line) (setq levels nil))
          ;; If the current line has sufficient indentation, mark out pre block
          ;; The opening should be preceded by a blank line.
-         ((and (looking-at pre-regexp)
-               (markdown-prev-line-blank-p))
+         ((and (markdown-prev-line-blank) (looking-at pre-regexp))
           (setq open (match-beginning 0))
           (while (and (or (looking-at-p pre-regexp) (markdown-cur-line-blank-p))
                       (not (eobp)))
@@ -2569,6 +2577,9 @@ region of a YAML metadata block as propertized by
             (comment-begin (nth 8 (syntax-ppss))))
         (put-text-property (1- comment-end) comment-end
                            'syntax-table (string-to-syntax ">"))
+        ;; Remove any other text properties inside the comment
+        (remove-text-properties comment-begin comment-end
+                                markdown--syntax-properties)
         (put-text-property comment-begin comment-end
                            'markdown-comment (list comment-begin comment-end))
         (markdown-syntax-propertize-comments
@@ -3306,25 +3317,25 @@ Used for `flyspell-generic-check-word-predicate'."
 (define-obsolete-function-alias
   'markdown-cur-line-blank 'markdown-cur-line-blank-p "v2.4")
 (define-obsolete-function-alias
-  'markdown-prev-line-blank 'markdown-prev-line-blank-p "v2.4")
-(define-obsolete-function-alias
   'markdown-next-line-blank 'markdown-next-line-blank-p "v2.4")
-(define-obsolete-function-alias
-  'markdown-new-baseline 'markdown-new-baseline-p "v2.4")
 
 (defun markdown-cur-line-blank-p ()
   "Return t if the current line is blank and nil otherwise."
   (save-excursion
     (beginning-of-line)
-    (looking-at-p "^\\s *$")))
+    (looking-at-p markdown-regex-blank-line)))
 
-(defun markdown-prev-line-blank-p ()
+(defun markdown-prev-line-blank ()
   "Return t if the previous line is blank and nil otherwise.
 If we are at the first line, then consider the previous line to be blank."
   (or (= (line-beginning-position) (point-min))
       (save-excursion
         (forward-line -1)
-        (markdown-cur-line-blank-p))))
+        (looking-at markdown-regex-blank-line))))
+
+(defun markdown-prev-line-blank-p ()
+  "Like `markdown-prev-line-blank', but preserve `match-data'."
+  (save-match-data (markdown-prev-line-blank)))
 
 (defun markdown-next-line-blank-p ()
   "Return t if the next line is blank and nil otherwise.
@@ -3352,30 +3363,14 @@ Return 0 if line is the last line in the buffer."
       (forward-line 1)
       (current-indentation))))
 
-(defun markdown-cur-non-list-indent ()
-  "Return beginning position of list item text (not including the list marker).
-Return nil if the current line is not the beginning of a list item."
-  (save-match-data
-    (save-excursion
-      (beginning-of-line)
-      (when (re-search-forward markdown-regex-list (line-end-position) t)
-        (current-column)))))
-
-(defun markdown-prev-non-list-indent ()
-  "Return position of the first non-list-marker on the previous line."
-  (save-excursion
-    (forward-line -1)
-    (markdown-cur-non-list-indent)))
-
-(defun markdown-new-baseline-p ()
-  "Determine if the current line begins a new baseline level."
-  (save-excursion
-    (beginning-of-line)
-    (or (looking-at-p markdown-regex-header)
-        (looking-at-p markdown-regex-hr)
-        (and (null (markdown-cur-non-list-indent))
-             (= (current-indentation) 0)
-             (markdown-prev-line-blank-p)))))
+(defun markdown-new-baseline ()
+  "Determine if the current line begins a new baseline level.
+Assume point is positioned at beginning of line."
+  (or (looking-at markdown-regex-header)
+      (looking-at markdown-regex-hr)
+      (and (= (current-indentation) 0)
+           (not (looking-at markdown-regex-list))
+           (markdown-prev-line-blank))))
 
 (defun markdown-search-backward-baseline ()
   "Search backward baseline point with no indentation and not a list item."
@@ -3386,7 +3381,7 @@ Return nil if the current line is not the beginning of a list item."
       (when (match-end 2)
         (goto-char (match-end 2))
         (cond
-         ((markdown-new-baseline-p)
+         ((markdown-new-baseline)
           (setq stop t))
          ((looking-at-p markdown-regex-list)
           (setq stop nil))
@@ -3441,7 +3436,7 @@ immediately  after a list item, return nil."
         (beginning-of-line)
         (cond
          ;; Make sure this is not a header or hr
-         ((markdown-new-baseline-p) (setq levels nil))
+         ((markdown-new-baseline) (setq levels nil))
          ;; Make sure this is not a line from a pre block
          ((looking-at-p pre-regexp))
          ;; If not, then update levels
@@ -3558,20 +3553,20 @@ original point.  If the point is not in a list item, do nothing."
          ;; Stop at end of the buffer.
          ((eobp) nil)
          ;; Continue if the current line is blank
-         ((markdown-cur-line-blank-p) t)
+         ((looking-at markdown-regex-blank-line) t)
          ;; Continue while indentation is the same or greater
          ((>= indent level) t)
          ;; Stop if current indentation is less than list item
          ;; and the previous line was blank.
          ((and (< indent level)
-               (markdown-prev-line-blank-p))
+               (markdown-prev-line-blank))
           nil)
          ;; Stop at a new list item of the same or lesser indentation
-         ((looking-at-p markdown-regex-list) nil)
+         ((looking-at markdown-regex-list) nil)
          ;; Stop at a header
-         ((looking-at-p markdown-regex-header) nil)
+         ((looking-at markdown-regex-header) nil)
          ;; Stop at a horizontal rule
-         ((looking-at-p markdown-regex-hr) nil)
+         ((looking-at markdown-regex-hr) nil)
          ;; Otherwise, continue.
          (t t))
       (forward-line)
@@ -3588,7 +3583,7 @@ original point.  If the point is not in a list item, do nothing."
   "Return bounds for list item at point.
 Return a list of the following form:
 
-    (begin end indent nonlist-indent marker checkbox)
+    (begin end indent nonlist-indent marker checkbox match)
 
 The named components are:
 
@@ -3602,6 +3597,7 @@ The named components are:
   - checkbox: String containing the GFM checkbox portion, if any,
     including any trailing whitespace before the text
     begins (e.g., \"[x] \").
+  - match: match data for markdown-regex-list
 
 As an example, for the following unordered list item
 
@@ -3609,7 +3605,7 @@ As an example, for the following unordered list item
 
 the returned list would be
 
-    (1 14 3 5 \"- \" nil)
+    (1 14 3 5 \"- \" nil (1 6 1 4 4 5 5 6))
 
 If the point is not inside a list item, return nil."
   (car (get-text-property (point-at-bol) 'markdown-list-item)))
@@ -3812,8 +3808,22 @@ quoted code blocks.  Return nil otherwise.  This function does not
 use text properties, which have not yet been set during the
 syntax propertization phase."
   (setq pos (save-excursion (goto-char pos) (point-at-bol)))
-  (or (looking-at-p markdown-regex-pre)
-      (markdown-get-enclosing-fenced-block-construct pos)))
+  (let (match)
+    (cond
+     ;; Indented code blocks
+     ((looking-at markdown-regex-pre)
+      (let ((start (save-excursion
+                     (markdown-search-backward-baseline) (point)))
+            (end (save-excursion
+                   (while (and (or (looking-at-p markdown-regex-pre)
+                                   (markdown-cur-line-blank-p))
+                               (not (eobp)))
+                     (forward-line))
+                   (point))))
+        (list start end start start start end end end)))
+     ;; Fenced code blocks
+     ((setq match (markdown-get-enclosing-fenced-block-construct pos))
+      match))))
 
 (defun markdown-code-block-at-pos (pos)
   "Return match data list if there is a code block at POS.
@@ -3947,7 +3957,8 @@ When FACELESS is non-nil, do not return matches where faces have been applied."
                begin begin 'face '(markdown-url-face
                                    markdown-plain-url-face))
               (markdown-range-property-any
-               begin end 'face '(markdown-math-face)))
+               begin end 'face '(markdown-hr-face
+                                 markdown-math-face)))
           (progn (goto-char (min (1+ begin) last))
                  (when (< (point) last)
                    (markdown-match-italic last)))
@@ -3973,6 +3984,7 @@ When FACELESS is non-nil, do not return matches where faces have been applied."
                 (markdown-range-property-any
                  begin end 'face '(markdown-bold-face
                                    markdown-list-face
+                                   markdown-hr-face
                                    markdown-math-face)))
             (progn (goto-char (min (1+ begin) last))
                    (when (< (point) last)
@@ -4002,21 +4014,23 @@ $..$ or `markdown-regex-math-inline-double' for matching $$..$$."
 
 (defun markdown-match-list-items (last)
   "Match list items from point to LAST."
-  (when (markdown-match-inline-generic markdown-regex-list last)
-    (let ((begin (match-beginning 2))
-          (end (match-end 2)))
-        (if (or (markdown-range-property-any
-                 begin end 'face (list markdown-inline-code-face
-                                       markdown-bold-face
-                                       markdown-math-face))
-                (markdown-range-properties-exist begin end '(markdown-hr))
-                (markdown-in-comment-p))
-            (progn (goto-char (min (1+ (match-end 0)) last))
-                   (markdown-match-list-items last))
-          (set-match-data (list (match-beginning 0) (match-end 0)
-                                (match-beginning 1) (match-end 1)
-                                (match-beginning 2) (match-end 2)))
-          (goto-char (1+ (match-end 0)))))))
+  (let* ((first (point))
+         (pos first)
+         (prop 'markdown-list-item)
+         (bounds (car (get-text-property pos prop))))
+    (while
+        (and (or (null (setq bounds (car (get-text-property pos prop))))
+                 (< (cl-first bounds) pos))
+             (< (point) last)
+             (setq pos (next-single-char-property-change pos prop nil last))
+             (goto-char pos)))
+    (when bounds
+      (set-match-data (cl-seventh bounds))
+      ;; Step at least one character beyond point. Otherwise
+      ;; `font-lock-fontify-keywords-region' infloops.
+      (goto-char (min (1+ (max (point-at-eol) first))
+                      (point-max)))
+      t)))
 
 (defun markdown-match-math-single (last)
   "Match single quoted $..$ math from point to LAST."
@@ -5804,7 +5818,10 @@ duplicate positions, which are handled up by calling functions."
     (setq positions (cons prev-line-pos positions))
 
     ;; Indentation of previous non-list-marker text
-    (when (setq pos (markdown-prev-non-list-indent))
+    (when (setq pos (save-excursion
+                      (forward-line -1)
+                      (when (looking-at markdown-regex-list)
+                        (- (match-end 3) (match-beginning 0)))))
       (setq positions (cons pos positions)))
 
     ;; Indentation required for a pre block in current context

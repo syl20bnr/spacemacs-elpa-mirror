@@ -15,13 +15,15 @@ These keys can be used in the pocket-reader buffer:
 "a" pocket-reader-toggle-archived
 "b" pocket-reader-open-in-external-browser
 "c" pocket-reader-copy-url
+"d" pocket-reader (return to default view)
 "D" pocket-reader-delete
 "e" pocket-reader-excerpt
 "E" pocket-reader-excerpt-all
 "*" pocket-reader-toggle-favorite
 "f" pocket-reader-toggle-favorite
 "F" pocket-reader-show-unread-favorites
-"g" pocket-reader-refresh
+"g" pocket-reader-resort
+"G" pocket-reader-refresh
 "s" pocket-reader-search
 "m" pocket-reader-toggle-mark
 "M" pocket-reader-mark-all
