@@ -4,7 +4,7 @@
 ;; Maintainer: Somelauw
 ;; Original-author: Edward Tjörnhammar
 ;; URL: https://github.com/Somelauw/evil-org-mode.git
-;; Package-Version: 20171107.1159
+;; Package-Version: 20171127.1309
 ;; Git-Repository: git://github.com/Somelauw/evil-org-mode.git
 ;; Created: 2012-06-14
 ;; Forked-since: 2017-02-12
@@ -112,6 +112,9 @@ By default, o and O are bound to ‘evil-org-open-above’ and ‘evil-org-open-
   :keymap evil-org-mode-map
   :group 'evil-org
   )
+
+(with-eval-after-load 'evil-surround
+  (add-to-list 'evil-surround-operator-alist '(evil-org-delete . delete)))
 
 (defun evil-org-eol-call (fun &rest arguments)
   "Go to end of line and call provided function.

@@ -3,8 +3,8 @@
 ;; Copyright (C) 2012-2017 Dimitri Fontaine
 
 ;; Author: Dimitri Fontaine <dim@tapoueh.org>
-;; Version: 0.1.1
-;; Package-Version: 20171117.2317
+;; Version: 0.1.2
+;; Package-Version: 20171128.649
 ;; URL: https://github.com/dimitri/mbsync-el
 
 ;; This file is NOT part of GNU Emacs.
@@ -18,6 +18,8 @@
 ;;; News:
 
 ;;;; Changes since 0.0.1:
+;;
+;; - `mbsync-verbose' now has several levels of verbosity
 ;;
 ;; - Update status line regex and make it customizable. (#4, #10)
 ;;   New defcustom mbsync-status-line-re – thanks Matthew Carter and
@@ -53,8 +55,8 @@
   :group 'mbsync
   :type 'boolean)
 
-(defcustom mbsync-verbose t
-  "Print messages on start and finish."
+(defcustom mbsync-verbose 'normal
+  "How many messages to print to minibuffer.  See `mbsync-log-levels'."
   :group 'mbsync
   :type 'boolean)
 
@@ -76,9 +78,26 @@
 
 (defvar mbsync-buffer-name "*mbsync*")
 
-(defun mbsync-info (&rest args)
-  "Show user the message ARGS if we're being `mbsync-verbose'."
-  (let ((inhibit-message (not mbsync-verbose)))
+(defun mbsync-elem-index (elt lst)
+  "Return index of ELT in LST, or nil if not found."
+  (let ((i 0))
+    (catch 'found
+      (dolist (e lst)
+        (if (eq e elt)
+            (throw 'found i)
+          (incf i))))))
+
+(defvar mbsync-log-levels '(normal verbose debug))
+
+(defun mbsync-log-level-int (severity)
+  "Get the log level of SEVERITY as int."
+  (or (mbsync-elem-index mbsync-verbose mbsync-log-levels)
+      0))
+
+(defun mbsync-log (severity &rest args)
+  "If SEVERITY is less than `mbsync-verbose', show user the message ARGS."
+  (when (>= (mbsync-log-level-int severity)
+            (mbsync-log-level-int mbsync-verbose))
     (apply #'message args)))
 
 (defun mbsync-process-filter (proc string)
@@ -105,7 +124,7 @@ Arguments PROC, STRING as in `set-process-filter'."
       ;; message progress
       (goto-char mbsync-process-filter-pos)
       (while (re-search-forward mbsync-status-line-re nil t)
-        (mbsync-info "mbsync progress: %s" (match-string 0))))
+        (mbsync-log 'verbose "mbsync progress: %s" (match-string 0))))
 
     (let (err-pos)
       (save-excursion
@@ -132,7 +151,7 @@ Arguments PROC, STRING as in `set-process-filter'."
   "Mail sync is over, message it then run `mbsync-exit-hook'.
 Arguments PROC, CHANGE as in `set-process-sentinel'."
   (when (eq (process-status proc) 'exit)
-    (mbsync-info "mbsync is done")
+    (mbsync-log 'normal "mbsync is done")
     (run-hooks 'mbsync-exit-hook)))
 
 (defun mbsync-get-proc ()

@@ -1,10 +1,10 @@
 ;;; org-dashboard.el --- Visually summarize progress in org files
 
-;; Copyright (C) 2015 Massimiliano Mirra
+;; Copyright (C) 2015-2017 Massimiliano Mirra
 
 ;; Author: Massimiliano Mirra <hyperstruct@gmail.com>
 ;; Version: 1.0
-;; Package-Version: 20160929.941
+;; Package-Version: 20171128.301
 ;; Maintainer: Massimiliano Mirra <hyperstruct@gmail.com>
 ;; Keywords: outlines, calendar
 ;; URL: http://github.com/bard/org-dashboard
@@ -28,7 +28,7 @@
 ;; Org Dashboard provides a visual summary of progress on projects and
 ;; tasks.
 ;;
-;; For example, if an org file (known by `org-agenda-files') contains
+;; For example, if an org file (known by `org-dashboard-files') contains
 ;; the following:
 ;;
 ;;     * Project: Better Health
@@ -57,8 +57,8 @@
 ;; Then `M-x org-dashboard-display' generates the following report and
 ;; displays it in a new buffer:
 ;;
-;;     health                run 10 km/week [██████████████████████           ]  66%
-;;     widget                   0.1 release [██████                           ]  18%
+;;     health                run 10 km/week [||||||||||||||||||||||           ]  66%
+;;     widget                   0.1 release [||||||                           ]  18%
 ;;
 ;; A dynamic block form is also supported. Writing the following in an
 ;; org file and then running `org-dblock-update', or placing the
@@ -95,17 +95,25 @@
   :tag "Org Dashboard"
   :group 'org)
 
+(defcustom org-dashboard-files
+  org-agenda-files
+  "Files to search for progress items."
+  :type '(repeat :tag "List of files and directories" file)
+  :group 'org-dashboard)
+
 (defcustom org-dashboard-progress-display-category
   t
   "Whether to display categories in a progress report.
 
 Note that, if not set with per-file or per-tree properties,
 category defaults to the org file name."
+  :group 'org-dashboard
   :type 'boolean)
 
 (defcustom org-dashboard-omit-completed
   nil
   "Whether to display progress bar for completed projects."
+  :group 'org-dashboard
   :type 'boolean)
 
 ;;;###autoload
@@ -117,7 +125,7 @@ category defaults to the org file name."
     (org-mode)
     (save-excursion
       (org-dashboard--insert-progress-summary
-       (org-dashboard--collect-progress-agenda-files)))
+       (org-dashboard--collect-progress)))
     (setq buffer-read-only t)
     (display-buffer (current-buffer))))
 
@@ -126,7 +134,7 @@ category defaults to the org file name."
   "Generate a progress report inside an org dynamic block.
 
 Progress information is retrieved by searching files in
-`org-agenda-files' for headings containing a \"progress cookie\",
+`org-dashboard-files' for headings containing a \"progress cookie\",
 e.g.:
 
   ** [50%] release v0.1
@@ -135,16 +143,23 @@ e.g.:
 
 See Info node `(org) Breaking down tasks'."
   (org-dashboard--insert-progress-summary
-   (org-dashboard--collect-progress-agenda-files)))
+   (org-dashboard--collect-progress)))
 
-(defun org-dashboard--collect-progress-agenda-files ()
-  (cl-loop for file in (org-agenda-files)
+(defun org-dashboard--collect-progress ()
+  (cl-loop for file in org-dashboard-files
            append (with-current-buffer (find-file-noselect file)
                     (org-with-wide-buffer
-                     (org-dashboard--collect-progress-current-buffer)))))
+                     (cl-remove-if (lambda (entry)
+                                     (let ((progress (nth 2 entry))
+                                           (tags (nth 4 entry)))
+                                       (or (member "archive" tags)
+                                           (eq 0 progress))))
+                                   (org-dashboard--collect-progress-current-buffer))))))
 
 (defun org-dashboard--search-heading-with-progress ()
-  (let ((cookie-re "\\[\\(\\([0-9]+\\)%\\|\\([0-9]+\\)/\\([0-9]+\\)\\)\\]"))
+  (let ((cookie-re "\\[\\(\\([0-9]+\\)%\\|\\([0-9]+\\)/\\([0-9]+\\)\\)\\]")
+	(priority-re "\\[#[ABCD]\\]")
+	)
     (cl-labels ((match-number (n)
                               (and (match-string n)
                                    (string-to-number (match-string n))))
@@ -171,10 +186,14 @@ See Info node `(org) Breaking down tasks'."
                 (remove-cookie (heading)
                                (replace-regexp-in-string
                                 cookie-re "" heading))
+		(remove-priority (heading)
+				 (replace-regexp-in-string
+				  priority-re "" heading))
                 (clean-heading (heading)
                                (trim-string
-                                (remove-cookie
-                                 (substring-no-properties heading)))))
+                                (remove-priority
+				 (remove-cookie
+				  (substring-no-properties heading))))))
       
       (and (search-heading-with-cookie)
            (let* ((progress-percent (read-progress))
@@ -190,9 +209,9 @@ See Info node `(org) Breaking down tasks'."
        (make-progress-bar (percent)
                           (let ((color (org-dashboard--progress-color percent)))
                             (concat (propertize 
-                                     (make-string (/ percent 3) ?█)
+                                     (make-string (/ percent 4) ?|)
                                      'font-lock-face (list :foreground color))
-                                    (make-string (- (/ 100 3) (/ percent 3)) ?\s))))
+                                    (make-string (- (/ 100 4) (/ percent 4)) ?\s))))
        (make-link (file goal goal-label)
                   (format "[[%s::*%s][%s]]" file goal goal-label)))
 
@@ -228,7 +247,8 @@ See Info node `(org) Breaking down tasks'."
                        (list category
                              heading
                              progress
-                             (buffer-file-name))))))
+                             (buffer-file-name)
+                             (org-get-tags))))))
 
 (defun org-dashboard--progress-color (percent)
   (cond ((< percent 33) "red")

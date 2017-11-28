@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171126.239
+;; Package-Version: 20171127.1025
 ;; Version: 0.9.1
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -55,25 +55,30 @@
 
 (defun counsel-unquote-regex-parens (str)
   "Unquote regex parenthesis in STR."
-  (let ((start 0)
-        ms)
-    (while (setq start (string-match "\\\\)\\|\\\\(\\|[()]" str start))
-      (setq ms (match-string-no-properties 0 str))
-      (cond ((equal ms "\\(")
-             (setq str (replace-match "(" nil t str))
-             (setq start (+ start 1)))
-            ((equal ms "\\)")
-             (setq str (replace-match ")" nil t str))
-             (setq start (+ start 1)))
-            ((equal ms "(")
-             (setq str (replace-match "\\(" nil t str))
-             (setq start (+ start 2)))
-            ((equal ms ")")
-             (setq str (replace-match "\\)" nil t str))
-             (setq start (+ start 2)))
-            (t
-             (error "Unexpected"))))
-    str))
+  (if (consp str)
+      (mapconcat
+       #'car
+       (cl-remove-if-not #'cdr str)
+       ".*")
+    (let ((start 0)
+          ms)
+      (while (setq start (string-match "\\\\)\\|\\\\(\\|[()]" str start))
+        (setq ms (match-string-no-properties 0 str))
+        (cond ((equal ms "\\(")
+               (setq str (replace-match "(" nil t str))
+               (setq start (+ start 1)))
+              ((equal ms "\\)")
+               (setq str (replace-match ")" nil t str))
+               (setq start (+ start 1)))
+              ((equal ms "(")
+               (setq str (replace-match "\\(" nil t str))
+               (setq start (+ start 2)))
+              ((equal ms ")")
+               (setq str (replace-match "\\)" nil t str))
+               (setq start (+ start 2)))
+              (t
+               (error "Unexpected"))))
+      str)))
 
 (defun counsel-directory-parent (dir)
   "Return the directory parent of directory DIR."
@@ -1729,7 +1734,7 @@ When INITIAL-INPUT is non-nil, use it in the minibuffer during completion."
   (cd ivy--directory)
   (counsel-cmd-to-dired
    (format
-    "ls | grep -i -E '%s' | xargs ls"
+    "ls | grep -i -E '%s' | xargs -d '\n' ls"
     (counsel-unquote-regex-parens ivy--old-re))))
 
 (defun counsel-up-directory ()

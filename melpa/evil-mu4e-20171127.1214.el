@@ -4,8 +4,8 @@
 
 ;; Author: Joris Engbers <info@jorisengbers.nl>
 ;; Homepage: https://github.com/JorisE/evil-mu4e
-;; Version: 0.0.6
-;; Package-Version: 20171122.1304
+;; Version: 0.0.7
+;; Package-Version: 20171127.1214
 ;; Package-Requires: ((emacs "24.4")(dash "2.12.0") (evil "1.2.10"))
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -82,6 +82,7 @@
     (,evil-mu4e-state mu4e-headers-mode-map "J"            mu4e~headers-jump-to-maildir)
     (,evil-mu4e-state mu4e-headers-mode-map "j"            next-line)
     (,evil-mu4e-state mu4e-headers-mode-map "k"            previous-line)
+    (,evil-mu4e-state mu4e-headers-mode-map "gr"           mu4e-headers-rerun-search)
     (,evil-mu4e-state mu4e-headers-mode-map "b"            mu4e-headers-search-bookmark)
     (,evil-mu4e-state mu4e-headers-mode-map ";"            mu4e-context-switch)
     (,evil-mu4e-state mu4e-headers-mode-map ,(kbd "RET")   mu4e-headers-view-message)

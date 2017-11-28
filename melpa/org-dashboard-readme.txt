@@ -1,7 +1,7 @@
 Org Dashboard provides a visual summary of progress on projects and
 tasks.
 
-For example, if an org file (known by `org-agenda-files') contains
+For example, if an org file (known by `org-dashboard-files') contains
 the following:
 
     * Project: Better Health
@@ -30,8 +30,8 @@ the following:
 Then `M-x org-dashboard-display' generates the following report and
 displays it in a new buffer:
 
-    health                run 10 km/week [██████████████████████           ]  66%
-    widget                   0.1 release [██████                           ]  18%
+    health                run 10 km/week [||||||||||||||||||||||           ]  66%
+    widget                   0.1 release [||||||                           ]  18%
 
 A dynamic block form is also supported. Writing the following in an
 org file and then running `org-dblock-update', or placing the

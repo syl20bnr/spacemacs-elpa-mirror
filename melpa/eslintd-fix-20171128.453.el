@@ -4,9 +4,9 @@
 
 ;; Author: Aaron Jensen <aaronjensen@gmail.com>
 ;; URL: https://github.com/aaronjensen/eslintd-fix
-;; Package-Version: 20171125.1432
+;; Package-Version: 20171128.453
 ;; Version: 1.0.0
-;; Package-Requires: ((dash "2.13.0"))
+;; Package-Requires: ((dash "2.12.0") (emacs "24.3"))
 
 ;;; Commentary:
 
@@ -51,15 +51,19 @@
   :group 'eslintd-fix
   :type 'string)
 
+(defcustom eslintd-fix-host "127.0.0.1"
+  "The host to connect to for eslint_d. Typically either \"127.0.0.1\" or \"localhost\"."
+  :group 'eslintd-fix
+  :type 'string)
+
 (defcustom eslintd-fix-portfile "~/.eslint_d"
   "The file written by eslint_d containing the port and token."
   :group 'eslintd-fix
   :type 'string)
 
 (defcustom eslintd-fix-preprocess-command nil
-  "The shell command to pipe the buffer into before piping to
-  eslintd. This is useful for integrating `prettier', for
-  example. It is ignored if `nil'."
+  "The shell command to pipe the buffer into before piping to eslintd.
+This is useful for integrating `prettier', for example. It is ignored if nil."
   :group 'eslintd-fix
   :type 'string)
 
@@ -143,6 +147,10 @@ function."
               (error "Invalid rcs patch or internal error in eslintd-fix--apply-rcs-patch")))))))))
 
 (defun eslintd-fix--replace-buffer-contents-via-patch (buffer file)
+  "Replace BUFFER contents with contents of FILE.
+
+Maintain point position as best as possible and minimize undo
+size by applying the changes as a diff patch."
   (with-temp-buffer
     (let ((patch-buffer (current-buffer)))
       (with-current-buffer buffer
@@ -153,6 +161,7 @@ function."
           (eslintd-fix--apply-rcs-patch patch-buffer))))))
 
 (defun eslintd-fix--compatible-versionp (executable)
+  "Return t if EXECUTABLE supports the features we need."
   (and (file-executable-p executable)
        (zerop (call-process-shell-command
                (concat
@@ -162,6 +171,9 @@ function."
                 ")")))))
 
 (defun eslintd-fix--eslint-config-foundp (executable)
+  "Return t if there is an eslint config for the current file.
+
+EXECUTABLE is the full path to an eslint_d executable."
   (let ((filename (buffer-file-name)))
     (and filename
          (zerop (call-process-shell-command
@@ -170,17 +182,32 @@ function."
                   " --print-config "
                   filename))))))
 
-(defun eslintd-fix--verify (executable)
-  (or eslintd-fix--verified
-      (cond ((not (eslintd-fix--compatible-versionp executable))
-             (eslintd-fix-mode -1)
-             (message "eslintd-fix: Could not find eslint_d or it does not have the `--fix-to-stdout' feature.")
-             nil)
+(defun eslintd-fix--deactivate (message)
+  "Deactivate ‘eslintd-fix-mode’ and show MESSAGE explaining why."
+  (eslintd-fix-mode -1)
+  (message (concat "eslintd-fix: " message))
+  nil)
+
+(defun eslintd-fix--verify (&optional force)
+  "Verify that eslint_d is running and the right version.
+
+Pass non-nil FORCE to bypass the memoized verification result.
+Return t eslint_d is working and nil otherwise."
+  (-if-let* ((executable (executable-find eslintd-fix-executable)))
+      (cond ((and eslintd-fix--verified
+                  (not force))
+             t)
+            ((not (eslintd-fix--compatible-versionp executable))
+             (eslintd-fix--deactivate "Could not find eslint_d or it does not have the `--fix-to-stdout' feature."))
+            ;; This will start eslint_d if it has not already been started.
             ((not (eslintd-fix--eslint-config-foundp executable))
-             (eslintd-fix-mode -1)
-             (message "eslintd-fix: Could not find an eslint config file.")
-             nil)
-            (t (setq eslintd-fix--verified t)))))
+             (eslintd-fix--deactivate "Could not find an eslint config file."))
+            ((not (file-exists-p eslintd-fix-portfile))
+             (eslintd-fix--deactivate
+              (concat  "Could not find `eslintd-fix-portfile' after starting eslint_d. "
+                       "This may be a bug in eslint_d, eslintd-fix or you may have overridden the portfile location somehow.")))
+            (t (setq eslintd-fix--verified t)))
+    (eslintd-fix--deactivate "Could not find eslint_d. Customize `eslintd-fix-executable' and ensure it is in your `exec-path'.")))
 
 (defun eslintd-fix--read-portfile ()
   "Read and return contents of ~/.eslint_d as a list."
@@ -193,28 +220,25 @@ function."
   "Start eslint_d.
 
 Return t if it successfully starts."
-  (-when-let* ((executable (executable-find eslintd-fix-executable)))
-      (and
-       (eslintd-fix--verify executable)
-       (message "eslintd-fix: Starting eslint_d...")
-       (if (zerop (call-process-shell-command
-                   (concat executable " start")))
-           t
-         (message "eslintd-fix: Could not start eslint_d.")
-         (eslintd-fix-mode -1)
-         nil))))
+  (eslintd-fix--verify t))
 
 (defun eslintd-fix--buffer-contains-exit-codep ()
-  "Return t if buffer contains an eslint_d exit code."
+  "Return t if buffer ends with an eslint_d exit code."
   (goto-char (point-max))
   (beginning-of-line)
   (looking-at "# exit [[:digit:]]+"))
 
 (defun eslintd-fix--connection-sentinel (connection status)
+  "Automatically attempt to start eslint_d if CONNECTION fails.
+
+STATUS contains the failure status message."
   (pcase (process-status connection)
-    ('failed (eslintd-fix--start))))
+    ('failed
+     (message "eslintd-fix: Failed to connect: %s" status)
+     (eslintd-fix--start))))
 
 (defun eslintd-fix--connection-filter (connection output)
+  "Copy OUTPUT from CONNECTION to output buffer."
   (-when-let* ((output-buffer (process-get connection 'eslintd-fix-output-buffer)))
     (with-current-buffer output-buffer
       (insert output))))
@@ -232,7 +256,7 @@ cached connection if it is already open."
                (port (car portfile))
                (token (cadr portfile))
                (connection
-                (open-network-stream "eslintd-fix" nil "localhost" port :nowait t)))
+                (open-network-stream "eslintd-fix" nil eslintd-fix-host port :nowait t)))
     (process-put connection 'eslintd-fix-token token)
     (set-process-query-on-exit-flag connection nil)
     (set-process-sentinel connection 'eslintd-fix--connection-sentinel)
@@ -267,8 +291,10 @@ Will open a connection if there is not one."
       (eslintd-fix--wait-for-connection (eslintd-fix--open-connection))))
 
 (defun eslintd-fix ()
+  "Use eslint_d to \"fix\ the current buffer."
   (interactive)
-  (-when-let* ((connection (eslintd-fix--get-connection))
+  (-when-let* ((_ (eslintd-fix--verify))
+               (connection (eslintd-fix--get-connection))
                (token (process-get connection 'eslintd-fix-token))
                (buffer (current-buffer))
                (output-file (make-temp-file "eslintd-fix-")))
