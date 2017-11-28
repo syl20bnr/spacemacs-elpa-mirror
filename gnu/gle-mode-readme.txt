@@ -4,12 +4,14 @@ language.  See http://glx.sourceforge.net/
   "gle" instead.  ]
 
 It provides:
-- Rudimentary code highlighting.
-- Automatic indentation.
-- Flymake support (requires Emacs-26's fymake).
+- Rudimentary code highlighting
+- Automatic indentation
+- Flymake support (requires Emacs-26's fymake)
 - Imenu support
+- Electric bloc names (after begin/end)
+- Completion of bloc names
+- Skeletons/templates to insert or close blocs
 
 TODO
 - Fix highlighting of function calls?
-- provide a completion-at-point-function
-- auto-complete the `end`s and `next`s
+- provide more completion

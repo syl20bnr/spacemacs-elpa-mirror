@@ -470,7 +470,7 @@
 	 ((:keywords "git" "vc" "convenience")
 	  (:url . "http://elpa.gnu.org/packages/gited.html"))])
  (gle-mode .
-	   [(1 0)
+	   [(1 1)
 	    ((cl-lib
 	      (0 5)))
 	    "Major mode to edit Graphics Layout Engine files" single

@@ -4,7 +4,7 @@
 
 ;; Author: Stefan Monnier <monnier@iro.umontreal.ca>
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Version: 1.0
+;; Version: 1.1
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -27,22 +27,24 @@
 ;;   "gle" instead.  ]
 
 ;; It provides:
-;; - Rudimentary code highlighting.
-;; - Automatic indentation.
-;; - Flymake support (requires Emacs-26's fymake).
+;; - Rudimentary code highlighting
+;; - Automatic indentation
+;; - Flymake support (requires Emacs-26's fymake)
 ;; - Imenu support
+;; - Electric bloc names (after begin/end)
+;; - Completion of bloc names
+;; - Skeletons/templates to insert or close blocs
 
 ;;;; TODO
 ;; - Fix highlighting of function calls?
-;; - provide a completion-at-point-function
-;; - auto-complete the `end`s and `next`s
+;; - provide more completion
 
 ;;; Code:
 
 (require 'smie)
 (require 'cl-lib)
 
-(defgroup 'gle-mode ()
+(defgroup gle-mode ()
   "Major mode for GLE (Graphics Layout Engine) files."
   :group 'tools)
 
@@ -68,7 +70,23 @@
          ;; If match-beg is not within a string, maybe it starts a string,
          ;; and maybe the second " doesn't end the string!
          (goto-char (1+ (match-beginning 0)))
-         nil)))))
+         nil)))
+   ;; Abuse the syntax-propertize scan to mark those places in the buffer
+   ;; where we have a bloc name, to speed up the gle--before-change-function.
+   ("\\(?:begin\\|end\\)[ \t]+\\(\\sw+\\)"
+    (1 (prog1 nil
+         (put-text-property (match-beginning 1) (match-end 1)
+                            'gle-block-name t))))))
+
+;;;; General tables about GLE's syntax
+
+(defvar gle--bloc-names
+  ;; Extracted with:
+  ;;     sed -ne 's/\(^\|.*\\sf \)begin \([[:alnum:]]*\).*/\2/p' \
+  ;;         **/*.tex | sort -u
+  '("box" "clip" "config" "contour" "fitz" "graph" "key" "length" "letz"
+    "name" "object" "origin" "path" "rotate" "scale" "surface"
+    "table" "tex" "texpreamble" "text" "translate"))
 
 ;;;; SMIE support
 
@@ -89,8 +107,8 @@
              ;; You can have "single-line" ifs (with inst right after "then"),
              ;; which can be extended with single line "else if"s.
              ;; Or you can have "if ... end if" blocs.
-             ("if bloc" inst-else-inst "end if")
-             ("sub" inst "end sub")
+             ("if bloc" inst-else-inst "end <thing>")
+             ("sub" inst "end <thing>")
              ("for" for-body "next <var>")
              ("until" until-body "next")
              ("while" until-body "next")
@@ -141,8 +159,8 @@
              ((looking-at "[ \t]*=") "<var>")
              ((equal tok "end")
               (cond
-               ((looking-at "[ \t]+sub") (goto-char (match-end 0)) "end sub")
-               ((looking-at "[ \t]+if") (goto-char (match-end 0)) "end if")
+               ;; ((looking-at "[ \t]+sub") (goto-char (match-end 0)) "end sub")
+               ;; ((looking-at "[ \t]+if") (goto-char (match-end 0)) "end if")
                ((looking-at "[ \t]+\\w+")
                 (goto-char (match-end 0)) "end <thing>")
                (t tok)))
@@ -191,8 +209,8 @@
           (goto-char (match-beginning 1))
           (cond
            ((match-beginning 2) "next <var>")
-           ((equal tok "sub") "end sub")
-           ((equal tok "if") "end if")
+           ;; ((equal tok "sub") "end sub")
+           ;; ((equal tok "if") "end if")
            (t "end <thing>")))
          (t "<exp>"))))))
 
@@ -200,14 +218,15 @@
   (pcase (cons kind token)
     (`(:after . ";")
      (cond
-      ((smie-rule-parent-p "for" "while" "sub" "begin" "gsave" "if bloc")
+      ((smie-rule-parent-p "for" "while" "until" "sub" "begin" "gsave"
+                           "if bloc")
        (smie-rule-parent smie-indent-basic))))
     (`(:before . "else bloc") (smie-rule-parent 0))))
 
 ;;;; Font-lock
 
 (defvar gle-font-lock-keywords
-  '(("^[ \t]*\\(\\(?:\\sw\\|\\s_\\)+\\)[ \t]*="
+  `(("^[ \t]*\\(\\(?:\\sw\\|\\s_\\)+\\)[ \t]*="
      (1 font-lock-variable-name-face))
     ("^[ \t]*if[ \t][^!\n;]*[ \t]\\(then\\)\\_>"
      (1 font-lock-keyword-face))
@@ -215,7 +234,11 @@
      (1 font-lock-keyword-face) (2 font-lock-keyword-face nil t))
     ("^[ \t]*else[ \t]+\\(if\\)[ \t][^!\n;]*[ \t]\\(then\\)\\_>"
      (1 font-lock-keyword-face) (2 font-lock-keyword-face))
-    ("^[ \t]*end[ \t]+\\(\\(?:\\sw\\|\\s_\\)+\\)"
+    (,(concat "^[ \t]*end[ \t]+\\("
+              (regexp-opt `("if" "sub" ,@gle--bloc-names))
+              "\\_>\\)")
+     (1 font-lock-keyword-face))
+    (,(concat "^[ \t]*begin[ \t]+\\(" (regexp-opt gle--bloc-names) "\\_>\\)")
      (1 font-lock-keyword-face))
     ("^[ \t]*sub[ \t]*\\(\\(?:\\sw\\|\\s_\\)+\\)"
      (1 font-lock-function-name-face))
@@ -297,7 +320,158 @@ See `flymake-diagnostic-functions' for documentation of REPORT-FN."
   '(("Funs" "^[ \t]*sub[ \t]+\\(\\(?:\\s_\\|\\sw\\)+\\)" 1)
     ("Vars" "^[ \t]*\\(\\(?:\\s_\\|\\sw\\)+\\)[ \t]*=" 1)))
 
+;;;; Completion
+
+(defun gle--capf-data ()
+  (save-excursion
+    (skip-chars-backward "a-z")
+    (when (looking-back "^[ \t]*\\(?:begin\\|end\\)[ \t]+"
+                        (line-beginning-position))
+      (let ((beg (point))
+            (end (progn
+                   (skip-chars-forward "a-z")
+                   (point))))
+        `(,beg ,end ,gle--bloc-names)))))
+
+(defun gle--before-change-function (beg end)
+  (when (get-text-property beg 'gle-block-name)
+    (condition-case err
+        (with-silent-modifications
+          ;; Remove property even if we don't find a pair.
+          (remove-text-properties
+           (previous-single-property-change (1+ beg) 'gle-block-name)
+           (next-single-property-change beg 'gle-block-name)
+           '(gle-block-name))
+          (unless (or (get-char-property beg 'text-clones)
+                      (get-char-property (1+ beg) 'text-clones)
+                      (save-excursion
+                        (goto-char beg)
+                        (not (looking-back
+                              "^[ \t]*\\(?:begi\\(n\\)\\|end\\)[ \t]*\\([[:alnum:]]*\\)"
+                              (line-beginning-position)))))
+            (let ((cmd-start (match-beginning 0))
+                  (type (match-end 1))  ;nil for end, else begin.
+                  (arg-start (match-beginning 2)))
+              (save-excursion
+                (goto-char (match-end 0))
+                (when (and (looking-at "[[:alnum:]]")
+                           (>= (match-end 0) end))
+                  (let ((arg-end (match-end 0)))
+                    (if (null type)     ;end
+                        (progn (goto-char arg-end)
+                               (forward-sexp -1)
+                               (skip-chars-forward "[:alnum:]")
+                               (skip-chars-forward " \t"))
+                      (goto-char cmd-start)
+                      (forward-sexp 1)
+                      (skip-chars-backward "[:alnum:]"))
+                    (when (looking-at
+                           (regexp-quote (buffer-substring arg-start arg-end)))
+                      (text-clone-create arg-start arg-end
+                                         'spread "[[:alnum:]]*"))))))))
+      (scan-error nil)
+      (error (message "Error in gle--before-change-function %S" err)))))
+        
+
+;;;; Skeletons
+
+(defvar gle--begend-default "graph")
+
+(define-skeleton gle-insert-begin-end
+  "Insert a begin...end bloc."
+  (if (consp gle--begend-default)
+      (car gle--begend-default)
+    (let ((choice (completing-read (format "GLE begin name [%s]: "
+					   gle--begend-default)
+                                   gle--bloc-names
+				   nil nil nil nil gle--begend-default)))
+      (setq gle--begend-default choice)
+      choice))
+  \n "begin " str > \n > _ \n "end " str > \n)
+
+(define-skeleton gle-insert-sub
+  "Insert a sub...end bloc."
+  nil ;; "Subroutine name: "
+  \n "sub " ;; str
+  > \n > _ \n "end sub" ;; " !" str
+  > \n)
+
+(define-skeleton gle-insert-if
+  "Insert a if...end bloc."
+  nil
+  \n "if " @ " then"
+  > \n > _ \n "else"
+  > \n > \n "end if"
+  > \n)
+
+(define-skeleton gle-insert-for
+  "Insert a for...next bloc."
+  "GLE var name: "
+  \n "for " str " = " @ " to " @ " step 1" > \n > _ \n "next " str > \n)
+
+(define-skeleton gle-insert-while
+  "Insert a while...next bloc."
+  nil
+  \n "while " > \n > _ \n "next" > \n)
+
+(define-skeleton gle-insert-until
+  "Insert a until...next bloc."
+  nil
+  \n "until " > \n > _ \n "next" > \n)
+
+(defvar gle--bloc-default "graph")
+
+(defun gle-insert-bloc (name)
+  "Insert some bloc (begin..end, while...next, sub...end, ...).
+NAME is the kind of bloc to insert."
+  (interactive
+   (list
+    (let ((choice (completing-read (format "GLE bloc name [%s]: "
+				           gle--bloc-default)
+                                   `("for" "if" "until" "sub" "while"
+                                     ,@gle--bloc-names)
+			           nil nil nil nil gle--bloc-default)))
+      (setq gle--bloc-default choice)
+      choice)))
+  (pcase name
+    ("for"   (call-interactively 'gle-insert-for))
+    ("if"    (call-interactively 'gle-insert-if))
+    ("until" (call-interactively 'gle-insert-until))
+    ("sub"   (call-interactively 'gle-insert-sub))
+    ("while" (call-interactively 'gle-insert-while))
+    (_ (let ((gle--begend-default (list name)))
+         (call-interactively 'gle-insert-begin-end)))))
+
+(define-skeleton gle-insert-close
+  "Insert an end or next instruction to close the current bloc."
+  (save-excursion
+    (with-demoted-errors "Beginning not found!"
+      (let* ((options (mapcar (lambda (tok) (assoc tok smie-grammar))
+                              '("next" "next <var>" "end <thing>")))
+             (closer (caar (sort options (lambda (o1 o2)
+                                           (>= (cadr o1) (cadr o2))))))
+             (opener (smie-backward-sexp closer)))
+        (pcase opener
+          (`(,_ ,_ ,(or "while" "until")) "next")
+          (`(,_ ,_ "if bloc") "end if")
+          (`(,_ ,_ "sub") "end sub")
+          (`(,_ ,_ "for")
+           (looking-at "[[:alnum:]]*")
+           (concat "next " (match-string 0)))
+          (`(,_ ,_ "begin")
+           (if (looking-at "begin[ \t]+\\([[:alnum:]]+\\)")
+               (concat "end " (match-string 1))
+             (message "Can't find bloc name after `begin'!")))
+          (_ (error "Unexpected beginning!"))))))
+  \n str > \n)
+
 ;;;; Top-level
+
+(defvar gle-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map [?\C-c ?\C-e] 'gle-insert-close)
+    (define-key map [?\C-c ?\C-o] 'gle-insert-bloc)
+    map))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.gle\\'" . gle-mode))
@@ -313,11 +487,33 @@ See `flymake-diagnostic-functions' for documentation of REPORT-FN."
   (setq-local font-lock-defaults
               '(gle-font-lock-keywords))
   (setq-local imenu-generic-expression gle-imenu-generic-expression)
-  (add-hook 'flymake-diagnostic-functions 'gle--flymake nil 'local)
+  (add-hook 'flymake-diagnostic-functions #'gle--flymake nil 'local)
+  (add-hook 'completion-at-point-functions #'gle--capf-data nil 'local)
+  (add-hook 'before-change-functions #'gle--before-change-function nil 'local)
   )
 
 ;;;; ChangeLog:
 
+;; 2017-11-27  Stefan Monnier  <monnier@iro.umontreal.ca>
+;; 
+;; 	* packages/gle-mode/gle-mode.el: Improvement for 1.1
+;; 
+;; 	(gle-mode) <defgroup>: Fix serious typo.
+;; 	(gle-smie-grammar, gle-smie-forward-token, gle-smie-backward-token): Use
+;; 	"end <thing>" for end-sub and end-if as well.
+;; 	(gle-smie-rules): Add "until" alongside "while".
+;; 	(gle--bloc-names): New var.
+;; 	(gle-font-lock-keywords): Use it to improve highlighting of begin/end.
+;; 	(gle--capf-data): Rudimentary completion data.
+;; 	(gle-syntax-propertize): Mark bloc names.
+;; 	(gle--before-change-function): New function to edit bloc names in pairs.
+;; 	(gle--begend-default, gle--bloc-default): New vars.
+;; 	(gle-insert-begin-end, gle-insert-sub, gle-insert-if, gle-insert-for)
+;; 	(gle-insert-while, gle-insert-until, gle-insert-bloc)
+;; 	(gle-insert-close): New skeletons.
+;; 	(gle-mode-map): New var.
+;; 	(gle-mode): Add before-change-function and completion functions.
+;; 
 ;; 2017-11-26  Stefan Monnier  <monnier@iro.umontreal.ca>
 ;; 
 ;; 	Add gle-mode package
