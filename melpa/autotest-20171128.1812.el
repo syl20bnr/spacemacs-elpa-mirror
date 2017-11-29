@@ -5,7 +5,7 @@
 ;; Author: Ryan Davis <ryand-ruby@zenspider.com>
 ;; Version 1.1.0
 ;; Keywords: testing, ruby, convenience
-;; Package-Version: 20150130.225
+;; Package-Version: 20171128.1812
 ;; Created: 2006-11-17
 ;; Compatibility: Emacs 24, 23, 22, 21?
 ;; URL: https://github.com/zenspider/elisp/blob/master/autotest.el
@@ -78,7 +78,7 @@
          '(
            ("^ +\\(#{RAILS_ROOT}/\\)?\\([^(:]+\\):\\([0-9]+\\)" 2 3)
            ("\\[\\(.*\\):\\([0-9]+\\)\\]:$" 1 2)
-           ("^ *\\([[+]\\)?\\([^:
+           ("^ *\\(?:from \\)?\\([[+]\\)?\\([^:
 ]+\\):\\([0-9]+\\):in" 2 3)
            ("^.* at \\([^:]*\\):\\([0-9]+\\)$" 1 2)
            ))

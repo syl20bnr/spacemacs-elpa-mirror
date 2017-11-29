@@ -6,7 +6,7 @@
 ;; Maintainer: John Wiegley <jwiegley@gmail.com>
 ;; Created: 16 Jun 2012
 ;; Version: 1.0
-;; Package-Version: 20161218.1520
+;; Package-Version: 20171128.2058
 ;; Keywords: keys keybinding config dotemacs
 ;; URL: https://github.com/jwiegley/use-package
 
@@ -162,9 +162,13 @@ can safely be called at any time."
                                (key-description ,namevar))
                              (quote ,keymap)))
             (,bindingvar (lookup-key (or ,keymap global-map) ,keyvar)))
-       (add-to-list 'personal-keybindings
-                    (list ,kdescvar ,command
-                          (unless (numberp ,bindingvar) ,bindingvar)))
+       (let ((entry (assoc ,kdescvar personal-keybindings))
+             (details (list ,command
+                            (unless (numberp ,bindingvar)
+                              ,bindingvar))))
+         (if entry
+             (setcdr entry details)
+           (add-to-list 'personal-keybindings (cons ,kdescvar details))))
        ,(if predicate
             `(define-key (or ,keymap global-map) ,keyvar
                '(menu-item "" nil :filter (lambda (&optional _)
@@ -371,8 +375,8 @@ function symbol (unquoted)."
                              (car (compare-keybindings l r))))))
 
         (if (not (eq (cdar last-binding) (cdar binding)))
-            (princ (format "\n\n%s\n%s\n\n"
-                           (cdar binding)
+            (princ (format "\n\n%s: %s\n%s\n\n"
+                           (cdar binding) (caar binding)
                            (make-string (+ 21 (car bind-key-column-widths)
                                            (cdr bind-key-column-widths)) ?-)))
           (if (and last-binding
