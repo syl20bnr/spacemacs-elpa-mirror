@@ -7,7 +7,7 @@
 ;; Created: 17 Jun 2012
 ;; Modified: 17 Oct 2016
 ;; Version: 2.3
-;; Package-Version: 20171128.1141
+;; Package-Version: 20171128.1627
 ;; Package-Requires: ((bind-key "1.0") (diminish "0.44"))
 ;; Keywords: dotemacs startup speed config package
 ;; URL: https://github.com/jwiegley/use-package
@@ -159,6 +159,7 @@ the user specified."
     :defines
     :functions
     :defer
+    :hook
     :custom
     :custom-face
     :init
@@ -829,10 +830,12 @@ If the package is installed, its entry is removed from
 ;;; :requires
 ;;
 
-(defun use-package-as-one (label args f)
-  "Call F on the first element of ARGS if it has one element, or all of ARGS."
+(defun use-package-as-one (label args f &optional allow-empty)
+  "Call F on the first element of ARGS if it has one element, or all of ARGS.
+If ALLOW-EMPTY is non-nil, it's OK for ARGS to be an empty list."
   (declare (indent 1))
-  (if (and (not (null args)) (listp args) (listp (cdr args)))
+  (if (or (and (not (null args)) (listp args) (listp (cdr args)))
+          (and allow-empty (null args)))
       (if (= (length args) 1)
           (funcall f label (car args))
         (funcall f label args))
@@ -1412,23 +1415,68 @@ deferred until the prefix key sequence is pressed."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
+;;; :hook
+;;
+
+(defun use-package-normalize/:hook (name keyword args)
+  (use-package-as-one (symbol-name keyword) args
+    (lambda (label arg)
+      (unless (or (symbolp arg) (consp arg))
+        (use-package-error
+         (concat label " a <symbol> or (<symbol or list of symbols> . <symbol or function>)"
+                 " or list of these")))
+      (use-package-normalize-pairs
+       #'(lambda (k)
+           (or (symbolp k)
+               (and (listp k)
+                    (listp (cdr k))
+                    (seq-every-p #'symbolp k))))
+       #'(lambda (v)
+           (or (symbolp v) (functionp v)))
+       name label arg))))
+
+(defun use-package-handler/:hook (name keyword args rest state)
+  "Generate use-package custom keyword code."
+  (let ((commands (let (funs)
+                    (dolist (def args)
+                      (if (symbolp (cdr def))
+                          (setq funs (cons (cdr def) funs))))
+                    (nreverse funs))))
+    (use-package-concat
+     (use-package-process-keywords name
+       (if commands
+           (use-package-sort-keywords
+            (use-package-plist-maybe-put rest :defer t))
+         rest)
+       (if commands
+           (use-package-plist-append state :commands commands)
+         state))
+     (cl-mapcan
+      (lambda (def)
+        (let ((syms (car def))
+              (fun (cdr def)))
+          (mapcar
+           #'(lambda (sym) 
+               `(add-hook (quote ,(intern (format "%s-hook" sym)))
+                          (function ,fun)))
+           (if (symbolp syms) (list syms) syms)))) args))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
 ;;; :custom
 ;;
 
-(defun use-package-normalize/:custom (name-symbol keyword args)
+(defun use-package-normalize/:custom (name keyword args)
   "Normalize use-package custom keyword."
-  (cond
-   ((and (= (length args) 1)
-         (listp (car args))
-         (listp (car (car args))))
-    (car args))
-   ((and (= (length args) 1)
-         (listp (car args)))
-    args)
-   (t
-    (use-package-error
-     (concat label " a (<symbol> <value> [comment])"
-             " or list of these")))))
+  (use-package-as-one (symbol-name keyword) args
+    (lambda (label arg)
+      (unless (listp arg)
+        (use-package-error
+         (concat label " a (<symbol> <value> [comment])"
+                 " or list of these")))
+      (if (symbolp (car arg))
+          (list arg)
+        arg))))
 
 (defun use-package-handler/:custom (name keyword args rest state)
   "Generate use-package custom keyword code."
@@ -1501,7 +1549,7 @@ deferred until the prefix key sequence is pressed."
 
 (defun use-package-normalize/:diminish (name keyword args)
   (use-package-as-one (symbol-name keyword) args
-    (apply-partially #'use-package-normalize-diminish name)))
+    (apply-partially #'use-package-normalize-diminish name) t))
 
 (defun use-package-handler/:diminish (name keyword arg rest state)
   (let ((body (use-package-process-keywords name rest state)))
