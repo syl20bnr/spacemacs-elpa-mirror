@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 2.15
+;; Package-Version: 2.16
 ;; Version: 0.5
 ;; Package-Requires: ((emacs "24.3") (company "0.8.1") (rtags "2.10"))
 
