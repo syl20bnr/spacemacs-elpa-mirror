@@ -6,7 +6,7 @@
 ;; Created: 24 Aug 2011
 ;; Updated: 16 Mar 2015
 ;; Version: 1.2
-;; Package-Version: 20171024.1907
+;; Package-Version: 20171129.845
 ;; Package-Requires: ((gntp "0.1") (log4e "0.3.0"))
 ;; Keywords: notification emacs message
 ;; X-URL: https://github.com/jwiegley/alert
@@ -810,7 +810,8 @@ From https://github.com/julienXX/terminal-notifier."
       (let ((args
              (list "-title"   (alert-encode-string (plist-get info :title))
                    "-appIcon" (or (plist-get info :icon) alert-notifier-default-icon)
-                   "-message" (alert-encode-string (plist-get info :message)))))
+                   "-message" (alert-encode-string (plist-get info :message))
+                   "-timeout" (number-to-string alert-fade-time))))
         (apply #'call-process alert-notifier-command nil nil nil args))
     (alert-message-notify info)))
 

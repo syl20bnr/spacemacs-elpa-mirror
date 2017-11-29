@@ -7,8 +7,8 @@
 ;; Created: 17 Jun 2012
 ;; Modified: 17 Oct 2016
 ;; Version: 2.3
-;; Package-Version: 20171128.2112
-;; Package-Requires: ((bind-key "1.0"))
+;; Package-Version: 20171129.840
+;; Package-Requires: ((emacs "24.3") (bind-key "1.0"))
 ;; Keywords: dotemacs startup speed config package
 ;; URL: https://github.com/jwiegley/use-package
 
@@ -42,6 +42,7 @@
 
 (require 'bind-key)
 (require 'bytecomp)
+(require 'cl-lib)
 (eval-when-compile (require 'cl))
 (eval-when-compile (require 'regexp-opt))
 
@@ -1427,7 +1428,7 @@ deferred until the prefix key sequence is pressed."
            (or (symbolp k)
                (and (listp k)
                     (listp (cdr k))
-                    (seq-every-p #'symbolp k))))
+                    (cl-every #'symbolp k))))
        #'(lambda (v)
            (or (symbolp v) (functionp v)))
        name label arg))))
@@ -1453,7 +1454,7 @@ deferred until the prefix key sequence is pressed."
         (let ((syms (car def))
               (fun (cdr def)))
           (mapcar
-           #'(lambda (sym) 
+           #'(lambda (sym)
                `(add-hook (quote ,(intern (format "%s-hook" sym)))
                           (function ,fun)))
            (if (symbolp syms) (list syms) syms)))) args))))
