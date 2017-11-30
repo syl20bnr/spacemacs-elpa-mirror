@@ -4,7 +4,7 @@
 
 ;; Author: Fritz Stelzer <brotzeitmacher@gmail.com>
 ;; URL: https://github.com/brotzeitmacher/helm-xref
-;; Package-Version: 20170822.1708
+;; Package-Version: 20171130.126
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "25.1") (helm "1.9.4"))
 
@@ -29,6 +29,20 @@
 (defvar helm-xref-alist nil
   "Holds helm candidates.")
 
+(defgroup helm-xref nil
+  "Xref with helm."
+  :prefix "helm-xref-" :group 'helm)
+
+(defface helm-xref-file-name
+  '((t (:foreground "cyan")))
+  "Face for xref file name"
+  :group 'helm-xref)
+
+(defface helm-xref-line-number
+  '((t (:inherit 'compilation-line-number)))
+  "Face for xref line number"
+  :group 'helm-xref)
+
 (defun helm-xref-candidates (xrefs)
   "Convert XREF-ALIST items to helm candidates and add them to `helm-xref-alist'."
   (dolist (xref xrefs)
@@ -40,12 +54,12 @@
         (setq candidate
               (concat
                (propertize (car (reverse (split-string file "\\/")))
-                           'font-lock-face '(:foreground "cyan"))
+                           'font-lock-face 'helm-xref-file-name)
                (when (string= "integer" (type-of line))
                  (concat
                   ":"
                   (propertize (int-to-string line)
-                              'font-lock-face 'compilation-line-number)))
+                              'font-lock-face 'helm-xref-line-number)))
                ":"
                summary))
         (push `(,candidate . ,marker) helm-xref-alist)))))

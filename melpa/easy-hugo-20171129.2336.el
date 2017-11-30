@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20171129.1958
-;; Version: 2.4.18
+;; Package-Version: 20171129.2336
+;; Version: 2.4.19
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -370,14 +370,6 @@ Because only two are supported by hugo."
 (defconst easy-hugo--forward-char 20
   "Forward-char of easy-hugo.")
 
-;;;###autoload
-(defun easy-hugo-article ()
-  "Open a list of articles written in hugo with dired."
-  (interactive)
-  (unless easy-hugo-basedir
-    (error "Please set easy-hugo-basedir variable"))
-  (find-file (expand-file-name easy-hugo-postdir easy-hugo-basedir)))
-
 (defmacro easy-hugo-with-env (&rest body)
   "Evaluate BODY with `default-directory' set to `easy-hugo-basedir'.
 Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
@@ -388,6 +380,25 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
        (error "'hugo' is not installed"))
      (let ((default-directory easy-hugo-basedir))
        ,@body)))
+
+(defmacro easy-hugo-set-bloglist (body)
+  "Macros to set variables to `easy-hugo-bloglist' as BODY."
+  `(setq ,body
+	 (cdr (assoc ',body
+		     (nth easy-hugo--current-blog easy-hugo-bloglist)))))
+
+(defmacro easy-hugo-eval-bloglist (body)
+  "Macros to eval variables of BODY from `easy-hugo-bloglist'."
+  `(cdr (assoc ',body
+	       (nth easy-hugo--current-blog easy-hugo-bloglist))))
+
+;;;###autoload
+(defun easy-hugo-article ()
+  "Open a list of articles written in hugo with dired."
+  (interactive)
+  (unless easy-hugo-basedir
+    (error "Please set easy-hugo-basedir variable"))
+  (find-file (expand-file-name easy-hugo-postdir easy-hugo-basedir)))
 
 ;;;###autoload
 (defun easy-hugo-image ()
@@ -1234,7 +1245,7 @@ Optional prefix ARG says how many lines to move; default is one line."
 		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
     (setq easy-hugo-google-cloud-storage-bucket-name
 	  (cdr (assoc 'easy-hugo-google-cloud-storage-bucket-name
-		      (nth 1 easy-hugo-bloglist))))
+		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
     (if (cdr (assoc 'easy-hugo-github-deploy-script
 		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
 	(setq easy-hugo-github-deploy-script
@@ -1335,7 +1346,7 @@ Optional prefix ARG says how many lines to move; default is one line."
 		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
     (setq easy-hugo-google-cloud-storage-bucket-name
 	  (cdr (assoc 'easy-hugo-google-cloud-storage-bucket-name
-		      (nth 1 easy-hugo-bloglist))))
+		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
     (if (cdr (assoc 'easy-hugo-github-deploy-script
 		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
 	(setq easy-hugo-github-deploy-script
@@ -1438,7 +1449,7 @@ Optional prefix ARG says how many lines to move; default is one line."
 		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
     (setq easy-hugo-google-cloud-storage-bucket-name
 	  (cdr (assoc 'easy-hugo-google-cloud-storage-bucket-name
-		      (nth 1 easy-hugo-bloglist))))
+		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
     (if (cdr (assoc 'easy-hugo-github-deploy-script
 		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
 	(setq easy-hugo-github-deploy-script
