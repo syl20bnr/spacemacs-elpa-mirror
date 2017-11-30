@@ -5,7 +5,7 @@
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 27 Jul 2017
 ;; Version: 0.0.2
-;; Package-Version: 20171019.347
+;; Package-Version: 20171130.857
 ;; Keywords: files comm deploy
 ;; Package-Requires: ((emacs "24.3") (cl-lib "0.5") (f "0.17") (s "1.7.0"))
 
@@ -126,8 +126,11 @@
 
 (defun copy-file-on-save--copy-file ()
   "Copy a file using `copy-file'."
-  (let ((from-path buffer-file-name)
-        (to-path   (copy-file-on-save--replace-path buffer-file-name)))
+  (let* ((from-path buffer-file-name)
+	 (to-path   (copy-file-on-save--replace-path buffer-file-name))
+	 (to-dir (file-name-directory to-path)))
+    (unless (file-exists-p to-dir)
+      (make-directory to-dir t))
     (copy-file from-path to-path t)))
 
 (defun copy-file-on-save--replace-path (src-file-path)

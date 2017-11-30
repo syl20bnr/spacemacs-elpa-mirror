@@ -1,54 +1,16 @@
-A minuscule client for the Github API.
+Ghub is a library that provides basic support for using the Github API
+from Emacs packages.  It abstracts access to API resources using only
+a handful of functions that are not resource-specific.
 
-This library just provides the HTTP methods.
-See https://developer.github.com/v3 for valid requests.
+It also handles the creation, storage and use of access tokens using a
+setup wizard, to make it easier for users to get started and to reduce
+the support burden imposed on package maintainers.  It also comes with
+a comprehensive manual to address the cases when things don't just
+work as expected.
 
-Initial configuration
----------------------
-
-  $ git config --global github.user <username>
-  $ emacs ~/.authinfo.gpg
-  # -*- epa-file-encrypt-to: ("A.U.Thor@example.com") -*-
-  machine api.github.com login <login> password <token>
-
-To acquire a token, go to https://github.com/settings/tokens.  Note
-that currently the same token is shared by all Emacs packages that
-use `ghub.el'.
-
-Usage examples
---------------
-
-Getting details about a repository:
-
-  (ghub-get "/repos/tarsius/ghub")
-
-Listing names of all repositories of a user:
-
-  (--keep (cdr (assq 'name it))
-          (let ((ghub-unpaginate t))
-            (ghub-get "/users/tarsius/repos")))
-
-Making an unauthenticated request:
-
-  (let ((ghub-authenticate nil))
-    (ghub-get "/orgs/magit/repos"))
-
-Making a request using basic authentication:
-
-  (let ((ghub-authenticate 'basic))
-    (ghub-get "/orgs/magit/repos"))
-
-Github Enterprise support
--------------------------
-
-Initial configuration:
-
-  $ git config --global github.gh.example.com.user employee
-  $ emacs ~/.authinfo.gpg
-  # -*- epa-file-encrypt-to: ("employee@example.com") -*-
-  machine gh.example.com login employee password <token>
-
-Making a request:
-
-  (let ((ghub-base-url "https://gh.example.com"))
-    (ghub-get "/users/employee/repos"))
+Ghub is intentionally limited to only provide these two essential
+features — basic request functions and guided setup — to avoid being
+too opinionated, which would hinder wide adaption.  It is assumed that
+wide adoption would make life easier for users and maintainers alike,
+because then all packages that talk to the Github API could be
+configured the same way.
