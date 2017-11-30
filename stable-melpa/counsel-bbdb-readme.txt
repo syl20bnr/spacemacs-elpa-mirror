@@ -7,7 +7,7 @@ Since It's not using any API from `bbdb', it's always fast and stable.
 `M-x counsel-bbdb-expand-mail-alias' to expand mail alias.  Mail Alias
 is also called "Contact Group" or "Address Book Group" in other email clients.
 
-Since counsel-bbdb is based ivy-mode. All ivy key bindings are supported.
+Since counsel-bbdb is based ivy-mode.  All ivy key bindings are supported.
 For example, after `C-u M-x counsel-bbdb-complete-mail', you can press
 `C-M-n' to input multiple mail address.
 

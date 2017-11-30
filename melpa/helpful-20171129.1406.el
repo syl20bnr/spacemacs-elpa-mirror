@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171120.321
+;; Package-Version: 20171129.1406
 ;; Keywords: help, lisp
 ;; Version: 0.3
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2"))
@@ -385,7 +385,7 @@ for cleaning up."
                 (cons (marker-buffer marker)
                       (marker-position marker))))))
     (when (not callable-p)
-      (condition-case err
+      (condition-case _err
           (setq buf-and-pos (find-definition-noselect sym 'defvar))
         (search-failed nil)))
     buf-and-pos))

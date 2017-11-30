@@ -2,12 +2,12 @@
 
 ;; Copyright (C) 2016,2017 Chen Bin
 ;;
-;; Version: 0.0.2
-;; Package-Version: 20171016.1545
+;; Version: 0.0.3
+;; Package-Version: 20171129.1737
 ;; Author: Chen Bin <chenbin.sh AT gmail>
 ;; URL: https://github.com/redguard/counsel-bbdb
 ;; Package-Requires: ((ivy "0.8.0") (emacs "24.3"))
-;; Keywords: bbdb, email, completion
+;; Keywords: mail, abbrev, convenience, matching
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -39,7 +39,7 @@
 ;; `M-x counsel-bbdb-expand-mail-alias' to expand mail alias.  Mail Alias
 ;; is also called "Contact Group" or "Address Book Group" in other email clients.
 ;;
-;; Since counsel-bbdb is based ivy-mode. All ivy key bindings are supported.
+;; Since counsel-bbdb is based ivy-mode.  All ivy key bindings are supported.
 ;; For example, after `C-u M-x counsel-bbdb-complete-mail', you can press
 ;; `C-M-n' to input multiple mail address.
 ;;
@@ -110,8 +110,6 @@ If it's nil, the default insertion is executed.")
     (forward-char))
   (insert str))
 
-
-
 ;;;###autoload
 (defun counsel-bbdb-reload ()
   "Load contacts from `bbdb-file'."
@@ -161,8 +159,8 @@ If it's nil, the default insertion is executed.")
                                    mail-alias))))))))
 
 (defun counsel-bbdb-insert-one-mail-address (r append-comma)
-  "Insert one mail address from R.  If APPEND-COMMA is t, append comma
-at the end of mail address."
+  "Insert one mail address from R.
+If APPEND-COMMA is t, append comma at the end of mail address."
   (let* (rlt
          (family-name (nth 1 r))
          (given-name (nth 2 r))
@@ -177,10 +175,10 @@ at the end of mail address."
         ;; insert "full-name <email"
         (setq rlt (format "%s <%s>" display-name mail)))
        ((> (length (setq display-name
-                         (concat given-name " " family-name))
+                         (concat given-name " " family-name)))
                    1)
            ;; insert "given-name family-name <email>"
-           (setq rlt (format "%s <%s>" display-name mail))))
+           (setq rlt (format "%s <%s>" display-name mail)))
        (t
         ;; insert "email"
         (setq rlt mail)))
