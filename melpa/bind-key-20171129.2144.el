@@ -7,7 +7,7 @@
 ;; Created: 16 Jun 2012
 ;; Modified: 29 Nov 2017
 ;; Version: 2.4
-;; Package-Version: 20171129.1638
+;; Package-Version: 20171129.2144
 ;; Keywords: keys keybinding config dotemacs
 ;; URL: https://github.com/jwiegley/use-package
 
@@ -268,11 +268,12 @@ function symbol (unquoted)."
          (wrap map
                (cl-mapcan
                 (lambda (form)
-                  (if prefix-map
-                      `((bind-key ,(car form) #',(cdr form) ,prefix-map ,filter))
-                    (if (and map (not (eq map 'global-map)))
-                        `((bind-key ,(car form) #',(cdr form) ,map ,filter))
-                      `((bind-key ,(car form) #',(cdr form) nil ,filter)))))
+                  (let ((fun (and (cdr form) (list 'function (cdr form)))))
+                    (if prefix-map
+                        `((bind-key ,(car form) ,fun ,prefix-map ,filter))
+                      (if (and map (not (eq map 'global-map)))
+                          `((bind-key ,(car form) ,fun ,map ,filter))
+                        `((bind-key ,(car form) ,fun nil ,filter))))))
                 first))
          (when next
            (bind-keys-form

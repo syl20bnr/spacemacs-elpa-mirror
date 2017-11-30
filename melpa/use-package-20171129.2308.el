@@ -7,7 +7,7 @@
 ;; Created: 17 Jun 2012
 ;; Modified: 29 Nov 2017
 ;; Version: 2.4
-;; Package-Version: 20171129.1653
+;; Package-Version: 20171129.2308
 ;; Package-Requires: ((emacs "24.3") (bind-key "2.4"))
 ;; Keywords: dotemacs startup speed config package
 ;; URL: https://github.com/jwiegley/use-package
@@ -730,31 +730,32 @@ If the package is installed, its entry is removed from
                    "(an unquoted symbol name)")))))))
 
 (defun use-package-ensure-elpa (name ensure state context &optional no-refresh)
-  (let ((package (or (when (eq ensure t) (use-package-as-symbol name))
+  (let ((package (or (and (eq ensure t) (use-package-as-symbol name))
                      ensure)))
     (when package
       (require 'package)
       (or (package-installed-p package)
-          (not (or
-                ;; Contexts in which the confirmation prompt is
-                ;; bypassed.
-                (member context '(:byte-compile :ensure :config))
-                (y-or-n-p (format "Install package %S?" package))))
+          ;; Contexts in which the confirmation prompt is bypassed.
+          (not (or (member context '(:byte-compile :ensure :config))
+                   (y-or-n-p (format "Install package %S?" package))))
           (condition-case-unless-debug err
-              (progn
-                (when (assoc package (bound-and-true-p package-pinned-packages))
+              (let ((pinned (assoc package (bound-and-true-p
+                                            package-pinned-packages))))
+                (when pinned
                   (package-read-all-archive-contents))
-                (cond ((assoc package package-archive-contents)
-                       (package-install package)
-                       t)
-                      (t
-                       (package-refresh-contents)
-                       (when (assoc package
-                                    (bound-and-true-p package-pinned-packages))
-                         (package-read-all-archive-contents))
-                       (package-install package))))
-            (error (message "Error: Cannot load %s: %S" name err)
-                   nil))))))
+                (if (assoc package package-archive-contents)
+                    (package-install package)
+                  (package-refresh-contents)
+                  (when pinned
+                    (package-read-all-archive-contents))
+                  (package-install package))
+                t)
+            (error
+             (ignore
+              (display-warning 'use-package
+                               (format "Failed to install %s: %s"
+                                       name (error-message-string err))
+                               :error))))))))
 
 (defun use-package-handler/:ensure (name keyword ensure rest state)
   (let* ((body (use-package-process-keywords name rest
@@ -1013,8 +1014,9 @@ If RECURSED is non-nil, recurse into sublists."
              (setq last-item x))) arg)))
    (t arg)))
 
-(defun use-package--recognize-function (v &optional additional-pred)
+(defun use-package--recognize-function (v &optional binding additional-pred)
   "A predicate that recognizes functional constructions:
+  nil
   sym
   'sym
   (quote sym)
@@ -1026,11 +1028,12 @@ If RECURSED is non-nil, recurse into sublists."
   #'(lambda () ...)
   (function (lambda () ...))"
   (pcase v
-    ((pred use-package--non-nil-symbolp) t)
+    ((and x (guard (if binding
+                       (symbolp x)
+                     (use-package--non-nil-symbolp x)))) t)
     (`(,(or `quote `function)
        ,(pred use-package--non-nil-symbolp)) t)
-    ((pred functionp) t)
-    (`(function (lambda . ,_)) t)
+    ((and x (guard (if binding (commandp x) (functionp x)))) t)
     (_ (and additional-pred
             (funcall additional-pred v)))))
 
@@ -1039,9 +1042,9 @@ If RECURSED is non-nil, recurse into sublists."
   sym
   #'(lambda () ...)"
   (pcase v
-    ((pred use-package--non-nil-symbolp) v)
+    ((pred symbolp) v)
     (`(,(or `quote `function)
-       ,(and sym (pred use-package--non-nil-symbolp))) sym)
+       ,(and sym (pred symbolp))) sym)
     (`(lambda . ,_) v)
     (`(quote ,(and lam `(lambda . ,_))) lam)
     (`(function ,(and lam `(lambda . ,_))) lam)
@@ -1058,10 +1061,12 @@ representing symbols (that may need to be autloaded)."
                               (use-package--normalize-function (cdr x)))
                       x)) args)))
     (cons nargs
-          (delete nil (mapcar #'(lambda (x)
-                                  (and (consp x)
-                                       (use-package--non-nil-symbolp (cdr x))
-                                       (cdr x))) nargs)))))
+          (delete
+           nil (mapcar
+                #'(lambda (x)
+                    (and (consp x)
+                         (use-package--non-nil-symbolp (cdr x))
+                         (cdr x))) nargs)))))
 
 (defun use-package-normalize-binder (name keyword args)
   (use-package-as-one (symbol-name keyword) args
@@ -1075,7 +1080,7 @@ representing symbols (that may need to be autloaded)."
            (pcase k
              ((pred stringp) t)
              ((pred vectorp) t)))
-       #'(lambda (v) (use-package--recognize-function v #'stringp))
+       #'(lambda (v) (use-package--recognize-function v t #'stringp))
        name label arg))))
 
 (defalias 'use-package-normalize/:bind 'use-package-normalize-binder)
@@ -1501,11 +1506,12 @@ representing symbols (that may need to be autloaded)."
       (lambda (def)
         (let ((syms (car def))
               (fun (cdr def)))
-          (mapcar
-           #'(lambda (sym)
-               `(add-hook (quote ,(intern (format "%s-hook" sym)))
-                          (function ,fun)))
-           (if (use-package--non-nil-symbolp syms) (list syms) syms))))
+          (when fun
+            (mapcar
+             #'(lambda (sym)
+                 `(add-hook (quote ,(intern (format "%s-hook" sym)))
+                            (function ,fun)))
+             (if (use-package--non-nil-symbolp syms) (list syms) syms)))))
       nargs))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1760,6 +1766,10 @@ this file.  Usage:
                                       (not (memq :defer args)))
                                  (append args '(:demand t))
                                args)))
+                  (when (and use-package-always-ensure
+                             (plist-member args* :load-path)
+                             (not (plist-member args* :ensure)))
+                    (plist-put args* :ensure nil))
                   (unless (plist-member args* :init)
                     (plist-put args* :init nil))
                   (unless (plist-member args* :config)
