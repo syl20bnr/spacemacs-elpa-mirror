@@ -3,9 +3,9 @@
 ;; Copyright (C) 2015 JJ Asghar <http://jjasghar.github.io>
 ;; Author: JJ Asghar
 ;; URL: http://github.com/jjasghar/test-kitchen-el
-;; Package-Version: 20171129.1021
+;; Package-Version: 20171129.1235
 ;; Created: 2015
-;; Version: 0.3.0
+;; Version: 0.4.0
 ;; Keywords: chef ruby test-kitchen
 
 ;; This file is NOT part of GNU Emacs.
