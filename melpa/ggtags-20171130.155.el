@@ -4,7 +4,7 @@
 
 ;; Author: Leo Liu <sdl.web@gmail.com>
 ;; Version: 0.8.13
-;; Package-Version: 20170918.1838
+;; Package-Version: 20171130.155
 ;; Keywords: tools, convenience
 ;; Created: 2013-01-29
 ;; URL: https://github.com/leoliu/ggtags
@@ -217,6 +217,12 @@ This feature requires GNU Global 6.3.3+ and is ignored if `gtags'
 isn't built with sqlite3 support."
   :type 'boolean
   :safe 'booleanp
+  :group 'ggtags)
+
+(defcustom ggtags-extra-args nil
+  "Extra arguments to pass to `gtags' in `ggtags-create-tags'."
+  :type '(repeat string)
+  :safe #'ggtags-list-of-string-p
   :group 'ggtags)
 
 (defcustom ggtags-sort-by-nearness nil
@@ -736,14 +742,15 @@ source trees. See Info node `(global)gtags' for details."
           (setenv "GTAGSLABEL" "ctags"))
         (ggtags-with-temp-message "`gtags' in progress..."
           (let ((default-directory (file-name-as-directory root))
-                (args (cl-remove-if
-                       #'null
-                       (list (and ggtags-use-idutils "--idutils")
-                             (and ggtags-use-sqlite3
-                                  (ggtags-process-succeed-p "gtags" "--sqlite3" "--help")
-                                  "--sqlite3")
-                             (and conf "--gtagsconf")
-                             (and conf (ggtags-ensure-localname conf))))))
+                (args (append (cl-remove-if
+                               #'null
+                               (list (and ggtags-use-idutils "--idutils")
+                                     (and ggtags-use-sqlite3
+                                          (ggtags-process-succeed-p "gtags" "--sqlite3" "--help")
+                                          "--sqlite3")
+                                     (and conf "--gtagsconf")
+                                     (and conf (ggtags-ensure-localname conf))))
+                              ggtags-extra-args)))
             (condition-case err
                 (apply #'ggtags-process-string "gtags" args)
               (error (if (and ggtags-use-idutils

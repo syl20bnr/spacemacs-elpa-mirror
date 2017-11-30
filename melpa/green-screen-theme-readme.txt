@@ -5,7 +5,7 @@ https://www.tutorialrepublic.com/html-reference/html-color-picker.php
 
 #0C1900
 #193300
-#264C00 -- The darkest we go
+#264C00 -- The darkest we go for foregrounds
 #336600
 #407F00 -- Dimmed text
 #4C9900
@@ -22,3 +22,12 @@ https://www.tutorialrepublic.com/html-reference/html-color-picker.php
 #D8FFB2 -- Extra bold
 #E5FFCC
 #F2FFE5
+
+Other named greens
+light green
+pale green
+dark green
+green1
+green2
+green3
+green4

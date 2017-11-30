@@ -4,7 +4,7 @@
 
 ;; Author: Dimitri Fontaine <dim@tapoueh.org>
 ;; Version: 0.1.2
-;; Package-Version: 20171128.649
+;; Package-Version: 20171130.335
 ;; URL: https://github.com/dimitri/mbsync-el
 
 ;; This file is NOT part of GNU Emacs.
@@ -91,13 +91,13 @@
 
 (defun mbsync-log-level-int (severity)
   "Get the log level of SEVERITY as int."
-  (or (mbsync-elem-index mbsync-verbose mbsync-log-levels)
+  (or (mbsync-elem-index severity mbsync-log-levels)
       0))
 
 (defun mbsync-log (severity &rest args)
   "If SEVERITY is less than `mbsync-verbose', show user the message ARGS."
-  (when (>= (mbsync-log-level-int severity)
-            (mbsync-log-level-int mbsync-verbose))
+  (when (>= (mbsync-log-level-int mbsync-verbose)
+            (mbsync-log-level-int severity))
     (apply #'message args)))
 
 (defun mbsync-process-filter (proc string)
