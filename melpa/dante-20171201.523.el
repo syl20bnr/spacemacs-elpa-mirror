@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20171201.14
+;; Package-Version: 20171201.523
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -277,7 +277,7 @@ When the universal argument INSERT is non-nil, insert the type in the buffer."
 (defun dante-async-load-current-buffer (interpret cont)
   "Load and maybe INTERPRET the temp file for current buffer and run CONT in a session.
 The continuation must call its first argument; see `dante-session'."
-;; Note that the GHCi doc appears to be wrong. TEST before changing this code.
+;; Note that the GHCi doc for :l and :r appears to be wrong. TEST before changing this code.
   (let ((fname (dante-local-name (dante-temp-file))))
     (dante-cps-let (((buffer done) (dante-session))
                     (_ (dante-async-call (if interpret ":set -fbyte-code" ":set -fobject-code")))

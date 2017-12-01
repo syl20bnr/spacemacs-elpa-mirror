@@ -5,7 +5,7 @@
 ;; Author: DarkSun <lujun9972@gmail.com>
 ;; Created: 2016-5-23
 ;; Version: 0.1
-;; Package-Version: 20170327.438
+;; Package-Version: 20171201.515
 ;; Keywords: convenience, pocket
 ;; Package-Requires: ((emacs "24.4") (pocket-api "0.1"))
 
@@ -51,8 +51,7 @@
   "Manage your pocket"
   :group 'tools)
 
-(defvar pocket-current-item 1)
-;; (setq pocket-current-item 53)
+(defvar pocket-current-item 0)
 
 (defcustom pocket-buffer-name "*pocket*"
   "Specify buffer name"

@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/emacscollective/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 20171123.1237
+;; Package-Version: 20171201.219
 
 ;; This file is not part of GNU Emacs.
 
@@ -246,7 +246,7 @@ This variable has to be set before `no-littering' is loaded.")
 ;;; Third-party packages
 
     (setq ac-comphist-file                 (var "ac-comphist.el"))
-    (setq anaconda-mode-installation-directory (etc "anaconda-mode/"))
+    (setq anaconda-mode-installation-directory (var "anaconda-mode/"))
     (setq async-byte-compile-log-file      (var "async-bytecomp.log"))
     (eval-after-load 'bbdb
       `(make-directory ,(var "bbdb/") t))
@@ -284,6 +284,7 @@ directories."
     (eval-after-load 'helm
       `(make-directory ,(var "helm/") t))
     (setq helm-adaptive-history-file       (var "helm/adaptive-history.el"))
+    (setq helm-backup-path                 (var "helm/backup/"))
     (setq helm-github-stars-cache-file     (var "helm/github-stars-cache.el"))
     (setq historian-save-file              (var "historian-save.el"))
     (setq indium-workspace-file            (var "indium/workspaces.el"))
@@ -297,6 +298,7 @@ directories."
       `(make-directory ,(var "jabber/history/") t))
     (eval-after-load 'lookup
       `(make-directory ,(etc "lookup/") t))
+    (setq litable-list-file                (var "litable-list.el"))
     (setq lookup-init-directory            (etc "lookup/"))
     (setq magithub-dir                     (var "magithub/"))
     (setq magithub-cache-file              (var "magithub/cache.el"))
