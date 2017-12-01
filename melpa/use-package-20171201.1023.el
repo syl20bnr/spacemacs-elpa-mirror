@@ -7,7 +7,7 @@
 ;; Created: 17 Jun 2012
 ;; Modified: 29 Nov 2017
 ;; Version: 2.4
-;; Package-Version: 20171201.136
+;; Package-Version: 20171201.1023
 ;; Package-Requires: ((emacs "24.3") (bind-key "2.4"))
 ;; Keywords: dotemacs startup speed config package
 ;; URL: https://github.com/jwiegley/use-package
@@ -1761,25 +1761,25 @@ this file.  Usage:
                                      (symbol-name name)) nil t)))))))))
 
       (let ((body
-             (macroexp-progn
-              (use-package-process-keywords name
-                (let ((args*
-                       (use-package-sort-keywords
-                        (if (and use-package-always-demand
-                                 (not (memq :defer args)))
-                            (plist-put args :demand t)
-                          args))))
-                  (when (and use-package-always-ensure
-                             (plist-member args* :load-path)
-                             (not (plist-member orig-args :ensure)))
-                    (plist-put args* :ensure nil))
-                  (unless (plist-member args* :init)
-                    (plist-put args* :init nil))
-                  (unless (plist-member args* :config)
-                    (plist-put args* :config '(t)))
-                  args*)
-                (and use-package-always-defer
-                     (list :deferred t))))))
+             `(progn
+                ,@(use-package-process-keywords name
+                    (let ((args*
+                           (use-package-sort-keywords
+                            (if (and use-package-always-demand
+                                     (not (memq :defer args)))
+                                (plist-put args :demand t)
+                              args))))
+                      (when (and use-package-always-ensure
+                                 (plist-member args* :load-path)
+                                 (not (plist-member orig-args :ensure)))
+                        (plist-put args* :ensure nil))
+                      (unless (plist-member args* :init)
+                        (plist-put args* :init nil))
+                      (unless (plist-member args* :config)
+                        (plist-put args* :config '(t)))
+                      args*)
+                    (and use-package-always-defer
+                         (list :deferred t))))))
         (when use-package-debug
           (display-buffer
            (save-current-buffer
@@ -1788,6 +1788,7 @@ this file.  Usage:
                (emacs-lisp-mode)
                (insert (pp-to-string body))
                (current-buffer)))))
+        (message "body = %s" body)
         body))))
 
 
