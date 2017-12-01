@@ -4,8 +4,8 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20170703.2350
-;; Version: 0.9.1
+;; Package-Version: 0.10.0
+;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.9.0") (hydra "0.13.4"))
 ;; Keywords: completion, matching, bindings
 

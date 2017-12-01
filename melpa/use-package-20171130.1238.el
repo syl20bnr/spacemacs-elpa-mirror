@@ -7,7 +7,7 @@
 ;; Created: 17 Jun 2012
 ;; Modified: 29 Nov 2017
 ;; Version: 2.4
-;; Package-Version: 20171129.2308
+;; Package-Version: 20171130.1238
 ;; Package-Requires: ((emacs "24.3") (bind-key "2.4"))
 ;; Keywords: dotemacs startup speed config package
 ;; URL: https://github.com/jwiegley/use-package
@@ -48,6 +48,9 @@
 
 (declare-function package-installed-p "package")
 (declare-function package-read-all-archive-contents "package" ())
+
+(defconst use-package-version "2.4"
+  "This version of use-package.")
 
 (defgroup use-package nil
   "A use-package declaration for simplifying your `.emacs'."
@@ -723,7 +726,7 @@ If the package is installed, its entry is removed from
       t
     (use-package-only-one (symbol-name keyword) args
       (lambda (label arg)
-        (if (use-package--non-nil-symbolp arg)
+        (if (symbolp arg)
             arg
           (use-package-error
            (concat ":ensure wants an optional package name "
@@ -1732,6 +1735,7 @@ this file.  Usage:
   (declare (indent 1))
   (unless (member :disabled args)
     (let ((name-symbol (if (stringp name) (intern name) name))
+          (orig-args args)
           (args (use-package-normalize-plist name args)))
       (dolist (spec use-package-defaults)
         (setq args (use-package-sort-keywords
@@ -1768,7 +1772,7 @@ this file.  Usage:
                                args)))
                   (when (and use-package-always-ensure
                              (plist-member args* :load-path)
-                             (not (plist-member args* :ensure)))
+                             (not (plist-member orig-args :ensure)))
                     (plist-put args* :ensure nil))
                   (unless (plist-member args* :init)
                     (plist-put args* :init nil))

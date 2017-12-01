@@ -4,8 +4,8 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 0.9.1
-;; Version: 0.9.1
+;; Package-Version: 20171130.1143
+;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.9.0") (hydra "0.13.4"))
 ;; Keywords: completion, matching, bindings
 
@@ -35,10 +35,11 @@
 (require 'hydra)
 
 (defun ivy--matcher-desc ()
-  (if (eq ivy--regex-function
-          'ivy--regex-fuzzy)
-      "fuzzy"
-    "ivy"))
+  "Return description of `ivy--regex-function'."
+  (let ((cell (assoc ivy--regex-function ivy--preferred-re-builders)))
+    (if cell
+        (cdr cell)
+      "other")))
 
 (defhydra hydra-ivy (:hint nil
                      :color pink)
@@ -65,7 +66,7 @@ _h_ ^+^ _l_ | _d_one      ^ ^  | _o_ops   | _m_: matcher %-5s(ivy--matcher-desc)
   ("g" ivy-call)
   ("C-m" ivy-done :exit t)
   ("c" ivy-toggle-calling)
-  ("m" ivy-toggle-fuzzy)
+  ("m" ivy-rotate-preferred-builders)
   (">" ivy-minibuffer-grow)
   ("<" ivy-minibuffer-shrink)
   ("w" ivy-prev-action)
@@ -78,15 +79,25 @@ _h_ ^+^ _l_ | _d_one      ^ ^  | _o_ops   | _m_: matcher %-5s(ivy--matcher-desc)
         (lambda (_) (find-function 'hydra-ivy/body)))
        :exit t))
 
+(defvar ivy-dispatching-done-columns 2
+  "Number of columns to use if the hint does not fit on one line.")
+
 (defun ivy-dispatching-done-hydra ()
   "Select one of the available actions and call `ivy-done'."
   (interactive)
-  (let ((actions (ivy-state-action ivy-last)))
+  (let* ((actions (ivy-state-action ivy-last))
+         (estimated-len (+ 25 (length
+                               (mapconcat
+                                (lambda (x) (format "[%s] %s" (nth 0 x) (nth 2 x)))
+                                (cdr actions) ", "))))
+         (n-columns (if (> estimated-len (window-width))
+                        ivy-dispatching-done-columns
+                      nil)))
     (if (null (ivy--actionp actions))
         (ivy-done)
       (funcall
        (eval
-        `(defhydra ivy-read-action (:color teal)
+        `(defhydra ivy-read-action (:color teal :columns ,n-columns)
            "action"
            ,@(mapcar (lambda (x)
                        (list (nth 0 x)
@@ -95,7 +106,8 @@ _h_ ^+^ _l_ | _d_one      ^ ^  | _o_ops   | _m_: matcher %-5s(ivy--matcher-desc)
                                 (ivy-done))
                              (nth 2 x)))
                      (cdr actions))
-           ("M-o" nil "back")))))))
+           ("M-o" nil "back")
+           ("C-g" nil)))))))
 
 (define-key ivy-minibuffer-map (kbd "M-o") 'ivy-dispatching-done-hydra)
 
