@@ -4,7 +4,7 @@
 
 ;; Author: xcwenn@qq.com [https://github.com/xcwen]
 ;; URL: https://github.com/xcwen/ac-php
-;; Package-Version: 20170110.2036
+;; Package-Version: 20171201.134
 ;; Keywords: completion, convenience, intellisense
 ;; Package-Requires: ((ac-php-core "1") (auto-complete "1.4.0") (yasnippet "0.8.0")  )
 
@@ -97,7 +97,7 @@
       (setq  ret (point)))
     (unless ret
       (save-excursion
-        (skip-chars-backward "a-z0-9A-Z_\\\\")
+        (skip-chars-backward "\\$a-z0-9A-Z_\\\\")
         (setq ret (point))
         )
       )

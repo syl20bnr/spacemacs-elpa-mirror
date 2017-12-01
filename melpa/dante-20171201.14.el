@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20171126.1252
+;; Package-Version: 20171201.14
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -308,14 +308,6 @@ process."
   :start 'dante-check
   :modes '(haskell-mode literate-haskell-mode))
 
-;;;###autoload
-(defun flycheck-dante-setup ()
-  "Setup Flycheck Dante.
-
-Add `haskell-dante' to `flycheck-checkers'."
-  (interactive)
-  (add-to-list 'flycheck-checkers 'haskell-dante))
-
 (defun dante-parse-errors-warnings-splices (checker buffer string)
   "Parse flycheck errors and warnings.
 CHECKER and BUFFER are added to each item parsed from STRING."
@@ -335,8 +327,7 @@ CHECKER and BUFFER are added to each item parsed from STRING."
                     ((string-match-p "^warning:" msg) 'warning)
                     ((string-match-p "^splicing " msg) 'splice)
                     (t 'error)))
-             (location (dante-parse-error
-                        (concat file ":" location-raw ": x")))
+             (location (dante-parse-error-location location-raw))
              (line (plist-get location :line))
              (column (plist-get location :col)))
         (setq string s)
@@ -348,41 +339,15 @@ CHECKER and BUFFER are added to each item parsed from STRING."
               messages)))
     messages))
 
-(defconst dante-error-regexp-alist
-  `((,(concat
-       "^ *\\(?1:[^\t\r\n]+?\\):"
-       "\\(?:"
-       "\\(?2:[0-9]+\\):\\(?4:[0-9]+\\)\\(?:-\\(?5:[0-9]+\\)\\)?" ;; "121:1" & "12:3-5"
-       "\\|"
-       "(\\(?2:[0-9]+\\),\\(?4:[0-9]+\\))-(\\(?3:[0-9]+\\),\\(?5:[0-9]+\\))" ;; "(289,5)-(291,36)"
-       "\\)"
-       ":\\(?6: Warning:\\)?")
-     1 (2 . 3) (4 . 5) (6 . nil)) ;; error/warning locus
-
-    ;; multiple declarations
-    ("^    \\(?:Declared at:\\|            \\) \\(?1:[^ \t\r\n]+\\):\\(?2:[0-9]+\\):\\(?4:[0-9]+\\)$"
-     1 2 4 0) ;; info locus
-
-    ;; this is the weakest pattern as it's subject to line wrapping et al.
-    (" at \\(?1:[^ \t\r\n]+\\):\\(?2:[0-9]+\\):\\(?4:[0-9]+\\)\\(?:-\\(?5:[0-9]+\\)\\)?[)]?$"
-     1 2 (4 . 5) 0)) ;; info locus
-  "Regexps used for matching GHC compile messages.")
-
-(defun dante-parse-error (string)
+(defun dante-parse-error-location (string)
   "Parse the line number from the error in STRING."
-  (let ((span nil))
-    (cl-loop for regex
-             in dante-error-regexp-alist
-             do (when (string-match (car regex) string)
-                  (setq span
-                        (list :file (match-string 1 string)
-                              :line (string-to-number (match-string 2 string))
-                              :col (string-to-number (match-string 4 string))
-                              :line2 (when (match-string 3 string)
-                                       (string-to-number (match-string 3 string)))
-                              :col2 (when (match-string 5 string)
-                                      (string-to-number (match-string 5 string)))))))
-    span))
+  (when (string-match (concat
+                       "\\(?2:[0-9]+\\):\\(?4:[0-9]+\\)\\(?:-\\(?5:[0-9]+\\)\\)?" ;; "121:1" & "12:3-5"
+                       "\\|"
+                       "(\\(?2:[0-9]+\\),\\(?4:[0-9]+\\))-(\\(?3:[0-9]+\\),\\(?5:[0-9]+\\))") ;; "(289,5)-(291,36)"
+                      string)
+    (list :line (string-to-number (match-string 2 string))
+          :col (string-to-number (match-string 4 string)))))
 
 (defun dante-call-in-buffer (buffer func &rest args)
   "In BUFFER, call FUNC with ARGS."

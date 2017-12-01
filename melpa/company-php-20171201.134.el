@@ -2,7 +2,7 @@
 ;; Copyright (C) 2014 - 2016 jim
 ;; Author: xcwenn@qq.com [https://github.com/xcwen]
 ;; URL: https://github.com/xcwen/ac-php
-;; Package-Version: 20171111.757
+;; Package-Version: 20171201.134
 ;; Keywords: completion, convenience, intellisense
 ;; Package-Requires: ( (cl-lib "0.5") (ac-php-core "1") (company "0.9")  )
 
@@ -66,7 +66,7 @@ and `c-electric-colon', for automatic completion right after \">\" and
               (string-to-list candidate)))
 
 (defun company-ac-php--prefix-symbol ()
-  (buffer-substring (point) (save-excursion (skip-chars-backward "a-z0-9A-Z_\\\\" )
+  (buffer-substring (point) (save-excursion (skip-chars-backward "\\$a-z0-9A-Z_\\\\" )
                                             (point))))
 
 ;; TODO it bad for namespace like  \App\add\ss
@@ -77,8 +77,8 @@ and `c-electric-colon', for automatic completion right after \">\" and
 
 (defun  company-ac-php-candidate  (arg)
   (let ( raw-help  ac-php-company-list   ac-php-prefix-str-len  candidate-list  find-count )
-    (ac-php--debug "company-ac-php-candidate " )
     (setq ac-php-prefix-str (company-ac-php--prefix-symbol))
+    (ac-php--debug "company-ac-php-candidate :%s " ac-php-prefix-str   )
     (setq  ac-php-prefix-str-len  (length ac-php-prefix-str  ) )
     (setq find-count 0)
     (setq candidate-list (ac-php-candidate) )

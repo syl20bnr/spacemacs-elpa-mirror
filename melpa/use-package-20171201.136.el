@@ -7,7 +7,7 @@
 ;; Created: 17 Jun 2012
 ;; Modified: 29 Nov 2017
 ;; Version: 2.4
-;; Package-Version: 20171130.1238
+;; Package-Version: 20171201.136
 ;; Package-Requires: ((emacs "24.3") (bind-key "2.4"))
 ;; Keywords: dotemacs startup speed config package
 ;; URL: https://github.com/jwiegley/use-package
@@ -43,8 +43,9 @@
 (require 'bind-key)
 (require 'bytecomp)
 (require 'cl-lib)
-(eval-when-compile (require 'cl))
-(eval-when-compile (require 'regexp-opt))
+(eval-when-compile
+  (require 'cl)
+  (require 'regexp-opt))
 
 (declare-function package-installed-p "package")
 (declare-function package-read-all-archive-contents "package" ())
@@ -139,7 +140,6 @@ the user specified."
 
 (defcustom use-package-keywords
   '(:disabled
-    :preface
     :pin
     :defer-install
     :ensure
@@ -148,6 +148,9 @@ the user specified."
     :unless
     :requires
     :load-path
+    :defines
+    :functions
+    :preface
     :no-require
     :bind
     :bind*
@@ -158,10 +161,8 @@ the user specified."
     :magic
     :magic-fallback
     :commands
-    :defines
-    :functions
-    :defer
     :hook
+    :defer
     :custom
     :custom-face
     :init
@@ -684,11 +685,8 @@ If the package is installed, its entry is removed from
      (if packages
          (list
           (intern
-           (completing-read
-            "Select package: "
-            packages
-            nil
-            'require-match))
+           (completing-read "Select package: "
+                            packages nil 'require-match))
           :interactive)
        (user-error "No packages with deferred installation"))))
   (let ((spec (gethash name use-package--deferred-packages)))
@@ -742,14 +740,15 @@ If the package is installed, its entry is removed from
           (not (or (member context '(:byte-compile :ensure :config))
                    (y-or-n-p (format "Install package %S?" package))))
           (condition-case-unless-debug err
-              (let ((pinned (assoc package (bound-and-true-p
-                                            package-pinned-packages))))
-                (when pinned
+              (progn
+                (when (assoc package (bound-and-true-p
+                                      package-pinned-packages))
                   (package-read-all-archive-contents))
                 (if (assoc package package-archive-contents)
                     (package-install package)
                   (package-refresh-contents)
-                  (when pinned
+                  (when (assoc package (bound-and-true-p
+                                        package-pinned-packages))
                     (package-read-all-archive-contents))
                   (package-install package))
                 t)
@@ -936,7 +935,8 @@ If ALLOW-EMPTY is non-nil, it's OK for ARGS to be an empty list."
 
 (defun use-package-handler/:no-require (name keyword arg rest state)
   ;; This keyword has no functional meaning.
-  (use-package-process-keywords name rest state))
+  (use-package-process-keywords name rest
+    (plist-put state :no-require t)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -961,7 +961,7 @@ If ALLOW-EMPTY is non-nil, it's OK for ARGS to be an empty list."
 (defun use-package-handler/:preface (name keyword arg rest state)
   (let ((body (use-package-process-keywords name rest state)))
     (use-package-concat
-     (unless (null arg)
+     (when arg
        `((eval-and-compile ,@arg)))
      body)))
 
@@ -1099,9 +1099,8 @@ representing symbols (that may need to be autloaded)."
         (use-package-plist-maybe-put rest :defer t))
        (use-package-plist-append state :commands commands))
      `((ignore
-        ,(macroexpand
-          `(,(if bind-macro bind-macro 'bind-keys)
-            :package ,name ,@nargs)))))))
+        (,(if bind-macro bind-macro 'bind-keys)
+         :package ,name ,@nargs))))))
 
 (defun use-package-handler/:bind* (name keyword arg rest state)
   (use-package-handler/:bind name keyword arg rest state 'bind-keys*))
@@ -1144,17 +1143,18 @@ representing symbols (that may need to be autloaded)."
 
 (defun use-package-handler/:bind-keymap
     (name keyword arg rest state &optional override)
-  (let ((form (mapcar
-               #'(lambda (binding)
-                   `(,(if override
-                          'bind-key*
-                        'bind-key)
-                     ,(car binding)
-                     #'(lambda ()
-                         (interactive)
-                         (use-package-autoload-keymap
-                          ',(cdr binding) ',(use-package-as-symbol name)
-                          ,override)))) arg)))
+  (let ((form
+         (mapcar
+          #'(lambda (binding)
+              `(,(if override
+                     'bind-key*
+                   'bind-key)
+                ,(car binding)
+                #'(lambda ()
+                    (interactive)
+                    (use-package-autoload-keymap
+                     ',(cdr binding) ',(use-package-as-symbol name)
+                     ,override)))) arg)))
     (use-package-concat
      (use-package-process-keywords name
        (use-package-sort-keywords
@@ -1254,8 +1254,7 @@ representing symbols (that may need to be autloaded)."
 (defalias 'use-package-normalize/:defines 'use-package-normalize-symlist)
 
 (defun use-package-handler/:defines (name keyword arg rest state)
-  (let ((body (use-package-process-keywords name rest state)))
-    body))
+  (use-package-process-keywords name rest state))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1265,16 +1264,7 @@ representing symbols (that may need to be autloaded)."
 (defalias 'use-package-normalize/:functions 'use-package-normalize-symlist)
 
 (defun use-package-handler/:functions (name keyword arg rest state)
-  (let ((body (use-package-process-keywords name rest state)))
-    (if (not (bound-and-true-p byte-compile-current-file))
-        body
-      (use-package-concat
-       (unless (null arg)
-         `((eval-when-compile
-             ,@(mapcar
-                #'(lambda (fn)
-                    `(declare-function ,fn ,(use-package-as-string name))) arg))))
-       body))))
+  (use-package-process-keywords name rest state))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1451,21 +1441,26 @@ representing symbols (that may need to be autloaded)."
         (unless (or (null config-body) (equal config-body '(t)))
           `((eval-after-load ,(if (symbolp name) `',name name)
               ',(macroexp-progn config-body))))
-      ;; Here we are checking the marker value for deferred
-      ;; installation set in `use-package-handler/:ensure'. See also
+
+      ;; Here we are checking the marker value for deferred installation set
+      ;; in `use-package-handler/:ensure'. See also
       ;; `use-package-handler/:defer-install'.
       (when (eq (plist-get state :defer-install) :ensure)
         (use-package-install-deferred-package name :config))
+
       (use-package--with-elapsed-timer
           (format "Loading package %s" name)
         (if use-package-expand-minimally
             (use-package-concat
-             (list (use-package-load-name name))
+             (unless (plist-get state ':no-require)
+               (list (use-package-load-name name)))
              config-body)
-          `((if (not ,(use-package-load-name name t))
-                (ignore
-                 (message (format "Cannot load %s" ',name)))
-              ,@config-body)))))))
+          (if (plist-get state ':no-require)
+              config-body
+            `((if (not ,(use-package-load-name name t))
+                  (ignore
+                   (message (format "Cannot load %s" ',name)))
+                ,@config-body))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1738,38 +1733,42 @@ this file.  Usage:
           (orig-args args)
           (args (use-package-normalize-plist name args)))
       (dolist (spec use-package-defaults)
-        (setq args (use-package-sort-keywords
-                    (if (eval (nth 2 spec))
-                        (use-package-plist-maybe-put
-                         args (nth 0 spec) (eval (nth 1 spec)))
-                      args))))
+        (setq args (if (eval (nth 2 spec))
+                       (use-package-plist-maybe-put
+                        args (nth 0 spec) (eval (nth 1 spec)))
+                     args)))
 
       ;; When byte-compiling, pre-load the package so all its symbols are in
       ;; scope.
       (if (bound-and-true-p byte-compile-current-file)
           (setq args
-                (use-package-plist-cons
+                (use-package-plist-append
                  args :preface
-                 `(eval-when-compile
-                    ,@(mapcar #'(lambda (var) `(defvar ,var))
-                              (plist-get args :defines))
-                    ,@(mapcar #'(lambda (fn) `(declare-function
-                                          ,fn ,(use-package-as-string name)))
-                              (plist-get args :functions))
-                    (with-demoted-errors
-                        ,(format "Cannot load %s: %%S" name)
-                      ,(if (eq use-package-verbose 'debug)
-                           `(message "Compiling package %s" ',name-symbol))
-                      ,(unless (plist-get args :no-require)
-                         (use-package-load-name name)))))))
+                 (use-package-concat
+                  (mapcar #'(lambda (var) `(defvar ,var))
+                          (plist-get args :defines))
+                  (mapcar #'(lambda (fn) `(declare-function
+                                      ,fn ,(use-package-as-string name)))
+                          (plist-get args :functions))
+                  `((eval-when-compile
+                      (with-demoted-errors
+                          ,(format "Cannot load %s: %%S" name)
+                        ,(if (eq use-package-verbose 'debug)
+                             `(message "Compiling package %s" ',name-symbol))
+                        ,(unless (plist-get args :no-require)
+                           `(load ,(if (stringp name)
+                                       name
+                                     (symbol-name name)) nil t)))))))))
 
       (let ((body
              (macroexp-progn
               (use-package-process-keywords name
-                (let ((args* (if (and use-package-always-demand
-                                      (not (memq :defer args)))
-                                 (append args '(:demand t))
-                               args)))
+                (let ((args*
+                       (use-package-sort-keywords
+                        (if (and use-package-always-demand
+                                 (not (memq :defer args)))
+                            (plist-put args :demand t)
+                          args))))
                   (when (and use-package-always-ensure
                              (plist-member args* :load-path)
                              (not (plist-member orig-args :ensure)))
@@ -1777,7 +1776,7 @@ this file.  Usage:
                   (unless (plist-member args* :init)
                     (plist-put args* :init nil))
                   (unless (plist-member args* :config)
-                    (plist-put args* :config nil))
+                    (plist-put args* :config '(t)))
                   args*)
                 (and use-package-always-defer
                      (list :deferred t))))))

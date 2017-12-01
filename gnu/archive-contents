@@ -977,6 +977,11 @@
 	   nil "Add spinners and progress-bars to the mode-line for ongoing operations" single
 	   ((:url . "https://github.com/Malabarba/spinner.el")
 	    (:keywords "processes" "mode-line"))])
+ (sql-indent .
+	     [(1 0)
+	      nil "Support for indenting code in SQL files." tar
+	      ((:keywords "languages" "sql")
+	       (:url . "http://elpa.gnu.org/packages/sql-indent.html"))])
  (stream .
 	 [(2 2 4)
 	  ((emacs

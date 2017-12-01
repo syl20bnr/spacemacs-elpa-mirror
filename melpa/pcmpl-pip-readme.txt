@@ -1,2 +1,2 @@
-Pcomplete for pip.
-Based on pip 1.5.6 docs.
+Pcomplete for python and pip.
+Based on pip 9.0.1 docs.
