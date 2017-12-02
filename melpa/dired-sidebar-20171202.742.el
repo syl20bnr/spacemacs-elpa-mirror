@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/dired-sidebar
-;; Package-Version: 20171124.942
+;; Package-Version: 20171202.742
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1") (dired-subtree "0.0.1"))
 ;; Keywords: dired, files, tools
@@ -101,6 +101,11 @@ This has no effect in Terminals."
   :type 'boolean
   :group 'dired-sidebar)
 
+(defcustom dired-sidebar-should-follow-file nil
+  "Refresh sidebar to match current file."
+  :type 'boolean
+  :group 'dired-sidebar)
+
 (defcustom dired-sidebar-pop-to-sidebar-on-toggle-open t
   "Whether to jump to sidebar upon toggling open.
 
@@ -171,6 +176,12 @@ When true, only allow function `auto-revert-mode' to update every
   :type 'number
   :group 'dired-sidebar)
 
+(defcustom dired-sidebar-follow-file-idle-delay 2
+  "The time in idle seconds to wait before checking if sidebar should
+follow file."
+  :type 'number
+  :group 'dired-sidebar)
+
 (defcustom dired-sidebar-refresh-on-special-commands t
   "Whether or not to trigger auto-revert after certain functions.
 
@@ -215,6 +226,11 @@ with a prefix arg or when `dired-sidebar-find-file-alt' is called."
   :type 'function
   :group 'dired-sidebar)
 
+(defcustom dired-sidebar-recenter-cursor-on-follow-file t
+  "Whether or not to center cursor when pointing at file."
+  :type 'boolean
+  :group 'dired-sidebar)
+
 ;; Internal
 
 (defvar dired-sidebar-alist '()
@@ -224,6 +240,9 @@ with a prefix arg or when `dired-sidebar-find-file-alt' is called."
   "Timer used for setting `dired-sidebar-check-for-stale-buffer-p'.
 
 This is buffer local.")
+
+(defvar-local dired-sidebar-follow-file-timer nil
+  "Timer used when `dired-sidebar-should-follow-file' is true.")
 
 (defvar-local dired-sidebar-check-for-stale-buffer-p nil
   "Whether to check if buffer is stale.
@@ -328,7 +347,17 @@ will check if buffer is stale through `auto-revert-mode'.")
 
   (when dired-sidebar-refresh-on-projectile-switch
     (add-hook 'projectile-after-switch-project-hook
-              #'dired-sidebar-handle-projectile-switch-project))
+              #'dired-sidebar-follow-file-in-project))
+
+  (when dired-sidebar-should-follow-file
+    (setq dired-sidebar-follow-file-timer
+          (run-with-idle-timer
+           dired-sidebar-follow-file-idle-delay
+           t (lambda ()
+               (when (and
+                      (dired-sidebar-showing-sidebar-in-frame-p (selected-frame))
+                      buffer-file-name)
+                 (dired-sidebar-follow-file-in-project))))))
 
   (dired-unadvertise (dired-current-directory))
   (dired-sidebar-update-buffer-name))
@@ -401,7 +430,9 @@ This is dependent on `dired-subtree-cycle'."
               ;; This will probably throw an error when trying to expand
               ;; directories that have been collapsed by `dired-collapse'.
               (dired-subtree-cycle))
-            (setq path (concat path "/"))))))))
+            (setq path (concat path "/")))))
+      (when dired-sidebar-recenter-cursor-on-follow-file
+        (recenter nil)))))
 
 ;;;###autoload
 (defun dired-sidebar-toggle-with-current-directory ()
@@ -661,16 +692,21 @@ Optional argument NOCONFIRM Pass NOCONFIRM on to `dired-buffer-stale-p'."
       (revert-buffer)
     (setq dired-sidebar-check-for-stale-buffer-p t)))
 
-(defun dired-sidebar-handle-projectile-switch-project ()
-  "Handle `projectile-after-switch-project-hook'."
-  (when (and (fboundp 'projectile-project-root)
-             (dired-sidebar-showing-sidebar-in-frame-p))
+(defun dired-sidebar-follow-file-in-project ()
+  "Follow new file in project."
+  (when (and
+         (fboundp 'projectile-project-p)
+         (fboundp 'projectile-project-root)
+         (dired-sidebar-showing-sidebar-in-frame-p))
     ;; Wrap in `with-selected-window' because we don't want to pop to
     ;; the sidebar buffer.
     ;; We also need to pick the correct selected-window to get the correct
     ;; project root that we've switched to.
     (with-selected-window (selected-window)
-      (let ((root (projectile-project-root)))
+      (let ((root (or (and
+                       (projectile-project-p)
+                       (projectile-project-root))
+                      default-directory)))
         (dired-sidebar-switch-to-dir root)
         (when (and dired-sidebar-follow-file-at-point-on-toggle-open
                    buffer-file-name)
