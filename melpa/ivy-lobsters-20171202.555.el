@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017 by Julien Blanchard
 ;; Author: Julien Blanchard <https://github.com/julienXX>
 ;; URL: https://github.com/julienXX/ivy-lobsters
-;; Package-Version: 20170903.445
+;; Package-Version: 20171202.555
 ;; Package: ivy-lobsters
 ;; Package-Requires: ((ivy "0.8.0") (cl-lib "0.5"))
 ;; Version: 0.1
@@ -39,6 +39,10 @@
 (defcustom ivy-lobsters-url "https://lobste.rs/newest.json"
   "Variable to define lobste.rs newest articles url."
   :type 'string :group 'ivy-lobsters)
+
+(defcustom ivy-lobsters-keep-focus nil
+  "Variable to control if the browser takes focus from Emacs.  Currently only work for macOS."
+  :type 'boolean :group 'ivy-lobsters)
 
 (defun ivy-lobsters-get-posts ()
   "Get newest posts json and store parsed stories."
@@ -87,6 +91,12 @@
     (ivy-lobsters-extract 'title story))
    'utf-8))
 
+(defun ivy-lobsters-browse (url)
+  "Optionally keep focus in Emacs when opening a link.  Takes the URL as an arguement."
+  (if (and ivy-lobsters-keep-focus (eq system-type 'darwin))
+      (start-process (concat "ivy-lobsters-" url) nil "open" url "-g")
+    (browse-url url)))
+
 ;;;###autoload
 (defun ivy-lobsters ()
   "Show latest lobste.rs stories."
@@ -96,12 +106,12 @@
       (ivy-read "Lobste.rs latest stories: "
                 stories
                 :action (lambda (story)
-                          (browse-url (plist-get (cdr story) :url)))))))
+                  (ivy-lobsters-browse (plist-get (cdr story) :url)))))))
 
 (ivy-set-actions
  'ivy-lobsters
  '(("c" (lambda (story)
-          (browse-url (plist-get (cdr story) :comments-url))) "Browse Comments")))
+          (ivy-lobsters-browse (plist-get (cdr story) :url))) "Browse Comments")))
 
 
 (provide 'ivy-lobsters)
