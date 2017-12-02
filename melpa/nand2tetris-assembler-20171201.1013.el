@@ -7,10 +7,10 @@
 ;; Created: 10 August 2015
 
 ;; Keywords: nand2tetris-assembler, hdl
-;; Package-Version: 20161109.1637
+;; Package-Version: 20171201.1013
 ;; Homepage: http://www.github.com/CestDiego/nand2tetris-assembler.el/
-;; Version: 1.0.0
-;; Package-Requires: ((nand2tetris "1.0.0"))
+;; Version: 1.1.0
+;; Package-Requires: ((nand2tetris "1.1.0"))
 
 ;; This file is not part of GNU Emacs.
 

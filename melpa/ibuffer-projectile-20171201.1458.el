@@ -6,7 +6,7 @@
 ;; Keywords: themes
 ;; Package-Requires: ((projectile "0.11.0"))
 ;; URL: http://github.com/purcell/ibuffer-projectile
-;; Package-Version: 20171103.2004
+;; Package-Version: 20171201.1458
 ;; Package-X-Original-Version: 0
 ;;
 ;; This program is free software; you can redistribute it and/or modify
@@ -88,7 +88,7 @@ This option can be used to exclude certain files from the grouping mechanism."
   "Return a cons cell (project-name . root-dir) for BUF.
 If the file is not in a project, then nil is returned instead."
   (with-current-buffer buf
-    (let ((file-name (buffer-file-name))
+    (let ((file-name (ibuffer-buffer-file-name))
           (root (ignore-errors (projectile-project-root))))
       (when (and file-name
                  root

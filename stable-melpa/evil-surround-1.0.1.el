@@ -10,7 +10,7 @@
 ;; Current Maintainer: ninrod (github.com/ninrod)
 ;; Created: July 23 2011
 ;; Version: 0.1
-;; Package-Version: 1.0.0
+;; Package-Version: 1.0.1
 ;; Package-Requires: ((evil "1.2.12"))
 ;; Mailing list: <implementations-list at lists.ourproject.org>
 ;;      Subscribe: http://tinyurl.com/implementations-list
@@ -40,10 +40,14 @@
 
 (require 'evil)
 
-(defgroup surround nil
+(defgroup evil-surround nil
   "surround.vim for Emacs"
-  :prefix "surround-"
+  :prefix "evil-surround-"
   :group 'evil)
+
+;; make surround's `ysw' work like `cw', not `ce'
+(when (boundp 'evil-change-commands)
+  (add-to-list 'evil-change-commands 'evil-surround-region))
 
 (defcustom evil-surround-pairs-alist
   '((?\( . ("( " . " )"))
@@ -65,7 +69,7 @@
 Each item is of the form (TRIGGER . (LEFT . RIGHT)), all strings.
 Alternatively, a function can be put in place of (LEFT . RIGHT).
 This only affects inserting pairs, not deleting or changing them."
-  :group 'surround
+  :group 'evil-surround
   :type '(alist
           :key-type (character :tag "Key")
           :value-type (choice
@@ -78,7 +82,7 @@ This only affects inserting pairs, not deleting or changing them."
     (evil-delete . delete))
   "Association list of operators to their fundamental operation.
 Each item is of the form (OPERATOR . OPERATION)."
-  :group 'surround
+  :group 'evil-surround
   :type '(repeat (cons (symbol :tag "Operator")
                        (symbol :tag "Operation"))))
 
@@ -246,6 +250,12 @@ This is necessary because `evil-yank' operator is not repeatable (:repeat nil)"
   (evil-repeat-start)
   (evil-repeat-record "y")
   (evil-repeat-record (this-command-keys))
+
+  ;; set `this-command-keys' to the command that will be executed
+  ;; interactively; as a result, `evil-this-operator' will be
+  ;; correctly set to, for example, `evil-surround-region' instead of
+  ;; `evil-yank' when surround has been invoked by `ys'
+  (setq this-command callback)
   (call-interactively callback)
   (evil-repeat-keystrokes 'post)
   (evil-repeat-stop))
@@ -259,7 +269,6 @@ If OPERATION is `change', call `evil-surround-change'.
 if OPERATION is `delete', call `evil-surround-delete'.
 Otherwise call `evil-surround-region'."
   (interactive (evil-surround-interactive-setup))
-  (message "%s" operation)
   (cond
    ((eq operation 'change)
     (call-interactively 'evil-surround-change))
@@ -274,7 +283,6 @@ Otherwise call `evil-surround-region'."
 
 It does nothing for change / delete."
   (interactive (evil-surround-interactive-setup))
-  (message "%s" operation)
   (cond
    ((eq operation 'change) nil)
    ((eq operation 'delete) nil)
@@ -312,8 +320,8 @@ Becomes this:
                   ((eq type 'line)
                    (setq force-new-line
                          (or force-new-line
-                             ;; Force newline if not invoked from an operator, e.g. VS)
-                             (eq evil-this-operator 'evil-surround-region)
+                             ;; Force newline if not invoked from an operator, e.g. visual line mode with VS)
+                             (evil-visual-state-p)
                              ;; Or on multi-line operator surrounds (like 'ysj]')
                              (/= (line-number-at-pos) (line-number-at-pos (1- end)))))
 
