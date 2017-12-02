@@ -11,5 +11,7 @@ using `gnus-summary-ext-limit-filter', or apply the process mark to such article
 `gnus-summary-ext-uu-mark-filter'.
 You can save these filters in `gnus-summary-ext-saved-filters'.
 
+To add new keybindings for these new filter commands add `gnus-summary-ext-hook' to `gnus-summary-mode-hook'.
+
 See the documentation of the individual commands & functions for more
 details.
