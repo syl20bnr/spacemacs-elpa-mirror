@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/helm-org-rifle
-;; Package-Version: 20170807.611
+;; Package-Version: 20171202.1216
 ;; Version: 1.5.0-pre
 ;; Package-Requires: ((emacs "24.4") (dash "2.12") (f "0.18.1") (helm "1.9.4") (s "1.10.0"))
 ;; Keywords: hypermedia, outlines
@@ -839,10 +839,12 @@ because it uses variables in its outer scope."
                                      (cons buffer pos))))
 
         ;; Verify all tokens are contained in each matching node
-        (when (cl-loop with targets = (append (-non-nil (list buffer-name
+        (when (cl-loop with targets = (-non-nil (append (list buffer-name
                                                               heading
-                                                              tags))
-                                              (mapcar 'car matching-lines-in-node))
+                                                              tags)
+                                                        (when helm-org-rifle-show-path
+                                                          path)
+                                                        (mapcar 'car matching-lines-in-node)))
                        for re in required-positive-re-list
                        always (cl-loop for target in targets
                                        thereis (s-matches? re target)))

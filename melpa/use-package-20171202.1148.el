@@ -7,7 +7,7 @@
 ;; Created: 17 Jun 2012
 ;; Modified: 29 Nov 2017
 ;; Version: 2.4
-;; Package-Version: 20171201.1339
+;; Package-Version: 20171202.1148
 ;; Package-Requires: ((emacs "24.3") (bind-key "2.4"))
 ;; Keywords: dotemacs startup speed config package
 ;; URL: https://github.com/jwiegley/use-package
@@ -193,7 +193,7 @@ Must be set before loading use-package."
 
 (defcustom use-package-ensure-function 'use-package-ensure-elpa
   "Function that ensures a package is installed.
-This function is called with four arguments: the name of the
+This function is called with three arguments: the name of the
 package declared in the `use-package' form; the argument passed
 to `:ensure'; and the current `state' plist created by previous
 handlers.
