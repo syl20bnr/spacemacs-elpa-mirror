@@ -5,7 +5,7 @@
 ;; Author: Junpeng Qiu <qjpchmail@gmail.com>
 ;; Maintainer: Junpeng Qiu <qjpchmail@gmail.com>
 ;; URL: https://github.com/cute-jumper/parsec.el
-;; Package-Version: 20170508.1500
+;; Package-Version: 20171202.2031
 ;; Version: 0.1.3
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: extensions
@@ -900,7 +900,8 @@ Return a list of N values returned by PARSER."
   (let ((res-sym (make-symbol "results")))
     `(let (,res-sym)
        (dotimes (_ ,n ,res-sym)
-         (push ,parser ,res-sym)))))
+         (push ,parser ,res-sym))
+       (nreverse ,res-sym))))
 
 (defmacro parsec-count-as-string (n parser)
   "Parse N occurrences of PARSER.

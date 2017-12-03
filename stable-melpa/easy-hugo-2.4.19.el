@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 2.3.18
-;; Version: 2.3.18
+;; Package-Version: 2.4.19
+;; Version: 2.4.19
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -111,7 +111,8 @@
   :type 'integer)
 
 (defcustom easy-hugo-publish-chmod "Du=rwx,Dgo=rx,Fu=rw,Fog=r"
-  "Permission when publish. The default is drwxr-xr-x."
+  "Permission when publish.
+The default is drwxr-xr-x."
   :group 'easy-hugo
   :type 'string)
 
@@ -146,13 +147,28 @@ Because only two are supported by hugo."
   :group 'easy-hugo
   :type 'string)
 
+(defcustom easy-hugo-help-line 7
+  "Number of lines of `easy-hugo-help'."
+  :group 'easy-hugo
+  :type 'integer)
+
+(defcustom easy-hugo-add-help-line 4
+  "Number of lines of `easy-hugo-add-help'."
+  :group 'easy-hugo
+  :type 'integer)
+
+(defcustom easy-hugo-org-header nil
+  "Flg of use in org format header with hugo version 0.25 and above."
+  :group 'easy-hugo
+  :type 'integer)
+
 (defvar easy-hugo--preview-loop t
   "Preview loop flg.")
 
 (defvar easy-hugo--server-process nil
   "Hugo process.")
 
-(defvar easy-hugo--unmovable-line 11
+(defvar easy-hugo--unmovable-line (+ easy-hugo-help-line 4)
   "Impossible to move below this line.")
 
 (defvar easy-hugo--draft-list nil
@@ -359,14 +375,6 @@ Because only two are supported by hugo."
 (defconst easy-hugo--forward-char 20
   "Forward-char of easy-hugo.")
 
-;;;###autoload
-(defun easy-hugo-article ()
-  "Open a list of articles written in hugo with dired."
-  (interactive)
-  (unless easy-hugo-basedir
-    (error "Please set easy-hugo-basedir variable"))
-  (find-file (expand-file-name easy-hugo-postdir easy-hugo-basedir)))
-
 (defmacro easy-hugo-with-env (&rest body)
   "Evaluate BODY with `default-directory' set to `easy-hugo-basedir'.
 Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
@@ -377,6 +385,25 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
        (error "'hugo' is not installed"))
      (let ((default-directory easy-hugo-basedir))
        ,@body)))
+
+(defmacro easy-hugo-set-bloglist (body)
+  "Macros to set variables to `easy-hugo-bloglist' as BODY."
+  `(setq ,body
+	 (cdr (assoc ',body
+		     (nth easy-hugo--current-blog easy-hugo-bloglist)))))
+
+(defmacro easy-hugo-eval-bloglist (body)
+  "Macros to eval variables of BODY from `easy-hugo-bloglist'."
+  `(cdr (assoc ',body
+	       (nth easy-hugo--current-blog easy-hugo-bloglist))))
+
+;;;###autoload
+(defun easy-hugo-article ()
+  "Open a list of articles written in hugo with dired."
+  (interactive)
+  (unless easy-hugo-basedir
+    (error "Please set easy-hugo-basedir variable"))
+  (find-file (expand-file-name easy-hugo-postdir easy-hugo-basedir)))
 
 ;;;###autoload
 (defun easy-hugo-image ()
@@ -467,8 +494,10 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
   (setq easy-hugo--sshdomain-timer easy-hugo-sshdomain)
   (setq easy-hugo--root-timer easy-hugo-root)
   (setq easy-hugo--url-timer easy-hugo-url)
-  (setq easy-hugo--publish-timer
-	(run-at-time (* n 60) nil #'easy-hugo-publish-on-timer)))
+  (if easy-hugo--publish-timer
+      (message "There is already reserved publish-timer")
+    (setq easy-hugo--publish-timer
+	  (run-at-time (* n 60) nil #'easy-hugo-publish-on-timer))))
 
 ;;;###autoload
 (defun easy-hugo-cancel-publish-timer ()
@@ -492,6 +521,7 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
   (setq easy-hugo--publish-url easy-hugo-url)
   (setq easy-hugo-url easy-hugo--url-timer)
   (easy-hugo-publish)
+  (setq easy-hugo--publish-timer nil)
   (setq easy-hugo-basedir easy-hugo--publish-basedir)
   (setq easy-hugo-sshdomain easy-hugo--publish-sshdomain)
   (setq easy-hugo-root easy-hugo--publish-root)
@@ -524,7 +554,8 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
        (error "Please enter .%s or .org or .%s or .rst or .mmark or .%s file name" easy-hugo-markdown-extension easy-hugo-asciidoc-extension easy-hugo-html-extension))
      (when (file-exists-p (file-truename filename))
        (error "%s already exists!" filename))
-     (if (<= 0.25 (easy-hugo--version))
+     (if (and (null easy-hugo-org-header)
+	      (<= 0.25 (easy-hugo--version)))
 	 (call-process "hugo" nil "*hugo*" t "new" (file-relative-name filename (expand-file-name "content" easy-hugo-basedir)))
        (progn
 	 (if (or (string-equal file-ext easy-hugo-markdown-extension)
@@ -536,8 +567,9 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
      (when (get-buffer "*hugo*")
        (kill-buffer "*hugo*"))
      (find-file filename)
-     (when (and (> 0.25 (easy-hugo--version))
-		(string-equal file-ext "org"))
+     (when (or easy-hugo-org-header
+	       (and (> 0.25 (easy-hugo--version))
+		    (string-equal file-ext "org")))
        (insert (easy-hugo--org-headers (file-name-base post-file))))
      (goto-char (point-max))
      (save-buffer))))
@@ -674,8 +706,10 @@ If not applicable, return the default preview."
   (interactive "nMinute:")
   (setq easy-hugo--github-deploy-basedir-timer easy-hugo-basedir)
   (setq easy-hugo--github-deploy-url-timer easy-hugo-url)
-  (setq easy-hugo--github-deploy-timer
-	(run-at-time (* n 60) nil #'easy-hugo-github-deploy-on-timer)))
+  (if easy-hugo--github-deploy-timer
+      (message "There is already reserved github-deploy-timer")
+    (setq easy-hugo--github-deploy-timer
+	  (run-at-time (* n 60) nil #'easy-hugo-github-deploy-on-timer))))
 
 ;;;###autoload
 (defun easy-hugo-cancel-github-deploy-timer ()
@@ -695,6 +729,7 @@ If not applicable, return the default preview."
   (setq easy-hugo--github-deploy-url easy-hugo-url)
   (setq easy-hugo-url easy-hugo--github-deploy-url-timer)
   (easy-hugo-github-deploy)
+  (setq easy-hugo--github-deploy-timer nil)
   (setq easy-hugo-basedir easy-hugo--github-deploy-basedir)
   (setq easy-hugo-url easy-hugo--github-deploy-url))
 
@@ -727,8 +762,10 @@ If not applicable, return the default preview."
   (setq easy-hugo--amazon-s3-basedir-timer easy-hugo-basedir)
   (setq easy-hugo--amazon-s3-url-timer easy-hugo-url)
   (setq easy-hugo--amazon-s3-bucket-name-timer easy-hugo-amazon-s3-bucket-name)
-  (setq easy-hugo--amazon-s3-timer
-	(run-at-time (* n 60) nil #'easy-hugo-amazon-s3-deploy-on-timer)))
+  (if easy-hugo--amazon-s3-timer
+      (message "There is already reserved AWS-s3-deploy-timer")
+    (setq easy-hugo--amazon-s3-timer
+	  (run-at-time (* n 60) nil #'easy-hugo-amazon-s3-deploy-on-timer))))
 
 ;;;###autoload
 (defun easy-hugo-cancel-amazon-s3-deploy-timer ()
@@ -750,6 +787,7 @@ If not applicable, return the default preview."
   (setq easy-hugo--amazon-s3-bucket-name easy-hugo-amazon-s3-bucket-name)
   (setq easy-hugo-amazon-s3-bucket-name easy-hugo--amazon-s3-bucket-name-timer)
   (easy-hugo-amazon-s3-deploy)
+  (setq easy-hugo--amazon-s3-timer nil)
   (setq easy-hugo-basedir easy-hugo--amazon-s3-basedir)
   (setq easy-hugo-url easy-hugo--amazon-s3-url)
   (setq easy-hugo-amazon-s3-bucket-name easy-hugo--amazon-s3-bucket-name))
@@ -783,8 +821,10 @@ If not applicable, return the default preview."
   (setq easy-hugo--google-cloud-storage-basedir-timer easy-hugo-basedir)
   (setq easy-hugo--google-cloud-storage-url-timer easy-hugo-url)
   (setq easy-hugo--google-cloud-storage-bucket-name-timer easy-hugo-google-cloud-storage-bucket-name)
-  (setq easy-hugo--google-cloud-storage-timer
-	(run-at-time (* n 60) nil #'easy-hugo-google-cloud-storage-deploy-on-timer)))
+  (if easy-hugo--google-cloud-storage-timer
+      (message "There is already reserved GCS-timer")
+    (setq easy-hugo--google-cloud-storage-timer
+	  (run-at-time (* n 60) nil #'easy-hugo-google-cloud-storage-deploy-on-timer))))
 
 ;;;###autoload
 (defun easy-hugo-cancel-google-cloud-storage-deploy-timer ()
@@ -806,6 +846,7 @@ If not applicable, return the default preview."
   (setq easy-hugo--google-cloud-storage-bucket-name easy-hugo-google-cloud-storage-bucket-name)
   (setq easy-hugo-google-cloud-storage-bucket-name easy-hugo--google-cloud-storage-bucket-name-timer)
   (easy-hugo-google-cloud-storage-deploy)
+  (setq easy-hugo--google-cloud-storage-timer nil)
   (setq easy-hugo-basedir easy-hugo--google-cloud-storage-basedir)
   (setq easy-hugo-url easy-hugo--google-cloud-storage-url)
   (setq easy-hugo-google-cloud-storage-bucket-name easy-hugo--google-cloud-storage-bucket-name))
@@ -984,7 +1025,7 @@ w .. Write post       o .. Open file     - .. Pre postdir      + .. Next postdir
     (progn
       (setq easy-hugo-additional-help 1)
       (setq easy-hugo-no-help nil)
-      (setq easy-hugo--unmovable-line 15)))
+      (setq easy-hugo--unmovable-line (+ easy-hugo-help-line easy-hugo-add-help-line 4))))
   (if easy-hugo--draft-list
       (easy-hugo-draft-list)
     (easy-hugo)))
@@ -1013,7 +1054,7 @@ w .. Write post       o .. Open file     - .. Pre postdir      + .. Next postdir
   (setq easy-hugo--refresh nil))
 
 (defun easy-hugo-sort-time ()
-  "Sort time on easy-hugo-mode."
+  "Sort article by time on easy-hugo-mode."
   (interactive)
   (if easy-hugo--draft-list
       (progn
@@ -1030,7 +1071,7 @@ w .. Write post       o .. Open file     - .. Pre postdir      + .. Next postdir
       (easy-hugo))))
 
 (defun easy-hugo-sort-char ()
-  "Sort char on easy-hugo-mode."
+  "Sort article by characters on easy-hugo-mode."
   (interactive)
   (if easy-hugo--draft-list
       (progn
@@ -1206,95 +1247,47 @@ Optional prefix ARG says how many lines to move; default is one line."
 	(setq easy-hugo--current-blog 0)
       (setq easy-hugo--current-blog (+ easy-hugo--current-blog 1)))
     (setq easy-hugo--current-postdir 0)
-    (setq easy-hugo-basedir
-	  (cdr (assoc 'easy-hugo-basedir
-		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
-    (setq easy-hugo-url
-	  (cdr (assoc 'easy-hugo-url
-		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
-    (setq easy-hugo-root
-	  (cdr (assoc 'easy-hugo-root
-		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
-    (setq easy-hugo-sshdomain
-	  (cdr (assoc 'easy-hugo-sshdomain
-		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
-    (setq easy-hugo-amazon-s3-bucket-name
-	  (cdr (assoc 'easy-hugo-amazon-s3-bucket-name
-		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
-    (setq easy-hugo-google-cloud-storage-bucket-name
-	  (cdr (assoc 'easy-hugo-google-cloud-storage-bucket-name
-		      (nth 1 easy-hugo-bloglist))))
-    (if (cdr (assoc 'easy-hugo-github-deploy-script
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-github-deploy-script
-	      (cdr (assoc 'easy-hugo-github-deploy-script
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (easy-hugo-set-bloglist easy-hugo-basedir)
+    (easy-hugo-set-bloglist easy-hugo-url)
+    (easy-hugo-set-bloglist easy-hugo-root)
+    (easy-hugo-set-bloglist easy-hugo-sshdomain)
+    (easy-hugo-set-bloglist easy-hugo-amazon-s3-bucket-name)
+    (easy-hugo-set-bloglist easy-hugo-google-cloud-storage-bucket-name)
+    (if (easy-hugo-eval-bloglist easy-hugo-github-deploy-script)
+	(easy-hugo-set-bloglist easy-hugo-github-deploy-script)
       (setq easy-hugo-github-deploy-script easy-hugo--default-github-deploy-script))
-    (if (cdr (assoc 'easy-hugo-image-directory
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-image-directory
-	      (cdr (assoc 'easy-hugo-image-directory
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-image-directory)
+	(easy-hugo-set-bloglist easy-hugo-image-directory)
       (setq easy-hugo-image-directory easy-hugo--default-image-directory))
-    (if (cdr (assoc 'easy-hugo-default-picture-directory
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-default-picture-directory
-	      (cdr (assoc 'easy-hugo-default-picture-directory
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-default-picture-directory)
+	(easy-hugo-set-bloglist easy-hugo-default-picture-directory)
       (setq easy-hugo-default-picture-directory easy-hugo--default-picture-directory))
-    (if (cdr (assoc 'easy-hugo-publish-chmod
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-publish-chmod
-	      (cdr (assoc 'easy-hugo-publish-chmod
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
-      (setq easy-hugo-publish-chmod easy-hugo--default-publish-chmod))
-    (if (cdr (assoc 'easy-hugo-previewtime
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-previewtime
-	      (cdr (assoc 'easy-hugo-previewtime
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
-      (setq easy-hugo-previewtime easy-hugo--default-previewtime))
-    (if (cdr (assoc 'easy-hugo-preview-url
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-preview-url
-	      (cdr (assoc 'easy-hugo-preview-url
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-preview-url)
+	(easy-hugo-set-bloglist easy-hugo-preview-url)
       (setq easy-hugo-preview-url easy-hugo--default-preview-url))
-    (if (cdr (assoc 'easy-hugo-sort-default-char
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-sort-default-char
-	      (cdr (assoc 'easy-hugo-sort-default-char
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-publish-chmod)
+	(easy-hugo-set-bloglist easy-hugo-publish-chmod)
+      (setq easy-hugo-publish-chmod easy-hugo--default-publish-chmod))
+    (if (easy-hugo-eval-bloglist easy-hugo-previewtime)
+	(easy-hugo-set-bloglist easy-hugo-previewtime)
+      (setq easy-hugo-previewtime easy-hugo--default-previewtime))
+    (if (easy-hugo-eval-bloglist easy-hugo-sort-default-char)
+	(easy-hugo-set-bloglist easy-hugo-sort-default-char)
       (setq easy-hugo-sort-default-char easy-hugo--default-sort-default-char))
-    (if (cdr (assoc 'easy-hugo-asciidoc-extension
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-asciidoc-extension
-	      (cdr (assoc 'easy-hugo-asciidoc-extension
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-asciidoc-extension)
+	(easy-hugo-set-bloglist easy-hugo-asciidoc-extension)
       (setq easy-hugo-asciidoc-extension easy-hugo--default-asciidoc-extension))
-    (if (cdr (assoc 'easy-hugo-html-extension
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-html-extension
-	      (cdr (assoc 'easy-hugo-html-extension
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-html-extension)
+	(easy-hugo-set-bloglist easy-hugo-html-extension)
       (setq easy-hugo-html-extension easy-hugo--default-html-extension))
-    (if (cdr (assoc 'easy-hugo-markdown-extension
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-markdown-extension
-	      (cdr (assoc 'easy-hugo-markdown-extension
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
-      (setq easy-hugo-markdown-extension easy-hugo--default-markdown-extension))
-    (if (cdr (assoc 'easy-hugo-default-ext
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-default-ext
-	      (cdr (assoc 'easy-hugo-default-ext
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-markdown-extension)
+	(easy-hugo-set-bloglist easy-hugo-markdown-extension)
+      (setq easy-hugo-markdown-extension easy-hugo-markdown-extension))
+    (if (easy-hugo-eval-bloglist easy-hugo-default-ext)
+	(easy-hugo-set-bloglist easy-hugo-default-ext)
       (setq easy-hugo-default-ext easy-hugo--default-ext))
-    (if (cdr (assoc 'easy-hugo-postdir
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-postdir
-	      (cdr (assoc 'easy-hugo-postdir
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-postdir)
+	(easy-hugo-set-bloglist easy-hugo-postdir)
       (setq easy-hugo-postdir easy-hugo--default-postdir))
     (easy-hugo--preview-end)
     (easy-hugo)))
@@ -1307,95 +1300,47 @@ Optional prefix ARG says how many lines to move; default is one line."
 	(setq easy-hugo--current-blog (- (length easy-hugo-bloglist) 1))
       (setq easy-hugo--current-blog (- easy-hugo--current-blog 1)))
     (setq easy-hugo--current-postdir 0)
-    (setq easy-hugo-basedir
-	  (cdr (assoc 'easy-hugo-basedir
-		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
-    (setq easy-hugo-url
-	  (cdr (assoc 'easy-hugo-url
-		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
-    (setq easy-hugo-root
-	  (cdr (assoc 'easy-hugo-root
-		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
-    (setq easy-hugo-sshdomain
-	  (cdr (assoc 'easy-hugo-sshdomain
-		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
-    (setq easy-hugo-amazon-s3-bucket-name
-	  (cdr (assoc 'easy-hugo-amazon-s3-bucket-name
-		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
-    (setq easy-hugo-google-cloud-storage-bucket-name
-	  (cdr (assoc 'easy-hugo-google-cloud-storage-bucket-name
-		      (nth 1 easy-hugo-bloglist))))
-    (if (cdr (assoc 'easy-hugo-github-deploy-script
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-github-deploy-script
-	      (cdr (assoc 'easy-hugo-github-deploy-script
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (easy-hugo-set-bloglist easy-hugo-basedir)
+    (easy-hugo-set-bloglist easy-hugo-url)
+    (easy-hugo-set-bloglist easy-hugo-root)
+    (easy-hugo-set-bloglist easy-hugo-sshdomain)
+    (easy-hugo-set-bloglist easy-hugo-amazon-s3-bucket-name)
+    (easy-hugo-set-bloglist easy-hugo-google-cloud-storage-bucket-name)
+    (if (easy-hugo-eval-bloglist easy-hugo-github-deploy-script)
+	(easy-hugo-set-bloglist easy-hugo-github-deploy-script)
       (setq easy-hugo-github-deploy-script easy-hugo--default-github-deploy-script))
-    (if (cdr (assoc 'easy-hugo-image-directory
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-image-directory
-	      (cdr (assoc 'easy-hugo-image-directory
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-image-directory)
+	(easy-hugo-set-bloglist easy-hugo-image-directory)
       (setq easy-hugo-image-directory easy-hugo--default-image-directory))
-    (if (cdr (assoc 'easy-hugo-default-picture-directory
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-default-picture-directory
-	      (cdr (assoc 'easy-hugo-default-picture-directory
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-default-picture-directory)
+	(easy-hugo-set-bloglist easy-hugo-default-picture-directory)
       (setq easy-hugo-default-picture-directory easy-hugo--default-picture-directory))
-    (if (cdr (assoc 'easy-hugo-publish-chmod
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-publish-chmod
-	      (cdr (assoc 'easy-hugo-publish-chmod
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
-      (setq easy-hugo-publish-chmod easy-hugo--default-publish-chmod))
-    (if (cdr (assoc 'easy-hugo-previewtime
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-previewtime
-	      (cdr (assoc 'easy-hugo-previewtime
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
-      (setq easy-hugo-previewtime easy-hugo--default-previewtime))
-    (if (cdr (assoc 'easy-hugo-preview-url
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-preview-url
-	      (cdr (assoc 'easy-hugo-preview-url
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-preview-url)
+	(easy-hugo-set-bloglist easy-hugo-preview-url)
       (setq easy-hugo-preview-url easy-hugo--default-preview-url))
-    (if (cdr (assoc 'easy-hugo-sort-default-char
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-sort-default-char
-	      (cdr (assoc 'easy-hugo-sort-default-char
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-publish-chmod)
+	(easy-hugo-set-bloglist easy-hugo-publish-chmod)
+      (setq easy-hugo-publish-chmod easy-hugo--default-publish-chmod))
+    (if (easy-hugo-eval-bloglist easy-hugo-previewtime)
+	(easy-hugo-set-bloglist easy-hugo-previewtime)
+      (setq easy-hugo-previewtime easy-hugo--default-previewtime))
+    (if (easy-hugo-eval-bloglist easy-hugo-sort-default-char)
+	(easy-hugo-set-bloglist easy-hugo-sort-default-char)
       (setq easy-hugo-sort-default-char easy-hugo--default-sort-default-char))
-    (if (cdr (assoc 'easy-hugo-asciidoc-extension
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-asciidoc-extension
-	      (cdr (assoc 'easy-hugo-asciidoc-extension
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-asciidoc-extension)
+	(easy-hugo-set-bloglist easy-hugo-asciidoc-extension)
       (setq easy-hugo-asciidoc-extension easy-hugo--default-asciidoc-extension))
-    (if (cdr (assoc 'easy-hugo-html-extension
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-html-extension
-	      (cdr (assoc 'easy-hugo-html-extension
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-html-extension)
+	(easy-hugo-set-bloglist easy-hugo-html-extension)
       (setq easy-hugo-html-extension easy-hugo--default-html-extension))
-    (if (cdr (assoc 'easy-hugo-markdown-extension
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-markdown-extension
-	      (cdr (assoc 'easy-hugo-markdown-extension
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
-      (setq easy-hugo-markdown-extension easy-hugo--default-markdown-extension))
-    (if (cdr (assoc 'easy-hugo-default-ext
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-default-ext
-	      (cdr (assoc 'easy-hugo-default-ext
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-markdown-extension)
+	(easy-hugo-set-bloglist easy-hugo-markdown-extension)
+      (setq easy-hugo-markdown-extension easy-hugo-markdown-extension))
+    (if (easy-hugo-eval-bloglist easy-hugo-default-ext)
+	(easy-hugo-set-bloglist easy-hugo-default-ext)
       (setq easy-hugo-default-ext easy-hugo--default-ext))
-    (if (cdr (assoc 'easy-hugo-postdir
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-postdir
-	      (cdr (assoc 'easy-hugo-postdir
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-postdir)
+	(easy-hugo-set-bloglist easy-hugo-postdir)
       (setq easy-hugo-postdir easy-hugo--default-postdir))
     (easy-hugo--preview-end)
     (easy-hugo)))
@@ -1410,95 +1355,47 @@ Optional prefix ARG says how many lines to move; default is one line."
 	     (< n (length easy-hugo-bloglist)))
     (setq easy-hugo--current-blog n)
     (setq easy-hugo--current-postdir 0)
-    (setq easy-hugo-basedir
-	  (cdr (assoc 'easy-hugo-basedir
-		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
-    (setq easy-hugo-url
-	  (cdr (assoc 'easy-hugo-url
-		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
-    (setq easy-hugo-root
-	  (cdr (assoc 'easy-hugo-root
-		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
-    (setq easy-hugo-sshdomain
-	  (cdr (assoc 'easy-hugo-sshdomain
-		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
-    (setq easy-hugo-amazon-s3-bucket-name
-	  (cdr (assoc 'easy-hugo-amazon-s3-bucket-name
-		      (nth easy-hugo--current-blog easy-hugo-bloglist))))
-    (setq easy-hugo-google-cloud-storage-bucket-name
-	  (cdr (assoc 'easy-hugo-google-cloud-storage-bucket-name
-		      (nth 1 easy-hugo-bloglist))))
-    (if (cdr (assoc 'easy-hugo-github-deploy-script
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-github-deploy-script
-	      (cdr (assoc 'easy-hugo-github-deploy-script
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (easy-hugo-set-bloglist easy-hugo-basedir)
+    (easy-hugo-set-bloglist easy-hugo-url)
+    (easy-hugo-set-bloglist easy-hugo-root)
+    (easy-hugo-set-bloglist easy-hugo-sshdomain)
+    (easy-hugo-set-bloglist easy-hugo-amazon-s3-bucket-name)
+    (easy-hugo-set-bloglist easy-hugo-google-cloud-storage-bucket-name)
+    (if (easy-hugo-eval-bloglist easy-hugo-github-deploy-script)
+	(easy-hugo-set-bloglist easy-hugo-github-deploy-script)
       (setq easy-hugo-github-deploy-script easy-hugo--default-github-deploy-script))
-    (if (cdr (assoc 'easy-hugo-image-directory
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-image-directory
-	      (cdr (assoc 'easy-hugo-image-directory
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-image-directory)
+	(easy-hugo-set-bloglist easy-hugo-image-directory)
       (setq easy-hugo-image-directory easy-hugo--default-image-directory))
-    (if (cdr (assoc 'easy-hugo-default-picture-directory
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-default-picture-directory
-	      (cdr (assoc 'easy-hugo-default-picture-directory
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-default-picture-directory)
+	(easy-hugo-set-bloglist easy-hugo-default-picture-directory)
       (setq easy-hugo-default-picture-directory easy-hugo--default-picture-directory))
-    (if (cdr (assoc 'easy-hugo-publish-chmod
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-publish-chmod
-	      (cdr (assoc 'easy-hugo-publish-chmod
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
-      (setq easy-hugo-publish-chmod easy-hugo--default-publish-chmod))
-    (if (cdr (assoc 'easy-hugo-previewtime
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-previewtime
-	      (cdr (assoc 'easy-hugo-previewtime
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
-      (setq easy-hugo-previewtime easy-hugo--default-previewtime))
-    (if (cdr (assoc 'easy-hugo-preview-url
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-preview-url
-	      (cdr (assoc 'easy-hugo-preview-url
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-preview-url)
+	(easy-hugo-set-bloglist easy-hugo-preview-url)
       (setq easy-hugo-preview-url easy-hugo--default-preview-url))
-    (if (cdr (assoc 'easy-hugo-sort-default-char
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-sort-default-char
-	      (cdr (assoc 'easy-hugo-sort-default-char
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-publish-chmod)
+	(easy-hugo-set-bloglist easy-hugo-publish-chmod)
+      (setq easy-hugo-publish-chmod easy-hugo--default-publish-chmod))
+    (if (easy-hugo-eval-bloglist easy-hugo-previewtime)
+	(easy-hugo-set-bloglist easy-hugo-previewtime)
+      (setq easy-hugo-previewtime easy-hugo--default-previewtime))
+    (if (easy-hugo-eval-bloglist easy-hugo-sort-default-char)
+	(easy-hugo-set-bloglist easy-hugo-sort-default-char)
       (setq easy-hugo-sort-default-char easy-hugo--default-sort-default-char))
-    (if (cdr (assoc 'easy-hugo-asciidoc-extension
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-asciidoc-extension
-	      (cdr (assoc 'easy-hugo-asciidoc-extension
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-asciidoc-extension)
+	(easy-hugo-set-bloglist easy-hugo-asciidoc-extension)
       (setq easy-hugo-asciidoc-extension easy-hugo--default-asciidoc-extension))
-    (if (cdr (assoc 'easy-hugo-html-extension
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-html-extension
-	      (cdr (assoc 'easy-hugo-html-extension
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-html-extension)
+	(easy-hugo-set-bloglist easy-hugo-html-extension)
       (setq easy-hugo-html-extension easy-hugo--default-html-extension))
-    (if (cdr (assoc 'easy-hugo-markdown-extension
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-markdown-extension
-	      (cdr (assoc 'easy-hugo-markdown-extension
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
-      (setq easy-hugo-markdown-extension easy-hugo--default-markdown-extension))
-    (if (cdr (assoc 'easy-hugo-default-ext
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-default-ext
-	      (cdr (assoc 'easy-hugo-default-ext
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-markdown-extension)
+	(easy-hugo-set-bloglist easy-hugo-markdown-extension)
+      (setq easy-hugo-markdown-extension easy-hugo-markdown-extension))
+    (if (easy-hugo-eval-bloglist easy-hugo-default-ext)
+	(easy-hugo-set-bloglist easy-hugo-default-ext)
       (setq easy-hugo-default-ext easy-hugo--default-ext))
-    (if (cdr (assoc 'easy-hugo-postdir
-		    (nth easy-hugo--current-blog easy-hugo-bloglist)))
-	(setq easy-hugo-postdir
-	      (cdr (assoc 'easy-hugo-postdir
-			  (nth easy-hugo--current-blog easy-hugo-bloglist))))
+    (if (easy-hugo-eval-bloglist easy-hugo-postdir)
+	(easy-hugo-set-bloglist easy-hugo-postdir)
       (setq easy-hugo-postdir easy-hugo--default-postdir))
     (easy-hugo--preview-end)
     (easy-hugo)))
