@@ -4,7 +4,7 @@
 
 ;; Author: Hinrik Örn Sigurðsson <hinrik.sig@gmail.com>
 ;; URL: https://github.com/hinrik/flycheck-lilypond
-;; Package-Version: 20171124.500
+;; Package-Version: 20171203.532
 ;; Keywords: tools, convenience
 ;; Version: 0.1-git
 ;; Package-Requires: ((emacs "24.3") (flycheck "0.22"))
@@ -27,6 +27,11 @@
 ;;; Commentary:
 
 ;; LilyPond syntax checking support for Flycheck.
+
+;; You can add the following to your init file:
+
+;; (add-hook 'LilyPond-mode-hook 'flycheck-mode)
+;; (eval-after-load 'flycheck '(require 'flycheck-lilypond)
 
 ;;; Code:
 

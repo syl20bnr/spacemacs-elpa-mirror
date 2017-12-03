@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/dired-sidebar
-;; Package-Version: 20171202.1325
+;; Package-Version: 20171203.749
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1") (dired-subtree "0.0.1"))
 ;; Keywords: dired, files, tools
@@ -224,7 +224,12 @@ Warning: This is implemented by advising specific dired functions."
     dired-do-rename
     dired-do-copy
     dired-do-flagged-delete
-    dired-create-directory)
+    dired-create-directory
+    delete-file
+    save-buffer
+    evil-write
+    evil-write-all
+    evil-save)
   "A list of commands that will trigger a refresh of the sidebar."
   :type 'list
   :group 'dired-sidebar)
@@ -253,6 +258,11 @@ with a prefix arg or when `dired-sidebar-find-file-alt' is called."
 
 (defcustom dired-sidebar-recenter-cursor-on-follow-file t
   "Whether or not to center cursor when pointing at file."
+  :type 'boolean
+  :group 'dired-sidebar)
+
+(defcustom dired-sidebar-display-autorevert-messages nil
+  "Whether or not to display `autorevert' messages."
   :type 'boolean
   :group 'dired-sidebar)
 
@@ -312,7 +322,13 @@ will check if buffer is stale through `auto-revert-mode'.")
             (kbd "<return>") 'dired-sidebar-find-file
             "^" 'dired-sidebar-up-directory
             (kbd "C-o") 'dired-sidebar-find-file-alt
-            [mouse-2] 'dired-sidebar-mouse-subtree-cycle-or-find-file))))
+            [mouse-2] 'dired-sidebar-mouse-subtree-cycle-or-find-file))
+        ;; Although `evil-define-minor-mode-key' is supposed to define bindings
+        ;; immediately, I did not see that happen when restoring `dired-sidebar'
+        ;; with `desktop-read'.
+        ;; Force keymaps to normalize.
+        (when (fboundp 'evil-normalize-keymaps)
+          (evil-normalize-keymaps))))
     map)
   "Keymap used for symbol `dired-sidebar-mode'.")
 
@@ -334,6 +350,11 @@ will check if buffer is stale through `auto-revert-mode'.")
              (fboundp 'dired-collapse-mode)
              (bound-and-true-p dired-collapse-mode))
     (dired-collapse-mode -1))
+
+  (when (and
+         (not dired-sidebar-display-autorevert-messages)
+         (boundp 'auto-revert-verbose))
+    (setq-local auto-revert-verbose nil))
 
   (when dired-sidebar-delay-auto-revert-updates
     (setq-local buffer-stale-function #'dired-sidebar-buffer-stale-p)
@@ -387,7 +408,8 @@ will check if buffer is stale through `auto-revert-mode'.")
                  (dired-sidebar-follow-file-in-project))))))
 
   (dired-unadvertise (dired-current-directory))
-  (dired-sidebar-update-buffer-name))
+  (dired-sidebar-update-buffer-name)
+  (dired-sidebar-update-state-in-frame (current-buffer)))
 
 ;; User Interface
 
@@ -684,16 +706,12 @@ Check if F or selected frame contains a sidebar and return
 corresponding buffer if buffer has a window attached to it.
 
 Return buffer if so."
-  (if-let* ((buffer (alist-get (or f (selected-frame)) dired-sidebar-alist)))
-      (if (get-buffer-window buffer)
-          buffer
-        nil)
-    nil))
+  (when-let* ((buffer (dired-sidebar-sidebar-buffer-in-frame f)))
+    (get-buffer-window buffer)))
 
 (defun dired-sidebar-sidebar-buffer-in-frame (&optional f)
   "Return the current sidebar buffer in F or selected frame."
-  (let ((frame (or f (selected-frame))))
-    (alist-get frame dired-sidebar-alist)))
+  (alist-get (or f (selected-frame)) dired-sidebar-alist))
 
 (defun dired-sidebar-switch-to-dir (dir)
   "Update buffer with DIR as root."
@@ -716,7 +734,9 @@ Optional argument NOCONFIRM Pass NOCONFIRM on to `dired-buffer-stale-p'."
 (defun dired-sidebar-refresh-or-schedule-refresh (&rest _)
   "Refresh or schedule refresh of sidebar buffer."
   (if dired-sidebar-refresh-on-special-command-instantly
-      (revert-buffer)
+      (when-let* ((sidebar (dired-sidebar-sidebar-buffer-in-frame)))
+        (with-current-buffer sidebar
+          (revert-buffer)))
     (setq dired-sidebar-check-for-stale-buffer-p t)))
 
 (defun dired-sidebar-follow-file-in-project ()
@@ -823,16 +843,14 @@ This is somewhat experimental/hacky."
   (run-with-idle-timer
    dired-sidebar-tui-update-delay nil
    (lambda ()
-     (when-let* ((buffer (dired-sidebar-showing-sidebar-in-frame-p
-                          (selected-frame))))
+     (when-let* ((buffer (dired-sidebar-sidebar-buffer-in-frame)))
        (with-current-buffer buffer
          (dired-revert)
          (recenter))))))
 
 (defun dired-sidebar-tui-reset-in-sidebar (&rest _)
   "Runs `dired-sidebar-tui-dired-reset' in current `dired-sidebar' buffer."
-  (when-let* ((buffer (dired-sidebar-showing-sidebar-in-frame-p
-                       (selected-frame))))
+  (when-let* ((buffer (dired-sidebar-sidebar-buffer-in-frame)))
     (with-current-buffer buffer
       (dired-sidebar-tui-dired-reset))))
 

@@ -74,7 +74,7 @@ Usage:
   (setq w32-pipe-read-delay 0)
   (when (msvc-initialize)
     (msvc-flags-load-db :parsing-buffer-delete-p t)
-    (add-hook 'c-mode-common-hook 'msvc-mode-on t))
+    (add-hook 'c-mode-common-hook #'msvc-mode-on t))
 
   For more samples, please refer the following URL.
   [https://github.com/yaruopooner/msvc/tree/master/minimal-config-sample]
