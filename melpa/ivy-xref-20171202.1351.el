@@ -4,7 +4,7 @@
 
 ;; Author: Alex Murray <murray.alex@gmail.com>
 ;; URL: https://github.com/alexmurray/ivy-xref
-;; Package-Version: 20171130.2137
+;; Package-Version: 20171202.1351
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "25.1") (ivy "0.10.0"))
 
@@ -29,7 +29,7 @@
 
 ;;;; Setup
 
-;; (require 'ivy-xref)
+;; (require 'ivy-xref) ; unless installed from a package
 ;; (setq xref-show-xrefs-function 'ivy-xref-show-xrefs)
 
 ;;; Code:
@@ -53,6 +53,7 @@
           (push `(,candidate . ,location) collection))))
     collection))
 
+;;;###autoload
 (defun ivy-xref-show-xrefs (xrefs _alist)
   "Show the list of XREFS via ivy."
   (ivy-read "xref: " (ivy-xref-make-collection xrefs)

@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20171202.326
+;; Package-Version: 20171202.1225
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -2917,7 +2917,7 @@ suggestions are available."
                  (save-excursion
                    (goto-char (point-min))
                    (forward-line (1- (plist-get suggestion :line)))
-                   (let* ((start (point))
+                   (let* ((start (search-forward "(" nil t 1))
                           (end (or (save-excursion
                                      (when (search-forward-regexp "\n[^ \t]" nil t 1)
                                        (1- (point))))
@@ -2928,23 +2928,26 @@ suggestions are available."
                             (mapconcat
                              (lambda (ident)
                                (if (string-match "^[_a-zA-Z]" ident)
-                                   (concat "\\<" (regexp-quote ident) "\\>")
+                                   (concat "\\<" (regexp-quote ident) "\\> ?" "\\("(regexp-quote "(..)") "\\)?")
                                  (concat "(" (regexp-quote ident) ")")))
                              (plist-get suggestion :idents)
                              "\\|")
                             "\\)"))
                           (string (buffer-substring start end)))
                      (delete-region start end)
-                     (insert (replace-regexp-in-string
-                              "([\n ]*," "("
-                              (replace-regexp-in-string
-                               "[\n ,]*,[\n ,]*" ", "
-                               (replace-regexp-in-string
-                                ",[\n ]*)" ")"
-                                (replace-regexp-in-string
-                                 regex ""
-                                 string))))
-                             (make-string (1- (length (split-string string "\n" t))) 10)))))
+                     (insert
+                      (replace-regexp-in-string
+                       ",[\n ]*)" ")"
+                       (replace-regexp-in-string
+                        "^[\n ,]*" ""
+                        (replace-regexp-in-string
+                         "[\n ,]*,[\n ,]*" ", "
+                         (replace-regexp-in-string
+                          ",[\n ]*)" ")"
+                          (replace-regexp-in-string
+                           regex ""
+                           string)))))
+                      (make-string (1- (length (split-string string "\n" t))) 10)))))
                 (fix-typo
                  (save-excursion
                    (goto-char (point-min))

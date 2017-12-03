@@ -6,7 +6,7 @@
 ;; Keywords: tools, maint, convenience
 ;; Homepage: https://github.com/vermiculus/apiwrap.el
 ;; Package-Requires: ((emacs "25"))
-;; Package-Version: 20171022.2203
+;; Package-Version: 20171202.1653
 ;; Package-X-Original-Version: 0.3
 
 ;; This file is not part of GNU Emacs.
@@ -65,13 +65,15 @@ Example:
         (setq replacements
               (mapcar (lambda (s) (list #'apiwrap--encode-url (make-symbol (concat "." s))))
                       (nreverse replacements)))
-        (macroexpand-all
-         `(let-alist ,(if (or (symbolp object)
+        (let ((object (if (or (symbolp object)
                               (and (listp object)
                                    (not (consp (car object)))))
                           object
-                        `',object)
-            (format ,(buffer-string) ,@replacements)))))))
+                        `',object))
+              (str `(format ,(buffer-string) ,@replacements)))
+          (if object
+              (macroexpand-all `(let-alist ,object ,str))
+            str))))))
 
 (defun apiwrap--encode-url (thing)
   (if (numberp thing)
@@ -268,7 +270,7 @@ Otherwise, just return VALUE quoted."
         (funsym (apiwrap-gensym prefix method resource))
         resolved-resource-form form functions
         data-massage-func params-massage-func
-        primitive-func link-func)
+        primitive-func link-func around)
 
     ;; Be smart about when configuration starts.  Neither `objects' nor
     ;; `internal-resource' can be keywords, so we know that if they
@@ -304,8 +306,10 @@ Otherwise, just return VALUE quoted."
 
     ;; Alright, we're ready to build our function
     (setq resolved-resource-form
-          (apiwrap-genform-resolve-api-params
-              `(list ,@(mapcar (lambda (o) `(cons ',o ,o)) objects))
+          (if objects
+              (apiwrap-genform-resolve-api-params
+                  `(list ,@(mapcar (lambda (o) `(cons ',o ,o)) objects))
+                internal-resource)
             internal-resource)
           form
           `(apply ,primitive-func ',method ,resolved-resource-form

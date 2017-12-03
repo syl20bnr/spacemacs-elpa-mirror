@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017 by Julien Blanchard
 ;; Author: Julien Blanchard <https://github.com/julienXX>
 ;; URL: https://github.com/julienXX/ivy-lobsters
-;; Package-Version: 20171202.555
+;; Package-Version: 20171202.1241
 ;; Package: ivy-lobsters
 ;; Package-Requires: ((ivy "0.8.0") (cl-lib "0.5"))
 ;; Version: 0.1
@@ -111,7 +111,7 @@
 (ivy-set-actions
  'ivy-lobsters
  '(("c" (lambda (story)
-          (ivy-lobsters-browse (plist-get (cdr story) :url))) "Browse Comments")))
+          (ivy-lobsters-browse (plist-get (cdr story) :comments-url))) "Browse Comments")))
 
 
 (provide 'ivy-lobsters)
