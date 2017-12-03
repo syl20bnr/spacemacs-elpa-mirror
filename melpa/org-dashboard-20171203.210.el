@@ -4,7 +4,7 @@
 
 ;; Author: Massimiliano Mirra <hyperstruct@gmail.com>
 ;; Version: 1.0
-;; Package-Version: 20171128.301
+;; Package-Version: 20171203.210
 ;; Maintainer: Massimiliano Mirra <hyperstruct@gmail.com>
 ;; Keywords: outlines, calendar
 ;; URL: http://github.com/bard/org-dashboard
@@ -68,27 +68,55 @@
 ;;     #+BEGIN: block-dashboard
 ;;     #+END:
 
+;; Configuration:
+;;
+;; You can customize the following variables:
+;;
+;; - `org-dashboard-files': list of files to search for progress entries; defaults to `org-agenda-files'
+;; - `org-dashboard-show-category': whether to show or not the project category
+;; - `org-dashboard-filter': a function that decides whether an entry should be displayed or not
+;;
+;; For example, to avoid displaying entries that are finished
+;; (progress = 100), not started (progress = 0), or are tagged with
+;; "archive", use the following:
+;;
+;;    (defun my/org-dashboard-filter (entry)
+;;      (and (> (plist-get entry :progress-percent) 0)
+;;           (< (plist-get entry :progress-percent) 100)
+;;           (not (member "archive" (plist-get entry :tags)))))
+;;
+;;    (setq org-dashboard-filter 'my/org-dashboard-filter)
+
 ;; Notes:
 ;;
-;; Labels link back to the trees where they were found.
+;; Labels link back to the trees where they were found. 
 ;;
 ;; The color of the progress bar is (naively, for now) chosen based on
 ;; the progress value, from dark red to bright green.
 ;;
-;; The first column displays categories. You can turn this off by
-;; customizing the `org-dashboard-display-category' option. Note that,
-;; if not set per-tree through a property or per-file through a
+;; If not set per-tree through a property or per-file through a
 ;; keyword, the category defaults to the file name without extension.
+;; To set category on a per-file basis, you can add the following at
+;; the bottom of the org file:
+;;
+;;    #+CATEGORY: xyz
 
 ;; Related work:
 ;;
 ;; This module was inspired by Zach Peter's [A Dashboard for your
 ;; Life](http://thehelpfulhacker.net/2014/07/19/a-dashboard-for-your-life-a-minimal-goal-tracker-using-org-mode-go-and-git/).
 
+;; Contributions:
+;;
+;; - one feature or fix per pull request
+;; - provide an example of the problem it addresses
+;; - please adhere to the existing code style
+
 ;;; Code:
 
 (require 'org)
 (require 'cl-lib)
+(require 'subr-x)
 
 (defgroup org-dashboard nil
   "Options concerning org dashboard."
@@ -101,7 +129,7 @@
   :type '(repeat :tag "List of files and directories" file)
   :group 'org-dashboard)
 
-(defcustom org-dashboard-progress-display-category
+(defcustom org-dashboard-show-category
   t
   "Whether to display categories in a progress report.
 
@@ -110,11 +138,10 @@ category defaults to the org file name."
   :group 'org-dashboard
   :type 'boolean)
 
-(defcustom org-dashboard-omit-completed
-  nil
-  "Whether to display progress bar for completed projects."
+(defcustom org-dashboard-filter nil
+  "Function to use to filter progress entries."
   :group 'org-dashboard
-  :type 'boolean)
+  :type 'function)
 
 ;;;###autoload
 (defun org-dashboard-display ()
@@ -145,60 +172,16 @@ See Info node `(org) Breaking down tasks'."
   (org-dashboard--insert-progress-summary
    (org-dashboard--collect-progress)))
 
-(defun org-dashboard--collect-progress ()
-  (cl-loop for file in org-dashboard-files
-           append (with-current-buffer (find-file-noselect file)
-                    (org-with-wide-buffer
-                     (cl-remove-if (lambda (entry)
-                                     (let ((progress (nth 2 entry))
-                                           (tags (nth 4 entry)))
-                                       (or (member "archive" tags)
-                                           (eq 0 progress))))
-                                   (org-dashboard--collect-progress-current-buffer))))))
+(defvar org-dashboard--cookie-re
+  "\\[[0-9]+\\(%\\|/[0-9]+\\)\\]")
 
-(defun org-dashboard--search-heading-with-progress ()
-  (let ((cookie-re "\\[\\(\\([0-9]+\\)%\\|\\([0-9]+\\)/\\([0-9]+\\)\\)\\]")
-	(priority-re "\\[#[ABCD]\\]")
-	)
-    (cl-labels ((match-number (n)
-                              (and (match-string n)
-                                   (string-to-number (match-string n))))
-                (read-progress ()
-                               (let ((progress-percent (match-number 2))
-                                     (progress-ratio-done (match-number 3))
-                                     (progress-ratio-total (match-number 4)))
-                                 (or progress-percent
-                                     (if (zerop progress-ratio-total)
-                                         0
-                                       (/ (* 100 progress-ratio-done)
-                                          progress-ratio-total)))))
-                (search-heading-with-cookie ()
-                                            (let ((pos (re-search-forward
-                                                        cookie-re nil t)))
-                                              (if pos
-                                                  (if (save-match-data (org-at-heading-p))
-                                                      pos
-                                                    (search-heading-with-cookie))
-                                                nil)))
-                (trim-string (string)
-                             (replace-regexp-in-string
-                              "^ +\\| +$" "" string))
-                (remove-cookie (heading)
-                               (replace-regexp-in-string
-                                cookie-re "" heading))
-		(remove-priority (heading)
-				 (replace-regexp-in-string
-				  priority-re "" heading))
-                (clean-heading (heading)
-                               (trim-string
-                                (remove-priority
-				 (remove-cookie
-				  (substring-no-properties heading))))))
-      
-      (and (search-heading-with-cookie)
-           (let* ((progress-percent (read-progress))
-                  (heading (clean-heading (org-get-heading t t))))
-             (cons heading progress-percent))))))
+(defun org-dashboard--collect-progress ()
+  (cl-remove-if-not
+   org-dashboard-filter
+   (cl-loop for file in org-dashboard-files
+            append (with-current-buffer (find-file-noselect file)
+                     (org-with-wide-buffer
+                      (org-dashboard--collect-progress-current-buffer))))))
 
 (defun org-dashboard--insert-progress-summary (progress-summary)
   (cl-labels
@@ -206,28 +189,30 @@ See Info node `(org) Breaking down tasks'."
                             (truncate-string-to-width category 10 0 ?\s "…"))
        (make-goal-label (goal)
                         (truncate-string-to-width goal 25 0 nil "…"))
-       (make-progress-bar (percent)
-                          (let ((color (org-dashboard--progress-color percent)))
+       (make-progress-bar (progress-percent)
+                          (let ((color (org-dashboard--progress-color progress-percent)))
                             (concat (propertize 
-                                     (make-string (/ percent 4) ?|)
+                                     (make-string (/ progress-percent 4) ?|)
                                      'font-lock-face (list :foreground color))
-                                    (make-string (- (/ 100 4) (/ percent 4)) ?\s))))
-       (make-link (file goal goal-label)
-                  (format "[[%s::*%s][%s]]" file goal goal-label)))
+                                    (make-string (- (/ 100 4) (/ progress-percent 4)) ?\s))))
+       (make-link (target label)
+                  (format "[[%s][%s]]" target label)))
 
     (insert "\n")
-    (cl-loop for (category goal-heading percent file) in progress-summary
-             do (let* ((category-label (make-category-label category))
-                       (goal-label (make-goal-label goal-heading))
-                       (goal-link (make-link file goal-heading goal-label))
-                       (goal-label-padding (make-string (- 25 (string-width goal-label)) ?\s))
-                       (progress-bar (make-progress-bar percent))
-                       (percent-indicator (format "%3d%%" percent)))
+    (cl-loop for entry in progress-summary
+             do (cl-destructuring-bind
+                    (&key category heading id progress-percent filename tags)
+                    entry
+                  (let* ((category-label (make-category-label category))
+                         (goal-label (make-goal-label heading))
+                         (goal-link (make-link (or id (concat filename "::*" heading))
+                                               goal-label))
+                         (goal-label-padding (make-string (- 25 (string-width goal-label)) ?\s))
+                         (progress-bar (make-progress-bar progress-percent))
+                         (percent-indicator (format "%3d%%" progress-percent)))
 
-                  (unless (and (eq 100 percent)
-                               org-dashboard-omit-completed)
                     (insert (format "%s %s%s [%s] %s\n"
-                                    (if org-dashboard-progress-display-category
+                                    (if org-dashboard-show-category
                                         category-label
                                       "")
                                     goal-label-padding
@@ -239,16 +224,30 @@ See Info node `(org) Breaking down tasks'."
   (save-excursion
     (goto-char (point-min))
     (org-refresh-category-properties)
-    
-    (cl-loop for (heading . progress) = (org-dashboard--search-heading-with-progress)
-             while heading
-             collect (let ((category (substring-no-properties
-                                      (org-get-category))))
-                       (list category
-                             heading
-                             progress
-                             (buffer-file-name)
-                             (org-get-tags))))))
+    (cl-loop while (re-search-forward org-dashboard--cookie-re nil t)
+             if (org-at-heading-p)
+             collect (list :category (substring-no-properties (org-get-category))
+                           :heading (org-dashboard--get-heading-text)
+                           :id (org-id-get)
+                           :progress-percent (org-dashboard--get-heading-progress)
+                           :filename (buffer-file-name)
+                           :tags (org-get-tags)))))
+
+(defun org-dashboard--get-heading-text ()
+  (string-trim
+   (replace-regexp-in-string org-dashboard--cookie-re
+                             ""
+                             (nth 4 (org-heading-components)))))
+
+(defun org-dashboard--get-heading-progress ()
+  (let* ((heading-with-cookie (nth 4 (org-heading-components)))
+         (_ (string-match org-dashboard--cookie-re (nth 4 (org-heading-components))))
+         (cookie (substring heading-with-cookie 0 (match-end 0))))
+    (cond ((string-match "\\([0-9]+\\)%" cookie)
+           (string-to-number (match-string 1 cookie)))
+          ((string-match "\\([0-9]+\\)/\\([0-9]+\\)" cookie)
+           (/ (* 100 (string-to-number (match-string 1 cookie)))
+              (string-to-number (match-string 2 cookie)))))))
 
 (defun org-dashboard--progress-color (percent)
   (cond ((< percent 33) "red")

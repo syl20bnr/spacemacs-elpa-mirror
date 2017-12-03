@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20171202.1225
+;; Package-Version: 20171203.456
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -745,7 +745,8 @@ CHECKER and BUFFER are added to each item parsed from STRING."
                (type (cond ((string-match "^Warning:" msg)
                             (setq msg (replace-regexp-in-string "^Warning: *" "" msg))
                             (if (or (string-match "^\\[-Wdeferred-type-errors\\]" msg)
-                                    (string-match "^\\[-Wdeferred-out-of-scope-variables\\]" msg))
+                                    (string-match "^\\[-Wdeferred-out-of-scope-variables\\]" msg)
+                                    (string-match "^\\[-Wtyped-holes\\]" msg))
                                 (progn (setq found-error-as-warning t)
                                        'error)
                               'warning))
