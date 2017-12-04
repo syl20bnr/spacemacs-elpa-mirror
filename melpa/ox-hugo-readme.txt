@@ -34,18 +34,18 @@ commands have bindings beginning with "H" (for Hugo).
                        export that subtree to a Hugo post in
                        Markdown.
                      - If the file is intended to be exported as a
-                       whole i.e. it must have the #+TITLE keyword
-                       set, export the whole Org file a Hugo post
-                       in Markdown.
+                       whole (i.e. has the #+TITLE keyword),
+                       export the whole Org file to a Hugo post in
+                       Markdown.
 
    - C-c C-e H A  -> Export *all* "What I Mean"
                      - If the Org file has one or more 'valid Hugo
                        post subtrees', export them to Hugo posts in
                        Markdown.
                      - If the file is intended to be exported as a
-                       whole (no 'valid Hugo post subtrees' at all)
-                       i.e. it must have the #+TITLE keyword set,
-                       export the whole Org file a Hugo post in
+                       whole (i.e. no 'valid Hugo post subtrees'
+                       at all, and has the #+TITLE keyword),
+                       export the whole Org file to a Hugo post in
                        Markdown.
 
 ## For only the one-post-per-file flow
