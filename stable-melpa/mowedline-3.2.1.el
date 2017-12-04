@@ -5,7 +5,7 @@
 
 ;; Author: John Foerch <jjfoerch@earthlink.net>
 ;; Version: 0.7
-;; Package-Version: 3.2.0
+;; Package-Version: 3.2.1
 ;; Date: 2016-11-21
 
 ;; mowedline is free software: you can redistribute it and/or modify
