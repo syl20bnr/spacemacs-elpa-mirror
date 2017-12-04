@@ -6,7 +6,7 @@
 ;; Keywords: extensions, multimedia, tools
 ;; Homepage: https://github.com/vermiculus/ghub-plus
 ;; Package-Requires: ((emacs "25") (ghub "1.2") (apiwrap "0.3"))
-;; Package-Version: 20171203.1040
+;; Package-Version: 20171203.1627
 ;; Package-X-Original-Version: 0.2
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -105,7 +105,7 @@ PARAMS is a plist.
 
 DATA is an alist."
     (let-alist (ghubp-get-context)
-      (let ((method (upcase (symbol-name method)))
+      (let ((method (encode-coding-string (upcase (symbol-name method)) 'utf-8))
             (params (apiwrap-plist->alist params)))
         (funcall (or ghubp-request-override-function
                      #'ghub-request)

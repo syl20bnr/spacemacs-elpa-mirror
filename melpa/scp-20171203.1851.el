@@ -4,15 +4,15 @@
 ;;
 ;; Author: zg <13853850881@163.com>
 ;; URL: https://github.com/tszg/emacs-scp
-;; Package-Version: 20171202.616
+;; Package-Version: 20171203.1851
 ;; Package-X-Original-Version: 0
 ;; Package-Requires: ((emacs "25.1") (cl-lib "0.5"))
 ;; Keywords: convenience, scp
 ;;
 ;;; Commentary:
 ;; (require 'scp)
-;; Linux USES the SCP command and the sshpass command
-;; The PSCP command line tool is used under Windows
+;; Linux uses the scp command and the sshpass command
+;; The pscp command line tool is used under Windows
 ;;
 ;;; Code:
 
