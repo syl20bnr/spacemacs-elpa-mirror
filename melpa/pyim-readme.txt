@@ -209,7 +209,11 @@ pyim 支持其它版本的仓颉，但需要用户自己创建词库文件。
    #+BEGIN_EXAMPLE
    (setq pyim-page-tooltip 'popup)
    #+END_EXAMPLE
-2. 使用 pos-tip 包来绘制选词框（emacs tooltip 机制）
+2. 使用 child-frame 来绘制选词框（emacs-version >= 26）
+   #+BEGIN_EXAMPLE
+   (setq pyim-page-tooltip 'child-frame)
+   #+END_EXAMPLE
+3. 使用 pos-tip 包来绘制选词框（emacs tooltip 机制）
    #+BEGIN_EXAMPLE
    (setq pyim-page-tooltip 'pos-tip)
    #+END_EXAMPLE
