@@ -4,7 +4,7 @@
 
 ;; Author: Hinrik Örn Sigurðsson
 ;; URL: https://github.com/hinrik/total-lines
-;; Package-Version: 20171203.1649
+;; Package-Version: 20171204.413
 ;; Version: 0.1-git
 ;; Keywords: convenience mode-line
 ;; Package-Requires: ((emacs "24.3"))
@@ -44,17 +44,21 @@
   "Reset `total-lines' by scanning to the end of the buffer."
   (setq total-lines (line-number-at-pos (point-max) t)))
 
+(defun total-lines--in-empty-line (pos)
+  "Return t when the position POS is in an empty line, nil otherwise."
+  (save-excursion
+    (goto-char pos)
+    (beginning-of-line)
+    (= (point) pos)))
+
 (defun total-lines-before-change-function (beg end)
   "Decrement `total-lines' in response to a text deletion.
 
 BEG, END come from `after-change-functions'"
   (unless (= beg end)
     (let ((deleted-lines (1- (count-lines beg end))))
-      (save-excursion
-        (goto-char end)
-        (beginning-of-line)
-        (when (= (point) end)
-          (setq deleted-lines (1+ deleted-lines))))
+      (when (total-lines--in-empty-line end)
+        (setq deleted-lines (1+ deleted-lines)))
       (setq total-lines (- total-lines deleted-lines)))))
 
 (defun total-lines-after-change-function (beg end old-length)
@@ -63,11 +67,8 @@ BEG, END come from `after-change-functions'"
 BEG and END, and OLD-LENGTH come from `before-change-functions'"
   (when (= old-length 0)
     (let ((added-lines (1- (count-lines beg end))))
-      (save-excursion
-        (goto-char end)
-        (beginning-of-line)
-        (when (= (point) end)
-          (setq added-lines (1+ added-lines))))
+      (when (total-lines--in-empty-line end)
+        (setq added-lines (1+ added-lines)))
       (setq total-lines (+ total-lines added-lines)))))
 
 ;;;###autoload

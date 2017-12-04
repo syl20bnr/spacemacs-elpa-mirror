@@ -4,7 +4,7 @@
 
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/kostafey/popup-switcher
-;; Package-Version: 20161130.656
+;; Package-Version: 20171204.444
 ;; Keywords: popup, switch, buffers, functions
 ;; Version: 0.2.14
 ;; Package-Requires: ((cl-lib "0.3")(popup "0.5.3"))
@@ -327,11 +327,21 @@ SWITCHER - function, that describes what do with the selected item."
      :item-name-getter (psw-compose 'file-name-nondirectory 'car)
      :switcher (lambda (entity)
                  (let* ((entity-path (car entity))
-                        (entity-name (file-name-nondirectory entity-path)))
-                   (if (cadr entity) ; is a directory sign
-                       ;; is a directory
-                       (psw-navigate-files
-                        (expand-file-name entity-name start-path))
+                        (entity-name (file-name-nondirectory entity-path))
+                        (first-attrib (cadr entity)))
+                   ;; t for directory,
+                   ;; string (name linked to) for symbolic link,
+                   ;; or nil.
+                   (if first-attrib
+                       (if (stringp first-attrib)
+                           ;; is a link
+                           (progn
+                             (message (format "Open symbolic link to '%s'"
+                                              first-attrib))
+                             (find-file first-attrib))
+                         ;; is a directory
+                         (psw-navigate-files
+                          (expand-file-name entity-name start-path)))
                      ;; is a file
                      (find-file entity-path)))))))
 
