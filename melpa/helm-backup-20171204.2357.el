@@ -4,7 +4,7 @@
 
 ;; Author: Anthony HAMON <hamon.anth@gmail.com>
 ;; URL: http://github.com/antham/helm-backup
-;; Package-Version: 20170807.1239
+;; Package-Version: 20171204.2357
 ;; Version: 1.0.0
 ;; Package-Requires: ((helm "1.5.5") (s "1.8.0") (cl-lib "0"))
 ;; Keywords: backup, convenience, files, tools, vc
@@ -45,7 +45,7 @@
   "Backup system using git and helm."
   :group 'helm)
 
-(defcustom helm-backup-path "~/.helm-backup"
+(defcustom helm-backup-path "~/.helm-backup/"
   "Backup location."
   :group 'helm-backup
   :set (lambda (symbol path) (set-default symbol (expand-file-name path)))
@@ -79,7 +79,7 @@
 
 (defun helm-backup--exec-git-command (command &optional strip-last-newline)
   "Execute a git COMMAND inside backup repository, optionally STRIP-LAST-NEWLINE."
-  (when (file-directory-p (concat helm-backup-path "/.git"))
+  (when (file-directory-p (expand-file-name ".git" helm-backup-path))
     (let* ((default-directory helm-backup-path)
            (output (shell-command-to-string (combine-and-quote-strings (append '("git") command)))))
       (if strip-last-newline
@@ -89,14 +89,8 @@
 (defun helm-backup--transform-filename-for-git (filename)
   "Transform FILENAME to be used in git repository."
   (when (and filename
-             (helm-backup--is-absolute-filename filename))
+             (file-name-absolute-p filename))
     (substring filename 1)))
-
-(defun helm-backup--is-absolute-filename (filename)
-  "Check if a FILENAME is absolute or not."
-  (when (and filename
-             (string= (substring filename 0 1) "/"))
-    t))
 
 (defun helm-backup--copy-file-to-repository (filename)
   "Create folder in repository and copy file using FILENAME in it."
@@ -112,7 +106,7 @@
 (defun helm-backup--version-file (filename)
   "Version file using FILENAME in backup repository."
   (when (and filename
-             (helm-backup--is-absolute-filename filename)
+             (file-name-absolute-p filename)
              (file-exists-p filename)
              (not (helm-backup--file-excluded-p filename)))
     (helm-backup--init-git-repository)

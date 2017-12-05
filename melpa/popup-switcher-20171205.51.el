@@ -4,7 +4,7 @@
 
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/kostafey/popup-switcher
-;; Package-Version: 20171204.444
+;; Package-Version: 20171205.51
 ;; Keywords: popup, switch, buffers, functions
 ;; Version: 0.2.14
 ;; Package-Requires: ((cl-lib "0.3")(popup "0.5.3"))
@@ -80,6 +80,13 @@ fill-column - centered relative to `fill-column'"
 Consequences of menu drawing and probable text changing should not be removed
 by buffer editing for this comint-like modes."
   :type 'list
+  :group 'popup-switcher)
+
+(defcustom psw-enable-single-dot-to-navigate-files nil
+  "Add single dot '.' item to `psw-navigate-files' fn list.
+When t any time you run `psw-navigate-files' fn you can select this dot '.'
+item, which opens `dired-mode' for current directory."
+  :type 'boolean
   :group 'popup-switcher)
 
 (defun psw-window-line-number ()
@@ -322,7 +329,10 @@ SWITCHER - function, that describes what do with the selected item."
                         (expand-file-name ".." (buffer-file-name)))))
     (psw-switcher
      :items-list (cl-remove-if
-                  (lambda (path) (equal (file-name-nondirectory (car path)) "."))
+                  (lambda (path)
+                    (and
+                     (equal (file-name-nondirectory (car path)) ".")
+                     (not psw-enable-single-dot-to-navigate-files)))
                   (directory-files-and-attributes start-path t))
      :item-name-getter (psw-compose 'file-name-nondirectory 'car)
      :switcher (lambda (entity)
@@ -340,8 +350,10 @@ SWITCHER - function, that describes what do with the selected item."
                                               first-attrib))
                              (find-file first-attrib))
                          ;; is a directory
-                         (psw-navigate-files
-                          (expand-file-name entity-name start-path)))
+                         (if (equal entity-name ".")
+                             (dired entity-path)
+                           (psw-navigate-files
+                            (expand-file-name entity-name start-path))))
                      ;; is a file
                      (find-file entity-path)))))))
 
