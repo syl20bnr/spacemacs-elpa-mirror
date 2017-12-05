@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017  Marc Sherry
 ;; Homepage: https://github.com/msherry/tickscript-mode
 ;; Version: 0.4.1
-;; Package-Version: 20171130.1732
+;; Package-Version: 20171204.1316
 ;; Author: Marc Sherry <msherry@gmail.com>
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "24.1"))
@@ -233,7 +233,7 @@ Requires Emacs to be compiled with Imagemagick support."
         "create" "crit" "cron" "database" "delimiter" "details" "every"
         "exclude" "field" "fill" "flushInterval" "groupBy" "groupByMeasurement"
         "id" "info" "keep" "level" "measurement" "message" "noRecoveries"
-        "offset" "on" "pagerDuty" "period" "post" "precision" "quiet"
+        "offset" "on" "pagerDuty" "period" "post" "precision" "prefix" "quiet"
         "retentionPolicy" "slack" "stateChangesOnly" "streamName" "tag" "tags"
         "tcp" "tolerance" "usePointTimes" "warn" "writeConsistency"))
 

@@ -4,8 +4,8 @@
 
 ;; Author: Johan Dykstrom
 ;; Created: Sep 2017
-;; Version: 0.3.1
-;; Package-Version: 20171125.652
+;; Version: 0.3.2
+;; Package-Version: 20171204.1217
 ;; Keywords: basic, languages
 ;; URL: https://github.com/dykstrom/basic-mode
 ;; Package-Requires: ((seq "2.20") (emacs "24.3"))
@@ -66,6 +66,7 @@
 
 ;;; Change Log:
 
+;;  0.3.2  2017-12-04  Indentation of one-line-loops.
 ;;  0.3.1  2017-11-25  Renumbering on-goto and bug fixes.
 ;;  0.3.0  2017-11-20  Auto-numbering and renumbering support.
 ;;                     Thanks to Peder O. Klingenberg.
@@ -136,7 +137,7 @@ empty lines are never numbered."
 ;; Variables:
 ;; ----------------------------------------------------------------------------
 
-(defconst basic-mode-version "0.3.1"
+(defconst basic-mode-version "0.3.2"
   "The current version of `basic-mode'.")
 
 (defconst basic-increase-indent-keywords-bol
@@ -158,7 +159,7 @@ end of a line.")
               'symbols)
   "Regexp string of keywords that decrease indentation.
 These keywords decrease indentation when found at the
-beginning of a line.")
+beginning of a line or after a statement separator (:).")
 
 (defconst basic-comment-and-string-faces
   '(font-lock-comment-face font-lock-comment-delimiter-face font-lock-string-face)
@@ -286,11 +287,18 @@ while other keywords do it when found at the beginning of a line."
 (defun basic-decrease-indent-p ()
   "Return non-nil if indentation should be decreased.
 Some keywords trigger un-indentation when found at the beginning
-of a line, see `basic-decrease-indent-keywords-bol'."
+of a line or statement, see `basic-decrease-indent-keywords-bol'."
   (save-excursion
     (beginning-of-line)
     (re-search-forward "[^0-9 \t\n]" (point-at-eol) t)
-    (basic-match-symbol-at-point-p basic-decrease-indent-keywords-bol)))
+    (or (basic-match-symbol-at-point-p basic-decrease-indent-keywords-bol)
+        (let ((match nil))
+          (basic-code-search-backward)
+          (beginning-of-line)
+          (while (and (not match)
+                      (re-search-forward ":[ \t\n]*" (point-at-eol) t))
+            (setq match (basic-match-symbol-at-point-p basic-decrease-indent-keywords-bol)))
+          match))))
 
 (defun basic-current-indent ()
   "Return the indent column of the current code line.

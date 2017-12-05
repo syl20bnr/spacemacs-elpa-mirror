@@ -5,7 +5,7 @@
 ;; Author: Sibi Prabakaran <sibi@psibi.in>
 ;; Maintainer: Sibi Prabakaran <sibi@psibi.in>
 ;; Keywords: languages
-;; Package-Version: 20171128.2130
+;; Package-Version: 20171204.1327
 ;; Version: 0.1.3
 ;; Package-Requires: ((emacs "24.4"))
 ;; URL: https://github.com/psibi/dhall-mode
@@ -73,7 +73,7 @@
   "Syntax table used while in `dhall-mode'.")
 
 ;; define several category of keywords
-(defvar dhall-mode-keywords (concat "\\_<" (regexp-opt '("if" "then" "else" "let" "in" "using")) "\\_>"))
+(defvar dhall-mode-keywords (concat "\\_<" (regexp-opt '("if" "then" "else" "let" "in" "using" "as")) "\\_>"))
 
 (defvar dhall-mode-types
   (concat "\\_<" (regexp-opt '("Optional" "Bool" "Natural" "Integer" "Double" "Text" "List" "Type")) "\\_>"))

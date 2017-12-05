@@ -369,7 +369,7 @@
 	     ((:url . "http://elpa.gnu.org/packages/ediprolog.html")
 	      (:keywords "languages" "processes"))])
  (el-search .
-	    [(1 4 0 6)
+	    [(1 4 0 8)
 	     ((emacs
 	       (25))
 	      (stream
