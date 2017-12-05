@@ -1,10 +1,10 @@
-;;; go-tag.el --- Modify tags for struct fields -*- lexical-binding: t; -*-
+;;; go-tag.el --- Edit Golang struct field tag -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2017 Brantou
 
 ;; Author: Brantou <brantou89@gmail.com>
 ;; URL: https://github.com/brantou/emacs-go-tag
-;; Package-Version: 20171202.115
+;; Package-Version: 20171204.1903
 ;; Keywords: tools
 ;; Version: 1.0.0
 ;; Package-Requires: ((emacs "24.0")(go-mode "1.3.1"))
@@ -26,7 +26,8 @@
 
 ;;; Commentary:
 ;;
-;; Modify field tags for struct. Based on https://github.com/fatih/gomodifytags
+;; Edit field tags for golang struct fields, based on gomodifytags. 
+;; This package is inspired by GoAddTags of vim-go and go-add-tags.
 ;;
 
 ;;; Requirements:

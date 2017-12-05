@@ -1,12 +1,12 @@
-;;; difflib.el --- Helpers for computing deltas between objects. -*- lexical-binding: t; -*-
+;;; difflib.el --- Helpers for computing deltas between sequences. -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2017 Diego A. Mundo
 ;; Author: Diego A. Mundo <diegoamundo@gmail.com>
 ;; URL: http://github.com/dieggsy/difflib.el
-;; Package-Version: 0.3.6
+;; Package-Version: 0.3.7
 ;; Git-Repository: git://github.com/dieggsy/difflib.el
 ;; Created: 2017-10-28
-;; Version: 0.3.6
+;; Version: 0.3.7
 ;; Keywords: matching tools string
 ;; Package-Requires: ((emacs "24.4") (cl-generic "0.3") (ht "2.2") (s "1.12.0"))
 
