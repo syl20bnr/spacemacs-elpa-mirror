@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/smart-jump
-;; Package-Version: 20171203.752
+;; Package-Version: 20171205.1723
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1") (dumb-jump "0.5.1"))
 ;; Keywords: tools
@@ -256,7 +256,7 @@ ASYNC: Whether or not to run the heuristic function after a certain time.
 If this is a number, run the heuristic function after that many ms.
 
 ORDER: The weight applied to each JUMP-FN. This is used to determine which
-fallback strategy is used first. Higher is better."
+fallback strategy is used first. Lower numbers give more precedence."
   ;; Add 'smart-jump-go to list of exclusions so `xref' doesn't prompt the user.
   (when (memq 'not xref-prompt-for-identifier)
     (unless (memq 'smart-jump-go xref-prompt-for-identifier)
