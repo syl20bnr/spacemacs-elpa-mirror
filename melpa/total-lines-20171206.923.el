@@ -4,7 +4,7 @@
 
 ;; Author: Hinrik Örn Sigurðsson
 ;; URL: https://github.com/hinrik/total-lines
-;; Package-Version: 20171206.231
+;; Package-Version: 20171206.923
 ;; Version: 0.1-git
 ;; Keywords: convenience mode-line
 ;; Package-Requires: ((emacs "24.3"))
@@ -60,7 +60,7 @@ Kind of like `count-lines' but without the special cases."
   "Return t when the position POS is at beginning of line, nil otherwise."
   (save-excursion
     (goto-char pos)
-    (beginning-of-line)
+    (forward-line 0)
     (= (point) pos)))
 
 (defun total-lines-before-change-function (beg end)

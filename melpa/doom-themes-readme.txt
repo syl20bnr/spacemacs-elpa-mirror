@@ -7,7 +7,7 @@ DOOM Themes is an opinionated UI plugin and pack of themes extracted from my
   [X] `doom-nova': adapted from Nova (thanks to bigardone)
   [X] `doom-one-light': light version of doom-one
   [X] `doom-tomorrow-night': by Chris Kempson
-  [ ] `doom-tomorrow-day`: by Chris Kempson
+  [ ] `doom-tomorrow-day': by Chris Kempson
   [ ] `doom-x': reads your colors from ~/.Xresources
   [ ] `doom-spacegrey': I'm sure you've heard of it
   [ ] `doom-mono-dark' / `doom-mono-light': a minimalistic, monochromatic theme

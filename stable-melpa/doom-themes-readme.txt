@@ -1,52 +1,37 @@
-An opinionated UI plugin/pack of themes extracted from my emacs.d, inspired
-by the One Dark/Light UI and syntax themes in Atom.
+DOOM Themes is an opinionated UI plugin and pack of themes extracted from my
+[emacs.d], inspired by some of my favorite color themes including:
 
-Includes optional dimming of non-source buffers, a neotree theme with font
-icons, and (soon) a mode-line config.
+  [X] `doom-one': inspired by Atom's One Dark themes
+  [X] `doom-vibrant': a more vibrant version of `doom-one`
+  [X] `doom-molokai': based on Textmate's monokai
+  [X] `doom-nova': adapted from Nova (thanks to bigardone)
+  [X] `doom-one-light': light version of doom-one
+  [X] `doom-tomorrow-night': by Chris Kempson
+  [ ] `doom-tomorrow-day': by Chris Kempson
+  [ ] `doom-x': reads your colors from ~/.Xresources
+  [ ] `doom-spacegrey': I'm sure you've heard of it
+  [ ] `doom-mono-dark' / `doom-mono-light': a minimalistic, monochromatic theme
+  [ ] `doom-tron': based on Tron Legacy from daylerees' themes
+  [ ] `doom-peacock': based on Peacock from daylerees' themes
 
-Currently available colorschemes:
-+ doom-one: inspired by Atom One Dark
-+ doom-dark: based on Molokai
+## Install
 
-Soon to come:
-+ doom-one-light: inspired by Atom One Light
-+ doom-tron: doom-one, but with daylerees' Tron Legacy colorscheme
-+ doom-peacock: doom-one, but with daylerees' Peacock colorscheme
+  `M-x package-install RET doom-themes`
 
-
-## Configuration
-
-+ global
-    + `doom-enable-bold` (default: `t`): if nil, bolding will be disabled
-    across all faces.
-    + `doom-enable-italic` (default: `t`): if nil, italicization will be
-    disabled across all faces.
-+ doom-one
-    + `doom-one-brighter-modeline` (default: `nil`): If non-nil, the
-    mode-line background is slightly brighter.
-    + `doom-one-brighter-comments` (default: `nil`): If non-nil, comments
-    are brighter and easier to see.
-
-
-## Installation
-
-1. Install from MELPA `M-x package-install RET doom-themes`, or clone
-   the repo somewhere in your `load-path`.
-
-2. If you want the neotree theme, download and install the fonts included
-   with all-the-icons.
-
-3. `(require 'doom-themes)` and then load the theme you want.
-
-Example configuration:
+A comprehensive configuration example:
 
   (require 'doom-themes)
-  (load-theme 'doom-one t) ;; or doom-molokai, etc.
 
-  ;;; OPTIONAL
-  ;; brighter source buffers
-  (add-hook 'find-file-hook 'doom-buffer-mode)
-  ;; brighter minibuffer when active
-  (add-hook 'minibuffer-setup-hook 'doom-brighten-minibuffer)
-  ;; Custom neotree theme
-  (doom-themes-neotree-config)
+  ;; Global settings (defaults)
+  (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+        doom-themes-enable-italic t) ; if nil, italics is universally disabled
+
+  ;; Load the theme (doom-one, doom-molokai, etc); keep in mind that each
+  ;; theme may have their own settings.
+  (load-theme 'doom-one t)
+
+  ;; Enable flashing mode-line on errors
+  (doom-themes-visual-bell-config)
+
+  ;; Enable custom neotree theme
+  (doom-themes-neotree-config)  ; all-the-icons fonts must be installed!
