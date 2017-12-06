@@ -7,13 +7,13 @@
 ;; Created: 16 Jun 2012
 ;; Modified: 29 Nov 2017
 ;; Version: 2.4
-;; Package-Version: 20171205.1110
+;; Package-Version: 20171206.619
 ;; Keywords: keys keybinding config dotemacs
 ;; URL: https://github.com/jwiegley/use-package
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the gnu general public license as
-;; published by the free software foundation; either version 2, or (at
+;; published by the free software foundation; either version 3, or (at
 ;; your option) any later version.
 
 ;; This program is distributed in the hope that it will be useful, but

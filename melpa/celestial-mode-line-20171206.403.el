@@ -4,8 +4,8 @@
 
 ;; Author: Peter <craven@gmx.net>
 ;; URL: https://github.com/ecraven/celestial-mode-line
-;; Package-Version: 20171205.244
-;; Package-X-Original-Version: 20171205
+;; Package-Version: 20171206.403
+;; Package-X-Original-Version: 20171206
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 0.1.1
 ;; Keywords: extensions
@@ -45,6 +45,8 @@
 
 (defvar celestial-mode-line-string ""
   "Buffered mode-line string.")
+(put 'celestial-mode-line-string 'risky-local-variable t) ;; for mode-line face
+
 (defvar celestial-mode-line--timer nil
   "Interval timer object.")
 
@@ -140,17 +142,17 @@ See `celestial-mode-line-phase-representation-alist'."
                          " "
                          (celestial-mode-line--sunrise-sunset-representation date)
                          celestial-mode-line-suffix)
-                        'help-echo (celestial-mode-line--text-description moon-date)))
+                        'help-echo (celestial-mode-line--text-description date)))
       celestial-mode-line-string)))
 
 (defun celestial-mode-line--text-description (&optional date)
   "Return a text description of the current lunar phase after DATE."
-  (destructuring-bind (next-phase days date time)
+  (destructuring-bind (next-phase days moon-date time)
       (celestial-mode-line--relevant-data date)
     (concat (lunar-phase-name next-phase)
             " in " (number-to-string days)
             " day" (if (> days 1) "s" "")
-            " on " (calendar-date-string date)
+            " on " (calendar-date-string moon-date)
             " at " time)))
 
 ;;;###autoload

@@ -1,7 +1,7 @@
 ;;; simple-paren.el --- Insert paired delimiter, wrap -*- lexical-binding: t; -*-
 
 ;; Version: 0.1
-;; Package-Version: 20171205.358
+;; Package-Version: 20171206.128
 
 ;; Copyright (C) 2016-2017  Andreas Röhler, Steve Purcell
 ;; See also http://www.unicode.org/L2/L2013/13046-BidiBrackets.txt
@@ -151,6 +151,9 @@ With numerical ARG 2 honor padding")))
 (simple-paren-define arc-less-than-bracket ?\⦓ ?\⦔)
 (simple-paren-define backslash ?\\ ?\\)
 (simple-paren-define backtick ?\` ?\`)
+(simple-paren-define question-mark ?\? ?\?)
+(simple-paren-define exclamation-mark ?\! ?\!)
+(simple-paren-define semicolon ?\; ?\;)
 (simple-paren-define black-lenticular-bracket ?\【 ?\】)
 (simple-paren-define black-tortoise-shell-bracket ?\⦗ ?\⦘)
 (simple-paren-define bottom-half-bracket ?\⸤ ?\⸥)
@@ -235,53 +238,9 @@ With numerical ARG 2 honor padding")))
 (simple-paren-define z-notation-image-bracket ?\⦇ ?\⦈)
 ;; Commands
 
-(defvar simple-paren-filter-predicate (lambda (char) t)
-  "Predicate function used to filter menu elements")
-
-(defvar simple-paren-tokenise-insert #'insert
-  "Function used to insert possibly formatted or escaped character.")
-
-;; (defun simple-paren-build-menu (spec)
-;;   (let ((map (make-sparse-keymap "Characters")))
-;;     (dolist (pane spec)
-;;       (let* ((name (pop pane))
-;; 	     (pane-map (make-sparse-keymap name)))
-;; 	(define-key-after map (vector (intern name)) (cons name pane-map))
-;; 	(dolist (elt pane)
-;; 	  (let ((fname (intern
-;; 			(concat "simple-paren-"
-;; 				(replace-regexp-in-string " " "-" (cadr elt))))))
-;; 	    (fset fname
-;; 		  `(lambda ()
-;; 		     (interactive)
-;; 		     ;; (funcall simple-paren- ,(car elt))
-;; 		     (simple-paren--intern ?\( ?\))
-;; 		     ))
-;; 	    (define-key-after pane-map
-;; 	      (vector (intern (string (car elt)))) ; convenient unique symbol
-;; 	      (list 'menu-item
-;; 		    ;; (format "%c  (%s)" (car elt) (cadr elt))
-;; 		    (format "%s" (cadr elt))
-;; 		    fname
-;; 		    ;; :visible `(funcall simple-paren-filter-predicate ,(car elt))
-;; 		    :visible fname
-;; 		    )
-;; 	      )))))
-;;     map))
-
-;; (defconst simple-paren-menu
-;;   (simple-paren-build-menu
-;;    '(("SParen"
-;;  ;; (?∧ "and")
-;;  (?\{ "brace")))))
-
-
 (defvar simple-paren-mode-map nil)
 (defconst simple-paren-mode-map
   (let ((map (make-sparse-keymap)))
-    ;; (define-key map [menu-bar maths]
-    ;; `(menu-item "Maths" ,simple-paren-menu
-    ;; :help "Menu of maths characters to insert")
     (define-key map [(super ?\")] 'simple-paren-doublequote)
     (define-key map [(super ?\#)] 'simple-paren-hash)
     (define-key map [(super ?\$)] 'simple-paren-dollar)
@@ -312,10 +271,10 @@ With numerical ARG 2 honor padding")))
     map))
 
 (define-minor-mode simple-paren-mode
-  "Install a menu for entering mathematical characters.
-Uses window system menus only when they can display multilingual text.
-Otherwise the menu-bar item activates the text-mode menu system.
-This mode is only useful with a font which can display the maths repertoire."
+  "Commands inserting paired delimiters.
+
+Provide characters used in Math resp. Logic"
+
   nil " SP" simple-paren-mode-map)
 
 (provide 'simple-paren)

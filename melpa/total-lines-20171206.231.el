@@ -4,7 +4,7 @@
 
 ;; Author: Hinrik Örn Sigurðsson
 ;; URL: https://github.com/hinrik/total-lines
-;; Package-Version: 20171205.1410
+;; Package-Version: 20171206.231
 ;; Version: 0.1-git
 ;; Keywords: convenience mode-line
 ;; Package-Requires: ((emacs "24.3"))
@@ -44,8 +44,20 @@
   "Reset `total-lines' by scanning to the end of the buffer."
   (setq total-lines (line-number-at-pos (point-max) t)))
 
-(defun total-lines--in-empty-line (pos)
-  "Return t when the position POS is in an empty line, nil otherwise."
+(defun total-lines--count-newlines (beg end)
+  "Count the number of newlines between BEG and END.
+
+Kind of like `count-lines' but without the special cases."
+  (let ((count (count-lines beg end)))
+    (when (> count 0)
+      (setq count (1- count)))
+    (when (and (not (= beg end))
+               (total-lines--at-beginning-of-line end))
+      (setq count (1+ count)))
+    count))
+
+(defun total-lines--at-beginning-of-line (pos)
+  "Return t when the position POS is at beginning of line, nil otherwise."
   (save-excursion
     (goto-char pos)
     (beginning-of-line)
@@ -54,21 +66,14 @@
 (defun total-lines-before-change-function (beg end)
   "Decrement `total-lines' in response to a text deletion.
 
-BEG, END come from `after-change-functions'"
-  (unless (= beg end)
-    (let ((deleted-lines (1- (count-lines beg end))))
-      (when (total-lines--in-empty-line end)
-        (setq deleted-lines (1+ deleted-lines)))
-      (setq total-lines (- total-lines deleted-lines)))))
+BEG and END come from `after-change-functions'"
+  (setq total-lines (- total-lines (total-lines--count-newlines beg end))))
 
-(defun total-lines-after-change-function (beg end old-length)
+(defun total-lines-after-change-function (beg end _old-length)
   "Increment `total-lines-count' in response to a text addition.
 
-BEG and END, and OLD-LENGTH come from `before-change-functions'"
-  (let ((added-lines (1- (count-lines beg end))))
-    (when (total-lines--in-empty-line end)
-      (setq added-lines (1+ added-lines)))
-    (setq total-lines (+ total-lines added-lines))))
+BEG, END, and OLD-LENGTH come from `before-change-functions'"
+  (setq total-lines (+ total-lines (total-lines--count-newlines beg end))))
 
 ;;;###autoload
 (define-minor-mode total-lines-mode

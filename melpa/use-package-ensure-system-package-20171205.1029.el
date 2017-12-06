@@ -4,7 +4,7 @@
 
 ;; Author: Justin Talbott <justin@waymondo.com>
 ;; Keywords: convenience, tools, extensions
-;; Package-Version: 20171105.2300
+;; Package-Version: 20171205.1029
 ;; URL: https://github.com/waymondo/use-package-ensure-system-package
 ;; Version: 0.1
 ;; Package-Requires: ((use-package "2.1") (system-packages "0.1"))
@@ -14,15 +14,19 @@
 
 ;;; Commentary:
 ;;
-;; README: https://github.com/waymondo/use-package-ensure-system-package
+;; The `:ensure-system-package` keyword allows you to ensure system
+;; binaries exist alongside your `use-package` declarations.
 ;;
 
 ;;; Code:
 
 (require 'use-package)
-(require 'system-packages)
+(require 'system-packages nil t)
 
-(add-to-list 'use-package-keywords :ensure-system-package t)
+(eval-when-compile
+  (defvar system-packages-packagemanager)
+  (defvar system-packages-supported-package-managers)
+  (defvar system-packages-usesudo))
 
 (defun use-package-ensure-system-package-install-command (pack)
   "Return the default install command for `pack'."
@@ -47,6 +51,7 @@
     (cons arg (use-package-ensure-system-package-install-command (symbol-name arg))))
    ((consp arg) arg)))
 
+;;;###autoload
 (defun use-package-normalize/:ensure-system-package (name-symbol keyword args)
   "Turn `arg' into a list of cons-es of (`package-name' . `install-command')."
   (use-package-only-one (symbol-name keyword) args
@@ -57,14 +62,18 @@
        (t
         (list (use-package-ensure-system-package-consify arg)))))))
 
+;;;###autoload
 (defun use-package-handler/:ensure-system-package (name keyword arg rest state)
   "Execute the handler for `:ensure-system-package' keyword in `use-package'."
   (let ((body (use-package-process-keywords name rest state)))
     (use-package-concat
      (mapcar #'(lambda (cons)
                  `(unless (executable-find (symbol-name ',(car cons)))
-                   (async-shell-command ,(cdr cons)))) arg)
+                    (async-shell-command ,(cdr cons)))) arg)
      body)))
 
+(add-to-list 'use-package-keywords :ensure-system-package t)
+
 (provide 'use-package-ensure-system-package)
+
 ;;; use-package-ensure-system-package.el ends here
