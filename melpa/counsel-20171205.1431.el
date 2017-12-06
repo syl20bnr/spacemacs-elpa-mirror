@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171205.1231
+;; Package-Version: 20171205.1431
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -2329,7 +2329,9 @@ RG-PROMPT, if non-nil, is passed as `ivy-read' prompt argument."
          (when current-prefix-arg
            (read-directory-name (concat
                                  (car (split-string counsel-rg-base-command))
-                                 " in directory: ")))))
+                                 " in directory: ")))
+         (when current-prefix-arg
+           (read-from-minibuffer "rg args: "))))
   (counsel-require-program (car (split-string counsel-rg-base-command)))
   (ivy-set-prompt 'counsel-rg counsel-prompt-function)
   (setq counsel--git-dir (or initial-directory

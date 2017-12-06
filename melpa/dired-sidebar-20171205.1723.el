@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/dired-sidebar
-;; Package-Version: 20171203.1543
+;; Package-Version: 20171205.1723
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1") (dired-subtree "0.0.1"))
 ;; Keywords: dired, files, tools
@@ -813,7 +813,9 @@ This is somewhat experimental/hacky."
   (interactive)
   (when (or t (and (not dired-sidebar-tui-dired-displayed) dired-subdir-alist))
     (setq-local dired-sidebar-tui-dired-displayed t)
-    (let ((inhibit-read-only t))
+    (let ((inhibit-read-only t)
+          (collapsible-icon (if (display-graphic-p) "▾" "-"))
+          (expandable-icon (if (display-graphic-p) "▸" "+")))
       (save-excursion
         (goto-char (point-min))
         (while (not (eobp))
@@ -824,9 +826,9 @@ This is somewhat experimental/hacky."
                 (let ((filename (dired-get-filename nil t)))
                   (if (file-directory-p filename)
                       (if (dired-subtree--is-expanded-p)
-                          (insert "- ")
-                        (insert "+ "))
-                    (insert "  "))))))
+                          (insert (concat collapsible-icon " "))
+                        (insert (concat expandable-icon " ")))
+                    (insert ""))))))
           (forward-line 1))))))
 
 (defun dired-sidebar-tui-update-with-delay (&rest _)
@@ -837,7 +839,8 @@ This is somewhat experimental/hacky."
      (when-let* ((buffer (dired-sidebar-sidebar-buffer-in-frame)))
        (with-current-buffer buffer
          (dired-revert)
-         (recenter))))))
+         (when dired-sidebar-recenter-cursor-on-follow-file
+           (recenter)))))))
 
 (defun dired-sidebar-tui-reset-in-sidebar (&rest _)
   "Runs `dired-sidebar-tui-dired-reset' in current `dired-sidebar' buffer."

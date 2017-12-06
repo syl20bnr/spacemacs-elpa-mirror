@@ -4,7 +4,7 @@
 
 ;; Author: Hinrik Örn Sigurðsson
 ;; URL: https://github.com/hinrik/total-lines
-;; Package-Version: 20171204.413
+;; Package-Version: 20171205.1410
 ;; Version: 0.1-git
 ;; Keywords: convenience mode-line
 ;; Package-Requires: ((emacs "24.3"))
@@ -65,11 +65,10 @@ BEG, END come from `after-change-functions'"
   "Increment `total-lines-count' in response to a text addition.
 
 BEG and END, and OLD-LENGTH come from `before-change-functions'"
-  (when (= old-length 0)
-    (let ((added-lines (1- (count-lines beg end))))
-      (when (total-lines--in-empty-line end)
-        (setq added-lines (1+ added-lines)))
-      (setq total-lines (+ total-lines added-lines)))))
+  (let ((added-lines (1- (count-lines beg end))))
+    (when (total-lines--in-empty-line end)
+      (setq added-lines (1+ added-lines)))
+    (setq total-lines (+ total-lines added-lines))))
 
 ;;;###autoload
 (define-minor-mode total-lines-mode
