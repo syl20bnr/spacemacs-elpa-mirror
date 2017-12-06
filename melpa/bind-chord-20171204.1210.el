@@ -1,10 +1,10 @@
 ;;; bind-chord.el --- key-chord binding helper for use-package-chords
 
-;; Copyright (C) 2015 justin talbott
+;; Copyright (C) 2015-2017 Justin Talbott
 
-;; Author: justin talbott <justin@waymondo.com>
+;; Author: Justin Talbott <justin@waymondo.com>
 ;; Keywords: convenience, tools, extensions
-;; Package-Version: 20170717.1152
+;; Package-Version: 20171204.1210
 ;; URL: https://github.com/waymondo/use-package-chords
 ;; Version: 0.2
 ;; Package-Requires: ((bind-key "1.0") (key-chord "0.6"))
@@ -18,7 +18,7 @@
 ;;; Code:
 
 (require 'bind-key)
-(require 'key-chord)
+(require 'key-chord nil t)
 
 ;;;###autoload
 (defmacro bind-chord (chord command &optional keymap)
@@ -59,4 +59,5 @@ function symbol (unquoted)."
               key-bindings)))))
 
 (provide 'bind-chord)
+
 ;;; bind-chord.el ends here

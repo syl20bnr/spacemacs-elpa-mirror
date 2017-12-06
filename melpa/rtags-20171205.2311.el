@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 20171129.36
+;; Package-Version: 20171205.2311
 ;; Version: 2.10
 
 ;; This file is not part of GNU Emacs.
@@ -479,6 +479,11 @@ return t if RTags is allowed to modify this file."
   :group 'rtags
   :type 'hook)
 
+(defcustom rtags-switch-to-buffer-hook nil
+  "Run after RTags has switched to a buffer"
+  :group 'rtags
+  :type 'hook)
+
 (defcustom rtags-jump-to-first-match t
   "If t, jump to first match."
   :group 'rtags
@@ -769,7 +774,8 @@ switch to BUFFER-OR-NAME in other window."
     (if other-window
         (switch-to-buffer-other-window buffer-or-name)
       (switch-to-buffer buffer-or-name))
-    (set (make-local-variable 'rtags-previous-window-configuration) conf)))
+    (set (make-local-variable 'rtags-previous-window-configuration) conf)
+    (run-hooks 'rtags-switch-to-buffer-hook)))
 
 ;; for old emacsen
 (defun rtags-string-prefix-p (str1 str2 &optional ignore-case)
