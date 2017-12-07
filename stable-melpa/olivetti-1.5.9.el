@@ -1,10 +1,15 @@
 ;;; olivetti.el --- Minor mode for a nice writing environment -*- lexical-binding: t; -*-
 
-;; Copyright (c) 2014-2016 Paul Rankin
+;; Copyright (c) 2014-2017 Paul Rankin
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 1.5.8
+;; Package-Version: 1.5.9
+;; Version: 1.5.8
+;; Package-Requires: ((emacs "24.4"))
+;; URL: https://github.com/rnkn/olivetti
+
+;; This file is not part of GNU Emacs.
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -62,9 +67,13 @@
 ;; Known Bugs
 ;; ----------
 
-;; - `linum-mode` currently has a bug that overwrites margin settings,
-;;   making it incompatible with Olivetti. More information here:
-;;   <http://debbugs.gnu.org/20674>.
+;; - `display-line-numbers-mode` (included in Emacs 26.1) has a poor implementation
+;;   that causes problems with modes that work with the text body width or margins.
+;;   Discussion at <https://debbugs.gnu.org/28248> and
+;;   <https://debbugs.gnu.org/28844>. Use `linum-mode` instead.
+;; - `linum-mode` in Emacs versions earlier than 26.1 has a bug that overwrites
+;;   margin settings, making it incompatible with modes that work with margins.
+;;   More information here: <https://debbugs.gnu.org/20674>.
 
 ;; Please report bugs on GitHub [Issues] page.
 
@@ -123,7 +132,7 @@ This option does not affect file contents."
   :group 'olivetti)
 
 (defcustom olivetti-hide-mode-line
- nil
+  nil
   "Hide the mode line."
   :type 'boolean
   :group 'olivetti)
@@ -155,15 +164,21 @@ find the `olivetti-safe-width' to which to set
 `olivetti-body-width', then find the appropriate margin size
 relative to each window. Finally set the window margins, taking
 care that the maximum size is 0."
-  (dolist (window (get-buffer-window-list nil nil (or frame t)))
+  (dolist (window (get-buffer-window-list nil nil t))
     (let* ((n (olivetti-safe-width (if (integerp olivetti-body-width)
                                        (olivetti-scale-width olivetti-body-width)
                                      olivetti-body-width)
                                    window))
+           (fringes (window-fringes window))
+           (window-width (- (window-total-width window)
+                            (+ (/ (car fringes)
+                                  (float (frame-char-width)))
+                               (/ (cadr fringes)
+                                  (float (frame-char-width))))))
            (width (cond ((integerp n) n)
-                        ((floatp n) (* (window-total-width window)
+                        ((floatp n) (* window-width
                                        n))))
-           (margin (max (round (/ (- (window-total-width window)
+           (margin (max (round (/ (- window-width
                                      width)
                                   2))
                         0)))
@@ -342,7 +357,7 @@ hidden."
         (add-hook 'change-major-mode-hook
                   'olivetti-reset-all-windows nil t)
         (setq-local split-window-preferred-function
-              'olivetti-split-window-sensibly)
+                    'olivetti-split-window-sensibly)
         (setq olivetti--visual-line-mode visual-line-mode)
         (unless olivetti--visual-line-mode (visual-line-mode 1))
         (olivetti-set-environment))

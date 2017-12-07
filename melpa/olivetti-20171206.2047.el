@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 20171102.1906
+;; Package-Version: 20171206.2047
 ;; Version: 1.5.8
 ;; Package-Requires: ((emacs "24.4"))
 ;; URL: https://github.com/rnkn/olivetti
@@ -164,15 +164,21 @@ find the `olivetti-safe-width' to which to set
 `olivetti-body-width', then find the appropriate margin size
 relative to each window. Finally set the window margins, taking
 care that the maximum size is 0."
-  (dolist (window (get-buffer-window-list nil nil (or frame t)))
+  (dolist (window (get-buffer-window-list nil nil t))
     (let* ((n (olivetti-safe-width (if (integerp olivetti-body-width)
                                        (olivetti-scale-width olivetti-body-width)
                                      olivetti-body-width)
                                    window))
+           (fringes (window-fringes window))
+           (window-width (- (window-total-width window)
+                            (+ (/ (car fringes)
+                                  (float (frame-char-width)))
+                               (/ (cadr fringes)
+                                  (float (frame-char-width))))))
            (width (cond ((integerp n) n)
-                        ((floatp n) (* (window-total-width window)
+                        ((floatp n) (* window-width
                                        n))))
-           (margin (max (round (/ (- (window-total-width window)
+           (margin (max (round (/ (- window-width
                                      width)
                                   2))
                         0)))
