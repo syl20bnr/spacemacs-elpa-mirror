@@ -6,6 +6,7 @@ The full set of commands you can try is:
 
 * helpful-function
 * helpful-command
+* helpful-key
 * helpful-macro
 * helpful-callable
 * helpful-variable
