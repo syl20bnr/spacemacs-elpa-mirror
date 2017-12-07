@@ -11,7 +11,7 @@ Probably the most interesting thing Gnorb does is tracking
 correspondences between Gnus email messages and Org headings. Rather
 than "turning your inbox into a TODO list", as some software puts it,
 Gnorb (kind of) does the opposite: turning your TODO headings into
-mini mailboxes.
+mini mailboxes. See the Info manual for details.
 
 *Note for previous users*: If you were using Gnorb from Github before
 it shifted to the Elpa repository, the email tracking mechanism has
