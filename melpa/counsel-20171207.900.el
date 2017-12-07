@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171205.1431
+;; Package-Version: 20171207.900
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1723,11 +1723,14 @@ When INITIAL-INPUT is non-nil, use it in the minibuffer during completion."
 
 (ivy-set-occur 'counsel-find-file 'counsel-find-file-occur)
 
+(defvar counsel-find-file-occur-cmd "ls | grep -i -E '%s' | xargs -d '\n' ls"
+  "Format string for `counsel-find-file-occur'.")
+
 (defun counsel-find-file-occur ()
   (cd ivy--directory)
   (counsel-cmd-to-dired
    (format
-    "ls | grep -i -E '%s' | xargs -d '\n' ls"
+    counsel-find-file-occur-cmd
     (counsel-unquote-regex-parens ivy--old-re))))
 
 (defun counsel-up-directory ()
@@ -2683,38 +2686,57 @@ otherwise continue prompting for tags."
            (org-agenda-set-tags nil nil))
       (fset 'org-set-tags store))))
 
-(defcustom counsel-org-goto-display-style 'path
-  "The style for displaying headlines in `counsel-org-goto' functions.
+(defcustom counsel-org-headline-display-style 'path
+  "The style used when displaying matched `org-mode'-headlines.
 
 If headline, the title and the leading stars are displayed.
 
 If path, the path hierarchy is displayed.  For each entry the title is shown.
-`counsel-org-goto-separator' is used as separator between entries.
+`counsel-org-headline-path-separator' is used as separator between entries.
 
 If title or any other value, only the title of the headline is displayed.
 
-Use `counsel-org-goto-display-tags' and `counsel-org-goto-display-todo' to
-display tags and todo keywords respectively."
+Use `counsel-org-headline-display-tags' and
+ `counsel-org-headline-display-todo' to display tags and todo keywords
+ respectively."
   :type '(choice
           (const :tag "Title only" title)
           (const :tag "Headline" headline)
           (const :tag "Path" path))
   :group 'ivy)
 
-(defcustom counsel-org-goto-separator "/"
-  "Character(s) to separate path entries in `counsel-org-goto' functions.
-This variable has no effect unless `counsel-org-goto-display-style' is
+(define-obsolete-variable-alias 'counsel-org-goto-display-style
+    'counsel-org-headline-display-style "0.10.0")
+
+(defcustom counsel-org-headline-path-separator "/"
+  "Character(s) to separate path entries in matched `org-mode'-headlines.
+
+This variable has no effect unless `counsel-org-headline-display-style' is
 set to path."
   :type 'string
   :group 'ivy)
 
-(defcustom counsel-org-goto-display-tags nil
-  "If non-nil, display tags in `counsel-org-goto' functions."
+(define-obsolete-variable-alias 'counsel-org-goto-separator
+    'counsel-org-headline-path-separator "0.10.0")
+
+(defcustom counsel-org-headline-display-tags nil
+  "If non-nil, display tags in matched `org-mode' headlines."
   :type 'boolean
   :group 'ivy)
 
-(defcustom counsel-org-goto-display-todo nil
-  "If non-nil, display todo keywords in `counsel-org-goto' functions."
+(define-obsolete-variable-alias 'counsel-org-goto-display-tags
+    'counsel-org-headline-display-tags "0.10.0")
+
+(defcustom counsel-org-headline-display-todo nil
+  "If non-nil, display todo keywords in matched `org-mode' headlines."
+  :type 'boolean
+  :group 'ivy)
+
+(define-obsolete-variable-alias 'counsel-org-goto-display-todo
+    'counsel-org-headline-display-todo "0.10.0")
+
+(defcustom counsel-org-headline-display-priority nil
+  "If non-nil, display priorities in matched `org-mode' headlines."
   :type 'boolean
   :group 'ivy)
 
@@ -2741,8 +2763,9 @@ for a certain level, headlines on that level will not be styled.
 
 If nil or any other value, no face is applied to the headline.
 
-See `counsel-org-goto-display-tags' and `counsel-org-goto-display-todo' if
-you want to display tags and todo keywords in your headlines."
+See `counsel-org-headline-display-tags' and
+`counsel-org-headline-display-todo' if you want to display tags and todo
+keywords in your headlines."
   :type '(choice
           (const :tag "Same as org-mode" org)
           (const :tag "Verbatim" verbatim)
@@ -2792,27 +2815,41 @@ to custom."
   "Go to headline in candidate X."
   (org-goto-marker-or-bmk (cdr x)))
 
+(defvar org-version)
+
+(defun counsel--org-get-heading-args ()
+  "Return list of arguments for `org-get-heading'.
+Try to return the right number of arguments for the current Org
+version.  Argument values are based on the
+`counsel-org-headline-display-*' user options."
+  (nbutlast (mapcar #'not (list counsel-org-headline-display-tags
+                                counsel-org-headline-display-todo
+                                counsel-org-headline-display-priority))
+            (if (if (fboundp 'func-arity)
+                    (< (cdr (func-arity #'org-get-heading)) 3)
+                  (version< org-version "9.1.1"))
+                1 0)))
+
 (defun counsel-org-goto--get-headlines ()
   "Get all headlines from the current org buffer."
   (save-excursion
     (let (entries
           start-pos
           stack
-          (stack-level 0))
+          (stack-level 0)
+          (heading-args (counsel--org-get-heading-args)))
       (goto-char (point-min))
       (setq start-pos (or (and (org-at-heading-p)
                                (point))
                           (outline-next-heading)))
       (while start-pos
-        (let ((name (org-get-heading
-                     (not counsel-org-goto-display-tags)
-                     (not counsel-org-goto-display-todo)))
+        (let ((name (apply #'org-get-heading heading-args))
               level)
           (search-forward " ")
           (setq level
                 (- (length (buffer-substring-no-properties start-pos (point)))
                    1))
-          (cond ((eq counsel-org-goto-display-style 'path)
+          (cond ((eq counsel-org-headline-display-style 'path)
                  ;; Update stack. The empty entry guards against incorrect
                  ;; headline hierarchies e.g. a level 3 headline immediately
                  ;; following a level 1 entry.
@@ -2826,9 +2863,9 @@ to custom."
                  (setq name (mapconcat
                              #'identity
                              (reverse stack)
-                             counsel-org-goto-separator)))
+                             counsel-org-headline-path-separator)))
                 (t
-                 (when (eq counsel-org-goto-display-style 'headline)
+                 (when (eq counsel-org-headline-display-style 'headline)
                    (setq name (concat (make-string level ?*) " " name)))
                  (setq name (counsel-org-goto--add-face name level))))
           (push (cons name (point-marker)) entries))
@@ -4098,20 +4135,28 @@ candidate."
 (defvar counsel-org-agenda-headlines-history nil
   "History for `counsel-org-agenda-headlines'.")
 
+(declare-function org-get-outline-path "org")
+
 (defun counsel-org-agenda-headlines--candidates ()
   "Return a list of completion candidates for `counsel-org-agenda-headlines'."
   (org-map-entries
    (lambda ()
      (let* ((components (org-heading-components))
-            (level (make-string
-                    (if org-odd-levels-only
-                        (nth 1 components)
-                      (nth 0 components))
-                    ?*))
-            (todo (nth 2 components))
-            (priority (nth 3 components))
+            (level (and (eq counsel-org-headline-display-style 'headline)
+                        (make-string
+                         (if org-odd-levels-only
+                             (nth 1 components)
+                           (nth 0 components))
+                         ?*)))
+            (todo (and counsel-org-headline-display-todo
+                       (nth 2 components)))
+            (path (and (eq counsel-org-headline-display-style 'path)
+                       (org-get-outline-path)))
+            (priority (and counsel-org-headline-display-priority
+                           (nth 3 components)))
             (text (nth 4 components))
-            (tags (nth 5 components)))
+            (tags (and counsel-org-headline-display-tags
+                       (nth 5 components))))
        (list
         (mapconcat
          'identity
@@ -4119,8 +4164,10 @@ candidate."
                        (list
                         level
                         todo
-                        (if priority (format "[#%c]" priority))
-                        text
+                        (and priority (format "[#%c]" priority))
+                        (mapconcat 'identity
+                                   (append path (list text))
+                                   counsel-org-headline-path-separator)
                         tags))
          " ")
         (buffer-file-name) (point))))
