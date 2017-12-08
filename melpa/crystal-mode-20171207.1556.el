@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Jason Pellerin
 ;; Authors: Jason Pellerin
 ;; URL: https://github.com/crystal-lang-tools/emacs-crystal-mode
-;; Package-Version: 20171023.212
+;; Package-Version: 20171207.1556
 ;; Created: Tue Jun 23 2015
 ;; Keywords: languages crystal
 ;; Version: 0.1
@@ -2280,7 +2280,8 @@ See `font-lock-syntax-table'.")
           "public_class_method"
           "public_constant"
           "refine"
-          "using")
+          "using"
+          "record")
         'symbols))
      (1 (unless (looking-at " *\\(?:[]|,.)}=]\\|$\\)")
           font-lock-builtin-face)))
