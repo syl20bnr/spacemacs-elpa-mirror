@@ -28,8 +28,8 @@
 ;;;;;;;;;;;;;;;
 ;;;; Accounting
 
-;; Version: 0.3.0
-;; Package-Version: 20171208.346
+;; Version: 0.3.1
+;; Package-Version: 20171208.559
 ;; Author: Aad Versteden <madnificent@gmail.com>
 ;; Keywords: ember ember.js emberjs
 ;; License: MIT
@@ -1364,7 +1364,8 @@ For example, if you have a project named foo, the paths look like
     ("Ember.warn" "warn" "import { warn } from '@ember/debug';")))
 
 (defun ember--get-js-symbol-at-point ()
-  "Returns the javascript symbol at the current point."
+  "Returns the javascript symbol at the current point,
+   the start, and the end location."
   (save-excursion
     (let (start end)
       (search-backward-regexp "[^\\.a-zA-Z]")
@@ -1372,8 +1373,7 @@ For example, if you have a project named foo, the paths look like
       (setf start (point))
       (search-forward-regexp "[^\\.a-zA-Z]")
       (setf end (1- (point)))
-      (values (buffer-substring start end)
-              start end))))
+      (list (buffer-substring start end) start end))))
 
 (defun ember--find-recursive-match-for-import-statement (components)
   "Recursively searches for a matching symbol
@@ -1381,7 +1381,7 @@ For example, if you have a project named foo, the paths look like
   (if components
       (let ((match (cl-find (mapconcat 'identity components ".")
                             *ember--core-importer-matches*
-                            :key 'first :test 'equal)))
+                            :key 'cl-first :test 'equal)))
         (if match
             match
           (ember--find-recursive-match-for-import-statement
@@ -1398,16 +1398,17 @@ For example, if you have a project named foo, the paths look like
    import syntax."
   (interactive)
   ;; get the symbol
-  (multiple-value-bind (found-symbol start)
-      (ember--get-js-symbol-at-point)
+  (let* ((js-symbol-info (ember--get-js-symbol-at-point))
+         (found-symbol (cl-first js-symbol-info))
+         (start (cl-second js-symbol-info)))
     ;; find if this should be replaced
     (let ((start-point (point))
           (match (ember--find-match-for-statement found-symbol)))
       (if match
           ;; get replacement and injection
-          (let ((original (first match))
-                (replacement (second match))
-                (injection (third match))
+          (let ((original (cl-first match))
+                (replacement (cl-second match))
+                (injection (cl-third match))
                 needs-injection-p)
             ;; replace original content
             (delete-region start (+ start (length original)))

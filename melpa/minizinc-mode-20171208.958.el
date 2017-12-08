@@ -3,7 +3,7 @@
 ;; Copyright © 2015-2017 Yushi Wang
 ;; Authors : Yushi Wang <dot_wangyushi@yeah.net>
 ;; URL : http://github.com/m00nlight/minizinc-mode
-;; Package-Version: 20170708.358
+;; Package-Version: 20171208.958
 ;; Keywords : languages minizinc
 ;; Version : 0.0.2
 ;; Package-Requires : ((emacs "24.1"))
@@ -81,7 +81,8 @@
     "minimize" "output" "par" "of" "where" "ann"
     "annotation" "any" "array" "function" "include"
     "op" "predicate" "record" "test" "tuple" "type"
-    "if" "else" "endif" "false" "true" "in" "then"))
+    "if" "else" "endif" "false" "true" "in" "then"
+    "opt"))
 
 (defvar minizinc-types
   '("float" "int" "bool" "string" "list" "tuple" "set"))
