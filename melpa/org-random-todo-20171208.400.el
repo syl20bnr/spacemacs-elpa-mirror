@@ -3,8 +3,8 @@
 ;; Copyright (C) 2013-2017 Kevin Brubeck Unhammer
 
 ;; Author: Kevin Brubeck Unhammer <unhammer@fsfe.org>
-;; Version: 0.5.1
-;; Package-Version: 20170404.318
+;; Version: 0.5.2
+;; Package-Version: 20171208.400
 ;; Package-Requires: ((emacs "24.3") (alert "1.2"))
 ;; Keywords: org todo notification
 
@@ -104,7 +104,8 @@ The `ELT' argument is an org element, see `org-element'."
   "Go to the file/position of last shown TODO."
   (interactive)
   (find-file (car org-random-todo--current))
-  (goto-char (cdr org-random-todo--current)))
+  (goto-char (cdr org-random-todo--current))
+  (org-reveal))
 
 ;;;###autoload
 (defun org-random-todo ()
@@ -153,6 +154,7 @@ e.g. a sleep/resume."
 
 (defun org-random-todo--setup ()
   "Set up idle timers."
+  (org-random-todo--teardown)
   (when (numberp org-random-todo-how-often)
     (add-to-list 'org-random-todo--timers
                  (run-with-timer org-random-todo-how-often

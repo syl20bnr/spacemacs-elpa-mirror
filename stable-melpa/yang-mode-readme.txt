@@ -2,6 +2,12 @@ Note: The interface used in this file requires CC Mode 5.30 or
 later.
 
 History:
+  0.9.7 - 2017-03-23
+       one more autoload fix
+  0.9.6 - 2017-03-21
+       autoload fix, tested with use-package
+  0.9.5 - 2017-02-13
+       autoload fix
   0.9.4 - 2016-12-20
        derive from prog-mode if available, otherwise nil
        use proper syntax-table
@@ -38,7 +44,11 @@ History:
 
 Useful tips:
 
-  Put this in your .emacs:
+  If you're using use-package, put this in your .emacs:
+    (use-package yang-mode
+      :ensure t)
+
+  Otherwise, put this in your .emacs:
     (require 'yang-mode)
 
   For use with Emacs 23, put this in your .emacs:

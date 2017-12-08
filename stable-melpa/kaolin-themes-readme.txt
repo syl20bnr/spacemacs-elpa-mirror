@@ -31,7 +31,7 @@ inspired by Sierra.vim with adding some extra colors.
  ;; If t, use the wave underline style instead of regular underline.
  (setq kaolin-wave t)
 
- ;; When t, will display colored hl-line style instead dim gray
+ ;; When t, will display colored hl-line style
  (setq kaolin-hl-line-colored t)
 
 

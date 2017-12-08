@@ -5,7 +5,7 @@
 ;; Author: Bharat Joshi <jbharat@outlook.com>
 ;; Maintainer: Bharat Joshi <jbharat@outlook.com>
 ;; URL: https://github.com/jbharat/exotica-theme
-;; Package-Version: 20171128.1540
+;; Package-Version: 20171208.430
 ;; Created: 22th July 2017
 ;; Keywords: faces, theme, dark, vibrant colors
 ;; Version: 1.0.2
@@ -49,7 +49,7 @@
     (
      (bg                     "#091423")
      (fg                     "#E8F0FF")
-     (seperator              "#271C33")
+     (seperator              "#132947")
      (cursor                 "#F8F8F0")
      (face1                  "#66D9EF")
      (face2                  "#A6E22E")
@@ -120,7 +120,8 @@
  ;; powerline/modeline
  `(mode-line ((t (:foreground ,fg :background ,line-highlight
                               :box (:line-width 1 :color ,seperator :style released-button)))))
- `(mode-line-inactive ((t (:foreground ,ml-inactive-face :background ,bg ))))
+ `(mode-line-inactive ((t (:foreground ,ml-inactive-face :background ,bg
+                                 :box (:line-width 1 :color ,seperator)))))
  `(powerline-active0 ((t (:inherit mode-line :background ,bg))))
  `(powerline-active1 ((t (:inherit mode-line :background ,bg))))
  `(powerline-active2 ((t (:inherit mode-line :background ,bg))))
