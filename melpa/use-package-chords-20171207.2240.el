@@ -4,7 +4,7 @@
 
 ;; Author: Justin Talbott <justin@waymondo.com>
 ;; Keywords: convenience, tools, extensions
-;; Package-Version: 20171205.1029
+;; Package-Version: 20171207.2240
 ;; URL: https://github.com/waymondo/use-package-chords
 ;; Version: 0.2
 ;; Package-Requires: ((use-package "2.1") (bind-key "1.0") (bind-chord "0.2") (key-chord "0.6"))
@@ -40,9 +40,8 @@
              (use-package-sort-keywords
               (use-package-plist-maybe-put rest :defer t))
              (use-package-plist-append state :commands commands))
-           `((ignore
-              ,(macroexpand
-                `(bind-chords :package ,name ,@arg)))))))
+           `(,(macroexpand
+               `(bind-chords :package ,name ,@arg))))))
     (use-package-handler/:preface name keyword chord-binder rest state)))
 
 (add-to-list 'use-package-keywords :chords t)

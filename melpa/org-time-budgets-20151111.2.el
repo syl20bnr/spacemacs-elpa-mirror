@@ -3,7 +3,7 @@
 ;; Author: Arthur Leonard Andersen <leoc.git@gmail.com>
 ;; Created: November 08, 2015
 ;; Version: 1.0.1
-;; Package-Version: 20151111.1
+;; Package-Version: 20151111.2
 ;; Package-Requires: ((alert "0.5.10") (cl-lib "0.5"))
 
 ;; This file is free software; you can redistribute it and/or modify
