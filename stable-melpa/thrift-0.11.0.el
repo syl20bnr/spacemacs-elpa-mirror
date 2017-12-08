@@ -1,7 +1,7 @@
 ;;; thrift.el --- Major mode for Apache Thrift files
 
 ;; Keywords: files
-;; Package-Version: 0.10.0
+;; Package-Version: 0.11.0
 
 ;; Licensed to the Apache Software Foundation (ASF) under one
 ;; or more contributor license agreements. See the NOTICE file

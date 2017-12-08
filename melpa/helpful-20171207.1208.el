@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171206.1557
+;; Package-Version: 20171207.1208
 ;; Keywords: help, lisp
 ;; Version: 0.4
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -47,6 +47,7 @@
 (require 'help)
 (require 'dash)
 (require 's)
+(require 'shut-up)
 (require 'find-func)
 (require 'nadvice)
 (require 'info-look)

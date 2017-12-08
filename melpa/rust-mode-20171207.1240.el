@@ -1,7 +1,7 @@
 ;;; rust-mode.el --- A major emacs mode for editing Rust source code -*-lexical-binding: t-*-
 
 ;; Version: 0.3.0
-;; Package-Version: 20171106.510
+;; Package-Version: 20171207.1240
 ;; Author: Mozilla
 ;; Url: https://github.com/rust-lang/rust-mode
 ;; Keywords: languages
@@ -1354,6 +1354,8 @@ This is written mainly to be used as `end-of-defun-function' for Rust."
             (insert-file-contents tmpf)
             (error "Rustfmt could not format some lines, see *rustfmt* buffer for details"))
            (t
+            (erase-buffer)
+            (insert-file-contents tmpf)
             (error "Rustfmt failed, see *rustfmt* buffer for details"))))
       (delete-file tmpf))))
 
