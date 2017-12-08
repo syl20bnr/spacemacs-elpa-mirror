@@ -4,7 +4,7 @@
 
 ;; Author: Petter Storvik
 ;; URL: https://github.com/storvik/emacs-lastpass
-;; Package-Version: 20170801.1214
+;; Package-Version: 20171208.136
 ;; Version: 0.2.0
 ;; Created: 2017-02-17
 ;; Package-Requires: ((emacs "24.4") (seq "1.9") (cl-lib "0.5"))
@@ -47,6 +47,7 @@
 ;; - `lastpass-status'
 ;; - `lastpass-getpass'
 ;; - `lastpass-addpass'
+;; - `lastpass-version'
 ;; - `lastpass-visit-url'
 ;; These functions can also used in elisp when configuring Emacs.
 ;;
@@ -116,6 +117,11 @@ Can be set to eww or generic, where generic means open in external browser."
           string)
   :group 'lastpass)
 
+(defcustom lastpass-min-version "1.1.0"
+  "Variable describing minimal lpass command line interface version."
+  :type 'string
+  :group 'lastpass)
+
 (defvar lastpass-group-completion '()
   "List containing groups.  Gets updated on `lastpass-list-all'.")
 
@@ -146,6 +152,16 @@ and returned string from lpass command."
   (when (string-match (buffer-name) "*lastpass-list*")
     (kill-buffer "*lastpass-list*")
     (lastpass-list-all)))
+
+;;;###autoload
+(defun lastpass-version (&optional print-message)
+  "Show lastpass command line interface version.
+If run interactively PRINT-MESSAGE gets set and version is printed to minibuffer."
+  (interactive "p")
+  (let ((ret (lastpass-runcmd "--version")))
+    (when print-message
+      (message "%s" (nth 1 ret)))
+    (nth 1 ret)))
 
 ;;;###autoload
 (defun lastpass-login ()
@@ -597,6 +613,22 @@ See `auth-source-search' for details on SPEC."
 (if (boundp 'auth-source-backend-parser-functions)
     (add-hook 'auth-source-backend-parser-functions #'lastpass-auth-source-backend-parse)
   (advice-add 'auth-source-backend-parse :before-until #'lastpass-auth-source-backend-parse))
+
+;; Check lastpass command line interface version and notify user if incompatible
+(let ((versionstring (lastpass-version)))
+  (let ((lpass-incompatible nil))
+    (string-match "\\([0-9]+\.[0-9]+\.[0-9]+\\)" versionstring)
+    (let ((current (split-string (match-string 1 versionstring) "\\.")))
+      (let ((minimal (split-string lastpass-min-version "\\.")))
+        (when (< (string-to-number (concat (nth 0 current)
+                                           (nth 1 current)
+                                           (nth 2 current)))
+                 (string-to-number (concat (nth 0 minimal)
+                                           (nth 1 minimal)
+                                           (nth 2 minimal))))
+          (setq lpass-incompatible t))))
+    (when lpass-incompatible
+      (message "Lastpass: lpass version not compatible."))))
 
 (provide 'lastpass)
 ;;; lastpass.el ends here

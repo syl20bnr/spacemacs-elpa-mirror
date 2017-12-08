@@ -16,6 +16,7 @@ Such functions are:
 - `lastpass-status'
 - `lastpass-getpass'
 - `lastpass-addpass'
+- `lastpass-version'
 - `lastpass-visit-url'
 These functions can also used in elisp when configuring Emacs.
 

@@ -3,8 +3,8 @@
 ;; Copyright (C) 2013-2017 Kevin Brubeck Unhammer
 
 ;; Author: Kevin Brubeck Unhammer <unhammer@fsfe.org>
-;; Version: 0.5.0
-;; Package-Version: 0.5
+;; Version: 0.5.2
+;; Package-Version: 0.5.2
 ;; Package-Requires: ((emacs "24.3") (alert "1.2"))
 ;; Keywords: org todo notification
 
@@ -56,6 +56,11 @@ they're in your agenda already."
   :group 'org-random-todo
   :type 'bool)
 
+(defcustom org-random-todo-skip-keywords nil
+  "List of TODO keywords to skip."
+  :group 'org-random-todo
+  :type '(list string))
+
 (defvar org-random-todo--cache nil)
 
 (defun org-random-todo--scheduledp (hl)
@@ -80,6 +85,8 @@ they're in your agenda already."
                      (when (and (org-element-property :todo-type hl)
                                 (or org-random-todo-include-scheduled
                                     (not (org-random-todo--scheduledp hl)))
+                                (not (member (org-element-property :todo-keyword hl)
+                                             org-random-todo-skip-keywords))
                                 (not (equal 'done (org-element-property :todo-type hl))))
                        (cons file hl)))))))
            files))))
@@ -97,7 +104,8 @@ The `ELT' argument is an org element, see `org-element'."
   "Go to the file/position of last shown TODO."
   (interactive)
   (find-file (car org-random-todo--current))
-  (goto-char (cdr org-random-todo--current)))
+  (goto-char (cdr org-random-todo--current))
+  (org-reveal))
 
 ;;;###autoload
 (defun org-random-todo ()
@@ -146,6 +154,7 @@ e.g. a sleep/resume."
 
 (defun org-random-todo--setup ()
   "Set up idle timers."
+  (org-random-todo--teardown)
   (when (numberp org-random-todo-how-often)
     (add-to-list 'org-random-todo--timers
                  (run-with-timer org-random-todo-how-often

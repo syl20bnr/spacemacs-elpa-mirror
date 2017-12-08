@@ -4,7 +4,7 @@
 ;;
 ;; Author: Mark Karpov <markkarpov92@gmail.com>
 ;; URL: https://github.com/hasky-mode/hasky-stack
-;; Package-Version: 20170928.359
+;; Package-Version: 20171208.30
 ;; Version: 0.6.0
 ;; Package-Requires: ((emacs "24.4") (f "0.18.0") (magit-popup "2.10"))
 ;; Keywords: tools, haskell
@@ -121,7 +121,7 @@ being used to compose command line."
   :tag  "Completing Function"
   :type '(radio (function-item completing-read)))
 
-(defcustom hasky-stack-ghc-versions '("8.2.1" "8.0.2" "7.10.3" "7.8.4")
+(defcustom hasky-stack-ghc-versions '("8.2.2" "8.0.2" "7.10.3" "7.8.4")
   "GHC versions to pick from (for commands like \"stack setup\")."
   :tag  "GHC versions"
   :type '(repeat (string :tag "Extension name")))
