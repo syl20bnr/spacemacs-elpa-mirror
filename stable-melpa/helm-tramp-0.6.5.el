@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-helm-tramp
-;; Package-Version: 0.6.4
-;; Version: 0.6.4
+;; Package-Version: 0.6.5
+;; Version: 0.6.5
 ;; Package-Requires: ((emacs "24.3") (helm "2.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -60,7 +60,7 @@
 	    (replace-match "" t t host))
         (unless (string= host "*")
           (push
-	   (concat "/" tramp-default-method ":" host ":/")
+	   (concat "/" tramp-default-method ":" host ":")
 	   hosts)
 	  (push
 	   (concat "/ssh:" host "|sudo:" host ":/")
