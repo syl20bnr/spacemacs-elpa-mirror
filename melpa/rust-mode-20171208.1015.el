@@ -1,7 +1,7 @@
 ;;; rust-mode.el --- A major emacs mode for editing Rust source code -*-lexical-binding: t-*-
 
 ;; Version: 0.3.0
-;; Package-Version: 20171207.1240
+;; Package-Version: 20171208.1015
 ;; Author: Mozilla
 ;; Url: https://github.com/rust-lang/rust-mode
 ;; Keywords: languages
@@ -1479,7 +1479,8 @@ This is written mainly to be used as `end-of-defun-function' for Rust."
                (buffer (window-buffer window))
                (start (rust--format-get-pos buffer (pop loc)))
                (pos (rust--format-get-pos buffer (pop loc))))
-          (set-window-start window start)
+          (unless (eq buffer current)
+            (set-window-start window start))
           (set-window-point window pos)))))
 
   (message "Formatted buffer with rustfmt."))

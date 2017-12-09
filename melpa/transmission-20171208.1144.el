@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.12
-;; Package-Version: 20171029.1210
+;; Package-Version: 20171208.1144
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -285,7 +285,7 @@ caching built in or is otherwise slow."
     "downloadedEver" "corruptEver" "haveValid" "totalSize" "percentDone"
     "seedRatioLimit" "seedRatioMode" "bandwidthPriority" "downloadDir"
     "uploadLimit" "uploadLimited" "downloadLimit" "downloadLimited"
-    "honorsSessionLimits"  "rateDownload" "rateUpload"))
+    "honorsSessionLimits" "rateDownload" "rateUpload" "queuePosition"))
 
 (defconst transmission-file-symbols
   '(:files-wanted :files-unwanted :priority-high :priority-low :priority-normal)
@@ -1435,6 +1435,38 @@ See `transmission-read-time' for details on time input."
        (list ids) '(nil)))
   (when ids (transmission-request-async nil "torrent-verify" (list :ids ids))))
 
+(defun transmission-queue-move-top (ids)
+  "Move torrent(s)--at point, in region, or marked--to the top of the queue."
+  (transmission-interactive
+   (if (y-or-n-p (concat "Queue torrent" (when (cdr ids) "s") " first? "))
+       (list ids) '(nil)))
+  (when ids
+    (transmission-request-async nil "queue-move-top" (list :ids ids))))
+
+(defun transmission-queue-move-bottom (ids)
+  "Move torrent(s)--at point, in region, or marked--to the bottom of the queue."
+  (transmission-interactive
+   (if (y-or-n-p (concat "Queue torrent" (when (cdr ids) "s") " last? "))
+       (list ids) '(nil)))
+  (when ids
+    (transmission-request-async nil "queue-move-bottom" (list :ids ids))))
+
+(defun transmission-queue-move-up (ids)
+  "Move torrent(s)--at point, in region, or marked--up in the queue."
+  (transmission-interactive
+   (if (y-or-n-p (concat "Raise torrent" (when (cdr ids) "s") " in the queue? "))
+       (list ids) '(nil)))
+  (when ids
+    (transmission-request-async nil "queue-move-up" (list :ids ids))))
+
+(defun transmission-queue-move-down (ids)
+  "Move torrent(s)--at point, in region, or marked--down in the queue."
+  (transmission-interactive
+   (if (y-or-n-p (concat "Lower torrent" (when (cdr ids) "s") " in the queue? "))
+       (list ids) '(nil)))
+  (when ids
+    (transmission-request-async nil "queue-move-down" (list :ids ids))))
+
 (defun transmission-quit ()
   "Quit and bury the buffer."
   (interactive)
@@ -1869,6 +1901,7 @@ Each form in BODY is a column descriptor."
         (concat "Percent done: " (format fmt percent) "%"))
       (format "Bandwidth priority: %s"
               (car (rassq .bandwidthPriority transmission-priority-alist)))
+      (format "Queue position: %d" .queuePosition)
       (concat "Speed: "
               (transmission-format-limits
                .honorsSessionLimits .rateDownload .rateUpload
@@ -2070,6 +2103,11 @@ for explanation of the peer flags."
      ["Set Torrent Download Limit" transmission-set-torrent-download]
      ["Set Torrent Upload Limit" transmission-set-torrent-upload]
      ["Set Torrent Seed Ratio Limit" transmission-set-torrent-ratio])
+    ("Set Torrent Queue Position"
+     ["Move To Top" transmission-queue-move-top]
+     ["Move To Bottom" transmission-queue-move-bottom]
+     ["Move Up" transmission-queue-move-up]
+     ["Move Down" transmission-queue-move-down])
     ["Verify Torrent" transmission-verify]
     "--"
     ["View Torrent Files" transmission-files]
@@ -2223,6 +2261,11 @@ for explanation of the peer flags."
     ["Delete Torrent" transmission-delete
      :help "Delete torrent contents from disk."]
     ["Reannounce Torrent" transmission-reannounce]
+    ("Set Torrent Queue Position"
+     ["Move To Top" transmission-queue-move-top]
+     ["Move To Bottom" transmission-queue-move-bottom]
+     ["Move Up" transmission-queue-move-up]
+     ["Move Down" transmission-queue-move-down])
     ["Verify Torrent" transmission-verify]
     "--"
     ["Toggle Mark" transmission-toggle-mark]
