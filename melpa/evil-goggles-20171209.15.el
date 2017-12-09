@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20171121.2306
+;; Package-Version: 20171209.15
 ;; Package-Requires: ((emacs "24.4") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -69,9 +69,9 @@ If nil, the value of `evil-goggles-duration' will be used."
 (defcustom evil-goggles-blocking-duration nil
   "Time in floating seconds the blocking hint should last.
 
-This affects the blocking hints. Such hints are displayed before the
+This affects the blocking hints.  Such hints are displayed before the
 operation, then the UI is blocked for the specified duration, then the
-operation is executed. Such an operation is delete, where the hint
+operation is executed.  Such an operation is delete, where the hint
 only makes sense to be displayed before text is deleted.
 
 If nil, the value of `evil-goggles-duration' will be used."
@@ -79,9 +79,7 @@ If nil, the value of `evil-goggles-duration' will be used."
   :group 'evil-goggles)
 
 (defcustom evil-goggles-pulse nil
-  "If t, the overlay hint will pulse rather than appear and disapper.
-
-This option is experimental."
+  "If t, the hint will pulse, rather than just appear and disapper."
   :type 'boolean
   :group 'evil-goggles)
 
@@ -183,10 +181,41 @@ non-nil, else for `evil-goggles-duration' seconds."
   "Show or pulse overlay OV with face FACE.
 
 DUR is used only when pulsing.
-The overlay is pulsed if variable `evil-goggles-pulse' is t."
-  (if evil-goggles-pulse
-      (evil-goggles--pulse-overlay ov (evil-goggles--face-background face) dur)
-    (overlay-put ov 'face face)))
+The overlay is pulsed if variable `evil-goggles-pulse' is t and the
+FACE is appropriate for pulsing, i.e. it has a background."
+  (pcase (evil-goggles--should-blink-or-pulse face)
+    (`(blink ,blink-face)
+     (overlay-put ov 'face blink-face))
+    (`(pulse ,pulse-bg)
+     (evil-goggles--pulse-overlay ov pulse-bg dur))))
+
+(defun evil-goggles--should-blink-or-pulse (face)
+  "Determine wheter to pulse or blink.
+
+The decision is made based on the value of `evil-goggles-pulse'.
+
+If the FACE has no background, pulsing is not supported, hence the
+decision is to blink.  If the face has no foreground and/or background,
+this function tries to make the most appropriate decision whether to
+pulse or not, and whether to use the given FACE or use the fallback
+face `evil-goggles-default-face'.
+
+This function returns a list - either ('blink face) or ('pulse bg)."
+  (let ((fg (face-foreground face nil t))
+        (bg (face-background face nil t)))
+    (cond
+     ;; pulse enabled and the face has a bg - pulse with the given face's bg
+     ((and evil-goggles-pulse bg)
+      `(pulse ,bg))
+     ;; pulse enabled and the face has no bg or fg - pulse with the default face's bg
+     ((and evil-goggles-pulse (null bg) (null fg))
+      `(pulse ,(face-background 'evil-goggles-default-face nil t)))
+     ;; pulse disabled or face has fg only - show the hint with given face
+     ((and (null bg) (null fg))
+      `(blink evil-goggles-default-face))
+     ;; else show the hint with the given face
+     (t
+      `(blink ,face)))))
 
 (defmacro evil-goggles--if-hint-on (beg end body1 &rest body2)
   "Run one block of code if hint is visible, run the other if not.
@@ -303,10 +332,10 @@ DUR-DOC is the docstring for DUR-NAME."
 
 ;;; core ends here ;;;
 
-;; helper function to inherit from diff-mode's faces
+;; helper function to inherit from diff-mode/magit-diff's faces
 
 (defun evil-goggles-use-diff-faces ()
-  "Load `diff-mode' and use its faces for evil-goggles mode."
+  "Use `diff-mode's diff-* faces for evil-goggles mode."
   (unless (require 'diff-mode nil 'no-error)
     (user-error "Can't load package diff-mode"))
   (custom-set-faces
@@ -316,6 +345,18 @@ DUR-DOC is the docstring for DUR-NAME."
    '(evil-goggles-undo-redo-remove-face ((t (:inherit diff-removed))))
    '(evil-goggles-undo-redo-add-face    ((t (:inherit diff-added))))
    '(evil-goggles-undo-redo-change-face ((t (:inherit diff-changed))))))
+
+(defun evil-goggles-use-diff-refine-faces ()
+  "Use `diff-mode's diff-refine-* faces for evil-goggles mode."
+  (unless (require 'diff-mode nil 'no-error)
+    (user-error "Can't load package diff-mode"))
+  (custom-set-faces
+   '(evil-goggles-delete-face           ((t (:inherit diff-refine-removed))))
+   '(evil-goggles-paste-face            ((t (:inherit diff-refine-added))))
+   '(evil-goggles-yank-face             ((t (:inherit diff-refine-changed))))
+   '(evil-goggles-undo-redo-remove-face ((t (:inherit diff-refine-removed))))
+   '(evil-goggles-undo-redo-add-face    ((t (:inherit diff-refine-added))))
+   '(evil-goggles-undo-redo-change-face ((t (:inherit diff-refine-changed))))))
 
 (defun evil-goggles-use-magit-faces ()
   "Load `magit-diff' and use its faces for evil-goggles mode."
