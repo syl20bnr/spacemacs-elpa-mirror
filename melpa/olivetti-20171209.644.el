@@ -4,8 +4,8 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 20171207.1751
-;; Version: 1.5.8
+;; Package-Version: 20171209.644
+;; Version: 1.5.9
 ;; Package-Requires: ((emacs "24.4"))
 ;; URL: https://github.com/rnkn/olivetti
 
@@ -76,11 +76,6 @@
 ;; Known Bugs
 ;; ----------
 
-;; - `display-line-numbers-mode` (included in Emacs 26.1) has a terrible
-;;   implementation that causes problems with many modes that work with display.
-;;   Discussion at <https://debbugs.gnu.org/28248> and
-;;   <https://debbugs.gnu.org/28844> and <http://debbugs.gnu.org/29597>. Use
-;;   `linum-mode` instead.
 ;; - `linum-mode` in Emacs versions earlier than 26.1 has a bug that overwrites
 ;;   margin settings, making it incompatible with modes that work with margins.
 ;;   More information here: <https://debbugs.gnu.org/20674>.

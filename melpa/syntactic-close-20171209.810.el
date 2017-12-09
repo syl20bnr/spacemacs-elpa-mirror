@@ -2,8 +2,12 @@
 
 ;; Author: Emacs User Group Berlin <emacs-berlin@emacs-berlin.org>
 ;; Maintainer: Emacs User Group Berlin <emacs-berlin@emacs-berlin.org>
+
 ;; Version: 0.1
-;; Package-Version: 20171004.1037
+;; Package-Version: 20171209.810
+
+;; URL: https://github.com/emacs-berlin/syntactic-close
+
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: languages, convenience
 
@@ -42,12 +46,12 @@
   :prefix "syntactic-close-")
 
 (defcustom syntactic-close-empty-line-p-chars "^[ \t\r]*$"
-  "syntactic-close-empty-line-p-chars"
+  "Syntactic-close-empty-line-p-chars."
   :type 'regexp
   :group 'convenience)
 
 (defcustom syntactic-close-known-string-inpolation-opener  (list ?{ ?\( ?\[)
-  "syntactic-close-known-string-inpolation-opener"
+  "Syntactic-close-known-string-inpolation-opener."
   :type 'list
   :group 'convenience)
 
@@ -56,50 +60,12 @@
 :type 'string
 :group 'werkstatt)
 
-(defun syntactic-close-reverse-char (char)
-  "Return reciproke char as \">\" for \"<\". "
-  (let* ((cf char)
-	 cn)
-    (cond
-     ((eq cf ?∧) ;; ?\>
-      (setq cn "∨"))
-     ((eq cf ?∨) ;; ?\<
-      (setq cn "∧"))
-     ((eq cf 62) ;; ?\>
-      (setq cn "<"))
-     ((eq cf 60) ;; ?\<
-      (setq cn ">"))
-     ((eq cf 187) ;; ?\»
-      (setq cn "«"))
-     ((eq cf 171) ;; ?\«
-      (setq cn "»"))
-     ((eq cf 41) ;; ?\)
-      (setq cn "("))
-     ((eq cf 40) ;; ?\(
-      (setq cn ")"))
-     ((eq cf 123) ;; ?\{
-      (setq cn "}"))
-     ((eq cf 125) ;; ?\}
-      (setq cn "{"))
-     ((eq cf ?`)
-      (setq cn "´"))
-     ((eq cf ?´)
-      (setq cn "`"))
-     ((eq cf 93) ;; ?\]
-      (setq cn "["))
-     ((eq cf 91) ;; ?\[
-      (setq cn "]"))
-     ((eq cf 92) ;; ?\\
-      (setq cn "/"))
-     ((eq cf 47) ;; ?\/
-      (setq cn "\\")))
-    (or cn cf)))
-
-
 (defun syntactic-close-count-lines (&optional beg end)
   "Count lines in accessible part of buffer.
 
-See http://debbugs.gnu.org/cgi/bugreport.cgi?bug=7115"
+See http://debbugs.gnu.org/cgi/bugreport.cgi?bug=7115
+Optional argument BEG counts start.
+Optional argument END counts end."
   (interactive)
   (let ((beg (or beg (point-min)))
 	(end (or end (point)))
@@ -107,13 +73,14 @@ See http://debbugs.gnu.org/cgi/bugreport.cgi?bug=7115"
     (if (bolp)
 	(setq erg (1+ (count-lines beg end)))
       (setq erg (count-lines beg end)))
-    (when (called-interactively-p) (message "%s" erg))
+    (when (interactive-p) (message "%s" erg))
     erg))
 
 (unless (functionp 'empty-line-p)
   (defalias 'empty-line-p 'syntactic-close-empty-line-p))
 (defun syntactic-close-empty-line-p (&optional iact)
-  "Returns t if cursor is at an empty line, nil otherwise."
+  "Return t if cursor is at an empty line, nil otherwise.
+Optional argument IACT signaling interactive use."
   (interactive "p")
   (save-excursion
     (beginning-of-line)
@@ -122,10 +89,10 @@ See http://debbugs.gnu.org/cgi/bugreport.cgi?bug=7115"
     (looking-at syntactic-close-empty-line-p-chars)))
 
 (defvar haskell-interactive-mode-prompt-start (ignore-errors (require 'haskell-interactive-mode) haskell-interactive-mode-prompt-start)
-  "Defined in haskell-interactive-mode.el, silence warnings. ")
+  "Defined in haskell-interactive-mode.el, silence warnings.")
 
 (defcustom syntactic-close-guess-p nil
-  "When non-nil, guess default arguments, list-separators etc. "
+  "When non-nil, guess default arguments, list-separators etc."
   :type 'boolean
   :tag "syntactic-close-guess-p"
   :group 'syntactic-close)
@@ -141,7 +108,7 @@ See http://debbugs.gnu.org/cgi/bugreport.cgi?bug=7115"
    'sml-mode
    'web-mode
    )
-  "List of modes which commands must be closed by a separator. "
+  "List of modes which commands must be closed by a separator."
 
   :type 'list
   :tag "syntactic-close--semicolon-separator-modes"
@@ -155,7 +122,7 @@ See http://debbugs.gnu.org/cgi/bugreport.cgi?bug=7115"
    'xml-mode
    'xxml-mode
    )
-  "List of modes using markup language. "
+  "List of modes using markup language."
   :type 'list
   :tag "syntactic-close--semicolon-separator-modes"
   :group 'syntactic-close)
@@ -177,12 +144,12 @@ See http://debbugs.gnu.org/cgi/bugreport.cgi?bug=7115"
   "Matches the beginning of a compound statement. "))
 
 (defvar syntactic-close-known-comint-modes (list 'shell-mode 'inferior-sml-mode 'inferior-asml-mode 'Comint-SML 'haskell-interactive-mode 'inferior-haskell-mode)
-  "`parse-partial-sexp' must scan only from last prompt. ")
+  "`parse-partial-sexp' must scan only from last prompt.")
 (setq syntactic-close-known-comint-modes (list 'shell-mode 'inferior-sml-mode 'inferior-asml-mode 'Comint-SML 'haskell-interactive-mode 'inferior-haskell-mode))
 
 (defvar syntactic-close-empty-line-p-chars "^[ \t\r]*$")
 (defcustom syntactic-close-empty-line-p-chars "^[ \t\r]*$"
-  "syntactic-close-empty-line-p-chars"
+  "Syntactic-close-empty-line-p-chars."
   :type 'regexp
   :group 'convenience)
 
@@ -191,13 +158,14 @@ See http://debbugs.gnu.org/cgi/bugreport.cgi?bug=7115"
 (defun syntactic-close-toggle-verbosity ()
   "If `syntactic-close-verbose-p' is nil, switch it on.
 
-Otherwise switch it off. "
+Otherwise switch it off."
   (interactive)
   (setq syntactic-close-verbose-p (not syntactic-close-verbose-p))
   (when (called-interactively-p 'any) (message "syntactic-close-verbose-p: %s" syntactic-close-verbose-p)))
 
 (defun syntactic-close--return-complement-char-maybe (erg)
-  "For example return \"}\" for \"{\" but keep \"\\\"\". "
+  "For example return \"}\" for \"{\" but keep \"\\\"\".
+Argument ERG character to complement."
   (pcase erg
     (?‘ ?’)
     (?` ?')
@@ -209,17 +177,76 @@ Otherwise switch it off. "
     (?\[ ?\])
     (?} ?{)
     (?{ ?})
+    (?\〈 ?\〉)
+    (?\⦑ ?\⦒)
+    (?\⦓ ?\⦔)
+    (?\【 ?\】)
+    (?\⦗ ?\⦘)
+    (?\⸤ ?\⸥)
+    (?\「 ?\」)
+    (?\《 ?\》)
+    (?\⦕ ?\⦖)
+    (?\⸨ ?\⸩)
+    (?\⧚ ?\⧛)
+    (?\｛ ?\｝)
+    (?\（ ?\）)
+    (?\［ ?\］)
+    (?\｟ ?\｠)
+    (?\｢ ?\｣)
+    (?\❰ ?\❱)
+    (?\❮ ?\❯)
+    (?\“ ?\”)
+    (?\‘ ?\’)
+    (?\❲ ?\❳)
+    (?\⟨ ?\⟩)
+    (?\⟪ ?\⟫)
+    (?\⟮ ?\⟯)
+    (?\⟦ ?\⟧)
+    (?\⟬ ?\⟭)
+    (?\❴ ?\❵)
+    (?\❪ ?\❫)
+    (?\❨ ?\❩)
+    (?\❬ ?\❭)
+    (?\᚛ ?\᚜)
+    (?\〈 ?\〉)
+    (?\⧼ ?\⧽)
+    (?\⟅ ?\⟆)
+    (?\⸦ ?\⸧)
+    (?\﹛ ?\﹜)
+    (?\﹙ ?\﹚)
+    (?\﹝ ?\﹞)
+    (?\⁅ ?\⁆)
+    (?\⦏ ?\⦎)
+    (?\⦍ ?\⦐)
+    (?\⦋ ?\⦌)
+    (?\₍ ?\₎)
+    (?\⁽ ?\⁾)
+    (?\༼ ?\༽)
+    (?\༺ ?\༻)
+    (?\⸢ ?\⸣)
+    (?\〔 ?\〕)
+    (?\『 ?\』)
+    (?\⦃ ?\⦄)
+    (?\〖 ?\〗)
+    (?\⦅ ?\⦆)
+    (?\〚 ?\〛)
+    (?\〘 ?\〙)
+    (?\⧘ ?\⧙)
+    (?\⦉ ?\⦊)
+    (?\⦇ ?\⦈)
     (_ erg)))
 
 (defun syntactic-close--string-delim-intern (pps)
-  "Return the delimiting string. "
+  "Return the delimiting string.
+Argument PPS delivering result of ‘parse-partial-sexp’."
   (goto-char (nth 8 pps))
   (buffer-substring-no-properties (point) (progn  (skip-chars-forward (char-to-string (char-after))) (point))))
 
 (defun syntactic-close-in-string-maybe (&optional pps)
-  "if inside a double- triple- or singlequoted string,
+  "If inside a double- triple- or singlequoted string.
 
-Return delimiting chars "
+Return delimiting chars
+Optional argument PPS should deliver the result of ‘parse-partial-sexp’."
   (interactive)
   (save-excursion
     (let* ((pps (or pps (parse-partial-sexp (point-min) (point))))
@@ -238,7 +265,7 @@ Return delimiting chars "
 (defun syntactic-close-stack-based ()
   "Command will insert closing delimiter whichever needed.
 
-Does not require parenthesis syntax WRT \"{[(\" "
+Does not require parenthesis syntax WRT \"{[(\""
   (interactive "*")
   (let (closer stack done)
     (save-excursion
@@ -257,7 +284,7 @@ Does not require parenthesis syntax WRT \"{[(\" "
     (insert closer)))
 
 (defun syntactic-close--nth-1-pps-complement-char-maybe (pps)
-  "Return complement character from (nth 1 pps). "
+  "Return complement character from (nth 1 PPS)."
   (save-excursion
     (goto-char (nth 1 pps))
     (syntactic-close--return-complement-char-maybe (char-after))))
@@ -295,10 +322,10 @@ Does not require parenthesis syntax WRT \"{[(\" "
 	  (syntactic-close--return-complement-char-maybe (char-after)))))))
 
 (defun syntactic-close--fetch-delimiter-maybe (pps)
-  "Close the innermost list resp. string. "
+  "Close the innermost list resp. string.
+Argument PPS should provide the result of ‘parse-partial-sexp’."
   (save-excursion
     (let* (erg
-	   strg
 	   padding
 	   (closer
 	    (cond
@@ -346,7 +373,10 @@ Does not require parenthesis syntax WRT \"{[(\" "
     done))
 
 (defun syntactic-close-insert-with-padding-maybe (strg &optional nbefore nafter)
-  "Takes a string. Insert a space before and after maybe. "
+  "Takes a string. Insert a space before and after maybe.
+Argument STRG the string to be padded maybe.
+Optional argument NBEFORE read not-before string.
+Optional argument NAFTER read not after string."
   (skip-chars-backward " \t\r\n\f")
       (cond ((looking-back "([ \t]*" (line-beginning-position))
 	     (delete-region (match-beginning 0) (match-end 0))
@@ -365,7 +395,7 @@ Does not require parenthesis syntax WRT \"{[(\" "
 		    nafter) (insert " ")))))
 
 (defun syntactic-close--others (orig closer pps padding)
-  (let (done erg)
+  (let (done)
     (cond
      ((nth 3 pps)
       (cond ((characterp (nth 3 pps))
@@ -378,7 +408,7 @@ Does not require parenthesis syntax WRT \"{[(\" "
      (closer (setq done (syntactic-close--insert-delimiter-char-maybe orig closer padding))))
     done))
 
-(defun syntactic-close--comments-intern (orig start end &optional padding)
+(defun syntactic-close--comments-intern (orig start end)
   (if (looking-at start)
       (progn (goto-char orig)
 	     (fixup-whitespace)
@@ -433,13 +463,14 @@ Does not require parenthesis syntax WRT \"{[(\" "
     done))
 
 (defun syntactic-close-fetch-delimiter (pps)
-  "In some cases in (nth 3 pps only returns `t'. "
+  "In some cases in (nth 3 PPS only return t."
   (save-excursion
     (goto-char (nth 8 pps))
     (char-after)))
 
 (defun syntactic-close--guess-from-string-interpolation-maybe (pps)
-  "Returns the character of innermost sexp in inside. "
+  "Return the character of innermost sexp in inside.
+Argument PPS should provide result of ‘parse-partial-sexp’."
   (when (and (nth 1 pps) (nth 3 pps))
     (let* ((listchar (save-excursion (goto-char (nth 1 pps))
 				     (char-after)))
@@ -462,6 +493,7 @@ Does not require parenthesis syntax WRT \"{[(\" "
 
 ;; Ml
 (defun syntactic-close-ml ()
+  "Close in Standard ML."
   (interactive "*")
   (let ((oldmode major-mode) done)
     (cond ((save-excursion
@@ -482,7 +514,11 @@ Does not require parenthesis syntax WRT \"{[(\" "
     done))
 
 (defun syntactic-close-python-listclose (orig closer force pps)
-  "If inside list, assume another item first. "
+  "If inside list, assume another item first.
+Argument ORIG the start position.
+Argument CLOSER the char which closes the list.
+Argument FORCE to be done.
+Argument PPS should provide result of ‘parse-partial-sexp’."
   (let (done)
     (cond ((member (char-before) (list ?' ?\"))
 	   (if force
@@ -508,9 +544,13 @@ Does not require parenthesis syntax WRT \"{[(\" "
     (newline)
     ;; +BEGIN_QUOTE
     (when (save-excursion (and (re-search-backward "^#\\+\\([A-Z]+\\)_\\([A-Z]+\\)" nil t 1)(string= "BEGIN" (match-string-no-properties 1))))
-      (insert (concat "#+END_" (match-string-no-properties 2))))))  
-    
+      (insert (concat "#+END_" (match-string-no-properties 2))))))
+
 (defun syntactic-close-emacs-lisp-close (closer pps &optional org)
+  "Close in Emacs Lisp.
+Argument CLOSER the char to close.
+Argument PPS should provide result of ‘parse-partial-sexp’.
+Optional argument ORG read ‘org-mode’."
   (let ((closer (or closer (syntactic-close--fetch-delimiter-maybe pps)))
 	done)
     (cond
@@ -534,7 +574,10 @@ Does not require parenthesis syntax WRT \"{[(\" "
     done))
 
 (defun syntactic-close-python-close (b-of-st b-of-bl &optional padding)
-  "Might deliver equivalent to `py-dedent'"
+  "Might deliver equivalent to `py-dedent'.
+Argument B-OF-ST reaqd beginning-of-statement.
+Argument B-OF-BL read beginning-of-block.
+Optional argument PADDING to be done."
   (interactive "*")
   (let* ((syntactic-close-beginning-of-statement
 	  (or b-of-st
@@ -600,10 +643,6 @@ Does not require parenthesis syntax WRT \"{[(\" "
 	  (insert "++ ")
 	(insert " ++ ")))
     done))
-
-(defun syntactic-closer-forward-sexp-maybe (pos)
-  (ignore-errors (forward-sexp))
-  (when (< pos (point))(point)))
 
 (defun syntactic-close--semicolon-modes (pps &optional closer padding)
   (let ((closer (or closer (syntactic-close--fetch-delimiter-maybe pps)))
@@ -685,7 +724,10 @@ Does not require parenthesis syntax WRT \"{[(\" "
 (defun syntactic-close (&optional arg beg force)
   "Command will insert closing delimiter whichever needed.
 
-With \\[universal-argument]: close everything at point. "
+With \\[universal-argument]: close everything at point.
+Optional argument ARG TBD.
+Optional argument BEG the starting point.
+Optional argument FORCE TBD."
   (interactive "p*")
   (let ((beg (or beg (syntactic-close--point-min)))
 	(iact arg))

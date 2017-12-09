@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.12
-;; Package-Version: 20171208.1144
+;; Package-Version: 20171209.905
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -2073,6 +2073,7 @@ for explanation of the peer flags."
 
 (defvar transmission-info-mode-map
   (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "RET") 'transmission-files)
     (define-key map "p" 'previous-line)
     (define-key map "n" 'next-line)
     (define-key map "a" 'transmission-trackers-add)

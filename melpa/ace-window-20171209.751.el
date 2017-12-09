@@ -5,7 +5,7 @@
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; Maintainer: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/ace-window
-;; Package-Version: 20171209.531
+;; Package-Version: 20171209.751
 ;; Version: 0.9.0
 ;; Package-Requires: ((avy "0.2.0"))
 ;; Keywords: window, location
@@ -295,8 +295,7 @@ LEAF is (PT . WND)."
     (?v aw-split-window-vert "Split Vert Window")
     (?b aw-split-window-horz "Split Horz Window")
     (?o delete-other-windows)
-    (?? aw-show-dispatch-help)
-    (?z aw-use-frame "Use new frame"))
+    (?? aw-show-dispatch-help))
   "List of actions for `aw-dispatch-default'.")
 
 (defun aw--dispatch-action (char)
@@ -332,17 +331,21 @@ pixels."
 
 (defun aw-dispatch-default (char)
   "Perform an action depending on CHAR."
-  (if (= char (aref (kbd "C-g") 0))
-      (throw 'done 'exit)
-    (let ((action (aw--dispatch-action char)))
-      (cl-destructuring-bind (_key fn &optional description) action
-        (if action
-            (if (and fn description)
-                (prog1 (setq aw-action fn)
-                  (aw-set-mode-line (format " Ace - %s" description)))
-              (funcall fn)
-              (throw 'done 'exit))
-          (avy-handler-default char))))))
+  (cond ((= char (aref (kbd "C-g") 0))
+         (throw 'done 'exit))
+        ((= char ?z)
+         (aw-use-frame (selected-window))
+         (throw 'done 'exit))
+        (t
+         (let ((action (aw--dispatch-action char)))
+           (cl-destructuring-bind (_key fn &optional description) action
+             (if action
+                 (if (and fn description)
+                     (prog1 (setq aw-action fn)
+                       (aw-set-mode-line (format " Ace - %s" description)))
+                   (funcall fn)
+                   (throw 'done 'exit))
+               (avy-handler-default char)))))))
 
 (defun aw-select (mode-line &optional action)
   "Return a selected other window.
