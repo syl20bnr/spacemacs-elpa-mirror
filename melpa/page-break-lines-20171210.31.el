@@ -4,7 +4,7 @@
 
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;; URL: https://github.com/purcell/page-break-lines
-;; Package-Version: 20171020.108
+;; Package-Version: 20171210.31
 ;; Package-X-Original-Version: 0
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: convenience, faces
@@ -169,7 +169,6 @@ When `major-mode' is listed in `page-break-lines-modes', then
 
 ;; Local Variables:
 ;; coding: utf-8
-;; byte-compile-warnings: (not cl-functions)
 ;; checkdoc-minor-mode: t
 ;; End:
 

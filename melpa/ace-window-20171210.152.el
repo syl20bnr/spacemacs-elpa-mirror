@@ -5,7 +5,7 @@
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; Maintainer: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/ace-window
-;; Package-Version: 20171209.751
+;; Package-Version: 20171210.152
 ;; Version: 0.9.0
 ;; Package-Requires: ((avy "0.2.0"))
 ;; Keywords: window, location
@@ -160,7 +160,13 @@ Its value is a (width . height) pair in pixels or nil for the default frame size
            (member (buffer-name (window-buffer window))
                    aw-ignored-buffers))
       (and aw-ignore-current
-           (equal window (selected-window)))))
+           (equal window (selected-window)))
+      (unless ignore-window-parameters
+        (cl-case this-command
+          (ace-select-window (window-parameter window 'no-other-window))
+          (ace-delete-window (window-parameter window 'no-delete-other-windows))
+          (ace-delete-other-windows (window-parameter
+                                     window 'no-delete-other-windows))))))
 
 (defun aw-window-list ()
   "Return the list of interesting windows."
@@ -329,11 +335,30 @@ pixels."
   (aw-switch-to-window window)
   (aw-make-frame))
 
+(defcustom aw-make-frame-char ?z
+  "Character that triggers creation of a new single-window frame for display."
+  :set 'aw-set-make-frame-char
+  :type 'character)
+
+(defun aw-set-make-frame-char (symbol value)
+  "Set SYMBOL `aw-make-frame-char' to VALUE after checking it."
+  (when value
+    (cond ((not (characterp value))
+           (user-error
+            "must be a character, not `%s'" value))
+          ((memq value aw-keys)
+           (user-error
+            "`%c' conflicts with the same character in `aw-keys'" value))
+          ((assq value aw-dispatch-alist)
+           (user-error
+            "`%c' conflicts with the same character in `aw-dispatch-alist'" value))))
+  (set symbol value))
+
 (defun aw-dispatch-default (char)
   "Perform an action depending on CHAR."
   (cond ((= char (aref (kbd "C-g") 0))
          (throw 'done 'exit))
-        ((= char ?z)
+        ((= char aw-make-frame-char)
          (aw-use-frame (selected-window))
          (throw 'done 'exit))
         (t
