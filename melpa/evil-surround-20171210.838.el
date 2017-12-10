@@ -10,7 +10,7 @@
 ;; Current Maintainer: ninrod (github.com/ninrod)
 ;; Created: July 23 2011
 ;; Version: 0.1
-;; Package-Version: 20171207.1300
+;; Package-Version: 20171210.838
 ;; Package-Requires: ((evil "1.2.12"))
 ;; Mailing list: <implementations-list at lists.ourproject.org>
 ;;      Subscribe: http://tinyurl.com/implementations-list
@@ -97,7 +97,7 @@ Each item is of the form (OPERATOR . OPERATION)."
 
 (defun evil-surround-read-from-minibuffer (&rest args)
   (when evil-surround-record-repeat
-    (evil-repeat-record (evil-this-command-keys)))
+    (evil-repeat-keystrokes 'post))
   (let ((res (apply #'read-from-minibuffer args)))
     (when evil-surround-record-repeat
       (evil-repeat-record res))

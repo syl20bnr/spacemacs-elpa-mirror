@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/dired-sidebar
-;; Package-Version: 20171209.757
+;; Package-Version: 20171210.1008
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1") (dired-subtree "0.0.1"))
 ;; Keywords: dired, files, tools
@@ -93,21 +93,42 @@ This uses format specified by `dired-sidebar-mode-line-format'."
   :type 'list
   :group 'dired-sidebar)
 
+(make-obsolete-variable 'dired-sidebar-use-all-the-icons
+                        'dired-sidebar-theme "2017/12/10")
+
 (defcustom dired-sidebar-use-all-the-icons t
   "Use `all-the-icons' if true.
 
-This has no effect in Terminals."
+This has no effect in Terminals.
+
+This variable will be removed sometime in 2018 in favor of `dired-sidebar-theme'."
   :type 'boolean
   :group 'dired-sidebar)
+
+(make-obsolete-variable 'dired-sidebar-use-tui
+                        'dired-sidebar-theme "2017/12/10")
 
 (defcustom dired-sidebar-use-tui t
   "Use text user interface.
 
 This adds + and - 'icons' to the UI.
 
-This only takes effect if `dired-sidebar-use-all-the-icons' is not enabled."
+This only takes effect if `dired-sidebar-use-all-the-icons' is not enabled.
+
+This variable will be removed sometime in 2018 in favor of `dired-sidebar-theme'."
   :type 'boolean
   :group 'dired-sidebar)
+
+(defcustom dired-sidebar-theme 'icons
+  "*The tree style to display.
+`ascii' is the simplest style, it will use +/- to display the fold state,
+it is suitable for terminal.
+`icons' use `all-the-icons'.
+`nerd' use the nerdtree indentation mode and arrow."
+  :group 'dired-sidebar
+  :type '(choice (const ascii)
+                 (const icons)
+                 (const nerd)))
 
 (defcustom dired-sidebar-width 35
   "Width of the `dired-sidebar' buffer."
@@ -384,13 +405,19 @@ will check if buffer is stale through `auto-revert-mode'.")
             (advice-add x :after #'dired-sidebar-refresh-or-schedule-refresh))
           dired-sidebar-special-refresh-commands))
 
-  (if (and
-       dired-sidebar-use-all-the-icons
-       (display-graphic-p)
-       (fboundp 'all-the-icons-dired-mode))
-      (all-the-icons-dired-mode)
-    (when dired-sidebar-use-tui
-      (dired-sidebar-setup-tui)))
+  (cond
+   ((and dired-sidebar-use-all-the-icons
+         (eq dired-sidebar-theme 'icons)
+         (display-graphic-p)
+         (or
+          (fboundp 'all-the-icons-dired-mode)
+          (autoloadp (symbol-function 'all-the-icons-dired-mode))))
+    (with-no-warnings
+      (all-the-icons-dired-mode)))
+   ((eq dired-sidebar-theme 'nerd)
+    (dired-sidebar-setup-tui))
+   (:default
+    (dired-sidebar-setup-tui)))
 
   (when dired-sidebar-use-custom-font
     (dired-sidebar-set-font))
@@ -843,8 +870,8 @@ This is somewhat experimental/hacky."
   (when (or t (and (not dired-sidebar-tui-dired-displayed) dired-subdir-alist))
     (setq-local dired-sidebar-tui-dired-displayed t)
     (let ((inhibit-read-only t)
-          (collapsible-icon (if (display-graphic-p) "▾" "-"))
-          (expandable-icon (if (display-graphic-p) "▸" "+")))
+          (collapsible-icon (if (eq dired-sidebar-theme 'nerd) "▾" "-"))
+          (expandable-icon (if (eq dired-sidebar-theme 'nerd) "▸" "+")))
       (save-excursion
         (goto-char (point-min))
         (while (not (eobp))

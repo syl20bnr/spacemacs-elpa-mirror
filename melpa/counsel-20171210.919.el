@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171210.106
+;; Package-Version: 20171210.919
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1697,6 +1697,15 @@ Skip some dotfiles unless `ivy-text' requires them."
 (defvar counsel-find-file-speedup-remote t
   "Speed up opening remote files by disabling `find-file-hook' for them.")
 
+(defun counsel-find-file-action (x)
+  "Find file X."
+  (with-ivy-window
+    (if (and counsel-find-file-speedup-remote
+             (file-remote-p ivy--directory))
+        (let ((find-file-hook nil))
+          (find-file (expand-file-name x ivy--directory)))
+      (find-file (expand-file-name x ivy--directory)))))
+
 ;;;###autoload
 (defun counsel-find-file (&optional initial-input)
   "Forward to `find-file'.
@@ -1705,14 +1714,7 @@ When INITIAL-INPUT is non-nil, use it in the minibuffer during completion."
   (ivy-read "Find file: " 'read-file-name-internal
             :matcher #'counsel--find-file-matcher
             :initial-input initial-input
-            :action
-            (lambda (x)
-              (with-ivy-window
-                (if (and counsel-find-file-speedup-remote
-                         (file-remote-p ivy--directory))
-                    (let ((find-file-hook nil))
-                      (find-file (expand-file-name x ivy--directory)))
-                  (find-file (expand-file-name x ivy--directory)))))
+            :action #'counsel-find-file-action
             :preselect (when counsel-find-file-at-point
                          (require 'ffap)
                          (let ((f (ffap-guesser)))
