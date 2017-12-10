@@ -5,7 +5,7 @@
 
 ;; Author: Terje Larsen <terlar@gmail.com>
 ;; URL: https://github.com/terlar/indent-info.el
-;; Package-Version: 20171122.1555
+;; Package-Version: 20171209.1503
 ;; Keywords: convenience, tools
 ;; Version: 0.1
 
@@ -70,7 +70,7 @@ Choices are `before', `after'."
 
 (defcustom indent-info-use-symbols nil
   "Indicates whether to use symbols for the `tab-width' number or not."
-  :type 'boolean
+  :type '(choice (boolean :tag "Symbols"))
   :group 'indent-info)
 
 (defcustom indent-info-tab-width-min 2
@@ -88,7 +88,7 @@ Choices are `before', `after'."
   :type 'integer
   :group 'indent-info)
 
-(defvar indent-info-number-symbol-alist
+(defcustom indent-info-number-symbol-alist
   '((1  . "➀")
     (2  . "②")
     (3  . "➂")
@@ -100,23 +100,41 @@ Choices are `before', `after'."
     (9  . "➈")
     (10 . "➉"))
   "List of `tab-width' number mappings.
-Each element is a list of the form (NUMBER . SYMBOL).")
+Each element is a list of the form (NUMBER . SYMBOL)."
+  :type '(alist :key-type (integer :tag "Number")
+                :value-type (string :tag "Symbol"))
+  :group 'indent-info)
+
+(defcustom indent-info-minor-mode-text-properties
+  '('local-map
+    '(keymap
+      (mode-line keymap
+                 (mouse-1 . indent-info-toggle-indent-mode)
+                 (mouse-4 . indent-info-cycle-tab-width-increase)
+                 (mouse-5 . indent-info-cycle-tab-width-decrease)))
+    'help-echo
+    "Indentation\n\ mouse-1: Toggle tabs/spaces\n\ mouse-4: Increase tab-width\n\ mouse-5: Decrease tab-width"
+    'mouse-face 'mode-line-highlight)
+  "List of text properties to apply to the `indent-info' mode line."
+  :type '(repeat sexp)
+  :group 'indent-info)
+
+(defvar indent-info-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-M-~") 'indent-info-toggle-indent-mode)
+    (define-key map (kbd "C-M->") 'indent-info-cycle-tab-width-increase)
+    (define-key map (kbd "C-M-<") 'indent-info-cycle-tab-width-decrease)
+    map)
+  "The keymap for `indent-info-mode'.")
 
 (defun indent-info-mode-line ()
-  "The modeline with menu and content."
-  (let* ((map
-          '(keymap
-            (mode-line keymap
-                       (mouse-1 . indent-info-toggle-indent-mode)
-                       (mouse-4 . indent-info-cycle-tab-width-increase)
-                       (mouse-5 . indent-info-cycle-tab-width-decrease))))
-         (help "Indentation\n\ mouse-1: Toggle tabs/spaces\n\ mouse-4: Increase tab-width\n\ mouse-5: Decrease tab-width"))
-    (concat indent-info-prefix
-            (propertize (indent-info-mode-line-text)
-                        'help-echo help
-                        'mouse-face 'mode-line-highlight
-                        'local-map map)
-            indent-info-suffix)))
+  "The mode line with menu and content."
+  (concat indent-info-prefix
+          (eval
+           `(propertize
+             ,(indent-info-mode-line-text)
+             ,@indent-info-minor-mode-text-properties))
+          indent-info-suffix))
 
 (defun indent-info-mode-line-text ()
   "The indentation information text."
@@ -173,7 +191,9 @@ A null prefix argument turns it off.
 
 When enabled, information about the currently configured `indent-tabs-mode' and
 `tab-width' is displayed in the mode line."
-  :lighter nil :global nil
+  :lighter nil
+  :global nil
+  :keymap indent-info-mode-map
   (if indent-info-mode
       (add-to-list indent-info-insert-target
                    '(indent-info-mode (:eval (indent-info-mode-line)))
