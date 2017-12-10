@@ -4,8 +4,8 @@
 
 ;; Author: Vasilij Schneidermann <v.schneidermann@gmail.com>
 ;; URL: https://github.com/wasamasa/shackle
-;; Package-Version: 20171018.1120
-;; Version: 1.0.0
+;; Package-Version: 20171209.1401
+;; Version: 1.0.1
 ;; Keywords: convenience
 ;; Package-Requires: ((cl-lib "0.5"))
 
@@ -492,7 +492,7 @@ popups in Emacs."
   "Enable tracing `shackle-traced-functions'."
   (interactive)
   (dolist (function shackle-traced-functions)
-    (untrace-function function shackle-trace-buffer)))
+    (untrace-function function)))
 
 (provide 'shackle)
 ;;; shackle.el ends here
