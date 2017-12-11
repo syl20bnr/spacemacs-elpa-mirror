@@ -5,7 +5,7 @@ For asynchrous operations it uses async.el,
 
 By setting the variables (globally, per directory or per file):
 ssh-deploy-root-local,ssh-deploy-root-remote, ssh-deploy-on-explicit-save
-you can setup a directory for SSH or FTP deployment.
+you can setup a directory for TRAMP deployment.
 
 For asynchronous transfers you need to setup ~/.netrc or key-based authorization or equivalent for automatic authentication.
 
@@ -33,21 +33,21 @@ Set permissions to this file to 700 with you as the owner.
     (global-set-key (kbd "C-c C-z b") (lambda() (interactive)(ssh-deploy-browse-remote-base-handler) ))
     (global-set-key (kbd "C-c C-z B") (lambda() (interactive)(ssh-deploy-browse-remote-handler) ))
 
-Here is an example for SSH deployment, /Users/Chris/Web/Site1/.dir.locals.el:
+Here is an example for SSH/SFTP deployment, /Users/Chris/Web/Site1/.dir-locals.el:
 ((nil . (
   (ssh-deploy-root-local . "/Users/Chris/Web/Site1/")
   (ssh-deploy-root-remote . "/ssh:myuser@myserver.com:/var/www/site1/")
   (ssh-deploy-on-explicity-save . t)
 )))
 
-Here is an example for FTP deployment, /Users/Chris/Web/Site2/.dir.locals.el:
+Here is an example for FTP deployment, /Users/Chris/Web/Site2/.dir-locals.el:
 ((nil . (
   (ssh-deploy-root-local . "/Users/Chris/Web/Site2/")
   (ssh-deploy-root-remote . "/ftp:myuser@myserver.com:/var/www/site2/")
   (ssh-deploy-on-explicit-save . nil)
 )))
 
-Now when you are in a directory which is deployed via SSH or FTP you can access these features.
+Now when you are in a directory which is configured for deployment.
 
 Here is a list of other variables you can set globally or per directory:
 

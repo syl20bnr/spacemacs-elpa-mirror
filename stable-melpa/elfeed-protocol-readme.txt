@@ -1,6 +1,6 @@
 elfeed-protocol provide extra protocols to make self-hosting RSS
-readers like ownCloud News works with elfeed.  See the README for
-full documentation.
+readers like ownCloud News, Tiny TIny RSS and NewsBlur works with
+elfeed.  See the README for full documentation.
 
 Usage:
 
@@ -15,6 +15,5 @@ Usage:
                       "owncloud+https://user1:pass1@myhost.com"
                       (list "owncloud+https://user2@myhost.com"
                             :password "password/with|special@characters:"
-                            :autotags '(("example.com" comic))
-                            )))
+                            :autotags '(("example.com" comic)))))
   (elfeed-protocol-enable)

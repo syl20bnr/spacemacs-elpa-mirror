@@ -4,7 +4,7 @@
 
 ;; Author: Hinrik Örn Sigurðsson
 ;; URL: https://github.com/hinrik/total-lines
-;; Package-Version: 20171206.923
+;; Package-Version: 20171211.421
 ;; Version: 0.1-git
 ;; Keywords: convenience mode-line
 ;; Package-Requires: ((emacs "24.3"))
@@ -42,7 +42,11 @@
 
 (defun total-lines-init ()
   "Reset `total-lines' by scanning to the end of the buffer."
-  (setq total-lines (line-number-at-pos (point-max) t)))
+  (setq total-lines (if (version< emacs-version "26.1")
+                        (save-restriction
+                          (widen)
+                          (line-number-at-pos (point-max)))
+                      (line-number-at-pos (point-max) t))))
 
 (defun total-lines--count-newlines (beg end)
   "Count the number of newlines between BEG and END.
