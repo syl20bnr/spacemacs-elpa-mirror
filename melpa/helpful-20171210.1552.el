@@ -4,10 +4,10 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171210.1247
+;; Package-Version: 20171210.1552
 ;; Keywords: help, lisp
 ;; Version: 0.4
-;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
+;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -416,7 +416,7 @@ for killing the newly created buffer."
       (unless buf-and-pos
         ;; If it's defined interactively, it may have an edebug property
         ;; that tells us where it's defined.
-        (-when-let (marker (get sym 'edebug))
+        (-when-let (marker (car (get sym 'edebug)))
           (setq buf-and-pos
                 (cons (marker-buffer marker)
                       (marker-position marker))))))

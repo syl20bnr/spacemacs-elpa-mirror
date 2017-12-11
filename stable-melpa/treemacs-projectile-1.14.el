@@ -4,7 +4,7 @@
 
 ;; Author: Alexander Miller <alexanderm@web.de>
 ;; Package-Requires: ((projectile "0.14.0") (treemacs "0"))
-;; Package-Version: 1.13.3
+;; Package-Version: 1.14
 ;; Package-X-Original-Version: 0
 ;; Homepage: https://github.com/Alexander-Miller/treemacs
 
