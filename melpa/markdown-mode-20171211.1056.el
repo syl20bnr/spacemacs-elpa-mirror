@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171209.1210
+;; Package-Version: 20171211.1056
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -58,11 +58,6 @@
 
 (defconst markdown-output-buffer-name "*markdown-output*"
   "Name of temporary buffer for markdown command output.")
-
-(defconst markdown-sub-superscript-display
-  '(((raise -0.3) (height 0.7))         ; subscript
-    ((raise 0.3) (height 0.7)))         ; superscript
-  "Parameters for sub- and superscript formatting.")
 
 
 ;;; Global Variables ==========================================================
@@ -971,6 +966,35 @@ Group 3 matches all attributes and whitespace following the tag name.")
 
 ;;; Syntax ====================================================================
 
+(defvar markdown--syntax-properties
+  (list 'markdown-tilde-fence-begin nil
+        'markdown-tilde-fence-end nil
+        'markdown-fenced-code nil
+        'markdown-yaml-metadata-begin nil
+        'markdown-yaml-metadata-end nil
+        'markdown-yaml-metadata-section nil
+        'markdown-gfm-block-begin nil
+        'markdown-gfm-block-end nil
+        'markdown-gfm-code nil
+        'markdown-list-item nil
+        'markdown-pre nil
+        'markdown-blockquote nil
+        'markdown-hr nil
+        'markdown-comment nil
+        'markdown-heading nil
+        'markdown-heading-1-setext nil
+        'markdown-heading-2-setext nil
+        'markdown-heading-1-atx nil
+        'markdown-heading-2-atx nil
+        'markdown-heading-3-atx nil
+        'markdown-heading-4-atx nil
+        'markdown-heading-5-atx nil
+        'markdown-heading-6-atx nil
+        'markdown-metadata-key nil
+        'markdown-metadata-value nil
+        'markdown-metadata-markup nil)
+  "Property list of all Markdown syntactic properties.")
+
 (defsubst markdown-in-comment-p (&optional pos)
   "Return non-nil if POS is in a comment.
 If POS is not given, use point instead."
@@ -1582,35 +1606,6 @@ region of a YAML metadata block as propertized by
      ;; Nothing found
      (t nil))))
 
-(defvar markdown--syntax-properties
-  (list 'markdown-tilde-fence-begin nil
-        'markdown-tilde-fence-end nil
-        'markdown-fenced-code nil
-        'markdown-yaml-metadata-begin nil
-        'markdown-yaml-metadata-end nil
-        'markdown-yaml-metadata-section nil
-        'markdown-gfm-block-begin nil
-        'markdown-gfm-block-end nil
-        'markdown-gfm-code nil
-        'markdown-list-item nil
-        'markdown-pre nil
-        'markdown-blockquote nil
-        'markdown-hr nil
-        'markdown-comment nil
-        'markdown-heading nil
-        'markdown-heading-1-setext nil
-        'markdown-heading-2-setext nil
-        'markdown-heading-1-atx nil
-        'markdown-heading-2-atx nil
-        'markdown-heading-3-atx nil
-        'markdown-heading-4-atx nil
-        'markdown-heading-5-atx nil
-        'markdown-heading-6-atx nil
-        'markdown-metadata-key nil
-        'markdown-metadata-value nil
-        'markdown-metadata-markup nil)
-  "Property list of all Markdown syntactic properties.")
-
 (defun markdown-syntax-propertize (start end)
   "Function used as `syntax-propertize-function'.
 START and END delimit region to propertize."
@@ -1784,6 +1779,39 @@ See `markdown-hide-markup' for additional details."
 
 (defvar markdown-markup-face 'markdown-markup-face
   "Face name to use for markup elements.")
+
+(make-obsolete-variable 'markdown-italic-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-bold-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-strike-through-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-header-delimiter-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-header-rule-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-header-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-header-face-1 "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-header-face-2 "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-header-face-3 "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-header-face-4 "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-header-face-5 "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-header-face-6 "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-inline-code-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-list-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-blockquote-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-pre-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-language-keyword-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-language-info-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-link-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-missing-link-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-reference-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-footnote-marker-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-url-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-link-title-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-line-break-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-comment-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-math-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-metadata-key-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-metadata-value-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-gfm-checkbox-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-highlight-face "Use face name directly" "v2.4")
+(make-obsolete-variable 'markdown-markup-face "Use face name directly" "v2.4")
 
 (defgroup markdown-faces nil
   "Faces used in Markdown Mode"
@@ -2068,11 +2096,11 @@ Depending on your font, some reasonable choices are:
              `(display ,markdown-footnote-display))))
 
 (defvar markdown-mode-font-lock-keywords-basic
-  `((markdown-match-yaml-metadata-begin . ((1 markdown-markup-face)))
-    (markdown-match-yaml-metadata-end . ((1 markdown-markup-face)))
-    (markdown-match-yaml-metadata-key . ((1 markdown-metadata-key-face)
-                                         (2 markdown-markup-face)
-                                         (3 markdown-metadata-value-face)))
+  `((markdown-match-yaml-metadata-begin . ((1 'markdown-markup-face)))
+    (markdown-match-yaml-metadata-end . ((1 'markdown-markup-face)))
+    (markdown-match-yaml-metadata-key . ((1 'markdown-metadata-key-face)
+                                         (2 'markdown-markup-face)
+                                         (3 'markdown-metadata-value-face)))
     (markdown-match-gfm-open-code-blocks . ((1 markdown-markup-properties)
                                             (2 markdown-markup-properties nil t)
                                             (3 markdown-language-keyword-properties nil t)
@@ -2088,20 +2116,20 @@ Depending on your font, some reasonable choices are:
                                                (5 markdown-markup-properties nil t)))
     (markdown-match-fenced-end-code-block . ((0 markdown-markup-properties)))
     (markdown-fontify-fenced-code-blocks)
-    (markdown-match-pre-blocks . ((0 markdown-pre-face)))
+    (markdown-match-pre-blocks . ((0 'markdown-pre-face)))
     (markdown-fontify-headings)
-    (markdown-match-declarative-metadata . ((1 markdown-metadata-key-face)
-                                              (2 markdown-markup-face)
-                                              (3 markdown-metadata-value-face)))
-    (markdown-match-pandoc-metadata . ((1 markdown-markup-face)
-                                       (2 markdown-markup-face)
-                                       (3 markdown-metadata-value-face)))
+    (markdown-match-declarative-metadata . ((1 'markdown-metadata-key-face)
+                                              (2 'markdown-markup-face)
+                                              (3 'markdown-metadata-value-face)))
+    (markdown-match-pandoc-metadata . ((1 'markdown-markup-face)
+                                       (2 'markdown-markup-face)
+                                       (3 'markdown-metadata-value-face)))
     (markdown-fontify-hrs)
     (markdown-match-code . ((1 markdown-markup-properties prepend)
-                            (2 markdown-inline-code-face prepend)
+                            (2 'markdown-inline-code-face prepend)
                             (3 markdown-markup-properties prepend)))
     (,markdown-regex-kbd . ((1 markdown-markup-properties)
-                            (2 markdown-inline-code-face)
+                            (2 'markdown-inline-code-face)
                             (3 markdown-markup-properties)))
     (markdown-fontify-angle-uris)
     (,markdown-regex-email . 'markdown-plain-url-face)
@@ -2136,41 +2164,45 @@ Depending on your font, some reasonable choices are:
                                 (7 markdown-markup-properties)))
     (markdown-fontify-inline-links)
     (markdown-fontify-reference-links)
-    (,markdown-regex-reference-definition . ((1 markdown-markup-face) ; [
-                                             (2 markdown-reference-face) ; label
-                                             (3 markdown-markup-face)    ; ]
-                                             (4 markdown-markup-face)    ; :
-                                             (5 markdown-url-face)       ; url
-                                             (6 markdown-link-title-face))) ; "title" (optional)
+    (,markdown-regex-reference-definition . ((1 'markdown-markup-face) ; [
+                                             (2 'markdown-reference-face) ; label
+                                             (3 'markdown-markup-face)    ; ]
+                                             (4 'markdown-markup-face)    ; :
+                                             (5 'markdown-url-face)       ; url
+                                             (6 'markdown-link-title-face))) ; "title" (optional)
     (markdown-fontify-plain-uris)
     ;; Math mode $..$
-    (markdown-match-math-single . ((1 markdown-markup-face prepend)
-                                   (2 markdown-math-face append)
-                                   (3 markdown-markup-face prepend)))
+    (markdown-match-math-single . ((1 'markdown-markup-face prepend)
+                                   (2 'markdown-math-face append)
+                                   (3 'markdown-markup-face prepend)))
     ;; Math mode $$..$$
-    (markdown-match-math-double . ((1 markdown-markup-face prepend)
-                                   (2 markdown-math-face append)
-                                   (3 markdown-markup-face prepend)))
+    (markdown-match-math-double . ((1 'markdown-markup-face prepend)
+                                   (2 'markdown-math-face append)
+                                   (3 'markdown-markup-face prepend)))
     ;; Math mode \[..\] and \\[..\\]
-    (markdown-match-math-display . ((1 markdown-markup-face prepend)
-                                    (3 markdown-math-face append)
-                                    (4 markdown-markup-face prepend)))
+    (markdown-match-math-display . ((1 'markdown-markup-face prepend)
+                                    (3 'markdown-math-face append)
+                                    (4 'markdown-markup-face prepend)))
     (markdown-match-bold . ((1 markdown-markup-properties prepend)
-                            (2 markdown-bold-face append)
+                            (2 'markdown-bold-face append)
                             (3 markdown-markup-properties prepend)))
     (markdown-match-italic . ((1 markdown-markup-properties prepend)
-                              (2 markdown-italic-face append)
+                              (2 'markdown-italic-face append)
                               (3 markdown-markup-properties prepend)))
     (,markdown-regex-strike-through . ((3 markdown-markup-properties)
-                                       (4 markdown-strike-through-face)
+                                       (4 'markdown-strike-through-face)
                                        (5 markdown-markup-properties)))
-    (,markdown-regex-line-break . (1 markdown-line-break-face prepend))
+    (,markdown-regex-line-break . (1 'markdown-line-break-face prepend))
     (markdown-fontify-sub-superscripts)
     (markdown-match-inline-attributes . ((0 markdown-markup-properties prepend)))
     (markdown-match-leanpub-sections . ((0 markdown-markup-properties)))
     (markdown-fontify-blockquotes)
-    (markdown-match-wiki-link . ((0 markdown-link-face prepend))))
+    (markdown-match-wiki-link . ((0 'markdown-link-face prepend))))
   "Syntax highlighting for Markdown files.")
+
+(define-obsolete-variable-alias
+ 'markdown-mode-font-lock-keywords-basic
+ 'markdown-mode-font-lock-keywords "v2.4")
 
 ;; Footnotes
 (defvar markdown-footnote-counter 0
@@ -2965,7 +2997,7 @@ When FACELESS is non-nil, do not return matches where faces have been applied."
 
 (defun markdown-match-italic (last)
   "Match inline italics from the point to LAST."
-  (let ((regex (if (eq major-mode 'gfm-mode)
+  (let ((regex (if (memq major-mode '(gfm-mode gfm-view-mode))
                    markdown-regex-gfm-italic markdown-regex-italic)))
     (when (markdown-match-inline-generic regex last)
       (let ((begin (match-beginning 1))
@@ -2998,8 +3030,8 @@ $..$ or `markdown-regex-math-inline-double' for matching $$..$$."
     (let ((begin (match-beginning 1)) (end (match-end 1)))
       (prog1
           (if (or (markdown-range-property-any
-                   begin end 'face (list markdown-inline-code-face
-                                         markdown-bold-face))
+                   begin end 'face
+                   '(markdown-inline-code-face markdown-bold-face))
                   (markdown-range-properties-exist
                    begin end
                    (markdown-get-fenced-block-middle-properties)))
@@ -7466,7 +7498,7 @@ Translate filenames using `markdown-filename-translate-function'."
                      'font-lock-multiline t))
            ;; Link part
            (lp (list 'keymap markdown-mode-mouse-map
-                     'face markdown-link-face
+                     'face 'markdown-link-face
                      'mouse-face 'markdown-highlight-face
                      'font-lock-multiline t
                      'help-echo (if title (concat title "\n" url) url)))
@@ -7506,7 +7538,7 @@ Translate filenames using `markdown-filename-translate-function'."
                      'font-lock-multiline t))
            ;; Link part
            (lp (list 'keymap markdown-mode-mouse-map
-                     'face markdown-link-face
+                     'face 'markdown-link-face
                      'mouse-face 'markdown-highlight-face
                      'font-lock-multiline t
                      'help-echo (lambda (_ __ pos)
@@ -7622,7 +7654,7 @@ in parent directories if
 `markdown-wiki-link-search-parent-directories' is non-nil."
   (let* ((basename (markdown-replace-regexp-in-string
                     "[[:space:]\n]" markdown-link-space-sub-char name))
-         (basename (if (eq major-mode 'gfm-mode)
+         (basename (if (eq major-mode '(gfm-mode gfm-view-mode))
                        (concat (upcase (substring basename 0 1))
                                (downcase (substring basename 1 nil)))
                      basename))
@@ -7704,9 +7736,9 @@ and highlight accordingly."
                 (markdown-wiki-link-link))))
           (if (condition-case nil (file-exists-p file-name) (error nil))
               (markdown-highlight-wiki-link
-               highlight-beginning highlight-end markdown-link-face)
+               highlight-beginning highlight-end 'markdown-link-face)
             (markdown-highlight-wiki-link
-             highlight-beginning highlight-end markdown-missing-link-face)))))))
+             highlight-beginning highlight-end 'markdown-missing-link-face)))))))
 
 (defun markdown-extend-changed-region (from to)
   "Extend region given by FROM and TO so that we can fontify all links.
@@ -7748,8 +7780,7 @@ newline after."
                 ;; wiki link face or if the wiki link regexp matches.
                 (when (or (markdown-range-property-any
                            new-from new-to 'font-lock-face
-                           (list markdown-link-face
-                                 markdown-missing-link-face))
+                           '(markdown-link-face markdown-missing-link-face))
                           (re-search-forward
                            markdown-regex-wiki-link new-to t))
                   ;; Unfontify existing fontification (start from scratch)
@@ -7949,7 +7980,8 @@ or span."
 (defun markdown-reload-extensions ()
   "Check settings, update font-lock keywords and hooks, and re-fontify buffer."
   (interactive)
-  (when (member major-mode '(markdown-mode gfm-mode))
+  (when (member major-mode
+                '(markdown-mode markdown-view-mode gfm-mode gfm-view-mode))
     ;; Refontify buffer
     (if (eval-when-compile (fboundp 'font-lock-flush))
         ;; Use font-lock-flush in Emacs >= 25.1
@@ -8514,8 +8546,11 @@ tables and gfm tables which are less strict about the markup.")
               ;; go up to find the header
               (catch 'done
                 (while (looking-at-p gfm-table-line-regexp)
-                  (when (looking-at-p gfm-table-hline-regexp)
+                  (cond
+                   ((looking-at-p gfm-table-hline-regexp)
                     (throw 'done t))
+                   ((bobp)
+                    (throw 'done nil)))
                   (forward-line -1))
                 nil))))))
 
@@ -9138,18 +9173,15 @@ spaces, or alternatively a TAB should be used as the separator."
   (setq-local syntax-propertize-function #'markdown-syntax-propertize)
   (syntax-propertize (point-max)) ;; Propertize before hooks run, etc.
   ;; Font lock.
-  (setq-local font-lock-defaults nil)
-  (setq-local font-lock-multiline t)
-  (setq-local font-lock-extra-managed-props
-              (append font-lock-extra-managed-props
-                      '(composition display invisible)))
+  (setq font-lock-defaults
+        '(markdown-mode-font-lock-keywords
+          nil nil nil nil
+          (font-lock-multiline . t)
+          (font-lock-syntactic-face-function . markdown-syntactic-face)
+          (font-lock-extra-managed-props . '(composition display invisible))))
   (if markdown-hide-markup
       (add-to-invisibility-spec 'markdown-markup)
     (remove-from-invisibility-spec 'markdown-markup))
-  (setq font-lock-defaults
-        '(markdown-mode-font-lock-keywords-basic
-          nil nil nil nil
-          (font-lock-syntactic-face-function . markdown-syntactic-face)))
   ;; Wiki links
   (markdown-setup-wiki-link-hooks)
   ;; Math mode
@@ -9270,20 +9302,56 @@ spaces, or alternatively a TAB should be used as the separator."
 (defvar gfm-mode-hook nil
   "Hook run when entering GFM mode.")
 
-(defvar gfm-font-lock-keywords
-  ;; Basic Markdown features (excluding possibly overridden ones)
-  markdown-mode-font-lock-keywords-basic
-  "Default highlighting expressions for GitHub Flavored Markdown mode.")
-
 ;;;###autoload
 (define-derived-mode gfm-mode markdown-mode "GFM"
   "Major mode for editing GitHub Flavored Markdown files."
   (setq markdown-link-space-sub-char "-")
   (setq markdown-wiki-link-search-subdirectories t)
-  (setq-local font-lock-defaults '(gfm-font-lock-keywords))
   (setq-local markdown-table-at-point-p-function 'gfm--table-at-point-p)
-  ;; do the initial link fontification
   (markdown-gfm-parse-buffer-for-languages))
+
+(define-obsolete-variable-alias
+ 'gfm-font-lock-keywords
+ 'markdown-mode-font-lock-keywords "v2.4")
+
+
+;;; Viewing modes
+
+(defcustom markdown-hide-markup-in-view-modes t
+  "Enable hidden markup mode in `markdown-view-mode' and `gfm-view-mode'."
+  :group 'markdown
+  :type 'boolean
+  :safe 'booleanp)
+
+(defvar markdown-view-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "p") #'markdown-outline-previous)
+    (define-key map (kbd "n") #'markdown-outline-next)
+    (define-key map (kbd "f") #'markdown-outline-next-same-level)
+    (define-key map (kbd "b") #'markdown-outline-previous-same-level)
+    (define-key map (kbd "u") #'markdown-outline-up)
+    (define-key map (kbd "DEL") #'scroll-down-command)
+    (define-key map (kbd "SPC") #'scroll-up-command)
+    (define-key map (kbd ">") #'end-of-buffer)
+    (define-key map (kbd "<") #'beginning-of-buffer)
+    (define-key map (kbd "q") #'kill-this-buffer)
+    (define-key map (kbd "?") #'describe-mode)
+    map)
+  "Keymap for `markdown-view-mode'.")
+
+(define-derived-mode markdown-view-mode markdown-mode "Markdown-View"
+  "Major mode for viewing Markdown content."
+  (setq-local markdown-hide-markup markdown-hide-markup-in-view-modes)
+  (read-only-mode 1))
+
+(defvar gfm-view-mode-map
+  markdown-view-mode-map
+  "Keymap for `gfm-view-mode'.")
+
+(define-derived-mode gfm-view-mode gfm-mode "GFM-View"
+  "Major mode for viewing GitHub Flavored Markdown content."
+  (setq-local markdown-hide-markup markdown-hide-markup-in-view-modes)
+  (read-only-mode 1))
 
 
 ;;; Live Preview Mode  ============================================

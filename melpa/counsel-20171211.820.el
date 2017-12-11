@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171210.1038
+;; Package-Version: 20171211.820
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1726,7 +1726,7 @@ When INITIAL-INPUT is non-nil, use it in the minibuffer during completion."
 
 (ivy-set-occur 'counsel-find-file 'counsel-find-file-occur)
 
-(defvar counsel-find-file-occur-cmd "ls | grep -i -E '%s' | xargs -d '\n' ls"
+(defvar counsel-find-file-occur-cmd "ls | grep -i -E '%s' | tr '\\n' '\\0' | xargs -0 ls"
   "Format string for `counsel-find-file-occur'.")
 
 (defun counsel-find-file-occur ()
@@ -3198,6 +3198,7 @@ unique under `equal-including-properties'."
   "Like `yank-pop', but insert the kill corresponding to S."
   (with-ivy-window
     (setq last-command 'yank)
+    (setq yank-window-start (window-start))
     (yank-pop (counsel--yank-pop-position s))
     (setq ivy-completion-end (point))))
 
