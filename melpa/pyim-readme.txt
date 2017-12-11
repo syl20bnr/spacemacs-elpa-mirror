@@ -324,12 +324,6 @@ pyim 的 tooltip 选词框默认使用 *双行显示* 的样式，在一些特
 (setq debug-on-error t)
 #+END_EXAMPLE
 
-*** 选词框弹出位置不合理或者选词框内容显示不全
-可以通过设置 `pyim-tooltip-width-adjustment' 变量来手动校正。
-
-1. 选词框内容显示不全：增大变量值
-2. 选词框弹出位置不合理：减小变量值
-
 *** 如何查看 pyim 文档。
 pyim 的文档隐藏在 comment 中，如果用户喜欢阅读 html 格式的文档，
 可以查看在线文档；

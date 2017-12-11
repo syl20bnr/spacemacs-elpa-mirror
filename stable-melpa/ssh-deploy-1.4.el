@@ -1,11 +1,11 @@
-;;; ssh-deploy.el --- Deployment via SSH or FTP, global or per directory.
+;;; ssh-deploy.el --- Deployment via TRAMP, global or per directory.
 
 ;; Author: Christian Johansson <github.com/cjohansson>
 ;; Maintainer: Christian Johansson <github.com/cjohansson>
 ;; Created: 5 Jul 2016
-;; Modified: 30 Oct 2017
-;; Version: 1.68
-;; Package-Version: 1.3
+;; Modified: 11 Dec 2017
+;; Version: 1.72
+;; Package-Version: 1.4
 ;; Keywords: tools, convenience
 ;; URL: https://github.com/cjohansson/emacs-ssh-deploy
 
@@ -37,7 +37,7 @@
 ;;
 ;; By setting the variables (globally, per directory or per file):
 ;; ssh-deploy-root-local,ssh-deploy-root-remote, ssh-deploy-on-explicit-save
-;; you can setup a directory for SSH or FTP deployment.
+;; you can setup a directory for TRAMP deployment.
 ;;
 ;; For asynchronous transfers you need to setup ~/.netrc or key-based authorization or equivalent for automatic authentication.
 ;;
@@ -65,21 +65,21 @@
 ;;     (global-set-key (kbd "C-c C-z b") (lambda() (interactive)(ssh-deploy-browse-remote-base-handler) ))
 ;;     (global-set-key (kbd "C-c C-z B") (lambda() (interactive)(ssh-deploy-browse-remote-handler) ))
 ;;
-;; Here is an example for SSH deployment, /Users/Chris/Web/Site1/.dir.locals.el:
+;; Here is an example for SSH/SFTP deployment, /Users/Chris/Web/Site1/.dir-locals.el:
 ;; ((nil . (
 ;;   (ssh-deploy-root-local . "/Users/Chris/Web/Site1/")
 ;;   (ssh-deploy-root-remote . "/ssh:myuser@myserver.com:/var/www/site1/")
 ;;   (ssh-deploy-on-explicity-save . t)
 ;; )))
 ;;
-;; Here is an example for FTP deployment, /Users/Chris/Web/Site2/.dir.locals.el:
+;; Here is an example for FTP deployment, /Users/Chris/Web/Site2/.dir-locals.el:
 ;; ((nil . (
 ;;   (ssh-deploy-root-local . "/Users/Chris/Web/Site2/")
 ;;   (ssh-deploy-root-remote . "/ftp:myuser@myserver.com:/var/www/site2/")
 ;;   (ssh-deploy-on-explicit-save . nil)
 ;; )))
 ;;
-;; Now when you are in a directory which is deployed via SSH or FTP you can access these features.
+;; Now when you are in a directory which is configured for deployment.
 ;;
 ;; Here is a list of other variables you can set globally or per directory:
 
@@ -97,7 +97,7 @@
 ;;; Code:
 
 (defgroup ssh-deploy nil
-  "Upload, download, difference, browse and terminal handler for files and directories on remote hosts via SSH and FTP."
+  "Upload, download, difference, browse and terminal handler for files and directories on remote hosts via TRAMP."
   :group 'tools
   :group 'convenience)
 
@@ -136,7 +136,7 @@
   :type 'boolean
   :group 'ssh-deploy)
 
-(defcustom ssh-deploy-exclude-list '("/.git/" ".dir-locals.el")
+(defcustom ssh-deploy-exclude-list '(".git/" ".dir-locals.el")
   "List of strings that if found in paths will exclude paths from sync, '(\"/.git\"/' \".dir-locals.el\") by default."
   :type 'list
   :group 'ssh-deploy)
@@ -147,6 +147,10 @@
 ;; these functions are only used internally and should be of no value to outside public and handler functions.
 ;; these functions MUST not use module variables.
 
+(defun ssh-deploy--insert-keyword (text)
+  "Insert TEXT as bold text."
+  (put-text-property 0 (length text) 'face 'font-lock-keyword-face text)
+  (insert text))
 
 (defun ssh-deploy--get-revision-path (path root)
   "Generate revision-path for PATH in ROOT."
@@ -199,7 +203,7 @@
                                   (copy-file ,path-local ,revision-path t t t t)
                                   (list 0 (format "Upload '%s' completed." ,path-remote)))
                               (list 1 (format "Remote file '%s' has changed, please download or diff." ,path-remote))))
-                        (list 1 "Function ediff-same-file-contents is missing.")))
+                        (list 1 "Function 'ediff-same-file-contents' is missing.")))
                    (lambda(return)
                      (if (= (nth 0 return) 0)
                          (message (nth 1 return))
@@ -214,21 +218,26 @@
                  (message "Upload '%s' finished." return-path)))))))
     (message "async.el is not installed")))
 
-;; TODO Fix "bug" where this does not detect remote changes
 (defun ssh-deploy--upload-via-tramp (path-local path-remote force revision-folder)
   "Upload PATH-LOCAL to PATH-REMOTE via TRAMP synchronously and FORCE despite remote change compared with copy in REVISION-FOLDER."
-  (let ((file-or-directory (file-regular-p path-local)))
+  (let ((file-or-directory (file-regular-p path-local))
+        (revision-path (ssh-deploy--get-revision-path path-local revision-folder)))
     (if file-or-directory
         (progn
-          (if (or (boundp 'force) (not (ssh-deploy--remote-has-changed path-local path-remote revision-folder)))
-              (progn
-                (message "Uploading file '%s' to '%s' via TRAMP synchronously.." path-local path-remote)
-                (if (not (file-directory-p (file-name-directory path-remote)))
-                    (make-directory (file-name-directory path-remote) t))
-                (copy-file path-local path-remote t t t t)
-                (message "Upload '%s' finished" path-local)
-                (ssh-deploy-store-revision path-local revision-folder))
-            (display-warning "ssh-deploy" "Remote contents has changed or no base revision exists, please download or diff." :warning)))
+          (require 'ediff)
+          (if (fboundp 'ediff-same-file-contents)
+              (if (or (eq t force)
+                      (not (file-exists-p path-remote))
+                      (and (file-exists-p revision-path) (ediff-same-file-contents revision-path path-remote)))
+                  (progn
+                    (message "Uploading file '%s' to '%s' via TRAMP synchronously.." path-local path-remote)
+                    (if (not (file-directory-p (file-name-directory path-remote)))
+                        (make-directory (file-name-directory path-remote) t))
+                    (copy-file path-local path-remote t t t t)
+                    (message "Upload '%s' completed." path-local)
+                    (ssh-deploy-store-revision path-local revision-folder))
+                (display-warning "ssh-deploy" (format "Remote file '%s' has changed, please download or diff." path-remote) :warning))
+            (display-warning "ssh-deploy" "Function 'ediff-same-file-contents' is missing." :warning)))
       (progn
         (message "Uploading directory '%s' to '%s' via TRAMP synchronously.." path-local path-remote)
         (copy-directory path-local path-remote t t t)
@@ -274,24 +283,152 @@
         (copy-directory path-remote path-local t t t)
         (message "Download '%s' finished." path-local)))))
 
-(defun ssh-deploy--remote-has-changed (path-local path-remote revision-folder)
-  "Synchronously check if last stored revision of PATH-LOCAL exists or has changed at PATH-REMOTE that is stored in REVISION-FOLDER."
-  (let ((revision-path (ssh-deploy--get-revision-path path-local revision-folder)))
-    (if (file-exists-p path-remote)
+(defun ssh-deploy--diff-directories-data (directory-a directory-b exclude-list)
+  "Find difference between DIRECTORY-A and DIRECTORY-B but exclude paths matching EXCLUDE-LIST."
+  ;; (message "Comparing a: %s to b: %s" directory-a directory-b)
+  (require 'subr-x)
+  (if (fboundp 'string-remove-prefix)
+      (let ((files-a (directory-files-recursively directory-a ""))
+            (files-b (directory-files-recursively directory-b ""))
+            (files-a-only (list))
+            (files-b-only (list))
+            (files-both (list))
+            (files-both-equals (list))
+            (files-both-differs (list))
+            (files-a-relative-list (list))
+            (files-b-relative-list (list))
+            (files-a-relative-hash (make-hash-table :test 'equal))
+            (files-b-relative-hash (make-hash-table :test 'equal)))
+
+        ;; Collected included files in directory a with relative paths
+        (mapc
+         (lambda (file-a-tmp)
+           (let ((file-a (file-truename file-a-tmp)))
+             (let ((relative-path (string-remove-prefix directory-a file-a))
+                   (included t))
+
+               ;; Check if file is excluded
+               (dolist (element exclude-list)
+                 (if (and (not (null element))
+                          (not (null (string-match element relative-path))))
+                     (setq included nil)))
+
+               (if included
+                   (progn
+                     (puthash relative-path file-a files-a-relative-hash)
+                     (if (equal files-a-relative-list nil)
+                         (setq files-a-relative-list (list relative-path))
+                       (push relative-path files-a-relative-list)))))))
+         files-a)
+
+        ;; Collected included files in directory b with relative paths
+        (mapc
+         (lambda (file-b-tmp)
+           ;; (message "file-b-tmp: %s %s" file-b-tmp (file-truename file-b-tmp))
+           (let ((file-b (file-truename file-b-tmp)))
+             (let ((relative-path (string-remove-prefix directory-b file-b))
+                   (included t))
+
+               ;; Check if file is excluded
+               (dolist (element exclude-list)
+                 (if (and (not (null element))
+                          (not (null (string-match element relative-path))))
+                     (setq included nil)))
+
+               (if included
+                   (progn
+                     (puthash relative-path file-b files-b-relative-hash)
+                     (if (equal files-b-relative-list nil)
+                         (setq files-b-relative-list (list relative-path))
+                       (push relative-path files-b-relative-list)))))))
+         files-b)
+
+        ;; Collect files that only exists in directory a and files that exist in both directory a and b
+        (mapc
+         (lambda (file-a)
+           (if (not (equal (gethash file-a files-b-relative-hash) nil))
+               (if (equal files-both nil)
+                   (setq files-both (list file-a))
+                 (push file-a files-both))
+             (if (equal files-a-only nil)
+                 (setq files-a-only (list file-a))
+               (push file-a files-a-only))))
+         files-a-relative-list)
+
+        ;; Collect files that only exists in directory b
+        (mapc
+         (lambda (file-b)
+           (if (equal (gethash file-b files-a-relative-hash) nil)
+               (progn
+                 ;; (message "%s did not exist in hash-a" file-b)
+                 (if (equal files-b-only nil)
+                     (setq files-b-only (list file-b))
+                   (push file-b files-b-only)))))
+         files-b-relative-list)
+
+        ;; Collect files that differ in contents and have equal contents
+        (require 'ediff)
+        (if (fboundp 'ediff-same-file-contents)
+            (mapc
+             (lambda (file)
+               (let ((file-a (gethash file files-a-relative-hash))
+                     (file-b (gethash file files-b-relative-hash)))
+                 (if (ediff-same-file-contents file-a file-b)
+                     (if (equal files-both-equals nil)
+                         (setq files-both-equals (list file))
+                       (push file files-both-equals))
+                   (if (equal files-both-differs nil)
+                       (setq files-both-differs (list file))
+                     (push file files-both-differs)))))
+             files-both))
+
+        (list directory-a directory-b exclude-list files-both files-a-only files-b-only files-both-equals files-both-differs))
+    (display-warning "ssh-deploy" "Function 'string-remove-prefix' is missing.")))
+
+;; TODO Make this function interactive
+(defun ssh-deploy--diff-directories-present (diff)
+  "Present difference data for directories from DIFF."
+  (let ((buffer (generate-new-buffer "ssh-deploy diff")))
+    (switch-to-buffer buffer)
+
+    (ssh-deploy--insert-keyword "Directory A: ")
+    (insert (nth 0 diff) "\n")
+
+    (ssh-deploy--insert-keyword "Directory B: ")
+    (insert (nth 1 diff) "\n")
+
+    (if (length (nth 2 diff))
         (progn
-          (if (file-exists-p revision-path)
-              (progn
-                (require 'ediff)
-                (if (fboundp 'ediff-same-file-contents)
-                    (progn
-                      (if (not (ediff-same-file-contents revision-path path-remote))
-                          t
-                        nil))
-                  (progn
-                    (message "Function ediff-same-file-contents is missing.")
-                    nil)))
-            t))
-      nil)))
+          (insert "\n")
+          (ssh-deploy--insert-keyword (format "Exclude-list (%d)" (length (nth 2 diff))))
+          (dolist (element (nth 2 diff))
+            (insert "\n" element))
+          (insert "\n")))
+
+    (insert "\n")
+
+    (if (length (nth 4 diff))
+        (progn
+          (ssh-deploy--insert-keyword (format "Files only in A (%d)" (length (nth 4 diff))))
+          (dolist (element (nth 4 diff))
+            (insert "\n" element))
+          (insert "\n\n")))
+
+    (if (length (nth 5 diff))
+        (progn
+          (ssh-deploy--insert-keyword (format "Files only in B (%d)" (length (nth 5 diff))))
+          (dolist (element (nth 5 diff))
+            (insert "\n" element))
+          (insert "\n\n")))
+
+    (if (length (nth 7 diff))
+        (progn
+          (ssh-deploy--insert-keyword (format "Files in both but differs (%d)" (length (nth 7 diff))))
+          (dolist (element (nth 7 diff))
+            (insert "\n" element))
+          (insert "\n\n")))
+
+    (read-only-mode)))
 
 
 ;; PUBLIC functions
@@ -299,6 +436,44 @@
 ;; handlers use these to do things and people SHOULD be able to use these as they please themselves
 ;; these functions MUST only use module variables as fall-backs for missing arguments.
 
+
+;;;### autoload
+(defun ssh-deploy-diff-files (file-a file-b)
+  "Find difference between FILE-A and FILE-B."
+  (require 'ediff)
+  (if (fboundp 'ediff-same-file-contents)
+      (progn
+        (message "Comparing file '%s' to '%s'.." file-a file-b)
+        (if (ediff-same-file-contents file-a file-b)
+            (message "Files have identical contents.")
+          (ediff file-a file-b)))
+    (display-warning "ssh-deploy" "Function 'ediff-same-file-contents' is missing." :warning)))
+
+;;;### autoload
+(defun ssh-deploy-diff-directories (directory-a directory-b &optional exclude-list async)
+  "Find difference between DIRECTORY-A and DIRECTORY-B but exclude paths matching EXCLUDE-LIST, do it asynchronously is ASYNC is true."
+  (if (not (boundp 'async))
+      (setq async ssh-deploy-async))
+  (if (not (boundp 'exclude-list))
+      (setq exclude-list ssh-deploy-exclude-list))
+  (if (and async (fboundp 'async-start))
+      (let ((script-filename (file-name-directory (symbol-file 'ssh-deploy-diff-directories))))
+        (message "Generating differences asynchronously between directory '%s' and '%s'.." directory-a directory-b)
+        (async-start
+         `(lambda()
+            (add-to-list 'load-path ,script-filename)
+            (require 'ssh-deploy)
+            (ssh-deploy--diff-directories-data ,directory-a ,directory-b (list ,@exclude-list)))
+         (lambda(diff)
+           (message "Differences calculated: %s only in A, %s only in B, %s differs" (length (nth 4 diff)) (length (nth 5 diff)) (length (nth 7 diff)))
+           (if (or (> (length (nth 4 diff)) 0) (> (length (nth 5 diff)) 0) (> (length (nth 7 diff)) 0))
+               (ssh-deploy--diff-directories-present diff)))))
+    (progn
+      (message "Generating differences synchronously between directory '%s' and '%s'.." directory-a directory-b)
+      (let ((diff (ssh-deploy--diff-directories-data directory-a directory-b exclude-list)))
+        (message "Differences calculated: %s only in A, %s only in B, %s differs" (length (nth 4 diff)) (length (nth 5 diff)) (length (nth 7 diff)))
+        (if (or (> (length (nth 4 diff)) 0) (> (length (nth 5 diff)) 0) (> (length (nth 7 diff)) 0))
+            (ssh-deploy--diff-directories-present diff))))))
 
 ;;;### autoload
 (defun ssh-deploy-remote-changes (path-local &optional root-local root-remote async revision-folder exclude-list)
@@ -330,7 +505,7 @@
                                                   (copy-file ,path-local ,revision-path t t t t)
                                                   (list 0 (format "Remote file '%s' is identical to local file '%s' but different to local revision. Updated local revision." ,path-remote ,path-local)))
                                               (list 1 (format "Remote file '%s' has changed, please download or diff." ,path-remote))))))
-                                    (list 1 "Function ediff-same-file-contents is missing.")))
+                                    (list 1 "Function 'ediff-same-file-contents' is missing.")))
                               (list 0 (format "Remote file '%s' doesn't exist." ,path-remote))))
                          (lambda(return)
                            (if (= (nth 0 return) 0)
@@ -345,7 +520,7 @@
                                   (if (ediff-same-file-contents revision-path path-remote)
                                       (message "Remote file '%s' has not changed." path-remote)
                                     (display-warning "ssh-deploy" (format "Remote file '%s' has changed, please download or diff." path-remote) :warning)))
-                              (display-warning "ssh-deploy" "Function ediff-same-file-contents is missing." :warning)))
+                              (display-warning "ssh-deploy" "Function 'ediff-same-file-contents' is missing." :warning)))
                         (message "Remote file '%s' doesn't exist." path-remote))))
                 (if (and async (fboundp 'async-start))
                     (async-start
@@ -375,9 +550,8 @@
                               (copy-file path-local revision-path t t t t)
                               (message "Remote file '%s' has not changed, created base revision." path-remote))
                           (display-warning "ssh-deploy" (format "Remote file '%s' has changed, please download or diff." path-remote) :warning))
-                        (display-warning "ssh-deploy" "Function ediff-same-file-contents is missing." :warning)))
-                  (message "Remote file '%s' doesn't exist." path-remote)))
-            (message "Directory differences not implemented yet"))))))
+                        (display-warning "ssh-deploy" "Function 'ediff-same-file-contents' is missing." :warning)))
+                  (message "Remote file '%s' doesn't exist." path-remote))))))))
 
 ;;;### autoload
 (defun ssh-deploy-delete (path-local &optional root-local root-remote async debug exclude-list)
@@ -452,8 +626,8 @@
                   (progn
                     (rename-file old-path-remote new-path-remote t)
                     (message "Synchronously renamed '%s' to '%s'." old-path-remote new-path-remote)))))))
-          (if debug
-              (message "Path '%s' or '%s' is not in the root '%s' or is excluded from it." old-path-local new-path-local root-local)))))
+      (if debug
+          (message "Path '%s' or '%s' is not in the root '%s' or is excluded from it." old-path-local new-path-local root-local)))))
 
 ;;;### autoload
 (defun ssh-deploy-browse-remote (path-local &optional root-local root-remote exclude-list)
@@ -503,29 +677,22 @@
       (copy-file path revision-path t t t t))))
 
 ;;;### autoload
-(defun ssh-deploy-diff (path-local path-remote &optional root-local debug exclude-list)
-  "Find differences between PATH-LOCAL and PATH-REMOTE, where PATH-LOCAL is inside ROOT-LOCAL.  DEBUG enables feedback message, check if PATH-LOCAL is not in EXCLUDE-LIST."
+(defun ssh-deploy-diff (path-local path-remote &optional root-local debug exclude-list async)
+  "Find differences between PATH-LOCAL and PATH-REMOTE, where PATH-LOCAL is inside ROOT-LOCAL.  DEBUG enables feedback message, check if PATH-LOCAL is not in EXCLUDE-LIST.   ASYNC make the process work asynchronously."
   (let ((file-or-directory (file-regular-p path-local))
         (exclude-list (or exclude-list ssh-deploy-exclude-list)))
     (if (not (boundp 'root-local))
         (setq root-local ssh-deploy-root-local))
     (if (not (boundp 'debug))
         (setq debug ssh-deploy-debug))
+    (if (not (boundp 'async))
+        (setq async ssh-deploy-async))
     (if (and (ssh-deploy--file-is-in-path path-local root-local)
              (ssh-deploy--file-is-included path-local exclude-list))
         (progn
           (if file-or-directory
-              (progn
-                (require 'ediff)
-                (if (fboundp 'ediff-same-file-contents)
-                    (progn
-                      (message "Comparing file '%s' to '%s'.." path-local path-remote)
-                      (if (ediff-same-file-contents path-local path-remote)
-                          (message "Files have identical contents.")
-                        (ediff path-local path-remote)))
-                  (message "Function ediff-same-file-contents is missing.")))
-            (progn
-              (message "Unfortunately directory differences are not yet implemented."))))
+              (ssh-deploy-diff-files path-local path-remote)
+            (ssh-deploy-diff-directories path-local path-remote exclude-list async)))
       (if debug
           (message "Path '%s' is not in the root '%s' or is excluded from it." path-local root-local)))))
 
@@ -595,7 +762,7 @@
   (if (and (ssh-deploy--is-not-empty-string ssh-deploy-root-local)
            (ssh-deploy--is-not-empty-string ssh-deploy-root-remote)
            (ssh-deploy--is-not-empty-string buffer-file-name))
-          (ssh-deploy-remote-changes (file-truename buffer-file-name) (file-truename ssh-deploy-root-local) ssh-deploy-root-remote ssh-deploy-async ssh-deploy-revision-folder ssh-deploy-exclude-list)))
+      (ssh-deploy-remote-changes (file-truename buffer-file-name) (file-truename ssh-deploy-root-local) ssh-deploy-root-remote ssh-deploy-async ssh-deploy-revision-folder ssh-deploy-exclude-list)))
 
 ;;;### autoload
 (defun ssh-deploy-download-handler ()
@@ -630,13 +797,13 @@
           (let* ((path-local (file-truename buffer-file-name))
                  (root-local (file-truename ssh-deploy-root-local))
                  (path-remote (concat ssh-deploy-root-remote (ssh-deploy--get-relative-path root-local path-local))))
-            (ssh-deploy-diff path-local path-remote root-local ssh-deploy-debug ssh-deploy-exclude-list))
+            (ssh-deploy-diff path-local path-remote root-local ssh-deploy-debug ssh-deploy-exclude-list ssh-deploy-async))
         (if (and (ssh-deploy--is-not-empty-string default-directory)
                  (file-exists-p default-directory))
             (let* ((path-local (file-truename default-directory))
                    (root-local (file-truename ssh-deploy-root-local))
                    (path-remote (concat ssh-deploy-root-remote (ssh-deploy--get-relative-path root-local path-local))))
-              (ssh-deploy-diff path-local path-remote root-local ssh-deploy-debug ssh-deploy-exclude-list))))))
+              (ssh-deploy-diff path-local path-remote root-local ssh-deploy-debug ssh-deploy-exclude-list ssh-deploy-async))))))
 
 ;;;### autoload
 (defun ssh-deploy-delete-handler ()
