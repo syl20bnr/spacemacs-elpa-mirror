@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/avy
-;; Package-Version: 20171210.44
+;; Package-Version: 20171210.1106
 ;; Version: 0.4.0
 ;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
 ;; Keywords: point, location
@@ -628,20 +628,24 @@ Set `avy-style' according to COMMMAND as well."
     (raise-frame frame)
     (goto-char pt)))
 
+(defun avy-forward-item ()
+  (if (eq avy-command 'avy-goto-line)
+      (end-of-line)
+    (forward-sexp))
+  (point))
+
 (defun avy-action-mark (pt)
   "Mark sexp at PT."
   (goto-char pt)
   (set-mark (point))
-  (forward-sexp))
+  (avy-forward-item))
 
 (defun avy-action-copy (pt)
   "Copy sexp starting on PT."
   (save-excursion
     (let (str)
       (goto-char pt)
-      (if (eq avy-command 'avy-goto-line)
-          (end-of-line)
-        (forward-sexp))
+      (avy-forward-item)
       (setq str (buffer-substring pt (point)))
       (kill-new str)
       (message "Copied: %s" str)))
@@ -654,28 +658,38 @@ Set `avy-style' according to COMMMAND as well."
 (defun avy-action-yank (pt)
   "Yank sexp starting at PT at the current point."
   (avy-action-copy pt)
-  (yank))
+  (yank)
+  t)
 
 (defun avy-action-kill-move (pt)
   "Kill sexp at PT and move there."
   (goto-char pt)
-  (forward-sexp)
+  (avy-forward-item)
   (kill-region pt (point))
-  (message "Killed: %s" (current-kill 0)))
+  (message "Killed: %s" (current-kill 0))
+  (point))
 
 (defun avy-action-kill-stay (pt)
   "Kill sexp at PT."
   (save-excursion
-   (goto-char pt)
-   (forward-sexp)
-   (kill-region pt (point))
-   (just-one-space))
-  (message "Killed: %s" (current-kill 0)))
+    (goto-char pt)
+    (avy-forward-item)
+    (kill-region pt (point))
+    (just-one-space))
+  (message "Killed: %s" (current-kill 0))
+  (select-window
+   (cdr
+    (ring-ref avy-ring 0)))
+  t)
 
 (defun avy-action-teleport (pt)
   "Kill sexp starting on PT and yank into the current location."
   (avy-action-kill-stay pt)
-  (yank))
+  (select-window
+   (cdr
+    (ring-ref avy-ring 0)))
+  (yank)
+  t)
 
 (declare-function flyspell-correct-word-before-point "flyspell")
 
@@ -683,14 +697,20 @@ Set `avy-style' according to COMMMAND as well."
   "Auto correct word at PT."
   (save-excursion
     (goto-char pt)
-    (if (bound-and-true-p flyspell-mode)
-        (flyspell-correct-word-before-point)
-      (if (looking-at-p "\\b")
-          (ispell-word)
-        (progn
-          (backward-word)
-          (when (looking-at-p "\\b")
-            (ispell-word)))))))
+    (cond
+      ((eq avy-command 'avy-goto-line)
+       (ispell-region
+        (line-beginning-position)
+        (line-end-position)))
+      ((bound-and-true-p flyspell-mode)
+       (flyspell-correct-word-before-point))
+      ((looking-at-p "\\b")
+       (ispell-word))
+      (t
+       (progn
+         (backward-word)
+         (when (looking-at-p "\\b")
+           (ispell-word)))))))
 
 (defun avy--process (candidates overlay-fn)
   "Select one of CANDIDATES using `avy-read'.

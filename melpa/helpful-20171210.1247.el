@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171210.726
+;; Package-Version: 20171210.1247
 ;; Keywords: help, lisp
 ;; Version: 0.4
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -401,10 +401,11 @@ for killing the newly created buffer."
       ;;
       ;; Narrowing has been fixed upstream:
       ;; http://git.savannah.gnu.org/cgit/emacs.git/commit/?id=abd18254aec76b26e86ae27e91d2c916ec20cc46
-      (-let* (((base-sym . path) (find-function-library sym))
-              (src-buf (find-file-noselect path)))
-        (with-current-buffer src-buf
-          ;; Ignore the current narrowing and point position in `src-buf'.
+      (-when-let ((base-sym . path) (find-function-library sym))
+        ;; Open `path' ourselves. If the user has already opened it,
+        ;; we ensure that we don't change their narrowing or point
+        ;; position when we search it.
+        (with-current-buffer (find-file-noselect (find-library-name path))
           (save-excursion
             (save-restriction
               (widen)
@@ -429,10 +430,12 @@ for killing the newly created buffer."
   "Return the path where SYM is defined."
   (-let* ((initial-buffers (buffer-list))
           ((buf . _) (helpful--definition sym callable-p))
-          (path (when buf (buffer-file-name buf))))
-    ;; If we've just created this buffer, close it.
-    (unless (-contains-p initial-buffers buf)
-      (kill-buffer buf))
+          (path))
+    (when buf
+      (setq path (buffer-file-name buf))
+      ;; If we've just created this buffer, close it.
+      (unless (-contains-p initial-buffers buf)
+        (kill-buffer buf)))
     path))
 
 (defun helpful--source-pos (sym callable-p)
@@ -714,24 +717,26 @@ state of the current symbol."
        (format
         "This %s is advised." (if (macrop helpful--sym) "macro" "function"))))
 
-    (insert
-     (helpful--heading "\n\nDebugging\n\n")
-     (if (or (not helpful--callable-p) primitive-p)
-         ""
-       (concat
-        (make-text-button
-         "Disassemble"
-         nil
-         :type 'helpful-disassemble-button
-         'symbol helpful--sym))))
-    (unless (special-form-p helpful--sym)
-      (insert
-       " "
-       (make-text-button
-        "Forget" nil
-        :type 'helpful-forget-button
-        'symbol helpful--sym
-        'callable-p helpful--callable-p)))
+    (insert (helpful--heading "\n\nDebugging\n\n"))
+    (let ((can-disassemble
+           (and helpful--callable-p
+                (not primitive-p))))
+      (when can-disassemble
+        (insert
+         (make-text-button
+          "Disassemble" nil
+          :type 'helpful-disassemble-button
+          'symbol helpful--sym)))
+
+      (unless (special-form-p helpful--sym)
+        (when can-disassemble
+          (insert " "))
+        (insert
+         (make-text-button
+          "Forget" nil
+          :type 'helpful-forget-button
+          'symbol helpful--sym
+          'callable-p helpful--callable-p))))
 
     (insert
      (helpful--heading "\n\nSource Code\n")

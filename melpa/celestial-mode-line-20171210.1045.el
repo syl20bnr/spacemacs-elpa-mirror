@@ -4,7 +4,7 @@
 
 ;; Author: Peter <craven@gmx.net>
 ;; URL: https://github.com/ecraven/celestial-mode-line
-;; Package-Version: 20171206.2303
+;; Package-Version: 20171210.1045
 ;; Package-X-Original-Version: 20171207
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 0.1.1
@@ -150,8 +150,11 @@ See `celestial-mode-line-phase-representation-alist'."
   (destructuring-bind (next-phase days moon-date time)
       (celestial-mode-line--relevant-data date)
     (concat (lunar-phase-name next-phase)
-            " in " (number-to-string days)
-            " day" (if (> days 1) "s" "")
+            (if (zerop days)
+                " today"
+              (concat
+               " in " (number-to-string days)
+               " day" (if (> days 1) "s" "")))
             " on " (calendar-date-string moon-date)
             " at " time)))
 
