@@ -5,7 +5,7 @@
 ;; Version: 1.3
 ;; Package-Requires: ((emacs "24"))
 ;; Based On: ujelly by Mark Tran
-;; Package-Version: 20171108.1431
+;; Package-Version: 20171212.1053
 ;; Package-X-Original-Version: 20151208.2136
 ;; "What do you mean, no one calls you JBeans?!  I call you JBeans!"
 ;; -- Wilbur
@@ -13,6 +13,28 @@
 ;; Based on ujelly by Mark Tran <mark.tran@gmail.com>
 ;; Orig-URL: http://github.com/marktran/color-theme-ujelly
 ;; Inspired by jellybeans: http://www.vim.org/scripts/script.php?script_id=2555.
+
+
+;; Copyright (c) 2017 Adam Olsen <arolsen@gmail.com>
+;; 
+;; Permission is hereby granted, free of charge, to any person obtaining a copy
+;; of this software and associated documentation files (the "Software"), to deal
+;; in the Software without restriction, including without limitation the rights
+;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+;; copies of the Software, and to permit persons to whom the Software is
+;; furnished to do so, subject to the following conditions:
+;; 
+;; The above copyright notice and this permission notice shall be included in all
+;; copies or substantial portions of the Software.
+;; 
+;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+;; SOFTWARE.
+
 (deftheme jbeans "The jbeans color theme")
 
 (let ((class '((class color) (min-colors 89)))
@@ -201,6 +223,8 @@
        `(lazy-highlight                      ((,class (:foreground ,jbeans-red-4 :background nil))))
 ;;;;; Linum
        `(linum                               ((,class (:foreground ,jbeans-grey-5 :background ,jbeans-grey-2))))
+;;;;; Display line numbers
+       `(line-number                         ((,class (:foreground ,jbeans-grey-5 :background ,jbeans-grey-2))))
 ;;;;; Ediff
        `(ediff-even-diff-A                   ((,class (:background ,jbeans-grey-2 :foreground ,jbeans-fg))))
        `(ediff-even-diff-B                   ((,class (:background ,jbeans-grey-3 :foreground ,jbeans-fg))))
@@ -375,6 +399,16 @@
        `(tabbar-modified                     ((,class (:inherit tabbar-default :foreground ,jbeans-green-5 :box (:line-width 1 :color ,jbeans-grey-5 style: released-button)))))
        `(tabbar-selected                     ((,class (:inherit tabbar-default :foreground ,jbeans-blue-0 :box (:line-width 1 :color ,jbeans-fg style: released-button)))))
        `(tabbar-unselected                   ((,class (:inherit tabbar-default :box (:line-width 1 :color ,jbeans-grey-6 style: released-button)))))
+;;;;; Term
+       `(term-color-black                    ((,class (:foreground ,jbeans-bg :background ,jbeans-bg))))
+       `(term-color-red                      ((,class (:foreground ,jbeans-red-2 :background ,jbeans-red-3))))
+       `(term-color-green                    ((,class (:foreground ,jbeans-green-2 :background ,jbeans-green-3))))
+       `(term-color-yellow                   ((,class (:foreground ,jbeans-yellow-3 :background ,jbeans-yellow-2))))
+       `(term-color-blue                     ((,class (:foreground ,jbeans-blue-0 :background ,jbeans-blue-1))))
+       `(term-color-magenta                  ((,class (:foreground ,jbeans-purple-0 :background ,jbeans-purple-3))))
+       `(term-color-white                    ((,class (:foreground ,jbeans-fg :background ,jbeans-fg))))
+       `(term-default-fg-color               ((,class (:inherit term-color-white))))
+       `(term-default-bg-color               ((,class (:inherit term-color-black))))
 ;;;;; Whitespace
        `(trailing-whitespace                 ((,class (:background ,jbeans-red-4))))
 ;;;;; Vertical border

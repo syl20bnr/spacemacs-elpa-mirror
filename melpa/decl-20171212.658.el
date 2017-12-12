@@ -2,8 +2,8 @@
 
 ;; Author: Preetpal S. Sohal
 ;; URL: https://github.com/preetpalS/decl.el
-;; Package-Version: 20170314.23
-;; Version: 1.0.3
+;; Package-Version: 20171212.658
+;; Version: 1.0.4
 ;; Package-Requires: ((dash "2.5.0") (emacs "24.3") (cl-lib "0.3"))
 ;; License: GNU General Public License Version 3
 
@@ -762,7 +762,7 @@ DECL-BLOCK-KEYWORD-NAME must be a keyword.
                      (cl-dolist (e successful-nodes)
                        (decl--concat! to-return (concat "*** " (prin1-to-string e) "\n")))
 
-                     (decl--concat! to-return "** Nodes failing and returning nil\n")
+                     (decl--concat! to-return "** Nodes failing from returning nil\n")
 
                      (cl-dolist (e failed-nil-nodes)
                        (decl--concat! to-return (concat "*** " (prin1-to-string e) "\n")))
