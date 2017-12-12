@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/dired-sidebar
-;; Package-Version: 20171211.1819
+;; Package-Version: 20171212.36
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1") (dired-subtree "0.0.1"))
 ;; Keywords: dired, files, tools
@@ -289,6 +289,11 @@ with a prefix arg or when `dired-sidebar-find-file-alt' is called."
 
 (defcustom dired-sidebar-display-autorevert-messages nil
   "Whether or not to display `autorevert' messages."
+  :type 'boolean
+  :group 'dired-sidebar)
+
+(defcustom dired-sidebar-open-file-in-most-recently-used-window t
+  "Whether or not to open files in most recently used window."
   :type 'boolean
   :group 'dired-sidebar)
 
@@ -581,7 +586,9 @@ window selection."
       (select-window
        (if select-with-alt-window-function
            (funcall dired-sidebar-alternate-select-window-function)
-         (next-window)))
+         (if dired-sidebar-open-file-in-most-recently-used-window
+             (get-mru-window)
+           (next-window))))
       (find-file dired-file-name))))
 
 (defun dired-sidebar-find-file-alt ()

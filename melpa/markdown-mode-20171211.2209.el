@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171211.2047
+;; Package-Version: 20171211.2209
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -9178,7 +9178,7 @@ spaces, or alternatively a TAB should be used as the separator."
           nil nil nil nil
           (font-lock-multiline . t)
           (font-lock-syntactic-face-function . markdown-syntactic-face)
-          (font-lock-extra-managed-props . '(composition display invisible))))
+          (font-lock-extra-managed-props . (composition display invisible))))
   (if markdown-hide-markup
       (add-to-invisibility-spec 'markdown-markup)
     (remove-from-invisibility-spec 'markdown-markup))
