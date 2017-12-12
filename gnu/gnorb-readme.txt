@@ -80,9 +80,6 @@ composing messages from... Or maybe it's just a case of NIH.
 Provide an Org Agenda command that does an email search for messages
 received in the visible date span, or day under point, etc. Make it
 work in the calendar, as well?
-*** TODO Gnus message tagging
-Allow tagging of Gnus messages, by giving the message's registry entry
-an 'org-tags key.
 *** TODO Collect BBDB messages by thread
 At present, when you collect message links on a BBDB contact, each
 message is a separate link. If you have lengthy conversations with
@@ -98,6 +95,12 @@ automatically.
 *** TODO gnorb-bbdb-view
 Provide a `gnorb-bbdb-view' command that opens a Summary buffer
 containing all the tracked messages from the contact(s) under point.
+*** DONE Gnus message tagging
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2017-12-09 Sat 17:23]
+:END:
+Allow tagging of Gnus messages, by giving the message's registry entry
+an 'org-tags key.
 *** DONE Email subtree export to doc and rtf
 :LOGBOOK:
 - State "DONE"       from "TODO"       [2017-03-11 Sat 12:35]
