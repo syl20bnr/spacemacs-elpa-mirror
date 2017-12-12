@@ -2,7 +2,7 @@
 ;; Copyright (C) 2014 - 2016 jim
 ;; Author: xcwenn@qq.com [https://github.com/xcwen]
 ;; URL: https://github.com/xcwen/ac-php
-;; Package-Version: 2.0pre
+;; Package-Version: 2.0
 ;; Keywords: completion, convenience, intellisense
 ;; Package-Requires: ( (cl-lib "0.5") (ac-php-core "1") (company "0.9")  )
 
@@ -43,7 +43,7 @@
   "Completion backend for PHP."
   :group 'company)
 
-(defcustom company-php-begin-after-member-access  nil
+(defcustom company-php-begin-after-member-access  t
   "When non-nil, automatic completion will start whenever the current
 symbol is preceded by \"->\" or \"::\", ignoring
 `company-minimum-prefix-length'.
