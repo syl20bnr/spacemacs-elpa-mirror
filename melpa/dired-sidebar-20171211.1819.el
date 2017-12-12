@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/dired-sidebar
-;; Package-Version: 20171210.2202
+;; Package-Version: 20171211.1819
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1") (dired-subtree "0.0.1"))
 ;; Keywords: dired, files, tools
@@ -844,7 +844,9 @@ This may return nil if there's no suitable file to show."
    ((and (eq major-mode 'dired-mode)
          (not dired-sidebar-mode))
     ;; Not sure if `dired-get-filename' is more appropriate.
-    (dired-get-file-for-visit))
+    (condition-case nil
+        (dired-get-file-for-visit)
+      (error nil)))
    (:default
     buffer-file-name)))
 

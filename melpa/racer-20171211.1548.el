@@ -4,7 +4,7 @@
 
 ;; Author: Phil Dawes
 ;; URL: https://github.com/racer-rust/emacs-racer
-;; Package-Version: 20171129.1343
+;; Package-Version: 20171211.1548
 ;; Version: 1.3
 ;; Package-Requires: ((emacs "24.3") (rust-mode "0.2.0") (dash "2.13.0") (s "1.10.0") (f "0.18.2") (pos-tip "0.4.6"))
 ;; Keywords: abbrev, convenience, matching, rust, tools
@@ -256,13 +256,19 @@ Return a list (exit-code stdout stderr)."
 Return a list of all the lines returned by the command."
   (racer--with-temporary-file tmp-file
     (write-region nil nil tmp-file nil 'silent)
-    (s-lines
-     (s-trim-right
-      (racer--call command
-                   (number-to-string (line-number-at-pos))
-                   (number-to-string (racer--current-column))
-                   (buffer-file-name (buffer-base-buffer))
-                   tmp-file)))))
+    (let ((racer-args (list
+                       command
+                       (number-to-string (line-number-at-pos))
+                       (number-to-string (racer--current-column)))))
+      ;; If this buffer is backed by a file, pass that to racer too.
+      (-when-let (file-name (buffer-file-name (buffer-base-buffer)))
+        (setq racer-args
+              (append racer-args (list file-name))))
+
+      (setq racer-args (append racer-args (list tmp-file)))
+      (s-lines
+       (s-trim-right
+        (apply #'racer--call racer-args))))))
 
 (defun racer--read-rust-string (string)
   "Convert STRING, a rust string literal, to an elisp string."

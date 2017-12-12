@@ -4,9 +4,10 @@
 
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 27 Jul 2017
-;; Version: 0.0.2
-;; Package-Version: 0.0.2
+;; Version: 0.0.3
+;; Package-Version: 20171211.1744
 ;; Keywords: files comm deploy
+;; URL: https://github.com/emacs-php/emacs-auto-deployment
 ;; Package-Requires: ((emacs "24.3") (cl-lib "0.5") (f "0.17") (s "1.7.0"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -126,8 +127,11 @@
 
 (defun copy-file-on-save--copy-file ()
   "Copy a file using `copy-file'."
-  (let ((from-path buffer-file-name)
-        (to-path   (copy-file-on-save--replace-path buffer-file-name)))
+  (let* ((from-path buffer-file-name)
+	 (to-path   (copy-file-on-save--replace-path buffer-file-name))
+	 (to-dir (file-name-directory to-path)))
+    (unless (file-exists-p to-dir)
+      (make-directory to-dir t))
     (copy-file from-path to-path t)))
 
 (defun copy-file-on-save--replace-path (src-file-path)
@@ -145,14 +149,15 @@
   "Minor mode for automatic deployment/syncronize file when saved."
   :group 'copy-file-on-save
   :lighter copy-file-on-save-lighter
-  :global t
   (if copy-file-on-save-mode
       (add-hook 'after-save-hook 'copy-file-on-save--hook-after-save nil t)
     (remove-hook 'after-save-hook 'copy-file-on-save--hook-after-save t)))
 
 ;;;###autoload
 (define-globalized-minor-mode global-copy-file-on-save-mode copy-file-on-save-mode
-  turn-on-copy-file-on-save :group 'copy-file-on-save)
+  turn-on-copy-file-on-save
+  :group 'copy-file-on-save
+  :require 'copy-file-on-save)
 
 (provide 'copy-file-on-save)
 ;;; copy-file-on-save.el ends here

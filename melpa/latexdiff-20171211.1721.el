@@ -5,7 +5,7 @@
 ;; Author: Launay Gaby <gaby.launay@tutanota.com>
 ;; Maintainer: Launay Gaby <gaby.launay@tutanota.com>
 ;; Package-Requires: ((emacs "24.4"))
-;; Package-Version: 20171130.905
+;; Package-Version: 20171211.1721
 ;; Version: 0.1.0
 ;; Keywords: tex, vc, tools, git, helm
 ;; URL: http://github.com/galaunay/latexdiff.el
@@ -418,7 +418,7 @@ Used to show nice commit description during commit selection."
 ;; Helm
 ;;;;;;;;;
 
-(with-eval-after-load 'helm-mode
+(with-eval-after-load "helm-mode"
 
   (defvar helm-source-latexdiff-choose-commit
     (helm-build-sync-source "Latexdiff choose a commit:"

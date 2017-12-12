@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171210.1552
+;; Package-Version: 20171211.1558
 ;; Keywords: help, lisp
 ;; Version: 0.4
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -416,7 +416,7 @@ for killing the newly created buffer."
       (unless buf-and-pos
         ;; If it's defined interactively, it may have an edebug property
         ;; that tells us where it's defined.
-        (-when-let (marker (car (get sym 'edebug)))
+        (-when-let (marker (car-safe (get sym 'edebug)))
           (setq buf-and-pos
                 (cons (marker-buffer marker)
                       (marker-position marker))))))
@@ -1005,6 +1005,13 @@ See also `helpful-callable' and `helpful-variable'."
   "Move point backward to the next button."
   (interactive)
   (helpful--forward-button -1))
+
+(defun helpful-kill-buffers ()
+  "Kill all `helpful-mode' buffers."
+  (interactive)
+  (dolist (buffer (buffer-list))
+    (when (eq (buffer-local-value 'major-mode buffer) 'helpful-mode)
+      (kill-buffer buffer))))
 
 (define-key helpful-mode-map (kbd "g") #'helpful-update)
 (define-key helpful-mode-map (kbd "RET") #'helpful-visit-reference)
