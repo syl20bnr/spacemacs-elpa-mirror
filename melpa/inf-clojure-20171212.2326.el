@@ -5,7 +5,7 @@
 ;; Authors: Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Olin Shivers <shivers@cs.cmu.edu>
 ;; URL: http://github.com/clojure-emacs/inf-clojure
-;; Package-Version: 20171120.2310
+;; Package-Version: 20171212.2326
 ;; Keywords: processes, clojure
 ;; Version: 2.1.0-snapshot
 ;; Package-Requires: ((emacs "24.4") (clojure-mode "5.6"))
@@ -189,6 +189,14 @@ number (e.g. (\"localhost\" . 5555))."
    (listp x)
    (stringp (car x))
    (numberp (cdr x))))
+
+(defcustom inf-clojure-project-type nil
+  "Defines the project type.
+
+If this is `nil`, the project will be automatically detected."
+  :type 'string
+  :safe #'stringp
+  :package-version '(inf-clojure . "2.1.0"))
 
 (defcustom inf-clojure-lein-cmd "lein repl"
   "The command used to start a Clojure REPL for Leiningen projects.
@@ -512,10 +520,11 @@ Fallback to `default-directory.' if not within a project."
 
 (defun inf-clojure-project-type ()
   "Determine the type, either leiningen or boot of the current project."
-  (let ((default-directory (inf-clojure-project-root)))
-    (cond ((file-exists-p "project.clj") "lein")
-          ((file-exists-p "build.boot") "boot")
-          (t nil))))
+  (or inf-clojure-project-type
+      (let ((default-directory (inf-clojure-project-root)))
+        (cond ((file-exists-p "project.clj") "lein")
+              ((file-exists-p "build.boot") "boot")
+              (t "generic")))))
 
 (defun inf-clojure-cmd (project-type)
   "Determine the command `inf-clojure' needs to invoke for the PROJECT-TYPE."
