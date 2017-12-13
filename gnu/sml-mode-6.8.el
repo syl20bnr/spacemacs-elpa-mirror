@@ -1,9 +1,9 @@
 ;;; sml-mode.el --- Major mode for editing (Standard) ML  -*- lexical-binding: t; coding: utf-8 -*-
 
-;; Copyright (C) 1989,1999,2000,2004,2007,2010-2015  Free Software Foundation, Inc.
+;; Copyright (C) 1989,1999,2000,2004,2007,2010-2017  Free Software Foundation, Inc.
 
-;; Maintainer: (Stefan Monnier) <monnier@iro.umontreal.ca>
-;; Version: 6.7
+;; Maintainer: Stefan Monnier <monnier@iro.umontreal.ca>
+;; Version: 6.8
 ;; Keywords: SML
 ;; Author:	Lars Bo Nielsen
 ;;		Olin Shivers
@@ -12,6 +12,7 @@
 ;;		Matthew Morley <mjm@scs.leeds.ac.uk>
 ;;		Matthias Blume <blume@cs.princeton.edu>
 ;;		(Stefan Monnier) <monnier@iro.umontreal.ca>
+;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 
 ;; This file is part of GNU Emacs.
 
@@ -113,7 +114,7 @@
 
 ;;; Code:
 
-(eval-when-compile (require 'cl))
+(eval-when-compile (require 'cl-lib))
 (require 'smie nil 'noerror)
 (require 'electric)
 
@@ -218,8 +219,8 @@ notion of \"the end of an outline\".")
 
 
 (defconst sml-=-starter-syms
-  (list* "|" "val" "fun" "and" "datatype" "type" "abstype" "eqtype"
-	 sml-module-head-syms)
+  `("|" "val" "fun" "and" "datatype" "type" "abstype" "eqtype"
+    . ,sml-module-head-syms)
   "Symbols that can be followed by a `='.")
 (defconst sml-=-starter-re
   (concat "\\S.|\\S.\\|" (sml-syms-re (cdr sml-=-starter-syms)))
@@ -256,8 +257,8 @@ notion of \"the end of an outline\".")
   (defconst sml-id-re "\\sw\\(?:\\sw\\|\\s_\\)*"))
 
 (defconst sml-tyvarseq-re
-  (concat "\\(?:\\(?:'+" sml-id-re "\\|(\\(?:[,']\\|" sml-id-re
-          "\\|\\s-\\)+)\\)\\s-+\\)?"))
+  (concat "\\(?:\\(?:'+" sml-id-re "\\|(\\(?:[,' \t\n]+" sml-id-re
+          "\\)+)\\)\\s-+\\)?"))
 
 ;;; Font-lock settings ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -344,7 +345,7 @@ Regexp match data 0 points to the chars."
     (,(concat "\\_<\\(signature\\)\\s-+\\(" sml-id-re "\\)")
      (1 font-lock-keyword-face)
      (2 font-lock-interface-def-face))
-    
+
     (,sml-keywords-regexp . font-lock-keyword-face)
     ,@(sml-font-lock-symbols-keywords))
   "Regexps matching standard SML keywords.")
@@ -500,7 +501,7 @@ Regexp match data 0 points to the chars."
     ;;      and bar = Bar of string
     (save-excursion
       (let ((max (line-end-position 0))
-            (data (smie-backward-sexp "and"))
+            (_data (smie-backward-sexp "and"))
             (startcol (save-excursion
                         (forward-comment (- (point)))
                         (current-column)))
@@ -555,7 +556,6 @@ Regexp match data 0 points to the chars."
     (`(:before . "withtype") 0)
     (`(:before . "d=")
      (cond
-      ((smie-rule-parent-p "fun") 2)
       ((smie-rule-parent-p "datatype") (if (smie-rule-bolp) 2))
       ((smie-rule-parent-p "structure" "signature" "functor") 0)))
     ;; Indent an expression starting with "local" as if it were starting
@@ -721,7 +721,7 @@ Assumes point is right before the | symbol."
   "The inferior-process buffer to which to send code.")
 (make-variable-buffer-local 'sml-prog-proc--buffer)
 
-(defstruct (sml-prog-proc-descriptor
+(cl-defstruct (sml-prog-proc-descriptor
             (:constructor sml-prog-proc-make)
             (:predicate nil)
             (:copier nil))
@@ -890,10 +890,10 @@ Prefix arg AND-GO also means to switch to the read-eval-loop buffer afterwards."
      ;; Look for files to determine the default command.
      (while (and (stringp dir)
                  (progn
-                   (dolist (cf (sml-prog-proc--prop compile-commands-alist))
+                   (cl-dolist (cf (sml-prog-proc--prop compile-commands-alist))
                      (when (file-exists-p (expand-file-name (cdr cf) dir))
                        (setq cmd (concat cmd "\"; " (car cf)))
-                       (return nil)))
+                       (cl-return nil)))
                    (not cmd)))
        (let ((newdir (file-name-directory (directory-file-name dir))))
 	 (setq dir (unless (equal newdir dir) newdir))
@@ -916,10 +916,10 @@ Prefix arg AND-GO also means to switch to the read-eval-loop buffer afterwards."
      ;; ;; now look for command's file to determine the directory
      ;; (setq dir default-directory)
      ;; (while (and (stringp dir)
-     ;; 	    (dolist (cf (sml-prog-proc--prop compile-commands-alist) t)
+     ;; 	    (cl-dolist (cf (sml-prog-proc--prop compile-commands-alist) t)
      ;; 	      (when (and (equal cmd (car cf))
      ;; 			 (file-exists-p (expand-file-name (cdr cf) dir)))
-     ;; 		(return nil))))
+     ;; 		(cl-return nil))))
      ;;   (let ((newdir (file-name-directory (directory-file-name dir))))
      ;;     (setq dir (unless (equal newdir dir) newdir))))
      ;; (setq dir (or dir default-directory))
@@ -981,7 +981,7 @@ commands with the same file.")
 
 (defvar sml-use-command "use \"%s\""
   "Template for loading a file into the inferior SML process.
-Set to \"use \\\"%s\\\"\" for SML/NJ or Edinburgh ML; 
+Set to \"use \\\"%s\\\"\" for SML/NJ or Edinburgh ML;
 set to \"PolyML.use \\\"%s\\\"\" for Poly/ML, etc.")
 
 (defvar sml-cd-command "OS.FileSys.chDir \"%s\""
@@ -1097,7 +1097,7 @@ on which to run CMD using `remote-shell-program'.
     (setq sml-host-name host)
     ;; For remote execution, use `remote-shell-program'
     (when (> (length host) 0)
-      (setq args (list* host "cd" default-directory ";" cmd args))
+      (setq args `(,host "cd" ,default-directory ";" ,cmd . ,args))
       (setq cmd remote-shell-program))
     ;; Go for it.
     (save-current-buffer
@@ -1114,7 +1114,7 @@ on which to run CMD using `remote-shell-program'.
       (current-buffer))))
 
 (defun sml-send-function (&optional and-go)
-  "Send current paragraph to the inferior SML process. 
+  "Send current paragraph to the inferior SML process.
 With a prefix argument AND-GO switch to the repl buffer as well."
   (interactive "P")
   (save-excursion
@@ -1140,7 +1140,7 @@ With a prefix argument AND-GO switch to the repl buffer as well."
   ;; always obvious to spot it).
   ;;
   ;; Sample messages:
-  ;; 
+  ;;
   ;; Data.sml:31.9-33.33 Error: right-hand-side of clause doesn't agree with function result type [tycon mismatch]
   ;;   expression:  Hstring
   ;;   result type:  Hstring * int
@@ -1462,7 +1462,7 @@ Depending on the context insert the name of function, a \"=>\" etc."
       (end-of-line)
       (while (and (> count 0)
 		  (setq name (sml-beginning-of-defun)))
-	(decf count)
+	(cl-decf count)
 	(setq fullname (if fullname (concat name "." fullname) name))
 	;; Skip all other declarations that we find at the same level.
 	(sml-skip-siblings))
@@ -1475,8 +1475,8 @@ Depending on the context insert the name of function, a \"=>\" etc."
   "Alist of code templates.
 You can extend this alist to your heart's content.  For each additional
 template NAME in the list, declare a keyboard macro or function (or
-interactive command) called 'sml-form-NAME'.
-If 'sml-form-NAME' is a function it takes no arguments and should
+interactive command) called `sml-form-NAME'.
+If `sml-form-NAME' is a function it takes no arguments and should
 insert the template at point\; if this is a command it may accept any
 sensible interactive call arguments\; keyboard macros can't take
 arguments at all.
@@ -1568,7 +1568,7 @@ If a prefix argument is given insert a NEWLINE and indent first, or
 just move to the proper indentation if the line is blank\; otherwise
 insert at point (which forces indentation to current column).
 
-The default form to insert is 'whatever you inserted last time'
+The default form to insert is whatever you inserted last time
 \(just hit return when prompted\)\; otherwise the command reads with
 completion from `sml-forms-alist'."
   (interactive
@@ -1833,6 +1833,32 @@ If nil, align it with previous cases."
 
 ;;;; ChangeLog:
 
+;; 2017-12-12  Stefan Monnier  <monnier@iro.umontreal.ca>
+;; 
+;; 	Bump version to make new release
+;; 
+;; 2016-10-26  Stefan Monnier  <monnier@iro.umontreal.ca>
+;; 
+;; 	* packages/sml-mode/sml-mode.el (sml-smie-rules): Remove incoherent
+;; 	rule.
+;; 
+;; 2016-08-14  Stefan Monnier  <monnier@iro.umontreal.ca>
+;; 
+;; 	* packages/sml-mode/sml-mode.el (sml-tyvarseq-re): Backtrack less
+;; 	(bug#24205)
+;; 
+;; 2016-08-04  Stefan Monnier  <monnier@iro.umontreal.ca>
+;; 
+;; 	* sml-mode/sml-mode.el: Use cl-lib.
+;; 
+;; 2016-07-11  Paul Eggert	 <eggert@cs.ucla.edu>
+;; 
+;; 	Fix some quoting problems in doc strings
+;; 
+;; 	Most of these are minor issues involving, e.g., quoting `like this' 
+;; 	instead of 'like this'.	 A few involve escaping ` and ' with a preceding
+;; 	\= when the characters should not be turned into curved single quotes.
+;; 
 ;; 2015-02-12  Stefan Monnier  <monnier@iro.umontreal.ca>
 ;; 
 ;; 	* sml-mode/sml-mode.el: Bump version to make a new release
@@ -1891,8 +1917,7 @@ If nil, align it with previous cases."
 ;; 
 ;; 2013-01-24  Stefan Monnier  <monnier@iro.umontreal.ca>
 ;; 
-;; 	* sml-mode.el (sml-mode-variables): Set sml-prog-proc-descriptor
-;; 	here...
+;; 	* sml-mode.el (sml-mode-variables): Set sml-prog-proc-descriptor here...
 ;; 	(sml-mode): ... instead of here.
 ;; 
 ;; 2013-01-24  Stefan Monnier  <monnier@iro.umontreal.ca>

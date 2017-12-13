@@ -952,7 +952,7 @@
 	      ((:url . "http://elpa.gnu.org/packages/smart-yank.html")
 	       (:keywords "convenience"))])
  (sml-mode .
-	   [(6 7)
+	   [(6 8)
 	    ((emacs
 	      (24))
 	     (cl-lib
