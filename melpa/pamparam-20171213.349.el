@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/pamparam
-;; Package-Version: 20170927.1048
+;; Package-Version: 20171213.349
 ;; Version: 0.0.0
 ;; Package-Requires: ((emacs "24.3") (lispy "0.26.0") (worf "0.1.0") (hydra "0.13.4"))
 ;; Keywords: outlines, hypermedia, flashcards, memory
@@ -482,9 +482,8 @@ When called interactively, use today's schedule file."
         (save-buffer)
         (kill-buffer (current-buffer))))
   (defun pamparam-spit (str file)
-    (let ((cmd (format "echo %s > %s"
-                       (shell-quote-argument
-                        (replace-regexp-in-string "'" "'\\''" str t t))
+    (let ((cmd (format "echo '%s' > %s"
+                       (replace-regexp-in-string "'" "'\\''" str t t)
                        (shell-quote-argument file))))
       (unless (= 0 (call-process-shell-command cmd))
         (error "Command failed: %s" cmd)))))
