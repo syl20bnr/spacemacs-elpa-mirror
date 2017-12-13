@@ -6,7 +6,7 @@
 ;; Created: 24 Aug 2011
 ;; Updated: 16 Mar 2015
 ;; Version: 1.2
-;; Package-Version: 20171129.1408
+;; Package-Version: 20171213.1207
 ;; Package-Requires: ((gntp "0.1") (log4e "0.3.0"))
 ;; Keywords: notification emacs message
 ;; X-URL: https://github.com/jwiegley/alert
@@ -781,11 +781,11 @@ strings."
 (when (featurep 'notifications)
 (defun alert-notifications-notify (info)
   (notifications-notify :title (plist-get info :title)
-                      :body  (plist-get info :message)
-                      :app-icon (plist-get info :icon)
-                      :urgency (cdr (assq (plist-get info :severity)
-                                            alert-notifications-priorities))
-)
+                        :body  (plist-get info :message)
+                        :app-icon (plist-get info :icon)
+                        :timeout (if (plist-get info :persistent) 0 -1)
+                        :urgency (cdr (assq (plist-get info :severity)
+                                            alert-notifications-priorities)))
                (alert-message-notify info))
 
 (alert-define-style 'notifications :title "Notify using notifications"

@@ -21,11 +21,6 @@ if things ain't perfect, or if they only do what *I currently*
 need but not what you (or I) think they should (eventually) be
 doing instead.
 
-Currently my init file also contains this:
-
-   (magit-define-popup-action 'magit-fetch-popup
-     ?P "Pull request" 'magit-branch-pull-request)
-
 To use the "uncommit-extend" feature add this:
 
    (magit-define-popup-action 'magit-revert-popup
