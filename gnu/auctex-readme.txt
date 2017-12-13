@@ -1,6 +1,6 @@
 This is the README file for the AUCTeX distribution.
 
-     Copyright (C) 2008 Free Software Foundation, Inc.
+     Copyright (C) 2008, 2017 Free Software Foundation, Inc.
 
      Copying and distribution of this file, with or without
      modification, are permitted in any medium without royalty provided
@@ -16,7 +16,7 @@ installation.
 
 AUCTeX is a comprehensive customizable integrated environment for
 writing input files for TeX, LaTeX, ConTeXt, Texinfo, and docTeX using
-Emacs or XEmacs.
+Emacs.
 
 It supports you in the insertion of macros, environments, and sectioning
 commands by providing completion alternatives and prompting for
@@ -108,9 +108,9 @@ background and providing fast interactive response.
 **************************
 
 After installation, the package may need to be activated (and remember
-to activate AUCTeX too).  In XEmacs, and in any prepackaged versions
-worth their salt, activation should be automatic upon installation.  If
-this seems not the case, complain to your installation provider.
+to activate AUCTeX too).  If preview-latex is installed via the Emacs
+package manager (ELPA), activation should be automatic upon
+installation.
 
 The usual activation (if it is not done automatically) would be
 
@@ -153,9 +153,7 @@ C-p' (or by clicking with the middle mouse button on the icon before the
 edited text).
 
 If you are using the 'desktop' package, previews will remain from one
-session to the next as long as you don't kill your buffer.  If you are
-using XEmacs, you will probably need to upgrade the package to the
-newest one; things are being fixed just as I am writing this.
+session to the next as long as you don't kill your buffer.
 
 4 Basic modes of operation
 **************************
