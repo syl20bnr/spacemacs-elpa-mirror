@@ -5,7 +5,8 @@ Usage:
   "M-x counsel-etags-scan-code" to create tags file
   "M-x counsel-etags-grep" to grep
   "M-x counsel-etags-grep-symbol-at-point" to grep the symbol at point
-  "M-x counsel-etags-recent-tag" open recent tag
+  "M-x counsel-etags-recent-tag" to open recent tag
+  "M-x counsel-etags-find-tag" to fuzzy searching tag
 
 That's all!
 

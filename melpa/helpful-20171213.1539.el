@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171212.1332
+;; Package-Version: 20171213.1539
 ;; Keywords: help, lisp
 ;; Version: 0.4
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -51,6 +51,7 @@
 (require 'find-func)
 (require 'nadvice)
 (require 'info-look)
+(require 'edebug)
 
 (defvar-local helpful--sym nil)
 (defvar-local helpful--callable-p nil)
@@ -157,6 +158,62 @@ This allows us to distinguish strings from symbols."
 (defun helpful--disassemble (button)
   "Disassemble the current symbol."
   (disassemble (button-get button 'symbol)))
+
+(define-button-type 'helpful-edebug-button
+  'action #'helpful--edebug
+  'follow-link t
+  'symbol nil
+  'help-echo "Toggle edebug (re-evaluates definition)")
+
+(defun helpful--edebug-p (sym)
+  "Does function SYM have its definition patched by edebug?"
+  (let ((fn-def (indirect-function sym)))
+    ;; Edebug replaces function source code with a sexp that has
+    ;; `edebug-enter', `edebug-after' etc interleaved. This means the
+    ;; function is interpreted, so `indirect-function' returns a list.
+    (when (and (consp fn-def) (consp (cdr fn-def)))
+      (eq (car (-last-item fn-def)) 'edebug-enter))))
+
+(defun helpful--can-edebug-p (sym callable-p)
+  "Can we use edebug with SYM?"
+  (and
+   ;; SYM must be a function.
+   callable-p
+   ;; The function cannot be a primitive, it must be defined in elisp.
+   (not (helpful--primitive-p sym callable-p))
+   ;; We need to be able to find its definition, or we can't step
+   ;; through the source.
+   (-when-let ((buf pos opened) (helpful--definition sym t))
+     (when opened
+       (kill-buffer buf))
+     t)))
+
+(defun helpful--toggle-edebug (sym)
+  "Enable edebug when function SYM is called,
+or disable if already enabled."
+  (-if-let ((buf pos created) (helpful--definition sym t))
+      (progn
+        (with-current-buffer buf
+          (save-excursion
+            (save-restriction
+              (widen)
+              (goto-char pos)
+
+              (let* ((should-edebug (not (helpful--edebug-p sym)))
+                     (edebug-all-forms should-edebug)
+                     (edebug-all-defs should-edebug)
+                     (form (edebug-read-top-level-form)))
+                ;; Based on `edebug-eval-defun'.
+                (eval (eval-sexp-add-defvars form) lexical-binding)))))
+        (when created
+          (kill-buffer buf)))
+    
+    (user-error "Could not find source for edebug")))
+
+(defun helpful--edebug (button)
+  "Toggle edebug for the current symbol."
+  (helpful--toggle-edebug (button-get button 'symbol))
+  (helpful-update))
 
 (define-button-type 'helpful-navigate-button
   'action #'helpful--navigate
@@ -354,25 +411,24 @@ hooks.")
 (defun helpful--source (sym callable-p)
   "Return the source code of SYM.
 If the source code cannot be found, return the sexp used."
-  (-let ((initial-buffers (buffer-list))
-         ((buf . start-pos) (helpful--definition sym callable-p)))
-    (if (and buf start-pos)
-        (let (source)
-          (with-current-buffer buf
-            (save-excursion
-              (save-restriction
-                (goto-char start-pos)
-                (narrow-to-defun)
-                (setq source (buffer-substring-no-properties (point-min) (point-max))))))
-          ;; If we've just created this buffer, close it.
-          (unless (-contains-p initial-buffers buf)
-            (kill-buffer buf))
-          (when (and source (buffer-file-name buf))
-            (setq source (propertize source
-                                     'helpful-path (buffer-file-name buf)
-                                     'helpful-pos start-pos
-                                     'helpful-pos-is-start t)))
-          source)
+  (-let (((buf start-pos created) (helpful--definition sym callable-p))
+         (source nil))
+    (when (and buf start-pos)
+      (with-current-buffer buf
+        (save-excursion
+          (save-restriction
+            (goto-char start-pos)
+            (narrow-to-defun)
+            (setq source (buffer-substring-no-properties (point-min) (point-max))))))
+      (when (and source (buffer-file-name buf))
+        (setq source (propertize source
+                                 'helpful-path (buffer-file-name buf)
+                                 'helpful-pos start-pos
+                                 'helpful-pos-is-start t))))
+    (when (and buf created)
+      (kill-buffer buf))
+    (if source
+        source
       ;; Could not find source -- probably defined interactively, or via
       ;; a macro, or file has changed.
       ;; TODO: verify that the source hasn't changed before showing.
@@ -390,60 +446,82 @@ If the source code cannot be found, return the sexp used."
         (assoc-string sym completions))))
 
 (defun helpful--definition (sym callable-p)
-  "Return a pair (BUF . POS) where SYM is defined.
+  "Return a list (BUF POS OPENED) where SYM is defined.
 
-BUF may be an existing buffer or created. Caller is responsible
-for killing the newly created buffer."
-  (let (buf-and-pos)
+BUF is the buffer containing the definition. If the user wasn't
+already visiting this buffer, OPENED is t and callers should kill
+the buffer when done.
+
+POS is the position of the start of the definition within the
+buffer."
+  (-let ((initial-buffers (buffer-list))
+         (primitive-p (helpful--primitive-p sym callable-p))
+         (path nil)
+         (buf nil)
+         (pos nil)
+         (opened nil))
     (when callable-p
-      ;; This is basically `find-function-noselect', but that moves
-      ;; point and can't find definitions if narrowing is in effect.
-      ;;
-      ;; Narrowing has been fixed upstream:
-      ;; http://git.savannah.gnu.org/cgit/emacs.git/commit/?id=abd18254aec76b26e86ae27e91d2c916ec20cc46
-      (-when-let ((base-sym . path) (find-function-library sym))
-        ;; Open `path' ourselves. If the user has already opened it,
-        ;; we ensure that we don't change their narrowing or point
-        ;; position when we search it.
-        (with-current-buffer (find-file-noselect (find-library-name path))
-          (save-excursion
-            (save-restriction
-              (widen)
-              (setq buf-and-pos
-                    ;; `base-sym' is the underlying symbol if `sym' is an alias.
-                    (find-function-search-for-symbol base-sym nil path))))))
+      (-let [(base-sym . src-path) (find-function-library sym)]
+        ;; `base-sym' is the underlying symbol if `sym' is an alias.
+        (setq sym base-sym)
+        (setq path src-path)))
+    (when (and primitive-p path)
+      ;; Convert "src/foo.c" to "".
+      (setq path (f-expand path
+                           (f-parent find-function-C-source-directory))))
 
-      (unless buf-and-pos
-        ;; If it's defined interactively, it may have an edebug property
-        ;; that tells us where it's defined.
-        (-when-let (marker (car-safe (get sym 'edebug)))
-          (setq buf-and-pos
-                (cons (marker-buffer marker)
-                      (marker-position marker))))))
-    (when (not callable-p)
+    (cond
+     ((and callable-p path)
+      ;; Open `path' ourselves, so we can widen before searching.
+      (setq buf (find-file-noselect (find-library-name path)))
+
+      (unless (-contains-p initial-buffers buf)
+        (setq opened t))
+
+      ;; Based on `find-function-noselect'.
+      (with-current-buffer buf
+        ;; `find-function-search-for-symbol' moves point. Prevent
+        ;; that.
+        (save-excursion
+          ;; Narrowing has been fixed upstream:
+          ;; http://git.savannah.gnu.org/cgit/emacs.git/commit/?id=abd18254aec76b26e86ae27e91d2c916ec20cc46
+          (save-restriction
+            (widen)
+            (setq pos
+                  (if primitive-p
+                      (cdr (find-function-C-source sym path nil))
+                    (cdr (find-function-search-for-symbol sym nil path))))))))
+     (callable-p
+      ;; Functions defined interactively may have an edebug property
+      ;; that contains the location of the definition.
+      (-when-let (marker (car-safe (get sym 'edebug)))
+        (setq buf (marker-buffer marker))
+        (setq pos (marker-position marker))))
+     ((not callable-p)
       (condition-case _err
-          (setq buf-and-pos (find-definition-noselect sym 'defvar))
-        (search-failed nil)))
-    buf-and-pos))
+          (-let [(sym-buf . sym-pos) (find-definition-noselect sym 'defvar)]
+            (setq buf sym-buf)
+            (setq pos sym-pos))
+        (search-failed nil))))
+    (list buf pos opened)))
 
 (defun helpful--source-path (sym callable-p)
   "Return the path where SYM is defined."
-  (-let* ((initial-buffers (buffer-list))
-          ((buf . _) (helpful--definition sym callable-p))
-          (path))
+  (-let* (((buf _ opened) (helpful--definition sym callable-p))
+          (path nil))
     (when buf
       (setq path (buffer-file-name buf))
-      ;; If we've just created this buffer, close it.
-      (unless (-contains-p initial-buffers buf)
+      (when opened
+        ;; If we've just created this buffer, close it.
         (kill-buffer buf)))
     path))
 
 (defun helpful--source-pos (sym callable-p)
   "Return the file position where SYM is defined."
-  (-let ((initial-buffers (buffer-list))
-         ((buf . pos) (helpful--definition sym callable-p)))
+  (-let (((buf pos opened) (helpful--definition sym callable-p)))
     ;; If we've just created this buffer, close it.
-    (unless (-contains-p initial-buffers buf)
+    (when opened
+      ;; If we've just created this buffer, close it.
       (kill-buffer buf))
     pos))
 
@@ -717,10 +795,26 @@ state of the current symbol."
        (format
         "This %s is advised." (if (macrop helpful--sym) "macro" "function"))))
 
-    (insert (helpful--heading "\n\nDebugging\n\n"))
-    (let ((can-disassemble
-           (and helpful--callable-p
+    (let ((can-edebug
+           (helpful--can-edebug-p helpful--sym helpful--callable-p))
+          (can-disassemble
+           (and helpful--callable-p (not primitive-p)))
+          (can-forget
+           (and (not (special-form-p helpful--sym))
                 (not primitive-p))))
+      (when (or can-edebug can-disassemble can-forget)
+        (insert (helpful--heading "\n\nDebugging\n")))
+      (when can-edebug
+        (insert
+         (make-text-button
+          (if (helpful--edebug-p helpful--sym)
+              "Disable edebug"
+            "Enable edebug")
+          nil
+          :type 'helpful-edebug-button
+          'symbol helpful--sym)
+         "\n"))
+
       (when can-disassemble
         (insert
          (make-text-button
@@ -728,7 +822,7 @@ state of the current symbol."
           :type 'helpful-disassemble-button
           'symbol helpful--sym)))
 
-      (unless (special-form-p helpful--sym)
+      (when can-forget
         (when can-disassemble
           (insert " "))
         (insert

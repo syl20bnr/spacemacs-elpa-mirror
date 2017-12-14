@@ -5,7 +5,7 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-which-key
-;; Package-Version: 20171213.810
+;; Package-Version: 20171213.1752
 ;; Version: 3.0.2
 ;; Keywords:
 ;; Package-Requires: ((emacs "24.4"))
@@ -914,15 +914,16 @@ If AT-ROOT is non-nil the binding is also placed at the root of MAP."
 to `which-key-replacement-alist' so that this binding is replaced
 in which-key with DESCRIPTION. This function is meant to be used
 as :before advice for `define-key'."
-  (when (and (consp def)
-             (stringp (car def))
-             (symbolp (cdr def)))
-    (let ((key-desc (regexp-quote (key-description key))))
-      (push (cons (cons (format "%s\\'" key-desc)
-                        (when (cdr def)
-                          (format "\\`%s\\'" (symbol-name (cdr def)))))
-                  (cons nil (car def)))
-            which-key-replacement-alist))))
+  (with-demoted-errors "Which-key extended define-key error: %s"
+    (when (and (consp def)
+               (stringp (car def))
+               (symbolp (cdr def)))
+      (let ((key-desc (regexp-quote (key-description key))))
+        (push (cons (cons (format "%s\\'" key-desc)
+                          (when (cdr def)
+                            (format "\\`%s\\'" (symbol-name (cdr def)))))
+                    (cons nil (car def)))
+              which-key-replacement-alist)))))
 
 (when which-key-enable-extended-define-key
   (advice-add #'define-key :before #'which-key--process-define-key-args))

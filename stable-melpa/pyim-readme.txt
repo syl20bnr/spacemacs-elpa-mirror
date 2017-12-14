@@ -209,19 +209,10 @@ pyim 支持其它版本的仓颉，但需要用户自己创建词库文件。
    #+BEGIN_EXAMPLE
    (setq pyim-page-tooltip 'popup)
    #+END_EXAMPLE
-2. 使用 pos-tip 包来绘制选词框（emacs tooltip 机制）
+2. 使用 child-frame 来绘制选词框（emacs-version >= 26）
    #+BEGIN_EXAMPLE
-   (setq pyim-page-tooltip 'pos-tip)
+   (setq pyim-page-tooltip 'child-frame)
    #+END_EXAMPLE
-
-注：Linux 平台下，emacs 可以使用 GTK 来绘制选词框：
-
-#+BEGIN_EXAMPLE
-(setq pyim-page-tooltip 'pos-tip)
-(setq x-gtk-use-system-tooltips t)
-#+END_EXAMPLE
-
-GTK 选词框的字体设置可以参考：[[https://www.gnu.org/software/emacs/manual/html_node/emacs/GTK-resources.html#GTK-resources][GTK resources]] 。
 
 *** 调整 tooltip 选词框的显示样式
 pyim 的 tooltip 选词框默认使用 *双行显示* 的样式，在一些特
@@ -332,12 +323,6 @@ pyim 的 tooltip 选词框默认使用 *双行显示* 的样式，在一些特
 #+BEGIN_EXAMPLE
 (setq debug-on-error t)
 #+END_EXAMPLE
-
-*** 选词框弹出位置不合理或者选词框内容显示不全
-可以通过设置 `pyim-tooltip-width-adjustment' 变量来手动校正。
-
-1. 选词框内容显示不全：增大变量值
-2. 选词框弹出位置不合理：减小变量值
 
 *** 如何查看 pyim 文档。
 pyim 的文档隐藏在 comment 中，如果用户喜欢阅读 html 格式的文档，
