@@ -5,7 +5,7 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/system-packages
-;; Package-Version: 20171120.1205
+;; Package-Version: 20171214.941
 ;; Version: 0.1
 ;; Package-Requires: ((cl-lib "0.5"))
 
@@ -29,7 +29,7 @@
 
 ;;; Commentary:
 
-;; This is a package to manage installed system packages. Useful
+;; This is a package to manage installed system packages.  Useful
 ;; functions include installing packages, removing packages, listing
 ;; installed packages, and others.
 
@@ -67,7 +67,8 @@
            (remove-orphaned . nil)
            (list-installed-packages . "brew list --installed")
            (list-installed-packages-all . "brew list")
-           (list-dependencies-of . "brew deps")))
+           (list-dependencies-of . "brew deps")
+           (noconfirm . nil)))
     (port .
           ((default-sudo . t)
            (install . "port install")
@@ -84,7 +85,8 @@
            (remove-orphaned . "port uninstall leaves")
            (list-installed-packages . "port installed")
            (list-installed-packages-all . "port installed")
-           (list-dependencies-of . "port deps")))
+           (list-dependencies-of . "port deps")
+           (noconfirm . nil)))
     ;; Arch-based systems
     (pacaur .
             ((default-sudo . nil)
@@ -102,7 +104,8 @@
              (remove-orphaned . "pacaur -Rns $(pacman -Qtdq)")
              (list-installed-packages . "pacaur -Qe")
              (list-installed-packages-all . "pacaur -Q")
-             (list-dependencies-of . "pacaur -Qi")))
+             (list-dependencies-of . "pacaur -Qi")
+             (noconfirm . "--noconfirm")))
     (pacman .
             ((default-sudo . t)
              (install . "pacman -S")
@@ -119,7 +122,8 @@
              (remove-orphaned . "pacman -Rns $(pacman -Qtdq)")
              (list-installed-packages . "pacman -Qe")
              (list-installed-packages-all . "pacman -Q")
-             (list-dependencies-of . "pacman -Qi")))
+             (list-dependencies-of . "pacman -Qi")
+             (noconfirm . "--noconfirm")))
     ;; Debian (and Ubuntu) based systems
     (apt .
          ((default-sudo . t)
@@ -137,7 +141,8 @@
           (remove-orphaned . "apt autoremove")
           (list-installed-packages . nil)
           (list-installed-packages-all . nil)
-          (list-dependencies-of . "apt-cache deps")))
+          (list-dependencies-of . "apt-cache deps")
+          (noconfirm . "-y")))
     (aptitude .
               ((default-sudo . t)
                (install . "aptitude install")
@@ -154,7 +159,8 @@
                (remove-orphaned . nil) ; aptitude does this automatically
                (list-installed-packages . "aptitude search '~i!~M'")
                (list-installed-packages-all . "aptitude search '~i!~M'")
-               (list-dependencies-of . "apt-cache deps")))
+               (list-dependencies-of . "apt-cache deps")
+               (noconfirm . "-y")))
     ;; Gentoo
     (emerge .
             ((default-sudo . t)
@@ -172,7 +178,8 @@
              (remove-orphaned . "emerge --depclean")
              (list-installed-packages . nil)
              (list-installed-packages-all . nil)
-             (list-dependencies-of . "emerge -ep")))
+             (list-dependencies-of . "emerge -ep")
+             (noconfirm . nil)))
     ;; openSUSE
     (zypper .
             ((default-sudo . t)
@@ -190,7 +197,8 @@
              (remove-orphaned . "zypper rm -u")
              (list-installed-packages . nil)
              (list-installed-packages-all . nil)
-             (list-dependencies-of . "zypper info --requires")))
+             (list-dependencies-of . "zypper info --requires")
+             (noconfirm . nil)))
     ;; Fedora
     (dnf .
          ((default-sudo . t)
@@ -208,7 +216,8 @@
           (remove-orphaned . "dnf autoremove")
           (list-installed-packages . "dnf list --installed")
           (list-installed-packages-all . nil)
-          (list-dependencies-of . "rpm -qR")))
+          (list-dependencies-of . "rpm -qR")
+          (noconfirm . nil)))
     ;; Void
     ;; xbps is the name of the package manager, but that doesn't appear as an
     ;; executable, so let's just call it xbps-install:
@@ -228,7 +237,8 @@
                    (remove-orphaned . "dnf autoremove")
                    (list-installed-packages . "xbps-query -l ")
                    (list-installed-packages-all . "xbps-query -l ")
-                   (list-dependencies-of . "xbps-query -x")))))
+                   (list-dependencies-of . "xbps-query -x")
+                   (noconfirm . nil)))))
 
 (defcustom system-packages-packagemanager
   (cl-loop for (name . prop) in system-packages-supported-package-managers
@@ -238,23 +248,41 @@
   "String containing the package manager to use.
 
 See `system-packages-supported-package-managers' for a list of
-supported software. Tries to be smart about selecting the
+supported software.  Tries to be smart about selecting the
 default."
+  :group 'system-packages
   :type 'symbol)
 
 (defcustom system-packages-usesudo
   (cdr (assoc 'default-sudo (cdr (assoc system-packages-packagemanager
                                         system-packages-supported-package-managers))))
-  "If non-nil, system-packages will use sudo for appropriate
-  commands. Tries to be smart for selecting the default.")
+  "If non-nil, system-packages uses sudo for appropriate commands.
 
-(defun system-packages--run-command (action &optional pack)
-  "ACTION can be `default-sudo', `install', `search',
-`uninstall' etc. Run the command according to
-`system-packages-supported-package-managers' and ACTION."
+Tries to be smart for selecting the default."
+  :group 'system-packages)
+
+(defcustom system-packages-noconfirm nil
+  "If non-nil, bypass prompts asking the user to confirm package upgrades."
+  :group 'system-packages
+  :type 'boolean)
+
+(defun system-packages--run-command (action &optional pack args)
+  "Run a command that affects system packages.
+
+ACTION can be `default-sudo', `install', `search', `uninstall'
+etc.  Run the command according to
+`system-packages-supported-package-managers' and ACTION.  PACK is
+used to operation on specific packages.
+
+ARGS gets passed to the command and is useful for passing options
+to the package manager."
   (let ((command
          (cdr (assoc action (cdr (assoc system-packages-packagemanager
-                                        system-packages-supported-package-managers))))))
+                                        system-packages-supported-package-managers)))))
+        (noconfirm (when system-packages-noconfirm
+                     (cdr (assoc 'noconfirm
+                                 (cdr (assoc system-packages-packagemanager
+                                             system-packages-supported-package-managers)))))))
     (unless command
       (error (format "%S not supported in %S" action system-packages-packagemanager)))
     (unless (listp command)
@@ -262,106 +290,139 @@ default."
     (when system-packages-usesudo
       (setq command (mapcar (lambda (part) (concat "sudo " part)) command)))
     (setq command (mapconcat 'identity command " && "))
-    (async-shell-command (mapconcat 'identity (list command pack) " ") "*system-packages*")))
+    (setq command (mapconcat 'identity (list command pack) " "))
+    (setq args (concat args noconfirm))
+    (when args
+      (setq command (concat command args)))
+    (async-shell-command command "*system-packages*")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; functions on named packages
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;###autoload
-(defun system-packages-install (pack)
-  "Installs system packages using the package manager named in
-system-packages-packagemanager."
-  (interactive "sWhat package to install: ")
-  (system-packages--run-command 'install pack))
+(defun system-packages-install (pack &optional args)
+  "Install system packages.
+
+Use the package manager from `system-packages-packagemanager' to
+install PACK.  You may use ARGS to pass options to the package
+manger."
+  (system-packages--run-command 'install pack args))
 
 ;;;###autoload
-(defun system-packages-search (pack)
-  "Search for system packages using the package manager named in
-system-packages-packagemanager."
+(defun system-packages-search (pack &optional args)
+  "Search for system packages.
+
+Use the package manager named in `system-packages-packagemanager'
+to search for PACK.  You may use ARGS to pass options to the
+package manager."
   (interactive "sSearch string: ")
-  (system-packages--run-command 'search pack))
+  (system-packages--run-command 'search pack args))
 
 ;;;###autoload
-(defun system-packages-uninstall (pack)
-  "Uninstalls installed system packages using the package manager named in
-system-packages-packagemanager."
+(defun system-packages-uninstall (pack &optional args)
+  "Uninstall system packages.
+
+Uses the package manager named in
+`system-packages-packagemanager' to uninstall PACK.  You may use
+ARGS to pass options to the package manager."
   (interactive "sWhat package to uninstall: ")
-  (system-packages--run-command 'uninstall pack))
+  (system-packages--run-command 'uninstall pack args))
 
 ;;;###autoload
-(defun system-packages-list-dependencies-of (pack)
-  "List all the dependencies of PACK."
+(defun system-packages-list-dependencies-of (pack &optional args)
+  "List the dependencies of PACK.
+
+You may use ARGS to pass options to the package manager."
   (interactive "sWhat package to list dependencies of: ")
-  (system-packages--run-command 'list-dependencies-of pack))
+  (system-packages--run-command 'list-dependencies-of pack args))
 
 ;;;###autoload
-(defun system-packages-get-info (pack)
+(defun system-packages-get-info (pack &optional args)
   "Display local package information of PACK.
 
-With a prefix argument, display remote package information."
+With a prefix argument, display remote package information.  You
+may use ARGS to pass options to the package manager."
   (interactive "sWhat package to list info for: ")
   (if current-prefix-arg
-      (system-packages--run-command 'get-info-remote pack)
-    (system-packages--run-command 'get-info pack)))
+      (system-packages--run-command 'get-info-remote pack args)
+    (system-packages--run-command 'get-info pack args)))
 
 ;;;###autoload
-(defun system-packages-list-files-provided-by (pack)
-  "List the files provided by PACK."
+(defun system-packages-list-files-provided-by (pack &optional args)
+  "List the files provided by PACK.
+
+You may use ARGS to pass options to the package manager."
   (interactive "sWhat package to list provided files of: ")
-  (system-packages--run-command 'list-files-provided-by pack))
+  (system-packages--run-command 'list-files-provided-by pack args))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; functions that don't take a named package
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;###autoload
-(defun system-packages-update ()
-  "Updates installed system packages using the package manager named in
-system-packages-packagemanager."
+(defun system-packages-update (&optional args)
+  "Update system packages.
+
+Use the package manager `system-packages-packagemanager'.  You
+may use ARGS to pass options to the package manger."
   (interactive)
-  (system-packages--run-command 'update))
+  (system-packages--run-command 'update nil args))
 
 ;;;###autoload
-(defun system-packages-remove-orphaned ()
-  "This function removes orphaned packages (i.e. unused packages). using the package manager named in
-system-packages-packagemanager."
+(defun system-packages-remove-orphaned (&optional args)
+  "Remove orphaned packages.
+
+Uses the package manager named in
+`system-packages-packagemanager'.  You may use ARGS to pass
+options to the package manger."
   (interactive)
-  (system-packages--run-command 'remove-orphaned))
+  (system-packages--run-command 'remove-orphaned nil args))
 
 ;;;###autoload
-(defun system-packages-list-installed-packages (arg)
-  "List explicitly installed packages using the package manager
-named in system-packages-packagemanager. With
-\\[universal-argument], list all installed packages."
+(defun system-packages-list-installed-packages (all &optional args)
+  "List explicitly installed packages.
+
+Uses the package manager named in
+`system-packages-packagemanager'.  With
+\\[universal-argument] (for ALL), list all installed packages.
+You may use ARGS to pass options to the package manger."
   (interactive "P")
-  (if arg
-      (system-packages--run-command 'list-installed-packages-all)
-    (system-packages--run-command 'list-installed-packages)))
+  (if all
+      (system-packages--run-command 'list-installed-packages-all nil args)
+    (system-packages--run-command 'list-installed-packages nil args)))
 
 ;;;###autoload
-(defun system-packages-clean-cache ()
-  "Clean the cache of the package manager."
+(defun system-packages-clean-cache (&optional args)
+  "Clean the cache of the package manager.
+
+You may use ARGS to pass options to the package manger."
   (interactive)
-  (system-packages--run-command 'clean-cache))
+  (system-packages--run-command 'clean-cache nil args))
 
 ;;;###autoload
-(defun system-packages-log ()
-  "Show a log of the actions taken by the package manager."
+(defun system-packages-log (&optional args)
+  "Show a log from `system-packages-packagemanager'.
+
+You may use ARGS to pass options to the package manger."
   (interactive)
-  (system-packages--run-command 'log))
+  (system-packages--run-command 'log args))
 
 ;;;###autoload
-(defun system-packages-verify-all-packages ()
-  "Check that files owned by packages are present on the system."
+(defun system-packages-verify-all-packages (&optional args)
+  "Check that files owned by packages are present on the system.
+
+You may use ARGS to pass options to the package manger."
   (interactive)
-  (system-packages--run-command 'verify-all-packages))
+  (system-packages--run-command 'verify-all-packages nil args))
 
 ;;;###autoload
-(defun system-packages-verify-all-dependencies ()
-  "Verify that all required dependencies are installed on the system."
+(defun system-packages-verify-all-dependencies (&optional args)
+  "Verify that all required dependencies are installed on the system.
+
+You may use ARGS to pass options to the package manger."
   (interactive)
-  (system-packages--run-command 'verify-all-dependencies))
+  (system-packages--run-command 'verify-all-dependencies nil args))
 
 (provide 'system-packages)
 ;;; system-packages.el ends here

@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 20171214.515
+;; Package-Version: 20171214.855
 ;; Version: 2.4.0
 ;; Package-Requires: ((emacs "24.4"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -107,6 +107,10 @@
 
 ;; Please raise an issue on [Issues](https://github.com/rnkn/fountain-mode/issues).
 
+;; - Emacs versions prior to 26 have a bug with `visual-line-mode` that produces erratic
+;;   navigation behavior when displaying very long lines. More information here:
+;;   <https://debbugs.gnu.org/23879>
+
 ;; Roadmap
 ;; -------
 
@@ -116,6 +120,11 @@
 ;; -------
 
 ;; See [Releases](https://github.com/rnkn/fountain-mode/releases).
+
+;; Tips
+;; ----
+
+;; Bitcoin Cash address 19gUvL8YUzDKr5GyiHpYeF31BfQm87xM9L
 
 
 ;;; Code:
@@ -1038,24 +1047,6 @@ See <http://debbugs.gnu.org/24073>."
                  (looking-at fountain-note-regexp)
                  (< x (match-end 0))))))))
 
-(defun fountain-match-comment ()            ; FIXME: does not see "//" comments
-  "Match comment if point is at a comment, nil otherwise."
-  (save-excursion
-    (save-restriction
-      (widen)
-      (if (eq (char-before) ?*) (forward-char -1))
-      (let ((x (point))
-            beg end)
-        (search-forward "*/" nil t)
-        (setq end (point-marker))
-        (if (and (forward-comment -1)
-                 (setq beg (point-marker))
-                 (<= beg x end))
-            (progn (set-match-data (list beg end) t)
-                   t))))))
-
-(defalias 'fountain-match-boneyard 'fountain-match-comment)
-
 (defun fountain-match-scene-heading ()
   "Match scene heading if point is at a scene heading, nil otherwise."
   (save-excursion
@@ -1674,7 +1665,6 @@ Includes child elements."
         (with-temp-buffer
           (fountain-init-vars)
           (insert-buffer-substring buffer start end)
-          ;; FIXME: includes need to be erased if not exported
           (fountain-include-in-region (point-min) (point-max)
                                       (not (memq 'include export-elements)))
           (goto-char (point-min))
@@ -3794,55 +3784,43 @@ ARG (\\[universal-argument]), only insert note delimiters."
                                      (cons 'email user-mail-address))))))
         fountain-note-template)))))
 
-(defun fountain-continued-dialog-refresh (&optional arg)
-  "Add or remove continued dialog on characters speaking in succession.
+(defun fountain-continued-dialog-refresh ()
+  "Add or remove continued dialog in buffer.
+
 If `fountain-add-continued-dialog' is non-nil, add
 `fountain-continued-dialog-string' on characters speaking in
 succession, otherwise remove all occurences.
 
-If region is active, act on region, otherwise act on current
-scene. If prefixed with ARG (\\[universal-argument]), act on
-whole buffer (this can take a while).
-
-WARNING: if you change `fountain-continued-dialog-string' then
-call this function, strings matching the previous value will not
-be recognized. Before changing that variable, first make sure to
-set `fountain-add-continued-dialog' to nil and run this function,
-then make the changes desired."
-  ;; FIXME: now fast enough to do whole buffer by default
-  (interactive "P")
+If `fountain-continued-dialog-string' has changed, also attempt
+to remove previous string first."
+  (interactive)
   (save-excursion
     (save-restriction
       (widen)
-      (let ((start (make-marker))
-            (end (make-marker))
-            (job (make-progress-reporter "Refreshing continued dialog...")))
-        ;; Set START and END markers since buffer contents will change.
-        (set-marker start
-                    (cond (arg (point-min))
-                          ((use-region-p)
-                           (region-beginning))
-                          (t
-                           (fountain-forward-scene 0)
-                           (point))))
-        (set-marker end
-                    (cond (arg (point-max))
-                          ((use-region-p)
-                           (region-end))
-                          (t
-                           (fountain-forward-scene 1)
-                           (point))))
-        ;; Delete all matches in region.
-        ;; FIXME: should this check character elements?
-        (goto-char start)
-        (while (re-search-forward
-                (concat "\s*" fountain-continued-dialog-string) end t)
-          (replace-match "")
-          (progress-reporter-update job))
-        ;; When FOUNTAIN-ADD-CONTINUED-DIALOG, add string where appropriate.
+      (let ((job (make-progress-reporter "Refreshing continued dialog..."))
+            (backup (car (get 'fountain-continued-dialog-string
+                              'backup-value)))
+            (replace-fun
+             (lambda (string job)
+               (goto-char (point-min))
+               (while (re-search-forward
+                       (concat "\s*" string) nil t)
+                 (let ((inhibit-changing-match-data t))
+                   (when (fountain-match-character)
+                     (delete-region (match-beginning 0) (match-end 0))))
+                 (progress-reporter-update job))))
+            case-fold-search)
+        (if (string= fountain-continued-dialog-string backup)
+            (setq backup (eval (car (get 'fountain-continued-dialog-string
+                                         'standard-value)))))
+        ;; Delete all matches of backup string.
+        (funcall replace-fun backup job)
+        ;; Delete all matches of current string.
+        (funcall replace-fun fountain-continued-dialog-string job)
+        ;; When fountain-add-continued-dialog, add string where appropriate.
         (when fountain-add-continued-dialog
-          (goto-char start)
-          (while (< (point) end)
+          (goto-char (point-min))
+          (while (< (point) (point-max))
             (when (and (not (looking-at-p
                              (concat ".*" fountain-continued-dialog-string "$")))
                        (fountain-match-character)
@@ -3852,8 +3830,6 @@ then make the changes desired."
               (replace-match (concat "\s" fountain-continued-dialog-string)))
             (forward-line 1)
             (progress-reporter-update job)))
-        (set-marker start nil)
-        (set-marker end nil)
         (progress-reporter-done job)))))
 
 
