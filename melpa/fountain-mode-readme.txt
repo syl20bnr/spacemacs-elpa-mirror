@@ -20,7 +20,6 @@ Features
 - Navigation by section, scene, character name, or page
 - 3 levels of element syntax highlighting
 - Automatic loading for `*.fountain` files
-- Support for both official and legacy commenting (boneyard) syntax
 - Include or omit a title page
 - Emphasis (bold, italic, underlined text)
 - Toggle visibility of emphasis delimiters and syntax characters
@@ -79,10 +78,6 @@ Bugs and Feature Requests
 -------------------------
 
 Please raise an issue on [Issues](https://github.com/rnkn/fountain-mode/issues).
-
-- Emacs versions prior to 26.1 have a bug with `visual-line-mode` that produces erratic
-  navigation behavior when displaying very long lines. More information here:
-  <https://debbugs.gnu.org/23879>
 
 Roadmap
 -------
