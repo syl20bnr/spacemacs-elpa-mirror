@@ -4,10 +4,10 @@
 ;; Copyright (C) 2015 Raimon Grau
 ;;
 ;; Author: Marten Lienen <marten.lienen@gmail.com>
-;; Version: 0.1.1
-;; Package-Version: 20170318.1232
+;; Version: 1.0.0
+;; Package-Version: 20171213.1334
 ;; Keywords: convenience
-;; Package-Requires: ((emacs "24") (cl-lib "0.5") (s "1.0") (dash "2.0") (helm "1.0"))
+;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (ivy "0.10.0"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -26,14 +26,11 @@
 
 ;;; Commentary:
 
-;; Look up translations on dict.cc. You then pick one of them through a helm
-;; interface and it is inserted at point.
+;; Look up translations on dict.cc.  Then you can browse and pick one of them
+;; and insert it at point.
 
 ;;; Code:
 
-(require 'dash)
-(require 's)
-(require 'helm)
 (require 'cl-lib)
 
 (defgroup dictcc ()
@@ -41,6 +38,14 @@
   :group 'convenience
   :group 'external
   :prefix "dictcc-")
+
+(defcustom dictcc-completion-backend
+  (cond
+   ((require 'ivy nil 'noerror) 'ivy)
+   ((require 'helm nil 'noerror) 'helm))
+  "Completion backend used for choosing a translation to insert."
+  :type '(choice (const 'ivy) (const 'helm) (const nil))
+  :group 'dictcc)
 
 (defcustom dictcc-candidate-width 30
   "Maximum length of a translation candidate."
@@ -89,9 +94,9 @@
     ;; Search for tags in a string form, so that we can more easily find tags,
     ;; that are split across tags (multi-word tags).
     (let* ((tag-strings (mapcar #'dictcc--tag-to-text tags-nodes))
-           (tag-string (s-join " " tag-strings))
+           (tag-string (string-join tag-strings " "))
            (tags (dictcc--tags-from-string tag-string)))
-      (make-dictcc--translation :text (s-join " " words)
+      (make-dictcc--translation :text (string-join words " ")
                                 :tags tags))))
 
 (defun dictcc--tags-from-string (string)
@@ -139,9 +144,9 @@ Emacs does not like my regexps."
   (concat (dictcc--translation-text translation)
           " "
           (propertize
-           (s-join " "
-                   (mapcar (lambda (tag) (concat "[" tag "]"))
-                           (dictcc--translation-tags translation)))
+           (string-join (mapcar (lambda (tag) (concat "[" tag "]"))
+                           (dictcc--translation-tags translation))
+                        " ")
            'face dictcc-tag-face)))
 
 (defun dictcc--request-url (query)
@@ -204,7 +209,7 @@ At the moment they are of the form `<tr id='trXXX'></tr>'."
       tag
     (let* ((children (cddr tag))
            (texts (mapcar #'dictcc--tag-to-text children)))
-      (s-join "" texts))))
+      (string-join texts ""))))
 
 (defun dictcc--insert-source-translation (pair)
   "Insert the source translation of the selected PAIR."
@@ -231,15 +236,42 @@ At the moment they are of the form `<tr id='trXXX'></tr>'."
 
 (defun dictcc--select-translation (query translations)
   "For QUERY, select one of TRANSLATIONS and insert into buffer."
+  (cl-case dictcc-completion-backend
+    ('ivy (dictcc--select-translation-ivy query translations))
+    ('helm (dictcc--select-translation-helm query translations))
+    (t (message "dictcc.el requires ivy or helm."))))
+
+(defun dictcc--insert-candidate (selector)
+  "Insert translation text extracted from an ivy/helm item with SELECTOR."
+  (lambda (item)
+    (insert (dictcc--translation-text (funcall selector item)))))
+
+(when (require 'ivy nil 'noerror)
+  (ivy-set-actions
+   'dictcc--select-translation
+   `(("e" ,(dictcc--insert-candidate #'cadr)
+      ,(format "Insert %s translation" dictcc-source-lang))
+     ("d" ,(dictcc--insert-candidate #'cddr)
+      ,(format "Insert %s translation" dictcc-destination-lang)))))
+
+(defun dictcc--select-translation-ivy (query translations)
+  "Choose from TRANSLATIONS for QUERY with ivy."
+  (ivy-read "Filter: " (mapcar #'dictcc--candidate translations)
+            :action (dictcc--insert-candidate #'cadr)
+            :require-match t
+            :caller 'dictcc--select-translation))
+
+(defun dictcc--select-translation-helm (query translations)
+  "Choose from TRANSLATIONS for QUERY with helm."
   (let* ((candidates (mapcar #'dictcc--candidate translations))
          (source `((name . ,(format "Translations for «%s»" query))
                    (candidates . ,candidates)
                    (action . ,(helm-make-actions
                                (format "Insert %s translation" dictcc-source-lang)
-                               #'dictcc--insert-source-translation
+                               (dictcc--insert-candidate #'car)
                                (format "Insert %s translation" dictcc-destination-lang)
-                               #'dictcc--insert-destination-translation)))))
-    (helm :sources (list source))))
+                               (dictcc--insert-candidate #'cdr))))))
+    (helm :prompt "Filter: " :sources (list source))))
 
 ;;;###autoload
 (defun dictcc (query)

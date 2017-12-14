@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Version: 2.3
-;; Package-Version: 20171112.1405
+;; Package-Version: 20171213.1334
 ;; Keywords: hash table, hash map, hash
 ;; Package-Requires: ((dash "2.12.0"))
 
@@ -44,6 +44,13 @@ Keys are compared with `equal'.
     `(let ((,table-symbol (ht-create)))
        ,@assignments
        ,table-symbol)))
+
+(defsubst ht-set! (table key value)
+  "Associate KEY in TABLE with VALUE."
+  (puthash key value table)
+  nil)
+
+(defalias 'ht-set 'ht-set!)
 
 (defsubst ht-create (&optional test)
   "Create an empty hash table.
@@ -95,13 +102,6 @@ for the final key, which may return any value."
   (if (cdr keys)
       (apply #'ht-get* (ht-get table (car keys)) (cdr keys))
     (ht-get table (car keys))))
-
-(defsubst ht-set! (table key value)
-  "Associate KEY in TABLE with VALUE."
-  (puthash key value table)
-  nil)
-
-(defalias 'ht-set 'ht-set!)
 
 (defun ht-update! (table from-table)
   "Update TABLE according to every key-value pair in FROM-TABLE."

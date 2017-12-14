@@ -4,7 +4,7 @@
 
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Package-Requires: ((evil "1.2.3") (magit "2.6.0"))
-;; Package-Version: 20171018.722
+;; Package-Version: 20171213.1019
 ;; Homepage: https://github.com/justbur/evil-magit
 ;; Version: 0.4.1
 
@@ -182,6 +182,7 @@ evil-magit was loaded."
 (defvar evil-magit-section-maps
   '(magit-branch-section-map
     magit-commit-section-map
+    magit-commit-message-section-map
     magit-file-section-map
     magit-hunk-section-map
     magit-module-commit-section-map

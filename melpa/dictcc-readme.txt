@@ -1,2 +1,2 @@
-Look up translations on dict.cc. You then pick one of them through a helm
-interface and it is inserted at point.
+Look up translations on dict.cc.  Then you can browse and pick one of them
+and insert it at point.
