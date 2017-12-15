@@ -4,9 +4,9 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171213.1539
+;; Package-Version: 20171214.1557
 ;; Keywords: help, lisp
-;; Version: 0.4
+;; Version: 0.5
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -183,32 +183,36 @@ This allows us to distinguish strings from symbols."
    (not (helpful--primitive-p sym callable-p))
    ;; We need to be able to find its definition, or we can't step
    ;; through the source.
-   (-when-let ((buf pos opened) (helpful--definition sym t))
+   (-let* (((buf pos opened) (helpful--definition sym t))
+           (have-definition (and buf pos)))
      (when opened
        (kill-buffer buf))
-     t)))
+     have-definition)))
 
 (defun helpful--toggle-edebug (sym)
   "Enable edebug when function SYM is called,
 or disable if already enabled."
-  (-if-let ((buf pos created) (helpful--definition sym t))
-      (progn
-        (with-current-buffer buf
-          (save-excursion
-            (save-restriction
-              (widen)
-              (goto-char pos)
+  (-let ((should-edebug (not (helpful--edebug-p sym)))
+         ((buf pos created) (helpful--definition sym t)))
+    (if (and buf pos)
+        (progn
+          (with-current-buffer buf
+            (save-excursion
+              (save-restriction
+                (widen)
+                (goto-char pos)
 
-              (let* ((should-edebug (not (helpful--edebug-p sym)))
-                     (edebug-all-forms should-edebug)
-                     (edebug-all-defs should-edebug)
-                     (form (edebug-read-top-level-form)))
-                ;; Based on `edebug-eval-defun'.
-                (eval (eval-sexp-add-defvars form) lexical-binding)))))
-        (when created
-          (kill-buffer buf)))
-    
-    (user-error "Could not find source for edebug")))
+                (let* ((edebug-all-forms should-edebug)
+                       (edebug-all-defs should-edebug)
+                       (form (edebug-read-top-level-form)))
+                  ;; Based on `edebug-eval-defun'.
+                  (eval (eval-sexp-add-defvars form) lexical-binding)))))
+          ;; If we're enabling edebug, we need the source buffer to
+          ;; exist. Otherwise, we can clean it up.
+          (when (and created (not should-edebug))
+            (kill-buffer buf)))
+      
+      (user-error "Could not find source for edebug"))))
 
 (defun helpful--edebug (button)
   "Toggle edebug for the current symbol."
@@ -222,9 +226,15 @@ or disable if already enabled."
   'follow-link t
   'help-echo "Navigate to definition")
 
+(defun helpful--no-properties (s)
+  "Return a copy of S without any properties."
+  (with-temp-buffer
+    (insert s)
+    (buffer-substring-no-properties (point-min) (point-max))))
+
 (defun helpful--navigate (button)
   "Navigate to the path this BUTTON represents."
-  (find-file (button-get button 'path))
+  (find-file (helpful--no-properties (button-get button 'path)))
   ;; We use `get-text-property' to work around an Emacs 25 bug:
   ;; http://git.savannah.gnu.org/cgit/emacs.git/commit/?id=f7c4bad17d83297ee9a1b57552b1944020f23aea
   (-when-let (pos (get-text-property button 'position
@@ -280,14 +290,22 @@ or disable if already enabled."
   (let* ((sym (button-get button 'symbol))
          (sym-value (symbol-value sym))
          (buf (button-get button 'buffer))
-         ;; Inspired by `counsel-set-variable'.
+         ;; Inspired by `counsel-read-setq-expression'.
          (expr
-          (read-from-minibuffer
-           "Eval: "
-           (format
-            (if (consp sym-value) "(setq %s '%S)" "(setq %s %S)")
-            sym sym-value)
-           read-expression-map t)))
+          (minibuffer-with-setup-hook
+              (lambda ()
+                (add-function :before-until (local 'eldoc-documentation-function)
+                              #'elisp-eldoc-documentation-function)
+                (run-hooks 'eval-expression-minibuffer-setup-hook)
+                (goto-char (minibuffer-prompt-end))
+                (forward-char (length (format "(setq %S " sym))))
+            (read-from-minibuffer
+             "Eval: "
+             (format
+              (if (consp sym-value) "(setq %s '%S)" "(setq %s %S)")
+              sym sym-value)
+             read-expression-map t
+             'read-expression-history))))
     (save-current-buffer
       ;; If this is a buffer-local variable, ensure we're in the right
       ;; buffer.
