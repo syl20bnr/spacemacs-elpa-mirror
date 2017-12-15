@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-helm-tramp
-;; Package-Version: 20171208.2029
-;; Version: 0.6.5
+;; Package-Version: 20171214.2054
+;; Version: 0.7.5
 ;; Package-Requires: ((emacs "24.3") (helm "2.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -67,11 +67,11 @@
 	   hosts))))
     (when (package-installed-p 'docker-tramp)
       (cl-loop for line in (cdr (ignore-errors (apply #'process-lines "docker" (list "ps"))))
-	       for info = (split-string line "[[:space:]]+" t)
+	       for info = (reverse (split-string line "[[:space:]]+" t))
 	       collect (progn (push
 			       (concat "/docker:" (car info) ":/")
 			       hosts)
-			      (unless (null helm-tramp-docker-user)
+			      (when helm-tramp-docker-user
 				(if (listp helm-tramp-docker-user)
 				    (let ((docker-user helm-tramp-docker-user))
 				      (while docker-user

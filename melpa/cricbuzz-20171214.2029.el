@@ -3,9 +3,9 @@
 ;; Copyright (c) 2016 Abhinav Tushar
 
 ;; Author: Abhinav Tushar <abhinav.tushar.vs@gmail.com>
-;; Version: 0.2.10
-;; Package-Version: 0.2.10
-;; Package-Requires: ((enlive "0.0.1") (dash "2.13.0") (s "1.11.0"))
+;; Version: 0.3.2
+;; Package-Version: 20171214.2029
+;; Package-Requires: ((enlive "0.0.1") (f "0.19.0") (dash "2.13.0") (s "1.11.0"))
 ;; Keywords: cricket, score
 ;; URL: https://github.com/lepisma/cricbuzz.el
 
@@ -36,22 +36,36 @@
 ;;; Code:
 
 (require 'enlive)
+(require 'f)
 (require 'org)
 (require 'dash)
 (require 's)
 
+(defcustom cricbuzz-cache-dir (f-full "~/.cricbuzz.el/")
+  "Directory for keeping index and scorecards")
 (defvar cricbuzz-base-url "http://cricbuzz.com")
-(defvar cricbuzz-live-url (concat cricbuzz-base-url
-                                  "/cricket-match/live-scores"))
-(defvar cricbuzz-schedule-file (expand-file-name "~/cricket-schedule.org"))
+(defvar cricbuzz-live-url (concat cricbuzz-base-url "/cricket-match/live-scores"))
+(defvar cricbuzz-index-file (f-join cricbuzz-cache-dir "cricbuzz-index.cbi"))
 
 (defun -cricbuzz-clean-str (text)
-  (s-collapse-whitespace
-   (s-chop-prefix "-" (s-trim
-                       (s-replace-all '(("_" . " ")
-                                        ("►" . " ")
-                                        (" " . " ")
-                                        ("•" . " ")) text)))))
+  (->> text
+     (s-replace-all '(("_" . " ")
+                      ("►" . " ")
+                      (" " . " ")
+                      ("•" . " ")))
+     (s-trim)
+     (s-chop-prefix "-")
+     (s-collapse-whitespace)))
+
+(defun -cricbuzz-match-file-name (match-name)
+  "Return cache file name for the match"
+  (--> match-name
+     (downcase it)
+     (s-replace-all '(("," . " ")) it)
+     (s-trim it)
+     (s-collapse-whitespace it)
+     (s-replace-all '((" " . "-")) it)
+     (s-concat (f-join cricbuzz-cache-dir it) ".cb")))
 
 ;; Parse live scores
 
@@ -147,10 +161,11 @@
 (defun cricbuzz-get-live-scores ()
   "Display live scores in a buffer"
   (interactive)
+  (f-mkdir cricbuzz-cache-dir)
   (let ((main-node (first (enlive-get-elements-by-class-name
                            (enlive-fetch cricbuzz-live-url)
                            "cb-schdl")))
-        (buffer (get-buffer-create "*Cricket Scores*")))
+        (buffer (find-file-noselect cricbuzz-index-file)))
     (set-buffer buffer)
     (setq buffer-read-only nil)
     (erase-buffer)
@@ -162,11 +177,9 @@
     (-map 'cricbuzz-insert-match
           (enlive-get-elements-by-class-name main-node "cb-mtch-lst"))
     (setq buffer-read-only t)
-    (switch-to-buffer buffer)
     (goto-char (point-min))
-    ;; Save schedule and add to agenda
-    (write-region (point-min) (point-max) cricbuzz-schedule-file)
-    (flyspell-mode-off)))
+    (save-buffer)
+    (switch-to-buffer buffer)))
 
 ;; Parse scorecard
 
@@ -278,6 +291,7 @@
 
 (defun cricbuzz-insert-scorecard (match-url)
   "Display scorecard in a buffer"
+  (f-mkdir cricbuzz-cache-dir)
   (let* ((main-node (enlive-fetch match-url))
          (left-node (first (enlive-get-elements-by-class-name
                             main-node
@@ -293,8 +307,7 @@
                         (enlive-text (first (enlive-get-elements-by-class-name
                                              left-node
                                              "cb-scrcrd-status")))))
-         (buffer (get-buffer-create
-                  (concat "*" (s-truncate 20 match-name) "*"))))
+         (buffer (find-file-noselect (-cricbuzz-match-file-name match-name))))
     (set-buffer buffer)
     (setq buffer-read-only nil)
     (erase-buffer)
@@ -304,9 +317,10 @@
           (butlast (cdr (enlive-direct-children left-node))))
     (cricbuzz-insert-match-info left-node)
     (setq buffer-read-only t)
-    (switch-to-buffer buffer)
     (goto-char (point-min))
-    (font-lock-fontify-buffer)))
+    (font-lock-fontify-buffer)
+    (save-buffer)
+    (switch-to-buffer buffer)))
 
 (defun cricbuzz-get-last-url (position)
   "Get last cricbuzz-url searching backward from given position"
@@ -331,20 +345,20 @@
 (defun cricbuzz-kill-buffer ()
   "Close current buffer"
   (interactive)
-  (kill-this-buffer))
+  (kill-buffer (current-buffer)))
 
 (defvar cricbuzz-index-mode-map
   (let ((map (make-keymap)))
-    (define-key map (kbd "r") 'cricbuzz-get-live-scores)
-    (define-key map (kbd "RET") 'cricbuzz-show-scorecard)
-    (define-key map (kbd "q") 'cricbuzz-kill-buffer)
+    (define-key map (kbd "r") #'cricbuzz-get-live-scores)
+    (define-key map (kbd "RET") #'cricbuzz-show-scorecard)
+    (define-key map (kbd "q") #'cricbuzz-kill-buffer)
     map)
   "Keymap for cricbuzz-index major mode")
 
 (defvar cricbuzz-score-mode-map
   (let ((map (make-keymap)))
-    (define-key map (kbd "r") 'cricbuzz-refresh-scorecard)
-    (define-key map (kbd "q") 'cricbuzz-kill-buffer)
+    (define-key map (kbd "r") #'cricbuzz-refresh-scorecard)
+    (define-key map (kbd "q") #'cricbuzz-kill-buffer)
     map)
   "Keymap for cricbuzz-index major mode")
 
@@ -358,6 +372,8 @@
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.cb\\'" . cricbuzz-score-mode))
+;;;###autoload
+(add-to-list 'auto-mode-alist '("\\.cbi\\'" . cricbuzz-index-mode))
 
 (provide 'cricbuzz)
 

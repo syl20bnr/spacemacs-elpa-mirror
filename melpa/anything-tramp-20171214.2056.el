@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-anything-tramp
-;; Package-Version: 20171208.2032
-;; Version: 0.6.5
+;; Package-Version: 20171214.2056
+;; Version: 0.7.5
 ;; Package-Requires: ((emacs "24.3") (anything "1.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -67,11 +67,11 @@
 	   hosts))))
     (when (package-installed-p 'docker-tramp)
       (cl-loop for line in (cdr (ignore-errors (apply #'process-lines "docker" (list "ps"))))
-	       for info = (split-string line "[[:space:]]+" t)
+	       for info = (reverse (split-string line "[[:space:]]+" t))
 	       collect (progn (push
 			       (concat "/docker:" (car info) ":/")
 			       hosts)
-			      (unless (null anything-tramp-docker-user)
+			      (when anything-tramp-docker-user
 				(if (listp anything-tramp-docker-user)
 				    (let ((docker-user anything-tramp-docker-user))
 				      (while docker-user

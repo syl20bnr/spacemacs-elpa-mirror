@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/dired-sidebar
-;; Package-Version: 20171212.36
+;; Package-Version: 20171214.2022
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1") (dired-subtree "0.0.1"))
 ;; Keywords: dired, files, tools
@@ -247,24 +247,30 @@ Warning: This is implemented by advising specific dired functions."
     dired-do-flagged-delete
     dired-create-directory
     delete-file
-    save-buffer
-    evil-write
-    evil-write-all
-    evil-save)
-  "A list of commands that will trigger a refresh of the sidebar."
+    (save-buffer . 5))
+  "A list of commands that will trigger a refresh of the sidebar.
+
+The command can be an alist with the CDR of the alist being the amount of time
+to wait to refresh the sidebar after the CAR of the alist is called.
+
+Set this to nil or set `dired-sidebar-refresh-on-special-commands' to nil
+to disable automatic refresh when a special command is triggered."
   :type 'list
   :group 'dired-sidebar)
+
+(make-obsolete-variable 'dired-sidebar-refresh-on-special-command-instantly
+                        'dired-sidebar-special-refresh-commands "2017/12/14")
 
 (defcustom dired-sidebar-refresh-on-special-command-instantly t
   "Whether or not to revert buffer when special command is called.
 
 Special command is a command from `dired-sidebar-special-refresh-commands'.
 
-If this is true, trigger `revert-buffer' when special command is called.
-Otherwise, schedule the refresh for later.
-
 Keeping this as true will make those special commands update the UI instantly
-at the cost of *possibly* some extra delay."
+at the cost of *possibly* some extra delay.
+
+This is deprecated and unused. Modify `dired-sidebar-special-refresh-commands'
+instead. This will be removed early 2018."
   :type 'boolean
   :group 'dired-sidebar)
 
@@ -406,9 +412,32 @@ will check if buffer is stale through `auto-revert-mode'.")
                 nil t)))
 
   (when dired-sidebar-refresh-on-special-commands
-    (mapc (lambda (x)
-            (advice-add x :after #'dired-sidebar-refresh-or-schedule-refresh))
-          dired-sidebar-special-refresh-commands))
+    (mapc
+     (lambda (x)
+       (if (consp x)
+           (let ((command (car x))
+                 (delay (cdr x)))
+             (advice-add
+              command
+              :after
+              (defalias (intern (format "dired-sidebar-refresh-after-%S" command))
+                (function
+                 (lambda (&rest _)
+                   (let ((timer-symbol
+                          (intern
+                           (format
+                            "dired-sidebar-refresh-%S-timer" command))))
+                     (when (and (boundp timer-symbol)
+                                (timerp (symbol-value timer-symbol)))
+                       (cancel-timer (symbol-value timer-symbol)))
+                     (setf
+                      (symbol-value timer-symbol)
+                      (run-with-idle-timer
+                       delay
+                       nil
+                       #'dired-sidebar-refresh-buffer))))))))
+         (advice-add x :after #'dired-sidebar-refresh-buffer)))
+     dired-sidebar-special-refresh-commands))
 
   (cond
    ((and dired-sidebar-use-all-the-icons
@@ -789,13 +818,11 @@ Optional argument NOCONFIRM Pass NOCONFIRM on to `dired-buffer-stale-p'."
     (setq dired-sidebar-check-for-stale-buffer-p nil)
     (dired-buffer-stale-p noconfirm)))
 
-(defun dired-sidebar-refresh-or-schedule-refresh (&rest _)
-  "Refresh or schedule refresh of sidebar buffer."
-  (if dired-sidebar-refresh-on-special-command-instantly
-      (when-let* ((sidebar (dired-sidebar-sidebar-buffer-in-frame)))
-        (with-current-buffer sidebar
-          (revert-buffer)))
-    (setq dired-sidebar-check-for-stale-buffer-p t)))
+(defun dired-sidebar-refresh-buffer (&rest _)
+  "Refresh sidebar buffer."
+  (when-let* ((sidebar (dired-sidebar-sidebar-buffer-in-frame)))
+    (with-current-buffer sidebar
+      (revert-buffer))))
 
 (defun dired-sidebar-follow-file ()
   "Follow new file.
@@ -835,6 +862,18 @@ both accounting for the currently selected window."
    ((and (eq major-mode 'dired-mode)
          (not dired-sidebar-mode))
     (expand-file-name default-directory))
+   ((and (eq major-mode 'ibuffer-mode)
+         (fboundp 'ibuffer-current-buffer)
+         (ibuffer-current-buffer))
+    (let ((buffer-at-point (ibuffer-current-buffer)))
+      (if (fboundp 'ibuffer-projectile-root)
+          (if-let* ((ibuffer-projectile-root
+                     (ibuffer-projectile-root buffer-at-point)))
+              (cdr ibuffer-projectile-root)
+            (with-current-buffer buffer-at-point
+              default-directory))
+        (with-current-buffer buffer-at-point
+          default-directory))))
    (:default
     (dired-sidebar-sidebar-root))))
 
@@ -854,6 +893,9 @@ This may return nil if there's no suitable file to show."
     (condition-case nil
         (dired-get-file-for-visit)
       (error nil)))
+   ((and (eq major-mode 'ibuffer-mode)
+         (fboundp 'ibuffer-current-buffer))
+    (buffer-file-name (ibuffer-current-buffer)))
    (:default
     buffer-file-name)))
 
