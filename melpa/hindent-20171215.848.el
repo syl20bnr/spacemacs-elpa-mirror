@@ -4,7 +4,7 @@
 
 ;; Author: Chris Done <chrisdone@gmail.com>
 ;; URL: https://github.com/chrisdone/hindent
-;; Package-Version: 20171206.138
+;; Package-Version: 20171215.848
 ;; Package-Requires: ((cl-lib "0.5"))
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -61,7 +61,8 @@ For hindent versions lower than 5, you must set this to a non-nil string."
   :type 'string
   :safe #'stringp)
 
-(defcustom hindent-extra-args
+(defcustom hindent-extra-args nil
+  "Extra arguments to give to hindent"
   :group 'hindent
   :type 'sexp
   :safe #'listp)

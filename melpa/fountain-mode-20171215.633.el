@@ -4,9 +4,9 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 20171214.2305
+;; Package-Version: 20171215.633
 ;; Version: 2.4.0
-;; Package-Requires: ((emacs "24.4"))
+;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
 
 ;; This file is not part of GNU Emacs.
@@ -69,7 +69,7 @@
 ;; Requirements
 ;; ------------
 
-;; - Emacs 24.4
+;; - Emacs 24.5
 ;; - LaTeX packages for PDF export: geometry fontspec titling fancyhdr
 ;;   marginnote ulem xstring oberdiek
 
@@ -1635,8 +1635,8 @@ Includes child elements."
 
 (defun fountain-parse-element (&optional export-elements job)
   "Call appropropriate element parsing function for matched element at point."
-  (let ((parser (plist-get (alist-get (fountain-get-element)
-                                      fountain-elements)
+  (let ((parser (plist-get (cdr (assq (fountain-get-element)
+                                      fountain-elements))
                            :parser)))
     (if parser (funcall parser (match-data) export-elements job))))
 
@@ -1932,8 +1932,8 @@ specify a different filename."
                       ("\\*\\(.+?\\)\\*" "\\\\emph{\\1}")
                       ("^~\s*\\(.+?\\)$\\*\\*" "\\\\textit{\\1}")
                       ("_\\(.+?\\)_" "\\\\uline{\\1}")
-                      ("\n\n+" "\s\\\\par\s")
-                      ("\n" "\s\\\\protecting{\\\\\\\\}\s"))
+                      ("\n[\s\t]*\n+" "\\\\par")
+                      ("\n" "\\\\protecting{\\\\\\\\}"))
      :eval-replace ((font fountain-export-font)
                     (scene-heading-spacing
                      (if (memq 'double-space fountain-export-scene-heading-format)
@@ -2083,7 +2083,7 @@ Takes the form:
     (ELEMENT KEYWORD PROPERTY)")
 
 (defun define-fountain-export-template-docstring (format)
-  (let ((tag (plist-get (alist-get format fountain-export-formats)
+  (let ((tag (plist-get (cdr (assq format fountain-export-formats))
                         :tag)))
     (format
      "Association list of element templates for exporting to %s.
@@ -2126,7 +2126,7 @@ etc.) as well as keys defined in `fountain-export-formats'." tag)))
 ;; %s" tag tag
 ;;     (mapconcat #'(lambda (var)
 ;;                    (concat "    {{" (symbol-name (car var)) "}}"))
-;;                (plist-get (alist-get format fountain-export-formats)
+;;                (plist-get (cdr (assq format fountain-export-formats))
 ;;                           :eval-replace)
 ;;                "\n"))))
 
@@ -2181,7 +2181,7 @@ Format defaults to \"screenplay\"."
   "If buffer is visiting a file, concat file name base and FORMAT.
 Otherwise return `fountain-export-buffer' formatted with export
 format tag."
-  (let* ((alist (alist-get format fountain-export-formats))
+  (let* ((alist (cdr (assq format fountain-export-formats)))
          (tag (plist-get alist :tag))
          (ext (plist-get alist :ext)))
     (with-current-buffer (or buffer (current-buffer))
@@ -2215,7 +2215,7 @@ whitespace is converted to dashes. e.g.
     (let (adaptive-fill-mode
           (fill
            (symbol-value
-            (plist-get (alist-get element fountain-elements) :fill))))
+            (plist-get (cdr (assq element fountain-elements)) :fill))))
       (setq left-margin (car fill)
             fill-column (+ left-margin (cdr fill)))
       ;; Replace emphasis syntax with face text propoerties (before performing fill).
@@ -2233,7 +2233,7 @@ whitespace is converted to dashes. e.g.
 
 (defun fountain-export-replace-in-string (string format)
   (let ((replace-alist
-         (plist-get (alist-get format fountain-export-formats)
+         (plist-get (cdr (assq format fountain-export-formats))
                     :string-replace)))
   (dolist (replacement replace-alist string)
     (setq string (replace-regexp-in-string
@@ -2241,20 +2241,20 @@ whitespace is converted to dashes. e.g.
 
 (defun fountain-export-get-cond-replacement (format element key value)
   (let ((replace-alist
-         (plist-get (alist-get format
-                               fountain-export-formats)
+         (plist-get (cdr (assq format fountain-export-formats))
                     :cond-replace)))
     (car
-     (alist-get value
-                (alist-get key
-                           (or (alist-get element replace-alist)
-                               (alist-get t replace-alist)))))))
+     (cdr (assq value
+                (cdr (assq key
+                           (or (cdr (assq element replace-alist))
+                               (cdr (assq t replace-alist))))))))))
 
 (defun fountain-export-get-eval-replacement (key format)
   (let ((replacement
-         (car (alist-get key
-                         (plist-get (alist-get format fountain-export-formats)
-                                    :eval-replace))))
+         (car (cdr (assq key
+                         (plist-get (cdr (assq format
+                                               fountain-export-formats))
+                                    :eval-replace)))))
         string)
     (unwind-protect
         (setq string (eval replacement))
@@ -2297,7 +2297,7 @@ and set ELEMENT-TEMPLATE. If so, replace matches of
     (if (plist-get plist 'export)
         ;; Set the ELEMENT-FORMAT-PLIST. STRING will return the final exported
         ;; string.
-        (let ((export-format-plist (alist-get format fountain-export-formats))
+        (let ((export-format-plist (cdr (assq format fountain-export-formats)))
               format-template element-template string)
           (cond
            ;; If CONTENT is a string, format CONTENT and set as STRING.
@@ -2320,7 +2320,7 @@ and set ELEMENT-TEMPLATE. If so, replace matches of
           ;; Set the FORMAT-TEMPLATE, which is the big alist of template strings
           ;; for each element. From this, get the ELEMENT-TEMPLATE.
           (setq format-template (symbol-value (plist-get export-format-plist :template))
-                element-template (car (alist-get element format-template)))
+                element-template (car (cdr (assq element format-template))))
           (cond
            ;; If there is a FORMAT-TEMPLATE and an ELEMENT-TEMPLATE, replace
            ;; template keys in that template.
@@ -2425,7 +2425,7 @@ otherwise kill destination buffer."
   (setq buffer (or buffer (current-buffer)))
   (let ((dest-buffer (get-buffer-create
                       (fountain-export-get-filename format buffer)))
-        (hook (plist-get (alist-get format fountain-export-formats)
+        (hook (plist-get (cdr (assq format fountain-export-formats))
                          :hook))
         string complete)
     (unwind-protect
@@ -2803,11 +2803,11 @@ parent."
 \\vspace{3in}
 \\iftoggle{contactalignright}{%
   \\begin{flushright}
-    {{contact}}
+    \\contact
   \\end{flushright}
 }{%
-  {{contact}}
-}\\par
+  \\contact
+}
 \\clearpage"
   "Template for LaTeX title page."
   :type 'string
@@ -3530,8 +3530,8 @@ interactively."
     ;; forced page break, or after the maximum lines in a page.
     (while (and (< (point) (point-max))
                 (not (fountain-match-page-break))
-                (< line-count (alist-get fountain-export-page-size
-                                         fountain-page-max-lines)))
+                (< line-count (cdr (assq fountain-export-page-size
+                                         fountain-page-max-lines))))
       (cond
        ;; If we're at the end of a line (but not also the beginning, i.e. not a
        ;; blank line) then move forward a line and increment line-count.
@@ -3552,7 +3552,7 @@ interactively."
           (if (memq element (fountain-get-export-elements))
               (let ((line-width
                      (cdr (symbol-value
-                           (plist-get (alist-get element fountain-elements)
+                           (plist-get (cdr (assq element fountain-elements))
                                       :fill)))))
                 ;; If scene headings are double-spaced, add an extra line to
                 ;; line-count already.
@@ -3908,9 +3908,9 @@ Or, if nil:
 
     (10) -> \"10\"
     (9 1 2) -> \"9AB\""
-  (let* ((number (car scene-num-list))
-         separator revision)
-    (if (< 1 (list-length scene-num-list))
+  (let ((number (car scene-num-list))
+        separator revision)
+    (if (< 1 (length scene-num-list))
         (setq separator
               (if fountain-scene-number-separator
                   (char-to-string fountain-scene-number-separator)

@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/general.el
-;; Package-Version: 20171213.1251
+;; Package-Version: 20171215.1123
 ;; Created: February 17, 2016
 ;; Keywords: vim, evil, leader, keybindings, keys
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
@@ -254,6 +254,7 @@ local keybindings.")
   "Whether `general-maps-alist' has been set correctly for the current buffer.")
 (put 'general-maps-alist 'permanent-local t)
 
+(declare-function evil-make-intercept-map "evil-core")
 (defun general-override-make-intercept-maps (_sym states)
   "Make intercept keymaps for STATES in `general-override-mode-map'.
 This means that keys bound in STATES for `general-override-mode-map' will take
@@ -592,6 +593,7 @@ run on it)."
 
 (defalias 'general-extended-def-:wk #'general-extended-def-:which-key)
 
+(declare-function evil-add-command-properties "evil-common")
 (defun general-extended-def-:properties (_state _keymap _key def kargs)
   "Use `evil-add-command-properties' to add properties to a command.
 The properties should be specified with :properties in either DEF or KARGS."
@@ -1898,6 +1900,7 @@ aliases such as `nmap' for `general-nmap'."
   (declare-function use-package-plist-maybe-put "use-package")
   (declare-function use-package-plist-append "use-package")
   (defvar use-package-keywords)
+  (defvar use-package-deferring-keywords)
   (setq use-package-keywords
         ;; should go in the same location as :bind
         ;; adding to end may not cause problems, but see issue #22
@@ -1908,6 +1911,8 @@ aliases such as `nmap' for `general-nmap'."
                  ;; don't add duplicates
                  unless (eq item :general)
                  collect item))
+  (when (boundp 'use-package-deferring-keywords)
+    (add-to-list 'use-package-deferring-keywords :general t))
   (defun use-package-normalize/:general (_name _keyword args)
     "Return ARGS."
     args)
@@ -1946,8 +1951,8 @@ aliases such as `nmap' for `general-nmap'."
       (use-package-concat
        (use-package-process-keywords name
          (use-package-sort-keywords
-          (use-package-plist-maybe-put rest :defer t))
-         (use-package-plist-append state :commands commands))
+          (use-package-plist-append rest :commands commands))
+         state)
        `((ignore ,@(mapcar (lambda (arglist)
                              ;; Note: prefix commands are not valid functions
                              (if (or (functionp (car arglist))
