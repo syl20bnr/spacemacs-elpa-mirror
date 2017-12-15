@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 20171214.855
+;; Package-Version: 20171214.2305
 ;; Version: 2.4.0
 ;; Package-Requires: ((emacs "24.4"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -3814,7 +3814,7 @@ to remove previous string first."
             (setq backup (eval (car (get 'fountain-continued-dialog-string
                                          'standard-value)))))
         ;; Delete all matches of backup string.
-        (funcall replace-fun backup job)
+        (if (stringp backup) (funcall replace-fun backup job))
         ;; Delete all matches of current string.
         (funcall replace-fun fountain-continued-dialog-string job)
         ;; When fountain-add-continued-dialog, add string where appropriate.

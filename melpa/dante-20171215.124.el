@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20171207.1313
+;; Package-Version: 20171215.124
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -299,7 +299,7 @@ The continuation must call its first argument; see `dante-session'."
 
 (defun dante-check (checker cont)
   "Run a check with CHECKER and pass the status onto CONT."
-  (if (eq (dante-get-var 'dante-state) 'dead) (cont 'interrupted)
+  (if (eq (dante-get-var 'dante-state) 'dead) (funcall cont 'interrupted)
     (dante-cps-let (((done string) (dante-async-load-current-buffer nil)))
       (funcall done)
       (funcall cont

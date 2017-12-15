@@ -4,7 +4,7 @@
 
 ;; Author: Youngjoo Lee <youngker@gmail.com>
 ;; Version: 0.4.0
-;; Package-Version: 20161214.548
+;; Package-Version: 20171215.26
 ;; Keywords: tools
 ;; Package-Requires: ((s "1.10.0") (dash "2.12.0") (helm "1.7.7") (cl-lib "0.5"))
 
@@ -34,6 +34,8 @@
 (require 'helm-grep)
 (require 'helm-files)
 (require 'cl-lib)
+(if (> emacs-major-version 24)
+    (require 'xref))
 
 (defgroup helm-codesearch nil
   "Helm interface for codesearch."
@@ -62,6 +64,11 @@
 
 (defcustom helm-codesearch-global-csearchindex nil
   "The global csearchindex file."
+  :type 'boolean
+  :group 'helm-codesearch)
+
+(defcustom helm-codesearch-ignore-case nil
+  "Ignore case distinctions in both the PATTERN and the input files."
   :type 'boolean
   :group 'helm-codesearch)
 
@@ -97,6 +104,19 @@
     :init #'helm-codesearch-init
     :cleanup #'helm-codesearch-cleanup
     :candidates-process #'helm-codesearch-find-pattern-process
+    :filtered-candidate-transformer #'helm-codesearch-find-pattern-transformer
+    :action 'helm-codesearch-action
+    :persistent-action 'helm-grep-persistent-action
+    :help-message 'helm-grep-help-message
+    :candidate-number-limit 99999
+    :requires-pattern 3))
+
+(defvar helm-codesearch-source-pattern-in-files
+  (helm-build-async-source "Codesearch: Find pattern"
+    :header-name #'helm-codesearch-header-name
+    :init #'helm-codesearch-init
+    :cleanup #'helm-codesearch-cleanup
+    :candidates-process #'helm-codesearch-find-pattern-in-files-process
     :filtered-candidate-transformer #'helm-codesearch-find-pattern-transformer
     :action 'helm-codesearch-action
     :persistent-action 'helm-grep-persistent-action
@@ -185,7 +205,9 @@
     (beginning-of-line)
     (-when-let (window (helm-codesearch-show-source))
       (select-window window)
-      (ring-insert find-tag-marker-ring (point-marker)))))
+      (if (> emacs-major-version 24)
+          (xref-push-marker-stack (point-marker))
+        (ring-insert find-tag-marker-ring (point-marker))))))
 
 (defun helm-codesearch-next-line ()
   "Move point to the next search result, if one exists."
@@ -328,7 +350,9 @@
                      "codesearch"
                      nil
                      "csearch"
-                     (cons "-n" (split-string helm-pattern " " t)))))
+                     (if helm-codesearch-ignore-case
+                         (list "-i" "-n" helm-pattern)
+                       (list "-n" helm-pattern)))))
     (setq helm-codesearch-file nil)
     (setq helm-codesearch-process proc)
     (helm-codesearch-set-process-sentinel proc)))
@@ -339,7 +363,30 @@
                      "codesearch"
                      nil
                      "csearch"
-                     (list "-l" "-f" helm-pattern "$"))))
+                     (if helm-codesearch-ignore-case
+                         (list "-i" "-l" "-f"
+                               (replace-regexp-in-string "\s" ".*" helm-pattern) "$")
+                       (list "-l" "-f"
+                             (replace-regexp-in-string "\s" ".*" helm-pattern) "$")))))
+    (setq helm-codesearch-process proc)
+    (helm-codesearch-set-process-sentinel proc)))
+
+(defvar helm-codesearch--file-pattern nil
+  "File pattern for searching in.")
+
+(defun helm-codesearch-find-pattern-in-files-process ()
+  "Execute the csearch for a file."
+  (let ((proc (apply 'start-process
+                     "codesearch"
+                     nil
+                     "csearch"
+                     (if helm-codesearch-ignore-case
+                         (list "-i" "-n" "-f"
+                               (replace-regexp-in-string "\s" ".*" helm-codesearch--file-pattern)
+                               helm-pattern)
+                       (list "-n" "-f"
+                             (replace-regexp-in-string "\s" ".*" helm-codesearch--file-pattern)
+                             helm-pattern)))))
     (setq helm-codesearch-process proc)
     (helm-codesearch-set-process-sentinel proc)))
 
@@ -366,23 +413,46 @@
       (setq buffer-read-only t)
       (pop-to-buffer buf))))
 
+(defvar helm-codesearch--marker nil
+  "Point to previous position.")
+
+(defun helm-codesearch-push-marker ()
+  "Push marker to previous position."
+  (interactive)
+  (if (> emacs-major-version 24)
+      (xref-push-marker-stack helm-codesearch--marker)
+    (ring-insert find-tag-marker-ring helm-codesearch--marker)))
+
 (defun helm-codesearch-init ()
   "Initialize."
   (advice-add 'helm-show-candidate-number :override
-              #'helm-codesearch-show-candidate-number))
+              #'helm-codesearch-show-candidate-number)
+  (setq helm-codesearch--marker (point-marker)))
 
 (defun helm-codesearch-cleanup ()
   "Cleanup Function."
   (advice-remove 'helm-show-candidate-number
-                 #'helm-codesearch-show-candidate-number))
+                 #'helm-codesearch-show-candidate-number)
+  (helm-codesearch-push-marker))
 
 ;;;###autoload
-(defun helm-codesearch-find-pattern ()
-  "Find pattern."
-  (interactive)
-  (let ((symbol (thing-at-point 'symbol)))
+(defun helm-codesearch-find-pattern (&optional arg)
+  "Find pattern.  If ARG > 1 in files.  If ARG >= 16 toggle case."
+  (interactive "p")
+  (let* ((in-files (if (> arg 1) t nil))
+         (toggle-case (if (>= arg 16) t nil))
+         (helm-codesearch-ignore-case (if toggle-case
+                                          (not helm-codesearch-ignore-case)
+                                        helm-codesearch-ignore-case))
+         (symbol (thing-at-point 'symbol))
+         (source (if in-files
+                     'helm-codesearch-source-pattern-in-files
+                   'helm-codesearch-source-pattern))
+         (helm-codesearch--file-pattern (if in-files
+                                            (read-string "File pattern: ")
+                                          nil)))
     (helm-codesearch-search-csearchindex)
-    (helm :sources 'helm-codesearch-source-pattern
+    (helm :sources source
           :buffer helm-codesearch-buffer
           :input symbol
           :keymap helm-codesearch-map
