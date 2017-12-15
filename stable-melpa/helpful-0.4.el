@@ -4,10 +4,10 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 0.3
+;; Package-Version: 0.4
 ;; Keywords: help, lisp
-;; Version: 0.3
-;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
+;; Version: 0.4
+;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -47,9 +47,11 @@
 (require 'help)
 (require 'dash)
 (require 's)
+(require 'shut-up)
 (require 'find-func)
 (require 'nadvice)
 (require 'info-look)
+(require 'edebug)
 
 (defvar-local helpful--sym nil)
 (defvar-local helpful--callable-p nil)
@@ -63,7 +65,8 @@ show the value of buffer-local variables.")
    ((not callable-p) "variable")
    ((commandp symbol) "command")
    ((macrop symbol) "macro")
-   ((functionp symbol) "function")))
+   ((functionp symbol) "function")
+   ((special-form-p symbol) "special form")))
 
 (defun helpful--buffer (symbol callable-p)
   "Return a buffer to show help for SYMBOL in."
@@ -138,10 +141,7 @@ This allows us to distinguish strings from symbols."
   "Unbind the current symbol."
   (let* ((sym (button-get button 'symbol))
          (callable-p (button-get button 'callable-p))
-         (kind (cond
-                ((not callable-p) "variable")
-                ((functionp sym) "function")
-                (t "macro"))))
+         (kind (helpful--kind-name sym callable-p)))
     (when (yes-or-no-p (format "Forget %s %s?" kind sym))
       (if callable-p
           (fmakunbound sym)
@@ -149,32 +149,75 @@ This allows us to distinguish strings from symbols."
       (message "Forgot %s %s." kind sym)
       (kill-buffer (current-buffer)))))
 
-(defun helpful--forget-button (symbol callable-p)
-  "Return a button that unbinds SYMBOL."
-  (with-temp-buffer
-    (insert-text-button
-     "Forget"
-     'symbol symbol
-     'callable-p callable-p
-     :type 'helpful-forget-button)
-    (buffer-string)))
-
 (define-button-type 'helpful-disassemble-button
   'action #'helpful--disassemble
   'follow-link t
+  'symbol nil
   'help-echo "Show disassembled bytecode")
 
-(defun helpful--disassemble (_button)
+(defun helpful--disassemble (button)
   "Disassemble the current symbol."
-  (disassemble helpful--sym))
+  (disassemble (button-get button 'symbol)))
 
-(defun helpful--disassemble-button ()
-  "Return a button that disassembles the current symbol."
-  (with-temp-buffer
-    (insert-text-button
-     "Disassemble"
-     :type 'helpful-disassemble-button)
-    (buffer-string)))
+(define-button-type 'helpful-edebug-button
+  'action #'helpful--edebug
+  'follow-link t
+  'symbol nil
+  'help-echo "Toggle edebug (re-evaluates definition)")
+
+(defun helpful--edebug-p (sym)
+  "Does function SYM have its definition patched by edebug?"
+  (let ((fn-def (indirect-function sym)))
+    ;; Edebug replaces function source code with a sexp that has
+    ;; `edebug-enter', `edebug-after' etc interleaved. This means the
+    ;; function is interpreted, so `indirect-function' returns a list.
+    (when (and (consp fn-def) (consp (cdr fn-def)))
+      (eq (car (-last-item fn-def)) 'edebug-enter))))
+
+(defun helpful--can-edebug-p (sym callable-p)
+  "Can we use edebug with SYM?"
+  (and
+   ;; SYM must be a function.
+   callable-p
+   ;; The function cannot be a primitive, it must be defined in elisp.
+   (not (helpful--primitive-p sym callable-p))
+   ;; We need to be able to find its definition, or we can't step
+   ;; through the source.
+   (-let* (((buf pos opened) (helpful--definition sym t))
+           (have-definition (and buf pos)))
+     (when opened
+       (kill-buffer buf))
+     have-definition)))
+
+(defun helpful--toggle-edebug (sym)
+  "Enable edebug when function SYM is called,
+or disable if already enabled."
+  (-let ((should-edebug (not (helpful--edebug-p sym)))
+         ((buf pos created) (helpful--definition sym t)))
+    (if (and buf pos)
+        (progn
+          (with-current-buffer buf
+            (save-excursion
+              (save-restriction
+                (widen)
+                (goto-char pos)
+
+                (let* ((edebug-all-forms should-edebug)
+                       (edebug-all-defs should-edebug)
+                       (form (edebug-read-top-level-form)))
+                  ;; Based on `edebug-eval-defun'.
+                  (eval (eval-sexp-add-defvars form) lexical-binding)))))
+          ;; If we're enabling edebug, we need the source buffer to
+          ;; exist. Otherwise, we can clean it up.
+          (when (and created (not should-edebug))
+            (kill-buffer buf)))
+      
+      (user-error "Could not find source for edebug"))))
+
+(defun helpful--edebug (button)
+  "Toggle edebug for the current symbol."
+  (helpful--toggle-edebug (button-get button 'symbol))
+  (helpful-update))
 
 (define-button-type 'helpful-navigate-button
   'action #'helpful--navigate
@@ -183,9 +226,15 @@ This allows us to distinguish strings from symbols."
   'follow-link t
   'help-echo "Navigate to definition")
 
+(defun helpful--no-properties (s)
+  "Return a copy of S without any properties."
+  (with-temp-buffer
+    (insert s)
+    (buffer-substring-no-properties (point-min) (point-max))))
+
 (defun helpful--navigate (button)
   "Navigate to the path this BUTTON represents."
-  (find-file (button-get button 'path))
+  (find-file (helpful--no-properties (button-get button 'path)))
   ;; We use `get-text-property' to work around an Emacs 25 bug:
   ;; http://git.savannah.gnu.org/cgit/emacs.git/commit/?id=f7c4bad17d83297ee9a1b57552b1944020f23aea
   (-when-let (pos (get-text-property button 'position
@@ -194,13 +243,76 @@ This allows us to distinguish strings from symbols."
 
 (defun helpful--navigate-button (path &optional pos)
   "Return a button that opens PATH and puts point at POS."
-  (with-temp-buffer
-    (insert-text-button
-     (abbreviate-file-name path)
-     :type 'helpful-navigate-button
-     'path path
-     'position pos)
-    (buffer-string)))
+  (make-text-button
+   (abbreviate-file-name path) nil
+   :type 'helpful-navigate-button
+   'path path
+   'position pos))
+
+(define-button-type 'helpful-customize-button
+  'action #'helpful--customize
+  'symbol nil
+  'follow-link t
+  'help-echo "Open Customize for this symbol")
+
+(defun helpful--customize (button)
+  "Open Customize for this symbol."
+  (customize-variable (button-get button 'symbol)))
+
+(define-button-type 'helpful-toggle-button
+  'action #'helpful--toggle
+  'symbol nil
+  'buffer nil
+  'follow-link t
+  'help-echo "Toggle this symbol between t and nil")
+
+(defun helpful--toggle (button)
+  "Toggle the symbol between nil and t."
+  (let ((sym (button-get button 'symbol))
+        (buf (button-get button 'buffer)))
+    (save-current-buffer
+      ;; If this is a buffer-local variable, ensure we're in the right
+      ;; buffer.
+      (when buf
+        (set-buffer buf))
+      (set sym (not (symbol-value sym))))
+    (helpful-update)))
+
+(define-button-type 'helpful-set-button
+  'action #'helpful--set
+  'symbol nil
+  'buffer nil
+  'follow-link t
+  'help-echo "Set the value of this symbol")
+
+(defun helpful--set (button)
+  "Set the value of this symbol."
+  (let* ((sym (button-get button 'symbol))
+         (sym-value (symbol-value sym))
+         (buf (button-get button 'buffer))
+         ;; Inspired by `counsel-read-setq-expression'.
+         (expr
+          (minibuffer-with-setup-hook
+              (lambda ()
+                (add-function :before-until (local 'eldoc-documentation-function)
+                              #'elisp-eldoc-documentation-function)
+                (run-hooks 'eval-expression-minibuffer-setup-hook)
+                (goto-char (minibuffer-prompt-end))
+                (forward-char (length (format "(setq %S " sym))))
+            (read-from-minibuffer
+             "Eval: "
+             (format
+              (if (consp sym-value) "(setq %s '%S)" "(setq %s %S)")
+              sym sym-value)
+             read-expression-map t
+             'read-expression-history))))
+    (save-current-buffer
+      ;; If this is a buffer-local variable, ensure we're in the right
+      ;; buffer.
+      (when buf
+        (set-buffer buf))
+      (eval-expression expr))
+    (helpful-update)))
 
 (define-button-type 'helpful-all-references-button
   'action #'helpful--all-references
@@ -221,30 +333,11 @@ This allows us to distinguish strings from symbols."
      ((macrop sym)
       (elisp-refs-macro sym)))))
 
-(defun helpful--all-references-button (sym callable-p)
-  "Return a button that finds all references to SYM."
-  (with-temp-buffer
-    (insert-text-button
-     "All references"
-     :type 'helpful-all-references-button
-     'symbol sym
-     'callable-p callable-p)
-    (buffer-string)))
-
 (define-button-type 'helpful-manual-button
   'action #'helpful--manual
   'symbol nil
   'follow-link t
   'help-echo "Describe this symbol")
-
-(defun helpful--manual-button (sym)
-  "Return a button that shows SYM in the Info manul."
-  (with-temp-buffer
-    (insert-text-button
-     "View in manual"
-     :type 'helpful-manual-button
-     'symbol sym)
-    (buffer-string)))
 
 (defun helpful--manual (button)
   "Open the manual for the system that this BUTTON represents."
@@ -261,15 +354,6 @@ This allows us to distinguish strings from symbols."
   "Describe the symbol that this BUTTON represents."
   (let ((sym (button-get button 'symbol)))
     (helpful-symbol sym)))
-
-(defun helpful--describe-button (sym)
-  "Return a button that describes SYM."
-  (with-temp-buffer
-    (insert-text-button
-     (symbol-name sym)
-     :type 'helpful-describe-button
-     'symbol sym)
-    (buffer-string)))
 
 (defun helpful--split-first-line (docstring)
   "If the first line is a standalone sentence, ensure we have a
@@ -296,7 +380,10 @@ blank line afterwards."
               (s-chop-prefix "`" (s-chop-suffix "'" it)))
              (sym (intern sym-name)))
         (if (or (boundp sym) (fboundp sym))
-            (helpful--describe-button (read sym-name))
+            (make-text-button
+             sym-name nil
+             :type 'helpful-describe-button
+             'symbol sym)
           (propertize sym-name
                       'face 'font-lock-constant-face))))
     (helpful--split-first-line docstring)
@@ -342,25 +429,24 @@ hooks.")
 (defun helpful--source (sym callable-p)
   "Return the source code of SYM.
 If the source code cannot be found, return the sexp used."
-  (-let ((initial-buffers (buffer-list))
-         ((buf . start-pos) (helpful--definition sym callable-p)))
-    (if (and buf start-pos)
-        (let (source)
-          (with-current-buffer buf
-            (save-excursion
-              (save-restriction
-                (goto-char start-pos)
-                (narrow-to-defun)
-                (setq source (buffer-substring-no-properties (point-min) (point-max))))))
-          ;; If we've just created this buffer, close it.
-          (unless (-contains-p initial-buffers buf)
-            (kill-buffer buf))
-          (when (and source (buffer-file-name buf))
-            (setq source (propertize source
-                                     'helpful-path (buffer-file-name buf)
-                                     'helpful-pos start-pos
-                                     'helpful-pos-is-start t)))
-          source)
+  (-let (((buf start-pos created) (helpful--definition sym callable-p))
+         (source nil))
+    (when (and buf start-pos)
+      (with-current-buffer buf
+        (save-excursion
+          (save-restriction
+            (goto-char start-pos)
+            (narrow-to-defun)
+            (setq source (buffer-substring-no-properties (point-min) (point-max))))))
+      (when (and source (buffer-file-name buf))
+        (setq source (propertize source
+                                 'helpful-path (buffer-file-name buf)
+                                 'helpful-pos start-pos
+                                 'helpful-pos-is-start t))))
+    (when (and buf created)
+      (kill-buffer buf))
+    (if source
+        source
       ;; Could not find source -- probably defined interactively, or via
       ;; a macro, or file has changed.
       ;; TODO: verify that the source hasn't changed before showing.
@@ -378,46 +464,82 @@ If the source code cannot be found, return the sexp used."
         (assoc-string sym completions))))
 
 (defun helpful--definition (sym callable-p)
-  "Return a pair (BUF . POS) where SYM is defined.
+  "Return a list (BUF POS OPENED) where SYM is defined.
 
-BUF may be an existing buffer or created. Caller is responsible
-for cleaning up."
-  (let (buf-and-pos)
+BUF is the buffer containing the definition. If the user wasn't
+already visiting this buffer, OPENED is t and callers should kill
+the buffer when done.
+
+POS is the position of the start of the definition within the
+buffer."
+  (-let ((initial-buffers (buffer-list))
+         (primitive-p (helpful--primitive-p sym callable-p))
+         (path nil)
+         (buf nil)
+         (pos nil)
+         (opened nil))
     (when callable-p
-      (ignore-errors
-        (setq buf-and-pos
-              ;; TODO: if SYM is in a buffer that's already open, this
-              ;; moves point.
-              (find-function-noselect sym)))
-      (unless buf-and-pos
-        ;; If it's defined interactively, it may have an edebug property
-        ;; that tells us where it's defined.
-        (-when-let (marker (get sym 'edebug))
-          (setq buf-and-pos
-                (cons (marker-buffer marker)
-                      (marker-position marker))))))
-    (when (not callable-p)
+      (-let [(base-sym . src-path) (find-function-library sym)]
+        ;; `base-sym' is the underlying symbol if `sym' is an alias.
+        (setq sym base-sym)
+        (setq path src-path)))
+    (when (and primitive-p path)
+      ;; Convert "src/foo.c" to "".
+      (setq path (f-expand path
+                           (f-parent find-function-C-source-directory))))
+
+    (cond
+     ((and callable-p path)
+      ;; Open `path' ourselves, so we can widen before searching.
+      (setq buf (find-file-noselect (find-library-name path)))
+
+      (unless (-contains-p initial-buffers buf)
+        (setq opened t))
+
+      ;; Based on `find-function-noselect'.
+      (with-current-buffer buf
+        ;; `find-function-search-for-symbol' moves point. Prevent
+        ;; that.
+        (save-excursion
+          ;; Narrowing has been fixed upstream:
+          ;; http://git.savannah.gnu.org/cgit/emacs.git/commit/?id=abd18254aec76b26e86ae27e91d2c916ec20cc46
+          (save-restriction
+            (widen)
+            (setq pos
+                  (if primitive-p
+                      (cdr (find-function-C-source sym path nil))
+                    (cdr (find-function-search-for-symbol sym nil path))))))))
+     (callable-p
+      ;; Functions defined interactively may have an edebug property
+      ;; that contains the location of the definition.
+      (-when-let (marker (car-safe (get sym 'edebug)))
+        (setq buf (marker-buffer marker))
+        (setq pos (marker-position marker))))
+     ((not callable-p)
       (condition-case _err
-          (setq buf-and-pos (find-definition-noselect sym 'defvar))
-        (search-failed nil)))
-    buf-and-pos))
+          (-let [(sym-buf . sym-pos) (find-definition-noselect sym 'defvar)]
+            (setq buf sym-buf)
+            (setq pos sym-pos))
+        (search-failed nil))))
+    (list buf pos opened)))
 
 (defun helpful--source-path (sym callable-p)
   "Return the path where SYM is defined."
-  (-let* ((initial-buffers (buffer-list))
-          ((buf . _) (helpful--definition sym callable-p))
-          (path (when buf (buffer-file-name buf))))
-    ;; If we've just created this buffer, close it.
-    (unless (-contains-p initial-buffers buf)
-      (kill-buffer buf))
+  (-let* (((buf _ opened) (helpful--definition sym callable-p))
+          (path nil))
+    (when buf
+      (setq path (buffer-file-name buf))
+      (when opened
+        ;; If we've just created this buffer, close it.
+        (kill-buffer buf)))
     path))
 
 (defun helpful--source-pos (sym callable-p)
   "Return the file position where SYM is defined."
-  (-let ((initial-buffers (buffer-list))
-         ((buf . pos) (helpful--definition sym callable-p)))
+  (-let (((buf pos opened) (helpful--definition sym callable-p)))
     ;; If we've just created this buffer, close it.
-    (unless (-contains-p initial-buffers buf)
+    (when opened
+      ;; If we've just created this buffer, close it.
       (kill-buffer buf))
     pos))
 
@@ -567,7 +689,8 @@ state of the current symbol."
   (interactive)
   (cl-assert (not (null helpful--sym)))
   (let* ((inhibit-read-only t)
-         (start-pos (point))
+         (start-line (line-number-at-pos))
+         (start-column (current-column))
          (primitive-p (helpful--primitive-p
                        helpful--sym helpful--callable-p))
          (look-for-src (or (not primitive-p)
@@ -588,19 +711,21 @@ state of the current symbol."
               (--map (helpful--outer-sexp buf it) positions))
         (kill-buffer buf)))
     (erase-buffer)
-    (when helpful--callable-p
+    (if helpful--callable-p
+        (insert
+         (helpful--heading
+          (if (macrop helpful--sym)
+              "Macro Signature\n"
+            "Function Signature\n"))
+         (helpful--syntax-highlight (helpful--signature helpful--sym)))
       (insert
        (helpful--heading
-        (if (macrop helpful--sym)
-            "Macro Signature\n"
-          "Function Signature\n"))
-       (helpful--syntax-highlight (helpful--signature helpful--sym))))
+        "Variable\n")
+       (symbol-name helpful--sym)))
 
-    (-when-let (docstring (helpful--docstring
-                           helpful--sym helpful--callable-p))
-      (when helpful--callable-p
-        (insert "\n\n"))
+    (-when-let (docstring (helpful--docstring helpful--sym helpful--callable-p))
       (insert
+       "\n\n"
        (helpful--heading
         (cond
          ((not helpful--callable-p)
@@ -613,16 +738,41 @@ state of the current symbol."
       (when (helpful--in-manual-p helpful--sym)
         (insert
          "\n\n"
-         (helpful--manual-button helpful--sym))))
+         (make-text-button
+          "View in manual" nil
+          :type 'helpful-manual-button
+          'symbol helpful--sym))))
 
     (when (not helpful--callable-p)
-      (insert
-       (helpful--heading "\n\nValue\n")
-       (let ((sym helpful--sym)
-             (buf (or helpful--associated-buffer (current-buffer))))
+      (let ((sym helpful--sym)
+            (buf (or helpful--associated-buffer (current-buffer))))
+        (insert
+         (helpful--heading "\n\nValue\n")
          (helpful--pretty-print
           (with-current-buffer buf
-            (symbol-value sym))))))
+            (symbol-value sym)))
+         "\n\n")
+        (when (memq (symbol-value helpful--sym) '(nil t))
+          (insert
+           (make-text-button
+            "Toggle" nil
+            :type 'helpful-toggle-button
+            'symbol helpful--sym
+            'buffer buf)
+           " "))
+        (insert
+         (make-text-button
+          "Set variable" nil
+          :type 'helpful-set-button
+          'symbol helpful--sym
+          'buffer buf))
+        (when (custom-variable-p helpful--sym)
+          (insert
+           " "
+           (make-text-button
+            "Customize" nil
+            :type 'helpful-customize-button
+            'symbol helpful--sym)))))
 
     ;; Show keybindings.
     ;; TODO: allow users to conveniently add and remove keybindings.
@@ -646,7 +796,11 @@ state of the current symbol."
       (t
        "Could not find source file."))
      "\n\n"
-     (helpful--all-references-button helpful--sym helpful--callable-p))
+     (make-text-button
+      "All references" nil
+      :type 'helpful-all-references-button
+      'symbol helpful--sym
+      'callable-p helpful--callable-p))
 
     (-when-let (formatted-props (helpful--format-properties helpful--sym))
       (insert
@@ -659,15 +813,44 @@ state of the current symbol."
        (format
         "This %s is advised." (if (macrop helpful--sym) "macro" "function"))))
 
-    (insert
-     (helpful--heading "\n\nDebugging\n")
-     (if (or (not helpful--callable-p) primitive-p)
-         ""
-       (concat
-        (helpful--disassemble-button)
-        " "))
-     (helpful--forget-button helpful--sym helpful--callable-p)
+    (let ((can-edebug
+           (helpful--can-edebug-p helpful--sym helpful--callable-p))
+          (can-disassemble
+           (and helpful--callable-p (not primitive-p)))
+          (can-forget
+           (and (not (special-form-p helpful--sym))
+                (not primitive-p))))
+      (when (or can-edebug can-disassemble can-forget)
+        (insert (helpful--heading "\n\nDebugging\n")))
+      (when can-edebug
+        (insert
+         (make-text-button
+          (if (helpful--edebug-p helpful--sym)
+              "Disable edebug"
+            "Enable edebug")
+          nil
+          :type 'helpful-edebug-button
+          'symbol helpful--sym)
+         "\n"))
 
+      (when can-disassemble
+        (insert
+         (make-text-button
+          "Disassemble" nil
+          :type 'helpful-disassemble-button
+          'symbol helpful--sym)))
+
+      (when can-forget
+        (when can-disassemble
+          (insert " "))
+        (insert
+         (make-text-button
+          "Forget" nil
+          :type 'helpful-forget-button
+          'symbol helpful--sym
+          'callable-p helpful--callable-p))))
+
+    (insert
      (helpful--heading "\n\nSource Code\n")
      (cond
       (source-path
@@ -699,8 +882,11 @@ state of the current symbol."
         (t
          (helpful--syntax-highlight
           (helpful--pretty-print source))))))
-    (goto-char start-pos)))
+    (goto-char (point-min))
+    (forward-line (1- start-line))
+    (forward-char start-column)))
 
+;; TODO: this isn't sufficient for `edebug-eval-defun'.
 (defun helpful--skip-advice (docstring)
   "Remove mentions of advice from DOCSTRING."
   (let* ((lines (s-lines docstring))
@@ -759,8 +945,6 @@ For example, \"(some-func FOO &optional BAR)\"."
             (documentation-property sym 'variable-documentation)))
     docstring))
 
-;; TODO: allow jumping to source by pressing RET on the inline code.
-
 (defun helpful--read-symbol (prompt predicate)
   (let ((sym-here (symbol-at-point)))
     (read (completing-read prompt obarray
@@ -810,11 +994,11 @@ For example, \"(some-func FOO &optional BAR)\"."
 
 ;;;###autoload
 (defun helpful-callable (symbol)
-  "Show help for function or macro named SYMBOL.
+  "Show help for function, macro or special form named SYMBOL.
 
 See also `helpful-macro' and `helpful-function'."
   (interactive
-   (list (helpful--read-symbol "Function/macro: " #'fboundp)))
+   (list (helpful--read-symbol "Callable: " #'fboundp)))
   (pop-to-buffer (helpful--buffer symbol t))
   (helpful-update))
 
@@ -899,6 +1083,9 @@ See also `helpful-callable' and `helpful-variable'."
             (setq pos (+ pos offset)))))
 
       (find-file path)
+      (when (or (< pos (point-min))
+                (> pos (point-max)))
+        (widen))
       (goto-char pos))))
 
 (defun helpful--forward-button (direction)
@@ -931,6 +1118,13 @@ See also `helpful-callable' and `helpful-variable'."
   "Move point backward to the next button."
   (interactive)
   (helpful--forward-button -1))
+
+(defun helpful-kill-buffers ()
+  "Kill all `helpful-mode' buffers."
+  (interactive)
+  (dolist (buffer (buffer-list))
+    (when (eq (buffer-local-value 'major-mode buffer) 'helpful-mode)
+      (kill-buffer buffer))))
 
 (define-key helpful-mode-map (kbd "g") #'helpful-update)
 (define-key helpful-mode-map (kbd "RET") #'helpful-visit-reference)

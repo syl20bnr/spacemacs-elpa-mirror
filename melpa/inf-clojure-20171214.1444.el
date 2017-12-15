@@ -5,7 +5,7 @@
 ;; Authors: Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Olin Shivers <shivers@cs.cmu.edu>
 ;; URL: http://github.com/clojure-emacs/inf-clojure
-;; Package-Version: 20171212.2326
+;; Package-Version: 20171214.1444
 ;; Keywords: processes, clojure
 ;; Version: 2.1.0-snapshot
 ;; Package-Requires: ((emacs "24.4") (clojure-mode "5.6"))
@@ -225,6 +225,19 @@ often connecting to a remote REPL process."
   :risky #'stringp
   :safe #'inf-clojure--endpoint-p
   :package-version '(inf-clojure . "2.0.0"))
+
+(defcustom inf-clojure-tools-deps-cmd "clj"
+  "The command used to start a Clojure REPL for tools.deps projects.
+
+Alternatively you can specify a TCP connection cons pair, instead
+of command, consisting of a host and port
+number (e.g. (\"localhost\" . 5555)).  That's useful if you're
+often connecting to a remote REPL process."
+  :type '(choice (string)
+                 (cons string integer))
+  :risky #'stringp
+  :safe #'inf-clojure--endpoint-p
+  :package-version '(inf-clojure . "2.1.0"))
 
 (defcustom inf-clojure-generic-cmd "lein repl"
   "The command used to start a Clojure REPL outside Lein/Boot projects.
@@ -504,7 +517,7 @@ to continue it."
    (t str)))
 
 (defvar inf-clojure-project-root-files
-  '("project.clj" "build.boot")
+  '("project.clj" "build.boot" "deps.edn")
   "A list of files that can be considered project markers.")
 
 (defun inf-clojure-project-root ()
@@ -524,6 +537,7 @@ Fallback to `default-directory.' if not within a project."
       (let ((default-directory (inf-clojure-project-root)))
         (cond ((file-exists-p "project.clj") "lein")
               ((file-exists-p "build.boot") "boot")
+              ((file-exists-p "deps.edn") "tools.deps")
               (t "generic")))))
 
 (defun inf-clojure-cmd (project-type)
@@ -531,6 +545,7 @@ Fallback to `default-directory.' if not within a project."
   (pcase project-type
     ("lein" inf-clojure-lein-cmd)
     ("boot" inf-clojure-boot-cmd)
+    ("tools.deps" inf-clojure-tools-deps-cmd)
     (_ inf-clojure-generic-cmd)))
 
 (defun inf-clojure-clear-repl-buffer ()

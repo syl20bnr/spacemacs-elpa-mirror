@@ -5,7 +5,7 @@
 ;; Author: Bharat Joshi <jbharat@outlook.com>
 ;; Maintainer: Bharat Joshi <jbharat@outlook.com>
 ;; URL: https://github.com/jbharat/exotica-theme
-;; Package-Version: 20171208.430
+;; Package-Version: 20171214.1609
 ;; Created: 22th July 2017
 ;; Keywords: faces, theme, dark, vibrant colors
 ;; Version: 1.0.2
@@ -134,7 +134,7 @@
  `(font-lock-comment-delimiter-face ((t (:foreground ,comment-face :slant ,slantType))))
  `(font-lock-constant-face ((t (:foreground ,face4))))
  `(font-lock-doc-face ((t (:foreground ,m1 :slant ,slantType))))
- `(font-lock-function-name-face ((t (:foreground ,face3 :slant ,slantType))))
+ `(font-lock-function-name-face ((t (:foreground ,face10 :slant ,slantType))))
  `(font-lock-keyword-face ((t (:foreground ,face1))))
  `(font-lock-negation-char-face ((t (:weight bold))))
  `(font-lock-preprocessor-face ((t (:foreground ,face2))))
