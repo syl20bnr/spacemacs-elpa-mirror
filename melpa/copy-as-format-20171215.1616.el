@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2016-2017 Skye Shaw
 ;; Author: Skye Shaw <skye.shaw@gmail.com>
-;; Package-Version: 20171214.1858
+;; Package-Version: 20171215.1616
 ;; Package-X-Original-Version: 0.0.7
 ;; Keywords: github, slack, jira, hipchat, gitlab, bitbucket, org-mode, pod, rst, asciidoc, tools, convenience
 ;; URL: https://github.com/sshaw/copy-as-format
@@ -34,7 +34,7 @@
 ;;
 ;; To add formats see `copy-as-format-format-alist'.
 ;;
-;; For AsciiDoc output see `copy-as-format-asciidoc-include-filename' and
+;; For AsciiDoc customization see `copy-as-format-asciidoc-include-file-name' and
 ;; `copy-as-format-asciidoc-language-alist'.
 
 ;;; Change Log:

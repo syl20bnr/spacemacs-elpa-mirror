@@ -5,5 +5,5 @@ With a prefix argument prompt for the format.  Defaults to `copy-as-format-defau
 
 To add formats see `copy-as-format-format-alist'.
 
-For AsciiDoc output see `copy-as-format-asciidoc-include-filename' and
+For AsciiDoc customization see `copy-as-format-asciidoc-include-file-name' and
 `copy-as-format-asciidoc-language-alist'.

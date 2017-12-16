@@ -4,7 +4,7 @@
 
 ;; Author: Jorgen Schaefer <contact@jorgenschaefer.de>
 ;; URL: http://github.com/jorgenschaefer/pyvenv
-;; Package-Version: 20171005.1106
+;; Package-Version: 20171215.1329
 ;; Version: 1.10
 ;; Keywords: Python, Virtualenv, Tools
 
@@ -167,7 +167,12 @@ This is usually the base name of `pyvenv-virtual-env'.")
                             (list (format "%s/bin" directory)))
                           ;; Windows
                           (when (file-exists-p (format "%s/Scripts" directory))
-                            (list (format "%s/Scripts" directory))))))
+                            (list (format "%s/Scripts" directory)
+                                  ;; Apparently, some virtualenv
+                                  ;; versions on windows put the
+                                  ;; python.exe in the virtualenv root
+                                  ;; for some reason?
+                                  directory)))))
     (setq pyvenv-old-exec-path exec-path
           pyvenv-old-process-environment process-environment
           ;; For some reason, Emacs adds some directories to `exec-path'
