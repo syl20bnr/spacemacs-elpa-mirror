@@ -5,7 +5,7 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-which-key
-;; Package-Version: 20171213.1752
+;; Package-Version: 20171215.1118
 ;; Version: 3.0.2
 ;; Keywords:
 ;; Package-Requires: ((emacs "24.4"))
@@ -920,8 +920,9 @@ as :before advice for `define-key'."
                (symbolp (cdr def)))
       (let ((key-desc (regexp-quote (key-description key))))
         (push (cons (cons (format "%s\\'" key-desc)
-                          (when (cdr def)
-                            (format "\\`%s\\'" (symbol-name (cdr def)))))
+                          (format "\\`%s\\'" (if (cdr def)
+                                                 (symbol-name (cdr def))
+                                               "Prefix Command")))
                     (cons nil (car def)))
               which-key-replacement-alist)))))
 
