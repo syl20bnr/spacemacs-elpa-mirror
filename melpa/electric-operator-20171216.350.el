@@ -4,7 +4,7 @@
 
 ;; Author: David Shepherd <davidshepherd7@gmail.com>
 ;; Version: 1.0.0
-;; Package-Version: 20171125.148
+;; Package-Version: 20171216.350
 ;; Package-Requires: ((dash "2.10.0") (names "20150618.0") (emacs "24.4"))
 ;; Keywords: electric
 ;; URL: https://github.com/davidshepherd7/electric-operator
@@ -204,7 +204,8 @@ Whitespace before the operator is captured for possible use later.
 
 (defun eval-action (action point)
   (cond
-   ((functionp action) (save-excursion (goto-char point) (funcall action)))
+   ((functionp action)
+    (save-excursion (goto-char point) (funcall action)))
    ((stringp action) action)
    (t (error "Unrecognised action: %s" action))))
 
@@ -302,7 +303,7 @@ if not inside any parens."
 (i.e. takes one argument). This is a bit of a fudge based on C-like syntax."
   (or
    (looking-back-locally "^\\s-*")
-   (looking-back-locally "[=,:\*\+-/><&^{]\\s-*")
+   (looking-back-locally "[=,:\*\+-/><&^{;]\\s-*")
    (looking-back-locally "\\(return\\)\\s-*")))
 
 (defun just-inside-bracket ()
@@ -320,6 +321,7 @@ Any better ideas would be welcomed."
                         (beginning-of-line)
                         (point))))
     (looking-back string two-lines-up greedy)))
+
 
 
 
@@ -351,6 +353,31 @@ Any better ideas would be welcomed."
   (cond ((and (hashbang-line?) (looking-back-locally "#!")) " /")
         ((hashbang-line?) "/")
         (t " / ")))
+
+
+(defun handle-c-style-comments-start ()
+  "Handle / being (probably) the start of a full-line comment"
+  (when (looking-back-locally "^\\s-*")
+    "/")
+  ;; else return nil so that it passes to the next cond in blocks
+  )
+
+
+;; Functions to handle comments in C-like languages
+(defun c-like-mode-/ ()
+  "Handle / being the first character of a comment"
+  (cond
+   ((handle-c-style-comments-start))
+   (t (prog-mode-/))))
+
+(defun c-like-mode-// ()
+  "Handle // comments on (non-)empty lines."
+  (if (looking-back-locally "^\s*") "// " " // "))
+
+(defun c-like-mode-/* ()
+  "Handle /* comments on (non-)empty lines."
+  (if (looking-back-locally "^\s*") "/* " " /* "))
+
 
 
 
@@ -384,8 +411,8 @@ Any better ideas would be welcomed."
                     (cons ">>" " >> ")
 
                     ;; Comments
-                    (cons "/*" "/* ")
-                    (cons "//" "// ")
+                    (cons "/*" #'c-like-mode-/*)
+                    (cons "//" #'c-like-mode-//)
 
                     ;; End of statement inc/decrement, handled separately
                     ;; because there is no space after the ++/--.
@@ -593,8 +620,11 @@ Also handles C++ lambda capture by reference."
     " && "))
 
 (defun c-mode-/ ()
-  "Handle / in #include <a/b>"
-  (if (c-mode-include-line?) "/" (prog-mode-/)))
+  "Handle / in #include <a/b> and start of full-line comment"
+  (cond
+   ((c-mode-include-line?) "/")
+   ((handle-c-style-comments-start))
+   (t (prog-mode-/))))
 
 (defun c++-probably-lambda-arrow ()
   "Try to guess if we are writing a lambda statement"
@@ -689,11 +719,13 @@ Also handles C++ lambda capture by reference."
 
 (defun js-mode-/ ()
   "Handle regex literals and division"
-  ;; Closing / counts as being inside a string so we don't need to do
-  ;; anything.
-  (if (probably-unary-operator?)
-      nil
-    (prog-mode-/)))
+  ;; Closing / counts as being inside a string so we don't need to do anything.
+  (cond
+   ;; Probably starting a comment or regex
+   ((handle-c-style-comments-start))
+   ;; Probably starting a regex
+   ((probably-unary-operator?) nil)
+   (t (prog-mode-/))))
 
 (apply #'add-rules-for-mode 'js-mode prog-mode-rules)
 (add-rules-for-mode 'js-mode
@@ -707,15 +739,18 @@ Also handles C++ lambda capture by reference."
                     (cons ":" #'js-mode-:)
                     (cons "?" " ? ")
                     (cons "/" #'js-mode-/)
-                    (cons "//" "// ")
-                    (cons "/*" "/* ")
+                    (cons "//" #'c-like-mode-//)
+                    (cons "/*" #'c-like-mode-/*)
                     (cons "=>" " => ") ; ES6 arrow functions
                     )
 
 (apply #'add-rules-for-mode 'js2-mode (get-rules-for-mode 'js-mode))
 
 (apply #'add-rules-for-mode 'typescript-mode (get-rules-for-mode 'js-mode))
-(add-rules-for-mode 'typescript-mode (cons ":" nil))
+(add-rules-for-mode 'typescript-mode
+                    (cons ":" nil)
+                    ;; generics closing tag
+                    (cons ">>" nil))
 
 
 
@@ -733,8 +768,9 @@ Also handles C++ lambda capture by reference."
                     ;; pointer deref vs multiplication
                     (cons "*" nil)
 
-                    ;; Comments are not division
-                    (cons "//" "// ")
+                    (cons "/" #'c-like-mode-/)
+                    (cons "/*" #'c-like-mode-/*)
+                    (cons "//" #'c-like-mode-//)
 
                     ;; Extra operators
                     (cons "<<" " << ")
@@ -825,8 +861,9 @@ Also handles C++ lambda capture by reference."
                     (cons ">>=" " >>= ")
 
                     ;; Comments
-                    (cons "/*" "/* ")
-                    (cons "//" "// ")
+                    (cons "/" #'c-like-mode-/)
+                    (cons "/*" #'c-like-mode-/*)
+                    (cons "//" #'c-like-mode-//)
 
                     ;; Generics are hard
                     (cons "<" nil)
@@ -940,9 +977,12 @@ Also handles C++ lambda capture by reference."
                     (cons "." " . ")   ; string concat
                     (cons ".=" " .= ")
                     (cons "->" "->")
-                    (cons "//" "// ")
                     (cons "=>" " => ")
                     (cons "<?" "<?")
+
+                    (cons "/" #'c-like-mode-/)
+                    (cons "/*" #'c-like-mode-/*)
+                    (cons "//" #'c-like-mode-//)
                     )
 
 
