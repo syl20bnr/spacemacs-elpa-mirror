@@ -1,4 +1,5 @@
-A modular GNU Emacs front-end for interacting with external debuggers.
+A modular, extensible GNU Emacs front-end for interacting with
+external debuggers.
 
 Quick start: https://github.com/realgud/realgud/
 
