@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171214.1557
+;; Package-Version: 20171216.749
 ;; Keywords: help, lisp
 ;; Version: 0.5
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -103,10 +103,19 @@ show the value of buffer-local variables.")
 
 (defun helpful--pretty-print (value)
   "Pretty-print VALUE.
-This allows us to distinguish strings from symbols."
+Break lists over large lines, and ensure strings are surrounded
+with double-quotes."
   (with-temp-buffer
+    (delay-mode-hooks (lisp-mode))
     (cl-prettyprint value)
     (s-trim (buffer-string))))
+
+(defun helpful--indent-rigidly (s amount)
+  "Indent string S by adding AMOUNT spaces to each line."
+  (with-temp-buffer
+    (insert s)
+    (indent-rigidly (point-min) (point-max) amount)
+    (buffer-string)))
 
 (defun helpful--format-properties (symbol)
   "Return a string describing all the properties of SYMBOL."
@@ -117,14 +126,14 @@ This allows us to distinguish strings from symbols."
                    (string-lessp (symbol-name sym1) (symbol-name sym2)))
                  syms-and-vals))
          (lines
-          (-map
-           (-lambda ((sym val))
-             (format "%s %s"
+          (--map
+           (-let* (((sym val) it)
+                   (pretty-val
+                    (helpful--pretty-print val)))
+             (format "%s\n%s"
                      (propertize (symbol-name sym)
                                  'face 'font-lock-constant-face)
-                     (if (eq (type-of val) 'compiled-function)
-                         "#<compiled-function>"
-                       (helpful--pretty-print val))))
+                     (helpful--indent-rigidly pretty-val 2)))
            syms-and-vals)))
     (when lines
       (s-join "\n" lines))))
@@ -219,6 +228,20 @@ or disable if already enabled."
   (helpful--toggle-edebug (button-get button 'symbol))
   (helpful-update))
 
+(define-button-type 'helpful-trace-button
+  'action #'helpful--trace
+  'follow-link t
+  'symbol nil
+  'help-echo "Toggle function tracing")
+
+(defun helpful--trace (button)
+  "Toggle tracing for the current symbol."
+  (let ((sym (button-get button 'symbol)))
+    (if (trace-is-traced sym)
+        (untrace-function sym)
+      (trace-function sym)))
+  (helpful-update))
+
 (define-button-type 'helpful-navigate-button
   'action #'helpful--navigate
   'path nil
@@ -226,15 +249,9 @@ or disable if already enabled."
   'follow-link t
   'help-echo "Navigate to definition")
 
-(defun helpful--no-properties (s)
-  "Return a copy of S without any properties."
-  (with-temp-buffer
-    (insert s)
-    (buffer-substring-no-properties (point-min) (point-max))))
-
 (defun helpful--navigate (button)
   "Navigate to the path this BUTTON represents."
-  (find-file (helpful--no-properties (button-get button 'path)))
+  (find-file (substring-no-properties (button-get button 'path)))
   ;; We use `get-text-property' to work around an Emacs 25 bug:
   ;; http://git.savannah.gnu.org/cgit/emacs.git/commit/?id=f7c4bad17d83297ee9a1b57552b1944020f23aea
   (-when-let (pos (get-text-property button 'position
@@ -288,8 +305,8 @@ or disable if already enabled."
 (defun helpful--set (button)
   "Set the value of this symbol."
   (let* ((sym (button-get button 'symbol))
-         (sym-value (symbol-value sym))
          (buf (button-get button 'buffer))
+         (sym-value (helpful--sym-value sym buf))
          ;; Inspired by `counsel-read-setq-expression'.
          (expr
           (minibuffer-with-setup-hook
@@ -355,6 +372,16 @@ or disable if already enabled."
   (let ((sym (button-get button 'symbol)))
     (helpful-symbol sym)))
 
+(define-button-type 'helpful-info-button
+  'action #'helpful--info
+  'info-node nil
+  'follow-link t
+  'help-echo "View this Info node")
+
+(defun helpful--info (button)
+  "Describe the symbol that this BUTTON represents."
+  (info (button-get button 'info-node)))
+
 (defun helpful--split-first-line (docstring)
   "If the first line is a standalone sentence, ensure we have a
 blank line afterwards."
@@ -368,26 +395,53 @@ blank line afterwards."
                 (-cons* first-line "" (cdr lines)))
       docstring)))
 
+(defun helpful--propertize-symbols (docstring)
+  "Convert symbol references in docstrings to buttons."
+  (replace-regexp-in-string
+   ;; Replace all text of the form `foo'.
+   (rx "`" symbol-start (+? anything) symbol-end "'")
+   (lambda (it)
+     (let* ((sym-name
+             (s-chop-prefix "`" (s-chop-suffix "'" it)))
+            (sym (intern sym-name)))
+       ;; Only create a link if this is a symbol that is bound as a
+       ;; variable or callable.
+       (if (or (boundp sym) (fboundp sym))
+           (make-text-button
+            sym-name nil
+            :type 'helpful-describe-button
+            'symbol sym)
+         (propertize sym-name
+                     'face 'font-lock-constant-face))))
+   docstring
+   t t))
+
+(defun helpful--propertize-info (docstring)
+  "Convert info references in docstrings to buttons."
+  (replace-regexp-in-string
+   ;; Replace all text of the form `foo'.
+   (rx "Info node `" (group (+ (not (in "'")))) "'")
+   (lambda (it)
+     ;; info-node has the form "(cl)Loop Facility".
+     (let ((info-node (match-string 1 it)))
+       (concat
+        "Info node "
+        (make-text-button
+         info-node nil
+         :type 'helpful-info-button
+         'info-node info-node))))
+   docstring
+   t t))
+
 ;; TODO: fix upstream Emacs bug that means `-map' is not highlighted
 ;; in the docstring for `--map'.
 (defun helpful--format-docstring (docstring)
   "Replace cross-references with links in DOCSTRING."
-  (s-trim
-   (replace-regexp-in-string
-    (rx "`" symbol-start (+? anything) symbol-end "'")
-    (lambda (it)
-      (let* ((sym-name
-              (s-chop-prefix "`" (s-chop-suffix "'" it)))
-             (sym (intern sym-name)))
-        (if (or (boundp sym) (fboundp sym))
-            (make-text-button
-             sym-name nil
-             :type 'helpful-describe-button
-             'symbol sym)
-          (propertize sym-name
-                      'face 'font-lock-constant-face))))
-    (helpful--split-first-line docstring)
-    t t)))
+  (-> docstring
+      (helpful--split-first-line)
+      (helpful--propertize-info)
+      (helpful--propertize-symbols)
+      (s-trim)))
 
 (defconst helpful--highlighting-funcs
   '(ert--activate-font-lock-keywords
@@ -683,11 +737,18 @@ POSITION-HEADS takes the form ((123 (defun foo)) (456 (defun bar)))."
           (and (stringp filename)
                (equal (file-name-extension filename) "c"))))))
 
+(defun helpful--sym-value (sym buf)
+  "Return the value of SYM in BUF."
+  (with-current-buffer buf
+    (symbol-value sym)))
+
 (defun helpful-update ()
   "Update the current *Helpful* buffer to the latest
 state of the current symbol."
   (interactive)
   (cl-assert (not (null helpful--sym)))
+  (unless (buffer-live-p helpful--associated-buffer)
+    (setq helpful--associated-buffer nil))
   (let* ((inhibit-read-only t)
          (start-line (line-number-at-pos))
          (start-column (current-column))
@@ -749,10 +810,9 @@ state of the current symbol."
         (insert
          (helpful--heading "\n\nValue\n")
          (helpful--pretty-print
-          (with-current-buffer buf
-            (symbol-value sym)))
+          (helpful--sym-value sym buf))
          "\n\n")
-        (when (memq (symbol-value helpful--sym) '(nil t))
+        (when (memq (helpful--sym-value helpful--sym buf) '(nil t))
           (insert
            (make-text-button
             "Toggle" nil
@@ -789,7 +849,8 @@ state of the current symbol."
                (helpful--navigate-button source-path 0)
                (helpful--format-position-heads references source-path)))
       (source-path
-       (format "No references found in %s."
+       (format "%s is unused in %s."
+               helpful--sym
                (helpful--navigate-button source-path 0)))
       ((and primitive-p (null find-function-C-source-directory))
        "C code is not yet loaded.")
@@ -797,7 +858,7 @@ state of the current symbol."
        "Could not find source file."))
      "\n\n"
      (make-text-button
-      "All references" nil
+      "Find all references" nil
       :type 'helpful-all-references-button
       'symbol helpful--sym
       'callable-p helpful--callable-p))
@@ -815,6 +876,12 @@ state of the current symbol."
 
     (let ((can-edebug
            (helpful--can-edebug-p helpful--sym helpful--callable-p))
+          (can-trace
+           (and helpful--callable-p
+                ;; Tracing uses advice, and you can't apply advice to
+                ;; primitive functions that are replaced with special
+                ;; opcodes. For example, `narrow-to-region'.
+                (not (plist-get (symbol-plist helpful--sym) 'byte-opcode))))
           (can-disassemble
            (and helpful--callable-p (not primitive-p)))
           (can-forget
@@ -830,8 +897,20 @@ state of the current symbol."
             "Enable edebug")
           nil
           :type 'helpful-edebug-button
-          'symbol helpful--sym)
-         "\n"))
+          'symbol helpful--sym)))
+      (when can-trace
+        (when can-edebug
+          (insert " "))
+        (insert
+         (make-text-button
+          (if (trace-is-traced helpful--sym)
+              "Disable tracing"
+            "Enable tracing")
+          nil
+          :type 'helpful-trace-button
+          'symbol helpful--sym)))
+      (when (or can-edebug can-trace)
+        (insert "\n"))
 
       (when can-disassemble
         (insert
