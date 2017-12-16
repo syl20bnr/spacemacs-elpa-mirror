@@ -3,8 +3,8 @@
 ;; Copyright (c) 2016 Abhinav Tushar
 
 ;; Author: Abhinav Tushar <abhinav.tushar.vs@gmail.com>
-;; Version: 0.3.2
-;; Package-Version: 0.3.2
+;; Version: 0.3.3
+;; Package-Version: 20171215.2350
 ;; Package-Requires: ((enlive "0.0.1") (f "0.19.0") (dash "2.13.0") (s "1.11.0"))
 ;; Keywords: cricket, score
 ;; URL: https://github.com/lepisma/cricbuzz.el
@@ -167,13 +167,13 @@
                            "cb-schdl")))
         (buffer (find-file-noselect cricbuzz-index-file)))
     (set-buffer buffer)
+    (cricbuzz-index-mode)
     (setq buffer-read-only nil)
     (erase-buffer)
     (insert "#+TITLE: Live Cricket Scores\n")
     (insert "#+TODO: LIVE | FINISHED\n\n")
     (insert (format-time-string "Last updated [%Y-%m-%d %a %H:%M] \n"))
     (insert (concat "~scores via [[" cricbuzz-base-url "][cricbuzz]]~\n\n"))
-    (cricbuzz-index-mode)
     (-map 'cricbuzz-insert-match
           (enlive-get-elements-by-class-name main-node "cb-mtch-lst"))
     (setq buffer-read-only t)
@@ -309,16 +309,15 @@
                                              "cb-scrcrd-status")))))
          (buffer (find-file-noselect (-cricbuzz-match-file-name match-name))))
     (set-buffer buffer)
+    (cricbuzz-score-mode)
     (setq buffer-read-only nil)
     (erase-buffer)
     (cricbuzz-insert-scorecard-preamble match-name match-url match-status)
-    (cricbuzz-score-mode)
     (-map 'cricbuzz-insert-innings
           (butlast (cdr (enlive-direct-children left-node))))
     (cricbuzz-insert-match-info left-node)
     (setq buffer-read-only t)
     (goto-char (point-min))
-    (font-lock-fontify-buffer)
     (save-buffer)
     (switch-to-buffer buffer)))
 
@@ -364,11 +363,13 @@
 
 (define-derived-mode cricbuzz-index-mode org-mode
   "Cricbuzz-Index"
-  "Major mode for cricbuzz live scores")
+  "Major mode for cricbuzz live scores"
+  (setq buffer-read-only t))
 
 (define-derived-mode cricbuzz-score-mode org-mode
   "Cricbuzz-Score"
-  "Major mode for viewing cricbuzz scorecards")
+  "Major mode for viewing cricbuzz scorecards"
+  (setq buffer-read-only t))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.cb\\'" . cricbuzz-score-mode))
