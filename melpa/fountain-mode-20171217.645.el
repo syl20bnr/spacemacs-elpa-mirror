@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 20171215.633
+;; Package-Version: 20171217.645
 ;; Version: 2.4.0
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -856,6 +856,11 @@ To switch between these levels, customize the value of
   "Default face for file inclusions."
   :group 'fountain-faces)
 
+(defface fountain-auto-upcase-highlight
+  '((t (:inherit hi-yellow)))
+  "Default face for highlighting line for auto-upcasing."
+  :group 'fountain-faces)
+
 
 ;;; Initializing
 
@@ -984,11 +989,12 @@ See <http://debbugs.gnu.org/24073>."
   (save-excursion
     (save-restriction
       (widen)
-      (forward-line -1)
+      (forward-line 0)
       (or (bobp)
-          (and (bolp) (eolp))
-          (progn (end-of-line 1)
-                 (forward-comment -1))))))
+          (progn (forward-line -1)
+                 (or (and (bolp) (eolp))
+                     (progn (end-of-line 1)
+                            (forward-comment -1))))))))
 
 (defun fountain-blank-after-p ()
   "Return non-nil if following line is blank or a comment."
@@ -1302,23 +1308,19 @@ number."
       (forward-line 0)
       (looking-at fountain-include-regexp))))
 
-(defun fountain-include-find-file (&optional arg)
-  "\\<fountain-mode-map>Find included file at point.
+(defun fountain-include-find-file (&optional no-select)
+  "Find included file at point.
 
-If called with ARG (\\[universal-argument] \\[fountain-include-find-file]), find file in same window,
-otherwise find file in other window.
-
-If called noninteractively, find file without selecting window."
-  (interactive "P")
+Optional argument NO-SELECT will find file without selecting
+window."
+  (interactive)
   (if (and (fountain-match-include)
            (save-match-data
              (string-match "include:" (match-string 1))))
       (let ((filename (expand-file-name (match-string 2))))
-        (if (called-interactively-p)
-            (if arg
-                (find-file filename)
-              (find-file-other-window filename))
-          (find-file-noselect filename)))))
+        (if no-select
+            (find-file-noselect filename)
+          (find-file filename)))))
 
 (defun fountain-include-in-region (start end &optional delete)
   "Replace inclusions between START and END with their file contents.
@@ -2268,26 +2270,33 @@ Break ELEMENT-LIST into ELEMENT, PLIST and CONTENT.
 If PLIST property \"export\" is non-nil, proceed, otherwise
 return an empty string.
 
-If CONTENT is a string, format with `fountain-export-replace-in-string'
-and if format it filled, fill with `fountain-export-fill-string'.
+If CONTENT is a string, format with
+`fountain-export-replace-in-string' and if format it filled, fill
+with `fountain-export-fill-string'.
 
 If CONTENT is a list, recursively call this function on each
 element of the list.
 
-Check if ELEMENT corresponds to a template in `fountain-export-templates'
-and set ELEMENT-TEMPLATE. If so, replace matches of
-`fountain-template-key-regexp' in the following order:
+Check if ELEMENT corresponds to a template in
+`fountain-export-templates' and set ELEMENT-TEMPLATE. If so,
+replace matches of `fountain-template-key-regexp' in the
+following order:
 
-    1. {{content}} is replaced with CONTENT.
-    2. If {{KEY}} corresponds to a string property in PLIST, it is replaced with
-       that string.
-    3. If {{KEY}} corresponds to the value of the key of ELEMENT of FORMAT in
-       `fountain-export-conditional-replacements', it is replaced with that
-       string.
-    4. If {{KEY}} corresponds with a cdr of FORMAT in
-       `fountain-export-replacements', it is evaluated using `eval' and replaced
-       with that string.
-    5. If none of the above, {{KEY}} is replaced with an empty string."
+1. {{content}} is replaced with CONTENT.
+
+2. If {{KEY}} corresponds to a string property in PLIST, it is
+   replaced with that string.
+
+3. If {{KEY}} corresponds to the value of the key of ELEMENT of
+   FORMAT in `fountain-export-conditional-replacements', it is
+   replaced with that string.
+
+4. If {{KEY}} corresponds with a cdr of FORMAT in
+   `fountain-export-replacements', it is evaluated using `eval'
+   and replaced with that string.
+
+5. If none of the above, {{KEY}} is replaced with an empty
+   string."
   ;; Break ELEMENT-LIST into ELEMENT, PLIST and CONTENT.
   (let ((element (car element-list))
         (plist (nth 1 element-list))
@@ -3277,13 +3286,16 @@ Display a message unless SILENT."
 (defun fountain-outline-cycle (&optional arg) ; FIXME: document
   "\\<fountain-mode-map>Cycle outline visibility depending on ARG.
 
-    \\[fountain-outline-cycle]				If ARG is nil, cycle outline visibility of current
-                    subtree and its children
-    \\[universal-argument] \\[fountain-outline-cycle]			If ARG is 4, cycle outline visibility of buffer
-                    (same as \\[fountain-outline-cycle-global])
-    \\[universal-argument] \\[universal-argument] \\[fountain-outline-cycle]		If ARG is 16, show all
-    \\[universal-argument] \\[universal-argument] \\[universal-argument] \\[fountain-outline-cycle]	If ARG is 64, show outline visibility set in
-                    `fountain-outline-custom-level'"
+1. If ARG is nil, cycle outline visibility of current subtree and
+   its children (\\[fountain-outline-cycle]).
+
+2. If ARG is 4, cycle outline visibility of buffer (\\[universal-argument] \\[fountain-outline-cycle],
+   same as \\[fountain-outline-cycle-global]).
+
+3. If ARG is 16, show all (\\[universal-argument] \\[universal-argument] \\[fountain-outline-cycle]).
+
+4. If ARG is 64, show outline visibility set in
+   `fountain-outline-custom-level' (\\[universal-argument] \\[universal-argument] \\[universal-argument] \\[fountain-outline-cycle])."
   (interactive "p")
   (let ((custom-level
          (if fountain-outline-custom-level
@@ -3376,10 +3388,13 @@ Display a message unless SILENT."
 Calls `fountain-outline-cycle' with argument 4 to cycle buffer
 outline visibility through the following states:
 
-    1: Top-level section headings
-    2: Value of `fountain-outline-custom-level'
-    3: All section headings and scene headings
-    4: Everything"
+1. Top-level section headings
+
+2. Value of `fountain-outline-custom-level'
+
+3. All section headings and scene headings
+
+4. Everything"
   (interactive)
   (fountain-outline-cycle 4))
 
@@ -3678,12 +3693,102 @@ persist even when calling \\[delete-other-windows]."
   :type 'boolean
   :group 'fountain)
 
+(defvar-local fountain--auto-upcase-line
+  nil
+  "Integer of line number to auto-upcase.
+If nil, auto-upcase is deactivated.")
+
+(defvar-local fountain--auto-upcase-overlay
+  nil
+  "Overlay used for auto-upcasing current line.")
+
+(defun fountain-auto-upcase-make-overlay ()
+  "Make the auto-upcase overlay on current line.
+
+If overlay `fountain--auto-upcase-overlay' already exists, delete
+it first.
+
+Make the overlay and add the face
+`fountain-auto-upcase-highlight'."
+  (if (overlayp fountain--auto-upcase-overlay)
+      (delete-overlay fountain--auto-upcase-overlay))
+  (setq fountain--auto-upcase-overlay
+        (make-overlay (line-beginning-position 1)
+                      (line-beginning-position 2) nil nil t))
+  (overlay-put fountain--auto-upcase-overlay 'face 'fountain-auto-upcase-highlight))
+
+(defun fountain-auto-upcase-deactivate-maybe (&optional deactivate)
+  "Maybe deactivate auto-upcasing.
+Always deactivate if optional argument DEACTIVATE is non-nil.
+
+Added as hook to `post-command-hook'."
+  (when (or deactivate
+            (not fountain--auto-upcase-line)
+            (and (integerp fountain--auto-upcase-line)
+                 (/= fountain--auto-upcase-line
+                     (count-lines (point-min) (line-beginning-position)))))
+    (setq fountain--auto-upcase-line nil)
+    (if (overlayp fountain--auto-upcase-overlay)
+        (delete-overlay fountain--auto-upcase-overlay))))
+
 (defun fountain-auto-upcase ()
-  (if (and fountain-auto-upcase-scene-headings
-           (fountain-match-scene-heading))
-      (upcase-region (line-beginning-position)
-                     (or (match-end 3)
-                         (point)))))
+  "Upcase all or part of the current line contextually.
+
+If `fountain-auto-upcase-scene-headings' is non-nil and point is
+at a scene heading, activate auto upcasing for beginning of line
+to scene number or point.
+
+Otherwise, activate auto-upcasing for the whole line.
+
+Added as hook to `post-self-insert-hook'."
+  (cond ((and fountain-auto-upcase-scene-headings
+              (fountain-match-scene-heading))
+         (setq fountain--auto-upcase-line
+               (count-lines (point-min) (line-beginning-position)))
+         (fountain-auto-upcase-make-overlay)
+         (upcase-region (line-beginning-position)
+                        (or (match-end 3)
+                            (point))))
+        ((and (integerp fountain--auto-upcase-line)
+              (= fountain--auto-upcase-line
+                 (count-lines (point-min) (line-beginning-position))))
+         (fountain-upcase-line))))
+
+(defun fountain-dwim (&optional arg)
+  "\\<fountain-mode-map>Call a command based on context (Do What I Mean).
+
+1. If point is at a scene heading or section heading, or if
+   prefixed with ARG (\\[universal-argument] \\[fountain-dwim]) call `fountain-outline-cycle'
+   and pass ARG, e.g. \\[universal-argument] \\[universal-argument] \\[fountain-dwim] is the same as
+   \\[universal-argument] \\[universal-argument] \\[fountain-outline-cycle].
+
+2. If point is at an directive to an included file, call
+   `fountain-include-find-file'.
+
+3. Otherwise, upcase the current line and active auto-upcasing.
+   This highlights the current line with face
+   `fountain-auto-upcase-highlight' and will continue to upcase
+   inserted characters until the command is called again
+   (\\[fountain-dwim]) or point moves to a different line (either
+   by inserting a newline or point motion). This allows a
+   flexible style of entering character names. You may press
+   \\[fountain-dwim] before, during or after typing the name to
+   get the same result."
+  (interactive "p")
+  (cond ((< 1 arg)
+         (fountain-outline-cycle arg))
+        ((or (fountain-match-section-heading)
+             (fountain-match-scene-heading))
+         (fountain-outline-cycle))
+        ((fountain-match-include)
+         (fountain-include-find-file))
+        (fountain--auto-upcase-line
+         (fountain-auto-upcase-deactivate-maybe t))
+        (t
+         (setq fountain--auto-upcase-line
+               (count-lines (point-min) (line-beginning-position)))
+         (fountain-auto-upcase-make-overlay)
+         (fountain-upcase-line))))
 
 (defun fountain-upcase-line (&optional arg)
   "Upcase the line.
@@ -3926,9 +4031,12 @@ Or, if nil:
           (concat revision separator (number-to-string number)))
       (concat (number-to-string number) separator revision))))
 
-(defun fountain-get-scene-number (&optional n) ; FIXME: inclusions break scene numbers
+(defun fountain-get-scene-number (&optional n)
   "Return the scene number of the Nth next scene as a list.
-Return Nth previous if N is negative."
+Return Nth previous if N is negative.
+
+Scene numbers will not be accurate if buffer contains directives
+to include external files."
   (unless n (setq n 0))
   (save-excursion
     (save-restriction
@@ -4390,6 +4498,7 @@ keywords suitable for Font Lock."
 (defvar fountain-mode-map
   (let ((map (make-sparse-keymap)))
     ;; Editing commands:
+    (define-key map (kbd "TAB") #'fountain-dwim)
     (define-key map (kbd "C-c RET") #'fountain-upcase-line-and-newline)
     (define-key map (kbd "<S-return>") #'fountain-upcase-line-and-newline)
     (define-key map (kbd "C-c C-c") #'fountain-upcase-line)
@@ -4401,7 +4510,7 @@ keywords suitable for Font Lock."
     (define-key map (kbd "C-c C-x _") #'fountain-remove-scene-numbers)
     (define-key map (kbd "C-c C-x f") #'fountain-set-font-lock-decoration)
     ;; FIXME: include-find-file feels like it should be C-c C-c...
-    (define-key map (kbd "C-c C-o") #'fountain-include-find-file)
+    ;; (define-key map (kbd "C-c C-c") #'fountain-include-find-file)
     ;; Navigation commands:
     (define-key map [remap forward-list] #'fountain-forward-scene)
     (define-key map [remap backward-list] #'fountain-backward-scene)
@@ -4420,7 +4529,7 @@ keywords suitable for Font Lock."
     (define-key map (kbd "C-c C-^") #'fountain-outline-shift-up)
     (define-key map (kbd "C-c C-v") #'fountain-outline-shift-down)
     (define-key map (kbd "C-c C-SPC") #'fountain-outline-mark)
-    (define-key map (kbd "TAB") #'fountain-outline-cycle)
+    (define-key map (kbd "C-c C-o") #'fountain-outline-cycle)
     (define-key map (kbd "<backtab>") #'fountain-outline-cycle-global)
     (define-key map (kbd "S-TAB") #'fountain-outline-cycle-global)
     ;; Endnotes:
@@ -4435,8 +4544,8 @@ keywords suitable for Font Lock."
     (define-key map (kbd "C-c C-e f") #'fountain-export-buffer-to-fountain)
     (define-key map (kbd "C-c C-e s") #'fountain-export-shell-command)
     ;; View commands:
-    (define-key map (kbd "C-c C-x !") #'fountain-toggle-hide-syntax-chars) ; FIXME ??
-    (define-key map (kbd "C-c C-x *") #'fountain-toggle-hide-emphasis-delim) ; FIXME ??
+    (define-key map (kbd "C-c C-x !") #'fountain-toggle-hide-syntax-chars)
+    (define-key map (kbd "C-c C-x *") #'fountain-toggle-hide-emphasis-delim)
     map)
   "Mode map for `fountain-mode'.")
 
@@ -4465,6 +4574,7 @@ otherwise, if ELT is provided, toggle the presence of ELT in VAR."
 Toggles the value of fountain-hide-ELEMENT, then, if
 fountain-hide-ELEMENT is non-nil, adds fountain-ELEMENT to
 `buffer-invisibility-spec', otherwise removes it."
+  ;; FIXME: make a macro
   (let* ((option (intern (concat "fountain-hide-" element)))
          (symbol (intern (concat "fountain-" element))))
     (customize-set-variable option
@@ -4667,6 +4777,8 @@ fountain-hide-ELEMENT is non-nil, adds fountain-ELEMENT to
                     (min (string-to-number n) 6))))
   (add-hook 'post-self-insert-hook
             #'fountain-auto-upcase t t)
+  (add-hook 'post-command-hook
+            #'fountain-auto-upcase-deactivate-maybe t t)
   (if fountain-patch-emacs-bugs (fountain-patch-emacs-bugs))
   (jit-lock-register #'fountain-redisplay-scene-numbers t)
   (fountain-outline-hide-level fountain-outline-startup-level t))

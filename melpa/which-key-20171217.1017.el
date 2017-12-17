@@ -5,7 +5,7 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-which-key
-;; Package-Version: 20171216.1911
+;; Package-Version: 20171217.1017
 ;; Version: 3.0.2
 ;; Keywords:
 ;; Package-Requires: ((emacs "24.4"))
@@ -1335,15 +1335,6 @@ local bindings coming first. Within these categories order using
 (defsubst which-key--butlast-string (str)
   (mapconcat #'identity (butlast (split-string str)) " "))
 
-(defun which-key--pseudo-key (key &optional use-current-prefix)
-  "Replace the last key in the sequence KEY by a special symbol
-in order for which-key to allow looking up a description for the key."
-  (let* ((seq (listify-key-sequence key))
-         (final (intern (format "which-key-%s" (key-description (last seq))))))
-    (if use-current-prefix
-        (vconcat (which-key--current-key-list) (list final))
-      (vconcat (butlast seq) (list final)))))
-
 (defun which-key--get-replacements (key-binding &optional use-major-mode)
   (let ((alist (or (and use-major-mode
                         (cdr-safe
@@ -1422,6 +1413,15 @@ which are strings. KEY is of the form produced by `key-binding'."
    (eq (which-key--safe-lookup-key
         map (kbd (which-key--current-key-string (car keydesc))))
        (intern (cdr keydesc)))))
+
+(defun which-key--pseudo-key (key &optional use-current-prefix)
+  "Replace the last key in the sequence KEY by a special symbol
+in order for which-key to allow looking up a description for the key."
+  (let* ((seq (listify-key-sequence key))
+         (final (intern (format "which-key-%s" (key-description (last seq))))))
+    (if use-current-prefix
+        (vconcat (which-key--current-key-list) (list final))
+      (vconcat (butlast seq) (list final)))))
 
 (defun which-key--maybe-get-prefix-title (keys)
   "KEYS is a string produced by `key-description'.
