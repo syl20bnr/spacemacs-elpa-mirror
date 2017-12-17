@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: http://github.com/bbatsov/zenburn-emacs
-;; Package-Version: 20171109.926
+;; Package-Version: 20171216.1027
 ;; Version: 2.5
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -555,7 +555,9 @@ Also bind `class' to ((class color) (min-colors 89))."
    '(git-annex-dired-annexed-unavailable ((t (:inherit error :weight normal))))
 ;;;;; git-commit
    `(git-commit-comment-action  ((,class (:foreground ,zenburn-green+1 :weight bold))))
-   `(git-commit-comment-branch  ((,class (:foreground ,zenburn-blue+1  :weight bold))))
+   `(git-commit-comment-branch  ((,class (:foreground ,zenburn-blue+1  :weight bold)))) ; obsolete
+   `(git-commit-comment-branch-local  ((,class (:foreground ,zenburn-blue+1  :weight bold))))
+   `(git-commit-comment-branch-remote ((,class (:foreground ,zenburn-green  :weight bold))))
    `(git-commit-comment-heading ((,class (:foreground ,zenburn-yellow  :weight bold))))
 ;;;;; git-gutter
    `(git-gutter:added ((t (:foreground ,zenburn-green :weight bold :inverse-video t))))

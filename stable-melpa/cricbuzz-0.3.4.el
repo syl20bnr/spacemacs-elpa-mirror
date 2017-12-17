@@ -3,8 +3,8 @@
 ;; Copyright (c) 2016 Abhinav Tushar
 
 ;; Author: Abhinav Tushar <abhinav.tushar.vs@gmail.com>
-;; Version: 0.3.3
-;; Package-Version: 0.3.3
+;; Version: 0.3.4
+;; Package-Version: 0.3.4
 ;; Package-Requires: ((enlive "0.0.1") (f "0.19.0") (dash "2.13.0") (s "1.11.0"))
 ;; Keywords: cricket, score
 ;; URL: https://github.com/lepisma/cricbuzz.el
@@ -41,7 +41,7 @@
 (require 'dash)
 (require 's)
 
-(defcustom cricbuzz-cache-dir (f-full "~/.cricbuzz.el/")
+(defcustom cricbuzz-cache-dir (f-full "~/.cache/cricbuzz.el/")
   "Directory for keeping index and scorecards")
 (defvar cricbuzz-base-url "http://cricbuzz.com")
 (defvar cricbuzz-live-url (concat cricbuzz-base-url "/cricket-match/live-scores"))

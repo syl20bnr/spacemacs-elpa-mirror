@@ -5,7 +5,7 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/system-packages
-;; Package-Version: 20171214.941
+;; Package-Version: 20171216.934
 ;; Version: 0.1
 ;; Package-Requires: ((cl-lib "0.5"))
 
@@ -307,6 +307,7 @@ to the package manager."
 Use the package manager from `system-packages-packagemanager' to
 install PACK.  You may use ARGS to pass options to the package
 manger."
+  (interactive "sPackage to install: ")
   (system-packages--run-command 'install pack args))
 
 ;;;###autoload
