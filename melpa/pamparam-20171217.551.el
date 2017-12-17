@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/pamparam
-;; Package-Version: 20171213.349
+;; Package-Version: 20171217.551
 ;; Version: 0.0.0
 ;; Package-Requires: ((emacs "24.3") (lispy "0.26.0") (worf "0.1.0") (hydra "0.13.4"))
 ;; Keywords: outlines, hypermedia, flashcards, memory
@@ -337,6 +337,16 @@ Otherwise, the repository will be in the same directory as the master file.")
           file))
         ".pam/"))))
 
+(defun pamparam-repo-init (repo-dir)
+  "Initialize REPO-DIR Git repository."
+  (if (file-exists-p repo-dir)
+      (unless (file-directory-p repo-dir)
+        (error "%s must be a directory" repo-dir))
+    (make-directory repo-dir)
+    (let ((default-directory repo-dir))
+      (shell-command "git init")
+      (make-directory "cards/"))))
+
 (defvar pamparam-new-cards-per-day 75)
 
 (defun pamparam-card-delete (file)
@@ -535,70 +545,74 @@ repository, while the new card will start with empty metadata."
   (interactive)
   (unless (eq major-mode 'org-mode)
     (error "Must be in `org-mode' file"))
-  (let ((repo-dir
-         (pamparam-repo-directory (buffer-file-name)))
-        (repo-is-new nil)
+  (let ((repo-dir (pamparam-repo-directory (buffer-file-name)))
         (make-backup-files nil))
-    (if (file-exists-p repo-dir)
-        (unless (file-directory-p repo-dir)
-          (error "%s must be a directory" repo-dir))
-      (make-directory repo-dir)
-      (let ((default-directory repo-dir))
-        (shell-command "git init")
-        (make-directory "cards/"))
-      (setq repo-is-new t))
+    (pamparam-repo-init repo-dir)
     (pamparam--recompute-git-cards repo-dir)
-    (let ((old-point (point))
-          (processed-headings nil)
-          (new-cards nil)
-          (updated-cards nil))
-      (goto-char (point-min))
-      (unless (re-search-forward pamparam-card-source-regexp nil t)
-        (error "No outlines with the :cards: tag found"))
-      (beginning-of-line)
-      (while (re-search-forward pamparam-card-source-regexp nil t)
-        (lispy-destructuring-setq (processed-headings new-cards updated-cards)
-                                  (pamparam-sync-current-outline
-                                   processed-headings new-cards updated-cards repo-dir)))
-      (goto-char old-point)
-      (when (or new-cards updated-cards)
-        (pamparam-schedule-today
-         (mapcar #'pamparam--todo-from-file new-cards)
-         (find-file (expand-file-name "pampile.org" repo-dir)))
-        (when repo-is-new
-          nil)
-        (shell-command-to-string
-         (format
-          "cd %s && git add . && git commit -m %s"
-          (shell-quote-argument repo-dir)
-          (shell-quote-argument
-           (cond ((null updated-cards)
-                  (format "Add %d new card(s)" (length new-cards)))
-                 ((null new-cards)
-                  (format "Update %d card(s)" (length updated-cards)))
-                 (t
-                  (format "Add %d new card(s), update %d cards"
-                          (length new-cards)
-                          (length updated-cards))))))))
-      (message "%d new cards, %d updated, %d total"
-               (length new-cards)
-               (length updated-cards)
-               (length processed-headings)))))
+    (pamparam--sync repo-dir)))
+
+(defun pamparam--sync (repo-dir)
+  (let ((old-point (point))
+        (processed-headings nil)
+        (new-cards nil)
+        (updated-cards nil))
+    (goto-char (point-min))
+    (unless (re-search-forward pamparam-card-source-regexp nil t)
+      (error "No outlines with the :cards: tag found"))
+    (beginning-of-line)
+    (while (re-search-forward pamparam-card-source-regexp nil t)
+      (lispy-destructuring-setq (processed-headings new-cards updated-cards)
+          (pamparam-sync-current-outline
+           processed-headings new-cards updated-cards repo-dir)))
+    (goto-char old-point)
+    (when (or new-cards updated-cards)
+      (pamparam-schedule-today
+       (mapcar #'pamparam--todo-from-file new-cards)
+       (find-file (expand-file-name "pampile.org" repo-dir)))
+      (shell-command-to-string
+       (format
+        "cd %s && git add . && git commit -m %s"
+        (shell-quote-argument repo-dir)
+        (shell-quote-argument
+         (cond ((null updated-cards)
+                (format "Add %d new card(s)" (length new-cards)))
+               ((null new-cards)
+                (format "Update %d card(s)" (length updated-cards)))
+               (t
+                (format "Add %d new card(s), update %d cards"
+                        (length new-cards)
+                        (length updated-cards))))))))
+    (message "%d new cards, %d updated, %d total"
+             (length new-cards)
+             (length updated-cards)
+             (length processed-headings))))
+
+(defun pamparam--card-info ()
+  (let* ((bnd (worf--bounds-subtree))
+         (str (lispy--string-dwim bnd))
+         front back)
+    (cond ((string-match "^\\*+ a\n\\(.*\\)" str)
+           (setq front (substring str 0 (match-beginning 0)))
+           (setq back (concat "* a\n" (match-string 1 str)))
+           (setq front (string-trim-left front "[* ]*"))
+           (goto-char (cdr bnd)))
+          ((string-match "\\`\\*+ \\(.*\\)\n\\([^*]+\\)\\(?:\n\\*\\)?" str)
+           (setq front (match-string 1 str))
+           (setq back (match-string 2 str))
+           (goto-char (+ (car bnd) (match-end 2)))
+           (setq back (string-trim-right back "\n+")))
+          (t
+           (error "unexpected")))
+    (cons front back)))
 
 (defun pamparam-sync-current-outline (processed-headings new-cards updated-cards repo-dir)
   (let ((end (save-excursion
                (outline-end-of-subtree)
-               (skip-chars-backward "\n ")
                (point))))
     (while (re-search-forward "^\\*\\{2,3\\} \\(.*\\)$" end t)
-      (let* ((card-front (match-string-no-properties 1))
-             (card-body (buffer-substring-no-properties
-                         (1+ (point))
-                         (if (re-search-forward "^\\*" end t)
-                             (progn
-                               (backward-char 2)
-                               (point))
-                           end)))
+      (let* ((card-info (pamparam--card-info))
+             (card-front (car card-info))
+             (card-body (cdr card-info))
              card-info
              card-file)
         (if (member card-front processed-headings)
@@ -840,7 +854,8 @@ If you have no more cards scheduled for today, use `pamparam-pull'."
         (progn
           (setq org-cycle-global-status 'contents)
           (goto-char (point-min))
-          (pamparam-card-answer))
+          (pamparam-card-answer)
+          (org-hide-block-all))
       (pamparam-card-mode -1))))
 
 (lispy-raise-minor-mode 'pamparam-card-mode)

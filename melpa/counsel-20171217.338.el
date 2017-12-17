@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171214.839
+;; Package-Version: 20171217.338
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1322,7 +1322,7 @@ INITIAL-INPUT can be given as the initial minibuffer input."
   (setq counsel-gg-state -2)
   (counsel--gg-count regex)
   (let* ((default-directory counsel--git-dir)
-         (counsel-gg-process " *counsel-gg*")
+         (counsel-gg-process " *counsel*")
          (proc (get-process counsel-gg-process))
          (buff (get-buffer counsel-gg-process)))
     (when proc

@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171206.1251
+;; Package-Version: 20171217.334
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.9.0"))
 ;; Keywords: matching
@@ -921,7 +921,7 @@ See `ivy-format-function' for further information."
   "Keymap for `swiper-all'.")
 
 ;;;###autoload
-(defun swiper-all ()
+(defun swiper-all (&optional initial-input)
   "Run `swiper' for all open buffers."
   (interactive)
   (let* ((swiper-window-width (- (frame-width) (if (display-graphic-p) 0 1)))
@@ -933,6 +933,7 @@ See `ivy-format-function' for further information."
                            (swiper-all-action (ivy-state-current ivy-last)))
               :dynamic-collection t
               :keymap swiper-all-map
+              :initial-input initial-input
               :caller 'swiper-multi)))
 
 (defun swiper-all-action (x)
