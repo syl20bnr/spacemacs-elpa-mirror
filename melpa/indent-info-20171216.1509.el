@@ -5,7 +5,7 @@
 
 ;; Author: Terje Larsen <terlar@gmail.com>
 ;; URL: https://github.com/terlar/indent-info.el
-;; Package-Version: 20171209.1503
+;; Package-Version: 20171216.1509
 ;; Keywords: convenience, tools
 ;; Version: 0.1
 
@@ -22,7 +22,7 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
+;; along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
