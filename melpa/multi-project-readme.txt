@@ -6,7 +6,7 @@ automatically switching the TAGS file for symbol lookup.
 To use multi-project add the following lines within your .emacs file:
 
 (require 'multi-project)
-(global-multi-project-mode)
+(multi-project-mode)
 
 The following bindings are created for multi-project
 C-xpj - Project jump              Displays a list of projects

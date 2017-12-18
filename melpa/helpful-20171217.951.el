@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171216.749
+;; Package-Version: 20171217.951
 ;; Keywords: help, lisp
 ;; Version: 0.5
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -52,6 +52,7 @@
 (require 'nadvice)
 (require 'info-look)
 (require 'edebug)
+(require 'trace)
 
 (defvar-local helpful--sym nil)
 (defvar-local helpful--callable-p nil)
