@@ -6,7 +6,7 @@
 ;; Maintainer: browse-kill-ring <browse-kill-ring@tonotdo.com>
 ;; Created: 7 Apr 2001
 ;; Version: 2.0.0
-;; Package-Version: 20171016.1312
+;; Package-Version: 20171218.1410
 ;; URL: https://github.com/browse-kill-ring/browse-kill-ring
 ;; Keywords: convenience
 
@@ -482,6 +482,9 @@ of the *Kill Ring*."
            (inhibit-read-only t))
       (delete-region (overlay-start over) (1+ (overlay-end over)))
       (setq kill-ring (delete target kill-ring))
+      (if (equal target (car kill-ring-yank-pointer))
+          (setq kill-ring-yank-pointer
+                (delete target kill-ring-yank-pointer)))
       (cond
        ;; Don't try to delete anything else in an empty buffer.
        ((and (bobp) (eobp)) t)
@@ -674,7 +677,7 @@ You most likely do not want to call `browse-kill-ring-mode' directly; use
 
 \\{browse-kill-ring-mode-map}"
   (set (make-local-variable 'font-lock-defaults)
-       '(nil t nil nil nil
+       '(nil t nil nil
              (font-lock-fontify-region-function . browse-kill-ring-fontify-region)))
   (define-key browse-kill-ring-mode-map (kbd "q") 'browse-kill-ring-quit)
   (define-key browse-kill-ring-mode-map (kbd "C-g") 'browse-kill-ring-quit)
@@ -913,7 +916,8 @@ reselects ENTRY in the `*Kill Ring*' buffer."
   (let ((buffer-read-only nil))
     (browse-kill-ring-fontify-on-property 'browse-kill-ring-extra 'bold beg end)
     (browse-kill-ring-fontify-on-property 'browse-kill-ring-separator
-                                          browse-kill-ring-separator-face beg end))
+                                          browse-kill-ring-separator-face beg end)
+    (font-lock-fontify-keywords-region beg end verbose))
   (when verbose (message "Fontifying...done")))
 
 (defun browse-kill-ring-update ()

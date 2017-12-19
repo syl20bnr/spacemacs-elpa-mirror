@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/emacscollective/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 20171215.308
+;; Package-Version: 20171218.1324
 
 ;; This file is not part of GNU Emacs.
 
@@ -279,6 +279,7 @@ directories."
     (eval-after-load 'emojify
       `(make-directory ,(var "emojify/") t))
     (setq emojify-emojis-dir               (var "emojify/"))
+    (setq geben-temporary-file-directory   (var "geben/"))
     (eval-after-load 'geiser
       `(make-directory ,(var "geiser/") t))
     (setq geiser-repl-history-filename     (var "geiser/repl-history"))

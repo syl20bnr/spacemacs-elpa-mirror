@@ -10,7 +10,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20171215.124
+;; Package-Version: 20171218.1249
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -187,8 +187,9 @@ if the argument is omitted or nil or a positive integer).
 (define-key dante-mode-map (kbd "C-c \"") 'dante-eval-block)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Session-local variables. These are defined *IN THE GHCi INTERACTION BUFFER*
+;; Session-local variables. These are set *IN THE GHCi INTERACTION BUFFER*
 
+(defvar-local dante-loaded-file "<DANTE:NO-FILE-LOADED>")
 (defvar-local dante-loaded-modules "" "Loaded modules as a string, reported by GHCi")
 (defvar-local dante-queue nil "List of ready GHCi queries.")
 (defvar-local dante-callback nil "Callback waiting for output.")
@@ -272,7 +273,6 @@ When the universal argument INSERT is non-nil, insert the type in the buffer."
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Flycheck checker
 
-(defvar-local dante-loaded-file "<DANTE:NO-FILE-LOADED>")
 (defvar-local dante-load-message nil "load messages")
 
 (defun dante-async-load-current-buffer (interpret cont)
@@ -861,20 +861,22 @@ a list is returned instead of failing with a nil result."
 (add-hook 'xref-backend-functions 'dante--xref-backend)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Idle-hook draft
+;; Idle-hook (missing bit: check for errors)
 
-;; (setq dante-timer (run-with-idle-timer 2 t #'dante-idle-function))
+;; (defvar dante-timer nil)
 ;; (defun dante-idle-function ()
-;;   (when dante-mode
+;;   (when (bound-and-true-p dante-mode)
 ;;     (let ((tap (dante--ghc-subexp (dante-thing-at-point))))
-;;       (unless (or (nth 4 (syntax-ppss)) (s-blank? tap))
+;;       (unless (or (nth 4 (syntax-ppss)) (nth 3 (syntax-ppss)) (s-blank? tap))
 ;;         (setq-local dante-idle-point (point))
 ;;         (dante-cps-let (((done _load-messages) (dante-async-load-current-buffer t))
 ;;                         (ty (dante-async-call (concat ":type-at " tap))))
 ;;           (when (eq (point) dante-idle-point)
-;;             (message "%s" (s-collapse-whitespace (dante-fontify-expression ty))))
+;;             (unless (current-message)
+;;               (message "%s" (s-collapse-whitespace (dante-fontify-expression ty)))))
 ;;           (funcall done))))))
-;; (cancel-timer dante-timer)
+;; (when dante-timer (cancel-timer dante-timer))
+;; (setq dante-timer (run-with-idle-timer 1 t #'dante-idle-function))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Auto-fix

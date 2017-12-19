@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171217.951
+;; Package-Version: 20171218.1350
 ;; Keywords: help, lisp
 ;; Version: 0.5
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -158,6 +158,22 @@ with double-quotes."
         (makunbound sym))
       (message "Forgot %s %s." kind sym)
       (kill-buffer (current-buffer)))))
+
+(define-button-type 'helpful-c-source-directory
+  'action #'helpful--c-source-directory
+  'follow-link t
+  'help-echo "Set directory to Emacs C source code")
+
+(defun helpful--c-source-directory (button)
+  "Set `find-function-C-source-directory' so we can show the
+source code to primitives."
+  (let ((emacs-src-dir (read-directory-name "Path to Emacs source code: ")))
+    ;; Let the user specify the source path with or without src/,
+    ;; which is a subdirectory in the Emacs tree.
+    (unless (equal (f-filename emacs-src-dir) "src")
+      (setq emacs-src-dir (f-join emacs-src-dir "src")))
+    (setq find-function-C-source-directory emacs-src-dir))
+  (helpful-update))
 
 (define-button-type 'helpful-disassemble-button
   'action #'helpful--disassemble
@@ -421,12 +437,18 @@ blank line afterwards."
   "Convert info references in docstrings to buttons."
   (replace-regexp-in-string
    ;; Replace all text of the form `foo'.
-   (rx "Info node `" (group (+ (not (in "'")))) "'")
+   (rx "Info node"
+       (group (+ whitespace))
+       "`"
+       (group (+ (not (in "'"))))
+       "'")
    (lambda (it)
      ;; info-node has the form "(cl)Loop Facility".
-     (let ((info-node (match-string 1 it)))
+     (let ((space (match-string 1 it))
+           (info-node (match-string 2 it)))
        (concat
-        "Info node "
+        "Info node"
+        space
         (make-text-button
          info-node nil
          :type 'helpful-info-button
@@ -546,6 +568,13 @@ buffer."
     (cond
      ((and callable-p path)
       ;; Open `path' ourselves, so we can widen before searching.
+
+      ;; TODO: this is slow, because when we open large .c files, such
+      ;; as data.c (e.g. when looking at `defalias'), we run all the
+      ;; mode hooks. If the user hasn't opened the buffer, we should
+      ;; just open a temporary buffer. This would require
+      ;; reimplementing `find-function-C-source', which is just a
+      ;; regexp search anyway.
       (setq buf (find-file-noselect (find-library-name path)))
 
       (unless (-contains-p initial-buffers buf)
@@ -888,7 +917,7 @@ state of the current symbol."
           (can-forget
            (and (not (special-form-p helpful--sym))
                 (not primitive-p))))
-      (when (or can-edebug can-disassemble can-forget)
+      (when (or can-edebug can-trace can-disassemble can-forget)
         (insert (helpful--heading "\n\nDebugging\n")))
       (when can-edebug
         (insert
@@ -910,7 +939,10 @@ state of the current symbol."
           nil
           :type 'helpful-trace-button
           'symbol helpful--sym)))
-      (when (or can-edebug can-trace)
+
+      (when (and
+             (or can-edebug can-trace)
+             (or can-disassemble can-forget))
         (insert "\n"))
 
       (when can-disassemble
@@ -943,9 +975,14 @@ state of the current symbol."
          (helpful--source-pos helpful--sym helpful--callable-p))
         "\n"))
       (primitive-p
-       (propertize
-        "C code is not yet loaded."
-        'face 'font-lock-comment-face))
+       (concat
+        (propertize
+         "C code is not yet loaded."
+         'face 'font-lock-comment-face)
+        "\n\n"
+        (make-text-button
+         "Set C source directory" nil
+         :type 'helpful-c-source-directory)))
       (t
        (helpful--syntax-highlight
         (format ";; Source file is unknown\n")))))
