@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20171218.652
+;; Package-Version: 20171219.153
 ;; Package-Requires: ((emacs "24.4") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -120,7 +120,6 @@ background of 'evil-goggles-default-face, then 'region."
   (let ((ov (make-overlay beg end)))
     (overlay-put ov 'priority 9999)
     (overlay-put ov 'window (selected-window))
-    (overlay-put ov 'evaporate t)
     (while properties
       (overlay-put ov (pop properties) (pop properties)))
     ov))

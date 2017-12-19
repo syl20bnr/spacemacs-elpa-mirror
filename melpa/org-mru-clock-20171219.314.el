@@ -4,7 +4,7 @@
 
 ;; Author: Kevin Brubeck Unhammer <unhammer@fsfe.org>
 ;; Version: 0.1.2
-;; Package-Version: 20171101.506
+;; Package-Version: 20171219.314
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: convenience, calendar
 
@@ -41,7 +41,7 @@
 ;;; To use, require and bind whatever keys you prefer to the
 ;;; interactive functions:
 ;;;
-;;; (require 'org-mru-clocks)
+;;; (require 'org-mru-clock)
 ;;; (global-set-key (kbd "C-c C-x i") #'org-mru-clock-in)
 ;;; (global-set-key (kbd "C-c C-x C-j") #'org-mru-clock-select-recent-task)
 ;;;

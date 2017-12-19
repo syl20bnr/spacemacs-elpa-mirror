@@ -1,12 +1,12 @@
-;;; org-random-todo.el --- notify of random TODO's
+;;; org-random-todo.el --- show a random TODO (with alert) every so often
 
 ;; Copyright (C) 2013-2017 Kevin Brubeck Unhammer
 
 ;; Author: Kevin Brubeck Unhammer <unhammer@fsfe.org>
 ;; Version: 0.5.2
-;; Package-Version: 20171208.400
+;; Package-Version: 20171219.58
 ;; Package-Requires: ((emacs "24.3") (alert "1.2"))
-;; Keywords: org todo notification
+;; Keywords: org todo notification calendar
 
 ;; This file is not part of GNU Emacs.
 
