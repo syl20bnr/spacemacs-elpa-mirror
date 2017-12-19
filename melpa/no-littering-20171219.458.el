@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/emacscollective/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 20171218.1324
+;; Package-Version: 20171219.458
 
 ;; This file is not part of GNU Emacs.
 
@@ -208,6 +208,7 @@ This variable has to be set before `no-littering' is loaded.")
       `(make-directory ,(var "desktop/") t))
     (setq desktop-dirname                  (var "desktop/"))
     (setq desktop-path                     (list desktop-dirname))
+    (setq diary-file                       (var "diary"))
     (setq epkg-repository                  (var "epkgs/"))
     (setq eshell-directory-name            (var "eshell/"))
     (eval-after-load 'eww
@@ -234,6 +235,8 @@ This variable has to be set before `no-littering' is loaded.")
     (setq org-publish-timestamp-directory  (var "org/timestamps/"))
     (setq org-registry-file                (var "org/registry.el"))
     (setq recentf-save-file                (var "recentf-save.el"))
+    (setq remember-data-file               (var "remember/data"))
+    (setq remember-data-directory          (var "remember/data.d/"))
     (setq save-place-file                  (var "save-place.el"))
     (setq savehist-file                    (var "savehist.el"))
     (setq semanticdb-default-save-directory (var "semantic/"))

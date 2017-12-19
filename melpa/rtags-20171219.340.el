@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 20171218.955
+;; Package-Version: 20171219.340
 ;; Version: 2.10
 
 ;; This file is not part of GNU Emacs.
@@ -1328,12 +1328,14 @@ to only call this when `rtags-socket-file' is defined.
                      (when rtags-autostart-diagnostics
                        (rtags-diagnostics)))
                     ((= result rtags-exit-code-connection-failure)
-                     (erase-buffer)
+                     (when output
+                       (erase-buffer))
                      (setq rtags-last-request-not-connected t)
                      (unless noerror
                        (error "Can't seem to connect to server. Is rdm running?")))
                     ((= result rtags-exit-code-protocol-failure)
-                     (erase-buffer)
+                     (when output
+                       (erase-buffer))
                      (unless noerror
                        (error (concat "RTags protocol version mismatch. This is usually caused by getting rtags.el from melpa\n"
                                       "and installing a new rtags build that modified the protocol. They need to be in sync."))))
@@ -4716,6 +4718,7 @@ See `rtags-get-summary-text' for details."
 (when rtags-tooltips-enabled
   (add-hook 'tooltip-functions 'rtags-display-tooltip-function))
 
+(defvar rtags-previous-buffer-list nil)
 (defun rtags-update-buffer-list ()
   "Send the list of indexable buffers to the rtags server, rdm,
 so it knows what files may be queried which helps with responsiveness.
@@ -4734,7 +4737,9 @@ so it knows what files may be queried which helps with responsiveness.
                      (combine-and-quote-strings buffers)
                    "")))
         (rtags-log (concat "--set-buffers files: " arg))
-      (rtags-call-rc :noerror t :silent-query t :silent t :path t "--set-buffers" arg)))))
+        (when (not (string= rtags-previous-buffer-list arg))
+          (setq rtags-previous-buffer-list arg)
+          (rtags-call-rc :noerror t :silent-query t :output nil :silent t :path t "--set-buffers" arg))))))
 
 (add-hook 'window-configuration-change-hook 'rtags-update-buffer-list)
 
