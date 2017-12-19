@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/general.el
-;; Package-Version: 20171217.1803
+;; Package-Version: 20171218.2201
 ;; Created: February 17, 2016
 ;; Keywords: vim, evil, leader, keybindings, keys
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
@@ -1915,7 +1915,7 @@ aliases such as `nmap' for `general-nmap'."
        (defalias 'tomap #'general-tomap))))
 
 ;; * Use-package Integration
-(with-eval-after-load 'use-package
+(with-eval-after-load 'use-package-core
   (declare-function use-package-concat "use-package")
   (declare-function use-package-process-keywords "use-package")
   (declare-function use-package-sort-keywords "use-package")
