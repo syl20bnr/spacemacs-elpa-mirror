@@ -4,7 +4,7 @@
 ;;   Phil Hagelberg, Doug Alcorn, Will Farrington, Chen Bin
 ;;
 ;; Version: 5.4.6
-;; Package-Version: 20171217.332
+;; Package-Version: 20171219.1858
 ;; Author: Phil Hagelberg, Doug Alcorn, and Will Farrington
 ;; Maintainer: Chen Bin <chenbin.sh@gmail.com>
 ;; URL: https://github.com/technomancy/find-file-in-project
@@ -203,6 +203,7 @@ The file path is passed to the hook as the first argument.")
 (defvar ffip-diff-backends
   '(ffip-git-diff-current-file
     ffip-git-diff-project
+    ("`git diff HEAD^` in project" . "cd $(git rev-parse --show-toplevel) && git diff HEAD^")
     ("`git diff --cached` in project" . "cd $(git rev-parse --show-toplevel) && git diff --cached")
     ("`git diff` in project" . "cd $(git rev-parse --show-toplevel) && git diff")
     ("`git diff` current file" . (shell-command-to-string (format "cd $(git rev-parse --show-toplevel) && git diff '%s'"
