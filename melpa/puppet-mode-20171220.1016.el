@@ -10,7 +10,7 @@
 ;; Maintainer: Bozhidar Batsov <bozhidar@batsov.com>
 ;;     Sebastian Wiesner <swiesner@lunaryorn.com>
 ;; URL: https://github.com/voxpupuli/puppet-mode
-;; Package-Version: 20170928.1007
+;; Package-Version: 20171220.1016
 ;; Keywords: languages
 ;; Version: 0.4-cvs
 ;; Package-Requires: ((emacs "24.1") (pkg-info "0.4"))
@@ -312,21 +312,27 @@ Return nil, if there is no special context at POS, or one of
                                ;; Any escaped character
                                (and "\\" not-newline)))))
       ;; http://docs.puppetlabs.com/puppet/latest/reference/lang_reserved.html#reserved-words
-      (keyword . ,(rx (or "and" "case" "class" "default" "define" "else" "elsif"
-                          "false" "if" "in" "import" "inherits" "node" "or"
-                          "true" "undef" "unless")))
+      (keyword . ,(rx (or "and" "application" "attr" "case" "class" "consumes"
+                          "default" "define" "else" "elsif" "environment"
+                          "false" "function" "if" "import" "in" "inherits"
+                          "node" "or" "private" "produces" "site" "true"
+                          "type" "undef" "unless")))
       ;; http://docs.puppetlabs.com/references/latest/function.html
-      (builtin-function . ,(rx (or "alert" "collect" "contain"
-                                   "create_resources" "crit" "debug" "defined"
-                                   "each" "emerg" "err" "extlookup" "fail"
-                                   "file" "filter" "fqdn_rand" "generate"
-                                   "hiera" "hiera_array" "hiera_hash"
-                                   "hiera_include" "include" "info"
-                                   "inline_template" "lookup" "map" "md5"
-                                   "notice" "realize" "reduce" "regsubst"
-                                   "require" "search" "select" "sha1"
-                                   "shellquote" "slice" "split" "sprintf" "tag"
-                                   "tagged" "template" "versioncmp" "warning")))
+      (builtin-function . ,(rx (or "alert" "assert_type" "binary_file" "break"
+                                   "contain" "create_resources" "crit" "debug"
+                                   "defined" "dig" "digest" "each" "emerg"
+                                   "epp" "err" "fail" "file" "filter"
+                                   "find_file" "fqdn_rand" "generate" "hiera"
+                                   "hiera_array" "hiera_hash" "hiera_include"
+                                   "include" "info" "inline_epp"
+                                   "inline_template" "lest" "lookup" "map"
+                                   "match" "md5" "new" "next" "notice"
+                                   "realize" "reduce" "regsubst" "require"
+                                   "return" "reverse_each" "scanf" "sha1"
+                                   "shellquote" "slice" "split" "sprintf"
+                                   "step" "strftime" "tag" "tagged" "template"
+                                   "then" "type" "versioncmp" "warning" "with"
+                                   )))
       ;; http://docs.puppetlabs.com/references/latest/type.html
       (builtin-type . ,(rx (or "augeas" "computer" "cron" "exec" "file"
                                "filebucket" "group" "host" "interface" "k5login"
@@ -348,11 +354,29 @@ Return nil, if there is no special context at POS, or one of
       ;; it got a mention in the docs, see
       ;; http://docs.puppetlabs.com/puppet/latest/reference/lang_resources.html#ensure,
       ;; so we'll consider it as metaparameter anyway
-      (builtin-metaparam . ,(rx (or "alias" "audit" "before" "loglevel" "noop"
-                                    "notify" "require" "schedule" "stage"
-                                    "subscribe" "tag"
+      (builtin-metaparam . ,(rx (or "alias" "audit" "before" "consume" "export"
+                                    "loglevel" "noop" "notify" "require"
+                                    "schedule" "stage" "subscribe" "tag"
                                     ;; Because it's so common and important
                                     "ensure")))
+      ;; https://github.com/puppetlabs/puppet-specifications/blob/master/language/types_values_variables.md
+      (data-type . ,(rx (or
+                         ;; Data Types
+                         "Array" "Binary" "Hash"
+                         ;; Scalar Types
+                         "Boolean" "Float" "Integer" "Regexp" "SemVer" "String"
+                         "Timespan" "Timestamp"
+                         ;; Catalog Types
+                         "Class" "Resource"
+                         ;; Abstract Types
+                         "Any" "CatalogEntry" "Collection" "Data" "Enum"
+                         "Iterable" "Iterator" "NotUndef" "Numeric" "Optional"
+                         "Pattern" "RichData" "Scalar" "ScalarData"
+                         "SemVerRange" "Struct" "Tuple" "Variant"
+                         ;; Platform Types:
+                         "Callable" "Default" "Runtime" "Sensitive" "Type"
+                         "Undef"
+                         )))
       ;; http://docs.puppetlabs.com/puppet/latest/reference/lang_reserved.html#classes-and-types
       (resource-name . ,(rx
                          ;; Optional top-level scope
@@ -417,6 +441,9 @@ are available:
 
 `builtin-metaparam'
      Any built-in meta-parameter, and `ensure'
+
+`data-type'
+     Any Puppet data type
 
 `resource-name'
      Any valid resource name, including scopes
@@ -644,10 +671,11 @@ of the initial include plus puppet-include-indent."
               (setq cur-indent (current-column))))))
        (include-start
         (setq cur-indent include-start))
-       ((and (looking-at "^\\s-*}\\(,\\|\\s-*[-~]>\\)?\\s-*$") block-indent)
-        ;; This line contains a closing brace or a closing brace followed by a
-        ;; comma and we're at the inner block, so we should indent it matching
-        ;; the indentation of the opening brace of the block.
+
+       ((and (looking-at "^\\s-*}.*$") block-indent)
+        ;; This line contains a closing brace and we're at the inner
+        ;; block, so we should indent it matching the indentation of
+        ;; the opening brace of the block.
         (setq cur-indent block-indent))
 
        ;; Class argument list ends with a closing paren and needs to be
@@ -665,7 +693,9 @@ of the initial include plus puppet-include-indent."
             (cond
              ;; Comment lines are ignored unless we're at the start of the
              ;; buffer.
-             ((eq (puppet-syntax-context) 'comment)
+             ((or (eq (puppet-syntax-context) 'comment)
+                  (save-excursion (end-of-line)
+                                  (eq (puppet-syntax-context) 'comment)))
               (if (bobp)
                   (setq not-indented nil)))
 
@@ -703,12 +733,8 @@ of the initial include plus puppet-include-indent."
               (setq not-indented nil))
 
              ;; Indent an extra level after : since it introduces a resource.
-             ;; Unless the : is in a comment
              ((looking-at "^.*:\\s-*$")
-              (end-of-line)
-              (if (eq (puppet-syntax-context) 'comment)
-                  (setq cur-indent (current-indentation))
-                (setq cur-indent (+ (current-indentation) puppet-indent-level)))
+              (setq cur-indent (+ (current-indentation) puppet-indent-level))
               (setq not-indented nil))
 
              ;; Start of buffer.
@@ -767,6 +793,8 @@ of the initial include plus puppet-include-indent."
   `(
     ;; Keywords
     (,(puppet-rx (symbol keyword)) 0 font-lock-keyword-face)
+    ;; Data Types
+    (,(puppet-rx (symbol data-type)) 0 font-lock-type-face)
     ;; Variables
     (,(puppet-rx "$" (symbol variable-name)) 0 font-lock-variable-name-face)
     ;; Class and type declarations

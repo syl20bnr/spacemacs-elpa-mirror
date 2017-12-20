@@ -7,7 +7,7 @@
 ;; Copyleft (Ↄ) 2012, Joe Bloggs, all rites reversed.
 ;; Created: 2012-11-01 21:28:07
 ;; Version: 20151116.1603
-;; Package-Version: 20161007.1913
+;; Package-Version: 20171220.735
 ;; Package-Requires: ((emacs "24.3") (anaphora "1.0.0"))
 ;; Last-Updated: Mon Nov 16 16:03:18 2015
 ;;           By: Joe Bloggs
@@ -664,7 +664,7 @@ as a flat list."
   (define-key simple-call-tree-mode-map (kbd "SPC") 'simple-call-tree-view-function)
   (define-key simple-call-tree-mode-map (kbd "C-o") 'simple-call-tree-view-function)
   (define-key simple-call-tree-mode-map (kbd "v") 'simple-call-tree-view-function)
-  (define-key simple-call-tree-mode-map (kbd "V") (lambda nil (interactive) (simple-call-tree-view-function t)))
+  (define-key simple-call-tree-mode-map (kbd "V") #'(lambda nil (interactive) (simple-call-tree-view-function t)))
   (define-key simple-call-tree-mode-map (kbd "<return>") 'simple-call-tree-visit-function)
   (define-key simple-call-tree-mode-map (kbd "o") 'simple-call-tree-visit-function)
   ;; Movement commands
@@ -683,12 +683,12 @@ as a flat list."
   (define-key simple-call-tree-mode-map (kbd "M-n") 'simple-call-tree-move-next-marked)
   ;; Jump ring commands
   (define-key simple-call-tree-mode-map (kbd "j") 'simple-call-tree-jump-to-function)
-  (define-key simple-call-tree-mode-map (kbd "J") '(lambda nil (interactive)
-                                                     (setq current-prefix-arg 1)
-                                                     (call-interactively 'simple-call-tree-jump-to-function)))
-  (define-key simple-call-tree-mode-map (kbd "C-j") '(lambda nil (interactive)
-                                                       (setq current-prefix-arg 1)
-                                                       (call-interactively 'simple-call-tree-jump-to-function)))
+  (define-key simple-call-tree-mode-map (kbd "J") #'(lambda nil (interactive)
+						      (setq current-prefix-arg 1)
+						      (call-interactively 'simple-call-tree-jump-to-function)))
+  (define-key simple-call-tree-mode-map (kbd "C-j") #'(lambda nil (interactive)
+							(setq current-prefix-arg 1)
+							(call-interactively 'simple-call-tree-jump-to-function)))
   (define-key simple-call-tree-mode-map (kbd ".") 'simple-call-tree-jump-ring-add)
   (define-key simple-call-tree-mode-map (kbd "<") 'simple-call-tree-jump-prev)
   (define-key simple-call-tree-mode-map (kbd ">") 'simple-call-tree-jump-next)

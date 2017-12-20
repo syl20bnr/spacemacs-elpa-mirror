@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20171219.851
+;; Package-Version: 20171220.642
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -1252,6 +1252,7 @@ stack's default)."
                         stack-yaml
                       (buffer-local-value 'intero-stack-yaml backend-buffer)))
         (arguments (intero-make-options-list
+                    "ghci"
                     (or targets
                         (let ((package-name (buffer-local-value 'intero-package-name
                                                                 backend-buffer)))
@@ -1944,6 +1945,7 @@ Uses the default stack config file, or STACK-YAML file if given."
       buffer
     (let* ((options
             (intero-make-options-list
+             "intero"
              (or targets
                  (let ((package-name (buffer-local-value 'intero-package-name buffer)))
                    (unless (equal "" package-name)
@@ -2023,7 +2025,7 @@ Restarts flycheck in case there was a problem and flycheck is stuck."
   (flycheck-mode)
   (flycheck-buffer))
 
-(defun intero-make-options-list (targets no-build no-load ignore-dot-ghci stack-yaml)
+(defun intero-make-options-list (with-ghc targets no-build no-load ignore-dot-ghci stack-yaml)
   "Make the stack ghci options list.
 TARGETS are the build targets.  When non-nil, NO-BUILD and
 NO-LOAD enable the correspondingly-named stack options.  When
@@ -2033,7 +2035,7 @@ default when nil)."
   (append (when stack-yaml
             (list "--stack-yaml" stack-yaml))
           (list "--with-ghc"
-                "intero"
+                with-ghc
                 "--docker-run-args=--interactive=true --tty=false"
                 )
           (when no-build
