@@ -3,7 +3,7 @@
 ;; Copyright 2016 Free Software Foundation, Inc.
 
 ;; Author: David Gonzalez Gandara <dggandara@member.fsf.org>
-;; Version: 0.71
+;; Version: 0.91
 ;; Package-Requires: ((cl-lib "0.5"))
 
 ;; This program is free software: you can redistribute it and/or modify
@@ -23,9 +23,19 @@
 
 ;; REQUIRES:
 ;; ---------------------------
-;; Some functions require the arbitools python package, you can install
-;; it by: "pip3 install arbitools"
-;; "pdflatex" is necessary in case you want to get pdfs.
+;; Some functions require the arbitools python package, written by myself
+;; you can install it by: "pip3 install arbitools"
+;;
+;; "pdflatex" by Han The Thanh is necessary in case you want to get pdfs.
+;;            It is distributed under a GPL license.
+;;            https://www.tug.org/applications/pdftex/
+;;
+;; "bbpPairings.exe" by Bierema Boyz Programming is necessary to do the 
+;;                   pairings. Copy the file to an executable folder, 
+;;                   for example /usr/bin.
+;;                   Find bbpPairings in
+;;                   https://github.com/BieremaBoyzProgramming/bbpPairings
+;;                   under GPL license.
 ;;
 ;; USAGE:
 ;; ---------------------------
@@ -63,6 +73,10 @@
 ;;
 ;; - Print standings - Native
 ;;
+;; - Do pairings - with bbpPairings.exe. In order for this to work,
+;;                 remember to add a XXR field in the file with the number
+;;                 of rounds of the tournament.
+;;
 ;; TODO:
 ;; ---------------------------------
 ;;
@@ -86,11 +100,66 @@
 ;;
 ;; - Reorder the players list
 ;;
-;; You will find more information in www.ourenxadrez.org/arbitools.htm
+;; - Error handling
+;;
+;; You will find more information in www.dggandara.eu/arbitools.htm
 
 ;;; Code:
 
 (eval-when-compile (require 'cl-lib))
+
+(defun arbitools-do-pairings ()
+  "Use bbpPairings to do the pairings for the next round."
+  ;; TODO: if there is no XXR entry, error and prompt to write one.
+  (interactive)
+  (save-excursion
+     (with-current-buffer "Pairings-output"
+        (erase-buffer)))
+    (call-process "bbpPairings.exe" nil "Pairings-output" nil  "--dutch" buffer-file-name "-p")
+    
+    (let* ((actualround (arbitools-actual-round))
+         (numberofrounds (arbitools-number-of-rounds))
+         (numberoftables 0)
+         (actualtable 0)
+         (white 0)
+         (black 0))
+       (save-excursion
+         (with-current-buffer "Pairings-output"
+           (goto-char (point-min))
+           (setq numberoftables (string-to-number (thing-at-point 'word)))))
+           (while (<= actualtable numberoftables)
+             (save-excursion
+               (with-current-buffer "Pairings-output"
+                 (forward-line)
+                 (setq actualtable (+ actualtable 1))
+                 (setq white (thing-at-point 'word))
+                 (forward-word)
+                 (forward-word)
+                 (setq black (thing-at-point 'word))))
+             (save-excursion
+               (goto-char (point-min))
+               (while (re-search-forward "^001" nil t)
+                 (forward-char 4) ;; rank number
+                 (when (string= white (thing-at-point 'word))
+                   (forward-char (+ 85 (* actualround 10)))
+                   (insert "  ") ;; replace the first positions with spaces
+                   (delete-char 2)
+                   (cond ((= 2 (length black)) (backward-char 1));; make room for bigger numbers
+                     ((= 3 (length black)) (backward-char 2)))
+                   (insert (format "%s w" black))
+                   (delete-char 3)
+                   (cond ((= 2 (length black)) (delete-char 1));; adjust when numbers are longer
+                     ((= 3 (length black)) (delete-char 2))))
+                (when (string= black (thing-at-point 'word))
+                   (forward-char (+ 85 (* actualround 10)))
+                   (insert "  ") ;; replace the first positions with spaces
+                   (delete-char 2)
+                   (cond ((= 2 (length white)) (backward-char 1)) ;; make room for bigger numbers
+                     ((= 3 (length white)) (backward-char 2)))
+                   (insert (format "%s b" white))
+                   (delete-char 3)
+                   (cond ((= 2 (length white)) (delete-char 1));; adjust when numbers are longer
+                     ((= 3 (length white)) (delete-char 2)))))))))
 
 (defun arbitools-prepare-feda ()
   "Prepare file to FEDA: add carriage return at the end of lines."
@@ -236,7 +305,9 @@
   (insert "102 CHIEF ARBITER\n")
   (insert "112 DEPUTY CHIEF ARBITER\n")
   (insert "122 ALLOTED TIMES PER MOVE/GAME\n")
+  (insert "XXR NUMBER OF ROUNDS\n")
   (insert "132 DATES                                                                                  YY/MM/DD  YY/MM/DD\n")
+  (insert "XXR NUMBER OF ROUNDS\n")
   ;; (insert "001  000 GTIT NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN RAT. FED   0000000000 YYYY/MM/DD 00.0  RNK  0000 C R  0000 C R\n")
   ;; (insert "013 NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN  0000 0000\n")
 )
@@ -244,29 +315,48 @@
  (defun arbitools-number-of-rounds ()
    "Get the number of rounds in the tournament. It has to be executed in the principal buffer."
    (let* ((numberofrounds 0))
+     
      (save-excursion
-      (goto-char (point-min))
-      (re-search-forward "^132" nil t)
-        (let* ((linestringrounds (thing-at-point 'line))
-            ;; (actualround " ")
-            (beginning-of-round 91)
-            (end-of-round 99)
-            (continue t))
-                    
-            ;; (with-current-buffer "Arbitools-output" (insert (format "rounds: %s" linestringrounds)))
-            ;; (with-current-buffer "Arbitools-output" (insert (format "length: %s" (- (length linestringrounds) 4))))
-           ;; For some reason, the length of the string is 4 characters longer than the real line
-           (while continue
-             (if (< end-of-round (length linestringrounds))
+       (if (re-search-forward "^XXR" nil t)
+         (progn 
+            (beginning-of-line)
+            (forward-char 5)
+            (setq numberofrounds (string-to-number (thing-at-point 'word))))
+       
+         (goto-char (point-min))
+         (re-search-forward "^132" nil t)
+         (let* ((linestringrounds (thing-at-point 'line))
+              (beginning-of-round 91)
+              (end-of-round 99)
+              (continue t))
+            (while continue
+              (if (< end-of-round (length linestringrounds))
                 
-               (progn
-                  ;; (setq actualround (substring-no-properties linestringrounds beginning-of-round end-of-round))
-                  (setq numberofrounds (+ numberofrounds 1))
-                  (setq beginning-of-round (+ beginning-of-round 10))
-                  (setq end-of-round (+ end-of-round 10)))
+                (progn
+                   (setq numberofrounds (+ numberofrounds 1))
+                   (setq beginning-of-round (+ beginning-of-round 10))
+                   (setq end-of-round (+ end-of-round 10)))
                   
-                  (setq continue nil)))))
+                   (setq continue nil))))))
      numberofrounds))
+
+(defun arbitools-actual-round ()
+  "Calculate the actual round. It has to be run on the principal buffer."
+  (let* (numberofrounds (arbitools-number-of-rounds)
+        (actualround 0)
+        (continue t))
+    
+    (save-excursion
+      (re-search-forward "^001" nil t)
+      (beginning-of-line)
+      (while continue
+        (forward-char (+ 93 (* actualround 10)))
+        (unless (string= (thing-at-point 'word) nil)
+          (setq actualround (+ actualround 1)))
+        (when (string= (thing-at-point 'word) nil)
+          (setq actualround (+ actualround 1))
+          (setq continue nil))))
+    actualround))
 
 (defun arbitools-calculate-points ()
   "Automatically calculate the points of each player"
@@ -601,6 +691,7 @@
     "---"
     ["Insert Player" arbitools-insert-player]
     ["Delete Player" arbitools-delete-player]
+    ["Do Pairings" arbitools-do-pairings]
     ["Insert Result" arbitools-insert-result]
     ["Delete Round" arbitools-delete-round]
     "---"
@@ -686,6 +777,7 @@
   (generate-new-buffer "List of players")
   (generate-new-buffer "Pairings List")
   (generate-new-buffer "Standings")
+  (generate-new-buffer "Pairings-output")
   (column-number-mode)
   (set (make-local-variable 'font-lock-defaults) '(arbitools-highlights)))
 
@@ -694,6 +786,10 @@
 
 ;;;; ChangeLog:
 
+;; 2017-12-19  David Gonzalez Gandara  <dggandara@member.fsf.org>
+;; 
+;; 	* arbitools.el: added new functions, updated website
+;; 
 ;; 2016-05-04  David Gonzalez Gandara  <dggandara@member.fsf.org>
 ;; 
 ;; 	packages/arbitools.el: Removed unused variables

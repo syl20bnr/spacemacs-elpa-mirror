@@ -1,8 +1,18 @@
 REQUIRES:
 ---------------------------
-Some functions require the arbitools python package, you can install
-it by: "pip3 install arbitools"
-"pdflatex" is necessary in case you want to get pdfs.
+Some functions require the arbitools python package, written by myself
+you can install it by: "pip3 install arbitools"
+
+"pdflatex" by Han The Thanh is necessary in case you want to get pdfs.
+           It is distributed under a GPL license.
+           https://www.tug.org/applications/pdftex/
+
+"bbpPairings.exe" by Bierema Boyz Programming is necessary to do the 
+                  pairings. Copy the file to an executable folder, 
+                  for example /usr/bin.
+                  Find bbpPairings in
+                  https://github.com/BieremaBoyzProgramming/bbpPairings
+                  under GPL license.
 
 USAGE:
 ---------------------------
@@ -40,6 +50,10 @@ manual edition of the files.
 
 - Print standings - Native
 
+- Do pairings - with bbpPairings.exe. In order for this to work,
+                remember to add a XXR field in the file with the number
+                of rounds of the tournament.
+
 TODO:
 ---------------------------------
 
@@ -63,4 +77,6 @@ TODO:
 
 - Reorder the players list
 
-You will find more information in www.ourenxadrez.org/arbitools.htm
+- Error handling
+
+You will find more information in www.dggandara.eu/arbitools.htm

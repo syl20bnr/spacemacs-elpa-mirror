@@ -6,7 +6,7 @@
 ;; Maintainer: browse-kill-ring <browse-kill-ring@tonotdo.com>
 ;; Created: 7 Apr 2001
 ;; Version: 2.0.0
-;; Package-Version: 20171218.1410
+;; Package-Version: 20171219.1108
 ;; URL: https://github.com/browse-kill-ring/browse-kill-ring
 ;; Keywords: convenience
 
@@ -676,8 +676,11 @@ You most likely do not want to call `browse-kill-ring-mode' directly; use
 `browse-kill-ring' instead.
 
 \\{browse-kill-ring-mode-map}"
+  ;; Later versions of emacs reduced the number of arguments to
+  ;; font-lock-defaults, at least version 24 requires 5 arguments
+  ;; before setting up buffer local variables.
   (set (make-local-variable 'font-lock-defaults)
-       '(nil t nil nil
+       '(nil t nil nil nil
              (font-lock-fontify-region-function . browse-kill-ring-fontify-region)))
   (define-key browse-kill-ring-mode-map (kbd "q") 'browse-kill-ring-quit)
   (define-key browse-kill-ring-mode-map (kbd "C-g") 'browse-kill-ring-quit)
