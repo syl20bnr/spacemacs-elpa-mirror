@@ -5,7 +5,7 @@
 ;; Author: Damien Cassou <damien@cassou.me>
 ;; Maintainer: Damien Cassou <damien@cassou.me>
 ;; Version: 0.7.0
-;; Package-Version: 20171017.1103
+;; Package-Version: 20171221.351
 ;; Package-Requires: ((emacs "25.1"))
 ;; GIT: https://github.com/DamienCassou/hierarchy
 ;; URL: https://github.com/DamienCassou/hierarchy
@@ -547,7 +547,7 @@ node label."
 HIERARCHY and LABELFN are passed unchanged to
 `hierarchy-convert-to-tree-widget'.
 
-The tabulated list is displayed in BUFFER, or a newly created buffer if
+The tree widget is displayed in BUFFER, or a newly created buffer if
 nil.  The buffer is returned."
   (let ((buffer (or buffer (generate-new-buffer "*hierarchy-tree*")))
         (tree-widget (hierarchy-convert-to-tree-widget hierarchy labelfn)))

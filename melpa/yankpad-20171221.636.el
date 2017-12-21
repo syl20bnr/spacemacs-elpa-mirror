@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand
 ;; URL: http://github.com/Kungsgeten/yankpad
-;; Package-Version: 20170607.819
+;; Package-Version: 20171221.636
 ;; Version: 1.70
 ;; Keywords: abbrev convenience
 ;; Package-Requires: ((emacs "24"))
@@ -288,7 +288,8 @@ Return the result of the function output as a string."
     (when (equal file yankpad-file)
       (when (org-entry-delete org-capture-last-stored-marker "ID")
         (with-current-buffer (get-file-buffer file)
-          (save-buffer))))))
+          (save-buffer)))
+      (yankpad-reload))))
 (add-hook 'org-capture-after-finalize-hook #'yankpad--remove-id-from-yankpad-capture)
 
 ;;;###autoload
@@ -300,8 +301,7 @@ Return the result of the function output as a string."
   (let ((org-capture-entry
          `("y" "Yankpad" entry (file+headline ,yankpad-file ,yankpad-category)
            "* %?\n%i")))
-    (org-capture))
-  (yankpad-reload))
+    (org-capture)))
 
 (defun yankpad-insert-from-current-category (&optional name)
   "Insert snippet NAME from `yankpad-category'.  Prompts for NAME unless set.

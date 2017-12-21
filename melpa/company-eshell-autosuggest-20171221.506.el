@@ -3,10 +3,10 @@
 ;; Copyright (C) 2017 Diego A. Mundo
 ;; Author: Diego A. Mundo <diegoamundo@gmail.com>
 ;; URL: http://github.com/dieggsy/company-eshell-autosuggest
-;; Package-Version: 1.2.2
+;; Package-Version: 20171221.506
 ;; Git-Repository: git://github.com/dieggsy/company-eshell-autosuggest.git
 ;; Created: 2017-10-28
-;; Version: 1.2.1
+;; Version: 1.2.2
 ;; Keywords: completion company matching convenience abbrev
 ;; Package-Requires: ((emacs "24.4") (company "0.9.4"))
 
@@ -58,8 +58,8 @@ respectively."
   (let ((keymap (make-sparse-keymap)))
     (define-key keymap (kbd "<right>") 'company-complete-selection)
     (define-key keymap (kbd "C-f") 'company-complete-selection)
-    (define-key keymap (kbd "M-<right>") 'company-eshell-autosugggest-complete-word)
-    (define-key keymap (kbd "M-f") 'company-eshell-autosugggest-complete-word)
+    (define-key keymap (kbd "M-<right>") 'company-eshell-autosuggest-complete-word)
+    (define-key keymap (kbd "M-f") 'company-eshell-autosuggest-complete-word)
     keymap)
   "Keymap that is enabled during an active history
   autosuggestion.")

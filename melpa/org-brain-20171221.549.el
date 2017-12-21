@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; URL: http://github.com/Kungsgeten/org-brain
-;; Package-Version: 20171216.536
+;; Package-Version: 20171221.549
 ;; Keywords: outlines hypermedia
 ;; Package-Requires: ((emacs "25") (org "9"))
 ;; Version: 0.4
@@ -87,6 +87,13 @@ If 'root, only choose from file entries in `org-brain-path' (non-recursive)."
 (defcustom org-brain-brain-link-adds-child t
   "If brain: links should add the linked entry as a child.
 Applicable for `org-insert-link' and `org-brain-insert-link'."
+  :group 'org-brain
+  :type '(boolean))
+
+(defcustom org-brain-file-entries-use-title t
+  "If file entries should show their title, when choosing entries from a list.
+This can potentially be slow. If set to nil, the relative
+filenames will be shown instead, which is faster."
   :group 'org-brain
   :type '(boolean))
 
@@ -278,9 +285,13 @@ In `org-brain-visualize' just return `org-brain--vis-entry'."
 
 (defun org-brain-entry-name (entry)
   "Get name string of ENTRY."
-  (if (org-brain-filep entry)
-      entry
-    (concat (car entry) "::" (cadr entry))))
+  (if org-brain-file-entries-use-title
+      (if (org-brain-filep entry)
+          (concat (file-name-directory entry) (org-brain-title entry))
+        (concat (org-brain-entry-name (car entry)) "::" (cadr entry)))
+    (if (org-brain-filep entry)
+        entry
+      (concat (car entry) "::" (cadr entry)))))
 
 (defun org-brain-entry-data (entry)
   "Run `org-element-parse-buffer' on ENTRY text.
@@ -310,29 +321,32 @@ Very similar to `org-brain-choose-entry', but can return several entries.
 For PREDICATE, REQUIRE-MATCH and INITIAL-INPUT, see `completing-read'."
   (unless org-id-locations (org-id-locations-load))
   (let* ((targets (mapcar (lambda (x)
-                            (if (org-brain-filep x)
-                                (cons x nil)
-                              (cons (org-brain-entry-name x)
+                            (cons (org-brain-entry-name x)
+                                  (if (org-brain-filep x)
+                                      x
                                     (nth 2 x))))
                           entries))
          (choices (completing-read prompt targets
                                    predicate require-match initial-input)))
     (mapcar (lambda (title)
-              (if-let ((id (cdr (assoc title targets))))
-                  ;; Headline entry exists, return it
-                  (org-brain-entry-from-id id)
-                ;; File entry
-                (setq title (split-string title "::" t))
-                (let ((entry-path (org-brain-entry-path (car title))))
-                  (unless (file-exists-p entry-path)
-                    (write-region "" nil entry-path))
-                  (if (equal (length title) 2)
-                      ;; Create new headline entry in file
-                      (with-current-buffer (find-file-noselect entry-path)
-                        (goto-char (point-max))
-                        (insert (concat "\n* " (cadr title)))
-                        (list (car title) (cadr title) (org-id-get-create)))
-                    (car title)))))
+              (let ((id (cdr (assoc title targets))))
+                (or
+                 ;; Headline entry exists, return it
+                 (org-brain-entry-from-id id)
+                 ;; File entry
+                 (progn
+                   (setq id (split-string id "::" t))
+                   (let ((entry-path (org-brain-entry-path (car id))))
+                     (unless (file-exists-p entry-path)
+                       (make-directory (file-name-directory entry-path) t)
+                       (write-region "" nil entry-path))
+                     (if (equal (length id) 2)
+                         ;; Create new headline entry in file
+                         (with-current-buffer (find-file-noselect entry-path)
+                           (goto-char (point-max))
+                           (insert (concat "\n* " (cadr id)))
+                           (list (car id) (cadr id) (org-id-get-create)))
+                       (car id)))))))
             (if org-brain-entry-separator
                 (split-string choices org-brain-entry-separator)
               (list choices)))))
@@ -343,14 +357,16 @@ For PREDICATE, REQUIRE-MATCH and INITIAL-INPUT, see `completing-read'."
   (let ((org-brain-entry-separator nil))
     (car (org-brain-choose-entries prompt entries predicate require-match initial-input))))
 
-(defun org-brain-keywords (file)
-  "Get alist of `org-mode' keywords and their values in FILE."
-  (with-temp-buffer
-    (ignore-errors (insert-file-contents file))
-    (org-element-map (org-element-parse-buffer) 'keyword
-      (lambda (kw)
-        (cons (org-element-property :key kw)
-              (org-element-property :value kw))))))
+(defun org-brain-keywords (entry)
+  "Get alist of `org-mode' keywords and their values in file ENTRY."
+  (if (org-brain-filep entry)
+      (with-temp-buffer
+        (ignore-errors (insert (org-brain-text entry t)))
+        (org-element-map (org-element-parse-buffer) 'keyword
+          (lambda (kw)
+            (cons (org-element-property :key kw)
+                  (org-element-property :value kw)))))
+    (error "Only file entries have keywords")))
 
 (defun org-brain-entry-marker (entry)
   "Get marker to ENTRY."
@@ -366,7 +382,7 @@ For PREDICATE, REQUIRE-MATCH and INITIAL-INPUT, see `completing-read'."
   "Get title of ENTRY. If CAPPED is t, max length is `org-brain-title-max-length'."
   (let ((title
          (if (org-brain-filep entry)
-             (or (cdr (assoc "TITLE" (org-brain-keywords (org-brain-entry-path entry))))
+             (or (cdr (assoc "TITLE" (org-brain-keywords entry)))
                  (car (last (split-string entry "/" t))))
            (nth 1 entry))))
     (if (and capped (> org-brain-title-max-length 0) (> (length title) org-brain-title-max-length))
@@ -528,8 +544,7 @@ PROPERTY could for instance be BRAIN_CHILDREN."
               (lambda (x) (or (org-brain-entry-from-id x) x))
               (mapcar #'org-entry-restore-space
                       (when-let ((kw-values (cdr (assoc property
-                                                        (org-brain-keywords
-                                                         (org-brain-entry-path entry))))))
+                                                        (org-brain-keywords entry)))))
                         (org-split-string kw-values "[ \t]"))))
            ;; Headline entry
            (mapcar
@@ -841,6 +856,46 @@ If run interactively, get ENTRY from context."
                     entry "BRAIN_FRIENDS")
                    nil t)))
 
+(defun org-brain--remove-relationships (entry)
+  "Remove all external relationships from ENTRY."
+  (dolist (child (org-brain--linked-property-entries
+                  entry "BRAIN_CHILDREN"))
+    (org-brain-remove-relationship entry child))
+  (dolist (parent (org-brain--linked-property-entries
+                   entry "BRAIN_PARENTS"))
+    (org-brain-remove-relationship parent entry))
+  (dolist (friend (org-brain-friends entry))
+    (org-brain-remove-friendship entry friend)))
+
+;;;###autoload
+(defun org-brain-rename-file (file-entry new-name)
+  "Rename FILE-ENTRY to NEW-NAME.
+Both arguments should be relative to `org-brain-path' and should
+not contain `org-brain-files-extension'."
+  (interactive (let ((entry (org-brain-choose-entry
+                             "File entry: " (org-brain-files t) nil t)))
+                 (list entry (read-string "New filename: " entry))))
+  (let ((newpath (org-brain-entry-path new-name))
+        (oldpath (org-brain-entry-path file-entry)))
+    (if (file-exists-p newpath)
+        (error "There's already a file %s" newpath)
+      (let ((children (org-brain--linked-property-entries file-entry "BRAIN_CHILDREN"))
+            (parents (org-brain--linked-property-entries file-entry "BRAIN_PARENTS"))
+            (friends (org-brain-friends file-entry)))
+        (org-brain--remove-relationships file-entry)
+        (org-save-all-org-buffers)
+        (make-directory (file-name-directory newpath) t)
+        (with-temp-file newpath (insert-file-contents oldpath))
+        (org-brain-delete-entry file-entry t)
+        (org-brain-update-id-locations)
+        (dolist (child children)
+          (org-brain-add-relationship new-name child))
+        (dolist (parent parents)
+          (org-brain-add-relationship parent new-name))
+        (dolist (friend friends)
+          (org-brain--internal-add-friendship new-name friend))
+        (message "Renamed %s to %s" file-entry new-name)))))
+
 ;;;###autoload
 (defun org-brain-delete-entry (entry &optional noconfirm)
   "Delete ENTRY and all of its local children.
@@ -860,14 +915,7 @@ If NOCONFIRM is nil, ask if we really want to delete."
                        (length local-children))))
       (dolist (child local-children)
         (org-brain-delete-entry child t))
-      (dolist (child (org-brain--linked-property-entries
-                      entry "BRAIN_CHILDREN"))
-        (org-brain-remove-relationship entry child))
-      (dolist (parent (org-brain--linked-property-entries
-                       entry "BRAIN_PARENTS"))
-        (org-brain-remove-relationship parent entry))
-      (dolist (friend (org-brain-friends entry))
-        (org-brain-remove-friendship entry friend))
+      (org-brain--remove-relationships entry)
       (if (org-brain-filep entry)
           (let ((filename (org-brain-entry-path entry)))
             (if (vc-backend filename)
@@ -923,7 +971,7 @@ If run interactively, get ENTRY from context and prompt for TITLE."
       (let ((entry-path (org-brain-entry-path entry)))
         (with-current-buffer (find-file-noselect entry-path)
           (goto-char (point-min))
-          (when (assoc "TITLE" (org-brain-keywords entry-path))
+          (when (assoc "TITLE" (org-brain-keywords entry))
             (re-search-forward "^#\\+TITLE:")
             (kill-whole-line))
           (insert (format "#+TITLE: %s\n" title))
@@ -1032,7 +1080,7 @@ org-brain setups to the system introduced in version 0.4. Please
 make a backup of your `org-brain-path' before running this
 function."
   (interactive)
-  (when (y-or-n-p "This function is meant for old configurations. Are uou sure you want to scan for links? ")
+  (when (y-or-n-p "This function is meant for old configurations. Are you sure you want to scan for links? ")
     (dolist (file (org-brain-files))
       (with-temp-buffer
         (insert-file-contents file)
