@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017 Diego A. Mundo
 ;; Author: Diego A. Mundo <diegoamundo@gmail.com>
 ;; URL: http://github.com/dieggsy/company-eshell-autosuggest
-;; Package-Version: 1.2.1
+;; Package-Version: 1.2.2
 ;; Git-Repository: git://github.com/dieggsy/company-eshell-autosuggest.git
 ;; Created: 2017-10-28
 ;; Version: 1.2.1
@@ -57,6 +57,9 @@ respectively."
 (defvar company-eshell-autosuggest-active-map
   (let ((keymap (make-sparse-keymap)))
     (define-key keymap (kbd "<right>") 'company-complete-selection)
+    (define-key keymap (kbd "C-f") 'company-complete-selection)
+    (define-key keymap (kbd "M-<right>") 'company-eshell-autosugggest-complete-word)
+    (define-key keymap (kbd "M-f") 'company-eshell-autosugggest-complete-word)
     keymap)
   "Keymap that is enabled during an active history
   autosuggestion.")
@@ -74,6 +77,18 @@ respectively."
                         history)))
     (when most-similar
       `(,most-similar))))
+
+(defun company-eshell-autosuggest-complete-word ()
+  (interactive)
+  (save-excursion
+    (let ((pos (point)))
+      (company-complete-selection)
+      (goto-char pos)
+      (forward-word)
+      (unless (or (eobp) (eolp))
+        (kill-line))))
+  (end-of-line)
+  (company-begin-backend 'company-eshell-autosuggest))
 
 (defun company-eshell-autosuggest--prefix ()
   "Get current eshell input."
@@ -110,8 +125,8 @@ customizable through `company-eshell-autosuggest-active-map'. If
 you prefer to use the default value of `company-active-map', you
 may set the variable
 `company-eshell-autosuggest-use-company-map', though this isn't
-recommended as RET and TAB may not work as you expect (send
-input, trigger completions, respectively) when there is an active
+recommended as RET and TAB may not work as expected (send input,
+trigger completions, respectively) when there is an active
 suggestion.
 
 The delay defaults to 0 seconds to emulate fish shell's

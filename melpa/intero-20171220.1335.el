@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20171220.642
+;; Package-Version: 20171220.1335
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -1911,7 +1911,8 @@ Installing intero-%s automatically ...
                     (if (string= package-name "intero")
                         "intero"
                       (concat "intero-" intero-package-version))))
-                "ghc-paths" "syb")
+                "ghc-paths" "syb"
+                "--flag" "haskeline:-terminfo")
         (0
          (message "Installed successfully! Starting Intero in a moment ...")
          (bury-buffer buffer)

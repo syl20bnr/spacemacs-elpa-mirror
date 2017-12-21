@@ -3,8 +3,8 @@
 ;; Copyright (C) 2017 ybiquitous <ybiquitous@gmail.com>
 
 ;; Author:  ybiquitous <ybiquitous@gmail.com>
-;; Version: 1.0.3
-;; Package-Version: 20171031.1819
+;; Version: 1.0.4
+;; Package-Version: 1.0.4
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: languages
 ;; URL: https://github.com/ybiquitous/js-auto-format-mode
@@ -72,12 +72,6 @@
     js-auto-format-command-args
     (shell-quote-argument (expand-file-name buffer-file-name))))
 
-(defun js-auto-format-kill-buffer ()
-  "Kill command output buffer if command succeeds."
-  (when (= 0 (buffer-size (get-buffer js-auto-format-buffer)))
-    (delete-windows-on js-auto-format-buffer)
-    (kill-buffer js-auto-format-buffer)))
-
 ;;;###autoload
 (defun js-auto-format-enabled-p ()
   "Test whether js-auto-format-mode is enabled."
@@ -92,11 +86,25 @@
   "Format JavaScript source code."
   (interactive)
   (when (js-auto-format-enabled-p)
-    (let* ((command (js-auto-format-full-command)))
+    (let* ((command (js-auto-format-full-command))
+            (buffer js-auto-format-buffer))
+
       (message "js-auto-format-execute: %s" command)
-      (shell-command command js-auto-format-buffer)
-      (revert-buffer t t t)
-      (js-auto-format-kill-buffer))))
+
+      ;; clear buffer
+      (if (get-buffer buffer) (kill-buffer buffer))
+      (get-buffer-create buffer)
+
+      (if (zerop (call-process-shell-command command nil buffer nil))
+        (progn ;; success
+          (delete-window (get-buffer-window buffer))
+          (kill-buffer buffer))
+        (progn ;; failure
+          (display-buffer buffer)
+          (shrink-window-if-larger-than-buffer (get-buffer-window buffer))
+          (set-window-point (get-buffer-window buffer) 0)))
+
+      (revert-buffer t t t))))
 
 ;;;###autoload
 (define-minor-mode js-auto-format-mode
