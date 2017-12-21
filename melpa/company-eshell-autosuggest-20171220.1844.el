@@ -3,10 +3,10 @@
 ;; Copyright (C) 2017 Diego A. Mundo
 ;; Author: Diego A. Mundo <diegoamundo@gmail.com>
 ;; URL: http://github.com/dieggsy/company-eshell-autosuggest
-;; Package-Version: 20171220.1817
+;; Package-Version: 20171220.1844
 ;; Git-Repository: git://github.com/dieggsy/company-eshell-autosuggest.git
 ;; Created: 2017-10-28
-;; Version: 1.2.1
+;; Version: 1.2.2
 ;; Keywords: completion company matching convenience abbrev
 ;; Package-Requires: ((emacs "24.4") (company "0.9.4"))
 
