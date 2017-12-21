@@ -4,7 +4,7 @@
 ;; Maintainer: Emacs User Group Berlin <emacs-berlin@emacs-berlin.org>
 
 ;; Version: 0.1
-;; Package-Version: 20171209.810
+;; Package-Version: 20171220.1206
 
 ;; URL: https://github.com/emacs-berlin/syntactic-close
 
@@ -153,7 +153,14 @@ Optional argument IACT signaling interactive use."
   :type 'regexp
   :group 'convenience)
 
-(setq syntactic-close--unary-delimiter-chars (list ?< ?` ?* ?\\ ?= ?_ ?$ ?% ?§ ?? ?! ?+ ?- ?# ?: ?\; ?,))
+(setq syntactic-close--unary-delimiter-chars (list ?' ?< ?` ?* ?\\ ?= ?$ ?% ?§ ?? ?! ?+ ?- ?# ?: ?\; ?,))
+
+(defvar syntactic-close--unary-delimiters "")
+(setq syntactic-close--unary-delimiters "")
+(dolist (ele syntactic-close--unary-delimiter-chars)
+  (setq syntactic-close--unary-delimiters
+	(concat syntactic-close--unary-delimiters (char-to-string ele))))
+
 
 (defun syntactic-close-toggle-verbosity ()
   "If `syntactic-close-verbose-p' is nil, switch it on.
@@ -326,6 +333,7 @@ Does not require parenthesis syntax WRT \"{[(\""
 Argument PPS should provide the result of ‘parse-partial-sexp’."
   (save-excursion
     (let* (erg
+	   backward-form
 	   padding
 	   (closer
 	    (cond
@@ -342,7 +350,11 @@ Argument PPS should provide the result of ‘parse-partial-sexp’."
 	      (syntactic-close--return-complement-char-maybe (char-after)))
 	     ;; not in list
 	     (t (save-excursion
-		  (and (skip-chars-backward (concat "^" syntactic-close--paired-opening-delimiter) (nth 8 pps))
+		  (if (member major-mode (list 'php-mode 'js-mode))
+		      (setq backward-form
+			    (concat "^" syntactic-close--paired-opening-delimiter))
+		    (setq backward-form (concat "^" syntactic-close--paired-opening-delimiter syntactic-close--unary-delimiters)))
+		  (and (skip-chars-backward backward-form (nth 8 pps))
 		       (member (char-before) syntactic-close--unary-delimiter-chars)
 		       (setq erg (char-before))))
 		(syntactic-close--return-complement-char-maybe erg)))))
