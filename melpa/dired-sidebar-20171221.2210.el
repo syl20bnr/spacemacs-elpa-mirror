@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/dired-sidebar
-;; Package-Version: 20171214.2022
+;; Package-Version: 20171221.2210
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1") (dired-subtree "0.0.1"))
 ;; Keywords: dired, files, tools
@@ -246,7 +246,7 @@ Warning: This is implemented by advising specific dired functions."
     dired-do-copy
     dired-do-flagged-delete
     dired-create-directory
-    delete-file
+    (delete-file . 5)
     (save-buffer . 5))
   "A list of commands that will trigger a refresh of the sidebar.
 
