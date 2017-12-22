@@ -1,7 +1,7 @@
 ;;; simple-paren.el --- Insert paired delimiter, wrap -*- lexical-binding: t; -*-
 
 ;; Version: 0.1
-;; Package-Version: 20171220.1007
+;; Package-Version: 20171222.1158
 
 ;; Copyright (C) 2016-2017  Andreas Röhler, Steve Purcell
 ;; See also http://www.unicode.org/L2/L2013/13046-BidiBrackets.txt
@@ -71,9 +71,84 @@
 ;;
 
 ;;; Code:
+(defvar simple-paren-paired-delimiter-chars
+  (list
+   ?‘ ?’
+   ?` ?'
+   ?< ?>
+   ?> ?<
+   ?\( ?\)
+   ?\) ?\(
+   ?\] ?\[
+   ?\[ ?\]
+   ?} ?{
+   ?{ ?}
+   ?\〈 ?\〉
+   ?\⦑ ?\⦒
+   ?\⦓ ?\⦔
+   ?\【 ?\】
+   ?\⦗ ?\⦘
+   ?\⸤ ?\⸥
+   ?\「 ?\」
+   ?\《 ?\》
+   ?\⦕ ?\⦖
+   ?\⸨ ?\⸩
+   ?\⧚ ?\⧛
+   ?\｛ ?\｝
+   ?\（ ?\）
+   ?\［ ?\］
+   ?\｟ ?\｠
+   ?\｢ ?\｣
+   ?\❰ ?\❱
+   ?\❮ ?\❯
+   ?\“ ?\”
+   ?\‘ ?\’
+   ?\❲ ?\❳
+   ?\⟨ ?\⟩
+   ?\⟪ ?\⟫
+   ?\⟮ ?\⟯
+   ?\⟦ ?\⟧
+   ?\⟬ ?\⟭
+   ?\❴ ?\❵
+   ?\❪ ?\❫
+   ?\❨ ?\❩
+   ?\❬ ?\❭
+   ?\᚛ ?\᚜
+   ?\〈 ?\〉
+   ?\⧼ ?\⧽
+   ?\⟅ ?\⟆
+   ?\⸦ ?\⸧
+   ?\﹛ ?\﹜
+   ?\﹙ ?\﹚
+   ?\﹝ ?\﹞
+   ?\⁅ ?\⁆
+   ?\⦏ ?\⦎
+   ?\⦍ ?\⦐
+   ?\⦋ ?\⦌
+   ?\₍ ?\₎
+   ?\⁽ ?\⁾
+   ?\༼ ?\༽
+   ?\༺ ?\༻
+   ?\⸢ ?\⸣
+   ?\〔 ?\〕
+   ?\『 ?\』
+   ?\⦃ ?\⦄
+   ?\〖 ?\〗
+   ?\⦅ ?\⦆
+   ?\〚 ?\〛
+   ?\〘 ?\〙
+   ?\⧘ ?\⧙
+   ?\⦉ ?\⦊
+   ?\⦇ ?\⦈))
+
 
 (defvar simple-paren-skip-chars "^, \t\r\n\f"
   "Skip chars backward not mentioned here.")
+
+(dolist (ele simple-paren-paired-delimiter-chars)
+  (unless (string-match (regexp-quote (char-to-string ele)) simple-paren-skip-chars)
+    (setq simple-paren-skip-chars
+	  (concat simple-paren-skip-chars (char-to-string ele)))))
 
 ;; (setq simple-paren-skip-chars "^, \t\r\n\f")
 
@@ -164,8 +239,8 @@
 	  (progn
 	    (setq end (copy-marker (region-end)))
 	    (goto-char (region-beginning)))
-	(when (setq erg (member (char-after) (list ?>  ?\) ?\]  ?} 8217 8221)))
-	  (forward-char -1) )
+	;; (when (setq erg (member (char-after) (list ?>  ?\) ?\]  ?} 8217 8221)))
+	;;   (forward-char -1) )
 	(unless (or (eobp) (eolp)(member (char-after) (list 32 9)))
 	  (skip-chars-backward simple-paren-skip-chars)))
       (insert left-char)

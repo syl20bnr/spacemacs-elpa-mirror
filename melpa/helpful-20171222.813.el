@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171222.47
+;; Package-Version: 20171222.813
 ;; Keywords: help, lisp
 ;; Version: 0.5
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -85,7 +85,7 @@ show the value of buffer-local variables.")
 
 (defun helpful--heading (text)
   "Propertize TEXT as a heading."
-  (propertize text 'face 'bold))
+  (format "%s\n" (propertize text 'face 'bold)))
 
 (defun helpful--format-closure (sym form)
   "Given a closure, return an equivalent defun form."
@@ -297,7 +297,7 @@ or disable if already enabled."
           ;; exist. Otherwise, we can clean it up.
           (when (and created (not should-edebug))
             (kill-buffer buf)))
-      
+
       (user-error "Could not find source for edebug"))))
 
 (defun helpful--edebug (button)
@@ -879,6 +879,10 @@ POSITION-HEADS takes the form ((123 (defun foo)) (456 (defun bar)))."
   (with-current-buffer buf
     (symbol-value sym)))
 
+(defun helpful--insert-section-break ()
+  "Insert section break into helpful buffer."
+  (insert "\n\n"))
+
 (defun helpful-update ()
   "Update the current *Helpful* buffer to the latest
 state of the current symbol."
@@ -891,6 +895,13 @@ state of the current symbol."
          (start-column (current-column))
          (primitive-p (helpful--primitive-p
                        helpful--sym helpful--callable-p))
+         (sym-type (cond
+                    ((not helpful--callable-p)
+                     "Variable")
+                    ((macrop helpful--sym)
+                     "Macro")
+                    (t
+                     "Function")))
          (look-for-src (or (not primitive-p)
                            find-function-C-source-directory))
          (source (when look-for-src
@@ -908,30 +919,21 @@ state of the current symbol."
         (setq references
               (--map (helpful--outer-sexp buf it) positions))
         (kill-buffer buf)))
+
     (erase-buffer)
+
     (if helpful--callable-p
         (insert
-         (helpful--heading
-          (if (macrop helpful--sym)
-              "Macro Signature\n"
-            "Function Signature\n"))
+         (helpful--heading (format "%s Signature" sym-type))
          (helpful--syntax-highlight (helpful--signature helpful--sym)))
       (insert
-       (helpful--heading
-        "Variable\n")
+       (helpful--heading sym-type)
        (symbol-name helpful--sym)))
 
     (-when-let (docstring (helpful--docstring helpful--sym helpful--callable-p))
+      (helpful--insert-section-break)
       (insert
-       "\n\n"
-       (helpful--heading
-        (cond
-         ((not helpful--callable-p)
-          "Variable Documentation\n")
-         ((macrop helpful--sym)
-          "Macro Documentation\n")
-         (t
-          "Function Documentation\n")))
+       (helpful--heading (format "%s Documentation" sym-type))
        (helpful--format-docstring docstring))
       (when (helpful--in-manual-p helpful--sym)
         (insert
@@ -942,10 +944,11 @@ state of the current symbol."
           'symbol helpful--sym))))
 
     (when (not helpful--callable-p)
+      (helpful--insert-section-break)
       (let ((sym helpful--sym)
             (buf (or helpful--associated-buffer (current-buffer))))
         (insert
-         (helpful--heading "\n\nValue\n")
+         (helpful--heading "Value")
          (helpful--pretty-print
           (helpful--sym-value sym buf))
          "\n\n")
@@ -974,12 +977,14 @@ state of the current symbol."
     ;; Show keybindings.
     ;; TODO: allow users to conveniently add and remove keybindings.
     (when (commandp helpful--sym)
+      (helpful--insert-section-break)
       (insert
-       (helpful--heading "\n\nKey Bindings\n")
+       (helpful--heading "Key Bindings")
        (helpful--format-keys helpful--sym)))
 
+    (helpful--insert-section-break)
     (insert
-     (helpful--heading "\n\nReferences\n")
+     (helpful--heading "References")
      (cond
       ((and source-path references)
        (format "References in %s:\n%s"
@@ -1001,8 +1006,9 @@ state of the current symbol."
       'callable-p helpful--callable-p))
 
     (when (helpful--advised-p helpful--sym)
+      (helpful--insert-section-break)
       (insert
-       (helpful--heading "\n\nAdvice\n")
+       (helpful--heading "Advice")
        (format
         "This %s is advised." (if (macrop helpful--sym) "macro" "function"))))
 
@@ -1020,7 +1026,8 @@ state of the current symbol."
            (and (not (special-form-p helpful--sym))
                 (not primitive-p))))
       (when (or can-edebug can-trace can-disassemble can-forget)
-        (insert (helpful--heading "\n\nDebugging\n")))
+        (helpful--insert-section-break)
+        (insert (helpful--heading "Debugging")))
       (when can-edebug
         (insert
          (helpful--button
@@ -1064,18 +1071,20 @@ state of the current symbol."
 
     (let ((aliases (helpful--aliases helpful--sym helpful--callable-p)))
       (when (> (length aliases) 1)
+        (helpful--insert-section-break)
         (insert
-         (helpful--heading "\n\nAliases\n")
+         (helpful--heading "Aliases")
          (s-join "\n" (--map (helpful--format-alias it helpful--callable-p)
                              aliases)))))
 
+    (helpful--insert-section-break)
+
     (insert
-     (helpful--heading "\n\nSource Code\n")
+     (helpful--heading "Source Code")
      (cond
       (source-path
        (concat
-        (propertize
-         (if primitive-p "// Defined in " ";; Defined in ")
+        (propertize (format "%s Defined in " (if primitive-p "//" ";;"))
          'face 'font-lock-comment-face)
         (helpful--navigate-button
          source-path
@@ -1107,9 +1116,11 @@ state of the current symbol."
          (helpful--syntax-highlight
           (helpful--pretty-print source))))))
 
+    (helpful--insert-section-break)
+
     (-when-let (formatted-props (helpful--format-properties helpful--sym))
       (insert
-       (helpful--heading "\n\nSymbol Properties\n")
+       (helpful--heading "Symbol Properties")
        formatted-props))
 
     (goto-char (point-min))

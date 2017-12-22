@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171221.2116
+;; Package-Version: 20171222.927
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -415,6 +415,13 @@ completion."
   :type 'boolean
   :safe 'booleanp
   :package-version '(markdown-mode . "2.2"))
+
+(defcustom markdown-add-footnotes-to-imenu t
+  "Add footnotes to end of imenu heading index."
+  :group 'markdown
+  :type 'boolean
+  :safe 'booleanp
+  :package-version '(markdown-mode . "2.4"))
 
 (defcustom markdown-make-gfm-checkboxes-buttons t
   "When non-nil, make GFM checkboxes into buttons."
@@ -4722,6 +4729,33 @@ NIL is returned instead."
         (forward-line)
         (append result (list (point)))))))
 
+(defun markdown-get-defined-footnotes ()
+  "Return a list of all defined footnotes.
+Result is an alist of pairs (MARKER . LINE), where MARKER is the
+footnote marker, a string, and LINE is the line number containing
+the footnote definition.
+
+For example, suppose the following footnotes are defined at positions
+448 and 475:
+
+\[^1]: First footnote here.
+\[^marker]: Second footnote.
+
+Then the returned list is: ((\"^1\" . 478) (\"^marker\" . 475))"
+  (save-excursion
+    (goto-char (point-min))
+    (let (footnotes)
+      (while (markdown-search-until-condition
+              (lambda () (and (not (markdown-code-block-at-point-p))
+                              (not (markdown-inline-code-at-point-p))
+                              (not (markdown-in-comment-p))))
+              markdown-regex-footnote-definition nil t)
+        (let ((marker (match-string-no-properties 1))
+              (pos (match-beginning 0)))
+          (unless (zerop (length marker))
+            (cl-pushnew (cons marker pos) footnotes :test #'equal))))
+      (reverse footnotes))))
+
 
 ;;; Element Removal ===========================================================
 
@@ -5432,7 +5466,8 @@ See also `markdown-mode-map'.")
      ["Forward Block" markdown-forward-block]
      ["Backward Block" markdown-backward-block])
     ("Show & Hide"
-     ["Cycle Heading Visibility" markdown-cycle (markdown-on-heading-p)]
+     ["Cycle Heading Visibility" markdown-cycle
+      :enable (markdown-on-heading-p)]
      ["Cycle Heading Visibility (Global)" markdown-shifttab]
      "---"
      ["Narrow to Region" narrow-to-region]
@@ -5447,24 +5482,39 @@ See also `markdown-mode-map'.")
       :selected markdown-hide-markup])
     "---"
     ("Headings & Structure"
-     ["Automatic Heading" markdown-insert-header-dwim :keys "C-c C-s h"]
-     ["Automatic Heading (Setext)" markdown-insert-header-setext-dwim :keys "C-c C-s H"]
+     ["Automatic Heading" markdown-insert-header-dwim
+      :keys "C-c C-s h"]
+     ["Automatic Heading (Setext)" markdown-insert-header-setext-dwim
+      :keys "C-c C-s H"]
      ("Specific Heading (atx)"
-      ["First Level atx" markdown-insert-header-atx-1 :keys "C-c C-s 1"]
-      ["Second Level atx" markdown-insert-header-atx-2 :keys "C-c C-s 2"]
-      ["Third Level atx" markdown-insert-header-atx-3 :keys "C-c C-s 3"]
-      ["Fourth Level atx" markdown-insert-header-atx-4 :keys "C-c C-s 4"]
-      ["Fifth Level atx" markdown-insert-header-atx-5 :keys "C-c C-s 5"]
-      ["Sixth Level atx" markdown-insert-header-atx-6 :keys "C-c C-s 6"])
+      ["First Level atx" markdown-insert-header-atx-1
+       :keys "C-c C-s 1"]
+      ["Second Level atx" markdown-insert-header-atx-2
+       :keys "C-c C-s 2"]
+      ["Third Level atx" markdown-insert-header-atx-3
+       :keys "C-c C-s 3"]
+      ["Fourth Level atx" markdown-insert-header-atx-4
+       :keys "C-c C-s 4"]
+      ["Fifth Level atx" markdown-insert-header-atx-5
+       :keys "C-c C-s 5"]
+      ["Sixth Level atx" markdown-insert-header-atx-6
+       :keys "C-c C-s 6"])
      ("Specific Heading (Setext)"
-      ["First Level Setext" markdown-insert-header-setext-1 :keys "C-c C-s !"]
-      ["Second Level Setext" markdown-insert-header-setext-2 :keys "C-c C-s @"])
-     ["Horizontal Rule" markdown-insert-hr :keys "C-c C-s -"]
+      ["First Level Setext" markdown-insert-header-setext-1
+       :keys "C-c C-s !"]
+      ["Second Level Setext" markdown-insert-header-setext-2
+       :keys "C-c C-s @"])
+     ["Horizontal Rule" markdown-insert-hr
+      :keys "C-c C-s -"]
      "---"
-     ["Move Subtree Up" markdown-move-up :keys "C-c <up>"]
-     ["Move Subtree Down" markdown-move-down :keys "C-c <down>"]
-     ["Promote Subtree" markdown-promote :keys "C-c <left>"]
-     ["Demote Subtree" markdown-demote :keys "C-c <right>"])
+     ["Move Subtree Up" markdown-move-up
+      :keys "C-c <up>"]
+     ["Move Subtree Down" markdown-move-down
+      :keys "C-c <down>"]
+     ["Promote Subtree" markdown-promote
+      :keys "C-c <left>"]
+     ["Demote Subtree" markdown-demote
+      :keys "C-c <right>"])
     ("Region & Mark"
      ["Indent Region" markdown-indent-region]
      ["Outdent Region" markdown-outdent-region]
@@ -5473,20 +5523,56 @@ See also `markdown-mode-map'.")
      ["Mark Block" markdown-mark-block]
      ["Mark Section" mark-defun]
      ["Mark Subtree" markdown-mark-subtree])
+    ("Tables"
+     ["Move Row Up" markdown-move-up
+      :enable (markdown-table-at-point-p)
+      :keys "C-c <up>"]
+     ["Move Row Down" markdown-move-down
+      :enable (markdown-table-at-point-p)
+      :keys "C-c <down>"]
+     ["Move Column Left" markdown-demote
+      :enable (markdown-table-at-point-p)
+      :keys "C-c <left>"]
+     ["Move Column Right" markdown-promote
+      :enable (markdown-table-at-point-p)
+      :keys "C-c <right>"]
+     ["Delete Row" markdown-table-delete-row
+      :enable (markdown-table-at-point-p)]
+     ["Insert Row" markdown-table-insert-row
+      :enable (markdown-table-at-point-p)]
+     ["Delete Column" markdown-table-delete-column
+      :enable (markdown-table-at-point-p)]
+     ["Insert Column" markdown-table-insert-column
+      :enable (markdown-table-at-point-p)]
+     "--"
+     ["Convert Region to Table" markdown-table-convert-region]
+     ["Sort Table Lines" markdown-table-sort-lines
+      :enable (markdown-table-at-point-p)]
+     ["Transpose Table" markdown-table-transpose
+      :enable (markdown-table-at-point-p)])
     ("Lists"
      ["Insert List Item" markdown-insert-list-item]
-     ["Move Subtree Up" markdown-move-up :keys "C-c <up>"]
-     ["Move Subtree Down" markdown-move-down :keys "C-c <down>"]
-     ["Indent Subtree" markdown-demote :keys "C-c <right>"]
-     ["Outdent Subtree" markdown-promote :keys "C-c <left>"]
+     ["Move Subtree Up" markdown-move-up
+      :keys "C-c <up>"]
+     ["Move Subtree Down" markdown-move-down
+      :keys "C-c <down>"]
+     ["Indent Subtree" markdown-demote
+      :keys "C-c <right>"]
+     ["Outdent Subtree" markdown-promote
+      :keys "C-c <left>"]
      ["Renumber List" markdown-cleanup-list-numbers]
-     ["Insert Task List Item" markdown-insert-gfm-checkbox :keys "C-c C-x ["]
-     ["Toggle Task List Item" markdown-toggle-gfm-checkbox (markdown-gfm-task-list-item-at-point) :keys "C-c C-d"])
+     ["Insert Task List Item" markdown-insert-gfm-checkbox
+      :keys "C-c C-x ["]
+     ["Toggle Task List Item" markdown-toggle-gfm-checkbox
+      :enable (markdown-gfm-task-list-item-at-point)
+      :keys "C-c C-d"])
     ("Links & Images"
      ["Insert Link" markdown-insert-link]
      ["Insert Image" markdown-insert-image]
-     ["Insert Footnote" markdown-insert-footnote :keys "C-c C-s f"]
-     ["Insert Wiki Link" markdown-insert-wiki-link :keys "C-c C-s w"]
+     ["Insert Footnote" markdown-insert-footnote
+      :keys "C-c C-s f"]
+     ["Insert Wiki Link" markdown-insert-wiki-link
+      :keys "C-c C-s w"]
      "---"
      ["Check References" markdown-check-refs]
      ["Toggle URL Hiding" markdown-toggle-url-hiding
@@ -5509,12 +5595,14 @@ See also `markdown-mode-map'.")
      ["Blockquote" markdown-insert-blockquote]
      ["Preformatted" markdown-insert-pre]
      ["GFM Code Block" markdown-insert-gfm-code-block]
-     ["Edit Code Block" markdown-edit-code-block (markdown-code-block-at-point-p)]
+     ["Edit Code Block" markdown-edit-code-block
+      :enable (markdown-code-block-at-point-p)]
      "---"
      ["Blockquote Region" markdown-blockquote-region]
      ["Preformatted Region" markdown-pre-region]
      "---"
-     ["Fontify Code Blocks Natively" markdown-toggle-fontify-code-blocks-natively
+     ["Fontify Code Blocks Natively"
+      markdown-toggle-fontify-code-blocks-natively
       :style radio
       :selected markdown-fontify-code-blocks-natively]
      ["LaTeX Math Support" markdown-toggle-math
@@ -5533,8 +5621,10 @@ See also `markdown-mode-map'.")
      ["Kill ring save" markdown-kill-ring-save])
     ("Markup Completion and Cycling"
      ["Complete Markup" markdown-complete]
-     ["Promote Element" markdown-promote :keys "C-c C--"]
-     ["Demote Element" markdown-demote :keys "C-c C-="])
+     ["Promote Element" markdown-promote
+      :keys "C-c C--"]
+     ["Demote Element" markdown-demote
+      :keys "C-c C-="])
     "---"
     ["Kill Element" markdown-kill-thing-at-point]
     "---"
@@ -5557,6 +5647,7 @@ See `imenu-create-index-function' and `imenu--index-alist' for details."
          (self-heading ".")
          hashes pos level heading)
     (save-excursion
+      ;; Headings
       (goto-char (point-min))
       (while (re-search-forward markdown-regex-header (point-max) t)
         (unless (markdown-code-block-at-point-p)
@@ -5596,13 +5687,19 @@ See `imenu-create-index-function' and `imenu--index-alist' for details."
                 (setcdr sibling-alist alist)
                 (setq cur-alist alist))
               (setq cur-level level))))))
-      (cdr root))))
+      ;; Footnotes
+      (let ((fn (markdown-get-defined-footnotes)))
+        (if (or (zerop (length fn))
+                (null markdown-add-footnotes-to-imenu))
+            (cdr root)
+          (nconc (cdr root) (list (cons "Footnotes" fn))))))))
 
 (defun markdown-imenu-create-flat-index ()
   "Create and return a flat imenu index alist for the current buffer.
 See `imenu-create-index-function' and `imenu--index-alist' for details."
   (let* ((empty-heading "-") index heading pos)
     (save-excursion
+      ;; Headings
       (goto-char (point-min))
       (while (re-search-forward markdown-regex-header (point-max) t)
         (when (and (not (markdown-code-block-at-point-p))
@@ -5615,6 +5712,9 @@ See `imenu-create-index-function' and `imenu--index-alist' for details."
           (or (> (length heading) 0)
               (setq heading empty-heading))
           (setq index (append index (list (cons heading pos))))))
+      ;; Footnotes
+      (when markdown-add-footnotes-to-imenu
+        (nconc index (markdown-get-defined-footnotes)))
       index)))
 
 
