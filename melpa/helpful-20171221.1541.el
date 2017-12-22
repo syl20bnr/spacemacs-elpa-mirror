@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171218.1452
+;; Package-Version: 20171221.1541
 ;; Keywords: help, lisp
 ;; Version: 0.5
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -111,6 +111,16 @@ with double-quotes."
     (cl-prettyprint value)
     (s-trim (buffer-string))))
 
+(defun helpful--button (text type &rest properties)
+  ;; `make-text-button' mutates our string to add properties. Copy
+  ;; TEXT to prevent mutating our arguments, and to support 'pure'
+  ;; strings, which are read-only.
+  (setq text (substring-no-properties text))
+  (apply #'make-text-button
+         text nil
+         :type type
+         properties))
+
 (defun helpful--canonical-symbol (sym callable-p)
   "If SYM is an alias, return the underlying symbol.
 Return SYM otherwise."
@@ -150,12 +160,9 @@ Return SYM otherwise."
   (let ((obsolete-info (if callable-p
                            (get sym 'byte-obsolete-info)
                          (get sym 'byte-obsolete-variable)))
-        (sym-button (make-text-button
-                     ;; symbol-name can return a pure string, e.g. for
-                     ;; 'report-errors, so take a copy so we can add
-                     ;; properties to it.
-                     (substring (symbol-name sym)) nil
-                     :type 'helpful-describe-exactly-button
+        (sym-button (helpful--button
+                     (symbol-name sym)
+                     'helpful-describe-exactly-button
                      'symbol sym
                      'callable-p callable-p)))
     (cond
@@ -330,9 +337,9 @@ or disable if already enabled."
 
 (defun helpful--navigate-button (path &optional pos)
   "Return a button that opens PATH and puts point at POS."
-  (make-text-button
-   (abbreviate-file-name path) nil
-   :type 'helpful-navigate-button
+  (helpful--button
+   (abbreviate-file-name path)
+   'helpful-navigate-button
    'path path
    'position pos))
 
@@ -494,9 +501,9 @@ blank line afterwards."
        ;; Only create a link if this is a symbol that is bound as a
        ;; variable or callable.
        (if (or (boundp sym) (fboundp sym))
-           (make-text-button
-            sym-name nil
-            :type 'helpful-describe-button
+           (helpful--button
+            sym-name
+            'helpful-describe-button
             'symbol sym)
          (propertize sym-name
                      'face 'font-lock-constant-face))))
@@ -519,10 +526,31 @@ blank line afterwards."
        (concat
         "Info node"
         space
-        (make-text-button
-         info-node nil
-         :type 'helpful-info-button
+        (helpful--button
+         info-node
+         'helpful-info-button
          'info-node info-node))))
+   docstring
+   t t))
+
+(defun helpful--propertize-command-keys (docstring)
+  "Convert command key references in docstrings to buttons."
+  (replace-regexp-in-string
+   ;; Replace all text of the form \\[foo] with a button that links to
+   ;; foo but shows the keys necessary to call foo.
+   (rx "\\["
+       (group (+ (not (in "]"))))
+       "]")
+   (lambda (it)
+     (let* ((symbol-with-parens (match-string 0 it))
+            (symbol-name (match-string 1 it))
+            (symbol (intern symbol-name)))
+       (helpful--button
+        ;; The button text should just be the keys required.
+        (substitute-command-keys symbol-with-parens)
+        'helpful-describe-exactly-button
+        'symbol symbol
+        'callable-p t)))
    docstring
    t t))
 
@@ -532,6 +560,7 @@ blank line afterwards."
   "Replace cross-references with links in DOCSTRING."
   (-> docstring
       (helpful--split-first-line)
+      (helpful--propertize-command-keys)
       (helpful--propertize-info)
       (helpful--propertize-symbols)
       (s-trim)))
@@ -899,9 +928,9 @@ state of the current symbol."
       (when (helpful--in-manual-p helpful--sym)
         (insert
          "\n\n"
-         (make-text-button
-          "View in manual" nil
-          :type 'helpful-manual-button
+         (helpful--button
+          "View in manual"
+          'helpful-manual-button
           'symbol helpful--sym))))
 
     (when (not helpful--callable-p)
@@ -914,24 +943,24 @@ state of the current symbol."
          "\n\n")
         (when (memq (helpful--sym-value helpful--sym buf) '(nil t))
           (insert
-           (make-text-button
-            "Toggle" nil
-            :type 'helpful-toggle-button
+           (helpful--button
+            "Toggle"
+            'helpful-toggle-button
             'symbol helpful--sym
             'buffer buf)
            " "))
         (insert
-         (make-text-button
-          "Set" nil
-          :type 'helpful-set-button
+         (helpful--button
+          "Set"
+          'helpful-set-button
           'symbol helpful--sym
           'buffer buf))
         (when (custom-variable-p helpful--sym)
           (insert
            " "
-           (make-text-button
-            "Customize" nil
-            :type 'helpful-customize-button
+           (helpful--button
+            "Customize"
+            'helpful-customize-button
             'symbol helpful--sym)))))
 
     ;; Show keybindings.
@@ -957,9 +986,9 @@ state of the current symbol."
       (t
        "Could not find source file."))
      "\n\n"
-     (make-text-button
-      "Find all references" nil
-      :type 'helpful-all-references-button
+     (helpful--button
+      "Find all references"
+      'helpful-all-references-button
       'symbol helpful--sym
       'callable-p helpful--callable-p))
 
@@ -986,23 +1015,21 @@ state of the current symbol."
         (insert (helpful--heading "\n\nDebugging\n")))
       (when can-edebug
         (insert
-         (make-text-button
+         (helpful--button
           (if (helpful--edebug-p helpful--sym)
               "Disable edebug"
             "Enable edebug")
-          nil
-          :type 'helpful-edebug-button
+          'helpful-edebug-button
           'symbol helpful--sym)))
       (when can-trace
         (when can-edebug
           (insert " "))
         (insert
-         (make-text-button
+         (helpful--button
           (if (trace-is-traced helpful--sym)
               "Disable tracing"
             "Enable tracing")
-          nil
-          :type 'helpful-trace-button
+          'helpful-trace-button
           'symbol helpful--sym)))
 
       (when (and
@@ -1012,18 +1039,18 @@ state of the current symbol."
 
       (when can-disassemble
         (insert
-         (make-text-button
-          "Disassemble" nil
-          :type 'helpful-disassemble-button
+         (helpful--button
+          "Disassemble"
+          'helpful-disassemble-button
           'symbol helpful--sym)))
 
       (when can-forget
         (when can-disassemble
           (insert " "))
         (insert
-         (make-text-button
-          "Forget" nil
-          :type 'helpful-forget-button
+         (helpful--button
+          "Forget"
+          'helpful-forget-button
           'symbol helpful--sym
           'callable-p helpful--callable-p))))
 
@@ -1052,9 +1079,9 @@ state of the current symbol."
          "C code is not yet loaded."
          'face 'font-lock-comment-face)
         "\n\n"
-        (make-text-button
-         "Set C source directory" nil
-         :type 'helpful-c-source-directory)))
+        (helpful--button
+         "Set C source directory"
+         'helpful-c-source-directory)))
       (t
        (helpful--syntax-highlight
         (format ";; Source file is unknown\n")))))
@@ -1074,7 +1101,7 @@ state of the current symbol."
 
     (-when-let (formatted-props (helpful--format-properties helpful--sym))
       (insert
-       (helpful--heading "\nSymbol Properties\n")
+       (helpful--heading "\n\nSymbol Properties\n")
        formatted-props))
 
     (goto-char (point-min))
@@ -1121,14 +1148,13 @@ For example, \"(some-func FOO &optional BAR)\"."
 
     (or docstring-sig source-sig)))
 
-;; TODO: Info mentions, e.g. `define-derived-mode' or `defface'.
 (defun helpful--docstring (sym callable-p)
   "Get the docstring for SYM."
   (let ((text-quoting-style 'grave)
         docstring)
     (if callable-p
         (progn
-          (setq docstring (documentation sym))
+          (setq docstring (documentation sym t))
           (-when-let (docstring-with-usage (help-split-fundoc docstring sym))
             (setq docstring (cdr docstring-with-usage))
             (when docstring

@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; URL: http://github.com/Kungsgeten/org-brain
-;; Package-Version: 20171221.549
+;; Package-Version: 20171221.1338
 ;; Keywords: outlines hypermedia
 ;; Package-Requires: ((emacs "25") (org "9"))
 ;; Version: 0.4
@@ -329,7 +329,8 @@ For PREDICATE, REQUIRE-MATCH and INITIAL-INPUT, see `completing-read'."
          (choices (completing-read prompt targets
                                    predicate require-match initial-input)))
     (mapcar (lambda (title)
-              (let ((id (cdr (assoc title targets))))
+              (let ((id (or (cdr (assoc title targets))
+                            title)))
                 (or
                  ;; Headline entry exists, return it
                  (org-brain-entry-from-id id)
