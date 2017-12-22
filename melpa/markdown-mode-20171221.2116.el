@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171221.1238
+;; Package-Version: 20171221.2116
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -573,16 +573,22 @@ requires Emacs to be built with ImageMagick support."
       (checkbox . ,(rx "[" (any " xX") "]")))
     "Markdown-specific sexps for `markdown-rx'")
 
+  (defun markdown-rx-to-string (form &optional no-group)
+    "Markdown mode specialized `rx-to-string' function.
+This variant supports named Markdown expressions in FORM.
+NO-GROUP non-nil means don't put shy groups around the result."
+    (let ((rx-constituents (append markdown-rx-constituents rx-constituents)))
+      (rx-to-string form no-group)))
+
   (defmacro markdown-rx (&rest regexps)
     "Markdown mode specialized rx macro.
 This variant of `rx' supports common Markdown named REGEXPS."
-    (let ((rx-constituents (append markdown-rx-constituents rx-constituents)))
-      (cond ((null regexps)
-             (error "No regexp"))
-            ((cdr regexps)
-             (rx-to-string `(and ,@regexps) t))
-            (t
-             (rx-to-string (car regexps) t))))))
+    (cond ((null regexps)
+           (error "No regexp"))
+          ((cdr regexps)
+           (markdown-rx-to-string `(and ,@regexps) t))
+          (t
+           (markdown-rx-to-string (car regexps) t)))))
 
 
 ;;; Regular Expressions =======================================================
@@ -7620,7 +7626,7 @@ and disable it otherwise."
   (markdown-reload-extensions))
 
 
-;;; WikiLink Following/Markup =================================================
+;;; Wiki Links ================================================================
 
 (defun markdown-wiki-link-p ()
   "Return non-nil if wiki links are enabled and `point' is at a true wiki link.
@@ -7810,6 +7816,43 @@ Designed to be used with the `after-change-functions' hook."
   "Refontify all wiki links in the buffer."
   (interactive)
   (markdown-check-change-for-wiki-link (point-min) (point-max)))
+
+(defun markdown-toggle-wiki-links (&optional arg)
+  "Toggle support for wiki links.
+With a prefix argument ARG, enable wiki link support if ARG is positive,
+and disable it otherwise."
+  (interactive (list (or current-prefix-arg 'toggle)))
+  (setq markdown-enable-wiki-links
+        (if (eq arg 'toggle)
+            (not markdown-enable-wiki-links)
+          (> (prefix-numeric-value arg) 0)))
+  (if markdown-enable-wiki-links
+      (message "markdown-mode wiki link support enabled")
+    (message "markdown-mode wiki link support disabled"))
+  (markdown-reload-extensions))
+
+(defun markdown-setup-wiki-link-hooks ()
+  "Add or remove hooks for fontifying wiki links.
+These are only enabled when `markdown-wiki-link-fontify-missing' is non-nil."
+  ;; Anytime text changes make sure it gets fontified correctly
+  (if (and markdown-enable-wiki-links
+           markdown-wiki-link-fontify-missing)
+      (add-hook 'after-change-functions
+                'markdown-check-change-for-wiki-link-after-change t t)
+    (remove-hook 'after-change-functions
+                 'markdown-check-change-for-wiki-link-after-change t))
+  ;; If we left the buffer there is a really good chance we were
+  ;; creating one of the wiki link documents. Make sure we get
+  ;; refontified when we come back.
+  (if (and markdown-enable-wiki-links
+           markdown-wiki-link-fontify-missing)
+      (progn
+        (add-hook 'window-configuration-change-hook
+                  'markdown-fontify-buffer-wiki-links t t)
+        (markdown-fontify-buffer-wiki-links))
+    (remove-hook 'window-configuration-change-hook
+                 'markdown-fontify-buffer-wiki-links t)
+  (markdown-unfontify-region-wiki-links (point-min) (point-max))))
 
 
 ;;; Following & Doing =========================================================
@@ -8012,46 +8055,6 @@ before regenerating font-lock rules for extensions."
     (when (assoc 'markdown-enable-math file-local-variables-alist)
       (markdown-toggle-math markdown-enable-math))
     (markdown-reload-extensions)))
-
-
-;;; Wiki Links ================================================================
-
-(defun markdown-toggle-wiki-links (&optional arg)
-  "Toggle support for wiki links.
-With a prefix argument ARG, enable wiki link support if ARG is positive,
-and disable it otherwise."
-  (interactive (list (or current-prefix-arg 'toggle)))
-  (setq markdown-enable-wiki-links
-        (if (eq arg 'toggle)
-            (not markdown-enable-wiki-links)
-          (> (prefix-numeric-value arg) 0)))
-  (if markdown-enable-wiki-links
-      (message "markdown-mode wiki link support enabled")
-    (message "markdown-mode wiki link support disabled"))
-  (markdown-reload-extensions))
-
-(defun markdown-setup-wiki-link-hooks ()
-  "Add or remove hooks for fontifying wiki links.
-These are only enabled when `markdown-wiki-link-fontify-missing' is non-nil."
-  ;; Anytime text changes make sure it gets fontified correctly
-  (if (and markdown-enable-wiki-links
-           markdown-wiki-link-fontify-missing)
-      (add-hook 'after-change-functions
-                'markdown-check-change-for-wiki-link-after-change t t)
-    (remove-hook 'after-change-functions
-                 'markdown-check-change-for-wiki-link-after-change t))
-  ;; If we left the buffer there is a really good chance we were
-  ;; creating one of the wiki link documents. Make sure we get
-  ;; refontified when we come back.
-  (if (and markdown-enable-wiki-links
-           markdown-wiki-link-fontify-missing)
-      (progn
-        (add-hook 'window-configuration-change-hook
-                  'markdown-fontify-buffer-wiki-links t t)
-        (markdown-fontify-buffer-wiki-links))
-    (remove-hook 'window-configuration-change-hook
-                 'markdown-fontify-buffer-wiki-links t)
-  (markdown-unfontify-region-wiki-links (point-min) (point-max))))
 
 
 ;;; Math Support ==============================================================
@@ -9188,7 +9191,9 @@ spaces, or alternatively a TAB should be used as the separator."
           nil nil nil nil
           (font-lock-multiline . t)
           (font-lock-syntactic-face-function . markdown-syntactic-face)
-          (font-lock-extra-managed-props . (composition display invisible))))
+          (font-lock-extra-managed-props
+           . (composition display invisible rear-nonsticky
+                          keymap help-echo mouse-face))))
   (if markdown-hide-markup
       (add-to-invisibility-spec 'markdown-markup)
     (remove-from-invisibility-spec 'markdown-markup))
