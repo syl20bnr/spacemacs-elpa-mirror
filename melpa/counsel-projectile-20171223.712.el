@@ -1,10 +1,10 @@
-;;; counsel-projectile.el --- Ivy integration for Projectile
+;; counsel-projectile.el --- Ivy integration for Projectile
 
 ;; Copyright (C) 2016-2017 Eric Danan
 
 ;; Author: Eric Danan
 ;; URL: https://github.com/ericdanan/counsel-projectile
-;; Package-Version: 20171218.1232
+;; Package-Version: 20171223.712
 ;; Keywords: project, convenience
 ;; Version: 0.2
 ;; Package-Requires: ((counsel "0.10.0") (projectile "0.14.0"))
@@ -46,7 +46,7 @@
 (require 'counsel)
 (require 'projectile)
                       
-;;;; utility
+;;;; global
 
 (defgroup counsel-projectile nil
   "Ivy integration for Projectile."
@@ -61,7 +61,7 @@ COMMAND's `ivy-read' call.
 This variable holds either a single action function, or an action
 list whose first element is the index of the default action in
 the list and the remaining elements are the actions (a key, a
-function, and a name for each action."
+function, and a name for each action)."
   (eval
    `(defcustom ,(intern (format "%s-action" command))
       ',action
@@ -84,7 +84,12 @@ An action is triggered for the selected candidate with `M-o
 triggered with `M-RET' or `C-M-RET'. If this variable holds a
 single action function, this action becomes the default action
 and is assigned the key \"o\".  For an action list, it is also
-usual to assign the key \"o\" to the default action."  command)
+usual to assign the key \"o\" to the default action.
+
+It is in fact possible to include actions with a two-character
+key in the list.  To do so, however, it is necessary to also
+include an action whose key is the first of these two characters
+and whose action function is `counsel-projectile-prefix-action'." command)
       :type '(choice
               (function :tag "Single action function")
               (cons :tag "Action list"
@@ -96,47 +101,174 @@ usual to assign the key \"o\" to the default action."  command)
                                   (string   :tag "    name")))))
       :group ',group)))
 
-(defun counsel-projectile--defcustom-sub-action (action sub-action group)
-  "Create a custom variable named \"ACTION-sub-action\" in GROUP,
-with default value SUB-ACTION, to be passed by ACTION to
-`counsel-projectile-sub-action'.
+(defun counsel-projectile--action-index (action-item action-list)
+  "Return the index in ACTION-LIST of the action whose key,
+function, name, or index in the list (1 for the first action,
+etc) is ACTION-ITEM.  If there is no such action, throw an error.
 
-This variable holds a list of sub-actions for ACTION (a key, a
-function, and a name for each action)."
-  (eval
-   `(defcustom ,(intern (format "%s-sub-action" action))
-      ',sub-action
-      ,(format "Sub-action(s) for `%s'.
+ACTION-LIST is an action list whose first element is the index of
+the default action in the list and the remaining elements are the
+actions (a key, a function, and a name for each action)."
+  (let (index)
+    (if (integerp action-item)
+	(when (and (> action-item 0)
+		   (< action-item (length action-list)))
+	  (setq index action-item))
+      (setq index (cl-position-if
+		   (cond
+		    ((functionp action-item)
+		     (lambda (action)
+		       (equal action-item
+			      (cadr action))))
+		    ((stringp action-item)
+		     (lambda (action)
+		       (member action-item
+			       (list (car action) (caddr action))))))
+		   (cdr action-list)))
+      (when index
+	(setq index (1+ index))))
+    (or index
+	(error "Action not found: %s" action-item))))
 
-This variable holds a list of sub-actions, each or which consists
-of:
+(defun counsel-projectile-modify-action (action-var modifications)
+  "Make MODIFICATIONS to ACTION-VAR.
 
-- a key (one-character string) to call the action,
-- an action function of one variable, 
-- a name (string) for the action.
+ACTION-VAR is a variable holding an action list whose first
+element is the index of the default action in the list and the
+remaining elements are the actions (a key, a function, and a name
+for each action).
 
-When `%s' is called, a key is read from the minibuffer and the
-corresponding sub-action is executed."  action action)
-      :type '(repeat :tag "Sub-actions"
-                     (list :tag "Sub-action"
-                           (string   :tag "     key")
-                           (function :tag "function")
-                           (string   :tag "    name")))
-      :group ',group)))
+MODIFICATIONS is a list of modifications to be applied
+sequentially to ACTION-LIST. Each modification has one of the
+following formats:
 
-(defun counsel-projectile-sub-action (cand sub-actions)
-  "Read a key from the minibuffer and apply the corresponding
-action from SUB-ACTIONS to CAND.
+    (remove ACTION-ITEM)
+        Remove the action whose key, function, name, or index in
+        the list (1 for the first action, etc) is ACTION-ITEM
+        from the list.
 
-SUB-ACTIONS is list of ivy actions: a key, an action function,
-and a name for each action.  Binding a key to a call to this
-function in an ivy action list makes this key behave like a
-prefix key and the keys in SUB-ACTIONS like sub-keys."
-  ;; adapted from `ivy-read-action'
-   (let* ((hint (funcall ivy-read-action-format-function sub-actions))
+    (add ACTION TARGET-ITEM)
+        Add ACTION (a list containing a key, a function, and a
+        name) to the list, just before the action whose key,
+        function, name, or index in the list (1 for the first
+        action, etc) is TARGET-ITEM.  If TARGET-ITEM is omitted,
+        add the action at the end of the list.
+
+    (move ACTION-ITEM TARGET-ITEM)
+        Move the action whose key, function, name, or index in
+        the list (1 for the first action, etc) is ACTION-ITEM
+        just before the action whose key, function, name, or
+        index in the list (1 for the first action, etc) is
+        TARGET-ITEM.  If TARGET-ITEM is omitted, move the action
+        to the end of the list.
+
+    (setkey ACTION-ITEM KEY)
+        Set the key of the action whose key, function, name, or
+        index in the list (1 for the first action, etc) is
+        ACTION-ITEM to KEY.
+
+    (setfun ACTION-ITEM FUNCTION)
+        Set the function of the action whose key, function, name,
+        or index in the list (1 for the first action, etc) is
+        ACTION-ITEM to FUNCTION.
+
+    (setname ACTION-ITEM NAME)
+        Set the name of the action whose key, function, name, or
+        index in the list (1 for the first action, etc) is
+        ACTION-ITEM to NAME.
+
+    (default ACTION-ITEM)
+        Set the index of the default action in the list to that
+        of the action whose key, function, name, or index in the
+        list (1 for the first action, etc) is ACTION-ITEM.
+
+If anything goes wrong, throw an error and do not modify ACTION-VAR."
+  (let ((action-list (symbol-value action-var))
+	mod)
+    ;; Make sure ACTION-VAR actually holds a list and not a single
+    ;; action function
+    (unless (listp action-list)
+      (error "%s's value is not a list" action-var))
+    (while (setq mod (pop modifications))
+      (pcase mod
+	(`(remove ,action-item)
+	 (setq action-list
+	       (remove (nth (counsel-projectile--action-index action-item action-list)
+			    action-list)
+		       action-list)))
+	(`(add ,action ,target-item)
+	 (let ((index (counsel-projectile--action-index target-item action-list)))
+	   ;; copied from `helm-append-at-nth'
+	   (setq action-list (cl-loop for a in action-list
+				      for count from 1
+				      collect a
+				      when (= count index)
+				      collect action))))
+	(`(add ,action)
+	 (setq action-list (append action-list (list action))))
+	(`(move ,action-item ,target-item)
+	 (push `(add ,(nth (counsel-projectile--action-index action-item action-list)
+			   action-list)
+		     ,target-item)
+	       modifications)
+	 (push `(remove ,action-item)
+	       modifications))
+	(`(move ,action-item)
+	 (push `(add ,(nth (counsel-projectile--action-index action-item action-list)
+			   action-list))
+	       modifications)
+	 (push `(remove ,action-item)
+	       modifications))
+	(`(setkey ,action-item ,key)
+	 (let ((index (counsel-projectile--action-index action-item action-list)))
+	   (setq action-list (cl-loop for a in action-list
+				      for count from 0
+				      if (= count index)
+				      collect (cons key (cdr a))
+				      else
+				      collect a))))
+	(`(setfun ,action-item ,fun)
+	 (let ((index (counsel-projectile--action-index action-item action-list)))
+	   (setq action-list (cl-loop for a in action-list
+				      for count from 0
+				      if (= count index)
+				      collect (list (car a) fun (caddr a))
+				      else
+				      collect a))))
+	(`(setname ,action-item ,name)
+	 (let ((index (counsel-projectile--action-index action-item action-list)))
+	   (setq action-list (cl-loop for a in action-list
+				      for count from 0
+				      if (= count index)
+				      collect (list (car a) (cadr a) name)
+				      else
+				      collect a))))
+	(`(default ,action-item)
+	 (setq action-list
+	       (cons (counsel-projectile--action-index action-item action-list)
+		     (cdr action-list))))))
+    (set action-var action-list)))
+
+(defun counsel-projectile-prefix-action (cand)
+  "Generic action for a prefix key in any counsel-projectile command.
+
+If used as action function in an action list, the corresponding
+key will serve as a prefix key.  That is, a secondary key will be
+read from the minibuffer and the action from the list whose key
+is the concatenation of these two keys will be called."
+  (let* ((action (ivy-state-action ivy-last))
+	 (prefix (car (nth (car action) action)))
+	 (sub-action (cl-loop
+		      for a in (cdr action)
+		      if (and (string-prefix-p prefix (car a))
+			      (not (string= prefix (car a))))
+		      collect (cons (string-remove-prefix prefix (car a))
+				    (cdr a))))
+	 ;; adapted from `ivy-read-action' from here on
+	 (hint (funcall ivy-read-action-format-function sub-action))
          (resize-mini-windows t)
          (key (string (read-key hint)))
-         (action-fun (nth 1 (assoc key sub-actions))))
+         (action-fun (nth 1 (assoc key sub-action))))
     (cond ((member key '("" ""))
            (when (eq ivy-exit 'done)
              (ivy-resume)))
@@ -561,12 +693,17 @@ The default value contains a single template, whose target is:
 This points to headline \"Tasks\" in file \"notes.org\" in the
 project root directory (one file per project).
 
-Another example of a valid target is:
+Two other examples of valid targets are:
 
+    \(file+headline \"${root}/${name}.org}\" \"Tasks\"\)
     \(file+olp \"~/notes.org\" \"${root}\" \"Tasks\"\)
 
-This points to outline path \"<project-root>/Tasks\" in file
-\"~/notes.org\" (same file for all projects)."
+The first one is similar to the default value's target, except
+that the file is named after the project name (this can be handy
+if you use org-mode's agenda since the project name is then
+displayed as category). The second one points to outline path
+\"<project-root>/Tasks\" in file \"~/notes.org\" (same file for
+all projects)."
   :type ;; copied from `org-capture-templates'
   (let ((file-variants '(choice :tag "Filename       "
 				(file :tag "Literal")
@@ -743,32 +880,24 @@ candidates list of `counsel-projectile-switch-project'."
     "edit project dir-locals")
    ("v" counsel-projectile-switch-project-action-vc
     "open project in vc-dir / magit / monky")
-   ("s" counsel-projectile-switch-project-action-prefix-search
-    "search project with ag / rg / grep...")
-   ("x" counsel-projectile-switch-project-action-prefix-shell
+   ("s" counsel-projectile-prefix-action
+    "search project with grep / ag / rg...")
+   ("sg" counsel-projectile-switch-project-action-grep
+    "search project with grep")
+   ("ss" counsel-projectile-switch-project-action-ag
+    "search project with ag")
+   ("sr" counsel-projectile-switch-project-action-rg
+    "search project with rg")
+   ("x" counsel-projectile-prefix-action
     "invoke shell / eshell / term from project root...")
+   ("xs" counsel-projectile-switch-project-action-run-shell
+    "invoke shell from project root")
+   ("xe" counsel-projectile-switch-project-action-run-eshell
+    "invoke eshell from project root")
+   ("xt" counsel-projectile-switch-project-action-run-term
+    "invoke term from project root")
    ("O" counsel-projectile-switch-project-action-org-capture
     "org-capture into project"))
- 'counsel-projectile)
-
-(counsel-projectile--defcustom-sub-action
- 'counsel-projectile-switch-project-action-prefix-search
- '(("g" counsel-projectile-switch-project-action-grep
-    "Search project with grep")
-   ("s" counsel-projectile-switch-project-action-ag
-    "Search project with ag")
-   ("r" counsel-projectile-switch-project-action-rg
-    "Search project with rg"))
- 'counsel-projectile)
-
-(counsel-projectile--defcustom-sub-action
- 'counsel-projectile-switch-project-action-prefix-shell
- '(("s" counsel-projectile-switch-project-action-run-shell
-    "Invoke shell from project root")
-   ("e" counsel-projectile-switch-project-action-run-eshell
-    "Invoke eshell from project root")
-   ("t" counsel-projectile-switch-project-action-run-term
-    "Invoke term from project root"))
  'counsel-projectile)
 
 (defun counsel-projectile-switch-project-by-name (project)
@@ -889,17 +1018,9 @@ action."
            (projectile-run-term nil))))
     (counsel-projectile-switch-project-by-name project)))
 
-(defun counsel-projectile-switch-project-action-prefix-shell (project)
-  "Select a sub-action from
-`counsel-projectile-switch-project-action-prefix-shell-sub-action'
-and apply it to PROJECT."
-  (counsel-projectile-sub-action
-   project
-   counsel-projectile-switch-project-action-prefix-shell-sub-action))
-
 (defun counsel-projectile-switch-project-action-grep (project)
   "Search PROJECT with `grep'."
-  (let ((projectile-switch-project-action 'counsel-projectile-ag))
+  (let ((projectile-switch-project-action 'counsel-projectile-grep))
     (counsel-projectile-switch-project-by-name project)))
 
 (defun counsel-projectile-switch-project-action-ag (project)
@@ -911,14 +1032,6 @@ and apply it to PROJECT."
   "Search PROJECT with `rg'."
   (let ((projectile-switch-project-action 'counsel-projectile-rg))
     (counsel-projectile-switch-project-by-name project)))
-
-(defun counsel-projectile-switch-project-action-prefix-search (project)
-  "Select a sub-action from
-`counsel-projectile-switch-project-action-prefix-search-sub-action'
-and apply it to PROJECT."
-  (counsel-projectile-sub-action
-   project
-   counsel-projectile-switch-project-action-prefix-search-sub-action))
 
 (defun counsel-projectile-switch-project-action-org-capture (project)
   "Org-capture into PROJECT."

@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 20171223.139
+;; Package-Version: 20171223.638
 ;; Version: 2.4.0
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -4521,7 +4521,7 @@ keywords suitable for Font Lock."
     (define-key map (kbd "C-c C-^") #'fountain-outline-shift-up)
     (define-key map (kbd "C-c C-v") #'fountain-outline-shift-down)
     (define-key map (kbd "C-c C-SPC") #'fountain-outline-mark)
-    (define-key map (kbd "C-c C-o") #'fountain-outline-cycle)
+    (define-key map (kbd "C-c TAB") #'fountain-outline-cycle)
     (define-key map (kbd "<backtab>") #'fountain-outline-cycle-global)
     (define-key map (kbd "S-TAB") #'fountain-outline-cycle-global)
     ;; Endnotes:

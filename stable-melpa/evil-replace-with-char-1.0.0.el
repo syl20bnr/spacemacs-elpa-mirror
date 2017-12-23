@@ -1,10 +1,10 @@
-;; evil-replace-with-char.el --- replace chars of a text object with a char -*- lexical-binding: t -*-
+;;; evil-replace-with-char.el --- replace chars of a text object with a char -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2015 by Filipe Silva (ninrod)
 
 ;; Author: Filipe Silva <filipe.silva@gmail.com>
 ;; URL: https://github.com/ninrod/evil-replace-with-char
-;; Package-Version: 20171202.1938
+;; Package-Version: 1.0.0
 ;; Version: 0.0.1
 ;; Package-Requires: ((evil "1.2.13") (emacs "24"))
 

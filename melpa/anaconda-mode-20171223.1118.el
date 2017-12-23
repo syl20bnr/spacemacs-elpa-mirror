@@ -4,7 +4,7 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/anaconda-mode
-;; Package-Version: 20171220.815
+;; Package-Version: 20171223.1118
 ;; Version: 0.1.9
 ;; Package-Requires: ((emacs "24") (pythonic "0.1.0") (dash "2.6.0") (s "1.9") (f "0.16.2"))
 
@@ -356,7 +356,8 @@ called when `anaconda-mode-port' will be bound."
                              anaconda-mode-socat-process-buffer
                              "socat"
                              (format "TCP4-LISTEN:%d" anaconda-mode-port)
-                             (format "TCP4:%s:%d" container-ip anaconda-mode-port)))))
+                             (format "TCP4:%s:%d" container-ip anaconda-mode-port)))
+        (set-process-query-on-exit-flag anaconda-mode-socat-process nil)))
     (when callback
       (funcall callback))))
 
@@ -632,7 +633,7 @@ virtual environment.")
        (erase-buffer)
        ,@body
        (goto-char (point-min))
-       (anaconda-mode-view-mode)
+       (anaconda-view-mode)
        buf)))
 
 (defun anaconda-mode-definitions-view (result)
@@ -681,6 +682,11 @@ PRESENTER is the function used to format buffer content."
   (let ((definition (button-get button 'definition)))
     (anaconda-mode-find-file-other-window definition)))
 
+(defun anaconda-mode-view-display-jump (button)
+  "Jump to definition file saved in BUTTON."
+  (let ((definition (button-get button 'definition)))
+    (anaconda-mode-display-buffer definition)))
+
 (defun anaconda-mode-find-file (definition)
   "Find DEFINITION file, go to DEFINITION point."
   (anaconda-mode-find-file-generic definition 'find-file))
@@ -688,6 +694,11 @@ PRESENTER is the function used to format buffer content."
 (defun anaconda-mode-find-file-other-window (definition)
   "Find DEFINITION file other window, go to DEFINITION point."
   (anaconda-mode-find-file-generic definition 'find-file-other-window))
+
+(defun anaconda-mode-display-buffer (definition)
+  "Display DEFINITION file, go to DEFINITION point."
+  (let ((buffer (anaconda-mode-find-file-generic definition 'find-file-noselect)))
+    (and buffer (display-buffer buffer))))
 
 (defun anaconda-mode-find-file-no-record-definition (definition)
   "Find DEFINITION file, go to DEFINITION point (without recording in the go-back stack)"
@@ -704,13 +715,16 @@ PRESENTER is the function used to format buffer content."
                                  (column . ,(- (point) (line-beginning-position)))))))
     (--if-let (cdr (assoc 'module-path definition))
         (progn
-          (funcall find-function it)
-          (goto-char (point-min))
-          (forward-line (1- (cdr (assoc 'line definition))))
-          (forward-char (cdr (assoc 'column definition)))
-          (when (and (not no-record) backward-navigation)
-            (push backward-navigation anaconda-mode-go-back-definitions)))
-      (message "Can't open %s module" (cdr (assoc 'module-name definition))))))
+          (let ((buffer (funcall find-function it)))
+            (with-current-buffer buffer
+              (goto-char (point-min))
+              (forward-line (1- (cdr (assoc 'line definition))))
+              (forward-char (cdr (assoc 'column definition)))
+              (when (and (not no-record) backward-navigation)
+                (push backward-navigation anaconda-mode-go-back-definitions))
+              buffer)))
+      (message "Can't open %s module" (cdr (assoc 'module-name definition)))
+      nil)))
 
 (defun anaconda-mode-view-insert-button (name definition)
   "Insert text button with NAME opening the DEFINITION."
@@ -746,25 +760,29 @@ PRESENTER is the function used to format buffer content."
      (insert "\n\n"))
    result))
 
-(defvar anaconda-mode-view-mode-map
+(defvar anaconda-view-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "n") 'next-error-no-select)
-    (define-key map (kbd "p") 'previous-error-no-select)
+    (define-key map (kbd "n") 'anaconda-view-mode-next-definition)
+    (define-key map (kbd "p") 'anaconda-view-mode-previous-definition)
     (define-key map (kbd "q") 'quit-window)
     map))
 
-(define-derived-mode anaconda-mode-view-mode special-mode "Anaconda-View"
+(define-derived-mode anaconda-view-mode special-mode "Anaconda-View"
   "Major mode for definitions view and navigation for `anaconda-mode'.
 
-\\{anaconda-mode-view-mode-map}"
-  (setq next-error-function #'anaconda-mode-next-definition))
+\\{anaconda-view-mode-map}")
 
-(defun anaconda-mode-next-definition (num _reset)
-  "Navigate to the next definition in the view buffer.
-NUM is the number of definitions to move forward.  RESET mean go
-to the beginning of buffer before definitions navigation."
-  (forward-button num)
-  (anaconda-mode-view-jump-other-window (button-at (point))))
+(defun anaconda-view-mode-next-definition ()
+  "Navigate to the next definition in the view buffer."
+  (interactive)
+  (forward-button 1)
+  (anaconda-mode-view-display-jump (button-at (point))))
+
+(defun anaconda-view-mode-previous-definition ()
+  "Navigate to the previous definition in the view buffer."
+  (interactive)
+  (forward-button -1)
+  (anaconda-mode-view-display-jump (button-at (point))))
 
 (defun anaconda-mode-go-back ()
   "Jump backward if buffer was navigated from `anaconda-mode' command."

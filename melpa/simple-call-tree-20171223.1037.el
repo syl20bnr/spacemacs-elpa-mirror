@@ -7,7 +7,7 @@
 ;; Copyleft (Ↄ) 2012, Joe Bloggs, all rites reversed.
 ;; Created: 2012-11-01 21:28:07
 ;; Version: 20151116.1603
-;; Package-Version: 20171223.510
+;; Package-Version: 20171223.1037
 ;; Package-Requires: ((emacs "24.3") (anaphora "1.0.0"))
 ;; Last-Updated: Mon Nov 16 16:03:18 2015
 ;;           By: Joe Bloggs
@@ -1316,27 +1316,23 @@ If REMOVE is non-nil remove the tags instead."
 ;; simple-call-tree-info: DONE
 (cl-defun simple-call-tree-display-buffer (&optional files)
   "Display call tree for current buffer.
-If optional arg FILES is supplied it specifies a list of files to search for functions to display in the tree.
-When called interactively files will be prompted for and only functions in the current buffer will be used."
-  (interactive "P")
-  (let (buffers dir regexp)
-    (or files
-        (if (y-or-n-p "Include other files?")
-            (whilelast
-             (setq dir
-                   (if (and (featurep 'ido)
-                            (or (eq ido-mode 'file)
-                                (eq ido-mode 'both)))
-                       (ido-read-directory-name "Dir containing files: ")
-                     (read-directory-name "Dir containing files: ")))
-             (list-directory dir)
-             (setq regexp (read-regexp "Regexp matching filenames (RET to finish)"))
-             (unless (string= regexp "")
-               (mapc (lambda (name) (if (string-match regexp name)
-                                        (add-to-list 'files (concat dir name))))
-                     (directory-files dir))))))
-    (save-excursion
-      (setq buffers (cl-loop for file in files collect (find-file file))))
+If optional arg FILES is supplied it specifies a list of files to search for 
+functions to display in the tree. When called interactively with a prefix arg, 
+files will be prompted for and only functions in the current buffer will be used."
+  (interactive (if current-prefix-arg
+		   (let (dir regexp files)
+		     (whilelast
+		      (setq dir (read-directory-name "Dir containing files to add: "))
+		      (list-directory dir)
+		      (setq regexp (read-regexp "Regexp matching filenames (RET to finish)"))
+		      (unless (string= regexp "")
+			(mapc (lambda (name) (if (string-match regexp name)
+						 (add-to-list 'files (concat dir name))))
+			      (directory-files dir))))
+		     files)))
+  (let ((buffers (save-excursion
+		   (cl-loop for file in files
+			    collect (find-file file)))))
     (if (or (not files) (called-interactively-p))
         (add-to-list 'buffers (current-buffer)))
     ;; If we already have a call tree for those buffers, just redisplay it
