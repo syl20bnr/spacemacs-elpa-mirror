@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; URL: http://github.com/Kungsgeten/org-brain
-;; Package-Version: 20171221.1338
+;; Package-Version: 20171223.19
 ;; Keywords: outlines hypermedia
 ;; Package-Requires: ((emacs "25") (org "9"))
 ;; Version: 0.4
@@ -154,6 +154,13 @@ If 0 or a negative value, the title won't be capped."
 Doing so allows for adding multiple entries at once."
   :group 'org-brain
   :type '(string))
+
+(defcustom org-brain-visualize-one-child-per-line nil
+  "If non-nil, each child of the visualized entry is listed on
+its own line. If nil (default), children are filled up to the
+`fill-column'."
+  :group 'org-brain
+  :type '(boolean))
 
 ;;;###autoload
 (defun org-brain-update-id-locations ()
@@ -1442,8 +1449,9 @@ Helper function for `org-brain-visualize'."
     (insert "\n\n")
     (dolist (child children)
       (let ((child-title (org-brain-title child)))
-        (when (> (+ (current-column) (length child-title))
-                 fill-column)
+        (when (or org-brain-visualize-one-child-per-line
+				  (> (+ (current-column) (length child-title))
+					 fill-column))
           (insert "\n"))
         (org-brain-insert-visualize-button child)
         (insert "  ")))))

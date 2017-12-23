@@ -4,7 +4,7 @@
 
 ;; Author: Iqbal Ansari <iqbalansari02@yahoo.com>
 ;; URL: https://github.com/iqbalansari/mu4e-alert
-;; Package-Version: 20170901.1027
+;; Package-Version: 20171222.2315
 ;; Keywords: mail, convenience
 ;; Version: 1.0
 ;; Package-Requires: ((alert "1.2") (s "1.10.0") (ht "2.0") (emacs "24.1"))
@@ -232,6 +232,7 @@ the requests for unread emails."
                                                "-o"
                                                "sexp"
                                                "--sortfield=d"
+                                               "-z"
                                                (format "--maxnum=%d" mu4e-alert-max-messages-to-process))
                                          (when mu4e-headers-skip-duplicates
                                            (list "-u"))

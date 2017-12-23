@@ -4,7 +4,7 @@
 
 ;; Author: Prassee  <prassee.sathian@gmail.com>
 ;; Keywords: faces
-;; Package-Version: 20170406.1953
+;; Package-Version: 20171222.2326
 ;; URL: https://github.com/prassee/prassee-emacs-theme
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 1.2
@@ -364,6 +364,10 @@
      `(powerline-inactive1 ((,c (:background ,grey :foreground ,white))))
      `(powerline-inactive2 ((,c (:background ,grey :foreground ,white))))
 
+     ;; mode-line with slightly more height
+     `(mode-line ((,c (:background ,cyan-d :foreground ,black :box (:line-width 4 :color ,cyan-d)))))
+     `(mode-line-inactive ((,c (:background ,grey :foreground ,white :box (:line-width 4 :color ,grey)))))
+     
      ;; web-mode
      `(web-mode-doctype-face           ((,c (:foreground ,comments))))
      `(web-mode-html-tag-face          ((,c (:foreground ,methods))))
@@ -374,27 +378,17 @@
      )))
 
 
-;; modeline & spaceline specific change  if spaceline and Fira Code font is installed 
-(set-face-attribute 'mode-line nil :font "PragmataPro-12" :weight 'bold )
+;; modeline & spaceline specific change  if spaceline and Fira Code font is installed
+;; :weight 'bold 
 (setq ns-use-srgb-colorspace nil)
 
 (setq spaceline-separator-dir-left '(left . left))
 (setq spaceline-separator-dir-right '(right . right))
-(setq powerline-height 29)
-(setq spaceline-highlight-face-func 'spaceline-highlight-face-modified)
-(spaceline-toggle-projectile-root-on)
-(spaceline-toggle-helm-buffer-id-on)  
-(spaceline-toggle-window-number-on)
-(spaceline-toggle-buffer-position-off)
-(spaceline-toggle-buffer-size-off)
-(spaceline-toggle-minor-modes-off)
-(spaceline-toggle-selection-info-on)  
-(spaceline-helm-mode +1)
 
 ;; set cursor style
 (setq-default cursor-type 'bar) 
 
-;;;###autoload
+;; autoload
 (when load-file-name
   (add-to-list 'custom-theme-load-path
                (file-name-as-directory (file-name-directory load-file-name))))
