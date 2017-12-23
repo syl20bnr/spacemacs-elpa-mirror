@@ -6,7 +6,7 @@
 ;; Keywords: themes
 ;; Package-Requires: ((projectile "0.11.0"))
 ;; URL: http://github.com/purcell/ibuffer-projectile
-;; Package-Version: 20171201.1458
+;; Package-Version: 20171222.2000
 ;; Package-X-Original-Version: 0
 ;;
 ;; This program is free software; you can redistribute it and/or modify
@@ -101,6 +101,23 @@ If the file is not in a project, then nil is returned instead."
                 :reader (read-regexp "Filter by projectile root dir (regexp): "))
   (ibuffer-awhen (ibuffer-projectile-root buf)
     (equal qualifier it)))
+
+;;;###autoload (autoload 'ibuffer-make-column-project-name "ibuffer-projectile")
+(define-ibuffer-column project-name
+  (:name "Project")
+  (projectile-project-name))
+
+;;;###autoload (autoload 'ibuffer-do-sort-by-project-name "ibuffer-projectile")
+(define-ibuffer-sorter project-name
+  "Sort the buffers by their project name."
+  (:description "project")
+  (let ((project1 (with-current-buffer (car a)
+                    (projectile-project-name)))
+        (project2 (with-current-buffer (car b)
+                    (projectile-project-name))))
+    (if (and project1 project2)
+        (string-lessp project1 project2)
+      (not (null project1)))))
 
 ;;;###autoload
 (defun ibuffer-projectile-generate-filter-groups ()
