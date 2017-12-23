@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/dired-sidebar
-;; Package-Version: 20171221.2210
+;; Package-Version: 20171222.1553
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1") (dired-subtree "0.0.1"))
 ;; Keywords: dired, files, tools
@@ -822,7 +822,8 @@ Optional argument NOCONFIRM Pass NOCONFIRM on to `dired-buffer-stale-p'."
   "Refresh sidebar buffer."
   (when-let* ((sidebar (dired-sidebar-sidebar-buffer-in-frame)))
     (with-current-buffer sidebar
-      (revert-buffer))))
+      (let ((auto-revert-verbose nil))
+        (revert-buffer)))))
 
 (defun dired-sidebar-follow-file ()
   "Follow new file.
