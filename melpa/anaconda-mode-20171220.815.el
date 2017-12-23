@@ -4,7 +4,7 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/anaconda-mode
-;; Package-Version: 20171219.813
+;; Package-Version: 20171220.815
 ;; Version: 0.1.9
 ;; Package-Requires: ((emacs "24") (pythonic "0.1.0") (dash "2.6.0") (s "1.9") (f "0.16.2"))
 
@@ -113,15 +113,8 @@ anaconda_mode.main(sys.argv[1:])
 (defvar anaconda-mode-process nil
   "Currently running anaconda-mode process.")
 
-(defun anaconda-mode-show-process-buffer ()
-  "Display `anaconda-mode-process-buffer'."
-  (let ((buffer (get-buffer-create anaconda-mode-process-buffer)))
-    (display-buffer buffer)))
-
 (defvar anaconda-mode-process-fail-hook nil
   "Hook running when any of `anaconda-mode' fails by some reason.")
-
-(add-hook 'anaconda-mode-process-fail-hook 'anaconda-mode-show-process-buffer)
 
 (defvar anaconda-mode-port nil
   "Port for anaconda-mode connection.")
@@ -446,7 +439,10 @@ submitted."
                                  ((json-readtable-error json-end-of-file end-of-file)
                                   (let ((response (concat (format "# status: %s\n# point: %s\n" status (point))
                                                           (buffer-string))))
-                                    (run-hook-with-args 'anaconda-mode-response-read-fail-hook response)
+                                    (with-current-buffer (get-buffer-create anaconda-mode-response-buffer)
+                                      (erase-buffer)
+                                      (insert response)
+                                      (goto-char (point-min)))
                                     nil)))))
                 (if (null response)
                     (message "Can not read anaconda-mode server response")
@@ -485,20 +481,6 @@ virtual environment.")
 
 (defvar anaconda-mode-response-skip-hook nil
   "Hook running when `anaconda-mode' decide to skip server response.")
-
-(defvar anaconda-mode-response-read-fail-hook nil
-  "Hook running when `anaconda-mode' fail to read server response.")
-
-(add-hook 'anaconda-mode-response-read-fail-hook 'anaconda-mode-show-unreadable-response)
-
-(defun anaconda-mode-show-unreadable-response (response)
-  "Show unreadable RESPONSE to user, so he can report it properly."
-  (pop-to-buffer
-   (with-current-buffer (get-buffer-create anaconda-mode-response-buffer)
-     (erase-buffer)
-     (insert response)
-     (goto-char (point-min))
-     (current-buffer))))
 
 
 ;;; Code completion.
