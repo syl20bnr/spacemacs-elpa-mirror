@@ -7,7 +7,7 @@
 ;; Copyleft (Ↄ) 2012, Joe Bloggs, all rites reversed.
 ;; Created: 2012-11-01 21:28:07
 ;; Version: 20151116.1603
-;; Package-Version: 20171220.735
+;; Package-Version: 20171223.510
 ;; Package-Requires: ((emacs "24.3") (anaphora "1.0.0"))
 ;; Last-Updated: Mon Nov 16 16:03:18 2015
 ;;           By: Joe Bloggs
@@ -1184,12 +1184,12 @@ information. If UPDATESRC is nil then don't bother updating the source code."
 By default FUNCS is set to the list of marked items or the function at point if there are no marked items.
 If a prefix arg is used (or REMOVE is non-nil) then remove the TODO state."
   (interactive (list (if current-prefix-arg nil
-                       (org-icompleting-read
-                        "State: " (simple-call-tree-org-todo-keywords)
-                        nil t))
+                       (completing-read "State: " (simple-call-tree-org-todo-keywords) nil))
                      (or simple-call-tree-marked-items
-                         (simple-call-tree-get-parent)
-                         (simple-call-tree-get-function-at-point))))
+                         (--if-let (simple-call-tree-get-parent)
+			     (list it))
+                         (--if-let (simple-call-tree-get-function-at-point)
+			     (list it)))))
   (dolist (func funcs)
     (simple-call-tree-set-attribute 'todo value func)))
 
@@ -1880,7 +1880,7 @@ The toplevel functions will be sorted, and the functions in each branch will be 
                 (fm-unhighlight 1))
               (if (> (length (window-list)) 1)
                   (delete-window)
-                (bury-buffer))))))
+		(switch-to-buffer (other-buffer)))))))
 
 ;; simple-call-tree-info: DONE
 (defun simple-call-tree-invert-buffer nil
