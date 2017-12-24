@@ -4,7 +4,7 @@
 
 ;; Author: Massimiliano Mirra <hyperstruct@gmail.com>
 ;; Version: 1.0
-;; Package-Version: 20171203.210
+;; Package-Version: 20171223.1124
 ;; Maintainer: Massimiliano Mirra <hyperstruct@gmail.com>
 ;; Keywords: outlines, calendar
 ;; URL: http://github.com/bard/org-dashboard
@@ -205,7 +205,8 @@ See Info node `(org) Breaking down tasks'."
                     entry
                   (let* ((category-label (make-category-label category))
                          (goal-label (make-goal-label heading))
-                         (goal-link (make-link (or id (concat filename "::*" heading))
+                         (goal-link (make-link (if id (concat "id:" id)
+                                                 (concat filename "::*" heading))
                                                goal-label))
                          (goal-label-padding (make-string (- 25 (string-width goal-label)) ?\s))
                          (progress-bar (make-progress-bar progress-percent))

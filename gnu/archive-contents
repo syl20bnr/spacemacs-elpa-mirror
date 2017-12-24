@@ -782,7 +782,7 @@
       [(20171218)
        nil "Outline-based notes management and organizer" tar nil])
  (org-edna .
-	   [(1 0 -2 2)
+	   [(1 0 -2 3)
 	    ((emacs
 	      (25 1))
 	     (seq
