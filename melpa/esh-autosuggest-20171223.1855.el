@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017 Diego A. Mundo
 ;; Author: Diego A. Mundo <diegoamundo@gmail.com>
 ;; URL: http://github.com/dieggsy/esh-autosuggest
-;; Package-Version: 20171222.1802
+;; Package-Version: 20171223.1855
 ;; Git-Repository: git://github.com/dieggsy/esh-autosuggest.git
 ;; Created: 2017-10-28
 ;; Version: 1.2.2
@@ -65,7 +65,7 @@ respectively."
   autosuggestion.")
 
 (defun esh-autosuggest-candidates (prefix)
-  "Select the first eshell history candidate with prefix PREFIX."
+  "Select the first eshell history candidate that starts with PREFIX."
   (let* ((history
           (delete-dups
            (mapcar (lambda (str)
@@ -88,7 +88,9 @@ respectively."
       (unless (or (eobp) (eolp))
         (kill-line))))
   (end-of-line)
-  (company-begin-backend 'esh-autosuggest))
+  (ignore-errors
+    (let ((inhibit-message t))
+      (company-begin-backend 'esh-autosuggest))))
 
 (defun esh-autosuggest--prefix ()
   "Get current eshell input."

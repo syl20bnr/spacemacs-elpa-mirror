@@ -2,7 +2,7 @@
 
 ;; Author: Andrew Barbarello
 ;; Version: 0.1
-;; Package-Version: 20171213.1609
+;; Package-Version: 20171223.1324
 ;; Package-Requires: ((emacs "24.5") (seq "2.3"))
 ;; URL: https://github.com/drewbarbs/erc-status-sidebar
 
@@ -289,13 +289,9 @@ to the `window-configuration-change-hook'"
 
 (define-derived-mode erc-status-sidebar-mode special-mode "ERC Sidebar"
   "Major mode for ERC status sidebar"
-  (use-local-map erc-status-sidebar-mode-map)
   ;; Don't scroll the buffer horizontally, if a channel name is
   ;; obscured then the window can be resized
   (setq-local auto-hscroll-mode nil)
-  ;; Don't want Malabarba's beacon mode blinking in the sidebar buffer
-  (if (boundp 'beacon-mode)
-      (setq-local beacon-mode nil))
   (setq cursor-type nil
 	buffer-read-only t
 	mode-line-format erc-status-sidebar-mode-line-format
