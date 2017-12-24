@@ -5,7 +5,7 @@
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; Homepage: https://github.com/proofit404/isortify
 ;; Version: 0.0.1
-;; Package-Version: 20170726.1254
+;; Package-Version: 20171223.1812
 ;; Package-Requires: ()
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -52,6 +52,7 @@ If isort exits with an error, the output will be shown in a help-window."
   (interactive)
   (let* ((original-buffer (current-buffer))
          (original-point (point))
+         (original-window-pos (window-start))
          (tmpbuf (generate-new-buffer "*isortify*"))
          (exit-code (isortify-call-bin original-buffer tmpbuf)))
     (unwind-protect
@@ -60,7 +61,8 @@ If isort exits with an error, the output will be shown in a help-window."
           (with-current-buffer tmpbuf
             (copy-to-buffer original-buffer (point-min) (point-max)))
           (kill-buffer tmpbuf)
-          (goto-char original-point)))))
+          (goto-char original-point)
+          (set-window-start (selected-window) original-window-pos)))))
 
 ;;;###autoload
 (define-minor-mode isort-mode
