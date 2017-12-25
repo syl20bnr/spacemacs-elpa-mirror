@@ -4,7 +4,7 @@
 
 ;; Author: Yevgnen Koh <wherejoystarts@gmail.com>
 ;; Package-Requires: ((emacs "24.4") (ivy "0.8.0"))
-;; Package-Version: 20171215.1945
+;; Package-Version: 20171224.1848
 ;; Version: 0.0.4
 ;; Keywords: ivy
 
@@ -236,7 +236,7 @@ or /a/…/f.el."
                   nil
                 (file-truename (buffer-file-name)))
             (if (eq major-mode 'dired-mode)
-                (dired-current-directory)
+                (file-truename (dired-current-directory))
               nil)))
          (path (cond ((or (memq ivy-rich-path-style '(full absolute))
                           (and (null ivy-rich-parse-remote-file-path)
