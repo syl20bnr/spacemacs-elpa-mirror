@@ -56,9 +56,6 @@ Usage:
   For more information and detailed usage, refer to the project page:
   [https://github.com/yaruopooner/msvc]
 
-  sorry, reference manual is japanese version only.
-  please help english version reference manual.
-
 * INSTALLATION:
   If you use auto-complete by ac-clang, you will need an external program.
   It's necessary to download or self-build the external program.
@@ -169,9 +166,17 @@ Usage:
                          ("DLL_EXPORT"         . "")
                          ("RESTRICT"           . ""))
     For details, refer to CEDET manual.
+  - :flymake-back-end
+    nil recommended.
+    specifiable : `msbuild' `clang' `nil'
+    refer to `msvc--flymake-back-end'
   - :flymake-manually-p
     nil recommended.
     If value is t, manual syntax check only.
+  - :flymake-manually-back-end
+    nil recommended.
+    specifiable : `msbuild' `clang' `nil'
+    refer to `msvc--flymake-manually-back-end'
 
 * DEFAULT KEYBIND(msvc on Source Code Buffer)
   - start auto completion

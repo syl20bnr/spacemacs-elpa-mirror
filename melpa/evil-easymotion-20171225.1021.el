@@ -5,7 +5,7 @@
 
 ;; Author: PythonNut <pythonnut@pythonnut.com>
 ;; Keywords: convenience, evil
-;; Package-Version: 20171224.2208
+;; Package-Version: 20171225.1021
 ;; Version: 20160228
 ;; URL: https://github.com/pythonnut/evil-easymotion
 ;; Package-Requires: ((emacs "24") (avy "0.3.0") (cl-lib "0.5"))
@@ -168,11 +168,12 @@
                  #'evilem--default-collect-postprocess)
              points)))
 
-(defun evilem--compute-inclusivity (funcs)
-  (when (and (= (length funcs) 1)
-             (evil-has-command-properties-p (car funcs)))
-    `(setq evil-this-type
-           ',(evil-get-command-property (car funcs) :type))))
+(eval-and-compile
+  (defun evilem--compute-inclusivity (funcs)
+    (when (and (= (length funcs) 1)
+               (evil-has-command-properties-p (car funcs)))
+      `(setq evil-this-type
+             ',(evil-get-command-property (car funcs) :type)))))
 
 (cl-defmacro evilem-make-motion (name
                                  funcs

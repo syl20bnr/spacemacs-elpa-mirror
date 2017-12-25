@@ -1,10 +1,9 @@
-;;; elpygen.el --- Implement a function or a method under point -*- lexical-binding: t; -*-
-
+;;; elpygen.el --- Generate a Python function/method using a symbol under point -*- lexical-binding: t; -*-
 ;; Copyright (C) 2017 Vladimir Kazanov
 
 ;; Author: Vladimir Kazanov <vkazanov@inbox.ru>
 ;; Version: 0.1.0
-;; Package-Version: 20171225.701
+;; Package-Version: 20171225.936
 ;; Package-Requires: ((emacs "25") (yasnippet "0.8.0"))
 ;; Keywords: Python, Languages, Tools
 ;; URL: https://github.com/vkazanov/elpygen
