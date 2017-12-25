@@ -4,7 +4,7 @@
 
 ;; Author: Vladimir Kazanov <vkazanov@inbox.ru>
 ;; Version: 0.1.0
-;; Package-Version: 20171222.650
+;; Package-Version: 20171225.701
 ;; Package-Requires: ((emacs "25") (yasnippet "0.8.0"))
 ;; Keywords: Python, Languages, Tools
 ;; URL: https://github.com/vkazanov/elpygen
@@ -24,8 +24,15 @@
 
 ;;; Commentary:
 ;;
-;; This package uses the symbol name (if it looks like a call ) and it's arguments under point to
-;; insert a method or a function stub into a suitable place.
+;; `elpygen.el' uses the symbol name and it's arguments under point to
+;; insert a method or a function stub into a suitable place. It also
+;; makes sure the symbol is not already defined, and the requested
+;; symbol is really a function/method call.
+;;
+;; To use the package just bind the main function to a suitable key:
+;;
+;; (define-key python-mode-map (kbd "C-c i") 'elpygen-implement).
+;;
 
 ;;; Code:
 
