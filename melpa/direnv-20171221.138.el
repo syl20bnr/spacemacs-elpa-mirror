@@ -2,9 +2,9 @@
 
 ;; Author: Wouter Bolsterlee <wouter@bolsterl.ee>
 ;; Version: 1.2.1
-;; Package-Version: 20171205.227
-;; Package-Requires: ((emacs "24.4") (dash "2.13.0") (with-editor "2.5.10"))
-;; Keywords: direnv, environment
+;; Package-Version: 20171221.138
+;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (with-editor "2.5.10"))
+;; Keywords: direnv, environment, processes, unix, tools
 ;; URL: https://github.com/wbolster/emacs-direnv
 ;;
 ;; This file is not part of GNU Emacs.
@@ -23,7 +23,6 @@
 (require 'dash)
 (require 'json)
 (require 'subr-x)
-(require 'with-editor)
 
 (defgroup direnv nil
   "direnv integration for emacs"
@@ -174,13 +173,16 @@ the environment changes."
 (defun direnv-update-environment (&optional file-name)
   "Update the environment for FILE-NAME."
   (interactive)
-  (direnv-update-directory-environment
-   (if file-name (file-name-directory file-name) (direnv--directory))
-   (called-interactively-p 'interactive)))
+  (let ((force-summary (called-interactively-p 'interactive)))
+    (direnv-update-directory-environment
+     (if file-name (file-name-directory file-name) (direnv--directory))
+     force-summary)))
 
 ;;;###autoload
 (defun direnv-update-directory-environment (&optional directory force-summary)
-  "Update the environment for DIRECTORY."
+  "Update the environment for DIRECTORY.
+
+When FORCE-SUMMARY is non-nil, a summary message is always shown."
   (interactive)
   (let ((directory (or directory default-directory))
         (old-directory direnv--active-directory))
@@ -202,6 +204,7 @@ the environment changes."
 (defun direnv-edit ()
   "Edit the .envrc associated with the current directory."
   (interactive)
+  (require 'with-editor)
   (let ((display-buffer-alist
          (cons (cons "\\*Async Shell Command\\*.*" (cons #'display-buffer-no-window nil))
                display-buffer-alist)))
@@ -215,6 +218,7 @@ the environment changes."
 When this mode is active, the environment inside Emacs will be
 continuously updated to match the direnv environment for the currently
 visited (local) file."
+  :require 'direnv
   :global t
   (if direnv-mode
       (direnv--enable)
