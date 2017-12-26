@@ -5,7 +5,7 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/system-packages
-;; Package-Version: 20171225.2002
+;; Package-Version: 1.0.0
 ;; Version: 0.1
 ;; Package-Requires: ((cl-lib "0.5"))
 
@@ -88,6 +88,24 @@
            (list-dependencies-of . "port deps")
            (noconfirm . nil)))
     ;; Arch-based systems
+    (pacaur .
+            ((default-sudo . nil)
+             (install . "pacaur -S")
+             (search . "pacaur -Ss")
+             (uninstall . "pacaur -Rs")
+             (update . "pacaur -Syu")
+             (clean-cache . "pacaur -Sc")
+             (log . "cat /var/log/pacman.log")
+             (get-info . "pacaur -Qi")
+             (get-info-remote . "pacaur -Si")
+             (list-files-provided-by . "pacaur -Ql")
+             (verify-all-packages . "pacaur -Qkk")
+             (verify-all-dependencies . "pacaur -Dk")
+             (remove-orphaned . "pacaur -Rns $(pacman -Qtdq)")
+             (list-installed-packages . "pacaur -Qe")
+             (list-installed-packages-all . "pacaur -Q")
+             (list-dependencies-of . "pacaur -Qi")
+             (noconfirm . "--noconfirm")))
     (pacman .
             ((default-sudo . t)
              (install . "pacman -S")
