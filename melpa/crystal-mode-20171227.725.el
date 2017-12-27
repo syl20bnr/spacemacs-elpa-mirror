@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 Jason Pellerin
 ;; Authors: Jason Pellerin
 ;; URL: https://github.com/crystal-lang-tools/emacs-crystal-mode
-;; Package-Version: 20171223.2035
+;; Package-Version: 20171227.725
 ;; Created: Tue Jun 23 2015
 ;; Keywords: languages crystal
 ;; Version: 0.1
@@ -2420,6 +2420,7 @@ See `font-lock-syntax-table'.")
            (append (list crystal-executable nil output-buffer-name t)
                    args))))
 
+;;;###autoload
 (defun crystal-tool-format ()
   "Format the contents of the current buffer without persisting the result."
   (interactive)
@@ -2429,11 +2430,13 @@ See `font-lock-syntax-table'.")
     (crystal-exec (list "tool" "format" name) "*messages*")
     (insert-file-contents name nil nil nil t)))
 
+;;;###autoload
 (defun crystal-tool-expand ()
   "Expand macro at point."
   (interactive)
   (crystal-tool--location "expand" t))
 
+;;;###autoload
 (defun crystal-tool-imp ()
   "Show implementations at point."
   (interactive)
@@ -2441,6 +2444,7 @@ See `font-lock-syntax-table'.")
       (error "Cannot use implementations on a buffer without a file name"))
   (crystal-tool--location "implementations"))
 
+;;;###autoload
 (defun crystal-tool-context()
   "Show content at point."
   (interactive)
@@ -2518,6 +2522,7 @@ description at POINT."
               (error "Failed to jump def")))
         (kill-buffer outbuf)))))
 
+;;;###autoload
 (defun crystal-def-jump (point &optional other-window)
   "Jump to the definition of the expression at POINT."
   (interactive "d")
@@ -2531,6 +2536,7 @@ description at POINT."
         (crystal-def--find-line-column specifier other-window))
     (file-error (message "Could not run crystal-def."))))
 
+;;;###autoload
 (defun crystal-def-jump-other-window (point)
   (interactive "d")
   (crystal-def-jump point t))
@@ -2539,16 +2545,17 @@ description at POINT."
   (goto-char (point-min))
   (forward-line (1- line)))
 
+;;;###autoload
 (defun crystal-spec-switch ()
   "Switch source file and its spec file."
   (interactive)
   (if (buffer-file-name)
       (if (not (string-suffix-p "spec_helper.cr" (buffer-file-name)))
-          (crystal-spec--switch t)
+          (crystal-spec--switch)
         (error "Cannot switch on spec_helper.cr."))
     (error "Cannot use crystal-spec-switch on a buffer without a file name.")))
 
-(defun crystal-spec--switch (&optional tf-create-p)
+(defun crystal-spec--switch ()
   (let* ((root-dir (file-truename (crystal-find-project-root)))
          (fname (file-truename (buffer-file-name (current-buffer))))
          (to-fname (crystal-spec--switch-to-fname root-dir fname)))
@@ -2556,11 +2563,10 @@ description at POINT."
               "%s switch to %s"
               (substring fname (length root-dir) nil)
               (substring to-fname (length root-dir) nil)))
-    (if tf-create-p
-        (funcall #'find-file to-fname)
       (if (file-exists-p to-fname)
           (funcall #'find-file to-fname)
-        (error (format "%s not exist." to-fname))))))
+        (when (y-or-n-p (format "%s not exist. Create?" (substring to-fname (length root-dir) nil)))
+          (funcall #'find-file to-fname)))))
 
 (defun crystal-spec--switch-to-fname (root-dir fname)
   (let* ((fname-non-dir (file-name-nondirectory fname))
@@ -2578,6 +2584,7 @@ description at POINT."
                          (length "src") nil)
               (replace-regexp-in-string ".cr" "_spec.cr" fname-non-dir)))))
 
+;;;###autoload
 (defun crystal-spec-buffer()
   "Run spec for current buffer."
   (interactive)
@@ -2595,6 +2602,7 @@ description at POINT."
             (error "Cannot use crystal spec on spec_helper.cr."))))
     (error "Cannot use crystal spec on a buffer without a file name.")))
 
+;;;###autoload
 (defun crystal-spec-all()
   "Run all specs for current project."
   (interactive)
