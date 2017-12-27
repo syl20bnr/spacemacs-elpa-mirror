@@ -2,7 +2,7 @@
 
 ;; Author: Ono Hiroko (kuanyui) <azazabc123@gmail.com>
 ;; Keywords: tools, hexo
-;; Package-Version: 20170702.1915
+;; Package-Version: 20171226.2035
 ;; Package-Requires: ((emacs "24.3"))
 ;; X-URL: https://github.com/kuanyui/hexo.el
 ;; Version: {{VERSION}}
@@ -255,7 +255,7 @@ Output contains suffix '/' "
                (nodes-without-node_modules (reverse (nthcdr from-nth (reverse nodes))))
                (path-string (mapconcat #'identity nodes-without-node_modules "/")))
           (hexo-path path-string))
-      (hexo-path (locate-dominating-file from "node_modules/")))))
+      (hexo-path (locate-dominating-file from "node_modules/hexo")))))
 
 
 (defun hexo-ask-for-root-dir ()
@@ -1131,14 +1131,12 @@ Return the link. If not found link under cursor, return nil."
 This is merely resonable for files in _posts/."
   (let* ((filename-without-ext (progn (string-match "/?\\([^/]+\\)/?$" permalink)
                                       (match-string 1 permalink)))
-         (article (format "%s/source/_posts/%s.md"
-                          (hexo-find-root-dir repo-root-dir)
-                          filename-without-ext))
-         )
-    (if (file-exists-p article) article
-      (replace-regexp-in-string "md$" "org" article))
-
-    ))
+         (filepath-without-ext (format "%s/source/_posts/%s"
+                                       (hexo-find-root-dir repo-root-dir)
+                                       filename-without-ext)))
+    (find-if (lambda (fullpath) (file-exists-p fullpath))
+             (mapcar (lambda (ext) (format "%s.%s" filepath-without-ext ext))
+                     '("org" "md")))))
 
 ;; ======================================================
 ;; Run Hexo process in Emacs
