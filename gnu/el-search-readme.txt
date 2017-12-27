@@ -1,9 +1,11 @@
 This package implements an expression based interactive search tool
-for Emacs Lisp files and buffers using pcase-style search patterns.
-It is multi file/buffer search capable.  It is designed to be fast
-and easy to use.  It offers an occur-like overview of matches and
-can do query-replace based on the same set of patterns.  All
-searches are added to a history and can be resumed or restarted
+for Emacs Lisp files and buffers.  The pattern language used is a
+superset of `pcase' patterns.
+
+"el-search" is multi file/buffer search capable.  It is designed to
+be fast and easy to use.  It offers an occur-like overview of
+matches and can do query-replace based on the same set of patterns.
+All searches are added to a history and can be resumed or restarted
 later.  Finally, it allows you to define your own kinds of search
 patterns and your own multi-search commands.
 
@@ -238,9 +240,13 @@ Answer "yes" to the prompt asking whether you want the started
 search drive the query-replace.  The user interface is
 self-explanatory.
 
-You can resume an aborted search-driven query-replace in the
-obvious way: call `el-search-jump-to-search-head' followed by
-`el-search-query-replace' (C-J C-%).  This will continue the
+It is always possible to resume an aborted query-replace session
+even if you did other stuff in the meantime (including other
+`el-search-query-replace' invocations).  Since internally every
+query-replace is driven by a search, call
+`el-search-jump-to-search-head' (maybe with a prefix arg) to make
+that search current, and invoke `el-search-query-replace' (with the
+default bindings, this would be C-J C-%).  This will continue the
 query-replace session from where you left.
 
 
@@ -301,11 +307,19 @@ in a content like
 
 the comment will be lost.
 
+- Emacs bug#29857: 27.0.50; error: "Loading `nil': old-style
+  backquotes detected!"
+
 
  Acknowledgments
  ===============
 
 Thanks to Stefan Monnier for corrections and advice.
+
+
+BUGS:
+
+- l is very slow for very long lists.  E.g. C-S-e (l "test")
 
 
 TODO:
@@ -325,3 +339,6 @@ TODO:
 - Replace: pause and warn when replacement might be wrong
   (ambiguous reader syntaxes; lost comments, comments that can't
   non-ambiguously be assigned to rewritten code)
+
+- There could be something much better than pp to format the
+  replacement, or pp should be improved.
