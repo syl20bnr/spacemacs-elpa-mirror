@@ -26,7 +26,7 @@ Faustine allows the edition of Faust (http://faust.grame.fr) code.
 ### Hard
 
 - Copy/clone this repository in `load-path`
-- Copy/clone [Faust-mode](https://github.com/rukano/emacs-faust-mode) in `load-path`
+- Copy/clone [Faust-mode](https://github.com/magnetophon/emacs-faust-mode) in `load-path`
 - Add
 ```elisp
 (require 'faust-mode)

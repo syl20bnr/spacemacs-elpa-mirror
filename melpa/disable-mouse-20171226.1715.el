@@ -4,7 +4,7 @@
 
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;; URL: https://github.com/purcell/disable-mouse
-;; Package-Version: 20170929.1353
+;; Package-Version: 20171226.1715
 ;; Package-X-Original-Version: 0
 ;; Keywords: mouse
 
@@ -44,7 +44,7 @@
   :group 'disable-mouse
   :type 'string)
 
-(defcustom global-disable-mouse-mode-lighter " NoMouse!"
+(defcustom disable-mouse-mode-global-lighter " NoMouse!"
   "Mode-line lighter for `global-disable-mouse-mode'."
   :group 'disable-mouse
   :type 'string)
@@ -56,17 +56,25 @@
 
 (defconst disable-mouse--multipliers '("double" "triple"))
 
-(defconst disable-mouse--bindings
-  '("mouse-1" "mouse-2" "mouse-3"
-    "up-mouse-1" "up-mouse-2" "up-mouse-3"
-    "down-mouse-1" "down-mouse-2" "down-mouse-3"
-    "drag-mouse-1" "drag-mouse-2" "drag-mouse-3"
-    "mouse-4" "mouse-5"
-    "up-mouse-4" "up-mouse-5"
-    "down-mouse-4" "down-mouse-5"
-    "drag-mouse-4" "drag-mouse-5"
-    "wheel-up" "wheel-down" "wheel-left" "wheel-right"
-    ))
+(defconst disable-mouse--button-numbers '(1 2 3 4 5))
+
+(defconst disable-mouse--button-events '("mouse" "up-mouse" "down-mouse" "drag-mouse"))
+
+(defvar disable-mouse-wheel-events '("wheel-up" "wheel-down" "wheel-left" "wheel-right")
+  "Mouse wheel event base names.
+Before `disable-mouse' is loaded, you can set this to nil if you
+do not want to disable mouse wheel events.")
+
+(defconst disable-mouse-button-bindings
+  (apply 'append
+         (mapcar (lambda (n)
+                   (mapcar (lambda (e) (format "%s-%d" e n))
+                           disable-mouse--button-events))
+                 disable-mouse--button-numbers)))
+
+(defvar disable-mouse-bindings
+  (append disable-mouse-button-bindings disable-mouse-wheel-events)
+  "Root names for mouse events to be disabled.")
 
 (defun disable-mouse--all-bindings (include-targets)
   "Return an extensive list of mouse-related keybindings.
@@ -78,7 +86,7 @@ the elements in `disable-mouse--bindings-targets'."
                               disable-mouse--bindings-targets)))
       (dolist (mod (append '(nil) disable-mouse--bindings-modifier-combos))
         (dolist (mult (append '(nil) disable-mouse--multipliers))
-          (dolist (binding disable-mouse--bindings)
+          (dolist (binding disable-mouse-bindings)
             (push (read-kbd-macro
                    (concat (when target (concat "<" target "> "))
                            mod
@@ -101,7 +109,7 @@ the elements in `disable-mouse--bindings-targets'."
     map)
   "Map containing no-op bindings for all mouse events.")
 
-(defvar global-disable-mouse-mode-map
+(defvar disable-mouse-global-mode-map
   (let ((map (make-sparse-keymap)))
     (dolist (binding (disable-mouse--all-bindings t))
       (define-key map binding 'disable-mouse--handle))
@@ -117,12 +125,16 @@ interact with GUI elements such as divider lines."
   :lighter disable-mouse-mode-lighter)
 
 ;;;###autoload
-(define-minor-mode global-disable-mouse-mode
+(define-minor-mode disable-mouse-global-mode
   "Disable the mouse globally.
 Interact with GUI elements such as divider lines will also be prevented."
   nil
-  :lighter global-disable-mouse-mode-lighter
+  :require 'disable-mouse
+  :lighter disable-mouse-mode-global-lighter
   :global t)
+
+;;;###autoload
+(defalias 'global-disable-mouse-mode 'disable-mouse-global-mode)
 
 (provide 'disable-mouse)
 ;;; disable-mouse.el ends here
