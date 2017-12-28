@@ -28,33 +28,14 @@ Tips:
   For example, input "keyword1 !keyword2 keyword3" means:
   "(keyword1 and (not (keyword2 or keyword3))"
 
-- Use `grep-find-ignored-directories', `grep-find-ignored-files' to ignore directories/files,
-
-  (eval-after-load 'grep
+- You can setup `counsel-etags-ignore-directories' and `counsel-etags-ignore-filenames',
+  (eval-after-load 'counsel-etags
     '(progn
-       (dolist (v '("auto"
-                    "target"
-                    "node_modules"
-                    "bower_components"
-                    "*dist"
-                    ".sass_cache"
-                    ".cache"
-                    ".npm"
-                    "elpa"))
-         (add-to-list 'grep-find-ignored-directories v))
-
-       (dolist (v '("*.min.js"
-                    "*.map"
-                    "*.bundle.js"
-                    "*.min.css"
-                    "tags"
-                    "TAGS"
-                    "GTAGS"
-                    "GRTAGS"
-                    "GPATH"
-                    "cscope.files"
-                    "*.json"
-                    "*.log"))
-       (add-to-list 'grep-find-ignored-files v))))
+       ;; counsel-etags-ignore-directories does NOT support wildcast
+       (add-to-list 'counsel-etags-ignore-directories "build_clang")
+       (add-to-list 'counsel-etags-ignore-directories "build_clang")
+       ;; counsel-etags-ignore-filenames supports wildcast
+       (add-to-list 'counsel-etags-ignore-filenames "TAGS")
+       (add-to-list 'counsel-etags-ignore-filenames "*.json")))
 
 See https://github.com/redguardtoo/counsel-etags/ for more tips.
