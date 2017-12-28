@@ -1,10 +1,10 @@
-;; counsel-projectile.el --- Ivy integration for Projectile
+;;; counsel-projectile.el --- Ivy integration for Projectile
 
 ;; Copyright (C) 2016-2017 Eric Danan
 
 ;; Author: Eric Danan
 ;; URL: https://github.com/ericdanan/counsel-projectile
-;; Package-Version: 20171223.712
+;; Package-Version: 20171227.1315
 ;; Keywords: project, convenience
 ;; Version: 0.2
 ;; Package-Requires: ((counsel "0.10.0") (projectile "0.14.0"))
@@ -262,7 +262,7 @@ is the concatenation of these two keys will be called."
 		      for a in (cdr action)
 		      if (and (string-prefix-p prefix (car a))
 			      (not (string= prefix (car a))))
-		      collect (cons (string-remove-prefix prefix (car a))
+		      collect (cons (substring (car a) (length prefix))
 				    (cdr a))))
 	 ;; adapted from `ivy-read-action' from here on
 	 (hint (funcall ivy-read-action-format-function sub-action))

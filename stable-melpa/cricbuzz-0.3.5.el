@@ -3,8 +3,8 @@
 ;; Copyright (c) 2016 Abhinav Tushar
 
 ;; Author: Abhinav Tushar <abhinav.tushar.vs@gmail.com>
-;; Version: 0.3.4
-;; Package-Version: 0.3.4
+;; Version: 0.3.5
+;; Package-Version: 0.3.5
 ;; Package-Requires: ((enlive "0.0.1") (f "0.19.0") (dash "2.13.0") (s "1.11.0"))
 ;; Keywords: cricket, score
 ;; URL: https://github.com/lepisma/cricbuzz.el
@@ -361,11 +361,13 @@
     map)
   "Keymap for cricbuzz-index major mode")
 
+;;;###autoload;
 (define-derived-mode cricbuzz-index-mode org-mode
   "Cricbuzz-Index"
   "Major mode for cricbuzz live scores"
   (setq buffer-read-only t))
 
+;;;###autoload;
 (define-derived-mode cricbuzz-score-mode org-mode
   "Cricbuzz-Score"
   "Major mode for viewing cricbuzz scorecards"
