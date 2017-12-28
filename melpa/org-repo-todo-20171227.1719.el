@@ -1,12 +1,12 @@
-;;; org-repo-todo.el --- Simple repository todo management with org-mode
+;;; org-repo-todo.el --- Simple repository todo management with org-mode -*- lexical-binding: t -*-
 
-;; Copyright (C) 2014  justin talbott
+;; Copyright (C) 2014-2017 justin talbott
 
 ;; Author: justin talbott <justin@waymondo.com>
 ;; Keywords: convenience
-;; Package-Version: 20160307.1029
+;; Package-Version: 20171227.1719
 ;; URL: https://github.com/waymondo/org-repo-todo
-;; Version: 0.0.2
+;; Version: 0.0.3
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 ;;; Commentary:
 
 ;; This is a simple package for capturing and visiting todo items for
-;; the repository you are currently within. Under the hood it uses
+;; the repository you are currently within.  Under the hood it uses
 ;; `org-capture' to provide a popup window for inputting `org-mode'
 ;; checkboxed todo items (http://orgmode.org/manual/Checkboxes.html)
 ;; or regular ** TODO items that get saved to a TODO.org file in the
@@ -53,7 +53,8 @@
 
 (defcustom ort/prefix-arg-directory user-emacs-directory
   "This is the alternate directory to visit/capture to with the `C-u' prefix."
-  :group 'org-repo-todo)
+  :group 'org-repo-todo
+  :type 'directory)
 
 (autoload 'vc-git-root "vc-git")
 (autoload 'vc-svn-root "vc-svn")
@@ -61,13 +62,13 @@
 
 (push '("ort/todo" "Org Repo Todo"
         entry
-        (file+headline (ort/todo-file) "Todos")
+        (file+headline "TODO.org" "Todos")
         "* TODO  %?\t\t\t%T\n %i\n Link: %l\n")
       org-capture-templates)
 
 (push '("ort/checkitem" "Org Repo Checklist Item"
         checkitem
-        (file+headline (ort/todo-file) "Checklist"))
+        (file+headline "TODO.org" "Checklist"))
       org-capture-templates)
 
 (defun ort/todo-file ()
@@ -97,9 +98,10 @@ TODO.org file."
 Items will be captured into the project root.
 If ARG-DIRECTORY is supplied, capture into `ort/prefix-arg-directory'."
   ;; make window split horizontally
-  (let ((split-width-threshold nil)
-        (split-height-threshold 0)
-        (ort/todo-root (ort/find-root arg-directory)))
+  (let* ((split-width-threshold nil)
+         (split-height-threshold 0)
+         (ort/todo-root (ort/find-root arg-directory))
+         (org-directory ort/todo-root))
     (org-capture nil ort/template)
     (fit-window-to-buffer nil nil 5)))
 

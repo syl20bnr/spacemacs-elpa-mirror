@@ -1,5 +1,5 @@
 This is a simple package for capturing and visiting todo items for
-the repository you are currently within. Under the hood it uses
+the repository you are currently within.  Under the hood it uses
 `org-capture' to provide a popup window for inputting `org-mode'
 checkboxed todo items (http://orgmode.org/manual/Checkboxes.html)
 or regular ** TODO items that get saved to a TODO.org file in the
