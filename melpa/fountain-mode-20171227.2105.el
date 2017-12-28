@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 20171226.2159
+;; Package-Version: 20171227.2105
 ;; Version: 2.4.0
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -1791,7 +1791,8 @@ Includes child elements."
         (list 'begin (match-beginning 0)
               'end (match-end 0)
               'export (if (memq 'page-break export-elements) t))
-        (match-string-no-properties 2)))
+        (or (match-string-no-properties 2)
+            "")))
 
 (defun fountain-parse-synopsis (match-data &optional export-elements job)
   "Return an element list for matched synopsis."
