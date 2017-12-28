@@ -1,9 +1,11 @@
 ;;; dimmer.el --- visually highlight the selected buffer
-;; 
+
+;; Copyright (C) 2017 Neil Okamoto
+
 ;; Filename: dimmer.el
 ;; Author: Neil Okamoto
 ;; Version: 0.2.0-SNAPSHOT
-;; Package-Version: 20171226.2250
+;; Package-Version: 20171228.1007
 ;; Package-Requires: ((emacs "25"))
 ;; URL: https://github.com/gonewest818/dimmer.el
 ;; Keywords: faces, editing
