@@ -5,7 +5,7 @@
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; Maintainer: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/ace-window
-;; Package-Version: 20171228.1021
+;; Package-Version: 20171228.1109
 ;; Version: 0.9.0
 ;; Package-Requires: ((avy "0.2.0"))
 ;; Keywords: window, location
@@ -65,6 +65,7 @@
 ;;; Code:
 (require 'avy)
 (require 'ring)
+(require 'subr-x)
 
 ;;* Customization
 (defgroup ace-window nil

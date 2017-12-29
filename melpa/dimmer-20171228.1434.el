@@ -5,7 +5,7 @@
 ;; Filename: dimmer.el
 ;; Author: Neil Okamoto
 ;; Version: 0.2.0-SNAPSHOT
-;; Package-Version: 20171228.1007
+;; Package-Version: 20171228.1434
 ;; Package-Requires: ((emacs "25"))
 ;; URL: https://github.com/gonewest818/dimmer.el
 ;; Keywords: faces, editing
@@ -15,15 +15,15 @@
 ;;; Commentary:
 ;; 
 ;; This module provides a subtle visual indication which window is
-;; currently active by dimming the faces on the others. It does this
+;; currently active by dimming the faces on the others.  It does this
 ;; nondestructively, and computes the dimmed faces dynamically such
 ;; that your overall color scheme is shown in a muted form without
 ;; requiring you to define the "dim" versions of every face.
 ;; The percentage of dimming is user configurable.
 ;;
 ;; Unlike the 'hiwin' module which has a similar goal, this module
-;; does *not* change the color of the background in any way. It only
-;; adjusts foregrounds. In the underlying implementation we do not
+;; does *not* change the color of the background in any way.  It only
+;; adjusts foregrounds.  In the underlying implementation we do not
 ;; use overlays, and therefore we avoid some of the visual problems
 ;; the hiwin module exhibits when highlighting interactive shells
 ;; and/or repls.
@@ -55,6 +55,7 @@
 (require 'subr-x)
 (require 'color)
 (require 'face-remap)
+(require 'seq)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; configuration
@@ -102,14 +103,12 @@
 (defun dimmer-compute-rgb (c pct invert)
   "Computes the color C when dimmed by percentage PCT.
 When INVERT is true, make the value brighter rather than darker."
-  (if invert
-      (apply 'color-rgb-to-hex
-             (mapcar (lambda (x) (- 1.0 (* (- 1.0 x)
-                                           (- 1.0 pct))))
-                     (color-name-to-rgb c)))
-    (apply 'color-rgb-to-hex
-           (mapcar (lambda (x) (* x (- 1.0 pct)))
-                   (color-name-to-rgb c)))))
+  (apply 'color-rgb-to-hex
+         (mapcar
+          (if invert
+              (lambda (x) (- 1.0 (* (- 1.0 x) (- 1.0 pct))))
+            (lambda (x) (* x (- 1.0 pct))))
+          (color-name-to-rgb c))))
 
 (defun dimmer-face-color (f pct invert)
   "Compute a dimmed version of the foreground color of face F.
@@ -121,10 +120,10 @@ for dark-on-light themes."
                      (if invert "-t" "-nil"))))
     (or (gethash key dimmer-dimmed-faces)
         (let ((fg (face-foreground f)))
-          (if fg  ; e.g. "(when-let* ((fg (...)))" in Emacs 26+
-              (let ((rgb (dimmer-compute-rgb fg pct invert)))
-                (puthash key rgb dimmer-dimmed-faces)
-                rgb))))))
+          (when fg  ; e.g. "(when-let* ((fg (...)))" in Emacs 26+
+            (let ((rgb (dimmer-compute-rgb fg pct invert)))
+              (puthash key rgb dimmer-dimmed-faces)
+              rgb))))))
 
 (defun dimmer-dim-buffer (buf pct invert)
   "Dim all the faces defined in the buffer BUF.
@@ -134,10 +133,10 @@ in ‘dimmer-face-color’."
     (unless dimmer-buffer-face-remaps
       (dolist (f (face-list))
         (let ((c (dimmer-face-color f pct invert)))
-          (if c   ; e.g. "(when-let* ((c (...)))" in Emacs 26
-              (setq dimmer-buffer-face-remaps
-                    (cons (face-remap-add-relative f :foreground c)
-                          dimmer-buffer-face-remaps))))))))
+          (when c  ; e.g. "(when-let* ((c (...)))" in Emacs 26
+            (setq dimmer-buffer-face-remaps
+                  (cons (face-remap-add-relative f :foreground c)
+                        dimmer-buffer-face-remaps))))))))
 
 (defun dimmer-restore-buffer (buf)
   "Restore the un-dimmed faces in the buffer BUF."
@@ -148,14 +147,16 @@ in ‘dimmer-face-color’."
       (setq dimmer-buffer-face-remaps nil))))
 
 (defun dimmer-filtered-buffer-list ()
-  "Get filtered subset of all buffers."
-  (seq-filter
-   (lambda (buf)
-     (let ((name (buffer-name buf)))
-       (not (or (eq ?\s (elt name 0)) ; leading space
-                (and dimmer-exclusion-regexp
-                     (string-match-p dimmer-exclusion-regexp name))))))
-   (buffer-list)))
+  "Get filtered subset of all visible buffers in the current frame."
+  (let (buffers)
+    (walk-windows
+     (lambda (win)
+       (let* ((buf (window-buffer win))
+              (name (buffer-name buf)))
+         (unless (and dimmer-exclusion-regexp
+                      (string-match-p dimmer-exclusion-regexp name))
+           (push buf buffers)))))
+    buffers))
 
 (defun dimmer-process-all ()
   "Process all buffers and dim or un-dim each."
@@ -168,8 +169,7 @@ in ‘dimmer-face-color’."
 
 (defun dimmer-restore-all ()
   "Un-dim all buffers."
-  (dolist (buf (dimmer-filtered-buffer-list))
-    (dimmer-restore-buffer buf)))
+  (mapc 'dimmer-restore-buffer (buffer-list)))
 
 (defun dimmer-command-hook ()
   "Process all buffers if current buffer has changed."
@@ -183,19 +183,22 @@ in ‘dimmer-face-color’."
   (dimmer-process-all))
 
 ;;;###autoload
-(defun dimmer-activate ()
-  "Activate the dimmer."
-  (interactive)
-  (add-hook 'post-command-hook 'dimmer-command-hook)
-  (add-hook 'window-configuration-change-hook 'dimmer-config-change-hook))
+(define-minor-mode dimmer-mode
+  "visually highlight the selected buffer"
+  nil
+  :lighter ""
+  :global t
+  :require 'dimmer
+  (if dimmer-mode
+      (progn
+        (add-hook 'post-command-hook 'dimmer-command-hook)
+        (add-hook 'window-configuration-change-hook 'dimmer-config-change-hook))
+    (remove-hook 'post-command-hook 'dimmer-command-hook)
+    (remove-hook 'window-configuration-change-hook 'dimmer-config-change-hook)
+    (dimmer-restore-all)))
 
 ;;;###autoload
-(defun dimmer-deactivate ()
-  "Deactivate the dimmer and restore all buffers to normal faces."
-  (interactive)
-  (remove-hook 'post-command-hook 'dimmer-command-hook)
-  (remove-hook 'window-configuration-change-hook 'dimmer-config-change-hook)
-  (dimmer-restore-all))
+(define-obsolete-function-alias 'dimmer-activate 'dimmer-mode)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; debugging - call from *scratch*, ielm, or eshell
@@ -221,6 +224,7 @@ in ‘dimmer-face-color’."
   (redraw-display))
 
 (defun dimmer--dbg (label)
+  "Print a debug state with the given LABEL."
   (if dimmer-debug-messages
       (let ((inhibit-message t))
         (message "%s: cb '%s' wb '%s' last '%s' %s"

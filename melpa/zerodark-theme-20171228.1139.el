@@ -4,7 +4,7 @@
 
 ;; Author: Nicolas Petton <nicolas@petton.fr>
 ;; Keywords: themes
-;; Package-Version: 20171128.610
+;; Package-Version: 20171228.1139
 ;; URL: https://github.com/NicolasPetton/zerodark-theme
 ;; Version: 4.3
 ;; Package: zerodark-theme
@@ -597,7 +597,7 @@ The result is cached for one second to avoid hiccups."
    `(visible-mark-face2 ((,class (:foreground ,peach :inverse-video t))))
 
    ;; show-paren
-   `(show-paren-match ((,class (:background ,blue-dark))))
+   `(show-paren-match ((,class (:foreground ,blue :weight bold))))
 
    ;; clojure
    `(clojure-keyword-face ((,class (:inherit font-lock-builtin-face))))
