@@ -5,7 +5,7 @@
 ;; Author: Chen Bin <chenbin.sh@gmail.com>
 ;; Maintainer: Chen Bin <chenbin.sh@gmail.com>
 ;; URL: http://github.com/redguardtoo/counsel-etags
-;; Package-Version: 20171227.2228
+;; Package-Version: 20171228.1836
 ;; Package-Requires: ((emacs "24.3") (counsel "0.9.1"))
 ;; Keywords: tools, convenience
 ;; Version: 1.3.7
@@ -310,7 +310,6 @@ So we don't need project root at all.  Or you can setup `counsel-etags-project-r
 (defun counsel-etags-dir-pattern (s)
   ;; trim the '*'
   (setq s (replace-regexp-in-string "\\`[*]*" "" (replace-regexp-in-string "[*]*\\'" "" s)))
-  (message "s=%s" s)
   (file-name-as-directory s))
 
 (defun counsel-etags-scan-dir (src-dir &optional force)
