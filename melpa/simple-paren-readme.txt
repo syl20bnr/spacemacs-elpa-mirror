@@ -35,5 +35,5 @@ Insertions are not electric, thus a mnemonic key is recommended:
 (global-set-key [(super ?\[)] 'simple-paren-bracket)
 (global-set-key [(super ?')] 'simple-paren-singlequote)
 (global-set-key [(super ?\")] 'simple-paren-doublequote)
-(global-set-key [(super ?<)] 'simple-paren-lesser-then)
-(global-set-key [(super ?>)] 'simple-paren-greater-then)
+(global-set-key [(super ?<)] 'simple-paren-lesser-than)
+(global-set-key [(super ?>)] 'simple-paren-greater-than)
