@@ -4,7 +4,7 @@
 
 ;; Author: Alex Murray <murray.alex@gmail.com>
 ;; URL: https://github.com/alexmurray/ivy-xref
-;; Package-Version: 20171202.1351
+;; Package-Version: 20171229.252
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "25.1") (ivy "0.10.0"))
 
@@ -54,13 +54,24 @@
     collection))
 
 ;;;###autoload
-(defun ivy-xref-show-xrefs (xrefs _alist)
-  "Show the list of XREFS via ivy."
-  (ivy-read "xref: " (ivy-xref-make-collection xrefs)
-            :require-match t
-            :sort t
-            :action #'(lambda (candidate)
-                        (xref--show-location (cdr candidate) t))))
+(defun ivy-xref-show-xrefs (xrefs alist)
+  "Show the list of XREFS and ALIST via ivy."
+  ;; call the original xref--show-xref-buffer so we can be used with
+  ;; dired-do-find-regexp-and-replace etc which expects to use the normal xref
+  ;; results buffer but then bury it and delete the window containing it
+  ;; immediately since we don't want to see it - see
+  ;; https://github.com/alexmurray/ivy-xref/issues/2
+  (let ((buffer (xref--show-xref-buffer xrefs alist)))
+    (bury-buffer buffer)
+    (delete-window)
+    (ivy-read "xref: " (ivy-xref-make-collection xrefs)
+              :require-match t
+              :sort t
+              :action #'(lambda (candidate)
+                          (xref--show-location (cdr candidate) 'quit)))
+    ;; honor the contact of xref--show-xref-buffer by returning its original
+    ;; return value
+    buffer))
 
 (provide 'ivy-xref)
 ;;; ivy-xref.el ends here
