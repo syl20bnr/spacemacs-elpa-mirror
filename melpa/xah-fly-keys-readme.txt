@@ -15,6 +15,7 @@ put the following in your emacs init file:
 (xah-fly-keys-set-layout "qwerty") ; required if you use qwerty
 (xah-fly-keys-set-layout "qwertz") ; required if you use qwertz (Germany, etc.)
 (xah-fly-keys-set-layout "workman") ; required if you use workman
+(xah-fly-keys-set-layout "programer-dvorak") ; required if you use Programmer Dvorak
 (xah-fly-keys-set-layout "dvorak") ; by default, it's dvorak
 (xah-fly-keys 1)
 
