@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/avy
-;; Package-Version: 20171211.923
+;; Package-Version: 20171230.220
 ;; Version: 0.4.0
 ;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
 ;; Keywords: point, location
@@ -467,15 +467,15 @@ multiple DISPLAY-FN invocations."
         (dolist (x avy--leafs)
           (funcall display-fn (car x) (cdr x))))
       (let ((char (funcall avy-translate-char-function (read-key)))
-	    window
+            window
             branch)
         (funcall cleanup-fn)
-	(if (setq window (avy-mouse-event-window char))
-	    (throw 'done (cons char window))
-	  ;; Ensure avy-current-path stores the full path prior to
+        (if (setq window (avy-mouse-event-window char))
+            (throw 'done (cons char window))
+          ;; Ensure avy-current-path stores the full path prior to
           ;; exit so other packages can utilize its value.
           (setq avy-current-path
-		(concat avy-current-path (string (avy--key-to-char char))))
+                (concat avy-current-path (string (avy--key-to-char char))))
           (if (setq branch (assoc char tree))
               (if (eq (car (setq tree (cdr branch))) 'leaf)
                   (throw 'done (cdr tree)))
@@ -629,8 +629,9 @@ Set `avy-style' according to COMMMAND as well."
 (defun avy-action-goto (pt)
   "Goto PT."
   (let ((frame (window-frame (selected-window))))
-    (select-frame-set-input-focus frame)
-    (raise-frame frame)
+    (unless (equal frame (selected-frame))
+      (select-frame-set-input-focus frame)
+      (raise-frame frame))
     (goto-char pt)))
 
 (defun avy-forward-item ()
@@ -734,19 +735,19 @@ Use OVERLAY-FN to visualize the decision overlay."
       (if (= len 1)
           (setq res (car candidates))
         (unwind-protect
-            (progn
-              (avy--make-backgrounds
-               (avy-window-list))
-              (setq res (cond ((eq avy-style 'de-bruijn)
-                               (avy-read-de-bruijn
-                                candidates avy-keys))
-                              ((eq avy-style 'words)
-                               (avy-read-words
-                                candidates avy-words))
-                              (t
-                               (avy-read (avy-tree candidates avy-keys)
-                                         overlay-fn
-                                         #'avy--remove-leading-chars)))))
+             (progn
+               (avy--make-backgrounds
+                (avy-window-list))
+               (setq res (cond ((eq avy-style 'de-bruijn)
+                                (avy-read-de-bruijn
+                                 candidates avy-keys))
+                               ((eq avy-style 'words)
+                                (avy-read-words
+                                 candidates avy-words))
+                               (t
+                                (avy-read (avy-tree candidates avy-keys)
+                                          overlay-fn
+                                          #'avy--remove-leading-chars)))))
           (avy--done)))
       (cond ((eq res 'restart)
              (avy--process cands overlay-fn))

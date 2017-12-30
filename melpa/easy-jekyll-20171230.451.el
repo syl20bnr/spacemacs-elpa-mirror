@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-jekyll
-;; Package-Version: 1.4.10
-;; Version: 1.4.10
+;; Package-Version: 20171230.451
+;; Version: 1.5.10
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -166,75 +166,6 @@ The default is drwxr-xr-x."
 (defvar easy-jekyll--draft-mode nil
   "Display draft-mode.")
 
-(defvar easy-jekyll--github-deploy-timer nil
-  "Easy-jekyll-github-deploy-timer.")
-
-(defvar easy-jekyll--github-deploy-basedir-timer nil
-  "Easy-jekyll-github-deploy-basedir-timer.")
-
-(defvar easy-jekyll--github-deploy-url-timer nil
-  "Easy-jekyll-github-deploy-url-timer.")
-
-(defvar easy-jekyll--amazon-s3-timer nil
-  "Easy-jekyll-amazon-s3-timer.")
-
-(defvar easy-jekyll--amazon-s3-basedir-timer nil
-  "Easy-jekyll-amazon-s3-basedir-timer.")
-
-(defvar easy-jekyll--amazon-s3-url-timer nil
-  "Easy-jekyll-amazon-s3-url-timer.")
-
-(defvar easy-jekyll--amazon-s3-bucket-name-timer nil
-  "Easy-jekyll-amazon-s3-bucket-name-timer.")
-
-(defvar easy-jekyll--google-cloud-storage-timer nil
-  "Easy-jekyll-google-cloud-storage-timer.")
-
-(defvar easy-jekyll--google-cloud-storage-basedir-timer nil
-  "Easy-jekyll-google-cloud-storage-basedir-timer.")
-
-(defvar easy-jekyll--google-cloud-storage-url-timer nil
-  "Easy-jekyll-google-cloud-storage-url-timer.")
-
-(defvar easy-jekyll--google-cloud-storage-bucket-name-timer nil
-  "Easy-jekyll-google-cloud-storage-bucket-name-timer.")
-
-(defvar easy-jekyll--publish-basedir nil
-  "Easy-jekyll-publish-var.")
-
-(defvar easy-jekyll--publish-sshdomain nil
-  "Easy-jekyll-publish-var.")
-
-(defvar easy-jekyll--publish-root nil
-  "Easy-jekyll-publish-var.")
-
-(defvar easy-jekyll--publish-url nil
-  "Easy-jekyll-publish-var.")
-
-(defvar easy-jekyll--github-deploy-basedir nil
-  "Easy-jekyll-github-deploy-var.")
-
-(defvar easy-jekyll--github-deploy-url nil
-  "Easy-jekyll-github-deploy-var.")
-
-(defvar easy-jekyll--amazon-s3-basedir nil
-  "Easy-jekyll-amazon-s3-var.")
-
-(defvar easy-jekyll--amazon-s3-url nil
-  "Easy-jekyll-amazon-s3-var.")
-
-(defvar easy-jekyll--amazon-s3-bucket-name nil
-  "Easy-jekyll-amazon-s3-var.")
-
-(defvar easy-jekyll--google-cloud-storage-basedir nil
-  "Easy-jekyll-google-cloud-storage-var.")
-
-(defvar easy-jekyll--google-cloud-storage-url nil
-  "Easy-jekyll-google-cloud-storage-var.")
-
-(defvar easy-jekyll--google-cloud-storage-bucket-name nil
-  "Easy-jekyll-google-cloud-storage-var.")
-
 (defconst easy-jekyll--unmovable-line-default easy-jekyll--unmovable-line
   "Default value of impossible to move below this line.")
 
@@ -299,7 +230,16 @@ The default is drwxr-xr-x."
       easy-jekyll-bloglist)
 
 (defvar easy-jekyll--publish-timer-list (make-list (length easy-jekyll-bloglist) 'nil)
-  "Timer list for cansel timer.")
+  "Timer list for cansel publish timer.")
+
+(defvar easy-jekyll--github-deploy-timer-list (make-list (length easy-jekyll-bloglist) 'nil)
+  "Timer list for cansel github deploy timer.")
+
+(defvar easy-jekyll--amazon-s3-deploy-timer-list (make-list (length easy-jekyll-bloglist) 'nil)
+  "Timer list for cansel amazon s3 deploy timer.")
+
+(defvar easy-jekyll--google-cloud-storage-deploy-timer-list (make-list (length easy-jekyll-bloglist) 'nil)
+  "Timer list for cansel google cloud storage deploy timer.")
 
 (defconst easy-jekyll--default-github-deploy-script easy-jekyll-github-deploy-script
   "Default easy-jekyll github-deploy-script.")
@@ -476,7 +416,8 @@ Report an error if jekyll is not installed, or if `easy-jekyll-basedir' is unset
     (if (nth blognum easy-jekyll--publish-timer-list)
 	(message "There is already reserved publish-timer on %s" easy-jekyll-url)
       (setf (nth easy-jekyll--current-blog easy-jekyll--publish-timer-list)
-	    (run-at-time (* n 60) nil #'(lambda () (easy-jekyll-publish-on-timer blognum)))))))
+	    (run-at-time (* n 60) nil
+			 #'(lambda () (easy-jekyll-publish-on-timer blognum)))))))
 
 ;;;###autoload
 (defun easy-jekyll-cancel-publish-timer ()
@@ -497,6 +438,7 @@ Report an error if jekyll is not installed, or if `easy-jekyll-basedir' is unset
     (let ((ret (call-process "bundle" nil "*jekyll-publish*" t "exec" "jekyll" "build" "--destination" "_site")))
       (unless (zerop ret)
 	(switch-to-buffer (get-buffer "*jekyll-publish*"))
+	(setf (nth n easy-jekyll--publish-timer-list) nil)
 	(error "'bundle exec jekyll build' command does not end normally")))
     (when (get-buffer "*jekyll-publish*")
       (kill-buffer "*jekyll-publish*"))
@@ -612,34 +554,54 @@ POST-FILE needs to have and extension '.md' or '.textile'."
 (defun easy-jekyll-github-deploy-timer (n)
   "A timer that github-deploy after the specified number as N of minutes has elapsed."
   (interactive "nMinute:")
-  (setq easy-jekyll--github-deploy-basedir-timer easy-jekyll-basedir)
-  (setq easy-jekyll--github-deploy-url-timer easy-jekyll-url)
-  (if easy-jekyll--github-deploy-timer
-      (message "There is already reserved github-deploy-timer")
-    (setq easy-jekyll--github-deploy-timer
-	  (run-at-time (* n 60) nil #'easy-jekyll-github-deploy-on-timer))))
+  (unless easy-jekyll-basedir
+    (error "Please set easy-jekyll-basedir variable"))
+  (unless (executable-find "jekyll")
+    (error "'jekyll' is not installed"))
+  (let ((deployscript (file-truename (expand-file-name
+				      easy-jekyll-github-deploy-script easy-jekyll-basedir)))
+	(blognum easy-jekyll--current-blog))
+    (unless (executable-find deployscript)
+      (error "%s do not execute" deployscript))
+    (if (nth blognum easy-jekyll--github-deploy-timer-list)
+	(message "There is already reserved github-deloy-timer on %s" easy-jekyll-url)
+      (setf (nth easy-jekyll--current-blog easy-jekyll--github-deploy-timer-list)
+	    (run-at-time (* n 60) nil
+			 #'(lambda () (easy-jekyll-github-deploy-on-timer blognum)))))))
 
 ;;;###autoload
 (defun easy-jekyll-cancel-github-deploy-timer ()
   "Cancel timer that github-deploy after the specified number of minutes has elapsed."
   (interactive)
-  (if easy-jekyll--github-deploy-timer
+  (if (nth easy-jekyll--current-blog easy-jekyll--github-deploy-timer-list)
       (progn
-	(cancel-timer easy-jekyll--github-deploy-timer)
-	(setq easy-jekyll--github-deploy-timer nil)
-	(message "Github-deploy-timer canceled"))
-    (message "There is no reserved github-deploy-timer")))
+	(cancel-timer (nth easy-jekyll--current-blog easy-jekyll--github-deploy-timer-list))
+	(setf (nth easy-jekyll--current-blog easy-jekyll--github-deploy-timer-list) nil)
+	(message "Github-deploy-timer canceled on %s" easy-jekyll-url))
+    (message "There is no reserved github-deploy-timer on %s" easy-jekyll-url)))
 
-(defun easy-jekyll-github-deploy-on-timer ()
-  "Execute `easy-jekyll-github-deploy-script' script on timer locate at `easy-jekyll-basedir'."
-  (setq easy-jekyll--github-deploy-basedir easy-jekyll-basedir)
-  (setq easy-jekyll-basedir easy-jekyll--github-deploy-basedir-timer)
-  (setq easy-jekyll--github-deploy-url easy-jekyll-url)
-  (setq easy-jekyll-url easy-jekyll--github-deploy-url-timer)
-  (easy-jekyll-github-deploy)
-  (setq easy-jekyll--github-deploy-timer nil)
-  (setq easy-jekyll-basedir easy-jekyll--github-deploy-basedir)
-  (setq easy-jekyll-url easy-jekyll--github-deploy-url))
+(defun easy-jekyll-github-deploy-on-timer (n)
+  "Execute `easy-jekyll-github-deploy-script' script on timer locate at `easy-jekyll-basedir' at N."
+  (let* ((deployscript (file-truename
+			(expand-file-name
+			 (if (easy-jekyll-nth-eval-bloglist easy-jekyll-github-deploy-script n)
+			     (easy-jekyll-nth-eval-bloglist easy-jekyll-github-deploy-script n)
+			   easy-jekyll--default-github-deploy-script)
+			 (easy-jekyll-nth-eval-bloglist easy-jekyll-basedir n))))
+	 (default-directory (easy-jekyll-nth-eval-bloglist easy-jekyll-basedir n))
+	 (ret (call-process
+	       (shell-quote-argument deployscript) nil "*jekyll-github-deploy*" t))
+	 (default-directory easy-jekyll-basedir))
+    (unless (zerop ret)
+      (switch-to-buffer (get-buffer "*jekyll-github-deploy*"))
+      (setf (nth n easy-jekyll--github-deploy-timer-list) nil)
+      (error "%s command does not end normally" deployscript)))
+  (when (get-buffer "*jekyll-github-deploy*")
+    (kill-buffer "*jekyll-github-deploy*"))
+  (message "Blog deployed")
+  (when (easy-jekyll-nth-eval-bloglist easy-jekyll-url n)
+    (browse-url (easy-jekyll-nth-eval-bloglist  easy-jekyll-url n)))
+  (setf (nth n easy-jekyll--github-deploy-timer-list) nil))
 
 ;;;###autoload
 (defun easy-jekyll-amazon-s3-deploy ()
@@ -667,38 +629,50 @@ POST-FILE needs to have and extension '.md' or '.textile'."
 (defun easy-jekyll-amazon-s3-deploy-timer (n)
   "A timer that amazon-s3-deploy after the specified number as N of minutes has elapsed."
   (interactive "nMinute:")
-  (setq easy-jekyll--amazon-s3-basedir-timer easy-jekyll-basedir)
-  (setq easy-jekyll--amazon-s3-url-timer easy-jekyll-url)
-  (setq easy-jekyll--amazon-s3-bucket-name-timer easy-jekyll-amazon-s3-bucket-name)
-  (if easy-jekyll--amazon-s3-timer
-      (message "There is already reserved AWS-s3-deploy-timer")
-    (setq easy-jekyll--amazon-s3-timer
-	  (run-at-time (* n 60) nil #'easy-jekyll-amazon-s3-deploy-on-timer))))
+  (unless easy-jekyll-basedir
+    (error "Please set easy-jekyll-basedir variable"))
+  (unless (executable-find "jekyll")
+    (error "'jekyll' is not installed"))
+  (unless (executable-find "aws")
+    (error "'aws' is not installed"))
+  (unless easy-jekyll-amazon-s3-bucket-name
+    (error "Please set 'easy-jekyll-amazon-s3-bucket-name' variable"))
+  (let ((blognum easy-jekyll--current-blog))
+    (if (nth blognum easy-jekyll--amazon-s3-deploy-timer-list)
+	(message "There is already reserved AWS-s3-deploy-timer on %s" easy-jekyll-url)
+      (setf (nth easy-jekyll--current-blog easy-jekyll--amazon-s3-deploy-timer-list)
+	    (run-at-time (* n 60) nil
+			 #'(lambda () (easy-jekyll-amazon-s3-deploy-on-timer blognum)))))))
 
 ;;;###autoload
 (defun easy-jekyll-cancel-amazon-s3-deploy-timer ()
   "Cancel timer that amazon-s3-deploy after the specified number of minutes has elapsed."
   (interactive)
-  (if easy-jekyll--amazon-s3-timer
+  (if (nth easy-jekyll--current-blog easy-jekyll--amazon-s3-deploy-timer-list)
       (progn
-	(cancel-timer easy-jekyll--amazon-s3-timer)
-	(setq easy-jekyll--amazon-s3-timer nil)
-	(message "AWS-s3-deploy-timer canceled"))
-    (message "There is no reserved AWS-s3-deploy-timer")))
+	(cancel-timer (nth easy-jekyll--current-blog easy-jekyll--amazon-s3-deploy-timer-list))
+	(setf (nth easy-jekyll--current-blog easy-jekyll--amazon-s3-deploy-timer-list) nil)
+	(message "AWS-s3-deploy-timer canceled on %s" easy-jekyll-url))
+    (message "There is no reserved AWS-s3-deploy-timer on %s" easy-jekyll-url)))
 
-(defun easy-jekyll-amazon-s3-deploy-on-timer ()
-  "Deploy jekyll source at Amazon S3 on timer."
-  (setq easy-jekyll--amazon-s3-basedir easy-jekyll-basedir)
-  (setq easy-jekyll-basedir easy-jekyll--amazon-s3-basedir-timer)
-  (setq easy-jekyll--amazon-s3-url easy-jekyll-url)
-  (setq easy-jekyll-url easy-jekyll--amazon-s3-url-timer)
-  (setq easy-jekyll--amazon-s3-bucket-name easy-jekyll-amazon-s3-bucket-name)
-  (setq easy-jekyll-amazon-s3-bucket-name easy-jekyll--amazon-s3-bucket-name-timer)
-  (easy-jekyll-amazon-s3-deploy)
-  (setq easy-jekyll--amazon-s3-timer nil)
-  (setq easy-jekyll-basedir easy-jekyll--amazon-s3-basedir)
-  (setq easy-jekyll-url easy-jekyll--amazon-s3-url)
-  (setq easy-jekyll-amazon-s3-bucket-name easy-jekyll--amazon-s3-bucket-name))
+(defun easy-jekyll-amazon-s3-deploy-on-timer (n)
+  "Deploy jekyll source at Amazon S3 on timer at N."
+  (let* ((default-directory (easy-jekyll-nth-eval-bloglist easy-jekyll-basedir n))
+	 (ret (call-process "bundle" nil "*jekyll-amazon-s3-deploy*" t "exec" "jekyll" "build" "--destination" "_site"))
+	 (default-directory easy-jekyll-basedir))
+    (unless (zerop ret)
+      (switch-to-buffer (get-buffer "*jekyll-amazon-s3-deploy*"))
+      (setf (nth n easy-jekyll--amazon-s3-deploy-timer-list) nil)
+      (error "'bundle exec jekyll build' command does not end normally")))
+  (when (get-buffer "*jekyll-amazon-s3-deploy*")
+    (kill-buffer "*jekyll-amazon-s3-deploy*"))
+  (setq default-directory (easy-jekyll-nth-eval-bloglist easy-jekyll-basedir n))
+  (shell-command-to-string (concat "aws s3 sync --delete _site s3://" easy-jekyll-amazon-s3-bucket-name "/"))
+  (setq default-directory easy-jekyll-basedir)
+  (message "Blog deployed")
+  (when (easy-jekyll-nth-eval-bloglist easy-jekyll-url n)
+    (browse-url (easy-jekyll-nth-eval-bloglist easy-jekyll-url n)))
+  (setf (nth n easy-jekyll--amazon-s3-deploy-timer-list) nil))
 
 ;;;###autoload
 (defun easy-jekyll-google-cloud-storage-deploy ()
@@ -726,38 +700,53 @@ POST-FILE needs to have and extension '.md' or '.textile'."
 (defun easy-jekyll-google-cloud-storage-deploy-timer (n)
   "A timer that google-cloud-storage-deploy after the specified number as N of minutes has elapsed."
   (interactive "nMinute:")
-  (setq easy-jekyll--google-cloud-storage-basedir-timer easy-jekyll-basedir)
-  (setq easy-jekyll--google-cloud-storage-url-timer easy-jekyll-url)
-  (setq easy-jekyll--google-cloud-storage-bucket-name-timer easy-jekyll-google-cloud-storage-bucket-name)
-  (if easy-jekyll--google-cloud-storage-timer
-      (message "There is already reserved GCS-timer")
-    (setq easy-jekyll--google-cloud-storage-timer
-	  (run-at-time (* n 60) nil #'easy-jekyll-google-cloud-storage-deploy-on-timer))))
+  (unless easy-jekyll-basedir
+    (error "Please set easy-jekyll-basedir variable"))
+  (unless (executable-find "jekyll")
+    (error "'jekyll' is not installed"))
+  (unless (executable-find "gsutil")
+    (error "'Google Cloud SDK' is not installed"))
+  (unless easy-jekyll-google-cloud-storage-bucket-name
+    (error "Please set 'easy-jekyll-google-cloud-storage-bucket-name' variable"))
+  (let ((blognum easy-jekyll--current-blog))
+    (if (nth blognum easy-jekyll--google-cloud-storage-deploy-timer-list)
+	(message "There is already reserved google-cloud-storage-deploy-timer on %s" easy-jekyll-url)
+      (setf (nth easy-jekyll--current-blog easy-jekyll--google-cloud-storage-deploy-timer-list)
+	    (run-at-time (* n 60) nil
+			 #'(lambda () (easy-jekyll-google-cloud-storage-deploy-on-timer blognum)))))))
 
 ;;;###autoload
 (defun easy-jekyll-cancel-google-cloud-storage-deploy-timer ()
   "Cancel timer that google-cloud-storage-deploy after the specified number of minutes has elapsed."
   (interactive)
-  (if easy-jekyll--google-cloud-storage-timer
+  (if (nth easy-jekyll--current-blog easy-jekyll--google-cloud-storage-deploy-timer-list)
       (progn
-	(cancel-timer easy-jekyll--google-cloud-storage-timer)
-	(setq easy-jekyll--google-cloud-storage-timer nil)
-	(message "GCS-timer canceled"))
-    (message "There is no reserved GCS-timer")))
+	(cancel-timer (nth easy-jekyll--current-blog easy-jekyll--google-cloud-storage-deploy-timer-list))
+	(setf (nth easy-jekyll--current-blog easy-jekyll--google-cloud-storage-deploy-timer-list) nil)
+	(message "GCS-timer canceled on %s" easy-jekyll-url))
+    (message "There is no reserved GCS-timer on %s" easy-jekyll-url)))
 
-(defun easy-jekyll-google-cloud-storage-deploy-on-timer ()
-  "Deploy jekyll source at Google Cloud Storage on timer."
-  (setq easy-jekyll--google-cloud-storage-basedir easy-jekyll-basedir)
-  (setq easy-jekyll-basedir easy-jekyll--google-cloud-storage-basedir-timer)
-  (setq easy-jekyll--google-cloud-storage-url easy-jekyll-url)
-  (setq easy-jekyll-url easy-jekyll--google-cloud-storage-url-timer)
-  (setq easy-jekyll--google-cloud-storage-bucket-name easy-jekyll-google-cloud-storage-bucket-name)
-  (setq easy-jekyll-google-cloud-storage-bucket-name easy-jekyll--google-cloud-storage-bucket-name-timer)
-  (easy-jekyll-google-cloud-storage-deploy)
-  (setq easy-jekyll--google-cloud-storage-timer nil)
-  (setq easy-jekyll-basedir easy-jekyll--google-cloud-storage-basedir)
-  (setq easy-jekyll-url easy-jekyll--google-cloud-storage-url)
-  (setq easy-jekyll-google-cloud-storage-bucket-name easy-jekyll--google-cloud-storage-bucket-name))
+(defun easy-jekyll-google-cloud-storage-deploy-on-timer (n)
+  "Deploy jekyll source at Google Cloud Storage on timer at N."
+  (let* ((default-directory (easy-jekyll-nth-eval-bloglist easy-jekyll-basedir n))
+	 (ret (call-process "bundle" nil "*jekyll-google-cloud-storage-deploy*" t "exec" "jekyll" "build" "--destination" "_site"))
+	 (default-directory easy-jekyll-basedir))
+    (unless (zerop ret)
+      (switch-to-buffer (get-buffer "*jekyll-google-cloud-storage-deploy*"))
+      (setf (nth n easy-jekyll--google-cloud-storage-deploy-timer-list) nil)
+      (error "'bundle exec jekyll build' command does not end normally")))
+  (when (get-buffer "*jekyll-google-cloud-storage-deploy*")
+    (kill-buffer "*jekyll-google-cloud-storage-deploy*"))
+  (setq default-directory (easy-jekyll-nth-eval-bloglist easy-jekyll-basedir n))
+  (shell-command-to-string
+   (concat "gsutil -m rsync -d -r _site gs://"
+	   (easy-jekyll-nth-eval-bloglist easy-jekyll-google-cloud-storage-bucket-name n)
+	   "/"))
+  (setq default-directory easy-jekyll-basedir)
+  (message "Blog deployed")
+  (when (easy-jekyll-nth-eval-bloglist easy-jekyll-url n)
+    (browse-url (easy-jekyll-nth-eval-bloglist easy-jekyll-url n)))
+  (setf (nth n easy-jekyll--google-cloud-storage-deploy-timer-list) nil))
 
 ;;;###autoload
 (defun easy-jekyll-ag ()
