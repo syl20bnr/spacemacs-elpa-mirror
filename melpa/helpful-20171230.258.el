@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171229.1723
+;; Package-Version: 20171230.258
 ;; Keywords: help, lisp
 ;; Version: 0.6
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -603,13 +603,13 @@ unescaping too."
                  (key-description
                   (if key
                       (key-description key)
-                    (format "M-x %s" symbol-name)))))
-          (insert
-           (helpful--button
-            key-description
-            'helpful-describe-exactly-button
-            'symbol symbol
-            'callable-p t))))
+                    (format "M-x %s" symbol-name))))
+            (insert
+             (helpful--button
+              key-description
+              'helpful-describe-exactly-button
+              'symbol symbol
+              'callable-p t)))))
        ;; Don't modify other characters.
        (t
         (forward-char 1))))

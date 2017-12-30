@@ -4,7 +4,7 @@
 
 ;; Author: Prassee  <prassee.sathian@gmail.com>
 ;; Keywords: faces
-;; Package-Version: 20171222.2326
+;; Package-Version: 20171230.353
 ;; URL: https://github.com/prassee/prassee-emacs-theme
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 1.2
@@ -22,15 +22,10 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-;;; Commentary:
-
-;; A variant of the Doom theme Zenburn for Emacs 25, built on top
-;; of the new built-in theme support in Emacs 25.
-
 ;;; Code:
 
 (deftheme prassee
-  "A dark theme inspired by Doom One theme")
+  "A dark theme for emacs")
 
 (let ((c '((class color) (min-colors 89)))
       (black          "#181e26")
@@ -53,7 +48,8 @@
       (blue-d         "#1f5582")
       (green          "#98be65"))
 
-  (let* ((bg             "#002b36")
+  (let* (
+         (bg             "#002b36")
          (bg-d           "#002a36")
          (bg-dd          "#0087af")
          (fg             "#bbc2cf")
@@ -104,7 +100,7 @@
      'prassee
 
      ;; Global
-     `(default                ((,c (:background ,bg-d :foreground ,fg))))
+     `(default                ((,c (:background ,bg :foreground ,fg))))
      `(fringe                 ((,c (:inherit default :foreground ,comments))))
      `(region                 ((,c (:background ,region))))
      `(highlight              ((,c (:background ,teal :foreground ,black))))
@@ -121,11 +117,11 @@
      `(match                  ((,c (:foreground ,green :background ,black ))))
      `(trailing-whitespace    ((,c (:background ,comments))))
      `(vertical-border        ((,c (:foreground ,teal :background ,white))))
-     `(show-paren-match       ((,c (:foreground ,red :background ,black ))))
+     `(show-paren-match       ((,c (:foreground ,black :background ,teal ))))
      `(show-paren-mismatch    ((,c (:foreground ,black :background ,red ))))
      `(linum
-       ((((type graphic)) :background ,bg :foreground ,teal )
-        (t                :background ,bg :foreground ,teal )))
+       ((((type graphic)) :background ,bg :foreground ,teal)
+        (t                :background ,bg :foreground ,teal)))
 
      `(font-lock-builtin-face           ((,c (:foreground ,builtin))))
      `(font-lock-comment-face           ((,c (:foreground ,comments))))
@@ -207,14 +203,14 @@
      `(git-gutter+-deleted         ((,c (:foreground ,vc-deleted))))
 
      ;; Helm
-     `(helm-selection              ((,c (:background ,teal :foreground ,black))))
-     `(helm-match                  ((,c (:foreground ,blue :underline t))))
+     `(helm-selection              ((,c (:background ,teal :foreground ,bg))))
+     `(helm-match                  ((,c (:foreground ,orange :underline t :bold t))))
      `(helm-source-header          ((,c (:background ,orange :foreground ,black :weight bold ))))
      `(helm-swoop-target-line-face ((,c (:foreground ,highlight :inverse-video t))))
      `(helm-ff-file                ((,c (:foreground ,fg))))
-     `(helm-ff-prefix              ((,c (:foreground ,magenta))))
-     `(helm-ff-dotted-directory    ((,c (:foreground ,grey-d))))
-     `(helm-ff-directory           ((,c (:foreground ,orange))))
+     `(helm-ff-prefix              ((,c (:foreground ,white))))
+     `(helm-ff-dotted-directory    ((,c (:foreground ,cyan-d :weight bold))))
+     `(helm-ff-directory           ((,c (:foreground ,orange :weight bold))))
      `(helm-ff-executable          ((,c (:foreground ,white ))))
 
      ;; indent-guide, highlight-{quoted,numbers,indentation}-mode
@@ -355,19 +351,13 @@
      `(org-list-bullet           ((,c (:foreground ,cyan :bold t :italic t))))  ; custom
      `(message-header-name       ((,c (:foreground ,green)))) ; custom
 
-     ;; typescript-mode
-     `(ts-object-property  ((,c (:inherit js2-object-property))))
-
-     ;; powerline mode 
-     `(powerline-active1 ((,c (:background ,cyan-d :foreground ,bg-d ))))
-     `(powerline-active2 ((,c (:background ,cyan-d :foreground ,bg-d ))))
-     `(powerline-inactive1 ((,c (:background ,grey :foreground ,white))))
-     `(powerline-inactive2 ((,c (:background ,grey :foreground ,white))))
-
+    
      ;; mode-line with slightly more height
-     `(mode-line ((,c (:background ,cyan-d :foreground ,black :box (:line-width 4 :color ,cyan-d)))))
-     `(mode-line-inactive ((,c (:background ,grey :foreground ,white :box (:line-width 4 :color ,grey)))))
+     `(mode-line ((,c (:background ,teal :foreground ,black :box (:line-width 6 :color ,teal)))))    
+     `(mode-line-inactive ((,c (:background ,grey :foreground ,white :box (:line-width 6 :color ,grey)))))
      
+     ;; `(mode-line-buffer-id ((,c (:background ,white  :foreground ,bg  :box (:line-width 6 :color ,white)))))
+
      ;; web-mode
      `(web-mode-doctype-face           ((,c (:foreground ,comments))))
      `(web-mode-html-tag-face          ((,c (:foreground ,methods))))
@@ -382,11 +372,8 @@
 ;; :weight 'bold 
 (setq ns-use-srgb-colorspace nil)
 
-(setq spaceline-separator-dir-left '(left . left))
-(setq spaceline-separator-dir-right '(right . right))
-
 ;; set cursor style
-(setq-default cursor-type 'bar) 
+(setq-default cursor-type 'box) 
 
 ;; autoload
 (when load-file-name

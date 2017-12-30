@@ -1120,7 +1120,7 @@
 	    ((:url . "https://elpa.gnu.org/packages/vigenere.html")
 	     (:keywords "data" "vigenere" "cipher"))])
  (vlf .
-      [(1 7)
+      [(1 7 1)
        nil "View Large Files" tar
        ((:keywords "large files" "utilities")
 	(:url . "https://github.com/m00natic/vlfi"))])
