@@ -4,7 +4,7 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20171229.1727
+;; Package-Version: 20171229.2056
 ;; Version: 2.8.19
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -484,7 +484,8 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
     (if (nth blognum easy-hugo--publish-timer-list)
 	(message "There is already reserved publish-timer on %s" easy-hugo-url)
       (setf (nth easy-hugo--current-blog easy-hugo--publish-timer-list)
-	    (run-at-time (* n 60) nil #'(lambda () (easy-hugo-publish-on-timer blognum)))))))
+	    (run-at-time (* n 60) nil
+			 #'(lambda () (easy-hugo-publish-on-timer blognum)))))))
 
 ;;;###autoload
 (defun easy-hugo-cancel-publish-timer ()
@@ -724,7 +725,7 @@ If not applicable, return the default preview."
 			(expand-file-name
 			 (if (easy-hugo-nth-eval-bloglist easy-hugo-github-deploy-script n)
 			     (easy-hugo-nth-eval-bloglist easy-hugo-github-deploy-script n)
-			   "deploy.sh")
+			   easy-hugo--default-github-deploy-script)
 			 (easy-hugo-nth-eval-bloglist easy-hugo-basedir n))))
 	 (default-directory (easy-hugo-nth-eval-bloglist easy-hugo-basedir n))
 	 (ret (call-process
