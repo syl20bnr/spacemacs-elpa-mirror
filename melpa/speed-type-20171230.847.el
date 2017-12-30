@@ -5,7 +5,7 @@
 ;; Author: Gunther Hagleitner
 ;; Maintainer: Julien Pagès <j.parkouss@gmail.com>
 ;; Version: 1.0
-;; Package-Version: 20171217.624
+;; Package-Version: 20171230.847
 ;; Keywords: games
 ;; URL: https://github.com/parkouss/speed-type
 ;; Package-Requires: ((emacs "24.3") (cl-lib "0.3"))
@@ -454,8 +454,21 @@ will be used. Else some text will be picked randomly."
       (when (re-search-forward "^Author: " nil t)
         (setq author (buffer-substring (point) (line-end-position))))
 
-      (speed-type--setup (speed-type--pick-text-to-type (point))
-                         author title))))
+      (let ((start (point))
+	    (end nil))
+
+	(goto-char (point-min))
+	(when (re-search-forward "***.START.OF.\\(THIS\\|THE\\).PROJECT.GUTENBERG.EBOOK" nil t)
+	  (end-of-line 1)
+	  (forward-line 1)
+	  (setq start (point)))
+	(when (re-search-forward "***.END.OF.\\(THIS\\|THE\\).PROJECT.GUTENBERG.EBOOK" nil t)
+	  (beginning-of-line 1)
+	  (forward-line -1)
+	  (setq end (point)))
+
+	(speed-type--setup (speed-type--pick-text-to-type start end)
+			   author title)))))
 
 (provide 'speed-type)
 

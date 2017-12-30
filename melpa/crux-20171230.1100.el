@@ -1,11 +1,11 @@
 ;;; crux.el --- A Collection of Ridiculously Useful eXtensions -*- lexical-binding: t -*-
 ;;
-;; Copyright © 2015-2016 Bozhidar Batsov
+;; Copyright © 2015-2017 Bozhidar Batsov
 ;;
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/crux
-;; Package-Version: 20170801.1334
-;; Version: 0.3.0
+;; Package-Version: 20171230.1100
+;; Version: 0.4.0-snapshot
 ;; Keywords: convenience
 ;; Package-Requires: ((seq "1.11"))
 
@@ -63,27 +63,38 @@
   :type 'string
   :group 'crux)
 
-(defcustom crux-shell-zsh-init-files '("$HOME/.zshrc" "$HOME/.zlogin" "$HOME/.zprofile" "$HOME/.zshenv" "$HOME/.zlogout" "/etc/zshenv" "/etc/zprofile" "/etc/zshrc" "/etc/zlogin" "/etc/zlogout" "$ZDOTDIR/.zshrc" "$ZDOTDIR/.zlogin" "$ZDOTDIR/.zprofile" "$ZDOTIR/.zshenv" "$ZDOTDIR/.zlogout")
+(defcustom crux-shell-zsh-init-files
+  '("$HOME/.zshrc" "$HOME/.zlogin" "$HOME/.zprofile" "$HOME/.zshenv"
+    "$HOME/.zlogout" "/etc/zshenv" "/etc/zprofile" "/etc/zshrc" "/etc/zlogin"
+    "/etc/zlogout" "$ZDOTDIR/.zshrc" "$ZDOTDIR/.zlogin" "$ZDOTDIR/.zprofile"
+    "$ZDOTIR/.zshenv" "$ZDOTDIR/.zlogout")
   "The default init files of zsh."
   :type 'list
   :group 'crux)
 
-(defcustom crux-shell-bash-init-files '("$BASH_ENV" "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.bash_login" "$HOME/.profile" "$HOME/.bash_logout" "/etc/bashrc" "/etc/bash_profile" "/etc/bash_login" "/etc/profile" "/etc/bash_logout")
+(defcustom crux-shell-bash-init-files
+  '("$BASH_ENV" "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.bash_login"
+    "$HOME/.profile" "$HOME/.bash_logout" "/etc/bashrc" "/etc/bash_profile"
+    "/etc/bash_login" "/etc/profile" "/etc/bash_logout")
   "The default init files of bash."
   :type 'list
   :group 'crux)
 
-(defcustom crux-shell-tcsh-init-files '("$HOME/.login" "$HOME/.cshrc" "$HOME/.tcshrc" "$HOME/.logout" "/etc/csh.cshrc" "/etc/csh.login" "/etc/csh.logout")
+(defcustom crux-shell-tcsh-init-files
+  '("$HOME/.login" "$HOME/.cshrc" "$HOME/.tcshrc" "$HOME/.logout"
+    "/etc/csh.cshrc" "/etc/csh.login" "/etc/csh.logout")
   "The default init files of tcsh."
   :type 'list
   :group 'crux)
 
-(defcustom crux-shell-fish-init-files '("$HOME/.config/fish/config.fish" "$XDG_CONFIG_HOME/fish/config.fish")
+(defcustom crux-shell-fish-init-files
+  '("$HOME/.config/fish/config.fish" "$XDG_CONFIG_HOME/fish/config.fish")
   "The default init files of fish."
   :type 'list
   :group 'crux)
 
-(defcustom crux-shell-ksh-init-files '("$HOME/.profile" "$ENV" "/etc/profile")
+(defcustom crux-shell-ksh-init-files
+  '("$HOME/.profile" "$ENV" "/etc/profile")
   "The default init files of ksh."
   :type 'list
   :group 'crux)
@@ -134,7 +145,7 @@ If the process in that buffer died, ask to restart."
                              (ansi-term crux-shell (concat crux-term-buffer-name "-term")))
                            (format "*%s-term*" crux-term-buffer-name))
   (when (and (null (get-buffer-process (current-buffer)))
-             (y-or-n-p "The process has died. Do you want to restart it? "))
+             (y-or-n-p "The process has died.  Do you want to restart it? "))
     (kill-buffer-and-window)
     (crux-visit-term-buffer)))
 
@@ -165,9 +176,8 @@ Position the cursor at its beginning, according to the current mode."
         ;; the current line.
         (insert indent-chars))
     ;; Just use the current major-mode's indent facility.
-    (progn
-      (forward-line -1)
-      (indent-according-to-mode))))
+    (forward-line -1)
+    (indent-according-to-mode)))
 
 (defun crux-smart-open-line (arg)
   "Insert an empty line after the current line.
@@ -177,21 +187,18 @@ With a prefix ARG open line above the current line."
   (interactive "P")
   (if arg
       (crux-smart-open-line-above)
-    (progn
-      (move-end-of-line nil)
-      (newline-and-indent))))
+    (move-end-of-line nil)
+    (newline-and-indent)))
 
-(defun crux-smart-kill-line (arg)
-  "Kill to the end of the line and kill whole line on the next call"
-  (interactive "P")
+(defun crux-smart-kill-line ()
+  "Kill to the end of the line and kill whole line on the next call."
+  (interactive)
   (let ((orig-point (point)))
     (move-end-of-line 1)
     (if (= orig-point (point))
         (crux-kill-whole-line)
-      (progn
-        (goto-char orig-point)
-        (kill-line))
-      )))
+      (goto-char orig-point)
+      (kill-line))))
 
 
 (defun crux-top-join-line ()
@@ -278,8 +285,8 @@ point reaches the beginning or end of the buffer, stop there."
 
 (defun crux-duplicate-current-line-or-region (arg)
   "Duplicates the current line or region ARG times.
-   If there's no region, the current line will be duplicated.  However, if
-   there's a region, all lines that region covers will be duplicated."
+If there's no region, the current line will be duplicated.  However, if
+there's a region, all lines that region covers will be duplicated."
   (interactive "p")
   (pcase-let* ((origin (point))
                (`(,beg . ,end) (crux-get-positions-of-line-or-region))
@@ -293,8 +300,8 @@ point reaches the beginning or end of the buffer, stop there."
 
 (defun crux-duplicate-and-comment-current-line-or-region (arg)
   "Duplicates and comments the current line or region ARG times.
-   If there's no region, the current line will be duplicated.  However, if
-   there's a region, all lines that region covers will be duplicated."
+If there's no region, the current line will be duplicated.  However, if
+there's a region, all lines that region covers will be duplicated."
   (interactive "p")
   (pcase-let* ((origin (point))
                (`(,beg . ,end) (crux-get-positions-of-line-or-region))
@@ -366,7 +373,7 @@ point reaches the beginning or end of the buffer, stop there."
   (interactive)
   (let ((value (eval (elisp--preceding-sexp))))
     (backward-kill-sexp)
-    (insert (format "%s" value))))
+    (insert (format "%S" value))))
 
 (defun crux-recompile-init ()
   "Byte-compile all your dotfiles again."
@@ -402,7 +409,10 @@ buffer is not visiting a file."
     (crux-find-alternate-file-as-root buffer-file-name)))
 
 (defun crux-reopen-as-root ()
-  "Find file as root if necessary."
+  "Find file as root if necessary.
+
+Meant to be used as `find-file-hook'.
+See also `crux-reopen-as-root-mode'."
   (unless (or (tramp-tramp-file-p buffer-file-name)
               (equal major-mode 'dired-mode)
               (not (file-exists-p (file-name-directory buffer-file-name)))
@@ -425,7 +435,7 @@ as the current user."
   (insert (format-time-string "%c" (current-time))))
 
 (defun crux-recentf-find-file ()
-  "Find a recent file using ido."
+  "Find a recent file using `completing-read'."
   (interactive)
   (let ((file (completing-read "Choose recent file: "
                                (mapcar #'abbreviate-file-name recentf-list)
@@ -433,7 +443,7 @@ as the current user."
     (when file
       (find-file file))))
 
-(defalias 'crux-recentf-ido-find-file 'crux-recentf-find-file)
+(define-obsolete-function-alias 'crux-recentf-ido-find-file 'crux-recentf-find-file "0.4.0")
 
 ;; modified from https://www.emacswiki.org/emacs/TransposeWindows
 (defun crux-transpose-windows (arg)
@@ -493,7 +503,7 @@ Doesn't mess with special buffers."
                            (t (error "Unknown shell"))))
          (candidates (cl-remove-if-not 'file-exists-p (mapcar 'substitute-in-file-name shell-init-file))))
     (if (> (length candidates) 1)
-        (find-file-other-window (completing-read "Choose shell init file:" candidates))
+        (find-file-other-window (completing-read "Choose shell init file: " candidates))
       (find-file-other-window (car candidates)))))
 
 ;; http://endlessparentheses.com/ispell-and-abbrev-the-perfect-auto-correct.html

@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171230.258
+;; Package-Version: 20171230.940
 ;; Keywords: help, lisp
 ;; Version: 0.6
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -228,10 +228,19 @@ Return SYM otherwise."
            (-let* (((sym val) it)
                    (pretty-val
                     (helpful--pretty-print val)))
-             (format "%s\n%s"
+             (format "%s\n%s%s"
                      (propertize (symbol-name sym)
                                  'face 'font-lock-constant-face)
-                     (helpful--indent-rigidly pretty-val 2)))
+                     (helpful--indent-rigidly pretty-val 2)
+                     ;; Also offer to disassemble byte-code
+                     ;; properties.
+                     (if (byte-code-function-p val)
+                         (format "\n  %s"
+                                 (helpful--button
+                                  "Disassemble"
+                                  'helpful-disassemble-button
+                                  'object val))
+                       "")))
            syms-and-vals)))
     (when lines
       (s-join "\n" lines))))
@@ -275,12 +284,14 @@ source code to primitives."
 (define-button-type 'helpful-disassemble-button
   'action #'helpful--disassemble
   'follow-link t
-  'symbol nil
+  'object nil
   'help-echo "Show disassembled bytecode")
 
 (defun helpful--disassemble (button)
   "Disassemble the current symbol."
-  (disassemble (button-get button 'symbol)))
+  ;; `disassemble' can handle both symbols (e.g. 'when) and raw
+  ;; byte-code objects.
+  (disassemble (button-get button 'object)))
 
 (define-button-type 'helpful-edebug-button
   'action #'helpful--edebug
@@ -433,7 +444,9 @@ or disable if already enabled."
             (read-from-minibuffer
              "Eval: "
              (format
-              (if (consp sym-value) "(setq %s '%S)" "(setq %s %S)")
+              (if (or (symbolp sym-value) (consp sym-value))
+                  "(setq %s '%S)"
+                "(setq %s %S)")
               sym sym-value)
              read-expression-map t
              'read-expression-history))))
@@ -1121,7 +1134,7 @@ state of the current symbol."
          (helpful--button
           "Disassemble"
           'helpful-disassemble-button
-          'symbol helpful--sym)))
+          'object helpful--sym)))
 
       (when can-forget
         (when can-disassemble

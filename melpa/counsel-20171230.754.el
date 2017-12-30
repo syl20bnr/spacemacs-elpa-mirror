@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171225.159
+;; Package-Version: 20171230.754
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -2933,6 +2933,7 @@ The face can be customized through `counsel-org-goto-face-style'."
 ;;** `counsel-org-file'
 (declare-function org-attach-dir "org-attach")
 (declare-function org-attach-file-list "org-attach")
+(defvar org-attach-directory)
 
 (defun counsel-org-files ()
   "Return list of all files under current Org attachment directories.
@@ -2941,12 +2942,26 @@ attachment directory associated with the current buffer, all
 contained files are listed, so the return value could conceivably
 include attachments of other Org buffers."
   (require 'org-attach)
-  (cl-mapcan
-   (lambda (dir)
-     (mapcar (lambda (file)
-               (file-relative-name (expand-file-name file dir)))
-             (org-attach-file-list dir)))
-   (delete-dups (delq nil (org-map-entries #'org-attach-dir "ID={.}")))))
+  (let* ((ids (let (res)
+                (save-excursion
+                  (goto-char (point-min))
+                  (while (re-search-forward "^:ID:[\t ]+\\(.*\\)$" nil t)
+                    (push (match-string-no-properties 1) res))
+                  (nreverse res))))
+         (files
+          (cl-remove-if-not
+           #'file-exists-p
+           (mapcar (lambda (id)
+                     (expand-file-name
+                      (concat (substring id 0 2) "/" (substring id 2))
+                      org-attach-directory))
+                   ids))))
+    (cl-mapcan
+     (lambda (dir)
+       (mapcar (lambda (file)
+                 (file-relative-name (expand-file-name file dir)))
+               (org-attach-file-list dir)))
+     files)))
 
 ;;;###autoload
 (defun counsel-org-file ()
@@ -3551,28 +3566,27 @@ And insert it into the minibuffer.  Useful during `eval-expression'."
 (declare-function semantic-tag-start "tag")
 (declare-function semantic-tag-of-class-p "tag")
 (declare-function semantic-fetch-tags "semantic")
+(declare-function semantic-format-tag-summarize "semantic/format")
 
-(defun counsel-semantic-action (tag)
+(defun counsel-semantic-action (x)
   "Got to semantic TAG."
-  (with-ivy-window
-    (goto-char (semantic-tag-start tag))))
+  (goto-char (semantic-tag-start (cdr x))))
+
+(defvar counsel-semantic-history nil
+  "History for `counsel-semantic'.")
 
 (defun counsel-semantic ()
   "Jump to a semantic tag in the current buffer."
   (interactive)
-  (let ((tags
-         (mapcar
-          (lambda (tag)
-            (if (semantic-tag-of-class-p tag 'function)
-                (cons
-                 (propertize
-                  (car tag)
-                  'face 'font-lock-function-name-face)
-                 (cdr tag))
-              tag))
-          (semantic-fetch-tags))))
+  (let ((tags (mapcar
+               (lambda (x)
+                 (cons (semantic-format-tag-summarize x nil t)
+                       x))
+               (semantic-fetch-tags))))
     (ivy-read "tag: " tags
-              :action 'counsel-semantic-action)))
+              :action 'counsel-semantic-action
+              :history 'counsel-semantic-history
+              :caller 'counsel-semantic)))
 
 ;;** `counsel-outline'
 (defun counsel-outline-candidates ()
