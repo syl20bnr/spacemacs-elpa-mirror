@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171230.408
+;; Package-Version: 20171230.1041
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -353,6 +353,20 @@ exporting with `markdown-export'."
   "Additional content to include in the XHTML <head> block."
   :group 'markdown
   :type 'string)
+
+(defcustom markdown-xhtml-body-preamble ""
+  "Content to include in the XHTML <body> block, before the output."
+  :group 'markdown
+  :type 'string
+  :safe 'stringp
+  :package-version '(markdown-mode . "2.4"))
+
+(defcustom markdown-xhtml-body-epilogue ""
+  "Content to include in the XHTML <body> block, after the output."
+  :group 'markdown
+  :type 'string
+  :safe 'stringp
+  :package-version '(markdown-mode . "2.4"))
 
 (defcustom markdown-xhtml-standalone-regexp
   "^\\(<\\?xml\\|<!DOCTYPE\\|<html\\)"
@@ -7252,7 +7266,11 @@ Standalone XHTML output is identified by an occurrence of
     (insert markdown-xhtml-header-content))
   (insert "\n</head>\n\n"
           "<body>\n\n")
+  (when (> (length markdown-xhtml-body-preamble) 0)
+    (insert markdown-xhtml-body-preamble "\n"))
   (goto-char (point-max))
+  (when (> (length markdown-xhtml-body-epilogue) 0)
+    (insert "\n" markdown-xhtml-body-epilogue))
   (insert "\n"
           "</body>\n"
           "</html>\n"))
