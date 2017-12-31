@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171230.940
+;; Package-Version: 20171230.1729
 ;; Keywords: help, lisp
 ;; Version: 0.6
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -120,9 +120,13 @@ To disable cleanup entirely, set this variable to nil. See also
         (kill-buffer (ring-remove helpful--buffers))))
     buf))
 
+(defface helpful-heading
+  '((t (:weight bold)))
+  "Face used for headings in Helpful buffers.")
+
 (defun helpful--heading (text)
   "Propertize TEXT as a heading."
-  (format "%s\n" (propertize text 'face 'bold)))
+  (format "%s\n" (propertize text 'face 'helpful-heading)))
 
 (defun helpful--format-closure (sym form)
   "Given a closure, return an equivalent defun form."
@@ -539,6 +543,19 @@ blank line afterwards."
                 (-cons* first-line "" (cdr lines)))
       docstring)))
 
+(defun helpful--propertize-keywords (docstring)
+  "Propertize quoted keywords in docstrings."
+  (replace-regexp-in-string
+   ;; Replace all text of the form `foo'.
+   (rx "`"
+       (group ":" symbol-start (+? anything) symbol-end)
+       "'")
+   (lambda (it)
+     (propertize (match-string 1 it)
+                 'face 'font-lock-builtin-face))
+   docstring
+   t t))
+
 (defun helpful--propertize-symbols (docstring)
   "Convert symbol references in docstrings to buttons."
   (replace-regexp-in-string
@@ -637,9 +654,8 @@ unescaping too."
       (helpful--split-first-line)
       (helpful--propertize-info)
       (helpful--propertize-symbols)
+      (helpful--propertize-keywords)
       (s-trim)))
-
-(helpful--format-docstring "(apply '+ 1 '(1 2))")
 
 (defconst helpful--highlighting-funcs
   '(ert--activate-font-lock-keywords
@@ -1372,9 +1388,30 @@ See also `helpful-callable' and `helpful-variable'."
       (helpful-symbol symbol)
     (user-error "There is no symbol at point.")))
 
+(defun helpful--imenu-index ()
+  "Return a list of headings in the current buffer, suitable for
+imenu."
+  (let (headings)
+    (goto-char (point-min))
+    (while (not (eobp))
+      (when (eq (get-text-property (point) 'face)
+                'helpful-heading)
+        (push
+         (cons
+          (buffer-substring-no-properties
+           (line-beginning-position) (line-end-position))
+          (line-beginning-position))
+         headings))
+      (forward-line))
+    (nreverse headings)))
+
 (define-derived-mode helpful-mode special-mode "Helpful"
   "Major mode for *Helpful* buffers."
-  (add-hook 'xref-backend-functions #'elisp--xref-backend nil t))
+  (add-hook 'xref-backend-functions #'elisp--xref-backend nil t)
+
+  (setq imenu-create-index-function #'helpful--imenu-index)
+  ;; Prevent imenu converting "Source Code" to "Source.Code".
+  (setq-local imenu-space-replacement " "))
 
 (defun helpful-visit-reference ()
   "Go to the reference at point."
