@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; URL: http://github.com/Kungsgeten/org-brain
-;; Package-Version: 20171223.19
+;; Package-Version: 20171231.808
 ;; Keywords: outlines hypermedia
 ;; Package-Requires: ((emacs "25") (org "9"))
 ;; Version: 0.4
@@ -31,6 +31,7 @@
 
 (require 'org-element)
 (require 'org-attach)
+(require 'org-macs)
 (require 'org-id)
 (require 'picture)
 (require 'subr-x)
@@ -62,6 +63,8 @@ will be considered org-brain entries."
   "Where org-brain data is saved."
   :group 'org-brain
   :type '(directory))
+
+(load org-brain-data-file t)
 
 (defcustom org-brain-visualize-default-choices 'all
   "Which entries to choose from when using `org-brain-visualize'.
@@ -100,6 +103,11 @@ filenames will be shown instead, which is faster."
 (defcustom org-brain-after-visualize-hook nil
   "Hook run after `org-brain-visualize', but before `org-brain-text'.
 Can be used to prettify the buffer output, e.g. `ascii-art-to-unicode'."
+  :group 'org-brain
+  :type 'hook)
+
+(defcustom org-brain-new-entry-hook nil
+  "Hook run after a new headline entry has been created."
   :group 'org-brain
   :type 'hook)
 
@@ -161,6 +169,11 @@ its own line. If nil (default), children are filled up to the
 `fill-column'."
   :group 'org-brain
   :type '(boolean))
+
+(defcustom org-brain-refile-max-level 1
+  "The default max-level used by `org-brain-refile'."
+  :group 'org-brain
+  :type 'integer)
 
 ;;;###autoload
 (defun org-brain-update-id-locations ()
@@ -353,7 +366,9 @@ For PREDICATE, REQUIRE-MATCH and INITIAL-INPUT, see `completing-read'."
                          (with-current-buffer (find-file-noselect entry-path)
                            (goto-char (point-max))
                            (insert (concat "\n* " (cadr id)))
-                           (list (car id) (cadr id) (org-id-get-create)))
+                           (let ((new-id (org-id-get-create)))
+                             (run-hooks 'org-brain-new-entry-hook)
+                             (list (car id) (cadr id) new-id)))
                        (car id)))))))
             (if org-brain-entry-separator
                 (split-string choices org-brain-entry-separator)
@@ -663,6 +678,7 @@ Several children can be created, by using `org-brain-entry-separator'."
               (goto-char (point-max)))
             (insert (concat "* " child-name))
             (org-id-get-create)
+            (run-hooks 'org-brain-new-entry-hook)
             (save-buffer))
         ;; Headline entry
         (org-with-point-at (org-brain-entry-marker entry)
@@ -673,6 +689,7 @@ Several children can be created, by using `org-brain-entry-separator'."
           (org-do-demote)
           (insert child-name)
           (org-id-get-create)
+          (run-hooks 'org-brain-new-entry-hook)
           (save-buffer)))))
   (org-brain--revert-if-visualizing))
 
@@ -863,6 +880,20 @@ If run interactively, get ENTRY from context."
                    (org-brain--linked-property-entries
                     entry "BRAIN_FRIENDS")
                    nil t)))
+
+;;;###autoload
+(defun org-brain-refile (max-level)
+  "Run `org-refile' to a heading in `org-brain-files', with set MAX-LEVEL.
+If MAX-LEVEL isn't given, use `org-brain-refile-max-level'.
+After refiling, all headlines will be given an id."
+  (interactive "p")
+  (unless current-prefix-arg
+    (setq max-level org-brain-refile-max-level))
+  (let ((org-refile-targets `((org-brain-files . (:maxlevel . ,max-level))))
+        (org-after-refile-insert-hook org-after-refile-insert-hook))
+    (add-hook 'org-after-refile-insert-hook
+              (lambda () (org-map-tree 'org-id-get-create)))
+    (org-refile)))
 
 (defun org-brain--remove-relationships (entry)
   "Remove all external relationships from ENTRY."
@@ -1368,8 +1399,6 @@ See `org-brain-add-resource'."
   "Insert pinned entries.
 Helper function for `org-brain-visualize'."
   (insert "PINNED:")
-  (unless org-brain-pins
-    (load org-brain-data-file t))
   (dolist (pin org-brain-pins)
     (insert "  ")
     (org-brain-insert-visualize-button pin))
@@ -1385,7 +1414,7 @@ Helper function for `org-brain-visualize'."
         (let ((children-links (cdr parent))
               (col-start (+ 3 max-width))
               (parent-title (org-brain-title (car parent))))
-          (goto-line 4)
+          (org-goto-line 4)
           (mapc
            (lambda (child)
              (picture-forward-column col-start)
@@ -1394,7 +1423,7 @@ Helper function for `org-brain-visualize'."
              (setq max-width (max max-width (current-column)))
              (newline (forward-line 1)))
            children-links)
-          (goto-line 4)
+          (org-goto-line 4)
           (forward-line (1- (length children-links)))
           (picture-forward-column col-start)
           (push (cons (picture-current-line)
@@ -1409,7 +1438,7 @@ Helper function for `org-brain-visualize'."
       (when parent-positions
         (let ((maxline (line-number-at-pos (point-max))))
           ;; Bottom line
-          (goto-line maxline)
+          (org-goto-line maxline)
           (picture-forward-column (cdar (last parent-positions)))
           (picture-move-down 1)
           (insert (make-string (1+ (- (cdar parent-positions)
@@ -1417,7 +1446,7 @@ Helper function for `org-brain-visualize'."
                                ?-))
           ;; Lines from parents to bottom
           (dolist (pos parent-positions)
-            (goto-line (car pos))
+            (org-goto-line (car pos))
             (picture-forward-column (cdr pos))
             (while (< (line-number-at-pos (point))
                       maxline)
