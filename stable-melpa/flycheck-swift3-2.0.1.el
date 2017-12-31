@@ -1,11 +1,11 @@
 ;;; flycheck-swift3.el --- Flycheck: Swift support for Apple swift-mode
 
-;; Copyright (c) 2016-2017 GyazSquare Inc.
+;; Copyright (c) 2016-2018 GyazSquare Inc.
 
 ;; Author: Goichi Hirakawa <gooichi@gyazsquare.com>
 ;; URL: https://github.com/GyazSquare/flycheck-swift3
-;; Package-Version: 2.0.0
-;; Version: 2.0.0
+;; Package-Version: 2.0.1
+;; Version: 2.0.1
 ;; Keywords: convenience, languages, tools
 ;; Package-Requires: ((emacs "24.4") (flycheck "26"))
 
@@ -89,7 +89,7 @@ When non-nil, add the specified conditional compilation flags via
 When non-nil, add the specified directory to the search path for
 system framework include files, via `-Fsystem'.
 The option is available in Swift 4.0 or later."
-  :type '(repeat (directory :tag "System Framework directory"))
+  :type '(repeat (directory :tag "System framework directory"))
   :safe #'flycheck-string-list-p)
 
 (flycheck-def-option-var flycheck-swift3-framework-search-paths nil swift

@@ -21,9 +21,10 @@
 ;;-------------------------------------------------------------------
 ;;
 ;; Author: David Andersson <l.david.andersson(at)sverige.nu>
+;; Maintainer: Vasilij Schneidermann <v.schneidermann@github.com>
 ;; Created: 16 May 2002
-;; Version: 1.7
-;; Package-Version: 1.7
+;; Version: 1.7.1
+;; Package-Version: 1.7.1
 ;; Keywords: convenience, matching
 ;;
 ;;; Commentary:
@@ -49,6 +50,8 @@
 ;;--------------------------------------------------------------------
 ;; History
 ;;
+;; Ver 1.7.1 2017-12-31 Vasilij Schneidermann
+;;    Fix byte-compiler warnings
 ;; Ver 1.7 2017-09-17 Vasilij Schneidermann
 ;;    Make it work with undo-tree-mode (see
 ;;    <https://github.com/martinp26/goto-chg>)
@@ -90,9 +93,12 @@
 
 ;;; Code:
 
+(require 'undo-tree)
+
 (defvar glc-default-span 8 "*goto-last-change don't visit the same point twice. glc-default-span tells how far around a visited point not to visit again.")
 (defvar glc-current-span 8 "Internal for goto-last-change.\nA copy of glc-default-span or the ARG passed to goto-last-change.")
 (defvar glc-probe-depth 0 "Internal for goto-last-change.\nIt is non-zero between successive goto-last-change.")
+(defvar glc-direction 1 "Direction goto-last-change moves towards.")
 
 ;;todo: Find begin and end of line, then use it somewhere
 

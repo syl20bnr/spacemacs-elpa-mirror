@@ -6,9 +6,12 @@ See README.md for detailed description.
 (require 'cl-lib)
 (require 'cider)
 (require 's)
+(require 'simple-httpd)
 
 (defvar clomacs-verify-nrepl-on-call t)
 (defvar clomacs-autoload-nrepl-on-call t)
+(defvar clomacs-httpd-port 8082
+  "Http port to listen for requests from Clojure side.")
 
 (defun clomacs-search-connection (repl-buffer-project-name)
   "Search nREPL connection buffer.
@@ -345,6 +348,40 @@ RETURN-VALUE may be :value or :stdout (:value by default)."
        (buffer-string))
      connection
      session)))
+
+
+Emacs http server
+
+(defun clomacs-eval-elisp (string)
+  "Evaluate elisp code stored in a STRING."
+  (eval (car (read-from-string string))))
+
+(defservlet* execute text/plain (elisp)
+  (insert (format
+           "%s"
+           (clomacs-eval-elisp elisp))))
+
+(clomacs-defun clomacs-require
+               clojure.core/require)
+
+(clomacs-defun clomacs-set-emacs-connection
+               clomacs/set-emacs-connection)
+
+(clomacs-defun clomacs-close-emacs-connection
+               clomacs/close-emacs-connection)
+
+(defun clomacs-httpd-start ()
+  "Start Emacs http server and set host and port on Clojure side."
+  (let ((httpd-port clomacs-httpd-port))
+    (clomacs-require `'clomacs)
+    (clomacs-set-emacs-connection "localhost" httpd-port)
+    (httpd-start)))
+
+(defun clomacs-httpd-stop ()
+  "Stop Emacs http server and reset host and port on Clojure side."
+  (clomacs-require `'clomacs)
+  (clomacs-close-emacs-connection)
+  (httpd-stop))
 
 (provide 'clomacs)
 

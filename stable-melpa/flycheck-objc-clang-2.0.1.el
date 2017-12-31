@@ -1,11 +1,11 @@
 ;;; flycheck-objc-clang.el --- Flycheck: Objective-C support using Clang
 
-;; Copyright (c) 2016-2017 GyazSquare Inc.
+;; Copyright (c) 2016-2018 GyazSquare Inc.
 
 ;; Author: Goichi Hirakawa <gooichi@gyazsquare.com>
 ;; URL: https://github.com/GyazSquare/flycheck-objc-clang
-;; Package-Version: 2.0.0
-;; Version: 2.0.0
+;; Package-Version: 2.0.1
+;; Version: 2.0.1
 ;; Keywords: convenience, languages, tools
 ;; Package-Requires: ((emacs "24.4") (flycheck "26"))
 

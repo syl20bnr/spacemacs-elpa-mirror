@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171230.1729
+;; Package-Version: 20171231.431
 ;; Keywords: help, lisp
 ;; Version: 0.6
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -1309,15 +1309,17 @@ escapes that are used by `substitute-command-keys'."
   (interactive
    (list (read-key-sequence "Press key: ")))
   (let ((sym (key-binding key-sequence)))
-    (unless sym
+    (cond
+     ((null sym)
       (user-error "No command is bound to %s"
                   (key-description key-sequence)))
-    (unless (commandp sym)
+     ((commandp sym)
+      (pop-to-buffer (helpful--buffer sym t))
+      (helpful-update))
+     (t
       (user-error "%s is bound to symbol %s which is not a command"
                   (key-description key-sequence)
-                  sym))
-    (pop-to-buffer (helpful--buffer sym t))
-    (helpful-update)))
+                  sym)))))
 
 ;;;###autoload
 (defun helpful-macro (symbol)

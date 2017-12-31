@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-jekyll
-;; Package-Version: 20171230.451
-;; Version: 1.5.10
+;; Package-Version: 20171231.401
+;; Version: 1.5.11
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -157,8 +157,11 @@ The default is drwxr-xr-x."
 (defvar easy-jekyll--server-process nil
   "Jekyll process.")
 
-(defvar easy-jekyll--unmovable-line (+ easy-jekyll-help-line 4)
-  "Impossible to move below this line.")
+(if easy-jekyll-no-help
+    (defvar easy-jekyll--unmovable-line 3
+      "Impossible to move below this line.")
+  (defvar easy-jekyll--unmovable-line (+ easy-jekyll-help-line 4)
+    "Impossible to move below this line."))
 
 (defvar easy-jekyll--draft-list nil
   "Draft list flg.")
@@ -166,7 +169,7 @@ The default is drwxr-xr-x."
 (defvar easy-jekyll--draft-mode nil
   "Display draft-mode.")
 
-(defconst easy-jekyll--unmovable-line-default easy-jekyll--unmovable-line
+(defconst easy-jekyll--unmovable-line-default (+ easy-jekyll-help-line 4)
   "Default value of impossible to move below this line.")
 
 (defconst easy-jekyll--buffer-name "*Jekyll Serve*"
