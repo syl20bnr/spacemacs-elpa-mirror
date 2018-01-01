@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20171231.431
+;; Package-Version: 20180101.352
 ;; Keywords: help, lisp
 ;; Version: 0.6
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -607,43 +607,54 @@ Emacs uses \\= to escape \\[ references, so replace that
 unescaping too."
   ;; Based on `substitute-command-keys', but converts command
   ;; references to buttons.
-  (with-temp-buffer
-    (insert docstring)
-    (goto-char (point-min))
-    (while (not (eobp))
-      (cond
-       ((looking-at
-         ;; Text of the form \=X
-         (rx "\\="))
-        ;; Remove the escaping, then step over the escaped char.
-        ;; Step over the escaped character.
-        (delete-region (point) (+ (point) 2))
-        (forward-char 1))
-       ((looking-at
-         ;; Text of the form \\[foo]
-         (rx "\\[" (group (+ (not (in "]")))) "]"))
-        (let* ((symbol-with-parens (match-string 0))
-               (symbol-name (match-string 1)))
-          ;; Remove the original string.
-          (delete-region (point)
-                         (+ (point) (length symbol-with-parens)))
-          ;; Add a button.
-          (let* ((symbol (intern symbol-name))
-                 (key (where-is-internal symbol nil t))
-                 (key-description
-                  (if key
-                      (key-description key)
-                    (format "M-x %s" symbol-name))))
-            (insert
-             (helpful--button
-              key-description
-              'helpful-describe-exactly-button
-              'symbol symbol
-              'callable-p t)))))
-       ;; Don't modify other characters.
-       (t
-        (forward-char 1))))
-    (buffer-string)))
+  (let ((keymap nil))
+    (with-temp-buffer
+      (insert docstring)
+      (goto-char (point-min))
+      (while (not (eobp))
+        (cond
+         ((looking-at
+           ;; Text of the form \=X
+           (rx "\\="))
+          ;; Remove the escaping, then step over the escaped char.
+          ;; Step over the escaped character.
+          (delete-region (point) (+ (point) 2))
+          (forward-char 1))
+         ((looking-at
+           ;; Text of the form \\<foo-keymap>
+           (rx "\\<" (group (+ (not (in ">")))) ">"))
+          (let* ((symbol-with-parens (match-string 0))
+                 (symbol-name (match-string 1)))
+            ;; Remove the original string.
+            (delete-region (point)
+                           (+ (point) (length symbol-with-parens)))
+            ;; Set the new keymap.
+            (setq keymap (symbol-value (intern symbol-name)))))
+         ((looking-at
+           ;; Text of the form \\[foo-command]
+           (rx "\\[" (group (+ (not (in "]")))) "]"))
+          (let* ((symbol-with-parens (match-string 0))
+                 (symbol-name (match-string 1)))
+            ;; Remove the original string.
+            (delete-region (point)
+                           (+ (point) (length symbol-with-parens)))
+            ;; Add a button.
+            (let* ((symbol (intern symbol-name))
+                   (key (where-is-internal symbol keymap t))
+                   (key-description
+                    (if key
+                        (key-description key)
+                      (format "M-x %s" symbol-name))))
+              (insert
+               (helpful--button
+                key-description
+                'helpful-describe-exactly-button
+                'symbol symbol
+                'callable-p t)))))
+         ;; Don't modify other characters.
+         (t
+          (forward-char 1))))
+      (buffer-string))))
 
 ;; TODO: fix upstream Emacs bug that means `-map' is not highlighted
 ;; in the docstring for `--map'.
@@ -851,35 +862,41 @@ buffer."
   (let (keymaps)
     (mapatoms
      (lambda (sym)
-       (when (and
-              (boundp sym)
-              (keymapp (symbol-value sym))
-              (s-ends-with-p "-mode-map" (symbol-name sym)))
+       (when (and (boundp sym) (keymapp (symbol-value sym)))
          (push sym keymaps))))
     keymaps))
 
 (defun helpful--keymaps-containing (command-sym)
+  "Return a list of pairs listing keymap symbols that contain COMMAND-SYM,
+along with the keybindings in each keymap.
+
+We ignore keybindings that are menu items, and ignore keybindings
+from parent keymaps."
   (let (matching-keymaps)
-    ;; Look for this command in all major and minor mode maps.
-    (dolist (keymap (helpful--all-keymap-syms))
-      (let ((keycodes (where-is-internal command-sym
-                                         (list (symbol-value keymap)))))
+    ;; Look for this command in all keymaps.
+    (dolist (keymap-sym (helpful--all-keymap-syms))
+      (let* ((keymap (symbol-value keymap-sym))
+             (keycodes
+              (where-is-internal
+               command-sym (list keymap) nil t))
+             ;; Look up this command in the parent keymap.
+             (parent-keymap (keymap-parent keymap))
+             (parent-keycodes
+              (when parent-keymap
+                (where-is-internal
+                 command-sym (list parent-keymap) nil t))))
+        (setq keycodes
+              ;; Ignore keybindings that we've just inherited from the
+              ;; parent.
+              (-difference keycodes parent-keycodes))
         (when keycodes
-          (push (cons keymap
+          (push (cons keymap-sym
                       (-map #'key-description keycodes))
                 matching-keymaps))))
-    ;; Look for this command in the global map.
-    (let ((keycodes (where-is-internal command-sym
-                                       (list (current-global-map)))))
-      (when keycodes
-        (push (cons 'global
-                    (-map #'key-description keycodes))
-              matching-keymaps)))
     matching-keymaps))
 
 (defun helpful--format-keys (command-sym)
-  "Describe all the keys that call COMMAND-SYM.
-Ensures global keybindings are shown first."
+  "Describe all the keys that call COMMAND-SYM."
   (let (mode-lines
         global-lines)
     (--each (helpful--keymaps-containing command-sym)
@@ -889,7 +906,7 @@ Ensures global keybindings are shown first."
            (format "%s %s"
                    (propertize (symbol-name map) 'face 'font-lock-variable-name-face)
                    key)
-           (if (eq map 'global) global-lines mode-lines)))))
+           (if (eq map 'global-map) global-lines mode-lines)))))
     (setq global-lines (-sort #'string< global-lines))
     (setq mode-lines (-sort #'string< mode-lines))
     (-let [lines (-concat global-lines mode-lines)]
@@ -976,6 +993,91 @@ POSITION-HEADS takes the form ((123 (defun foo)) (456 (defun bar)))."
   "Insert section break into helpful buffer."
   (insert "\n\n"))
 
+(defun helpful--calculate-references (sym callable-p source-path)
+  "Calculate references for SYM in SOURCE-PATH."
+  (when source-path
+    (let* ((primitive-p (helpful--primitive-p sym callable-p))
+           (buf (elisp-refs--contents-buffer source-path))
+           (positions
+            (if primitive-p
+                nil
+              (helpful--reference-positions
+               helpful--sym helpful--callable-p buf)))
+           (return-value (--map (helpful--outer-sexp buf it) positions)))
+      (kill-buffer buf)
+      return-value)))
+
+(defun helpful--make-manual-button (sym)
+  "Make manual button for SYM."
+  (helpful--button
+   "View in manual"
+   'helpful-manual-button
+   'symbol sym))
+
+(defun helpful--make-toggle-button (sym buffer)
+  "Make toggle button for SYM in BUFFER."
+  (helpful--button
+   "Toggle"
+   'helpful-toggle-button
+   'symbol sym
+   'buffer buffer))
+
+(defun helpful--make-set-button (sym buffer)
+  "Make set button for SYM in BUFFER."
+  (helpful--button
+   "Set"
+   'helpful-set-button
+   'symbol sym
+   'buffer buffer))
+
+(defun helpful--make-customize-button (sym)
+  "Make customize button for SYM."
+  (helpful--button
+   "Customize"
+   'helpful-customize-button
+   'symbol sym))
+
+(defun helpful--make-references-button (sym callable-p)
+  "Make references button for SYM."
+  (helpful--button
+   "Find all references"
+   'helpful-all-references-button
+   'symbol sym
+   'callable-p callable-p))
+
+(defun helpful--make-edebug-button (sym)
+  "Make edebug button for SYM."
+  (helpful--button
+   (format "%s edebug"
+           (if (helpful--edebug-p sym)
+               "Disable" "Enable"))
+   'helpful-edebug-button
+   'symbol sym))
+
+(defun helpful--make-tracing-button (sym)
+  "Make tracing button for SYM."
+  (helpful--button
+   (format "%s tracing"
+           (if (trace-is-traced sym)
+               "Disable" "Enable"))
+   'helpful-trace-button
+   'symbol sym))
+
+(defun helpful--make-disassemble-button (sym)
+  "Make disassemble button for SYM."
+  (helpful--button
+   "Disassemble"
+   'helpful-disassemble-button
+   'symbol sym))
+
+(defun helpful--make-forget-button (sym callable-p)
+  "Make forget button for SYM."
+  (helpful--button
+   "Forget"
+   'helpful-forget-button
+   'symbol sym
+   'callable-p callable-p))
+
 (defun helpful-update ()
   "Update the current *Helpful* buffer to the latest
 state of the current symbol."
@@ -986,32 +1088,20 @@ state of the current symbol."
   (let* ((inhibit-read-only t)
          (start-line (line-number-at-pos))
          (start-column (current-column))
-         (primitive-p (helpful--primitive-p
-                       helpful--sym helpful--callable-p))
+         (primitive-p (helpful--primitive-p helpful--sym helpful--callable-p))
          (sym-type (cond
-                    ((not helpful--callable-p)
-                     "Variable")
-                    ((macrop helpful--sym)
-                     "Macro")
-                    (t
-                     "Function")))
+                    ((not helpful--callable-p) "Variable")
+                    ((macrop helpful--sym) "Macro")
+                    (t "Function")))
          (look-for-src (or (not primitive-p)
                            find-function-C-source-directory))
          (source (when look-for-src
                    (helpful--source helpful--sym helpful--callable-p)))
          (source-path (when look-for-src
                         (helpful--source-path helpful--sym helpful--callable-p)))
-         references)
-    (when source-path
-      (let* ((buf (elisp-refs--contents-buffer source-path))
-             (positions
-              (if primitive-p
-                  nil
-                (helpful--reference-positions
-                 helpful--sym helpful--callable-p buf))))
-        (setq references
-              (--map (helpful--outer-sexp buf it) positions))
-        (kill-buffer buf)))
+         (references (helpful--calculate-references
+                      helpful--sym helpful--callable-p
+                      source-path)))
 
     (erase-buffer)
 
@@ -1029,12 +1119,8 @@ state of the current symbol."
        (helpful--heading (format "%s Documentation" sym-type))
        (helpful--format-docstring docstring))
       (when (helpful--in-manual-p helpful--sym)
-        (insert
-         "\n\n"
-         (helpful--button
-          "View in manual"
-          'helpful-manual-button
-          'symbol helpful--sym))))
+        (insert "\n\n")
+        (insert (helpful--make-manual-button helpful--sym))))
 
     (when (not helpful--callable-p)
       (helpful--insert-section-break)
@@ -1046,26 +1132,10 @@ state of the current symbol."
           (helpful--sym-value sym buf))
          "\n\n")
         (when (memq (helpful--sym-value helpful--sym buf) '(nil t))
-          (insert
-           (helpful--button
-            "Toggle"
-            'helpful-toggle-button
-            'symbol helpful--sym
-            'buffer buf)
-           " "))
-        (insert
-         (helpful--button
-          "Set"
-          'helpful-set-button
-          'symbol helpful--sym
-          'buffer buf))
+          (insert (helpful--make-toggle-button helpful--sym buf) " "))
+        (insert (helpful--make-set-button helpful--sym buf))
         (when (custom-variable-p helpful--sym)
-          (insert
-           " "
-           (helpful--button
-            "Customize"
-            'helpful-customize-button
-            'symbol helpful--sym)))))
+          (insert " " (helpful--make-customize-button helpful--sym)))))
 
     ;; Show keybindings.
     ;; TODO: allow users to conveniently add and remove keybindings.
@@ -1076,6 +1146,7 @@ state of the current symbol."
        (helpful--format-keys helpful--sym)))
 
     (helpful--insert-section-break)
+
     (insert
      (helpful--heading "References")
      (cond
@@ -1092,18 +1163,13 @@ state of the current symbol."
       (t
        "Could not find source file."))
      "\n\n"
-     (helpful--button
-      "Find all references"
-      'helpful-all-references-button
-      'symbol helpful--sym
-      'callable-p helpful--callable-p))
+     (helpful--make-references-button helpful--sym helpful--callable-p))
 
     (when (helpful--advised-p helpful--sym)
       (helpful--insert-section-break)
       (insert
        (helpful--heading "Advice")
-       (format
-        "This %s is advised." (if (macrop helpful--sym) "macro" "function"))))
+       (format "This %s is advised." (downcase sym-type))))
 
     (let ((can-edebug
            (helpful--can-edebug-p helpful--sym helpful--callable-p))
@@ -1123,22 +1189,12 @@ state of the current symbol."
         (insert (helpful--heading "Debugging")))
       (when can-edebug
         (insert
-         (helpful--button
-          (if (helpful--edebug-p helpful--sym)
-              "Disable edebug"
-            "Enable edebug")
-          'helpful-edebug-button
-          'symbol helpful--sym)))
+         (helpful--make-edebug-button helpful--sym)))
       (when can-trace
         (when can-edebug
           (insert " "))
         (insert
-         (helpful--button
-          (if (trace-is-traced helpful--sym)
-              "Disable tracing"
-            "Enable tracing")
-          'helpful-trace-button
-          'symbol helpful--sym)))
+         (helpful--make-tracing-button helpful--sym)))
 
       (when (and
              (or can-edebug can-trace)
@@ -1146,21 +1202,12 @@ state of the current symbol."
         (insert "\n"))
 
       (when can-disassemble
-        (insert
-         (helpful--button
-          "Disassemble"
-          'helpful-disassemble-button
-          'object helpful--sym)))
+        (insert (helpful--make-disassemble-button helpful--sym)))
 
       (when can-forget
         (when can-disassemble
           (insert " "))
-        (insert
-         (helpful--button
-          "Forget"
-          'helpful-forget-button
-          'symbol helpful--sym
-          'callable-p helpful--callable-p))))
+        (insert (helpful--make-forget-button helpful--sym helpful--callable-p))))
 
     (let ((aliases (helpful--aliases helpful--sym helpful--callable-p)))
       (when (> (length aliases) 1)

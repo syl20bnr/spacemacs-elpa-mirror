@@ -5,7 +5,7 @@
 ;; Authors: Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Olin Shivers <shivers@cs.cmu.edu>
 ;; URL: http://github.com/clojure-emacs/inf-clojure
-;; Package-Version: 20171231.6
+;; Package-Version: 20171231.2219
 ;; Keywords: processes, clojure
 ;; Version: 2.1.0-snapshot
 ;; Package-Requires: ((emacs "24.4") (clojure-mode "5.6"))
@@ -293,9 +293,10 @@ See http://blog.jorgenschaefer.de/2014/05/race-conditions-in-emacs-process-filte
 (defun inf-clojure--set-repl-type (proc)
   "Set the REPL type if has not already been set.
 It requires a REPL PROC for inspecting the correct type."
-  (if (not inf-clojure-repl-type)
-      (setq inf-clojure-repl-type (inf-clojure--detect-repl-type proc))
-    inf-clojure-repl-type))
+  (with-current-buffer inf-clojure-buffer
+    (if (not inf-clojure-repl-type)
+        (setq inf-clojure-repl-type (inf-clojure--detect-repl-type proc))
+      inf-clojure-repl-type)))
 
 (defun inf-clojure--single-linify (string)
   "Convert a multi-line STRING in a single-line STRING.
