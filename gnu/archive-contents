@@ -63,7 +63,7 @@
 	((:url . "http://elpa.gnu.org/packages/ampc.html")
 	 (:keywords "ampc" "mpc" "mpd"))])
  (arbitools .
-	    [(0 91)
+	    [(0 93)
 	     ((cl-lib
 	       (0 5)))
 	     "Package for chess tournaments administration" single
@@ -375,7 +375,7 @@
 	     ((:url . "http://elpa.gnu.org/packages/ediprolog.html")
 	      (:keywords "languages" "processes"))])
  (el-search .
-	    [(1 4 0 11)
+	    [(1 4 0 12)
 	     ((emacs
 	       (25))
 	      (stream

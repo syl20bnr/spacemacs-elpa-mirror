@@ -3,7 +3,7 @@
 ;; Copyright 2016 Free Software Foundation, Inc.
 
 ;; Author: David Gonzalez Gandara <dggandara@member.fsf.org>
-;; Version: 0.91
+;; Version: 0.93
 ;; Package-Requires: ((cl-lib "0.5"))
 
 ;; This program is free software: you can redistribute it and/or modify
@@ -102,64 +102,82 @@
 ;;
 ;; - Error handling
 ;;
+;; - Insert bye function
+;;
 ;; You will find more information in www.dggandara.eu/arbitools.htm
 
 ;;; Code:
 
 (eval-when-compile (require 'cl-lib))
 
-(defun arbitools-do-pairings ()
+(defun arbitools-do-pairings (round)
   "Use bbpPairings to do the pairings for the next round."
   ;; TODO: if there is no XXR entry, error and prompt to write one.
-  (interactive)
+  ;; If you have any players that are not going to be paired, insert 0000 - H in the column,
+  ;; for a half point bye and 0000 - F for full point bye. You have to update the points 
+  ;; column too.
+  ;; A XXC section followed by "white1" or "black1" will force that colour.
+  (interactive "sround: ")
+  ;; (arbitools-calculate-points round)
   (save-excursion
      (with-current-buffer "Pairings-output"
         (erase-buffer)))
-    (call-process "bbpPairings.exe" nil "Pairings-output" nil  "--dutch" buffer-file-name "-p")
+  (call-process "bbpPairings.exe" nil "Pairings-output" nil  "--dutch" buffer-file-name "-p")
     
-    (let* ((actualround (arbitools-actual-round))
+  (let* ((actualround (arbitools-actual-round))
          (numberofrounds (arbitools-number-of-rounds))
          (numberoftables 0)
          (actualtable 0)
          (white 0)
-         (black 0))
+         (black 0)
+         (positiontowrite (+ 89 (* (- (string-to-number round) 1) 10)))
+         (endoflinecolumn 0))
+       
        (save-excursion
          (with-current-buffer "Pairings-output"
            (goto-char (point-min))
            (setq numberoftables (string-to-number (thing-at-point 'word)))))
-           (while (<= actualtable numberoftables)
-             (save-excursion
-               (with-current-buffer "Pairings-output"
+       (while (<= actualtable numberoftables)
+         (save-excursion
+           (with-current-buffer "Pairings-output"
                  (forward-line)
                  (setq actualtable (+ actualtable 1))
                  (setq white (thing-at-point 'word))
                  (forward-word)
                  (forward-word)
                  (setq black (thing-at-point 'word))))
-             (save-excursion
-               (goto-char (point-min))
-               (while (re-search-forward "^001" nil t)
-                 (forward-char 4) ;; rank number
-                 (when (string= white (thing-at-point 'word))
-                   (forward-char (+ 85 (* actualround 10)))
-                   (insert "  ") ;; replace the first positions with spaces
-                   (delete-char 2)
-                   (cond ((= 2 (length black)) (backward-char 1));; make room for bigger numbers
-                     ((= 3 (length black)) (backward-char 2)))
-                   (insert (format "%s w" black))
-                   (delete-char 3)
-                   (cond ((= 2 (length black)) (delete-char 1));; adjust when numbers are longer
-                     ((= 3 (length black)) (delete-char 2))))
-                (when (string= black (thing-at-point 'word))
-                   (forward-char (+ 85 (* actualround 10)))
-                   (insert "  ") ;; replace the first positions with spaces
-                   (delete-char 2)
-                   (cond ((= 2 (length white)) (backward-char 1)) ;; make room for bigger numbers
-                     ((= 3 (length white)) (backward-char 2)))
-                   (insert (format "%s b" white))
-                   (delete-char 3)
-                   (cond ((= 2 (length white)) (delete-char 1));; adjust when numbers are longer
-                     ((= 3 (length white)) (delete-char 2)))))))))
+         (save-excursion
+           (goto-char (point-min))
+           (while (re-search-forward "^001" nil t)
+             (forward-char 4) ;; go to rank number
+             (when (string= white (thing-at-point 'word))
+               (end-of-line)
+               (setq endoflinecolumn (current-column))
+               (beginning-of-line)
+               (forward-char positiontowrite)
+               (unless (= positiontowrite endoflinecolumn) ;; check if there is something and 
+                 (save-excursion (with-current-buffer "Arbitools-output" (insert "yes")))
+                 (delete-char (- endoflinecolumn positiontowrite)))   ;; erase it
+               (insert "     ") ;; replace the first positions with spaces
+               (cond ((= 2 (length black)) (backward-char 1));; make room for bigger numbers
+                 ((= 3 (length black)) (backward-char 2)))
+               (insert (format "%s w" black))
+               (cond ((= 2 (length black)) (delete-char 1));; adjust when numbers are longer
+                 ((= 3 (length black)) (delete-char 2))))
+             (when (string= black (thing-at-point 'word))
+               (end-of-line)
+               (setq endoflinecolumn (current-column))
+               (beginning-of-line)
+               (forward-char positiontowrite)
+               (unless (= positiontowrite endoflinecolumn) ;; check if there is something and 
+                 (save-excursion (with-current-buffer "Arbitools-output" (insert "yes")))
+                 (delete-char (- endoflinecolumn positiontowrite)))   ;; erase it
+               (insert "     ") ;; replace the first positions with spaces
+               (cond ((= 2 (length white)) (backward-char 1)) ;; make room for bigger numbers
+                 ((= 3 (length white)) (backward-char 2)))
+               (insert (format "%s b" white))
+               (cond ((= 2 (length white)) (delete-char 1));; adjust when numbers are longer
+                 ((= 3 (length white)) (delete-char 2)))))))))
 
 (defun arbitools-prepare-feda ()
   "Prepare file to FEDA: add carriage return at the end of lines."
@@ -255,6 +273,7 @@
 
 (defun arbitools-standings ()
   "Get standings and report files from a tournament file."
+  ;; TODO: Add tiebreaks
   (interactive)
   ;; (shell-command (concat (expand-file-name "arbitools-standings.py") " -i " buffer-file-name))) ;this is to use the actual path
   (call-process "arbitools-run.py" nil "Arbitools-output" nil "standings" buffer-file-name))
@@ -307,7 +326,6 @@
   (insert "122 ALLOTED TIMES PER MOVE/GAME\n")
   (insert "XXR NUMBER OF ROUNDS\n")
   (insert "132 DATES                                                                                  YY/MM/DD  YY/MM/DD\n")
-  (insert "XXR NUMBER OF ROUNDS\n")
   ;; (insert "001  000 GTIT NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN RAT. FED   0000000000 YYYY/MM/DD 00.0  RNK  0000 C R  0000 C R\n")
   ;; (insert "013 NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN  0000 0000\n")
 )
@@ -342,25 +360,24 @@
 
 (defun arbitools-actual-round ()
   "Calculate the actual round. It has to be run on the principal buffer."
-  (let* (numberofrounds (arbitools-number-of-rounds)
-        (actualround 0)
-        (continue t))
-    
+  (let* ((actualround 0))
     (save-excursion
+      (goto-char (point-min))
       (re-search-forward "^001" nil t)
-      (beginning-of-line)
-      (while continue
-        (forward-char (+ 93 (* actualround 10)))
-        (unless (string= (thing-at-point 'word) nil)
-          (setq actualround (+ actualround 1)))
-        (when (string= (thing-at-point 'word) nil)
-          (setq actualround (+ actualround 1))
-          (setq continue nil))))
+      (end-of-line)
+      (setq actualround (- (current-column) 89))
+      ;; 89 is the position of the initial data
+      (when (> (current-column) 89)
+        (setq actualround (/ (current-column) 10)))
+      (when (< actualround 0)
+        (setq actualround 0)))
+      ;;(save-excursion (with-current-buffer "Arbitools-output"  
+      ;;    (insert (format "column: %d -" actualround))))
     actualround))
 
-(defun arbitools-calculate-points ()
-  "Automatically calculate the points of each player"
-  (interactive)
+(defun arbitools-calculate-points (round)
+  "Automatically calculate the points of each player and adjust the corresponding column"
+  (interactive "sround: ")
   (save-excursion
     (let ( (numberofrounds (arbitools-number-of-rounds))
            (points         0.0)
@@ -370,7 +387,7 @@
       (while (re-search-forward "^001" nil t)
         (setq points 0.0)
         (setq roundcount 1)
-        (while (<= roundcount numberofrounds)
+        (while (<= roundcount (string-to-number round))
           (beginning-of-line)
 	  (forward-char (+ 98 (* (- roundcount 1) 10))) ;; go to where the result is for each round
           (cond ((string= (thing-at-point 'symbol) "1") (setq pointstosum 1.0))
@@ -378,6 +395,8 @@
                 ((string= (thing-at-point 'symbol) "=") (setq pointstosum 0.5))
                 ((string= (thing-at-point 'symbol) "0") (setq pointstosum 0.0))
                 ((string= (thing-at-point 'symbol) "-") (setq pointstosum 0.0))
+                ((string= (thing-at-point 'symbol) "F") (setq pointstosum 1.0))
+                ((string= (thing-at-point 'symbol) "H") (setq pointstosum 0.5))
                 ((string= (thing-at-point 'symbol) nil) (setq pointstosum 0.0)))
           (setq points (+ points pointstosum))
           (setq roundcount (+ roundcount 1)))
@@ -389,38 +408,42 @@
         (insert (format "%s" points))))))
 
 (defun arbitools-calculate-standings ()
-  "Write the standings in the Standings buffer"
+  "Write the standings in the Standings buffer. Update the POS field in the file"
+  ;; TODO: Apply tiebreaks
   (interactive)
-  (arbitools-calculate-points) ;; make sure the points of each player are correct
+  ;;(arbitools-calculate-points round) ;; make sure the points of each player are correct
   (save-excursion
     (with-current-buffer "Standings"
-      (erase-buffer))
+      (erase-buffer)))
+  (save-excursion
     (let ((datachunk ""))
       (goto-char (point-min))
       (while (re-search-forward "^001" nil t)
-        (let* ()
-          (beginning-of-line)
-          (forward-char 89) ;; get the POS field
-          (setq datachunk (thing-at-point 'word))
+        (beginning-of-line)
+        (forward-char 89) ;; get the POS field
+        (setq datachunk (thing-at-point 'word))
+        (save-excursion
           (with-current-buffer "Standings"
             (insert (format "%s" datachunk))
             (insert-char ?\s (- 3 (length datachunk)))
-            (insert " "))
-          (setq datachunk (substring-no-properties (thing-at-point 'line) 14 47)) ;; get name
+            (insert " ")))
+        (setq datachunk (substring-no-properties (thing-at-point 'line) 14 47)) ;; get name
+        (save-excursion
           (with-current-buffer "Standings"
             (insert (format "%s " datachunk))
-            (insert-char ?\s (- 33 (length datachunk))))
-          (beginning-of-line)
-          (forward-char 68)
-          (setq datachunk (thing-at-point 'word)) ;; get idfide 
+            (insert-char ?\s (- 33 (length datachunk)))))
+        (beginning-of-line)
+        (forward-char 67)
+        (setq datachunk (thing-at-point 'word)) ;; get idfide 
+        (save-excursion
           (with-current-buffer "Standings"
             (insert (format "%s " datachunk))
-            (insert-char ?\s (- 10 (length datachunk))))
-          (setq datachunk (substring-no-properties (thing-at-point 'line) 80 84)) ;; get points
+            (insert-char ?\s (- 10 (length datachunk)))))
+        (setq datachunk (substring-no-properties (thing-at-point 'line) 80 84)) ;; get points
+        (save-excursion
           (with-current-buffer "Standings"
             (insert (format "%s " datachunk))
-            (insert-char ?\s (- 4 (length datachunk))))
-          (with-current-buffer "Standings"
+            (insert-char ?\s (- 4 (length datachunk)))
             (insert "\n")
             (sort-columns 1 49 (- (point-max) 1))))))
     (let ((newpos 0)
@@ -430,13 +453,15 @@
         (beginning-of-line)
         (forward-char 68)
         (setq idfide (thing-at-point 'word))
-        (with-current-buffer "Standings"
-          (goto-char (point-min))
-          (search-forward idfide nil t)
-          (setq newpos (line-number-at-pos))) ;; the POS is in the beginning of the line in Standings
-        (with-current-buffer "Arbitools-output"
-          (insert (format "%s" newpos))
-          (insert "\n"))
+        (save-excursion
+          (with-current-buffer "Standings"
+            (goto-char (point-min))
+            (search-forward idfide nil t)
+            (setq newpos (line-number-at-pos)))) ;; the POS is in the beginning of the line in Standings
+        (save-excursion
+          (with-current-buffer "Arbitools-output"
+            (insert (format "%s" newpos))
+            (insert "\n")))
         (beginning-of-line)
         (forward-char 89) ;; go to POS field
         (forward-char -3)
@@ -553,6 +578,38 @@
      (delete-char 8)
      (insert "        "))))
 
+(defun arbitools-insert-bye (player round type)
+   "Insert bye for player"
+   (interactive "splayer: \nsround: \nstype:")
+   (let* ((pointtowrite (+ 89 (* (- (string-to-number round) 1) 10)))
+       (positionendofline 0)
+       (points 0.0))
+     (save-excursion
+       (goto-char (point-min))
+       (while (re-search-forward "^001" nil t)
+         (forward-char 4) ;; go to rank number
+         (when (string= player (thing-at-point 'word))
+          (end-of-line)
+          (setq positionendofline (current-column))
+          ;; create space if needed
+          (when (< positionendofline pointtowrite)
+            (end-of-line)
+            (insert-char 32 (- pointtowrite positionendofline)))
+          (beginning-of-line)
+          (forward-char 84)
+          (forward-char -3)
+          (setq points (string-to-number (thing-at-point 'word)))
+          (cond ((string= type "H")(setq points (+ points 0.5)))
+            ((string= type "F")(setq points (+ points 1.0))))
+          (delete-char 3)
+          (insert-char ?\s (- 3 (length (format "%s" points)))) ;; write extra empty spaces
+          (insert (format "%s" points)) ;; write the points
+          (beginning-of-line)
+          (forward-char pointtowrite)
+          ;; (unless (= pointtowrite positionendofline)
+          ;;  (delete-char (- positionendofline pointtowrite))) 
+          (insert (format "  0000 - %s" type)))))))
+
 (defun arbitools-replace-empty ()
    "Replace non played games with spaces"
    (interactive)
@@ -624,43 +681,47 @@
 
 (defun arbitools-insert-result (round white black result)
    "Insert a result."
+   ;; TODO: It erases everything at the end. Fix this.
    (interactive "sround: \nswhite: \nsblack: \nsresult: ")
+   (let* ((pointtowrite (+ 89 (* (- (string-to-number round) 1) 10)))
+     (positionendofline 0))
    (save-excursion
      (goto-char (point-min))
      (while (re-search-forward "^001" nil t)
-       (forward-char 4) ;; rank number
+       (forward-char 4) ;; go to rank number
        (when (string= white (thing-at-point 'word))
-         ;;go to first round taking into account the cursor is in the rank number
-         (forward-char (+ 85 (* (- (string-to-number round) 1) 10)))
-         (insert "  ") ;; replace the first positions with spaces
-         (delete-char 2) ;; delete the former characters
+         ;; go to first round taking into account the cursor is in the rank number
+         (end-of-line)
+         (setq positionendofline (current-column))
+         (beginning-of-line)
+         (forward-char pointtowrite)
+         (unless (= pointtowrite positionendofline) ;; check if there is something and 
+           (delete-char (- positionendofline pointtowrite)))   ;; erase it
+         (insert "     ") ;; replace the first positions with spaces
          ;; make room for bigger numbers
          (cond ((= 2 (length black))
            (backward-char 1))
            ((= 3 (length black))
            (backward-char 2)))
-         (insert (format "%s w %s" black result))
-         (delete-char 5) 
-         ;; adjust when numbers are longer
-         (cond ((= 2 (length black)) (delete-char 1))
-           ((= 3 (length black)) (delete-char 2))))
+         (insert (format "%s w %s" black result))) 
        (when (string= black (thing-at-point 'word))
          ;; go to first round taking into account the cursor is in the rank number
-         (forward-char (+ 85 (* (- (string-to-number round) 1) 10)))
-         (insert "  ") ;; replace the first positions with spaces
-         (delete-char 2) ;; delete the former characters
+         (end-of-line)
+         (setq positionendofline (current-column))
+         (beginning-of-line)
+         (forward-char pointtowrite)
+         (unless (= pointtowrite positionendofline) ;; check if there is something and 
+           (save-excursion (with-current-buffer "Arbitools-output" (insert "yes")))
+           (delete-char (- positionendofline pointtowrite)))   ;; erase it
+         (insert "     ") ;; replace the first positions with spaces
          ;; make room for bigger numbers
          (cond ((= 2 (length white)) (backward-char 1))
            ((= 3 (length white)) (backward-char 2)))
          (cond ((string= "1" result) (insert (format "%s b 0" white)))
            ((string= "=" result) (insert (format "%s b =" white)))
-           ((string= "+" result) (insert (format "%s b +" white)))
-           ((string= "-" result) (insert (format "%s b -" white)))
-           ((string= "0" result) (insert (format "%s b 1" white))))
-         (delete-char 5) 
-         ;; adjust when numbers are longer
-         (cond ((= 2 (length white)) (delete-char 1))
-           ((= 3 (length white)) (delete-char 2)))))))
+           ((string= "+" result) (insert (format "%s b -" white)))
+           ((string= "-" result) (insert (format "%s b +" white)))
+           ((string= "0" result) (insert (format "%s b 1" white)))))))))
 
 (defun arbitools-it3 ()
    "Get the IT3 tournament report. You will get a .tex file, and a pdf
@@ -687,22 +748,27 @@
 (easy-menu-define arbitools-mode-menu arbitools-mode-map
   "Menu for Arbitools mode"
   '("Arbitools"
-    ["New Tournament" arbitools-new-trf]
+    ["New Tournament header" arbitools-new-trf]
     "---"
     ["Insert Player" arbitools-insert-player]
     ["Delete Player" arbitools-delete-player]
+    "---"
     ["Do Pairings" arbitools-do-pairings]
     ["Insert Result" arbitools-insert-result]
+    ["Insert Bye" arbitools-insert-bye]
     ["Delete Round" arbitools-delete-round]
     "---"
     ["List Players" arbitools-list-players]
     ["List Pairings" arbitools-list-pairing]
+    ["Recalculate Positions" arbitools-calculate-standings]
+    ["Recalculate points" arbitools-calculate-points]
+    "---"
+    ["Print Standings to file" arbitools-standings]
     "---"
     ["Update Elo" arbitools-update]
     ["Get It3 form Report" arbitools-it3]
     ["Get FEDA Rating file" arbitools-fedarating]
-    "---"
-    ["Prepare for FEDA" arbitools-prepare-feda]
+    ["Prepare file for FEDA" arbitools-prepare-feda]
     ))
 
 
@@ -786,6 +852,10 @@
 
 ;;;; ChangeLog:
 
+;; 2017-12-31  David Gonzalez Gandara  <dggandara@member.fsf.org>
+;; 
+;; 	*arbitools.el: Some functions improved
+;; 
 ;; 2017-12-19  David Gonzalez Gandara  <dggandara@member.fsf.org>
 ;; 
 ;; 	* arbitools.el: added new functions, updated website

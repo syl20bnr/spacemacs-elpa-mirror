@@ -79,4 +79,6 @@ TODO:
 
 - Error handling
 
+- Insert bye function
+
 You will find more information in www.dggandara.eu/arbitools.htm
