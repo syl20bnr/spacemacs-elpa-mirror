@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171231.624
+;; Package-Version: 20180101.832
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -3739,7 +3739,7 @@ TREEP is used to expand internal nodes."
 
 ;;** `counsel-linux-app'
 (defcustom counsel-linux-apps-directories
-  '("/usr/local/share/applications/" "/usr/share/applications/")
+  '("~/.local/share/applications/" "/usr/local/share/applications/" "/usr/share/applications/")
   "Directories in which to search for applications (.desktop files)."
   :group 'ivy
   :type '(list directory))

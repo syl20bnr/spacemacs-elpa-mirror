@@ -4,10 +4,10 @@
 
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/clojure-emacs/clomacs
-;; Package-Version: 20171231.728
+;; Package-Version: 20180101.742
 ;; Keywords: clojure, interaction
 ;; Version: 0.0.3
-;; Package-Requires: ((emacs "24.3") (cider "0.16") (s "1.10.0") (simple-httpd "1.4.6"))
+;; Package-Requires: ((emacs "24.3") (cider "0.16.0") (s "1.12.0") (simple-httpd "1.4.6"))
 
 ;; This file is not part of GNU Emacs.
 
