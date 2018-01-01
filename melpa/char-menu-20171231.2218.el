@@ -1,10 +1,10 @@
 ;;; char-menu.el --- Create your own menu for fast insertion of arbitrary symbols -*- lexical-binding: t; -*-
 ;;
-;; Copyright © 2016–2017 Mark Karpov <markkarpov92@gmail.com>
+;; Copyright © 2016–2018 Mark Karpov <markkarpov92@gmail.com>
 ;;
 ;; Author: Mark Karpov <markkarpov92@gmail.com>
 ;; URL: https://github.com/mrkkrp/char-menu
-;; Package-Version: 20170518.2247
+;; Package-Version: 20171231.2218
 ;; Version: 0.1.1
 ;; Package-Requires: ((emacs "24.3") (avy-menu "0.1"))
 ;; Keywords: convenience, editing
