@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20171230.1041
+;; Package-Version: 20180101.503
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -521,7 +521,7 @@ This applies to insertions done with
 This mode is used when automatic detection fails, such as for GFM
 code blocks with no language specified."
   :group 'markdown
-  :type 'symbol
+  :type '(choice function (const :tag "None" nil))
   :package-version '(markdown-mode . "2.4"))
 
 (defcustom markdown-gfm-uppercase-checkbox nil
@@ -8416,6 +8416,14 @@ setting the variable `markdown-code-lang-modes'."
   :safe 'booleanp
   :package-version '(markdown-mode . "2.3"))
 
+(defcustom markdown-fontify-code-block-default-mode nil
+  "Default mode to use to fontify code blocks.
+This mode is used when automatic detection fails, such as for GFM
+code blocks with no language specified."
+  :group 'markdown
+  :type '(choice function (const :tag "None" nil))
+  :package-version '(markdown-mode . "2.4"))
+
 (defun markdown-toggle-fontify-code-blocks-natively (&optional arg)
   "Toggle the native fontification of code blocks.
 With a prefix argument ARG, enable if ARG is positive,
@@ -8475,7 +8483,8 @@ Use matching function MATCHER."
                                 (if (bolp) (point-at-bol 2) (point-at-bol 3))))
                lang)
           (if (and markdown-fontify-code-blocks-natively
-                   (setq lang (markdown-code-block-lang)))
+                   (or (setq lang (markdown-code-block-lang))
+                       markdown-fontify-code-block-default-mode))
               (markdown-fontify-code-block-natively lang start end)
             (add-text-properties start end '(face markdown-pre-face)))
           ;; Set background for block as well as opening and closing lines.
@@ -8501,7 +8510,8 @@ This function is called by Emacs for automatic fontification when
 `markdown-fontify-code-blocks-natively' is non-nil.  LANG is the
 language used in the block. START and END specify the block
 position."
-  (let ((lang-mode (markdown-get-lang-mode lang)))
+  (let ((lang-mode (if lang (markdown-get-lang-mode lang)
+                     markdown-fontify-code-block-default-mode)))
     (when (fboundp lang-mode)
       (let ((string (buffer-substring-no-properties start end))
             (modified (buffer-modified-p))
