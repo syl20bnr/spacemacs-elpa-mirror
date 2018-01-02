@@ -1,10 +1,10 @@
 ;;; transmission.el --- Interface to a Transmission session -*- lexical-binding: t -*-
 
-;; Copyright (C) 2014-2017  Mark Oteiza <mvoteiza@udel.edu>
+;; Copyright (C) 2014-2018  Mark Oteiza <mvoteiza@udel.edu>
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.12
-;; Package-Version: 20171209.905
+;; Package-Version: 20180101.1803
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
