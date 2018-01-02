@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 20171227.2105
+;; Package-Version: 20180101.2248
 ;; Version: 2.4.0
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -922,18 +922,32 @@ regular expression."
 
 (defun fountain-init-vars ()
   "Initialize important variables.
-These are required for functions to operate with temporary buffers."
+Needs to be called for every Fountain buffer because some
+variatbles are required for functions to operate with temporary
+buffers."
   (fountain-init-scene-heading-regexp)
   (fountain-init-trans-regexp)
   (fountain-init-outline-regexp)
+  (fountain-init-imenu-generic-expression)
+  (modify-syntax-entry (string-to-char "/") ". 14" nil)
+  (modify-syntax-entry (string-to-char "*") ". 23" nil)
   (setq-local comment-start "/*")
   (setq-local comment-end "*/")
   (setq-local comment-use-syntax t)
-  (setq font-lock-multiline 'undecided)
+  (setq-local font-lock-comment-face 'fountain-comment)
   (setq-local page-delimiter fountain-page-break-regexp)
   (setq-local outline-level #'fountain-outline-level)
-  (setq-local require-final-newline mode-require-final-newline))
-
+  (setq-local require-final-newline mode-require-final-newline)
+  (setq-local font-lock-extra-managed-props
+              '(line-prefix wrap-prefix invisible))
+  (setq font-lock-multiline 'undecided)
+  (setq font-lock-defaults
+        '(fountain-create-font-lock-keywords nil t))
+  (add-to-invisibility-spec (cons 'outline t))
+  (if fountain-hide-emphasis-delim
+      (add-to-invisibility-spec 'fountain-emphasis-delim))
+  (if fountain-hide-syntax-chars
+      (add-to-invisibility-spec 'fountain-syntax-chars)))
 
 (defcustom fountain-scene-heading-prefix-list
   '("INT" "EXT" "INT/EXT" "I/E")
@@ -1791,8 +1805,7 @@ Includes child elements."
         (list 'begin (match-beginning 0)
               'end (match-end 0)
               'export (if (memq 'page-break export-elements) t))
-        (or (match-string-no-properties 2)
-            "")))
+        (match-string-no-properties 2)))
 
 (defun fountain-parse-synopsis (match-data &optional export-elements job)
   "Return an element list for matched synopsis."
@@ -1870,11 +1883,15 @@ Includes child elements."
           (insert-buffer-substring buffer start end)
           (fountain-include-in-region (point-min) (point-max)
                                       (not (memq 'include export-elements)))
+          (fountain-delete-comments-in-region (point-min) (point-max))
+          ;; Delete metadata.
           (goto-char (point-min))
           (while (fountain-match-metadata)
             (forward-line 1))
           (delete-region (point-min) (point))
-          (fountain-delete-comments-in-region (point-min) (point-max))
+          ;; Search for script end point and delete beyond.
+          (if (re-search-forward fountain-end-regexp nil t)
+              (del-region (match-beginning 0) (point-max)))
           (fountain-parse-region (point-min) (point-max) export-elements job))
       (progress-reporter-done job))))
 
@@ -2516,6 +2533,9 @@ following order:
         (let ((export-format-plist (cdr (assq format fountain-export-formats)))
               format-template element-template string)
           (cond
+           ;; If CONTENT is nil, set STRING as an empty string.
+           ((not content)
+            (setq string ""))
            ;; If CONTENT is a string, format CONTENT and set as STRING.
            ((stringp content)
             (setq string (fountain-export-replace-in-string content format))
@@ -2596,11 +2616,6 @@ included elements, otherwise walk the element tree calling
 strings."
   (let ((job (make-progress-reporter "Exporting..."))
         tree string)
-    ;; Search for script end point and reset END.
-    (save-excursion
-      (goto-char start)
-      (if (re-search-forward fountain-end-regexp end t)
-          (setq end (match-beginning 0))))
     ;; Parse the region to TREE.
     (save-excursion
       (setq tree (fountain-prep-and-parse-region start end)))
@@ -4887,10 +4902,7 @@ keywords suitable for Font Lock."
 ;;; Syntax Table
 
 (defvar fountain-mode-syntax-table
-  (let ((syntax (make-syntax-table)))
-    (modify-syntax-entry (string-to-char "/") ". 14" syntax)
-    (modify-syntax-entry (string-to-char "*") ". 23" syntax)
-    syntax)
+  (make-syntax-table)
   "Syntax table for `fountain-mode'.")
 
 
@@ -4904,17 +4916,6 @@ keywords suitable for Font Lock."
   "Major mode for screenwriting in Fountain markup."
   :group 'fountain
   (fountain-init-vars)
-  (fountain-init-imenu-generic-expression)
-  (setq font-lock-defaults
-        '(fountain-create-font-lock-keywords nil t))
-  (add-to-invisibility-spec (cons 'outline t))
-  (if fountain-hide-emphasis-delim
-      (add-to-invisibility-spec 'fountain-emphasis-delim))
-  (if fountain-hide-syntax-chars
-      (add-to-invisibility-spec 'fountain-syntax-chars))
-  (setq-local font-lock-comment-face 'fountain-comment)
-  (setq-local font-lock-extra-managed-props
-              '(line-prefix wrap-prefix invisible))
   (let ((n (plist-get (fountain-read-metadata) 'startup-level)))
     (if (stringp n)
         (setq-local fountain-outline-startup-level
