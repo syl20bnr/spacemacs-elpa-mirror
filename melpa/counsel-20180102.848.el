@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180101.832
+;; Package-Version: 20180102.848
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1169,7 +1169,7 @@ Typical value: '(recenter)."
   (if (and (or counsel-git-grep-skip-counting-lines (> counsel--git-grep-count 20000))
            (< (length string) 3))
       (counsel-more-chars 3)
-    (let* ((default-directory counsel--git-dir)
+    (let* ((default-directory (ivy-state-directory ivy-last))
            (cmd (format counsel-git-grep-cmd
                         (setq ivy--old-re (ivy--regex string t)))))
       (if (and (not counsel-git-grep-skip-counting-lines) (<= counsel--git-grep-count 20000))
@@ -1183,7 +1183,9 @@ Typical value: '(recenter)."
     (with-ivy-window
       (let ((file-name (match-string-no-properties 1 x))
             (line-number (match-string-no-properties 2 x)))
-        (find-file (expand-file-name file-name counsel--git-dir))
+        (find-file (expand-file-name
+                    file-name
+                    (ivy-state-directory ivy-last)))
         (goto-char (point-min))
         (forward-line (1- (string-to-number line-number)))
         (re-search-forward (ivy--regex ivy-text t) (line-end-position) t)
@@ -1271,9 +1273,10 @@ INITIAL-INPUT can be given as the initial minibuffer input."
     (setq proj (car proj-and-cmd))
     (setq counsel-git-grep-cmd (cdr proj-and-cmd))
     (counsel-require-program (car (split-string counsel-git-grep-cmd)))
-    (setq counsel--git-dir (if proj
-                               (car proj)
-                             (counsel-locate-git-root)))
+    (setf (ivy-state-directory ivy-last)
+          (if proj
+              (car proj)
+            (counsel-locate-git-root)))
     (unless (or proj counsel-git-grep-skip-counting-lines)
       (setq counsel--git-grep-count
             (if (eq system-type 'windows-nt)
@@ -1408,7 +1411,7 @@ If NO-ASYNC is non-nil, do it synchronously instead."
 When REVERT is non-nil, regenerate the current *ivy-occur* buffer."
   (unless (eq major-mode 'ivy-occur-grep-mode)
     (ivy-occur-grep-mode)
-    (setq default-directory counsel--git-dir))
+    (setq default-directory (ivy-state-directory ivy-last)))
   (setq ivy-text
         (and (string-match "\"\\(.*\\)\"" (buffer-name))
              (match-string 1 (buffer-name))))

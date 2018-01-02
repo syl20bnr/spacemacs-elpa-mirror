@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171217.334
+;; Package-Version: 20180102.1035
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.9.0"))
 ;; Keywords: matching
@@ -530,6 +530,8 @@ When non-nil, INITIAL-INPUT is the initial search pattern."
           (point))
       (unless (or res swiper-stay-on-quit)
         (goto-char swiper--opoint))
+      (when (and (null res) (> (length ivy-text) 0))
+        (cl-pushnew ivy-text swiper-history))
       (when swiper--reveal-mode
         (reveal-mode 1)))))
 
@@ -578,9 +580,7 @@ Matched candidates should have `swiper-invocation-face'."
     (delete-overlay (pop swiper--overlays)))
   (save-excursion
     (goto-char (point-min))
-    (isearch-clean-overlays))
-  (when (> (length ivy-text) 0)
-    (cl-pushnew ivy-text swiper-history)))
+    (isearch-clean-overlays)))
 
 (defun swiper--update-input-ivy ()
   "Called when `ivy' input is updated."

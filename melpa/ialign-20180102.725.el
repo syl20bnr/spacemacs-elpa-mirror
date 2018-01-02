@@ -3,7 +3,7 @@
 ;;
 ;; Author: Michał Kondraciuk <k.michal@zoho.com>
 ;; URL: https://github.com/mkcms/interactive-align
-;; Package-Version: 20171229.410
+;; Package-Version: 20180102.725
 ;; Package-Requires: ((emacs "24.4"))
 ;; Version: 0.0.1
 ;; Keywords: tools, editing, align, interactive
@@ -83,6 +83,11 @@ or equal to this, otherwise do not update."
   '(choice (const :tag "Never update" nil)
 	   (const :tag "Always update" t)
 	   (integer :tag "Update if number of lines is less than or equal")))
+
+(defcustom ialign-initial-regexp "\\(\\s-+\\)"
+  "Initial regexp to use when calling `ialign-interactive-align'."
+  :group 'ialign
+  :type 'regexp)
 
 (defvar ialign--buffer nil)
 (defvar ialign--start nil)
@@ -321,7 +326,8 @@ The keymap used in minibuffer is `ialign-minibuffer-keymap':
 	  (progn
 	    (add-hook 'after-change-functions #'ialign--after-change)
 	    (let ((buffer-undo-list t))
-	      (read-from-minibuffer " " "\\(\\s-+\\)" ialign-minibuffer-keymap
+	      (read-from-minibuffer " " ialign-initial-regexp
+                                    ialign-minibuffer-keymap
 				    nil 'ialign--history)
 	      (setq success t)))
 	(if success
