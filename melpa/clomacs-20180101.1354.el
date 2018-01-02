@@ -4,7 +4,7 @@
 
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/clojure-emacs/clomacs
-;; Package-Version: 20180101.742
+;; Package-Version: 20180101.1354
 ;; Keywords: clojure, interaction
 ;; Version: 0.0.3
 ;; Package-Requires: ((emacs "24.3") (cider "0.16.0") (s "1.12.0") (simple-httpd "1.4.6"))
@@ -394,6 +394,9 @@ RETURN-VALUE may be :value or :stdout (:value by default)."
 
 (clomacs-defun clomacs-set-emacs-connection
                clomacs/set-emacs-connection)
+
+(clomacs-defun clomacs-get-emacs-connection
+               clomacs/get-emacs-connection)
 
 (clomacs-defun clomacs-close-emacs-connection
                clomacs/close-emacs-connection)

@@ -367,6 +367,9 @@ Emacs http server
 (clomacs-defun clomacs-set-emacs-connection
                clomacs/set-emacs-connection)
 
+(clomacs-defun clomacs-get-emacs-connection
+               clomacs/get-emacs-connection)
+
 (clomacs-defun clomacs-close-emacs-connection
                clomacs/close-emacs-connection)
 
