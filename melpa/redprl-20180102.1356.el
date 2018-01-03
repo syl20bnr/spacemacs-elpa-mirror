@@ -5,7 +5,7 @@
 
 ;; Author: Jonathan Sterling <jon@jonmsterling.com>
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 20180102.829
+;; Package-Version: 20180102.1356
 ;; Version: 0.0.1
 ;; Keywords: languages
 
@@ -105,7 +105,7 @@
   "Syntax table for RedPRL.")
 
 (defconst redprl-declaration-keywords
-  '("Def" "Extract" "Print" "Rule" "Tac" "Thm")
+  '("Def" "Extract" "Print" "Quit" "Tac" "Thm")
   "RedPRL's keywords.")
 
 (defconst redprl-sort-keywords

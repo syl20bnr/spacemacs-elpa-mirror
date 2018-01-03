@@ -1,7 +1,7 @@
 ;;; company-lsp.el --- Company completion backend for lsp-mode.  -*- lexical-binding: t -*-
 
 ;; Version: 1.0
-;; Package-Version: 20171211.1017
+;; Package-Version: 20180102.1535
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "3.4") (company "0.9.0") (s "1.2.0") (dash "2.11.0"))
 ;; URL: https://github.com/tigersoldier/company-lsp
 
@@ -252,6 +252,21 @@ Return a plist of (:incomplete :candidates) if cache for PREFIX
 exists. Otherwise return nil."
   (cdr (assoc prefix company-lsp--completion-cache)))
 
+(defun company-lsp--documentation (candidate)
+  "Get the documentation from the item in the CANDIDATE.
+
+The documentation can be either string or MarkupContent. This method
+will return markdown string if it is MarkupContent, original string
+otherwise. If the documentation is not present, it will return nil
+which company can handle."
+  (let* ((resolved-candidate (company-lsp--resolve-candidate candidate "documentation"))
+         (item (company-lsp--candidate-item resolved-candidate))
+         (documentation (gethash "documentation" item)))
+    (if
+        (hash-table-p documentation)  ;; If true, then the documentation is a MarkupContent. String otherwise.
+        (gethash "value" documentation)
+      documentation)))
+
 ;;;###autoload
 (defun company-lsp (command &optional arg &rest _)
   "Define a company backend for lsp-mode.
@@ -285,6 +300,7 @@ See the documentation of `company-backends' for COMMAND and ARG."
                     (and cache (plist-get cache :incomplete)))
                 (not company-lsp-cache-candidates)))
     (annotation (lsp--annotate arg))
+    (quickhelp-string (company-lsp--documentation arg))
     (match (length arg))
     (post-completion (company-lsp--post-completion arg))))
 

@@ -3,7 +3,7 @@
 ;; Copyright (C) 2014 - 2017 Ruben Maher
 
 ;; Version: 1.0
-;; Package-Version: 20171203.1746
+;; Package-Version: 20180102.1518
 ;; Author: Ruben Maher <r@rkm.id.au>
 ;; URL: https://github.com/eqyiel/circe-notifications
 ;; Package-Requires: ((emacs "24.4") (circe "2.3") (alert "1.2"))
@@ -206,8 +206,9 @@ the last message from NICK?"
   ;; If alert-user-configuration is nil, the :style keyword is ignored.
   ;; Workaround for now is just to add a dummy rule that does nothing.
   ;; https://github.com/jwiegley/alert/issues/30
-  (if (eq alert-user-configuration nil)
-      (alert-add-rule :continue t)))
+  (unless (append alert-user-configuration
+                  alert-internal-configuration)
+    (alert-add-rule :continue t)))
 
 (defun disable-circe-notifications ()
   "Turn off notifications."
