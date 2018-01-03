@@ -4,7 +4,7 @@
 ;; Author: stardiviner <numbchild@gmail.com>
 ;; Maintainer: stardiviner <numbchild@gmail.com>
 ;; Keywords: org babel php
-;; Package-Version: 20171017.2206
+;; Package-Version: 20180103.441
 ;; URL: https://github.com/stardiviner/ob-php
 ;; Created: 04th May 2016
 ;; Version: 0.0.1
@@ -30,7 +30,8 @@
 ;;;###autoload
 (defun org-babel-execute:php (body params)
   "Orgmode Babel PHP evaluate function for `BODY' with `PARAMS'."
-  (let* ((cmd (mapconcat 'identity (list "php" "-r ") " ")))
+  (let* ((cmd "php")
+         (body (concat "<?php\n" body "\n?>")))
     (org-babel-eval cmd body)
     ))
 
