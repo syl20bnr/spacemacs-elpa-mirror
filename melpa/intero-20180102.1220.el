@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20171220.1335
+;; Package-Version: 20180102.1220
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -1271,6 +1271,7 @@ stack's default)."
               (insert ":set prompt \"\"
 :set -fbyte-code
 :set -fdefer-type-errors
+:set -fdiagnostics-color=never
 :set prompt \"\\4 \"
 ")
               (basic-save-buffer)

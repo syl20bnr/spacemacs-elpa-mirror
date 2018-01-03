@@ -5,7 +5,7 @@
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Created: 11 January 2013
 ;; Version: 0.48
-;; Package-Version: 20171209.450
+;; Package-Version: 20180102.1441
 ;; Package-Requires: ((dash "2.8.0") (s "1.9.0") (cl-lib "0.5"))
 ;;; Commentary:
 
@@ -117,6 +117,8 @@ If set to nil, fall back to finding VCS root directories."
   "A list of patterns for files/directories to ignore when searching."
   :type '(repeat (string))
   :group 'ag)
+(make-variable-buffer-local 'ag-ignore-list)
+(put 'ag-ignore-list 'safe-local-variable #'listp)
 
 (require 'compile)
 

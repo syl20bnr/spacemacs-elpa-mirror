@@ -21,10 +21,9 @@
 
 ;; Author: Nick Anderson <nick@cmdln.org>
 ;; Keywords: tools, convenience
-;; Package-Version: 20170915.634
+;; Package-Version: 20180102.1012
 ;; URL: https://github.com/nickanderson/ob-cfengine3
-;; Version: 0.0.1
-
+;; Version: 0.0.2
 
 ;;; Commentary:
 ;; Execute CFEngine 3 policy inside org-mode src blocks.
@@ -45,6 +44,9 @@ It is useful to inject into an example source block before execution.")
 (defconst ob-cfengine3-header-args-cfengine3
   '(
     (no-lock . :any)
+    (debug . :any)
+    (verbose . :any)
+    (info . :any)
     (include-stdlib . :any)
     (define . :any)
     (bundlesequence . :any))
@@ -60,6 +62,9 @@ This function is called by `org-babel-execute-src-block'.
   temporary file."
 
     (let* ((temporary-file-directory ".")
+           (debug (cdr (assoc :debug params)))
+           (verbose (cdr (assoc :verbose params)))
+           (info (cdr (assoc :info params)))
            (use-locks (cdr (assoc :use-locks params)))
            (include-stdlib (not (string= "no" (cdr (assoc :include-stdlib params)))))
            (define (cdr (assoc :define params)))
@@ -77,7 +82,17 @@ This function is called by `org-babel-execute-src-block'.
             " "
             (when define (concat "--define "  define ))
             " "
-            (unless use-locks "--no-lock")
+            (unless use-locks "--no-lock ")
+
+            ;; When info header arg is yes add --info to the command string and throw away the args
+            (when info (concat "--info "))
+            " "
+            ;; When verbose header arg is yes add --verbose to the command string and throw away the args
+            (when verbose (concat "--verbose "))
+            " "
+            ;; When debug header arg is yes add --debug with all log modules enabled to the command string and throw away the args
+            (when debug (concat "--debug --log-modules=all "))
+            " "
             ob-cfengine3-command-options
             " "
             (format " --file %s" (shell-quote-argument tempfile))))
