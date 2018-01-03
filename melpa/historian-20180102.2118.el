@@ -1,10 +1,10 @@
 ;;; historian.el --- Persistently store selected minibuffer candidates -*- lexical-binding: t -*-
 
-;; Copyright (C) 2017 PythonNut
+;; Copyright (C) 2017, 2018 PythonNut
 
 ;; Author: PythonNut <pythonnut@pythonnut.com>
 ;; Keywords: convenience
-;; Package-Version: 20170722.1714
+;; Package-Version: 20180102.2118
 ;; Version: 20170111
 ;; URL: https://github.com/PythonNut/historian.el
 ;; Package-Requires: ((emacs "24.4"))
