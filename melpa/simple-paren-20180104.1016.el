@@ -1,9 +1,9 @@
 ;;; simple-paren.el --- Insert paired delimiter, wrap -*- lexical-binding: t; -*-
 
 ;; Version: 0.1
-;; Package-Version: 20171229.1018
+;; Package-Version: 20180104.1016
 
-;; Copyright (C) 2016-2017  Andreas Röhler, Steve Purcell
+;; Copyright (C) 2016-2018  Andreas Röhler, Steve Purcell
 ;; See also http://www.unicode.org/L2/L2013/13046-BidiBrackets.txt
 
 ;; Author: Andreas Röhler, Steve Purcell
