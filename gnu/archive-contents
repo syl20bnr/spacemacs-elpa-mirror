@@ -784,9 +784,6 @@
 	     "guide your eyes while scrolling" single
 	     ((:url . "https://github.com/michael-heerdegen/on-screen.el")
 	      (:keywords "convenience"))])
- (org .
-      [(20171225)
-       nil "Outline-based notes management and organizer" tar nil])
  (org-edna .
 	   [(1 0 -2 4)
 	    ((emacs
