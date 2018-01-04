@@ -4,7 +4,7 @@
 
 ;; Author: Eric Danan
 ;; URL: https://github.com/ericdanan/counsel-projectile
-;; Package-Version: 20171227.1315
+;; Package-Version: 20180103.1329
 ;; Keywords: project, convenience
 ;; Version: 0.2
 ;; Package-Requires: ((counsel "0.10.0") (projectile "0.14.0"))
@@ -487,7 +487,7 @@ construct the command.")
   "Grep for STRING in the current project."
   (if (< (length string) 3)
       (counsel-more-chars 3)
-    (let ((default-directory counsel--git-dir)
+    (let ((default-directory (ivy-state-directory ivy-last))
           (regex (counsel-unquote-regex-parens
                   (setq ivy--old-re
                         (ivy--regex string)))))
@@ -508,7 +508,7 @@ construct the command.")
   ;; prepend "./" to the candidates since grep already does so.
   (unless (eq major-mode 'ivy-occur-grep-mode)
     (ivy-occur-grep-mode)
-    (setq default-directory counsel--git-dir))
+    (setq default-directory (ivy-state-directory ivy-last)))
   (setq ivy-text
         (and (string-match "\"\\(.*\\)\"" (buffer-name))
              (match-string 1 (buffer-name))))
@@ -561,11 +561,11 @@ called with a prefix argument."
                 (read-string (projectile-prepend-project-name "grep options: ")
                              ignored
                              'counsel-projectile-grep-options-history)
-              (concat ignored options-or-cmd))))
+              (concat ignored options-or-cmd)))
+           (default-directory (projectile-project-root)))
       (setq counsel-projectile-grep-command
             (format counsel-projectile-grep-base-command options))
       (ivy-set-prompt 'counsel-projectile-grep counsel-prompt-function)
-      (setq counsel--git-dir (projectile-project-root))
       (ivy-read (projectile-prepend-project-name "grep")
                 #'counsel-projectile-grep-function
                 :initial-input counsel-projectile-grep-initial-input
