@@ -4,7 +4,7 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20180103.431
+;; Package-Version: 20180103.1855
 ;; Version: 2.8.21
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -144,6 +144,11 @@ Because only two are supported by hugo."
 
 (defcustom easy-hugo-postdir "content/post"
   "Directory where the theme stores its posts."
+  :group 'easy-hugo
+  :type 'string)
+
+(defcustom easy-hugo-rsync-delete-directory "public/"
+  "Disappear directory when synchronizing with rsync."
   :group 'easy-hugo
   :type 'string)
 
@@ -470,7 +475,8 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
      (kill-buffer "*hugo-publish*"))
    (shell-command-to-string
     (concat "rsync -rtpl --chmod="
-	    easy-hugo-publish-chmod " --delete public/ "
+	    easy-hugo-publish-chmod " --delete "
+	    easy-hugo-rsync-delete-directory " "
 	    easy-hugo-sshdomain ":"
 	    (shell-quote-argument easy-hugo-root)))
    (message "Blog published")
@@ -525,7 +531,8 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
       (kill-buffer "*hugo-publish*"))
     (shell-command-to-string
      (concat "rsync -rtpl --chmod="
-	     easy-hugo-publish-chmod " --delete public/ "
+	     easy-hugo-publish-chmod " --delete "
+	     easy-hugo-rsync-delete-directory " "
 	     (easy-hugo-nth-eval-bloglist easy-hugo-sshdomain n) ":"
 	     (shell-quote-argument (easy-hugo-nth-eval-bloglist easy-hugo-root n))))
     (message "Blog published")
