@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 20180102.41
+;; Package-Version: 20180104.609
 ;; Version: 2.4.0
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -1901,7 +1901,7 @@ Includes child elements."
           (delete-region (point-min) (point))
           ;; Search for script end point and delete beyond.
           (if (re-search-forward fountain-end-regexp nil t)
-              (del-region (match-beginning 0) (point-max)))
+              (delete-region (match-beginning 0) (point-max)))
           (fountain-parse-region (point-min) (point-max) export-elements job))
       (progress-reporter-done job))))
 

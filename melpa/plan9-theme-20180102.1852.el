@@ -4,7 +4,7 @@
 
 ;; Author: John Louis Del Rosario <john2x@gmail.com>
 ;; URL: https://github.com/john2x/plan9-theme.el
-;; Package-Version: 20170529.2212
+;; Package-Version: 20180102.1852
 ;; Version: 0.2
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -437,15 +437,13 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(magit-refname ((t (:foreground ,purple :weight bold))))
    `(magit-head ((t (:foreground ,green :weight bold))))
 
-   `(magit-branch-local ((t (:foreground ,fg :background ,yellow-light
-                                         :weight bold
-                                         :box (:line-width 1 :color ,yellow)))))
-   `(magit-branch-remote ((t (:foreground ,fg :background ,purple-light
+   `(magit-branch-local ((t (:foreground ,blue :background ,blue-light
+                                         :weight bold))))
+   `(magit-branch-remote ((t (:foreground ,green :background ,green-light
+                                          :weight bold))))
+   `(magit-branch-current ((t (:foreground ,cyan :background ,cyan-light
                                           :weight bold
-                                          :box (:line-width 1 :color ,purple)))))
-   `(magit-branch-current ((t (:foreground ,fg :background ,blue-light
-                                          :weight bold
-                                          :box (:line-width 1 :color ,blue)))))
+                                          :box (:line-width 1 :color ,cyan)))))
 
    `(magit-diff-file-heading ((t (:foreground ,fg :weight bold))))
    `(magit-diff-file-heading-highlight ((t (:background ,bg-alt))))
