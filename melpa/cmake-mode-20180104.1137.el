@@ -1,5 +1,5 @@
 ;;; cmake-mode.el --- major-mode for editing CMake sources
-;; Package-Version: 20160928.505
+;; Package-Version: 20180104.1137
 
 ; Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
 ; file Copyright.txt or https://cmake.org/licensing for details.
@@ -353,7 +353,7 @@ and store the result as a list in LISTVAR."
 
 ;;;###autoload
 (defun cmake-help ()
-  "Queries for any of the four available help topics and prints out the approriate page."
+  "Queries for any of the four available help topics and prints out the appropriate page."
   (interactive)
   (let* ((default-entry (cmake-symbol-at-point))
          (command-list (cmake-get-list "command"))
