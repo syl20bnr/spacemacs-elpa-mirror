@@ -3,10 +3,10 @@
 ;; Copyright (C) 2015 Jason Pellerin
 ;; Authors: Jason Pellerin
 ;; URL: https://github.com/crystal-lang-tools/emacs-crystal-mode
-;; Package-Version: 20171227.725
+;; Package-Version: 20180104.1920
 ;; Created: Tue Jun 23 2015
 ;; Keywords: languages crystal
-;; Version: 0.1
+;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.4"))
 
 
