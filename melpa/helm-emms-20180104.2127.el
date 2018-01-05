@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 ~ 2014 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; Version: 1.3
-;; Package-Version: 20171217.2138
+;; Package-Version: 20180104.2127
 ;; Package-Requires: ((helm "1.5") (emms "0.0") (cl-lib "0.5") (emacs "24.1"))
 
 ;; X-URL: https://github.com/emacs-helm/helm-emms
@@ -25,6 +25,7 @@
 
 (require 'cl-lib)
 (require 'helm)
+(require 'helm-adaptive)
 (require 'emms)
 
 (declare-function emms-streams "ext:emms-streams")
