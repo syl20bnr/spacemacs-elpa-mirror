@@ -13,7 +13,7 @@ traad depends on the following packages:
 
   cl
   deferred - https://github.com/kiwanami/emacs-deferred
-  json
+  jsontraad
   request - https://github.com/tkf/emacs-request
   request-deferred - (same as request)
 
