@@ -6,7 +6,7 @@
 ;; Created: 24 Aug 2011
 ;; Updated: 16 Mar 2015
 ;; Version: 1.2
-;; Package-Version: 20171221.1126
+;; Package-Version: 20180105.2127
 ;; Package-Requires: ((gntp "0.1") (log4e "0.3.0"))
 ;; Keywords: notification emacs message
 ;; X-URL: https://github.com/jwiegley/alert
@@ -798,6 +798,14 @@ by the `notifications' style.")
     (when (plist-get info :id)
       (puthash (plist-get info :id) id alert-notifications-ids)))
   (alert-message-notify info))
+
+(defun alert-notifications-remove (info)
+  "Remove the `notifications-notify' message based on INFO :id."
+  (let ((id (and (plist-get info :id)
+                 (gethash (plist-get info :id) alert-notifications-ids))))
+    (when id
+      (notifications-close-notification id)
+      (remhash (plist-get info :id) alert-notifications-ids))))
 
 (alert-define-style 'notifications :title "Notify using notifications"
                     :notifier #'alert-notifications-notify))
