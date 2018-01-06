@@ -4,7 +4,7 @@
 
 ;; Author: Prassee  <prassee.sathian@gmail.com>
 ;; Keywords: dark high-contrast  faces
-;; Package-Version: 20171231.1852
+;; Package-Version: 20180105.1644
 ;; URL: https://github.com/prassee/prassee-emacs-theme
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 1.2
@@ -122,9 +122,8 @@
      `(show-paren-match       ((,c (:foreground ,black :background ,teal ))))
      `(show-paren-mismatch    ((,c (:foreground ,black :background ,red ))))
      `(linum
-       ((((type graphic)) :background ,bg :foreground ,teal)
-        (t                :background ,bg :foreground ,teal)))
-
+       ((((type graphic)) :background ,bg :foreground ,cyanr)
+        (t                :background ,bg :foreground ,cyanr)))
      `(font-lock-builtin-face           ((,c (:foreground ,builtin))))
      `(font-lock-comment-face           ((,c (:foreground ,comments))))
      `(font-lock-comment-delimiter-face ((,c (:foreground ,comments))))
@@ -363,6 +362,10 @@
      `(web-mode-html-attr-name-face    ((,c (:foreground ,type))))
      `(web-mode-html-entity-face       ((,c (:foreground ,cyan ))))
      `(web-mode-block-control-face     ((,c (:foreground ,orange))))
+
+     ;; only left fringe
+     '(fringe-mode (quote (nil . 0)) nil (fringe))
+     
      )))
 
 ;; set cursor style
@@ -381,4 +384,4 @@
 ;; no-byte-compile: t
 ;; indent-tabs-mode: nil
 ;; End:
-;;; prassee-theme.el ends here
+;;; prassee-theme.el ends here prassee-theme.el ends hereprassee-theme.el ends hereprassee-theme.el ends hereprassee-theme.el ends hereprassee-theme.el ends here

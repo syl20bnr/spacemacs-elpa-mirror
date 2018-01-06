@@ -5,7 +5,7 @@
 ;; Author: Tom Alexander <tomalexander@paphus.com>
 ;; Author: Tim Visher <tim.visher@gmail.com>
 ;; Package-Requires: ((cl-lib "0.5") (s "1.9.0"))
-;; Package-Version: 20161228.850
+;; Package-Version: 20180105.1354
 ;; Keywords: org, wp, mediawiki
 ;; Homepage: https://github.com/tomalexander/orgmode-mediawiki
 
@@ -87,6 +87,11 @@ any class definition."
 Should contain a two instances of %s.  The first will be replaced with the
 language-specific word for \"Footnotes\", the second one will be replaced
 by the footnotes themselves."
+  :group 'org-export-mw
+  :type 'string)
+
+(defcustom org-mw-filename-extension ".mw"
+  "Extension to use for file names when exporting."
   :group 'org-export-mw
   :type 'string)
 
@@ -314,7 +319,8 @@ a communication channel."
                 "\n\n"
                 contents))
        ;; Use "atx" style.
-       (t (concat (make-string level ?=) " " heading tags " " (make-string level ?=) "\n" contents))))))
+       (t (concat (make-string level ?=) " " heading tags " "
+                  (make-string level ?=) "\n" contents))))))
 
 
 ;;;; Horizontal Rule
@@ -384,11 +390,12 @@ a communication channel."
                (concat
                 (and contents (concat contents " "))
                 (format "(%s)"
-                        (format (org-export-translate "See section %s" :html info)
-                                (mapconcat 'number-to-string
-                                           (org-export-get-headline-number
-                                            destination info)
-                                           ".")))))))
+                        (format
+                         (org-export-translate "See section %s" :html info)
+                         (mapconcat 'number-to-string
+                                    (org-export-get-headline-number
+                                     destination info)
+                                    ".")))))))
           ((org-export-inline-image-p link org-html-inline-image-rules)
            (let ((path (let ((raw-path (org-element-property :path link)))
                          (if (not (file-name-absolute-p raw-path)) raw-path
@@ -429,7 +436,8 @@ a communication channel."
                               (concat "file://" (expand-file-name raw-path))))
                            (t raw-path))))
                (if (not contents) (format "%s" path)
-                 (format "[%s %s]" path (s-join " " (s-split "\n" contents)))))))))
+                 (format "[%s %s]" path
+                         (s-join " " (s-split "\n" contents)))))))))
 
 
 ;;;; Paragraph
@@ -589,7 +597,8 @@ contextual information."
                                      table-cell info)))
                      ""
                      ))
-                 (org-mw-table-first-row-data-cells table info) "\n"))))) ;; End of Let*
+                 (org-mw-table-first-row-data-cells table info)
+                 "\n"))))) ;; End of Let*
        (format "{| %s\n%s\n%s\n%s\n|}"
                (if (not org-mw-default-table-class) ""
                  (format "class=%s"
@@ -683,7 +692,8 @@ contents of hidden elements.
 
 Return output file's name."
   (interactive)
-  (let ((outfile (org-export-output-file-name ".mw" subtreep)))
+  (let ((outfile (org-export-output-file-name
+                  org-mw-filename-extension subtreep)))
     (if async
  (org-export-async-start
             (lambda (f) (org-export-add-to-stack f 'mw))
