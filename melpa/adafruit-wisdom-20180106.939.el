@@ -2,7 +2,7 @@
 
 ;; Author: Neil Okamoto <neil.okamoto+melpa@gmail.com>
 ;; Version: 0.2
-;; Package-Version: 20171115.1228
+;; Package-Version: 20180106.939
 ;; Keywords: games
 ;; URL: https://github.com/gonewest818/adafruit-wisdom.el
 ;; Package-Requires: ((emacs "24"))
@@ -56,8 +56,9 @@ Returns the parsed XML."
         (url-insert-file-contents adafruit-wisdom-quote-url)
         (xml-parse-region (point-min) (point-max))))))
 
+;;;###autoload
 (defun adafruit-wisdom-select ()
-  "Select a quote at random."
+  "Select a quote at random and return as a string."
   (let* ((root  (adafruit-wisdom-cached-get))
          ;; parse assuming the following RSS format:
          ;; ((rss (channel (item ...) (item ...) (item ...) ...)))
