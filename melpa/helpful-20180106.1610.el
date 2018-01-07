@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180102.1528
+;; Package-Version: 20180106.1610
 ;; Keywords: help, lisp
 ;; Version: 0.6
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -546,7 +546,10 @@ blank line afterwards."
   (replace-regexp-in-string
    ;; Replace all text of the form `foo'.
    (rx "`"
-       (group ":" symbol-start (+? anything) symbol-end)
+       (group ":"
+              symbol-start
+              (+? (or (syntax word) (syntax symbol)))
+              symbol-end)
        "'")
    (lambda (it)
      (propertize (match-string 1 it)
@@ -558,7 +561,7 @@ blank line afterwards."
   "Convert symbol references in docstrings to buttons."
   (replace-regexp-in-string
    ;; Replace all text of the form `foo'.
-   (rx "`" symbol-start (+? anything) symbol-end "'")
+   (rx "`" symbol-start (+? (not (any "`" "'"))) symbol-end "'")
    (lambda (it)
      (let* ((sym-name
              (s-chop-prefix "`" (s-chop-suffix "'" it)))
