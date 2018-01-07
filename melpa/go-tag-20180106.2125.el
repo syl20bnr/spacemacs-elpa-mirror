@@ -4,9 +4,9 @@
 
 ;; Author: Brantou <brantou89@gmail.com>
 ;; URL: https://github.com/brantou/emacs-go-tag
-;; Package-Version: 20171204.1903
+;; Package-Version: 20180106.2125
 ;; Keywords: tools
-;; Version: 1.0.0
+;; Version: 1.0.1
 ;; Package-Requires: ((emacs "24.0")(go-mode "1.3.1"))
 
 ;; This program is free software: you can redistribute it and/or modify
@@ -26,7 +26,7 @@
 
 ;;; Commentary:
 ;;
-;; Edit field tags for golang struct fields, based on gomodifytags. 
+;; Edit field tags for golang struct fields, based on gomodifytags.
 ;; This package is inspired by GoAddTags of vim-go and go-add-tags.
 ;;
 
@@ -103,7 +103,7 @@ It can either be displayed in its own buffer, in the echo area, or not at all."
         (options (go-tag--parse-option tags)))
     (if (use-region-p)
         (go-tag--region (region-beginning) (region-end) stags options)
-      (go-tag--point (point)  stags options))))
+      (go-tag--point (position-bytes (point))  stags options))))
 
 (defun go-tag--region (start end tags &optional options)
   "Add field TAGS for the region between START and END."
@@ -138,7 +138,7 @@ It can either be displayed in its own buffer, in the echo area, or not at all."
         (options (go-tag--parse-option tags)))
     (if (use-region-p)
         (go-tag--region-remove (region-beginning) (region-end) stags options)
-      (go-tag--point-remove (point)  stags options))))
+      (go-tag--point-remove (position-bytes (point))  stags options))))
 
 (defun go-tag--region-remove (start end tags &optional options)
   "Remove field TAGS for the region between START and END."
