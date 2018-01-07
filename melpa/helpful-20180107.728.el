@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180106.1610
+;; Package-Version: 20180107.728
 ;; Keywords: help, lisp
 ;; Version: 0.6
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -91,11 +91,11 @@ To disable cleanup entirely, set this variable to nil. See also
          (buf-name (format "*helpful %s: %s*"
                            (helpful--kind-name symbol callable-p)
                            symbol))
-         (buf (get-buffer buf-name))
-         (created nil))
+         (buf (get-buffer buf-name)))
     (unless buf
-      ;; If we have too many buffers, kill the least recently used.
-      (when (and created (numberp helpful-max-buffers))
+      ;; If we need to create the buffer, ensure we don't exceed
+      ;; `helpful-max-buffers' by killing the least recently used.
+      (when (numberp helpful-max-buffers)
         (let* ((buffers (buffer-list))
                (helpful-bufs (--filter (with-current-buffer it
                                          (eq major-mode 'helpful-mode))
@@ -107,8 +107,7 @@ To disable cleanup entirely, set this variable to nil. See also
           ;; before we create a new one.
           (-each excess-buffers #'kill-buffer)))
       
-      (setq buf (get-buffer-create buf-name))
-      (setq created t))
+      (setq buf (get-buffer-create buf-name)))
 
     ;; Initialise the buffer with the symbol and associated data.
     (with-current-buffer buf
@@ -234,15 +233,17 @@ Return SYM otherwise."
                      (propertize (symbol-name sym)
                                  'face 'font-lock-constant-face)
                      (helpful--indent-rigidly pretty-val 2)
-                     ;; Also offer to disassemble byte-code
-                     ;; properties.
-                     (if (byte-code-function-p val)
-                         (format "\n  %s"
-                                 (helpful--button
-                                  "Disassemble"
-                                  'helpful-disassemble-button
-                                  'object val))
-                       "")))
+                     (cond
+                      ;; Also offer to disassemble byte-code
+                      ;; properties.
+                      ((byte-code-function-p val)
+                       (format "\n  %s"
+                               (helpful--make-disassemble-button val)))
+                      ((eq sym 'ert--test)
+                       (format "\n  %s"
+                               (helpful--make-run-test-button symbol)))
+                      (t
+                       ""))))
            syms-and-vals)))
     (when lines
       (s-join "\n" lines))))
@@ -272,7 +273,7 @@ Return SYM otherwise."
   'follow-link t
   'help-echo "Set directory to Emacs C source code")
 
-(defun helpful--c-source-directory (button)
+(defun helpful--c-source-directory (_button)
   "Set `find-function-C-source-directory' so we can show the
 source code to primitives."
   (let ((emacs-src-dir (read-directory-name "Path to Emacs source code: ")))
@@ -294,6 +295,16 @@ source code to primitives."
   ;; `disassemble' can handle both symbols (e.g. 'when) and raw
   ;; byte-code objects.
   (disassemble (button-get button 'object)))
+
+(define-button-type 'helpful-run-test-button
+  'action #'helpful--run-test
+  'follow-link t
+  'symbol nil
+  'help-echo "Run ERT test")
+
+(defun helpful--run-test (button)
+  "Disassemble the current symbol."
+  (ert (button-get button 'symbol)))
 
 (define-button-type 'helpful-edebug-button
   'action #'helpful--edebug
@@ -1064,11 +1075,19 @@ POSITION-HEADS takes the form ((123 (defun foo)) (456 (defun bar)))."
    'helpful-trace-button
    'symbol sym))
 
-(defun helpful--make-disassemble-button (sym)
-  "Make disassemble button for SYM."
+(defun helpful--make-disassemble-button (obj)
+  "Make disassemble button for OBJ.
+OBJ may be a symbol or a compiled function object."
   (helpful--button
    "Disassemble"
    'helpful-disassemble-button
+   'object obj))
+
+(defun helpful--make-run-test-button (sym)
+  "Make an ERT test button for SYM."
+  (helpful--button
+   "Run test"
+   'helpful-run-test-button
    'symbol sym))
 
 (defun helpful--make-forget-button (sym callable-p)
@@ -1420,7 +1439,9 @@ See also `helpful-callable' and `helpful-variable'."
    ((fboundp symbol)
     (helpful-callable symbol))
    ((boundp symbol)
-    (helpful-variable symbol))))
+    (helpful-variable symbol))
+   (t
+    (user-error "Not bound: %S" symbol))))
 
 ;;;###autoload
 (defun helpful-variable (symbol)
