@@ -4,7 +4,7 @@
 
 ;; Author: Joe HAKIM RAHME <joehakimrahme@gmail.com>
 ;; Version: 20171126.1
-;; Package-Version: 20171207.230
+;; Package-Version: 20180107.843
 ;; Keywords: arabic, transliteration, i18n
 ;; URL: https://github.com/joehakimrahme/buckwalter-arabic
 
@@ -21,7 +21,7 @@
 ;; This file is NOT part of GNU Emacs.
 
 ;; This program is free software; you can redistribute it and/or
-;; modify it under the terms of the GNU General Public License v2 as
+;; modify it under the terms of the GNU General Public License v3 as
 ;; published by the Free Software Foundation.
 
 ;; This program is distributed in the hope that it will be useful,

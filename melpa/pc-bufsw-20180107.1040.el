@@ -25,7 +25,7 @@
 
 ;; Author: Igor Bukanov <igor@mir2.org>
 ;; Version: 3.0
-;; Package-Version: 20150923.13
+;; Package-Version: 20180107.1040
 ;; Keywords: buffer
 ;; URL: https://github.com/ibukanov/pc-bufsw
 
@@ -140,7 +140,12 @@ reported by some terminals when pressing those keys that Emacs does not recogniz
 there is no input during this interval the last choosen buffer
 becomes current."
     :group 'pc-bufsw
-    :type 'number))
+    :type 'number)
+
+  (defcustom pc-bufsw-wrap-index t
+    "Wrap to the other end of the buffer list when attempting to navigate past its edge."
+    :group 'pc-bufsw
+    :type 'boolean))
 
 (defvar pc-bufsw--walk-vector nil
   "Vector of buffers to navigate during buffer switch.
@@ -265,8 +270,11 @@ top.")
 
 (defun pc-bufsw--choose-next-index (direction)
   (setq pc-bufsw--cur-index
-	(mod (+ pc-bufsw--cur-index direction)
-	     (length pc-bufsw--walk-vector))))
+	(if pc-bufsw-wrap-index
+	    (mod (+ pc-bufsw--cur-index direction)
+		 (length pc-bufsw--walk-vector))
+	  (max 0 (min (1- (length pc-bufsw--walk-vector))
+		      (+ pc-bufsw--cur-index direction))))))
 
 (defun pc-bufsw--finish ()
   ;; Called on switch mode close.
