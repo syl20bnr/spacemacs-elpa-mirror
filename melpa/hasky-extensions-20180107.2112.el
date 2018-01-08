@@ -4,7 +4,7 @@
 ;;
 ;; Author: Mark Karpov <markkarpov92@gmail.com>
 ;; URL: https://github.com/hasky-mode/hasky-extensions
-;; Package-Version: 20171231.941
+;; Package-Version: 20180107.2112
 ;; Version: 0.2.0
 ;; Package-Requires: ((emacs "24.4") (avy-menu "0.2"))
 ;; Keywords: programming
@@ -173,6 +173,7 @@
     ("Safe"                       "safe-imports")
     ("ScopedTypeVariables"        "lexically-scoped-type-variables")
     ("StandaloneDeriving"         "stand-alone-deriving-declarations")
+    ("StaticPointers"             "static-pointers")
     ("StrictData"                 "strict-by-default-data-types")
     ("TemplateHaskell"            "template-haskell")
     ("TransformListComp"          "generalised-sql-like-list-comprehensions")

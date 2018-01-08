@@ -1,11 +1,11 @@
 ;;; fountain-mode.el --- Major mode for screenwriting in Fountain markup -*- lexical-binding: t; -*-
 
-;; Copyright (c) 2014-2017 Paul Rankin
+;; Copyright (c) 2014-2018 Paul Rankin
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 20180104.609
-;; Version: 2.4.0
+;; Package-Version: 20180107.2123
+;; Version: 2.4.2
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
 
@@ -140,7 +140,7 @@
 ;;; Code:
 
 (defconst fountain-version
-  "2.4.0")
+  "2.4.2")
 
 (defun fountain-version ()
   "Return `fountain-mode' version."
@@ -369,7 +369,7 @@ syntax.
 
 The default {{time}} - {{fullname}}: will insert something like:
 
-    [[ 2014-20-01 - Alan Smithee: ]]"
+    [[ 2017-12-31 - Alan Smithee: ]]"
   :type 'string
   :group 'fountain)
 ;; FIXME:
@@ -1140,6 +1140,7 @@ See <http://debbugs.gnu.org/24073>."
 (defun fountain-match-dialog ()
   "Match dialog if point is at dialog, nil otherwise."
   (unless (or (and (bolp) (eolp))
+              (save-excursion (and (forward-comment 1) (eolp)))
               (fountain-match-paren)
               (fountain-match-note))
     (save-excursion
@@ -4728,9 +4729,6 @@ keywords suitable for Font Lock."
     (define-key map (kbd "C-c C-e t") #'fountain-export-buffer-to-txt)
     (define-key map (kbd "C-c C-e f") #'fountain-export-buffer-to-fountain)
     (define-key map (kbd "C-c C-e s") #'fountain-export-shell-command)
-    ;; View commands:
-    (define-key map (kbd "C-c C-x !") #'fountain-toggle-hide-syntax-chars)
-    (define-key map (kbd "C-c C-x *") #'fountain-toggle-hide-emphasis-delim)
     map)
   "Mode map for `fountain-mode'.")
 

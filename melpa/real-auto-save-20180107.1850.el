@@ -6,7 +6,7 @@
 ;; Author: Chaoji Li <lichaoji AT gmail DOT com>
 ;;         Anand Reddy Pandikunta <anand21nanda AT gmail DOT com>
 ;; Version: 0.4
-;; Package-Version: 20170918.730
+;; Package-Version: 20180107.1850
 ;; Date: January 27, 2015
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -78,7 +78,7 @@
 (defun real-auto-save-buffers ()
   "Automatically save all buffers in real-auto-save-buffers-list."
   (progn
-    (save-excursion
+    (save-current-buffer
       (dolist (elem real-auto-save-buffers-list)
         (if (get-buffer elem)
             (progn
