@@ -5,7 +5,7 @@
 ;;
 ;; Author: Sanel Zukan <sanelz@gmail.com>
 ;; URL: http://www.github.com/sanel/monroe
-;; Package-Version: 20170623.103
+;; Package-Version: 20180108.224
 ;; Version: 0.4.0
 ;; Keywords: languages, clojure, nrepl, lisp
 
@@ -273,12 +273,6 @@ the operations supported by an nREPL endpoint."
 (defun monroe-input-sender (proc input)
   "Called when user enter data in REPL and when something is received in."
   (monroe-send-eval-string input (monroe-make-response-handler)))
-
-(defun monroe-input-sender-with-history (proc input)
-  "Called when user enter data in REPL. It will also record input for
-history purposes."
-  (comint-add-to-input-history input)
-  (monroe-input-sender proc input))
 
 (defun monroe-handle-input ()
   "Called when requested user input."
@@ -574,7 +568,7 @@ The following keys are available in `monroe-mode':
 
   :syntax-table lisp-mode-syntax-table
   (setq comint-prompt-regexp monroe-prompt-regexp)
-  (setq comint-input-sender 'monroe-input-sender-with-history)
+  (setq comint-input-sender 'monroe-input-sender)
   (setq mode-line-process '(":%s"))
   ;(set (make-local-variable 'font-lock-defaults) '(clojure-font-lock-keywords t))
 
