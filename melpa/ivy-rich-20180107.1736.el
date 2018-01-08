@@ -4,7 +4,7 @@
 
 ;; Author: Yevgnen Koh <wherejoystarts@gmail.com>
 ;; Package-Requires: ((emacs "24.4") (ivy "0.8.0"))
-;; Package-Version: 20171224.1848
+;; Package-Version: 20180107.1736
 ;; Version: 0.0.4
 ;; Keywords: ivy
 
@@ -246,8 +246,8 @@ or /a/…/f.el."
                       (abbreviate-file-name (or filename root)))
                      ((or (eq ivy-rich-path-style 'relative)
                           t)            ; make 'relative default
-                      (if filename
-                          (substring-no-properties filename (length root))
+                      (if (and filename root)
+                          (substring-no-properties (string-remove-prefix root filename))
                         "")))))
     (ivy-rich-switch-buffer-pad
      (ivy-rich-switch-buffer-shorten-path path path-max-length)
