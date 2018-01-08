@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180106.127
+;; Package-Version: 20180108.853
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1933,9 +1933,7 @@ string - the full shell command to run."
   (if (and (eq system-type 'windows-nt)
            (fboundp 'w32-shell-execute))
       (w32-shell-execute "open" x)
-    (call-process shell-file-name nil
-                  nil nil
-                  shell-command-switch
+    (start-process-shell-command shell-file-name nil
                   (format "%s %s"
                           (cl-case system-type
                             (darwin "open")

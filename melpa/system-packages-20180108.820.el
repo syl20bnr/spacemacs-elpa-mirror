@@ -5,7 +5,7 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/system-packages
-;; Package-Version: 20180103.1837
+;; Package-Version: 20180108.820
 ;; Package-Requires: ((cl-lib "0.5"))
 
 ;; This file is not part of GNU Emacs.
@@ -91,7 +91,7 @@
             ((default-sudo . t)
              (install . "pacman -S")
              (search . "pacman -Ss")
-             (uninstall . "pacman -Rs")
+             (uninstall . "pacman -Rns")
              (update . "pacman -Syu")
              (clean-cache . "pacman -Sc")
              (log . "cat /var/log/pacman.log")
