@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-jekyll
-;; Package-Version: 1.5.11
-;; Version: 1.5.11
+;; Package-Version: 20180108.559
+;; Version: 1.5.12
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -135,6 +135,11 @@ The default is drwxr-xr-x."
   :group 'easy-jekyll
   :type 'string)
 
+(defcustom easy-jekyll-rsync-delete-directory "_site/"
+  "Disappear directory when synchronizing with rsync."
+  :group 'easy-jekyll
+  :type 'string)
+
 (defcustom easy-jekyll-help-line 7
   "Number of lines of `easy-jekyll-help'."
   :group 'easy-jekyll
@@ -182,8 +187,10 @@ The default is drwxr-xr-x."
 				 ,easy-jekyll-textile-extension))
 
 (defface easy-jekyll-help-face
-  '((((class color) (background light)) (:inherit font-lock-function-name-face :background "#f0f8ff"))
-    (((class color) (background dark)) (:inherit font-lock-function-name-face :background "#2f4f4f")))
+  '((((class color) (background light))
+     (:inherit font-lock-function-name-face :background "#f0f8ff"))
+    (((class color) (background dark))
+     (:inherit font-lock-function-name-face :background "#2f4f4f")))
   ""
   :group 'easy-jekyll-faces)
 
@@ -232,49 +239,64 @@ The default is drwxr-xr-x."
 	(easy-jekyll-postdir . ,easy-jekyll-postdir))
       easy-jekyll-bloglist)
 
-(defvar easy-jekyll--publish-timer-list (make-list (length easy-jekyll-bloglist) 'nil)
+(defvar easy-jekyll--publish-timer-list
+  (make-list (length easy-jekyll-bloglist) 'nil)
   "Timer list for cansel publish timer.")
 
-(defvar easy-jekyll--github-deploy-timer-list (make-list (length easy-jekyll-bloglist) 'nil)
+(defvar easy-jekyll--github-deploy-timer-list
+  (make-list (length easy-jekyll-bloglist) 'nil)
   "Timer list for cansel github deploy timer.")
 
-(defvar easy-jekyll--amazon-s3-deploy-timer-list (make-list (length easy-jekyll-bloglist) 'nil)
+(defvar easy-jekyll--amazon-s3-deploy-timer-list
+  (make-list (length easy-jekyll-bloglist) 'nil)
   "Timer list for cansel amazon s3 deploy timer.")
 
-(defvar easy-jekyll--google-cloud-storage-deploy-timer-list (make-list (length easy-jekyll-bloglist) 'nil)
+(defvar easy-jekyll--google-cloud-storage-deploy-timer-list
+  (make-list (length easy-jekyll-bloglist) 'nil)
   "Timer list for cansel google cloud storage deploy timer.")
 
-(defconst easy-jekyll--default-github-deploy-script easy-jekyll-github-deploy-script
+(defconst easy-jekyll--default-github-deploy-script
+  easy-jekyll-github-deploy-script
   "Default easy-jekyll github-deploy-script.")
 
-(defconst easy-jekyll--default-image-directory easy-jekyll-image-directory
+(defconst easy-jekyll--default-image-directory
+  easy-jekyll-image-directory
   "Default easy-jekyll image-directory.")
 
-(defconst easy-jekyll--default-picture-directory easy-jekyll-default-picture-directory
+(defconst easy-jekyll--default-picture-directory
+  easy-jekyll-default-picture-directory
   "Default easy-jekyll picture-directory.")
 
-(defconst easy-jekyll--default-publish-chmod easy-jekyll-publish-chmod
+(defconst easy-jekyll--default-publish-chmod
+  easy-jekyll-publish-chmod
   "Default easy-jekyll publish-chmod.")
 
-(defconst easy-jekyll--default-previewtime easy-jekyll-previewtime
+(defconst easy-jekyll--default-previewtime
+  easy-jekyll-previewtime
   "Default easy-jekyll previewtime.")
 
-(defconst easy-jekyll--default-preview-url easy-jekyll-preview-url
+(defconst easy-jekyll--default-preview-url
+  easy-jekyll-preview-url
   "Default easy-jekyll preview-url.")
 
-(defconst easy-jekyll--default-sort-default-char easy-jekyll-sort-default-char
+(defconst easy-jekyll--default-sort-default-char
+  easy-jekyll-sort-default-char
   "Default easy-jekyll sort-default-char.")
 
-(defconst easy-jekyll--default-textile-extension easy-jekyll-textile-extension
+(defconst easy-jekyll--default-textile-extension
+  easy-jekyll-textile-extension
   "Default easy-jekyll textile-extension.")
 
-(defconst easy-jekyll--default-markdown-extension easy-jekyll-markdown-extension
+(defconst easy-jekyll--default-markdown-extension
+  easy-jekyll-markdown-extension
   "Default easy-jekyll markdown-extension.")
 
-(defconst easy-jekyll--default-ext easy-jekyll-default-ext
+(defconst easy-jekyll--default-ext
+  easy-jekyll-default-ext
   "Default easy-jekyll default-ext.")
 
-(defconst easy-jekyll--default-postdir easy-jekyll-postdir
+(defconst easy-jekyll--default-postdir
+  easy-jekyll-postdir
   "Default easy-jekyll-postdir.")
 
 (defconst easy-jekyll--buffer-name "*Easy-jekyll*"
@@ -323,8 +345,12 @@ Report an error if jekyll is not installed, or if `easy-jekyll-basedir' is unset
   "Generate image link."
   (interactive
    (easy-jekyll-with-env
-    (unless (file-directory-p (expand-file-name easy-jekyll-image-directory easy-jekyll-basedir))
-      (error "%s does not exist" (expand-file-name easy-jekyll-image-directory easy-jekyll-basedir)))
+    (unless (file-directory-p (expand-file-name
+			       easy-jekyll-image-directory
+			       easy-jekyll-basedir))
+      (error "%s does not exist" (expand-file-name
+				  easy-jekyll-image-directory
+				  easy-jekyll-basedir)))
     (let ((file (read-file-name "Image file: " nil
 				(expand-file-name
 				 easy-jekyll-image-directory easy-jekyll-basedir)
@@ -333,7 +359,11 @@ Report an error if jekyll is not installed, or if `easy-jekyll-basedir' is unset
 				 easy-jekyll-image-directory easy-jekyll-basedir))))
       (insert (concat (format "<img src=\"%s%s\""
 			      easy-jekyll-url
-			      (concat "/" easy-jekyll-image-directory "/" (file-name-nondirectory file)))
+			      (concat
+			       "/"
+			       easy-jekyll-image-directory
+			       "/"
+			       (file-name-nondirectory file)))
 		      " alt=\"\" width=\"100%\"/>"))))))
 
 ;;;###autoload
@@ -341,16 +371,26 @@ Report an error if jekyll is not installed, or if `easy-jekyll-basedir' is unset
   "Move image to image directory and generate image link."
   (interactive
    (easy-jekyll-with-env
-    (unless (file-directory-p (expand-file-name easy-jekyll-image-directory easy-jekyll-basedir))
-      (error "%s does not exist" (expand-file-name easy-jekyll-image-directory easy-jekyll-basedir)))
+    (unless (file-directory-p (expand-file-name
+			       easy-jekyll-image-directory
+			       easy-jekyll-basedir))
+      (error "%s does not exist" (expand-file-name
+				  easy-jekyll-image-directory
+				  easy-jekyll-basedir)))
     (let ((file (read-file-name "Image file: " nil
 				(expand-file-name easy-jekyll-default-picture-directory)
 				t
 				(expand-file-name easy-jekyll-default-picture-directory))))
-      (copy-file file (expand-file-name (file-name-nondirectory file) easy-jekyll-image-directory))
+      (copy-file file (expand-file-name
+		       (file-name-nondirectory file)
+		       easy-jekyll-image-directory))
       (insert (concat (format "<img src=\"%s%s\""
 			      easy-jekyll-url
-			      (concat "/" easy-jekyll-image-directory "/" (file-name-nondirectory file)))
+			      (concat
+			       "/"
+			       easy-jekyll-image-directory
+			       "/"
+			       (file-name-nondirectory file)))
 		      " alt=\"\" width=\"100%\"/>"))))))
 
 ;;;###autoload
@@ -358,19 +398,32 @@ Report an error if jekyll is not installed, or if `easy-jekyll-basedir' is unset
   "Pull image from internet to image directory and generate image link."
   (interactive
    (easy-jekyll-with-env
-    (unless (file-directory-p (expand-file-name easy-jekyll-image-directory easy-jekyll-basedir))
-      (error "%s does not exist" (expand-file-name easy-jekyll-image-directory easy-jekyll-basedir)))
-    (let ((url (read-string "URL: " (if (fboundp 'gui-get-selection) (gui-get-selection))))
+    (unless (file-directory-p (expand-file-name
+			       easy-jekyll-image-directory
+			       easy-jekyll-basedir))
+      (error "%s does not exist" (expand-file-name
+				  easy-jekyll-image-directory
+				  easy-jekyll-basedir)))
+    (let ((url (read-string "URL: " (if (fboundp 'gui-get-selection)
+					(gui-get-selection))))
 	  (file (read-file-name "Save as: "
-				(expand-file-name easy-jekyll-image-directory easy-jekyll-basedir)
-				(car (last (split-string (substring-no-properties (gui-get-selection)) "/")))
+				(expand-file-name
+				 easy-jekyll-image-directory
+				 easy-jekyll-basedir)
+				(car (last (split-string
+					    (substring-no-properties (gui-get-selection))
+					    "/")))
 				nil)))
       (when (file-exists-p (file-truename file))
 	(error "%s already exists!" (file-truename file)))
       (url-copy-file url file t)
       (insert (concat (format "<img src=\"%s%s\""
 			      easy-jekyll-url
-			      (concat "/" easy-jekyll-image-directory "/" (file-name-nondirectory file)))
+			      (concat
+			       "/"
+			       easy-jekyll-image-directory
+			       "/"
+			       (file-name-nondirectory file)))
 		      " alt=\"\" width=\"100%\"/>"))))))
 
 ;;;###autoload
@@ -388,13 +441,18 @@ Report an error if jekyll is not installed, or if `easy-jekyll-basedir' is unset
   (easy-jekyll-with-env
    (when (file-directory-p "_site")
      (delete-directory "_site" t nil))
-   (let ((ret (call-process "bundle" nil "*jekyll-publish*" t "exec" "jekyll" "build" "--destination" "_site")))
+   (let ((ret (call-process "bundle" nil "*jekyll-publish*" t
+			    "exec" "jekyll" "build" "--destination" "_site")))
      (unless (zerop ret)
        (switch-to-buffer (get-buffer "*jekyll-publish*"))
        (error "'bundle exec jekyll build' command does not end normally")))
    (when (get-buffer "*jekyll-publish*")
      (kill-buffer "*jekyll-publish*"))
-   (shell-command-to-string (concat "rsync -rtpl --chmod=" easy-jekyll-publish-chmod " --delete _site/ " easy-jekyll-sshdomain ":" (shell-quote-argument easy-jekyll-root)))
+   (shell-command-to-string (concat "rsync -rtpl --chmod="
+				    easy-jekyll-publish-chmod " --delete "
+				    easy-jekyll-rsync-delete-directory " "
+				    easy-jekyll-sshdomain ":"
+				    (shell-quote-argument easy-jekyll-root)))
    (message "Blog published")
    (when easy-jekyll-url
      (browse-url easy-jekyll-url))))
@@ -438,14 +496,21 @@ Report an error if jekyll is not installed, or if `easy-jekyll-basedir' is unset
   (let ((default-directory (easy-jekyll-nth-eval-bloglist easy-jekyll-basedir n)))
     (when (file-directory-p "_site")
       (delete-directory "_site" t nil))
-    (let ((ret (call-process "bundle" nil "*jekyll-publish*" t "exec" "jekyll" "build" "--destination" "_site")))
+    (let ((ret (call-process "bundle" nil "*jekyll-publish*" t
+			     "exec" "jekyll" "build" "--destination" "_site")))
       (unless (zerop ret)
 	(switch-to-buffer (get-buffer "*jekyll-publish*"))
 	(setf (nth n easy-jekyll--publish-timer-list) nil)
 	(error "'bundle exec jekyll build' command does not end normally")))
     (when (get-buffer "*jekyll-publish*")
       (kill-buffer "*jekyll-publish*"))
-    (shell-command-to-string (concat "rsync -rtpl --chmod=" easy-jekyll-publish-chmod " --delete _site/ " (easy-jekyll-nth-eval-bloglist easy-jekyll-sshdomain n) ":" (shell-quote-argument (easy-jekyll-nth-eval-bloglist easy-jekyll-root n))))
+    (shell-command-to-string (concat "rsync -rtpl --chmod="
+				     easy-jekyll-publish-chmod " --delete "
+				     easy-jekyll-rsync-delete-directory " "
+				     (easy-jekyll-nth-eval-bloglist easy-jekyll-sshdomain n) ":"
+				     (shell-quote-argument (easy-jekyll-nth-eval-bloglist
+							    easy-jekyll-root
+							    n))))
     (message "Blog published")
     (when (easy-jekyll-nth-eval-bloglist easy-jekyll-url n)
       (browse-url (easy-jekyll-nth-eval-bloglist easy-jekyll-url n)))
@@ -472,10 +537,13 @@ POST-FILE needs to have and extension '.md' or '.textile'."
   (easy-jekyll-with-env
    (let ((filename (if easy-jekyll--draft-list
 		       (expand-file-name post-file "_drafts")
-		     (expand-file-name (concat (format-time-string "%Y-%m-%d-" (current-time)) post-file) easy-jekyll-postdir)))
+		     (expand-file-name
+		      (concat (format-time-string "%Y-%m-%d-" (current-time)) post-file)
+		      easy-jekyll-postdir)))
 	 (file-ext (file-name-extension post-file)))
      (when (not (member file-ext easy-jekyll--formats))
-       (error "Please enter .%s file name or .%s file name" easy-jekyll-markdown-extension easy-jekyll-textile-extension))
+       (error "Please enter .%s file name or .%s file name"
+	      easy-jekyll-markdown-extension easy-jekyll-textile-extension))
      (when (file-exists-p (file-truename filename))
        (error "%s already exists!" filename))
      (find-file filename)
@@ -500,7 +568,8 @@ POST-FILE needs to have and extension '.md' or '.textile'."
        (browse-url easy-jekyll-preview-url)
      (progn
        (setq easy-jekyll--server-process
-	     (start-process "jekyll-serve" easy-jekyll--preview-buffer "bundle" "exec" "jekyll" "serve"))
+	     (start-process "jekyll-serve" easy-jekyll--preview-buffer
+			    "bundle" "exec" "jekyll" "serve"))
        (while easy-jekyll--preview-loop
 	 (if (equal (easy-jekyll--preview-status) "200")
 	     (progn
@@ -521,7 +590,8 @@ POST-FILE needs to have and extension '.md' or '.textile'."
        (split-string
 	(nth 0
 	     (split-string
-	      (with-current-buffer (url-retrieve-synchronously "http://127.0.0.1:4000/")
+	      (with-current-buffer
+		  (url-retrieve-synchronously "http://127.0.0.1:4000/")
 		(prog1
 		    (buffer-string)
 		  (kill-buffer)))
@@ -540,10 +610,13 @@ POST-FILE needs to have and extension '.md' or '.textile'."
   "Execute `easy-jekyll-github-deploy-script' script locate at `easy-jekyll-basedir'."
   (interactive)
   (easy-jekyll-with-env
-   (let ((deployscript (file-truename (expand-file-name easy-jekyll-github-deploy-script easy-jekyll-basedir))))
+   (let ((deployscript (file-truename (expand-file-name
+				       easy-jekyll-github-deploy-script
+				       easy-jekyll-basedir))))
      (unless (executable-find deployscript)
        (error "%s do not execute" deployscript))
-     (let ((ret (call-process (shell-quote-argument deployscript) nil "*jekyll-github-deploy*" t)))
+     (let ((ret (call-process
+		 (shell-quote-argument deployscript) nil "*jekyll-github-deploy*" t)))
        (unless (zerop ret)
 	 (switch-to-buffer (get-buffer "*jekyll-github-deploy*"))
 	 (error "%s command does not end normally" deployscript)))
@@ -562,7 +635,8 @@ POST-FILE needs to have and extension '.md' or '.textile'."
   (unless (executable-find "jekyll")
     (error "'jekyll' is not installed"))
   (let ((deployscript (file-truename (expand-file-name
-				      easy-jekyll-github-deploy-script easy-jekyll-basedir)))
+				      easy-jekyll-github-deploy-script
+				      easy-jekyll-basedir)))
 	(blognum easy-jekyll--current-blog))
     (unless (executable-find deployscript)
       (error "%s do not execute" deployscript))
@@ -617,13 +691,15 @@ POST-FILE needs to have and extension '.md' or '.textile'."
      (error "Please set 'easy-jekyll-amazon-s3-bucket-name' variable"))
    (when (file-directory-p "_site")
      (delete-directory "_site" t nil))
-   (let ((ret (call-process "bundle" nil "*jekyll-amazon-s3-deploy*" t "exec" "jekyll" "build" "--destination" "_site")))
+   (let ((ret (call-process "bundle" nil "*jekyll-amazon-s3-deploy*" t
+			    "exec" "jekyll" "build" "--destination" "_site")))
      (unless (zerop ret)
        (switch-to-buffer (get-buffer "*jekyll-amazon-s3-deploy*"))
        (error "'bundle exec jekyll build' command does not end normally")))
    (when (get-buffer "*jekyll-amazon-s3-deploy*")
      (kill-buffer "*jekyll-amazon-s3-deploy*"))
-   (shell-command-to-string (concat "aws s3 sync --delete _site s3://" easy-jekyll-amazon-s3-bucket-name "/"))
+   (shell-command-to-string
+    (concat "aws s3 sync --delete _site s3://" easy-jekyll-amazon-s3-bucket-name "/"))
    (message "Blog deployed")
    (when easy-jekyll-url
      (browse-url easy-jekyll-url))))
@@ -661,7 +737,8 @@ POST-FILE needs to have and extension '.md' or '.textile'."
 (defun easy-jekyll-amazon-s3-deploy-on-timer (n)
   "Deploy jekyll source at Amazon S3 on timer at N."
   (let* ((default-directory (easy-jekyll-nth-eval-bloglist easy-jekyll-basedir n))
-	 (ret (call-process "bundle" nil "*jekyll-amazon-s3-deploy*" t "exec" "jekyll" "build" "--destination" "_site"))
+	 (ret (call-process "bundle" nil "*jekyll-amazon-s3-deploy*" t
+			    "exec" "jekyll" "build" "--destination" "_site"))
 	 (default-directory easy-jekyll-basedir))
     (unless (zerop ret)
       (switch-to-buffer (get-buffer "*jekyll-amazon-s3-deploy*"))
@@ -669,8 +746,10 @@ POST-FILE needs to have and extension '.md' or '.textile'."
       (error "'bundle exec jekyll build' command does not end normally")))
   (when (get-buffer "*jekyll-amazon-s3-deploy*")
     (kill-buffer "*jekyll-amazon-s3-deploy*"))
-  (setq default-directory (easy-jekyll-nth-eval-bloglist easy-jekyll-basedir n))
-  (shell-command-to-string (concat "aws s3 sync --delete _site s3://" easy-jekyll-amazon-s3-bucket-name "/"))
+  (setq default-directory
+	(easy-jekyll-nth-eval-bloglist easy-jekyll-basedir n))
+  (shell-command-to-string
+   (concat "aws s3 sync --delete _site s3://" easy-jekyll-amazon-s3-bucket-name "/"))
   (setq default-directory easy-jekyll-basedir)
   (message "Blog deployed")
   (when (easy-jekyll-nth-eval-bloglist easy-jekyll-url n)
@@ -688,13 +767,15 @@ POST-FILE needs to have and extension '.md' or '.textile'."
      (error "Please set 'easy-jekyll-google-cloud-storage-bucket-name' variable"))
    (when (file-directory-p "_site")
      (delete-directory "_site" t nil))
-   (let ((ret (call-process "bundle" nil "*jekyll-google-cloud-storage-deploy*" t "exec" "jekyll" "build" "--destination" "_site")))
+   (let ((ret (call-process "bundle" nil "*jekyll-google-cloud-storage-deploy*" t
+			    "exec" "jekyll" "build" "--destination" "_site")))
      (unless (zerop ret)
        (switch-to-buffer (get-buffer "*jekyll-google-cloud-storage-deploy*"))
        (error "'bundle exec jekyll build' command does not end normally")))
    (when (get-buffer "*jekyll-google-cloud-storage-deploy*")
      (kill-buffer "*jekyll-google-cloud-storage-deploy*"))
-   (shell-command-to-string (concat "gsutil -m rsync -d -r _site gs://" easy-jekyll-google-cloud-storage-bucket-name "/"))
+   (shell-command-to-string
+    (concat "gsutil -m rsync -d -r _site gs://" easy-jekyll-google-cloud-storage-bucket-name "/"))
    (message "Blog deployed")
    (when easy-jekyll-url
      (browse-url easy-jekyll-url))))
@@ -732,7 +813,8 @@ POST-FILE needs to have and extension '.md' or '.textile'."
 (defun easy-jekyll-google-cloud-storage-deploy-on-timer (n)
   "Deploy jekyll source at Google Cloud Storage on timer at N."
   (let* ((default-directory (easy-jekyll-nth-eval-bloglist easy-jekyll-basedir n))
-	 (ret (call-process "bundle" nil "*jekyll-google-cloud-storage-deploy*" t "exec" "jekyll" "build" "--destination" "_site"))
+	 (ret (call-process "bundle" nil "*jekyll-google-cloud-storage-deploy*" t
+			    "exec" "jekyll" "build" "--destination" "_site"))
 	 (default-directory easy-jekyll-basedir))
     (unless (zerop ret)
       (switch-to-buffer (get-buffer "*jekyll-google-cloud-storage-deploy*"))
@@ -925,7 +1007,8 @@ J .. Jump blog        e .. Edit file
     (progn
       (setq easy-jekyll-additional-help 1)
       (setq easy-jekyll-no-help nil)
-      (setq easy-jekyll--unmovable-line (+ easy-jekyll-help-line easy-jekyll-add-help-line 4))))
+      (setq easy-jekyll--unmovable-line
+	    (+ easy-jekyll-help-line easy-jekyll-add-help-line 4))))
   (if easy-jekyll--draft-list
       (easy-jekyll-draft-list)
     (easy-jekyll)))
@@ -1050,7 +1133,8 @@ Optional prefix ARG says how many lines to move; default is one line."
 		    (expand-file-name post-file easy-jekyll-postdir)))
 	 (file-ext (file-name-extension post-file)))
      (when (not (member file-ext easy-jekyll--formats))
-       (error "Please enter .%s file name or .%s file name" easy-jekyll-markdown-extension easy-jekyll-textile-extension))
+       (error "Please enter .%s file name or .%s file name"
+	      easy-jekyll-markdown-extension easy-jekyll-textile-extension))
      (when (equal (buffer-name (current-buffer)) easy-jekyll--buffer-name)
        (when (file-exists-p (file-truename newname))
 	 (error "%s already exists!" newname))
@@ -1373,23 +1457,33 @@ Optional prefix ARG says how many lines to move; default is one line."
 (defun easy-jekyll-next-postdir ()
   "Go to next postdir."
   (interactive)
-  (add-to-list 'easy-jekyll--postdir-list (expand-file-name easy-jekyll-basedir))
-  (add-to-list 'easy-jekyll--postdir-list (expand-file-name "_posts" easy-jekyll-basedir))
+  (add-to-list 'easy-jekyll--postdir-list
+	       (expand-file-name easy-jekyll-basedir))
+  (add-to-list 'easy-jekyll--postdir-list
+	       (expand-file-name "_posts" easy-jekyll-basedir))
   (if (eq (- (length easy-jekyll--postdir-list) 1) easy-jekyll--current-postdir)
       (setq easy-jekyll--current-postdir 0)
     (setq easy-jekyll--current-postdir (+ easy-jekyll--current-postdir 1)))
-  (setq easy-jekyll-postdir (file-relative-name (nth easy-jekyll--current-postdir easy-jekyll--postdir-list) easy-jekyll-basedir))
+  (setq easy-jekyll-postdir
+	(file-relative-name
+	 (nth easy-jekyll--current-postdir easy-jekyll--postdir-list)
+	 easy-jekyll-basedir))
   (easy-jekyll))
 
 (defun easy-jekyll-previous-postdir ()
   "Go to previous postdir."
   (interactive)
-  (add-to-list 'easy-jekyll--postdir-list (expand-file-name easy-jekyll-basedir))
-  (add-to-list 'easy-jekyll--postdir-list (expand-file-name "_posts" easy-jekyll-basedir))
+  (add-to-list 'easy-jekyll--postdir-list
+	       (expand-file-name easy-jekyll-basedir))
+  (add-to-list 'easy-jekyll--postdir-list
+	       (expand-file-name "_posts" easy-jekyll-basedir))
   (setq easy-jekyll--current-postdir (- easy-jekyll--current-postdir 1))
   (when (> 0 easy-jekyll--current-postdir)
     (setq easy-jekyll--current-postdir (- (length easy-jekyll--postdir-list) 1)))
-  (setq easy-jekyll-postdir (file-relative-name (nth easy-jekyll--current-postdir easy-jekyll--postdir-list) easy-jekyll-basedir))
+  (setq easy-jekyll-postdir
+	(file-relative-name
+	 (nth easy-jekyll--current-postdir easy-jekyll--postdir-list)
+	 easy-jekyll-basedir))
   (easy-jekyll))
 
 (defun easy-jekyll-draft-list ()
@@ -1403,7 +1497,9 @@ Optional prefix ARG says how many lines to move; default is one line."
    (setq-local default-directory easy-jekyll-basedir)
    (setq buffer-read-only nil)
    (erase-buffer)
-   (insert (propertize (concat "Easy-jekyll  " easy-jekyll-url easy-jekyll--draft-mode "\n\n") 'face 'easy-jekyll-help-face))
+   (insert (propertize
+	    (concat "Easy-jekyll  " easy-jekyll-url easy-jekyll--draft-mode "\n\n")
+	    'face 'easy-jekyll-help-face))
    (unless easy-jekyll-no-help
      (insert (propertize easy-jekyll-help 'face 'easy-jekyll-help-face))
      (when easy-jekyll-additional-help
@@ -1418,8 +1514,10 @@ Optional prefix ARG says how many lines to move; default is one line."
 	   (easy-jekyll-mode)
 	   (goto-char easy-jekyll--cursor))
        (progn
-	 (cond ((eq 1 easy-jekyll--sort-char-flg) (setq files (reverse (sort files 'string<))))
-	       ((eq 2 easy-jekyll--sort-char-flg) (setq files (sort files 'string<))))
+	 (cond ((eq 1 easy-jekyll--sort-char-flg)
+		(setq files (reverse (sort files 'string<))))
+	       ((eq 2 easy-jekyll--sort-char-flg)
+		(setq files (sort files 'string<))))
 	 (while files
 	   (unless (or (string= (car files) ".")
 		       (string= (car files) "..")
@@ -1433,8 +1531,10 @@ Optional prefix ARG says how many lines to move; default is one line."
 	       (car files))
 	      lists))
 	   (pop files))
-	 (cond ((eq 1 easy-jekyll--sort-time-flg) (setq lists (reverse (sort lists 'string<))))
-	       ((eq 2 easy-jekyll--sort-time-flg) (setq lists (sort lists 'string<))))
+	 (cond ((eq 1 easy-jekyll--sort-time-flg)
+		(setq lists (reverse (sort lists 'string<))))
+	       ((eq 2 easy-jekyll--sort-time-flg)
+		(setq lists (sort lists 'string<))))
 	 (while lists
 	   (insert (concat (car lists) "\n"))
 	   (pop lists))
@@ -1454,7 +1554,9 @@ Optional prefix ARG says how many lines to move; default is one line."
   "Easy jekyll mode."
   (interactive)
   (easy-jekyll-with-env
-   (unless (file-directory-p (expand-file-name easy-jekyll-postdir easy-jekyll-basedir))
+   (unless (file-directory-p (expand-file-name
+			      easy-jekyll-postdir
+			      easy-jekyll-basedir))
      (error "%s%s doesn't exist!" easy-jekyll-basedir easy-jekyll-postdir))
    (setq easy-jekyll--mode-buffer (get-buffer-create easy-jekyll--buffer-name))
    (setq easy-jekyll--draft-list nil)
@@ -1463,8 +1565,12 @@ Optional prefix ARG says how many lines to move; default is one line."
    (setq buffer-read-only nil)
    (erase-buffer)
    (if (equal easy-jekyll-postdir "./")
-       (insert (propertize (concat "Easy-jekyll  " easy-jekyll-url "\n\n") 'face 'easy-jekyll-help-face))
-     (insert (propertize (concat "Easy-jekyll  " easy-jekyll-url "/" easy-jekyll-postdir "\n\n") 'face 'easy-jekyll-help-face)))
+       (insert (propertize
+		(concat "Easy-jekyll  " easy-jekyll-url "\n\n")
+		'face 'easy-jekyll-help-face))
+     (insert (propertize
+	      (concat "Easy-jekyll  " easy-jekyll-url "/" easy-jekyll-postdir "\n\n")
+	      'face 'easy-jekyll-help-face)))
    (unless easy-jekyll-no-help
      (insert (propertize easy-jekyll-help 'face 'easy-jekyll-help-face))
      (when easy-jekyll-additional-help
@@ -1472,7 +1578,9 @@ Optional prefix ARG says how many lines to move; default is one line."
      (insert (propertize (concat "\n")'face 'easy-jekyll-help-face)))
    (unless easy-jekyll--refresh
      (setq easy-jekyll--cursor (point)))
-   (let ((files (directory-files (expand-file-name easy-jekyll-postdir easy-jekyll-basedir)))
+   (let ((files (directory-files (expand-file-name
+				  easy-jekyll-postdir
+				  easy-jekyll-basedir)))
 	 (lists (list)))
      (if (eq 2 (length files))
 	 (progn
@@ -1480,8 +1588,10 @@ Optional prefix ARG says how many lines to move; default is one line."
 	   (easy-jekyll-mode)
 	   (goto-char easy-jekyll--cursor))
        (progn
-	 (cond ((eq 1 easy-jekyll--sort-char-flg) (setq files (reverse (sort files 'string<))))
-	       ((eq 2 easy-jekyll--sort-char-flg) (setq files (sort files 'string<))))
+	 (cond ((eq 1 easy-jekyll--sort-char-flg)
+		(setq files (reverse (sort files 'string<))))
+	       ((eq 2 easy-jekyll--sort-char-flg)
+		(setq files (sort files 'string<))))
 	 (while files
 	   (unless (or (string= (car files) ".")
 		       (string= (car files) "..")
@@ -1495,8 +1605,10 @@ Optional prefix ARG says how many lines to move; default is one line."
 	       (car files))
 	      lists))
 	   (pop files))
-	 (cond ((eq 1 easy-jekyll--sort-time-flg) (setq lists (reverse (sort lists 'string<))))
-	       ((eq 2 easy-jekyll--sort-time-flg) (setq lists (sort lists 'string<))))
+	 (cond ((eq 1 easy-jekyll--sort-time-flg)
+		(setq lists (reverse (sort lists 'string<))))
+	       ((eq 2 easy-jekyll--sort-time-flg)
+		(setq lists (sort lists 'string<))))
 	 (while lists
 	   (insert (concat (car lists) "\n"))
 	   (pop lists))
