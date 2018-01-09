@@ -5,7 +5,7 @@
 ;; Created: 1997
 ;; Description: routines for stemming English word
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 20170113.24
+;; Package-Version: 20180108.1958
 ;; Keywords: text
 ;; Human-Keywords: stemming
 ;; Version: 2.140226
@@ -956,6 +956,13 @@
 ;; 与えられた語の元の語として可能性のある語の文字列長の昇順のリストを返す"
   (sort (stem-english--stripping-suffix str)
 	(lambda (a b) (< (length a) (length b)))))
+
+(defun stem-english-smart (word)
+    "My smart apply of `stem-english'."
+    (let ((stem-word (stem-english word)))
+      (if (= 1 (length stem-word))
+          word
+        (nth 1 stem-word))))
 
 ;; この stem-english の動作は、
 ;;

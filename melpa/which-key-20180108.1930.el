@@ -5,7 +5,7 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-which-key
-;; Package-Version: 20180108.1719
+;; Package-Version: 20180108.1930
 ;; Version: 3.1.0
 ;; Keywords:
 ;; Package-Requires: ((emacs "24.4"))
@@ -413,7 +413,16 @@ prefixes in `which-key-paging-prefixes'"
                     ("\C-p" . which-key-show-previous-page-cycle)
                     ("p" . which-key-show-previous-page-cycle)
                     ("\C-u" . which-key-undo-key)
-                    ("u" . which-key-undo-key)))
+                    ("u" . which-key-undo-key)
+                    ("1" . which-key-digit-argument)
+                    ("2" . which-key-digit-argument)
+                    ("3" . which-key-digit-argument)
+                    ("4" . which-key-digit-argument)
+                    ("5" . which-key-digit-argument)
+                    ("6" . which-key-digit-argument)
+                    ("7" . which-key-digit-argument)
+                    ("8" . which-key-digit-argument)
+                    ("9" . which-key-digit-argument)))
       (define-key map (car bind) (cdr bind)))
     map)
   "Keymap for C-h commands.")
@@ -2017,12 +2026,14 @@ enough space based on your settings and frame size." prefix-keys)
 ;;; Paging functions
 
 ;;;###autoload
-(defun which-key-reload-key-sequence (key-seq)
+(defun which-key-reload-key-sequence (&optional key-seq)
   "Simulate entering the key sequence KEY-SEQ.
 KEY-SEQ should be a list of events as produced by
-`listify-key-sequence'. Any prefix arguments that were used are
-reapplied to the new key sequence."
-  (let ((next-event (mapcar (lambda (ev) (cons t ev)) key-seq)))
+`listify-key-sequence'. If nil, KEY-SEQ defaults to
+`which-key--current-key-list'. Any prefix arguments that were
+used are reapplied to the new key sequence."
+  (let* ((key-seq (or key-seq (which-key--current-key-list)))
+         (next-event (mapcar (lambda (ev) (cons t ev)) key-seq)))
     (setq prefix-arg current-prefix-arg
           unread-command-events next-event)))
 
@@ -2030,7 +2041,7 @@ reapplied to the new key sequence."
   "Show the next page of keys."
   (let ((next-page (if which-key--current-page-n
                        (+ which-key--current-page-n delta) 0)))
-    (which-key-reload-key-sequence (which-key--current-key-list))
+    (which-key-reload-key-sequence)
     (if which-key--last-try-2-loc
         (let ((which-key-side-window-location which-key--last-try-2-loc)
               (which-key--multiple-locations t))
@@ -2039,7 +2050,7 @@ reapplied to the new key sequence."
     (which-key--start-paging-timer)))
 
 ;;;###autoload
-(defun which-key-show-standard-help ()
+(defun which-key-show-standard-help (&optional _)
   "Call the command in `which-key--prefix-help-cmd-backup'.
 Usually this is `describe-prefix-bindings'."
   (interactive)
@@ -2076,7 +2087,7 @@ case do nothing."
       (which-key-turn-page -1))))
 
 ;;;###autoload
-(defun which-key-show-next-page-cycle ()
+(defun which-key-show-next-page-cycle (&optional _)
   "Show the next page of keys, cycling from end to beginning
 after last page."
   (interactive)
@@ -2084,7 +2095,7 @@ after last page."
     (which-key-turn-page 1)))
 
 ;;;###autoload
-(defun which-key-show-previous-page-cycle ()
+(defun which-key-show-previous-page-cycle (&optional _)
   "Show the previous page of keys, cycling from beginning to end
 after first page."
   (interactive)
@@ -2092,7 +2103,7 @@ after first page."
     (which-key-turn-page -1)))
 
 ;;;###autoload
-(defun which-key-show-top-level ()
+(defun which-key-show-top-level (&optional _)
   "Show top-level bindings."
   (interactive)
   (setq which-key--using-top-level "Top-level bindings")
@@ -2114,7 +2125,7 @@ current evil state. "
       (message "which-key: No map named %s" map-sym))))
 
 ;;;###autoload
-(defun which-key-undo-key ()
+(defun which-key-undo-key (&optional _)
   "Undo last keypress and force which-key update."
   (interactive)
   (let* ((key-lst (butlast (which-key--current-key-list)))
@@ -2130,12 +2141,20 @@ current evil state. "
           (t (which-key-show-top-level)))))
 (defalias 'which-key-undo 'which-key-undo-key)
 
-(defun which-key-abort ()
+(defun which-key-abort (&optional _)
   "Abort key sequence."
   (interactive)
   (let ((which-key-inhibit t))
     (which-key--hide-popup-ignore-command)
     (keyboard-quit)))
+
+(defun which-key-digit-argument (key)
+  "Version of `digit-argument' for use in `which-key-C-h-map'."
+  (interactive)
+  (let ((last-command-event (string-to-char key)))
+    (digit-argument key))
+  (let ((current-prefix-arg prefix-arg))
+    (which-key-reload-key-sequence)))
 
 ;;;###autoload
 (defun which-key-C-h-dispatch ()
@@ -2167,12 +2186,14 @@ prefix) if `which-key-use-C-h-commands' is non nil."
                               " \\[which-key-show-standard-help]"
                               which-key-separator "help,"
                               " \\[which-key-abort]"
-                              which-key-separator "abort"))
+                              which-key-separator "abort"
+                              " 1..9"
+                              which-key-separator "digit-arg"))
                             'face 'which-key-note-face)))
            (key (string (read-key prompt)))
            (cmd (lookup-key which-key-C-h-map key))
            (which-key-inhibit t))
-      (if cmd (funcall cmd) (which-key-turn-page 0)))))
+      (if cmd (funcall cmd key) (which-key-turn-page 0)))))
 
 ;;; Update
 
