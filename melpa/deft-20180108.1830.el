@@ -27,7 +27,7 @@
 ;; POSSIBILITY OF SUCH DAMAGE.
 
 ;;; Version: 0.8-dev
-;; Package-Version: 20171031.530
+;; Package-Version: 20180108.1830
 ;;; Author: Jason R. Blevins <jrblevin@xbeta.org>
 ;;; Keywords: plain text, notes, Simplenote, Notational Velocity
 ;;; URL: http://jblevins.org/projects/deft/
@@ -738,6 +738,11 @@ or kebab-case
   "Rules for omitting automatically generated files.
 For example, .tex files may be generated from `org-mode' or Pandoc."
   :type '(repeat (cons string string))
+  :group 'deft)
+
+(defcustom deft-filter-only-filenames nil
+  "Filter on file names only."
+  :type 'boolean
   :group 'deft)
 
 ;; Faces
@@ -1536,7 +1541,7 @@ all elements."
   (with-temp-buffer
     (insert file)
     (let ((title (deft-file-title file))
-          (contents (deft-file-contents file)))
+          (contents (if deft-filter-only-filenames "" (deft-file-contents file))))
       (when title (insert title))
       (when contents (insert contents)))
     (if batch

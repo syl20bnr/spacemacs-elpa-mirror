@@ -5,8 +5,8 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-which-key
-;; Package-Version: 3.0.2
-;; Version: 3.0.2
+;; Package-Version: 20180108.1719
+;; Version: 3.1.0
 ;; Keywords:
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -153,10 +153,10 @@ remapped given the currently active keymaps."
         `(((nil . "Prefix Command") . (nil . "prefix"))
           ((nil . "\\`\\?\\?\\'") . (nil . "lambda"))
           ((nil . "which-key-show-next-page-no-cycle") . (nil . "wk next pg"))
-          (("<\\([[:alnum:]-]+\\)>") . ("\\1"))
           ,@(unless which-key-dont-use-unicode
-              '((("left") . ("←"))
-                (("right") . ("→"))))))
+              '((("<left>") . ("←"))
+                (("<right>") . ("→"))))
+          (("<\\([[:alnum:]-]+\\)>") . ("\\1"))))
   "Association list to determine how to manipulate descriptions
 of key bindings in the which-key popup. Each element of the list
 is a nested cons cell with the format
@@ -477,6 +477,24 @@ it."
   :group 'which-key
   :type 'boolean)
 
+(defcustom which-key-enable-extended-define-key nil
+  "Advise `define-key' to make which-key aware of definitions of the form
+
+  \(define-key KEYMAP KEY '(\"DESCRIPTION\" . DEF))
+
+With the advice, this definition will have the side effect of
+creating a replacement in `which-key-replacement-alist' that
+replaces DEF with DESCRIPTION when the key sequence ends in
+KEY. Using a cons cell like this is a valid definition for
+`define-key'. All this does is to make which-key aware of it.
+
+Since many higher level keybinding functions use `define-key'
+internally, this will affect most if not all of those as well.
+
+This variable must be set before loading which-key."
+  :group 'which-key
+  :type 'boolean)
+
 ;; Hooks
 (defcustom which-key-init-buffer-hook '()
   "Hook run when which-key buffer is initialized."
@@ -779,7 +797,10 @@ bottom."
 
 ;;;###autoload
 (defun which-key-setup-minibuffer ()
-  "Apply suggested settings for minibuffer."
+  "Apply suggested settings for minibuffer.
+Do not use this setup if you use the paging commands. Instead use
+`which-key-setup-side-window-bottom', which is nearly identical
+but more functional."
   (interactive)
   (which-key--setup-echo-keystrokes)
   (setq which-key-popup-type 'minibuffer
@@ -887,6 +908,19 @@ If AT-ROOT is non-nil the binding is also placed at the root of MAP."
      (when (keymapp df)
        (which-key-define-key-recursively df key def t)))
    map))
+
+(defun which-key--process-define-key-args (keymap key def)
+  "When DEF takes the form (\"DESCRIPTION\". DEF), make sure
+which-key uses \"DESCRIPTION\" for this binding. This function is
+meant to be used as :before advice for `define-key'."
+  (with-demoted-errors "Which-key extended define-key error: %s"
+    (when (and (consp def)
+               (stringp (car def))
+               (symbolp (cdr def)))
+      (define-key keymap (which-key--pseudo-key key) `(which-key ,def)))))
+
+(when which-key-enable-extended-define-key
+  (advice-add #'define-key :before #'which-key--process-define-key-args))
 
 ;;; Functions for computing window sizes
 
@@ -1325,31 +1359,49 @@ local bindings coming first. Within these categories order using
                 (throw 'res res)))))))
     (nreverse res)))
 
+(defun which-key--get-pseudo-binding (key-binding)
+  (let* ((pseudo-binding
+          (key-binding (which-key--pseudo-key (kbd (car key-binding)) t)))
+         (pseudo-binding (when pseudo-binding (cadr pseudo-binding)))
+         (pseudo-desc (when pseudo-binding (car pseudo-binding)))
+         (pseudo-def (when pseudo-binding (cdr pseudo-binding)))
+         (real-def (key-binding (kbd (car key-binding))))
+         ;; treat keymaps as if they're nil bindings. This creates the
+         ;; possibility that we rename the wrong binding but this seems
+         ;; unlikely.
+         (real-def (unless (keymapp real-def) real-def)))
+    (when (and pseudo-binding
+               (eq pseudo-def real-def))
+      (cons (car key-binding) pseudo-desc))))
+
 (defun which-key--maybe-replace (key-binding)
   "Use `which-key--replacement-alist' to maybe replace KEY-BINDING.
 KEY-BINDING is a cons cell of the form \(KEY . BINDING\) each of
 which are strings. KEY is of the form produced by `key-binding'."
-  (let* ((mode-res (which-key--get-replacements key-binding t))
-         (all-repls (or mode-res
-                      (which-key--get-replacements key-binding))))
-    (dolist (repl all-repls key-binding)
-      (setq key-binding
-            (cond ((or (not (consp repl)) (null (cdr repl)))
-                   key-binding)
-                  ((functionp (cdr repl))
-                   (funcall (cdr repl) key-binding))
-                  ((consp (cdr repl))
-                   (cons
-                    (cond ((and (caar repl) (cadr repl))
-                           (replace-regexp-in-string
-                            (caar repl) (cadr repl) (car key-binding) t))
-                          ((cadr repl) (cadr repl))
-                          (t (car key-binding)))
-                    (cond ((and (cdar repl) (cddr repl))
-                           (replace-regexp-in-string
-                            (cdar repl) (cddr repl) (cdr key-binding) t))
-                          ((cddr repl) (cddr repl))
-                          (t (cdr key-binding))))))))))
+  (let* ((pseudo-binding (which-key--get-pseudo-binding key-binding)))
+    (if pseudo-binding
+        pseudo-binding
+      (let* ((mode-res (which-key--get-replacements key-binding t))
+             (all-repls (or mode-res
+                            (which-key--get-replacements key-binding))))
+        (dolist (repl all-repls key-binding)
+          (setq key-binding
+                (cond ((or (not (consp repl)) (null (cdr repl)))
+                       key-binding)
+                      ((functionp (cdr repl))
+                       (funcall (cdr repl) key-binding))
+                      ((consp (cdr repl))
+                       (cons
+                        (cond ((and (caar repl) (cadr repl))
+                               (replace-regexp-in-string
+                                (caar repl) (cadr repl) (car key-binding) t))
+                              ((cadr repl) (cadr repl))
+                              (t (car key-binding)))
+                        (cond ((and (cdar repl) (cddr repl))
+                               (replace-regexp-in-string
+                                (cdar repl) (cddr repl) (cdr key-binding) t))
+                              ((cddr repl) (cddr repl))
+                              (t (cdr key-binding))))))))))))
 
 (defsubst which-key--current-key-list (&optional key-str)
   (append (listify-key-sequence which-key--current-prefix)
@@ -1363,6 +1415,27 @@ which are strings. KEY is of the form produced by `key-binding'."
   (eq (which-key--safe-lookup-key
        (current-local-map) (kbd (which-key--current-key-string (car keydesc))))
       (intern (cdr keydesc))))
+
+(defun which-key--map-binding-p (map keydesc)
+  (or
+   (when (bound-and-true-p evil-state)
+     (eq (which-key--safe-lookup-key
+          map
+          (kbd (which-key--current-key-string
+                (format "<%s-state> %s" evil-state (car keydesc)))))
+         (intern (cdr keydesc))))
+   (eq (which-key--safe-lookup-key
+        map (kbd (which-key--current-key-string (car keydesc))))
+       (intern (cdr keydesc)))))
+
+(defun which-key--pseudo-key (key &optional use-current-prefix)
+  "Replace the last key in the sequence KEY by a special symbol
+in order for which-key to allow looking up a description for the key."
+  (let* ((seq (listify-key-sequence key))
+         (final (intern (format "which-key-%s" (key-description (last seq))))))
+    (if use-current-prefix
+        (vconcat (which-key--current-key-list) (list final))
+      (vconcat (butlast seq) (list final)))))
 
 (defun which-key--maybe-get-prefix-title (keys)
   "KEYS is a string produced by `key-description'.
@@ -1388,7 +1461,7 @@ no title exists."
              (if alternate alternate
                (concat "Following " keys)))
             (t ""))))
-    (which-key--using-top-level "Top-level bindings")
+    (which-key--using-top-level which-key--using-top-level)
     (which-key--current-show-keymap-name
      which-key--current-show-keymap-name)
     (t "")))
@@ -1514,19 +1587,18 @@ alists. Returns a list (key separator description)."
            new-list))))
     (nreverse new-list)))
 
-(defun which-key--get-keymap-bindings (keymap &optional filter)
+(defun which-key--get-keymap-bindings (keymap)
   "Retrieve top-level bindings from KEYMAP."
   (let (bindings)
     (map-keymap
      (lambda (ev def)
-       (unless (and (functionp filter) (funcall filter ev def))
-         (cl-pushnew
-          (cons (key-description (list ev))
-                (cond ((keymapp def) "Prefix Command")
-                      ((symbolp def) (copy-sequence (symbol-name def)))
-                      ((eq 'lambda (car-safe def)) "lambda")
-                      (t (format "%s" def))))
-          bindings :test (lambda (a b) (string= (car a) (car b))))))
+       (cl-pushnew
+        (cons (key-description (list ev))
+              (cond ((keymapp def) "Prefix Command")
+                    ((symbolp def) (copy-sequence (symbol-name def)))
+                    ((eq 'lambda (car-safe def)) "lambda")
+                    (t (format "%s" def))))
+        bindings :test (lambda (a b) (string= (car a) (car b)))))
      keymap)
     bindings))
 
@@ -1549,7 +1621,8 @@ Requires `which-key-compute-remaps' to be non-nil"
         (ignore-keys-regexp
          (eval-when-compile
            (regexp-opt '("mouse-" "wheel-" "remap" "drag-" "scroll-bar"
-                         "select-window" "switch-frame" "-state"))))
+                         "select-window" "switch-frame" "-state"
+                         "which-key-"))))
         (ignore-sections-regexp
          (eval-when-compile
            (regexp-opt '("Key translations" "Function key map translations"
@@ -1616,10 +1689,12 @@ Requires `which-key-compute-remaps' to be non-nil"
           (forward-line))
         (nreverse bindings)))))
 
-(defun which-key--get-formatted-key-bindings (&optional bindings)
+(defun which-key--get-formatted-key-bindings (&optional bindings filter)
   "Uses `describe-buffer-bindings' to collect the key bindings in
 BUFFER that follow the key sequence KEY-SEQ."
   (let* ((unformatted (if bindings bindings (which-key--get-current-bindings))))
+    (when filter
+      (setq unformatted (cl-remove-if-not filter unformatted)))
     (when which-key-sort-order
       (setq unformatted
             (sort unformatted which-key-sort-order)))
@@ -2020,8 +2095,23 @@ after first page."
 (defun which-key-show-top-level ()
   "Show top-level bindings."
   (interactive)
-  (setq which-key--using-top-level t)
+  (setq which-key--using-top-level "Top-level bindings")
   (which-key--create-buffer-and-show nil))
+
+;;;###autoload
+(defun which-key-show-major-mode ()
+  "Show top-level bindings in the map of the current major mode.
+
+This function will also detect evil bindings made using
+`evil-define-key' in this map. These bindings will depend on the
+current evil state. "
+  (interactive)
+  (setq which-key--using-top-level "Major-mode bindings")
+  (let ((map-sym (intern (format "%s-map" major-mode))))
+    (if (and (boundp map-sym) (keymapp (symbol-value map-sym)))
+        (which-key--create-buffer-and-show
+         nil nil (apply-partially #'which-key--map-binding-p (symbol-value map-sym)))
+      (message "which-key: No map named %s" map-sym))))
 
 ;;;###autoload
 (defun which-key-undo-key ()
@@ -2176,9 +2266,10 @@ is selected interactively by mode in `minor-mode-map-alist'."
                                    (cons keymap-name keymap)))
           (t (which-key--hide-popup)))))
 
-(defun which-key--evil-operator-filter (_ev def)
-  (and (functionp def)
-       (evil-get-command-property def :suppress-operator)))
+(defun which-key--evil-operator-filter (binding)
+  (let ((def (intern (cdr binding))))
+    (and (functionp def)
+         (not (evil-get-command-property def :suppress-operator)))))
 
 (defun which-key--show-evil-operator-keymap ()
   (if which-key--inhibit-next-operator-popup
@@ -2192,8 +2283,8 @@ is selected interactively by mode in `minor-mode-map-alist'."
             which-key--using-show-operator-keymap t)
       (when (keymapp keymap)
         (let ((formatted-keys (which-key--get-formatted-key-bindings
-                               (which-key--get-keymap-bindings
-                                keymap 'which-key--evil-operator-filter))))
+                               (which-key--get-keymap-bindings keymap)
+                               #'which-key--evil-operator-filter)))
           (cond ((= (length formatted-keys) 0)
                  (message "which-key: Keymap empty"))
                 ((listp which-key-side-window-location)
@@ -2216,7 +2307,7 @@ is selected interactively by mode in `minor-mode-map-alist'."
                (which-key--hide-popup)
                (setq unread-command-events (listify-key-sequence key))))))))
 
-(defun which-key--create-buffer-and-show (&optional prefix-keys from-keymap)
+(defun which-key--create-buffer-and-show (&optional prefix-keys from-keymap filter)
   "Fill `which-key--buffer' with key descriptions and reformat.
 Finally, show the buffer."
   (setq which-key--current-prefix prefix-keys
@@ -2224,7 +2315,8 @@ Finally, show the buffer."
   (let ((start-time (when which-key--debug (current-time)))
         (formatted-keys (which-key--get-formatted-key-bindings
                          (when from-keymap
-                           (which-key--get-keymap-bindings from-keymap))))
+                           (which-key--get-keymap-bindings from-keymap))
+                         filter))
         (prefix-keys (key-description which-key--current-prefix)))
     (cond ((= (length formatted-keys) 0)
            (message "%s-  which-key: There are no keys to show" prefix-keys))
