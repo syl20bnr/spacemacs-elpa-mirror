@@ -4,7 +4,7 @@
 
 ;; Author:  Atila Neves <atila.neves@gmail.com>
 ;; Version: 0.11
-;; Package-Version: 20170816.648
+;; Package-Version: 20180109.925
 ;; Package-Requires: ((flycheck "0.24") (f "0.18.2"))
 ;; Keywords: languages
 ;; URL: http://github.com/atilaneves/flycheck-dmd-dub
@@ -186,7 +186,7 @@ other lines besides the json object."
 
 (defun fldd--get-dub-describe-output ()
   "Return the output from dub with package description."
-  (shell-command-to-string "dub describe"))
+  (shell-command-to-string "dub describe -c unittest"))
 
 (defun fldd--get-timestamp (file)
   "Return the timestamp of FILE.
@@ -200,7 +200,7 @@ If FILE does not exist, return nil."
   (make-local-variable 'flycheck-dmd-args)
   (setq flycheck-dmd-include-path import-paths)
   (let ((flags (mapcar #'(lambda (x) (concat "-J" x)) string-import-paths)))
-    (setq flycheck-dmd-args (if (member "-unittest" flags) flags (cons "-unittest" flags)))))
+    (setq flycheck-dmd-args flags)))
 
 (defun fldd--cache-is-updated-p ()
   "Return non-nil if `fldd--cache-file' is up-to-date."

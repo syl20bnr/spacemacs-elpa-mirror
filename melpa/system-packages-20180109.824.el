@@ -5,7 +5,7 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/system-packages
-;; Package-Version: 20180108.820
+;; Package-Version: 20180109.824
 ;; Package-Requires: ((cl-lib "0.5"))
 
 ;; This file is not part of GNU Emacs.
@@ -49,6 +49,25 @@
 
 (defconst system-packages-supported-package-managers
   '(
+    ;; nix
+    (nix-env .
+             ((default-sudo . nil)
+              (install . "nix-env -i")
+              (search . "nix-env -qaP")
+              (uninstall . "nix-env -e")
+              (update . ("nix-env -u" ))
+              (clean-cache . nil)
+              (log . nil)
+              (get-info . nil)
+              (get-info-remote . nil)
+              (list-files-provided-by . nil)
+              (verify-all-packages . nil)
+              (verify-all-dependencies . nil)
+              (remove-orphaned . nil)
+              (list-installed-packages . "nix-env -q")
+              (list-installed-packages-all . "nix-env -q")
+              (list-dependencies-of . nil)
+              (noconfirm . nil)))
     ;; Mac
     (brew .
           ((default-sudo . nil)

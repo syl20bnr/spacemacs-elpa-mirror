@@ -1,7 +1,7 @@
 ;;; rust-mode.el --- A major emacs mode for editing Rust source code -*-lexical-binding: t-*-
 
 ;; Version: 0.3.0
-;; Package-Version: 20171208.1015
+;; Package-Version: 20180109.544
 ;; Author: Mozilla
 ;; Url: https://github.com/rust-lang/rust-mode
 ;; Keywords: languages
@@ -122,7 +122,7 @@
   :group 'rust-mode
   :safe #'booleanp)
 
-(defcustom rust-indent-where-clause t
+(defcustom rust-indent-where-clause nil
   "Indent the line starting with the where keyword following a
 function or trait.  When nil, where will be aligned with fn or trait."
   :type 'boolean
