@@ -2,7 +2,7 @@
 ;; Copyright (C) 2015-2018 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.1
-;; Package-Version: 20180107.2324
+;; Package-Version: 20180108.1229
 ;; Package-Requires: ((emacs "24.3") (f "0.20.0") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -991,7 +991,24 @@ or most optimal searcher."
 
     (:type "variable" :supports ("ag" "grep" "rg" "git-grep") :language "scss"
            :regex "JJJ\\s*:\\s*"
-           :tests ("test  :")))
+           :tests ("test  :"))
+
+    ;; sml
+    (:type "type" :supports ("ag" "grep" "rg" "git-grep") :language "sml"
+           :regex "\\s*(datatype)\\s+\\bJJJ\\b\\s*="
+           :tests ("datatype test ="
+                   "datatype test=")
+           :not ("datatypetest ="))
+
+    (:type "variable" :supports ("ag" "grep" "rg" "git-grep") :language "sml"
+           :regex "\\s*val\\s+\\bJJJ\\b\\s*="
+           :tests ("val test ="
+                   "val test="))
+
+    (:type "function" :supports ("ag" "grep" "rg" "git-grep") :language "sml"
+           :regex "\\s*fun\\s+\\bJJJ\\b\\s*(\\w+|\\((\\s*\\w\\s*,?)+\\))\\s*="
+           :tests ("fun test list ="
+                   "fun test (STRING_NIL, a) =")))
 
   "List of regex patttern templates organized by language and type to use for generating the grep command."
   :group 'dumb-jump
@@ -1096,6 +1113,7 @@ or most optimal searcher."
     (:language "shell" :ext "csh" :agtype nil :rgtype nil)
     (:language "shell" :ext "ksh" :agtype nil :rgtype nil)
     (:language "shell" :ext "tcsh" :agtype nil :rgtype nil)
+    (:language "sml" :ext "sml" :agtype "sml" :rgtype "sml")
     (:language "swift" :ext "swift" :agtype nil :rgtype "swift")
     (:language "elixir" :ext "ex" :agtype "elixir" :rgtype "elixir")
     (:language "elixir" :ext "exs" :agtype "elixir" :rgtype "elixir")

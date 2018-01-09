@@ -342,3 +342,8 @@ TODO:
 
 - There could be something much better than pp to format the
   replacement, or pp should be improved.
+
+
+NEWS:
+
+Please see the NEWS file in this directory.
