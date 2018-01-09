@@ -1,7 +1,7 @@
 ;;; prettier-js.el --- Minor mode to format JS code on file save
 
 ;; Version: 0.1.0
-;; Package-Version: 20170823.159
+;; Package-Version: 20180108.2326
 
 ;; Copyright (c) 2014 The go-mode Authors. All rights reserved.
 ;; Portions Copyright (c) 2015-present, Facebook, Inc. All rights reserved.
@@ -123,13 +123,14 @@ a `before-save-hook'."
               (with-current-buffer target-buffer
                 (prettier-js--goto-line (- from line-offset))
                 (setq line-offset (+ line-offset len))
-                (kill-whole-line len)
-                (setq kill-ring (cdr kill-ring))))
+                (let ((beg (point)))
+                  (forward-line len)
+                  (delete-region (point) beg))))
              (t
               (error "Invalid rcs patch or internal error in prettier-js--apply-rcs-patch")))))))))
 
-(defun prettier-js--process-errors (filename tmpfile errorfile errbuf)
-  "Process errors for FILENAME, using a TMPFILE an ERRORFILE and display the output in ERRBUF."
+(defun prettier-js--process-errors (filename errorfile errbuf)
+  "Process errors for FILENAME, using an ERRORFILE and display the output in ERRBUF."
   (with-current-buffer errbuf
     (if (eq prettier-js-show-errors 'echo)
         (progn
@@ -139,7 +140,7 @@ a `before-save-hook'."
       ;; Convert the prettier stderr to something understood by the compilation mode.
       (goto-char (point-min))
       (insert "prettier errors:\n")
-      (while (search-forward-regexp (regexp-quote tmpfile) nil t)
+      (while (search-forward-regexp "^stdin" nil t)
         (replace-match (file-name-nondirectory filename)))
       (compilation-mode)
       (display-buffer errbuf))))
@@ -193,7 +194,7 @@ a `before-save-hook'."
                  (if errbuf (prettier-js--kill-error-buffer errbuf)))
              (message "Could not apply prettier")
              (if errbuf
-                 (prettier-js--process-errors (buffer-file-name) bufferfile errorfile errbuf))
+                 (prettier-js--process-errors (buffer-file-name) errorfile errbuf))
              ))
        (kill-buffer patchbuf)
        (delete-file errorfile)
