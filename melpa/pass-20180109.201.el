@@ -5,7 +5,7 @@
 ;; Author: Nicolas Petton <petton.nicolas@gmail.com>
 ;;         Damien Cassou <damien@cassou.me>
 ;; Version: 1.8
-;; Package-Version: 20171010.410
+;; Package-Version: 20180109.201
 ;; GIT: https://github.com/NicolasPetton/pass
 ;; Package-Requires: ((emacs "24.3") (password-store "0.1") (password-store-otp "0.1.5") (f "0.17"))
 ;; Created: 09 Jun 2015
@@ -83,7 +83,7 @@
   "Face for displaying password-store directory names."
   :group 'pass)
 
-(define-derived-mode pass-mode nil "Password-Store"
+(define-derived-mode pass-mode fundamental-mode "Password-Store"
   "Major mode for editing password-stores.
 
 \\{pass-mode-map}"
