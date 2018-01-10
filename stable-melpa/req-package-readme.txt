@@ -72,9 +72,8 @@ https://coveralls.io/github/edvorg/req-package?branch=develop
   └────
 
   Define required packages with dependencies using `:require'.
-  Optionally provide preferred installation source with `:loader'
-  keyword.  Use `:force t' if you want to avoid dependency management
-  and load right now.
+  Use `:force t' if you want to avoid dependency management and load right now.
+  Use `:el-get t' or `:el-get package-name' if you want to install from el-get.
 
   ┌────
   │ ;; init-dired.el
@@ -92,7 +91,6 @@ https://coveralls.io/github/edvorg/req-package?branch=develop
   │ ;; init-lua.el
   │
   │ (req-package lua-mode
-  │   :loader :elpa ;; installed from elpa
   │   :config (...))
   │
   │ (req-package flymake-lua
@@ -102,17 +100,14 @@ https://coveralls.io/github/edvorg/req-package?branch=develop
   │ ;; init-flymake.el
   │
   │ (req-package flymake
-  │   :loader :built-in ;; use emacs built-in version
   │   :config (...))
   │
   │ (req-package flymake-cursor
-  │   :loader :el-get ;; installed from el-get
   │   :require flymake
   │   :config (...))
   │
   │ (req-package flymake-custom
   │   :require flymake
-  │   :loader :path ;; use package that is on load-path
   │   :load-path "/path/to/file/directory"
   │   :config (...))
   └────

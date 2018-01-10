@@ -4,55 +4,55 @@ Table of Contents
 1 req-package
 .. 1.1 Description
 .. 1.2 Usage
-.. 1.3 Providers
-.. 1.4 Logging
-.. 1.5 Migrate from use-package
-.. 1.6 Note
-.. 1.7 Contribute
-.. 1.8 Changelog
-..... 1.8.1 `v1.0'
-..... 1.8.2 `v0.9'
-..... 1.8.3 `v0.8'
-..... 1.8.4 `v0.7'
-..... 1.8.5 `v0.6'
-..... 1.8.6 `v0.5'
-..... 1.8.7 `v0.4.2'
-..... 1.8.8 `v0.4.1'
-..... 1.8.9 `v0.4-all-cycles'
-..... 1.8.10 `v0.3-cycles'
-..... 1.8.11 `v0.2-auto-fetch'
+.. 1.3 Logging
+.. 1.4 Migrate from use-package
+.. 1.5 Note
+.. 1.6 Contribute
+.. 1.7 Changelog
+..... 1.7.1 `v1.1'
+..... 1.7.2 `v1.0'
+..... 1.7.3 `v0.9'
+..... 1.7.4 `v0.8'
+..... 1.7.5 `v0.7'
+..... 1.7.6 `v0.6'
+..... 1.7.7 `v0.5'
+..... 1.7.8 `v0.4.2'
+..... 1.7.9 `v0.4.1'
+..... 1.7.10 `v0.4-all-cycles'
+..... 1.7.11 `v0.3-cycles'
+..... 1.7.12 `v0.2-auto-fetch'
 
 
 1 req-package
 ═════════════
 
-  [[file:https://img.shields.io/badge/license-GPL_3-green.svg]]
-  [[file:http://melpa.org/packages/req-package-badge.svg]]
-  [[file:http://stable.melpa.org/packages/req-package-badge.svg]]
-  [[file:https://travis-ci.org/edvorg/req-package.svg]]
-  [[file:https://coveralls.io/repos/edvorg/req-package/badge.svg?branch=develop&service=github]]
+  [file:https://img.shields.io/badge/license-GPL_3-green.svg]
+  [file:http://melpa.org/packages/req-package-badge.svg]
+  [file:http://stable.melpa.org/packages/req-package-badge.svg]
+  [file:https://travis-ci.org/edvorg/req-package.svg]
+  [file:https://coveralls.io/repos/edvorg/req-package/badge.svg?branch=develop&service=github]
 
 
-[[file:https://img.shields.io/badge/license-GPL_3-green.svg]]
+[file:https://img.shields.io/badge/license-GPL_3-green.svg]
 http://www.gnu.org/licenses/gpl-3.0.txt
 
-[[file:http://melpa.org/packages/req-package-badge.svg]]
+[file:http://melpa.org/packages/req-package-badge.svg]
 http://melpa.org/#/req-package
 
-[[file:http://stable.melpa.org/packages/req-package-badge.svg]]
+[file:http://stable.melpa.org/packages/req-package-badge.svg]
 http://stable.melpa.org/#/req-package
 
-[[file:https://travis-ci.org/edvorg/req-package.svg]]
+[file:https://travis-ci.org/edvorg/req-package.svg]
 https://travis-ci.org/edvorg/req-package
 
-[[file:https://coveralls.io/repos/edvorg/req-package/badge.svg?branch=develop&service=github]]
+[file:https://coveralls.io/repos/edvorg/req-package/badge.svg?branch=develop&service=github]
 https://coveralls.io/github/edvorg/req-package?branch=develop
 
 1.1 Description
 ───────────────
 
-  req-package provides dependency management for use-package.  this
-  allows to write simple and modular configs.  migration from
+  `req-package' provides dependency management for use-package.  This
+  allows to write simple and modular configs.  Migration from
   use-package is simple and syntax is almost same.
 
 
@@ -72,9 +72,8 @@ https://coveralls.io/github/edvorg/req-package?branch=develop
   └────
 
   Define required packages with dependencies using `:require'.
-  Optionally provide preferred installation source with `:loader'
-  keyword.  Use `:force t' if you want to avoid dependency management
-  and load right now.
+  Use `:force t' if you want to avoid dependency management and load right now.
+  Use `:el-get t' or `:el-get package-name' if you want to install from el-get.
 
   ┌────
   │ ;; init-dired.el
@@ -92,7 +91,6 @@ https://coveralls.io/github/edvorg/req-package?branch=develop
   │ ;; init-lua.el
   │
   │ (req-package lua-mode
-  │   :loader :elpa ;; installed from elpa
   │   :config (...))
   │
   │ (req-package flymake-lua
@@ -102,17 +100,14 @@ https://coveralls.io/github/edvorg/req-package?branch=develop
   │ ;; init-flymake.el
   │
   │ (req-package flymake
-  │   :loader :built-in ;; use emacs built-in version
   │   :config (...))
   │
   │ (req-package flymake-cursor
-  │   :loader :el-get ;; installed from el-get
   │   :require flymake
   │   :config (...))
   │
   │ (req-package flymake-custom
   │   :require flymake
-  │   :loader :path ;; use package that is on load-path
   │   :load-path "/path/to/file/directory"
   │   :config (...))
   └────
@@ -128,17 +123,7 @@ https://coveralls.io/github/edvorg/req-package?branch=develop
   └────
 
 
-1.3 Providers
-─────────────
-
-  `req-package' supports extensible package providers system.  This is
-  alternative to `:ensure' keyword in `use-package'.  Use `:loader'
-  keyword with `:el-get', `:elpa', `:built-in' or `:path' value.  Extend
-  `req-package-providers-map' if you want to introduce new provider.
-  Tweak provider priorities using `req-package-providers-priority' map.
-
-
-1.4 Logging
+1.3 Logging
 ───────────
 
   You can use `req-package--log-open-log' to see, what is happening with
@@ -147,37 +132,42 @@ https://coveralls.io/github/edvorg/req-package?branch=develop
   `fatal', `error', `warn', `info', `debug', `trace'.
 
 
-1.5 Migrate from use-package
+1.4 Migrate from use-package
 ────────────────────────────
 
   Just replace all `(use-package ...)' with `(req-package [:require
   DEPS] ...)' and add `(req-package-finish)' at the end of your
-  configuration file.  Do not use `:ensure' keyword, use providers
-  system that is more powerful.  There is a `:force' keyword which
-  simulates plain old use-package behavior.
+  configuration file.  There is a `:force' keyword which simulates plain
+  old use-package behavior.
 
 
-1.6 Note
+1.5 Note
 ────────
 
   More complex req-package usage example can be found at
   [https://github.com/edvorg/emacs-configs].
 
-  Use `load-dir' package to load all `*.el' files from a dir (e.g
+  Use `load-dir' package to load all `*.el' files in a dir (e.g
   `~/.emacs.d/init.d')
 
 
-1.7 Contribute
+1.6 Contribute
 ──────────────
 
   Please, pull-request your changes to `develop' branch.  Master is used
   for automatic *release* package builds by travis-ci.
 
 
-1.8 Changelog
+1.7 Changelog
 ─────────────
 
-1.8.1 `v1.0'
+1.7.1 `v1.1'
+╌╌╌╌╌╌╌╌╌╌╌╌
+
+  • due to use-package being mature enough drop providers system
+
+
+1.7.2 `v1.0'
 ╌╌╌╌╌╌╌╌╌╌╌╌
 
   • once you called `req-package-finish' you are able reload package
@@ -192,19 +182,19 @@ https://coveralls.io/github/edvorg/req-package?branch=develop
   • `req-package-force' replaced with `:force' keyword
 
 
-1.8.2 `v0.9'
+1.7.3 `v0.9'
 ╌╌╌╌╌╌╌╌╌╌╌╌
 
   • `:loader' keyword support
 
 
-1.8.3 `v0.8'
+1.7.4 `v0.8'
 ╌╌╌╌╌╌╌╌╌╌╌╌
 
   • bugfixes
 
 
-1.8.4 `v0.7'
+1.7.5 `v0.7'
 ╌╌╌╌╌╌╌╌╌╌╌╌
 
   • fixed some issues with packages installation. all packages will be
@@ -214,13 +204,13 @@ https://coveralls.io/github/edvorg/req-package?branch=develop
     choose, what to try first - elpa, el-get, or something else
 
 
-1.8.5 `v0.6'
+1.7.6 `v0.6'
 ╌╌╌╌╌╌╌╌╌╌╌╌
 
   • `el-get' support
 
 
-1.8.6 `v0.5'
+1.7.7 `v0.5'
 ╌╌╌╌╌╌╌╌╌╌╌╌
 
   • Major system refactoring.
@@ -230,26 +220,26 @@ https://coveralls.io/github/edvorg/req-package?branch=develop
   • Flexible `:require' keyword parsing.
 
 
-1.8.7 `v0.4.2'
+1.7.8 `v0.4.2'
 ╌╌╌╌╌╌╌╌╌╌╌╌╌╌
 
   • Bug fixes.
 
 
-1.8.8 `v0.4.1'
+1.7.9 `v0.4.1'
 ╌╌╌╌╌╌╌╌╌╌╌╌╌╌
 
   • Various tweaks and bug fixes.
 
 
-1.8.9 `v0.4-all-cycles'
-╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+1.7.10 `v0.4-all-cycles'
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
 
   • All cycles of your dependencies will be printed now.
   • Also there are more handy log messages and some bug fixes.
 
 
-1.8.10 `v0.3-cycles'
+1.7.11 `v0.3-cycles'
 ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
 
   • There are nice error messages about cycled dependencies now.
@@ -257,7 +247,7 @@ https://coveralls.io/github/edvorg/req-package?branch=develop
   • It means there is a cycle around `pkg1'.
 
 
-1.8.11 `v0.2-auto-fetch'
+1.7.12 `v0.2-auto-fetch'
 ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
 
   • There is no need of explicit `:ensure' in your code now.
