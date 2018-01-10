@@ -2,7 +2,7 @@
 ;; Copyright (C) 2015-2018 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.1
-;; Package-Version: 20180108.1229
+;; Package-Version: 20180109.1318
 ;; Package-Requires: ((emacs "24.3") (f "0.20.0") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -995,20 +995,37 @@ or most optimal searcher."
 
     ;; sml
     (:type "type" :supports ("ag" "grep" "rg" "git-grep") :language "sml"
-           :regex "\\s*(datatype)\\s+\\bJJJ\\b\\s*="
+           :regex "\\s*(data)?type\\s+.*\\bJJJ\\b"
            :tests ("datatype test ="
-                   "datatype test=")
+                   "datatype test="
+                   "datatype 'a test ="
+                   "type test ="
+                   "type 'a test ="
+                   "type 'a test"
+                   "type test")
            :not ("datatypetest ="))
 
     (:type "variable" :supports ("ag" "grep" "rg" "git-grep") :language "sml"
-           :regex "\\s*val\\s+\\bJJJ\\b\\s*="
+           :regex "\\s*val\\s+\\bJJJ\\b"
            :tests ("val test ="
-                   "val test="))
+                   "val test="
+                   "val test : bool"))
 
     (:type "function" :supports ("ag" "grep" "rg" "git-grep") :language "sml"
-           :regex "\\s*fun\\s+\\bJJJ\\b\\s*(\\w+|\\((\\s*\\w\\s*,?)+\\))\\s*="
+           :regex "\\s*fun\\s+\\bJJJ\\b.*\\s*="
            :tests ("fun test list ="
-                   "fun test (STRING_NIL, a) =")))
+                   "fun test (STRING_NIL, a) ="
+                   "fun test ((s1,s2): 'a queue) : 'a * 'a queue ="
+                   "fun test (var : q) : int ="
+                   "fun test f e xs ="))
+
+    (:type "module" :supports ("ag" "grep" "rg" "git-grep") :language "sml"
+           :regex "\\s*(structure|signature|functor)\\s+\\bJJJ\\b"
+           :tests ("structure test ="
+                   "structure test : MYTEST ="
+                   "signature test ="
+                   "functor test (T:TEST) ="
+                   "functor test(T:TEST) =")))
 
   "List of regex patttern templates organized by language and type to use for generating the grep command."
   :group 'dumb-jump

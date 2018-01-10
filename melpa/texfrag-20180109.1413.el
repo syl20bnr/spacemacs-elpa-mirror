@@ -4,7 +4,7 @@
 
 ;; Author: Tobias Zawada <i@tn-home.de>
 ;; Keywords: tex, languages, wp
-;; Package-Version: 20171229.1913
+;; Package-Version: 20180109.1413
 ;; URL: https://github.com/TobiasZawada/texfrag
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "25") (auctex "11.90.2"))
@@ -444,7 +444,7 @@ Returns nil if none of the args are numbers."
 		     (progn
 		       (parse-partial-sexp (point) (point-max) nil nil state 'syntax-table)
 		       (setq res (point))
-		       t)
+		       (null (eobp)))
                    nil))))
       res)))
 

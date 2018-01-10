@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180108.853
+;; Package-Version: 20180109.1031
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1724,7 +1724,8 @@ When INITIAL-INPUT is non-nil, use it in the minibuffer during completion."
             :preselect (when counsel-find-file-at-point
                          (require 'ffap)
                          (let ((f (ffap-guesser)))
-                           (when f (expand-file-name f))))
+                           (when (and f (not (ffap-url-p f)))
+                             (expand-file-name f))))
             :require-match 'confirm-after-completion
             :history 'file-name-history
             :keymap counsel-find-file-map

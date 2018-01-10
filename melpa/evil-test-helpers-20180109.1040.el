@@ -3,7 +3,7 @@
 ;; Author: Vegard Øye <vegard_oye at hotmail.com>
 ;; Maintainer: Vegard Øye <vegard_oye at hotmail.com>
 ;; Package-Requires: ((evil "1.2.13"))
-;; Package-Version: 20171122.1206
+;; Package-Version: 20180109.1040
 ;; Version: 1.2.13
 
 ;; This file is NOT part of GNU Emacs.
@@ -384,11 +384,6 @@ is executed at the end."
        (goto-char (overlay-end ,overlay))
        (evil-test-text (or ,end-string ,string) nil nil ,after-predicate))))
 
-(defun evil-temp-filename ()
-  "Return an appropriate temporary filename."
-  (make-temp-name (expand-file-name "evil-test"
-                                    temporary-file-directory)))
-
 (defmacro evil-with-temp-file (file-var content &rest body)
   "Create a temp file with CONTENT and bind its name to FILE-VAR within BODY.
 FILE-VAR must be a symbol which contains the name of the
@@ -400,7 +395,7 @@ while the temporary file exists. The temporary file is deleted at
 the end of the execution of BODY."
   (declare (indent 2)
            (debug (symbolp form body)))
-  `(let ((,file-var (evil-temp-filename)))
+  `(let ((,file-var (make-temp-file "evil-test")))
      (with-temp-file ,file-var
        ,(if (stringp content)
             `(insert ,content)
