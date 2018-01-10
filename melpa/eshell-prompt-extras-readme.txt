@@ -3,8 +3,7 @@ environment info, git branch, git dirty info and git unpushed
 number for eshell prompt.
 
 If you want to display the python virtual environment info, you
-need to install `virtualenvwrapper' and `virtualenvwrapper.el'.
-pip install virtualenvwrapper
+need to install `virtualenvwrapper.el'.
 M-x: package-install: virtualenvwrapper
 
 Installation

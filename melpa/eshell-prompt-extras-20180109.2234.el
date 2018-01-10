@@ -6,7 +6,7 @@
 ;; Contributors: Lee Hinman
 ;; Maintainer: Chunyang Xu <mail@xuchunyang.me>
 ;; URL: https://github.com/hiddenlotus/eshell-prompt-extras
-;; Package-Version: 20171020.2207
+;; Package-Version: 20180109.2234
 ;; Version: 0.96
 ;; Created: 2014-08-16
 ;; Keywords: eshell, prompt
@@ -37,8 +37,7 @@
 ;; number for eshell prompt.
 
 ;; If you want to display the python virtual environment info, you
-;; need to install `virtualenvwrapper' and `virtualenvwrapper.el'.
-;; pip install virtualenvwrapper
+;; need to install `virtualenvwrapper.el'.
 ;; M-x: package-install: virtualenvwrapper
 
 ;; Installation
@@ -85,12 +84,6 @@
 (autoload 'cl-reduce "cl-lib")
 (autoload 'vc-git-branches "vc-git")
 (autoload 'vc-find-root "vc-hooks")
-
-(when (require 'virtualenvwrapper nil t)
-  (defun epe-venv-p ()
-    "If you are `workon'ing some virtual environment."
-    (and (eshell-search-path "virtualenvwrapper.sh")
-         (string-match venv-location (eshell-search-path "python")))))
 
 (defgroup epe nil
   "Eshell extras"
@@ -342,10 +335,8 @@ length of PATH (sans directory slashes) down to MAX-LEN."
      (epe-colorize-with-face
       (concat (epe-remote-user) "@" (epe-remote-host) " ")
       'epe-remote-face))
-   (when epe-show-python-info
-     (when (fboundp 'epe-venv-p)
-       (when (and (epe-venv-p) venv-current-name)
-         (epe-colorize-with-face (concat "(" venv-current-name ") ") 'epe-venv-face))))
+   (when (and epe-show-python-info (bound-and-true-p venv-current-name))
+     (epe-colorize-with-face (concat "(" venv-current-name ") ") 'epe-venv-face))
    (let ((f (cond ((eq epe-path-style 'fish) 'epe-fish-path)
                   ((eq epe-path-style 'single) 'epe-abbrev-dir-name)
                   ((eq epe-path-style 'full) 'abbreviate-file-name))))
@@ -396,10 +387,8 @@ length of PATH (sans directory slashes) down to MAX-LEN."
        (epe-colorize-with-face
         (concat (epe-remote-user) "@" (epe-remote-host) " ")
         'epe-remote-face))
-     (when epe-show-python-info
-       (when (fboundp 'epe-venv-p)
-         (when (and (epe-venv-p) venv-current-name)
-           (epe-colorize-with-face (concat "(" venv-current-name ") ") 'epe-venv-face))))
+     (when (and epe-show-python-info (bound-and-true-p venv-current-name))
+       (epe-colorize-with-face (concat "(" venv-current-name ") ") 'epe-venv-face))
      (epe-colorize-with-face (funcall
                               shrink-paths
                               (split-string
@@ -446,10 +435,8 @@ length of PATH (sans directory slashes) down to MAX-LEN."
     (epe-colorize-with-face  "]\n" 'epe-pipeline-delimiter-face)
     (epe-colorize-with-face "└─>" 'epe-pipeline-delimiter-face)
     )
-   (when epe-show-python-info
-     (when (fboundp 'epe-venv-p)
-       (when (and (epe-venv-p) venv-current-name)
-	 (epe-colorize-with-face (concat "(" venv-current-name ") ") 'epe-venv-face))))
+   (when (and epe-show-python-info (bound-and-true-p venv-current-name))
+     (epe-colorize-with-face (concat "(" venv-current-name ") ") 'epe-venv-face))
    (when (epe-git-p)
      (concat
       (epe-colorize-with-face ":" 'epe-dir-face)

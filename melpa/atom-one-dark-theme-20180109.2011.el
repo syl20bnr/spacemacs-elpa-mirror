@@ -4,7 +4,7 @@
 
 ;; Author: Jonathan Chu <me@jonathanchu.is>
 ;; URL: https://github.com/jonathanchu/atom-one-dark-theme
-;; Package-Version: 20171217.2049
+;; Package-Version: 20180109.2011
 ;; Version: 0.4.0
 
 ;; This file is not part of GNU Emacs.
@@ -37,8 +37,7 @@
     ("atom-one-dark-bg"       . "#282C34")
     ("atom-one-dark-bg-1"     . "#121417")
     ("atom-one-dark-bg-hl"    . "#2F343D")
-    ("atom-one-dark-gutter"   . "#666D7A")
-    ("atom-one-dark-accent"   . "#AEB9F5")
+    ("atom-one-dark-gutter"   . "#636D83")
     ("atom-one-dark-mono-1"   . "#ABB2BF")
     ("atom-one-dark-mono-2"   . "#828997")
     ("atom-one-dark-mono-3"   . "#5C6370")
@@ -335,7 +334,10 @@
    ;; linum
    `(linum ((t (:foreground ,atom-one-dark-gutter :background ,atom-one-dark-bg))))
    ;; hlinum
-   `(linum-highlight-face ((t (:foreground ,atom-one-dark-accent :background ,atom-one-dark-bg))))
+   `(linum-highlight-face ((t (:foreground ,atom-one-dark-fg :background ,atom-one-dark-bg))))
+   ;; native line numbers (emacs version >=26)
+   `(line-number ((t (:foreground ,atom-one-dark-gutter :background ,atom-one-dark-bg))))
+   `(line-number-current-line ((t (:foreground ,atom-one-dark-fg :background ,atom-one-dark-bg))))
 
    ;; latex-mode
    `(font-latex-sectioning-0-face ((t (:foreground ,atom-one-dark-blue :height 1.0))))
@@ -353,6 +355,17 @@
    `(org-date ((t (:foreground ,atom-one-dark-cyan))))
    `(org-footnote ((t (:foreground ,atom-one-dark-cyan))))
    `(org-sexp-date ((t (:foreground ,atom-one-dark-cyan))))
+
+   ;; realgud
+   `(realgud-overlay-arrow1        ((t (:foreground ,atom-one-dark-green))))
+   `(realgud-overlay-arrow3        ((t (:foreground ,atom-one-dark-orange-1))   `(realgud-overlay-arrow2        ((t (:foreground ,atom-one-dark-orange-2))))
+))
+   '(realgud-bp-enabled-face       ((t (:inherit (error)))))
+   `(realgud-bp-disabled-face      ((t (:inherit (secondary-selection)))))
+   `(realgud-bp-line-enabled-face  ((t (:foreground ,atom-one-dark-red-1))))
+   `(realgud-bp-line-disabled-face ((t (:inherit (secondary-selection)))))
+   `(realgud-line-number           ((t (:foreground ,atom-one-dark-mono-2))))
+   `(realgud-backtrace-number      ((t (:inherit (secondary-selection)))))
 
    ;; undo-tree
    `(undo-tree-visualizer-current-face ((t (:foreground ,atom-one-dark-red-1))))

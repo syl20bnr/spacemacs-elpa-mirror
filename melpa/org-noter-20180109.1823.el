@@ -5,7 +5,7 @@
 ;; Author: Gonçalo Santos (aka. weirdNox@GitHub)
 ;; Homepage: https://github.com/weirdNox/org-noter
 ;; Keywords: lisp pdf interleave annotate external sync notes documents org-mode
-;; Package-Version: 20171229.1823
+;; Package-Version: 20180109.1823
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.6") (org "9.0"))
 ;; Version: 1.0
 
@@ -188,7 +188,7 @@ moment."
             (properties-end (org-noter--get-properties-end ast t))
             (inhibit-read-only t)
             (modified (buffer-modified-p)))
-       (add-text-properties (1- begin) begin '(read-only t))
+       (add-text-properties (max 1 (1- begin)) begin '(read-only t))
        (add-text-properties begin (1- title-begin) '(read-only t front-sticky t))
        (add-text-properties (1- title-begin) title-begin '(read-only t rear-nonsticky t))
        (add-text-properties (1- contents-begin) (1- properties-end) '(read-only t))
@@ -203,7 +203,7 @@ moment."
            (end (org-noter--get-properties-end ast t))
            (inhibit-read-only t)
            (modified (buffer-modified-p)))
-       (remove-list-of-text-properties (1- begin) end
+       (remove-list-of-text-properties (max 1 (1- begin)) end
                                        '(read-only front-sticky rear-nonsticky))
        (set-buffer-modified-p modified)))))
 
