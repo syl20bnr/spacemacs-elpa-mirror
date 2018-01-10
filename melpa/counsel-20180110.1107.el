@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180109.1031
+;; Package-Version: 20180110.1107
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1267,11 +1267,6 @@ INITIAL-INPUT can be given as the initial minibuffer input."
     (setq proj (car proj-and-cmd))
     (setq counsel-git-grep-cmd (cdr proj-and-cmd))
     (counsel-require-program (car (split-string counsel-git-grep-cmd)))
-    (unless (or proj counsel-git-grep-skip-counting-lines)
-      (setq counsel--git-grep-count
-            (if (eq system-type 'windows-nt)
-                0
-              (counsel--gg-count "" t))))
     (let ((collection-function
            (if proj
                #'counsel-git-grep-proj-function
@@ -1286,6 +1281,11 @@ INITIAL-INPUT can be given as the initial minibuffer input."
           (default-directory (if proj
                                  (car proj)
                                (counsel-locate-git-root))))
+      (unless (or proj counsel-git-grep-skip-counting-lines)
+        (setq counsel--git-grep-count
+              (if (eq system-type 'windows-nt)
+                  0
+                (counsel--gg-count "" t))))
       (ivy-read "git grep" collection-function
                 :initial-input initial-input
                 :matcher #'counsel-git-grep-matcher

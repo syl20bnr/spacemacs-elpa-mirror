@@ -1,14 +1,14 @@
 ;;; php-runtime.el --- Language binding bridge to PHP -*- lexical-binding: t -*-
 
-;; Copyright (C) 2017 USAMI Kenta
+;; Copyright (C) 2018 Friends of Emacs-PHP development
 
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 28 Aug 2017
-;; Version: 0.0.1
-;; Package-Version: 20170901.1106
+;; Version: 0.1.0
+;; Package-Version: 0.1.0
 ;; Keywords: processes php
 ;; URL: https://github.com/emacs-php/php-runtime.el
-;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
+;; Package-Requires: ((emacs "25") (cl-lib "0.5"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -46,7 +46,7 @@
   :group 'processes
   :group 'php)
 
-(defcustom php-runtime-php-executable (and (executable-find "php") "php")
+(defcustom php-runtime-php-executable (or (executable-find "php") "php")
   "A command name or path to PHP executable."
   :group 'php-runtime
   :type 'string)

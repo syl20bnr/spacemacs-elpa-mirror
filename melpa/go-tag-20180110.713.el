@@ -4,10 +4,10 @@
 
 ;; Author: Brantou <brantou89@gmail.com>
 ;; URL: https://github.com/brantou/emacs-go-tag
-;; Package-Version: 20180106.2125
+;; Package-Version: 20180110.713
 ;; Keywords: tools
-;; Version: 1.0.1
-;; Package-Requires: ((emacs "24.0")(go-mode "1.3.1"))
+;; Version: 1.0.2
+;; Package-Requires: ((emacs "24.0")(go-mode "1.5.0"))
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -96,9 +96,24 @@ It can either be displayed in its own buffer, in the echo area, or not at all."
              ","))
 
 ;;;###autoload
+(defun go-tag-refresh (tags)
+  "Refresh field TAGS for struct fields."
+  (interactive "sTags: ")
+  (let ((stags (go-tag--parse-tag tags))
+        (options (go-tag--parse-option tags)))
+    (when (string-equal stags "") (setq stags "json"))
+    (if (use-region-p)
+        (progn
+          (go-tag--region-remove (region-beginning) (region-end) stags "")
+          (go-tag--region (region-beginning) (region-end) stags options))
+      (progn
+        (go-tag--point-remove (position-bytes (point))  stags "")
+        (go-tag--point (position-bytes (point))  stags options)))))
+
+;;;###autoload
 (defun go-tag-add (tags)
   "Add field TAGS for struct fields."
-  (interactive "sTags:")
+  (interactive "sTags: ")
   (let ((stags (go-tag--parse-tag tags))
         (options (go-tag--parse-option tags)))
     (if (use-region-p)
@@ -133,7 +148,7 @@ It can either be displayed in its own buffer, in the echo area, or not at all."
 ;;;###autoload
 (defun go-tag-remove (tags)
   "Remove field TAGS for struct fields."
-  (interactive "sTags:")
+  (interactive "sTags: ")
   (let ((stags (go-tag--parse-tag tags))
         (options (go-tag--parse-option tags)))
     (if (use-region-p)
