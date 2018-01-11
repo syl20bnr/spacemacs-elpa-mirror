@@ -1,13 +1,13 @@
 ;;; auto-compile.el --- automatically compile Emacs Lisp libraries
 
-;; Copyright (C) 2008-2017  Jonas Bernoulli
+;; Copyright (C) 2008-2018  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
-;; Created: 20080830
-;; Package-Requires: ((emacs "24.3") (packed "2.0.0"))
-;; Package-Version: 20171213.756
 ;; Homepage: https://github.com/emacscollective/auto-compile
 ;; Keywords: compile, convenience, lisp
+;; Package-Version: 20180111.436
+
+;; Package-Requires: ((emacs "24.3") (packed "2.0.0"))
 
 ;; This file is not part of GNU Emacs.
 
