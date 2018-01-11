@@ -40,7 +40,9 @@ manual edition of the files.
 
 - Insert player. - Native
 
-- Get the pairing or results of a round - Native
+- Insert bye. - Native
+
+- Get the pairing list or results of a round - Native
 
 - Get the list of the players - Native
 
@@ -51,11 +53,13 @@ manual edition of the files.
 - Print standings - Native
 
 - Do pairings - with bbpPairings.exe. In order for this to work,
-                remember to add a XXR field in the file with the number
+                remember to add XXR and XXCfields in the file with the number
                 of rounds of the tournament.
 
 TODO:
 ---------------------------------
+
+- Write the add players function in ELISP.
 
 - Automatically purge all players who didn't play any games.
 
@@ -73,12 +77,12 @@ TODO:
 
 - Generate pgn file for a round or the whole tournament.
 
-- Reorder the ranking
-
 - Reorder the players list
 
 - Error handling
 
-- Insert bye function
+- Calculate tyebreaks
+
+- Make the interface more friendly
 
 You will find more information in www.dggandara.eu/arbitools.htm
