@@ -1,14 +1,14 @@
 ;;; composer.el --- Interface to PHP Composer -*- lexical-binding: t -*-
 
-;; Copyright (C) 2015 USAMI Kenta
+;; Copyright (C) 2018 Friends of Emacs-PHP development
 
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 5 Dec 2015
 ;; Version: 0.0.8
-;; Package-Version: 20171227.421
+;; Package-Version: 20180111.942
 ;; Keywords: tools php dependency manager
 ;; Homepage: https://github.com/zonuexe/composer.el
-;; Package-Requires: ((emacs "24") (s "1.9.0") (f "0.17") (request "0.2.0") (seq "1.9") (php-runtime "0"))
+;; Package-Requires: ((emacs "24") (s "1.9.0") (f "0.17") (request "0.2.0") (seq "1.9") (php-runtime "0.1.0"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -41,7 +41,7 @@
 ;;  - M-x composer-view-lock-file  - Open composer.lock of the project (as read-only)
 
 ;;; Code:
-(require 'php-runtime)
+(require 'php-runtime nil t)
 (require 'compile)
 (require 'seq)
 (require 's)
@@ -196,6 +196,8 @@
   "Download composer.phar and copy to `PATH-TO-DEST'.
 
 https://getcomposer.org/doc/faqs/how-to-install-composer-programmatically.md"
+  (unless (featurep 'php-runtime)
+    (error "This feature requires `php-runtime' package"))
   (let ((path-to-temp (f-join temporary-file-directory "composer-setup.php"))
         (expected-signature
          (s-trim (php-runtime-eval "readfile('https://composer.github.io/installer.sig');")))

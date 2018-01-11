@@ -1,10 +1,10 @@
 ;;; amd-mode.el --- Minor mode for handling JavaScript AMD module requirements.
 
-;; Copyright (C) 2014-2016  Nicolas Petton
+;; Copyright (C) 2014-2018  Nicolas Petton
 ;;
 ;; Author: Nicolas Petton <petton.nicolas@gmail.com>
 ;; Keywords: javascript, amd, projectile
-;; Package-Version: 20161124.550
+;; Package-Version: 20180111.602
 ;; Version: 2.7
 ;; Package: amd-mode
 ;; Package-Requires: ((emacs "25") (projectile "20161008.47") (s "1.9.0") (f "0.16.2") (seq "2.16") (makey "0.3") (js2-mode "20140114") (js2-refactor "0.6.1"))
@@ -597,7 +597,8 @@ If BUFFER is at the root of the project, return the empty string."
 (defun amd--define-node-p (node)
   (when (js2-call-node-p node)
    (let ((target (js2-call-node-target node)))
-     (string= (js2-name-node-name target) "define"))))
+     (and (js2-name-node-p target)
+	  (string= (js2-name-node-name target) "define")))))
 
 (defun amd--enclosing-scopes (node)
   "Return a list of the scope chain enclosing NODE."

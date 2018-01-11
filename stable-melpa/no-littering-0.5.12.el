@@ -1,11 +1,11 @@
 ;;; no-littering.el --- help keeping ~/.emacs.d clean
 
-;; Copyright (C) 2016-2017  Jonas Bernoulli
+;; Copyright (C) 2016-2018  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/emacscollective/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 0.5.11
+;; Package-Version: 0.5.12
 
 ;; This file is not part of GNU Emacs.
 
@@ -206,7 +206,9 @@ This variable has to be set before `no-littering' is loaded.")
     (setq bookmark-default-file            (var "bookmark-default.el"))
     (eval-after-load 'desktop
       `(make-directory ,(var "desktop/") t))
-    (setq desktop-path                     (list (var "desktop/")))
+    (setq desktop-dirname                  (var "desktop/"))
+    (setq desktop-path                     (list desktop-dirname))
+    (setq diary-file                       (var "diary"))
     (setq epkg-repository                  (var "epkgs/"))
     (setq eshell-directory-name            (var "eshell/"))
     (eval-after-load 'eww
@@ -227,11 +229,14 @@ This variable has to be set before `no-littering' is loaded.")
     (setq nsm-settings-file                (var "nsm-settings.el"))
     (eval-after-load 'org
       `(make-directory ,(var "org/") t))
+    (setq omnisharp-cache-directory        (var "omnisharp/cache"))
     (setq org-clock-persist-file           (var "org/clock-persist.el"))
     (setq org-id-locations-file            (var "org/id-locations.el"))
     (setq org-publish-timestamp-directory  (var "org/timestamps/"))
     (setq org-registry-file                (var "org/registry.el"))
     (setq recentf-save-file                (var "recentf-save.el"))
+    (setq remember-data-file               (var "remember/data"))
+    (setq remember-data-directory          (var "remember/data.d/"))
     (setq save-place-file                  (var "save-place.el"))
     (setq savehist-file                    (var "savehist.el"))
     (setq semanticdb-default-save-directory (var "semantic/"))
@@ -244,7 +249,8 @@ This variable has to be set before `no-littering' is loaded.")
 ;;; Third-party packages
 
     (setq ac-comphist-file                 (var "ac-comphist.el"))
-    (setq anaconda-mode-installation-directory (etc "anaconda-mode/"))
+    (setq amx-save-file                    (var "amx-save.el"))
+    (setq anaconda-mode-installation-directory (var "anaconda-mode/"))
     (setq async-byte-compile-log-file      (var "async-bytecomp.log"))
     (eval-after-load 'bbdb
       `(make-directory ,(var "bbdb/") t))
@@ -258,6 +264,7 @@ This variable has to be set before `no-littering' is loaded.")
     (eval-after-load 'company-statistics
       `(make-directory ,(var "company/") t))
     (setq company-statistics-file          (var "company/statistics.el"))
+    (setq elbank-data-file                 (var "elbank-data.el"))
     (eval-after-load 'elfeed
       `(make-directory ,(var "elfeed/") t))
     (setq elfeed-db-directory              (var "elfeed/db/"))
@@ -275,12 +282,14 @@ directories."
     (eval-after-load 'emojify
       `(make-directory ,(var "emojify/") t))
     (setq emojify-emojis-dir               (var "emojify/"))
+    (setq geben-temporary-file-directory   (var "geben/"))
     (eval-after-load 'geiser
       `(make-directory ,(var "geiser/") t))
     (setq geiser-repl-history-filename     (var "geiser/repl-history"))
     (eval-after-load 'helm
       `(make-directory ,(var "helm/") t))
     (setq helm-adaptive-history-file       (var "helm/adaptive-history.el"))
+    (setq helm-backup-path                 (var "helm/backup/"))
     (setq helm-github-stars-cache-file     (var "helm/github-stars-cache.el"))
     (setq historian-save-file              (var "historian-save.el"))
     (setq indium-workspace-file            (var "indium/workspaces.el"))
@@ -292,12 +301,16 @@ directories."
     (setq jabber-history-dir               (var "jabber/history"))
     (eval-after-load 'jabber
       `(make-directory ,(var "jabber/history/") t))
+    (setq keyfreq-file                     (var "keyfreq.el"))
+    (setq keyfreq-file-lock                (var "keyfreq.lock"))
     (eval-after-load 'lookup
       `(make-directory ,(etc "lookup/") t))
+    (setq litable-list-file                (var "litable-list.el"))
     (setq lookup-init-directory            (etc "lookup/"))
     (setq magithub-dir                     (var "magithub/"))
     (setq magithub-cache-file              (var "magithub/cache.el"))
     (setq mc/list-file                     (var "mc-list.el"))
+    (setq meghanada-server-install-dir     (var "meghanada/"))
     (setq multi-compile-history-file       (var "multi-compile-history.el"))
     ;; The value of this variable MUST NOT end with ".el" but the
     ;; actual file name MUST end with ".el".  Use "git blame" for
@@ -315,6 +328,7 @@ directories."
       `(make-directory ,(var "projectile/") t))
     (setq projectile-cache-file            (var "projectile/cache.el"))
     (setq projectile-known-projects-file   (var "projectile/known-projects.el"))
+    (setq pyim-dcache-directory            (var "pyim/dcache/"))
     (setq quack-dir                        (var "quack/"))
     (setq request-storage-directory        (var "request/storage/"))
     (setq rmh-elfeed-org-files             (list (var "elfeed/rmh-elfeed.org")))

@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/emacscollective/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 20180108.305
+;; Package-Version: 20180111.947
 
 ;; This file is not part of GNU Emacs.
 
@@ -301,6 +301,8 @@ directories."
     (setq jabber-history-dir               (var "jabber/history"))
     (eval-after-load 'jabber
       `(make-directory ,(var "jabber/history/") t))
+    (setq keyfreq-file                     (var "keyfreq.el"))
+    (setq keyfreq-file-lock                (var "keyfreq.lock"))
     (eval-after-load 'lookup
       `(make-directory ,(etc "lookup/") t))
     (setq litable-list-file                (var "litable-list.el"))
@@ -326,6 +328,7 @@ directories."
       `(make-directory ,(var "projectile/") t))
     (setq projectile-cache-file            (var "projectile/cache.el"))
     (setq projectile-known-projects-file   (var "projectile/known-projects.el"))
+    (setq pyim-dcache-directory            (var "pyim/dcache/"))
     (setq quack-dir                        (var "quack/"))
     (setq request-storage-directory        (var "request/storage/"))
     (setq rmh-elfeed-org-files             (list (var "elfeed/rmh-elfeed.org")))
