@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: http://github.com/bbatsov/zenburn-emacs
-;; Package-Version: 20171216.1027
+;; Package-Version: 20180111.43
 ;; Version: 2.5
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -299,6 +299,9 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(company-scrollbar-bg ((t (:background ,zenburn-bg+2))))
    `(company-preview ((t (:background ,zenburn-green+2))))
    `(company-preview-common ((t (:foreground ,zenburn-green+2 :background ,zenburn-bg-1))))
+;;;;; company-quickhelp
+   `(company-quickhelp-color-background ,zenburn-bg+1)
+   `(company-quickhelp-color-foreground ,zenburn-fg)
 ;;;;; bm
    `(bm-face ((t (:background ,zenburn-yellow-1 :foreground ,zenburn-bg))))
    `(bm-fringe-face ((t (:background ,zenburn-yellow-1 :foreground ,zenburn-bg))))
@@ -848,6 +851,12 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(magit-section-highlight           ((t (:background ,zenburn-bg+05))))
    `(magit-section-heading             ((t (:foreground ,zenburn-yellow :weight bold))))
    `(magit-section-heading-selection   ((t (:foreground ,zenburn-orange :weight bold))))
+
+   `(magit-diff-added-highlight ((t (:background ,zenburn-green))))
+   `(magit-diff-removed-highlight ((t (:background ,zenburn-red-3))))
+   `(magit-diff-added ((t (:background ,zenburn-green-1))))
+   `(magit-diff-removed ((t (:background ,zenburn-red-4))))
+
    `(magit-diff-file-heading           ((t (:weight bold))))
    `(magit-diff-file-heading-highlight ((t (:background ,zenburn-bg+05  :weight bold))))
    `(magit-diff-file-heading-selection ((t (:background ,zenburn-bg+05
@@ -1157,6 +1166,16 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(reb-match-1 ((t (:foreground ,zenburn-bg :background ,zenburn-blue))))
    `(reb-match-2 ((t (:foreground ,zenburn-bg :background ,zenburn-orange))))
    `(reb-match-3 ((t (:foreground ,zenburn-bg :background ,zenburn-red))))
+;;;;; realgud
+   `(realgud-overlay-arrow1 ((t (:foreground ,zenburn-green))))
+   `(realgud-overlay-arrow2 ((t (:foreground ,zenburn-yellow))))
+   `(realgud-overlay-arrow3 ((t (:foreground ,zenburn-orange))))
+   `(realgud-bp-enabled-face ((t (:inherit error))))
+   `(realgud-bp-disabled-face ((t (:inherit secondary-selection))))
+   `(realgud-bp-line-enabled-face ((t (:foreground ,zenburn-bg :background ,zenburn-red))))
+   `(realgud-bp-line-disabled-face ((t (:inherit secondary-selection))))
+   `(realgud-line-number ((t (:foreground ,zenburn-yellow))))
+   `(realgud-backtrace-number ((t (:foreground ,zenburn-yellow, :weight bold))))
 ;;;;; regex-tool
    `(regex-tool-matched-face ((t (:background ,zenburn-blue-4 :weight bold))))
 ;;;;; rpm-mode

@@ -2,8 +2,8 @@
 
 ;; Authors: stardiviner <numbchild@gmail.com>
 ;; Package-Requires: ((emacs "24.4") (org "9") (cider "0.16.0") (dash "2.12.0"))
-;; Package-Version: 20180106.2121
-;; Package-X-Original-Version: 1.0
+;; Package-Version: 20180111.210
+;; Package-X-Original-Version: 1.1
 ;; Keywords: tools
 ;; homepage: https://github.com/stardiviner/ob-clojure-literate
 
@@ -166,6 +166,58 @@ Don't auto jack in by default for not rude."
                  (lambda (cons) (if (eq (car cons) :session) t cons))
                  org-babel-default-header-args:clojure)))
     ))
+
+;;; Support `org-babel-initiate-session' / [C-c C-v z] to initialize Clojure session.
+
+(defun org-babel-clojure-initiate-session (&optional session _params)
+  "Initiate a session named SESSION according to PARAMS."
+  (when (and session (not (string= session "none")))
+    (save-window-excursion
+      (unless (org-babel-comint-buffer-livep session)
+        ;; CIDER jack-in to the Clojure project directory.
+        (cond
+         ((eq org-babel-clojure-backend 'cider)
+          (require 'cider)
+          (let ((session-buffer (save-window-excursion
+                                  (cider-jack-in t)
+                                  (current-buffer))))
+            (if (org-babel-comint-buffer-livep session-buffer)
+                (progn (sit-for .25) session-buffer))))
+         ((eq org-babel-clojure-backend 'slime)
+          (error "Session evaluation with SLIME is not supported"))
+         (t
+          (error "Session initiate failed")))
+        )
+      (get-buffer session)
+      )))
+
+(defun org-babel-prep-session:clojure (session params)
+  "Prepare SESSION according to the header arguments specified in PARAMS."
+  (let* ((session (org-babel-clojure-initiate-session session))
+         (var-lines (org-babel-variable-assignments:clojure params)))
+    (when session
+      (org-babel-comint-in-buffer session
+        (mapc (lambda (var)
+                (insert var) (comint-send-input nil t)
+		            (org-babel-comint-wait-for-output session)
+		            (sit-for .1) (goto-char (point-max))) var-lines)))
+    session))
+
+(defun org-babel-clojure-var-to-clojure (var)
+  "Convert src block's `VAR' to Clojure variable."
+  ;; TODO: reference `org-babel-python-var-to-python'
+  )
+
+(defun org-babel-variable-assignments:clojure (params)
+  "Return a list of Clojure statements assigning the block's variables in `PARAMS'."
+  (mapcar
+   (lambda (pair)
+     (format "(def %s %s)"
+             (car pair)
+             ;; (org-babel-clojure-var-to-clojure (cdr pair))
+             (cdr pair)))
+   (org-babel--get-vars params)))
+
 
 (defvar ob-clojure-literate-mode-map
   (let ((map (make-sparse-keymap)))
