@@ -6,14 +6,12 @@
 ;; Maintainer: André Riemann <andre.riemann@web.de>
 ;; Created: 2007-09-14
 ;; Keywords: convenience
-;; Package-Version: 20170830.948
-;; Package-X-Original-Version: 20151001.634
-;; Package-X-Original-Version: 20150302.831
+;; Package-Version: 20180112.755
 
 ;; URL: https://github.com/andre-r/centered-cursor-mode.el
 ;; Compatibility: tested with GNU Emacs 23.0, 24, 26
-;; Version: 0.5.5
-;; Last-Updated: 2017-08-30
+;; Version: 0.5.7
+;; Last-Updated: 2018-01-12
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -59,6 +57,11 @@
 ;; - more bugs?
 
 ;;; Change Log:
+;; 2018-01-12 andre-r
+;;   * #3: Centering does not take line-height into account
+;;     - added new function for calculating visible lines
+;;   * #2: Bug with collapsed lines (eg. org-mode)
+;;     - used count-screen-lines instead of count-lines
 ;; 2017-08-30 chrm
 ;;   * Fixed a bug with recentering at end of file
 ;; 2015-10-01 Hinrik Örn Sigurðsson <hinrik.sig@gmail.com>
@@ -143,12 +146,18 @@ jumping to the center."
   :tag "Ignored commands"
   :type '(repeat (symbol :tag "Command")))
 
-(defcustom ccm-vpos-init '(round (window-text-height) 2)
+;;;###autoload
+(defun ccm-visible-text-lines ()
+  "Visible text lines"
+  (/ (- (window-pixel-height) (window-header-line-height) (window-mode-line-height))
+     (default-line-height)))
+
+(defcustom ccm-vpos-init '(round (ccm-visible-text-lines) 2)
   "This is the screen line position where the cursor initially stays."
   :group 'centered-cursor
   :tag "Vertical cursor position"
-  :type '(choice (const :tag "Center" (round (window-text-height) 2))
-                 (const :tag "Golden ratio" (round (* 21 (window-text-height)) 34))
+  :type '(choice (const :tag "Center" (round (ccm-visible-text-lines) 2))
+                 (const :tag "Golden ratio" (round (* 21 (ccm-visible-text-lines)) 34))
                  (integer :tag "Lines from top" :value 10)))
 (make-variable-buffer-local 'ccm-vpos-init)
 
@@ -228,7 +237,7 @@ behaviour with automatic recentering."
     ;;(message "%S" mods)
     (if amt
         (setq amt (or (cdr amt)
-                      (- (window-text-height)
+                      (- (ccm-visible-text-lines)
                          next-screen-context-lines)))
       (let ((list-elt mouse-wheel-scroll-amount))
         (while (consp (setq amt (pop list-elt))))))
@@ -251,7 +260,7 @@ buffer. This version actually moves the cursor with
 `previous-line'. Since with centered-cursor-mode the cursor is in
 a fixed position the movement appears as page up."
   (interactive "P")
-  (let ((amt (or arg (- (window-text-height)
+  (let ((amt (or arg (- (ccm-visible-text-lines)
                         next-screen-context-lines))))
     (forward-line (- amt))))
 
@@ -261,7 +270,7 @@ This version actually moves the cursor with `previous-line'.
 Since with centered-cursor-mode the cursor is in a fixed position
 the movement appears as page up."
   (interactive "P")
-  (let ((amt (or arg (- (window-text-height)
+  (let ((amt (or arg (- (ccm-visible-text-lines)
                         next-screen-context-lines))))
     (forward-line amt)))
 
@@ -278,9 +287,9 @@ is set."
         ;; see pos-visible-in-window-p
         (vpos-max (if (< ccm-vpos 0)
                       -1
-                    (- (window-text-height) 1)))
+                    (- (ccm-visible-text-lines) 1)))
         (vpos-min (if (< ccm-vpos 0)
-                      (- (window-text-height))
+                      (- (ccm-visible-text-lines))
                     0)))
     (setq ccm-vpos
           (cond
@@ -317,14 +326,14 @@ the center. Just the variable ccm-vpos is set."
           (let* ((current-line
                   (if (< ccm-vpos 0)
                       ;; one-based, from bottom, negative
-                      (- (count-lines (point)
+                      (- (count-screen-lines (point)
                                       ;; window-end is sometimes < 0
                                       ;; when opening a help buffer
                                       (if (> (window-end) 0)
                                           (window-end)
                                         1)))
                     ;; zero-based, from top, positive
-                    (+ (count-lines (window-start) (point))
+                    (+ (count-screen-lines (window-start) (point))
                        ;; count-lines returns different value in column 0
                        (if (= (current-column) 0) 0 -1))))
                  (diff (- ccm-vpos current-line))
@@ -335,7 +344,7 @@ the center. Just the variable ccm-vpos is set."
 
             (let* ((bottom-vpos (if (< ccm-vpos 0)
                                     (- ccm-vpos)
-                                  (- (window-text-height) ccm-vpos)))
+                                  (- (ccm-visible-text-lines) ccm-vpos)))
                    (correction (save-excursion
                                  (if (or (= (point) (point-max))
                                          (progn
@@ -347,7 +356,7 @@ the center. Just the variable ccm-vpos is set."
                                             ))
                    ;; lines from point to end of buffer
                    (bottom-lines (if window-is-at-bottom
-                                     (+ (count-lines (point) (point-max))
+                                     (+ (count-screen-lines (point) (point-max))
                                         correction))))
 
               ;; only animate if the point was moved rather far away
@@ -385,7 +394,7 @@ the center. Just the variable ccm-vpos is set."
                                          (- bottom-lines)
                                          (if (< ccm-vpos 0)
                                              current-line
-                                           (- (- (window-text-height) current-line)))
+                                           (- (- (ccm-visible-text-lines) current-line)))
                                          (* (/ diff (abs diff)) (- step-size)))))
                         (cdr (reverse (number-sequence
                                        ccm-vpos
