@@ -3,8 +3,8 @@
 ;; Copyright (C) 2017
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
-;; Version: 0.6
-;; Package-Version: 20171229.1712
+;; Version: 0.7
+;; Package-Version: 20180111.1523
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.4") (loop "1.3") (dash "2.13.0") (s "1.11.0") (f "0.18.2"))
 ;; URL: https://github.com/Wilfred/suggest.el
@@ -69,7 +69,6 @@
    ;; Built-in functions that create lists.
    #'make-list
    #'number-sequence
-   #'mapcar
    ;; Sequence functions
    #'elt
    #'aref
@@ -77,6 +76,7 @@
    #'cl-first
    #'cl-second
    #'cl-third
+   #'cl-list*
    ;; dash.el list functions.
    #'-non-nil
    #'-slice
@@ -122,12 +122,6 @@
    #'-first-item
    #'-last-item
    #'-butlast
-   #'-map
-   #'-mapcat
-   ;; dash.el folding/unfolding
-   #'-reduce
-   #'-reduce-r
-   #'-iterate
    ;; alist functions
    #'assoc
    #'alist-get
@@ -228,7 +222,6 @@
    #'symbol-value
    #'symbol-file
    #'intern
-   #'read
    ;; Converting between types
    #'string-to-list
    #'string-to-number
@@ -271,7 +264,16 @@
    #'ignore
    )
   "Functions that suggest will consider.
-These functions must not produce side effects.
+
+These functions must not produce side effects, and must not be
+higher order functions.
+
+Side effects are obviously bad: we don't want to call
+`delete-file' with arbitrary strings!
+
+Higher order functions are any functions that call `funcall' or
+`apply'. These are not safe to call with arbitrary symbols, but
+see `suggest-funcall-functions'.
 
 The best functions for examples generally take a small number of
 arguments, and no arguments are functions. For other functions,
@@ -281,6 +283,23 @@ Likewise, we avoid predicates of one argument, as those generally
 need multiple examples to ensure they do what the user wants.
 
 See also `suggest-extra-args'.")
+
+(defvar suggest-funcall-functions
+  (list
+   ;; Higher order list functions.
+   #'mapcar
+   ;; When called with a symbol, read will call it.
+   #'read
+   ;; dash.el higher order list functions.
+   #'-map
+   #'-mapcat
+   ;; dash.el folding/unfolding
+   #'-reduce
+   #'-reduce-r
+   #'-iterate
+   )
+  "Pure functions that may call `funcall'. We will consider
+consider these, but only with arguments that are known to be safe." )
 
 (defvar suggest-extra-args
   (list
@@ -335,7 +354,12 @@ produce good results. If a function isn't explicitly mentioned,
 we look up `t' instead.")
 
 (defun suggest--safe (fn args)
-  "Is FN safe to call with ARGS?"
+  "Is FN safe to call with ARGS?
+
+Safety here means that we:
+
+* don't have any side effects, and
+* don't crash Emacs."
   (not
    (or
     ;; Due to Emacs bug #25684, string functions that call
@@ -356,7 +380,21 @@ we look up `t' instead.")
          (consp (car args)))
     ;; Work around https://github.com/magnars/dash.el/issues/241
     (and (memq fn '(-interleave -zip))
-         (null args)))))
+         (null args))
+    (and (memq fn suggest-funcall-functions) ;
+         ;; TODO: what about circular lists?
+         ;; 
+         ;; Does apply even handle that nicely? It looks like apply
+         ;; tries to get the length of the list and hangs until C-g.
+         (format-proper-list-p args)
+         (--any (or
+                 ;; Don't call any higher order functions with symbols that
+                 ;; aren't known to be safe.
+                 (and (symbolp it) (not (memq it suggest-functions)))
+                 ;; Don't allow callable objects (interpreted or
+                 ;; byte-compiled function objects).
+                 (functionp it))
+                args)))))
 
 (defface suggest-heading
   '((((class color) (background light)) :foreground "DarkGoldenrod4" :weight bold)
@@ -684,7 +722,8 @@ than their values."
         this-iteration
         intermediates
         (intermediates-count 0)
-        (value-occurrences (make-hash-table :test #'equal)))
+        (value-occurrences (make-hash-table :test #'equal))
+        (funcs (append suggest-functions suggest-funcall-functions)))
     ;; Setup: no function calls, all permutations of our inputs.
     (setq this-iteration
           (-map (-lambda ((values . literals))
@@ -696,7 +735,7 @@ than their values."
     (catch 'done
       (dotimes (iteration suggest--search-depth)
         (catch 'done-iteration
-          (dolist (func suggest-functions)
+          (dolist (func funcs)
             (loop-for-each item this-iteration
               (let ((literals (plist-get item :literals))
                     (values (plist-get item :values))

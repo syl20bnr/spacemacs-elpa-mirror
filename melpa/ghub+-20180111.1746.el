@@ -6,7 +6,7 @@
 ;; Keywords: extensions, multimedia, tools
 ;; Homepage: https://github.com/vermiculus/ghub-plus
 ;; Package-Requires: ((emacs "25") (ghub "1.2") (apiwrap "0.3"))
-;; Package-Version: 20171203.1627
+;; Package-Version: 20180111.1746
 ;; Package-X-Original-Version: 0.2
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -957,6 +957,11 @@ notifications (until you comment or get @mentioned once more)."
   "Post a comment to an issue"
   "issues/comments/#create-a-comment"
   (repo issue) "/repos/:repo.owner.login/:repo.name/issues/:issue.number/comments")
+
+(defapiget-ghubp "/repos/:owner/:repo/commits"
+  "List commits on a repository"
+  "repos/commits/#list-commits-on-a-repository"
+  (repo) "/repos/:repo.owner.login/:repo.name/commits")
 
 (defun ghubp-url-parse (url)
   "Parse URL for its type and API callback.

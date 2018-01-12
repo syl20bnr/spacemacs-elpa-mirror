@@ -4,9 +4,9 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180107.728
+;; Package-Version: 20180111.1504
 ;; Keywords: help, lisp
-;; Version: 0.6
+;; Version: 0.7
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -789,7 +789,11 @@ buffer."
       ;;
       ;; Bind `auto-mode-alist' to nil, so we open the buffer in
       ;; `fundamental-mode' if it isn't already open.
-      (let (auto-mode-alist)
+      (let (auto-mode-alist
+            ;; Don't both setting buffer-local variables, it's
+            ;; annoying to prompt the user since we immediately
+            ;; discard the buffer.
+            enable-local-variables)
         (setq buf (find-file-noselect (find-library-name path))))
 
       (unless (-contains-p initial-buffers buf)
@@ -801,7 +805,8 @@ buffer."
       ;; table for searching.
       (when opened
         (with-current-buffer buf
-          (delay-mode-hooks (normal-mode))))
+          (let (enable-local-variables)
+            (delay-mode-hooks (normal-mode t)))))
 
       ;; Based on `find-function-noselect'.
       (with-current-buffer buf
@@ -1344,7 +1349,7 @@ escapes that are used by `substitute-command-keys'."
               ;; TODO: Only do this if the function is advised.
               (setq docstring (helpful--skip-advice docstring)))))
       (setq docstring
-            (documentation-property sym 'variable-documentation)))
+            (documentation-property sym 'variable-documentation t)))
     docstring))
 
 (defun helpful--read-symbol (prompt predicate)
