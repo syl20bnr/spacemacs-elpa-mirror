@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/pamparam
-;; Package-Version: 20171217.551
+;; Package-Version: 20180111.1014
 ;; Version: 0.0.0
 ;; Package-Requires: ((emacs "24.3") (lispy "0.26.0") (worf "0.1.0") (hydra "0.13.4"))
 ;; Keywords: outlines, hypermedia, flashcards, memory
@@ -125,7 +125,14 @@ Q - the quality of the answer:
     str))
 
 (defun pamparam-save-buffer ()
-  (write-file (buffer-file-name)))
+  (write-file (buffer-file-name))
+  (pamparam-card-abbreviate))
+
+(defun pamparam-card-abbreviate ()
+  (let ((fname (file-name-nondirectory (buffer-file-name))))
+    (when (> (length fname) 60)
+      (rename-buffer
+       (concat "card-" (substring fname 0 6) ".org")))))
 
 (defun pamparam-card-score (score &optional actual-answer)
   (let* ((card-file (file-name-nondirectory (buffer-file-name)))
@@ -498,6 +505,11 @@ When called interactively, use today's schedule file."
       (unless (= 0 (call-process-shell-command cmd))
         (error "Command failed: %s" cmd)))))
 
+(defun pamparam-slurp (f)
+  (with-temp-buffer
+    (insert-file-contents f)
+    (buffer-string)))
+
 (defun pamparam-update-card (card-front card-body repo-dir)
   (let* ((card-front-id (md5 card-front))
          (card-body-id (md5 card-body))
@@ -685,12 +697,107 @@ repository, while the new card will start with empty metadata."
     (let ((save-silently t))
       (pamparam-save-buffer))))
 
+(defun pamparam-current-progress ()
+  (with-current-buffer (pamparam-todo-file)
+    (let ((n-done 0)
+          (n-todo 0)
+          (n-review 0))
+      (save-excursion
+        (goto-char (point-min))
+        (while (re-search-forward "^\\* \\(TODO\\|DONE\\|REVIEW\\)" nil t)
+          (let ((ms (match-string 1)))
+            (cond ((string= ms "TODO")
+                   (cl-incf n-todo))
+                  ((string= ms "DONE")
+                   (cl-incf n-done))
+                  ((string= ms "REVIEW")
+                   (cl-incf n-review)))))
+        (list n-done n-todo n-review)))))
+
+(defun pamparam-mode-line ()
+  (cl-destructuring-bind (n-done n-todo n-review)
+      (pamparam-current-progress)
+    (format "(pam: %d/%d+%d)" n-done n-todo n-review)))
+
 (defvar pamparam-day-limit 50
   "Limit for today's repetitions.
 All cards above this number that would be scheduled for today
 will instead be moved to tomorrow.")
 
+(defun pamparam-merge-schedules (from to)
+  "Copy items FROM -> TO. Delete FROM."
+  (let ((from-lines
+         (cl-remove-if-not
+          (lambda (s) (string-match-p "^\\*" s))
+          (split-string (pamparam-slurp from) "\n" t)))
+        (to-lines (split-string (pamparam-slurp to) "\n" t)))
+    (pamparam-spit
+     (mapconcat #'identity
+                (append to-lines from-lines)
+                "\n")
+     to)
+    (delete-file from)))
+
+(defun pamparam-carryover-year-maybe ()
+  "Move e.g. years/2018/*.org to . if the current year is 2018."
+  (let* ((today (calendar-current-date))
+         (year (nth 2 today))
+         (default-directory (pamparam-default-directory))
+         (year-directory (format "years/%d" year)))
+    (when (file-exists-p year-directory)
+      (let ((year-files (directory-files year-directory nil "org$")))
+        (dolist (file year-files)
+          (let ((file-from (expand-file-name file year-directory))
+                (file-to (expand-file-name file)))
+            (if (file-exists-p file-to)
+                (pamparam-merge-schedules file-from file-to)
+              (rename-file file-from file-to)))))
+      (delete-directory year-directory))))
+
+(defun pamparam-check ()
+  "Check the repo for inconsistencies and fix them.
+
+Check that all existing cards are scheduled, and only once.
+Check that there are no scheduled unexisting cards."
+  (interactive)
+  (let* ((all-cards (pamparam-cards (pamparam-default-directory)))
+         (all-schedules (delq nil
+                              (mapcar
+                               (lambda (s)
+                                 (when (string-match "file:\\([^]]+\\)" s)
+                                   (match-string 1 s)))
+                               (pamparam-cmd-to-list
+                                "git grep '^\\* TODO'"))))
+         (unscheduled-cards (cl-set-difference
+                             all-cards
+                             all-schedules
+                             :test #'equal))
+         (unexisting-cards (cl-set-difference
+                            all-schedules
+                            all-cards
+                            :test #'equal))
+         (all-schedules-nodups (delete-dups (copy-sequence all-schedules)))
+         (duplicate-cards (cl-set-difference all-schedules all-schedules-nodups)))
+    (with-current-buffer (find-file-noselect "pampile.org")
+      (goto-char (point-min))
+      (dolist (card unscheduled-cards)
+        (insert (format "* TODO [[file:%s][%s]]\n"
+                        card (nth 1 (split-string card "[-.]")))))
+      (save-buffer))
+    (dolist (card (append duplicate-cards unexisting-cards))
+      (let ((occurences (pamparam-cmd-to-list (format "git grep %s" card))))
+        (dolist (occ (if (= (length occurences) 1)
+                         occurences
+                       (cdr occurences)))
+          (with-current-buffer (find-file-noselect (car (split-string occ ":")))
+            (goto-char (point-min))
+            (re-search-forward card)
+            (delete-region (line-beginning-position)
+                           (1+ (line-end-position)))
+            (save-buffer)))))))
+
 (defun pamparam-reschedule-maybe ()
+  (pamparam-carryover-year-maybe)
   (let ((today (calendar-current-date)))
     (unless (and pamparam-last-rechedule
                  (<
@@ -852,6 +959,14 @@ If you have no more cards scheduled for today, use `pamparam-pull'."
   (when pamparam-card-mode
     (if (eq major-mode 'org-mode)
         (progn
+          (pamparam-card-abbreviate)
+          (setq-local mode-line-format
+                      `((pamparam-card-mode
+                         (:eval (pamparam-mode-line)))
+                        ,@(assq-delete-all
+                           'pamparam-card-mode
+                           (default-value 'mode-line-format))))
+          (force-mode-line-update t)
           (setq org-cycle-global-status 'contents)
           (goto-char (point-min))
           (pamparam-card-answer)

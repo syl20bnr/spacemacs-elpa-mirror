@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2017 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.6.20170821
-;; Package-Version: 20170821.400
+;; Version: 2.7.20180112
+;; Package-Version: 20180112.340
 ;; Created: 18 April 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: languages, convenience, css, color
@@ -261,17 +261,14 @@ If there's text selection, work on that region.
 Else, work on whole buffer.
 WARNING: not 99% robust. This command work by doing string replacement. Can get wrong if you have a string or comment. Worst will happen is whitespace gets inserted/removed in string or comment.
 URL `http://ergoemacs.org/emacs/elisp_css_compressor.html'
-Version 2016-10-02"
+Version 2017-12-15"
   (interactive
    (if (use-region-p)
        (list (region-beginning) (region-end))
      (list (point-min) (point-max))))
   (save-restriction
     (narrow-to-region @begin @end)
-    (xah-css--replace-regexp-pairs-region
-     (point-min)
-     (point-max)
-     '(["  +" " "]))
+
     (xah-css--replace-pairs-region
      (point-min)
      (point-max)
@@ -285,6 +282,12 @@ Version 2016-10-02"
        [": " ":"]
        [";}" "}"]
        ["}" "}\n"]
+       ))
+    (xah-css--replace-regexp-pairs-region
+     (point-min)
+     (point-max)
+     '(["  +" " "]
+       ["\t\t*" " "]
        ))))
 
 (defun xah-css-expand-to-multi-lines (&optional @begin @end)
@@ -567,9 +570,7 @@ Version 2016-10-02"
 
 (defvar xah-css-unit-names nil "List of CSS unite names.")
 (setq xah-css-unit-names
- '("px" "pt" "pc" "cm" "mm" "in" "em" "rem" "ex" "%" "deg"
-"ch"
-) )
+ '("px" "pt" "pc" "cm" "mm" "in" "em" "rem" "ex" "%" "deg" "ch" "vw" "vh" "vmin" "vmax" ) )
 
 (defvar xah-css-value-kwds nil "List of CSS value names")
 (setq
@@ -974,6 +975,7 @@ Version 2016-10-24"
     ("bbs" "border-bottom-style" xah-css--ahf)
     ("bbw" "border-bottom-width" xah-css--ahf)
     ("bc" "background-color" xah-css--ahf)
+    ("bgc" "background-color" xah-css--ahf)
     ("bi" "background-image" xah-css--ahf)
     ("blc" "border-left-color" xah-css--ahf)
     ("bls" "border-left-style" xah-css--ahf)
@@ -1038,23 +1040,23 @@ Version 2016-10-24"
     ("translateY" "translateY(▮)" xah-css--ahf)
     ("translateZ" "translateZ(▮)" xah-css--ahf)
 
-    ("zwhite" "#ffffff" xah-css--ahf)
-    ("zsilver" "#c0c0c0" xah-css--ahf)
-    ("zgray" "#808080" xah-css--ahf)
-    ("zblack" "#000000" xah-css--ahf)
-    ("zred" "#ff0000" xah-css--ahf)
-    ("zmaroon" "#800000" xah-css--ahf)
-    ("zyellow" "#ffff00" xah-css--ahf)
-    ("zolive" "#808000" xah-css--ahf)
-    ("zlime" "#00ff00" xah-css--ahf)
-    ("zgreen" "#008000" xah-css--ahf)
-    ("zaqua" "#00ffff" xah-css--ahf)
-    ("zteal" "#008080" xah-css--ahf)
-    ("zblue" "#0000ff" xah-css--ahf)
-    ("znavy" "#000080" xah-css--ahf)
-    ("zfuchsia" "#ff00ff" xah-css--ahf)
-    ("zpurple" "#800080" xah-css--ahf)
-    ("zorange" "#ffa500" xah-css--ahf)
+    ("white3" "#ffffff" xah-css--ahf)
+    ("silver3" "#c0c0c0" xah-css--ahf)
+    ("gray3" "#808080" xah-css--ahf)
+    ("black3" "#000000" xah-css--ahf)
+    ("red3" "#ff0000" xah-css--ahf)
+    ("maroon3" "#800000" xah-css--ahf)
+    ("yellow3" "#ffff00" xah-css--ahf)
+    ("olive3" "#808000" xah-css--ahf)
+    ("lime3" "#00ff00" xah-css--ahf)
+    ("green3" "#008000" xah-css--ahf)
+    ("aqua3" "#00ffff" xah-css--ahf)
+    ("teal3" "#008080" xah-css--ahf)
+    ("blue3" "#0000ff" xah-css--ahf)
+    ("navy3" "#000080" xah-css--ahf)
+    ("fuchsia3" "#ff00ff" xah-css--ahf)
+    ("purple3" "#800080" xah-css--ahf)
+    ("orange3" "#ffa500" xah-css--ahf)
 
     ("font-size" "font-size: 2rem;" xah-css--ahf)
     ("width" "width: 200px;" xah-css--ahf)
@@ -1069,7 +1071,7 @@ Version 2016-10-24"
     ("padding-bottom" "padding-bottom: 1rem;" xah-css--ahf)
     ("padding-right" "padding-right: 1rem;" xah-css--ahf)
     ("display" "display: inline-block;" xah-css--ahf)
-    ("background-color" "background-color: black;" xah-css--ahf)
+    ("background-color" "background-color: silver;" xah-css--ahf)
     ("text-align" "text-align: left right center justify;" xah-css--ahf)
     ("position" "position: static absolute fixed relative initial inherit;" xah-css--ahf)
     ("font-weight" "font-weight: normal bold;" xah-css--ahf)
@@ -1099,7 +1101,13 @@ Version 2016-10-24"
     ("cursor" "cursor: pointer;" xah-css--ahf)
     ("visibility" "visibility: hidden visible;" xah-css--ahf)
     ("list-style-type" "list-style-type: disc square circle decimal lower-roman upper-roman lower-alpha upper-alpha;" xah-css--ahf)
-    ("background-size" "background-size: 500px" xah-css--ahf))
+    ("background-size" "background-size: 500px" xah-css--ahf)
+    ("box-shadow" "box-shadow: 3px 3px 4px 2px grey" xah-css--ahf)
+
+    ("margin" "margin: 0.5rem;" xah-css--ahf)
+    ("padding" "padding: 0.5rem;" xah-css--ahf)
+    ;;
+)
 
   "abbrev table for `xah-css-mode'"
   )
