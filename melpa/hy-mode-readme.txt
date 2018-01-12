@@ -1501,7 +1501,7 @@ Core
 
 Spacemacs users please see spacemacs-hy, all bindings defined there
 (set-keymap-parent hy-mode-map lisp-mode-shared-map)
-(define-key hy-mode-map (kbd "C-c C-e") 'hy-shell-start-or-switch-to-shell)
+(define-key hy-mode-map (kbd "C-c C-z") 'hy-shell-start-or-switch-to-shell)
 (define-key hy-mode-map (kbd "C-c C-b") 'hy-shell-eval-buffer)
 
 (define-key hy-mode-map (kbd "C-c C-t") 'hy-insert-pdb)
