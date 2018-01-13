@@ -1,13 +1,11 @@
 ;;; helm-lastpass.el --- Helm interface of LastPass  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2017  Chunyang Xu
+;; Copyright (C) 2017, 2018  Xu Chunyang
 
-;; Author: Chunyang Xu <mail@xuchunyang.me>
-;; URL: https://github.com/xuchunyang/helm-lastpass
-;; Package-Version: 20170914.142
-;; Package-Requires: ((emacs "24.1") (helm-core "2.8.1") (csv "2.1"))
-;; Keywords: LastPass
-;; Version: 0
+;; Author: Xu Chunyang <mail@xuchunyang.me>
+;; Homepage: https://github.com/xuchunyang/helm-lastpass
+;; Package-Requires: ((emacs "24.4") (helm-core "2.0") (csv "2.1"))
+;; Package-Version: 20180113.512
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -20,30 +18,11 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
-;; About:
-;;
-;; This package uses lpass(1) (the LastPass command line tool) to let you access
-;; your LastPass with Helm.
-
-;; Prerequisites:
-;;
-;; - lpass(1), see https://github.com/lastpass/lastpass-cli
-
-;; Installation:
-;;
-;; [![MELPA](https://melpa.org/packages/helm-lastpass-badge.svg)](https://melpa.org/#/helm-lastpass)
-;;
-;; This package is available from MELPA, thus you can easily install it with
-;; `package.el'. If you decide to install it manually, you are on your own
-;; (Don't forget the dependencies, i.e., helm and csv).
-
-;; Usage:
-;;
-;; - `M-x helm-lastpass'
+;; Helm interface of LastPass.
 
 ;;; Code:
 

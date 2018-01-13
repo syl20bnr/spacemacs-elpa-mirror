@@ -7,7 +7,7 @@
 ;; Copyleft (Ↄ) 2013, Joe Bloggs, all rites reversed.
 ;; Created: 2013-12-23 00:06:16
 ;; Version: 1.0
-;; Package-Version: 20171231.549
+;; Package-Version: 20180113.516
 ;; Last-Updated: 2016-05-26 02:40:00
 ;;           By: Joe Bloggs
 ;; URL: https://github.com/vapniks/gnus-summary-ext
@@ -386,7 +386,8 @@ When called interactively an element of  `gnus-summary-ext-mime-actions' will be
   (interactive (let ((all (gnus-summary-ext-mime-actions-prompt)))
 		 (list (cddr all) (first all) (second all))))
   (gnus-article-check-buffer)
-  (let* ((n 2))
+  (goto-char (next-single-property-change (point) 'gnus-part))
+  (let* ((n (get-text-property (point) 'gnus-part)))
     (while (gnus-article-goto-part n)
       (let* ((handle (get-text-property (point) 'gnus-data))
 	     (size (buffer-size (mm-handle-buffer handle)))
