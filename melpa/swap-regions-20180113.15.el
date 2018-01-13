@@ -4,7 +4,7 @@
 
 ;; Author: Xu Chunyang <mail@xuchunyang.me>
 ;; Keywords: convenience
-;; Package-Version: 20180112.2158
+;; Package-Version: 20180113.15
 ;; Homepage: https://github.com/xuchunyang/swap-regions.el
 ;; Package-Requires: ((emacs "24.3"))
 
@@ -38,6 +38,14 @@
 
 (require 'cl-lib)
 
+(defgroup swap-regions nil
+  "Swap text in regions."
+  :group 'convenience)
+
+(defface swap-regions-selection '((t (:inherit secondary-selection)))
+  "Face marking the previous selected region."
+  :group 'swap-regions)
+
 ;;;###autoload
 (defun swap-regions (buf-A reg-A-beg reg-A-end buf-B reg-B-beg reg-B-end)
   "Swap text in two regions."
@@ -59,8 +67,7 @@
            reg-A-end (region-end))
      (deactivate-mark)
      (setq buf-A-overlay (make-overlay reg-A-beg reg-A-end))
-     ;; TODO: Make the face customizable
-     (overlay-put buf-A-overlay 'face 'region)
+     (overlay-put buf-A-overlay 'face 'swap-regions-selection)
      ;; Select the second region
      (let (message-log-max)
        (message "Select the second region (%s)" hint))
