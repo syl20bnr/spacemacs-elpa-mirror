@@ -4,9 +4,9 @@
 
 ;; Author: Xu Chunyang <mail@xuchunyang.me>
 ;; Keywords: convenience
-;; Package-Version: 20180112.1010
+;; Package-Version: 20180112.2158
 ;; Homepage: https://github.com/xuchunyang/swap-regions.el
-;; Package-Requires: ((emacs "24"))
+;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is not part of GNU Emacs.  However, it is distributed under the
 ;; same license.
@@ -31,7 +31,7 @@
 ;;   M-x swap-regions [select the first region] C-M-c [select the second region] C-M-c
 ;;
 ;; Note that C-M-c runs `exit-recursive-edit' which is bound
-;; by default in vanilla Emacs. And while you are selecting regions, you
+;; by default in vanilla Emacs.  And while you are selecting regions, you
 ;; can run any Emacs command thanks to (info "(elisp) Recursive Editing")
 
 ;;; Code:
@@ -40,12 +40,14 @@
 
 ;;;###autoload
 (defun swap-regions (buf-A reg-A-beg reg-A-end buf-B reg-B-beg reg-B-end)
-  "Swap contents in two regions."
+  "Swap text in two regions."
   (interactive
    (let ((hint
           (substitute-command-keys
            "Finish `\\[exit-recursive-edit]', abort \
 `\\[abort-recursive-edit]'"))
+         buf-A reg-A-beg reg-A-end
+         buf-B reg-B-beg reg-B-end
          buf-A-overlay)
      ;; Select the first region
      (unless (use-region-p)
