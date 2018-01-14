@@ -5,7 +5,7 @@
 
 ;; Author: PythonNut <pythonnut@pythonnut.com>
 ;; Keywords: convenience, evil
-;; Package-Version: 20180102.2115
+;; Package-Version: 20180113.2254
 ;; Version: 20160228
 ;; URL: https://github.com/pythonnut/evil-easymotion
 ;; Package-Requires: ((emacs "24") (avy "0.3.0") (cl-lib "0.5"))
@@ -120,6 +120,7 @@
               (abs (- (point) (car pt)))
             most-positive-fixnum))))
 
+;;;###autoload
 (defun evilem--collect (func &optional
                              scope
                              all-windows
