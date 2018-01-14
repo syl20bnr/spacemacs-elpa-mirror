@@ -3,7 +3,7 @@ Usage in Emacs,
  If you use native Windows Emacs, install Cygwin or MSYS2.
 
 Usage in Shell,
-  emacs --batch -l ~/.emacs.d/init.el
+  Emacs --batch -l ~/.emacs.d/init.el
         -l ~/any-directory-you-prefer/elpa-mirror.el \
         --eval='(setq elpamr-default-output-directory "~/myelpa")' \
         --eval='(elpamr-create-mirror-for-installed)
