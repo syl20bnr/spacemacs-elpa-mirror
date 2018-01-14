@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2017 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.7.20180112
-;; Package-Version: 20180112.340
+;; Version: 2.7.20180114
+;; Package-Version: 20180114.506
 ;; Created: 18 April 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: languages, convenience, css, color
@@ -998,6 +998,7 @@ Version 2016-10-24"
     ("h" "height" xah-css--ahf)
     ("lh" "line-height" xah-css--ahf)
     ("lst" "list-style-type" xah-css--ahf)
+    ("m" "margin: 1rem;" xah-css--ahf)
     ("mb" "margin-bottom" xah-css--ahf)
     ("ml" "margin-left" xah-css--ahf)
     ("mr" "margin-right" xah-css--ahf)
@@ -1007,11 +1008,16 @@ Version 2016-10-24"
     ("pl" "padding-left" xah-css--ahf)
     ("pr" "padding-right" xah-css--ahf)
     ("pt" "padding-top" xah-css--ahf)
+    ("t" "top: 99px;" xah-css--ahf)
     ("ta" "text-align" xah-css--ahf)
     ("v" "visibility" xah-css--ahf)
     ("va" "vertical-align" xah-css--ahf)
     ("w" "width" xah-css--ahf)
     ("zi" "z-index" xah-css--ahf)
+    ("b" "border: solid thin gray;" xah-css--ahf)
+
+    ("max-width" "max-width: 17rem;" xah-css--ahf)
+    ("mw" "max-width: 17rem;" xah-css--ahf)
 
     ("border-radius" "border-radius: 1rem;" xah-css--ahf)
     ("border" "border: solid thin gray;" xah-css--ahf)
@@ -1076,7 +1082,7 @@ Version 2016-10-24"
     ("position" "position: static absolute fixed relative initial inherit;" xah-css--ahf)
     ("font-weight" "font-weight: normal bold;" xah-css--ahf)
     ("line-height" "line-height: 1.5;" xah-css--ahf)
-    ("font-family" "font-family: \"Arial\", \"Liberation Sans\", sans-serif;" xah-css--ahf)
+    ("font-family" "font-family: Arial, sans-serif;" xah-css--ahf)
     ("float" "float: none left right initial inherit;" xah-css--ahf)
     ("top" "top: 99px;" xah-css--ahf)
     ("border-bottom-style" "border-bottom-style: none hidden dotted dashed solid double groove ridge inset outset inherit initial unset;" xah-css--ahf)
@@ -1101,11 +1107,12 @@ Version 2016-10-24"
     ("cursor" "cursor: pointer;" xah-css--ahf)
     ("visibility" "visibility: hidden visible;" xah-css--ahf)
     ("list-style-type" "list-style-type: disc square circle decimal lower-roman upper-roman lower-alpha upper-alpha;" xah-css--ahf)
-    ("background-size" "background-size: 500px" xah-css--ahf)
-    ("box-shadow" "box-shadow: 3px 3px 4px 2px grey" xah-css--ahf)
-
+    ("background-size" "background-size: 500px;" xah-css--ahf)
+    ("box-shadow" "box-shadow: 3px 3px 4px 2px grey;" xah-css--ahf)
+    ("opacity" "opacity: 1;" xah-css--ahf)
     ("margin" "margin: 0.5rem;" xah-css--ahf)
     ("padding" "padding: 0.5rem;" xah-css--ahf)
+
     ;;
 )
 

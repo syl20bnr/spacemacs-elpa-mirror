@@ -4,7 +4,7 @@
 
 ;; Author: Tony Wang <wwwjfy@gmail.com>
 ;; Keywords: Fish, shell
-;; Package-Version: 0.1.2
+;; Package-Version: 20180114.445
 ;; Package-Requires: ((emacs "24"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -35,6 +35,18 @@
 ;;                              (add-hook 'before-save-hook 'fish_indent-before-save)))
 
 ;;; Code:
+
+(require 'cl-lib)
+
+(defgroup fish nil
+  "Fish shell support."
+  :group 'languages)
+
+(defcustom fish-indent-offset 4
+  "Default indentation offset for Fish."
+  :group 'fish
+  :type 'integer
+  :safe 'integerp)
 
 (unless (fboundp 'setq-local)
   (defmacro setq-local (var val)
@@ -230,7 +242,7 @@
 
    ;; Variable substitution
    `( ,(rx
-        symbol-start (group "$") (group (1+ (or alnum (syntax symbol)))) symbol-end)
+        (group "$") (group (1+ (or alnum (syntax symbol)))) symbol-end)
       (1 font-lock-string-face)
       (2 font-lock-variable-name-face))
 
@@ -298,7 +310,7 @@
       font-lock-builtin-face)
 
    ;; Numbers
-   `( ,(rx symbol-start (1+ (or digit (char ?.))) symbol-end)
+   `( ,(rx symbol-start (optional "-")(1+ (or digit (char ?.))) symbol-end)
       .
       font-lock-constant-face)))
 
@@ -308,21 +320,23 @@
     (modify-syntax-entry ?\n ">" tab)
     (modify-syntax-entry ?\" "\"\"" tab)
     (modify-syntax-entry ?\' "\"'" tab)
+    (modify-syntax-entry ?\\ "\\" tab)
+    (modify-syntax-entry ?$ "'" tab)
     tab)
   "Syntax table for `fish-mode'.")
 
 ;;; Indentation helpers
 
-(defvar fish/block-opening-terms
-  (mapconcat
-   'identity
-   '("\\<if\\>"
-     "\\<function\\>"
-     "\\<while\\>"
-     "\\<for\\>"
-     "\\<begin\\>"
-     "\\<switch\\>")
-   "\\|"))
+(defvar fish/block-opening-terms-re
+  (rx symbol-start
+      (or "if"
+          "function"
+          "while"
+          "for"
+          "begin"
+          "switch")
+      symbol-end)
+  "Regular expression matching block opening terms.")
 
 (defun fish/current-line ()
   "Return the line at point as a string."
@@ -336,18 +350,25 @@ For example, (fold F X '(1 2 3)) computes (F (F (F X 1) 2) 3)."
       (setq x2 (funcall f x2 (pop li))))
     x2))
 
-(defun fish/count-of-tokens-in-string (token token-to-ignore string)
-  (let ((count 0)
-        (pos 0))
-    (while pos
-      (if (and token-to-ignore
-               (string-match token-to-ignore string pos))
-          (setq pos (match-end 0)))
-      (if (string-match token string pos)
-          (setq pos (match-end 0)
-                count (+ count 1))
-        (setq pos nil)))
-    count))
+(defun fish/count-tokens-on-current-line (positive-re &optional negative-re)
+  "Return count of matches for POSITIVE-RE that do not also match NEGATIVE-RE on current line.
+POSITIVE-RE and NEGATIVE-RE are regular expressions."
+  (cl-flet ((count-matches (re)
+                           (save-excursion
+                             (cl-loop initially (goto-char (line-beginning-position))
+                                      while (re-search-forward re (line-end-position) t)
+                                      for syntax = (syntax-ppss)
+                                      count (not (or
+                                                  ;; String
+                                                  (nth 3 syntax)
+                                                  ;; Comment
+                                                  (nth 4 syntax)))))))
+    (let ((positive-count (count-matches positive-re))
+          (negative-count (when negative-re
+                            (count-matches negative-re))))
+      (if negative-re
+          (- positive-count negative-count)
+        positive-count))))
 
 (defun fish/at-comment-line? ()
   "Returns t if looking at comment line, nil otherwise."
@@ -358,12 +379,11 @@ For example, (fold F X '(1 2 3)) computes (F (F (F X 1) 2) 3)."
   (looking-at "[ \t]*$"))
 
 (defun fish/count-of-opening-terms ()
-  (fish/count-of-tokens-in-string fish/block-opening-terms
-                                  "\\<else if\\>"
-                                  (fish/current-line)))
+  (fish/count-tokens-on-current-line fish/block-opening-terms-re
+                                     (rx symbol-start "else if" symbol-end)))
 
 (defun fish/count-of-end-terms ()
-  (fish/count-of-tokens-in-string "\\<end\\>" nil (fish/current-line)))
+  (fish/count-tokens-on-current-line (rx symbol-start "end" symbol-end) nil))
 
 (defun fish/at-open-block? ()
   "Returns t if line contains block opening term
@@ -388,7 +408,7 @@ For example, (fold F X '(1 2 3)) computes (F (F (F X 1) 2) 3)."
 
 (defun fish/line-contains-open-switch-term? ()
   "Returns t if line contains switch term, nil otherwise."
-  (> (fish/count-of-tokens-in-string "\\<switch\\>" nil (fish/current-line))
+  (> (fish/count-tokens-on-current-line (rx symbol-start "switch" symbol-end) nil)
      (fish/count-of-end-terms)))
 
 ;;; Indentation
@@ -427,9 +447,9 @@ For example, (fold F X '(1 2 3)) computes (F (F (F X 1) 2) 3)."
 
          ;; found line that starts with 'else'
          ;; cur-indent is previous non-empty and non-comment line
-         ;; minus tab-width
+         ;; minus fish-indent-offset
          ((looking-at "[ \t]*else\\>")
-          (setq cur-indent (- (fish-get-normal-indent) tab-width)))
+          (setq cur-indent (- (fish-get-normal-indent) fish-indent-offset)))
 
          ;; default case
          ;; cur-indent equals to indentation level of previous
@@ -467,13 +487,13 @@ For example, (fold F X '(1 2 3)) computes (F (F (F X 1) 2) 3)."
        ;; so increase indentation level
        ((fish/at-open-block?)
         (setq cur-indent (+ (current-indentation)
-                            tab-width)
+                            fish-indent-offset)
               not-indented nil))
 
        ;; found line that starts with 'else' or 'case'
        ;; so increase indentation level
        ((looking-at "[ \t]*\\(else\\|case\\)\\>")
-        (setq cur-indent (+ (current-indentation) tab-width)
+        (setq cur-indent (+ (current-indentation) fish-indent-offset)
               not-indented nil))
 
        ;; found a line that starts with 'end'
@@ -488,7 +508,7 @@ For example, (fold F X '(1 2 3)) computes (F (F (F X 1) 2) 3)."
        ;; so we need to decrease indentation level
        ((fish/at-open-end?)
         (setq cur-indent (- (current-indentation)
-                            tab-width)
+                            fish-indent-offset)
               not-indented nil))
 
        ;; default case
@@ -562,7 +582,7 @@ For example, (fold F X '(1 2 3)) computes (F (F (F X 1) 2) 3)."
        ;; so cur-indent equials to increased
        ;; indentation level of current line
        ((fish/line-contains-open-switch-term?)
-        (setq cur-indent (+ (current-indentation) tab-width)
+        (setq cur-indent (+ (current-indentation) fish-indent-offset)
               not-indented nil))
 
        ;; do nothing
