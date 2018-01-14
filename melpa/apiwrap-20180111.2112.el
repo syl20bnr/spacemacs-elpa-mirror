@@ -1,13 +1,13 @@
 ;;; apiwrap.el --- api-wrapping macros     -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2017  Sean Allred
+;; Copyright (C) 2017-2018  Sean Allred
 
 ;; Author: Sean Allred <code@seanallred.com>
 ;; Keywords: tools, maint, convenience
 ;; Homepage: https://github.com/vermiculus/apiwrap.el
 ;; Package-Requires: ((emacs "25"))
-;; Package-Version: 20171202.1653
-;; Package-X-Original-Version: 0.3
+;; Package-Version: 20180111.2112
+;; Package-X-Original-Version: 0.4
 
 ;; This file is not part of GNU Emacs.
 
@@ -195,7 +195,7 @@ structure
 See the documentation of `apiwrap-resolve-api-params' for more
 details on that behavior.
 
-FUNCTIONS is a list of override configuration parameters.  Values
+CONFIG is a list of override configuration parameters.  Values
 set here (notably those explicitly set to nil) will take
 precedence over the defaults provided to `apiwrap-new-backend'."
          (upcase (symbol-name method))
@@ -249,12 +249,12 @@ appropriately handle all of these symbols as a METHOD.")
       (let ((macrosym (apiwrap-gensym prefix method)))
         (push `(defmacro ,macrosym (resource doc link
                                              &optional objects internal-resource
-                                             &rest functions)
+                                             &rest config)
                  ,(apiwrap--docmacro name method)
                  (declare (indent defun) (doc-string 2))
                  (apiwrap-gendefun ,name ,prefix ',standard-parameters ',method
                                    resource doc link objects internal-resource
-                                   ',functions functions))
+                                   ',functions config))
               super-form)))
     super-form))
 
@@ -270,7 +270,7 @@ Otherwise, just return VALUE quoted."
         (funsym (apiwrap-gensym prefix method resource))
         resolved-resource-form form functions
         data-massage-func params-massage-func
-        primitive-func link-func around)
+        condition-case primitive-func link-func around)
 
     ;; Be smart about when configuration starts.  Neither `objects' nor
     ;; `internal-resource' can be keywords, so we know that if they
@@ -290,6 +290,7 @@ Otherwise, just return VALUE quoted."
 
     (setq internal-resource (or internal-resource resource)
           around (alist-get 'around functions)
+          condition-case (alist-get 'condition-case functions)
           primitive-func (alist-get 'request functions)
           data-massage-func (alist-get 'pre-process-data functions)
           params-massage-func (alist-get 'pre-process-params functions)
@@ -323,6 +324,14 @@ Otherwise, just return VALUE quoted."
         (error ":around must be a macro: %S" around))
       (setq form (macroexpand `(,around ,form))))
 
+    (when condition-case
+      (unless (and (listp condition-case)
+                   (cl-every #'listp condition-case)
+                   (cl-every (lambda (h) (get (car h) 'error-conditions)) ;is error
+                             condition-case))
+        (error ":condition-case must be a list of error handlers; see the documentation: %S" condition-case))
+      (setq form `(condition-case _ ,form ,@condition-case)))
+
     (let ((props `((prefix   . ,prefix)
                    (method   . ,method)
                    (endpoint . ,resource)
@@ -336,7 +345,7 @@ Otherwise, just return VALUE quoted."
             fn-form)
       (cons 'prog1 fn-form))))
 
-(defmacro apiwrap-new-backend (name prefix standard-parameters &rest functions)
+(defmacro apiwrap-new-backend (name prefix standard-parameters &rest config)
   "Define a new API backend.
 
 SERVICE-NAME is the name of the service this backend will wrap.
@@ -351,8 +360,7 @@ key of the alist is the parameter name (as a symbol) and its
 value is the documentation to insert in the docstring of
 resource-wrapping functions.
 
-FUNCTIONS is a list of arguments to configure the generated
-macros.
+CONFIG is a list of arguments to configure the generated macros.
 
   Required:
 
@@ -381,6 +389,21 @@ macros.
 
   Optional:
 
+    :around
+
+        Macro to wrap around the request form (which is passed as
+        the only argument).
+
+    :condition-case
+
+        List of error handlers of the form
+
+            ((CONDITION-NAME BODY...)
+             (CONDITION-NAME BODY...))
+
+        to appropriately deal with signals in the `:request'
+        primitive.  See also `condition-case'.
+
     :link
 
         Function to process an alist and return a link.  This
@@ -398,29 +421,24 @@ macros.
 
         The default is `apiwrap-stdgenlink'.
 
-    :pre-process-params
-
-        Function to process request parameters before the request
-        is passed to the `:request' function.
-
     :pre-process-data
 
         Function to process request data before the request is
         passed to the `:request' function.
 
-    :around
+    :pre-process-params
 
-        Macro to wrap around the request form (which is passed as
-        the only argument)."
+        Function to process request parameters before the request
+        is passed to the `:request' function."
   (declare (indent 2))
   (let ((sname (cl-gensym)) (sprefix (cl-gensym))
-        (sstdp (cl-gensym)) (sfuncs (cl-gensym)))
+        (sstdp (cl-gensym)) (sconfig (cl-gensym)))
     `(let ((,sname ,name)
            (,sprefix ,prefix)
            (,sstdp ,standard-parameters)
-           (,sfuncs ',(mapcar (lambda (f) (cons (car f) (eval (cdr f))))
-                              (apiwrap-plist->alist functions))))
-       (mapc #'eval (apiwrap-genmacros ,sname ,sprefix ,sstdp ,sfuncs)))))
+           (,sconfig ',(mapcar (lambda (f) (cons (car f) (eval (cdr f))))
+                               (apiwrap-plist->alist config))))
+       (mapc #'eval (apiwrap-genmacros ,sname ,sprefix ,sstdp ,sconfig)))))
 
 (provide 'apiwrap)
 ;;; apiwrap.el ends here
