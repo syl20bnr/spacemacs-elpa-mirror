@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180110.1107
+;; Package-Version: 20180113.711
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1662,6 +1662,11 @@ Does not list the currently checked out one."
   :type 'boolean
   :group 'ivy)
 
+(defcustom counsel-preselect-current-file nil
+  "When non-nil, preselect current file in list of candidates."
+  :type 'boolean
+  :group 'ivy)
+
 (defcustom counsel-find-file-ignore-regexp nil
   "A regexp of files to ignore while in `counsel-find-file'.
 These files are un-ignored if `ivy-text' matches them.  The
@@ -1712,6 +1717,20 @@ Skip some dotfiles unless `ivy-text' requires them."
           (find-file (expand-file-name x ivy--directory)))
       (find-file (expand-file-name x ivy--directory)))))
 
+(defun counsel--preselect-file ()
+  "Return candidate to preselect during filename completion.
+The preselect behaviour can be customized via user options
+`counsel-find-file-at-point' and
+`counsel-preselect-current-file', which see."
+  (or
+    (when counsel-find-file-at-point
+      (require 'ffap)
+      (let ((f (ffap-guesser)))
+        (when f (expand-file-name f))))
+    (and counsel-preselect-current-file
+         buffer-file-name
+         (file-name-nondirectory buffer-file-name))))
+
 ;;;###autoload
 (defun counsel-find-file (&optional initial-input)
   "Forward to `find-file'.
@@ -1721,11 +1740,7 @@ When INITIAL-INPUT is non-nil, use it in the minibuffer during completion."
             :matcher #'counsel--find-file-matcher
             :initial-input initial-input
             :action #'counsel-find-file-action
-            :preselect (when counsel-find-file-at-point
-                         (require 'ffap)
-                         (let ((f (ffap-guesser)))
-                           (when (and f (not (ffap-url-p f)))
-                             (expand-file-name f))))
+            :preselect (counsel--preselect-file)
             :require-match 'confirm-after-completion
             :history 'file-name-history
             :keymap counsel-find-file-map
@@ -2146,10 +2161,7 @@ INITIAL-DIRECTORY, if non-nil, is used as the root directory for search."
               :action (lambda (x)
                         (with-ivy-window
                           (find-file (expand-file-name x ivy--directory))))
-              :preselect (when counsel-find-file-at-point
-                           (require 'ffap)
-                           (let ((f (ffap-guesser)))
-                             (when f (expand-file-name f))))
+              :preselect (counsel--preselect-file)
               :require-match 'confirm-after-completion
               :history 'file-name-history
               :keymap counsel-find-file-map
