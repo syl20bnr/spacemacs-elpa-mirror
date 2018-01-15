@@ -9,7 +9,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20180110.1213
+;; Package-Version: 20180115.709
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -151,9 +151,10 @@ will be returned.  Otherwise, use
 
 (defun dante-status ()
   "Return dante's status for the current source buffer."
-  (if (dante-get-var 'dante-callback)
-      (format "busy(%s)" (1+ (length (dante-get-var 'dante-queue))))
-    (format "%s" (dante-get-var 'dante-state))))
+  (s-join ":"
+   (-non-nil (list (format "%s" (dante-get-var 'dante-state))
+                   (when (dante-get-var 'dante-callback)
+                     (format "busy(%s)" (1+ (length (dante-get-var 'dante-queue)))))))))
 
 ;;;###autoload
 (define-minor-mode dante-mode
@@ -308,18 +309,18 @@ process."
   :start 'dante-check
   :modes '(haskell-mode literate-haskell-mode))
 
-(defconst dante-err-regexp "^\\([A-Z]?:?[^ \n:][^:\n\r]+\\):\\([0-9()-:]+\\): \\(.*\\(\n[ ]+.*\\)*\\)")
 (defun dante-fly-message (string checker buffer temp-file)
   "Convert the STRING message to flycheck format.
 CHECKER and BUFFER are added if the error is in TEMP-FILE."
   (let* ((_ (string-match dante-err-regexp string))
          (file (dante-canonicalize-path (match-string 1 string)))
          (location-raw (match-string 2 string))
-         (msg (s-trim (match-string 3 string)))
+         (err-type (match-string 3 string))
+         (msg (s-trim-right (match-string 4 string)))
          (type (cond
-                ((string-match-p "^warning: \\[-W\\(typed-holes\\|deferred-\\(type-errors\\|out-of-scope-variables\\)\\)\\]" msg) 'error)
-                ((string-match-p "^warning:" msg) 'warning)
-                ((string-match-p "^splicing " msg) 'splice)
+                ((string-match-p "^warning: \\[-W\\(typed-holes\\|deferred-\\(type-errors\\|out-of-scope-variables\\)\\)\\]" err-type) 'error)
+                ((string-match-p "^warning:" err-type) 'warning)
+                ((string-match-p "^splicing " err-type) 'splice)
                 (t 'error)))
          (location (dante-parse-error-location location-raw))
          (line (plist-get location :line))
@@ -611,27 +612,32 @@ Called in process buffer."
     (dante-cps-let ((input (dante-async-read)))
       (dante-wait-for-prompt (concat acc input) cont))))
 
+(defconst dante-err-regexp "^\\([A-Z]?:?[^ \n:][^:\n\r]+\\):\\([0-9()-:]+\\): \\(.*\\)\n\\(\\([ ]+.*\n\\)*\\)")
 (defun dante-load-loop (acc err-msgs cont)
   "Parse the output of load command.
 ACC umulate input and ERR-MSGS.  When done call (CONT status error-messages loaded-modules)."
+  (setq dante-state 'loading)
   (let* ((success "^Ok, modules loaded:[ ]*\\([^\n ]*\\)\\( (.*)\\)?\.")
          (progress "^\\[\\([0-9]*\\) of \\([0-9]*\\)\\] Compiling \\([^ ]*\\).*")
-         (i (string-match (s-join "\\|" (list dante-ghci-prompt success dante-err-regexp progress)) acc)))
-    (if i (let* ((m (match-string 0 acc))
-                 (acc (substring acc (match-end 0))))
-            (cond ((string-match dante-ghci-prompt m)
-                   (setq dante-state 'ghc-reports-error)
-                   (funcall cont 'failed (nreverse err-msgs) (match-string 1 m)))
-                  ((string-match progress m)
-                   (setq dante-state (list 'compiling (match-string 3 m)))
-                   (dante-load-loop acc err-msgs cont))
-                  ((string-match success m)
-                   (dante-cps-let (((_ loaded-mods) (dante-wait-for-prompt acc)))
-                     (setq dante-state (list 'loaded loaded-mods))
-                     (funcall cont 'ok (nreverse err-msgs) loaded-mods)))
-                  (t (dante-load-loop acc (cons m err-msgs) cont))))
-      (dante-cps-let ((input (dante-async-read)))
-        (dante-load-loop (concat acc input) err-msgs cont)))))
+         (i (string-match (s-join "\\|" (list dante-ghci-prompt success dante-err-regexp progress)) acc))
+         (m (when i (match-string 0 acc)))
+         (rest (when i (substring acc (match-end 0)))))
+    (cond ((and m (string-match dante-ghci-prompt m))
+           (setq dante-state 'ghc-reports-error)
+           (funcall cont 'failed (nreverse err-msgs) (match-string 1 m)))
+          ((and m (string-match progress m))
+           (setq dante-state (list 'compiling (match-string 3 m)))
+           (dante-load-loop rest err-msgs cont))
+          ((and m (string-match success m))
+           (dante-cps-let (((_ loaded-mods) (dante-wait-for-prompt acc)))
+             (setq dante-state (list 'loaded loaded-mods))
+             (funcall cont 'ok (nreverse err-msgs) loaded-mods)))
+          ((and m (> (length rest) 0) (/= (elt rest 0) ? )) ;; make sure we're matching a full error message
+           (message "m = %s" m)
+           (message "rest = %s" rest)
+           (dante-load-loop rest (cons m err-msgs) cont))
+          (t (dante-cps-let ((input (dante-async-read)))
+               (dante-load-loop (concat acc input) err-msgs cont))))))
 
 (defun dante-async-write (buffer cmd cont)
   "Write to dante BUFFER the CMD and call CONT."

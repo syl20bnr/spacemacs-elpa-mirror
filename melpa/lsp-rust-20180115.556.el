@@ -4,7 +4,7 @@
 
 ;; Author: Vibhav Pant <vibhavp@gmail.com>
 ;; Version: 1.0
-;; Package-Version: 20171128.331
+;; Package-Version: 20180115.556
 ;; Package-Requires: ((lsp-mode "3.0") (rust-mode "0.3.0"))
 ;; Keywords: rust
 ;; URL: https://github.com/emacs-lsp/lsp-rust
@@ -32,6 +32,7 @@
 (require 'cl-lib)
 (require 'json)
 (require 'font-lock)
+(require 'xref)
 
 (defvar lsp-rust--config-options (make-hash-table))
 (defvar lsp-rust--diag-counters (make-hash-table))
@@ -46,6 +47,18 @@ executable.
 If this variable is nil, lsp-rust will try to use the RLS located
 at the environment variable RLS_ROOT, if set."
   :type '(repeat (string)))
+
+(defun lsp-rust-find-implementations ()
+  "List all implementation blocks for a trait, struct, or enum at point."
+  (interactive)
+  (lsp--send-changes lsp--cur-workspace)
+  (let* ((impls (lsp--send-request (lsp--make-request
+                                    "rustDocument/implementations"
+                                    (lsp--text-document-position-params))))
+         (items (lsp--locations-to-xref-items impls)))
+    (if items
+        (xref--show-xrefs items nil)
+      (message "No implementation found for: %s" (thing-at-point 'symbol t)))))
 
 (defun lsp-rust--rls-command ()
   "Return the command used to start the RLS for defining the LSP Rust client."

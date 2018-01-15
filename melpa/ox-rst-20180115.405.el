@@ -18,7 +18,7 @@
 
 ;; Author: Masanao Igarashi <syoux2@gmail.com>
 ;; Keywords: org, rst, reST, reStructuredText
-;; Package-Version: 20180115.220
+;; Package-Version: 20180115.405
 ;; Version: 0.2
 ;; URL: https://github.com/masayuko/ox-rst
 ;; Package-Requires: ((emacs "24.4") (org "8.2.4"))
@@ -751,7 +751,7 @@ holding export options."
                                                  (cdr lines)))))
                    )
                (concat id fntext)))
-		  definitions "\n\n")))))))
+		  definitions "\n")))))))
 
 
 ;;;; Italic
