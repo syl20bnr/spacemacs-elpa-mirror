@@ -26,7 +26,7 @@ undim together.  In my configuration I combine this package with
 `global-hl-line-mode` so that it's also clear which window is
 active.
 
-Users of light themes may need to increase `dimmer-percent` in
+Users of light themes may need to increase `dimmer-fraction` in
 order to see the effect.
 
 Usage:
@@ -36,7 +36,7 @@ Usage:
 
 Customization:
 
-`dimmer-percent` controls the degree to which unselected buffers
+`dimmer-fraction` controls the degree to which unselected buffers
 are dimmed.  Range is 0.0 - 1.0, and default is 0.20.  Increase
 value if you like the other buffers to be more dim.
 
