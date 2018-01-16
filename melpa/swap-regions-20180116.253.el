@@ -1,10 +1,10 @@
 ;;; swap-regions.el --- Swap text in two regions  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2016, 2018  Chunyang Xu
+;; Copyright (C) 2016, 2018  Xu Chunyang
 
 ;; Author: Xu Chunyang <mail@xuchunyang.me>
 ;; Keywords: convenience
-;; Package-Version: 20180114.936
+;; Package-Version: 20180116.253
 ;; Homepage: https://github.com/xuchunyang/swap-regions.el
 ;; Package-Requires: ((emacs "24.3"))
 ;; Version: 0
@@ -101,9 +101,10 @@
       (insert reg-B-str))))
 
 (provide 'swap-regions)
-;;; swap-regions.el ends here
 
 ;; Local Variables:
 ;; fill-column: #x50
 ;; indent-tabs-mode: nil
 ;; End:
+
+;;; swap-regions.el ends here

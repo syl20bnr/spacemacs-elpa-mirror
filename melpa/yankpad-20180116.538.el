@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand
 ;; URL: http://github.com/Kungsgeten/yankpad
-;; Package-Version: 20180115.2319
+;; Package-Version: 20180116.538
 ;; Version: 1.70
 ;; Keywords: abbrev convenience
 ;; Package-Requires: ((emacs "24"))
@@ -322,7 +322,7 @@ Only works if the symbol is found in the first matching group of `yankpad-expand
   (interactive)
   (unless yankpad-category
     (yankpad-set-category))
-  (let* ((symbol (symbol-at-point))
+  (let* ((symbol (symbol-name (symbol-at-point)))
          (bounds (bounds-of-thing-at-point 'symbol))
          (snippet-prefix (concat symbol yankpad-expand-separator)))
     (when (and symbol yankpad-category)

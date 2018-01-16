@@ -1,11 +1,11 @@
 ;;; -*- indent-tabs-mode: nil -*-
 ;;; monroe.el --- Yet another client for nREPL
 
-;; Copyright (c) 2014-2017 Sanel Zukan
+;; Copyright (c) 2014-2018 Sanel Zukan
 ;;
 ;; Author: Sanel Zukan <sanelz@gmail.com>
 ;; URL: http://www.github.com/sanel/monroe
-;; Package-Version: 20180108.224
+;; Package-Version: 20180116.759
 ;; Version: 0.4.0
 ;; Keywords: languages, clojure, nrepl, lisp
 
@@ -393,13 +393,21 @@ will force connection closing, which will as result call '(monroe-sentinel)'."
   (interactive)
   (monroe-eval-region (point-min) (point-max)))
 
-(defun monroe-eval-expression-at-point ()
-  "Figure out expression at point and send it for evaluation."
+(defun monroe-eval-defun ()
+  "Figure out top-level expression and send it to evaluation."
   (interactive)
   (save-excursion
     (end-of-defun)
     (let ((end (point)))
       (beginning-of-defun)
+      (monroe-eval-region (point) end))))
+
+(defun monroe-eval-expression-at-point ()
+  "Figure out expression at point and send it for evaluation."
+  (interactive)
+  (save-excursion
+    (let ((end (point)))
+      (backward-sexp)
       (monroe-eval-region (point) end))))
 
 (defun monroe-eval-namespace ()
@@ -536,7 +544,8 @@ as path can be remote location. For remote paths, use absolute path."
 ;; keys for interacting with Monroe REPL buffer
 (defvar monroe-interaction-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map "\C-c\C-c" 'monroe-eval-expression-at-point)
+    (define-key map "\C-c\C-c" 'monroe-eval-defun)
+    (define-key map "\C-c\C-e" 'monroe-eval-expression-at-point)
     (define-key map "\C-c\C-r" 'monroe-eval-region)
     (define-key map "\C-c\C-k" 'monroe-eval-buffer)
     (define-key map "\C-c\C-n" 'monroe-eval-namespace)

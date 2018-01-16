@@ -1,11 +1,11 @@
 ;;; mwim.el --- Switch between the beginning/end of line or code  -*- lexical-binding: t -*-
 
-;; Copyright © 2015, 2016 Alex Kost
+;; Copyright © 2015, 2016, 2018 Alex Kost
 
 ;; Author: Alex Kost <alezost@gmail.com>
 ;; Created: 9 Jan 2015
 ;; Version: 0.3
-;; Package-Version: 20161004.647
+;; Package-Version: 20180116.740
 ;; URL: https://github.com/alezost/mwim.el
 ;; Keywords: convenience
 
@@ -97,7 +97,8 @@ for complex cases."
   :group 'mwim)
 
 (defcustom mwim-beginning-position-functions
-  '(mwim-code-beginning
+  '(mwim-block-beginning
+    mwim-code-beginning
     mwim-line-beginning
     mwim-comment-beginning)
   "List of functions used by `\\[mwim-beginning]' command."
@@ -105,9 +106,20 @@ for complex cases."
   :group 'mwim)
 
 (defcustom mwim-end-position-functions
-  '(mwim-code-end
+  '(mwim-block-end
+    mwim-code-end
     mwim-line-end)
   "List of functions used by `\\[mwim-end]' command."
+  :type '(repeat function)
+  :group 'mwim)
+
+(defcustom mwim-position-functions
+  '(mwim-line-beginning
+    mwim-code-beginning
+    mwim-comment-beginning
+    mwim-code-end
+    mwim-line-end)
+  "List of functions used by `\\[mwim]' command."
   :type '(repeat function)
   :group 'mwim)
 
@@ -287,6 +299,22 @@ Use `mwim-end-of-line-function'."
   "Return position in the end of code."
   (mwim-point-at (mwim-end-of-code)))
 
+(defun mwim-block-beginning ()
+  "Return position in the beginning of code or comment.
+If the point is inside a comment, return beginning position of
+the current comment, otherwise - of the code."
+  (if (mwim-current-comment-beginning)
+      (mwim-comment-beginning)
+    (mwim-code-beginning)))
+
+(defun mwim-block-end ()
+  "Return position in the end of code or line.
+If the point is inside a comment, return end position of
+the current comment, otherwise - of the code."
+  (if (mwim-current-comment-beginning)
+      (mwim-line-end)
+    (mwim-code-end)))
+
 
 ;;; Moving commands
 
@@ -412,15 +440,11 @@ Interactively, with prefix argument, move to the previous position."
 ;;;###autoload
 (defun mwim (&optional arg)
   "Switch between various positions on the current line.
-
-Available positions are defined by using both
-`mwim-beginning-position-functions' and
-`mwim-end-position-functions'.
-
+Available positions are defined by `mwim-position-functions'
+variable.
 Interactively, with prefix argument, move to the previous position."
   (interactive "^P")
-  (mwim-move-to-next-position (append mwim-beginning-position-functions
-                                      mwim-end-position-functions)
+  (mwim-move-to-next-position mwim-position-functions
                               (if arg #'> #'<)))
 
 (provide 'mwim)
