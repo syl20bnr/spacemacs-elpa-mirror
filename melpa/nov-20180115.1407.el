@@ -4,8 +4,8 @@
 
 ;; Author: Vasilij Schneidermann <mail@vasilij.de>
 ;; URL: https://github.com/wasamasa/nov.el
-;; Package-Version: 20171104.1641
-;; Version: 0.2.1
+;; Package-Version: 20180115.1407
+;; Version: 0.2.2
 ;; Package-Requires: ((dash "2.12.0") (esxml "0.3.3") (emacs "24.4"))
 ;; Keywords: hypermedia, multimedia, epub
 
@@ -146,18 +146,18 @@ Each alist item consists of the identifier and full path.")
     (rename-file item directory))
   (delete-directory child))
 
-(defun nov--fix-permissions (file-or-directory)
+(defun nov--fix-permissions (file-or-directory mode)
   (->> (file-modes file-or-directory)
-       (file-modes-symbolic-to-number "+r")
+       (file-modes-symbolic-to-number mode)
        (set-file-modes file-or-directory)))
 
 (defun nov-fix-permissions (directory)
   "Iterate recursively through DIRECTORY to fix its files."
-  (nov--fix-permissions directory)
+  (nov--fix-permissions directory "+rx")
   (dolist (file (nov-directory-files directory))
     (if (file-directory-p file)
         (nov-fix-permissions file)
-      (nov--fix-permissions file))))
+      (nov--fix-permissions file "+r"))))
 
 (defun nov-unzip-epub (directory filename)
   "Extract FILENAME into DIRECTORY.
@@ -213,8 +213,9 @@ If PARSE-XML-P is t, return the contents as parsed by libxml."
 
 (defun nov-epub-valid-p (directory)
   "Return t if DIRECTORY makes up a valid EPUB document."
-  (and (nov-mimetype-valid-p directory)
-       (nov-container-valid-p directory)))
+  (when (not (nov-mimetype-valid-p directory))
+    (message "Invalid mimetype"))
+  (nov-container-valid-p directory))
 
 (defun nov-content-version (content)
   "Return the EPUB version for CONTENT."
