@@ -1,5 +1,3 @@
-The code of `grab-mac-link.el' is inspired by `org-mac-link.el'
-
 The following applications are supportted:
 - Chrome
 - Safari
