@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Version: 0.7
-;; Package-Version: 20180111.1523
+;; Package-Version: 20180115.1439
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.4") (loop "1.3") (dash "2.13.0") (s "1.11.0") (f "0.18.2"))
 ;; URL: https://github.com/Wilfred/suggest.el
@@ -37,6 +37,11 @@
 (require 'cl-extra) ;; cl-prettyprint
 (eval-when-compile
   (require 'cl-lib)) ;; cl-incf
+
+(defcustom suggest-insert-example-on-start t
+  "If t, insert example data in suggest buffer, else don't."
+  :group 'suggest
+  :type 'boolean)
 
 ;; See also `cl--simple-funcs' and `cl--safe-funcs'.
 (defvar suggest-functions
@@ -425,7 +430,8 @@ Safety here means that we:
     ;; Start the overlay after the ";; " bit.
     (let ((overlay (make-overlay (+ 3 start) end)))
       ;; Highlight the text in the heading.
-      (overlay-put overlay 'face 'suggest-heading))))
+      (overlay-put overlay 'face 'suggest-heading)))
+  (insert "\n"))
 
 (defun suggest--on-heading-p ()
   "Return t if point is on a heading."
@@ -466,6 +472,10 @@ Safety here means that we:
   "Find the keybinding for COMMAND in KEYMAP."
   (where-is-internal command keymap t))
 
+(defun suggest--insert-section-break ()
+  "Insert section break."
+  (insert "\n\n"))
+
 ;;;###autoload
 (defun suggest ()
   "Open a Suggest buffer that provides suggestions for the inputs
@@ -479,13 +489,22 @@ and outputs given."
     (suggest-mode)
 
     (suggest--insert-heading suggest--inputs-heading)
-    (insert "\n1\n2\n\n")
+    (when suggest-insert-example-on-start
+      (insert "1\n2"))
+
+    (suggest--insert-section-break)
+
     (suggest--insert-heading suggest--outputs-heading)
-    (insert "\n3\n\n")
+    (when suggest-insert-example-on-start
+      (insert "3"))
+
+    (suggest--insert-section-break)
+
     (suggest--insert-heading suggest--results-heading)
-    (insert "\n")
     ;; Populate the suggestions for 1, 2 => 3
-    (suggest-update)
+    (when suggest-insert-example-on-start
+      (suggest-update))
+
     ;; Put point on the first input.
     (suggest--nth-heading 1)
     (forward-line 1))
