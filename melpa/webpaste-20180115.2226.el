@@ -4,7 +4,7 @@
 
 ;; Author: Elis "etu" Hirwing
 ;; URL: https://github.com/etu/webpaste.el
-;; Package-Version: 20171025.956
+;; Package-Version: 20180115.2226
 ;; Package-X-Original-Version: 2.0.0
 ;; Version: 2.0.0
 ;; Keywords: convenience, comm, paste
@@ -157,6 +157,25 @@ the provider is created.  So to create a custom provider you should read up on
 the docs for `webpaste--provider'."
   :group 'webpaste
   :type 'alist)
+
+
+
+;; modified from https://emacs.stackexchange.com/a/33893/12534
+(defun webpaste--alist-set (key val alist)
+  "Set property KEY to VAL in ALIST. Return new alist.
+This creates the association if it is missing, and otherwise sets
+the cdr of the first matching association in the list. It does
+not create duplicate associations. Key comparison is done with
+`equal'.
+
+This method may mutate the original alist, but you still need to
+use the return value of this method instead of the original
+alist, to ensure correct results."
+  (let ((pair (assoc key alist)))
+    (if pair
+        (setcdr pair val)
+      (push (cons key val) alist)))
+  alist)
 
 
 
@@ -333,11 +352,16 @@ Optional params:
   ;; If we get a separator sent to the function, append it to the list of
   ;; separators for later use
   (when lang-uri-separator
-    (cl-pushnew (cons uri lang-uri-separator) webpaste--provider-separators))
+    (setq webpaste--provider-separators
+          (webpaste--alist-set
+           uri lang-uri-separator webpaste--provider-separators)))
 
   ;; Add pre-calculated list of webpaste lang alists
-  (cl-pushnew (cons uri (webpaste--get-lang-alist-with-overrides lang-overrides))
-              webpaste--provider-lang-alists)
+  (setq webpaste--provider-lang-alists
+        (webpaste--alist-set
+         uri
+         (webpaste--get-lang-alist-with-overrides lang-overrides)
+         webpaste--provider-lang-alists))
 
   (cl-function
    (lambda (text

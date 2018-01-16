@@ -1,11 +1,11 @@
 ;;; dimmer.el --- visually highlight the selected buffer
 
-;; Copyright (C) 2017 Neil Okamoto
+;; Copyright (C) 2017-2018 Neil Okamoto
 
 ;; Filename: dimmer.el
 ;; Author: Neil Okamoto
 ;; Version: 0.3.0-SNAPSHOT
-;; Package-Version: 20180114.1924
+;; Package-Version: 20180115.2047
 ;; Package-Requires: ((emacs "25"))
 ;; URL: https://github.com/gonewest818/dimmer.el
 ;; Keywords: faces, editing
@@ -25,13 +25,6 @@
 ;; The *direction* of dimming is computed on the fly.  For instance,
 ;; if you have a dark theme then the dimmed face is darker, and if you
 ;; have a light theme the dimmed face is lighter.
-;; 
-;; Unlike the 'hiwin' module which has a similar goal, this module
-;; does *not* change the color of the background in any way.  It only
-;; adjusts foregrounds.  In the underlying implementation we do not
-;; use overlays, and therefore we avoid some of the visual problems
-;; the hiwin module exhibits when highlighting interactive shells
-;; and/or repls.
 ;; 
 ;; Caveats:
 ;; 
@@ -131,42 +124,40 @@ color is brighter then we return t, else nil."
         (> (apply 'max bg) (apply 'max fg))
       (error "Cannot determine rgb values for face 'default"))))
 
-(defun dimmer-compute-rgb (c pct invert)
-  "Computes the color C when dimmed by percentage PCT.
+(defun dimmer-compute-rgb (c frac invert)
+  "Computes the color C when dimmed by fraction FRAC.
 When INVERT is true, make the value brighter rather than darker."
   (let ((rgb (color-name-to-rgb c)))
     (when rgb
       (apply 'color-rgb-to-hex
              (mapcar
               (if invert
-                  (lambda (x) (- 1.0 (* (- 1.0 x) (- 1.0 pct))))
-                (lambda (x) (* x (- 1.0 pct))))
+                  (lambda (x) (- 1.0 (* (- 1.0 x) (- 1.0 frac))))
+                (lambda (x) (* x (- 1.0 frac))))
               rgb)))))
 
-(defun dimmer-face-color (f pct invert)
+(defun dimmer-face-color (f frac invert)
   "Compute a dimmed version of the foreground color of face F.
-PCT is the amount of dimming where 0.0 is no change and 1.0 is
+FRAC is the amount of dimming where 0.0 is no change and 1.0 is
 maximum change.  When INVERT is not nil, invert the scaling
 for dark-on-light themes."
-  (let ((key (concat (symbol-name f) "-"
-                     (number-to-string pct)
-                     (if invert "-t" "-nil"))))
-    (or (gethash key dimmer-dimmed-faces)
-        (let ((fg (face-foreground f)))
-          (when fg  ; e.g. "(when-let* ((fg (...)))" in Emacs 26+
-            (let ((rgb (dimmer-compute-rgb fg pct invert)))
+  (let ((fg (face-foreground f)))
+    (when (and fg (color-defined-p fg))
+      (let ((key (format "%s-%f-%S" fg frac invert)))
+        (or (gethash key dimmer-dimmed-faces)
+            (let ((rgb (dimmer-compute-rgb fg frac invert)))
               (when rgb
                 (puthash key rgb dimmer-dimmed-faces)
                 rgb)))))))
 
-(defun dimmer-dim-buffer (buf pct invert)
+(defun dimmer-dim-buffer (buf frac invert)
   "Dim all the faces defined in the buffer BUF.
-PCT and INVERT controls the dimming as defined
+FRAC and INVERT controls the dimming as defined
 in ‘dimmer-face-color’."
   (with-current-buffer buf
     (unless dimmer-buffer-face-remaps
       (dolist (f (face-list))
-        (let ((c (dimmer-face-color f pct invert)))
+        (let ((c (dimmer-face-color f frac invert)))
           (when c  ; e.g. "(when-let* ((c (...)))" in Emacs 26
             (setq dimmer-buffer-face-remaps
                   (cons (face-remap-add-relative f :foreground c)
@@ -176,8 +167,7 @@ in ‘dimmer-face-color’."
   "Restore the un-dimmed faces in the buffer BUF."
   (with-current-buffer buf
     (when dimmer-buffer-face-remaps
-      (dolist (c dimmer-buffer-face-remaps)
-        (face-remap-remove-relative c))
+      (mapc 'face-remap-remove-relative dimmer-buffer-face-remaps)
       (setq dimmer-buffer-face-remaps nil))))
 
 (defun dimmer-filtered-buffer-list ()
@@ -237,14 +227,14 @@ in ‘dimmer-face-color’."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; debugging - call from *scratch*, ielm, or eshell
 
-(defun dimmer--debug-remaps (name &optional clear)
+(defun dimmer--debug-face-remapping-alist (name &optional clear)
   "Display 'face-remapping-alist' for buffer NAME (or clear if CLEAR)."
   (with-current-buffer name
     (if clear
         (setq face-remapping-alist nil)
       face-remapping-alist)))
 
-(defun dimmer--debug-hash (name &optional clear)
+(defun dimmer--debug-buffer-face-remaps (name &optional clear)
   "Display 'dimmer-buffer-face-remaps' for buffer NAME (or clear if CLEAR)."
   (with-current-buffer name
     (if clear
@@ -253,8 +243,8 @@ in ‘dimmer-face-color’."
 
 (defun dimmer--debug-reset (name)
   "Clear 'face-remapping-alist' and 'dimmer-buffer-face-remaps' for NAME."
-  (dimmer--debug-hash name t)
-  (dimmer--debug-remaps name t)
+  (dimmer--debug-face-remapping-alist name t)
+  (dimmer--debug-buffer-face-remaps name t)
   (redraw-display))
 
 (defun dimmer--dbg (label)

@@ -10,13 +10,6 @@ The *direction* of dimming is computed on the fly.  For instance,
 if you have a dark theme then the dimmed face is darker, and if you
 have a light theme the dimmed face is lighter.
 
-Unlike the 'hiwin' module which has a similar goal, this module
-does *not* change the color of the background in any way.  It only
-adjusts foregrounds.  In the underlying implementation we do not
-use overlays, and therefore we avoid some of the visual problems
-the hiwin module exhibits when highlighting interactive shells
-and/or repls.
-
 Caveats:
 
 This module makes use of the `face-remap-*` APIs in Emacs and these
