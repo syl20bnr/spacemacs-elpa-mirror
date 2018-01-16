@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.12
-;; Package-Version: 20180101.1803
+;; Package-Version: 20180116.854
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -324,6 +324,9 @@ Should accept the torrent ID as an argument, e.g. `transmission-torrent-id'.")
 
 (define-error 'transmission-failure "")
 
+(define-error 'transmission-misdirected
+  "Unrecognized hostname.  Check \"rpc-host-whitelist\"")
+
 (defvar transmission-timer nil
   "Timer for repeating `revert-buffer' in a visible Transmission buffer.")
 
@@ -374,7 +377,8 @@ update `transmission-session-id' and signal the error."
         (401 (signal 'transmission-unauthorized (list status)))
         (409 (when (search-forward (format "%s: " transmission-session-header))
                (setq transmission-session-id (read buffer))
-               (signal 'transmission-conflict (list status))))))))
+               (signal 'transmission-conflict (list status))))
+        (421 (signal 'transmission-misdirected (list transmission-host)))))))
 
 (defun transmission--auth-source-secret (user)
   "Return the secret for USER at found in `auth-sources'.
@@ -399,6 +403,7 @@ and port default to `transmission-host' and
   (with-current-buffer (process-buffer process)
     (erase-buffer))
   (let ((headers (list (cons transmission-session-header transmission-session-id)
+                       (cons "Host" transmission-host) ; CVE-2018-5702
                        (cons "Content-length" (string-bytes content)))))
     (let ((auth (transmission--auth-string)))
       (when auth (push (cons "Authorization" auth) headers)))

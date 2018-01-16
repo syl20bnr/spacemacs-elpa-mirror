@@ -5,7 +5,7 @@
 ;;
 ;; Author: Sanel Zukan <sanelz@gmail.com>
 ;; URL: http://www.github.com/sanel/monroe
-;; Package-Version: 20180116.759
+;; Package-Version: 20180116.817
 ;; Version: 0.4.0
 ;; Keywords: languages, clojure, nrepl, lisp
 
@@ -420,7 +420,7 @@ at the top of the file."
              (funcall 'clojure-find-ns))
     (save-excursion
       (goto-char (match-beginning 0))
-      (monroe-eval-expression-at-point))))
+      (monroe-eval-defun))))
 
 (defun monroe-eval-doc (symbol)
   "Internal function to actually ask for symbol documentation via nrepl protocol."
