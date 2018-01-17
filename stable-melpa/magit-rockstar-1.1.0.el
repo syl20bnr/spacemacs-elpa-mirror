@@ -3,8 +3,8 @@
 ;; Copyright (C) 2015-2017  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
-;; Package-Requires: ((dash "2.12.1") (magit "2.6.1"))
-;; Package-Version: 1.0.6
+;; Package-Requires: ((dash "2.13.0") (magit "2.12.0"))
+;; Package-Version: 1.1.0
 ;; Homepage: https://github.com/tarsius/magit-rockstar
 ;; Keywords: convenience
 
@@ -48,11 +48,6 @@
 ;; need but not what you (or I) think they should (eventually) be
 ;; doing instead.
 
-;; Currently my init file also contains this:
-;;
-;;    (magit-define-popup-action 'magit-fetch-popup
-;;      ?P "Pull request" 'magit-branch-pull-request)
-;;
 ;; To use the "uncommit-extend" feature add this:
 ;;
 ;;    (magit-define-popup-action 'magit-revert-popup
@@ -121,43 +116,15 @@ export GIT_COMMITTER_DATE=\"%%s %s\";;" tz tz)))
 (defun magit-debug-sections-1 (section level)
   (message "%-4s %-10s [%4s %3s]-[%4s %3s]  (%4s %3s)"
            (make-string (1+ level) ?*)
-           (magit-section-type section)
-           (marker-position       (magit-section-start section))
-           (marker-insertion-type (magit-section-start section))
-           (marker-position       (magit-section-end section))
-           (marker-insertion-type (magit-section-end section))
-           (ignore-errors (marker-position       (magit-section-content section)))
-           (ignore-errors (marker-insertion-type (magit-section-content section))))
-  (--each (magit-section-children section)
+           (oref section type)
+           (marker-position       (oref section start))
+           (marker-insertion-type (oref section start))
+           (marker-position       (oref section end))
+           (marker-insertion-type (oref section end))
+           (ignore-errors (marker-position       (oref section content)))
+           (ignore-errors (marker-insertion-type (oref section content))))
+  (--each (oref section children)
     (magit-debug-sections-1 it (1+ level))))
-
-;;;###autoload
-(defun magit-branch-pull-request (number &optional branch checkout)
-  "Create a new branch from a Github pull request and show its log.
-
-Read \"NR[:BRANCH-NAME] from the user.  If BRANCH-NAME is not
-provided use \"pr-NR\".  Set \"master\" as the upstream.
-
-Assume all pull requests can be found on \"origin\".  With a
-prefix argument checkout branch instead of showing its log."
-  (interactive
-   (let ((input (magit-read-string
-                 "Branch pull request (NR[:BRANCH-NAME])"
-                 (magit-section-when 'magithub-issue
-                   (number-to-string
-                    (plist-get (magit-section-value it) :number))))))
-     (if (string-match "\\([1-9][0-9]*\\)\\(?::\\(.+\\)\\)?" input)
-         (list (match-string 1 input)
-               (match-string 2 input)
-               current-prefix-arg)
-       (user-error "Invalid input"))))
-  (unless branch
-    (setq branch (format "pr-%s" number)))
-  (magit-call-git "fetch" "origin" (format "pull/%s/head:%s" number branch))
-  (magit-set-branch*merge/remote branch "master")
-  (if checkout
-      (magit-run-git "checkout" branch)
-    (apply #'magit-log (list branch) (magit-log-arguments))))
 
 ;;;###autoload
 (defun magit-uncommit-extend (&rest args)

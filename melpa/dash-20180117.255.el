@@ -4,7 +4,7 @@
 
 ;; Author: Magnar Sveen <magnars@gmail.com>
 ;; Version: 2.13.0
-;; Package-Version: 20180107.818
+;; Package-Version: 20180117.255
 ;; Keywords: lists
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -2116,6 +2116,15 @@ or with `-compare-fn' if that's non-nil."
   "Return all suffixes of LIST"
   (-reductions-r-from 'cons nil list))
 
+(defun -common-prefix (&rest lists)
+  "Return the longest common prefix of LISTS."
+  (declare (pure t) (side-effect-free t))
+  (--reduce (let (head prefix)
+              (while (and acc it (equal (setq head (pop acc)) (pop it)))
+                (push head prefix))
+              (nreverse prefix))
+            lists))
+
 (defun -contains? (list element)
   "Return non-nil if LIST contains ELEMENT.
 
@@ -2688,6 +2697,7 @@ structure such as plist or alist."
                              "-permutations"
                              "-inits"
                              "-tails"
+                             "-common-prefix"
                              "-contains?"
                              "-contains-p"
                              "-same-items?"

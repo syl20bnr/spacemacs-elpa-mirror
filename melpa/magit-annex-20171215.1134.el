@@ -5,7 +5,7 @@
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;;         Rémi Vanicat <vanicat@debian.org>
 ;; URL: https://github.com/magit/magit-annex
-;; Package-Version: 20170913.659
+;; Package-Version: 20171215.1134
 ;; Keywords: vc tools
 ;; Version: 1.4.0
 ;; Package-Requires: ((cl-lib "0.3") (magit "2.11.0"))
@@ -298,14 +298,14 @@ With a prefix argument, prompt for FILE.
       (pcase (list (magit-diff-type) (magit-diff-scope))
         (`(untracked file)
          (magit-annex-run "add" (directory-file-name
-                                 (magit-section-value it))))
+                                 (oref it value))))
         (`(untracked files)
          (magit-annex-run "add" (mapcar #'directory-file-name
                                         (magit-region-values))))
         (`(untracked list)
          (magit-annex-run "add" (magit-untracked-files)))
         (`(unstaged file)
-         (magit-annex-run "add" (magit-section-value it)))
+         (magit-annex-run "add" (oref it value)))
         (`(unstaged files)
          (magit-annex-run "add" (magit-region-values)))
         (`(unstaged list)
@@ -440,7 +440,7 @@ With a prefix argument, prompt for FILE.
   (magit-section-case
     (unused-data
      (let ((data-nums (or (mapcar #'car (magit-region-values))
-                          (list (car (magit-section-value it))))))
+                          (list (car (oref it value))))))
        (magit-annex-run "addunused" data-nums)))))
 
 (defun magit-annex-unused-drop (&optional force)
@@ -451,7 +451,7 @@ With prefix argument FORCE, pass \"--force\" flag to
   (magit-section-case
     (unused-data
      (let ((data-nums (or (mapcar #'car (magit-region-values))
-                          (list (car (magit-section-value it))))))
+                          (list (car (oref it value))))))
        (magit-annex-run "dropunused" (if force
                                          (cons "--force" data-nums)
                                        data-nums))))
@@ -471,10 +471,10 @@ value for the '-S' flag.  The '--stat' flag is also enabled if
 \('git log [--stat] -S<KEY>')"
   (interactive)
   (let ((section (magit-current-section)))
-    (if (not (eq (magit-section-type section) 'unused-data))
+    (if (not (eq (oref section type) 'unused-data))
         (call-interactively #'magit-log-popup)
       (let ((magit-log-arguments
-             `(,(concat "-S" (cdr (magit-section-value section)))
+             `(,(concat "-S" (cdr (oref section value)))
                ,(and magit-annex-unused-stat-argument "--stat")
                ,@(cl-remove-if
                   (lambda (x) (string-prefix-p "-S" x))
@@ -501,7 +501,7 @@ the file within Emacs."
   (interactive "P")
   (magit-section-case
     (unused-data
-     (let* ((key (cdr (magit-section-value it)))
+     (let* ((key (cdr (oref it value)))
             (file (magit-annex--file-name-from-key key)))
        (cond
         (in-emacs

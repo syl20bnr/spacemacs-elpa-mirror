@@ -4,7 +4,7 @@
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Package-Requires: ((dash "2.13.0") (magit "2.12.0"))
-;; Package-Version: 20171213.737
+;; Package-Version: 20171215.1135
 ;; Homepage: https://github.com/tarsius/magit-rockstar
 ;; Keywords: convenience
 
@@ -116,14 +116,14 @@ export GIT_COMMITTER_DATE=\"%%s %s\";;" tz tz)))
 (defun magit-debug-sections-1 (section level)
   (message "%-4s %-10s [%4s %3s]-[%4s %3s]  (%4s %3s)"
            (make-string (1+ level) ?*)
-           (magit-section-type section)
-           (marker-position       (magit-section-start section))
-           (marker-insertion-type (magit-section-start section))
-           (marker-position       (magit-section-end section))
-           (marker-insertion-type (magit-section-end section))
-           (ignore-errors (marker-position       (magit-section-content section)))
-           (ignore-errors (marker-insertion-type (magit-section-content section))))
-  (--each (magit-section-children section)
+           (oref section type)
+           (marker-position       (oref section start))
+           (marker-insertion-type (oref section start))
+           (marker-position       (oref section end))
+           (marker-insertion-type (oref section end))
+           (ignore-errors (marker-position       (oref section content)))
+           (ignore-errors (marker-insertion-type (oref section content))))
+  (--each (oref section children)
     (magit-debug-sections-1 it (1+ level))))
 
 ;;;###autoload
