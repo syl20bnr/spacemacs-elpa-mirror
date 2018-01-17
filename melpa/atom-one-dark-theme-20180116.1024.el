@@ -4,7 +4,7 @@
 
 ;; Author: Jonathan Chu <me@jonathanchu.is>
 ;; URL: https://github.com/jonathanchu/atom-one-dark-theme
-;; Package-Version: 20180112.609
+;; Package-Version: 20180116.1024
 ;; Version: 0.4.0
 
 ;; This file is not part of GNU Emacs.
@@ -363,8 +363,8 @@
 ))
    '(realgud-bp-enabled-face       ((t (:inherit (error)))))
    `(realgud-bp-disabled-face      ((t (:inherit (secondary-selection)))))
-   `(realgud-bp-line-enabled-face  ((t (:foreground ,atom-one-dark-red-1))))
-   `(realgud-bp-line-disabled-face ((t (:inherit (secondary-selection)))))
+   `(realgud-bp-line-enabled-face  ((t (:box (:color ,atom-one-dark-red-1)))))
+   `(realgud-bp-line-disabled-face ((t (:box (:color ,atom-one-dark-gray)))))
    `(realgud-line-number           ((t (:foreground ,atom-one-dark-mono-2))))
    `(realgud-backtrace-number      ((t (:inherit (secondary-selection)))))
 
