@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; URL: http://github.com/Kungsgeten/org-brain
-;; Package-Version: 20180111.1500
+;; Package-Version: 20180116.2216
 ;; Keywords: outlines hypermedia
 ;; Package-Requires: ((emacs "25") (org "9"))
 ;; Version: 0.4
@@ -1386,7 +1386,7 @@ See `org-brain-add-resource'."
   special-mode  "Org-brain Visualize"
   "Major mode for `org-brain-visualize'.
 \\{org-brain-visualize-mode-map}"
-  (setq revert-buffer-function #'org-brain-visualize-revert)
+  (setq-local revert-buffer-function #'org-brain-visualize-revert)
   (add-function :before-until (local 'eldoc-documentation-function)
                 #'org-brain-visualize-eldoc-function))
 

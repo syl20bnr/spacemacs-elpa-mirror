@@ -9,7 +9,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20180116.1350
+;; Package-Version: 20180117.104
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -629,10 +629,12 @@ ACC umulate input and ERR-MSGS.  When done call (CONT status error-messages load
            (setq dante-state (list 'compiling (match-string 3 m)))
            (dante-load-loop rest err-msgs cont))
           ((and m (string-match success m))
-           (dante-cps-let (((_ loaded-mods) (dante-wait-for-prompt acc)))
+           ;; With the +c setting, GHC (8.2) prints: 1. error
+           ;; messages+warnings, if compiling only 2. if successful,
+           ;; repeat the warnings
+           (dante-cps-let (((_status warning-msgs loaded-mods) (dante-load-loop rest nil)))
              (setq dante-state (list 'loaded loaded-mods))
-             (funcall cont 'ok (nreverse err-msgs) loaded-mods)))
-             ;; FIXME: sometimes, when there are only warnings, GHCi shows them AFTER "ok, modules loaded".
+             (funcall cont 'ok (or (nreverse err-msgs) warning-msgs) loaded-mods)))
           ((and m (> (length rest) 0) (/= (elt rest 0) ? )) ;; make sure we're matching a full error message
            (dante-load-loop rest (cons m err-msgs) cont))
           (t (dante-cps-let ((input (dante-async-read)))

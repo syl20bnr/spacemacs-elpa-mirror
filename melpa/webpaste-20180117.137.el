@@ -1,10 +1,10 @@
 ;;; webpaste.el --- Paste to pastebin-like services  -*- lexical-binding: t; -*-
 
-;; Copyright (c) 2016-2017 Elis Hirwing
+;; Copyright (c) 2016-2018 Elis Hirwing
 
 ;; Author: Elis "etu" Hirwing
 ;; URL: https://github.com/etu/webpaste.el
-;; Package-Version: 20180115.2226
+;; Package-Version: 20180117.137
 ;; Package-X-Original-Version: 2.0.0
 ;; Version: 2.0.0
 ;; Keywords: convenience, comm, paste
