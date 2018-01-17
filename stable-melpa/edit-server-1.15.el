@@ -6,7 +6,7 @@
 ;; Author: Alex Bennée <alex@bennee.com>
 ;; Maintainer: Alex Bennée <alex@bennee.com>
 ;; Version: 1.14
-;; Package-Version: 20180115.1234
+;; Package-Version: 1.15
 ;; Homepage: https://github.com/stsquad/emacs_chrome
 
 ;; This file is not part of GNU Emacs.
@@ -644,7 +644,9 @@ When called interactively, use prefix arg to abort editing."
       (unless nokill
         ;; don't run abort twice in a row.
         (remove-hook 'kill-buffer-hook 'edit-server-abort*)
-	(kill-buffer buffer))
+	(kill-buffer buffer)
+	(unless edit-server-frame
+	  (delete-window)))
       (edit-server-kill-client proc))))
 
 ;; edit-server-save uses the iterative edit-server option (send a

@@ -33,6 +33,6 @@ Alternatively, set the mode in `edit-server-start-hook'.  For
 example:
 
 (add-hook 'edit-server-start-hook
-         (lambda ()
-           (when (string-match "github.com" (buffer-name))
-             (markdown-mode))))
+          (lambda ()
+            (when (string-match "github.com" (buffer-name))
+              (markdown-mode))))

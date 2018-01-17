@@ -5,8 +5,8 @@
 
 ;; Author: Alex Bennée <alex@bennee.com>
 ;; Maintainer: Alex Bennée <alex@bennee.com>
-;; Version: 1.10
-;; Package-Version: 1.13
+;; Version: 1.14
+;; Package-Version: 20180117.716
 ;; Homepage: https://github.com/stsquad/emacs_chrome
 
 ;; This file is not part of GNU Emacs.
@@ -61,9 +61,9 @@
 ;; example:
 ;;
 ;; (add-hook 'edit-server-start-hook
-;;          (lambda ()
-;;            (when (string-match "github.com" (buffer-name))
-;;              (markdown-mode))))
+;;           (lambda ()
+;;             (when (string-match "github.com" (buffer-name))
+;;               (markdown-mode))))
 
 
 ;;; Code:
@@ -103,6 +103,15 @@ Current buffer holds the text that is about to be sent back to the client."
   "Hook run when starting a editing buffer.  Current buffer is
 the fully prepared editing buffer.  Use this hook to enable
 buffer-specific modes or add key bindings."
+  :group 'edit-server
+  :type 'hook)
+
+(defcustom edit-server-edit-mode-hook nil
+  "Hook run when we enter edit-server-edit-mode.  This is the final step of
+an edit session and is called when all frames and displays have been
+set-up.  You should not set any additional major modes here though as they
+may conflict with the edit-server-edit-mode, use the
+edit-server-start-hook instead."
   :group 'edit-server
   :type 'hook)
 
@@ -155,7 +164,7 @@ major mode. If no pattern matches,
   "Template name of the edit-server process buffers.")
 
 (defconst edit-server-log-buffer-name "*edit-server-log*"
-  "Template name of the edit-server process buffers.")
+  "Name of the edit-server process buffers.")
 
 (defconst edit-server-edit-buffer-name "TEXTAREA"
   "Template name of the edit-server text editing buffers.")
@@ -253,7 +262,11 @@ send a response back to the client."
   :group 'edit-server
   :lighter " EditSrv"
   :init-value nil
-  :keymap edit-server-edit-mode-map)
+  :keymap edit-server-edit-mode-map
+  (when (and
+         (numberp arg)
+         (> arg 0))
+    (run-hooks 'edit-server-edit-mode-hook)))
 
 (defun turn-on-edit-server-edit-mode-if-server ()
   "Turn on `edit-server-edit-mode' if in an edit-server buffer."
@@ -293,25 +306,26 @@ If argument VERBOSE is non-nil, logs all server activity to buffer
 `*edit-server-log*'.  When called interactivity, a prefix argument
 will cause it to be verbose."
   (interactive "P")
-  (if (or (process-status "edit-server")
-	  (null (condition-case err
-                    (let ((proc (make-network-process
-                                 :name "edit-server"
-                                 :buffer edit-server-process-buffer-name
-                                 :family 'ipv4
-                                 :host (or edit-server-host 'local)
-                                 :service edit-server-port
-                                 :log 'edit-server-accept
-                                 :server t
-                                 :noquery t)))
-                      (set-process-coding-system proc 'utf-8 'utf-8)
-                      proc)
-		  (file-error nil))))
+  (if (process-status "edit-server")
       (message "An edit-server process is already running")
-    (ad-activate 'save-buffers-kill-emacs)
-    (setq edit-server-clients '())
-    (if verbose (get-buffer-create edit-server-log-buffer-name))
-    (edit-server-log nil "Created a new edit-server process")))
+    (if (null (condition-case err
+                  (let ((proc (make-network-process
+                               :name "edit-server"
+                               :buffer edit-server-process-buffer-name
+                               :family 'ipv4
+                               :host (or edit-server-host 'local)
+                               :service edit-server-port
+                               :log 'edit-server-accept
+                               :server t
+                               :noquery t)))
+                    (set-process-coding-system proc 'utf-8 'utf-8)
+                    proc)
+                (file-error nil)))
+        (message "Failed to start an edit-server")
+      (ad-activate 'save-buffers-kill-emacs)
+      (setq edit-server-clients '())
+      (when verbose (get-buffer-create edit-server-log-buffer-name))
+      (edit-server-log nil "Created a new edit-server process"))))
 
 (defun edit-server-stop nil
   "Stop the edit server"
@@ -335,20 +349,20 @@ will cause it to be verbose."
 This is done for logging purposes.  If `edit-server-verbose' is
 non-nil, then STRING is also echoed to the message line."
   (let ((string (apply 'format fmt args)))
-    (if edit-server-verbose
-	(message string))
-    (if (get-buffer edit-server-log-buffer-name)
-	(with-current-buffer edit-server-log-buffer-name
-	  (goto-char (point-max))
-	  (insert (current-time-string)
-		  " "
-		  (if (processp proc)
-		      (concat
-		       (buffer-name (process-buffer proc))
-		       ": ")
-		    "") ; nil is not acceptable to 'insert
-		  string)
-	  (or (bolp) (newline))))))
+    (when edit-server-verbose
+      (message string))
+    (when (get-buffer edit-server-log-buffer-name)
+      (with-current-buffer edit-server-log-buffer-name
+	(goto-char (point-max))
+	(insert (current-time-string)
+		" "
+		(if (processp proc)
+		    (concat
+		     (buffer-name (process-buffer proc))
+		     ": ")
+		  "") ; nil is not acceptable to 'insert
+		string)
+	(or (bolp) (newline))))))
 
 (defun edit-server-accept (server client msg)
   "Accept a new client connection."
@@ -404,12 +418,12 @@ non-nil, then STRING is also echoed to the message line."
       ;; look for "x-url" header
       (save-excursion
 	(goto-char (point-min))
-	(when (re-search-forward "^x-url: .*/\\{2,3\\}\\([^?\r\n]+\\)" nil t)
+	(when (re-search-forward "^x-url: .*/\\{2,3\\}\\([^\r\n]+\\)" nil t)
 	  (setq edit-server-url (match-string 1))))
       ;; look for "x-file" header
       (save-excursion
 	(goto-char (point-min))
-	(when (re-search-forward "^x-file: \\([^?\r\n]+\\)" nil t)
+	(when (re-search-forward "^x-file: \\([^\r\n]+\\)" nil t)
 	  (edit-server-log proc "Found x-file: %s" (match-string 1))
 	  (setq edit-server-file (match-string 1))))
       ;; look for head/body separator
@@ -450,6 +464,17 @@ non-nil, then STRING is also echoed to the message line."
 	(setq edit-server-received 0)
 	(setq edit-server-phase 'wait)))))
 
+(defun edit-server-make-frame ()
+  "Create a frame for editing and return it."
+  (let ((disp (getenv "DISPLAY")))
+    (edit-server-log nil "Creating frame for %s/%s" window-system disp)
+    (if (or (memq window-system '(ns mac))
+            (= 0 (length disp)))
+      ;; Aquamacs, Emacs NS, Emacs (experimental) Mac port, termcap.
+      ;; matching (nil) avoids use of DISPLAY from TTY environments.
+      (make-frame edit-server-new-frame-alist)
+    (make-frame-on-display disp))))
+
 (defun edit-server-foreground-request (buffer)
   "Bring Emacs into the foreground after a request from Chrome.
 `buffer' is the process buffer which contains any potential contents
@@ -460,60 +485,46 @@ The new frame will have a specific frame parameter of
   (when (bufferp buffer)
     (with-current-buffer buffer
       (kill-ring-save (point-min) (point-max))))
-  
+
   (when edit-server-new-frame
     (set-frame-parameter
-     (make-frame-on-display (getenv "DISPLAY")
-                            edit-server-new-frame-alist)
-     'edit-server-forground-frame 't)))
+     (edit-server-make-frame) 'edit-server-forground-frame 't)))
 
 (defun edit-server-show-edit-buffer (buffer)
-  "Show edit buffer by creating a frame or raising the selected
-frame."
-  (if edit-server-new-frame
-      (let ((new-frame
-	     (if (memq window-system '(ns mac))
-		 ;; Aquamacs, Emacs NS, Emacs (experimental) Mac port
-		 (make-frame edit-server-new-frame-alist)
-	       (make-frame-on-display (getenv "DISPLAY")
-				      edit-server-new-frame-alist))))
-	(unless edit-server-new-frame-mode-line
-	  (setq mode-line-format nil))
-	(select-frame new-frame)
-	(when (and (eq window-system 'x)
-		   (fboundp 'x-send-client-message))
-	  (x-send-client-message nil 0 nil
-				 "_NET_ACTIVE_WINDOW" 32
-				 '(1 0 0)))
-	(raise-frame new-frame)
-	(set-window-buffer (frame-selected-window new-frame) buffer)
-	new-frame)
-    (select-frame-set-input-focus (window-frame (selected-window)))
+  "Show edit `BUFFER' by creating a frame or raising the selected
+frame. If a frame was created it returns `FRAME'."
+  (let ((edit-frame nil))
+    (when edit-server-new-frame
+      (setq edit-frame (edit-server-make-frame))
+      (unless edit-server-new-frame-mode-line
+        (setq mode-line-format nil))
+      (select-frame edit-frame)
+      (when (and (eq window-system 'x)
+                 (fboundp 'x-send-client-message))
+        (x-send-client-message nil 0 nil
+                               "_NET_ACTIVE_WINDOW" 32
+                               '(1 0 0))))
     (pop-to-buffer buffer)
-    (raise-frame)
-    nil))
+    (raise-frame edit-frame)
+    (select-frame-set-input-focus (window-frame (selected-window)))
+    edit-frame))
 
 (defun edit-server-choose-major-mode ()
   "Use `edit-server-url-major-mode-alist' to choose a major mode
 initialization function based on `edit-server-url', or fall back
 to `edit-server-default-major-mode'"
-  (let ((pairs edit-server-url-major-mode-alist)
-	(mode edit-server-default-major-mode))
-    (while pairs
-      (let ((entry (car pairs)))
-	(if (string-match (car entry) edit-server-url)
-	    (setq mode (cdr entry)
-		  pairs nil)
-	  (setq pairs (cdr pairs)))))
-    (funcall mode)))
+  (funcall (or (assoc-default edit-server-url
+                              edit-server-url-major-mode-alist 'string-match)
+               edit-server-default-major-mode)))
 
-(defun edit-server-find-or-create-edit-buffer(proc &optional existing)
+(defun edit-server-find-or-create-edit-buffer (proc &optional existing)
   "Find and existing or create an new edit buffer, place content in it
 and save the network process for the final call back"
-  (let* ((existing-buffer (get-buffer (or (and (stringp existing) existing) "")))
+  ;; FIXME: `existing' is useless: see issue #104.
+  (let* ((existing-buffer (and (stringp existing) (get-buffer existing)))
 	 (buffer (or existing-buffer (generate-new-buffer
-				     (or edit-server-url
-					 edit-server-edit-buffer-name)))))
+				      (or edit-server-url
+					  edit-server-edit-buffer-name)))))
 
     (edit-server-log proc
 		     "using buffer %s for edit (existing-buffer is %s)"
@@ -527,7 +538,7 @@ and save the network process for the final call back"
     ;; I seem to be working around a bug here :-/
     ;;
     ;; For some reason the copy-to-buffer doesn't blat the existing contents.
-    ;; This screws up formatting as the contents where decoded before being
+    ;; This screws up formatting as the contents were decoded before being
     ;; sent back to the browser. As a kludge I save the returned contents
     ;; in the kill-ring.
     (when existing-buffer
@@ -535,7 +546,7 @@ and save the network process for the final call back"
 
     (edit-server-log proc "copying new data into buffer")
     (copy-to-buffer buffer (point-min) (point-max))
-    
+
     (with-current-buffer buffer
       (setq edit-server-url (with-current-buffer (process-buffer proc) edit-server-url))
       (edit-server-choose-major-mode)
@@ -631,9 +642,11 @@ When called interactively, use prefix arg to abort editing."
 	(delete-frame edit-server-frame))
       ;; delete-frame may change the current buffer
       (unless nokill
-        ; don't run abort twice in a row.
+        ;; don't run abort twice in a row.
         (remove-hook 'kill-buffer-hook 'edit-server-abort*)
-	(kill-buffer buffer))
+	(kill-buffer buffer)
+	(unless edit-server-frame
+	  (delete-window)))
       (edit-server-kill-client proc))))
 
 ;; edit-server-save uses the iterative edit-server option (send a
