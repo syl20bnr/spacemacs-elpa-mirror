@@ -5,7 +5,7 @@
 ;; Author: Bharat Joshi <jbharat@outlook.com>
 ;; Maintainer: Bharat Joshi <jbharat@outlook.com>
 ;; URL: https://github.com/jbharat/exotica-theme
-;; Package-Version: 20171227.203
+;; Package-Version: 20180116.2137
 ;; Created: 22th July 2017
 ;; Keywords: faces, theme, dark, vibrant colors
 ;; Version: 1.0.2
@@ -276,6 +276,10 @@
   ;; linum relative line number face
   `(linum-relative-current-face ((t (:inherit linum :foreground ,face4 :weight normal))))
   `(linum ((t (:background ,bg :foreground ,line-number-face :weight normal))))
+
+  ;; native line number face
+  `(line-number ((t :background ,bg :foreground ,line-number-face :weight normal)))
+  `(line-number-current-line ((t :background ,bg :foreground, face4, :weight normal)))
 
   ;; imenu-list
   `(imenu-list-entry-subalist-face-0 ((t (:foreground ,face2))))
