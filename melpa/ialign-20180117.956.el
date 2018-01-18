@@ -3,9 +3,9 @@
 ;;
 ;; Author: Michał Kondraciuk <k.michal@zoho.com>
 ;; URL: https://github.com/mkcms/interactive-align
-;; Package-Version: 20180112.757
+;; Package-Version: 20180117.956
 ;; Package-Requires: ((emacs "24.4"))
-;; Version: 0.3.0
+;; Version: 0.4.0
 ;; Keywords: tools, editing, align, interactive
 
 ;; Copyright (C) 2017 Michał Kondraciuk
@@ -54,6 +54,7 @@
     (define-key map (kbd "C-c RET") #'ialign-commit)
     (define-key map (kbd "C-c C-c") #'ialign-update)
     (define-key map (kbd "C-c ?") #'ialign-show-help)
+    (define-key map [remap exit-minibuffer] #'ialign-exit-minibuffer)
     map)
   "Keymap used in minibuffer during `ialign'."
   :group 'ialign)
@@ -92,6 +93,18 @@ or equal to this, otherwise do not update."
   :group 'ialign
   :type 'regexp)
 
+(defcustom ialign-initial-group 1
+  "Initial group to use when calling `ialign'."
+  :group 'ialign
+  :type 'integer)
+
+(defcustom ialign-initial-repeat nil
+  "Initial value of repeat argument when calling `ialign'."
+  :group 'ialign
+  :type 'booleanp)
+
+(defvaralias 'ialign-initial-spacing 'ialign-default-spacing)
+
 (defvar ialign--buffer nil)
 (defvar ialign--start nil)
 (defvar ialign--end nil)
@@ -104,10 +117,13 @@ or equal to this, otherwise do not update."
 (defvar ialign--history nil)
 (defvar ialign--error nil)
 (defvar ialign--case-fold-search nil)
+(defvar ialign--minibuffer-overlay nil)
+(defvar ialign--recursive-minibuffer nil)
 
 (defmacro ialign--with-region-narrowed (&rest forms)
   "Evaluate FORMS in `ialign--buffer'.
 The buffer is narrowed to region that is to be aligned."
+  (declare (debug (&rest form)))
   `(with-current-buffer ialign--buffer
      (save-excursion
        (save-restriction
@@ -128,7 +144,7 @@ The buffer is narrowed to region that is to be aligned."
   (interactive)
   (when (ialign--active-p)
     (setq ialign--case-fold-search (not ialign--case-fold-search))
-    (ialign-update)
+    (ialign-update 'quietly)
     (minibuffer-message
      (if ialign--case-fold-search "case insensitive" "case sensitive"))))
 
@@ -140,7 +156,7 @@ Does nothing when currently not aligning with `ialign'."
   (interactive)
   (when (ialign--active-p)
     (setq ialign--repeat (not ialign--repeat))
-    (ialign-update)))
+    (ialign-update 'quietly)))
 
 (defun ialign-toggle-tabs ()
   "Toggle tab usage during alignment.
@@ -150,7 +166,7 @@ Does nothing when currently not aligning with `ialign'."
   (interactive)
   (when (ialign--active-p)
     (setq ialign--tabs (not ialign--tabs))
-    (ialign-update)))
+    (ialign-update 'quietly)))
 
 (defun ialign-increment-group ()
   "Increment the parenthesis group argument passed to `align-regexp'.
@@ -166,16 +182,27 @@ Does nothing when currently not aligning with `ialign'."
   (interactive)
   (ialign-set-group (1- ialign--group)))
 
+(defun ialign--read-number (prompt)
+  "Read number with PROMPT in a new minibuffer."
+  (let ((enable-recursive-minibuffers t)
+	(ialign--recursive-minibuffer t))
+    (read-number prompt)))
+
 (defun ialign-set-group (group)
   "Set the parenthesis group argument for the `align-regexp' command to GROUP.
-This should be called with a numeric prefix argument that is
-the group number to set.
+Interactively, reads a number from minibuffer, unless this function was called
+with a numeric prefix argument, in which case the prefix argument is used as
+GROUP.
 Does nothing when currently not aligning with `ialign'."
-  (interactive "p")
+  (interactive (list
+		(if current-prefix-arg
+		    (prefix-numeric-value current-prefix-arg)
+		  (ialign--read-number
+		   "Parenthesis group to modify (justify if negative): "))))
   (or group (setq group 1))
   (when (ialign--active-p)
     (setq ialign--group group)
-    (ialign-update)))
+    (ialign-update 'quietly)))
 
 (defun ialign-increment-spacing ()
   "Increment the amount of spacing passed to `align-regexp' command.
@@ -184,7 +211,7 @@ Does nothing when currently not aligning with `ialign'."
   (interactive)
   (when (ialign--active-p)
     (setq ialign--spacing (1+ ialign--spacing))
-    (ialign-update)))
+    (ialign-update 'quietly)))
 
 (defun ialign-decrement-spacing ()
   "Decrement the amount of spacing passed to `align-regexp' command.
@@ -193,17 +220,22 @@ Does nothing when currently not aligning with `ialign'."
   (interactive)
   (when (ialign--active-p)
     (setq ialign--spacing (1- ialign--spacing))
-    (ialign-update)))
+    (ialign-update 'quietly)))
 
 (defun ialign-set-spacing (spacing)
   "Set the spacing parameter passed to `align-regexp' command to SPACING.
-This should be called with a numeric prefix argument.
+Interactively, reads a number from minibuffer, unless this function was called
+with a numeric prefix argument, in which case the prefix argument is used as
+SPACING.
 Does nothing when currently not aligning with `ialign'."
-  (interactive "p")
+  (interactive (list
+		(if current-prefix-arg
+		    (prefix-numeric-value current-prefix-arg)
+		  (ialign--read-number "Amount of spacing: "))))
   (or spacing (setq spacing 1))
   (when (ialign--active-p)
     (setq ialign--spacing spacing)
-    (ialign-update)))
+    (ialign-update 'quietly)))
 
 (defun ialign-commit ()
   "Align the region using the current regexp and commit change in the buffer.
@@ -212,10 +244,11 @@ Next alignments will use the newly aligned region.
 Does nothing when currently not aligning with `ialign'."
   (interactive)
   (when (ialign--active-p)
+    (let ((ialign-auto-update t))
+      (ialign-update))
     (ialign--with-region-narrowed
-     (ialign-update)
-     (setq ialign--region-contents (buffer-substring (point-min) (point-max)))
-     (minibuffer-message "Commited regexp %s" ialign--regexp))))
+     (setq ialign--region-contents (buffer-substring (point-min) (point-max))))
+    (minibuffer-message "Commited regexp %s" ialign--regexp)))
 
 (defun ialign--make-marker (location)
   "Make marker at LOCATION."
@@ -253,18 +286,29 @@ Does nothing when currently not aligning with `ialign'."
   (let ((inhibit-read-only t)
 	(prompt
 	 (format "Align regexp %s(group %s%s, spacing %s%s%s, %s): "
-			(if (ialign--autoupdate-p) "" "(manual) ") ialign--group
-			(if (< ialign--group 0) " (justify)" "") ialign--spacing
-			(if ialign--repeat ", repeat" "")
-			(if (ialign--enable-tabs-p) ", with tabs" "")
-			(substitute-command-keys
-			 "\\<ialign-minibuffer-keymap>\\[ialign-show-help]: \
+		 (if (ialign--autoupdate-p) "" "(manual) ") ialign--group
+		 (if (< ialign--group 0) " (justify)" "") ialign--spacing
+		 (if ialign--repeat ", repeat" "")
+		 (if (ialign--enable-tabs-p) ", with tabs" "")
+		 (substitute-command-keys
+		  "\\<ialign-minibuffer-keymap>\\[ialign-show-help]: \
 help"))))
-    (put-text-property (point-min) (minibuffer-prompt-end) 'display prompt)))
+    (put-text-property (point-min) (minibuffer-prompt-end) 'display prompt)
+    (when (overlayp ialign--minibuffer-overlay)
+	(delete-overlay ialign--minibuffer-overlay)
+	(setq ialign--minibuffer-overlay nil))
+    (when ialign--error
+      (let ((msg (concat " [" ialign--error "]")))
+	(setq ialign--minibuffer-overlay
+	      (make-overlay (point-max) (point-max) nil t t))
+	(put-text-property 0 1 'cursor t msg)
+	(overlay-put ialign--minibuffer-overlay 'after-string msg)))))
 
 (defun ialign--minibuffer-setup-hook ()
   "Function called on minibuffer setup.  Aligns the region."
-  (and (ialign--active-p) (ialign-update)))
+  (and (ialign--active-p)
+       (not ialign--recursive-minibuffer)
+       (ialign-update 'quietly)))
 (add-hook 'minibuffer-setup-hook #'ialign--minibuffer-setup-hook)
 
 (defun ialign--align ()
@@ -287,37 +331,75 @@ This function is used to undo changes made by command `ialign'."
       (insert orig)
       (undo-boundary))))
 
-(defun ialign-update ()
+(defun ialign--restore-arguments ()
+  "Restore global variables stored in properties of minibuffer contents."
+  (let ((props
+	 (plist-get (text-properties-at 0 (minibuffer-contents)) 'ialign)))
+    (when props
+      (when minibuffer-text-before-history
+	(let ((orig-props
+	       (plist-get
+		(text-properties-at 0 minibuffer-text-before-history)
+		'ialign)))
+	  (unless orig-props
+	    (put-text-property
+	     0 (min 1 (length minibuffer-text-before-history))
+	     'ialign
+	     (list ialign--group ialign--spacing ialign--repeat)
+	     minibuffer-text-before-history))))
+      (setq ialign--group (nth 0 props)
+ 	    ialign--spacing (nth 1 props)
+	    ialign--repeat (nth 2 props))
+      (remove-list-of-text-properties
+       (minibuffer-prompt-end) (point-max) '(ialign)))))
+
+(defun ialign--save-arguments ()
+  "Save global variables in properties of minibuffer contents."
+  (let ((inhibit-modification-hooks t))
+    (put-text-property
+     (minibuffer-prompt-end) (min (point-max) (1+ (minibuffer-prompt-end)))
+     'ialign
+     (list ialign--group ialign--spacing ialign--repeat))))
+
+(defun ialign-update (&optional no-error)
   "Align the region with regexp in the minibuffer for preview.
 Does temporary alignment for preview only.
+The argument NO-ERROR, if non-nil means ignore any errors.
 Use `ialign-commit' to actually align the region in the buffer."
   (interactive)
   (when (and (ialign--active-p) (minibufferp))
-    (ialign--update-minibuffer-prompt)
-    (when (or (called-interactively-p 'interactive) (ialign--autoupdate-p))
-      (let ((regexp (minibuffer-contents-no-properties))
-	    (indent-tabs-mode (ialign--enable-tabs-p)))
-	(setq ialign--regexp regexp)
-	(ialign--align)
-	(redisplay)))))
+    (condition-case err
+	(progn
+	  (ialign--update-minibuffer-prompt)
+	  (when (or (called-interactively-p 'interactive)
+		    (ialign--autoupdate-p))
+	    (let ((regexp (minibuffer-contents-no-properties))
+		  (indent-tabs-mode (ialign--enable-tabs-p)))
+	      (setq ialign--regexp regexp)
+	      (ialign--align)
+	      (redisplay))))
+      (error
+       (progn
+	 (setq ialign--error (error-message-string err))
+	 (ialign--update-minibuffer-prompt)
+	 (unless no-error
+	   (signal (car err) (cdr err))))))))
 
 (defun ialign--after-change (beg end len)
   "Function called after change.
 Updates the minibuffer prompt and maybe realigns the region."
-  (when (and (ialign--active-p) (minibufferp))
-    (condition-case err
-	(progn
-	  (ialign-update)
-	  (setq ialign--error nil))
-      (error
-       (progn
-	 (unless ialign--error
-	   (setq ialign--error err)
-	   (run-with-timer
-	    0.05 nil
-	    (lambda ()
-	      (when ialign--error
-		(minibuffer-message (error-message-string ialign--error)))))))))))
+  (when (and (ialign--active-p) (minibufferp)
+	     (not ialign--recursive-minibuffer))
+    (ignore-errors
+      (ialign--restore-arguments)
+      (setq ialign--error nil)
+      (ignore-errors (ialign-update)))))
+
+(defun ialign-exit-minibuffer ()
+  "Save settings in history and exit minibuffer."
+  (interactive)
+  (ialign--save-arguments)
+  (exit-minibuffer))
 
 (defun ialign-show-help ()
   "Show help to the user."
@@ -331,19 +413,28 @@ Updates the minibuffer prompt and maybe realigns the region."
 \\[ialign-update]: update (realign)
 \\[ialign-increment-group], \\[ialign-decrement-group]: increment/decrement \
 parenthesis group
+\\[ialign-set-group]: read group from minibuffer
 \\[ialign-increment-spacing], \\[ialign-decrement-spacing]: increment/\
 decrement spacing
+\\[ialign-set-spacing]: read spacing from minibuffer
 \\[ialign-toggle-repeat]: repeat the alignment throughout the line (toggle)
 \\[ialign-toggle-tabs]: toggle tab usage
 \\[ialign-toggle-case-fold]: toggle case fold searching
+\\[next-history-element], \\[previous-history-element]: next/previous history \
+element
 \\[ialign-commit]: commit the alignment in buffer"))))
 
 ;;;###autoload
-(defun ialign (beg end)
+(defun ialign (beg end &optional regexp group spacing repeat)
   "Interactively align region BEG END using regexp read from minibuffer.
 As characters are typed in the minibuffer, the region is aligned
 using `align-regexp' and the result is presented to the user.
 \\<ialign-minibuffer-keymap>
+Arguments REGEXP, GROUP, SPACING and REPEAT are passed to `align-regexp',
+and default to `ialign-initial-regexp', `ialign-initial-group',
+`ialign-initial-spacing' and `ialign-initial-repeat'
+respectively.
+
 If the custom option `ialign-auto-update' is not set to t, manual update is
 possible with command `ialign-update' bound to \\[ialign-update].
 
@@ -358,15 +449,20 @@ and \\[ialign-set-spacing].
 The keymap used in minibuffer is `ialign-minibuffer-keymap':
 \\{ialign-minibuffer-keymap}"
   (interactive "r")
+  (or regexp (setq regexp ialign-initial-regexp))
+  (or group (setq group ialign-initial-group))
+  (or spacing (setq spacing ialign-initial-spacing))
+  (or repeat (setq repeat ialign-initial-repeat))
   (if (ialign--active-p)
       (error "Already aligning")
     (let* ((ialign--buffer (current-buffer))
 	   (ialign--start (ialign--make-marker beg))
 	   (ialign--end (ialign--make-marker end))
+	   (ialign--recursive-minibuffer nil)
 	   (region-contents (buffer-substring beg end))
 	   (ialign--region-contents region-contents)
-	   (ialign--repeat nil)
-	   (ialign--group 1)
+	   (ialign--repeat repeat)
+	   (ialign--group group)
 	   (ialign--spacing ialign-default-spacing)
 	   (ialign--tabs ialign-align-with-tabs)
 	   (ialign--regexp nil)
@@ -375,21 +471,29 @@ The keymap used in minibuffer is `ialign-minibuffer-keymap':
       (unwind-protect
 	  (progn
 	    (add-hook 'after-change-functions #'ialign--after-change)
-	    (let ((buffer-undo-list t))
-	      (read-from-minibuffer " " ialign-initial-regexp
+	    (let ((buffer-undo-list t)
+		  (minibuffer-allow-text-properties t))
+	      (read-from-minibuffer " " regexp
                                     ialign-minibuffer-keymap
 				    nil 'ialign--history)
 	      (setq success t)))
-	(if success
-	    (push (list 'apply #'ialign--undo
-			(marker-position ialign--start)
-			(marker-position ialign--end)
-			region-contents)
-		  buffer-undo-list)
-	  (let ((buffer-undo-list t))
-	    (ialign--revert)))
-	(set-marker ialign--start nil)
-	(set-marker ialign--end nil)))))
+	(unwind-protect
+	    (if success
+		(progn
+		  (unless (ialign--autoupdate-p)
+		    (ialign--align))
+		  (push (list 'apply #'ialign--undo
+			      (marker-position ialign--start)
+			      (marker-position ialign--end)
+			      region-contents)
+			buffer-undo-list))
+	      (let ((buffer-undo-list t))
+		(ialign--revert)))
+	  (set-marker ialign--start nil)
+	  (set-marker ialign--end nil)
+	  (when (overlayp ialign--minibuffer-overlay)
+	    (delete-overlay ialign--minibuffer-overlay)))))
+    (setq deactivate-mark t)))
 
 ;;;###autoload
 (define-obsolete-function-alias 'ialign-interactive-align 'ialign "0.1.0")
