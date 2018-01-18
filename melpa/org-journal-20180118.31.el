@@ -2,8 +2,8 @@
 
 ;; Author: Bastian Bechtold
 ;; URL: http://github.com/bastibe/org-journal
-;; Package-Version: 20171113.53
-;; Version: 1.12.3
+;; Package-Version: 20180118.31
+;; Version: 1.12.4
 
 ;;; Commentary:
 
@@ -685,10 +685,16 @@ org-journal-time-prefix."
      ((eql org-journal-search-results-order-by :desc) results)
      (t (reverse results)))))
 
+(defun org-journal-format-date (time)
+  "Format TIME according to `org-journal-date-format`"
+  (if (functionp org-journal-date-format)
+      (funcall org-journal-date-format time)
+    (format-time-string org-journal-date-format time)))
+
 (defun org-journal-search-print-results (str results period-start period-end)
   "Print search results using text buttons"
-  (let ((label-start (format-time-string org-journal-date-format period-start))
-        (label-end (format-time-string org-journal-date-format period-end)))
+  (let ((label-start (org-journal-format-date period-start))
+        (label-end (org-journal-format-date period-end)))
     (princ (concat "Search results for \"" str "\" between "
                    label-start " and " label-end
                    ": \n\n")))
@@ -699,9 +705,9 @@ org-journal-time-prefix."
            (time (org-journal-calendar-date->time
                   (org-journal-file-name->calendar-date
                    (file-name-nondirectory fname))))
-           (label (format-time-string org-journal-date-format time))
+           (label (org-journal-format-date time))
 
-           (label-end (format-time-string org-journal-date-format period-start)))
+           (label-end (org-journal-format-date period-start)))
 
       (insert-text-button label
                           'action 'org-journal-search-follow-link-action
