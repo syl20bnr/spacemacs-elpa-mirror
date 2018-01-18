@@ -2,7 +2,7 @@
 
 ;; Authors: stardiviner <numbchild@gmail.com>
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (seq "2.20"))
-;; Package-Version: 20171231.2313
+;; Package-Version: 20180117.1824
 ;; Package-X-Original-Version: 0.1
 ;; Keywords: org link ebook kindle epub mobi
 ;; homepage: https://github.com/stardiviner/org-send-ebook
@@ -74,7 +74,7 @@
   (interactive)
   ;; get the file path under org-mode link.
   (when (string= (org-element-property :type (org-element-context)) "file")
-    (let* ((source-file (expand-file-name (url-unhex-string (org-element-property :path (org-element-context)))))
+    (let* ((source-file (expand-file-name (org-link-unescape (org-element-property :path (org-element-context)))))
            (target-file-name (file-name-nondirectory
                               (concat (file-name-sans-extension source-file) (org-send-ebook--detect-format))))
            (default-directory (temporary-file-directory))

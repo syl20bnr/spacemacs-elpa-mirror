@@ -4,7 +4,7 @@
 
 ;; Author: Tobias Zawada <i@tn-home.de>
 ;; Keywords: tex, languages, wp
-;; Package-Version: 20180109.1546
+;; Package-Version: 20180117.2025
 ;; URL: https://github.com/TobiasZawada/texfrag
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "25") (auctex "11.90.2"))
@@ -862,8 +862,9 @@ Set variable `texfrag-LaTeX-file' to the file name of the current eww window."
   "Set LaTeX formulas after printing of the stackexchange question is done.
 Can be used for advice of `sx-question-mode--print-question'
 or as `sx-question-mode-after-print-hook'."
-  (texfrag-fix-display-math)
-  (texfrag-document))
+  (when texfrag-mode ;;< if sx.el works with global advice
+    (texfrag-fix-display-math)
+    (texfrag-document)))
 
 (declare-function sx-question-mode--print-question
 		  "sx-question-print.el")
