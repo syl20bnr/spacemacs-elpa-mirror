@@ -4,7 +4,7 @@
 
 ;; Author:    Austin Seipp <aseipp [@at] pobox [dot] com>
 ;; URL:       http://github.com/thoughtpolice/cryptol-mode
-;; Package-Version: 20160819.1444
+;; Package-Version: 20180118.535
 ;; Keywords:  cryptol cryptography
 ;; Version:   0.1.0
 ;; Released:  3 March 2013
@@ -261,7 +261,11 @@
 
   ;; Indentation, no tabs
   (set (make-local-variable 'tab-width) cryptol-tab-width)
-  (setq indent-tabs-mode nil))
+  (setq indent-tabs-mode nil)
+
+  ;; Comment syntax for M-;
+  (set (make-local-variable 'comment-start) "//")
+  (set (make-local-variable 'comment-end) ""))
 (provide 'cryptol-mode)
 
 ;;; ------------------------------------

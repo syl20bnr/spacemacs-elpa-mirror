@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20180116.9
+;; Package-Version: 20180118.745
 ;; Keywords: project, convenience
 ;; Version: 0.15.0-cvs
 ;; Package-Requires: ((emacs "24.3") (pkg-info "0.4"))
@@ -2277,7 +2277,7 @@ TEST-DIR which specifies the path to the tests relative to the project root."
 
 (defun projectile-cabal-project-p ()
   "Check if a project contains *.cabal files but no stack.yaml file."
-  (and (projectile-verify-file "*.cabal")
+  (and (projectile-verify-file-wildcard "*.cabal")
        (not (projectile-verify-file "stack.yaml"))))
 
 (defun projectile-go-project-p ()
@@ -2294,17 +2294,75 @@ TEST-DIR which specifies the path to the tests relative to the project root."
 
 (define-obsolete-variable-alias 'projectile-go-function 'projectile-go-project-test-function "0.15")
 
+;;; Project type registration
+;;
+;; Project type detection happens in a reverse order with respect to
+;; project type registration (invocations of `projectile-register-project-type').
+;;
+;; As function-based project type detection is pretty slow, so it
+;; should be tried at the end if everything else failed (meaning here
+;; it should be listed first).
+;;
+;; Ideally common project types should be checked earlier than exotic ones.
+(projectile-register-project-type 'haskell-cabal #'projectile-cabal-project-p
+                                  :compile "cabal build"
+                                  :test "cabal test")
+(projectile-register-project-type 'go projectile-go-project-test-function
+                                  :compile "go build ./..."
+                                  :test "go test ./...")
+;; File-based project types
 (projectile-register-project-type 'emacs-cask '("Cask")
                                   :compile "cask install")
-(projectile-register-project-type 'symfony '("composer.json" "app" "src" "vendor")
+(projectile-register-project-type 'r '("DESCRIPTION")
+                                  :compile "R CMD INSTALL --with-keep.source ."
+                                  :test (concat "R CMD check -o " temporary-file-directory " ."))
+(projectile-register-project-type 'haskell-stack '("stack.yaml")
+                                  :compile "stack build"
+                                  :test "stack build --test")
+(projectile-register-project-type 'rust-cargo '("Cargo.toml")
+                                  :compile "cargo build"
+                                  :test "cargo test")
+(projectile-register-project-type 'racket '("info.rkt")
+                                  :test "raco test .")
+;; Universal
+(projectile-register-project-type 'scons '("SConstruct")
+                                  :compile "scons"
+                                  :test "scons test")
+(projectile-register-project-type 'meson '("meson.build")
+                                  :compilation-dir "build"
+                                  :configure "meson %s"
+                                  :compile "ninja"
+                                  :test "ninja test")
+;; Make & CMake
+(projectile-register-project-type 'make '("Makefile")
+                                  :compile "make"
+                                  :test "make test")
+(projectile-register-project-type 'cmake '("CMakeLists.txt")
+                                  :configure "cmake %s"
+                                  :compile "cmake --build ."
+                                  :test "ctest")
+;; PHP
+(projectile-register-project-type 'php-symfony '("composer.json" "app" "src" "vendor")
                                   :compile "app/console server:run"
                                   :test "phpunit -c app ")
-(projectile-register-project-type 'ruby-rspec '("Gemfile" "lib" "spec")
-                                  :compile "bundle exec rake"
-                                  :test "bundle exec rspec")
-(projectile-register-project-type 'ruby-test '("Gemfile" "lib" "test")
-                                  :compile"bundle exec rake"
-                                  :test "bundle exec rake test")
+;; Erlang & Elixir
+(projectile-register-project-type 'rebar '("rebar.config")
+                                  :compile "rebar"
+                                  :test "rebar eunit")
+(projectile-register-project-type 'elixir '("mix.exs")
+                                  :compile "mix compile"
+                                  :test "mix test")
+;; JavaScript
+(projectile-register-project-type 'grunt '("Gruntfile.js")
+                                  :compile "grunt"
+                                  :test "grunt test")
+(projectile-register-project-type 'gulp '("gulpfile.js")
+                                  :compile "gulp"
+                                  :test "gulp test")
+(projectile-register-project-type 'npm '("package.json")
+                                  :compile "npm install"
+                                  :test "npm test")
+;; Python
 (projectile-register-project-type 'django '("manage.py")
                                   :compile "python manage.py runserver"
                                   :test "python manage.py test")
@@ -2317,9 +2375,7 @@ TEST-DIR which specifies the path to the tests relative to the project root."
 (projectile-register-project-type 'python-tox '("tox.ini")
                                   :compile "tox -r --notest"
                                   :test "tox")
-(projectile-register-project-type 'scons '("SConstruct")
-                                  :compile "scons"
-                                  :test "scons test")
+;; Java & friends
 (projectile-register-project-type 'maven '("pom.xml")
                                   :compile "mvn clean install"
                                   :test "mvn test")
@@ -2332,6 +2388,9 @@ TEST-DIR which specifies the path to the tests relative to the project root."
 (projectile-register-project-type 'grails '("application.properties" "grails-app")
                                   :compile "grails package"
                                   :test "grails test-app")
+(projectile-register-project-type 'sbt '("build.sbt")
+                                  :compile "sbt compile"
+                                  :test "sbt test")
 (projectile-register-project-type 'lein-test '("project.clj")
                                   :compile "lein compile"
                                   :test "lein test")
@@ -2341,55 +2400,13 @@ TEST-DIR which specifies the path to the tests relative to the project root."
 (projectile-register-project-type 'boot-clj '("build.boot")
                                   :compile "boot aot"
                                   :test "boot test")
-(projectile-register-project-type 'rebar '("rebar.config")
-                                  :compile "rebar"
-                                  :test "rebar eunit")
-(projectile-register-project-type 'sbt '("build.sbt")
-                                  :compile "sbt compile"
-                                  :test "sbt test")
-(projectile-register-project-type 'make '("Makefile")
-                                  :compile "make"
-                                  :test "make test")
-(projectile-register-project-type 'grunt '("Gruntfile.js")
-                                  :compile "grunt"
-                                  :test "grunt test")
-(projectile-register-project-type 'gulp '("gulpfile.js")
-                                  :compile "gulp"
-                                  :test "gulp test")
-(projectile-register-project-type 'haskell-stack '("stack.yaml")
-                                  :compile "stack build"
-                                  :test "stack build --test")
-(projectile-register-project-type 'haskell-cabal #'projectile-cabal-project-p
-                                  :compile "cabal build"
-                                  :test "cabal test")
-(projectile-register-project-type 'rust-cargo '("Cargo.toml")
-                                  :compile "cargo build"
-                                  :test "cargo test")
-(projectile-register-project-type 'r '("DESCRIPTION")
-                                  :compile "R CMD INSTALL --with-keep.source ."
-                                  :test (concat "R CMD check -o " temporary-file-directory " ."))
-(projectile-register-project-type 'go projectile-go-project-test-function
-                                  :compile "go build ./..."
-                                  :test "go test ./...")
-(projectile-register-project-type 'racket '("info.rkt")
-                                  :test "raco test .")
-(projectile-register-project-type 'elixir '("mix.exs")
-                                  :compile "mix compile"
-                                  :test "mix test")
-(projectile-register-project-type 'npm '("package.json")
-                                  :compile "npm install"
-                                  :test "npm test")
-(projectile-register-project-type 'meson '("meson.build")
-                                  :compilation-dir "build"
-                                  :configure "meson %s"
-                                  :compile "ninja"
-                                  :test "ninja test")
-(projectile-register-project-type 'cmake '("CMakeLists.txt")
-                                  :configure "cmake %s"
-                                  :compile "cmake --build ."
-                                  :test "ctest")
-
-;; Project detection goes in reverse order of registration.
+;; Ruby
+(projectile-register-project-type 'ruby-rspec '("Gemfile" "lib" "spec")
+                                  :compile "bundle exec rake"
+                                  :test "bundle exec rspec")
+(projectile-register-project-type 'ruby-test '("Gemfile" "lib" "test")
+                                  :compile"bundle exec rake"
+                                  :test "bundle exec rake test")
 ;; Rails needs to be registered after npm, otherwise `package.json` makes it `npm`.
 ;; https://github.com/bbatsov/projectile/pull/1191
 (projectile-register-project-type 'rails-test '("Gemfile" "app" "lib" "db" "config" "test")
@@ -2442,9 +2459,13 @@ The project type is cached for improved performance."
 
 (defun projectile-verify-files (files)
   "Check whether all FILES exist in the current project."
-  (cl-every 'projectile-verify-file files))
+  (cl-every #'projectile-verify-file files))
 
 (defun projectile-verify-file (file)
+  "Check whether FILE exists in the current project."
+  (file-exists-p (projectile-expand-root file)))
+
+(defun projectile-verify-file-wildcard (file)
   "Check whether FILE exists in the current project.
 Expands wildcards using `file-expand-wildcards' before checking."
   (file-expand-wildcards (projectile-expand-root file)))
@@ -2579,7 +2600,7 @@ Fallback to DEFAULT-VALUE for missing attributes."
      ((member project-type '(rails-rspec ruby-rspec)) (suffix "_spec"))
      ((member project-type '(rails-test ruby-test lein-test boot-clj go elixir)) (suffix "_test"))
      ((member project-type '(scons)) (suffix "test"))
-     ((member project-type '(maven symfony)) (suffix "Test"))
+     ((member project-type '(maven php-symfony)) (suffix "Test"))
      ((member project-type '(gradle gradlew grails)) (suffix "Spec"))
      ((member project-type '(haskell-cabal haskell-stack sbt)) (suffix "Spec"))
      (t (suffix)))))

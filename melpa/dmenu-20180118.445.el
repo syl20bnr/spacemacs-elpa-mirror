@@ -5,7 +5,7 @@
 ;; Author: DarkSun <lujun9972@gmail.com>
 ;; Created: 2015-12-01
 ;; Version: 0.1
-;; Package-Version: 20160228.627
+;; Package-Version: 20180118.445
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; Keywords: convenience, usability
 
@@ -130,7 +130,7 @@ Must be set before initializing Dmenu."
 
 (defun dmenu--cache-executable-files()
   "cache executable files"
-  (let* ((valid-exec-path (cl-remove-if-not #'file-exists-p (cl-remove-if-not #'stringp exec-path)))
+  (let* ((valid-exec-path (seq-uniq (cl-remove-if-not #'file-exists-p (cl-remove-if-not #'stringp exec-path))))
          (files (cl-mapcan (lambda (dir)
                              (directory-files dir t nil nil)) valid-exec-path))
          (executable-files (mapcar #'file-name-nondirectory (cl-remove-if #'file-directory-p (cl-remove-if-not #'file-executable-p files)))))
