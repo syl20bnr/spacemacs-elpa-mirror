@@ -4,7 +4,7 @@
 
 ;; Author: Tony Wang <wwwjfy@gmail.com>
 ;; Keywords: Fish, shell
-;; Package-Version: 20180114.445
+;; Package-Version: 20180117.1847
 ;; Package-Requires: ((emacs "24"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -33,6 +33,9 @@
 ;;  To run fish_indent before save, add the following to init script:
 ;;  (add-hook 'fish-mode-hook (lambda ()
 ;;                              (add-hook 'before-save-hook 'fish_indent-before-save)))
+;;
+;;  Configuration:
+;;  fish-indent-offset: customize the indentation
 
 ;;; Code:
 
