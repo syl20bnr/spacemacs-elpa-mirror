@@ -4,7 +4,7 @@
 
 ;; Author: ono hiroko <kuanyui.github.io>
 ;; Keywords: languages, html, jade, pug, sass, scss, stylus
-;; Package-Version: 20180118.322
+;; Package-Version: 20180118.912
 ;; Package-Requires: ((emacs "24.4"))
 ;; X-URL: https://github.com/kuanyui/cakecrumbs.el
 ;; Version: 0.1
@@ -58,7 +58,7 @@
 (defcustom cakecrumbs-refresh-delay-seconds 0.1
   "Set to number to refresh after idling N seconds.
 Set to nil, refresh without any delay."
-  :group 'cakecrumbs :type 'face)
+  :group 'cakecrumbs :type 'number)
 
 (defcustom cakecrumbs-separator " | "
   "The separator between each hierarchy."
