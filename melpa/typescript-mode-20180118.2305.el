@@ -21,7 +21,7 @@
 ;; -------------------------------------------------------------------------------------------
 
 ;; URL: http://github.com/ananthakumaran/typescript.el
-;; Package-Version: 20171229.810
+;; Package-Version: 20180118.2305
 ;; Version: 0.1
 ;; Keywords: typescript languages
 ;; Package-Requires: ()
@@ -582,12 +582,14 @@ Match group 1 is the name of the macro.")
 (defcustom typescript-indent-level 4
   "Number of spaces for each indentation step in `typescript-mode'."
   :type 'integer
+  :safe 'integerp
   :group 'typescript)
 
 (defcustom typescript-expr-indent-offset 0
   "Number of additional spaces used for indentation of continued expressions.
 The value must be no less than minus `typescript-indent-level'."
   :type 'integer
+  :safe 'integerp
   :group 'typescript)
 
 (defcustom typescript-auto-indent-flag t
