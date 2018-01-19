@@ -5,7 +5,7 @@
 ;; Author: Ben Hayden <hayden767@gmail.com>
 ;; Maintainer: Glynn Forrest <me@glynnforrest.com>
 ;; URL: https://github.com/glynnforrest/salt-mode
-;; Package-Version: 20170702.246
+;; Package-Version: 20180118.1754
 ;; Keywords: languages
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "24.4") (yaml-mode "0.0.12") (mmm-mode "0.5.4") (mmm-jinja2 "0.1"))
@@ -69,7 +69,7 @@
 (require 'cl-lib)
 (require 'rst)
 
-(defgroup salt-mode nil
+(defgroup salt nil
   "SaltStack major mode."
   :link '(custom-group-link :tag "Font Lock Faces group" font-lock-faces)
   :prefix "salt-mode-"
@@ -78,7 +78,7 @@
 (defcustom salt-mode-indent-level 2
   "Indentation of YAML statements."
   :type 'integer
-  :group 'salt-mode
+  :group 'salt
   :safe 'integerp)
 
 (defcustom salt-mode-python-program "python"
@@ -87,7 +87,7 @@
 Depending on your system's configuration, you might need to set
 this to `python2' or `python3'."
   :type '(file :must-match t)
-  :group 'salt-mode)
+  :group 'salt)
 
 (defun salt-mode--flyspell-predicate ()
   "Only spellcheck comments and documentation within salt-mode.
@@ -201,6 +201,18 @@ else:
 This does not load the full local minion configuration, so will not
 be able to access custom states and modules.")
 
+(defvar salt-mode--python-packages-p nil)
+(defun salt-mode--python-packages-p ()
+  "Return t if the required python packages to query Salt are present.
+
+This function caches its result, use `salt-mode-refresh-data' to reset it."
+  (unless salt-mode--python-packages-p
+    (setq salt-mode--python-packages-p
+          (if (equal
+               0 (call-process salt-mode-python-program nil nil nil "-c"
+                               (format salt-mode--query-template "{}"))) t 0)))
+  (equal t salt-mode--python-packages-p))
+
 (defun salt-mode--query-minion (program)
   "Run Python code PROGRAM on a virtual Salt minion.
 
@@ -258,7 +270,9 @@ BODY will run once the result is available, in the variable `result'."
 
 When IF-MISSING is set, only refresh data that is empty."
   (interactive)
-  (unless (and salt-mode--state-argspecs if-missing)
+  (unless if-missing
+    (setq salt-mode--python-packages-p nil))
+  (unless (or (and salt-mode--state-argspecs if-missing) (not (salt-mode--python-packages-p)))
     (let ((was-interactive (called-interactively-p 'any)))
       (salt-mode--with-async-minion "minion.functions.sys.state_argspec('*')"
         (when (and result (hash-table-p result))
@@ -285,7 +299,7 @@ When IF-MISSING is set, only refresh data that is empty."
 (defcustom salt-mode-hide-eldoc-argument-values
   '(nil :json-false "")
   "Default values to hide from the ElDoc function summary."
-  :group 'salt-mode
+  :group 'salt
   :type '(set (const :tag "Null" nil)
               (const :tag "Empty string" "")
               (const :tag "False" :json-false)
