@@ -5,7 +5,7 @@
 ;; Author: Bharat Joshi <jbharat@outlook.com>
 ;; Maintainer: Bharat Joshi <jbharat@outlook.com>
 ;; URL: https://github.com/jbharat/exotica-theme
-;; Package-Version: 20180118.2151
+;; Package-Version: 20180119.441
 ;; Created: 22th July 2017
 ;; Keywords: faces, theme, dark, vibrant colors
 ;; Version: 1.0.2
@@ -176,14 +176,14 @@
  `(outline-6 ((t (:foreground ,face6))))
  `(outline-7 ((t (:foreground ,face7))))
  `(outline-8 ((t (:foreground ,face8))))
- `(org-level-1 ((t (:inherit outline-1 :weight bold :height 1.0))))
- `(org-level-2 ((t (:inherit outline-2 :weight bold :height 1.0))))
- `(org-level-3 ((t (:inherit outline-3 :weight bold :height 1.0))))
- `(org-level-4 ((t (:inherit outline-4 :weight bold :height 1.0))))
- `(org-level-5 ((t (:inherit outline-5 :weight bold :height 1.0))))
- `(org-level-6 ((t (:inherit outline-6 :weight bold :height 1.0))))
- `(org-level-7 ((t (:inherit outline-7 :weight bold :height 1.0))))
- `(org-level-8 ((t (:inherit outline-8 :weight bold :height 1.0))))
+ `(org-level-1 ((t (:inherit outline-1 :weight bold :height 1.0 :slant ,slantType))))
+ `(org-level-2 ((t (:inherit outline-2 :weight bold :height 1.0 :slant ,slantType))))
+ `(org-level-3 ((t (:inherit outline-3 :weight bold :height 1.0 :slant ,slantType))))
+ `(org-level-4 ((t (:inherit outline-4 :weight bold :height 1.0 :slant ,slantType))))
+ `(org-level-5 ((t (:inherit outline-5 :weight bold :height 1.0 :slant ,slantType))))
+ `(org-level-6 ((t (:inherit outline-6 :weight bold :height 1.0 :slant ,slantType))))
+ `(org-level-7 ((t (:inherit outline-7 :weight bold :height 1.0 :slant ,slantType))))
+ `(org-level-8 ((t (:inherit outline-8 :weight bold :height 1.0 :slant ,slantType))))
  `(rainbow-delimiters-depth-1-face ((t (:inherit outline-1))))
  `(rainbow-delimiters-depth-2-face ((t (:inherit outline-2))))
  `(rainbow-delimiters-depth-3-face ((t (:inherit outline-3))))
