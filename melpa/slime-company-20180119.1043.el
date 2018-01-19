@@ -4,9 +4,9 @@
 ;;
 ;; Author: Ole Arndt <anwyn@sugarshark.com>
 ;; Keywords: convenience, lisp, abbrev
-;; Package-Version: 20180108.426
+;; Package-Version: 20180119.1043
 ;; Version: 1.1
-;; Package-Requires: ((slime "2.13") (company "0.9.0"))
+;; Package-Requires: ((emacs "24.4") (slime "2.13") (company "0.9.0"))
 ;;
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
