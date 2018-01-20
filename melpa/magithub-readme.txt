@@ -1,9 +1,9 @@
-Magithub is a Magit-based interface to Github.
+Magithub is a Magit-based interface to GitHub.
 
 Integrated into Magit workflows, Magithub lets you interact with
-your Github repositories and manage your work/play from emacs:
+your GitHub repositories and manage your work/play from emacs:
 
- - push brand-new local repositories up to Github
+ - push brand-new local repositories up to GitHub
  - create forks of existing repositories
  - submit pull requests upstream
  - view and create issues

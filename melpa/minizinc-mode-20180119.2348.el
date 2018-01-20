@@ -3,7 +3,7 @@
 ;; Copyright © 2015-2017 Yushi Wang
 ;; Authors : Yushi Wang <dot_wangyushi@yeah.net>
 ;; URL : http://github.com/m00nlight/minizinc-mode
-;; Package-Version: 20171208.958
+;; Package-Version: 20180119.2348
 ;; Keywords : languages minizinc
 ;; Version : 0.0.2
 ;; Package-Requires : ((emacs "24.1"))
@@ -13,6 +13,8 @@
 ;;; Commentary:
 
 ;; Provide font-lock for minizinc(http://www.minizinc.org/) code
+
+;; Note: pretty-rendering is shamelessly stolen from haskell-mode.
 
 ;; Here are some example of configuration:
 
@@ -62,6 +64,78 @@
 (defgroup minizinc nil
   "Major mode for MiniZinc code"
   :group 'languages)
+
+(defcustom minizinc-font-lock-symbols nil
+  "Display /\\ and -> and such using symbols in fonts.
+This may sound like a neat trick, but be extra careful: it changes the
+alignment and can thus lead to nasty surprises with regards to layout."
+  :group 'minizinc
+  :type 'boolean)
+
+
+(defcustom minizinc-font-lock-symbols-alist
+  '(("/\\" . "∧")
+    ("->"  . "⇒")
+    ("<-"  . "⇐")
+    ("<->" . "⇔")
+    ("\\/" . "∨")
+    ("not" . "¬")
+    ("xor" . "⊻")
+    ("in"  . "∈")
+    ("exists" . "∃")
+    ("forall" . "∀"))
+  "Alist mapping MiniZinc symbols to chars.
+Each element has the form (STRING . COMPONENTS) or (STRING
+COMPONENTS PREDICATE).
+STRING is the MiniZinc symbol.
+COMPONENTS is a representation specification suitable as an argument to
+`compose-region'.
+PREDICATE if present is a function of one argument (the start position
+of the symbol) which should return non-nil if this mapping should
+be disabled at that position."
+  :type '(alist string string)
+  :group 'minizinc)
+
+
+(defun minizinc-font-lock-compose-symbol (alist)
+  "Compose a sequence of ascii chars into a symbol.
+Regexp match data 0 points to the chars."
+  ;; Check that the chars should really be composed into a symbol.
+  (let* ((start (match-beginning 0))
+         (end (match-end 0))
+         (syntaxes (cond
+                    ((eq (char-syntax (char-after start)) ?w) '(?w))
+                    ((eq (char-syntax (char-after start)) ?.) '(?.))
+                    ;; Special case for the . used for qualified names.
+                    ((and (eq (char-after start) ?\.) (= end (1+ start)))
+                     '(?_ ?\\ ?w))
+                    (t '(?_ ?\\))))
+         sym-data)
+    (if (or (memq (char-syntax (or (char-before start) ?\ )) syntaxes)
+            (memq (char-syntax (or (char-after end) ?\ )) syntaxes)
+            (or (elt (syntax-ppss) 3) (elt (syntax-ppss) 4))
+            (and (consp (setq sym-data (cdr (assoc (match-string 0) alist))))
+                 (let ((pred (cadr sym-data)))
+                   (setq sym-data (car sym-data))
+                   (funcall pred start))))
+        ;; No composition for you.  Let's actually remove any composition
+        ;; we may have added earlier and which is now incorrect.
+        (remove-text-properties start end '(composition))
+      ;; That's a symbol alright, so add the composition.
+      (compose-region start end sym-data)))
+  ;; Return nil because we're not adding any face property.
+  nil)
+
+
+(defun minizinc-font-lock-symbols-keywords ()
+  (when (and minizinc-font-lock-symbols
+             minizinc-font-lock-symbols-alist)
+    `((,(regexp-opt (mapcar 'car minizinc-font-lock-symbols-alist) t)
+       (0 (haskell-font-lock-compose-symbol ',minizinc-font-lock-symbols-alist)
+          ;; In Emacs-21, if the `override' field is nil, the face
+          ;; expressions is only evaluated if the text has currently
+          ;; no face.  So force evaluation by using `keep'.
+          keep)))))
 
 ;; (defface font-lock-operator-face
 ;;   '((t :inherit font-lock-builtin-face))
@@ -147,6 +221,7 @@
 (defvar minizinc-font-lock-keywords
   `(
     ("\\(%[^\n]*\\)$" . font-lock-comment-face)
+    ,@(minizinc-font-lock-symbols-keywords)
     (,minizinc-builtins-regex . font-lock-builtin-face)
     (,minizinc-types-regex . font-lock-type-face)
     (,minizinc-keywords-regex . font-lock-keyword-face)

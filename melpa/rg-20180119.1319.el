@@ -7,7 +7,7 @@
 ;; Author: David Landell <david.landell@sunnyhill.email>
 ;;         Roland McGrath <roland@gnu.org>
 ;; Version: 1.4.1
-;; Package-Version: 20180118.935
+;; Package-Version: 20180119.1319
 ;; URL: https://github.com/dajva/rg.el
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24") (s "1.10.0"))
 ;; Keywords: matching, tools
@@ -70,6 +70,9 @@
 ;; The `rg-define-toggle' macro can be used to define a toggle-able
 ;; flag for the rg command line.  Such flags can then be toggled from
 ;; the results buffer to repeat the search with updated flags.
+
+;; The `rg-define-search' macro can be used to define custom search
+;; functions that is not available in this package.
 
 ;; The two `rg-save-search' functions will allow for saving search
 ;; result buffers with or without custom naming.
@@ -1027,6 +1030,11 @@ the :query option is missing, set it to ASK"
     (unless (plist-get args :query)
       (setq args (plist-put args :query 'ask)))
 
+    (unless (plist-get args :files)
+      (setq args (plist-put args :files 'ask)))
+
+    (unless (plist-get args :dir)
+      (setq args (plist-put args :dir 'ask)))
     args))
 
 (eval-and-compile
@@ -1058,7 +1066,7 @@ the :query option is missing, set it to ASK"
           (setq binding-list (append binding-list `((query ,query))))))
 
       ;; dir binding
-      (when dir-opt
+      (unless (eq dir-opt 'ask)
         (let ((dirs (cond ((eq dir-opt 'project) '(rg-project-root
                                                    buffer-file-name))
                           ((eq dir-opt 'current) 'default-directory)
@@ -1066,7 +1074,7 @@ the :query option is missing, set it to ASK"
           (setq binding-list (append binding-list `((dir ,dirs))))))
 
       ;; file alias binding
-      (when alias-opt
+      (unless (eq alias-opt 'ask)
         (let ((files (if (eq alias-opt 'current)
                          '(car (rg-default-alias))
                        alias-opt)))
@@ -1088,11 +1096,11 @@ the :query option is missing, set it to ASK"
         (setq iargs
               (append iargs `((query . (rg-read-pattern nil ,literal))))))
 
-      (unless files-opt
+      (when (eq files-opt 'ask)
         (setq iargs
               (append iargs '((files . (rg-read-files))))))
 
-      (unless dir-opt
+      (when (eq dir-opt 'ask)
         (setq iargs
               (append iargs
                       '((dir . (read-directory-name
@@ -1110,11 +1118,41 @@ the :query option is missing, set it to ASK"
 ;;;###autoload
 (defmacro rg-define-search (name &rest args)
   "Define an rg search functions named NAME.
-ARGS is a search specification with :query (POINT or ASK),
-:format (LITERAL or REGEXP), :files (rg or custom file alias),
-:dir (root search directory), and :confirm (NEVER, ALWAYS, or
-PREFIX) as allowable options specifying the behavior of the
-search function."
+ARGS is a search specification that defines parameters of a search.
+It optionally starts with a string that is used as the docstring for
+the defined function.  The rest of ARGS contains key value pairs
+according to the specification below.  All keys are optional with
+specified default if left out.
+
+:query      Method for retrieving the search string.  Allowed values
+            are `point' which means extract thing at point and `ask'
+            which means prompt the user for a string.  Any form that
+            evaulates to a string is allowed.
+            Default is `ask'.
+:format     Specifies if :query is interpreted literally (`literal')
+            or as a regexp (`regexp').
+            Default is `regexp'.
+:files      Form that evaluates to a file alias or custom file glob.
+            `current' means extract alias from current buffer file name,
+            `ask' will prompt the user.
+            Default is `ask'.
+:dir        Root search directory.  Allowed values are `ask' for user
+            prompt, `current' for current dir and `project' for project
+            root.  Any form that evaulates to a directory string is
+            also allowed.
+            Default is `ask'.
+:confirm    `never', `always', or `prefix' are allowed values.  Specifies
+            if the the final search command line string can be modified
+            and confirmed by the user.
+            Default is `never'.
+
+Example:
+\(rg-define-search search-home-dir-in-elisp
+  \"Doc string.\"
+  :query ask
+  :format literal
+  :files \"elisp\"
+  :dir (getenv \"HOME\"\)\)"
   (declare (indent defun))
   (let* ((body (rg-search-parse-body args))
          (decls (car body))

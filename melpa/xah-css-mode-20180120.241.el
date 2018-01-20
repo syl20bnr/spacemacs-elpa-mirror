@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2017 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.7.20180114
-;; Package-Version: 20180114.506
+;; Version: 2.8.20180120
+;; Package-Version: 20180120.241
 ;; Created: 18 April 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: languages, convenience, css, color
@@ -547,7 +547,7 @@ Version 2016-10-02"
 ":visited"
 ) )
 
-(defvar xah-css-media-keywords nil "List of CSS xxxxx todo.")
+(defvar xah-css-media-keywords nil "List of CSS media keywords.")
 (setq xah-css-media-keywords '(
 "@charset"
 "@document"
@@ -577,7 +577,7 @@ Version 2016-10-02"
  xah-css-value-kwds
  '(
 
-"!important"
+"important" ; todo, this actually needs to be !important
 "absolute"
 "alpha"
 "at"
