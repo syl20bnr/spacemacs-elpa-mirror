@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/general.el
-;; Package-Version: 20180119.2352
+;; Package-Version: 20180120.1015
 ;; Created: February 17, 2016
 ;; Keywords: vim, evil, leader, keybindings, keys
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
@@ -1709,9 +1709,11 @@ FALLBACK-COMMAND will also be run in the case that the user does not press the
 next key within the TIMEOUT (e.g. 0.5).
 
 NAME and DOCSTRING are optional keyword arguments. They can be used to replace
-the automatically generated name and docstring for the created function and are
-potentially useful if you want to create multiple, different commands using the
-same FALLBACK-COMMAND (e.g. `self-insert-command').
+the automatically generated name and docstring for the created function. By
+default, `cl-gensym' is used to prevent name clashes (e.g. allows the user to
+create multiple different commands using `self-insert-command' as the
+FALLBACK-COMMAND without explicitly specifying NAME to manually prevent
+clashes).
 
 When INHERIT-KEYMAP is specified, all the keybindings from that keymap will be
 inherited in MAPS.
@@ -1719,8 +1721,9 @@ inherited in MAPS.
 When a WHICH-KEY description is specified, it will replace the command name in
 the which-key popup."
   (declare (indent 1))
-  (let ((name (or name (intern (format "general-dispatch-%s"
-                                       (eval fallback-command)))))
+  (let ((name (or name (intern (format "general-dispatch-%s-%s"
+                                       (eval fallback-command)
+                                       (cl-gensym)))))
         ;; remove keyword arguments from maps
         (maps (car (general--remove-keyword-args maps))))
     `(progn
@@ -1769,7 +1772,8 @@ the which-key popup."
             (t
              (setq matched-command ,fallback-command)
              (general--simulate-keys ,fallback-command char)))
-           (setq general--last-dispatch-command matched-command))))))
+           (setq general--last-dispatch-command matched-command)))
+       #',name)))
 
 (defun general--dispatch-repeat (flag)
   "Modified version of `evil-repeat-keystrokes'.
