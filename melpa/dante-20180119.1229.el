@@ -9,7 +9,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20180119.134
+;; Package-Version: 20180119.1229
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -544,11 +544,10 @@ other sub-sessions start running.)"
   "If GHCi is idle, run the next queued GHCi sub-session for BUFFER, if any.
 Note that sub-sessions are not interleaved."
   (with-current-buffer buffer
-    (unless dante-callback
+    (if dante-callback (force-mode-line-update t)
       (let ((req (pop dante-queue)))
         (when req
-          (funcall req buffer (apply-partially #'dante-schedule-next buffer))))))
-  (force-mode-line-update))
+          (funcall req buffer (apply-partially #'dante-schedule-next buffer)))))))
 
 (defcustom dante-load-flags '("+c" "-fno-diagnostics-show-caret")
   "Flags to set whenever GHCi is started."
@@ -560,7 +559,7 @@ Note that sub-sessions are not interleaved."
                             ("-fno-diagnostics-show-caret" "Cleaner error messages for GHC >=8.2 (ignored by earlier versions)")))))
 
 (defun dante-start ()
-  "Start a GHCi worker and return its buffer."
+  "Start a GHCi process and return its buffer."
   (let* ((args (-non-nil (-map #'eval (dante-repl-command-line))))
          (buffer (dante-buffer-create))
          (process (with-current-buffer buffer
@@ -596,7 +595,7 @@ Called in process buffer."
     (when dante-callback
       (error "Try to set a callback (%s), but one exists already! (%s)" cont dante-callback))
     (setq dante-callback cont)
-    (force-mode-line-update))
+    (force-mode-line-update t))
 
 (defconst dante-ghci-prompt "\4\\(.*\\)|")
 (defun dante-wait-for-prompt (acc cont)

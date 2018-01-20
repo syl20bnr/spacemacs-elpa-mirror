@@ -5,7 +5,7 @@
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; Maintainer: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/ace-window
-;; Package-Version: 20171228.1109
+;; Package-Version: 20180119.1226
 ;; Version: 0.9.0
 ;; Package-Requires: ((avy "0.2.0"))
 ;; Keywords: window, location
@@ -388,7 +388,8 @@ The new frame is set to the same size as the previous frame, offset by
 
 (defun aw-dispatch-default (char)
   "Perform an action depending on CHAR."
-  (cond ((avy-mouse-event-window char))
+  (cond ((and (fboundp 'avy-mouse-event-window)
+              (avy-mouse-event-window char)))
         ((= char (aref (kbd "C-g") 0))
          (throw 'done 'exit))
         ((= char aw-make-frame-char)

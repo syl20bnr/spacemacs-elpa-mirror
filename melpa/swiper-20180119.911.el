@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180112.1001
+;; Package-Version: 20180119.911
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.9.0"))
 ;; Keywords: matching
@@ -316,6 +316,32 @@
 (defvar swiper-use-visual-line nil
   "When non-nil, use `line-move' instead of `forward-line'.")
 
+(defvar dired-isearch-filenames)
+(declare-function dired-move-to-filename "dired")
+
+(defun swiper--line ()
+  (let* ((beg (cond ((and (eq major-mode 'dired-mode)
+                          dired-isearch-filenames)
+                     (dired-move-to-filename)
+                     (point))
+                    (swiper-use-visual-line
+                     (save-excursion
+                       (beginning-of-visual-line)
+                       (point)))
+                    (t
+                     (point))))
+         (end (if swiper-use-visual-line
+                  (save-excursion
+                    (end-of-visual-line)
+                    (point))
+                (line-end-position))))
+
+    (concat
+     " "
+     (replace-regexp-in-string
+      "\t" "    "
+      (buffer-substring beg end)))))
+
 (declare-function outline-show-all "outline")
 
 (defun swiper--candidates (&optional numbers-width)
@@ -350,21 +376,7 @@ numbers; replaces calculating the width from buffer line count."
           (goto-char (point-min))
           (swiper-font-lock-ensure)
           (while (< (point) (point-max))
-            (let ((str (concat
-                        " "
-                        (replace-regexp-in-string
-                         "\t" "    "
-                         (if swiper-use-visual-line
-                             (buffer-substring
-                              (save-excursion
-                                (beginning-of-visual-line)
-                                (point))
-                              (save-excursion
-                                (end-of-visual-line)
-                                (point)))
-                           (buffer-substring
-                            (point)
-                            (line-end-position)))))))
+            (let ((str (swiper--line)))
               (setq str (ivy-cleanup-string str))
               (let ((line-number-str
                      (format swiper--format-spec (cl-incf line-number))))
