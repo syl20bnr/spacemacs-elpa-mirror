@@ -3,7 +3,7 @@
 ;;
 ;; Author: Michał Kondraciuk <k.michal@zoho.com>
 ;; URL: https://github.com/mkcms/interactive-align
-;; Package-Version: 20180117.956
+;; Package-Version: 20180120.304
 ;; Package-Requires: ((emacs "24.4"))
 ;; Version: 0.4.0
 ;; Keywords: tools, editing, align, interactive
@@ -54,7 +54,6 @@
     (define-key map (kbd "C-c RET") #'ialign-commit)
     (define-key map (kbd "C-c C-c") #'ialign-update)
     (define-key map (kbd "C-c ?") #'ialign-show-help)
-    (define-key map [remap exit-minibuffer] #'ialign-exit-minibuffer)
     map)
   "Keymap used in minibuffer during `ialign'."
   :group 'ialign)
@@ -210,8 +209,7 @@ Use `ialign-set-spacing' to set the spacing to specific number.
 Does nothing when currently not aligning with `ialign'."
   (interactive)
   (when (ialign--active-p)
-    (setq ialign--spacing (1+ ialign--spacing))
-    (ialign-update 'quietly)))
+    (ialign-set-spacing (1+ ialign--spacing))))
 
 (defun ialign-decrement-spacing ()
   "Decrement the amount of spacing passed to `align-regexp' command.
@@ -219,8 +217,7 @@ Use `ialign-set-spacing' to set the spacing to specific number.
 Does nothing when currently not aligning with `ialign'."
   (interactive)
   (when (ialign--active-p)
-    (setq ialign--spacing (1- ialign--spacing))
-    (ialign-update 'quietly)))
+    (ialign-set-spacing (1- ialign--spacing))))
 
 (defun ialign-set-spacing (spacing)
   "Set the spacing parameter passed to `align-regexp' command to SPACING.
@@ -278,7 +275,7 @@ Does nothing when currently not aligning with `ialign'."
       (ialign--with-region-narrowed
        (<= (- (line-number-at-pos (point-max))
 	      (line-number-at-pos (point-min)))
-	  ialign-auto-update))
+	   ialign-auto-update))
     ialign-auto-update))
 
 (defun ialign--update-minibuffer-prompt ()
@@ -295,8 +292,8 @@ Does nothing when currently not aligning with `ialign'."
 help"))))
     (put-text-property (point-min) (minibuffer-prompt-end) 'display prompt)
     (when (overlayp ialign--minibuffer-overlay)
-	(delete-overlay ialign--minibuffer-overlay)
-	(setq ialign--minibuffer-overlay nil))
+      (delete-overlay ialign--minibuffer-overlay)
+      (setq ialign--minibuffer-overlay nil))
     (when ialign--error
       (let ((msg (concat " [" ialign--error "]")))
 	(setq ialign--minibuffer-overlay
@@ -353,13 +350,12 @@ This function is used to undo changes made by command `ialign'."
       (remove-list-of-text-properties
        (minibuffer-prompt-end) (point-max) '(ialign)))))
 
-(defun ialign--save-arguments ()
-  "Save global variables in properties of minibuffer contents."
-  (let ((inhibit-modification-hooks t))
-    (put-text-property
-     (minibuffer-prompt-end) (min (point-max) (1+ (minibuffer-prompt-end)))
-     'ialign
-     (list ialign--group ialign--spacing ialign--repeat))))
+(defun ialign--regexp-with-state ()
+  "Return `ialign--regexp' with properties that store current state.
+These properties are restored with `ialign--restore-arguments'"
+  (propertize ialign--regexp
+	      'ialign
+	      (list ialign--group ialign--spacing ialign--repeat)))
 
 (defun ialign-update (&optional no-error)
   "Align the region with regexp in the minibuffer for preview.
@@ -380,7 +376,9 @@ Use `ialign-commit' to actually align the region in the buffer."
 	      (redisplay))))
       (error
        (progn
-	 (setq ialign--error (error-message-string err))
+	 (setq ialign--error
+	       (if (eq (car err) 'invalid-regexp)
+		   (cadr err) (error-message-string err)))
 	 (ialign--update-minibuffer-prompt)
 	 (unless no-error
 	   (signal (car err) (cdr err))))))))
@@ -393,13 +391,7 @@ Updates the minibuffer prompt and maybe realigns the region."
     (ignore-errors
       (ialign--restore-arguments)
       (setq ialign--error nil)
-      (ignore-errors (ialign-update)))))
-
-(defun ialign-exit-minibuffer ()
-  "Save settings in history and exit minibuffer."
-  (interactive)
-  (ialign--save-arguments)
-  (exit-minibuffer))
+      (ialign-update))))
 
 (defun ialign-show-help ()
   "Show help to the user."
@@ -472,10 +464,13 @@ The keymap used in minibuffer is `ialign-minibuffer-keymap':
 	  (progn
 	    (add-hook 'after-change-functions #'ialign--after-change)
 	    (let ((buffer-undo-list t)
-		  (minibuffer-allow-text-properties t))
+		  (minibuffer-allow-text-properties t)
+		  (history-add-new-input nil))
 	      (read-from-minibuffer " " regexp
                                     ialign-minibuffer-keymap
 				    nil 'ialign--history)
+	      (add-to-history 'ialign--history
+			      (ialign--regexp-with-state))
 	      (setq success t)))
 	(unwind-protect
 	    (if success
