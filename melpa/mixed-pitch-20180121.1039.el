@@ -5,7 +5,7 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/mixed-pitch
-;; Package-Version: 20180103.1839
+;; Package-Version: 20180121.1039
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "24.3"))
 
@@ -102,13 +102,16 @@
     org-table
     org-verbatim)
   "This is a list holding names of faces that will not be variable pitch when function `mixed-pitch-mode' is enabled."
+  :type '(repeat symbol)
   :group 'mixed-pitch)
 
 (defcustom mixed-pitch-variable-pitch-cursor 'bar
   "If non-nil, function `mixed-pitch-mode' changes the cursor.
 When disabled, switch back to what it was before.
 
-See `cursor-type' for a list of acceptable types.")
+See `cursor-type' for a list of acceptable types."
+  :type 'symbol
+  :group 'mixed-pitch)
 
 (defvar-local mixed-pitch-fixed-cookie nil)
 (defvar-local mixed-pitch-variable-cookie nil)
