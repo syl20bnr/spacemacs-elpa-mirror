@@ -1,10 +1,10 @@
 ;;; magit-imerge.el --- Magit extension for git-imerge  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2017  Kyle Meyer
+;; Copyright (C) 2017-2018  Kyle Meyer
 
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;; URL: https://github.com/magit/magit-imerge
-;; Package-Version: 20170805.819
+;; Package-Version: 20180120.1554
 ;; Keywords: vc, tools
 ;; Version: 0.2.0
 ;; Package-Requires: ((emacs "24.4") (magit "2.10.0"))

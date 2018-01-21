@@ -9,7 +9,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20180119.1229
+;; Package-Version: 20180120.1341
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -282,12 +282,13 @@ The continuation must call its first argument; see `dante-session'."
       (write-region nil nil (dante-temp-file-name (current-buffer)) nil 0))
     (dante-cps-let (((buffer done) (dante-session))
                     (_ (dante-async-call (if interpret ":set -fbyte-code" ":set -fobject-code")))
-                    (_ (dante-async-write buffer (if (string-equal (buffer-local-value 'dante-loaded-file buffer) fname)
+                    (_ (dante-async-write buffer (if (s-equals? (buffer-local-value 'dante-loaded-file buffer) fname)
                                                      ":r" (concat ":l " (dante-local-name fname)))))
                     ((status err-messages loaded-modules) (dante-async-with-buffer buffer (apply-partially 'dante-load-loop "" nil))))
-      (let ((load-msg (with-current-buffer buffer
-                        (setq dante-loaded-file fname)
-                        (if (and unchanged (eq status 'ok)) dante-load-message
+      (let* ((same-buffer (s-equals? dante-loaded-file fname)) ;; todo: factor
+             (load-msg (with-current-buffer buffer
+                         (setq dante-loaded-file fname)
+                        (if (and unchanged same-buffer (eq status 'ok)) dante-load-message
                           (setq dante-load-message err-messages)))))
         ;; when no write was done, then GHCi does not repeat the warnings. So, we spit back the previous load messages.
         (with-current-buffer source-buffer (funcall cont done load-msg))))))
@@ -490,7 +491,7 @@ x:\\foo\\bar (i.e., Windows)."
 
 (defun dante--ghc-subexp (reg)
   "Format the subexpression denoted by REG for GHCi commands."
-  (pcase reg (`(,beg . (,end . nil))
+  (pcase reg (`(,beg ,end)
               (format "%S %d %d %d %d %s"
                       (dante-temp-file-name (current-buffer))
                       (line-number-at-pos beg)
@@ -522,7 +523,7 @@ x:\\foo\\bar (i.e., Windows)."
     (car result)))
 
 (defun dante-restart ()
-  "Restart GHCi with the same configuration as before."
+  "Restart GHCi with the same configuration (root, command line) as before."
   (interactive)
   (when (dante-buffer-p)
     (dante-destroy)

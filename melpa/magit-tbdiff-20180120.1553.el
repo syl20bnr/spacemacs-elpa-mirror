@@ -1,10 +1,10 @@
 ;;; magit-tbdiff.el --- Magit extension for git-tbdiff  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2017  Kyle Meyer
+;; Copyright (C) 2017-2018  Kyle Meyer
 
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;; URL: https://github.com/magit/magit-tbdiff
-;; Package-Version: 20170725.1850
+;; Package-Version: 20180120.1553
 ;; Keywords: vc, tools
 ;; Version: 0.2.0
 ;; Package-Requires: ((emacs "24.4") (magit "2.10.0"))

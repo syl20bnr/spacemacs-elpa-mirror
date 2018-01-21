@@ -1,11 +1,11 @@
 ;;; magit-annex.el --- Control git-annex from Magit  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2013-2017 Kyle Meyer <kyle@kyleam.com>
+;; Copyright (C) 2013-2018 Kyle Meyer <kyle@kyleam.com>
 
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;;         Rémi Vanicat <vanicat@debian.org>
 ;; URL: https://github.com/magit/magit-annex
-;; Package-Version: 20171215.1134
+;; Package-Version: 20180120.1534
 ;; Keywords: vc tools
 ;; Version: 1.4.0
 ;; Package-Requires: ((cl-lib "0.3") (magit "2.11.0"))
@@ -587,7 +587,7 @@ Type \\[magit-annex-unused-open] to open the file.
     (let ((num (match-string 1))
           (key (match-string 2)))
       (delete-region (match-beginning 0) (match-end 0))
-      (magit-insert-section it (unused-data (cons num key))
+      (magit-insert-section (unused-data (cons num key))
         (insert (format "   %-3s   %s" num key))
         (forward-line)))))
 
@@ -676,7 +676,7 @@ on the file at point.
     (let ((locs (match-string 1))
           (file (match-string 2)))
       (delete-region (match-beginning 0) (match-end 0))
-      (magit-insert-section it (annex-list-file (cons locs file))
+      (magit-insert-section (annex-list-file (cons locs file))
         (insert (format "%s %s" locs file))
         (forward-line)))))
 

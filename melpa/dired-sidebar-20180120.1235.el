@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/dired-sidebar
-;; Package-Version: 20180115.1759
+;; Package-Version: 20180120.1235
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1") (dired-subtree "0.0.1"))
 ;; Keywords: dired, files, tools
@@ -222,7 +222,8 @@ Warning: This is implemented by advising specific dired functions."
     dired-do-flagged-delete
     dired-create-directory
     (delete-file . 5)
-    (save-buffer . 5))
+    (save-buffer . 5)
+    magit-format-patch)
   "A list of commands that will trigger a refresh of the sidebar.
 
 The command can be an alist with the CDR of the alist being the amount of time
