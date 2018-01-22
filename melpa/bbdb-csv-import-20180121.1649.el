@@ -6,7 +6,7 @@
 ;; Author: Ian Kelling <ian@iankelling.org>
 ;; Created: 1 Apr 2014
 ;; Version: 1.1
-;; Package-Version: 20140802.442
+;; Package-Version: 20180121.1649
 ;; Package-Requires: ((pcsv "1.3.3") (dash "2.5.0") (bbdb "20140412.1949"))
 ;; Keywords: csv, util, bbdb
 ;; Homepage: https://gitlab.com/iankelling/bbdb-csv-import
@@ -188,6 +188,15 @@
      "Spouse" "Web Page" "Personal Web Page"))
   "Linkedin export in the Outlook csv format.")
 
+(defconst bbdb-csv-import-linkedin-connections-format-january-2018
+  '((:namelist "First Name" "Last Name")
+    (:mail "Email Address") 
+    (:organization "Company")
+    (:xfields
+     "Position"
+     "Connected On"
+     "Tags"))
+  "Linkedin export January 2018 in the Outlook csv format.")
 
 (defconst bbdb-csv-import-gmail
   '((:namelist "Given Name" "Family Name")
@@ -293,6 +302,7 @@ Adds email labels as custom fields.")
           (append
            (cdr (assoc root bbdb-csv-import-thunderbird))
            (cdr (assoc root bbdb-csv-import-linkedin))
+	   (cdr (assoc root bbdb-csv-import-linkedin-connections-format-january-2018))
            (cdr (assoc root bbdb-csv-import-gmail))
            (cdr (assoc root bbdb-csv-import-outlook-web)))))))
 
@@ -495,7 +505,7 @@ BUFFER-OR-NAME is a buffer or name of a buffer, or the current buffer if nil."
                 (push elt dupes)
                 (setq found-dupe t)))
             (when (or allow-dupes (not found-dupe))
-              (bbdb-create-internal name affix aka organization mail phone address xfields t))))))
+	      (bbdb-create-internal :name name :affix affix :aka aka :organization organization :mail mail :phone phone :address address :xfields xfields))))))
     (when dupes (if allow-dupes
                     (message "Warning, contacts with duplicate email addresses were imported:\n%s" dupes)
                   (message "Skipped contacts with duplicate email addresses:\n%s" dupes)))

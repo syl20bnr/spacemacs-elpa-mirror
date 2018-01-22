@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/general.el
-;; Package-Version: 20180121.1205
+;; Package-Version: 20180121.1539
 ;; Created: February 17, 2016
 ;; Keywords: vim, evil, leader, keybindings, keys
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
@@ -196,19 +196,19 @@ This is an alist of a state to keybindings.")
 (defcustom general-describe-keybinding-sort-function nil
   "Function used to sort keybindings for `general-describe-keybindings'."
   :group 'general
-  :type 'function)
+  :type '(choice function (const nil)))
 
 (defcustom general-describe-state-sort-function
   #'general--sort-evil-state-conses
   "Function used to sort the states conses for `general-describe-keybindings'."
   :group 'general
-  :type 'function)
+  :type '(choice function (const nil)))
 
 (defcustom general-describe-keymap-sort-function nil
   "Function used to sort the keymap conses`general-keybindings' for
 `general-describe-keybindings'."
   :group 'general
-  :type 'function)
+  :type '(choice function (const nil)))
 
 (defcustom general-describe-priority-keymaps
   '(local
@@ -239,6 +239,7 @@ the stored previous definition). When set to nil, it will only be updated when
 the key was previously unbound."
   :group 'general
   ;; can't think of a use case, but add 'always if requested
+  ;; t is equivalent of on-change
   :type '(choice
           (const :tag "When definition has changed" on-change)
           (const :tag "When the key was previously unbound" nil)))
@@ -608,7 +609,7 @@ run on it)."
            ;; index of keymap in :keymaps
            (keymap-index (cl-dotimes (ind (length keymaps))
                            (when (eq (nth ind keymaps) keymap)
-                             (cl-return-from nil ind))))
+                             (cl-return ind))))
            (mode (let ((mode (if (and major-modes (listp major-modes))
                                  (nth keymap-index major-modes)
                                major-modes)))
@@ -1764,9 +1765,8 @@ When command to be executed has been remapped (i.e. [remap command] is currently
 bound), the remapped version will be used instead of the original command unless
 REMAP is specified as nil (it is true by default)."
   (declare (indent 1))
-  (let ((name (or name (intern (format "general-dispatch-%s-%s"
-                                       (eval fallback-command)
-                                       (cl-gensym)))))
+  (let ((name (or name (cl-gensym (format "general-dispatch-%s-"
+                                          (eval fallback-command)))))
         ;; remove keyword arguments from maps
         (maps (car (general--remove-keyword-args maps))))
     `(progn
@@ -1836,6 +1836,7 @@ to determine whether to abort recording."
              (evil-clear-command-keys))))))
 
 ;; ** Predicate Dispatch
+;;;###autoload
 (cl-defmacro general-predicate-dispatch
     (fallback-def &rest defs
                   &key docstring
