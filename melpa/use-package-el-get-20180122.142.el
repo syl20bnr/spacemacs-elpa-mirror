@@ -5,8 +5,8 @@
 ;; Author: Edward Knyshov <edvorg@gmail.com>
 ;; Created: 15 Jan 2018
 ;; Version: 0.1
-;; Package-Version: 20180116.2126
-;; Package-Requires: ((use-package "1.0") (el-get "1.0"))
+;; Package-Version: 20180122.142
+;; Package-Requires: ((use-package "1.0"))
 ;; Keywords: dotemacs startup speed config package tools
 ;; X-URL: https://github.com/edvorg/use-package-el-get
 ;; Homepage: https://github.com/edvorg/use-package-el-get

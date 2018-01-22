@@ -4,7 +4,7 @@
 
 ;; Author: Chunyang Xu <mail@xuchunyang.me>
 ;; URL: https://github.com/xuchunyang/gitter.el
-;; Package-Version: 20161203.9
+;; Package-Version: 20180122.56
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.4"))
 ;; Keywords: Gitter, chat, client, Internet
 ;; Version: 1
@@ -350,7 +350,13 @@ learning how to make commandsnon-interactive."
   "Open a room."
   (interactive)
   (unless (stringp gitter-token)
-    (error "`gitter-token' is not set. Please set it then try again"))
+    (let* ((plist (car (auth-source-search :max 1 :host "gitter.im")))
+           (k (plist-get plist :secret)))
+      (if (functionp k)
+          (setq gitter-token (funcall k))
+        (user-error "`gitter-token' is not set.  \
+Please put this line in your ~/.authinfo or ~/.authinfo.gpg
+machine gitter.im password here-is-your-token"))))
   (unless gitter--user-rooms
     (setq gitter--user-rooms (gitter--request "GET" "/v1/rooms")))
   ;; FIXME Assuming room name is unique because of `completing-read'

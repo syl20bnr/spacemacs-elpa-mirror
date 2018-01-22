@@ -5,7 +5,7 @@
 ;; Authors: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/flycheck-gradle
-;; Package-Version: 20180121.1345
+;; Package-Version: 20180121.2251
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "25.1") (flycheck "0.25"))
 ;; Keywords: languages gradle
@@ -38,12 +38,15 @@
 
 ;; Compatibility
 (eval-and-compile
-  (when (version< emacs-version "26")
-    (with-no-warnings
-      (defalias 'if-let* #'if-let)
-      (defalias 'when-let* #'when-let)
-      (function-put #'if-let* 'lisp-indent-function 2)
-      (function-put #'when-let* 'lisp-indent-function 1))))
+  (with-no-warnings
+    (if (version< emacs-version "26")
+        (progn
+          (defalias 'flycheck-gradle-if-let* #'if-let)
+          (defalias 'flycheck-gradle-when-let* #'when-let)
+          (function-put #'flycheck-gradle-if-let* 'lisp-indent-function 2)
+          (function-put #'flycheck-gradle-when-let* 'lisp-indent-function 1))
+      (defalias 'flycheck-gradle-if-let* #'if-let*)
+      (defalias 'flycheck-gradle-when-let* #'when-let*))))
 
 ;; Customization
 
@@ -183,8 +186,9 @@ a gradle project."
   "Set `flycheck-gradle' executable according to gradle location."
   (when (and (memq major-mode flycheck-gradle-modes)
              (flycheck-gradle--gradle-available-p))
-    (if-let* ((gradlew-path (flycheck-gradle--find-gradlew-executable))
-              (gradlew-expanded-path (expand-file-name gradlew-path)))
+    (flycheck-gradle-if-let*
+        ((gradlew-path (flycheck-gradle--find-gradlew-executable))
+         (gradlew-expanded-path (expand-file-name gradlew-path)))
         (progn
           (setq flycheck-gradle-java-executable gradlew-expanded-path)
           (setq flycheck-gradle-kotlin-executable gradlew-expanded-path))
@@ -193,7 +197,8 @@ a gradle project."
 
 (defun flycheck-gradle--find-gradlew-executable ()
   "Return path containing gradlew, if it exists."
-  (when-let* ((path (locate-dominating-file buffer-file-name "gradlew")))
+  (flycheck-gradle-when-let*
+      ((path (locate-dominating-file buffer-file-name "gradlew")))
     (concat path "gradlew")))
 
 (provide 'flycheck-gradle)
