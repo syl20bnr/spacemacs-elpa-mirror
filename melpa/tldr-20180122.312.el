@@ -2,7 +2,7 @@
 
 ;; Author: Ono Hiroko <azazabc123@gmail.com>
 ;; Keywords: tools, docs
-;; Package-Version: 20171023.1929
+;; Package-Version: 20180122.312
 ;; Package-Requires: ((emacs "24.3"))
 ;; X-URL: https://github.com/kuanyui/tldr.el
 ;; Version: {{VERSION}}
@@ -145,7 +145,7 @@
         (url-copy-file tldr-source-zip-url tldr-saved-zip-path 'overwrite)
         (shell-command (format "unzip -d %s %s" (file-truename user-emacs-directory) tldr-saved-zip-path))
         (delete-file tldr-saved-zip-path)
-        (rename-file (concat (file-truename user-emacs-directory) "tldr-master") tldr-directory-path)
+        (shell-command (format "mv '%s' '%s'" (concat (file-truename user-emacs-directory) "tldr-master") tldr-directory-path))
         (message "Now tldr docs is updated!"))))
 
 

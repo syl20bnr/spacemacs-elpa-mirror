@@ -1,3 +1,14 @@
+This package allows you to interact with a
+plaster paste service directly from within
+Emacs.
+
+By default this package uses the service at
+  https://plaster.tymoon.eu
+However, you can also configure your own setup
+if you so desire. The Plaster server app can
+be obtained at
+  https://github.com/Shirakumo/plaster
+
 The following commands are available:
 
 - plaster-login

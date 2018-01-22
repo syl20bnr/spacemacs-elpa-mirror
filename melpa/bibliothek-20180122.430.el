@@ -4,7 +4,7 @@
 
 ;; Author: Göktuğ Kayaalp <self@gkayaalp.com>
 ;; Version: 0.1.0
-;; Package-Version: 20180111.1115
+;; Package-Version: 20180122.430
 ;; Keywords: tools
 ;; URL: http://gkayaalp.com/emacs.html#bibliothek.el
 ;; Package-Requires: ((emacs "24.4") (pdf-tools "0.70") (a "0.1.0alpha4"))
@@ -71,10 +71,15 @@
 (defgroup bibliothek
   nil
   "Customisations for bibliothek.el, digital PDF library manager."
-  :group 'emacs
+  :group 'applications
   :prefix "bibliothek-")
 
-(defvar bibliothek-path nil "A list of paths to look for PDF files.")
+(defcustom bibliothek-path nil
+  "A list of directories to look for PDF files."
+  :type '(repeat directory)
+  ;; Should be a global variable.
+  :risky t
+  :group 'bibliothek)
 
 
 
@@ -84,7 +89,7 @@
   "Extract all the PDF files from each directory in ‘bibliothek-path’."
   (let (items)
     (dolist (directory bibliothek-path items)
-      (dolist (file (directory-files directory t "\\.pdf$" t))
+      (dolist (file (directory-files directory t "\\.pdf\\'" t))
         (cl-pushnew (cons (cons 'bibliothek--filename file)
                           (pdf-info-metadata file))
                     items)))))
@@ -145,19 +150,20 @@ called from a button."
 
 ;;;; The major mode:
 
+(defvar bibliothek-mode-map
+  (let ((map (make-sparse-keymap)))
+    (prog1 map
+      (define-key map "f" #'bibliothek--find)
+      (define-key map "g" #'bibliothek)
+      (define-key map "i" #'bibliothek--info))))
+
 (define-derived-mode bibliothek-mode tabulated-list-mode
   "Bibliothek"
   "Bibliothek listing."
+  (use-local-map bibliothek-mode-map)
   (tabulated-list-init-header)
   (tabulated-list-print t)
   (hl-line-mode))
-
-(defvar bibliothek-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map "f" #'bibliothek--find)
-    (define-key map "g" #'bibliothek)
-    (define-key map "i" #'bibliothek--info)
-    map))
 
 ;;;###autoload
 (defun bibliothek ()

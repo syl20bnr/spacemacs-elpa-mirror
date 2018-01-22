@@ -4,7 +4,7 @@
 ;;
 ;; Author: Nicolas Hafner <shinmera@tymoon.eu>
 ;; URL: http://github.com/shirakumo/plaster/
-;; Package-Version: 20180121.1437
+;; Package-Version: 20180122.513
 ;; Package-Requires: ((emacs "24.3"))
 ;; Version: 1.0
 ;; Keywords: convenience, paste service
@@ -15,7 +15,18 @@
 ;; Licensed under the Artistic License 2.0
 
 ;;; Commentary:
-
+;;
+;; This package allows you to interact with a
+;; plaster paste service directly from within
+;; Emacs.
+;;
+;; By default this package uses the service at
+;;   https://plaster.tymoon.eu
+;; However, you can also configure your own setup
+;; if you so desire. The Plaster server app can
+;; be obtained at
+;;   https://github.com/Shirakumo/plaster
+;;
 ;; The following commands are available:
 ;;
 ;; - plaster-login
