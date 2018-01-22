@@ -10,22 +10,42 @@ later.  Finally, it allows you to define your own kinds of search
 patterns and your own multi-search commands.
 
 
-Suggested key bindings
-======================
+Key bindings
+============
 
-After loading this file, you can eval
-(el-search-install-shift-bindings) to install a set of key bindings
-to try things out (no other setup is needed).  Here is an overview
-of the most important bindings that this function will establish -
-most are of the form Control-Shift-Letter:
+Loading this file doesn't install any key bindings - but you
+probably want some.  There are two predefined sets of key bindings.
+The first set installs bindings mostly of the form
+"Control-Shift-Letter", e.g. C-S, C-R, C-% etc.  These can be
+installed by calling (el-search-install-shift-bindings) - typically
+in your init file.  For console users (and others), the function
+`el-search-install-bindings-under-prefix' installs bindings of the
+form PREFIX LETTER.  If you e.g. call
 
-  C-S (el-search-pattern)
+  (el-search-install-bindings-under-prefix [(meta ?s) ?e])
+
+you install bindings M-s e s, M-s e r, M-s e % etc.  When using
+this function to install key bindings, the bindings are
+"repeatable" where it makes sense, so that you can for example hit
+M-s e j s s s a % to reactive the last search, go to the next match
+three times, then go back to the first match in the current buffer,
+and finally invoke query-replace.
+
+Here is a complete list of key bindings installed when
+you call
+  (el-search-install-shift-bindings)
+or
+  (el-search-install-bindings-under-prefix [(meta ?s) ?e])
+
+respectively:
+
+  C-S, M-s e s (el-search-pattern)
     Start a search in the current buffer/go to the next match.
 
-  C-R (el-search-pattern-backwards)
+  C-R, M-s e r (el-search-pattern-backwards)
     Search backwards.
 
-  C-% (el-search-query-replace)
+  C-%, M-s e % (el-search-query-replace)
     Do a query-replace.
 
   M-x el-search-directory
@@ -33,44 +53,42 @@ most are of the form Control-Shift-Letter:
     Emacs-Lisp files in that directory.  With prefix arg,
     recursively search files in subdirectories.
 
-  C-S in Dired (el-search-dired-marked-files)
+  C-S, M-s e s in Dired (el-search-dired-marked-files)
     Like above but uses the marked files and directories.
 
-  C-O (el-search-occur)
+  C-S, M-s e s in Ibuffer (el-search-ibuffer-marked-buffers)
+    Search marked buffers in *Ibuffer*.
+
+  C-O, M-s e o (el-search-occur)
     Pop up an occur buffer for the current search.
 
-  C-O (from a search pattern prompt)
+  C-O or M-RET (from a search pattern prompt)
     Execute this search command as occur.
 
-  C-N (el-search-continue-in-next-buffer)
+  C-N, M-s e n (el-search-continue-in-next-buffer)
     Skip over current buffer or file.
 
-  C-D (el-search-skip-directory)
+  C-D, M-s e d (el-search-skip-directory)
     Prompt for a directory name and skip all subsequent files
     located under this directory.
 
-  C-A (el-search-from-beginning) Go back to the first match in this
-    buffer or (with prefix arg) completely restart the current
-    search from the first file or buffer.
+  C-A, M-s e a (el-search-from-beginning)
+    Go back to the first match in this buffer or (with prefix arg)
+    completely restart the current search from the first file or
+    buffer.
 
-  C-J (el-search-jump-to-search-head)
+  C-J, M-s e j (el-search-jump-to-search-head)
     Resume the last search from the position of the last visited
     match, or (with prefix arg) prompt for an old search to resume.
 
-  C-H (el-search-this-sexp)
+  C-H, M-s e h (el-search-this-sexp)
     Grab the symbol or sexp under point and initiate an el-search
     for other occurrences.
 
 
-These bindings may not work in a console (if you have a good idea
-for nice alternative bindings please mail me).
-
 The setup you'll need for your init file is trivial: just define
 the key bindings you want to use (all important commands are
-autoloaded) and you are done.  You can either just copy
-(el-search-install-shift-bindings) to your init file to use the
-above bindings or use its definition as a template for your own key
-binding definitions.
+autoloaded) and you are done.
 
 
 Usage
@@ -246,8 +264,8 @@ even if you did other stuff in the meantime (including other
 query-replace is driven by a search, call
 `el-search-jump-to-search-head' (maybe with a prefix arg) to make
 that search current, and invoke `el-search-query-replace' (with the
-default bindings, this would be C-J C-%).  This will continue the
-query-replace session from where you left.
+default bindings, this would be C-J C-% or C-x o j %).  This will
+continue the query-replace session from where you left.
 
 
 Advanced usage: Replacement rules for semi-automatic code rewriting
@@ -295,7 +313,7 @@ Bugs, Known Limitations
 to reading-printing.  "Some" because we can handle this problem in
 most cases.
 
-- Similarly: Comments are normally preserved (where it makes
+- Similar: comments are normally preserved (where it makes
 sense).  But when replacing like `(foo ,a ,b) -> `(foo ,b ,a)
 
 in a content like
@@ -311,8 +329,8 @@ the comment will be lost.
   backquotes detected!"
 
 
- Acknowledgments
- ===============
+Acknowledgments
+===============
 
 Thanks to Stefan Monnier for corrections and advice.
 
@@ -321,10 +339,12 @@ BUGS:
 
 - l is very slow for very long lists.  E.g. C-S-e (l "test")
 
+- Emacs bug#30132: 27.0.50; "scan-sexps and ##": Occurrences of the
+  syntax "##" (a syntax for an interned symbol whose name is the
+  empty string) can lead to errors while searching.
+
 
 TODO:
-
-- The default keys are not available in the terminal
 
 - Make searching work in comments, too? (->
   `parse-sexp-ignore-comments').  Related: should the pattern
