@@ -1,4 +1,9 @@
 This package provides notification functions for org-agenda.
+
+To perform a one-time check use `org-wild-notifier-check'
+function.
+To enable timer-based notifications please use
+`org-wild-notifier-mode'.
 Notification times can be customized either globally (for all org
 entries) through `org-wild-notifier-alert-time' variable or on per
 org entry basis using `WILD_NOTIFIER_NOTIFY_BEFORE` property, which
