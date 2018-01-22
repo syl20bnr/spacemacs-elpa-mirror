@@ -4,7 +4,7 @@
 ;; Maintainer: Schuyler Eldridge <schuyler.eldridge@ibm.com>
 ;; Created: April 20, 2017
 ;; URL: https://github.com/ibm/firrtl-mode
-;; Package-Version: 20180121.1930
+;; Package-Version: 20180122.1059
 ;; Keywords: languages, firrtl
 ;; Version: 0.3
 ;; Package-Requires: ((emacs "24.3"))
@@ -44,27 +44,15 @@
 
 ;;; Actual Code
 (defvar firrtl-primop
-  '("add" "sub" "mul" "div" "mod"
-    "eq" "neq" "geq" "gt" "leq" "lt"
-    "dshl" "dshr" "shl" "shr"
-    "not" "and" "or" "xor" "andr" "orr" "xorr"
-    "neg" "cvt"
-    "asUInt" "asSInt" "asClock"
-    "pad" "cat" "bits" "head" "tail"
-    "mux" "validif"))
+  '("add" "sub" "mul" "div" "rem" "lt" "leq" "gt" "geq" "eq" "neq" "pad"
+    "asUInt" "asSInt" "asClock" "shl" "shr" "dshl" "dshr" "cvt" "neg" "not"
+    "and" "or" "xor" "andr" "orr" "xorr" "cat" "bits" "head" "tail" "mux"
+    "validif"))
 (defvar firrtl-type
-  '("input" "output"
-    "wire" "reg" "node"
-    "Clock" "Analog"
-    "parameter"))
+  '("input" "output" "wire" "reg" "node" "Clock" "Analog" "parameter"))
 (defvar firrtl-keyword
-  '("circuit" "module"
-    "when" "else" "skip"
-    "flip"
-    "is invalid" "with"
-    "printf" "stop"
-    "inst" "of"
-    "defname"))
+  '("circuit" "module" "extmodule" "when" "else" "skip" "flip" "is invalid"
+    "with" "printf" "stop" "inst" "of" "defname"))
 
 (defvar firrtl-primop-regexp
   (mapconcat 'identity
@@ -77,23 +65,17 @@
 
 (defvar firrtl-font-lock-keywords
   `(;; Circuit, module declarations
-    ("\\(circuit\\|\\(ext\\)?module\\)\s+\\([^ =:;([]+\\)\s+"
-     (1 font-lock-keyword-face)
+    ("\\(circuit\\|\\(ext\\)?module\\)\\s-+\\(\\sw+\\)"
      (3 font-lock-function-name-face))
     ;; Literals
     ("\\(\\(U\\|S\\)Int<[0-9]+>\\)\\(.+?\\)?"
      (1 font-lock-type-face))
-    ;; Strings
-    ("\\(\".+?\"\\)"
-     (1, font-lock-string-face))
     ;; Indices and numbers (for a firrtl-syntax feel)
     ("[ \\[(]\\([0-9]+\\)"
      (1 font-lock-string-face))
-    ;; Keywords
+    ;; Assignment operators
     (,firrtl-keyword-regexp . font-lock-keyword-face)
-    ("\\(<[=-]\\)"
-     (1, font-lock-keyword-face))
-    ("\\(reset =>\\)"
+    ("\\(<[=-]\\|reset\s*=>\\)"
      (1, font-lock-keyword-face))
     ;; PrimOps
     (,firrtl-primop-regexp
@@ -121,7 +103,9 @@
            (save-excursion
              (backward-word)
              (beginning-of-line)
-             (cond ((looking-at "\s*circuit")
+             (cond ((bobp)
+                    (setq indents (list 0)))
+                   ((looking-at "\s*circuit")
                     (setq indents (list tab-width)))
                    ((looking-at "\s*module")
                     (setq indents (list (* 2 tab-width))))
@@ -154,15 +138,17 @@ repeated key presses."
 (defvar firrtl-table
   (let ((table (make-syntax-table text-mode-syntax-table)))
     (modify-syntax-entry ?\; "<" table)
-    (modify-syntax-entry ?@ "<" table)
     (modify-syntax-entry ?\n ">" table)
-    (modify-syntax-entry ?< "(>" table)
-    (modify-syntax-entry ?> ")<" table)
-    (modify-syntax-entry ?\[ "(]" table)
-    (modify-syntax-entry ?\] ")[" table)
+    (modify-syntax-entry ?@ ". 1b" table)
+    (modify-syntax-entry ?\[ ". 2b" table)
+    (modify-syntax-entry ?\] "> b" table)
     (modify-syntax-entry ?\{ "(}" table)
     (modify-syntax-entry ?\} "){" table)
+    (modify-syntax-entry ?\( "()" table)
+    (modify-syntax-entry ?\) ")(" table)
     (modify-syntax-entry ?_ "w" table)
+    (modify-syntax-entry ?\\ "\\" table)
+    (modify-syntax-entry ?\" "|" table)
     table))
 
 ;;;###autoload
