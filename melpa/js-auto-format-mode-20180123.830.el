@@ -3,8 +3,8 @@
 ;; Copyright (C) 2017 ybiquitous <ybiquitous@gmail.com>
 
 ;; Author:  ybiquitous <ybiquitous@gmail.com>
-;; Version: 1.0.6
-;; Package-Version: 20180103.718
+;; Version: 1.1.0
+;; Package-Version: 20180123.830
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: languages
 ;; URL: https://github.com/ybiquitous/js-auto-format-mode
@@ -97,7 +97,8 @@
           (revert-buffer t t t)
           (pop-to-buffer buffer)
           (if (zerop exit-status) (quit-window t) (shrink-window-if-larger-than-buffer))
-          (pop-to-buffer saved-current-buffer))))))
+          (pop-to-buffer saved-current-buffer)
+          (if (fboundp 'flycheck-buffer) (flycheck-buffer)))))))
 
 ;;;###autoload
 (define-minor-mode js-auto-format-mode

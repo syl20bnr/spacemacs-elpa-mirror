@@ -5,7 +5,7 @@
 ;; Author: Tijs Mallaerts <tijs.mallaerts@gmail.com>
 
 ;; Package-Requires: ((emacs "24.3") (s "1.11.0"))
-;; Package-Version: 20170205.1306
+;; Package-Version: 20180123.714
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -88,7 +88,8 @@ STR is the output string of the PROC."
     (with-current-buffer buf
       (org-mode)
       (mysql-to-org-output-mode)
-      (if (string-match-p "mysql>" str)
+      (if (or (string-match-p "mysql>" str)
+              (string-match-p "MariaDB \\[" str))
           (progn (insert (mysql-to-org--remove-control-m-from-string str))
                  (save-excursion
                    (goto-char (point-min))

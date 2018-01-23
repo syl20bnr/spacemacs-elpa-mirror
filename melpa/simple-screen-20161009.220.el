@@ -2,7 +2,7 @@
 ;; Filename: simple-screen.el
 ;; Description: Simple screen configuration manager.
 ;; URL: https://github.com/wachikun/simple-screen
-;; Package-Version: 20141023.758
+;; Package-Version: 20161009.220
 ;; Author: Tadashi Watanabe <wac@umiushi.org>
 ;; Maintainer: Tadashi Watanabe <wac@umiushi.org>
 ;; Copyright (C) 2012,2013 Tadashi Watanabe <wac@umiushi.org>
@@ -84,11 +84,27 @@
   (force-mode-line-update))
 
 (defun simple-screen-save-window-point (index)
-  (aset simple-screen-window-point-vector index (window-point (selected-window))))
+  (let ((point-hash (make-hash-table)))
+    (mapc #'(lambda (a)
+	      (let ((point (window-point a))
+		    (point-max (with-current-buffer (window-buffer a) (point-max))))
+		(puthash a `((point . ,point) (point-max . ,point-max)) point-hash)))
+	  (window-list))
+    (aset simple-screen-window-point-vector index point-hash)))
 
 (defun simple-screen-load-window-point (index)
   (when (aref simple-screen-window-point-vector index)
-    (set-window-point (selected-window) (aref simple-screen-window-point-vector index))))
+    (let ((point-hash (aref simple-screen-window-point-vector index)))
+      (maphash #'(lambda (key alist)
+		   (let ((point-max (with-current-buffer (window-buffer key) (point-max)))
+			 (saved-point (cdr (assq 'point alist)))
+			 (saved-point-max (cdr (assq 'point-max alist))))
+		     (if (and (eq saved-point saved-point-max)
+			      (not (eq point-max saved-point-max)))
+			 (progn
+			   (set-window-point key point-max))
+		       (set-window-point key saved-point))))
+	       point-hash))))
 
 (defun simple-screen-core (index)
   (when (not (= index simple-screen-current-index))
