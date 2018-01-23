@@ -5,10 +5,10 @@
 ;; Author: Matthew Carter <m@ahungry.com>
 ;; Maintainer: Matthew Carter <m@ahungry.com>
 ;; URL: https://github.com/ahungry/color-theme-ahungry
-;; Package-Version: 20180122.633
+;; Package-Version: 20180122.2126
 ;; Version: 0.0.2
 ;; Keywords: ahungry reddit browse news
-;; Package-Requires: ((emacs "25.1") (hierarchy "0.7.0") (request "0.3.0") (cl-lib "0.6.1") (dash "2.12.0") (s "1.12.0"))
+;; Package-Requires: ((emacs "25.1") (hierarchy "0.7.0") (request "0.3.0") (cl-lib "0.6.1") (dash "2.12.0") (s "1.12.0") (tree-mode "1.0.0"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -40,6 +40,7 @@
 (require 'request)
 (require 'json)
 (require 's)
+(require 'tree-mode)
 
 (defvar md4rd--version "0.0.2"
   "The current version of the mode.")
@@ -229,12 +230,12 @@ Should be one of visit, upvote, downvote, open.")
 
 COMMENTS block is the nested list structure with them."
   (let-alist (alist-get 'data comments)
-    (when (and .name .body .parent_id)
+    (when (and .name (or .body .selftext))
       (let ((composite (list (cons 'name (intern .name))
-                             (cons 'body   .body)
+                             (cons 'body   (or .body .selftext))
                              (cons 'author .author)
                              (cons 'score  .score)
-                             (cons 'parent_id (intern .parent_id)))))
+                             (cons 'parent_id (if .parent_id (intern .parent_id) 'thread)))))
         (push composite md4rd--comments-composite)))
     (when .children (md4rd--parse-comments .children))
     (when (and .replies
@@ -396,6 +397,16 @@ the spot to do it as well."
 (defvar md4rd--hierarchy-labelfn-hooks nil)
 (defvar md4rd--sub-hierarchy-labelfn-hooks nil)
 
+(defun md4rd--hierarchy-labelfn-fixed-indent (labelfn &optional indent-string)
+  "Return a function rendering LABELFN indented with INDENT-STRING.
+
+INDENT-STRING defaults to a 2-space string.  Indentation is
+multiplied by the depth of the displayed item."
+  (let ((indent-string (or indent-string "  ")))
+    (lambda (item indent)
+      (insert indent-string)
+      (funcall labelfn item indent))))
+
 (defun md4rd--hierarchy-labelfn-button (labelfn actionfn)
   "Return a function rendering LABELFN in a button.
 
@@ -427,7 +438,7 @@ return value of ACTIONFN is ignored."
   (switch-to-buffer
    (hierarchy-tree-display
     md4rd--hierarchy
-    (hierarchy-labelfn-indent
+    (md4rd--hierarchy-labelfn-fixed-indent
      (md4rd--hierarchy-labelfn-button
       (lambda (item _)
         (let ((comment (md4rd--find-comment-by-name item)))
@@ -438,25 +449,26 @@ return value of ACTIONFN is ignored."
             (insert (symbol-name item)))))
       ;; Controls the button events we dispatch.
       (lambda (item _)
-          (let ((comment (md4rd--find-comment-by-name item)))
-            (let-alist comment
-              (cond
-               ((equal 'upvote md4rd--action-button-ctx)
-                (md4rd--post-vote .name +1))
+        (let ((comment (md4rd--find-comment-by-name item)))
+          (let-alist comment
+            (cond
+             ((equal 'upvote md4rd--action-button-ctx)
+              (md4rd--post-vote .name +1))
 
-               ((equal 'downvote md4rd--action-button-ctx)
-                (md4rd--post-vote .name -1))
+             ((equal 'downvote md4rd--action-button-ctx)
+              (md4rd--post-vote .name -1))
 
-               ((equal 'open md4rd--action-button-ctx)
-                (browse-url .url))
+             ((equal 'open md4rd--action-button-ctx)
+              (browse-url .url))
 
-               ((equal 'visit md4rd--action-button-ctx)
-                (message "Fetching: %s" .permalink)
-                (md4rd--fetch-comments
-                 (format "http://reddit.com/%s.json" .permalink)))
+             ((equal 'visit md4rd--action-button-ctx)
+              (message "Fetching: %s" .permalink)
+              (md4rd--fetch-comments
+               (format "http://reddit.com/%s.json" .permalink)))
 
-               (t (error "Unknown link action!"))))))))))
-  (md4rd-mode))
+             (t (error "Unknown link action!"))))))))))
+  (md4rd-mode)
+  (md4rd-widget-collapse-all 2))
 
 (defun md4rd--sub-show ()
   "Show the sub-posts that were built in the structure."
@@ -476,7 +488,7 @@ return value of ACTIONFN is ignored."
     (switch-to-buffer
      (hierarchy-tree-display
       md4rd--sub-hierarchy
-      (hierarchy-labelfn-indent
+      (md4rd--hierarchy-labelfn-fixed-indent
        (md4rd--hierarchy-labelfn-button
         ;; Controls the label we show for the raticle post.
         (lambda (item _)
@@ -507,7 +519,8 @@ return value of ACTIONFN is ignored."
 
                (t (error "Unknown link action!"))))))))
       buffer))
-    (md4rd-mode)))
+    (md4rd-mode)
+    (md4rd-widget-collapse-all)))
 
 ;;;###autoload
 (defun md4rd ()
@@ -567,11 +580,41 @@ return value of ACTIONFN is ignored."
 
 ;; Mode related code:
 
+(defun md4rd-widget-toggle-line ()
+  "Hop to the widget and open it up."
+  (interactive)
+  ;; If we're at the article text, we get 'button
+  ;; On the widget, we receive nil for 2nd check.
+  (when (and (button-at (point))
+             (equal 'button (button-type (button-at (point)))))
+    (widget-backward 1))
+
+  (unless (button-at (point))
+    (widget-forward 1))
+  (widget-button-press (point))
+  (widget-forward 1))
+
+(defun md4rd-widget-collapse-all (&optional level)
+  "Iterate all widgets in buffer and close em at LEVEL."
+  (interactive)
+  (goto-char (point-min))
+  (tree-mode-expand-level (or level 1)))
+
+(defun md4rd-widget-expand-all ()
+  "Iterate all widgets in buffer and expand em."
+  (interactive)
+  (tree-mode-expand-level 0))
+
 (defvar md4rd-mode-map
   (let ((map (make-keymap)))
     (define-key map (kbd "u") 'md4rd-upvote)
     (define-key map (kbd "d") 'md4rd-downvote)
     (define-key map (kbd "o") 'md4rd-open)
+    (define-key map (kbd "t") 'md4rd-widget-toggle-line)
+    (define-key map (kbd "e") 'md4rd-widget-expand-all)
+    (define-key map (kbd "c") 'md4rd-widget-collapse-all)
+    (define-key map (kbd "TAB") 'widget-forward)
+    (define-key map (kbd "<backtab>") 'widget-backward)
     map)
   "Keymap for md4rd major mode.")
 
@@ -581,7 +624,12 @@ return value of ACTIONFN is ignored."
   (when (fboundp 'evil-define-key)
     (evil-define-key '(normal motion) md4rd-mode-map (kbd "u") 'md4rd-upvote)
     (evil-define-key '(normal motion) md4rd-mode-map (kbd "d") 'md4rd-downvote)
-    (evil-define-key '(normal motion) md4rd-mode-map (kbd "o") 'md4rd-open)))
+    (evil-define-key '(normal motion) md4rd-mode-map (kbd "o") 'md4rd-open)
+    (evil-define-key '(normal motion) md4rd-mode-map (kbd "t") 'md4rd-widget-toggle-line)
+    (evil-define-key '(normal motion) md4rd-mode-map (kbd "e") 'md4rd-widget-expand-all)
+    (evil-define-key '(normal motion) md4rd-mode-map (kbd "c") 'md4rd-widget-collapse-all)
+    (evil-define-key '(normal motion) md4rd-mode-map (kbd "TAB") 'widget-forward)
+    (evil-define-key '(normal motion) md4rd-mode-map (kbd "<backtab>") 'widget-backward)))
 
 ;;;###autoload
 (defun md4rd-mode ()

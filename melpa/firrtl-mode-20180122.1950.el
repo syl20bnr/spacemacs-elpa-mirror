@@ -4,7 +4,7 @@
 ;; Maintainer: Schuyler Eldridge <schuyler.eldridge@ibm.com>
 ;; Created: April 20, 2017
 ;; URL: https://github.com/ibm/firrtl-mode
-;; Package-Version: 20180122.1059
+;; Package-Version: 20180122.1950
 ;; Keywords: languages, firrtl
 ;; Version: 0.3
 ;; Package-Requires: ((emacs "24.3"))
@@ -161,6 +161,7 @@ repeated key presses."
   (setq font-lock-defaults '(firrtl-font-lock-keywords))
   (setq-local indent-line-function 'firrtl-cycle-indents)
   (set-syntax-table firrtl-table)
+  (setq-local comment-start ";")
   )
 
 ;;;###autoload

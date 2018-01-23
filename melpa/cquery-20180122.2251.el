@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017 Tobias Pisani
 
 ;; Author:  Tobias Pisani
-;; Package-Version: 20180122.858
+;; Package-Version: 20180122.2251
 ;; Package-X-Original-Version: 20180122.1
 ;; Version: 0.1
 ;; Homepage: https://github.com/jacobdufault/cquery
@@ -170,19 +170,22 @@ Relative to the project root directory."
   "The face used for code lens overlays."
   :group 'cquery)
 
-(defcustom cquery-enable-sem-highlight
+(defcustom cquery-enable-inactive-region
   t
-  "Enable semantic highlighting."
-  :type 'boolean
-  :group 'cquery)
+  "Enable inactive region.
+Regions that are disabled by preprocessors will be displayed in shadow."
+  :group 'cquery
+  )
 
 (defcustom cquery-sem-highlight-method
-  'overlay
+  nil
   "The method used to draw semantic highlighting.
-overlays are more accurate than font-lock, but slower."
-  :group 'lsp-mode
+overlays are more accurate than font-lock, but slower.
+If nil, disable semantic highlighting."
+  :group 'cquery
   :type '(radio
-          (const :tag "overlays" overlay)
+          (const nil)
+          (const :tag "overlay" overlay)
           (const :tag "font-lock" font-lock)))
 
 ;; ---------------------------------------------------------------------
@@ -257,8 +260,8 @@ overlays are more accurate than font-lock, but slower."
 
 (defun cquery--publish-semantic-highlighting (_workspace params)
   "Publish semantic highlighting information according to PARAMS."
-  (when cquery-enable-sem-highlight
-    (let* ((file (cquery--uri-to-file (gethash "uri" params)))
+  (when cquery-sem-highlight-method
+    (let* ((file (lsp--uri-to-path (gethash "uri" params)))
            (buffer (find-buffer-visiting file))
            (symbols (gethash "symbols" params)))
       (when buffer
@@ -326,26 +329,29 @@ overlays are more accurate than font-lock, but slower."
 
 (defun cquery--set-inactive-regions (_workspace params)
   "Put overlays on (preprocessed) inactive regions according to PARAMS."
-  (let* ((file (cquery--uri-to-file (gethash "uri" params)))
+  (let* ((file (lsp--uri-to-path (gethash "uri" params)))
          (regions (mapcar 'cquery--read-range (gethash "inactiveRegions" params)))
          (buffer (find-buffer-visiting file)))
     (when buffer
       (with-current-buffer buffer
         (save-excursion
           (cquery--clear-inactive-regions)
-          (overlay-recenter (point-max))
-          (dolist (region regions)
-            (let ((ov (make-overlay (car region) (cdr region) buffer)))
-              (overlay-put ov 'face 'cquery-inactive-region-face)
-              (overlay-put ov 'cquery-inactive t))))))))
+          (when cquery-enable-inactive-region
+            (overlay-recenter (point-max))
+            (dolist (region regions)
+              (let ((ov (make-overlay (car region) (cdr region) buffer)))
+                (overlay-put ov 'face 'cquery-inactive-region-face)
+                (overlay-put ov 'cquery-inactive t)))))))))
 
 ;; ---------------------------------------------------------------------
 ;;   Notification handlers
 ;; ---------------------------------------------------------------------
 
 (defconst cquery--handlers
-  '(("$cquery/setInactiveRegions" . (lambda (w p) (cquery--set-inactive-regions w p)))
-    ("$cquery/publishSemanticHighlighting" . (lambda (w p) (cquery--publish-semantic-highlighting w p)))
+  '(("$cquery/setInactiveRegions" .
+     (lambda (w p) (cquery--set-inactive-regions w p)))
+    ("$cquery/publishSemanticHighlighting" .
+     (lambda (w p) (cquery--publish-semantic-highlighting w p)))
     ("$cquery/progress" . (lambda (_w _p)))))
 
 ;; ---------------------------------------------------------------------
@@ -389,7 +395,7 @@ Read document for all choices. DISPLAY-ACTION is passed to xref--show-xrefs."
   (lsp--cur-workspace-check)
   (lsp--send-request-async
    (lsp--make-request "textDocument/codeLens"
-                      `(:textDocument (:uri ,(concat lsp--uri-file-prefix buffer-file-name))))
+                      `(:textDocument (:uri ,(lsp--path-to-uri buffer-file-name))))
    'cquery--code-lens-callback))
 
 (defun cquery-clear-code-lens ()
@@ -428,7 +434,7 @@ Read document for all choices. DISPLAY-ACTION is passed to xref--show-xrefs."
              (root (gethash "command" lens))
              (title (gethash "title" root))
              (command (gethash "command" root))
-             (buffer (find-buffer-visiting (cquery--uri-to-file (car (gethash "arguments" root))))))
+             (buffer (find-buffer-visiting (lsp--uri-to-path (car (gethash "arguments" root))))))
         (when buffer
           (with-current-buffer buffer
             (save-excursion
@@ -470,7 +476,7 @@ Read document for all choices. DISPLAY-ACTION is passed to xref--show-xrefs."
   (let* ((uri (car arguments))
          (data (cdr arguments)))
     (save-current-buffer
-      (find-file (cquery--uri-to-file uri))
+      (find-file (lsp--uri-to-path uri))
       (pcase command
         ;; Code actions
         ('"cquery._applyFixIt"
@@ -516,9 +522,6 @@ Read document for all choices. DISPLAY-ACTION is passed to xref--show-xrefs."
       (delete-region start (- end 1)))
     (goto-char start)
     (insert newText)))
-
-(defun cquery--uri-to-file (uri)
-  (string-remove-prefix lsp--uri-file-prefix uri))
 
 (defun cquery--read-range (range)
   (cons (lsp--position-to-point (gethash "start" range))
