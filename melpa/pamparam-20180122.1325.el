@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/pamparam
-;; Package-Version: 20180111.1014
+;; Package-Version: 20180122.1325
 ;; Version: 0.0.0
 ;; Package-Requires: ((emacs "24.3") (lispy "0.26.0") (worf "0.1.0") (hydra "0.13.4"))
 ;; Keywords: outlines, hypermedia, flashcards, memory
@@ -606,13 +606,13 @@ repository, while the new card will start with empty metadata."
     (cond ((string-match "^\\*+ a\n\\(.*\\)" str)
            (setq front (substring str 0 (match-beginning 0)))
            (setq back (concat "* a\n" (match-string 1 str)))
-           (setq front (string-trim-left front "[* ]*"))
+           (setq front (string-trim-left front))
            (goto-char (cdr bnd)))
           ((string-match "\\`\\*+ \\(.*\\)\n\\([^*]+\\)\\(?:\n\\*\\)?" str)
            (setq front (match-string 1 str))
            (setq back (match-string 2 str))
            (goto-char (+ (car bnd) (match-end 2)))
-           (setq back (string-trim-right back "\n+")))
+           (setq back (string-trim-right back)))
           (t
            (error "unexpected")))
     (cons front back)))
