@@ -869,6 +869,11 @@
 		nil "Colorize color names in buffers" single
 		((:url . "http://elpa.gnu.org/packages/rainbow-mode.html")
 		 (:keywords "faces"))])
+ (rbit .
+       [(0 1)
+	nil "Red-black persistent interval trees" single
+	((:url . "http://elpa.gnu.org/packages/rbit.html")
+	 (:keywords "data structures" "binary tree" "intervals"))])
  (rcirc-color .
 	      [(0 3)
 	       nil "color nicks" single
