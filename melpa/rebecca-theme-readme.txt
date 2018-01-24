@@ -1,1 +1,0 @@
-Rebecca, the purple turtle.

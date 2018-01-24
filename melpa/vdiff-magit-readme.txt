@@ -1,1 +1,0 @@
-magit integration for vdiff
