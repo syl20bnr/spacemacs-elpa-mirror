@@ -2,7 +2,7 @@
 ;; Copyright (C) 2015-2018 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.1
-;; Package-Version: 20180109.1318
+;; Package-Version: 20180123.1100
 ;; Package-Requires: ((emacs "24.3") (f "0.20.0") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -1396,11 +1396,9 @@ Optionally pass t for RUN-NOT-TESTS to see a list of all failed rules"
 
 (defun dumb-jump-helm-persist-action (match)
   "Previews a MATCH in a temporary buffer at the matched line number when pressing \\<keymap>C-j</keymap> in helm."
-  (let* ((parts (--remove (string= it "")
-                          (s-split "\\(?:^\\|:\\)[0-9]+:"  match)))
-         (file-line-part (s-split ":" (nth 0 parts)))
-         (file (nth 0 file-line-part))
-         (line (string-to-number (nth 1 file-line-part)))
+  (let* ((line-parts (dumb-jump-parse-response-line match "."))
+         (file (nth 0 line-parts))
+         (line (string-to-number (nth 1 line-parts)))
          (default-directory-old default-directory))
     (switch-to-buffer (get-buffer-create " *helm dumb jump persistent*"))
     (setq default-directory default-directory-old)

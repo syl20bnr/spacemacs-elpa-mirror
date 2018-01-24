@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017 Tobias Pisani
 
 ;; Author:  Tobias Pisani
-;; Package-Version: 20180122.2251
+;; Package-Version: 20180123.1101
 ;; Package-X-Original-Version: 20180122.1
 ;; Version: 0.1
 ;; Homepage: https://github.com/jacobdufault/cquery
@@ -572,14 +572,12 @@ Keep an eye on https://github.com/jacobdufault/cquery/issues/283"
 
 (advice-add 'lsp--send-execute-command :around #'cquery--execute-command-locally-advice)
 
+;;;###autoload (autoload 'lsp-cquery-enable "cquery")
 (lsp-define-stdio-client
  lsp-cquery "cpp" #'cquery--get-root
  `(,cquery-executable "--language-server" ,@cquery-extra-args)
  :initialize #'cquery--initialize-client
  :extra-init-params #'cquery--get-init-params)
-
-;;;###autoload
-(autoload 'lsp-cquery-enable "cquery")
 
 (provide 'cquery)
 ;;; cquery.el ends here
