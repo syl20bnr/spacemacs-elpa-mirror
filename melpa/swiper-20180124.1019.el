@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180122.1230
+;; Package-Version: 20180124.1019
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.9.0"))
 ;; Keywords: matching
@@ -323,7 +323,7 @@
 
 (defun swiper--line ()
   (let* ((beg (cond ((and (eq major-mode 'dired-mode)
-                          dired-isearch-filenames)
+                          (bound-and-true-p dired-isearch-filenames))
                      (dired-move-to-filename)
                      (point))
                     (swiper-use-visual-line
