@@ -813,7 +813,7 @@
 	   ((:url . "http://elpa.gnu.org/packages/pabbrev.html")
 	    (:keywords))])
  (paced .
-	[(1 0)
+	[(1 0 1)
 	 ((emacs
 	   (25 1))
 	  (async
