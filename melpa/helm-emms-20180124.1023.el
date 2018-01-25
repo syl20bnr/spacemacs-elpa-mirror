@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 ~ 2014 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; Version: 1.3
-;; Package-Version: 20180104.2127
+;; Package-Version: 20180124.1023
 ;; Package-Requires: ((helm "1.5") (emms "0.0") (cl-lib "0.5") (emacs "24.1"))
 
 ;; X-URL: https://github.com/emacs-helm/helm-emms
@@ -144,6 +144,8 @@ may want to use it in helm-emms as well."
 (defvar helm-source-emms-dired
   (helm-build-sync-source "Music Directory"
     :init (lambda ()
+            (cl-assert emms-source-file-default-directory nil
+                       "Incorrect EMMS setup please setup `emms-source-file-default-directory' variable")
             (setq helm-emms--dired-cache
                   (helm-walk-directory
                    emms-source-file-default-directory

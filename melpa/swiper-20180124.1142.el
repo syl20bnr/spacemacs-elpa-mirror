@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180124.1019
+;; Package-Version: 20180124.1142
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.9.0"))
 ;; Keywords: matching
@@ -678,14 +678,22 @@ WND, when specified is the window."
           ;; RE can become an invalid regexp
           (while (and (ignore-errors (re-search-forward re end t))
                       (> (- (match-end 0) (match-beginning 0)) 0))
-            (let ((mb (match-beginning 0))
-                  (me (match-end 0)))
-              (unless (> (- me mb) 2017)
-                (swiper--add-overlay mb me
-                                     (if (zerop ivy--subexps)
-                                         (cadr swiper-faces)
-                                       (car swiper-faces))
-                                     wnd 0)))
+            (unless (and (consp ivy--old-re)
+                         (null
+                          (save-match-data
+                            (ivy--re-filter ivy--old-re
+                                            (list
+                                             (buffer-substring-no-properties
+                                              (line-beginning-position)
+                                              (line-end-position)))))))
+              (let ((mb (match-beginning 0))
+                    (me (match-end 0)))
+                (unless (> (- me mb) 2017)
+                  (swiper--add-overlay mb me
+                                       (if (zerop ivy--subexps)
+                                           (cadr swiper-faces)
+                                         (car swiper-faces))
+                                       wnd 0))))
             (let ((i 1)
                   (j 0))
               (while (<= (cl-incf j) ivy--subexps)
