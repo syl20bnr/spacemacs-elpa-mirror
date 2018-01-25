@@ -9,7 +9,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20180122.1305
+;; Package-Version: 20180125.116
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0"))
@@ -316,7 +316,8 @@ CHECKER and BUFFER are added if the error is in TEMP-FILE."
                   ((s-matches? "^splicing " err-type) 'splice)
                   (t 'error)))
            (location (dante-parse-error-location location-raw)))
-      (flycheck-error-new-at (plist-get location :line) (plist-get location :col) type (s-trim-right msg)
+      ;; FIXME: sometimes the "error type" contains the actual error too.
+      (flycheck-error-new-at (plist-get location :line) (plist-get location :col) type (concat err-type "\n" (s-trim-right msg))
                              :checker checker
                              :buffer (when (string= temp-file file) buffer)
                              :filename (dante-buffer-file-name buffer)))))
