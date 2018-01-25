@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017 Tobias Pisani
 
 ;; Author:  Tobias Pisani
-;; Package-Version: 20180123.2218
+;; Package-Version: 20180125.1037
 ;; Package-X-Original-Version: 20180122.1
 ;; Version: 0.1
 ;; Homepage: https://github.com/jacobdufault/cquery
@@ -294,11 +294,11 @@ If nil, disable semantic highlighting."
                     (cl-loop
                      for (start end face) in ranges do
                      (forward-line (- (car start) last-line-number))
-                     (forward-char (cdr start))
+                     (move-to-column (cdr start))
                      ;; start of range
                      (setq range-start (point))
                      (forward-line (- (car end) (car start)))
-                     (forward-char (cdr end))
+                     (move-to-column (cdr end))
                      ;; end of range
                      (setq range-end (point))
                      (cquery--make-sem-highlight (cons range-start range-end) buffer face)
