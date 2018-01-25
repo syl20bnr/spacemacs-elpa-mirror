@@ -4,7 +4,7 @@
 
 ;; Author: George Pittarelli <g@gjp.cc>
 ;; Version: 1.0
-;; Package-Version: 20171125.147
+;; Package-Version: 20180124.2058
 ;; Package-Requires: ((lsp-mode "3.0"))
 ;; Keywords: javascript typescript lsp
 ;; URL: https://github.com/emacs-lsp/lsp-javascript
@@ -35,8 +35,7 @@
 							   (directory-files dir nil "package.json"))))
 
 (lsp-define-stdio-client lsp-javascript-typescript "javascript"
-                         lsp-javascript--get-root '("javascript-typescript-stdio")
-                         :ignore-regexps '("readFile .*? requested by TypeScript but content not available"))
+                         lsp-javascript--get-root '("javascript-typescript-stdio"))
 
 (provide 'lsp-javascript-typescript)
 ;;; lsp-javascript-typescript.el ends here
