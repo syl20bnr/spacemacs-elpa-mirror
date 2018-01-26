@@ -4,10 +4,11 @@
 
 ;; Author: Brantou <brantou89@gmail.com>
 ;; URL: https://github.com/brantou/ob-coffeescript
-;; Package-Version: 20170719.121
+;; Package-Version: 20180125.2319
 ;; Keywords: coffee-script, literate programming, reproducible research
 ;; Homepage: http://orgmode.org
 ;; Version:  1.0.0
+;; Package-Requires: ((emacs "24.4"))
 
 ;;; License:
 
@@ -278,11 +279,9 @@ last statement in BODY, as elisp."
 
 (defun org-babel-coffeescript-get-vars (params)
   "org-babel-get-header was removed in org version 8.3.3"
-  (let* ((fversion (org-version))
-         (version (string-to-int fversion)))
-    (if (< version 8.3)
-        (mapcar #'cdr (org-babel-get-header params :var))
-      (org-babel--get-vars params))))
+  (if (fboundp 'org-babel-get-header)
+      (mapcar #'cdr (org-babel-get-header params :var))
+    (org-babel--get-vars params)))
 
 (defun org-babel-coffeescript-read (results)
   "Convert RESULTS into an appropriate elisp value.

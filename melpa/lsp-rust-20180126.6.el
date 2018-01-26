@@ -1,11 +1,11 @@
-;;; lsp-rust.el --- Rust support for lsp-mode
+;;; lsp-rust.el --- Rust support for lsp-mode -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2017 Vibhav Pant <vibhavp@gmail.com>
 
 ;; Author: Vibhav Pant <vibhavp@gmail.com>
 ;; Version: 1.0
-;; Package-Version: 20180115.556
-;; Package-Requires: ((lsp-mode "3.0") (rust-mode "0.3.0"))
+;; Package-Version: 20180126.6
+;; Package-Requires: ((emacs "25") (lsp-mode "3.0") (rust-mode "0.3.0") (dash "1.0") (markdown-mode "2.3"))
 ;; Keywords: rust
 ;; URL: https://github.com/emacs-lsp/lsp-rust
 
@@ -33,6 +33,8 @@
 (require 'json)
 (require 'font-lock)
 (require 'xref)
+(require 'dash)
+(require 'markdown-mode)
 
 (defvar lsp-rust--config-options (make-hash-table))
 (defvar lsp-rust--diag-counters (make-hash-table))
@@ -47,6 +49,40 @@ executable.
 If this variable is nil, lsp-rust will try to use the RLS located
 at the environment variable RLS_ROOT, if set."
   :type '(repeat (string)))
+
+(defun lsp-rust-explain-error-at-point ()
+  "Explain the error at point.
+The explaination comes from 'rustc --explain=ID'."
+  (interactive)
+  (unless (memq (bound-and-true-p flycheck-checker) '(lsp-ui lsp))
+    (user-error "You need to enable lsp-ui-flycheck"))
+  (-if-let* ((current-window (selected-window))
+             (id (-> (car (flycheck-overlay-errors-at (point)))
+                     (flycheck-error-id))))
+      (pop-to-buffer
+       (with-current-buffer (get-buffer-create "*rustc error*")
+         (let ((buffer-read-only nil))
+           (erase-buffer)
+           (insert (shell-command-to-string (concat "rustc --explain=" id))))
+         (if (fboundp 'markdown-view-mode)
+             (markdown-view-mode)
+           (markdown-mode))
+         (setq-local markdown-fontify-code-blocks-natively t)
+         (setq-local markdown-fontify-code-block-default-mode 'rust-mode)
+         (setq-local kill-buffer-hook (lambda nil
+                                        (quit-restore-window)
+                                        (when (window-live-p current-window)
+                                          (select-window current-window))))
+         (setq header-line-format
+               (concat (propertize " rustc" 'face 'error)
+                       (propertize " " 'display
+                                   `(space :align-to (- right-fringe ,(1+ (length id)))))
+                       (propertize id 'face 'error)))
+         (markdown-toggle-markup-hiding 1)
+         (font-lock-ensure)
+         (goto-char 1)
+         (current-buffer)))
+    (message "explain-error: No error at point")))
 
 (defun lsp-rust-find-implementations ()
   "List all implementation blocks for a trait, struct, or enum at point."
@@ -63,7 +99,7 @@ at the environment variable RLS_ROOT, if set."
 (defun lsp-rust--rls-command ()
   "Return the command used to start the RLS for defining the LSP Rust client."
   (or lsp-rust-rls-command
-      (when-let ((rls-root (getenv "RLS_ROOT")))
+      (-when-let (rls-root (getenv "RLS_ROOT"))
         `("cargo" "+nightly" "run" "--quiet"
           ,(concat "--manifest-path="
                    (concat

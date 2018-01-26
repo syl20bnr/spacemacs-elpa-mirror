@@ -688,7 +688,7 @@
 	    ((:url . "http://elpa.gnu.org/packages/midi-kbd.html")
 	     (:keywords "convenience" "hardware" "multimedia"))])
  (mines .
-	[(1 5)
+	[(1 6)
 	 ((emacs
 	   (24 4))
 	  (cl-lib
