@@ -3,11 +3,12 @@ First specify the hostname/ip of your kodi webserver:
 (setq kodi-host-name "my-htpc:8080")
 Then open the Remote with the command:
 'kodi-remote-keyboard'
-Alternativly open the Movies, Series or Music Overview with the command:
+Alternativly open the Media buffers with the commands:
 'kodi-remote-movies'
 'kodi-remote-series'
 'kodi-remote-music'
-Also open kodi Video Playlist with the command:
+'kodi-remote-playlists'
+Also open the current kodi Video Playlist with the command:
 'kodi-remote-playlist'
 OPTIONAL: setup settings for deleting files (over tramp)
 (setq kodi-dangerous-options t)

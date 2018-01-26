@@ -32,6 +32,3 @@ inspired by Sierra.vim with adding some extra colors.
 
  ;; When t, will display colored hl-line style
  (setq kaolin-hl-line-colored t)
-
-
-                          The end of the path is the beginning.

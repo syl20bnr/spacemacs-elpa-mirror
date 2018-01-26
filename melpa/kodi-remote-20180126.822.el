@@ -1,10 +1,10 @@
 ;;; kodi-remote.el --- Remote Control for Kodi
 
-;; Copyright (C) 2015-2016 Stefan Huchler
+;; Copyright (C) 2015-2018 Stefan Huchler
 
 ;; Author: Stefan Huchler <stefan.huchler@mail.de>
 ;; URL: http://github.com/spiderbit/kodi-remote.el
-;; Package-Version: 20171008.2226
+;; Package-Version: 20180126.822
 ;; Package-Requires: ((request "0.2.0")(let-alist "1.0.4")(json "1.4")(elnode "20140203.1506"))
 ;; Keywords: kodi tools convinience
 
@@ -30,11 +30,12 @@
 ;; (setq kodi-host-name "my-htpc:8080")
 ;; Then open the Remote with the command:
 ;; 'kodi-remote-keyboard'
-;; Alternativly open the Movies, Series or Music Overview with the command:
+;; Alternativly open the Media buffers with the commands:
 ;; 'kodi-remote-movies'
 ;; 'kodi-remote-series'
 ;; 'kodi-remote-music'
-;; Also open kodi Video Playlist with the command:
+;; 'kodi-remote-playlists'
+;; Also open the current kodi Video Playlist with the command:
 ;; 'kodi-remote-playlist'
 ;; OPTIONAL: setup settings for deleting files (over tramp)
 ;; (setq kodi-dangerous-options t)
@@ -137,9 +138,9 @@ Argument PARAMS kodi json api argument."
      :success (cl-function (lambda (&key data &allow-other-keys)
 			     (when data
 			       ;; (print data)
+			       ;; (print (json-read-from-string data))
 			       (setq kodi-properties (let-alist (json-read-from-string data)
 						       .result))
-			       ;; (message kodi-properties)
 			       ;; (print (aref (let-alist kodi-properties .episodedetails) 0))
 			       (setq kodi-request-running nil)
 			       )))
@@ -184,7 +185,7 @@ Argument DIRECTION which direction and how big of step to seek."
     (kodi-remote-post "Player.Seek" params)))
 
 (defun kodi-remote-play-database-id (field-name id)
-  "Play series in database with given ID."
+  "Play kodi item with the id type in FIELD-NAME and the given ID."
   (let* ((params
 	  `(("params" . (("item" . ((,field-name . ,id))))))))
     (kodi-remote-post "Player.Open" params)))
@@ -236,7 +237,7 @@ Argument DIRECTION which direction and how big of step to seek."
     (kodi-remote-post "Input.ExecuteAction" params)))
 
 (defun kodi-remote-input-direct (seek input)
-  "Move horrizontal or seek.
+  "Move horrizontal or SEEK.
 Depending on current window move horizontal in menu (INPUT)
  or SEEK big forward/backward."
   (kodi-remote-get-active-window)
@@ -368,12 +369,94 @@ Optional argument FILTER-WATCHED filters watched episodes."
     (kodi-remote-post "Playlist.Add" params)))
 
 ;;;###autoload
+(defun kodi-remote-playlist-add-song ()
+  "Add episode to playlist."
+  (interactive)
+  (let* ((params `(("params" .
+		    (("playlistid" . 1)
+		     ("item" .
+		      (("songid" . ,(tabulated-list-get-id)))))))))
+    (kodi-remote-post "Playlist.Add" params)))
+
+;;;###autoload
+(defun kodi-remote-playlist-add-music ()
+  "Add episode to playlist."
+  (interactive)
+  (let* ((params `(("params" .
+		    (("playlistid" . 1)
+		     ("item" .
+		      (("artistid" . ,(tabulated-list-get-id)))))))))
+    (kodi-remote-post "Playlist.Add" params)))
+
+;;;###autoload
 (defun kodi-remote-playlist-play ()
   "Add episode to playlist."
   (interactive)
   (let* ((params `(("params" .
 		    (("item" . (("playlistid" . 1))))))))
     (kodi-remote-post "Player.Open" params)))
+
+(defun kodi-profile-path ()
+  "Return the profile path of the kodi instance."
+  (with-current-buffer
+      (url-retrieve-synchronously
+       (concat "http://" kodi-host-name
+	       "/vfs/special%3a%2f%2flogpath%2fkodi.log"))
+    (re-search-forward "special://home/ is mapped to: ")
+    (re-search-forward ".*")
+    (match-string 0)))
+
+;;;###autoload
+(defun kodi-remote-playlist-save (name)
+  "Save playlist as NAME."
+  (interactive "sName:")
+  (if (and kodi-dangerous-options (boundp 'kodi-access-host))
+      (progn
+	(kodi-remote-playlist-get)
+	(let* ((default-directory
+		 (concat "/" kodi-access-method
+			 ":" kodi-access-host ":/"))
+	       (file-name (concat (seq-drop (kodi-profile-path) 0)
+				  "/userdata/playlists/video/"
+				  name ".m3u"))
+	       (items (cdr (assoc 'items kodi-properties)))
+	       (entries (mapconcat
+			 (lambda (item)
+			   (format "#EXTINF:0,%s\n%s"
+				   (assoc-default 'label item)
+				   (assoc-default 'file item))
+			   ) items "\n")))
+	  (if (file-writable-p file-name)
+	      (write-region (concat "#EXTM3U\n" entries) nil file-name))))))
+
+
+;;;###autoload
+(defun kodi-remote-playlists-remove ()
+  "Remove playlist."
+  (interactive)
+  (if (and kodi-dangerous-options (boundp 'kodi-access-host))
+      (progn
+	(let* ((default-directory
+		 (concat "/" kodi-access-method
+			 ":" kodi-access-host ":/"))
+	       (file-name (seq-drop (tabulated-list-get-id) 1)))
+	  (if (file-writable-p file-name)
+	      (delete-file file-name))))))
+
+;;;###autoload
+(defun kodi-remote-playlists-rename (name)
+  "Rename playlist to new NAME."
+  (interactive "sName:")
+  (if (and kodi-dangerous-options (boundp 'kodi-access-host))
+      (let* ((default-directory
+	       (concat "/" kodi-access-method
+		       ":" kodi-access-host ":/"))
+	     (file-name (seq-drop (tabulated-list-get-id) 1))
+	     (file-name-new (concat (seq-drop (kodi-profile-path) 1)
+				    "/userdata/playlists/video/"
+				    name ".m3u")))
+	(if (file-writable-p file-name)
+	    (rename-file file-name file-name-new)))))
 
 ;;;###autoload
 (defun kodi-remote-playlist-clear ()
@@ -409,7 +492,7 @@ Argument URL the file url to the media."
 (defun kodi-remote-playlist-get ()
   "Requests playlist items."
   (let* ((params
-  	  '(("params" . (("properties" . ["duration" "runtime" "title"])
+  	  '(("params" . (("properties" . ["duration" "runtime" "title" "file"])
 			 ("playlistid" . 1))))))
     (kodi-remote-get "Playlist.GetItems" params)))
 
@@ -442,11 +525,14 @@ Argument DIRECTION can be up or down."
   (interactive)
   (kodi-remote-playlist-swap "down"))
 
-;; (defun kodi-remote-playlists-get ()
-;;   "Requests playlist items."
-;;   (let* ((params nil
-;;   	  ))
-;;     (kodi-remote-get "Playlist.GetPlaylists" params)))
+(defun kodi-remote-playlists-get ()
+  "Requests playlist items."
+  (if (and kodi-dangerous-options (boundp 'kodi-access-host))
+      (let* ((params
+	      `(("params" . (("directory" .
+			      ,(concat (kodi-profile-path)
+				       "/userdata/playlists/video")))))))
+	(kodi-remote-get "Files.GetDirectory" params))))
 
 (defun kodi-remote-video-scan ()
   "Update availible/new videos."
@@ -683,11 +769,11 @@ Key bindings:
   (kodi-remote-draw-shows))
 
 (defun kodi-remote-delete-multiple (ids)
-  "Deletes all entries with id in ids list"
+  "Deletes all entries with id in IDS list."
   (mapcar 'kodi-remote-delete-entry ids))
 
 (defun kodi-remote-delete-entry (id)
-  "Deletes episode over tramp.
+  "Deletes episode with ID over tramp.
 For it to work ‘kodi-dangerous-options’ must be set to t
 and ‘kodi-access-host’ must be set to the hostname of your kodi-file host."
   (let* ((default-directory "~"))
@@ -734,7 +820,8 @@ and ‘kodi-access-host’ must be set to the hostname of your kodi-file host."
     (kodi-remote-post "VideoLibrary.Scan" params)))
 
 (defun sbit-action (field-name obj)
-  "Helper method for series start buttons.
+  "Helper method for start buttons.
+Argument FIELD-NAME the name of the id.
 Argument OBJ the button obj."
   (kodi-remote-play-database-id
    field-name (button-get obj 'id)))
@@ -775,20 +862,23 @@ Argument BUTTON contains the artist-id"
     (setq kodi-selected-artist (button-get button 'id)))
   (kodi-remote-songs))
 
-(defun kodi-generate-entry (action id subitems item)
+(defun kodi-generate-entry (action id subitems hide-ext item)
   "Generate tabulated-list entry for kodi media buffers.
 Argument ACTION button action.
 Argument ID button/entry id.
 Argument SUBITEMS sets entry as category/tag with child entries.
-Argument ITEM the media data from kodi"
+Argument HIDE-EXT if t removes file extension from entry label
+Argument ITEM the media data from kodi."
   (let* ((number-of-nodes
 	  (if subitems
 	      (kodi-show-get-number-of-unwatched item) 5)) ; not abstracted yet
 	 (subitemid (assoc-default id item))
-	 (label (decode-coding-string (assoc-default 'label item) 'utf-8))
+	 (label (decode-coding-string
+		 (assoc-default 'label item) 'utf-8))
+	 (label-sans-ext (file-name-sans-extension label))
 	 (itemid (assoc-default id item)))
     (when (or (> number-of-nodes 0) kodi-unseen-visible)
-      (let* ((button1 `(,label
+      (let* ((button1 `(,(if hide-ext label-sans-ext label)
 			action ,action
 			id ,subitemid))
 	     (button2 `(,(number-to-string number-of-nodes)
@@ -804,23 +894,34 @@ Argument ITEM the media data from kodi"
     (funcall kodi-remote-refresh-function ;; transmission-torrent-id
 )))
 
-(defun kodi-draw-tab-list (action parent id data-name subitems)
-  "Creates and draws a media overview buffer.
+(defun kodi-draw-tab-list (action parent id data-name subitems &optional hide-ext)
+  "Create and draw a media overview buffer.
 Argument ACTION button action.
 Argument PARENT sets entry as category/tag with child entries.
 Argument ID button/entry id.
 Argument DATA-NAME name of the data we want to show.
-Argument ITEM the media data from kodi"
+Argument SUBITEMS sets entry as category/tag with child entries
+Optional argument HIDE-EXT if t removes file extension from entry labels."
+;; FIXME parent and subitems argument seems to be redundant
   (setq tabulated-list-entries
   	(remove nil (mapcar
 		     (apply-partially
 		      'kodi-generate-entry
 		      (if parent action (apply-partially
 					 'sbit-action action))
-		      id subitems)
+		      id subitems hide-ext)
 		     (assoc-default data-name kodi-properties))))
   (tabulated-list-init-header)
   (tabulated-list-print))
+
+;;;###autoload
+(defun kodi-remote-playlists-draw (&optional _arg _noconfirm)
+  "Draw the list of playlists.
+Optional argument _ARG revert excepts this param.
+Optional argument _NOCONFIRM revert excepts this param."
+  (interactive)
+  (kodi-remote-playlists-get)
+  (kodi-draw-tab-list 'file nil 'file 'files nil t))
 
 ;;;###autoload
 (defun kodi-remote-draw-movies (&optional _arg _noconfirm)
@@ -854,7 +955,7 @@ Optional argument _NOCONFIRM revert excepts this param."
 
 ;;;###autoload
 (defun kodi-remote-draw-shows (&optional _arg _noconfirm)
-  "Draw a list of shows.
+  "Draw a list of show entries.
 Optional argument _ARG revert excepts this param.
 Optional argument _NOCONFIRM revert excepts this param."
   (interactive)
@@ -904,8 +1005,18 @@ Optional argument _NOCONFIRM revert excepts this param."
     (define-key map (kbd "a") 'kodi-remote-playlist-add-url)
     (define-key map (kbd "p") 'kodi-remote-playlist-play)
     (define-key map (kbd "c") 'kodi-remote-playlist-clear)
+    (define-key map (kbd "s") 'kodi-remote-playlist-save)
     map)
   "Keymap for `kodi-remote-playlist-mode'.")
+
+(defvar kodi-remote-playlists-mode-map
+  (let ((map (make-sparse-keymap))
+	(menu-map (make-sparse-keymap)))
+    (define-key map (kbd "k") 'kodi-remote-keyboard)
+    (define-key map (kbd "d") 'kodi-remote-playlists-remove)
+    (define-key map (kbd "r") 'kodi-remote-playlists-rename)
+    map)
+  "Keymap for `kodi-remote-playlists-mode'.")
 
 (defvar kodi-remote-series-episodes-mode-map
   (let ((map (make-sparse-keymap))
@@ -923,7 +1034,7 @@ Optional argument _NOCONFIRM revert excepts this param."
     (define-key map (kbd "k") 'kodi-remote-keyboard)
     ;; (define-key map (kbd "l") 'kodi-remote-episode-toggle-visibility)
     ;; (define-key map (kbd "d") 'kodi-remote-delete)
-    ;; (define-key map (kbd "a") 'kodi-remote-playlist-add-episode)
+    (define-key map (kbd "a") 'kodi-remote-playlist-add-song)
     map)
   "Keymap for `kodi-remote-songs-mode'.")
 
@@ -943,6 +1054,7 @@ Optional argument _NOCONFIRM revert excepts this param."
 	(menu-map (make-sparse-keymap)))
     (define-key map (kbd "k") 'kodi-remote-keyboard)
     (define-key map (kbd "g") 'kodi-remote-draw-music)
+    (define-key map (kbd "a") 'kodi-remote-playlist-add-music)
     ;; (define-key map (kbd "c") 'kodi-remote-series-clean)
     ;; (define-key map (kbd "s") 'kodi-remote-series-scan)
     ;; (define-key map (kbd "l") 'kodi-remote-series-toggle-visibility)
@@ -997,6 +1109,14 @@ Key bindings:
   (setq tabulated-list-format
         `[("Entry" 30 t)])
   (setq-local revert-buffer-function #'kodi-remote-playlist-draw))
+
+(define-derived-mode kodi-remote-playlists-mode tabulated-list-mode "kodi-remote-playlists"
+  "Major Mode for kodi playlists.
+Key bindings:
+\\{kodi-remote-playlists-mode-map}"
+  (setq tabulated-list-format
+        `[("Playlists" 30 t)])
+  (setq-local revert-buffer-function #'kodi-remote-playlists-draw))
 
 ;;;###autoload
 (defun kodi-remote-series-episodes ()
@@ -1056,7 +1176,7 @@ Key bindings:
   (kodi-remote-draw-movies))
 
 (defun spiderbit-get-movie-id (movie)
-  "Return the id of a Movie."
+  "Return the id of a MOVIE."
   (cdr (assoc 'movieid movie)))
 
 (defun kodi-remote-get-movies (&optional filter-watched)
@@ -1122,7 +1242,7 @@ Key bindings:
   (kodi-files-do :delete))
 
 (defun kodi-text-property-all (beg end prop)
-  "Return a list of non-nil values of a text property PROP between BEG and END.
+  "Return a list of non-nil values between BEG and END of a text property PROP.
 If none are found, return nil."
   (let (res pos)
     (save-excursion
@@ -1133,36 +1253,11 @@ If none are found, return nil."
         (goto-char (or pos end))))
     (nreverse (delq nil res))))
 
-
-;; (define-derived-mode kodi-remote-playlists-mode tabulated-list-mode "kodi-remote-playlists"
-;;   "Major Mode for kodi playlists.
-;; Key bindings:
-;; \\{kodi-remote-playlists-mode-map}"
-;;   (setq tabulated-list-format
-;;         `[("Playlists" 30 t)])
-;;   (setq-local revert-buffer-function #'kodi-remote-playlists-draw))
-
 ;;;###autoload
-;; (defun kodi-remote-playlists ()
-;;   "Open a `kodi-remote-playlists-mode' buffer."
-;;   (interactive)
-;;   (kodi-remote-context kodi-remote-playlists-mode))
-
-;;;###autoload
-;; (defun kodi-remote-playlists-draw (&optional _arg _noconfirm)
-;;   "Draw the list of playlists.
-;; Optional argument _ARG revert excepts this param.
-;; Optional argument _NOCONFIRM revert excepts this param."
-;;   (interactive)
-;;   (kodi-remote-playlists-get)
-;;   (setq tabulated-list-entries '())
-;;   (dolist (item (append (let-alist kodi-properties .items) nil))
-;;     (push (list (spiderbit-get-id item)
-;; 		(vector `(,(spiderbit-get-name item)
-;; 			  id ,(spiderbit-get-show-id item))))
-;; 	  tabulated-list-entries))
-;;   (tabulated-list-init-header)
-;;   (tabulated-list-print))
+(defun kodi-remote-playlists ()
+  "Open a `kodi-remote-playlists-mode' buffer."
+  (interactive)
+  (kodi-remote-context kodi-remote-playlists-mode))
 
 
 

@@ -1,10 +1,10 @@
 ;;; outrespace.el --- c++ namespace utility functions
-;; Copyright (C) 2016-2017  Dan Harms (dharms)
+;; Copyright (C) 2016-2018  Dan Harms (dharms)
 ;; Author: Dan Harms <danielrharms@gmail.com>
 ;; Created: Wednesday, June  1, 2016
 ;; Version: 0.1
-;; Package-Version: 20170904.511
-;; Modified Time-stamp: <2017-09-04 07:11:00 dharms>
+;; Package-Version: 20180126.857
+;; Modified Time-stamp: <2018-01-26 10:56:40 dan.harms>
 ;; Modified by: Dan Harms
 ;; Keywords: tools c++ namespace
 ;; URL: https://github.com/articuluxe/outrespace.git
@@ -484,8 +484,9 @@ This removes the tags and delimiters, not the content."
   (interactive)
   (outrespace-scan-buffer)
   (let ((ns (outrespace--find-enclosing-ns)))
-    (when ns
-      (message "Namespace: %s" (cadr (outrespace--get-ns-names ns))))))
+    (if ns
+        (message "Namespace: %s" (cadr (outrespace--get-ns-names ns)))
+      (message "No enclosing namespace."))))
 
 (defun outrespace--select-ns-ivy (lst prompt)
   "Select a namespace from LST (with prompt PROMPT), using ivy.

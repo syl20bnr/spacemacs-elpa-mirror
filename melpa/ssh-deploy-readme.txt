@@ -15,10 +15,10 @@ machine myserver.com login myuser port ftp password mypassword
 Set permissions to this file to 700 with you as the owner.
 
 - To setup a upload hook on save do this:
-    (add-hook 'after-save-hook (lambda() (if ssh-deploy-on-explicit-save (ssh-deploy-upload-handler)) ))
+    (add-hook 'after-save-hook (lambda() (if (and (boundp 'ssh-deploy-on-explicit-save) ssh-deploy-on-explicit-save) (ssh-deploy-upload-handler)) ))
 
 - To setup automatic storing of base revisions and detection of remote changes do this:
-    (add-hook 'find-file-hook (lambda() (if ssh-deploy-automatically-detect-remote-changes (ssh-deploy-remote-changes-handler)) ))
+    (add-hook 'find-file-hook (lambda() (if (and (boundp 'ssh-deploy-automatically-detect-remote-changes) ssh-deploy-automatically-detect-remote-changes) (ssh-deploy-remote-changes-handler)) ))
 
 - To set key-bindings do something like this:
     (global-set-key (kbd "C-c C-z f") (lambda() (interactive)(ssh-deploy-upload-handler-forced) ))

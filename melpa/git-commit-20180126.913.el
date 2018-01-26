@@ -12,7 +12,7 @@
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 
 ;; Package-Requires: ((emacs "24.4") (dash "20170810") (with-editor "20170817"))
-;; Package-Version: 20180118.507
+;; Package-Version: 20180126.913
 ;; Keywords: git tools vc
 ;; Homepage: https://github.com/magit/magit
 
@@ -557,7 +557,7 @@ With a numeric prefix ARG, go back ARG comments."
   (save-restriction
     (goto-char (point-min))
     (narrow-to-region (point)
-                      (if (re-search-forward (concat "^" comment-start))
+                      (if (re-search-forward (concat "^" comment-start) nil t)
                           (max 1 (- (point) 2))
                         (point-max)))
     (log-edit-previous-comment arg)))
