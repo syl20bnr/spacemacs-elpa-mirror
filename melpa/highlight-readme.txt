@@ -12,7 +12,7 @@
  navigate around the sections of this doc.  Linkd mode will
  highlight this Index, as well as the cross-references and section
  headings throughout this file.  You can get `linkd.el' here:
- http://www.emacswiki.org/emacs/download/linkd.el.
+ https://www.emacswiki.org/emacs/download/linkd.el.
 
  (@> "Things Defined Here")
  (@> "Documentation")
@@ -541,8 +541,8 @@
  The other hide and show commands depend on your also using
  Icicles, which is a set of libraries that offer enhanced
  completion.  Complete information about Icicles is here:
- `http://www.emacswiki.org/emacs/Icicles'.  You can obtain Icicles
- here: `http://www.emacswiki.org/emacs/Icicles_-_Libraries'.
+ `https://www.emacswiki.org/emacs/Icicles'.  You can obtain Icicles
+ here: `https://www.emacswiki.org/emacs/Icicles_-_Libraries'.
 
  The Icicles commands defined for `highlight.el' are the following:
 
@@ -692,13 +692,13 @@
  * `highlight-chars.el' - Provides ways to highlight different sets
    of characters, including whitespace and Unicode characters.  It
    is available here:
-   http://www.emacswiki.org/highlight-chars.el              (code)
-   http://www.emacswiki.org/ShowWhiteSpace#HighlightChars   (doc)
+   https://www.emacswiki.org/emacs/download/highlight-chars.el (code)
+   https://www.emacswiki.org/emacs/ShowWhiteSpace#HighlightChars (doc)
 
  * `hi-lock.el' - The features of `highlight.el' are complementary
    to those of vanilla Emacs library `hi-lock.el', so you can use
    the two libraries together.  See this page for a comparison:
-   http://www.emacswiki.org/HighlightTemporarily.
+   https://www.emacswiki.org/emacs/HighlightTemporarily.
 
 (@* "Commands That Won't Work in Emacs 20")
  ** Commands That Won't Work in Emacs 20 **
