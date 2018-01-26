@@ -3,8 +3,8 @@
 ;; Copyright (C) 2006-2009, 2011-2012, 2015, 2016, 2017
 ;;   Phil Hagelberg, Doug Alcorn, Will Farrington, Chen Bin
 ;;
-;; Version: 5.4.6
-;; Package-Version: 20171219.1858
+;; Version: 5.4.7
+;; Package-Version: 20180125.1853
 ;; Author: Phil Hagelberg, Doug Alcorn, and Will Farrington
 ;; Maintainer: Chen Bin <chenbin.sh@gmail.com>
 ;; URL: https://github.com/technomancy/find-file-in-project
@@ -33,7 +33,10 @@
 ;;; Commentary:
 
 ;; This program provides a couple methods for quickly finding any file
-;; in a given project.  It depends on GNU find.
+;; in a given project.
+;; - Only dependency is GNU/BSD find
+;; - Works on Windows with minimum setup
+;; - Works flawlessly on Tramp Mode (https://www.emacswiki.org/emacs/TrampMode)
 ;;
 ;; Usage,
 ;;   - `M-x find-file-in-project-by-selected' use the selected region
@@ -183,12 +186,19 @@ It's used by `find-file-with-similar-name'.")
   "Hook when `ffip-diff-apply-hunk' find the file to apply hunk.
 The file path is passed to the hook as the first argument.")
 
+(defun ffip-shell-command-to-string (cmd)
+  "Execute shell command COMMAND and return its output as a string."
+  (with-output-to-string
+    (with-current-buffer
+        standard-output
+      (shell-command cmd t))))
+
 ;;;###autoload
 (defun ffip-git-diff-current-file ()
   "Run 'git diff version:current-file current-file'."
   (let* ((default-directory (locate-dominating-file default-directory ".git"))
          (line (ivy-read "diff current file:" (my-git-versions))))
-    (shell-command-to-string (format "git --no-pager diff %s:%s %s"
+    (ffip-shell-command-to-string (format "git --no-pager diff %s:%s %s"
                                      (replace-regexp-in-string "^ *\\*? *" "" (car (split-string line "|" t)))
                                      (file-relative-name buffer-file-name default-directory)
                                      buffer-file-name))))
@@ -198,7 +208,7 @@ The file path is passed to the hook as the first argument.")
   (let* ((default-directory (locate-dominating-file default-directory ".git"))
          (line (ivy-read "diff current file:" (my-git-versions)))
          (version (replace-regexp-in-string "^ *\\*? *" "" (car (split-string line "|" t)))))
-    (shell-command-to-string (format "git --no-pager diff %s" version))))
+    (ffip-shell-command-to-string (format "git --no-pager diff %s" version))))
 
 (defvar ffip-diff-backends
   '(ffip-git-diff-current-file
@@ -206,11 +216,11 @@ The file path is passed to the hook as the first argument.")
     ("`git diff HEAD^` in project" . "cd $(git rev-parse --show-toplevel) && git diff HEAD^")
     ("`git diff --cached` in project" . "cd $(git rev-parse --show-toplevel) && git diff --cached")
     ("`git diff` in project" . "cd $(git rev-parse --show-toplevel) && git diff")
-    ("`git diff` current file" . (shell-command-to-string (format "cd $(git rev-parse --show-toplevel) && git diff '%s'"
+    ("`git diff` current file" . (ffip-shell-command-to-string (format "cd $(git rev-parse --show-toplevel) && git diff '%s'"
                                                                     (buffer-file-name))))
-    ("`git log -p` current file" . (shell-command-to-string (format "cd $(git rev-parse --show-toplevel) && git --no-pager log --date=short -p '%s'"
+    ("`git log -p` current file" . (ffip-shell-command-to-string (format "cd $(git rev-parse --show-toplevel) && git --no-pager log --date=short -p '%s'"
                                                      (buffer-file-name))))
-    ("`git log -S keyword -p` in project" . (shell-command-to-string (format "cd $(git rev-parse --show-toplevel) && git --no-pager log --date=short -S'%s' -p"
+    ("`git log -S keyword -p` in project" . (ffip-shell-command-to-string (format "cd $(git rev-parse --show-toplevel) && git --no-pager log --date=short -S'%s' -p"
                                                               (read-string "Git search string:"))))
     ("Diff from `kill-ring'" . (car kill-ring)))
   "The list of back-ends.
@@ -491,27 +501,31 @@ If CHECK-ONLY is true, only do the check."
     rlt))
 
 (defun ffip--executable-find (exe)
-  (let* ((rlt (if (eq system-type 'windows-nt)
-                  (or
-                   ;; cygwin
-                   (ffip--win-executable-find "c" ":\\\\cygwin64\\\\bin\\\\" exe)
-                   (ffip--win-executable-find "d" ":\\\\cygwin64\\\\bin\\\\" exe)
-                   (ffip--win-executable-find "e" ":\\\\cygwin64\\\\bin\\\\" exe)
-                   (ffip--win-executable-find "c" ":\\\\cygwin\\\\bin\\\\" exe)
-                   (ffip--win-executable-find "d" ":\\\\cygwin\\\\bin\\\\" exe)
-                   (ffip--win-executable-find "e" ":\\\\cygwin\\\\bin\\\\" exe)
-                   ;; msys2
-                   (ffip--win-executable-find "c" ":\\\\msys64\\\\usr\\\\bin\\\\" exe)
-                   (ffip--win-executable-find "d" ":\\\\msys64\\\\usr\\\\bin\\\\" exe)
-                   (ffip--win-executable-find "e" ":\\\\msys64\\\\usr\\\\bin\\\\" exe)
-                   (ffip--win-executable-find "c" ":\\\\msys32\\\\usr\\\\bin\\\\" exe)
-                   (ffip--win-executable-find "d" ":\\\\msys32\\\\usr\\\\bin\\\\" exe)
-                   (ffip--win-executable-find "e" ":\\\\msys32\\\\usr\\\\bin\\\\" exe))
-                ;; *nix
-                (executable-find exe))))
-    (unless rlt
-      ;; well, `executable-find' failed
+  (let* (rlt)
+    (cond
+     ((file-remote-p default-directory)
+      ;; In tramp mode and local windows, remote nix-like,
+      ;; the `ffip-find-executable' with windows path can't be applied.
+      ;; Assume remote server has already added EXE into $PATH!
+      ;; Thanks for ShuguangSun for the fix
       (setq rlt exe))
+     ((setq rlt ffip-find-executable))
+     ((eq system-type 'windows-nt)
+      (setq rlt (or
+                 ;; cygwin
+                 (ffip--win-executable-find "c" ":\\\\cygwin64\\\\bin\\\\" exe)
+                 (ffip--win-executable-find "d" ":\\\\cygwin64\\\\bin\\\\" exe)
+                 (ffip--win-executable-find "e" ":\\\\cygwin64\\\\bin\\\\" exe)
+                 (ffip--win-executable-find "f" ":\\\\cygwin64\\\\bin\\\\" exe)
+                 ;; msys2
+                 (ffip--win-executable-find "c" ":\\\\msys64\\\\usr\\\\bin\\\\" exe)
+                 (ffip--win-executable-find "d" ":\\\\msys64\\\\usr\\\\bin\\\\" exe)
+                 (ffip--win-executable-find "e" ":\\\\msys64\\\\usr\\\\bin\\\\" exe)
+                 (ffip--win-executable-find "f" ":\\\\msys64\\\\usr\\\\bin\\\\" exe))))
+     ((setq rlt (executable-find exe)))
+     (t
+      ;; well, `executable-find' failed
+      (setq rlt exe)))
     rlt))
 
 (defun ffip--join-patterns (patterns)
@@ -530,7 +544,7 @@ If CHECK-ONLY is true, only do the check."
 (defun ffip-completing-read (prompt collection &optional action)
   "Read a string in minibuffer, with completion.
 
-PROMPT is a string with same format as similar paramters in `ido-completing-read'.
+PROMPT is a string with same format as similar parameters in `ido-completing-read'.
 Collection is a list of strings.
 
 ACTION is a lambda function to call after selecting a result.
@@ -581,7 +595,7 @@ DIRECTORY-TO-SEARCH specify the root directory to search."
                    (ffip-get-project-root-directory)))
          (default-directory (file-name-as-directory root))
          (cmd (format "%s . \\( %s \\) -prune -o -type %s %s %s %s -print"
-                      (if ffip-find-executable ffip-find-executable (ffip--executable-find "find"))
+                      (ffip--executable-find "find")
                       (ffip--prune-patterns)
                       (if is-finding-directory "d" "f")
                       (ffip--join-patterns ffip-patterns)
@@ -606,7 +620,7 @@ DIRECTORY-TO-SEARCH specify the root directory to search."
                       (cons (file-name-nondirectory file)
                             (expand-file-name file))))
                   ;; #15 improving handling of directories containing space
-                  (split-string (shell-command-to-string cmd) "[\r\n]+" t)))
+                  (split-string (ffip-shell-command-to-string cmd) "[\r\n]+" t)))
     rlt))
 
 (defun ffip--forward-line (lnum)
@@ -946,7 +960,7 @@ Keyword to search new file is selected text or user input."
       (cond
        ;; shell command
        ((stringp backend)
-        (ffip-show-content-in-diff-mode (shell-command-to-string backend)))
+        (ffip-show-content-in-diff-mode (ffip-shell-command-to-string backend)))
        ;; command
        ((functionp backend)
         (ffip-show-content-in-diff-mode (funcall backend)))

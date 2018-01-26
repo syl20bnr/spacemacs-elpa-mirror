@@ -1,5 +1,8 @@
 This program provides a couple methods for quickly finding any file
-in a given project.  It depends on GNU find.
+in a given project.
+- Only dependency is GNU/BSD find
+- Works on Windows with minimum setup
+- Works flawlessly on Tramp Mode (https://www.emacswiki.org/emacs/TrampMode)
 
 Usage,
   - `M-x find-file-in-project-by-selected' use the selected region
