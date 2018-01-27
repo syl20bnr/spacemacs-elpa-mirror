@@ -4,8 +4,8 @@
 
 ;; Author: Carl Lieberman <dev@carl.ac>
 ;; Keywords: kdeconnect, android
-;; Package-Version: 20161022.700
-;; Version: 1.2.0
+;; Package-Version: 20180126.1540
+;; Version: 1.2.1
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -104,6 +104,16 @@
           (split-string kdeconnect-devices "," t)
           nil t "")))
   (setq kdeconnect-active-device name))
+
+;;;###autoload
+(defun kdeconnect-send-sms (message destination)
+  (interactive "MEnter message: \nnEnter destination: ")
+  (shell-command
+   (mapconcat 'identity
+              (list "kdeconnect-cli" "-d"
+                    (shell-quote-argument kdeconnect-active-device)
+                    "--destination" (number-to-string destination)
+                    "--send-sms" (shell-quote-argument message)) " ")))
 
 (provide 'kdeconnect)
 ;;; kdeconnect.el ends here
