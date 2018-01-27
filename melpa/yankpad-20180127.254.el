@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand
 ;; URL: http://github.com/Kungsgeten/yankpad
-;; Package-Version: 20180116.538
+;; Package-Version: 20180127.254
 ;; Version: 1.70
 ;; Keywords: abbrev convenience
 ;; Package-Requires: ((emacs "24"))
@@ -316,9 +316,12 @@ Does not change `yankpad-category'."
         nil))))
 
 ;;;###autoload
-(defun yankpad-expand ()
+(defun yankpad-expand (&optional _first)
   "Replace symbol at point with a snippet.
-Only works if the symbol is found in the first matching group of `yankpad-expand-keyword-regex'."
+Only works if the symbol is found in the first matching group of
+`yankpad-expand-keyword-regex'.
+
+This function can be added to `hippie-expand-try-functions-list'."
   (interactive)
   (unless yankpad-category
     (yankpad-set-category))

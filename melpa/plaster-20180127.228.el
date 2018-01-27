@@ -4,7 +4,7 @@
 ;;
 ;; Author: Nicolas Hafner <shinmera@tymoon.eu>
 ;; URL: http://github.com/shirakumo/plaster/
-;; Package-Version: 20180122.513
+;; Package-Version: 20180127.228
 ;; Package-Requires: ((emacs "24.3"))
 ;; Version: 1.0
 ;; Keywords: convenience, paste service
@@ -121,6 +121,10 @@
 
 (require 'url)
 (require 'json)
+
+(defun plaster-read-type (&optional (default "text"))
+  (let ((completion-ignore-case t))
+    (completing-read "Paste type:" plaster-types nil t nil nil default)))
 
 (defun plaster-find-session-token (cookies)
   "Find the radiance-session token in the cookie jar.
@@ -271,7 +275,7 @@ Optional argument TITLE The title for the paste."
   (interactive)
   (let* ((type (or type
                    (plaster-mode-type major-mode)
-                   (read-string "Paste type: " "text")))
+                   (plaster-read-type)))
          (title (or title
                     (read-string "Paste title: " (buffer-name))))
          (data (plaster-request (plaster-api "new")
@@ -299,7 +303,7 @@ Optional argument TITLE The title for the paste."
   (let* ((mode major-mode)
          (type (or type
                    (plaster-mode-type major-mode)
-                   (read-string "Paste type: " "text")))
+                   (plaster-read-type)))
          (title (or title
                     (read-string "Paste title: " (buffer-name))))
          (text (buffer-substring (mark) (point))))
@@ -340,8 +344,8 @@ does not represent a paste, a new paste is created for it."
 The remote paste will be automatically created when the buffer
 is opened."
   (interactive)
-  (let* ((type (read-string "Paste type: " "text"))
-         (title (read-string "Paste title: ")))
+  (let* ((title (read-string "Paste title: "))
+         (type (plaster-read-type)))
     (with-current-buffer (generate-new-buffer title)
       (insert " ")
       (switch-to-buffer (current-buffer))

@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/emacscollective/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 20180116.427
+;; Package-Version: 20180125.1539
 
 ;; This file is not part of GNU Emacs.
 
@@ -350,8 +350,7 @@ directories."
     (setq xkcd-cache-dir                   (var "xkcd/"))
     (eval-after-load 'yasnippet
       `(make-directory ,(etc "yasnippet/snippets/") t))
-    (setq yas-snippet-dirs                 (list (etc "yasnippet/snippets/")
-                                                 'yas-installed-snippets-dir))
+    (setq yas-snippet-dirs                 (list (etc "yasnippet/snippets/")))
     ))
 
 (provide 'no-littering)

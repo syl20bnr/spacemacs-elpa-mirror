@@ -4,7 +4,7 @@
 
 ;; Author: ono hiroko <kuanyui.github.io>
 ;; Keywords: languages, html, jade, pug, sass, scss, stylus
-;; Package-Version: 20180127.205
+;; Package-Version: 20180127.456
 ;; Package-Requires: ((emacs "24.4"))
 ;; X-URL: https://github.com/kuanyui/cakecrumbs.el
 ;; Version: 0.1
@@ -59,7 +59,7 @@
 
 (defcustom cakecrumbs-refresh-delay-seconds 0.1
   "Set to number to refresh after idling N seconds.
-Set to nil, refresh without any delay."
+Set to nil or 0, refresh without any delay."
   :group 'cakecrumbs :type 'number)
 
 (defcustom cakecrumbs-separator " | "
@@ -242,7 +242,7 @@ else, returns a list with following elements:
 3. symbol, type: `self-closing-tag', `start-tag', `end-tag'
 4. string, tag name.
 5. string, id name.
-6. list,   class nqames.
+6. list,   class names.
 
 "
   (let* ((begin (cakecrumbs-html-search-backward-< pos))
@@ -255,14 +255,16 @@ else, returns a list with following elements:
                              ((string-match-p "/ *$" raw) 'self-closing-tag)
                              (t 'start-tag)))
              (tag-name (if (eq tag-role 'end-tag)
-                           (cakecrumbs-string-match "\\([A-z0-9_-]+\\)$" 1 raw)
-                         (cakecrumbs-string-match "^\\([A-z0-9_-]+\\)" 1 raw)))
+                           (cakecrumbs-string-match "\\([^ /]+\\)$" 1 raw)
+                         (cakecrumbs-string-match "^\\([^ ]+\\)" 1 raw)))
              (tag-id (if (memq tag-role '(self-closing-tag start-tag))
-                         (cakecrumbs-string-match "[ \"']id ?= ?['\"]\\([A-z0-9 _-]+\\)['\"]" 1 raw)))
+                         (cakecrumbs-string-match "[ \"']id ?= ?['\"]\\([A-Za-Z0-9 _-]+\\)['\"]" 1 raw)))
              (tag-classes (if (memq tag-role '(self-closing-tag start-tag))
-                              (cakecrumbs-string-match "[ \"']class ?= ?['\"]\\([A-z0-9 _-]+\\)['\"]" 1 raw))))
-        (if (and (eq tag-role 'start-tag)
-                 (equal tag-name '("img" "link")))
+                              (cakecrumbs-string-match "[ \"']class ?= ?['\"]\\([A-Za-z0-9 _-]+\\)['\"]" 1 raw))))
+        (if (or (string-prefix-p "?" tag-name)  ;; <?xml ...>
+                (string-prefix-p "!" tag-name) ;; <!DOCTYPE ...>
+                (and (eq tag-role 'start-tag)
+                     (equal tag-name '("img" "link"))))
             (setq tag-role 'self-closing-tag))
         (if tag-id (setq tag-id (string-trim tag-id)))
         (if tag-classes (setq tag-classes (split-string (string-trim tag-classes) " +")))
@@ -619,11 +621,17 @@ Currently IN-TAG-ITSELF is always nil."
     (if (timerp cakecrumbs--idle-timer)
         (cancel-timer cakecrumbs--idle-timer))
     (setq cakecrumbs--original-head-line-format header-line-format)
-    (if cakecrumbs-refresh-delay-seconds
-        (progn (setq cakecrumbs--idle-timer
-                     (run-with-idle-timer cakecrumbs-refresh-delay-seconds t #'cakecrumbs-timer-handler (current-buffer)))
-               (setq header-line-format '((:eval cakecrumbs--formatted-header))))
-      (progn (setq header-line-format '((:eval (cakecrumbs-generate-header-string))))))
+    (cond ((and (numberp cakecrumbs-refresh-delay-seconds)
+                (> cakecrumbs-refresh-delay-seconds 0))
+           (progn (setq cakecrumbs--idle-timer
+                        (run-with-idle-timer cakecrumbs-refresh-delay-seconds t #'cakecrumbs-timer-handler (current-buffer)))
+                  (setq header-line-format '((:eval cakecrumbs--formatted-header)))))
+          ((> (buffer-size) (* 1024 1024 100))  ;; if file size > 100 MB, always use idle timer.
+           (progn (setq cakecrumbs--idle-timer
+                        (run-with-idle-timer 0.3 t #'cakecrumbs-timer-handler (current-buffer)))
+                  (setq header-line-format '((:eval cakecrumbs--formatted-header)))))
+          (t
+           (progn (setq header-line-format '((:eval (cakecrumbs-generate-header-string)))))))
     (add-hook 'kill-buffer-hook 'cakecrumbs-uninstall-header nil t)
     (setq cakecrumbs--header-installed t)))
 
