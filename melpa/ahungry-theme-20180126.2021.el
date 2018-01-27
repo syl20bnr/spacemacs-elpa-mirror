@@ -1,12 +1,12 @@
 ;;; ahungry-theme.el --- Ahungry color theme for Emacs.  Make sure to (load-theme 'ahungry).  -*- lexical-binding:t -*-
 
-;; Copyright (C) 2015-2017  Free Software Foundation, Inc.
+;; Copyright (C) 2015-2018  Free Software Foundation, Inc.
 
 ;; Author: Matthew Carter <m@ahungry.com>
 ;; Maintainer: Matthew Carter <m@ahungry.com>
 ;; URL: https://github.com/ahungry/color-theme-ahungry
-;; Package-Version: 20171103.2238
-;; Version: 1.8.0
+;; Package-Version: 20180126.2021
+;; Version: 1.10.0
 ;; Keywords: ahungry palette color theme emacs color-theme deftheme
 ;; Package-Requires: ((emacs "24"))
 
@@ -36,6 +36,9 @@
 ;; to a dark background.
 
 ;;; News:
+
+;;;; Changes since 1.8.0:
+;; - Add eyebrowse face and rainbow-delimiters/blocks faces.
 
 ;;;; Changes since 1.7.0:
 ;; - Make helm faces easier on the eyes (less backgrounds).
@@ -313,6 +316,28 @@ Default value:
    '(avy-lead-face-0 ((t (:foreground "#cf0" :bold t))))
    '(avy-lead-face-1 ((t (:foreground "#09f" :bold t))))
    '(avy-lead-face-2 ((t (:foreground "#0ff" :bold t))))
+   '(eyebrowse-mode-line-active ((t (:bold t))))
+   '(eyebrowse-mode-line-inactive ((t (:bold nil))))
+
+   '(rainbow-delimiters-depth-1-face ((t (:foreground "#cf0" :bold t))))
+   '(rainbow-delimiters-depth-2-face ((t (:foreground "#0cf"))))
+   '(rainbow-delimiters-depth-3-face ((t (:foreground "#ff0"))))
+   '(rainbow-delimiters-depth-4-face ((t (:foreground "#0ff"))))
+   '(rainbow-delimiters-depth-5-face ((t (:foreground "#ff7"))))
+   '(rainbow-delimiters-depth-6-face ((t (:foreground "#f90"))))
+   '(rainbow-delimiters-depth-7-face ((t (:foreground "#f0a"))))
+   '(rainbow-delimiters-depth-8-face ((t (:foreground "#a0f"))))
+   '(rainbow-delimiters-depth-9-face ((t (:foreground "#0fa"))))
+
+   '(rainbow-blocks-depth-1-face ((t (:foreground "#cf0" :bold t))))
+   '(rainbow-blocks-depth-2-face ((t (:foreground "#0cf"))))
+   '(rainbow-blocks-depth-3-face ((t (:foreground "#ff0"))))
+   '(rainbow-blocks-depth-4-face ((t (:foreground "#0ff"))))
+   '(rainbow-blocks-depth-5-face ((t (:foreground "#ff7"))))
+   '(rainbow-blocks-depth-6-face ((t (:foreground "#f90"))))
+   '(rainbow-blocks-depth-7-face ((t (:foreground "#f0a"))))
+   '(rainbow-blocks-depth-8-face ((t (:foreground "#a0f"))))
+   '(rainbow-blocks-depth-9-face ((t (:foreground "#0fa"))))
    )
   (custom-theme-set-variables
    'ahungry

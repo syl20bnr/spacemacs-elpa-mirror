@@ -1,12 +1,12 @@
 ;;; ahungry-theme.el --- Ahungry color theme for Emacs.  Make sure to (load-theme 'ahungry).  -*- lexical-binding:t -*-
 
-;; Copyright (C) 2015-2017  Free Software Foundation, Inc.
+;; Copyright (C) 2015-2018  Free Software Foundation, Inc.
 
 ;; Author: Matthew Carter <m@ahungry.com>
 ;; Maintainer: Matthew Carter <m@ahungry.com>
 ;; URL: https://github.com/ahungry/color-theme-ahungry
-;; Package-Version: 1.8.0
-;; Version: 1.8.0
+;; Package-Version: 1.10.0
+;; Version: 1.10.0
 ;; Keywords: ahungry palette color theme emacs color-theme deftheme
 ;; Package-Requires: ((emacs "24"))
 
@@ -36,6 +36,9 @@
 ;; to a dark background.
 
 ;;; News:
+
+;;;; Changes since 1.8.0:
+;; - Add eyebrowse face and rainbow-delimiters/blocks faces.
 
 ;;;; Changes since 1.7.0:
 ;; - Make helm faces easier on the eyes (less backgrounds).
@@ -276,9 +279,9 @@ Default value:
    '(helm-match ((t (:foreground "gold1"))))
    '(helm-visible-mark ((t (:foreground "#cf0066" :bold nil :italic t))))
    '(helm-source-header ((t (:foreground "#36c" :bold t :italic t))))
-   '(helm-swoop-target-line-block-face ((t (:foreground "#ff6" :italic t))))
-   '(helm-swoop-target-line-face ((t (:foreground "#ff6" :italic t))))
-   '(helm-swoop-target-word-face ((t (:background "#000" :bold nil :italic t :underline t))))
+   '(helm-swoop-target-line-block-face ((t (:background "#ff6" :foreground "#000" :italic t))))
+   '(helm-swoop-target-line-face ((t (:background "#ff6" :foreground "#000" :italic t))))
+   '(helm-swoop-target-word-face ((t (:background "#000" :foreground "#ff6" :bold nil :italic t :underline t))))
    '(erc-nick-default-face ((t (:foreground "#ff0099"))))
    '(erc-current-nick-face ((t (:foreground "#0099ff"))))
    '(erc-input-face ((t (:foreground "#0099ff"))))
@@ -307,6 +310,30 @@ Default value:
    '(woman-bold ((t (:foreground "yellow" :bold t))))
    '(woman-italic ((t (:foreground "orange" :underline t))))
    '(evil-ex-lazy-highlight ((t (:foreground "orange" :italic t :bold t))))
+   '(dired-filetype-program ((t (:foreground "#0066ff"))))
+   '(diredp-compressed-file-suffix ((t (:foreground "#0066ff"))))
+   '(avy-lead-face ((t (:foreground "#f09" :bold t))))
+   '(avy-lead-face-0 ((t (:foreground "#cf0" :bold t))))
+   '(avy-lead-face-1 ((t (:foreground "#09f" :bold t))))
+   '(avy-lead-face-2 ((t (:foreground "#0ff" :bold t))))
+   '(eyebrowse-mode-line-active ((t (:bold t))))
+   '(eyebrowse-mode-line-inactive ((t (:bold nil))))
+
+   '(rainbow-delimiters-depth-1-face ((t (:foreground "#cf0" :bold t))))
+   '(rainbow-delimiters-depth-2-face ((t (:foreground "#0cf"))))
+   '(rainbow-delimiters-depth-3-face ((t (:foreground "#ff0"))))
+   '(rainbow-delimiters-depth-4-face ((t (:foreground "#0ff"))))
+   '(rainbow-delimiters-depth-5-face ((t (:foreground "#ff7"))))
+   '(rainbow-delimiters-depth-6-face ((t (:foreground "#f90"))))
+   '(rainbow-delimiters-depth-7-face ((t (:foreground "#f00"))))
+
+   '(rainbow-blocks-depth-1-face ((t (:foreground "#cf0" :bold t))))
+   '(rainbow-blocks-depth-2-face ((t (:foreground "#0cf"))))
+   '(rainbow-blocks-depth-3-face ((t (:foreground "#ff0"))))
+   '(rainbow-blocks-depth-4-face ((t (:foreground "#0ff"))))
+   '(rainbow-blocks-depth-5-face ((t (:foreground "#ff7"))))
+   '(rainbow-blocks-depth-6-face ((t (:foreground "#f90"))))
+   '(rainbow-blocks-depth-7-face ((t (:foreground "#f00"))))
    )
   (custom-theme-set-variables
    'ahungry

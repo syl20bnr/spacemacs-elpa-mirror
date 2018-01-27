@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/dired-sidebar
-;; Package-Version: 20180122.2139
+;; Package-Version: 20180126.1812
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1") (dired-subtree "0.0.1"))
 ;; Keywords: dired, files, tools
@@ -269,6 +269,13 @@ with a prefix arg or when `dired-sidebar-find-file-alt' is called."
 (defcustom dired-sidebar-subtree-line-prefix dired-subtree-line-prefix
   "The line prefix to use when subtree is cycled."
   :type 'string
+  :group 'dired-sidebar)
+
+(defcustom dired-sidebar-display-alist '((side . left) (slot . -1))
+  "Alist used in `display-buffer-in-side-window'.
+
+e.g. (display-buffer-in-side-window buffer '((side . left) (slot . -1)))"
+  :type 'alist
   :group 'dired-sidebar)
 
 ;; Internal
@@ -540,7 +547,7 @@ This is dependent on `dired-subtree-cycle'."
                     ;; Only expect this to be hit when called interactively.
                     (dired-sidebar-get-or-create-buffer
                      (dired-sidebar-get-dir-to-show)))))
-    (display-buffer-in-side-window buffer '((side . left)))
+    (display-buffer-in-side-window buffer dired-sidebar-display-alist)
     (let ((window (get-buffer-window buffer)))
       (set-window-dedicated-p window t)
       (with-selected-window window
