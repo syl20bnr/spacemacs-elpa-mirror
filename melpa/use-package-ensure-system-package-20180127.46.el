@@ -1,10 +1,10 @@
-;;; use-package-ensure-system-package.el --- auto install system packages
+;;; use-package-ensure-system-package.el --- auto install system packages  -*- lexical: t; -*-
 
 ;; Copyright (C) 2017 Justin Talbott
 
 ;; Author: Justin Talbott <justin@waymondo.com>
 ;; Keywords: convenience, tools, extensions
-;; Package-Version: 20171205.1029
+;; Package-Version: 20180127.46
 ;; URL: https://github.com/waymondo/use-package-ensure-system-package
 ;; Version: 0.1
 ;; Package-Requires: ((use-package "2.1") (system-packages "0.1"))
@@ -24,20 +24,20 @@
 (require 'system-packages nil t)
 
 (eval-when-compile
-  (defvar system-packages-packagemanager)
+  (defvar system-packages-package-manager)
   (defvar system-packages-supported-package-managers)
-  (defvar system-packages-usesudo))
+  (defvar system-packages-use-sudo))
 
 (defun use-package-ensure-system-package-install-command (pack)
-  "Return the default install command for `pack'."
+  "Return the default install command for PACK."
   (let ((command
-         (cdr (assoc 'install (cdr (assoc system-packages-packagemanager
+         (cdr (assoc 'install (cdr (assoc system-packages-package-manager
                                           system-packages-supported-package-managers))))))
     (unless command
-      (error (format "%S not supported in %S" 'install system-packages-packagemanager)))
+      (error (format "%S not supported in %S" 'install system-packages-package-manager)))
     (unless (listp command)
       (setq command (list command)))
-    (when system-packages-usesudo
+    (when system-packages-use-sudo
       (setq command (mapcar (lambda (part) (concat "sudo " part)) command)))
     (setq command (mapconcat 'identity command " && "))
     (mapconcat 'identity (list command pack) " ")))
