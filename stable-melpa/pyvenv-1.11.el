@@ -4,7 +4,7 @@
 
 ;; Author: Jorgen Schaefer <contact@jorgenschaefer.de>
 ;; URL: http://github.com/jorgenschaefer/pyvenv
-;; Package-Version: 1.10
+;; Package-Version: 1.11
 ;; Version: 1.10
 ;; Keywords: Python, Virtualenv, Tools
 
@@ -85,6 +85,8 @@ is active, after every command."
 (defcustom pyvenv-virtualenvwrapper-python
   (or (getenv "VIRTUALENVWRAPPER_PYTHON")
       (executable-find "python")
+      (executable-find "py")
+      (executable-find "pythonw")
       "python")
   "The python process which has access to the virtualenvwrapper module.
 
@@ -165,7 +167,12 @@ This is usually the base name of `pyvenv-virtual-env'.")
                             (list (format "%s/bin" directory)))
                           ;; Windows
                           (when (file-exists-p (format "%s/Scripts" directory))
-                            (list (format "%s/Scripts" directory))))))
+                            (list (format "%s/Scripts" directory)
+                                  ;; Apparently, some virtualenv
+                                  ;; versions on windows put the
+                                  ;; python.exe in the virtualenv root
+                                  ;; for some reason?
+                                  directory)))))
     (setq pyvenv-old-exec-path exec-path
           pyvenv-old-process-environment process-environment
           ;; For some reason, Emacs adds some directories to `exec-path'
@@ -363,12 +370,11 @@ CAREFUL! This will modify your `process-environment' and
     (with-temp-buffer
       (let ((tmpfile (make-temp-file "pyvenv-virtualenvwrapper-")))
         (unwind-protect
-            (progn
+            (let ((default-directory (pyvenv-workon-home)))
               (apply #'call-process
                      pyvenv-virtualenvwrapper-python
                      nil t nil
-                     "-c"
-                     "from virtualenvwrapper.hook_loader import main; main()"
+                     "-m" "virtualenvwrapper.hook_loader"
                      "--script" tmpfile
                      (if (getenv "HOOK_VERBOSE_OPTION")
                          (cons (getenv "HOOK_VERBOSE_OPTION")
@@ -380,7 +386,7 @@ CAREFUL! This will modify your `process-environment' and
                nil t nil))
           (delete-file tmpfile)))
       (goto-char (point-min))
-      (when (and (not (re-search-forward "\\(ImportError\\|ModuleNotFoundError\\): No module named '?virtualenvwrapper'?" nil t))
+      (when (and (not (re-search-forward "No module named '?virtualenvwrapper'?" nil t))
                  (re-search-forward "\n=-=-=\n" nil t))
         (let ((output (buffer-substring (point-min)
                                         (match-beginning 0))))

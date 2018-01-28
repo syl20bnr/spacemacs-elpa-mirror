@@ -1,7 +1,8 @@
-ssh-deploy enables automatic deploys on explicit-save, manual uploads, renaming,
-deleting, downloads, file differences, remote terminals, detection of remote changes and remote directory browsing via TRAMP.
+ssh-deploy enables automatic deploys on explicit-save actions, manual uploads, renaming,
+deleting, downloads, file and directory differences, launching remote terminals,
+detection of remote changes and remote directory browsing via TRAMP.
 
-For asynchrous operations it uses async.el,
+For asynchrous operations it uses package async.el.
 
 By setting the variables (globally, per directory or per file):
 ssh-deploy-root-local,ssh-deploy-root-remote, ssh-deploy-on-explicit-save
@@ -9,8 +10,10 @@ you can setup a directory for TRAMP deployment.
 
 For asynchronous transfers you need to setup ~/.netrc or key-based authorization or equivalent for automatic authentication.
 
-Example contents of ~/.netrc for FTP:
+Example contents of ~/.netrc for password-based interaction-free authentication:
 machine myserver.com login myuser port ftp password mypassword
+machine myserver2.com login myuser2 port ssh password mypassword2
+machine myserver3.com login myuser3 port sftp password mypassword3
 
 Set permissions to this file to 700 with you as the owner.
 
