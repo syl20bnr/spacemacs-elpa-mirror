@@ -1,9 +1,29 @@
  This package is for people who use Anki as SRS but would like to
- create cards in Org-mode.  It does so by using Org-mode's built-in
- HTML backend to generate HTML with specific syntax (e.g. latex)
- translated to the Anki style, then sends requests to anki-connect
- (an Anki addon that runs an HTTP server to expose Anki functions
- as APIs).
+ make cards in Org-mode.
+
+ With this package, you can make cards from something like:
+ (which is inspired by `org-dirll')
+
+ * Computing                    :deck:
+ ** Item                        :note:
+    :PROPERTIES:
+    :ANKI_NOTE_TYPE: Basic
+    :END:
+ *** Front
+     How to hello world in elisp ?
+ *** Back
+     #+BEGIN_SRC emacs-lisp
+     (message "Hello, world!")
+     #+END_SRC
+
+ This package leverages Org-mode's built-in HTML backend to
+ generate HTML for contents of note fields with specific syntax
+ (e.g. latex) translated to Anki style, then save the note to Anki.
+
+ For this package to work, you have to setup these external dependencies:
+ - curl
+ - AnkiConnect, an Anki addon that runs an HTTP server to expose
+                Anki functions as RESTful APIs
 
 
 

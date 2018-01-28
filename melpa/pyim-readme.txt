@@ -57,6 +57,7 @@ pyim 的目标是： *尽最大的努力成为一个好用的 Emacs 中文输入
 #+BEGIN_EXAMPLE
 (use-package pyim
   :ensure nil
+  :demand t
   :config
   ;; 激活 basedict 拼音词库
   (use-package pyim-basedict
@@ -91,7 +92,8 @@ pyim 的目标是： *尽最大的努力成为一个好用的 Emacs 中文输入
   ;; 开启拼音搜索功能
   (pyim-isearch-mode 1)
 
-  ;; 使用 pupup-el 来绘制选词框
+  ;; 使用 pupup-el 来绘制选词框, 如果用 emacs26, 建议设置
+  ;; 为 'child-frame, 速度很快并且菜单不会变形。
   (setq pyim-page-tooltip 'popup)
 
   ;; 选词框显示5个候选词
