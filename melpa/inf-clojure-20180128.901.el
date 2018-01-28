@@ -5,7 +5,7 @@
 ;; Authors: Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Olin Shivers <shivers@cs.cmu.edu>
 ;; URL: http://github.com/clojure-emacs/inf-clojure
-;; Package-Version: 20180122.1333
+;; Package-Version: 20180128.901
 ;; Keywords: processes, clojure
 ;; Version: 2.1.0
 ;; Package-Requires: ((emacs "24.4") (clojure-mode "5.6"))
@@ -576,9 +576,10 @@ run).
                          (list cmd)
                        (split-string cmd))))
         (message "Starting Clojure REPL via `%s'..." cmd)
-        (set-buffer (apply #'make-comint
-                           "inf-clojure" (car cmdlist) nil (cdr cmdlist)))
-        (inf-clojure-mode)))
+        (with-current-buffer (apply #'make-comint
+                                    "inf-clojure" (car cmdlist) nil (cdr cmdlist))
+          (inf-clojure-mode)
+          (hack-dir-local-variables-non-file-buffer))))
   (setq inf-clojure-buffer "*inf-clojure*")
   (if inf-clojure-repl-use-same-window
       (pop-to-buffer-same-window "*inf-clojure*")
@@ -971,12 +972,20 @@ If you are using REPL types, it will pickup the most approapriate
   :safe #'stringp
   :package-version '(inf-clojure . "2.0.0"))
 
+(defcustom inf-clojure-macroexpand-form-lumo
+  "(macroexpand '%s)"
+  "Lumo form to invoke macroexpand."
+  :type 'string
+  :safe #'stringp
+  :package-version '(inf-clojure . "2.2.0"))
+
 (defun inf-clojure-macroexpand-form (proc)
   "Return the form for macroexpansion in the Inf-Clojure PROC.
 If you are using REPL types, it will pickup the most approapriate
 `inf-clojure-macroexpand-form` variant."
   (inf-clojure--sanitize-command
    (pcase (inf-clojure--set-repl-type proc)
+     (`lumo inf-clojure-macroexpand-form-lumo)
      (`planck inf-clojure-macroexpand-form-planck)
      (_ inf-clojure-macroexpand-form))))
 
@@ -996,12 +1005,20 @@ If you are using REPL types, it will pickup the most approapriate
   :safe #'stringp
   :package-version '(inf-clojure . "2.0.0"))
 
+(defcustom inf-clojure-macroexpand-1-form-lumo
+  "(macroexpand-1 '%s)"
+  "Lumo form to invoke macroexpand-1."
+  :type 'string
+  :safe #'stringp
+  :package-version '(inf-clojure . "2.2.0"))
+
 (defun inf-clojure-macroexpand-1-form (proc)
   "Return the form for macroexpand-1 in the Inf-Clojure PROC.
 If you are using REPL types, it will pickup the most approapriate
 `inf-clojure-macroexpand-1-form` variant."
   (inf-clojure--sanitize-command
    (pcase (inf-clojure--set-repl-type proc)
+     (`lumo inf-clojure-macroexpand-1-form-lumo)
      (`planck inf-clojure-macroexpand-1-form-planck)
      (_ inf-clojure-macroexpand-1-form))))
 
@@ -1109,6 +1126,17 @@ are going to match those."
             (length string))
         (or (string-match prompt string) (length string))))
 
+(defun inf-clojure--get-redirect-buffer ()
+  "Get the redirection buffer, creating it if necessary.
+
+It is the buffer used for processing REPL responses, see variable
+\\[inf-clojure--redirect-buffer-name]."
+  (or (get-buffer inf-clojure--redirect-buffer-name)
+      (let ((buffer (generate-new-buffer inf-clojure--redirect-buffer-name)))
+        (with-current-buffer buffer
+          (hack-dir-local-variables-non-file-buffer)
+          buffer))))
+
 ;; Originally from:
 ;;   https://github.com/glycerine/lush2/blob/master/lush2/etc/lush.el#L287
 (defun inf-clojure--process-response (command process &optional beg-regexp end-regexp)
@@ -1119,31 +1147,29 @@ If BEG-REGEXP is nil, the result string will start from (point)
 in the results buffer.  If END-REGEXP is nil, the result string
 will end at (point-max) in the results buffer.  It cuts out the
 output from and including the `inf-clojure-prompt`."
-  (let ((work-buffer inf-clojure--redirect-buffer-name)
+  (let ((redirect-buffer-name inf-clojure--redirect-buffer-name)
         (sanitized-command (inf-clojure--sanitize-command command)))
     (when (not (string-empty-p sanitized-command))
       (inf-clojure--log-string command "----CMD->")
-      (with-current-buffer (get-buffer-create work-buffer)
-        (erase-buffer)
-        (comint-redirect-send-command-to-process sanitized-command work-buffer process nil t)
-        ;; Wait for the process to complete
-        (set-buffer (process-buffer process))
-        (while (and (null comint-redirect-completed)
-                    (accept-process-output process 1 0 t))
-          (sleep-for 0.01))
-        ;; Collect the output
-        (set-buffer work-buffer)
-        (goto-char (point-min))
-        (let* ((buffer-string (buffer-substring-no-properties (point-min) (point-max)))
-               (boundaries (inf-clojure--string-boundaries buffer-string inf-clojure-prompt beg-regexp end-regexp))
-               (beg-pos (car boundaries))
-               (end-pos (car (cdr boundaries)))
-               (prompt-pos (car (cdr (cdr boundaries))))
-               (response-string (substring buffer-string beg-pos (min end-pos prompt-pos))))
-          (inf-clojure--log-string buffer-string "<-BUF----")
-          (inf-clojure--log-string boundaries "<-BND----")
-          (inf-clojure--log-string response-string "<-RES----")
-          response-string)))))
+      (set-buffer (inf-clojure--get-redirect-buffer))
+      (erase-buffer)
+      (comint-redirect-send-command-to-process sanitized-command redirect-buffer-name process nil t)
+      ;; Wait for the process to complete
+      (set-buffer (process-buffer process))
+      (while (and (null comint-redirect-completed)
+                  (accept-process-output process 1 0 t))
+        (sleep-for 0.01))
+      ;; Collect the output
+      (set-buffer redirect-buffer-name)
+      (goto-char (point-min))
+      (let* ((buffer-string (buffer-substring-no-properties (point-min) (point-max)))
+             (boundaries (inf-clojure--string-boundaries buffer-string inf-clojure-prompt beg-regexp end-regexp))
+             (beg-pos (car boundaries))
+             (end-pos (car (cdr boundaries)))
+             (prompt-pos (car (cdr (cdr boundaries))))
+             (response-string (substring buffer-string beg-pos (min end-pos prompt-pos))))
+        (inf-clojure--log-string buffer-string "<-RES----")
+        response-string))))
 
 (defun inf-clojure--nil-string-match-p (string)
   "Return true iff STRING is not nil.
