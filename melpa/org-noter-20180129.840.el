@@ -5,7 +5,7 @@
 ;; Author: Gonçalo Santos (aka. weirdNox@GitHub)
 ;; Homepage: https://github.com/weirdNox/org-noter
 ;; Keywords: lisp pdf interleave annotate external sync notes documents org-mode
-;; Package-Version: 20180129.801
+;; Package-Version: 20180129.840
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.6") (org "9.0"))
 ;; Version: 1.0
 
@@ -121,13 +121,13 @@ is member of `org-noter-notes-window-behavior' (which see)."
 (defvar org-noter--inhibit-page-handler nil
   "Prevent page change from updating point in notes.")
 
-(defconst org-noter-property-behavior "NOTER_NOTES_BEHAVIOR"
+(defconst org-noter--property-behavior "NOTER_NOTES_BEHAVIOR"
   "Property for overriding global `org-noter-notes-window-behavior'.")
 
-(defconst org-noter-property-location "NOTER_NOTES_LOCATION"
+(defconst org-noter--property-location "NOTER_NOTES_LOCATION"
   "Property for overriding global `org-noter-notes-window-location'.")
 
-(defconst org-noter-property-auto-save-last-page "NOTER_AUTO_SAVE_LAST_PAGE"
+(defconst org-noter--property-auto-save-last-page "NOTER_AUTO_SAVE_LAST_PAGE"
   "Property for overriding global `org-noter-auto-save-last-page'.")
 
 ;; --------------------------------------------------------------------------------
@@ -416,7 +416,7 @@ is member of `org-noter-notes-window-behavior' (which see)."
           (user-error "%s" ,error-str))))))
 
 (defun org-noter--notes-window-behavior-property (ast)
-  (let ((property (org-element-property (intern (concat ":" org-noter-property-behavior)) ast))
+  (let ((property (org-element-property (intern (concat ":" org-noter--property-behavior)) ast))
         value)
     (when (and (stringp property) (> (length property) 0))
       (setq value (car (read-from-string property)))
@@ -424,7 +424,7 @@ is member of `org-noter-notes-window-behavior' (which see)."
         value))))
 
 (defun org-noter--notes-window-location-property (ast)
-  (let ((property (org-element-property (intern (concat ":" org-noter-property-location)) ast))
+  (let ((property (org-element-property (intern (concat ":" org-noter--property-location)) ast))
         value)
     (when (and (stringp property) (> (length property) 0))
       (setq value (intern property))
@@ -432,7 +432,7 @@ is member of `org-noter-notes-window-behavior' (which see)."
         value))))
 
 (defun org-noter--auto-save-page-property (ast)
-  (let ((property (org-element-property (intern (concat ":" org-noter-property-auto-save-last-page)) ast))
+  (let ((property (org-element-property (intern (concat ":" org-noter--property-auto-save-last-page)) ast))
         value)
     (when (and (stringp property) (> (length property) 0))
       (when (intern property)
@@ -490,8 +490,9 @@ is member of `org-noter-notes-window-behavior' (which see)."
 
 (defun org-noter--ask-scroll-percentage ()
   (org-noter--with-valid-session
-   (let (event)
-     (with-selected-window (org-noter--get-doc-window)
+   (let ((window (org-noter--get-doc-window))
+         event)
+     (with-selected-window window
        (while (not (and (eq 'mouse-1 (car event))
                         (eq window (posn-window (event-start event)))))
          (setq event (read-event "Click where you want the start of the note to be!")))
@@ -595,6 +596,7 @@ P2 or, when in the same page, if P1 is the First of the two."
        ;; NOTE(nox): This only considers the first group of notes from the same page that
        ;; are together in the document (no notes from other pages in between).
        ;; TODO(nox): Should this focus another one if the point is inside those?
+       ;; TODO(nox): This should change in order to have subgroups
        (org-element-map contents 'headline
          (lambda (headline)
            (let ((property (car (org-noter--page-property headline))))
@@ -617,6 +619,7 @@ P2 or, when in the same page, if P1 is the First of the two."
    (let ((contents (org-element-contents (org-noter--parse-root)))
          (current-page (org-noter--current-page))
          (number-of-notes 0))
+     ;; TODO(nox): This should change in order to have subgroups
      (org-element-map contents 'headline
        (lambda (headline)
          (let ((page (car (org-noter--page-property headline))))
@@ -660,8 +663,8 @@ With a prefix ARG, delete the current setting and use the default."
        (org-with-wide-buffer
         (goto-char (org-element-property :begin ast))
         (if arg
-            (org-entry-delete nil org-noter-property-auto-save-last-page)
-          (org-entry-put nil org-noter-property-auto-save-last-page (format "%s" new-setting)))
+            (org-entry-delete nil org-noter--property-auto-save-last-page)
+          (org-entry-put nil org-noter--property-auto-save-last-page (format "%s" new-setting)))
         (unless new-setting (org-entry-delete nil org-noter-property-note-page)))))))
 
 (defun org-noter-set-notes-window-behavior (arg)
@@ -689,9 +692,9 @@ See `org-noter-notes-window-behavior' for more information."
          (org-with-wide-buffer
           (goto-char (org-element-property :begin ast))
           (if behavior
-              (org-entry-put nil org-noter-property-behavior
+              (org-entry-put nil org-noter--property-behavior
                              (format "%s" behavior))
-            (org-entry-delete nil org-noter-property-behavior))))))))
+            (org-entry-delete nil org-noter--property-behavior))))))))
 
 (defun org-noter-set-notes-window-location (arg)
   "Set the notes window default location for the current session.
@@ -717,9 +720,9 @@ See `org-noter-notes-window-behavior' for more information."
          (org-with-wide-buffer
           (goto-char (org-element-property :begin ast))
           (if location
-              (org-entry-put nil org-noter-property-location
+              (org-entry-put nil org-noter--property-location
                              (format "%s" location))
-            (org-entry-delete nil org-noter-property-location))))))))
+            (org-entry-delete nil org-noter--property-location))))))))
 
 (defun org-noter-kill-session (&optional session)
   "Kill an `org-noter' session.
@@ -810,6 +813,7 @@ more info)."
           notes best-previous-element)
      (setq scroll-percentage (or scroll-percentage 0))
 
+     ;; TODO(nox): This should change in order to have subgroups
      (org-element-map contents 'headline
        (lambda (headline)
          (let ((property-cons (org-noter--page-property headline)))
@@ -826,82 +830,90 @@ more info)."
        nil nil org-element-all-elements)
      (setq notes (nreverse notes))
 
-     (select-frame-set-input-focus (window-frame window))
-     (select-window window)
+     (let ((inhibit-quit t))
+       (with-local-quit
+         (select-frame-set-input-focus (window-frame window))
+         (select-window window)
 
-     ;; NOTE(nox): Need to be careful changing the next part, it is a bit complicated to
-     ;; get it right...
-     (if (and notes (not arg))
-         (let ((point (point))
-               default note has-contents num-blank collection)
-           (if (eq (length notes) 1)
-               (setq note (car notes))
-             (dolist (iterator notes (setq collection (nreverse collection)))
-               (let ((display (org-element-property :raw-value iterator)))
-                 (when (or (not default)
-                           (>= point (org-element-property :begin iterator)))
-                   (setq default display))
-                 (push (cons display iterator) collection)))
-             (setq note
-                   (cdr
-                    (assoc (completing-read "Insert in which note? " collection nil t nil nil
-                                            default)
-                           collection))))
-           (when note
-             (setq has-contents
-                   (org-element-map (org-element-contents note) org-element-all-elements
-                     (lambda (element)
-                       (unless (memq (org-element-type element) '(section property-drawer))
-                         t))
-                     nil t)
-                   num-blank (org-element-property :post-blank note))
-             (goto-char (org-element-property :end note))
-             ;; NOTE(nox): Org doesn't count `:post-blank' when at the end of the buffer
-             (when (org-next-line-empty-p) ;; NOTE(nox): This is only true at the end, I think
-               (goto-char (point-max))
-               (save-excursion
-                 (beginning-of-line)
-                 (while (looking-at "[[:space:]]*$")
-                   (setq num-blank (1+ num-blank))
-                   (beginning-of-line 0))))
-             (cond (has-contents
-                    (while (< num-blank 2)
-                      (insert "\n")
-                      (setq num-blank (1+ num-blank))))
-                   (t (when (eq num-blank 0) (insert "\n"))))
-             (when (org-at-heading-p)
-               (forward-line -1))))
+         ;; NOTE(nox): Need to be careful changing the next part, it is a bit complicated to
+         ;; get it right...
+         (if (and notes (not arg))
+             (let ((point (point))
+                   default note has-contents num-blank collection)
+               (if (eq (length notes) 1)
+                   (setq note (car notes))
+                 (dolist (iterator notes (setq collection (nreverse collection)))
+                   (let ((display (org-element-property :raw-value iterator)))
+                     (when (or (not default)
+                               (>= point (org-element-property :begin iterator)))
+                       (setq default display))
+                     (push (cons display iterator) collection)))
+                 (setq note
+                       (cdr
+                        (assoc (completing-read "Insert in which note? " collection nil t nil nil
+                                                default)
+                               collection))))
+               (when note
+                 (setq has-contents
+                       (org-element-map (org-element-contents note) org-element-all-elements
+                         (lambda (element)
+                           (unless (memq (org-element-type element) '(section property-drawer))
+                             t))
+                         nil t)
+                       num-blank (org-element-property :post-blank note))
+                 (goto-char (org-element-property :end note))
+                 ;; NOTE(nox): Org doesn't count `:post-blank' when at the end of the buffer
+                 (when (org-next-line-empty-p) ;; NOTE(nox): This is only true at the end, I think
+                   (goto-char (point-max))
+                   (save-excursion
+                     (beginning-of-line)
+                     (while (looking-at "[[:space:]]*$")
+                       (setq num-blank (1+ num-blank))
+                       (beginning-of-line 0))))
+                 (cond (has-contents
+                        (while (< num-blank 2)
+                          (insert "\n")
+                          (setq num-blank (1+ num-blank))))
+                       (t (when (eq num-blank 0) (insert "\n"))))
+                 (when (org-at-heading-p)
+                   (forward-line -1))))
 
-       (let ((title (read-string "Title: ")))
-         (when (zerop (length title))
-           (setq title (replace-regexp-in-string
-                        (regexp-quote "$p$") (number-to-string page)
-                        org-noter-default-heading-title)))
-         (if best-previous-element
-             (progn
-               (goto-char (org-element-property :end best-previous-element))
+           (let ((title (read-string "Title: ")))
+             (when (zerop (length title))
+               (setq title (replace-regexp-in-string
+                            (regexp-quote "$p$") (number-to-string page)
+                            org-noter-default-heading-title)))
+             (if best-previous-element
+                 (progn
+                   (goto-char (org-element-property :end best-previous-element))
+                   (org-noter--insert-heading insertion-level))
+               (goto-char
+                (org-element-map contents 'section
+                  (lambda (section)
+                    (org-element-property :end section))
+                  nil t org-element-all-elements))
+               ;; NOTE(nox): This is needed to insert in the right place...
+               (outline-show-entry)
                (org-noter--insert-heading insertion-level))
-           (goto-char
-            (org-element-map contents 'section
-              (lambda (section)
-                (org-element-property :end section))
-              nil t org-element-all-elements))
-           ;; NOTE(nox): This is needed to insert in the right place...
-           (outline-show-entry)
-           (org-noter--insert-heading insertion-level))
-         (insert title)
-         (end-of-line)
-         (if (and (not (eobp)) (org-next-line-empty-p))
-             (forward-line)
-           (insert "\n"))
-         (org-entry-put nil org-noter-property-note-page
-                        (format "%s" (if (zerop scroll-percentage)
-                                         page
-                                       (cons page scroll-percentage))))))
-     (org-show-context)
-     (org-show-siblings)
-     (org-show-subtree)
-     (org-cycle-hide-drawers 'all))))
+             (insert title)
+             (end-of-line)
+             (if (and (not (eobp)) (org-next-line-empty-p))
+                 (forward-line)
+               (insert "\n"))
+             (org-entry-put nil org-noter-property-note-page
+                            (format "%s" (if (zerop scroll-percentage)
+                                             page
+                                           (cons page scroll-percentage))))))
+         (org-show-context)
+         (org-show-siblings)
+         (org-show-subtree)
+         (org-cycle-hide-drawers 'all))
+
+       (when quit-flag
+         ;; NOTE(nox): If this runs, it means the user quitted while creating a note, so
+         ;; revert to the previous window.
+         (select-frame-set-input-focus (org-noter--session-frame session))
+         (select-window (get-buffer-window (org-noter--session-doc-buffer session))))))))
 
 (defun org-noter-insert-localized-note ()
   "Insert note associated with part of a page.
@@ -923,6 +935,7 @@ This will force the notes window to popup."
          target-page)
      (org-noter--get-notes-window 'force)
 
+     ;; TODO(nox): This should change in order to have subgroups
      (org-element-map contents 'headline
        (lambda (headline)
          (let ((page (org-noter--page-property headline)))
@@ -957,6 +970,7 @@ This will force the notes window to popup."
          (contents (org-element-contents (org-noter--parse-root)))
          target-page)
 
+     ;; TODO(nox): This should change in order to have subgroups
      (org-element-map contents 'headline
        (lambda (headline)
          (let ((page (org-noter--page-property headline)))
@@ -980,6 +994,7 @@ As such, it will only work when the notes window exists."
    (let ((org-noter--inhibit-page-handler t)
          (contents (org-element-contents (org-noter--parse-root)))
          previous)
+     ;; TODO(nox): This should change in order to have subgroups
      (org-element-map contents 'headline
        (lambda (headline)
          (let ((begin (org-element-property :begin headline))
@@ -1025,6 +1040,7 @@ As such, it will only work when the notes window exists."
    (let ((org-noter--inhibit-page-handler t)
          (contents (org-element-contents (org-noter--parse-root)))
          next)
+     ;; TODO(nox): This should change in order to have subgroups
      (org-element-map contents 'headline
        (lambda (headline)
          (when (and
