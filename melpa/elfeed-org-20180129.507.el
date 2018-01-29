@@ -4,7 +4,7 @@
 
 ;; Author           : Remy Honig <remyhonig@gmail.com>
 ;; Package-Requires : ((elfeed "1.1.1") (org "8.2.7") (dash "2.10.0") (s "1.9.0") (cl-lib "0.5"))
-;; Package-Version: 20171113.356
+;; Package-Version: 20180129.507
 ;; URL              : https://github.com/remyhonig/elfeed-org
 ;; Version          : 20170423.1
 ;; Keywords         : news
@@ -66,6 +66,8 @@
   :group 'elfeed-org
   :type '(repeat (file :tag "org-mode file")))
 
+(defvar elfeed-org-new-entry-hook nil
+  "List of new-entry tagger hooks created by elfeed-org.")
 
 (defun rmh-elfeed-org-check-configuration-file (file)
   "Make sure FILE exists."
@@ -88,10 +90,13 @@ Return t if it does or nil if it does not."
     (with-current-buffer (find-file-noselect
                           (expand-file-name org-file))
       (org-mode)
-      (beginning-of-buffer)
+      (goto-char (point-min))
       (while (and
               (search-forward url nil t)
-              (org-on-heading-p)
+              ;; Prefer outline-on-heading-p because org-on-heading-p
+              ;; is obsolete but org-at-heading-p was only introduced
+              ;; in org 9.0:
+              (outline-on-heading-p t)
               (rmh-elfeed-org-is-headline-contained-in-elfeed-tree))
         (org-toggle-tag rmh-elfeed-org-ignore-tag 'on))
       (elfeed-log 'info "elfeed-org tagged '%s' in file '%s' with '%s' to be ignored" url org-file rmh-elfeed-org-ignore-tag))))
@@ -186,7 +191,7 @@ all.  Which in my opinion makes the process more traceable."
 
 (defun rmh-elfeed-org-export-entry-hook (tagger-params)
   "Export TAGGER-PARAMS to the proper `elfeed' structure."
-  (add-hook 'elfeed-new-entry-hook
+  (add-hook 'elfeed-org-new-entry-hook
             (elfeed-make-tagger
              :entry-title (nth 0 tagger-params)
              :add (nth 1 tagger-params))))
@@ -210,7 +215,7 @@ all.  Which in my opinion makes the process more traceable."
 
   ;; Clear elfeed structures
   (setq elfeed-feeds nil)
-  (setq elfeed-new-entry-hook nil)
+  (setq elfeed-org-new-entry-hook nil)
 
   ;; Convert org structure to elfeed structure and register taggers and subscriptions
   (let* ((headlines (rmh-elfeed-org-import-headlines-from-files files tree-id))
@@ -224,8 +229,12 @@ all.  Which in my opinion makes the process more traceable."
   ;; Tell user what we did
   (elfeed-log 'info "elfeed-org loaded %i feeds, %i rules"
            (length elfeed-feeds)
-           (length elfeed-new-entry-hook)))
+           (length elfeed-org-new-entry-hook)))
 
+(defun elfeed-org-run-new-entry-hook (entry)
+  "Run ENTRY through elfeed-org taggers."
+  (--each elfeed-org-new-entry-hook
+    (funcall it entry)))
 
 (defun rmh-elfeed-org-filter-taggers (headlines)
   "Filter tagging rules from the HEADLINES in the tree."
@@ -361,6 +370,7 @@ because most of Feed/RSS readers only support trees of 2 levels deep."
   (defadvice elfeed (before configure-elfeed activate)
     "Load all feed settings before elfeed is started."
     (rmh-elfeed-org-process rmh-elfeed-org-files rmh-elfeed-org-tree-id))
+  (add-hook 'elfeed-new-entry-hook #'elfeed-org-run-new-entry-hook)
   (add-hook 'elfeed-http-error-hooks (lambda (url status)
                                        (when rmh-elfeed-org-auto-ignore-invalid-feeds
                                          (rmh-elfeed-org-mark-feed-ignore url))))

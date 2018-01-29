@@ -1,21 +1,17 @@
-About
+About:
 
-I made this theme because I liked the colors in Ample but didn't
-like how much gray there was. So I started with a few tweaks here
-and there until it ended up looking quite a bit different, and this
-is the result. The theme is being worked on actively and I add new
-faces all the time.
+The best dark theme for Emacs.
+
+This theme was originally a fork of Ample theme, but has seen
+enough tweaks and changes that it's essentially a new (and better)
+theme.
+
+Nimbus theme is constantly being worked on, and I am actively
+adding faces and support for more third-party packages.
 
 Installing:
 
-See README.md for the most current installation instructions.
-
-Notes:
-
-When trying to follow the 80-column line rule, I didn't split up
-the face definitions - having, for example, the foreground and
-background definitions on the same line makes it easier to search
-for lines which contain a particular foreground/background combo
+See README.md for the most up-to-date installation instructions.
 
 
 

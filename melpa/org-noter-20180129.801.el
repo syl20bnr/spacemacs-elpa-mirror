@@ -5,7 +5,7 @@
 ;; Author: Gonçalo Santos (aka. weirdNox@GitHub)
 ;; Homepage: https://github.com/weirdNox/org-noter
 ;; Keywords: lisp pdf interleave annotate external sync notes documents org-mode
-;; Package-Version: 20180128.1620
+;; Package-Version: 20180129.801
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.6") (org "9.0"))
 ;; Version: 1.0
 
@@ -748,21 +748,32 @@ want to kill."
         (setq session (cdr (assoc (completing-read "Which session? " collection nil t
                                                    nil nil default)
                                   collection))))))
+
   (when (and session (memq session org-noter--sessions))
     (let ((frame (org-noter--session-frame session))
           (notes-buffer (org-noter--session-notes-buffer session))
           (doc-buffer (org-noter--session-doc-buffer session)))
       (setq org-noter--sessions (delq session org-noter--sessions))
+
       (when (eq (length org-noter--sessions) 0)
         (setq delete-frame-functions (delq 'org-noter--handle-delete-frame
                                            delete-frame-functions))
         (when (featurep 'doc-view)
           (advice-remove  'org-noter--doc-view-advice 'doc-view-goto-page)))
+
       (when (frame-live-p frame)
         (delete-frame frame))
+
       (when (buffer-live-p doc-buffer)
         (kill-buffer doc-buffer))
+
       (when (buffer-live-p notes-buffer)
+        (dolist (window (get-buffer-window-list notes-buffer nil t))
+          (with-selected-frame (window-frame window)
+            (if (= (count-windows) 1)
+                (delete-frame)
+              (delete-window window))))
+
         (let ((base-buffer (buffer-base-buffer notes-buffer))
               (modified (buffer-modified-p notes-buffer)))
           (with-current-buffer notes-buffer
