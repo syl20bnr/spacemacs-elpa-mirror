@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Created: 20081202
 ;; Package-Requires: ((emacs "24.4"))
-;; Package-Version: 20180127.1252
+;; Package-Version: 20180129.124
 ;; Homepage: https://github.com/emacscollective/elx
 ;; Keywords: docs, libraries, packages
 
@@ -353,6 +353,7 @@ Public License as published by the Free Software Foundation\\.")) ; lmselect, ti
 
 (defconst elx-non-gnu-license-keyword-alist
   '(("Apache-2.0"    . "apache-2\\.0")
+    ("Artistic-1.0"  . "Artistic-1.0")
     ("BSD-3-clause"  . "BSD Licen[sc]e 2\\.0")
     ("BSD-3-clause"  . "\\(Revised\\|New\\|Modified\\) BSD\\( Licen[sc]e\\)?")
     ("BSD-3-clause"  . "BSD[-v]?3")
@@ -370,6 +371,7 @@ Public License as published by the Free Software Foundation\\.")) ; lmselect, ti
     ("CeCILL-B"      . "CeCILL-B")
     ("MS-PL"         . "MS-PL")
     ("unlicense"     . "Unlicense")
+    ("BEER-WARE"     . "BEER-WARE")
     ))
 
 (defconst elx-non-gnu-license-keyword-regexp "\
@@ -543,7 +545,7 @@ An effort is made to normalize the returned value."
           (`(nil "llvm-mode")       "UIUC")         ; http://llvm.org/viewvc/llvm-project/llvm/trunk/LICENSE.TXT
           (`(nil "manued")          "GPL-3+")       ; https://github.com/yamauchih/manued/blob/master/README.md
           (`(nil "nm")              "GPL-3+")       ; https://github.com/tjim/nevermore/blob/master/COPYING
-          (`(nil "redshank")        "GPL")          ; http://www.foldr.org/~michaelw/projects/gitweb?p=redshank.git
+          (`(nil "tablegen-mode")   "UIUC")         ; http://llvm.org/viewvc/llvm-project/llvm/trunk/LICENSE.TXT
           (`(nil "trr")             "GPL-1+")       ; https://github.com/kawabata/emacs-trr/blob/master/README.rst
           (`(nil "tumblesocks")     "as-is")        ; https://github.com/gcr/tumblesocks/blob/master/COPYING
           (`(nil "ruby-additional") "BSD-3-clause") ; https://svn.ruby-lang.org/repos/ruby/trunk/COPYING
