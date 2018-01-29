@@ -375,11 +375,13 @@
 	     ((:url . "http://elpa.gnu.org/packages/ediprolog.html")
 	      (:keywords "languages" "processes"))])
  (el-search .
-	    [(1 5 1)
+	    [(1 5 3)
 	     ((emacs
 	       (25))
 	      (stream
-	       (2 2 4)))
+	       (2 2 4))
+	      (cl-print
+	       (1 0)))
 	     "Expression based interactive search for Emacs Lisp" tar
 	     ((:keywords "lisp")
 	      (:url . "http://elpa.gnu.org/packages/el-search.html"))])

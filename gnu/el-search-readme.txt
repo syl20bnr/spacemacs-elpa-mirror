@@ -85,6 +85,11 @@ respectively:
     Grab the symbol or sexp under point and initiate an el-search
     for other occurrences.
 
+  M-x el-search-to-register
+    Save the current search to an Emacs register.  Use C-x r j
+    (`jump-to-register') to make that search current and jump to
+    the latest position.
+
 
 The setup you'll need for your init file is trivial: just define
 the key bindings you want to use (all important commands are
