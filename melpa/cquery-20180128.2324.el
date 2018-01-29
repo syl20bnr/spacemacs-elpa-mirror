@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017 Tobias Pisani
 
 ;; Author:  Tobias Pisani
-;; Package-Version: 20180127.1132
+;; Package-Version: 20180128.2324
 ;; Package-X-Original-Version: 20180122.1
 ;; Version: 0.1
 ;; Homepage: https://github.com/jacobdufault/cquery
@@ -69,7 +69,7 @@
 (defalias 'cquery-additional-arguments 'cquery-extra-args)
 
 (defcustom cquery-cache-dir
-  ".vscode/cquery_cached_index/"
+  ".cquery_cached_index/"
   "Directory in which cquery will store its index cache.
 Relative to the project root directory."
   :type 'directory
@@ -294,11 +294,13 @@ If nil, disable semantic highlighting."
                     (cl-loop
                      for (start end face) in ranges do
                      (forward-line (- (car start) last-line-number))
-                     (move-to-column (cdr start))
+                     (beginning-of-line)
+                     (forward-char (cdr start))
                      ;; start of range
                      (setq range-start (point))
                      (forward-line (- (car end) (car start)))
-                     (move-to-column (cdr end))
+                     (beginning-of-line)
+                     (forward-char (cdr end))
                      ;; end of range
                      (setq range-end (point))
                      (cquery--make-sem-highlight (cons range-start range-end) buffer face)
@@ -615,7 +617,7 @@ Keep an eye on https://github.com/jacobdufault/cquery/issues/283"
 ;;;###autoload (autoload 'lsp-cquery-enable "cquery")
 (lsp-define-stdio-client
  lsp-cquery "cpp" #'cquery--get-root
- `(,cquery-executable "--language-server" ,@cquery-extra-args)
+ `(,cquery-executable ,@cquery-extra-args)
  :initialize #'cquery--initialize-client
  :extra-init-params #'cquery--get-init-params)
 

@@ -4,7 +4,7 @@
 
 ;; Author: Aaron Jacobs <atheriel@gmail.com>
 ;; URL: https://github.com/atheriel/org-clock-csv
-;; Package-Version: 20170904.1745
+;; Package-Version: 20180128.2130
 ;; Keywords: calendar, data, org
 ;; Version: 1.1
 ;; Package-Requires: ((org "8.3") (s "1.0"))
@@ -191,12 +191,15 @@ properties."
                         (org-clock-csv--pad
                          (org-element-property :hour-end timestamp))
                         (org-clock-csv--pad
-                         (org-element-property :minute-end timestamp)))))
+                         (org-element-property :minute-end timestamp))))
+           (duration (org-element-property :duration element)))
       (list :task task
+            :headline task-headline
             :parents parents
             :category category
             :start start
             :end end
+            :duration duration
             :effort effort
             :ishabit ishabit
             :tags tags))))
