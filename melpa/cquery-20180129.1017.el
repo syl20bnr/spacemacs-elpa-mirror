@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017 Tobias Pisani
 
 ;; Author:  Tobias Pisani
-;; Package-Version: 20180128.2324
+;; Package-Version: 20180129.1017
 ;; Package-X-Original-Version: 20180122.1
 ;; Version: 0.1
 ;; Homepage: https://github.com/jacobdufault/cquery
@@ -294,17 +294,17 @@ If nil, disable semantic highlighting."
                     (cl-loop
                      for (start end face) in ranges do
                      (forward-line (- (car start) last-line-number))
-                     (beginning-of-line)
                      (forward-char (cdr start))
                      ;; start of range
                      (setq range-start (point))
-                     (forward-line (- (car end) (car start)))
-                     (beginning-of-line)
-                     (forward-char (cdr end))
-                     ;; end of range
-                     (setq range-end (point))
+                     (setq last-line-number (car start))
+                     (save-excursion
+                       (forward-line (- (car end) (car start)))
+                       (forward-char (cdr end))
+                       ;; end of range
+                       (setq range-end (point)))
                      (cquery--make-sem-highlight (cons range-start range-end) buffer face)
-                     (setq last-line-number (car end)))))))))))))
+                     )))))))))))
 
 (defmacro cquery-use-default-rainbow-sem-highlight ()
   "Use default rainbow semantic highlighting theme."
