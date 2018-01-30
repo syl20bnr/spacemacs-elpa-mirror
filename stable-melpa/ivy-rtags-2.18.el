@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 2.16
+;; Package-Version: 2.18
 ;; Version: 0.1
 ;; Package-Requires: ((ivy "0.7.0") (rtags "2.10"))
 

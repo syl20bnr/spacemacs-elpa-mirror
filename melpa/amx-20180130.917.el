@@ -8,7 +8,7 @@
 ;;         Cornelius Mika <cornelius.mika@gmail.com>
 ;; Maintainer: Ryan C. Thompson <rct@thompsonclan.org>
 ;; URL: http://github.com/DarwinAwardWinner/amx/
-;; Package-Version: 20170923.835
+;; Package-Version: 20180130.917
 ;; Package-Requires: ((emacs "24.4"))
 ;; Version: 4.0
 ;; Keywords: convenience, usability
