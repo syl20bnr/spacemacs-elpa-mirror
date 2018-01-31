@@ -5,7 +5,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/lcr
-;; Package-Version: 20180127.1229
+;; Package-Version: 20180130.1354
 ;; Created: January 2018
 ;; Version: 0.9
 ;; Keywords: tools
@@ -318,6 +318,13 @@ comes back."
            ,@body))
      ,@body))
 
+(defvar lcr-context-switch-hook nil
+"Hook to run when a context switch (lightweight yield) occurs.")
+
+(defun lcr-refresh-modelines ()
+  "Update all modelines."
+  (force-mode-line-update t))
+
 (defmacro lcr-context-switch (&rest body)
   "Save the current context, to restore it in a continuation.
 The current continuation is passed as CONT and can be called
@@ -330,21 +337,44 @@ parlance."
                                  `(lcr--with-context
                                    ctx
                                    (funcall ,cont ,@args))))
-       (progn ,@body))))
+       (progn ,@body
+              (run-hooks 'lcr-context-switch-hook)))))
 
-(defun lcr-process-read (process continue)
-  "Asynchronously read from PROCESS and CONTINUE.
+(defvar-local lcr-process-callback nil "Callback used by `lcr-process-read'.")
+
+(defun lcr-process-initialize (buffer)
+  "Initialize a proccess BUFFER for communication.
+After initialization, you can use `lcr-process-read' to read the
+process' output.  This function overwrites the `process-filter'."
+  (set-process-filter
+   (get-buffer-process buffer)
+   (lambda (_process string)
+     (let ((cb (buffer-local-value 'lcr-process-callback buffer)))
+       (if cb (funcall cb string)
+         (when (buffer-live-p buffer)
+           (with-current-buffer buffer
+             (goto-char (point-max))
+             (insert string))))))))
+  
+(defun lcr-process-read (buffer continue)
+  "Asynchronously read from the process associated with BUFFER and CONTINUE.
 The amount of data read is unknown, so this function should most
-certainly be called within a loop.  This function is a
-lightweight coroutine, see `lcr'."
-  (when (process-filter process)
-    (error "Try to read from process (%s), but a filter is already installed (%s)" process (process-filter process)))
-  (lcr-context-switch
-    (set-process-filter
-     process
-     (lambda (process string)
-       (set-process-filter process nil)
-       (lcr-resume continue string)))))
+certainly be called within a loop.  Note that if the process
+outputs text and `lcr-process-read' is not waiting for output,
+the data is simply appended to the process' buffer.  This
+function is a lightweight coroutine, see `lcr'."
+  (if (buffer-local-value 'lcr-process-callback buffer)
+      (funcall continue "lcr-process-read: try to read from (%s), but another coroutine is reading from it already.")
+    (lcr-context-switch
+        (lcr-set-local 'lcr-process-callback
+                       (lambda (input)
+                         (lcr-set-local 'lcr-process-callback nil buffer)
+                         (lcr-resume continue input))
+                       buffer))))
+
+(defun lcr-set-local (var val buffer)
+  "Set variable VAR to value VAL in BUFFER."
+  (with-current-buffer buffer (set (make-local-variable var) val)))
 
 (defun lcr-wait (secs continue)
   "Wait SECS then CONTINUE.
