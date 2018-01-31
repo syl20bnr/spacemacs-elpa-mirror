@@ -5,7 +5,7 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-which-key
-;; Package-Version: 20180131.558
+;; Package-Version: 20180131.606
 ;; Version: 3.1.0
 ;; Keywords:
 ;; Package-Requires: ((emacs "24.4"))
@@ -1554,33 +1554,35 @@ removing a \"group:\" prefix.
 
 ORIGINAL-DESCRIPTION is the description given by
 `describe-buffer-bindings'."
-  (let* ((desc description)
-         (desc (if (string-match-p "^group:" desc)
-                   (substring desc 6) desc))
-         (desc (if group (concat which-key-prefix-prefix desc) desc)))
-    (make-text-button desc nil
-      'face (cond (hl-face hl-face)
-                  (group 'which-key-group-description-face)
-                  (local 'which-key-local-map-description-face)
-                  (t 'which-key-command-description-face))
-      'help-echo (cond
-                  ((and original-description
-                        (fboundp (intern original-description))
-                        (documentation (intern original-description))
-                        ;; tooltip-mode doesn't exist in emacs-nox
-                        (boundp 'tooltip-mode) tooltip-mode)
-                   (documentation (intern original-description)))
-                  ((and original-description
-                        (fboundp (intern original-description))
-                        (documentation (intern original-description))
-                        (let* ((doc (documentation
-                                     (intern original-description)))
-                               (str (replace-regexp-in-string "\n" " " doc))
-                               (max (floor (* (frame-width) 0.8))))
-                          (if (> (length str) max)
-                              (concat (substring str 0 max) "...")
-                            str))))))
-    desc))
+  (when description
+    (let* ((desc description)
+           (desc (if (string-match-p "^group:" desc)
+                     (substring desc 6) desc))
+           (desc (if group (concat which-key-prefix-prefix desc) desc)))
+      (make-text-button
+       desc nil
+       'face (cond (hl-face hl-face)
+                   (group 'which-key-group-description-face)
+                   (local 'which-key-local-map-description-face)
+                   (t 'which-key-command-description-face))
+       'help-echo (cond
+                   ((and original-description
+                         (fboundp (intern original-description))
+                         (documentation (intern original-description))
+                         ;; tooltip-mode doesn't exist in emacs-nox
+                         (boundp 'tooltip-mode) tooltip-mode)
+                    (documentation (intern original-description)))
+                   ((and original-description
+                         (fboundp (intern original-description))
+                         (documentation (intern original-description))
+                         (let* ((doc (documentation
+                                      (intern original-description)))
+                                (str (replace-regexp-in-string "\n" " " doc))
+                                (max (floor (* (frame-width) 0.8))))
+                           (if (> (length str) max)
+                               (concat (substring str 0 max) "...")
+                             str))))))
+      desc)))
 
 (defun which-key--extract-key (key-str)
   "Pull the last key (or key range) out of KEY-STR."
@@ -1631,9 +1633,11 @@ alists. Returns a list (key separator description)."
              (hl-face (which-key--highlight-face orig-desc))
              (key-binding (which-key--maybe-replace (cons keys orig-desc)))
              (final-desc (which-key--propertize-description
-                          (cdr key-binding) group local hl-face orig-desc))
-             (final-desc (which-key--maybe-add-docstring final-desc orig-desc))
-             (final-desc (which-key--truncate-description final-desc)))
+                          (cdr key-binding) group local hl-face orig-desc)))
+        (when final-desc
+          (setq final-desc
+                (which-key--truncate-description
+                 (which-key--maybe-add-docstring final-desc orig-desc))))
         (when (consp key-binding)
           (push
            (list (which-key--propertize-key

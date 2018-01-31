@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper-helm
-;; Package-Version: 20151116.330
+;; Package-Version: 20180131.944
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.1") (swiper "0.1.0") (helm "1.5.3"))
 ;; Keywords: matching
@@ -52,7 +52,7 @@
     map)
   "Allows you to go to next and previous hit isearch-style.")
 
-(defun swiper-helm-default-display-buffer (buf)
+(defun swiper-helm-default-display-buffer (buf &optional _resume)
   "Display BUF buffer."
   (when (one-window-p)
     (split-window-vertically))
