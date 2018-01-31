@@ -5,7 +5,7 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-which-key
-;; Package-Version: 20180108.1930
+;; Package-Version: 20180130.1729
 ;; Version: 3.1.0
 ;; Keywords:
 ;; Package-Requires: ((emacs "24.4"))
@@ -213,6 +213,15 @@ non-nil value."
 elements in `which-key-replacement-alist' if non-nil. When nil,
 only the first match is used to perform replacements from
 `which-key-replacement-alist'."
+  :group 'which-key
+  :type 'boolean)
+
+(defcustom which-key-show-docstrings nil
+  "If non-nil, show each command's docstring next to the command
+in the which-key buffer. This will only display the docstring up
+to the first line break. You probably also want to adjust
+`which-key-max-description-length' at the same time if you use
+this feature."
   :group 'which-key
   :type 'boolean)
 
@@ -1585,14 +1594,24 @@ alists. Returns a list (key separator description)."
              (local (eq (which-key--safe-lookup-key local-map (kbd keys))
                         (intern orig-desc)))
              (hl-face (which-key--highlight-face orig-desc))
-             (key-binding (which-key--maybe-replace (cons keys orig-desc))))
+             (key-binding (which-key--maybe-replace (cons keys orig-desc)))
+             (final-desc (which-key--propertize-description
+                          (cdr key-binding) group local hl-face orig-desc)))
+        (when (and which-key-show-docstrings
+                   (commandp (intern orig-desc))
+                   (documentation (intern orig-desc)))
+          (setq final-desc
+                (format "%s %s"
+                        final-desc
+                        (car
+                         (split-string
+                          (documentation (intern orig-desc)) "\n")))))
         (when (consp key-binding)
           (push
            (list (which-key--propertize-key
                   (which-key--extract-key (car key-binding)))
                  sep-w-face
-                 (which-key--propertize-description
-                  (cdr key-binding) group local hl-face orig-desc))
+                 final-desc)
            new-list))))
     (nreverse new-list)))
 
