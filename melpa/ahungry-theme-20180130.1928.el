@@ -5,7 +5,7 @@
 ;; Author: Matthew Carter <m@ahungry.com>
 ;; Maintainer: Matthew Carter <m@ahungry.com>
 ;; URL: https://github.com/ahungry/color-theme-ahungry
-;; Package-Version: 20180130.659
+;; Package-Version: 20180130.1928
 ;; Version: 1.10.0
 ;; Keywords: ahungry palette color theme emacs color-theme deftheme
 ;; Package-Requires: ((emacs "24"))
@@ -319,7 +319,7 @@ Default value:
    '(eyebrowse-mode-line-active ((t (:bold t))))
    '(eyebrowse-mode-line-inactive ((t (:bold nil))))
 
-   '(rainbow-delimiters-depth-1-face ((t (:foreground "#cf0" :bold t))))
+   '(rainbow-delimiters-depth-1-face ((t (:foreground "#cf0"))))
    '(rainbow-delimiters-depth-2-face ((t (:foreground "#0cf"))))
    '(rainbow-delimiters-depth-3-face ((t (:foreground "#ff0"))))
    '(rainbow-delimiters-depth-4-face ((t (:foreground "#0ff"))))
@@ -329,7 +329,7 @@ Default value:
    '(rainbow-delimiters-depth-8-face ((t (:foreground "#a0f"))))
    '(rainbow-delimiters-depth-9-face ((t (:foreground "#0fa"))))
 
-   '(rainbow-blocks-depth-1-face ((t (:foreground "#cf0" :bold t))))
+   '(rainbow-blocks-depth-1-face ((t (:foreground "#cf0"))))
    '(rainbow-blocks-depth-2-face ((t (:foreground "#0cf"))))
    '(rainbow-blocks-depth-3-face ((t (:foreground "#ff0"))))
    '(rainbow-blocks-depth-4-face ((t (:foreground "#0ff"))))
@@ -339,7 +339,8 @@ Default value:
    '(rainbow-blocks-depth-8-face ((t (:foreground "#a0f"))))
    '(rainbow-blocks-depth-9-face ((t (:foreground "#0fa"))))
 
-   '(link ((t (:foreground "#cf0"))))
+   '(link ((t (:foreground "#af0"))))
+   '(hackernews-link ((t (:foreground "#af0"))))
    )
   (custom-theme-set-variables
    'ahungry

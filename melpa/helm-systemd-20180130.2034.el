@@ -3,7 +3,7 @@
 ;; Copyright (C) 2016
 
 ;; Author:  <lompik@oriontabArch>
-;; Package-Version: 20160517.2333
+;; Package-Version: 20180130.2034
 ;; Package-X-Original-Version: 0.0.1
 ;; Package-Requires: ((emacs "24.4") (helm "1.9.2") (with-editor "2.5.0"))
 ;; Keywords: convenience
@@ -138,7 +138,7 @@
   (with-current-buffer (get-buffer-create helm-systemd-buffer-name)
     (helm-systemd-status-mode)
     (let ((command
-           (helm-systemd-systemctl-command (if isuser "--user") unit-command  unit)))
+           (helm-systemd-systemctl-command (if isuser "--user") unit-command "--" unit)))
       (insert "\n🔜 " command "\n")
       (if (or isuser (string= unit-command "status"))
           (insert  (shell-command-to-string command))
@@ -178,66 +178,69 @@
           units)))
 
 (defun helm-systemd-transformer (candidates source)
-  (let ((res candidates))
-    (unless (string= (car helm-systemd-command-types) "device")
-
-      (setq res (cl-loop for i in candidates
-                         for split = (split-string i)
-                         for unit = (car split)
-                         for loaded = (nth 1 split)
-                         for active = (nth 2 split)
-                         for running = (nth 3 split)
-                         for description = (if running (helm-systemd-concatspace (cl-subseq split 4)))
-                         collect (let ((line i))
-                                   (unless (and unit loaded active running description)
-                                     line)
-                                   (if (and loaded (not (string= (car helm-systemd-command-types) "mount")))
-                                       (let* ((isenabled
-                                               (car
-                                                (split-string
-                                                 (shell-command-to-string
-                                                  (helm-systemd-concatspace `("systemctl" "is-enabled "
-                                                                              ,(if (string-match "User"
-                                                                                                 (cdr (assoc 'name source)))
-                                                                                   "--user")
-                                                                              ,unit))))))
-                                              (propena (cond ((string= isenabled "enabled") 'helm-bookmark-info)
-                                                             ((string= isenabled "static") 'helm-bookmark-gnus)
-                                                             (t 'helm-bookmark-gnus)))
-                                              (isenabled (format "%8s" isenabled) ))
-                                         (setq line (if active
-                                                        (replace-regexp-in-string loaded (concat (propertize isenabled 'face propena) " " loaded " ") line )
-                                                      (replace-regexp-in-string loaded (concat (propertize isenabled 'face propena) " ") line ))))) ;; list-units case
-                                   (if (string=  running "running")
-                                       (setq line
-                                             (replace-regexp-in-string running
-                                                                       (propertize
-                                                                        running
-                                                                        'face
-                                                                        'helm-ff-directory) line )))
-                                   (if (string= running "exited")
-                                       (setq line
-                                             (replace-regexp-in-string running
-                                                                       (propertize
-                                                                        running
-                                                                        'face
-                                                                        'helm-bookmark-info) line )))
-                                   (if (string= running "failed")
-                                       (setq line
-                                             (replace-regexp-in-string running
-                                                                       (propertize
-                                                                        running
-                                                                        'face
-                                                                        'diredp-executable-tag) line )))
-                                   (if description
-                                       (setq line
-                                             (replace-regexp-in-string
-                                              (regexp-quote description) (propertize
-                                                                          description
-                                                                          'face
-                                                                          'helm-buffer-process) line t)))
-                                   line ))))
-    res))
+  (cl-loop for i in candidates
+           for split = (split-string i)
+           for unit = (car split)
+           for loaded = (nth 1 split)
+           for active = (nth 2 split)
+           for running = (nth 3 split)
+           for description = (if running (helm-systemd-concatspace (cl-subseq split 4)))
+           collect (let ((line i))
+                     (unless (and unit loaded active running description)
+                       line)
+                     (if loaded
+                         (let* ((isenabled
+                                 (car
+                                  (split-string
+                                   (shell-command-to-string
+                                    (helm-systemd-concatspace `("systemctl" "is-enabled "
+                                                                ,(if (string-match "User"
+                                                                                   (cdr (assoc 'name source)))
+                                                                     "--user")
+                                                                "--" ,unit))))))
+                                (propena (cond ((string= isenabled "enabled") 'helm-bookmark-info)
+                                               ((string= isenabled "static") 'helm-bookmark-gnus)
+                                               (t 'helm-bookmark-gnus)))
+                                (isenabled (format "%8s" isenabled) ))
+                           (setq line (if active
+                                          (replace-regexp-in-string loaded (concat (propertize isenabled 'face propena) " " loaded " ") line nil t)
+                                        (replace-regexp-in-string loaded (concat (propertize isenabled 'face propena) " ") line nil t))))) ;; list-units case
+                     (if (or (string=  running "mounted") (string=  running "running"))
+                         (setq line
+                               (replace-regexp-in-string running
+                                                         (propertize
+                                                          running
+                                                          'face
+                                                          'helm-ff-directory) line nil t)))
+                     (if (or (string= running "exited") (string= running "dead"))
+                         (setq line
+                               (replace-regexp-in-string running
+                                                         (propertize
+                                                          running
+                                                          'face
+                                                          'helm-bookmark-info) line nil t)))
+                     (if (string= running "listening")
+                         (setq line
+                               (replace-regexp-in-string running
+                                                         (propertize
+                                                          running
+                                                          'face
+                                                          'dired-symlink) line nil t)))
+                     (if (string= running "failed")
+                         (setq line
+                               (replace-regexp-in-string running
+                                                         (propertize
+                                                          running
+                                                          'face
+                                                          'diredp-executable-tag) line nil t)))
+                     (if description
+                         (setq line
+                               (replace-regexp-in-string
+                                description (propertize
+                                             description
+                                             'face
+                                             'helm-buffer-process) line nil t)))
+                     line )))
 
 (defmacro helm-systemd-make-actions (sysd-verb isuser)
   `(lambda (_ignore)

@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/general.el
-;; Package-Version: 20180121.1539
+;; Package-Version: 20180130.2055
 ;; Created: February 17, 2016
 ;; Keywords: vim, evil, leader, keybindings, keys
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
@@ -868,7 +868,8 @@ to bind the keys with by calling `general--define-key-dispatch'."
                                            general-non-normal-states))))
              (valid-maps (list (cond ((and non-normal-maps non-normal-p)
                                       non-normal-maps)
-                                     ((and global-maps non-normal-p))
+                                     ((and global-maps non-normal-p)
+                                      nil)
                                      (t
                                       maps))
                                global-maps)))
