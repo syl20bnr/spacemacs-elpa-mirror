@@ -5,7 +5,7 @@
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; Homepage: https://github.com/proofit404/isortify
 ;; Version: 0.0.1
-;; Package-Version: 20171223.1812
+;; Package-Version: 20180131.2244
 ;; Package-Requires: ()
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -39,30 +39,56 @@
 ;;
 ;;; Code:
 
+(defvar isortify-multi-line-output nil)
+
+(defvar isortify-trailing-comma nil)
+
+(defvar isortify-known-first-party nil)
+
 (defun isortify-call-bin (input-buffer output-buffer)
   "Call process isort on INPUT-BUFFER saving the output to OUTPUT-BUFFER.
-Return the exit code."
+
+Return isort process the exit code."
   (with-current-buffer input-buffer
-    (call-process-region (point-min) (point-max) "isort" nil output-buffer nil "--multi-line" "3" "--trailing-comma" "-")))
+    (let (args)
+      (when isortify-multi-line-output
+        (add-to-list 'args "--multi-line" t)
+        (add-to-list 'args (number-to-string isortify-multi-line-output) t))
+      (when isortify-trailing-comma
+        (add-to-list 'args "--trailing-comma" t))
+      (when isortify-known-first-party
+        (add-to-list 'args "--project" t)
+        (add-to-list 'args isortify-known-first-party t))
+      (add-to-list 'args "-" t)
+      (let ((process (apply 'start-file-process "isortify" output-buffer "isort" args)))
+        (process-send-region process (point-min) (point-max))
+        (process-send-eof process)
+        (accept-process-output process nil nil t)
+        (while (process-live-p process)
+          (accept-process-output process nil nil t))
+        (process-exit-status process)))))
 
 ;;;###autoload
-(defun isortify-buffer ()
+(defun isortify-buffer (&optional display)
   "Try to isortify the current buffer.
-If isort exits with an error, the output will be shown in a help-window."
-  (interactive)
+
+Show isort output, if isort exit abnormally and DISPLAY is t."
+  (interactive (list t))
   (let* ((original-buffer (current-buffer))
          (original-point (point))
          (original-window-pos (window-start))
-         (tmpbuf (generate-new-buffer "*isortify*"))
-         (exit-code (isortify-call-bin original-buffer tmpbuf)))
-    (unwind-protect
-        (if (not (zerop exit-code))
+         (tmpbuf (get-buffer-create "*isortify*")))
+    (condition-case err
+        (if (not (zerop (isortify-call-bin original-buffer tmpbuf)))
             (error "Isort failed, see %s buffer for details" (buffer-name tmpbuf))
           (with-current-buffer tmpbuf
             (copy-to-buffer original-buffer (point-min) (point-max)))
           (kill-buffer tmpbuf)
           (goto-char original-point)
-          (set-window-start (selected-window) original-window-pos)))))
+          (set-window-start (selected-window) original-window-pos))
+      (error (message "%s" (error-message-string err))
+             (when display
+               (pop-to-buffer tmpbuf))))))
 
 ;;;###autoload
 (define-minor-mode isort-mode
