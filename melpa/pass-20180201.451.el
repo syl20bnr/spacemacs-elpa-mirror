@@ -5,7 +5,7 @@
 ;; Author: Nicolas Petton <petton.nicolas@gmail.com>
 ;;         Damien Cassou <damien@cassou.me>
 ;; Version: 1.8
-;; Package-Version: 20180109.201
+;; Package-Version: 20180201.451
 ;; GIT: https://github.com/NicolasPetton/pass
 ;; Package-Requires: ((emacs "24.3") (password-store "0.1") (password-store-otp "0.1.5") (f "0.17"))
 ;; Created: 09 Jun 2015
@@ -477,7 +477,8 @@ This function only works when `pass-view-mode' is enabled."
   (interactive)
   (save-excursion
     (goto-char (point-min))
-    (copy-region-as-kill (point) (line-end-position))))
+    (copy-region-as-kill (point) (line-end-position))
+    (message "Password copied to kill ring.")))
 
 (defun pass-view-mask-password ()
   "Mask the password of the current buffer."

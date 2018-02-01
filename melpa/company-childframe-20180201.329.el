@@ -5,7 +5,7 @@
 ;; Author: Clément Pit-Claudel, Feng Shu
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/company-mode/company-mode
-;; Package-Version: 20180124.1744
+;; Package-Version: 20180201.329
 ;; Version: 0.1.0
 ;; Keywords: abbrev, convenience, matching
 ;; Package-Requires: ((emacs "26.0")(company "0.9.0"))
@@ -237,7 +237,7 @@ COMMAND: See `company-frontends'."
     (update (company-childframe--update))
     (post-command (company-childframe--update))))
 
-;;;autoload
+;;;###autoload
 (define-minor-mode company-childframe-mode
   "Company-childframe minor mode."
   :global t
