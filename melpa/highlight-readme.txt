@@ -275,7 +275,7 @@
  active region.  If the region is not active then they act on the
  text in the whole buffer.  The commands with `to-end' in their
  name act on the text from point to the end of the buffer.  See
- also (@* "What Gets Highlighted: Region, Buffer, New Text You Type").
+ also (@> "What Gets Highlighted: Region, Buffer, New Text You Type").
 
  The commands you will use the most often are perhaps
  `hlt-highlight', `hlt-highlighter', `hlt-highlight-symbol',

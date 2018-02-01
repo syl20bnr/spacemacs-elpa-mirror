@@ -7,12 +7,13 @@
 ;; Copyright (C) 1995-2018, Drew Adams, all rights reserved.
 ;; Created: Wed Oct 11 15:07:46 1995
 ;; Version: 0
-;; Package-Version: 20180125.1126
+;; Package-Version: 20180131.1216
 ;; Package-Requires: ()
-;; Last-Updated: Mon Jan  1 13:42:09 2018 (-0800)
+;; Last-Updated: Tue Jan 30 07:42:53 2018 (-0800)
 ;;           By: dradams
-;;     Update #: 4131
+;;     Update #: 4133
 ;; URL: https://www.emacswiki.org/emacs/download/highlight.el
+;; URL (GIT mirror): https://github.com/steckerhalter/highlight.el
 ;; Doc URL: https://www.emacswiki.org/emacs/HighlightLibrary
 ;; Keywords: faces, help, local
 ;; Compatibility: GNU Emacs: 20.x, 21.x, 22.x, 23.x, 24.x, 25.x, 26.x
@@ -306,7 +307,7 @@
 ;;  active region.  If the region is not active then they act on the
 ;;  text in the whole buffer.  The commands with `to-end' in their
 ;;  name act on the text from point to the end of the buffer.  See
-;;  also (@* "What Gets Highlighted: Region, Buffer, New Text You Type").
+;;  also (@> "What Gets Highlighted: Region, Buffer, New Text You Type").
 ;;
 ;;  The commands you will use the most often are perhaps
 ;;  `hlt-highlight', `hlt-highlighter', `hlt-highlight-symbol',
