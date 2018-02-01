@@ -5,7 +5,7 @@
 ;; Author: Kris Jenkins <krisajenkins@gmail.com>
 ;; Maintainer: Kris Jenkins <krisajenkins@gmail.com>
 ;; Keywords: clojure cider cheatsheet helm
-;; Package-Version: 20161004.2328
+;; Package-Version: 20180201.4
 ;; URL: https://github.com/clojure-emacs/clojure-cheatsheet
 ;; Created: 7th August 2013
 ;; Version: 0.4.0
@@ -40,6 +40,8 @@
 (require 'helm-multi-match)
 (require 'cider-interaction)
 (require 'cl-lib)
+
+(warn "This package is now deprecated as its functionality was fully integrated into CIDER and helm-cider")
 
 (defconst clojure-cheatsheet-hierarchy
   '(("Primitives"

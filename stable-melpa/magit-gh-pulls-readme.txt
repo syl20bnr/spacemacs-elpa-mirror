@@ -13,16 +13,15 @@ Add these lines to your init.el:
 (add-hook 'magit-mode-hook 'turn-on-magit-gh-pulls)
 
 These are the bindings for pull requests, defined in magit-gh-pulls-mode-map:
-# g g --- refreshes the list of pull requests
-# g f --- fetches the commits associated with the pull request at point
-# g b --- helps you creating a topic branch from a review request
-# g m --- merges the PR on top of the current branch
-# g c --- creates a PR from the current branch
-# g o --- opens a pull request on GitHub in your default browser
+# g --- refreshes the list of pull requests
+# f --- fetches the commits associated with the pull request at point
+# b --- helps you creating a topic branch from a review request
+# m --- merges the PR on top of the current branch
+# c --- creates a PR from the current branch
+# o --- opens a pull request on GitHub in your default browser
 
 Then, you can do whatever you want with the commit objects associated with
 the pull request (merge, cherry-pick, diff, ...)
 
-When you create a new pull request, it will automatically open it on GitHub
-in your default browser.  You can alter this behavior by customizing
-magit-gh-pulls-open-new-pr-in-browser
+When you create a new pull request, you can enable -w option to automatically
+open it on GitHub in your default browser.

@@ -1,13 +1,13 @@
 ;;; magit-gh-pulls.el --- GitHub pull requests extension for Magit
 
-;; Copyright (C) 2011-2015  Yann Hodique, Alexander Yakushev
+;; Copyright (C) 2011-2017  Yann Hodique, Alexander Yakushev
 
 ;; Author: Yann Hodique <yann.hodique@gmail.com>
 ;; Keywords: git tools
-;; Package-Version: 0.5.2
-;; Version: 0.5.2
+;; Package-Version: 0.5.3
+;; Version: 0.5.3
 ;; URL: https://github.com/sigma/magit-gh-pulls
-;; Package-Requires: ((emacs "24") (gh "0.9.1") (magit "2.1.0") (pcache "0.2.3") (s "1.6.1"))
+;; Package-Requires: ((emacs "24.4") (gh "0.9.1") (magit "2.1.0") (pcache "0.2.3") (s "1.6.1"))
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -41,36 +41,38 @@
 ;; (add-hook 'magit-mode-hook 'turn-on-magit-gh-pulls)
 
 ;; These are the bindings for pull requests, defined in magit-gh-pulls-mode-map:
-;; # g g --- refreshes the list of pull requests
-;; # g f --- fetches the commits associated with the pull request at point
-;; # g b --- helps you creating a topic branch from a review request
-;; # g m --- merges the PR on top of the current branch
-;; # g c --- creates a PR from the current branch
-;; # g o --- opens a pull request on GitHub in your default browser
+;; # g --- refreshes the list of pull requests
+;; # f --- fetches the commits associated with the pull request at point
+;; # b --- helps you creating a topic branch from a review request
+;; # m --- merges the PR on top of the current branch
+;; # c --- creates a PR from the current branch
+;; # o --- opens a pull request on GitHub in your default browser
 
 ;; Then, you can do whatever you want with the commit objects associated with
 ;; the pull request (merge, cherry-pick, diff, ...)
 
-;; When you create a new pull request, it will automatically open it on GitHub
-;; in your default browser.  You can alter this behavior by customizing
-;; magit-gh-pulls-open-new-pr-in-browser
+;; When you create a new pull request, you can enable -w option to automatically
+;; open it on GitHub in your default browser.
 
 ;;; Code:
 
 (require 'eieio)
 
 (require 'magit)
+(require 'git-commit)
 (require 'gh)
 (require 'gh-pulls)
 (require 'pcache)
 (require 's)
+(require 'cl-lib)
+(require 'subr-x)
 
 (defgroup magit-gh-pulls nil
   "Github.com pull-requests for Magit."
   :group 'magit-extensions)
 
-(defcustom magit-gh-pulls-open-new-pr-in-browser t
-  "Open newly-created pull-requests automatically in the browser"
+(defcustom magit-gh-pulls-open-new-pr-in-browser nil
+  "DEPRECATED: use magit switch instead."
   :group 'magit-gh-pulls
   :type 'boolean)
 
@@ -79,13 +81,47 @@
   viewed in magit. It receives a list of pull requests and should
   return a list of pull requests.")
 
-(defvar magit-gh-pulls-collapse-commits nil
+(defvar magit-gh-pulls-collapse-commits t
   "Collapse commits in pull requests listing.")
+
+(defvar magit-gh-pulls-pull-detail-limit 10
+  "Pull in additional information for each pull request in the
+   status buffer only if the total number of open PRs is <=
+   this number. Additional information includes individual
+   commits in each PR and highlighting based on the merge
+   status of the PR. Increasing this number may adversely
+   affect performance on repos with many PRs.")
+
+(defvar magit-gh-pulls-status-documentation nil
+  "Info string to be shown in magit status buffer when there are
+   no PRs to be listed.
+
+When nil, default string is constructed.")
+
+(defvar-local magit-gh-pulls-previous-winconf nil)
+
+(defvar magit-gh-pulls-editor-mode-map
+  (let ((map (make-keymap)))
+    (define-key map (kbd "C-c C-c") 'magit-gh-pulls-pull-editor-finish)
+    (define-key map (kbd "C-c C-k") 'magit-gh-pulls-pull-editor-quit)
+    map))
+
+(define-minor-mode magit-gh-pulls-editor-mode "Magit GitHub Pulls Editor"
+  :lighter  " PR-editor"
+  :keymap  'magit-gh-pulls-editor-mode-map)
+
+(easy-menu-define magit-gh-pulls-editor-mode-menu magit-gh-pulls-editor-mode-map
+  "Magit GitHub Pulls Editor Menu"
+  '("Magit GitHub Pulls"
+    ["Submit Pull Request" magit-gh-pulls-pull-editor-finish t]
+    ["Cancel" magit-gh-pulls-pull-editor-quit t]))
 
 (defun magit-gh-pulls-get-api ()
   (gh-pulls-api "api" :sync t :num-retries 1 :cache (gh-cache "cache")))
 
 (defun magit-gh-pulls-get-repo-from-config ()
+  "Return (user . project) pair read from magit.gh-pulls-repo
+config option."
   (let* ((cfg (magit-get "magit" "gh-pulls-repo")))
     (when cfg
       (let* ((split (split-string cfg "/")))
@@ -157,7 +193,7 @@
          (parsed-url (url-generic-parse-url fixed-url))
          (ssh-host (when (string= (url-type parsed-url) "ssh")
                      (assoc (url-host parsed-url) ssh-config-hosts))))
-    (when ssh-host
+    (when (and ssh-host (cadr ssh-host))
       (setf (url-host parsed-url) (cadr ssh-host)))
     (when (and
            (string= (url-host parsed-url) "github.com")
@@ -168,6 +204,8 @@
 
 
 (defun magit-gh-pulls-guess-repo-from-origin ()
+  "Return (user . project) pair inferred from remotes in
+.git/config."
   (let ((creds nil)
         (ssh-config-hosts (magit-gh-pulls-get-ssh-config-hosts)))
     (dolist (remote (magit-git-lines "remote") creds)
@@ -178,10 +216,13 @@
           (setq creds parsed))))))
 
 (defun magit-gh-pulls-guess-repo ()
+  "Return (user . project) pair obtained either from explicit
+option, or inferred from remotes."
   (or (magit-gh-pulls-get-repo-from-config)
       (magit-gh-pulls-guess-repo-from-origin)))
 
 (defun magit-gh-pulls-requests-cached-p (api user proj)
+  "Returns T if the API request to the given USER and PROJ is cached."
   (let ((cache-repo (format "/repos/%s/%s/pulls" user proj))
         (cached? nil))
     (pcache-map (oref api :cache)
@@ -189,8 +230,20 @@
                              (setq cached? t))))
     cached?))
 
+(defvar magit-pull-section-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map [remap magit-visit-thing]      'magit-gh-pulls-diff-pull-request)
+    map)
+  "Keymap for pull-request sections.")
+
+(defvar magit-unfetched-pull-section-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map [remap magit-visit-thing]      'magit-gh-pulls-fetch-commits)
+    map)
+  "Keymap for unfetched pull-request sections.")
+
 (defun magit-gh-pulls-insert-gh-pulls ()
-  (condition-case print-section
+  (condition-case-unless-debug print-section
       (progn
         (let* ((repo (magit-gh-pulls-guess-repo)))
           (when repo
@@ -201,28 +254,27 @@
                    (stubs (when cached?
                             (funcall magit-gh-pulls-maybe-filter-pulls
                                      (oref (gh-pulls-list api user proj) :data))))
+                   (num-total-stubs (length stubs))
+                   (i 0)
                    (branch (magit-get-current-branch)))
               (when (or (> (length stubs) 0) (not cached?))
                 (magit-insert-section (pulls)
                   (magit-insert-heading "Pull Requests:")
                   (dolist (stub stubs)
+                    (cl-incf i)
                     (let* ((id (oref stub :number))
-                           (req (oref (gh-pulls-get api user proj id) :data))
-                           (base-sha (oref (oref req :base) :sha))
-                           (base-ref (oref (oref req :base) :ref))
-                           (head-sha (oref (oref req :head) :sha))
+                           (base-sha (oref (oref stub :base) :sha))
+                           (base-ref (oref (oref stub :base) :ref))
+                           (head-sha (oref (oref stub :head) :sha))
                            ;; branch has been deleted in the meantime...
-                           (invalid (equal (oref (oref req :head) :ref) head-sha))
+                           (invalid (equal (oref (oref stub :head) :ref) head-sha))
                            (have-commits
-                            (and (eql 0 (magit-git-exit-code "cat-file" "-e" base-sha))
+                            (and (>= magit-gh-pulls-pull-detail-limit i)
+                                 (eql 0 (magit-git-exit-code "cat-file" "-e" base-sha))
                                  (eql 0 (magit-git-exit-code "cat-file" "-e" head-sha))))
                            (applied (and have-commits
-                                         (not (magit-git-string
-                                               "rev-list"
-                                               "--cherry-pick" "--right-only"
-                                               (format "HEAD...%s" head-sha)
-                                               "--not"
-                                               (format "%s" base-sha)))))
+                                         (magit-git-string "branch" branch
+                                                           (format "--contains=%s" head-sha))))
                            (heading
                             (format "[%s@%s] %s\n"
                                     (propertize (number-to-string id)
@@ -232,7 +284,7 @@
                                                     'face 'magit-branch-local)
                                       base-ref)
                                     (propertize
-                                     (oref req :title) 'face
+                                     (oref stub :title) 'face
                                      (cond (applied 'magit-cherry-equivalent)
                                            (have-commits nil)
                                            (invalid 'error)
@@ -241,8 +293,8 @@
                       (cond
                        (have-commits
                         (magit-insert-section
-                          (pull info (not magit-gh-pulls-collapse-commits))
-                          (magit-insert heading)
+                          (pull info magit-gh-pulls-collapse-commits)
+                          (insert heading)
                           (magit-insert-heading)
                           (when (and have-commits (not applied))
                             (magit-git-wash
@@ -251,12 +303,22 @@
                               base-sha head-sha))))
                        (invalid
                         (magit-insert-section (invalid-pull info)
-                          (magit-insert heading)))
+                          (insert heading)))
                        (t
                         (magit-insert-section (unfetched-pull info)
-                          (magit-insert heading))))))
+                          (insert heading))))))
                   (when (not cached?)
-                    (insert "Press `# g g` to update the pull request list.\n\n"))
+                    (insert (if (bound-and-true-p magit-gh-pulls-status-documentation)
+                                magit-gh-pulls-status-documentation
+                              (format "Press `%s %s` to update the pull request list."
+                                      (substitute-command-keys "\\<magit-mode-map>\\[magit-gh-pulls-popup]")
+                                      (char-to-string
+                                       (car
+                                        (seq-find
+                                         (lambda (entry)
+                                           (eq (nth 2 entry) 'magit-gh-pulls-reload))
+                                         (plist-get magit-gh-pulls-popup :actions)))))))
+                    (insert "\n\n"))
                   (when (> (length stubs) 0)
                     (insert "\n"))))))))
     (error nil)))
@@ -272,6 +334,21 @@
                (magit-section-value (or section (magit-current-section))))
         :data))
 
+(defun magit-gh-pulls-diff-pull-request ()
+  (interactive)
+  (magit-section-case
+    (pull
+     (let* ((req (magit-gh-section-req-data))
+            (inhibit-magit-refresh t))
+       (magit-diff (concat (oref (oref req :base) :sha) ".."
+                           (oref (oref req :head) :sha))))
+     (magit-refresh))
+    (unfetched-pull
+     (error "Please fetch pull request commits first"))
+    (invalid-pull
+     (error "This pull request refers to invalid reference"))))
+
+
 (defun magit-gh-pulls-create-branch ()
   (interactive)
   (magit-section-case
@@ -283,7 +360,7 @@
                    "Branch base: "
                    (oref (oref req :base) :ref)))
             (inhibit-magit-refresh t))
-       (magit-branch branch base)
+       (magit-branch-and-checkout branch base)
        (magit-merge (oref (oref req :head) :sha)))
      (magit-refresh))
     (unfetched-pull
@@ -291,19 +368,26 @@
     (invalid-pull
      (error "This pull request refers to invalid reference"))))
 
+(defun magit-gh-pulls-github-merge-message (pr)
+  "Generate a default merge commit message, the same as Github does."
+  (format "Merge pull request #%d from %s/%s\n\n%s"
+          (oref pr :number)
+          (oref (oref (oref pr :head) :user) :login)
+          (oref (oref pr :head) :ref)
+          (oref pr :title)))
+
 (defun magit-gh-pulls-merge-pull-request ()
   (interactive)
   (magit-section-case
     (pull
      (let* ((req (magit-gh-section-req-data))
-            (branch (magit-gh-pulls-guess-topic-name req))
             (base (oref (oref req :base) :ref))
             (inhibit-magit-refresh t))
-       (magit-branch branch base)
-       (magit-merge (oref (oref req :head) :sha))
        (magit-checkout base)
-       (magit-merge branch)
-       (magit-call-git "branch" "-D" branch))
+       (magit-merge (oref (oref req :head) :sha)
+                    (append (list "-m" (magit-gh-pulls-github-merge-message req))
+                            (when (member "--no-ff" (magit-gh-pulls-arguments))
+                              '("--no-ff")))))
      (magit-refresh))
     (unfetched-pull
      (error "Please fetch pull request commits first"))
@@ -316,7 +400,7 @@
     (unfetched-pull
      (let* ((req (magit-gh-section-req-data))
             (head (oref req :head)))
-       (magit-run-git "fetch" (oref (oref head :repo) :git-url)
+       (magit-run-git "fetch" (oref (oref head :repo) :ssh-url)
                       (oref head :ref))))
     (pull nil)
     (invalid-pull
@@ -344,53 +428,124 @@
                                (car k))
                           (pcache-invalidate cache k))))))
 
-(defun magit-gh-pulls-get-remote-default (&optional remote-name-override)
-  (let ((remote-name (or remote-name-override "origin"))
-        (remote-branches (magit-git-lines "branch" "-r"))
-         remote-head)
-    (while (and remote-branches (not remote-head))
-      (let ((m (s-match (format "^\\s-*%s/HEAD -> %s/\\(\\w*\\)" remote-name remote-name) (car remote-branches))))
-        (if m
-            (setq remote-head (cadr m))
-          (setq remote-branches (cdr remote-branches)))))
-    remote-head))
+;;; Pull request creation
 
+(defun magit-gh-pulls-ensure-branch-pushed (branch)
+  "Checks if the BRANCH has a remote branch (either an upstream
+  or a push-remote), and that their tips match. If the remote
+  branch is behind the local branch, poll user to push the
+  changes."
+  (let* ((remote-ref (or (magit-get-push-branch branch)
+                         (magit-get-upstream-branch branch)))
+         (pushed-p (and remote-ref (magit-branch-p remote-ref)
+                        (null (magit-git-lines "diff" (concat remote-ref ".." branch))))))
+    (unless pushed-p
+      (if remote-ref
+          (when (yes-or-no-p
+                 (format "Branch %s lags behind its remote. Push the local commits to %s?"
+                         branch remote-ref))
+            (call-interactively (if (magit-get-push-branch branch)
+                                    'magit-push-current-to-pushremote
+                                  'magit-push-current-to-upstream)))
+        (when (yes-or-no-p
+               (format "%s doesn't have a push-remote or upstream. Set the push-remote and push it?"
+                       branch))
+          (call-interactively 'magit-push-current-to-pushremote))))))
 
+(defun magit-gh-pulls-pr-template-file ()
+  "Returns the path to the PULL_REQUEST_TEMPLATE file in the
+  current repository. Returns nil if there is not a pull request
+  template file. A pull request template file can be placed in
+  the repository root directory, or in a .github/ directory."
+  (car (or (directory-files (magit-toplevel) t "^PULL_REQUEST_TEMPLATE")
+           (ignore-errors (directory-files (format "%s.github/" (magit-toplevel))
+                                           t "^PULL_REQUEST_TEMPLATE")))))
 
-(defun magit-gh-pulls-build-req (user proj)
-  (let* ((current (or (cdr (magit-get-remote-branch))
-                     (magit-get-current-branch)))
-         (current-default (magit-gh-pulls-get-remote-default)))
-    (let* ((base
-            (make-instance 'gh-repos-ref :user (make-instance 'gh-users-user :name user)
-                           :repo (make-instance 'gh-repos-repo :name proj)
-                           :ref (magit-read-other-branch-or-commit "Base" nil current-default)))
-           (head
-            (make-instance 'gh-repos-ref :user (make-instance 'gh-users-user :name user)
-                           :repo (make-instance 'gh-repos-repo :name proj)
-                           :ref (magit-read-other-branch-or-commit "Head" nil current)))
-           (title (read-string "Title: "))
-           (body (read-string "Description: "))
-           (req (make-instance 'gh-pulls-request :head head :base base :body body :title title)))
-      req)))
+(defun magit-gh-pulls-init-pull-editor (proj base head callback)
+  "Create a new buffer for editing this pull request and switch
+   to it. Save CALLBACK to be called with the submitted PR text."
+  (let ((winconf (current-window-configuration))
+        (default-title (magit-git-string "log" (format "%s..%s" base head)
+                                         "--format=%s" "--reverse"))
+        (default-body (s-join "\n" (magit-git-items "log" (format "%s..%s" base head)
+                                                    "--reverse" "--format=**%s**%n%b"))))
+    (split-window-vertically)
+    (other-window 1)
+    (switch-to-buffer (get-buffer-create (format "*magit-gh-pulls: %s*" proj)))
+    (funcall (if (functionp 'markdown-mode)
+                 'markdown-mode 'text-mode))
+    (funcall 'magit-gh-pulls-editor-mode)
+    (insert (or default-title "") "\n\n") ; Title
+    (if (magit-gh-pulls-pr-template-file) ; Body
+        (insert-file-contents (magit-gh-pulls-pr-template-file))
+      (insert default-body))
+    (goto-char (point-min))
+    (message "Opening pull request editor. C-c C-c to finish, C-c C-k to quit.")
+    (setq-local magit-gh-pulls-editor-callback callback)
+    (setq magit-gh-pulls-previous-winconf winconf)))
+
+(defun magit-gh-pulls-pull-editor-finish ()
+  "Finish editing the current pull request and call the saved
+   callback. This should be called interactively from within a
+   pull request editor buffer."
+  (interactive)
+  (if (eq nil magit-gh-pulls-editor-callback)
+      (message "This function can only be run in a pull editor buffer.")
+    (let* ((end-of-first-line (save-excursion
+                                (beginning-of-buffer)
+                                (line-end-position)))
+           (title (s-trim (buffer-substring-no-properties 1 end-of-first-line)))
+           (body (s-trim (buffer-substring-no-properties end-of-first-line (point-max)))))
+      (funcall magit-gh-pulls-editor-callback title body)
+      (magit-gh-pulls-pull-editor-quit))))
+
+(defun magit-gh-pulls-pull-editor-quit ()
+  "Cleanup the current pull request editor and restore
+   the previous window config."
+  (interactive)
+  (if (eq nil magit-gh-pulls-editor-callback)
+      (message "This function can only be run in a pull editor buffer.")
+    (let ((winconf magit-gh-pulls-previous-winconf))
+      (kill-buffer)
+      (kill-local-variable 'magit-gh-pulls-previous-winconf)
+      (when winconf
+        (set-window-configuration winconf)))))
+
+(defun magit-gh-pulls-build-req (user proj base-branch head-branch title body)
+  "Builds a request entity for a new pull request."
+  (let* ((user (make-instance 'gh-users-user :name user))
+         (repo (make-instance 'gh-repos-repo :name proj))
+         (base (make-instance 'gh-repos-ref :user user :repo repo :ref base-branch))
+         (head (make-instance 'gh-repos-ref :user user :repo repo :ref head-branch)))
+    (make-instance 'gh-pulls-request :head head :base base :title title :body body)))
+
+(defun magit-gh-pulls-submit-pull-request (api user proj req)
+  "Endpoint for creating a new pull request. Actually sends the
+  PR creation API request to Github."
+  (let* ((a (gh-pulls-new api user proj req)))
+    (if (not (= (oref a :http-status) 201))
+        (message "Error creating pull-request: %s.  Have you pushed the branch to github?" (cdr (assoc "Status" (oref a :headers))))
+      (let ((url (oref (oref a :data) :html-url)))
+        (message (concat "Created pull-request and copied URL to kill ring: " url))
+        (when (member "--open-new-in-browser" (magit-gh-pulls-arguments))
+          (browse-url url))
+        (kill-new url)))))
 
 (defun magit-gh-pulls-create-pull-request ()
+  "Entrypoint for creating a new pull request."
   (interactive)
-  (let ((repo (magit-gh-pulls-guess-repo)))
-    (when repo
-      (let* ((current-branch (magit-get-current-branch))
-            (api (magit-gh-pulls-get-api))
-            (user (car repo))
-            (proj (cdr repo))
-            (req (magit-gh-pulls-build-req user proj))
-            (a (gh-pulls-new api user proj req)))
-        (if (not (= (oref a :http-status) 201))
-            (message "Error creating pull-request: %s.  Have you pushed the branch to github?" (cdr (assoc "Status" (oref a :headers))))
-          (let ((url (oref (oref a :data) :html-url)))
-            (message (concat "Created pull-request and copied URL to kill ring: " url))
-            (when magit-gh-pulls-open-new-pr-in-browser
-              (browse-url url))
-            (kill-new url)))))))
+  (when-let (repo (magit-gh-pulls-guess-repo))
+    (lexical-let* ((user (car repo))
+                   (proj (cdr repo))
+                   (base-branch (magit-read-branch-or-commit "Base" "master"))
+                   (head-branch (magit-read-branch-or-commit "Head" (magit-get-current-branch))))
+      (magit-gh-pulls-ensure-branch-pushed head-branch)
+      (magit-gh-pulls-init-pull-editor
+       proj base-branch head-branch
+       (lambda (title body)
+         (let ((api (magit-gh-pulls-get-api))
+               (req (magit-gh-pulls-build-req user proj base-branch head-branch title body)))
+           (magit-gh-pulls-submit-pull-request api user proj req)))))))
 
 (defun magit-gh-pulls-reload ()
   (interactive)
@@ -416,18 +571,12 @@
                     '("Extensions")
                     magit-gh-pulls-extension-menu)
 
-
-(magit-define-section-jumper pulls "Pull Requests")
+(magit-define-section-jumper magit-jump-to-pulls "Pull Requests" pulls)
 (define-key magit-status-mode-map (kbd "jq") 'magit-jump-to-pulls)
 
 (defvar magit-gh-pulls-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "# g b") 'magit-gh-pulls-create-branch)
-    (define-key map (kbd "# g f") 'magit-gh-pulls-fetch-commits)
-    (define-key map (kbd "# g g") 'magit-gh-pulls-reload)
-    (define-key map (kbd "# g m") 'magit-gh-pulls-merge-pull-request)
-    (define-key map (kbd "# g c") 'magit-gh-pulls-create-pull-request)
-    (define-key map (kbd "# g o") 'magit-gh-pulls-open-in-browser)
+    (define-key map (kbd "#") 'magit-gh-pulls-popup)
     map))
 
 (defvar magit-gh-pulls-mode-lighter " Pulls")
@@ -440,11 +589,16 @@
   (or (derived-mode-p 'magit-mode)
       (error "This mode only makes sense with magit"))
   (if magit-gh-pulls-mode
-      (magit-add-section-hook
-       'magit-status-sections-hook
-       'magit-gh-pulls-insert-gh-pulls
-       'magit-insert-stashes)
-    (remove-hook 'magit-status-sections-hook 'magit-gh-pulls-insert-gh-pulls))
+      (progn
+        (magit-add-section-hook
+         'magit-status-sections-hook
+         'magit-gh-pulls-insert-gh-pulls
+         'magit-insert-stashes)
+        (magit-define-popup-action 'magit-dispatch-popup
+          ?# "Github PR" 'magit-gh-pulls-popup ?!))
+    (progn
+      (remove-hook 'magit-status-sections-hook 'magit-gh-pulls-insert-gh-pulls)
+      (magit-remove-popup-key 'magit-dispatch-popup :action ?#)))
   (when (called-interactively-p 'any)
     (magit-refresh)))
 
@@ -452,6 +606,20 @@
 (defun turn-on-magit-gh-pulls ()
   "Unconditionally turn on `magit-pulls-mode'."
   (magit-gh-pulls-mode 1))
+
+(magit-define-popup magit-gh-pulls-popup
+  "Show popup buffer featuring Github Pull Requests commands."
+  'magit-commands
+  :switches '((?c "Produce merge commit" "--no-ff")
+              (?w "Open new PR in browser" "--open-new-in-browser"))
+  :actions  '((?g "Reload" magit-gh-pulls-reload)
+              (?f "Fetch" magit-gh-pulls-fetch-commits)
+              (?d "Diff" magit-gh-pulls-diff-pull-request)
+              (?b "Make branch" magit-gh-pulls-create-branch)
+              (?m "Merge"    magit-gh-pulls-merge-pull-request)
+              (?c "Create new PR" magit-gh-pulls-create-pull-request)
+              (?o "Open in browser" magit-gh-pulls-open-in-browser))
+  :default-action 'magit-gh-pulls-reload)
 
 (provide 'magit-gh-pulls)
 ;; Local Variables:

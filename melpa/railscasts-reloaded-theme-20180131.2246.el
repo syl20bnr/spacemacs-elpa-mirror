@@ -4,7 +4,7 @@
 ;;
 ;; Author: George Thomas <iamgeorgethomas@gmail.com>
 ;; URL: https://github.com/thegeorgeous/railscasts-reloaded-theme
-;; Package-Version: 20170314.146
+;; Package-Version: 20180131.2246
 ;; Version: 1.5.0
 ;;
 ;; This program is free software: you can redistribute it and/or modify
@@ -136,10 +136,15 @@
 
   ;;;; flycheck
   `(flycheck-info
-    ((((supports :underline (:style wave)))
-      (:underline (:style wave :color ,railscasts-dark-green) :inherit unspecified))
+    ((((supports :underline (:style line)))
+      (:underline (:style line :color ,railscasts-dark-green) :inherit unspecified))
      (t (:foreground ,railscasts-dark-green :weight bold :underline t))))
   `(flycheck-fringe-info ((t (:foreground ,railscasts-dark-green :weight bold))))
+  `(flycheck-warning
+    ((((supports :underline (:style line)))
+      (:underline (:style line :color ,railscasts-orange) :inherit unspecified))
+     (t (:foreground ,railscasts-orange :weight bold :underline t))))
+
 
   ;;;; company
   `(company-tooltip ((t (:foreground ,railscasts-fg :background ,railscasts-bg-2))))
