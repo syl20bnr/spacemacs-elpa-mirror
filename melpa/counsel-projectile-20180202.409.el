@@ -4,7 +4,7 @@
 
 ;; Author: Eric Danan
 ;; URL: https://github.com/ericdanan/counsel-projectile
-;; Package-Version: 20180105.632
+;; Package-Version: 20180202.409
 ;; Keywords: project, convenience
 ;; Version: 0.2.0
 ;; Package-Requires: ((counsel "0.10.0") (projectile "0.14.0"))
@@ -1049,7 +1049,7 @@ action."
                file)
            (dolist (buffer counsel-projectile--buffers files)
              (when (setq file (buffer-file-name (get-buffer buffer)))
-               (setq files (delete (file-relative-name file root) files))))))))
+               (setq files (remove (file-relative-name file root) files))))))))
 
 (defun counsel-projectile--matcher (regexp candidates)
   "Return REGEXP-matching CANDIDATES for `counsel-projectile'.
