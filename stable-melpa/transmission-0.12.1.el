@@ -1,10 +1,10 @@
 ;;; transmission.el --- Interface to a Transmission session -*- lexical-binding: t -*-
 
-;; Copyright (C) 2014-2017  Mark Oteiza <mvoteiza@udel.edu>
+;; Copyright (C) 2014-2018  Mark Oteiza <mvoteiza@udel.edu>
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
-;; Version: 0.12
-;; Package-Version: 0.12
+;; Version: 0.12.1
+;; Package-Version: 0.12.1
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -194,6 +194,13 @@ Each function should accept no arguments, and return a string or nil."
              transmission-ffap-selection
              transmission-ffap-last-killed))
 
+(defcustom transmission-files-command-functions '(mailcap-file-default-commands)
+  "List of functions to use for guessing default applications.
+Each function should accept one argument, a list of file names,
+and return a list of strings or nil."
+  :type 'hook
+  :options '(mailcap-file-default-commands))
+
 (defcustom transmission-geoip-function nil
   "Function used to translate an IP address into a location name.
 The function should accept an IP address and return a string or nil."
@@ -278,7 +285,7 @@ caching built in or is otherwise slow."
     "downloadedEver" "corruptEver" "haveValid" "totalSize" "percentDone"
     "seedRatioLimit" "seedRatioMode" "bandwidthPriority" "downloadDir"
     "uploadLimit" "uploadLimited" "downloadLimit" "downloadLimited"
-    "honorsSessionLimits"  "rateDownload" "rateUpload"))
+    "honorsSessionLimits" "rateDownload" "rateUpload" "queuePosition"))
 
 (defconst transmission-file-symbols
   '(:files-wanted :files-unwanted :priority-high :priority-low :priority-normal)
@@ -316,6 +323,9 @@ Should accept the torrent ID as an argument, e.g. `transmission-torrent-id'.")
   "Bad RPC path.  Check `transmission-rpc-path'")
 
 (define-error 'transmission-failure "")
+
+(define-error 'transmission-misdirected
+  "Unrecognized hostname.  Check \"rpc-host-whitelist\"")
 
 (defvar transmission-timer nil
   "Timer for repeating `revert-buffer' in a visible Transmission buffer.")
@@ -367,7 +377,8 @@ update `transmission-session-id' and signal the error."
         (401 (signal 'transmission-unauthorized (list status)))
         (409 (when (search-forward (format "%s: " transmission-session-header))
                (setq transmission-session-id (read buffer))
-               (signal 'transmission-conflict (list status))))))))
+               (signal 'transmission-conflict (list status))))
+        (421 (signal 'transmission-misdirected (list transmission-host)))))))
 
 (defun transmission--auth-source-secret (user)
   "Return the secret for USER at found in `auth-sources'.
@@ -392,6 +403,7 @@ and port default to `transmission-host' and
   (with-current-buffer (process-buffer process)
     (erase-buffer))
   (let ((headers (list (cons transmission-session-header transmission-session-id)
+                       (cons "Host" transmission-host) ; CVE-2018-5702
                        (cons "Content-length" (string-bytes content)))))
     (let ((auth (transmission--auth-string)))
       (when auth (push (cons "Authorization" auth) headers)))
@@ -400,7 +412,7 @@ and port default to `transmission-host' and
       (dolist (elt headers)
         (insert (format "%s: %s\r\n" (car elt) (cdr elt))))
       (insert "\r\n" content)
-      (process-send-string process (buffer-string)))))
+      (process-send-region process (point-min) (point-max)))))
 
 (defun transmission-wait (process)
   "Wait to receive HTTP response from PROCESS.
@@ -579,9 +591,8 @@ If the array is empty or not found, return nil."
 
 (defun transmission-files-directory-base (filename)
   "Return the top-most parent directory in string FILENAME."
-  (let ((index (and (stringp filename)
-                    (string-match-p "/" filename))))
-    (when index (substring filename 0 (1+ index)))))
+  (let ((index (and (stringp filename) (string-match "/" filename))))
+    (when index (substring filename 0 (match-end 0)))))
 
 (defun transmission-every-prefix-p (prefix list)
   "Return t if PREFIX is a prefix to every string in LIST, otherwise nil."
@@ -755,8 +766,7 @@ Days are the keys of `transmission-schedules'."
   (cond
    ((or (< a b c) (< b c a) (< c a b)) 1)
    ((or (< c b a) (< a c b) (< b a c)) -1)
-   ((or (= a b) (= b c) (= c a)) 0)
-   (t (error "how u do dat: (%d, %d, %d)" a b c))))
+   ((or (= a b) (= b c) (= c a)) 0)))
 
 (defun transmission-turtle-when (beg end &optional now)
   "Calculate the time in seconds until the next schedule change.
@@ -774,7 +784,8 @@ NOW is a time, defaulting to `current-time'."
 
 (defun transmission-tracker-url-p (str)
   "Return non-nil if STR is not just a number."
-  (string-match-p "[uh]" (string-trim str)))
+  (let ((match (string-match "[^[:blank:]]" str)))
+    (when match (null (< ?0 (aref str match) ?9)))))
 
 (defun transmission-tracker-stats (id)
   "Return the \"trackerStats\" array for torrent id ID."
@@ -793,7 +804,7 @@ NOW is a time, defaulting to `current-time'."
 
 (defun transmission-btih-p (string)
   "Return non-nil if STRING is a BitTorrent info hash, otherwise nil."
-  (if (and string (string-match-p "\\`[[:xdigit:]]\\{40\\}\\'" string)) string))
+  (and string (string-match (rx bos (= 40 xdigit) eos) string) string))
 
 (defun transmission-directory-name-p (name)
   "Return non-nil if NAME ends with a directory separator character."
@@ -832,17 +843,16 @@ NOW is a time, defaulting to `current-time'."
 (defun transmission-files-do (action)
   "Apply ACTION to files in `transmission-files-mode' buffers."
   (cl-assert (memq action transmission-file-symbols))
-  (let* ((id transmission-torrent-id)
-         (prop 'tabulated-list-id)
-         (region (use-region-p))
-         (beg (and region (region-beginning)))
-         (end (and region (region-end)))
-         (indices
+  (let ((id transmission-torrent-id)
+        (prop 'tabulated-list-id)
+        indices)
+    (setq indices
           (or transmission-marked-ids
-              (if (null region)
+              (if (null (use-region-p))
                   (list (cdr (assq 'index (get-text-property (point) prop))))
-                (mapcar (lambda (id) (cdr (assq 'index id)))
-                        (transmission-text-property-all beg end prop))))))
+                (transmission-refs (transmission-text-property-all
+                                    (region-beginning) (region-end) prop)
+                                   'index))))
     (if (and id indices)
         (let ((arguments (list :ids id action indices)))
           (transmission-request-async nil "torrent-set" arguments))
@@ -978,13 +988,6 @@ Registers the change in `transmission-marked-ids'."
       (tabulated-list-put-tag ">"))
     (set-buffer-modified-p nil)))
 
-(defun transmission-tabulated-list-pred (key)
-  "Return a sorting predicate comparing values of KEY.
-KEY should be a key in an element of `tabulated-list-entries'."
-  (lambda (a b)
-    (> (cdr (assq key (car a)))
-       (cdr (assq key (car b))))))
-
 (defun transmission-move-to-file-name ()
   "Move to the beginning of the filename on the current line."
   (let* ((eol (line-end-position))
@@ -1041,16 +1044,16 @@ point or in region, otherwise a `user-error' is signalled."
                         (,marked (format "[%d marked] " (length ,marked)))
                         (,region (format "[%d in region] " (length ids)))))))))))
 
-(defun transmission-collect-hook (hook)
-  "Run HOOK and return a list of non-nil results from calling its elements."
+(defun transmission-collect-hook (hook &rest args)
+  "Run HOOK with ARGS and return a list of non-nil results from its elements."
   (let (res)
-    (run-hook-wrapped
-     hook
-     (lambda (fun)
-       (let ((val (funcall fun)))
-         (when val (cl-pushnew val res :test #'equal)))
-       nil))
-    (nreverse res)))
+    (cl-flet
+        ((collect (fun &rest args)
+           (let ((val (apply fun args)))
+             (when val (cl-pushnew val res :test #'equal))
+             nil)))
+      (apply #'run-hook-wrapped hook #'collect args)
+      (nreverse res))))
 
 (defmacro transmission-with-window-maybe (window &rest body)
   "If WINDOW is non-nil, execute BODY with WINDOW current.
@@ -1124,7 +1127,7 @@ When called with a prefix, prompt for DIRECTORY."
    "torrent-add"
    (append (if (and (file-readable-p torrent) (not (file-directory-p torrent)))
                `(:metainfo ,(with-temp-buffer
-                              (insert-file-contents torrent)
+                              (insert-file-contents-literally torrent)
                               (base64-encode-string (buffer-string))))
              (setq torrent (string-trim torrent))
              `(:filename ,(if (transmission-btih-p torrent)
@@ -1437,6 +1440,38 @@ See `transmission-read-time' for details on time input."
        (list ids) '(nil)))
   (when ids (transmission-request-async nil "torrent-verify" (list :ids ids))))
 
+(defun transmission-queue-move-top (ids)
+  "Move torrent(s)--at point, in region, or marked--to the top of the queue."
+  (transmission-interactive
+   (if (y-or-n-p (concat "Queue torrent" (when (cdr ids) "s") " first? "))
+       (list ids) '(nil)))
+  (when ids
+    (transmission-request-async nil "queue-move-top" (list :ids ids))))
+
+(defun transmission-queue-move-bottom (ids)
+  "Move torrent(s)--at point, in region, or marked--to the bottom of the queue."
+  (transmission-interactive
+   (if (y-or-n-p (concat "Queue torrent" (when (cdr ids) "s") " last? "))
+       (list ids) '(nil)))
+  (when ids
+    (transmission-request-async nil "queue-move-bottom" (list :ids ids))))
+
+(defun transmission-queue-move-up (ids)
+  "Move torrent(s)--at point, in region, or marked--up in the queue."
+  (transmission-interactive
+   (if (y-or-n-p (concat "Raise torrent" (when (cdr ids) "s") " in the queue? "))
+       (list ids) '(nil)))
+  (when ids
+    (transmission-request-async nil "queue-move-up" (list :ids ids))))
+
+(defun transmission-queue-move-down (ids)
+  "Move torrent(s)--at point, in region, or marked--down in the queue."
+  (transmission-interactive
+   (if (y-or-n-p (concat "Lower torrent" (when (cdr ids) "s") " in the queue? "))
+       (list ids) '(nil)))
+  (when ids
+    (transmission-request-async nil "queue-move-down" (list :ids ids))))
+
 (defun transmission-quit ()
   "Quit and bury the buffer."
   (interactive)
@@ -1449,17 +1484,17 @@ See `transmission-read-time' for details on time input."
         (delete-window)))))
 
 (defun transmission-files-unwant ()
-  "Mark file(s) at point or in region as unwanted."
+  "Mark file(s)--at point, in region, or marked--as unwanted."
   (interactive)
   (transmission-files-do :files-unwanted))
 
 (defun transmission-files-want ()
-  "Mark file(s) at point or in region as wanted."
+  "Mark file(s)--at point, in region, or marked--as wanted."
   (interactive)
   (transmission-files-do :files-wanted))
 
 (defun transmission-files-priority (priority)
-  "Set bandwidth PRIORITY on file(s) at point or in region."
+  "Set bandwidth PRIORITY on file(s) at point, in region, or marked."
   (interactive
    (list (completing-read "Set priority: " transmission-priority-alist nil t)))
   (transmission-files-do (intern (concat ":priority-" priority))))
@@ -1468,8 +1503,10 @@ See `transmission-read-time' for details on time input."
   "Run a command COMMAND on the FILE at point."
   (interactive
    (let* ((fap (run-hook-with-args-until-success 'file-name-at-point-functions))
-          (def (mailcap-file-default-commands
-                (list (replace-regexp-in-string "\\.part\\'" "" fap))))
+          (fn (replace-regexp-in-string "\\.part\\'" "" fap))
+          (def (let ((lists (transmission-collect-hook
+                             'transmission-files-command-functions (list fn))))
+                 (delete-dups (apply #'append lists))))
           (prompt (and fap (concat "! on " (file-name-nondirectory fap)
                                    (when def (format " (default %s)" (car def)))
                                    ": ")))
@@ -1479,6 +1516,20 @@ See `transmission-read-time' for details on time input."
   (let* ((args (nconc (split-string-and-unquote command) (list (expand-file-name file))))
          (prog (car args)))
     (apply #'start-process prog nil args)))
+
+(defun transmission-copy-file (file newname &optional ok-if-already-exists)
+  "Copy the file at point to another location.
+FILE, NEWNAME, and OK-IF-ALREADY-EXISTS are the same as in `copy-file'."
+  (interactive
+   (let* ((f (transmission-files-file-at-point))
+          (prompt (format "Copy %s to: " (file-name-nondirectory f)))
+          (def (when (bound-and-true-p dired-dwim-target)
+                 (buffer-local-value 'default-directory
+                                     (window-buffer (next-window)))))
+          (new (read-file-name prompt nil def)))
+     (list f new 0)))
+  (copy-file file newname ok-if-already-exists t t t)
+  (message "Copied %s" (file-name-nondirectory file)))
 
 (defun transmission-find-file ()
   "Visit the file at point with `find-file-read-only'."
@@ -1509,6 +1560,8 @@ See `transmission-read-time' for details on time input."
   (browse-url-of-file (expand-file-name (transmission-files-file-at-point))))
 
 (defun transmission-copy-filename-as-kill (&optional arg)
+  "Copy name of file at point into the kill ring.
+With a prefix argument, use the absolute file name."
   (interactive "P")
   (let* ((fn (transmission-files-file-at-point))
          (str (if arg fn (file-name-nondirectory fn))))
@@ -1599,31 +1652,33 @@ Otherwise, with a prefix arg, mark files on the next ARG lines."
 (defvar transmission-turtle-poll-callback
   (let (timer enabled next lighter)
     (lambda (response)
-       (let-alist response
-         (setq enabled (eq t .alt-speed-enabled))
-         (setq next (transmission-turtle-when .alt-speed-time-begin
-                                              .alt-speed-time-end))
-         (set-default 'transmission-turtle-mode enabled)
-         (setq lighter
-               (if enabled
-                   (concat transmission-turtle-lighter
-                           (format ":%d/%d" .alt-speed-down .alt-speed-up))
-                 nil))
-         (transmission-register-turtle-mode lighter)
-         (when timer (cancel-timer timer))
-         (setq timer (run-at-time next nil #'transmission-turtle-poll)))))
+      (let-alist response
+        (setq enabled (eq t .alt-speed-enabled))
+        (setq next (transmission-turtle-when .alt-speed-time-begin
+                                             .alt-speed-time-end))
+        (set-default 'transmission-turtle-mode enabled)
+        (setq lighter
+              (if enabled
+                  (concat transmission-turtle-lighter
+                          (format ":%d/%d" .alt-speed-down .alt-speed-up))
+                nil))
+        (transmission-register-turtle-mode lighter)
+        (when timer (cancel-timer timer))
+        (setq timer (run-at-time next nil #'transmission-turtle-poll)))))
   "Closure checking turtle mode status and marshaling a timer.")
 
 (defun transmission-turtle-poll (&rest _args)
+  "Initiate `transmission-turtle-poll-callback' timer function."
   (transmission-request-async
    transmission-turtle-poll-callback "session-get"
    '(:fields ("alt-speed-enabled" "alt-speed-down" "alt-speed-up"))))
 
 (defvar transmission-turtle-mode-lighter nil
-  "Lighter for `transmission-turtle-mode'. ")
+  "Lighter for `transmission-turtle-mode'.")
 
 (define-minor-mode transmission-turtle-mode
-  "Toggle alternative speed limits (turtle mode)."
+  "Toggle alternative speed limits (turtle mode).
+Indicates on the mode-line the down/up speed limits in kB/s."
   :group 'transmission
   :global t
   :lighter transmission-turtle-mode-lighter
@@ -1690,8 +1745,8 @@ PIECES and COUNT are the same as in `transmission-format-pieces'."
   "Format piece data into a string.
 PIECES and COUNT are the same as in `transmission-format-pieces'.
 SIZE is the file size in bytes of a single piece."
-  (let ((have (apply #'+ (mapcar #'transmission-hamming-weight
-                                 (base64-decode-string pieces)))))
+  (let ((have (cl-loop for b across (base64-decode-string pieces)
+                       sum (transmission-hamming-weight b))))
     (concat
      "Piece count: " (transmission-group-digits have)
      " / " (transmission-group-digits count)
@@ -1851,6 +1906,7 @@ Each form in BODY is a column descriptor."
         (concat "Percent done: " (format fmt percent) "%"))
       (format "Bandwidth priority: %s"
               (car (rassq .bandwidthPriority transmission-priority-alist)))
+      (format "Queue position: %d" .queuePosition)
       (concat "Speed: "
               (transmission-format-limits
                .honorsSessionLimits .rateDownload .rateUpload
@@ -2022,6 +2078,7 @@ for explanation of the peer flags."
 
 (defvar transmission-info-mode-map
   (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "RET") 'transmission-files)
     (define-key map "p" 'previous-line)
     (define-key map "n" 'next-line)
     (define-key map "a" 'transmission-trackers-add)
@@ -2052,6 +2109,11 @@ for explanation of the peer flags."
      ["Set Torrent Download Limit" transmission-set-torrent-download]
      ["Set Torrent Upload Limit" transmission-set-torrent-upload]
      ["Set Torrent Seed Ratio Limit" transmission-set-torrent-ratio])
+    ("Set Torrent Queue Position"
+     ["Move To Top" transmission-queue-move-top]
+     ["Move To Bottom" transmission-queue-move-bottom]
+     ["Move Up" transmission-queue-move-up]
+     ["Move Down" transmission-queue-move-down])
     ["Verify Torrent" transmission-verify]
     "--"
     ["View Torrent Files" transmission-files]
@@ -2088,6 +2150,7 @@ for explanation of the peer flags."
     (define-key map "&" 'transmission-files-command)
     (define-key map "X" 'transmission-files-command)
     (define-key map "W" 'transmission-browse-url-of-file)
+    (define-key map "C" 'transmission-copy-file)
     (define-key map "e" 'transmission-peers)
     (define-key map "i" 'transmission-info)
     (define-key map "m" 'transmission-toggle-mark)
@@ -2204,6 +2267,11 @@ for explanation of the peer flags."
     ["Delete Torrent" transmission-delete
      :help "Delete torrent contents from disk."]
     ["Reannounce Torrent" transmission-reannounce]
+    ("Set Torrent Queue Position"
+     ["Move To Top" transmission-queue-move-top]
+     ["Move To Bottom" transmission-queue-move-bottom]
+     ["Move Up" transmission-queue-move-up]
+     ["Move Down" transmission-queue-move-down])
     ["Verify Torrent" transmission-verify]
     "--"
     ["Toggle Mark" transmission-toggle-mark]

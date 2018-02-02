@@ -6,7 +6,7 @@
 ;; Maintainer: Mark Meyer <mark@ofosos.org>
 
 ;; URL: http://github.com/ofosos/org-epub
-;; Package-Version: 0.2.4
+;; Package-Version: 0.3
 ;; Keywords: hypermedia
 
 ;; Version: 0.1.0
@@ -59,7 +59,9 @@
     
   :translate-alist
   '((template . org-epub-template)
-    (link . org-epub-link))
+    (link . org-epub-link)
+    (latex-environment . org-epub--latex-environment)
+    (latex-fragment . org-epub--latex-fragment))
   :menu-entry
   '(?E "Export to Epub"
        ((?e "As Epub file" org-epub-export-to-epub)
@@ -141,6 +143,15 @@
 "
   "Default style declarations for org epub")
 
+(defvar org-epub-zip-command "zip"
+  "Command to call to create zip files.")
+
+(defvar org-epub-zip-no-compress (list "-Xu0")
+  "Zip command option list to pass for no compression.")
+
+(defvar org-epub-zip-compress (list "-Xu9")
+  "Zip command option list to pass for compression.")
+
 (defvar org-epub-metadata nil
   "EPUB export metadata")
 
@@ -197,6 +208,55 @@ If it needs to be copied return a pair (sourcefile . targetfile)."
 	(cl-return-from org-epub-manifest-first el)))))
 
 ;; core
+
+;;; Latex Environment - stolen from ox-html
+
+(defun org-epub--latex-environment (latex-environment _contents info)
+  "Transcode a LATEX-ENVIRONMENT element from Org to HTML.
+CONTENTS is nil.  INFO is a plist holding contextual information."
+  (let ((processing-type (plist-get info :with-latex))
+	(latex-frag (org-remove-indentation
+		     (org-element-property :value latex-environment)))
+	(attributes (org-export-read-attribute :attr_html latex-environment)))
+    (cond
+     ((assq processing-type org-preview-latex-process-alist)
+      (let ((formula-link
+	     (org-html-format-latex latex-frag processing-type info)))
+	(when (and formula-link (string-match "file:\\([^]]*\\)" formula-link))
+	  ;; Do not provide a caption or a name to be consistent with
+	  ;; `mathjax' handling.
+	  (org-html--wrap-image
+	   (org-html--format-image
+	    (let* ((path (match-string 1 formula-link))
+		   (ref (org-export-get-reference latex-environment info))
+		   (mime (file-name-extension path))
+		   (name (concat "img-" ref "." mime)))
+	      (message "Formatting Latex environment: %s" name)
+	      (push (org-epub-manifest-entry ref name 'img (concat "image/" mime) path) org-epub-manifest)
+	      name) attributes info) info))))
+     (t latex-frag))))
+
+;;;; Latex Fragment - stolen from ox-html
+
+(defun org-epub--latex-fragment (latex-fragment _contents info)
+  "Transcode a LATEX-FRAGMENT object from Org to HTML.
+CONTENTS is nil.  INFO is a plist holding contextual information."
+  (let ((latex-frag (org-element-property :value latex-fragment))
+	(processing-type (plist-get info :with-latex)))
+    (cond
+     ((assq processing-type org-preview-latex-process-alist)
+      (let ((formula-link
+	     (org-html-format-latex latex-frag processing-type info)))
+	(when (and formula-link (string-match "file:\\([^]]*\\)" formula-link))
+	  (let* ((path (match-string 1 formula-link))
+		 (ref (org-export-get-reference latex-fragment info))
+		 (mime (file-name-extension path))
+		 (name (concat "img-" ref "." mime)))
+	    (message "Formatting Latex fragement: %s" name)
+	    (push (org-epub-manifest-entry ref name 'img (concat "image/" mime) path) org-epub-manifest)
+	    (org-html--format-image name nil info)))))
+     (t latex-frag))))
+
 
 (defun org-epub-link (link desc info)
   "Return the HTML required for a link descriped by LINK, DESC, and INFO.
@@ -344,11 +404,11 @@ holding export options."
 		   (push men org-epub-manifest))
 		 (let ((men (org-epub-manifest-entry "cover-image" cover-name 'coverimg (concat "image/" cover-type) cover-path)))
 		   (push men org-epub-manifest)))))
+           (unless (file-directory-p (expand-file-name "META-INF" org-epub-zip-dir))
+             (make-directory (file-name-as-directory (expand-file-name "META-INF" org-epub-zip-dir))))
 	   (with-current-buffer (find-file (expand-file-name "META-INF/container.xml" org-epub-zip-dir))
 	     (erase-buffer)
 	     (insert (org-epub-template-container))
-	     (unless (file-exists-p (file-name-as-directory (expand-file-name "META-INF" org-epub-zip-dir)))
-	       (make-directory (file-name-as-directory (expand-file-name "META-INF" org-epub-zip-dir))))
 	     (save-buffer 0)
 	     (kill-buffer))
 	   (with-current-buffer (find-file (concat org-epub-zip-dir "mimetype"))
@@ -579,14 +639,15 @@ their proper place."
 	files)
   (let ((default-directory target-dir)
 	(meta-files '("META-INF/container.xml" "content.opf" "toc.ncx")))
-    (call-process "zip" nil '(:file "zip.log") nil
-		  "-Xu0"
-		  epub-file
-		  "mimetype")
-    (apply 'call-process "zip" nil '(:file "zip.log") nil
-	   "-Xu9"
-	   epub-file
-	   (append meta-files (mapcar #'(lambda (el) (plist-get el :filename)) files))))
+    (apply 'call-process
+	   (append (list org-epub-zip-command nil '(:file "zip.log") nil)
+		   org-epub-zip-no-compress
+		   (list epub-file
+			 "mimetype")))
+    (apply 'call-process org-epub-zip-command nil '(:file "zip.log") nil
+	   (append org-epub-zip-compress
+		   (list epub-file)
+		   (append meta-files (mapcar #'(lambda (el) (plist-get el :filename)) files)))))
   (copy-file (concat target-dir epub-file) default-directory t))
 
 (defun org-epub-generate-toc-single (headlines filename)
