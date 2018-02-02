@@ -5,7 +5,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/lcr
-;; Package-Version: 20180130.1354
+;; Package-Version: 20180202.112
 ;; Created: January 2018
 ;; Version: 0.9
 ;; Keywords: tools
@@ -311,12 +311,11 @@ comes back."
 (defmacro lcr--with-context (ctx &rest body)
   "Temporarily switch to CTX (if possible) and run BODY."
   (declare (indent 2))
-  `(if (marker-buffer ,ctx)
-       (with-current-buffer (marker-buffer ,ctx)
-         (save-excursion
-           (goto-char ,ctx)
-           ,@body))
-     ,@body))
+  `(save-current-buffer
+     (when (marker-buffer ,ctx) (set-buffer (marker-buffer ,ctx)))
+     (save-excursion
+       (goto-char ,ctx)
+       ,@body)))
 
 (defvar lcr-context-switch-hook nil
 "Hook to run when a context switch (lightweight yield) occurs.")

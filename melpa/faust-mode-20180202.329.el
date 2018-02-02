@@ -6,8 +6,9 @@
 ;; Author: Juan A. Romero <rukano@gmail.com>
 ;; Author: Yassin Philip <xaccrocheur@gmail.com>
 ;; Maintainer: Yassin Philip <xaccrocheur@gmail.com>
+;; Maintainer: Juan A. Romero <rukano@gmail.com>
 ;; Keywords: languages, faust
-;; Package-Version: 20171122.414
+;; Package-Version: 20180202.329
 ;; Version: 0.2
 ;; URL: https://github.com/rukano/emacs-faust-mode
 ;; License: GPLv3
@@ -62,7 +63,13 @@
 
 ;;; Code:
 
-(require 'smie)
+
+
+;; disabled for now until we have a Faust grammar for SMIE - agraef
+;; (require 'smie)
+
+(defvar ac-sources)
+
 
 (defconst faust-keywords-statements
   '("process" "with" "case" "seq" "par" "sum" "prod" "include" "import" "component" "library" "environment" "declare" "define" "undef" "error" "pragma" "ident" "if" "def" "else" "elif" "endif" "line" "warning"))
@@ -160,6 +167,11 @@
    faust-keywords-lib-vaeffect)
   "All the Faust library function keywords.")
 
+
+(defvar faust-mode-ac-source
+  '((candidates . faust-keywords-lib)))
+
+
 (defvar faust-regexp-keywords-function (regexp-opt faust-keywords-functions 'words))
 (defvar faust-regexp-keywords-statement (regexp-opt faust-keywords-statements 'words))
 (defvar faust-regexp-keywords-ui (regexp-opt faust-keywords-ui 'words))
@@ -204,7 +216,15 @@ well as indentation rules."
    comment-end ""
    font-lock-defaults '(faust-mode-font-lock-keywords))
 
-  (smie-setup nil #'ignore)
+  (if (boundp 'ac-sources)
+      (progn
+        (add-to-list 'ac-modes 'faust-mode)
+        (add-to-list 'ac-sources 'faust-mode-ac-source))
+    (message "You really should install and use auto-complete"))
+
+  ;; disabled for now until we have a Faust grammar for SMIE - agraef
+  ;; (smie-setup nil #'ignore)
+
 
   (set-syntax-table faust-mode-syntax-table))
 
