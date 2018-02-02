@@ -4,7 +4,7 @@
 
 ;; Author: Alex Murray <murray.alex@gmail.com>
 ;; URL: https://github.com/alexmurray/ivy-xref
-;; Package-Version: 20171229.252
+;; Package-Version: 20180201.1919
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "25.1") (ivy "0.10.0"))
 
@@ -51,7 +51,7 @@
                                     (concat ":" (int-to-string line) ": "))
                                   summary))
           (push `(,candidate . ,location) collection))))
-    collection))
+    (nreverse collection)))
 
 ;;;###autoload
 (defun ivy-xref-show-xrefs (xrefs alist)
