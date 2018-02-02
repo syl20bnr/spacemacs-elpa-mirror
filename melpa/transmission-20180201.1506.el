@@ -3,8 +3,8 @@
 ;; Copyright (C) 2014-2018  Mark Oteiza <mvoteiza@udel.edu>
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
-;; Version: 0.12
-;; Package-Version: 20180116.854
+;; Version: 0.12.1
+;; Package-Version: 20180201.1506
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -845,10 +845,10 @@ NOW is a time, defaulting to `current-time'."
   (cl-assert (memq action transmission-file-symbols))
   (let ((id transmission-torrent-id)
         (prop 'tabulated-list-id)
-        region marked indices)
+        indices)
     (setq indices
-          (or (setq marked transmission-marked-ids)
-              (if (null (setq region (use-region-p)))
+          (or transmission-marked-ids
+              (if (null (use-region-p))
                   (list (cdr (assq 'index (get-text-property (point) prop))))
                 (transmission-refs (transmission-text-property-all
                                     (region-beginning) (region-end) prop)
