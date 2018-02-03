@@ -5,7 +5,7 @@
 ;; Author: Gonçalo Santos (aka. weirdNox@GitHub)
 ;; Homepage: https://github.com/weirdNox/org-noter
 ;; Keywords: lisp pdf interleave annotate external sync notes documents org-mode
-;; Package-Version: 20180201.1257
+;; Package-Version: 20180202.1821
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.6") (org "9.0"))
 ;; Version: 1.0
 
@@ -137,12 +137,17 @@ is member of `org-noter-notes-window-behavior' (which see)."
 ;; --------------------------------------------------------------------------------
 ;; NOTE(nox): Utility functions
 (defun org-noter--create-session (ast document-property-value notes-file-path)
-  (let* ((display-name (org-element-property :raw-value ast))
-         (document (find-file-noselect document-property-value))
+  (let* ((raw-value-not-empty (> (length (org-element-property :raw-value ast)) 0))
+         (display-name (if raw-value-not-empty
+                           (org-element-property :raw-value ast)
+                         (file-name-nondirectory document-property-value)))
 
+         (document (find-file-noselect document-property-value))
          (document-buffer
           (make-indirect-buffer
-           document (generate-new-buffer-name display-name)))
+           document (generate-new-buffer-name (concat
+                                               (unless raw-value-not-empty "Org-noter: ")
+                                               display-name))))
 
          (notes-buffer
           (make-indirect-buffer
@@ -1156,7 +1161,6 @@ when ARG < 0."
       (unless (and expanded-document-path
                    (not (file-directory-p expanded-document-path))
                    (file-readable-p expanded-document-path))
-
         (setq doc-file-path (expand-file-name
                              (read-file-name
                               "Invalid or no document property found. Please specify a document path: "
