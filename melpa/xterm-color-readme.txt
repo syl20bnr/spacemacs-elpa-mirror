@@ -4,7 +4,7 @@ Translates ANSI control sequences into text properties.
 
 * XTERM 256 colors
 
-* Works with compilation-mode (experimental)
+* Works with compilation-mode
 
 * Works with eshell
 

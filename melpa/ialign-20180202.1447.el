@@ -3,9 +3,9 @@
 ;;
 ;; Author: Michał Kondraciuk <k.michal@zoho.com>
 ;; URL: https://github.com/mkcms/interactive-align
-;; Package-Version: 20180120.304
+;; Package-Version: 20180202.1447
 ;; Package-Requires: ((emacs "24.4"))
-;; Version: 0.4.0
+;; Version: 0.4.1
 ;; Keywords: tools, editing, align, interactive
 
 ;; Copyright (C) 2017 Michał Kondraciuk
@@ -134,52 +134,9 @@ The buffer is narrowed to region that is to be aligned."
 	   (set-marker ialign--start (point-min))
 	   (set-marker ialign--end (point-max)))))))
 
-(defun ialign--active-p ()
+(defsubst ialign--active-p ()
   "Return non-nil if currently executing `ialign'."
   ialign--buffer)
-
-(defun ialign-toggle-case-fold ()
-  "Toggle case-fold searching on or off."
-  (interactive)
-  (when (ialign--active-p)
-    (setq ialign--case-fold-search (not ialign--case-fold-search))
-    (ialign-update 'quietly)
-    (minibuffer-message
-     (if ialign--case-fold-search "case insensitive" "case sensitive"))))
-
-(defun ialign-toggle-repeat ()
-  "Toggle 'repeat' argument passed to `align-regexp'.
-When the repeat argument is non-nil, the alignment is repeated throughout
-the line.
-Does nothing when currently not aligning with `ialign'."
-  (interactive)
-  (when (ialign--active-p)
-    (setq ialign--repeat (not ialign--repeat))
-    (ialign-update 'quietly)))
-
-(defun ialign-toggle-tabs ()
-  "Toggle tab usage during alignment.
-After executing this command, the region is always aligned with either tabs
-or spaces, regardless of value of the variable `ialign-align-with-tabs'.
-Does nothing when currently not aligning with `ialign'."
-  (interactive)
-  (when (ialign--active-p)
-    (setq ialign--tabs (not ialign--tabs))
-    (ialign-update 'quietly)))
-
-(defun ialign-increment-group ()
-  "Increment the parenthesis group argument passed to `align-regexp'.
-Use `ialign-set-group' to set the group to a specific number.
-Does nothing when currently not aligning with `ialign'."
-  (interactive)
-  (ialign-set-group (1+ ialign--group)))
-
-(defun ialign-decrement-group ()
-  "Decrement the parenthesis group argument passed to `align-regexp'.
-Use `ialign-set-group' to set the group to a specific number.
-Does nothing when currently not aligning with `ialign'."
-  (interactive)
-  (ialign-set-group (1- ialign--group)))
 
 (defun ialign--read-number (prompt)
   "Read number with PROMPT in a new minibuffer."
@@ -187,67 +144,7 @@ Does nothing when currently not aligning with `ialign'."
 	(ialign--recursive-minibuffer t))
     (read-number prompt)))
 
-(defun ialign-set-group (group)
-  "Set the parenthesis group argument for the `align-regexp' command to GROUP.
-Interactively, reads a number from minibuffer, unless this function was called
-with a numeric prefix argument, in which case the prefix argument is used as
-GROUP.
-Does nothing when currently not aligning with `ialign'."
-  (interactive (list
-		(if current-prefix-arg
-		    (prefix-numeric-value current-prefix-arg)
-		  (ialign--read-number
-		   "Parenthesis group to modify (justify if negative): "))))
-  (or group (setq group 1))
-  (when (ialign--active-p)
-    (setq ialign--group group)
-    (ialign-update 'quietly)))
-
-(defun ialign-increment-spacing ()
-  "Increment the amount of spacing passed to `align-regexp' command.
-Use `ialign-set-spacing' to set the spacing to specific number.
-Does nothing when currently not aligning with `ialign'."
-  (interactive)
-  (when (ialign--active-p)
-    (ialign-set-spacing (1+ ialign--spacing))))
-
-(defun ialign-decrement-spacing ()
-  "Decrement the amount of spacing passed to `align-regexp' command.
-Use `ialign-set-spacing' to set the spacing to specific number.
-Does nothing when currently not aligning with `ialign'."
-  (interactive)
-  (when (ialign--active-p)
-    (ialign-set-spacing (1- ialign--spacing))))
-
-(defun ialign-set-spacing (spacing)
-  "Set the spacing parameter passed to `align-regexp' command to SPACING.
-Interactively, reads a number from minibuffer, unless this function was called
-with a numeric prefix argument, in which case the prefix argument is used as
-SPACING.
-Does nothing when currently not aligning with `ialign'."
-  (interactive (list
-		(if current-prefix-arg
-		    (prefix-numeric-value current-prefix-arg)
-		  (ialign--read-number "Amount of spacing: "))))
-  (or spacing (setq spacing 1))
-  (when (ialign--active-p)
-    (setq ialign--spacing spacing)
-    (ialign-update 'quietly)))
-
-(defun ialign-commit ()
-  "Align the region using the current regexp and commit change in the buffer.
-The region is aligned using the current regexp only if it's valid.
-Next alignments will use the newly aligned region.
-Does nothing when currently not aligning with `ialign'."
-  (interactive)
-  (when (ialign--active-p)
-    (let ((ialign-auto-update t))
-      (ialign-update))
-    (ialign--with-region-narrowed
-     (setq ialign--region-contents (buffer-substring (point-min) (point-max))))
-    (minibuffer-message "Commited regexp %s" ialign--regexp)))
-
-(defun ialign--make-marker (location)
+(defsubst ialign--make-marker (location)
   "Make marker at LOCATION."
   (let ((marker (make-marker)))
     (set-marker marker location)
@@ -350,12 +247,125 @@ This function is used to undo changes made by command `ialign'."
       (remove-list-of-text-properties
        (minibuffer-prompt-end) (point-max) '(ialign)))))
 
-(defun ialign--regexp-with-state ()
+(defsubst ialign--regexp-with-state ()
   "Return `ialign--regexp' with properties that store current state.
 These properties are restored with `ialign--restore-arguments'"
   (propertize ialign--regexp
 	      'ialign
 	      (list ialign--group ialign--spacing ialign--repeat)))
+
+(defun ialign--after-change (beg end len)
+  "Function called after change.
+Updates the minibuffer prompt and maybe realigns the region."
+  (when (and (ialign--active-p) (minibufferp)
+	     (not ialign--recursive-minibuffer))
+    (ignore-errors
+      (ialign--restore-arguments)
+      (setq ialign--error nil)
+      (ialign-update))))
+
+(defun ialign-toggle-case-fold ()
+  "Toggle case-fold searching on or off."
+  (interactive)
+  (when (ialign--active-p)
+    (setq ialign--case-fold-search (not ialign--case-fold-search))
+    (ialign-update 'quietly)
+    (minibuffer-message
+     (if ialign--case-fold-search "case insensitive" "case sensitive"))))
+
+(defun ialign-toggle-repeat ()
+  "Toggle 'repeat' argument passed to `align-regexp'.
+When the repeat argument is non-nil, the alignment is repeated throughout
+the line.
+Does nothing when currently not aligning with `ialign'."
+  (interactive)
+  (when (ialign--active-p)
+    (setq ialign--repeat (not ialign--repeat))
+    (ialign-update 'quietly)))
+
+(defun ialign-toggle-tabs ()
+  "Toggle tab usage during alignment.
+After executing this command, the region is always aligned with either tabs
+or spaces, regardless of value of the variable `ialign-align-with-tabs'.
+Does nothing when currently not aligning with `ialign'."
+  (interactive)
+  (when (ialign--active-p)
+    (setq ialign--tabs (not ialign--tabs))
+    (ialign-update 'quietly)))
+
+(defun ialign-increment-group ()
+  "Increment the parenthesis group argument passed to `align-regexp'.
+Use `ialign-set-group' to set the group to a specific number.
+Does nothing when currently not aligning with `ialign'."
+  (interactive)
+  (ialign-set-group (1+ ialign--group)))
+
+(defun ialign-decrement-group ()
+  "Decrement the parenthesis group argument passed to `align-regexp'.
+Use `ialign-set-group' to set the group to a specific number.
+Does nothing when currently not aligning with `ialign'."
+  (interactive)
+  (ialign-set-group (1- ialign--group)))
+
+(defun ialign-set-group (group)
+  "Set the parenthesis group argument for the `align-regexp' command to GROUP.
+Interactively, reads a number from minibuffer, unless this function was called
+with a numeric prefix argument, in which case the prefix argument is used as
+GROUP.
+Does nothing when currently not aligning with `ialign'."
+  (interactive (list
+		(if current-prefix-arg
+		    (prefix-numeric-value current-prefix-arg)
+		  (ialign--read-number
+		   "Parenthesis group to modify (justify if negative): "))))
+  (or group (setq group 1))
+  (when (ialign--active-p)
+    (setq ialign--group group)
+    (ialign-update 'quietly)))
+
+(defun ialign-increment-spacing ()
+  "Increment the amount of spacing passed to `align-regexp' command.
+Use `ialign-set-spacing' to set the spacing to specific number.
+Does nothing when currently not aligning with `ialign'."
+  (interactive)
+  (when (ialign--active-p)
+    (ialign-set-spacing (1+ ialign--spacing))))
+
+(defun ialign-decrement-spacing ()
+  "Decrement the amount of spacing passed to `align-regexp' command.
+Use `ialign-set-spacing' to set the spacing to specific number.
+Does nothing when currently not aligning with `ialign'."
+  (interactive)
+  (when (ialign--active-p)
+    (ialign-set-spacing (1- ialign--spacing))))
+
+(defun ialign-set-spacing (spacing)
+  "Set the spacing parameter passed to `align-regexp' command to SPACING.
+Interactively, reads a number from minibuffer, unless this function was called
+with a numeric prefix argument, in which case the prefix argument is used as
+SPACING.
+Does nothing when currently not aligning with `ialign'."
+  (interactive (list
+		(if current-prefix-arg
+		    (prefix-numeric-value current-prefix-arg)
+		  (ialign--read-number "Amount of spacing: "))))
+  (or spacing (setq spacing 1))
+  (when (ialign--active-p)
+    (setq ialign--spacing spacing)
+    (ialign-update 'quietly)))
+
+(defun ialign-commit ()
+  "Align the region using the current regexp and commit change in the buffer.
+The region is aligned using the current regexp only if it's valid.
+Next alignments will use the newly aligned region.
+Does nothing when currently not aligning with `ialign'."
+  (interactive)
+  (when (ialign--active-p)
+    (let ((ialign-auto-update t))
+      (ialign-update))
+    (ialign--with-region-narrowed
+     (setq ialign--region-contents (buffer-substring (point-min) (point-max))))
+    (minibuffer-message "Commited regexp %s" ialign--regexp)))
 
 (defun ialign-update (&optional no-error)
   "Align the region with regexp in the minibuffer for preview.
@@ -382,16 +392,6 @@ Use `ialign-commit' to actually align the region in the buffer."
 	 (ialign--update-minibuffer-prompt)
 	 (unless no-error
 	   (signal (car err) (cdr err))))))))
-
-(defun ialign--after-change (beg end len)
-  "Function called after change.
-Updates the minibuffer prompt and maybe realigns the region."
-  (when (and (ialign--active-p) (minibufferp)
-	     (not ialign--recursive-minibuffer))
-    (ignore-errors
-      (ialign--restore-arguments)
-      (setq ialign--error nil)
-      (ialign-update))))
 
 (defun ialign-show-help ()
   "Show help to the user."
@@ -455,7 +455,7 @@ The keymap used in minibuffer is `ialign-minibuffer-keymap':
 	   (ialign--region-contents region-contents)
 	   (ialign--repeat repeat)
 	   (ialign--group group)
-	   (ialign--spacing ialign-default-spacing)
+	   (ialign--spacing spacing)
 	   (ialign--tabs ialign-align-with-tabs)
 	   (ialign--regexp nil)
 	   (ialign--case-fold-search case-fold-search)
