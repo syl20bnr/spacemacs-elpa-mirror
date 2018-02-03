@@ -6,7 +6,7 @@
 ;; Keywords: extensions, multimedia, tools
 ;; Homepage: https://github.com/vermiculus/ghub-plus
 ;; Package-Requires: ((emacs "25") (ghub "1.2") (apiwrap "0.4"))
-;; Package-Version: 20180121.1435
+;; Package-Version: 20180203.1017
 ;; Package-X-Original-Version: 0.2.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -120,6 +120,7 @@ DATA is an alist."
 
   (apiwrap-new-backend "GitHub" "ghubp"
     '((repo . "REPO is a repository alist of the form returned by `ghubp-get-user-repos'.")
+      (branch . "BRANCH is a branch object of the form returned by `ghubp-get-repos-owner-repo-branches-branch'.")
       (org  . "ORG is an organization alist of the form returned by `ghubp-get-user-orgs'.")
       (thread . "THREAD is a thread object of the form returned by `ghubp-get-repos-owner-repo-comments'.")
       (issue . "ISSUE is an issue object of the form returned by `ghubp-get-issues'.")
@@ -747,6 +748,16 @@ organization."
   "Get a specific repository object."
   "repos/#get"
   (repo) "/repos/:repo.owner.login/:repo.name"
+  :condition-case
+  ((ghub-404 nil)))
+
+
+;;; Branches:
+
+(defapiget-ghubp "/repos/:owner/:repo/branches/:branch"
+  "Get branch"
+  "repos/branches/#get-branch"
+  (repo branch) "/repos/:repo.owner.login/:repo.name/branches/:branch.name"
   :condition-case
   ((ghub-404 nil)))
 

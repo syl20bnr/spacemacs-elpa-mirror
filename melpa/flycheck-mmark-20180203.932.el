@@ -1,10 +1,10 @@
-;;; flycheck-mmark.el --- Flycheck checker for MMark markdown processor -*- lexical-binding: t; -*-
+;;; flycheck-mmark.el --- Flycheck checker for the MMark markdown processor -*- lexical-binding: t; -*-
 ;;
 ;; Copyright © 2018 Mark Karpov <markkarpov92@gmail.com>
 ;;
 ;; Author: Mark Karpov <markkarpov92@gmail.com>
 ;; URL: https://github.com/mmark-md/flycheck-mmark
-;; Package-Version: 20180118.328
+;; Package-Version: 20180203.932
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.4") (flycheck "0.29"))
 ;; Keywords: convenience, text
@@ -26,7 +26,8 @@
 
 ;;; Commentary:
 
-;; This package provides a Flycheck checker for MMark markdown processor.
+;; This package provides a Flycheck checker for the MMark markdown
+;; processor.
 
 ;;; Code:
 
@@ -34,7 +35,7 @@
 (require 'json)
 
 (defgroup flycheck-mmark nil
-  "Flycheck checker for MMark markdown processor."
+  "Flycheck checker for the MMark markdown processor."
   :group  'flycheck
   :tag    "Flycheck MMark"
   :prefix "flycheck-mmark-"
@@ -60,7 +61,7 @@ checked."
        (json-read-from-string output)))))
 
 (flycheck-define-checker mmark
-  "A syntax checker for MMark markdown processor using ‘mmark’ CLI tool.
+  "A syntax checker for the MMark markdown processor using ‘mmark’ CLI tool.
 
 See: https://github.com/mmark-md/mmark-cli"
   :command        ("mmark" "--json" "--ofile" null-device)

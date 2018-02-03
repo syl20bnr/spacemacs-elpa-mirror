@@ -6,7 +6,7 @@
 ;; Keywords: tools, maint, convenience
 ;; Homepage: https://github.com/vermiculus/apiwrap.el
 ;; Package-Requires: ((emacs "25"))
-;; Package-Version: 20180125.612
+;; Package-Version: 20180201.637
 ;; Package-X-Original-Version: 0.4
 
 ;; This file is not part of GNU Emacs.
@@ -34,6 +34,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'apropos)
 
 (defvar apiwrap-backends nil
   "An alist of (BACKEND-NAME . BACKEND-PREFIX) for `apropos-api-endpoint'.
