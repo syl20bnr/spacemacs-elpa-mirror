@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Created: 20081202
 ;; Package-Requires: ((emacs "24.4"))
-;; Package-Version: 20180129.124
+;; Package-Version: 20180202.958
 ;; Homepage: https://github.com/emacscollective/elx
 ;; Keywords: docs, libraries, packages
 
@@ -533,7 +533,7 @@ An effort is made to normalize the returned value."
                                    elx-permission-statement-alist)))))
         (pcase (list license package-name)
           (`("GPL-3.0" ,_)          "GPL-3")
-          (`("GPL-2" "akh-mode")    "GPL-3")        ; "either GPL version 2 or 3"
+          (`("GPL-2" "ahk-mode")    "GPL-3")        ; "either GPL version 2 or 3"
           (`("GPL-2" "rhtml-mode")  "LGPL-2.1")     ; "MPL 1.1/GPL 2.0/LGPL 2.1"
           (`(nil "clang-format")    "UIUC")         ; http://llvm.org/svn/llvm-project/cfe/trunk/LICENSE.TXT
           (`(nil "cython-mode")     "Apache-2.0")   ; https://github.com/cython/cython/blob/master/LICENSE.txt
