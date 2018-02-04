@@ -4,7 +4,7 @@
 
 ;; Author: Youngjoo Lee <youngker@gmail.com>
 ;; Version: 0.5.0
-;; Package-Version: 20180127.2237
+;; Package-Version: 20180203.2033
 ;; Keywords: tools
 ;; Package-Requires: ((s "1.10.0") (dash "2.12.0") (helm "1.7.7") (cl-lib "0.5"))
 
@@ -339,25 +339,15 @@
 
 (defun helm-codesearch-show-candidate-number (&optional name)
   "Used to display candidate number in mode-line, not used NAME."
-  (let ((source (cdr (assoc helm-codesearch-process helm-async-processes))))
+  (let* ((source (cdr (assoc helm-codesearch-process helm-async-processes)))
+         (match-num (cdr (assoc 'item-count source))))
     (propertize
-     (format "[%s %s %s]"
-             (or (cdr (assoc 'item-count source)) 0)
-             (or helm-codesearch--file-pattern "")
-             (if helm-codesearch-ignore-case "ignorecase" ""))
+     (format "[%s%s%s]"
+             (if (and match-num (> match-num 0)) match-num "No match found")
+             (if helm-codesearch-ignore-case "(?i)"
+               (if helm-codesearch--file-pattern " " ""))
+             (or helm-codesearch--file-pattern ""))
      'face 'helm-candidate-number)))
-
-(defun helm-codesearch-set-process-sentinel (proc)
-  "Set process sentinel to PROC."
-  (prog1 proc
-    (set-process-sentinel
-     proc
-     (lambda (process event)
-       (helm-process-deferred-sentinel-hook
-        process event (helm-default-directory))
-       (unless (or (string= event "finished\n")
-                   (s-starts-with-p "killed" event))
-         (message " No match found."))))))
 
 (defun helm-codesearch-find-pattern-process ()
   "Execute the csearch for a pattern."
@@ -370,8 +360,7 @@
                                       "-f" (or helm-codesearch--file-pattern "")
                                       "-n" pattern)))))
     (setq helm-codesearch-file nil)
-    (setq helm-codesearch-process proc)
-    (helm-codesearch-set-process-sentinel proc)))
+    (setq helm-codesearch-process proc)))
 
 (defun helm-codesearch-find-file-process ()
   "Execute the csearch for a file."
@@ -384,8 +373,7 @@
                                       (if helm-codesearch-ignore-case
                                           (concat "(?i)" pattern)
                                         pattern) "$")))))
-    (setq helm-codesearch-process proc)
-    (helm-codesearch-set-process-sentinel proc)))
+    (setq helm-codesearch-process proc)))
 
 (defvar helm-codesearch--file-pattern nil
   "File pattern for searching in.")
@@ -453,6 +441,7 @@
     (helm-codesearch-search-csearchindex)
     (helm :sources 'helm-codesearch-source-pattern
           :buffer helm-codesearch-buffer
+          :preselect ""
           :input symbol
           :keymap helm-codesearch-map
           :prompt "Find pattern: "
@@ -466,6 +455,7 @@
     (helm-codesearch-search-csearchindex)
     (helm :sources 'helm-codesearch-source-file
           :buffer helm-codesearch-buffer
+          :preselect ""
           :input symbol
           :keymap helm-codesearch-map
           :prompt "Find file: "
