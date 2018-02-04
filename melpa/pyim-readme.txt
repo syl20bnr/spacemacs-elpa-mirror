@@ -93,7 +93,8 @@ pyim 的目标是： *尽最大的努力成为一个好用的 Emacs 中文输入
   (pyim-isearch-mode 1)
 
   ;; 使用 pupup-el 来绘制选词框, 如果用 emacs26, 建议设置
-  ;; 为 'child-frame, 速度很快并且菜单不会变形。
+  ;; 为 'posframe, 速度很快并且菜单不会变形，不过需要用户
+  ;; 手动安装 posframe 包。
   (setq pyim-page-tooltip 'popup)
 
   ;; 选词框显示5个候选词
@@ -211,10 +212,11 @@ pyim 支持其它版本的仓颉，但需要用户自己创建词库文件。
    #+BEGIN_EXAMPLE
    (setq pyim-page-tooltip 'popup)
    #+END_EXAMPLE
-2. 使用 child-frame 来绘制选词框（emacs-version >= 26）
+2. 使用 posframe 来绘制选词框
    #+BEGIN_EXAMPLE
-   (setq pyim-page-tooltip 'child-frame)
+   (setq pyim-page-tooltip 'posframe)
    #+END_EXAMPLE
+   注意：pyim 不会自动安装 posframe, 用户需要手动安装这个包，
 
 *** 调整 tooltip 选词框的显示样式
 pyim 的 tooltip 选词框默认使用 *双行显示* 的样式，在一些特

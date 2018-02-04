@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper-helm
-;; Package-Version: 0.1.0
+;; Package-Version: 0.2.0
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.1") (swiper "0.1.0") (helm "1.5.3"))
 ;; Keywords: matching
@@ -52,7 +52,7 @@
     map)
   "Allows you to go to next and previous hit isearch-style.")
 
-(defun swiper-helm-default-display-buffer (buf)
+(defun swiper-helm-default-display-buffer (buf &optional _resume)
   "Display BUF buffer."
   (when (one-window-p)
     (split-window-vertically))
@@ -63,14 +63,31 @@
   "The function that switches to the window where helm should be."
   :type 'function)
 
+(defvar swiper--anchor nil
+  "A line number to which the search should be anchored.")
+
+(defvar swiper--len 0
+  "The last length of input for which an anchoring was made.")
+
+(defun swiper--helm-init ()
+  "Perform initialization common to both completion methods."
+  (setq swiper--opoint (point))
+  (setq swiper--len 0)
+  (setq swiper--anchor (line-number-at-pos))
+  (when (bound-and-true-p evil-jumper-mode)
+    (evil-jumper--set-jump)))
+
 ;;;###autoload
 (defun swiper-helm (&optional initial-input)
   "`isearch' with an overview using `helm'.
 When non-nil, INITIAL-INPUT is the initial search pattern."
   (interactive)
   (require 'helm)
-  (require 'helm-match-plugin)
-  (swiper--init)
+  (require 'helm-multi-match)
+  (swiper--helm-init)
+  (setq ivy-last
+        (make-ivy-state
+         :window (selected-window)))
   (unwind-protect
        (let ((helm-display-function swiper-helm-display-function)
              helm-candidate-number-limit)
@@ -86,7 +103,7 @@ When non-nil, INITIAL-INPUT is the initial search pattern."
                  (match-strict . (lambda (x)
                                    (ignore-errors
                                      (string-match (ivy--regex helm-input) x))))
-                 (candidates . ,(swiper--candidates))
+                 (candidates . ,(swiper--helm-candidates))
                  (filtered-candidate-transformer
                   helm-fuzzy-highlight-matches)
                  (action . swiper--action-helm))
@@ -106,14 +123,15 @@ When non-nil, INITIAL-INPUT is the initial search pattern."
 (defun swiper--update-input-helm ()
   "Update selection."
   (swiper--cleanup)
-  (with-selected-window swiper--window
-    (swiper--add-overlays
-     (ivy--regex helm-input)
-     (window-start swiper--window)
-     (window-end swiper--window t)))
-  (when (/= (length helm-input) swiper--len)
-    (setq swiper--len (length helm-input))
-    (swiper--reanchor)))
+  (let ((swiper--window (ivy-state-window ivy-last)))
+    (with-selected-window swiper--window
+      (swiper--add-overlays
+       (ivy--regex helm-input)
+       (window-start swiper--window)
+       (window-end swiper--window t)))
+    (when (/= (length helm-input) swiper--len)
+      (setq swiper--len (length helm-input))
+      (swiper--reanchor))))
 
 (defun swiper--binary (beg end)
   "Find anchor between BEG and END."
@@ -154,19 +172,17 @@ When non-nil, INITIAL-INPUT is the initial search pattern."
                   (string-to-number (match-string 0 str))
                 0))
          pt)
-    (when (> (length re) 0)
-      (with-selected-window swiper--window
+    (with-ivy-window
+      (when (> (length re) 0)
         (goto-char (point-min))
         (forward-line (1- num))
         (when (re-search-forward re (point-max) t)
-          (setq pt (match-beginning 0))))
-      (when pt
-        (with-selected-window
-            (helm-persistent-action-display-window)
+          (setq pt (match-beginning 0)))
+        (when pt
+          (helm-persistent-action-display-window)
           (goto-char pt)
           (recenter)
-          (swiper--update-input-helm))))
-    (with-selected-window swiper--window
+          (swiper--update-input-helm)))
       (let ((ov (make-overlay
                  (line-beginning-position)
                  (1+ (line-end-position)))))
@@ -187,7 +203,53 @@ When non-nil, INITIAL-INPUT is the initial search pattern."
 
 (defun swiper--action-helm (x)
   "Goto line X."
-  (swiper--action x helm-input))
+  (if (null x)
+      (user-error "No candidates")
+    (goto-char (point-min))
+    (forward-line (1- (read x)))
+    (re-search-forward
+     (ivy--regex helm-input)
+     (line-end-position)
+     t)
+    (swiper--ensure-visible)
+    (when (/= (point) swiper--opoint)
+      (unless (and transient-mark-mode
+                   mark-active)
+        (push-mark swiper--opoint t)
+        (message
+         "Mark saved where search started"))))
+  (recenter))
+
+(defun swiper-helm-from-isearch ()
+  "Invoke `swiper-helm' from isearch."
+  (interactive)
+  (let ((query (if isearch-regexp
+                   isearch-string
+                 (regexp-quote isearch-string))))
+    (isearch-exit)
+    (swiper-helm query)))
+
+(defun swiper--helm-candidates ()
+  "Return a list of this buffer lines."
+  (let ((n-lines (count-lines (point-min) (point-max))))
+    (unless (zerop n-lines)
+      (setq swiper--width (1+ (floor (log n-lines 10))))
+      (setq swiper--format-spec
+            (format "%%-%dd %%s" swiper--width))
+      (let ((line-number 0)
+            candidates)
+        (save-excursion
+          (goto-char (point-min))
+          (swiper-font-lock-ensure)
+          (while (< (point) (point-max))
+            (push (format swiper--format-spec
+                          (cl-incf line-number)
+                          (buffer-substring
+                           (line-beginning-position)
+                           (line-end-position)))
+                  candidates)
+            (forward-line 1))
+          (nreverse candidates))))))
 
 (provide 'swiper-helm)
 

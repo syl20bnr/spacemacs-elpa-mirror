@@ -4,7 +4,7 @@
 ;; the LICENSE file in the root directory of this source tree.
 
 ;; Version: 0.3
-;; Package-Version: 20180104.1348
+;; Package-Version: 20180204.141
 ;; URL: https://github.com/an-sh/flow-minor-mode
 
 ;; Package-Requires: ((emacs "25.1"))
@@ -232,8 +232,7 @@ BODY progn"
           (forward-line 1)
           (delete-region (point) (point-max))
           (flow-minor-colorize-buffer)
-          (eldoc-message (car (split-string (buffer-substring (point-min) (point-max)) "\n"))))
-      (switch-to-buffer-other-window (get-buffer "*Flow Eldoc Error*") t))))
+          (eldoc-message (car (split-string (buffer-substring (point-min) (point-max)) "\n")))))))
 
 (defun flow-minor-eldoc-documentation-function ()
   "Display type at point with eldoc."

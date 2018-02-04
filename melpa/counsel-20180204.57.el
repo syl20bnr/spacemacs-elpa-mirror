@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180131.1133
+;; Package-Version: 20180204.57
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -3942,6 +3942,35 @@ Any desktop entries that fail to parse are recorded in
   (ivy-read "Run a command: " (counsel-linux-apps-list)
             :action #'counsel-linux-app-action-default
             :caller 'counsel-linux-app))
+
+;;** `counsel-wmctrl'
+(defun counsel-wmctrl-action (x)
+  "Select the desktop window that corresponds to X."
+  (shell-command
+   (format "wmctrl -i -a \"%s\"" (cdr x))))
+
+(defvar counsel-wmctrl-ignore '("XdndCollectionWindowImp"
+                                "unity-launcher" "unity-panel" "unity-dash"
+                                "Hud" "Desktop")
+  "List of window titles to ignore for `counsel-wmctrl'.")
+
+(defun counsel-wmctrl ()
+  "Select a desktop window using wmctrl."
+  (interactive)
+  (let* ((cands1 (split-string (shell-command-to-string "wmctrl -l") "\n" t))
+         (cands2
+          (mapcar (lambda (s)
+                    (when (string-match
+                           "\\`\\([0-9a-fx]+\\)  \\([0-9]+\\) \\([^ ]+\\) \\(.+\\)\\'"
+                           s)
+                      (let ((title (match-string 4 s))
+                            (id (match-string 1 s)))
+                        (unless (member title counsel-wmctrl-ignore)
+                          (cons title id)))))
+                  cands1)))
+    (ivy-read "window: " cands2
+              :action #'counsel-wmctrl-action
+              :caller 'counsel-wmctrl)))
 
 ;;** `counsel-company'
 (defvar company-candidates)

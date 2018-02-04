@@ -1,10 +1,10 @@
 ;;; helm-google.el --- Emacs Helm Interface for quick Google searches
 
-;; Copyright (C) 2014-2017, Steckerhalter
+;; Copyright (C) 2014-2018, Steckerhalter
 
 ;; Author: steckerhalter
 ;; Package-Requires: ((helm "0"))
-;; Package-Version: 20171215.1159
+;; Package-Version: 20180204.232
 ;; URL: https://github.com/steckerhalter/helm-google
 ;; Keywords: helm google search browse
 
@@ -59,14 +59,18 @@ searches you will want to use `www.google.TLD'."
 (defcustom helm-google-actions
   '(("Browse URL" . browse-url)
     ("Browse URL with EWW" . (lambda (candidate)
-                               (eww-browse-url
-                                (helm-google-display-to-real candidate))))
+                               (eww-browse-url candidate)))
     ("Copy URL to clipboard" . (lambda (candidate)
-                                 (kill-new (helm-google-display-to-real candidate)))))
+                                 (kill-new  candidate))))
   "List of actions for helm-google sources."
   :group 'helm-google
   :type '(alist :key-type string :value-type function))
 
+
+(defcustom helm-google-idle-delay 0.4
+  "Time to wait when idle until query is made."
+  :type 'integer
+  :group 'helm-google)
 
 (defvar helm-google-input-history nil)
 (defvar helm-google-pending-query nil)
@@ -121,37 +125,34 @@ searches you will want to use `www.google.TLD'."
   (let* ((results (helm-google--search helm-pattern)))
     (mapcar (lambda (result)
               (let ((cite (plist-get result :cite)))
-                (concat
-                 (propertize
-                  (plist-get result :title)
-                  'face 'font-lock-variable-name-face)
-                 "\n"
-                 (plist-get result :content)
-                 "\n"
-                 (when cite
-                   (concat
-                    (propertize
-                     cite
-                     'face 'link)
-                    "\n"))
-                 (propertize
-                  (url-unhex-string
-                   (plist-get result :url))
-                  'face (if cite 'glyphless-char 'link)))))
+                (cons
+                 (concat
+                  (propertize
+                   (plist-get result :title)
+                   'face 'font-lock-variable-name-face)
+                  "\n"
+                  (plist-get result :content)
+                  "\n"
+                  (when cite
+                    (concat
+                     (propertize
+                      cite
+                      'face 'link)
+                     "\n"))
+                  (propertize
+                   (url-unhex-string
+                    (plist-get result :url))
+                   'face (if cite 'glyphless-char 'link)))
+                 (plist-get result :url))))
             results)))
 
 (defun helm-google-search ()
   "Invoke the search function set by `helm-google-search-function'."
   (funcall helm-google-search-function))
 
-(defun helm-google-display-to-real (candidate)
-  "Retrieve the URL from the results for the action."
-  (car (last (split-string candidate "[\n]+"))))
-
 (defvar helm-source-google
   `((name . "Google")
     (action . helm-google-actions)
-    (display-to-real . helm-google-display-to-real)
     (candidates . helm-google-search)
     (requires-pattern)
     (nohighlight)
@@ -169,11 +170,11 @@ searches you will want to use `www.google.TLD'."
                (buffer-substring-no-properties
                 (region-beginning)
                 (region-end)))
-           arg))
-        (helm-input-idle-delay 0.4))
+           arg)))
     (helm :sources 'helm-source-google
           :prompt "Google: "
           :input region
+          :input-idle-delay helm-google-idle-delay
           :buffer "*helm google*"
           :history 'helm-google-input-history)))
 
