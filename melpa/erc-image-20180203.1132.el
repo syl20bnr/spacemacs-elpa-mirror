@@ -7,7 +7,7 @@
 ;; Author: Jon de Andrés Frías <jondeandres@gmail.com>
 ;;         Raimon Grau Cuscó <raimonster@gmail.com>
 ;; Version: 0.9
-;; Package-Version: 20180118.739
+;; Package-Version: 20180203.1132
 ;; Keywords: multimedia
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -114,6 +114,7 @@ If several regex match prior occurring have higher priority."
           (let ((inhibit-read-only t))
             (goto-char (marker-position marker))
             (insert-before-markers
+             (or erc-fill-prefix "")
              (format "%s\n" (error-message-string (cadr status)))))))
     (goto-char (point-min))
     (search-forward "\n\n")
@@ -126,6 +127,7 @@ If several regex match prior occurring have higher priority."
           (goto-char (marker-position marker))
           (let ((pt-before (point)))
             (insert-before-markers
+             (or erc-fill-prefix "")
              (propertize " " 'display im)
              "\n")
             (when (image-multi-frame-p im) (image-animate im 0 t))

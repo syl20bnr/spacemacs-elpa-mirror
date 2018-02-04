@@ -1,7 +1,7 @@
 ;;; lsp-javacomp.el --- Provide Java IDE features powered by JavaComp.  -*- lexical-binding: t -*-
 
 ;; Version: 1.0
-;; Package-Version: 20171024.1547
+;; Package-Version: 20180203.1204
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "3.0") (s "1.2.0"))
 ;; Keywords: java
 ;; URL: https://github.com/tigersoldier/lsp-javacomp
@@ -72,12 +72,13 @@ Requires to be ended with a slash."
   "Retrieves the root directory of the java project root if available.
 
 The current directory is assumed to be the java project’s root otherwise."
-  (cond
-   ((and (featurep 'projectile) (projectile-project-p)) (projectile-project-root))
-   ((vc-backend default-directory) (expand-file-name (vc-root-dir)))
-   (t (let ((project-types '("pom.xml" "build.gradle" ".project" "WORKSPACE")))
+  (expand-file-name
+   (cond
+    ((and (featurep 'projectile) (projectile-project-p)) (projectile-project-root))
+    ((vc-backend default-directory) (vc-root-dir))
+    (t (let ((project-types '("pom.xml" "build.gradle" ".project" "WORKSPACE")))
         (or (seq-some (lambda (file) (locate-dominating-file default-directory file)) project-types)
-            default-directory)))))
+            default-directory))))))
 
 ;;;###autoload
 (defun lsp-javacomp-install-server (&optional prompt-exists)

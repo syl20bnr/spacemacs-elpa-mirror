@@ -8,8 +8,8 @@
 ;;         Cornelius Mika <cornelius.mika@gmail.com>
 ;; Maintainer: Ryan C. Thompson <rct@thompsonclan.org>
 ;; URL: http://github.com/DarwinAwardWinner/amx/
-;; Package-Version: 20180130.917
-;; Package-Requires: ((emacs "24.4"))
+;; Package-Version: 20180203.1043
+;; Package-Requires: ((emacs "24.4") (s "0"))
 ;; Version: 4.0
 ;; Keywords: convenience, usability
 
@@ -39,7 +39,7 @@
 ;;; Code:
 
 (require 'cl-lib)
-(require 'ido)
+(require 's)
 
 (defvar amx-initialized nil
   "If non-nil amx is initialized.")
@@ -62,7 +62,10 @@
   "Number of commands known to amx.")
 
 (defvar amx-custom-action nil
-  "If non-nil, amx will call this in place of `execute-extended-command'.")
+  "If non-nil, amx will call this in place of `execute-extended-command'.
+
+This should be set to a function that accepts a symbol
+representing the name of a command.")
 
 (defvar amx-minibuffer-depth -1
   "Used to determin if amx \"owns\" the current active minibuffer.")
@@ -265,7 +268,30 @@ or symbol."
    ((stringp cmd)
     cmd)
    (t
-    (error "Unrecognized command: %s" cmd))))
+    (error "Unrecognized command: %S" cmd))))
+
+(defun amx-get-command-symbol (cmd &optional force)
+  "Return COMMAND-NAME as a symbol, or nil if it is not a command.
+
+COMMAND-NAME can be a symbol or a string, and will always be
+returned as a symbol (although the returned symbol may be nil).
+
+If optional argument FORCE is non-nil, return the symbol even if it
+does not correspond to a defined command."
+  (cond
+   ((consp cmd)
+    (amx-get-command-symbol (car cmd)))
+   ((symbolp cmd)
+    (when (or force (commandp cmd))
+      cmd))
+   ((stringp cmd)
+    (amx-get-command-symbol
+     (funcall (if force #'intern #'intern-soft) command-name)
+     force))
+   ((null cmd)
+    nil)
+   (t
+    (error "Unrecognized command: %S" cmd))))
 
 (defun amx-get-default (choices)
   "Get the first non-ignored entry from CHOICES as a string."
@@ -950,28 +976,32 @@ In the returned list, each element will be a string."
    collect (amx-augment-command-with-keybind cmd bind-hash)))
 
 (defun amx-clean-command-name (command-name)
-  "Trim the key binding off the end of a command name.
+  "Return the symbol for COMMAND-NAME, stripping any keybinds.
 
 For example, given \"forward-char (C-f)\", this would return
-\"forward-char\".
+`forward-char'.
 
 This is roughly the inverse of
 `amx-augment-command-with-keybind'."
-  (or
-   ;; First try getting it from the hash table
-   (and amx-command-keybind-hash
-        (gethash command-name amx-command-keybind-hash))
-   ;; Next, chop chars off the end until the result is a command
-   (cl-loop
-    for s = (cl-copy-seq command-name) then (substring s 0 -1)
-    for sym = (intern-soft s)
-    if (and sym (commandp sym))
-    return sym
-    if (= 0 (length s))
-    return nil)
-   ;; Finally, just take everything up to the first space
-   (car (s-match "\\`[^[:space:]]+" command-name))
-   (error "Could not find command: %S" command-name)))
+  (amx-get-command-symbol
+   (or
+    ;; First try getting it from the hash table as a shortcut
+    (and amx-command-keybind-hash
+         (gethash command-name amx-command-keybind-hash))
+    ;; If that doesn't work, we do it the hard way: chop chars off the
+    ;; end until the result is a command
+    (cl-loop
+     for s = (cl-copy-seq command-name) then (substring s 0 -1)
+     for sym = (intern-soft s)
+     if (and sym (commandp sym))
+     return sym
+     if (= 0 (length s))
+     return nil)
+    ;; Finally, just take all non-space chars up to the first space
+    (car (s-match "\\`[^[:space:]]+" command-name))
+    ;; If none of the above works, fail
+    (error "Could not find command: %S" command-name))
+   t))
 
 ;;--------------------------------------------------------------------------------
 ;; Ignored commands
@@ -988,6 +1018,7 @@ See `amx-ignored-command-matchers'."
   ;; the real command name
   (when (stringp command)
     (setq command (amx-clean-command-name command)))
+  (setq command (amx-get-command-symbol command))
   (cl-loop
    with matched = nil
    for matcher in amx-ignored-command-matchers
@@ -1006,19 +1037,18 @@ See `amx-ignored-command-matchers'."
 See `amx-ignore-command'."
   ;; Allow passing entries from `amx-cache', whose `car' is the
   ;; command symbol.
-  (when (consp command)
-    (setq command (car command)))
-  (get command 'amx-ignored))
+  (get (amx-get-command-symbol command) 'amx-ignored))
 
 (defun amx-command-obsolete-p (command)
   "Return non-nil if COMMAND is marked obsolete."
-  (get command 'byte-obsolete-info))
+  (get (amx-get-command-symbol command) 'byte-obsolete-info))
 
 (defun amx-command-mouse-interactive-p (command)
   "Return non-nil if COMMAND uses mouse events.
 
 This is not guaranteed to detect all mouse-interacting commands,
 but it should find most of them."
+  (setq command (amx-get-command-symbol command))
   (and (listp (help-function-arglist command))
        (not (eq ?\& (aref (symbol-name (car (help-function-arglist command))) 0)))
        (stringp (cadr (interactive-form command)))
