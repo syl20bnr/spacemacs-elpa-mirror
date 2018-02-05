@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 20180204.445
+;; Package-Version: 20180204.2304
 ;; Version: 2.4.2
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -1446,7 +1446,7 @@ number."
         (total 0)
         (current 0)
         (end (point-max))
-        (export-element (fountain-get-export-elements))
+        (export-elements (fountain-get-export-elements))
         found)
     (save-excursion
       (save-restriction
@@ -1456,7 +1456,7 @@ number."
             (setq end (match-beginning 0)))
         (goto-char (point-min))
         (while (< (point) end)
-          (fountain-forward-page 1 export-element)
+          (fountain-forward-page 1 export-elements)
           (setq total (1+ total))
           (if (and (not found) (<= x (point))) (setq current total found t)))
         (cons current total)))))
@@ -4905,12 +4905,16 @@ keywords suitable for Font Lock."
   (interactive)
   (let (unsaved)
     (dolist (option '(fountain-align-elements
+                      fountain-auto-upcase-scene-headings
                       fountain-add-continued-dialog
+                      fountain-display-scene-numbers-in-margin
+                      fountain-pages-show-in-mode-line
                       fountain-hide-emphasis-delim
                       fountain-hide-syntax-chars
-                      fountain-display-scene-numbers-in-margin
-                      fountain-export-scene-heading-format
-                      font-lock-maximum-decoration))
+                      font-lock-maximum-decoration
+                      fountain-export-page-size
+                      fountain-export-include-title-page
+                      fountain-export-scene-heading-format))
       (if (customize-mark-to-save option)
           (setq unsaved t)))
     (if unsaved (custom-save-all))))

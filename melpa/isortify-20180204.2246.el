@@ -5,7 +5,7 @@
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; Homepage: https://github.com/proofit404/isortify
 ;; Version: 0.0.1
-;; Package-Version: 20180131.2244
+;; Package-Version: 20180204.2246
 ;; Package-Requires: ()
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -61,6 +61,7 @@ Return isort process the exit code."
         (add-to-list 'args isortify-known-first-party t))
       (add-to-list 'args "-" t)
       (let ((process (apply 'start-file-process "isortify" output-buffer "isort" args)))
+        (set-process-sentinel process (lambda (process event)))
         (process-send-region process (point-min) (point-max))
         (process-send-eof process)
         (accept-process-output process nil nil t)

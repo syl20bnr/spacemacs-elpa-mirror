@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20180116.653
+;; Package-Version: 20180205.153
 ;; Package-Requires: ((emacs "24.4") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -150,21 +150,28 @@ overlay must not be re-displayed.")
 (defvar evil-goggles--force-block nil
   "When non-nil, force the hint about to be shown to be a block.")
 
+(defvar evil-goggles--hint-on-empty-lines nil
+  "When nil, the default, function `evil-goggles--show-p' will not return t for whitespace-only regions.")
+
 (defun evil-goggles--show-p (beg end)
   "Return t if the overlay should be displayed in region BEG to END."
   (and (not evil-inhibit-operator-value)
        (bound-and-true-p evil-mode)
        (numberp beg)
        (numberp end)
-       (> (- end beg) 1)
+       ;; don't show overlay if the region is a single char on a single line
+       (not (and (<= (- end beg) 1)
+                 (= (line-number-at-pos beg) (line-number-at-pos end))))
        (<= (point-min) beg end)
        (>= (point-max) end beg)
        (not (evil-visual-state-p))
        (not (evil-insert-state-p))
-       ;; don't show overlay when evil-mc has multiple fake cursors
+       ;; don't show overlay when evil-mc has active cursors
        (not (and (fboundp 'evil-mc-has-cursors-p) (evil-mc-has-cursors-p)))
-       ;; don't show overlay when the region has nothing but whitespace
-       (not (null (string-match-p "[^ \t\n]" (buffer-substring-no-properties beg end))))))
+       ;; don't show hint when the region has nothing but whitespace, but skip this check if `evil-goggles--hint-on-empty-lines' is t
+       (if evil-goggles--hint-on-empty-lines
+           t
+         (not (null (string-match-p "[^ \t\n]" (buffer-substring-no-properties beg end)))))))
 
 (defun evil-goggles--overlay-insert-behind-hook (ov afterp beg end &optional len)
   "Function which grows/shriks the overlay OV when its text changes.
@@ -646,16 +653,37 @@ CHAR POS ADVANCE are the arguments of the original function."
   (evil-goggles--funcall-preserve-interactive orig-fun char pos advance)
   ;; maybe show the goggles overlay
   (when (<= ?a char ?z)
-    (save-excursion
-      (when pos
-        (goto-char pos))
-      (let ((beg (save-excursion
-                   (move-beginning-of-line nil)
-                   (point)))
-            (end (1+ (save-excursion
-                       (move-end-of-line nil)
-                       (point)))))
-        (evil-goggles--show-hint beg end 'evil-goggles-set-marker-face)))))
+    (let ((beg (line-beginning-position))
+          (end (1+ (line-end-position)))
+          (evil-goggles--hint-on-empty-lines t))
+      (evil-goggles--with-async-hint beg end 'evil-goggles-set-marker-face))))
+
+;;; record macro
+
+(evil-goggles--define-switch-and-face
+    evil-goggles-enable-record-macro "If non-nil, enable record macro support"
+    evil-goggles-record-macro-face "Face for record macro action")
+
+(defun evil-goggles--evil-record-macro-advice (orig-fun register)
+  "Around-advice for function `evil-record-macro'.
+
+ORIG-FUN is the original function.
+REGISTER is the argument of the original function."
+  (let ((beg (line-beginning-position))
+        (end (1+ (line-end-position)))
+        (was-defining-kbd-macro defining-kbd-macro)
+        (evil-goggles--hint-on-empty-lines t))
+
+    ;; show hint before starting to record a macro
+    (unless was-defining-kbd-macro
+      (evil-goggles--show-hint beg end 'evil-goggles-record-macro-face))
+
+    (evil-goggles--funcall-preserve-interactive orig-fun register)
+
+    ;; show hint when done defining the macro
+    (when was-defining-kbd-macro
+      (evil-goggles--show-hint beg end 'evil-goggles-record-macro-face))))
+
 
 ;;; ex global
 
@@ -774,6 +802,9 @@ COUNT BEG &OPTIONAL END TYPE REGISTER are the arguments of the original function
     (when evil-goggles-enable-set-marker
       (advice-add 'evil-set-marker :around 'evil-goggles--evil-set-marker-advice))
 
+    (when evil-goggles-enable-record-macro
+      (advice-add 'evil-record-macro :around 'evil-goggles--evil-record-macro-advice))
+
     ;; make sure :global and :v don't show the goggles overlay
     (advice-add 'evil-ex-global :around 'evil-goggles--evil-ex-global-advice)
 
@@ -804,6 +835,7 @@ COUNT BEG &OPTIONAL END TYPE REGISTER are the arguments of the original function
     (advice-remove 'evil-shift-left 'evil-goggles--evil-shift-advice)
     (advice-remove 'evil-shift-right 'evil-goggles--evil-shift-advice)
     (advice-remove 'evil-set-marker 'evil-goggles--evil-set-marker-advice)
+    (advice-remove 'evil-record-macro 'evil-goggles--evil-record-macro-advice)
 
     (advice-remove 'evil-ex-global 'evil-goggles--evil-ex-global-advice)
 

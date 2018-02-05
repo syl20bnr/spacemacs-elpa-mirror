@@ -5,7 +5,7 @@
 ;; Author: Clément Pit-Claudel, Feng Shu
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/company-mode/company-mode
-;; Package-Version: 20180203.2252
+;; Package-Version: 20180204.2243
 ;; Version: 0.1.0
 ;; Keywords: abbrev, convenience, matching
 ;; Package-Requires: ((emacs "26.0")(company "0.9.0")(posframe "0.1.0"))
@@ -75,8 +75,7 @@ Using current frame's font if it it nil."
 
 (defun company-childframe-show ()
   "Show company-childframe candidate menu."
-  (let* ((company-tooltip-margin 0) ;FIXME: Do not support this custom at the moment
-         (height (min company-tooltip-limit company-candidates-length))
+  (let* ((height (min company-tooltip-limit company-candidates-length))
          (lines (company--create-lines company-selection height))
          (contents (mapconcat #'identity lines "\n")))
     ;; FIXME: Do not support mouse at the moment, so remove mouse-face
@@ -85,6 +84,7 @@ Using current frame's font if it it nil."
     (posframe-show company-childframe-buffer
                    :string contents
                    :position (- (point) (length company-prefix))
+                   :x-pixel-offset (* -1 company-tooltip-margin (default-font-width))
                    :font company-childframe-font
                    :min-width company-tooltip-minimum-width
                    :background-color (face-attribute 'company-tooltip :background))))

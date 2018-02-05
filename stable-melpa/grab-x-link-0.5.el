@@ -1,13 +1,13 @@
 ;;; grab-x-link.el --- Grab links from X11 apps and insert into Emacs  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2016  Chunyang Xu
+;; Copyright (C) 2016, 2018  Xu Chunyang
 
-;; Author: Chunyang Xu <mail@xuchunyang.me>
+;; Author: Xu Chunyang <mail@xuchunyang.me>
 ;; URL: https://github.com/xuchunyang/grab-x-link
-;; Package-Version: 0.4.1
+;; Package-Version: 0.5
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 ;; Keywords: hyperlink
-;; Version: 0.4.1
+;; Version: 0.5
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@
 ;; - xsel(1) or xclip(1) if you are running Emacs inside a terminal emulator
 ;;
 ;; Changes:
+;; - 2018-02-05 v0.5 Support Google Chrome
 ;; - 2016-12-01 v0.4 Handle case that app is not running
 ;; - 2016-12-01 v0.3 Add the command `grab-x-link'
 ;; - 2016-11-19 v0.2 Rename grab-x11-link to grab-x-link
@@ -101,7 +102,7 @@
           "xdotool getactivewindow"))
         (chromium-window
          (or (grab-x-link--shell-command-to-string
-              "xdotool search --class chromium-browser | tail -1")
+              "xdotool search --name ' - Chromium' | tail -1")
              (error "Can't detect Chromium Window -- is it running?"))))
     (shell-command (format "xdotool windowactivate --sync %s key ctrl+l ctrl+c" chromium-window))
     (shell-command (format "xdotool windowactivate %s" emacs-window))
@@ -111,6 +112,24 @@
                   (grab-x-link--shell-command-to-string
                    (concat "xdotool getwindowname " chromium-window))
                   " - Chromium")))
+      (cons url title))))
+
+(defun grab-x-link-chrome ()
+  (let ((emacs-window
+         (grab-x-link--shell-command-to-string
+          "xdotool getactivewindow"))
+        (chrome-window
+         (or (grab-x-link--shell-command-to-string
+              "xdotool search --name ' - Google Chrome' | tail -1")
+             (error "Can't detect Chrome Window -- is it running?"))))
+    (shell-command (format "xdotool windowactivate --sync %s key ctrl+l ctrl+c" chrome-window))
+    (shell-command (format "xdotool windowactivate %s" emacs-window))
+    (sit-for 0.2)
+    (let ((url (substring-no-properties (grab-x-link--get-clipboard)))
+          (title (grab-x-link--title-strip
+                  (grab-x-link--shell-command-to-string
+                   (concat "xdotool getwindowname " chrome-window))
+                  " - Google Chrome")))
       (cons url title))))
 
 ;;;###autoload
@@ -144,6 +163,21 @@
   (insert (grab-x-link--build (grab-x-link-chromium) 'markdown)))
 
 ;;;###autoload
+(defun grab-x-link-chrome-insert-link ()
+  (interactive)
+  (insert (grab-x-link--build (grab-x-link-chrome))))
+
+;;;###autoload
+(defun grab-x-link-chrome-insert-org-link ()
+  (interactive)
+  (insert (grab-x-link--build (grab-x-link-chrome) 'org)))
+
+;;;###autoload
+(defun grab-x-link-chrome-insert-markdown-link ()
+  (interactive)
+  (insert (grab-x-link--build (grab-x-link-chrome) 'markdown)))
+
+;;;###autoload
 (defun grab-x-link (app &optional link-type)
   "Prompt for an application to grab a link from.
 When done, go gtab the link, and insert it at point.
@@ -155,6 +189,7 @@ markdown org), if LINK-TYPE is omitted or nil, plain link will be used."
   (interactive
    (let ((apps
           '((?c . chromium)
+            (?g . chrome)
             (?f . firefox)))
          (link-types
           '((?p . plain)
@@ -172,7 +207,7 @@ markdown org), if LINK-TYPE is omitted or nil, plain link will be used."
          input app link-type)
 
      (message (funcall propertize-menu
-                       "Grab link from [c]hromium [f]irefox:"))
+                       "Grab link from [c]hromium [g]chrome [f]irefox:"))
      (setq input (read-char-exclusive))
      (setq app (cdr (assq input apps)))
 
@@ -185,7 +220,7 @@ markdown org), if LINK-TYPE is omitted or nil, plain link will be used."
   (unless link-type
     (setq link-type 'plain))
 
-  (unless (and (memq app '(chromium firefox))
+  (unless (and (memq app '(chromium chrome firefox))
                (memq link-type '(plain org markdown)))
     (error "Unknown app %s or link-type %s" app link-type))
 
