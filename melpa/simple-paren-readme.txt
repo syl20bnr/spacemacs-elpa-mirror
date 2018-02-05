@@ -7,7 +7,7 @@ math white square brackets
 
 With \\[universal-argument] insert whitespaces literatim
 With active region, wrap around.
-With numerical ARG 2 honor padding"
+With numerical ARG insert the delimiter arg times"
   (interactive "*P")
   (simple-paren--intern ?⟦  ?⟧ arg))
 
@@ -25,7 +25,8 @@ int|eractive		==> (interactive)
 with active region until end of word
 int|eractive		==> int(eractive)
 
-With C-u keep padding
+With ‘simple-paren-honor-padding-p’ set to ‘t’ --the default--
+honor padding:
 | foo		==> ( foo )
 
 Insertions are not electric, thus a mnemonic key is recommended:
