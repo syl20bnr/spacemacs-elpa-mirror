@@ -787,7 +787,7 @@
 	     ((:url . "https://github.com/michael-heerdegen/on-screen.el")
 	      (:keywords "convenience"))])
  (org-edna .
-	   [(1 0 -2 4)
+	   [(1 0 -2 5)
 	    ((emacs
 	      (25 1))
 	     (seq
@@ -815,7 +815,7 @@
 	   ((:url . "http://elpa.gnu.org/packages/pabbrev.html")
 	    (:keywords))])
  (paced .
-	[(1 0 1)
+	[(1 1)
 	 ((emacs
 	   (25 1))
 	  (async
