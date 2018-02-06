@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180204.57
+;; Package-Version: 20180205.837
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -2893,7 +2893,7 @@ version.  Argument values are based on the
                                (point))
                           (outline-next-heading)))
       (while start-pos
-        (let ((name (apply #'org-get-heading heading-args))
+        (let ((name (or (apply #'org-get-heading heading-args) ""))
               level)
           (search-forward " ")
           (setq level

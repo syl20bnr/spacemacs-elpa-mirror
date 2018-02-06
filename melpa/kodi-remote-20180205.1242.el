@@ -4,7 +4,7 @@
 
 ;; Author: Stefan Huchler <stefan.huchler@mail.de>
 ;; URL: http://github.com/spiderbit/kodi-remote.el
-;; Package-Version: 20180204.713
+;; Package-Version: 20180205.1242
 ;; Package-Requires: ((request "0.2.0")(let-alist "1.0.4")(json "1.4")(elnode "20140203.1506"))
 ;; Keywords: kodi tools convinience
 
@@ -320,14 +320,26 @@ Depending on current window move horizontal in menu (INPUT)
   (setq kodi-volume (let-alist kodi-properties .volume)))
 
 (defun kodi-remote-visibility-filter ()
-  "Create filter json string for media request"
+  "Create filter json string for media request."
   (unless (equal "all" kodi-watch-filter)
-    `("filter" . (("field" . "playcount")
-		  ("operator" .
-		   ,(pcase kodi-watch-filter
-		      ("seen" "greaterthan")
-		      ("unseen" "is")))
-		  ("value" . "0" )))))
+    `(("field" . "playcount")
+      ("operator" .
+       ,(pcase kodi-watch-filter
+	  ("seen" "greaterthan")
+	  ("unseen" "is")))
+      ("value" . "0" ))))
+
+(defun kodi-remote-filter-band ()
+  "Filter by Band name."
+  (interactive)
+  (kodi-remote-get-artist-list)
+  (let* ((name
+	  (ido-completing-read
+	   "Band: "
+	   (mapcar (apply-partially 'assoc-default 'artist)
+		   (assoc-default 'artists kodi-properties)))))
+    (setq kodi-selected-artist name))
+  (kodi-remote-draw-music))
 
 (defun kodi-remote-get-movies (&optional filter-watched)
   "Poll unwatches movies.
@@ -335,27 +347,34 @@ Optional argument FILTER-WATCHED filters watched episodes."
   (let* ((filter (kodi-remote-visibility-filter))
 	 (pre-params `(("properties" .
                         ["title" "file" "playcount"])))
-	 (params (list (append '("params") pre-params
-			       (unless (equal "all" kodi-watch-filter)
-				 `(,filter))))))
+	 (params (list
+		  (append '("params") pre-params
+			  (if filter (list
+				      (append (list "filter")
+					      filter)))))))
     (kodi-remote-get "VideoLibrary.GetMovies" params)))
 
 (defun kodi-remote-get-songs (&optional id)
   "Poll list of songs.
 Optional argument ID limits to a specific artist."
-  (let* ((filter (kodi-remote-visibility-filter))
-	 ;; (pre-params `(("filter" . (("artistid". ,id)))))
-	 (pre-params `("filter" . (("operator" . "is")
-				   ("field" . "artist")
-				   ("value" . ,id))))
-	 (params `(("params" .
-		    (("properties" .
-                        ["title" "file" "playcount"])
-		     ("filter" . (("and" .
-				   ,(if filter
-				       `(,(append (cdr pre-params))
-					,(cdr filter))
-				     `(,(cdr pre-params)))))))))))
+  (let* ((filter-watched (kodi-remote-visibility-filter))
+	 (artist-filter (if id `(("operator" . "is")
+				 ("field" . "artist")
+				 ("value" . ,id))))
+	 (filter
+	  (if (or filter-watched artist-filter)
+	      (list (append '("and")
+			    (remove nil
+				    (list artist-filter
+					  (if filter-watched
+					      filter-watched)))))))
+	 (params (list
+		  (append '("params")
+			  '(("properties" .
+			     ["title" "file" "playcount"]))
+			  (if filter (list
+				      (append (list "filter")
+					      filter)))))))
     (kodi-remote-get "AudioLibrary.GetSongs" params)))
 
 (defun kodi-remote-get-artist-list ()
@@ -370,13 +389,11 @@ Optional argument ID limits to a specific artist."
 Optional argument SHOW-ID limits to a specific show.
 Optional argument FILTER-WATCHED filters watched episodes."
   (let* ((filter (kodi-remote-visibility-filter))
-	 (pre-params (if (integerp show-id)
-			 `(("tvshowid" . ,show-id)
-			   ("properties" . ["title" "episode" "playcount"]))
-		       `(("properties" .
-			  ["title" "watchedepisodes" "episode"]))))
-	 (params (list (append '("params") pre-params
-			       (unless (null filter) `(,filter))))))
+	 (params (list (append '("params")
+			       (if show-id (list (append '("tvshowid") show-id)))
+			       '(("properties" .
+				   ["title" "episode" "playcount"]))
+			       (if filter (list (append (list "filter") filter)))))))
     (kodi-remote-get "VideoLibrary.GetEpisodes" params)))
 
 (defun kodi-remote-get-show-list ()
@@ -785,7 +802,7 @@ Key bindings:
         (switch-to-buffer-other-window buffer)))))
 
 (defun kodi-switch-watch-filter ()
-  "Switch between visability scope of entries"
+  "Switch between visability scope of entries."
   (interactive)
   (let* ((filters '("all" "unseen" "seen")))
     (setq kodi-watch-filter
@@ -802,7 +819,7 @@ Key bindings:
     ("*kodi-remote-series-episodes*" (kodi-remote-draw-episodes))
     ("*kodi-remote-series*" (kodi-remote-draw-shows))
     ("*kodi-remote-movies*" (kodi-remote-draw-movies))
-    ("*kodi-remote-songs*" (kodi-remote-draw-songs))))
+    ("*kodi-remote-music*" (kodi-remote-draw-music))))
 
 (defun kodi-remote-delete-multiple (ids)
   "Deletes all entries with id in IDS list."
@@ -1023,7 +1040,7 @@ Optional argument _NOCONFIRM revert excepts this param."
    'episodeid nil 'episodeid 'episodes nil))
 
 ;;;###autoload
-(defun kodi-remote-draw-songs (&optional _arg _noconfirm)
+(defun kodi-remote-draw-music (&optional _arg _noconfirm)
   "Draw a list of songs of all or a specific artist.
 Optional argument _ARG revert excepts this param.
 Optional argument _NOCONFIRM revert excepts this param."
@@ -1031,27 +1048,14 @@ Optional argument _NOCONFIRM revert excepts this param."
   (setq tabulated-list-format [("Songs" 30 t)])
   (setq mode-name
 	(format
-	 "kodi-remote-songs: %s"
+	 "kodi-remote-music: %s"
 	 (pcase kodi-watch-filter
 	   ("all" "all")
 	   ("unseen" "not listenend")
 	   ("seen" "listened"))))
+  (kodi-remote-get-artist-list)
   (kodi-remote-get-songs kodi-selected-artist)
   (kodi-draw-tab-list 'songid nil 'songid 'songs nil))
-
-;;;###autoload
-(defun kodi-remote-draw-music (&optional _arg _noconfirm)
-  "Draw a list of music.
-Optional argument _ARG revert excepts this param.
-Optional argument _NOCONFIRM revert excepts this param."
-  (interactive)
-  (setq tabulated-list-format [("Artists" 30 t)])
-  (setq mode-name (format
-		   "kodi-remote-music: %s"
-		   kodi-watch-filter))
-  (kodi-remote-get-artist-list)
-  (kodi-draw-tab-list 'kodi-remote-songs-wrapper t
-		      'label 'artists nil))
 
 (defun kodi-remote-draw-status (&optional _arg _noconfirm)
   "Draw kodi status buffer.
@@ -1116,16 +1120,6 @@ Optional argument _NOCONFIRM revert excepts this param."
     map)
   "Keymap for `kodi-remote-playlist-mode'.")
 
-(defvar kodi-remote-songs-mode-map
-  (let ((map (make-sparse-keymap))
-	(menu-map (make-sparse-keymap)))
-    (define-key map (kbd "k") 'kodi-remote-keyboard)
-    (define-key map (kbd "l") 'kodi-remote-toggle-visibility)
-    ;; (define-key map (kbd "d") 'kodi-remote-delete)
-    (define-key map (kbd "a") 'kodi-remote-playlist-add-song)
-    map)
-  "Keymap for `kodi-remote-songs-mode'.")
-
 (defvar kodi-remote-series-mode-map
   (let ((map (make-sparse-keymap))
 	(menu-map (make-sparse-keymap)))
@@ -1143,9 +1137,7 @@ Optional argument _NOCONFIRM revert excepts this param."
     (define-key map (kbd "k") 'kodi-remote-keyboard)
     (define-key map (kbd "g") 'kodi-remote-draw-music)
     (define-key map (kbd "a") 'kodi-remote-playlist-add-music)
-    ;; (define-key map (kbd "c") 'kodi-remote-series-clean)
-    ;; (define-key map (kbd "s") 'kodi-remote-series-scan)
-    ;; (define-key map (kbd "l") 'kodi-remote-toggle-visibility)
+    (define-key map (kbd "l") 'kodi-remote-toggle-visibility)
     map)
   "Keymap for `kodi-remote-music-mode'.")
 
@@ -1232,6 +1224,7 @@ Key bindings:
 (defun kodi-remote-music ()
   "Open a `kodi-remote-music-mode' buffer."
   (interactive)()
+  (setq kodi-selected-artist nil)
   (kodi-remote-context kodi-remote-music-mode))
 
 ;;;###autoload
@@ -1289,8 +1282,7 @@ Key bindings:
          (indices
           (if (null region)
 	      (list (tabulated-list-get-id))
-	    (mapcar (lambda (id) id)
-		    (kodi-text-property-all beg end prop)))))
+	    (kodi-text-property-all beg end prop))))
     (if (and indices)
         (let ((arguments (list :ids action indices)))
 	  (if (equal :delete action)

@@ -330,9 +330,6 @@ in a content like
 
 the comment will be lost.
 
-- Emacs bug#29857: 27.0.50; error: "Loading `nil': old-style
-  backquotes detected!"
-
 
 Acknowledgments
 ===============

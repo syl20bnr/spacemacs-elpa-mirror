@@ -6,8 +6,8 @@
 ;; Author: Sebastian Wiesner <swiesner@lunaryorn.com>
 ;; Maintainer: Johan Andersson <johan.rejeep@gmail.com>
 ;;     Sebastian Wiesner <swiesner@lunaryorn.com>
-;; Version: 0.9-cvs
-;; Package-Version: 20180127.351
+;; Version: 0.10-cvs
+;; Package-Version: 20180205.1249
 ;; Package-Requires: ((cl-lib "0.3"))
 ;; Keywords: convenience
 ;; URL: http://github.com/cask/epl

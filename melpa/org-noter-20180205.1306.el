@@ -5,7 +5,7 @@
 ;; Author: Gonçalo Santos (aka. weirdNox@GitHub)
 ;; Homepage: https://github.com/weirdNox/org-noter
 ;; Keywords: lisp pdf interleave annotate external sync notes documents org-mode
-;; Package-Version: 20180202.1821
+;; Package-Version: 20180205.1306
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.6") (org "9.0"))
 ;; Version: 1.0
 
@@ -42,6 +42,7 @@
 
 (declare-function pdf-view-mode "ext:pdf-view")
 (declare-function pdf-view-goto-page "ext:pdf-view")
+(declare-function pdf-info-outline "ext:pdf-info")
 (declare-function doc-view-goto-page "doc-view")
 (declare-function image-mode-window-get "image-mode")
 
@@ -109,8 +110,8 @@ is member of `org-noter-notes-window-behavior' (which see)."
 ;; --------------------------------------------------------------------------------
 ;; NOTE(nox): Private variables or constants
 (cl-defstruct org-noter--session
-  frame doc-mode display-name notes-file-path doc-file-path property-text
-  notes-buffer doc-buffer level window-behavior window-location auto-save-last-page
+  frame doc-buffer notes-buffer ast modified-tick doc-mode display-name notes-file-path
+  doc-file-path property-text level window-behavior window-location auto-save-last-page
   initialized)
 
 (defvar org-noter--sessions nil
@@ -168,7 +169,8 @@ is member of `org-noter-notes-window-behavior' (which see)."
            :level (org-element-property :level ast)
            :window-behavior (or (org-noter--notes-window-behavior-property ast) org-noter-notes-window-behavior)
            :window-location (or (org-noter--notes-window-location-property ast) org-noter-notes-window-location)
-           :auto-save-last-page (or (org-noter--auto-save-page-property ast) org-noter-auto-save-last-page)))
+           :auto-save-last-page (or (org-noter--auto-save-page-property ast) org-noter-auto-save-last-page)
+           :modified-tick -1))
 
          current-page)
 
@@ -244,38 +246,43 @@ is member of `org-noter-notes-window-behavior' (which see)."
 (defun org-noter--parse-root (&optional buffer property-doc-path)
   ;; TODO(nox): Maybe create IDs in each noter session and use that instead of using
   ;; the property text that may be repeated... This would simplify some things
-  (let* ((session org-noter--session)
-         (use-args (and (stringp property-doc-path)
-                        (buffer-live-p buffer)
+  (let* ((session (when (org-noter--valid-session org-noter--session) org-noter--session))
+         (use-args (and (stringp property-doc-path) (buffer-live-p buffer)
                         (eq (buffer-local-value 'major-mode buffer) 'org-mode)))
-         (notes-buffer (if use-args
-                           buffer
-                         (when session (org-noter--session-notes-buffer session))))
-         (wanted-value (if use-args
-                           property-doc-path
-                         (when session (org-noter--session-property-text session))))
-         element)
-    (when (buffer-live-p notes-buffer)
+         (notes-buffer (when use-args buffer))
+         (wanted-prop (when use-args property-doc-path))
+         ast)
+    ;; NOTE(nox): Try to use a cached AST
+    (when (and (not use-args) session)
+      (setq notes-buffer (org-noter--session-notes-buffer session)
+            wanted-prop (org-noter--session-property-text session))
+      (when (= (buffer-chars-modified-tick (org-noter--session-notes-buffer session))
+               (org-noter--session-modified-tick session))
+        (setq ast (org-noter--session-ast session))))
+
+    (when (and (not ast) (buffer-live-p notes-buffer))
       (with-current-buffer notes-buffer
         (org-with-wide-buffer
-         (unless (org-before-first-heading-p)
-           ;; NOTE(nox): Start by trying to find a parent heading with the specified
-           ;; property
-           (let ((try-next t) property-value)
-             (while try-next
-               (setq property-value (org-entry-get nil org-noter-property-doc-file))
-               (when (and property-value (string= property-value wanted-value))
-                 (org-narrow-to-subtree)
-                 (setq element (org-element-parse-buffer 'greater-element)))
-               (setq try-next (and (not element) (org-up-heading-safe))))))
-         (unless element
-           ;; NOTE(nox): Could not find parent with property, do a global search
-           (let ((pos (org-find-property org-noter-property-doc-file wanted-value)))
-             (when pos
-               (goto-char pos)
-               (org-narrow-to-subtree)
-               (setq element (org-element-parse-buffer 'greater-element)))))
-         (car (org-element-contents element)))))))
+         (when
+             (or
+              ;; NOTE(nox): Start by trying to find a parent heading with the specified
+              ;; property
+              (catch 'break
+                (while t
+                  (when (string= wanted-prop
+                                 (org-entry-get nil org-noter-property-doc-file))
+                    (org-back-to-heading t)
+                    (throw 'break t))
+                  (unless (org-up-heading-safe) (throw 'break nil))))
+              ;; NOTE(nox): Could not find parent with property, do a global search
+              (let ((pos (org-find-property org-noter-property-doc-file wanted-prop)))
+                (when pos (goto-char pos))))
+           (org-narrow-to-subtree)
+           (setq ast (car (org-element-contents (org-element-parse-buffer 'greater-element))))
+           (when session
+             (setf (org-noter--session-ast session) ast
+                   (org-noter--session-modified-tick session) (buffer-chars-modified-tick)))))))
+    ast))
 
 (defun org-noter--get-properties-end (ast &optional force-trim)
   (when ast
@@ -369,10 +376,18 @@ is member of `org-noter-notes-window-behavior' (which see)."
                  (raise-frame (window-frame notes-window)))
 
              (with-selected-window (org-noter--get-doc-window)
-               (setq notes-window (if (eq window-location 'horizontal-split)
-                                      (split-window-right)
-                                    (split-window-below)))
-               (set-window-buffer notes-window notes-buffer)))
+               (let ((horizontal (eq window-location 'horizontal-split)))
+                 (setq
+                  notes-window
+                  (if (window-combined-p nil horizontal)
+                      ;; NOTE(nox): Reuse already existent window
+                      (or (window-next-sibling) (window-prev-sibling))
+
+                    (if horizontal
+                        (split-window-right)
+                      (split-window-below))))))
+
+             (set-window-buffer notes-window notes-buffer))
            notes-window)))))
 
 (defun org-noter--setup-windows (session)
@@ -389,8 +404,8 @@ is member of `org-noter-notes-window-behavior' (which see)."
         (set-window-dedicated-p doc-window t)
 
         (with-current-buffer notes-buffer
-          (org-noter--narrow-to-root (org-noter--parse-root
-                                      notes-buffer (org-noter--session-property-text session)))
+          (org-noter--narrow-to-root
+           (org-noter--parse-root notes-buffer (org-noter--session-property-text session)))
           (setq notes-window (org-noter--get-notes-window 'start))
           (org-noter--set-scroll notes-window))))))
 
@@ -827,6 +842,43 @@ want to kill."
           (with-current-buffer base-buffer
             (set-buffer-modified-p modified)))))))
 
+(defun org-noter-create-skeleton ()
+  "Create notes skeleton with PDF outline.
+Only available with PDF Tools."
+  (interactive)
+  (org-noter--with-valid-session
+   (cond ((eq (org-noter--session-doc-mode session) 'pdf-view-mode)
+          (let* ((ast (org-noter--parse-root))
+                 (level (org-element-property :level ast))
+                 (outline (pdf-info-outline)))
+            (with-current-buffer (org-noter--session-notes-buffer session)
+              (widen)
+              (save-excursion
+                (goto-char (org-element-property :end ast))
+                (dolist (item outline)
+                  (let ((type  (alist-get 'type item))
+                        (page  (alist-get 'page item))
+                        (depth (alist-get 'depth item))
+                        (title (alist-get 'title item))
+                        (top   (alist-get 'top item)))
+                    (when (and (eq type 'goto-dest)
+                               (> page 0))
+                      (org-noter--insert-heading (+ level depth))
+                      (insert title)
+                      (if (and (not (eobp)) (org-next-line-empty-p))
+                          (forward-line)
+                        (insert "\n"))
+                      (org-entry-put nil org-noter-property-note-page
+                                     (format "%s" (if (zerop top)
+                                                      page
+                                                    (cons page top)))))))
+                (setq ast (org-noter--parse-root))
+                (org-noter--narrow-to-root ast)
+                (goto-char (org-element-property :begin ast))
+                (outline-hide-subtree)
+                (org-show-children 2)))))
+         (t (error "This command is only supported on PDF Tools.")))))
+
 (defun org-noter-insert-note (&optional arg scroll-percentage)
   "Insert note associated with the current page.
 
@@ -1198,7 +1250,6 @@ when ARG < 0."
                                 (org-element-property :begin test-ast))
 
                         (let* ((org-noter--session test-session)
-                               (point (point))
                                (page (org-noter--selected-note-page)))
                           (org-noter--setup-windows test-session)
 
