@@ -6,7 +6,7 @@
 
 ;; Author: caffo
 ;; Version: 0.1
-;; Package-Version: 20180204.1613
+;; Package-Version: 20180205.2000
 ;; Package-X-Original-Version: 0
 ;; Package-Requires: ((emacs "24"))
 ;; URL: https://github.com/caffo/monotropic-theme
@@ -43,8 +43,8 @@
    `(font-latex-match-variable-keywords ((t (:foreground ,fg))))
    `(font-latex-string-face ((t (:foreground "#a9a9a9"))))
    `(font-lock-builtin-face ((t (:background ,bg :foreground ,fg))))
-   `(font-lock-comment-delimiter-face ((t (:foreground "#808080"))))
-   `(font-lock-comment-face ((t (:foreground "#808080"  :slant italic))))
+   `(font-lock-comment-delimiter-face ((t (:foreground ,fg-light))))
+   `(font-lock-comment-face ((t (:foreground ,fg-light  :slant italic))))
    `(font-lock-constant-face ((t (:foreground ,fg))))
    `(font-lock-doc-face ((t (:foreground ,fg :weight semi-bold))))
    `(font-lock-function-name-face ((t (:foreground ,fg))))

@@ -1,7 +1,7 @@
 ;;; zpresent.el --- Simple presentation mode based on org files.  -*- lexical-binding: t; -*-
 
 ;; Version: 0.3
-;; Package-Version: 20171008.2152
+;; Package-Version: 20180205.2109
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright 2015-2017 Zachary Kanfer <zkanfer@gmail.com>
@@ -102,10 +102,12 @@
 (defvar zpresent-align-title 'left
   "How to align lines in the title.  Possible values are 'left, 'right, 'center.")
 
+(defvar zpresent-default-background-color "#E0E0E0"
+  "The default color placed over all fonts in the background.")
 
 ;;;; Faces:
 
-(defface zpresent-whole-screen-face '((t . (:background "#E0E0E0"))) "Face that should be put over the whole screen.")
+(defface zpresent-whole-screen-face `((t . (:background ,zpresent-default-background-color))) "Face that should be put over the whole screen.")
 (defface zpresent-base '((t . (:height 4.0 :foreground "#000000"))) "The base face, so we can manage changing sizes only by changing this face." :group 'zpresent-faces)
 (defface zpresent-h1 '((t . (:height 1.0 :inherit zpresent-base))) "Face for the title of a regular slide." :group 'zpresent-faces)
 (defface zpresent-title-slide-title '((t . (:height 1.5 :inherit zpresent-base))) "Face for titles in a title slide." :group 'zpresent-faces)
@@ -298,6 +300,7 @@ slide is created with an empty body."
     (puthash :checkpoint t slide)
     (puthash :title title slide)
     (puthash :body (if body (list body) nil) slide)
+    (puthash :properties '() slide)
 
     (puthash :type :normal slide)
     slide))
@@ -606,6 +609,11 @@ for example, for the first slide of each top level org element."
   (let ((inhibit-read-only t))
     (insert (propertize (make-string (window-total-height) ?\n)
                         'face 'zpresent-base)))
+  (face-spec-set 'zpresent-whole-screen-face
+                 `((t . (:background
+                         ,(if-let ((background-color (alist-get "background-color" (gethash :properties slide) nil nil #'equal)))
+                              background-color
+                            zpresent-default-background-color)))))
   (move-overlay zpresent-whole-screen-overlay
                 (point-min)
                 (point-max))
@@ -797,7 +805,6 @@ progress."
 (defun zpresent--insert-image (image-location)
   "Insert IMAGE-LOCATION as an image."
   (when-let ((image (zpresent--get-image-from-cache image-location 1)))
-    (message "found the image!")
     (insert-image image)))
 
 (defun zpresent--get-image-data (image-location)

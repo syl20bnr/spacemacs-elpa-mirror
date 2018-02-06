@@ -5,7 +5,7 @@
 ;; Author: Clément Pit-Claudel, Feng Shu
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/company-mode/company-mode
-;; Package-Version: 20180204.2243
+;; Package-Version: 20180205.2236
 ;; Version: 0.1.0
 ;; Keywords: abbrev, convenience, matching
 ;; Package-Requires: ((emacs "26.0")(company "0.9.0")(posframe "0.1.0"))
@@ -34,14 +34,26 @@
 ;; child frame as its candidate menu.
 
 ;; It has the following feature:
-;; 1. It is more fast than the company default candidate menu.
+;; 1. It is fast enough for daily use.
 ;; 2. It works well with CJK language.
+
+;; *At the moment*, company-childframe can not work well with:
+;; 1. company-quickhelp
 
 ;; ** How to use company-childframe
 
 ;; #+BEGIN_EXAMPLE
 ;; (require 'company-childframe)
 ;; (company-childframe-mode 1)
+;; #+END_EXAMPLE
+
+;; ** Tips
+;; *** Work better with desktop.el
+;; The below code let desktop.el not record the company-childframe-mode
+;; #+BEGIN_EXAMPLE
+;; (require 'desktop) ;this line is needed.
+;; (push '(company-childframe-mode . nil)
+;;       desktop-minor-mode-table)
 ;; #+END_EXAMPLE
 
 ;; ** Note
