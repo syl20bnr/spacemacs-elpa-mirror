@@ -1,4 +1,4 @@
-;;; erc-image.el --- Show received image urls in the ERC buffer
+;;; erc-image.el --- Show received image urls in the ERC buffer -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2012  Jon de Andrés Frías
 ;; Copyright (C) 2012  Raimon Grau Cuscó
@@ -7,7 +7,7 @@
 ;; Author: Jon de Andrés Frías <jondeandres@gmail.com>
 ;;         Raimon Grau Cuscó <raimonster@gmail.com>
 ;; Version: 0.9
-;; Package-Version: 20180205.1635
+;; Package-Version: 20180206.941
 ;; Keywords: multimedia
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -125,14 +125,21 @@ If several regex match prior occurring have higher priority."
     (with-current-buffer (marker-buffer marker)
       (save-excursion
         (let ((inhibit-read-only t)
-               (im (erc-image-create-image file-name)))
+              (im (erc-image-create-image file-name))
+              (map (make-sparse-keymap)))
           (goto-char (marker-position marker))
           (let ((pt-before (point)))
             (insert-before-markers
              (or erc-fill-prefix "")
-             (propertize " " 'display im)
+             (propertize " " 'display im 'keymap map
+                         'help-echo (when (image-multi-frame-p im)
+                                      "mouse-2 or RET: replay animation"))
              "\n")
-            (when (image-multi-frame-p im) (image-animate im 0 t))
+            (when (image-multi-frame-p im)
+              (image-animate im)
+              (let ((animate (lambda () (interactive) (image-animate im))))
+                (define-key map [mouse-2] animate)
+                (define-key map (kbd "RET") animate)))
             (put-text-property pt-before (point) 'read-only t)))))))
 
 (defun erc-image-create-image (file-name)

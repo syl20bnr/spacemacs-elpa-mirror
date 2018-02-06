@@ -2,8 +2,8 @@
 
 ;; Author: Preetpal S. Sohal
 ;; URL: https://github.com/preetpalS/emacs-dotenv-mode
-;; Package-Version: 20180205.1232
-;; Version: 0.2.2
+;; Package-Version: 20180206.900
+;; Version: 0.2.3
 ;; Package-Requires: ((emacs "24.3"))
 ;; License: GNU General Public License Version 3
 
@@ -88,6 +88,8 @@
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.env\\'" . dotenv-mode))
+
+;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.env\\.example\\'" . dotenv-mode))
 
 (provide 'dotenv-mode)
