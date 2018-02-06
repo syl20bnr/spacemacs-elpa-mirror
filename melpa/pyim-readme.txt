@@ -232,6 +232,20 @@ pyim 的 tooltip 选词框默认使用 *双行显示* 的样式，在一些特
 *** 设置模糊音
 可以通过设置 `pyim-fuzzy-pinyin-alist' 变量来自定义模糊音。
 
+*** 使用魔术转换器
+用户可以将待选词条作 “特殊处理” 后再 “上屏”，比如 “简体转繁体” 或者
+“输入中文，上屏英文” 之类的。
+
+用户需要设置 `pyim-magic-converter', 比如：下面这个例子实现，
+输入 “二呆”，“一个超级帅的小伙子” 上屏 :-)
+#+BEGIN_EXAMPLE
+(defun my-converter (string)
+  (if (equal string "二呆")
+      "“一个超级帅的小伙子”"
+    string))
+(setq pyim-magic-converter #'my-converter)
+#+END_EXAMPLE
+
 *** 切换全角标点与半角标点
 
 1. 第一种方法：使用命令 `pyim-punctuation-toggle'，全局切换。
