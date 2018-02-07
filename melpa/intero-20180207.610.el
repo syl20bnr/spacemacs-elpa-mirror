@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20180204.1445
+;; Package-Version: 20180207.610
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -1325,7 +1325,7 @@ stack's default)."
                              (list "--verbosity" "silent")
                              (list "--ghci-options"
                                    (concat "-ghci-script=" script))
-                             (mapcan (lambda (x) (list "--ghci-options" x)) intero-extra-ghci-options))))))
+                             (cl-mapcan (lambda (x) (list "--ghci-options" x)) intero-extra-ghci-options))))))
         (when (process-live-p process)
           (set-process-query-on-exit-flag process nil)
           (message "Started Intero process for REPL.")
@@ -1680,6 +1680,15 @@ x:\\foo\\bar (i.e., Windows)."
 
 (defun intero-get-type-at (beg end)
   "Get the type at the given region denoted by BEG and END."
+  (let ((result (intero-get-type-at-helper beg end)))
+    (if (string-match (regexp-quote "Couldn't guess that module name. Does it exist?")
+                      result)
+        (progn (flycheck-buffer)
+               (message "No type information yet, compiling module ...")
+               (intero-get-type-at-helper beg end))
+      result)))
+
+(defun intero-get-type-at-helper (beg end)
   (replace-regexp-in-string
    "\n$" ""
    (intero-blocking-call
@@ -1748,8 +1757,20 @@ type as arguments."
                  (format ":info %s" thing))))
       optimistic-result)))
 
+(defconst intero-unloaded-module-string "Couldn't guess that module name. Does it exist?")
+
 (defun intero-get-loc-at (beg end)
   "Get the location of the identifier denoted by BEG and END."
+  (let ((result (intero-get-loc-at-helper beg end)))
+    (if (string-match (regexp-quote intero-unloaded-module-string)
+                      result)
+        (progn (flycheck-buffer)
+               (message "No location information yet, compiling module ...")
+               (intero-get-loc-at-helper beg end))
+      result)))
+
+(defun intero-get-loc-at-helper (beg end)
+  "Make the blocking call to the process."
   (replace-regexp-in-string
    "\n$" ""
    (intero-blocking-call
@@ -1767,6 +1788,16 @@ type as arguments."
             (buffer-substring-no-properties beg end)))))
 
 (defun intero-get-uses-at (beg end)
+  "Return usage list for identifier denoted by BEG and END."
+  (let ((result (intero-get-uses-at-helper beg end)))
+    (if (string-match (regexp-quote intero-unloaded-module-string)
+                      result)
+        (progn (flycheck-buffer)
+               (message "No use information yet, compiling module ...")
+               (intero-get-uses-at-helper beg end))
+      result)))
+
+(defun intero-get-uses-at-helper (beg end)
   "Return usage list for identifier denoted by BEG and END."
   (replace-regexp-in-string
    "\n$" ""
@@ -2087,7 +2118,7 @@ default when nil)."
             (list "--no-load"))
           (when ignore-dot-ghci
             (list "--ghci-options" "-ignore-dot-ghci"))
-          (mapcan (lambda (x) (list "--ghci-options" x)) intero-extra-ghc-options)
+          (cl-mapcan (lambda (x) (list "--ghci-options" x)) intero-extra-ghc-options)
           (let ((dir (intero-localize-path (intero-make-temp-file "intero" t))))
             (list "--ghci-options"
                   (concat "-odir=" dir)
