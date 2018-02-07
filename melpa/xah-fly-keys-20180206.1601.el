@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2017, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 8.5.20180107
-;; Package-Version: 20180107.1546
+;; Version: 8.6.20180206
+;; Package-Version: 20180206.1601
 ;; Created: 10 Sep 2013
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, emulations, vim, ergoemacs
@@ -30,10 +30,12 @@
 ;; (add-to-list 'load-path "~/.emacs.d/lisp/")
 ;; (require 'xah-fly-keys)
 ;; (xah-fly-keys-set-layout "qwerty") ; required if you use qwerty
-;; (xah-fly-keys-set-layout "qwertz") ; required if you use qwertz (Germany, etc.)
-;; ;; (xah-fly-keys-set-layout "workman") ; required if you use workman
-;; ;; (xah-fly-keys-set-layout "programer-dvorak") ; required if you use Programmer Dvorak
-;; ;; (xah-fly-keys-set-layout "dvorak") ; by default, it's dvorak
+;; for other layout, use one of
+;; ;; "qwertz"
+;; ;; "workman"
+;; ;; "programer-dvorak"
+;; ;; "dvorak"
+;; ;; default is dvorak
 ;; (xah-fly-keys 1)
 
 ;; --------------------------------------------------
@@ -525,6 +527,22 @@ Version 2017-06-19"
       (dolist (x kill-ring )
         (insert x "\n--------------------------------------------------\n\n"))
       (goto-char (point-min)))))
+
+(defun xah-kill-word ()
+  "Like `kill-word', but delete selection first if there's one.
+Version 2018-02-06"
+  (interactive)
+  (when mark-active
+    (delete-region (region-beginning) (region-end)))
+  (kill-word 1))
+
+(defun xah-backward-kill-word ()
+  "Like `backward-kill-word', but delete selection first if there's one.
+Version 2018-02-06"
+  (interactive)
+  (when mark-active
+    (delete-region (region-beginning) (region-end)))
+  (backward-kill-word 1))
 
 (defun xah-delete-backward-char-or-bracket-text ()
   "Delete backward 1 character, but if it's a \"quote\" or bracket ()[]{}【】「」 etc, delete bracket and the inner text, push the deleted text to `kill-ring'.
@@ -2108,7 +2126,7 @@ File suffix is used to determine what program to run.
 If the file is modified or not saved, save it automatically before run.
 
 URL `http://ergoemacs.org/emacs/elisp_run_current_file.html'
-Version 2017-10-27"
+Version 2018-01-12"
   (interactive)
   (let (
         ($suffix-map
@@ -2122,8 +2140,8 @@ Version 2017-10-27"
            ("go" . "go run")
            ("hs" . "runhaskell")
            ("js" . "node")
-           ;; ("ts" . "tsc --alwaysStrict --lib DOM,ES2015,DOM.Iterable,ScriptHost --target ES6") ; TypeScript
            ("ts" . "tsc --alwaysStrict --lib DOM,ES2015,DOM.Iterable,ScriptHost --target ES5") ; TypeScript
+           ;; ("ts" . "tsc --alwaysStrict --lib DOM,ES2015,DOM.Iterable,ScriptHost --target ES6") ; TypeScript
            ("sh" . "bash")
            ("clj" . "java -cp ~/apps/clojure-1.6.0/clojure-1.6.0.jar clojure.main")
            ("rkt" . "racket")
@@ -2353,10 +2371,10 @@ Version 2015-04-09"
 (defun xah-show-in-desktop ()
   "Show current file in desktop.
  (Mac Finder, Windows Explorer, Linux file manager)
- This command be called when in a file or in `dired'.
+ This command can be called when in a file or in `dired'.
 
 URL `http://ergoemacs.org/emacs/emacs_dired_open_file_in_ext_apps.html'
-Version 2017-12-23"
+Version 2018-01-13"
   (interactive)
   (let (($path (if (buffer-file-name) (buffer-file-name) default-directory )))
     (cond
@@ -2367,9 +2385,9 @@ Version 2017-12-23"
           (let (($files (dired-get-marked-files )))
             (if (eq (length $files) 0)
                 (shell-command
-                 (concat "open " default-directory ))
+                 (concat "open " (shell-quote-argument default-directory)))
               (shell-command
-               (concat "open -R " (car (dired-get-marked-files ))))))
+               (concat "open -R " (shell-quote-argument (car (dired-get-marked-files )))))))
         (shell-command
          (concat "open -R " $path))))
      ((string-equal system-type "gnu/linux")
@@ -3167,6 +3185,7 @@ Version 2017-01-21"
 ;; setting keys
 
 (progn
+  ;; set control meta, etc keys
 
   (progn
     (define-key xah-fly-key-map (kbd "<home>") 'xah-fly-command-mode-activate)
@@ -3198,8 +3217,22 @@ Version 2017-01-21"
       (define-key xah-fly-key-map (kbd "<C-prior>") 'xah-previous-user-buffer)
       (define-key xah-fly-key-map (kbd "<C-next>") 'xah-next-user-buffer)
 
-      (define-key xah-fly-key-map (kbd "C-2") 'xah-previous-user-buffer)
-      (define-key xah-fly-key-map (kbd "C-1") 'xah-next-user-buffer)
+      (define-key xah-fly-key-map (kbd "C-9") 'scroll-down-command)
+      (define-key xah-fly-key-map (kbd "C-0") 'scroll-up-command)
+
+      (if xah-fly-swapped-1-8-and-2-7-p
+          (progn
+            (define-key xah-fly-key-map (kbd "C-2") 'xah-previous-user-buffer)
+            (define-key xah-fly-key-map (kbd "C-1") 'xah-next-user-buffer))
+        (progn
+          (define-key xah-fly-key-map (kbd "C-7") 'xah-previous-user-buffer)
+          (define-key xah-fly-key-map (kbd "C-8") 'xah-next-user-buffer)))
+
+      (define-key xah-fly-key-map (kbd "C-5") 'xah-previous-emacs-buffer)
+      (define-key xah-fly-key-map (kbd "C-6") 'xah-next-emacs-buffer)
+
+      (define-key xah-fly-key-map (kbd "C-3") 'previous-error)
+      (define-key xah-fly-key-map (kbd "C-4") 'next-error)
 
       (define-key xah-fly-key-map (kbd "<C-S-prior>") 'xah-previous-emacs-buffer)
       (define-key xah-fly-key-map (kbd "<C-S-next>") 'xah-next-emacs-buffer)
@@ -3207,9 +3240,6 @@ Version 2017-01-21"
       (define-key xah-fly-key-map (kbd "<C-tab>") 'xah-next-user-buffer)
       (define-key xah-fly-key-map (kbd "<C-S-tab>") 'xah-previous-user-buffer)
       (define-key xah-fly-key-map (kbd "<C-S-iso-lefttab>") 'xah-previous-user-buffer)
-
-      (define-key xah-fly-key-map (kbd "C-9") 'scroll-down-command)
-      (define-key xah-fly-key-map (kbd "C-0") 'scroll-up-command)
 
       (define-key xah-fly-key-map (kbd "C-SPC") 'xah-fly-leader-key-map)
 
@@ -3223,9 +3253,6 @@ Version 2017-01-21"
       (define-key xah-fly-key-map (kbd "C-v") 'yank)
       (define-key xah-fly-key-map (kbd "C-w") 'xah-close-current-buffer)
       (define-key xah-fly-key-map (kbd "C-z") 'undo)
-
-      (define-key xah-fly-key-map (kbd "C-3") 'previous-error)
-      (define-key xah-fly-key-map (kbd "C-4") 'next-error)
 
       (define-key xah-fly-key-map (kbd "C-+") 'text-scale-increase)
       (define-key xah-fly-key-map (kbd "C--") 'text-scale-decrease)
@@ -3270,7 +3297,7 @@ Version 2017-01-21"
      ("'" . xah-reformat-lines)
      ("," . xah-shrink-whitespaces)
      ("-" . xah-cycle-hyphen-underscore-space)
-     ("." . backward-kill-word)
+     ("." . xah-backward-kill-word)
      (";" . xah-comment-dwim)
      ("/" . hippie-expand)
      ("\\" . nil)
@@ -3308,7 +3335,7 @@ Version 2017-01-21"
      ("m" . xah-backward-left-bracket)
      ("n" . forward-char)
      ("o" . open-line)
-     ("p" . kill-word)
+     ("p" . xah-kill-word)
      ("q" . xah-cut-line-or-region)
      ("r" . forward-word)
      ("s" . xah-end-of-line-or-block)

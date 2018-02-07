@@ -1,12 +1,11 @@
 ;;; fwb-cmds.el --- misc frame, window and buffer commands
 
-;; Copyright (C) 2008-2016  Jonas Bernoulli
+;; Copyright (C) 2008-2018  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
-;; Created: 20080830
 ;; Homepage: https://github.com/tarsius/fwb-cmds
 ;; Keywords: convenience
-;; Package-Version: 1.0.0
+;; Package-Version: 1.1.0
 
 ;; This file is not part of GNU Emacs.
 
@@ -99,6 +98,35 @@ Only buffers are considered that have a window in the current frame."
   "Create new frame with the current buffer."
   (interactive)
   (switch-to-buffer-other-frame (current-buffer)))
+
+;;;###autoload
+(defun toggle-window-split ()
+  "Toggle between vertical and horizontal split."
+  ;; Source: https://www.emacswiki.org/emacs/ToggleWindowSplit.
+  ;; Author: Jeff Dwork
+  (interactive)
+  (if (= (count-windows) 2)
+      (let* ((this-win-buffer (window-buffer))
+             (next-win-buffer (window-buffer (next-window)))
+             (this-win-edges (window-edges (selected-window)))
+             (next-win-edges (window-edges (next-window)))
+             (this-win-2nd (not (and (<= (car this-win-edges)
+                                         (car next-win-edges))
+                                     (<= (cadr this-win-edges)
+                                         (cadr next-win-edges)))))
+             (splitter
+              (if (= (car this-win-edges)
+                     (car (window-edges (next-window))))
+                  'split-window-horizontally
+                'split-window-vertically)))
+        (delete-other-windows)
+        (let ((first-win (selected-window)))
+          (funcall splitter)
+          (if this-win-2nd (other-window 1))
+          (set-window-buffer (selected-window) this-win-buffer)
+          (set-window-buffer (next-window) next-win-buffer)
+          (select-window first-win)
+          (if this-win-2nd (other-window 1))))))
 
 (defun read-library-name ()
   (require 'find-func)
