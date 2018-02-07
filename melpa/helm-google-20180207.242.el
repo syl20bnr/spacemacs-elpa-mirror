@@ -4,9 +4,9 @@
 
 ;; Author: steckerhalter
 ;; Package-Requires: ((helm "0"))
-;; Package-Version: 20180204.232
+;; Package-Version: 20180207.242
 ;; URL: https://github.com/steckerhalter/helm-google
-;; Keywords: helm google search browse
+;; Keywords: helm google search browse searx
 
 ;; This file is not part of GNU Emacs.
 
@@ -31,6 +31,7 @@
 
 (require 'helm)
 (require 'helm-net)
+(require 'json)
 
 (defgroup helm-google '()
   "Customization group for `helm-google'."
@@ -38,21 +39,9 @@
   :group 'convenience
   :group 'comm)
 
-(defcustom helm-google-search-function 'helm-google-html-search
-  "The function that should be used to get the search results."
-  :type 'symbol
-  :group 'helm-google)
-
-(defcustom helm-google-url "https://encrypted.google.com/search?ie=UTF-8&oe=UTF-8&q=%s"
-  "The Google search url.
-`%s' is where the search terms are inserted. `encrypted' is used
-to avoid country-specific redirects. For country-specific
-searches you will want to use `www.google.TLD'."
-  :type 'string
-  :group 'helm-google)
-
-(defcustom helm-google-parsing-function 'helm-google--parse-w/regexp
-  "Function to use to parse the html."
+(defcustom helm-google-default-engine 'google
+  "The default engine to use.
+See `helm-google-engines' for available engines."
   :type 'symbol
   :group 'helm-google)
 
@@ -66,8 +55,16 @@ searches you will want to use `www.google.TLD'."
   :group 'helm-google
   :type '(alist :key-type string :value-type function))
 
+(defcustom helm-google-engines
+  '((google . "https://encrypted.google.com/search?ie=UTF-8&oe=UTF-8&q=%s")
+    (searx . "https://searx.dk/?engines=google&format=json&q=%s"))
+  "Alist of search engines.
+Each element is a cons-cell (ENGINE . URL).
+`%s' is where the search terms are inserted in the URL."
+  :group 'helm-google
+  :type '(alist :key-type symbol :value-type string))
 
-(defcustom helm-google-idle-delay 0.4
+(defcustom helm-google-idle-delay 0.5
   "Time to wait when idle until query is made."
   :type 'integer
   :group 'helm-google)
@@ -93,7 +90,8 @@ searches you will want to use `www.google.TLD'."
      (prog1 ,@body
        (kill-buffer ,buf))))
 
-(defun helm-google--parse-w/regexp (buf)
+(defun helm-google--parse-google (buf)
+  "Parse the html response from Google."
   (helm-google--with-buffer buf
       (let (results result)
         (while (re-search-forward "class=\"r\"><a href=\"/url\\?q=\\(.*?\\)&amp;sa" nil t)
@@ -106,23 +104,32 @@ searches you will want to use `www.google.TLD'."
           (setq result nil))
         results)))
 
-(defun helm-google--parse (buf)
-  "Extract the search results from BUF."
-    (funcall helm-google-parsing-function buf))
+(defun helm-google--parse-searx (buf)
+  "Parse the json response from Searx."
+  (let ((json-object-type 'plist)
+        (json-array-type 'list))
+    (plist-get (helm-google--with-buffer buf (json-read)) :results)))
 
-(defun helm-google--response-buffer-from-search (text &optional search-url)
+(defun helm-google--response-buffer-from-search (text search-url)
   (let ((url-mime-charset-string "utf-8")
-        (url (format (or search-url helm-google-url) (url-hexify-string text))))
+        (url (format search-url (url-hexify-string text))))
     (url-retrieve-synchronously url t)))
 
-(defun helm-google--search (text)
-  (let* ((buf (helm-google--response-buffer-from-search text))
-         (results (helm-google--parse buf)))
+(defun helm-google--search (text engine)
+  "Fetch the response buffer and parse it with the corresponding
+parsing function."
+  (let* ((search-url (or (and (eq engine 'google)
+                              (boundp 'helm-google-url) ;support legacy variable
+                              helm-google-url)
+                         (alist-get engine helm-google-engines)))
+         (buf (helm-google--response-buffer-from-search text search-url))
+         (results (funcall (intern (format "helm-google--parse-%s" engine)) buf)))
     results))
 
-(defun helm-google-html-search ()
-  "Get Google results by scraping the website."
-  (let* ((results (helm-google--search helm-pattern)))
+(defun helm-google-search (&optional engine)
+  "Query the search engine, parse the response and fontify the candidates."
+  (let* ((engine (or engine helm-google-default-engine))
+         (results (helm-google--search helm-pattern engine)))
     (mapcar (lambda (result)
               (let ((cite (plist-get result :cite)))
                 (cons
@@ -146,19 +153,10 @@ searches you will want to use `www.google.TLD'."
                  (plist-get result :url))))
             results)))
 
-(defun helm-google-search ()
-  "Invoke the search function set by `helm-google-search-function'."
-  (funcall helm-google-search-function))
 
-(defvar helm-source-google
-  `((name . "Google")
-    (action . helm-google-actions)
-    (candidates . helm-google-search)
-    (requires-pattern)
-    (nohighlight)
-    (multiline)
-    (match . identity)
-    (volatile)))
+(defun helm-google-engine-string ()
+  (capitalize
+   (format "%s" helm-google-default-engine)))
 
 ;;;###autoload
 (defun helm-google ( &optional arg)
@@ -171,8 +169,15 @@ searches you will want to use `www.google.TLD'."
                 (region-beginning)
                 (region-end)))
            arg)))
-    (helm :sources 'helm-source-google
-          :prompt "Google: "
+    (helm :sources `((name . ,(helm-google-engine-string))
+                     (action . helm-google-actions)
+                     (candidates . helm-google-search)
+                     (requires-pattern)
+                     (nohighlight)
+                     (multiline)
+                     (match . identity)
+                     (volatile))
+          :prompt (concat (helm-google-engine-string) ": ")
           :input region
           :input-idle-delay helm-google-idle-delay
           :buffer "*helm google*"
