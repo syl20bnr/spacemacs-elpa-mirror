@@ -4,7 +4,7 @@
 ;; Copyright 2011-2017 François-Xavier Bois
 
 ;; Version: 15.0.23
-;; Package-Version: 20180207.123
+;; Package-Version: 20180208.750
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; Package-Requires: ((emacs "23.1"))
@@ -2390,6 +2390,16 @@ another auto-completion with different ac-sources (e.g. ac-php)")
   (unless (fboundp 'setq-local)
     (defmacro setq-local (var val)
     `(set (make-local-variable ',var) ,val)))
+
+  ;; compatability with emacs < 24.4
+  (defun web-mode-string-suffix-p (suffix string)
+    "Return t if STRING ends with SUFFIX."
+      (and (string-match (rx-to-string `(: ,suffix eos) t)
+                         string)
+           t))
+
+  (unless (fboundp 'string-suffix-p)
+    (fset 'string-suffix-p (symbol-function 'web-mode-string-suffix-p)))
 
   ) ;eval-and-compile
 
@@ -9229,7 +9239,7 @@ Prompt user if TAG-NAME isn't provided."
                 (> (length tag-name) 0)))
       (message "element-insert ** failure **"))
      ((web-mode-element-is-void tag-name)
-      (insert (concat "<" tag-name "/>"))
+      (insert (concat "<" (replace-regexp-in-string "/" "" tag-name) "/>"))
       )
      (mark-active
       (let ((beg (region-beginning)) (end (region-end)))
@@ -9371,6 +9381,8 @@ Prompt user if TAG-NAME isn't provided."
     t)
    ((and tag (member tag '("div" "li" "a" "p" "h1" "h2" "h3" "ul" "span" "article" "section" "td" "tr")))
     nil)
+   ((and tag (string-suffix-p "/" tag))
+    t)
    ((and tag (string= web-mode-content-type "jsx"))
     (member (downcase tag) '("img" "br" "hr")))
    (tag

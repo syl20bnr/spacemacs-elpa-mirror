@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20171130.1143
+;; Package-Version: 20180208.912
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.9.0") (hydra "0.13.4"))
 ;; Keywords: completion, matching, bindings
@@ -36,7 +36,7 @@
 
 (defun ivy--matcher-desc ()
   "Return description of `ivy--regex-function'."
-  (let ((cell (assoc ivy--regex-function ivy--preferred-re-builders)))
+  (let ((cell (assq ivy--regex-function ivy-preferred-re-builders)))
     (if cell
         (cdr cell)
       "other")))
