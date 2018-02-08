@@ -1,11 +1,11 @@
 ;;; pipenv.el --- A Pipenv porcelain.  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2017 by Paul Walsh
+;; Copyright (C) 2017-2018 by Paul Walsh
 
 ;; Author: Paul Walsh <paulywalsh@gmail.com>
 ;; URL: https://github.com/pwalsh/pipenv.el
-;; Package-Version: 20180123.1146
-;; Version: 0.0.1-alpha
+;; Package-Version: 20180207.1216
+;; Version: 0.0.1-beta
 ;; Package-Requires: ((emacs "25.1")(f "0.19.0")(s "1.12.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -107,7 +107,17 @@
   "Force ARGUMENT to a list."
   (if (listp argument)
       argument
-    (s-split " " argument)))
+    (s-split " " argument t)))
+
+(defun pipenv--force-wait (process)
+  "Block until PROCESS exits successfully."
+  (let ((sentinel-event nil))
+    (set-process-sentinel
+     process
+     (lambda (process message)
+       (setq sentinel-event t)))
+    (while (not sentinel-event)
+      (sit-for 0.1 t))))
 
 (defun pipenv--process-filter-buffer-insert (process response)
   "Filter for PROCESS, insert RESPONSE in process buffer."
@@ -143,21 +153,22 @@
     (pipenv--process-filter-message-insert process clean-response)
     (pipenv--process-filter-buffer-insert process clean-response)))
 
-(defun pipenv--get-executable-dir ()
+(defun pipenv--get-executables-dir ()
   "Get the directory of executables in an active virtual environment, or nil."
-  (when python-shell-virtualenv-root
+  (when (and python-shell-virtualenv-root
+             (f-directory? python-shell-virtualenv-root))
     (concat
      (file-name-as-directory python-shell-virtualenv-root)
      (if (eq system-type 'windows-nt) "Scripts" "bin"))))
 
 (defun pipenv--push-venv-executables-to-exec-path ()
   "Push the directory of executables in an active virtual environment to PATH."
-  (when-let ((venv-executables (pipenv--get-executable-dir)))
+  (when-let ((venv-executables (pipenv--get-executables-dir)))
     (push venv-executables exec-path)))
 
 (defun pipenv--pull-venv-executables-from-exec-path ()
   "Pull the directory of executables in an active virtual environment from PATH."
-  (when-let ((venv-executables (pipenv--get-executable-dir)))
+  (when-let ((venv-executables (pipenv--get-executables-dir)))
     (setq exec-path (delete venv-executables exec-path))))
 
 (defun pipenv--make-pipenv-process (command &optional filter sentinel)
@@ -299,8 +310,8 @@ or (if none is given), installs all packages."
     (comint-send-input)
     (comint-clear-buffer)))
 
-(defun pipenv-uninstall(packages)
-  "Uninstalls PACKAGES and removes it from Pipfile."
+(defun pipenv-uninstall (packages)
+  "Uninstalls PACKAGES and removes from Pipfile."
   (interactive "sWhich Python packages should be uninstalled (separate with space)? ")
   (pipenv--command (cons "uninstall" (pipenv--force-list packages))))
 
@@ -318,7 +329,7 @@ to latest compatible versions."
   "Activate the Python version from Pipenv. Return nil if no project."
   (interactive)
   (when (pipenv-project?)
-    (accept-process-output (pipenv-venv) nil)
+    (pipenv--force-wait (pipenv-venv))
     (pipenv--push-venv-executables-to-exec-path)
     (when (and (featurep 'flycheck) pipenv-with-flycheck)
       (pipenv-activate-flycheck))
@@ -387,10 +398,9 @@ and open a Pipenv shell and a Python interpreter."
   (pipenv-deactivate)
   ;; Only activate if we can verify this is a Pipenv project.
   (when (pipenv-project?)
-    (progn
-      (pipenv-activate)
-      (pipenv-shell)
-      (run-python))))
+    (pipenv-activate)
+    (pipenv-shell)
+    (run-python)))
 
 ;;
 ;; Initialization code.
