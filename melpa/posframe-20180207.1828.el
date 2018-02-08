@@ -5,7 +5,7 @@
 ;; Author: Feng Shu <tumashu@163.com>
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/posframe
-;; Package-Version: 20180207.124
+;; Package-Version: 20180207.1828
 ;; Version: 0.1.0
 ;; Keywords: tooltip
 ;; Package-Requires: ((emacs "26"))
@@ -410,11 +410,8 @@ you can use `posframe-delete-all' to delete all posframes."
                   (frame-pixel-width child-frame)
                   (frame-pixel-height child-frame)))
                 ((consp position)
-                 (posframe--get-respect-position
-                  (cons (+ (car position) x-pixel-offset)
-                        (+ (cdr position) y-pixel-offset))
-                  :respect-minibuffer t
-                  :respect-modeline t))
+                 (cons (+ (car position) x-pixel-offset)
+                       (+ (cdr position) y-pixel-offset)))
                 (t (posframe--get-pixel-position
                     position
                     :posframe-width (frame-pixel-width child-frame)
@@ -459,28 +456,6 @@ you can use `posframe-delete-all' to delete all posframes."
                               child-frame height min-height width min-width)))
                        child-frame height min-height width min-width))))
       nil)))
-
-(cl-defun posframe--get-respect-position (position
-                                          &key
-                                          respect-minibuffer
-                                          respect-modeline)
-  "Get adjusted position for POSITION which like (0 . -1).
-the new position will respect modeline and minibuffer and
-protect them from be hided over."
-  (if (>= (cdr position) 0)
-      position
-    (let ((modeline-height
-           (if respect-modeline
-               (window-mode-line-height)
-             0))
-          (minibuffer-height
-           (if respect-minibuffer
-               (window-pixel-height (minibuffer-window))
-             0)))
-      (cons (car position)
-            (min (cdr position)
-                 (- 0 (+ modeline-height
-                         minibuffer-height)))))))
 
 (defun posframe-get-frame-size (posframe-buffer &optional pixelwise)
   "Return the posframe's current frame text or PIXELWISE size.

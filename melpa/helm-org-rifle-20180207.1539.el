@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/helm-org-rifle
-;; Package-Version: 20180115.137
+;; Package-Version: 20180207.1539
 ;; Version: 1.6.0-pre
 ;; Package-Requires: ((emacs "24.4") (dash "2.12") (f "0.18.1") (helm "1.9.4") (s "1.10.0"))
 ;; Keywords: hypermedia, outlines
@@ -597,7 +597,8 @@ Files are opened if necessary, and the resulting buffers are left open."
                   :action (helm-make-actions
                            "Show entry" 'helm-org-rifle--show-candidates
                            "Show entry in indirect buffer" 'helm-org-rifle-show-entry-in-indirect-buffer
-                           "Show entry in real buffer" 'helm-org-rifle-show-entry-in-real-buffer)
+                           "Show entry in real buffer" 'helm-org-rifle-show-entry-in-real-buffer
+			   "Clock in" 'helm-org-rifle--clock-in)
                   :keymap helm-org-rifle-map)))
     (helm-attrset 'buffer buffer source)
     source))
@@ -716,6 +717,13 @@ source, so we must gather them manually."
   (interactive)
   (with-helm-alive-p
     (helm-exit-and-execute-action 'helm-org-rifle-show-entry-in-indirect-buffer)))
+
+(defun helm-org-rifle--clock-in (candidate)
+  "Clock into CANDIDATE."
+  (-let (((buffer . pos) candidate))
+    (with-current-buffer buffer
+      (goto-char pos)
+      (org-clock-in))))
 
 ;;;;; The meat
 
