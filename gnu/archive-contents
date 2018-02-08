@@ -787,7 +787,7 @@
 	     ((:url . "https://github.com/michael-heerdegen/on-screen.el")
 	      (:keywords "convenience"))])
  (org-edna .
-	   [(1 0 -2 5)
+	   [(1 0 -2 6)
 	    ((emacs
 	      (25 1))
 	     (seq
