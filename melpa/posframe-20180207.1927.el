@@ -5,7 +5,7 @@
 ;; Author: Feng Shu <tumashu@163.com>
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/posframe
-;; Package-Version: 20180207.1828
+;; Package-Version: 20180207.1927
 ;; Version: 0.1.0
 ;; Keywords: tooltip
 ;; Package-Requires: ((emacs "26"))
@@ -110,6 +110,9 @@
 (defvar posframe--frame nil
   "Record posframe's frame.")
 
+(defvar posframe--parent-frame nil
+  "Record posframe's parent frame.")
+
 (defvar posframe--timer nil
   "Record posframe's hide timer.")
 
@@ -137,6 +140,7 @@ of `posframe-show'.")
 of `posframe-show'.")
 
 (dolist (var '(posframe--frame
+               posframe--parent-frame
                posframe--timer
                posframe--last-position
                posframe--last-posframe-size
@@ -194,17 +198,6 @@ by sticking out of the display."
                      (- y-top (or posframe-height 0))
                    y-buttom)))))
 
-(defun posframe--get-center-position (posframe-width posframe-height)
-  "Get the position which let posframe stay onto its parent-frame's center.
-This posframe's pixel width is POSFRAME-WIDTH,
-its pixel height is POSFRAME-HEIGHT."
-  (let* ((window (selected-window))
-         (frame (window-frame window))
-         (xmax (frame-pixel-width frame))
-         (ymax (frame-pixel-height frame)))
-    (cons (/ (- xmax posframe-width) 2)
-          (/ (- ymax posframe-height) 2))))
-
 (cl-defun posframe--create-frame (posframe-buffer
                                   &key
                                   parent-frame
@@ -252,6 +245,7 @@ This posframe's buffer is POSFRAME-BUFFER."
         (setq-local posframe--last-args args)
         (setq-local posframe--last-position nil)
         (setq-local posframe--last-posframe-size nil)
+        (setq-local posframe--parent-frame (or parent-frame (window-frame)))
         (setq-local posframe--frame
                     (make-frame
                      `(,@override-parameters
@@ -261,7 +255,7 @@ This posframe's buffer is POSFRAME-BUFFER."
                           (cons 'background-color background-color))
                        ,(when font
                           (cons 'font font))
-                       (parent-frame . ,(or parent-frame (window-frame)))
+                       (parent-frame . ,posframe--parent-frame)
                        (keep-ratio ,keep-ratio)
                        (posframe-buffer . ,posframe-buffer)
                        (no-accept-focus . t)
@@ -318,8 +312,7 @@ This posframe's buffer is POSFRAME-BUFFER."
 The POSITION can be:
 1. a number, which regard as a point.
 2. a cons of pixel numbers, for example: (0 . 0).
-3. 'center, which will put posframe onto the center
-   of its parent frame.
+3. a function with POSFRAME-BUFFER as its argument.
 
 This posframe's buffer is POSFRAME-BUFFER.
 
@@ -405,10 +398,8 @@ you can use `posframe-delete-all' to delete all posframes."
     ;; Get the posframe's position, this must run in user's working
     ;; buffer instead of posframe's buffer.
     (setq x-and-y
-          (cond ((eq position 'center)
-                 (posframe--get-center-position
-                  (frame-pixel-width child-frame)
-                  (frame-pixel-height child-frame)))
+          (cond ((functionp position)
+                 (funcall position posframe-buffer))
                 ((consp position)
                  (cons (+ (car position) x-pixel-offset)
                        (+ (cdr position) y-pixel-offset)))
