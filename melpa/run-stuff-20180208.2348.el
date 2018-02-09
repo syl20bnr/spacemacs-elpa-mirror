@@ -5,7 +5,7 @@
 ;; Author: Campbell Barton <ideasman42@gmail.com>
 
 ;; URL: https://github.com/ideasman42/emacs-run-stuff
-;; Package-Version: 20170813.1957
+;; Package-Version: 20180208.2348
 ;; Version: 0.0.1
 ;; Keywords: files lisp files convenience hypermedia
 ;; Package-Requires: ((emacs "24.4"))
@@ -102,9 +102,10 @@ Returns the line(s) as a string with no properties."
             (progn
               (setq end new-end)
               (setq end-ws new-end-ws)
-              (if (char-equal (char-before end-ws) line-terminate-char)
-                  (forward-line)
-                  (setq iterate nil)))
+              (let ((end-ws-before (char-before end-ws)))
+                (if (and end-ws-before (char-equal end-ws-before line-terminate-char))
+                    (forward-line)
+                    (setq iterate nil))))
             (setq iterate nil)))
       (buffer-substring-no-properties start end))))
 
@@ -126,9 +127,10 @@ Argument LINE-TERMINATE-CHAR is used to wrap lines."
             (progn
               (setq prev above-new-end-ws)
               (setq end-ws above-new-end-ws)
-              (if (char-equal (char-before end-ws) line-terminate-char)
-                  (forward-line -1)
-                  (setq iterate nil)))
+              (let ((end-ws-before (char-before end-ws)))
+                (if (and end-ws-before (char-equal end-ws-before line-terminate-char))
+                    (forward-line -1)
+                    (setq iterate nil))))
             (setq iterate nil)))
       (run-stuff--extract-split-lines line-terminate-char))))
 
