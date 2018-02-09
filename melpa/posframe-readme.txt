@@ -7,7 +7,7 @@ The main advantages are:
 1. It is fast enough for daily usage :-)
 2. It works well with CJK language.
 
-NOTE: For MacOS users, posframe need emacs (version >= 26.0.91)
+NOTE: For MacOS users, posframe need Emacs (version >= 26.0.91)
 
 [[./snapshots/posframe-1.png]]
 
