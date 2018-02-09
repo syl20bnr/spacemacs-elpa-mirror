@@ -4,7 +4,7 @@
 
 ;; Author: Peter Stiernström <peter@stiernstrom.se>
 ;; Version: 4.4
-;; Package-Version: 20180201.1315
+;; Package-Version: 20180208.1342
 ;; URL: https://github.com/pidu/git-timemachine
 ;; Keywords: git
 ;; Package-Requires: ((emacs "24.3"))
@@ -36,11 +36,13 @@
 
 (defcustom git-timemachine-abbreviation-length 12
  "Number of chars from the full sha1 hash to use for abbreviation."
+ :type 'integer
  :group 'git-timemachine)
 
 (defcustom git-timemachine-show-minibuffer-details t
  "Non-nil means that details of the commit (its hash and date)
 will be shown in the minibuffer while navigating commits."
+ :type 'boolean
  :group 'git-timemachine)
 
 (defface git-timemachine-commit
