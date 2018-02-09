@@ -3,10 +3,10 @@
 
 ;; Author: Russell Black (killdash9@github)
 ;; Keywords: convenience
-;; Package-Version: 20170215.1020
+;; Package-Version: 1.2
 ;; URL: https://github.com/killdash9/better-shell
 ;; Created: 1st Mar 2016
-;; Version: 1.1
+;; Version: 1.2
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -199,7 +199,7 @@ shell is left in tact."
     (when (string-match-p "\\bsudo:" f) (user-error "Already sudo"))
     (let ((sudo-f (if (file-remote-p f)
                       (with-parsed-tramp-file-name f nil
-                        (concat "/ssh:" host "|sudo:" host ":" localname))
+                        (concat "/ssh:" user "@" host "|sudo:" host ":" localname))
                     (concat "/sudo:localhost:" f)))
           (tramp-default-proxies-alist nil)
           ;; so that you don't get method overrides.  ssh is the only one that works for sudo.

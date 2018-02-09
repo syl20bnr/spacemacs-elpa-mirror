@@ -5,10 +5,10 @@
 
 ;; Author: Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; URL: http://github.com/Kungsgeten/org-brain
-;; Package-Version: 20180209.507
+;; Package-Version: 20180209.534
 ;; Keywords: outlines hypermedia
 ;; Package-Requires: ((emacs "25") (org "9"))
-;; Version: 0.4
+;; Version: 0.45
 
 ;;; Commentary:
 
@@ -880,6 +880,8 @@ Unless GOTO-FILE-FUNC is nil, use `pop-to-buffer-same-window' for opening the en
     (org-show-entry))
   entry)
 
+(define-obsolete-function-alias 'org-brain-open 'org-brain-goto "0.4")
+
 ;;;###autoload
 (defun org-brain-goto-other-window (&optional entry)
   "Goto buffer and position of org-brain ENTRY in other window.
@@ -1283,6 +1285,10 @@ Unless WANDER is t, `org-brain-stop-wandering' will be run."
 Can be (de)activated by `org-brain-visualize-wander'.")
 
 (defun org-brain-visualize-wander ()
+  "Run `org-brain-visualize-random' every `org-brain-wander-interval'.
+
+Will be cancelled by many org-brain commands, but can also be
+cancelled manually with `org-brain-stop-wandering'."
   (interactive)
   (if (member org-brain-wander-timer timer-list)
       (progn
@@ -1297,8 +1303,8 @@ Can be (de)activated by `org-brain-visualize-wander'.")
     (cancel-timer org-brain-wander-timer)))
 
 (defun org-brain-visualize-quit ()
-  (interactive)
   "Like `quit-window', but also stops `org-brain-visualize-wander'."
+  (interactive)
   (org-brain-stop-wandering)
   (quit-window))
 
@@ -1592,7 +1598,7 @@ Helper function for `org-brain-visualize'."
   "Create an org-link target string to a file in `org-brain-path'."
   (let ((entry (ignore-errors (org-brain-entry-at-pt)))
         (choice (org-brain-choose-entry "Entry: " (append (org-brain-files t)
-                                                          (org-brain-headline-entries)))))
+                                                  (org-brain-headline-entries)))))
     (when (and entry org-brain-brain-link-adds-child)
       (org-brain-add-relationship entry choice))
     (concat "brain:" (if (org-brain-filep choice) choice (nth 2 choice)))))

@@ -3,10 +3,10 @@
 
 ;; Author: Russell Black (killdash9@github)
 ;; Keywords: convenience
-;; Package-Version: 1.1
+;; Package-Version: 20180209.1001
 ;; URL: https://github.com/killdash9/better-shell
 ;; Created: 1st Mar 2016
-;; Version: 1.1
+;; Version: 1.2
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -24,13 +24,41 @@
 
 ;;; Commentary:
 ;; 
-;; This package provides two commands.
+;; This package simplifies shell management and sudo access by providing
+;; the following commands.
 ;; 
-;; better-shell-shell -- cycle through current shells, creating one if
-;; no shell exists.  With prefix arg, pop to or create a shell in
-;; the same directory (and same host) as the current buffer.
+;; `better-shell-shell'
+;; --------------------
 ;; 
-;; better-shell-remote-open -- open a shell on a remote server
+;; Cycle through existing shell buffers, in order of recent use.  If
+;; there are no shells, one is created.
+;; 
+;; With C-u prefix arg, invoke `better-shell-for-current-dir'.
+;; 
+;; `better-shell-for-current-dir'
+;; ------------------------------
+;; 
+;; Bring up a shell on the same host and in the same directory as the
+;; current buffer, choosing an existing shell if possible.  The shell
+;; chosen is guaranteed to be idle (not currently running a command).  It
+;; first looks for an idle shell that is already in the buffer's
+;; directory.  If none is found, it looks for another idle shell on the
+;; same host as the buffer.  If one is found, that shell is selected and
+;; automatically placed into the buffer's directory with a `cd` command.
+;; Otherwise, a new shell is created on the same host and in the same
+;; directory as the buffer.
+;; 
+;; `better-shell-remote-open'
+;; --------------------------
+;; 
+;; Open a shell on a remote server, allowing you to choose from any host
+;; you've previously logged into (uses your ~/.ssh/known_hosts file) or
+;; enter a new host.  With C-u prefix arg, get sudo shell.
+;; 
+;; `better-shell-sudo-here'
+;; --------------------------
+;; 
+;; Reopen the current file, directory, or shell as root.
 
 ;;; Code:
 (require 'cl-lib)
@@ -171,7 +199,7 @@ shell is left in tact."
     (when (string-match-p "\\bsudo:" f) (user-error "Already sudo"))
     (let ((sudo-f (if (file-remote-p f)
                       (with-parsed-tramp-file-name f nil
-                        (concat "/ssh:" host "|sudo:" host ":" localname))
+                        (concat "/ssh:" user "@" host "|sudo:" host ":" localname))
                     (concat "/sudo:localhost:" f)))
           (tramp-default-proxies-alist nil)
           ;; so that you don't get method overrides.  ssh is the only one that works for sudo.

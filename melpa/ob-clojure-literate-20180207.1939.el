@@ -2,7 +2,7 @@
 
 ;; Authors: stardiviner <numbchild@gmail.com>
 ;; Package-Requires: ((emacs "24.4") (org "9") (cider "0.16.0") (dash "2.12.0"))
-;; Package-Version: 20180111.210
+;; Package-Version: 20180207.1939
 ;; Package-X-Original-Version: 1.1
 ;; Keywords: tools
 ;; homepage: https://github.com/stardiviner/ob-clojure-literate
@@ -221,12 +221,13 @@ Don't auto jack in by default for not rude."
 
 (defvar ob-clojure-literate-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-c C-v M-s") 'ob-clojure-literate-specify-session-header-argument)
-    (define-key map (kbd "C-c C-v M-j") 'ob-clojure-literate-auto-jackin)
-    ;; (define-key map (kbd "C-c C-e") 'cider-eval-last-sexp)
-    ;; (define-key map (kbd "C-c C-d") 'cider-doc)
     map)
   "Keymap for `ob-clojure-literate-mode'.")
+
+(define-key org-babel-map (kbd "M-s") 'ob-clojure-literate-specify-session-header-argument)
+(define-key org-babel-map (kbd "M-j") 'ob-clojure-literate-auto-jackin)
+;; (define-key org-babel-map (kbd "M-e") 'cider-eval-last-sexp)
+;; (define-key org-babel-map (kbd "M-d") 'cider-doc)
 
 ;;;###autoload
 (defun ob-clojure-literate-enable ()
