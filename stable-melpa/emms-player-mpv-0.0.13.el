@@ -1,12 +1,14 @@
 ;;; emms-player-mpv.el --- mpv support for EMMS
 
-;; Copyright (C) 2013-2016 ZHANG Weiyi
+;; Copyright (C) 2013-2018 ZHANG Weiyi
 ;; Copyright (C) 2014 Alex Kost
+;; Copyright (C) 2018 stardiviner <numbchild@gmail.com>
 
 ;; Authors: ZHANG Weiyi <dochang@gmail.com>,
-;;          Alex Kost <alezost@gmail.com>
-;; Version: 0.0.12
-;; Package-Version: 0.0.12
+;;          Alex Kost <alezost@gmail.com>,
+;;          stardiviner <numbchild@gmail.com>
+;; Version: 0.0.13
+;; Package-Version: 0.0.13
 ;; Package-Requires: ((emms "0"))
 ;; Keywords: multimedia, emms, mpv
 ;; URL: https://github.com/dochang/emms-player-mpv/
@@ -43,7 +45,7 @@
   :group 'emms)
 
 (define-emms-simple-player mpv '(file url streamlist playlist)
-  (concat "\\`\\(http\\|mms\\)://\\|"
+  (concat "\\`\\(https?\\|mms\\)://\\|"
           (emms-player-simple-regexp
            "ogg" "mp3" "wav" "mpg" "mpeg" "wmv" "wma"
            "mov" "avi" "divx" "ogm" "ogv" "asf" "mkv"
