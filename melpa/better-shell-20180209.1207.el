@@ -3,7 +3,7 @@
 
 ;; Author: Russell Black (killdash9@github)
 ;; Keywords: convenience
-;; Package-Version: 20180209.1001
+;; Package-Version: 20180209.1207
 ;; URL: https://github.com/killdash9/better-shell
 ;; Created: 1st Mar 2016
 ;; Version: 1.2
@@ -185,7 +185,7 @@ there.  With prefix argument, get a sudo shell."
             (shell (format "*shell/sudo:%s*" remote-host))))
       ;; non-sudo
       (with-temp-buffer
-        (cd (concat "/" remote-host ":"))
+        (cd (concat "/" (or tramp-default-method "ssh") ":" remote-host ":"))
         (shell (format "*shell/%s*" remote-host))))))
 
 ;;;###autoload
@@ -217,10 +217,8 @@ shell is left in tact."
             (t (message "Can't sudo this buffer"))
             ))))
 
-(defun better-shell-existing-shell (&optional pop-to-buffer)
-  "Next existing shell in the stack.
-If POP-TO-BUFFER is non-nil, pop to the shell.  Otherwise, switch
-to it."
+(defun better-shell-existing-shell ()
+  "Switch to the next existing shell in the stack."
   (interactive)
   ;; rotate through existing shells
   (let* ((shells (better-shell-shells))
@@ -243,7 +241,7 @@ directory."
   (let ((shells (better-shell-shells)))
     (if (or (null shells) (and arg (= 4 arg)))
         (better-shell-for-current-dir)
-      (better-shell-existing-shell t))))
+      (better-shell-existing-shell))))
 
 (provide 'better-shell)
 ;;; better-shell.el ends here
