@@ -4,7 +4,7 @@
 
 ;; Author: Chen Bin <chenbin.sh@gmail.com>
 ;; URL: http://github.com/redguardtoo/find-by-pinyin-dired
-;; Package-Version: 20170206.208
+;; Package-Version: 20180209.1818
 ;; Package-Requires: ((pinyinlib "0.1.0"))
 ;; Keywords: Hanzi Chinese dired find file pinyin
 ;; Version: 0.0.3
@@ -86,7 +86,7 @@ For example, pattern 'hh tt' find file '好好学习天天向上.txt'."
 ;;;###autoload
 (defun find-by-pinyin-in-project-dired (pattern)
   "Simlar to `find-by-pinyin-dired' while search directory automatically detected.
-The directory is detected by `ffip-project-root' if you installed `find-file-in-project'."
+The directory is detected by `ffip-project-root' if `find-file-in-project' installed."
   (interactive "sFile name (first characters of Hanzi Pinyin): ")
   (let* ((dir (or find-by-pinyin-project-root
                   (if (fboundp 'ffip-project-root) (ffip-project-root)))))
