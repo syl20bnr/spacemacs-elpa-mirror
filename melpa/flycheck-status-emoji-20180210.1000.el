@@ -5,7 +5,7 @@
 ;; Author: Ben Liblit <liblit@acm.org>
 ;; Created: 13 Aug 2015
 ;; Version: 1.2.2
-;; Package-Version: 20170923.1439
+;; Package-Version: 20180210.1000
 ;; Package-Requires: ((cl-lib "0.1") (emacs "24") (flycheck "0.20") (let-alist "1.0"))
 ;; Keywords: convenience languages tools
 ;; URL: https://github.com/liblit/flycheck-status-emoji
@@ -48,10 +48,11 @@
 ;;  dependencies
 ;;
 
-(require 'cl-lib)
 (require 'flycheck)
 
-(eval-when-compile (require 'let-alist))
+(eval-when-compile
+  (require 'cl-lib)
+  (require 'let-alist))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

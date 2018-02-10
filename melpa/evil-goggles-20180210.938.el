@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20180205.153
+;; Package-Version: 20180210.938
 ;; Package-Requires: ((emacs "24.4") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -293,7 +293,7 @@ If BLOCKING is non-nil, the hint will be treated like a blocking
 hint, i.e. it will be displayed for `evil-goggles-blocking-duration'
 rather than `evil-goggles-async-duration'"
   (if (or blocking force-vertical-hint)
-      (let ((evil-goggles--force-block blocking))
+      (let ((evil-goggles--force-block force-vertical-hint))
         ;; use blocking hint for vertial blocks, async hint doesn't support vertial blocks
         (evil-goggles--with-blocking-hint beg end face))
     (evil-goggles--with-async-hint beg end face)))
@@ -513,10 +513,9 @@ Each element is expected to be either '(text-added BEG END) or
   (let* ((last (car input))
          (result (list last)))
     (dolist (this (cdr input) (nreverse result))
-      (cond ((and (eq (car last) 'text-added)
-                  (eq (car last) (car this))
+      (cond ((and (eq (car last) (car this)) ;; both are either text-added or text-removed
                   (eq (nth 1 last) (nth 1 this)))
-             ;; combine 2 overlapping 'text-added elements
+             ;; combine 2 overlapping elements
              (setcar result (list
                              (car this)
                              (nth 1 this)
