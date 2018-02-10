@@ -4,10 +4,10 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 0.6
+;; Package-Version: 0.7
 ;; Keywords: help, lisp
-;; Version: 0.6
-;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (elisp-refs "1.2") (shut-up "0.3"))
+;; Version: 0.7
+;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -45,9 +45,11 @@
 
 (require 'elisp-refs)
 (require 'help)
+(require 'help-fns)
 (require 'dash)
 (require 'dash-functional)
 (require 's)
+(require 'f)
 (require 'shut-up)
 (require 'find-func)
 (require 'nadvice)
@@ -396,10 +398,10 @@ or disable if already enabled."
                                      (marker-buffer button)))
     (goto-char pos)))
 
-(defun helpful--navigate-button (path &optional pos)
+(defun helpful--navigate-button (text path &optional pos)
   "Return a button that opens PATH and puts point at POS."
   (helpful--button
-   (abbreviate-file-name path)
+   text
    'helpful-navigate-button
    'path path
    'position pos))
@@ -568,24 +570,30 @@ blank line afterwards."
    docstring
    t t))
 
-(defun helpful--propertize-symbols (docstring)
-  "Convert symbol references in docstrings to buttons."
+(defun helpful--propertize-quoted (docstring)
+  "Convert `foo' in docstrings to buttons (if bound) or else highlight."
   (replace-regexp-in-string
    ;; Replace all text of the form `foo'.
-   (rx "`" symbol-start (+? (not (any "`" "'"))) symbol-end "'")
+   (rx "`" (+? (not (any "`" "'"))) "'")
    (lambda (it)
      (let* ((sym-name
              (s-chop-prefix "`" (s-chop-suffix "'" it)))
             (sym (intern sym-name)))
-       ;; Only create a link if this is a symbol that is bound as a
-       ;; variable or callable.
-       (if (or (boundp sym) (fboundp sym))
-           (helpful--button
-            sym-name
-            'helpful-describe-button
-            'symbol sym)
+       (cond
+        ;; Only create a link if this is a symbol that is bound as a
+        ;; variable or callable.
+        ((or (boundp sym) (fboundp sym))
+         (helpful--button
+          sym-name
+          'helpful-describe-button
+          'symbol sym))
+        ;; If this is already a button, don't modify it.
+        ((get-text-property 0 'button sym-name)
+         sym-name)
+        ;; Highlight the quoted string.
+        (t
          (propertize sym-name
-                     'face 'font-lock-constant-face))))
+                     'face 'font-lock-constant-face)))))
    docstring
    t t))
 
@@ -612,9 +620,99 @@ blank line afterwards."
    docstring
    t t))
 
-;; TODO: handle keymaps of the form \\{foo}.
+(defun helpful--char-table-keys (char-table)
+  "Convert CHAR-TABLE to list of pairs (KEYCODES COMMAND)."
+  ;; Kludge: use `describe-vector' to convert a char-table to a sparse
+  ;; keymap.
+  (let (result)
+    (map-char-table
+     (lambda (key value)
+       (push (list (vector key) value) result))
+     char-table)
+    result))
+
+(defun helpful--keymap-keys (keymap)
+  "Return all the keys and commands in KEYMAP.
+Flattens nested keymaps and follows remapped commands.
+
+Returns a list of pairs (KEYCODES COMMAND), where KEYCODES is a
+vector suitable for `key-description', and COMMAND is a smbol."
+  (let (result)
+    (if (symbolp keymap)
+        (push (list (vector) keymap) result)
+      (dolist (item (cdr keymap))
+        (cond
+         ((and (consp item)
+               (eq (car item) 'menu-bar))
+          ;; Skip menu bar items.
+          nil)
+         ;; Sparse keymaps are lists.
+         ((consp item)
+          (-let [(keycode . value) item]
+            (-each (helpful--keymap-keys value)
+              (-lambda ((keycodes command))
+                (push (list (vconcat (vector keycode) keycodes) command)
+                      result)))))
+         ;; Dense keymaps are char-tables.
+         ((char-table-p item)
+          (map-char-table
+           (lambda (keycode value)
+             (-each (helpful--keymap-keys value)
+               (-lambda ((keycodes command))
+                 (push (list (vconcat (vector keycode) keycodes) command)
+                       result))))
+           item)))))
+    ;; For every command `foo' mapped to a command `bar', show `foo' with
+    ;; the key sequence for `bar'.
+    (setq result
+          (-map-when
+           (-lambda ((keycodes _))
+             (and (> (length keycodes) 1)
+                  (eq (elt keycodes 0) 'remap)))
+           (-lambda ((keycodes command))
+             (list
+              (where-is-internal (elt keycodes 1) global-map t)
+              command))
+           result))
+    ;; Preserve the original order of the keymap.
+    (nreverse result)))
+
+;; TODO: unlike `substitute-command-keys', this shows keybindings
+;; which are currently shadowed (e.g. a global minor mode map).
+(defun helpful--format-keymap (keymap)
+  "Format KEYMAP."
+  (let* ((keys-and-commands (helpful--keymap-keys keymap))
+         ;; Convert keycodes [27 i] to "C-M-i".
+         (keys (-map #'-first-item keys-and-commands))
+         ;; Add padding so all our strings are the same length.
+         (formatted-keys (-map #'key-description keys))
+         (max-formatted-length (-max (cons 0 (-map #'length formatted-keys))))
+         (aligned-keys (--map (s-pad-right (1+ max-formatted-length)
+                                           " " it)
+                              formatted-keys))
+         ;; Format commands as buttons.
+         (commands (-map (-lambda ((_ command)) command)
+                         keys-and-commands))
+         (formatted-commands
+          (--map
+           (helpful--button
+            (symbol-name it)
+            'helpful-describe-button
+            'symbol it)
+           commands))
+         ;; Build lines for display.
+         (lines
+          (-map (-lambda ((key . command)) (format "%s %s" key command))
+                (-zip-pair aligned-keys formatted-commands))))
+    ;; The flattened keymap will have normal bindings first, and
+    ;; inherited bindings last. Sort so that we group by prefix.
+    (s-join "\n" (-sort #'string< lines))))
+
+;; TODO: \\<foo>
 (defun helpful--format-command-keys (docstring)
-  "Convert command key references in docstrings to buttons.
+  "Convert command key references and keymap references
+in DOCSTRING to buttons.
+
 Emacs uses \\= to escape \\[ references, so replace that
 unescaping too."
   ;; Based on `substitute-command-keys', but converts command
@@ -642,6 +740,17 @@ unescaping too."
                            (+ (point) (length symbol-with-parens)))
             ;; Set the new keymap.
             (setq keymap (symbol-value (intern symbol-name)))))
+         ((looking-at
+           ;; Text of the form \\{foo-mode-map}
+           (rx "\\{" (group (+ (not (in "}")))) "}"))
+          (let* ((symbol-with-parens (match-string 0))
+                 (symbol-name (match-string 1))
+                 (keymap (symbol-value (intern symbol-name))))
+            ;; Remove the original string.
+            (delete-region (point)
+                           (+ (point) (length symbol-with-parens)))
+            (insert
+             (helpful--format-keymap keymap))))
          ((looking-at
            ;; Text of the form \\[foo-command]
            (rx "\\[" (group (+ (not (in "]")))) "]"))
@@ -676,8 +785,8 @@ unescaping too."
       (helpful--format-command-keys)
       (helpful--split-first-line)
       (helpful--propertize-info)
-      (helpful--propertize-symbols)
       (helpful--propertize-keywords)
+      (helpful--propertize-quoted)
       (s-trim)))
 
 (defconst helpful--highlighting-funcs
@@ -755,6 +864,16 @@ If the source code cannot be found, return the sexp used."
     (or (assoc sym completions)
         (assoc-string sym completions))))
 
+(defun helpful--find-library-name (path)
+  "A wrapper around `find-library-name' that returns nil if PATH
+has no library with that name.
+
+This can happen when users have installed Emacs without its
+source code: they have e.g. org.elc but no org.el."
+  (condition-case _err
+      (find-library-name path)
+    (error nil)))
+
 (defun helpful--definition (sym callable-p)
   "Return a list (BUF POS OPENED) where SYM is defined.
 
@@ -775,64 +894,74 @@ buffer."
         ;; `base-sym' is the underlying symbol if `sym' is an alias.
         (setq sym base-sym)
         (setq path src-path)))
-    (when (and primitive-p path)
+    (when (and primitive-p path find-function-C-source-directory)
       ;; Convert "src/foo.c" to "".
       (setq path (f-expand path
                            (f-parent find-function-C-source-directory))))
 
     (cond
      ((and callable-p path)
-      ;; Open `path' ourselves, so we can widen before searching.
+      ;; Convert foo.elc to foo.el.
+      (-when-let (src-path (helpful--find-library-name path))
+        ;; Open `path' ourselves, so we can widen before searching.
+        ;; 
+        ;; Opening large.c files can be slow (e.g. when looking at
+        ;; `defalias'), especially if the user has configured mode hooks.
+        ;;
+        ;; Bind `auto-mode-alist' to nil, so we open the buffer in
+        ;; `fundamental-mode' if it isn't already open.
+        (let (auto-mode-alist
+              ;; Don't both setting buffer-local variables, it's
+              ;; annoying to prompt the user since we immediately
+              ;; discard the buffer.
+              enable-local-variables)
+          (setq buf (find-file-noselect src-path)))
 
-      ;; Opening large.c files can be slow (e.g. when looking at
-      ;; `defalias'), especially if the user has configured mode hooks.
-      ;;
-      ;; Bind `auto-mode-alist' to nil, so we open the buffer in
-      ;; `fundamental-mode' if it isn't already open.
-      (let (auto-mode-alist
-            ;; Don't both setting buffer-local variables, it's
-            ;; annoying to prompt the user since we immediately
-            ;; discard the buffer.
-            enable-local-variables)
-        (setq buf (find-file-noselect (find-library-name path))))
+        (unless (-contains-p initial-buffers buf)
+          (setq opened t))
 
-      (unless (-contains-p initial-buffers buf)
-        (setq opened t))
+        ;; If it's a freshly opened buffer, we need to switch to the
+        ;; correct mode so we can search correctly. Enable the mode, but
+        ;; don't bother with mode hooks, because we just need the syntax
+        ;; table for searching.
+        (when opened
+          (with-current-buffer buf
+            (let (enable-local-variables)
+              (delay-mode-hooks (normal-mode t)))))
 
-      ;; If it's a freshly opened buffer, we need to switch to the
-      ;; correct mode so we can search correctly. Enable the mode, but
-      ;; don't bother with mode hooks, because we just need the syntax
-      ;; table for searching.
-      (when opened
+        ;; Based on `find-function-noselect'.
         (with-current-buffer buf
-          (let (enable-local-variables)
-            (delay-mode-hooks (normal-mode t)))))
-
-      ;; Based on `find-function-noselect'.
-      (with-current-buffer buf
-        ;; `find-function-search-for-symbol' moves point. Prevent
-        ;; that.
-        (save-excursion
-          ;; Narrowing has been fixed upstream:
-          ;; http://git.savannah.gnu.org/cgit/emacs.git/commit/?id=abd18254aec76b26e86ae27e91d2c916ec20cc46
-          (save-restriction
-            (widen)
-            (setq pos
-                  (if primitive-p
-                      (cdr (find-function-C-source sym path nil))
-                    (cdr (find-function-search-for-symbol sym nil path))))))))
+          ;; `find-function-search-for-symbol' moves point. Prevent
+          ;; that.
+          (save-excursion
+            ;; Narrowing has been fixed upstream:
+            ;; http://git.savannah.gnu.org/cgit/emacs.git/commit/?id=abd18254aec76b26e86ae27e91d2c916ec20cc46
+            (save-restriction
+              (widen)
+              (setq pos
+                    (if primitive-p
+                        (cdr (find-function-C-source sym path nil))
+                      (cdr (find-function-search-for-symbol sym nil path)))))))))
      (callable-p
       ;; Functions defined interactively may have an edebug property
       ;; that contains the location of the definition.
-      (-when-let (marker (car-safe (get sym 'edebug)))
-        (setq buf (marker-buffer marker))
-        (setq pos (marker-position marker))))
+      (-when-let (edebug-info (get sym 'edebug))
+        (-let [marker (if (consp edebug-info)
+                          (car edebug-info)
+                        edebug-info)]
+          (setq buf (marker-buffer marker))
+          (setq pos (marker-position marker)))))
      ((not callable-p)
       (condition-case _err
           (-let [(sym-buf . sym-pos) (find-definition-noselect sym 'defvar)]
             (setq buf sym-buf)
             (setq pos sym-pos))
-        (search-failed nil))))
+        (search-failed nil)
+        ;; If your current Emacs instance doesn't match the source
+        ;; code configured in find-function-C-source-directory, we can
+        ;; get an error about not finding source. Try
+        ;; `default-tab-width' against Emacs trunk.
+        (error nil))))
     (list buf pos opened)))
 
 (defun helpful--source-path (sym callable-p)
@@ -1103,6 +1232,63 @@ OBJ may be a symbol or a compiled function object."
    'symbol sym
    'callable-p callable-p))
 
+(defun helpful--summary (sym callable-p)
+  "Return a one sentence summary for SYM."
+  (-let* ((primitive-p (helpful--primitive-p sym callable-p))
+          ((buf pos opened)
+           (if (or (not primitive-p) find-function-C-source-directory)
+               (helpful--definition sym callable-p)
+             '(nil nil nil)))
+          (interactive-button
+           (helpful--button
+            "interactive"
+            'helpful-info-button
+            'info-node "(elisp)Using Interactive"))
+          (autoload-button
+           (helpful--button
+            "autoloaded"
+            'helpful-info-button
+            'info-node "(elisp)Autoload"))
+          ;; TODO: this only reports if a function is autoloaded
+          ;; because we autoloaded it. This ignores newly defined
+          ;; functions that are autoloaded. Built-in help has this
+          ;; limitation too, but if we can find the source, we should
+          ;; instead see if there's an autoload cookie.
+          (autoloaded-p
+           (if (and callable-p buf (buffer-file-name buf))
+               (help-fns--autoloaded-p sym (buffer-file-name buf))))
+          (description
+           (cond
+            ((and callable-p (commandp sym) autoloaded-p)
+             (format "an %s, %s" interactive-button autoload-button))
+            ((and callable-p (commandp sym))
+             (format "an %s" interactive-button))
+            ((and callable-p autoloaded-p)
+             (format "an %s" autoload-button))
+            (t
+             "a")))
+          (kind
+           (cond
+            ((not callable-p) "variable")
+            ((macrop sym) "macro")
+            (t "function")))
+          (defined
+            (cond
+             (buf
+              (let ((path (buffer-file-name buf)))
+                (format
+                 "defined in %s"
+                 (helpful--navigate-button
+                  (file-name-nondirectory path) path pos))))
+             (primitive-p
+              "defined in C source code")
+             (t
+              "without source code"))))
+    (when opened
+      (kill-buffer buf))
+
+    (format "%s is %s %s %s." sym description kind defined)))
+
 (defun helpful-update ()
   "Update the current *Helpful* buffer to the latest
 state of the current symbol."
@@ -1130,13 +1316,13 @@ state of the current symbol."
 
     (erase-buffer)
 
-    (if helpful--callable-p
-        (insert
-         (helpful--heading (format "%s Signature" sym-type))
-         (helpful--syntax-highlight (helpful--signature helpful--sym)))
+    (insert (helpful--summary helpful--sym helpful--callable-p))
+
+    (when helpful--callable-p
+      (helpful--insert-section-break)
       (insert
-       (helpful--heading sym-type)
-       (symbol-name helpful--sym)))
+       (helpful--heading (format "%s Signature" sym-type))
+       (helpful--syntax-highlight (helpful--signature helpful--sym))))
 
     (-when-let (docstring (helpful--docstring helpful--sym helpful--callable-p))
       (helpful--insert-section-break)
@@ -1174,19 +1360,26 @@ state of the current symbol."
 
     (insert
      (helpful--heading "References")
-     (cond
-      ((and source-path references)
-       (format "References in %s:\n%s"
-               (helpful--navigate-button source-path 0)
-               (helpful--format-position-heads references source-path)))
-      (source-path
-       (format "%s is unused in %s."
-               helpful--sym
-               (helpful--navigate-button source-path 0)))
-      ((and primitive-p (null find-function-C-source-directory))
-       "C code is not yet loaded.")
-      (t
-       "Could not find source file."))
+     (let ((src-button
+            (when source-path
+              (helpful--navigate-button
+               (file-name-nondirectory source-path)
+               source-path
+               (or (helpful--source-pos helpful--sym helpful--callable-p)
+                   0)))))
+       (cond
+        ((and source-path references)
+         (format "References in %s:\n%s"
+                 src-button
+                 (helpful--format-position-heads references source-path)))
+        (source-path
+         (format "%s is unused in %s."
+                 helpful--sym
+                 src-button))
+        ((and primitive-p (null find-function-C-source-directory))
+         "C code is not yet loaded.")
+        (t
+         "Could not find source file.")))
      "\n\n"
      (helpful--make-references-button helpful--sym helpful--callable-p))
 
@@ -1252,6 +1445,7 @@ state of the current symbol."
         (propertize (format "%s Defined in " (if primitive-p "//" ";;"))
                     'face 'font-lock-comment-face)
         (helpful--navigate-button
+         source-path
          source-path
          (helpful--source-pos helpful--sym helpful--callable-p))
         "\n"))
