@@ -4,7 +4,7 @@
 ;; Copyright 2011-2017 François-Xavier Bois
 
 ;; Version: 15.0.24
-;; Package-Version: 20180210.28
+;; Package-Version: 20180211.29
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; Package-Requires: ((emacs "23.1"))
@@ -2377,8 +2377,11 @@ another auto-completion with different ac-sources (e.g. ac-php)")
            (set-buffer-modified-p old-modified-p)))))
 
   ;; compatibility with emacs < 24
-  (defalias 'web-mode-prog-mode
-    (if (fboundp 'prog-mode) 'prog-mode 'fundamental-mode))
+  (if (fboundp 'prog-mode)
+      (defmacro web-mode-define-derived-mode (mode &rest args)
+        `(define-derived-mode ,mode prog-mode ,@args))
+    (defmacro web-mode-define-derived-mode (mode &rest args)
+      `(define-derived-mode ,mode fundamental-mode ,@args)))
 
   ;; compatibility with emacs < 24.3
   (defun web-mode-buffer-narrowed-p ()
@@ -2406,7 +2409,7 @@ another auto-completion with different ac-sources (e.g. ac-php)")
 ;;---- MAJOR MODE --------------------------------------------------------------
 
 ;;;###autoload
-(define-derived-mode web-mode web-mode-prog-mode "Web"
+(web-mode-define-derived-mode web-mode "Web"
   "Major mode for editing web templates."
 
   (make-local-variable 'web-mode-attr-indent-offset)

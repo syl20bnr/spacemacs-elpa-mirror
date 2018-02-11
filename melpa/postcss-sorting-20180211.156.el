@@ -3,8 +3,8 @@
 ;; Copyright (C) 2017 Peiwen Lu
 
 ;; Author: Peiwen Lu <hi@peiwen.lu>
-;; Version: 0.0.1
-;; Package-Version: 20170531.1858
+;; Version: 0.0.2
+;; Package-Version: 20180211.156
 ;; Package-Requires: ((emacs "24"))
 ;; URL: https://github.com/P233/postcss-sorting.el
 
@@ -24,8 +24,8 @@
 ;;; Commentary:
 
 ;; Provides an interactive command `postcss-sorting-buffer' to sort CSS buffer
-;; using postcss with postcss-sorting plugin.  Supports CSS, SCSS, Less, and
-;; SugarSS syntaxes.
+;; using postcss with postcss-sorting plugin.  Support postcss-cli v5 and
+;; postcss-sorting v3.
 
 ;; Heavily inspired by the stylefmt.el package:
 ;; https://github.com/KeenS/stylefmt.el
@@ -34,10 +34,6 @@
 
 ;; Install the postcss-cli tool and postcss-sorting plugin:
 ;; Run 'npm install -g postcss-cli postcss-sorting'.
-
-;; ;optional
-;; Install the corresponding postcss syntax plugin for your file:
-;; For example, 'npm install -g postcss-scss' or 'npm install -g postcss-less'.
 
 ;; Indicate your postcss config file's path:
 ;; (setq postcss-sorting-config-file "path/to/config/file")
@@ -64,24 +60,18 @@
   "Display error buffer when postcss-sorting fails.")
 
 
-(defun postcss-sorting-get-shell-command (extension)
-  "Construct postcss shell command.  Choose the proper postcss syntax plugin based on EXTENSION."
+(defun postcss-sorting-get-shell-command ()
+  "Construct postcss shell command."
   (mapconcat 'identity (list postcss-sorting-program
-                             "-u postcss-sorting"
-                             (pcase extension
-                               ("scss" "-s postcss-scss")
-                               ("less" "-s postcss-less")
-                               ("sss"  "-s sugarss")
-                               (_ ""))
                              (concat "-c " (shell-quote-argument (expand-file-name postcss-sorting-config-file)))) " "))
 
 
-(defun postcss-sorting--call (cur-buffer output-buffer-name extension)
-  "Execute the postcss command.  Process CUR-BUFFER in the OUTPUT-BUFFER-NAME buffer.  Pass EXTENSION to 'postcss-sorting-get-shell-command'."
+(defun postcss-sorting--call (cur-buffer output-buffer-name)
+  "Execute the postcss command.  Process CUR-BUFFER in the OUTPUT-BUFFER-NAME buffer."
   (with-current-buffer (get-buffer-create output-buffer-name)
     (erase-buffer)
     (insert-buffer-substring cur-buffer)
-    (if (zerop (shell-command-on-region (point-min) (point-max) (postcss-sorting-get-shell-command extension) cur-buffer t output-buffer-name))
+    (if (zerop (shell-command-on-region (point-min) (point-max) (postcss-sorting-get-shell-command) cur-buffer t output-buffer-name))
         (progn (copy-to-buffer cur-buffer (point-min) (point-max))
                (kill-buffer))
       (when postcss-sorting-popup-errors
@@ -99,7 +89,7 @@
   (let ((cur-point (point))
         (cur-win-start (window-start))
         (output-buffer-name "*postcss-sorting*"))
-    (postcss-sorting--call (current-buffer) output-buffer-name (file-name-extension buffer-file-name))
+    (postcss-sorting--call (current-buffer) output-buffer-name)
     (goto-char cur-point)
     (set-window-start (selected-window) cur-win-start))
   (message "Sorted buffer with postcss-sorting."))
