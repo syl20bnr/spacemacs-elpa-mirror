@@ -5,7 +5,7 @@
 ;; Author: Feng Shu <tumashu@163.com>
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/posframe
-;; Package-Version: 20180211.128
+;; Package-Version: 20180211.1915
 ;; Version: 0.1.0
 ;; Keywords: tooltip
 ;; Package-Requires: ((emacs "26"))
@@ -280,6 +280,8 @@ poshandler functions:
 6. `posframe-poshandler-window-top-right-corner'
 7. `posframe-poshandler-window-bottom-left-corner'
 8. `posframe-poshandler-window-bottom-right-corner'
+9. `posframe-poshandler-point-top-left-corner'
+9. `posframe-poshandler-point-bottom-left-corner'
 
 This posframe's buffer is POSFRAME-BUFFER.
 
