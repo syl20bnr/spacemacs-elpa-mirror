@@ -4,8 +4,8 @@
 
 ;; Author: Shea Levy
 ;; URL: https://github.com/shlevy/nix-buffer/tree/master/
-;; Package-Version: 20170809.1128
-;; Version: 3.1.0
+;; Package-Version: 3.1.1
+;; Version: 3.1.1
 ;; Package-Requires: ((f "0.17.3") (emacs "24.4"))
 
 ;;; Commentary:
@@ -26,10 +26,10 @@
 (defgroup nix-buffer nil "Customization for nix-buffer."
   :prefix "nix-buffer-"
   :group 'environment
-  :package-version '('nix-buffer . "3.1.0"))
+  :package-version '('nix-buffer . "3.1.1"))
 
 (defun nix-buffer--directory-name-setter (opt val)
-  "Defcustom setter for nix-buffer-directory-name.
+  "Defcustom setter for ‘nix-buffer-directory-name’.
 OPT The option we're setting.
 
 VAL The value it's being set to."
@@ -37,7 +37,7 @@ VAL The value it's being set to."
 
 (defcustom nix-buffer-directory-name
   (locate-user-emacs-file "nix-buffer")
-  "Path where nix-buffer keeps its data.
+  "Path where ‘nix-buffer’ keeps its data.
 To update this variable outside of Customize, please use
 'nix-buffer-update-directory-name'."
   :group 'nix-buffer
@@ -50,7 +50,7 @@ To update this variable outside of Customize, please use
   (f-join nix-buffer-directory-name "trusted-exprs"))
 
 (defun nix-buffer--load-trusted-exprs ()
-  "Load the trusted nix-buffer exprs."
+  "Load the trusted ‘nix-buffer’ exprs."
   (let ((tbl (ignore-errors
 	       (with-temp-buffer
 		 (insert-file-contents-literally
@@ -63,8 +63,8 @@ To update this variable outside of Customize, please use
 (defvar nix-buffer--trusted-exprs (nix-buffer--load-trusted-exprs))
 
 (defun nix-buffer-update-directory-name (path)
-  "Update the nix-buffer state directory.
-PATH The path to store the nix-buffer state."
+  "Update the ‘nix-buffer’ state directory.
+PATH The path to store the ‘nix-buffer’ state."
   (setq nix-buffer-directory-name path)
   (setq nix-buffer--trust-exprs-file
 	(f-join nix-buffer-directory-name "trusted-exprs"))
@@ -101,16 +101,16 @@ LISP-FILE The file in question."
     res))
 
 (defvar nix-buffer-after-load-hook nil
-  "Hook run after nix-buffer loads an expression.")
+  "Hook run after ‘nix-buffer’ loads an expression.")
 
 (defun nix-buffer--load-result (expr-file out)
-  "Load the result of a nix-buffer build, checking for safety.
+  "Load the result of a ‘nix-buffer’ build, checking for safety.
 EXPR-FILE The nix expression being built.
 
 OUT The build result."
   (when (or (gethash out nix-buffer--trusted-exprs)
 	    (nix-buffer--query-safety expr-file out))
-    (load-file out)
+    (load out t t nil t)
     (run-hooks 'nix-buffer-after-load-hook)))
 
 (defun nix-buffer--sentinel
@@ -149,8 +149,9 @@ EVENT The process status change event string."
 		    " with error output: \n")
 	    (insert-buffer-substring err-buf)
 	    (pop-to-buffer (current-buffer))))
-	(kill-buffer out-buf)
-	(kill-buffer err-buf)))))
+	(let ((kill-buffer-query-functions nil))
+	  (kill-buffer out-buf)
+	  (kill-buffer err-buf))))))
 
 (defun nix-buffer--nix-build (root expr-file)
   "Start the nix build.
@@ -219,7 +220,8 @@ If dir-locals.nix does not evaluate to any derivations (e.g. it
 evaluates to {}), then nothing is loaded and the cached result, if any,
 is removed."
   (interactive)
-  (let* ((root (directory-file-name (or (buffer-file-name) default-directory)))
+  (let* ((root (f-expand (directory-file-name
+			  (or (buffer-file-name) default-directory))))
 	 (expr-dir (locate-dominating-file root nix-buffer-root-file)))
     (when expr-dir
       (let ((expr-file (f-expand nix-buffer-root-file expr-dir)))
@@ -230,3 +232,7 @@ is removed."
 (provide 'nix-buffer)
 
 ;;; nix-buffer.el ends here
+
+;; Local Variables:
+;; tab-width: 8
+;; End:
