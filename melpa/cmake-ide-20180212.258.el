@@ -4,7 +4,7 @@
 
 ;; Author:  Atila Neves <atila.neves@gmail.com>
 ;; Version: 0.6
-;; Package-Version: 20180208.1116
+;; Package-Version: 20180212.258
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (seq "1.11") (levenshtein "0") (s "1.11.0"))
 ;; Keywords: languages
 ;; URL: http://github.com/atilaneves/cmake-ide
@@ -95,8 +95,8 @@
   )
 
 (defcustom cmake-ide-build-pool-dir
-  nil
-  "The parent directory for all automatically created build directories.  If nil, the system tmp-directory is used."
+  temporary-file-directory
+  "The parent directory for all automatically created build directories."
   :group 'cmake-ide
   :type 'directory
   :safe #'stringp

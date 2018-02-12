@@ -527,7 +527,7 @@
 			      ((:url . "https://github.com/dgutov/highlight-escape-sequences")
 			       (:keywords "convenience"))])
  (hook-helpers .
-	       [(1 1)
+	       [(1 1 1)
 		((emacs
 		  (25 1)))
 		"Anonymous, modifiable hook functions" tar
@@ -997,7 +997,7 @@
 	   ((:url . "https://github.com/Malabarba/spinner.el")
 	    (:keywords "processes" "mode-line"))])
  (sql-indent .
-	     [(1 0)
+	     [(1 1)
 	      nil "Support for indenting code in SQL files." tar
 	      ((:keywords "languages" "sql")
 	       (:url . "http://elpa.gnu.org/packages/sql-indent.html"))])

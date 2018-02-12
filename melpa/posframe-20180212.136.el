@@ -5,7 +5,7 @@
 ;; Author: Feng Shu <tumashu@163.com>
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/posframe
-;; Package-Version: 20180211.1915
+;; Package-Version: 20180212.136
 ;; Version: 0.1.0
 ;; Keywords: tooltip
 ;; Package-Requires: ((emacs "26"))
@@ -107,38 +107,30 @@
   :group 'posframe
   :type 'boolean)
 
-(defvar posframe--frame nil
+(defvar-local posframe--frame nil
   "Record posframe's frame.")
 
-(defvar posframe--last-position nil
+(defvar-local posframe--last-position nil
   "Record the last pixel position of posframe's frame.")
 
-(defvar posframe--last-posframe-size nil
+(defvar-local posframe--last-posframe-size nil
   "Record the last size of posframe's frame.")
 
-(defvar posframe--last-parent-frame-size nil
+(defvar-local posframe--last-parent-frame-size nil
   "Record the last size of posframe's parent-frame.")
 
-(defvar posframe--last-args nil
+(defvar-local posframe--last-args nil
   "Record the last arguments of `posframe--create-posframe'.
 
 If these args have changed, posframe will recreate its
 frame.")
 
-(defvar posframe--timeout-timer nil
+(defvar-local posframe--timeout-timer nil
   "Record the timer to deal with timeout argument of `posframe-show'.")
 
-(defvar posframe--refresh-timer nil
+(defvar-local posframe--refresh-timer nil
   "Record the timer to deal with refresh argument of `posframe-show'.")
 
-(dolist (var '(posframe--frame
-               posframe--last-position
-               posframe--last-posframe-size
-               posframe--last-args
-               posframe--timeout-timer
-               posframe--refresh-timer))
-  (make-variable-buffer-local var)
-  (put var 'permanent-local t))
 
 (cl-defun posframe--create-posframe (posframe-buffer
                                      &key
