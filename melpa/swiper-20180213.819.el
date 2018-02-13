@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180211.1018
+;; Package-Version: 20180213.819
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.9.0"))
 ;; Keywords: matching
@@ -760,10 +760,10 @@ the face, window and priority of the overlay."
          'regexp-search-ring
          re
          regexp-search-ring-max)
+        ;; integration with evil-mode's search
         (when (bound-and-true-p evil-mode)
-          ;; This allows evil mode to use swiper searches as defaults in
-          ;; s-expressions
-          (setq isearch-string ivy-text)
+          (when (eq evil-search-module 'isearch)
+            (setq isearch-string ivy-text))
           (when (eq evil-search-module 'evil-search)
             (add-to-history 'evil-ex-search-history re)
             (setq evil-ex-search-pattern (list re t t))
