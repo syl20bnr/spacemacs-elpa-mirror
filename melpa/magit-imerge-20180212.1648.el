@@ -4,7 +4,7 @@
 
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;; URL: https://github.com/magit/magit-imerge
-;; Package-Version: 20180120.1554
+;; Package-Version: 20180212.1648
 ;; Keywords: vc, tools
 ;; Version: 0.2.0
 ;; Package-Requires: ((emacs "24.4") (magit "2.10.0"))
@@ -399,9 +399,9 @@ plan to return to this incremental merge later."
 (eval-after-load 'magit
   '(progn
      (magit-define-popup-action 'magit-merge-popup
-       ?i "Incremental merge" 'magit-imerge-popup)
+       ?I "Incremental merge" 'magit-imerge-popup)
      (magit-define-popup-sequence-action 'magit-merge-popup
-       ?i "Incremental merge" 'magit-imerge-popup)))
+       ?I "Incremental merge" 'magit-imerge-popup)))
 
 (provide 'magit-imerge)
 ;;; magit-imerge.el ends here

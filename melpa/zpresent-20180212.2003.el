@@ -1,7 +1,7 @@
 ;;; zpresent.el --- Simple presentation mode based on org files.  -*- lexical-binding: t; -*-
 
 ;; Version: 0.3
-;; Package-Version: 20180205.2109
+;; Package-Version: 20180212.2003
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright 2015-2017 Zachary Kanfer <zkanfer@gmail.com>
@@ -42,10 +42,12 @@
   (define-key zpresent-mode-map (kbd "C-n") #'zpresent--next-slide)
   (define-key zpresent-mode-map (kbd "<right>") #'zpresent--next-slide)
   (define-key zpresent-mode-map (kbd "<down>") #'zpresent--next-slide)
+  (define-key zpresent-mode-map (kbd "SPC") #'zpresent--next-slide)
   (define-key zpresent-mode-map (kbd "p") #'zpresent--previous-slide)
   (define-key zpresent-mode-map (kbd "C-p") #'zpresent--previous-slide)
   (define-key zpresent-mode-map (kbd "<left>") #'zpresent--previous-slide)
   (define-key zpresent-mode-map (kbd "<up>") #'zpresent--previous-slide)
+  (define-key zpresent-mode-map (kbd "S-SPC") #'zpresent--previous-slide)
   (define-key zpresent-mode-map (kbd "<next>") #'zpresent--next-checkpoint-slide)
   (define-key zpresent-mode-map (kbd "N") #'zpresent--next-checkpoint-slide)
   (define-key zpresent-mode-map (kbd "<prior>") #'zpresent--previous-checkpoint-slide)
@@ -864,7 +866,8 @@ The whitespace calculation assumes no line will be split."
 If you want to insert an image, use '#'zpresent--insert-image'."
   (insert-button (propertize (gethash :text link-hash)
                              'face face)
-                 'action `(lambda (button) (browse-url ,(gethash :target link-hash)))))
+                 'action `(lambda (button) (browse-url ,(gethash :target link-hash)))
+                 'follow-link t))
 
 
 

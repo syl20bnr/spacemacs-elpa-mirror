@@ -5,7 +5,7 @@
 ;; Author: Feng Shu <tumashu@163.com>
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/posframe
-;; Package-Version: 20180212.136
+;; Package-Version: 20180212.1717
 ;; Version: 0.1.0
 ;; Keywords: tooltip
 ;; Package-Requires: ((emacs "26"))
@@ -396,6 +396,8 @@ https://github.com/tumashu/posframe/issues/4#issuecomment-357514918"
 If NO-PROPERTIES is non-nil, all properties of STRING
 will be removed."
   (when (and string (stringp string))
+    (remove-text-properties
+     0 (length string) '(read-only t) string)
     ;; Does inserting string then deleting the before
     ;; contents reduce flicking? Maybe :-)
     (goto-char (point-min))

@@ -5,7 +5,7 @@
 ;; Author: Bharat Joshi <jbharat@outlook.com>
 ;; Maintainer: Bharat Joshi <jbharat@outlook.com>
 ;; URL: https://github.com/jbharat/exotica-theme
-;; Package-Version: 20180212.1352
+;; Package-Version: 20180212.1529
 ;; Created: 22th July 2017
 ;; Keywords: faces, theme, dark, vibrant colors
 ;; Version: 1.0.2
@@ -177,14 +177,14 @@
  `(outline-6 ((t (:foreground ,face6))))
  `(outline-7 ((t (:foreground ,face7))))
  `(outline-8 ((t (:foreground ,face8))))
- `(org-level-1 ((t (:inherit outline-1 :weight bold :height 1.0 :slant ,slantType))))
- `(org-level-2 ((t (:inherit outline-2 :weight bold :height 1.0 :slant ,slantType))))
- `(org-level-3 ((t (:inherit outline-3 :weight bold :height 1.0 :slant ,slantType))))
- `(org-level-4 ((t (:inherit outline-4 :weight bold :height 1.0 :slant ,slantType))))
- `(org-level-5 ((t (:inherit outline-5 :weight bold :height 1.0 :slant ,slantType))))
- `(org-level-6 ((t (:inherit outline-6 :weight bold :height 1.0 :slant ,slantType))))
- `(org-level-7 ((t (:inherit outline-7 :weight bold :height 1.0 :slant ,slantType))))
- `(org-level-8 ((t (:inherit outline-8 :weight bold :height 1.0 :slant ,slantType))))
+ `(org-level-1 ((t (:inherit outline-1 :height 1.1))))
+ `(org-level-2 ((t (:inherit outline-2 :height 1.1))))
+ `(org-level-3 ((t (:inherit outline-3 :height 1.1))))
+ `(org-level-4 ((t (:inherit outline-4 :height 1.1))))
+ `(org-level-5 ((t (:inherit outline-5 :height 1.1))))
+ `(org-level-6 ((t (:inherit outline-6 :height 1.1))))
+ `(org-level-7 ((t (:inherit outline-7 :height 1.1))))
+ `(org-level-8 ((t (:inherit outline-8 :height 1.1))))
  `(rainbow-delimiters-depth-1-face ((t (:inherit outline-1))))
  `(rainbow-delimiters-depth-2-face ((t (:inherit outline-2))))
  `(rainbow-delimiters-depth-3-face ((t (:inherit outline-3))))
@@ -249,11 +249,11 @@
   
 
   ;; neotree
-  `(neo-dir-link-face ((t (:foreground ,face7 :slant ,slantType))))
-  `(neo-root-dir-face ((t (:foreground ,face1 :weight demibold))))
+  `(neo-dir-link-face ((t (:foreground ,face7))))
+  `(neo-root-dir-face ((t (:foreground ,face1))))
 
   ;; treemacs
-  `(treemacs-directory-face ((t (:foreground ,face7 :slant ,slantType))))
+  `(treemacs-directory-face ((t (:foreground ,face7))))
 
   ;; parentheses matching
   ;; `(show-paren-match ((t (:height 0.8 :width condensed :box (:line-width 1 :color "cyan" :style none )))))
@@ -264,7 +264,7 @@
   `(rainbow-delimiters-unmatched-face ((t (:inherit show-paren-mismatch))))
 
   ;; dired
-  `(dired-directory ((t (:foreground ,face7 :slant ,slantType))))
+  `(dired-directory ((t (:foreground ,face7))))
 
   ;; Web-mode
   `(web-mode-html-attr-custom-face ((t (:foreground ,face7))))
