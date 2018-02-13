@@ -17,7 +17,7 @@
 
 ;; Author: Thomas Letan <contact@thomasletan.fr>
 ;; URL: https://github.com/lethom/nordless-theme.el
-;; Package-Version: 20180204.48
+;; Package-Version: 20180213.500
 ;; Version: 0.1
 ;; License: GPL-3
 ;; Keywords: theme, dark
@@ -89,8 +89,10 @@
    `(show-paren-match ((t (:foreground ,nord8 :weight bold))))
    `(show-paren-mismatch ((t (:foreground ,nord11 :weight bold))))
    `(hl-paren-face ((t (:foreground ,nord8 :weight bold))))
+   '(dired-directory ((t (:weight bold))))
    '(diredp-file-suffix ((t ())))
    '(diredp-ignored-file-name ((t ())))
+   `(org-footnote ((t ())))
    `(org-level-1 ((t (:height 1.2))))
    `(org-level-2 ((t (:height 1.1))))
    `(org-level-3 ((t ())))
@@ -175,7 +177,7 @@
    '(helm-ff-prefix ((t ())))
    '(helm-ff-directory ((t (:weight bold))))
    '(helm-ff-dotted-directory ((t (:weight bold))))
-   `(variable-pitch ((t (:background ,nord3))))
+   `(variable-pitch ((t ())))
    `(highlight ((t (:background ,nord3))))
    `(company-tooltip ((t (:foreground ,nord0 :background ,nord5))))
    `(company-scrollbar-fg ((t (:background ,nord0))))
@@ -186,6 +188,8 @@
    '(company-tooltip-common ((t (:weight bold))))
    `(company-preview-common ((t ())))
    `(company-preview ((t (:background ,nord4 :foreground ,nord0))))
+   `(sh-heredoc ((t (:foreground ,nord7 :weight bold))))
+   `(sh-quoted-exec ((t ())))
    )
   )
 

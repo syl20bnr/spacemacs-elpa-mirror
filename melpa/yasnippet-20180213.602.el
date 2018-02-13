@@ -6,7 +6,7 @@
 ;;          Noam Postavsky <npostavs@gmail.com>
 ;; Maintainer: Noam Postavsky <npostavs@gmail.com>
 ;; Version: 0.12.2
-;; Package-Version: 20180211.1442
+;; Package-Version: 20180213.602
 ;; X-URL: http://github.com/joaotavora/yasnippet
 ;; Keywords: convenience, emulation
 ;; URL: http://github.com/joaotavora/yasnippet
@@ -3792,8 +3792,8 @@ bindings considered when expanding the snippet.  If omitted, use
 SNIPPET's expand-env field.
 
 SNIPPET may be a snippet structure (e.g., as returned by
-`yas-lookup-snippet'), or just a string representing a snippet's
-body text."
+`yas-lookup-snippet'), or just a snippet body (which is a string
+for normal snippets, and a list for command snippets)."
   (cl-assert (and yas-minor-mode
                   (memq 'yas--post-command-handler post-command-hook))
              nil
@@ -3832,8 +3832,9 @@ body text."
     (when to-delete
       (delete-region start end))
 
-    (let ((content (if (stringp snippet) snippet
-                     (yas--template-content snippet))))
+    (let ((content (if (yas--template-p snippet)
+                       (yas--template-content snippet)
+                     snippet)))
       (when (and (not expand-env) (yas--template-p snippet))
         (setq expand-env (yas--template-expand-env snippet)))
       (cond ((listp content)
