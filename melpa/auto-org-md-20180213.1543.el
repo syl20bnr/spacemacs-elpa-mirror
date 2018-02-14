@@ -4,11 +4,12 @@
 
 ;; Author: jamcha <jamcha.aa@gmail.com>
 ;; Created: 2016-09-23
+;; Updated: 2018-02-14
 ;; Version: 1.2
-;; Package-Version: 20160923.708
+;; Package-Version: 20180213.1543
 
 ;; Keywords: org, markdown
-;; Package-Requires: ((org "8.0") (emacs "24.4"))
+;; Package-Requires: ((emacs "24.4"))
 ;; URL: https://github.com/jamcha-aa/auto-org-md
 
 ;; This program is free software; you can redistribute it and/or modify
