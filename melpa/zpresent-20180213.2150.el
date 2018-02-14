@@ -1,7 +1,7 @@
 ;;; zpresent.el --- Simple presentation mode based on org files.  -*- lexical-binding: t; -*-
 
 ;; Version: 0.3
-;; Package-Version: 20180212.2003
+;; Package-Version: 20180213.2150
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright 2015-2017 Zachary Kanfer <zkanfer@gmail.com>
@@ -277,6 +277,7 @@ This will respect in order of precedence:
       ("*" ?*)
       (")" ?\))
       ("." ?.)
+      ("none" ?\s)
       (_ (gethash :bullet-type structure)))))
 
 (defun zpresent--format-bullet (structure prior-siblings &optional parent-structure)
@@ -612,6 +613,7 @@ for example, for the first slide of each top level org element."
     (insert (propertize (make-string (window-total-height) ?\n)
                         'face 'zpresent-base)))
   (face-spec-set 'zpresent-whole-screen-face
+                 ;;we don't get the new properties from the children!
                  `((t . (:background
                          ,(if-let ((background-color (alist-get "background-color" (gethash :properties slide) nil nil #'equal)))
                               background-color
