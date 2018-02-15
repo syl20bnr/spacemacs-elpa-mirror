@@ -1,9 +1,9 @@
 ;;; helm-swoop.el --- Efficiently hopping squeezed lines powered by helm interface -*- coding: utf-8; lexical-binding: t -*-
 
-;; Copyright (C) 2013 by Shingo Fukuyama
+;; Copyright (C) 2013 - 2018 by Shingo Fukuyama
 
-;; Version: 1.7.2
-;; Package-Version: 1.7.2
+;; Version: 1.7.4
+;; Package-Version: 1.7.4
 ;; Author: Shingo Fukuyama - http://fukuyama.co
 ;; URL: https://github.com/ShingoFukuyama/helm-swoop
 ;; Created: Oct 24 2013
@@ -142,7 +142,7 @@
   :group 'helm-swoop :type 'boolean)
 
 (defvar helm-swoop-split-window-function
-  (lambda ($buf)
+  (lambda ($buf &rest _$args)
    (if helm-swoop-split-with-multiple-windows
        (funcall helm-swoop-split-direction)
        (when (one-window-p)
@@ -150,6 +150,15 @@
     (other-window 1)
     (switch-to-buffer $buf))
   "Change the way to split window only when `helm-swoop' is calling")
+
+(defcustom helm-swoop-after-goto-line-action-hook nil
+  "hooks run after `helm-swoop--goto-line"
+  :group 'helm-swoop
+  :type 'hook)
+(defcustom helm-swoop-before-goto-line-action-hook nil
+  "hooks run before `helm-swoop--goto-line"
+  :group 'helm-swoop
+  :type 'hook)
 
 (defvar helm-swoop-candidate-number-limit 19999)
 (defvar helm-swoop-buffer "*Helm Swoop*")
@@ -230,9 +239,6 @@
 
 (defsubst helm-swoop--recenter ()
   (recenter (/ (window-height) 2)))
-
-(defsubst helm-swoop--key-of-function ($function &optional $mode-map)
-  (edmacro-format-keys (car (where-is-internal $function $mode-map))))
 
 (defsubst helm-swoop--delete-overlay ($identity &optional $beg $end)
   (or $beg (setq $beg (point-min)))
@@ -504,6 +510,23 @@ If $linum is number, lines are separated by $linum"
             (setq $return (helm-swoop--buffer-substring (point-min) (point-max))))
           $return)))))
 
+(defun helm-swoop--goto-line-action ($line)
+  (run-hooks 'helm-swoop-before-goto-line-action-hook)
+  (helm-swoop--goto-line
+   (when (string-match "^[0-9]+" $line)
+     (string-to-number (match-string 0 $line))))
+  (let (($regex
+         (mapconcat 'identity
+                    (split-string helm-pattern " ")
+                    "\\|")))
+    (when (or (and (and (featurep 'migemo) helm-migemo-mode)
+                   (migemo-forward $regex nil t))
+              (re-search-forward $regex nil t))
+      (helm-swoop-flash-word (match-beginning 0) (match-end 0))
+      (goto-char (match-beginning 0))
+      (run-hooks 'helm-swoop-after-goto-line-action-hook)))
+  (helm-swoop--recenter))
+
 (defun helm-c-source-swoop ()
   `((name . ,(buffer-name helm-swoop-target-buffer))
     (candidates . ,(if helm-swoop-list-cache
@@ -518,22 +541,10 @@ If $linum is number, lines are separated by $linum"
                      'helm-swoop--buffer-substring
                    'buffer-substring-no-properties))
     (keymap . ,helm-swoop-map)
-    (header-line . "[C-c C-e] Edit mode, [M-i] apply all buffers")
-    (action . (("Go to Line"
-                . (lambda ($line)
-                    (helm-swoop--goto-line
-                     (when (string-match "^[0-9]+" $line)
-                       (string-to-number (match-string 0 $line))))
-                    (let (($regex
-                           (mapconcat 'identity
-                                      (split-string helm-pattern " ")
-                                      "\\|")))
-                      (when (or (and (and (featurep 'migemo) helm-migemo-mode)
-                                     (migemo-forward $regex nil t))
-                                (re-search-forward $regex nil t))
-                        (helm-swoop-flash-word (match-beginning 0) (match-end 0))
-                        (goto-char (match-beginning 0))))
-                    (helm-swoop--recenter)))))
+    (header-line . ,(substitute-command-keys
+                     "[\\<helm-swoop-map>\\[helm-swoop-edit]] Edit mode, \
+[\\<helm-swoop-map>\\[helm-multi-swoop-all-from-helm-swoop]] apply all buffers"))
+    (action . (("Go to Line" . helm-swoop--goto-line-action)))
     ,(if (and helm-swoop-last-prefix-number
               (> helm-swoop-last-prefix-number 1))
          '(multiline))
@@ -544,7 +555,9 @@ If $linum is number, lines are separated by $linum"
   `((name . ,$buf)
     (candidates . ,(funcall $func))
     (action . ,$action)
-    (header-line . ,(concat $buf "    [C-c C-e] Edit mode"))
+    (header-line . ,(concat $buf
+                            (substitute-command-keys
+                             "    [\\<helm-multi-swoop-map>\\[helm-multi-swoop-edit]] Edit mode")))
     (keymap . ,helm-multi-swoop-map)
     (requires-pattern . 2)
     ,(if (and $multiline
@@ -872,10 +885,12 @@ If $linum is number, lines are separated by $linum"
           (overlay-put $o 'face 'font-lock-function-name-face)
           (overlay-put $o 'after-string
                        (propertize
-                        (format " [%s] Complete, [%s] Cancel, [%s] Delete All"
-                                (helm-swoop--key-of-function 'helm-swoop--edit-complete helm-swoop-edit-map)
-                                (helm-swoop--key-of-function 'helm-swoop--edit-cancel helm-swoop-edit-map)
-                                (helm-swoop--key-of-function 'helm-swoop--edit-delete-all-lines helm-swoop-edit-map))
+                        (substitute-command-keys
+                         (concat
+                          " [\\<helm-swoop-edit-map>\\[helm-swoop--edit-complete]] Complete"
+                          ", [\\<helm-swoop-edit-map>\\[helm-swoop--edit-cancel]] Cancel"
+                          ", [\\<helm-swoop-edit-map>\\[helm-swoop--edit-delete-all-lines]] Delete All"
+                         ))
                         'face 'helm-bookmark-addressbook)))
         ;; Line number and editable area
         (while (re-search-forward "^\\([0-9]+\s\\)\\(.*\\)$" nil t)
@@ -1153,8 +1168,9 @@ If $linum is number, lines are separated by $linum"
                   :candidate-number-limit
                   helm-multi-swoop-candidate-number-limit
                   :preselect
-                  (format "%s %s" (line-number-at-pos)
-                          (helm-swoop--get-string-at-line)))))
+                  (regexp-quote
+                   (format "%s %s" (line-number-at-pos)
+                           (helm-swoop--get-string-at-line))))))
       ;; Restore
       (progn
         (when (= 1 helm-exit-status)
@@ -1457,10 +1473,12 @@ Last selected buffers will be applied to helm-multi-swoop.
           (overlay-put $o 'face 'font-lock-function-name-face)
           (overlay-put $o 'after-string
                        (propertize
-                        (format " [%s] Complete, [%s] Cancel, [%s] Delete All"
-                                (helm-swoop--key-of-function 'helm-swoop--edit-complete helm-swoop-edit-map)
-                                (helm-swoop--key-of-function 'helm-swoop--edit-cancel helm-swoop-edit-map)
-                                (helm-swoop--key-of-function 'helm-swoop--edit-delete-all-lines helm-swoop-edit-map))
+                        (substitute-command-keys
+                         (concat
+                          " [\\<helm-swoop-edit-map>\\[helm-swoop--edit-complete]] Complete"
+                          ", [\\<helm-swoop-edit-map>\\[helm-swoop--edit-cancel]] Cancel"
+                          ", [\\<helm-swoop-edit-map>\\[helm-swoop--edit-delete-all-lines]] Delete All"
+                          ))
                         'face 'helm-bookmark-addressbook)))
         ;; Line number and editable area
         (while (re-search-forward "^\\([0-9]+\s\\)\\(.*\\)$" nil t)

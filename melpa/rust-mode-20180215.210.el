@@ -1,7 +1,7 @@
 ;;; rust-mode.el --- A major emacs mode for editing Rust source code -*-lexical-binding: t-*-
 
 ;; Version: 0.3.0
-;; Package-Version: 20180109.544
+;; Package-Version: 20180215.210
 ;; Author: Mozilla
 ;; Url: https://github.com/rust-lang/rust-mode
 ;; Keywords: languages
@@ -526,7 +526,7 @@ buffer."
   '("as"
     "box" "break"
     "const" "continue" "crate"
-    "do"
+    "do" "dyn"
     "else" "enum" "extern"
     "false" "fn" "for"
     "if" "impl" "in"
@@ -634,7 +634,7 @@ match data if found. Returns nil if not within a Rust string."
   "List of builtin Rust macros for string formatting used by `rust-mode-font-lock-keywords'. (`write!' is handled separately.)")
 
 (defvar rust-formatting-macro-opening-re
-  "[[:space:]]*[({[][[:space:]]*"
+  "[[:space:]\n]*[({[][[:space:]\n]*"
   "Regular expression to match the opening delimiter of a Rust formatting macro.")
 
 (defvar rust-start-of-string-re
@@ -662,7 +662,7 @@ match data if found. Returns nil if not within a Rust string."
       1 font-lock-preprocessor-face keep)
 
      ;; Builtin formatting macros
-     (,(concat (rust-re-grab (concat (regexp-opt rust-builtin-formatting-macros) "!")) (concat rust-formatting-macro-opening-re rust-start-of-string-re))
+     (,(concat (rust-re-grab (concat (regexp-opt rust-builtin-formatting-macros) "!")) (concat rust-formatting-macro-opening-re "\\(?:" rust-start-of-string-re) "\\)?")
       (1 'rust-builtin-formatting-macro-face)
       (rust-string-interpolation-matcher
        (rust-end-of-string)
