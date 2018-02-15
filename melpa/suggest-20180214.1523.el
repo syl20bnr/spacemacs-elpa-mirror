@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; Version: 0.7
-;; Package-Version: 20180206.1327
+;; Package-Version: 20180214.1523
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.4") (loop "1.3") (dash "2.13.0") (s "1.11.0") (f "0.18.2"))
 ;; URL: https://github.com/Wilfred/suggest.el
@@ -185,6 +185,7 @@
    #'replace-regexp-in-string
    #'format
    #'string-join
+   #'prin1-to-string
    ;; Quoting strings
    #'shell-quote-argument
    #'regexp-quote

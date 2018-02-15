@@ -12,7 +12,7 @@ Alternative manual installation
 2. Tell Emacs to load it when needed:
    (autoload 'vc-fossil-registered "vc-fossil")
 3. Add Fossil to the list of supported backends:
-   (add-to-list 'vc-handled-backends 'Fossil)
+   (add-to-list 'vc-handled-backends 'Fossil t)
 
 Implemented Functions
 BACKEND PROPERTIES
