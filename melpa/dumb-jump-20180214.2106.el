@@ -2,7 +2,7 @@
 ;; Copyright (C) 2015-2018 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.1
-;; Package-Version: 20180123.1100
+;; Package-Version: 20180214.2106
 ;; Package-Requires: ((emacs "24.3") (f "0.20.0") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -1876,7 +1876,7 @@ Ffrom the ROOT project CONFIG-FILE."
                (buffer-file-name it)
                (file-exists-p (buffer-file-name it)))
           (buffer-list))))
-    (member path (--map (buffer-file-name it) modified-file-buffers))))
+    (member (f-full path) (--map (buffer-file-name it) modified-file-buffers))))
 
 (defun dumb-jump-result-follow (result &optional use-tooltip proj)
   "Take the RESULT to jump to and record the jump, for jumping back, and then trigger jump.  Prompt if we should continue if destentation has been modified."
