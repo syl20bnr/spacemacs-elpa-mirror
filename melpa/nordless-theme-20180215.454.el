@@ -17,7 +17,7 @@
 
 ;; Author: Thomas Letan <contact@thomasletan.fr>
 ;; URL: https://github.com/lethom/nordless-theme.el
-;; Package-Version: 20180214.1154
+;; Package-Version: 20180215.454
 ;; Version: 0.1
 ;; License: GPL-3
 ;; Keywords: theme, dark
@@ -61,6 +61,10 @@
    `(default ((t (:background ,nord0 :foreground ,nord4))))
    `(mode-line ((t (:background ,nord3))))
    `(mode-line-inactive ((t ())))
+   `(powerline-active1 ((t (:background ,nord0))))
+   `(powerline-active2 ((t (:background ,nord1))))
+   `(powerline-inactive1 ((t (:background ,nord3))))
+   `(powerline-inactive2 ((t (:background ,nord3))))
    '(link ((t (:underline t))))
    '(secondary-selection ((t ())))
    '(shadow ((t ())))
@@ -141,6 +145,23 @@
    `(flyspell-incorrect ((t (:foreground ,nord11))))
    `(flyspell-duplicate ((t (:foreground ,nord12))))
    `(fringe ((t (()))))
+   '(git-commit-summary ((t ())))
+   `(git-commit-overlong-summary ((t (:foreground ,nord11))))
+   `(git-commit-nonempty-second-line ((t (:foreground ,nord11))))
+   '(magit-diff-hunk-heading ((t (:slant italic))))
+   '(magit-diff-hunk-heading-highlight ((t (:slant italic))))
+   '(magit-header ((t (:weight bold))))
+   '(magit-section-heading ((t (:weight bold))))
+   '(magit-section-heading-selection ((t ())))
+   '(magit-selection-title ((t ())))
+   '(magit-selection-highlight ((t (:inherit default))))
+   '(magit-selection ((t ())))
+   `(magit-diff-context ((t ())))
+   `(magit-diff-context-highlight ((t ())))
+   `(magit-diff-removed-highlight ((t (:foreground ,nord11))))
+   `(magit-diff-removed ((t (:foreground ,nord11))))
+   `(magit-diff-added-highlight ((t (:foreground ,nord14))))
+   `(magit-diff-added ((t (:foreground ,nord14))))
    '(markdown-header-delimiter-face ((t ())))
    '(markdown-header-face-1 ((t ())))
    '(markdown-header-face-2 ((t ())))

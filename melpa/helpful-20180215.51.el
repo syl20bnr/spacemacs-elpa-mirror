@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180209.1706
+;; Package-Version: 20180215.51
 ;; Keywords: help, lisp
 ;; Version: 0.8
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -321,7 +321,9 @@ source code to primitives."
     ;; `edebug-enter', `edebug-after' etc interleaved. This means the
     ;; function is interpreted, so `indirect-function' returns a list.
     (when (and (consp fn-def) (consp (cdr fn-def)))
-      (eq (car (-last-item fn-def)) 'edebug-enter))))
+      (-let [fn-end (-last-item fn-def)]
+        (and (consp fn-end)
+             (eq (car fn-end) 'edebug-enter))))))
 
 (defun helpful--can-edebug-p (sym callable-p)
   "Can we use edebug with SYM?"
@@ -846,13 +848,13 @@ If the source code cannot be found, return the sexp used."
                                  'helpful-pos-is-start t))))
     (when (and buf created)
       (kill-buffer buf))
-    (if source
-        source
+    (when (and (null source) callable-p)
       ;; Could not find source -- probably defined interactively, or via
       ;; a macro, or file has changed.
       ;; TODO: verify that the source hasn't changed before showing.
       ;; TODO: offer to download C sources for current version.
-      (indirect-function sym))))
+      (setq source (indirect-function sym)))
+    source))
 
 (defun helpful--in-manual-p (sym)
   "Return non-nil if SYM is in an Info manual."
@@ -1460,7 +1462,7 @@ state of the current symbol."
          'helpful-c-source-directory)))
       (t
        (helpful--syntax-highlight
-        (format ";; Source file is unknown\n")))))
+        (format ";; Source file is unknown")))))
     (when source
       (insert
        (cond
