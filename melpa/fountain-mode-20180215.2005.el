@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 20180213.353
+;; Package-Version: 20180215.2005
 ;; Version: 2.5.0
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -124,7 +124,7 @@
 ;; Roadmap
 ;; -------
 
-;; See [Milestones](https://github.com/rnkn/fountain-mode/milestones).
+;; See [Roadmap](https://github.com/rnkn/fountain-mode/projects/2).
 
 ;; History
 ;; -------
