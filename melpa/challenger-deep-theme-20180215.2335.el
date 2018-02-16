@@ -2,7 +2,7 @@
 
 ;; Author: MaxSt
 ;; Version: 0.0.2
-;; Package-Version: 20171229.435
+;; Package-Version: 20180215.2335
 ;; Package-Requires: ((emacs "24"))
 ;; URL: https://github.com/challenger-deep-theme/emacs
 
@@ -364,6 +364,15 @@
                                     (,ct (:foreground ,ct-magenta :background ,ct-black))))
      `(company-preview-search      ((,c (:inherit company-tooltip-search))
                                     (,ct (:inherit company-tooltip-search))))
+
+     ;; auto-complete
+     `(ac-completion-face ((,c (:foreground ,magenta :background ,black))
+     			   (,ct (:foreground, ct-magenta :background ,ct-black))))
+     `(ac-candidate-face ((,c (:foreground, blue :background ,black))
+     			  (,ct (:foreground, ct-blue :background, ct-black))))
+     `(ac-selection-face ((,c (:background, selection))
+     			  (,ct (:background, ct-selection))))
+
      ;; diff-hl
      `(diff-hl-change              ((,c (:foreground ,vc-modified))
                                     (,ct (:foreground ,ct-vc-modified))))
