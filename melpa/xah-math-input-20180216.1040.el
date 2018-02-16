@@ -3,8 +3,8 @@
 ;; Copyright © 2010-2017 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.2.20170905
-;; Package-Version: 20170905.849
+;; Version: 2.3.20180216
+;; Package-Version: 20180216.1040
 ;; Created: 08 Dec 2010
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: abbrev, convenience, unicode, math, LaTex
@@ -725,22 +725,25 @@ See `xah-math-input-mode'."
   (setq xah-math-input-keymap (make-sparse-keymap))
   (define-key xah-math-input-keymap (kbd "S-SPC") 'xah-math-input-change-to-symbol))
 
-(defun xah-math-input--abbr-to-symbol (inputString)
-  "Returns a char corresponding to inputString."
-  (let (resultSymbol charByNameResult)
-    (setq resultSymbol (gethash inputString xah-math-input-abrvs))
+(defun xah-math-input--abbr-to-symbol (@inputStr)
+  "Returns a char corresponding to @inputStr.
+Version 2018-02-16"
+  (let ($resultChar $charByNameResult)
+    (setq $resultChar (gethash @inputStr xah-math-input-abrvs))
     (cond
-     (resultSymbol resultSymbol)
+     ($resultChar $resultChar)
+     ;; begin with u+
+     ((string-match "\\`u\\+\\([0-9a-fA-F]+\\)\\'" @inputStr) (char-to-string (string-to-number (match-string 1 @inputStr) 16)))
      ;; decimal. 「945」 or 「#945」
-     ((string-match "\\`#?\\([0-9]+\\)\\'" inputString) (char-to-string (string-to-number (match-string 1 inputString))))
+     ((string-match "\\`#?\\([0-9]+\\)\\'" @inputStr) (char-to-string (string-to-number (match-string 1 @inputStr))))
      ;; e.g. decimal with html entity markup. 「&#945;」
-     ((string-match "\\`&#\\([0-9]+\\);\\'" inputString) (char-to-string (string-to-number (match-string 1 inputString))))
+     ((string-match "\\`&#\\([0-9]+\\);\\'" @inputStr) (char-to-string (string-to-number (match-string 1 @inputStr))))
      ;; hex number. e.g. 「x3b1」 or 「#x3b1」
-     ((string-match "\\`#?x\\([0-9a-fA-F]+\\)\\'" inputString) (char-to-string (string-to-number (match-string 1 inputString) 16)))
+     ((string-match "\\`#?x\\([0-9a-fA-F]+\\)\\'" @inputStr) (char-to-string (string-to-number (match-string 1 @inputStr) 16)))
      ;; html entity hex number. e.g. 「&#x3b1;」
-     ((string-match "\\`&#x\\([0-9a-fA-F]+\\);\\'" inputString) (char-to-string (string-to-number (match-string 1 inputString) 16)))
+     ((string-match "\\`&#x\\([0-9a-fA-F]+\\);\\'" @inputStr) (char-to-string (string-to-number (match-string 1 @inputStr) 16)))
      ;; unicode full name. e.g. 「GREEK SMALL LETTER ALPHA」
-     ((and (string-match "\\`\\([- a-zA-Z0-9]+\\)\\'" inputString) (setq charByNameResult (assoc-string inputString (ucs-names) t))) (char-to-string (cdr charByNameResult)))
+     ((and (string-match "\\`\\([- a-zA-Z0-9]+\\)\\'" @inputStr) (setq $charByNameResult (assoc-string @inputStr (ucs-names) t))) (char-to-string (cdr $charByNameResult)))
      (t nil))))
 
 (defun xah-math-input-change-to-symbol (&optional print-message-when-no-match)
@@ -753,6 +756,7 @@ A valid input can be any abbreviation listed by the command `xah-math-input-list
  &#945;  ← XML entity syntax
 
  x3b1    ← hexadimal with prefix x
+ U+3B1   ← hexadimal with prefix U+ (lower case ok.)
  #x3b1   ← hexadimal with prefix #x
  &#x3b1; ← XML entity syntax
 
@@ -760,30 +764,31 @@ Full Unicode name can also be used, e.g. 「greek small letter alpha」.
 
 If preceded by `universal-argument', print error message when no valid abbrev found.
 
-See also: `xah-math-input-mode'."
+See also: `xah-math-input-mode'.
+Version 2018-02-16"
   (interactive "P")
-  (let (p1 p2 inputStr resultSymbol)
+  (let ($p1 $p2 $inputStr $resultChar)
     (if (region-active-p)
         (progn
-          (setq p1 (region-beginning))
-          (setq p2 (region-end))
-          (setq inputStr (buffer-substring-no-properties p1 p2))
-          (setq resultSymbol (xah-math-input--abbr-to-symbol inputStr))
-          (when resultSymbol (progn (delete-region p1 p2) (insert resultSymbol))))
+          (setq $p1 (region-beginning))
+          (setq $p2 (region-end))
+          (setq $inputStr (buffer-substring-no-properties $p1 $p2))
+          (setq $resultChar (xah-math-input--abbr-to-symbol $inputStr))
+          (when $resultChar (progn (delete-region $p1 $p2) (insert $resultChar))))
       ;; if there's no text selection, grab all chars to the left of cursor point up to whitespace, try each string until there a valid abbrev found or none char left.
       (progn
-        (setq p2 (point))
+        (setq $p2 (point))
         (skip-chars-backward "^ \t\n" -20)
-        (setq p1 (point))
-        (while (and (not resultSymbol) (>= (- p2 p1) 1))
-          (setq inputStr (buffer-substring-no-properties p1 p2))
-          (setq resultSymbol (xah-math-input--abbr-to-symbol inputStr))
-          (when resultSymbol (progn (goto-char p2) (delete-region p1 p2) (insert resultSymbol)))
-          (setq p1 (1+ p1)))))
-    (when (not resultSymbol)
+        (setq $p1 (point))
+        (while (and (not $resultChar) (>= (- $p2 $p1) 1))
+          (setq $inputStr (buffer-substring-no-properties $p1 $p2))
+          (setq $resultChar (xah-math-input--abbr-to-symbol $inputStr))
+          (when $resultChar (progn (goto-char $p2) (delete-region $p1 $p2) (insert $resultChar)))
+          (setq $p1 (1+ $p1)))))
+    (when (not $resultChar)
       (when print-message-when-no-match
         (xah-math-input-list-math-symbols)
-        (user-error "「%s」 no match found for that abbrev/input. Call “xah-math-input-list-math-symbols” for a list. Or use a decimal e.g. 「945」 or hexadecimal e.g. 「x3b1」, or full Unicode name e.g. 「greek small letter alpha」."  inputStr)))))
+        (user-error "「%s」 no match found for that abbrev/input. Call `xah-math-input-list-math-symbols' for a list. Or use a decimal e.g. 「945」 or hexadecimal e.g. 「x3b1」, or full Unicode name e.g. 「greek small letter alpha」."  $inputStr)))))
 
 ;;;###autoload
 (define-globalized-minor-mode global-xah-math-input-mode xah-math-input-mode xah-math-input-mode-on)

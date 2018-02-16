@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://gitlab.com/tarsius/glab
 ;; Keywords: tools
-;; Package-Version: 1.1.1
+;; Package-Version: 1.2.0
 ;; Package-Requires: ((emacs "25"))
 
 ;; This file is not part of GNU Emacs.
@@ -67,7 +67,7 @@
 (defvar url-http-response-status)
 
 (defconst glab--domain ".gitlab.com")
-(defconst glab--root-endpoint "https://gitlab.com/api/v3")
+(defconst glab--root-endpoint "https://gitlab.com/api/v4")
 
 (defvar glab-unpaginate nil)
 

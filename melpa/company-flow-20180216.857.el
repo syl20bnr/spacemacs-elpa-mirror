@@ -4,7 +4,7 @@
 
 ;; Author: Aaron Jensen <aaronjensen@gmail.com>
 ;; URL: https://github.com/aaronjensen/company-flow
-;; Package-Version: 20170325.810
+;; Package-Version: 20180216.857
 ;; Version: 0.1.0
 ;; Package-Requires: ((company "0.8.0") (dash "2.13.0"))
 
@@ -58,6 +58,7 @@
                                 js-jsx-mode
                                 js2-mode
                                 js2-jsx-mode
+                                rjsx-mode
                                 web-mode
                                 )
   "List of major modes where company-flow will be providing completions."
