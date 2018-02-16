@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/general.el
-;; Package-Version: 20180130.2055
+;; Package-Version: 20180215.1455
 ;; Created: February 17, 2016
 ;; Keywords: vim, evil, leader, keybindings, keys
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
@@ -549,6 +549,19 @@ arguments. The order of arguments will be preserved."
            and collect value into args
            finally (cl-return (list args kargs))))
 
+(defmacro general--ensure-lists (&rest vars)
+  "Ensure that all variables in VARS are lists if they are not already.
+If any variable is a lambda, it will not be considered to be a list. If a var is
+nil, it will be set to (list nil)."
+  `(progn
+     ,@(mapcar (lambda (var)
+                 `(unless (and ,var
+                               (listp ,var)
+                               ;; lambdas are lists
+                               (not (functionp ,var)))
+                    (setq ,var (list ,var))))
+               vars)))
+
 ;; * Extended Key Definition Language
 (defvar general-extended-def-keywords '(:which-key :wk :properties :repeat :jump)
   "Extra keywords that are valid for extended definitions.
@@ -858,8 +871,6 @@ GLOBAL-MAPS to use for the keybindings. This function will rewrite extended
 definitions, add predicates when applicable, and then choose the base function
 to bind the keys with by calling `general--define-key-dispatch'."
   (let ((general--definer-p t))
-    (unless states
-      (setq states (list nil)))
     (dolist (state states)
       (let* ((non-normal-p (if state
                                (memq state general-non-normal-states)
@@ -1020,13 +1031,9 @@ keywords that are used for each corresponding custom DEFINER."
         global-prefix-maps
         kargs)
     ;; don't force the user to wrap a single state or keymap in a list
-    ;; luckily nil is a list
-    (unless (listp states)
-      (setq states (list states)))
+    (general--ensure-lists states keymaps)
     (setq states (mapcar (lambda (state) (general--unalias state t))
                          states))
-    (unless (listp keymaps)
-      (setq keymaps (list keymaps)))
     (setq keymaps (mapcar #'general--unalias keymaps))
     ;; remove keyword arguments from rest var
     (let ((split-maps (general--remove-keyword-args maps)))
@@ -1883,11 +1890,7 @@ for example, would continue to swap and unswap the definitions of these keys.
 This means that when DESTRUCTIVE is non-nil, all related swaps/cycles should be
 done in the same invocation."
   (declare (indent defun))
-  (unless (listp keymaps)
-    (setq keymaps (list keymaps)))
-  (unless (and (listp states)
-               (not (null states)))
-    (setq states (list states)))
+  (general--ensure-lists states keymaps)
   (dolist (keymap-name keymaps)
     (dolist (state states)
       (setq keymap-name (general--unalias keymap-name)
@@ -1928,24 +1931,31 @@ with `general-translate-key') and optionally keyword arguments for
                       collect replacement and collect key))
   `(general-translate-key ,states ,keymaps ,@args))
 
-;; ** Automatic Unbinding
-(defun general-unbind-non-prefix (define-key keymap key def)
-  "If in KEYMAP KEY starts with a non-prefix key, unbind it with DEFINE-KEY."
+;; ** Automatic Key Unbinding
+(defun general-unbind-non-prefix-key (define-key keymap key def)
+  "Use DEFINE-KEY in KEYMAP to unbind an existing non-prefix subsequence of KEY.
+When a general key definer is in use and a subsequnece of KEY is already bound
+in KEYMAP, unbind it using DEFINE-KEY. Always bind KEY to DEF using DEFINE-KEY."
   (when general--definer-p
-    (let ((non-prefix key))
-      (when (stringp non-prefix)
-        (setq non-prefix (string-to-vector non-prefix)))
-      (while (numberp (lookup-key keymap non-prefix))
-        (setq non-prefix (cl-subseq non-prefix 0 -1)))
-      (funcall define-key keymap non-prefix nil)))
+    (let ((key (if (stringp key)
+                   (string-to-vector key)
+                 key)))
+      (while (numberp (lookup-key keymap key))
+        (setq key (cl-subseq key 0 -1)))
+      (funcall define-key keymap key nil)))
   (funcall define-key keymap key def))
 
 ;;;###autoload
-(defun general-auto-unbind-keys ()
+(defun general-auto-unbind-keys (&optional undo)
   "Advise `define-key' to automatically unbind keys when necessary.
-This will prevent errors when a sub-sequence of a key is already bound (e.g.
-the user attempts to bind \"SPC a\" when \"SPC\" is bound)."
-  (general-add-advice 'define-key :around #'general-unbind-non-prefix))
+This will prevent errors when a sub-sequence of a key is already bound (e.g. the
+user attempts to bind \"SPC a\" when \"SPC\" is bound, resulting in a \"Key
+sequnce starts with non-prefix key\" error). When UNDO is non-nil, remove
+advice."
+  (if undo
+      ;; using general versions in case start recording advice for later display
+      (general-advice-remove 'define-key #'general-unbind-non-prefix-key)
+    (general-advice-add 'define-key :around #'general-unbind-non-prefix-key)))
 
 ;; * Functions/Macros to Aid Other Configuration
 ;; ** Settings
@@ -1972,11 +1982,9 @@ variables comments."
 ;;;###autoload
 (defun general-add-hook (hooks functions &optional append local)
   "A drop-in replacement for `add-hook'.
-HOOKS and FUNCTIONS can be single items or lists."
-  (unless (listp hooks)
-    (setq hooks (list hooks)))
-  (unless (listp functions)
-    (setq functions (list functions)))
+Unlike `add-hook', HOOKS and FUNCTIONS can be single items or lists. APPEND and
+LOCAL are passed directly to `add-hook'."
+  (general--ensure-lists hooks functions)
   (dolist (hook hooks)
     (dolist (func functions)
       (add-hook hook func append local))))
@@ -1984,24 +1992,21 @@ HOOKS and FUNCTIONS can be single items or lists."
 ;;;###autoload
 (defun general-remove-hook (hooks functions &optional local)
   "A drop-in replacement for `remove-hook'.
-HOOKS and FUNCTIONS can be single items or lists."
-  (unless (listp hooks)
-    (setq hooks (list hooks)))
-  (unless (listp functions)
-    (setq functions (list functions)))
+Unlike `remove-hook', HOOKS and FUNCTIONS can be single items or lists. LOCAL is
+passed directly to `remove-hook'."
+  (general--ensure-lists hooks functions)
   (dolist (hook hooks)
     (dolist (func functions)
       (remove-hook hook func local))))
 
 ;; ** Advice
 ;;;###autoload
-(defun general-add-advice (symbols where functions &optional props)
+(defun general-advice-add (symbols where functions &optional props)
   "A drop-in replacement for `advice-add'.
-SYMBOLS and FUNCTIONS can be single items or lists."
-  (unless (listp symbols)
-    (setq symbols (list symbols)))
-  (unless (listp functions)
-    (setq functions (list functions)))
+SYMBOLS, WHERE, FUNCTIONS, and PROPS correspond to the arguments for
+`advice-add'. Unlike `advice-add', SYMBOLS and FUNCTIONS can be single items or
+lists."
+  (general--ensure-lists symbols functions)
   (dolist (symbol symbols)
     (dolist (func functions)
       (advice-add symbol where func props))))
@@ -2009,21 +2014,18 @@ SYMBOLS and FUNCTIONS can be single items or lists."
 ;; will actually pull in defalias
 ;; (will work the same though; docstring will be correct)
 ;;;###autoload
-(defalias 'general-advice-add #'general-add-advice)
+(defalias 'general-add-advice #'general-advice-add)
 
 ;;;###autoload
-(defun general-remove-advice (symbols functions)
+(defun general-advice-remove (symbols functions)
   "A drop-in replacement for `advice-remove'.
-SYMBOLS and FUNCTIONS can be single items or lists."
-  (unless (listp symbols)
-    (setq symbols (list symbols)))
-  (unless (listp functions)
-    (setq functions (list functions)))
+Unlike `advice-remove', SYMBOLS and FUNCTIONS can be single items or lists."
+  (general--ensure-lists symbols functions)
   (dolist (symbol symbols)
     (dolist (func functions)
       (advice-remove symbol func))))
 
-(defalias 'general-advice-remove #'general-remove-advice)
+(defalias 'general-remove-advice #'general-advice-remove)
 
 ;; * Optional Setup
 ;;;###autoload

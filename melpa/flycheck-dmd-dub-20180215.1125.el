@@ -4,7 +4,7 @@
 
 ;; Author:  Atila Neves <atila.neves@gmail.com>
 ;; Version: 0.12
-;; Package-Version: 20180208.855
+;; Package-Version: 20180215.1125
 ;; Package-Requires: ((flycheck "0.24") (f "0.18.2"))
 ;; Keywords: languages
 ;; URL: http://github.com/atilaneves/flycheck-dmd-dub
@@ -247,13 +247,13 @@ brace are discarded before parsing."
 
 (defun fldd--packages-fetched? (dependencies)
   "If all packages in DEPENDENCIES have been fetched."
+  (fldd--all (mapcar #'fldd--dependency-fetched? dependencies)))
 
-  (defun dependency-fetched? (dependency)
-    (let ((package (symbol-name (car dependency)))
-          (version (cdr dependency)))
-      (fldd--package-fetched? package version)))
-
-  (fldd--all (mapcar #'dependency-fetched? dependencies)))
+(defun fldd--dependency-fetched? (dependency)
+  "If DEPENDENCY has already been fetched."
+  (let ((package (symbol-name (car dependency)))
+        (version (cdr dependency)))
+    (fldd--package-fetched? package version)))
 
 (defun fldd--all (lst)
   "If all elements in LST are true."
@@ -290,7 +290,7 @@ If FILE does not exist, return nil."
     (setq flycheck-dmd-args flags)))
 
 (defun fldd--maybe-add-flag (flags flag)
-  "Add FLAG to FLAGS if not already present."
+  "Concat FLAGS and FLAG if the latter is not already present."
   (if (member flag flags) flags (cons flag flags)))
 
 (defun fldd--cache-is-updated-p ()
@@ -340,6 +340,10 @@ to `fldd--cache-file' to reuse the result of dub describe."
                                   (print `((import-paths . ,import-paths)
                                            (string-import-paths . ,string-import-paths))))))
                 (f-write cache-text 'utf-8 fldd--cache-file)))))))))
+
+(defun flycheck-dmd-add-version (version)
+  "Add VERSION to the list of dmd arguments when calling flycheck."
+  (add-to-list 'flycheck-dmd-args (concat "-version=" version)))
 
 
 (provide 'flycheck-dmd-dub)

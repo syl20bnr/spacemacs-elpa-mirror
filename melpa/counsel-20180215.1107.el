@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180211.1029
+;; Package-Version: 20180215.1107
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -2986,6 +2986,38 @@ include attachments of other Org buffers."
   (ivy-read "file: " (counsel-org-files)
             :action 'counsel-locate-action-dired
             :caller 'counsel-org-file))
+
+(defvar org-entities)
+(defvar org-entities-user)
+
+;;;###autoload
+(defun counsel-org-entity ()
+  "Insert an org-entity using ivy."
+  (interactive)
+  (ivy-read "Entity: " (cl-loop for element in (append org-entities org-entities-user)
+                          when (not (stringp element))
+                          collect
+                            (cons
+                             (format "%20s | %20s | %20s | %s"
+                                     (cl-first element) ;name
+                                     (cl-second element) ; latex
+                                     (cl-fourth element) ; html
+                                     (cl-seventh element)) ;utf-8
+                             element))
+            :require-match t
+            :action '(1
+                      ("u" (lambda (candidate)
+                             (insert (cl-seventh (cdr candidate)))) "utf-8")
+                      ("o" (lambda (candidate)
+                             (insert "\\" (cl-first (cdr candidate)))) "org-entity")
+                      ("l" (lambda (candidate)
+                             (insert (cl-second (cdr candidate)))) "latex")
+                      ("h" (lambda (candidate)
+                             (insert (cl-fourth (cdr candidate)))) "html")
+                      ("a" (lambda (candidate)
+                             (insert (cl-fifth (cdr candidate)))) "ascii")
+                      ("L" (lambda (candidate)
+                             (insert (cl-sixth (cdr candidate))) "Latin-1")))))
 
 ;;** `counsel-org-capture'
 (defvar org-capture-templates)
