@@ -5,8 +5,8 @@
 ;; Filename: ido-completing-read+.el
 ;; Author: Ryan Thompson
 ;; Created: Sat Apr  4 13:41:20 2015 (-0700)
-;; Version: 4.7
-;; Package-Version: 20180122.1340
+;; Version: 4.8
+;; Package-Version: 20180216.949
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (s "0.1") (memoize "1.1"))
 ;; URL: https://github.com/DarwinAwardWinner/ido-completing-read-plus
 ;; Keywords: ido, completion, convenience
@@ -78,7 +78,7 @@
 ;;
 ;;; Code:
 
-(defconst ido-completing-read+-version "4.7"
+(defconst ido-completing-read+-version "4.8"
   "Currently running version of ido-completing-read+.
 
 Note that when you update ido-completing-read+, this variable may
@@ -1157,6 +1157,17 @@ blacklist was modified."
     (ido-cr+--debug-message "Skipping blacklist update by user request.")))
 
 (ido-cr+-maybe-update-blacklist)
+
+;; Temporary fix for #146, copied from:
+;; https://github.com/kurnevsky/dotfiles/commit/b4daed5ea3d554b816767dbb1284bf5ea7e82de9
+(when (and (version<= "26" emacs-version) (fboundp 'add-variable-watcher))
+  (add-variable-watcher
+   'ido-cr+-dynamic-collection
+   (lambda (_symbol newval _operation _where)
+     (when (fboundp 'flx-ido-mode)
+       (if newval
+           (flx-ido-mode 0)
+         (flx-ido-mode 1))))))
 
 (provide 'ido-completing-read+)
 

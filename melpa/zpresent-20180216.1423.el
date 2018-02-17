@@ -1,7 +1,7 @@
 ;;; zpresent.el --- Simple presentation mode based on org files.  -*- lexical-binding: t; -*-
 
 ;; Version: 0.3
-;; Package-Version: 20180213.2150
+;; Package-Version: 20180216.1423
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright 2015-2017 Zachary Kanfer <zkanfer@gmail.com>
@@ -40,10 +40,14 @@
 (define-derived-mode zpresent-mode special-mode "zpresent-mode"
   (define-key zpresent-mode-map (kbd "n") #'zpresent--next-slide)
   (define-key zpresent-mode-map (kbd "C-n") #'zpresent--next-slide)
+  (define-key zpresent-mode-map (kbd "j") #'zpresent--next-slide)
+  (define-key zpresent-mode-map (kbd "l") #'zpresent--next-slide)
   (define-key zpresent-mode-map (kbd "<right>") #'zpresent--next-slide)
   (define-key zpresent-mode-map (kbd "<down>") #'zpresent--next-slide)
   (define-key zpresent-mode-map (kbd "SPC") #'zpresent--next-slide)
   (define-key zpresent-mode-map (kbd "p") #'zpresent--previous-slide)
+  (define-key zpresent-mode-map (kbd "h") #'zpresent--previous-slide)
+  (define-key zpresent-mode-map (kbd "k") #'zpresent--previous-slide)
   (define-key zpresent-mode-map (kbd "C-p") #'zpresent--previous-slide)
   (define-key zpresent-mode-map (kbd "<left>") #'zpresent--previous-slide)
   (define-key zpresent-mode-map (kbd "<up>") #'zpresent--previous-slide)
