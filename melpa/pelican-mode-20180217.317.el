@@ -3,7 +3,7 @@
 ;; Copyright 2013-2017 Joe Wreschnig
 ;;
 ;; Author: Joe Wreschnig <joe.wreschnig@gmail.com>
-;; Package-Version: 20171001.503
+;; Package-Version: 20180217.317
 ;; Package-X-Original-Version: 20170808
 ;; Package-Requires: ((emacs "25"))
 ;; URL: https://git.korewanetadesu.com/pelican-mode.git
@@ -52,7 +52,7 @@
 ;; Or with ‘use-package’ and deferred loading:
 ;;
 ;;     (use-package pelican-mode
-;;       :after (:any org rst markdown-mode adoc-mode)
+;;       :demand :after (:any org rst markdown-mode adoc-mode)
 ;;       :config
 ;;       (pelican-global-mode))
 ;;

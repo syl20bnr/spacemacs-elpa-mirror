@@ -4,9 +4,9 @@
 
 ;; Author: Sviatoslav Bulbakha <mail@ssbb.me>
 ;; URL: https://github.com/ssbb/pyenv-mode-auto
-;; Package-Version: 20160122.2341
+;; Package-Version: 20180216.2352
 ;; Keywords: python, pyenv
-;; Version: 0.1.0
+;; Version: 0.1.1
 ;; Package-Requires: ((pyenv-mode "0.1.0") (s "1.11.0") (f "0.17.0"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -43,7 +43,9 @@
    (lambda (path)
      (let ((pyenv-version-path (f-expand ".python-version" path)))
        (if (f-exists? pyenv-version-path)
-           (pyenv-mode-set (s-trim (f-read-text pyenv-version-path 'utf-8))))))))
+           (progn
+             (pyenv-mode-set (s-trim (f-read-text pyenv-version-path 'utf-8)))
+             t))))))
 
 (add-hook 'find-file-hook 'pyenv-mode-auto-hook)
 
