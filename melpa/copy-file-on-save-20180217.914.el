@@ -5,7 +5,7 @@
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 27 Jul 2017
 ;; Version: 0.0.3
-;; Package-Version: 20171211.1744
+;; Package-Version: 20180217.914
 ;; Keywords: files comm deploy
 ;; URL: https://github.com/emacs-php/emacs-auto-deployment
 ;; Package-Requires: ((emacs "24.3") (cl-lib "0.5") (f "0.17") (s "1.7.0"))
@@ -68,21 +68,25 @@
   :type 'string)
 
 (defvar copy-file-on-save-lighter copy-file-on-save-default-lighter)
-(make-local-variable 'copy-file-on-save-lighter)
+(make-variable-buffer-local 'copy-file-on-save-lighter)
+
+;; Directory Local variables
+;;;###autoload
+(progn
+  (defvar-local copy-file-on-save-dest-dir nil
+    "Path to deployment directory or convert (mapping) function.")
+  (put 'copy-file-on-save-dest-dir 'safe-local-variable #'stringp))
 
-(defvar copy-file-on-save-dest-dir nil
-  "Path to deployment directory or convert (mapping) function.")
-(make-local-variable 'copy-file-on-save-dest-dir)
-(put 'copy-file-on-save-dest-dir 'safe-local-variable #'stringp)
-
-(defvar copy-file-on-save-ignore-patterns '("/\\.dir-locals\\.el\\'" "/\\.git/")
-  "Ignore deploy when buffer-filename matched by these patterns.")
-(make-local-variable 'copy-file-on-save-ignore-patterns)
-(put 'copy-file-on-save-ignore-patterns 'safe-local-variable
-     (lambda (obj)
-       (and (listp obj)
-            (cl-loop for o in obj always (stringp o)))))
-
+;;;###autoload
+(progn
+  (defvar-local copy-file-on-save-ignore-patterns '("/\\.dir-locals\\.el\\'" "/\\.git/")
+    "Ignore deploy when buffer-filename matched by these patterns.")
+  (put 'copy-file-on-save-ignore-patterns 'safe-local-variable
+       (lambda (obj)
+         (and (listp obj)
+              (cl-loop for o in obj always (stringp o))))))
+
+;; Variables
 (defvar copy-file-on-save-base-dir nil
   "Path to base directory for deployment.")
 
