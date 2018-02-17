@@ -18,7 +18,7 @@
 
 ;; Author: Masanao Igarashi <syoux2@gmail.com>
 ;; Keywords: org, rst, reST, reStructuredText
-;; Package-Version: 20180115.405
+;; Package-Version: 20180217.644
 ;; Version: 0.2
 ;; URL: https://github.com/masayuko/ox-rst
 ;; Package-Requires: ((emacs "24.4") (org "8.2.4"))
@@ -812,8 +812,7 @@ CONTENTS is nil.  INFO is a plist holding contextual information."
   (let ((key (org-element-property :key keyword))
 	(value (org-element-property :value keyword)))
     (cond
-     ((string= key "RST") value)
-     ((string= key "TOC") (downcase value)))))
+     ((string= key "RST") value))))
 
 
 ;;;; Latex Environment
@@ -1503,11 +1502,11 @@ channel."
   "Transcode a VERSE-BLOCK element from Org to reStructuredText.
 CONTENTS is verse block contents.  INFO is a plist holding
 contextual information."
-  (concat
-   (replace-regexp-in-string "^" "| " (if (> (string-width contents) 1)
-                                          (substring contents 0 -1)
-                                        contents)) "\n"))
-
+  (let ((lines (split-string contents "\n")))
+    (cond ((> (length lines) 0)
+           (mapconcat
+            (function (lambda (x) (if (> (string-width x) 0)
+                                      (concat "| " x "\n") ""))) lines "")))))
 
 
 ;;; Filters
