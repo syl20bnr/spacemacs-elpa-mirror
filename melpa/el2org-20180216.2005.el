@@ -1,13 +1,13 @@
 ;;; el2org.el --- Convert elisp file to org file
 
 ;; * Header
-;; #+BEGIN_EXAMPLE
+;; #+begin_example
 ;; Copyright (C) 2017 Feng Shu
 
 ;; Author: Feng Shu  <tumashu AT 163.com>
 ;; Homepage: https://github.com/tumashu/el2org
 ;; Keywords: convenience
-;; Package-Version: 20180213.1700
+;; Package-Version: 20180216.2005
 ;; Package-Requires: ((emacs "25.1"))
 ;; Version: 0.10
 
@@ -23,7 +23,7 @@
 
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
-;; #+END_EXAMPLE
+;; #+end_example
 
 ;;; Commentary:
 
@@ -73,16 +73,6 @@
 (require 'thingatpt)
 (require 'org)
 (require 'ox-org)
-
-(defvar el2org-mode-map
-  (let ((keymap (make-sparse-keymap)))
-    (define-key keymap "\C-c.." 'el2org-generate-readme)
-    keymap)
-  "Keymap for `el2org-mode'")
-
-(define-minor-mode el2org-mode
-  "Minor for el2org."
-  nil " el2org" 'el2org-mode-map)
 
 (defun el2org-in-src-block-p ()
   "If the current point is in BEGIN/end_src block, return t."
@@ -166,10 +156,10 @@
         ;; Deal with ";; Local Variables:" and ";; End:"
         (goto-char (point-min))
         (while (re-search-forward "^;;+[ ]+Local[ ]+Variables: *" nil t)
-          (replace-match ";; #+BEGIN_EXAMPLE\n;; Local Variables:" nil t))
+          (replace-match ";; #+begin_example\n;; Local Variables:" nil t))
         (goto-char (point-min))
         (while (re-search-forward "^;;+[ ]+End: *" nil t)
-          (replace-match ";; End:\n;; #+END_EXAMPLE" nil t))
+          (replace-match ";; End:\n;; #+end_example" nil t))
         ;; Deal with ";;;"
         (goto-char (point-min))
         (while (re-search-forward "^;;;" nil t)
