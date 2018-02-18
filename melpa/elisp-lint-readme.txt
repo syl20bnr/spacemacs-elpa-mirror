@@ -1,14 +1,15 @@
-This is a tool for finding certain problems in Emacs Lisp files. Use it on
+This is a tool for finding certain problems in Emacs Lisp files.  Use it on
 the command line like this:
 
-emacs -Q --batch -l elisp-lint.el -f elisp-lint-files-batch *.el
+$(EMACS) -Q --batch -l elisp-lint.el -f elisp-lint-files-batch *.el
 
-You can disable individual checks, by passing flags on the command line:
+You can disable individual checks by passing flags on the command line:
 
-emacs -Q --batch -l elisp-lint.el -f elisp-lint-files-batch --no-indent *.el
+$(EMACS) -Q --batch -l elisp-lint.el -f elisp-lint-files-batch \
+         --no-indent *.el
 
 Alternatively, you can disable checks using file variables or the following
-.dir.locals file:
+.dir-locals.el file:
 
 ((nil . ((elisp-lint-ignored-validators . ("fill-column")))))
 
