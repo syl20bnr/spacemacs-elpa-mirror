@@ -4,7 +4,7 @@
 
 ;; Author: wolray <wolray@foxmail.com>
 ;; Version: 3.6
-;; Package-Version: 20171103.2306
+;; Package-Version: 20180218.729
 ;; URL: https://github.com/wolray/symbol-overlay/
 ;; Keywords: faces, matching
 ;; Package-Requires: ((emacs "24.3"))
@@ -385,11 +385,9 @@ DIR must be 1 or -1."
 	   (keyword (symbol-overlay-assoc symbol)))
       (push-mark nil t)
       (funcall jump-function symbol dir)
-      (if keyword
-          (progn
-            (symbol-overlay-maybe-reput symbol keyword)
-            (symbol-overlay-maybe-count keyword))
-        (symbol-overlay-mode)))))
+      (when keyword
+        (symbol-overlay-maybe-reput symbol keyword)
+        (symbol-overlay-maybe-count keyword)))))
 
 (defun symbol-overlay-basic-jump (symbol dir)
   "Jump to SYMBOL's next location in the direction DIR.  DIR must be 1 or -1."
