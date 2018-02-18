@@ -6,9 +6,9 @@
 ;; Author: Nikolaj Schumacher <bugs * nschum de>,
 ;; Author: Neil Okamoto <neil.okamoto+melpa@gmail.com>
 ;; Version: 0.2
-;; Package-Version: 20180217.1131
+;; Package-Version: 20180217.1700
 ;; Keywords: lisp, maint, tools
-;; Package-Requires: ((emacs "25"))
+;; Package-Requires: ((emacs "23"))
 ;; URL: http://github.com/gonewest818/elisp-lint/
 ;;
 ;; This file is NOT part of GNU Emacs.
@@ -53,14 +53,14 @@
 ;;    - Whitespace check permits page-delimiter (^L)
 ;;    - Indentation check prints the diff to console
 ;;    - User can specify indent specs to tell the checker about macros
-;;    - Added checkdoc (require Emacs 25 and newer)
+;;    - Added checkdoc (available only Emacs 25 and newer)
 ;;    - Cleared up the console output for easier reading in CI
 ;;    - Expand Travis CI test matrix to include Emacs 25 and 26
 ;;
 ;;; Code:
 
 (require 'bytecomp)
-(require 'checkdoc)
+(require 'checkdoc nil t)
 (require 'package nil t)
 
 (declare-function package-buffer-info "package" t)

@@ -6,7 +6,7 @@
 ;; Maintainer: Ola Nilsson <ola.nilsson@gmail.com>
 ;; Created; Jul 24 2014
 ;; Keywords: tools test unittest ert
-;; Package-Version: 20180207.1348
+;; Package-Version: 20180208.935
 ;; Version: 0.1.2
 ;; Package-Requires: ((ert "0"))
 ;; URL: http://bitbucket.org/olanilsson/ert-junit
@@ -46,6 +46,17 @@ RESULT must be an `ert-test-result-with-condition'."
 	(delete-extract-rectangle (point-min) (+ (line-beginning-position) 4))
 	(buffer-string)))
 
+(defun ert-junit--condition-string (result)
+  "Return ert condition string for RESULT.
+RESULT must be an `ert-test-result-with-condition'."
+  (with-temp-buffer
+	(let ((print-escape-newlines t)
+          (print-level 5)
+          (print-length 10))
+      (ert--pp-with-indentation-and-newline
+       (ert-test-result-with-condition-condition result)))
+	(buffer-string)))
+
 (defun ert-junit-testcase (stats test-name test-index)
   "Insert a testcase XML element at point in the current buffer.
 STATS is the test run state.  The name of the testcase is
@@ -65,7 +76,16 @@ TEST-NAME and TEST-INDEX its index into STATS."
 		 (ert-test-failed
 		  (setq text (concat "<failure message=\"test\" type=\"type\">"
 							 (ert-junit--infos-string test-status)
-							 ;;(ert--print-backtrace (ert-test-result-with-condition-backtrace test-status))
+							 (ert-junit--condition-string test-status)
+							 ;; Printing the backtrace requires
+							 ;; escapes (as the content may contain
+							 ;; xml-like constructs like #<bytecode>
+							 ;; (with-temp-buffer
+							 ;;   (ert--print-backtrace
+							 ;; 	(ert-test-result-with-condition-backtrace test-status)
+							 ;; 	nil)
+							 ;;   (buffer-substring-no-properties (point-min)
+                             ;;                                 (point-max)))
 							 "</failure>")))
 		 (ert-test-quit (setq text " <failure>quit</failure>"))))
 	 text)
