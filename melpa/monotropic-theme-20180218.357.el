@@ -6,7 +6,7 @@
 
 ;; Author: caffo
 ;; Version: 0.1
-;; Package-Version: 20180205.2000
+;; Package-Version: 20180218.357
 ;; Package-X-Original-Version: 0
 ;; Package-Requires: ((emacs "24"))
 ;; URL: https://github.com/caffo/monotropic-theme
@@ -43,10 +43,10 @@
    `(font-latex-match-variable-keywords ((t (:foreground ,fg))))
    `(font-latex-string-face ((t (:foreground "#a9a9a9"))))
    `(font-lock-builtin-face ((t (:background ,bg :foreground ,fg))))
-   `(font-lock-comment-delimiter-face ((t (:foreground ,fg-light))))
-   `(font-lock-comment-face ((t (:foreground ,fg-light  :slant italic))))
+   `(font-lock-comment-delimiter-face ((t (:foreground ,fg-light :weight normal))))
+   `(font-lock-comment-face ((t (:foreground ,fg-light  :slant italic :weight normal ))))
    `(font-lock-constant-face ((t (:foreground ,fg))))
-   `(font-lock-doc-face ((t (:foreground ,fg :weight semi-bold))))
+   `(font-lock-doc-face ((t (:foreground ,fg))))
    `(font-lock-function-name-face ((t (:foreground ,fg))))
    `(font-lock-keyword-face ((t (:foreground ,fg))))
    `(font-lock-preprocessor-face ((t (:foreground ,fg))))
@@ -237,6 +237,13 @@
    `(eshell-ls-todo-face ((t (:foreground ,fg))))
    `(eshell-ls-unreadable-face ((t (:foreground ,fg))))
    `(eshell-prompt-face ((t (:foreground ,fg))))
+
+   ;; feebleline
+   `(feebleline-time-face ((t (:foreground ,fg-light))))
+   `(feebleline-linum-face ((t (:foreground ,fg-light))))
+   `(feebleline-bufname-face ((t (:foreground ,fg-light))))
+   `(feebleline-previous-buffer-face ((t (:foreground ,fg-light))))
+   `(feebleline-asterisk-face ((t (:foreground ,fg-light))))
 
    ;; misc
     `(hl-line ((t (:background "#fcfaf0" ))))

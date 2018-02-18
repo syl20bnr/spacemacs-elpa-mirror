@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180217.1016
+;; Package-Version: 20180218.207
 ;; Keywords: help, lisp
 ;; Version: 0.8
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -836,7 +836,7 @@ hooks.")
   "Return the source code of SYM.
 If the source code cannot be found, return the sexp used."
   (catch 'source
-    (when (functionp sym)
+    (unless (symbolp sym)
       (throw 'source sym))
 
     (-let (((buf start-pos created) (helpful--definition sym callable-p))
