@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand
 ;; URL: http://github.com/Kungsgeten/yankpad
-;; Package-Version: 20180127.254
+;; Package-Version: 20180219.738
 ;; Version: 1.70
 ;; Keywords: abbrev convenience
 ;; Package-Requires: ((emacs "24"))
@@ -285,7 +285,7 @@ Return the result of the function output as a string."
   "Remove ID property from last `yankpad-capture-snippet', save `yankpad-file'."
   (let* ((properties (org-entry-properties org-capture-last-stored-marker))
          (file (cdr (assoc "FILE" properties))))
-    (when (equal file yankpad-file)
+    (when (file-equal-p file yankpad-file)
       (when (org-entry-delete org-capture-last-stored-marker "ID")
         (with-current-buffer (get-file-buffer file)
           (save-buffer)))

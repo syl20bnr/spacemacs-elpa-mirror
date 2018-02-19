@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180215.1107
+;; Package-Version: 20180219.956
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1330,11 +1330,15 @@ INITIAL-INPUT can be given as the initial minibuffer input."
       (delete-process proc))
     (when buff
       (kill-buffer buff))
-    (setq proc (start-process-shell-command
+    (setq proc (start-file-process
                 counsel-gg-process
                 counsel-gg-process
+                shell-file-name
+                shell-command-switch
                 (concat
-                 (format counsel-git-grep-cmd regex)
+                 (format
+                  counsel-git-grep-cmd
+                  regex)
                  " | head -n 200")))
     (set-process-sentinel
      proc
@@ -1384,9 +1388,11 @@ If NO-ASYNC is non-nil, do it synchronously instead."
           (delete-process proc))
         (when buff
           (kill-buffer buff))
-        (setq proc (start-process-shell-command
+        (setq proc (start-file-process
                     counsel-ggc-process
                     counsel-ggc-process
+                    shell-file-name
+                    shell-command-switch
                     cmd))
         (set-process-sentinel
          proc

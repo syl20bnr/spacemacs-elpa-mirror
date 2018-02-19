@@ -6,7 +6,7 @@
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 9 Aug 2015
 ;; Version: 0.2.0
-;; Package-Version: 20161214.1017
+;; Package-Version: 0.3.0
 ;; Keywords: emulations vim ft file magic-mode
 ;; Homepage: https://github.com/zonuexe/magic-filetype.el
 ;; Package-Requires: ((emacs "24") (s "1.9.0"))
@@ -49,8 +49,8 @@
 (eval-when-compile
   (require 'rx))
 
-(defcustom magic-filetype-vim-filetype-line-re
-  "vim: *set +\\(?:ft\\|filetype\\)=\\(.+\\):"
+(defcustom  magic-filetype-vim-filetype-line-re
+  "vim: *set +\\(?:.*?\\)\\(?:ft\\|filetype\\)=\\([^ :]+\\)\\(?:.*?\\):$"
   "Regexp of Vim filetype line."
   :group 'magic-filetype
   :type  'regexp)
@@ -95,6 +95,7 @@
     (json         . ("/dir/file.json"))
     (lisp         . ("/dir/file.lisp"))
     (nadeshiko    . ("/dir/file.nako"))
+    (nim          . ("/dir/file.nim"))   ;; Nim https://nim-lang.org/
     (m4           . ("/dir/file.m4"))
     (markdown     . ("/dir/file.md"))
     (msql         . (sql-mode))
