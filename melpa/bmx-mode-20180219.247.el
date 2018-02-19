@@ -4,7 +4,7 @@
 
 ;; Author: Jostein Kjønigsen <jostein@gmail.com>
 ;; URL: http://github.com/josteink/bmx-mode
-;; Package-Version: 20180218.444
+;; Package-Version: 20180219.247
 ;; Version: 0.1
 ;; Keywords: c convenience tools
 ;; Package-Requires: ((cl-lib "0.5") (company "0.9.4") (dash "2.13.0") (s "1.12.0"))
@@ -28,6 +28,12 @@
 
 ;; Extend Emacs' bat-mode to support auto-completion, code-navigation and
 ;; refactoring capabilities.
+;;
+;; Once installed, add the following to your .emacs file to configure Emacs
+;; and bmx-mode using the bmx-mode default-settings:
+;;
+;; (require 'bmx-mode)
+;; (bmx-mode-setup-defaults)
 ;;
 ;; This minor-mode is all Elisp, and thus cross-platform and does not depend
 ;; on any native platform tools or host OS.
