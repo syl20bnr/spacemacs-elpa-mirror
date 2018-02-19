@@ -1,10 +1,10 @@
-;;; org-mru-clock.el --- load most recently used clocks into history -*- lexical-binding: t -*-
+;;; org-mru-clock.el --- clock in/out of tasks with completion and persistent history -*- lexical-binding: t -*-
 
-;; Copyright (C) 2016--2017 Kevin Brubeck Unhammer
+;; Copyright (C) 2016--2018 Kevin Brubeck Unhammer
 
 ;; Author: Kevin Brubeck Unhammer <unhammer@fsfe.org>
 ;; Version: 0.1.2
-;; Package-Version: 20171219.314
+;; Package-Version: 20180219.359
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: convenience, calendar
 
