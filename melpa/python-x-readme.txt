@@ -2,6 +2,23 @@ python-x extends the built-in `python-mode' (F. Gallina's) with several
 additional functions and behaviors inspired by `ess-mode' which are targeted
 to interactive code evaluation with an inferior Python process.
 
+Quick overview:
+
+Use `python-x-setup' in your emacs startup:
+
+  (python-x-setup)
+
+In any `python-mode' buffer use [C-c C-p] to start a new interpreter,
+then use [C-c C-c] to evaluate the current section. The default
+section delimiter is "# ---" but can be changed via
+`python-section-delimiter' to be similar to Spyder/Pyzo:
+
+  (setq python-section-delimiter "##")
+
+See the `python-x' customization group for additional settings.
+
+Detailed documentation:
+
 python-x allows to evaluate code blocks using comments as delimiters (code
 "sections") or using arbitrarily nested folding marks. By default, a code
 section is delimited by comments starting with "# ---"; while folds are
@@ -47,13 +64,7 @@ uses `folding' to interpret and define folding marks. Again, `folding-mode'
 needs to be enabled manually if code folding is also desired.
 `expand-region' is equally supported, when previously loaded.
 
-To automatically setup python-x with an ESS-like keyboard map, use
-`python-x-setup' in your emacs startup:
-
-(python-x-setup)
-
-The keyboard map definition is currently tuned to the author's taste, and
-may change over time. You are encouraged to look at the definition of
-`python-x-setup' and derive your own.
-
-See the `python-x' customization group for additional settings.
+The default keyboard map definition set by (python-x-setup) is
+currently tuned to the author's taste, and may change over time. You
+are encouraged to look at the definition of `python-x-setup' and
+derive your own.
