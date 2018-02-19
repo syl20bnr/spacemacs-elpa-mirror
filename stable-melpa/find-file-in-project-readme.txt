@@ -5,6 +5,8 @@ in a given project.
 - Works flawlessly on Tramp Mode (https://www.emacswiki.org/emacs/TrampMode)
 
 Usage,
+  - `M-x find-file-in-project-at-point' guess the file name at point and
+     find file
   - `M-x find-file-in-project-by-selected' use the selected region
      as the keyword to search file.  Or you need provide the keyword
      if no region selected.
@@ -27,11 +29,6 @@ For instance, in a Ruby on Rails project, you are interested in all
 .rb files that don't exist in the "vendor" directory.  In that case
 you could set `ffip-find-options' to "-not -regex \".*vendor.*\"".
 
-The variable `ffip-filename-rules' create some extra file names for
-search when calling `find-file-in-project-by-selected'. For example,
-When file basename `helloWorld' provided, `HelloWorld', `hello-world'
-are added as the file name search patterns.
-`C-h v ffip-filename-rules' to see its default value.
 `find-file-with-similar-name' find file with similar name to current
 opened file. The regular expression `ffip-strip-file-name-regex' is
 also used by `find-file-with-similar-name'.

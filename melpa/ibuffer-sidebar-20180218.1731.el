@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/ibuffer-sidebar
-;; Package-Version: 20180208.1813
+;; Package-Version: 20180218.1731
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: ibuffer, files, tools
@@ -123,9 +123,9 @@ Warning: This is implemented by advising specific functions."
   :group 'ibuffer-sidebar)
 
 (defcustom ibuffer-sidebar-special-refresh-commands
-  '((kill-buffer . 3)
-    (find-file . 3)
-    (delete-file . 3))
+  '((kill-buffer . 2)
+    (find-file . 2)
+    (delete-file . 2))
   "A list of commands that will trigger a refresh of the sidebar.
 
 The command can be an alist with the CDR of the alist being the amount of time
@@ -143,16 +143,10 @@ to disable automatic refresh when a special command is triggered."
 
 ;; Mode
 
-(defvar ibuffer-sidebar-mode-map
-  (let ((map (make-sparse-keymap)))
-    map)
-  "Keymap used for symbol `ibuffer-sidebar-mode'.")
-
-(define-minor-mode ibuffer-sidebar-mode
-  "A minor mode that puts `ibuffer' in a sidebar."
-  :init-value nil
-  :lighter ""
-  :keymap ibuffer-sidebar-mode-map
+(define-derived-mode ibuffer-sidebar-mode ibuffer-mode
+  "Ibuffer-sidebar"
+  "A major mode that puts `ibuffer' in a sidebar."
+  :group 'ibuffer-sidebar
   (let ((inhibit-read-only t))
     (setq window-size-fixed 'width)
 

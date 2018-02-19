@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/dired-sidebar
-;; Package-Version: 20180126.1812
+;; Package-Version: 20180218.1717
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1") (dired-subtree "0.0.1"))
 ;; Keywords: dired, files, tools
@@ -507,28 +507,40 @@ This is dependent on `dired-subtree-cycle'."
              ;; This will return a list of '\("a" "b" "c"\).
              (dirs (split-string (cadr (split-string name root)) "/")))
         (dolist (dir dirs)
-          (setq path (concat path dir))
-          (if (file-regular-p path)
-              ;; Try to use `dired-goto-file' to go to the correct
-              ;; file. If that fails, just search for the text.
-              (let ((default-directory (file-name-directory path)))
-                (unless (dired-goto-file path)
-                  ;; It's hard to get this right so just using a
-                  ;; heuristic will get 90% of the way there.
-                  ;; Making sure there's a space in front of the name
-                  ;; skips matches that contains the name as a
-                  ;; substring which is probably good enough...
-                  (re-search-forward (concat "^.*[[:space:]]"
-                                             (regexp-quote dir)))))
-            (re-search-forward (concat "^.*[[:space:]]" (regexp-quote dir)))
-            ;; Check if subtree has already been expanded.
-            ;; Basically, we're using `dired-subtree-cycle' more
-            ;; like dired-subtree-expand.
-            (when (not (dired-subtree--is-expanded-p))
-              ;; This will probably throw an error when trying to expand
-              ;; directories that have been collapsed by `dired-collapse'.
-              (dired-subtree-cycle))
-            (setq path (concat path "/")))))
+          (let ((path-regex (concat "^.*[[:space:]]" (regexp-quote dir))))
+            (setq path (concat path dir))
+            (if (file-regular-p path)
+                ;; Try to use `dired-goto-file' to go to the correct
+                ;; file. If that fails, just search for the text.
+                (let ((default-directory (file-name-directory path)))
+                  (unless (dired-goto-file path)
+                    (condition-case nil
+                        ;; It's hard to get this right so just using a
+                        ;; heuristic will get 90% of the way there.
+                        ;; Making sure there's a space in front of the name
+                        ;; skips matches that contains the name as a
+                        ;; substring which is probably good enough...
+                        (re-search-forward path-regex)
+                      ;; Sometimes `dired' gets out of sync with the file.
+                      ;; Refresh the buffer and try the search again.
+                      ;; One way to reproduce this:
+                      ;; 1. Open file A as buffer B.
+                      ;; 2. Delete file A in `dired'.
+                      ;; 3. Hide `dired-sidebar'.
+                      ;; 4. Save buffer B.
+                      ;; 5. Re-open `dired-sidebar'.
+                      (error
+                       (revert-buffer)
+                       (re-search-forward path-regex nil :no-error)))))
+              (re-search-forward path-regex)
+              ;; Check if subtree has already been expanded.
+              ;; Basically, we're using `dired-subtree-cycle' more
+              ;; like dired-subtree-expand.
+              (when (not (dired-subtree--is-expanded-p))
+                ;; This will probably throw an error when trying to expand
+                ;; directories that have been collapsed by `dired-collapse'.
+                (dired-subtree-cycle))
+              (setq path (concat path "/"))))))
       (when dired-sidebar-recenter-cursor-on-follow-file
         (recenter nil)))))
 

@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/lispyville
-;; Package-Version: 20180215.1853
+;; Package-Version: 20180218.1555
 ;; Created: March 03, 2016
 ;; Keywords: vim, evil, lispy, lisp, parentheses
 ;; Package-Requires: ((lispy "0") (evil "1.2.12") (cl-lib "0.5") (emacs "24.4"))
@@ -562,6 +562,30 @@ This will also act as `lispy-delete-backward' after delimiters."
   :motion evil-forward-char
   (interactive "<R><x>")
   (lispyville-change beg end type register))
+
+(defun lispyville--forward-list (&optional arg)
+  "Like `forward-list' but error if no more lists.
+ARG has the same effect."
+  (interactive "^p")
+  (or arg (setq arg 1))
+  (let ((pos (scan-lists (point) arg 0)))
+    (if pos
+        (goto-char pos)
+      (error "No more lists"))))
+
+(evil-define-operator lispyville-prettify (beg end)
+  "Prettify lists from BEG to END."
+  (interactive "<r>")
+  (evil-exit-visual-state)
+  (let ((orig-pos (point)))
+    (ignore-errors (backward-up-list))
+    (while (and (ignore-errors (lispyville--forward-list))
+                (<= (save-excursion
+                      (backward-list))
+                    end))
+      (lispy--normalize-1))
+    (or (ignore-errors (goto-char orig-pos))
+        (goto-char (point-max)))))
 
 ;;; * Motions
 ;; ** Additional Movement Key Theme

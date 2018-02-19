@@ -5,6 +5,8 @@ in a given project.
 - Works flawlessly on Tramp Mode (https://www.emacswiki.org/emacs/TrampMode)
 
 Usage,
+  - `M-x find-file-in-project-at-point' guess the file name at point and
+     find file
   - `M-x find-file-in-project-by-selected' use the selected region
      as the keyword to search file.  Or you need provide the keyword
      if no region selected.
