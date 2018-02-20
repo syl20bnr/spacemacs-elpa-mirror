@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180219.956
+;; Package-Version: 20180219.1113
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1700,7 +1700,10 @@ but the leading dot is a lot faster."
 (defun counsel--find-file-matcher (regexp candidates)
   "Return REGEXP matching CANDIDATES.
 Skip some dotfiles unless `ivy-text' requires them."
-  (let ((res (ivy--re-filter regexp candidates)))
+  (let ((res
+         (cl-remove-if-not
+          (lambda (x) (string-match regexp (directory-file-name x)))
+          candidates)))
     (if (or (null ivy-use-ignore)
             (null counsel-find-file-ignore-regexp)
             (string-match "\\`\\." ivy-text))
