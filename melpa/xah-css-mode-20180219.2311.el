@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2017 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.8.20180120
-;; Package-Version: 20180120.241
+;; Version: 2.8.20180219
+;; Package-Version: 20180219.2311
 ;; Created: 18 April 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: languages, convenience, css, color
@@ -227,6 +227,20 @@ Note: the region's text or any string in PAIRS is assumed to NOT contain any cha
             (while (search-forward (elt $tempMapPoints $i) nil t)
               (replace-match (elt (elt pairs $i) 1) t t))
             (setq $i (1+ $i))))))))
+
+(defun xah-css-smart-newline ()
+  "Insert a newline, maybe add a semicolon before.
+Version 2018-02-19"
+  (interactive)
+  (backward-char )
+  (if (looking-at "[a-z0-9]")
+      (progn
+        (forward-char )
+        (insert ";")
+        (newline))
+    (progn
+      (forward-char )
+      (newline))))
 
 (defun xah-css-compact-block ()
   "Compact current CSS code block.
@@ -1132,6 +1146,8 @@ Version 2016-10-24"
   (setq xah-css-mode-map (make-sparse-keymap))
   (define-key xah-css-mode-map (kbd "TAB") 'xah-css-complete-or-indent)
 
+  (define-key xah-css-mode-map (kbd "RET") 'xah-css-smart-newline)
+
   (define-prefix-command 'xah-css-mode-no-chord-map)
 
   ;; todo need to set these to also emacs's conventional major mode keys
@@ -1144,9 +1160,7 @@ Version 2016-10-24"
   ;  (define-key xah-css-mode-map [remap comment-dwim] 'xah-css-comment-dwim)
 
   ;; define separate, so that user can override the lead key
-  (define-key xah-css-mode-map (kbd "C-c C-c") xah-css-mode-no-chord-map)
-
-  )
+  (define-key xah-css-mode-map (kbd "C-c C-c") xah-css-mode-no-chord-map))
 
 
 
