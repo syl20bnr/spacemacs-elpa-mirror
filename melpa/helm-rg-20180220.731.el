@@ -14,7 +14,7 @@
 
 ;; Author: Danny McClanahan
 ;; Version: 0.1
-;; Package-Version: 20180220.126
+;; Package-Version: 20180220.731
 ;; URL: https://github.com/cosmicexplorer/helm-rg
 ;; Package-Requires: ((emacs "25") (helm "2.8.8") (cl-lib "0.5") (dash "2.13.0") (pcre2el "1.0"))
 ;; Keywords: find, file, files, helm, fast, rg, ripgrep, grep, search
@@ -25,16 +25,23 @@
 ;; The below is generated from a README at
 ;; https://github.com/cosmicexplorer/helm-rg.
 
-;; Search massive codebases extremely fast, using `ripgrep' and `helm'.
-;; Inspired by `helm-ag' and `f3'.
+;; MELPA: https://melpa.org/#/helm-rg
 
-;; Also check out rg.el, which I haven't used much but seems pretty cool.
+;; Search massive codebases extremely fast, using `ripgrep'
+;; (https://github.com/BurntSushi/ripgrep) and `helm'
+;; (https://github.com/emacs-helm/helm). Inspired by `helm-ag'
+;; (https://github.com/syohex/emacs-helm-ag) and `f3'
+;; (https://github.com/cosmicexplorer/f3).
+
+;; Also check out rg.el (https://github.com/dajva/rg.el), which I haven't used
+;; much but seems pretty cool.
 
 
 ;; Usage:
 
-;; *See the `ripgrep' whirlwind tour for further information on invoking
-;; `ripgrep'.*
+;; *See the `ripgrep' whirlwind tour
+;; (https://github.com/BurntSushi/ripgrep#whirlwind-tour) for further
+;; information on invoking `ripgrep'.*
 
 ;; - Invoke the interactive function `helm-rg' to start a search with `ripgrep'
 ;; in the current directory.
@@ -42,32 +49,59 @@
 ;; type.
 ;;     - Each line has the file path, the line number, and the column number of
 ;; the start of the match, and each part is highlighted differently.
-;;     - Use 'TAB' to invoke the helm persistent action, which previews the
+;;     - Use `TAB' to invoke the helm persistent action, which previews the
 ;; result and highlights the matched text in the preview.
-;;     - Use 'RET' to visit the file containing the result, move point to the
+;;     - Use `RET' to visit the file containing the result, move point to the
 ;; start of the match, and recenter.
-;; - The text entered into the minibuffer is interpreted as a PCRE regexp which
-;; `ripgrep' uses to search your files.
-;; - Use 'M-d' to select a new directory to search from.
-;; - Use 'M-g' to input a glob pattern to filter files by, e.g. `*.py'.
+;;         - The result's buffer is displayed with
+;; `helm-rg-display-buffer-normal-method' (which defaults to
+;; `switch-to-buffer').
+;;         - Use a prefix argument (`C-u RET') to open the buffer with
+;; `helm-rg-display-buffer-alternate-method' (which defaults to
+;; `pop-to-buffer').
+;; - The text entered into the minibuffer is interpreted into a PCRE
+;; (https://pcre.org) regexp to pass to `ripgrep'.
+;;     - `helm-rg''s pattern syntax is basically PCRE, but single spaces
+;; basically act as a more powerful conjunction operator.
+;;         - For example, the pattern `a b' in the minibuffer is transformed
+;; into `a.*b|b.*a'.
+;;             - The single space can be used to find lines with any
+;; permutation of the regexps on either side of the space.
+;;             - Two spaces in a row will search for a literal single space.
+;;         - `ripgrep''s `--smart-case' option is used so that case-sensitive
+;; search is only on if any of the characters in the pattern are capitalized.
+;;             - For example, `ab' (conceptually) searches `[Aa][bB]', but `Ab'
+;; in the minibuffer will only search for the pattern `Ab' with `ripgrep',
+;; because it has at least one uppercase letter.
+;; - Use `M-d' to select a new directory to search from.
+;; - Use `M-g' to input a glob pattern to filter files by, e.g. `*.py'.
 ;;     - The glob pattern defaults to the value of
 ;; `helm-rg-default-glob-string', which is an empty string (matches every file)
 ;; unless you customize it.
-;;     - Pressing 'M-g' again shows the same minibuffer prompt for the glob
+;;     - Pressing `M-g' again shows the same minibuffer prompt for the glob
 ;; pattern, with the string that was previously input.
+;; - Use `<left>' and `<right>' to go up and down by files in the results.
+;;     - `<up>' and `<down>' simply go up and down by match result, and there
+;; may be many matches for your pattern in a single file, even multiple on a
+;; single line (which `ripgrep' reports as multiple separate results).
+;;     - The `<left>' and `<right>' keys will move up or down until it lands on
+;; a result from a different file than it started on.
+;;         - When moving by file, `helm-rg' will cycle around the results list,
+;; but it will print a harmless error message instead of looping infinitely if
+;; all results are from the same file.
 
 
 ;; TODO:
 
-;; - make a keybinding to move by files (go to next file of results)
-;;     - also one to move by containing directory
 ;; - make a keybinding to drop into an edit mode and edit file content inline
-;; in results like helm-ag
+;; in results like `helm-ag' (https://github.com/syohex/emacs-helm-ag)
+;; - allow (elisp)? regex searching of search results, including file names
+;;     - use `helm-swoop' (https://github.com/ShingoFukuyama/helm-swoop)?
 
 
 ;; License:
 
-;; GPL 3.0+
+;; GPL 3.0+ (./LICENSE)
 
 ;; End Commentary
 
@@ -77,6 +111,7 @@
 (require 'ansi-color)
 (require 'cl-lib)
 (require 'dash)
+(require 'font-lock)
 (require 'helm)
 (require 'helm-grep)
 (require 'helm-lib)
@@ -123,8 +158,19 @@ See `helm-rg--make-process' and `helm-rg--make-dummy-process' if interested."
   :safe #'helm-rg--always-safe-local
   :group 'helm-rg)
 
-(defcustom helm-rg--display-buffer-default-method #'switch-to-buffer
-  "The function to use to display each visited buffer in some window."
+(defcustom helm-rg-display-buffer-normal-method #'switch-to-buffer
+  "A function accepting a single argument BUF and displaying the buffer.
+
+The default function to invoke to display a visited buffer in some window in
+`helm-rg'."
+  :type 'function
+  :group 'helm-rg)
+
+(defcustom helm-rg-display-buffer-alternate-method #'pop-to-buffer
+  "A function accepting a single argument BUF and displaying the buffer.
+
+The function will be invoked if a prefix argument is used when visiting a result
+in `helm-rg'."
   :type 'function
   :group 'helm-rg)
 
@@ -136,6 +182,11 @@ See `helm-rg--make-process' and `helm-rg--make-dummy-process' if interested."
 (defface helm-rg-preview-match-highlight
   '((t (:background "purple" :foreground "white")))
   "Face of the text matched by the pattern given to the ripgrep process."
+  :group 'helm-rg)
+
+(defface helm-rg-cmd-arg-face
+  '((t (:foreground "green")))
+  "Face of arguments in the ripgrep invocation."
   :group 'helm-rg)
 
 
@@ -159,8 +210,10 @@ See `helm-rg--make-process' and `helm-rg--make-dummy-process' if interested."
          eol))
   "Regexp matching the output of invoking ripgrep with the '--vimgrep' option.")
 
-(defconst helm-rg--alternate-display-buffer-method #'pop-to-buffer
-  "A function accepting a single argument BUF and displaying the buffer.")
+(defconst helm-rg--persistent-action-display-buffer-method #'switch-to-buffer
+  "A function accepting a single argument BUF and displaying the buffer.
+
+Let-bound to `helm-rg--display-buffer-method' in `helm-rg--async-persistent-action'.")
 
 (defconst helm-rg--loop-input-pattern-regexp
   (rx
@@ -217,29 +270,57 @@ Should accept one argument BUF, the buffer to display.")
     (helm-attrset 'name helm-src-name)
     dummy-proc))
 
+(defun helm-rg--join (sep seq)
+  (mapconcat #'identity seq sep))
+
+(defun helm-rg--props (props str)
+  (apply #'propertize (append (list str) props)))
+
+(defun helm-rg--make-face (face str)
+  (helm-rg--props `(face ,face) str))
+
+(defun helm-rg--propertize-cmd-arg (arg)
+  (if (string-match-p (rx space) arg)
+      (helm-rg--make-face 'font-lock-string-face (format "'%s'" arg))
+    (helm-rg--make-face 'helm-rg-cmd-arg-face arg)))
+
+(defun helm-rg--format-argv-string (argv)
+  (->>
+   argv
+   (-map #'helm-rg--propertize-cmd-arg)
+   (helm-rg--join " ")
+   (format
+    (concat
+     (propertize "(" 'face 'highlight)
+     "%s"
+     (propertize ")" 'face 'highlight)))))
+
+(defun helm-rg--construct-argv-for-cwd (pattern)
+  (append
+   helm-rg-base-command
+   (list "-g" helm-rg--glob-string)
+   (list pattern)))
+
+(defun helm-rg--make-process-from-argv (argv)
+  (let* ((real-proc (make-process
+                     :name helm-rg--process-name
+                     :buffer helm-rg--process-buffer-name
+                     :command argv
+                     :noquery t))
+         (helm-src-name
+          (format "argv: %s" (helm-rg--format-argv-string argv))))
+    (helm-attrset 'name helm-src-name)
+    (set-process-query-on-exit-flag real-proc nil)
+    real-proc))
+
 (defun helm-rg--make-process ()
   "Invoke ripgrep in `helm-rg--current-dir' with `helm-pattern'."
   (let* ((default-directory helm-rg--current-dir)
          (input helm-pattern))
     (if (< (length input) helm-rg-input-min-search-chars)
         (helm-rg--make-dummy-process input)
-      (let* ((rg-cmd
-              (append
-               helm-rg-base-command
-               (list "-g" helm-rg--glob-string)
-               (list helm-pattern)))
-             (real-proc (make-process
-                         :name helm-rg--process-name
-                         :buffer helm-rg--process-buffer-name
-                         :command rg-cmd
-                         :noquery t))
-             (helm-src-name
-              (format "argv: (%s)"
-                      (mapconcat (lambda (s) (format "'%s'" s))
-                                 rg-cmd " "))))
-        (helm-attrset 'name helm-src-name)
-        (set-process-query-on-exit-flag real-proc nil)
-        real-proc))))
+      (helm-rg--make-process-from-argv
+       (helm-rg--construct-argv-for-cwd input)))))
 
 (defun helm-rg--decompose-vimgrep-output-line (line)
   "Parse LINE into its constituent elements, returning a plist."
@@ -252,27 +333,6 @@ Should accept one argument BUF, the buffer to display.")
          :line-no (1- (string-to-number line-no))
          :col-no (1- (string-to-number col-no))
          :content content)))))
-
-(defun helm-rg--pcre-to-elisp-regexp (pcre)
-  "Convert the string PCRE to an Emacs Lisp regexp."
-  (with-temp-buffer
-    (insert pcre)
-    (goto-char (point-min))
-    ;; convert (, ), {, }, |
-    (while (re-search-forward "[(){}|]" nil t)
-      (backward-char 1)
-      (cond ((looking-back "\\\\\\\\" nil))
-            ((looking-back "\\\\" nil)
-             (delete-char -1))
-            (t
-             (insert "\\")))
-      (forward-char 1))
-    ;; convert \s and \S -> \s- \S-
-    (goto-char (point-min))
-    (while (re-search-forward "\\(\\\\s\\)" nil t)
-      (unless (looking-back "\\\\\\\\s" nil)
-        (insert "-")))
-    (buffer-string)))
 
 (defun helm-rg--make-overlay-with-face (beg end face)
   "Generate an overlay in region BEG to END with face FACE."
@@ -298,10 +358,13 @@ Should accept one argument BUF, the buffer to display.")
 (defun helm-rg--async-action (parsed-output)
   "Visit the file at the line and column specified by CAND.
 The match is highlighted in its buffer."
-  (let ((default-directory helm-rg--current-dir))
+  (let ((default-directory helm-rg--current-dir)
+        (helm-rg--display-buffer-method
+         (or helm-rg--display-buffer-method
+             (if helm-current-prefix-arg helm-rg-display-buffer-alternate-method
+               helm-rg-display-buffer-normal-method))))
     (helm-rg--delete-overlays)
-    (cl-destructuring-bind (&key file-path line-no col-no content)
-        parsed-output
+    (cl-destructuring-bind (&key file-path line-no col-no content) parsed-output
       (let* ((file-abs-path
               (expand-file-name file-path))
              (buffer-to-display
@@ -335,7 +398,8 @@ The match is highlighted in its buffer."
   "Visit the file at the line and column specified by CAND.
 Call `helm-rg--async-action', but push the buffer corresponding to CAND to
 `helm-rg--current-overlays', if there was no buffer visiting it already."
-  (let ((helm-rg--append-persistent-buffers t))
+  (let ((helm-rg--append-persistent-buffers t)
+        (helm-rg--display-buffer-method helm-rg--persistent-action-display-buffer-method))
     (helm-rg--async-action parsed-output)))
 
 (defun helm-rg--kill-proc-if-live (proc-name)
@@ -362,8 +426,8 @@ Call `helm-rg--async-action', but push the buffer corresponding to CAND to
    finally (setq helm-rg--cur-persistent-bufs nil))
   (helm-rg--kill-proc-if-live helm-rg--process-name)
   (helm-rg--kill-bufs-if-live helm-rg--buffer-name
-                          helm-rg--process-buffer-name
-                          helm-rg--error-buffer-name))
+                              helm-rg--process-buffer-name
+                              helm-rg--error-buffer-name))
 
 (defun helm-rg--do-helm-rg (rg-pattern)
   "Invoke ripgrep to search for RG-PATTERN, using `helm'."
@@ -398,9 +462,6 @@ Call `helm-rg--async-action', but push the buffer corresponding to CAND to
   (cl-loop while (re-search-forward regexp nil t)
            collect (match-string 1)))
 
-(defun helm-rg--join (sep seq)
-  (mapconcat #'identity seq sep))
-
 (defun helm-rg--pattern-transformer (pattern)
   (->>
    (helm-rg--into-temp-buffer pattern
@@ -410,7 +471,63 @@ Call `helm-rg--async-action', but push the buffer corresponding to CAND to
    (--map (helm-rg--join ".*" it))
    (helm-rg--join "|")))
 
-(defun helm-rg--iterate-results ())
+(defun helm-rg--advance-forward ()
+  (interactive)
+  (if (helm-end-of-source-p)
+      (helm-beginning-of-buffer)
+    (helm-next-line)))
+
+(defun helm-rg--advance-backward ()
+  (interactive)
+  (if (helm-beginning-of-source-p)
+      (helm-end-of-buffer)
+    (helm-previous-line)))
+
+(defun helm-rg--iterate-results (direction success-fn failure-fn)
+  (with-helm-window
+    (let ((helm-move-to-line-cycle-in-source t)
+          (move-fn
+           (pcase-exhaustive direction
+             (`forward #'helm-rg--advance-forward)
+             (`backward #'helm-rg--advance-backward))))
+      (call-interactively move-fn)
+      (cl-loop
+
+       for cur-line-parsed = (helm-rg--decompose-vimgrep-output-line
+                               (helm-current-line-contents))
+       until (funcall success-fn cur-line-parsed)
+       if (funcall failure-fn cur-line-parsed)
+       return (message "%s" "failure: could not cycle to next entry")
+       else do (call-interactively move-fn)))))
+
+(defun helm-rg--move-file (direction)
+  (-let* ((cur-line
+           (with-helm-buffer (helm-current-line-contents)))
+          (parsed-line
+           (helm-rg--decompose-vimgrep-output-line cur-line))
+          ((&plist :file-path file-path
+                   :line-no line-no
+                   :col-no col-no)
+           parsed-line))
+    (helm-rg--iterate-results
+     direction
+     (-lambda ((&plist :file-path new-file-path))
+       (not (string-equal new-file-path file-path)))
+     (-lambda ((&plist :file-path new-file-path
+                       :line-no new-line-no
+                       :col-no new-col-no))
+       (and
+        (string-equal new-file-path file-path)
+        (= new-line-no line-no)
+        (= new-col-no col-no))))))
+
+(defun helm-rg--file-forward ()
+  (interactive)
+  (helm-rg--move-file 'forward))
+
+(defun helm-rg--file-backward ()
+  (interactive)
+  (helm-rg--move-file 'backward))
 
 
 ;; Toggles and settings
@@ -446,6 +563,8 @@ Call `helm-rg--async-action', but push the buffer corresponding to CAND to
     (set-keymap-parent map helm-map)
     (define-key map (kbd "M-g") #'helm-rg--set-glob)
     (define-key map (kbd "M-d") #'helm-rg--set-dir)
+    (define-key map (kbd "<right>") #'helm-rg--file-forward)
+    (define-key map (kbd "<left>") #'helm-rg--file-backward)
     map)
   "Keymap for `helm-rg'.")
 
@@ -479,10 +598,7 @@ Call `helm-rg--async-action', but push the buffer corresponding to CAND to
   (let* ((helm-rg--current-dir (or helm-rg--current-dir
                                    default-directory))
          (helm-rg--glob-string (or helm-rg--glob-string
-                                   helm-rg-default-glob-string))
-         (helm-rg--display-buffer-method
-          (if pfx helm-rg--alternate-display-buffer-method
-            helm-rg--display-buffer-default-method)))
+                                   helm-rg-default-glob-string)))
     (unwind-protect (helm-rg--do-helm-rg rg-pattern)
       (helm-rg--unwind-cleanup))))
 

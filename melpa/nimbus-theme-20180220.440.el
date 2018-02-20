@@ -5,7 +5,7 @@
 ;; Author: Marcin Swieczkowski <scatman@bu.edu>
 ;; Created: Thu Mar  2 22:19:19 CET 2017
 ;; Version: 1.0.0
-;; Package-Version: 20180129.536
+;; Package-Version: 20180220.440
 ;; Last-Updated: Wed Apr 12 16:11:07 CEST 2017
 ;;           By: Marcin Swieczkowski
 ;;     Update #: 3
@@ -136,7 +136,7 @@
    `(powerline-inactive2
      ((t (:background ,nimbus/gray :foreground ,nimbus/black))))
    `(mode-line-inactive
-     ((t (:background ,nimbus/gray :foreground ,nimbus/black))))
+     ((t (:background ,nimbus/blue-gray :foreground ,nimbus/black))))
    `(mode-line
      ((t (:background ,nimbus/dark-green :foreground ,nimbus/black))))
 
