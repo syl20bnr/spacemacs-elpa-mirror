@@ -2,7 +2,7 @@
 
 ;; Author: Natalie Weizenbaum
 ;; URL: https://github.com/nex3/dart-mode
-;; Package-Version: 20180219.1339
+;; Package-Version: 20180219.1614
 ;; Version: 1.0.3
 ;; Package-Requires: ((emacs "24.5") (cl-lib "0.5") (dash "2.10.0") (flycheck "0.23") (s "1.10"))
 ;; Keywords: language
@@ -838,7 +838,9 @@ errors for the current contents of the buffer, not whatever is saved to disk."
    "analysis.updateContent"
    `((files .
             ((,buffer-file-name . ((type . "add")
-                                   (content . ,(buffer-string)))))))))
+                                   (content . ,(save-restriction
+                                                 (widen)
+                                                 (buffer-string))))))))))
 
 (defun dart-change-analysis-overlay
     (change-begin change-end change-before-length)
