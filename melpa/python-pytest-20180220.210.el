@@ -2,7 +2,7 @@
 
 ;; Author: wouter bolsterlee <wouter@bolsterl.ee>
 ;; Version: 0.2.0
-;; Package-Version: 20180216.431
+;; Package-Version: 20180220.210
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (dash-functional "2.12.0") (magit-popup "2.12.0") (projectile "0.14.0") (s "1.12.0"))
 ;; Keywords: pytest, test, python, languages, processes, tools
 ;; URL: https://github.com/wbolster/emacs-python-pytest
@@ -473,6 +473,14 @@ Example: ‘MyABCThingy.__repr__’ becomes ‘test_my_abc_thingy_repr’."
   (if (python-pytest--test-file-p file)
       (python-pytest--relative-file-name file)
     (python-pytest--find-test-file file)))
+
+
+;; third party integration
+
+(with-eval-after-load 'direnv
+  (defvar direnv-non-file-modes)
+  (add-to-list 'direnv-non-file-modes 'python-pytest-mode))
+
 
 (provide 'python-pytest)
 ;;; python-pytest.el ends here

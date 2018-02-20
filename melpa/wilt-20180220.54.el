@@ -4,7 +4,7 @@
 ;;
 ;; Author: Austin Bingham <austin@sixty-north.com>
 ;; Version: 0.1
-;; Package-Version: 20151105.518
+;; Package-Version: 20180220.54
 ;; URL: https://github.com/sixty-north/emacs-wilt
 ;; Package-Requires: ((emacs "24.3") (dash "2.12.0") (s "1.10.0"))
 ;;
@@ -88,7 +88,7 @@ conditions.
   (if (memq condition wilt-update-conditions)
       (wilt--update-current)))
 
-(defvar-local wilt--current 0
+(defvar-local wilt-current 0
   "The most recently calculated WILT value for a buffer.")
 
 (defun wilt--line-length ()
@@ -133,11 +133,11 @@ buffer."
 
 (defun wilt--mode-line-status-text ()
   "Get text for the mode line."
-  (format wilt-mode-line-template wilt--current))
+  (format wilt-mode-line-template wilt-current))
 
 (defun wilt--update-current ()
   "Update the current WILT calculation."
-  (setq wilt--current (wilt-calculate-wilt))
+  (setq wilt-current (wilt-calculate-wilt))
 
 (defun wilt--on-save ()
   "Hook run after a save."
