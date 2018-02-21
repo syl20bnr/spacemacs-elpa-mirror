@@ -3,7 +3,7 @@
 ;; Author: Fred Campos <fred.tecnologia@gmail.com>
 ;; Maintainer: Fred Campos <fred.tecnologia@gmail.com>
 ;; URL: https://github.com/fredcamps/green-is-the-new-black-emacs
-;; Package-Version: 0.0.3
+;; Package-Version: 20180220.1332
 ;; Keywords: faces, themes
 ;; Version: 0.0.3
 
@@ -33,7 +33,7 @@
 (let ((gitnb-black "#000000")
       (gitnb-dark-grey "#2b2b30")
       (gitnb-grey "#898989")
-      (gitnb-heavy-green "#00ffff")
+      (gitnb-heavy-green "#005f00")
       (gitnb-dark-green "#218c23")
       (gitnb-green "#0ecc11")
       (gitnb-light-green "#8dcc78")
@@ -165,7 +165,7 @@
    `(smerge-refined-added ((t (:foreground, gitnb-bright-green :background, gitnb-dark-green))))
 
    `(js2-external-variable ((t (:foreground, gitnb-yellow))))
-   `(js2-error ((t (:foreground, gitnb-red))))
+   `(js2-private-function-call ((t (:foreground, gitnb-yellow))))
    `(js2-error ((t (:foreground, gitnb-yellow))))
 
    `(which-func ((t (:foreground, gitnb-grey))))))

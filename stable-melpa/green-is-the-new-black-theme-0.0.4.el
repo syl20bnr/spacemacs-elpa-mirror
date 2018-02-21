@@ -3,7 +3,7 @@
 ;; Author: Fred Campos <fred.tecnologia@gmail.com>
 ;; Maintainer: Fred Campos <fred.tecnologia@gmail.com>
 ;; URL: https://github.com/fredcamps/green-is-the-new-black-emacs
-;; Package-Version: 20171005.1641
+;; Package-Version: 0.0.4
 ;; Keywords: faces, themes
 ;; Version: 0.0.3
 
@@ -33,7 +33,7 @@
 (let ((gitnb-black "#000000")
       (gitnb-dark-grey "#2b2b30")
       (gitnb-grey "#898989")
-      (gitnb-heavy-green "#00ffff")
+      (gitnb-heavy-green "#005f00")
       (gitnb-dark-green "#218c23")
       (gitnb-green "#0ecc11")
       (gitnb-light-green "#8dcc78")

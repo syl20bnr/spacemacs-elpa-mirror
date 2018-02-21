@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180218.207
+;; Package-Version: 20180220.1512
 ;; Keywords: help, lisp
 ;; Version: 0.8
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -211,7 +211,9 @@ Return SYM otherwise."
                      'callable-p callable-p)))
     (cond
      (obsolete-info
-      (format "%s (obsolete since %s)" sym-button (-last-item obsolete-info)))
+      (-if-let (version (-last-item obsolete-info))
+          (format "%s (obsolete since %s)" sym-button version)
+        (format "%s (obsolete)" sym-button)))
      (t
       sym-button))))
 
@@ -410,6 +412,28 @@ or disable if already enabled."
    text
    'helpful-navigate-button
    'path path
+   'position pos))
+
+(define-button-type 'helpful-buffer-button
+  'action #'helpful--switch-to-buffer
+  'buffer nil
+  'position nil
+  'follow-link t
+  'help-echo "Switch to this buffer")
+
+(defun helpful--switch-to-buffer (button)
+  "Navigate to the buffer this BUTTON represents."
+  (let ((buf (button-get button 'buffer))
+        (pos (button-get button 'position)))
+    (switch-to-buffer buf)
+    (goto-char pos)))
+
+(defun helpful--buffer-button (buffer pos)
+  "Return a button that switches to BUFFER and puts point at POS."
+  (helpful--button
+   (buffer-name buffer)
+   'helpful-buffer-button
+   'buffer buffer
    'position pos))
 
 (define-button-type 'helpful-customize-button
@@ -1290,14 +1314,17 @@ OBJ may be a symbol or a compiled function object."
             (cond
              (buf
               (let ((path (buffer-file-name buf)))
-                (format
-                 "defined in %s"
-                 (helpful--navigate-button
-                  (file-name-nondirectory path) path pos))))
+                (if path
+                    (format
+                     "defined in %s"
+                     (helpful--navigate-button
+                      (file-name-nondirectory path) path pos))
+                  (format "defined in buffer %s"
+                          (helpful--buffer-button buf pos)))))
              (primitive-p
               "defined in C source code")
              (t
-              "without source code"))))
+              "without a source file"))))
     (when opened
       (kill-buffer buf))
 
@@ -1476,8 +1503,7 @@ state of the current symbol."
          "Set C source directory"
          'helpful-c-source-directory)))
       (t
-       (helpful--syntax-highlight
-        (format ";; Source file is unknown\n")))))
+       "")))
     (when source
       (insert
        (cond
@@ -1490,7 +1516,9 @@ state of the current symbol."
                    (helpful--format-closure helpful--sym source)))))
         (t
          (helpful--syntax-highlight
-          (helpful--pretty-print source))))))
+          (concat
+           ";; Source file is unknown, showing raw function object.\n"
+           (helpful--pretty-print source)))))))
 
     (helpful--insert-section-break)
 
@@ -1611,7 +1639,7 @@ escapes that are used by `substitute-command-keys'."
       (pop-to-buffer (helpful--buffer sym t))
       (helpful-update))
      (t
-      (user-error "%s is bound to symbol %s which is not a command"
+      (user-error "%s is bound to %s which is not a command"
                   (key-description key-sequence)
                   sym)))))
 
