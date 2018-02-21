@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20180219.1703
+;; Package-Version: 20180221.149
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -1111,8 +1111,10 @@ pragma is supported also."
                       (1+ (current-column))))
      (list :buffer (current-buffer) :cont cont)
      (lambda (state reply)
-       (unless (or (string-match "^Couldn't guess" reply)
-                   (string-match "^Unable to " reply))
+       (if (or (string-match "^Couldn't guess" reply)
+                   (string-match "^Unable to " reply)
+                   (intero-parse-error reply))
+           (funcall (plist-get state :cont) (list))
          (with-current-buffer (plist-get state :buffer)
            (let ((candidates
                   (split-string
