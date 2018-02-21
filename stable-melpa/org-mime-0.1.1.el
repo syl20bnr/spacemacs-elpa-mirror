@@ -5,9 +5,9 @@
 ;; Author: Eric Schulte
 ;; Maintainer: Chen Bin (redguardtoo)
 ;; Keywords: mime, mail, email, html
-;; Package-Version: 20171105.1440
+;; Package-Version: 0.1.1
 ;; Homepage: http://github.com/org-mime/org-mime
-;; Version: 0.1.0
+;; Version: 0.1.1
 ;; Package-Requires: ((emacs "24.3") (cl-lib "0.5"))
 
 ;; This file is not part of GNU Emacs.
@@ -178,7 +178,10 @@ You could use either `org-up-heading-safe' or `org-back-to-heading'.")
 
 (defun org-mime--export-string (s fmt &optional opts)
   "Export string S into HTML format.  OPTS is export options."
-  (let* (rlt)
+  (let* (rlt
+         ;; Emacs 25+ prefer exporting drawer by default
+         ;; obviously not acception in exporting to mail body
+         (org-export-with-drawers nil))
     (if org-mime-debug (message "org-mime--export-string called => %s" opts))
     ;; we won't export title from org file anyway
     (if opts (setq opts (plist-put opts 'title nil)))

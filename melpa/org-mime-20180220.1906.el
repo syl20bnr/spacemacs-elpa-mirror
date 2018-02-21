@@ -5,9 +5,9 @@
 ;; Author: Eric Schulte
 ;; Maintainer: Chen Bin (redguardtoo)
 ;; Keywords: mime, mail, email, html
-;; Package-Version: 0.0.9
+;; Package-Version: 20180220.1906
 ;; Homepage: http://github.com/org-mime/org-mime
-;; Version: 0.0.9
+;; Version: 0.1.1
 ;; Package-Requires: ((emacs "24.3") (cl-lib "0.5"))
 
 ;; This file is not part of GNU Emacs.
@@ -93,7 +93,7 @@
 ;;               (while (re-search-forward "@\\([^@]*\\)@" nil t)
 ;;                 (replace-match "<span style=\"color:red\">\\1</span>"))))
 ;;
-;; 3. Since v0.0.9, the quoted mail uses modern style (like Gmail).
+;; 3. Now the quoted mail uses modern style (like Gmail).
 ;; So replyed mail looks clean and modern. If you prefer old style, please set
 ;; `org-mime-beautify-quoted-mail' to nil.
 
@@ -135,6 +135,16 @@ And ensure first line isn't assumed to be a title line."
   :group 'org-mime
   :type 'string)
 
+(defcustom org-mime-find-html-start 'identity
+  "Call back to search the new HTML start for htmlize in message buffer."
+  :group 'org-mime
+  :type 'sexp)
+
+(defcustom org-mime-org-html-with-latex-default 'dvipng
+  "Default value of `org-html-with-latex'."
+  :group 'org-mime
+  :type 'sexp)
+
 (defvar org-mime-export-options nil
   "Default export options which may overrides org buffer/subtree options.
 You avoid exporting section-number/author/toc with below setup,
@@ -154,7 +164,6 @@ buffer holding\nthe text to be exported.")
 
 (defvar org-mime-debug nil
   "Enable debug logger.")
-
 (defvar org-mime-up-subtree-heading 'org-up-heading-safe
   "Funtion to call before exporting subtree.
 You could use either `org-up-heading-safe' or `org-back-to-heading'.")
@@ -169,7 +178,10 @@ You could use either `org-up-heading-safe' or `org-back-to-heading'.")
 
 (defun org-mime--export-string (s fmt &optional opts)
   "Export string S into HTML format.  OPTS is export options."
-  (let* (rlt)
+  (let* (rlt
+         ;; Emacs 25+ prefer exporting drawer by default
+         ;; obviously not acception in exporting to mail body
+         (org-export-with-drawers nil))
     (if org-mime-debug (message "org-mime--export-string called => %s" opts))
     ;; we won't export title from org file anyway
     (if opts (setq opts (plist-put opts 'title nil)))
@@ -283,11 +295,21 @@ You could use either `org-up-heading-safe' or `org-back-to-heading'.")
                  "<p>[\n\r]*&gt;&gt;&gt;&gt;&gt; .* == \\([^\r\n]*\\)[\r\n]*</p>"
                  "<div class=\"gmail_quote\">\\1</div>"
                  html))
-        (setq info (org-mime-encode-quoted-mail-body))
-        (delete-region (nth 0 info) (nth 1 info))
-        (goto-char (nth 0 info))
-        (insert (nth 2 info))
-        (buffer-substring-no-properties (point-min) (point-max)))))
+        (unwind-protect
+            (let (retval)
+              (condition-case ex
+                  (setq info (org-mime-encode-quoted-mail-body))
+                  (setq retval info)
+                ('error (setq info nil)))
+              retval))
+        (cond
+         (info
+          (delete-region (nth 0 info) (nth 1 info))
+          (goto-char (nth 0 info))
+          (insert (nth 2 info))
+          (buffer-substring-no-properties (point-min) (point-max)))
+         (t
+          html)))))
    (t
     html)))
 
@@ -296,13 +318,13 @@ You could use either `org-up-heading-safe' or `org-back-to-heading'.")
 If html portion of message includes IMAGES they are wrapped in multipart/related part."
   (cl-case org-mime-library
     (mml (concat "<#multipart type=alternative><#part type=text/plain>"
-		  plain
-		  (when images "<#multipart type=related>")
-		  "<#part type=text/html>"
-		  (org-mime-cleanup-quoted html)
-		  images
-		  (when images "<#/multipart>\n")
-		  "<#/multipart>\n"))
+                 plain
+                 (when images "<#multipart type=related>")
+                 "<#part type=text/html>"
+                 (org-mime-cleanup-quoted html)
+                 images
+                 (when images "<#/multipart>\n")
+                 "<#/multipart>\n"))
     (semi (concat
             "--" "<<alternative>>-{\n"
             "--" "[[text/plain]]\n" plain
@@ -336,23 +358,25 @@ CURRENT-FILE is used to calculate full path of images."
       str)
      html-images)))
 
+;;;###autoload
 (defun org-mime-htmlize (arg)
   "Export a portion of an email to html using `org-mode'.
 If called with an active region only export that region, otherwise entire body.
-If ARG is not NIL, use `org-mime-fixedwith-wrap' to wrap the exported text."
+If ARG is not nil, use `org-mime-fixedwith-wrap' to wrap the exported text."
   (interactive "P")
   (if org-mime-debug (message "org-mime-htmlize called"))
   (let* ((region-p (org-region-active-p))
-         (html-start (or (and region-p (region-beginning))
-                         (save-excursion
-                           (goto-char (point-min))
-                           (search-forward mail-header-separator)
-                           (+ (point) 1))))
+         (html-start (funcall org-mime-find-html-start
+                              (or (and region-p (region-beginning))
+                                  (save-excursion
+                                    (goto-char (point-min))
+                                    (search-forward mail-header-separator)
+                                    (+ (point) 1)))))
          (html-end (or (and region-p (region-end))
                        ;; TODO: should catch signature...
                        (point-max)))
-         (body (concat org-mime-default-header
-                       (buffer-substring html-start html-end)))
+         (body (buffer-substring html-start html-end))
+         (header-body (concat org-mime-default-header body))
          (tmp-file (make-temp-name (expand-file-name
                                     "mail" temporary-file-directory)))
          ;; because we probably don't want to export a huge style file
@@ -360,11 +384,13 @@ If ARG is not NIL, use `org-mime-fixedwith-wrap' to wrap the exported text."
          ;; makes the replies with ">"s look nicer
          (org-export-preserve-breaks org-mime-preserve-breaks)
          ;; dvipng for inline latex because MathJax doesn't work in mail
-         (org-html-with-latex 'dvipng)
+         ;; Also @see https://github.com/org-mime/org-mime/issues/16
+         ;; (setq org-html-with-latex nil) sometimes useful
+         (org-html-with-latex org-mime-org-html-with-latex-default)
          ;; to hold attachments for inline html images
          (html-and-images
           (org-mime-replace-images
-           (org-mime--export-string body
+           (org-mime--export-string header-body
                                     'html
                                     (if (fboundp 'org-export--get-inbuffer-options)
                                         (org-export--get-inbuffer-options)))
@@ -372,7 +398,7 @@ If ARG is not NIL, use `org-mime-fixedwith-wrap' to wrap the exported text."
          (html-images (unless arg (cdr html-and-images)))
          (html (org-mime-apply-html-hook
                 (if arg
-                    (format org-mime-fixedwith-wrap body)
+                    (format org-mime-fixedwith-wrap header-body)
                   (car html-and-images)))))
     (delete-region html-start html-end)
     (save-excursion
