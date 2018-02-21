@@ -4,8 +4,8 @@
 
 ;; Author: Artem Khramov <futu.fata@gmail.com>
 ;; Created: 6 Jan 2017
-;; Version: 0.2.2
-;; Package-Version: 20180218.2151
+;; Version: 0.2.4
+;; Package-Version: 20180221.335
 ;; Package-Requires: ((alert "1.2") (dash "2.13.0") (emacs "24.4"))
 ;; Keywords: notification alert org org-agenda agenda
 ;; URL: https://github.com/akhramov/org-wild-notifier.el
@@ -260,6 +260,7 @@ smoother experience this function also runs a check without timer."
     (let ((org-agenda-use-time-grid nil)
           (org-agenda-compact-blocks t)
           (org-agenda-window-setup 'current-window)
+          (org-agenda-buffer-name nil)
           (org-agenda-buffer-tmp-name org-wild-notifier--agenda-buffer-name))
 
       (org-agenda-list 2)
