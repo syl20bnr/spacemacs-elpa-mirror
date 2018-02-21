@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180220.938
+;; Package-Version: 20180221.1013
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1660,12 +1660,16 @@ Does not list the currently checked out one."
         (find-alternate-file file-name)
       (find-file file-name))))
 
+(defun counsel-find-file-mkdir-action (x)
+  (make-directory x))
+
 (ivy-set-actions
  'counsel-find-file
  '(("j" find-file-other-window "other window")
    ("b" counsel-find-file-cd-bookmark-action "cd bookmark")
    ("x" counsel-find-file-extern "open externally")
-   ("r" counsel-find-file-as-root "open as root")))
+   ("r" counsel-find-file-as-root "open as root")
+   ("d" counsel-find-file-mkdir-action "mkdir")))
 
 (defcustom counsel-find-file-at-point nil
   "When non-nil, add file-at-point to the list of candidates."
@@ -3721,6 +3725,7 @@ TREEP is used to expand internal nodes."
   (with-ivy-window
     (goto-char (cdr x))))
 
+;;;###autoload
 (defun counsel-outline ()
   "Jump to outline with completion."
   (interactive)
@@ -4478,6 +4483,83 @@ replacements. "
           'counsel-minibuffer-history))
     (when (fboundp 'advice-remove)
       (advice-remove #'describe-bindings #'counsel-descbinds))))
+
+;;** `counsel-ibuffer'
+(defvar counsel-ibuffer--buffer-name nil
+  "Name of the buffer to use for `counsel-ibuffer'.")
+
+;;;###autoload
+(defun counsel-ibuffer (&optional name)
+  "Use ibuffer to switch to another buffer.
+NAME specifies the name of the buffer (defaults to \"*Ibuffer*\")."
+  (interactive)
+  (setq counsel-ibuffer--buffer-name (or name "*Ibuffer*"))
+  (let ((entries (counsel-ibuffer--get-buffers)))
+    (ivy-read "Switch to buffer: "
+              entries
+              :history 'counsel-ibuffer-history
+              :action 'counsel-ibuffer-visit-buffer
+              :caller 'counsel-ibuffer)))
+
+(declare-function ibuffer-update "ibuffer")
+(declare-function ibuffer-current-buffer "ibuffer")
+(declare-function ibuffer-forward-line "ibuffer")
+(defvar ibuffer-movement-cycle)
+
+(defun counsel-ibuffer--get-buffers ()
+  "Get buffers listed in ibuffer."
+  (let* ((ibuffer-buf (get-buffer counsel-ibuffer--buffer-name))
+         (new-ibuffer-p (not ibuffer-buf))
+         (ibuffer-movement-cycle t)
+         entries)
+    (when new-ibuffer-p
+      (ibuffer nil counsel-ibuffer--buffer-name)
+      (setq ibuffer-buf (current-buffer))
+      (quit-window))
+    (with-current-buffer ibuffer-buf
+      ;; ibuffer might not be up to date in case we use an existing buffer.
+      (unless new-ibuffer-p
+        (ibuffer-update nil t))
+      (goto-char (point-min))
+      ;; `ibuffer-forward-line` wraps around, we guard against it by
+      ;; using the point of the first entry and make sure we abort as
+      ;; soon as we encounter it for the second time.
+      (let ((first-point 0))
+        (while (> (point) first-point)
+          (let ((current-buf (ibuffer-current-buffer)))
+            ;; We are only interested in buffers we can actually visit.
+            ;; This filters out headings and other unusable entries.
+            (when (buffer-live-p current-buf)
+              (push
+               (cons
+                (buffer-substring-no-properties
+                 (line-beginning-position)
+                 (line-end-position))
+                current-buf)
+               entries)
+              ;; Remember point of the first entry as we will wrap
+              ;; around to it.
+              (when (= first-point 0)
+                (setq first-point (point)))))
+          (ibuffer-forward-line 1 t))))
+    (nreverse entries)))
+
+(defun counsel-ibuffer-visit-buffer (x)
+  "Switch to buffer of candidate X."
+  (switch-to-buffer (cdr x)))
+
+(defun counsel-ibuffer-visit-buffer-other-window (x)
+  "Switch to buffer of candidate X in other window."
+  (switch-to-buffer-other-window (cdr x)))
+
+(defun counsel-ibuffer-visit-vanilla-ibuffer (_)
+  "Switch to vanilla ibuffer."
+  (switch-to-buffer counsel-ibuffer--buffer-name))
+
+(ivy-set-actions
+ 'counsel-ibuffer
+ '(("j" counsel-ibuffer-visit-buffer-other-window "other window")
+   ("v" counsel-ibuffer-visit-vanilla-ibuffer "open vanilla ibuffer")))
 
 (provide 'counsel)
 
