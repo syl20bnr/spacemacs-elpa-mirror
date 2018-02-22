@@ -5,7 +5,7 @@
 ;; Author: Huming Chen <chenhuming@gmail.com>
 ;; Maintainer: Huming Chen <chenhuming@gmail.com>
 ;; URL: https://github.com/beacoder/call-graph
-;; Package-Version: 20180213.117
+;; Package-Version: 20180222.57
 ;; Version: 0.0.5
 ;; Keywords: programming, convenience
 ;; Created: 2018-01-07
@@ -61,7 +61,7 @@
   :type 'integer
   :group 'call-graph)
 
-(defcustom call-graph-filters nil
+(defcustom call-graph-filters '("grep -E \"\\.(cpp|cc):\"")
   "The filters used by `call-graph' when searching caller."
   :type 'list
   :group 'call-graph)
@@ -71,11 +71,20 @@
   :type 'boolean
   :group 'call-graph)
 
+(defcustom call-graph-path-to-global nil
+  "If non-nil the directory to search global executables."
+  :type '(choice (const :tag "Unset" nil) directory)
+  :risky t
+  :group 'call-graph)
+
 (defvar call-graph--current-depth 0
   "The current depth of call graph.")
 
 (defvar call-graph--default-instance nil
   "Default CALL-GRAPH instance.")
+
+(defvar call-graph--default-hierarchy nil
+  "Hierarchy to display call-graph.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
@@ -85,7 +94,6 @@
                (:constructor call-graph--make)
                (:conc-name call-graph--))
   (depth 0)  ; depth of call graph
-  (hierarchy (hierarchy-new)) ; hierarchy to display call-graph
   (callers (make-hash-table :test 'equal)) ; map func to its callers
   (locations (make-hash-table :test 'equal))) ; map func <- caller to its locations
 
@@ -130,6 +138,12 @@ Which is used to retrieve location information."
   (let ((buffer-name "*call-graph*"))
     (get-buffer-create buffer-name)))
 
+(defun call-graph--get-path-to-global ()
+  "Return path to program GNU GLOBAL."
+  (if call-graph-path-to-global
+      (expand-file-name "global" call-graph-path-to-global)
+    "global"))
+
 (defun call-graph--find-caller (reference)
   "Given a REFERENCE, return the caller as (caller . location)."
   (when-let ((tmp-val (split-string reference ":"))
@@ -154,7 +168,8 @@ Which is used to retrieve location information."
 (defun call-graph--find-references (func)
   "Given a FUNC, return all references as a list."
   (let ((command
-         (format "global -a --result=grep -r %s | grep -E \"\\.(cpp|cc):\""
+         (format "%s -a --result=grep -r %s"
+                 (call-graph--get-path-to-global)
                  (shell-quote-argument (symbol-name func))))
         (filter-separator " | ")
         command-filter command-out-put)
@@ -199,7 +214,7 @@ Which is used to retrieve location information."
 (defun call-graph--build-hierarchy (call-graph func depth)
   "In CALL-GRAPH, given FUNC, build hierarchy deep to DEPTH level."
   (when-let ((next-depth (and (> depth 0) (1- depth)))
-             (hierarchy (call-graph--hierarchy call-graph))
+             (hierarchy call-graph--default-hierarchy)
              (short-func (call-graph--extract-method-name func))
              (callers (map-elt (call-graph--callers call-graph) short-func (list))))
 
@@ -218,10 +233,9 @@ Which is used to retrieve location information."
         hierarchy-buffer)
     (setq hierarchy-buffer
           (hierarchy-tree-display
-           (call-graph--hierarchy call-graph)
+           call-graph--default-hierarchy
            (lambda (tree-item _)
-             (let* ((hierarchy (call-graph--hierarchy call-graph))
-                    (parent (hierarchy-parent hierarchy tree-item))
+             (let* ((parent (hierarchy-parent call-graph--default-hierarchy tree-item))
                     (func-caller-key (call-graph--get-func-caller-key parent tree-item))
                     (location (map-elt (call-graph--locations call-graph) func-caller-key))
                     (caller (symbol-name tree-item)))
@@ -245,12 +259,13 @@ DEPTH is the depth of caller-map."
 ;;;###autoload
 (defun call-graph ()
   "Generate `call-graph' for function at point.
-DEPTH is the depth of caller-map."
+With prefix argument, regenerate reference data."
   (interactive)
   (save-excursion
     (when-let ((func (symbol-at-point)))
       (when (or current-prefix-arg (not call-graph--default-instance))
         (setq call-graph--default-instance (call-graph-new)))
+      (setq call-graph--default-hierarchy (hierarchy-new))
       (call-graph--create func call-graph-initial-max-depth))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -283,9 +298,8 @@ DEPTH is the depth of caller-map."
   (save-selected-window
     (call-graph-goto-file-at-point)))
 
-(defun call-graph-at-point (&optional depth)
-  "Genearete `call-graph' for symbol at point.
-DEPTH is the depth of caller-map."
+(defun call-graph-at-point ()
+  "Genearete `call-graph' for symbol at point."
   (interactive)
   (save-excursion
     (when (get-char-property (point) 'button)
@@ -316,7 +330,7 @@ DEPTH is the depth of caller-map."
   "Expand `call-graph' by LEVEL."
   (interactive "p")
   (when-let ((call-graph call-graph--default-instance)
-             (hierarchy (call-graph--hierarchy call-graph))
+             (hierarchy call-graph--default-hierarchy)
              (depth (+ call-graph--current-depth level))
              (func (car (hierarchy-roots hierarchy))))
     (call-graph--create func depth)))
