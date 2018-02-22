@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180221.1013
+;; Package-Version: 20180222.1141
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1129,6 +1129,9 @@ INITIAL-INPUT can be given as the initial minibuffer input."
 (defvar counsel--git-grep-count nil
   "Store the line count in current repository.")
 
+(defvar counsel--git-grep-count-threshold 20000
+  "The maximum threshold beyond which repositories are considered large.")
+
 (defvar counsel-git-grep-history nil
   "History for `counsel-git-grep'.")
 
@@ -1157,13 +1160,13 @@ Typical value: '(recenter)."
 
 (defun counsel-git-grep-function (string &optional _pred &rest _unused)
   "Grep in the current git repository for STRING."
-  (if (and (> counsel--git-grep-count 20000)
+  (if (and (> counsel--git-grep-count counsel--git-grep-count-threshold)
            (< (length string) 3))
       (counsel-more-chars 3)
     (let* ((default-directory (ivy-state-directory ivy-last))
            (cmd (format counsel-git-grep-cmd
                         (setq ivy--old-re (ivy--regex string t)))))
-      (if (<= counsel--git-grep-count 20000)
+      (if (<= counsel--git-grep-count counsel--git-grep-count-threshold)
           (split-string (shell-command-to-string cmd) "\n" t)
         (counsel--gg-candidates (ivy--regex string))
         nil))))
@@ -1250,6 +1253,15 @@ files in a project.")
        (setq cmd counsel-git-grep-cmd-default)))
     (cons proj cmd)))
 
+(defun counsel--git-grep-count-func-default ()
+  "Default defun to calculate `counsel--git-grep-count'."
+  (if (eq system-type 'windows-nt)
+      0
+    (read (shell-command-to-string "du -s"))))
+
+(defvar counsel--git-grep-count-func #'counsel--git-grep-count-func-default
+  "Defun to calculate `counsel--git-grep-count' for `counsel-git-grep'.")
+
 ;;;###autoload
 (defun counsel-git-grep (&optional cmd initial-input)
   "Grep for a string in the current git repository.
@@ -1277,17 +1289,14 @@ INITIAL-INPUT can be given as the initial minibuffer input."
           (default-directory (if proj
                                  (car proj)
                                (counsel-locate-git-root))))
-      (setq counsel--git-grep-count
-            (if (eq system-type 'windows-nt)
-                0
-              (read (shell-command-to-string "du -s"))))
+      (setq counsel--git-grep-count (funcall counsel--git-grep-count-func))
       (ivy-read "git grep" collection-function
                 :initial-input initial-input
                 :matcher #'counsel-git-grep-matcher
                 :dynamic-collection (or proj
                                         (>
                                          counsel--git-grep-count
-                                         20000))
+                                         counsel--git-grep-count-threshold))
                 :keymap counsel-git-grep-map
                 :action #'counsel-git-grep-action
                 :unwind unwind-function

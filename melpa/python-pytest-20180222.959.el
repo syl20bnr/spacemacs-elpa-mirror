@@ -1,8 +1,8 @@
 ;;; python-pytest.el --- helpers to run pytest -*- lexical-binding: t; -*-
 
 ;; Author: wouter bolsterlee <wouter@bolsterl.ee>
-;; Version: 0.2.0
-;; Package-Version: 20180220.210
+;; Version: 0.2.1
+;; Package-Version: 20180222.959
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (dash-functional "2.12.0") (magit-popup "2.12.0") (projectile "0.14.0") (s "1.12.0"))
 ;; Keywords: pytest, test, python, languages, processes, tools
 ;; URL: https://github.com/wbolster/emacs-python-pytest
@@ -123,7 +123,7 @@ When non-nil only ‘test_foo()’ will match, and nothing else."
 (defvar-local python-pytest--current-command nil
   "Current command; used in python-pytest-mode buffers.")
 
-;;;###autoload (autoload 'python-pytest-popup "pytest" nil t)
+;;;###autoload (autoload 'python-pytest-popup "python-pytest" nil t)
 (magit-define-popup python-pytest-popup
   "Show popup for running pytest."
   'python-pytest
