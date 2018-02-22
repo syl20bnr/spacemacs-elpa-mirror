@@ -4,7 +4,7 @@
 ;; Maintainer: Schuyler Eldridge <schuyler.eldridge@ibm.com>
 ;; Created: April 20, 2017
 ;; URL: https://github.com/ibm/firrtl-mode
-;; Package-Version: 20180221.1540
+;; Package-Version: 20180221.1555
 ;; Keywords: languages, firrtl
 ;; Version: 0.3
 ;; Package-Requires: ((emacs "24.3"))
@@ -46,8 +46,8 @@
 (defvar firrtl-primop
   '("add" "sub" "mul" "div" "rem" "lt" "leq" "gt" "geq" "eq" "neq" "pad"
     "asUInt" "asSInt" "asClock" "shl" "shr" "dshl" "dshr" "cvt" "neg" "not"
-    "and" "or" "xor" "andr" "orr" "xorr" "cat" "bits" "head" "tail" "mux"
-    "validif"))
+    "and" "or" "xor" "andr" "orr" "xorr" "cat" "bits" "head" "tail"
+    "asFixedPoint" "bpshl" "bpshr" "bpset" "mux" "validif"))
 (defvar firrtl-type
   '("input" "output" "wire" "reg" "node" "Clock" "Analog" "parameter"))
 (defvar firrtl-keyword
@@ -56,7 +56,7 @@
 
 (defvar firrtl-primop-regexp
   (mapconcat 'identity
-             (list "=\s*\\("
+             (list "\s*\\("
                    (mapconcat 'identity firrtl-primop "\\|")
                    "\\)(")
              ""))
