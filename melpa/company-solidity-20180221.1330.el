@@ -4,9 +4,9 @@
 
 ;; Author: Samuel Smolkin <sam@future-precedent.org>
 ;; URL: https://github.com/ssmolkin1/company-solidity
-;; Package-Version: 20180206.821
+;; Package-Version: 20180221.1330
 ;; Keywords: solidity, completion
-;; Version: 1.1.3
+;; Version: 1.1.4
 ;; Package-Requires: ((company "0.9.0") (cl-lib "0.5.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -31,7 +31,7 @@
 (require 'cl-lib)
 (require 'company)
 
-(defconst solidity-keywords
+(defconst company-solidity-keywords
   '("after"
     "as"
     "assembly"
@@ -241,7 +241,7 @@ Argument COMMAND `company-backend` functions.
 Optional argument ARG the completion target prefix.
 Optional argument IGNORED Additional arguments are ingnored."
     (interactive (list 'interactive))
-    (setq company-minimum-prefix-length 2)
+    (set (make-local-variable 'company-minimum-prefix-length) 2)
     (cl-case command
 	(interactive (company-begin-backend 'company-solidity))
 	(prefix (and (eq major-mode 'solidity-mode)
@@ -249,7 +249,7 @@ Optional argument IGNORED Additional arguments are ingnored."
     (candidates
     (cl-remove-if-not
 	(lambda (c) (string-prefix-p arg c))
-	solidity-keywords))))
+	company-solidity-keywords))))
 
 (add-to-list 'company-backends 'company-solidity)
 

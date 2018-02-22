@@ -1,7 +1,7 @@
 ;;; rust-mode.el --- A major emacs mode for editing Rust source code -*-lexical-binding: t-*-
 
 ;; Version: 0.3.0
-;; Package-Version: 20180215.210
+;; Package-Version: 20180221.1130
 ;; Author: Mozilla
 ;; Url: https://github.com/rust-lang/rust-mode
 ;; Keywords: languages
@@ -321,7 +321,7 @@ buffer."
                 (- (current-column) rust-indent-offset)))))
         (cond
          ;; foo.bar(...)
-         ((rust-looking-back-str ")")
+         ((looking-back "[)?]" (1- (point)))
           (backward-list 1)
           (funcall skip-dot-identifier))
 
@@ -502,7 +502,7 @@ buffer."
                           ;; ..or if the previous line ends with any of these:
                           ;;     { ? : ( , ; [ }
                           ;; then we are at the beginning of an expression, so stay on the baseline...
-                          (looking-back "[(,:;?[{}]\\|[^|]|" (- (point) 2))
+                          (looking-back "[(,:;[{}]\\|[^|]|" (- (point) 2))
                           ;; or if the previous line is the end of an attribute, stay at the baseline...
                           (progn (rust-rewind-to-beginning-of-current-level-expr) (looking-at "#")))))
                       baseline

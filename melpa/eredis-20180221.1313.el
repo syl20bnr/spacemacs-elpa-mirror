@@ -3,7 +3,7 @@
  
 ;; Author: Justin Heyes-Jones
 ;; URL: http://code.google.com/p/eredis/
-;; Package-Version: 20160809.2053
+;; Package-Version: 20180221.1313
 ;; Version: 0.6.00
 ;; Package-Requires: 
 
@@ -100,7 +100,7 @@ as it first constructs a list of key value pairs then uses that to construct the
         (let ((req (format "*%d\r\n$%d\r\n%s\r\n" num-args (length command) command)))
           (dolist (item arguments)
             (setf item (eredis--stringify-numbers-and-symbols item))
-            (setf req (concat req (format "$%d\r\n%s\r\n" (length item) item))))
+            (setf req (concat req (format "$%d\r\n%s\r\n" (string-bytes item) item))))
           req)
       nil)))
 

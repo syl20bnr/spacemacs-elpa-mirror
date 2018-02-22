@@ -4,7 +4,7 @@
 ;; Maintainer: Schuyler Eldridge <schuyler.eldridge@ibm.com>
 ;; Created: April 20, 2017
 ;; URL: https://github.com/ibm/firrtl-mode
-;; Package-Version: 20180122.1950
+;; Package-Version: 20180221.1540
 ;; Keywords: languages, firrtl
 ;; Version: 0.3
 ;; Package-Requires: ((emacs "24.3"))
@@ -97,7 +97,7 @@
   (let (indents)
     (cond ((or (bobp) (looking-at "\s*circuit"))
            (setq indents (list 0)))
-          ((looking-at "\s*module")
+          ((looking-at "\s*\\(ext\\)?module")
            (setq indents (list tab-width)))
           (t
            (save-excursion
@@ -107,7 +107,7 @@
                     (setq indents (list 0)))
                    ((looking-at "\s*circuit")
                     (setq indents (list tab-width)))
-                   ((looking-at "\s*module")
+                   ((looking-at "\s*\\(ext\\)?module")
                     (setq indents (list (* 2 tab-width))))
                    ((looking-at "\s*\\(when\\|else\\)")
                     (setq indents (number-sequence

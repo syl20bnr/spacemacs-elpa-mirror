@@ -6,7 +6,7 @@
 ;; Author: Ryan Thompson
 ;; Created: Sat Apr  4 13:41:20 2015 (-0700)
 ;; Version: 4.8
-;; Package-Version: 20180216.949
+;; Package-Version: 20180221.1438
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (s "0.1") (memoize "1.1"))
 ;; URL: https://github.com/DarwinAwardWinner/ido-completing-read-plus
 ;; Keywords: ido, completion, convenience
@@ -521,6 +521,12 @@ completion for them."
           (if ido-cr+-dynamic-collection
               (memoize (indirect-function 'all-completions))
             'all-completions))
+         ;; Disable flx-ido for dynamic collections in Emacs 26.
+         ;; Temporary workaround for #146.
+         (flx-ido-mode
+          (and flx-ido-mode
+               (or (version< emacs-version "26")
+                   (not ido-cr+-dynamic-collection))))
          ;; If the whitelist is empty, everything is whitelisted
          (whitelisted (not ido-cr+-function-whitelist))
          ;; If non-nil, we need alternate nil DEF handling
@@ -1157,17 +1163,6 @@ blacklist was modified."
     (ido-cr+--debug-message "Skipping blacklist update by user request.")))
 
 (ido-cr+-maybe-update-blacklist)
-
-;; Temporary fix for #146, copied from:
-;; https://github.com/kurnevsky/dotfiles/commit/b4daed5ea3d554b816767dbb1284bf5ea7e82de9
-(when (and (version<= "26" emacs-version) (fboundp 'add-variable-watcher))
-  (add-variable-watcher
-   'ido-cr+-dynamic-collection
-   (lambda (_symbol newval _operation _where)
-     (when (fboundp 'flx-ido-mode)
-       (if newval
-           (flx-ido-mode 0)
-         (flx-ido-mode 1))))))
 
 (provide 'ido-completing-read+)
 
