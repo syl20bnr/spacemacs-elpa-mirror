@@ -3,12 +3,12 @@
 ;; Copyright (C) 2017 Diego A. Mundo
 ;; Author: Diego A. Mundo <diegoamundo@gmail.com>
 ;; URL: http://github.com/therockmandolinist/turing-machine
-;; Package-Version: 0.1.4
+;; Package-Version: 0.2.0
 ;; Git-Repository: git://github.com/therockmandolinist/turing-machine
 ;; Created: 2017-05-04
-;; Version: 0.1.4
+;; Version: 0.2.0
 ;; Keywords: turing machine simulation
-;; Package-Requires: ((emacs "24.4") (cl-lib "0.6.1"))
+;; Package-Requires: ((emacs "24.4"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -35,14 +35,33 @@
 
 ;;; Code:
 (require 'cl-lib)
+(eval-when-compile (require 'subr-x))
+
+(defface turing-machine-current-face
+  `((t (:foreground ,(face-attribute 'default :background)
+        :background ,(face-attribute 'default :foreground)
+        :height 200)))
+  "Face of current place in turing machine tape."
+  :group 'turing-machine)
+
+(defface turing-machine-tape-face
+  `((t (:height 200)))
+  "Face of displayed tape."
+  :group 'turing-machine)
+
+(defcustom turing-machine-visual-spaces t
+  "Visualize spaces with an underscore."
+  :group 'turing-machine
+  :type 'boolean)
 
 (defvar turing-machine-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-c") #'turing-machine-execute)
     map))
 
-(defvar turing-machine-highlights '((";.*" . font-lock-comment-face)
-                                    ("^[^ ]+ [^ ]+" . font-lock-keyword-face)))
+(defvar turing-machine-highlights
+  '((";.*" . font-lock-comment-face)
+    ("^[^ ]+ [^ ]+" . font-lock-keyword-face)))
 
 ;;;###autoload
 (define-derived-mode turing-machine-mode prog-mode "turing machine"
@@ -55,30 +74,24 @@
 (setq turing-machine-mode-hook '(turing-machine--convenience))
 
 (defun turing-machine--convenience ()
-  "Turn off modes that interfere."
+  "Turn off modes that may interfere."
   (when (featurep 'highlight-numbers)
     (highlight-numbers-mode -1))
   (when (featurep 'rainbow-delimiters)
     (rainbow-delimiters-mode -1)))
 
 ;;; Define turing machine.
-(defface turing-machine-current-face
-  `((t (:foreground ,(face-attribute 'default :background) :background ,(face-attribute 'default :foreground) :height 200)))
-  "Face of current place in turing machine tape."
-  :group 'turing-machine)
-
-(defface turing-machine-tape-face
-  `((t (:height 200)))
-  "Face of displayed tape."
-  :group 'turing-machine)
-
-(defcustom turing-machine-visual-spaces t
-  "Whether to visualize spaces with an underscore"
-  :group 'turing-machine
-  :type 'boolean)
-
 ;; Set up an empty hash table of commands
 (defvar turing-machine--commands (make-hash-table :test #'equal))
+
+(defun turing-machine--invalid-line (line)
+  "Check if LINE is empty or a comment."
+  (or (string-empty-p line) (string-prefix-p ";" (string-trim line))))
+
+(defun turing-machine--line-to-command (line)
+  "Turn LINE into a grouped list like: `((a b) (c d e))'."
+  (let ((elems (split-string (string-trim (car (split-string line ";"))) " ")))
+    (list (reverse (nthcdr 3 (reverse elems))) (nthcdr 2 elems))))
 
 (defun turing-machine--buffer-to-hash ()
   "Parse the current buffer into a hash table of cammands."
@@ -92,40 +105,77 @@
       (puthash (car command) (cadr command) turing-machine--commands))
     turing-machine--commands))
 
-(defun turing-machine--invalid-line (line)
-  "Check if LINE is empty or a comment."
-  (or (string-empty-p line) (string-prefix-p ";" (string-trim line))))
+(defun turing-machine--get-value (key)
+  "Get value of keyword KEY from turing code comments.
 
-(defun turing-machine--line-to-command (line)
-  "Turn LINE into a grouped list like: `((a b) (c d e))'."
-  (let ((elems (split-string (string-trim (car (split-string line ";"))) " ")))
-    (list (reverse (nthcdr 3 (reverse elems))) (nthcdr 2 elems))))
+KEY must be in a comment with format ; KEY: VALUE."
+  (goto-char (point-min))
+  (let ((val (and (search-forward-regexp
+                   (rx-to-string `(: "; " ,key ":" (? " ") (group (+ nonl))))
+                   nil t)
+                  (match-string-no-properties 1))))
+    val))
 
-(defun turing-machine--get-value (search)
-  (string-trim
-   (or (progn (search-forward-regexp search nil t)
-              (match-string-no-properties 1))
-       "0")))
+(defun turing-machine--display-tape (tape place)
+  "Display turing machine according to current TAPE and PLACE."
+  (let* ((tape-string
+          (concat (propertize
+                   (string-join (cl-subseq tape 0 place))
+                   'face
+                   'turing-machine-tape-face)
+                  (propertize
+                   (nth place tape)
+                   'face
+                   'turing-machine-current-face)
+                  (propertize
+                   (string-join (cl-subseq tape
+                                           (1+ place)
+                                           (length tape)))
+                   'face
+                   'turing-machine-tape-face))))
+    (with-current-buffer-window
+     (get-buffer-create "*turing-machine*")
+     nil
+     nil
+     (erase-buffer)
+     (if turing-machine-visual-spaces
+         (insert tape-string)
+       (insert (replace-regexp-in-string "_" " " tape-string))))))
 
 ;;;###autoload
-(defun turing-machine-execute ()
-  "Run the turing machine."
-  (interactive)
+(defun turing-machine-execute (&optional arg)
+  "Run the turing machine.
+
+Initial state will come from a comment like:
+
+  ;; INITIAL: 11_11
+
+in the code buffer. If no such comment exists, a minibuffer
+prompt will ask for the initial state. With prefix argument ARG,
+always prompt for initial state."
+  (interactive "p")
   (save-excursion
-    (goto-char (point-min))
     (let* ((commands (turing-machine--buffer-to-hash))
-           (initial (replace-regexp-in-string
-                     " "
-                     "_"
-                     (turing-machine--get-value "; INITIAL:\\(.*\\)")))
+           (initial (let ((initial (turing-machine--get-value "INITIAL")))
+                      (replace-regexp-in-string
+                       " "
+                       "-"
+                       (or (and (= arg 1) initial)
+                           (read-string "Set initial state: ")))))
            (tape (cl-remove-if #'string-empty-p
                                (split-string (format "_%s_" initial) "")))
-           (rate (string-to-number
-                  (turing-machine--get-value "; RATE:\\(.*\\)")))
+           (rate (let ((rate (turing-machine--get-value "RATE")))
+                   (cond ((= arg 16)
+                          (string-to-number
+                           (read-string "Set rate: ")))
+                         (rate (string-to-number rate))
+                         (t 0))))
            (place 1)
            (state "0")
            (key (list "0" (cadr tape)))
            (wild-key (list state "*")))
+      ;; Visualize initial state
+      (turing-machine--display-tape tape place)
       ;; If we still have a command associated with key
       (while (and (or (gethash key commands)
                       (gethash wild-key commands))
@@ -158,31 +208,8 @@
           (setq state new-state)
           (setq key (list state (nth place tape)))
           (setq wild-key (list state "*"))
-          ;; Make visualization
-          (let* ((tape-viz (copy-tree tape))
-                 (tape-string
-                  (concat (propertize
-                           (string-join (cl-subseq tape-viz 0 place))
-                           'face
-                           'turing-machine-tape-face)
-                          (propertize
-                           (nth place tape-viz)
-                           'face
-                           'turing-machine-current-face)
-                          (propertize
-                           (string-join (cl-subseq tape-viz
-                                                   (1+ place)
-                                                   (length tape-viz)))
-                           'face
-                           'turing-machine-tape-face))))
-            (with-current-buffer-window
-             (get-buffer-create "*turing-machine*")
-             nil
-             nil
-             (erase-buffer)
-             (if turing-machine-visual-spaces
-                 (insert tape-string)
-               (insert (replace-regexp-in-string "_" " " tape-string)))))))
+          ;; Visualize new state
+          (turing-machine--display-tape tape place)))
       (if (not (string-prefix-p "halt" (car key)))
           (message "No rule for state '%s' and char '%s'" state (nth place tape))
         (message "Done!")))))

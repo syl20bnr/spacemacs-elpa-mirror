@@ -5,7 +5,7 @@
 ;; Author: Artem Khramov <futu.fata@gmail.com>
 ;; Created: 6 Jan 2017
 ;; Version: 0.2.4
-;; Package-Version: 20180221.335
+;; Package-Version: 20180221.2025
 ;; Package-Requires: ((alert "1.2") (dash "2.13.0") (emacs "24.4"))
 ;; Keywords: notification alert org org-agenda agenda
 ;; URL: https://github.com/akhramov/org-wild-notifier.el
@@ -207,7 +207,7 @@ string, cdr holds time in list-of-integer format."
       (and org-timestamp
            (cons org-timestamp
                  (apply 'encode-time (org-parse-time-string org-timestamp)))))
-    '("DEADLINE" "SCHEDULED"))))
+    '("DEADLINE" "SCHEDULED" "TIMESTAMP"))))
 
 (defun org-wild-notifier--extract-title (marker)
   "Extract event title from MARKER.
