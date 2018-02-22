@@ -5,7 +5,7 @@
 ;; Author: Feng Shu
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/ivy-posframe
-;; Package-Version: 20180212.1746
+;; Package-Version: 20180222.343
 ;; Version: 0.1.0
 ;; Keywords: abbrev, convenience, matching, ivy
 ;; Package-Requires: ((emacs "26.0")(posframe "0.1.0")(ivy "0.10.0"))
@@ -32,6 +32,8 @@
 ;; ** What is ivy-posframe
 ;; ivy-posframe is a ivy extension, which let ivy use posframe
 ;; to show its candidate menu.
+
+;; NOTE: ivy-posframe requires Emacs 26
 
 ;; ** How to enable ivy-posframe
 ;; 1. Global mode

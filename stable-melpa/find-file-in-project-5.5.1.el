@@ -3,8 +3,8 @@
 ;; Copyright (C) 2006-2009, 2011-2012, 2015, 2016, 2017
 ;;   Phil Hagelberg, Doug Alcorn, Will Farrington, Chen Bin
 ;;
-;; Version: 5.5.0
-;; Package-Version: 5.5.0
+;; Version: 5.5.1
+;; Package-Version: 5.5.1
 ;; Author: Phil Hagelberg, Doug Alcorn, and Will Farrington
 ;; Maintainer: Chen Bin <chenbin.sh@gmail.com>
 ;; URL: https://github.com/technomancy/find-file-in-project
@@ -153,7 +153,6 @@
 
 (require 'diff-mode)
 (require 'windmove)
-(require 'ffap)
 
 (defvar ffip-window-ratio-alist
   '((1 . 1.61803398875)
@@ -634,10 +633,12 @@ This function is the API to find files."
   "Prepare data for ROOT."
   (cons 'ffip-project-root root))
 
+(defun ffip--read-selected ()
+  (buffer-substring-no-properties (region-beginning) (region-end)))
+
 (defun ffip-read-keyword ()
   "Read keyword from selected text or user input."
-  (if (region-active-p)
-      (buffer-substring-no-properties (region-beginning) (region-end))
+  (if (region-active-p) (ffip--read-selected)
     (read-string "Enter keyword (or press ENTER):")))
 
 ;;;###autoload
@@ -707,17 +708,31 @@ You can override this by setting the variable `ffip-project-root'."
   "Find file whose name is guessed around point.
 If OPEN-ANOTHER-WINDOW is not nil, the file will be opened in new window."
   (interactive "P")
-  (let* ((filename (or (ffap-file-at-point)
+  (let* ((fp (or (and (region-active-p) (ffip--read-selected))
                        (thing-at-point 'filename)
                        (thing-at-point 'symbol)
                        (read-string "No file name at point. Please provide file name:")))
-         ;; filename could be a path
+         ;; could be a path
          (ffip-match-path-instead-of-filename t))
     (cond
-     (filename
-      ;; strip prefix "../../" or "././" from file name
-      (setq filename (replace-regexp-in-string "^\\(\\.\\.*/\\)*" "" filename))
-      (ffip-find-files filename open-another-window))
+     (fp
+      (let* ((absolute-p (file-name-absolute-p fp)))
+        (cond
+         (absolute-p
+          ;; absolute path
+          (cond
+           ((file-exists-p fp)
+            ;; if absolute path file exists, open it directly
+            (if open-another-window (find-file-other-window fp)
+              (find-file fp)))
+           (t
+            ;; well, search by file name
+            (let* ((ffip-match-path-instead-of-filename t))
+              (ffip-find-files (file-name-nondirectory fp) open-another-window)))))
+         (t
+          ;; strip prefix "../../" or "././" from file name
+          (setq fp (replace-regexp-in-string "^\\(\\.\\.*/\\)*" "" fp))
+          (ffip-find-files fp open-another-window)))))
      (t
       (message "No file name is provided.")))))
 

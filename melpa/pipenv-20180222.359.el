@@ -4,7 +4,7 @@
 
 ;; Author: Paul Walsh <paulywalsh@gmail.com>
 ;; URL: https://github.com/pwalsh/pipenv.el
-;; Package-Version: 20180207.1216
+;; Package-Version: 20180222.359
 ;; Version: 0.0.1-beta
 ;; Package-Requires: ((emacs "25.1")(f "0.19.0")(s "1.12.0"))
 
@@ -111,13 +111,8 @@
 
 (defun pipenv--force-wait (process)
   "Block until PROCESS exits successfully."
-  (let ((sentinel-event nil))
-    (set-process-sentinel
-     process
-     (lambda (process message)
-       (setq sentinel-event t)))
-    (while (not sentinel-event)
-      (sit-for 0.1 t))))
+  (while (process-live-p process)
+    (sit-for 0.1 t)))
 
 (defun pipenv--process-filter-buffer-insert (process response)
   "Filter for PROCESS, insert RESPONSE in process buffer."

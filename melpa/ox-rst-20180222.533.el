@@ -18,7 +18,7 @@
 
 ;; Author: Masanao Igarashi <syoux2@gmail.com>
 ;; Keywords: org, rst, reST, reStructuredText
-;; Package-Version: 20180217.644
+;; Package-Version: 20180222.533
 ;; Version: 0.2
 ;; URL: https://github.com/masayuko/ox-rst
 ;; Package-Requires: ((emacs "24.4") (org "8.2.4"))
@@ -1041,11 +1041,11 @@ information."
 
 ;;;; Paragraph
 
-(defun org-rst-paragraph (_paragraph contents _info)
+(defun org-rst-paragraph (_paragraph contents info)
   "Transcode a PARAGRAPH element from Org to reStructuredText.
 CONTENTS is the contents of the paragraph, as a string.  INFO is
 the plist used as a communication channel."
-  (when (plist-get _info :preserve-breaks)
+  (when (plist-get info :preserve-breaks)
     (let ((lines (split-string contents "\n+[ \t\n]*")))
       (cond ((> (length lines) 2)
              (setq contents (apply 'concat (mapcar
@@ -1074,9 +1074,9 @@ contextual information."
   ;; Protect `, *, _ and \
   (setq text (replace-regexp-in-string "[`*_\\]" "\\\\\\&" text))
   ;; Protect ..
-  (setq text (replace-regexp-in-string "^[\s-]*\\.\\. [^\\[]" "\\\\.. " text))
-  ;; Protect ^\d+.
-  (setq text (replace-regexp-in-string "^\\([[:digit:]]\\)+\\." "\\1\\." text))
+  (setq text (replace-regexp-in-string "^[\s-]*\\.\\. [^\\[]" "\\\\\\&" text))
+  ;; Protect ::
+  (setq text (replace-regexp-in-string "::" "\\\\:\\\\:" text))
   ;; Return value.
   text)
 
@@ -1184,7 +1184,7 @@ containing export options.  Modify DATA by side-effect and return it."
 	       (org-rst--wrap-latex-math-block (plist-get info prop) info))))
 
 (defun org-rst-math-block (_math-block contents _info)
-  "Transcode a MATH-BLOCK object from Org to LaTeX.
+  "Transcode a MATH-BLOCK object from Org to reStructuredText.
 CONTENTS is a string.  INFO is a plist used as a communication
 channel."
   (let* ((value (org-trim contents))
