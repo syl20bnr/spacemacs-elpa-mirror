@@ -3,7 +3,7 @@
 ;; Copyright (C) 2018 Ivan Truskov
 ;; Author: Ivan 'Kurvivor' Truskov <trus19@gmail.com>
 ;; Version: 1.1
-;; Package-Version: 20180213.327
+;; Package-Version: 20180222.1214
 ;; Created: 12 December 2017
 ;; Keywords: games
 ;; Homepage: https://github.com/Kurvivor19/rubik-mode
@@ -11,7 +11,7 @@
 
 ;; This file is not part of GNU Emacs.
 
-;;; License
+;;; License: BEER-WARE
 
 ;; If the following license is retained, anybody may change or use the
 ;; code in any way.  If this have been helpful, you may thank the
