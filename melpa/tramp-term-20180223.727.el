@@ -3,8 +3,8 @@
 ;; Copyright (C) 2014 Randy Morris
 
 ;; Author: Randy Morris <randy.morris@archlinux.us>
-;; Version: 0.2
-;; Package-Version: 20141104.1345
+;; Version: 0.3
+;; Package-Version: 20180223.727
 ;; Keywords: tramp, ssh
 ;; URL: https://github.com/randymorris/tramp-term.el
 
@@ -115,12 +115,12 @@ enable tramp integration in that terminal."
   "Send bash commands to set up tramp integration."
   (term-send-raw-string (format "
 function set-eterm-dir {
-    echo -e \"\\033AnSiTu\" \"$USER\"
+    echo -e \"\\033AnSiTu\" \"ssh:$USER\"
     echo -e \"\\033AnSiTc\" \"$PWD\"
     echo -e \"\\033AnSiTh\" \"%s\"
     history -a
 }
-PROMPT_COMMAND=set-eterm-dir
+PROMPT_COMMAND=\"${PROMPT_COMMAND:+$PROMPT_COMMAND ;} set-eterm-dir\"
 clear
 " hostname)))
 
