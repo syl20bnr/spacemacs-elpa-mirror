@@ -6,7 +6,7 @@
 ;; Author: Ryan Thompson
 ;; Created: Sat Apr  4 13:41:20 2015 (-0700)
 ;; Version: 4.8
-;; Package-Version: 20180221.1438
+;; Package-Version: 20180222.1504
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (s "0.1") (memoize "1.1"))
 ;; URL: https://github.com/DarwinAwardWinner/ido-completing-read-plus
 ;; Keywords: ido, completion, convenience
@@ -524,7 +524,7 @@ completion for them."
          ;; Disable flx-ido for dynamic collections in Emacs 26.
          ;; Temporary workaround for #146.
          (flx-ido-mode
-          (and flx-ido-mode
+          (and (bound-and-true-p flx-ido-mode)
                (or (version< emacs-version "26")
                    (not ido-cr+-dynamic-collection))))
          ;; If the whitelist is empty, everything is whitelisted

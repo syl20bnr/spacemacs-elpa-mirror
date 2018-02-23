@@ -1,5 +1,5 @@
 * What is switch-window                       :README:
-switch-window is an emacs window switch tool, which offer a
+switch-window is an Emacs window switch tool, which offer a
 *visual* way to choose a window to switch to, delete, split
 or other operations.
 
@@ -21,6 +21,16 @@ Note: User can install switch-window with [[http://github.com/dimitri/el-get][El
 (global-set-key (kbd "C-x 2") 'switch-window-then-split-below)
 (global-set-key (kbd "C-x 3") 'switch-window-then-split-right)
 (global-set-key (kbd "C-x 0") 'switch-window-then-delete)
+
+(global-set-key (kbd "C-x 4 d") 'switch-window-then-dired)
+(global-set-key (kbd "C-x 4 f") 'switch-window-then-find-file)
+(global-set-key (kbd "C-x 4 m") 'switch-window-then-compose-mail)
+(global-set-key (kbd "C-x 4 r") 'switch-window-then-find-file-read-only)
+
+(global-set-key (kbd "C-x 4 C-f") 'switch-window-then-find-file)
+(global-set-key (kbd "C-x 4 C-o") 'switch-window-then-display-buffer)
+
+(global-set-key (kbd "C-x 4 0") 'switch-window-then-kill-buffer)
 #+END_EXAMPLE
 
 When switch-window is enabled, user can use the below five keys:
@@ -112,7 +122,7 @@ with *small* ascii char.
    1.png ... 9.png, a.png ... z.png.
 
    You can use other image types supported by
-   emacs, please see: `image-types'.
+   Emacs, please see: `image-types'.
 2. Put all above images to directory:
    `switch-window-image-directory'.
 3. Set variable: `switch-window-shortcut-appearance'
@@ -122,7 +132,7 @@ with *small* ascii char.
 
 [[./snapshots/switch-window-2.png]]
 
-*** `switch-window-shortcut-appearance' can't satisfy my need. how to do?
+*** `switch-window-shortcut-appearance' can't satisfy my need.  how to do?
 All you should do is hacking you own label buffer function,
 for example: my-switch-window-label-buffer-function, and set
 the below variable:

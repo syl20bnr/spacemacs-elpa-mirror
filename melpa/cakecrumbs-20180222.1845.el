@@ -4,7 +4,7 @@
 
 ;; Author: ono hiroko <kuanyui.github.io>
 ;; Keywords: languages, html, jade, pug, sass, scss, stylus
-;; Package-Version: 20180127.456
+;; Package-Version: 20180222.1845
 ;; Package-Requires: ((emacs "24.4"))
 ;; X-URL: https://github.com/kuanyui/cakecrumbs.el
 ;; Version: 0.1
@@ -185,7 +185,7 @@ This is useless in `web-mode'."
       nil)))
 
 ;; ======================================================
-;; HTML
+;; XML / HTML
 ;; ======================================================
 
 (defun cakecrumbs-html-search-backward-< (&optional pos)
@@ -626,14 +626,15 @@ Currently IN-TAG-ITSELF is always nil."
            (progn (setq cakecrumbs--idle-timer
                         (run-with-idle-timer cakecrumbs-refresh-delay-seconds t #'cakecrumbs-timer-handler (current-buffer)))
                   (setq header-line-format '((:eval cakecrumbs--formatted-header)))))
-          ((> (buffer-size) (* 1024 1024 100))  ;; if file size > 100 MB, always use idle timer.
+          ((> (buffer-size) (* 1024 1024 10))  ;; if file size > 10 MB, always use idle timer.
            (progn (setq cakecrumbs--idle-timer
                         (run-with-idle-timer 0.3 t #'cakecrumbs-timer-handler (current-buffer)))
                   (setq header-line-format '((:eval cakecrumbs--formatted-header)))))
           (t
            (progn (setq header-line-format '((:eval (cakecrumbs-generate-header-string)))))))
     (add-hook 'kill-buffer-hook 'cakecrumbs-uninstall-header nil t)
-    (setq cakecrumbs--header-installed t)))
+    (setq cakecrumbs--header-installed t)
+    (message "Cakecrumb header installed")))
 
 (defun cakecrumbs-uninstall-header ()
   (when cakecrumbs--header-installed
@@ -641,7 +642,8 @@ Currently IN-TAG-ITSELF is always nil."
         (cancel-timer cakecrumbs--idle-timer))
     (setq header-line-format cakecrumbs--original-head-line-format)
     (setq cakecrumbs--original-head-line-format nil)
-    (remove-hook 'kill-buffer-hook 'cakecrumbs-uninstall-header t)))
+    (remove-hook 'kill-buffer-hook 'cakecrumbs-uninstall-header t)
+    (message "Cakecrumb header uninstalled")))
 
 ;; ======================================================
 ;; Minor Mode
@@ -654,16 +656,16 @@ Currently IN-TAG-ITSELF is always nil."
   :lighter " cakecrumbs"
   ;; :keymap cakecrumbs-mode-map
   :global nil
-  (if cakecrumbs-mode
-      (cakecrumbs-install-header)
-    (cakecrumbs-uninstall-header)))
+  :after-hook (if cakecrumbs-mode
+                  (cakecrumbs-install-header)
+                (cakecrumbs-uninstall-header)))
 
 (defalias 'cakecrumbs 'cakecrumbs-mode)
 
 ;;;###autoload
 (defun cakecrumbs-enable-if-disabled ()
   (interactive)
-  (if cakecrumbs-mode
+  (if (not cakecrumbs-mode)
       (cakecrumbs-mode)))
 
 ;; ======================================================
