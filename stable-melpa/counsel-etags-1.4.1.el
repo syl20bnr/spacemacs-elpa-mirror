@@ -5,10 +5,10 @@
 ;; Author: Chen Bin <chenbin.sh@gmail.com>
 ;; Maintainer: Chen Bin <chenbin.sh@gmail.com>
 ;; URL: http://github.com/redguardtoo/counsel-etags
-;; Package-Version: 1.4.0
+;; Package-Version: 1.4.1
 ;; Package-Requires: ((emacs "24.4") (counsel "0.9.1"))
 ;; Keywords: tools, convenience
-;; Version: 1.4.0
+;; Version: 1.4.1
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@
 ;;   "Exuberant Ctags" and "GNU Find" should exist at first.
 ;;
 ;;   "M-x counsel-etags-find-tag-at-point" to navigate.  This command will also
-;;   run `counsel-etags-scan-code' automatically if tags file is not built yet.
+;;   run `counsel-etags-scan-code' AUTOMATICALLY if tags file is not built yet.
 ;;
 ;;   "M-x counsel-etags-scan-code" to create tags file
 ;;   "M-x counsel-etags-grep" to grep
@@ -41,11 +41,11 @@
 ;; That's all!
 ;;
 ;; Tips:
-;; - Add below code into "~/.emacs" to auto-update scan code:
+;; - Add below code into "~/.emacs" to AUTOMATICALLY update tags file:
 ;;
-;;   ;; Don't ask before rereading the TAGS files if they have changed
+;;   ;; Don't ask before re-reading changed TAGS files
 ;;   (setq tags-revert-without-query t)
-;;   ;; Don't warn when TAGS files are large
+;;   ;; NO warning when loading large TAGS files
 ;;   (setq large-file-warning-threshold nil)
 ;;   (add-hook 'prog-mode-hook
 ;;     (lambda ()
@@ -341,7 +341,7 @@ If FORCE is t, the commmand is executed without checking the timer."
          (doit (or force (not (file-exists-p tags-file)))))
     ;; always update cli options
     (when doit
-      (message "%s at %s" (if ffip-debug cmd "Scan") default-directory)
+      (message "%s at %s" (if counsel-etags-debug cmd "Scan") default-directory)
       ;; Run the shell command without any interrupt or extra information
       (let* ((async-shell-command-buffer 'new-buffer)
              (display-buffer-alist '(("Async Shell Command" display-buffer-no-window))))

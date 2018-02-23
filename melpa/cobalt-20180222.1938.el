@@ -4,7 +4,7 @@
 
 ;; Author: Juan Karlo Licudine <accidentalrebel@gmail.com>
 ;; URL: https://github.com/cobalt-org/cobalt.el
-;; Package-Version: 20180218.2342
+;; Package-Version: 20180222.1938
 ;; Version: 1.0.0
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24"))
@@ -39,7 +39,6 @@
 ;;; Todo:
 ;;;; Bugs:
 
-;; - Add cobalt-change-current-site to the Readme.
 ;; - Create function that checks if the current buffer is a valid post.
 ;; - Only preview a buffer if it is a valid post.
 ;; - If post is a draft, and cobalt-serve was not run with "--drafts", then don't allow previewing.

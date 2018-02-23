@@ -2,7 +2,7 @@
 
 ;; Author: 10sr <8.slashes@gmail.com>
 ;; URL: https://github.com/10sr/editorconfig-charset-extras-el
-;; Package-Version: 20170712.108
+;; Package-Version: 20180222.2057
 ;; Version: 0.1
 ;; Package-Requires: ((editorconfig "0.6.0"))
 ;; Keywords: tools
@@ -72,14 +72,16 @@ If no apropriate charset found return nil."
              (memq emacs-charset-interned
                    coding-systems))
         emacs-charset-interned
-      (message "editorconfig-charset-extras: Charset not found: %S"
-               emacs-charset-interned)
+      (when emacs-charset-interned
+        (message "editorconfig-charset-extras: Charset not found: %S"
+                 emacs-charset-interned))
       (if (and charset-interned
                (memq charset-interned
                      coding-systems))
           charset-interned
-        (message "editorconfig-charset-extras: Charset not found: %S"
-                 charset-interned)
+        (when charset-interned
+          (message "editorconfig-charset-extras: Charset not found: %S"
+                   charset-interned))
         nil))))
 
 ;;;###autoload

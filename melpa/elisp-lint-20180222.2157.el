@@ -5,10 +5,10 @@
 ;;
 ;; Author: Nikolaj Schumacher <bugs * nschum de>,
 ;; Author: Neil Okamoto <neil.okamoto+melpa@gmail.com>
-;; Version: 0.2
-;; Package-Version: 20180218.1247
+;; Version: 0.3
+;; Package-Version: 20180222.2157
 ;; Keywords: lisp, maint, tools
-;; Package-Requires: ((emacs "23"))
+;; Package-Requires: ((emacs "24"))
 ;; URL: http://github.com/gonewest818/elisp-lint/
 ;;
 ;; This file is NOT part of GNU Emacs.
@@ -48,7 +48,10 @@
 ;;
 ;;; Change Log:
 ;;
-;; * Version 0.2:
+;; * Version 0.3 (MELPA)
+;;    - Emacs 23 support is deprecated [#13]
+;;    - Adopt CircleCI and drop Travis CI [#9] [#14]
+;; * Version 0.2 (MELPA Stable - Feb 2018)
 ;;    - Project transferred to new maintainer
 ;;    - Whitespace check permits page-delimiter (^L)
 ;;    - Indentation check prints the diff to console
@@ -56,6 +59,8 @@
 ;;    - Added checkdoc (available only Emacs 25 and newer)
 ;;    - Cleared up the console output for easier reading in CI
 ;;    - Expand Travis CI test matrix to include Emacs 25 and 26
+;; * Version 0.1 (2015)
+;;    - Basic linting functionality implemented
 ;;
 ;;; Code:
 
