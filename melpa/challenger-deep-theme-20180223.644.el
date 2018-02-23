@@ -2,7 +2,7 @@
 
 ;; Author: MaxSt
 ;; Version: 0.0.2
-;; Package-Version: 20180215.2335
+;; Package-Version: 20180223.644
 ;; Package-Requires: ((emacs "24"))
 ;; URL: https://github.com/challenger-deep-theme/emacs
 
@@ -372,6 +372,10 @@
      			  (,ct (:foreground, ct-blue :background, ct-black))))
      `(ac-selection-face ((,c (:background, selection))
      			  (,ct (:background, ct-selection))))
+     `(ac-yasnippet-selection-face ((,c (:background, magenta-d :foreground, white))
+				    (,ct (:background, ct-magenta-d :foreground, ct-white))))
+     `(ac-yasnippet-candidate-face ((,c (:background, blue-d :foreground, black))
+				    (,ct (:background, ct-blue-d :foreground, ct-black))))
 
      ;; diff-hl
      `(diff-hl-change              ((,c (:foreground ,vc-modified))
