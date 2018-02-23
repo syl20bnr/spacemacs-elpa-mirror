@@ -181,7 +181,7 @@
 		      ((:url . "https://github.com/cpitclaudel/compact-docstrings")
 		       (:keywords "convenience" "faces" "lisp" "maint" "c"))])
  (company .
-	  [(0 9 5)
+	  [(0 9 6)
 	   ((emacs
 	     (24 3)))
 	   "Modular text completion framework" tar

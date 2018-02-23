@@ -1,7 +1,7 @@
 ;;; bazel-mode.el --- A major mode for editing Bazel files
 
 ;; Version: 1.0.0
-;; Package-Version: 20171226.1551
+;; Package-Version: 20180222.2253
 ;; Author: Neri Marschik
 ;; Url: https://github.com/codesuki/bazel-mode
 ;; Keywords: languages, bazel
@@ -47,12 +47,14 @@
   "Run 'buildifier' on the buffer."
   (interactive)
   (let ((current-buffer (current-buffer))
+        (oldpoint (point))
         (result-buffer (get-buffer-create "*bazel-format*")))
     (with-current-buffer result-buffer (erase-buffer))
     (if (zerop (call-process-region (point-min) (point-max) bazel-format-command nil result-buffer nil))
         (progn
           (with-current-buffer current-buffer (delete-region (point-min) (point-max)))
-          (with-current-buffer current-buffer (insert-buffer-substring result-buffer)))
+          (with-current-buffer current-buffer (insert-buffer-substring result-buffer))
+          (goto-char oldpoint))
       (message "bazel-format failed"))
     (kill-buffer result-buffer)))
 
