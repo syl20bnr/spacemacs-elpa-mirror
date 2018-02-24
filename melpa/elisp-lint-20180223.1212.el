@@ -6,7 +6,7 @@
 ;; Author: Nikolaj Schumacher <bugs * nschum de>,
 ;; Author: Neil Okamoto <neil.okamoto+melpa@gmail.com>
 ;; Version: 0.3
-;; Package-Version: 20180222.2157
+;; Package-Version: 20180223.1212
 ;; Keywords: lisp, maint, tools
 ;; Package-Requires: ((emacs "24"))
 ;; URL: http://github.com/gonewest818/elisp-lint/
@@ -51,6 +51,7 @@
 ;; * Version 0.3 (MELPA)
 ;;    - Emacs 23 support is deprecated [#13]
 ;;    - Adopt CircleCI and drop Travis CI [#9] [#14]
+;;    - Add check-declare validator [#16]
 ;; * Version 0.2 (MELPA Stable - Feb 2018)
 ;;    - Project transferred to new maintainer
 ;;    - Whitespace check permits page-delimiter (^L)
@@ -65,13 +66,14 @@
 ;;; Code:
 
 (require 'bytecomp)
+(require 'check-declare)
 (require 'checkdoc nil t)
 (require 'package nil t)
 
 (declare-function package-buffer-info "package" t)
 
 (defconst elisp-lint-file-validators
-  (nconc '("byte-compile")
+  (nconc '("byte-compile" "check-declare")
          (when (fboundp 'checkdoc-file) '("checkdoc"))))
 
 (defconst elisp-lint-buffer-validators
@@ -103,7 +105,7 @@ identical to the `indent' declarations in defmacro.")
   "Run the VALIDATOR with ARGS."
   `(or (member ,validator elisp-lint-ignored-validators)
        (progn
-         (message "Run %s" ,validator)
+         (message "* Run %s" ,validator)
          (elisp-lint--protect (funcall
                                (intern (concat "elisp-lint--" ,validator))
                                ,@args)))))
@@ -122,6 +124,12 @@ Return nil if errors were found."
   (let ((byte-compile-error-on-warn t)
         (byte-compile-warnings t))
     (byte-compile-file file)))
+
+(defun elisp-lint--check-declare (file)
+  "Validate `declare-function` statements in FILE."
+  (let ((errlist (check-declare-file file)))
+    (or (null errlist)
+        (error "Check-declare failed"))))
 
 ;; Checkdoc is available only Emacs 25 or newer
 (when (fboundp 'checkdoc-file)
