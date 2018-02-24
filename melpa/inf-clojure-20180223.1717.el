@@ -5,7 +5,7 @@
 ;; Authors: Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Olin Shivers <shivers@cs.cmu.edu>
 ;; URL: http://github.com/clojure-emacs/inf-clojure
-;; Package-Version: 20180218.343
+;; Package-Version: 20180223.1717
 ;; Keywords: processes, clojure
 ;; Version: 2.1.0
 ;; Package-Requires: ((emacs "24.4") (clojure-mode "5.6"))
@@ -297,17 +297,21 @@ See http://blog.jorgenschaefer.de/2014/05/race-conditions-in-emacs-process-filte
 (defun inf-clojure--set-repl-type (proc)
   "Set the REPL type if has not already been set.
 It requires a REPL PROC for inspecting the correct type."
-  (with-current-buffer inf-clojure-buffer
-    (if (not inf-clojure-repl-type)
-        (setq inf-clojure-repl-type (inf-clojure--detect-repl-type proc))
-      inf-clojure-repl-type)))
+  (if (not inf-clojure-repl-type)
+      (let ((repl-type (inf-clojure--detect-repl-type proc)))
+        ;; set the REPL process buffer
+        (with-current-buffer inf-clojure-buffer
+          (setq-local inf-clojure-repl-type repl-type))
+        ;; set in the current buffer
+        (setq-local inf-clojure-repl-type repl-type))
+    inf-clojure-repl-type))
 
 (defun inf-clojure--single-linify (string)
   "Convert a multi-line STRING in a single-line STRING.
-It also reduces/adds redundant whitespace for readability.  Note
-that this function will transform the empty string in \" \" (it
-adds an empty space)."
-  (replace-regexp-in-string "[ \\|\n]+" " " string))
+It also reduces redundant whitespace for readability."
+  (thread-last string
+    (replace-regexp-in-string "[ \\|\n]+" " ")
+    (replace-regexp-in-string " $" "")))
 
 (defun inf-clojure--trim-newline-right (string)
   "Trim newlines (only) in STRING."
@@ -335,7 +339,10 @@ always be preferred over `comint-send-string`.  It delegates to
 the string for evaluation.  Refer to `comint-simple-send` for
 customizations."
   (inf-clojure--set-repl-type proc)
-  (comint-simple-send proc string))
+  (let ((sanitized (inf-clojure--sanitize-command string)))
+    (when (not (string-empty-p sanitized))
+      (inf-clojure--log-string sanitized "----CMD->")
+      (comint-simple-send proc sanitized))))
 
 (defcustom inf-clojure-load-form "(clojure.core/load-file \"%s\")"
   "Format-string for building a Clojure expression to load a file.
@@ -556,6 +563,7 @@ to continue it."
 
 (defun inf-clojure-preoutput-filter (str)
   "Preprocess the output STR from interactive commands."
+  (inf-clojure--log-string str "<-RES----")
   (cond
    ((string-prefix-p "inf-clojure-" (symbol-name (or this-command last-command)))
     ;; Remove subprompts and prepend a newline to the output string
@@ -1174,7 +1182,7 @@ STRING if present."
                               (concat tag "\n")
                               (concat (prin1-to-string tag) "\n")))
                           (let ((print-escape-newlines t))
-                            (prin1-to-string string)))
+                            (prin1-to-string (substring-no-properties string))))
                   nil
                   (expand-file-name inf-clojure--log-file-name
                                     (inf-clojure-project-root))
@@ -1217,25 +1225,25 @@ output from and including the `inf-clojure-prompt`."
         (sanitized-command (inf-clojure--sanitize-command command)))
     (when (not (string-empty-p sanitized-command))
       (inf-clojure--log-string command "----CMD->")
-      (set-buffer (inf-clojure--get-redirect-buffer))
-      (erase-buffer)
-      (comint-redirect-send-command-to-process sanitized-command redirect-buffer-name process nil t)
+      (with-current-buffer (inf-clojure--get-redirect-buffer)
+        (erase-buffer)
+        (comint-redirect-send-command-to-process sanitized-command redirect-buffer-name process nil t))
       ;; Wait for the process to complete
-      (set-buffer (process-buffer process))
-      (while (and (null comint-redirect-completed)
-                  (accept-process-output process 1 0 t))
-        (sleep-for 0.01))
+      (with-current-buffer (process-buffer process)
+        (while (and (null comint-redirect-completed)
+                    (accept-process-output process 1 0 t))
+          (sleep-for 0.01)))
       ;; Collect the output
-      (set-buffer redirect-buffer-name)
-      (goto-char (point-min))
-      (let* ((buffer-string (buffer-substring-no-properties (point-min) (point-max)))
-             (boundaries (inf-clojure--string-boundaries buffer-string inf-clojure-prompt beg-regexp end-regexp))
-             (beg-pos (car boundaries))
-             (end-pos (car (cdr boundaries)))
-             (prompt-pos (car (cdr (cdr boundaries))))
-             (response-string (substring buffer-string beg-pos (min end-pos prompt-pos))))
-        (inf-clojure--log-string buffer-string "<-RES----")
-        response-string))))
+      (with-current-buffer redirect-buffer-name
+        (goto-char (point-min))
+        (let* ((buffer-string (buffer-substring-no-properties (point-min) (point-max)))
+               (boundaries (inf-clojure--string-boundaries buffer-string inf-clojure-prompt beg-regexp end-regexp))
+               (beg-pos (car boundaries))
+               (end-pos (car (cdr boundaries)))
+               (prompt-pos (car (cdr (cdr boundaries))))
+               (response-string (substring buffer-string beg-pos (min end-pos prompt-pos))))
+          (inf-clojure--log-string buffer-string "<-RES----")
+          response-string)))))
 
 (defun inf-clojure--nil-string-match-p (string)
   "Return true iff STRING is not nil.
