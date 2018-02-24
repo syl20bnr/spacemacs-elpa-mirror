@@ -3,8 +3,8 @@
 
 ;; Copyright 2011-2018 François-Xavier Bois
 
-;; Version: 15.0.27
-;; Package-Version: 20180222.746
+;; Version: 15.0.28
+;; Package-Version: 20180224.222
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; Package-Requires: ((emacs "23.1"))
@@ -25,7 +25,7 @@
 
 ;;---- CONSTS ------------------------------------------------------------------
 
-(defconst web-mode-version "15.0.27"
+(defconst web-mode-version "15.0.28"
   "Web Mode version.")
 
 ;;---- GROUPS ------------------------------------------------------------------
@@ -804,7 +804,7 @@ Must be used in conjunction with web-mode-enable-block-face."
     ("elixir"           . ("phoenix"))
     ("erb"              . ("eruby" "erubis"))
     ("freemarker"       . ())
-    ("go"               . ("gtl"))
+    ("go"               . ("gtl" "hugo"))
     ("hero"             . ())
     ("json-t"           . ())
     ("jsp"              . ("grails"))
@@ -1092,6 +1092,8 @@ Must be used in conjunction with web-mode-enable-block-face."
                            ("[% " . " %]")
                            ("[# " . " #]")
                            ("[#-" . "- | --]")))
+    ("go"               . (("{{ " . " }}")
+                           ("{{-" . " | -}}")))
     ("hero"             . (("<% " . " %>")
                            ("<%=" . " | %>")
                            ("<%!" . " | %>")
@@ -1561,8 +1563,8 @@ shouldn't be moved back.)")
 (defvar web-mode-go-functions
   (eval-when-compile
     (regexp-opt
-     '("and" "call" "html" "index" "js" "len" "not" "or"
-       "print" "printf" "println" "urlquery"))))
+     '("and" "call" "ge" "html" "index" "js" "len" "not" "or"
+       "print" "printf" "println" "urlquery" "where"))))
 
 (defvar web-mode-go-types
   (regexp-opt
@@ -1913,13 +1915,14 @@ shouldn't be moved back.)")
 
 (defvar web-mode-go-font-lock-keywords
   (list
-   '("{{[ ]*\\([[:alpha:]]+\\)" 1 'web-mode-block-control-face)
+   '("{{[-]?[ ]*\\([[:alpha:]]+\\)" 1 'web-mode-block-control-face)
    '("\\_<func \\([[:alnum:]]+\\)" 1 'web-mode-function-name-face)
    '("\\_<type \\([[:alnum:]]+\\)" 1 'web-mode-type-face)
    (cons (concat "\\_<\\(" web-mode-go-types "\\)\\_>") '(0 'web-mode-type-face))
    (cons (concat "\\_<\\(" web-mode-go-keywords "\\)\\_>") '(1 'web-mode-keyword-face))
    (cons (concat "\\_<\\(" web-mode-go-functions "\\)\\_>") '(1 'web-mode-function-call-face))
    '("[$.]\\([[:alnum:]_]+\\)" 1 'web-mode-variable-name-face t t)
+   '("|[ ]?\\([[:alpha:]_]+\\)\\_>" 1 'web-mode-filter-face)
    ))
 
 (defvar web-mode-expression-font-lock-keywords
@@ -2898,8 +2901,8 @@ another auto-completion with different ac-sources (e.g. ac-php)")
 
          ((string= web-mode-engine "go")
           (setq closing-string "}}"
-                delim-open "{{"
-                delim-close "}}")
+                delim-open "{{-?"
+                delim-close "-?}}")
           ) ;go
 
          ((string= web-mode-engine "angular")
@@ -3101,17 +3104,28 @@ another auto-completion with different ac-sources (e.g. ac-php)")
                   pos (point))
             )
 
+
+
            ((and (member web-mode-engine '("closure"))
                  (string= closing-string "}"))
-            (goto-char open)
-            (setq tmp (web-mode-closing-paren-position (point) (line-end-position)))
-            (if tmp
-                (setq tmp (1+ tmp))
-              (setq tmp (line-end-position)))
-            (goto-char tmp)
-            (setq close (point)
-                  pos (point))
+            (when (web-mode-closure-skip reg-end)
+              (setq close (point)
+                    pos (point))
+              (message "close=%S pos=%S" close pos)
+              ) ;when
             )
+
+           ;; ((and (member web-mode-engine '("closure"))
+           ;;       (string= closing-string "}"))
+           ;;  (goto-char open)
+           ;;  (setq tmp (web-mode-closing-paren-position (point) (line-end-position)))
+           ;;  (if tmp
+           ;;      (setq tmp (1+ tmp))
+           ;;    (setq tmp (line-end-position)))
+           ;;  (goto-char tmp)
+           ;;  (setq close (point)
+           ;;        pos (point))
+           ;;  )
 
            ((string= closing-string "EOL")
             (end-of-line)
@@ -3240,14 +3254,49 @@ another auto-completion with different ac-sources (e.g. ac-php)")
 
       )))
 
+(defun web-mode-closure-skip (reg-end)
+  (let (regexp char pos inc continue found)
+    (setq regexp "[\"'{}]"
+          inc 0)
+    (while (and (not found) (re-search-forward regexp reg-end t))
+      (setq char (char-before))
+      (cond
+       ((get-text-property (point) 'block-side)
+        (setq found t))
+       ((eq char ?\{)
+        (setq inc (1+ inc)))
+       ((eq char ?\})
+        (cond
+         ((and (not (eobp))
+               (< inc 1))
+          (setq found t
+                pos (point)))
+         ((> inc 0)
+          (setq inc (1- inc)))
+         )
+        )
+       ((eq char ?\')
+        (setq continue t)
+        (while (and continue (search-forward "'" reg-end t))
+          (setq continue (web-mode-string-continue-p reg-beg))
+          )
+        )
+       ((eq char ?\")
+        (setq continue t)
+        (while (and continue (search-forward "\"" reg-end t))
+          (setq continue (web-mode-string-continue-p reg-beg))
+          )
+        )
+       ) ;cond
+      ) ;while
+    pos))
+
 (defun web-mode-django-skip (reg-end)
   (let (regexp char pos inc continue found)
     (setq regexp "[\"'{}]"
           inc 0)
     (while (and (not found) (re-search-forward regexp reg-end t))
       (setq char (char-before))
-      ;;(setq char (aref (match-string 0) 0))
-      ;;      (message "point=%S char=%c inc=%S | reg-end=%S" (point) char inc reg-end)
       (cond
        ((get-text-property (point) 'block-side)
         (setq found t))
@@ -3282,11 +3331,11 @@ another auto-completion with different ac-sources (e.g. ac-php)")
     pos))
 
 (defun web-mode-block-delimiters-set (reg-beg reg-end delim-open delim-close)
-  "Set text-property 'block-token to 'delimiter-(beg|end) on block delimiters (e.g. <?php ?>)"
+  "Set text-property 'block-token to 'delimiter-(beg|end) on block delimiters (e.g. <?php and ?>)"
   ;;(message "reg-beg(%S) reg-end(%S) delim-open(%S) delim-close(%S)" reg-beg reg-end delim-open delim-close)
   (when (member web-mode-engine
                 '("asp" "aspx" "cl-emb" "clip" "closure" "ctemplate" "django" "dust"
-                  "elixir" "ejs" "erb" "freemarker" "hero" "jsp" "lsp" "mako" "mason" "mojolicious"
+                  "elixir" "ejs" "erb" "freemarker" "go" "hero" "jsp" "lsp" "mako" "mason" "mojolicious"
                   "smarty" "template-toolkit" "web2py" "xoops"))
     (save-excursion
       (when delim-open

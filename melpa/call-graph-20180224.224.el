@@ -5,7 +5,7 @@
 ;; Author: Huming Chen <chenhuming@gmail.com>
 ;; Maintainer: Huming Chen <chenhuming@gmail.com>
 ;; URL: https://github.com/beacoder/call-graph
-;; Package-Version: 20180224.131
+;; Package-Version: 20180224.224
 ;; Version: 0.0.5
 ;; Keywords: programming, convenience
 ;; Created: 2018-01-07
@@ -169,9 +169,11 @@ Which is used to retrieve location information."
     (when-let ((locations (call-graph--locations call-graph)))
       (or
        (map-elt locations (call-graph--get-func-caller-key func caller))
-       (map-elt locations (call-graph--get-func-caller-key caller func))
+       (map-elt locations (call-graph--get-func-caller-key func (call-graph--extract-method-name caller)))
        (map-elt locations (call-graph--get-func-caller-key (call-graph--extract-method-name func) caller))
-       (map-elt locations (call-graph--get-func-caller-key caller (call-graph--extract-method-name func)))))))
+       (map-elt locations (call-graph--get-func-caller-key caller func))
+       (map-elt locations (call-graph--get-func-caller-key caller (call-graph--extract-method-name func)))
+       (map-elt locations (call-graph--get-func-caller-key (call-graph--extract-method-name caller) func))))))
 
 (defun call-graph--get-buffer ()
   "Generate ‘*call-graph*’ buffer."

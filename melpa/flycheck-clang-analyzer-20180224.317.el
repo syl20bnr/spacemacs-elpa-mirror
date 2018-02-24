@@ -5,7 +5,7 @@
 ;; Author: Alex Murray <murray.alex@gmail.com>
 ;; Maintainer: Alex Murray <murray.alex@gmail.com>
 ;; URL: https://github.com/alexmurray/flycheck-clang-analyzer
-;; Package-Version: 20180215.345
+;; Package-Version: 20180224.317
 ;; Version: 0.3
 ;; Package-Requires: ((flycheck "0.24") (emacs "24.4"))
 
@@ -89,7 +89,7 @@
 (defun flycheck-clang-analyzer--cquery-get-compile-options ()
   "Get compile options from cquery."
   (if (fboundp 'cquery-file-info)
-      (rest (gethash "args" (cquery-file-info)))))
+      (cl-rest (gethash "args" (cquery-file-info)))))
 
 (defun flycheck-clang-analyzer--cquery-get-default-directory ()
   "Get default directory from cquery."
@@ -196,9 +196,15 @@ See `https://github.com/alexmurray/clang-analyzer/'."
   :predicate flycheck-clang-analyzer--predicate
   :working-directory flycheck-clang-analyzer--get-default-directory
   :verify flycheck-clang-analyzer--verify
-  :error-patterns ((warning line-start (file-name) ":" line ":" column
-                            ": warning: " (optional (message))
-                            line-end))
+  :error-patterns ((info line-start (file-name) ":" line ":" column
+                            ": note: " (optional (message))
+                            line-end)
+		   (warning line-start (file-name) ":" line ":" column
+			    ": warning: " (optional (message))
+			    line-end)
+		   (error line-start (file-name) ":" line ":" column
+			  ": error: " (optional (message))
+			  line-end))
   :error-filter
   (lambda (errors)
     (let ((errors (flycheck-sanitize-errors errors)))

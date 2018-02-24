@@ -4,7 +4,7 @@
 
 ;; Author: Anthony Green <green@moxielogic.com>
 ;; URL: http://github.com/atgreen/paperless
-;; Package-Version: 20180224.407
+;; Package-Version: 20180224.445
 ;; Version: 1.1
 ;; Keywords: pdf, convenience
 ;; Package-Requires: ((emacs "24.4") (f "0.11.0") (s "1.10.0") (cl-lib "0.6.1"))
@@ -80,13 +80,7 @@
 	   (list i (vector "" (file-name-nondirectory i) "")))
 	 (directory-files paperless-capture-directory t ".*pdf")))
   (pop-to-buffer (concat "*Paperless* - " paperless-capture-directory))
-  ;; Recursively build the list of destination directories, but don't
-  ;; include hidden directories.
-  (setq paperless--directory-list
-	(cl-remove-if
-	 (lambda (s)
-	   (s-contains? "/." s))
-	 (f-directories paperless-root-directory nil t)))
+  (paperless-scan-directories)
   (paperless-mode)
   (tabulated-list-print t))
 
@@ -123,6 +117,18 @@
 	(vctr (cadr (assoc (tabulated-list-get-id) paperless--table-contents))))
     (setf (elt vctr 2) new-dir))
   (tabulated-list-print t))
+
+(defun paperless-scan-directories ()
+  "Scan target directory hierarchy"
+  (interactive)
+  (message "Scanning directories under %s" paperless-root-directory)
+  ;; Recursively build the list of destination directories, but don't
+  ;; include hidden directories.
+  (setq paperless--directory-list
+	(cl-remove-if
+	 (lambda (s)
+	   (s-contains? "/." s))
+	 (f-directories paperless-root-directory nil t))))
 
 (defun paperless-rename ()
   "Rename the current document."
@@ -199,6 +205,7 @@
       (let ((map (make-sparse-keymap)))
 	(define-key map (kbd "SPC") 'paperless-display)
 	(define-key map "f" 'paperless-file)
+	(define-key map "g" 'paperless-scan-directories)
 	(define-key map "r" 'paperless-rename)
 	(define-key map "d" 'paperless-delete)
 	(define-key map "x" 'paperless-execute)
