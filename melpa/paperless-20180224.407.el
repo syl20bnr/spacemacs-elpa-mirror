@@ -1,15 +1,19 @@
 ;;; paperless.el --- A major mode for sorting and filing PDF documents.
 
-;; Copyright (c) 2017 Anthony Green
+;; Copyright (c) 2017, 2018 Anthony Green
 
 ;; Author: Anthony Green <green@moxielogic.com>
 ;; URL: http://github.com/atgreen/paperless
-;; Package-Version: 20170213.503
+;; Package-Version: 20180224.407
 ;; Version: 1.1
 ;; Keywords: pdf, convenience
-;; Package-Requires: ((emacs "24.4") (f "0.19.0") (s "1.10.0") (cl-lib "0.6.1"))
+;; Package-Requires: ((emacs "24.4") (f "0.11.0") (s "1.10.0") (cl-lib "0.6.1"))
 
 ;; This file is NOT part of GNU Emacs.
+
+;;; Commentary:
+
+;; A tool for sorting and filing PDF documents.
 
 ;;; License:
 
@@ -105,6 +109,13 @@
   (setf (elt (cadr (assoc (tabulated-list-get-id) paperless--table-contents)) 0) "*")
   (tabulated-list-print t))
 
+(defun paperless-delete ()
+  "Delete the current document."
+  (interactive)
+  (let ((vctr (cadr (assoc (tabulated-list-get-id) paperless--table-contents))))
+    (setf (elt vctr 2) "[ DELETE ]"))
+  (tabulated-list-print t))
+
 (defun paperless-file ()
   "Select the directory in which to file the current document."
   (interactive)
@@ -116,7 +127,7 @@
 (defun paperless-rename ()
   "Rename the current document."
   (interactive)
-  (let ((new-name (completing-read "New name: " nil))
+  (let ((new-name (read-from-minibuffer "New name: "))
 	(vctr (cadr (assoc (tabulated-list-get-id) paperless--table-contents))))
     (setf (elt vctr 1) (if (file-name-extension new-name)
 			   new-name
@@ -133,7 +144,9 @@
 	      (if (= (length (elt vctr 2)) 0)
 		  nil
 		(progn
-		  (rename-file (car i) (concat (elt vctr 2) "/" (elt vctr 1)))
+		  (if (string-equal (elt vctr 2) "[ TRASH ]")
+		      (move-file-to-trash (car i))
+		    (rename-file (car i) (concat (elt vctr 2) "/" (elt vctr 1))))
 		  (car i)))))
 	  paperless--table-contents)))
     (mapc
@@ -187,6 +200,7 @@
 	(define-key map (kbd "SPC") 'paperless-display)
 	(define-key map "f" 'paperless-file)
 	(define-key map "r" 'paperless-rename)
+	(define-key map "d" 'paperless-delete)
 	(define-key map "x" 'paperless-execute)
 	
 	;; Zoom in/out.

@@ -5,7 +5,7 @@
 ;; Author: Huming Chen <chenhuming@gmail.com>
 ;; Maintainer: Huming Chen <chenhuming@gmail.com>
 ;; URL: https://github.com/beacoder/call-graph
-;; Package-Version: 20180222.2322
+;; Package-Version: 20180224.131
 ;; Version: 0.0.5
 ;; Keywords: programming, convenience
 ;; Created: 2018-01-07
@@ -91,7 +91,7 @@
   "Hierarchy to display call-graph.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Helpers
+;; Data Structure
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (cl-defstruct (call-graph
@@ -104,6 +104,45 @@
 (defun call-graph-new ()
   "Create a call-graph and return it."
   (call-graph--make))
+
+(defun call-graph--add-callers (call-graph func callers)
+  "In CALL-GRAPH, given FUNC, add CALLERS."
+  (when (and call-graph func callers)
+    (let ((short-func (call-graph--extract-method-name func))) ; method only
+      (unless (map-elt (call-graph--callers call-graph) short-func)
+        (seq-doseq (caller callers)
+          (let* ((full-caller (car caller)) ; class::method
+                 (location (cdr caller)) ; location
+                 (func-caller-key
+                  (intern (concat (symbol-name func) " <- " (symbol-name full-caller))))) ; "class::callee <- class::caller" as key
+
+            ;; populate caller data
+            (pushnew full-caller (map-elt (call-graph--callers call-graph) short-func (list)))
+
+            ;; populate location data
+            (pushnew location (map-elt (call-graph--locations call-graph) func-caller-key (list))
+                     :test 'equal)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun call-graph--duplicate-func-p (func)
+  "Check if FUNC was modified due to duplication.
+Return the orinal func if it's duplicated func."
+  (when-let ((func-str (symbol-name func))
+             (temp-split (split-string func-str "::"))
+             (is-duplicate (not (= 0 (string-to-number (seq-elt temp-split 0))))))
+    (pop temp-split)
+    (intern (mapconcat #'identity (delq nil temp-split) "::"))))
+
+(defun call-graph--rename-duplicate-func (func depth)
+  "Change duplicate FUNC by adding DEPTH as prefix.
+Workaround for hierarchy not supporting duplicated items."
+  (when-let ((func-str (symbol-name func))
+             (new-func
+              (intern (concat (number-to-string depth) "::" func-str))))
+    new-func))
 
 (defun call-graph--extract-method-name (full-func)
   "Given FULL-FUNC, return a SHORT-FUNC.
@@ -118,24 +157,21 @@ e.g: class::method => method."
   "Given FUNC, CALLER, return func-caller-key.
 Which is used to retrieve location information."
   (when (and func caller)
+    (when-let ((is-duplicate (call-graph--duplicate-func-p func)))
+      (setq func is-duplicate))
+    (when-let ((is-duplicate (call-graph--duplicate-func-p caller)))
+      (setq caller is-duplicate))
     (intern (concat (symbol-name func) " <- " (symbol-name caller)))))
 
-(defun call-graph--add-callers (call-graph func callers)
-  "In CALL-GRAPH, given FUNC, add CALLERS."
-  (when (and call-graph func callers)
-    (let ((short-func (call-graph--extract-method-name func))) ; method only
-      (unless (map-elt (call-graph--callers call-graph) short-func)
-        (seq-doseq (caller callers)
-          (let* ((full-caller (car caller)) ; class::method
-                 (location (cdr caller)) ; location
-                 (func-caller-key
-                  (intern (concat (symbol-name func) " <- " (symbol-name full-caller))))) ; "class::callee <- class::caller" as key
-
-            ;; populate caller data
-            (push full-caller (map-elt (call-graph--callers call-graph) short-func (list)))
-
-            ;; populate location data
-            (map-put (call-graph--locations call-graph) func-caller-key location)))))))
+(defun call-graph--get-func-caller-location (call-graph func caller)
+  "In CALL-GRAPH, given FUNC and CALLER, return the caller postion."
+  (when (and call-graph func caller)
+    (when-let ((locations (call-graph--locations call-graph)))
+      (or
+       (map-elt locations (call-graph--get-func-caller-key func caller))
+       (map-elt locations (call-graph--get-func-caller-key caller func))
+       (map-elt locations (call-graph--get-func-caller-key (call-graph--extract-method-name func) caller))
+       (map-elt locations (call-graph--get-func-caller-key caller (call-graph--extract-method-name func)))))))
 
 (defun call-graph--get-buffer ()
   "Generate ‘*call-graph*’ buffer."
@@ -186,7 +222,7 @@ Which is used to retrieve location information."
       (split-string command-out-put "\n" t))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Core Function
+;; Core Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun call-graph--search-callers (call-graph func depth &optional calculate-depth)
@@ -196,23 +232,25 @@ CALCULATE-DEPTH is used to calculate actual depth."
              (calculate-depth (or calculate-depth 1))
              (next-calculate-depth (1+ calculate-depth))
              (short-func (call-graph--extract-method-name func)))
-    (let ((caller-pairs (list)))
+    (let ((caller-pairs (list))
+          (callers (map-elt (call-graph--callers call-graph) short-func (list))))
 
       ;; callers not found.
-      (unless (map-elt (call-graph--callers call-graph) short-func)
+      (unless callers
         (seq-doseq (reference (call-graph--find-references short-func))
           (when-let ((caller-pair
                       (and reference (call-graph--find-caller reference))))
             (message (format "Search returns: %s" (symbol-name (car caller-pair))))
             (push caller-pair caller-pairs)))
-        (call-graph--add-callers call-graph func caller-pairs))
+        (call-graph--add-callers call-graph func caller-pairs)
+        (setq callers (map-elt (call-graph--callers call-graph) short-func (list))))
 
       ;; calculate depth.
       (when (> calculate-depth call-graph--current-depth)
         (setq call-graph--current-depth calculate-depth))
 
       ;; recursively search callers.
-      (seq-doseq (caller (map-elt (call-graph--callers call-graph) short-func))
+      (seq-doseq (caller callers)
         (call-graph--search-callers call-graph caller next-depth next-calculate-depth)))))
 
 (defun call-graph--build-hierarchy (call-graph func depth)
@@ -224,6 +262,9 @@ CALCULATE-DEPTH is used to calculate actual depth."
 
     ;; populate hierarchy data.
     (seq-doseq (caller callers)
+      (when-let ((is-duplicate (hierarchy-has-item hierarchy caller))
+                 (new-caller (call-graph--rename-duplicate-func caller depth)))
+        (setq caller new-caller))
       (hierarchy-add-tree hierarchy caller (lambda (item) (when (eq item caller) func)))
       (message "insert child %s under parent %s" (symbol-name caller) (symbol-name func)))
 
@@ -239,10 +280,10 @@ CALCULATE-DEPTH is used to calculate actual depth."
           (hierarchy-tree-display
            call-graph--default-hierarchy
            (lambda (tree-item _)
-             (let* ((parent (hierarchy-parent call-graph--default-hierarchy tree-item))
-                    (func-caller-key (call-graph--get-func-caller-key parent tree-item))
-                    (location (map-elt (call-graph--locations call-graph) func-caller-key))
-                    (caller (symbol-name tree-item)))
+             (let* ((caller (symbol-name tree-item))
+                    (parent (hierarchy-parent call-graph--default-hierarchy tree-item))
+                    (location (call-graph--get-func-caller-location call-graph parent tree-item)))
+
                ;; use propertize to avoid this error => Attempt to modify read-only object
                ;; @see https://stackoverflow.com/questions/24565068/emacs-text-is-read-only
                (insert (propertize caller 'caller-location location))))
@@ -274,12 +315,13 @@ With prefix argument, regenerate reference data."
       (call-graph--create func call-graph-initial-max-depth))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Call-Graph operation
+;; Call-Graph Operations
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun call-graph-visit-file-at-point ()
   "Visit occurrence on the current line."
   (when-let ((location (get-text-property (point) 'caller-location))
+             (location (seq-elt location 0)) ; use first one for now, provide popup-menu in the future.
              (tmp-val (split-string location ":"))
              (file-name (seq-elt tmp-val 0))
              (line-nb-str (seq-elt tmp-val 1))
@@ -317,7 +359,7 @@ With prefix argument, regenerate reference data."
   (kill-this-buffer))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Widget operation
+;; Widget Operations
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun call-graph-widget-expand-all ()
