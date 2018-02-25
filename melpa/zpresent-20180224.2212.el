@@ -1,7 +1,7 @@
 ;;; zpresent.el --- Simple presentation mode based on org files.  -*- lexical-binding: t; -*-
 
 ;; Version: 0.3
-;; Package-Version: 20180220.2131
+;; Package-Version: 20180224.2212
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright 2015-2017 Zachary Kanfer <zkanfer@gmail.com>
@@ -619,7 +619,7 @@ for example, for the first slide of each top level org element."
   (face-spec-set 'zpresent-whole-screen-face
                  ;;we don't get the new properties from the children!
                  `((t . (:background
-                         ,(if-let ((background-color (alist-get "background-color" (gethash :properties slide) nil nil #'equal)))
+                         ,(if-let ((background-color (assoc-default "background-color" (gethash :properties slide) #'equal)))
                               background-color
                             zpresent-default-background-color)))))
   (move-overlay zpresent-whole-screen-overlay
@@ -669,7 +669,7 @@ for example, for the first slide of each top level org element."
   (buffer-disable-undo "zpresentation")
   (let ((inhibit-read-only t))
     (erase-buffer)
-    (when-let ((image-location (alist-get "image" (gethash :properties slide) nil nil #'equal))
+    (when-let ((image-location (assoc-default "image" (gethash :properties slide) #'equal))
                (image (zpresent--get-image-from-cache image-location 1)))
       (insert-image (append image (list :width (window-body-width nil t)
                                         :height (window-body-height nil t)))))))
@@ -827,7 +827,7 @@ progress."
 
 (defun zpresent--cache-images-helper (slide)
   "Read or download all images in SLIDE, and put them into a cache."
-  (when-let ((image-in-properties (alist-get "image" (gethash :properties slide) nil nil #'equal)))
+  (when-let ((image-in-properties (assoc-default "image" (gethash :properties slide) #'equal)))
     (zpresent--fetch-and-cache-image image-in-properties))
   (dolist (line (append (gethash :title slide)
                         (gethash :body slide)))
