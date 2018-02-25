@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180222.1141
+;; Package-Version: 20180225.744
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -241,14 +241,13 @@ Update the minibuffer with the amount of lines collected every
          (ivy--format ivy--all-candidates)))
       (setq counsel--async-time (current-time)))))
 
-(defcustom counsel-prompt-function 'counsel-prompt-function-default
+(defcustom counsel-prompt-function #'counsel-prompt-function-default
   "A function to return a full prompt string from a basic prompt string."
-  :type
-  '(choice
-    (const :tag "Plain" counsel-prompt-function-default)
-    (const :tag "Directory" counsel-prompt-function-dir)
-    (function :tag "Custom"))
-  :group 'ivy)
+  :group 'ivy
+  :type '(radio
+          (function-item counsel-prompt-function-default)
+          (function-item counsel-prompt-function-dir)
+          (function :tag "Custom")))
 
 (make-obsolete-variable
  'counsel-prompt-function
@@ -486,7 +485,7 @@ COUNT defaults to 1."
          (push (symbol-name vv) cands))))
     (delete "" cands)))
 
-(defcustom counsel-describe-variable-function 'describe-variable
+(defcustom counsel-describe-variable-function #'describe-variable
   "Function to call to describe a variable passed as parameter."
   :type 'function
   :group 'ivy)
@@ -526,7 +525,7 @@ Variables declared using `defcustom' are highlighted according to
  '(("I" counsel-info-lookup-symbol "info")
    ("d" counsel--find-symbol "definition")))
 
-(defcustom counsel-describe-function-function 'describe-function
+(defcustom counsel-describe-function-function #'describe-function
   "Function to call to describe a function passed as parameter."
   :type 'function
   :group 'ivy)
@@ -544,13 +543,11 @@ Variables declared using `defcustom' are highlighted according to
   (let ((f (function-called-at-point)))
     (and f (symbol-name f))))
 
-(defcustom counsel-describe-function-preselect 'ivy-thing-at-point
+(defcustom counsel-describe-function-preselect #'ivy-thing-at-point
   "Determine what `counsel-describe-function' should preselect."
-  :type
-  '(choice
-    (const ivy-thing-at-point)
-    (const ivy-function-called-at-point))
-  :group 'ivy)
+  :group 'ivy
+  :type '(radio (function-item ivy-thing-at-point)
+                (function-item ivy-function-called-at-point)))
 
 ;;;###autoload
 (defun counsel-describe-function ()
@@ -2258,35 +2255,24 @@ regex string."
   :type 'string
   :group 'ivy)
 
+(defvar counsel-ag-command nil)
+
 (counsel-set-async-exit-code 'counsel-ag 1 "No matches found")
 (ivy-set-occur 'counsel-ag 'counsel-ag-occur)
 (ivy-set-display-transformer 'counsel-ag 'counsel-git-grep-transformer)
 
-(defun counsel-ag-function (string base-cmd extra-ag-args)
+(defun counsel-ag-function (string)
   "Grep in the current directory for STRING using BASE-CMD.
 If non-nil, append EXTRA-AG-ARGS to BASE-CMD."
-  (when (null extra-ag-args)
-    (setq extra-ag-args ""))
   (if (< (length string) 3)
       (counsel-more-chars 3)
     (let ((default-directory (ivy-state-directory ivy-last))
           (regex (counsel-unquote-regex-parens
                   (setq ivy--old-re
                         (ivy--regex string)))))
-      (let* ((args-end (string-match " -- " extra-ag-args))
-             (file (if args-end
-                       (substring-no-properties extra-ag-args (+ args-end 3))
-                     ""))
-             (extra-ag-args (if args-end
-                                (substring-no-properties extra-ag-args 0 args-end)
-                              extra-ag-args))
-             (ag-cmd (format base-cmd
-                             (concat extra-ag-args
-                                     " -- "
-                                     (shell-quote-argument regex)
-                                     file))))
-        (counsel--async-command ag-cmd)
-        nil))))
+      (counsel--async-command (format counsel-ag-command
+                                      (shell-quote-argument regex)))
+      nil)))
 
 ;;;###autoload
 (defun counsel-ag (&optional initial-input initial-directory extra-ag-args ag-prompt)
@@ -2296,25 +2282,39 @@ INITIAL-DIRECTORY, if non-nil, is used as the root directory for search.
 EXTRA-AG-ARGS string, if non-nil, is appended to `counsel-ag-base-command'.
 AG-PROMPT, if non-nil, is passed as `ivy-read' prompt argument."
   (interactive)
-  (counsel-require-program (car (split-string counsel-ag-base-command)))
+  (setq counsel-ag-command counsel-ag-base-command)
+  (counsel-require-program (car (split-string counsel-ag-command)))
   (when current-prefix-arg
     (setq initial-directory
           (or initial-directory
               (read-directory-name (concat
-                                    (car (split-string counsel-ag-base-command))
+                                    (car (split-string counsel-ag-command))
                                     " in directory: "))))
     (setq extra-ag-args
           (or extra-ag-args
-              (let* ((pos (cl-position ?  counsel-ag-base-command))
-                     (command (substring-no-properties counsel-ag-base-command 0 pos))
-                     (ag-args (replace-regexp-in-string
-                               "%s" "" (substring-no-properties counsel-ag-base-command pos))))
-                (read-string (format "(%s) args:" command) ag-args)))))
+              (read-from-minibuffer (format
+                                     "%s args: "
+                                     (car (split-string counsel-ag-command)))))))
+  (when (null extra-ag-args)
+    (setq extra-ag-args ""))
+  (let* ((args-end (string-match " -- " extra-ag-args))
+         (file (if args-end
+                   (substring-no-properties extra-ag-args (+ args-end 3))
+                 ""))
+         (extra-ag-args (if args-end
+                            (substring-no-properties extra-ag-args 0 args-end)
+                          extra-ag-args)))
+    (setq counsel-ag-command (format counsel-ag-command
+                                      (concat extra-ag-args
+                                              " -- "
+                                              "%s"
+                                              file))))
   (ivy-set-prompt 'counsel-ag counsel-prompt-function)
-  (let ((default-directory (or initial-directory default-directory)))
-    (ivy-read (or ag-prompt (car (split-string counsel-ag-base-command)))
-              (lambda (string)
-                (counsel-ag-function string counsel-ag-base-command extra-ag-args))
+  (let ((default-directory (or initial-directory
+                               (locate-dominating-file default-directory ".git")
+                               default-directory)))
+    (ivy-read (or ag-prompt (car (split-string counsel-ag-command)))
+              #'counsel-ag-function
               :initial-input initial-input
               :dynamic-collection t
               :keymap counsel-ag-map
@@ -2349,7 +2349,7 @@ AG-PROMPT, if non-nil, is passed as `ivy-read' prompt argument."
 (defun counsel-ag-occur ()
   "Generate a custom occur buffer for `counsel-ag'."
   (counsel-grep-like-occur
-   "ag --nocolor --nogroup -- %s"))
+   counsel-ag-command))
 
 ;;** `counsel-pt'
 (defcustom counsel-pt-base-command "pt --nocolor --nogroup -e %s"
@@ -2397,7 +2397,7 @@ Note: don't use single quotes for the regex."
   :group 'ivy)
 
 (counsel-set-async-exit-code 'counsel-rg 1 "No matches found")
-(ivy-set-occur 'counsel-rg 'counsel-rg-occur)
+(ivy-set-occur 'counsel-rg 'counsel-ag-occur)
 (ivy-set-display-transformer 'counsel-rg 'counsel-git-grep-transformer)
 
 ;;;###autoload
@@ -2407,36 +2407,9 @@ INITIAL-INPUT can be given as the initial minibuffer input.
 INITIAL-DIRECTORY, if non-nil, is used as the root directory for search.
 EXTRA-RG-ARGS string, if non-nil, is appended to `counsel-rg-base-command'.
 RG-PROMPT, if non-nil, is passed as `ivy-read' prompt argument."
-  (interactive
-   (list nil
-         (when current-prefix-arg
-           (read-directory-name (concat
-                                 (car (split-string counsel-rg-base-command))
-                                 " in directory: ")))
-         (when current-prefix-arg
-           (read-from-minibuffer "rg args: "))))
-  (counsel-require-program (car (split-string counsel-rg-base-command)))
-  (ivy-set-prompt 'counsel-rg counsel-prompt-function)
-  (let ((default-directory (or initial-directory
-                               (locate-dominating-file default-directory ".git")
-                               default-directory)))
-    (ivy-read (or rg-prompt (car (split-string counsel-rg-base-command)))
-              (lambda (string)
-                (counsel-ag-function string counsel-rg-base-command extra-rg-args))
-              :initial-input initial-input
-              :dynamic-collection t
-              :keymap counsel-ag-map
-              :history 'counsel-git-grep-history
-              :action #'counsel-git-grep-action
-              :unwind (lambda ()
-                        (counsel-delete-process)
-                        (swiper--cleanup))
-              :caller 'counsel-rg)))
-
-(defun counsel-rg-occur ()
-  "Generate a custom occur buffer for `counsel-rg'."
-  (counsel-grep-like-occur
-   "rg -i --no-heading --line-number --color never -- %s ."))
+  (interactive)
+  (let ((counsel-ag-base-command counsel-rg-base-command))
+    (counsel-ag initial-input initial-directory extra-rg-args rg-prompt)))
 
 ;;** `counsel-grep'
 (defcustom counsel-grep-base-command "grep -E -n -e %s %s"
@@ -3817,12 +3790,15 @@ TREEP is used to expand internal nodes."
 
 ;;** `counsel-linux-app'
 (defcustom counsel-linux-apps-directories
-  '("~/.local/share/applications/" "/usr/local/share/applications/" "/usr/share/applications/")
+  '("~/.local/share/applications/"
+    "~/.guix-profile/share/applications/"
+    "/usr/local/share/applications/"
+    "/usr/share/applications/")
   "Directories in which to search for applications (.desktop files)."
   :group 'ivy
-  :type '(list directory))
+  :type '(repeat directory))
 
-(defcustom counsel-linux-app-format-function 'counsel-linux-app-format-function-default
+(defcustom counsel-linux-app-format-function #'counsel-linux-app-format-function-default
   "Function to format Linux application names the `counsel-linux-app' menu.
 The format function will be passed the application's name, comment, and command
 as arguments."
