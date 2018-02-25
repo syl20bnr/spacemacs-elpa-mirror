@@ -310,34 +310,40 @@ can simply specify (literally!) the following rule:
   (el-search-mapc->dolist repl) -> repl
 
 
-
-Bugs, Known Limitations
-=======================
-
-- Replacing: in some cases the read syntax of forms is changing due
-to reading-printing.  "Some" because we can handle this problem in
-most cases.
-
-- Similar: comments are normally preserved (where it makes
-sense).  But when replacing like `(foo ,a ,b) -> `(foo ,b ,a)
-
-in a content like
-
-  (foo
-    a
-    ;; comment
-    b)
-
-the comment will be lost.
-
-
 Acknowledgments
 ===============
 
 Thanks to Stefan Monnier for corrections and advice.
 
 
-BUGS:
+Known Limitations
+=================
+
+- Replacing: in some cases the read syntax of forms is changing due
+  to reading-printing.  "Some" because we can handle this problem
+  in most cases.
+
+- Similar: comments are normally preserved (where it makes sense).
+  But when replacing like `(foo ,a ,b) -> `(foo ,b ,a)
+
+  in a content like
+
+    (foo
+      a
+      ;; comment
+      b)
+
+  the comment will be lost.
+
+- Something like '(1 #1#) is unmatchable (because it is
+  un`read'able without context).  For a similar reason it is
+  currently not possible to allow a replacement to contain
+  uninterned symbols or repeated/circular parts.
+
+
+
+BUGS
+====
 
 - l is very slow for very long lists.  E.g. C-S-e (l "test")
 
@@ -345,8 +351,19 @@ BUGS:
   syntax "##" (a syntax for an interned symbol whose name is the
   empty string) can lead to errors while searching.
 
+- In *El Occur* buffers, when there are adjacent or nested matches,
+  the movement commands (el-search-occur-previous-match,
+  el-search-occur-next-match aka n and p) may skip matches, and the
+  shown match count can be inaccurate.
+
 
 TODO:
+
+- There should be a way to go back to the starting position, like
+  in Isearch, which does this with (push-mark isearch-opoint t) in
+  `isearch-done'.
+
+- Add a help command that can be called while searching.
 
 - Make searching work in comments, too? (->
   `parse-sexp-ignore-comments').  Related: should the pattern

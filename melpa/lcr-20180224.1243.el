@@ -5,7 +5,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/lcr
-;; Package-Version: 20180202.112
+;; Package-Version: 20180224.1243
 ;; Created: January 2018
 ;; Version: 0.9
 ;; Keywords: tools
@@ -89,23 +89,23 @@ forward the continuation as expected).  From the outside, use
        (defun ,name ,(-snoc  arglist 'lcr--continuation)
          ,(lcr--transform-1 exp-body (lambda (x) `(funcall lcr--continuation ,x)))))))
 
-(defmacro lcr-async-bind (var expr &rest body)
-  "Bind VAR in a continuation passed to EXPR with contents BODY.
-EXPR is turned to a co-routine but BODY is executed in direct
-style (but only after EXPR returns)."
-  (declare (indent 2))
-  (lcr--transform-1 expr `(lambda (,var) ,@body)))
+;; (defmacro lcr-async-bind (var expr &rest body)
+;;   "Bind VAR in a continuation passed to EXPR with contents BODY.
+;; EXPR is turned to a co-routine but BODY is executed in direct
+;; style (but only after EXPR returns)."
+;;   (declare (indent 2))
+;;   (lcr--transform-1 expr `(lambda (,var) ,@body)))
 
-(defmacro lcr-async-let (bindings &rest body)
-"Expand multiple BINDINGS and call BODY as a continuation.
-Example:
- (lcr-async-let ((x (lcr1 a b c))
-                 (y (lcr2 a b c x)))
-    (f x y))"
-  (declare (indent 2))
-  (pcase bindings
-    (`((,vars ,expr)) `(lcr-async-bind ,vars ,expr ,@body))
-    (`((,vars ,expr) . ,rest) `(lcr-async-bind ,vars ,expr (lcr-async-let ,rest ,@body)))))
+;; (defmacro lcr-async-let (bindings &rest body)
+;; "Expand multiple BINDINGS and call BODY as a continuation.
+;; Example:
+;;  (lcr-async-let ((x (lcr1 a b c))
+;;                  (y (lcr2 a b c x)))
+;;     (f x y))"
+;;   (declare (indent 2))
+;;   (pcase bindings
+;;     (`((,vars ,expr)) `(progn (lcr-async-bind ,vars ,expr ,@body) (lcr-scheduler)))
+;;     (`((,vars ,expr) . ,rest) `(lcr-async-bind ,vars ,expr (lcr-async-let ,rest ,@body)))))
 
 (defmacro lcr-cps-bind (vars expr &rest body)
   "Bind VARS in a continuation passed to EXPR with contents BODY.
@@ -113,7 +113,7 @@ So (lcr-cps-bind x (fun arg) body) expands to (fun arg (λ (x) body))"
   (declare (indent 2))
   (if (listp vars)
       `(,@expr (lambda ,vars ,@body))
-  `(,@expr (lambda (,vars) ,@body))))
+    `(,@expr (lambda (,vars) ,@body))))
 
 (defmacro lcr-cps-let (bindings &rest body)
 "Expand multiple BINDINGS and call BODY as a continuation.
@@ -121,7 +121,7 @@ Example: (lcr-cps-let ((x (fun1 arg1)) (y z (fun2 arg2))) body)
 expands to: (fun1 arg1 (λ (x) (fun2 arg2 (λ (y z) body))))."
   (declare (indent 1))
   (pcase bindings
-    (`((,vars ,expr)) `(lcr-cps-bind ,vars ,expr ,@body))
+    (`((,vars ,expr)) `(progn (lcr-cps-bind ,vars ,expr ,@body) (lcr-scheduler)))
     (`((,vars ,expr) . ,rest) `(lcr-cps-bind ,vars ,expr (lcr-cps-let ,rest ,@body)))))
 
 (defun lcr--transform-body (forms k)
@@ -253,7 +253,7 @@ expands to: (fun1 arg1 (λ (x) (fun2 arg2 (λ (y z) body))))."
                              ,(lcr--transform-1
                                test
                                (lambda (x) `(if ,x
-                                                ,(lcr--transform-1 `(progn ,@body) (lambda (_) `(funcall ,while-fun)))
+                                                ,(lcr--transform-1 `(progn ,@body) (lambda (_) `(lcr-yield ,while-fun)))
                                               ,(funcall k 'nil))))))
           (funcall ,while-fun))))
     ;; Process various kinds of `quote'.
@@ -324,12 +324,33 @@ comes back."
   "Update all modelines."
   (force-mode-line-update t))
 
+(defvar lcr-ready-in (list) "List of ready processes, inbound portion of queue.")
+(defvar lcr-ready-out (list) "List of ready processes, outbound portion of queue.")
+
+(defun lcr-yield (cont)
+  "Enqueue the ready process CONT."
+  (push cont lcr-ready-in))
+
+(defun lcr-scheduler ()
+  "This is the main loop of the lcr 'OS'.
+This is a simple FIFO scheduler.  The ready queue is polled for
+processes (continuations) to run until it gets empty.  If no
+process is ready to run the control is yielded back to the Emacs
+main loop."
+  (while (or lcr-ready-out lcr-ready-in)
+    (when (not lcr-ready-out)
+      (setq lcr-ready-out (nreverse lcr-ready-in))
+      (setq lcr-ready-in nil))
+    (let ((next-process (pop lcr-ready-out)))
+      ;; (message "lcr-scheduler running... %s ready" (+ (length lcr-ready-in) (length lcr-ready-out)))
+      (funcall next-process))))
+
 (defmacro lcr-context-switch (&rest body)
   "Save the current context, to restore it in a continuation.
 The current continuation is passed as CONT and can be called
 within a BODY by using the macro `lcr-resume'.  The operations
 performed here correspond to a context-switch in operating-system
-parlance."
+parlance.  After BODY is run `lcr-scheduler' is called."
   (declare (indent 2))
   `(let ((ctx (lcr--context)))
      (cl-macrolet ((lcr-resume (cont &rest args)
@@ -337,7 +358,8 @@ parlance."
                                    ctx
                                    (funcall ,cont ,@args))))
        (progn ,@body
-              (run-hooks 'lcr-context-switch-hook)))))
+              (run-hooks 'lcr-context-switch-hook)
+              (lcr-scheduler)))))
 
 (defvar-local lcr-process-callback nil "Callback used by `lcr-process-read'.")
 
@@ -354,7 +376,8 @@ process' output.  This function overwrites the `process-filter'."
            (with-current-buffer buffer
              (goto-char (point-max))
              (insert string))))))))
-  
+
+
 (defun lcr-process-read (buffer continue)
   "Asynchronously read from the process associated with BUFFER and CONTINUE.
 The amount of data read is unknown, so this function should most

@@ -9,7 +9,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20180224.556
+;; Package-Version: 20180224.1246
 ;; Created: October 2016
 ;; Keywords: haskell, tools
 ;; Package-Requires: ((dash "2.12.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0") (lcr "0.9"))
@@ -513,8 +513,9 @@ x:\\foo\\bar (i.e., Windows)."
         (dante-schedule-next (current-buffer)))))
 
 (defun dante-schedule-next (buffer)
-  "If GHCi is idle, run the next queued GHCi sub-session for BUFFER, if any.
+  "If no sub-session is running, run the next queued sub-session for BUFFER, if any.
 Note that sub-sessions are not interleaved."
+  (lcr-scheduler)
   (with-current-buffer buffer
     (if lcr-process-callback (force-mode-line-update t)
       (let ((req (pop dante-queue)))
@@ -557,7 +558,9 @@ Note that sub-sessions are not interleaved."
 Must be called from GHCi process buffer."
   (let ((buffer (current-buffer)))
     (lcr-cps-let ((input (lcr-process-read buffer)))
-      (when (memq 'inputs dante-debug) (message "[Dante] <- %s" input))
+      (when (memq 'inputs dante-debug)
+          (goto-char (point-max))
+          (insert input))
       (funcall cont (s-replace "\r" "" input))
       (dante-schedule-next buffer)))
   (force-mode-line-update t))

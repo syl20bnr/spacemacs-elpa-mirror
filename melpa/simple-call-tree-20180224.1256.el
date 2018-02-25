@@ -7,7 +7,7 @@
 ;; Copyleft (Ↄ) 2012, Joe Bloggs, all rites reversed.
 ;; Created: 2012-11-01 21:28:07
 ;; Version: 20151116.1603
-;; Package-Version: 20171223.1037
+;; Package-Version: 20180224.1256
 ;; Package-Requires: ((emacs "24.3") (anaphora "1.0.0"))
 ;; Last-Updated: Mon Nov 16 16:03:18 2015
 ;;           By: Joe Bloggs
@@ -609,7 +609,8 @@ as a flat list."
   "The major-mode for the one-key menu buffer."
   :group 'simple-call-tree
   (setq simple-call-tree-mode-map (make-keymap)
-        buffer-read-only nil)
+        buffer-read-only nil
+	comment-start ";")
   (outline-minor-mode 1)
   (setq outline-regexp "^[|*]\\([-<>]*\\)\\(\\( +\\w+\\)?\\)\\(\\( \\[#.\\]\\)?\\) "
         outline-level 'simple-call-tree-outline-level)
@@ -653,7 +654,7 @@ as a flat list."
   (if (featurep 'outshine)
       (define-key simple-call-tree-mode-map (kbd "<tab>") 'outline-cycle)
     (define-key simple-call-tree-mode-map (kbd "<tab>") 'outline-toggle-children))
-  (define-key simple-call-tree-mode-map (kbd "<right>") 'show-children)
+  (define-key simple-call-tree-mode-map (kbd "<right>") 'outline-show-children)
   (define-key simple-call-tree-mode-map (kbd "<left>") 'hide-subtree)
   (define-key simple-call-tree-mode-map (kbd "a") 'show-all)
   (define-key simple-call-tree-mode-map (kbd "1") 'simple-call-tree-delete-other-windows)
@@ -1025,7 +1026,7 @@ By default it is set to a list containing the current buffer."
 			       (if (re-search-forward regex endpos t)
 				   (return t)))
 			;; need to go back so that the text properties are read correctly
-			(forward-word -1)
+			(backward-word)
 			;; check face is valid
 			(let ((face (get-text-property (point) 'face)))
 			  (if (listp face)
@@ -1033,7 +1034,7 @@ By default it is set to a list containing the current buffer."
 				  (push (list (match-string 1) (point-marker)) (cdr item)))
 			    (if (not (member face invalidfonts))
 				(push (list (match-string 1) (point-marker)) (cdr item)))))
-			(forward-word 1))))))
+			(forward-word))))))
     (setq simple-call-tree-inverted-alist (simple-call-tree-invert))
     (message "simple-call-tree done")))
 
@@ -1065,7 +1066,7 @@ If there is no function on this line of the *Simple Call Tree* buffer, return ni
           (if (re-search-forward (concat outline-regexp "\\(\\S-+\\)")
                                  (line-end-position) t)
               (match-string 6)
-            (previous-line)
+            (previous-line) ;;dont be tempted to replace with (forward-line -1) which moves to BEGINNING of previous line
             (re-search-forward (concat outline-regexp "\\(\\S-+\\)")
                                (line-end-position) t)
             (match-string 6)))
@@ -1131,7 +1132,7 @@ information. If UPDATESRC is nil then don't bother updating the source code."
          (marker (second item))
          (buf (marker-buffer marker))
          (end (marker-position marker))
-         srcval)
+         newval srcval)
     (cl-case attr
       (todo (unless (or (not value) (stringp value))
               (error "Invalid TODO value"))
@@ -1176,7 +1177,7 @@ information. If UPDATESRC is nil then don't bother updating the source code."
             (kill-line)
             (simple-call-tree-insert-item item 1 nil marked)
             (read-only-mode 1)
-            (if hidden (hide-subtree)))))))
+            (if hidden (outline-hide-subtree)))))))
 
 ;; simple-call-tree-info: DONE
 (cl-defun simple-call-tree-set-todo (value funcs &optional remove)
@@ -1333,7 +1334,8 @@ files will be prompted for and only functions in the current buffer will be used
   (let ((buffers (save-excursion
 		   (cl-loop for file in files
 			    collect (find-file file)))))
-    (if (or (not files) (called-interactively-p))
+    (if (or (not files)
+	    (called-interactively-p 'any))
         (add-to-list 'buffers (current-buffer)))
     ;; If we already have a call tree for those buffers, just redisplay it
     (if (and (get-buffer simple-call-tree-buffer-name)
@@ -1359,7 +1361,7 @@ listed in `simple-call-tree-buffers' will be used."
   (cl-case simple-call-tree-default-sort-method
     (position (simple-call-tree-reverse))
     (name (simple-call-tree-sort-by-name))
-    (numdescend (simple-call-tree-sort-by-num-descendants))
+    (numdescend (simple-call-tree-sort-by-num-descendants 1))
     (face (simple-call-tree-sort-by-face))
     (size (simple-call-tree-sort-by-size))
     (priority (simple-call-tree-sort-by-priority))
@@ -1394,11 +1396,11 @@ otherwise it will be narrowed around FUNC."
 
 ;; simple-call-tree-info: DONE
 (cl-defun simple-call-tree-list-callers-and-functions (&optional (maxdepth simple-call-tree-default-maxdepth)
-                                                               (funclist simple-call-tree-alist))
+								 (funclist simple-call-tree-alist))
   "List callers and functions in FUNCLIST to depth MAXDEPTH.
 By default FUNCLIST is set to `simple-call-tree-alist'."
   (switch-to-buffer (get-buffer-create simple-call-tree-buffer-name))
-  (if (not (equal major-mode 'simple-call-tree-mode))
+  (if (not (eq major-mode 'simple-call-tree-mode))
       (simple-call-tree-mode))
   (read-only-mode -1)
   (erase-buffer)
@@ -1681,7 +1683,7 @@ When call interactively DEPTH is prompted for."
         (invlist (copy-tree simple-call-tree-inverted-alist)))
     (simple-call-tree-sort
      (lambda (a b)
-       (let ((alist (if invertedtree invlist normallist)))
+       (let ((alist (if simple-call-tree-inverted invlist normallist)))
          (> (simple-call-tree-count-descendants (car a) depth alist)
             (simple-call-tree-count-descendants (car b) depth alist))))))
   (simple-call-tree-revert)
@@ -1876,7 +1878,7 @@ The toplevel functions will be sorted, and the functions in each branch will be 
                 (fm-unhighlight 1))
               (if (> (length (window-list)) 1)
                   (delete-window)
-		(switch-to-buffer (other-buffer)))))))
+		(switch-to-buffer nil))))))
 
 ;; simple-call-tree-info: DONE
 (defun simple-call-tree-invert-buffer nil
@@ -2237,7 +2239,7 @@ If FUNC is nil then mark the current line and add the item to `simple-call-tree-
         (add-to-list 'simple-call-tree-marked-items
                      (or func (match-string 4))
                      nil 'simple-call-tree-compare-items)
-        (if (called-interactively-p)
+        (if (called-interactively-p 'any)
             (simple-call-tree-move-next-samelevel)))))
 
 ;; simple-call-tree-info: DONE
@@ -2245,15 +2247,17 @@ If FUNC is nil then mark the current line and add the item to `simple-call-tree-
   "Unmark the item named FUNC."
   (interactive (list (or (simple-call-tree-get-parent)
                          (simple-call-tree-get-function-at-point))))
-  (if (simple-call-tree-goto-func func)
-      (let ((start (line-beginning-position)))
-        (read-only-mode -1)
-        (replace-regexp "\\*" "|" nil start (1+ start))
-        (read-only-mode 1)
-        (cl-callf2 cl-remove func simple-call-tree-marked-items
-          :test 'simple-call-tree-compare-items)
-        (if (called-interactively-p)
-            (simple-call-tree-move-next-samelevel)))))
+  (unless (not (simple-call-tree-goto-func func))
+    (read-only-mode -1)
+    (save-excursion
+      (goto-char (line-beginning-position))
+      (if (re-search-forward "^\\*" (1+ (point)))
+	  (replace-match "|" nil t)))
+    (read-only-mode 1)
+    (cl-callf2 cl-remove func simple-call-tree-marked-items
+      :test 'simple-call-tree-compare-items)
+    (if (called-interactively-p 'any)
+	(simple-call-tree-move-next-samelevel))))
 
 ;; Easier to remember the function name than the raw code.
 ;; simple-call-tree-info: DONE
@@ -2270,7 +2274,9 @@ If optional arg ALIST is supplied then use alist instead of `simple-call-tree-ma
   (save-excursion
     (goto-char (point-min))
     (read-only-mode -1)
-    (replace-regexp "\\*" "|" nil (point-min) (point-max))
+    (save-excursion
+      (while (re-search-forward "^\\*" nil t)
+	(replace-match "|" nil t)))
     (read-only-mode 1))
   (setq simple-call-tree-marked-items nil))
 

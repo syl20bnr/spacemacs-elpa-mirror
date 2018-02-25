@@ -5,7 +5,7 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-which-key
-;; Package-Version: 20180223.1048
+;; Package-Version: 20180224.1335
 ;; Version: 3.1.0
 ;; Keywords:
 ;; Package-Requires: ((emacs "24.4"))
@@ -1655,19 +1655,21 @@ alists. Returns a list (key separator description)."
     (nreverse new-list)))
 
 (defun which-key--get-keymap-bindings (keymap &optional all prefix)
-  "Retrieve top-level bindings from KEYMAP."
+  "Retrieve top-level bindings from KEYMAP.
+If ALL is non-nil, get all bindings, not just the top-level
+ones. PREFIX is for internal use and should not be used."
   (let (bindings)
     (map-keymap
      (lambda (ev def)
-       (let ((key (if prefix
-                      (concat prefix " " (key-description (list ev)))
-                    (key-description (list ev)))))
-         (unless (string-match-p which-key--ignore-keys-regexp key)
+       (let* ((key (append prefix (list ev)))
+              (key-desc (key-description key)))
+         (unless (string-match-p which-key--ignore-keys-regexp key-desc)
            (if (and all (keymapp def))
                (setq bindings
-                     (append bindings (which-key--get-keymap-bindings def t key)))
+                     (append bindings
+                             (which-key--get-keymap-bindings def t key)))
              (cl-pushnew
-              (cons key
+              (cons key-desc
                     (cond
                      ((keymapp def) "Prefix Command")
                      ((symbolp def) (copy-sequence (symbol-name def)))
