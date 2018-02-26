@@ -5,7 +5,7 @@
 ;; Author: Huming Chen <chenhuming@gmail.com>
 ;; Maintainer: Huming Chen <chenhuming@gmail.com>
 ;; URL: https://github.com/beacoder/call-graph
-;; Package-Version: 20180225.1806
+;; Package-Version: 20180225.2147
 ;; Version: 0.0.5
 ;; Keywords: programming, convenience
 ;; Created: 2018-01-07
@@ -208,8 +208,7 @@ CALCULATE-DEPTH is used to calculate actual depth."
       ;; callers not found.
       (unless callers
         (seq-doseq (reference (call-graph--find-references short-func))
-          (when-let ((caller-pair
-                      (and reference (call-graph--find-caller reference))))
+          (when-let ((caller-pair (and reference (call-graph--find-caller reference))))
             (message (format "Search returns: %s" (symbol-name (car caller-pair))))
             (push caller-pair caller-pairs)))
         (call-graph--add-callers call-graph func caller-pairs)
@@ -260,10 +259,9 @@ CALCULATE-DEPTH is used to calculate actual depth."
     (call-graph-mode)
     (call-graph-widget-expand-all)))
 
-(defun call-graph--create (func depth)
-  "Generate `call-graph' for FUNC.
-DEPTH is the depth of caller-map."
-  (when-let ((call-graph call-graph--default-instance))
+(defun call-graph--create (call-graph func depth)
+  "Generate CALL-GRAPH for FUNC, DEPTH is the depth of caller-map."
+  (when (and call-graph func depth)
     (setq call-graph--default-hierarchy (hierarchy-new)
           call-graph--current-depth 0)
     (call-graph--search-callers call-graph func depth)
@@ -272,14 +270,17 @@ DEPTH is the depth of caller-map."
 
 ;;;###autoload
 (defun call-graph ()
-  "Generate `call-graph' for function at point.
-With prefix argument, regenerate reference data."
+  "Generate `call-graph' for function at point or function in active selection.
+With prefix argument, discard cached data and re-generate reference data."
   (interactive)
-  (save-excursion
-    (when-let ((func (symbol-at-point)))
-      (when (or current-prefix-arg (null call-graph--default-instance))
-        (setq call-graph--default-instance (call-graph-new)))
-      (call-graph--create func call-graph-initial-max-depth))))
+  (when-let ((func
+              (if (use-region-p)
+                  (intern (buffer-substring-no-properties (region-beginning) (region-end)))
+                (symbol-at-point))))
+    (when (or current-prefix-arg (null call-graph--default-instance))
+      (setq call-graph--default-instance (call-graph-new)))
+    (save-mark-and-excursion
+      (call-graph--create call-graph--default-instance func call-graph-initial-max-depth))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Call-Graph Operations
@@ -301,7 +302,7 @@ With prefix argument, regenerate reference data."
 (defun call-graph-goto-file-at-point ()
   "Go to the occurrence on the current line."
   (interactive)
-  (save-excursion
+  (save-mark-and-excursion
     (when (get-char-property (point) 'button)
       (forward-char 4))
     (call-graph-visit-file-at-point)))
@@ -315,7 +316,7 @@ With prefix argument, regenerate reference data."
 (defun call-graph-at-point ()
   "Within buffer <*call-graph*>, generate new `call-graph' for symbol at point."
   (interactive)
-  (save-excursion
+  (save-mark-and-excursion
     (when (get-char-property (point) 'button)
       (forward-char 4))
     (call-graph)))
@@ -347,7 +348,7 @@ With prefix argument, regenerate reference data."
              (hierarchy call-graph--default-hierarchy)
              (depth (+ call-graph--current-depth level))
              (func (car (hierarchy-roots hierarchy))))
-    (call-graph--create func depth)))
+    (call-graph--create call-graph func depth)))
 
 (defun call-graph-collapse (&optional level)
   "Collapse `call-graph' by LEVEL."
