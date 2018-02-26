@@ -5,11 +5,11 @@
 ;; Author: Huming Chen <chenhuming@gmail.com>
 ;; Maintainer: Huming Chen <chenhuming@gmail.com>
 ;; URL: https://github.com/beacoder/call-graph
-;; Package-Version: 20180225.2147
-;; Version: 0.0.5
+;; Package-Version: 20180226.156
+;; Version: 0.0.6
 ;; Keywords: programming, convenience
 ;; Created: 2018-01-07
-;; Package-Requires: ((emacs "25.1") (hierarchy "0.7.0") (tree-mode "1.0.0"))
+;; Package-Requires: ((emacs "25.1") (hierarchy "0.7.0") (tree-mode "1.0.0") (ivy "0.10.0"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -46,6 +46,7 @@
 
 (require 'hierarchy)
 (require 'tree-mode)
+(require 'ivy)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Customizable
@@ -53,7 +54,7 @@
 
 (defgroup call-graph nil
   "Customization support for the `call-graph'."
-  :version "0.0.5"
+  :version "0.0.6"
   :group 'applications)
 
 (defcustom call-graph-initial-max-depth 2
@@ -108,13 +109,14 @@
 (defun call-graph--add-callers (call-graph func callers)
   "In CALL-GRAPH, given FUNC, add CALLERS."
   (when (and call-graph func callers)
-    (let ((short-func (call-graph--extract-method-name func))) ; method only
+    (let* ((full-func func)
+           (short-func (call-graph--extract-method-name full-func))) ; method only
       (unless (map-elt (call-graph--callers call-graph) short-func)
         (seq-doseq (caller callers)
           (let* ((full-caller (car caller)) ; class::method
                  (location (cdr caller)) ; location
                  (func-caller-key
-                  (intern (concat (symbol-name func) " <- " (symbol-name full-caller))))) ; "class::callee <- class::caller" as key
+                  (intern (concat (symbol-name full-func) " <- " (symbol-name full-caller))))) ; "class::callee <- class::caller" as key
 
             ;; populate caller data
             (pushnew full-caller (map-elt (call-graph--callers call-graph) short-func (list)))
@@ -153,6 +155,17 @@ e.g: class::method => method."
   (if call-graph-path-to-global
       (expand-file-name "global" call-graph-path-to-global)
     "global"))
+
+(defun call-graph--visit-function (func-location)
+  "Visit function location FUNC-LOCATION."
+  (when-let ((temp-split (split-string func-location ":"))
+             (file-name (seq-elt temp-split 0))
+             (line-nb-str (seq-elt temp-split 1))
+             (line-nb (string-to-number line-nb-str))
+             (is-valid-file (file-exists-p file-name))
+             (is-valid-nb (integerp line-nb)))
+    (find-file-read-only-other-window file-name)
+    (with-no-warnings (goto-line line-nb))))
 
 (defun call-graph--find-caller (reference)
   "Given a REFERENCE, return the caller as (caller . location)."
@@ -275,7 +288,8 @@ With prefix argument, discard cached data and re-generate reference data."
   (interactive)
   (when-let ((func
               (if (use-region-p)
-                  (intern (buffer-substring-no-properties (region-beginning) (region-end)))
+                  (prog1 (intern (buffer-substring-no-properties (region-beginning) (region-end)))
+                    (deactivate-mark))
                 (symbol-at-point))))
     (when (or current-prefix-arg (null call-graph--default-instance))
       (setq call-graph--default-instance (call-graph-new)))
@@ -288,16 +302,13 @@ With prefix argument, discard cached data and re-generate reference data."
 
 (defun call-graph-visit-file-at-point ()
   "Visit occurrence on the current line."
-  (when-let ((location (get-text-property (point) 'caller-location))
-             (location (seq-elt location 0)) ; use first one for now, provide popup-menu in the future.
-             (tmp-val (split-string location ":"))
-             (file-name (seq-elt tmp-val 0))
-             (line-nb-str (seq-elt tmp-val 1))
-             (line-nb (string-to-number line-nb-str))
-             (is-valid-file (file-exists-p file-name))
-             (is-valid-nb (integerp line-nb)))
-    (find-file-read-only-other-window file-name)
-    (with-no-warnings (goto-line line-nb))))
+  (when-let ((locations (get-text-property (point) 'caller-location))
+             (location (seq-elt locations 0)))
+    (if (> (seq-length locations) 1)
+        (ivy-read "Caller Locations:" locations
+                  :action (lambda (func-location)
+                            (call-graph--visit-function func-location)))
+      (call-graph--visit-function location))))
 
 (defun call-graph-goto-file-at-point ()
   "Go to the occurrence on the current line."

@@ -1,11 +1,11 @@
-;;; overseer.el --- Ert-runner Integration Into Emacs
+;;; overseer.el --- Ert-runner Integration Into Emacs -*- lexical-binding: t -*-
 
 ;; Copyright © 2014-2015 Samuel Tonini
 ;;
 ;; Author: Samuel Tonini <tonini.samuel@gmail.com>
 
 ;; URL: http://www.github.com/tonini/overseer.el
-;; Package-Version: 20170207.2241
+;; Package-Version: 20180225.2219
 ;; Version: 0.3.0
 ;; Package-Requires: ((emacs "24") (dash "2.10.0") (pkg-info "0.4") (f "0.18.1"))
 ;; Keywords:
@@ -63,8 +63,7 @@
   "Files which indicate a root of a emacs lisp package.")
 
 (defvar overseer--save-buffers-predicate
-  (lambda ()
-    (not (string= (substring (buffer-name) 0 1) "*"))))
+  (lambda () (string-prefix-p "*" (buffer-name))))
 
 ;; Private functions
 
@@ -111,7 +110,9 @@
 (defun overseer-project-root ()
   "Return path to the current emacs lisp package root directory."
   (let ((file (file-name-as-directory (expand-file-name default-directory))))
-    (overseer--project-root-identifier file overseer--project-root-indicators)))
+    (or
+     (overseer--project-root-identifier file overseer--project-root-indicators)
+     (user-error "Overseer unable to identify project root"))))
 
 (define-compilation-mode overseer-buffer-mode "ert-runner"
   "Overseer compilation mode."
@@ -132,7 +133,7 @@
     (with-current-buffer
         (compilation-start (mapconcat 'concat cmdlist " ")
                            'overseer-buffer-mode
-                           (lambda (b) overseer--buffer-name))
+                           (lambda (_b) overseer--buffer-name))
       (set (make-local-variable 'compilation-error-regexp-alist) (cons 'overseer compilation-error-regexp-alist))
       (add-hook 'compilation-filter-hook 'overseer--handle-ansi-color nil t)
       (add-hook 'compilation-filter-hook 'overseer--remove-header nil t))))
@@ -207,9 +208,12 @@
 
 (defun overseer-execute (cmdlist)
   "Execute an ert-runner with CMDLIST as arguments."
-  (let ((default-directory (overseer-project-root)))
-    (overseer-compilation-run (overseer--build-runner-cmdlist (list overseer-command cmdlist))
-                              overseer-buffer-name)))
+  (let ((original-default-directory default-directory))
+    (unwind-protect
+        (let ((default-directory (overseer-project-root)))
+          (overseer-compilation-run (overseer--build-runner-cmdlist (list overseer-command cmdlist))
+                                    overseer-buffer-name))
+      (setq default-directory original-default-directory))))
 
 ;;;###autoload
 (defun overseer-version (&optional show-version)
