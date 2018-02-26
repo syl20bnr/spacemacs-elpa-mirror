@@ -5,7 +5,7 @@
 ;; Author: Huming Chen <chenhuming@gmail.com>
 ;; Maintainer: Huming Chen <chenhuming@gmail.com>
 ;; URL: https://github.com/beacoder/call-graph
-;; Package-Version: 20180224.224
+;; Package-Version: 20180225.1806
 ;; Version: 0.0.5
 ;; Keywords: programming, convenience
 ;; Created: 2018-01-07
@@ -127,23 +127,6 @@
 ;; Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun call-graph--duplicate-func-p (func)
-  "Check if FUNC was modified due to duplication.
-Return the orinal func if it's duplicated func."
-  (when-let ((func-str (symbol-name func))
-             (temp-split (split-string func-str "::"))
-             (is-duplicate (not (= 0 (string-to-number (seq-elt temp-split 0))))))
-    (pop temp-split)
-    (intern (mapconcat #'identity (delq nil temp-split) "::"))))
-
-(defun call-graph--rename-duplicate-func (func depth)
-  "Change duplicate FUNC by adding DEPTH as prefix.
-Workaround for hierarchy not supporting duplicated items."
-  (when-let ((func-str (symbol-name func))
-             (new-func
-              (intern (concat (number-to-string depth) "::" func-str))))
-    new-func))
-
 (defun call-graph--extract-method-name (full-func)
   "Given FULL-FUNC, return a SHORT-FUNC.
 e.g: class::method => method."
@@ -153,27 +136,12 @@ e.g: class::method => method."
               (intern (seq-elt temp-split (1- (seq-length temp-split))))))
     short-func))
 
-(defun call-graph--get-func-caller-key (func caller)
-  "Given FUNC, CALLER, return func-caller-key.
-Which is used to retrieve location information."
-  (when (and func caller)
-    (when-let ((is-duplicate (call-graph--duplicate-func-p func)))
-      (setq func is-duplicate))
-    (when-let ((is-duplicate (call-graph--duplicate-func-p caller)))
-      (setq caller is-duplicate))
-    (intern (concat (symbol-name func) " <- " (symbol-name caller)))))
-
 (defun call-graph--get-func-caller-location (call-graph func caller)
   "In CALL-GRAPH, given FUNC and CALLER, return the caller postion."
   (when (and call-graph func caller)
-    (when-let ((locations (call-graph--locations call-graph)))
-      (or
-       (map-elt locations (call-graph--get-func-caller-key func caller))
-       (map-elt locations (call-graph--get-func-caller-key func (call-graph--extract-method-name caller)))
-       (map-elt locations (call-graph--get-func-caller-key (call-graph--extract-method-name func) caller))
-       (map-elt locations (call-graph--get-func-caller-key caller func))
-       (map-elt locations (call-graph--get-func-caller-key caller (call-graph--extract-method-name func)))
-       (map-elt locations (call-graph--get-func-caller-key (call-graph--extract-method-name caller) func))))))
+    (let ((func-caller-key (intern (concat (symbol-name func) " <- " (symbol-name caller))))
+          (locations (call-graph--locations call-graph)))
+      (map-elt locations func-caller-key))))
 
 (defun call-graph--get-buffer ()
   "Generate ‘*call-graph*’ buffer."
@@ -264,9 +232,6 @@ CALCULATE-DEPTH is used to calculate actual depth."
 
     ;; populate hierarchy data.
     (seq-doseq (caller callers)
-      (when-let ((is-duplicate (hierarchy-has-item hierarchy caller))
-                 (new-caller (call-graph--rename-duplicate-func caller depth)))
-        (setq caller new-caller))
       (hierarchy-add-tree hierarchy caller (lambda (item) (when (eq item caller) func)))
       (message "insert child %s under parent %s" (symbol-name caller) (symbol-name func)))
 
