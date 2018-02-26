@@ -4,7 +4,7 @@
 
 ;; Author: Jostein Kjønigsen <jostein@gmail.com>
 ;; URL: http://github.com/josteink/bmx-mode
-;; Package-Version: 20180219.247
+;; Package-Version: 20180226.256
 ;; Version: 0.1
 ;; Keywords: c convenience tools
 ;; Package-Requires: ((cl-lib "0.5") (company "0.9.4") (dash "2.13.0") (s "1.12.0"))
@@ -124,6 +124,18 @@
     (candidates (bmx--get-matching-labels arg))
     (meta (format "This value is named %s" arg))
     (ignore-case t)))
+
+(defun bmx--company-completion-finished-hook (res)
+  ;; when completing in front an existing statement like this:
+  ;; some.exe params
+  ;; call :CKRETsome.exe params
+  ;; we may want to insert a space.
+  (when (and
+         (equal major-mode 'bat-mode)
+         (equal ":" (substring-no-properties res 0 1))
+         (not (looking-at-p "\s"))
+         (not (looking-at-p "$")))
+    (insert " ")))
 
 (defun bmx--label-at-point ()
   (cond
@@ -442,7 +454,8 @@ Supports variables and labels."
   "Configure default-settings for `bmx-mode'."
   (add-hook 'bat-mode-hook #'bmx-mode)
   (add-to-list 'company-backends #'bmx--company-label-backend)
-  (add-to-list 'company-backends #'bmx--company-variable-backend))
+  (add-to-list 'company-backends #'bmx--company-variable-backend)
+  (add-hook 'company-completion-finished-hook #'bmx--company-completion-finished-hook))
 
 (defvar bmx-keymap (let ((map (make-sparse-keymap)))
                      (define-key map (kbd ":") #'bmx-insert-colon-and-complete)
