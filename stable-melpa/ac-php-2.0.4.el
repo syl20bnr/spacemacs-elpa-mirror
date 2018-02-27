@@ -4,7 +4,7 @@
 
 ;; Author: xcwenn@qq.com [https://github.com/xcwen]
 ;; URL: https://github.com/xcwen/ac-php
-;; Package-Version: 2.0.3
+;; Package-Version: 2.0.4
 ;; Keywords: completion, convenience, intellisense
 ;; Package-Requires: ((ac-php-core "1") (auto-complete "1.4.0") (yasnippet "0.8.0")  )
 
