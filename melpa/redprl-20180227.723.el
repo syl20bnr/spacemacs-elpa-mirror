@@ -5,7 +5,7 @@
 
 ;; Author: Jonathan Sterling <jon@jonmsterling.com>
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 20180216.646
+;; Package-Version: 20180227.723
 ;; Version: 0.0.1
 ;; Keywords: languages
 
@@ -115,7 +115,7 @@
 (defconst redprl-expression-keywords
   '("tv" "ax" "fcom"
     "bool" "tt" "ff" "if"
-    "nat" "zero" "succ" "nat-rec" "int" "negsucc" "int-rec"
+    "nat" "zero" "succ" "nat-rec" "int" "pos" "negsucc" "int-rec"
     "void"
     "S1" "base" "loop" "S1-rec"
     "lam" "app"

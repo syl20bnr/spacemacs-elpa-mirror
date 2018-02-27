@@ -4,7 +4,7 @@
 
 ;; Author: Leandro Facchinetti <me@leafac.com>
 ;; Version: 0.0.1
-;; Package-Version: 20170701.919
+;; Package-Version: 20180227.1010
 ;; Keywords: password
 ;; URL: https://git.leafac.com/org-password-manager
 ;; Package-Requires: ((org "8.2.10") (s "1.9.0") (dash "2.13.0"))
@@ -26,7 +26,7 @@
 
 ;;; Commentary:
 
-;; Org Password Manager
+;; [ARCHIVED] Org Password Manager
 
 ;; Leandro Facchinetti <me@leafac.com>
 
@@ -124,9 +124,13 @@
 ;; follows recommendations from Keep a CHANGELOG and uses Semantic
 ;; Versioning. Each released version is a Git tag.
 
-;; 5.1. 0.0.1 · 2015-07-29
+;; 5.1. Archived · 2018-02-27
 
-;; 5.1.1. Added
+;; This project is archived and no longer maintained.
+
+;; 5.2. 0.0.1 · 2015-07-29
+
+;; 5.2.1. Added
 
 ;; * Core functionality.
 

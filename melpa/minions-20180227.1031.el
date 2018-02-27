@@ -6,7 +6,7 @@
 ;; Homepage: https://github.com/tarsius/minions
 
 ;; Package-Requires: ((emacs "25.3"))
-;; Package-Version: 20180226.543
+;; Package-Version: 20180227.1031
 
 ;; This file is not part of GNU Emacs.
 
@@ -86,6 +86,11 @@ global minor-mode, nil otherwise."
   :group 'minions
   :type '(repeat (symbol :tag "Mode")))
 
+(defcustom minions-mode-line-lighter ";-"
+  "Text used for the mode menu in the mode line."
+  :group 'minions
+  :type 'string)
+
 ;;; Mode
 
 ;;;###autoload
@@ -138,7 +143,7 @@ mouse-2: Show help for minor mode\n\
 mouse-3: Toggle minor modes"
 			local-map ,mode-line-minor-mode-keymap)
           " "
-          `(:propertize ";-"
+          `(:propertize minions-mode-line-lighter
                         mouse-face mode-line-highlight
                         help-echo "Minions
 mouse-1: Display minor modes menu"
@@ -222,12 +227,12 @@ Otherwise the entry can only be used to toggle the mode."
            (list 'menu-item (symbol-name mode) wrap)))))
 
 (defun minions--define-toggle (map mode)
-  (define-key map (vector mode)
-    (list 'menu-item
-          (symbol-name mode)
-          (or (get mode :minor-mode-function) mode)
-          :help (minions--documentation mode)
-          :button (cons :toggle mode))))
+  (let ((fn (or (get mode :minor-mode-function) mode)))
+    (when (functionp fn)
+      (define-key map (vector mode)
+        (list 'menu-item (symbol-name mode) fn
+              :help (minions--documentation fn)
+              :button (cons :toggle mode))))))
 
 (defun minions--help-menu ()
   (pcase-let ((map (make-sparse-keymap))
@@ -242,14 +247,15 @@ Otherwise the entry can only be used to toggle the mode."
     map))
 
 (defun minions--define-help (map mode)
-  (define-key map (vector mode)
-    (list 'menu-item
-          (symbol-name mode)
-          (lambda ()
-            (interactive)
-            (describe-minor-mode-from-symbol
-             (or (get mode :minor-mode-function) mode)))
-          :help (minions--documentation mode))))
+  (let ((fn (or (get mode :minor-mode-function) mode)))
+    (when (functionp fn)
+      (define-key map (vector mode)
+        (list 'menu-item
+              (symbol-name mode)
+              (lambda ()
+                (interactive)
+                (describe-minor-mode-from-symbol fn))
+              :help (minions--documentation mode))))))
 
 (defun minions--documentation (function)
   (let ((doc (documentation function t)))

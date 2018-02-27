@@ -1,4 +1,4 @@
-Org Password Manager
+[ARCHIVED] Org Password Manager
 
 Leandro Facchinetti <me@leafac.com>
 
@@ -96,8 +96,12 @@ This section documents all notable changes to Org Password Manager. It
 follows recommendations from Keep a CHANGELOG and uses Semantic
 Versioning. Each released version is a Git tag.
 
-5.1. 0.0.1 · 2015-07-29
+5.1. Archived · 2018-02-27
 
-5.1.1. Added
+This project is archived and no longer maintained.
+
+5.2. 0.0.1 · 2015-07-29
+
+5.2.1. Added
 
 * Core functionality.
