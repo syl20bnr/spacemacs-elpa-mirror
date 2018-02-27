@@ -4,7 +4,7 @@
 
 ;; Author: Christopher Monsanto <chris@monsan.to>, Alexey Romanov <alexey.v.romanov@gmail.com>
 ;; Version: 0.1
-;; Package-Version: 20161025.24
+;; Package-Version: 20180226.2248
 ;; URL: https://github.com/alexeyr/company-auctex/
 ;; Package-Requires: ((yasnippet "0.8.0") (company "0.8.0") (auctex "11.87"))
 
@@ -110,11 +110,9 @@
 
 (defun company-auctex-prefix (regexp)
   "Returns the prefix for matching given REGEXP."
-  (let ((prefix (and (derived-mode-p 'latex-mode)
-                     (when (looking-back regexp)
-                       (match-string-no-properties 1)))))
-    (if prefix (cons prefix t) nil)))
-
+  (and (derived-mode-p 'latex-mode)
+       (when (looking-back regexp)
+         (match-string-no-properties 1))))
 
 ;; Macros
 ;;

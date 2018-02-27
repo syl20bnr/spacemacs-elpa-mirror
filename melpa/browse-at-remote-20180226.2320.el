@@ -4,7 +4,7 @@
 ;;
 ;; Author:     Rustem Muslimov <r.muslimov@gmail.com>
 ;; Version:    0.9.0
-;; Package-Version: 20171115.210
+;; Package-Version: 20180226.2320
 ;; Keywords:   github, gitlab, bitbucket, convenience
 ;; Package-Requires: ((f "0.17.2") (s "1.9.0") (cl-lib "0.5"))
 
@@ -45,7 +45,8 @@
 (defcustom browse-at-remote-remote-type-domains
   '(("bitbucket.org" ."bitbucket")
     ("github.com" . "github")
-    ("gitlab.com" . "gitlab"))
+    ("gitlab.com" . "gitlab")
+    ("git.savannah.gnu.org" . "gnu"))
   "Alist of domain patterns to remote types."
 
   :type '(alist :key-type (string :tag "Domain")
@@ -199,6 +200,24 @@ If HEAD is detached, return nil."
   (let ((formatter (intern (format "browse-at-remote--format-%s-as-%s" formatter-type remote-type))))
     (if (fboundp formatter)
         formatter nil)))
+
+(defun browse-at-remote-gnu-format-url (repo-url)
+  "Get a gnu formatted URL."
+  (replace-regexp-in-string
+   (concat "https://" (car (rassoc "gnu" browse-at-remote-remote-type-domains))
+           "/\\(git\\).*\\'")
+   "cgit" repo-url nil nil 1))
+
+(defun browse-at-remote--format-region-url-as-gnu (repo-url location filename &optional linestart lineend)
+  "URL formatter for gnu."
+  (let ((repo-url (browse-at-remote-gnu-format-url repo-url)))
+    (cond
+     (linestart (format "%s.git/tree/%s?h=%s#n%d" repo-url filename location linestart))
+     (t (format "%s.git/tree/%s?h=%s" repo-url filename location)))))
+
+(defun browse-at-remote--format-commit-url-as-gnu (repo-url commithash)
+  "Commit URL formatted for gnu"
+  (format "%s.git/commit/?id=%s" (browse-at-remote-gnu-format-url repo-url) commithash))
 
 (defun browse-at-remote--format-region-url-as-github (repo-url location filename &optional linestart lineend)
   "URL formatted for github."

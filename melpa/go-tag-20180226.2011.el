@@ -4,10 +4,10 @@
 
 ;; Author: Brantou <brantou89@gmail.com>
 ;; URL: https://github.com/brantou/emacs-go-tag
-;; Package-Version: 1.0.1
+;; Package-Version: 20180226.2011
 ;; Keywords: tools
-;; Version: 1.0.1
-;; Package-Requires: ((emacs "24.0")(go-mode "1.3.1"))
+;; Version: 1.1.0
+;; Package-Requires: ((emacs "24.0")(go-mode "1.5.0"))
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -47,18 +47,22 @@
 
 (defgroup go-tag nil
   "Modify field tag for struct fields."
+  :prefix "go-tag-"
+  :link '(url-link :tag "MELPA" "https://melpa.org/#/go-tag")
+  :link '(url-link :tag "MELPA Stable" "https://stable.melpa.org/#/go-tag")
+  :link '(url-link :tag "GitHub" "https://github.com/brantou/emacs-go-tag")
   :group 'go)
 
 (defcustom go-tag-command "gomodifytags"
   "The 'gomodifytags' command.
 from https://github.com/fatih/gomodifytags."
   :type 'string
-  :group 'go)
+  :group 'go-tag)
 
 (defcustom go-tag-args nil
   "Additional arguments to pass to go-tag."
   :type '(repeat string)
-  :group 'go)
+  :group 'go-tag)
 
 (defcustom go-tag-show-errors 'buffer
   "Where to display go-tag error output.
@@ -67,7 +71,7 @@ It can either be displayed in its own buffer, in the echo area, or not at all."
           (const :tag "Own buffer" buffer)
           (const :tag "Echo area" echo)
           (const :tag "None" nil))
-  :group 'go)
+  :group 'go-tag)
 
 (defun go-tag--parse-tag (tags)
   (mapconcat
@@ -96,9 +100,30 @@ It can either be displayed in its own buffer, in the echo area, or not at all."
              ","))
 
 ;;;###autoload
+(defun go-tag-open-github()
+  "go-tag open Github page."
+  (interactive)
+  (browse-url "https://github.com/brantou/emacs-go-tag"))
+
+;;;###autoload
+(defun go-tag-refresh (tags)
+  "Refresh field TAGS for struct fields."
+  (interactive "sTags: ")
+  (let ((stags (go-tag--parse-tag tags))
+        (options (go-tag--parse-option tags)))
+    (when (string-equal stags "") (setq stags "json"))
+    (if (use-region-p)
+        (progn
+          (go-tag--region-remove (region-beginning) (region-end) stags "")
+          (go-tag--region (region-beginning) (region-end) stags options))
+      (progn
+        (go-tag--point-remove (position-bytes (point))  stags "")
+        (go-tag--point (position-bytes (point))  stags options)))))
+
+;;;###autoload
 (defun go-tag-add (tags)
   "Add field TAGS for struct fields."
-  (interactive "sTags:")
+  (interactive "sTags: ")
   (let ((stags (go-tag--parse-tag tags))
         (options (go-tag--parse-option tags)))
     (if (use-region-p)
@@ -133,7 +158,7 @@ It can either be displayed in its own buffer, in the echo area, or not at all."
 ;;;###autoload
 (defun go-tag-remove (tags)
   "Remove field TAGS for struct fields."
-  (interactive "sTags:")
+  (interactive "sTags: ")
   (let ((stags (go-tag--parse-tag tags))
         (options (go-tag--parse-option tags)))
     (if (use-region-p)

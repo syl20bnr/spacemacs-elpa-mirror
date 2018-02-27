@@ -3,8 +3,8 @@
 ;; Copyright (C) 2016 Powershop NZ Ltd.
 
 ;; Author: Kieran Trezona-le Comte <trezona.lecomte@gmail.com>
-;; Version: 0.2
-;; Package-Version: 0.2
+;; Version: 0.3
+;; Package-Version: 20180226.2057
 ;; Package-Requires: ((ov "1.0") (cl-lib "0.5"))
 ;; Created: 2016-01-21
 ;; Keywords: coverage metrics simplecov ruby rspec
@@ -39,21 +39,19 @@
 ;; source code files.
 ;;
 ;; At present it only knows how to parse coverage data in the format
-;; provided by the Simplecov gem (specifically, the RSpec results in
-;; the .resultset.json file it outputs).
+;; provided by the Simplecov gem.
 ;;
 ;; Coverage highlighting will be automatically updated whenever the
 ;; coverage results change after running specs.  You can individually
 ;; toggle Coverage on/off in as many buffers as you like.
 
+;;; Code:
 
 (require 'json)
 (require 'ov)
 (require 'cl-lib)
 (require 'timer)
 (autoload 'vc-git-root "vc-git")
-
-;;; Code:
 
 (defgroup coverage nil
   "Code coverage line highlighting."
@@ -84,7 +82,7 @@ next editing session."
               (coverage-set-timer))))
 
 (defvar coverage-buffer-list ()
-  "List of buffers with Coverage enabled.")
+  "List of buffers with `coverage-mode' enabled.")
 
 (defcustom coverage-dir nil
   "The coverage directory for `coverage'.
@@ -104,20 +102,20 @@ root directory."
   "Clear all coverage highlighting for the current buffer."
   (when coverage-timer
     (cancel-timer coverage-timer))
-  (ov-clear))
+  (ov-clear 'coverage 'any))
 
 (defun coverage-draw-highlighting-for-current-buffer ()
   "Draw line highlighting for the current buffer."
   (save-excursion
     (goto-char (point-min))
     (dolist (element (coverage-get-results-for-current-buffer))
-      (ov-clear (line-beginning-position) (line-end-position))
-      (cond ((eq element nil)
-             (ov-clear (line-beginning-position) (line-end-position)))
+      (ov-clear 'coverage 'any (line-beginning-position) (line-end-position))
+      (cond ((null element)
+             t)
             ((= element 0)
-             (ov (line-beginning-position) (line-end-position) 'face 'coverage-uncovered-face))
+             (ov (line-beginning-position) (line-end-position) 'coverage t 'face 'coverage-uncovered-face))
             ((> element 0)
-             (ov (line-beginning-position) (line-end-position) 'face 'coverage-covered-face)))
+             (ov (line-beginning-position) (line-end-position) 'coverage t 'face 'coverage-covered-face)))
       (forward-line))))
 
 (defun coverage-result-path-for-file (filename)
@@ -141,16 +139,32 @@ root."
 (defun coverage-get-results-for-file (target-path result-path)
   "Return coverage for the file at TARGET-PATH from RESULT-PATH."
   (cl-coerce (cdr
-              (assoc-string target-path
-                            (assoc 'coverage
-                                   (assoc 'RSpec
-                                          (coverage-get-json-from-file result-path)))))
+              (car
+               (cl-remove-if-not 'identity
+                                 (mapcar (lambda (l)
+                                           (assoc-string target-path
+                                                         (assoc 'coverage l)))
+                                         (coverage-get-json-from-file result-path)))))
              'list))
 
 (defun coverage-get-results-for-current-buffer ()
   "Return a list of coverage results for the current buffer."
   (coverage-get-results-for-file (buffer-file-name)
                                  (coverage-result-path-for-file buffer-file-name)))
+
+(defun coverage-get-timestamp-for-results (filepath)
+  "Return the time that results at FILEPATH were last updated."
+  (with-temp-buffer
+    (insert-file-contents filepath)
+    (goto-char (point-max))
+    (re-search-backward "\"timestamp\": [0-9]+")
+    (re-search-forward ": ")
+    (current-word)))
+
+(defun coverage-get-timestamp-for-current-buffer ()
+  "Return result timestamp for the current buffer."
+  (coverage-get-timestamp-for-results
+   (coverage-result-path-for-file buffer-file-name)))
 
 (defun coverage-set-timer ()
   "Restart or cancel the timer used by Coverage.
@@ -172,8 +186,10 @@ Coverage will use an up-to-date value of `coverage-interval'"
   "Toggle Coverage mode for the current buffer."
   :lighter " COV"
   (when coverage-mode
-    (add-to-list 'coverage-buffer-list (current-buffer))
-    (coverage-set-timer))
+    (let ((timestamp-and-buffer (cons (coverage-get-timestamp-for-current-buffer)
+                                      (current-buffer))))
+      (add-to-list 'coverage-buffer-list timestamp-and-buffer)
+      (coverage-set-timer)))
   (when (null coverage-buffer-list)
     (cancel-timer coverage-timer))
   (coverage-redraw-buffers))
@@ -181,19 +197,31 @@ Coverage will use an up-to-date value of `coverage-interval'"
 (defun coverage-redraw-buffers ()
   "Redraw highlighting in all buffers with Coverage enabled.
 
+Use the `coverage-redraw-current-buffer' function for each
+enabled buffer to make sure we don't redraw buffers unless the
+timestamp in their results has changed.
+
 If Coverage is no longer enabled in any of the buffers, remove
 that buffer from `coverage-buffer-list'."
   (let ((existing-buffers coverage-buffer-list)
         enabled-buffers)
-    (dolist (buffer existing-buffers)
-      (when (buffer-live-p buffer)
-        (with-current-buffer buffer
-          (if coverage-mode
-              (progn
-                (coverage-draw-highlighting-for-current-buffer)
-                (push buffer enabled-buffers))
-            (coverage-clear-highlighting-for-current-buffer)))))
+    (dolist (timestamp-and-buffer existing-buffers)
+      (let ((buffer (cdr timestamp-and-buffer))
+            (existing-timestamp (car timestamp-and-buffer)))
+        (when (buffer-live-p buffer)
+          (with-current-buffer buffer
+            (if coverage-mode
+                (let ((new-timestamp (coverage-get-timestamp-for-current-buffer)))
+                  (progn
+                    (coverage-redraw-current-buffer new-timestamp existing-timestamp)
+                    (push (cons new-timestamp buffer) enabled-buffers)))
+              (coverage-clear-highlighting-for-current-buffer))))))
     (setq coverage-buffer-list enabled-buffers)))
+
+(defun coverage-redraw-current-buffer (new-timestamp existing-timestamp)
+  "Redraw current buffer unless NEW-TIMESTAMP equals EXISTING-TIMESTAMP."
+  (unless (eq new-timestamp existing-timestamp)
+    (coverage-draw-highlighting-for-current-buffer)))
 
 ;;; Faces
 

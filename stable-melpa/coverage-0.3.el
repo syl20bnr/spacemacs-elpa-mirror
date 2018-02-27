@@ -3,8 +3,8 @@
 ;; Copyright (C) 2016 Powershop NZ Ltd.
 
 ;; Author: Kieran Trezona-le Comte <trezona.lecomte@gmail.com>
-;; Version: 0.2
-;; Package-Version: 20160222.114
+;; Version: 0.3
+;; Package-Version: 0.3
 ;; Package-Requires: ((ov "1.0") (cl-lib "0.5"))
 ;; Created: 2016-01-21
 ;; Keywords: coverage metrics simplecov ruby rspec
@@ -39,8 +39,7 @@
 ;; source code files.
 ;;
 ;; At present it only knows how to parse coverage data in the format
-;; provided by the Simplecov gem (specifically, the RSpec results in
-;; the .resultset.json file it outputs).
+;; provided by the Simplecov gem.
 ;;
 ;; Coverage highlighting will be automatically updated whenever the
 ;; coverage results change after running specs.  You can individually
@@ -103,20 +102,20 @@ root directory."
   "Clear all coverage highlighting for the current buffer."
   (when coverage-timer
     (cancel-timer coverage-timer))
-  (ov-clear))
+  (ov-clear 'coverage 'any))
 
 (defun coverage-draw-highlighting-for-current-buffer ()
   "Draw line highlighting for the current buffer."
   (save-excursion
     (goto-char (point-min))
     (dolist (element (coverage-get-results-for-current-buffer))
-      (ov-clear (line-beginning-position) (line-end-position))
-      (cond ((eq element nil)
-             (ov-clear (line-beginning-position) (line-end-position)))
+      (ov-clear 'coverage 'any (line-beginning-position) (line-end-position))
+      (cond ((null element)
+             t)
             ((= element 0)
-             (ov (line-beginning-position) (line-end-position) 'face 'coverage-uncovered-face))
+             (ov (line-beginning-position) (line-end-position) 'coverage t 'face 'coverage-uncovered-face))
             ((> element 0)
-             (ov (line-beginning-position) (line-end-position) 'face 'coverage-covered-face)))
+             (ov (line-beginning-position) (line-end-position) 'coverage t 'face 'coverage-covered-face)))
       (forward-line))))
 
 (defun coverage-result-path-for-file (filename)
@@ -140,10 +139,12 @@ root."
 (defun coverage-get-results-for-file (target-path result-path)
   "Return coverage for the file at TARGET-PATH from RESULT-PATH."
   (cl-coerce (cdr
-              (assoc-string target-path
-                            (assoc 'coverage
-                                   (assoc 'RSpec
-                                          (coverage-get-json-from-file result-path)))))
+              (car
+               (cl-remove-if-not 'identity
+                                 (mapcar (lambda (l)
+                                           (assoc-string target-path
+                                                         (assoc 'coverage l)))
+                                         (coverage-get-json-from-file result-path)))))
              'list))
 
 (defun coverage-get-results-for-current-buffer ()

@@ -1,0 +1,48 @@
+This package provides utilities for displaying elements of the
+mode line as tabs and ribbons.  It also provides replacements
+for a few built-in elements.
+
+The biggest differences to similar packages is that this one is
+much simpler and much more consistent.  When using this package,
+then only the color of the mode line changes when a window
+becomes in-/active.  Other packages additionally change what
+elements are being displayed and also the appearance of an
+individual element may change completely, which I found highly
+distracting when trying out those packages because I never know
+what visual clues to look for in order to find a certain piece
+of information.
+
+Usage:
+
+* Make sure that the face `mode-line' does not set `:box' and that
+  it sets `:underline' and `:overline' to the same color.  That
+  color should be different from the `:background' colors of both
+  `mode-line' and `default'.  Do the same for `mode-line-inactive'.
+  The line colors of `mode-line' and `mode-line-inactive' do not
+  have to be identical.  For example:
+
+    (use-package solarized-theme
+      :config
+      (load-theme 'solarized-light t)
+      (let ((line (face-attribute 'mode-line :underline)))
+        (set-face-attribute 'mode-line-inactive nil :overline   line)
+        (set-face-attribute 'mode-line          nil :overline   line)
+        (set-face-attribute 'mode-line          nil :underline  line)
+        (set-face-attribute 'mode-line          nil :box        nil)
+        (set-face-attribute 'mode-line-inactive nil :box        nil)
+        (set-face-attribute 'mode-line-inactive nil :background "#f9f2d9")))
+
+* Add something like this to your init file:
+
+    (use-package moody
+      :config
+      (setq x-underline-at-descent-line t)
+      (moody-replace-mode-line-buffer-identification)
+      (moody-replace-vc-mode))
+
+* Such replacement functions are defines as commands, making it
+  quicker to try them out.
+
+* To undo a replacement use the optional REVERSE argument of the
+  replacement function.  When calling it interactively, then use
+  a prefix argument to do so.
