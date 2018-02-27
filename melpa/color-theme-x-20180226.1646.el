@@ -1,10 +1,10 @@
 ;;; color-theme-x.el --- convert color themes to X11 resource settings
 
 ;; Copyright (C) 2003  Free Software Foundation, Inc.
-;; Copyright (C) 2012-2016 Andrew Johnson <andrew@andrewjamesjohnson.com>
+;; Copyright (C) 2012-2018 Andrew Johnson <andrew@andrewjamesjohnson.com>
 
 ;; Version: 1.3
-;; Package-Version: 20160924.854
+;; Package-Version: 20180226.1646
 ;; Keywords: convenience, faces, frames
 ;; Author: Matthew Kennedy <mkennedy@killr.ath.cx>
 ;; Author: Andrew Johnson <andrew@andrewjamesjohnson.com>
