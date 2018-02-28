@@ -5,7 +5,7 @@
 ;; Author: Feng Shu
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/ivy-posframe
-;; Package-Version: 20180227.314
+;; Package-Version: 20180227.1759
 ;; Version: 0.1.0
 ;; Keywords: abbrev, convenience, matching, ivy
 ;; Package-Requires: ((emacs "26.0")(posframe "0.1.0")(ivy "0.10.0"))
@@ -44,7 +44,8 @@
 ;; 4. ivy-posframe-display-at-frame-bottom-left
 ;; 5. ivy-posframe-display-at-window-bottom-left
 ;;    [[./snapshots/ivy-posframe-display-at-window-bottom-left.gif]]
-;; 6. ivy-posframe-display-at-point
+;; 6. ivy-posframe-display-at-frame-bottom-window-center
+;; 7. ivy-posframe-display-at-point
 ;;    [[./snapshots/ivy-posframe-display-at-point.gif]]
 
 ;; ** How to enable ivy-posframe
@@ -87,21 +88,20 @@
 ;;    (setq ivy-posframe-style 'point)
 ;;    #+END_EXAMPLE
 
+;; ** How to custom your ivy-posframe style
+
+;; The simplest way is:
+;; ;; #+BEGIN_EXAMPLE
+;; (defun ivy-posframe-display-at-XXX (str)
+;;   (ivy-posframe-display str 'your-own-poshandler-function))
+;; (ivy-posframe-setup) ; This line is need.
+;; ;; #+END_EXAMPLE
 
 ;;; Code:
 ;; * ivy-posframe's code
 (require 'cl-lib)
 (require 'posframe)
 (require 'ivy)
-
-(dolist (f '(ivy-posframe-display
-             ivy-posframe-display-at-frame-center
-             ivy-posframe-display-at-window-center
-             ivy-posframe-display-at-frame-bottom-left
-             ivy-posframe-display-at-window-bottom-left
-             ivy-posframe-display-at-point))
-  (push `(,f :cleanup ivy-posframe-cleanup)
-        ivy-display-functions-props))
 
 (defgroup ivy-posframe nil
   "Using posframe to show ivy"
@@ -132,13 +132,16 @@ When nil, Using current frame's font as fallback."
     (frame-center  . posframe-poshandler-frame-center)
     (window-bottom-left . posframe-poshandler-window-bottom-left-corner)
     (frame-bottom-left . posframe-poshandler-frame-bottom-left-corner)
+    (frame-bottom-window-center . (lambda (info)
+                                    (cons (car (posframe-poshandler-window-center info))
+                                          (cdr (posframe-poshandler-frame-bottom-left-corner info)))))
     (point . posframe-poshandler-point-bottom-left-corner))
   "Alist of ivy posframe styles.")
 
 ;; Fix warn
 (defvar emacs-basic-display)
 
-(defun ivy-posframe-display (str &optional style)
+(defun ivy-posframe-display (str &optional style-or-poshandler)
   "Show STR in ivy's posframe."
   (if (not (ivy-posframe-workable-p))
       (ivy-display-function-fallback str)
@@ -150,8 +153,11 @@ When nil, Using current frame's font as fallback."
        (with-current-buffer (get-buffer-create " *Minibuf-1*")
          (concat (buffer-string) "  " str))
        :position (point)
-       :poshandler (cdr (assq (or style ivy-posframe-style)
-                              ivy-posframe-style-alist))
+       :poshandler
+       (if (functionp style-or-poshandler)
+           style-or-poshandler
+         (cdr (assq (or style-or-poshandler ivy-posframe-style)
+                    ivy-posframe-style-alist)))
        :background-color (face-attribute 'ivy-posframe :background)
        :foreground-color (face-attribute 'ivy-posframe :foreground)
        :height ivy-height
@@ -170,6 +176,9 @@ When nil, Using current frame's font as fallback."
 (defun ivy-posframe-display-at-frame-bottom-left (str)
   (ivy-posframe-display str 'frame-bottom-left))
 
+(defun ivy-posframe-display-at-frame-bottom-window-center (str)
+  (ivy-posframe-display str 'frame-bottom-window-center))
+
 (defun ivy-posframe-display-at-point (str)
   (ivy-posframe-display str 'point))
 
@@ -184,6 +193,19 @@ When nil, Using current frame's font as fallback."
        (not (or noninteractive
                 emacs-basic-display
                 (not (display-graphic-p))))))
+
+(defun ivy-posframe-setup ()
+  "Regedit all display functions of ivy-posframe to `ivy-display-functions-props'."
+  (interactive)
+  (mapatoms
+   #'(lambda (func)
+       (when (and (functionp func)
+                  (string-match-p "^ivy-posframe-display" (symbol-name func))
+                  (not (assq func ivy-display-functions-props)))
+         (push `(,func :cleanup ivy-posframe-cleanup)
+               ivy-display-functions-props)))))
+
+(ivy-posframe-setup)
 
 (provide 'ivy-posframe)
 
