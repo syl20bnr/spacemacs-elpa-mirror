@@ -43,27 +43,11 @@ NOTE: ivy-posframe requires Emacs 26
    (push '(t . ivy-posframe-display) ivy-display-functions-alist)
    #+END_EXAMPLE
 
-If you use `ivy-posframe-display', you can use `ivy-posframe-style'
-to set show style.
-
-1. window-bottom-left style
-   #+BEGIN_EXAMPLE
-   (setq ivy-posframe-style 'window-bottom-left)
-   #+END_EXAMPLE
-2. Window-center style
-   #+BEGIN_EXAMPLE
-   (setq ivy-posframe-style 'window-center)
-   #+END_EXAMPLE
-3. Point style
-   #+BEGIN_EXAMPLE
-   (setq ivy-posframe-style 'point)
-   #+END_EXAMPLE
-
 ** How to custom your ivy-posframe style
 
 The simplest way is:
 #+BEGIN_EXAMPLE
 (defun ivy-posframe-display-at-XXX (str)
-  (ivy-posframe-display str 'your-own-poshandler-function))
-(ivy-posframe-setup) ; This line is need.
+  (ivy-posframe--display str #'your-own-poshandler-function))
+(ivy-posframe-setup) ; This line is needed.
 #+END_EXAMPLE

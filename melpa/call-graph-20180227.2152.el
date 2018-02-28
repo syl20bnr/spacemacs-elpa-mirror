@@ -5,7 +5,7 @@
 ;; Author: Huming Chen <chenhuming@gmail.com>
 ;; Maintainer: Huming Chen <chenhuming@gmail.com>
 ;; URL: https://github.com/beacoder/call-graph
-;; Package-Version: 20180226.156
+;; Package-Version: 20180227.2152
 ;; Version: 0.0.6
 ;; Keywords: programming, convenience
 ;; Created: 2018-01-07
@@ -44,6 +44,7 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'hierarchy)
 (require 'tree-mode)
 (require 'ivy)
@@ -99,8 +100,8 @@
                (:constructor nil)
                (:constructor call-graph--make)
                (:conc-name call-graph--))
-  (callers (make-hash-table :test 'equal)) ; map func to its callers
-  (locations (make-hash-table :test 'equal))) ; map func <- caller to its locations
+  (callers (make-hash-table :test #'equal)) ; map func to its callers
+  (locations (make-hash-table :test #'equal))) ; map func <- caller to its locations
 
 (defun call-graph-new ()
   "Create a call-graph and return it."
@@ -119,11 +120,11 @@
                   (intern (concat (symbol-name full-func) " <- " (symbol-name full-caller))))) ; "class::callee <- class::caller" as key
 
             ;; populate caller data
-            (pushnew full-caller (map-elt (call-graph--callers call-graph) short-func (list)))
+            (cl-pushnew full-caller (map-elt (call-graph--callers call-graph) short-func (list)))
 
             ;; populate location data
-            (pushnew location (map-elt (call-graph--locations call-graph) func-caller-key (list))
-                     :test 'equal)))))))
+            (cl-pushnew location (map-elt (call-graph--locations call-graph) func-caller-key (list))
+                        :test #'equal)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
@@ -290,11 +291,14 @@ With prefix argument, discard cached data and re-generate reference data."
               (if (use-region-p)
                   (prog1 (intern (buffer-substring-no-properties (region-beginning) (region-end)))
                     (deactivate-mark))
-                (symbol-at-point))))
-    (when (or current-prefix-arg (null call-graph--default-instance))
-      (setq call-graph--default-instance (call-graph-new)))
+                (symbol-at-point)))
+             (call-graph
+              (or call-graph--default-instance (setq call-graph--default-instance (call-graph-new)))))
+    (when current-prefix-arg
+      (setf (call-graph--callers call-graph) nil
+            (call-graph--locations call-graph) nil))
     (save-mark-and-excursion
-      (call-graph--create call-graph--default-instance func call-graph-initial-max-depth))))
+     (call-graph--create call-graph func call-graph-initial-max-depth))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Call-Graph Operations
