@@ -710,7 +710,9 @@
 	    (:keywords))])
  (multishell .
 	     [(1 1 5)
-	      nil "Easily use multiple shell buffers, local and remote." tar
+	      ((cl-lib
+		(0 5)))
+	      "Easily use multiple shell buffers, local and remote" tar
 	      ((:keywords "processes")
 	       (:url . "https://github.com/kenmanheimer/EmacsMultishell"))])
  (muse .
@@ -842,6 +844,13 @@
 	 nil "Texas hold 'em poker" single
 	 ((:url . "http://elpa.gnu.org/packages/poker.html")
 	  (:keywords "games"))])
+ (posframe .
+	   [(0 1 0)
+	    ((emacs
+	      (26)))
+	    "Pop a posframe (just a frame) at point" single
+	    ((:url . "https://github.com/tumashu/posframe")
+	     (:keywords "tooltip"))])
  (psgml .
 	[(1 3 4)
 	 nil "SGML-editing mode with parsing support" tar
