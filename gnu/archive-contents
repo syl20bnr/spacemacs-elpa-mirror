@@ -857,7 +857,7 @@
 	 ((:keywords "languages")
 	  (:url . "http://elpa.gnu.org/packages/psgml.html"))])
  (python .
-	 [(0 26)
+	 [(0 26 1)
 	  ((emacs
 	    (24 1))
 	   (cl-lib

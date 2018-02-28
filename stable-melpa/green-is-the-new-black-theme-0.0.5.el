@@ -3,9 +3,9 @@
 ;; Author: Fred Campos <fred.tecnologia@gmail.com>
 ;; Maintainer: Fred Campos <fred.tecnologia@gmail.com>
 ;; URL: https://github.com/fredcamps/green-is-the-new-black-emacs
-;; Package-Version: 0.0.4
+;; Package-Version: 0.0.5
 ;; Keywords: faces, themes
-;; Version: 0.0.3
+;; Version: 0.0.5
 
 ;; Copyright (c) 2017 Fred Campos
 
@@ -31,6 +31,7 @@
   "Cool blackned green theme")
 
 (let ((gitnb-black "#000000")
+      (gitnb-heavy-grey "#1c1c1c")
       (gitnb-dark-grey "#2b2b30")
       (gitnb-grey "#898989")
       (gitnb-heavy-green "#005f00")
@@ -43,9 +44,9 @@
 
   (custom-theme-set-faces
    `green-is-the-new-black
-   `(default ((t (:background, gitnb-black :foreground, gitnb-green))))
+   `(default ((t (:background, gitnb-heavy-grey :foreground, gitnb-green))))
    `(cursor  ((t (:background, gitnb-dark-green :weight bold))))
-   `(hl-line ((t (:background, gitnb-dark-grey :weight bold))))
+   `(hl-line ((t (:background, gitnb-black :weight bold))))
    `(mode-line ((t (:box nil, :background, gitnb-black :foreground, gitnb-dark-green) )))
    `(mode-line-inactive ((t (:inherit mode-line :background, gitnb-black :foreground, gitnb-grey :box nil))))
    `(fringe ((t (:background, gitnb-dark-grey))))

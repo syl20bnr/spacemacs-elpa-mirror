@@ -5,8 +5,8 @@
 ;; Author: Huming Chen <chenhuming@gmail.com>
 ;; Maintainer: Huming Chen <chenhuming@gmail.com>
 ;; URL: https://github.com/beacoder/call-graph
-;; Package-Version: 20180227.2152
-;; Version: 0.0.6
+;; Package-Version: 20180228.200
+;; Version: 0.0.7
 ;; Keywords: programming, convenience
 ;; Created: 2018-01-07
 ;; Package-Requires: ((emacs "25.1") (hierarchy "0.7.0") (tree-mode "1.0.0") (ivy "0.10.0"))
@@ -55,7 +55,7 @@
 
 (defgroup call-graph nil
   "Customization support for the `call-graph'."
-  :version "0.0.6"
+  :version "0.0.7"
   :group 'applications)
 
 (defcustom call-graph-initial-max-depth 2
@@ -100,6 +100,7 @@
                (:constructor nil)
                (:constructor call-graph--make)
                (:conc-name call-graph--))
+  (filters (make-hash-table :test #'equal)) ; customized caller map, higher priority
   (callers (make-hash-table :test #'equal)) ; map func to its callers
   (locations (make-hash-table :test #'equal))) ; map func <- caller to its locations
 
@@ -110,14 +111,13 @@
 (defun call-graph--add-callers (call-graph func callers)
   "In CALL-GRAPH, given FUNC, add CALLERS."
   (when (and call-graph func callers)
-    (let* ((full-func func)
-           (short-func (call-graph--extract-method-name full-func))) ; method only
+    (let* ((short-func (call-graph--extract-method-name func))) ; method only
       (unless (map-elt (call-graph--callers call-graph) short-func)
         (seq-doseq (caller callers)
           (let* ((full-caller (car caller)) ; class::method
                  (location (cdr caller)) ; location
                  (func-caller-key
-                  (intern (concat (symbol-name full-func) " <- " (symbol-name full-caller))))) ; "class::callee <- class::caller" as key
+                  (intern (concat (symbol-name short-func) " <- " (symbol-name full-caller))))) ; "callee <- class::caller" as key
 
             ;; populate caller data
             (cl-pushnew full-caller (map-elt (call-graph--callers call-graph) short-func (list)))
@@ -142,8 +142,9 @@ e.g: class::method => method."
 (defun call-graph--get-func-caller-location (call-graph func caller)
   "In CALL-GRAPH, given FUNC and CALLER, return the caller postion."
   (when (and call-graph func caller)
-    (let ((func-caller-key (intern (concat (symbol-name func) " <- " (symbol-name caller))))
-          (locations (call-graph--locations call-graph)))
+    (let* ((short-func (call-graph--extract-method-name func))
+           (func-caller-key (intern (concat (symbol-name short-func) " <- " (symbol-name caller))))
+           (locations (call-graph--locations call-graph)))
       (map-elt locations func-caller-key))))
 
 (defun call-graph--get-buffer ()
@@ -241,12 +242,14 @@ CALCULATE-DEPTH is used to calculate actual depth."
   (when-let ((next-depth (and (> depth 0) (1- depth)))
              (hierarchy call-graph--default-hierarchy)
              (short-func (call-graph--extract-method-name func))
-             (callers (map-elt (call-graph--callers call-graph) short-func (list))))
+             (callers
+              (or (map-elt (call-graph--filters call-graph) func (list))
+                  (map-elt (call-graph--callers call-graph) short-func (list)))))
 
     ;; populate hierarchy data.
     (seq-doseq (caller callers)
       (hierarchy-add-tree hierarchy caller (lambda (item) (when (eq item caller) func)))
-      (message "insert child %s under parent %s" (symbol-name caller) (symbol-name func)))
+      (message "Insert child %s under parent %s" (symbol-name caller) (symbol-name func)))
 
     ;; recursively populate callers.
     (seq-doseq (caller callers)
@@ -266,7 +269,9 @@ CALCULATE-DEPTH is used to calculate actual depth."
 
                ;; use propertize to avoid this error => Attempt to modify read-only object
                ;; @see https://stackoverflow.com/questions/24565068/emacs-text-is-read-only
-               (insert (propertize caller 'caller-location location))))
+               (insert (propertize caller 'caller-location location
+                                   'caller-name tree-item
+                                   'callee-name parent))))
            (call-graph--get-buffer)))
     (when switch-buffer
       (switch-to-buffer-other-window hierarchy-buffer))
@@ -332,9 +337,34 @@ With prefix argument, discard cached data and re-generate reference data."
   "Within buffer <*call-graph*>, generate new `call-graph' for symbol at point."
   (interactive)
   (save-mark-and-excursion
-    (when (get-char-property (point) 'button)
-      (forward-char 4))
-    (call-graph)))
+   (when (get-char-property (point) 'button)
+     (forward-char 4))
+   (call-graph)))
+
+(defun call-graph-remove-caller ()
+  "Within buffer <*call-graph*>, remove caller at point."
+  (interactive)
+  (when (get-char-property (point) 'button)
+    (forward-char 4))
+  (when-let ((call-graph call-graph--default-instance)
+             (callee (get-text-property (point) 'callee-name))
+             (caller (get-text-property (point) 'caller-name))
+             (short-func (call-graph--extract-method-name callee))
+             (callers (map-elt (call-graph--callers call-graph) short-func (list)))
+             (deep-copy-of-callers (seq-map #'identity callers))
+             (filters
+              (or (map-elt (call-graph--filters call-graph) callee deep-copy-of-callers)
+                  (setf (map-elt (call-graph--filters call-graph) callee) deep-copy-of-callers))))
+    (tree-mode-delete-match (symbol-name caller))
+    (setf (map-elt (call-graph--filters call-graph) callee)
+          (remove caller filters))))
+
+(defun call-graph-reset-caller-filter ()
+  "Within buffer <*call-graph*>, reset caller filter."
+  (interactive)
+  (when-let ((call-graph call-graph--default-instance))
+    (setf (call-graph--filters call-graph) nil)
+    (message "Reset caller filter done")))
 
 (defun call-graph-quit ()
   "Quit `call-graph'."
@@ -389,11 +419,12 @@ With prefix argument, discard cached data and re-generate reference data."
     (define-key map (kbd "p") 'widget-backward)
     (define-key map (kbd "n") 'widget-forward)
     (define-key map (kbd "q") 'call-graph-quit)
-    (define-key map (kbd "d") 'call-graph-display-file-at-point)
-    (define-key map (kbd "o") 'call-graph-goto-file-at-point)
     (define-key map (kbd "+") 'call-graph-expand)
     (define-key map (kbd "_") 'call-graph-collapse)
+    (define-key map (kbd "o") 'call-graph-display-file-at-point)
     (define-key map (kbd "g") 'call-graph-at-point)
+    (define-key map (kbd "d") 'call-graph-remove-caller)
+    (define-key map (kbd "f") 'call-graph-reset-caller-filter)
     (define-key map (kbd "<RET>") 'call-graph-goto-file-at-point)
     map)
   "Keymap for `call-graph' major mode.")
