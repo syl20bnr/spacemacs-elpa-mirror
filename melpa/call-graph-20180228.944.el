@@ -5,8 +5,8 @@
 ;; Author: Huming Chen <chenhuming@gmail.com>
 ;; Maintainer: Huming Chen <chenhuming@gmail.com>
 ;; URL: https://github.com/beacoder/call-graph
-;; Package-Version: 20180228.200
-;; Version: 0.0.7
+;; Package-Version: 20180228.944
+;; Version: 0.0.8
 ;; Keywords: programming, convenience
 ;; Created: 2018-01-07
 ;; Package-Requires: ((emacs "25.1") (hierarchy "0.7.0") (tree-mode "1.0.0") (ivy "0.10.0"))
@@ -55,7 +55,7 @@
 
 (defgroup call-graph nil
   "Customization support for the `call-graph'."
-  :version "0.0.7"
+  :version "0.0.8"
   :group 'applications)
 
 (defcustom call-graph-initial-max-depth 2
@@ -161,8 +161,8 @@ e.g: class::method => method."
 (defun call-graph--visit-function (func-location)
   "Visit function location FUNC-LOCATION."
   (when-let ((temp-split (split-string func-location ":"))
-             (file-name (seq-elt temp-split 0))
-             (line-nb-str (seq-elt temp-split 1))
+             (file-name (car temp-split))
+             (line-nb-str (cadr temp-split))
              (line-nb (string-to-number line-nb-str))
              (is-valid-file (file-exists-p file-name))
              (is-valid-nb (integerp line-nb)))
@@ -171,9 +171,9 @@ e.g: class::method => method."
 
 (defun call-graph--find-caller (reference)
   "Given a REFERENCE, return the caller as (caller . location)."
-  (when-let ((tmp-val (split-string reference ":"))
-             (file-name (seq-elt tmp-val 0))
-             (line-nb-str (seq-elt tmp-val 1))
+  (when-let ((tmp-split (split-string reference ":"))
+             (file-name (car tmp-split))
+             (line-nb-str (cadr tmp-split))
              (line-nb (string-to-number line-nb-str))
              (is-valid-file (file-exists-p file-name))
              (is-valid-nb (integerp line-nb)))
@@ -264,14 +264,11 @@ CALCULATE-DEPTH is used to calculate actual depth."
            call-graph--default-hierarchy
            (lambda (tree-item _)
              (let* ((caller (symbol-name tree-item))
-                    (parent (hierarchy-parent call-graph--default-hierarchy tree-item))
-                    (location (call-graph--get-func-caller-location call-graph parent tree-item)))
+                    (parent (hierarchy-parent call-graph--default-hierarchy tree-item)))
 
                ;; use propertize to avoid this error => Attempt to modify read-only object
                ;; @see https://stackoverflow.com/questions/24565068/emacs-text-is-read-only
-               (insert (propertize caller 'caller-location location
-                                   'caller-name tree-item
-                                   'callee-name parent))))
+               (insert (propertize caller 'caller-name tree-item 'callee-name parent))))
            (call-graph--get-buffer)))
     (when switch-buffer
       (switch-to-buffer-other-window hierarchy-buffer))
@@ -288,15 +285,15 @@ CALCULATE-DEPTH is used to calculate actual depth."
     (call-graph--display-hierarchy call-graph)))
 
 ;;;###autoload
-(defun call-graph ()
-  "Generate `call-graph' for function at point or function in active selection.
+(defun call-graph (&optional func)
+  "Generate `call-graph' for FUNC / func-at-point / func-in-active-rigion.
 With prefix argument, discard cached data and re-generate reference data."
   (interactive)
   (when-let ((func
-              (if (use-region-p)
-                  (prog1 (intern (buffer-substring-no-properties (region-beginning) (region-end)))
-                    (deactivate-mark))
-                (symbol-at-point)))
+              (or func (if (use-region-p)
+                           (prog1 (intern (buffer-substring-no-properties (region-beginning) (region-end)))
+                             (deactivate-mark))
+                         (symbol-at-point))))
              (call-graph
               (or call-graph--default-instance (setq call-graph--default-instance (call-graph-new)))))
     (when current-prefix-arg
@@ -309,23 +306,45 @@ With prefix argument, discard cached data and re-generate reference data."
 ;; Call-Graph Operations
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun call-graph-select-caller-location ()
+  "Select caller location as default location for function at point."
+  (interactive)
+  (save-mark-and-excursion
+   (when (get-char-property (point) 'button)
+     (forward-char 4))
+   (when-let ((call-graph call-graph--default-instance)
+              (callee (get-text-property (point) 'callee-name))
+              (caller (get-text-property (point) 'caller-name))
+              (func-caller-key
+               (intern (concat (symbol-name (call-graph--extract-method-name callee)) " <- " (symbol-name caller))))
+              (locations (call-graph--get-func-caller-location call-graph callee caller))
+              (has-many (> (seq-length locations) 1)))
+     (ivy-read "Caller Locations:" locations
+               :action (lambda (func-location)
+                         (while (not (equal func-location (car locations)))
+                           (setq locations
+                                 (nconc (cdr locations) (cons (car locations) ())))) ; put selected location upfront
+                         (setf (map-elt (call-graph--locations call-graph) func-caller-key) locations)
+                         (call-graph--visit-function func-location))))))
+
 (defun call-graph-visit-file-at-point ()
   "Visit occurrence on the current line."
-  (when-let ((locations (get-text-property (point) 'caller-location))
-             (location (seq-elt locations 0)))
-    (if (> (seq-length locations) 1)
-        (ivy-read "Caller Locations:" locations
-                  :action (lambda (func-location)
-                            (call-graph--visit-function func-location)))
-      (call-graph--visit-function location))))
+  (when-let ((call-graph call-graph--default-instance)
+             (callee (get-text-property (point) 'callee-name))
+             (caller (get-text-property (point) 'caller-name))
+             (locations (call-graph--get-func-caller-location call-graph callee caller))
+             (location (car locations)))
+    (call-graph--visit-function location)
+    (when (> (seq-length locations) 1)
+      (message "Multiple locations for this function, select with `call-graph-select-caller-location'"))))
 
 (defun call-graph-goto-file-at-point ()
   "Go to the occurrence on the current line."
   (interactive)
   (save-mark-and-excursion
-    (when (get-char-property (point) 'button)
-      (forward-char 4))
-    (call-graph-visit-file-at-point)))
+   (when (get-char-property (point) 'button)
+     (forward-char 4))
+   (call-graph-visit-file-at-point)))
 
 (defun call-graph-display-file-at-point ()
   "Display in another window the occurrence the current line describes."
@@ -339,7 +358,8 @@ With prefix argument, discard cached data and re-generate reference data."
   (save-mark-and-excursion
    (when (get-char-property (point) 'button)
      (forward-char 4))
-   (call-graph)))
+   (when-let ((caller (get-text-property (point) 'caller-name)))
+     (call-graph caller))))
 
 (defun call-graph-remove-caller ()
   "Within buffer <*call-graph*>, remove caller at point."
@@ -421,10 +441,11 @@ With prefix argument, discard cached data and re-generate reference data."
     (define-key map (kbd "q") 'call-graph-quit)
     (define-key map (kbd "+") 'call-graph-expand)
     (define-key map (kbd "_") 'call-graph-collapse)
-    (define-key map (kbd "o") 'call-graph-display-file-at-point)
+    (define-key map (kbd "o") 'call-graph-goto-file-at-point)
     (define-key map (kbd "g") 'call-graph-at-point)
     (define-key map (kbd "d") 'call-graph-remove-caller)
     (define-key map (kbd "f") 'call-graph-reset-caller-filter)
+    (define-key map (kbd "l") 'call-graph-select-caller-location)
     (define-key map (kbd "<RET>") 'call-graph-goto-file-at-point)
     map)
   "Keymap for `call-graph' major mode.")

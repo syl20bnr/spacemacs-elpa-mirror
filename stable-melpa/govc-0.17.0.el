@@ -2,7 +2,7 @@
 
 ;; Author: The govc developers
 ;; URL: https://github.com/vmware/govmomi/tree/master/govc/emacs
-;; Package-Version: 0.16.0
+;; Package-Version: 0.17.0
 ;; Keywords: convenience
 ;; Version: 0.16.0
 ;; Package-Requires: ((emacs "24.3") (dash "1.5.0") (s "1.9.0") (magit-popup "2.0.50") (json-mode "1.6.0"))
@@ -621,7 +621,7 @@ returned, assuming that's what the user wanted."
   "Events via govc events -n `govc-max-events'."
   (interactive)
   (govc-shell-command
-   (list "events" "-n" govc-max-events (if current-prefix-arg "-f") (govc-selection)) "*govc-event*"))
+   (list "events" "-l" "-n" govc-max-events (if current-prefix-arg "-f") (govc-selection)) "*govc-event*"))
 
 (defun govc-tasks ()
   "Tasks via govc tasks."

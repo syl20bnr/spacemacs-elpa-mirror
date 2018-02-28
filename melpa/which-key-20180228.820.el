@@ -5,7 +5,7 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-which-key
-;; Package-Version: 20180228.507
+;; Package-Version: 20180228.820
 ;; Version: 3.1.0
 ;; Keywords:
 ;; Package-Requires: ((emacs "24.4"))
@@ -1688,20 +1688,27 @@ ones. PREFIX is for internal use and should not be used."
      (lambda (ev def)
        (let* ((key (append prefix (list ev)))
               (key-desc (key-description key)))
-         (unless (string-match-p which-key--ignore-keys-regexp key-desc)
-           (if (and all (keymapp def))
+         (unless (or (string-match-p which-key--ignore-keys-regexp key-desc)
+                     (eq ev 'menu-bar))
+           (if (and (keymapp def)
+                    (or all
+                        ;; event 27 is escape, so this will pick up meta
+                        ;; bindings and hopefully not too much more
+                        (and (numberp ev) (= ev 27))))
                (setq bindings
                      (append bindings
                              (which-key--get-keymap-bindings def t key)))
-             (cl-pushnew
-              (cons key-desc
-                    (cond
-                     ((keymapp def) "Prefix Command")
-                     ((symbolp def) (copy-sequence (symbol-name def)))
-                     ((eq 'lambda (car-safe def)) "lambda")
-                     ((eq 'menu-item (car-safe def)) "menu-item")
-                     (t (format "%s" def))))
-              bindings :test (lambda (a b) (string= (car a) (car b))))))))
+             (when def
+               (cl-pushnew
+                (cons key-desc
+                      (cond
+                       ((keymapp def) "Prefix Command")
+                       ((symbolp def) (copy-sequence (symbol-name def)))
+                       ((eq 'lambda (car-safe def)) "lambda")
+                       ((eq 'menu-item (car-safe def)) "menu-item")
+                       ((stringp def) def)
+                       (t "unknown")))
+                bindings :test (lambda (a b) (string= (car a) (car b)))))))))
      keymap)
     bindings))
 

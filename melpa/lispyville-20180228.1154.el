@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/lispyville
-;; Package-Version: 20180218.1555
+;; Package-Version: 20180228.1154
 ;; Created: March 03, 2016
 ;; Keywords: vim, evil, lispy, lisp, parentheses
 ;; Package-Requires: ((lispy "0") (evil "1.2.12") (cl-lib "0.5") (emacs "24.4"))
@@ -420,7 +420,9 @@ This is not like the default `evil-yank-line'."
                     (goto-char (line-end-position))
                     (not (lispy--in-comment-p))))
          (join-line)
-         (evil-insert-newline-below))
+         (while (progn (forward-char)
+                       (lispyville--at-right-p)))
+         (newline-and-indent))
        ;; fix indentation (when closing delimiter(s) on empty line)
        (lispy--indent-for-tab)
        (when (lispyville--at-left-p)

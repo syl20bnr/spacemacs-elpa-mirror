@@ -8,7 +8,7 @@
 ;;         Cornelius Mika <cornelius.mika@gmail.com>
 ;; Maintainer: Ryan C. Thompson <rct@thompsonclan.org>
 ;; URL: http://github.com/DarwinAwardWinner/amx/
-;; Package-Version: 20180203.1043
+;; Package-Version: 20180228.927
 ;; Package-Requires: ((emacs "24.4") (s "0"))
 ;; Version: 4.0
 ;; Keywords: convenience, usability
@@ -286,7 +286,7 @@ does not correspond to a defined command."
       cmd))
    ((stringp cmd)
     (amx-get-command-symbol
-     (funcall (if force #'intern #'intern-soft) command-name)
+     (funcall (if force #'intern #'intern-soft) cmd)
      force))
    ((null cmd)
     nil)
