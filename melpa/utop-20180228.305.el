@@ -3,7 +3,7 @@
 ;; Copyright: (c) 2011, Jeremie Dimino <jeremie@dimino.org>
 ;; Author: Jeremie Dimino <jeremie@dimino.org>
 ;; URL: https://github.com/diml/utop
-;; Package-Version: 20180226.729
+;; Package-Version: 20180228.305
 ;; Licence: BSD3
 ;; Version: 1.11
 ;; Package-Requires: ((emacs "24"))
@@ -231,6 +231,26 @@ end-pos-with-comments)." )
 Non-nil means skip to the end of the phrase after evaluation in the
 Caml toplevel")
 
+(defvar utop--complete-k (lambda (_candidates) '())
+  "continuation function to populate the candidates for the company
+backend")
+
+(defvar utop-protocol-version "0"
+  "detected version of utop protocol. 0 for unknown or version pre")
+
+(defvar utop--read-version nil
+  "whether we've tried to detect the utop version")
+
+(defvar utop--company-loaded nil)
+
+(defun utop--supports-company ()
+  (and
+   ;; version< only works on version numbers 
+   (condition-case nil
+       (version<= "1" utop-protocol-version)
+     (error t))
+   (featurep 'company)))
+
 ;; +-----------------------------------------------------------------+
 ;; | Compability with different ocaml major modes                    |
 ;; +-----------------------------------------------------------------+
@@ -335,11 +355,9 @@ it is started."
     (setq utop-input-prompt-max utop-prompt-max)
     ;; Send all lines to utop
     (utop-send-string cmd)
-    (while lines
+    (dolist (line lines)
       ;; Send the line
-      (utop-send-string (concat "data:" (car lines) "\n"))
-      ;; Remove it and continue
-      (setq lines (cdr lines)))
+      (utop-send-string (concat "data:" line "\n")))
     (utop-send-string "end:\n")))
 
 (defun utop-last-type ()
@@ -620,11 +638,14 @@ it is started."
       ;; End of completion
       ("completion-stop"
        (utop-set-state 'edit)
-       (if (> (length utop-completion) 1)
-           (with-current-buffer utop-complete-buffer
-             (with-output-to-temp-buffer "*Completions*"
-               (display-completion-list (nreverse utop-completion))))
-         (minibuffer-hide-completions))
+       (if (utop--supports-company)
+           (funcall utop--complete-k (nreverse utop-completion))
+         (progn
+           (if (> (length utop-completion) 1)
+               (with-current-buffer utop-complete-buffer
+                 (with-output-to-temp-buffer "*Completions*"
+                   (display-completion-list (nreverse utop-completion))))
+             (minibuffer-hide-completions))))
        (setq utop-completion nil)))))
 
 (defun utop-process-output (_process output)
@@ -636,10 +657,19 @@ it is started."
      ;; Split lines. Each line contains exactly one command
      (let ((lines (split-string utop-output "\n")))
        (while (>= (length lines) 2)
-         ;; Process the first line
-         (utop-process-line (car lines))
-         ;; Remove it and continue
-         (setq lines (cdr lines)))
+         ;; process first line. if we haven't tried reading the version, we'll
+         ;; trying to do it now.
+         (let ((line (car lines)))
+           (if utop--read-version
+               (utop-process-line line)
+             (progn
+               (save-match-data
+                 (if (string-match "protocol-version:\\([0-9]+\\)" line)
+                     (setq utop-protocol-version (match-string 1 line))
+                   (utop-process-line line)))
+               (setq utop--read-version t)))
+           ;; Remove it and continue
+           (setq lines (cdr lines))))
        ;; When the list contains only one element, then this is either
        ;; the end of commands, either an unterminated one, so we save
        ;; it for later
@@ -712,12 +742,13 @@ If ADD-TO-HISTORY is t then the input will be added to history."
     ;; We are now waiting for completion
     (utop-set-state 'comp)
     ;; Send all lines to utop
-    (utop-send-string "complete:\n")
-    (while lines
+    (utop-send-string
+     (if (utop--supports-company)
+         "complete-company:\n"
+       "complete:\n"))
+    (dolist (line lines)
       ;; Send the line
-      (utop-send-string (concat "data:" (car lines) "\n"))
-      ;; Remove it and continue
-      (setq lines (cdr lines)))
+      (utop-send-string (concat "data:" line "\n")))
     (utop-send-string "end:\n")))
 
 (defun utop-complete ()
@@ -940,13 +971,12 @@ defaults to 0."
     ;; Set the header column size to the maximal length
     (setcdr (elt tabulated-list-format 0) (list max-name-length t))
     ;; Build a list, accumulating in tabulated-list-entries
-    (while packages
-      (let* ((package (car packages))
+    (dolist (package packages)
+      (let* ((package package)
              (name (car package))
              (version (cdr package)))
         (push (list package (vector name version))
-              tabulated-list-entries))
-      (setq packages (cdr packages))))
+              tabulated-list-entries))))
   (setq tabulated-list-entries (nreverse tabulated-list-entries)))
 
 (defun utop-package-printer (_id cols)
@@ -1122,6 +1152,10 @@ See https://github.com/diml/utop for configuration information."))
   (make-local-variable 'utop-phrase-terminator)
   (make-local-variable 'utop-pending-position)
   (make-local-variable 'utop-pending-entry)
+  (make-local-variable 'utop-protocol-version)
+
+  (make-local-variable 'utop--complete-k)
+  (make-local-variable 'utop--read-version)
 
   ;; Set the hook to call before changing the buffer
   (add-hook 'before-change-functions 'utop-before-change nil t)
@@ -1131,6 +1165,10 @@ See https://github.com/diml/utop for configuration information."))
 
   ;; Save history before killing the buffer
   (add-hook 'kill-buffer-query-functions (lambda () (utop-save-history) t) nil t)
+
+  ;; add company completion hook:
+  (with-eval-after-load 'company
+    (add-to-list 'company-backends #'utop-company-backend))
 
   ;; Start utop
   (utop-start (utop-arguments)))
@@ -1177,6 +1215,20 @@ Special keys for utop:
         ;; Put it in utop mode
         (with-current-buffer buf (utop-mode)))))
     buf))
+
+(defun utop-company-backend (command &optional _arg &rest ignored)
+  "company backend for utop completions"
+  (interactive (list 'interactive))
+  (pcase command
+    ('interactive (company-begin-backend 'utop-company-backend))
+    ('sorted t)
+    ('prefix (company-grab-symbol))
+    ('candidates
+     (progn
+       `(:async
+         . ,(lambda (k)
+              (setq utop--complete-k k)
+              (call-interactively #'utop-complete)))))))
 
 (provide 'utop-minor-mode)
 (provide 'utop)
