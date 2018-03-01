@@ -2,9 +2,9 @@
 ;;
 ;; Author: Thomas Luquet <thomas@luquet.net>
 ;; Keywords: multimedia, playerctl, music
-;; Package-Version: 20170414.156
+;; Package-Version: 20180301.554
 ;; URL: https://github.com/thomasluquet/playerctl.el
-;; Version: 0.0.1
+;; Version: 0.0.2
 ;;
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -30,9 +30,15 @@
 ;;; Code:
 
 (defun playerctl--command (cmd msg)
-  "Pass CMD to playerctl and display MSG."
-  (start-process "playerctl.el" nil "playerctl" cmd)
-  (message msg))
+  (let ((proc (start-process "playerctl.el" "foo" "playerctl" cmd)))
+    (if (equal cmd "status")
+        (set-process-filter proc (lambda
+                                  (proc line)
+                                  (message "Status : %s" line)))
+      (message msg)
+        )
+    )
+  )
 
 ;;;###autoload
 (defun playerctl-play-pause-song()
@@ -57,6 +63,13 @@
   "Stop song."
   (interactive)
   (playerctl--command "stop" "Stop music"))
+
+;;;###autoload
+(defun playerctl-status()
+  "Get status of playerctl."
+  (interactive)
+  (playerctl--command "status" "status"))
+
 
 
 (provide 'playerctl)

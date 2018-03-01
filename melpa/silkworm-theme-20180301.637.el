@@ -4,7 +4,7 @@
 
 ;; Author: Martin Haesler
 ;; Version: 0.1
-;; Package-Version: 20160217.509
+;; Package-Version: 20180301.637
 ;; Package-Requires: ((emacs "24"))
 ;; Created with ThemeCreator, https://github.com/mswift42/themecreator.
 
@@ -48,6 +48,10 @@
        (var     "#a74f31")
        (warning "#ff1276")
        (warning2 "#ff4d12"))
+   (custom-theme-set-variables
+    'silkworm
+    `(ansi-color-names-vector
+      [,fg1 ,var ,keyword ,type ,builtin ,func ,str ,bg4]))
    (custom-theme-set-faces
    'silkworm
         `(default ((,class (:background ,bg1 :foreground ,fg1))))

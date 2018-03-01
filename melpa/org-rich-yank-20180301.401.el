@@ -4,7 +4,7 @@
 
 ;; Author: Kevin Brubeck Unhammer <unhammer@fsfe.org>
 ;; Version: 0.1.1
-;; Package-Version: 20180218.156
+;; Package-Version: 20180301.401
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: convenience, hypermedia, org
 
@@ -65,10 +65,21 @@ ARGS ignored."
                             ""
                             str))
 
+(defun org-rich-yank--store-link ()
+  "Store the link using `org-store-link' without erroring out."
+  (with-demoted-errors
+      (if (eq major-mode 'gnus-article-mode)
+          ;; Workaround for possible bug in org-gnus-store-link: If
+          ;; you've moved point in the summary, org-store-link from
+          ;; the article will give the wrong link
+          (save-window-excursion (gnus-article-show-summary)
+                                 (org-store-link nil))
+        (org-store-link nil))))
+
 (defun org-rich-yank--link ()
   "Get an org-link to the current kill."
   (with-current-buffer org-rich-yank--buffer
-    (let ((link (with-demoted-errors (org-store-link nil))))
+    (let ((link (org-rich-yank--store-link)))
       ;; TODO: make it (file-relative-name … dir-of-org-file) if
       ;; they're in the same projectile-project
       (when link (concat link "\n")))))

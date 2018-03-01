@@ -5,7 +5,7 @@
 ;; Author: Huming Chen <chenhuming@gmail.com>
 ;; Maintainer: Huming Chen <chenhuming@gmail.com>
 ;; URL: https://github.com/beacoder/call-graph
-;; Package-Version: 20180228.944
+;; Package-Version: 20180301.708
 ;; Version: 0.0.8
 ;; Keywords: programming, convenience
 ;; Created: 2018-01-07
@@ -142,9 +142,10 @@ e.g: class::method => method."
 (defun call-graph--get-func-caller-location (call-graph func caller)
   "In CALL-GRAPH, given FUNC and CALLER, return the caller postion."
   (when (and call-graph func caller)
-    (let* ((short-func (call-graph--extract-method-name func))
-           (func-caller-key (intern (concat (symbol-name short-func) " <- " (symbol-name caller))))
-           (locations (call-graph--locations call-graph)))
+    (let ((locations (call-graph--locations call-graph))
+          (func-caller-key
+           (if (eq 'root-function func) 'root-function ; special treatment for root-function
+             (intern (concat (symbol-name (call-graph--extract-method-name func)) " <- " (symbol-name caller))))))
       (map-elt locations func-caller-key))))
 
 (defun call-graph--get-buffer ()
@@ -255,16 +256,16 @@ CALCULATE-DEPTH is used to calculate actual depth."
     (seq-doseq (caller callers)
       (call-graph--build-hierarchy call-graph caller next-depth))))
 
-(defun call-graph--display-hierarchy (call-graph)
-  "Display CALL-GRAPH in hierarchy."
+(defun call-graph--display-hierarchy ()
+  "Display `call-graph' in hierarchy."
   (let ((switch-buffer (not (eq major-mode 'call-graph-mode)))
         hierarchy-buffer)
     (setq hierarchy-buffer
           (hierarchy-tree-display
            call-graph--default-hierarchy
            (lambda (tree-item _)
-             (let* ((caller (symbol-name tree-item))
-                    (parent (hierarchy-parent call-graph--default-hierarchy tree-item)))
+             (let ((caller (symbol-name tree-item))
+                   (parent (or (hierarchy-parent call-graph--default-hierarchy tree-item) 'root-function)))
 
                ;; use propertize to avoid this error => Attempt to modify read-only object
                ;; @see https://stackoverflow.com/questions/24565068/emacs-text-is-read-only
@@ -282,7 +283,7 @@ CALCULATE-DEPTH is used to calculate actual depth."
           call-graph--current-depth 0)
     (call-graph--search-callers call-graph func depth)
     (call-graph--build-hierarchy call-graph func depth)
-    (call-graph--display-hierarchy call-graph)))
+    (call-graph--display-hierarchy)))
 
 ;;;###autoload
 (defun call-graph (&optional func)
@@ -296,9 +297,16 @@ With prefix argument, discard cached data and re-generate reference data."
                          (symbol-at-point))))
              (call-graph
               (or call-graph--default-instance (setq call-graph--default-instance (call-graph-new)))))
+
     (when current-prefix-arg
       (setf (call-graph--callers call-graph) nil
-            (call-graph--locations call-graph) nil))
+            (call-graph--locations call-graph) nil)) ; clear cached reference
+
+    (when-let ((file-name (buffer-file-name))
+               (line-nb (line-number-at-pos))
+               (location (concat file-name ":" (number-to-string line-nb))))
+      (setf (map-elt (call-graph--locations call-graph) 'root-function) (list location))) ; save root function location
+
     (save-mark-and-excursion
      (call-graph--create call-graph func call-graph-initial-max-depth))))
 
@@ -444,7 +452,6 @@ With prefix argument, discard cached data and re-generate reference data."
     (define-key map (kbd "o") 'call-graph-goto-file-at-point)
     (define-key map (kbd "g") 'call-graph-at-point)
     (define-key map (kbd "d") 'call-graph-remove-caller)
-    (define-key map (kbd "f") 'call-graph-reset-caller-filter)
     (define-key map (kbd "l") 'call-graph-select-caller-location)
     (define-key map (kbd "<RET>") 'call-graph-goto-file-at-point)
     map)
