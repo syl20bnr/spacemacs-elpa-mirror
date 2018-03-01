@@ -4,7 +4,7 @@
 ;;
 ;; Author: Nicolas Lamirault <nicolas.lamirault@gmail.com>
 ;; Version: 0.4.0
-;; Package-Version: 20170211.857
+;; Package-Version: 20180301.651
 ;; Keywords : ripgrep projectile
 ;; Homepage: https://github.com/nlamirault/ripgrep.el
 ;; Package-Requires: ((ripgrep "0.3.0") (projectile "0.14.0"))
@@ -43,16 +43,27 @@
 (require 'ripgrep)
 
 ;;;###autoload
-(defun projectile-ripgrep (regexp)
-  "Run a Ripgrep search with `REGEXP' rooted at the current projectile project root."
+(defun projectile-ripgrep (search-term &optional arg)
+  "Run a Ripgrep search with `SEARCH-TERM' rooted at the current projectile project root.
+
+With an optional prefix argument `ARG' `SEARCH-TERM' is interpreted as a
+regular expression."
   (interactive
    (list
-    (read-from-minibuffer "Ripgrep search for: " (thing-at-point 'symbol))))
-  (ripgrep-regexp regexp
-                  (projectile-project-root)
-                  (mapcar (lambda (val) (concat "--glob !" val))
-                          (append projectile-globally-ignored-files
-                                  projectile-globally-ignored-directories))))
+    (read-from-minibuffer (projectile-prepend-project-name (format "Ripgrep %ssearch for: "
+                                                                   (if current-prefix-arg
+                                                                       "regexp "
+                                                                     "")))
+                          (projectile-symbol-or-selection-at-point))
+    current-prefix-arg))
+  (let ((args (mapcar (lambda (val) (concat "--glob !" val))
+                      (append projectile-globally-ignored-files
+                              projectile-globally-ignored-directories))))
+    (ripgrep-regexp search-term
+                    (projectile-project-root)
+                    (if current-prefix-arg
+                        args
+                      (cons "--fixed-strings" args)))))
 
 
 (provide 'projectile-ripgrep)

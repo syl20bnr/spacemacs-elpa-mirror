@@ -4,7 +4,7 @@
 
 ;; Author: Takashi Masuda <masutaka.net@gmail.com>
 ;; URL: https://github.com/masutaka/emacs-helm-qiita
-;; Package-Version: 20170821.609
+;; Package-Version: 20180301.635
 ;; Version: 1.0.2
 ;; Package-Requires: ((helm "2.8.2"))
 
@@ -206,8 +206,7 @@ Should to call in `helm-qiita-http-buffer-name'."
   (save-excursion
     (let ((result))
       (goto-char (point-min))
-      (setq result (re-search-forward
-		    (concat "^" (regexp-quote "HTTP/1.1 200 OK")) (point-at-eol) t))
+      (setq result (re-search-forward "^HTTP/2 200" (point-at-eol) t))
       (helm-qiita-http-debug-finish result process)
       result)))
 

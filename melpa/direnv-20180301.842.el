@@ -1,8 +1,8 @@
-;;; direnv.el --- direnv support for emacs
+;;; direnv.el --- direnv support for emacs -*- lexical-binding: t; -*-
 
 ;; Author: Wouter Bolsterlee <wouter@bolsterl.ee>
-;; Version: 1.3.0
-;; Package-Version: 20180227.1306
+;; Version: 1.4.0
+;; Package-Version: 20180301.842
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (with-editor "2.5.10"))
 ;; Keywords: direnv, environment, processes, unix, tools
 ;; URL: https://github.com/wbolster/emacs-direnv

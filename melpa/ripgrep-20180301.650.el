@@ -4,7 +4,7 @@
 ;;
 ;; Author: Nicolas Lamirault <nicolas.lamirault@gmail.com>
 ;; Version: 0.4.0
-;; Package-Version: 20170810.1118
+;; Package-Version: 20180301.650
 ;; Keywords : ripgrep ack pt ag sift grep search
 ;; Homepage: https://github.com/nlamirault/ripgrep.el
 
@@ -184,6 +184,7 @@ This function is called from `compilation-filter-hook'."
                         args
                         '("--no-heading --vimgrep -n")
                         (when ripgrep-highlight-search '("--color=always"))
+                        '("--")
                         (list (shell-quote-argument regexp) ".")) " ")
      'ripgrep-search-mode)))
 
