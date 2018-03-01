@@ -584,7 +584,7 @@
 	       ((:url . "http://elpa.gnu.org/packages/jgraph-mode.html")
 		(:keywords "tex" "wp"))])
  (js2-mode .
-	   [(20170721)
+	   [(20180301)
 	    ((emacs
 	      (24 1))
 	     (cl-lib
