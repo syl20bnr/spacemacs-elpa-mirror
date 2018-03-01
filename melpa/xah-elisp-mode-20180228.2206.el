@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2017, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 3.2.20180225
-;; Package-Version: 20180225.1515
+;; Version: 3.2.20180228
+;; Package-Version: 20180228.2206
 ;; Created: 23 Mar 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: lisp, languages
@@ -2968,6 +2968,7 @@ Version 2017-01-27"
     ("ff" "find-file" xah-elisp--ahf)
     ("fl" "forward-line" xah-elisp--ahf)
     ("fw" "forward-word" xah-elisp--ahf)
+    ("gb" "get-buffer" xah-elisp--ahf)
     ("gc" "goto-char" xah-elisp--ahf)
     ("kb" "kill-buffer" xah-elisp--ahf)
     ("kr" "kill-region" xah-elisp--ahf)
@@ -3009,6 +3010,7 @@ Version 2017-01-27"
     ("fne" "file-name-extension" xah-elisp--ahf)
     ("fnn" "file-name-nondirectory" xah-elisp--ahf)
     ("frn" "file-relative-name" xah-elisp--ahf)
+    ("gbc" "get-buffer-create" xah-elisp--ahf)
     ("gnb" "generate-new-buffer" xah-elisp--ahf)
     ("gsk" "global-set-key" xah-elisp--ahf)
     ("ifc" "insert-file-contents" xah-elisp--ahf)

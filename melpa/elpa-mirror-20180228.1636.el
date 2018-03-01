@@ -4,7 +4,7 @@
 
 ;; Author: Chen Bin <chenbin.sh@gmail.com>
 ;; URL: http://github.com/redguardtoo/elpa-mirror
-;; Package-Version: 20180113.2321
+;; Package-Version: 20180228.1636
 ;; Package-Requires: ((emacs "24.4"))
 ;; Version: 2.1.1
 ;; Keywords: cloud mirror elpa
@@ -41,7 +41,7 @@
 ;;         --eval='(elpamr-create-mirror-for-installed)
 ;;
 ;; Make Emacs use the repository created by elpa-mirror,
-;;   - Insert `(setq package-archives '(("myelpa" . "~/myelpa")))` into ~/.emacs
+;;   - Insert `(setq package-archives '(("myelpa" . "~/myelpa/")))` into ~/.emacs
 ;;   - Restart Emacs
 ;;
 ;; You can also setup repositories on Dropbox and Github.

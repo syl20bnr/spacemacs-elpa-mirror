@@ -5,7 +5,7 @@
 ;; Authors: Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Olin Shivers <shivers@cs.cmu.edu>
 ;; URL: http://github.com/clojure-emacs/inf-clojure
-;; Package-Version: 20180223.1717
+;; Package-Version: 20180228.1718
 ;; Keywords: processes, clojure
 ;; Version: 2.1.0
 ;; Package-Requires: ((emacs "24.4") (clojure-mode "5.6"))
@@ -306,27 +306,29 @@ It requires a REPL PROC for inspecting the correct type."
         (setq-local inf-clojure-repl-type repl-type))
     inf-clojure-repl-type))
 
-(defun inf-clojure--single-linify (string)
-  "Convert a multi-line STRING in a single-line STRING.
-It also reduces redundant whitespace for readability."
-  (thread-last string
-    (replace-regexp-in-string "[ \\|\n]+" " ")
-    (replace-regexp-in-string " $" "")))
+(defun inf-clojure--whole-comment-line-p (string)
+  "Return true iff STRING is a whole line semicolon comment."
+  (string-match-p "^\s*;" string))
 
-(defun inf-clojure--trim-newline-right (string)
-  "Trim newlines (only) in STRING."
-  (if (string-match "\n+\\'" string)
-      (replace-match "" t t string)
-    string))
+(defun inf-clojure--make-single-line (string)
+  "Convert a multi-line STRING in a single-line STRING.
+It also reduces redundant whitespace for readability and removes
+comments."
+  (let* ((lines (seq-filter (lambda (s) (not (inf-clojure--whole-comment-line-p s)))
+                            (split-string string "[\r\n]" t))))
+    (mapconcat (lambda (s)
+                 (if (not (string-match-p ";" s))
+                     (replace-regexp-in-string "\s+" " " s)
+                   (concat s "\n")))
+               lines " ")))
 
 (defun inf-clojure--sanitize-command (command)
   "Sanitize COMMAND for sending it to a process.
 An example of things that this function does is to add a final
 newline at the end of the form.  Return an empty string if the
 sanitized command is empty."
-  (let* ((linified (inf-clojure--single-linify command))
-         (sanitized (inf-clojure--trim-newline-right linified)))
-    (if (or (string-blank-p linified) (string-blank-p sanitized))
+  (let ((sanitized (inf-clojure--make-single-line command)))
+    (if (string-blank-p sanitized)
         ""
       (concat sanitized "\n"))))
 
@@ -340,9 +342,8 @@ the string for evaluation.  Refer to `comint-simple-send` for
 customizations."
   (inf-clojure--set-repl-type proc)
   (let ((sanitized (inf-clojure--sanitize-command string)))
-    (when (not (string-empty-p sanitized))
-      (inf-clojure--log-string sanitized "----CMD->")
-      (comint-simple-send proc sanitized))))
+    (inf-clojure--log-string sanitized "----CMD->")
+    (comint-send-string proc sanitized)))
 
 (defcustom inf-clojure-load-form "(clojure.core/load-file \"%s\")"
   "Format-string for building a Clojure expression to load a file.

@@ -5,7 +5,7 @@
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 19 Oct 2017
 ;; Version: 0.0.1
-;; Package-Version: 20171107.847
+;; Package-Version: 20180228.2102
 ;; Keywords: tools php
 ;; Package-Requires: ((emacs "24.3") (cl-lib "0.5") (f "0.17"))
 ;; URL: https://github.com/emacs-php/jetbrains.el
@@ -108,7 +108,7 @@
 ;;;###autoload
 (progn
   (defvar-local jetbrains-ide nil)
-  (put 'jetbrains-ide 'safe-local-variable #'jetbrains-ide-symbol))
+  (put 'jetbrains-ide 'safe-local-variable 'jetbrains-ide-symbol))
 
 (defun jetbrains-ide-symbol (name)
   "Return symbol of IDE by `NAME'."
