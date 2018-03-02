@@ -5,7 +5,7 @@
 ;; Author: Huming Chen <chenhuming@gmail.com>
 ;; Maintainer: Huming Chen <chenhuming@gmail.com>
 ;; URL: https://github.com/beacoder/call-graph
-;; Package-Version: 20180301.708
+;; Package-Version: 0.0.8
 ;; Version: 0.0.8
 ;; Keywords: programming, convenience
 ;; Created: 2018-01-07
