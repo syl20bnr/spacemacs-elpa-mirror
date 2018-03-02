@@ -100,17 +100,18 @@ Now when you are in a directory which is configured for deployment.
 
 Here is a list of other variables you can set globally or per directory:
 
-* ssh-deploy-root-local - The local root that should be under deployment *(string)*
-* ssh-deploy-root-remote - The remote TRAMP root that is used for deployment *(string)*
-* ssh-deploy-debug - Enables debugging messages *(boolean)*
-* ssh-deploy-revision-folder - The folder used for storing local revisions *(string)*
-* ssh-deploy-automatically-detect-remote-changes - Enables automatic detection of remote changes *(boolean)*
-* ssh-deploy-on-explicit-save - Enabled automatic uploads on save *(boolean)*
-* ssh-deploy-exclude-list - A list defining what paths to exclude from deployment *(list)*
-* ssh-deploy-async - Enables asynchronous transfers (you need to have `async.el` installed as well) *(boolean)*
-* ssh-deploy-remote-sql-database - Default database when connecting to remote SQL database *(string)*
-* ssh-deploy-remote-sql-password - Default password when connecting to remote SQL database *(string)*
-* ssh-deploy-remote-sql-server - Default server when connecting to remote SQL database *(string)*
-* ssh-deploy-remote-sql-user - Default user when connecting to remote SQL database *(string)*
+* `ssh-deploy-root-local' - The local root that should be under deployment *(string)*
+* `ssh-deploy-root-remote' - The remote TRAMP root that is used for deployment *(string)*
+* `ssh-deploy-debug' - Enables debugging messages *(boolean)*
+* `ssh-deploy-revision-folder' - The folder used for storing local revisions *(string)*
+* `ssh-deploy-automatically-detect-remote-changes' - Enables automatic detection of remote changes *(boolean)*
+* `ssh-deploy-on-explicit-save' - Enabled automatic uploads on save *(boolean)*
+* `ssh-deploy-exclude-list' - A list defining what paths to exclude from deployment *(list)*
+* `ssh-deploy-async' - Enables asynchronous transfers (you need to have `async.el` installed as well) *(boolean)*
+* `ssh-deploy-remote-sql-database' - Default database when connecting to remote SQL database *(string)*
+* `ssh-deploy-remote-sql-password' - Default password when connecting to remote SQL database *(string)*
+* `ssh-deploy-remote-sql-port' - Default port when connecting to remote SQL database *(integer)*
+* `ssh-deploy-remote-sql-server' - Default server when connecting to remote SQL database *(string)*
+* `ssh-deploy-remote-sql-user' - Default user when connecting to remote SQL database *(string)*
 
 Please see README.md from the same repository for extended documentation.
