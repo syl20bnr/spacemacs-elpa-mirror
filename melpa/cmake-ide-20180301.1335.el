@@ -4,7 +4,7 @@
 
 ;; Author:  Atila Neves <atila.neves@gmail.com>
 ;; Version: 0.6
-;; Package-Version: 20180212.258
+;; Package-Version: 20180301.1335
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (seq "1.11") (levenshtein "0") (s "1.11.0"))
 ;; Keywords: languages
 ;; URL: http://github.com/atilaneves/cmake-ide
@@ -213,20 +213,24 @@ the closest possible matches available in cppcheck."
   "Whether or not to try all unique compiler flags for header files."
   )
 
+(defun cmake-ide--make-hash-table ()
+  "Make a hash table with equal for the test function."
+  (make-hash-table :test #'equal))
+
 (defvar cmake-ide--idbs
-  (make-hash-table :test #'equal)
+  (cmake-ide--make-hash-table)
   "A cached map of build directories to IDE databases.")
 
 (defvar cmake-ide--cdb-hash
-  (make-hash-table :test #'equal)
+  (cmake-ide--make-hash-table)
   "The hash of the JSON CDB for each build directory.")
 
 (defvar cmake-ide--cmake-hash
-  (make-hash-table :test #'equal)
+  (cmake-ide--make-hash-table)
   "A hash to remember cmake build dirs.")
 
 (defvar cmake-ide--irony
-  (make-hash-table :test #'equal)
+  (cmake-ide--make-hash-table)
   "A hash to remember irony build dirs.")
 
 (defvar cmake-ide--semantic-system-include)
@@ -914,7 +918,7 @@ the object file's name just above."
 
 
 (defun cmake-ide--locate-cmakelists ()
-  "Find CMakeLists.txt. Use CMakeLists.txt in user defined project-dir, or find the topmost CMakeLists.txt file.  Return nil if not found."
+  "Find CMakeLists.txt.  Use CMakeLists.txt in user defined project-dir, or find the topmost CMakeLists.txt file.  Return nil if not found."
   (if (and (cmake-ide--project-dir-var) (file-exists-p (expand-file-name "CMakeLists.txt" (cmake-ide--project-dir-var))))
       (expand-file-name "CMakeLists.txt" (cmake-ide--project-dir-var))
     nil
@@ -1046,13 +1050,6 @@ the object file's name just above."
       (cl-incf index))
     ret))
 
-
-(defun cmake-ide--idb-unique-compiler-commands (idb)
-  "Calculate the list of unique compiler commands in IDB ignoring the source file name."
-  (let ((objects) (ret))
-    (maphash (lambda (_ v) (push v objects)) idb)
-    (setq ret (cmake-ide--idb-objs-to-unique-commands objects))
-    ret))
 
 (defun cmake-ide--idb-objs-to-unique-commands (objects)
   "Calculate the list of unique compiler commands in OBJECTS ignoring the source file name."
