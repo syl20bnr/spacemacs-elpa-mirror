@@ -3,12 +3,13 @@
 ;; This file is not part of Emacs
 
 ;; Author: Mohammed Ismail Ansari <team.terminal@gmail.com>
+;; Version: 1.0
+;; Package-Version: 20180302.655
 ;; Keywords: theme
-;; Package-Version: 20180227.900
 ;; Maintainer: Mohammed Ismail Ansari <team.terminal@gmail.com>
 ;; Created: 2018/02/15
 ;; Package-Requires: ((emacs "24"))
-;; Description: A dark but vibrant color theme for Emacs
+;; Description: A dark but vibrant color theme
 ;; URL: http://ismail.teamfluxion.com
 ;; Compatibility: Emacs24
 ;; Inpired by a template from https://github.com/mswift42/themecreator.
@@ -40,7 +41,7 @@
 
 ;;; Commentary:
 
-;;     A dark but vibrant color theme for Emacs.
+;;     A dark but vibrant color theme.
 ;;
 ;;  Overview of features:
 ;;
