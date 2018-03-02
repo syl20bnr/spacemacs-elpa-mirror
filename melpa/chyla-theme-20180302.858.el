@@ -1,9 +1,9 @@
-;;; chyla-theme.el --- The chyla.org color theme for Emacs.
+;;; chyla-theme.el --- chyla.org - green color theme.
 
 ;; Copyright (C) 2018 Adam Chyła
 ;; Author: Adam Chyła <adam@chyla.org> https://chyla.org/
 ;; URL: https://github.com/chyla/ChylaThemeForEmacs
-;; Package-Version: 20180221.1130
+;; Package-Version: 20180302.858
 ;; Version: 0.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -21,7 +21,7 @@
 
 ;;; Commentary:
 
-;; The chyla.org color theme for Emacs.
+;; chyla.org - green color theme.
 
 ;;; Credits:
 

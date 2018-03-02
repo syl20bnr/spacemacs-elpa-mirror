@@ -4,7 +4,7 @@
 
 ;; Author:  Atila Neves <atila.neves@gmail.com>
 ;; Version: 0.12
-;; Package-Version: 20180220.15
+;; Package-Version: 20180302.853
 ;; Package-Requires: ((flycheck "0.24") (f "0.18.2"))
 ;; Keywords: languages
 ;; URL: http://github.com/atilaneves/flycheck-dmd-dub
@@ -76,6 +76,10 @@
   :group 'flycheck-dmd-dub
   :type 'string
   :safe #'stringp)
+
+(defvar fldd--cache-dir
+  (make-temp-file "fldd" 'dir)
+  "A temporary directory to store dub describe outputs.")
 
 
 (defun fldd--dub-pkg-version-to-suffix (version)
@@ -189,7 +193,7 @@ brace are discarded before parsing."
   (let ((dub-sdl-dir (fldd--locate-topmost "dub.sdl"))
         (dub-json-dir (fldd--locate-topmost "dub.json"))
         (package-json-dir (fldd--locate-topmost "package.json")))
-    (or dub-sdl-dir dub-json-dir package-json-dir)))
+    (file-truename (or dub-sdl-dir dub-json-dir package-json-dir))))
 
 (defun fldd--locate-topmost (file-name)
   "Locate the topmost FILE-NAME."
@@ -203,17 +207,6 @@ brace are discarded before parsing."
             new-dir
           (fldd--locate-topmost-impl file-name (expand-file-name ".." new-dir) new-dir))
       last-found)))
-
-
-(defun fldd--get-dub-package-dirs ()
-  "Get package directories."
-  (let ((default-directory (fldd--get-project-dir)))
-    (fldd--get-dub-package-dirs-json-string (fldd--get-dub-describe-output))))
-
-(defun fldd--get-dub-string-import-paths ()
-  "Get package directories."
-  (let ((default-directory (fldd--get-project-dir)))
-    (fldd--get-dub-package-string-import-paths-json-string (fldd--get-dub-describe-output))))
 
 
 (defun fldd--get-dub-describe-output ()
@@ -270,6 +263,12 @@ brace are discarded before parsing."
          (real-version (if (equal version0 "~") version-from-1 version)))
     (concat "~/.dub/packages/" package "-" real-version)))
 
+(defun fldd--1st-file-newer? (file1 file2)
+  "If FILE1 is newer than FILE2."
+  (let ((timestamp1 (fldd--get-timestamp file1))
+        (timestamp2 (fldd--get-timestamp file2)))
+    (or (null timestamp2) (time-less-p timestamp2 timestamp1))))
+
 (defun fldd--get-timestamp (file)
   "Return the timestamp of FILE.
 If FILE does not exist, return nil."
@@ -302,48 +301,80 @@ If FILE does not exist, return nil."
 
 
 ;;;###autoload
-(defun flycheck-dmd-dub-set-include-path ()
-  "Set `flycheck-dmd-include-path' from dub info if available."
-  (let* ((basedir (fldd--get-project-dir)))
-    (when basedir
-      (make-local-variable 'flycheck-dmd-include-path)
-      (setq flycheck-dmd-include-path (fldd--get-dub-package-dirs)))))
-
-;;;###autoload
 (defun flycheck-dmd-dub-set-variables ()
   "Set all flycheck-dmd variables.
 It also outputs the values of `import-paths' and `string-import-paths'
 to `fldd--cache-file' to reuse the result of dub describe."
   (interactive)
-  (let ((basedir (fldd--get-project-dir)))
-    (when basedir
-      (let ((default-directory basedir))
+  (let ((project-dir (fldd--get-project-dir)))
+    (when project-dir
+      (let ((default-directory project-dir))
         (if (and flycheck-dmd-dub-use-cache-p (fldd--cache-is-updated-p))
-            (let* ((alist (read (f-read fldd--cache-file)))
-                   (import-paths (cdr (assq 'import-paths alist)))
-                   (string-import-paths (cdr (assq 'string-import-paths alist)))
-                   (versions)
-                   (dflags))
-              (fldd--message "Using cache")
-              (fldd--set-variables import-paths string-import-paths nil nil))
+            (fldd--set-variables-from-cache project-dir)
           ;; else
-          (let* ((json-string (fldd--get-dub-describe-output))
-                 (json (json-read-from-string json-string))
-                 (import-paths (fldd--get-dub-package-dirs-json json))
-                 (string-import-paths (fldd--get-dub-package-string-import-paths-json json))
-                 (versions (fldd--get-dub-package-versions-json json))
-                 (dflags (fldd--get-dub-package-dflags-json json)))
-            (fldd--message "Reading from dub describe")
-            (fldd--set-variables import-paths string-import-paths versions dflags)
-            (when flycheck-dmd-dub-use-cache-p
-              (let ((cache-text (with-output-to-string
-                                  (print `((import-paths . ,import-paths)
-                                           (string-import-paths . ,string-import-paths))))))
-                (f-write cache-text 'utf-8 fldd--cache-file)))))))))
+          (fldd--set-variables-from-dub-describe project-dir))))))
+
+(defun fldd--set-variables-from-dub-describe (project-dir)
+  "Set variables form the output of running `dub describe' in PROJECT-DIR."
+  (fldd--message "Setting variables from dub describe")
+  (fldd--set-variables-from-json-string (fldd--describe-json-for project-dir)))
+
+(defun fldd--describe-json-for (project-dir)
+  "Get dub describe JSON for PROJECT-DIR."
+  (let* ((default-directory project-dir)
+         (cache-file-name (fldd--dub-describe-cache-file-name))
+         (cache-file-dir (file-name-directory cache-file-name)))
+    (if (fldd--1st-file-newer? "dub.selections.json" cache-file-name)
+        (progn
+          (fldd--message "Cache invalidated, running dub describe.")
+          (let ((dub-desc-output (fldd--get-dub-describe-output)))
+            (fldd--message "Caching result of dub describe")
+            (when (not (file-exists-p cache-file-dir))
+              (fldd--message "Creating directory %s" cache-file-dir)
+              (make-directory cache-file-dir 't))
+            (f-write dub-desc-output 'utf-8 cache-file-name)
+            dub-desc-output))
+      (f-read cache-file-name))))
+
+(defun fldd--dub-describe-cache-file-name ()
+  "The file name to cache the describe output for PROJECT-DIR."
+  (concat fldd--cache-dir (fldd--get-project-dir) "dub_describe.json"))
+
+(defun fldd--set-variables-from-json-string (json-string)
+  "Parse the output of running of the `dub describe' JSON-STRING."
+  (fldd--message "Setting variables from JSON string")
+  (let* ((json (json-read-from-string json-string))
+         (import-paths (fldd--get-dub-package-dirs-json json))
+         (string-import-paths (fldd--get-dub-package-string-import-paths-json json))
+         (versions (fldd--get-dub-package-versions-json json))
+         (dflags (fldd--get-dub-package-dflags-json json)))
+    (fldd--set-variables import-paths string-import-paths versions dflags)
+    (when flycheck-dmd-dub-use-cache-p
+      (let ((cache-text (with-output-to-string
+                          (print `((import-paths . ,import-paths)
+                                   (string-import-paths . ,string-import-paths))))))
+        (f-write cache-text 'utf-8 fldd--cache-file)))))
+
+(defun fldd--set-variables-from-cache (project-dir)
+  "Set flycheck variables from the cache for PROJECT-DIR."
+  (fldd--message "Setting variables from cache")
+  (let* ((alist (read (f-read fldd--cache-file)))
+         (import-paths (cdr (assq 'import-paths alist)))
+         (string-import-paths (cdr (assq 'string-import-paths alist)))
+         (versions)
+         (dflags))
+    (fldd--set-variables import-paths string-import-paths nil nil)))
+
 
 (defun flycheck-dmd-dub-add-version (version)
   "Add VERSION to the list of dmd arguments when calling flycheck."
   (add-to-list 'flycheck-dmd-args (concat "-version=" version)))
+
+
+;; FIXME: DELETE
+(defun fldd--get-dub-package-dirs ()
+  "Get package directories."
+  (fldd--get-dub-package-dirs-json-string (fldd--describe-json-for (fldd--get-project-dir))))
 
 
 (provide 'flycheck-dmd-dub)

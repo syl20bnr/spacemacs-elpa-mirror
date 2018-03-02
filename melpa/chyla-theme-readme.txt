@@ -1,1 +1,1 @@
-The chyla.org color theme for Emacs.
+chyla.org - green color theme.

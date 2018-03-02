@@ -2,7 +2,7 @@
 
 ;; Copyright (c) 2018 Robert Schwarz
 ;; Package-Requires: ((emacs "24"))
-;; Package-Version: 20180220.839
+;; Package-Version: 20180302.755
 ;; Package-X-Original-Version: 0.1
 ;; Author: Robert Schwarz <mail@rschwarz.net>
 ;; Homepage: https://github.com/leethargo/sql-clickhouse
@@ -155,35 +155,33 @@ Argument OPTIONS additional options."
   ;; `sql-database', and `sql-server'.
   (let ((params
          (append
-          (if (not (string= "" sql-user))
+          (unless (string= "" sql-user)
               (list "-u" sql-user))
-          (if (not (string= "" sql-password))
+          (unless (string= "" sql-password)
               (list "--password" sql-password))
-          (if (not (string= "" sql-database))
+          (unless (string= "" sql-database)
               (list "-d" sql-database))
-          (if (not (string= "" sql-server))
+          (unless (string= "" sql-server)
               (list "-h" sql-server))
           options)))
     (sql-comint product params)))
 
+;;;###autoload
 (defun sql-clickhouse (&optional buffer)
   "Run clickhouse-client by ClickHouse as an inferior process.
 Optional argument BUFFER current buffer."
   (interactive "P")
   (sql-product-interactive 'clickhouse buffer))
 
-(eval-after-load "sql"
-  '(sql-add-product 'clickhouse "ClickHouse"
-                    :font-lock 'sql-clickhouse-font-lock-keywords
-                    :sqli-program 'sql-clickhouse-program
-                    :prompt-regexp "^:) "
-                    :prompt-length 3
-                    :prompt-cont-regexp "^:-] "
-                    :sqli-login 'sql-clickhouse-login-params
-                    :sqli-options 'sql-clickhouse-options
-                    :sqli-comint-func 'sql-clickhouse-comint))
-
-(provide 'sql-clickhouse)
+(sql-add-product 'clickhouse "ClickHouse"
+                 :font-lock 'sql-clickhouse-font-lock-keywords
+                 :sqli-program 'sql-clickhouse-program
+                 :prompt-regexp "^:) "
+                 :prompt-length 3
+                 :prompt-cont-regexp "^:-] "
+                 :sqli-login 'sql-clickhouse-login-params
+                 :sqli-options 'sql-clickhouse-options
+                 :sqli-comint-func 'sql-clickhouse-comint)
 
 (provide 'sql-clickhouse)
 
