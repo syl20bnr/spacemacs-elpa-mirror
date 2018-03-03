@@ -4,7 +4,7 @@
 
 ;; Author:  Sho Mizoe <sho.mizoe@gmail.com>
 ;; URL: https://github.com/smizoe/mpmc-queue
-;; Package-Version: 0.1.0
+;; Package-Version: 0.1.1
 ;; Version: 0.1.0
 ;; Keywords: lisp, async
 ;; Package-Requires: ((emacs "26.0") (queue "0.2.0"))
@@ -29,7 +29,6 @@
 ;;; Code:
 
 (require 'queue)
-(defconst mpmc-queue--emacs-minimal-version "26.0")
 (cl-defstruct
     (mpmc-queue
      (:constructor nil)
@@ -106,25 +105,6 @@ Otherwise block until an element is available."
                 (queue-empty internal-queue)
                 )
               )
-  )
-
-(defun mpmc-queue--startup-asserts ()
-  "Check assumptions we made in writing mpmc-queue."
-  (progn
-    (when (version< emacs-version mpmc-queue--emacs-minimal-version)
-      (display-warning 'mpmc-queue (format "\
-mpmc-queue requires the thread support from emacs;
-emacs version should be >= %s, but you seem to be using version %s.
-"
-                                           mpmc-queue--emacs-minimal-version emacs-version)
-                       )
-      )
-    )
-  )
-
-(if after-init-time
-    (mpmc-queue--startup-asserts)
-  (add-hook 'after-init-hook #'mpmc-queue--startup-asserts t)
   )
 
 (provide 'mpmc-queue)

@@ -7,7 +7,7 @@
 ;; Contributions from Kyle Meyer
 ;; Created: 8 Mar 2015
 ;; Version: 0.2
-;; Package-Version: 20170429.1158
+;; Package-Version: 20180302.2041
 ;; Keywords: pydoc, python
 ;; Homepage: https://github.com/statmobile/pydoc
 
@@ -790,7 +790,7 @@ OTHER MODULES IN THIS FILE
 '''.format(gd[0].full_name, gd[0].module_path, gd[0].line, gd[0].name, gd[0].docstring(), related))"
 	   ;; I found I need to quote double quotes so they
 	   ;; work in the script above.
-	   (replace-regexp-in-string "\"" "\\\\\"" script)
+	   (replace-regexp-in-string "\"" "\\\\\"" (replace-regexp-in-string "\\\\" "\\\\\\\\" script))
 	   line
 	   column
 	   tfile)))
