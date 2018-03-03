@@ -4,7 +4,7 @@
 
 ;; Author: Hiroki YAMAKAWA <s06139@gmail.com>
 ;; URL: https://github.com/HKey/dired-atool
-;; Package-Version: 20160208.433
+;; Package-Version: 20180302.2340
 ;; Version: 1.1.0
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: files
@@ -169,7 +169,7 @@ ARG is used for `dired-get-marked-files'."
          (archive (expand-file-name ; to expand "~" to a real path name
                    (dired-mark-pop-up
                     nil nil files
-                    #'read-directory-name
+                    #'read-file-name
                     (format "Pack %s to: "
                             (dired-atool--file-names-for-prompt files))
                     (dired-dwim-target-directory))))
