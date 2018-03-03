@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/dired-sidebar
-;; Package-Version: 20180218.1717
+;; Package-Version: 20180303.1026
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1") (dired-subtree "0.0.1"))
 ;; Keywords: dired, files, tools
@@ -863,31 +863,32 @@ both accounting for the currently selected window."
 
 (defun dired-sidebar-get-dir-to-show ()
   "Return the directory `dired-sidebar' should open to."
-  (cond
-   ((and (derived-mode-p 'magit-mode)
-         dired-sidebar-use-magit-integration
-         (fboundp 'magit-toplevel))
-    (magit-toplevel))
-   ((and (eq major-mode 'term-mode)
-         dired-sidebar-use-term-integration)
-    (dired-sidebar-term-get-pwd))
-   ((and (eq major-mode 'dired-mode)
-         (not dired-sidebar-mode))
-    (expand-file-name default-directory))
-   ((and (eq major-mode 'ibuffer-mode)
-         (fboundp 'ibuffer-current-buffer)
-         (ibuffer-current-buffer))
-    (let ((buffer-at-point (ibuffer-current-buffer)))
-      (if (fboundp 'ibuffer-projectile-root)
-          (dired-sidebar-if-let* ((ibuffer-projectile-root
-                                   (ibuffer-projectile-root buffer-at-point)))
-              (cdr ibuffer-projectile-root)
-            (with-current-buffer buffer-at-point
-              default-directory))
-        (with-current-buffer buffer-at-point
-          default-directory))))
-   (:default
-    (dired-sidebar-sidebar-root))))
+  (expand-file-name
+   (cond
+    ((and (derived-mode-p 'magit-mode)
+          dired-sidebar-use-magit-integration
+          (fboundp 'magit-toplevel))
+     (magit-toplevel))
+    ((and (eq major-mode 'term-mode)
+          dired-sidebar-use-term-integration)
+     (dired-sidebar-term-get-pwd))
+    ((and (eq major-mode 'dired-mode)
+          (not dired-sidebar-mode))
+     default-directory)
+    ((and (eq major-mode 'ibuffer-mode)
+          (fboundp 'ibuffer-current-buffer)
+          (ibuffer-current-buffer))
+     (let ((buffer-at-point (ibuffer-current-buffer)))
+       (if (fboundp 'ibuffer-projectile-root)
+           (dired-sidebar-if-let* ((ibuffer-projectile-root
+                                    (ibuffer-projectile-root buffer-at-point)))
+               (cdr ibuffer-projectile-root)
+             (with-current-buffer buffer-at-point
+               default-directory))
+         (with-current-buffer buffer-at-point
+           default-directory))))
+    (:default
+     (dired-sidebar-sidebar-root)))))
 
 (defun dired-sidebar-get-file-to-show ()
   "Return the file `dired-sidebar' should open to.

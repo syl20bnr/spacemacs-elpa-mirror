@@ -1,7 +1,7 @@
 ;;; rust-mode.el --- A major emacs mode for editing Rust source code -*-lexical-binding: t-*-
 
 ;; Version: 0.3.0
-;; Package-Version: 20180221.1130
+;; Package-Version: 20180303.854
 ;; Author: Mozilla
 ;; Url: https://github.com/rust-lang/rust-mode
 ;; Keywords: languages
@@ -1575,31 +1575,24 @@ This is written mainly to be used as `end-of-defun-function' for Rust."
 (defun rust--before-save-hook ()
   (when rust-format-on-save (rust-format-buffer)))
 
-;; Issue #6887: Rather than inheriting the 'gnu compilation error
-;; regexp (which is broken on a few edge cases), add our own 'rust
-;; compilation error regexp and use it instead.
 (defvar rustc-compilation-regexps
-  (let ((file "\\([^\n]+\\)")
-        (start-line "\\([0-9]+\\)")
-        (start-col  "\\([0-9]+\\)")
-        (end-line   "\\([0-9]+\\)")
-        (end-col    "\\([0-9]+\\)")
-        (msg-type   "\\(?:[Ee]rror\\|\\([Ww]arning\\)\\|\\([Nn]ote\\|[Hh]elp\\)\\)"))
-    (let ((re (concat "^" file ":" start-line ":" start-col
-                      ": " end-line ":" end-col
-                      " " msg-type ":")))
-      (cons re '(1 (2 . 4) (3 . 5) (6 . 7)))))
-  "Specifications for matching errors in rustc invocations.
-See `compilation-error-regexp-alist' for help on their format.")
-
-(defvar rustc-new-compilation-regexps
   (let ((file "\\([^\n]+\\)")
         (start-line "\\([0-9]+\\)")
         (start-col  "\\([0-9]+\\)"))
     (let ((re (concat "^ *--> " file ":" start-line ":" start-col ; --> 1:2:3
                       )))
       (cons re '(1 2 3))))
-  "Specifications for matching errors in rustc invocations (new style).
+  "Specifications for matching errors in rustc invocations.
+See `compilation-error-regexp-alist' for help on their format.")
+
+(defvar rustc-colon-compilation-regexps
+  (let ((file "\\([^\n]+\\)")
+        (start-line "\\([0-9]+\\)")
+        (start-col  "\\([0-9]+\\)"))
+    (let ((re (concat "^ *::: " file ":" start-line ":" start-col ; ::: foo/bar.rs
+                      )))
+      (cons re '(1 2 3))))
+  "Specifications for matching `:::` hints in rustc invocations.
 See `compilation-error-regexp-alist' for help on their format.")
 
 ;; Match test run failures and panics during compilation as
@@ -1632,15 +1625,15 @@ See `compilation-error-regexp-alist' for help on their format.")
 (eval-after-load 'compile
   '(progn
      (add-to-list 'compilation-error-regexp-alist-alist
-                  (cons 'rustc-new rustc-new-compilation-regexps))
-     (add-to-list 'compilation-error-regexp-alist 'rustc-new)
-     (add-hook 'next-error-hook 'rustc-scroll-down-after-next-error)
-     (add-to-list 'compilation-error-regexp-alist-alist
                   (cons 'rustc rustc-compilation-regexps))
      (add-to-list 'compilation-error-regexp-alist 'rustc)
      (add-to-list 'compilation-error-regexp-alist-alist
+                  (cons 'rustc-colon rustc-colon-compilation-regexps))
+     (add-to-list 'compilation-error-regexp-alist 'rustc-colon)
+     (add-to-list 'compilation-error-regexp-alist-alist
                   (cons 'cargo cargo-compilation-regexps))
-     (add-to-list 'compilation-error-regexp-alist 'cargo)))
+     (add-to-list 'compilation-error-regexp-alist 'cargo)
+     (add-hook 'next-error-hook 'rustc-scroll-down-after-next-error)))
 
 ;;; Functions to submit (parts of) buffers to the rust playpen, for
 ;;; sharing.
