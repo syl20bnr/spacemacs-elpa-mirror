@@ -5,7 +5,7 @@
 ;; Authors: Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Olin Shivers <shivers@cs.cmu.edu>
 ;; URL: http://github.com/clojure-emacs/inf-clojure
-;; Package-Version: 20180228.1718
+;; Package-Version: 20180302.1455
 ;; Keywords: processes, clojure
 ;; Version: 2.1.0
 ;; Package-Requires: ((emacs "24.4") (clojure-mode "5.6"))
@@ -69,6 +69,7 @@
 (require 'ansi-color)
 (require 'cl-lib)
 (require 'subr-x)
+(require 'seq)
 
 
 (defgroup inf-clojure nil

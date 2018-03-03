@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180220.1512
+;; Package-Version: 20180302.1438
 ;; Keywords: help, lisp
 ;; Version: 0.8
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -74,8 +74,13 @@ if there are more than this many.
 
 To disable cleanup entirely, set this variable to nil. See also
 `helpful-kill-buffers' for a one-off cleanup."
-  :group 'help
   :type '(choice (const nil) number)
+  :group 'helpful)
+
+(defcustom helpful-switch-buffer-function
+  #'pop-to-buffer
+  "Function called to display the *Helpful* buffer."
+  :type 'function
   :group 'helpful)
 
 (defun helpful--kind-name (symbol callable-p)
@@ -1099,10 +1104,14 @@ from parent keymaps."
 
 (defun helpful--outer-sexp (buf pos)
   "Find position POS in BUF, and return the name of the outer sexp,
-along with its position."
+along with its position.
+
+Moves point in BUF."
   (with-current-buffer buf
     (goto-char pos)
-    (beginning-of-defun)
+    (let* ((ppss (syntax-ppss)))
+      (unless (zerop (syntax-ppss-depth ppss))
+        (beginning-of-defun)))
     (list (point) (-take 2 (read buf)))))
 
 (defun helpful--count-values (items)
@@ -1614,7 +1623,7 @@ escapes that are used by `substitute-command-keys'."
   "Show help for function named SYMBOL."
   (interactive
    (list (helpful--read-symbol "Function: " #'functionp)))
-  (pop-to-buffer (helpful--buffer symbol t))
+  (funcall helpful-switch-buffer-function (helpful--buffer symbol t))
   (helpful-update))
 
 ;;;###autoload
@@ -1622,7 +1631,7 @@ escapes that are used by `substitute-command-keys'."
   "Show help for interactive function named SYMBOL."
   (interactive
    (list (helpful--read-symbol "Command: " #'commandp)))
-  (pop-to-buffer (helpful--buffer symbol t))
+  (funcall helpful-switch-buffer-function (helpful--buffer symbol t))
   (helpful-update))
 
 ;;;###autoload
@@ -1636,7 +1645,7 @@ escapes that are used by `substitute-command-keys'."
       (user-error "No command is bound to %s"
                   (key-description key-sequence)))
      ((commandp sym)
-      (pop-to-buffer (helpful--buffer sym t))
+      (funcall helpful-switch-buffer-function (helpful--buffer sym t))
       (helpful-update))
      (t
       (user-error "%s is bound to %s which is not a command"
@@ -1648,7 +1657,7 @@ escapes that are used by `substitute-command-keys'."
   "Show help for macro named SYMBOL."
   (interactive
    (list (helpful--read-symbol "Macro: " #'macrop)))
-  (pop-to-buffer (helpful--buffer symbol t))
+  (funcall helpful-switch-buffer-function (helpful--buffer symbol t))
   (helpful-update))
 
 ;;;###autoload
@@ -1658,7 +1667,7 @@ escapes that are used by `substitute-command-keys'."
 See also `helpful-macro' and `helpful-function'."
   (interactive
    (list (helpful--read-symbol "Callable: " #'fboundp)))
-  (pop-to-buffer (helpful--buffer symbol t))
+  (funcall helpful-switch-buffer-function (helpful--buffer symbol t))
   (helpful-update))
 
 (defun helpful--variable-p (symbol)
@@ -1703,7 +1712,7 @@ See also `helpful-callable' and `helpful-variable'."
   "Show help for variable named SYMBOL."
   (interactive
    (list (helpful--read-symbol "Variable: " #'helpful--variable-p)))
-  (pop-to-buffer (helpful--buffer symbol nil))
+  (funcall helpful-switch-buffer-function (helpful--buffer symbol nil))
   (helpful-update))
 
 ;;;###autoload
