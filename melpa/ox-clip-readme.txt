@@ -9,9 +9,16 @@ issue.
 
 Mac OSX needs textutils and pbcopy, which should be part of the base install.
 
-Linux needs a relatively modern xclip. https://github.com/astrand/xclip
+Linux needs a relatively modern xclip, preferrably a version of at least
+0.12. https://github.com/astrand/xclip
 
-There is one command: `ox-clip-formatted-copy' that should work across
-Windows, Mac and Linux.
+The main command is `ox-clip-formatted-copy' that should work across
+Windows, Mac and Linux. By default, it copies as html.
+
+Note: Images/equations may not copy well in html. Use `ox-clip-image-to-clipboard' to
+copy the image or latex equation at point to the clipboard as an image. The
+default latex scale is too small for me, so the default size for this is set
+to 3 in `ox-clip-default-latex-scale'. This overrides the settings in
+`org-format-latex-options'.
 
 (require 'htmlize)
