@@ -8,7 +8,8 @@ Usage:
   "M-x counsel-etags-grep" to grep
   "M-x counsel-etags-grep-symbol-at-point" to grep the symbol at point
   "M-x counsel-etags-recent-tag" to open recent tag
-  "M-x counsel-etags-find-tag" to fuzzy searching tag
+  "M-x counsel-etags-find-tag" to two step tag matching use regular expression and filter
+  "M-x counsel-etags-list-tag" to list all tags
 
 That's all!
 
