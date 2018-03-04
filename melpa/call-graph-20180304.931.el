@@ -5,11 +5,11 @@
 ;; Author: Huming Chen <chenhuming@gmail.com>
 ;; Maintainer: Huming Chen <chenhuming@gmail.com>
 ;; URL: https://github.com/beacoder/call-graph
-;; Package-Version: 20180301.2124
+;; Package-Version: 20180304.931
 ;; Version: 0.0.8
 ;; Keywords: programming, convenience
 ;; Created: 2018-01-07
-;; Package-Requires: ((emacs "25.1") (cl-lib "1.0") (hierarchy "0.7.0") (tree-mode "1.0.0") (ivy "0.10.0"))
+;; Package-Requires: ((emacs "25.1") (cl-lib "0.6.1") (hierarchy "0.7.0") (tree-mode "1.0.0") (ivy "0.10.0"))
 
 ;; This file is not part of GNU Emacs.
 

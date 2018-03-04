@@ -4,7 +4,7 @@
 
 ;; Author: Jorgen Schaefer <contact@jorgenschaefer.de>
 ;; URL: http://github.com/jorgenschaefer/pyvenv
-;; Package-Version: 20180223.22
+;; Package-Version: 20180304.712
 ;; Version: 1.10
 ;; Keywords: Python, Virtualenv, Tools
 
@@ -269,6 +269,8 @@ configured."
       (dolist (name (directory-files workon-home))
         (when (or (file-exists-p (format "%s/%s/bin/activate"
                                          workon-home name))
+		  (file-exists-p (format "%s/%s/bin/python"
+					 workon-home name))
                   (file-exists-p (format "%s/%s/Scripts/activate.bat"
                                          workon-home name)))
           (setq result (cons name result))))
