@@ -1,10 +1,10 @@
 ;;; web-mode.el --- major mode for editing web templates
-;;; -*- coding: utf-8 -*-
+;;; -*- coding: utf-8; lexical-binding: t; -*-
 
 ;; Copyright 2011-2018 François-Xavier Bois
 
 ;; Version: 15.1.0
-;; Package-Version: 20180302.853
+;; Package-Version: 20180303.1031
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; Package-Requires: ((emacs "23.1"))
@@ -2531,7 +2531,12 @@ another auto-completion with different ac-sources (e.g. ac-php)")
   (if (fboundp 'prog-mode)
       (put 'web-mode 'derived-mode-parent 'prog-mode))
 
-  ;;(web-mode-trace "end")
+  (cond
+   ((not (buffer-file-name))
+    )
+   ((string-match-p "web-mode-benchmark.html" (buffer-file-name))
+    (web-mode-trace "end"))
+   ) ;cond
 
   )
 
@@ -13290,7 +13295,7 @@ extended to support more filetypes by customizing
 
 (defun web-mode-trace (msg)
   (let (sub)
-    ;;      (when (null web-mode-time) (setq web-mode-time (current-time)))
+    (when (null web-mode-time) (setq web-mode-time (current-time)))
     (setq sub (time-subtract (current-time) web-mode-time))
     (when nil
       (save-excursion

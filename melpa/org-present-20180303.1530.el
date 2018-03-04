@@ -4,7 +4,7 @@
 ;;
 ;; Author: Ric Lister
 ;; Package-Requires: ((org "7"))
-;; Package-Version: 20141109.1756
+;; Package-Version: 20180303.1530
 ;; URL: https://github.com/rlister/org-present
 ;;
 ;; This file is not part of GNU Emacs.
@@ -102,7 +102,8 @@
          (org-present-top)))    ;if that was last, go back to top before narrow
     ;; else handle title page before first heading
     (outline-next-heading))
-  (org-present-narrow))
+  (org-present-narrow)
+  (org-present-run-after-navigate-functions))
 
 (defun org-present-prev ()
   "Jump to previous top-level heading."
@@ -112,7 +113,8 @@
         (widen)
         (org-present-top)
         (org-get-last-sibling)))
-  (org-present-narrow))
+  (org-present-narrow)
+  (org-present-run-after-navigate-functions))
 
 (defun org-present-narrow ()
   "Show just current page; in a heading we narrow, else show title page (before first heading)."
@@ -130,7 +132,8 @@
   (interactive)
   (widen)
   (beginning-of-buffer)
-  (org-present-narrow))
+  (org-present-narrow)
+  (org-present-run-after-navigate-functions))
 
 (defun org-present-end ()
   "Jump to last slide of presentation."
@@ -138,7 +141,8 @@
   (widen)
   (end-of-buffer)
   (org-present-top)
-  (org-present-narrow))
+  (org-present-narrow)
+  (org-present-run-after-navigate-functions))
 
 (defun org-present-big ()
   "Make font size larger."
@@ -220,7 +224,8 @@
   (setq org-present-mode t)
   (org-present-add-overlays)
   (org-present-narrow)
-  (run-hooks 'org-present-mode-hook))
+  (run-hooks 'org-present-mode-hook)
+  (org-present-run-after-navigate-functions))
 
 (defun org-present-quit ()
   "Quit the minor-mode."
@@ -233,6 +238,23 @@
     (org-present-read-write))
   (run-hooks 'org-present-mode-quit-hook)
   (setq org-present-mode nil))
+
+(defvar org-present-after-navigate-functions nil
+  "Abnormal hook run after org-present navigates to a new heading.")
+
+;; courtesy Xah Lee ( http://ergoemacs.org/emacs/modernization_elisp_lib_problem.html )
+(defun org-present-trim-string (string)
+  "Remove whitespace (space, tab, emacs newline (LF, ASCII 10)) in beginning and ending of STRING."
+  (replace-regexp-in-string
+   "\\`[ \t\n]*" ""
+   (replace-regexp-in-string "[ \t\n]*\\'" "" string)))
+
+(defun org-present-run-after-navigate-functions ()
+  "Run org-present-after-navigate hook, passing the name of the presentation buffer and the current heading."
+  (let* ((title-text (thing-at-point 'line))
+         (safe-title-text (replace-regexp-in-string "^[ \*]" "" title-text))
+         (current-heading (org-present-trim-string safe-title-text)))
+    (run-hook-with-args 'org-present-after-navigate-functions (buffer-name) current-heading)))
 
 (provide 'org-present)
 ;;; org-present.el ends here

@@ -1,5 +1,5 @@
 ;;; bash-completion.el --- BASH completion for the shell buffer
-;; Package-Version: 20170924.1021
+;; Package-Version: 20180303.1144
 
 ;; Copyright (C) 2009 Stephane Zermatten
 
@@ -760,7 +760,7 @@ result. See `bash-completion-fix' for more details."
         (push (bash-completion-fix
                completion parsed-stub unparsed-stub open-quote completion-type nil)
               result))
-      (nreverse result))))
+      (delete-dups (nreverse result)))))
 
 (defun bash-completion-fix
     (str parsed-prefix unparsed-prefix open-quote completion-type single)
