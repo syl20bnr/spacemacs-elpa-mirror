@@ -3,8 +3,8 @@
 
 ;; Copyright 2011-2018 François-Xavier Bois
 
-;; Version: 15.1.0
-;; Package-Version: 20180303.1031
+;; Version: 16.0.0
+;; Package-Version: 20180305.1059
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; Package-Requires: ((emacs "23.1"))
@@ -25,7 +25,7 @@
 
 ;;---- CONSTS ------------------------------------------------------------------
 
-(defconst web-mode-version "15.1.0"
+(defconst web-mode-version "16.0.0"
   "Web Mode version.")
 
 ;;---- GROUPS ------------------------------------------------------------------

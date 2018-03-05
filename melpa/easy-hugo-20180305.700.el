@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 2.8.21
-;; Version: 2.8.21
+;; Package-Version: 20180305.700
+;; Version: 2.9.22
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -393,6 +393,34 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
 		      " alt=\"\" width=\"100%\"/>"))))))
 
 ;;;###autoload
+(defun easy-hugo-figure ()
+  "Generate figure shortcode."
+  (interactive
+   (easy-hugo-with-env
+    (unless (file-directory-p (expand-file-name
+			       easy-hugo-image-directory
+			       (expand-file-name "static" easy-hugo-basedir)))
+      (error "%s does not exist" (expand-file-name
+				  easy-hugo-image-directory
+				  (expand-file-name "static" easy-hugo-basedir))))
+    (let ((file (read-file-name "Image file: " nil
+				(expand-file-name
+				 easy-hugo-image-directory
+				 (expand-file-name "static" easy-hugo-basedir))
+				t
+				(expand-file-name
+				 easy-hugo-image-directory
+				 (expand-file-name "static" easy-hugo-basedir)))))
+      (insert (concat (format "{{< figure src=\"%s%s\""
+			      easy-hugo-url
+			      (concat
+			       "/"
+			       easy-hugo-image-directory
+			       "/"
+			       (file-name-nondirectory file)))
+		      "  title=\"\" >}}"))))))
+
+;;;###autoload
 (defun easy-hugo-put-image ()
   "Move image to image directory and generate image link."
   (interactive
@@ -418,6 +446,33 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
 			       "/"
 			       (file-name-nondirectory file)))
 		      " alt=\"\" width=\"100%\"/>"))))))
+
+;;;###autoload
+(defun easy-hugo-put-figure ()
+  "Move image to image directory and generate figure shortcode."
+  (interactive
+   (easy-hugo-with-env
+    (unless (file-directory-p (expand-file-name
+                               easy-hugo-image-directory
+                               (expand-file-name "static" easy-hugo-basedir)))
+      (error "%s does not exist" (expand-file-name
+                                  easy-hugo-image-directory
+                                  (expand-file-name "static" easy-hugo-basedir))))
+    (let ((file (read-file-name "Image file: " nil
+                                (expand-file-name easy-hugo-default-picture-directory)
+                                t
+                                (expand-file-name easy-hugo-default-picture-directory))))
+      (copy-file file (expand-file-name
+                       (file-name-nondirectory file)
+                       (expand-file-name easy-hugo-image-directory "static")))
+      (insert (concat (format "{{< figure src=\"%s%s\""
+                              easy-hugo-url
+                              (concat
+                               "/"
+                               easy-hugo-image-directory
+                               "/"
+                               (file-name-nondirectory file)))
+                      "  title=\"\" >}}"))))))
 
 ;;;###autoload
 (defun easy-hugo-pull-image ()
@@ -451,6 +506,39 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
 			       "/"
 			       (file-name-nondirectory file)))
 		      " alt=\"\" width=\"100%\"/>"))))))
+
+;;;###autoload
+(defun easy-hugo-pull-figure ()
+  "Pull image from internet to image directory and generate figure shortcode."
+  (interactive
+   (easy-hugo-with-env
+    (unless (file-directory-p (expand-file-name
+			       easy-hugo-image-directory
+			       (expand-file-name "static" easy-hugo-basedir)))
+      (error "%s does not exist" (expand-file-name
+				  easy-hugo-image-directory
+				  (expand-file-name "static" easy-hugo-basedir))))
+    (let ((url (read-string "URL: " (if (fboundp 'gui-get-selection)
+					(gui-get-selection))))
+	  (file (read-file-name "Save as: "
+				(expand-file-name
+				 easy-hugo-image-directory
+				 (expand-file-name "static" easy-hugo-basedir))
+				(car (last (split-string
+					    (substring-no-properties (gui-get-selection))
+					    "/")))
+				nil)))
+      (when (file-exists-p (file-truename file))
+	(error "%s already exists!" (file-truename file)))
+      (url-copy-file url file t)
+      (insert (concat (format "{{< figure src=\"%s%s\""
+                              easy-hugo-url
+                              (concat
+                               "/"
+                               easy-hugo-image-directory
+                               "/"
+                               (file-name-nondirectory file)))
+                      "  title=\"\" >}}"))))))
 
 ;;;###autoload
 (defun easy-hugo-publish ()
@@ -707,6 +795,13 @@ If not applicable, return the default preview."
     (delete-process easy-hugo--server-process))
   (when (get-buffer easy-hugo--preview-buffer)
     (kill-buffer easy-hugo--preview-buffer)))
+
+;;;###autoload
+(defun easy-hugo-current-time ()
+  "Generate current time in date format at the frontmatter."
+  (concat
+   (format-time-string "%Y-%m-%dT%T")
+   (easy-hugo--orgtime-format (format-time-string "%z"))))
 
 (defun easy-hugo--orgtime-format (x)
   "Format orgtime as X."
@@ -966,7 +1061,7 @@ If not applicable, return the default preview."
   (if (null easy-hugo-sort-default-char)
       (progn
 	"n .. New blog post    R .. Rename file   G .. Deploy GitHub    D .. Draft list
-p .. Preview          g .. Refresh       A .. Deploy AWS S3    u .. Undraft file
+p .. Preview          g .. Refresh       A .. Deploy AWS S3    O .. Open basedir
 v .. Open view-mode   s .. Sort time     T .. Publish timer    N .. No help-mode
 d .. Delete post      c .. Open config   W .. AWS S3 timer     I .. GCS timer
 P .. Publish server   C .. Deploy GCS    a .. Search blog ag   H .. GitHub timer
@@ -976,7 +1071,7 @@ F .. Full help [tab]  S .. Sort char     ? .. Describe-mode    q .. Quit easy-hu
     (progn
       "n .. New blog post    R .. Rename file   G .. Deploy GitHub    D .. Draft list
 p .. Preview          g .. Refresh       A .. Deploy AWS S3    s .. Sort char
-v .. Open view-mode   u .. Undraft file  T .. Publish timer    N .. No help-mode
+v .. Open view-mode   O .. Open basedir  T .. Publish timer    N .. No help-mode
 d .. Delete post      c .. Open config   S .. Sort time        I .. GCS timer
 P .. Publish server   C .. Deploy GCS    a .. Search blog ag   H .. GitHub timer
 < .. Previous blog    > .. Next blog     , .. Pre postdir      . .. Next postdir
@@ -1072,7 +1167,6 @@ J .. Jump blog        e .. Edit file
     (define-key map "I" 'easy-hugo-google-cloud-storage-deploy-timer)
     (define-key map "i" 'easy-hugo-cancel-google-cloud-storage-deploy-timer)
     (define-key map "D" 'easy-hugo-list-draft)
-    (define-key map "u" 'easy-hugo-undraft)
     (define-key map "q" 'easy-hugo-quit)
     (define-key map "<" 'easy-hugo-previous-blog)
     (define-key map ">" 'easy-hugo-next-blog)
@@ -1248,24 +1342,6 @@ Optional prefix ARG says how many lines to move; default is one line."
 			 (substring (thing-at-point 'line) easy-hugo--forward-char -1)
 			 easy-hugo-postdir)))
 	   (rename-file oldname newname 1)
-	   (easy-hugo-refresh)))))))
-
-(defun easy-hugo-undraft ()
-  "Undraft file on the pointer."
-  (interactive)
-  (when (equal (buffer-name (current-buffer)) easy-hugo--buffer-name)
-    (easy-hugo-with-env
-     (when (> 0.25 (easy-hugo--version))
-       (error "'easy-hugo-undraft' requires hugo 0.25 or higher"))
-     (unless (or (string-match "^$" (thing-at-point 'line))
-		 (eq (point) (point-max))
-		 (> (+ 1 easy-hugo--forward-char) (length (thing-at-point 'line))))
-       (let ((file (expand-file-name
-		    (substring (thing-at-point 'line) easy-hugo--forward-char -1)
-		    easy-hugo-postdir)))
-	 (when (and (file-exists-p file)
-		    (not (file-directory-p file)))
-	   (shell-command-to-string (concat "hugo undraft " file))
 	   (easy-hugo-refresh)))))))
 
 (defun easy-hugo-open ()

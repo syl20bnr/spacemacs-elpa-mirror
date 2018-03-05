@@ -1,10 +1,10 @@
 ;;; web-mode.el --- major mode for editing web templates
-;;; -*- coding: utf-8 -*-
+;;; -*- coding: utf-8; lexical-binding: t; -*-
 
 ;; Copyright 2011-2018 François-Xavier Bois
 
-;; Version: 15.1.0
-;; Package-Version: 15.1
+;; Version: 16.0.0
+;; Package-Version: 16
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; Package-Requires: ((emacs "23.1"))
@@ -25,7 +25,7 @@
 
 ;;---- CONSTS ------------------------------------------------------------------
 
-(defconst web-mode-version "15.1.0"
+(defconst web-mode-version "16.0.0"
   "Web Mode version.")
 
 ;;---- GROUPS ------------------------------------------------------------------
@@ -2384,6 +2384,10 @@ another auto-completion with different ac-sources (e.g. ac-php)")
         (buffer-narrowed-p)
       (/= (- (point-max) (point-min)) (buffer-size))))
 
+  ;; compatibility with emacs < 24
+  (defalias 'web-mode-prog-mode
+    (if (fboundp 'prog-mode) 'prog-mode 'fundamental-mode))
+
   ;; compatibility with emacs < 24.3
   (unless (fboundp 'setq-local)
     (defmacro setq-local (var val)
@@ -2404,7 +2408,7 @@ another auto-completion with different ac-sources (e.g. ac-php)")
 ;;---- MAJOR MODE --------------------------------------------------------------
 
 ;;;###autoload
-(define-derived-mode web-mode fundamental-mode "Web"
+(define-derived-mode web-mode web-mode-prog-mode "Web"
   "Major mode for editing web templates."
 
   (make-local-variable 'web-mode-attr-indent-offset)
@@ -2527,7 +2531,12 @@ another auto-completion with different ac-sources (e.g. ac-php)")
   (if (fboundp 'prog-mode)
       (put 'web-mode 'derived-mode-parent 'prog-mode))
 
-  ;;(web-mode-trace "end")
+  (cond
+   ((not (buffer-file-name))
+    )
+   ((string-match-p "web-mode-benchmark.html" (buffer-file-name))
+    (web-mode-trace "end"))
+   ) ;cond
 
   )
 
@@ -13021,8 +13030,8 @@ Prompt user if TAG-NAME isn't provided."
       (web-mode-buffer-indent)
       (setq sig2 (md5 (current-buffer)))
       (setq success (string= sig1 sig2))
-      (setq out (concat (if success "ok" "ko") " : " (file-name-nondirectory file)))
-      (message out)
+      (setq out (concat (if success "ok" "ko") " : " (file-name-nondirectory file) "\n"))
+      (princ out)
       (setq err (concat (file-name-directory file) "_err." (file-name-nondirectory file)))
       (if success
           (when (file-readable-p err)
@@ -13286,7 +13295,7 @@ extended to support more filetypes by customizing
 
 (defun web-mode-trace (msg)
   (let (sub)
-    ;;      (when (null web-mode-time) (setq web-mode-time (current-time)))
+    (when (null web-mode-time) (setq web-mode-time (current-time)))
     (setq sub (time-subtract (current-time) web-mode-time))
     (when nil
       (save-excursion

@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20180301.252
-;; Version: 2.9.21
+;; Package-Version: 2.9.22
+;; Version: 2.9.22
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -796,6 +796,14 @@ If not applicable, return the default preview."
   (when (get-buffer easy-hugo--preview-buffer)
     (kill-buffer easy-hugo--preview-buffer)))
 
+;;;###autoload
+(defun easy-hugo-current-time ()
+  "Generate current time in date format at the frontmatter."
+  (interactive)
+  (insert (concat
+	   (format-time-string "%Y-%m-%dT%T")
+	   (easy-hugo--orgtime-format (format-time-string "%z")))))
+
 (defun easy-hugo--orgtime-format (x)
   "Format orgtime as X."
   (concat (substring x 0 3) ":" (substring x 3 5)))
@@ -1054,7 +1062,7 @@ If not applicable, return the default preview."
   (if (null easy-hugo-sort-default-char)
       (progn
 	"n .. New blog post    R .. Rename file   G .. Deploy GitHub    D .. Draft list
-p .. Preview          g .. Refresh       A .. Deploy AWS S3    u .. Undraft file
+p .. Preview          g .. Refresh       A .. Deploy AWS S3    O .. Open basedir
 v .. Open view-mode   s .. Sort time     T .. Publish timer    N .. No help-mode
 d .. Delete post      c .. Open config   W .. AWS S3 timer     I .. GCS timer
 P .. Publish server   C .. Deploy GCS    a .. Search blog ag   H .. GitHub timer
@@ -1064,7 +1072,7 @@ F .. Full help [tab]  S .. Sort char     ? .. Describe-mode    q .. Quit easy-hu
     (progn
       "n .. New blog post    R .. Rename file   G .. Deploy GitHub    D .. Draft list
 p .. Preview          g .. Refresh       A .. Deploy AWS S3    s .. Sort char
-v .. Open view-mode   u .. Undraft file  T .. Publish timer    N .. No help-mode
+v .. Open view-mode   O .. Open basedir  T .. Publish timer    N .. No help-mode
 d .. Delete post      c .. Open config   S .. Sort time        I .. GCS timer
 P .. Publish server   C .. Deploy GCS    a .. Search blog ag   H .. GitHub timer
 < .. Previous blog    > .. Next blog     , .. Pre postdir      . .. Next postdir
@@ -1160,7 +1168,6 @@ J .. Jump blog        e .. Edit file
     (define-key map "I" 'easy-hugo-google-cloud-storage-deploy-timer)
     (define-key map "i" 'easy-hugo-cancel-google-cloud-storage-deploy-timer)
     (define-key map "D" 'easy-hugo-list-draft)
-    (define-key map "u" 'easy-hugo-undraft)
     (define-key map "q" 'easy-hugo-quit)
     (define-key map "<" 'easy-hugo-previous-blog)
     (define-key map ">" 'easy-hugo-next-blog)
@@ -1336,24 +1343,6 @@ Optional prefix ARG says how many lines to move; default is one line."
 			 (substring (thing-at-point 'line) easy-hugo--forward-char -1)
 			 easy-hugo-postdir)))
 	   (rename-file oldname newname 1)
-	   (easy-hugo-refresh)))))))
-
-(defun easy-hugo-undraft ()
-  "Undraft file on the pointer."
-  (interactive)
-  (when (equal (buffer-name (current-buffer)) easy-hugo--buffer-name)
-    (easy-hugo-with-env
-     (when (> 0.25 (easy-hugo--version))
-       (error "'easy-hugo-undraft' requires hugo 0.25 or higher"))
-     (unless (or (string-match "^$" (thing-at-point 'line))
-		 (eq (point) (point-max))
-		 (> (+ 1 easy-hugo--forward-char) (length (thing-at-point 'line))))
-       (let ((file (expand-file-name
-		    (substring (thing-at-point 'line) easy-hugo--forward-char -1)
-		    easy-hugo-postdir)))
-	 (when (and (file-exists-p file)
-		    (not (file-directory-p file)))
-	   (shell-command-to-string (concat "hugo undraft " file))
 	   (easy-hugo-refresh)))))))
 
 (defun easy-hugo-open ()

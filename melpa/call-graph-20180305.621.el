@@ -5,7 +5,7 @@
 ;; Author: Huming Chen <chenhuming@gmail.com>
 ;; Maintainer: Huming Chen <chenhuming@gmail.com>
 ;; URL: https://github.com/beacoder/call-graph
-;; Package-Version: 20180304.2337
+;; Package-Version: 20180305.621
 ;; Version: 0.0.8
 ;; Keywords: programming, convenience
 ;; Created: 2018-01-07
@@ -179,7 +179,7 @@ e.g: class::method => method."
              (is-valid-file (file-exists-p file-name))
              (is-valid-nb (integerp line-nb)))
     (let ((location (concat file-name ":" line-nb-str))
-          caller)
+          (caller nil))
       (with-temp-buffer
         (insert-file-contents-literally file-name)
         ;; TODO: leave only hooks on which 'which-function-mode depends
