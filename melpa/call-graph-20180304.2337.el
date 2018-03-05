@@ -5,7 +5,7 @@
 ;; Author: Huming Chen <chenhuming@gmail.com>
 ;; Maintainer: Huming Chen <chenhuming@gmail.com>
 ;; URL: https://github.com/beacoder/call-graph
-;; Package-Version: 20180304.1811
+;; Package-Version: 20180304.2337
 ;; Version: 0.0.8
 ;; Keywords: programming, convenience
 ;; Created: 2018-01-07
@@ -185,6 +185,9 @@ e.g: class::method => method."
         ;; TODO: leave only hooks on which 'which-function-mode depends
         ;; (set (make-local-variable 'c++-mode-hook) nil)
         (c++-mode)
+        (goto-char (point-min))
+        (while (re-search-forward "__attribute__[ \t\n]*(([[:alpha:]]+))" nil t)
+          (replace-match "__attribute__" t nil)) ; imenu failed to parse function with __attribute__ ((...)) as args
         (which-function-mode t)
         (goto-char (point-min))
         (forward-line (1- line-nb))
