@@ -1,2 +1,5 @@
-Ivy interface to mpdel.  Provide `ivy-mpdel-artists' as entry point
-command.  Bind that to a convenient binding.
+The package ivy-mpdel provides an ivy/counsel interface to navigate
+your Music Player Daemon database (MPD) database, a flexible,
+powerful,server-side application for playing music.  ivy-mpdel
+works in cooperation with (and depends on) mpdel, an Emacs client
+for MPD.
