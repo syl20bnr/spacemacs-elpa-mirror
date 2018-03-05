@@ -6,7 +6,7 @@
 
 ;; Compatibility: GNU Emacs 24.1+
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5") (async "1.9.2"))
-;; Package-Version: 20180202.44
+;; Package-Version: 20180304.2233
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -219,7 +219,6 @@ Arg CONF is an entry in `psession--winconf-alist'."
 
 (defun psession--restore-some-buffers ()
   (let* ((max (length psession--save-buffers-alist))
-         file-name-handler-alist
          (progress-reporter (make-progress-reporter "Restoring buffers..." 0 max)))
     (cl-loop for (f . p) in psession--save-buffers-alist
              for count from 0
