@@ -5,7 +5,7 @@
 ;; Author: Huming Chen <chenhuming@gmail.com>
 ;; Maintainer: Huming Chen <chenhuming@gmail.com>
 ;; URL: https://github.com/beacoder/call-graph
-;; Package-Version: 20180304.931
+;; Package-Version: 20180304.1811
 ;; Version: 0.0.8
 ;; Keywords: programming, convenience
 ;; Created: 2018-01-07
@@ -186,7 +186,8 @@ e.g: class::method => method."
         ;; (set (make-local-variable 'c++-mode-hook) nil)
         (c++-mode)
         (which-function-mode t)
-        (forward-line line-nb)
+        (goto-char (point-min))
+        (forward-line (1- line-nb))
         (setq caller (which-function)))
       (when caller
         (cons (intern caller) location)))))

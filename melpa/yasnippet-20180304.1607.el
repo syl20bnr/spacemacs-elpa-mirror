@@ -6,7 +6,7 @@
 ;;          Noam Postavsky <npostavs@gmail.com>
 ;; Maintainer: Noam Postavsky <npostavs@gmail.com>
 ;; Version: 0.12.2
-;; Package-Version: 20180218.459
+;; Package-Version: 20180304.1607
 ;; X-URL: http://github.com/joaotavora/yasnippet
 ;; Keywords: convenience, emulation
 ;; URL: http://github.com/joaotavora/yasnippet
@@ -238,7 +238,7 @@ nil.
 - To signal that the user quit the prompting process, you can
 signal `quit' with
 
-  (signal \\='quit \"user quit!\")."
+    (signal \\='quit \"user quit!\")"
   :type '(repeat function))
 
 (defcustom yas-indent-line 'auto
@@ -2947,7 +2947,8 @@ Otherwise signal `yas-exception'."
 (defun yas-field-value (number)
   "Get the string for field with NUMBER.
 
-Use this in primary and mirror transformations to tget."
+Use this in primary and mirror transformations to get the text of
+other fields."
   (let* ((snippet (car (yas-active-snippets)))
          (field (and snippet
                      (yas--snippet-find-field snippet number))))
@@ -4303,9 +4304,13 @@ The SNIPPET's markers are preserved."
   ;; Now do stuff for `fixed' and `auto'.
   (save-excursion
     (cond ((eq yas-indent-line 'fixed)
-           (while (and (zerop (forward-line))
-                       (zerop (current-column)))
-             (indent-to-column yas--indent-original-column)))
+           (forward-line 1)
+           (let ((indent-line-function
+                  (lambda ()
+                    (indent-to-column yas--indent-original-column))))
+             (yas--indent-region (line-beginning-position)
+                                 (point-max)
+                                 snippet)))
           ((eq yas-indent-line 'auto)
            (unless yas-also-auto-indent-first-line
              (forward-line 1))

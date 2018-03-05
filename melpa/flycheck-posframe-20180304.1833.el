@@ -5,8 +5,8 @@
 ;; Author: Alex Murray <murray.alex@gmail.com>
 ;; Maintainer: Alex Murray <murray.alex@gmail.com>
 ;; URL: https://github.com/alexmurray/flycheck-posframe
-;; Package-Version: 20180303.414
-;; Version: 0.1
+;; Package-Version: 20180304.1833
+;; Version: 0.2
 ;; Package-Requires: ((flycheck "0.24") (emacs "26") (posframe "0.1.0"))
 
 ;; This file is not part of GNU Emacs.
@@ -50,6 +50,12 @@
   :type 'string
   :package-version '(flycheck-posframe . "0.1"))
 
+(defface flycheck-posframe-face
+  '((t :inherit default))
+  "The face to use for displaying messages in posframe."
+  :group 'flycheck-posframe
+  :package-version '(flycheck-posframe . "0.2"))
+
 (defvar flycheck-posframe-buffer "*flycheck-posframe-buffer*"
   "The posframe buffer name use by flycheck-posframe.")
 
@@ -77,14 +83,7 @@
                     'string-lessp)))
     (propertize (mapconcat 'identity messages "\n")
                 'face
-                '(:inherit posframe-face
-                           :underline nil
-                           :overline nil
-                           :strike-through nil
-                           :box nil
-                           :slant normal
-                           :width normal
-                           :weight normal))))
+                '(:inherit flycheck-posframe-face))))
 
 (defun flycheck-posframe-show-posframe (errors)
   "Display ERRORS, using posframe.el library."
