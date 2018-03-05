@@ -6,7 +6,7 @@
 ;; Homepage: https://github.com/tarsius/moody
 
 ;; Package-Requires: ((emacs "25.3"))
-;; Package-Version: 20180226.538
+;; Package-Version: 20180305.514
 
 ;; This file is not part of GNU Emacs.
 
@@ -76,6 +76,8 @@
 
 ;;; Code:
 
+(require 'cl-lib)
+
 ;;; Options
 
 (defcustom moody-mode-line-height 30
@@ -93,14 +95,15 @@ This should be an even number."
 
 (defun moody-replace-element (plain wrapped &optional reverse)
   "Replace PLAIN element with WRAPPED element in `mode-line-format'.
+
+Replace every occurance of PLAIN is the complete tree.
 If optional REVERSE is non-nil, then replace WRAPPED with PLAIN."
   (when reverse
     (cl-rotatef plain wrapped))
-  (let ((replace (member plain mode-line-format)))
-    (cond (replace
-           (setcar replace wrapped))
-          ((not (member wrapped mode-line-format))
-           (message "Cannot find %s and use %s in its place" plain wrapped)))))
+  (let ((format (cl-subst wrapped plain mode-line-format :test #'equal)))
+    (if (eq format mode-line-format)
+        (message "Cannot find %s and use %s in its place" plain wrapped)
+      (setq-default mode-line-format format))))
 
 (defun moody-tab (string &optional width direction)
   "Return STRING as a tab.

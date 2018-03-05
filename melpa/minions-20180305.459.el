@@ -6,7 +6,7 @@
 ;; Homepage: https://github.com/tarsius/minions
 
 ;; Package-Requires: ((emacs "25.3"))
-;; Package-Version: 20180227.1031
+;; Package-Version: 20180305.459
 
 ;; This file is not part of GNU Emacs.
 
@@ -102,14 +102,16 @@ minor-modes that is usually displayed directly in the mode line."
   :group 'minions
   :global t
   (if minions-mode
-      (unless (memq 'minions-mode-line-modes mode-line-format)
-        (unless (memq 'mode-line-modes mode-line-format)
-          (setq minions-mode nil)
-          (error "Cannot turn on Minions mode"))
-        (setcar (memq 'mode-line-modes mode-line-format)
-                'minions-mode-line-modes))
-    (setcar (memq 'minions-mode-line-modes mode-line-format)
-            'mode-line-modes)))
+      (let ((banana (cl-subst 'minions-mode-line-modes
+                              'mode-line-modes
+                              mode-line-format)))
+        (if (eq banana mode-line-format)
+            (progn (setq minions-mode nil)
+                   (error "Cannot turn on Minions mode"))
+          (setq-default mode-line-format banana)))
+    (cl-nsubst 'mode-line-modes
+               'minions-mode-line-modes
+               mode-line-format)))
 
 ;;; Menu
 

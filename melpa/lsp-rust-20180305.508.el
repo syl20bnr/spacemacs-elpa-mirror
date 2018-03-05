@@ -4,7 +4,7 @@
 
 ;; Author: Vibhav Pant <vibhavp@gmail.com>
 ;; Version: 1.0
-;; Package-Version: 20180213.2304
+;; Package-Version: 20180305.508
 ;; Package-Requires: ((emacs "25") (lsp-mode "3.0") (rust-mode "0.3.0") (dash "1.0") (markdown-mode "2.3"))
 ;; Keywords: rust
 ;; URL: https://github.com/emacs-lsp/lsp-rust
@@ -38,6 +38,7 @@
 
 (defvar lsp-rust--config-options (make-hash-table))
 (defvar lsp-rust--diag-counters (make-hash-table))
+(defvar lsp-rust--running-progress (make-hash-table))
 
 (defcustom lsp-rust-rls-command '("rls")
   "The command used to launch the RLS.
@@ -116,8 +117,33 @@ The explaination comes from 'rustc --explain=ID'."
       (error "Couldn't find root for project at %s" default-directory))
     (file-name-directory dir)))
 
+(define-inline lsp-rust--as-percent (fraction)
+  (inline-quote (format "%d%%" (round (* ,fraction 100)))))
+
 (defconst lsp-rust--handlers
-  '(("rustDocument/diagnosticsBegin" . (lambda (_w _p)))
+  '(("window/progress" .
+     (lambda (workspace progress)
+       (let ((id (gethash "id" progress))
+	     (message (gethash "message" progress))
+	     (percentage (gethash "percentage" progress))
+	     (title (gethash "title" progress))
+	     (workspace-progress (gethash workspace lsp-rust--running-progress)))
+	 (if (gethash "done" progress)
+	     (setq workspace-progress (delete id workspace-progress))
+	   (delete-dups workspace-progress)
+	   (push id workspace-progress))
+	 (puthash workspace workspace-progress lsp-rust--running-progress)
+	 (setq lsp-status
+	       (if workspace-progress
+		   (cond
+		    ((numberp percentage) (lsp-rust--as-percent percentage))
+		    (message (format "(%s)" message))
+		    (title (format "(%s)" (downcase title))))
+		 nil)))))
+    ;; From rls-vscode:
+    ;; FIXME these are legacy notifications used by RLS ca jan 2018.
+    ;; remove once we're certain we've progress on.
+    ("rustDocument/diagnosticsBegin" . (lambda (_w _p)))
     ("rustDocument/diagnosticsEnd" .
      (lambda (w _p)
        (when (<= (cl-decf (gethash w lsp-rust--diag-counters 0)) 0)
