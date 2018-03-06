@@ -16,8 +16,8 @@
 ;; Boston, MA 02111-1307, USA.
 
 ;; Author: Martin Bjorklund <mbj4668@gmail.com>
-;; Version: 0.9.7
-;; Package-Version: 0.9.7
+;; Version: 0.9.8
+;; Package-Version: 0.9.8
 
 ;;; Commentary:
 
@@ -25,6 +25,8 @@
 ;; later.
 
 ;; History:
+;;   0.9.8 - 2018-03-06
+;;        yet another autoload fix; contributed by Christian Hopps
 ;;   0.9.7 - 2017-03-23
 ;;        one more autoload fix
 ;;   0.9.6 - 2017-03-21
@@ -100,7 +102,7 @@
 ;;
 ;;     (add-hook 'yang-mode-hook 'my-yang-mode-hook)
 ;;
-;;   Using the oultine minor mode for YANG is very useful to get a
+;;   Using the outline minor mode for YANG is very useful to get a
 ;;   good overview of the structure of a module.
 ;;
 ;;   Put this in your .emacs:
@@ -158,7 +160,13 @@
   ;; mode as the fallback for the constants we don't change here.
   ;; This needs to be done also at compile time since the language
   ;; constants are evaluated then.
-  (c-add-language 'yang-mode 'java-mode))
+  (c-add-language 'yang-mode 'java-mode)
+
+  ;; compatibility with emacs < 24
+  (defalias 'yang-mode-prog-mode
+    (if (fboundp 'prog-mode) 'prog-mode 'fundamental-mode))
+  )
+
 
 ;; Work around Emacs bug #18845, cc-mode expects cl to be loaded
 (eval-and-compile
@@ -352,15 +360,8 @@
 (substitute-key-definition 'c-fill-paragraph 'yang-fill-paragraph
                            yang-mode-map c-mode-map)
 
-;; derive from prog-mode if it is defined
-(if (fboundp 'prog-mode)
-    (defmacro yang-define-derived-mode (mode &rest args)
-      `(define-derived-mode ,mode prog-mode ,@args))
-  (defmacro yang-define-derived-mode (mode &rest args)
-    `(define-derived-mode ,mode nil ,@args)))
-
-;;;###autoload(autoload 'yang-mode "yang-mode" "" t nil)
-(yang-define-derived-mode yang-mode "YANG"
+;;;###autoload
+(define-derived-mode yang-mode yang-mode-prog-mode "YANG"
   "Major mode for editing YANG modules.
 
 The hook `c-mode-common-hook' is run with no args at mode

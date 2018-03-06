@@ -2,6 +2,8 @@ Note: The interface used in this file requires CC Mode 5.30 or
 later.
 
 History:
+  0.9.8 - 2018-03-06
+       yet another autoload fix; contributed by Christian Hopps
   0.9.7 - 2017-03-23
        one more autoload fix
   0.9.6 - 2017-03-21
@@ -77,7 +79,7 @@ Useful tips:
 
     (add-hook 'yang-mode-hook 'my-yang-mode-hook)
 
-  Using the oultine minor mode for YANG is very useful to get a
+  Using the outline minor mode for YANG is very useful to get a
   good overview of the structure of a module.
 
   Put this in your .emacs:
