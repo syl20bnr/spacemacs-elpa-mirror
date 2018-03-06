@@ -1,24 +1,39 @@
 ;;; unidecode.el --- Transliterate Unicode to ASCII -*- lexical-binding: t -*-
 ;;
 ;; Copyright (C) 2013 sindikat
+;; Copyright (C) 2018 sindikat, John Mastro
 ;;
 ;; Author: sindikat <sindikat at mail36 dot net>
+;; Maintainer: John Mastro <john.b.mastro@gmail.com>
 ;; Version: 0.2
-;; Package-Version: 20180303.832
+;; Package-Version: 20180306.47
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
-;; This file is placed in the public domain to the extent possible by law.
+;; This program is free software: you can redistribute it and/or modify it under
+;; the terms of the GNU General Public License as published by the Free Software
+;; Foundation, version 2.
+;;
+;; This program is distributed in the hope that it will be useful, but WITHOUT
+;; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+;; FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+;; details.
+;;
+;; You should have received a copy of the GNU General Public License along with
+;; this program. If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 ;;
 ;; Transliterate Unicode characters into one of 128 ASCII characters.
-;; This package is an Emacs Lisp port of Python Unidecode package.
 ;;
-;; Python Unidecode can be found here:
-;; http://pypi.python.org/pypi/Unidecode/
+;; Two functions are provided that operate on strings (`unidecode' and
+;; `unidecode-sanitize'), plus two that operate on buffer regions
+;; (`unidecode-region' and `unidecode-sanitize-region')
 ;;
-;; More information in file README.org
+;; This package is an Emacs Lisp port of the Unidecode package for Python:
+;; <http://pypi.python.org/pypi/Unidecode/>.
+;;
+;; See README.org for additional information.
 
 ;;; Code:
 

@@ -1,7 +1,10 @@
 Transliterate Unicode characters into one of 128 ASCII characters.
-This package is an Emacs Lisp port of Python Unidecode package.
 
-Python Unidecode can be found here:
-http://pypi.python.org/pypi/Unidecode/
+Two functions are provided that operate on strings (`unidecode' and
+`unidecode-sanitize'), plus two that operate on buffer regions
+(`unidecode-region' and `unidecode-sanitize-region')
 
-More information in file README.org
+This package is an Emacs Lisp port of the Unidecode package for Python:
+<http://pypi.python.org/pypi/Unidecode/>.
+
+See README.org for additional information.
