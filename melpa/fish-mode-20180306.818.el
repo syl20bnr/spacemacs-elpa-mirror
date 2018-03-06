@@ -4,7 +4,7 @@
 
 ;; Author: Tony Wang <wwwjfy@gmail.com>
 ;; Keywords: Fish, shell
-;; Package-Version: 20180117.1847
+;; Package-Version: 20180306.818
 ;; Package-Requires: ((emacs "24"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -401,14 +401,6 @@ POSITIVE-RE and NEGATIVE-RE are regular expressions."
   (> (fish/count-of-end-terms)
      (fish/count-of-opening-terms)))
 
-(defun fish/line-contains-block-opening-term? ()
-  "Returns t if line contains block opening term, nil otherwise."
-  (fish/at-open-block?))
-
-(defun fish/line-contans-end-term? ()
-  "Returns t if line contains end term, nil otherwise."
-  (fish/at-open-end?))
-
 (defun fish/line-contains-open-switch-term? ()
   "Returns t if line contains switch term, nil otherwise."
   (> (fish/count-tokens-on-current-line (rx symbol-start "switch" symbol-end) nil)
@@ -568,7 +560,8 @@ POSITIVE-RE and NEGATIVE-RE are regular expressions."
 (defun fish-get-case-indent ()
   "Returns indentation level based on matching 'switch' term."
   (let ((cur-indent 0)
-        (not-indented t))
+        (not-indented t)
+        (count-of-ends 0))
     (while (and not-indented
                 (not (bobp)))
       ;; move to previous line
@@ -581,8 +574,18 @@ POSITIVE-RE and NEGATIVE-RE are regular expressions."
        ;; found comment line, so just skip it
        ((fish/at-comment-line?))
 
+       ;; the following two conditions are to check embeded switch term
+       ((and
+         (> (fish/count-of-opening-terms) 0)
+         (> count-of-ends 0))
+        (setq count-of-ends (1- count-of-ends)))
+
+       ((fish/at-open-end?)
+        (setq count-of-ends (1+ count-of-ends)))
+
+
        ;; line contains switch term
-       ;; so cur-indent equials to increased
+       ;; so cur-indent equals to increased
        ;; indentation level of current line
        ((fish/line-contains-open-switch-term?)
         (setq cur-indent (+ (current-indentation) fish-indent-offset)
