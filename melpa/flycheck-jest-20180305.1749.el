@@ -5,7 +5,7 @@
 ;; Authors: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/flycheck-jest
-;; Package-Version: 20180218.1743
+;; Package-Version: 20180305.1749
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "25.1") (flycheck "0.25"))
 ;; Keywords: languages jest
@@ -61,6 +61,8 @@
   :group 'flycheck-jest)
 
 ;;; Flycheck
+(defvar flycheck-jest-modes '(web-mode js-mode typescript-mode rjsx-mode)
+  "A list of modes for use with `flycheck-jest'.")
 
 (flycheck-def-executable-var jest "jest")
 
@@ -71,8 +73,7 @@
 
 (flycheck-define-checker jest
   "Flycheck plugin for for Jest."
-  :command ("node"
-            (eval (flycheck-jest--path))
+  :command ("jest"
             "--json"
             "--testPathPattern"
             (eval buffer-file-name)
@@ -91,34 +92,38 @@
 (defun flycheck-jest-setup ()
   "Setup Flycheck for Jest."
   (interactive)
-  (add-to-list 'flycheck-checkers 'jest))
+  (add-to-list 'flycheck-checkers 'jest)
+
+  (add-hook 'flycheck-before-syntax-check-hook
+            #'flycheck-jest--set-flychecker-executable))
 
 (defun flycheck-jest--find-jest-project-directory (&optional _checker)
   "Return directory containing project-related jest files or nil."
-  (expand-file-name
-   (or
-    (locate-dominating-file buffer-file-name "app.json")
-    (locate-dominating-file buffer-file-name ".npmrc")
-    (locate-dominating-file buffer-file-name ".git")
-    (locate-dominating-file buffer-file-name "package.json"))))
+  (when buffer-file-name
+    (flycheck-jest-when-let*
+        ((path (or
+                (locate-dominating-file buffer-file-name "node_modules/.bin/jest")
+                (locate-dominating-file buffer-file-name "app.json")
+                (locate-dominating-file buffer-file-name ".npmrc")
+                (locate-dominating-file buffer-file-name ".git")
+                (locate-dominating-file buffer-file-name "package.json"))))
+      (expand-file-name path))))
 
 (defun flycheck-jest--set-flychecker-executable ()
   "Set `flycheck-jest' executable according to jest location."
-  (setq flycheck-jest-executable
-        (format "node %snode_modules/jest/bin/jest.js"
-                (flycheck-jest--find-jest-project-directory))))
+  (when (flycheck-jest--should-use-p)
+    (setq flycheck-jest-executable
+          (format "%snode_modules/.bin/jest"
+                  (flycheck-jest--find-jest-project-directory)))))
 
 (defun flycheck-jest--should-use-p ()
   "Return whether or not `flycheck-jest' should run."
   (and buffer-file-name
+       (memq major-mode flycheck-jest-modes)
        (string-match-p "test" buffer-file-name)
-       (file-exists-p (format "%snode_modules/jest/bin/jest.js"
-                              (flycheck-jest--find-jest-project-directory)))))
-
-(defun flycheck-jest--path ()
-  "Path in project jest should be located."
-  (format "%snode_modules/jest/bin/jest.js"
-          (flycheck-jest--find-jest-project-directory)))
+       (file-exists-p
+        (format "%snode_modules/.bin/jest"
+                (flycheck-jest--find-jest-project-directory)))))
 
 (defun flycheck-jest--result-path (&optional buffer)
   "Return the path `flycheck-jest' writes json reports to.
@@ -169,16 +174,36 @@ Result is a list of plists with the form:
                 (message (alist-get 'message testResult)))
             (mapcar
              (lambda (s)
-               (let* ((split (split-string s "at Object.<anonymous>" t))
-                      (error-message (string-trim (car split)))
-                      (linenumbers-str (cadr split))
-                      (line (flycheck-jest--extract-line linenumbers-str))
-                      (col (flycheck-jest--extract-column linenumbers-str)))
-                 `(
-                   :line ,line
-                   :column ,col
-                   :error ,error-message
-                   :filename ,filename)))
+               (cond
+                ((string-match-p "at Object.<anonymous>" s)
+                 (let* ((split (split-string s "at Object.<anonymous>" t))
+                        (error-message (string-trim (car split)))
+                        (linenumbers-str (cadr split))
+                        (line (flycheck-jest--extract-line linenumbers-str))
+                        (col (flycheck-jest--extract-column linenumbers-str)))
+                   `(
+                     :line ,line
+                     :column ,col
+                     :error ,error-message
+                     :filename ,filename)))
+                ;; FIXME: This is fairly duplicated and it'd be nice to figure
+                ;; out how to grab the line and column numbers without resorting
+                ;; to explicit pattern patches.
+                ((string-match "at _callee\\(\[[:digit:]]\\)\\$" s)
+                 (let* ((split (split-string
+                                s "at _callee\\(\[[:digit:]]\\)\\$" t))
+                        (error-message (string-trim (car split)))
+                        ;; The cadr of the split will be a stacktrace. We only
+                        ;; care about the first line of the stacktrace.
+                        (linenumbers-str (car (split-string (cadr split) "\n")))
+                        (line (flycheck-jest--extract-line linenumbers-str))
+                        (col (flycheck-jest--extract-column linenumbers-str)))
+                   `(
+                     :line ,line
+                     :column ,col
+                     :error ,error-message
+                     :filename ,filename)))
+                (:default nil)))
              (seq-filter (lambda (s)
                            (not (string-blank-p s)))
                          (split-string message "●" t)))))

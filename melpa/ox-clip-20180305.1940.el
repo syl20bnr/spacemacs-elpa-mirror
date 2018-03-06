@@ -4,7 +4,7 @@
 
 ;; Author: John Kitchin <jkitchin@andrew.cmu.edu>
 ;; URL: https://github.com/jkitchin/ox-clip/ox-clip.el
-;; Package-Version: 20180303.1258
+;; Package-Version: 20180305.1940
 ;; Version: 0.3
 ;; Keywords: org-mode
 ;; Package-Requires: ((org "8.2") (htmlize "0"))
@@ -426,12 +426,13 @@ R1 and R2 define the selected region."
 
 
 ;; * copy images / latex fragments to the clipboard
-
+;;;###autoload
 (defun ox-clip-image-to-clipboard (&optional scale)
   "Copy the image file or latex fragment at point to the clipboard as an image.
-SCALE is a numerical prefix (default=1) that determines the size
-of the latex image. It has no effect on other kinds of images.
-Currently only works on Linux."
+SCALE is a numerical
+prefix (default=`ox-clip-default-latex-scale') that determines
+the size of the latex image. It has no effect on other kinds of
+images. Currently only works on Linux."
   (interactive "P")
   (let* ((el (org-element-context))
 	 (image-file (cond
