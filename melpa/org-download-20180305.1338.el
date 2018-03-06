@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel
 ;; URL: https://github.com/abo-abo/org-download
-;; Package-Version: 20171116.1045
+;; Package-Version: 20180305.1338
 ;; Version: 0.1.0
 ;; Package-Requires: ((async "1.2"))
 ;; Keywords: images, screenshots, download
@@ -415,6 +415,16 @@ It's inserted before the image link and is used to annotate it.")
                                (region-end))
          (delete-region (region-beginning)
                         (region-end)))
+
+        ((looking-at org-any-link-re)
+         (let ((fname (org-link-unescape
+                       (match-string-no-properties 2))))
+           (when (file-exists-p fname)
+             (delete-file fname)
+             (delete-region (match-beginning 0)
+                            (match-end 0))
+             (when (eolp)
+               (delete-char 1)))))
 
         (t (org-download--delete (line-beginning-position)
                                  (line-end-position))))
