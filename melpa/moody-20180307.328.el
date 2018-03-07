@@ -6,7 +6,7 @@
 ;; Homepage: https://github.com/tarsius/moody
 
 ;; Package-Requires: ((emacs "25.3"))
-;; Package-Version: 20180307.154
+;; Package-Version: 20180307.328
 
 ;; This file is not part of GNU Emacs.
 
@@ -41,11 +41,12 @@
 
 ;; Usage:
 
-;; * Make sure that the face `mode-line' does not set `:box' and that
-;;   it sets `:underline' and `:overline' to the same color.  That
-;;   color should be different from the `:background' colors of both
-;;   `mode-line' and `default'.  Do the same for `mode-line-inactive'.
-;;   The line colors of `mode-line' and `mode-line-inactive' do not
+;; * Make sure that the face `mode-line' does not set `:box' and
+;;   that `:underline' and `:overline' are the same color or are
+;;   both `undefined'.  If defined, then the line color should be
+;;   different from the `:background' colors of both `mode-line'
+;;   and `default'.  Do the same for `mode-line-inactive'.  The
+;;   line colors of `mode-line' and `mode-line-inactive' do not
 ;;   have to be identical.  For example:
 ;;
 ;;     (use-package solarized-theme
@@ -142,6 +143,7 @@ not specified, then faces based on `default', `mode-line' and
                   (or face-inactive 'mode-line-inactive)))
          (outer (face-attribute base :background))
          (line  (face-attribute base :underline))
+         (line  (if (eq line 'unspecified) outer line))
          (inner (if (eq type 'ribbon)
                     (face-attribute base :underline)
                   (face-attribute 'default :background)))
@@ -286,6 +288,28 @@ to the command loop."
 (add-hook 'focus-in-hook                    'moody--set-active-window)
 (advice-add 'handle-switch-frame :after     'moody--set-active-window)
 (advice-add 'select-window :after           'moody--set-active-window)
+
+;;; Kludges
+
+(defun moody-slant-apple-rgb (direction c1 c2 c3 &optional height)
+  (cl-flet ((cnv (color)
+                 (pcase-let*
+                     ((`(,r ,g ,b) (color-name-to-rgb color))
+                      (`(,x ,y ,z) (color-srgb-to-xyz r g b))
+                      (r (expt (+ (*  3.2404542 x)
+                                  (* -1.5371385 y)
+                                  (* -0.4985314 z))
+                               (/ 1.8)))
+                      (g (expt (+ (* -0.9692660 x)
+                                  (*  1.8760108 y)
+                                  (*  0.0415560 z))
+                               (/ 1.8)))
+                      (b (expt (+ (*  0.0556434 x)
+                                  (* -0.2040259 y)
+                                  (*  1.0572252 z))
+                               (/ 1.8))))
+                   (color-rgb-to-hex r g b))))
+    (moody-slant direction (cnv c1) (cnv c2) (cnv c3) height)))
 
 ;;; _
 (provide 'moody)

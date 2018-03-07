@@ -5,7 +5,7 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/system-packages
-;; Package-Version: 20180131.1624
+;; Package-Version: 20180307.646
 ;; Package-Requires: ((cl-lib "0.5"))
 
 ;; This file is not part of GNU Emacs.
@@ -77,7 +77,7 @@
            (install . "brew install")
            (search . "brew search")
            (uninstall . "brew uninstall")
-           (update . ("brew update" "brew upgrade --all"))
+           (update . ("brew update" "brew upgrade"))
            (clean-cache . "brew cleanup")
            (log . nil)
            (get-info . nil)
