@@ -43,7 +43,19 @@ NOTE: ivy-posframe requires Emacs 26
    (push '(t . ivy-posframe-display) ivy-display-functions-alist)
    #+END_EXAMPLE
 
-** How to custom your ivy-posframe style
+** Tips
+
+*** How to show fringe to ivy-posframe
+#+BEGIN_EXAMPLE
+(setq ivy-posframe-parameters
+      '((left-fringe . 10)
+        (right-fringe . 10)))
+#+END_EXAMPLE
+
+By the way, User can set *any* parameters of ivy-posframe with
+the help of `ivy-posframe-parameters'.
+
+*** How to custom your ivy-posframe style
 
 The simplest way is:
 #+BEGIN_EXAMPLE

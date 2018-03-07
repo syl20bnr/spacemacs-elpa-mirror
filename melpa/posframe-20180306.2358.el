@@ -5,7 +5,7 @@
 ;; Author: Feng Shu <tumashu@163.com>
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/posframe
-;; Package-Version: 20180306.2243
+;; Package-Version: 20180306.2358
 ;; Version: 0.1.0
 ;; Keywords: tooltip
 ;; Package-Requires: ((emacs "26"))
@@ -515,6 +515,17 @@ This posframe's buffer is POSFRAME-BUFFER."
     (with-current-buffer buffer
       (when posframe--frame
         (posframe--kill-buffer buffer)))))
+
+(defun posframe-auto-delete ()
+  "Auto delete posframe when its buffer is killed.
+
+This function is used by `kill-buffer-hook'."
+  (dolist (frame (frame-list))
+    (let ((buffer (frame-parameter frame 'posframe-buffer)))
+      (when (eq buffer (current-buffer))
+        (delete-frame frame)))))
+
+(add-hook 'kill-buffer-hook #'posframe-auto-delete)
 
 ;; Posframe's position handler
 (defun posframe-run-poshandler (info)

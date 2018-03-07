@@ -6,7 +6,7 @@
 ;; Homepage: https://github.com/tarsius/moody
 
 ;; Package-Requires: ((emacs "25.3"))
-;; Package-Version: 20180305.514
+;; Package-Version: 20180307.154
 
 ;; This file is not part of GNU Emacs.
 
@@ -52,9 +52,9 @@
 ;;       :config
 ;;       (load-theme 'solarized-light t)
 ;;       (let ((line (face-attribute 'mode-line :underline)))
-;;         (set-face-attribute 'mode-line-inactive nil :overline   line)
 ;;         (set-face-attribute 'mode-line          nil :overline   line)
-;;         (set-face-attribute 'mode-line          nil :underline  line)
+;;         (set-face-attribute 'mode-line-inactive nil :overline   line)
+;;         (set-face-attribute 'mode-line-inactive nil :underline  line)
 ;;         (set-face-attribute 'mode-line          nil :box        nil)
 ;;         (set-face-attribute 'mode-line-inactive nil :box        nil)
 ;;         (set-face-attribute 'mode-line-inactive nil :background "#f9f2d9")))

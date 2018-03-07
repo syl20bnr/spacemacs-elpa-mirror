@@ -5,7 +5,7 @@
 ;; Authors: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/flycheck-jest
-;; Package-Version: 20180305.1749
+;; Package-Version: 20180307.1
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "25.1") (flycheck "0.25"))
 ;; Keywords: languages jest
@@ -189,7 +189,7 @@ Result is a list of plists with the form:
                 ;; FIXME: This is fairly duplicated and it'd be nice to figure
                 ;; out how to grab the line and column numbers without resorting
                 ;; to explicit pattern patches.
-                ((string-match "at _callee\\(\[[:digit:]]\\)\\$" s)
+                ((string-match-p "at _callee\\(\[[:digit:]]\\)\\$" s)
                  (let* ((split (split-string
                                 s "at _callee\\(\[[:digit:]]\\)\\$" t))
                         (error-message (string-trim (car split)))
