@@ -5,8 +5,8 @@
 ;; Author: Huming Chen <chenhuming@gmail.com>
 ;; Maintainer: Huming Chen <chenhuming@gmail.com>
 ;; URL: https://github.com/beacoder/call-graph
-;; Package-Version: 20180305.621
-;; Version: 0.0.8
+;; Package-Version: 20180306.1839
+;; Version: 0.1.0
 ;; Keywords: programming, convenience
 ;; Created: 2018-01-07
 ;; Package-Requires: ((emacs "25.1") (cl-lib "0.6.1") (hierarchy "0.7.0") (tree-mode "1.0.0") (ivy "0.10.0"))
@@ -55,7 +55,7 @@
 
 (defgroup call-graph nil
   "Customization support for the `call-graph'."
-  :version "0.0.8"
+  :version "0.1.0"
   :group 'applications)
 
 (defcustom call-graph-initial-max-depth 2
@@ -63,7 +63,7 @@
   :type 'integer
   :group 'call-graph)
 
-(defcustom call-graph-filters '("grep -E \"\\.(cpp|cc):\"")
+(defcustom call-graph-search-filters '("grep -E \"\\.(cpp|cc):\"")
   "The filters used by `call-graph' when searching caller."
   :type 'list
   :group 'call-graph)
@@ -83,6 +83,12 @@
 ;; Definition
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defvar call-graph-persist-caller-filters nil
+  "The alist form of `call-graph--caller-filters'.")
+
+(defvar call-graph--caller-filters nil
+  "The filters describing caller relations, used when building caller-map.")
+
 (defvar call-graph--current-depth 0
   "The current depth of call graph.")
 
@@ -100,7 +106,6 @@
                (:constructor nil)
                (:constructor call-graph--make)
                (:conc-name call-graph--))
-  (filters (make-hash-table :test #'equal)) ; customized caller map, higher priority
   (callers (make-hash-table :test #'equal)) ; map func to its callers
   (locations (make-hash-table :test #'equal))) ; map func <- caller to its locations
 
@@ -125,6 +130,16 @@
             ;; populate location data
             (cl-pushnew location (map-elt (call-graph--locations call-graph) func-caller-key (list))
                         :test #'equal)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Persitence
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun call-graph-prepare-persistent-data ()
+  "Prepare data for persistence."
+  (when call-graph--caller-filters
+    (setq call-graph-persist-caller-filters
+          (map-into call-graph--caller-filters 'list))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
@@ -203,9 +218,9 @@ e.g: class::method => method."
                  (shell-quote-argument (symbol-name func))))
         (filter-separator " | ")
         command-filter command-out-put)
-    (when (and (> (length call-graph-filters) 0)
+    (when (and (> (length call-graph-search-filters) 0)
                (setq command-filter
-                     (mapconcat #'identity (delq nil call-graph-filters) filter-separator))
+                     (mapconcat #'identity (delq nil call-graph-search-filters) filter-separator))
                (not (string= command-filter filter-separator)))
       (setq command (concat command filter-separator command-filter)))
     (when (setq command-out-put (shell-command-to-string command))
@@ -248,7 +263,7 @@ CALCULATE-DEPTH is used to calculate actual depth."
              (hierarchy call-graph--default-hierarchy)
              (short-func (call-graph--extract-method-name func))
              (callers
-              (or (map-elt (call-graph--filters call-graph) func (list))
+              (or (map-elt call-graph--caller-filters func (list))
                   (map-elt (call-graph--callers call-graph) short-func (list)))))
 
     ;; populate hierarchy data.
@@ -289,6 +304,17 @@ CALCULATE-DEPTH is used to calculate actual depth."
     (call-graph--build-hierarchy call-graph func depth)
     (call-graph--display-hierarchy)))
 
+(defun call-graph--init ()
+  "Initialize data for `call-graph'."
+  (when (or current-prefix-arg (null call-graph--default-instance))
+    (setq call-graph--default-instance (call-graph-new))) ; clear cached reference
+
+  (when (null call-graph--caller-filters)
+    (if call-graph-persist-caller-filters ; load filtes from saved session
+        (setq call-graph--caller-filters (map-into call-graph-persist-caller-filters 'hash-table)
+              call-graph-persist-caller-filters nil)
+      (setq call-graph--caller-filters (make-hash-table :test #'equal)))))
+
 ;;;###autoload
 (defun call-graph (&optional func)
   "Generate `call-graph' for FUNC / func-at-point / func-in-active-rigion.
@@ -298,21 +324,17 @@ With prefix argument, discard cached data and re-generate reference data."
               (or func (if (use-region-p)
                            (prog1 (intern (buffer-substring-no-properties (region-beginning) (region-end)))
                              (deactivate-mark))
-                         (symbol-at-point))))
-             (call-graph
-              (or call-graph--default-instance (setq call-graph--default-instance (call-graph-new)))))
+                         (symbol-at-point)))))
+    (call-graph--init)
+    (let ((call-graph call-graph--default-instance))
 
-    (when current-prefix-arg
-      (setf (call-graph--callers call-graph) nil
-            (call-graph--locations call-graph) nil)) ; clear cached reference
+      (when-let ((file-name (buffer-file-name))
+                 (line-nb (line-number-at-pos))
+                 (location (concat file-name ":" (number-to-string line-nb))))
+        (setf (map-elt (call-graph--locations call-graph) 'root-function) (list location))) ; save root function location
 
-    (when-let ((file-name (buffer-file-name))
-               (line-nb (line-number-at-pos))
-               (location (concat file-name ":" (number-to-string line-nb))))
-      (setf (map-elt (call-graph--locations call-graph) 'root-function) (list location))) ; save root function location
-
-    (save-mark-and-excursion
-     (call-graph--create call-graph func call-graph-initial-max-depth))))
+      (save-mark-and-excursion
+       (call-graph--create call-graph func call-graph-initial-max-depth)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Call-Graph Operations
@@ -385,18 +407,17 @@ With prefix argument, discard cached data and re-generate reference data."
              (callers (map-elt (call-graph--callers call-graph) short-func (list)))
              (deep-copy-of-callers (seq-map #'identity callers))
              (filters
-              (or (map-elt (call-graph--filters call-graph) callee deep-copy-of-callers)
-                  (setf (map-elt (call-graph--filters call-graph) callee) deep-copy-of-callers))))
+              (or (map-elt call-graph--caller-filters callee deep-copy-of-callers)
+                  (setf (map-elt call-graph--caller-filters callee) deep-copy-of-callers))))
     (tree-mode-delete-match (symbol-name caller))
-    (setf (map-elt (call-graph--filters call-graph) callee)
+    (setf (map-elt call-graph--caller-filters callee)
           (remove caller filters))))
 
 (defun call-graph-reset-caller-filter ()
   "Within buffer <*call-graph*>, reset caller filter."
   (interactive)
-  (when-let ((call-graph call-graph--default-instance))
-    (setf (call-graph--filters call-graph) nil)
-    (message "Reset caller filter done")))
+  (setf call-graph--caller-filters nil)
+  (message "Reset caller filter done"))
 
 (defun call-graph-quit ()
   "Quit `call-graph'."

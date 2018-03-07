@@ -1,10 +1,10 @@
 ;;; flycheck-crystal.el --- Add support for Crystal to Flycheck
 
-;; Copyright (C) 2015 crystal-lang-tools
+;; Copyright (C) 2015-2018 crystal-lang-tools
 
 ;; Authors: crystal-lang-tools
 ;; URL: https://github.com/crystal-lang-tools/emacs-crystal-mode
-;; Package-Version: 20171124.740
+;; Package-Version: 20180306.1821
 ;; Keywords: tools crystal
 ;; Version: 0.1
 ;; Package-Requires: ((flycheck "30"))

@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 ~ 2015 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; Version: 1.0
-;; Package-Version: 20180305.924
+;; Package-Version: 20180306.2157
 ;; Package-Requires: ((helm "1.5") (bbdb "3.1.2"))
 ;; URL: https://github.com/emacs-helm/helm-bbdb
 
@@ -203,26 +203,23 @@ URL `http://bbdb.sourceforge.net/'")
         (helm-bbdb--view-person-action-1 (list candidate)))))
 
 (defun helm-bbdb-collect-mail-addresses ()
-  "Return a list of all mail addresses of records in bbdb buffer."
-  (with-current-buffer bbdb-buffer-name
-    (cl-loop for i in bbdb-records
-             for mails = (bbdb-record-mail (car i))
-             when mails collect
-             (if (cdr mails)
-                 (helm-comp-read "Choose mail: " mails)
-                 (bbdb-mail-address (car i))))))
+  "Return a list of the mail addresses of candidates.
+If record has more than one address, prompt for an address."
+  (cl-loop for record in (helm-marked-candidates)
+	   for mail = (bbdb-record-mail record)
+	   when mail collect
+	   (if (cdr mail)
+	       (bbdb-dwim-mail record (helm-comp-read "Choose mail: " mail))
+	     (bbdb-dwim-mail record (car mail)))))
+
+(defun helm-bbdb-compose-mail (candidate)
+  "Compose a new mail to one or multiple CANDIDATEs."
+  (let* ((address-list (helm-bbdb-collect-mail-addresses))
+         (address-str  (mapconcat 'identity address-list ",\n    ")))
+    (compose-mail address-str nil nil nil 'switch-to-buffer)))
 
 (defun helm-bbdb-quit-bbdb-window (&optional kill)
   (quit-window kill (get-buffer-window bbdb-buffer-name)))
-
-(defun helm-bbdb-compose-mail (candidate)
-  "Compose a mail with all records of bbdb buffer."
-  (helm-bbdb-view-person-action candidate)
-  (let* ((address-list (helm-bbdb-collect-mail-addresses))
-         (address-str  (mapconcat 'identity address-list ",\n    ")))
-    ;; Delete the bbdb window and kill its buffer.
-    (helm-bbdb-quit-bbdb-window t)
-    (compose-mail address-str nil nil nil 'switch-to-buffer)))
 
 (defun helm-bbdb-delete-contact (_candidate)
   "Delete CANDIDATE from the bbdb buffer and database.
@@ -244,10 +241,8 @@ Prompt user to confirm deletion."
 
 (defun helm-bbdb-insert-mail (candidate)
   "Insert CANDIDATE's email address."
-  (helm-bbdb-view-person-action candidate)
   (let* ((address-list (helm-bbdb-collect-mail-addresses))
-         (address-str  (mapconcat 'identity address-list ", ")))
-    (helm-bbdb-quit-bbdb-window t)
+         (address-str  (mapconcat 'identity address-list ", \n")))
     (insert address-str)))
 
 ;;;###autoload
