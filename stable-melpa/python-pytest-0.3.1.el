@@ -1,8 +1,8 @@
 ;;; python-pytest.el --- helpers to run pytest -*- lexical-binding: t; -*-
 
 ;; Author: wouter bolsterlee <wouter@bolsterl.ee>
-;; Version: 0.2.2
-;; Package-Version: 0.2.2
+;; Version: 0.3.1
+;; Package-Version: 0.3.1
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (dash-functional "2.12.0") (magit-popup "2.12.0") (projectile "0.14.0") (s "1.12.0"))
 ;; Keywords: pytest, test, python, languages, processes, tools
 ;; URL: https://github.com/wbolster/emacs-python-pytest
@@ -283,6 +283,7 @@ With a prefix ARG, allow editing."
       (user-error "No previous pytest run for this project"))
     (python-pytest--run-command
      :command command
+     :popup-arguments python-pytest-arguments
      :edit current-prefix-arg)))
 
 
@@ -294,24 +295,26 @@ With a prefix ARG, allow editing."
 
 (cl-defun python-pytest--run (&key args file func edit)
   "Run pytest for the given arguments."
-  (setq args (python-pytest--transform-arguments args))
-  (when (and file (file-name-absolute-p file))
-    (setq file (python-pytest--relative-file-name file)))
-  (when func
-    (setq func (s-replace "." "::" func)))
-  (let ((command)
-        (thing (cond
-                ((and file func) (format "%s::%s" file func))
-                (file file))))
-    (when thing
-      (setq args (-snoc args (python-pytest--shell-quote thing))))
-    (setq args (cons python-pytest-executable args)
-          command (s-join " " args))
-    (python-pytest--run-command
-     :command command
-     :edit edit)))
+  (let ((popup-arguments args))
+    (setq args (python-pytest--transform-arguments args))
+    (when (and file (file-name-absolute-p file))
+      (setq file (python-pytest--relative-file-name file)))
+    (when func
+      (setq func (s-replace "." "::" func)))
+    (let ((command)
+          (thing (cond
+                  ((and file func) (format "%s::%s" file func))
+                  (file file))))
+      (when thing
+        (setq args (-snoc args (python-pytest--shell-quote thing))))
+      (setq args (cons python-pytest-executable args)
+            command (s-join " " args))
+      (python-pytest--run-command
+       :command command
+       :popup-arguments popup-arguments
+       :edit edit))))
 
-(cl-defun python-pytest--run-command (&key command edit)
+(cl-defun python-pytest--run-command (&key command popup-arguments edit)
   "Run a pytest command line."
   (let* ((default-directory (python-pytest--project-root)))
     (when python-pytest-confirm
@@ -325,9 +328,11 @@ With a prefix ARG, allow editing."
     (setq python-pytest--history (-uniq python-pytest--history))
     (puthash (python-pytest--project-root) command
              python-pytest--project-last-command)
-    (python-pytest-run-as-comint command)))
+    (python-pytest--run-as-comint
+     :command command
+     :popup-arguments popup-arguments)))
 
-(defun python-pytest-run-as-comint (command)
+(cl-defun python-pytest--run-as-comint (&key command popup-arguments)
   "Run a pytest comint session for COMMAND."
   (let* ((buffer (python-pytest--get-buffer))
          (process (get-buffer-process buffer)))
@@ -341,7 +346,9 @@ With a prefix ARG, allow editing."
       (erase-buffer)
       (python-pytest-mode)
       (insert (format "cwd: %s\ncmd: %s\n\n" default-directory command))
-      (setq python-pytest--current-command command)
+      (make-local-variable 'python-pytest-arguments)
+      (setq python-pytest--current-command command
+            python-pytest-arguments popup-arguments)
       (when python-pytest-pdb-track
         (add-hook
          'comint-output-filter-functions
@@ -402,7 +409,6 @@ When present ON-REPLACEMENT is substituted, else OFF-REPLACEMENT is appended."
           (python-pytest--shell-quote it)
           (format "%s %s" option it)))
    args))
-
 
 (defun python-pytest--choose-traceback-style (prompt _value)
   "Helper to choose a pytest traceback style using PROMPT."
