@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180225.744
+;; Package-Version: 20180306.953
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.9.0"))
 ;; Keywords: matching
@@ -340,9 +340,7 @@
 
     (concat
      " "
-     (replace-regexp-in-string
-      "\t" "    "
-      (buffer-substring beg end)))))
+     (buffer-substring beg end))))
 
 (declare-function outline-show-all "outline")
 
