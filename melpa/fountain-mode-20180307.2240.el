@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 20180226.514
+;; Package-Version: 20180307.2240
 ;; Version: 2.5.0
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -2319,6 +2319,7 @@ specify a different filename."
      :template fountain-export-tex-template
      :string-replace (("%" "\\\\%")
                       ("&" "\\\\&")
+                      ("#" "\\\\#")
                       ("\\$" "\\\\$")
                       ("\\*\\*\\*\\(.+?\\)\\*\\*\\*" "\\\\textbf{\\\\emph{\\1}}")
                       ("\\*\\*\\(.+?\\)\\*\\*" "\\\\textbf{\\1}")
