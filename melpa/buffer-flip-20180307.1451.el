@@ -2,7 +2,7 @@
 
 ;; Author: Russell Black (killdash9@github)
 ;; Keywords: convenience
-;; Package-Version: 20180223.2341
+;; Package-Version: 20180307.1451
 ;; URL: https://github.com/killdash9/buffer-flip.el
 ;; Created: 10th November 2015
 ;; Version: 2.0
@@ -74,6 +74,10 @@ ORIGINAL-CONFIGURATION is used internally by
 be restored upon abort."
   (interactive "P")
   (buffer-flip-check-map-configuration)
+  ;; ensure current buffer is on the top of the stack at outset.  It's
+  ;; rare, but this happens sometimes, particularly with the help
+  ;; buffer.
+  (switch-to-buffer (current-buffer))
   (if arg
       (buffer-flip-other-window)    ; C-u calls buffer-flip-other-window
     (setq buffer-flip-original-window-configuration ;restored in abort

@@ -5,7 +5,7 @@
 ;; Author: Gonçalo Santos (aka. weirdNox@GitHub)
 ;; Homepage: https://github.com/weirdNox/org-noter
 ;; Keywords: lisp pdf interleave annotate external sync notes documents org-mode
-;; Package-Version: 20180225.1352
+;; Package-Version: 20180307.1029
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.6") (org "9.0"))
 ;; Version: 1.0
 
@@ -114,7 +114,9 @@ When nil, it will use the selected frame if it does not belong to any other sess
   :type 'boolean)
 
 (defcustom org-noter-separate-notes-from-heading nil
-  "When non-nil, add an empty line between each note's heading and content.")
+  "When non-nil, add an empty line between each note's heading and content."
+  :group 'org-noter
+  :type 'boolean)
 
 (defface org-noter-no-notes-exist-face
   '((t
