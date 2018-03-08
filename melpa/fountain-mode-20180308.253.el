@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 20180307.2240
+;; Package-Version: 20180308.253
 ;; Version: 2.5.0
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -3798,6 +3798,21 @@ data reflects `outline-regexp'."
          (string-width (match-string 2)))
         (t 6)))
 
+(defun fountain-outline-to-indirect-buffer ()
+  (interactive)
+  (let (beg end heading-name)
+    (save-excursion
+      (outline-back-to-heading t)
+      (setq beg (point))
+      (if (or (fountain-match-section-heading)
+              (fountain-match-scene-heading))
+          (setq heading-name (match-string-no-properties 3)))
+      (outline-end-of-subtree)
+      (setq end (point)))
+    (clone-indirect-buffer heading-name t)
+    (narrow-to-region beg end)
+    (outline-show-all)))
+
 
 ;;; Navigation
 
@@ -4869,6 +4884,7 @@ keywords suitable for Font Lock."
     (define-key map (kbd "M-n") #'fountain-forward-character)
     (define-key map (kbd "M-p") #'fountain-backward-character)
     ;; Outline commands:
+    (define-key map (kbd "C-c C-o") #'fountain-outline-to-indirect-buffer)
     (define-key map (kbd "C-c C-n") #'fountain-outline-next)
     (define-key map (kbd "C-c C-p") #'fountain-outline-previous)
     (define-key map (kbd "C-c C-f") #'fountain-outline-forward)
@@ -4916,6 +4932,8 @@ keywords suitable for Font Lock."
     ("Outline"
      ["Cycle Scene/Section Visibility" fountain-outline-cycle]
      ["Cycle Global Visibility" fountain-outline-cycle-global]
+     "---"
+     ["Open Scene/Section in Indirect Buffer" fountain-outline-to-indirect-buffer]
      "---"
      ["Up Heading" fountain-outline-up]
      ["Next Heading" fountain-outline-next]
@@ -5046,7 +5064,7 @@ keywords suitable for Font Lock."
      ["Toggle Auto-Upcasing" (customize-set-variable 'fountain-tab-command 'fountain-toggle-auto-upcase)
       :style radio
       :selected (eq fountain-tab-command 'fountain-toggle-auto-upcase)]
-     ["Auto-Complete" (customize-set-variable 'fountain-tab-command 'completion-at-point)
+     ["Auto-Completion" (customize-set-variable 'fountain-tab-command 'completion-at-point)
       :style radio
       :selected (eq fountain-tab-command 'completion-at-point)])
     ["Display Elements Auto-Aligned"
