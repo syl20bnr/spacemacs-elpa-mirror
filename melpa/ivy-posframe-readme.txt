@@ -29,6 +29,7 @@ NOTE: ivy-posframe requires Emacs 26
    ;; (setq ivy-display-function #'ivy-posframe-display-at-frame-bottom-left)
    ;; (setq ivy-display-function #'ivy-posframe-display-at-window-bottom-left)
    ;; (setq ivy-display-function #'ivy-posframe-display-at-point)
+   (ivy-posframe-enable)
    #+END_EXAMPLE
 2. Per-command mode.
    #+BEGIN_EXAMPLE
@@ -36,11 +37,13 @@ NOTE: ivy-posframe requires Emacs 26
    ;; Different command can use different display function.
    (push '(counsel-M-x . ivy-posframe-display-at-window-bottom-left) ivy-display-functions-alist)
    (push '(complete-symbol . ivy-posframe-display-at-point) ivy-display-functions-alist)
+   (ivy-posframe-enable)
    #+END_EXAMPLE
 3. Fallback mode
    #+BEGIN_EXAMPLE
    (require 'ivy-posframe)
    (push '(t . ivy-posframe-display) ivy-display-functions-alist)
+   (ivy-posframe-enable)
    #+END_EXAMPLE
 
 ** Tips
@@ -61,5 +64,5 @@ The simplest way is:
 #+BEGIN_EXAMPLE
 (defun ivy-posframe-display-at-XXX (str)
   (ivy-posframe--display str #'your-own-poshandler-function))
-(ivy-posframe-setup) ; This line is needed.
+(ivy-posframe-enable) ; This line is needed.
 #+END_EXAMPLE

@@ -5,7 +5,7 @@
 ;; Author: Feng Shu
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/ivy-posframe
-;; Package-Version: 20180306.2257
+;; Package-Version: 20180309.132
 ;; Version: 0.1.0
 ;; Keywords: abbrev, convenience, matching, ivy
 ;; Package-Requires: ((emacs "26.0")(posframe "0.1.0")(ivy "0.10.0"))
@@ -58,6 +58,7 @@
 ;;    ;; (setq ivy-display-function #'ivy-posframe-display-at-frame-bottom-left)
 ;;    ;; (setq ivy-display-function #'ivy-posframe-display-at-window-bottom-left)
 ;;    ;; (setq ivy-display-function #'ivy-posframe-display-at-point)
+;;    (ivy-posframe-enable)
 ;;    #+END_EXAMPLE
 ;; 2. Per-command mode.
 ;;    #+BEGIN_EXAMPLE
@@ -65,11 +66,13 @@
 ;;    ;; Different command can use different display function.
 ;;    (push '(counsel-M-x . ivy-posframe-display-at-window-bottom-left) ivy-display-functions-alist)
 ;;    (push '(complete-symbol . ivy-posframe-display-at-point) ivy-display-functions-alist)
+;;    (ivy-posframe-enable)
 ;;    #+END_EXAMPLE
 ;; 3. Fallback mode
 ;;    #+BEGIN_EXAMPLE
 ;;    (require 'ivy-posframe)
 ;;    (push '(t . ivy-posframe-display) ivy-display-functions-alist)
+;;    (ivy-posframe-enable)
 ;;    #+END_EXAMPLE
 
 ;; ** Tips
@@ -90,7 +93,7 @@
 ;; ;; #+BEGIN_EXAMPLE
 ;; (defun ivy-posframe-display-at-XXX (str)
 ;;   (ivy-posframe--display str #'your-own-poshandler-function))
-;; (ivy-posframe-setup) ; This line is needed.
+;; (ivy-posframe-enable) ; This line is needed.
 ;; ;; #+END_EXAMPLE
 
 ;;; Code:
@@ -128,6 +131,10 @@ When nil, Using current frame's font as fallback."
 (defvar ivy-posframe-buffer " *ivy-posframe-buffer*"
   "The posframe-buffer used by ivy-posframe.")
 
+(defvar ivy-posframe--ignore-prompt nil
+  "When non-nil, ivy-posframe will ignore prompt.
+This variable is useful for `ivy-posframe-read-action' .")
+
 ;; Fix warn
 (defvar emacs-basic-display)
 
@@ -140,8 +147,10 @@ When nil, Using current frame's font as fallback."
        ivy-posframe-buffer
        :font ivy-posframe-font
        :string
-       (with-current-buffer (get-buffer-create " *Minibuf-1*")
-         (concat (buffer-string) "  " str))
+       (if ivy-posframe--ignore-prompt
+           str
+         (with-current-buffer (get-buffer-create " *Minibuf-1*")
+           (concat (buffer-string) "  " str)))
        :position (point)
        :poshandler poshandler
        :background-color (face-attribute 'ivy-posframe :background)
@@ -191,9 +200,71 @@ When nil, Using current frame's font as fallback."
                 emacs-basic-display
                 (not (display-graphic-p))))))
 
-(defun ivy-posframe-setup ()
-  "Regedit all display functions of ivy-posframe to `ivy-display-functions-props'."
+(defun ivy-posframe-dispatching-done ()
+  "Select one of the available actions and call `ivy-done'."
   (interactive)
+  (when (ivy-posframe-read-action)
+    (ivy-done)))
+
+(defun ivy-posframe-read-action ()
+  "Change the action to one of the available ones.
+
+Return nil for `minibuffer-keyboard-quit' or wrong key during the
+selection, non-nil otherwise."
+  (interactive)
+  (let* ((actions (ivy-state-action ivy-last))
+         (caller (ivy-state-caller ivy-last))
+         (display-function
+          (or ivy-display-function
+              (cdr (or (assq caller ivy-display-functions-alist)
+                       (assq t ivy-display-functions-alist))))))
+    (if (not (ivy--actionp actions))
+        t
+      (let* ((hint (funcall ivy-read-action-format-function (cdr actions)))
+             (resize-mini-windows t)
+             (key "")
+             action-idx)
+        (while (and (setq action-idx (cl-position-if
+                                      (lambda (x)
+                                        (string-prefix-p key (car x)))
+                                      (cdr actions)))
+                    (not (string= key (car (nth action-idx (cdr actions))))))
+          (setq key (concat key (string
+                                 (read-key
+                                  (if (functionp display-function)
+                                      (let ((ivy-posframe--ignore-prompt t))
+                                        (funcall display-function hint)
+                                        "Please type a key: ")
+                                    hint))))))
+        (cond ((member key '("" ""))
+               nil)
+              ((null action-idx)
+               (message "%s is not bound" key)
+               nil)
+              (t
+               (message "")
+               (setcar actions (1+ action-idx))
+               (ivy-set-action actions)))))))
+
+(defun ivy-posframe-avy ()
+  "Jump to one of the current ivy candidates."
+  (interactive)
+  (message "ivy-posframe: ivy-avy is not supported at the moment."))
+
+;;;###autoload
+(defun ivy-posframe-enable ()
+  "Enable ivy-posframe."
+  (interactive)
+  (require 'ivy)
+  (ivy-posframe-setup)
+  (define-key ivy-minibuffer-map (kbd "C-M-a") 'ivy-posframe-read-action)
+  (define-key ivy-minibuffer-map (kbd "M-o") 'ivy-posframe-dispatching-done)
+  (define-key ivy-minibuffer-map (kbd "C-'") 'ivy-posframe-avy)
+  (message "ivy-posframe is enabled."))
+
+(defun ivy-posframe-setup ()
+  "Add all display functions of ivy-posframe to
+`ivy-display-functions-props'."
   (mapatoms
    #'(lambda (func)
        (when (and (functionp func)

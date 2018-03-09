@@ -4,9 +4,9 @@
 
 ;; Author: Pierre Neidhardt <ambrevar@gmail.com>
 ;; URL: https://github.com/ambrevar/emacs-gif-screencast
-;; Package-Version: 20180303.911
+;; Package-Version: 20180309.242
 ;; Version: 1.0
-;; Package-Requires: ((emacs "24.4"))
+;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: multimedia, screencast
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -121,7 +121,7 @@ If you are a macOS user, \"ppm\" should be specified."
   :group 'gif-screencast
   :type 'string)
 
-(defcustom gif-screencast-title-bar-pixel-height 22
+(defcustom gif-screencast-title-bar-pixel-height (cdr (alist-get 'title-bar-size (frame-geometry)))
   "Height of title bar for cropping screenshots."
   :group 'gif-screencast
   :type 'integer)
@@ -208,9 +208,10 @@ If you are a macOS user, \"ppm\" should be specified."
   "Return the cropping region of the captured image."
   (let ((x (car (frame-position)))
         (y (cdr (frame-position)))
-        (width (frame-pixel-width))
+        (width (car (alist-get 'outer-size (frame-geometry))))
         (height (+ (frame-pixel-height)
-                   gif-screencast-title-bar-pixel-height)))
+                   (or gif-screencast-title-bar-pixel-height 0)
+                   (cdr (alist-get 'tool-bar-size (frame-geometry))))))
     (format "%dx%d+%d+%d" width height x y)))
 
 (defun gif-screencast--crop ()
