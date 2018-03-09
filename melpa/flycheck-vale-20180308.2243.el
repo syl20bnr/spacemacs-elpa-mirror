@@ -3,7 +3,7 @@
 ;;
 ;; Author: Austin Bingham <austin.bingham@gmail.com>
 ;; Version: 0.1
-;; Package-Version: 20170619.2322
+;; Package-Version: 20180308.2243
 ;; URL: https://github.com/abingham/flycheck-vale
 ;; Package-Requires: ((emacs "24.4") (flycheck "0.22") (let-alist "1.0.4"))
 ;;
@@ -63,6 +63,7 @@
 
 (defconst flycheck-vale--level-map
   '(("error" . error)
+    ("suggestion" . info)
     ("warning" . warning)))
 
 (defun flycheck-vale--output-to-errors (output checker buffer)
