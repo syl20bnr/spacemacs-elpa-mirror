@@ -43,10 +43,14 @@ M-x posframe-hide-all
 #+END_EXAMPLE
 
 *** Delete a posframe
-#+BEGIN_EXAMPLE
-(posframe-delete " *my-posframe-buffer*")
-#+END_EXAMPLE
-
+1. Delete posframe and its buffer
+   #+BEGIN_EXAMPLE
+   (posframe-delete " *my-posframe-buffer*")
+   #+END_EXAMPLE
+2. Only delete posframe's frame
+   #+BEGIN_EXAMPLE
+   (posframe-delete-frame " *my-posframe-buffer*")
+   #+END_EXAMPLE
 *** Delete all posframes
 #+BEGIN_EXAMPLE
 M-x posframe-delete-all

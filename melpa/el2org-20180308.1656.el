@@ -7,7 +7,7 @@
 ;; Author: Feng Shu  <tumashu AT 163.com>
 ;; Homepage: https://github.com/tumashu/el2org
 ;; Keywords: convenience
-;; Package-Version: 20180305.1422
+;; Package-Version: 20180308.1656
 ;; Package-Requires: ((emacs "25.1"))
 ;; Version: 0.10
 
@@ -84,14 +84,14 @@
   "Default backend for README file."
   :group 'el2org
   :type '(choice (const :tag "Org" org)
-		 (const :tag "GitHub Markdown" gfm)
-		 (const :tag "Org Markdown" md)))
+		         (const :tag "GitHub Markdown" gfm)
+		         (const :tag "Org Markdown" md)))
 
-(defcustom el2org-add-notification 't
+(defcustom el2org-add-notification t
   "Add a notification, which mention el2org as file generator in README."
   :group 'el2org
   :type '(choice (const :tag "On" t)
-		 (const :tag "Off" nil)))
+		         (const :tag "Off" nil)))
 
 (defun el2org-in-src-block-p ()
   "If the current point is in BEGIN/end_src block, return t."
@@ -223,32 +223,29 @@ If BACKEND is set then use-it else use `el2org-default-backend'.
 If FILE-EXT is nil deduce it from BACKEND."
   (interactive)
   (let* ((backend (or backend el2org-default-backend))
-	 (file-ext (or file-ext
-		       (if (eq backend 'org)
-			   ".org"
-			 ".md")))
-	 (file (or (buffer-file-name)
+	     (file-ext (or file-ext
+		               (if (eq backend 'org)
+			               ".org"
+			             ".md")))
+	     (file (or (buffer-file-name)
                    (error "el2org: No emacs-lisp file is found.")))
          (readme-file (concat (file-name-directory file) "README" file-ext))
-	 (link-desc "el2org")
-	 (link-string (org-make-link-string "https://github.com/tumashu/el2org"
-					    link-desc))
-	 (link (car (org-element-parse-secondary-string link-string '(link)))))
+	     (link-desc "el2org")
+	     (link-string
+          (org-make-link-string "https://github.com/tumashu/el2org" link-desc))
+	     (link (car (org-element-parse-secondary-string link-string '(link)))))
     (when (and (eq backend 'gfm)
-	       (not (featurep 'ox-gfm)))
-      (message "Can't generate README.md with ox-gfm, use ox-md instead!")
-      'md)
-    (el2org-generate-file
-     file '("README")
-     backend
-     readme-file t)
+	           (not (featurep 'ox-gfm)))
+      (message "el2org: can't generate README.md with ox-gfm, use ox-md instead!")
+      (setq backend 'md))
+    (el2org-generate-file file '("README") backend readme-file t)
     (when el2org-add-notification
       (write-region
        (format "\n\nConverted from %s by %s.\n"
-	       (file-name-nondirectory file)
-	       (if (eq backend 'org)
-		   link-string
-		   (org-md-link link link-desc nil)))
+	           (file-name-nondirectory file)
+	           (if (eq backend 'org)
+		           link-string
+		         (org-md-link link link-desc nil)))
        nil readme-file 'append))))
 
 ;;;###autoload

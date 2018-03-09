@@ -5,8 +5,8 @@
 ;; Author: Feng Shu <tumashu@163.com>
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/posframe
-;; Package-Version: 20180307.2218
-;; Version: 0.2.0
+;; Package-Version: 20180308.1627
+;; Version: 0.3.0
 ;; Keywords: tooltip
 ;; Package-Requires: ((emacs "26"))
 
@@ -73,10 +73,14 @@
 ;; #+END_EXAMPLE
 
 ;; *** Delete a posframe
-;; #+BEGIN_EXAMPLE
-;; (posframe-delete " *my-posframe-buffer*")
-;; #+END_EXAMPLE
-
+;; 1. Delete posframe and its buffer
+;;    #+BEGIN_EXAMPLE
+;;    (posframe-delete " *my-posframe-buffer*")
+;;    #+END_EXAMPLE
+;; 2. Only delete posframe's frame
+;;    #+BEGIN_EXAMPLE
+;;    (posframe-delete-frame " *my-posframe-buffer*")
+;;    #+END_EXAMPLE
 ;; *** Delete all posframes
 ;; #+BEGIN_EXAMPLE
 ;; M-x posframe-delete-all
@@ -89,8 +93,6 @@
 ;;; Code:
 ;; * posframe's code                         :CODE:
 (require 'cl-lib)
-
-(defconst posframe-version "0.1.0")
 
 (defgroup posframe nil
   "Pop a posframe (just a frame) at point"
@@ -181,7 +183,7 @@ This posframe's buffer is POSFRAME-BUFFER."
                    ;; user change args, recreating frame
                    ;; is needed.
                    (equal posframe--last-args args))
-        (posframe--delete-frame posframe-buffer)
+        (posframe-delete-frame posframe-buffer)
         (setq-local posframe--last-args args)
         (setq-local posframe--last-position nil)
         (setq-local posframe--last-posframe-size nil)
@@ -493,10 +495,10 @@ WIDTH and MIN-WIDTH."
 
 (defun posframe-delete (posframe-buffer)
   "Delete posframe which buffer POSFRAME-BUFFER."
-  (posframe--delete-frame posframe-buffer)
+  (posframe-delete-frame posframe-buffer)
   (posframe--kill-buffer posframe-buffer))
 
-(defun posframe--delete-frame (posframe-buffer)
+(defun posframe-delete-frame (posframe-buffer)
   "Kill child-frame of posframe.
 This posframe's buffer is POSFRAME-BUFFER."
   (dolist (frame (frame-list))
@@ -541,7 +543,7 @@ This posframe's buffer is POSFRAME-BUFFER."
   "Auto delete posframe when its buffer is killed.
 
 This function is used by `kill-buffer-hook'."
-  (posframe--delete-frame (current-buffer)))
+  (posframe-delete-frame (current-buffer)))
 
 (add-hook 'kill-buffer-hook #'posframe-auto-delete)
 

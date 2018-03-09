@@ -4,7 +4,7 @@
 
 ;; Author: Ankur Dave <ankurdave@gmail.com>
 ;; Url: https://github.com/ankurdave/color-identifiers-mode
-;; Package-Version: 20170814.1121
+;; Package-Version: 20180308.1739
 ;; Created: 24 Jan 2014
 ;; Version: 1.1
 ;; Keywords: faces, languages
@@ -260,6 +260,13 @@ For cc-mode support within color-identifiers-mode."
                 "\\([a-zA-Z_$]\\(?:\\s_\\|\\sw\\)*\\)"
                 (nil font-lock-variable-name-face)
                 "[a-zA-Z_$]\\(\\s_\\|\\sw\\)*\\s-*[(:]")))
+
+;; Golang
+(add-to-list
+ 'color-identifiers:modes-alist
+ `(go-mode . ("[^.][[:space:]]*"
+              "\\_<\\([a-zA-Z_$]\\(?:\\s_\\|\\sw\\)*\\)"
+              (nil font-lock-variable-name-face))))
 
 ;; Python
 (when (fboundp 'python-nav-forward-defun)
