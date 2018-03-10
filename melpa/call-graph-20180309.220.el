@@ -5,7 +5,7 @@
 ;; Author: Huming Chen <chenhuming@gmail.com>
 ;; Maintainer: Huming Chen <chenhuming@gmail.com>
 ;; URL: https://github.com/beacoder/call-graph
-;; Package-Version: 20180308.2114
+;; Package-Version: 20180309.220
 ;; Version: 0.1.0
 ;; Keywords: programming, convenience
 ;; Created: 2018-01-07
@@ -84,7 +84,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defvar cg-persist-caller-filters nil
-  "The alist form of `call-graph--caller-filters'.")
+  "The alist form of `cg--caller-filters'.")
 
 (defvar cg--caller-filters nil
   "The filters describing caller relations, used when building caller-map.")

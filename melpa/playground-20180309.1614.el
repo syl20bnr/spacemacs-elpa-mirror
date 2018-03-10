@@ -4,7 +4,7 @@
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 0.2.0
-;; Package-Version: 20180224.2325
+;; Package-Version: 20180309.1614
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: maint
 ;; URL: https://github.com/akirak/emacs-playground
@@ -59,16 +59,15 @@
   :group 'playground)
 
 (defcustom playground-dotemacs-list
-      '(
-        (:repo "https://github.com/bbatsov/prelude.git" :name "prelude")
-        (:repo "https://github.com/seagle0128/.emacs.d.git")
-        (:repo "https://github.com/purcell/emacs.d.git")
-        (:repo "https://github.com/syl20bnr/spacemacs.git" :name "spacemacs")
-        (:repo "https://github.com/eschulte/emacs24-starter-kit.git" :name "emacs24-starter-kit")
-        (:repo "https://github.com/akirak/emacs.d.git")
-        )
-      "List of configuration repositories suggested in ‘playground-checkout’."
-      :group 'playground)
+  '(
+    (:repo "https://github.com/bbatsov/prelude.git" :name "prelude")
+    (:repo "https://github.com/seagle0128/.emacs.d.git")
+    (:repo "https://github.com/purcell/emacs.d.git")
+    (:repo "https://github.com/syl20bnr/spacemacs.git" :name "spacemacs")
+    (:repo "https://github.com/eschulte/emacs24-starter-kit.git" :name "emacs24-starter-kit")
+    )
+  "List of configuration repositories suggested in ‘playground-checkout’."
+  :group 'playground)
 
 (defun playground--emacs-executable ()
   "Get the executable file of Emacs."
@@ -350,8 +349,8 @@ COMPLETION is a symbol representing a completion engine to be used. See
             (if (and proc (process-live-p proc))
                 (when (yes-or-no-p (format "%s is still running. Kill it? " name))
                   (let ((sentinel (lambda (_ event)
-                                            (cond
-                                             ((string-prefix-p "killed" event) (playground--start name home))))))
+                                    (cond
+                                     ((string-prefix-p "killed" event) (playground--start name home))))))
                     (set-process-sentinel proc sentinel)
                     (kill-process proc)))
               (playground--start name home))))))

@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20180308.204
+;; Package-Version: 20180309.1853
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -3226,11 +3226,9 @@ suggestions are available."
                    (forward-line (1- (plist-get suggestion :line)))
                    (move-to-column (- (plist-get suggestion :column) 1))
                    (search-forward "{")
-                   (let ((first t))
-                     (mapc (lambda (field)
-                             (insert (if first "" ", ") field " = _" )
-                             (setq first nil))
-                           (plist-get suggestion :fields)))))))
+                   (insert (mapconcat (lambda (field) (concat field " = _"))
+                                      (plist-get suggestion :fields)
+                                      ", "))))))
           ;; # Changes that do increase/decrease line numbers
           ;;
           ;; Remove redundant constraints

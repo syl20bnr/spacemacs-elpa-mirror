@@ -3,8 +3,8 @@
 ;; Copyright © 2012-2017 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 3.1.20170820
-;; Package-Version: 20170821.358
+;; Version: 3.2.20180310
+;; Package-Version: 20180310.450
 ;; Created: 02 April 2012
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, extensions, files, tools, unix
@@ -144,13 +144,13 @@
   )
 
 (defcustom xah-find-file-separator
-  "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+  "================================================================================\n\n"
   "A string as visual separator."
   :group 'xah-find )
 
 (defcustom
   xah-find-occur-separator
-  "────────────────────────────────────────────────────────────\n"
+  "--------------------------------------------------\n"
   "A string as visual separator."
   :group 'xah-find )
 
@@ -682,7 +682,7 @@ Result is shown in buffer *xah-find output*.
              ;; (xah-find--print-occur-block (match-beginning 0) (match-end 0) $outBuffer)
              (xah-find--occur-output (match-beginning 0) (match-end 0) $fp $outBuffer t)
              (replace-match @replace-str @fixed-case-replace-p)
-             (xah-find--occur-output (match-beginning 0) (point) $fp $outBuffer nil t))
+             (xah-find--occur-output (match-beginning 0) (point) $fp $outBuffer t t))
            (when (> $count 0)
              (xah-find--print-file-count $fp $count $outBuffer)
              (when @write-to-file-p (copy-file $fp (concat $fp $backupSuffix) t) (write-region 1 (point-max) $fp))))))

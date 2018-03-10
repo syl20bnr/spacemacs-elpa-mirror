@@ -5,7 +5,7 @@
 ;; Author: Eric Schulte
 ;; Maintainer: Chen Bin (redguardtoo)
 ;; Keywords: mime, mail, email, html
-;; Package-Version: 20180301.1744
+;; Package-Version: 20180309.2241
 ;; Homepage: http://github.com/org-mime/org-mime
 ;; Version: 0.1.1
 ;; Package-Requires: ((emacs "24.3") (cl-lib "0.5"))
@@ -172,12 +172,13 @@ buffer holdin the text to be exported.")
   "Enable debug logger.")
 
 (defvar org-mime-up-subtree-heading 'org-up-heading-safe
-  "Funtion to call before exporting a subtree.
+  "Function to call before exporting a subtree.
 You could use either `org-up-heading-safe' or `org-back-to-heading'.")
 
 
 (defun org-mime--chomp (str)
-  "Chomp leading and tailing whitespace from STR."
+  "Chomp leading and trailing whitespace from STR.
+This also chomps multiple line-endings to a single line-ending."
   (while (string-match "\\`[\n\r]+\\|^\\s-+\\|\\s-+$\\|[\n\r]+\\'"
                        str)
     (setq str (replace-match "" t t str)))
@@ -188,7 +189,7 @@ You could use either `org-up-heading-safe' or `org-back-to-heading'.")
 OPTS is export options."
   (let* (rlt
          ;; Emacs 25+ prefer exporting drawer by default
-         ;; obviously not acception in exporting to mail body
+         ;; obviously not acceptable in exporting to mail body
          (org-export-with-drawers nil))
     (when org-mime-debug (message "org-mime--export-string called => %s" opts))
     ;; we won't export title from org file anyway
@@ -226,25 +227,23 @@ OPTS is export options."
 ;;             (org-mime-change-element-style
 ;;              "pre" (format "color: %s; background-color: %s;"
 ;;                            "#E6E1DC" "#232323"))
-;; 	    (org-mime-change-class-style
+;;             (org-mime-change-class-style
 ;;              "verse" "border-left: 2px solid gray; padding-left: 4px;")))
 
 (defun org-mime-file (ext path id)
   "Markup a file with EXT, PATH and ID for attachment."
   (when org-mime-debug (message "org-mime-file called => %s %s %s" ext path id))
   (cl-case org-mime-library
-    (mml (format (concat "<#part type=\"%s\" filename=\"%s\" "
-			 "disposition=inline id=\"<%s>\">\n<#/part>\n")
-		 ext path id))
+    (mml (format "<#part type=\"%s\" filename=\"%s\" disposition=inline id=\"<%s>\">\n<#/part>\n"
+                 ext path id))
     (semi (concat
-	   (format (concat "--[[%s\nContent-Disposition: "
-			   "inline;\nContent-ID: <%s>][base64]]\n")
-		   ext id)
-	   (base64-encode-string
-	    (with-temp-buffer
-	      (set-buffer-multibyte nil)
-	      (insert-file-contents-literally path)
-	      (buffer-string)))))
+           (format "--[[%s\nContent-Disposition: inline;\nContent-ID: <%s>][base64]]\n"
+                   ext id)
+           (base64-encode-string
+            (with-temp-buffer
+              (set-buffer-multibyte nil)
+              (insert-file-contents-literally path)
+              (buffer-string)))))
     (vm "?")))
 
 (defun org-mime-encode-quoted-mail-body ()
@@ -309,7 +308,7 @@ HTML is the body of the message."
             (let (retval)
               (condition-case ex
                   (setq info (org-mime-encode-quoted-mail-body))
-		(setq retval info)
+                (setq retval info)
                 ('error (setq info nil)))
               retval))
         (cond
@@ -336,13 +335,13 @@ If html portion of message includes IMAGES they are wrapped in multipart/related
                  (when images "<#/multipart>\n")
                  "<#/multipart>\n"))
     (semi (concat
-            "--" "<<alternative>>-{\n"
-            "--" "[[text/plain]]\n" plain
-	    (when images (concat "--" "<<alternative>>-{\n"))
-            "--" "[[text/html]]\n"  html
-	    images
-	    (when images (concat "--" "}-<<alternative>>\n"))
-            "--" "}-<<alternative>>\n"))
+           "--" "<<alternative>>-{\n"
+           "--" "[[text/plain]]\n" plain
+           (when images (concat "--" "<<alternative>>-{\n"))
+           "--" "[[text/html]]\n"  html
+           images
+           (when images (concat "--" "}-<<alternative>>\n"))
+           "--" "}-<<alternative>>\n"))
     (vm "?")))
 
 (defun org-mime-replace-images (str current-file)
@@ -354,17 +353,17 @@ CURRENT-FILE is used to calculate full path of images."
      (replace-regexp-in-string ;; replace images in html
       "src=\"\\([^\"]+\\)\""
       (lambda (text)
-	(format
-	 "src=\"cid:%s\""
-	 (let* ((url (and (string-match "src=\"\\([^\"]+\\)\"" text)
-			  (match-string 1 text)))
-		(path (if (string-match-p "^file:///" url) (replace-regexp-in-string "^file://" "" url)
-			(expand-file-name url (file-name-directory current-file))))
-		(ext (file-name-extension path))
-		(id (replace-regexp-in-string "[\/\\\\]" "_" path)))
-	   (add-to-list 'html-images
-			(org-mime-file (concat "image/" ext) path id))
-	   id)))
+        (format
+         "src=\"cid:%s\""
+         (let* ((url (and (string-match "src=\"\\([^\"]+\\)\"" text)
+                          (match-string 1 text)))
+                (path (if (string-match-p "^file:///" url) (replace-regexp-in-string "^file://" "" url)
+                        (expand-file-name url (file-name-directory current-file))))
+                (ext (file-name-extension path))
+                (id (replace-regexp-in-string "[\/\\\\]" "_" path)))
+           (add-to-list 'html-images
+                        (org-mime-file (concat "image/" ext) path id))
+           id)))
       str)
      html-images)))
 
@@ -414,7 +413,7 @@ If ARG is not nil, use `org-mime-fixedwith-wrap' to wrap the exported text."
     (save-excursion
       (goto-char html-start)
       (insert (org-mime-multipart
-	       body html (mapconcat 'identity html-images "\n"))))))
+               body html (mapconcat 'identity html-images "\n"))))))
 
 (defun org-mime-apply-html-hook (html)
   "Apply HTML hook."
@@ -516,4 +515,9 @@ alternatives."
         (org-mime-compose body file to subject other-headers opts)))))
 
 (provide 'org-mime)
+;; Local Variables:
+;; coding: utf-8
+;; tab-width: 2
+;; indent-tabs-mode: nil
+;; End:
 ;;; org-mime.el ends here
