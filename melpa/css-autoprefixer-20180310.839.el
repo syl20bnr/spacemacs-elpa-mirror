@@ -4,7 +4,7 @@
 ;;
 ;; Author: Kyung Mo Kweon<kkweon@gmail.com> and contributors
 ;; URL: https://github.com/kkweon/emacs-css-autoprefixer
-;; Package-Version: 20180118.1411
+;; Package-Version: 20180310.839
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 1.0
 ;; Keywords: convenience, usability, css
@@ -41,7 +41,7 @@
         (if success-p
             (progn
               (css-autoprefixer-clean-buffer)
-              (insert (css-autoprefixer--trim-first-and-last content)))
+              (insert content))
           (display-message-or-buffer content))))))
 
 
@@ -63,14 +63,9 @@
                         "postcss"
                         (shell-quote-argument (expand-file-name filename))
                         "--use"
-                        "autoprefixer")
+                        "autoprefixer"
+                        "--no-map")
           (buffer-string))))
-
-(defun css-autoprefixer--trim-first-and-last (message)
-  "Delete first line and last line of MESSAGE because the first line is success message and the last message is useless message"
-  (mapconcat 'identity
-             (nbutlast (cdr (split-string message "\n")))
-             "\n"))
 
 (provide 'css-autoprefixer)
 ;;; css-autoprefixer.el ends here
