@@ -4,7 +4,8 @@
 ;;
 ;; Author: Kyung Mo Kweon<kkweon@gmail.com> and contributors
 ;; URL: https://github.com/kkweon/emacs-css-autoprefixer
-;; Package-Version: 20180310.839
+;; Package-Version: 20180311.900
+;; Package-X-Original-Version: 20180310.839
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 1.0
 ;; Keywords: convenience, usability, css
@@ -27,22 +28,14 @@
 (defun css-autoprefixer ()
   "Run autoprefix in the current buffer. If error, display error messages"
   (interactive)
-  (save-excursion
-    (let* ((temp-name (make-temp-file "css-prefixer" nil ".css"))
-           (temp-css (if (region-active-p)
-                         (buffer-substring-no-properties (region-beginning)
-                                                         (region-end))
-                       (buffer-string))))
-      (with-temp-file temp-name
-        (insert temp-css))
-      (let* ((result (css-autoprefixer--execute-npx temp-name))
-             (success-p (= (car result) 0))
-             (content (car (cdr result))))
-        (if success-p
-            (progn
-              (css-autoprefixer-clean-buffer)
-              (insert content))
-          (display-message-or-buffer content))))))
+  (if buffer-file-name (let* ((result (css-autoprefixer--execute-npx buffer-file-name))
+                              (success-p (= (car result) 0))
+                              (content (car (cdr result))))
+                         (if success-p
+                             (progn
+                               (css-autoprefixer-clean-buffer)
+                               (insert content))
+                           (display-message-or-buffer content)))))
 
 
 (defun css-autoprefixer-clean-buffer ()

@@ -5,7 +5,7 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/helm-pass
-;; Package-Version: 20180208.1313
+;; Package-Version: 20180311.959
 ;; Version: 0.2
 ;; Package-Requires: ((helm "0") (password-store "0") (auth-password-store "0"))
 
@@ -45,7 +45,7 @@
 
 (require 'helm)
 (require 'password-store)
-(require 'auth-password-store)
+(require 'auth-source-pass)
 
 (defgroup helm-pass nil
   "Emacs helm interface for helm-pass"
@@ -55,7 +55,7 @@
   "Get username for ENTRY.
 
 Does not clear it from clipboard."
-  (let ((username (auth-pass-get "user" entry)))
+  (let ((username (auth-source-pass-get "user" entry)))
     (if username
         (progn (password-store-clear)
                (kill-new username))

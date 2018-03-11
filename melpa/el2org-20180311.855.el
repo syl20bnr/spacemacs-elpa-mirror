@@ -7,7 +7,7 @@
 ;; Author: Feng Shu  <tumashu AT 163.com>
 ;; Homepage: https://github.com/tumashu/el2org
 ;; Keywords: convenience
-;; Package-Version: 20180308.2250
+;; Package-Version: 20180311.855
 ;; Package-Requires: ((emacs "25.1"))
 ;; Version: 0.10
 
@@ -87,11 +87,35 @@
                  (const :tag "GitHub Markdown" gfm)
                  (const :tag "Org Markdown" md)))
 
-(defcustom el2org-add-notification t
+(defcustom el2org-add-notification 'begin
   "Add a notification, which mention el2org as file generator in README."
   :group 'el2org
-  :type '(choice (const :tag "On" t)
+  :type '(choice (const :tag "Beginning of file" begin)
+                 (const :tag "End of file" end)
                  (const :tag "Off" nil)))
+
+(defvar el2org-backend-settings
+  `((gfm
+     :require ox-gfm
+     :fallback md
+     :filename-extension "md"
+     :notification
+     ,(concat "Note: this file is auto converted from %elisp-file by "
+              "[el2org](https://github.com/tumashu/el2org), "
+              "please do not edit it by hand!!!"))
+    (md
+     :filename-extension "md"
+     :notification
+     ,(concat "Note: this file is auto converted from %elisp-file by "
+              "[el2org](https://github.com/tumashu/el2org), "
+              "please do not edit it by hand!!!"))
+    (org
+     :filename-extension "org"
+     :notification
+     ,(concat "Note: this file is auto converted from %elisp-file by "
+              "[[https://github.com/tumashu/el2org][el2org]], "
+              "please do not edit it by hand!!!")))
+  "The settings of el2org backends.")
 
 (defun el2org-in-src-block-p ()
   "If the current point is in BEGIN/end_src block, return t."
@@ -215,6 +239,16 @@
         (org-export-to-file backend output-file))
       output-file)))
 
+(defun el2org--get-valid-backend (backend)
+  (let* ((setting (cdr (assq backend el2org-backend-settings)))
+         (feature (plist-get setting :require))
+         (fallback (plist-get setting :fallback)))
+    (if (or (not feature)
+            (and feature (featurep feature)))
+        backend
+      (message "el2org: backend '%s' is invalid, fallback to '%s'." backend fallback)
+      fallback)))
+
 ;;;###autoload
 (defun el2org-generate-readme (&optional backend file-ext)
   "Generate README from current emacs-lisp file.
@@ -222,33 +256,32 @@
 If BACKEND is set then use-it else use `el2org-default-backend'.
 If FILE-EXT is nil deduce it from BACKEND."
   (interactive)
-  (let* ((backend (or backend el2org-default-backend))
-         (file-ext (or file-ext
-                       (if (eq backend 'org)
-                           ".org"
-                         ".md")))
-         (file (or (buffer-file-name)
-                   (error "el2org: No emacs-lisp file is found.")))
-         (readme-file (concat (file-name-directory file) "README" file-ext))
-         (link-desc "el2org")
-         (link-string
-          (org-make-link-string "https://github.com/tumashu/el2org" link-desc))
-         (link (car (org-element-parse-secondary-string link-string '(link)))))
-    (when (and (eq backend 'gfm)
-               (not (featurep 'ox-gfm)))
-      (message "el2org: can't generate README.md with ox-gfm, use ox-md instead!")
-      (setq backend 'md))
-    (el2org-generate-file file '("README") backend readme-file t)
+  (let* ((backend (el2org--get-valid-backend
+                   (or backend el2org-default-backend)))
+         (file-ext
+          (or file-ext
+              (plist-get (cdr (assq backend el2org-backend-settings))
+                         :filename-extension)))
+         (el-file (or (buffer-file-name)
+                      (error "el2org: No emacs-lisp file is found.")))
+         (readme-file (concat (file-name-directory el-file) "README" "." file-ext))
+         (notification (replace-regexp-in-string
+                        "%elisp-file"
+                        (file-name-nondirectory el-file)
+                        (or (plist-get (cdr (assq 'md el2org-backend-settings))
+                                       :notification)
+                            ""))))
+    (el2org-generate-file el-file '("README") backend readme-file t)
     (when el2org-add-notification
       (with-temp-buffer
-        (insert (format (concat
-                         "Note: this file is converted from %s by %s, "
-                         "please do not edit it by hand!!!\n\n")
-                        (file-name-nondirectory file)
-                        (if (eq backend 'org)
-                            link-string
-                          (org-md-link link link-desc nil))))
         (insert-file-contents readme-file)
+        (if (eq el2org-add-notification 'end)
+            (progn (goto-char (point-max))
+                   (insert "\n\n")
+                   (insert notification))
+          (goto-char (point-min))
+          (insert notification)
+          (insert "\n\n"))
         (write-file readme-file)))))
 
 ;;;###autoload

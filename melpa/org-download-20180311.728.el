@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel
 ;; URL: https://github.com/abo-abo/org-download
-;; Package-Version: 20180305.1338
+;; Package-Version: 20180311.728
 ;; Version: 0.1.0
 ;; Package-Requires: ((async "1.2"))
 ;; Keywords: images, screenshots, download
@@ -350,7 +350,7 @@ It's inserted before the image link and is used to annotate it.")
                         (org-element-property :path (org-element-context))))
          (current-path (concat dir-path "/" current-name))
          (ext (file-name-extension current-name))
-         (new-name (read-string "Rename file at point to: "))
+         (new-name (read-string "Rename file at point to: " current-name))
          (new-path (concat dir-path "/" new-name "." ext)))
     (rename-file current-path new-path)
     (message "File successfully renamed...")
@@ -360,7 +360,7 @@ It's inserted before the image link and is used to annotate it.")
   "Rename the last downloaded file saved in your computer."
   (interactive)
   (let* ((dir-path (org-download--dir))
-         (newname (read-string "Rename last file to: "))
+         (newname (read-string "Rename last file to: " (file-name-base org-download-path-last-file)))
          (ext (file-name-extension org-download-path-last-file))
          (newpath (concat dir-path "/" newname "." ext)))
     (when org-download-path-last-file
