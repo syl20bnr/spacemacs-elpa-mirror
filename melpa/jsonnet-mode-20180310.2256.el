@@ -4,7 +4,7 @@
 
 ;; Author: Nick Lanham
 ;; URL: https://github.com/mgyucht/jsonnet-mode
-;; Package-Version: 20171005.24
+;; Package-Version: 20180310.2256
 ;; Package-X-Original-Version: 0.0.1
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "24"))
@@ -236,6 +236,7 @@ If not inside of a multiline string, return nil."
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist (cons "\\.jsonnet\\'" 'jsonnet-mode))
+(add-to-list 'auto-mode-alist (cons "\\.libsonnet\\'" 'jsonnet-mode))
 
 ;; Utilities for evaluating and jumping around Jsonnet code.
 ;;;###autoload

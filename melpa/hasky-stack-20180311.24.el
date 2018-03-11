@@ -4,7 +4,7 @@
 ;;
 ;; Author: Mark Karpov <markkarpov92@gmail.com>
 ;; URL: https://github.com/hasky-mode/hasky-stack
-;; Package-Version: 20171231.942
+;; Package-Version: 20180311.24
 ;; Version: 0.7.0
 ;; Package-Requires: ((emacs "24.4") (f "0.18.0") (magit-popup "2.10"))
 ;; Keywords: tools, haskell
@@ -520,6 +520,7 @@ This uses `compile' internally."
               (?p "Profile"           "--profile")
               (?c "Coverage"          "--coverage")
               (?b "Copy bins"         "--copy-bins")
+              (?g "Copy compiler tool" "--copy-compiler-tool")
               (?l "Library profiling" "--library-profiling")
               (?e "Executable profiling" "--executable-profiling"))
   :options  '((?o "GHC options"         "--ghc-options=")
