@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20180309.1853
+;; Package-Version: 20180310.2036
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -816,7 +816,9 @@ CHECKER and BUFFER are added to each item parsed from STRING."
                        :buffer (when (intero-paths-for-same-file temp-file file)
                                  buffer)
                        :filename (if intero--flycheck-multiple-files-support
-                                     file
+                                     (if (intero-paths-for-same-file temp-file file)
+                                         (intero-buffer-file-name buffer)
+                                       file)
                                    (intero-buffer-file-name buffer)))
                       messages)))
         (forward-line -1))

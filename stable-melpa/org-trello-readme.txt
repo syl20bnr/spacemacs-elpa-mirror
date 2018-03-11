@@ -65,4 +65,4 @@ Now you can work with trello from the comfort of org-mode and Emacs
 Enjoy!
 
 More informations: https://org-trello.github.io
-Issue tracker: https://github.com/org-trello/org-trello-issues
+Issue tracker: https://github.com/org-trello/org-trello/issues
