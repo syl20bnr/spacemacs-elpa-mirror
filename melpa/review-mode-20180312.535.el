@@ -1,9 +1,9 @@
 ;;; review-mode.el --- major mode for ReVIEW -*- lexical-binding: t -*-
-;; Copyright 2007-2017 Kenshi Muto <kmuto@debian.org>
+;; Copyright 2007-2018 Kenshi Muto <kmuto@debian.org>
 
 ;; Author: Kenshi Muto <kmuto@debian.org>
 ;; URL: https://github.com/kmuto/review-el
-;; Package-Version: 20171029.650
+;; Package-Version: 20180312.535
 
 ;;; Commentary:
 
@@ -81,7 +81,7 @@
 
 (declare-function skk-mode "skk-mode")
 
-(defconst review-version "1.7"
+(defconst review-version "1.8"
   "編集モードバージョン")
 
 ;;;; Custom Variables
@@ -379,6 +379,8 @@
     ("@<hidx>{.*?}" . review-mode-hide-face)
     ("@<br>{.*?}" . review-mode-bold-face)
     ("@<m>{.*?}" . review-mode-bold-face)
+    ("@<m>\\$.*?\\$" . review-mode-bold-face)
+    ("@<m>\|.*?\|" . review-mode-bold-face)
     ("@<icon>{.*?}" . review-mode-bold-face)
     ("@<uchar>{.*?}" . review-mode-bold-face)
     ("@<href>{.*?}" . review-mode-bold-face)
