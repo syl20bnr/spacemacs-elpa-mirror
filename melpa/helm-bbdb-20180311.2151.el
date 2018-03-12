@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 ~ 2015 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; Version: 1.0
-;; Package-Version: 20180306.2157
+;; Package-Version: 20180311.2151
 ;; Package-Requires: ((helm "1.5") (bbdb "3.1.2"))
 ;; URL: https://github.com/emacs-helm/helm-bbdb
 
@@ -57,18 +57,27 @@
 (defcustom helm-bbdb-actions
   (helm-make-actions
    "View contact's data" 'helm-bbdb-view-person-action
-   "Insert contact's email" 'helm-bbdb-insert-mail
    "Delete contact" 'helm-bbdb-delete-contact
    "Send an email" 'helm-bbdb-compose-mail)
   "Default actions alist for `helm-source-bbdb'."
   :type '(alist :key-type string :value-type function))
 
-(defun helm-bbdb-candidates ()
+(defun helm-bbdb-candidates (&optional mail-only)
   "Return a list of all names in the bbdb database.
+If MAIL-ONLY is non-nil, return a list of all names containing mail.
 The format is \"Firstname Lastname\"."
   (cl-loop for bbdb-record in (bbdb-records)
 	   for name = (bbdb-record-name bbdb-record)
-           collect (cons name bbdb-record)))
+	   for mail = (bbdb-record-mail bbdb-record)
+	   if (and mail-only mail) collect
+	   (cons (if (cdr mail)
+		     (concat name "...")
+		   name)
+		 bbdb-record)
+	   else collect
+	   (if mail-only
+	       ""
+	     (cons name bbdb-record))))
 
 (defun helm-bbdb-read-phone ()
   "Return a list of vector address objects.
@@ -209,7 +218,12 @@ If record has more than one address, prompt for an address."
 	   for mail = (bbdb-record-mail record)
 	   when mail collect
 	   (if (cdr mail)
-	       (bbdb-dwim-mail record (helm-comp-read "Choose mail: " mail))
+	       (helm-comp-read "Choose mail: "
+			       (mapcar (lambda (mail)
+					 (bbdb-dwim-mail record mail))
+				       mail)
+			       :allow-nest t
+			       :initial-input helm-pattern)
 	     (bbdb-dwim-mail record (car mail)))))
 
 (defun helm-bbdb-compose-mail (candidate)
@@ -242,8 +256,25 @@ Prompt user to confirm deletion."
 (defun helm-bbdb-insert-mail (candidate)
   "Insert CANDIDATE's email address."
   (let* ((address-list (helm-bbdb-collect-mail-addresses))
-         (address-str  (mapconcat 'identity address-list ", \n")))
-    (insert address-str)))
+	 (address-str  (mapconcat 'identity address-list ",\n    ")))
+    (end-of-line)
+    (while (not (looking-back "^\\(Resent-\\)?\\(To\\|B?Cc\\): \\|, \\|    " (point-at-bol)))
+      (delete-char -1))
+    (insert address-str)
+    (end-of-line)))
+
+(defun helm-bbdb-expand-name ()
+  "Set up auto-completion of mail addresses in `message-mode'.
+This feature requires adding `helm-bbdb-expand-name' to the
+`message-completion-alist' variable."
+  (helm :sources (helm-build-sync-source "BBDB"
+		   :init (lambda ()
+			   (require 'bbdb)
+			   (setq helm-bbdb--cache (helm-bbdb-candidates t)))
+		   :candidates 'helm-bbdb--cache
+		   :match '(helm-bbdb-match-mail helm-bbdb-match-org)
+		   :action 'helm-bbdb-insert-mail)
+	:input (thing-at-point 'symbol t)))
 
 ;;;###autoload
 (defun helm-bbdb ()
