@@ -1,11 +1,11 @@
 ;;; counsel-tramp.el --- Tramp ivy interface for ssh, docker, vagrant -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2017 by Masashı Mıyaura
+;; Copyright (C) 2017-2018 by Masashı Mıyaura
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-counsel-tramp
-;; Package-Version: 20171224.321
-;; Version: 0.3.1
+;; Package-Version: 20180311.2327
+;; Version: 0.4.1
 ;; Package-Requires: ((emacs "24.3") (counsel "0.10"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -86,12 +86,22 @@ Kill all remote buffers."
 	(if (string-match "\\`[ \t\n\r]+" host)
 	    (replace-match "" t t host))
         (unless (string= host "*")
-          (push
-	   (concat "/" tramp-default-method ":" host ":")
-	   hosts)
-	  (push
-	   (concat "/ssh:" host "|sudo:root@" host ":/")
-	   hosts))))
+	  (if (string-match "[ ]+" host)
+	      (let ((result (split-string host " ")))
+		(while result
+		  (push
+		   (concat "/" tramp-default-method ":" (car result) ":")
+		   hosts)
+		  (push
+		   (concat "/ssh:" (car result) "|sudo:root@" (car result) ":/")
+		   hosts)
+		  (pop result)))
+	    (push
+	     (concat "/" tramp-default-method ":" host ":")
+	     hosts)
+	    (push
+	     (concat "/ssh:" host "|sudo:root@" host ":/")
+	     hosts)))))
     (when (package-installed-p 'docker-tramp)
       (cl-loop for line in (cdr (ignore-errors (apply #'process-lines "docker" (list "ps"))))
 	       for info = (reverse (split-string line "[[:space:]]+" t))
