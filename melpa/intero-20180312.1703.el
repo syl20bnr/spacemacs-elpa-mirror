@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20180310.2036
+;; Package-Version: 20180312.1703
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -151,14 +151,6 @@ For example, this variable can be used to enable some ghci extensions
 by default."
   :group 'intero
   :type '(repeat string))
-
-(defcustom intero--flycheck-multiple-files-support nil
-  "I added multiple file support to flycheck here:
-https://github.com/chrisdone/flycheck/commits/errors-from-other-buffers
-
-But the PR was never accepted into flycheck mainline. However,
-it's clearly better to have multiple file support, so I'm
-including the option here.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Modes
@@ -813,13 +805,10 @@ CHECKER and BUFFER are added to each item parsed from STRING."
                        line column type
                        msg
                        :checker checker
-                       :buffer (when (intero-paths-for-same-file temp-file file)
-                                 buffer)
-                       :filename (if intero--flycheck-multiple-files-support
-                                     (if (intero-paths-for-same-file temp-file file)
-                                         (intero-buffer-file-name buffer)
-                                       file)
-                                   (intero-buffer-file-name buffer)))
+                       :buffer buffer
+                       :filename (if (intero-paths-for-same-file temp-file file)
+                                     (intero-buffer-file-name buffer)
+                                   file))
                       messages)))
         (forward-line -1))
       (delete-dups

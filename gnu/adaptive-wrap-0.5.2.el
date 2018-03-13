@@ -1,10 +1,10 @@
 ;;; adaptive-wrap.el --- Smart line-wrapping with wrap-prefix
 
-;; Copyright (C) 2011-2013, 2017  Free Software Foundation, Inc.
+;; Copyright (C) 2011-2018  Free Software Foundation, Inc.
 
 ;; Author: Stephen Berman <stephen.berman@gmx.net>
 ;;         Stefan Monnier <monnier@iro.umontreal.ca>
-;; Version: 0.5.1
+;; Version: 0.5.2
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -83,13 +83,31 @@ extra indent = 2
 
 (defun adaptive-wrap-prefix-function (beg end)
   "Indent the region between BEG and END with adaptive filling."
+  ;; Any change at the beginning of a line might change its wrap prefix, which
+  ;; affects the whole line.  So we need to "round-up" `end' to the nearest end
+  ;; of line.  We do the same with `beg' although it's probably not needed.
+  (goto-char end)
+  (unless (bolp) (forward-line 1))
+  (setq end (point))
   (goto-char beg)
+  (forward-line 0)
+  (setq beg (point))
   (while (< (point) end)
-    (let ((lbp (line-beginning-position)))
+    (let ((lbp (point)))
       (put-text-property (point)
                          (progn (search-forward "\n" end 'move) (point))
                          'wrap-prefix
-                         (adaptive-wrap-fill-context-prefix lbp (point))))))
+			 (let ((pfx (adaptive-wrap-fill-context-prefix
+				     lbp (point))))
+			   ;; Remove any `wrap-prefix' property that
+			   ;; might have been added earlier.
+			   ;; Otherwise, we end up with a string
+			   ;; containing a `wrap-prefix' string
+			   ;; containing a `wrap-prefix' string ...
+			   (remove-text-properties
+			    0 (length pfx) '(wrap-prefix) pfx)
+			   pfx))))
+  `(jit-lock-bounds ,beg . ,end))
 
 ;;;###autoload
 (define-minor-mode adaptive-wrap-prefix-mode
@@ -98,9 +116,11 @@ extra indent = 2
   :group 'visual-line
   (if adaptive-wrap-prefix-mode
       (progn
-        ;; HACK ATTACK!  We need to run after font-lock, but jit-lock-register
-        ;; doesn't accept an `append' argument, so we add ourselves beforehand,
-        ;; to make sure we're at the end of the hook (bug#15155).
+        ;; HACK ATTACK!  We want to run after font-lock (so our
+        ;; wrap-prefix includes the faces applied by font-lock), but
+        ;; jit-lock-register doesn't accept an `append' argument, so
+        ;; we add ourselves beforehand, to make sure we're at the end
+        ;; of the hook (bug#15155).
         (add-hook 'jit-lock-functions
                   #'adaptive-wrap-prefix-function 'append t)
         (jit-lock-register #'adaptive-wrap-prefix-function))
@@ -120,6 +140,13 @@ extra indent = 2
 
 ;;;; ChangeLog:
 
+;; 2018-03-12  Stefan Monnier  <monnier@iro.umontreal.ca>
+;; 
+;; 	* adaptive-wrap/adaptive-wrap.el: Fix use without font-lock
+;; 
+;; 	(adaptive-wrap-prefix-function): Work on whole lines. Fix a kind of
+;; 	memory leak.
+;; 
 ;; 2017-05-04  Noam Postavsky  <npostavs@users.sourceforge.net>
 ;; 
 ;; 	Mark adaptive-wrap-extra-indent as safe if integerp (Bug#23816)

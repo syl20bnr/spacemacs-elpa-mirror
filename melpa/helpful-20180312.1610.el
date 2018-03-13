@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180303.1426
+;; Package-Version: 20180312.1610
 ;; Keywords: help, lisp
 ;; Version: 0.9
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -997,6 +997,8 @@ buffer."
       (condition-case _err
           (-let [(sym-buf . sym-pos) (find-definition-noselect sym 'defvar)]
             (setq buf sym-buf)
+            (unless (-contains-p initial-buffers buf)
+              (setq opened t))
             (setq pos sym-pos))
         (search-failed nil)
         ;; If your current Emacs instance doesn't match the source
