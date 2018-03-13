@@ -5,9 +5,9 @@
 ;; Author: Alex Murray <murray.alex@gmail.com>
 ;; Maintainer: Alex Murray <murray.alex@gmail.com>
 ;; URL: https://github.com/alexmurray/flycheck-posframe
-;; Package-Version: 20180305.1636
-;; Version: 0.3
-;; Package-Requires: ((flycheck "0.24") (emacs "26") (posframe "0.1.0"))
+;; Package-Version: 20180313.450
+;; Version: 0.4
+;; Package-Requires: ((flycheck "0.24") (emacs "26") (posframe "0.3.0"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -92,6 +92,13 @@
   :group 'flycheck-posframe
   :package-version '(flycheck-posframe . "0.3"))
 
+(defface flycheck-posframe-background-face
+  '((t))
+  "The background color of the flycheck-posframe frame.
+Only the `background' is used in this face."
+  :group 'flycheck-posframe
+  :package-version '(flycheck-posframe . "0.4"))
+
 (defvar flycheck-posframe-buffer "*flycheck-posframe-buffer*"
   "The posframe buffer name use by flycheck-posframe.")
 
@@ -104,7 +111,7 @@
 
 (defun flycheck-posframe-delete-posframe ()
   "Delete messages currently being shown if any."
-  (posframe-hide flycheck-posframe-buffer)
+  (posframe-delete flycheck-posframe-buffer)
   (dolist (hook flycheck-posframe-delete-posframe-hooks)
     (remove-hook hook #'flycheck-posframe-delete-posframe t)))
 
@@ -147,6 +154,7 @@
     (posframe-show
      flycheck-posframe-buffer
      :string (flycheck-posframe-format-errors errors)
+     :background-color (face-background 'flycheck-posframe-background-face nil t)
      :position (point))
     (dolist (hook flycheck-posframe-delete-posframe-hooks)
       (add-hook hook #'flycheck-posframe-delete-posframe nil t))))
