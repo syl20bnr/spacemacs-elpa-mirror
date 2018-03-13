@@ -9,7 +9,7 @@
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Artur Malabarba <bruce.connor.am@gmail.com>
 ;; URL: http://github.com/clojure-emacs/clojure-mode
-;; Package-Version: 20180312.1037
+;; Package-Version: 20180313.620
 ;; Keywords: languages clojure clojurescript lisp
 ;; Version: 5.7.0-snapshot
 ;; Package-Requires: ((emacs "24.4"))
@@ -91,11 +91,6 @@
 (defface clojure-character-face
   '((t (:inherit font-lock-string-face)))
   "Face used to font-lock Clojure character literals."
-  :package-version '(clojure-mode . "3.0.0"))
-
-(defface clojure-interop-method-face
-  '((t (:inherit font-lock-preprocessor-face)))
-  "Face used to font-lock interop method names (camelCase)."
   :package-version '(clojure-mode . "3.0.0"))
 
 (defcustom clojure-indent-style :always-align
@@ -849,29 +844,45 @@ any number of matches of `clojure--sym-forbidden-rest-chars'."))
        0 font-lock-constant-face)
       ;; Character literals - \1, \a, \newline, \u0000
       ("\\\\\\([[:punct:]]\\|[a-z0-9]+\\>\\)" 0 'clojure-character-face)
-      ;; foo/ Foo/ @Foo/ /FooBar
-      (,(concat "\\(?:\\<:?\\|\\.\\)@?\\(" clojure--sym-regexp "\\)\\(/\\)")
-       (1 font-lock-type-face) (2 'default))
-      ;; Constant values (keywords), including as metadata e.g. ^:static
-      ("\\<^?\\(:\\(\\sw\\|\\s_\\)+\\(\\>\\|\\_>\\)\\)" 1 'clojure-keyword-face append)
-      ;; Java interop highlighting
-      ;; CONST SOME_CONST (optionally prefixed by /)
-      ("\\(?:\\<\\|/\\)\\([A-Z]+\\|\\([A-Z]+_[A-Z1-9_]+\\)\\)\\>" 1 font-lock-constant-face)
-      ;; .foo .barBaz .qux01 .-flibble .-flibbleWobble
-      ("\\<\\.-?[a-z][a-zA-Z0-9]*\\>" 0 'clojure-interop-method-face)
-      ;; Foo Bar$Baz Qux_ World_OpenUDP Foo. Babylon15.
-      ("\\(?:\\<\\|\\.\\|/\\|#?^\\)\\([A-Z][a-zA-Z0-9_]*[a-zA-Z0-9$_]+\\.?\\>\\)" 1 font-lock-type-face)
-      ;; foo.bar.baz
-      ("\\<^?\\([a-z][a-z0-9_-]+\\.\\([a-z][a-z0-9_-]*\\.?\\)+\\)" 1 font-lock-type-face)
-      ;; (ns namespace) - special handling for single segment namespaces
+
+      ;; namespace definitions: (ns foo.bar)
       (,(concat "(\\<ns\\>[ \r\n\t]*"
                 ;; Possibly metadata
                 "\\(?:\\^?{[^}]+}[ \r\n\t]*\\)*"
                 ;; namespace
-                "\\([a-z0-9-]+\\)")
-       (1 font-lock-type-face nil t))
-      ;; fooBar
-      ("\\(?:\\<\\|/\\)\\([a-z]+[A-Z]+[a-zA-Z0-9$]*\\>\\)" 1 'clojure-interop-method-face)
+                "\\(" clojure--sym-regexp "\\)")
+       (1 font-lock-type-face))
+
+      ;; TODO dedupe the code for matching of keywords, type-hints and unmatched symbols
+
+      ;; keywords: {:oneword/veryCom|pLex.stu-ff 0}
+      (,(concat "\\(:\\)\\(" clojure--sym-regexp "\\)\\(/\\)\\(" clojure--sym-regexp "\\)")
+       (1 'clojure-keyword-face)
+       (2 font-lock-type-face)
+       (3 'default)
+       (4 'clojure-keyword-face))
+      (,(concat "\\(:\\)\\(" clojure--sym-regexp "\\)")
+       (1 'clojure-keyword-face)
+       (2 'clojure-keyword-face))
+
+      ;; type-hints: #^oneword
+      (,(concat "\\(#^\\)\\(" clojure--sym-regexp "\\)\\(/\\)\\(" clojure--sym-regexp "\\)")
+       (1 'default)
+       (2 font-lock-type-face)
+       (3 'default)
+       (4 'default))
+      (,(concat "\\(#^\\)\\(" clojure--sym-regexp "\\)")
+       (1 'default)
+       (2 font-lock-type-face))
+
+      ;; clojure symbols not matched by the previous regexps
+      (,(concat "\\(" clojure--sym-regexp "\\)\\(/\\)\\(" clojure--sym-regexp "\\)")
+       (1 font-lock-type-face)
+       (2 'default)
+       (3 'default))
+      (,(concat "\\(" clojure--sym-regexp "\\)")
+       (1 'default))
+
       ;; #_ and (comment ...) macros.
       (clojure--search-comment-macro 1 font-lock-comment-face t)
       ;; Highlight `code` marks, just like `elisp'.

@@ -4,7 +4,7 @@
 
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Package-Requires: ((evil "1.2.3") (magit "2.6.0"))
-;; Package-Version: 20171213.1019
+;; Package-Version: 20180313.931
 ;; Homepage: https://github.com/justbur/evil-magit
 ;; Version: 0.4.1
 
@@ -206,6 +206,7 @@ evil-magit was loaded."
     magit-processbuf-section-map
     magit-process-section-map
     magit-pulls-section-map
+    magit-unmerged-section-map
     magit-status-section-map
     magit-worktree-section-map)
   "All magit section maps. For testing purposes only at the
@@ -401,6 +402,12 @@ denotes the original magit key for this command.")
 
 ;; Need to refresh evil keymaps when blame mode is entered.
 (add-hook 'magit-blame-mode-hook 'evil-normalize-keymaps)
+
+(evil-set-initial-state 'magit-repolist-mode 'motion)
+(evil-define-key 'motion magit-repolist-mode-map
+  (kbd "RET") 'magit-repolist-status
+  (kbd "gr")  'magit-list-repositories)
+(add-hook 'magit-repolist-mode-hook 'evil-normalize-keymaps)
 
 (eval-after-load 'git-rebase
   `(progn
