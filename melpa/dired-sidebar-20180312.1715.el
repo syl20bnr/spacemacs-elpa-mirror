@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/dired-sidebar
-;; Package-Version: 20180305.1747
+;; Package-Version: 20180312.1715
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1") (dired-subtree "0.0.1"))
 ;; Keywords: dired, files, tools
@@ -276,6 +276,14 @@ with a prefix arg or when `dired-sidebar-find-file-alt' is called."
 
 e.g. (display-buffer-in-side-window buffer '((side . left) (slot . -1)))"
   :type 'alist
+  :group 'dired-sidebar)
+
+(defcustom dired-sidebar-close-sidebar-on-file-open nil
+  "Whether or not to close sidebar when `dired-sidebar-find-file' is called.
+
+This behavior only triggers if `dired-sidebar-find-file' is triggered on
+a file."
+  :type 'boolean
   :group 'dired-sidebar)
 
 ;; Internal
@@ -643,7 +651,9 @@ window selection."
          (if dired-sidebar-open-file-in-most-recently-used-window
              (get-mru-window)
            (next-window))))
-      (find-file dired-file-name))))
+      (find-file dired-file-name)
+      (when dired-sidebar-close-sidebar-on-file-open
+        (dired-sidebar-hide-sidebar)))))
 
 (defun dired-sidebar-find-file-alt ()
   "Like `dired-sidebar-find-file' but select window with alterate method.

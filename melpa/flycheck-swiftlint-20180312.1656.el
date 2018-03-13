@@ -5,7 +5,7 @@
 ;; Authors: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/flycheck-swiftlint
-;; Package-Version: 20180121.2251
+;; Package-Version: 20180312.1656
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "25.1") (flycheck "0.25"))
 ;; Keywords: languages swiftlint swift emacs
@@ -48,6 +48,13 @@
       (defalias 'flycheck-swiftlint-if-let* #'if-let*)
       (defalias 'flycheck-swiftlint-when-let* #'when-let*))))
 
+;; Customization
+(defcustom flycheck-swiftlint-should-run-swiftlint-function
+  'flycheck-swiftlint-should-run-p
+  "Function used to determine if swiftlint should run."
+  :type 'function
+  :group 'flycheck)
+
 ;;; Flycheck
 
 (flycheck-def-executable-var swiftlint "swiftlint")
@@ -60,6 +67,9 @@
                    (warning line-start (file-name) ":" line ":" column ": "
                             "warning: " (message) line-end))
   :modes (swift-mode)
+  :predicate
+  (lambda ()
+    (funcall flycheck-swiftlint-should-run-swiftlint-function))
   :working-directory
   (lambda (_)
     (flycheck-swiftlint--find-swiftlint-directory)))
@@ -113,6 +123,10 @@ Taken from https://github.com/nhojb/xcode-project/blob/master/xcode-project.el."
           (setq xcodeproj (directory-files directory t ".*\.xcodeproj$" nil))
           (setq directory (file-name-directory (directory-file-name directory))))
         (car xcodeproj))))
+
+(defun flycheck-swiftlint-should-run-p ()
+  "Return whether or not swiftlint should run."
+  (executable-find "swiftlint"))
 
 (provide 'flycheck-swiftlint)
 ;;; flycheck-swiftlint.el ends here
