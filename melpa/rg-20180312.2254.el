@@ -7,7 +7,7 @@
 ;; Author: David Landell <david.landell@sunnyhill.email>
 ;;         Roland McGrath <roland@gnu.org>
 ;; Version: 1.5.0
-;; Package-Version: 20180218.1129
+;; Package-Version: 20180312.2254
 ;; URL: https://github.com/dajva/rg.el
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24") (s "1.10.0"))
 ;; Keywords: matching, tools
@@ -228,7 +228,9 @@ a string describing how the process finished.")
 (defvar rg-builtin-type-aliases nil
   "Cache for 'rg --type-list'.")
 
-(defvar rg-command "rg --color always --colors match:fg:red -n"
+(defvar rg-command
+  (concat (executable-find "rg")
+	  " --color always --colors match:fg:red -n")
   "Command string for invoking rg.")
 
 (defvar rg-last-search nil
@@ -376,7 +378,8 @@ added as a '--type-add' parameter to the rg command line."
              (s-trim
               (mapconcat 'identity (split-string (cadr association) "," t ) " ")))))
    (nbutlast (split-string
-              (shell-command-to-string "rg --type-list") "\n") 1)))
+              (shell-command-to-string
+	       (concat (executable-find "rg") " --type-list")) "\n") 1)))
 
 
 (defun rg-get-type-aliases (&optional nospecial)
