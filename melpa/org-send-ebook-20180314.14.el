@@ -2,7 +2,7 @@
 
 ;; Authors: stardiviner <numbchild@gmail.com>
 ;; Package-Requires: ((emacs "25") (cl-lib "0.5") (seq "2.20"))
-;; Package-Version: 20180313.1836
+;; Package-Version: 20180314.14
 ;; Package-X-Original-Version: 0.1
 ;; Keywords: org link ebook kindle epub mobi
 ;; homepage: https://github.com/stardiviner/org-send-ebook
@@ -81,8 +81,10 @@
            (default-directory (temporary-file-directory))
            (target-file (concat (temporary-file-directory) target-file-name))
            (device-directory (org-send-ebook--detect-directory)))
+      ;; device already has this file.
       (unless (file-exists-p (concat device-directory target-file-name))
-        (if (file-exists-p target-file) ; converted temp file exist, when previous convert failed.
+        ;; converted temp file exist, when previous convert failed.
+        (if (file-exists-p target-file)
             (progn
               (message "org-send-ebook: converted temp target file exist.")
               (copy-file target-file device-directory)
@@ -96,13 +98,14 @@
             (message (format "org-send-ebook: %s started..." target-file-name))
             (make-process
              :name (format "org-send-ebook: %s" target-file-name)
-             ;; FIXME: fix on `shell-quote-argument'
-             :command (list "ebook-convert" " " (shell-quote-argument source-file) " " (shell-quote-argument target-file))
+             :command (list "ebook-convert" " " source-file " " target-file)
              :sentinel (lambda (proc event)
                          ;; send converted file to device
-                         (when (string= event "finished\n")
-                           (copy-file target-file device-directory)
-                           (message (format "org-send-ebook: %s finished." target-file-name))))
+                         (if (string= event "finished\n")
+                             (progn
+                               (copy-file target-file device-directory)
+                               (message (format "org-send-ebook: %s finished." target-file-name)))
+                           (user-error "Error on process: org-send-ebook")))
              :buffer (format "*org-send-ebook: %s*" target-file-name))
             )))
       )))

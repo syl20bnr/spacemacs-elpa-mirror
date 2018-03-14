@@ -6,7 +6,7 @@
 
 ;; Compatibility: GNU Emacs 24.1+
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5") (async "1.9.2"))
-;; Package-Version: 20180304.2233
+;; Package-Version: 20180314.205
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -114,11 +114,8 @@ That may not work with Emacs versions <=23.1 for hash tables."
              (cond ((and (eq o 'register-alist)
                      (symbol-value o))
                     (psession--dump-object-save-register-alist f))
-                   ((and (memq o '(kill-ring kill-ring-yank-pointer))
-                         (symbol-value o))
-                    (psession--dump-object-no-properties o abs))
                    ((and (boundp o) (symbol-value o))
-                    (psession--dump-object-to-file o abs))))))
+                    (psession--dump-object-no-properties o abs))))))
 
 (cl-defun psession--restore-objects-from-directory
     (&optional (dir psession-elisp-objects-default-directory))
@@ -127,7 +124,9 @@ That may not work with Emacs versions <=23.1 for hash tables."
 
 (defun psession--dump-object-no-properties (object file)
   (set object (cl-loop for str in (symbol-value object)
-                       collect (substring-no-properties str)))
+                       if (stringp str)
+                       collect (substring-no-properties str)
+                       else collect str))
   (psession--dump-object-to-file object file))
 
 (cl-defun psession--dump-object-save-register-alist (&optional (file "register-alist.el"))
@@ -136,9 +135,11 @@ That may not work with Emacs versions <=23.1 for hash tables."
                                  unless (or (markerp val)
                                             (vectorp val)
                                             (and (consp val) (window-configuration-p (car val))))
-                                 collect (cons char val)))
+                                 collect (cons char (if (stringp val)
+                                                        (substring-no-properties val)
+                                                      val))))
         (def-file (expand-file-name file psession-elisp-objects-default-directory)))
-    (psession--dump-object-to-file 'register-alist def-file)))
+    (psession--dump-object-no-properties 'register-alist def-file)))
 
 ;;; Persistents window configs
 ;;
