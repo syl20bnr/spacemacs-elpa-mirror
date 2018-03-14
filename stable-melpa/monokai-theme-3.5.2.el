@@ -4,8 +4,8 @@
 
 ;; Author: Kelvin Smith <oneKelvinSmith@gmail.com>
 ;; URL: http://github.com/oneKelvinSmith/monokai-emacs
-;; Package-Version: 3.5.0
-;; Version: 3.5.0
+;; Package-Version: 3.5.2
+;; Version: 3.5.2
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -68,6 +68,12 @@ Also affects 'linum-mode' background."
   "Use variable pitch face for some headings and titles."
   :type 'boolean
   :group 'monokai)
+
+(defcustom monokai-doc-face-as-comment nil
+  "Consider `font-lock-doc-face' as comment instead of a string."
+  :type 'boolean
+  :group 'monokai
+  :package-version "3.5.1")
 
 (defcustom monokai-height-minus-1 0.8
   "Font size -1."
@@ -323,8 +329,12 @@ Also affects 'linum-mode' background."
       (,monokai-256-class (:foreground ,monokai-256-violet))))
 
    `(font-lock-doc-face
-     ((,monokai-class (:foreground ,monokai-yellow))
-      (,monokai-256-class (:foreground ,monokai-256-yellow))))
+     ((,monokai-class (:foreground ,(if monokai-doc-face-as-comment
+                                        monokai-comments
+                                      monokai-yellow)))
+      (,monokai-256-class (:foreground ,(if monokai-doc-face-as-comment
+                                            monokai-256-comments
+                                          monokai-256-yellow)))))
 
    `(font-lock-function-name-face
      ((,monokai-class (:foreground ,monokai-green))
@@ -3237,6 +3247,26 @@ Also affects 'linum-mode' background."
                                         :inherit default
                                         :underline nil))))
 
+   ;; line-number (>= Emacs26)
+   `(line-number
+     ((,monokai-class (:foreground ,monokai-line-number
+                                   :background ,monokai-fringe-bg
+                                   :inherit default
+                                   :underline nil))
+      (,monokai-256-class (:foreground ,monokai-256-line-number
+                                        :background ,monokai-256-fringe-bg
+                                        :inherit default
+                                        :underline nil))))
+   `(line-number-current-line
+     ((,monokai-class (:foreground ,monokai-foreground
+                                   :background ,monokai-fringe-bg
+                                   :inherit default
+                                   :underline nil))
+      (,monokai-256-class (:foreground ,monokai-256-foreground
+                                        :background ,monokai-256-fringe-bg
+                                        :inherit default
+                                        :underline nil))))
+
    ;; linum-relative-current-face
    `(linum-relative-current-face
      ((,monokai-class (:foreground ,monokai-line-number
@@ -5205,6 +5235,61 @@ Also affects 'linum-mode' background."
      ((,monokai-class (:background ,monokai-yellow-hc
                                    :foreground ,monokai-background
                                    :inherit ,monokai-pitch))))
+
+   ;; treemacs
+   `(treemacs-directory-face
+      ((,monokai-class (:foreground ,monokai-violet
+                         :background ,monokai-background
+                         :weight bold))
+        (,monokai-256-class (:foreground ,monokai-256-violet
+                              :background ,monokai-256-background
+                              :weight bold))))
+
+   `(treemacs-header-face
+      ((,monokai-class (:foreground ,monokai-yellow
+                         :background ,monokai-background
+                         :underline t
+                         :weight bold))
+        (,monokai-256-class (:foreground ,monokai-256-yellow
+                              :background ,monokai-256-background
+                              :underline t
+                              :weight bold))))
+
+   `(treemacs-git-modified-face
+      ((,monokai-class (:foreground ,monokai-green
+                         :background ,monokai-background))
+        (,monokai-256-class (:foreground ,monokai-256-green
+                              :background ,monokai-256-background))))
+
+   `(treemacs-git-renamed-face
+      ((,monokai-class (:foreground ,monokai-red
+                         :background ,monokai-background))
+        (,monokai-256-class (:foreground ,monokai-256-red
+                              :background ,monokai-256-background))))
+
+   `(treemacs-git-ignored-face
+      ((,monokai-class (:foreground ,monokai-gray-l
+                         :background ,monokai-background))
+        (,monokai-256-class (:foreground ,monokai-256-gray-l
+                              :background ,monokai-256-background))))
+
+   `(treemacs-git-untracked-face
+      ((,monokai-class (:foreground ,monokai-red
+                         :background ,monokai-background))
+        (,monokai-256-class (:foreground ,monokai-256-red
+                              :background ,monokai-256-background))))
+
+   `(treemacs-git-added-face
+      ((,monokai-class (:foreground ,monokai-green
+                         :background ,monokai-background))
+        (,monokai-256-class (:foreground ,monokai-256-green
+                              :background ,monokai-256-background))))
+
+   `(treemacs-git-conflict-face
+      ((,monokai-class (:foreground ,monokai-orange
+                         :background ,monokai-background))
+        (,monokai-256-class (:foreground ,monokai-256-orange
+                              :background ,monokai-256-background))))
 
    ;; tuareg
    `(tuareg-font-lock-governing-face
