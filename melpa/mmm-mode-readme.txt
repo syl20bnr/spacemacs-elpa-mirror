@@ -37,11 +37,11 @@ respectively.) `mmm-save-keywords' should only be used for lists
 with more than four arguments, such as in `mmm-ify-by-regexp'.
 
 In general, while I have no qualms about using things from CL like
-`mapl', `loop' and `destructuring-bind', I try not to use `defun*'
+`cl-mapl', `cl-loop' and `cl-destructuring-bind', I try not to use `cl-defun'
 more than I have to. For one, it sometimes makes bad documentation
 strings. Furthermore, to a `defun'ned function, a nil argument is
 the same as no argument, so it will use its (manual) default, but
-to a `defun*'ned function, a nil argument *is* the argument, so
+to a `cl-defun'ned function, a nil argument *is* the argument, so
 any default specified in the arglist will be ignored. Confusion of
 this type should be avoided when at all possible.
 

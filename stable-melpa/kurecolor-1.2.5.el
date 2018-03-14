@@ -2,8 +2,8 @@
 
 ;;; Author: Jason Milkins <jasonm23@gmail.com>
 
-;;; Version: 1.2.4
-;; Package-Version: 1.2.4
+;;; Version: 1.2.5
+;; Package-Version: 1.2.5
 
 ;;; Commentary:
 ;;
@@ -93,11 +93,12 @@
 
 ;;; Package-Requires: ((emacs "24.1") (s "1.0"))
 
-;;; Licence:
-;;  GNU / GPL2
+;;; Licence: MIT
+
 
 ;;; Code:
 
+(require 'cl)
 (require 's)
 
 (unless (>= (string-to-number (format "%i.%i" emacs-major-version emacs-minor-version)) 24.1)

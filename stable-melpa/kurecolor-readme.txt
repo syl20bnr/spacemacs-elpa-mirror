@@ -83,3 +83,5 @@ The theme is Gruvbox, although you can't see much of it. Anyway,
 it's a great theme, you should go install it now. (from MELPA)
 
 Package-Requires: ((emacs "24.1") (s "1.0"))
+
+Licence: MIT

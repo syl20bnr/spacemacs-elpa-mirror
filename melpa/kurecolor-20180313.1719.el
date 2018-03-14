@@ -2,8 +2,8 @@
 
 ;;; Author: Jason Milkins <jasonm23@gmail.com>
 
-;;; Version: 1.2.4
-;; Package-Version: 20170808.602
+;;; Version: 1.2.5
+;; Package-Version: 20180313.1719
 
 ;;; Commentary:
 ;;
@@ -98,6 +98,7 @@
 
 ;;; Code:
 
+(require 'cl)
 (require 's)
 
 (unless (>= (string-to-number (format "%i.%i" emacs-major-version emacs-minor-version)) 24.1)
