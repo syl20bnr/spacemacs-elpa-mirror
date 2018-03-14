@@ -4,7 +4,7 @@
 
 ;; Author: Filipe Silva <filipe.silva@gmail.com>
 ;; URL: https://github.com/ninrod/evil-string-inflection
-;; Package-Version: 20171225.1815
+;; Package-Version: 20180313.1055
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "24") (evil "1.2.13") (string-inflection "1.0.6"))
 
@@ -33,6 +33,9 @@
 (require 'string-inflection)
 
 ;;;###autoload
+(autoload 'evil-string-inflection "evil-string-inflection.el"
+  "Define a new evil operator that cicles underscore -> UPCASE -> CamelCase." t)
+
 (evil-define-operator evil-operator-string-inflection (beg end _type)
   "Define a new evil operator that cicles underscore -> UPCASE -> CamelCase."
   :move-point nil

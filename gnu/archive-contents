@@ -375,7 +375,7 @@
 	     ((:url . "http://elpa.gnu.org/packages/ediprolog.html")
 	      (:keywords "languages" "processes"))])
  (el-search .
-	    [(1 6)
+	    [(1 6 1)
 	     ((emacs
 	       (25))
 	      (stream
@@ -430,9 +430,9 @@
 	       ((:keywords "calendar")
 		(:url . "http://elpa.gnu.org/packages/excorporate.html"))])
  (exwm .
-       [(0 17)
+       [(0 18)
 	((xelb
-	  (0 13)))
+	  (0 14)))
 	"Emacs X Window Manager" tar
 	((:keywords "unix")
 	 (:url . "https://github.com/ch11ng/exwm"))])
@@ -1199,7 +1199,7 @@
 	 ((:url . "http://elpa.gnu.org/packages/xclip.html")
 	  (:keywords "convenience" "tools"))])
  (xelb .
-       [(0 13)
+       [(0 14)
 	((emacs
 	  (24 4))
 	 (cl-generic

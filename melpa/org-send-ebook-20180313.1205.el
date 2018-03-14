@@ -2,7 +2,7 @@
 
 ;; Authors: stardiviner <numbchild@gmail.com>
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (seq "2.20"))
-;; Package-Version: 20180117.1824
+;; Package-Version: 20180313.1205
 ;; Package-X-Original-Version: 0.1
 ;; Keywords: org link ebook kindle epub mobi
 ;; homepage: https://github.com/stardiviner/org-send-ebook
@@ -64,7 +64,8 @@
   "Detect plugged in device directory of saving ebook."
   (cl-case (intern (org-send-ebook--read-device-info))
     ('kindle
-     (concat (org-send-ebook--mount-path) "/Kindle/documents"))
+     (expand-file-name
+      (concat (org-send-ebook--mount-path) "/Kindle/documents/")))
     (t
      (read-directory-name "Send to device directory: "))))
 
@@ -80,11 +81,25 @@
            (default-directory (temporary-file-directory))
            (target-file (concat (temporary-file-directory) target-file-name))
            (device-directory (org-send-ebook--detect-directory)))
-      ;; convert ebook to device compatible format.
-      (unless (string= (file-name-extension source-file) (file-name-extension target-file-name))
-        (shell-command (concat "ebook-convert" " " (shell-quote-argument source-file) " " (shell-quote-argument target-file))))
-      ;; send converted file to device
-      (copy-file target-file device-directory)
+      (unless (file-exists-p (concat device-directory target-file-name))
+        (if (file-exists-p target-file) ; converted temp file exist, when previous convert failed.
+            (progn
+              (message "org-send-ebook: converted temp target file exist.")
+              (copy-file target-file device-directory)
+              (message (format "org-send-ebook: %s finished." target-file-name)))
+          ;; convert ebook to device compatible format.
+          (if (not (string= (file-name-extension source-file) (file-name-extension target-file-name)))
+              (make-process
+               :name (format "org-send-ebook: %s" target-file-name)
+               :command (list "ebook-convert" " " (shell-quote-argument source-file) " " (shell-quote-argument target-file))
+               :sentinel (lambda (proc event)
+                           ;; send converted file to device
+                           (when (string= event "finished\n")
+                             (copy-file target-file device-directory)
+                             (message (format "org-send-ebook: %s finished." target-file-name))))
+               :buffer (format "org-send-ebook: %s" target-file-name))
+            (copy-file source-file device-directory)
+            (message (format "org-send-ebook: %s finished." target-file-name)))))
       )))
 
 

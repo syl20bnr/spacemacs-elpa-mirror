@@ -5,7 +5,7 @@
 ;; Author: Joe Wreschnig
 ;; Keywords: tools, vc, convenience
 ;; Package-Requires: ((emacs "25") (flycheck "31") (gitlab-ci-mode "1"))
-;; Package-Version: 20180304.756
+;; Package-Version: 20180313.1157
 ;; Package-X-Original-Version: 20180304.1
 ;; URL: https://gitlab.com/joewreschnig/gitlab-ci-mode-flycheck/
 ;;
@@ -35,12 +35,61 @@
 (require 'flycheck)
 (require 'gitlab-ci-mode)
 
+(defun gitlab-ci-mode-flycheck--goto-path (path)
+  "Go to the YAML key described by a “:”-separated PATH string.
+
+If the full path could not be resolved, go to the last element
+which could be found."
+  (goto-char 0)
+  (condition-case nil
+      (let ((prefix "^"))
+        (dolist (key (split-string path ":"))
+          (re-search-forward
+           (concat "\\(" prefix "\\)\\<\\(" key "\\)\\> *:"))
+          (setq prefix (concat (match-string 1) " +"))
+          (goto-char (match-beginning 2))))
+    (search-failed nil)))
+
+(defun gitlab-ci-mode-flycheck--line-for-message (message)
+  "Try figure out the line number described by MESSAGE.
+
+If the full key in the message could not be found, attribute the
+error to the last element which could be found."
+  (cond ((string-match
+          "\\(?:jobs:\\)?\\([^ ]+\\) .* keys: \\([^ ]+\\)" message)
+         (gitlab-ci-mode-flycheck--goto-path
+          (concat (match-string 1 message) ":" (match-string 2 message))))
+        ((string-match "\\(?:jobs:\\)?\\([^ ]+\\) config" message)
+         (gitlab-ci-mode-flycheck--goto-path (match-string 1 message)))
+        ((string-match "jobs:\\([^ ]+\\)" message)
+         (gitlab-ci-mode-flycheck--goto-path (match-string 1 message)))
+        (t (goto-char 0)))
+  (line-number-at-pos))
+
+(defun gitlab-ci-mode-flycheck--errors-filter (errors)
+  "Fix up the line numbers of each error in ERRORS, if necessary."
+  (dolist (err errors)
+    (unless (flycheck-error-line err)
+      (setf (flycheck-error-line err)
+            (or (when-let (message (flycheck-error-message err))
+                  (flycheck-error-with-buffer err
+                    (save-restriction
+                      (save-mark-and-excursion
+                       (widen)
+                       (gitlab-ci-mode-flycheck--line-for-message message)))))
+                  0))))
+  errors)
+
 (flycheck-define-generic-checker 'gitlab-ci
   "Lint GitLab CI configuration files.
 
 This checker will send your file to a remote service, as GitLab
 offers no local linting tool. The service URL is configurable via
-‘gitlab-ci-url’."
+‘gitlab-ci-url’.
+
+Because the GitLab CI linter does not give line numbers for most
+errors, line-level attribution may be incorrect when using some
+YAML features such as references, tags, or unusual indentation."
   :start
   (lambda (checker callback)
     (gitlab-ci-request-lint
@@ -52,16 +101,15 @@ offers no local linting tool. The service URL is configurable via
           (mapcar
            (lambda (message)
              (flycheck-error-new-at
-              ;; Most errors from GitLab CI’s lint tool don’t give a
-              ;; proper line number, but if they do, try to parse it
-              ;; out. (Even then it’s often wrong…)
-              (if (string-match "\\<line \\([0-9]+\\)\\>" message)
-                  (string-to-number (match-string 1 message)) 1)
-              (if (string-match "\\<column \\([0-9]+\\)\\>" message)
-                  (string-to-number (match-string 1 message)) nil)
+              (when (string-match "\\<line \\([0-9]+\\)\\>" message)
+                (string-to-number (match-string 1 message)))
+              (when (string-match "\\<column \\([0-9]+\\)\\>" message)
+                (string-to-number (match-string 1 message)))
               'error message :checker checker))
            (alist-get 'errors data)))))
      :silent))
+
+  :error-filter #'gitlab-ci-mode-flycheck--errors-filter
 
   :modes '(gitlab-ci-mode))
 
