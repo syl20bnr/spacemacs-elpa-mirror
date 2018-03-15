@@ -1,17 +1,17 @@
 ;;; smart-compile.el --- an interface to `compile'
 
-;; Copyright (C) 1998-2017  by Seiji Zenitani
+;; Copyright (C) 1998-2018  by Seiji Zenitani
 
 ;; Author: Seiji Zenitani <zenitani@mac.com>
-;; Version: 20171105
-;; Package-Version: 20171104.2333
+;; Version: 20180315
+;; Package-Version: 20180315.54
 ;; Keywords: tools, unix
 ;; Created: 1998-12-27
 ;; Compatibility: Emacs 21 or later
 ;; URL(en): https://github.com/zenitani/elisp/blob/master/smart-compile.el
 ;; URL(jp): http://th.nao.ac.jp/MEMBER/zenitani/elisp-j.html#smart-compile
 
-;; Contributors: Sakito Hisakura, Greg Pfell
+;; Contributors: Sakito Hisakura, Greg Pfell, Pierre Techoueyres
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -117,12 +117,14 @@ evaluate FUNCTION instead of running a compilation command.
 (defcustom smart-compile-make-program "make "
   "The command by which to invoke the make program."
   :type 'string
-  :group 'smart-compile)
+  :group 'smart-compile
+  :safe 'stringp)
 
 (defcustom smart-compile-option-string ""
   "The option string that replaces %o.  The default is empty."
   :type 'string
-  :group 'smart-compile)
+  :group 'smart-compile
+  :safe 'stringp)
 
 
 ;;;###autoload
