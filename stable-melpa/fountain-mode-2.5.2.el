@@ -4,8 +4,8 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 2.5.1
-;; Version: 2.5.1
+;; Package-Version: 2.5.2
+;; Version: 2.5.2
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
 
@@ -141,7 +141,7 @@
 ;;; Code:
 
 (defconst fountain-version
-  "2.5.1")
+  "2.5.2")
 
 (defun fountain-version ()
   "Return `fountain-mode' version."
@@ -3808,20 +3808,42 @@ data reflects `outline-regexp'."
          (string-width (match-string 2)))
         (t 6)))
 
+(defcustom fountain-pop-up-indirect-windows
+  nil
+  "Non-nil if opening indirect buffers should make a new window."
+  :type 'boolean
+  :group 'fountain)
+
 (defun fountain-outline-to-indirect-buffer ()
+  "Clone section/scene at point to indirect buffer.
+
+Set `fountain-pop-up-indirect-windows' to control how indirect
+buffer windows are opened."
   (interactive)
-  (let (beg end heading-name)
+  (let ((pop-up-windows fountain-pop-up-indirect-windows)
+        (base-buffer (buffer-name (buffer-base-buffer)))
+        beg end heading-name target-buffer)
     (save-excursion
-      (outline-back-to-heading t)
-      (setq beg (point))
-      (if (or (fountain-match-section-heading)
-              (fountain-match-scene-heading))
-          (setq heading-name (match-string-no-properties 3)))
-      (outline-end-of-subtree)
-      (setq end (point)))
-    (clone-indirect-buffer heading-name t)
-    (narrow-to-region beg end)
-    (outline-show-all)))
+      (save-restriction
+        (widen)
+        (outline-back-to-heading t)
+        (setq beg (point))
+        (when (or (fountain-match-section-heading)
+                  (fountain-match-scene-heading))
+          (setq heading-name (match-string-no-properties 3)
+                target-buffer (concat base-buffer "-" heading-name))
+          (outline-end-of-subtree)
+          (setq end (point)))))
+    (if (and (get-buffer target-buffer)
+             (with-current-buffer target-buffer
+               (goto-char beg)
+               (and (or (fountain-match-section-heading)
+                        (fountain-match-scene-heading))
+                    (string= heading-name (match-string-no-properties 3)))))
+        (pop-to-buffer target-buffer)
+      (clone-indirect-buffer target-buffer t)
+      (outline-show-all))
+    (narrow-to-region beg end))))
 
 
 ;;; Navigation

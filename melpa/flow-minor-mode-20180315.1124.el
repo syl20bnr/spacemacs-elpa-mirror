@@ -4,7 +4,7 @@
 ;; the LICENSE file in the root directory of this source tree.
 
 ;; Version: 0.3
-;; Package-Version: 20180204.141
+;; Package-Version: 20180315.1124
 ;; URL: https://github.com/an-sh/flow-minor-mode
 
 ;; Package-Requires: ((emacs "25.1"))
@@ -221,7 +221,7 @@ BODY progn"
 (add-hook 'kill-emacs-hook 'flow-minor-stop-flow-server t)
 
 (defun flow-minor-maybe-delete-process (name)
-  (when-let (process (get-process name))
+  (when (get-process name)
     (delete-process name)))
 
 (defun flow-minor-eldoc-sentinel (process _event)
