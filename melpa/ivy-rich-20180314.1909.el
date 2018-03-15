@@ -4,7 +4,7 @@
 
 ;; Author: Yevgnen Koh <wherejoystarts@gmail.com>
 ;; Package-Requires: ((emacs "24.4") (ivy "0.8.0"))
-;; Package-Version: 20180225.1752
+;; Package-Version: 20180314.1909
 ;; Version: 0.0.4
 ;; Keywords: ivy
 
@@ -129,11 +129,14 @@ Note that this variable takes effect only when
   "Use space to pad STR to LEN of length.
 
 When LEFT is not nil, pad from left side."
-  (if (< (length str) len)
-      (if left
-          (concat (make-string (- len (length str)) ? ) str)
-        (concat str (make-string (- len (length str)) ? )))
-    str))
+  (let ((str-len (length str)))
+    (cond ((< str-len len)
+           (if left
+               (concat (make-string (- len (length str)) ? ) str)
+             (concat str (make-string (- len (length str)) ? ))))
+          ((> str-len len)
+           (format "%s…" (substring str 0 (1- len))))
+          (t str))))
 
 (defun ivy-rich-switch-buffer-user-buffer-p (buffer)
   "Check whether BUFFER-NAME is a user buffer."
@@ -289,7 +292,7 @@ or /a/…/f.el."
          (filename (propertize filename 'face 'ivy-virtual))
          (path (file-name-directory str))
          (path (ivy-rich-switch-buffer-shorten-path path (- (window-width (minibuffer-window)) (length filename))))
-         (path (ivy-rich-switch-buffer-pad path (- (window-width)
+         (path (ivy-rich-switch-buffer-pad path (- (window-width (minibuffer-window))
                                                    (length filename)
                                                    2)))  ; Fixed the unexpected wrapping in terminal
          (path (propertize path 'face 'ivy-virtual)))

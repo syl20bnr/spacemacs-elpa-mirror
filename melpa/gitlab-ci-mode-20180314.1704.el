@@ -5,7 +5,7 @@
 ;; Author: Joe Wreschnig
 ;; Keywords: tools, vc
 ;; Package-Requires: ((emacs "25") (yaml-mode "0.0.12"))
-;; Package-Version: 20180305.1532
+;; Package-Version: 20180314.1704
 ;; Package-X-Original-Version: 20180306.1
 ;; URL: https://gitlab.com/joewreschnig/gitlab-ci-mode/
 ;;
@@ -250,7 +250,7 @@ In particular, it does not expect to encounter tags."
               '(gitlab-ci-complete-at-point)))
 
 ;;;###autoload
-(add-to-list 'auto-mode-alist '(".gitlab-ci.yml\\'" . gitlab-ci-mode))
+(add-to-list 'auto-mode-alist '("\\.gitlab-ci.yml\\'" . gitlab-ci-mode))
 
 
 ;; Linting support

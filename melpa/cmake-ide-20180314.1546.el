@@ -4,7 +4,7 @@
 
 ;; Author:  Atila Neves <atila.neves@gmail.com>
 ;; Version: 0.6
-;; Package-Version: 20180301.1335
+;; Package-Version: 20180314.1546
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (seq "1.11") (levenshtein "0") (s "1.11.0"))
 ;; Keywords: languages
 ;; URL: http://github.com/atilaneves/cmake-ide
@@ -219,19 +219,19 @@ the closest possible matches available in cppcheck."
 
 (defvar cmake-ide--idbs
   (cmake-ide--make-hash-table)
-  "A cached map of build directories to IDE databases.")
+  "Key: build directory.  Value: IDB for that build directory.")
 
 (defvar cmake-ide--cdb-hash
   (cmake-ide--make-hash-table)
-  "The hash of the JSON CDB for each build directory.")
+  "Key: build directory.  Value: The hash of the JSON CDB.")
 
 (defvar cmake-ide--cmake-hash
   (cmake-ide--make-hash-table)
-  "A hash to remember cmake build dirs.")
+  "Key: project key.  Value: build dir.")
 
 (defvar cmake-ide--irony
   (cmake-ide--make-hash-table)
-  "A hash to remember irony build dirs.")
+  "Used as a set.  Key: build dir.  Value: T or nil.")
 
 (defvar cmake-ide--semantic-system-include)
 
@@ -678,11 +678,9 @@ the object file's name just above."
                     (if (and cmake-ide-build-pool-use-persistent-naming project-key)
                         project-key
                       (make-temp-name "cmake")))
-              (setq build-dir (expand-file-name build-directory-name build-parent-directory)
-                    )
+              (setq build-dir (expand-file-name build-directory-name build-parent-directory))
               (progn
-                (puthash project-key build-dir cmake-ide--cmake-hash)
-                )
+                (puthash project-key build-dir cmake-ide--cmake-hash))
               build-dir)
           build-dir)))))
 
@@ -918,36 +916,38 @@ the object file's name just above."
 
 
 (defun cmake-ide--locate-cmakelists ()
-  "Find CMakeLists.txt.  Use CMakeLists.txt in user defined project-dir, or find the topmost CMakeLists.txt file.  Return nil if not found."
-  (if (and (cmake-ide--project-dir-var) (file-exists-p (expand-file-name "CMakeLists.txt" (cmake-ide--project-dir-var))))
-      (expand-file-name "CMakeLists.txt" (cmake-ide--project-dir-var))
-    nil
-    )
-  (let ((cmakelist-dir (cmake-ide--locate-cmakelists-impl default-directory nil)))
-    (if cmakelist-dir
-        (expand-file-name "CMakeLists.txt" cmakelist-dir)
-      nil
-      )
-    ))
+  "Find CMakeLists.txt.
 
-(defun cmake-ide--locate-cmakelists-impl (dir last-found)
+Use CMakeLists.txt in user defined project-dir, or find the topmost
+CMakeLists.txt file.  Return nil if not found."
+  (if (and (cmake-ide--project-dir-var)
+           (file-exists-p (expand-file-name "CMakeLists.txt" (cmake-ide--project-dir-var))))
+      (expand-file-name "CMakeLists.txt" (cmake-ide--project-dir-var))
+    (let ((cmakelist-dir (cmake-ide--topmost-cmakelists default-directory nil)))
+      (if cmakelist-dir
+          (expand-file-name "CMakeLists.txt" cmakelist-dir)
+        nil))))
+
+(defun cmake-ide--topmost-cmakelists (dir last-found)
   "Find the topmost CMakeLists.txt from DIR using LAST-FOUND as a 'plan B'."
   (let ((new-dir (locate-dominating-file dir "CMakeLists.txt")))
     (if new-dir
-        (cmake-ide--locate-cmakelists-impl (expand-file-name ".." new-dir) new-dir)
+        (cmake-ide--topmost-cmakelists (expand-file-name ".." new-dir) new-dir)
       last-found)))
 
 (defun cmake-ide--locate-project-dir ()
   "Return the path to the project directory."
   (let ((cmakelists (cmake-ide--locate-cmakelists)))
-    (or (and (cmake-ide--project-dir-var) (expand-file-name (cmake-ide--project-dir-var)))     ; if project dir is set by the user, use this value.
+    ;; if project dir is set by the user, use this value.
+    (or (and (cmake-ide--project-dir-var) (expand-file-name (cmake-ide--project-dir-var)))
         (and cmakelists (file-name-directory cmakelists)) ; else try to use cmakelists dir
         nil ; if no CMakeLists.txt nor project-dir set, return nil and prevent cmake-ide to do anything else
         )))
 
 (defun cmake-ide--cdb-json-file-to-idb ()
-  "Retrieve a JSON object from the compilation database."
-  ;; check the cache first
+  "Convert the compile_commands.json CDB to an IDB.
+First it checks the cache for previously
+computed IDBs, and if none are found actually performs the conversion."
   (let ((idb (cmake-ide--cdb-idb-from-cache)))
     (unless idb
       (if (not (file-exists-p (cmake-ide--comp-db-file-name)))
@@ -974,9 +974,12 @@ the object file's name just above."
   (secure-hash 'md5 (cmake-ide--get-string-from-file file-name)))
 
 (defun cmake-ide--cdb-json-string-to-idb (json-str)
-  "Tranform JSON-STR into an opaque json object."
-  (let ((idb (make-hash-table :test #'equal))
+  "Tranform JSON-STR into an IDB.
+
+The IDB is hash mapping files to all JSON objects (usually only one) in the CDB."
+  (let ((idb (cmake-ide--make-hash-table))
         (json (json-read-from-string json-str)))
+    ;; map over all the JSON objects in JSON, which is an array of objects (CDB)
     (mapc (lambda (obj)
             (let* ((file (cmake-ide--relativize (cmake-ide--idb-obj-get obj 'file)))
                    (objs (gethash file idb)))
