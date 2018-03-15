@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 ~ 2018 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; Version: 1.0
-;; Package-Version: 20180314.1023
+;; Package-Version: 20180314.1527
 ;; Package-Requires: ((helm "1.5") (bbdb "3.1.2"))
 ;; URL: https://github.com/emacs-helm/helm-bbdb
 
@@ -129,25 +129,24 @@ All other actions are removed."
        "Add to contacts"
        (lambda (_actions)
          (bbdb-create-internal
-          (read-from-minibuffer "Name: " helm-pattern)
-          nil nil
-          (bbdb-read-organization)
-          (helm-read-repeat-string "Email " t)
-          (helm-bbdb-read-phone)
-          (helm-bbdb-read-address)
-          (let ((xfield (bbdb-read-xfield bbdb-default-xfield)))
-            (unless (string= xfield "")
-              (list (cons bbdb-default-xfield xfield)))))))
+          :name (read-from-minibuffer "Name: " helm-pattern)
+          :organization (bbdb-read-organization)
+          :mail (helm-read-repeat-string "Email " t)
+          ;; Bug in bbdb-create-internal, see:
+          ;; https://lists.gnu.org/archive/html/bbdb-user/2018-01/msg00006.html
+          ;; :phone (helm-bbdb-read-phone)
+          :address (helm-bbdb-read-address)
+          :xfields (let ((xfield (bbdb-read-xfield bbdb-default-xfield)))
+		     (unless (string= xfield "")
+		       (list (cons bbdb-default-xfield xfield)))))))
     actions))
 
-(defun helm-bbdb-get-record (candidate &optional delete-window)
+(defun helm-bbdb-get-record (candidate)
   "Return record that match CANDIDATE."
-  (cl-letf (((symbol-function 'message) #'ignore)) 
+  (cl-letf (((symbol-function 'message) #'ignore))
     (bbdb candidate nil)
     (set-buffer bbdb-buffer-name)
-    (prog1
-        (bbdb-current-record)
-      (and delete-window (delete-window)))))
+    (bbdb-current-record)))
 
 (defun helm-bbdb-match-mail (candidate)
   "Additional match function that match email address of CANDIDATE."
@@ -253,7 +252,7 @@ Prompt user to confirm deletion."
   (let* ((address-list (helm-bbdb-collect-mail-addresses))
 	 (address-str  (mapconcat 'identity address-list ",\n    ")))
     (end-of-line)
-      (while (not (looking-back ": \\|, \\| [ \t]" (point-at-bol)))
+    (while (not (looking-back ": \\|, \\| [ \t]" (point-at-bol)))
       (delete-char -1))
     (insert address-str)
     (end-of-line)))

@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/zoutline
-;; Package-Version: 20180306.1207
+;; Package-Version: 20180314.1059
 ;; Version: 0.1.0
 ;; Keywords: outline
 
@@ -141,6 +141,31 @@ Return nil if moved 0 times."
     (insert "\n\n" title "\n")
     (let ((inhibit-message t))
       (save-buffer))))
+
+(defun zo-end-of-subtree ()
+  "Goto to the end of a subtree."
+  (outline-back-to-heading t)
+  (let ((first t)
+        (level (funcall outline-level)))
+    (while (and (not (eobp))
+                (or first (> (funcall outline-level) level)))
+      (setq first nil)
+      (outline-next-heading)))
+  (point))
+
+(defun zo-bnd-subtree ()
+  "Return a cons of heading end and subtree end."
+  (save-excursion
+    (outline-back-to-heading)
+    (cons
+     (save-excursion
+       (outline-end-of-heading)
+       (point))
+     (save-excursion
+       (zo-end-of-subtree)
+       (when (bolp)
+         (backward-char))
+       (point)))))
 
 (provide 'zoutline)
 

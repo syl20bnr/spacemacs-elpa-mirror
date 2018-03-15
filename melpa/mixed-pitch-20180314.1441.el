@@ -5,7 +5,7 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/mixed-pitch
-;; Package-Version: 20180121.1039
+;; Package-Version: 20180314.1441
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "24.3"))
 
@@ -56,7 +56,14 @@
   :group 'mixed-pitch)
 
 (defcustom mixed-pitch-fixed-pitch-faces
-  '(font-latex-math-face
+  '(diff-added
+    diff-context
+    diff-file-header
+    diff-function
+    diff-header
+    diff-hunk-header
+    diff-removed
+    font-latex-math-face
     font-latex-sedate-face
     font-latex-warning-face
     font-latex-sectioning-5-face
