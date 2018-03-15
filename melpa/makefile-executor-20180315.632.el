@@ -4,7 +4,7 @@
 
 ;; Author: Lowe Thiderman <lowe.thiderman@gmail.com>
 ;; URL: https://github.com/thiderman/makefile-executor.el
-;; Package-Version: 20180314.1043
+;; Package-Version: 20180315.632
 ;; Package-X-Original-Version: 20170613
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.3") (dash "2.11.0") (f "0.11.0") (s "1.10.0"))
@@ -37,6 +37,9 @@
 ;; - Re-running the last execution.  We usually run things in
 ;;   Makefiles many times after all!  Bound to '`C-c C-c'` in `makefile-mode` when
 ;;   'makefile-executor-mode'` is enabled.
+;; - Running a makefile target in a dedicated buffer.  Useful when
+;;   starting services and other long-running things!  Bound to
+;;   '`C-c C-d'` in `makefile-mode` when 'makefile-executor-mode'` is enabled.
 ;; - Calculation of variables et.c.; $(BINARY) will show up as what it
 ;;   evaluates to.
 ;; - If `projectile' is installed, execution from any buffer in a
