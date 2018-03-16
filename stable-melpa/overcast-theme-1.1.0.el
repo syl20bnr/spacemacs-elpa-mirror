@@ -4,7 +4,7 @@
 
 ;; Author: Mohammed Ismail Ansari <team.terminal@gmail.com>
 ;; Version: 1.0
-;; Package-Version: 1.0.0
+;; Package-Version: 1.1.0
 ;; Keywords: theme
 ;; Maintainer: Mohammed Ismail Ansari <team.terminal@gmail.com>
 ;; Created: 2018/02/15
@@ -116,7 +116,7 @@
    `(fringe ((,class (:background ,bgcolor-level1 :foreground ,bgcolor-level3))))
    `(vertical-border ((,class (:foreground ,bgcolor-primary))))
    `(linum ((,class (:foreground ,bgcolor-level3))))
-   `(show-paren-match-face ((,class (:background ,bgcolor-level2 :foreground ,color-white))))
+   `(show-paren-match-face ((,class (:background ,color-level3 :foreground ,color-white))))
    `(isearch ((,class (:bold t :foreground ,bgcolor-primary :background ,color-warning))))
    `(minibuffer-prompt ((,class (:bold t :background ,bgcolor-level3 :foreground ,color-primary))))
    `(default-italic ((,class (:italic t))))
@@ -300,7 +300,11 @@
    `(jde-java-font-lock-constant-face ((t (:foreground ,color-const))))
    `(jde-java-font-lock-modifier-face ((t (:foreground ,color-level1))))
    `(jde-jave-font-lock-protected-face ((t (:foreground ,color-keyword))))
-   `(jde-java-font-lock-number-face ((t (:foreground ,color-var))))))
+   `(jde-java-font-lock-number-face ((t (:foreground ,color-var))))
+
+   ;; telephone-line
+   `(telephone-line-accent-active ((t (:foreground ,bgcolor-primary :background ,color-level3))))
+   `(telephone-line-accent-inactive ((t (:foreground ,color-primary :background ,bgcolor-level2))))))
 
 ;;;###autoload
 (when (and (boundp 'custom-theme-load-path)

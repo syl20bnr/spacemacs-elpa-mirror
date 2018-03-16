@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel
 ;; URL: https://github.com/abo-abo/org-download
-;; Package-Version: 20180311.728
+;; Package-Version: 20180315.1220
 ;; Version: 0.1.0
 ;; Package-Requires: ((async "1.2"))
 ;; Keywords: images, screenshots, download
@@ -350,7 +350,7 @@ It's inserted before the image link and is used to annotate it.")
                         (org-element-property :path (org-element-context))))
          (current-path (concat dir-path "/" current-name))
          (ext (file-name-extension current-name))
-         (new-name (read-string "Rename file at point to: " current-name))
+         (new-name (read-string "Rename file at point to: " (file-name-sans-extension current-name)))
          (new-path (concat dir-path "/" new-name "." ext)))
     (rename-file current-path new-path)
     (message "File successfully renamed...")

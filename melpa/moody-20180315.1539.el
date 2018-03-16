@@ -6,7 +6,7 @@
 ;; Homepage: https://github.com/tarsius/moody
 
 ;; Package-Requires: ((emacs "25.3"))
-;; Package-Version: 20180307.328
+;; Package-Version: 20180315.1539
 
 ;; This file is not part of GNU Emacs.
 
@@ -81,7 +81,8 @@
 
 ;;; Options
 
-(defcustom moody-mode-line-height 30
+(defcustom moody-mode-line-height
+  (* 2 (aref (font-info (face-font 'mode-line)) 2))
   "When using `moody', height of the mode line in pixels.
 This should be an even number."
   :type 'integer
@@ -151,7 +152,7 @@ not specified, then faces based on `default', `mode-line' and
                     (list outer line inner)
                   (list inner line outer)))
          (face  (if (eq direction 'down)
-                    (list :overline nil
+                    (list :overline (and (eq type 'ribbon) line)
                           :underline line
                           :background inner)
                   (list :overline line
@@ -184,6 +185,8 @@ not specified, then faces based on `default', `mode-line' and
 (defun moody-slant (direction c1 c2 c3 &optional height)
   (unless height
     (setq height moody-mode-line-height))
+  (unless (evenp height)
+    (cl-incf height))
   (let ((key (list direction c1 c2 c3 height)))
     (or (cdr (assoc key moody--cache))
         (let* ((width (/ height 2))
@@ -216,6 +219,7 @@ not specified, then faces based on `default', `mode-line' and
 (put 'moody-mode-line-buffer-identification 'risky-local-variable t)
 (make-variable-buffer-local 'moody-mode-line-buffer-identification)
 
+;;;###autoload
 (defun moody-replace-mode-line-buffer-identification (&optional reverse)
   (interactive "P")
   (moody-replace-element 'mode-line-buffer-identification
@@ -239,6 +243,7 @@ not specified, then faces based on `default', `mode-line' and
 (defvar moody--default-mode-line-buffer-identification
   mode-line-buffer-identification)
 
+;;;###autoload
 (defun moody-replace-sml/mode-line-buffer-identification (&optional reverse)
   (interactive "P")
   ;; Without this `sml/generate-buffer-identification' would always return nil.
@@ -258,6 +263,7 @@ not specified, then faces based on `default', `mode-line' and
 (put 'moody-vc-mode 'risky-local-variable t)
 (make-variable-buffer-local 'moody-vc-mode)
 
+;;;###autoload
 (defun moody-replace-vc-mode (&optional reverse)
   (interactive "P")
   (moody-replace-element '(vc-mode vc-mode)
