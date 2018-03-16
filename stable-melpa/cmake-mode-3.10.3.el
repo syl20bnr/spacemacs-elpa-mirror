@@ -1,5 +1,5 @@
 ;;; cmake-mode.el --- major-mode for editing CMake sources
-;; Package-Version: 3.10.2
+;; Package-Version: 3.10.3
 
 ; Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
 ; file Copyright.txt or https://cmake.org/licensing for details.

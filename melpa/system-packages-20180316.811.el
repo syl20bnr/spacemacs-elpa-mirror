@@ -5,7 +5,7 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/system-packages
-;; Package-Version: 20180309.1440
+;; Package-Version: 20180316.811
 ;; Package-Requires: ((cl-lib "0.5"))
 
 ;; This file is not part of GNU Emacs.
@@ -130,20 +130,20 @@
     ;; Debian (and Ubuntu) based systems
     (apt .
          ((default-sudo . t)
-          (install . "apt install")
-          (search . "apt search")
-          (uninstall . "apt remove")
-          (update . ("apt update" "apt upgrade"))
+          (install . "apt-get install")
+          (search . "apt-cache search")
+          (uninstall . "apt-get --purge remove")
+          (update . ("apt-get update" "apt-get upgrade"))
           (clean-cache . "apt-get clean")
           (log . "cat /var/log/dpkg.log")
           (get-info . "dpkg -s")
-          (get-info-remote . "apt show")
+          (get-info-remote . "apt-cache show")
           (list-files-provided-by . "dpkg -L")
           (verify-all-packages . "debsums")
           (verify-all-dependencies . "apt-get check")
-          (remove-orphaned . "apt autoremove")
-          (list-installed-packages . nil)
-          (list-installed-packages-all . nil)
+          (remove-orphaned . "apt-get autoremove")
+          (list-installed-packages . "dpkg -l")
+          (list-installed-packages-all . "dpkg -l")
           (list-dependencies-of . "apt-cache deps")
           (noconfirm . "-y")))
     (aptitude .
