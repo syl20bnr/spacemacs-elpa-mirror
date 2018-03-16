@@ -6,7 +6,7 @@
 ;; Homepage: https://github.com/tarsius/moody
 
 ;; Package-Requires: ((emacs "25.3"))
-;; Package-Version: 20180315.1539
+;; Package-Version: 20180316.340
 
 ;; This file is not part of GNU Emacs.
 
@@ -185,7 +185,7 @@ not specified, then faces based on `default', `mode-line' and
 (defun moody-slant (direction c1 c2 c3 &optional height)
   (unless height
     (setq height moody-mode-line-height))
-  (unless (evenp height)
+  (unless (cl-evenp height)
     (cl-incf height))
   (let ((key (list direction c1 c2 c3 height)))
     (or (cdr (assoc key moody--cache))

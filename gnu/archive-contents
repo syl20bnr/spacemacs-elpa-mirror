@@ -708,6 +708,13 @@
 	   nil "Sidebar showing a \"mini-map\" of a buffer" single
 	   ((:url . "http://elpa.gnu.org/packages/minimap.html")
 	    (:keywords))])
+ (mmm-mode .
+	   [(0 5 5)
+	    ((cl-lib
+	      (0 2)))
+	    "Allow Multiple Major Modes in a buffer" tar
+	    ((:keywords "convenience" "faces" "languages" "tools")
+	     (:url . "https://github.com/purcell/mmm-mode"))])
  (multishell .
 	     [(1 1 5)
 	      ((cl-lib

@@ -4,10 +4,10 @@
 
 ;; Author: Damien Cassou <damien@cassou.me>
 ;; Keywords: multimedia
-;; Package-Version: 20180304.51
+;; Package-Version: 20180316.122
 ;; Url: https://github.com/DamienCassou/mpdel
 ;; Package-requires: ((emacs "25.1"))
-;; Version: 0.3.0
+;; Version: 0.4.0
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -157,6 +157,12 @@ message from the server.")
 (cl-defstruct (libmpdel-current-playlist
                (:constructor libmpdel--current-playlist-create)
                (:conc-name libmpdel--current-playlist-)))
+
+(cl-defstruct (libmpdel-search-criteria
+               (:constructor libmpdel-search-criteria-create)
+               (:conc-name libmpdel--search-criteria-))
+  (type nil :read-only t)
+  (what nil :read-only t))
 
 (defun libmpdel-current-playlist ()
   "Return the current playlist."
@@ -645,6 +651,14 @@ If HANDLER is nil, ignore response."
               (mapcar
                (lambda (playlist-name) (libmpdel--stored-playlist-create :name playlist-name))
                (libmpdel-sorted-entries data 'playlist))))))
+
+(cl-defmethod libmpdel-list ((search-criteria libmpdel-search-criteria) function)
+  (libmpdel-send-command
+   `("search %s %S"
+     ,(libmpdel--search-criteria-type search-criteria)
+     ,(libmpdel--search-criteria-what search-criteria))
+   (lambda (data)
+     (funcall function (libmpdel--create-songs-from-data data)))))
 
 (cl-defmethod libmpdel-list ((artist libmpdel-artist) function)
   (libmpdel-send-command
