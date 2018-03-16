@@ -1,12 +1,11 @@
 ;;; system-packages.el --- functions to manage system packages -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2016-2017 J. Alexander Branham
+;; Copyright (C) 2016-2018 J. Alexander Branham
 
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/system-packages
-;; Package-Version: 1.0.0
-;; Version: 0.1
+;; Package-Version: 1.0.1
 ;; Package-Requires: ((cl-lib "0.5"))
 
 ;; This file is not part of GNU Emacs.
@@ -33,6 +32,9 @@
 ;; functions include installing packages, removing packages, listing
 ;; installed packages, and others.
 
+;; Helm users might also be interested in helm-system-packages.el
+;; <https://github.com/emacs-helm/helm-system-packages>
+
 ;; Usage:
 
 ;; (require 'system-packages)
@@ -50,13 +52,32 @@
 
 (defconst system-packages-supported-package-managers
   '(
+    ;; nix
+    (nix-env .
+             ((default-sudo . nil)
+              (install . "nix-env -i")
+              (search . "nix-env -qaP")
+              (uninstall . "nix-env -e")
+              (update . ("nix-env -u" ))
+              (clean-cache . nil)
+              (log . nil)
+              (get-info . nil)
+              (get-info-remote . nil)
+              (list-files-provided-by . nil)
+              (verify-all-packages . nil)
+              (verify-all-dependencies . nil)
+              (remove-orphaned . nil)
+              (list-installed-packages . "nix-env -q")
+              (list-installed-packages-all . "nix-env -q")
+              (list-dependencies-of . nil)
+              (noconfirm . nil)))
     ;; Mac
     (brew .
           ((default-sudo . nil)
            (install . "brew install")
            (search . "brew search")
            (uninstall . "brew uninstall")
-           (update . ("brew update" "brew upgrade --all"))
+           (update . ("brew update" "brew upgrade"))
            (clean-cache . "brew cleanup")
            (log . nil)
            (get-info . nil)
@@ -88,29 +109,11 @@
            (list-dependencies-of . "port deps")
            (noconfirm . nil)))
     ;; Arch-based systems
-    (pacaur .
-            ((default-sudo . nil)
-             (install . "pacaur -S")
-             (search . "pacaur -Ss")
-             (uninstall . "pacaur -Rs")
-             (update . "pacaur -Syu")
-             (clean-cache . "pacaur -Sc")
-             (log . "cat /var/log/pacman.log")
-             (get-info . "pacaur -Qi")
-             (get-info-remote . "pacaur -Si")
-             (list-files-provided-by . "pacaur -Ql")
-             (verify-all-packages . "pacaur -Qkk")
-             (verify-all-dependencies . "pacaur -Dk")
-             (remove-orphaned . "pacaur -Rns $(pacman -Qtdq)")
-             (list-installed-packages . "pacaur -Qe")
-             (list-installed-packages-all . "pacaur -Q")
-             (list-dependencies-of . "pacaur -Qi")
-             (noconfirm . "--noconfirm")))
     (pacman .
             ((default-sudo . t)
              (install . "pacman -S")
              (search . "pacman -Ss")
-             (uninstall . "pacman -Rs")
+             (uninstall . "pacman -Rns")
              (update . "pacman -Syu")
              (clean-cache . "pacman -Sc")
              (log . "cat /var/log/pacman.log")
@@ -127,20 +130,20 @@
     ;; Debian (and Ubuntu) based systems
     (apt .
          ((default-sudo . t)
-          (install . "apt install")
-          (search . "apt search")
-          (uninstall . "apt remove")
-          (update . ("apt update" "apt upgrade"))
+          (install . "apt-get install")
+          (search . "apt-cache search")
+          (uninstall . "apt-get --purge remove")
+          (update . ("apt-get update" "apt-get upgrade"))
           (clean-cache . "apt-get clean")
           (log . "cat /var/log/dpkg.log")
           (get-info . "dpkg -s")
-          (get-info-remote . "apt show")
+          (get-info-remote . "apt-cache show")
           (list-files-provided-by . "dpkg -L")
           (verify-all-packages . "debsums")
           (verify-all-dependencies . "apt-get check")
-          (remove-orphaned . "apt autoremove")
-          (list-installed-packages . nil)
-          (list-installed-packages-all . nil)
+          (remove-orphaned . "apt-get autoremove")
+          (list-installed-packages . "dpkg -l")
+          (list-installed-packages-all . "dpkg -l")
           (list-dependencies-of . "apt-cache deps")
           (noconfirm . "-y")))
     (aptitude .
@@ -148,7 +151,7 @@
                (install . "aptitude install")
                (search . "aptitude search")
                (uninstall . "aptitude remove")
-               (update . ("aptitude update"))
+               (update . ("apt update" "aptitude safe-upgrade"))
                (clean-cache . "aptitude clean")
                (log . "cat /var/log/dpkg.log")
                (get-info . "aptitude show")
@@ -240,7 +243,7 @@
                    (list-dependencies-of . "xbps-query -x")
                    (noconfirm . nil)))))
 
-(defcustom system-packages-packagemanager
+(defcustom system-packages-package-manager
   (cl-loop for (name . prop) in system-packages-supported-package-managers
            for path = (executable-find (symbol-name name))
            when path
@@ -253,13 +256,20 @@ default."
   :group 'system-packages
   :type 'symbol)
 
-(defcustom system-packages-usesudo
-  (cdr (assoc 'default-sudo (cdr (assoc system-packages-packagemanager
+(define-obsolete-variable-alias 'system-packages-packagemanager
+  'system-packages-package-manager "2017-12-25")
+
+(defcustom system-packages-use-sudo
+  (cdr (assoc 'default-sudo (cdr (assoc system-packages-package-manager
                                         system-packages-supported-package-managers))))
   "If non-nil, system-packages uses sudo for appropriate commands.
 
 Tries to be smart for selecting the default."
+  :type 'boolean
   :group 'system-packages)
+
+(define-obsolete-variable-alias 'system-packages-usesudo
+  'system-packages-use-sudo "2017-12-25")
 
 (defcustom system-packages-noconfirm nil
   "If non-nil, bypass prompts asking the user to confirm package upgrades."
@@ -277,17 +287,17 @@ used to operation on specific packages.
 ARGS gets passed to the command and is useful for passing options
 to the package manager."
   (let ((command
-         (cdr (assoc action (cdr (assoc system-packages-packagemanager
+         (cdr (assoc action (cdr (assoc system-packages-package-manager
                                         system-packages-supported-package-managers)))))
         (noconfirm (when system-packages-noconfirm
                      (cdr (assoc 'noconfirm
-                                 (cdr (assoc system-packages-packagemanager
+                                 (cdr (assoc system-packages-package-manager
                                              system-packages-supported-package-managers)))))))
     (unless command
-      (error (format "%S not supported in %S" action system-packages-packagemanager)))
+      (error (format "%S not supported in %S" action system-packages-package-manager)))
     (unless (listp command)
       (setq command (list command)))
-    (when system-packages-usesudo
+    (when system-packages-use-sudo
       (setq command (mapcar (lambda (part) (concat "sudo " part)) command)))
     (setq command (mapconcat 'identity command " && "))
     (setq command (mapconcat 'identity (list command pack) " "))
@@ -304,7 +314,7 @@ to the package manager."
 (defun system-packages-install (pack &optional args)
   "Install system packages.
 
-Use the package manager from `system-packages-packagemanager' to
+Use the package manager from `system-packages-package-manager' to
 install PACK.  You may use ARGS to pass options to the package
 manger."
   (interactive "sPackage to install: ")
@@ -314,7 +324,7 @@ manger."
 (defun system-packages-search (pack &optional args)
   "Search for system packages.
 
-Use the package manager named in `system-packages-packagemanager'
+Use the package manager named in `system-packages-package-manager'
 to search for PACK.  You may use ARGS to pass options to the
 package manager."
   (interactive "sSearch string: ")
@@ -325,7 +335,7 @@ package manager."
   "Uninstall system packages.
 
 Uses the package manager named in
-`system-packages-packagemanager' to uninstall PACK.  You may use
+`system-packages-package-manager' to uninstall PACK.  You may use
 ARGS to pass options to the package manager."
   (interactive "sWhat package to uninstall: ")
   (system-packages--run-command 'uninstall pack args))
@@ -365,7 +375,7 @@ You may use ARGS to pass options to the package manager."
 (defun system-packages-update (&optional args)
   "Update system packages.
 
-Use the package manager `system-packages-packagemanager'.  You
+Use the package manager `system-packages-package-manager'.  You
 may use ARGS to pass options to the package manger."
   (interactive)
   (system-packages--run-command 'update nil args))
@@ -375,7 +385,7 @@ may use ARGS to pass options to the package manger."
   "Remove orphaned packages.
 
 Uses the package manager named in
-`system-packages-packagemanager'.  You may use ARGS to pass
+`system-packages-package-manager'.  You may use ARGS to pass
 options to the package manger."
   (interactive)
   (system-packages--run-command 'remove-orphaned nil args))
@@ -385,7 +395,7 @@ options to the package manger."
   "List explicitly installed packages.
 
 Uses the package manager named in
-`system-packages-packagemanager'.  With
+`system-packages-package-manager'.  With
 \\[universal-argument] (for ALL), list all installed packages.
 You may use ARGS to pass options to the package manger."
   (interactive "P")
@@ -403,7 +413,7 @@ You may use ARGS to pass options to the package manger."
 
 ;;;###autoload
 (defun system-packages-log (&optional args)
-  "Show a log from `system-packages-packagemanager'.
+  "Show a log from `system-packages-package-manager'.
 
 You may use ARGS to pass options to the package manger."
   (interactive)

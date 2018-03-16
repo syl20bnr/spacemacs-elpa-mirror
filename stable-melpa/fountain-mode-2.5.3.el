@@ -4,8 +4,8 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 2.5.2
-;; Version: 2.5.2
+;; Package-Version: 2.5.3
+;; Version: 2.5.3
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
 
@@ -141,7 +141,7 @@
 ;;; Code:
 
 (defconst fountain-version
-  "2.5.2")
+  "2.5.3")
 
 (defun fountain-version ()
   "Return `fountain-mode' version."
@@ -3843,7 +3843,7 @@ buffer windows are opened."
         (pop-to-buffer target-buffer)
       (clone-indirect-buffer target-buffer t)
       (outline-show-all))
-    (narrow-to-region beg end))))
+    (narrow-to-region beg end)))
 
 
 ;;; Navigation

@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180306.953
+;; Package-Version: 20180316.924
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.9.0"))
 ;; Keywords: matching
@@ -997,6 +997,7 @@ See `ivy-format-function' for further information."
                        ?\ )
                       (buffer-name))
                      s)
+                    (put-text-property 0 len 'buffer buf s)
                     s))
                 (swiper--candidates 4))
                res))

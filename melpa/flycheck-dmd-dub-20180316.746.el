@@ -4,7 +4,7 @@
 
 ;; Author:  Atila Neves <atila.neves@gmail.com>
 ;; Version: 0.12
-;; Package-Version: 20180307.738
+;; Package-Version: 20180316.746
 ;; Package-Requires: ((flycheck "0.24") (f "0.18.2"))
 ;; Keywords: languages
 ;; URL: http://github.com/atilaneves/flycheck-dmd-dub
@@ -385,7 +385,7 @@ to `fldd--cache-file' to reuse the result of dub describe."
 
 (defun fldd-add-version (version)
   "Add VERSION to the list of dmd arguments when calling flycheck."
-  (flycheck-dmd-dub-add-version (version)))
+  (flycheck-dmd-dub-add-version version))
 
 ;;;###autoload
 (defun fldd-run ()
