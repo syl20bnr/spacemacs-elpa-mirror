@@ -1,4 +1,4 @@
-Put this file in your Emacs lisp path (i.e. site-lisp) and add
+Put this file in your Emacs Lisp path (i.e. site-lisp) and add
 this to your `.emacs' file:
 
     (require 'bbcode-mode)

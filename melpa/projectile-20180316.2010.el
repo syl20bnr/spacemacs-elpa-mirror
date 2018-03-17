@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20180227.1743
+;; Package-Version: 20180316.2010
 ;; Keywords: project, convenience
 ;; Version: 0.15.0-cvs
 ;; Package-Requires: ((emacs "24.3") (pkg-info "0.4"))
@@ -1047,7 +1047,8 @@ Files are returned as relative paths to the project root."
   :type 'string)
 
 (defcustom projectile-git-submodule-command "git submodule --quiet foreach 'echo $path' | tr '\\n' '\\0'"
-  "Command used by projectile to get the files in git submodules."
+  "Command used by projectile to list submodules of a given git repository.
+Set to nil to disable listing submodules contents."
   :group 'projectile
   :type 'string)
 
@@ -2365,6 +2366,7 @@ TEST-DIR which specifies the path to the tests relative to the project root."
                                   :test-suffix "_SUITE")
 (projectile-register-project-type 'elixir '("mix.exs")
                                   :compile "mix compile"
+                                  :src-dir "lib/"
                                   :test "mix test"
                                   :test-suffix "_test")
 ;; JavaScript
@@ -2432,21 +2434,27 @@ TEST-DIR which specifies the path to the tests relative to the project root."
 ;; Ruby
 (projectile-register-project-type 'ruby-rspec '("Gemfile" "lib" "spec")
                                   :compile "bundle exec rake"
+                                  :src-dir "lib/"
                                   :test "bundle exec rspec"
+                                  :test-dir "spec/"
                                   :test-suffix "_spec")
 (projectile-register-project-type 'ruby-test '("Gemfile" "lib" "test")
                                   :compile"bundle exec rake"
+                                  :src-dir "lib/"
                                   :test "bundle exec rake test"
                                   :test-suffix "_test")
 ;; Rails needs to be registered after npm, otherwise `package.json` makes it `npm`.
 ;; https://github.com/bbatsov/projectile/pull/1191
 (projectile-register-project-type 'rails-test '("Gemfile" "app" "lib" "db" "config" "test")
                                   :compile "bundle exec rails server"
+                                  :src-dir "lib/"
                                   :test "bundle exec rake test"
                                   :test-suffix "_test")
 (projectile-register-project-type 'rails-rspec '("Gemfile" "app" "lib" "db" "config" "spec")
                                   :compile "bundle exec rails server"
+                                  :src-dir "lib/"
                                   :test "bundle exec rspec"
+                                  :test-dir "spec/"
                                   :test-suffix "_spec")
 
 (defvar-local projectile-project-type nil
@@ -3228,8 +3236,9 @@ Should be set via .dir-locals.el.")
   "Retrieve the configure command for COMPILE-DIR."
   (or (gethash compile-dir projectile-configure-cmd-map)
       projectile-project-configure-cmd
-      (format (projectile-default-configure-command (projectile-project-type))
-              (projectile-project-root))))
+      (let ((cmd-format-string (projectile-default-configure-command (projectile-project-type))))
+        (when cmd-format-string
+          (format cmd-format-string (projectile-project-root))))))
 
 (defun projectile-compilation-command (compile-dir)
   "Retrieve the compilation command for COMPILE-DIR."
