@@ -4,8 +4,8 @@
 
 ;; Author: Vasilij Schneidermann <mail@vasilij.de>
 ;; URL: https://github.com/wasamasa/nov.el
-;; Package-Version: 0.2.2
-;; Version: 0.2.2
+;; Package-Version: 0.2.3
+;; Version: 0.2.3
 ;; Package-Requires: ((dash "2.12.0") (esxml "0.3.3") (emacs "24.4"))
 ;; Keywords: hypermedia, multimedia, epub
 
@@ -226,9 +226,9 @@ If PARSE-XML-P is t, return the contents as parsed by libxml."
     version))
 
 (defun nov-content-unique-identifier-name (content)
-  "Return the UUID name for CONTENT.
+  "Return the unique identifier name referenced in CONTENT.
 This is used in `nov-content-unique-identifier' to retrieve the
-UUID."
+the specific type of unique identifier."
   (let* ((node (esxml-query "package[unique-identifier]" content))
          (name (esxml-node-attribute 'unique-identifier node)))
     (when (not name)
@@ -236,7 +236,7 @@ UUID."
     name))
 
 (defun nov-content-unique-identifier (content)
-  "Return the UUID for CONTENT."
+  "Return the the unique identifier for CONTENT."
   (let* ((name (nov-content-unique-identifier-name content))
          (selector (format "package>metadata>identifier[id='%s']"
                            (regexp-quote name)))
@@ -651,6 +651,11 @@ Saving is only done if `nov-save-place-file' is set."
       (with-temp-file nov-save-place-file
         (insert (prin1-to-string places))))))
 
+(defun nov--index-valid-p (documents index)
+  (and (integerp index)
+       (>= index 0)
+       (< index (length documents))))
+
 ;;;###autoload
 (define-derived-mode nov-mode special-mode "EPUB"
   "Major mode for reading EPUB documents"
@@ -687,9 +692,13 @@ Saving is only done if `nov-save-place-file' is set."
     (if place
         (let ((index (cdr (assq 'index place)))
               (point (cdr (assq 'point place))))
-          (setq nov-documents-index index)
-          (nov-render-document)
-          (goto-char point))
+          (if (nov--index-valid-p nov-documents index)
+              (progn
+                (setq nov-documents-index index)
+                (nov-render-document)
+                (goto-char point))
+            (warn "Couldn't restore last position")
+            (nov-render-document)))
       (nov-render-document))))
 
 (provide 'nov)
