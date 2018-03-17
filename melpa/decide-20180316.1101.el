@@ -3,7 +3,7 @@
 ;;
 ;; Author: Pelle Nilsson <perni@lysator.liu.se>
 ;; Version: 0.7
-;; Package-Version: 20170702.1617
+;; Package-Version: 20180316.1101
 ;;
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -154,7 +154,7 @@
                           "2>>5 small goblins"
                           "level 1--10 hero"
                           "example-dragon"))
-    ("example-dragon" . ("dragon"
+    ("example-dragon" . (("dragon" . 3)
                          "example-dragon-prefix~dragon"
                          "2-3 example-dragon-prefix~dragons"
                          "example-dragon-prefix~dragon"
@@ -305,11 +305,29 @@
              (mapcar 'decide-choose-from-table-list-part
                   (split-string choice "~")) ""))
 
+(defun decide-weight-for-choice (choice)
+  (if (listp choice) (cdr choice) 1))
+
+(defun decide-entry-for-choice (choice)
+  (if (listp choice) (car choice) choice))
+
+(defun decide-table-sum (choices)
+  (seq-reduce
+   (lambda (s v) (+ s (decide-weight-for-choice v)))
+   choices 0))
+
+;; (decide-table-sum '("a" "b" ("c" . 10) "d"))
+
 (defun decide-choose-from-table-choices (choices)
-  (let ((choice (nth (random (length choices)) choices)))
-    (if (stringp choice)
-        (decide-choose-from-table-list choice)
-      "")))
+  (let* ((max (decide-table-sum choices))
+         (roll (decide-from-range-draw (cons 0 max)))
+         (sum 0))
+    (cl-loop for c in choices
+             for e = (decide-entry-for-choice c)
+             for w = (decide-weight-for-choice c)
+             sum w into sum
+             until (< roll sum)
+             finally return e)))
 
 (defun decide-choose-from-table (table-name)
   (let ((choices (cdr (assoc table-name decide-tables))))

@@ -558,7 +558,7 @@
 	  ((:url . "http://elpa.gnu.org/packages/ioccur.html")
 	   (:keywords))])
  (iterators .
-	    [(0 1)
+	    [(0 1 1)
 	     ((emacs
 	       (25)))
 	     "Functions for working with iterators" single

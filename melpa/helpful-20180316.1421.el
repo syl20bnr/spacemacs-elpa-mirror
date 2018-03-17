@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180312.1610
+;; Package-Version: 20180316.1421
 ;; Keywords: help, lisp
 ;; Version: 0.9
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -184,23 +184,21 @@ Return SYM otherwise."
 
 (defun helpful--aliases (sym callable-p)
   "Return all the aliases for SYM."
-  (let ((changed t)
-        (canonical (helpful--canonical-symbol sym callable-p))
+  (let ((canonical (helpful--canonical-symbol sym callable-p))
         aliases)
-    (while changed
-      (setq changed nil)
-      (mapatoms
-       (lambda (s)
-         (when (and
-                ;; Skip variables that aren't bound, so we're faster.
-                (if callable-p (fboundp s) (boundp s))
+    (mapatoms
+     (lambda (s)
+       (when (and
+              ;; Skip variables that aren't bound, so we're faster.
+              (if callable-p (fboundp s) (boundp s))
 
-                ;; If this symbol is a new alias for our target sym,
-                ;; add it.
-                (eq canonical (helpful--canonical-symbol s callable-p))
-                (not (-contains-p aliases s)))
-           (push s aliases)
-           (setq changed t)))))
+              ;; If this symbol is a new alias for our target sym,
+              ;; add it.
+              (eq canonical (helpful--canonical-symbol s callable-p))
+
+              ;; Don't include SYM.
+              (not (eq sym s)))
+         (push s aliases))))
     (--sort
      (string< (symbol-name it) (symbol-name other))
      aliases)))
@@ -672,9 +670,21 @@ Flattens nested keymaps and follows remapped commands.
 
 Returns a list of pairs (KEYCODES COMMAND), where KEYCODES is a
 vector suitable for `key-description', and COMMAND is a smbol."
-  (let (result)
-    (if (symbolp keymap)
-        (push (list (vector) keymap) result)
+  (cond
+   ;; Prefix keys.
+   ((and
+     (symbolp keymap)
+     (fboundp keymap)
+     ;; Prefix keys use a keymap in the function slot of a symbol.
+     (keymapp (symbol-function keymap)))
+    (helpful--keymap-keys (symbol-function keymap)))
+   ;; Other symbols mean we've reached a leaf, so this is a command
+   ;; we can call.
+   ((symbolp keymap)
+    `(([] ,keymap)))
+   ;; Otherwise, recurse on the keys at this level of the keymap.
+   (t
+    (let (result)
       (dolist (item (cdr keymap))
         (cond
          ((and (consp item)
@@ -696,21 +706,21 @@ vector suitable for `key-description', and COMMAND is a smbol."
                (-lambda ((keycodes command))
                  (push (list (vconcat (vector keycode) keycodes) command)
                        result))))
-           item)))))
-    ;; For every command `foo' mapped to a command `bar', show `foo' with
-    ;; the key sequence for `bar'.
-    (setq result
-          (-map-when
-           (-lambda ((keycodes _))
-             (and (> (length keycodes) 1)
-                  (eq (elt keycodes 0) 'remap)))
-           (-lambda ((keycodes command))
-             (list
-              (where-is-internal (elt keycodes 1) global-map t)
-              command))
-           result))
-    ;; Preserve the original order of the keymap.
-    (nreverse result)))
+           item))))
+      ;; For every command `new-func' mapped to a command `orig-func', show `new-func' with
+      ;; the key sequence for `orig-func'.
+      (setq result
+            (-map-when
+             (-lambda ((keycodes _))
+               (and (> (length keycodes) 1)
+                    (eq (elt keycodes 0) 'remap)))
+             (-lambda ((keycodes command))
+               (list
+                (where-is-internal (elt keycodes 1) global-map t)
+                command))
+             result))
+      ;; Preserve the original order of the keymap.
+      (nreverse result)))))
 
 ;; TODO: unlike `substitute-command-keys', this shows keybindings
 ;; which are currently shadowed (e.g. a global minor mode map).
@@ -833,6 +843,8 @@ This is used in `helpful--syntax-highlight' to support extra
 highlighting that the user may have configured in their mode
 hooks.")
 
+;; TODO: crashes on `backtrace-frame' on a recent checkout.
+
 (defun helpful--syntax-highlight (source &optional mode)
   "Return a propertized version of SOURCE in MODE."
   (unless mode
@@ -930,9 +942,7 @@ buffer."
          (pos nil)
          (opened nil))
     (when (and (symbolp sym) callable-p)
-      (-let [(base-sym . src-path) (find-function-library sym)]
-        ;; `base-sym' is the underlying symbol if `sym' is an alias.
-        (setq sym base-sym)
+      (-let [(_ . src-path) (find-function-library sym)]
         (setq path src-path)))
     (when (and primitive-p path find-function-C-source-directory)
       ;; Convert "src/foo.c" to "".
@@ -1284,10 +1294,25 @@ OBJ may be a symbol or a compiled function object."
 (defun helpful--summary (sym callable-p)
   "Return a one sentence summary for SYM."
   (-let* ((primitive-p (helpful--primitive-p sym callable-p))
+          (canonical-sym (helpful--canonical-symbol sym callable-p))
+          (alias-p (not (eq canonical-sym sym)))
           ((buf pos opened)
            (if (or (not primitive-p) find-function-C-source-directory)
                (helpful--definition sym callable-p)
              '(nil nil nil)))
+          (alias-button
+           (if callable-p
+               ;; Show a link to 'defalias' in the manual.
+               (helpful--button
+                "function alias"
+                'helpful-manual-button
+                'symbol 'defalias)
+             ;; Show a link to the variable aliases section in the
+             ;; manual.
+             (helpful--button
+              "alias"
+              'helpful-info-button
+              'info-node "(elisp)Variable Aliases")))
           (interactive-button
            (helpful--button
             "interactive"
@@ -1308,6 +1333,10 @@ OBJ may be a symbol or a compiled function object."
                (help-fns--autoloaded-p sym (buffer-file-name buf))))
           (description
            (cond
+            (alias-p
+             (format "%s %s"
+                     (if callable-p "a" "an")
+                     alias-button))
             ((and callable-p (commandp sym) autoloaded-p)
              (format "an %s, %s" interactive-button autoload-button))
             ((and callable-p (commandp sym))
@@ -1318,6 +1347,13 @@ OBJ may be a symbol or a compiled function object."
              "a")))
           (kind
            (cond
+            (alias-p
+             (format "for %s,"
+                     (helpful--button
+                      (symbol-name canonical-sym)
+                      'helpful-describe-exactly-button
+                      'symbol canonical-sym
+                      'callable-p callable-p)))
             ((not callable-p) "variable")
             ((macrop sym) "macro")
             (t "function")))
@@ -1339,9 +1375,11 @@ OBJ may be a symbol or a compiled function object."
     (when opened
       (kill-buffer buf))
 
-    (format "%s is %s %s %s."
-            (if (symbolp sym) sym "This lambda")
-            description kind defined)))
+    (s-word-wrap
+     70
+     (format "%s is %s %s %s."
+             (if (symbolp sym) sym "This lambda")
+             description kind defined))))
 
 (defun helpful-update ()
   "Update the current *Helpful* buffer to the latest
@@ -1483,7 +1521,7 @@ state of the current symbol."
         (insert (helpful--make-forget-button helpful--sym helpful--callable-p))))
 
     (let ((aliases (helpful--aliases helpful--sym helpful--callable-p)))
-      (when (> (length aliases) 1)
+      (when aliases
         (helpful--insert-section-break)
         (insert
          (helpful--heading "Aliases")

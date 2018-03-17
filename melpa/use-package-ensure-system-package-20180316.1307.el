@@ -4,7 +4,7 @@
 
 ;; Author: Justin Talbott <justin@waymondo.com>
 ;; Keywords: convenience, tools, extensions
-;; Package-Version: 20180127.46
+;; Package-Version: 20180316.1307
 ;; URL: https://github.com/waymondo/use-package-ensure-system-package
 ;; Version: 0.1
 ;; Package-Requires: ((use-package "2.1") (system-packages "0.1"))
@@ -49,7 +49,11 @@
     (cons arg (use-package-ensure-system-package-install-command arg)))
    ((symbolp arg)
     (cons arg (use-package-ensure-system-package-install-command (symbol-name arg))))
-   ((consp arg) arg)))
+   ((consp arg)
+    (if (stringp (cdr arg))
+        arg
+      (cons (car arg)
+            (use-package-ensure-system-package-install-command (symbol-name (cdr arg))))))))
 
 ;;;###autoload
 (defun use-package-normalize/:ensure-system-package (name-symbol keyword args)
