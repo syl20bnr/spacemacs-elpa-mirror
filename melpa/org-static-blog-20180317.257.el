@@ -2,8 +2,8 @@
 
 ;; Author: Bastian Bechtold
 ;; URL: https://github.com/bastibe/org-static-blog
-;; Package-Version: 20170706.646
-;; Version: 1.0.3
+;; Package-Version: 20180317.257
+;; Version: 1.0.4
 ;; Package-Requires: ((emacs "24.3"))
 
 ;;; Commentary:
@@ -149,8 +149,8 @@ existed before)."
 (defun org-static-blog-get-date (post-filename)
   "Extract the `#+date:` from entry POST-FILENAME."
   (let ((date nil))
-    (org-static-blog-with-find-file
-     post-filename
+    (with-temp-buffer
+     (insert-file-contents post-filename)
      (goto-char (point-min))
      (search-forward-regexp "^\\#\\+date:[ ]*<\\([^]>]+\\)>$")
      (setq date (date-to-time (match-string 1))))
@@ -159,12 +159,30 @@ existed before)."
 (defun org-static-blog-get-title (post-filename)
   "Extract the `#+title:` from entry POST-FILENAME."
   (let ((title nil))
-    (org-static-blog-with-find-file
-     post-filename
+    (with-temp-buffer
+     (insert-file-contents post-filename)
      (goto-char (point-min))
      (search-forward-regexp "^\\#\\+title:[ ]*\\(.+\\)$")
      (setq title (match-string 1)))
     title))
+
+(defun org-static-blog-get-bare-html (post-filename)
+  "Get the rendered HTML body without headers from POST-FILENAME."
+  (let ((html-filename (org-static-blog-matching-publish-filename post-filename))
+        (content-start)
+        (content-end))
+    (with-temp-buffer
+      (insert-file-contents html-filename)
+      (goto-char (point-min))
+      (buffer-substring-no-properties
+       (progn
+         (search-forward "<h1 class=\"post-title\">")
+         (search-forward "</h1>")
+         (point))
+       (progn
+         (search-forward "<div id=\"postamble\" class=\"status\">")
+         (search-backward "</div>")
+         (point))))))
 
 (defun org-static-blog-get-url (post-filename)
   "Generate a URL to entry POST-FILENAME."
@@ -177,13 +195,57 @@ existed before)."
   "Publish a single entry POST-FILENAME.
 The index page, archive page, and RSS feed are not updated."
   (interactive "f")
-  (org-static-blog-with-find-file post-filename
-   (org-export-to-file 'org-static-blog-post
-       (org-static-blog-matching-publish-filename post-filename)
-     nil nil nil nil nil)))
+  (org-static-blog-with-find-file
+   (org-static-blog-matching-publish-filename post-filename)
+   (erase-buffer)
+   (insert (org-static-blog-render-post post-filename))))
+
+(defun org-static-blog-render-post (post-filename)
+  "Return complete document string after blog post conversion.
+CONTENTS is the transcoded contents string.  INFO is a plist used
+as a communication channel."
+  (concat
+"<?xml version=\"1.0\" encoding=\"utf-8\"?>
+<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"
+\"https://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">
+<html xmlns=\"https://www.w3.org/1999/xhtml\" lang=\"en\" xml:lang=\"en\">
+<head>
+<meta http-equiv=\"Content-Type\" content=\"text/html;charset=utf-8\" />
+<link rel=\"alternate\"
+      type=\"appliation/rss+xml\"
+      href=\"" org-static-blog-publish-url org-static-blog-rss-file "\"
+      title=\"RSS feed for " org-static-blog-publish-url "\">
+<title>" (org-static-blog-get-title post-filename) "</title>"
+org-static-blog-page-header
+"</head>
+<body>
+<div id=\"preamble\" class=\"status\">"
+org-static-blog-page-preamble
+"</div>
+<div id=\"content\">
+<div class=\"post-date\">" (format-time-string "%d %b %Y" (org-static-blog-get-date post-filename)) "</div>
+<h1 class=\"post-title\">" (org-static-blog-get-title post-filename) "</h1>\n"
+(org-static-blog-render-post-bare post-filename)
+"</div>
+<div id=\"postamble\" class=\"status\">"
+org-static-blog-page-postamble
+"</div>
+</body>
+</html>"))
+
+(defun org-static-blog-render-post-bare (post-filename)
+  "Render blog content as bare HTML without header."
+  (let ((content))
+    (org-static-blog-with-find-file
+     post-filename
+     (setq content (org-export-as 'org-static-blog-post-bare nil nil nil nil)))
+    content))
+
+(org-export-define-derived-backend 'org-static-blog-post-bare 'html
+  :translate-alist '((template . (lambda (contents info) contents))))
 
 (defun org-static-blog-create-index ()
-  "Re-render the blog index page.
+  "Assemble the blog index page.
 The index page contains the last `org-static-blog-index-length`
 entries as full text entries."
   (let ((posts (directory-files
@@ -191,13 +253,11 @@ entries as full text entries."
         (index-file (concat org-static-blog-publish-directory org-static-blog-index-file))
         (index-entries nil))
     (dolist (file posts)
-      (org-static-blog-with-find-file
-       file
-       (let ((date (org-static-blog-get-date file))
-             (title (org-static-blog-get-title file))
-             (content (org-export-as 'org-static-blog-post-bare nil nil nil nil))
-             (url (org-static-blog-get-url file)))
-           (add-to-list 'index-entries (list date title url content)))))
+      (let ((date (org-static-blog-get-date file))
+            (title (org-static-blog-get-title file))
+            (content (org-static-blog-get-bare-html file))
+            (url (org-static-blog-get-url file)))
+        (add-to-list 'index-entries (list date title url content))))
     (org-static-blog-with-find-file
      index-file
      (erase-buffer)
@@ -238,7 +298,7 @@ org-static-blog-page-preamble
 </body>"))))
 
 (defun org-static-blog-create-rss ()
-  "Re-render the blog RSS feed.
+  "Assemble the blog RSS feed.
 The RSS-feed is an XML file that contains every blog entry in a
 machine-readable format."
   (let ((posts (directory-files
@@ -246,11 +306,9 @@ machine-readable format."
         (rss-file (concat org-static-blog-publish-directory org-static-blog-rss-file))
         (rss-entries nil))
     (dolist (file posts)
-      (org-static-blog-with-find-file
-       file
-       (let ((rss-date (org-static-blog-get-date file))
-             (rss-text (org-export-as 'org-static-blog-rss nil nil nil nil)))
-       (add-to-list 'rss-entries (cons rss-date rss-text)))))
+      (let ((rss-date (org-static-blog-get-date file))
+            (rss-text (org-static-blog-get-rss-entry file)))
+        (add-to-list 'rss-entries (cons rss-date rss-text))))
     (org-static-blog-with-find-file
      rss-file
      (erase-buffer)
@@ -266,6 +324,26 @@ machine-readable format."
      (insert "</channel>
 </rss>"))))
 
+(defun org-static-blog-get-rss-entry (post-filename)
+  "Assemble RSS entry from post-filename.
+The HTML content is taken from the rendered HTML post."
+  (concat
+   "<item>
+  <title>" (org-static-blog-get-title post-filename) "</title>
+  <description><![CDATA["
+  (org-static-blog-get-bare-html post-filename)
+  "]]></description>
+  <link>"
+  (concat org-static-blog-publish-url
+          (file-name-nondirectory
+           (org-static-blog-matching-publish-filename
+            post-filename)))
+  "</link>
+  <pubDate>"
+  (format-time-string "%a, %d %b %Y %H:%M:%S %z" (org-static-blog-get-date post-filename))
+  "</pubDate>
+</item>\n"))
+
 (defun org-static-blog-create-archive ()
   "Re-render the blog archive page.
 The archive page contains single-line links and dates for every
@@ -275,12 +353,10 @@ blog entry, but no entry body."
         (archive-file (concat org-static-blog-publish-directory org-static-blog-archive-file))
         (archive-entries nil))
     (dolist (file posts)
-      (org-static-blog-with-find-file
-       file
-       (let ((date (org-static-blog-get-date file))
-             (title (org-static-blog-get-title file))
-             (url (org-static-blog-get-url file)))
-           (add-to-list 'archive-entries (list date title url)))))
+      (let ((date (org-static-blog-get-date file))
+            (title (org-static-blog-get-title file))
+            (url (org-static-blog-get-url file)))
+        (add-to-list 'archive-entries (list date title url))))
     (org-static-blog-with-find-file
      archive-file
      (erase-buffer)
@@ -312,75 +388,6 @@ org-static-blog-page-preamble
            "<a href=\"" (nth 2 entry) "\">" (nth 1 entry) "</a>"
            "</h2>\n")))
        (insert "</body>\n </html>"))))
-
-(org-export-define-derived-backend 'org-static-blog-post 'html
-  :translate-alist '((template . org-static-blog-post-template)))
-
-(defun org-static-blog-post-template (contents info)
-  "Return complete document string after blog post conversion.
-CONTENTS is the transcoded contents string.  INFO is a plist used
-as a communication channel."
-  (let ((title (org-export-data (plist-get info :title) info))
-        (date (org-timestamp-format (car (plist-get info :date)) "%d %b %Y")))
-    (concat
-"<?xml version=\"1.0\" encoding=\"utf-8\"?>
-<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"
-\"https://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">
-<html xmlns=\"https://www.w3.org/1999/xhtml\" lang=\"en\" xml:lang=\"en\">
-<head>
-<meta http-equiv=\"Content-Type\" content=\"text/html;charset=utf-8\" />
-<link rel=\"alternate\"
-      type=\"appliation/rss+xml\"
-      href=\"" org-static-blog-publish-url org-static-blog-rss-file "\"
-      title=\"RSS feed for " org-static-blog-publish-url "\">
-<title>" title "</title>"
-org-static-blog-page-header
-"</head>
-<body>
-<div id=\"preamble\" class=\"status\">"
-org-static-blog-page-preamble
-"</div>
-<div id=\"content\">
-<div class=\"post-date\">" date "</div>
-<h1 class=\"post-title\">" title "</h1>\n"
-contents
-"</div>
-<div id=\"postamble\" class=\"status\">"
-org-static-blog-page-postamble
-"</div>
-</body>
-</html>")))
-
-(org-export-define-derived-backend 'org-static-blog-post-bare 'html
-  :translate-alist '((template . org-static-blog-post-bare-template)))
-
-(defun org-static-blog-post-bare-template (contents info)
-  "Return complete document string after blog post conversion.
-CONTENTS is the transcoded contents string.  INFO is a plist used
-as a communication channel."
-contents)
-
-(org-export-define-derived-backend 'org-static-blog-rss 'html
-  :translate-alist '((template . org-static-blog-rss-template)
-                     (timestamp . (lambda (&rest args) ""))))
-
-(defun org-static-blog-rss-template (contents info)
-  "Return complete document string after rss entry conversion.
-CONTENTS is the transcoded contents string.  INFO is a plist used
-as a communication channel."
-  (let ((url (concat org-static-blog-publish-url
-                     (file-name-nondirectory
-                      (org-static-blog-matching-publish-filename
-                       (plist-get info :input-buffer))))))
-    (concat
-"<item>
-  <title>" (org-export-data (plist-get info :title) info) "</title>
-  <description><![CDATA["
-  contents
-  "]]></description>
-  <link>" url "</link>
-  <pubDate>" (org-timestamp-format (car (plist-get info :date)) "%a, %d %b %Y %H:%M:%S %z") "</pubDate>
-</item>\n")))
 
 (provide 'org-static-blog)
 
