@@ -4,7 +4,7 @@
 
 ;; Author: Tejas Bubane <tejasbubane@gmail.com>
 ;; URL: https://github.com/tejasbubane/emacs-git-io
-;; Package-Version: 20180223.112
+;; Package-Version: 20180317.1052
 ;; Keywords: convenience files
 ;; Version: 0.1.1
 ;; Package-Requires: ((emacs "24.4"))
@@ -62,6 +62,7 @@
         (url-retrieve-synchronously gitio-url)
       (git-io-extract-shortened-url))))
 
+;;;###autoload
 (defun git-io-shorten ()
   "Replace thing at point with shortened URL."
   (interactive)

@@ -5,7 +5,7 @@
 
 ;; Author: Martín Varela (martin@varela.fi)
 ;; URL: http://github.com/mvarela/Sunburn-Theme
-;; Package-Version: 20171101.1126
+;; Package-Version: 20180317.1051
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "24"))
 
@@ -831,7 +831,7 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(magit-diff-lines-heading          ((t (:background ,sunburn-orange
                                                         :foreground ,sunburn-bg+2))))
    `(magit-diff-context-highlight      ((t (:background ,sunburn-bg-1
-                                                        :foreground sunburn-fg-1))))
+                                                        :foreground ,sunburn-fg-1))))
    `(magit-diffstat-added   ((t (:foreground ,sunburn-green+4))))
    `(magit-diffstat-removed ((t (:foreground ,sunburn-red))))
 ;;;;;; popup
