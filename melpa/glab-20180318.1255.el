@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/magit/ghub
 ;; Keywords: tools
-;; Package-Version: 20180218.652
+;; Package-Version: 20180318.1255
 ;; Package-Requires: ((emacs "24.4") (ghub "2.0"))
 
 ;; This file is not part of GNU Emacs.
@@ -122,7 +122,7 @@ Like calling `ghub-request' (which see) with `gitlab' as FORGE."
                 :unpaginate unpaginate :noerror noerror :reader reader
                 :username username :auth auth :host host))
 
-;;; glab.el ends soon
+;;; _
 (provide 'glab)
 ;; Local Variables:
 ;; indent-tabs-mode: nil

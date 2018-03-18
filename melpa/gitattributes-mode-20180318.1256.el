@@ -1,12 +1,12 @@
 ;;; gitattributes-mode.el --- Major mode for editing .gitattributes files -*- lexical-binding: t -*-
 
-;; Copyright (C) 2013-2017  The Magit Project Contributors
+;; Copyright (C) 2013-2018  The Magit Project Contributors
 
 ;; Author: Rüdiger Sonderfeld <ruediger@c-plusplus.net>
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/magit/git-modes
 ;; Keywords: convenience vc git
-;; Package-Version: 20170118.1613
+;; Package-Version: 20180318.1256
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -224,6 +224,9 @@ If ARG is omitted or nil, move point backward one field."
                    "/git/attributes\\'"))
   (add-to-list 'auto-mode-alist (cons pattern #'gitattributes-mode)))
 
+;;; _
 (provide 'gitattributes-mode)
-
+;; Local Variables:
+;; indent-tabs-mode: nil
+;; End:
 ;;; gitattributes-mode.el ends here

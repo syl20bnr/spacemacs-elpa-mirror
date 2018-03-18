@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/emacscollective/auto-compile
 ;; Keywords: compile, convenience, lisp
-;; Package-Version: 20180111.436
+;; Package-Version: 20180318.1036
 
 ;; Package-Requires: ((emacs "24.3") (packed "2.0.0"))
 
@@ -39,7 +39,7 @@
 
 ;; Even when using `auto-compile-on-save-mode' it can happen that some
 ;; source file is newer than the respective byte code file, which is a
-;; problem because by default Emacs load the byte code file even when
+;; problem because by default Emacs loads the byte code file even when
 ;; the respective source file has been modified more recently.
 
 ;; Starting with Emacs version 24.4, setting `load-prefer-newer' to t

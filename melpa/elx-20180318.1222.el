@@ -1,11 +1,11 @@
-;;; elx.el --- extract information from Emacs Lisp libraries
+;;; elx.el --- extract information from Emacs Lisp libraries  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2008-2018  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Created: 20081202
-;; Package-Requires: ((emacs "24.4"))
-;; Package-Version: 20180202.958
+;; Package-Requires: ((emacs "26"))
+;; Package-Version: 20180318.1222
 ;; Homepage: https://github.com/emacscollective/elx
 ;; Keywords: docs, libraries, packages
 
@@ -38,28 +38,12 @@
 ;;; Code:
 
 (require 'lisp-mnt)
+(require 'subr-x)
 
 (defgroup elx nil
   "Extract information from Emacs Lisp libraries."
   :group 'maint
   :link '(url-link :tag "Homepage" "https://github.com/tarsius/elx"))
-
-;; Redefine to undo bug introduced in Emacs
-;; bf3f6a961f378f35a292c41c0bfbdae88ee1b1b9
-;; https://debbugs.gnu.org/cgi/bugreport.cgi?bug=22510
-(defun lm-header (header)
-  "Return the contents of the header named HEADER."
-  ;; This breaks `lm-header-multiline': (save-excursion
-  (goto-char (point-min))
-  (let ((case-fold-search t))
-    (when (and (re-search-forward (lm-get-header-re header) (lm-code-mark) t)
-               ;;   RCS ident likes format "$identifier: data$"
-               (looking-at
-                (if (save-excursion
-                      (skip-chars-backward "^$" (match-beginning 0))
-                      (= (point) (match-beginning 0)))
-                    "[^\n]+" "[^$\n]+")))
-      (match-string-no-properties 0))))
 
 ;;; Extract Summary
 
@@ -135,7 +119,7 @@ else as strings."
               (and remap (setq keyword (cadr remap))))
             (and keyword
                  (string-match elx-keywords-regexp keyword)
-                 (add-to-list 'keywords keyword)))))
+                 (push keyword keywords)))))
       (setq keywords (sort keywords 'string<))
       (if symbols (mapcar #'intern keywords) keywords))))
 
@@ -511,7 +495,7 @@ An effort is made to normalize the returned value."
                                  version)))
                   (and (re-search-forward elx-wtf-permission-statement-regexp bound t)
                        "WTFPL-2")
-                  (-when-let (license (lm-header "Licen[sc]e"))
+                  (and-let* ((license (lm-header "Licen[sc]e")))
                     (and (not (equal license ""))
                          ;; TEMP for ensime
                          (not (string-match "https?://www\\.gnu\\.org/licenses/gpl\\.html"
@@ -522,7 +506,7 @@ An effort is made to normalize the returned value."
                   (car (cl-find-if (pcase-lambda (`(,_ . ,re))
                                      (re-search-forward re bound t))
                                    elx-gnu-non-standard-permission-statement-alist))
-                  (-when-let (license (lm-header "Licen[sc]e"))
+                  (and-let* ((license (lm-header "Licen[sc]e")))
                     (or (car (cl-find-if (pcase-lambda (`(,_ . ,re))
                                            (string-match re license))
                                          elx-non-gnu-license-keyword-alist))
@@ -768,6 +752,7 @@ or is nil.  Each element of the list is a cons; the car is the
 full name, the cdr is an email address."
   (elx-people "adapted-by" file))
 
+;;; _
 (provide 'elx)
 ;; Local Variables:
 ;; indent-tabs-mode: nil
