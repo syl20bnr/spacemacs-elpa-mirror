@@ -3,8 +3,8 @@
 ;; Copyright © 2010-2018 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.4.20180308
-;; Package-Version: 20180308.349
+;; Version: 2.4.20180318
+;; Package-Version: 20180318.259
 ;; Created: 08 Dec 2010
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: abbrev, convenience, unicode, math, LaTex
@@ -414,7 +414,7 @@
     ])
 
 (xah-math-input--add-to-hash
-'( ["inf" "∞"] ["empty" "∅"] ["es" "∅"] ["+-" "±"] ["-+" "∓"]))
+'( ["inf" "∞"] ["infinity" "∞"] ["empty" "∅"] ["es" "∅"] ["+-" "±"] ["-+" "∓"]))
 
 (xah-math-input--add-to-hash
  ;; http://xahlee.info/comp/unicode_matching_brackets.html
@@ -511,7 +511,13 @@
    ["tack" "⊢"]
    ["tee" "⊢"]
    ["|-" "⊢"]
-   ["-|" "⊣"]))
+   ["-|" "⊣"]
+
+   ["because" "∵"]
+   ["therefore" "∴"]
+   ["thus" "∴"]
+   ["so" "∴"]
+))
 
 (xah-math-input--add-to-hash
  ;; http://xahlee.info/comp/unicode_arrows.html

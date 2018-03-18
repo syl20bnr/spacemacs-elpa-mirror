@@ -4,7 +4,7 @@
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 0.2.0
-;; Package-Version: 20180309.1614
+;; Package-Version: 20180318.46
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: maint
 ;; URL: https://github.com/akirak/emacs-playground
@@ -327,7 +327,7 @@ COMPLETION is a symbol representing a completion engine to be used. See
          (name (read-from-minibuffer (format "Name of the sandbox for %s: "
                                              repo-url)))
          (recursive (y-or-n-p "Recursively clone submodules? "))
-         (depth (when (y-or-n-p "Fetch all the commits in the branch? ") nil 1)))
+         (depth (if (y-or-n-p "Fetch all the commits in the branch? ") nil 1)))
     (playground-checkout name (list
                                :name name
                                :repo repo-url
