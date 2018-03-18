@@ -4,7 +4,7 @@
 
 ;; Author: Hrvoje Niksic <hniksic@gmail.com>
 ;; Keywords: hypermedia, extensions
-;; Package-Version: 20171017.141
+;; Package-Version: 20180317.1526
 ;; Version: 1.51
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -1123,8 +1123,8 @@ If no rgb.txt file is found, return nil."
     ;; Apply the prefix.
     (concat htmlize-css-name-prefix name)))
 
-(defun htmlize-face-to-fstruct (face)
-  "Convert Emacs face FACE to fstruct."
+(defun htmlize-face-to-fstruct-1 (face)
+  "Convert Emacs face FACE to fstruct, internal."
   (let ((fstruct (make-htmlize-fstruct
 		  :foreground (htmlize-color-to-rgb
 			       (htmlize-face-foreground face))
@@ -1153,6 +1153,21 @@ If no rgb.txt file is found, return nil."
         (unless (eql size 1.0) 	; ignore non-spec
           (setf (htmlize-fstruct-size fstruct) size))))
     (setf (htmlize-fstruct-css-name fstruct) (htmlize-face-css-name face))
+    fstruct))
+
+(defun htmlize-face-to-fstruct (face)
+  (let* ((face-list (or (and (symbolp face)
+                            (alist-get face face-remapping-alist))
+                        (list face)))
+         (fstruct (htmlize-merge-faces
+                   (mapcar (lambda (face)
+                             (if (symbolp face)
+                                 (or (htmlize-get-override-fstruct face)
+                                     (htmlize-face-to-fstruct-1 face))
+                               (htmlize-attrlist-to-fstruct face)))
+                           (nreverse face-list)))))
+    (when (symbolp face)
+      (setf (htmlize-fstruct-css-name fstruct) (htmlize-face-css-name face)))
     fstruct))
 
 (defmacro htmlize-copy-attr-if-set (attr-list dest source)
@@ -1281,10 +1296,7 @@ If no rgb.txt file is found, return nil."
       (unless (gethash face face-map)
 	;; Haven't seen FACE yet; convert it to an fstruct and cache
 	;; it.
-	(let ((fstruct (if (symbolp face)
-                           (or (htmlize-get-override-fstruct face)
-                               (htmlize-face-to-fstruct face))
-			 (htmlize-attrlist-to-fstruct face))))
+	(let ((fstruct (htmlize-face-to-fstruct face)))
 	  (setf (gethash face face-map) fstruct)
 	  (let* ((css-name (htmlize-fstruct-css-name fstruct))
 		 (new-name css-name)
@@ -1382,29 +1394,11 @@ property and by buffer overlays that specify `face'."
 		  ;; Collect overlays at point that specify `face'.
 		  (delete-if-not (lambda (o)
 				   (overlay-get o 'face))
-				 (overlays-at (point))))
+				 (nreverse
+                                  (if (>= emacs-major-version 25)
+                                      (overlays-at (point) t)
+                                    (overlays-at (point))))))
 		 list face-prop)
-	     ;; Sort the overlays so the smaller (more specific) ones
-	     ;; come later.  The number of overlays at each one
-	     ;; position should be very small, so the sort shouldn't
-	     ;; slow things down.
-	     (setq overlays (sort* overlays
-				   ;; Sort by ascending...
-				   #'<
-				   ;; ...overlay size.
-				   :key (lambda (o)
-					  (- (overlay-end o)
-					     (overlay-start o)))))
-	     ;; Overlay priorities, if present, override the above
-	     ;; established order.  Larger overlay priority takes
-	     ;; precedence and therefore comes later in the list.
-	     (setq overlays (stable-sort
-			     overlays
-			     ;; Reorder (stably) by acending...
-			     #'<
-			     ;; ...overlay priority.
-			     :key (lambda (o)
-				    (or (overlay-get o 'priority) 0))))
 	     (dolist (overlay overlays)
 	       (setq face-prop (overlay-get overlay 'face)
                      list (nconc (htmlize-decode-face-prop face-prop) list)))
