@@ -1,12 +1,12 @@
 ;;; texfrag.el --- preview LaTeX fragments in alien major modes  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2017  Tobias Zawada
+;; Copyright (C) 2017-2018 Tobias Zawada
 
 ;; Author: Tobias Zawada <i@tn-home.de>
 ;; Keywords: tex, languages, wp
-;; Package-Version: 20180317.1312
+;; Package-Version: 20180318.626
 ;; URL: https://github.com/TobiasZawada/texfrag
-;; Version: 0.1
+;; Version: 0.2
 ;; Package-Requires: ((emacs "25") (auctex "11.90.2"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -514,10 +514,10 @@ that generates the file name string."
 
 (defun texfrag-file-name-escape (name &optional re)
   "Replace chars in NAME that are not ASCII and do not match RE.
-RE is a regular expression defaulting to \"[^<>:\"/\\|?*]\".
+RE is a regular expression defaulting to \"[^]<>:\"/\\|?*+{}[]\".
 Relevant characters are replaced by _hex-number."
   (unless re
-    (setq re "[^<>:\"/\\|?*]"))
+    (setq re "[^]<>:\"/\\|?*+{}[]"))
   (mapconcat (lambda (char)
                (let ((str (char-to-string char)))
                  (if (and (/= char ?_)
@@ -638,13 +638,14 @@ or the string itself."
 	      )))))
 
 (defun texfrag-region (b e)
-  "Collect all LaTeX fragments in region from B to E in the LaTeX target file.
-Thereby, the LaTeX target file is that one returned by `texfrag-LaTeX-file'.
+  "Collect LaTeX fragments in region from B to E in the LaTeX target file.
+Thereby, the LaTeX target file is that one returned by
+function `texfrag-LaTeX-file'.
 Afterwards start `preview-document' on the target file.
 The function `texfrag-after-tex' is hooked into `texfrag-after-preview-hook'
 which runs after `preview-document'.
-`texfrag-after-tex' transfers the preview images from the LaTeX target file buffer
-to the source buffer."
+`texfrag-after-tex' transfers the preview images
+from the LaTeX target file buffer to the source buffer."
   (interactive "r")
   (cl-declare (special auto-insert-alist auto-insert))
   (let ((tex-path (texfrag-LaTeX-file t t))
@@ -702,9 +703,9 @@ to the source buffer."
 
 (defmacro texfrag-while-not-quit-and (test seconds &rest body)
   "While TEST is non-nil and SECONDS long quit is not sent run BODY.
-When the user presses a key other than \\C-g the event is available
+When the user presses a key other than \\[keyboard-quit] the event is available
 as let-bound variable EVENT in BODY.
-Returns t when it exits on \\C-g and nil when TEST evaluates to nil."
+Returns t when it exits on \\[keyboard-quit] and nil when TEST evaluates to nil."
   (declare (debug (sexp sexp body)) (indent 2))
   ;; In cygwin emacs keyboard-quit does not work in a loop like
   ;; (while running (sit-for SECONDS))
@@ -726,13 +727,15 @@ File content of \"test.org\":
 --8<------------------------------------------------------------------
 Start texfrag region.
 First TeX-fragment: \\\(z=\sqrt{x^2 + y^2}\\\)
-Second TeX-fragment: \\\(s(x) = \\int_0^x \\sqrt{1 + f'(\\bar x)^2}\\;d\\bar x\\\)
+Second TeX-fragment:
+  \\\(s(x) = \\int_0^x \\sqrt{1 + f'(\\bar x)^2}\\;d\\bar x\\\)
 Stop texfrag region.
 
 #+begin_src emacs-lisp :results silent
  (preview-clearout-buffer)
  (goto-char (point-min))
- (texfrag-region-synchronously (point-min) (search-forward \"Stop texfrag region.\"))
+ (texfrag-region-synchronously
+    (point-min) (search-forward \"Stop texfrag region.\"))
  (goto-char (point-min))
  (search-forward \"\\\\(\"))
  (let ((b (match-beginning 0)))
@@ -927,7 +930,7 @@ Replaces &amp; with &, &lt; with <, and &gt; with >."
 (declare-function org-export-get-environment "org")
 
 (defun texfrag-org-header ()
-  ""
+  "Generate LaTeX header for org-files."
   (require 'org)
   (let* ((processing-type org-preview-latex-default-process)
          (processing-info (assq processing-type org-preview-latex-process-alist)))

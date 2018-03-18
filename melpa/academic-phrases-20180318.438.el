@@ -4,7 +4,7 @@
 
 ;; Author: Nasser Alshammari <designernasser@gmail.com>
 ;; Version: 0.0.1
-;; Package-Version: 20180317.956
+;; Package-Version: 20180318.438
 ;; Package-Requires: ((dash "2.12.0") (s "1.12.0") (ht "2.0") (emacs "24"))
 ;; Keywords: academic, convenience, papers, writing, wp
 ;; Homepage: https://github.com/nashamri/academic-phrases
@@ -43,6 +43,7 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'dash)
 (require 'ht)
 (require 's)
@@ -1964,7 +1965,7 @@ for the final key, which may return any value."
 (defun academic-phrases--replace-placeholders (tmp choices)
   (s-replace-all `(("{1}" . ,(s-join "/" (car choices)))
                    ("{2}" . ,(s-join "/" (cadr choices)))
-                   ("{3}" . ,(s-join "/" (caddr choices))))
+                   ("{3}" . ,(s-join "/" (cl-caddr choices))))
                  tmp))
 
 (defun academic-phrases--prompt-categories (phrases)
