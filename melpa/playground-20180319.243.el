@@ -4,7 +4,7 @@
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 0.2.0
-;; Package-Version: 20180318.46
+;; Package-Version: 20180319.243
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: maint
 ;; URL: https://github.com/akirak/emacs-playground
@@ -200,6 +200,7 @@ If the argument is not given, the value is taken from `playground-dotemacs-list'
 LOCAL is a list of local sandbox names, and REMOTE is an alist of (name . spec)."
   (require 'helm)
   (helm :prompt prompt
+        :buffer "*helm playground*"
         :sources (list (helm-build-sync-source
                            "Local"
                          :candidates local

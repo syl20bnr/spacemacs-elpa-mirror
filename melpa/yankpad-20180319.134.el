@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand
 ;; URL: http://github.com/Kungsgeten/yankpad
-;; Package-Version: 20180220.1049
+;; Package-Version: 20180319.134
 ;; Version: 1.80
 ;; Keywords: abbrev convenience
 ;; Package-Requires: ((emacs "24"))
@@ -424,16 +424,26 @@ Each snippet is a list (NAME TAGS SRC-BLOCKS TEXT)."
   "Create and execute a keymap out of the last tags of snippets in `yankpad-category'."
   (interactive)
   (define-prefix-command 'yankpad-keymap)
-  (mapc (lambda (snippet)
-          (let ((last-tag (car (last (nth 1 snippet)))))
-            (when (and last-tag
-                       (not (string-prefix-p "indent_" last-tag))
-                       (not (member last-tag '("func" "results" "src"))))
-              (define-key yankpad-keymap (kbd (substring-no-properties last-tag))
-                `(lambda ()
-                   (interactive)
-                   (yankpad--run-snippet ',snippet))))))
-        (yankpad-active-snippets))
+  (let (map-help)
+    (mapc (lambda (snippet)
+            (let ((last-tag (car (last (nth 1 snippet)))))
+              (when (and last-tag
+                         (not (string-prefix-p "indent_" last-tag))
+                         (not (member last-tag '("func" "results" "src"))))
+                (let ((heading (car snippet))
+                      (key (substring-no-properties last-tag)))
+                  (push (cons key (format "[%s] %s " key heading)) map-help)
+                  (define-key yankpad-keymap (kbd key)
+                    `(lambda ()
+                       (interactive)
+                       (yankpad--run-snippet ',snippet)))))))
+          (yankpad-active-snippets))
+    (message "yankpad: %s"
+             (if map-help
+                 (apply 'concat (mapcar 'cdr (sort map-help
+                                                   (lambda (x y)
+                                                     (string-lessp (car x) (car y))))))
+               (format "nothing is defined in %s" yankpad-category))))
   (set-transient-map 'yankpad-keymap))
 
 (defun yankpad-local-category-to-major-mode ()

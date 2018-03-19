@@ -4,7 +4,7 @@
 
 ;; Author: Damien Cassou <damien@cassou.me>
 ;; Keywords: multimedia
-;; Package-Version: 20180316.122
+;; Package-Version: 20180319.34
 ;; Url: https://github.com/DamienCassou/mpdel
 ;; Package-requires: ((emacs "25.1"))
 ;; Version: 0.4.0
@@ -224,6 +224,31 @@ message from the server.")
 
 (cl-defmethod libmpdel-entity-name ((stored-playlist libmpdel-stored-playlist))
   (libmpdel--stored-playlist-name stored-playlist))
+
+(cl-defgeneric libmpdel-entity-parent (_entity)
+  "Return parent of _ENTITY."
+  nil)
+
+(cl-defmethod libmpdel-entity-parent ((song libmpdel-song))
+  (libmpdel-album song))
+
+(cl-defmethod libmpdel-entity-parent ((album libmpdel-album))
+  (libmpdel-artist album))
+
+(cl-defmethod libmpdel-entity-parent ((_artist libmpdel-artist))
+  'artists)
+
+(cl-defmethod libmpdel-entity-parent ((_stored-playlist libmpdel-stored-playlist))
+  'stored-playlists)
+
+(cl-defgeneric libmpdel-entity-id (entity)
+  "Return an identifier string for ENTITY."
+  entity)
+
+(cl-defmethod libmpdel-entity-id ((song libmpdel-song))
+  ;; Override of default implementation to ignore changing ids and
+  ;; position.
+  (libmpdel--song-file song))
 
 (defun libmpdel-song-file (song)
   "Return the filename of SONG."
@@ -516,22 +541,30 @@ The user is asked to choose for a stored playlist first."
    'stored-playlists))
 
 (defun libmpdel-current-playlist-add (entity)
-  "Add ENTITY to a current playlist."
+  "Add ENTITY to a current playlist.
+
+ENTITY can also be a list of entities to add."
   (libmpdel-playlist-add entity (libmpdel-current-playlist)))
 
 (defun libmpdel-current-playlist-replace (entity)
-  "Replace current playlist with ENTITY."
+  "Replace current playlist with ENTITY.
+
+ENTITY can also be a list of entities to replace with."
   (libmpdel-playlist-replace entity (libmpdel-current-playlist)))
 
 (defun libmpdel-stored-playlist-add (entity)
   "Add ENTITY to a stored playlist.
-The user is asked to choose for a stored playlist first."
+The user is asked to choose for a stored playlist first.
+
+ENTITY can also be a list of entities to add."
   (libmpdel-funcall-on-stored-playlist
    (apply-partially #'libmpdel-playlist-add entity)))
 
 (defun libmpdel-stored-playlist-replace (entity)
   "Replace a stored playlist with ENTITY.
-The user is asked to choose for a stored playlist first."
+The user is asked to choose for a stored playlist first.
+
+ENTITY can also be a list of entities to replace with."
   (libmpdel-funcall-on-stored-playlist
    (apply-partially #'libmpdel-playlist-replace entity)))
 
@@ -607,6 +640,10 @@ If HANDLER is nil, ignore response."
 (cl-defmethod libmpdel-dired ((song libmpdel-song))
   (require 'dired-x)
   (dired-jump t (expand-file-name (libmpdel-song-file song) libmpdel-music-directory)))
+
+(defun libmpdel-equal (entity1 entity2)
+  "Return non-nil if ENTITY1 and ENTITY2 represent the same entity."
+  (equal (libmpdel-entity-id entity1) (libmpdel-entity-id entity2)))
 
 
 ;;; Helper queries
@@ -691,7 +728,8 @@ If HANDLER is nil, ignore response."
 ;;; Playlist queries
 
 (cl-defgeneric libmpdel-playlist-add (entity playlist)
-  "Add ENTITY to PLAYLIST.")
+  "Add ENTITY to PLAYLIST.
+ENTITY can also be a list of entities to add.")
 
 (cl-defmethod libmpdel-playlist-add (entity (_ libmpdel-current-playlist))
   (libmpdel-send-command `("findadd %s" ,(libmpdel-entity-to-criteria entity))))
@@ -703,11 +741,15 @@ If HANDLER is nil, ignore response."
      ,(libmpdel-entity-to-criteria entity))))
 
 (cl-defmethod libmpdel-playlist-add ((stored-playlist libmpdel-stored-playlist) (_ libmpdel-current-playlist))
+  "Add content of STORED-PLAYLIST to the current playlist."
   (libmpdel-send-command `("load %S" ,(libmpdel-entity-name stored-playlist))))
 
-(defun libmpdel-playlist-replace (entity &optional playlist)
-  "Clear PLAYLIST and add ENTITY to it.
-If PLAYLIST is nil, use the current one."
+(cl-defmethod libmpdel-playlist-add ((entities list) playlist)
+  (mapcar (lambda (entity) (libmpdel-playlist-add entity playlist))
+          entities))
+
+(defun libmpdel-playlist-replace (entity playlist)
+  "Clear PLAYLIST and add ENTITY to it."
   (libmpdel-playlist-clear playlist)
   (libmpdel-playlist-add entity playlist))
 
