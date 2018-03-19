@@ -5,7 +5,7 @@
 
 ;; Author: Sebastian Wiesner <swiesner@lunaryorn.com>
 ;; URL: https://github.com/flycheck/flycheck-rust
-;; Package-Version: 20171021.151
+;; Package-Version: 20180319.1028
 ;; Keywords: tools, convenience
 ;; Version: 0.1-cvs
 ;; Package-Requires: ((emacs "24.1") (flycheck "28") (dash "2.13.0") (seq "2.3") (let-alist "1.0.4"))
@@ -32,7 +32,8 @@
 ;;
 ;; # Setup
 ;;
-;;     (add-hook 'flycheck-mode-hook #'flycheck-rust-setup)
+;;     (with-eval-after-load 'rust-mode
+;;       (add-hook 'flycheck-mode-hook #'flycheck-rust-setup))
 ;;
 ;; # Usage
 ;;

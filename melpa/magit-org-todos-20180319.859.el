@@ -4,10 +4,10 @@
 ;; Author: Daniel Ma
 ;; URL: http://github.com/danielma/magit-org-todos
 ;; Created: 2018
-;; Version: 0.1.0
+;; Version: 0.1.1
 ;; Keywords: org-mode magit tools
-;; Package-Version: 20180316.2245
-;; Package-X-Original-Version: 0.1.0
+;; Package-Version: 20180319.859
+;; Package-X-Original-Version: 0.1.1
 ;; Package-Requires: ((magit "2.0.0") (emacs "24"))
 
 ;;; Commentary:
@@ -19,10 +19,21 @@
 (require 'magit)
 (require 'org-element)
 
+;;; Customizations:
+(defgroup magit-org-todos nil
+  "Add local todo items to the magit status buffer"
+  :group 'tools)
+
+(defcustom magit-org-todos-filename "todo.org"
+  "The org file that holds todo items."
+  :group 'magit-org-todos
+  :type 'string)
+
+;;; Implementation:
 (defun magit-org-todos--todo-file-path ()
   "Path of the todo file."
   (let* ((toplevel (magit-toplevel))
-         (todo (concat toplevel "todo.org")))
+         (todo (concat toplevel magit-org-todos-filename)))
     todo))
 
 (defun magit-org-todos--magit-visit-org-todo ()

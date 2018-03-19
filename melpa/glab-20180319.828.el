@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/magit/ghub
 ;; Keywords: tools
-;; Package-Version: 20180318.1308
+;; Package-Version: 20180319.828
 ;; Package-Requires: ((emacs "24.4") (ghub "2.0"))
 
 ;; This file is not part of GNU Emacs.
@@ -132,7 +132,7 @@ and `gitlab' as FORGE."
 (cl-defun glab-request (method resource &optional params
                                &key query payload headers
                                silent unpaginate noerror reader
-                               username auth host forge
+                               username auth host
                                callback errorback extra)
   "Make a request for RESOURCE and return the response body.
 Like calling `ghub-request' (which see) with `gitlab' as FORGE."

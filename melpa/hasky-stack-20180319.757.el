@@ -4,7 +4,7 @@
 ;;
 ;; Author: Mark Karpov <markkarpov92@gmail.com>
 ;; URL: https://github.com/hasky-mode/hasky-stack
-;; Package-Version: 20180319.624
+;; Package-Version: 20180319.757
 ;; Version: 0.7.0
 ;; Package-Requires: ((emacs "24.4") (f "0.18.0") (magit-popup "2.10"))
 ;; Keywords: tools, haskell
@@ -102,8 +102,7 @@ This is usually set by `hasky-stack--prepare'.")
 
 If it's not NIL, this value is used in invocation of Stack
 commands instead of the standard \"stack\" string.  Set this
-variable if your Stack is in a strange place where OS cannot find
-it.
+variable if your Stack is not on PATH.
 
 Note that the path is quoted with `shell-quote-argument' before
 being used to compose command line."
@@ -239,10 +238,6 @@ failure.  Returned path is guaranteed to have trailing slash."
     (cond ((executable-find default)     default)
           ((and custom (f-file? custom)) custom))))
 
-(defun hasky-stack--initialized-p (dir)
-  "Return non-NIL value if \"stack.yaml\" file exists in DIR."
-  (f-file? (f-expand "stack.yaml" dir)))
-
 (defun hasky-stack--templates ()
   "Return list of available Stack templates."
   (with-temp-buffer
@@ -258,7 +253,7 @@ failure.  Returned path is guaranteed to have trailing slash."
   (f-expand "indices/Hackage/00-index.tar" hasky-stack-config-dir))
 
 (defun hasky-stack--index-dir ()
-  "Get ptah to directory that is to contain unpackaed Hackage index."
+  "Get path to directory that is to contain unpackaed Hackage index."
   (file-name-as-directory
    (f-expand "indices/Hackage/00-index" hasky-stack-config-dir)))
 
