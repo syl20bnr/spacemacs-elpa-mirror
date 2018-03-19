@@ -4,7 +4,7 @@
 
 ;; Author: Tobias Zawada <i@tn-home.de>
 ;; Keywords: tex, languages, wp
-;; Package-Version: 20180318.1419
+;; Package-Version: 20180318.1647
 ;; URL: https://github.com/TobiasZawada/texfrag
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "25") (auctex "11.90.2"))
@@ -155,6 +155,10 @@ If there is a collision with the major mode you can change this prefix in the ma
   :type 'key-sequence
   :group 'texfrag)
 
+(defcustom texfrag-LaTeX-max-file-name-length 72
+  "Maximal length of LaTeX file names."
+  :type 'integerp
+  :group 'texfrag)
 
 (defcustom texfrag-poll-time 0.25
   "Polling time for `texfrag-region-synchronously' in seconds."
@@ -501,7 +505,6 @@ See `texfrag-search-forward-fragment' for further details."
 (defvar-local texfrag-LaTeX-file nil
   "Used instead of `buffer-file-name' for function `texfrag-LaTeX-file' when non-nil.
 Can be modified in the major mode hook.")
-(setq-default TeXFrag-LaTeX-file nil)
 
 (defun texfrag-file-name-option (opt)
   "Get file name from option OPT.
@@ -538,15 +541,34 @@ if it does not exist yet and MKDIR is non-nil."
          (file (and texfrag-LaTeX-file (file-name-nondirectory texfrag-LaTeX-file)))
          (tex-file
           (texfrag-file-name-escape
-           (concat
-            (or (and
-                 file
-                 (null (string-empty-p file))
-                 file)
-                (file-name-nondirectory
-                 (or (buffer-file-name)
-                     (buffer-name)))) "." TeX-default-extension)))
-         (tex-path (concat subdir "/" tex-file)))
+	   (or (and
+		file
+		(null (string-empty-p file))
+		file)
+	       (file-name-nondirectory
+		(or (buffer-file-name)
+		    (buffer-name))))))
+	 tex-path)
+    ;; File names generated from buffer names of org source edit buffers can be pretty long.
+    ;; Pityingly I had to note that the TeX toolchain including gs
+    ;; does not work properly with file names longer than 72 characters.
+    ;; Version info:
+    ;; - Ubuntu 16.04.3 LTS
+    ;; - gs 9.18
+    ;; - pdfTeX 3.14159265-2.6-1.40.16 (TeX Live 2015/Debian)
+    ;; - kpathsea version 6.2.1
+    ;; I do not know what exactly breaks with longer file names.
+    ;; But, the next limitation avoids the error
+    ;; LaTeX: No preview images found.
+    ;; for org source edit buffers.
+    (when (> (length tex-file) texfrag-LaTeX-max-file-name-length)
+      (setq tex-file (substring tex-file 0 texfrag-LaTeX-max-file-name-length)))
+    (setq tex-file (concat tex-file
+			   (unless (and (stringp tex-file)
+					(string-suffix-p "." tex-file))
+			     ".")
+			   TeX-default-extension))
+    (setq tex-path (concat subdir "/" tex-file))
     (when absolute
       (setq tex-path (expand-file-name tex-path)))
     (unless (and mkdir (file-directory-p subdir))
