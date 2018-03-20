@@ -6,7 +6,7 @@
 ;; Keywords: extensions, multimedia, tools
 ;; Homepage: https://github.com/vermiculus/ghub-plus
 ;; Package-Requires: ((emacs "25") (ghub "1.2") (apiwrap "0.4"))
-;; Package-Version: 20180318.1518
+;; Package-Version: 20180319.1553
 ;; Package-X-Original-Version: 0.2.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -118,27 +118,52 @@ DATA is an alist."
                  :auth .auth
                  :host .host))))
 
-  (defmacro ghubp-catch (&rest handlers)
-    "Catch some Ghub signals with HANDLERS.
+  ;; If ghub-404 is not defined as an error, define it.
+  ;; This will be necessary until Ghub releases v2.
+  ;; See also #8.
+  (unless (get 'ghub-404 'error-conditions)
+    (define-error 'ghub-404 "Not Found" 'ghub-http-error))
+
+  (defun ghubp--catch (error-symbol &rest handlers)
+    "Catch some Ghub signals as ERROR-SYMBOL with HANDLERS.
 Each element of HANDLERS should be a list of
 
     (HTTP-CODE HANDLER)
 
 where HTTP-CODE is an error code like 404.
 
+For use inside `:condition-case' endpoint configurations.
+
+See also `ghub-catch' and `ghub-catch*'.
+
 For now, care is taken to support older versions of Ghub."
-    (let (general code handler form)
+    (let (code handler form)
       (dolist (pair handlers)
         (setq code (car pair)
               handler (cdr pair))
-        (push (cons (intern (format "ghub-%d" code)) handler) form)
-        (push (cons code handler) general))
+        (push (cons (intern (format "ghub-%d" code)) handler) form))
       (setcdr (last form)
               `((ghub-http-error
-                 (pcase it
-                   ,@general
-                   (_ (signal (car it) (cdr it)))))))
+                 (pcase ,error-symbol
+                   ,@handlers
+                   (_ (signal (car ,error-symbol) (cdr ,error-symbol)))))))
       form))
+
+  (defmacro ghubp-catch* (&rest handlers)
+    "Catch some Ghub signals with HANDLERS.
+For use inside `:condition-case' endpoint configurations.
+
+See `ghubp--catch'."
+    (apply #'ghubp--catch 'it handlers))
+
+  (defmacro ghubp-catch (error-symbol form &rest handlers)
+    "Catch some Ghub signals as ERROR_SYMBOL in FORM with HANDLERS.
+For general use.
+
+See `ghubp--catch'"
+    (declare (indent 2))
+    `(condition-case ,error-symbol ,form
+       ,@(apply #'ghubp--catch error-symbol handlers)))
 
   (apiwrap-new-backend "GitHub" "ghubp"
     '((repo . "REPO is a repository alist of the form returned by `ghubp-get-user-repos'.")
@@ -263,7 +288,8 @@ This method is intended for use with callbacks."
 
 (defun ghubp-base-html-url ()
   "Get the base HTML URL from `ghub-default-host'"
-  (if-let ((host (magit-get "github" "host")))
+  (if-let ((host (car (ignore-errors
+			(process-lines "git" "config" "github.host")))))
       (and (string-match (rx bos (group (* any)) "/api/v3" eos) host)
            (match-string 1 host))
     "https://github.com"))
@@ -771,7 +797,7 @@ organization."
   "repos/#get"
   (repo) "/repos/:repo.owner.login/:repo.name"
   :condition-case
-  (ghubp-catch
+  (ghubp-catch*
    (404 nil)))
 
 
@@ -782,7 +808,7 @@ organization."
   "repos/branches/#get-branch"
   (repo branch) "/repos/:repo.owner.login/:repo.name/branches/:branch.name"
   :condition-case
-  (ghubp-catch
+  (ghubp-catch*
    (404 nil)))
 
 
@@ -982,7 +1008,10 @@ notifications (until you comment or get @mentioned once more)."
 (defapiget-ghubp "/repos/:owner/:repo/commits/:ref/status"
   "Get the combined status for a specific ref"
   "repos/statuses/#get-the-combined-status-for-a-specific-ref"
-  (repo ref) "/repos/:repo.owner.login/:repo.name/commits/:ref/status")
+  (repo ref) "/repos/:repo.owner.login/:repo.name/commits/:ref/status"
+  :condition-case
+  (ghubp-catch*
+   (404 nil)))
 
 (defapipost-ghubp "/repos/:owner/:repo/forks"
   "Create a fork for the authenticated user."
