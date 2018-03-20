@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov
 ;; URL: https://github.com/bbatsov/helm-projectile
-;; Package-Version: 20180318.2217
+;; Package-Version: 20180319.1414
 ;; Created: 2011-31-07
 ;; Keywords: project, convenience
 ;; Version: 0.14.0
@@ -223,7 +223,7 @@ It is there because Helm requires it."
 
 (defvar helm-source-projectile-projects
   (helm-build-sync-source "Projectile projects"
-    :candidates (lambda () projectile-known-projects)
+    :candidates (lambda () (with-helm-current-buffer projectile-known-projects))
     :fuzzy-match helm-projectile-fuzzy-match
     :keymap helm-projectile-projects-map
     :mode-line helm-read-file-name-mode-line-string
@@ -249,7 +249,7 @@ It is there because Helm requires it."
 
 (defvar helm-source-projectile-dirty-projects
   (helm-build-sync-source "Projectile dirty projects"
-    :candidates 'helm-projectile-get-dirty-projects
+    :candidates (lambda () (with-helm-current-buffer (helm-projectile-get-dirty-projects)))
     :fuzzy-match helm-projectile-fuzzy-match
     :keymap helm-projectile-dirty-projects-map
     :mode-line helm-read-file-name-mode-line-string
@@ -500,11 +500,10 @@ CANDIDATE is the selected file.  Used when no file is explicitly marked."
 (defvar helm-source-projectile-files-list
   (helm-build-sync-source "Projectile files"
     :candidates (lambda ()
-                  (condition-case nil
-                      (cl-loop with root = (projectile-project-root)
-                               for display in (projectile-current-project-files)
-                               collect (cons display (expand-file-name display root)))
-                    (error nil)))
+                  (with-helm-current-buffer
+                    (cl-loop with root = (projectile-project-root)
+                             for display in (projectile-current-project-files)
+                             collect (cons display (expand-file-name display root)))))
     :fuzzy-match helm-projectile-fuzzy-match
     :keymap helm-projectile-find-file-map
     :help-message 'helm-ff-help-message
@@ -517,10 +516,9 @@ CANDIDATE is the selected file.  Used when no file is explicitly marked."
 (defvar helm-source-projectile-files-in-all-projects-list
   (helm-build-sync-source "Projectile files in all Projects"
     :candidates (lambda ()
-                  (condition-case nil
-                      (let ((projectile-require-project-root nil))
-                        (projectile-all-project-files))
-                    (error nil)))
+                  (with-helm-current-buffer
+                    (let ((projectile-require-project-root nil))
+                      (projectile-all-project-files))))
     :keymap helm-find-files-map
     :help-message 'helm-ff-help-message
     :mode-line helm-read-file-name-mode-line-string
@@ -538,13 +536,11 @@ CANDIDATE is the selected file.  Used when no file is explicitly marked."
 (defvar helm-source-projectile-dired-files-list
   (helm-build-in-buffer-source "Projectile files in current Dired buffer"
     :data (lambda ()
-            (condition-case nil
-                (if (and (file-remote-p (projectile-project-root))
-                         (not helm-projectile-virtual-dired-remote-enable))
-                    nil
-                  (when (eq major-mode 'dired-mode)
-                    (helm-projectile-files-in-current-dired-buffer)))
-              (error nil)))
+            (if (and (file-remote-p (projectile-project-root))
+                     (not helm-projectile-virtual-dired-remote-enable))
+                nil
+              (when (eq major-mode 'dired-mode)
+                (helm-projectile-files-in-current-dired-buffer))))
     :filter-one-by-one (lambda (file)
                          (let ((helm-ff-transformer-show-only-basename t))
                            (helm-ff-filter-candidate-one-by-one file)))
@@ -571,12 +567,11 @@ CANDIDATE is the selected file.  Used when no file is explicitly marked."
 (defvar helm-source-projectile-directories-list
   (helm-build-sync-source "Projectile directories"
     :candidates (lambda ()
-                  (condition-case nil
-                      (let ((dirs (if projectile-find-dir-includes-top-level
-                                      (append '("./") (projectile-current-project-dirs))
-                                    (projectile-current-project-dirs))))
-                        (helm-projectile--files-display-real dirs (projectile-project-root)))
-                    (error nil)))
+                  (with-helm-current-buffer
+                    (let ((dirs (if projectile-find-dir-includes-top-level
+                                    (append '("./") (projectile-current-project-dirs))
+                                  (projectile-current-project-dirs))))
+                      (helm-projectile--files-display-real dirs (projectile-project-root)))))
     :fuzzy-match helm-projectile-fuzzy-match
     :action-transformer 'helm-find-files-action-transformer
     :keymap (let ((map (make-sparse-keymap)))
@@ -605,9 +600,8 @@ CANDIDATE is the selected file.  Used when no file is explicitly marked."
 (defclass helm-source-projectile-buffer (helm-source-sync helm-type-buffer)
   ((init :initform (lambda ()
                      ;; Issue #51 Create the list before `helm-buffer' creation.
-                     (setq helm-projectile-buffers-list-cache (condition-case nil
-                                                                  (cdr (projectile-project-buffer-names))
-                                                                (error nil)))
+                     (setq helm-projectile-buffers-list-cache
+                           (ignore-errors (cdr (projectile-project-buffer-names))))
                      (let ((result (cl-loop for b in helm-projectile-buffers-list-cache
                                             maximize (length b) into len-buf
                                             maximize (length (with-current-buffer b
@@ -635,10 +629,9 @@ CANDIDATE is the selected file.  Used when no file is explicitly marked."
 (defvar helm-source-projectile-recentf-list
   (helm-build-sync-source "Projectile recent files"
     :candidates (lambda ()
-                  (condition-case nil
-                      (helm-projectile--files-display-real (projectile-recentf-files)
-                                                           (projectile-project-root))
-                    (error nil)))
+                  (with-helm-current-buffer
+                    (helm-projectile--files-display-real (projectile-recentf-files)
+                                                         (projectile-project-root))))
     :fuzzy-match helm-projectile-fuzzy-match
     :keymap helm-projectile-find-file-map
     :help-message 'helm-ff-help-message
