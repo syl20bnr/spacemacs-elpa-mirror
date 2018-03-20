@@ -5,7 +5,7 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/system-packages
-;; Package-Version: 20180316.811
+;; Package-Version: 20180320.718
 ;; Package-Requires: ((cl-lib "0.5"))
 
 ;; This file is not part of GNU Emacs.
@@ -86,7 +86,7 @@
            (verify-all-packages . nil)
            (verify-all-dependencies . nil)
            (remove-orphaned . nil)
-           (list-installed-packages . "brew list --installed")
+           (list-installed-packages . "brew list")
            (list-installed-packages-all . "brew list")
            (list-dependencies-of . "brew deps")
            (noconfirm . nil)))

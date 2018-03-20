@@ -3,7 +3,7 @@
 ;; Author: Fred Campos <fred.tecnologia@gmail.com>
 ;; Maintainer: Fred Campos <fred.tecnologia@gmail.com>
 ;; URL: https://github.com/fredcamps/green-is-the-new-black-emacs
-;; Package-Version: 20180228.206
+;; Package-Version: 20180320.1215
 ;; Keywords: faces, themes
 ;; Version: 0.0.5
 
@@ -119,10 +119,10 @@
 
    `(ido-indicator ((t (:background, gitnb-dark-green :foreground, gitnb-black))))
 
-   `(flycheck-error ((t (:underline, gitnb-red :foreground, gitnb-red))))
-   `(flycheck-warning ((t (:underline, gitnb-yellow :foreground, gitnb-yellow))))
-   `(flycheck-info ((t (:underline, gitnb-bright-green :foreground, gitnb-bright-green))))
-
+   `(flycheck-error ((t (:underline gitnb-red ))))
+   `(flycheck-warning ((t (:underline gitnb-yellow  ))))
+   `(flycheck-info ((t (:underline gitnb-bright-green ))))
+   
    `(vertical-border ((t (:foreground, gitnb-green))))
    `(info ((t (:foreground, gitnb-bright-green))))
    `(warning ((t (:foreground, gitnb-yellow))))

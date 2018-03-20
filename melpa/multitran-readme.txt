@@ -2,9 +2,10 @@ Multitran is a zero-dependancy interface to http://multitran.com
 online dictionary.
 
 Multitran supports *tons* of languages, including such languages
-as: Esperanto, Latin and Luxembourgish.  See http://multitran.com
+as: Esperanto, Latin and Luxembourgish.
+See https://www.multitran.com/m.exe?a=1&all=32
 for full list and feel free to add new languages to
-`multitran-languages-map' if you missing one.
+`multitran-languages-alist' if you missing one.
 
 Variables to customize:
 ~~~~~~~~~~~~~~~~~~~~~~
