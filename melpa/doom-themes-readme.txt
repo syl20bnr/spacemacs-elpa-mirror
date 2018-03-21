@@ -4,9 +4,10 @@ DOOM Themes is an opinionated UI plugin and pack of themes extracted from my
 Flagship themes
   `doom-one'
   `doom-one-light'
+  `doom-vibrant'
 
 Additional themes
-  [X] `doom-citylights' (added by fuxialexnder)
+  [X] `doom-city-lights' (added by fuxialexnder)
   [X] `doom-darcula' (added by fuxialexnder)
   [X] `doom-molokai'
   [X] `doom-nord' (added by fuxialexnder)
@@ -15,9 +16,7 @@ Additional themes
   [X] `doom-solarized-light' (added by fuxialexnder)
   [X] `doom-spacegrey' (added by teesloane)
   [X] `doom-tomorrow-night'
-  [X] `doom-vibrant'
-  [ ] `doom-tomorrow-day'
-  [ ] `doom-x'
+  [X] `doom-tomorrow-day'
   [ ] `doom-mono-dark' / `doom-mono-light'
   [ ] `doom-tron'
 

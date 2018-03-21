@@ -4,8 +4,8 @@
 
 ;; Author: James Ferguson <(concat "wjcferguson" at-sign "gmail.com")>
 ;; URL: https://github.com/WJCFerguson/emacs-faff-theme
-;; Package-Version: 20180320.1247
-;; Version: 20180320.16:00
+;; Package-Version: 20180321.758
+;; Version: 20180321.11:00
 ;; Keywords: color theme
 
 ;; This file is not part of GNU Emacs.
@@ -48,7 +48,7 @@
  '(default ((t (:foreground "black" :background "ivory3"))))
  '(match ((t (:background "yellow2"))))
  '(cursor ((t (:background "red3"))))
- '(fixed-pitch ((t (:family "Monospace"))))
+ '(fixed-pitch ((t (:inherit default :background "ivory2"))))
  '(variable-pitch ((t (:family "Sans Serif"))))
  '(escape-glyph ((((background dark)) (:foreground "cyan")) (((type pc)) (:foreground "magenta")) (t (:foreground "brown"))))
  '(minibuffer-prompt ((((background dark)) (:foreground "cyan")) (((type pc)) (:foreground "magenta")) (t (:foreground "medium blue"))))

@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/pamparam
-;; Package-Version: 20180122.1325
+;; Package-Version: 20180321.1041
 ;; Version: 0.0.0
 ;; Package-Requires: ((emacs "24.3") (lispy "0.26.0") (worf "0.1.0") (hydra "0.13.4"))
 ;; Keywords: outlines, hypermedia, flashcards, memory
@@ -90,6 +90,25 @@ Q - the quality of the answer:
                   (or actual-answer "")))
   (org-table-align))
 
+(defun pamparam-wdiff (actual-answer)
+  (let ((expected-answer
+         (save-excursion
+           (goto-char (point-max))
+           (skip-chars-backward "\n")
+           (buffer-substring-no-properties
+            (line-beginning-position)
+            (line-end-position)))))
+    (when (and actual-answer
+               (not (pamparam-equal actual-answer expected-answer))
+               (executable-find "wdiff"))
+      (message
+       (string-trim
+        (shell-command-to-string
+         (format
+          "wdiff -i <(echo \"%s\") <(echo \"%s\")"
+          actual-answer
+          (string-trim-right expected-answer "[.?!]"))))))))
+
 (defun pamparam-card-read-stats ()
   (goto-char (point-min))
   (if (re-search-forward "^\\*\\* stats\n" nil t)
@@ -153,7 +172,8 @@ Q - the quality of the answer:
              (if (or (= score 5)
                      (= score 4)
                      (= score 3))
-                 (let ((org-log-done nil))
+                 (let ((org-log-done nil)
+                       (inhibit-message t))
                    (org-todo 'done))
                (let ((item (pamparam-delete-region
                             (line-beginning-position)
@@ -219,7 +239,8 @@ Q - the quality of the answer:
               (insert todo-entry)
               (pamparam-save-buffer))
             (kill-buffer))))
-      (pamparam-save-buffer))))
+      (pamparam-save-buffer)
+      (pamparam-wdiff actual-answer))))
 
 (defvar-local pamparam-card-answer-validate-p nil)
 
@@ -491,19 +512,20 @@ When called interactively, use today's schedule file."
       (pamparam--update-card prev-file (concat (substring fnn 0 2) "/" fnn)))
     old-metadata))
 
-(if (eq system-type 'windows-nt)
-    (defsubst pamparam-spit (str file)
-      (with-current-buffer (find-file-noselect file)
-        (erase-buffer)
-        (insert str)
-        (save-buffer)
-        (kill-buffer (current-buffer))))
-  (defun pamparam-spit (str file)
-    (let ((cmd (format "echo '%s' > %s"
-                       (replace-regexp-in-string "'" "'\\''" str t t)
-                       (shell-quote-argument file))))
-      (unless (= 0 (call-process-shell-command cmd))
-        (error "Command failed: %s" cmd)))))
+(eval-when-compile
+  (if (eq system-type 'windows-nt)
+      (defun pamparam-spit (str file)
+        (with-current-buffer (find-file-noselect file)
+          (erase-buffer)
+          (insert str)
+          (save-buffer)
+          (kill-buffer (current-buffer))))
+    (defun pamparam-spit (str file)
+      (let ((cmd (format "echo '%s' > %s"
+                         (replace-regexp-in-string "'" "'\\''" str t t)
+                         (shell-quote-argument file))))
+        (unless (= 0 (call-process-shell-command cmd))
+          (error "Command failed: %s" cmd))))))
 
 (defun pamparam-slurp (f)
   (with-temp-buffer
