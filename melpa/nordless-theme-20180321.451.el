@@ -17,7 +17,7 @@
 
 ;; Author: Thomas Letan <contact@thomasletan.fr>
 ;; URL: https://github.com/lethom/nordless-theme.el
-;; Package-Version: 20180215.454
+;; Package-Version: 20180321.451
 ;; Version: 0.1
 ;; License: GPL-3
 ;; Keywords: theme, dark
@@ -70,6 +70,7 @@
    '(shadow ((t ())))
    `(region ((t (:background ,nord4 :foreground ,nord0))))
    '(escape-glyph ((t ())))
+   '(font-lock-warning-face ((t (:slant italic))))
    '(font-lock-negation-char-face ((t ())))
    '(font-lock-regexp-grouping-backslash ((t ())))
    '(font-lock-regexp-grouping-construct ((t ())))
@@ -175,6 +176,7 @@
    '(markdown-link-face ((t ())))
    '(markdown-url-face ((t (:underline t))))
    '(font-latex-warning-face ((t (:slant italic))))
+   '(font-latex-bold-face ((t (:weight bold))))
    '(font-latex-sedate-face ((t ())))
    '(font-latex-string-face ((t (:weight bold))))
    '(font-latex-math-face ((t ())))
@@ -200,6 +202,8 @@
    '(helm-ff-dotted-directory ((t (:weight bold))))
    `(variable-pitch ((t ())))
    `(highlight ((t (:background ,nord3))))
+   '(compilation-warning ((t (:weight bold :underline t))))
+   '(compilation-column-number ((t (:underline t))))
    `(company-tooltip ((t (:foreground ,nord0 :background ,nord5))))
    `(company-scrollbar-fg ((t (:background ,nord0))))
    `(company-scrollbar-bg ((t (:background ,nord4))))
