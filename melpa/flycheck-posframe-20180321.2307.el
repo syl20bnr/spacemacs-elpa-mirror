@@ -5,8 +5,8 @@
 ;; Author: Alex Murray <murray.alex@gmail.com>
 ;; Maintainer: Alex Murray <murray.alex@gmail.com>
 ;; URL: https://github.com/alexmurray/flycheck-posframe
-;; Package-Version: 20180313.450
-;; Version: 0.4
+;; Package-Version: 20180321.2307
+;; Version: 0.5
 ;; Package-Requires: ((flycheck "0.24") (emacs "26") (posframe "0.3.0"))
 
 ;; This file is not part of GNU Emacs.
@@ -105,15 +105,17 @@ Only the `background' is used in this face."
 (defvar flycheck-posframe-old-display-function nil
   "The former value of `flycheck-display-errors-function'.")
 
-(defvar flycheck-posframe-delete-posframe-hooks
+(defvar flycheck-posframe-hide-posframe-hooks
   '(pre-command-hook post-command-hook focus-out-hook)
   "The hooks which should trigger automatic removal of the posframe.")
 
-(defun flycheck-posframe-delete-posframe ()
-  "Delete messages currently being shown if any."
-  (posframe-delete flycheck-posframe-buffer)
-  (dolist (hook flycheck-posframe-delete-posframe-hooks)
-    (remove-hook hook #'flycheck-posframe-delete-posframe t)))
+(defun flycheck-posframe-hide-posframe ()
+  "Hide messages currently being shown if any."
+  ;; hide posframe instead of deleting it to avoid flicker or worse crashes etc
+  ;; on MacOS (see https://github.com/alexmurray/flycheck-posframe/issues/8)
+  (posframe-hide flycheck-posframe-buffer)
+  (dolist (hook flycheck-posframe-hide-posframe-hooks)
+    (remove-hook hook #'flycheck-posframe-hide-posframe t)))
 
 (defun flycheck-posframe-get-prefix-for-error (err)
   "Return the prefix which should be used to display ERR."
@@ -149,15 +151,15 @@ Only the `background' is used in this face."
 
 (defun flycheck-posframe-show-posframe (errors)
   "Display ERRORS, using posframe.el library."
-  (flycheck-posframe-delete-posframe)
+  (flycheck-posframe-hide-posframe)
   (when errors
     (posframe-show
      flycheck-posframe-buffer
      :string (flycheck-posframe-format-errors errors)
      :background-color (face-background 'flycheck-posframe-background-face nil t)
      :position (point))
-    (dolist (hook flycheck-posframe-delete-posframe-hooks)
-      (add-hook hook #'flycheck-posframe-delete-posframe nil t))))
+    (dolist (hook flycheck-posframe-hide-posframe-hooks)
+      (add-hook hook #'flycheck-posframe-hide-posframe nil t))))
 
 ;;;###autoload
 (defun flycheck-posframe-configure-pretty-defaults ()
