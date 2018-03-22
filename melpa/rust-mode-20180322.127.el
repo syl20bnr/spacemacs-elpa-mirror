@@ -1,7 +1,7 @@
 ;;; rust-mode.el --- A major emacs mode for editing Rust source code -*-lexical-binding: t-*-
 
 ;; Version: 0.3.0
-;; Package-Version: 20180303.854
+;; Package-Version: 20180322.127
 ;; Author: Mozilla
 ;; Url: https://github.com/rust-lang/rust-mode
 ;; Keywords: languages
@@ -1591,7 +1591,7 @@ See `compilation-error-regexp-alist' for help on their format.")
         (start-col  "\\([0-9]+\\)"))
     (let ((re (concat "^ *::: " file ":" start-line ":" start-col ; ::: foo/bar.rs
                       )))
-      (cons re '(1 2 3))))
+      (cons re '(1 2 3 0)))) ;; 0 for info type
   "Specifications for matching `:::` hints in rustc invocations.
 See `compilation-error-regexp-alist' for help on their format.")
 

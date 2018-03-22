@@ -6,7 +6,7 @@
 
 ;; Compatibility: GNU Emacs 24.1+
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
-;; Package-Version: 20140604.947
+;; Package-Version: 20180322.28
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -318,10 +318,10 @@ Shell buffers.  It implements `shell-completion-execonly' for
             (pcomplete-match "^--\\([^= \t\n\f]*\\)\\'" 0))
        (pcomplete-here* pcomplete--tar-long-options-cache))
       ((pcomplete-match "^-" 0)
-       (pcomplete-opt "01234567ABCFGKLMNOPRSTUVWXZbcdfghiklmoprstuvwxz"))
+       (pcomplete-opt "01234567ABCFGJKLMNOPRSTUVWXZbcdfghijklmoprstuvwxz"))
       ((pcomplete-match "\\`-\\'" 0)
        (pcomplete-here*))))
-  (while (pcomplete-here) (pcomplete-entries)))
+  (while (pcomplete-here (pcomplete-entries))))
 
 ;; Tests
 ;; find . -name '*.el' | xargs et      =>ok

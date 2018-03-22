@@ -4,7 +4,7 @@
 
 ;; Author: alpha22jp <alpha22jp@gmail.com>
 ;; Package-Requires: ((emacs "24.3") (let-alist "1.0.4") (websocket "1.4"))
-;; Package-Version: 20171116.2332
+;; Package-Version: 20180322.248
 ;; Keywords: chrome edit textarea
 ;; URL: https://github.com/alpha22jp/atomic-chrome
 ;; Version: 2.0.0
@@ -195,7 +195,7 @@ or raising the selected frame depending on `atomic-chrome-buffer-open-style'."
   "Create buffer associated with websocket specified by SOCKET.
 URL is used to determine the major mode of the buffer created,
 TITLE is used for the buffer name and TEXT is inserted to the buffer."
-  (let ((buffer (generate-new-buffer title)))
+  (let ((buffer (generate-new-buffer (if (string-empty-p title) "No title" title))))
     (with-current-buffer buffer
       (puthash buffer
              (list socket (atomic-chrome-show-edit-buffer buffer title))
