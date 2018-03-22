@@ -4,7 +4,7 @@
 
 ;; Author: Christopher Wellons <wellons@nullprogram.com>
 ;; URL: https://github.com/skeeto/x86-lookup
-;; Package-Version: 20161215.448
+;; Package-Version: 20180321.1430
 ;; Version: 1.1.1
 ;; Package-Requires: ((emacs "24.3") (cl-lib "0.3"))
 
@@ -139,11 +139,13 @@ This function accepts two arguments: filename and page number."
 (cl-defun x86-lookup-create-index (&optional (pdf x86-lookup-pdf))
   "Create an index alist from PDF mapping mnemonics to page numbers.
 This function requires the pdftotext command line program."
-  (let ((mnemonic (concat "INSTRUCTION SET REFERENCE, [A-Z]-[A-Z]\n\n"
-                          "\\([[:alnum:]/ ]+\\)[- ]?—"))
+  (let ((mnemonic (concat "\\(?:.*\n\n?\\)?"
+                          "\\([[:alnum:]/[:blank:]]+\\)[[:blank:]]*"
+                          "\\(?:--\\|—\\)\\(?:.*\n\n?\\)\\{1,3\\}"
+                          "[[:blank:]]*Opcode"))
         (coding-system-for-read 'utf-8)
         (coding-system-for-write 'utf-8)
-        (case-fold-search nil))
+        (case-fold-search t))
     (with-temp-buffer
       (call-process x86-lookup-pdftotext-program nil t nil
                     (file-truename pdf) "-")

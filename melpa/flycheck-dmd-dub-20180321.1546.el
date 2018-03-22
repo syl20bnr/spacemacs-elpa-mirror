@@ -4,7 +4,7 @@
 
 ;; Author:  Atila Neves <atila.neves@gmail.com>
 ;; Version: 0.12
-;; Package-Version: 20180316.746
+;; Package-Version: 20180321.1546
 ;; Package-Requires: ((flycheck "0.24") (f "0.18.2"))
 ;; Keywords: languages
 ;; URL: http://github.com/atilaneves/flycheck-dmd-dub
@@ -246,7 +246,11 @@ brace are discarded before parsing."
   "If DEPENDENCY has already been fetched."
   (let ((package (symbol-name (car dependency)))
         (version (cdr dependency)))
-    (fldd--package-fetched? package version)))
+    (if (stringp version)
+        (fldd--package-fetched? package version)  ; check dub cache
+      ;; else it's (path . <path>)
+      (when (stringp (cdr version))
+        (file-exists-p (cdr version))))))
 
 (defun fldd--all (lst)
   "If all elements in LST are true."
