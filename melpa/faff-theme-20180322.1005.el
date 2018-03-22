@@ -4,8 +4,8 @@
 
 ;; Author: James Ferguson <(concat "wjcferguson" at-sign "gmail.com")>
 ;; URL: https://github.com/WJCFerguson/emacs-faff-theme
-;; Package-Version: 20180321.758
-;; Version: 20180321.11:00
+;; Package-Version: 20180322.1005
+;; Version: 2.0
 ;; Keywords: color theme
 
 ;; This file is not part of GNU Emacs.
@@ -130,6 +130,7 @@
  '(helm-ff-symlink ((t (:foreground "orange4"))))
  '(helm-grep-lineno ((t (:foreground "orange4"))))
  '(helm-source-header ((t (:background "ivory2" :foreground "black" :box (:line-width 1 :color "grey75" :style pressed-button) :weight normal :height 1.0 :family "Sans Serif"))))
+ '(Info-quoted ((t (:inherit fixed-pitch))))
  '(magit-branch ((t (:inherit magit-header :background "yellow" :box (:line-width 1 :color "grey75" :style released-button)))))
  '(magit-branch-current ((t (:inherit magit-branch-local :background "green1" :box 1))))
  '(magit-branch-local ((t (:background "yellow" :box (:line-width 1 :color "*")))))

@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov
 ;; URL: https://github.com/bbatsov/helm-projectile
-;; Package-Version: 20180321.324
+;; Package-Version: 20180322.1126
 ;; Created: 2011-31-07
 ;; Keywords: project, convenience
 ;; Version: 0.14.0
@@ -524,8 +524,6 @@ unnecessary complexity."
                              finally return files
                              else for new-display = (helm-ff-prefix-filename helm-pattern nil t)
                              finally return (cl-acons new-display helm-pattern files))))
-    :cleanup (lambda ()
-               (remove-hook 'helm-update-hook #'helm-projectile--move-to-real))
     :fuzzy-match helm-projectile-fuzzy-match
     :keymap helm-projectile-find-file-map
     :help-message 'helm-ff-help-message
@@ -703,10 +701,11 @@ With a prefix ARG invalidates the cache first."
      (let ((helm-ff-transformer-show-only-basename nil)
            ;; for consistency, we should just let Projectile take care of ignored files
            (helm-boring-file-regexp-list nil))
-       (helm :sources ,source
-             :buffer (concat "*helm projectile: " (projectile-project-name) "*")
-             :truncate-lines ,truncate-lines-var
-             :prompt (projectile-prepend-project-name ,prompt)))))
+       (unwind-protect (helm :sources ,source
+                             :buffer (concat "*helm projectile: " (projectile-project-name) "*")
+                             :truncate-lines ,truncate-lines-var
+                             :prompt (projectile-prepend-project-name ,prompt))
+         (remove-hook 'helm-update-hook #'helm-projectile--move-to-real)))))
 
 (helm-projectile-command "switch-project" 'helm-source-projectile-projects "Switch to project: " t)
 (helm-projectile-command "find-file" helm-source-projectile-files-and-dired-list "Find file: ")
