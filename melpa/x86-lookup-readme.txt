@@ -66,6 +66,8 @@ This function accepts two arguments: filename and page number."
                                 x86-lookup-browse-pdf-zathura)
                  (function-item :tag "MuPDF" :value
                                 x86-lookup-browse-pdf-mupdf)
+                 (function-item :tag "Sumatra PDF" :value
+                                x86-lookup-browse-pdf-sumatrapdf)
                  (function-item :tag "browse-url"
                                 :value x86-lookup-browse-pdf-browser)
                  (function :tag "Your own function")))
@@ -186,6 +188,21 @@ This function requires the pdftotext command line program."
         (x86-lookup--save-index x86-lookup-pdf x86-lookup-index)))))
   x86-lookup-index)
 
+(defun x86-lookup-ensure-and-update-index ()
+  "Ensure the PDF index has been created and (unconditionally) updated.
+Useful for forcibly syncing the index with the current PDF without resorting
+to manual deletion of index file on filesystem."
+  (interactive)
+  (cond
+   ((null x86-lookup-pdf)
+    (error "No PDF available. Set `x86-lookup-pdf'."))
+   ((not (file-exists-p x86-lookup-pdf))
+    (error "PDF not found. Check `x86-lookup-pdf'."))
+   ((message "Generating mnemonic index ...")
+    (setf x86-lookup-index (x86-lookup-create-index))
+    (x86-lookup--save-index x86-lookup-pdf x86-lookup-index)
+    (message "Finished generating mnemonic index."))))
+
 (defun x86-lookup-browse-pdf (pdf page)
   "Launch a PDF viewer using `x86-lookup-browse-pdf-function'."
   (funcall x86-lookup-browse-pdf-function pdf page))
@@ -246,6 +263,10 @@ PDF viewers:
   "View PDF at PAGE using zathura."
   (start-process "zathura" nil "zathura" "-P" (format "%d" page) "--" pdf))
 
+(defun x86-lookup-browse-pdf-sumatrapdf (pdf page)
+  "View PDF at PAGE using Sumatra PDF."
+  (start-process "sumatrapdf" nil "sumatrapdf" "-page" (format "%d" page) pdf))
+
 (defun x86-lookup-browse-pdf-mupdf (pdf page)
   "View PDF at PAGE using MuPDF."
   ;; MuPDF doesn't have a consistent name across platforms.
@@ -269,6 +290,7 @@ PDF viewers:
       (ignore-errors (x86-lookup-browse-pdf-gv pdf page))
       (ignore-errors (x86-lookup-browse-pdf-zathura pdf page))
       (ignore-errors (x86-lookup-browse-pdf-mupdf pdf page))
+      (ignore-errors (x86-lookup-browse-pdf-sumatrapdf pdf page))
       (ignore-errors (x86-lookup-browse-pdf-browser pdf page))
       (error "Could not find a PDF viewer.")))
 

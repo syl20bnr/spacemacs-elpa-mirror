@@ -14,20 +14,21 @@ of information.
 
 Usage:
 
-* Make sure that the face `mode-line' does not set `:box' and that
-  it sets `:underline' and `:overline' to the same color.  That
-  color should be different from the `:background' colors of both
-  `mode-line' and `default'.  Do the same for `mode-line-inactive'.
-  The line colors of `mode-line' and `mode-line-inactive' do not
+* Make sure that the face `mode-line' does not set `:box' and
+  that `:underline' and `:overline' are the same color or are
+  both `undefined'.  If defined, then the line color should be
+  different from the `:background' colors of both `mode-line'
+  and `default'.  Do the same for `mode-line-inactive'.  The
+  line colors of `mode-line' and `mode-line-inactive' do not
   have to be identical.  For example:
 
     (use-package solarized-theme
       :config
       (load-theme 'solarized-light t)
       (let ((line (face-attribute 'mode-line :underline)))
-        (set-face-attribute 'mode-line-inactive nil :overline   line)
         (set-face-attribute 'mode-line          nil :overline   line)
-        (set-face-attribute 'mode-line          nil :underline  line)
+        (set-face-attribute 'mode-line-inactive nil :overline   line)
+        (set-face-attribute 'mode-line-inactive nil :underline  line)
         (set-face-attribute 'mode-line          nil :box        nil)
         (set-face-attribute 'mode-line-inactive nil :box        nil)
         (set-face-attribute 'mode-line-inactive nil :background "#f9f2d9")))
