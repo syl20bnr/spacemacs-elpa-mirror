@@ -908,7 +908,7 @@
 	      ((:url . "http://elpa.gnu.org/packages/rcirc-menu.html")
 	       (:keywords "comm"))])
  (realgud .
-	  [(1 4 4)
+	  [(1 4 5)
 	   ((load-relative
 	     (1 2))
 	    (loc-changes
@@ -920,7 +920,7 @@
 	    (emacs
 	     (24)))
 	   "A modular front-end for interacting with external debuggers" tar
-	   ((:keywords "gdb" "python" "perl" "go" "bash" "nodejs" "zsh" "bashdb" "zshdb" "remake" "make" "trepan" "perldb")
+	   ((:keywords "gdb" "python" "perl" "go" "bash" "nodejs" "zsh" "bashdb" "zshdb" "remake" "make" "trepan" "perldb" "pdb")
 	    (:url . "http://github.com/realgud/realgud/"))])
  (register-list .
 		[(0 1)
