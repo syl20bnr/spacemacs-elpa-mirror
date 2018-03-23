@@ -1,7 +1,7 @@
 Static blog generators are a dime a dozen. This is one more, which
 focuses on being simple. All files are simple org-mode files in a
 directory. The only requirement is that every org file must have a
-#+TITLE and a #+DATE.
+#+TITLE and a #+DATE, and optionally, #+FILETAGS.
 
 This file is also available from marmalade and melpa-stable.
 

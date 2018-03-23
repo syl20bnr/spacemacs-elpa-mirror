@@ -5,7 +5,7 @@
 ;; Authors: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/flycheck-gradle
-;; Package-Version: 20180322.1935
+;; Package-Version: 20180322.2332
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "25.1") (flycheck "0.25"))
 ;; Keywords: languages gradle
@@ -192,7 +192,7 @@ This needs to be set before `flycheck-gradle-setup' is called."
     (if (memq 'meghanada-live flycheck-checkers)
         ;; `flycheck-gradle-java' checker will go first.
         (flycheck-add-next-checker 'gradle-java 'meghanada-live)
-      (with-eval-after-load 'meghanada
+      (with-eval-after-load 'flycheck-meghanada
         ;; `flycheck-java' will go first.
         (flycheck-add-next-checker 'meghanada-live 'gradle-java))))
 

@@ -2,8 +2,8 @@
 
 ;; Author: Bastian Bechtold
 ;; URL: https://github.com/bastibe/org-static-blog
-;; Package-Version: 1.1.0
-;; Version: 1.1.0
+;; Package-Version: 1.1.1
+;; Version: 1.1.1
 ;; Package-Requires: ((emacs "24.3"))
 
 ;;; Commentary:
@@ -11,7 +11,7 @@
 ;; Static blog generators are a dime a dozen. This is one more, which
 ;; focuses on being simple. All files are simple org-mode files in a
 ;; directory. The only requirement is that every org file must have a
-;; #+TITLE and a #+DATE.
+;; #+TITLE and a #+DATE, and optionally, #+FILETAGS.
 
 ;; This file is also available from marmalade and melpa-stable.
 
@@ -40,7 +40,7 @@
 
 (defgroup org-static-blog nil
   "Settings for a static blog generator using org-mode"
-  :version "1.1.0"
+  :version "1.1.1"
   :group 'applications)
 
 (defcustom org-static-blog-publish-url "https://example.com/"
@@ -91,6 +91,10 @@ The tags page lists all posts as headlines."
   "Show tags below posts, and generate tag pages."
   :group 'org-static-blog)
 
+(defcustom org-static-blog-enable-deprecation-warning t
+  "Show deprecation warnings."
+  :group 'org-static-blog)
+
 (defcustom org-static-blog-rss-file "rss.xml"
   "File name of the RSS feed."
   :group 'org-static-blog)
@@ -117,11 +121,13 @@ re-rendered."
                         (org-static-blog-get-draft-filenames)))
     (when (org-static-blog-needs-publishing-p file)
       (org-static-blog-publish-file file)))
-  (org-static-blog-assemble-index)
-  (org-static-blog-assemble-rss)
-  (org-static-blog-assemble-archive)
-  (if org-static-blog-enable-tags
-      (org-static-blog-assemble-tags)))
+  ;; don't spam too many deprecation warnings:
+  (let ((org-static-blog-enable-deprecation-warning nil))
+    (org-static-blog-assemble-index)
+    (org-static-blog-assemble-rss)
+    (org-static-blog-assemble-archive)
+    (if org-static-blog-enable-tags
+        (org-static-blog-assemble-tags))))
 
 (defun org-static-blog-needs-publishing-p (post-filename)
   "Check whether POST-FILENAME was changed since last render."
@@ -184,14 +190,26 @@ existed before)."
       (match-string 1))))
 
 (defun org-static-blog-get-tags (post-filename)
-  "Extract the `#+tags:` from POST-FILENAME as list of strings."
+  "Extract the `#+filetags:` from POST-FILENAME as list of strings."
   (let ((case-fold-search t))
     (with-temp-buffer
       (insert-file-contents post-filename)
       (goto-char (point-min))
-      (if (search-forward-regexp "^\\#\\+tags:[ ]*\\(.+\\)$" nil t)
+      (if (search-forward-regexp "^\\#\\+filetags:[ ]*\\(.+\\)$" nil t)
           (split-string (match-string 1))
-        nil))))
+        ;; for a very short time, I allowed #+tags: to be used to set
+        ;; tags. This was wrong. It now still works, but will issue a
+        ;; warning, and will be removed in the future.
+        (if (search-forward-regexp "^\\#\\+tags:[ ]*\\(.+\\)$" nil t)
+            (progn
+              (if org-static-blog-enable-deprecation-warning
+                  (display-warning
+                   :warning
+                   (concat "Using `#+tags:` is deprecated and "
+                           "will be removed in the future. "
+                           "Please use `#+filetags` instead")))
+              (split-string (match-string 1)))
+            nil)))))
 
 (defun org-static-blog-get-tag-tree ()
   "Return an association list of tags to filenames.
@@ -497,6 +515,73 @@ blog post, sorted by tags, but no post body."
          (insert (org-static-blog-get-post-summary post-filename))))
      (insert "</body>\n"
              "</html>\n"))))
+
+(defun org-static-blog-open-previous-post ()
+  "Opens previous blog post."
+  (interactive)
+  (let ((posts (sort (org-static-blog-get-post-filenames)
+                     (lambda (x y)
+                       (time-less-p (org-static-blog-get-date y)
+                                    (org-static-blog-get-date x)))))
+        (current-post (buffer-file-name)))
+    (while (and posts
+                (not (string-equal
+                      (file-name-nondirectory current-post)
+                      (file-name-nondirectory (car posts)))))
+      (setq posts (cdr posts)))
+    (if (> (list-length posts) 1)
+        (find-file (cadr posts))
+      (message "There is no previous post"))))
+
+(defun org-static-blog-open-next-post ()
+  "Opens next blog post."
+  (interactive)
+  (let ((posts (sort (org-static-blog-get-post-filenames)
+                     (lambda (x y)
+                       (time-less-p (org-static-blog-get-date x)
+                                    (org-static-blog-get-date y)))))
+        (current-post (buffer-file-name)))
+    (while (and posts
+                (not (string-equal
+                      (file-name-nondirectory current-post)
+                      (file-name-nondirectory (car posts)))))
+      (setq posts (cdr posts)))
+    (if (> (list-length posts) 1)
+        (find-file (cadr posts))
+      (message "There is no next post"))))
+
+(defun org-static-blog-open-matching-publish-file ()
+  "Opens HTML for post."
+  (interactive)
+  (find-file (org-static-blog-matching-publish-filename (buffer-file-name))))
+
+(defun org-static-blog-create-new-post ()
+  "Creates a new blog post.
+Prompts for a title and proposes a file name. The file name is
+only a suggestion; You can choose any other file name if you so
+choose."
+  (interactive)
+  (let ((title (read-string "Title: ")))
+    (find-file (concat
+                org-static-blog-posts-directory
+                (read-string "Filename: " (concat (format-time-string "%Y-%m-%d-" (current-time))
+                                                  (replace-regexp-in-string "\s" "-" (downcase title))
+                                                  ".org"))))
+    (insert "#+title: " title "\n"
+            "#+date: " (format-time-string "<%Y-%m-%d %H:%M>") "\n"
+            "#+filetags: ")))
+
+;;;###autoload
+(define-derived-mode org-static-blog-mode org-mode "OSB"
+  "Blogging with org-mode and emacs."
+  (run-mode-hooks)
+  :group 'org-static-blog)
+
+;; Key bindings
+(define-key org-static-blog-mode-map (kbd "C-c C-f") 'org-static-blog-open-next-post)
+(define-key org-static-blog-mode-map (kbd "C-c C-b") 'org-static-blog-open-previous-post)
+(define-key org-static-blog-mode-map (kbd "C-c C-p") 'org-static-blog-open-matching-publish-file)
+(define-key org-static-blog-mode-map (kbd "C-c C-n") 'org-static-blog-create-new-post)
 
 (provide 'org-static-blog)
 
