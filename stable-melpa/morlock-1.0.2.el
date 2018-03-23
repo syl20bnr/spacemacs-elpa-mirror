@@ -1,11 +1,11 @@
 ;;; morlock.el --- more font-lock keywords for elisp  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2013-2016  Jonas Bernoulli
+;; Copyright (C) 2013-2018  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/tarsius/morlock
 ;; Keywords: convenience
-;; Package-Version: 1.0.1
+;; Package-Version: 1.0.2
 
 ;; This file is not part of GNU Emacs.
 
@@ -107,6 +107,7 @@ This variable combines the keywords defined in
   (when (derived-mode-p 'emacs-lisp-mode)
     (morlock-mode 1)))
 
+;;; _
 (provide 'morlock)
 ;; Local Variables:
 ;; indent-tabs-mode: nil

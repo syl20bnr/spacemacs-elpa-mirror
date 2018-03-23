@@ -3,10 +3,10 @@
 ;; Copyright (C) 2018  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
-;; Homepage: https://github.com/tarsius/moody
+;; Homepage: https://github.com/tarsius/frameshot
 
 ;; Package-Requires: ((emacs "25.3"))
-;; Package-Version: 0.1.0
+;; Package-Version: 0.1.1
 
 ;; This file is not part of GNU Emacs.
 

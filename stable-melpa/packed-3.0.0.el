@@ -1,11 +1,11 @@
-;;; packed.el --- package manager agnostic Emacs Lisp package utilities
+;;; packed.el --- package manager agnostic Emacs Lisp package utilities  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012-2017  Jonas Bernoulli
+;; Copyright (C) 2012-2018  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/emacscollective/packed
 ;; Keywords: compile, convenience, lisp, package, library
-;; Package-Version: 2.0.2
+;; Package-Version: 3.0.0
 ;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is not part of GNU Emacs.
@@ -28,37 +28,24 @@
 ;; Packed provides some package manager agnostic utilities to work
 ;; with Emacs Lisp packages.  As far as Packed is concerned packages
 ;; are collections of Emacs Lisp libraries that are stored in a
-;; dedicated directory such as a vcs repository.  And libraries are
+;; dedicated directory such as a Git repository.  And libraries are
 ;; Emacs Lisp files that provide the correct feature (matching the
 ;; filename).
 
 ;; Where a package manager might depend on metadata, Packed instead
-;; uses some heuristics to get the same information -- that is slower
-;; and might also fail at times but avoids having to create the
-;; metadata in the first place.
+;; uses some heuristics to get the same information — that is slower
+;; and might also fail at times but makes it unnecessary to maintain
+;; package recipes.
 
 ;;; Code:
 
 (require 'bytecomp)
 (require 'cl-lib)
 
+(defvar autoload-modified-buffers)
 (declare-function autoload-rubric "autoload")
 (declare-function autoload-find-destination "autoload")
 (declare-function autoload-file-load-name "autoload")
-(declare-function info-initialize "info")
-(defvar Info-directory-list)
-
-;;; Options
-
-(defgroup packed nil
-  "Emacs package utilities."
-  :group 'convenience
-  :prefix 'packed)
-
-(defcustom packed-loaddefs-filename "loaddefs.el"
-  "Name of the files used to store extracted autoload definitions."
-  :group 'packed
-  :type 'file)
 
 ;;; Libraries
 
@@ -320,7 +307,7 @@ Elements of `load-path' which no longer exist are not removed."
       (cond ((file-regular-p f)
              (and (not in-lp)
                   (packed-library-p f)
-                  (add-to-list 'lp (directory-file-name directory))
+                  (push (directory-file-name directory) lp)
                   (setq in-lp t)))
             ((file-directory-p f)
              (unless (packed-ignore-directory-p f)
@@ -377,10 +364,30 @@ Elements of `load-path' which no longer exist are not removed."
 
 ;;; Autoloads
 
-(defun packed-loaddefs-file (&optional directory)
-  (let ((file (locate-dominating-file (or directory default-directory)
-                                      packed-loaddefs-filename)))
-    (and file (expand-file-name packed-loaddefs-filename file))))
+(defun packed-loaddefs-file (&optional file)
+  "Starting at FILE, look up directory hierarchy for an autoloads file.
+
+An autoloads file is either named \"loaddefs.el\" or its name ends
+with \"-autoloads.el\".  FILE can be a file or a directory.  If
+it's a file, its directory will serve as the starting point for
+searching the hierarchy of directories.  Stop at the first parent
+directory containing such a file, and return the file.  Return
+nil if not found."
+  (unless file
+    (setq file default-directory))
+  (setq file (abbreviate-file-name (expand-file-name file)))
+  (let (found)
+    (while (not (or found
+                    (null file)
+                    (string-match locate-dominating-stop-dir-regexp file)))
+      (unless (setq found
+                    (car (directory-files
+                          file t "\\(\\`loaddefs\\.el\\|-autoloads.el\\)\\'")))
+        (when (equal file
+                     (setq file
+                           (file-name-directory (directory-file-name file))))
+          (setq file nil))))
+    found))
 
 (defun packed-load-loaddefs (&optional directory)
   (let ((file (packed-loaddefs-file directory)))
@@ -434,7 +441,7 @@ Elements of `load-path' which no longer exist are not removed."
           (dolist (feature (cons (match-string 1)
                                  (let ((f (match-string 2)))
                                    (and f (split-string f " " t)))))
-            (add-to-list 'features (intern feature))))))
+            (push (intern feature) features)))))
     (or features
         (and (goto-char (point-min))
              (re-search-forward
@@ -488,95 +495,12 @@ library.  If a file lacks an expected feature then loading it using
                    (or (nth 3 (syntax-ppss))    ; in string
                        (nth 4 (syntax-ppss))))) ; in comment
                 ((match-string 2)
-                 (add-to-list 'soft feature))
+                 (push feature soft))
                 (t
-                 (add-to-list 'hard feature))))))
+                 (push feature hard))))))
     (list hard soft)))
 
-;;; Info Pages
-
-(defvar packed-ginstall-info
-  (or (executable-find "ginstall-info")
-      (executable-find "install-info")))
-
-(defconst packed-texinfo-regexp
-  (concat "\\." (regexp-opt (list "texi" "texinfo" "txi")) "$"))
-
-(defun packed-enable-info-dir-file (dir-file)
-  "Add the directory containing DIR-FILE to `Info-directory-list'.
-Before doing so initialize the default value of the latter if
-that hasn't happened yet.  If DIR-FILE doesn't exist do nothing."
-  (when (file-exists-p dir-file)
-    (require 'info)
-    (info-initialize)
-    (add-to-list 'Info-directory-list (file-name-directory dir-file))))
-
-(defun packed-install-info (directory dir-file)
-  "Install info files from DIRECTORY in DIR-FILE.
-
-In the directory containing DIR-FILE create links to info and
-texinfo files in DIRECTORY and recursively all non-hidden
-subdirectories; and add the info files to DIR-FILE.  Files are
-linked to instead of copied to make it easier to later remove
-files from a particular DIRECTORY.
-
-If a texinfo file exists create a link to it and create the info
-file in the directory containing DIR-FILE.  The corresponding
-info file if it also exists in DIRECTORY is ignored."
-  (let ((default-directory (file-name-directory dir-file)))
-    (dolist (f (packed-info-files directory))
-      (let ((l (file-name-nondirectory f)))
-        (make-symbolic-link f l t)
-        (when (string-match packed-texinfo-regexp f)
-          (call-process "makeinfo" nil nil nil l)
-          (setq l (concat (file-name-sans-extension l) ".info")))
-        (call-process packed-ginstall-info nil nil nil l
-                      (file-name-nondirectory dir-file))))))
-
-(defun packed-uninstall-info (directory dir-file)
-  "Uninstall info files located in DIRECTORY from DIR-FILE.
-
-In the directory containing DIR-FILE remove links to info and
-texinfo files in DIRECTORY and recursively all non-hidden
-subdirectories; and remove the info files from DIR-FILE.
-
-When removing a symlink to a texinfo file also remove the info
-file created from it.  Also remove the corresponding entries from
-DIR-FILE."
-  (let ((default-directory (file-name-directory dir-file))
-        (r (concat "^" (regexp-quote directory))))
-    (dolist (f (directory-files default-directory "^[^.]"))
-      (when (and (file-symlink-p f)
-                 (string-match r (file-truename f)))
-        (when (string-match packed-texinfo-regexp f)
-          (delete-file f)
-          (setq f (concat (file-name-sans-extension f) ".info")))
-        (call-process packed-ginstall-info nil nil nil "--delete" f "dir")
-        (when (file-exists-p f)
-          (delete-file f))))))
-
-(defun packed-info-files (directory)
-  "Return a list of info and texinfo files in DIRECTORY.
-
-Return a list of absolute filenames of info and texinfo files in
-DIRECTORY and recursively all non-hidden subdirectories.  If both
-an info file and the corresponding texinfo file exist only
-include the latter in the returned list."
-  (let (files name)
-    (dolist (f (directory-files directory t "^[^.]"))
-      (cond ((file-directory-p f)
-             (setq files (nconc (packed-info-files f) files)))
-            ((file-regular-p f)
-             (cond ((and (string-match "\\.info\\'" f)
-                         (setq name (file-name-sans-extension f))
-                         (not (file-exists-p (concat name ".texinfo")))
-                         (not (file-exists-p (concat name ".texi")))
-                         (not (file-exists-p (concat name ".txi"))))
-                    (setq files (cons f files)))
-                   ((string-match "\\.\\(txi\\|texi\\(nfo\\)?\\)\\'" f)
-                    (setq files (cons f files)))))))
-    (sort files 'string<)))
-
+;;; _
 (provide 'packed)
 ;; Local Variables:
 ;; indent-tabs-mode: nil

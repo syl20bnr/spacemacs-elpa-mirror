@@ -1,11 +1,11 @@
-;;; fwb-cmds.el --- misc frame, window and buffer commands
+;;; fwb-cmds.el --- misc frame, window and buffer commands  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2008-2018  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/tarsius/fwb-cmds
 ;; Keywords: convenience
-;; Package-Version: 1.1.0
+;; Package-Version: 1.1.1
 
 ;; This file is not part of GNU Emacs.
 
@@ -184,6 +184,7 @@ Only buffers are considered that have a window in the current frame."
                 (confirm-nonexistent-file-or-buffer))))
     (find-alternate-file (concat "/sudo:root@localhost:" buffer-file-name))))
 
+;;; _
 (provide 'fwb-cmds)
 ;; Local Variables:
 ;; indent-tabs-mode: nil

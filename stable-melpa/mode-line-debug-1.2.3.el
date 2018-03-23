@@ -1,11 +1,11 @@
-;;; mode-line-debug.el --- show status of `debug-on-error' in the mode-line
+;;; mode-line-debug.el --- show status of `debug-on-error' in the mode-line  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012-2014  Jonas Bernoulli
+;; Copyright (C) 2012-2018  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/tarsius/mode-line-debug
 ;; Keywords: convenience, lisp
-;; Package-Version: 1.2.2
+;; Package-Version: 1.2.3
 
 ;; This file is not part of GNU Emacs.
 
@@ -42,12 +42,10 @@ modes.  The inserted character can be used to toggle the state of
 `debug-on-error'."
   :global t
   :group 'mode-line
-  ;; We cannot insert `mode-line-debug' but have to insert it's value
-  ;; because we insert at the head of `mode-line-modes'. A list whose
-  ;; car is a symbol is interpreted as (CONDITION THEN ELSE).
-  (setq mode-line-modes (delete mode-line-debug mode-line-modes))
-  (when mode-line-debug-mode
-    (setq mode-line-modes (cons mode-line-debug mode-line-modes))))
+  (setq mode-line-misc-info
+        (if mode-line-debug-mode
+            (cons mode-line-debug mode-line-misc-info)
+          (delete mode-line-debug mode-line-misc-info))))
 
 (defcustom mode-line-debug-strings '("?" . " ")
   "Strings indicating the state of `debug-on-error' in the mode-line.
@@ -100,6 +98,7 @@ to have any effect."
 (put 'mode-line-debug 'risky-local-variable t)
 (make-variable-buffer-local 'mode-line-debug)
 
+;;; _
 (provide 'mode-line-debug)
 ;; Local Variables:
 ;; indent-tabs-mode: nil

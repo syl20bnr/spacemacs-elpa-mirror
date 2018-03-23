@@ -6,7 +6,7 @@
 ;; Homepage: https://github.com/tarsius/keycast
 
 ;; Package-Requires: ((emacs "25.3"))
-;; Package-Version: 0.1.0
+;; Package-Version: 0.1.1
 
 ;; This file is not part of GNU Emacs.
 
@@ -226,7 +226,7 @@ instead."
 (put 'mode-line-keycast 'risky-local-variable t)
 (make-variable-buffer-local 'mode-line-keycast)
 
-;; _
+;;; _
 (provide 'keycast)
 ;; Local Variables:
 ;; indent-tabs-mode: nil

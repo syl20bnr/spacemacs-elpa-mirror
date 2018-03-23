@@ -1,11 +1,11 @@
 ;;; hl-todo.el --- highlight TODO and similar keywords  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2013-2017  Jonas Bernoulli
+;; Copyright (C) 2013-2018  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/tarsius/hl-todo
 ;; Keywords: convenience
-;; Package-Version: 1.8.0
+;; Package-Version: 1.8.1
 
 ;; This file is not part of GNU Emacs.
 
@@ -192,6 +192,7 @@ matcher."
   (interactive)
   (occur hl-todo-regexp))
 
+;;; _
 (provide 'hl-todo)
 ;; Local Variables:
 ;; indent-tabs-mode: nil

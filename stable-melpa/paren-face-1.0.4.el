@@ -1,5 +1,5 @@
 ;;; paren-face.el --- a face for parentheses in lisp modes  -*- lexical-binding: t -*-
-;; Package-Version: 1.0.3
+;; Package-Version: 1.0.4
 
 ;; Copyright (C) 2013-2018  Jonas Bernoulli
 
@@ -120,6 +120,7 @@ To add [ and ] use something like \"[][()]\"."
   (when (apply 'derived-mode-p paren-face-modes)
     (paren-face-mode 1)))
 
+;;; _
 (provide 'paren-face)
 ;; Local Variables:
 ;; indent-tabs-mode: nil

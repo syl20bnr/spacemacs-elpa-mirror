@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/emacscollective/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 0.5.12
+;; Package-Version: 0.5.13
 
 ;; This file is not part of GNU Emacs.
 
@@ -316,6 +316,7 @@ directories."
     ;; actual file name MUST end with ".el".  Use "git blame" for
     ;; more information.
     (setq notmuch-init-file                (etc "notmuch-init"))
+    (setq nov-save-place-file              (var "nov-save-place.el"))
     (setq org-gcal-dir                     (var "org/gcal/"))
     (eval-after-load 'org-caldav
       `(make-directory ,(var "org/caldav/save") t))
@@ -349,10 +350,10 @@ directories."
     (setq xkcd-cache-dir                   (var "xkcd/"))
     (eval-after-load 'yasnippet
       `(make-directory ,(etc "yasnippet/snippets/") t))
-    (setq yas-snippet-dirs                 (list (etc "yasnippet/snippets/")
-                                                 'yas-installed-snippets-dir))
+    (setq yas-snippet-dirs                 (list (etc "yasnippet/snippets/")))
     ))
 
+;;; _
 (provide 'no-littering)
 ;; Local Variables:
 ;; indent-tabs-mode: nil

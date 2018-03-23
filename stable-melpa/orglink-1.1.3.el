@@ -1,12 +1,12 @@
 ;;; orglink.el --- use Org Mode links in other modes  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2004-2013  Free Software Foundation, Inc.
-;; Copyright (C) 2013-2016  Jonas Bernoulli
+;; Copyright (C) 2013-2018  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Created: 20130501
 ;; Package-Requires: ((emacs "24.3") (dash "2.12.1") (org "8.3"))
-;; Package-Version: 1.1.2
+;; Package-Version: 1.1.3
 ;; Homepage: https://github.com/tarsius/orglink
 ;; Keywords: hypertext
 
@@ -255,6 +255,7 @@ On the links the following commands are available:
            (setq pos (match-beginning 0))
            (goto-char pos)))))
 
+;;; _
 (provide 'orglink)
 ;; Local Variables:
 ;; indent-tabs-mode: nil

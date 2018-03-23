@@ -1,10 +1,10 @@
 ;;; imake.el --- Simple, opinionated make target runner  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2017  Jonas Bernoulli
+;; Copyright (C) 2017-2018  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 1.0.0
+;; Package-Version: 1.0.1
 ;; Homepage: https://github.com/tarsius/imake
 
 ;; This file is not part of GNU Emacs.

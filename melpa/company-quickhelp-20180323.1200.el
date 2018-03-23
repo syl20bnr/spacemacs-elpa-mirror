@@ -4,7 +4,7 @@
 
 ;; Author: Lars Andersen <expez@expez.com>
 ;; URL: https://www.github.com/expez/company-quickhelp
-;; Package-Version: 20180322.1137
+;; Package-Version: 20180323.1200
 ;; Keywords: company popup documentation quickhelp
 ;; Version: 2.2.0
 ;; Package-Requires: ((emacs "24.3") (company "0.8.9") (pos-tip "0.4.6"))
@@ -30,7 +30,7 @@
 ;; candidate will pop up after `company-quickhelp-idle-delay' seconds.
 
 ;;; Usage:
-;;  put (company-quickhelp-mode 1) in your init.el to activate
+;;  put (company-quickhelp-mode) in your init.el to activate
 ;;  `company-quickhelp-mode'.
 
 ;; You can adjust the time it takes for the documentation to pop up by

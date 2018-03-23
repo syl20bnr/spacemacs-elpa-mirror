@@ -1,11 +1,11 @@
 ;;; dim-autoload.el --- dim or hide autoload cookie lines  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2013-2016  Jonas Bernoulli
+;; Copyright (C) 2013-2018  Jonas Bernoulli
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/tarsius/dim-autoload
 ;; Keywords: convenience
-;; Package-Version: 2.0.0
+;; Package-Version: 2.0.1
 
 ;; This file is not part of GNU Emacs.
 
@@ -190,6 +190,7 @@ and `hide-autoload-cookies-mode'."
          (dim-autoload-cookies-mode   1)
          (hide-autoload-cookies-mode -1))))
 
+;;; _
 (provide 'dim-autoload)
 ;; Local Variables:
 ;; indent-tabs-mode: nil

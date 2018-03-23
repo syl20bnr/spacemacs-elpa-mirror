@@ -1,6 +1,6 @@
-;;; keychain-environment.el --- load keychain environment variables
+;;; keychain-environment.el --- load keychain environment variables  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2011-2016  Jonas Bernoulli
+;; Copyright (C) 2011-2018  Jonas Bernoulli
 ;; Copyright (C) 2008-2011  Paul Tipper
 
 ;; Author: Paul Tipper <bluefoo at googlemail dot com>
@@ -8,7 +8,7 @@
 ;; Created: 20081218
 ;; Homepage: https://github.com/tarsius/keychain-environment
 ;; Keywords: gnupg, pgp, ssh
-;; Package-Version: 2.4.0
+;; Package-Version: 2.4.1
 
 ;; This file is not part of GNU Emacs.
 
@@ -70,6 +70,7 @@ information retrieved from files created by the keychain script."
                (string-match "GPG_AGENT_INFO[=\s]\\([^\s;\n]*\\)" gpg)
                (setenv       "GPG_AGENT_INFO" (match-string 1 gpg))))))
 
+;;; _
 (provide 'keychain-environment)
 ;; Local Variables:
 ;; indent-tabs-mode: nil

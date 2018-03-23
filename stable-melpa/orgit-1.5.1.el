@@ -1,12 +1,12 @@
 ;;; orgit.el --- support for Org links to Magit buffers
 
-;; Copyright (C) 2014-2017  The Magit Project Developers
+;; Copyright (C) 2014-2018  The Magit Project Developers
 
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 
 ;; Package-Requires: ((emacs "24.4") (dash "2.13.0") (magit "2.10.0") (org "8.3.3"))
-;; Package-Version: 1.5.0
+;; Package-Version: 1.5.1
 ;; Homepage: https://github.com/magit/orgit
 
 ;; This library is free software; you can redistribute it and/or modify
@@ -372,7 +372,7 @@ store links to the Magit-Revision mode buffers for these commits."
           (error "Cannot determine public url for %s" path))
       (error "Cannot determine public remote for %s" default-directory))))
 
-;;; orgit.el ends soon
+;;; _
 (provide 'orgit)
 ;; Local Variables:
 ;; indent-tabs-mode: nil
