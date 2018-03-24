@@ -5,7 +5,7 @@
 ;; Author: Gonçalo Santos (aka. weirdNox@GitHub)
 ;; Homepage: https://github.com/weirdNox/org-noter
 ;; Keywords: lisp pdf interleave annotate external sync notes documents org-mode
-;; Package-Version: 20180323.1800
+;; Package-Version: 20180324.629
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.6") (org "9.0"))
 ;; Version: 1.0
 
@@ -141,7 +141,7 @@ When nil, it will use the selected frame if it does not belong to any other sess
 ;; NOTE(nox): Private variables or constants
 (cl-defstruct org-noter--session
   frame doc-buffer notes-buffer ast modified-tick doc-mode display-name notes-file-path property-text
-  level num-notes-in-view window-behavior window-location auto-save-last-location hide-other initialized)
+  level num-notes-in-view window-behavior window-location auto-save-last-location hide-other)
 
 (defvar org-noter--sessions nil
   "List of `org-noter' sessions.")
@@ -265,7 +265,6 @@ When nil, it will use the selected frame if it does not belong to any other sess
         (setq target-location (org-noter--location-property (org-noter--get-containing-heading t)))))
 
     (org-noter--setup-windows session)
-    (setf (org-noter--session-initialized session) t)
 
     ;; NOTE(nox): This timer is for preventing reflowing too soon.
     (run-with-idle-timer
@@ -280,10 +279,7 @@ When nil, it will use the selected frame if it does not belong to any other sess
   (when session
     (if (and (frame-live-p (org-noter--session-frame session))
              (buffer-live-p (org-noter--session-doc-buffer session))
-             (buffer-live-p (org-noter--session-notes-buffer session))
-             (or (not (org-noter--session-initialized session))
-                 (get-buffer-window (org-noter--session-doc-buffer session)
-                                    (org-noter--session-frame session))))
+             (buffer-live-p (org-noter--session-notes-buffer session)))
         t
       (org-noter-kill-session session)
       nil)))
@@ -423,8 +419,11 @@ When nil, it will use the selected frame if it does not belong to any other sess
 
 (defun org-noter--get-doc-window ()
   (org-noter--with-valid-session
-   (get-buffer-window (org-noter--session-doc-buffer session)
-                      (org-noter--session-frame session))))
+   (or (get-buffer-window (org-noter--session-doc-buffer session)
+                          (org-noter--session-frame session))
+       (org-noter--setup-windows org-noter--session)
+       (get-buffer-window (org-noter--session-doc-buffer session)
+                          (org-noter--session-frame session)))))
 
 (defun org-noter--get-notes-window (&optional type)
   (org-noter--with-valid-session

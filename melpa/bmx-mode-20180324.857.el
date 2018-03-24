@@ -4,10 +4,10 @@
 
 ;; Author: Jostein Kjønigsen <jostein@gmail.com>
 ;; URL: http://github.com/josteink/bmx-mode
-;; Package-Version: 20180226.256
+;; Package-Version: 20180324.857
 ;; Version: 0.1
 ;; Keywords: c convenience tools
-;; Package-Requires: ((cl-lib "0.5") (company "0.9.4") (dash "2.13.0") (s "1.12.0"))
+;; Package-Requires: ((emacs "25.1") (cl-lib "0.5") (company "0.9.4") (dash "2.13.0") (s "1.12.0"))
 
 ;; This program is free software: you can redistribute it and/or modify it
 ;; under the terms of the GNU General Public License as published by
@@ -450,6 +450,7 @@ Supports variables and labels."
 ;; mode setup
 ;;
 
+;;;###autoload
 (defun bmx-mode-setup-defaults ()
   "Configure default-settings for `bmx-mode'."
   (add-hook 'bat-mode-hook #'bmx-mode)
@@ -472,8 +473,6 @@ Supports variables and labels."
   :lighter "bat-ide"
   :global nil
   :keymap bmx-keymap)
-
-
 
 (provide 'bmx-mode)
 
