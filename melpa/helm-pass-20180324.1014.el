@@ -5,7 +5,7 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/helm-pass
-;; Package-Version: 20180311.959
+;; Package-Version: 20180324.1014
 ;; Version: 0.2
 ;; Package-Requires: ((helm "0") (password-store "0") (auth-password-store "0"))
 
@@ -45,7 +45,14 @@
 
 (require 'helm)
 (require 'password-store)
-(require 'auth-source-pass)
+(require 'auth-source-pass nil t)
+
+(declare-function auth-pass-get "auth-password-store")
+(unless (functionp #'auth-source-pass-get)
+  (require 'auth-password-store nil t)
+  ;; auth-source-pass got renamed but MELPA update is slow. For now,
+  ;; we'll just make an alias if we need it:
+  (defalias #'auth-source-pass-get #'auth-pass-get))
 
 (defgroup helm-pass nil
   "Emacs helm interface for helm-pass"

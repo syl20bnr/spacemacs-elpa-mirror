@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand
 ;; URL: http://github.com/Kungsgeten/yankpad
-;; Package-Version: 20180319.217
+;; Package-Version: 20180324.949
 ;; Version: 1.90
 ;; Keywords: abbrev convenience
 ;; Package-Requires: ((emacs "24"))
@@ -209,13 +209,16 @@ Uses `yankpad-category', and prompts for it if it isn't set."
         (yankpad-set-category)))
   (yankpad-insert-from-current-category))
 
-(defun yankpad--insert-snippet-text (text indent)
+(defun yankpad--insert-snippet-text (text indent wrap)
   "Insert TEXT into buffer.  INDENT is whether/how to indent the snippet.
+WRAP is the value for `yas-wrap-around-region', if `yasnippet' is available.
 Use yasnippet and `yas-indent-line' if available."
   (if (and (require 'yasnippet nil t)
            yas-minor-mode)
       (if (region-active-p)
-          (yas-expand-snippet text (region-beginning) (region-end) `((yas-indent-line (quote ,indent))))
+          (yas-expand-snippet text (region-beginning) (region-end)
+                              `((yas-indent-line (quote ,indent))
+                                (yas-wrap-around-region (quote ,wrap))))
         (yas-expand-snippet text nil nil `((yas-indent-line (quote ,indent)))))
     (let ((start (point)))
       (insert text)
@@ -226,11 +229,11 @@ Use yasnippet and `yas-indent-line' if available."
   "SNIPPETNAME can be an elisp function, without arguments, if CONTENT is nil.
 If non-nil, CONTENT should hold a single `org-mode' src-block, to be executed.
 Return the result of the function output as a string."
-  (if (car content)
+  (if (> (length content) 0)
       (with-temp-buffer
         (delay-mode-hooks
           (org-mode)
-          (insert (car content))
+          (insert content)
           (goto-char (point-min))
           (if (org-in-src-block-p)
               (prin1-to-string (org-babel-execute-src-block))
@@ -270,7 +273,13 @@ Return the result of the function output as a string."
                                'auto)
                               ((and (require 'yasnippet nil t) yas-minor-mode)
                                yas-indent-line)
-                              (t t))))
+                              (t t)))
+                (wrap (cond ((or (not (and (require 'yasnippet nil t) yas-minor-mode))
+                                 (member "wrap_nil" tags))
+                             nil)
+                            ((member "wrap" tags)
+                             t)
+                            (t yas-wrap-around-region))))
             (when (and yankpad-respect-current-org-level
                        (equal major-mode 'org-mode)
                        (org-current-level))
@@ -278,7 +287,7 @@ Return the result of the function output as a string."
             (yankpad--insert-snippet-text
              (replace-regexp-in-string
               "^\\\\[*]" (make-string prepend-asterisks ?*) content)
-             indent))
+             indent wrap))
         (message (concat "\"" name "\" snippet doesn't contain any text. Check your yankpad file.")))))))
 
 (defun yankpad-repeat ()
@@ -429,6 +438,7 @@ Each snippet is a list (NAME TAGS SRC-BLOCKS TEXT)."
             (let ((last-tag (car (last (nth 1 snippet)))))
               (when (and last-tag
                          (not (string-prefix-p "indent_" last-tag))
+                         (not (string-prefix-p "wrap" last-tag))
                          (not (member last-tag '("func" "results" "src"))))
                 (let ((heading (car snippet))
                       (key (substring-no-properties last-tag)))
@@ -479,6 +489,20 @@ If successful, make `yankpad-category' buffer-local."
   (add-hook 'projectile-find-file-hook #'yankpad-local-category-to-projectile))
 ;; Run the function when yankpad is loaded
 (yankpad-local-category-to-projectile)
+
+(with-eval-after-load "auto-yasnippet"
+  (defun yankpad-aya-persist (name)
+    "Add `aya-current' as NAME to `yankpad-category'."
+    (interactive
+     (if (eq aya-current "")
+         (user-error "Aborting: You don't have a current auto-snippet defined")
+       (list (read-string "Snippet name: "))))
+    (unless yankpad-category (yankpad-set-category))
+    (let ((org-capture-entry
+           `("y" "Yankpad" entry (file+headline ,yankpad-file ,yankpad-category)
+             ,(format "* %s\n%s\n" name aya-current)
+             :immediate-finish t)))
+      (org-capture))))
 
 ;; `company-yankpad--name-or-key' and `company-yankpad' are Copyright (C) 2017
 ;; Sidart Kurias (https://github.com/sid-kurias/) and are included by permission

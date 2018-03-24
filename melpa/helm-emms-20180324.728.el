@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 ~ 2014 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; Version: 1.3
-;; Package-Version: 20180319.650
+;; Package-Version: 20180324.728
 ;; Package-Requires: ((helm "1.5") (emms "0.0") (cl-lib "0.5") (emacs "24.1"))
 
 ;; X-URL: https://github.com/emacs-helm/helm-emms
@@ -246,6 +246,7 @@ Returns nil when no music files are found."
            for curtrack = (emms-playlist-current-selected-track)
            for playing = (or (assoc-default 'info-title curtrack)
                              (and helm-emms-use-track-description-function
+                                  (stringp curtrack)
                                   (funcall emms-track-description-function curtrack)))
            if (member (cdr i) helm-emms-current-playlist)
            collect (cons (pcase (car i)
