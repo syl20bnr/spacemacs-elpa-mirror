@@ -6,8 +6,8 @@
 ;; http://zenorocha.mit-license.org
 
 ;; Author: vic <vborja@apache.org>
-;; Version: 1.3.1
-;; Package-Version: 20180321.103
+;; Version: 1.3.2
+;; Package-Version: 20180324.121
 ;; Package-Requires: ((emacs "24"))
 ;; URL: https://github.com/vic/rebecca-theme
 ;; Keywords: theme, dark
@@ -353,6 +353,9 @@
    `(powerline-evil-operator-face ((,class (:inherit powerline-evil-base-face :background ,rainbow-4))))
    `(powerline-evil-replace-face ((,class (:inherit powerline-evil-base-face :background "#ff5555"))))
    `(powerline-evil-visual-face ((,class (:inherit powerline-evil-base-face :background ,rainbow-5))))
+   `(powerline-fileinfo-normal ((t (:weight bold :foreground ,base06 :background ,rebecca))))
+   `(powerline-state_indicator-normal ((t (:weight bold :background ,base02 :foreground ,base06))))
+
    ;; rainbow-delimiters
    `(rainbow-delimiters-depth-1-face ((,class :foreground ,rainbow-1)))
    `(rainbow-delimiters-depth-2-face ((,class :foreground ,rainbow-2)))

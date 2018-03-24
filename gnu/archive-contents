@@ -709,7 +709,7 @@
 	   ((:url . "http://elpa.gnu.org/packages/minimap.html")
 	    (:keywords))])
  (mmm-mode .
-	   [(0 5 5)
+	   [(0 5 6)
 	    ((cl-lib
 	      (0 2)))
 	    "Allow Multiple Major Modes in a buffer" tar
@@ -723,7 +723,7 @@
 	      ((:keywords "processes")
 	       (:url . "https://github.com/kenmanheimer/EmacsMultishell"))])
  (muse .
-       [(3 20 1)
+       [(3 20 2)
 	nil "Authoring and publishing tool for Emacs" tar
 	((:keywords "hypermedia")
 	 (:url . "http://mwolson.org/projects/EmacsMuse.html"))])
