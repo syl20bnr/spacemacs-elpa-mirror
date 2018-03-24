@@ -2,7 +2,7 @@
 ;; Copyright (C) 2015-2018 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.2
-;; Package-Version: 20180228.2206
+;; Package-Version: 20180323.1942
 ;; Package-Requires: ((emacs "24.3") (f "0.20.0") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -499,6 +499,16 @@ or most optimal searcher."
     (:type "type" :supports ("ag" "rg" "git-grep") :language "ruby"
            :regex "(^|[^\\w.])module\\s+(\\w*::)*JJJ($|[^\\w|:])"
            :tests ("module test" "module Foo::test"))
+
+    (:type "function" :supports ("ag" "rg" "git-grep") :language "ruby"
+           :regex "(^|\\W)alias(_method)?\\W+JJJ(\\W|$)"
+           :tests ("alias test some_method"
+                   "alias_method :test, :some_method"
+                   "alias_method ’test’ ’some_method’"
+                   "some_class.send(:alias_method, :test, :some_method)")
+           :not ("alias some_method test"
+                 "alias_method :some_method, :test"
+                 "alias test_foo test"))
 
     ;; crystal
     (:type "variable" :supports ("ag" "rg" "git-grep") :language "crystal"

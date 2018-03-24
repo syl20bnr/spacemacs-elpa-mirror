@@ -1,5 +1,5 @@
 ssh-deploy enables automatic deploys on explicit-save actions, manual uploads, renaming,
-deleting, downloads, file and directory differences, launching remote terminals,
+deleting, downloads, file and directory differences, launching remote terminals (eshell, shell),
 detection of remote changes, remote directory browsing, remote SQL database sessions via TRAMP.
 
 For asynchrous operations it uses package async.el.
@@ -31,6 +31,8 @@ Set permissions to this file to 600 with your user as the owner.
     (global-set-key (kbd "C-c C-z x") (lambda() (interactive)(ssh-deploy-diff-handler) ))
     (global-set-key (kbd "C-c C-z t") (lambda() (interactive)(ssh-deploy-remote-terminal-eshell-base-handler) ))
     (global-set-key (kbd "C-c C-z T") (lambda() (interactive)(ssh-deploy-remote-terminal-eshell-handler) ))
+    (global-set-key (kbd "C-c C-z h") (lambda() (interactive)(ssh-deploy-remote-terminal-shell-base-handler) ))
+    (global-set-key (kbd "C-c C-z H") (lambda() (interactive)(ssh-deploy-remote-terminal-shell-handler) ))
     (global-set-key (kbd "C-c C-z R") (lambda() (interactive)(ssh-deploy-rename-handler) ))
     (global-set-key (kbd "C-c C-z e") (lambda() (interactive)(ssh-deploy-remote-changes-handler) ))
     (global-set-key (kbd "C-c C-z b") (lambda() (interactive)(ssh-deploy-browse-remote-base-handler) ))
@@ -53,6 +55,7 @@ _d_: Download
 _D_: Delete
 _x_: Difference
 _t_: Eshell Base Terminal                _T_: Eshell Relative Terminal
+_h_: Shell Base Terminal                 _H_: Shell Relative Terminal
 _e_: Detect Remote Changes
 _R_: Rename
 _b_: Browse Base                         _B_: Browse Relative
@@ -65,6 +68,8 @@ _o_: Open current file on remote         _m_: Open sql-mysql on remote
       ("x" ssh-deploy-diff-handler)
       ("t" ssh-deploy-remote-terminal-eshell-base-handler)
       ("T" ssh-deploy-remote-terminal-eshell-handler)
+      ("h" ssh-deploy-remote-terminal-shell-base-handler)
+      ("H" ssh-deploy-remote-terminal-shell-handler)
       ("e" ssh-deploy-remote-changes-handler)
       ("R" ssh-deploy-rename-handler)
       ("b" ssh-deploy-browse-remote-base-handler)
