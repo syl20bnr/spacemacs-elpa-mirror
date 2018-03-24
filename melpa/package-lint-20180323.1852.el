@@ -5,7 +5,7 @@
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;;         Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/purcell/package-lint
-;; Package-Version: 20171201.1903
+;; Package-Version: 20180323.1852
 ;; Keywords: lisp
 ;; Version: 0
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
@@ -916,18 +916,20 @@ Current buffer is used if none is specified."
   (interactive)
   (let ((errs (package-lint-buffer))
         (buf "*Package-Lint*"))
-    (with-current-buffer (get-buffer-create buf)
-      (let ((buffer-read-only nil))
-        (erase-buffer)
-        (cond
-         ((null errs) (insert "No issues found."))
-         ((null (cdr errs)) (insert "1 issue found:\n\n"))
-         (t (insert (format "%d issues found:\n\n" (length errs)))))
-        (pcase-dolist (`(,line ,col ,type ,message) errs)
-          (insert (format "%d:%d: %s: %s\n" line col type message))))
-      (special-mode)
-      (view-mode 1))
-    (display-buffer buf)))
+    (if (null errs)
+        (message "No issues found")
+      (with-current-buffer (get-buffer-create buf)
+        (let ((buffer-read-only nil))
+          (erase-buffer)
+          (cond
+           ((null errs) (insert "No issues found."))
+           ((null (cdr errs)) (insert "1 issue found:\n\n"))
+           (t (insert (format "%d issues found:\n\n" (length errs)))))
+          (pcase-dolist (`(,line ,col ,type ,message) errs)
+            (insert (format "%d:%d: %s: %s\n" line col type message))))
+        (special-mode)
+        (view-mode 1))
+      (display-buffer buf))))
 
 ;;;###autoload
 (defun package-lint-batch-and-exit ()

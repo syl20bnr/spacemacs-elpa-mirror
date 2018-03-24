@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov
 ;; URL: https://github.com/bbatsov/helm-projectile
-;; Package-Version: 20180322.1850
+;; Package-Version: 20180323.2014
 ;; Created: 2011-31-07
 ;; Keywords: project, convenience
 ;; Version: 0.14.0
@@ -472,6 +472,9 @@ CANDIDATE is the selected file.  Used when no file is explicitly marked."
       (kbd "M-!") #'helm-projectile-find-files-eshell-command-on-file-action)
     (define-key map (kbd "<left>") #'helm-previous-source)
     (define-key map (kbd "<right>") #'helm-next-source)
+    (dolist (cmd '(helm-find-files-up-one-level
+                   helm-find-files-down-last-level))
+      (substitute-key-definition cmd nil map))
     map)
   "Mapping for file commands in Helm Projectile.")
 
@@ -556,7 +559,7 @@ unnecessary complexity."
                   (with-helm-current-buffer
                     (let ((projectile-require-project-root nil))
                       (projectile-all-project-files))))
-    :keymap helm-find-files-map
+    :keymap helm-projectile-find-file-map
     :help-message 'helm-ff-help-message
     :mode-line helm-read-file-name-mode-line-string
     :action helm-projectile-file-actions
@@ -689,8 +692,7 @@ unnecessary complexity."
 (defcustom helm-projectile-sources-list
   '(helm-source-projectile-buffers-list
     helm-source-projectile-files-list
-    helm-source-projectile-projects
-    )
+    helm-source-projectile-projects)
   "Default sources for `helm-projectile'."
   :type 'list
   :group 'helm-projectile)
@@ -780,10 +782,7 @@ Other file extensions can be customized with the variable `projectile-other-file
             (let* ((helm-ff-transformer-show-only-basename nil))
               (helm :sources (helm-build-sync-source "Projectile other files"
                                :candidates (helm-projectile--files-display-real other-files project-root)
-                               :keymap (let ((map (copy-keymap helm-find-files-map)))
-                                         (define-key map (kbd "<left>") 'helm-previous-source)
-                                         (define-key map (kbd "<right>") 'helm-next-source)
-                                         map)
+                               :keymap helm-projectile-find-file-map
                                :help-message helm-ff-help-message
                                :mode-line helm-read-file-name-mode-line-string
                                :action helm-projectile-file-actions
@@ -1020,15 +1019,16 @@ DIR is the project root, if not set then current directory is used"
 With a prefix ARG invalidates the cache first.
 If invoked outside of a project, displays a list of known projects to jump."
   (interactive "P")
-  (if (projectile-project-p)
-      (projectile-maybe-invalidate-cache arg))
-  (let ((helm-ff-transformer-show-only-basename nil))
-    (helm :sources helm-projectile-sources-list
-          :buffer "*helm projectile*"
-          :truncate-lines helm-projectile-truncate-lines
-          :prompt (projectile-prepend-project-name (if (projectile-project-p)
-                                                       "pattern: "
-                                                     "Switch to project: ")))))
+  (if (not (projectile-project-p))
+      (helm-projectile-switch-project arg)
+    (projectile-maybe-invalidate-cache arg)
+    (let ((helm-ff-transformer-show-only-basename nil))
+      (helm :sources helm-projectile-sources-list
+            :buffer "*helm projectile*"
+            :truncate-lines helm-projectile-truncate-lines
+            :prompt (projectile-prepend-project-name (if (projectile-project-p)
+                                                         "pattern: "
+                                                       "Switch to project: "))))))
 
 ;;;###autoload
 (eval-after-load 'projectile

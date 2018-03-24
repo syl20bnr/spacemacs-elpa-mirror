@@ -5,7 +5,7 @@
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;; Keywords: unix, environment
 ;; URL: https://github.com/purcell/exec-path-from-shell
-;; Package-Version: 20180224.1916
+;; Package-Version: 20180323.1904
 ;; Package-X-Original-Version: 0
 
 ;; This file is not part of GNU Emacs.
@@ -72,6 +72,9 @@
 ;;     (exec-path-from-shell-copy-env "PYTHONPATH")
 
 ;;; Code:
+
+;; Satisfy the byte compiler
+(defvar eshell-path-env)
 
 (defgroup exec-path-from-shell nil
   "Make Emacs use shell-defined values for $PATH etc."

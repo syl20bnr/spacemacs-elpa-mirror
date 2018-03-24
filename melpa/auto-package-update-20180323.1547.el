@@ -4,7 +4,7 @@
 
 ;; Author: Renan Ranelli
 ;; URL: http://github.com/rranelli/auto-package-update.el
-;; Package-Version: 20170803.1005
+;; Package-Version: 20180323.1547
 ;; Version: 1.7
 ;; Keywords: package, update
 ;; Package-Requires: ((emacs "24.4") (dash "2.1.0"))
@@ -176,6 +176,13 @@
   :type 'boolean
   :group 'auto-package-update)
 
+(defcustom auto-package-update-hide-results
+  nil
+  "If not nil, the result of auto package update in buffer
+`auto-package-update-buffer-name' will not be shown."
+  :type 'boolean
+  :group 'auto-package-update)
+
 (defvar apu--last-update-day-path
   (expand-file-name apu--last-update-day-filename user-emacs-directory)
   "Path to the file that will hold the day in which the last update was run.")
@@ -229,7 +236,7 @@
    (or
     (not (file-exists-p apu--last-update-day-path))
     (let* ((last-update-day (apu--read-last-update-day))
-	   (days-since (- (apu--today-day) last-update-day)))
+           (days-since (- (apu--today-day) last-update-day)))
       (>=
        (/ days-since auto-package-update-interval)
        1)))
@@ -288,9 +295,14 @@
       (apu--delete-old-versions-dirs-list))
     apu--package-installation-results))
 
-(defun apu--show-results-buffer (contents)
+(defun apu--write-results-buffer (contents)
   (let ((inhibit-read-only t))
-    (pop-to-buffer auto-package-update-buffer-name)
+    (if (not auto-package-update-hide-results)
+        (pop-to-buffer auto-package-update-buffer-name)
+      (set-buffer
+       (get-buffer-create auto-package-update-buffer-name))
+      (bury-buffer
+       auto-package-update-buffer-name))
     (erase-buffer)
     (insert contents)
     (read-only-mode 1)
@@ -311,9 +323,10 @@
 
   (let ((installation-report (apu--safe-install-packages (apu--packages-to-install))))
     (apu--write-current-day)
-    (apu--show-results-buffer (mapconcat #'identity
-                                         (cons "[PACKAGES UPDATED]:" installation-report)
-                                         "\n")))
+    (apu--write-results-buffer
+     (mapconcat #'identity
+                (cons "[PACKAGES UPDATED]:" installation-report)
+                "\n")))
 
   (run-hooks 'auto-package-update-after-hook))
 
