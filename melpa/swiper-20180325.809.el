@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180323.1027
+;; Package-Version: 20180325.809
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.9.0"))
 ;; Keywords: matching
@@ -407,6 +407,7 @@ When non-nil, INITIAL-INPUT is the initial search pattern."
   "Extract captured REGEX groups from CANDS."
   (let (res)
     (dolist (cand cands)
+      (setq cand (substring cand 1))
       (when (string-match regex cand)
         (push (mapconcat (lambda (n) (match-string-no-properties n cand))
                          (number-sequence

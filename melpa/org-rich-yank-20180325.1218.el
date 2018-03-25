@@ -4,7 +4,7 @@
 
 ;; Author: Kevin Brubeck Unhammer <unhammer@fsfe.org>
 ;; Version: 0.1.1
-;; Package-Version: 20180301.401
+;; Package-Version: 20180325.1218
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: convenience, hypermedia, org
 
@@ -68,13 +68,22 @@ ARGS ignored."
 (defun org-rich-yank--store-link ()
   "Store the link using `org-store-link' without erroring out."
   (with-demoted-errors
-      (if (eq major-mode 'gnus-article-mode)
-          ;; Workaround for possible bug in org-gnus-store-link: If
-          ;; you've moved point in the summary, org-store-link from
-          ;; the article will give the wrong link
-          (save-window-excursion (gnus-article-show-summary)
-                                 (org-store-link nil))
-        (org-store-link nil))))
+      (cond ((and (eq major-mode 'gnus-article-mode)
+                  (fboundp #'gnus-article-show-summary))
+             ;; Workaround for possible bug in org-gnus-store-link: If
+             ;; you've moved point in the summary, org-store-link from
+             ;; the article will give the wrong link
+             (save-window-excursion (gnus-article-show-summary)
+                                    (org-store-link nil)))
+            ;; org-store-link doesn't do eww-mode yet as of 8.2.10 at least:
+            ((and (eq major-mode 'eww-mode)
+                  (boundp 'eww-data)
+                  (plist-get eww-data :url))
+             (format "[[%s][%s]]"
+                     (plist-get eww-data :url)
+                     (or (plist-get eww-data :title)
+                         (plist-get eww-data :url))))
+            (t (org-store-link nil)))))
 
 (defun org-rich-yank--link ()
   "Get an org-link to the current kill."
@@ -87,14 +96,16 @@ ARGS ignored."
 (defun org-rich-yank ()
   "Yank, surrounded by #+BEGIN_SRC block with major mode of originating buffer."
   (interactive)
-  (insert
-   (concat
-    (with-current-buffer org-rich-yank--buffer
-      (format "#+BEGIN_SRC %s\n"
-              (replace-regexp-in-string "-mode$" "" (symbol-name major-mode))))
-    (org-rich-yank--trim-nl (current-kill 0))
-    (format "\n#+END_SRC\n")
-    (org-rich-yank--link))))
+  (if org-rich-yank--buffer
+      (insert
+       (concat
+        (with-current-buffer org-rich-yank--buffer
+          (format "#+BEGIN_SRC %s\n"
+                  (replace-regexp-in-string "-mode$" "" (symbol-name major-mode))))
+        (org-rich-yank--trim-nl (current-kill 0))
+        (format "\n#+END_SRC\n")
+        (org-rich-yank--link)))
+    (message "`org-rich-yank' doesn't know the source buffer – please `kill-ring-save' and try again.")))
 
 
 (provide 'org-rich-yank)
