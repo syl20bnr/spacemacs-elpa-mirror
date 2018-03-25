@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/general.el
-;; Package-Version: 20180323.1502
+;; Package-Version: 20180324.1830
 ;; Created: February 17, 2016
 ;; Keywords: vim, evil, leader, keybindings, keys
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
@@ -2082,14 +2082,32 @@ aliases such as `nmap' for `general-nmap'."
     (defalias 'tomap #'general-tomap)))
 
 ;; * Use-package Integration
+;; maybe useful for something else in future
+(defun general--extract-autoloadable-symbol (def)
+  "Extract an autoloadable symbol from DEF, a normal or extended definition.
+This will also correctly extract the definition from a cons of the form (STRING
+. DEFN). If the extracted definition is nil, a string, a lambda, a keymap symbol
+from an extended definition, or some other definition that cannot be autoloaded,
+return nil."
+  ;; explicit null checks not required because nil return value means no def
+  (when (general--extended-def-p def)
+    ;; extract definition
+    (let ((first (car def)))
+      (setq def (if (keywordp first)
+                    (plist-get def :def)
+                  first))))
+  (cond ((symbolp def)
+         def)
+        ((and (consp def)
+              (symbolp (cdr def)))
+         (cdr def))))
+
 (with-eval-after-load 'use-package-core
   (declare-function use-package-concat "use-package")
   (declare-function use-package-process-keywords "use-package")
-  (declare-function use-package-sort-keywords "use-package")
-  (declare-function use-package-plist-maybe-put "use-package")
-  (declare-function use-package-plist-append "use-package")
   (defvar use-package-keywords)
   (defvar use-package-deferring-keywords)
+  ;; ** :general Keyword
   (setq use-package-keywords
         ;; should go in the same location as :bind
         ;; adding to end may not cause problems, but see issue #22
@@ -2100,32 +2118,15 @@ aliases such as `nmap' for `general-nmap'."
                  ;; don't add duplicates
                  unless (eq item :general)
                  collect item))
-  (when (boundp 'use-package-deferring-keywords)
-    (add-to-list 'use-package-deferring-keywords :general t))
-  (defun use-package-normalize/:general (_name _keyword args)
-    "Return ARGS."
-    args)
-  (defun general--extract-symbol (def)
-    "Extract autoloadable symbol from DEF, a normal or extended definition."
-    (when def
-      (if (general--extended-def-p def)
-          (let ((first (car def))
-                (inner-def (cl-getf def :def)))
-            (cond ((symbolp inner-def)
-                   inner-def)
-                  ((and (symbolp first)
-                        (not (keywordp first)))
-                   first)))
-        (when (symbolp def)
-          def))))
-  (declare-function general--extract-symbol "general")
-  (defun use-package-handler/:general (name _keyword arglists rest state)
-    "Use-package handler for :general."
+
+  ;; altered args will be passed to the autoloads and handler functions
+  (defun use-package-normalize/:general (_name _keyword general-arglists)
+    "Return a plist containing the original ARGLISTS and autoloadable symbols."
     (let* ((sanitized-arglist
             ;; combine arglists into one without function names or
             ;; positional arguments
             (let (result)
-              (dolist (arglist arglists result)
+              (dolist (arglist general-arglists result)
                 (while (general--positional-arg-p (car arglist))
                   (setq arglist (cdr arglist)))
                 (setq result (append result arglist)))))
@@ -2135,22 +2136,126 @@ aliases such as `nmap' for `general-nmap'."
                                (not (null def))
                                (ignore-errors
                                  (setq def (eval def))
-                                 (setq def (general--extract-symbol def))))
+                                 (setq def (general--extract-autoloadable-symbol
+                                            def))))
                      collect def)))
-      (use-package-concat
-       (use-package-process-keywords name
-         (use-package-sort-keywords
-          (use-package-plist-append rest :commands commands))
-         state)
-       `((ignore ,@(mapcar (lambda (arglist)
-                             ;; Note: prefix commands are not valid functions
-                             (if (or (functionp (car arglist))
-                                     (macrop (car arglist)))
-                                 `(,@arglist :package ',name)
-                               `(general-def
-                                  ,@arglist
-                                  :package ',name)))
-                           arglists)))))))
+      (list :arglists general-arglists :commands commands)))
+
+  (defun use-package-autoloads/:general (_name _keyword args)
+    "Return an alist of commands extracted from ARGS.
+Return something like '((some-command-to-autoload . command) ...)."
+    (mapcar (lambda (command) (cons command 'command))
+            (plist-get args :commands)))
+
+  (defun use-package-handler/:general (name _keyword args rest state)
+    "Use-package handler for :general."
+    (use-package-concat
+     (use-package-process-keywords name rest state)
+     `(,@(mapcar (lambda (arglist)
+                   ;; Note: prefix commands are not valid functions
+                   (if (or (functionp (car arglist))
+                           (macrop (car arglist)))
+                       `(,@arglist :package ',name)
+                     `(general-def
+                        ,@arglist
+                        :package ',name)))
+                 (plist-get args :arglists)))))
+
+  ;; ** :ghook and :gfhook Keyword
+  (setq use-package-keywords
+        ;; should go in the same location as :bind
+        ;; adding to end may not cause problems, but see issue #22
+        (cl-loop for item in use-package-keywords
+                 if (eq item :hook)
+                 collect :hook and collect :ghook and collect :gfhook
+                 else
+                 ;; don't add duplicates
+                 unless (memq item '(:ghook :gfhook))
+                 collect item))
+
+  (defun general-normalize-hook-arglist (arglist mode-enable mode-hook
+                                                 &optional symbol-is-function-p)
+    "Rewrite a :g(f)hook ARGLIST to a `general-add-hook' arglist.
+MODE-ENABLE is the inferred command to enable the package's mode, and MODE-HOOK
+is the mode inferred hook to enable the package's mode. When ARGLIST is a symbol
+instead of a list, it will be considered to be a hook name unless
+SYMBOL-IS-FUNCTION-P is non-nil, in which case it will considered to be a
+function."
+    ;; standalone symbols are quoted automatically; unquote
+    (when (ignore-errors (memq (car arglist) (list 'quote 'function)))
+      (setq arglist (cadr arglist)))
+    (cond ((listp arglist)
+           ;; necessary to extract commands because they could be stored in a
+           ;; variable or returned by a macro/function
+           ;; e.g. (list #'func1 #'func2) needs to be evaluated
+           (setq arglist (mapcar (lambda (arg) (eval arg))
+                                 arglist))
+           (if (= (length arglist) 1)
+               ;; <user specified hook(s)> #'<package>-mode
+               (append arglist (list mode-enable))
+             (let ((hooks (car arglist))
+                   (functions (cadr arglist)))
+               (when (or (null hooks)
+                         (not (or (symbolp hooks)
+                                  (listp hooks))))
+                 (setq hooks mode-hook))
+               (when (or (null functions)
+                         (not (or (symbolp functions)
+                                  (listp functions))))
+                 (setq functions mode-enable))
+               (cons hooks (cons functions (cddr arglist))))))
+          (t
+           (if symbol-is-function-p
+               ;; '<package>-mode-hook <user specified function>
+               (list mode-hook arglist)
+             ;; <user specified hook> #'<package>-mode
+             (list arglist mode-enable)))))
+
+  ;; altered args will be passed to the autoloads and handler functions
+  (defun general-normalize-hook (name _keyword args &optional gfhookp)
+    "Return a plist containing arglists and autoloadable commands.
+Transform ARGS into arglists suitable for `general-add-hook'."
+    (let* ((mode (if (string-match-p "mode\\'" (symbol-name name))
+                     name
+                   (intern (format "%s-mode" name))))
+           (mode-hook (intern (format "%s-hook" mode))))
+      (cl-loop for arg in args
+               collect (general-normalize-hook-arglist
+                        arg mode mode-hook gfhookp))))
+
+  (defalias 'use-package-normalize/:ghook #'general-normalize-hook)
+
+  (defun use-package-autoloads/:ghook (_name _keyword arglists)
+    "Return an alist of commands extracted from ARGLISTS.
+Return something like '((some-command-to-autoload . command) ...)."
+    (let ((commands
+           (cl-loop for (_ functions) in arglists
+                    if (symbolp functions)
+                    collect functions
+                    else
+                    unless (functionp functions)
+                    append (cl-loop for function in functions
+                                    when (symbolp function)
+                                    collect function))))
+      (mapcar (lambda (command) (cons command 'command))
+              commands)))
+
+  (defun use-package-handler/:ghook (name _keyword arglists rest state)
+    "Use-package handler for :ghook and :gfhook."
+    (use-package-concat
+     (use-package-process-keywords name rest state)
+     `(,@(mapcar (lambda (arglist)
+                   arglist
+                   ;; requote (unfortunately need to evaluate in normalizer)
+                   `(general-add-hook ,@(mapcar (lambda (x) `',x)
+                                                arglist)))
+                 arglists))))
+
+  (defun use-package-normalize/:gfhook (name keyword args)
+    "Use-package normalizer for :gfhook."
+    (general-normalize-hook name keyword args t))
+
+  (defalias 'use-package-handler/:gfhook #'use-package-handler/:ghook))
 
 ;; * Key-chord "Integration"
 (defun general-chord (keys)

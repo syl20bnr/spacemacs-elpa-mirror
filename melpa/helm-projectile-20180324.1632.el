@@ -4,11 +4,11 @@
 
 ;; Author: Bozhidar Batsov
 ;; URL: https://github.com/bbatsov/helm-projectile
-;; Package-Version: 20180323.2014
+;; Package-Version: 20180324.1632
 ;; Created: 2011-31-07
 ;; Keywords: project, convenience
 ;; Version: 0.14.0
-;; Package-Requires: ((helm "1.7.7") (projectile "0.14.0") (cl-lib "0.3"))
+;; Package-Requires: ((helm "1.9.9") (projectile "0.14.0") (cl-lib "0.3"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -525,24 +525,35 @@ unnecessary complexity."
                 (helm-projectile--move-selection-p selection)))
     (helm-next-line)))
 
+(defun helm-projectile--remove-move-to-real ()
+  "Hook function to remove `helm-projectile--move-to-real'.
+
+Meant to be added to `helm-cleanup-hook', from which it removes
+ itself at the end."
+  (remove-hook 'helm-after-update-hook #'helm-projectile--move-to-real)
+  (remove-hook 'helm-cleanup-hook #'helm-projectile--remove-move-to-real))
+
 (defvar helm-source-projectile-files-list
   (helm-build-sync-source "Projectile files"
+    :before-init-hook (lambda ()
+                        (add-hook 'helm-after-update-hook #'helm-projectile--move-to-real)
+                        (add-hook 'helm-cleanup-hook #'helm-projectile--remove-move-to-real))
     :candidates (lambda ()
-                  (add-hook 'helm-update-hook #'helm-projectile--move-to-real)
-                  (with-helm-current-buffer
-                    (cl-loop with root = (projectile-project-root)
-                             with file-at-root = (file-relative-name (expand-file-name helm-pattern root))
-                             for display in (projectile-current-project-files)
-                             collect (cons display (expand-file-name display root)) into files
-                             finally return
-                             (if (or (string-empty-p helm-pattern)
-                                     (assoc helm-pattern files))
-                                 files
-                               (cl-pairlis (list (helm-ff-prefix-filename helm-pattern nil t)
-                                                 (helm-ff-prefix-filename file-at-root nil t))
-                                           (list (expand-file-name helm-pattern)
-                                                 (expand-file-name helm-pattern root))
-                                           files)))))
+                  (when (projectile-project-p)
+                    (with-helm-current-buffer
+                      (cl-loop with root = (projectile-project-root)
+                               with file-at-root = (file-relative-name (expand-file-name helm-pattern root))
+                               for display in (projectile-current-project-files)
+                               collect (cons display (expand-file-name display root)) into files
+                               finally return
+                               (if (or (string-empty-p helm-pattern)
+                                       (assoc helm-pattern files))
+                                   files
+                                 (cl-pairlis (list (helm-ff-prefix-filename helm-pattern nil t)
+                                                   (helm-ff-prefix-filename file-at-root nil t))
+                                             (list (expand-file-name helm-pattern)
+                                                   (expand-file-name helm-pattern root))
+                                             files))))))
     :fuzzy-match helm-projectile-fuzzy-match
     :keymap helm-projectile-find-file-map
     :help-message 'helm-ff-help-message
@@ -607,11 +618,12 @@ unnecessary complexity."
 (defvar helm-source-projectile-directories-list
   (helm-build-sync-source "Projectile directories"
     :candidates (lambda ()
-                  (with-helm-current-buffer
-                    (let ((dirs (if projectile-find-dir-includes-top-level
-                                    (append '("./") (projectile-current-project-dirs))
-                                  (projectile-current-project-dirs))))
-                      (helm-projectile--files-display-real dirs (projectile-project-root)))))
+                  (when (projectile-project-p)
+                    (with-helm-current-buffer
+                      (let ((dirs (if projectile-find-dir-includes-top-level
+                                      (append '("./") (projectile-current-project-dirs))
+                                    (projectile-current-project-dirs))))
+                        (helm-projectile--files-display-real dirs (projectile-project-root))))))
     :fuzzy-match helm-projectile-fuzzy-match
     :action-transformer 'helm-find-files-action-transformer
     :keymap (let ((map (make-sparse-keymap)))
@@ -719,11 +731,10 @@ With a prefix ARG invalidates the cache first."
      (let ((helm-ff-transformer-show-only-basename nil)
            ;; for consistency, we should just let Projectile take care of ignored files
            (helm-boring-file-regexp-list nil))
-       (unwind-protect (helm :sources ,source
-                             :buffer (concat "*helm projectile: " (projectile-project-name) "*")
-                             :truncate-lines ,truncate-lines-var
-                             :prompt (projectile-prepend-project-name ,prompt))
-         (remove-hook 'helm-update-hook #'helm-projectile--move-to-real)))))
+       (helm :sources ,source
+             :buffer (concat "*helm projectile: " (projectile-project-name) "*")
+             :truncate-lines ,truncate-lines-var
+             :prompt (projectile-prepend-project-name ,prompt)))))
 
 (helm-projectile-command "switch-project" 'helm-source-projectile-projects "Switch to project: " t)
 (helm-projectile-command "find-file" helm-source-projectile-files-and-dired-list "Find file: ")
