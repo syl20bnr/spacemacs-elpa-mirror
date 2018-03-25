@@ -4,7 +4,7 @@
 
 ;; Author: Ricardo Martins
 ;; URL: https://github.com/meqif/docker-compose-mode
-;; Package-Version: 20180311.611
+;; Package-Version: 20180324.1052
 ;; Version: 1.1.0
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.3") (dash "2.12.0") (yaml-mode "0.0.12"))
@@ -163,7 +163,7 @@ variable for additional information about STRING and STATUS."
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist
-             '("docker-compose.*\.yml\\'" . docker-compose-mode))
+             '("docker-compose[^/]*\\.yml\\'" . docker-compose-mode))
 
 (provide 'docker-compose-mode)
 ;;; docker-compose-mode.el ends here
