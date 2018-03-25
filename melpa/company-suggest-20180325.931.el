@@ -4,7 +4,7 @@
 
 ;; Author: Jürgen Hötzel <juergen@archlinux.org>
 ;; URL: https://github.com/juergenhoetzel/company-suggest
-;; Package-Version: 20180324.1031
+;; Package-Version: 20180325.931
 ;; Keywords: completion convenience
 ;; Package-Requires: ((company "0.9.0") (emacs "25.1"))
 
@@ -67,11 +67,11 @@
 	    (backward-sentence 1)
 	    (setq sentence-line (line-number-at-pos))
 	    ;; don't span prefix over following lines
-	    (if (thing-at-point 'sentence)
-		(replace-regexp-in-string
-		 ".*?\\([[:alnum:]][[:space:][:alnum:]]*\\)"
-		 "\\1"
-		 (replace-regexp-in-string "\\(.*\\)[ \t\n]*.*" "\\1" (thing-at-point 'sentence)))))))
+	    (when (thing-at-point 'sentence)
+	      (replace-regexp-in-string
+	       ".*?\\([[:alnum:]][[:space:][:alnum:]]*\\)"
+	       "\\1"
+	       (replace-regexp-in-string "\\(.*\\)[ \t\n]*.*" "\\1" (thing-at-point 'sentence)))))))
     (or (if (eq sentence-line current-line) sentence) (thing-at-point 'word)))) ;fallback to word
 
 ;;;###autoload
@@ -80,11 +80,11 @@
   (interactive (list 'interactive))
   (cl-case command
     (interactive (company-begin-backend 'company-suggest-google))
-    (prefix (if (derived-mode-p 'text-mode)
-		(if company-suggest-complete-sentence
-		    ;; FIXME (thing-at-point 'sentence) doesn't work reliable
-		    (company-suggest--sentence-at-point)
-		  (thing-at-point 'word))))
+    (prefix (when (derived-mode-p 'text-mode)
+	      (if company-suggest-complete-sentence
+		  ;; FIXME (thing-at-point 'sentence) doesn't work reliable
+		  (company-suggest--sentence-at-point)
+		(thing-at-point 'word))))
     (ignore-case t)
     (candidates (mapcar (lambda  (s)
 			  (if (string-prefix-p arg s t)
@@ -109,8 +109,8 @@
   (interactive (list 'interactive))
   (cl-case command
     (interactive (company-begin-backend 'company-suggest-wiktionary))
-    (prefix (if (derived-mode-p 'text-mode)
-		(thing-at-point 'word)))
+    (prefix (when (derived-mode-p 'text-mode)
+	      (thing-at-point 'word)))
     (candidates (company-suggest--wiktionary-candidates arg))))
 
 (provide 'company-suggest)

@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180308.1121
+;; Package-Version: 20180325.545
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1233,7 +1233,7 @@ files in a project.")
   "Default defun to calculate `counsel--git-grep-count'."
   (if (eq system-type 'windows-nt)
       0
-    (read (shell-command-to-string "du -s"))))
+    (read (shell-command-to-string "du -s 2>/dev/null"))))
 
 (defvar counsel--git-grep-count-func #'counsel--git-grep-count-func-default
   "Defun to calculate `counsel--git-grep-count' for `counsel-git-grep'.")

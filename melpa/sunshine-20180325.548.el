@@ -2,7 +2,7 @@
 
 ;; Author: Aaron Bieber <aaron@aaronbieber.com>
 ;; Version: 0.1
-;; Package-Version: 20160410.1317
+;; Package-Version: 20180325.548
 ;; Package-X-Original-Version: 20150620.1320
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; Keywords: tools, weather
@@ -26,8 +26,8 @@
 ;;; Commentary:
 
 ;; Sunshine allows you to view your weather forecast directly within
-;; Emacs. The recommended method of installing Sunshine is from the
-;; MELPA repository. Full instructions can be found at
+;; Emacs.  The recommended method of installing Sunshine is from the
+;; MELPA repository.  Full instructions can be found at
 ;; http://melpa.org/#/getting-started
 
 ;;; Code:
@@ -42,7 +42,7 @@
 (defgroup sunshine nil
   "A utility for viewing your local weather forecast."
   :group 'tools)
-  
+
 (defcustom sunshine-buffer-name "*Sunshine*"
   "Name for the Sunshine buffer.  You probably don't need to change this."
   :group 'sunshine
@@ -149,20 +149,26 @@ The following keys are available in `sunshine-mode':
 ;;; INTERNAL FUNCTIONS:
 
 (defun sunshine-make-url (location units appid)
-  "Make a URL for retrieving the weather for LOCATION in UNITS."
-  (concat "http://api.openweathermap.org/data/2.5/forecast/daily?q="
+  "Make a URL for retrieving the weather for LOCATION in UNITS.
+
+Requires your OpenWeatherMap APPID."
+  (concat "http://api.openweathermap.org/data/2.5/forecast?q="
           (url-encode-url location)
-          "&APPID=" appid 
+          "&APPID=" appid
           "&mode=json&units="
           (url-encode-url (symbol-name units))
           "&cnt=5"))
 
 (defun sunshine-get-forecast (location units display-type appid)
   "Get forecast data from OpenWeatherMap's API.
+
 Provide a LOCATION and optionally the preferred unit of measurement as
 UNITS (e.g. 'metric' or 'imperial').
+
 DISPLAY-TYPE determines whether a full or quick forecast is shown.
-Its value may be 'full or 'quick."
+Its value may be 'full or 'quick.
+
+Requires your OpenWeatherMap APPID."
   (let* ((url (sunshine-make-url location units appid)))
     (if (sunshine-forecast-cache-expired url)
         (url-retrieve url 'sunshine-retrieved (list display-type) t)
@@ -269,9 +275,9 @@ forecast results."
                           (cons 'icon (cdr (assoc 'icon (elt (cdr (assoc 'weather day)) 0))))
                           (cons 'temp
                                 (list
-                                 (cons 'min (format "%s %s" (round (cdr (assoc 'min (cdr (assoc 'temp day))))) temp-symbol))
-                                 (cons 'max (format "%s %s" (round (cdr (assoc 'max (cdr (assoc 'temp day))))) temp-symbol))))
-                          (cons 'pressure (cdr (assoc 'pressure day)))))))))
+                                 (cons 'min (format "%s %s" (round (cdr (assoc 'temp_min (cdr (assoc 'main day))))) temp-symbol))
+                                 (cons 'max (format "%s %s" (round (cdr (assoc 'temp_max (cdr (assoc 'main day))))) temp-symbol))))
+                          (cons 'pressure (cdr (assoc 'pressure (cdr (assoc 'main day)))))))))))
 
 (defun sunshine-prepare-buffer ()
   "Prepare a buffer for the forecast output."
@@ -283,24 +289,6 @@ forecast results."
       (sunshine-mode)
       (setq buffer-read-only t))
     buf))
-
-;;(defun sunshine-prepare-window ()
-;;  "Create the window and buffer used to display the forecast."
-;;  (let* ((buf (get-buffer-create sunshine-buffer-name))
-;;         (win (or (get-buffer-window sunshine-buffer-name)
-;;                  (split-window-vertically))))
-;;    (set-window-buffer win buf)
-;;    ;; Start the window rather short so it doesn't jarringly change
-;;    ;; size after the download.
-;;    (window-resize win (- 10 (window-total-height win)))
-;;    (with-current-buffer buf
-;;      (setq buffer-read-only nil)
-;;      (erase-buffer)
-;;      (kill-all-local-variables)
-;;      (set-window-dedicated-p (get-buffer-window buf) t)
-;;      (sunshine-mode)
-;;      (insert "Loading...")
-;;      (setq buffer-read-only t))))
 
 (defun sunshine-pivot-forecast-rows (forecast)
   "Pivot FORECAST rows of days into rows of elements from each day.
@@ -434,7 +422,9 @@ Expected to be used by the callback from `url-retrieve'."
    'png t))
 
 (defun sunshine-icon-retrieved (status number)
-  "Callback from `url-retrieve' that places icon NUMBER into the buffer."
+  "Callback from `url-retrieve' that places icon NUMBER into the buffer.
+
+Receives param STATUS, for which see `url-retrieve'."
   (let ((image-desc (sunshine-extract-icon)))
     (if image-desc
         (progn
