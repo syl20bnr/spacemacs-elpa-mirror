@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20180322.415
+;; Package-Version: 20180324.2226
 ;; Keywords: project, convenience
 ;; Version: 0.15.0-cvs
 ;; Package-Requires: ((emacs "24.3") (pkg-info "0.4"))
@@ -3136,9 +3136,11 @@ If PROJECT-ROOT is given, it is opened instead of the project
 root directory of the current buffer file.  If interactively
 called with a prefix argument, the user is prompted for a project
 directory to open."
-  (interactive (list (projectile-completing-read
+  (interactive (and current-prefix-arg
+                    (list
+                     (projectile-completing-read
                       "Open project VC in: "
-                      projectile-known-projects)))
+                      projectile-known-projects))))
   (or project-root (setq project-root (projectile-project-root)))
   (let ((vcs (projectile-project-vcs project-root)))
     (cl-case vcs
