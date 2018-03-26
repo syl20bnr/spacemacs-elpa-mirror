@@ -4,9 +4,9 @@
 
 ;; Author: Damien Cassou <damien@cassou.me>,
 ;;         Nicolas Petton <nicolas@petton.fr>
-;; Version: 4.0.0
-;; Package-Version: 4.0.0
-;; Package-Requires: ((emacs "24.4"))
+;; Version: 4.0.1
+;; Package-Version: 20180326.8
+;; Package-Requires: ((emacs "25"))
 ;; Url: https://github.com/DamienCassou/auth-password-store
 ;; Created: 07 Jun 2015
 
@@ -93,7 +93,9 @@ See `auth-source-search' for details on SPEC."
   (when (eq entry 'password-store)
     (auth-source-backend-parse-parameters entry auth-source-pass-backend)))
 
-(add-hook 'auth-source-backend-parser-functions #'auth-source-pass-backend-parse)
+(if (boundp 'auth-source-backend-parser-functions)
+    (add-hook 'auth-source-backend-parser-functions #'auth-source-pass-backend-parse)
+  (advice-add 'auth-source-backend-parse :before-until #'auth-source-pass-backend-parse))
 
 
 (defun auth-source-pass-get (key entry)

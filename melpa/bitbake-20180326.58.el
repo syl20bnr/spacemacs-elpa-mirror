@@ -2,7 +2,7 @@
 
 ;; Author: Damien Merenne
 ;; URL: https://github.com/canatella/bitbake-el
-;; Package-Version: 20180322.510
+;; Package-Version: 20180326.58
 ;; Created: 2014-02-11
 ;; Keywords: convenience
 ;; Version: 0.1
@@ -716,11 +716,11 @@ For detail, see `comment-dwim'."
 (defvar bitbake-font-lock-defaults
   `((
      ;; fakeroot python do_foo() {
-     ("include\\|require\\|inherit\\|python\\|addtask\\|export\\|fakeroot" . font-lock-keyword-face)
+     ("\\b\\(include\\|require\\|inherit\\|python\\|addtask\\|export\\|fakeroot\\|unset\\)\\b" . font-lock-keyword-face)
      ;; do_install_append() {
-     ("^\\(fakeroot *\\)?\\(python *\\)?\\([a-zA-Z0-9_${}-]+\\) *( *) *{" 3 font-lock-function-name-face)
+     ("^\\(fakeroot *\\)?\\(python *\\)?\\([a-zA-Z0-9\-_+.${}/~]+\\) *( *) *{" 3 font-lock-function-name-face)
      ;; do_deploy[depends] ??=
-     ("^\\(export *\\)?\\([a-zA-Z0-9_${}-]+\\(\\[[a-zA-Z0-9_-]+\\]\\)?\\) *\\(=\\|\\?=\\|\\?\\?=\\|:=\\|+=\\|=+\\|.=\\|=.\\)" 2 font-lock-variable-name-face)
+     ("^\\(export *\\)?\\([a-zA-Z0-9\-_+.${}/~]+\\(\\[[a-zA-Z0-9\-_+.${}/~]+\\]\\)?\\) *\\(=\\|\\?=\\|\\?\\?=\\|:=\\|+=\\|=+\\|.=\\|=.\\)" 2 font-lock-variable-name-face)
      )))
 
 (defun bitbake-indent-line ()
@@ -745,17 +745,17 @@ For detail, see `comment-dwim'."
     :submode shell-script-mode
     :delimiter-mode nil
     :case-fold-search nil
-    :front "^\\(fakeroot *\\)?\\([a-zA-Z0-9_${}-]+\\) *( *) *{"
+    :front "^\\(fakeroot *\\)?\\([a-zA-Z0-9\-_+.${}/~]+\\) *( *) *{"
     :back "^}")
    (bitbake-python
     :submode python-mode
     :delimiter-mode nil
     :case-fold-search nil
-    :front "^\\(fakeroot *\\)?python *\\([a-zA-Z0-9_${}-]+\\) *( *) *{"
+    :front "^\\(fakeroot *\\)?python *\\([a-zA-Z0-9\-_+.${}/~]+\\) *( *) *{"
     :back "^}")))
 
-(mmm-add-mode-ext-class 'bitbake-mode "\\.bb\\(append\\|class\\)\\'" 'bitbake-shell)
-(mmm-add-mode-ext-class 'bitbake-mode "\\.bb\\(append\\|class\\)\\'" 'bitbake-python)
+(mmm-add-mode-ext-class 'bitbake-mode "\\.bb\\(append\\|class\\)?\\'" 'bitbake-shell)
+(mmm-add-mode-ext-class 'bitbake-mode "\\.bb\\(append\\|class\\)?\\'" 'bitbake-python)
 (add-to-list 'auto-mode-alist
              '("\\.bb\\(append\\|class\\)?\\'" . bitbake-mode))
 
