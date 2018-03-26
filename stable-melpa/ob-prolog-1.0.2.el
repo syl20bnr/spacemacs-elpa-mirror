@@ -4,9 +4,9 @@
 
 ;; Author: Bjarte Johansen
 ;; Keywords: literate programming, reproducible research
-;; Package-Version: 20170126.921
+;; Package-Version: 1.0.2
 ;; URL: https://github.com/ljos/ob-prolog
-;; Version: 1.0.1
+;; Version: 1.0.2
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -83,10 +83,13 @@
           (org-babel-prolog--elisp-to-pl (cdr pair))))
 
 (defun org-babel-variable-assignments:prolog (params)
-  (let ((strs (mapcar #'org-babel-prolog--variable-assignment
-		      (org-babel--get-vars params))))
-    (when strs
-      (list (concat ":- " (mapconcat #'identity strs ", ") ".\n")))))
+  (let (vars)
+    (dolist (param params vars)
+      (when (eq (car param) :var)
+        (setq vars (cons (org-babel-prolog--variable-assignment (cdr param))
+                         vars))))
+    (when vars
+      (list (concat ":- " (mapconcat #'identity vars ", ") ".\n")))))
 
 (defun org-babel-prolog--parse-goal (goal)
   "Evaluate inline emacs-lisp in prolog goal parameter.

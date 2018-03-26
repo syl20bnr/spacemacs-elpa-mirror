@@ -3,8 +3,8 @@
 
 ;; Copyright 2011-2018 François-Xavier Bois
 
-;; Version: 16.0.1
-;; Package-Version: 20180313.1458
+;; Version: 16.0.2
+;; Package-Version: 20180326.451
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; Package-Requires: ((emacs "23.1"))
@@ -25,7 +25,7 @@
 
 ;;---- CONSTS ------------------------------------------------------------------
 
-(defconst web-mode-version "16.0.1"
+(defconst web-mode-version "16.0.2"
   "Web Mode version.")
 
 ;;---- GROUPS ------------------------------------------------------------------
@@ -729,7 +729,6 @@ Must be used in conjunction with web-mode-enable-block-face."
 (defvar web-mode-expand-previous-state "")
 (defvar web-mode-font-lock-keywords '(web-mode-font-lock-highlight))
 (defvar web-mode-fontification-off nil)
-;;(defvar web-mode-fontification-pos nil)
 (defvar web-mode-inlay-regexp nil)
 (defvar web-mode-is-scratch nil)
 (defvar web-mode-jshint-errors 0)
@@ -2449,7 +2448,6 @@ another auto-completion with different ac-sources (e.g. ac-php)")
   (make-local-variable 'web-mode-indentless-elements)
   (make-local-variable 'web-mode-is-scratch)
   (make-local-variable 'web-mode-fontification-off)
-;;  (make-local-variable 'web-mode-fontification-pos)
   (make-local-variable 'web-mode-jshint-errors)
   (make-local-variable 'web-mode-last-enabled-feature)
   (make-local-variable 'web-mode-markup-indent-offset)
@@ -5747,7 +5745,6 @@ another auto-completion with different ac-sources (e.g. ac-php)")
                (inhibit-point-motion-hooks t)
                (inhibit-quit t))
            ;;(message "web-mode-highlight-region=%S" (point))
-           ;;(setq web-mode-fontification-pos (point))
            (remove-list-of-text-properties beg end '(font-lock-face face))
            (cond
             ((and (get-text-property beg 'block-side)
@@ -5838,7 +5835,6 @@ another auto-completion with different ac-sources (e.g. ac-php)")
     (setq bracket-end (> (logand flags 16) 0))
     (cond
      ;; ((and (not bracket-end)
-     ;;       web-mode-fontification-pos
      ;;       (or (< web-mode-fontification-pos beg)
      ;;           (> web-mode-fontification-pos end)))
      ;;  )
@@ -7818,6 +7814,7 @@ another auto-completion with different ac-sources (e.g. ac-php)")
                           pos reg-beg))
             )
            ((null (cdr (assoc "lineup-ternary" web-mode-indentation-params)))
+            ;;(message "ici %S %S" (current-indentation) web-mode-code-indent-offset)
             (setq offset (+ (current-indentation) web-mode-code-indent-offset)))
            (t
             (setq offset (current-column))
@@ -9046,25 +9043,23 @@ another auto-completion with different ac-sources (e.g. ac-php)")
   (interactive)
   (let* ((pos (point))
          (type (get-text-property pos 'tag-type)))
-    (if type
-        (cond
-         ((member type '(start void))
-          (web-mode-tag-beginning)
-          (set-mark (point))
-          (web-mode-tag-match)
-          (web-mode-tag-end)
-          (exchange-point-and-mark))
-         (t
-          (web-mode-tag-match)
-          (set-mark (point))
-          (web-mode-tag-match)
-          (web-mode-tag-end)
-          (exchange-point-and-mark))
-         ) ;cond
+    (cond
+     ((not type)
       (web-mode-element-parent)
-      (unless (= (point) pos) (web-mode-element-select))
-      ) ;if
-    ))
+      (unless (= (point) pos) (web-mode-element-select)))
+     ((member type '(start void))
+      (web-mode-tag-beginning)
+      (set-mark (point))
+      (web-mode-tag-match)
+      (web-mode-tag-end)
+      (exchange-point-and-mark))
+     (t
+      (web-mode-tag-match)
+      (set-mark (point))
+      (web-mode-tag-match)
+      (web-mode-tag-end)
+      (exchange-point-and-mark))
+     )))
 
 (defun web-mode-element-is-collapsed (&optional pos)
   (unless pos (setq pos (point)))
@@ -9973,7 +9968,7 @@ Prompt user if TAG-NAME isn't provided."
           ;;(message "%S" comment)
           )
          ((string= sub2 "//")
-          (setq comment (replace-regexp-in-string "\\(//\\)" "" comment)))
+          (setq comment (replace-regexp-in-string "^ *//" "" comment)))
          ) ;cond
         (delete-region beg end)
         (web-mode-insert-and-indent comment)
@@ -11961,9 +11956,18 @@ Prompt user if TAG-NAME isn't provided."
        (t
         (setq pos (web-mode-rsb-position pos "[\]\[}{)(=:]\\|\\(return\\)" reg-beg))
         (when (not pos)
-          (when (not is-jsx) (message "javascript-statement-beginning-position ** search failure **"))
-          (setq continue nil
-                pos reg-beg)))
+          (cond
+           (is-jsx
+            (when (web-mode-looking-at "[ \n]*" reg-beg)
+              (setq pos (+ reg-beg (length (match-string-no-properties 0)))))
+            (setq continue nil))
+           (t
+            (message "javascript-statement-beginning-position ** search failure **")
+            (setq continue nil
+                  pos reg-beg))
+           ) ;cond
+          )
+        ) ;t
        ) ;cond
       ) ;while
     ;;(message "%S -------" pos)

@@ -4,9 +4,9 @@
 
 ;; Author: Bjarte Johansen
 ;; Keywords: literate programming, reproducible research
-;; Package-Version: 1.0.0
+;; Package-Version: 20180326.528
 ;; URL: https://github.com/ljos/ob-prolog
-;; Version: 1.0.0
+;; Version: 1.0.2
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -83,10 +83,13 @@
           (org-babel-prolog--elisp-to-pl (cdr pair))))
 
 (defun org-babel-variable-assignments:prolog (params)
-  (let ((strs (mapcar #'org-babel-prolog--variable-assignment
-                      (mapcar #'cdr (org-babel--get-vars params :var)))))
-    (when strs
-      (list (concat ":- " (mapconcat #'identity strs ", ") ".\n")))))
+  (let (vars)
+    (dolist (param params vars)
+      (when (eq (car param) :var)
+        (setq vars (cons (org-babel-prolog--variable-assignment (cdr param))
+                         vars))))
+    (when vars
+      (list (concat ":- " (mapconcat #'identity vars ", ") ".\n")))))
 
 (defun org-babel-prolog--parse-goal (goal)
   "Evaluate inline emacs-lisp in prolog goal parameter.
@@ -120,16 +123,17 @@ called by `org-babel-execute-src-block'"
 		       goal full-body)
 		    (org-babel-prolog-evaluate-session
 		     session goal full-body))))
-    (org-babel-reassemble-table
-     (org-babel-result-cond result-params
-       results
-       (let ((tmp (org-babel-temp-file "prolog-results-")))
-	 (with-temp-file tmp (insert results))
-	 (org-babel-import-elisp-from-file tmp)))
-     (org-babel-pick-name (cdr (assq :colname-names params))
-			  (cdr (assq :colnames params)))
-     (org-babel-pick-name (cdr (assq :rowname-names params))
-			  (cdr (assq :rownames params))))))
+    (unless (string= "" results)
+      (org-babel-reassemble-table
+       (org-babel-result-cond result-params
+	 results
+	 (let ((tmp (org-babel-temp-file "prolog-results-")))
+	   (with-temp-file tmp (insert results))
+	   (org-babel-import-elisp-from-file tmp)))
+       (org-babel-pick-name (cdr (assq :colname-names params))
+			    (cdr (assq :colnames params)))
+       (org-babel-pick-name (cdr (assq :rowname-names params))
+			    (cdr (assq :rownames params)))))))
 
 (defun org-babel-load-session:prolog (session body params)
   "Load BODY into SESSION."
