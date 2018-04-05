@@ -5,7 +5,7 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/system-packages
-;; Package-Version: 20180402.812
+;; Package-Version: 20180405.1002
 ;; Package-Requires: ((cl-lib "0.5"))
 
 ;; This file is not part of GNU Emacs.
@@ -75,7 +75,7 @@
     (nix-env .
              ((default-sudo . nil)
               (install . "nix-env -i")
-              (search . "nix-env -qaP")
+              (search . "nix search")
               (uninstall . "nix-env -e")
               (update . ("nix-env -u" ))
               (clean-cache . nil)
