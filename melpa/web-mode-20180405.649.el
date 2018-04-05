@@ -4,7 +4,7 @@
 ;; Copyright 2011-2018 François-Xavier Bois
 
 ;; Version: 16.0.4
-;; Package-Version: 20180401.810
+;; Package-Version: 20180405.649
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; Package-Requires: ((emacs "23.1"))
@@ -1198,7 +1198,7 @@ Must be used in conjunction with web-mode-enable-block-face."
    '("ctemplate"        . "[$]?{[{~].")
    '("django"           . "{[#{%]")
    '("dust"             . "{.")
-   '("elixir"           . "<%.")
+   '("elixir"           . "<%")
    '("ejs"              . "<%")
    '("erb"              . "<%\\|^%.")
    '("freemarker"       . "<%\\|${\\|</?[[:alpha:]]+:[[:alpha:]]\\|</?[@#]\\|\\[/?[@#].")
@@ -2719,9 +2719,9 @@ another auto-completion with different ac-sources (e.g. ac-php)")
 
          ((string= web-mode-engine "elixir")
           (cond
-           ((string= tagopen "<%#")
+           ((member (char-after) '(?\#))
             (setq closing-string "%>"))
-           ((string= sub2 "<%")
+           (t
             (setq closing-string "%>"
                   delim-open "<%[=%]?"
                   delim-close "%>"))
@@ -4478,7 +4478,7 @@ another auto-completion with different ac-sources (e.g. ac-php)")
               (setq element-content-type "markdown"))
              ((string-match-p " type[ ]*=[ ]*[\"']text/ruby" script)
               (setq element-content-type "ruby"))
-             ((string-match-p " type[ ]*=[ ]*[\"']text/\\(x-handlebars\\|x-jquery-tmpl\\|x-jsrender\\|html\\|ng-template\\|template\\|mustache\\|x-dust-template\\)" script)
+             ((string-match-p " type[ ]*=[ ]*[\"']text/\\(x-handlebars\\|x-jquery-tmpl\\|x-jsrender\\|html\\|ng-template\\|template\\|x-template\\|mustache\\|x-dust-template\\)" script)
               (setq element-content-type "html"
                     part-close-tag nil))
              ((string-match-p " type[ ]*=[ ]*[\"']application/\\(ld\\+json\\|json\\)" script)
@@ -8097,7 +8097,7 @@ another auto-completion with different ac-sources (e.g. ac-php)")
             ;;(message "val=%S tag=%S end=%S | %S" val tag end (plist-get map tag))
             (setq continue (not (> val 0)))
             ) ;unless
-          ;;(message "pos=%S tag=%S val=%S end=%S void=%S" (point) tag val end void)
+          ;(message "pos=%S tag=%S val=%S end=%S void=%S" (point) tag val end void)
           ) ;while
         (cond
          ((> val 0)
@@ -8107,7 +8107,7 @@ another auto-completion with different ac-sources (e.g. ac-php)")
           ;;(re-search-forward "[[:space:]]*")
           (setq offset (+ (current-indentation) web-mode-markup-indent-offset)))
          (t
-          (setq offset nil))
+          (setq offset (current-indentation)))
          )
         ) ;t
        ) ;cond

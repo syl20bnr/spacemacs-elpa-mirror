@@ -5,7 +5,7 @@
 ;; Author: Marcin Swieczkowski <scatman@bu.edu>
 ;; Created: Thu Mar  2 22:19:19 CET 2017
 ;; Version: 1.0.0
-;; Package-Version: 20180401.917
+;; Package-Version: 20180405.805
 ;; Last-Updated: Wed Apr 12 16:11:07 CEST 2017
 ;;           By: Marcin Swieczkowski
 ;;     Update #: 3
@@ -99,7 +99,7 @@
    `(highlight
      ((t (:foreground ,nimbus/bg :background ,nimbus/light-green))))
    `(region
-     ((t (:foreground ,nimbus/fg :background ,nimbus/region))))
+     ((t (:foreground ,nimbus/fg :background ,nimbus/fg))))
    `(shadow       ((t (:foreground ,nimbus/light-gray))))
    `(tooltip      ((t (:background ,nimbus/fg :foreground ,nimbus/bg))))
 
@@ -240,7 +240,7 @@
    `(hl-line ((t (:background ,nimbus/blue-bg))))
 
    `(secondary-selection
-     ((t (:foreground ,nimbus/fg :background ,nimbus/blue-gray))))
+     ((t (:foreground ,nimbus/fg :background ,nimbus/region))))
 
    ;; ruler
    `(ruler-mode-default
