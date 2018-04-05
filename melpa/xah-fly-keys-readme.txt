@@ -76,7 +76,6 @@ the following standard keys with Control are supported:
  ;; 【Ctrl+shift+t】 open last closed
  ;; 【Ctrl++】 'text-scale-increase
  ;; 【Ctrl+-】 'text-scale-decrease
- ;; 【Ctrl+0】 (lambda () (interactive) (text-scale-set 0))))
 
 I highly recommend setting 【capslock】 to send 【Home】. So that it acts as `xah-fly-command-mode-activate'.
 see
@@ -89,5 +88,3 @@ For detail about design and other info, see home page at
 http://ergoemacs.org/misc/ergoemacs_vi_mode.html
 
 If you like this project, Buy Xah Emacs Tutorial http://ergoemacs.org/emacs/buy_xah_emacs_tutorial.html or make a donation. Thanks.
-
-

@@ -43,6 +43,7 @@ In calendar view: j to view an entry in a new buffer
                   f m to search all entries of the current month
                   f y to search all entries of the current year
                   f f to search all entries of all time
+                  f F to search all entries in the future
                   [ to go to previous entry
                   ] to go to next entry
 When viewing a journal entry: C-c C-b to view previous entry

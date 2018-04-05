@@ -41,6 +41,13 @@ another category (basically having several categories active at the same
 time), use `yankpad-append-category'.  If you have company-mode enabled,
 you can also use `company-yankpad`.
 
+A quick way to add short snippets with a keyword is to add a descriptive list
+to the category in your `yankpad-file'.  The key of each item in the list will be
+the keyword, and the description will be the snippet.  You can turn off this
+behaviour by setting `yankpad-descriptive-list-treatment' to nil, or change
+descriptive lists to use `abbrev-mode' by setting the variable to 'abbrev
+instead.
+
 For further customization, please see the Github page: https://github.com/Kungsgeten/yankpad
 
 Here's an example of what yankpad.org could look like:
@@ -64,6 +71,14 @@ Yankpad example:
    `yankpad-respect-current-org-level' to nil in order to change that.
 
 * Category 2
+
+  Descriptive lists at the top-level of a category will be treated as
+  snippets.  You can set them to be treated as `abbrev-mode' abbrevs instead,
+  by setting `yankpad-descriptive-list-treatment' to abbrev.
+
+  - name :: Erik Sjöstrand
+  - key :: Typing "key" followed by `yankpad-expand' will insert this snippet.
+
 ** Snippet 1
 
    This is yet another snippet, in a different category.
@@ -89,3 +104,7 @@ Yankpad example:
 ** A snippet among many!
    This category will include snippets from Category 1 and Category 2.
    This is done by setting the INCLUDE property of the category.
+
+* Global category       :global:
+** Always available
+   Snippets in a category with the :global: tag are always available for expansion.

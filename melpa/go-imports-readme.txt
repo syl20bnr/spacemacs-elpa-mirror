@@ -27,5 +27,3 @@ first called.
 
 Calling go-imports-reload-packages-list will reload the package-name
 mappings.
-
-(require 'thingatpt)

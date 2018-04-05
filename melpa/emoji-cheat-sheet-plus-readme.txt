@@ -36,5 +36,3 @@ trollface
 Copyright (c) 2012 whynne@deviantart. All rights reserved.
 All other emoji images
 Copyright (c) 2012 Apple Inc. All rights reserved.
-
-

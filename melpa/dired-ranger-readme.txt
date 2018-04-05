@@ -1,5 +1,5 @@
 This package implements useful features present in the
-[ranger](http://ranger.nongnu.org/) file manager which are missing
+[ranger](http://ranger.github.io/) file manager which are missing
 in dired.
 
 Multi-stage copy/pasting of files

@@ -51,5 +51,3 @@ Juri Linkov, Maciek Pasternacki, and many others.
 
 User quotes: "You sir, are a sick, sick, _sick_ person. :)"
                  -- Bill Perry, author of Emacs/W3
-
-

@@ -115,5 +115,3 @@ mode.  Select your favourite title with completion.  User option
 
   - chalow (Perl)
       http://chalow.org/
-
-

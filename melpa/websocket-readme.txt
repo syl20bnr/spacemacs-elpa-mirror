@@ -19,8 +19,3 @@ Server functionality is similar.  A server is started with
 which returns a process.  The process can later be closed with
 `websocket-server-close'.  A `websocket' struct is also created
 for every connection, and is exposed through the callbacks.
-
-(require 'bindat)
-(require 'url-parse)
-(require 'url-cookie)
-(eval-when-compile (require 'cl-lib))

@@ -3,8 +3,10 @@ in a given project.
 - Only dependency is GNU/BSD find
 - Works on Windows with minimum setup
 - Works flawlessly on Tramp Mode (https://www.emacswiki.org/emacs/TrampMode)
+- fd (faster alternative of find, see https://github.com/sharkdp/fd) is supported
 
 Usage,
+  - You can insert `(setq ffip-use-rust-fd t)' into ".emacs" to use fd (alternative of find)
   - `M-x find-file-in-project-at-point' guess the file name at point and
      find file
   - `M-x find-file-in-project-by-selected' use the selected region
