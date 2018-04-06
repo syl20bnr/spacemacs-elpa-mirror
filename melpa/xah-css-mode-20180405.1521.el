@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2017 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.8.20180219
-;; Package-Version: 20180219.2311
+;; Version: 2.8.20180405
+;; Package-Version: 20180405.1521
 ;; Created: 18 April 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: languages, convenience, css, color
@@ -1018,6 +1018,7 @@ Version 2016-10-24"
     ("mr" "margin-right" xah-css--ahf)
     ("mt" "margin-top" xah-css--ahf)
     ("p" "position" xah-css--ahf)
+    ("pd" "padding" xah-css--ahf)
     ("pb" "padding-bottom" xah-css--ahf)
     ("pl" "padding-left" xah-css--ahf)
     ("pr" "padding-right" xah-css--ahf)
@@ -1031,7 +1032,10 @@ Version 2016-10-24"
     ("b" "border: solid thin gray;" xah-css--ahf)
 
     ("max-width" "max-width: 17rem;" xah-css--ahf)
-    ("mw" "max-width: 17rem;" xah-css--ahf)
+    ("mw" "max-width" xah-css--ahf)
+
+    ("max-height" "max-height: 17rem;" xah-css--ahf)
+    ("mh" "max-height" xah-css--ahf)
 
     ("border-radius" "border-radius: 1rem;" xah-css--ahf)
     ("border" "border: solid thin gray;" xah-css--ahf)
@@ -1086,6 +1090,7 @@ Version 2016-10-24"
     ("margin-bottom" "margin-bottom: 1rem;" xah-css--ahf)
     ("margin-right" "margin-right: 1rem;" xah-css--ahf)
     ("height" "height: 200px;" xah-css--ahf)
+    ("padding" "padding: 0.5rem;" xah-css--ahf)
     ("padding-top" "padding-top: 1rem;" xah-css--ahf)
     ("padding-left" "padding-left: 1rem;" xah-css--ahf)
     ("padding-bottom" "padding-bottom: 1rem;" xah-css--ahf)
@@ -1125,10 +1130,10 @@ Version 2016-10-24"
     ("box-shadow" "box-shadow: 3px 3px 4px 2px grey;" xah-css--ahf)
     ("opacity" "opacity: 1;" xah-css--ahf)
     ("margin" "margin: 0.5rem;" xah-css--ahf)
-    ("padding" "padding: 0.5rem;" xah-css--ahf)
+
 
     ;;
-)
+    )
 
   "abbrev table for `xah-css-mode'"
   )

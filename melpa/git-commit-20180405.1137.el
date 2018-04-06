@@ -12,7 +12,7 @@
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 
 ;; Package-Requires: ((emacs "24.4") (dash "20170810") (with-editor "20180318"))
-;; Package-Version: 20180401.314
+;; Package-Version: 20180405.1137
 ;; Keywords: git tools vc
 ;; Homepage: https://github.com/magit/magit
 
@@ -410,6 +410,7 @@ This is only used if Magit is available."
 
 (add-hook 'after-change-major-mode-hook 'git-commit-setup-font-lock-in-buffer)
 
+;;;###autoload
 (defun git-commit-setup-check-buffer ()
   (and buffer-file-name
        (string-match-p git-commit-filename-regexp buffer-file-name)
