@@ -6,7 +6,7 @@
 ;; Maintainer: Ola Nilsson <ola.nilsson@gmail.com>
 ;; Created; Jul 24 2014
 ;; Keywords: tools test unittest ert
-;; Package-Version: 20180208.935
+;; Package-Version: 20180406.150
 ;; Version: 0.1.2
 ;; Package-Requires: ((ert "0"))
 ;; URL: http://bitbucket.org/olanilsson/ert-junit
@@ -57,6 +57,15 @@ RESULT must be an `ert-test-result-with-condition'."
        (ert-test-result-with-condition-condition result)))
 	(buffer-string)))
 
+(defun ert-junit--time-subtract-float (a b)
+  "Return the elapsed seconds between two time values A and B.
+A nil value for either argument stands for the current time.
+See ‘current-time-string’ for the various forms of a time value."
+  ;; time-subtract did not handle nil parameters until Emacs 25
+  (let ((current-time (current-time)))
+	(float-time (time-subtract (or a current-time)
+							   (or b current-time)))))
+
 (defun ert-junit-testcase (stats test-name test-index)
   "Insert a testcase XML element at point in the current buffer.
 STATS is the test run state.  The name of the testcase is
@@ -65,8 +74,9 @@ TEST-NAME and TEST-INDEX its index into STATS."
 		  (format "<testcase name=\"%s\" classname=\"ert\" time=\"%f\">"
 				  test-name ;name
 				  ;; time
-				  (float-time (time-subtract (aref (ert--stats-test-end-times stats) test-index)
-											 (aref (ert--stats-test-start-times stats) test-index))))
+				  (ert-junit--time-subtract-float
+				   (aref (ert--stats-test-end-times stats) test-index)
+				   (aref (ert--stats-test-start-times stats) test-index)))
   ;; success, failure or error
    (let ((test-status (aref (ert--stats-test-results stats) test-index))
 		 (text ""))
@@ -113,9 +123,9 @@ TEST-NAME and TEST-INDEX its index into STATS."
 					(ert-stats-total stats) ;tests
 					(ert-stats-completed-unexpected stats) ;failures
 					0; errors
-					;;time
-					(float-time (time-subtract (ert--stats-end-time stats)
-											   (ert--stats-start-time stats)))
+					(ert-junit--time-subtract-float ; time
+					 (ert--stats-end-time stats)
+					 (ert--stats-start-time stats))
 					(- (ert-stats-total stats) (ert-stats-completed stats)) ;skipped
 					)
 			"\n")

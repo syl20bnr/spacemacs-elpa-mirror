@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; URL: http://github.com/Kungsgeten/org-brain
-;; Package-Version: 20180319.353
+;; Package-Version: 20180406.602
 ;; Keywords: outlines hypermedia
 ;; Package-Requires: ((emacs "25") (org "9"))
 ;; Version: 0.5
@@ -1146,6 +1146,7 @@ If interactive, also prompt for ENTRY."
         (org-cut-subtree)
         (pop kill-ring)
         (save-buffer))
+      (make-directory (file-name-directory path) t)
       (with-temp-file path
         (insert (format "#+TITLE:%s\n\n%s" title hl-text))
         (delay-mode-hooks

@@ -5,7 +5,7 @@
 ;; Author: Matúš Goljer <matus.goljer@gmail.com>
 ;; Maintainer: Matúš Goljer <matus.goljer@gmail.com>
 ;; Version: 1.1.0
-;; Package-Version: 20170711.501
+;; Package-Version: 20180406.456
 ;; Created: 26th March 2015
 ;; Keywords: conf
 
@@ -85,9 +85,9 @@ echo json_encode($result);" root class)
 (defvar conf-neon-font-lock-keywords
   `(
     (,(concat "\\_<" (regexp-opt '("true" "True" "TRUE" "yes" "Yes"
-                                  "YES" "on" "On" "ON" "false" "False"
-                                  "FALSE" "no" "No" "NO" "off" "Off" "OFF"
-                                  "enabled" "disabled"))
+                                   "YES" "on" "On" "ON" "false" "False"
+                                   "FALSE" "no" "No" "NO" "off" "Off" "OFF"
+                                   "enabled" "disabled"))
               "\\_>")
      0 'font-lock-constant-face)
     ("\\<%\\(.*?\\)%\\>" 0 'font-lock-keyword-face)
@@ -100,7 +100,15 @@ echo json_encode($result);" root class)
       (prog1 (line-end-position) (search-backward "("))
       nil
       (1 'font-lock-variable-name-face)))
-    ,@conf-colon-font-lock-keywords))
+    ,@conf-colon-font-lock-keywords
+
+    ;; Fix the case where there is a value of an array of the form:
+    ;; - foo:bar
+    ;; The default conf-colon-font-lock-keywords setup marks the `-
+    ;; foo' as the key name, where the `foo' is in fact part of the
+    ;; value of the array.
+    ("^[ \t]*-[ \t]+.+?[ \t]*:" 0 nil t)
+    ))
 
 (defvar neon-mode-map
   (let ((map (make-sparse-keymap)))
