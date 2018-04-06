@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/lispyville
-;; Package-Version: 20180327.1343
+;; Package-Version: 20180405.1757
 ;; Created: March 03, 2016
 ;; Keywords: vim, evil, lispy, lisp, parentheses
 ;; Package-Requires: ((lispy "0") (evil "1.2.12") (cl-lib "0.5") (emacs "24.4"))
@@ -31,6 +31,7 @@
 (require 'lispy)
 (require 'cl-lib)
 
+;; * Settings
 (defgroup lispyville nil
   "Provides a minor mode to integrate evil with lispy."
   :group 'lispy
@@ -44,45 +45,40 @@ called afterwards with no arguments. The user can also not set this variable
 at all and simply use `lispyville-set-key-theme' with an argument after
 lispyville has been loaded."
   :group 'lispyville
-  :type '(repeat :tag "Key Themes"
-           (choice
-            (const :tag "Safe versions of evil operators."
-              operators)
-            (const :tag "Safe versions of the s and S operators."
-              s-operators)
-            (const
-             :tag "Extra motions similar to those given by cleverparens."
-              additional-movement)
-            (const
-             :tag "Slurp/barf keybindings in the style of cleverparens."
-              slurp/barf-cp)
-            (const
-             :tag "Slurp/barf keybindings in the style of lispy."
-              slurp/barf-lispy)
-            (const
-             :tag "Extra commands similar to those given by cleverparens."
-              additional)
-            (const
-             :tag "Command to enter normal state and cancel an active region."
-              escape)
-            (const
-             :tag "Lispy commands for marking."
-              mark)
-            (const
-             :tag "Lispy commands for marking that enter special instead of
-visual state."
-              mark-special)
-            (const
-             :tag "Commands for toggling between special and visual state and
+  :type
+  '(repeat :tag "Key Themes"
+     (choice
+      (const
+       :tag "Safe versions of evil operators."
+       operators)
+      (const
+       :tag "Safe versions of the s and S operators."
+       s-operators)
+      (const
+       :tag "Extra motions similar to those provided by cleverparens."
+       additional-movement)
+      (const
+       :tag "Slurp/barf keybindings in the style of cleverparens."
+       slurp/barf-cp)
+      (const
+       :tag "Slurp/barf keybindings in the style of lispy."
+       slurp/barf-lispy)
+      (const
+       :tag "Extra commands similar to those provided by cleverparens."
+       additional)
+      (const
+       :tag "Command to enter normal state and cancel an active region."
+       escape)
+      (const
+       :tag "Lispy commands for marking."
+       mark)
+      (const
+       :tag "Lispy commands for marking that enter special instead of visual state."
+       mark-special)
+      (const
+       :tag "Commands for toggling between special and visual state and
 canceling a region."
-              mark-toggle))))
-
-(defcustom lispyville-dd-stay-with-closing nil
-  "When non-nil, don't move closing delimiters after dd (`lispyville-delete').
-This prevents dd from moving closing delimiters on an empty line by themselves
-to the previous line."
-  :group 'lispyville
-  :type 'boolean)
+       mark-toggle))))
 
 (defcustom lispyville-barf-stay-with-closing nil
   "When non-nil, stay with the closing delimiter when barfing.
@@ -122,6 +118,11 @@ to a non-nil value."
   :group 'lispyville
   :type 'boolean)
 
+(defcustom lispyville-insert-states '(insert emacs hybrid iedit-insert)
+  "States "
+  :group 'lispyvilles
+  :type 'list)
+
 (with-eval-after-load 'evil-surround
   (add-to-list 'evil-surround-operator-alist '(lispyville-change . change))
   (add-to-list 'evil-surround-operator-alist '(lispyville-delete . delete)))
@@ -132,7 +133,7 @@ to a non-nil value."
 
 ;;;###autoload
 (define-minor-mode lispyville-mode
-    "A minor mode for integrating evil with lispy."
+  "A minor mode for integrating evil with lispy."
   :lighter " LYVLE"
   :keymap (make-sparse-keymap)
   (when lispyville-mode
@@ -143,7 +144,7 @@ to a non-nil value."
             lispy-safe-paste t
             lispy-safe-actions-no-pull-delimiters-into-comments t))))
 
-;;; * Helpers
+;; * Helpers
 (defun lispyville--in-string-p ()
   "Return whether the point is in a string.
 Unlike `lispy--in-string-p', |\"\" is not considered to be inside the string."
@@ -350,7 +351,7 @@ or insert state."
                       (evil-visual-state-p))))
     (lispyville--state-transition t)))
 
-;;; * Operators
+;; * Operators
 (evil-define-operator lispyville-yank (beg end type register yank-handler)
   "Like `evil-yank' but will not copy unmatched delimiters."
   :move-point nil
@@ -387,12 +388,18 @@ This is not like the default `evil-yank-line'."
            (lispyville-yank beg (line-end-position)
                             type register yank-handler)))))
 
-(defun lispyville--join-line ()
-  "Like `join-line' but don't alter whitespace."
+(defun lispyville--maybe-newline-and-indent ()
+  "Skip closing delimiters and call `newline-and-indent' with a trailing sexp.
+Only add a newline if there is a sexp after the closing delimiters. Don't move
+the point."
   (save-excursion
-    (forward-line 1)
-    (when (eq (preceding-char) ?\n)
-      (delete-region (point) (1- (point))))))
+    (while (progn (forward-char)
+                  (lispyville--at-right-p)))
+    (unless (looking-at "[[:space:]]*$")
+      (newline-and-indent))))
+
+(defvar lispyville--cc nil
+  "Whether `lispyville-delete' has been called from `lispyville-change'.")
 
 (evil-define-operator lispyville-delete (beg end type register yank-handler)
   "Like `evil-delete' but will not delete/copy unmatched delimiters."
@@ -403,43 +410,51 @@ This is not like the default `evil-yank-line'."
         ;; set the small delete register
         (evil-set-register ?- (lispyville--safe-manipulate beg end)))))
   (let ((evil-was-yanked-without-register nil))
-    (cl-case type
-      (line
-       (when (and (= end (point-max))
-                  (or (= beg end)
-                      (/= (char-before end) ?\n))
-                  (/= beg (point-min))
-                  (=  (char-before beg) ?\n))
-         (setq beg (1- beg)))
-       (lispyville--safe-manipulate beg end type t t register yank-handler)
-       (when (and (not lispyville-dd-stay-with-closing)
-                  (lispyville--at-right-p)
-                  (lispy-looking-back "^[[:space:]]*")
-                  (save-excursion
-                    (forward-line -1)
-                    (goto-char (line-end-position))
-                    (not (lispy--in-comment-p))))
-         (join-line)
-         (while (progn (forward-char)
-                       (lispyville--at-right-p)))
-         (newline-and-indent))
-       ;; fix indentation (when closing delimiter(s) on empty line)
-       (lispy--indent-for-tab)
-       (when (lispyville--at-left-p)
-         ;; remove any extra whitespace
-         (save-excursion
-           (lispyville-first-non-blank)
-           (delete-region (point)
-                          (progn
-                            (skip-chars-forward "[:space:]")
-                            (point)))))
-       (when (called-interactively-p 'any)
-         (evil-first-non-blank)))
-      (t
-       (lispyville--safe-manipulate beg end type t t register yank-handler)))))
+    (cond
+     ((and (eq type 'line)
+           (not lispyville--cc))
+      ;; at end of buffer delete previous newline since no newline after
+      ;; current line
+      (when (and
+             ;; check that there is no final newline
+             (= end (point-max))
+             (or (= beg end)
+                 (/= (char-before end) ?\n))
+             ;; there must be a previous newline
+             (/= beg (point-min))
+             (= (char-before beg) ?\n))
+        (setq beg (1- beg)))
+      (lispyville--safe-manipulate beg end type t t register yank-handler)
+      (when (and (lispyville--at-right-p)
+                 (lispy-looking-back "^[[:space:]]*"))
+        (cond ((save-excursion
+                 (forward-line -1)
+                 (goto-char (line-end-position))
+                 (lispy--in-comment-p))
+               (lispy--indent-for-tab)
+               ;; don't pull delimiter(s) into comment
+               (lispyville--maybe-newline-and-indent))
+              (t
+               (join-line)
+               (while (progn (forward-char)
+                             (lispyville--at-right-p)))
+               (newline-and-indent))))
+      (when (lispyville--at-left-p)
+        ;; remove any extra whitespace (e.g. unmatched opening delimeter;
+        ;; pulling up indented code)
+        (save-excursion
+          (lispyville-first-non-blank)
+          (delete-region (point)
+                         (progn
+                           (skip-chars-forward "[:space:]")
+                           (point)))))
+      (when (called-interactively-p 'any)
+        (evil-first-non-blank)))
+     (t
+      (lispyville--safe-manipulate beg end type t t register yank-handler)))))
 
 (evil-define-operator lispyville-delete-line
-    (beg end type register yank-handler)
+  (beg end type register yank-handler)
   "Like `evil-delete-line' but will not delete/copy unmatched delimiters."
   :motion nil
   :keep-visual t
@@ -467,7 +482,7 @@ This is not like the default `evil-yank-line'."
                               type register yank-handler)))))
 
 (evil-define-operator lispyville-delete-whole-line
-    (beg end type register yank-handler)
+  (beg end type register yank-handler)
   "Like `evil-delete-whole-line' but will not delete/copy unmatched delimiters."
   :motion evil-line
   (interactive "<R><x>")
@@ -481,7 +496,7 @@ This is not like the default `evil-yank-line'."
   (lispyville--safe-manipulate beg end type 'splice t register yank-handler))
 
 (evil-define-operator lispyville-delete-char-or-splice-backwards
-    (beg end type register yank-handler)
+  (beg end type register yank-handler)
   "Like `lispyville-delete-char-or-splice' but acts on the preceding character."
   :motion evil-backward-char
   (interactive "<R><x>")
@@ -519,7 +534,7 @@ This will also act as `lispy-delete-backward' after delimiters."
     (indent-according-to-mode)))
 
 (evil-define-operator lispyville-change
-    (beg end type register yank-handler delete-func)
+  (beg end type register yank-handler delete-func)
   "Like `evil-change' but will not delete/copy unmatched delimiters."
   (interactive "<R><x><y>")
   ;; differences from `evil-change' are commented
@@ -527,14 +542,31 @@ This will also act as `lispy-delete-backward' after delimiters."
         (nlines (1+ (evil-count-lines beg end)))
         (opoint (save-excursion
                   (goto-char beg)
-                  (line-beginning-position))))
+                  (line-beginning-position)))
+        (unmatched (lispy--find-unmatched-delimiters
+                    (line-beginning-position)
+                    (line-end-position)))
+        (lispyville--cc t))
     (unless (eq evil-want-fine-undo t)
       (evil-start-undo-step))
-    (let ((lispyville-dd-stay-with-closing t))
-      (funcall delete-func beg end type register yank-handler))
+    (funcall delete-func beg end type register yank-handler)
     (cl-case type
       (line
-       (cond ((= opoint (point))
+       (cond ((lispyville--at-right-p)
+              (lispy--indent-for-tab)
+              (save-excursion
+                (while (progn (forward-char)
+                              (lispyville--at-right-p)))
+                (newline-and-indent))
+              (evil-insert 1))
+             ((and unmatched
+                   (lispyville--at-left-p))
+              (while (progn (forward-char)
+                            (lispyville--at-left-p)))
+              (save-excursion
+                (newline-and-indent))
+              (evil-insert 1))
+             ((= opoint (point))
               (evil-open-above 1))
              (t
               (newline-and-indent)
@@ -544,7 +576,7 @@ This will also act as `lispy-delete-backward' after delimiters."
        (evil-insert 1)))))
 
 (evil-define-operator lispyville-change-line
-    (beg end type register yank-handler)
+  (beg end type register yank-handler)
   "Like `evil-change-line' but will not delete/copy unmatched delimiters."
   :motion evil-end-of-line
   (interactive "<R><x><y>")
@@ -552,7 +584,7 @@ This will also act as `lispy-delete-backward' after delimiters."
                      #'lispyville-delete-line))
 
 (evil-define-operator lispyville-change-whole-line
-    (beg end type register yank-handler)
+  (beg end type register yank-handler)
   "Change whole line while respecting parentheses."
   :motion evil-line
   (interactive "<R><x>")
@@ -589,7 +621,7 @@ ARG has the same effect."
       (lispy--normalize-1))
     (goto-char orig-pos)))
 
-;;; * Motions
+;; * Motions
 ;; ** Additional Movement Key Theme
 (evil-define-motion lispyville-forward-sexp (count)
   "This is an evil motion equivalent of `forward-sexp'."
@@ -698,7 +730,7 @@ on outlines. Unlike `up-list', it will keep the point on the closing delimiter."
 
 (defalias 'lispyville-right 'lispyville-up-list)
 
-;;; * Commands
+;; * Commands
 ;; TODO make motion
 (defun lispyville-first-non-blank ()
   "Like `evil-first-non-blank' but skips opening delimiters.
@@ -849,7 +881,7 @@ This is the lispyville equivalent of `lispy-move-up' and
 
 (defalias 'lispyville-move-up 'lispyville-drag-backward)
 
-;;; * Integration Between Visual State and Lispy's Special Mark State
+;; * Integration Between Visual State and Lispy's Special Mark State
 ;; ** Using Both Separately
 (defun lispyville-normal-state ()
   "The same as `evil-normal-state' but won't ever enter visual state.
@@ -900,7 +932,7 @@ run in lispy special without an active region or when it is not the default 1."
   (if (region-active-p)
       (cond ((evil-visual-state-p)
              (lispyville--state-transition t))
-            ((memq evil-state '(insert emacs hybrid iedit-insert))
+            ((memq evil-state lispyville-insert-states)
              (cond ((= arg 1)
                     (setq lispyville--inhibit-next-special-force t)
                     (lispyville--state-transition))
@@ -962,7 +994,52 @@ marking something using a command like `lispy-mark' from special."
   (remove-hook 'evil-visual-state-entry-hook #'lispyville--enter-special)
   (remove-hook 'activate-mark-hook #'lispyville--enter-visual))
 
-;;; * Keybindings
+;; * Insert Key Theme
+(defun lispyville-insert-enter ()
+  "Insert a space when inserting after an opening delimiter.
+Do nothing if entering an insert state (see `lispyville-insert-states') from
+visual state or if there is a space or newline after the point. "
+  (when (and lispyville-mode
+             (not (eq evil-previous-state 'visual))
+             (not (memq evil-previous-state lispyville-insert-states))
+             (not (lispyville--in-string-p))
+             (lispyville--after-left-p)
+             (not (looking-at "[[:space:]\n]")))
+    (save-excursion
+      (insert " "))))
+
+(defun lispyville-insert-exit ()
+  "Remove any spaces inserted after an opening delimiter.
+Do nothing if entering an insert state from another insert state (see
+`lispyville-insert-states')."
+  (when (and lispyville-mode
+             (not (memq evil-next-state lispyville-insert-states))
+             (not (lispyville--in-string-p))
+             (lispyville--after-left-p))
+    (delete-region (point)
+                   (progn
+                     (skip-chars-forward "[:space:]")
+                     (point)))))
+
+(defun lispyville-space-after-insert (&optional undo)
+  "Use state hooks to automatically insert spaces after opening delimiters.
+
+If UNDO is non-nil, remove"
+  ;; add-hook works fine even if hook doesn't exist
+  (cond (undo
+         (dolist (state lispyville-insert-states)
+           (remove-hook (intern (format "evil-%s-state-entry-hook" state))
+                        #'lispyville-insert-enter)
+           (remove-hook (intern (format "evil-%s-state-exit-hook" state))
+                        #'lispyville-insert-exit)))
+        (t
+         (dolist (state lispyville-insert-states)
+           (add-hook (intern (format "evil-%s-state-entry-hook" state))
+                     #'lispyville-insert-enter)
+           (add-hook (intern (format "evil-%s-state-exit-hook" state))
+                     #'lispyville-insert-exit)))))
+
+;; * Keybindings
 ;; TODO update evil dependency on next release (evil-define-key*)
 (defun lispyville--define-key (states &rest maps)
   "Helper function for defining keys in `lispyville-mode-map'."
@@ -1038,6 +1115,8 @@ When THEME is not given, `lispville-key-theme' will be used instead."
          (lispyville--define-key states
            (kbd "M-j") #'lispyville-drag-forward
            (kbd "M-k") #'lispyville-drag-backward))
+        (insert
+         (lispyville-space-after-insert))
         (escape
          (or states (setq states '(insert emacs)))
          (lispyville--define-key states

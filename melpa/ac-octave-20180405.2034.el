@@ -4,7 +4,7 @@
 ;;
 ;; Author: coldnew <coldnew.tw@gmail.com>
 ;; Keywords: Octave, auto-complete, completion
-;; Package-Version: 20171122.943
+;; Package-Version: 20180405.2034
 ;; Package-Requires: ((auto-complete "1.4.0"))
 ;; URL: https://github.com/coldnew/ac-octave
 ;; Version: 0.7
@@ -123,6 +123,10 @@
       (mapconcat #'identity
                  inferior-octave-output-list
                  "\n"))))
+
+;;;###autoload
+(autoload 'ac-define-source "auto-complete" "Source definition macro. It defines a complete command also."  nil nil)
+(declare-function ac-define-source "auto-complete")
 
 ;;;###autoload
 (ac-define-source octave

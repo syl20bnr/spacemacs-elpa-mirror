@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20180331.1851
+;; Package-Version: 20180405.1526
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -2078,7 +2078,9 @@ as (CALLBACK STATE REPLY)."
           (setq intero-async-network-connected t)
           (if intero-async-network-cmd
               (process-send-string process (concat intero-async-network-cmd "\n"))
-            (delete-process process)))
+            (progn
+              (delete-process process)
+              (kill-buffer (process-buffer process)))))
       (progn
         (if intero-async-network-connected
             (when intero-async-network-callback
@@ -2096,8 +2098,10 @@ as (CALLBACK STATE REPLY)."
              intero-async-network-cmd
              intero-async-network-state
              intero-async-network-callback)))
-        ;; In any case we clean up the connection.
-        (delete-process process)))))
+        ;; In any case we clean up the connection, and kill the buffer.
+        (progn
+          (delete-process process)
+          (kill-buffer (process-buffer process)))))))
 
 (defun intero-async-call (worker cmd &optional state callback)
   "Send WORKER the command string CMD.
