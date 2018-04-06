@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 ~ 2014 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; Version: 1.3
-;; Package-Version: 20180328.2125
+;; Package-Version: 20180405.2228
 ;; Package-Requires: ((helm "1.5") (emms "0.0") (cl-lib "0.5") (emacs "24.1"))
 
 ;; X-URL: https://github.com/emacs-helm/helm-emms
@@ -253,7 +253,7 @@ Returns nil when no music files are found."
                            ((and str
                                  (guard (and playing
                                              (string-match-p
-                                              (regexp-quote playing) str))))
+                                              (concat (regexp-quote playing) "\\'") str))))
                             (propertize str 'face 'emms-browser-track-face))
                            (str (propertize str 'face 'helm-emms-playlist)))
                          (cdr i))
