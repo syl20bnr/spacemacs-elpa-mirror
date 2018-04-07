@@ -4,7 +4,7 @@
 ;; Maintainer: Larry Staton Jr.
 ;; Created: 10 March 2018
 ;; Keywords: literate programming, reproducible research
-;; Package-Version: 20180318.1519
+;; Package-Version: 20180406.1128
 ;; Homepage: https://gitlab.com/statonjr/ob-clojurescript
 ;; Package-Requires: ((emacs "24.4") (org "9.0"))
 
@@ -42,7 +42,7 @@
 (defvar org-babel-tangle-lang-exts)
 (add-to-list 'org-babel-tangle-lang-exts '("clojurescript" . "cljs"))
 
-(defvar org-babel-clojurescript-command "lumo"
+(defvar org-babel-clojurescript-command (executable-find "lumo")
   "The command to use to compile and run your ClojureScript code.")
 
 (defvar org-babel-default-header-args:clojurescript '())
@@ -79,7 +79,7 @@
     (setq result
           (org-babel-trim
            (shell-command-to-string
-            (concat "/usr/local/bin/lumo -e \"" expanded "\""))))
+            (concat org-babel-clojurescript-command " -e \"" expanded "\""))))
     (org-babel-result-cond (cdr (assoc :result-params params))
       result
       (condition-case nil (org-babel-script-escape result)
