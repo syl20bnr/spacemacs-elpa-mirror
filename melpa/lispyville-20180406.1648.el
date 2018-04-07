@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/lispyville
-;; Package-Version: 20180405.1757
+;; Package-Version: 20180406.1648
 ;; Created: March 03, 2016
 ;; Keywords: vim, evil, lispy, lisp, parentheses
 ;; Package-Requires: ((lispy "0") (evil "1.2.12") (cl-lib "0.5") (emacs "24.4"))
@@ -123,6 +123,11 @@ to a non-nil value."
   :group 'lispyvilles
   :type 'list)
 
+(defface lispyville-special-face
+  '((t :foreground "#aa4456"))
+  "Face for lispyville special mode line indicator."
+  :group 'lispyville)
+
 (with-eval-after-load 'evil-surround
   (add-to-list 'evil-surround-operator-alist '(lispyville-change . change))
   (add-to-list 'evil-surround-operator-alist '(lispyville-delete . delete)))
@@ -170,6 +175,13 @@ Closing delimiters inside strings and comments are ignored."
            (and (looking-at "\"")
                 (lispyville--in-string-p)))
        (not (looking-back "\\\\" (- (point) 2)))))
+
+(defun lispyville--after-left-p ()
+  "Return whether the point is after an opening delimiters.
+Opening delimiters inside strings and comments are ignored."
+  (save-excursion
+    (backward-char)
+    (lispyville--at-left-p)))
 
 (defun lispyville--after-delimiter-p ()
   "Return whether the point is after an opening or closing delimiter."
@@ -1141,6 +1153,33 @@ When THEME is not given, `lispville-key-theme' will be used instead."
            (kbd "<escape>") #'lispyville-escape))))))
 
 (lispyville-set-key-theme)
+
+;; * Mode Line Integration
+(defun lispyville--special-p ()
+  "Return whether the point is in special."
+  (or (region-active-p)
+      (and (not (lispy--in-string-or-comment-p))
+           (or (lispy-left-p)
+               (lispy-right-p)
+               (and (lispy-bolp)
+                    (or (looking-at lispy-outline-header)
+                        (looking-at lispy-outline)))))))
+
+(defun lispyville--lispy-keybindings-active-p ()
+  "Return whether lispy keybindings are active."
+  (and lispy-mode
+       (memq evil-state lispyville-insert-states)
+       (lispyville--special-p)))
+
+(cl-defun lispyville-mode-line-string (&optional (special-text "🍰-special ")
+                                                 default-text)
+  "When added to the mode line, show SPECIAL-TEXT when in special.
+When not in special (or not in a state in `lispyville-insert-states'), show
+DEFAULT-TEXT."
+  `(:eval
+    (if (lispyville--lispy-keybindings-active-p)
+        (propertize ,special-text 'face 'lispyville-special-face)
+      ,default-text)))
 
 (provide 'lispyville)
 ;;; lispyville.el ends here
