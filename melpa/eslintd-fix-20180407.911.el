@@ -4,8 +4,8 @@
 
 ;; Author: Aaron Jensen <aaronjensen@gmail.com>
 ;; URL: https://github.com/aaronjensen/eslintd-fix
-;; Package-Version: 20171128.453
-;; Version: 1.0.0
+;; Package-Version: 20180407.911
+;; Version: 1.1.0
 ;; Package-Requires: ((dash "2.12.0") (emacs "24.3"))
 
 ;;; Commentary:

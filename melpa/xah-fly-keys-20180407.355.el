@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2017, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 8.8.20180403
-;; Package-Version: 20180403.1832
+;; Version: 8.8.20180407
+;; Package-Version: 20180407.355
 ;; Created: 10 Sep 2013
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, emulations, vim, ergoemacs
@@ -2927,13 +2927,13 @@ Version 2017-01-21"
 
    ("." . highlight-symbol-at-point)
    ("p" . highlight-regexp)
-   ("t" . highlight-phrase)
    ("e" . unhighlight-regexp)
    ("u" . highlight-lines-matching-regexp)
 
+   ("t" . highlight-phrase)
    ("g" . isearch-forward-symbol-at-point)
+   ("c" . isearch-forward-symbol)
    ("h" . isearch-forward-word)
-   ("t" . isearch-forward-symbol)
 
    ;; temp
    ("b" . facemenu-set-bold)

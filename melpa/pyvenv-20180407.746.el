@@ -4,7 +4,7 @@
 
 ;; Author: Jorgen Schaefer <contact@jorgenschaefer.de>
 ;; URL: http://github.com/jorgenschaefer/pyvenv
-;; Package-Version: 20180331.802
+;; Package-Version: 20180407.746
 ;; Version: 1.13
 ;; Keywords: Python, Virtualenv, Tools
 
@@ -120,6 +120,15 @@ Do not set this variable directly; use `pyvenv-activate' or
 
 This is usually the base name of `pyvenv-virtual-env'.")
 
+
+(defvar pyvenv-pre-create-hooks nil
+  "Hooks run before a virtual environment is created.")
+
+
+(defvar pyvenv-post-create-hooks nil
+  "Hooks run after a virtual environment is created.")
+
+
 (defvar pyvenv-pre-activate-hooks nil
   "Hooks run before a virtual environment is activated.
 
@@ -154,6 +163,24 @@ This is usually the base name of `pyvenv-virtual-env'.")
 
 (defvar pyvenv-old-eshell-path nil
   "The old eshell path before the last activate.")
+
+
+(defun pyvenv-create (venv-name python-executable)
+  "Create virtualenv.  VENV-NAME  PYTHON-EXECUTABLE."
+  (interactive (list
+                (read-from-minibuffer "Name of virtual environment: ")
+                (read-file-name "Python interpreter to use: "
+                                (file-name-directory (executable-find "python"))
+                                nil nil "python")))
+  (let ((venv-dir (concat (file-name-as-directory (pyvenv-workon-home))
+                          venv-name)))
+    (unless (file-exists-p venv-dir)
+      (run-hooks 'pyvenv-pre-create-hooks)
+      (call-process "virtualenv" nil "*virtualenv" t
+                    "-p" python-executable venv-dir)
+      (run-hooks 'pyvenv-post-create-hooks))
+    (pyvenv-activate venv-dir)))
+
 
 ;;;###autoload
 (defun pyvenv-activate (directory)
