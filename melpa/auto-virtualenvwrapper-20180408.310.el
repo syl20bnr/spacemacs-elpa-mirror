@@ -5,7 +5,7 @@
 ;; Author: Marcwebbie <marcwebbie@gmail.com>
 ;;         Robert Zaremba <robert-zaremba@scale-it.pl>
 ;; Version: 1.0
-;; Package-Version: 20170916.1304
+;; Package-Version: 20180408.310
 ;; Package-X-Original-Version: 20170518
 ;; Keywords: Python, Virtualenv, Tools
 ;; Package-Requires: ((cl-lib "0.6") (s "1.10.0") (virtualenvwrapper "0"))
@@ -57,7 +57,7 @@
   :group 'auto-virtualenvwrapper)
 
 (defvar auto-virtualenvwrapper-project-root-files
-  '(".python-version" ".dir-locals.el" ".projectile" ".emacs-project" ".workon")
+  '(".python-version" ".dir-locals.el" ".projectile" ".emacs-project" ".workon" "Pipfile")
   "The presence of any file/directory in this list indicates a project root.")
 
 (defvar auto-virtualenvwrapper-verbose t

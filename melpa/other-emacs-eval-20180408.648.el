@@ -5,7 +5,7 @@
 ;; Author: Xu Chunyang <mail@xuchunyang.me>
 ;; Homepage: https://github.com/xuchunyang/other-emacs-eval
 ;; Package-Requires: ((emacs "25.1") (async "1.9.2"))
-;; Package-Version: 20180329.757
+;; Package-Version: 20180408.648
 ;; Keywords: tools
 ;; Created: Thu, 29 Mar 2018 17:28:30 +0800
 
@@ -38,6 +38,7 @@
 
 ;;; Code:
 
+(require 'subr-x)                       ; `string-trim'
 (require 'async)
 
 ;;;###autoload
@@ -56,7 +57,7 @@ absolute file name) of an Emacs."
         (user-error "Emacs not found: %s" emacs)))))
 
 (defun other-emacs-eval-read-emacs ()
-  (read-shell-command "Emacs: " "emacs"))
+  (string-trim (read-shell-command "Emacs: " "emacs")))
 
 ;;;###autoload
 (defun other-emacs-eval-expression (emacs exp)

@@ -6,7 +6,7 @@
 
 ;; Compatibility: GNU Emacs 24.1+
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5") (async "1.9.2"))
-;; Package-Version: 20180404.358
+;; Package-Version: 20180408.847
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -278,7 +278,8 @@ Arg CONF is an entry in `psession--winconf-alist'."
       (add-to-list 'load-path
                    ,(file-name-directory (locate-library "psession")))
       (require 'psession)
-      ,(async-inject-variables (format "\\`%s" (psession--get-variables-regexp)))
+      ,(async-inject-variables (format "\\`%s" (psession--get-variables-regexp))
+                               nil nil t)
       (psession--dump-object-to-file-save-alist))
    (lambda (_result)
      (message "Psession: auto saving session done"))))

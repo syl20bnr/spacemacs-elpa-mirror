@@ -4,7 +4,7 @@
 
 ;; Author: Tobias Svensson
 ;; URL: http://github.com/endofunky/inf-mongo
-;; Package-Version: 20160815.216
+;; Package-Version: 20180408.638
 ;; Created: 1 March 2013
 ;; Keywords: databases mongodb
 ;; Version: 1.0.0
@@ -159,7 +159,7 @@ With argument, position cursor at end of buffer."
   (comint-send-string (get-buffer-process inf-mongo-buffer) "\n")
   (define-key inf-mongo-mode-map "\t" 'complete-symbol))
 
-(defvar inf-mongo-prompt "\n> " 
+(defvar inf-mongo-prompt "\n> \\|\n.+> "
   "String used to match inf-mongo prompt.")
 
 (defvar inf-mongo--shell-output-buffer "")
