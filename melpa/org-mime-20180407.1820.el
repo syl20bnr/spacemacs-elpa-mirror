@@ -5,7 +5,7 @@
 ;; Author: Eric Schulte
 ;; Maintainer: Chen Bin (redguardtoo)
 ;; Keywords: mime, mail, email, html
-;; Package-Version: 20180313.524
+;; Package-Version: 20180407.1820
 ;; Homepage: http://github.com/org-mime/org-mime
 ;; Version: 0.1.1
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
@@ -537,10 +537,15 @@ If SUBTREEP is t, curret org node is subtree."
 (defun org-mime-build-mail-other-headers (cc bcc)
   "Build mail header from CC and BCC."
   (cond
-   ((and cc bcc) ((cc . cc) (bcc . bcc)))
-   (cc ((cc . cc)))
-   (bcc ((bcc . bcc)))
-   (t nil)))
+   ((and cc bcc)
+    (list (cons "Cc" cc)
+          (cons "Bcc" bcc)))
+   (cc
+    (list (cons "Cc" cc)))
+   (bcc
+    (list (cons "Bcc" bcc)))
+   (t
+    nil)))
 
 ;;;###autoload
 (defun org-mime-org-buffer-htmlize ()
