@@ -6,7 +6,7 @@
 ;; Author: Christian Köstlin <christian.koestlin@gmail.com>
 ;; Keywords: org-mode, org, kanban, tools
 ;; Package-Requires: ((dash "2.12.0") (emacs "24.4"))
-;; Package-Version: 20180313.1339
+;; Package-Version: 20180408.208
 ;; Package-X-Original-Version: 0.3.0
 ;; Homepage: http://github.com/gizmomogwai/org-kanban
 
@@ -99,6 +99,15 @@
      (define-key map org-kanban/prev-key (lambda () (interactive) (org-kanban/shift 'left)))
      (define-key map org-kanban/next-key (lambda () (interactive) (org-kanban/shift 'right)))
      map)))
+
+(defun org-kanban/initialize ()
+  "Create an org-kanban dynamic block"
+  (interactive)
+  (save-excursion
+    (insert "#+BEGIN: kanban\n#+END:\n")
+    )
+  (org-ctrl-c-ctrl-c)
+  )
 
 (defun org-kanban/move (direction)
   "Move the todo entry in the current line of the kanban table to the next state in direction DIRECTION."
