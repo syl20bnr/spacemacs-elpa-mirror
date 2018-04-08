@@ -4,7 +4,7 @@
 
 ;; Author: Samuel Smolkin <sam@future-precedent.org>
 ;; URL: https://github.com/ethereum/emacs-solidity
-;; Package-Version: 20180407.551
+;; Package-Version: 20180407.1344
 ;; Keywords: solidity, completion, company
 ;; Version: 2.0.0
 ;; Package-Requires: ((company "0.9.0") (cl-lib "0.5.0") (solidity-mode "0.1.8"))
@@ -76,7 +76,7 @@
 
 (defconst company-solidity-additional-contracts
   '("super"
-    "selfdistruct"
+    "selfdestruct"
     "suicide"))
 
 (defconst company-solidity-additional-modifiers

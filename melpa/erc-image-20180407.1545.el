@@ -7,7 +7,7 @@
 ;; Author: Jon de Andrés Frías <jondeandres@gmail.com>
 ;;         Raimon Grau Cuscó <raimonster@gmail.com>
 ;; Version: 0.9
-;; Package-Version: 20180206.941
+;; Package-Version: 20180407.1545
 ;; Keywords: multimedia
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -60,7 +60,7 @@
 (defcustom erc-image-regex-alist
   '(("https?://\\(www\\.\\)?giphy\\.com" .
      erc-image-get-giphy-url)
-    ("http://\\(www\\.\\)?imgur\\.com" .
+    ("https?://\\(www\\.\\)?imgur\\.com" .
      erc-image-get-imgur-url)
     ("\\.\\(png\\|jpg\\|jpeg\\|gif\\|svg\\)$" .
      erc-image-show-url-image))
