@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/lispyville
-;; Package-Version: 20180406.1648
+;; Package-Version: 20180408.916
 ;; Created: March 03, 2016
 ;; Keywords: vim, evil, lispy, lisp, parentheses
 ;; Package-Requires: ((lispy "0") (evil "1.2.12") (cl-lib "0.5") (emacs "24.4"))
@@ -35,7 +35,7 @@
 (defgroup lispyville nil
   "Provides a minor mode to integrate evil with lispy."
   :group 'lispy
-  :prefix 'lispyville)
+  :prefix "lispyville-")
 
 (defcustom lispyville-key-theme '(operators c-w)
   "Determines the key theme initially set by lispyville.

@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/emacs-sentence-navigation
-;; Package-Version: 20171215.1007
+;; Package-Version: 20180408.919
 ;; Keywords: sentence evil
 ;; Package-Requires: ((ample-regexps "0.1") (cl-lib "0.5") (emacs "24.4"))
 ;; Version: 0.1
@@ -42,7 +42,7 @@
 (defgroup sentence-navigation nil
   "Gives commands for navigating sentences and sentence text objects."
   :group 'editing
-  :prefix 'sentence-nav-)
+  :prefix "sentence-nav-")
 
 (defcustom sentence-nav-abbreviation-list
   '("[ABCDIMPSUabcdegimpsv]"

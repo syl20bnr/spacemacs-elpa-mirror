@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/general.el
-;; Package-Version: 20180327.1753
+;; Package-Version: 20180406.944
 ;; Created: February 17, 2016
 ;; Keywords: vim, evil, leader, keybindings, keys
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
@@ -1163,7 +1163,7 @@ the default arguments."
   (declare (indent defun))
   `(defmacro ,name (&rest args)
      (declare (indent defun))
-     ,(let ((print-quoted nil))
+     ,(let ((print-quoted t))
         (format
          "A wrapper for `general-def'.
 
@@ -1991,6 +1991,14 @@ advice."
       ;; using general versions in case start recording advice for later display
       (general-advice-remove 'define-key #'general-unbind-non-prefix-key)
     (general-advice-add 'define-key :around #'general-unbind-non-prefix-key)))
+
+;; ** Interactive Lambdas
+(defmacro general-lambda (&rest body)
+  "Wrap BODY in an interactive lamba"
+  `(lambda () (interactive)
+     ,@body))
+
+(defalias 'general-l #'general-lambda)
 
 ;; * Functions/Macros to Aid Other Configuration
 ;; ** Settings

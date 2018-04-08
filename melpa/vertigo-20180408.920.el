@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/vertigo.el
-;; Package-Version: 20160429.2105
+;; Package-Version: 20180408.920
 ;; Created: September 18, 2015
 ;; Keywords: vim, vertigo
 ;; Package-Requires: ((dash "2.11.0"))
@@ -49,7 +49,7 @@
 (defgroup vertigo nil
   "Gives commands for moving by lines using the home row."
   :group 'convenience
-  :prefix 'vertigo)
+  :prefix "vertigo-")
 
 (defcustom vertigo-home-row
   '(?a ?s ?d ?f ?g ?h ?j ?k ?l ?\;)
