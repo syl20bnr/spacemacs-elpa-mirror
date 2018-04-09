@@ -6,7 +6,7 @@
 ;;         Marshall T. Vandegrift <llasram@gmail.com>
 ;; Maintainer: Vasilij Schneidermann <v.schneidermann@gmail.com>
 ;; Package-Requires: ((emacs "24.1"))
-;; Package-Version: 20180212.1556
+;; Package-Version: 20180408.2307
 ;; Keywords: data yaml
 ;; Version: 0.0.13
 
@@ -439,13 +439,15 @@ otherwise do nothing."
 
 (defun yaml-fill-paragraph (&optional justify region)
   "Fill paragraph.
-This behaves as `fill-paragraph' except that filling does not
-cross boundaries of block literals."
+Outside of comments, this behaves as `fill-paragraph' except that
+filling does not cross boundaries of block literals.  Inside comments,
+this will do usual adaptive fill behaviors."
   (interactive "*P")
   (save-restriction
     (yaml-narrow-to-block-literal)
     (let ((fill-paragraph-function nil))
-      (fill-paragraph justify region))))
+      (or (fill-comment-paragraph justify)
+          (fill-paragraph justify region)))))
 
 (defun yaml-set-imenu-generic-expression ()
   (make-local-variable 'imenu-generic-expression)
