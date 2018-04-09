@@ -3,7 +3,7 @@
 ;; Author: Bob Manson <manson@cygnus.com>
 ;; Maintainer: Noah Friedman <friedman@prep.ai.mit.edu>
 ;; Keywords: extensions games
-;; Package-Version: 20180403.1918
+;; Package-Version: 20180408.2341
 ;; Created: 1995-08-02
 ;; Version: 2.0
 ;; Package-Requires: ((emacs "24"))
@@ -419,6 +419,21 @@ from the appropriate list."
          (concat (car a)
                  (if (cdr a) " " "")
                  (horoscope--iterate-list (cdr a))))))
+
+;;;###autoload
+(defun horoscope-psychoanalyze ()
+  "The astrologist goes to the analyst."
+  (interactive)
+  (require 'doctor)
+  (doctor)
+  (message "")
+  (switch-to-buffer "*doctor*")
+  (sit-for 0)
+  (while (not (input-pending-p))
+    (horoscope t)
+    (insert "\n")
+    (sit-for 0.2)
+    (doctor-ret-or-read 1)))
 
 (provide 'horoscope)
 
