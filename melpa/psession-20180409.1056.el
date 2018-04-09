@@ -6,7 +6,7 @@
 
 ;; Compatibility: GNU Emacs 24.1+
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5") (async "1.9.2"))
-;; Package-Version: 20180408.2125
+;; Package-Version: 20180409.1056
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -256,7 +256,7 @@ Arg CONF is an entry in `psession--winconf-alist'."
                 psession-object-to-save-alist
                 :test 'equal)))
 
-;;;###autoloads
+;;;###autoload
 (define-minor-mode psession-savehist-mode
     "Save minibuffer-history variables persistently."
   :global t

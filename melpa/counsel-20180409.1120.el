@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180328.1326
+;; Package-Version: 20180409.1120
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -3256,6 +3256,8 @@ All blank strings are deleted from `kill-ring' by default."
   "Return list of kills for `counsel-yank-pop' to complete.
 Returned elements satisfy `counsel-yank-pop-filter' and are
 unique under `equal-including-properties'."
+  ;; Refresh `kill-ring' in the presence of `interprogram-paste-function'
+  (current-kill 0)
   ;; Keep things consistent with the rest of Emacs
   (dolist (sym '(kill-ring kill-ring-yank-pointer))
     (set sym (cl-delete-duplicates
@@ -3267,8 +3269,11 @@ unique under `equal-including-properties'."
           kill-ring))
 
 (defun counsel-yank-pop-action (s)
-  "Like `yank-pop', but insert the kill corresponding to S."
+  "Like `yank-pop', but insert the kill corresponding to S.
+Signal a `buffer-read-only' error if called from a read-only
+buffer position."
   (with-ivy-window
+    (barf-if-buffer-read-only)
     (setq last-command 'yank)
     (setq yank-window-start (window-start))
     (yank-pop (counsel--yank-pop-position s))
@@ -3321,7 +3326,8 @@ can be controlled with `counsel-yank-pop-preselect-last', which
 see.  See also `counsel-yank-pop-filter' for how to filter
 candidates.
 Note: Duplicate elements of `kill-ring' are always deleted."
-  (interactive "*P")
+  ;; Do not specify `*' to allow browsing `kill-ring' in read-only buffers
+  (interactive "P")
   (let ((ivy-format-function #'counsel--yank-pop-format-function)
         (ivy-height counsel-yank-pop-height)
         (kills (counsel--yank-pop-kills)))

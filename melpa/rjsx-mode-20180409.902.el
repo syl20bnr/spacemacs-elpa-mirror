@@ -4,7 +4,7 @@
 
 ;; Author: Felipe Ochoa <felipe@fov.space>
 ;; URL: https://github.com/felipeochoa/rjsx-mode/
-;; Package-Version: 20180314.845
+;; Package-Version: 20180409.902
 ;; Package-Requires: ((emacs "24.4") (js2-mode "20170504"))
 ;; Version: 1.1
 ;; Keywords: languages
@@ -354,6 +354,14 @@ Sets KID's parent to N."
   `(when rjsx-print-debug-message
      (message ,@args)))
 
+
+(defvar rjsx-text-syntax-table
+  (let ((table (make-syntax-table (standard-syntax-table))))
+    ;; `js-indent-line' assumes that \n is not whitespace
+    ;; Since it's not a comment delimiter in JSX text, punctuation
+    ;; is the only other (semi) logical choice
+    (modify-syntax-entry ?\n "." table)
+    table))
 
 (js2-deflocal rjsx-in-xml nil "Variable used to track which xml parsing function is the outermost one.")
 
@@ -740,7 +748,7 @@ as a fragment closing node, and not as an empty tag."
       (rjsx-maybe-message "text node: '%s'" (js2-current-token-string))
       (js2-set-face (js2-current-token-beg) (js2-current-token-end) 'rjsx-text 'record)
       (js2-record-text-property (js2-current-token-beg) (js2-current-token-end)
-                                'syntax-table (standard-syntax-table))
+                                'syntax-table rjsx-text-syntax-table)
       (make-rjsx-text :value (js2-current-token-string)))
 
      ((= tt js2-ERROR)
