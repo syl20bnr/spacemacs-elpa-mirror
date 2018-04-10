@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp
-;; Package-Version: 20180402.855
+;; Package-Version: 20180410.732
 ;; Version: 2.5.3
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -618,7 +618,7 @@ Set with `fountain-init-trans-regexp'. Requires
   "Regular expression for matching comments.")
 
 (defconst fountain-metadata-regexp
-  (concat "^\\(?1:\\(?2:[^:\n]+\\):[\s\t]*\\(?3:.+\\)?\\)"
+  (concat "^\\(?1:\\(?2:[^[{:\n]+\\):[\s\t]*\\(?3:.+\\)?\\)"
           "\\|"
           "^[\s\t]+\\(?1:\\(?3:.+\\)\\)")
   "Regular expression for matching multi-line metadata values.

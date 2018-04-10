@@ -5,7 +5,7 @@
 ;; Author: Marcin Swieczkowski <scatman@bu.edu>
 ;; Created: Thu Mar  2 22:19:19 CET 2017
 ;; Version: 1.0.0
-;; Package-Version: 20180405.805
+;; Package-Version: 20180410.307
 ;; Last-Updated: Wed Apr 12 16:11:07 CEST 2017
 ;;           By: Marcin Swieczkowski
 ;;     Update #: 3
@@ -240,7 +240,7 @@
    `(hl-line ((t (:background ,nimbus/blue-bg))))
 
    `(secondary-selection
-     ((t (:foreground ,nimbus/fg :background ,nimbus/region))))
+     ((t (:foreground ,nimbus/fg :background ,nimbus/blue-gray))))
 
    ;; ruler
    `(ruler-mode-default
@@ -1426,11 +1426,15 @@
    `(highlight-indentation-current-column-face
      ((t (:background ,nimbus/gray))))
    `(highlight-indentation-face
-     ((t (:background ,nimbus/darkest-gray))))
+     ((t (:background ,nimbus/darker-gray))))
 
    ;; highlight-indent-guides
    `(highlight-indent-guides-character-face
-     ((t (:foreground ,nimbus/dark-gray))))
+     ((t (:foreground ,nimbus/darker-gray))))
+   `(highlight-indent-guides-odd-face
+     ((t (:background ,nimbus/darkest-gray))))
+   `(highlight-indent-guides-even-face
+     ((t (:background ,nimbus/darker-gray))))
 
    ;; trailing whitespace
    `(trailing-whitespace ((t (:background ,nimbus/white :bold t))))

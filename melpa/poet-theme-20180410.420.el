@@ -4,7 +4,7 @@
 
 ;; Author: Kunal Bhalla <bhalla.kunal@gmail.com>
 ;; URL: https://github.com/kunalb/poet/
-;; Package-Version: 20180324.1909
+;; Package-Version: 20180410.420
 ;; Version: 1.0
 
 ;;; Commentary:
@@ -100,6 +100,7 @@
      ;; Colors
      (bg "#e1d9c2")
      (fg "#444444")
+     (sep "#eeeeee")
 
      (bg-highlight "#fff8e1")
 
@@ -172,8 +173,12 @@
          :inherit region)
 
         (window-divider
-         :background "#ffffff"
-         :foreground "#ffffff")))
+         :background ,sep
+         :foreground ,sep)
+
+        (vertical-border
+         :background ,sep
+         :foreground ,sep)))
 
      (evil
       `((evil-ex-substitute-replacement
@@ -191,9 +196,10 @@
       `((mode-line
          :inherit fixed-pitch
          :foreground "#111111"
-         :background "#cdcdcd"
+         :background ,bg
+         :overline ,sep
          :box (:line-width 3
-               :color "#cdcdcd"))
+               :color ,bg))
         (header-line
          :inherit mode-line)
         (mode-line-buffer-id
@@ -204,9 +210,9 @@
          :background "#ffffff")
         (mode-line-inactive
          :inherit mode-line
-         :background "#bbbbbb"
-         :foreground "#555555"
-         :box (:color "#bbbbbb"
+         :background ,bg
+         :foreground "#888888"
+         :box (:color ,bg
                :line-width 3))))
 
      (syntax
