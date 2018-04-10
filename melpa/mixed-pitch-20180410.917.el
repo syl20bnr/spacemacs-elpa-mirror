@@ -5,7 +5,7 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/mixed-pitch
-;; Package-Version: 20180405.750
+;; Package-Version: 20180410.917
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "24.3"))
 
@@ -102,6 +102,7 @@
     org-block
     org-block-begin-line
     org-block-end-line
+    org-document-info-keyword
     org-code
     org-latex-and-related
     org-checkbox
