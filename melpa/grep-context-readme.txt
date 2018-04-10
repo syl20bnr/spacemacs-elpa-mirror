@@ -1,7 +1,7 @@
 This package provides commands to show and hide lines of context around
 errors in compilation buffers or around matches in grep buffers
-(e.g. M-x grep).  Works with `wgrep', `ag-mode', `ivy-occur-grep-mode'
-and `ack-mode'.
+(e.g. M-x grep).  Works with `wgrep', `ag-mode', `ivy-occur-grep-mode',
+`ack-mode' and `ripgrep'.
 
 Usage:
 
@@ -10,6 +10,7 @@ Usage:
     (dolist (elt '((compile . compilation-mode-map)
                    (grep . grep-mode-map)
                    (ivy . ivy-occur-grep-mode-map)
+                   (ripgrep . ripgrep-search-mode-map)
                    (ag . ag-mode-map)
                    (ack . ack-mode-map)))
       (eval-after-load (car elt)

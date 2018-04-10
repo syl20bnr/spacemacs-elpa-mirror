@@ -7,8 +7,8 @@
 ;; Authors: ZHANG Weiyi <dochang@gmail.com>,
 ;;          Alex Kost <alezost@gmail.com>,
 ;;          stardiviner <numbchild@gmail.com>
-;; Version: 0.0.13
-;; Package-Version: 20180210.310
+;; Version: 0.1.0
+;; Package-Version: 20180409.1503
 ;; Package-Requires: ((emms "0"))
 ;; Keywords: multimedia, emms, mpv
 ;; URL: https://github.com/dochang/emms-player-mpv/
@@ -46,12 +46,9 @@
 
 (define-emms-simple-player mpv '(file url streamlist playlist)
   (concat "\\`\\(https?\\|mms\\)://\\|"
-          (emms-player-simple-regexp
-           "ogg" "mp3" "wav" "mpg" "mpeg" "wmv" "wma"
-           "mov" "avi" "divx" "ogm" "ogv" "asf" "mkv"
-           "rm" "rmvb" "mp4" "flac" "vob" "m4a" "ape"
-           "flv" "webm" "m4b" "m4p" "m4v" "m4r" "3gp"
-           "aac"))
+          (apply #'emms-player-simple-regexp
+                 "m4b" "m4p" "m4v" "m4r" "3gp" "3g2" "aac"
+                 emms-player-base-format-list))
   "mpv" "--quiet" "--really-quiet")
 
 (defadvice emms-player-mpv-start (around append-arguments activate)
