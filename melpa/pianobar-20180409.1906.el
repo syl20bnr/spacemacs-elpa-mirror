@@ -1,5 +1,5 @@
 ;;; pianobar.el --- thin wrapper for Pianobar, a Pandora Radio client
-;; Package-Version: 20171117.1522
+;; Package-Version: 20180409.1906
 
 ;; Copyright (c) 2011, Aaron Griffith
 ;; This file is licensed under the GNU GPL -- see below.
@@ -137,6 +137,7 @@ the groups matched will be stored in the associated symbol.")
 (defvar pianobar-mode-map
   (let ((map (nconc (make-keymap) comint-mode-map)))
     (substitute-key-definition 'self-insert-command 'pianobar-self-insert-command map global-map)
+    (define-key (kbd "C-c C-c") #'pianobar-sigint)
     map))
 
 (defvar pianobar-is-prompting nil
@@ -264,6 +265,12 @@ Returns t on success, nil on error."
   "Bring up pianobar's station select menu."
   (interactive)
   (pianobar-send-command ?s t))
+
+(defun pianobar-sigint ()
+  "Send SIGINT to pianobar process."
+  (interactive)
+  (when (comint-check-proc pianobar-buffer)
+    (interrupt-process pianobar-buffer)))
 
 (define-derived-mode pianobar-mode comint-mode "pianobar"
   "Major mode for interacting with pianobar.
