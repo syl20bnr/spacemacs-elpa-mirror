@@ -4,14 +4,12 @@ Differences with the built-in front-end:
 
 - Differents colors for differents backends.
 - Icons associated to functions/variables/.. and their backends
+- Display candidate's documentation (support quickhelp-string)
 - Not limited by the current window size, buffer's text properties, ..
   (it's better than you might think)
 
-This package requires emacs 26.
-Also, not compatible with emacs in a tty.
-
-If you want icons, please install icons-in-terminal:
-https://github.com/sebastiencs/icons-in-terminal
+This package requires Emacs 26.
+Also, not compatible with Emacs in a tty.
 
 
 Installation:
