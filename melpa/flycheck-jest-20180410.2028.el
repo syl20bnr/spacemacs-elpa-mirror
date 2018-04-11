@@ -5,7 +5,7 @@
 ;; Authors: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/flycheck-jest
-;; Package-Version: 20180409.1718
+;; Package-Version: 20180410.2028
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "25.1") (flycheck "0.25"))
 ;; Keywords: languages jest
@@ -76,7 +76,7 @@
   :command ("jest"
             "--json"
             "--testPathPattern"
-            source-inplace
+            (eval buffer-file-name)
             "--outputFile"
             (eval (flycheck-jest--result-path)))
   :error-parser flycheck-jest--parse
