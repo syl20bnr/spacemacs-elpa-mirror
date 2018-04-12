@@ -12,7 +12,7 @@
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 
 ;; Package-Requires: ((emacs "24.4") (dash "20170810") (with-editor "20180318"))
-;; Package-Version: 20180405.1137
+;; Package-Version: 20180411.1649
 ;; Keywords: git tools vc
 ;; Homepage: https://github.com/magit/magit
 
@@ -513,7 +513,8 @@ finally check current non-comment text."
     (flyspell-region (point-min) end)))
 
 (defun git-commit-flyspell-verify ()
-  (not (= (char-after (line-beginning-position)) ?#)))
+  (not (= (char-after (line-beginning-position))
+          (aref comment-start 0))))
 
 (defun git-commit-finish-query-functions (force)
   (run-hook-with-args-until-failure
