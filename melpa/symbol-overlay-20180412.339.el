@@ -3,8 +3,8 @@
 ;; Copyright (C) 2017 wolray
 
 ;; Author: wolray <wolray@foxmail.com>
-;; Version: 3.6
-;; Package-Version: 20180306.648
+;; Version: 4.0
+;; Package-Version: 20180412.339
 ;; URL: https://github.com/wolray/symbol-overlay/
 ;; Keywords: faces, matching
 ;; Package-Requires: ((emacs "24.3"))
@@ -152,6 +152,17 @@ You can add more colors whatever you like."
   :group 'symbol-overlay
   :type 'float)
 
+(defcustom symbol-overlay-ignore-functions
+  '((python-mode . symbol-overlay-ignore-function-python))
+  "Functions to determine whether a symbol should be ignored.
+
+This is an association list that maps a MAJOR-MODE symbol to a
+function that determines whether a symbol should be ignored. For
+instance, such a function could use a major mode's font-lock
+definitions to prevent a language's keywords from getting highlighted."
+  :group 'symbol-overlay)
+;; todo: add :type
+
 (defvar symbol-overlay-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "i") 'symbol-overlay-put)
@@ -260,23 +271,31 @@ depending on SCOPE and WINDOW."
   "Highlight symbol at point when there are more than 2 occurrences.
 This only effects symbols in the current displayed window."
   (when symbol-overlay-mode
-    (let ((case-fold-search nil)
-	  (symbol (symbol-overlay-get-symbol nil t))
-	  p)
-      (when (and symbol (not (symbol-overlay-assoc symbol)))
-	(symbol-overlay-remove-temp)
-	(save-excursion
-	  (save-restriction
-	    (symbol-overlay-narrow symbol-overlay-scope t)
-	    (goto-char (point-min))
-	    (re-search-forward symbol nil t)
-	    (save-match-data
-	      (while (re-search-forward symbol nil t)
-		(symbol-overlay-put-one symbol)
-		(or p (setq p t))))
-	    (when p
-	      (symbol-overlay-put-one symbol)
-	      (setq symbol-overlay-temp-symbol symbol))))))))
+    (let* ((case-fold-search nil)
+           (symbol (symbol-overlay-get-symbol nil t))
+           p)
+      (when (and symbol
+                 (not (symbol-overlay-assoc symbol))
+                 (not (symbol-overlay-ignored-p symbol)))
+        (symbol-overlay-remove-temp)
+        (save-excursion
+          (save-restriction
+            (symbol-overlay-narrow symbol-overlay-scope t)
+            (goto-char (point-min))
+            (re-search-forward symbol nil t)
+            (save-match-data
+              (while (re-search-forward symbol nil t)
+                (symbol-overlay-put-one symbol)
+                (or p (setq p t))))
+            (when p
+              (symbol-overlay-put-one symbol)
+              (setq symbol-overlay-temp-symbol symbol))))))))
+
+(defun symbol-overlay-ignored-p (symbol)
+  "Determine whether SYMBOL should be temporarily highlighted."
+  (let ((f (cdr (assoc major-mode symbol-overlay-ignore-functions))))
+    (when f
+      (funcall f symbol))))
 
 (defvar symbol-overlay-timer nil
   "Timer for temporary highlighting.")
@@ -346,6 +365,11 @@ If SHOW-COLOR is non-nil, display the color used by current overlay."
 		       (and show-color (format " (%s)" (cddr keyword))))
 	       (+ count 1)
 	       (+ count (length after))))))
+
+(defvar python-font-lock-keywords)
+(defun symbol-overlay-ignore-function-python (symbol)
+  "Determine whether SYMBOL should be ignored (Python)."
+  (string-match-p (car python-font-lock-keywords) symbol))
 
 ;;;###autoload
 (defun symbol-overlay-put ()

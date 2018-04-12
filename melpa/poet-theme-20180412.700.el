@@ -4,7 +4,7 @@
 
 ;; Author: Kunal Bhalla <bhalla.kunal@gmail.com>
 ;; URL: https://github.com/kunalb/poet/
-;; Package-Version: 20180411.516
+;; Package-Version: 20180412.700
 ;; Version: 1.0
 
 ;;; Commentary:
@@ -85,21 +85,20 @@
             callback)))
    (number-sequence range-start range-end)))
 
-(defvar poet--base-height
+(defvar poet--monospace-height
   (face-attribute 'fixed-pitch :height nil 'default)
   "The base size to use: specified as a defvar to stay consistent")
+
+(defun poet--height (multiplier)
+  (truncate (* multiplier poet--monospace-height)))
 
 (let*
     (;; Theme design
 
-     ;; Get default height
-     (default-height (face-attribute 'fixed-pitch :height nil 'default))
-     (default-monospace (face-attribute 'fixed-pitch :family))
-
      ;; Typography
-     (max-heading-height 1.8)
-     (base-height 1.23)
-     (monospace-height poet--base-height)
+     (max-heading-height (poet--height 1.8))
+     (base-height (poet--height 1.23))
+     (monospace-height (poet--height 1))
 
      ;; Colors
      (bg "#e1d9c2")
@@ -117,6 +116,7 @@
 
      (basic
       `((variable-pitch
+          :family ,(face-attribute 'variable-pitch :family)
           :height ,base-height)
         (default
           :background ,bg
@@ -271,8 +271,8 @@
               ':inherit 'default
               ':foreground header-color
               ':height (max
-                        (+ .08 base-height)
-                        (- max-heading-height (* .3 index))))))
+                        (+ (poet--height .08) base-height)
+                        (- max-heading-height (* (poet--height .2) index))))))
 
         (org-meta-line
          :inherit fixed-pitch
@@ -320,7 +320,7 @@
 
         (org-tag
          :inherit fixed-pitch
-         :height 140
+         :height ,(poet--height 1)
          :foreground "#777777")
 
         (org-block-begin-line
@@ -358,12 +358,12 @@
 
         (markdown-metadata-key-face
          :inherit fixed-pitch
-         :height 140
+         :height ,(poet--height 1)
          :foreground "#777777")
 
         (markdown-metadata-value-face
          :inherit fixed-pitch
-         :height 140
+         :height ,(poet--height 1)
          :foreground ,fg)
 
         (markdown-language-keyword-face
@@ -402,8 +402,8 @@
               ':foreground header-color
               ':inherit 'default
               ':height (max
-                        (+ .08 base-height)
-                        (- max-heading-height (* .3 index))))))))
+                        (+ (poet--height .08) base-height)
+                        (- max-heading-height (* (poet--height .2) index))))))))
 
      (imenu-list
       `(,@(poet--numbered-faces
