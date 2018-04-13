@@ -57,6 +57,15 @@ Press "vic" to select inner object (comment without limiter).
 You can assign other key instead of "c" to the text object by
 customizing `evilnc-comment-text-object'.
 
+You can list of comments in current buffer through using imenu.
+by setup `imenu-create-index-function' to `evilnc-imenu-create-index-function',
+
+  (defun counsel-imenu-comments ()
+    (interactive)
+    (let* ((imenu-create-index-function 'evilnc-imenu-create-index-function))
+      (unless (featurep 'counsel) (require 'counsel))
+      (counsel-imenu)))
+
 For certain major modes, you need manual setup to override its original
 keybindings,
 
