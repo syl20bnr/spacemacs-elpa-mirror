@@ -4,7 +4,7 @@
 
 ;; Author:  Atila Neves <atila.neves@gmail.com>
 ;; Version: 0.6
-;; Package-Version: 20180408.1140
+;; Package-Version: 20180413.329
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (seq "1.11") (levenshtein "0") (s "1.11.0"))
 ;; Keywords: languages
 ;; URL: http://github.com/atilaneves/cmake-ide
@@ -617,7 +617,7 @@ the object file's name just above."
           (make-local-variable 'flycheck-clang-args)
           (make-local-variable 'flycheck-gcc-args)
           (setq flycheck-clang-args args)
-          (setq flycheck-gcc-args args)
+          (setq flycheck-gcc-args (cide--filter-output-arg args))
 
           (make-local-variable 'flycheck-clang-language-standard)
           (make-local-variable 'flycheck-gcc-language-standard)
@@ -1171,6 +1171,13 @@ returned unchanged."
      ((cide--valid-cppcheck-standard-p gnu-replaced) gnu-replaced)
      ;; Otherwise, just hand back the original input.
      (t standard))))
+(defun cide--filter-output-arg (args)
+  "Filter out '-o <output>' from the provided 'args' list."
+  (if (not args)
+      nil
+    (if (cide--string-match "^-o" (car args))
+	(nthcdr 2 args) ;; We assume '-o <output>' is provided only once, hence we stop recursion here. 
+      (cons (car args) (cide--filter-output-arg (cdr args))))))
 
 (provide 'cmake-ide)
 ;;; cmake-ide.el ends here
