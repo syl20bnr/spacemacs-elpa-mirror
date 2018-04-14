@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 ~ 2015 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; Package-Requires: ((helm "1.7.8"))
-;; Package-Version: 20180414.213
+;; Package-Version: 20180414.501
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 (defvaralias 'helm-c-source-ls-git-status 'helm-source-ls-git-status)
 (make-obsolete-variable 'helm-c-source-ls-git-status 'helm-source-ls-git-status "1.5.1")
 
+(defvar inhibit-magit-refresh)
 (declare-function magit-stage-file "ext:magit-apply")
 (declare-function magit-unstage-file "ext:magit-apply")
 (declare-function magit-commit "ext:magit-commit")
@@ -575,14 +576,16 @@ and launch git-grep from there.
   (require 'magit-commit nil t)
   (let ((default-directory (file-name-directory candidate)))
     (if (fboundp 'magit-commit-extend)
-        (magit-commit-extend)
+        (let ((inhibit-magit-refresh t))
+          (magit-commit-extend))
       (process-file "git" nil nil nil "commit" "--amend" "--no-edit"))))
 
 (defun helm-ls-git-amend-commit (candidate)
   (require 'magit-commit nil t)
   (let ((default-directory (file-name-directory candidate)))
     (if (fboundp 'magit-commit-amend)
-        (magit-commit-amend)
+        (let ((inhibit-magit-refresh t))
+          (magit-commit-amend))
       (process-file "git" nil nil nil "commit" "--amend"))))
 
 (defun helm-ls-git-commit (candidate)
@@ -590,7 +593,8 @@ and launch git-grep from there.
   (require 'magit-commit nil t)
   (let ((default-directory (file-name-directory candidate)))
     (if (fboundp 'magit-commit)
-        (magit-commit)
+        (let ((inhibit-magit-refresh t))
+          (magit-commit))
       (helm-ls-git-commit-files))))
 
 (defun helm-ls-git-commit-files ()

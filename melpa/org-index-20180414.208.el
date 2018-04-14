@@ -4,8 +4,8 @@
 
 ;; Author: Marc Ihm <org-index@2484.de>
 ;; URL: https://github.com/marcIhm/org-index
-;; Package-Version: 20180410.811
-;; Version: 5.8.7
+;; Package-Version: 20180414.208
+;; Version: 5.8.8
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This file is not part of GNU Emacs.
@@ -89,7 +89,7 @@
 (require 'widget)
 
 ;; Version of this package
-(defvar org-index-version "5.8.7" "Version of `org-index', format is major.minor.bugfix, where \"major\" are incompatible changes and \"minor\" are new features.")
+(defvar org-index-version "5.8.8" "Version of `org-index', format is major.minor.bugfix, where \"major\" are incompatible changes and \"minor\" are new features.")
 
 ;; customizable options
 (defgroup org-index nil
@@ -776,7 +776,7 @@ table.
 To start using your index, invoke the subcommand 'add' to create
 entries and 'occur' to find them.
 
-This is version 5.8.7 of org-index.el.
+This is version 5.8.8 of org-index.el.
 
 The function `org-index' is the only interactive function of this
 package and its main entry point; it will present you with a list
