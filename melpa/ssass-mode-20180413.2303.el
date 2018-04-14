@@ -4,7 +4,7 @@
 
 ;; Author: Adam Niederer <adam.niederer@gmail.com>
 ;; URL: http://github.com/AdamNiederer/ssass-mode
-;; Package-Version: 20180412.926
+;; Package-Version: 20180413.2303
 ;; Version: 0.1
 ;; Keywords: languages sass
 ;; Package-Requires: ((emacs "24.3"))
@@ -40,13 +40,13 @@
   :link '(emacs-commentary-link :tag "Commentary" "ssass-mode"))
 
 (defconst ssass-id-regex
-  "#[a-z][A-z0-9\-]+")
+  "#[a-z][A-Za-z0-9\-]+")
 
 (defconst ssass-class-regex
-  "\\.[a-z][A-z0-9\-]+")
+  "\\.[a-z][A-Za-z0-9\-]+")
 
 (defconst ssass-pseudoselector-regex
-  "::?[A-z0-9\-]+")
+  "::?[A-Za-z0-9\-]+")
 
 (defconst ssass-key-regex
   "^\s+[a-z\-]+:")
@@ -56,25 +56,37 @@
   "Matches all directives which do not require indentation.")
 
 (defconst ssass-variable-regex
-  "\$[A-z\-]+")
+  "\$[A-Za-z0-9\-]+")
+
+(defconst ssass-variable-assignment-regex
+  (concat ssass-variable-regex ":"))
 
 (defconst ssass-builtin-regex
-  "@[A-z]+")
+  "@[A-Za-z]+")
 
 (defconst ssass-comment-regex
   "^\s+/[/*].*") ; TODO: Make better or use syntax table
 
 (defconst ssass-function-regex
-  "\\([A-z\-]+?\\)\\((.*)\\)")
+  "\\([A-Za-z\-]+?\\)\\((.*)\\)")
 
 (defconst ssass-keywords
-  '("and" "or" "not" "in" "@if" "@else" "@each" "@for" "@return"))
+  '("and" "or" "not" "in" "from" "to" "through"))
+
+(defconst ssass-control-directives
+  '("@if" "@else" "@each" "@for"))
+
+(defconst ssass-function-directives
+  '("@function" "@return"))
+
+(defconst ssass-mixin-directives
+  '("@mixin" "@include"))
 
 (defconst ssass-constants
   '("true" "false" "null"))
 
 (defconst ssass-bang-regex
-  "![a-z][A-z0-9]+")
+  "![a-z][A-Za-z0-9]+")
 
 (defcustom ssass-tab-width 2
   "Tab width for ‘ssass-mode’."
@@ -104,16 +116,18 @@ Use --sass for sassc, and --indented-syntax for node-sass."
   :type 'boolean)
 
 (defconst ssass-font-lock-keywords
-  `((,(regexp-opt ssass-keywords 'words) . font-lock-keyword-face)
-    (,(regexp-opt ssass-constants 'words) . font-lock-constant-face)
-    (,ssass-id-regex . (0 font-lock-keyword-face))
+  `((,ssass-id-regex . (0 font-lock-keyword-face))
     (,ssass-class-regex . (0 font-lock-type-face))
-    (,ssass-builtin-regex . (0 font-lock-builtin-face))
     (,ssass-key-regex . (0 font-lock-variable-name-face))
     (,ssass-function-regex . (1 font-lock-function-name-face))
+    (,ssass-builtin-regex . (0 font-lock-builtin-face))
     (,ssass-pseudoselector-regex . (0 font-lock-function-name-face))
     (,ssass-variable-regex . (0 font-lock-variable-name-face))
-    (,ssass-bang-regex . (0 font-lock-warning-face)))
+    (,ssass-bang-regex . (0 font-lock-warning-face))
+    (,(regexp-opt ssass-keywords 'words) . font-lock-keyword-face)
+    (,(regexp-opt ssass-control-directives 'words) . font-lock-keyword-face)
+    (,(regexp-opt ssass-function-directives 'words) . font-lock-keyword-face)
+    (,(regexp-opt ssass-constants 'words) . font-lock-constant-face))
   "List of Font Lock keywords.")
 
 (defvar ssass-mode-map
@@ -128,21 +142,21 @@ Use --sass for sassc, and --indented-syntax for node-sass."
   "Return whether LINE is a selector."
   (not (or (string-empty-p line)
            (string-match-p ssass-key-regex line)
-           (string-match-p ssass-variable-regex line)
+           (string-match-p ssass-variable-assignment-regex line)
            (string-match-p ssass-directive-noindent-regex line)
            (string-match-p ssass-comment-regex line))))
 
-(defun ssass--goto-last-selector-line ()
+(defun ssass--goto-last-anchor-line ()
   "Move point to the line of the last selector, or the beginning of the buffer."
   (forward-line -1)
   (while (not (or (equal (point-min) (point-at-bol))
                   (ssass--selector-p (buffer-substring (point-at-bol) (point-at-eol)))))
     (forward-line -1)))
 
-(defun ssass--last-selector-line-indent-level ()
+(defun ssass--last-anchor-line-indent-level ()
   "Return the number of spaces indenting the line of the last selector."
   (save-excursion
-    (ssass--goto-last-selector-line)
+    (ssass--goto-last-anchor-line)
     (ssass--indent-level)))
 
 (defun ssass--indent-level ()
@@ -166,10 +180,10 @@ Use --sass for sassc, and --indented-syntax for node-sass."
     (forward-line -1)
     (string-match-p ",\\s-*$" (buffer-substring (point-at-bol) (point-at-eol)))))
 
-(defun ssass--no-selector-line-p ()
+(defun ssass--no-anchor-line-p ()
   "Return whether there is no proper selector or keyword above this line."
   (save-excursion
-    (ssass--goto-last-selector-line)
+    (ssass--goto-last-anchor-line)
     (not (ssass--selector-p (buffer-substring (point-at-bol) (point-at-eol))))))
 
 (defun ssass-indent ()
@@ -179,9 +193,9 @@ Use --sass for sassc, and --indented-syntax for node-sass."
    (cond
     ((and (not ssass-indent-blanks) (ssass--whitespace-p 0)) 0)
     ((ssass--whitespace-p -1) 0)
-    ((ssass--no-selector-line-p) 0)
-    ((ssass--comma-before-p) (ssass--last-selector-line-indent-level))
-    (t (+ ssass-tab-width (ssass--last-selector-line-indent-level))))))
+    ((ssass--no-anchor-line-p) 0)
+    ((ssass--comma-before-p) (ssass--last-anchor-line-indent-level))
+    (t (+ ssass-tab-width (ssass--last-anchor-line-indent-level))))))
 
 (defun ssass-dedent ()
   "Remove one level of indentation from the current line."
