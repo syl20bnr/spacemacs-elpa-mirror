@@ -5,7 +5,7 @@
 
 ;; Author: Martín Varela (martin@varela.fi)
 ;; URL: http://github.com/mvarela/Sunburn-Theme
-;; Package-Version: 20180411.709
+;; Package-Version: 20180414.2312
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "24"))
 
@@ -176,7 +176,7 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(trailing-whitespace ((t (:background ,sunburn-red))))
    `(vertical-border ((t (:foreground ,sunburn-fg))))
 ;;;;; font lock
-   `(font-lock-builtin-face ((t (:foreground ,sunburn-fg :weight bold))))
+   `(font-lock-builtin-face ((t (:foreground ,sunburn-fg-1, :weight bold))))
    `(font-lock-comment-face ((t (:background ,sunburn-bg :foreground ,sunburn-bg+3))))
    `(font-lock-comment-delimiter-face ((t (:background ,sunburn-bg :foreground ,sunburn-bg+3))))
    `(font-lock-constant-face ((t (:foreground ,sunburn-blue+1))))
