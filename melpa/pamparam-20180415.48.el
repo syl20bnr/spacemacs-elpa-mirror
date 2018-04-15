@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/pamparam
-;; Package-Version: 20180321.1041
+;; Package-Version: 20180415.48
 ;; Version: 0.0.0
 ;; Package-Requires: ((emacs "24.3") (lispy "0.26.0") (worf "0.1.0") (hydra "0.13.4"))
 ;; Keywords: outlines, hypermedia, flashcards, memory
@@ -36,6 +36,16 @@
 (require 'worf)
 (require 'lispy)
 (require 'hydra)
+(if (version< emacs-version "26.1")
+    (progn
+      (defsubst string-trim-right (string &optional regexp)
+        "Trim STRING of trailing string matching REGEXP.
+
+REGEXP defaults to  \"[ \\t\\n\\r]+\"."
+        (if (string-match (concat "\\(?:" (or regexp "[ \t\n\r]+") "\\)\\'") string)
+            (replace-match "" t t string)
+          string)))
+  (require 'subr-x))
 
 ;;* Pure
 (defun pamparam-sm2 (card-stats q)

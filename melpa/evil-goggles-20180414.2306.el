@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20180210.938
+;; Package-Version: 20180414.2306
 ;; Package-Requires: ((emacs "24.4") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -47,6 +47,7 @@
 ;;; Code:
 
 (require 'evil)
+(require 'pulse)
 
 (defcustom evil-goggles-duration 0.200
   "Time in floating seconds the goggles hint should last.
@@ -103,8 +104,6 @@ The default is to pulse if the display is graphical, otherwise not."
 This is needed because the pulse package expects to receive a face, it
 can't work with input such as (backgound . \"red\")."
   :group 'evil-goggles)
-
-(autoload 'pulse-momentary-highlight-overlay "pulse")
 
 (defun evil-goggles--pulse-p ()
   "Return whether to pulse or not, depending on variable `evil-goggles-pulse'."

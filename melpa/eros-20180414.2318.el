@@ -1,10 +1,10 @@
 ;;; eros.el --- Evaluation Result OverlayS for Emacs Lisp   -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2016  Tianxiang Xiong
+;; Copyright (C) 2016-2018  Tianxiang Xiong
 
 ;; Author: Tianxiang Xiong <tianxiang.xiong@gmail.com>
 ;; Keywords: convenience, lisp
-;; Package-Version: 20161221.826
+;; Package-Version: 20180414.2318
 ;; Package-Requires: ((emacs "24.4"))
 ;; URL: https://github.com/xiongtx/eros
 ;; Version: 0.1.0
