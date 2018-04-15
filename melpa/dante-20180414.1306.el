@@ -9,10 +9,10 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/dante
-;; Package-Version: 20180224.1246
+;; Package-Version: 20180414.1306
 ;; Created: October 2016
 ;; Keywords: haskell, tools
-;; Package-Requires: ((dash "2.12.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0") (lcr "0.9"))
+;; Package-Requires: ((dash "2.12.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (haskell-mode "13.14") (s "1.11.0") (lcr "1.0"))
 ;; Version:
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -567,16 +567,21 @@ Must be called from GHCi process buffer."
 
 (defconst dante-ghci-prompt "\4\\(.*\\)|")
 
+(defun dante-regexp-disjoin (&rest args)
+  (s-join "\\|" args))
+
 (lcr-def dante-load-loop (acc err-msgs)
   "Parse the output of load command.
 ACC umulate input and ERR-MSGS."
   (setq dante-state 'loading)
-  (let ((success "^Ok, modules loaded:[ ]*\\([^\n ]*\\)\\( (.*)\\)?\.")
+  (let ((success (dante-regexp-disjoin
+                  "^Ok, modules loaded:[ ]*\\([^\n ]*\\)\\( (.*)\\)?\."
+                  "^Ok, one module loaded."))
         (progress "^\\[\\([0-9]*\\) of \\([0-9]*\\)\\] Compiling \\([^ ]*\\).*")
         (err-regexp "^\\([A-Z]?:?[^ \n:][^:\n\r]+\\):\\([0-9()-:]+\\): \\(.*\\)\n\\(\\([ ]+.*\n\\)*\\)")
         (result nil))
     (while (not result)
-      (let* ((i (string-match (s-join "\\|" (list dante-ghci-prompt success err-regexp progress)) acc))
+      (let* ((i (string-match (dante-regexp-disjoin dante-ghci-prompt success err-regexp progress) acc))
              (m (when i (match-string 0 acc)))
              (rest (when i (substring acc (match-end 0)))))
         (cond ((and m (string-match dante-ghci-prompt m))

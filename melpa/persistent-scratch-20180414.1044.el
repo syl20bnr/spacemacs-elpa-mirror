@@ -2,7 +2,7 @@
 
 ;; Author: Fanael Linithien <fanael4@gmail.com>
 ;; URL: https://github.com/Fanael/persistent-scratch
-;; Package-Version: 20170110.546
+;; Package-Version: 20180414.1044
 ;; Package-X-Original-Version: 0.3
 ;; Package-Requires: ((emacs "24"))
 
@@ -321,7 +321,7 @@ The exact format is undocumented, but must be kept in sync with what
          (buffer-string)
        (buffer-substring-no-properties 1 (1+ (buffer-size)))))
    (when (memq 'point persistent-scratch-what-to-save)
-     (cons (point) (mark)))
+     (cons (point) (ignore-errors (mark))))
    (when (memq 'major-mode persistent-scratch-what-to-save)
      major-mode)
    (when (and (buffer-narrowed-p)
