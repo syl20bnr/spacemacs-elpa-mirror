@@ -4,7 +4,7 @@
 
 ;; Author: Kunal Bhalla <bhalla.kunal@gmail.com>
 ;; URL: https://github.com/kunalb/poet/
-;; Package-Version: 20180412.700
+;; Package-Version: 20180415.1209
 ;; Version: 1.0
 
 ;;; Commentary:
@@ -298,7 +298,11 @@
          :background "#e0e0e0")
 
         (org-hide
+         :inherit fixed-pitch
          :foreground ,bg)
+
+        (org-indent
+         :inherit org-hide)
 
         (org-document-title
          :inherit default

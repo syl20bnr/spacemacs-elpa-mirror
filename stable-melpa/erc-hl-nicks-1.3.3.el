@@ -4,8 +4,8 @@
 
 ;; Author: David Leatherman <leathekd@gmail.com>
 ;; URL: http://www.github.com/leathekd/erc-hl-nicks
-;; Package-Version: 1.3.2
-;; Version: 1.3.2
+;; Package-Version: 1.3.3
+;; Version: 1.3.3
 
 ;; This file is not part of GNU Emacs.
 
@@ -16,6 +16,10 @@
 ;; add to nicknames
 
 ;; History
+
+;; 1.3.3
+;;
+;; - Pull request #9 - switch from cl to cl-lib
 
 ;; 1.3.2
 ;;
@@ -109,7 +113,7 @@
 ;;; Code:
 (require 'erc)
 (require 'erc-button)
-(require 'cl)
+(require 'cl-lib)
 (require 'color)
 
 (defgroup erc-hl-nicks nil
@@ -236,7 +240,7 @@
   adjust how far to blend the color."
   (if (and erc-hl-nicks-minimum-contrast-ratio
            (< 0 erc-hl-nicks-minimum-contrast-ratio))
-      (some
+      (cl-some
        (lambda (c)
          (let ((hex (color-rgb-to-hex (nth 0 c) (nth 1 c) (nth 2 c))))
            (when (> (erc-hl-nicks-brightness-contrast erc-hl-nicks-bg-color hex)
@@ -269,7 +273,7 @@
   "Get the color to use for the given nick by calculating the color
   and applying the contrast strategies to it."
   (let ((color (concat "#" (substring (md5 (downcase nick)) 0 12))))
-    (reduce
+    (cl-reduce
      (lambda (color strategy)
        (let ((fn (cdr (assq strategy erc-hl-nicks-color-contrast-strategies))))
          (if fn

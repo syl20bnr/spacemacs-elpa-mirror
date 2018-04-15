@@ -5,7 +5,7 @@
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 5 Dec 2015
 ;; Version: 0.0.8
-;; Package-Version: 20180111.942
+;; Package-Version: 20180415.743
 ;; Keywords: tools php dependency manager
 ;; Homepage: https://github.com/zonuexe/composer.el
 ;; Package-Requires: ((emacs "24") (s "1.9.0") (f "0.17") (request "0.2.0") (seq "1.9") (php-runtime "0.1.0"))
@@ -108,14 +108,14 @@
 
 (defun composer--make-command-string (sub-command args)
   "Return command string by `SUB-COMMAND' and `ARGS'."
-  (s-join " "
-          (mapcar
-           (if composer--quote-shell-argument 'shell-quote-argument 'identity)
-           (cons (composer--find-executable)
-                 (append (if composer-global-command '("global") nil)
-                         (list sub-command)
-                         (if composer--execute-interactive nil '("--no-interaction"))
-                         (composer--args-with-global-options args))))))
+  (mapconcat
+   (if composer--quote-shell-argument 'shell-quote-argument 'identity)
+   (cons (composer--find-executable)
+         (append (if composer-global-command '("global") nil)
+                 (list sub-command)
+                 (if composer--execute-interactive nil '("--no-interaction"))
+                 (composer--args-with-global-options args)))
+   " "))
 
 (defun composer--args-with-global-options (args)
   "Set global options to `ARGS'."
