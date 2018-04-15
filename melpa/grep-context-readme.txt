@@ -5,20 +5,7 @@ errors in compilation buffers or around matches in grep buffers
 
 Usage:
 
-  (progn
-    (require 'grep-context)
-    (dolist (elt '((compile . compilation-mode-map)
-                   (grep . grep-mode-map)
-                   (ivy . ivy-occur-grep-mode-map)
-                   (ripgrep . ripgrep-search-mode-map)
-                   (ag . ag-mode-map)
-                   (ack . ack-mode-map)))
-      (eval-after-load (car elt)
-        `(progn
-            (define-key ,(cdr elt) (kbd "+")
-               #'grep-context-more-around-point)
-            (define-key ,(cdr elt) (kbd "-")
-               #'grep-context-less-around-point)))))
+  (add-hook 'compilation-mode-hook #'grep-context-mode)
 
 After evaluating that you can open a grep buffer and navigate to a match,
 then hit "+" to insert a line of context before and after that match.
