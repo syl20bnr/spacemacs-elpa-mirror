@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/lispyville
-;; Package-Version: 20180408.1649
+;; Package-Version: 20180414.1952
 ;; Created: March 03, 2016
 ;; Keywords: vim, evil, lispy, lisp, parentheses
 ;; Package-Requires: ((lispy "0") (evil "1.2.12") (cl-lib "0.5") (emacs "24.4"))
@@ -650,6 +650,25 @@ ARG has the same effect."
       (lispy--normalize-1))
     (goto-char orig-pos)))
 
+;; ** Wrap Key Theme
+(evil-define-operator lispyville-wrap-with-round (beg end)
+  "Insert ( at BEG and ) at END."
+  (interactive "<r>")
+  (lispy--mark (cons beg end))
+  (lispy-parens nil))
+
+(evil-define-operator lispyville-wrap-with-brackets (beg end)
+  "Insert [ at BEG and ] at END."
+  (interactive "<r>")
+  (lispy--mark (cons beg end))
+  (lispy-brackets nil))
+
+(evil-define-operator lispyville-wrap-with-braces (beg end)
+  "Insert { at BEG and } at END."
+  (interactive "<r>")
+  (lispy--mark (cons beg end))
+  (lispy-braces nil))
+
 ;; * Motions
 ;; ** Additional Movement Key Theme
 (evil-define-motion lispyville-forward-sexp (count)
@@ -921,7 +940,7 @@ only."
       (lispy-raise (or count 1)))))
 
 ;; ** Additional Insert Key Theme
-(evil-define-command lispyville-insert-at-beggining-of-list (count)
+(evil-define-command lispyville-insert-at-beginning-of-list (count)
   "Enter `lispyville-preferred-state' at the beginning of the current list.
 With COUNT, move backward/out COUNT lists first. This is the lispyville
 equivalent of `evil-cp-insert-at-beginning-of-form' except for lists only."
@@ -978,6 +997,37 @@ insert in between two newlines. This is the lispyville equivalent of
       (save-excursion
         (insert "\n")))
     (evil-change-state lispyville-preferred-state)))
+
+;; ** Additional Wrap Key Theme
+(defun lispyville-wrap-round (arg)
+  "Forward arg to `lispy-wrap-round'.
+Never insert a space after the opening delimiter unless in a state in
+`lispyville-insert-states'."
+  (interactive "P")
+  (let ((lispy-insert-space-after-wrap
+         (when (memq evil-state lispyville-insert-states)
+           lispy-insert-space-after-wrap)))
+    (lispy-wrap-round arg)))
+
+(defun lispyville-wrap-brackets (arg)
+  "Forward ARG to `lispy-wrap-brackets'.
+Never insert a space after the opening delimiter unless in a state in
+`lispyville-insert-states'."
+  (interactive "P")
+  (let ((lispy-insert-space-after-wrap
+         (when (memq evil-state lispyville-insert-states)
+           lispy-insert-space-after-wrap)))
+    (lispy-wrap-brackets arg)))
+
+(defun lispyville-wrap-braces (arg)
+  "Forward ARG to `lispy-wrap-braces'.
+Never insert a space after the opening delimiter unless in a state in
+`lispyville-insert-states'."
+  (interactive "P")
+  (let ((lispy-insert-space-after-wrap
+         (when (memq evil-state lispyville-insert-states)
+           lispy-insert-space-after-wrap)))
+    (lispy-wrap-braces arg)))
 
 ;; * Integration Between Visual State and Lispy's Special Mark State
 ;; ** Using Both Separately
@@ -1208,6 +1258,12 @@ When THEME is not given, `lispville-key-theme' will be used instead."
          (lispyville--define-key states
            ">" #'lispyville-slurp
            "<" #'lispyville-barf))
+        (wrap
+         (or states (setq states 'normal))
+         (lispyville--define-key states
+           (kbd "M-(") #'lispyville-wrap-with-round
+           (kbd "M-[") #'lispyville-wrap-with-brackets
+           (kbd "M-{") #'lispyville-wrap-with-braces))
         (additional
          (or states (setq states 'normal))
          (lispyville--define-key states
@@ -1223,14 +1279,20 @@ When THEME is not given, `lispville-key-theme' will be used instead."
         (additional-insert
          (or states (setq states 'normal))
          (lispyville--define-key states
-           (kbd "M-i") #'lispyville-insert-at-beggining-of-list
+           (kbd "M-i") #'lispyville-insert-at-beginning-of-list
            (kbd "M-a") #'lispyville-insert-at-end-of-list
            (kbd "M-o") #'lispyville-open-below-list
            (kbd "M-O") #'lispyville-open-above-list))
+        (additional-wrap
+         (or states (setq states 'normal))
+         (lispyville--define-key states
+           (kbd "M-(") #'lispyville-wrap-round
+           (kbd "M-[") #'lispyyville-wrap-brackets
+           (kbd "M-{") #'lispyville-wrap-braces))
         (arrows
          (or states (setq states 'normal))
          (lispyville--define-key states
-           "<i" #'lispyville-insert-at-beggining-of-list
+           "<i" #'lispyville-insert-at-beginning-of-list
            ">i" #'lispyville-insert-at-end-of-list))
         (insert
          (lispyville-space-after-insert))
