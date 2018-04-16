@@ -38,6 +38,9 @@ The `rg-define-toggle' macro can be used to define a toggle-able
 flag for the rg command line.  Such flags can then be toggled from
 the results buffer to repeat the search with updated flags.
 
+The `rg-define-search' macro can be used to define custom search
+functions that is not available in this package.
+
 The two `rg-save-search' functions will allow for saving search
 result buffers with or without custom naming.
 `rg-list-searches' will display a list of all search buffers with
