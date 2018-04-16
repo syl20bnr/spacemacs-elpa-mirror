@@ -4,6 +4,10 @@ add to nicknames
 
 History
 
+1.3.3
+
+- Pull request #9 - switch from cl to cl-lib
+
 1.3.2
 
 - Pull request #7 - remove the list membership check on autoload
