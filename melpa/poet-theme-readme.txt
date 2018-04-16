@@ -7,9 +7,9 @@ formatted in monospace text with the appropriate backgrounds.
 Recommended customizations for using this theme
 
 - Set up the base fonts you'd like to use in Emacs before loading Poet
-    (set-face-attribute 'default nil :family "Fira Code" :height 130)
-    (set-face-attribute 'fixed-pitch nil :family "Fira Code")
-    (set-face-attribute 'variable-pitch nil :family "Georgia")
+    (set-face-attribute 'default nil :family "Iosevka" :height 130)
+    (set-face-attribute 'fixed-pitch nil :family "Iosevka")
+    (set-face-attribute 'variable-pitch nil :family "Baskerville")
   On loading this theme captures the default and treats that for fixed-pitch
   rendering.
 
