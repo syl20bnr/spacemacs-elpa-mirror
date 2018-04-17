@@ -3,9 +3,9 @@
 ;; Copyright (c) 2014-2018 Paul Rankin
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
-;; Keywords: wp
-;; Package-Version: 20180410.732
-;; Version: 2.5.3
+;; Keywords: text
+;; Package-Version: 20180413.742
+;; Version: 2.5.4
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
 
@@ -293,9 +293,12 @@
 ;;; Customization
 
 (defcustom fountain-mode-hook
-  '(turn-on-visual-line-mode)
+  '(turn-on-visual-line-mode fountain-outline-hide-custom-level)
   "Mode hook for `fountain-mode', run after the mode is turned on."
   :type 'hook
+  :options '(turn-on-visual-line-mode
+             fountain-outline-hide-custom-level
+             turn-on-flyspell)
   :group 'fountain)
 
 (defcustom fountain-add-continued-dialog
@@ -3565,23 +3568,17 @@ Used by `fountain-outline-cycle'.")
 
 Used by `fountain-outline-cycle'.")
 
-(defcustom fountain-outline-startup-level
-  0
-  "Outline level to show when visiting a file."
-  :type '(choice (const :tag "Show all" 0)
-                 (const :tag "Show top-level" 1)
-                 (const :tag "Show scene headings" 6)
-                 (integer :tag "Custom level"))
-  :group 'fountain)
+(make-obsolete-variable 'fountain-outline-startup-level
+  'fountain-outline-custom-level "2.5.4")
 
 (defcustom fountain-outline-custom-level
   nil
   "Additional section headings to include in outline cycling."
   :type '(choice (const :tag "Only top-level" nil)
-                 (const :tag "Include level 2" 2)
-                 (const :tag "Include level 3" 3)
-                 (const :tag "Include level 4" 4)
-                 (const :tag "Include level 5" 5))
+                 (const :tag "Level 2" 2)
+                 (const :tag "Level 3" 3)
+                 (const :tag "Level 4" 4)
+                 (const :tag "Level 5" 5))
   :group 'fountain)
 
 (defalias 'fountain-outline-next 'outline-next-visible-heading)
@@ -3677,6 +3674,10 @@ Display a message unless SILENT."
          (outline-hide-sublevels n)
          (unless silent (message "Showing level %s headings" n))))
   (setq fountain--outline-cycle n))
+
+(defun fountain-outline-hide-custom-level ()
+  "Set the outline visibilty to `fountain-outline-custom-level'."
+  (fountain-outline-hide-level fountain-outline-custom-level t))
 
 (defun fountain-outline-cycle (&optional arg) ; FIXME: document
   "\\<fountain-mode-map>Cycle outline visibility depending on ARG.
@@ -5128,7 +5129,6 @@ keywords suitable for Font Lock."
   "Major mode for screenwriting in Fountain markup."
   :group 'fountain
   (fountain-init-vars)
-  (hack-local-variables)
   (face-remap-add-relative 'default 'fountain)
   (add-hook 'post-command-hook #'fountain-set-edit-line nil t)
   (add-hook 'post-command-hook #'fountain-auto-upcase-deactivate-maybe nil t)
@@ -5138,8 +5138,7 @@ keywords suitable for Font Lock."
   (jit-lock-register #'fountain-completion-update-scene-headings)
   (jit-lock-register #'fountain-completion-update-characters)
   (fountain-init-mode-line)
-  (fountain-restart-page-count-timer)
-  (fountain-outline-hide-level fountain-outline-startup-level t))
+  (fountain-restart-page-count-timer))
 
 (provide 'fountain-mode)
 

@@ -1,7 +1,7 @@
 ;;; clang-format.el --- Format code using clang-format  -*- lexical-binding: t; -*-
 
 ;; Keywords: tools, c
-;; Package-Version: 20171202.1318
+;; Package-Version: 20180406.814
 ;; Package-Requires: ((cl-lib "0.3"))
 
 ;;; Commentary:
@@ -154,7 +154,7 @@ uses the function `buffer-file-name'."
                              nil nil clang-format-executable
                              nil `(,temp-buffer ,temp-file) nil
                              `("-output-replacements-xml"
-                               ;; Gaurd against a nil assume-file-name.
+                               ;; Guard against a nil assume-file-name.
                                ;; If the clang-format option -assume-filename
                                ;; is given a blank string it will crash as per
                                ;; the following bug report
