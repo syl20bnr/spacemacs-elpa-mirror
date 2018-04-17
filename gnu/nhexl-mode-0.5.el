@@ -4,7 +4,7 @@
 
 ;; Author: Stefan Monnier <monnier@iro.umontreal.ca>
 ;; Keywords: data
-;; Version: 0.4
+;; Version: 0.5
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -56,11 +56,23 @@
   "Edit a file in a hex dump format."
   :group 'data)
 
-(defvar nhexl-line-width 16
-  "Number of bytes per line.")
+(defcustom nhexl-line-width 16
+  "Number of bytes per line."
+  :type 'integer)
+
+(defcustom nhexl-display-unprintables nil
+  "If non-nil, display non-printable chars using the customary codes.
+If nil, use just `.' for those chars instead of things like `\\NNN' or `^C'."
+  :type 'boolean)
 
 (defvar nhexl--display-table
   (let ((dt (make-display-table)))
+    (unless nhexl-display-unprintables
+      (dotimes (i 128)
+        (when (> (char-width i) 1)
+          (setf (aref dt i) [?.])))
+      (dotimes (i 128)
+        (setf (aref dt (unibyte-char-to-multibyte (+ i 128))) [?.])))
     ;; (aset dt ?\n [?␊])
     (aset dt ?\t [?␉])
     dt))
@@ -266,6 +278,10 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
     ;; `previous-line' for this case, tho it is pretty pathological for them.
     (define-key map [remap next-line] #'nhexl-next-line)
     (define-key map [remap previous-line] #'nhexl-previous-line)
+    ;; Just as for line movement, scrolling movement could/should work as-is
+    ;; but benefit from an ad-hoc implementation.
+    (define-key map [remap scroll-up-command] #'nhexl-scroll-up)
+    (define-key map [remap scroll-down-command] #'nhexl-scroll-down)
     ;; FIXME: Find a key binding for nhexl-nibble-edit-mode!
     map))
 
@@ -285,6 +301,17 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
         (with-silent-modifications
           (put-text-property (point-min) (point-max) 'display nil))
         (remove-overlays (point-min) (point-max) 'nhexl t))
+    (when (and enable-multibyte-characters
+               (not (save-excursion
+                      (save-restriction
+                        (widen)
+                        (goto-char (point-min))
+                        (re-search-forward "[^[:ascii:]\200-\377]" nil t))))
+               ;; We're in a multibyte buffer which only contains bytes,
+               ;; so we could advantageously convert it to unibyte.
+               (y-or-n-p "Make buffer unibyte? "))
+      (set-buffer-multibyte nil))
+                   
     (unless (local-variable-p 'nhexl--saved-vars)
       (dolist (var '(buffer-display-table buffer-invisibility-spec
                      overwrite-mode header-line-format))
@@ -318,6 +345,50 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
     (let ((nib (nhexl--nibble)))
       (backward-char (* arg nhexl-line-width))
       (nhexl--nibble-set nib))))
+
+(defun nhexl-scroll-down (&optional arg)
+  "Scroll text of selected window down ARG lines; or near full screen if no ARG."
+  (interactive "P")
+  (unless arg
+    ;; Magic extra 2 lines: 1 line to account for the header-line, and a second
+    ;; to account for the extra empty line that somehow ends up being there
+    ;; pretty much all the time right below the header-line :-(
+    (setq arg (max 1 (- (window-text-height) next-screen-context-lines 2))))
+  (cond
+   ((< arg 0) (nhexl-scroll-up (- arg)))
+   ((eq arg '-) (nhexl-scroll-up nil))
+   ((bobp) (scroll-down arg))			; signal error
+   (t
+    (let* ((ws (window-start))
+           (nws (- ws (* nhexl-line-width arg))))
+      (if (eq ws (point-min))
+          (if scroll-error-top-bottom
+              (nhexl-previous-line arg)
+            (scroll-down arg))
+        (nhexl-previous-line arg)
+        (set-window-start nil (max (point-min) nws)))))))
+
+(defun nhexl-scroll-up (&optional arg)
+  "Scroll text of selected window up ARG lines; or near full screen if no ARG."
+  (interactive "P")
+  (unless arg
+    ;; Magic extra 2 lines: 1 line to account for the header-line, and a second
+    ;; to account for the extra empty line that somehow ends up being there
+    ;; pretty much all the time right below the header-line :-(
+    (setq arg (max 1 (- (window-text-height) next-screen-context-lines 2))))
+  (cond
+   ((< arg 0) (nhexl-scroll-down (- arg)))
+   ((eq arg '-) (nhexl-scroll-down nil))
+   ((eobp) (scroll-up arg))			; signal error
+   (t
+    (let* ((ws (window-start))
+           (nws (+ ws (* nhexl-line-width arg))))
+      (if (pos-visible-in-window-p (point-max))
+          (if scroll-error-top-bottom
+              (nhexl-next-line arg)
+            (scroll-up arg))
+        (nhexl-next-line arg)
+        (set-window-start nil (min (point-max) nws)))))))
 
 (defun nhexl--change-function (beg end len)
   ;; Round modifications up-to the hexl-line length since nhexl--jit will need
@@ -517,6 +588,17 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
 
 ;;;; ChangeLog:
 
+;; 2018-04-16  Stefan Monnier  <monnier@iro.umontreal.ca>
+;; 
+;; 	* nhexl-mode.el: Hide undisplayable chars by default
+;; 
+;; 	(nhexl-line-width): Make it a defcustom.
+;; 	(nhexl-display-unprintables): New defcustom.
+;; 	(nhexl--display-table): Avoid \NNN by default.
+;; 	(nhexl-mode): Suggest converting to unibyte when applicable.
+;; 	(nhexl-scroll-down, nhexl-scroll-up): New commands.
+;; 	(nhexl-mode-map): Use them.
+;; 
 ;; 2018-04-15  Stefan Monnier  <monnier@iro.umontreal.ca>
 ;; 
 ;; 	* nhexl-mode.el: Bump version number for new release
