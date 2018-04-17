@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 3.2.24
-;; Version: 3.2.24
+;; Package-Version: 3.2.26
+;; Version: 3.2.26
 ;; Package-Requires: ((emacs "24.4") (popup "0.5.3"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -574,12 +574,20 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
        (error "'hugo --destination public' command does not end normally")))
    (when (get-buffer "*hugo-publish*")
      (kill-buffer "*hugo-publish*"))
-   (shell-command-to-string
-    (concat "rsync -rtpl --chmod="
-	    easy-hugo-publish-chmod " --delete "
-	    easy-hugo-rsync-delete-directory " "
-	    easy-hugo-sshdomain ":"
-	    (shell-quote-argument easy-hugo-root)))
+   (let ((ret (call-process "rsync"
+			    nil
+			    "*hugo-rsync*"
+			    t
+			    "-rtpl"
+			    (concat "--chmod=" easy-hugo-publish-chmod)
+			    "--delete"
+			    easy-hugo-rsync-delete-directory
+			    (concat easy-hugo-sshdomain ":" (shell-quote-argument easy-hugo-root)))))
+     (unless (zerop ret)
+       (switch-to-buffer (get-buffer "*hugo-rsync*"))
+       (error "'rsync' command does not end normally")))
+   (when (get-buffer "*hugo-rsync*")
+     (kill-buffer "*hugo-rsync*"))
    (message "Blog published")
    (when easy-hugo-url
      (browse-url easy-hugo-url))))
@@ -630,12 +638,23 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
 	(error "'hugo --destination public' command does not end normally")))
     (when (get-buffer "*hugo-publish*")
       (kill-buffer "*hugo-publish*"))
-    (shell-command-to-string
-     (concat "rsync -rtpl --chmod="
-	     easy-hugo-publish-chmod " --delete "
-	     easy-hugo-rsync-delete-directory " "
-	     (easy-hugo-nth-eval-bloglist easy-hugo-sshdomain n) ":"
-	     (shell-quote-argument (easy-hugo-nth-eval-bloglist easy-hugo-root n))))
+    (let ((ret (call-process "rsync"
+			     nil
+			     "*hugo-rsync*"
+			     t
+			     "-rtpl"
+			     (concat "--chmod=" easy-hugo-publish-chmod)
+			     "--delete"
+			     easy-hugo-rsync-delete-directory
+			     (concat
+			      (easy-hugo-nth-eval-bloglist easy-hugo-sshdomain n)
+			      ":"
+			      (shell-quote-argument (easy-hugo-nth-eval-bloglist easy-hugo-root n))))))
+      (unless (zerop ret)
+	(switch-to-buffer (get-buffer "*hugo-rsync*"))
+	(error "'rsync' command does not end normally")))
+    (when (get-buffer "*hugo-rsync*")
+      (kill-buffer "*hugo-rsync*"))
     (message "Blog published")
     (when (easy-hugo-nth-eval-bloglist easy-hugo-url n)
       (browse-url (easy-hugo-nth-eval-bloglist easy-hugo-url n)))
@@ -1414,17 +1433,18 @@ J .. Jump blog        e .. Edit file     S .. Sort time
 	  (while (string-match "^[D\\|d]ate[:]? [=]?+[ ]*\\(.+?\\)$" source pos)
 	    (push (match-string 1 source) matches)
 	    (setq pos (match-end 0)))
-	  (let ((timestamplist
-		 (delete "" (split-string
-			     (replace-regexp-in-string
-			      "[\"\']" " "
-			      (replace-regexp-in-string "[,()]" "" (format "%s" matches)))
-			     " "))))
-	    (while timestamplist
-	      (push (cons (car timestamplist) (car filelist)) result)
-	      (pop timestamplist)
-	      (pop filelist))
-	    result))))))
+	  (when matches
+	    (let ((timestamplist
+		   (delete "" (split-string
+			       (replace-regexp-in-string
+				"[\"\']" " "
+				(replace-regexp-in-string "[,()]" "" (format "%s" matches)))
+			       " "))))
+	      (while timestamplist
+		(push (cons (car timestamplist) (car filelist)) result)
+		(pop timestamplist)
+		(pop filelist))
+	      result)))))))
 
 (defun easy-hugo--draft-publishday-alist (filesin)
   "Return article alist from FILESIN with publishing date."
@@ -1453,17 +1473,18 @@ J .. Jump blog        e .. Edit file     S .. Sort time
 	    (while (string-match "^[D\\|d]ate[:]? [=]?+[ ]*\\(.+?\\)$" source pos)
 	      (push (match-string 1 source) matches)
 	      (setq pos (match-end 0)))
-	    (let ((timestamplist
-		   (delete "" (split-string
-			       (replace-regexp-in-string
-				"[\"\']" " "
-				(replace-regexp-in-string "[,()]" "" (format "%s" matches)))
-			       " "))))
-	      (while timestamplist
-		(push (cons (car timestamplist) (car filelist)) result)
-		(pop timestamplist)
-		(pop filelist))
-	      result)))))))
+	    (when matches
+	      (let ((timestamplist
+		     (delete "" (split-string
+				 (replace-regexp-in-string
+				  "[\"\']" " "
+				  (replace-regexp-in-string "[,()]" "" (format "%s" matches)))
+				 " "))))
+		(while timestamplist
+		  (push (cons (car timestamplist) (car filelist)) result)
+		  (pop timestamplist)
+		  (pop filelist))
+		result))))))))
 
 (defun easy-hugo-forward-char (arg)
   "Forward-char on easy-hugo-mode.
@@ -1978,7 +1999,7 @@ output directories whose names match REGEXP."
 		file)
 	   (push (match-string 1 file) files))))
      (unless (file-directory-p (expand-file-name easy-hugo-postdir easy-hugo-basedir))
-       (error "%s%s doesn't exist!" easy-hugo-basedir easy-hugo-postdir))
+       (error "%s%s does not exist!" easy-hugo-basedir easy-hugo-postdir))
      (setq easy-hugo--mode-buffer (get-buffer-create easy-hugo--buffer-name))
      (switch-to-buffer easy-hugo--mode-buffer)
      (setq-local default-directory easy-hugo-basedir)
@@ -2007,23 +2028,29 @@ output directories whose names match REGEXP."
 	   ((eq 2 easy-hugo--sort-char-flg)
 	    (setq files (sort files 'string<)))
 	   ((eq 1 easy-hugo--sort-publishday-flg)
-	    (let ((source (reverse (sort (easy-hugo--draft-publishday-alist files)
-					 (lambda (a b) (string> (car a) (car b)))))))
-	      (setq files nil)
-	      (while source
-		(push (file-relative-name (cdr (car source))
-					  (expand-file-name easy-hugo-postdir easy-hugo-basedir))
-		      files)
-		(pop source))))
+	    (let ((publist (easy-hugo--draft-publishday-alist files)))
+	      (if publist
+		  (let ((source (reverse (sort publist
+					       (lambda (a b) (string> (car a) (car b)))))))
+		    (setq files nil)
+		    (while source
+		      (push (file-relative-name (cdr (car source))
+						(expand-file-name easy-hugo-postdir easy-hugo-basedir))
+			    files)
+		      (pop source)))
+		(message "There is no file written date in front matter"))))
 	   ((eq 2 easy-hugo--sort-publishday-flg)
-	    (let ((source (sort (easy-hugo--draft-publishday-alist files)
-				(lambda (a b) (string> (car a) (car b))))))
-	      (setq files nil)
-	      (while source
-		(push (file-relative-name (cdr (car source))
-					  (expand-file-name easy-hugo-postdir easy-hugo-basedir))
-		      files)
-		(pop source)))))
+	    (let ((publist (easy-hugo--draft-publishday-alist files)))
+	      (if publist
+		  (let ((source (sort publist
+				      (lambda (a b) (string> (car a) (car b))))))
+		    (setq files nil)
+		    (while source
+		      (push (file-relative-name (cdr (car source))
+						(expand-file-name easy-hugo-postdir easy-hugo-basedir))
+			    files)
+		      (pop source)))
+		(message "There is no file written date in front matter")))))
      (while files
        (push
 	(concat
@@ -2059,7 +2086,7 @@ output directories whose names match REGEXP."
   (interactive)
   (easy-hugo-with-env
    (unless (file-directory-p (expand-file-name easy-hugo-postdir easy-hugo-basedir))
-     (error "%s%s doesn't exist!" easy-hugo-basedir easy-hugo-postdir))
+     (error "%s%s does not exist!" easy-hugo-basedir easy-hugo-postdir))
    (setq easy-hugo--mode-buffer (get-buffer-create easy-hugo--buffer-name))
    (setq easy-hugo--draft-list nil)
    (switch-to-buffer easy-hugo--mode-buffer)
@@ -2097,23 +2124,29 @@ output directories whose names match REGEXP."
 	       ((eq 2 easy-hugo--sort-char-flg)
 		(setq files (sort files 'string<)))
 	       ((eq 1 easy-hugo--sort-publishday-flg)
-		(let ((source (sort (easy-hugo--publishday-alist)
-				    (lambda (a b) (string> (car a) (car b))))))
-		  (setq files nil)
-		  (while source
-		    (push (file-relative-name (cdr (car source))
-					      (expand-file-name easy-hugo-postdir easy-hugo-basedir))
-			  files)
-		    (pop source))))
+		(let ((publist (easy-hugo--publishday-alist)))
+		  (if publist
+		      (let ((source (sort publist
+					  (lambda (a b) (string> (car a) (car b))))))
+			(setq files nil)
+			(while source
+			  (push (file-relative-name (cdr (car source))
+						    (expand-file-name easy-hugo-postdir easy-hugo-basedir))
+				files)
+			  (pop source)))
+		    (message "There is no file written date in front matter"))))
 	       ((eq 2 easy-hugo--sort-publishday-flg)
-		(let ((source (reverse (sort (easy-hugo--publishday-alist)
-					     (lambda (a b) (string> (car a) (car b)))))))
-		  (setq files nil)
-		  (while source
-		    (push (file-relative-name (cdr (car source))
-					      (expand-file-name easy-hugo-postdir easy-hugo-basedir))
-			  files)
-		    (pop source)))))
+		(let ((publist (easy-hugo--publishday-alist)))
+		  (if publist
+		      (let ((source (reverse (sort publist
+						   (lambda (a b) (string> (car a) (car b)))))))
+			(setq files nil)
+			(while source
+			  (push (file-relative-name (cdr (car source))
+						    (expand-file-name easy-hugo-postdir easy-hugo-basedir))
+				files)
+			  (pop source)))
+		    (message "There is no file written date in front matter")))))
 	 (while files
 	   (unless (or (string= (car files) ".")
 		       (string= (car files) "..")

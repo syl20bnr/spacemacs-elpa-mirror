@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-jekyll
-;; Package-Version: 1.6.13
-;; Version: 1.6.13
+;; Package-Version: 1.6.14
+;; Version: 1.6.14
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -458,11 +458,20 @@ Report an error if jekyll is not installed, or if `easy-jekyll-basedir' is unset
        (error "'bundle exec jekyll build' command does not end normally")))
    (when (get-buffer "*jekyll-publish*")
      (kill-buffer "*jekyll-publish*"))
-   (shell-command-to-string (concat "rsync -rtpl --chmod="
-				    easy-jekyll-publish-chmod " --delete "
-				    easy-jekyll-rsync-delete-directory " "
-				    easy-jekyll-sshdomain ":"
-				    (shell-quote-argument easy-jekyll-root)))
+   (let ((ret (call-process "rsync"
+			    nil
+			    "*jekyll-rsync*"
+			    t
+			    "-rtpl"
+			    (concat "--chmod=" easy-jekyll-publish-chmod)
+			    "--delete"
+			    easy-jekyll-rsync-delete-directory
+			    (concat easy-jekyll-sshdomain ":" (shell-quote-argument easy-jekyll-root)))))
+     (unless (zerop ret)
+       (switch-to-buffer (get-buffer "*jekyll-rsync*"))
+       (error "'rsync' command does not end normally")))
+   (when (get-buffer "*jekyll-rsync*")
+     (kill-buffer "*jekyll-rsync*"))
    (message "Blog published")
    (when easy-jekyll-url
      (browse-url easy-jekyll-url))))
@@ -514,13 +523,24 @@ Report an error if jekyll is not installed, or if `easy-jekyll-basedir' is unset
 	(error "'bundle exec jekyll build' command does not end normally")))
     (when (get-buffer "*jekyll-publish*")
       (kill-buffer "*jekyll-publish*"))
-    (shell-command-to-string (concat "rsync -rtpl --chmod="
-				     easy-jekyll-publish-chmod " --delete "
-				     easy-jekyll-rsync-delete-directory " "
-				     (easy-jekyll-nth-eval-bloglist easy-jekyll-sshdomain n) ":"
-				     (shell-quote-argument (easy-jekyll-nth-eval-bloglist
-							    easy-jekyll-root
-							    n))))
+    (let ((ret (call-process "rsync"
+			     nil
+			     "*jekyll-rsync*"
+			     t
+			     "-rtpl"
+			     (concat "--chmod=" easy-jekyll-publish-chmod)
+			     "--delete"
+			     easy-jekyll-rsync-delete-directory
+			     (concat
+			      (easy-jekyll-nth-eval-bloglist easy-jekyll-sshdomain n)
+			      ":"
+			      (shell-quote-argument
+			       (easy-jekyll-nth-eval-bloglist easy-jekyll-root n))))))
+      (unless (zerop ret)
+	(switch-to-buffer (get-buffer "*jekyll-rsync*"))
+	(error "'rsync' command does not end normally")))
+    (when (get-buffer "*jekyll-rsync*")
+      (kill-buffer "*jekyll-rsync*"))
     (message "Blog published")
     (when (easy-jekyll-nth-eval-bloglist easy-jekyll-url n)
       (browse-url (easy-jekyll-nth-eval-bloglist easy-jekyll-url n)))
@@ -1651,7 +1671,7 @@ Optional prefix ARG says how many lines to move; default is one line."
    (unless (file-directory-p (expand-file-name
 			      easy-jekyll-postdir
 			      easy-jekyll-basedir))
-     (error "%s%s doesn't exist!" easy-jekyll-basedir easy-jekyll-postdir))
+     (error "%s%s does not exist!" easy-jekyll-basedir easy-jekyll-postdir))
    (setq easy-jekyll--mode-buffer (get-buffer-create easy-jekyll--buffer-name))
    (setq easy-jekyll--draft-list nil)
    (switch-to-buffer easy-jekyll--mode-buffer)
