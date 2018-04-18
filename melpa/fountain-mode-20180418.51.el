@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: text
-;; Package-Version: 20180413.742
+;; Package-Version: 20180418.51
 ;; Version: 2.5.4
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -2922,7 +2922,7 @@ Command acts on current buffer or BUFFER."
     (page-break "\n\n")
     (synopsis "{{content}}\n\n")
     (note "[ note: {{content}} ]\n\n")
-    (center "{{content}}"))
+    (center "{{content}}\n\n"))
   (define-fountain-export-template-docstring 'txt)
   :type 'fountain-element-list-type
   :group 'fountain-plaintext-export)
@@ -3677,7 +3677,8 @@ Display a message unless SILENT."
 
 (defun fountain-outline-hide-custom-level ()
   "Set the outline visibilty to `fountain-outline-custom-level'."
-  (fountain-outline-hide-level fountain-outline-custom-level t))
+  (if fountain-outline-custom-level
+      (fountain-outline-hide-level fountain-outline-custom-level t)))
 
 (defun fountain-outline-cycle (&optional arg) ; FIXME: document
   "\\<fountain-mode-map>Cycle outline visibility depending on ARG.
