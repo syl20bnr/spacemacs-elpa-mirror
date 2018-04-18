@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; URL: http://github.com/Kungsgeten/org-brain
-;; Package-Version: 20180411.1157
+;; Package-Version: 20180417.2305
 ;; Keywords: outlines hypermedia
 ;; Package-Requires: ((emacs "25") (org "9"))
 ;; Version: 0.5
@@ -909,6 +909,7 @@ Unless GOTO-FILE-FUNC is nil, use `pop-to-buffer-same-window' for opening the en
   (let ((marker (org-brain-entry-marker entry)))
     (apply (or goto-file-func #'pop-to-buffer-same-window)
            (list (marker-buffer marker)))
+    (widen)
     (goto-char (marker-position marker))
     (org-show-entry))
   entry)

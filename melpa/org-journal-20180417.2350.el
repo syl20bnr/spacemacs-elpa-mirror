@@ -2,8 +2,8 @@
 
 ;; Author: Bastian Bechtold
 ;; URL: http://github.com/bastibe/org-journal
-;; Package-Version: 20180402.536
-;; Version: 1.13.3
+;; Package-Version: 20180417.2350
+;; Version: 1.13.4
 ;; Package-Requires: ((emacs "25.1"))
 
 ;;; Commentary:
@@ -99,7 +99,7 @@ org-journal. Use org-journal-file-format instead.")
 ; Customizable variables
 (defgroup org-journal nil
   "Settings for the personal journal"
-  :version "1.13.3"
+  :version "1.13.4"
   :group 'applications)
 
 (defface org-journal-highlight
@@ -649,7 +649,8 @@ And cleans out past org-journal files."
     (let ((agenda-files-without-org-journal
            (seq-filter
             (lambda (f)
-              (not (and (string= (file-name-directory f) (expand-file-name org-journal-dir))
+              (not (and (string= (file-name-directory f)
+                                 (expand-file-name (file-name-as-directory org-journal-dir)))
                         (string-match org-journal-file-pattern (file-name-nondirectory f)))))
             org-agenda-files))
           (org-journal-agenda-files
