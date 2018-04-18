@@ -7,7 +7,7 @@
 ;; Created: December 5, 2014
 ;; Modified: March 17, 2018
 ;; Version: 2.1.0
-;; Package-Version: 20180317.233
+;; Package-Version: 20180417.1915
 ;; Keywords: emulation, vim, evil, sneak, seek
 ;; Homepage: https://github.com/hlissner/evil-snipe
 ;; Package-Requires: ((emacs "24.4") (evil "1.2.12") (cl-lib "0.5"))
@@ -585,7 +585,6 @@ be inclusive or exclusive."
 (defun turn-on-evil-snipe-mode ()
   "Enable evil-snipe-mode in the current buffer."
   (unless (or (minibufferp)
-              (eq major-mode 'fundamental-mode)
               (apply #'derived-mode-p evil-snipe-disabled-modes))
     (evil-snipe-local-mode +1)))
 
@@ -593,7 +592,6 @@ be inclusive or exclusive."
 (defun turn-on-evil-snipe-override-mode ()
   "Enable evil-snipe-mode in the current buffer."
   (unless (or (minibufferp)
-              (eq major-mode 'fundamental-mode)
               (apply #'derived-mode-p evil-snipe-disabled-modes))
     (evil-snipe-override-local-mode +1)))
 
