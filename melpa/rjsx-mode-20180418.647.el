@@ -4,7 +4,7 @@
 
 ;; Author: Felipe Ochoa <felipe@fov.space>
 ;; URL: https://github.com/felipeochoa/rjsx-mode/
-;; Package-Version: 20180409.902
+;; Package-Version: 20180418.647
 ;; Package-Requires: ((emacs "24.4") (js2-mode "20170504"))
 ;; Version: 1.1
 ;; Keywords: languages
@@ -861,7 +861,7 @@ inserts `</>' and places the cursor inside the new tag."
         (insert (make-string n ?<))
       (if (save-excursion
             (forward-comment most-negative-fixnum)
-            (skip-syntax-backward " ")
+            (skip-chars-backward "\n\r")
             (or (= (point) (point-min))
                 (memq (char-before) (append "=(?:>}&|{," nil))
                 (let ((start (- (point) 6)))

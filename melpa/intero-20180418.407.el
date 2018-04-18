@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20180417.26
+;; Package-Version: 20180418.407
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -286,6 +286,9 @@ LIST is a FIFO.")
 
 (defvar-local intero-targets (list)
   "Targets used for the stack process.")
+
+(defvar-local intero-repl-last-loaded nil
+  "Last loaded module in the REPL.")
 
 (defvar-local intero-start-time nil
   "Start time of the stack process.")
@@ -1244,9 +1247,16 @@ If PROMPT-OPTIONS is non-nil, prompt with an options list."
   (save-buffer)
   (let ((file (intero-path-for-ghci (intero-buffer-file-name))))
     (intero-with-repl-buffer prompt-options
-      (comint-simple-send
-       (get-buffer-process (current-buffer))
-       (concat ":load " file)))))
+      (if (or (not intero-repl-last-loaded)
+	      (not (equal file intero-repl-last-loaded)))
+	  (progn
+	    (comint-simple-send
+	     (get-buffer-process (current-buffer))
+	     (concat ":load " file))
+	    (setq intero-repl-last-loaded file))
+	(comint-simple-send
+	 (get-buffer-process (current-buffer))
+	 ":reload")))))
 
 (defun intero-repl-eval-region (begin end &optional prompt-options)
   "Evaluate the code in region from BEGIN to END in the REPL.
@@ -1348,6 +1358,7 @@ STACK-YAML is the stack yaml config to use.  When nil, tries to
 use project-wide intero-stack-yaml when nil, otherwise uses
 stack's default)."
   (setq intero-targets targets)
+  (setq intero-repl-last-loaded nil)
   (when stack-yaml
     (setq intero-stack-yaml stack-yaml))
   (when prompt-options

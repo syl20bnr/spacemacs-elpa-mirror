@@ -4,7 +4,7 @@
 
 ;; Author: Leo Liu <sdl.web@gmail.com>
 ;; Version: 0.8.13
-;; Package-Version: 20171203.1553
+;; Package-Version: 20180418.657
 ;; Keywords: tools, convenience
 ;; Created: 2013-01-29
 ;; URL: https://github.com/leoliu/ggtags
@@ -462,14 +462,14 @@ Set to nil to disable tag highlighting."
           (output (progn
                     (goto-char (point-max))
                     (skip-chars-backward " \t\n\r")
-                    (buffer-substring (point-min) (point)))))
+                    (buffer-substring-no-properties (point-min) (point)))))
       (or (zerop exit)
           (error "`%s' non-zero exit: %s" program output))
       output)))
 
 (defun ggtags-tag-at-point ()
   (pcase (funcall ggtags-bounds-of-tag-function)
-    (`(,beg . ,end) (buffer-substring beg end))))
+    (`(,beg . ,end) (buffer-substring-no-properties beg end))))
 
 ;;; Store for project info and settings
 
@@ -2091,8 +2091,9 @@ When finished invoke CALLBACK in BUFFER with process exit status."
          (show (lambda (_status)
                  (goto-char (point-min))
                  (let ((defs (cl-loop while (re-search-forward re nil t)
-                                      collect (list (buffer-substring (1+ (match-end 2))
-                                                                      (line-end-position))
+                                      collect (list (buffer-substring-no-properties
+                                                     (1+ (match-end 2))
+                                                     (line-end-position))
                                                     name
                                                     (match-string 1)
                                                     (string-to-number (match-string 2))))))
@@ -2318,7 +2319,8 @@ to nil disables displaying this information.")
         nil)
        ((and bounds (let ((completion-ignore-case nil))
                       (test-completion
-                       (buffer-substring (car bounds) (cdr bounds))
+                       (buffer-substring-no-properties
+                        (car bounds) (cdr bounds))
                        ggtags-completion-table)))
         (move-overlay o (car bounds) (cdr bounds) (current-buffer))
         (overlay-put o 'category 'ggtags-active-tag))
