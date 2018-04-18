@@ -5,7 +5,7 @@
 
 ;; Author: Jonathan Sterling <jon@jonmsterling.com>
 ;; Package-Requires: ((emacs "24.3"))
-;; Package-Version: 20180417.2121
+;; Package-Version: 20180418.734
 ;; Version: 0.0.1
 ;; Keywords: languages
 
@@ -126,6 +126,7 @@
     "self" "rec"
     "mem" "ni"
     "box" "cap"
+    "ecom"
     "V" "Vin" "Vproj"
     "universe" "U"
     "hcom" "ghcom" "coe" "com" "gcom"
