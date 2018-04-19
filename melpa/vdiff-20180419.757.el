@@ -5,7 +5,7 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-vdiff
-;; Package-Version: 20180419.641
+;; Package-Version: 20180419.757
 ;; Version: 0.2.3
 ;; Keywords: diff
 ;; Package-Requires: ((emacs "24.4") (hydra "0.13.0"))
@@ -107,6 +107,11 @@ commands."
   "diff3 command to use. Specify as a list where the car is the command to use
 and the remaining elements are the arguments to the command."
   :type '(repeat string))
+
+(make-obsolete-variable 'vdiff-diff-program 'vdiff-diff-algorithm "2018-04-17")
+(make-obsolete-variable 'vdiff-diff3-program 'vdiff-diff3-command "2018-04-17")
+(make-obsolete-variable 'vdiff-diff-extra-args "See `vdiff-diff-algorithms'." "2018-04-17")
+(make-obsolete-variable 'vdiff-diff3-extra-args 'vdiff-diff3-command "2018-04-17")
 
 (defcustom vdiff-disable-folding nil
   "If non-nil, disable folding in vdiff buffers."
