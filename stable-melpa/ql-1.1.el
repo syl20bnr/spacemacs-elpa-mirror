@@ -4,10 +4,10 @@
 
 ;; Author: Ian Eure <ian.eure@gmail.com>
 ;; Keywords: multimedia
-;; Package-Version: 20180404.943
+;; Package-Version: 1.1
 ;; URL: https://github.com/ieure/ql-el
 ;; Package-Requires: ((emacs "24"))
-;; Version: 1.0
+;; Version: 1.1
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -52,6 +52,7 @@
   "Return t if Quod Libet is playing a song, nil otherwise."
   (ql-call* "IsPlaying"))
 
+;;;###autoload
 (defun ql-play-pause ()
   "Toggle playing status."
   (interactive)
@@ -59,32 +60,39 @@
   (when (ql-playingp*)
     (ql-status)))
 
+;;;###autoload
 (defun ql-pause ()
   "Pause the current song."
   (interactive)
   (ql-call* "Pause"))
 
+;;;###autoload
 (defun ql-play ()
   "Begin playing."
   (interactive)
   (ql-call* "Play")
   (ql-status))
 
+;;;###autoload
 (defun ql-next ()
   "Skip to the next track."
   (interactive)
   (ql-call* "Next")
   (ql-status))
 
+;;;###autoload
 (defun ql-previous ()
   "Skip backwards to the previous track."
   (interactive)
   (ql-call* "Previous")
   (ql-status))
 
+;;;###autoload
 (define-minor-mode ql-minor-mode
   "Minor mode for controlling Quod Libet"
-  t nil (make-sparse-keymap))
+  t nil (make-sparse-keymap)
+  :global t
+  :require 'ql)
 
 (define-key ql-minor-mode-map (kbd "<XF86AudioPlay>") #'ql-play-pause)
 (define-key ql-minor-mode-map (kbd "<XF86AudioNext>") #'ql-next)
