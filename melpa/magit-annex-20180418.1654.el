@@ -5,7 +5,7 @@
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;;         Rémi Vanicat <vanicat@debian.org>
 ;; URL: https://github.com/magit/magit-annex
-;; Package-Version: 20180416.1503
+;; Package-Version: 20180418.1654
 ;; Keywords: vc tools
 ;; Version: 1.5.0
 ;; Package-Requires: ((cl-lib "0.3") (magit "2.12.0"))
@@ -389,15 +389,19 @@ With a prefix argument, prompt for FILE.
      ,(format "%s FILES.\n\n  git annex %s [ARGS] [FILE...]"
               (capitalize command) command)
      (interactive
-      (list (let ((atpoint (magit-annex-list-file-at-point)))
-              (magit-annex-read-files
-               (concat ,(capitalize command)
-                       " file,s"
-                       (and atpoint (format " (%s)" atpoint))
-                       ": ")
-               ,limit
-               atpoint))
-            (magit-annex-file-action-arguments)))
+      (list
+       (let ((default (--when-let (or (mapcar #'cdr (magit-region-values 'annex-list-file))
+                                      (-some-> (cdr (magit-section-when annex-list-file))
+                                               (list)))
+                        (mapconcat #'identity it ","))))
+         (magit-annex-read-files
+          (concat ,(capitalize command)
+                  " file,s"
+                  (and default (format " (%s)" default))
+                  ": ")
+          ,limit
+          default))
+       (magit-annex-file-action-arguments)))
      (magit-with-toplevel
        (,(if no-async 'magit-annex-run 'magit-annex-run-async)
         ,command args files))))
@@ -613,7 +617,7 @@ Type \\[magit-annex-unused-open] to open the file.
 
 \\<magit-annex-list-mode-map>\
 Type \\[magit-annex-file-action-popup] to perform git-annex action
-on the file at point.
+on the files selected by the region (if active) or the file at point.
 \n\\{magit-annex-list-mode-map}"
   :group 'magit-modes
   (hack-dir-local-variables-non-file-buffer))
@@ -679,9 +683,6 @@ on the file at point.
       (magit-insert-section (annex-list-file (cons locs file))
         (insert (format "%s %s" locs file))
         (forward-line)))))
-
-(defun magit-annex-list-file-at-point ()
-  (cdr (magit-section-when annex-list-file)))
 
 (provide 'magit-annex)
 

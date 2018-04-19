@@ -4,7 +4,7 @@
 
 ;; Author: Andreas Müller <code@0x7.ch>
 ;; Keywords: tools, vc
-;; Package-Version: 20171129.1447
+;; Package-Version: 20180418.1636
 ;; Version: 0.1.0
 ;; URL: https://github.com/andrmuel/projectile-git-autofetch
 ;; Package-Requires: ((projectile "0.14.0") (alert "1.2"))
@@ -86,6 +86,13 @@ Selection of projects that should be automatically fetched."
   :group 'projectile-git-autofetch
   :type 'integer)
 
+(defcustom projectile-git-autofetch-ping-host nil
+  "Host to ping on order to check for Internet connectivity or nil to
+disable."
+  :package-version '(projectile-git-autofetch . "0.1.2")
+  :group 'projectile-git-autofetch
+  :type 'string)
+
 (defun projectile-git-autofetch-sentinel (process _)
   "Handle the state of PROCESS."
   (unless (process-live-p process)
@@ -102,6 +109,22 @@ Selection of projects that should be automatically fetched."
 
 (defun projectile-git-autofetch-run ()
   "Fetch all repositories and notify user."
+  (if projectile-git-autofetch-ping-host
+      (make-process :name "projectile-git-autofetch-ping"
+                    :buffer "*projectile-git-autofetch-ping"
+                    :command `("ping" "-c" "1" "-W" "3" ,projectile-git-autofetch-ping-host)
+                    :sentinel 'projectile-git-autofetch--ping-sentinel)
+      (projectile-git-autofetch--work)))
+
+(defun projectile-git-autofetch--ping-sentinel (process event)
+  (when (string= "finished\n" event)
+    (projectile-git-autofetch--work))
+  (let ((buffer (process-buffer process)))
+    (when (not (get-buffer-process buffer))
+      (delete-process process)
+      (kill-buffer buffer))))
+
+(defun projectile-git-autofetch--work ()
   (let ((projects (cond
                    ((eq projectile-git-autofetch-projects 'current)
                     (list (projectile-project-root)))
