@@ -4,7 +4,7 @@
 
 ;; Author: Jorgen Schaefer <contact@jorgenschaefer.de>
 ;; URL: http://github.com/jorgenschaefer/pyvenv
-;; Package-Version: 20180415.614
+;; Package-Version: 20180420.55
 ;; Version: 1.13
 ;; Keywords: Python, Virtualenv, Tools
 
@@ -99,8 +99,8 @@ educated guess, but that can be off."
   :group 'pyvenv)
 
 (defcustom pyvenv-exec-shell
-  (or (executable-find "sh")
-      (executable-find "bash")
+  (or (executable-find "bash")
+      (executable-find "sh")
       shell-file-name)
   "The path to a POSIX compliant shell to use for running
   virtualenv hooks. Useful if you use a non-POSIX shell (e.g.
