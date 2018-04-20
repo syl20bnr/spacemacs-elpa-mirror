@@ -19,3 +19,7 @@ It also comes with:
 - `nhexl-overwrite-only-mode': a minor mode to try and avoid moving text.
   In this minor mode, not only self-inserting keys overwrite existing
   text, but commands like `yank' and `kill-region' as well.
+
+Even though the Hex addresses displayed by this mode aren't actually
+part of the buffer's text (contrary to hexl-mode, for example), you can
+search them with isearch.

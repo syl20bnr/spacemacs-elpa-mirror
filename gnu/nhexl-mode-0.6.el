@@ -4,7 +4,7 @@
 
 ;; Author: Stefan Monnier <monnier@iro.umontreal.ca>
 ;; Keywords: data
-;; Version: 0.5
+;; Version: 0.6
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -44,6 +44,10 @@
 ;;   In this minor mode, not only self-inserting keys overwrite existing
 ;;   text, but commands like `yank' and `kill-region' as well.
 
+;; Even though the Hex addresses displayed by this mode aren't actually
+;; part of the buffer's text (contrary to hexl-mode, for example), you can
+;; search them with isearch.
+
 ;;; Todo:
 ;; - Clicks on the hex side should put point at the right place.
 
@@ -63,6 +67,15 @@
 (defcustom nhexl-display-unprintables nil
   "If non-nil, display non-printable chars using the customary codes.
 If nil, use just `.' for those chars instead of things like `\\NNN' or `^C'."
+  :type 'boolean)
+
+(defcustom nhexl-obey-font-lock t
+  "If non-nil, faces will only be applied when font-lock is enabled.
+Otherwise they are applied unconditionally."
+  :type 'boolean)
+
+(defcustom nhexl-silently-convert-to-unibyte nil
+  "If non-nil `nhexl-mode' won't ask before converting the buffer to unibyte."
   :type 'boolean)
 
 (defvar nhexl--display-table
@@ -289,19 +302,25 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
 (define-minor-mode nhexl-mode
   "Minor mode to edit files via hex-dump format"
   :lighter (" NHexl" (nhexl-nibble-edit-mode "/ne"))
+  (dolist (varl (prog1 nhexl--saved-vars
+                  (kill-local-variable 'nhexl--saved-vars)))
+    (set (make-local-variable (car varl)) (cdr varl)))
+
   (if (not nhexl-mode)
       (progn
-        (dolist (varl nhexl--saved-vars)
-          (set (make-local-variable (car varl)) (cdr varl)))
-        (kill-local-variable 'nhexl--saved-vars)
         (jit-lock-unregister #'nhexl--jit)
         (remove-hook 'after-change-functions #'nhexl--change-function 'local)
         (remove-hook 'post-command-hook #'nhexl--post-command 'local)
-        ;; FIXME: This will conflict with any other use of `display'.
+        (remove-function (local 'isearch-search-fun-function)
+                         #'nhexl--isearch-search-fun)
+        ;; FIXME: This conflicts with any other use of `display'.
         (with-silent-modifications
           (put-text-property (point-min) (point-max) 'display nil))
         (remove-overlays (point-min) (point-max) 'nhexl t))
+
     (when (and enable-multibyte-characters
+               ;; No point changing to unibyte in a pure-ASCII buffer.
+               (not (= (position-bytes (point-max)) (point-max)))
                (not (save-excursion
                       (save-restriction
                         (widen)
@@ -309,7 +328,8 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
                         (re-search-forward "[^[:ascii:]\200-\377]" nil t))))
                ;; We're in a multibyte buffer which only contains bytes,
                ;; so we could advantageously convert it to unibyte.
-               (y-or-n-p "Make buffer unibyte? "))
+               (or nhexl-silently-convert-to-unibyte
+                   (y-or-n-p "Make buffer unibyte? ")))
       (set-buffer-multibyte nil))
                    
     (unless (local-variable-p 'nhexl--saved-vars)
@@ -324,7 +344,9 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
     (jit-lock-register #'nhexl--jit)
     (add-hook 'change-major-mode-hook (lambda () (nhexl-mode -1)) nil 'local)
     (add-hook 'post-command-hook #'nhexl--post-command nil 'local)
-    (add-hook 'after-change-functions #'nhexl--change-function nil 'local)))
+    (add-hook 'after-change-functions #'nhexl--change-function nil 'local)
+    (add-function :around (local 'isearch-search-fun-function)
+                  #'nhexl--isearch-search-fun)))
 
 (defun nhexl-next-line (&optional arg)
   "Move cursor vertically down ARG lines."
@@ -457,10 +479,12 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
 (defun nhexl--make-line (from next zero)
   (let* ((nextpos (min next (point-max)))
          (bufstr (buffer-substring from nextpos))
+         (prop (if nhexl-obey-font-lock 'font-lock-face 'face))
          (i -1)
          (s (concat
              (unless (eq zero from) "\n")
-             (format (propertize "%08x:" 'face
+             (format (propertize "%08x:"
+                                 prop
                                  (if (or (< nhexl--point from)
                                          (>= nhexl--point next))
                                      'hexl-address-region
@@ -495,7 +519,7 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
                          `(space :align-to
                                  ,(+ (/ (* nhexl-line-width 5) 2)
                                      12 3))))))
-    (font-lock-append-text-property 0 (length s) 'face 'default s)
+    (font-lock-append-text-property 0 (length s) prop 'default s)
     s))
 
 (defun nhexl--jit (from to)
@@ -528,7 +552,8 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
              (ol (make-overlay from next))
              (s (nhexl--make-line from next zero)))
         (overlay-put ol 'nhexl t)
-        (overlay-put ol 'face 'hexl-ascii-region)
+        (overlay-put ol (if nhexl-obey-font-lock 'font-lock-face 'face)
+                     'hexl-ascii-region)
         (overlay-put ol 'before-string s)
         (setq from next)))))
 
@@ -586,8 +611,73 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
               (truncate (- oldpoint zero) nhexl-line-width))
           (nhexl--refresh-cursor oldpoint)))))
 
+(defun nhexl--isearch-search-fun (orig-fun)
+  (let ((def-fun (funcall orig-fun)))
+    (lambda (string bound noerror)
+      (let ((startpos (point))
+            (def (funcall def-fun string bound noerror)))
+        (setq bound
+              ;; Don't search further than what `def-fun' found.
+              (if def (match-beginning 0)
+                (if isearch-forward (point-max) (point-min))))
+        (cond
+         ((string-match-p "\\`[[:xdigit:]]+:?\\'" string)
+          ;; Could be a hexadecimal address.
+          (let* ((addr (string-to-number string 16))
+                 ;; If `string' says "7a:", then it's "anchored", meaning that
+                 ;; we'll only look for nearest address of the form "XXX7a"
+                 ;; whereas if `string' says just "7a", then we look for nearest
+                 ;; address of the form "XXX7a", or "XXX7aX", or "XXX7aXX", ...
+                 (anchored (eq ?: (aref string (1- (length string)))))
+                 (mod (lsh 1 (* 4 (- (length string) (if anchored 1 0)))))
+                 (base (save-restriction (widen) (point-min)))
+                 (bestnext nil)
+                 (maxaddr (- (max startpos bound) base)))
+            (while (< addr maxaddr)
+              (let ((next (+ addr base (* (/ (- startpos base) mod) mod))))
+                (if isearch-forward
+                    (progn
+                      (when (<= next startpos)
+                        (setq next (+ next mod)))
+                      (cl-assert (> next startpos))
+                      (and (< next bound)
+                           (or (null bestnext) (< next bestnext))
+                           (setq bestnext next)))
+                  (when (>= next startpos)
+                    (setq next (- next mod)))
+                  (cl-assert (< next startpos))
+                  (and (> next bound)
+                       (or (null bestnext) (> next bestnext))
+                       (setq bestnext next))))
+              (let ((nextmod (* mod 16)))
+                (if (or anchored
+                        ;; Overflow!  let's get out of the loop right away.
+                        (< nextmod mod))
+                    (setq maxaddr -1)
+                  (setq addr (* addr 16))
+                  (setq mod nextmod))))
+            (cond
+             ((null bestnext) def)
+             (isearch-forward
+              (goto-char bestnext) (re-search-forward "."))
+             (t (goto-char (1+ bestnext)) (re-search-backward ".")))))
+         (t def))))))
+
 ;;;; ChangeLog:
 
+;; 2018-04-19  Stefan Monnier  <monnier@iro.umontreal.ca>
+;; 
+;; 	* nhexl-mode/nhexl-mode.el: Let isearch look for addresses as well
+;; 
+;; 	(nhexl-obey-font-lock): New custom var.
+;; 	(nhexl--make-line, nhexl--jit): Use it.
+;; 	(nhexl-silently-convert-to-unibyte): New custom var.
+;; 	(nhexl-mode): Use it.  Set isearch-search-fun-function. Don't bother
+;; 	switching to unibyte for pure-ascii buffers. Be more robust for the case
+;; 	when nhexl-mode is enabled while it was already enabled.
+;; 	(nhexl--isearch-search-fun): New function.
+;; 	(nhexl--font-lock-switch): New function.
+;; 
 ;; 2018-04-16  Stefan Monnier  <monnier@iro.umontreal.ca>
 ;; 
 ;; 	* nhexl-mode.el: Hide undisplayable chars by default
@@ -636,7 +726,6 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
 ;; 	Add nhexl-mode.
 ;; 
 
-  
 
 (provide 'nhexl-mode)
 ;;; nhexl-mode.el ends here
