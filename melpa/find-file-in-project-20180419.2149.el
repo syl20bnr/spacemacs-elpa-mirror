@@ -4,7 +4,7 @@
 ;;   Phil Hagelberg, Doug Alcorn, Will Farrington, Chen Bin
 ;;
 ;; Version: 5.6.4
-;; Package-Version: 20180405.713
+;; Package-Version: 20180419.2149
 ;; Author: Phil Hagelberg, Doug Alcorn, and Will Farrington
 ;; Maintainer: Chen Bin <chenbin.sh@gmail.com>
 ;; URL: https://github.com/technomancy/find-file-in-project
@@ -1137,23 +1137,27 @@ Similar to `diff-apply-hunk' but smarter.
 Please read documenation of `diff-apply-hunk' to get more details.
 If REVERSE is t, applied patch is reverted."
   (interactive "P")
-  (setq ffip-read-file-name-hijacked-p t)
-  (defadvice read-file-name (around ffip-read-file-name-hack activate)
-    (cond
-     (ffip-read-file-name-hijacked-p
-      (let* ((args (ad-get-args 0))
-             (file-name (file-name-nondirectory (nth 2 args)))
-             (default-directory (ffip-project-root))
-             (cands (ffip-project-search file-name nil default-directory))
-             (rlt (if cands (ffip-completing-read "Files: " cands))))
-        (when rlt
-          (setq rlt (file-truename rlt))
-          (run-hook-with-args 'ffip-diff-apply-hunk-hook rlt)
-          (setq ad-return-value rlt))))
-     (t
-      ad-do-it)))
-  (diff-apply-hunk reverse)
-  (setq ffip-read-file-name-hijacked-p nil))
+  (cond
+   ((derived-mode-p 'diff-mode)
+    (setq ffip-read-file-name-hijacked-p t)
+    (defadvice read-file-name (around ffip-read-file-name-hack activate)
+      (cond
+       (ffip-read-file-name-hijacked-p
+        (let* ((args (ad-get-args 0))
+               (file-name (file-name-nondirectory (nth 2 args)))
+               (default-directory (ffip-project-root))
+               (cands (ffip-project-search file-name nil default-directory))
+               (rlt (if cands (ffip-completing-read "Files: " cands))))
+          (when rlt
+            (setq rlt (file-truename rlt))
+            (run-hook-with-args 'ffip-diff-apply-hunk-hook rlt)
+            (setq ad-return-value rlt))))
+       (t
+        ad-do-it)))
+    (diff-apply-hunk reverse)
+    (setq ffip-read-file-name-hijacked-p nil))
+   (t
+    (message "This command only run in `diff-mode' and `ffip-diff-mode'."))))
 
 ;; safe locals
 (progn
