@@ -6,7 +6,7 @@
 ;;          Noam Postavsky <npostavs@gmail.com>
 ;; Maintainer: Noam Postavsky <npostavs@gmail.com>
 ;; Version: 0.12.2
-;; Package-Version: 20180319.607
+;; Package-Version: 20180412.1548
 ;; X-URL: http://github.com/joaotavora/yasnippet
 ;; Keywords: convenience, emulation
 ;; URL: http://github.com/joaotavora/yasnippet
@@ -1413,15 +1413,51 @@ Returns (TEMPLATES START END). This function respects
 
 ;;; Internal functions and macros:
 
+(defun yas--remove-misc-free-from-undo (old-undo-list)
+  "Tries to work around Emacs Bug#30931.
+Helper function for `yas--save-restriction-and-widen'."
+  ;; If Bug#30931 is unfixed, we get (#<Lisp_Misc_Free> . INTEGER)
+  ;; entries in the undo list.  If we call `type-of' on the
+  ;; Lisp_Misc_Free object then Emacs aborts, so try to find it by
+  ;; checking that its type is none of the expected ones.
+  (when (consp buffer-undo-list)
+    (let* ((prev buffer-undo-list)
+           (undo-list prev))
+      (while (and (consp undo-list)
+                  ;; Only check new entries.
+                  (not (eq undo-list old-undo-list)))
+        (let ((entry (pop undo-list)))
+          (when (consp entry)
+            (let ((head (car entry)))
+              (unless (or (stringp head)
+                          (markerp head)
+                          (integerp head)
+                          (symbolp head)
+                          (not (integerp (cdr entry))))
+                ;; (message "removing misc free %S" entry)
+                (setcdr prev undo-list)))))
+        (setq prev undo-list)))))
+
+(defmacro yas--save-restriction-and-widen (&rest body)
+  "Equivalent to (save-restriction (widen) BODY).
+Also tries to work around Emacs Bug#30931."
+  (declare (debug (body)) (indent 0))
+  ;; Disable garbage collection, since it could cause an abort.
+  `(let ((gc-cons-threshold most-positive-fixnum)
+         (old-undo-list buffer-undo-list))
+     (prog1 (save-restriction
+              (widen)
+              ,@body)
+       (yas--remove-misc-free-from-undo old-undo-list))))
+
 (defun yas--eval-for-string (form)
   "Evaluate FORM and convert the result to string."
   (let ((debug-on-error (and (not (memq yas-good-grace '(t inline)))
                              debug-on-error)))
     (condition-case oops
         (save-excursion
-          (save-restriction
+          (yas--save-restriction-and-widen
             (save-match-data
-              (widen)
               (let ((result (eval form)))
                 (when result
                   (format "%s" result))))))
@@ -3391,9 +3427,8 @@ This renders the snippet as ordinary text."
     ;;
     (yas--markers-to-points snippet)
 
-    ;; Take care of snippet revival
-    ;;
-    (if yas-snippet-revival
+    ;; Take care of snippet revival on undo.
+    (if (and yas-snippet-revival (listp buffer-undo-list))
         (push `(apply yas--snippet-revive ,yas-snippet-beg ,yas-snippet-end ,snippet)
               buffer-undo-list)
       ;; Dismember the snippet... this is useful if we get called
@@ -3964,8 +3999,9 @@ After revival, push the `yas--take-care-of-redo' in the
   (when (yas--maybe-move-to-active-field snippet)
     (setf (yas--snippet-control-overlay snippet) (yas--make-control-overlay snippet beg end))
     (overlay-put (yas--snippet-control-overlay snippet) 'yas--snippet snippet)
-    (push `(apply yas--take-care-of-redo ,snippet)
-          buffer-undo-list)))
+    (when (listp buffer-undo-list)
+      (push `(apply yas--take-care-of-redo ,snippet)
+            buffer-undo-list))))
 
 (defun yas--snippet-create (content expand-env begin end)
   "Create a snippet from a template inserted at BEGIN to END.
@@ -3985,16 +4021,18 @@ Returns the newly created snippet."
           (narrow-to-region begin end)
           (goto-char (point-min))
           (yas--snippet-parse-create snippet))
-        (push (cons (point-min) (point-max))
-              buffer-undo-list)
+        (when (listp buffer-undo-list)
+          (push (cons (point-min) (point-max))
+                buffer-undo-list))
 
         ;; Indent, collecting undo information normally.
         (yas--indent snippet)
 
         ;; Follow up with `yas--take-care-of-redo' on the newly
         ;; inserted snippet boundaries.
-        (push `(apply yas--take-care-of-redo ,snippet)
-              buffer-undo-list)
+        (when (listp buffer-undo-list)
+          (push `(apply yas--take-care-of-redo ,snippet)
+                buffer-undo-list))
 
         ;; Sort and link each field
         (yas--snippet-sort-fields snippet)
@@ -4186,8 +4224,7 @@ Meant to be called in a narrowed buffer, does various passes"
       (syntax-ppss-flush-cache parse-start))
     ;; Set "next" links of fields & mirrors.
     (yas--calculate-adjacencies snippet)
-    (save-restriction
-      (widen)                           ; Delete $-constructs.
+    (yas--save-restriction-and-widen    ; Delete $-constructs.
       (yas--delete-regions yas--dollar-regions))
     ;; Make sure to do this insertion *after* deleting the dollar
     ;; regions, otherwise we invalidate the calculated positions of
@@ -4328,8 +4365,7 @@ Buffer must be narrowed to BEG..END used to create the snapshot info."
   "Indent the lines between FROM and TO with `indent-according-to-mode'.
 The SNIPPET's markers are preserved."
   (save-excursion
-    (save-restriction
-      (widen)
+    (yas--save-restriction-and-widen
       (let* ((snippet-markers (yas--collect-snippet-markers snippet))
              (to (set-marker (make-marker) to)))
         (goto-char from)
@@ -4438,8 +4474,8 @@ Lisp expression."
                             (setq yas--change-detected t)))))
     (while (re-search-forward yas--backquote-lisp-expression-regexp nil t)
       (let ((current-string (match-string-no-properties 1)) transformed)
-        (save-restriction (widen)
-                          (delete-region (match-beginning 0) (match-end 0)))
+        (yas--save-restriction-and-widen
+          (delete-region (match-beginning 0) (match-end 0)))
         (let ((before-change-functions
                (cons detect-change before-change-functions)))
           (setq transformed (yas--eval-for-string (yas--read-lisp
@@ -4449,8 +4485,7 @@ Lisp expression."
         (when transformed
           (let ((marker (make-marker))
                 (before-change-functions (cdr before-change-functions)))
-            (save-restriction
-              (widen)
+            (yas--save-restriction-and-widen
               (insert "Y") ;; quite horrendous, I love it :)
               (set-marker marker (point))
               (insert "Y"))
@@ -4470,8 +4505,7 @@ SAVED-QUOTES is the in format returned by `yas--save-backquotes'."
   (cl-loop for (marker . string) in saved-quotes do
            (save-excursion
              (goto-char marker)
-             (save-restriction
-               (widen)
+             (yas--save-restriction-and-widen
                (delete-char -1)
                (insert string)
                (delete-char 1))
@@ -4652,8 +4686,7 @@ When multiple expressions are found, only the last one counts."
 
 (defun yas--update-mirrors (snippet)
   "Update all the mirrors of SNIPPET."
-  (save-restriction
-    (widen)
+  (yas--save-restriction-and-widen
     (save-excursion
       (cl-loop
        for (field . mirror)
