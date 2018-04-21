@@ -5,7 +5,7 @@
 ;; Author: Feng Shu <tumashu@163.com>
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/posframe
-;; Package-Version: 20180420.1644
+;; Package-Version: 20180420.1755
 ;; Version: 0.3.0
 ;; Keywords: tooltip
 ;; Package-Requires: ((emacs "26"))
@@ -120,6 +120,12 @@
 
 (defvar-local posframe--last-parent-frame-size nil
   "Record the last size of posframe's parent-frame.")
+
+(defvar-local posframe--last-poshandler-info nil
+  "Record the last poshandler info.")
+
+(defvar-local posframe--last-font-height-info nil
+  "Record the last font height info.")
 
 (defvar-local posframe--last-args nil
   "Record the last arguments of `posframe--create-posframe'.
@@ -392,15 +398,20 @@ you can use `posframe-delete-all' to delete all posframes."
 
 (defun posframe--get-font-height (position)
   "Get the font's height at POSITION."
-  (when (integerp position)
-    (if (= position 1)
-        (default-line-height)
-      (aref (font-info
-             (font-at
-              (if (and (= position (point-max)))
-                  (- position 1)
-                position)))
-            3))))
+  (if (eq position (car posframe--last-font-height-info))
+      (cdr posframe--last-font-height-info)
+    (let ((height (when (integerp position)
+                    (if (= position 1)
+                        (default-line-height)
+                      (aref (font-info
+                             (font-at
+                              (if (and (= position (point-max)))
+                                  (- position 1)
+                                position)))
+                            3)))))
+      (setq posframe--last-font-height-info
+            (cons position height))
+      height)))
 
 (defun posframe--mouse-banish (frame)
   "Banish mouse to the (0 . 0) of FRAME.
@@ -553,17 +564,20 @@ This function is used by `kill-buffer-hook'."
 
 the structure of INFO can be found in docstring
 of `posframe-show'."
-  (funcall
-   (or (plist-get info :poshandler)
-       (let ((position (plist-get info :position)))
-         (cond ((integerp position)
-                #'posframe-poshandler-point-bottom-left-corner)
-               ((and (consp position)
-                     (integerp (car position))
-                     (integerp (cdr position)))
-                #'posframe-poshandler-absolute-x-y)
-               (t (error "Posframe: have no valid poshandler")))))
-   info))
+  (if (equal info posframe--last-poshandler-info)
+      posframe--last-posframe-pixel-position
+    (setq posframe--last-poshandler-info info)
+    (funcall
+     (or (plist-get info :poshandler)
+         (let ((position (plist-get info :position)))
+           (cond ((integerp position)
+                  #'posframe-poshandler-point-bottom-left-corner)
+                 ((and (consp position)
+                       (integerp (car position))
+                       (integerp (cdr position)))
+                  #'posframe-poshandler-absolute-x-y)
+                 (t (error "Posframe: have no valid poshandler")))))
+     info)))
 
 (defun posframe-poshandler-absolute-x-y (info)
   "Posframe's position hanlder.
