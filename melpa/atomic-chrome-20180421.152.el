@@ -4,7 +4,7 @@
 
 ;; Author: alpha22jp <alpha22jp@gmail.com>
 ;; Package-Requires: ((emacs "24.3") (let-alist "1.0.4") (websocket "1.4"))
-;; Package-Version: 20180322.301
+;; Package-Version: 20180421.152
 ;; Keywords: chrome edit textarea
 ;; URL: https://github.com/alpha22jp/atomic-chrome
 ;; Version: 2.0.0
@@ -70,6 +70,11 @@
 
 (defcustom atomic-chrome-buffer-frame-height 25
   "Height of editing buffer frame."
+  :type 'integer
+  :group 'atomic-chrome)
+
+(defcustom atomic-chrome-server-ghost-text-port 4001
+  "HTTP server port for Ghost Text."
   :type 'integer
   :group 'atomic-chrome)
 
@@ -295,7 +300,7 @@ where FRAME show raw data received."
    :name "atomic-chrome-httpd"
    :family 'ipv4
    :host 'local
-   :service 4001
+   :service atomic-chrome-server-ghost-text-port
    :filter 'atomic-chrome-httpd-process-filter
    :filter-multibyte nil
    :server t
