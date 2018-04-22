@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/general.el
-;; Package-Version: 20180421.1043
+;; Package-Version: 20180421.1156
 ;; Created: February 17, 2016
 ;; Keywords: vim, evil, leader, keybindings, keys
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
@@ -246,7 +246,14 @@ the key was previously unbound."
           (const :tag "When definition has changed" on-change)
           (const :tag "When the key was previously unbound" nil)))
 
-;; * Minor Modes
+;; * Override Minor Modes
+(defcustom general-override-auto-enable t
+  "Whether to automatically enable `general-override-mode'.
+If non-nil, enable `general-override-mode' when binding a key in
+`general-override-mode-map'."
+  :group 'general
+  :type 'boolean)
+
 (defvar general-override-mode-map (make-sparse-keymap)
   "A keymap that will take priority over other minor mode keymaps.
 This is only for non-evil keybindings (it won't override keys bound with
@@ -323,7 +330,7 @@ local version."
 (defun general-local-map ()
   "Return `general-override-local-mode-map'.
 Also turn on `general-override-local-mode' and update `general-maps-alist'."
-  (general-override-local-mode)
+  (or general-override-local-mode (general-override-local-mode))
   (unless general--maps-alist-updated
     (general--update-maps-alist))
   general-override-local-mode-map)
@@ -866,6 +873,10 @@ MAPS is composed of triplets of (key parsed-def original-def). This function
 determines the appropriate base definer function to use based depending on
 whether :definer is present in original-def or KARGS or whether STATE is
 non-nil if no custom definer is specified."
+  (when (and general-override-auto-enable
+             (eq keymap 'general-override-mode-map)
+             (not general-override-mode))
+    (general-override-mode))
   (while maps
     (let* ((key (pop maps))
            (def (pop maps))
