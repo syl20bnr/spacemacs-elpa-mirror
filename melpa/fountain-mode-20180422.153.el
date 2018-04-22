@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: text
-;; Package-Version: 20180418.51
+;; Package-Version: 20180422.153
 ;; Version: 2.5.4
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -4578,8 +4578,7 @@ scene number from being auto-upcased."
   `(;; Action
     ((lambda (limit)
        (fountain-match-element 'fountain-match-action limit))
-     ((:level 1 :subexp 0 :face fountain-action
-              :invisible action)
+     ((:level 1 :subexp 0 :face fountain-action)
       (:level 2 :subexp 1 :face fountain-non-printing
               :invisible fountain-syntax-chars
               :override t
@@ -4587,16 +4586,14 @@ scene number from being auto-upcased."
      fountain-align-action)
     ;; Section Headings
     (,fountain-section-heading-regexp
-     ((:level 2 :subexp 0 :face fountain-section-heading
-              :invisible section-heading)
+     ((:level 2 :subexp 0 :face fountain-section-heading)
       (:level 2 :subexp 2 :face fountain-non-printing
               :override t))
      fountain-align-scene-heading)
     ;; Scene Headings
     ((lambda (limit)
        (fountain-match-element 'fountain-match-scene-heading limit))
-     ((:level 2 :subexp 0 :face fountain-scene-heading
-              :invisible scene-heading)
+     ((:level 2 :subexp 0 :face fountain-scene-heading)
       (:level 2 :subexp 2 :face fountain-non-printing
               :invisible fountain-syntax-chars
               :override prepend
@@ -4618,8 +4615,7 @@ scene number from being auto-upcased."
     ;; Character
     ((lambda (limit)
        (fountain-match-element 'fountain-match-character limit))
-     ((:level 3 :subexp 0 :face fountain-character
-              :invisible character)
+     ((:level 3 :subexp 0 :face fountain-character)
       (:level 3 :subexp 2
               :invisible fountain-syntax-chars
               :override t
@@ -4631,20 +4627,17 @@ scene number from being auto-upcased."
     ;; Parenthetical
     ((lambda (limit)
        (fountain-match-element 'fountain-match-paren limit))
-     ((:level 3 :subexp 0 :face fountain-paren
-              :invisible paren))
+     ((:level 3 :subexp 0 :face fountain-paren))
      fountain-align-paren)
     ;; Dialog
     ((lambda (limit)
        (fountain-match-element 'fountain-match-dialog limit))
-     ((:level 3 :subexp 0 :face fountain-dialog
-              :invisible dialog))
+     ((:level 3 :subexp 0 :face fountain-dialog))
      fountain-align-dialog)
     ;; Transition
     ((lambda (limit)
        (fountain-match-element 'fountain-match-trans limit))
-     ((:level 3 :subexp 0 :face fountain-trans
-              :invisible trans)
+     ((:level 3 :subexp 0 :face fountain-trans)
       (:level 2 :subexp 2 :face fountain-comment
               :invisible fountain-syntax-chars
               :override t
@@ -4655,40 +4648,34 @@ scene number from being auto-upcased."
      ((:level 2 :subexp 2 :face fountain-comment
               :invisible fountain-syntax-chars
               :override t)
-      (:level 3 :subexp 3
-              :invisible center)
+      (:level 3 :subexp 3)
       (:level 2 :subexp 4 :face fountain-comment
               :invisible fountain-syntax-chars
               :override t))
      fountain-align-center)
     ;; Page-break
     (,fountain-page-break-regexp
-     ((:level 2 :subexp 0 :face fountain-page-break
-              :invisible page-break)
+     ((:level 2 :subexp 0 :face fountain-page-break)
       (:level 2 :subexp 2 :face fountain-page-number
               :override t
               :laxmatch t)))
     ;; Synopses
     (,fountain-synopsis-regexp
-     ((:level 2 :subexp 0 :face fountain-synopsis
-              :invisible synopsis)
+     ((:level 2 :subexp 0 :face fountain-synopsis)
       (:level 2 :subexp 2 :face fountain-comment
               :invisible fountain-syntax-chars
               :override t))
      fountain-align-synopsis)
     ;; Notes
     (,fountain-note-regexp
-     ((:level 2 :subexp 0 :face fountain-note
-              :invisible note)))
+     ((:level 2 :subexp 0 :face fountain-note)))
     ;; Inclusions
     (,fountain-include-regexp
-     ((:level 2 :subexp 0 :face fountain-include
-              :invisible include)))
+     ((:level 2 :subexp 0 :face fountain-include)))
     ;; Metedata
     ((lambda (limit)
        (fountain-match-element 'fountain-match-metadata limit))
      ((:level 2 :subexp 0 :face fountain-metadata-key
-              :invisible metadata
               :laxmatch t)
       (:level 2 :subexp 3 :face fountain-metadata-value
               :override t
@@ -4804,7 +4791,6 @@ assigning the following keywords:
   "Return a new list of `font-lock-mode' keywords.
 Uses `fountain-font-lock-keywords-plist' to create a list of
 keywords suitable for Font Lock."
-  (fountain-init-vars)
   (let ((dec (fountain-get-font-lock-decoration))
         keywords)
     (dolist (var fountain-font-lock-keywords-plist keywords)

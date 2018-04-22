@@ -1,11 +1,11 @@
-;;; upbo.el --- Karma Test Runner Integration ;;; -*- lexical-binding: t; -*-
+;;; upbo.el --- Karma Test Runner Integration  -*- lexical-binding: t -*-
 ;;
 ;; Filename: upbo.el
 ;; Description: Karma test runner emacs integration that support mode line report
 ;; Author: Sungho Kim(shiren)
 ;; Maintainer: Sungho Kim(shiren)
 ;; URL: http://github.com/shiren
-;; Package-Version: 20180408.1958
+;; Package-Version: 20180422.122
 ;; Version: 1.0.0
 ;; Package-Requires: ((dash "2.12.0") (emacs "24.4"))
 ;; Keywords: javascript, js, test, karma
@@ -28,6 +28,11 @@
 ;;; Commentary:
 
 ;;  Emacs karma integration that support mode line report!
+
+;;  To enable, use:
+;;     (add-hook javascript-mode-hook 'upbo-mode)
+;;  or
+;;     (add-hook js2-mode-hook 'upbo-mode)
 
 ;;  Test Setup Usage:
 ;; (upbo-define-test
@@ -238,9 +243,6 @@ Key bindings:
   :group 'upbo
   :global nil
   :keymap 'upbo-mode-map)
-
-(add-hook 'js-mode-hook 'upbo-mode)
-(add-hook 'js2-mode-hook 'upbo-mode)
 
 (provide 'upbo)
 ;;; upbo.el ends here

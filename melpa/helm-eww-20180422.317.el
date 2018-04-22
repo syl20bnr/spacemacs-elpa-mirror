@@ -4,7 +4,7 @@
 
 ;; Author: Pierre Neidhardt <ambrevar@gmail.com>
 ;; URL: https://github.com/emacs-helm/helm-eww
-;; Package-Version: 20180416.128
+;; Package-Version: 20180422.317
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "24.4") (helm "2.8.6") (seq "1.8"))
 ;; Keywords: helm, packages
@@ -51,16 +51,18 @@ the EWW title starts at the column of the open parenthesis in
     (let* ((buf (helm-get-selection))
            ;; `helm-buffer--get-preselection' uses `helm-buffer-max-length'.
            (helm-buffer-max-length helm-eww-buffer-max-length)
-           (preselect (helm-buffer--get-preselection buf)))
+           (preselect (and (bufferp buf) (helm-buffer--get-preselection buf))))
       (setq helm-buffer-details-flag (not helm-buffer-details-flag))
       ;; TODO: `helm-force-update' seems to be necessary to be necessary to
       ;; update the buffer live.  It is not the case for helm-buffers-list
       ;; though.  Why?
-      (helm-force-update (lambda ()
-                           (helm-awhile (re-search-forward preselect nil t)
-                             (helm-mark-current-line)
-                             (when (equal buf (helm-get-selection))
-                               (cl-return t))))))))
+      (if (bufferp buf)
+          (helm-force-update (lambda ()
+                               (helm-awhile (re-search-forward preselect nil t)
+                                 (helm-mark-current-line)
+                                 (when (equal buf (helm-get-selection))
+                                   (cl-return t)))))
+        (helm-force-update)))))
 (put 'helm-eww-toggle-buffers-details 'helm-only t)
 
 (defun helm-eww-new-buffer (url)
