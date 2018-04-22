@@ -3,10 +3,10 @@
 ;; Authors: Chris Rayner (dchrisrayner @ gmail)
 ;; Created: May 23 2011
 ;; Keywords: processes, tools
-;; Package-Version: 0.0.14
+;; Package-Version: 0.0.15
 ;; URL: https://github.com/riscy/shx-for-emacs
 ;; Package-Requires: ((emacs "24.4"))
-;; Version: 0.0.14
+;; Version: 0.0.15
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -112,6 +112,12 @@
   :link '(function-link shx-cmd-keep)
   :type '(alist :key-type string :value-type string))
 
+(defcustom shx-max-input nil
+  "The largest input allowed in characters.  On macOS a good
+value is 1024, the size of the typeahead buffer.  Otherwise set
+your terminal to canonical mode with 'stty -icanon'."
+  :type 'integer)
+
 (defvar shx-cmd-prefix "shx-cmd-"
   "Prefix for user-command functions.")
 
@@ -183,8 +189,8 @@ This can help in running `ibuffer-do-eval' on multiple buffers."
 In normal circumstances this input is additionally filtered by
 `shx-filter-input' via `comint-mode'."
   (interactive)
-  (if (> (length (shx--current-input)) 1000)
-      (message "Input too long (shorten to < 1000 chars)")
+  (if (and shx-max-input (>= (length (shx--current-input)) shx-max-input))
+      (message "Input line exceeds `shx-max-input'.")
     (shx--timestamp-prompt)
     (comint-send-input nil t)))
 
@@ -198,7 +204,7 @@ This function overrides `comint-input-sender'."
     (if (not shx-cmd)
         (comint-simple-send process input)
       (condition-case-unless-debug error-descriptor
-          (funcall shx-cmd (match-string 2 input))
+          (funcall shx-cmd (substitute-env-vars (match-string 2 input)))
         (error (shx-insert 'error (error-message-string error-descriptor) "\n")))
       (with-current-buffer (process-buffer process)
         ;; advance the process mark to trick comint-mode
@@ -362,20 +368,19 @@ With non-nil WITHOUT-PREFIX, strip `shx-cmd-prefix' from each."
 (defun shx--get-timer-list ()
   "Get the list of resident timers."
   (let ((timer-list-1 (copy-sequence timer-list)))
-    ;; select only timers with shx--auto prefix, "(lambda nil (shx--auto..."
     (setq timer-list-1
-          (remove nil
-                  (mapcar (lambda (timer)
-                            (when (string-prefix-p
-                                   "(lambda nil (shx--auto"
-                                   (format "%s" (aref timer 5)))
-                              timer))
-                          timer-list-1)))
+          (mapcar (lambda (timer) (when (shx--timer-by-shx-p timer) timer))
+                  timer-list-1))
+    (setq timer-list-1 (remove nil timer-list-1))
     ;; sort the timers for consistency
     (sort timer-list-1
           (lambda (first-timer second-timer)
             (string< (format "%s" (aref first-timer 5))
                      (format "%s" (aref second-timer 5)))))))
+
+(defun shx--timer-by-shx-p (timer)
+  "Return t if TIMER was created by shx."
+  (string-prefix-p "(lambda nil (shx--auto" (format "%s" (aref timer 5))))
 
 (defun shx--get-user-cmd (cmd-prefix)
   "Return user command prefixed by CMD-PREFIX, or nil."
