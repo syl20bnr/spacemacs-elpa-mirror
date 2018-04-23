@@ -5,7 +5,7 @@
 ;; Author: Huming Chen <chenhuming@gmail.com>
 ;; Maintainer: Huming Chen <chenhuming@gmail.com>
 ;; URL: https://github.com/beacoder/call-graph
-;; Package-Version: 20180403.2002
+;; Package-Version: 20180423.57
 ;; Version: 0.1.0
 ;; Keywords: programming, convenience
 ;; Created: 2018-01-07
@@ -365,6 +365,8 @@ With prefix argument, discard cached data and re-generate reference data."
              (locations (cg--get-func-caller-location call-graph callee caller))
              (location (car locations)))
     (cg--visit-function location)
+    (setq cg--window-configuration (current-window-configuration)
+          cg--selected-window (frame-selected-window)) ; update window configuration
     (when (> (seq-length locations) 1)
       (message "Multiple locations for this function, select with `cg/select-caller-location'"))))
 

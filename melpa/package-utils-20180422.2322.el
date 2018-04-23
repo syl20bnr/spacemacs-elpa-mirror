@@ -1,8 +1,8 @@
-;;; package-utils.el --- Extensions for package.el
+;;; package-utils.el --- Extensions for package.el  -*- lexical-binding: t -*-
 
 ;; Author: Philippe Vaucher <philippe.vaucher@gmail.com>
 ;; URL: https://github.com/Silex/package-utils
-;; Package-Version: 20180317.1134
+;; Package-Version: 20180422.2322
 ;; Keywords: package, convenience
 ;; Version: 0.5.0
 ;; Package-Requires: ((restart-emacs "0.1.1"))

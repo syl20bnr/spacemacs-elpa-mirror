@@ -4,7 +4,7 @@
 
 ;; Author: Kevin Brubeck Unhammer <unhammer@fsfe.org>
 ;; Version: 0.2.0
-;; Package-Version: 0.2.0
+;; Package-Version: 0.2.1
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: convenience, calendar
 
@@ -100,6 +100,14 @@ Popular choices include `ivy-completing-read' and `ido-completing-read'."
 
 (defcustom org-mru-clock-include-entry-at-point t
   "If point is at an org headline, include it as the top choice."
+  :group 'org-mru-clock
+  :type 'boolean)
+
+(defcustom org-mru-clock-keep-formatting nil
+  "Keep faces (and other properties) from entries before showing them.
+If this is set to t, entries will show up using the faces they
+had in the org file.  If nil, use the regular face of the
+`org-mru-clock-completing-read' function."
   :group 'org-mru-clock
   :type 'boolean)
 
@@ -214,8 +222,11 @@ filled first.  Optional argument N as in `org-mru-clock'."
             (org-get-heading 'no-tags 'no-todo)))
          (parent-post (if parent
                           (format " (%s)" parent)
-                        "")))
-    (concat this parent-post)))
+                        ""))
+         (with-parent (concat this parent-post)))
+    (if org-mru-clock-keep-formatting
+        with-parent
+      (substring-no-properties with-parent))))
 
 (defun org-mru-clock--clock-in (task)
   "Clock into the TASK (cons of description and marker)."
@@ -299,13 +310,15 @@ See `org-mru-clock-completing-read' for the completion function used.
 Optional argument N as in `org-mru-clock'."
   (interactive "P")
   (org-mru-clock-to-history n)
-  (let ((prompt "Recent clocks: ")
-        ;; Remove string faces, possibly include entry-at-point:
-        (collection (mapcar (lambda (kv)
-                              (setf (car kv) (substring-no-properties (car kv)))
-                              kv)
-                            (append (org-mru-clock--collect-entry-at-point)
-                                    (org-mru-clock--collect-history org-clock-history)))))
+  (let* ((prompt "Recent clocks: ")
+         (entry-at-point (org-mru-clock--collect-entry-at-point))
+         (entry-at-point-keys (mapcar #'car entry-at-point))
+         ;; Possibly include entry-at-point, always keep it first, avoid duplicates:
+         (collection (append entry-at-point
+                             (cl-remove-if
+                              (lambda (k) (member k entry-at-point-keys))
+                              (org-mru-clock--collect-history org-clock-history)
+                              :key #'car))))
     (org-mru-clock--read prompt
                          collection
                          #'org-mru-clock--clock-in
