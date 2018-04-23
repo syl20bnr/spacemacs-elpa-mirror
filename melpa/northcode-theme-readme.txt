@@ -1,4 +1,3 @@
-My first Emacs theme.
 Dark theme with most colors roughly hand-picked in blue and orange shades.
 I will keep adding as I go, but try not to drastically change anything.
 If you want me to add colors to support a specific package, submit an issue on the github repo.

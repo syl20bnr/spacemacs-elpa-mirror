@@ -1,5 +1,5 @@
 ;;; bash-completion.el --- BASH completion for the shell buffer
-;; Package-Version: 20180303.1144
+;; Package-Version: 20180423.925
 
 ;; Copyright (C) 2009 Stephane Zermatten
 
@@ -195,6 +195,12 @@ feature doesn't always work perfectly with programmable completion.
 Enable this option if you find yourself having to often backtrack
 to remove the extra space bash adds after a completion."
   :type '(boolean)
+  :group 'bash-completion)
+
+(defcustom bash-completion-default-completion t
+  "Use Readline’s default filename completion if a compspec
+  generates no matches."
+  :type 'boolean
   :group 'bash-completion)
 
 (defvar bash-completion-start-files
@@ -725,7 +731,7 @@ The result is a list of candidates, which might be empty."
           (when (eq 0 completion-status)
             (bash-completion-extract-candidates
              (nth cword words) unparsed-stub open-quote (car cmdline))))
-    (if (and (not candidates) (eq 'custom (car cmdline)))
+    (if (and bash-completion-default-completion (not candidates) (eq 'custom (car cmdline)))
         (bash-completion--default-completion
          (nth cword words) unparsed-stub open-quote 'default)
       candidates)))

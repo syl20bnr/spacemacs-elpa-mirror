@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180415.905
+;; Package-Version: 20180423.1012
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -760,13 +760,21 @@ By default `counsel-bookmark' opens a dired buffer for directories."
     "open as root")))
 
 (defun counsel-M-x-transformer (cmd)
-  "Return CMD appended with the corresponding binding in the current window."
-  (let ((binding (substitute-command-keys (format "\\[%s]" cmd))))
-    (setq binding (replace-regexp-in-string "C-x 6" "<f2>" binding))
-    (if (string-match "^M-x" binding)
+  "Return CMD annotated with its active key binding, if any."
+  (let ((key (where-is-internal (intern cmd) nil t)))
+    (if (not key)
         cmd
-      (format "%s (%s)"
-              cmd (propertize binding 'face 'font-lock-keyword-face)))))
+      ;; Prefer `<f2>' over `C-x 6' where applicable
+      (let ((i (cl-search [?\C-x ?6] key)))
+        (when i
+          (let ((dup (vconcat (substring key 0 i) [f2] (substring key (+ i 2))))
+                (map (current-global-map)))
+            (when (equal (lookup-key map key)
+                         (lookup-key map dup))
+              (setq key dup)))))
+      (setq key (key-description key))
+      (put-text-property 0 (length key) 'face 'font-lock-keyword-face key)
+      (format "%s (%s)" cmd key))))
 
 (defvar smex-initialized-p)
 (defvar smex-ido-cache)
@@ -2715,6 +2723,9 @@ otherwise continue prompting for tags."
            (org-agenda-set-tags nil nil))
       (fset 'org-set-tags store))))
 
+(define-obsolete-variable-alias 'counsel-org-goto-display-style
+    'counsel-org-headline-display-style "0.10.0")
+
 (defcustom counsel-org-headline-display-style 'path
   "The style used when displaying matched `org-mode'-headlines.
 
@@ -2734,8 +2745,8 @@ Use `counsel-org-headline-display-tags' and
           (const :tag "Path" path))
   :group 'ivy)
 
-(define-obsolete-variable-alias 'counsel-org-goto-display-style
-    'counsel-org-headline-display-style "0.10.0")
+(define-obsolete-variable-alias 'counsel-org-goto-separator
+    'counsel-org-headline-path-separator "0.10.0")
 
 (defcustom counsel-org-headline-path-separator "/"
   "Character(s) to separate path entries in matched `org-mode'-headlines.
@@ -2745,24 +2756,21 @@ set to path."
   :type 'string
   :group 'ivy)
 
-(define-obsolete-variable-alias 'counsel-org-goto-separator
-    'counsel-org-headline-path-separator "0.10.0")
+(define-obsolete-variable-alias 'counsel-org-goto-display-tags
+    'counsel-org-headline-display-tags "0.10.0")
 
 (defcustom counsel-org-headline-display-tags nil
   "If non-nil, display tags in matched `org-mode' headlines."
   :type 'boolean
   :group 'ivy)
 
-(define-obsolete-variable-alias 'counsel-org-goto-display-tags
-    'counsel-org-headline-display-tags "0.10.0")
+(define-obsolete-variable-alias 'counsel-org-goto-display-todo
+    'counsel-org-headline-display-todo "0.10.0")
 
 (defcustom counsel-org-headline-display-todo nil
   "If non-nil, display todo keywords in matched `org-mode' headlines."
   :type 'boolean
   :group 'ivy)
-
-(define-obsolete-variable-alias 'counsel-org-goto-display-todo
-    'counsel-org-headline-display-todo "0.10.0")
 
 (defcustom counsel-org-headline-display-priority nil
   "If non-nil, display priorities in matched `org-mode' headlines."

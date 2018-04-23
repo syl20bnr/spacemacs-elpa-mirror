@@ -4,7 +4,7 @@
 
 ;; Author: Aurélien Aptel <aurelien.aptel@gmail.com>
 ;; URL: http://github.com/aaptel/test-c
-;; Package-Version: 20170316.1432
+;; Package-Version: 20180423.1020
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "24.3"))
 
@@ -146,7 +146,7 @@ int main(int argc, char **argv)
 (defun test-c (new-buffer)
   "Compile and run a new test-c buffer (or reuse existing one)."
   (interactive "P")
-  (when (not test-c-buffer)
+  (when (not (bound-and-true-p test-c-mode))
     (switch-to-buffer (get-buffer-create "*test-c*"))
     (when (string= (buffer-string) "")
       (erase-buffer)

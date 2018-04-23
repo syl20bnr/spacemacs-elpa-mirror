@@ -4,7 +4,7 @@
 
 ;; Author: Mario Rodas <marsam@users.noreply.github.com>
 ;; URL: https://github.com/emacs-pe/honcho.el
-;; Package-Version: 20180319.1441
+;; Package-Version: 20180423.724
 ;; Keywords: convenience
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "25.1") (sudo-edit "0.1"))
@@ -132,6 +132,8 @@ load `.env.dev' i.e. will use the same suffix."
   "Table holding the information for honcho services.")
 (defvar honcho-buffer-name "*honcho*"
   "Name of the buffer used for listing the services.")
+(defvar honcho-services-switch #'switch-to-buffer
+  "Function to call to display and switch to the honcho process list.")
 (defvar honcho-dotenv ".env"
   "Dotenv filename.")
 ;;;###autoload
@@ -140,11 +142,12 @@ load `.env.dev' i.e. will use the same suffix."
 ;;;###autoload
 (put 'honcho-procfile 'safe-local-variable #'stringp)
 
+;; See: https://github.com/ddollar/foreman/blob/025de2a/lib/foreman/procfile.rb#L5-L9
 (defconst honcho-procfile-command-regexp
-  (rx line-start (* space)
-      (group (+ alnum)) (* space)                 ; name
-      ":"                                         ; separator
-      (* space) (group (one-or-more not-newline)) ; command
+  (rx line-start
+      (group (+ (in alnum ?_)))         ; name
+      ?:                                ; separator
+      (* space) (group (+ any))         ; command
       line-end)
   "Regexp of a Procfile command definition.")
 
@@ -214,18 +217,22 @@ Otherwise convert it to a symbol and return that."
            when (string-match "^\\(.+[^[:space:]]\\)[[:space:]]*=[[:space:]]*\\(.+\\)" line)
            collect (cons (match-string-no-properties 1 line) (match-string-no-properties 2 line))))
 
+(defun honcho-collect-commands (procfile)
+  "Return a list of commands defined in PROCFILE."
+  (cl-loop for line in (honcho-file-lines procfile)
+           when (string-match honcho-procfile-command-regexp line)
+           collect (list (match-string 1 line) (split-string-and-unquote (match-string 2 line)))))
+
 (defun honcho-collect-procfile-services (procfile)
   "Collect the services defined in PROCFILE."
   (setq honcho-services
-        (cl-loop for line in (honcho-file-lines procfile)
-                 with cwd = (file-name-directory procfile)
+        (cl-loop with cwd = (file-name-directory procfile)
                  with env = (honcho-collect-dotenv honcho-dotenv)
                  with services = honcho-services
-                 when (string-match honcho-procfile-command-regexp line)
-                 for (name cmd) = (list (match-string 1 line) (split-string-and-unquote (match-string 2 line)))
+                 for (name command) in (honcho-collect-commands procfile)
                  if (gethash name services)
-                 do (setf (honcho-service-env it) (honcho-collect-dotenv honcho-dotenv) (honcho-service-command it) cmd)
-                 else do (puthash name (honcho-service-new :name name :command cmd :env env :cwd cwd) services)
+                 do (setf (honcho-service-env it) (honcho-collect-dotenv honcho-dotenv) (honcho-service-command it) command)
+                 else do (puthash name (honcho-service-new :name name :command command :env env :cwd cwd) services)
                  finally return services)))
 
 (defun honcho-process-status (process)
@@ -387,7 +394,7 @@ Otherwise convert it to a symbol and return that."
   (with-current-buffer (get-buffer-create honcho-buffer-name)
     (honcho-menu-mode)
     (tabulated-list-print)
-    (display-buffer (current-buffer))))
+    (funcall honcho-services-switch (current-buffer))))
 
 ;;;###autoload
 (defun honcho-procfile (procfile)
@@ -404,7 +411,7 @@ Otherwise convert it to a symbol and return that."
         (setq-local honcho-services (if local-p services (make-hash-table :test #'equal)))
         (setq tabulated-list-entries (apply-partially #'honcho-procfile-entries-services procfile))
         (tabulated-list-print)
-        (display-buffer (current-buffer))))))
+        (funcall honcho-services-switch (current-buffer))))))
 
 (provide 'honcho)
 ;;; honcho.el ends here
