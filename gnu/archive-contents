@@ -751,7 +751,7 @@
 	 ((:keywords "extensions" "lisp")
 	  (:url . "https://github.com/Malabarba/names"))])
  (nhexl-mode .
-	     [(0 6)
+	     [(0 7)
 	      ((emacs
 		(24))
 	       (cl-lib

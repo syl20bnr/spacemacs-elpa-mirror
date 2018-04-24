@@ -4,7 +4,7 @@
 
 ;; Author: Stefan Monnier <monnier@iro.umontreal.ca>
 ;; Keywords: data
-;; Version: 0.6
+;; Version: 0.7
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -46,7 +46,7 @@
 
 ;; Even though the Hex addresses displayed by this mode aren't actually
 ;; part of the buffer's text (contrary to hexl-mode, for example), you can
-;; search them with isearch.
+;; search them with Isearch.
 
 ;;; Todo:
 ;; - Clicks on the hex side should put point at the right place.
@@ -62,7 +62,7 @@
 
 (defcustom nhexl-line-width 16
   "Number of bytes per line."
-  :type 'integer)
+  :type '(choice (integer :tag "Fixed width") (const :tag "Adjust to window" t)))
 
 (defcustom nhexl-display-unprintables nil
   "If non-nil, display non-printable chars using the customary codes.
@@ -97,6 +97,12 @@ Otherwise they are applied unconditionally."
 
 ;;;; Nibble editing minor mode
 
+;; FIXME: Region highlighting in this minor mode should highlight the hex area
+;;   rather than only the ascii area!
+;; FIXME: Isearch in this minor mode should try and "search in the hex area".
+;; FIXME: Kill&yank in this minor mode should work on the hex representation
+;;   of the buffer's content!
+
 (defvar nhexl-nibble-edit-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map [remap self-insert-command] #'nhexl-nibble-self-insert)
@@ -127,12 +133,16 @@ Otherwise they are applied unconditionally."
 (defun nhexl--nibble-set (n)
   (setq nhexl--nibble (list n (point) (buffer-chars-modified-tick))))
 
+(defsubst nhexl--line-width ()
+  (if (integerp nhexl-line-width) nhexl-line-width 16))
+
 (defun nhexl--refresh-cursor (&optional pos)
   (unless pos (setq pos (point)))
   (let* ((zero (save-restriction (widen) (point-min)))
-         (n (truncate (- pos zero) nhexl-line-width))
-         (from (max (point-min) (+ zero (* n nhexl-line-width))))
-         (to (min (point-max) (+ zero (* (1+ n) nhexl-line-width)))))
+         (lw (nhexl--line-width))
+         (n (truncate (- pos zero) lw))
+         (from (max (point-min) (+ zero (* n lw))))
+         (to (min (point-max) (+ zero (* (1+ n) lw)))))
     (with-silent-modifications
       (put-text-property from to 'fontified nil))))
 
@@ -184,6 +194,11 @@ Otherwise they are applied unconditionally."
       (nhexl--nibble-set (1+ nib)))))
 
 ;;;; No insertion/deletion minor mode
+
+;; FIXME: To make it work more generally, we should hook into
+;; after-change-function, but we can't work directly from there because
+;; it's called at too fine a grain (an overwrite is actually an
+;; insertion+deletion and will run after-change-function, twice).
 
 (defvar nhexl-overwrite-clear-byte ?\000
   "Byte to use to replace deleted content.")
@@ -311,6 +326,11 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
         (jit-lock-unregister #'nhexl--jit)
         (remove-hook 'after-change-functions #'nhexl--change-function 'local)
         (remove-hook 'post-command-hook #'nhexl--post-command 'local)
+        ;; Apparently it's window-size-change-functions instead of
+        ;; window-configuration-change-hook which we need here!
+        ;;(remove-hook 'window-configuration-change-hook
+        ;;             #'nhexl--window-config-change t)
+        (remove-hook 'window-size-change-functions #'nhexl--window-size-change)
         (remove-function (local 'isearch-search-fun-function)
                          #'nhexl--isearch-search-fun)
         ;; FIXME: This conflicts with any other use of `display'.
@@ -345,6 +365,9 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
     (add-hook 'change-major-mode-hook (lambda () (nhexl-mode -1)) nil 'local)
     (add-hook 'post-command-hook #'nhexl--post-command nil 'local)
     (add-hook 'after-change-functions #'nhexl--change-function nil 'local)
+    ;; (add-hook 'window-configuration-change-hook
+    ;;           #'nhexl--window-config-change nil 'local)
+    (add-hook 'window-size-change-functions #'nhexl--window-size-change)
     (add-function :around (local 'isearch-search-fun-function)
                   #'nhexl--isearch-search-fun)))
 
@@ -355,7 +378,7 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
   (if (< arg 0)
       (nhexl-previous-line (- arg))
     (let ((nib (nhexl--nibble)))
-      (forward-char (* arg nhexl-line-width))
+      (forward-char (* arg (nhexl--line-width)))
       (nhexl--nibble-set nib))))
 
 (defun nhexl-previous-line (&optional arg)
@@ -365,7 +388,7 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
   (if (< arg 0)
       (nhexl-next-line (- arg))
     (let ((nib (nhexl--nibble)))
-      (backward-char (* arg nhexl-line-width))
+      (backward-char (* arg (nhexl--line-width)))
       (nhexl--nibble-set nib))))
 
 (defun nhexl-scroll-down (&optional arg)
@@ -382,7 +405,7 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
    ((bobp) (scroll-down arg))			; signal error
    (t
     (let* ((ws (window-start))
-           (nws (- ws (* nhexl-line-width arg))))
+           (nws (- ws (* (nhexl--line-width) arg))))
       (if (eq ws (point-min))
           (if scroll-error-top-bottom
               (nhexl-previous-line arg)
@@ -404,7 +427,7 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
    ((eobp) (scroll-up arg))			; signal error
    (t
     (let* ((ws (window-start))
-           (nws (+ ws (* nhexl-line-width arg))))
+           (nws (+ ws (* (nhexl--line-width) arg))))
       (if (pos-visible-in-window-p (point-max))
           (if scroll-error-top-bottom
               (nhexl-next-line arg)
@@ -416,12 +439,12 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
   ;; Round modifications up-to the hexl-line length since nhexl--jit will need
   ;; to modify the overlay that covers that text.
   (let* ((zero (save-restriction (widen) (point-min)))
+         (lw (nhexl--line-width))
          (from (max (point-min)
-                    (+ zero (* (truncate (- beg zero) nhexl-line-width)
-                               nhexl-line-width))))
+                    (+ zero (* (truncate (- beg zero) lw) lw))))
          (to (min (point-max)
-                  (+ zero (* (ceiling (- end zero) nhexl-line-width)
-                             nhexl-line-width)))))
+                  (+ zero (* (ceiling (- end zero) lw)
+                             lw)))))
     (with-silent-modifications    ;Don't store this change in buffer-undo-list!
       (put-text-property from to 'fontified nil)))
   ;; Also make sure the tail's addresses are refreshed when
@@ -429,6 +452,11 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
   (when (/= len (- end beg))
     (with-silent-modifications    ;Don't store this change in buffer-undo-list!
       (put-text-property beg (point-max) 'fontified nil))))
+
+(defun nhexl--flush ()
+  (save-restriction
+    (widen)
+    (nhexl--change-function (point-min) (point-max) (buffer-size))))
 
 (defvar nhexl--overlay-counter 100)
 (make-variable-buffer-local 'nhexl--overlay-counter)
@@ -451,6 +479,7 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
     ;; nhexl--overlay-counter overlays, then we'll inf-loop.
     ;; So let's be more careful about removing overlays.
     (let ((windows (get-buffer-window-list nil nil t))
+          (lw (nhexl--line-width))
           (start (point-min))
           (zero (save-restriction (widen) (point-min)))
           (debug-count (nhexl--debug-count-ols)))
@@ -463,21 +492,20 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
                 (setq end (min (1- (window-start window)) end)))
                ((< start (1+ (window-end window)))
                 (setq start (1+ (window-end window))))))
-            ;; Round to multiple of nhexl-line-width.
-            (setq start (+ zero (* (ceiling (- start zero) nhexl-line-width)
-                                   nhexl-line-width)))
-            (setq end (+ zero (* (truncate (- end zero) nhexl-line-width)
-                                 nhexl-line-width)))
+            ;; Round to multiple of lw.
+            (setq start (+ zero (* (ceiling (- start zero) lw) lw)))
+            (setq end (+ zero (* (truncate (- end zero) lw) lw)))
             (when (< start end)
               (remove-overlays start end 'nhexl t)
               (put-text-property start end 'fontified nil)
-              (setq start (+ end nhexl-line-width))))))
+              (setq start (+ end lw))))))
       (let ((debug-new-count (nhexl--debug-count-ols)))
         (message "Flushed %d overlays, %d remaining"
                  (- debug-count debug-new-count) debug-new-count)))))
 
 (defun nhexl--make-line (from next zero)
   (let* ((nextpos (min next (point-max)))
+         (lw (nhexl--line-width))
          (bufstr (buffer-substring from nextpos))
          (prop (if nhexl-obey-font-lock 'font-lock-face 'face))
          (i -1)
@@ -517,19 +545,18 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
                               ?\s))
              (propertize "  " 'display
                          `(space :align-to
-                                 ,(+ (/ (* nhexl-line-width 5) 2)
+                                 ,(+ (/ (* lw 5) 2)
                                      12 3))))))
     (font-lock-append-text-property 0 (length s) prop 'default s)
     s))
 
 (defun nhexl--jit (from to)
-  (let ((zero (save-restriction (widen) (point-min))))
+  (let ((zero (save-restriction (widen) (point-min)))
+        (lw (nhexl--line-width)))
     (setq from (max (point-min)
-                    (+ zero (* (truncate (- from zero) nhexl-line-width)
-                               nhexl-line-width))))
+                    (+ zero (* (truncate (- from zero) lw) lw))))
     (setq to (min (point-max)
-                  (+ zero (* (ceiling (- to zero) nhexl-line-width)
-                             nhexl-line-width))))
+                  (+ zero (* (ceiling (- to zero) lw) lw))))
     (remove-overlays from to 'nhexl t)
     (remove-text-properties from to '(display))
     (save-excursion
@@ -548,12 +575,17 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
         ;; (run-with-idle-timer 0 nil 'nhexl--flush-overlays (current-buffer))
         )
       
-      (let* ((next (+ from nhexl-line-width))
+      (let* ((next (+ from lw))
              (ol (make-overlay from next))
              (s (nhexl--make-line from next zero)))
         (overlay-put ol 'nhexl t)
         (overlay-put ol (if nhexl-obey-font-lock 'font-lock-face 'face)
                      'hexl-ascii-region)
+        ;; Make sure these overlays have less priority than that of (say)
+        ;; the region highlighting (since they're rather small).  Another way
+        ;; to do it would be to add an overlay over the whole buffer with the
+        ;; `face' property.
+        (overlay-put ol 'priority most-negative-fixnum)
         (overlay-put ol 'before-string s)
         (setq from next)))))
 
@@ -561,12 +593,14 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
   ;; FIXME: merge with nhexl--make-line.
   ;; FIXME: Memoize last line to avoid recomputation!
   (let* ((zero (save-restriction (widen) (point-min)))
+         (lw (nhexl--line-width))
          (text
           (let ((tmp ()))
-            (dotimes (i nhexl-line-width)
+            (dotimes (i lw)
+              (setq i (logand i #xf))
               (push (if (< i 10) (+ i ?0) (+ i -10 ?a)) tmp))
-            (apply 'string (nreverse tmp))))
-         (pos (mod (- nhexl--point zero) nhexl-line-width))
+            (apply #'string (nreverse tmp))))
+         (pos (mod (- nhexl--point zero) lw))
          (i -1))
     (put-text-property pos (1+ pos) 'face 'highlight text)
     (concat
@@ -595,7 +629,7 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
                 "")
      (propertize "  " 'display
                  `(space :align-to
-                         ,(+ (/ (* nhexl-line-width 5) 2)
+                         ,(+ (/ (* lw 5) 2)
                              12 3)))
      text)))
   
@@ -603,12 +637,13 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
 (defun nhexl--post-command ()
   (when (/= (point) nhexl--point)
     (let ((zero (save-restriction (widen) (point-min)))
+          (lw (nhexl--line-width))
           (oldpoint nhexl--point))
       (setq nhexl--point (point))
       (nhexl--refresh-cursor)
       ;; (nhexl--jit (point) (1+ (point)))
-      (if (/= (truncate (- (point) zero) nhexl-line-width)
-              (truncate (- oldpoint zero) nhexl-line-width))
+      (if (/= (truncate (- (point) zero) lw)
+              (truncate (- oldpoint zero) lw))
           (nhexl--refresh-cursor oldpoint)))))
 
 (defun nhexl--isearch-search-fun (orig-fun)
@@ -623,6 +658,10 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
         (cond
          ((string-match-p "\\`[[:xdigit:]]+:?\\'" string)
           ;; Could be a hexadecimal address.
+          ;; FIXME: The code below works well to find the address, but the
+          ;; resulting isearch-highlighting is wrong (the char at that position
+          ;; is highlighted, instead of the actual address matched in the
+          ;; before-string).
           (let* ((addr (string-to-number string 16))
                  ;; If `string' says "7a:", then it's "anchored", meaning that
                  ;; we'll only look for nearest address of the form "XXX7a"
@@ -663,8 +702,56 @@ existing text, if needed with `nhexl-overwrite-clear-byte'."
              (t (goto-char (1+ bestnext)) (re-search-backward ".")))))
          (t def))))))
 
+(defun nhexl--line-width-watcher (_sym _newval op where)
+  (when (eq op 'set)
+    (dolist (buf (if where (list where) (buffer-list)))
+      (with-current-buffer buf
+        (when nhexl-mode (nhexl--flush))))))
+
+(when (fboundp 'add-variable-watcher)
+  (add-variable-watcher 'nhexl-line-width #'nhexl--line-width-watcher))
+
+(defun nhexl--window-size-change (frame)
+  (when (eq t (default-value 'nhexl-line-width))
+    (dolist (win (window-list frame 'nomini))
+      (when (buffer-local-value 'nhexl-mode (window-buffer win))
+        (with-selected-window win (nhexl--window-config-change))))))
+
+(defun nhexl--window-config-change ()
+  (when (eq t (default-value 'nhexl-line-width))
+    ;; FIXME: What should we do with buffers displayed in several windows of
+    ;; different width?
+    (let ((win (get-buffer-window)))
+      (when win
+        (let* ((width (window-text-width win))
+               (bytes (/ (- width
+                            (eval-when-compile
+                              (+ 9      ;Address
+                                 3      ;Spaces between address and hex area
+                                 4)))   ;Spaces between hex area and ascii area
+                         3.5))          ;Columns per byte
+               (pow2bytes (lsh 1 (truncate (log bytes 2)))))
+          (when (> (/ bytes pow2bytes) 1.5)
+            ;; Add 1½ steps: 4, *6*, 8, *12*, 16, *24*, 32, *48*, 64
+            (setq pow2bytes (+ pow2bytes (/ pow2bytes 2))))
+          (unless (eql pow2bytes nhexl-line-width)
+            (setq-local nhexl-line-width pow2bytes)))))))
+
 ;;;; ChangeLog:
 
+;; 2018-04-23  Stefan Monnier  <monnier@iro.umontreal.ca>
+;; 
+;; 	* nhexl-mode/nhexl-mode.el (nhexl-line-width): Allow dynamic adjust
+;; 
+;; 	(nhexl--line-width): New function.
+;; 	(nhexl--window-size-change): New function.
+;; 	(nhexl-mode): Use it.
+;; 	(nhexl--flush, nhexl--window-config-change): New functions.
+;; 	(nhexl--jit): Set 'priority' of overlay so as not to hide the region.
+;; 	(nhexl--header-line): Don't use letters past `f` for columns >15.
+;; 	(nhexl--line-width-watcher): New function.
+;; 	(nhexl-line-width): Use it as watcher when applicable.
+;; 
 ;; 2018-04-19  Stefan Monnier  <monnier@iro.umontreal.ca>
 ;; 
 ;; 	* nhexl-mode/nhexl-mode.el: Let isearch look for addresses as well

@@ -22,4 +22,4 @@ It also comes with:
 
 Even though the Hex addresses displayed by this mode aren't actually
 part of the buffer's text (contrary to hexl-mode, for example), you can
-search them with isearch.
+search them with Isearch.

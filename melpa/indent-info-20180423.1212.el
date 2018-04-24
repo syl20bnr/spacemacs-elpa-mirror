@@ -1,13 +1,13 @@
 ;;; indent-info.el --- show indentation information in status bar
 
-;; Copyright (C) 2017 Terje Larsen
+;; Copyright (C) 2018 Terje Larsen
 ;; All rights reserved.
 
 ;; Author: Terje Larsen <terlar@gmail.com>
 ;; URL: https://github.com/terlar/indent-info.el
-;; Package-Version: 20171216.1509
+;; Package-Version: 20180423.1212
 ;; Keywords: convenience, tools
-;; Version: 0.1
+;; Version: 0.2.0
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -31,6 +31,9 @@
 ;; status bar.
 
 ;;; Code:
+
+(eval-when-compile
+  (defvar evil-shift-width))
 
 (defgroup indent-info nil
   "Display indentation information in mode line."
@@ -150,6 +153,12 @@ Each element is a list of the form (NUMBER . SYMBOL)."
   (unless (minibufferp)
     (indent-info-mode 1)))
 
+(defun indent-info-set-indentation-width (width)
+  "Set `tab-width' and other width related variables to WIDTH."
+  (setq tab-width width)
+  (when (featurep 'evil)
+    (setq-local evil-shift-width width)))
+
 ;;;###autoload
 (defun indent-info-toggle-indent-mode ()
   "Toggle indentation modes between tabs and spaces."
@@ -167,7 +176,7 @@ When reaching `indent-info-tab-width-max' it won't do anything."
   (interactive)
   (let ((width (+ tab-width indent-info-tab-width-step)))
     (when (<= width indent-info-tab-width-max)
-      (setq tab-width width)
+      (indent-info-set-indentation-width width)
       (message "Set tab-width to %d." width)
       (force-mode-line-update))))
 
@@ -178,7 +187,7 @@ When reaching `indent-info-tab-width-min' it won't do anything."
   (interactive)
   (let ((width (- tab-width indent-info-tab-width-step)))
     (when (>= width indent-info-tab-width-min)
-      (setq tab-width width)
+      (indent-info-set-indentation-width width)
       (message "Set tab-width to %d." width)
       (force-mode-line-update))))
 

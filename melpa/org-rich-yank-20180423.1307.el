@@ -4,7 +4,7 @@
 
 ;; Author: Kevin Brubeck Unhammer <unhammer@fsfe.org>
 ;; Version: 0.1.1
-;; Package-Version: 20180325.1218
+;; Package-Version: 20180423.1307
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: convenience, hypermedia, org
 
@@ -75,6 +75,10 @@ ARGS ignored."
              ;; the article will give the wrong link
              (save-window-excursion (gnus-article-show-summary)
                                     (org-store-link nil)))
+            ((and (eq major-mode 'diff-mode))
+             (save-window-excursion
+               (diff-goto-source)
+               (org-store-link nil)))
             ;; org-store-link doesn't do eww-mode yet as of 8.2.10 at least:
             ((and (eq major-mode 'eww-mode)
                   (boundp 'eww-data)
