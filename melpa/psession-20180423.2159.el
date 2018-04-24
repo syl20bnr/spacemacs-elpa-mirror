@@ -5,8 +5,8 @@
 ;; X-URL: https://github.com/thierryvolpiatto/psession
 
 ;; Compatibility: GNU Emacs 24.1+
-;; Package-Requires: ((emacs "24") (cl-lib "0.5") (async "1.9.2"))
-;; Package-Version: 20180418.2137
+;; Package-Requires: ((emacs "24") (cl-lib "0.5") (async "1.9.3"))
+;; Package-Version: 20180423.2159
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -279,13 +279,6 @@ Arg CONF is an entry in `psession--winconf-alist'."
       (psession--dump-object-to-file-save-alist 'skip-props))
    (lambda (_result)
      (message "Psession: auto saving session done"))))
-
-(defun psession-save-all ()
-  "Save current emacs session."
-  (interactive)
-  (psession-save-last-winconf)
-  (psession--dump-some-buffers-to-list)
-  (psession--dump-object-to-file-save-alist))
 
 (defvar psession--auto-save-timer nil)
 (defun psession-start-auto-save ()

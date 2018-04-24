@@ -5,8 +5,8 @@
 ;; X-URL: https://github.com/thierryvolpiatto/psession
 
 ;; Compatibility: GNU Emacs 24.1+
-;; Package-Requires: ((emacs "24") (cl-lib "0.5") (async "1.9.2"))
-;; Package-Version: 1.4
+;; Package-Requires: ((emacs "24") (cl-lib "0.5") (async "1.9.3"))
+;; Package-Version: 1.5
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -73,14 +73,6 @@ have to add here the `minibuffer-history' variables, instead enable
   :group 'psession
   :type 'integer)
 
-(defcustom psession-auto-save nil
-  "Enable auto-saving session when non nil.
-
-Session is saved all the `psession-auto-save-delay' seconds.
-Auto saving is done asynchronously."
-  :group 'psession
-  :type 'boolean)
-
 (defcustom psession-savehist-ignored-variables nil
   "List of `minibuffer-history' variables to not save."
   :group 'psession
@@ -114,7 +106,7 @@ That may not work with Emacs versions <=23.1 for hash tables."
 ;;; Objects (variables to save)
 ;;
 ;;
-(defun psession--dump-object-to-file-save-alist ()
+(defun psession--dump-object-to-file-save-alist (&optional skip-props)
   (when psession-object-to-save-alist
     (cl-loop for (o . f) in psession-object-to-save-alist
              for abs = (expand-file-name f psession-elisp-objects-default-directory)
@@ -122,28 +114,30 @@ That may not work with Emacs versions <=23.1 for hash tables."
              do
              (cond ((and (eq o 'register-alist)
                          (symbol-value o))
-                    (psession--dump-object-save-register-alist f))
+                    (psession--dump-object-save-register-alist f skip-props))
                    ((and (boundp o) (symbol-value o))
-                    (psession--dump-object-no-properties o abs))))))
+                    (psession--dump-object-no-properties o abs skip-props))))))
 
 (cl-defun psession--restore-objects-from-directory
     (&optional (dir psession-elisp-objects-default-directory))
   (let ((file-list (directory-files dir t directory-files-no-dot-files-regexp)))
     (cl-loop for file in file-list do (and file (load file)))))
 
-(defun psession--dump-object-no-properties (object file)
+(defun psession--dump-object-no-properties (object file &optional skip-props)
+  ;; Force not checking properties with SKIP-PROPS.
   (let ((value (symbol-value object)))
-    (set object (cond ((stringp value)
-                       (substring-no-properties value))
-                      ((listp value)
-                       (cl-loop for elm in value
-                                if (stringp elm)
-                                collect (substring-no-properties elm)
-                                else collect elm))
-                      (t value)))
+    (unless skip-props
+      (set object (cond ((stringp value)
+                         (substring-no-properties value))
+                        ((listp value)
+                         (cl-loop for elm in value
+                                  if (stringp elm)
+                                  collect (substring-no-properties elm)
+                                  else collect elm))
+                        (t value))))
     (psession--dump-object-to-file object file)))
 
-(cl-defun psession--dump-object-save-register-alist (&optional (file "register-alist.el"))
+(cl-defun psession--dump-object-save-register-alist (&optional (file "register-alist.el") skip-props)
   "Save `register-alist' but only supported objects."
   (let ((register-alist (cl-loop for (char . val) in register-alist
                                  unless (or (markerp val)
@@ -153,7 +147,7 @@ That may not work with Emacs versions <=23.1 for hash tables."
                                                         (substring-no-properties val)
                                                       val))))
         (def-file (expand-file-name file psession-elisp-objects-default-directory)))
-    (psession--dump-object-no-properties 'register-alist def-file)))
+    (psession--dump-object-no-properties 'register-alist def-file skip-props)))
 
 ;;; Persistents window configs
 ;;
@@ -254,7 +248,7 @@ Arg CONF is an entry in `psession--winconf-alist'."
                 psession-object-to-save-alist
                 :test 'equal)))
 
-;;;###autoloads
+;;;###autoload
 (define-minor-mode psession-savehist-mode
     "Save minibuffer-history variables persistently."
   :global t
@@ -278,17 +272,13 @@ Arg CONF is an entry in `psession--winconf-alist'."
       (add-to-list 'load-path
                    ,(file-name-directory (locate-library "psession")))
       (require 'psession)
-      ,(async-inject-variables (format "\\`%s" (psession--get-variables-regexp)))
-      (psession--dump-object-to-file-save-alist))
+      ;; Inject variables without properties.
+      ,(async-inject-variables (format "\\`%s" (psession--get-variables-regexp))
+                               nil nil 'noprops)
+      ;; No need to treat properties here it is already done.
+      (psession--dump-object-to-file-save-alist 'skip-props))
    (lambda (_result)
      (message "Psession: auto saving session done"))))
-
-(defun psession-save-all ()
-  "Save current emacs session."
-  (interactive)
-  (psession-save-last-winconf)
-  (psession--dump-some-buffers-to-list)
-  (psession--dump-object-to-file-save-alist))
 
 (defvar psession--auto-save-timer nil)
 (defun psession-start-auto-save ()
@@ -299,10 +289,17 @@ Arg CONF is an entry in `psession--winconf-alist'."
 
 (defun psession-auto-save-cancel-timer ()
   "Cancel psession auto-saving."
-  (interactive)
   (when psession--auto-save-timer
     (cancel-timer psession--auto-save-timer)
     (setq psession--auto-save-timer nil)))
+
+;;;###autoload
+(define-minor-mode psession-autosave-mode
+    "Auto save emacs session when enabled."
+  :global t
+  (if psession-autosave-mode
+      (psession-start-auto-save)
+    (psession-auto-save-cancel-timer)))
 
 ;;;###autoload
 (define-minor-mode psession-mode
@@ -312,7 +309,6 @@ Arg CONF is an entry in `psession--winconf-alist'."
       (progn
         (unless (file-directory-p psession-elisp-objects-default-directory)
           (make-directory psession-elisp-objects-default-directory t))
-        (and psession-auto-save (psession-start-auto-save))
         (add-hook 'kill-emacs-hook 'psession--dump-object-to-file-save-alist)
         (add-hook 'emacs-startup-hook 'psession--restore-objects-from-directory)
         (add-hook 'kill-emacs-hook 'psession--dump-some-buffers-to-list)
@@ -320,7 +316,6 @@ Arg CONF is an entry in `psession--winconf-alist'."
         (add-hook 'kill-emacs-hook 'psession-save-last-winconf)
         (add-hook 'emacs-startup-hook 'psession-restore-last-winconf 'append)
         (add-hook 'kill-emacs-hook 'psession-auto-save-cancel-timer))
-    (psession-auto-save-cancel-timer)
     (remove-hook 'kill-emacs-hook 'psession--dump-object-to-file-save-alist)
     (remove-hook 'emacs-startup-hook 'psession--restore-objects-from-directory)
     (remove-hook 'kill-emacs-hook 'psession--dump-some-buffers-to-list)
