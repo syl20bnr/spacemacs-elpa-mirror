@@ -1,4 +1,4 @@
-;;; bbcode-mode.el --- Major mode for writing BBCode markup
+;;; bbcode-mode.el --- Major mode for phpBB posts (BBCode markup)
 ;;
 ;; Copyright 2012, 2013, 2014 Eric James Michael Ritz
 ;; Copyright 2018 Lassi Kortela
@@ -6,7 +6,7 @@
 ;; Author: Eric James Michael Ritz <lobbyjones@gmail.com>
 ;; Maintainer: Lassi Kortela <lassi@lassi.io>
 ;; URL: https://github.com/lassik/bbcode-mode
-;; Package-Version: 20180326.1410
+;; Package-Version: 20180424.135
 ;; Version: 2.1.0
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; Keywords: bbcode languages
@@ -33,14 +33,14 @@
 ;;
 ;;; Commentary:
 ;;
-;; Put this file in your Emacs Lisp path (i.e. site-lisp) and add
-;; this to your `.emacs' file:
+;; This major mode lets you write phpBB forum posts in Emacs. It
+;; implements syntax highlighting and keyboard commands for BBCode
+;; (Bulletin Board Code), the markup language used by phpBB.
 ;;
-;;     (require 'bbcode-mode)
+;; Do M-x bbcode-scratch to instantly get a temp buffer to write
+;; posts. Use M-x bbcode-mode to switch an existing buffer to BBCode
+;; mode. The file name extension .bbcode is also recognized.
 ;;
-;; Files with the '.bbcode' extension automatically enable
-;; bbcode-mode.  No other extensions are associated with the mode.
-
 ;;; Code:
 
 (eval-when-compile (require 'cl-lib))
@@ -219,6 +219,7 @@ text there."
 
 (bbcode-define-insert-tag-commands)
 
+;;;###autoload
 (defun bbcode-scratch ()
   "Open *bbcode-scratch* buffer to quickly edit BBCode posts."
   (interactive)

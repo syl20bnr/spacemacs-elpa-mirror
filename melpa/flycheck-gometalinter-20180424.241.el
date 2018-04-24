@@ -5,7 +5,7 @@
 
 ;; Author: Diep Pham <me@favadi.com>
 ;; Keywords: convenience, tools, go
-;; Package-Version: 20170321.732
+;; Package-Version: 20180424.241
 ;; Version: 0.1.0
 ;; URL: https://github.com/favadi/flycheck-gometalinter
 ;; Package-Requires: ((emacs "24") (flycheck "0.22"))
@@ -92,6 +92,10 @@ flycheck-gometalinter-enable-linters."
   duration."
   :safe #'stringp)
 
+(flycheck-def-option-var flycheck-gometalinter-config nil gometalinter
+  "Path to gometalinter configuration file, or nil for none."
+  :safe #'stringp)
+
 (flycheck-define-checker gometalinter
   "A all-in-one Go linter.
 See URL: `https://github.com/alecthomas/gometalinter'"
@@ -105,6 +109,7 @@ See URL: `https://github.com/alecthomas/gometalinter'"
             (option "--deadline=" flycheck-gometalinter-deadline concat)
             (option-list "--disable=" flycheck-gometalinter-disable-linters concat)
             (option-list "--enable=" flycheck-gometalinter-enable-linters concat)
+            (option "--config=" flycheck-gometalinter-config concat)
             "--checkstyle"
             ".")
    :error-parser flycheck-parse-checkstyle
