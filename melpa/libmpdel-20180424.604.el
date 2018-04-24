@@ -4,7 +4,7 @@
 
 ;; Author: Damien Cassou <damien@cassou.me>
 ;; Keywords: multimedia
-;; Package-Version: 20180424.526
+;; Package-Version: 20180424.604
 ;; Url: https://github.com/DamienCassou/mpdel
 ;; Package-requires: ((emacs "25.1"))
 ;; Version: 0.5.0
@@ -566,6 +566,26 @@ The user is asked to choose for a stored playlist first.
 ENTITY can also be a list of entities to replace with."
   (libmpdel-funcall-on-stored-playlist
    (apply-partially #'libmpdel-playlist-replace entity)))
+
+(defun libmpdel-current-playlist-insert (entity)
+  "Insert ENTITY after currently-played song.
+ENTITY can also be a list of entities."
+  (libmpdel-list-songs
+   entity
+   (lambda (songs)
+     (libmpdel-send-commands
+      (mapcar (lambda (song) (format "addid %S" (libmpdel-song-file song))) songs)
+      (lambda (data)
+        (let ((song-ids (mapcar (lambda (song-data) (cdr song-data)) data))
+              ;; Add after current song if possible:
+              (target-index (if (libmpdel-current-song) "-1" "0")))
+          (libmpdel-send-commands
+           ;; The reverse is important to get the songs in the same
+           ;; order as in the selection:
+           (mapcar
+            (lambda (song-id) (format "moveid %s %s" song-id target-index))
+            (reverse song-ids))
+           (lambda (_) (libmpdel-send-command `("playid %s" ,(car song-ids)))))))))))
 
 
 ;;; Public functions

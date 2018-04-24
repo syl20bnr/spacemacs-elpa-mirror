@@ -5,7 +5,7 @@
 ;; Author: Alex Bennée <alex@bennee.com>
 ;; Maintainer: Alex Bennée <alex@bennee.com>
 ;; Version: 0.2
-;; Package-Version: 20180418.155
+;; Package-Version: 20180424.831
 ;; Package-Requires: ((s "1.12.0") (dash "2.0.0") (emacs "24"))
 ;; Homepage: https://github.com/stsquad/dired-rsync
 ;;
@@ -146,7 +146,8 @@ ssh/scp tramp connections."
                        (-flatten
                         (list dired-rsync-command
                               dired-rsync-options
-                              src-files dest)))))
+                              (mapcar #'shell-quote-argument src-files)
+			      (shell-quote-argument dest))))))
       (dired-rsync--do-run cmd
                            (list :marked-files src-files
                                  :dest dest

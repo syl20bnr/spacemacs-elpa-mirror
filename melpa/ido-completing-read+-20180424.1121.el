@@ -6,7 +6,7 @@
 ;; Author: Ryan Thompson
 ;; Created: Sat Apr  4 13:41:20 2015 (-0700)
 ;; Version: 4.10
-;; Package-Version: 20180424.824
+;; Package-Version: 20180424.1121
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (s "0.1") (memoize "1.1"))
 ;; URL: https://github.com/DarwinAwardWinner/ido-completing-read-plus
 ;; Keywords: ido, completion, convenience
@@ -89,7 +89,9 @@ not be updated until you restart Emacs.")
 (require 'cl-lib)
 (require 'cus-edit)
 (require 's)
-(require 'memoize)
+
+;; Optional dependency, only needed for optimization
+(require 'memoize nil t)
 
 ;; Silence some byte-compiler warnings
 (eval-when-compile
@@ -518,11 +520,11 @@ completion for them."
          (ido-cr+-last-dynamic-update-text nil)
          ;; Only memoize if the collection is dynamic.
          (ido-cr+-all-prefix-completions-memoized
-          (if ido-cr+-dynamic-collection
+          (if (and ido-cr+-dynamic-collection (featurep 'memoize))
               (memoize (indirect-function 'ido-cr+-all-prefix-completions))
             'ido-cr+-all-prefix-completions))
          (ido-cr+-all-completions-memoized
-          (if ido-cr+-dynamic-collection
+          (if (and ido-cr+-dynamic-collection (featurep 'memoize))
               (memoize (indirect-function 'all-completions))
             'all-completions))
          ;; If the whitelist is empty, everything is whitelisted
