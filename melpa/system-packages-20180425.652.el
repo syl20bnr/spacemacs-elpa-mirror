@@ -5,9 +5,9 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/system-packages
-;; Package-Version: 20180415.2039
+;; Package-Version: 20180425.652
 ;; Package-Requires: ((emacs "24.3"))
-;; Version: 1.0.3.9000
+;; Version: 1.0.3
 
 
 ;; This file is not part of GNU Emacs.

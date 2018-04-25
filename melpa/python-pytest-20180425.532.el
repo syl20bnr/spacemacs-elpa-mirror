@@ -2,7 +2,7 @@
 
 ;; Author: wouter bolsterlee <wouter@bolsterl.ee>
 ;; Version: 0.3.1
-;; Package-Version: 20180307.844
+;; Package-Version: 20180425.532
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (dash-functional "2.12.0") (magit-popup "2.12.0") (projectile "0.14.0") (s "1.12.0"))
 ;; Keywords: pytest, test, python, languages, processes, tools
 ;; URL: https://github.com/wbolster/emacs-python-pytest
@@ -58,46 +58,46 @@ This can be changed on a case by case basis by using a prefix argument
 \(\\[universal-argument]\) when invoking a command.
 
 When t, this toggles the behaviour of the prefix argument."
-  :group 'pytest
+  :group 'python-pytest
   :type 'boolean)
 
 (defcustom python-pytest-executable "pytest"
   "The name of the pytest executable."
-  :group 'pytest
+  :group 'python-pytest
   :type 'string)
 
 (defcustom python-pytest-setup-hook nil
   "Hooks to run before a pytest process starts."
-  :group 'pytest
+  :group 'python-pytest
   :type 'hook)
 
 (defcustom python-pytest-started-hook nil
   "Hooks to run after a pytest process starts."
-  :group 'pytest
+  :group 'python-pytest
   :type 'hook)
 
 (defcustom python-pytest-finished-hook nil
   "Hooks to run after a pytest process finishes."
-  :group 'pytest
+  :group 'python-pytest
   :type 'hook)
 
 (defcustom python-pytest-buffer-name "*pytest*"
   "Name of the pytest output buffer."
-  :group 'pytest
+  :group 'python-pytest
   :type 'string)
 
 (defcustom python-pytest-project-name-in-buffer-name t
   "Whether to include the project name in the buffer name.
 
 This is useful when working on multiple projects simultaneously."
-  :group 'pytest
+  :group 'python-pytest
   :type 'boolean)
 
 (defcustom python-pytest-pdb-track t
   "Whether to automatically track output when pdb is spawned.
 
 This results in automatically opening source files during debugging."
-  :group 'pytest
+  :group 'python-pytest
   :type 'boolean)
 
 (defcustom python-pytest-strict-test-name-matching nil
@@ -111,7 +111,7 @@ a pattern to run the corresponding tests, which will match
 ‘test_foo()’ as well as ‘test_foo_xyz()’.
 
 When non-nil only ‘test_foo()’ will match, and nothing else."
-  :group 'pytest
+  :group 'python-pytest
   :type 'boolean)
 
 (defvar python-pytest--history nil
