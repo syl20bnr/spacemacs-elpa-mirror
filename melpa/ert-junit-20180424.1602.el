@@ -6,7 +6,7 @@
 ;; Maintainer: Ola Nilsson <ola.nilsson@gmail.com>
 ;; Created; Jul 24 2014
 ;; Keywords: tools test unittest ert
-;; Package-Version: 20180407.1243
+;; Package-Version: 20180424.1602
 ;; Version: 0.1.2
 ;; Package-Requires: ((ert "0"))
 ;; URL: http://bitbucket.org/olanilsson/ert-junit
@@ -35,7 +35,14 @@
 ;;; Code:
 
 (require 'ert)
+(require 'xml)
 (eval-when-compile (require 'cl))
+
+(defmacro ert-junit--stats (property stats test-index)
+  "Get PROPERTY from STATS test with index TEST-INDEX.
+Expand to `(aref (ert--stats-test-PROPERTY STATS) TEST-INDEX)'."
+  (let ((stat-fn (intern (format "ert--stats-test-%s" (symbol-name property)))))
+    `(aref (,stat-fn ,stats) ,test-index)))
 
 (defun ert-junit--infos-string (result)
   "Return `ert-info' infos from RESULT as a string.
@@ -57,6 +64,33 @@ RESULT must be an `ert-test-result-with-condition'."
        (ert-test-result-with-condition-condition result)))
 	(buffer-string)))
 
+(defun ert-junit--failure-message (result)
+  "Return a failure message for RESULT.
+RESULT must be an `ert-test-result-with-condition'."
+  (concat (ert-junit--infos-string result)
+          (ert-junit--condition-string result)
+          ;; Printing the backtrace requires
+          ;; escapes (as the content may contain
+          ;; xml-like constructs like #<bytecode>
+          ;; (with-temp-buffer
+          ;;   (ert--print-backtrace
+          ;;    (ert-test-result-with-condition-backtrace test-status)
+          ;;    nil)
+          ;;   (buffer-substring-no-properties (point-min)
+          ;;                                 (point-max)))
+          ))
+
+(defun ert-junit--xml-escape-and-trim (string)
+  "Convert STRING into a trimmed string containing valid XML character data.
+Escape with `xml-escape-string'.  Use code equivalent to
+`string-trim' (not available in Emacs 24.3) to trim."
+  (let ((escaped (xml-escape-string string)))
+	(when (string-match "\\`[ \t\n\r]+" escaped)
+	  (setq escaped (replace-match "" t t escaped)))
+	(if (string-match "[ \t\n\r]+\\'" escaped)
+		(replace-match "" t t escaped)
+	  escaped)))
+
 (defun ert-junit--time-subtract-float (a b)
   "Return the elapsed seconds between two time values A and B.
 A nil value for either argument stands for the current time.
@@ -67,7 +101,7 @@ See ‘current-time-string’ for the various forms of a time value."
 							   (or b current-time)))))
 
 (defun ert-junit-testcase (stats test-name test-index)
-  "Insert a testcase XML element at point in the current buffer.
+  "Return a testcase XML element as a string.
 STATS is the test run state.  The name of the testcase is
 TEST-NAME and TEST-INDEX its index into STATS."
   (concat " "
@@ -75,10 +109,10 @@ TEST-NAME and TEST-INDEX its index into STATS."
 				  test-name ;name
 				  ;; time
 				  (ert-junit--time-subtract-float
-				   (aref (ert--stats-test-end-times stats) test-index)
-				   (aref (ert--stats-test-start-times stats) test-index)))
-  ;; success, failure or error
-   (let ((test-status (aref (ert--stats-test-results stats) test-index))
+                   (ert-junit--stats end-times stats test-index)
+                   (ert-junit--stats start-times stats test-index)))
+   ;; success, failure or error
+   (let ((test-status (ert-junit--stats results stats test-index))
 		 (text ""))
 	 (unless (ert-test-result-expected-p (aref (ert--stats-tests stats) test-index) test-status)
 	   (etypecase test-status
@@ -86,17 +120,8 @@ TEST-NAME and TEST-INDEX its index into STATS."
 		  (setq text "\n  <failure message=\"passed unexpectedly\" type=\"type\"></failure>\n "))
 		 (ert-test-failed
 		  (setq text (concat "<failure message=\"test\" type=\"type\">"
-							 (ert-junit--infos-string test-status)
-							 (ert-junit--condition-string test-status)
-							 ;; Printing the backtrace requires
-							 ;; escapes (as the content may contain
-							 ;; xml-like constructs like #<bytecode>
-							 ;; (with-temp-buffer
-							 ;;   (ert--print-backtrace
-							 ;; 	(ert-test-result-with-condition-backtrace test-status)
-							 ;; 	nil)
-							 ;;   (buffer-substring-no-properties (point-min)
-                             ;;                                 (point-max)))
+                             (ert-junit--xml-escape-and-trim
+                              (ert-junit--failure-message test-status))
 							 "</failure>")))
 		 (ert-test-quit (setq text " <failure>quit</failure>"))))
 	 text)
@@ -172,6 +197,7 @@ the tests)."
 ;; Local Variables:
 ;; byte-compile-warnings: (not cl-functions)
 ;; tab-width: 4
+;; indent-tabs-mode: nil
 ;; End:
 (provide 'ert-junit)
 ;;; ert-junit.el ends here
