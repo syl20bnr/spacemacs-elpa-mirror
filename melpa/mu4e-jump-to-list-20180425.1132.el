@@ -2,7 +2,7 @@
 
 ;; Author: Yuri D'Elia <wavexx@thregr.org>
 ;; Version: 1.0
-;; Package-Version: 20171104.1248
+;; Package-Version: 20180425.1132
 ;; URL: https://github.com/wavexx/mu4e-jump-to-list.el
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
 ;; Keywords: mu4e, mail, convenience
@@ -84,7 +84,7 @@ The string should be a valid mu4e query to select messages eligible for
 		   "| sort -n -k2 | awk '{ if($1 > %d) print $3 }'")
 	   mu4e-jump-to-list-min-freq))
 	 (command
-	  (concat "mu find -s date -z -f v " quoted filter)))
+	  (concat mu4e-mu-binary " find -s date -z -f v " quoted filter)))
     (split-string (shell-command-to-string command) "\n" t)))
 
 (defun mu4e-jump-to-list--kill-lists (lists)

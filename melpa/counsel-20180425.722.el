@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180423.1012
+;; Package-Version: 20180425.722
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -219,6 +219,11 @@ Update the minibuffer with the amount of lines collected every
         (ivy--insert-minibuffer (ivy--format ivy--all-candidates)))
       (setq counsel--async-time (current-time)))))
 
+(make-obsolete-variable
+ 'counsel-prompt-function
+ 'ivy-set-prompt
+ "0.8.0 <2016-06-20 Mon>")
+
 (defcustom counsel-prompt-function #'counsel-prompt-function-default
   "A function to return a full prompt string from a basic prompt string."
   :group 'ivy
@@ -226,11 +231,6 @@ Update the minibuffer with the amount of lines collected every
           (function-item counsel-prompt-function-default)
           (function-item counsel-prompt-function-dir)
           (function :tag "Custom")))
-
-(make-obsolete-variable
- 'counsel-prompt-function
- "Use `ivy-set-prompt' instead"
- "0.8.0 <2016-06-20 Mon>")
 
 (defun counsel-prompt-function-default ()
   "Return prompt appended with a semicolon."
@@ -369,8 +369,8 @@ so this function ensures lexicographic order."
                                     'code code)
                         cands))))
     (if (not (hash-table-p table))
-        ;; Support `ucs-names' returning an alist in Emacs < 26. The result of
-        ;; `ucs-names' comes pre-reversed so no need to repeat.
+        ;; Support `ucs-names' returning an alist in Emacs < 26.
+        ;; The result of `ucs-names' comes pre-reversed so no need to repeat.
         (dolist (entry table)
           (funcall fmt (car entry) (cdr entry)))
       (maphash fmt table)
@@ -2500,7 +2500,9 @@ When non-nil, INITIAL-INPUT is the initial search pattern."
 
 ;;** `counsel-grep-or-swiper'
 (defcustom counsel-grep-swiper-limit 300000
-  "When the buffer is larger than this, use `counsel-grep' instead of `swiper'."
+  "Buffer size threshold for `counsel-grep-or-swiper'.
+When the number of characters in a buffer exceeds this threshold,
+`counsel-grep' will be used instead of `swiper'."
   :type 'integer
   :group 'ivy)
 
@@ -3221,15 +3223,15 @@ A is the left hand side, B the right hand side."
   :group 'ivy
   :type 'string)
 
+(make-obsolete-variable
+ 'counsel-yank-pop-height
+ 'ivy-height-alist
+ "<2018-04-14 Fri>") ;; TODO: Add version tag
+
 (defcustom counsel-yank-pop-height 5
   "The `ivy-height' of `counsel-yank-pop'."
   :group 'ivy
   :type 'integer)
-
-(make-obsolete-variable
- 'counsel-yank-pop-height
- "use `ivy-height-alist' instead."
- "<2018-04-14 Fri>") ;; TODO add version
 
 (defun counsel--yank-pop-format-function (cand-pairs)
   "Transform CAND-PAIRS into a string for `counsel-yank-pop'."
@@ -3377,15 +3379,15 @@ Note: Duplicate elements of `kill-ring' are always deleted."
    ("r" counsel-yank-pop-action-rotate "rotate")))
 
 ;;** `counsel-evil-registers'
+(make-obsolete-variable
+ 'counsel-evil-registers-height
+ 'ivy-height-alist
+ "<2018-04-14 Fri>") ;; TODO: Add version tag
+
 (defcustom counsel-evil-registers-height 5
   "The `ivy-height' of `counsel-evil-registers'."
   :group 'ivy
   :type 'integer)
-
-(make-obsolete-variable
- 'counsel-evil-registers
- "use `ivy-height-alist' instead."
- "<2018-04-14 Fri>") ;; TODO add version
 
 (defun counsel-evil-registers ()
   "Ivy replacement for `evil-show-registers'."
@@ -3528,38 +3530,47 @@ An extra action allows to switch to the process buffer."
                 :action (lambda (x) (funcall action (cdr x)))
                 :require-match t
                 :caller 'counsel-ace-link))))
-;;** `counsel-expression-history'
+
+;;** `counsel-minibuffer-history'
+(make-obsolete
+ 'counsel-expression-history
+ 'counsel-minibuffer-history
+ "0.10.0 <2017-11-13 Mon>")
+
+(make-obsolete
+ 'counsel-shell-command-history
+ 'counsel-minibuffer-history
+ "0.10.0 <2017-11-13 Mon>")
+
 ;;;###autoload
 (defun counsel-expression-history ()
   "Select an element of `read-expression-history'.
 And insert it into the minibuffer.  Useful during `eval-expression'."
   (interactive)
   (let ((enable-recursive-minibuffers t))
-    (ivy-read "Expr: " (delete-dups read-expression-history)
-              :action #'insert)))
+    (ivy-read "Expression: "
+              (delete-dups (copy-sequence read-expression-history))
+              :action #'insert
+              :caller 'counsel-expression-history)))
 
-;;** `counsel-shell-command-history'
 ;;;###autoload
 (defun counsel-shell-command-history ()
   "Browse shell command history."
   (interactive)
-  (ivy-read "cmd: " shell-command-history
+  (ivy-read "Command: " shell-command-history
             :action #'insert
             :caller 'counsel-shell-command-history))
 
-;;** `counsel-minibuffer-history'
 ;;;###autoload
 (defun counsel-minibuffer-history ()
   "Browse minibuffer history."
   (interactive)
   (let ((enable-recursive-minibuffers t))
-    (ivy-read "Reverse-i-search: " (delete-dups
-                                    (copy-sequence
-                                     (symbol-value minibuffer-history-variable)))
+    (ivy-read "History: "
+              (delete-dups (copy-sequence
+                            (symbol-value minibuffer-history-variable)))
               :action #'insert
               :caller 'counsel-minibuffer-history)))
-(make-obsolete 'counsel-expression-history 'counsel-minibuffer-history "20171011")
-(make-obsolete 'counsel-shell-command-history 'counsel-minibuffer-history "20171011")
 
 ;;** `counsel-esh-history'
 (defun counsel--browse-history (elements)
@@ -3957,11 +3968,11 @@ Any desktop entries that fail to parse are recorded in
 
 (defun counsel-linux-app-action-default (desktop-shortcut)
   "Launch DESKTOP-SHORTCUT."
-  (call-process "gtk-launch" nil nil nil (cdr desktop-shortcut)))
+  (call-process "gtk-launch" nil 0 nil (cdr desktop-shortcut)))
 
 (defun counsel-linux-app-action-file (desktop-shortcut)
   "Launch DESKTOP-SHORTCUT with a selected file."
-  (call-process "gtk-launch" nil nil nil
+  (call-process "gtk-launch" nil 0 nil
                 (cdr desktop-shortcut)
                 (read-file-name "File: ")))
 

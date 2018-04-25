@@ -5,7 +5,7 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/system-packages
-;; Package-Version: 20180425.652
+;; Package-Version: 1.0.4
 ;; Package-Requires: ((emacs "24.3"))
 ;; Version: 1.0.3
 
@@ -329,9 +329,9 @@ of passing additional arguments to the package manager."
       (setq command (mapcar (lambda (part) (concat "sudo " part)) command)))
     (setq command (mapconcat 'identity command " && "))
     (setq command (mapconcat 'identity (list command pack) " "))
-    (setq args (concat args noconfirm))
-    (when args
-      (setq command (concat command args)))))
+    (when noconfirm
+      (setq args (concat args (and pack " ") noconfirm)))
+    (concat command args)))
 
 (defun system-packages--run-command (action &optional pack args)
   "Run a command asynchronously using the system's package manager.

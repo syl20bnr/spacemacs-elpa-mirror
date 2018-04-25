@@ -5,9 +5,9 @@
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
 ;; URL: https://github.com/jabranham/system-packages
-;; Package-Version: 1.0.3
+;; Package-Version: 20180425.1204
 ;; Package-Requires: ((emacs "24.3"))
-;; Version: 1.0.3
+;; Version: 1.0.4
 
 
 ;; This file is not part of GNU Emacs.
@@ -329,9 +329,9 @@ of passing additional arguments to the package manager."
       (setq command (mapcar (lambda (part) (concat "sudo " part)) command)))
     (setq command (mapconcat 'identity command " && "))
     (setq command (mapconcat 'identity (list command pack) " "))
-    (setq args (concat args noconfirm))
-    (when args
-      (setq command (concat command args)))))
+    (when noconfirm
+      (setq args (concat args (and pack " ") noconfirm)))
+    (concat command args)))
 
 (defun system-packages--run-command (action &optional pack args)
   "Run a command asynchronously using the system's package manager.
@@ -353,6 +353,23 @@ install PACK.  You may use ARGS to pass options to the package
 manger."
   (interactive "sPackage to install: ")
   (system-packages--run-command 'install pack args))
+
+;;;###autoload
+(defun system-packages-ensure (pack &optional args)
+  "Ensure PACK is installed on system.
+Search for PACK with `system-packages-package-installed-p', and
+install the package if not found.  Use ARGS to pass options to
+the package manager."
+  (interactive "sPackage to ensure is present: ")
+  (if (system-packages-package-installed-p pack)
+      t
+    (system-packages-install pack args)))
+
+;;;###autoload
+(defalias 'system-packages-package-installed-p #'executable-find
+  "Return t if PACK is installed.
+Currently an alias for `executable-find', so it will give wrong
+results if the package and executable names are different.")
 
 ;;;###autoload
 (defun system-packages-search (pack &optional args)

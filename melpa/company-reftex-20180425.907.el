@@ -4,10 +4,10 @@
 ;;
 ;; Author: Eivind Fonn <evfonn@gmail.com>
 ;; URL: https://github.com/TheBB/company-reftex
-;; Package-Version: 20180330.552
+;; Package-Version: 20180425.907
 ;; Version: 0.1.0
 ;; Keywords: bib tex company latex reftex references labels citations
-;; Package-Requires: ((emacs "25.1") (cl-lib "0.5") (s "1.12") (company "0.8"))
+;; Package-Requires: ((emacs "25.1") (s "1.12") (company "0.8"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -72,6 +72,20 @@
   :type '(choice (const :tag "Off" nil) integer)
   :group 'company-reftex)
 
+(defcustom company-reftex-labels-regexp
+  "\\\\\\(?:eq\\|auto\\)?ref{\\([^}]*\\)\\="
+  "Regular expression to use when lookng for the label prefix.
+Group number 1 should be the prefix itself."
+  :type 'string
+  :group 'company-reftex)
+
+(defcustom company-reftex-citations-regexp
+  "\\\\cite[^[{]*\\(?:\\[[^]]*\\]\\)?{\\(?:[^},]*,\\)*\\([^},]*\\)"
+  "Regular expression to use when lookng for the citation prefix.
+Group number 1 should be the prefix itself."
+  :type 'string
+  :group 'company-reftex)
+
 
 
 ;; Auxiliary functions
@@ -134,7 +148,7 @@ For more information on COMMAND and ARG see `company-backends'."
   (interactive (list 'interactive))
   (cl-case command
     (interactive (company-begin-backend 'company-reftex-labels))
-    (prefix (company-reftex-prefix "\\\\cite[^[{]*\\(?:\\[[^]]*\\]\\)?{\\([^},]*\\)\\="))
+    (prefix (company-reftex-prefix company-reftex-citations-regexp))
     (candidates (company-reftex-citation-candidates arg))
     (annotation (when company-reftex-annotate-citations
                   (concat
@@ -160,7 +174,7 @@ For more information on COMMAND and ARG see `company-backends'."
   (interactive (list 'interactive))
   (cl-case command
     (interactive (company-begin-backend 'company-reftex-labels))
-    (prefix (company-reftex-prefix "\\\\\\(?:eq\\|auto\\)?ref{\\([^}]*\\)\\="))
+    (prefix (company-reftex-prefix company-reftex-labels-regexp))
     (candidates (company-reftex-label-candidates arg))
     (annotation (when company-reftex-annotate-labels
                   (concat
