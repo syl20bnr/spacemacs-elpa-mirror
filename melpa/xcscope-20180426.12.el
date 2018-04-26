@@ -10,7 +10,7 @@
 ;; Maintainer: Dima Kogan <dima@secretsauce.net>
 ;; Keywords: languages c
 ;; Homepage: https://github.com/dkogan/xcscope.el
-;; Package-Version: 20160628.2324
+;; Package-Version: 20180426.12
 ;; Package-X-Original-Version: 1.0
 
 ;; This file is not part of GNU Emacs.
@@ -2576,7 +2576,7 @@ using the mouse."
         (set-process-filter cscope-process 'cscope-process-filter)
         (set-process-sentinel cscope-process 'cscope-process-sentinel)
         (setq cscope-last-output-point (point))
-        (process-kill-without-query cscope-process)
+        (set-process-query-on-exit-flag cscope-process nil)
         (if cscope-running-in-xemacs
             (setq modeline-process ": Searching ..."))
 	t
@@ -2786,7 +2786,7 @@ indexer"
     (set-process-filter cscope-unix-index-process 'cscope-unix-index-files-filter)
     (set-process-sentinel cscope-unix-index-process
                           'cscope-unix-index-files-sentinel)
-    (process-kill-without-query cscope-unix-index-process)))
+    (set-process-query-on-exit-flag cscope-unix-index-process nil)))
 
 
 (defun cscope-index-files (top-directory)
