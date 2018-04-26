@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180425.722
+;; Package-Version: 20180426.733
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -1496,11 +1496,6 @@ done") "\n" t)))
   "Add candidate X to kill ring."
   (message "%S" (kill-new x)))
 
-(defcustom counsel-yank-pop-truncate-radius 2
-  "Number of context lines around `counsel-yank-pop' candidates."
-  :type 'integer
-  :group 'ivy)
-
 ;;** `counsel-git-change-worktree'
 (autoload 'string-trim-right "subr-x")
 (defun counsel-git-change-worktree-action (git-root-dir tree)
@@ -1578,6 +1573,8 @@ Does not list the currently checked out one."
   (ivy-read "Checkout branch: " (counsel-git-branch-list)
             :action #'counsel-git-checkout-action
             :caller 'counsel-git-checkout))
+
+(defvar counsel-yank-pop-truncate-radius)
 
 ;;;###autoload
 (defun counsel-git-log ()
@@ -2739,8 +2736,8 @@ If path, the path hierarchy is displayed.  For each entry the title is shown.
 If title or any other value, only the title of the headline is displayed.
 
 Use `counsel-org-headline-display-tags' and
- `counsel-org-headline-display-todo' to display tags and todo keywords
- respectively."
+`counsel-org-headline-display-todo' to display tags and todo
+keywords, respectively."
   :type '(choice
           (const :tag "Title only" title)
           (const :tag "Headline" headline)
@@ -2969,23 +2966,24 @@ include attachments of other Org buffers."
             :action 'counsel-locate-action-dired
             :caller 'counsel-org-file))
 
+;;** `counsel-org-entity'
 (defvar org-entities)
 (defvar org-entities-user)
 
 ;;;###autoload
 (defun counsel-org-entity ()
-  "Insert an org-entity using ivy."
+  "Complete Org entities using Ivy."
   (interactive)
+  (require 'org)
   (ivy-read "Entity: " (cl-loop for element in (append org-entities org-entities-user)
-                          when (not (stringp element))
-                          collect
-                            (cons
-                             (format "%20s | %20s | %20s | %s"
-                                     (cl-first element) ;name
-                                     (cl-second element) ; latex
-                                     (cl-fourth element) ; html
-                                     (cl-seventh element)) ;utf-8
-                             element))
+                                unless (stringp element)
+                                collect (cons
+                                         (format "%20s | %20s | %20s | %s"
+                                                 (cl-first element)    ; name
+                                                 (cl-second element)   ; latex
+                                                 (cl-fourth element)   ; html
+                                                 (cl-seventh element)) ; utf-8
+                                         element))
             :require-match t
             :action '(1
                       ("u" (lambda (candidate)
@@ -3193,6 +3191,11 @@ A is the left hand side, B the right hand side."
   (counsel-tmm-prompt (tmm-get-keybind [menu-bar])))
 
 ;;** `counsel-yank-pop'
+(defcustom counsel-yank-pop-truncate-radius 2
+  "Number of context lines around `counsel-yank-pop' candidates."
+  :type 'integer
+  :group 'ivy)
+
 (defun counsel--yank-pop-truncate (str)
   "Truncate STR for use in `counsel-yank-pop'."
   (condition-case nil
@@ -3265,7 +3268,7 @@ Newlines and carriage returns are considered blank."
 (defcustom counsel-yank-pop-filter #'counsel-string-non-blank-p
   "Unary filter function applied to `counsel-yank-pop' candidates.
 All elements of `kill-ring' for which this function returns nil
-will be permanently deleted from `kill-ring' before completion.
+will be destructively removed from `kill-ring' before completion.
 All blank strings are deleted from `kill-ring' by default."
   :group 'ivy
   :type '(radio (function-item counsel-string-non-blank-p)
@@ -3273,20 +3276,20 @@ All blank strings are deleted from `kill-ring' by default."
                 (function :tag "Other")))
 
 (defun counsel--yank-pop-kills ()
-  "Return list of kills for `counsel-yank-pop' to complete.
-Returned elements satisfy `counsel-yank-pop-filter' and are
-unique under `equal-including-properties'."
-  ;; Refresh `kill-ring' in the presence of `interprogram-paste-function'
-  (current-kill 0)
+  "Return filtered `kill-ring' for `counsel-yank-pop' completion.
+Both `kill-ring' and `kill-ring-yank-pointer' may be
+destructively modifed to eliminate duplicates under
+`equal-including-properties', satisfy `counsel-yank-pop-filter',
+and incorporate `interprogram-paste-function'."
+  ;; Protect against `kill-ring' and result of
+  ;; `interprogram-paste-function' both being nil
+  (ignore-errors (current-kill 0))
   ;; Keep things consistent with the rest of Emacs
   (dolist (sym '(kill-ring kill-ring-yank-pointer))
     (set sym (cl-delete-duplicates
               (cl-delete-if-not counsel-yank-pop-filter (symbol-value sym))
               :test #'equal-including-properties :from-end t)))
-  ;; Clean up completion candidates without modifying `kill-ring' elements
-  (mapcar (lambda (kill)
-            (ivy-cleanup-string (copy-sequence kill)))
-          kill-ring))
+  kill-ring)
 
 (defun counsel-yank-pop-action (s)
   "Like `yank-pop', but insert the kill corresponding to S.
@@ -3296,7 +3299,9 @@ buffer position."
     (barf-if-buffer-read-only)
     (setq last-command 'yank)
     (setq yank-window-start (window-start))
-    (yank-pop (counsel--yank-pop-position s))
+    ;; Avoid unexpected additions to `kill-ring'
+    (let (interprogram-paste-function)
+      (yank-pop (counsel--yank-pop-position s)))
     (setq ivy-completion-end (point))))
 
 (defun counsel-yank-pop-action-remove (s)
@@ -3305,22 +3310,25 @@ buffer position."
     (set sym (cl-delete s (symbol-value sym)
                         :test #'equal-including-properties)))
   ;; Update collection and preselect for next `ivy-call'
-  (let ((kills (counsel--yank-pop-kills)))
-    (setf (ivy-state-collection ivy-last) kills)
-    (setf (ivy-state-preselect ivy-last)
-          (nth (min ivy--index (1- (length kills)))
-               kills)))
+  (setf (ivy-state-collection ivy-last) kill-ring)
+  (setf (ivy-state-preselect ivy-last)
+        (nth (min ivy--index (1- (length kill-ring)))
+             kill-ring))
   (ivy--reset-state ivy-last))
 
 (defun counsel-yank-pop-action-rotate (s)
   "Rotate the yanking point to S in the kill ring.
 See `current-kill' for how this interacts with the window system
 selection."
-  ;; `current-kill' can modify both `kill-ring' and `kill-ring-yank-pointer',
-  ;; so update collection and preselect for next `ivy-call'
-  (setf (ivy-state-preselect ivy-last)
-        (current-kill (counsel--yank-pop-position s)))
-  (setf (ivy-state-collection ivy-last) (counsel--yank-pop-kills))
+  (let ((i (counsel--yank-pop-position s)))
+    ;; Avoid unexpected additions to `kill-ring'
+    (let (interprogram-paste-function)
+      (setf (ivy-state-preselect ivy-last) (current-kill i)))
+    ;; Manually change window system selection because `current-kill' won't
+    (when (and (zerop i)
+               yank-pop-change-selection
+               interprogram-cut-function)
+      (funcall interprogram-cut-function (car kill-ring-yank-pointer))))
   (ivy--reset-state ivy-last))
 
 (defcustom counsel-yank-pop-preselect-last nil
@@ -3358,11 +3366,7 @@ Note: Duplicate elements of `kill-ring' are always deleted."
     (setq ivy-completion-end (point))
     (ivy-read "kill-ring: " kills
               :require-match t
-              :preselect (let ((kill-ring kills)
-                               (kill-ring-yank-pointer
-                                (cl-member (car kill-ring-yank-pointer) kills
-                                           :test #'equal-including-properties))
-                               interprogram-paste-function)
+              :preselect (let (interprogram-paste-function)
                            (current-kill (cond
                                           (arg (prefix-numeric-value arg))
                                           (counsel-yank-pop-preselect-last 0)
