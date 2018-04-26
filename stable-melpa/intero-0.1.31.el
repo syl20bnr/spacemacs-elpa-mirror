@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 0.1.29
+;; Package-Version: 0.1.31
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -71,7 +71,11 @@
   :group 'haskell)
 
 (defcustom intero-package-version
-  "0.1.28"
+  (cl-case system-type
+    ;; Until <https://github.com/haskell/network/issues/313> is fixed:
+    (windows-nt "0.1.28")
+    (cygwin "0.1.28")
+    (t "0.1.30"))
   "Package version to auto-install.
 
 This version does not necessarily have to be the latest version
@@ -283,6 +287,12 @@ LIST is a FIFO.")
 (defvar-local intero-targets (list)
   "Targets used for the stack process.")
 
+(defvar-local intero-repl-last-loaded nil
+  "Last loaded module in the REPL.")
+
+(defvar-local intero-repl-send-after-load nil
+  "Send a command after every load.")
+
 (defvar-local intero-start-time nil
   "Start time of the stack process.")
 
@@ -326,10 +336,6 @@ This is slower, but will build required dependencies.")
 
 (defvar-local intero-ghc-version nil
   "GHC version used by the project.")
-
-(defvar-local intero-repl-last-loaded
-  nil
-  "The last loaded thing with `intero-repl-load`.")
 
 (defvar-local intero-buffer-host nil
   "The hostname of the box hosting the intero process for the current buffer.")
@@ -547,7 +553,7 @@ If the problem persists, please report this as a bug!")))
     (intero-with-dump-splices
      (let* ((output (intero-blocking-call
                      'backend
-                     (concat ":load " (intero-localize-path (intero-temp-file-name)))))
+                     (concat ":load " (intero-path-for-ghci (intero-temp-file-name)))))
             (msgs (intero-parse-errors-warnings-splices nil (current-buffer) output))
             (line (line-number-at-pos))
             (column (if (save-excursion
@@ -700,22 +706,13 @@ running context across :load/:reloads in Intero."
                       cont
                       'interrupted)
     (let* ((file-buffer (current-buffer))
-           (staging-file (intero-localize-path (intero-staging-file-name)))
-           (temp-file (intero-localize-path (intero-temp-file-name))))
+           (staging-file (intero-path-for-ghci (intero-staging-file-name)))
+           (temp-file (intero-path-for-ghci (intero-temp-file-name))))
       ;; We queue up to :move the staging file to the target temp
       ;; file, which also updates its modified time.
       (intero-async-call
        'backend
-       (format ":move \"%s\" \"%s\""
-               ;; TODO: This is a temporary fix. I don't want to use
-               ;; %S as that may escape things that Haskell doesn't
-               ;; consider escapable; Intero's function reads with
-               ;; 'read' (not my implementation!). Instead, I should
-               ;; implement an alternative reading function for Intero
-               ;; which would consume only "strings" and treat any
-               ;; non-double-quote characters as-is.
-               (replace-regexp-in-string "\\\\" "\\\\\\\\" staging-file)
-               (replace-regexp-in-string "\\\\" "\\\\\\\\" temp-file)))
+       (format ":move %s %s" staging-file temp-file))
       ;; We load up the target temp file, which has only been updated
       ;; by the copy above.
       (intero-async-call
@@ -1110,8 +1107,8 @@ pragma is supported also."
     (intero-async-call
      'backend
      (format
-      ":fill %S %d %d"
-      (intero-localize-path (intero-temp-file-name))
+      ":fill %s %d %d"
+      (intero-path-for-ghci (intero-temp-file-name))
       (save-excursion (goto-char beg)
                       (line-number-at-pos))
       (save-excursion (goto-char beg)
@@ -1246,17 +1243,44 @@ be activated after evaluation.  PROMPT-OPTIONS are passed to
        (when intero-pop-to-repl
          (pop-to-buffer ,repl-buffer)))))
 
+(defun intero-repl-after-load ()
+  "Set the command to run after load."
+  (interactive)
+  (if (eq major-mode 'intero-repl-mode)
+      (setq intero-repl-send-after-load
+            (read-from-minibuffer
+             "Command to run: "
+             (or intero-repl-send-after-load
+                 (car (ring-elements comint-input-ring))
+                 "")))
+    (error "Run this in the REPL.")))
+
 (defun intero-repl-load (&optional prompt-options)
   "Load the current file in the REPL.
 If PROMPT-OPTIONS is non-nil, prompt with an options list."
   (interactive "P")
   (save-buffer)
-  (let ((file (intero-localize-path (intero-buffer-file-name))))
+  (let ((file (intero-path-for-ghci (intero-buffer-file-name))))
     (intero-with-repl-buffer prompt-options
       (comint-simple-send
-       (get-buffer-process (current-buffer))
-       (concat ":load " file))
-      (setq intero-repl-last-loaded file))))
+         (get-buffer-process (current-buffer))
+         ":set prompt \"\\n\"")
+        (if (or (not intero-repl-last-loaded)
+                (not (equal file intero-repl-last-loaded)))
+            (progn
+              (comint-simple-send
+               (get-buffer-process (current-buffer))
+               (concat ":load " file))
+              (setq intero-repl-last-loaded file))
+          (comint-simple-send
+           (get-buffer-process (current-buffer))
+           ":reload"))
+        (when intero-repl-send-after-load
+          (comint-simple-send
+           (get-buffer-process (current-buffer))
+           intero-repl-send-after-load))
+        (comint-simple-send (get-buffer-process (current-buffer))
+                            ":set prompt \"\\4 \""))))
 
 (defun intero-repl-eval-region (begin end &optional prompt-options)
   "Evaluate the code in region from BEGIN to END in the REPL.
@@ -1357,8 +1381,8 @@ load.  If PROMPT-OPTIONS is non-nil, prompt with an options list.
 STACK-YAML is the stack yaml config to use.  When nil, tries to
 use project-wide intero-stack-yaml when nil, otherwise uses
 stack's default)."
-  (setq intero-repl-last-loaded nil)
   (setq intero-targets targets)
+  (setq intero-repl-last-loaded nil)
   (when stack-yaml
     (setq intero-stack-yaml stack-yaml))
   (when prompt-options
@@ -1724,6 +1748,14 @@ path."
         (insert contents))
       fname)))
 
+(defun intero-quote-path-for-ghci (path)
+  "Quote PATH as necessary so that it can be passed to a GHCi :command."
+  (concat "\"" (replace-regexp-in-string "\\([\\\"]\\)" "\\\\\\1" path nil nil) "\""))
+
+(defun intero-path-for-ghci (path)
+  "Turn a possibly-remote PATH into one that can be passed to a GHCi :command."
+  (intero-quote-path-for-ghci (intero-localize-path path)))
+
 (defun intero-localize-path (path)
   "Turn a possibly-remote PATH to a purely local one.
 This is used to create paths which a remote intero process can load."
@@ -1798,8 +1830,8 @@ type as arguments."
 
 (defun intero-format-get-type-at (beg end)
   "Compose a request for getting types in region from BEG to END."
-  (format ":type-at %S %d %d %d %d %S"
-          (intero-localize-path (intero-temp-file-name))
+  (format ":type-at %s %d %d %d %d %S"
+          (intero-path-for-ghci (intero-temp-file-name))
           (save-excursion (goto-char beg)
                           (line-number-at-pos))
           (save-excursion (goto-char beg)
@@ -1829,7 +1861,7 @@ type as arguments."
                (unless (member 'save flycheck-check-syntax-automatically)
                  (intero-async-call
                   'backend
-                  (concat ":load " (intero-localize-path (intero-temp-file-name)))))
+                  (concat ":load " (intero-path-for-ghci (intero-temp-file-name)))))
                (intero-async-call
                 'backend
                 ":set -fobject-code")
@@ -1858,8 +1890,8 @@ type as arguments."
    "\n$" ""
    (intero-blocking-network-call
     'backend
-    (format ":loc-at %S %d %d %d %d %S"
-            (intero-localize-path (intero-temp-file-name))
+    (format ":loc-at %s %d %d %d %d %S"
+            (intero-path-for-ghci (intero-temp-file-name))
             (save-excursion (goto-char beg)
                             (line-number-at-pos))
             (save-excursion (goto-char beg)
@@ -1876,8 +1908,8 @@ type as arguments."
    "\n$" ""
    (intero-blocking-call
     'backend
-    (format ":loc-at %S %d %d %d %d %S"
-            (intero-localize-path (intero-temp-file-name))
+    (format ":loc-at %s %d %d %d %d %S"
+            (intero-path-for-ghci (intero-temp-file-name))
             (save-excursion (goto-char beg)
                             (line-number-at-pos))
             (save-excursion (goto-char beg)
@@ -1904,8 +1936,8 @@ type as arguments."
    "\n$" ""
    (intero-blocking-network-call
     'backend
-    (format ":uses %S %d %d %d %d %S"
-            (intero-localize-path (intero-temp-file-name))
+    (format ":uses %s %d %d %d %d %S"
+            (intero-path-for-ghci (intero-temp-file-name))
             (save-excursion (goto-char beg)
                             (line-number-at-pos))
             (save-excursion (goto-char beg)
@@ -1922,8 +1954,8 @@ type as arguments."
    "\n$" ""
    (intero-blocking-call
     'backend
-    (format ":uses %S %d %d %d %d %S"
-            (intero-localize-path (intero-temp-file-name))
+    (format ":uses %s %d %d %d %d %S"
+            (intero-path-for-ghci (intero-temp-file-name))
             (save-excursion (goto-char beg)
                             (line-number-at-pos))
             (save-excursion (goto-char beg)
@@ -1940,8 +1972,8 @@ Prefix is marked by positions BEG and END.  Completions are
 passed to CONT in SOURCE-BUFFER."
   (intero-async-network-call
    'backend
-   (format ":complete-at %S %d %d %d %d %S"
-           (intero-localize-path (intero-temp-file-name))
+   (format ":complete-at %s %d %d %d %d %S"
+           (intero-path-for-ghci (intero-temp-file-name))
            (save-excursion (goto-char beg)
                            (line-number-at-pos))
            (save-excursion (goto-char beg)
@@ -2074,33 +2106,40 @@ as (CALLBACK STATE REPLY)."
       (error "Intero process is not running: run M-x intero-restart to start it"))))
 
 (defun intero-network-call-sentinel (process event)
-  (with-current-buffer (process-buffer process)
-    (if (string= "open\n" event)
-        (progn
-          (when intero-debug (message "Connected to service, sending %S" intero-async-network-cmd))
-          (setq intero-async-network-connected t)
-          (if intero-async-network-cmd
-              (process-send-string process (concat intero-async-network-cmd "\n"))
-            (delete-process process)))
-      (progn
-        (if intero-async-network-connected
-            (when intero-async-network-callback
-              (when intero-debug (message "Calling callback with %S" (buffer-string)))
-              (funcall intero-async-network-callback
-                       intero-async-network-state
-                       (buffer-string)))
-          ;; We didn't successfully connect, so let's fallback to the
-          ;; process pipe.
-          (when intero-async-network-callback
-            (when intero-debug (message "Failed to connect, falling back ... "))
-            (setq intero-async-network-callback nil)
-            (intero-async-call
-             intero-async-network-worker
-             intero-async-network-cmd
-             intero-async-network-state
-             intero-async-network-callback)))
-        ;; In any case we clean up the connection.
-        (delete-process process)))))
+  (pcase event
+    ;; This event sometimes gets sent when (delete-process) is called, but
+    ;; inconsistently. We can't rely on it for killing buffers, but we need to
+    ;; handle the possibility.
+    ("deleted\n")
+
+    ("open\n"
+     (with-current-buffer (process-buffer process)
+       (when intero-debug (message "Connected to service, sending %S" intero-async-network-cmd))
+       (setq intero-async-network-connected t)
+       (if intero-async-network-cmd
+           (process-send-string process (concat intero-async-network-cmd "\n"))
+         (delete-process process)
+         (kill-buffer (process-buffer process)))))
+    (_
+     (with-current-buffer (process-buffer process)
+       (if intero-async-network-connected
+           (when intero-async-network-callback
+             (when intero-debug (message "Calling callback with %S" (buffer-string)))
+             (funcall intero-async-network-callback
+                      intero-async-network-state
+                      (buffer-string)))
+         ;; We didn't successfully connect, so let's fallback to the
+         ;; process pipe.
+         (when intero-async-network-callback
+           (when intero-debug (message "Failed to connect, falling back ... "))
+           (setq intero-async-network-callback nil)
+           (intero-async-call
+            intero-async-network-worker
+            intero-async-network-cmd
+            intero-async-network-state
+            intero-async-network-callback))))
+     (delete-process process)
+     (kill-buffer (process-buffer process)))))
 
 (defun intero-async-call (worker cmd &optional state callback)
   "Send WORKER the command string CMD.
@@ -3217,6 +3256,8 @@ suggestions are available."
                    (forward-line (1- (plist-get suggestion :line)))
                    (move-to-column (- (plist-get suggestion :column) 1))
                    (search-forward "{")
+                   (unless (looking-at "}")
+                     (save-excursion (insert ", ")))
                    (insert (mapconcat (lambda (field) (concat field " = _"))
                                       (plist-get suggestion :fields)
                                       ", "))))))

@@ -5,8 +5,8 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-which-key
-;; Package-Version: 20180321.331
-;; Version: 3.1.0
+;; Package-Version: 20180426.733
+;; Version: 3.2.0
 ;; Keywords:
 ;; Package-Requires: ((emacs "24.4"))
 
