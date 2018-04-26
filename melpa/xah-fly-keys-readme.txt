@@ -18,6 +18,8 @@ for other layout, use one of
 "workman"
 "programer-dvorak"
 "dvorak"
+"colemak"
+"colemak-mod-dh"
 default is dvorak
 (xah-fly-keys 1)
 

@@ -4,7 +4,7 @@
 
 ;; Author: James Ferguson <(concat "wjcferguson" at-sign "gmail.com")>
 ;; URL: https://github.com/WJCFerguson/emacs-faff-theme
-;; Package-Version: 20180322.1005
+;; Package-Version: 20180425.1424
 ;; Version: 2.0
 ;; Keywords: color theme
 
@@ -163,6 +163,9 @@
  '(sh-heredoc ((t (:foreground "tan4"))))
  '(success ((t (:foreground "darkgreen" :weight bold))))
  '(tool-bar ((default (:foreground "black" :box (:line-width 1 :style released-button))) (((type x w32 mac) (class color)) (:background "grey92"))))
+ '(web-mode-doctype-face ((t (:foreground "Grey35"))))
+ '(web-mode-html-attr-name-face ((t (:foreground "gray10"))))
+ '(web-mode-html-tag-face ((t (:weight bold))))
  '(warning ((t (:foreground "DarkOrange3" :weight bold)))))
 
 ;;;###autoload

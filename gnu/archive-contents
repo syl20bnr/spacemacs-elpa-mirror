@@ -753,7 +753,7 @@
  (nhexl-mode .
 	     [(0 7)
 	      ((emacs
-		(24))
+		(24 4))
 	       (cl-lib
 		(0 5)))
 	      "Minor mode to edit files via hex-dump format" single
