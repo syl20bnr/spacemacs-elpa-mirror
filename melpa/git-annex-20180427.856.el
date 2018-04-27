@@ -5,7 +5,7 @@
 ;; Author: John Wiegley <jwiegley@gmail.com>
 ;; Created: 20 Oct 2012
 ;; Version: 1.1
-;; Package-Version: 20170417.1653
+;; Package-Version: 20180427.856
 ;; Keywords: files data git annex
 ;; X-URL: https://github.com/jwiegley/git-annex-el
 
@@ -129,9 +129,10 @@ otherwise you will have to commit by hand."
   "Face name used to hide a git-annex'd file's annex path.")
 
 (defun git-annex-lookup-file (limit)
-  (and (re-search-forward " -> \\(.*\\.git/annex/.+\\)" limit t)
-       (file-exists-p
-        (expand-file-name (match-string 1) (dired-current-directory)))))
+  (cl-loop while (re-search-forward " -> \\(.*\\.git/annex/.+\\)" limit t)
+           if (file-exists-p
+               (expand-file-name (match-string 1) (dired-current-directory)))
+           return t))
 
 (eval-after-load "dired"
   '(progn
