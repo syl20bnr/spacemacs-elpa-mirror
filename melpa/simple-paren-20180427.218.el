@@ -1,7 +1,7 @@
 ;;; simple-paren.el --- Insert paired delimiter, wrap -*- lexical-binding: t; -*-
 
 ;; Version: 0.1
-;; Package-Version: 20180205.1141
+;; Package-Version: 20180427.218
 
 ;; Copyright (C) 2016-2018  Andreas Röhler, Steve Purcell
 ;; See also http://www.unicode.org/L2/L2013/13046-BidiBrackets.txt
@@ -148,16 +148,166 @@
    ?\⦉ ?\⦊
    ?\⦇ ?\⦈))
 
+(defvar simple-paren-forward-delimiter-chars
+  (list
+     ?’
+     ?'
+     ?>
+     ?<
+     ?\)
+     ?\(
+     ?\[
+     ?\]
+     ?{
+     ?}
+     ?\〉
+     ?\⦒
+     ?\⦔
+     ?\】
+     ?\⦘
+     ?\⸥
+     ?\」
+     ?\》
+     ?\⦖
+     ?\⸩
+     ?\⧛
+     ?\｝
+     ?\）
+     ?\］
+     ?\｠
+     ?\｣
+     ?\❱
+     ?\❯
+     ?\”
+     ?\’
+     ?\❳
+     ?\⟩
+     ?\⟫
+     ?\⟯
+     ?\⟧
+     ?\⟭
+     ?\❵
+     ?\❫
+     ?\❩
+     ?\❭
+     ?\᚜
+     ?\〉
+     ?\⧽
+     ?\⟆
+     ?\⸧
+     ?\﹜
+     ?\﹚
+     ?\﹞
+     ?\⁆
+     ?\⦎
+     ?\⦐
+     ?\⦌
+     ?\₎
+     ?\⁾
+     ?\༽
+     ?\༻
+     ?\⸣
+     ?\〕
+     ?\』
+     ?\⦄
+     ?\〗
+     ?\⦆
+     ?\〛
+     ?\〙
+     ?\⧙
+     ?\⦊))
 
-(defvar simple-paren-skip-chars "^, \t\r\n\f"
+(defvar simple-paren-backward-delimiter-chars
+  (list
+   ?‘
+   ?`
+   ?<
+   ?>
+   ?\(
+   ?\)
+   ?\]
+   ?\[
+   ?}
+   ?{
+   ?\〈
+   ?\⦑
+   ?\⦓
+   ?\【
+   ?\⦗
+   ?\⸤
+   ?\「
+   ?\《
+   ?\⦕
+   ?\⸨
+   ?\⧚
+   ?\｛
+   ?\（
+   ?\［
+   ?\｟
+   ?\｢
+   ?\❰
+   ?\❮
+   ?\“
+   ?\‘
+   ?\❲
+   ?\⟨
+   ?\⟪
+   ?\⟮
+   ?\⟦
+   ?\⟬
+   ?\❴
+   ?\❪
+   ?\❨
+   ?\❬
+   ?\᚛
+   ?\〈
+   ?\⧼
+   ?\⟅
+   ?\⸦
+   ?\﹛
+   ?\﹙
+   ?\﹝
+   ?\⁅
+   ?\⦏
+   ?\⦍
+   ?\⦋
+   ?\₍
+   ?\⁽
+   ?\༼
+   ?\༺
+   ?\⸢
+   ?\〔
+   ?\『
+   ?\⦃
+   ?\〖
+   ?\⦅
+   ?\〚
+   ?\〘
+   ?\⧘
+   ?\⦉
+   ?\⦇))
+
+(defvar simple-paren-known-paired-delimiters (list ?‘ ?’ ?` ?' ?< ?> ?> ?< ?\( ?\) ?\) ?\( ?\] ?\[ ?\[ ?\] ?} ?{ ?{ ?} ?\〈 ?\〉 ?\⦑ ?\⦒ ?\⦓ ?\⦔ ?\【 ?\】 ?\⦗ ?\⦘ ?\⸤ ?\⸥ ?\「 ?\」 ?\《 ?\》 ?\⦕ ?\⦖ ?\⸨ ?\⸩ ?\⧚ ?\⧛ ?\｛ ?\｝ ?\（ ?\） ?\［ ?\］ ?\｟ ?\｠ ?\｢ ?\｣ ?\❰ ?\❱ ?\❮ ?\❯ ?\“ ?\” ?\‘ ?\’ ?\❲ ?\❳ ?\⟨ ?\⟩ ?\⟪ ?\⟫ ?\⟮ ?\⟯ ?\⟦ ?\⟧ ?\⟬ ?\⟭ ?\❴ ?\❵ ?\❪ ?\❫ ?\❨ ?\❩ ?\❬ ?\❭ ?\᚛ ?\᚜ ?\〈 ?\〉 ?\⧼ ?\⧽ ?\⟅ ?\⟆ ?\⸦ ?\⸧ ?\﹛ ?\﹜ ?\﹙ ?\﹚ ?\﹝ ?\﹞ ?\⁅ ?\⁆ ?\⦏ ?\⦎ ?\⦍ ?\⦐ ?\⦋ ?\⦌ ?\₍ ?\₎ ?\⁽ ?\⁾ ?\༼ ?\༽ ?\༺ ?\༻ ?\⸢ ?\⸣ ?\〔 ?\〕 ?\『 ?\』 ?\⦃ ?\⦄ ?\〖 ?\〗 ?\⦅ ?\⦆ ?\〚 ?\〛 ?\〘 ?\〙 ?\⧘ ?\⧙ ?\⦉ ?\⦊ ?\⦇ ?\⦈)
+  "List known paired delimiters")
+
+(defvar simple-paren-skip-chars (concat "^, \t\r\n\f" simple-paren-known-paired-delimiters)
   "Skip chars backward not mentioned here.")
 
-;; (dolist (ele simple-paren-paired-delimiter-chars)
-;;   (unless (string-match (regexp-quote (char-to-string ele)) simple-paren-skip-chars)
-;;     (setq simple-paren-skip-chars
-;; 	  (concat simple-paren-skip-chars (char-to-strig ele)))))
+(setq simple-paren-skip-chars (concat "^, \t\r\n\f" simple-paren-known-paired-delimiters))
 
-;; (setq simple-paren-skip-chars "^, \t\r\n\f")
+(defvar simple-paren-backward-skip-chars simple-paren-skip-chars)
+
+(defvar simple-paren-forward-skip-chars simple-paren-skip-chars)
+
+(dolist (ele simple-paren-backward-delimiter-chars)
+  (unless (string-match (regexp-quote (char-to-string ele)) simple-paren-skip-chars)
+    (setq simple-paren-backward-skip-chars
+	  (concat simple-paren-backward-skip-chars (char-to-string ele)))))
+
+(dolist (ele simple-paren-forward-delimiter-chars)
+  (unless (string-match (regexp-quote (char-to-string ele)) simple-paren-skip-chars)
+    (setq simple-paren-forward-skip-chars
+	  (concat simple-paren-forward-skip-chars (char-to-string ele)))))
 
 (defun simple-paren--return-complement-char-maybe (erg)
   "For example return \"}\" for \"{\" but keep \"\\\"\"."
@@ -231,7 +381,6 @@
     (?\⦇ ?\⦈)
     (_ erg)))
 
-
 (defvar simple-paren-braced-newline (list 'js-mode))
 
 (defcustom simple-paren-honor-padding-p t
@@ -241,7 +390,9 @@
 
 (defun simple-paren--intern (left-char right-char arg)
   (let* ((no-wrap (equal '(4) arg))
-	 (times (prefix-numeric-value arg))
+	 (times (if no-wrap
+		    1
+		     (prefix-numeric-value arg)))
 	 end erg padding fillchar)
     (if no-wrap
 	(progn
@@ -252,7 +403,7 @@
 	    (setq end (copy-marker (region-end)))
 	    (goto-char (region-beginning)))
 	(unless (or (eobp) (eolp)(member (char-after) (list 32 9)))
-	  (skip-chars-backward simple-paren-skip-chars)))
+	  (skip-chars-backward simple-paren-backward-skip-chars)))
       (when (and simple-paren-honor-padding-p (member (char-after) (list 32 9)))
 	(setq fillchar (char-after))
 	(save-excursion

@@ -4,8 +4,8 @@
 
 ;; Author: Jorgen Schaefer <contact@jorgenschaefer.de>
 ;; URL: http://github.com/jorgenschaefer/pyvenv
-;; Package-Version: 1.13
-;; Version: 1.13
+;; Package-Version: 1.14
+;; Version: 1.14
 ;; Keywords: Python, Virtualenv, Tools
 
 ;; This program is free software; you can redistribute it and/or
@@ -98,6 +98,16 @@ educated guess, but that can be off."
   :safe #'file-directory-p
   :group 'pyvenv)
 
+(defcustom pyvenv-exec-shell
+  (or (executable-find "bash")
+      (executable-find "sh")
+      shell-file-name)
+  "The path to a POSIX compliant shell to use for running
+  virtualenv hooks. Useful if you use a non-POSIX shell (e.g.
+  fish)."
+  :type '(file :must-match t)
+  :group 'pyvenv)
+
 ;; API for other libraries
 
 (defvar pyvenv-virtual-env nil
@@ -110,6 +120,15 @@ Do not set this variable directly; use `pyvenv-activate' or
   "The name of the current virtual environment.
 
 This is usually the base name of `pyvenv-virtual-env'.")
+
+
+(defvar pyvenv-pre-create-hooks nil
+  "Hooks run before a virtual environment is created.")
+
+
+(defvar pyvenv-post-create-hooks nil
+  "Hooks run after a virtual environment is created.")
+
 
 (defvar pyvenv-pre-activate-hooks nil
   "Hooks run before a virtual environment is activated.
@@ -145,6 +164,24 @@ This is usually the base name of `pyvenv-virtual-env'.")
 
 (defvar pyvenv-old-eshell-path nil
   "The old eshell path before the last activate.")
+
+
+(defun pyvenv-create (venv-name python-executable)
+  "Create virtualenv.  VENV-NAME  PYTHON-EXECUTABLE."
+  (interactive (list
+                (read-from-minibuffer "Name of virtual environment: ")
+                (read-file-name "Python interpreter to use: "
+                                (file-name-directory (executable-find "python"))
+                                nil nil "python")))
+  (let ((venv-dir (concat (file-name-as-directory (pyvenv-workon-home))
+                          venv-name)))
+    (unless (file-exists-p venv-dir)
+      (run-hooks 'pyvenv-pre-create-hooks)
+      (call-process "virtualenv" nil "*virtualenv" t
+                    "-p" python-executable venv-dir)
+      (run-hooks 'pyvenv-post-create-hooks))
+    (pyvenv-activate venv-dir)))
+
 
 ;;;###autoload
 (defun pyvenv-activate (directory)
@@ -269,8 +306,8 @@ configured."
       (dolist (name (directory-files workon-home))
         (when (or (file-exists-p (format "%s/%s/bin/activate"
                                          workon-home name))
-		  (file-exists-p (format "%s/%s/bin/python"
-					 workon-home name))
+                  (file-exists-p (format "%s/%s/bin/python"
+                                         workon-home name))
                   (file-exists-p (format "%s/%s/Scripts/activate.bat"
                                          workon-home name)))
           (setq result (cons name result))))
@@ -384,7 +421,8 @@ CAREFUL! This will modify your `process-environment' and
 `exec-path'."
   (when (pyvenv-virtualenvwrapper-supported)
     (with-temp-buffer
-      (let ((tmpfile (make-temp-file "pyvenv-virtualenvwrapper-")))
+      (let ((tmpfile (make-temp-file "pyvenv-virtualenvwrapper-"))
+            (shell-file-name pyvenv-exec-shell))
         (unwind-protect
             (let ((default-directory (pyvenv-workon-home)))
               (apply #'call-process
