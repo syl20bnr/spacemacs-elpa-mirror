@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180428.610
+;; Package-Version: 20180428.928
 ;; Keywords: help, lisp
 ;; Version: 0.10
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -1125,7 +1125,10 @@ buffer."
 along with the keybindings in each keymap.
 
 We ignore keybindings that are menu items, and ignore keybindings
-from parent keymaps."
+from parent keymaps.
+
+`widget-global-map' is also ignored as it generally contains the
+same bindings as `global-map'."
   (let (matching-keymaps)
     ;; Look for this command in all keymaps.
     (dolist (keymap-sym (helpful--all-keymap-syms))
@@ -1143,7 +1146,7 @@ from parent keymaps."
               ;; Ignore keybindings that we've just inherited from the
               ;; parent.
               (-difference keycodes parent-keycodes))
-        (when keycodes
+        (when (and keycodes (not (eq keymap-sym 'widget-global-map)))
           (push (cons keymap-sym
                       (-map #'key-description keycodes))
                 matching-keymaps))))
@@ -1861,10 +1864,17 @@ imenu."
   ;; Prevent imenu converting "Source Code" to "Source.Code".
   (setq-local imenu-space-replacement " "))
 
+(defun helpful--flash-region (start end)
+  "Temporarily highlight region from START to END."
+  (let ((overlay (make-overlay start end)))
+    (overlay-put overlay 'face 'highlight)
+    (run-with-timer 1.0 nil 'delete-overlay overlay)))
+
 (defun helpful-visit-reference ()
   "Go to the reference at point."
   (interactive)
-  (let* ((path (get-text-property (point) 'helpful-path))
+  (let* ((sym helpful--sym)
+         (path (get-text-property (point) 'helpful-path))
          (pos (get-text-property (point) 'helpful-pos))
          (pos-is-start (get-text-property (point) 'helpful-pos-is-start)))
     (when (and path pos)
@@ -1890,7 +1900,13 @@ imenu."
       (when (or (< pos (point-min))
                 (> pos (point-max)))
         (widen))
-      (goto-char pos))))
+      (goto-char pos)
+      (save-excursion
+        (let ((defun-end (scan-sexps (point) 1)))
+          (while (re-search-forward
+                  (rx-to-string `(seq symbol-start ,(symbol-name sym) symbol-end))
+                  defun-end t)
+            (helpful--flash-region (match-beginning 0) (match-end 0))))))))
 
 (defun helpful-kill-buffers ()
   "Kill all `helpful-mode' buffers.
