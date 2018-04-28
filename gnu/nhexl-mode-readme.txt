@@ -6,9 +6,6 @@ but using a different implementation technique, which makes it
 usable as a "plain" minor mode.  It works on any buffer, and does
 not mess with the undo log or with the major mode.
 
-In theory it could also work just fine even on very large buffers,
-although in practice it seems to make the display engine suffer.
-
 It also comes with:
 
 - `nhexl-nibble-edit-mode': a "nibble editor" minor mode.
@@ -20,6 +17,20 @@ It also comes with:
   In this minor mode, not only self-inserting keys overwrite existing
   text, but commands like `yank' and `kill-region' as well.
 
-Even though the Hex addresses displayed by this mode aren't actually
+Even though the hex addresses displayed by this mode aren't actually
 part of the buffer's text (contrary to hexl-mode, for example), you can
 search them with Isearch.
+
+Known bugs:
+
+- When the buffer is displayed in several windows, the "cursor" in the hex
+  area only reflects one of the window-points.  Fixing this would be rather
+  painful:
+  - for every cursor, we need an extra overlay with the `window'
+    property with its own `before-string'.
+  - because that overlay won't *replace* the normal overlay (the one
+    without the `window' property), we will need to *remove* that
+    overlay (lest we get 2 before-strings) and replace it with N overlays
+    with a `window' property (for all N other windows that don't have
+    their cursor on this line).
+  FWIW, the original `hexl-mode' has the same kind of problem.
