@@ -2,7 +2,7 @@
 
 ;; Author: ncaq <ncaq@ncaq.net>
 ;; Version: 0.0.0
-;; Package-Version: 20171227.156
+;; Package-Version: 20180427.2153
 ;; Package-Requires: ((emacs "24")(f "0.19.0"))
 ;; URL: https://github.com/ncaq/auto-sudoedit
 
@@ -38,10 +38,11 @@
 
 (defun auto-sudoedit ()
   "`auto-sudoedit' hook."
-  (unless (or
-           (f-writable? (auto-sudoedit-current-path))
-           (tramp-tramp-file-p (auto-sudoedit-current-path)))
-    (auto-sudoedit-sudoedit-and-kill)))
+  (let ((curr-path (auto-sudoedit-current-path)))
+    (unless (or
+             (f-traverse-upwards #'f-writable? curr-path)
+             (tramp-tramp-file-p curr-path))
+      (auto-sudoedit-sudoedit-and-kill))))
 
 ;;;###autoload
 (define-minor-mode
