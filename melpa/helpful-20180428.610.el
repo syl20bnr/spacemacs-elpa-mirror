@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180428.351
+;; Package-Version: 20180428.610
 ;; Keywords: help, lisp
 ;; Version: 0.10
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -610,12 +610,15 @@ blank line afterwards."
   "Convert `foo' in docstrings to buttons (if bound) or else highlight."
   (replace-regexp-in-string
    ;; Replace all text of the form `foo'.
-   (rx "`" (+? (not (any "`" "'"))) "'")
+   (rx (? "\\=") "`" (+? (not (any "`" "'"))) "'")
    (lambda (it)
      (let* ((sym-name
              (s-chop-prefix "`" (s-chop-suffix "'" it)))
             (sym (intern sym-name)))
        (cond
+        ;; If the quote is escaped, don't modify it.
+        ((s-starts-with-p "\\=" it)
+         it)
         ;; Only create a link if this is a symbol that is bound as a
         ;; variable or callable.
         ((or (boundp sym) (fboundp sym))
@@ -832,13 +835,15 @@ unescaping too."
 (defun helpful--format-docstring (docstring)
   "Replace cross-references with links in DOCSTRING."
   (-> docstring
-      (helpful--format-command-keys)
       (helpful--split-first-line)
       (helpful--propertize-info)
       (helpful--propertize-links)
       (helpful--propertize-bare-links)
       (helpful--propertize-keywords)
       (helpful--propertize-quoted)
+      ;; This needs to happen after we've replaced quoted chars, so we
+      ;; don't confuse \\=` with `.
+      (helpful--format-command-keys)
       (s-trim)))
 
 (define-button-type 'helpful-link-button
@@ -1652,17 +1657,23 @@ state of the current symbol."
   "Get the signature for function SYM, as a string.
 For example, \"(some-func FOO &optional BAR)\"."
   (let (docstring-sig
-        source-sig)
+        source-sig
+        (advertised-args
+         (when (symbolp sym)
+           (gethash (symbol-function sym) advertised-signature-table))))
     ;; Get the usage from the function definition.
     (let* ((function-args
             (if (symbolp sym)
                 (help-function-arglist sym)
               (cadr sym)))
            (formatted-args
-            (if (listp function-args)
-                (-map #'helpful--format-argument
-                      function-args)
-              (list function-args))))
+            (cond
+             (advertised-args
+              (-map #'helpful--format-argument advertised-args))
+             ((listp function-args)
+              (-map #'helpful--format-argument function-args))
+             (t
+              (list function-args)))))
       (setq source-sig
             (cond
              ;; If it's a function object, just show the arguments.
@@ -1682,7 +1693,16 @@ For example, \"(some-func FOO &optional BAR)\"."
       (-when-let (docstring-with-usage (help-split-fundoc docstring sym))
         (setq docstring-sig (car docstring-with-usage))))
 
-    (or docstring-sig source-sig)))
+    (cond
+     ;; Advertised signature always wins.
+     (advertised-args
+      source-sig)
+     ;; If that's not set, use the usage specification in the
+     ;; docstring, if present.
+     (docstring-sig)
+     (t
+      ;; Otherwise, just use the signature from the source code.
+      source-sig))))
 
 (defun helpful--docstring (sym callable-p)
   "Get the docstring for SYM.
