@@ -1,10 +1,10 @@
 ;;; helpful.el --- a better *help* buffer            -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2017  Wilfred Hughes
+;; Copyright (C) 2017-2018  Wilfred Hughes
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180407.351
+;; Package-Version: 20180428.351
 ;; Keywords: help, lisp
 ;; Version: 0.10
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
