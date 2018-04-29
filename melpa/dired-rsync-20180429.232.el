@@ -4,8 +4,8 @@
 ;;
 ;; Author: Alex Bennée <alex@bennee.com>
 ;; Maintainer: Alex Bennée <alex@bennee.com>
-;; Version: 0.2
-;; Package-Version: 20180426.924
+;; Version: 0.3
+;; Package-Version: 20180429.232
 ;; Package-Requires: ((s "1.12.0") (dash "2.0.0") (emacs "24"))
 ;; Homepage: https://github.com/stsquad/dired-rsync
 ;;

@@ -3,8 +3,8 @@
 ;; Copyright (C) 2018 Kevin Brubeck Unhammer
 
 ;; Author: Kevin Brubeck Unhammer <unhammer@fsfe.org>
-;; Version: 0.1.1
-;; Package-Version: 20180423.1307
+;; Version: 0.2.0
+;; Package-Version: 20180428.2335
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: convenience, hypermedia, org
 
@@ -56,8 +56,19 @@
 ARGS ignored."
   (setq org-rich-yank--buffer (current-buffer)))
 
-(advice-add #'kill-append :after #'org-rich-yank--store)
-(advice-add #'kill-new :after #'org-rich-yank--store)
+;;;###autoload
+(defun org-rich-yank-enable ()
+  "Add the advices that store the buffer of the current kill."
+  (advice-add #'kill-append :after #'org-rich-yank--store)
+  (advice-add #'kill-new :after #'org-rich-yank--store))
+
+;; Always do this on load – safe to run multiple times
+(org-rich-yank-enable)
+
+(defun org-rich-yank-disable ()
+  "Remove the advices that store the buffer of the current kill."
+  (advice-remove #'kill-append #'org-rich-yank--store)
+  (advice-remove #'kill-new #'org-rich-yank--store))
 
 (defun org-rich-yank--trim-nl (str)
   "Trim surrounding newlines from STR."
@@ -97,6 +108,7 @@ ARGS ignored."
       ;; they're in the same projectile-project
       (when link (concat link "\n")))))
 
+;;;###autoload
 (defun org-rich-yank ()
   "Yank, surrounded by #+BEGIN_SRC block with major mode of originating buffer."
   (interactive)
