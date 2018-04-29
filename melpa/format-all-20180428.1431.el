@@ -2,7 +2,7 @@
 ;;
 ;; Author: Lassi Kortela <lassi@lassi.io>
 ;; URL: https://github.com/lassik/emacs-format-all-the-code
-;; Package-Version: 20180421.156
+;; Package-Version: 20180428.1431
 ;; Version: 0.1.0
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; Keywords: languages util
@@ -66,6 +66,10 @@
     (unless (= (point-min) (point-max))
       (goto-char (point-max))
       (insert "\n"))))
+
+(defun format-all-remove-ansi-color (string)
+  "Internal helper function to remove terminal color codes from a string."
+  (save-match-data (replace-regexp-in-string "\x1b\\[[0-9]+m" "" string t)))
 
 (defun format-all-buffer-thunk (thunk)
   "Internal helper function to implement formatters.
@@ -157,7 +161,10 @@ EXECUTABLE is the full path to the formatter."
   "Format the current buffer as Elm using \"elm-format\".
 
 EXECUTABLE is the full path to the formatter."
-  (format-all-buffer-process executable nil nil  "--yes" "--stdin"))
+  (cl-destructuring-bind (output errput first-diff)
+      (format-all-buffer-process executable nil nil  "--yes" "--stdin")
+    (let ((errput (format-all-remove-ansi-color (or errput ""))))
+      (list output errput first-diff))))
 
 (defun format-all-buffer-emacs-lisp (executable)
   "Format the current buffer as Emacs Lisp using Emacs itself.
