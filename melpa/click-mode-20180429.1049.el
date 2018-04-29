@@ -6,7 +6,7 @@
 
 ;; Author: Brian Malehorn <bmalehorn@gmail.com>
 ;; Version: 0.0.5
-;; Package-Version: 20170105.20
+;; Package-Version: 20180429.1049
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: click router
 ;; URL: https://github.com/bmalehorn/click-mode
@@ -107,9 +107,7 @@ returns nil. Otherwise, returns the new indentation.
                          (looking-at (concat ".*" regexp))))
               (while (not (looking-at regexp))
                 (forward-char))
-              (let* ((bracket (point))
-                     (bol (progn (beginning-of-line) (point))))
-                     (- bracket bol))))))
+              (current-column)))))
     (when indent
       (indent-line-to indent)
       indent)))
