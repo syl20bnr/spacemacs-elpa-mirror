@@ -4,7 +4,7 @@
 ;;
 ;; Author: Eivind Fonn <evfonn@gmail.com>
 ;; URL: https://github.com/TheBB/company-reftex
-;; Package-Version: 20180425.907
+;; Package-Version: 20180429.25
 ;; Version: 0.1.0
 ;; Keywords: bib tex company latex reftex references labels citations
 ;; Package-Requires: ((emacs "25.1") (s "1.12") (company "0.8"))
@@ -39,14 +39,13 @@
 
 
 (eval-when-compile
-  (require 'cl-lib)
   (require 'rx))
 
+(require 'cl-lib)
 (require 'company)
 (require 'reftex)
 (require 'reftex-cite)
 (require 's)
-
 
 
 ;; Customization
@@ -165,7 +164,7 @@ For more information on COMMAND and ARG see `company-backends'."
   (cl-loop for entry in (symbol-value reftex-docstruct-symbol)
            if (and (stringp (car entry)) (string-prefix-p prefix (car entry)))
            collect
-           (company-reftex-annotate (car entry) (caddr entry))))
+           (company-reftex-annotate (car entry) (cl-caddr entry))))
 
 ;;;###autoload
 (defun company-reftex-labels (command &optional arg &rest _)

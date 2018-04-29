@@ -2,7 +2,7 @@
 
 ;; Author: ncaq <ncaq@ncaq.net>
 ;; Version: 0.0.0
-;; Package-Version: 20180427.2153
+;; Package-Version: 20180428.2343
 ;; Package-Requires: ((emacs "24")(f "0.19.0"))
 ;; URL: https://github.com/ncaq/auto-sudoedit
 
@@ -39,10 +39,13 @@
 (defun auto-sudoedit ()
   "`auto-sudoedit' hook."
   (let ((curr-path (auto-sudoedit-current-path)))
-    (unless (or
-             (f-traverse-upwards #'f-writable? curr-path)
-             (tramp-tramp-file-p curr-path))
-      (auto-sudoedit-sudoedit-and-kill))))
+    ;; Don't activate for tramp files
+    (unless (tramp-tramp-file-p curr-path)
+      ;; Current path may not exist; back up to the first existing parent
+      ;; and see if it's writable
+      (let ((first-existing-path (f-traverse-upwards #'f-exists? curr-path)))
+        (unless (and first-existing-path (f-writable? first-existing-path))
+          (auto-sudoedit-sudoedit-and-kill))))))
 
 ;;;###autoload
 (define-minor-mode

@@ -2,7 +2,7 @@
 
 ;; Author: 10sr <8slashes+el [at] gmail [dot] com>
 ;; URL: https://github.com/10sr/editorconfig-custom-major-mode-el
-;; Package-Version: 20170509.141
+;; Package-Version: 20180428.1926
 ;; Version: 0.0.2
 ;; Package-Requires: ((editorconfig "0.6.0"))
 ;; Keywords: editorconfig util
@@ -68,6 +68,10 @@
   (defvar mmm-classes)
   (defvar mmm-classes-alist))
 
+(defvar editorconfig-custom-majormode--already
+  nil
+  "Flag used internaly to avoid infinite loop.")
+
 (defun editorconfig-custom-majormode--is-a-mode-p (target want)
   "Return non-nil if major mode TARGET is a major mode WANT."
   (or (eq target
@@ -127,28 +131,30 @@ Return non-nil if LIB has been successfully loaded."
 If `package' is installed on your Emacs and the major mode specified is
 installable, this plugin asks whether you want to install and enable it
 automatically."
-  (let* ((mode-str (gethash 'emacs_mode
-                            hash))
-         (mode (and mode-str
-                    (not (string= mode-str
-                                  ""))
-                    (intern (concat mode-str
-                                    "-mode"))))
-         (mmm-classes-str (gethash 'emacs_mmm_classes
-                                   hash))
-         ;; FIXME: Split by comma and make list
-         (ed-mmm-classes (and mmm-classes-str
-                              (not (string= ""
-                                            mmm-classes-str))
-                              (mapcar 'intern
-                                      (split-string mmm-classes-str
-                                                    ",")))))
-    (when mode
-      (editorconfig-custom-majormode--set-majormode mode))
-    (when (and ed-mmm-classes
-               (editorconfig-custom-majormode--require-or-install 'mmm-mode))
-      (editorconfig-custom-majormode--set-mmm-classes ed-mmm-classes)
-      (mmm-mode-on))))
+  (when (not editorconfig-custom-majormode--already)
+    (let* ((editorconfig-custom-majormode--already t)
+           (mode-str (gethash 'emacs_mode
+                              hash))
+           (mode (and mode-str
+                      (not (string= mode-str
+                                    ""))
+                      (intern (concat mode-str
+                                      "-mode"))))
+           (mmm-classes-str (gethash 'emacs_mmm_classes
+                                     hash))
+           ;; FIXME: Split by comma and make list
+           (ed-mmm-classes (and mmm-classes-str
+                                (not (string= ""
+                                              mmm-classes-str))
+                                (mapcar 'intern
+                                        (split-string mmm-classes-str
+                                                      ",")))))
+      (when mode
+        (editorconfig-custom-majormode--set-majormode mode))
+      (when (and ed-mmm-classes
+                 (editorconfig-custom-majormode--require-or-install 'mmm-mode))
+        (editorconfig-custom-majormode--set-mmm-classes ed-mmm-classes)
+        (mmm-mode-on)))))
 
 (provide 'editorconfig-custom-majormode)
 

@@ -3,8 +3,8 @@
 ;; Copyright (C) 2018 Kevin Brubeck Unhammer
 
 ;; Author: Kevin Brubeck Unhammer <unhammer@fsfe.org>
-;; Version: 0.1.1
-;; Package-Version: 0.1.1
+;; Version: 0.2.0
+;; Package-Version: 0.2.0
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: convenience, hypermedia, org
 
@@ -56,8 +56,19 @@
 ARGS ignored."
   (setq org-rich-yank--buffer (current-buffer)))
 
-(advice-add #'kill-append :after #'org-rich-yank--store)
-(advice-add #'kill-new :after #'org-rich-yank--store)
+;;;###autoload
+(defun org-rich-yank-enable ()
+  "Add the advices that store the buffer of the current kill."
+  (advice-add #'kill-append :after #'org-rich-yank--store)
+  (advice-add #'kill-new :after #'org-rich-yank--store))
+
+;; Always do this on load – safe to run multiple times
+(org-rich-yank-enable)
+
+(defun org-rich-yank-disable ()
+  "Remove the advices that store the buffer of the current kill."
+  (advice-remove #'kill-append #'org-rich-yank--store)
+  (advice-remove #'kill-new #'org-rich-yank--store))
 
 (defun org-rich-yank--trim-nl (str)
   "Trim surrounding newlines from STR."
@@ -65,25 +76,52 @@ ARGS ignored."
                             ""
                             str))
 
+(defun org-rich-yank--store-link ()
+  "Store the link using `org-store-link' without erroring out."
+  (with-demoted-errors
+      (cond ((and (eq major-mode 'gnus-article-mode)
+                  (fboundp #'gnus-article-show-summary))
+             ;; Workaround for possible bug in org-gnus-store-link: If
+             ;; you've moved point in the summary, org-store-link from
+             ;; the article will give the wrong link
+             (save-window-excursion (gnus-article-show-summary)
+                                    (org-store-link nil)))
+            ((and (eq major-mode 'diff-mode))
+             (save-window-excursion
+               (diff-goto-source)
+               (org-store-link nil)))
+            ;; org-store-link doesn't do eww-mode yet as of 8.2.10 at least:
+            ((and (eq major-mode 'eww-mode)
+                  (boundp 'eww-data)
+                  (plist-get eww-data :url))
+             (format "[[%s][%s]]"
+                     (plist-get eww-data :url)
+                     (or (plist-get eww-data :title)
+                         (plist-get eww-data :url))))
+            (t (org-store-link nil)))))
+
 (defun org-rich-yank--link ()
   "Get an org-link to the current kill."
   (with-current-buffer org-rich-yank--buffer
-    (let ((link (with-demoted-errors (org-store-link nil))))
+    (let ((link (org-rich-yank--store-link)))
       ;; TODO: make it (file-relative-name … dir-of-org-file) if
       ;; they're in the same projectile-project
       (when link (concat link "\n")))))
 
+;;;###autoload
 (defun org-rich-yank ()
   "Yank, surrounded by #+BEGIN_SRC block with major mode of originating buffer."
   (interactive)
-  (insert
-   (concat
-    (with-current-buffer org-rich-yank--buffer
-      (format "#+BEGIN_SRC %s\n"
-              (replace-regexp-in-string "-mode$" "" (symbol-name major-mode))))
-    (org-rich-yank--trim-nl (current-kill 0))
-    (format "\n#+END_SRC\n")
-    (org-rich-yank--link))))
+  (if org-rich-yank--buffer
+      (insert
+       (concat
+        (with-current-buffer org-rich-yank--buffer
+          (format "#+BEGIN_SRC %s\n"
+                  (replace-regexp-in-string "-mode$" "" (symbol-name major-mode))))
+        (org-rich-yank--trim-nl (current-kill 0))
+        (format "\n#+END_SRC\n")
+        (org-rich-yank--link)))
+    (message "`org-rich-yank' doesn't know the source buffer – please `kill-ring-save' and try again.")))
 
 
 (provide 'org-rich-yank)
