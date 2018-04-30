@@ -4,11 +4,11 @@
 
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 15 Mar 2018
-;; Version: 0.2.0
-;; Package-Version: 20180423.207
+;; Version: 0.2.1
+;; Package-Version: 0.2.1
 ;; Keywords: convenience, php
 ;; Homepage: https://github.com/emacs-php/phpstan.el
-;; Package-Requires: ((emacs "24.3") (flycheck "26") (phpstan "0.2.0"))
+;; Package-Requires: ((emacs "24.3") (flycheck "26") (phpstan "0.2.1"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -26,6 +26,18 @@
 ;;; Commentary:
 
 ;; Flycheck integration for PHPStan.
+;;
+;; Put the following into your .emacs file (~/.emacs.d/init.el)
+;;
+;;     (defun my-php-mode-hook ()
+;;       "My PHP-mode hook."
+;;       (require 'flycheck-phpstan)
+;;       (flycheck-mode t)
+;;       (flycheck-select-checker 'phpstan))
+;;
+;;     (add-hook 'php-mode-hook 'my-php-mode-hook)
+;;
+
 
 ;;; Code:
 (require 'flycheck)
@@ -50,7 +62,6 @@
                  phpstan-docker-executable
                (car phpstan-executable)))))))
 
-;;;###autoload
 (flycheck-define-checker phpstan
   "PHP static analyzer based on PHPStan."
   :command ("php" (eval (phpstan-get-command-args))
@@ -63,6 +74,8 @@
   ((error line-start (1+ (not (any ":"))) ":" line ":" (message) line-end))
   :modes (php-mode)
   :next-checkers (php))
+
+(add-to-list 'flycheck-checkers 'phpstan t)
 
 (provide 'flycheck-phpstan)
 ;;; flycheck-phpstan.el ends here
