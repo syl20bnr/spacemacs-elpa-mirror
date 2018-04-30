@@ -2,7 +2,7 @@
 
 ;; Authors: stardiviner <numbchild@gmail.com>
 ;; Package-Requires: ((emacs "25"))
-;; Package-Version: 20180423.639
+;; Package-Version: 20180430.853
 ;; Package-X-Original-Version: 0.1
 ;; Keywords: comm proxy
 ;; homepage: https://github.com/stardiviner/proxy-mode
@@ -140,8 +140,7 @@
       (proxy-mode-enable)
     (proxy-mode-disable)))
 
-(define-globalized-minor-mode proxy-mode
-  proxy-local-mode proxy-local-mode)
+(define-globalized-minor-mode global-proxy-mode proxy-mode proxy-mode)
 
 
 
