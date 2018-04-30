@@ -3,8 +3,8 @@
 ;; Copyright (C) 2018 Kevin Brubeck Unhammer
 
 ;; Author: Kevin Brubeck Unhammer <unhammer@fsfe.org>
-;; Version: 0.2.0
-;; Package-Version: 20180428.2335
+;; Version: 0.2.1
+;; Package-Version: 20180430.644
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: convenience, hypermedia, org
 
@@ -48,6 +48,18 @@
 
 
 ;;; Code:
+
+(defgroup org-rich-yank nil
+  "Options for org-rich-yank"
+  :tag "org-rich-yank"
+  :group 'org)
+
+(defcustom org-rich-yank-add-target-indent t
+  "Give all lines of paste the same indentation as the first one.
+If this variable is non-nil and point is indented before pasting,
+all lines below will also get that indentation."
+  :group 'org-rich-yank
+  :type 'boolean)
 
 (defvar org-rich-yank--buffer nil)
 
@@ -108,19 +120,32 @@ ARGS ignored."
       ;; they're in the same projectile-project
       (when link (concat link "\n")))))
 
+(defun org-rich-yank-indent (paste)
+  "Prepend current indentation to each line of PASTE."
+  (let* ((s (buffer-substring (line-beginning-position) (point)))
+         (indent (progn (string-match "\\s *$" s)
+                        (match-string 0 s))))
+    (replace-regexp-in-string "\n"
+                              (concat "\n" indent)
+                              paste)))
+
 ;;;###autoload
 (defun org-rich-yank ()
   "Yank, surrounded by #+BEGIN_SRC block with major mode of originating buffer."
   (interactive)
   (if org-rich-yank--buffer
-      (insert
-       (concat
-        (with-current-buffer org-rich-yank--buffer
-          (format "#+BEGIN_SRC %s\n"
-                  (replace-regexp-in-string "-mode$" "" (symbol-name major-mode))))
-        (org-rich-yank--trim-nl (current-kill 0))
-        (format "\n#+END_SRC\n")
-        (org-rich-yank--link)))
+      (let ((paste
+             (concat
+              (with-current-buffer org-rich-yank--buffer
+                (format "#+BEGIN_SRC %s\n"
+                        (replace-regexp-in-string "-mode$" "" (symbol-name major-mode))))
+              (org-rich-yank--trim-nl (current-kill 0))
+              (format "\n#+END_SRC\n")
+              (org-rich-yank--link))))
+        (insert
+         (if org-rich-yank-add-target-indent
+             (org-rich-yank-indent paste)
+           paste)))
     (message "`org-rich-yank' doesn't know the source buffer – please `kill-ring-save' and try again.")))
 
 

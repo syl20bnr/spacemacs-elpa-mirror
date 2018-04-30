@@ -8,8 +8,8 @@
 ;;         Aldric Giacomoni <trevoke@gmail.com>
 ;; Keywords: org-mode, org, kanban, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "24.4"))
-;; Package-Version: 20180429.1253
-;; Package-X-Original-Version: 0.4.3
+;; Package-Version: 20180429.1254
+;; Package-X-Original-Version: 0.4.4
 ;; Homepage: http://github.com/gizmomogwai/org-kanban
 
 ;;; Commentary:
@@ -240,7 +240,7 @@ Return file and marker."
 (defun org-kanban/version ()
   "Print org-kanban version."
   (interactive)
-  (message "org-kanban 0.4.3"))
+  (message "org-kanban 0.4.4"))
 
 (provide 'org-kanban)
 ;;; org-kanban.el ends here
