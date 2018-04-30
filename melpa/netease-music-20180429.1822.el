@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2018  hiro方圆
 ;; Version: 1.0
-;; Package-Version: 20180429.1801
+;; Package-Version: 20180429.1822
 ;; URL: https://github.com/nicehiro/netease-music
 ;; Package-Requires: ((names "0.5") (emacs "25"))
 ;; Author: hiro方圆 <wfy11235813@gmail.com>
@@ -762,10 +762,12 @@ Argument LST: play this song from LST."
         (setq next-song-id
               (slot-value (cdr (nth (+ position 1) songs-list))
                           'song-id))))
+    (setq next-song-name
+          (slot-value (cdr (nth (+ position 1) songs-list)) 'name))
     (message next-song-name)
     (if can-play
         (play-song-by-id next-song-id netease-music-songs-list))
-    (setq global-mode-string song-name)
+    (setq global-mode-string next-song-name)
     (move-to-current-song)))
 
 (defun add-to-songslist (song-ins)
