@@ -6,7 +6,7 @@
 
 ;; Author: Neri Marschik <marschik_neri@cyberagent.co.jp>
 ;; Version: 1.0
-;; Package-Version: 20180426.2217
+;; Package-Version: 20180501.49
 ;; Package-Requires: ()
 ;; Keywords: javascript, node, node_modules, eslint
 ;; URL: https://github.com/codesuki/add-node-modules-path
@@ -33,8 +33,9 @@
 ;;; Code:
 
 ;;;###autoload
-(defvar add-node-modules-path-debug nil
-  "Enable verbose output when non nil.")
+(defcustom add-node-modules-path-debug nil
+  "Enable verbose output when non nil."
+  :type 'boolean)
 
 ;;;###autoload
 (defun add-node-modules-path ()
@@ -43,14 +44,17 @@ Traverse the directory structure up, until reaching the user's home directory.
 Any path found is added to the `exec-path'."
   (interactive)
   (let* ((file (or (buffer-file-name) default-directory))
+         (path (locate-dominating-file file "node_modules"))
          (home (expand-file-name "~"))
-         (root (expand-file-name (locate-dominating-file file "node_modules")))
+         (root (and path (expand-file-name path)))
          (roots '()))
-    (while (and root (not (string= root home)))
+    (while root
       (let ((bindir (expand-file-name "node_modules/.bin/" root)))
         (when (file-directory-p bindir)
           (add-to-list 'roots bindir)))
-      (setq root (directory-file-name (file-name-directory root))))
+      (if (string= root home)
+          (setq root nil)
+        (setq root (directory-file-name (file-name-directory root)))))
     (if roots
         (progn
           (make-local-variable 'exec-path)

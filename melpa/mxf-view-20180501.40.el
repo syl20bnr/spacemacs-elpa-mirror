@@ -5,7 +5,7 @@
 ;; Author: Tomotaka SUWA <tomotaka.suwa@gmail.com>
 ;; Package: mxf-view
 ;; Package-Requires: ((emacs "25"))
-;; Package-Version: 20180426.1921
+;; Package-Version: 20180501.40
 ;; Version: 0.2
 ;; Keywords: data multimedia
 ;; URL: https://github.com/t-suwa/mxf-view
@@ -33,9 +33,7 @@
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'cl))
-
+(require 'cl-lib)
 (require 'seq)
 (require 'subr-x)
 (require 'hexl)
@@ -138,7 +136,6 @@
 
 ;;;###autoload
 (define-derived-mode mxf-view-mode special-mode "MXF-View"
-  (use-local-map mxf-view-mode-map)
   (setq imenu-create-index-function 'mxf-view-imenu-index)
   (setq imenu-default-goto-function 'mxf-view-imenu-goto)
   (setq revert-buffer-function 'mxf-view-revert-buffer)
@@ -719,7 +716,7 @@ LENGTH should be an integer or a symbol bound to an integer."
         (i 0)
         array)
     (while (< (point) end)
-      (push (mxf-view-read-number-item spec (incf i)) array))
+      (push (mxf-view-read-number-item spec (cl-incf i)) array))
     (nreverse array)))
 
 (defun mxf-view-read-array (spec count)
@@ -824,7 +821,7 @@ COUNT should be an integer or a symbol bound to an integer."
         (while (< i (length vec))
           (setq result (logior result
                                (lsh (aref vec i) (* i 8))))
-          (incf i))
+          (cl-incf i))
         result))))
 
 (defun mxf-view-read-kl ()
@@ -1039,7 +1036,7 @@ COUNT should be an integer or a symbol bound to an integer."
     (let ((index 0))
       (mapcar (lambda (package)
                 (let ((key (make-symbol
-                            (format ":content-package-%d" (incf index)))))
+                            (format ":content-package-%d" (cl-incf index)))))
                   (mxf-view-make-group 0 key package)))
               (mxf-view-read-content-packages)))))
 
@@ -1626,7 +1623,7 @@ COUNT should be an integer or a symbol bound to an integer."
        (let ((i 0))
          (goto-char (point-min))
          (while (mxf-view-find-next-partition)
-           (push (mxf-view-read-partition (incf i)) result))))
+           (push (mxf-view-read-partition (cl-incf i)) result))))
       (rip
        (let ((indexes (mxf-view-get :partition-index (cdr rip))))
          (dotimes (i (length indexes))
@@ -1661,7 +1658,7 @@ COUNT should be an integer or a symbol bound to an integer."
     (message nil)))
 
 ;;;###autoload
-(let ((mxf-file-regexp "\\.mxf"))
+(let ((mxf-file-regexp "\\.mxf\\'"))
   (add-to-list 'auto-mode-alist `(,mxf-file-regexp . mxf-view-mode))
   (add-to-list 'auto-coding-alist `(,mxf-file-regexp . binary)))
 
