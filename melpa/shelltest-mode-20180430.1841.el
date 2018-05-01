@@ -2,9 +2,9 @@
 
 ;; Copyright (C) 2014 Dustin Fechner
 
-;; Author: Dustin Fechner <fechnedu@gmail.com>
+;; Author: Dustin Fechner <dfe@rtrn.io>
 ;; URL: https://github.com/rtrn/shelltest-mode
-;; Package-Version: 20141227.248
+;; Package-Version: 20180430.1841
 ;; Version: 1.1
 ;; Created: 21 Dec 2014
 ;; Keywords: languages
