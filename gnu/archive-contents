@@ -811,6 +811,13 @@
 	    "Extensible Dependencies 'N' Actions" tar
 	    ((:keywords "convenience" "text" "org")
 	     (:url . "https://savannah.nongnu.org/projects/org-edna-el/"))])
+ (orgalist .
+	   [(1 1)
+	    ((emacs
+	      (24 4)))
+	    "Manage Org-like lists in non-Org buffers" single
+	    ((:url . "http://elpa.gnu.org/packages/orgalist.html")
+	     (:keywords "convenience"))])
  (osc .
       [(0 1)
        nil "Open Sound Control protocol library" single
