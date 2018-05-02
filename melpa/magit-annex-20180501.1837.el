@@ -5,7 +5,7 @@
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;;         Rémi Vanicat <vanicat@debian.org>
 ;; URL: https://github.com/magit/magit-annex
-;; Package-Version: 20180418.1654
+;; Package-Version: 20180501.1837
 ;; Keywords: vc tools
 ;; Version: 1.5.0
 ;; Package-Requires: ((cl-lib "0.3") (magit "2.12.0"))
@@ -38,6 +38,8 @@
 ;; Managing file content:
 ;;   @fu   Unlock files.
 ;;   @fl   Lock files.
+;;   @fU   Undo files.
+;;
 ;;   @fg   Get files.
 ;;   @fd   Drop files.
 ;;   @fc   Copy files.
@@ -164,11 +166,15 @@ program used to open the unused file."
               (?c "Copy" magit-annex-copy-files)
               (?m "Move" magit-annex-move-files)
               (?l "Lock" magit-annex-lock-files)
-              (?u "Unlock" magit-annex-unlock-files))
-  :switches '((?f "Fast" "--fast")
+              (?u "Unlock" magit-annex-unlock-files) nil nil
+              (?U "Undo" magit-annex-undo-files))
+  :switches '("Switches"
+              (?f "Fast" "--fast")
               (?F "Force" "--force")
+              "Switches for get, drop, copy, and move"
               (?a "Auto" "--auto"))
-  :options  '((?t "To remote" "--to=" magit-read-remote)
+  :options  '("Options for get, drop, copy, and move"
+              (?t "To remote" "--to=" magit-read-remote)
               (?f "From remote" "--from=" magit-read-remote)
               (?n "Number of copies" "--numcopies=")
               (?j "Number of jobs" "--jobs="))
@@ -415,6 +421,8 @@ With a prefix argument, prompt for FILE.
   (unless (magit-annex-from-in-options-p) 'present))
 (magit-annex-files-action "unlock" 'present t)
 (magit-annex-files-action "lock" 'unlocked t)
+
+(magit-annex-files-action "undo" nil t)
 
 (defun magit-annex-from-in-options-p ()
   (cl-some (lambda (it) (string-match "--from=" it)) magit-current-popup-args))

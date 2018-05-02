@@ -11,6 +11,8 @@ Adding files:
 Managing file content:
   @fu   Unlock files.
   @fl   Lock files.
+  @fU   Undo files.
+
   @fg   Get files.
   @fd   Drop files.
   @fc   Copy files.

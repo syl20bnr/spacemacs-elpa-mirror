@@ -4,7 +4,7 @@
 
 ;; Author: Andreas Müller <code@0x7.ch>
 ;; Keywords: tools
-;; Package-Version: 20180423.1321
+;; Package-Version: 20180501.1525
 ;; Version: 0.1.0
 ;; URL: https://github.com/andrmuel/nodemcu-mode
 ;; Package-Requires: ((emacs "25"))
@@ -25,7 +25,7 @@
 ;;; Commentary:
 
 ;; nodemcu-mode provides a wrapper around nodemcu-tool and
-;; nodemcu-wrapper, so that NodeMCU devices can be programmed and used
+;; nodemcu-uploader, so that NodeMCU devices can be programmed and used
 ;; from within Emacs.
 
 ;;; Code:

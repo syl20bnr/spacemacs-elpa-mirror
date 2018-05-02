@@ -1,11 +1,11 @@
 ;;; cyberpunk-theme.el --- Cyberpunk Color Theme
 
-;; Copyright 2012-2016, Nicholas M. Van Horn
+;; Copyright 2012-2018, Nicholas M. Van Horn
 
-;; Author: Nicholas M. Van Horn <vanhorn.nm@gmail.com>
+;; Author: Nicholas M. Van Horn <nvanhorn@protonmail.com>
 ;; Keywords: color theme cyberpunk
-;; Package-Version: 20170724.924
-;; Version: 1.19
+;; Package-Version: 20180501.2010
+;; Version: 1.20
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -154,7 +154,7 @@
    ;; faces used by isearch
    `(isearch ((,class (:foreground ,cyberpunk-black :background ,cyberpunk-pink-1))))
    `(isearch-fail ((,class (:background ,cyberpunk-red-1))))
-   
+
    `(lazy-highlight ((,class (:foreground ,cyberpunk-black :background ,cyberpunk-yellow))))
    `(query-replace ((,class (:background ,cyberpunk-gray-5))))
    `(Highline-face ((,class (:background ,cyberpunk-green-1))))
@@ -181,7 +181,7 @@
    ;;; font lock
    `(font-lock-builtin-face ((,class (:foreground ,cyberpunk-blue-5))))
    `(font-lock-comment-face ((,class (:foreground ,cyberpunk-gray-2 :italic t))))
-   ;; `(font-lock-comment-delimiter-face ((,class (:foreground ,cyberpunk-green)))) 
+   ;; `(font-lock-comment-delimiter-face ((,class (:foreground ,cyberpunk-green))))
    `(font-lock-constant-face ((,class (:foreground ,cyberpunk-blue-6))))
    ;; `(font-lock-doc-face ((,class (:foreground ,cyberpunk-green+1))))
    `(font-lock-doc-face ((,class (:foreground ,cyberpunk-yellow-1))))
@@ -260,7 +260,7 @@
    `(company-scrollbar-bg ((,class (:background ,cyberpunk-gray-5))))
    `(company-preview ((,class (:foreground ,cyberpunk-gray :background ,cyberpunk-pink-1))))
    `(company-preview-common ((,class (:foreground ,cyberpunk-gray :background ,cyberpunk-pink-1))))
-   
+
    ;; diff
    `(diff-added ((,class (:foreground ,cyberpunk-green))))
    `(diff-changed ((,class (:foreground ,cyberpunk-yellow))))
@@ -531,7 +531,7 @@
    `(magit-reflog-cherry-pick  ((t (:foreground ,cyberpunk-green))))
    `(magit-reflog-remote       ((t (:foreground ,cyberpunk-cyan))))
    `(magit-reflog-other        ((t (:foreground ,cyberpunk-cyan))))
-   
+
    `(eval-sexp-fu-flash ((,class (:background ,cyberpunk-gray-8 :foreground ,cyberpunk-pink-2))))
 
    ;; message-mode
@@ -621,13 +621,13 @@
    `(org-level-8 ((,class (:foreground ,cyberpunk-blue-1))))
    `(org-link ((,class (:foreground ,cyberpunk-blue-6 :underline t))))
    `(org-tag ((,class (:bold t :weight bold))))
-   `(org-column ((,class (:background ,cyberpunk-yellow-3 :foreground ,cyberpunk-black))))
-   `(org-column-title ((,class (:background ,cyberpunk-bg-1 :underline t :weight bold))))
+   `(org-column ((,class (:background ,cyberpunk-gray-7 :foreground ,cyberpunk-black))))
+   `(org-column-title ((,class (:background ,cyberpunk-gray-7 :underline t :weight bold))))
    `(org-block ((,class (:foreground ,cyberpunk-fg :background ,cyberpunk-bg-05))))
-   `(org-block-begin-line 
+   `(org-block-begin-line
      ((,class (:foreground "#008ED1" :background ,cyberpunk-bg-1))))
    `(org-block-background ((,class (:background ,cyberpunk-bg-05))))
-   `(org-block-end-line 
+   `(org-block-end-line
      ((,class (:foreground "#008ED1" :background ,cyberpunk-bg-1))))
 
    ;; `(org-deadline-announce ((,class (:foreground ,cyberpunk-red-1))))

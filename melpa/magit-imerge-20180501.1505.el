@@ -4,7 +4,7 @@
 
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;; URL: https://github.com/magit/magit-imerge
-;; Package-Version: 20180329.1950
+;; Package-Version: 20180501.1505
 ;; Keywords: vc, tools
 ;; Version: 0.3.0
 ;; Package-Requires: ((emacs "24.4") (magit "2.10.0"))
@@ -37,7 +37,7 @@
 ;;   * git-imerge drop   => magit-imerge-drop
 ;;
 ;; All these commands are available under the popup
-;; `magit-imerge-popup', which by default is bound to "i" in the main
+;; `magit-imerge-popup', which by default is bound to "I" in the main
 ;; merge popup.
 ;;
 ;; Once an incremental merge has been started with one of the commands
