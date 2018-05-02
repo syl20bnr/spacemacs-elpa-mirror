@@ -4,8 +4,8 @@
 
 ;; Author: James Ferguson <(concat "wjcferguson" at-sign "gmail.com")>
 ;; URL: https://github.com/WJCFerguson/emacs-faff-theme
-;; Package-Version: 20180425.1424
-;; Version: 2.0
+;; Package-Version: 20180502.1203
+;; Version: 2.1
 ;; Keywords: color theme
 
 ;; This file is not part of GNU Emacs.
@@ -152,8 +152,8 @@
  '(org-agenda-structure ((t (:background "white" :foreground "Blue3" :box (:line-width 1 :color "grey75" :style pressed-button)))))
  '(org-hide ((((background light)) (:foreground "ivory2"))))
  '(outline-1 ((t (:weight bold))))
- '(outline-2 ((t (:foreground "red4"))))
- '(outline-3 ((t (:foreground "purple4"))))
+ '(outline-2 ((t (:foreground "red4" :weight bold))))
+ '(outline-3 ((t (:foreground "purple4" :weight bold))))
  '(outline-4 ((t (:inherit font-lock-variable-name-face))))
  '(powerline-active1 ((t (:inherit mode-line :background "gold4"))))
  '(powerline-active2 ((t (:inherit mode-line :background "gold3"))))

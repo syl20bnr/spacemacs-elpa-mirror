@@ -4,8 +4,8 @@
 
 ;; Author: James Ferguson <(concat "wjcferguson" at-sign "gmail.com")>
 ;; URL: https://github.com/WJCFerguson/emacs-faff-theme
-;; Package-Version: 2.0
-;; Version: 2.0
+;; Package-Version: 2.1
+;; Version: 2.1
 ;; Keywords: color theme
 
 ;; This file is not part of GNU Emacs.
@@ -130,6 +130,7 @@
  '(helm-ff-symlink ((t (:foreground "orange4"))))
  '(helm-grep-lineno ((t (:foreground "orange4"))))
  '(helm-source-header ((t (:background "ivory2" :foreground "black" :box (:line-width 1 :color "grey75" :style pressed-button) :weight normal :height 1.0 :family "Sans Serif"))))
+ '(Info-quoted ((t (:inherit fixed-pitch))))
  '(magit-branch ((t (:inherit magit-header :background "yellow" :box (:line-width 1 :color "grey75" :style released-button)))))
  '(magit-branch-current ((t (:inherit magit-branch-local :background "green1" :box 1))))
  '(magit-branch-local ((t (:background "yellow" :box (:line-width 1 :color "*")))))
@@ -151,8 +152,8 @@
  '(org-agenda-structure ((t (:background "white" :foreground "Blue3" :box (:line-width 1 :color "grey75" :style pressed-button)))))
  '(org-hide ((((background light)) (:foreground "ivory2"))))
  '(outline-1 ((t (:weight bold))))
- '(outline-2 ((t (:foreground "red4"))))
- '(outline-3 ((t (:foreground "purple4"))))
+ '(outline-2 ((t (:foreground "red4" :weight bold))))
+ '(outline-3 ((t (:foreground "purple4" :weight bold))))
  '(outline-4 ((t (:inherit font-lock-variable-name-face))))
  '(powerline-active1 ((t (:inherit mode-line :background "gold4"))))
  '(powerline-active2 ((t (:inherit mode-line :background "gold3"))))
@@ -162,6 +163,9 @@
  '(sh-heredoc ((t (:foreground "tan4"))))
  '(success ((t (:foreground "darkgreen" :weight bold))))
  '(tool-bar ((default (:foreground "black" :box (:line-width 1 :style released-button))) (((type x w32 mac) (class color)) (:background "grey92"))))
+ '(web-mode-doctype-face ((t (:foreground "Grey35"))))
+ '(web-mode-html-attr-name-face ((t (:foreground "gray10"))))
+ '(web-mode-html-tag-face ((t (:weight bold))))
  '(warning ((t (:foreground "DarkOrange3" :weight bold)))))
 
 ;;;###autoload
