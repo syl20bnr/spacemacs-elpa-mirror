@@ -4,7 +4,7 @@
 
 ;; Author: Yasushi SHOJI <yasushi.shoji@gmail.com>
 ;; URL: https://github.com/yashi/org-textile
-;; Package-Version: 20180110.516
+;; Package-Version: 20180502.247
 ;; Package-Requires: ((org "8.1"))
 ;; Keywords: org, textile
 
@@ -108,6 +108,14 @@
   :group 'org-export-textile
   :type 'boolean)
 
+(defsubst org-textile-trim (s &optional keep-lead)
+  "This function is, shamelessly, a copy of org-trim taken from
+Org version 9.0.  This function is to support Org v8.1, which has
+the same function without optional `keep-lead` argument."
+  (replace-regexp-in-string
+   (if keep-lead "\\`\\([ \t]*\n\\)+" "\\`[ \t\n\r]+") ""
+   (replace-regexp-in-string "[ \t\n\r]+\\'" "" s)))
+
 (defun org-textile-identity (blob contents info)
   "Transcode BLOB element or object back into Org syntax.
 CONTENTS is its contents, as a string or nil.  INFO is ignored."
@@ -182,7 +190,7 @@ contextual information."
        (format "%s %s :=%s"
                delim
                (org-export-data (org-element-property :tag item) info)
-               (concat (if (string-match-p "\n" (org-trim contents t)) "\n" " ")
+               (concat (if (string-match-p "\n" (org-textile-trim contents t)) "\n" " ")
                        contents)))
       (_
        (format "%s %s" delim contents)))))

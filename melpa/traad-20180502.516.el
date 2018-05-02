@@ -4,7 +4,7 @@
 ;;
 ;; Author: Austin Bingham <austin.bingham@gmail.com>
 ;; Version: 1.1.0
-;; Package-Version: 20180104.2351
+;; Package-Version: 20180502.516
 ;; URL: https://github.com/abingham/traad
 ;; Package-Requires: ((dash "2.13.0") (deferred "0.3.2") (popup "0.5.0") (request "0.2.0") (request-deferred "0.2.0") (virtualenvwrapper "20151123"))
 ;;
@@ -357,39 +357,6 @@ necessary. Return the history buffer."
    (concat "/history/redo_info/" (number-to-string i))))
 
 ;;;###autoload
-(defun traad-rename-current-file (new-name)
-  "Rename the current file/module."
-  (interactive
-   (list
-    (read-string "New file name: ")))
-  ;; TODO: Make this work!
-  (lexical-let ((new-name new-name)
-                (data (list (cons "name" new-name)
-                            (cons "path" (buffer-file-name))))
-                (old-buff (current-buffer))
-                (dirname (file-name-directory buffer-file-name))
-                (extension (file-name-extension buffer-file-name)))
-    (deferred:$
-      (traad--deferred-request
-       (buffer-file-name)
-       "/refactor/rename"
-       :type "POST"
-       :data data)
-
-      ;; TODO: This is a hack. We just assume that the renaming happens and
-      ;; switch to that buffer. The refactoring could fail, and we don't check
-      ;; for that. But it kinda works.
-      (deferred:nextc it
-        (lambda (_)
-          (switch-to-buffer
-           (find-file
-            (expand-file-name
-             (concat new-name "." extension)
-             dirname)))
-          (kill-buffer old-buff)
-          (traad--update-history-buffer))))))
-
-;;;###autoload
 (defun traad-rename (new-name)
   "Rename the object at the current location."
   (interactive
@@ -401,6 +368,40 @@ necessary. Return the history buffer."
    :data (list (cons "name" new-name)
                (cons "path" (buffer-file-name))
                (cons "offset" (traad--adjust-point (point))))))
+
+;;;###autoload
+(defun traad-move-global (dest)
+  "Move the object at the current location to dest."
+  (interactive
+   (list
+    (read-file-name "Destination: " nil nil "confirm")))
+  (traad--fetch-perform-refresh
+   (buffer-file-name)
+   "/refactor/move_global"
+   :data (list (cons "dest" dest)
+               (cons "path" (buffer-file-name))
+               (cons "offset" (traad--adjust-point (point))))))
+
+;;;###autoload
+(defun traad-move-module (dest)
+  "Move the object at the current location to dest."
+  (interactive
+   (list
+    (read-directory-name "Destination: " nil nil "confirm")))
+  (deferred:$
+    (traad--fetch-perform
+     (buffer-file-name)
+     "/refactor/move_module"
+     :data (list (cons "dest" dest)
+                 (cons "path" (buffer-file-name))))
+
+    ;; Close current buffer, opening new one on moved file.
+    (deferred:nextc it
+      (lambda (_)
+        (let* ((base_name (file-name-nondirectory (buffer-file-name)))
+               (new_name (expand-file-name (concat dest "/" base_name))))
+          (kill-buffer (current-buffer))
+          (switch-to-buffer (find-file new_name)))))))
 
 ;;;###autoload
 (defun traad-normalize-arguments ()
@@ -985,11 +986,35 @@ saved in the process of this function.
         (and (yes-or-no-p "Save modified buffers? ")
              (funcall save-all)))))))
 
+(defun* traad--fetch-perform (for-path location &key (data '()))
+  "Perform common refactoring path: fetch changes from
+`location' (passing `data' as a payload) and perform them."
+  ;; TODO: check for non-success and lack of 'changes key
+  (when (traad--all-changes-saved)
+    (let ((response nil) (pth for-path))
+      (deferred:$
+
+        ;; Get the changes
+        (traad--deferred-request
+         pth
+         location
+         :type "POST"
+         :data data)
+
+        ;; Perform the changes
+        (deferred:nextc it
+          (lambda (rsp)
+            (let ((response (request-response-data rsp)))
+              (traad--deferred-request
+               pth
+               "/refactor/perform"
+               :type "POST"
+               :data response))))))))
+
 (defun* traad--fetch-perform-refresh (for-path location &key (data '()))
   "Perform common refactoring path: fetch changes from
 `location' (passing `data' as a payload), perform them, and
 refresh affected buffers."
-  ;; TODO: check for non-success and lack of 'changes key
   (when (traad--all-changes-saved)
     (let ((response nil) (pth for-path))
       (deferred:$
@@ -1011,7 +1036,7 @@ refresh affected buffers."
              :type "POST"
              :data response)))
 
-        ;; Force refresh of buffers in the listed changes
+        ;; Refresh buffers in the response
         (deferred:nextc it
           (lambda (rsp)
             (let ((changeset (assoc-default 'changes response)))

@@ -4,7 +4,7 @@
 ;;
 ;; Author: Muir Manders <muir+emacs@mnd.rs>
 ;; Version: 0.1.0
-;; Package-Version: 20180502.158
+;; Package-Version: 20180502.552
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: theme dark nova pastel faces
 ;; URL: https://github.com/muirmanders/emacs-nova-theme
@@ -118,9 +118,9 @@ FACES is a list of faces of the form (name :attr value) such as:
 (nova-set-faces
   ;; basic faces (faces.el)
   (default :foreground fg :background bg)
+  (cursor :background user-current-state)
   (region :background gray3 :distant-foreground nil)
   (highlight :background user-current-state :foreground bg)
-  (cursor :background user-current-state)
   (fringe :foreground gray3)
   (success :foreground green)
   (warning :foreground yellow)
@@ -132,13 +132,16 @@ FACES is a list of faces of the form (name :attr value) such as:
   (show-paren-match :foreground (nova-darken green 0.4) :background green)
   (show-paren-mismatch :background (nova-darken red 0.4) :foreground red)
   (header-line :background bg)
-  (mode-line :box nil :background (nova-blend blue bg 0.6) :foreground fg)
-  (mode-line-inactive :box nil :background (nova-blend blue bg 0.3) :foreground (nova-darken fg 0.2))
+  (mode-line :box nil :background black :foreground cyan)
+  (mode-line-inactive :box nil :background (nova-darken black -0.2) :foreground (nova-darken cyan 0.2))
   (mode-line-buffer-id :weight 'unspecified :foreground white)
   (mode-line-buffer-id-inactive :foreground (nova-darken fg 0.2)) ; doesn't seem to work
   (mode-line-highlight :inherit 'highlight)
   (link :foreground cyan :underline t)
   (vertical-border :foreground trivial)
+  (window-divider :inherit 'vertical-border)
+  (window-divider-first-pixel :inherit 'vertical-border)
+  (window-divider-last-pixel :inherit 'vertical-border)
   (shadow :foreground trivial)
 
   ;; font lock faces
@@ -162,7 +165,7 @@ FACES is a list of faces of the form (name :attr value) such as:
   (powerline-inactive2 :background (nova-darken gray0 -0.3) :foreground (nova-darken fg 0.2))
 
   ;; search faces
-  (match :background emphasis :foreground gray0)
+  (match :background emphasis :foreground gray0 :distant-foreground gray0)
   (isearch :inherit 'match)
   (lazy-highlight :background (nova-darken emphasis 0.3) :foreground bg)
 
@@ -190,6 +193,13 @@ FACES is a list of faces of the form (name :attr value) such as:
   (hydra-face-pink :foreground pink)
   (hydra-face-teal :foreground cyan)
 
+  ;; ido faces
+  (ido-first-match :foreground emphasis)
+  (ido-indicator :foreground red :background bg)
+  (ido-only-match :foreground green)
+  (ido-subdir :foreground blue)
+  (ido-virtual :foreground trivial)
+
   ;; magit faces
   (magit-tag :foreground yellow)
   (magit-filename :foreground fg)
@@ -203,6 +213,7 @@ FACES is a list of faces of the form (name :attr value) such as:
   (magit-section-highlight :background gray2)
   (magit-section-heading :foreground blue)
   (magit-section-heading-selection :foreground cyan :background gray2)
+  (magit-section-secondary-heading :foreground purple :weight 'bold)
   (magit-diff-file-heading-selection :foreground cyan :background gray2)
   (magit-diff-hunk-heading :foreground (nova-darken blue 0.1) :background gray2)
   (magit-diff-hunk-heading-highlight :foreground blue :background gray2)
@@ -211,13 +222,45 @@ FACES is a list of faces of the form (name :attr value) such as:
   (magit-diff-added-highlight :foreground added :background (nova-blend added bg 0.2))
   (magit-diff-removed :foreground removed :background (nova-blend removed bg 0.1))
   (magit-diff-removed-highlight :foreground removed :background (nova-blend removed bg 0.2))
+  (magit-diff-base :foreground yellow :background (nova-blend yellow bg 0.1))
+  (magit-diff-base-highlight :foreground yellow :background (nova-blend yellow bg 0.2))
   (magit-diff-context :foreground trivial :background bg)
   (magit-diff-context-highlight :foreground trivial :background bg)
   (magit-diffstat-added :foreground added)
   (magit-diffstat-removed :foreground removed)
-  (magit-log-author :foreground red)
+  (magit-log-author :foreground pink)
   (magit-log-date :foreground blue)
   (magit-log-graph :foreground trivial)
+  (magit-bisect-bad :foreground red)
+  (magit-bisect-good :foreground green)
+  (magit-bisect-skip :foreground orange)
+  (magit-blame-heading  :background black)
+  (magit-blame-name :foreground pink :background black)
+  (magit-blame-date :foreground blue :background black)
+  (magit-blame-summary :foreground cyan :background black)
+  (magit-blame-hash :foreground trivial :background black)
+  (magit-cherry-equivalent :foreground purple)
+  (magit-cherry-unmatched :foreground cyan)
+  (magit-reflog-amend :foreground pink)
+  (magit-reflog-checkout :foreground blue)
+  (magit-reflog-cherry-pick :foreground green)
+  (magit-reflog-commit :foreground green)
+  (magit-reflog-merge :foreground green)
+  (magit-reflog-other :foreground cyan)
+  (magit-reflog-rebase :foreground pink)
+  (magit-reflog-remote :foreground cyan)
+  (magit-reflog-reset :inherit 'error)
+  (magit-refname :foreground trivial)
+  (magit-sequence-drop :foreground red)
+  (magit-sequence-head :foreground (nova-lighten blue 0.2))
+  (magit-sequence-part :foreground yellow)
+  (magit-sequence-stop :foreground (nova-darken green 0.2))
+  (magit-signature-bad :inherit 'error)
+  (magit-signature-error :inherit 'error)
+  (magit-signature-expired :inherit 'warning)
+  (magit-signature-good :inherit 'success)
+  (magit-signature-revoked :foreground pink)
+  (magit-signature-untrusted :foreground orange)
 
   ;; vc faces
   (diff-context :inherit 'magit-diff-context)
@@ -227,6 +270,23 @@ FACES is a list of faces of the form (name :attr value) such as:
   (diff-header :inherit 'magit-section)
   (diff-function :foreground identifier)
   (diff-hunk-header :foreground purple)
+
+  ;; rainbow-delimiters faces
+  (rainbow-delimiters-depth-1-face :foreground blue)
+  (rainbow-delimiters-depth-2-face :foreground pink)
+  (rainbow-delimiters-depth-3-face :foreground green)
+  (rainbow-delimiters-depth-4-face :foreground orange)
+  (rainbow-delimiters-depth-5-face :foreground purple)
+  (rainbow-delimiters-depth-6-face :foreground yellow)
+  (rainbow-delimiters-depth-7-face :foreground cyan)
+  (rainbow-delimiters-unmatched-face :foreground red :background (nova-blend red bg 0.2))
+
+  ;; wgrep faces
+  (wgrep-face :background gray2 :foreground 'unspecified)
+  (wgrep-delete-face :foreground red :background (nova-blend red bg 0.2))
+  (wgrep-done-face :foreground blue)
+  (wgrep-file-face :foreground 'unspecified :background gray2)
+  (wgrep-reject-face :foreground red :weight 'bold)
 
   ;; outline faces
   (outline-1 :foreground blue)
@@ -278,8 +338,37 @@ FACES is a list of faces of the form (name :attr value) such as:
   (enh-ruby-regexp-delimiter-face :foreground special)
   (enh-ruby-regexp-face :foreground special)
 
+  ;; widget faces
+  (widget-field :background gray2)
+  (widget-single-line-field :background gray2)
+  (widget-documentation :foreground cyan)
+
+  ;; info faces
+  (info-menu-star :foreground red)
+
+  ;; customize faces
+  (custom-variable-button :foreground green :underline t)
+  (custom-variable-tag :foreground pink)
+  (custom-group-tag :foreground purple)
+  (custom-group-tag-1 :foreground blue)
+  (custom-state :foreground yellow :background (nova-blend yellow bg 0.2))
+  (custom-saved :foreground green :background (nova-blend green bg 0.2))
+  (custom-button :foreground bg :background gray5 :box '(:line-width 2 :style released-button))
+  (custom-button-mouse :inherit 'custom-button :background gray6)
+  (custom-button-pressed :inherit 'custom-button :box '(:line-width 2 :style pressed-button))
+  (custom-button-pressed-unraised :foreground purple)
+  (custom-comment :foreground fg :background gray3)
+  (custom-comment-tag :foreground trivial)
+  (custom-modified :foreground modified :background (nova-blend modified bg 0.2))
+  (custom-group-subtitle :foreground orange)
+  (custom-variable-obsolete :foreground trivial)
+  (custom-set :foreground green :background bg)
+  (custom-themed :foreground blue :background bg)
+  (custom-invalid :foreground red :background (nova-blend red bg 0.2))
+  (custom-changed :foreground orange :background bg)
+
   ;; dired faces
-  (dired-directory :foreground purple)
+  (dired-directory :foreground blue)
   (dired-ignored :foreground trivial)
   (dired-flagged :foreground red :background (nova-blend red bg 0.2))
   (dired-header :foreground pink)
@@ -293,7 +382,7 @@ FACES is a list of faces of the form (name :attr value) such as:
   ;;
   ;; file faces
   (diredp-dir-heading :foreground pink)
-  (diredp-dir-name :foreground purple)
+  (diredp-dir-name :foreground blue)
   (diredp-file-name :inherit 'default)
   (diredp-file-suffix :inherit 'default)
   (diredp-compressed-file-name :foreground yellow)
@@ -307,7 +396,7 @@ FACES is a list of faces of the form (name :attr value) such as:
   (diredp-date-time :foreground cyan)
 
   ;; priv faces
-  (diredp-dir-priv :foreground purple)
+  (diredp-dir-priv :foreground blue)
   (diredp-read-priv :foreground green)
   (diredp-write-priv :foreground orange)
   (diredp-exec-priv :foreground red)
@@ -324,6 +413,37 @@ FACES is a list of faces of the form (name :attr value) such as:
   (diredp-flag-mark-line :background gray2)
   (diredp-mode-line-marked :foreground blue)
   (diredp-mode-line-flagged :foreground red)
+
+  ;; eshell faces
+  (eshell-prompt :foreground cyan)
+  (eshell-ls-archive :inherit 'diredp-compressed-file-name)
+  (eshell-ls-backup :foreground trivial)
+  (eshell-ls-clutter :foreground trivial)
+  (eshell-ls-directory :inherit 'diredp-dir-name)
+  (eshell-ls-executable :foreground red)
+  (eshell-ls-missing :foreground red)
+  (eshell-ls-product :foreground orange)
+  (eshell-ls-readonly :foreground yellow)
+  (eshell-ls-special :foreground pink)
+  (eshell-ls-symlink :foreground cyan)
+  (eshell-ls-unreadable :foreground orange)
+
+  ;; term faces
+  (term :foreground fg)
+  (term-bold :weight 'bold)
+  (term-color-black :background gray0   :foreground gray0)
+  (term-color-red :background red :foreground red)
+  (term-color-green :background green :foreground green)
+  (term-color-yellow :background yellow :foreground yellow)
+  (term-color-blue :background blue :foreground blue)
+  (term-color-magenta :background pink :foreground pink)
+  (term-color-cyan :background cyan :foreground cyan)
+  (term-color-white :background white :foreground white)
+
+  ;; sh-mode faces
+  (sh-heredoc :inherit 'font-lock-string-face :weight 'unspecified)
+  (sh-quoted-exec :foreground yellow)
+  (sh-escaped-newline :foreground special)
 
   ;; cperl-mode faces
   (cperl-hash-face :foreground red :background 'unspecified)
@@ -342,6 +462,7 @@ FACES is a list of faces of the form (name :attr value) such as:
 (nova-with-colors
   (custom-theme-set-variables
    'nova
+   `(frame-background-mode dark)
    `(vc-annotate-background ,bg)
    `(vc-annotate-very-old-color ,(nova-darken purple 0.2))
    `(vc-annotate-color-map

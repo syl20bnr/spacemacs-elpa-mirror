@@ -8,7 +8,7 @@
 ;;              Vladimir Panteleev <vladimir@thecybershadow.net>
 ;; Created:  March 2007
 ;; Version:  201804041719
-;; Package-Version: 20180409.1043
+;; Package-Version: 20180502.710
 ;; Keywords:  D programming language emacs cc-mode
 ;; Package-Requires: ((emacs "24.3"))
 
@@ -37,6 +37,9 @@
 ;; Put these lines in your init file.
 ;;   (autoload 'd-mode "d-mode" "Major mode for editing D code." t)
 ;;   (add-to-list 'auto-mode-alist '("\\.d[i]?\\'" . d-mode))
+;;
+;; Alternatively you can load d-mode.el explicitly:
+;;   (load "d-mode.el")
 ;;
 ;; cc-mode version 5.30 or greater is required.
 ;; You can check your cc-mode with the command M-x c-version.
@@ -710,7 +713,8 @@ The expression is added to `compilation-error-regexp-alist' and
   (advice-add 'c-add-stmt-syntax :around #'d-around--c-add-stmt-syntax))
 
 ;;----------------------------------------------------------------------------
-;;;###autoload (add-to-list 'auto-mode-alist '("\\.d[i]?\\'" . d-mode))
+;;;###autoload
+(add-to-list 'auto-mode-alist '("\\.d[i]?\\'" . d-mode))
 
 ;; Custom variables
 ;;;###autoload
