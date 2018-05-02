@@ -2,9 +2,35 @@ This library provides Org mode's plain lists in non-Org buffers, as
 a minor mode.
 
 More specifically, it supports syntax for numbered, unnumbered,
-description items, checkboxes, and counter cookies.  See (info
-"(org) Plain Lists") and (info "(org) Checkboxes") for details
-about the syntax of such constructs.
+description items, checkboxes, and counter cookies.  Examples of
+such constructs include:
+
+    - item 1
+    - item 2
+      - [ ] checbox sub-item
+
+or
+
+    1. item 1
+    2. item 2
+       1. sub-item 1
+       8. [@8] sub-item 8
+
+and
+
+    - term :: definition
+    - term 2 :: definition 2
+
+To start a list, type "- <SPC>" or "1 . <SPC>", then write the
+contents of the item.  To create a new item, use M-<RET>.  If it
+should be a child of the previous item, use <TAB> or M-<RIGHT>.
+For example, "- <SPC> i t e m M-<RET> <TAB> c h i l d" produces:
+
+    - item
+      - child
+
+See (info "(org) Plain Lists") and (info "(org) Checkboxes") for
+more details about the syntax of such constructs.
 
 The following features are supported:
 
@@ -15,11 +41,12 @@ The following features are supported:
 - Toggling checkboxes (C-c C-c)
 - Cycling bullets (C-c -)
 - Sorting items (C-c ^)
-- Filling items (M-q)
-- Auto filling (when Auto Fill mode is enabled)
+
+The minor mode also supports filling and auto filling, when Auto
+Fill mode is enabled.
 
 Note that the bindings above are only available when point is in an
-item (for M-<RET>, M-<UP>, M-<DOWN> and M-q) or exactly at an item.
+item (for M-<RET>, M-<UP>, M-<DOWN>) or exactly at an item.
 
 The library also implements radio lists:
 

@@ -6,7 +6,7 @@
 ;; Maintainer: Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.4"))
-;; Version: 1.1
+;; Version: 1.2
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -27,9 +27,35 @@
 ;; a minor mode.
 
 ;; More specifically, it supports syntax for numbered, unnumbered,
-;; description items, checkboxes, and counter cookies.  See (info
-;; "(org) Plain Lists") and (info "(org) Checkboxes") for details
-;; about the syntax of such constructs.
+;; description items, checkboxes, and counter cookies.  Examples of
+;; such constructs include:
+
+;;     - item 1
+;;     - item 2
+;;       - [ ] checbox sub-item
+
+;; or
+
+;;     1. item 1
+;;     2. item 2
+;;        1. sub-item 1
+;;        8. [@8] sub-item 8
+
+;; and
+
+;;     - term :: definition
+;;     - term 2 :: definition 2
+
+;; To start a list, type "- <SPC>" or "1 . <SPC>", then write the
+;; contents of the item.  To create a new item, use M-<RET>.  If it
+;; should be a child of the previous item, use <TAB> or M-<RIGHT>.
+;; For example, "- <SPC> i t e m M-<RET> <TAB> c h i l d" produces:
+
+;;     - item
+;;       - child
+
+;; See (info "(org) Plain Lists") and (info "(org) Checkboxes") for
+;; more details about the syntax of such constructs.
 
 ;; The following features are supported:
 
@@ -40,11 +66,12 @@
 ;; - Toggling checkboxes (C-c C-c)
 ;; - Cycling bullets (C-c -)
 ;; - Sorting items (C-c ^)
-;; - Filling items (M-q)
-;; - Auto filling (when Auto Fill mode is enabled)
+
+;; The minor mode also supports filling and auto filling, when Auto
+;; Fill mode is enabled.
 
 ;; Note that the bindings above are only available when point is in an
-;; item (for M-<RET>, M-<UP>, M-<DOWN> and M-q) or exactly at an item.
+;; item (for M-<RET>, M-<UP>, M-<DOWN>) or exactly at an item.
 
 ;; The library also implements radio lists:
 
@@ -187,23 +214,22 @@ group 4: description tag")
 (defvar-local orgalist--cycling-state nil
   "Current cycling state when cycling indentation.")
 
-(defvar-local orgalist--last-advised-function nil
-  "Function currently advised for Auto fill mode.")
-
 
 ;;; Internal functions
 
-(defun orgalist--call-in-item (fun pos)
-  "Call function FUN with buffer narrowed to item starting at POS."
+(defun orgalist--call-in-item (fun pos &rest arguments)
+  "Call function FUN with buffer narrowed to item starting at POS.
+Call function with ARGUMENTS.  Return the value FUN returns."
   (let* ((struct (save-excursion (goto-char pos) (orgalist--struct)))
          (next (or (org-list-has-child-p pos struct)
                    (org-list-get-item-end pos struct)))
          (fill-prefix
-          (make-string (length (org-list-get-bullet pos struct))
+          (make-string (+ (length (org-list-get-bullet pos struct))
+                          (org-list-get-ind pos struct))
                        ?\s)))
     (save-restriction
       (narrow-to-region pos next)
-      (funcall fun))))
+      (apply fun arguments))))
 
 (defun orgalist--boundaries ()
   "Return buffer boundaries, as a cons cell, where lists are acceptable.
@@ -212,13 +238,6 @@ Return nil if Orgalist mode is not active."
        (let ((f (cdr (assq major-mode orgalist-context-function))))
          (or (and (functionp f) (funcall f))
              (cons (point-min) (point-max))))))
-
-(defun orgalist--indentation ()
-  "Return current line's indentation."
-  (save-excursion
-    (beginning-of-line)
-    (skip-chars-forward "[ \t]")
-    (current-column)))
 
 (defun orgalist--at-item-p ()
   "Non-nil if point is at an item."
@@ -238,7 +257,7 @@ Return nil if Orgalist mode is not active."
               ;; Indentation isn't meaningful when point starts at an
               ;; empty line .
               (ind-ref (if (looking-at-p "^[ \t]*$") 10000
-                         (orgalist--indentation))))
+                         (current-indentation))))
           (if (looking-at orgalist--item-re) (point)
             ;; Detect if cursor in the middle of blank lines after a list.
             (let ((end-bounds nil))
@@ -250,7 +269,7 @@ Return nil if Orgalist mode is not active."
             ;; Look for an item, less indented that reference line.
             (catch 'exit
               (while t
-                (let ((ind (orgalist--indentation)))
+                (let ((ind (current-indentation)))
                   (cond
                    ;; This is exactly what we want.
                    ((and (looking-at orgalist--item-re) (< ind ind-ref))
@@ -306,7 +325,7 @@ Assume point is at an item."
     (beginning-of-line)
     (pcase-let* ((`(,lim-up . ,lim-down) (orgalist--boundaries))
                  (text-min-ind 10000)
-                 (beg-cell (cons (point) (orgalist--indentation)))
+                 (beg-cell (cons (point) (current-indentation)))
                  (itm-lst nil)
                  (itm-lst-2 nil)
                  (end-lst nil)
@@ -336,7 +355,7 @@ Assume point is at an item."
       (save-excursion
         (catch 'exit
           (while t
-            (let ((ind (orgalist--indentation)))
+            (let ((ind (current-indentation)))
               (cond
                ((<= (point) lim-up)
                 ;; At upward limit: if we ended at an item, store it,
@@ -388,7 +407,7 @@ Assume point is at an item."
       ;; position of items in END-LST-2.
       (catch 'exit
         (while t
-          (let ((ind (orgalist--indentation)))
+          (let ((ind (current-indentation)))
             (cond
              ((>= (point) lim-down)
               ;; At downward limit: this is de facto the end of the
@@ -475,39 +494,73 @@ move is not possible."
     (move-to-column col)))
 
 (defun orgalist--auto-fill ()
-  "Auto fill function."
+  "Auto fill function.
+Return nil outside of a list or in a blank line.  This function is
+meant to be used as a piece of advice on `auto-fill-function'."
   (unless (org-match-line "^[ \t]*$")
     (let ((item? (orgalist--in-item-p)))
       (when item?
-        (orgalist--call-in-item normal-auto-fill-function item?)))))
+        (orgalist--call-in-item normal-auto-fill-function item?)
+        t))))
 
-(defun orgalist--set-auto-fill ()
-  "Add advice to current Auto fill function.
-This function is meant to be used as a post command hook so it
-can periodically check changes to variable ‘auto-fill-function’."
-  (when (and auto-fill-function
-             (not (advice-function-member-p #'orgalist--auto-fill
-                                            auto-fill-function)))
-    (when orgalist--last-advised-function
-      (remove-function orgalist--last-advised-function #'orgalist--auto-fill))
-    (setq orgalist--last-advised-function auto-fill-function)
-    (add-function :before-until
-                  (local 'auto-fill-function)
-                  #'orgalist--auto-fill)))
+(defun orgalist--fill-item (justify)
+  "Fill item as a paragraph.
+
+If JUSTIFY is non-nil, justify as well.
+
+Return nil outside of a list.  This function is meant to be used
+as a piece of advice on `fill-paragraph-function'."
+  (let ((item? (orgalist--in-item-p)))
+    (when item?
+      (orgalist--call-in-item #'fill-paragraph item? justify)
+      t)))
+
+(defun orgalist--cycle-indentation ()
+  "Cycle levels of indentation of an empty item.
+
+The first run indents the item, if applicable.  Subsequent runs
+outdent it at meaningful levels in the list.
+
+This function is meant to be used as a piece of advice on
+`indent-line-function'."
+  (when (orgalist--at-item-p)
+    (let ((struct (orgalist--struct)))
+      (if (>= (progn (org-match-line orgalist--item-re) (match-end 0))
+              (save-excursion
+                (goto-char (org-list-get-item-end
+                            (line-beginning-position) struct))
+                (skip-chars-backward " \r\t\n")
+                (point)))
+          ;; If the item is not empty, do not indent.
+          'noindent
+        (let ((ind (org-list-get-ind (line-beginning-position) struct))
+              (bullet (org-trim (buffer-substring (line-beginning-position)
+                                                  (line-end-position)))))
+          (setq this-command 'orgalist--cycle-indentation)
+          ;; When in the middle of the cycle, try to outdent first.  If
+          ;; it fails, and point is still at initial position, indent.
+          ;; Else, re-create it at its original position.
+          (if (eq last-command 'orgalist--cycle-indentation)
+              (cond
+               ((ignore-errors (org-list-indent-item-generic -1 t struct)))
+               ((and (= ind (car orgalist--cycling-state))
+                     (ignore-errors (org-list-indent-item-generic 1 t struct))))
+               (t (delete-region (line-beginning-position) (line-end-position))
+                  (indent-to-column (car orgalist--cycling-state))
+                  (insert (cdr orgalist--cycling-state) " ")
+                  ;; Break cycle.
+                  (setq this-command 'identity)))
+            ;; If a cycle is starting, remember indentation and bullet,
+            ;; then try to indent.  If it fails, try to outdent.
+            (setq orgalist--cycling-state (cons ind bullet))
+            (cond
+             ((ignore-errors (org-list-indent-item-generic 1 t struct)))
+             ((ignore-errors (org-list-indent-item-generic -1 t struct)))
+             (t 'noindent))))))))
 
 (defun orgalist--while-at-item (cmd)
   "Return CMD when point is at a list item."
   (when (orgalist--at-item-p) cmd))
-
-(defun orgalist--while-at-empty-item (cmd)
-  "Return CMD when point is at a list item."
-  (when (and (orgalist--at-item-p)
-             (save-excursion
-               (beginning-of-line)
-               (re-search-forward orgalist--item-re)
-               (skip-chars-forward " \t")
-               (eolp)))
-    cmd))
 
 (defun orgalist--while-in-item (cmd)
   "Return CMD when point is in a list item."
@@ -515,9 +568,6 @@ can periodically check changes to variable ‘auto-fill-function’."
 
 
 ;;; Bindings and menu
-
-(defconst orgalist--maybe-fill
-  '(menu-item "" orgalist-fill-item :filter orgalist--while-in-item))
 
 (defconst orgalist--maybe-previous
   '(menu-item "" orgalist-previous-item :filter orgalist--while-in-item))
@@ -549,10 +599,6 @@ can periodically check changes to variable ‘auto-fill-function’."
 (defconst orgalist--maybe-cycle-bullet
   '(menu-item "" orgalist-cycle-bullet :filter orgalist--while-at-item))
 
-(defconst orgalist--maybe-cycle-indentation
-  '(menu-item "" orgalist-cycle-indentation
-              :filter orgalist--while-at-empty-item))
-
 (defconst orgalist--maybe-check
   '(menu-item "" orgalist-check-item :filter orgalist--while-at-item))
 
@@ -561,9 +607,6 @@ can periodically check changes to variable ‘auto-fill-function’."
 
 (defconst orgalist-mode-map
   (let ((map (make-sparse-keymap)))
-    ;; FIXME: Why don't we set fill-(forward-)paragraph-function instead of
-    ;; rebinding M-q?
-    (define-key map (kbd "M-q") orgalist--maybe-fill)
     (define-key map (kbd "M-<up>") orgalist--maybe-previous)
     (define-key map (kbd "M-<down>") orgalist--maybe-next)
     (define-key map (kbd "M-RET") orgalist--maybe-insert)
@@ -576,10 +619,6 @@ can periodically check changes to variable ‘auto-fill-function’."
     (define-key map (kbd "C-c -") orgalist--maybe-cycle-bullet)
     (define-key map (kbd "C-c C-c") orgalist--maybe-check)
     (define-key map (kbd "C-c ^") orgalist--maybe-sort)
-    ;; FIXME: This interacts poorly with other uses of TAB such as
-    ;; doing completion via (setq tab-always-indent 'complete).
-    ;; Maybe we should set indent-line-function instead.
-    (define-key map (kbd "TAB") orgalist--maybe-cycle-indentation)
     map))
 
 (easy-menu-define orgalist--menu
@@ -590,7 +629,7 @@ can periodically check changes to variable ‘auto-fill-function’."
     ["Insert item" orgalist-insert-item :active (orgalist--in-item-p)]
     "----"
     ["Check item" orgalist-check-item :active (orgalist--at-item-p)]
-    ["Cycle item" orgalist-cycle-bullet :active (orgalist--at-item-p)]
+    ["Cycle bullet" orgalist-cycle-bullet :active (orgalist--at-item-p)]
     "----"
     ["Previous item" orgalist-previous-item :active (orgalist--in-item-p)]
     ["Next item" orgalist-next-item :active (orgalist--in-item-p)]
@@ -598,9 +637,9 @@ can periodically check changes to variable ‘auto-fill-function’."
     ["Move item down" orgalist-move-item-gdown :active (orgalist--at-item-p)]
     "---"
     ["Indent item" orgalist-indent-item :active (orgalist--at-item-p)]
-    ["Indent item tree" orgalist-indent-item-tree :active (orgalist--at-item-p)]
+    ["Indent tree" orgalist-indent-item-tree :active (orgalist--at-item-p)]
     ["Outdent item" orgalist-outdent-item :active (orgalist--at-item-p)]
-    ["Outdent item tree" orgalist-outdent-item-tree :active (orgalist--at-item-p)]
+    ["Outdent tree" orgalist-outdent-item-tree :active (orgalist--at-item-p)]
     "---"
     ["Sort items" orgalist-sort-items :active (orgalist--at-item-p)]))
 
@@ -616,20 +655,18 @@ major modes.
 
 key             binding
 ---             -------
-M-q             `orgalist-fill-item'
-M-RET           `orgalist-insert-item'
-M-<up>          `orgalist-previous-item'
-M-<down>        `orgalist-next-item'
-M-S-<up>        `orgalist-move-item-up'
-M-S-<down>      `orgalist-move-item-down'
-M-<left>        `orgalist-outdent-item'
-M-<right>       `orgalist-indent-item'
-M-S-<left>      `orgalist-outdent-item-tree'
-M-S-<right>     `orgalist-indent-item-tree'
+M-<RET>         `orgalist-insert-item'
+M-<UP>          `orgalist-previous-item'
+M-<DOWN>        `orgalist-next-item'
+M-S-<UP>        `orgalist-move-item-up'
+M-S-<DOWN>      `orgalist-move-item-down'
+M-<LEFT>        `orgalist-outdent-item'
+M-<RIGHT>       `orgalist-indent-item'
+M-S-<LEFT>      `orgalist-outdent-item-tree'
+M-S-<RIGHT>     `orgalist-indent-item-tree'
 C-c -           `orgalist-cycle-bullet'
 C-c ^           `orgalist-sort-items'
-C-c C-c         `orgalist-check-item'
-TAB             `orgalist-cycle-indentation'"
+C-c C-c         `orgalist-check-item'"
   :lighter " olst"
   (cond
    (orgalist-mode
@@ -639,21 +676,22 @@ TAB             `orgalist-cycle-indentation'"
     (setq-local org-list-automatic-rules nil)
     (setq-local org-list-demote-modify-bullet nil)
     (setq-local org-list-two-spaces-after-bullet-regexp nil)
-    (add-hook 'post-command-hook #'orgalist--set-auto-fill nil t)
-    (orgalist--set-auto-fill))
+    (add-function :before-until (local 'auto-fill-function)
+                  #'orgalist--auto-fill)
+    (add-function :before-until
+                  (local 'fill-paragraph-function)
+                  #'orgalist--fill-item)
+    (add-function :before-until
+                  (local 'indent-line-function)
+                  #'orgalist--cycle-indentation))
    (t
-    (remove-hook 'post-command-hook #'orgalist--set-auto-fill t)
-    (remove-function orgalist--last-advised-function #'orgalist--auto-fill))))
+    (remove-function (local 'auto-fill-function) #'orgalist--auto-fill)
+    (remove-function (local 'fill-paragraph-function) #'orgalist--fill-item)
+    (remove-function (local 'indent-line-function)
+                     #'orgalist--cycle-indentation))))
 
 
 ;;; Public functions
-
-(defun orgalist-fill-item ()
-  "Fill item as a paragraph."
-  (interactive)
-  (let ((item (orgalist--in-item-p)))
-    (unless item (user-error "Not in a list"))
-    (orgalist--call-in-item #'fill-paragraph item)))
 
 (defun orgalist-previous-item ()
   "Move to the beginning of the previous item.
@@ -714,53 +752,6 @@ the item, so this really moves item trees."
   (interactive)
   (unless (orgalist--at-item-p) (user-error "Not in a list"))
   (orgalist--move-item t))
-
-(defun orgalist-cycle-indentation ()
-  "Cycle levels of indentation of an empty item.
-The first run indents the item, if applicable.  Subsequent runs
-outdent it at meaningful levels in the list.  When done, item is
-put back at its original position with its original bullet."
-  (interactive)
-  (unless (orgalist--at-item-p) (user-error "Not in a list"))
-  (let* ((struct (orgalist--struct))
-         (ind (org-list-get-ind (line-beginning-position) struct))
-         (bullet (org-trim (buffer-substring (line-beginning-position)
-                                             (line-end-position)))))
-    ;; Accept empty items or if cycle has already started.
-    (if (and (not (eq last-command 'orgalist-cycle-indentation))
-             (save-excursion
-               (beginning-of-line)
-               (looking-at orgalist--item-re))
-             (< (match-end 0)
-                (save-excursion
-                  (goto-char (org-list-get-item-end
-                              (line-beginning-position) struct))
-                  (skip-chars-backward " \r\t\n")
-                  (point))))
-        (progn
-          (setq this-command 'identity)
-          (error "Cannot move item"))
-      (setq this-command 'orgalist-cycle-indentation)
-      ;; When in the middle of the cycle, try to outdent first.  If
-      ;; it fails, and point is still at initial position, indent.
-      ;; Else, re-create it at its original position.
-      (if (eq last-command 'orgalist-cycle-indentation)
-          (cond
-           ((ignore-errors (org-list-indent-item-generic -1 t struct)))
-           ((and (= ind (car orgalist--cycling-state))
-                 (ignore-errors (org-list-indent-item-generic 1 t struct))))
-           (t (delete-region (line-beginning-position) (line-end-position))
-              (indent-to-column (car orgalist--cycling-state))
-              (insert (cdr orgalist--cycling-state) " ")
-              ;; Break cycle
-              (setq this-command 'identity)))
-        ;; If a cycle is starting, remember indentation and bullet,
-        ;; then try to indent.  If it fails, try to outdent.
-        (setq orgalist--cycling-state (cons ind bullet))
-        (cond
-         ((ignore-errors (org-list-indent-item-generic 1 t struct)))
-         ((ignore-errors (org-list-indent-item-generic -1 t struct)))
-         (t (user-error "Cannot move item")))))))
 
 (defun orgalist-cycle-bullet ()
   "Cycle through the different itemize/enumerate bullets.
@@ -951,6 +942,72 @@ for this list."
 
 ;;;; ChangeLog:
 
+;; 2018-05-01  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	orgalist: Fix location of "orgalist.el ends here" cookie
+;; 
+;; 2018-05-01  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	orgalist: Improve menu and a docstring
+;; 
+;; 	* orgalist.el (orgalist--cycle-indentation): Improve docstring.
+;; 	(orgalist--menu): Improve menu.
+;; 
+;; 2018-05-01  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	orgalist: Bump to version 1.2
+;; 
+;; 2018-05-01  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	orgalist: Add non-nil `sentence-end-double-space' file local variable
+;; 
+;; 2018-05-01  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	orgalist: Improve documentation
+;; 
+;; 2018-05-01  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	orgalist: Replace `orgalist--indentation' with `current-indentation'
+;; 
+;; 	* orgalist.el (orgalist--indentation): Remove function.
+;; 	(orgalist--in-item-p):
+;; 	(orgalist--struct): Use `current-indentation'.
+;; 
+;; 2018-05-01  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	orgalist: Improve indentation cycling
+;; 
+;; 	* orgalist.el (orgalist--cycle-indentation): New function.
+;; 	(orgalist--while-at-empty-item): Remove function.
+;; 	(orgalist--maybe-cycle-indentation): Remove variable.
+;; 	(orgalist-mode-map): Remove hard-coded <TAB> binding.
+;; 	(orgalist-mode): Advise `indent-line-function' with
+;; 	`orgalist--cycle-indentation'.	Improve docstring.
+;; 	(orgalist-cycle-indentation): Remove function.
+;; 
+;; 2018-05-01  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	orgalist: Simplify auto fill
+;; 
+;; 	* orgalist.el (orgalist--last-advised-function): Remove variable.
+;; 	(orgalist--set-auto-fill): Remove function.
+;; 	(orgalist-mode): Directly advise `auto-fill-function' instead of relying
+;; 	on a post command hook.
+;; 
+;; 2018-05-01  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	orgalist: Fix filling items
+;; 
+;; 	* orgalist.el (orgalist--call-in-item): Allow arguments.  Take into
+;; 	 consideration indentation of current item.  Improve docstring.
+;; 	(orgalist--auto-fill): Improve docstring.  Return a non-nil value when 
+;; 	taking care of the auto filling.
+;; 	(orgalist--fill-item): New function.
+;; 	(orgalist--maybe-fill): Remove variable.
+;; 	(orgalist-mode-map): Do not bind "M-q".
+;; 	(orgalist-mode): Advise `fill-paragraph-function'.
+;; 	(orgalist-fill-item): Remove function.
+;; 
 ;; 2018-04-30  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
 ;; 
 ;; 	orgalist: Bump to version 1.1
@@ -987,4 +1044,9 @@ for this list."
 
 
 (provide 'orgalist)
+
+;; Local Variables:
+;; sentence-end-double-space: t
+;; End:
+
 ;;; orgalist.el ends here
