@@ -4,7 +4,7 @@
 ;;
 ;; Author: Austin Bingham <austin.bingham@gmail.com>
 ;; Version: 1.1.0
-;; Package-Version: 20180502.516
+;; Package-Version: 20180503.239
 ;; URL: https://github.com/abingham/traad
 ;; Package-Requires: ((dash "2.13.0") (deferred "0.3.2") (popup "0.5.0") (request "0.2.0") (request-deferred "0.2.0") (virtualenvwrapper "20151123"))
 ;;
@@ -370,11 +370,21 @@ necessary. Return the history buffer."
                (cons "offset" (traad--adjust-point (point))))))
 
 ;;;###autoload
+(defun traad-move ()
+  "Call the correct form of `move` based on the type of thing at the point."
+  (interactive)
+  (pcase (traad-thing-at (point))
+    (module (call-interactively 'traad-move-module))
+    (function (call-interactively 'traad-move-global))
+    (_ (call-interactively 'traad-move-moodule))))
+
+
+;;;###autoload
 (defun traad-move-global (dest)
   "Move the object at the current location to dest."
   (interactive
    (list
-    (read-file-name "Destination: " nil nil "confirm")))
+    (read-file-name "Destination file: " nil nil "confirm")))
   (traad--fetch-perform-refresh
    (buffer-file-name)
    "/refactor/move_global"
@@ -387,7 +397,7 @@ necessary. Return the history buffer."
   "Move the object at the current location to dest."
   (interactive
    (list
-    (read-directory-name "Destination: " nil nil "confirm")))
+    (read-directory-name "Destination directory: " nil nil "confirm")))
   (deferred:$
     (traad--fetch-perform
      (buffer-file-name)
@@ -755,6 +765,25 @@ necessary. Return the history buffer."
 ;;     (traad-display-implementations (point)))
 ;;    ((equal type "definition")
 ;;     (traad-goto-definition (point)))))
+
+;;;###autoload
+(defun traad-thing-at (pos)
+  "Get the type of the Python thing at `pos'."
+  (interactive "d")
+  (let* ((data (list (cons "offset" (traad--adjust-point pos))
+                     (cons "path" (buffer-file-name))))
+         (request-backend 'url-retrieve)
+         (url (traad--construct-url (buffer-file-name) "/thing_at"))
+         (result (request-response-data
+                  (request
+                   url
+                   :headers '(("Content-Type" . "application/json"))
+                   :data (json-encode data)
+                   :sync t
+                   :parser 'json-read
+                   :data (json-encode data)
+                   :type "POST"))))
+    (alist-get 'thing result)))
 
 ;;;###autoload
 (defun traad-code-assist (pos)

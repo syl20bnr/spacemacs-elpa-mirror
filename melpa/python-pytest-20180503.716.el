@@ -2,7 +2,7 @@
 
 ;; Author: wouter bolsterlee <wouter@bolsterl.ee>
 ;; Version: 0.3.1
-;; Package-Version: 20180425.532
+;; Package-Version: 20180503.716
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (dash-functional "2.12.0") (magit-popup "2.12.0") (projectile "0.14.0") (s "1.12.0"))
 ;; Keywords: pytest, test, python, languages, processes, tools
 ;; URL: https://github.com/wbolster/emacs-python-pytest
@@ -113,6 +113,15 @@ a pattern to run the corresponding tests, which will match
 When non-nil only ‘test_foo()’ will match, and nothing else."
   :group 'python-pytest
   :type 'boolean)
+
+(defcustom python-pytest-unsaved-buffers-behavior 'ask-all
+  "Whether to ask whether unsaved buffers should be saved before running pytest."
+  :group 'python-pytest
+  :type '(choice (const :tag "Ask for all project buffers" ask-all)
+                 (const :tag "Ask for current buffer" ask-current)
+                 (const :tag "Save all project buffers" save-all)
+                 (const :tag "Save current buffer" save-current)
+                 (const :tag "Ignore" nil)))
 
 (defvar python-pytest--history nil
   "History for pytest invocations.")
@@ -316,6 +325,7 @@ With a prefix ARG, allow editing."
 
 (cl-defun python-pytest--run-command (&key command popup-arguments edit)
   "Run a pytest command line."
+  (python-pytest--maybe-save-buffers)
   (let* ((default-directory (python-pytest--project-root)))
     (when python-pytest-confirm
       (setq edit (not edit)))
@@ -479,6 +489,33 @@ Example: ‘MyABCThingy.__repr__’ becomes ‘test_my_abc_thingy_repr’."
   (if (python-pytest--test-file-p file)
       (python-pytest--relative-file-name file)
     (python-pytest--find-test-file file)))
+
+(defun python-pytest--maybe-save-buffers ()
+  "Maybe save modified buffers."
+  (cond
+   ((memq python-pytest-unsaved-buffers-behavior '(ask-current save-current))
+    ;; check only current buffer
+    (when (and (buffer-modified-p)
+               (or (eq python-pytest-unsaved-buffers-behavior 'save-current)
+                   (y-or-n-p
+                    (format "Save modified buffer (%s)? " (buffer-name)))))
+      (save-buffer)))
+   ((memq python-pytest-unsaved-buffers-behavior '(ask-all save-all))
+    ;; check all project buffers
+    (-when-let*
+        ((buffers
+          (projectile-buffers-with-file (projectile-project-buffers)))
+         (modified-buffers
+          (-filter 'buffer-modified-p buffers))
+         (confirmed
+          (or (eq python-pytest-unsaved-buffers-behavior 'save-all)
+              (y-or-n-p
+               (format "Save modified project buffers (%d)? "
+                       (length modified-buffers))))))
+      (--each modified-buffers
+        (with-current-buffer it
+          (save-buffer)))))
+   (t nil)))
 
 
 ;; third party integration
