@@ -5,7 +5,7 @@
 ;; Author: Sibi Prabakaran <sibi@psibi.in>
 ;; Maintainer: Sibi Prabakaran <sibi@psibi.in>
 ;; Keywords: languages
-;; Package-Version: 20180430.104
+;; Package-Version: 20180503.12
 ;; Version: 0.1.3
 ;; Package-Requires: ((emacs "24.4"))
 ;; URL: https://github.com/psibi/dhall-mode
@@ -132,7 +132,7 @@ Should be dhall or the complete path to your dhall executable,
 (defun dhall-buffer-type ()
   "Return the type of the expression in the current buffer."
   (interactive)
-  (let ((stderr (make-temp-name "dhall-buffer-type")))
+  (let ((stderr (make-temp-file "dhall-buffer-type")))
     (call-process-region (point-min) (point-max) dhall-command nil (list nil stderr))
     (let ((type (car (split-string (with-temp-buffer
                                      (insert-file-contents stderr)
@@ -140,6 +140,7 @@ Should be dhall or the complete path to your dhall executable,
                                    "[]+"
                                    t
                                    split-string-default-separators))))
+      (delete-file stderr)
       (unless (string-match-p "↳" type)
         (ansi-color-apply (replace-regexp-in-string "\n" " " type))))))
 

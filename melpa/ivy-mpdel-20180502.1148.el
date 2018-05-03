@@ -4,8 +4,8 @@
 
 ;; Author: Damien Cassou <damien@cassou.me>
 ;; Keywords: multimedia
-;; Package-Version: 20180424.610
-;; Url: https://github.com/DamienCassou/mpdel
+;; Package-Version: 20180502.1148
+;; Url: https://gitlab.petton.fr/mpdel/ivy-mpdel
 ;; Package-requires: ((emacs "25.1") (ivy "0.10.0") (libmpdel "0.5.0") (mpdel "0.4.0"))
 ;; Keywords: multimedia
 ;; Version: 0.4.0

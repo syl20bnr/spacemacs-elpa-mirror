@@ -4,7 +4,7 @@
 
 ;; Author: Nicolas Petton <nicolas@petton.fr>
 ;; Keywords: themes
-;; Package-Version: 20180308.957
+;; Package-Version: 20180503.125
 ;; URL: https://github.com/NicolasPetton/zerodark-theme
 ;; Version: 4.3
 ;; Package: zerodark-theme
@@ -247,7 +247,7 @@ The result is cached for one second to avoid hiccups."
    `(border ((,class (:foreground ,background-lighter))))
    `(vertical-border ((,class (:foreground ,background-lighter))))
    `(highlight ((,class (:background ,highlight :foreground ,default :underline nil))))
-   `(region ((,class (:background ,highlight :foreground ,default))))
+   `(region ((,class (:background ,highlight))))
    `(secondary-selection ((,class (:background ,highlight :foreground ,default))))
    `(isearch ((,class (:background ,orange-light :foreground ,highlight))))
    `(lazy-highlight ((,class (:background ,grey-dark :foreground ,orange-light))))

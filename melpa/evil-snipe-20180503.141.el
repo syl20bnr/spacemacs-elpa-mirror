@@ -7,7 +7,7 @@
 ;; Created: December 5, 2014
 ;; Modified: May 2, 2018
 ;; Version: 2.1.1
-;; Package-Version: 20180502.947
+;; Package-Version: 20180503.141
 ;; Keywords: emulation, vim, evil, sneak, seek
 ;; Homepage: https://github.com/hlissner/evil-snipe
 ;; Package-Requires: ((emacs "24.4") (evil "1.2.12") (cl-lib "0.5"))
@@ -134,9 +134,9 @@ mode use:
 (define-obsolete-variable-alias 'evil-snipe-symbol-groups 'evil-snipe-aliases "v2.0.0")
 
 (defcustom evil-snipe-disabled-modes
-  (org-agenda-mode magit-mode git-rebase-mode elfeed-show-mode
-   elfeed-search-mode ranger-mode magit-repolist-mode mu4e-main-mode
-   mu4e-view-mode mu4e-headers-mode mu4e~update-mail-mode)
+  '(org-agenda-mode magit-mode git-rebase-mode elfeed-show-mode
+    elfeed-search-mode ranger-mode magit-repolist-mode mu4e-main-mode
+    mu4e-view-mode mu4e-headers-mode mu4e~update-mail-mode)
   "A list of modes in which the global evil-snipe minor modes
 will not be turned on."
   :group 'evil-snipe

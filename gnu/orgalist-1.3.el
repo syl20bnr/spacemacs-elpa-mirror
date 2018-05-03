@@ -6,7 +6,7 @@
 ;; Maintainer: Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.4"))
-;; Version: 1.2
+;; Version: 1.3
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -525,12 +525,12 @@ This function is meant to be used as a piece of advice on
 `indent-line-function'."
   (when (orgalist--at-item-p)
     (let ((struct (orgalist--struct)))
-      (if (>= (progn (org-match-line orgalist--item-re) (match-end 0))
-              (save-excursion
-                (goto-char (org-list-get-item-end
-                            (line-beginning-position) struct))
-                (skip-chars-backward " \r\t\n")
-                (point)))
+      (if (< (progn (org-match-line orgalist--item-re) (match-end 0))
+             (save-excursion
+               (goto-char (org-list-get-item-end
+                           (line-beginning-position) struct))
+               (skip-chars-backward " \r\t\n")
+               (point)))
           ;; If the item is not empty, do not indent.
           'noindent
         (let ((ind (org-list-get-ind (line-beginning-position) struct))
@@ -648,10 +648,28 @@ This function is meant to be used as a piece of advice on
 
 ;;;###autoload
 (define-minor-mode orgalist-mode
-  "Toggle the minor mode `orgalist-mode'.
+  "Toggle Org-like lists and their relative commands.
 
-This mode is for using Org mode plain lists commands in other
-major modes.
+With a prefix argument ARG, enable Auto Fill mode if ARG is
+positive, and disable it otherwise.  If called from Lisp, enable
+the mode if ARG is omitted or nil.
+
+When Orgalist mode is enabled, any line beginning with \"-\",
+\"+\", \"1.\" or \"a.\" followed by a space starts a list.  You
+can then operate locally on the list, e.g., to insert new items,
+move items or sort them.  See below for details.
+
+Moreover, you can add check-boxes to items
+
+  - [ ] A checkbox, toggled with `C-c C-c'
+
+turn an unordered list into a description list
+
+  - term :: description
+
+and control numbering in an ordered list
+
+  4. [@4] a forced numbered item
 
 key             binding
 ---             -------
@@ -676,7 +694,7 @@ C-c C-c         `orgalist-check-item'"
     (setq-local org-list-automatic-rules nil)
     (setq-local org-list-demote-modify-bullet nil)
     (setq-local org-list-two-spaces-after-bullet-regexp nil)
-    (add-function :before-until (local 'auto-fill-function)
+    (add-function :before-until (local 'normal-auto-fill-function)
                   #'orgalist--auto-fill)
     (add-function :before-until
                   (local 'fill-paragraph-function)
@@ -685,7 +703,7 @@ C-c C-c         `orgalist-check-item'"
                   (local 'indent-line-function)
                   #'orgalist--cycle-indentation))
    (t
-    (remove-function (local 'auto-fill-function) #'orgalist--auto-fill)
+    (remove-function (local 'normal-auto-fill-function) #'orgalist--auto-fill)
     (remove-function (local 'fill-paragraph-function) #'orgalist--fill-item)
     (remove-function (local 'indent-line-function)
                      #'orgalist--cycle-indentation))))
@@ -942,6 +960,30 @@ for this list."
 
 ;;;; ChangeLog:
 
+;; 2018-05-03  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Bump to version 1.3
+;; 
+;; 2018-05-03  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Improve minor mode's docstring
+;; 
+;; 	* orgalist.el (orgalist-mode):Improve docstring.
+;; 
+;; 2018-05-02  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Fix mode when Auto fill mode is not active
+;; 
+;; 	* orgalist.el (orgalist-mode): Advise `normal-auto-fill-function'
+;; 	 instead of `auto-fill-function', which may be nil if Auto fill mode
+;; 	 is not activated.
+;; 
+;; 2018-05-02  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Fix thinko preventing indentation cycling to work properly
+;; 
+;; 	* orgalist.el (orgalist--cycle-indentation): Fix test for empty items.
+;; 
 ;; 2018-05-01  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
 ;; 
 ;; 	orgalist: Fix location of "orgalist.el ends here" cookie
