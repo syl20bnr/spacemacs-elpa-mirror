@@ -5,7 +5,7 @@
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 15 Mar 2018
 ;; Version: 0.2.1
-;; Package-Version: 20180430.358
+;; Package-Version: 20180502.2006
 ;; Keywords: tools, php
 ;; Homepage: https://github.com/emacs-php/phpstan.el
 ;; Package-Requires: ((emacs "24.3"))
@@ -226,6 +226,8 @@ it returns the value of `SOURCE' as it is."
    ((and (consp phpstan-executable)
          (eq 'root (car phpstan-executable)))
     (expand-file-name (cdr phpstan-executable) (php-project-get-root-dir)))
+   ((and (stringp phpstan-executable) (file-exists-p phpstan-executable))
+    (list phpstan-executable))
    ((and phpstan-flycheck-auto-set-executable
          (listp phpstan-executable)
          (stringp (car phpstan-executable))
