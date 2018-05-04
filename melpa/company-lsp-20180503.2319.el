@@ -1,7 +1,7 @@
 ;;; company-lsp.el --- Company completion backend for lsp-mode.  -*- lexical-binding: t -*-
 
 ;; Version: 2.0.1
-;; Package-Version: 20180429.1425
+;; Package-Version: 20180503.2319
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "3.4") (company "0.9.0") (s "1.2.0") (dash "2.11.0"))
 ;; URL: https://github.com/tigersoldier/company-lsp
 
@@ -97,8 +97,8 @@ This is useful in cases such as 'std' is completed as 'std::' in C++."
 PREFIX is the prefix string.
 COMPLETION is a cache-item created by `company-lsp--cache-item-new'.")
 
-(defvar-local company-lsp--line-backup nil
-  "A copy of current line before modified by company-mode.")
+(defvar-local company-lsp--prefix-backup nil
+  "A copy of the last company prefix.")
 
 (defun company-lsp--trigger-characters ()
   "Return a list of completion trigger characters specified by server."
@@ -236,27 +236,30 @@ CANDIDATE is a string returned by `company-lsp--make-candidate'."
          (additional-text-edits (gethash "additionalTextEdits" item)))
     (cond
      (text-edit
-      (goto-char (line-beginning-position))
-      (delete-char (- (line-end-position) (line-beginning-position)))
-      (insert company-lsp--line-backup)
-      (lsp--apply-text-edit text-edit)
+      (setq insert-text (gethash "newText" text-edit))
+      (delete-region (- (point) (length candidate)) (point))
+      (insert company-lsp--prefix-backup)
       (let* ((range (gethash "range" text-edit))
              (start-point (lsp--position-to-point (gethash "start" range)))
-             (new-text-length (length (gethash "newText" text-edit))))
+             (new-text-length (length insert-text)))
+        (lsp--apply-text-edit text-edit)
         (goto-char (+ start-point new-text-length))))
      ((and insert-text (not (eq insert-text-format 2)))
       (cl-assert (string-equal (buffer-substring-no-properties start (point)) label))
       (goto-char start)
       (delete-char (length label))
       (insert insert-text)))
-    (when additional-text-edits
-      (lsp--apply-text-edits additional-text-edits))
-    (when (and company-lsp-enable-snippet
-               (fboundp 'yas-expand-snippet))
-      (if (and insert-text (eq insert-text-format 2))
-          (yas-expand-snippet insert-text start (point))
-        (-when-let (fallback-snippet (company-lsp--fallback-snippet item))
-          (yas-expand-snippet fallback-snippet))))
+
+    (let ((start-marker (set-marker (make-marker) start)))
+      (when additional-text-edits
+        (lsp--apply-text-edits additional-text-edits))
+      (when (and company-lsp-enable-snippet
+                 (fboundp 'yas-expand-snippet))
+        (if (and insert-text (eq insert-text-format 2))
+            (yas-expand-snippet insert-text (marker-position start-marker) (point))
+          (-when-let (fallback-snippet (company-lsp--fallback-snippet item))
+            (yas-expand-snippet fallback-snippet))))
+      (set-marker start-marker nil))
     ;; Here we set this-command to a `self-insert-command'
     ;; so that company may retrigger idle completion after the snippet expansion
     ;; (~`company-post-command').
@@ -397,10 +400,9 @@ See the documentation of `company-backends' for COMMAND and ARG."
      ;; If the completion items in the response have textEdit action populated,
      ;; we'll apply them in `company-lsp--post-completion'. However, textEdit
      ;; actions only apply to the pre-completion content. We backup the current
-     ;; line and restore it after company completion is done, so the content
+     ;; prefix and restore it after company completion is done, so the content
      ;; is restored and textEdit actions can be applied.
-     (setq company-lsp--line-backup
-           (buffer-substring (line-beginning-position) (line-end-position)))
+     (setq company-lsp--prefix-backup arg)
      (or (company-lsp--cache-item-candidates (company-lsp--cache-get arg))
          (and company-lsp-async
               (cons :async (lambda (callback)

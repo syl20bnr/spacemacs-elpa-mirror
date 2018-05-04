@@ -14,7 +14,7 @@
 
 ;; Author: Danny McClanahan
 ;; Version: 0.1
-;; Package-Version: 20180502.1020
+;; Package-Version: 20180504.21
 ;; URL: https://github.com/cosmicexplorer/helm-rg
 ;; Package-Requires: ((emacs "25") (helm "2.8.8") (cl-lib "0.5") (dash "2.13.0") (pcre2el "1.0"))
 ;; Keywords: find, file, files, helm, fast, rg, ripgrep, grep, search
@@ -322,6 +322,9 @@ See the documentation for `helm-rg-default-directory'.")
      "%s"
      (propertize ")" 'face 'highlight)))))
 
+(defun helm-rg--process-paths-to-search (paths)
+  (--map (expand-file-name it helm-rg--current-dir) paths))
+
 (defun helm-rg--construct-argv (pattern)
   "Create an argument list for the ripgrep command.
 Uses `defcustom' values, and `defvar' values bound in other functions."
@@ -329,7 +332,7 @@ Uses `defcustom' values, and `defvar' values bound in other functions."
    helm-rg-base-command
    (list "-g" helm-rg--glob-string)
    (list pattern)
-   helm-rg--paths-to-search))
+   (helm-rg--process-paths-to-search helm-rg--paths-to-search)))
 
 (defun helm-rg--make-process-from-argv (argv)
   (let* ((real-proc (make-process
