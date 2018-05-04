@@ -7,8 +7,8 @@
 ;; Authors: ZHANG Weiyi <dochang@gmail.com>,
 ;;          Alex Kost <alezost@gmail.com>,
 ;;          stardiviner <numbchild@gmail.com>
-;; Version: 0.1.0
-;; Package-Version: 0.1.0
+;; Version: 0.2.0
+;; Package-Version: 0.2.0
 ;; Package-Requires: ((emms "0"))
 ;; Keywords: multimedia, emms, mpv
 ;; URL: https://github.com/dochang/emms-player-mpv/
@@ -112,6 +112,13 @@
   "Depends on mpv's --input-file option."
   (let ((cmd (emms-player-mpv--format-command "seek %d absolute" sec)))
     (call-process-shell-command cmd nil nil nil)))
+
+;; Display deprecation warning
+(mapc (lambda (msg)
+        (display-warning '(emms emms-player-mpv) msg))
+      '("emms-player-mpv has been merged into EMMS."
+        "Please delete the emms-player-mpv package."
+        "See https://github.com/dochang/emms-player-mpv for details."))
 
 (provide 'emms-player-mpv)
 ;;; emms-player-mpv.el ends here

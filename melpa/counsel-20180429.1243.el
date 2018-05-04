@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180426.733
+;; Package-Version: 20180429.1243
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -46,6 +46,11 @@
 (require 'esh-util)
 (require 'compile)
 (require 'dired)
+
+(defface counsel-key-binding
+  '((t :inherit font-lock-keyword-face))
+  "Face used by `counsel-M-x' for key bindings."
+  :group 'ivy-faces)
 
 ;;* Utility
 (defun counsel-more-chars (n)
@@ -773,7 +778,7 @@ By default `counsel-bookmark' opens a dired buffer for directories."
                          (lookup-key map dup))
               (setq key dup)))))
       (setq key (key-description key))
-      (put-text-property 0 (length key) 'face 'font-lock-keyword-face key)
+      (put-text-property 0 (length key) 'face 'counsel-key-binding key)
       (format "%s (%s)" cmd key))))
 
 (defvar smex-initialized-p)

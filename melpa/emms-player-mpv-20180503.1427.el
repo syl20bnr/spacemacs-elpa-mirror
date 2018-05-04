@@ -7,8 +7,8 @@
 ;; Authors: ZHANG Weiyi <dochang@gmail.com>,
 ;;          Alex Kost <alezost@gmail.com>,
 ;;          stardiviner <numbchild@gmail.com>
-;; Version: 0.1.0
-;; Package-Version: 20180415.1958
+;; Version: 0.2.0
+;; Package-Version: 20180503.1427
 ;; Package-Requires: ((emms "0"))
 ;; Keywords: multimedia, emms, mpv
 ;; URL: https://github.com/dochang/emms-player-mpv/
@@ -116,7 +116,7 @@
 ;; Display deprecation warning
 (mapc (lambda (msg)
         (display-warning '(emms emms-player-mpv) msg))
-      '("emms-player-mpv will be merged into EMMS."
+      '("emms-player-mpv has been merged into EMMS."
         "Please delete the emms-player-mpv package."
         "See https://github.com/dochang/emms-player-mpv for details."))
 
