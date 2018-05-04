@@ -4,7 +4,7 @@
 ;;
 ;; Author: Muir Manders <muir+emacs@mnd.rs>
 ;; Version: 0.1.0
-;; Package-Version: 20180502.552
+;; Package-Version: 20180503.1900
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: theme dark nova pastel faces
 ;; URL: https://github.com/muirmanders/emacs-nova-theme
@@ -445,6 +445,10 @@ FACES is a list of faces of the form (name :attr value) such as:
   (sh-quoted-exec :foreground yellow)
   (sh-escaped-newline :foreground special)
 
+  ;; flyspell faces
+  (flyspell-incorrect :underline `(:style wave :color ,red))
+  (flyspell-duplicate :underline `(:style wave :color ,orange))
+
   ;; cperl-mode faces
   (cperl-hash-face :foreground red :background 'unspecified)
   (cperl-array-face :foreground yellow :background 'unspecified)
@@ -462,7 +466,7 @@ FACES is a list of faces of the form (name :attr value) such as:
 (nova-with-colors
   (custom-theme-set-variables
    'nova
-   `(frame-background-mode dark)
+   `(frame-background-mode 'dark)
    `(vc-annotate-background ,bg)
    `(vc-annotate-very-old-color ,(nova-darken purple 0.2))
    `(vc-annotate-color-map

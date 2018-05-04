@@ -6,7 +6,7 @@
 ;; Copyright (C) 2009-2012 Chris Done
 
 ;; Version: 1.0.10
-;; Package-Version: 20180503.1222
+;; Package-Version: 20180503.1804
 ;; Author: Shin Aoyama <smihica@gmail.com>
 ;; URL: https://github.com/smihica/emmet-mode
 ;; Last-Updated: 2014-08-11 Mon
@@ -652,7 +652,7 @@ See `emmet-preview-online'."
 		(point))
 	      (forward-char)))))))
 
-(defcustom emmet-postwrap-goto-edit-point f
+(defcustom emmet-postwrap-goto-edit-point nil
   "Goto first edit point after wrapping markup?"
   :type 'boolean
   :group 'emmet)
