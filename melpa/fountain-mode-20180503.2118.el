@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: text
-;; Package-Version: 20180502.33
+;; Package-Version: 20180503.2118
 ;; Version: 2.5.4
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -1767,13 +1767,13 @@ character if N is negative, otherwise return nil. If N is nil or
 
 If LIMIT is 'scene, halt at next scene heading. If LIMIT is
 'dialog, halt at next non-dialog element."
-  (let ((n (or n 0)))
-    (save-excursion
-      (save-restriction
-        (widen)
-        (fountain-forward-character n limit)
-        (if (fountain-match-character)
-            (match-string-no-properties 4))))))
+  (unless n (setq n 0))
+  (save-excursion
+    (save-restriction
+      (widen)
+      (fountain-forward-character n limit)
+      (if (fountain-match-character)
+          (match-string-no-properties 4)))))
 
 (defun fountain-read-metadata ()
   "Read metadata of current buffer and return as a property list.
@@ -2023,19 +2023,17 @@ Includes child elements."
 (defun fountain-parse-action (match-data &optional export-elements job)
   "Return an element list for matched action."
   (set-match-data match-data)
-  (let ((beg (match-beginning 0))
-        (end
-         (save-excursion
-           (save-match-data
-             (goto-char (match-beginning 0))
-             (re-search-forward fountain-blank-regexp nil 'move)
-             (skip-chars-backward "\n\r\s\t")
-             (point))))
-        string)
-    (setq string (buffer-substring-no-properties (match-beginning 2) end)
+  (let ((bounds (fountain-get-block-bounds))
+        begin end string)
+    (setq begin (car bounds))
+    (save-excursion
+      (goto-char (cdr bounds))
+      (skip-chars-backward "\n\s\t")
+      (setq end (point)))
+    (setq string (buffer-substring-no-properties begin end)
           string (replace-regexp-in-string "^!" "" string))
     (list 'action
-          (list 'begin beg
+          (list 'begin begin
                 'end end
                 'forced (stringp (match-string 1))
                 'export (if (memq 'action export-elements) t)
@@ -2060,7 +2058,6 @@ Includes child elements."
       (if (< (point) end)
           (let ((element (fountain-parse-element export-elements job)))
             (push element list)
-            ;; FIXME: better to use a forward-block function
             (goto-char (plist-get (nth 1 element) 'end))))
       (if job (progress-reporter-update job)))
     (reverse list)))
@@ -3615,6 +3612,92 @@ Used by `fountain-outline-cycle'.")
 If POS is nil, use `point' instead."
   (eq (get-char-property (or pos (point)) 'invisible) 'outline))
 
+(defun fountain-get-block-bounds ()
+  "Return the beginning and end bounds of current element block."
+  (let ((element (fountain-get-element))
+        begin end)
+    (save-excursion
+      (save-restriction
+        (widen)
+        (cond ((memq element '(section-heading scene-heading))
+               (setq begin (match-beginning 0))
+               (outline-end-of-subtree)
+               (skip-chars-forward "\n\s\t")
+               (setq end (point)))
+              ((memq element '(character paren lines))
+               (fountain-forward-character 0)
+               (setq begin (line-beginning-position))
+               (while (not (or (eobp)
+                               (looking-at fountain-blank-regexp)
+                               (fountain-match-note)))
+                 (forward-line))
+               (skip-chars-forward "\n\s\t")
+               (setq end (point)))
+              ((memq element '(trans center synopsis note page-break))
+               (setq begin (match-beginning 0))
+               (goto-char (match-end 0))
+               (skip-chars-forward "\n\s\t")
+               (setq end (point)))
+              ((eq element 'action)
+               (save-excursion
+                 (if (fountain-blank-before-p)
+                     (setq begin (line-beginning-position))
+                   (forward-char -1)
+                   (while (eq (fountain-get-element) 'action)
+                     (forward-line -1))
+                   (skip-chars-forward "\n\s\t")
+                   (forward-line 0)
+                   (setq begin (point))))
+               (forward-line)
+               (while (eq (fountain-get-element) 'action)
+                 (forward-line))
+               (skip-chars-forward "\n\s\t")
+               (forward-line 0)
+               (setq end (point))))))
+    (cons begin end)))
+
+(defun fountain-shift-block-down (&optional n)
+  "Move the current block down past N blocks of same level."
+  (interactive "p")
+  (unless n (setq n 1))
+  (if (outline-on-heading-p)
+      (fountain-outline-shift-down n)
+    (let ((p (< 0 n)))
+      (if (and (bolp) (eolp))
+          (funcall (if p 'skip-chars-forward 'skip-chars-backward)
+                   "\n\s\t"))
+      (save-excursion
+        (save-restriction
+          (widen)
+          (let ((block-bounds (fountain-get-block-bounds))
+                outline-begin outline-end next-block-bounds)
+            (unless (and (car block-bounds)
+                         (cdr block-bounds))
+              (user-error "Not at a moveable block"))
+            (save-excursion
+              (outline-back-to-heading)
+              (setq outline-begin (point))
+              (outline-next-heading)
+              (setq outline-end (point)))
+            (if p
+                (goto-char (cdr block-bounds))
+              (goto-char (car block-bounds))
+              (forward-char -1)
+              (skip-chars-backward "\n\s\t"))
+            (setq next-block-bounds (fountain-get-block-bounds))
+            (unless (< outline-begin (car next-block-bounds) outline-end)
+              (user-error "Cannot shift past higher level"))
+            (goto-char (funcall (if p 'car 'cdr) block-bounds))
+            (insert-before-markers
+             (delete-and-extract-region (car next-block-bounds)
+                                        (cdr next-block-bounds)))))))))
+
+(defun fountain-shift-block-up (&optional n)
+  "Move the current block up past N element blocks of same level."
+  (interactive "p")
+  (unless n (setq n 1))
+  (fountain-shift-block-down (- n)))
+
 (defun fountain-outline-shift-down (&optional n)
   "Move the current subtree down past N headings of same level."
   (interactive "p")
@@ -3876,7 +3959,7 @@ If N is 0, move to beginning of scene."
 (defun fountain-backward-scene (&optional n)
   "Move backward N scene headings (foward if N is negative)."
   (interactive "^p")
-  (or n (setq n 1))
+  (unless n (setq n 1))
   (fountain-forward-scene (- n)))
 
 (defun fountain-beginning-of-scene ()   ; FIXME: needed?
@@ -3974,7 +4057,7 @@ halt at end of scene."
 (defun fountain-backward-character (&optional n)
   "Move backward N character (foward if N is negative)."
   (interactive "^p")
-  (setq n (or n 1))
+  (unless n (setq n 1))
   (fountain-forward-character (- n)))
 
 
@@ -4877,24 +4960,24 @@ keywords suitable for Font Lock."
     ;; FIXME: include-find-file feels like it should be C-c C-c...
     ;; (define-key map (kbd "C-c C-c") #'fountain-include-find-file)
     ;; Navigation commands:
-    (define-key map [remap forward-list] #'fountain-forward-scene)
-    (define-key map [remap backward-list] #'fountain-backward-scene)
     (define-key map [remap beginning-of-defun] #'fountain-beginning-of-scene)
     (define-key map [remap end-of-defun] #'fountain-end-of-scene)
-    (define-key map [remap mark-defun] #'fountain-mark-scene)
     (define-key map (kbd "M-g s") #'fountain-goto-scene)
     (define-key map (kbd "M-g p") #'fountain-goto-page)
     (define-key map (kbd "M-n") #'fountain-forward-character)
     (define-key map (kbd "M-p") #'fountain-backward-character)
+    ;; Block editing commands:
+    (define-key map (kbd "<M-down>") #'fountain-shift-block-down)
+    (define-key map (kbd "ESC <down>") #'fountain-shift-block-down)
+    (define-key map (kbd "<M-up>") #'fountain-shift-block-up)
+    (define-key map (kbd "ESC <up>") #'fountain-shift-block-up)
     ;; Outline commands:
-    (define-key map (kbd "C-c C-n") #'fountain-outline-next)
-    (define-key map (kbd "C-c C-p") #'fountain-outline-previous)
-    (define-key map (kbd "C-c C-f") #'fountain-outline-forward)
-    (define-key map (kbd "C-c C-b") #'fountain-outline-backward)
-    (define-key map (kbd "C-c C-u") #'fountain-outline-up)
-    (define-key map (kbd "C-c C-^") #'fountain-outline-shift-up)
-    (define-key map (kbd "C-c C-v") #'fountain-outline-shift-down)
-    (define-key map (kbd "C-c C-SPC") #'fountain-outline-mark)
+    (define-key map [remap forward-list] #'fountain-outline-next)
+    (define-key map [remap backward-list] #'fountain-outline-previous)
+    (define-key map [remap forward-sexp] #'fountain-outline-forward)
+    (define-key map [remap backward-sexp] #'fountain-outline-backward)
+    (define-key map [remap backward-up-list] #'fountain-outline-up)
+    (define-key map [remap mark-defun] #'fountain-outline-mark)
     (define-key map (kbd "C-c TAB") #'fountain-outline-cycle)
     (define-key map (kbd "<backtab>") #'fountain-outline-cycle-global)
     (define-key map (kbd "S-TAB") #'fountain-outline-cycle-global)
@@ -4924,8 +5007,11 @@ keywords suitable for Font Lock."
   "Menu for `fountain-mode'."
   '("Fountain"
     ("Navigate"
-     ["Next Scene Heading" fountain-forward-scene]
-     ["Previous Scene Heading" fountain-backward-scene]
+     ["Next Scene/Section" fountain-outline-next]
+     ["Previous Scene/Section" fountain-outline-previous]
+     ["Up Scene/Section" fountain-outline-up]
+     ["Forward Scene/Section" fountain-outline-forward]
+     ["Backward Scene/Section" fountain-outline-backward]
      "---"
      ["Next Character" fountain-forward-character]
      ["Previous Character" fountain-backward-character]
@@ -4936,17 +5022,11 @@ keywords suitable for Font Lock."
      ["Cycle Scene/Section Visibility" fountain-outline-cycle]
      ["Cycle Global Visibility" fountain-outline-cycle-global]
      "---"
-     ["Open Scene/Section in Indirect Buffer" fountain-outline-to-indirect-buffer]
-     "---"
-     ["Up Heading" fountain-outline-up]
-     ["Next Heading" fountain-outline-next]
-     ["Previous Heading" fountain-outline-previous]
-     ["Forward Heading" fountain-outline-forward]
-     ["Backward Heading" fountain-outline-backward]
-     "---"
      ["Mark Section/Scene" fountain-outline-mark]
-     ["Shift Section/Scene Up" fountain-outline-shift-up]
-     ["Shift Section/Scene Down" fountain-outline-shift-down])
+     ["Shift Block Up" fountain-shift-block-up]
+     ["Shift Block Down" fountain-shift-block-down]
+     "---"
+     ["Open Scene/Section in Indirect Buffer" fountain-outline-to-indirect-buffer])
     ("Scene Numbers"
      ["Add Scene Numbers" fountain-add-scene-numbers]
      ["Remove Scene Numbers" fountain-remove-scene-numbers]
@@ -4980,7 +5060,6 @@ keywords suitable for Font Lock."
     ["Update Auto-Completion" fountain-completion-update]
     "---"
     ("Show/Hide"
-     ["Endnotes" fountain-show-or-hide-endnotes]
      ["Hide Emphasis Delimiters"
       (customize-set-variable 'fountain-hide-emphasis-delim
                               (not fountain-hide-emphasis-delim))
