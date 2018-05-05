@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 ~ 2018 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; Version: 1.0
-;; Package-Version: 20180412.807
+;; Package-Version: 20180505.808
 ;; Package-Requires: ((helm "1.5") (bbdb "3.1.2"))
 ;; URL: https://github.com/emacs-helm/helm-bbdb
 
@@ -211,7 +211,7 @@ If record has more than one address, prompt for an address."
 This may include multiple addresses of the same record. The name in
 the mail address is formatted obeying `bbdb-mail-name-format' and
 `bbdb-mail-name'."
-  (let ((mails nil))
+  (let (mails)
     (dolist (record (bbdb-records))
       (let ((mail (bbdb-record-mail record)))
 	(when mail
@@ -220,10 +220,10 @@ the mail address is formatted obeying `bbdb-mail-name-format' and
 	      ;; many addresses are found in the record.
 	      (let ((addresses mail))
 		(mapcar (lambda (mail)
-			  (add-to-list 'mails (bbdb-dwim-mail record mail)))
+			  (push (bbdb-dwim-mail record mail) mails))
 			addresses))
 	    (let ((mail (bbdb-dwim-mail record (car mail))))
-	      (add-to-list 'mails mail))))))
+	      (push mail mails))))))
     (mapcar (lambda (mail)
 	      mail)
     	    mails)))
@@ -276,16 +276,14 @@ To use this feature, make sure `helm-bbdb-expand-name' is added to the
   (if (and (looking-back "\\(<.+\\)\\(@\\)\\(.+>$\\)" nil)
 	   bbdb-complete-mail-allow-cycling)
       (bbdb-complete-mail)
-    (let ((mails nil)
+    (let ((mails)
 	  (abbrev (thing-at-point 'symbol t)))
       (with-temp-buffer (mapcar (lambda (mail)
 				  (insert (concat mail "\n")))
 				(helm-bbdb-collect-all-mail-addresses))
 			(goto-char (point-min))
 			(while (re-search-forward (concat "\\(^.+\\)" "\\(" abbrev "\\)" "\\(.+$\\)") nil t)
-			  (add-to-list 'mails (concat (match-string 1)
-						      (match-string 2)
-						      (match-string 3)))
+			  (push (concat (match-string 1) (match-string 2) (match-string 3)) mails)
 			  (setq mails mails)))
       ;; If there's one address, insert it automatically
       (if (= (length mails) 1)

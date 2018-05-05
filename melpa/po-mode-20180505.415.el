@@ -6,7 +6,7 @@
 ;; Authors: François Pinard <pinard@iro.umontreal.ca>
 ;;          Greg McGary <gkm@magilla.cichlid.com>
 ;; Keywords: i18n gettext
-;; Package-Version: 20170419.303
+;; Package-Version: 20180505.415
 ;; Created: 1995
 
 ;; This file is part of GNU gettext.
@@ -22,7 +22,7 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
