@@ -1,4 +1,4 @@
-;;; bbcode-mode.el --- Major mode for phpBB posts (BBCode markup)
+;;; bbcode-mode.el --- Major mode for phpBB posts (BBCode markup) -*- lexical-binding: t -*-
 ;;
 ;; Copyright 2012, 2013, 2014 Eric James Michael Ritz
 ;; Copyright 2018 Lassi Kortela
@@ -6,7 +6,7 @@
 ;; Author: Eric James Michael Ritz <lobbyjones@gmail.com>
 ;; Maintainer: Lassi Kortela <lassi@lassi.io>
 ;; URL: https://github.com/lassik/bbcode-mode
-;; Package-Version: 20180424.135
+;; Package-Version: 20180505.227
 ;; Version: 2.1.0
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; Keywords: bbcode languages
@@ -195,7 +195,7 @@ text there."
   `(progn
      ,@(cl-mapcan
         (lambda (tag-spec)
-          (cl-destructuring-bind (tag face key body . attrs) tag-spec
+          (cl-destructuring-bind (tag _face key body . attrs) tag-spec
             (let ((function-name (intern (format "bbcode-insert-tag-%s" tag)))
                   (insert-tag (format "MInsert BBCode tag: [%s" tag)))
               `((defun ,function-name ,attrs
