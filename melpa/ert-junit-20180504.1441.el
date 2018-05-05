@@ -6,7 +6,7 @@
 ;; Maintainer: Ola Nilsson <ola.nilsson@gmail.com>
 ;; Created; Jul 24 2014
 ;; Keywords: tools test unittest ert
-;; Package-Version: 20180424.1602
+;; Package-Version: 20180504.1441
 ;; Version: 0.1.2
 ;; Package-Requires: ((ert "0"))
 ;; URL: http://bitbucket.org/olanilsson/ert-junit
@@ -38,6 +38,16 @@
 (require 'xml)
 (eval-when-compile (require 'cl))
 
+(unless (fboundp 'ert-skipped-p)
+  (defun ert-test-skipped-p (cl-x)
+    "Dummy `ert-test-skipped' for Emacs 24.3."
+    nil))
+
+(unless (fboundp 'ert-stats-skipped)
+  (defun ert-stats-skipped (stats)
+    "Dummy `ert-stats-skipped' for Emacs 24.3."
+    0))
+
 (defmacro ert-junit--stats (property stats test-index)
   "Get PROPERTY from STATS test with index TEST-INDEX.
 Expand to `(aref (ert--stats-test-PROPERTY STATS) TEST-INDEX)'."
@@ -63,6 +73,21 @@ RESULT must be an `ert-test-result-with-condition'."
       (ert--pp-with-indentation-and-newline
        (ert-test-result-with-condition-condition result)))
 	(buffer-string)))
+
+(defun ert-junit--skip-form-as-string (result)
+  "Return a suitable message string from a skipped test RESULT."
+  ;; there are two possible variant to handle, `skip-unless' and
+  ;; `ert-skipped' called directly.
+  (let ((skip (cadr (ert-test-result-with-condition-condition result))))
+    ;; skip unless looks like
+    ;; ((skip-unless nil) :form nil :value nil)
+    ;; while plain ert-skipped tests can be any data
+    (cond ((and (consp skip)
+                (consp (car skip))
+                (eq 'skip-unless (caar skip)))
+           (pp-to-string (cadar skip)))
+          ((stringp skip) skip)
+          (t (pp-to-string skip)))))
 
 (defun ert-junit--failure-message (result)
   "Return a failure message for RESULT.
@@ -114,16 +139,25 @@ TEST-NAME and TEST-INDEX its index into STATS."
    ;; success, failure or error
    (let ((test-status (ert-junit--stats results stats test-index))
 		 (text ""))
-	 (unless (ert-test-result-expected-p (aref (ert--stats-tests stats) test-index) test-status)
 	   (etypecase test-status
 		 (ert-test-passed
-		  (setq text "\n  <failure message=\"passed unexpectedly\" type=\"type\"></failure>\n "))
+          (if (ert-test-result-expected-p (aref (ert--stats-tests stats) test-index) test-status)
+              (setq text "")
+            (setq text "\n  <failure message=\"passed unexpectedly\" type=\"type\"></failure>\n ")))
+         (ert-test-skipped
+          (setq text (concat "\n  <skipped message=\""
+                             (ert-junit--xml-escape-and-trim
+                              (ert-junit--skip-form-as-string test-status))
+                             "\" type=\"type\">"
+                             (ert-junit--xml-escape-and-trim
+                              (ert-junit--failure-message test-status))
+                             "</skipped>\n ")))
 		 (ert-test-failed
 		  (setq text (concat "<failure message=\"test\" type=\"type\">"
                              (ert-junit--xml-escape-and-trim
                               (ert-junit--failure-message test-status))
 							 "</failure>")))
-		 (ert-test-quit (setq text " <failure>quit</failure>"))))
+         (ert-test-quit (setq text " <failure>quit</failure>")))
 	 text)
    "</testcase>" "\n"))
 
@@ -144,7 +178,8 @@ TEST-NAME and TEST-INDEX its index into STATS."
   (with-current-buffer buf
 	(insert "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
 	(insert (format "<testsuite name=\"ERT\" timestamp=\"%s\" hostname=\"%s\" tests=\"%d\" failures=\"%d\" errors=\"%d\" time=\"%f\" skipped=\"%d\" >"
-					(ert--format-time-iso8601 (ert--stats-start-time stats)) ; timestamp
+                    ;; timestamp
+                    (ert--format-time-iso8601 (ert--stats-start-time stats))
 					(system-name) ;hostname
 					(ert-stats-total stats) ;tests
 					(ert-stats-completed-unexpected stats) ;failures
@@ -152,7 +187,7 @@ TEST-NAME and TEST-INDEX its index into STATS."
 					(ert-junit--time-subtract-float ; time
 					 (ert--stats-end-time stats)
 					 (ert--stats-start-time stats))
-					(- (ert-stats-total stats) (ert-stats-completed stats)) ;skipped
+                    (ert-stats-skipped stats) ; skipped
 					)
 			"\n")
 	(maphash (lambda (key value)
