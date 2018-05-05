@@ -2,7 +2,7 @@
 ;; Copyright (C) 2015-2018 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.2
-;; Package-Version: 20180323.1942
+;; Package-Version: 20180504.2335
 ;; Package-Requires: ((emacs "24.3") (f "0.20.0") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -569,9 +569,9 @@ or most optimal searcher."
            :regex "\\bJJJ\\s*=[^=><]" :tests ("test = 1234") :not ("if (test == 1234)"))
 
     (:type "function" :supports ("ag" "grep" "rg" "git-grep") :language "r"
-           :regex "\\bJJJ\\s*<-\\s*function"
-           :tests ("test <- function"))
-
+           :regex "\\bJJJ\\s*<-\\s*function\\b"
+           :tests ("test <- function" "test <- function(")
+           :not   ("test <- functionX"))
 
     ;; perl
     (:type "function" :supports ("ag" "grep" "rg" "git-grep") :language "perl"
