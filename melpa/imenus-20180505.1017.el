@@ -1,11 +1,11 @@
 ;;; imenus.el --- Imenu for multiple buffers and without subgroups
 
-;; Copyright © 2014–2017 Alex Kost
+;; Copyright © 2014–2018 Alex Kost
 
 ;; Author: Alex Kost <alezost@gmail.com>
 ;; Created: 19 Dec 2014
 ;; Version: 0.2
-;; Package-Version: 20170217.47
+;; Package-Version: 20180505.1017
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; URL: https://github.com/alezost/imenus.el
 ;; Keywords: tools convenience
@@ -140,7 +140,7 @@ Make this command return the current user input."
   (cond
    ((boundp 'ido-cur-item)                      ; if inside ido
     (ido-select-text))
-   ((memq 'ivy--exhibit post-command-hook)      ; if inside ivy
+   ((memq 'ivy--queue-exhibit post-command-hook) ; if inside ivy
     (ivy-immediate-done))
    (t (exit-minibuffer))))
 

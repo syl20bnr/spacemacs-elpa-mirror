@@ -4,7 +4,7 @@
 
 ;; Author: Clément Pit-Claudel <clement.pitclaudel@live.com>
 ;; Keywords: tools help doc convenience
-;; Package-Version: 20170327.27
+;; Package-Version: 20180505.946
 ;; Package-Requires: ((emacs "24.3"))
 ;; Version: 1.0
 
@@ -46,6 +46,12 @@
   :group 'help
   :group 'tools
   :tag "Quick peek windows")
+
+(defcustom quick-peek-position 'below
+  "Position of quick-peek windows."
+  :group 'quick-peek
+  :type '(choice (const :tag "Above the current line" above)
+                 (const :tag "Below the current line" below)))
 
 ;;; Variables
 
@@ -184,7 +190,11 @@ is `none', let the inline window expand beyond the end of the
 selected Emacs window."
   (let ((ov (quick-peek-overlay-at (point))))
     (unless ov
-      (setq ov (make-overlay (point-at-eol) (1+ (point-at-eol))))
+      (setq ov
+            (let ((overlay-anchor (pcase quick-peek-position
+                                    (`above (1- (point-at-bol)))
+                                    (`below (point-at-eol)))))
+              (make-overlay overlay-anchor (1+ overlay-anchor))))
       (push ov quick-peek--overlays))
     (quick-peek--update ov str min-h max-h)))
 
