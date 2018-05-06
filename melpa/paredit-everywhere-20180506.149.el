@@ -4,7 +4,7 @@
 
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;; Keywords: languages, convenience
-;; Package-Version: 20150821.2144
+;; Package-Version: 20180506.149
 ;; Version: DEV
 ;; Package-Requires: ((paredit "22"))
 
@@ -45,7 +45,6 @@
     (define-key m (kbd "M-(") 'paredit-wrap-round)
     (define-key m (kbd "M-)") 'paredit-close-round-and-newline)
     (define-key m (kbd "M-]") 'paredit-close-square-and-newline)
-    (define-key m (kbd "M-}") 'paredit-close-curly-and-newline)
     (define-key m (kbd "M-\"") 'paredit-meta-doublequote)
     (define-key m (kbd "M-S") 'paredit-split-sexp)
     (define-key m (kbd "M-J") 'paredit-join-sexps)

@@ -65,6 +65,8 @@ a result from a different file than it started on.
         - When moving by file, `helm-rg' will cycle around the results list,
 but it will print a harmless error message instead of looping infinitely if
 all results are from the same file.
+- Use the interactive autoloaded function `helm-rg-display-help' to see the
+ripgrep command's usage info.
 
 
 TODO:
@@ -73,6 +75,8 @@ TODO:
 in results like `helm-ag' (https://github.com/syohex/emacs-helm-ag)
 - allow (elisp)? regex searching of search results, including file names
     - use `helm-swoop' (https://github.com/ShingoFukuyama/helm-swoop)?
+- publish `update-commentary.el' and the associated machinery as an npm
+package
 
 
 License:
