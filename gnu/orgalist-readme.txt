@@ -23,7 +23,10 @@ and
 
 To start a list, type "- <SPC>" or "1 . <SPC>", then write the
 contents of the item.  To create a new item, use M-<RET>.  If it
-should be a child of the previous item, use <TAB> or M-<RIGHT>.
+should be a child of the previous item, use <TAB> (this is
+a shortcut for M-<RIGHT> and M-<LEFT> only on empty items), or
+M-<RIGHT>.
+
 For example, "- <SPC> i t e m M-<RET> <TAB> c h i l d" produces:
 
     - item

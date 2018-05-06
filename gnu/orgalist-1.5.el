@@ -6,7 +6,7 @@
 ;; Maintainer: Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.4"))
-;; Version: 1.3
+;; Version: 1.5
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -48,7 +48,10 @@
 
 ;; To start a list, type "- <SPC>" or "1 . <SPC>", then write the
 ;; contents of the item.  To create a new item, use M-<RET>.  If it
-;; should be a child of the previous item, use <TAB> or M-<RIGHT>.
+;; should be a child of the previous item, use <TAB> (this is
+;; a shortcut for M-<RIGHT> and M-<LEFT> only on empty items), or
+;; M-<RIGHT>.
+
 ;; For example, "- <SPC> i t e m M-<RET> <TAB> c h i l d" produces:
 
 ;;     - item
@@ -109,6 +112,7 @@
 ;;; Code:
 
 (require 'easymenu)
+(require 'nadvice)
 (require 'org-macs)
 (require 'org-list)
 
@@ -493,15 +497,20 @@ move is not possible."
     (org-list-write-struct struct (org-list-parents-alist struct))
     (move-to-column col)))
 
-(defun orgalist--auto-fill ()
+(defun orgalist--auto-fill (fill-function)
   "Auto fill function.
-Return nil outside of a list or in a blank line.  This function is
-meant to be used as a piece of advice on `auto-fill-function'."
+
+FILL-FUNCTION is the regular function used to perform auto-fill.
+
+Return nil outside of a list or in a blank line.  This function
+is meant to be used as a piece of advice on both
+`auto-fill-function' and `normal-auto-fill-function'."
   (unless (org-match-line "^[ \t]*$")
-    (let ((item? (orgalist--in-item-p)))
-      (when item?
-        (orgalist--call-in-item normal-auto-fill-function item?)
-        t))))
+    (let ((fc (current-fill-column)))
+      (when (and fc (<= fc (current-column)))
+        (let ((item? (orgalist--in-item-p)))
+          (if item? (orgalist--call-in-item fill-function item?)
+            (funcall fill-function)))))))
 
 (defun orgalist--fill-item (justify)
   "Fill item as a paragraph.
@@ -515,95 +524,148 @@ as a piece of advice on `fill-paragraph-function'."
       (orgalist--call-in-item #'fill-paragraph item? justify)
       t)))
 
+(defun orgalist--indent-line ()
+  "Indent current line in an item.
+This function is meant to be used as a piece of advice on
+`indent-line-function'."
+  (cond
+   ;; At an item, try to cycle indentation if it is empty or prevent
+   ;; any indentation.
+   ((orgalist--at-item-p) t)
+   ;; Within an item, indent according to the current bullet.
+   ((let ((item? (orgalist--in-item-p)))
+      (and item?
+           (let ((column (save-excursion
+                           (goto-char item?)
+                           (looking-at orgalist--item-re)
+                           (goto-char (match-end 1))
+                           (skip-chars-backward " \t")
+                           (1+ (current-column)))))
+             (if (<= (current-column) (current-indentation))
+                 (indent-line-to column)
+               (save-excursion (indent-line-to column)))
+             t))))
+   ;; Right after a list, indent like the first item in the list.
+   ((let ((struct? (save-excursion
+                     (and (= 0 (forward-line -1))
+                          (looking-at-p "[ \t]*$")
+                          (progn
+                            (skip-chars-backward " \r\t\n")
+                            (let ((item? (orgalist--in-item-p)))
+                              (and item?
+                                   (goto-char item?)
+                                   (orgalist--struct))))))))
+      (and struct?
+           (let ((column (save-excursion
+                           (goto-char (org-list-get-top-point struct?))
+                           (current-indentation))))
+             (if (<= (current-column) (current-indentation))
+                 (indent-line-to column)
+               (save-excursion (indent-line-to column)))
+             t))))
+   (t nil)))
+
 (defun orgalist--cycle-indentation ()
   "Cycle levels of indentation of an empty item.
 
 The first run indents the item, if applicable.  Subsequent runs
 outdent it at meaningful levels in the list.
 
-This function is meant to be used as a piece of advice on
-`indent-line-function'."
-  (when (orgalist--at-item-p)
-    (let ((struct (orgalist--struct)))
-      (if (< (progn (org-match-line orgalist--item-re) (match-end 0))
-             (save-excursion
-               (goto-char (org-list-get-item-end
-                           (line-beginning-position) struct))
-               (skip-chars-backward " \r\t\n")
-               (point)))
-          ;; If the item is not empty, do not indent.
-          'noindent
-        (let ((ind (org-list-get-ind (line-beginning-position) struct))
-              (bullet (org-trim (buffer-substring (line-beginning-position)
-                                                  (line-end-position)))))
-          (setq this-command 'orgalist--cycle-indentation)
-          ;; When in the middle of the cycle, try to outdent first.  If
-          ;; it fails, and point is still at initial position, indent.
-          ;; Else, re-create it at its original position.
-          (if (eq last-command 'orgalist--cycle-indentation)
-              (cond
-               ((ignore-errors (org-list-indent-item-generic -1 t struct)))
-               ((and (= ind (car orgalist--cycling-state))
-                     (ignore-errors (org-list-indent-item-generic 1 t struct))))
-               (t (delete-region (line-beginning-position) (line-end-position))
-                  (indent-to-column (car orgalist--cycling-state))
-                  (insert (cdr orgalist--cycling-state) " ")
-                  ;; Break cycle.
-                  (setq this-command 'identity)))
-            ;; If a cycle is starting, remember indentation and bullet,
-            ;; then try to indent.  If it fails, try to outdent.
-            (setq orgalist--cycling-state (cons ind bullet))
-            (cond
-             ((ignore-errors (org-list-indent-item-generic 1 t struct)))
-             ((ignore-errors (org-list-indent-item-generic -1 t struct)))
-             (t 'noindent))))))))
+The function assumes point is at an empty item."
+  (interactive)
+  (let* ((struct (orgalist--struct))
+         (ind (org-list-get-ind (line-beginning-position) struct))
+         (bullet (org-trim (buffer-substring (line-beginning-position)
+                                             (line-end-position)))))
+    (setq this-command 'orgalist--cycle-indentation)
+    ;; When in the middle of the cycle, try to outdent first.  If it
+    ;; fails, and point is still at initial position, indent.  Else,
+    ;; re-create it at its original position.
+    (if (eq last-command 'orgalist--cycle-indentation)
+        (cond
+         ((ignore-errors (org-list-indent-item-generic -1 t struct)))
+         ((and (= ind (car orgalist--cycling-state))
+               (ignore-errors (org-list-indent-item-generic 1 t struct))))
+         (t (delete-region (line-beginning-position) (line-end-position))
+            (indent-to-column (car orgalist--cycling-state))
+            (insert (cdr orgalist--cycling-state) " ")
+            ;; Break cycle.
+            (setq this-command 'identity)))
+      ;; If a cycle is starting, remember indentation and bullet, then
+      ;; try to indent.  If it fails, try to outdent.
+      (setq orgalist--cycling-state (cons ind bullet))
+      (cond
+       ((ignore-errors (org-list-indent-item-generic 1 t struct)))
+       ((ignore-errors (org-list-indent-item-generic -1 t struct)))
+       (t (user-error "No other meaningful indentation level"))))))
 
-(defun orgalist--while-at-item (cmd)
+(defun orgalist--when-at-item (cmd)
   "Return CMD when point is at a list item."
-  (when (orgalist--at-item-p) cmd))
+  (when (and orgalist-mode (orgalist--at-item-p)) cmd))
 
-(defun orgalist--while-in-item (cmd)
+(defun orgalist--when-at-empty-item (cmd)
+  "Return CMD when point is at an empty list item."
+  (when (and orgalist-mode
+             (orgalist--at-item-p)
+             (org-match-line orgalist--item-re)
+             (let ((start (line-beginning-position))
+                   (reference-ind (current-indentation))
+                   (end (line-beginning-position 4)))
+               (save-excursion
+                 (goto-char (match-end 0))
+                 (skip-chars-forward " \r\t\n" end)
+                 (or (= end (point))
+                     (and (/= start (line-beginning-position))
+                          (>= reference-ind (current-indentation)))))))
+    cmd))
+
+(defun orgalist--when-in-item (cmd)
   "Return CMD when point is in a list item."
-  (when (orgalist--in-item-p) cmd))
+  (when (and orgalist-mode (orgalist--in-item-p)) cmd))
 
 
 ;;; Bindings and menu
 
 (defconst orgalist--maybe-previous
-  '(menu-item "" orgalist-previous-item :filter orgalist--while-in-item))
+  '(menu-item "" orgalist-previous-item :filter orgalist--when-in-item))
 
 (defconst orgalist--maybe-next
-  '(menu-item "" orgalist-next-item :filter orgalist--while-in-item))
+  '(menu-item "" orgalist-next-item :filter orgalist--when-in-item))
 
 (defconst orgalist--maybe-insert
-  '(menu-item "" orgalist-insert-item :filter orgalist--while-in-item))
+  '(menu-item "" orgalist-insert-item :filter orgalist--when-in-item))
 
 (defconst orgalist--maybe-move-up
-  '(menu-item "" orgalist-move-item-up :filter orgalist--while-at-item))
+  '(menu-item "" orgalist-move-item-up :filter orgalist--when-at-item))
 
 (defconst orgalist--maybe-move-down
-  '(menu-item "" orgalist-move-item-down :filter orgalist--while-at-item))
+  '(menu-item "" orgalist-move-item-down :filter orgalist--when-at-item))
 
 (defconst orgalist--maybe-outdent
-  '(menu-item "" orgalist-outdent-item :filter orgalist--while-at-item))
+  '(menu-item "" orgalist-outdent-item :filter orgalist--when-at-item))
 
 (defconst orgalist--maybe-indent
-  '(menu-item "" orgalist-indent-item :filter orgalist--while-at-item))
+  '(menu-item "" orgalist-indent-item :filter orgalist--when-at-item))
 
 (defconst orgalist--maybe-outdent-tree
-  '(menu-item "" orgalist-outdent-item-tree :filter orgalist--while-at-item))
+  '(menu-item "" orgalist-outdent-item-tree :filter orgalist--when-at-item))
 
 (defconst orgalist--maybe-indent-tree
-  '(menu-item "" orgalist-indent-item-tree :filter orgalist--while-at-item))
+  '(menu-item "" orgalist-indent-item-tree :filter orgalist--when-at-item))
 
 (defconst orgalist--maybe-cycle-bullet
-  '(menu-item "" orgalist-cycle-bullet :filter orgalist--while-at-item))
+  '(menu-item "" orgalist-cycle-bullet :filter orgalist--when-at-item))
 
 (defconst orgalist--maybe-check
-  '(menu-item "" orgalist-check-item :filter orgalist--while-at-item))
+  '(menu-item "" orgalist-check-item :filter orgalist--when-at-item))
 
 (defconst orgalist--maybe-sort
-  '(menu-item "" orgalist-sort-items :filter orgalist--while-at-item))
+  '(menu-item "" orgalist-sort-items :filter orgalist--when-at-item))
+
+(defconst orgalist--maybe-cycle-indentation
+  '(menu-item ""
+              orgalist--cycle-indentation
+              :filter orgalist--when-at-empty-item))
 
 (defconst orgalist-mode-map
   (let ((map (make-sparse-keymap)))
@@ -619,6 +681,16 @@ This function is meant to be used as a piece of advice on
     (define-key map (kbd "C-c -") orgalist--maybe-cycle-bullet)
     (define-key map (kbd "C-c C-c") orgalist--maybe-check)
     (define-key map (kbd "C-c ^") orgalist--maybe-sort)
+    ;; When an item is empty, we really want to hijack <TAB> binding
+    ;; so that the key can be used to cycle item level.
+    ;;
+    ;; Although it contains "indentation", this is not tied to, e.g.,
+    ;; `indent-line-function'.  For example, consider
+    ;; `reindent-then-newline-and-indent'.  When called on an empty
+    ;; item, it would cycle its indentation even though <RET> was
+    ;; pressed.  This is not desirable.
+    (define-key map (kbd "<tab>") orgalist--maybe-cycle-indentation)
+    (define-key map (kbd "TAB") orgalist--maybe-cycle-indentation)
     map))
 
 (easy-menu-define orgalist--menu
@@ -694,19 +766,41 @@ C-c C-c         `orgalist-check-item'"
     (setq-local org-list-automatic-rules nil)
     (setq-local org-list-demote-modify-bullet nil)
     (setq-local org-list-two-spaces-after-bullet-regexp nil)
-    (add-function :before-until (local 'normal-auto-fill-function)
-                  #'orgalist--auto-fill)
     (add-function :before-until
                   (local 'fill-paragraph-function)
                   #'orgalist--fill-item)
     (add-function :before-until
                   (local 'indent-line-function)
-                  #'orgalist--cycle-indentation))
+                  #'orgalist--indent-line)
+    ;; If Auto fill mode is not enabled when we initialize Orgalist
+    ;; mode, `auto-fill-function' is nil and we just advise
+    ;; `normal-auto-fill-function'.
+    (add-function :around
+                  (local 'normal-auto-fill-function)
+                  #'orgalist--auto-fill)
+    (when auto-fill-function
+      (add-function :around (local 'auto-fill-function) #'orgalist--auto-fill))
+    ;; FIXME: Workaround bug#31361.
+    (unless (advice-member-p 'orgalist-fix-bug:31361 'indent-according-to-mode)
+      (advice-add 'indent-according-to-mode
+                  :around (lambda (old)
+                            "Workaround bug#31361."
+                            (or (orgalist--indent-line)
+                                (let ((indent-line-function
+                                       (advice--cd*r indent-line-function)))
+                                  (funcall old))))
+                  '((name . orgalist-fix-bug:31361)))))
    (t
-    (remove-function (local 'normal-auto-fill-function) #'orgalist--auto-fill)
     (remove-function (local 'fill-paragraph-function) #'orgalist--fill-item)
-    (remove-function (local 'indent-line-function)
-                     #'orgalist--cycle-indentation))))
+    (remove-function (local 'indent-line-function) #'orgalist--indent-line)
+    (remove-function (local 'normal-auto-fill-function) #'orgalist--auto-fill)
+    (when auto-fill-function
+      (remove-function (local 'auto-fill-function) #'orgalist--auto-fill))
+    ;; FIXME: When there is no Orgalist minor mode active in any
+    ;; buffer, remove workaround for bug#31361.
+    (unless (cl-some (lambda (b) (with-current-buffer b orgalist-mode))
+                     (buffer-list))
+      (advice-remove 'indent-according-to-mode 'orgalist-fix-bug:31361)))))
 
 
 ;;; Public functions
@@ -960,6 +1054,121 @@ for this list."
 
 ;;;; ChangeLog:
 
+;; 2018-05-05  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Bump to version 1.5
+;; 
+;; 2018-05-05  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Fix workaround bug#31361
+;; 
+;; 	* orgalist.el (orgalist-mode): Re-apply advice.
+;; 
+;; 2018-05-05  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Silence byte-compiler
+;; 
+;; 2018-05-05  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Bump to version 1.4
+;; 
+;; 2018-05-05  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Add workaround for bug#31361
+;; 
+;; 	* orgalist.el (orgalist-mode): Add workaround for bug#31361.
+;; 
+;; 2018-05-05  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Short-circuit filters when Orgalist minor mode is not active
+;; 
+;; 	* orgalist.el (orgalist--when-at-item):
+;; 	(orgalist--when-at-empty-item):
+;; 	(orgalist--when-in-item): Check `orgalist-mode'.
+;; 
+;; 	The check is already done by `orgalist--at-item-p', but checking it 
+;; 	earlier can avoid two funcalls.
+;; 
+;; 2018-05-05  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Rename filters
+;; 
+;; 	* orgalist.el (orgalist--when-at-item): Renamed from
+;; 	`orgalist--while-at-item'.
+;; 	(orgalist--when-at-empty-item): Renamed from
+;; 	`orgalist--while-at-empty-item'.
+;; 	(orgalist--when-in-item): Renamed from `orgalist--while-at-item'.
+;; 	(orgalist--maybe-previous):
+;; 	(orgalist--maybe-next):
+;; 	(orgalist--maybe-insert):
+;; 	(orgalist--maybe-move-up):
+;; 	(orgalist--maybe-move-down):
+;; 	(orgalist--maybe-outdent):
+;; 	(orgalist--maybe-indent):
+;; 	(orgalist--maybe-outdent-tree):
+;; 	(orgalist--maybe-indent-tree):
+;; 	(orgalist--maybe-cycle-bullet):
+;; 	(orgalist--maybe-check):
+;; 	(orgalist--maybe-sort):
+;; 	(orgalist--maybe-cycle-indentation): Apply renaming.
+;; 
+;; 2018-05-05  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Fix indentation cycling on empty items
+;; 
+;; 	* orgalist.el (orgalist--indent-line): Do not cycle indentation.
+;; 	(orgalist--cycle-indentation): Change signature.  Make it interactive so
+;; 	as to be used in `menu-item'.
+;; 	(orgalist--while-at-empty-item): New function.
+;; 	(orgalist--maybe-cycle-indentation): New variable.
+;; 	(orgalist-mode-map): Hijack <TAB> on empty items.
+;; 
+;; 2018-05-05  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Really prevent any indentation at items
+;; 
+;; 	* orgalist.el (orgalist--indent-line): Return t instead of `noindent'
+;; 	 at a non-empty item.
+;; 
+;; 	Returning `noindent' still allows `indent-line-function' default value 
+;; 	to kick in, according to `indent-according-to-mode'.
+;; 
+;; 2018-05-04  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Do not consider auto filling line before `current-fill-column'
+;; 
+;; 	* orgalist.el (orgalist--auto-fill): Do not consider auto filling line
+;; 	 before `current-fill-column'.
+;; 
+;; 	The behavior is the same, but we avoid calling `orgalist--in-item-p' in
+;; 	most cases.
+;; 
+;; 2018-05-04  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Also indent line right after the list
+;; 
+;; 	(orgalist--indent-line): Indent line right after the list.
+;; 
+;; 2018-05-04  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Fix auto filling
+;; 
+;; 	* orgalist.el (orgalist-mode): Advise around both
+;; 	 `normal-auto-fill-function' and `auto-fill-function' to handle
+;; 	 various Auto fill mode status when Orgalist mode starts.
+;; 	(orgalist--auto-fill): Change signature since the advice is located at a
+;; 	different place.
+;; 
+;; 2018-05-04  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Indent line properly
+;; 
+;; 	* orgalist.el (orgalist--indent-line): New function.
+;; 	(orgalist--cycle-indentation): Focus on indentation cycling instead of 
+;; 	trying to indent line.
+;; 	(orgalist-mode): Advise `indent-line-function' with
+;; 	`orgalist--indent-line'.
+;; 
 ;; 2018-05-03  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
 ;; 
 ;; 	Bump to version 1.3
