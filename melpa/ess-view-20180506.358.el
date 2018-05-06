@@ -5,7 +5,7 @@
 ;; Author: Bocci Gionata <boccigionata@gmail.com>
 ;; Maintainer: Bocci Gionata <boccigionata@gmail.com>
 ;; URL: https://github.com/GioBo/ess-view
-;; Package-Version: 20160309.1315
+;; Package-Version: 20180506.358
 ;; Created: 2016-02-10
 ;; Version: 0.1
 ;; Package-Requires: ((ess "15")  (s "1.8.0") (f "0.16.0"))
@@ -71,6 +71,7 @@
 (require 'f)
 (require 's)
 
+
 (defvar ess-view--spreadsheet-program (or
 				       (executable-find "libreoffice")
 				       (executable-find "openoffice")
@@ -97,26 +98,23 @@
 (defvar ess-view-spr-proc
   "Process of the called spreadsheet software.")
 
-(defvar ess-view--save nil
-  "Test if user want to midify the dataframe within the spreadsheet.")
 
 (defun ess-view-print-vector (obj)
   "Print content of vector OBJ in another buffer.
 In case the passed object is a vector it is not convenient to use
 an external spreadsheet sofware to look at its content."
-  (let
-      ((header (concat obj " contains the following elements: \n")))
+  (let ((header (concat obj " contains the following elements: \n")))
     (ess-execute (concat "cat(" obj ",sep='\n')") nil "*BUFF*" header)))
 
 
 (defun ess-view-random-string ()
-  "This function create a random string of 20 characters."
+  "Create a string of 20 random characters."
   (interactive)
-  (setq ess-view--rand-str "")
-  (let ((mycharset '("a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "y" "v" "w" "x" "y" "z")))
+  (setq ess-view--rand-str (make-string 20 0))
+  (let ((mycharset "abcdefghijklmnopqrstuvwxyz"))
     (dotimes (i 20)
-      (setq ess-view--rand-str (concat ess-view--rand-str (elt mycharset (random (length mycharset)))))))
-  ess-view--rand-str)
+      (aset ess-view--rand-str i (elt mycharset (random (length mycharset)))))
+    ess-view--rand-str))
 
 
 (defun ess-view-create-env ()
@@ -124,17 +122,13 @@ an external spreadsheet sofware to look at its content."
 This is done in order not to pollute user's environments with a temporary
 copy of the passed object which is used to create the temporary .csv file."
   (interactive)
-  (let*
-      ((nome-env
-	(ess-view-random-string)))
+  (let ((nome-env (ess-view-random-string)))
     ;; it is very unlikely that the user has an environment which
     ;; has the same name of our random generated 20-char string,
     ;; but just to be sure, we run this cycle recursively
     ;; until we find an environment name which does not exist yet
-    (if
-	(ess-boolean-command
-	 (concat "is.environment(" nome-env ")\n"))
-	(ess-view-create-env))
+    (if (ess-boolean-command (concat "is.environment(" nome-env ")\n"))
+        (ess-view-create-env))
     nome-env))
 
 
@@ -143,8 +137,9 @@ copy of the passed object which is used to create the temporary .csv file."
 Argument STRINGCMD  is the command - as a string - to be passed to the R process."
   (ess-send-string (get-process "R") STRINGCMD nil))
 
+
 (defun ess-view-write--sentinel (process signal)
-  "Chech the spreadsheet (PROCESS) to intercepts when it is closed (SIGNAL).
+  "Check the spreadsheet (PROCESS) to intercept when it is closed (SIGNAL).
 The saved version of the file - in the csv fomat -is than converted back
 to the R dataframe."
   (cond
@@ -152,7 +147,8 @@ to the R dataframe."
     (progn
       (ess-view-check-separator ess-view-temp-file)
       (ess-view-send-to-R (format "%s <- read.table('%s',header=TRUE,sep=',',stringsAsFactors=FALSE)\n" ess-view-oggetto ess-view-temp-file))))))
-  
+
+
 (defun ess-view-clean-data-frame (obj)
   "This function cleans the dataframe of interest.
 Factors are converted to characters (less problems when exporting), NA and
@@ -162,6 +158,7 @@ Argument OBJ is the name of the dataframe to be cleaned."
   (ess-view-send-to-R (format "%s[sapply(%s,is.factor)]<-lapply(%s[sapply(%s,is.factor)],as.character)" obj obj obj obj))
   (ess-view-send-to-R (format "%s[is.na(%s)]<-''\n" obj obj))
   (ess-view-send-to-R (format "%s[%s=='NA']<-''\n" obj obj)))
+
 
 (defun ess-view-data-frame-view (object save row-names)
   "This function is used in case the passed OBJECT is a data frame.
@@ -218,61 +215,61 @@ the row names of the dataframe as well."
     (pop-to-buffer "*ess-view-error*")))
 
 
-
-(defun ess-view-check-separator (filePath)
+(defun ess-view-check-separator (file-path)
   "Try to convert the tmp file to the csv format.
 This is a tentative strategy to obtain a csv content from the file - specified
-by FILEPATH - separated by commas, reagardless of the default field separator
+by FILE-PATH - separated by commas, regardless of the default field separator
 used by the spreadsheet software."
-  (let
-      ((testo (s-split "\n" (f-read filePath) t)))
+  (let ((testo (s-split "\n" (f-read file-path) t)))
     (setq testo (mapcar (lambda (x) (s-replace-all '(("\t" . ",") ("|" . ",") (";" . ",")) x)) testo))
     (setq testo (s-join "\n" testo))
-    (f-write-text testo 'utf-8 filePath)))
+    (f-write-text testo 'utf-8 file-path)))
 
 
-(defun ess-view-inspect-df (&optional ess-view-row)
-  "Call other functions to inspect or save a dataframe.
-This function is bound to both \\C-\\x w and \\C-\\x q and according to the
-keybinding used, it either show the dataframe or shown AND later store
-it back in the R dataframe.
-If user wants the row names of the dataframe to be exported, then the prefix
-argument 0 must be provided before calling the function (eg. by using
-\\C-\\u 0 \\C-\\x w): the argument ESS-VIEW-ROW takes care of storing
-this prefix arg."
-  (interactive "P")
-  (if (eq ess-view-row 0)
-      (setq ess-view-row t)
-    (setq ess-view-row nil))
+(defun ess-view-inspect-df-inner (row-names save)
+  "Show a dataframe.
+If ROW-NAMES is t, the row names of the dataframe are also exported.
+If SAVE is t, it also saves back the result."
   (if ess-view--spreadsheet-program
       (progn
-	(let*
-	    ((codes (key-description (this-command-keys-vector)))
-	     (called (make-string 1 (aref codes (1- (length codes))))))
-	  (if (equal called "w")
-	      (setq ess-view--save nil)
-	    (setq ess-view--save t))
-	  (setq ess-view-oggetto (ess-read-object-name "name of R object:"))
-	  (setq ess-view-oggetto (substring-no-properties (car ess-view-oggetto)))
-	  (cond
-	   ((ess-boolean-command (concat "exists(" ess-view-oggetto ")\n")) (message "The object does not exists"))
-	   ((ess-boolean-command (concat "is.vector(" ess-view-oggetto ")\n")) (ess-view-print-vector ess-view-oggetto))
-	   ((ess-boolean-command (concat "is.data.frame(" ess-view-oggetto ")\n")) (ess-view-data-frame-view ess-view-oggetto ess-view--save ess-view-row))
-	   (t (message "the object is neither a vector or a data.frame; don't know how to show it...")))))
+        (setq ess-view-oggetto (ess-read-object-name "name of R object:"))
+        (setq ess-view-oggetto (substring-no-properties (car ess-view-oggetto)))
+        (cond
+         ((ess-boolean-command (concat "exists(" ess-view-oggetto ")\n"))
+          (message "The object does not exists"))
+         ((ess-boolean-command (concat "is.vector(" ess-view-oggetto ")\n"))
+          (ess-view-print-vector ess-view-oggetto))
+         ((ess-boolean-command (concat "is.data.frame(" ess-view-oggetto ")\n"))
+          (ess-view-data-frame-view ess-view-oggetto save row-names))
+         (t
+          (message "the object is neither a vector or a data.frame; don't know how to show it..."))))
     (ess-no-program)))
 
 
-(global-set-key (kbd "C-x w") 'ess-view-inspect-df)
-(global-set-key (kbd "C-x q") 'ess-view-inspect-df)
+(defun ess-view-inspect-df (&optional row-names)
+  "Show a dataframe.
+If ROW-NAMES is t, the row names of the dataframe are also exported."
+  (interactive "P")
+  (ess-view-inspect-df-inner (if (eq row-names 0) t nil) nil))
 
+
+(defun ess-view-inspect-and-save-df (&optional row-names)
+  "Show a dataframe and save the result.
+If ROW-NAMES is t, the row names of the dataframe are also exported."
+  (interactive "P")
+  (ess-view-inspect-df-inner (if (eq row-names 0) t nil) t))
+
+
+(global-set-key (kbd "C-x w") 'ess-view-inspect-df)
+(global-set-key (kbd "C-x q") 'ess-view-inspect-and-save-df)
 
 
 (define-minor-mode ess-view-mode
-  "Have a look ad dataframes."
+  "Have a look at dataframes."
   :lighter " ess-v"
   :keymap (let ((map (make-sparse-keymap)))
 	    (define-key map (kbd "C-x w") 'ess-view-inspect-df)
-	    (define-key map (kbd "C-x q") 'ess-view-inspect-df)
+	    (define-key map (kbd "C-x q") 'ess-view-inspect-and-save-df)
 	    map))
 
 
