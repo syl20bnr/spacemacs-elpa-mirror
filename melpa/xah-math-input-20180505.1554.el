@@ -3,8 +3,8 @@
 ;; Copyright © 2010-2018 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.5.20180328
-;; Package-Version: 20180328.1515
+;; Version: 2.6.20180505155202
+;; Package-Version: 20180505.1554
 ;; Created: 08 Dec 2010
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: abbrev, convenience, unicode, math, LaTex
@@ -65,15 +65,15 @@
 (defvar xah-math-input-abrvs nil "A abbreviation hash table that maps a string to unicode char.")
 (setq xah-math-input-abrvs (make-hash-table :test 'equal))
 
-(defun xah-math-input--add-to-hash (φpairs)
-  "Add φpairs to the hash table `xah-math-input-abrvs'.
-φpairs is a sequence of pairs. Each element is a sequence of 2 items, [key, value]."
+(defun xah-math-input--add-to-hash (@pairs)
+  "Add @pairs to the hash table `xah-math-input-abrvs'.
+@pairs is a sequence of pairs. Each element is a sequence of 2 items, [key, value]."
   (mapc
    (lambda (x) (puthash (elt x 0) (elt x 1) xah-math-input-abrvs))
-   φpairs))
+   @pairs))
 
 (xah-math-input--add-to-hash
- ;; xml entities http://xahlee.info/comp/unicode_html_entities.html
+ ;; xml entities http://xahlee.info/js/html_xml_entities.html
  [
   [ "nbsp" " " ]
   [ "bull" "•" ]
@@ -317,12 +317,6 @@
   ["no" "№"]
   ["No" "№"]
 
-  ["^_^" "😄"]
-  ["^_^'" "😅"]
-  [">_<" "😆"]
-  ["¬_¬" "😒"]
-  ["meh" "😒"]
-
   ["obj" "￼"]
 
   [":o" "😮"]
@@ -410,25 +404,27 @@
  ;; http://xahlee.info/comp/unicode_matching_brackets.html
  '(
 
-   ["flr" "⌊⌋"]      ;
-   ["ceil" "⌈⌉"]     ;
-   ["floor" "⌊⌋"]    ;
-   ["ceiling" "⌈⌉"]  ;
+   ["flr" "⌊⌋"]
+   ["ceil" "⌈⌉"]
+   ["floor" "⌊⌋"]
+   ["ceiling" "⌈⌉"]
 
    ["\"" "“”"] ;curly quote
    ["\"\"" "“”"]
 
-   ["<>" "‹›"] ;french quote
-   ["<<>>" "«»"]
+   ["fq" "‹›"] ;french quote
+   ["<>" "‹›"] ;
+   ["dfq" "«»"] ; double french quote
 
+   ["cb" "「」"] ; corner bracket
    ["[" "「」"]
-   ["[]" "「」"]
-   ["[[" "『』"]
-   ["[[]]" "『』"]
-   ["[(" "【】"]
-   ["[()]" "【】"]
-   ["(" "〔〕"]
-   ["()" "〔〕"]))
+
+   ["[(" "【】"] ; LEFT BLACK LENTICULAR BRACKET
+
+    ["tb" "〔〕"] ; TORTOISE SHELL BRACKET
+  ["(" "〔〕"]
+
+   ))
 
 (xah-math-input--add-to-hash
  ;; http://xahlee.info/comp/unicode_circled_numbers.html
@@ -482,6 +478,7 @@
    [">=" "≥"]
    ["!el" "∉"]
    ["el" "∈"]
+   ["in" "∈"]
    ["&&" "∧"]
    ["||" "∨"]
    ["not" "¬"]
@@ -537,9 +534,8 @@
    ["sqrt" "√"]
    ["rt" "√"]
    ["del" "∇"]
-   ["part" "∂"]
-   ["partial" "∂"]
-   ["pd" "∂"]
+
+   ["pd" "∂"] ; partial derivative
    ["cross" "⨯"]
    ["cint" "∮"] ; contour integral
    ["ccint" "∲"]
@@ -667,7 +663,8 @@
 (xah-math-input--add-cycle ["✂" "✄"])              ;scissor
 (xah-math-input--add-cycle ["↹" "⇥" "⇤"])          ; tab
 (xah-math-input--add-cycle ["⏎" "↩" "↵" "⌤" "⎆"])     ; return/enter
-(xah-math-input--add-cycle ["⌫" "⌦"])     ; delete
+
+(xah-math-input--add-cycle ["∇" "⌫" "⌦"])     ; del delete
 (xah-math-input--add-cycle ["↶" "⎌"])     ; undo
 (xah-math-input--add-cycle ["✲" "⎈" "‸"])     ; control
 

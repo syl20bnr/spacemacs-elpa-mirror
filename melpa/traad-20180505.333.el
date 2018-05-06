@@ -4,7 +4,7 @@
 ;;
 ;; Author: Austin Bingham <austin.bingham@gmail.com>
 ;; Version: 1.1.0
-;; Package-Version: 20180503.239
+;; Package-Version: 20180505.333
 ;; URL: https://github.com/abingham/traad
 ;; Package-Requires: ((dash "2.13.0") (deferred "0.3.2") (popup "0.5.0") (request "0.2.0") (request-deferred "0.2.0") (virtualenvwrapper "20151123"))
 ;;
@@ -357,6 +357,41 @@ necessary. Return the history buffer."
    (concat "/history/redo_info/" (number-to-string i))))
 
 ;;;###autoload
+(defun traad-auto-import ()
+  (interactive)
+
+  (deferred:$
+    (traad--deferred-request
+     (buffer-file-name)
+     "/auto_import/get_imports"
+     :type "POST"
+     :data (list (cons "path" (buffer-file-name))
+                 (cons "offset" (traad--adjust-point (point)))))
+
+    (deferred:nextc it
+      (lambda (rsp)
+        (let* ((buff (get-buffer-create "*traad-get-imports*"))
+               (data (request-response-data rsp))
+               (imports (assoc-default 'imports data))
+               (location (assoc-default 'location data))
+               (menu-entries
+                (mapcar
+                 (lambda (import)
+                   (format "from %s import %s"
+                           (elt import 1)
+                           (elt import 0)))
+                 imports))
+               (selection (popup-menu*
+                            menu-entries
+                            :margin-left 1
+                            :margin-right 1
+                            )))
+          (save-excursion
+            (goto-line location)
+            (insert selection)
+            (insert "\n")))))))
+
+;;;###autoload
 (defun traad-rename (new-name)
   "Rename the object at the current location."
   (interactive
@@ -374,8 +409,8 @@ necessary. Return the history buffer."
   "Call the correct form of `move` based on the type of thing at the point."
   (interactive)
   (pcase (traad-thing-at (point))
-    (module (call-interactively 'traad-move-module))
-    (function (call-interactively 'traad-move-global))
+    ('module (call-interactively 'traad-move-module))
+    ('function (call-interactively 'traad-move-global))
     (_ (call-interactively 'traad-move-moodule))))
 
 
