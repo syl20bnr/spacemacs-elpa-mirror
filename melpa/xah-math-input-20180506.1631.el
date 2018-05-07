@@ -3,8 +3,8 @@
 ;; Copyright © 2010-2018 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.6.20180505155202
-;; Package-Version: 20180505.1554
+;; Version: 2.6.20180506163108
+;; Package-Version: 20180506.1631
 ;; Created: 08 Dec 2010
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: abbrev, convenience, unicode, math, LaTex
@@ -520,17 +520,17 @@
 
 (xah-math-input--add-to-hash
  '(
+
    ;; operators
-   ["cp" "∘"]
-   ["c+" "⊕"]
-   ["c*" "⊗"]
-   ["c-" "⊖"]
-   ["c/" "⊘"]
-   ["'" "′"]
-   ["''" "″"]
+   ["rp" "∘"] ; ring operator
+   ["cp" "⊕"] ; circle plus
+   ["ct" "⊗"] ; circle times
+   ["cm" "⊖"] ; circle minus
+   ["cd" "⊘"] ; circle divide
+   ["'" "′"]  ; prime
+   ["''" "″"] ; double prime
    ["'''" "‴"]
    ["." "·"]
-   ["root" "√"]
    ["sqrt" "√"]
    ["rt" "√"]
    ["del" "∇"]
