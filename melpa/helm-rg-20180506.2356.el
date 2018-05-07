@@ -14,9 +14,9 @@
 
 ;; Author: Danny McClanahan
 ;; Version: 0.1
-;; Package-Version: 20180506.29
+;; Package-Version: 20180506.2356
 ;; URL: https://github.com/cosmicexplorer/helm-rg
-;; Package-Requires: ((emacs "25") (helm "2.8.8") (cl-lib "0.5") (dash "2.13.0") (pcre2el "1.0"))
+;; Package-Requires: ((emacs "25") (helm "2.8.8") (cl-lib "0.5") (dash "2.13.0"))
 ;; Keywords: find, file, files, helm, fast, rg, ripgrep, grep, search
 
 
@@ -120,15 +120,28 @@
 (require 'helm-grep)
 (require 'helm-lib)
 (require 'pcase)
-(require 'pcre2el)
 (require 'rx)
-(require 'rxt)
 
 
-;; Helpers
+;; Customization Helpers
 (defun helm-rg--always-safe-local (_)
   "Use as a :safe predicate in a `defcustom' form to accept any local override."
   t)
+
+(defun helm-rg--gen-defcustom-form-from-alist (name alist doc args)
+  `(defcustom ,name ',(car (helm-rg--alist-keys (symbol-value alist)))
+     ,doc
+     :type `(radio ,@(--map `(const ,it) (helm-rg--alist-keys ,alist)))
+     :group 'helm-rg
+     ,@args))
+
+(defmacro helm-rg--defcustom-from-alist (name alist doc &rest args)
+  "Create a `defcustom' named NAME which allows the keys of ALIST as values.
+
+The default value for the `defcustom' is the `car' of the first element of ALIST. ALIST must be the
+unquoted name of a variable containing an alist."
+  (declare (indent 2))
+  (helm-rg--gen-defcustom-form-from-alist name alist doc args))
 
 
 ;; Customization
@@ -194,6 +207,14 @@ in `helm-rg'."
   :type 'function
   :group 'helm-rg)
 
+(defcustom helm-rg--only-current-line-match-highlight-files-regexp nil
+  "By default, `helm-rg' will create overlays to highlight all the matches from ripgrep in a file
+when previewing a result. This is done each time a match is selected, even for buffers already
+previewed. Creating these overlays can be slow for files with lots of matches in some search. If this
+variable is set to an elisp regexp and some file path matches it, `helm-rg' will only highlight the
+current line of the file and the matches in that line when previewing that file."
+  :type 'regexp
+  :group 'helm-rg)
 
 
 ;; Faces
@@ -214,9 +235,23 @@ in `helm-rg'."
 
 
 ;; Constants
-(defconst helm-rg--base-command-args
-  '("--vimgrep" "--color=always" "--smart-case")
-  "Arguments necessary for functionality on the ripgrep command line.")
+(defconst helm-rg--color-format-argument-alist
+  '((red :cmd-line "red" :text-property "red3"))
+  "Alist mapping (a symbol named after a color) -> (strings to describe that symbol on the ripgrep
+command line and in an emacs text property). This allows `helm-rg' to identify matched text using
+ripgrep's highlighted output directly instead of doing it ourselves, by telling ripgrep to highlight
+matches a specific color, then searching for that specific color as a text property in the output.")
+
+(defconst helm-rg--style-format-argument-alist
+  '((bold :cmd-line "bold" :text-property bold))
+  "Very similar to `helm-rg--color-format-argument-alist', but for non-color styling.")
+
+(defconst helm-rg--case-sensitive-argument-alist
+  '((smart-case "--smart-case")
+    (case-sensitive "--case-sensitive")
+    (case-insensitive "--ignore-case"))
+  "Alist of methods of treating case-sensitivity when invoking ripgrep. The value is the ripgrep
+command-line argument which enforces the specified type of case-sensitivity.")
 
 (defconst helm-rg--buffer-name "*helm-rg*")
 (defconst helm-rg--process-name "*helm-rg--rg*")
@@ -225,19 +260,22 @@ in `helm-rg'."
 (defconst helm-rg--error-process-name "*helm-rg--error-process*")
 (defconst helm-rg--error-buffer-name "*helm-rg--errors*")
 
-(defconst helm-rg--ripgrep-help-buffer-name "*helm-rg-usage-help*")
+(defconst helm-rg--ripgrep-help-buffer-name "helm-rg-usage-help")
 
-(defconst helm-rg--vimgrep-output-line-regexp
-  (rx (: bol
-         (group (+ (not (any ?:))))
-         ":"
-         (group (+ (any digit)))
-         ":"
-         (group (+ (any digit)))
-         ":"
-         (group (* nonl))
-         eol))
-  "Regexp matching the output of invoking ripgrep with the '--vimgrep' option.")
+(defconst helm-rg--output-new-file-line-regexp
+  (rx (: bos (group (+? (not (any 0)))) eos))
+  "Regexp for ripgrep output which marks the start of results for a new file.
+
+See `helm-rg--process-transition' for usage.")
+
+(defconst helm-rg--numbered-text-line-regexp
+  (rx (: bos
+         (: (group (+ digit)) ":"
+            (group (*? anything)))
+         eos))
+  "Regexp for ripgrep output which marks a matched line, with he line number and content.
+
+See `helm-rg--process-transition' for usage.")
 
 (defconst helm-rg--persistent-action-display-buffer-method #'switch-to-buffer
   "A function accepting a single argument BUF and displaying the buffer.
@@ -255,6 +293,10 @@ Let-bound to `helm-rg--display-buffer-method' in `helm-rg--async-persistent-acti
        (not (in ? ))
        (= 2 ? ))))))
   "Regexp applied iteratively to split the input interpreted by `helm-rg'.")
+
+(defconst helm-rg--jump-location-text-property 'helm-rg-jump-to
+  "Name of a text property attached to the colorized ripgrep output.
+This text property contains location and match info. See `helm-rg--process-transition' for usage.")
 
 
 ;; Variables
@@ -288,6 +330,46 @@ Should accept one argument BUF, the buffer to display.")
 All paths are interpreted relative to the directory ripgrep is invoked from.
 When nil, searches from the directory ripgrep is invoked from.
 See the documentation for `helm-rg-default-directory'.")
+
+(defvar helm-rg--case-sensitivity nil
+  "Key of `helm-rg--case-sensitive-argument-alist' to use in a `helm-rg' session.")
+
+
+;; Buffer-local Variables
+(defvar-local helm-rg--process-output-parse-state
+  (list :cur-file nil)
+  "Contains state which is updated as the ripgrep output is processed.
+
+This is buffer-local because it is specific to a single process invocation and is manipulated in
+that process's buffer. See `helm-rg--parse-process-output' for usage.")
+
+
+;; Utilities
+(defun helm-rg--alist-get-exhaustive (key alist)
+  "Get KEY from ALIST, or throw an error."
+  (or (alist-get key alist)
+      (error "key '%s' was not found in alist '%S' during exhaustive check"
+             key alist)))
+
+(defun helm-rg--alist-keys (alist)
+  "Get all keys of ALIST."
+  (cl-mapcar #'car alist))
+
+(defmacro helm-rg--get-optional-typed (type-name obj &rest body)
+  "If OBJ is non-nil, check its type against TYPE-NAME, then bind it to `it' and execute BODY."
+  (declare (indent 2))
+  `(let ((it ,obj))
+     (when it
+       (cl-check-type it ,type-name)
+       ,@body)))
+
+(defmacro helm-rg--into-temp-buffer (to-insert &rest body)
+  "Execute BODY at the beginning of a `with-temp-buffer' containing TO-INSERT."
+  (declare (indent 1))
+  `(with-temp-buffer
+     (insert ,to-insert)
+     (goto-char (point-min))
+     ,@body))
 
 
 ;; Logic
@@ -330,8 +412,30 @@ See the documentation for `helm-rg-default-directory'.")
      "%s"
      (propertize ")" 'face 'highlight)))))
 
+(cl-deftype helm-rg--existing-file ()
+  `(and string
+        (satisfies file-exists-p)))
+
+(cl-deftype helm-rg--existing-directory ()
+  `(and helm-rg--existing-file
+        (satisfies file-directory-p)))
+
 (defun helm-rg--process-paths-to-search (paths)
-  (--map (expand-file-name it helm-rg--current-dir) paths))
+  (cl-check-type helm-rg--current-dir helm-rg--existing-directory)
+  (cl-loop
+   for path in paths
+   for expanded = (expand-file-name path helm-rg--current-dir)
+   unless (file-exists-p expanded)
+   do (error (concat "Error: expanded path '%s' does not exist. "
+                     "The cwd was '%s', and the paths provided were %S.")
+             expanded
+             helm-rg--current-dir
+             paths)
+   collect expanded))
+
+(defun helm-rg--empty-glob-p (glob-str)
+  (or (null glob-str)
+      (string-blank-p glob-str)))
 
 (defun helm-rg--construct-argv (pattern)
   "Create an argument list for the ripgrep command.
@@ -339,8 +443,11 @@ Uses `defcustom' values, and `defvar' values bound in other functions."
   (cons
    helm-rg-ripgrep-executable
    (append
-    helm-rg--base-command-args
-    (list "-g" helm-rg--glob-string)
+    (helm-rg--alist-get-exhaustive helm-rg--case-sensitivity helm-rg--case-sensitive-argument-alist)
+    '("--color=ansi")
+    (helm-rg--construct-match-color-format-arguments helm-rg-match-color helm-rg-match-style)
+    (unless (helm-rg--empty-glob-p helm-rg--glob-string)
+      (list "-g" helm-rg--glob-string))
     (list pattern)
     (helm-rg--process-paths-to-search helm-rg--paths-to-search))))
 
@@ -366,18 +473,6 @@ Make a dummy process if the input is empty with a clear message to the user."
       (helm-rg--make-process-from-argv
        (helm-rg--construct-argv input)))))
 
-(defun helm-rg--decompose-vimgrep-output-line (line)
-  "Parse LINE into its constituent elements, returning a plist."
-  (when (string-match helm-rg--vimgrep-output-line-regexp line)
-    (let ((matches (cl-mapcar (lambda (ind) (match-string ind line))
-                              (number-sequence 1 4))))
-      (cl-destructuring-bind (file-path line-no col-no content) matches
-        (list
-         :file-path file-path
-         :line-no (1- (string-to-number line-no))
-         :col-no (1- (string-to-number col-no))
-         :content content)))))
-
 (defun helm-rg--make-overlay-with-face (beg end face)
   "Generate an overlay in region BEG to END with face FACE."
   (let ((olay (make-overlay beg end)))
@@ -389,15 +484,63 @@ Make a dummy process if the input is empty with a clear message to the user."
   (mapc #'delete-overlay helm-rg--current-overlays)
   (setq helm-rg--current-overlays nil))
 
-(defun helm-rg--get-overlay-columns (elisp-regexp content)
-  "Find regions matching ELISP-REGEXP in the string CONTENT."
-  (with-temp-buffer
-    (insert content)
+(defun helm-rg--on-file-line-p (parsed-output)
+  (cl-destructuring-bind (&key file line-num match-results) parsed-output
+    (null line-num)))
+
+(defun helm-rg--collect-lines-matches-current-file (orig-line-parsed file-abs-path)
+  "Collect all matches from ripgrep's highlighted output from from FILE-ABS-PATH."
+  ;; If we are on a file's line, stay where we are, otherwise back up to the closest file line above
+  ;; the current line (this is the file that "owns" the entry).
+  (let ((orig-file (plist-get orig-line-parsed :file)))
+    ;; If the file path matches `helm-rg--only-current-line-match-highlight-files-regexp', just
+    ;; highlight the matches for the current line, if not on a file line.
+    (if (and (stringp helm-rg--only-current-line-match-highlight-files-regexp)
+             (string-match-p helm-rg--only-current-line-match-highlight-files-regexp file-abs-path))
+        (list (list :match-line-num (plist-get orig-line-parsed :line-num)
+                    :line-match-results (plist-get orig-line-parsed :match-results)))
+      ;; Otherwise, collect all the results on all matching lines of the file.
+      (with-helm-buffer
+        (save-excursion
+          (if (helm-rg--on-file-line-p orig-line-parsed)
+              (beginning-of-line)
+            ;; Go back to the owning file's line.
+            (re-search-backward (rx (: bol (not digit)))))
+          (cl-loop
+           do (forward-line 1)
+           for cur-line = (helm-rg--current-line-contents)
+           for result = (helm-rg--process-transition orig-file cur-line)
+           for line-content = (plist-get result :line-content)
+           while line-content
+           for parsed-line = (helm-rg--get-jump-location-from-line line-content)
+           for match-results = (plist-get parsed-line :match-results)
+           while match-results
+           do (cl-assert (string= orig-file (plist-get result :file-path)))
+           for line-num = (plist-get parsed-line :line-num)
+           collect (list :match-line-num line-num :line-match-results match-results)))))))
+
+(defun helm-rg--convert-lines-matches-to-overlays (line-match-results)
+  (beginning-of-line)
+  (--map (cl-destructuring-bind (&key beg end) it
+           (helm-rg--make-overlay-with-face
+            (+ (point) beg) (+ (point) end)
+            'helm-rg-preview-match-highlight))
+         line-match-results))
+
+(defun helm-rg--make-match-overlays-for-result (cur-file-matches)
+  (save-excursion
     (goto-char (point-min))
     (cl-loop
-     while (re-search-forward elisp-regexp nil t)
-     for (beg end) = (match-data t)
-     collect (list :beg (1- beg) :end (1- end)))))
+     with cur-line = 0
+     for line-match-set in cur-file-matches
+     append (cl-destructuring-bind (&key match-line-num line-match-results)
+                line-match-set
+              (let ((lines-diff (- match-line-num cur-line)))
+                (cl-assert (> lines-diff 0))
+                (forward-line lines-diff)
+                (incf cur-line lines-diff)
+                (cl-assert (not (eobp)))
+                (helm-rg--convert-lines-matches-to-overlays line-match-results))))))
 
 (defun helm-rg--async-action (parsed-output)
   "Visit the file at the line and column specified by CAND.
@@ -408,34 +551,33 @@ The match is highlighted in its buffer."
              (if helm-current-prefix-arg helm-rg-display-buffer-alternate-method
                helm-rg-display-buffer-normal-method))))
     (helm-rg--delete-overlays)
-    (cl-destructuring-bind (&key file-path line-no col-no content) parsed-output
+    (cl-destructuring-bind (&key file line-num match-results) parsed-output
       (let* ((file-abs-path
-              (expand-file-name file-path))
+              (expand-file-name file))
              (buffer-to-display
-              (or (find-buffer-visiting file-abs-path)
+              (or (when-let ((visiting-buf (find-buffer-visiting file-abs-path)))
+                    ;; TODO: prompt to save the buffer if modified? something?
+                    visiting-buf)
                   (let ((new-buf (find-file-noselect file-abs-path)))
                     (when helm-rg--append-persistent-buffers
                       (push new-buf helm-rg--cur-persistent-bufs))
                     new-buf)))
-             (olay-cols
-              (helm-rg--get-overlay-columns
-               (rxt-pcre-to-elisp helm-pattern) content)))
+             (cur-file-matches
+              (helm-rg--collect-lines-matches-current-file parsed-output file-abs-path)))
         (funcall helm-rg--display-buffer-method buffer-to-display)
-        (goto-char (point-min))
-        (forward-line line-no)
-        (let* ((line-olay
-                (helm-rg--make-overlay-with-face
-                 (line-beginning-position) (line-end-position)
-                 'helm-rg-preview-line-highlight))
-               (match-olays
-                (-map (-lambda ((&plist :beg beg :end end))
-                        (helm-rg--make-overlay-with-face
-                         (+ (point) beg) (+ (point) end)
-                         'helm-rg-preview-match-highlight))
-                      olay-cols)))
-          (setq helm-rg--current-overlays
-                (cons line-olay match-olays)))
-        (forward-char col-no)
+        (let ((match-olays (helm-rg--make-match-overlays-for-result cur-file-matches)))
+          (goto-char (point-min))
+          (helm-rg--get-optional-typed natnum line-num
+            (forward-line it))
+          (let ((line-olay
+                 (helm-rg--make-overlay-with-face (line-beginning-position) (line-end-position)
+                                                  'helm-rg-preview-line-highlight)))
+            (setq helm-rg--current-overlays (cons line-olay match-olays))))
+        ;; Move to the first match in the line (all lines have >= 1 match because ripgrep only
+        ;; outputs matching lines).
+        (let ((first-match-beginning (plist-get (car match-results) :beg)))
+          (helm-rg--get-optional-typed natnum first-match-beginning
+            (forward-char it)))
         (recenter)))))
 
 (defun helm-rg--async-persistent-action (parsed-output)
@@ -471,7 +613,10 @@ Call `helm-rg--async-action', but push the buffer corresponding to CAND to
   (helm-rg--kill-proc-if-live helm-rg--process-name)
   (helm-rg--kill-bufs-if-live helm-rg--buffer-name
                               helm-rg--process-buffer-name
-                              helm-rg--error-buffer-name))
+                              helm-rg--error-buffer-name)
+  (setq helm-rg--glob-string nil
+        helm-rg--paths-to-search nil
+        helm-rg--case-sensitivity nil))
 
 (defun helm-rg--do-helm-rg (rg-pattern)
   "Invoke ripgrep to search for RG-PATTERN, using `helm'."
@@ -492,27 +637,44 @@ Call `helm-rg--async-action', but push the buffer corresponding to CAND to
           src-name
           helm-rg--current-dir))
 
-(defun helm-rg--display-to-real (cand)
-  (helm-rg--decompose-vimgrep-output-line cand))
+(defun helm-rg--get-jump-location-from-line (line)
+  "Get the value of `helm-rg--jump-location-text-property' at the start of LINE."
+  ;; When there is an empty pattern, the argument can be nil due to the way helm handles our dummy
+  ;; process. There may be a way to avoid having to do this check.
+  (when line
+    (get-text-property 0 helm-rg--jump-location-text-property line)))
 
-(defmacro helm-rg--into-temp-buffer (to-insert &rest body)
-  (declare (indent 1))
-  `(with-temp-buffer
-     (insert ,to-insert)
-     (goto-char (point-min))
-     ,@body))
+(defun helm-rg--display-to-real (_)
+  "Extract the information from the process filter stored in the current entry's text properties.
+
+Note that this doesn't use the argument at all. I don't think you can get the currently selected
+line without the text properties scrubbed using helm without doing this."
+  (helm-rg--get-jump-location-from-line (helm-get-selection nil 'withprop)))
 
 (defun helm-rg--collect-matches (regexp)
   (cl-loop while (re-search-forward regexp nil t)
            collect (match-string 1)))
 
 (defun helm-rg--pattern-transformer (pattern)
+  "Transform PATTERN (the `helm-input') into a Perl-compatible regular expression."
+  ;; For example: "a  b c" => "a b.*c|c.*a b".
   (->>
+   ;; Split the pattern into our definition of "components". Suppose PATTERN is "a  b c". Then:
+   ;; "a  b c" => '("a  b" "c")
    (helm-rg--into-temp-buffer pattern
      (helm-rg--collect-matches helm-rg--loop-input-pattern-regexp))
+   ;; Two spaces in a row becomes a single space in the output regexp. Each component is now a
+   ;; regexp.
+   ;; '("a  b" "c") => '("a b" "c")
    (--map (replace-regexp-in-string (rx (= 2 ? )) " " it))
+   ;; All permutations of all component regexps.
+   ;; '("a b" "c") => '(("a b" "c") ("c" "a b"))
    (-permutations)
+   ;; Each permutation is converted into a regexp which matches a line containing each regexp in
+   ;; the permutation in order, each separated by 0 or more non-newline characters.
+   ;; '(("a b" "c") ("c" "a b")) => '("a  b.*c" "c.*a  b")
    (--map (helm-rg--join ".*" it))
+   ;; '("a  b.*c" "c.*a  b") => "a b.*c|c.*a b"
    (helm-rg--join "|")))
 
 (defun helm-rg--advance-forward ()
@@ -536,34 +698,48 @@ Call `helm-rg--async-action', but push the buffer corresponding to CAND to
              (`backward #'helm-rg--advance-backward))))
       (call-interactively move-fn)
       (cl-loop
-
-       for cur-line-parsed = (helm-rg--decompose-vimgrep-output-line
-                               (helm-current-line-contents))
+       for cur-line-parsed = (helm-rg--get-jump-location-from-line (helm-rg--current-line-contents))
        until (funcall success-fn cur-line-parsed)
        if (funcall failure-fn cur-line-parsed)
        return (message "%s" "failure: could not cycle to next entry")
        else do (call-interactively move-fn)))))
 
+(defun helm-rg--current-line-contents ()
+  "`helm-current-line-contents' doesn't keep text properties."
+  (buffer-substring (point-at-bol) (point-at-eol)))
+
+(cl-defun helm-rg--nullable-states-different (a b &key (cmp #'eq))
+  "Compare A and B respecting nullability using CMP.
+
+When CMP is `string=', the following results:
+(A=nil, B=nil) => nil
+(A=\"a\", B=nil) => t
+(A=nil, B=\"a\") => t
+(A=\"a\", B=\"a\") => nil
+(A=\"a\", B=\"b\") => t"
+  (if a
+      (not (and b (funcall cmp a b)))
+    b))
+
+(defun helm-rg--on-same-entry (orig-line-parsed cur-line-parsed)
+  (let ((orig-file (plist-get orig-line-parsed :file))
+        (cur-file (plist-get cur-line-parsed :file))
+        (orig-line-num (plist-get orig-line-parsed :line-num))
+        (cur-line-num (plist-get cur-line-parsed :line-num)))
+    (and (not (helm-rg--nullable-states-different orig-file cur-file :cmp #'string=))
+         (not (helm-rg--nullable-states-different orig-line-num cur-line-num :cmp #'=)))))
+
 (defun helm-rg--move-file (direction)
-  (-let* ((cur-line
-           (with-helm-buffer (helm-current-line-contents)))
-          (parsed-line
-           (helm-rg--decompose-vimgrep-output-line cur-line))
-          ((&plist :file-path file-path
-                   :line-no line-no
-                   :col-no col-no)
-           parsed-line))
+  "Move through matching lines from ripgrep in the given DIRECTION.
+
+This will loop around the results when advancing past the beginning or end of the results."
+  (let* ((orig-line (helm-rg--current-line-contents))
+         (orig-line-parsed (helm-rg--get-jump-location-from-line orig-line)))
     (helm-rg--iterate-results
      direction
-     (-lambda ((&plist :file-path new-file-path))
-       (not (string-equal new-file-path file-path)))
-     (-lambda ((&plist :file-path new-file-path
-                       :line-no new-line-no
-                       :col-no new-col-no))
-       (and
-        (string-equal new-file-path file-path)
-        (= new-line-no line-no)
-        (= new-col-no col-no))))))
+     #'helm-rg--on-file-line-p
+     (lambda (cur-line-parsed)
+       (helm-rg--on-same-entry orig-line-parsed cur-line-parsed)))))
 
 (defun helm-rg--file-forward ()
   (interactive)
@@ -572,6 +748,128 @@ Call `helm-rg--async-action', but push the buffer corresponding to CAND to
 (defun helm-rg--file-backward ()
   (interactive)
   (helm-rg--move-file 'backward))
+
+(defun helm-rg--process-output (exe &rest args)
+  "Get output from a process specified by string arguments.
+Merges stdout and stderr, and trims whitespace from the result."
+  (with-temp-buffer
+    (let ((proc (make-process
+                 :name "temp-proc"
+                 :buffer (current-buffer)
+                 :command `(,exe ,@args)
+                 :sentinel #'ignore)))
+      (while (accept-process-output proc nil nil t)))
+    (trim-whitespace (buffer-string))))
+
+(defun helm-rg--check-directory-path (path)
+  (if (and path (file-directory-p path)) path
+    (error "path '%S' was not a directory." path)))
+
+(defun helm-rg--make-help-buffer (help-buf-name)
+  (with-current-buffer (get-buffer-create help-buf-name)
+    (read-only-mode -1)
+    (erase-buffer)
+    (fundamental-mode)
+    (insert (helm-rg--process-output helm-rg-ripgrep-executable "--help"))
+    (goto-char (point-min))
+    (read-only-mode 1)
+    (current-buffer)))
+
+(defun helm-rg--lookup-color (color)
+  (helm-rg--alist-get-exhaustive color helm-rg--color-format-argument-alist))
+
+(defun helm-rg--lookup-style (style)
+  (helm-rg--alist-get-exhaustive style helm-rg--style-format-argument-alist))
+
+(defun helm-rg--construct-match-color-format-arguments (color style)
+  (list
+   (format "--colors=match:fg:%s"
+           (plist-get (helm-rg--lookup-color color) :cmd-line))
+   (format "--colors=match:style:%s"
+           (plist-get (helm-rg--lookup-style style) :cmd-line))))
+
+(defun helm-rg--construct-match-text-properties (color style)
+  `(,(plist-get (helm-rg--lookup-style style) :text-property)
+    (foreground-color . ,(plist-get (helm-rg--lookup-color color) :text-property))))
+
+(defun helm-rg--is-match (position object)
+  (let ((text-props-for-position (get-text-property position 'font-lock-face object))
+        (text-props-for-match
+         (helm-rg--construct-match-text-properties helm-rg-match-color helm-rg-match-style)))
+    (equal text-props-for-position text-props-for-match)))
+
+(defun helm-rg--first-match-start-ripgrep-output (position match-line &optional find-end)
+  (cl-loop
+   with line-char-index = position
+   for is-match-p = (helm-rg--is-match line-char-index match-line)
+   until (if find-end (not is-match-p) is-match-p)
+   for next-chg = (next-single-property-change line-char-index 'font-lock-face match-line)
+   if next-chg do (setq line-char-index next-chg)
+   else return (if find-end
+                   ;; char at end of line is end of match
+                   (length match-line)
+                 nil)
+   finally return line-char-index))
+
+(defun helm-rg--parse-match-regions-from-match-line (match-line)
+  (cl-loop
+   with line-char-index = 0
+   for match-beg = (helm-rg--first-match-start-ripgrep-output line-char-index match-line)
+   while match-beg
+   for match-end = (helm-rg--first-match-start-ripgrep-output match-beg match-line t)
+   do (setq line-char-index match-end)
+   collect (list :beg match-beg :end match-end)))
+
+;;; TODO: make the file line jump to the top of the file!
+;;; TODO: make the numbers and file names readonly (or even make the numbers in
+;;; a fringe and make the file unsearchable/uneditable?
+(defun helm-rg--process-transition (cur-file line)
+  (cond
+   ((string= line "") (list :file-path nil))
+   ((and cur-file (string-match helm-rg--numbered-text-line-regexp line))
+    (let* ((whole-line (match-string 0 line))
+           (line-num (string-to-number (match-string 1 line)))
+           (content (match-string 2 line))
+           (jump-to (list :file cur-file
+                          :line-num (1- line-num)
+                          :match-results (helm-rg--parse-match-regions-from-match-line content)))
+           (output-line
+            (propertize whole-line helm-rg--jump-location-text-property jump-to)))
+      (list :file-path cur-file
+            :line-content output-line)))
+   ((string-match helm-rg--output-new-file-line-regexp line)
+    (let* ((whole-line (match-string 0 line))
+           (file-path (match-string 1 line))
+           (jump-to (list :file file-path))
+           (output-line
+            (propertize whole-line helm-rg--jump-location-text-property jump-to)))
+      (list :file-path file-path
+            :line-content output-line)))))
+
+(defun helm-rg--maybe-get-line (content)
+  (helm-rg--into-temp-buffer content
+    (if (re-search-forward (rx (: (group (*? anything)) "\n")) nil t)
+        (list :line (match-string 1)
+              :rest (buffer-substring (point) (point-max)))
+      (list :line nil
+            :rest (buffer-string)))))
+
+(defun helm-rg--parse-process-output (input-line)
+  ;; TODO: in helm-buffer?
+  (let ((colored-line (ansi-color-apply input-line)))
+    (cl-destructuring-bind (&key cur-file) helm-rg--process-output-parse-state
+      (if-let ((parsed (helm-rg--process-transition cur-file colored-line)))
+          (cl-destructuring-bind (&key file-path line-content) parsed
+            (setq helm-rg--process-output-parse-state
+                  (list :cur-file file-path))
+            (or line-content ""))
+        (error "line '%s' could not be parsed! state was: '%S'"
+               colored-line helm-rg--process-output-parse-state)))))
+
+(defun helm-rg--edit-results ()
+  (interactive)
+  ;;
+  )
 
 
 ;; Toggles and settings
@@ -605,22 +903,6 @@ Call `helm-rg--async-action', but push the buffer corresponding to CAND to
        (file-executable-p path)
        (not (file-directory-p path))))
 
-(defun helm-rg--process-output (exe &rest args)
-  "Get output from a process specified by string arguments.
-Merges stdout and stderr, and trims whitespace from the result."
-  (with-temp-buffer
-    (let ((proc (make-process
-                 :name "temp-proc"
-                 :buffer (current-buffer)
-                 :command `(,exe ,@args)
-                 :sentinel #'ignore)))
-      (while (accept-process-output proc nil nil t)))
-    (trim-whitespace (buffer-string))))
-
-(defun helm-rg--check-directory-path (path)
-  (if (and path (file-directory-p path)) path
-    (error "path '%S' was not a directory." path)))
-
 (defun helm-rg--get-git-root ()
   (if (helm-rg--is-executable-file helm-rg-git-executable)
       (helm-rg--process-output helm-rg-git-executable
@@ -634,15 +916,18 @@ Merges stdout and stderr, and trims whitespace from the result."
     ('git-root (helm-rg--get-git-root))
     ((pred stringp) (helm-rg--check-directory-path))))
 
-(defun helm-rg--make-help-buffer (help-buf-name)
-  (with-current-buffer (get-buffer-create help-buf-name)
-    (read-only-mode -1)
-    (erase-buffer)
-    (fundamental-mode)
-    (insert (helm-rg--process-output helm-rg-ripgrep-executable "--help"))
-    (goto-char (point-min))
-    (read-only-mode 1)
-    (current-buffer)))
+(defun helm-rg--set-case-sensitivity ()
+  (interactive)
+  (let ((pat helm-pattern)
+        (start-dir helm-rg--current-dir))
+    (helm-rg--run-after-exit
+     (let* ((helm-rg--current-dir start-dir)
+            (all-sensitivity-keys
+             (helm-rg--alist-keys helm-rg--case-sensitive-argument-alist))
+            (sensitivity-selection
+             (completing-read "Choose case sensitivity: " all-sensitivity-keys nil t))
+            (helm-rg--case-sensitivity (intern sensitivity-selection)))
+       (helm-rg--do-helm-rg pat)))))
 
 
 ;; Keymap
@@ -651,6 +936,8 @@ Merges stdout and stderr, and trims whitespace from the result."
     (set-keymap-parent map helm-map)
     (define-key map (kbd "M-g") #'helm-rg--set-glob)
     (define-key map (kbd "M-d") #'helm-rg--set-dir)
+    (define-key map (kbd "M-c") #'helm-rg--set-case-sensitivity)
+    (define-key map (kbd "M-e") #'helm-rg--edit-results)
     (define-key map (kbd "<right>") #'helm-rg--file-forward)
     (define-key map (kbd "<left>") #'helm-rg--file-backward)
     map)
@@ -666,7 +953,7 @@ Merges stdout and stderr, and trims whitespace from the result."
     :help-message "FIXME: useful help message!!!"
     :candidates-process #'helm-rg--make-process
     :action (helm-make-actions "Visit" #'helm-rg--async-action)
-    :filter-one-by-one #'ansi-color-apply
+    :filter-one-by-one #'helm-rg--parse-process-output
     :display-to-real #'helm-rg--display-to-real
     :pattern-transformer #'helm-rg--pattern-transformer
     :persistent-action #'helm-rg--async-persistent-action
@@ -674,6 +961,29 @@ Merges stdout and stderr, and trims whitespace from the result."
     :requires-pattern nil
     :group 'helm-rg)
   "Helm async source to search files in a directory using ripgrep.")
+
+
+;; Meta-programmed Defcustom Forms
+(helm-rg--defcustom-from-alist helm-rg-default-case-sensitivity
+    helm-rg--case-sensitive-argument-alist
+  "Case sensitivity to use in ripgrep searches.
+
+This is the default value for `helm-rg--case-sensitivity', which can be modified with
+`helm-rg--set-case-sensitivity' during a `helm-rg' session.
+
+This must be an element of `helm-rg--case-sensitive-argument-alist'.")
+
+(helm-rg--defcustom-from-alist helm-rg-match-color helm-rg--color-format-argument-alist
+  "Color to use for match results from ripgrep.
+
+This must be synchronized between ripgrep and elisp so that `helm-rg' can parse the match locations
+from the ripgrep highlights, so it must be an element of `helm-rg--color-format-argument-alist'.")
+
+(helm-rg--defcustom-from-alist helm-rg-match-style helm-rg--style-format-argument-alist
+  "Style to use for match results from ripgrep.
+
+This must be synchronized between ripgrep and elisp so that `helm-rg' can parse the match locations
+from the ripgrep highlights, so it must be an element of `helm-rg--style-format-argument-alist'.")
 
 
 ;; Autoloaded functions
@@ -690,7 +1000,10 @@ process's cwd. Otherwise, the process's cwd will be searched.
 
 Note that ripgrep respects glob patterns from .gitignore, .rgignore, and .ignore
 files. This composes with the glob defined by `helm-rg-default-glob-string', or
-overridden with `helm-rg--set-glob', which is defined in `helm-rg-map':
+overridden with `helm-rg--set-glob', which is defined in `helm-rg-map'.
+
+The ripgrep command's help output can be printed into its own buffer for reference
+with the interactive command `helm-rg-display-help'.
 
 \\{helm-rg-map}"
   (interactive (list (helm-rg--get-thing-at-pt) current-prefix-arg nil))
@@ -703,7 +1016,10 @@ overridden with `helm-rg--set-glob', which is defined in `helm-rg-map':
               helm-rg-default-glob-string))
          (helm-rg--paths-to-search
           (or helm-rg--paths-to-search
-              paths)))
+              paths))
+         (helm-rg--case-sensitivity
+          (or helm-rg--case-sensitivity
+              helm-rg-default-case-sensitivity)))
     (unwind-protect (helm-rg--do-helm-rg rg-pattern)
       (helm-rg--unwind-cleanup))))
 
