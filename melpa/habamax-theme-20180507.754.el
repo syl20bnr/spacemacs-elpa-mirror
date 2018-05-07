@@ -2,7 +2,7 @@
 
 ;; Author: Maxim Kim <habamax@gmail.com>
 ;; Url: https://github.com/habamax/habamax-theme
-;; Package-Version: 20180430.2335
+;; Package-Version: 20180507.754
 ;; Package-Requires: ((emacs "24"))
 
 ;;; Commentary:
@@ -40,12 +40,12 @@
      (color-url-visited "#806088")
      (color-bg-highlight "#ececef")
      (color-bg-highlight-2 "#cadfca")
-     (height-1 (if habamax-theme-variable-heading-heights 1.6 1))
-     (height-2 (if habamax-theme-variable-heading-heights 1.4 1))
-     (height-3 (if habamax-theme-variable-heading-heights 1.2 1))
-     (height-4 (if habamax-theme-variable-heading-heights 1.1 1))
-     (height-5 (if habamax-theme-variable-heading-heights 1.1 1))
-     (height-6 (if habamax-theme-variable-heading-heights 1.1 1)))
+     (height-1 (if habamax-theme-variable-heading-heights 1.6 1.0))
+     (height-2 (if habamax-theme-variable-heading-heights 1.4 1.0))
+     (height-3 (if habamax-theme-variable-heading-heights 1.2 1.0))
+     (height-4 (if habamax-theme-variable-heading-heights 1.1 1.0))
+     (height-5 (if habamax-theme-variable-heading-heights 1.1 1.0))
+     (height-6 (if habamax-theme-variable-heading-heights 1.1 1.0)))
 
   (custom-theme-set-faces
    'habamax
