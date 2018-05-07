@@ -5,7 +5,7 @@
 ;; Author: Gonçalo Santos (aka. weirdNox@GitHub)
 ;; Homepage: https://github.com/weirdNox/org-noter
 ;; Keywords: lisp pdf interleave annotate external sync notes documents org-mode
-;; Package-Version: 20180331.1231
+;; Package-Version: 20180507.803
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.6") (org "9.0"))
 ;; Version: 1.0.1
 
@@ -517,7 +517,7 @@ When nil, it will use the selected frame if it does not belong to any other sess
   (let ((window (if (org-noter--valid-session org-noter--session)
                     (org-noter--get-doc-window)
                   (selected-window))))
-    (assert window)
+    (cl-assert window)
     (with-selected-window window
       (cond
        ((memq major-mode '(doc-view-mode pdf-view-mode))

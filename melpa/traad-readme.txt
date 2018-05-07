@@ -9,14 +9,6 @@ https://github.com/abingham/traad.
 
 Installation:
 
-traad depends on the following packages:
-
-  cl
-  deferred - https://github.com/kiwanami/emacs-deferred
-  jsontraad
-  request - https://github.com/tkf/emacs-request
-  request-deferred - (same as request)
-
 Copy traad.el to some location in your emacs load path. Then add
 "(require 'traad)" to your emacs initialization (.emacs,
 init.el, or something).
