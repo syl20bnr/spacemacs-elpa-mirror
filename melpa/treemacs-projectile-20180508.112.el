@@ -4,7 +4,7 @@
 
 ;; Author: Alexander Miller <alexanderm@web.de>
 ;; Package-Requires: ((projectile "0.14.0") (treemacs "0"))
-;; Package-Version: 20180507.139
+;; Package-Version: 20180508.112
 ;; Package-X-Original-Version: 0
 ;; Homepage: https://github.com/Alexander-Miller/treemacs
 
@@ -48,8 +48,14 @@
 * If the workspace is empty additionally ask for the root path of the first
   project to add."
   (interactive)
-  (treemacs--init (when (treemacs-workspace->is-empty?)
-                    (read-directory-name "Project root: " (projectile-project-root)))))
+  (-pcase (treemacs--current-visibility)
+    [`visible
+     (delete-window (treemacs--is-visible?))]
+    [`exists
+     (treemacs-select-window)]
+    [`none
+     (treemacs--init (when (treemacs-workspace->is-empty?)
+                (read-directory-name "Project root: " (projectile-project-root))))]))
 
 (define-key treemacs-mode-map (kbd "C-p p") #'treemacs-projectile)
 
