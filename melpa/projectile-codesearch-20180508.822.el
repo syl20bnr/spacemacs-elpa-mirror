@@ -2,7 +2,7 @@
 ;;
 ;; Author: Austin Bingham <austin.bingham@gmail.com>
 ;; Version: 2
-;; Package-Version: 20171129.600
+;; Package-Version: 20180508.822
 ;; URL: https://github.com/abingham/emacs-codesearch
 ;; Keywords: tools, development, search
 ;; Package-Requires: ((codesearch "20171122.431") (projectile "20150405.126"))
