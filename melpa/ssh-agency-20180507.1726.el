@@ -6,9 +6,9 @@
 ;; Maintainer: Noam Postavsky <npostavs@user.sourceforge.net>
 
 ;; Package-Requires: ((emacs "24.4") (dash "2.10.0"))
-;; Package-Version: 20180403.1638
+;; Package-Version: 20180507.1726
 ;; URL: https://github.com/magit/ssh-agency
-;; Version: 0.3
+;; Version: 0.4
 
 ;; This file is not part of GNU Emacs.
 

@@ -5,10 +5,10 @@
 ;; Author: Chen Bin <chenbin.sh@gmail.com>
 ;; Maintainer: Chen Bin <chenbin.sh@gmail.com>
 ;; URL: http://github.com/redguardtoo/counsel-etags
-;; Package-Version: 1.5.1
+;; Package-Version: 1.6.0
 ;; Package-Requires: ((emacs "24.4") (counsel "0.9.1"))
 ;; Keywords: tools, convenience
-;; Version: 1.5.1
+;; Version: 1.6.0
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -191,7 +191,7 @@ You may set it to nil to disable re-ordering for performance reason."
   :group 'counsel-etags
   :type 'boolean)
 
-(defcustom counsel-etags-max-file-size 64
+(defcustom counsel-etags-max-file-size 512
   "Ignore files bigger than `counsel-etags-max-file-size' kilobytes."
   :group 'counsel-etags
   :type 'integer)
@@ -547,55 +547,51 @@ IS-STRING is t if the candidate is string."
     (when counsel-etags-debug
       (message "tags-file=%s" tags-file)
       (message "counsel-etags-cache[tags-file]=%s" (plist-get counsel-etags-cache tags-file))
-      (message "force-tags-file=%s tags-file=%s" force-tags-file tags-file))
+      (message "force-tags-file=%s tags-file=%s" force-tags-file tags-file)
+      (message "tagname=%s" tagname))
 
-    ;; this part should be re-written use string and regex
     (when (setq file-content (counsel-etags-cache-content tags-file) )
       (with-temp-buffer
         (insert file-content)
-        (goto-char (point-min))
-        ;; build file path dictionary
-        (while (re-search-forward "\f\n\\([^\n]+\\),\\([0-9]*\\)\n" (point-max) t)
-          (beginning-of-line)
-          (let* ((filename (buffer-substring (match-beginning 1) (match-end 1)))
-                 (chunk-size (string-to-number (buffer-substring (match-beginning 2) (match-end 2))))
+        (modify-syntax-entry ?_ "w")
 
-                 (chunk-bound (+ (line-beginning-position) chunk-size))
-                 linenum
-                 offset)
-            (while (re-search-forward (concat "\\([^\177\001\n]+\\)\177"
-                                              (if fuzzy (format "[^\177\001\n]*%s[^\177\001\n]*" tagname) tagname)
-                                              "\001\\([0-9]+\\),\\([0-9]+\\)") ;; chunk-bound
-                                      chunk-bound
-                                      t)
-              (let* ((text (buffer-substring (match-beginning 1) (match-end 1)))
-                     (linenum (string-to-number (buffer-substring (match-beginning 2) (match-end 2))))
-                     (offset (string-to-number (buffer-substring (match-beginning 3) (match-end 3)))))
-                (add-to-list 'cands
-                             (cons (format "%s:%d:%s" filename linenum text)
-                                   (list (concat (file-name-directory (counsel-etags-locate-tags-file))
-                                                 filename)
-                                         linenum
-                                         tagname)))))))))
+        (goto-char (point-min))
+        ;; first step, regex should be simple to speed up search
+        (while (re-search-forward tagname nil t)
+          (beginning-of-line)
+          (when (re-search-forward (concat "\\([^\177\001\n]+\\)\177"
+                                           (if fuzzy "[^\177\001\n]+" tagname)
+                                           "\001\\([0-9]+\\),\\([0-9]+\\)")
+                                   (point-at-eol)
+                                   'goto-eol)
+            (let* ((text (match-string-no-properties 1))
+                   (linenum (match-string-no-properties 2))
+                   (filename (etags-file-of-tag t)))
+              (add-to-list 'cands
+                           (cons (format "%s:%s:%s" filename linenum text)
+                                 (list (concat (file-name-directory (counsel-etags-locate-tags-file))
+                                               filename)
+                                       linenum
+                                       tagname))))))))
 
     (mapcar 'car (counsel-etags-sort-candidates-maybe cands 3 nil))))
 
 (defun counsel-etags-encode(s)
   "Encode S."
-    ;; encode "{}[]"
-    (setq s (replace-regexp-in-string "\"" "\\\\\"" s))
-    (setq s (replace-regexp-in-string "\\?" "\\\\\?" s))
-    (setq s (replace-regexp-in-string "\\$" "\\\\x24" s))
-    (setq s (replace-regexp-in-string "\\*" "\\\\\*" s))
-    (setq s (replace-regexp-in-string "\\." "\\\\\." s))
-    (setq s (replace-regexp-in-string "\\[" "\\\\\[" s))
-    (setq s (replace-regexp-in-string "\\]" "\\\\\]" s))
-    ;; perl-regex support non-ASCII characters
-    ;; Turn on `-P` from `git grep' and `grep'
-    ;; the_silver_searcher and ripgrep need no setup
-    (setq s (replace-regexp-in-string "{" "\\\\{" s))
-    (setq s (replace-regexp-in-string "}" "\\\\}" s))
-    s)
+  ;; encode "{}[]"
+  (setq s (replace-regexp-in-string "\"" "\\\\\"" s))
+  (setq s (replace-regexp-in-string "\\?" "\\\\\?" s))
+  (setq s (replace-regexp-in-string "\\$" "\\\\x24" s))
+  (setq s (replace-regexp-in-string "\\*" "\\\\\*" s))
+  (setq s (replace-regexp-in-string "\\." "\\\\\." s))
+  (setq s (replace-regexp-in-string "\\[" "\\\\\[" s))
+  (setq s (replace-regexp-in-string "\\]" "\\\\\]" s))
+  ;; perl-regex support non-ASCII characters
+  ;; Turn on `-P` from `git grep' and `grep'
+  ;; the_silver_searcher and ripgrep need no setup
+  (setq s (replace-regexp-in-string "{" "\\\\{" s))
+  (setq s (replace-regexp-in-string "}" "\\\\}" s))
+  s)
 
 (defun counsel-etags-selected-str ()
   "Get selected string.  Suppose plain text instead regex in selected text.
@@ -606,8 +602,7 @@ So we need *encode* the string."
 
 (defun counsel-etags-tagname-at-point ()
   "Get tag name at point."
-  (let* ((s (counsel-etags-selected-str)))
-    (if s s (find-tag-default))))
+  (or (counsel-etags-selected-str) (find-tag-default)))
 
 (defun counsel-etags-forward-line (lnum)
   "Forward LNUM lines."
@@ -777,11 +772,15 @@ Focus on TAGNAME if it's not nil."
 ;;;###autoload
 (defun counsel-etags-find-tag ()
   "Find tag by two step matching.
-First, user need input regex to match tags.
-Second, user could filter in matches."
+
+First, user need input regex to fuzzy match tag.
+Any tag whose sub-string matches regex will be listed.
+
+Second, user could filter tags."
   (interactive)
   (counsel-etags-tags-file-must-exist)
-  (let* ((tagname (read-string "Please input regex to match tag:")))
+  (let* ((tagname (read-string "Regex to match tag:"
+                               (or (counsel-etags-selected-str) ""))))
     (when (and tagname (not (string= tagname "")))
         (counsel-etags-find-tag-api tagname t))))
 
@@ -848,13 +847,17 @@ used by other hooks or commands.  The tags updating might now happen."
 
 (defun counsel-etags-read-keyword (hint)
   "Read keyword with HINT."
-  (cond
-   ((region-active-p)
-    (setq counsel-etags-keyword (counsel-unquote-regex-parens (counsel-etags-selected-str)))
-    ;; de-select region
-    (set-mark-command nil))
-   (t
-    (setq counsel-etags-keyword (read-string hint))))
+  (let* ((str (if (region-active-p) (counsel-etags-selected-str)
+                (read-string hint))))
+    (when str
+      (cond
+       ((region-active-p)
+        (setq counsel-etags-keyword (counsel-unquote-regex-parens str))
+        ;; de-select region
+        (set-mark-command nil))
+       (t
+        ;; processing double quotes character
+        (setq counsel-etags-keyword (replace-regexp-in-string "\"" "\\\\\""str))))))
   counsel-etags-keyword)
 
 (defun counsel-etags-has-quick-grep ()
@@ -867,22 +870,23 @@ used by other hooks or commands.  The tags updating might now happen."
                         counsel-etags-ignore-directories))
          (ignore-file-names (if use-cache (plist-get counsel-etags-opts-cache :ignore-file-names)
                               counsel-etags-ignore-filenames)))
+    ;; please note Windows DOS CLI only support double quotes
     (cond
      ((counsel-etags-has-quick-grep)
       (concat (mapconcat (lambda (e)
-                           (format "-g='!%s/*'" e))
+                           (format "-g=\"!%s/*" e))
                          ignore-dirs " ")
               " "
               (mapconcat (lambda (e)
-                           (format "-g='!%s'" e))
+                           (format "-g=\"!%s" e))
                          ignore-file-names " ")))
      (t
       (concat (mapconcat (lambda (e)
-                           (format "--exclude-dir='%s'" e))
+                           (format "--exclude-dir=\"%s\"" e))
                          ignore-dirs " ")
               " "
               (mapconcat (lambda (e)
-                           (format "--exclude='%s'" e))
+                           (format "--exclude=\"%s\"" e))
                          ignore-file-names " "))))))
 
 (defun counsel-etags-grep-cli (keyword use-cache)
@@ -892,6 +896,7 @@ Extended regex is used, like (pattern1|pattern2)."
    ((counsel-etags-has-quick-grep)
     (format "%s %s \"%s\" --"
             (concat (executable-find "rg")
+                    ;; (if counsel-etags-debug " --debug")
                     " -n -M 512 --no-heading --color never -s")
             (counsel-etags-exclude-opts use-cache)
             keyword))
@@ -912,11 +917,13 @@ If HINT is not nil, it's used as grep hint."
   (interactive)
   (let* ((keyword (if default-keyword default-keyword
                     (counsel-etags-read-keyword "Enter grep pattern: ")))
-         (default-directory (counsel-etags-locate-project))
+         (default-directory (file-truename (counsel-etags-locate-project)))
          (time (current-time))
-         (cands (split-string (shell-command-to-string (counsel-etags-grep-cli keyword nil)) "[\r\n]+" t))
+         (cmd (counsel-etags-grep-cli keyword nil))
+         (cands (split-string (shell-command-to-string cmd) "[\r\n]+" t))
          (dir-summary (file-name-as-directory (file-name-base (directory-file-name (counsel-etags-locate-project))))))
 
+    (if counsel-etags-debug (message "counsel-etags-grep called => %s %s %s %s" keyword default-directory cmd cands))
     (counsel-etags-put :ignore-dirs
                        counsel-etags-ignore-directories
                        counsel-etags-opts-cache)
@@ -943,9 +950,8 @@ If HINT is not nil, it's used as grep hint."
 (defun counsel-etags-grep-symbol-at-point ()
   "Similar to `counsel-etags-grep' but grep symbol at point."
   (interactive)
-  (counsel-etags-grep (if (region-active-p) (counsel-etags-selected-str)
-                        (thing-at-point 'symbol))))
-
+  (counsel-etags-grep (or (counsel-etags-selected-str)
+                          (thing-at-point 'symbol))))
 
 ;; {{ occur setup
 (defun counsel-etags-tag-occur-api (items)

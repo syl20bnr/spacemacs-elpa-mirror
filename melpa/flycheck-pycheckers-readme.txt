@@ -8,6 +8,7 @@ in parallel.  The list of supported checkers includes:
 - pep8
 - pyflakes
 - mypy (for both Python 2 and 3)
+- bandit
 
 This is an alternative way of running multiple Python syntax checkers in
 Flycheck that doesn't depend on Flycheck's chaining mechanism.
