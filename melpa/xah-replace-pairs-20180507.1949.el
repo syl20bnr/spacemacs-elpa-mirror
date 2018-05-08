@@ -3,8 +3,8 @@
 ;; Copyright © 2010-2018, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.3.20180506113436
-;; Package-Version: 20180506.1136
+;; Version: 2.3.20180507194855
+;; Package-Version: 20180507.1949
 ;; Created: 17 Aug 2010
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: lisp, tools, find replace
@@ -60,9 +60,9 @@ Once a subsring in the buffer is replaced, that part will not change again.  For
 
 Returns a list, each element is a vector [position findStr replaceStr].
 
-Version 2018-05-05"
+Version 2018-05-07"
   (let (
-        ($randomStr "ζ北κ铜2ρ")
+        ($randomStr "ζ北ρ铜9")
         ($i 0)
         ($tempMapPoints '())
         ($changeLog '()))
@@ -70,8 +70,9 @@ Version 2018-05-05"
       ;; generate a list of Unicode chars for intermediate replacement. These chars are in  Private Use Area.
       (setq $i 0)
       (while (< $i (length @pairs))
-        (push (concat $randomStr (char-to-string $i)) $tempMapPoints)
+        (push (concat $randomStr (number-to-string $i)) $tempMapPoints)
         (setq $i (1+ $i))))
+
     (save-excursion
       (save-restriction
         (narrow-to-region @begin @end)

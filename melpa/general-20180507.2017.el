@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/general.el
-;; Package-Version: 20180421.1156
+;; Package-Version: 20180507.2017
 ;; Created: February 17, 2016
 ;; Keywords: vim, evil, leader, keybindings, keys
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
@@ -935,7 +935,7 @@ to bind the keys with by calling `general--define-key-dispatch'."
     (&rest maps &key
            definer
            (states general-default-states)
-           (keymaps general-default-keymaps)
+           (keymaps general-default-keymaps keymaps-specified-p)
            (prefix general-default-prefix)
            (non-normal-prefix general-default-non-normal-prefix)
            (global-prefix general-default-global-prefix)
@@ -1018,6 +1018,9 @@ menu name/prompt. If PREFIX-COMMAND is specified, `define-prefix-command' will
 be used. Otherwise, only a prefix keymap will be created. Previously created
 prefix commands/keymaps will never be redefined/cleared. All prefixes (including
 the INFIX key, if specified) will then be bound to PREFIX-COMMAND or PREFIX-MAP.
+If the user did not specify any PREFIX or manually specify any KEYMAPS, general
+will bind all MAPS in the prefix keymap corresponding to either PREFIX-MAP or
+PREFIX-COMMAND instead of in the default keymap.
 
 PREDICATE corresponds to a predicate to check to determine whether a definition
 should be active (e.g. \":predicate '(eobp)\"). Definitions created with a
@@ -1087,25 +1090,28 @@ keywords that are used for each corresponding custom DEFINER."
                     :states states)
                    (cadr split-maps))))
     (general--define-prefix prefix-command prefix-map prefix-name)
+    (when (and (or prefix-map prefix-command)
+               (not (or prefix keymaps-specified-p)))
+      (setq keymaps (list (or prefix-map prefix-command))))
     ;; TODO reduce code duplication here
     (when non-normal-prefix
       (setq non-normal-prefix-maps
             (general--apply-prefix-and-kbd
              (general--concat t non-normal-prefix infix)
-             (append (when prefix-def
+             (append (when (and prefix prefix-def)
                        (list "" prefix-def))
                      maps))))
     (when global-prefix
       (setq global-prefix-maps
             (general--apply-prefix-and-kbd
              (general--concat t global-prefix infix)
-             (append (when prefix-def
+             (append (when (and prefix prefix-def)
                        (list "" prefix-def))
                      maps))))
     ;; last so not applying prefix twice
     (setq maps (general--apply-prefix-and-kbd
                 (general--concat t prefix infix)
-                (append (when prefix-def
+                (append (when (and prefix prefix-def)
                           (list "" prefix-def))
                         maps)))
     (dolist (keymap keymaps)
