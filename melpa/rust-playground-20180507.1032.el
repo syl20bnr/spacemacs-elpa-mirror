@@ -2,10 +2,10 @@
 
 ;; Copyright (C) 2016-2017  Alexander I.Grafov (axel)
 
-;; Author: Alexander I.Grafov <grafov@gmail.com>
+;; Author: Alexander I.Grafov <grafov@gmail.com> + all the contributors (see git log)
 ;; URL: https://github.com/grafov/rust-playground
-;; Package-Version: 20180429.1750
-;; Version: 0.1
+;; Package-Version: 20180507.1032
+;; Version: 0.2.1
 ;; Keywords: tools, rust
 ;; Package-Requires: ((emacs "24.3") (rust-mode "0.3.0"))
 
@@ -108,7 +108,7 @@ Start from PATH or the path of the current buffer's file, or NIL if this is not 
   (if (not path)
       nil
     (if (not (string= path "/"))
-        (let ((base "/home/jason/.emacs.d/rust-playground")
+        (let ((base (expand-file-name rust-playground-basedir))
               (path-parent (file-name-directory (directory-file-name path))))
           (if (string= (file-name-as-directory base)
                        (file-name-as-directory path-parent))
@@ -142,7 +142,7 @@ Otherwise message the user that they aren't in one."
          (snippet-file-name (rust-playground-snippet-main-file-name snippet-dir))
          (snippet-cargo-toml (rust-playground-toml-file-name snippet-dir)))
     ;; create a buffer for Cargo.toml and switch to it
-    (make-directory snippet-dir)
+    (make-directory snippet-dir t)
     (set-buffer (create-file-buffer snippet-cargo-toml))
     (set-visited-file-name snippet-cargo-toml t)
     (rust-playground-mode)
@@ -195,7 +195,7 @@ Toggle between main.rs and Cargo.toml: C-c b
    (let* ((basedir (rust-playground-get-snippet-basedir))
           (srcdir (concat basedir (file-name-as-directory "src"))))
      ;; now get the fullpath of cargo.toml, and the fullpath of every file under src/
-     (remove 'nil (seq-map 'find-buffer-visiting
+     (remove 'nil (mapcar 'find-buffer-visiting
                            (cons (concat basedir "Cargo.toml")
                                  (directory-files srcdir t ".*\.rs")))))))
 

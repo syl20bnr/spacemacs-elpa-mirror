@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180429.1243
+;; Package-Version: 20180507.1200
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -2024,7 +2024,7 @@ INITIAL-INPUT can be given as the initial minibuffer input."
             :caller 'counsel-locate))
 
 ;;** `counsel-fzf'
-(defvar counsel-fzf-cmd "fzf -f %s"
+(defvar counsel-fzf-cmd "fzf -f \"%s\""
   "Command for `counsel-fzf'.")
 
 (defvar counsel--fzf-dir nil

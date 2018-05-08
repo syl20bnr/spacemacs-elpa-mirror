@@ -6,7 +6,7 @@
 ;; Maintainer: Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.4"))
-;; Version: 1.6
+;; Version: 1.7
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -767,6 +767,7 @@ C-c C-c         `orgalist-check-item'"
     (setq-local org-list-automatic-rules nil)
     (setq-local org-list-demote-modify-bullet nil)
     (setq-local org-list-two-spaces-after-bullet-regexp nil)
+    (setq-local org-plain-list-ordered-item-terminator ?.)
     (add-function :before-until
                   (local 'fill-paragraph-function)
                   #'orgalist--fill-item)
@@ -1059,6 +1060,18 @@ for this list."
 
 ;;;; ChangeLog:
 
+;; 2018-05-07  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Bump to version 1.7
+;; 
+;; 2018-05-07  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Fix issue with M-RET with unsupported "1)" type lists
+;; 
+;; 	* orgalist.el (orgalist-mode): Set
+;; 	 `org-plain-list-ordered-item-terminator' to ?. since ?\) is not
+;; 	 supported.
+;; 
 ;; 2018-05-06  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
 ;; 
 ;; 	Bump to version 1.6
