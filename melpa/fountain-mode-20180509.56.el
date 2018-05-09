@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: text
-;; Package-Version: 20180506.47
+;; Package-Version: 20180509.56
 ;; Version: 2.5.4
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -2030,10 +2030,10 @@ Includes child elements."
   (list 'trans
         (list 'begin (match-beginning 0)
               'end (match-end 0)
-              'forced (stringp (match-string 2))
+              'forced (stringp (match-string 1))
               'export (if (memq 'trans export-elements) t)
               'starts-new-page (fountain-starts-new-page))
-        (match-string-no-properties 3)))
+        (match-string-no-properties 2)))
 
 (defun fountain-parse-center (match-data &optional export-elements job)
   "Return an element list for matched center text."
