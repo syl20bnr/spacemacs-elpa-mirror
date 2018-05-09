@@ -5,7 +5,7 @@
 ;; Author: Huming Chen <chenhuming@gmail.com>
 ;; Maintainer: Huming Chen <chenhuming@gmail.com>
 ;; URL: https://github.com/beacoder/call-graph
-;; Package-Version: 20180423.57
+;; Package-Version: 20180508.1924
 ;; Version: 0.1.0
 ;; Keywords: programming, convenience
 ;; Created: 2018-01-07
@@ -176,9 +176,9 @@ e.g: class::method => method."
 
 (defun cg--get-path-to-global ()
   "Return path to program GNU GLOBAL."
-  (if cg-path-to-global
-      (expand-file-name "global" cg-path-to-global)
-    "global"))
+  (let ((path (if cg-path-to-global (expand-file-name "global" cg-path-to-global) "global")))
+    (if (file-exists-p path) path
+      (error "Failed to find \"GNU GLOBAL\" in path: %s" path))))
 
 (defun cg--dwim-at-point ()
   "If there's an active selection, return that.
