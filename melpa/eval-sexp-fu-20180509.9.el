@@ -2,8 +2,8 @@
 
 ;; Copyright (C) 2009-2013 Takeshi Banse <takebi@laafc.net>
 ;; Author: Takeshi Banse <takebi@laafc.net>
-;; Version: 0.4.0
-;; Package-Version: 20131230.1351
+;; Version: 0.4.1
+;; Package-Version: 20180509.9
 ;; Keywords: lisp, highlight, convenience
 ;; Package-Requires: ((highlight "0"))
 
@@ -81,6 +81,11 @@
 
 ;;; History:
 
+;; v0.4.1
+;; replacing preceding-sexp with elisp--preceding-sexp to avoid obsolete warning in Emacs 25.1
+;; Remove `labels' and `flet' (obsolete as of 24.3).
+;; Thank you very much, Daniel Schranz and Robby O'Connor.
+
 ;; v0.4.0
 ;; Workaround bug#13952 fix about `end-of-sexp'.
 
@@ -94,6 +99,11 @@
 ;; Initial version.
 
 ;;; Code:
+
+;; TL;DR: Emacs 25 renamed 'preceding-sexp' to 'elisp--preceding-sexp'
+;; alias here
+(unless (fboundp 'elisp--preceding-sexp)
+  (defalias 'elisp--preceding-sexp 'preceding-sexp))
 
 (eval-when-compile (require 'cl))
 (require 'highlight)
@@ -140,18 +150,15 @@
 ;;; Tools
 (defmacro esf-konstantly (v)
   `(lambda (&rest _it) ,v))
-(defun esf-every0 (pred xs)
-  (labels ((rec (pred xs acc)
-             (if (null xs)
-                 acc
-               (let ((it (funcall pred (car xs))))
-                 (and it (rec pred (cdr xs) it))))))
-    (rec pred xs nil)))
 (defun esf-every-pred (&rest preds)
   (lexical-let ((preds preds))
     (lambda (x)
-      (esf-every0 (lambda (pred) (funcall pred x))
-                  preds))))
+      (loop with ret = nil
+            for p in preds
+            do (setq ret (funcall p x))
+            unless ret
+            return nil
+            finally return ret))))
 
 (defun esf-hl-highlight-bounds (bounds face buf)
   (with-current-buffer buf
@@ -174,10 +181,9 @@
 (defun* eval-sexp-fu-flash (bounds &optional (face eval-sexp-fu-flash-face) (eface eval-sexp-fu-flash-error-face))
   "BOUNS is either the cell or the function returns, such that (BEGIN . END).
 Reurn the 4 values; bounds, highlighting, un-highlighting and error flashing procedure. This function is convenient to use with `define-eval-sexp-fu-flash-command'."
-  (flet ((bounds () (if (functionp bounds) (funcall bounds) bounds)))
-    (let ((b (bounds)))
-      (when b
-        (funcall eval-sexp-fu-flash-function b face eface (current-buffer))))))
+  (let ((b (if (functionp bounds) (funcall bounds) bounds)))
+    (when b
+      (funcall eval-sexp-fu-flash-function b face eface (current-buffer)))))
 (defun eval-sexp-fu-flash-default (bounds face eface buf)
   "Create all of the actual flashing implementations. See also `eval-sexp-fu-flash'."
   (values bounds
@@ -296,26 +302,26 @@ See also `eval-sexp-fu-flash'."
     (call-interactively eval-last-sexp)))
 
 (require 'rx)
+(defsubst esf-forward-inner-sexp0-positions ()
+  (let ((prev (save-excursion (backward-sexp) (forward-sexp) (point)))
+        (next (save-excursion (forward-sexp) (backward-sexp) (point))))
+    (list prev (line-number-at-pos prev)
+          next (line-number-at-pos next)
+          (point) (line-number-at-pos))))
 (defun esf-forward-inner-sexp0 ()
-  (flet ((poss ()
-           (let
-               ((prev (save-excursion (backward-sexp) (forward-sexp) (point)))
-                (next (save-excursion (forward-sexp) (backward-sexp) (point))))
-             (list prev (line-number-at-pos prev)
-                   next (line-number-at-pos next)
-                   (point) (line-number-at-pos)))))
-    (cond ((looking-at (rx (or (syntax symbol) (syntax word)
-                               (syntax open-parenthesis))))
-           (forward-sexp))
-          (t (destructuring-bind (pp pl np nl cp cl) (poss)
-               (cond ((and (<=  pp cp) (<= cp np))
-                      (cond ((= pl cl) (backward-sexp))
-                            ((= nl cl))
-                            ((< (- cl pl) (- nl cl)) (backward-sexp))
-                            ((< (- nl cl) (- cl pl)))
-                            (t (backward-sexp)))
-                      (forward-sexp))
-                     (t (backward-sexp) (forward-sexp))))))))
+  (cond ((looking-at (rx (or (syntax symbol) (syntax word)
+                             (syntax open-parenthesis))))
+         (forward-sexp))
+        (t (destructuring-bind (pp pl np nl cp cl)
+               (esf-forward-inner-sexp0-positions)
+             (cond ((and (<=  pp cp) (<= cp np))
+                    (cond ((= pl cl) (backward-sexp))
+                          ((= nl cl))
+                          ((< (- cl pl) (- nl cl)) (backward-sexp))
+                          ((< (- nl cl) (- cl pl)))
+                          (t (backward-sexp)))
+                    (forward-sexp))
+                   (t (backward-sexp) (forward-sexp)))))))
 (defun esf-forward-inner-sexp ()
   (condition-case nil
       (esf-forward-inner-sexp0)
@@ -397,11 +403,11 @@ such that ignores any prefix arguments."
 ;;; initialize.
 (defun esf-initialize ()
   (define-eval-sexp-fu-flash-command eval-last-sexp
-    (eval-sexp-fu-flash (when (ignore-errors (preceding-sexp))
+    (eval-sexp-fu-flash (when (ignore-errors (elisp--preceding-sexp))
                           (with-esf-end-of-sexp
                             (bounds-of-thing-at-point 'sexp)))))
   (define-eval-sexp-fu-flash-command eval-defun
-    (eval-sexp-fu-flash (when (ignore-errors (preceding-sexp))
+    (eval-sexp-fu-flash (when (ignore-errors (elisp--preceding-sexp))
                           (save-excursion
                             (end-of-defun)
                             (beginning-of-defun)
@@ -443,7 +449,7 @@ such that ignores any prefix arguments."
   (eval-after-load 'slime
     '(esf-initialize-slime)))
 
-(dont-compile
+(eval-when nil
   (when (fboundp 'expectations)
     (expectations
       (desc "esf-every-pred")
@@ -451,7 +457,7 @@ such that ignores any prefix arguments."
         (funcall (esf-every-pred 'stringp 'identity)
                  "value"))
       (expect t
-        (not (funcall (every-pred 'stringp 'numberp 'identity)
+        (not (funcall (esf-every-pred 'stringp 'numberp 'identity)
                       "value")))
       (desc "esf-forward-inner-sexp0")
       (expect ?p
