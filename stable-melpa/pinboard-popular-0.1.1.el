@@ -2,20 +2,18 @@
 ;; -*- lexical-binding: t; -*-
 
 ;; Adam Simpson <adam@adamsimpson.net>
-;; Version: 0.1.0
-;; Package-Version: 0.1.0
-;; Package-Requires: ((ivy "0.9.0"))
-;; Keywords: pinboard, ivy
-;; URL: https://github.com/asimpson/ivy-pinboard-popular
+;; Version: 0.1.1
+;; Package-Version: 0.1.1
+;; Package-Requires: ((loop "1.4"))
+;; Keywords: pinboard
+;; URL: https://github.com/asimpson/pinboard-popular
 
 ;;; Commentary:
-;; I'm not great at regexes so this code is designed around that limitation.
-;; The resulting plist may seem oddly structured but ivy-read uses the first element of each element as the displayed title.
-;; So the strucuture is '(title-for-ivy :title title :url url).  A quick cdr returns a "proper" plist.
+;; Easily filter and open links from pinboard.in popular page.
 
 ;;; Code:
-(require 'ivy)
 (require 'url)
+(require 'loop)
 
 (defun pinboard-popular--re-capture-between(re-start re-end)
   "Return the string between two regexes."
@@ -26,7 +24,7 @@
 
 ;;;###autoload
 (defun pinboard-popular()
-  "Download and parse the pinboard.in/popular page. Yes, I'm bad at regex, but this works...for now."
+  "Download and parse the pinboard.in/popular page."
   (interactive)
   (let ((url "https://pinboard.in/popular/"))
     (url-retrieve url (lambda(_)
@@ -36,12 +34,9 @@
                                                 (unless (= (point) (point-max))
                                                   (setq link (substring (pinboard-popular--re-capture-between "href=\"" "\"") 0 -1))
                                                   (setq title (decode-coding-string (substring (pinboard-popular--re-capture-between ">" "<") 0 -1) 'utf-8))
-                                                  (push (list title :title title :url link) links))))
+                                                  (push (propertize title 'url link) links))))
 
-                          (ivy-read "Pinboard popular:"
-                                    (reverse links)
-                                    :action (lambda(x)
-                                              (browse-url (plist-get (cdr x) :url)))))))))
+                          (browse-url (get-text-property 0 'url (completing-read "Pinboard popular: " (reverse links) nil t))))))))
 
 (provide 'pinboard-popular)
 
