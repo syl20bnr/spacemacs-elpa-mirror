@@ -1,2 +1,1 @@
-(require 'lsp-php)
-(add-hook 'php-mode-hook #'lsp-php-enable)
+Adds PHP support to lsp-mode with php-language-server (felixfbecker/language-server )
