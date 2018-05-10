@@ -1,10 +1,10 @@
 ;;; godoctor.el --- Frontend for godoctor
 
-;; Copyright (C) 2016 james sangho nah <microamp@protonmail.com>
+;; Copyright (C) 2016, 2018 Sangho Na <microamp@protonmail.com>
 ;;
-;; Author: james sangho nah <microamp@protonmail.com>
-;; Version: 0.0.9
-;; Package-Version: 0.0.9
+;; Author: Sangho Na <microamp@protonmail.com>
+;; Version: 0.0.10
+;; Package-Version: 20180510.245
 ;; Keywords: go golang refactoring
 ;; Homepage: https://github.com/microamp/godoctor.el
 
@@ -118,13 +118,7 @@
     (let* ((compilation-buffer "*godoctor rename*")
            (new-name (symbol-name symbol))
            (len (length new-name))
-           (startrow (line-number-at-pos))
-           (startcol (current-column))
-           (endrow startrow)
-           (endcol (+ startcol (- len 1)))
-           (pos (format "%d,%d:%d,%d"
-                        startrow startcol
-                        endrow endcol))
+           (pos (format "%d,%d" (point) len))
            (new-name (read-string "New name: " new-name))
            (cmd (godoctor-rename-cmd pos new-name dry-run)))
       (godoctor--execute-command compilation-buffer cmd dry-run))))

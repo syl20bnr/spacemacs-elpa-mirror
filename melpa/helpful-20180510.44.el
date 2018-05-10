@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180429.327
+;; Package-Version: 20180510.44
 ;; Keywords: help, lisp
 ;; Version: 0.10
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -82,6 +82,14 @@ To disable cleanup entirely, set this variable to nil. See also
   "Function called to display the *Helpful* buffer."
   :type 'function
   :group 'helpful)
+
+;; TODO: explore whether more basic highlighting is fast enough to
+;; handle larger functions. See `c-font-lock-init' and its use of
+;; font-lock-keywords-1.
+(defconst helpful-max-highlight 5000
+  "Don't highlight code with more than this many characters.
+This is particularly important for large pieces of C code, such
+as describing `this-command'.")
 
 (defun helpful--kind-name (symbol callable-p)
   "Describe what kind of symbol this is."
@@ -906,25 +914,26 @@ hooks.")
   (with-temp-buffer
     (insert source)
 
-    ;; Switch to major-mode MODE, but don't run any hooks.
-    (delay-mode-hooks (funcall mode))
+    (when (< (length source) helpful-max-highlight)
+      ;; Switch to major-mode MODE, but don't run any hooks.
+      (delay-mode-hooks (funcall mode))
 
-    ;; `delayed-mode-hooks' contains mode hooks like
-    ;; `emacs-lisp-mode-hook'. Build a list of functions that are run
-    ;; when the mode hooks run.
-    (let (hook-funcs)
-      (dolist (hook delayed-mode-hooks)
-        (let ((funcs (symbol-value hook)))
-          (setq hook-funcs (append hook-funcs funcs))))
+      ;; `delayed-mode-hooks' contains mode hooks like
+      ;; `emacs-lisp-mode-hook'. Build a list of functions that are run
+      ;; when the mode hooks run.
+      (let (hook-funcs)
+        (dolist (hook delayed-mode-hooks)
+          (let ((funcs (symbol-value hook)))
+            (setq hook-funcs (append hook-funcs funcs))))
 
-      ;; Filter hooks to those that relate to highlighting, and run them.
-      (setq hook-funcs (-intersection hook-funcs helpful--highlighting-funcs))
-      (-map #'funcall hook-funcs))
+        ;; Filter hooks to those that relate to highlighting, and run them.
+        (setq hook-funcs (-intersection hook-funcs helpful--highlighting-funcs))
+        (-map #'funcall hook-funcs))
 
-    (if (fboundp 'font-lock-ensure)
-        (font-lock-ensure)
-      (with-no-warnings
-        (font-lock-fontify-buffer)))
+      (if (fboundp 'font-lock-ensure)
+          (font-lock-ensure)
+        (with-no-warnings
+          (font-lock-fontify-buffer))))
     (buffer-string)))
 
 (defun helpful--source (sym callable-p)
