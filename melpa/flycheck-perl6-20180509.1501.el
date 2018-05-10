@@ -4,7 +4,7 @@
 
 ;; Author: Hinrik Örn Sigurðsson <hinrik.sig@gmail.com>
 ;; URL: https://github.com/hinrik/flycheck-perl6
-;; Package-Version: 20180417.7
+;; Package-Version: 20180509.1501
 ;; Keywords: tools, convenience
 ;; Version: 0.1-git
 ;; Package-Requires: ((emacs "24.3") (flycheck "0.22"))
@@ -41,9 +41,19 @@
   :group 'flycheck
   :link '(url-link :tag "Github" "https://github.com/hinrik/flycheck-perl6"))
 
+(flycheck-def-option-var flycheck-perl6-include-path nil perl6
+  "A list of include directories for Perl6.
+
+The value of this variable is a list of strings, where each
+string is a directory to add to the include path of Perl6.
+Relative paths are relative to the file being checked."
+  :type '(repeat (directory :tag "Include directory"))
+  :safe #'flycheck-string-list-p)
+
 (flycheck-define-checker perl6
   "A Perl 6 syntax checker."
-  :command ("perl6" "-c" source)
+  :command ("perl6" "-c"
+            (option-list "-I" flycheck-perl6-include-path) source)
   :error-patterns
   ((error (or (and line-start (message) (? "\r") "\nat " (file-name) ":" line (? "\r") line-end)
               (and "compiling " (file-name) (? "\r") "\n" (message (minimal-match (1+ anything))) " at line " line)

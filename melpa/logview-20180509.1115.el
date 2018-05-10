@@ -4,8 +4,8 @@
 
 ;; Author:     Paul Pogonyshev <pogonyshev@gmail.com>
 ;; Maintainer: Paul Pogonyshev <pogonyshev@gmail.com>
-;; Version:    0.9
-;; Package-Version: 20180508.1322
+;; Version:    0.10
+;; Package-Version: 20180509.1115
 ;; Keywords:   files, tools
 ;; Homepage:   https://github.com/doublep/logview
 ;; Package-Requires: ((emacs "24.4") (datetime "0.3"))
@@ -900,6 +900,7 @@ successfully.")
   (set (make-local-variable 'font-lock-fontify-region-function) #'logview--fontify-region)
   (set (make-local-variable 'filter-buffer-substring-function)  #'logview--buffer-substring-filter)
   (set (make-local-variable 'isearch-filter-predicate)          #'logview--isearch-filter-predicate)
+  (add-hook 'after-change-functions #'logview--invalidate-region-entries nil t)
   (add-hook 'change-major-mode-hook #'logview--exiting-mode nil t)
   (logview--guess-submode)
   (logview--update-invisibility-spec)
@@ -914,7 +915,7 @@ successfully.")
 (defun logview--exiting-mode ()
   (logview--std-temporarily-widening
     (logview--std-altering
-      (remove-text-properties (point-min) (point-max) '(invisible nil logview-entry nil)))))
+      (remove-list-of-text-properties (point-min) (point-max) '(invisible logview-entry)))))
 
 (defun logview-initialized-p ()
   (not (null logview--entry-regexp)))
@@ -935,7 +936,7 @@ Transient Mark mode also activate the region."
     (logview--locate-current-entry entry start
       (goto-char (logview--entry-message-start entry start))
       (when select-message
-        (push-mark (logview--entry-end entry start))))
+        (push-mark (logview--linefeed-back (logview--entry-end entry start)) t t)))
     (unless (and select-message transient-mark-mode)
       (logview--maybe-pulse-current-entry 'message-beginning))))
 
@@ -2618,6 +2619,25 @@ This list is preserved across Emacs session in
 
 
 ;;; Internal commands meant as hooks.
+
+(defun logview--invalidate-region-entries (region-start region-end &optional _old-length)
+  (logview--std-temporarily-widening
+    (logview--std-altering
+      (when (> region-start (point-min))
+        ;; Here we need to go to the entry beginning and then one more entry back: it is
+        ;; possible that after the change current text has to be merged into the previous
+        ;; entry as details.
+        (let ((entry (get-text-property region-start 'logview-entry)))
+          (when entry
+            (when (eq (get-text-property (1- region-start) 'logview-entry) entry)
+              (setq region-start (or (previous-single-property-change region-start 'logview-entry) (point-min))))))
+        (when (and (> region-start (point-min)) (get-text-property (1- region-start) 'logview-entry))
+          (setq region-start (or (previous-single-property-change (1- region-start) 'logview-entry) (point-min)))))
+      (when (< region-end (point-max))
+        (let ((entry (get-text-property region-end 'logview-entry)))
+          (when (and entry (eq (get-text-property (1+ region-end) 'logview-entry) entry))
+            (setq region-end (or (next-single-property-change region-end 'logview-entry) (point-max))))))
+      (remove-list-of-text-properties region-start region-end '(logview-entry fontified)))))
 
 (defun logview--fontify-region (region-start region-end _loudly)
   (logview--std-temporarily-widening
