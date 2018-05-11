@@ -1,7 +1,7 @@
 ;;; lsp-java.el --- Java support for lsp-mode
 
 ;; Version: 1.0
-;; Package-Version: 20180510.1054
+;; Package-Version: 20180511.747
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "3.0"))
 ;; Keywords: java
 ;; URL: https://github.com/emacs-lsp/lsp-java
@@ -60,7 +60,7 @@ The slash is expected at the end."
   :type '(repeat directory))
 
 ;;;###autoload
-(defcustom lsp-java-vmargs "-noverify -Xmx1G -XX:+UseG1GC -XX:+UseStringDeduplication"
+(defcustom lsp-java-vmargs '("-noverify" "-Xmx1G" "-XX:+UseG1GC" "-XX:+UseStringDeduplication")
   "Specifies extra VM arguments used to launch the Java Language Server.
 
 Eg. use `-noverify -Xmx1G -XX:+UseG1GC
@@ -69,7 +69,7 @@ verification,increase the heap size to 1GB and enable String
 deduplication with the G1 Garbage collector"
   :group 'lsp-java
   :risky t
-  :type 'string)
+  :type '(repeat string))
 
 ;;;###autoload
 (defcustom lsp-java-incomplete-classpath 'warning
@@ -136,7 +136,7 @@ A package or type name prefix (e.g. 'org.eclipse') is a valid entry. An import i
   '((java
      (jdt
       (ls
-       (vmargs . ,lsp-java-vmargs)))
+       (vmargs . ,(string-join lsp-java-vmargs " "))))
      (errors
       (incompleteClasspath
        (severity . ,lsp-java-incomplete-classpath)))
@@ -232,21 +232,19 @@ FULL specify whether full or incremental build will be performed."
         (server-config (lsp-java--locate-server-config))
         (root-dir (lsp-java--get-root)))
     (lsp-java--ensure-dir lsp-java-workspace-dir)
-    `( "java"
-       "-Declipse.application=org.eclipse.jdt.ls.core.id1"
-       "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1044"
-       "-Dosgi.bundles.defaultStartLevel=4"
-       "-Declipse.product=org.eclipse.jdt.ls.core.product"
-       "-Dlog.protocol=true"
-       "-Dlog.level=ALL"
-       "-noverify"
-       "-Xmx1G"
-       "-jar"
-       ,server-jar
-       "-configuration"
-       ,server-config
-       "-data"
-       ,lsp-java-workspace-dir)))
+    `("java"
+     "-Declipse.application=org.eclipse.jdt.ls.core.id1"
+     "-Dosgi.bundles.defaultStartLevel=4"
+     "-Declipse.product=org.eclipse.jdt.ls.core.product"
+     "-Dlog.protocol=true"
+     "-Dlog.level=ALL"
+     ,@lsp-java-vmargs
+     "-jar"
+     ,server-jar
+     "-configuration"
+     ,server-config
+     "-data"
+     ,lsp-java-workspace-dir)))
 
 (defun lsp-java--get-root ()
   "Retrieves the root directory of the java project root if available.

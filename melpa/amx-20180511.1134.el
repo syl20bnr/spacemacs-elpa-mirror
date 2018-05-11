@@ -8,9 +8,9 @@
 ;;         Cornelius Mika <cornelius.mika@gmail.com>
 ;; Maintainer: Ryan C. Thompson <rct@thompsonclan.org>
 ;; URL: http://github.com/DarwinAwardWinner/amx/
-;; Package-Version: 20180313.857
+;; Package-Version: 20180511.1134
 ;; Package-Requires: ((emacs "24.4") (s "0"))
-;; Version: 4.0
+;; Version: 3.1
 ;; Keywords: convenience, usability
 
 ;; This file is not part of GNU Emacs.
@@ -323,12 +323,19 @@ provides several extra features."
     (amx-update-if-needed)
     (amx-read-and-run amx-cache)))
 
-(defun amx-active ()
+(defsubst amx-active ()
   "Return non-nil if amx is currently using the minibuffer."
   (>= amx-minibuffer-depth (minibuffer-depth)))
 
 (defun amx-update-and-rerun ()
-  "Check for newly defined commands and re-run `amx'."
+  "Check for newly defined commands and re-run `amx'.
+
+This function should only be called if amx completion is already
+running."
+  (unless (amx-active)
+    (error "Cannot rerun amx because it is not currently running."))
+  (select-window (active-minibuffer-window))
+  (message "Re-running amx")
   (let ((new-initial-input
          (funcall (amx-backend-get-text-fun (amx-get-backend)))))
     (amx-do-with-selected-item

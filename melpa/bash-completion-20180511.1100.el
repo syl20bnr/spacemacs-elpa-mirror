@@ -1,5 +1,5 @@
 ;;; bash-completion.el --- BASH completion for the shell buffer -*- lexical-binding: t -*-
-;; Package-Version: 20180510.119
+;; Package-Version: 20180511.1100
 
 ;; Copyright (C) 2009 Stephane Zermatten
 
@@ -145,13 +145,22 @@ BASH completion is only available in the environment for which
   :type '(boolean)
   :group 'bash-completion)
 
-(defcustom bash-completion-prog "/bin/bash"
+(defcustom bash-completion-prog (executable-find "bash")
   "Name or path of the BASH executable to run for command-line completion.
 This should be either an absolute path to the BASH executable or
 the name of the bash command if it is on Emacs' PATH.  This
 should point to a recent version of BASH (BASH 3) with support
 for command-line completion."
   :type '(file :must-match t)
+  :group 'bash-completion)
+
+(defcustom bash-completion-remote-prog "bash"
+  "Name or path of the remote BASH executable to use.
+
+This is the path of an BASH executable available on the remote machine.
+Best is to just specify \"bash\" and rely on the PATH being set correctly
+for the remote connection."
+  :type '(string)
   :group 'bash-completion)
 
 (defcustom bash-completion-args '("--noediting")
@@ -925,7 +934,7 @@ is set to t."
                      (buffer-name (generate-new-buffer-name " bash-completion"))
                      (args `("*bash-completion*"
                              ,buffer-name
-                             ,bash-completion-prog
+                             ,(if remote bash-completion-remote-prog bash-completion-prog)
                              ,@bash-completion-args)))
                 (when remote
                   ;; See http://lists.gnu.org/archive/html/tramp-devel/2016-05/msg00004.html
@@ -944,21 +953,27 @@ is set to t."
               (dolist (start-file bash-completion-start-files)
                 (when (file-exists-p (bash-completion--expand-file-name start-file))
                   (process-send-string process (concat ". " start-file "\n"))))
+              (process-send-string
+               process
+               (concat
+                ;; attempt to turn off unexpected status messages from
+                ;; bash if the current version of bash does not
+                ;; support these options, the commands will fail
+                ;; silently and be ignored.
+                "shopt -u checkjobs\n"
+                "shopt -u mailwarn\n"
+                "export MAILCHECK=-1\n"
+                "export -n MAIL\n"
+                "export -n MAILPATH\n"
+                "unset HISTFILE\n"
+                ;; some bash completion functions use quote_readline
+                ;; to double-quote strings - which compgen understands
+                ;; but only in some environment. disable this dreadful
+                ;; business to get a saner way of handling spaces.
+                ;; Noticed in bash_completion v1.872.
+                "function quote_readline { echo \"$1\"; }\n"))
+
               (bash-completion-send "PROMPT_COMMAND='';PS1='\t$?\v'" process bash-completion-initial-timeout)
-              ;; attempt to turn off unexpected status messages from bash
-              ;; if the current version of bash does not support these options,
-              ;; the commands will fail silently and be ignored.
-              (bash-completion-send "shopt -u checkjobs" process)
-              (bash-completion-send "shopt -u mailwarn" process)
-              (bash-completion-send "export MAILCHECK=-1" process)
-              (bash-completion-send "export -n MAIL" process)
-              (bash-completion-send "export -n MAILPATH" process)
-              (bash-completion-send "unset HISTFILE" process)
-              ;; some bash completion functions use quote_readline to double-quote
-              ;; strings - which compgen understands but only in some environment.
-              ;; disable this dreadful business to get a saner way of handling
-              ;; spaces. Noticed in bash_completion v1.872.
-              (bash-completion-send "function quote_readline { echo \"$1\"; }" process)
               (bash-completion-send "complete -p" process)
               (process-put process 'complete-p
                            (bash-completion-build-alist (process-buffer process)))
@@ -1180,7 +1195,10 @@ Return the status code of the command, as a number."
       (process-send-string process (concat commandline "\n"))
       (while (not (progn (goto-char 1) (search-forward "\v" nil t)))
 	(unless (accept-process-output process timeout)
-	  (error "Timeout while waiting for an answer from bash-completion process")))
+	  (error (concat
+                  "Timeout while waiting for an answer from "
+                  "bash-completion process.\nProcess output: <<<EOF\n%sEOF")
+                 (buffer-string))))
       (let* ((control-v-position (point))
 	     (control-t-position (progn (search-backward "\t" nil t) (point)))
 	     (status-code (string-to-number

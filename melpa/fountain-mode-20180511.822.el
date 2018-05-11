@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: text
-;; Package-Version: 20180509.56
+;; Package-Version: 20180511.822
 ;; Version: 2.5.4
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -1386,30 +1386,32 @@ First, return second-last speaking character, followed by each
 previously speaking character within scene. After that, return
 characters from `fountain-completion-characters'."
   (lambda (string pred action)
-    (let (candidates)
+    (let (scene-characters)
       (save-excursion
         (save-restriction
           (widen)
           (fountain-forward-character 0)
           (while (not (or (fountain-match-scene-heading)
                           (bobp)))
-            (if (fountain-match-character)
-                (let ((character (match-string-no-properties 4)))
-                  (unless (member character candidates)
-                    (push (list character) candidates))))
+            (when (fountain-match-character)
+              (let ((character (match-string-no-properties 4)))
+                (unless (member character scene-characters)
+                  (push (list character) scene-characters))))
             (fountain-forward-character -1 'scene))))
-      (setq candidates (reverse candidates))
-      (let ((contd-character (list (car candidates)))
-            (alt-character (list (car (cdr candidates))))
-            (rest-characters (cdr (cdr candidates))))
-        (setq candidates (append alt-character contd-character rest-characters)))
-      (setq candidates (append candidates
-                               fountain-completion-characters))
+      (when scene-characters
+        (setq scene-characters (reverse scene-characters))
+        (let ((alt-character (list (cadr scene-characters)))
+              (contd-character (list (car scene-characters)))
+              (rest-characters (cddr scene-characters)))
+          (setq fountain-completion-characters
+                (append alt-character contd-character rest-characters
+                        fountain-completion-characters))))
       (if (eq action 'metadata)
           (list 'metadata
                 (cons 'display-sort-function 'identity)
                 (cons 'cycle-sort-function 'identity))
-        (complete-with-action action candidates string pred)))))
+        (complete-with-action action fountain-completion-characters
+                              string pred)))))
 
 (defun fountain-completion-at-point ()
   "Return completion table for entity at point.
