@@ -4,7 +4,7 @@
 
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;; Homepage: https://github.com/purcell/flymake-json
-;; Package-Version: 20170722.1846
+;; Package-Version: 20180511.211
 ;; Package-X-Original-Version: 0
 ;; Package-Requires: ((flymake-easy "0.1"))
 
@@ -33,7 +33,7 @@
 ;;
 ;; Then, if you're using `json-mode':
 ;;
-;;   (add-hook 'json-mode 'flymake-json-load)
+;;   (add-hook 'json-mode-hook 'flymake-json-load)
 ;;
 ;; or, if you use `js-mode' for json:
 ;;

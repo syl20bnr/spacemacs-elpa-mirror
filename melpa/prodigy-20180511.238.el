@@ -5,7 +5,7 @@
 ;; Author: Johan Andersson <johan.rejeep@gmail.com>
 ;; Maintainer: Johan Andersson <johan.rejeep@gmail.com>
 ;; Version: 0.7.0
-;; Package-Version: 20180329.1357
+;; Package-Version: 20180511.238
 ;; URL: http://github.com/rejeep/prodigy.el
 ;; Package-Requires: ((s "1.8.0") (dash "2.4.0") (f "0.14.0") (emacs "24"))
 
@@ -1424,11 +1424,7 @@ The old service process is transfered to the new service."
 (define-derived-mode prodigy-mode tabulated-list-mode "Prodigy"
   "Special mode for prodigy buffers."
   (buffer-disable-undo)
-  (kill-all-local-variables)
   (setq truncate-lines t)
-  (setq mode-name "Prodigy")
-  (setq major-mode 'prodigy-mode)
-  (use-local-map prodigy-mode-map)
   (add-hook 'post-command-hook 'prodigy-set-default-directory)
   (setq tabulated-list-format prodigy-list-format)
   (setq tabulated-list-entries 'prodigy-list-entries)
