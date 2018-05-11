@@ -4,7 +4,7 @@
 
 ;; Author: Jonathan Chu <me@jonathanchu.is>
 ;; URL: https://github.com/jonathanchu/atom-one-dark-theme
-;; Package-Version: 20180305.1454
+;; Package-Version: 20180510.1043
 ;; Version: 0.4.0
 
 ;; This file is not part of GNU Emacs.
@@ -193,6 +193,22 @@
    `(helm-swoop-target-word-face ((t (:background ,atom-one-dark-purple :foreground "#ffffff"))))
    `(helm-locate-finish ((t (:foreground ,atom-one-dark-green))))
    `(info-menu-star ((t (:foreground ,atom-one-dark-red-1))))
+
+   ;; ivy
+   `(ivy-confirm-face ((t (:inherit minibuffer-prompt :foreground ,atom-one-dark-green))))
+   `(ivy-current-match ((t (:background ,atom-one-dark-gray :weight normal))))
+   `(ivy-highlight-face ((t (:inherit font-lock-builtin-face))))
+   `(ivy-match-required-face ((t (:inherit minibuffer-prompt :foreground ,atom-one-dark-red-1))))
+   `(ivy-minibuffer-match-face-1 ((t (:background ,atom-one-dark-bg-hl))))
+   `(ivy-minibuffer-match-face-2 ((t (:inherit ivy-minibuffer-match-face-1 :background ,atom-one-dark-black :foreground ,atom-one-dark-purple :weight semi-bold))))
+   `(ivy-minibuffer-match-face-3 ((t (:inherit ivy-minibuffer-match-face-2 :background ,atom-one-dark-black :foreground ,atom-one-dark-green :weight semi-bold))))
+   `(ivy-minibuffer-match-face-4 ((t (:inherit ivy-minibuffer-match-face-2 :background ,atom-one-dark-black :foreground ,atom-one-dark-orange-2 :weight semi-bold))))
+   `(ivy-minibuffer-match-highlight ((t (:foreground ,atom-one-dark-blue))))
+   `(ivy-modified-buffer ((t (:inherit default :foreground ,atom-one-dark-orange-1))))
+   `(ivy-virtual ((t (:inherit font-lock-builtin-face :slant italic))))
+
+   ;; counsel
+   `(counsel-key-binding ((t (:foreground ,atom-one-dark-orange-2 :weight bold))))
 
    ;; git-commit
    `(git-commit-comment-action  ((t (:foreground ,atom-one-dark-green :weight bold))))

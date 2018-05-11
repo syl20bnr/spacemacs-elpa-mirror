@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; URL: http://github.com/Kungsgeten/org-brain
-;; Package-Version: 20180510.1108
+;; Package-Version: 20180510.1541
 ;; Keywords: outlines hypermedia
 ;; Package-Requires: ((emacs "25") (org "9"))
 ;; Version: 0.5
@@ -217,6 +217,7 @@ Insert links using `org-insert-link'."
   (interactive "D")
   (setq org-brain-path directory)
   (setq org-brain-data-file (expand-file-name ".org-brain-data.el" org-brain-path))
+  (setq org-brain-pins nil)
   (load org-brain-data-file t)
   (org-brain-update-id-locations)
   (message "Switched org-brain to %s" directory))
@@ -1441,7 +1442,8 @@ cancelled manually with `org-brain-stop-wandering'."
    (org-brain-title entry t)
    'action (lambda (_x) (org-brain-visualize entry))
    'follow-link t
-   'help-echo (org-brain-description entry)))
+   'help-echo (org-brain-description entry)
+   'aa2u-text t))
 
 (defun org-brain-insert-resource-button (resource &optional indent)
   "Insert a new line with a RESOURCE button, indented by INDENT spaces."
@@ -1451,7 +1453,8 @@ cancelled manually with `org-brain-stop-wandering'."
    (or (cdr resource) (car resource))
    'action (lambda (_x)
              (org-open-link-from-string (car resource)))
-   'follow-link t))
+   'follow-link t
+   'aa2u-text t))
 
 (defun org-brain-add-resource (link &optional description prompt entry)
   "Insert LINK with DESCRIPTION in an entry.
@@ -1605,7 +1608,7 @@ See `org-brain-add-resource'."
   "Insert pinned entries.
 Helper function for `org-brain-visualize'."
   (insert "PINNED:")
-  (dolist (pin (sort org-brain-pins org-brain-visualize-sort-function))
+  (dolist (pin (sort (copy-sequence org-brain-pins) org-brain-visualize-sort-function))
     (insert "  ")
     (org-brain-insert-visualize-button pin))
   (insert "\n"))
