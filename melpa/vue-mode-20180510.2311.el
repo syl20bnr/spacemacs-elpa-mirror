@@ -4,7 +4,7 @@
 
 ;; Author: codefalling <code.falling@gmail.com>
 ;; Keywords: languages
-;; Package-Version: 20180428.1331
+;; Package-Version: 20180510.2311
 
 ;; Version: 0.4.0
 ;; Package-Requires: ((mmm-mode "0.5.5") (vue-html-mode "0.2") (ssass-mode "0.2") (edit-indirect "0.1.4"))
@@ -59,6 +59,7 @@
     (:type style :name css :mode css-mode)
     (:type style :name stylus :mode stylus-mode)
     (:type style :name less :mode less-css-mode)
+    (:type style :name postcss :mode css-mode)
     (:type style :name scss :mode css-mode)
     (:type style :name sass :mode ssass-mode))
   "A list of vue component languages.
