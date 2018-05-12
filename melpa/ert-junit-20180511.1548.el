@@ -6,7 +6,7 @@
 ;; Maintainer: Ola Nilsson <ola.nilsson@gmail.com>
 ;; Created; Jul 24 2014
 ;; Keywords: tools test unittest ert
-;; Package-Version: 20180504.1441
+;; Package-Version: 20180511.1548
 ;; Version: 0.1.2
 ;; Package-Requires: ((ert "0"))
 ;; URL: http://bitbucket.org/olanilsson/ert-junit
@@ -153,10 +153,18 @@ TEST-NAME and TEST-INDEX its index into STATS."
                               (ert-junit--failure-message test-status))
                              "</skipped>\n ")))
 		 (ert-test-failed
-		  (setq text (concat "<failure message=\"test\" type=\"type\">"
-                             (ert-junit--xml-escape-and-trim
-                              (ert-junit--failure-message test-status))
-							 "</failure>")))
+          (let ((condition (ert-test-failed-condition test-status)))
+            (if (and (consp condition)
+                     (symbolp (car condition))
+                     (not (eq (car condition) 'ert-test-failed))
+                     (get (car condition) 'error-conditions))
+                ;; This is an unexpected error
+                (setq text (concat "\n  <error message=\"" (nth 1 condition)
+                                   "\" type=\"type\">" "</error>\n "))
+              (setq text (concat "\n  <failure message=\"test\" type=\"type\">"
+                                 (ert-junit--xml-escape-and-trim
+                                  (ert-junit--failure-message test-status))
+                                 "</failure>\n ")))))
          (ert-test-quit (setq text " <failure>quit</failure>")))
 	 text)
    "</testcase>" "\n"))
@@ -175,25 +183,46 @@ TEST-NAME and TEST-INDEX its index into STATS."
 
 (defun ert-junit-generate-report (stats buf)
   "Generate a JUnit XML report for STATS at point in BUF."
+  (let ((total (ert-stats-total stats))
+        (successful 0) (failures 0) (errors 0) (skipped 0))
+    (maphash
+     (lambda (testname index)
+       (let ((test-status (ert-junit--stats results stats index)))
+         (etypecase test-status
+           (ert-test-passed
+            (if (ert-test-result-expected-p (aref (ert--stats-tests stats) index) test-status)
+                (incf successful)
+              (incf failures)))
+           (ert-test-skipped (incf skipped))
+           (ert-test-failed
+            (let ((condition (ert-test-failed-condition test-status)))
+              (if (and (consp condition)
+                       (symbolp (car condition))
+                       (not (eq (car condition) 'ert-test-failed))
+                       (get (car condition) 'error-conditions))
+                  ;; This is an unexpected error
+                  (incf errors)
+                (incf failures))))
+           (ert-test-quit (incf failures)))))
+     (ert--stats-test-map stats))
+    (cl-assert (= total (+ successful failures errors skipped))
+               nil "%d != (+ %d %d %d %d)"
+               total successful failures errors skipped)
   (with-current-buffer buf
 	(insert "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-	(insert (format "<testsuite name=\"ERT\" timestamp=\"%s\" hostname=\"%s\" tests=\"%d\" failures=\"%d\" errors=\"%d\" time=\"%f\" skipped=\"%d\" >"
+    (insert (format "<testsuite name=\"ERT\" timestamp=\"%s\" hostname=\"%s\" tests=\"%d\" failures=\"%d\" errors=\"%d\" skipped=\"%d\" time=\"%f\">"
                     ;; timestamp
                     (ert--format-time-iso8601 (ert--stats-start-time stats))
 					(system-name) ;hostname
-					(ert-stats-total stats) ;tests
-					(ert-stats-completed-unexpected stats) ;failures
-					0; errors
+                    total failures errors skipped
 					(ert-junit--time-subtract-float ; time
 					 (ert--stats-end-time stats)
-					 (ert--stats-start-time stats))
-                    (ert-stats-skipped stats) ; skipped
-					)
+                     (ert--stats-start-time stats)))
 			"\n")
 	(maphash (lambda (key value)
 			   (insert (ert-junit-testcase stats key value)))
 			 (ert--stats-test-map stats))
-	(insert "</testsuite>" "\n")))
+    (insert "</testsuite>" "\n"))))
 
 (defun ert-junit-run-tests-batch (result-file &optional selector)
   "Run `ert-run-tests-batch' and generate JUnit report.
