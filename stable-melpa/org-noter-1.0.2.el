@@ -5,9 +5,9 @@
 ;; Author: Gonçalo Santos (aka. weirdNox@GitHub)
 ;; Homepage: https://github.com/weirdNox/org-noter
 ;; Keywords: lisp pdf interleave annotate external sync notes documents org-mode
-;; Package-Version: 1.0.1
+;; Package-Version: 1.0.2
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.6") (org "9.0"))
-;; Version: 1.0.1
+;; Version: 1.0.2
 
 ;; This file is not part of GNU Emacs.
 
@@ -517,7 +517,7 @@ When nil, it will use the selected frame if it does not belong to any other sess
   (let ((window (if (org-noter--valid-session org-noter--session)
                     (org-noter--get-doc-window)
                   (selected-window))))
-    (assert window)
+    (cl-assert window)
     (with-selected-window window
       (cond
        ((memq major-mode '(doc-view-mode pdf-view-mode))
@@ -1085,7 +1085,7 @@ Only available with PDF Tools."
                               (org-noter--compare-location-cons '< (aref e1 1) (aref e2 1)))))))
 
        (with-current-buffer (org-noter--session-notes-buffer session)
-         ;; NOTE(nox): org-with-wide-buffer can't be used because we wan't to set the
+         ;; NOTE(nox): org-with-wide-buffer can't be used because we want to set the
          ;; narrow region
          (widen)
          (save-excursion
@@ -1094,9 +1094,6 @@ Only available with PDF Tools."
            (dolist (data output-data)
              (org-noter--insert-heading (+ level (aref data 2)))
              (insert (aref data 0))
-             (if (and (not (eobp)) (org-next-line-empty-p))
-                 (forward-line)
-               (insert "\n"))
              (when (aref data 1)
                (org-entry-put
                 nil org-noter-property-note-location (org-noter--pretty-print-location (aref data 1)))))
@@ -1120,7 +1117,9 @@ If:
     which one to write
 
 When inserting a new note, it will ask you for a title; if you
-want the default title, input an empty string.
+want the default title, input an empty string. Also, when using
+PDF View or Nov.el, if you have something selected, it will be
+used as the default title.
 
 If you want to force the creation of a separate note, use a
 prefix ARG. PRECISE-LOCATION makes the new note associated with a
@@ -1133,6 +1132,13 @@ more info)."
           (notes-in-view (org-noter--get-notes-for-current-view))
           (location-cons (org-noter--doc-approx-location (or precise-location 'infer)))
           (include-property-less t)
+          (default-title-value
+            (cond
+             ((eq (org-noter--session-doc-mode session) 'pdf-view-mode)
+              (when (pdf-view-active-region-p)
+                (replace-regexp-in-string "\n" " " (mapconcat 'identity (pdf-view-active-region-text) ? ))))
+             ((eq (org-noter--session-doc-mode session) 'nov-mode)
+              (replace-regexp-in-string "\n" " " (buffer-substring-no-properties (mark) (point))))))
           best-previous-element)
 
      (org-element-map contents 'headline
@@ -1202,8 +1208,8 @@ more info)."
                    (when (org-at-heading-p)
                      (forward-line -1)))))
 
-           (let ((title (read-string "Title: "))
-                 (post-blank (if org-noter-separate-notes-from-heading 2 1)))
+           (let ((title (read-string "Title: " default-title-value))
+                 (wanted-post-blank (if org-noter-separate-notes-from-heading 2 1)))
              (when (zerop (length title))
                (setq title (replace-regexp-in-string
                             (regexp-quote "$p$") (number-to-string (car location-cons))
@@ -1221,13 +1227,16 @@ more info)."
                (outline-show-entry)
                (org-noter--insert-heading (1+ (org-element-property :level ast))))
              (insert title)
-             (end-of-line)
-             (dotimes (i post-blank)
+             (org-entry-put nil org-noter-property-note-location
+                            (org-noter--pretty-print-location location-cons))
+
+             (goto-char (org-element-property :contents-end (org-element-at-point)))
+             (while (= 32 (char-syntax (char-before))) (backward-char))
+             (dotimes (i wanted-post-blank)
                (if (and (not (eobp)) (org-next-line-empty-p))
                    (forward-line)
                  (insert "\n")))
-             (org-entry-put nil org-noter-property-note-location
-                            (org-noter--pretty-print-location location-cons))
+
              (setf (org-noter--session-num-notes-in-view session)
                    (1+ (org-noter--session-num-notes-in-view session)))))
          (org-show-context)

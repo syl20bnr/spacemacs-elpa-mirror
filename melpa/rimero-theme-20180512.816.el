@@ -1,14 +1,15 @@
 ;;; rimero-theme.el --- Theme with a dark background suitable for UI and terminal usage.
 
-;; Copyright (C) 2017 , Yves Zoundi
+;; Copyright (C) 2017-2018 , Yves Zoundi
 
 ;; Author: Yves Zoundi <yveszoundi@users.sf.net>
 ;; Maintainer: Yves Zoundi <yveszoundi@users.sf.net>
 ;; Created: 12th August 2017
 ;; URL: https://github.com/yveszoundi/emacs-rimero-theme
-;; Package-Version: 20171001.821
+;; Package-Version: 20180512.816
+;; Package-X-Original-Version: 20180512.821
 ;; Keywords: faces, theme, dark, light colors
-;; Version: 0.0.2
+;; Version: 0.0.3
 ;; Package-Requires: ((emacs "24"))
 
 ;; License: GPL3
@@ -244,10 +245,15 @@
         `(jde-java-font-lock-private-face ((t (:foreground ,keyword))))
         `(jde-java-font-lock-constant-face ((t (:foreground ,const))))
         `(jde-java-font-lock-modifier-face ((t (:foreground ,key3))))
-        `(jde-jave-font-lock-protected-face ((t (:foreground ,keyword))))
+        `(jde-jave-font-lock-protected-face ((t (:foreground ,keyword))))        
+        `(jdee-font-lock-private-face ((t (:foreground ,keyword :weight bold))))
+        `(jdee-font-lock-public-face ((t (:foreground ,keyword :weight bold))))
+        `(jdee-font-lock-protected-face ((t (:foreground ,keyword :weight bold))))
+        `(jdee-db-spec-breakpoint-face ((t (:foreground ,keyword :background ,bg2 :weight bold))))
+        `(jdee-font-lock-modifier-face ((t (:foreground ,builtin))))
         `(jde-java-font-lock-number-face ((t (:foreground ,var))))
         `(erc-notice-face ((t (:foreground ,comment :weight bold))))
-        `(erc-my-nick-face ((t (:foreground ,var :weight bold))))
+        `(erc-my-nick-face ((t (:foreground ,var :weight bold))))        
         `(erc-input-face ((t (:foreground ,var :weight bold))))))
 
 ;;;###autoload
