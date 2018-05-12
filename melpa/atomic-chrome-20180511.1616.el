@@ -4,7 +4,7 @@
 
 ;; Author: alpha22jp <alpha22jp@gmail.com>
 ;; Package-Requires: ((emacs "24.3") (let-alist "1.0.4") (websocket "1.4"))
-;; Package-Version: 20180421.152
+;; Package-Version: 20180511.1616
 ;; Keywords: chrome edit textarea
 ;; URL: https://github.com/alpha22jp/atomic-chrome
 ;; Version: 2.0.0
@@ -349,16 +349,19 @@ STRING is the string process received."
 
 ;;;###autoload
 (defun atomic-chrome-start-server ()
-  "Start websocket server for atomic-chrome."
+  "Start websocket server for atomic-chrome.  Fails silently if a \
+server is already running."
   (interactive)
-  (and (not atomic-chrome-server-atomic-chrome)
-       (memq 'atomic-chrome atomic-chrome-extension-type-list)
-       (setq atomic-chrome-server-atomic-chrome
-             (atomic-chrome-start-websocket-server 64292)))
-  (and (not (process-status "atomic-chrome-httpd"))
-       (memq 'ghost-text atomic-chrome-extension-type-list)
-       (atomic-chrome-start-httpd))
-  (global-atomic-chrome-edit-mode 1))
+  (ignore-errors
+      (progn
+        (and (not atomic-chrome-server-atomic-chrome)
+             (memq 'atomic-chrome atomic-chrome-extension-type-list)
+             (setq atomic-chrome-server-atomic-chrome
+                   (atomic-chrome-start-websocket-server 64292)))
+        (and (not (process-status "atomic-chrome-httpd"))
+             (memq 'ghost-text atomic-chrome-extension-type-list)
+             (atomic-chrome-start-httpd))
+        (global-atomic-chrome-edit-mode 1))))
 
 ;;;###autoload
 (defun atomic-chrome-stop-server nil

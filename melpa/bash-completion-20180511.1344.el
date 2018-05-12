@@ -1,5 +1,5 @@
 ;;; bash-completion.el --- BASH completion for the shell buffer -*- lexical-binding: t -*-
-;; Package-Version: 20180511.1100
+;; Package-Version: 20180511.1344
 
 ;; Copyright (C) 2009 Stephane Zermatten
 
@@ -928,8 +928,8 @@ is set to t."
       (let ((process) (oldterm (getenv "TERM")) (cleanup t) (bash-major-version))
         (unwind-protect
             (progn
-              (setenv "EMACS_BASH_COMPLETE" "t")
               (setenv "TERM" "dumb")
+              (setenv "EMACS_BASH_COMPLETE" "t")
               (let* ((start-proc-fun (if remote #'start-file-process #'start-process))
                      (buffer-name (generate-new-buffer-name " bash-completion"))
                      (args `("*bash-completion*"
@@ -950,6 +950,13 @@ is set to t."
                   ;; user
                   (setq process (apply start-proc-fun args))))
               (set-process-query-on-exit-flag process nil)
+              (if remote
+                  ;; Set EMACS_BASH_COMPLETE now for remote
+                  ;; completion, since setenv doesn't work. This will
+                  ;; unfortunately not be available in .bashrc or
+                  ;; .bash_profile. TODO: Find a way of getting it to
+                  ;; work from the very beginning.
+                  (process-send-string process "EMACS_BASH_COMPLETE=t\n"))
               (dolist (start-file bash-completion-start-files)
                 (when (file-exists-p (bash-completion--expand-file-name start-file))
                   (process-send-string process (concat ". " start-file "\n"))))

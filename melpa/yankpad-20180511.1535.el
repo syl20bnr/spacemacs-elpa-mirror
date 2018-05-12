@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand
 ;; URL: http://github.com/Kungsgeten/yankpad
-;; Package-Version: 20180415.350
+;; Package-Version: 20180511.1535
 ;; Version: 2.10
 ;; Keywords: abbrev convenience
 ;; Package-Requires: ((emacs "24"))
@@ -401,7 +401,8 @@ Only works if the symbol is found in the first matching group of
 
 This function can be added to `hippie-expand-try-functions-list'."
   (interactive)
-  (unless yankpad-category
+  (when (and (called-interactively-p 'any)
+             (not yankpad-category))
     (yankpad-set-category))
   (let* ((symbol (symbol-name (symbol-at-point)))
          (bounds (bounds-of-thing-at-point 'symbol))
@@ -506,7 +507,7 @@ removed from the snippet text."
         (let* ((text (substring-no-properties (org-remove-indentation (org-get-entry))))
                (tags (org-get-tags))
                (src-blocks (when (member "src" tags)
-			     (org-element-map 
+			     (org-element-map
 				 (with-temp-buffer (insert text) (org-element-parse-buffer))
 				 'src-block #'identity))))
           (when remove-props
