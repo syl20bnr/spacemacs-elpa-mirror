@@ -89,5 +89,6 @@ important disadvantages:
 
 COMPATIBILITY
 
-bash-completion.el is known to work on Emacs 22 and later under
-Linux and OSX. It does not works on XEmacs.
+bash-completion.el is known to work with Bash 3 and 4, on Emacs,
+starting with version 24.1, under Linux and OSX. It does not work
+on XEmacs.

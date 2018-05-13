@@ -1,5 +1,5 @@
 ;;; bash-completion.el --- BASH completion for the shell buffer -*- lexical-binding: t -*-
-;; Package-Version: 20180511.1344
+;; Package-Version: 20180513.906
 
 ;; Copyright (C) 2009 Stephane Zermatten
 
@@ -112,8 +112,9 @@
 ;;
 ;; COMPATIBILITY
 ;;
-;; bash-completion.el is known to work on Emacs 22 and later under
-;; Linux and OSX. It does not works on XEmacs.
+;; bash-completion.el is known to work with Bash 3 and 4, on Emacs,
+;; starting with version 24.1, under Linux and OSX. It does not work
+;; on XEmacs.
 ;;
 
 ;;; History:
@@ -148,9 +149,9 @@ BASH completion is only available in the environment for which
 (defcustom bash-completion-prog (executable-find "bash")
   "Name or path of the BASH executable to run for command-line completion.
 This should be either an absolute path to the BASH executable or
-the name of the bash command if it is on Emacs' PATH.  This
-should point to a recent version of BASH (BASH 3) with support
-for command-line completion."
+the name of the bash command if it is on Emacs' PATH. This should
+point to a recent version of BASH, 3 or 4, with support for
+command-line completion."
   :type '(file :must-match t)
   :group 'bash-completion)
 

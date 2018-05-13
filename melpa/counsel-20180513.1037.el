@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180507.1200
+;; Package-Version: 20180513.1037
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -67,10 +67,16 @@
        ".*")
     (let ((start 0)
           ms)
-      (while (setq start (string-match "\\\\)\\|\\\\(\\|[()]" str start))
+      (while (setq start (string-match "\\\\)\\|\\\\(\\|\\\\{\\|\\\\}\\|[()]" str start))
         (setq ms (match-string-no-properties 0 str))
         (cond ((equal ms "\\(")
                (setq str (replace-match "(" nil t str))
+               (setq start (+ start 1)))
+              ((equal ms "\\{")
+               (setq str (replace-match "{" nil t str))
+               (setq start (+ start 1)))
+              ((equal ms "\\}")
+               (setq str (replace-match "}" nil t str))
                (setq start (+ start 1)))
               ((equal ms "\\)")
                (setq str (replace-match ")" nil t str))

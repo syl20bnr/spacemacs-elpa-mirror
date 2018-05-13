@@ -1,12 +1,12 @@
 ;;; yasnippet.el --- Yet another snippet extension for Emacs.
 
-;; Copyright (C) 2008-2017 Free Software Foundation, Inc.
+;; Copyright (C) 2008-2018 Free Software Foundation, Inc.
 ;; Authors: pluskid <pluskid@gmail.com>,
 ;;          João Távora <joaotavora@gmail.com>,
 ;;          Noam Postavsky <npostavs@gmail.com>
 ;; Maintainer: Noam Postavsky <npostavs@gmail.com>
-;; Version: 0.12.2
-;; Package-Version: 20180412.1548
+;; Version: 0.13.0
+;; Package-Version: 20180513.1004
 ;; X-URL: http://github.com/joaotavora/yasnippet
 ;; Keywords: convenience, emulation
 ;; URL: http://github.com/joaotavora/yasnippet
@@ -547,7 +547,7 @@ override bindings from other packages (e.g., `company-mode')."
 
 ;;; Internal variables
 
-(defconst yas--version "0.12.2")
+(defconst yas--version "0.13.0")
 
 (defvar yas--menu-table (make-hash-table)
   "A hash table of MAJOR-MODE symbols to menu keymaps.")
