@@ -2,7 +2,7 @@
 
 ;; Author: Wouter Bolsterlee <wouter@bolsterl.ee>
 ;; Version: 1.4.0
-;; Package-Version: 20180502.509
+;; Package-Version: 20180513.123
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (with-editor "2.5.10"))
 ;; Keywords: direnv, environment, processes, unix, tools
 ;; URL: https://github.com/wbolster/emacs-direnv
@@ -144,9 +144,9 @@ In these modes, direnv will use `default-directory' instead of
            (face)
            (prefix))
       (pcase state
-        ('added   (setq prefix "+" face 'diff-added))
-        ('changed (setq prefix "~" face 'diff-changed))
-        ('removed (setq prefix "-" face 'diff-removed)))
+        (`added   (setq prefix "+" face 'diff-added))
+        (`changed (setq prefix "~" face 'diff-changed))
+        (`removed (setq prefix "-" face 'diff-removed)))
       (propertize (concat prefix name) 'face face))
     (--sort
      (string-lessp (symbol-name (cdr it)) (symbol-name (cdr other)))

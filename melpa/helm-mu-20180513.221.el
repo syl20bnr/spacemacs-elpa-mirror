@@ -5,7 +5,7 @@
 ;; Author: Titus von der Malsburg <malsburg@posteo.de>
 ;; Maintainer: Titus von der Malsburg <malsburg@posteo.de>
 ;; URL: https://github.com/emacs-helm/helm-mu
-;; Package-Version: 20171027.933
+;; Package-Version: 20180513.221
 ;; Version: 1.0.0
 ;; Package-Requires: ((helm "1.5.5"))
 
@@ -167,7 +167,7 @@ Homebrew without some specific installation options."
   :group 'helm-mu
   :type 'string)
 
-(defcustom helm-mu-append-implicit-wildcard t
+(defcustom helm-mu-append-implicit-wildcard nil
   "Should a wildcard be appended implicitly to the search string.
 If non-nil a wildcard is appended to the user's search query before passing it
 to mu, this allows getting results even for partially entered queries.
@@ -243,7 +243,8 @@ by appending a `*' to the pattern input by the user"
    (if (and helm-mu-append-implicit-wildcard
             ;; Do not append a wildcard if flag is being searched for, wildcards do
             ;; not work with flag
-            (not  (string-match-p "flag:[[:alnum:]]+$" helm-pattern)))
+            (not  (string-match-p "flag:[[:alnum:]]+$" helm-pattern))
+            (not (string-match-p "[ \t]$" helm-pattern)))
        (concat helm-pattern "*")
      helm-pattern)))
 
