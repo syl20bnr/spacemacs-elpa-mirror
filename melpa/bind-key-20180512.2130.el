@@ -7,7 +7,7 @@
 ;; Created: 16 Jun 2012
 ;; Modified: 29 Nov 2017
 ;; Version: 2.4
-;; Package-Version: 20171210.2125
+;; Package-Version: 20180512.2130
 ;; Keywords: keys keybinding config dotemacs
 ;; URL: https://github.com/jwiegley/use-package
 
@@ -38,6 +38,12 @@
 ;;   (require 'bind-key)
 ;;
 ;;   (bind-key "C-c x" 'my-ctrl-c-x-command)
+;;
+;; If the keybinding argument is a vector, it is passed straight to
+;; `define-key', so remapping a key with `[remap COMMAND]' works as
+;; expected:
+;;
+;;   (bind-key [remap original-ctrl-c-x-command] 'my-ctrl-c-x-command)
 ;;
 ;; If you want the keybinding to override all minor modes that may also bind
 ;; the same key, use the `bind-key*' form:

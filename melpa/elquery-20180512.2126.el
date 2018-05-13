@@ -7,7 +7,7 @@
 ;; Created: 19 Feb 2017
 
 ;; Keywords: html hypermedia tools webscale
-;; Package-Version: 20170624.1635
+;; Package-Version: 20180512.2126
 ;; Homepage: https://github.com/AdamNiederer/elquery
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "25.1") (s "1.11.0") (dash "2.13.0"))
@@ -171,17 +171,35 @@ If KEYS is supplied, only test keys from that list."
   (elquery--plist-remove-if (lambda (it) (member it '(:id :class)))
                             (elquery-props node)))
 
-(defun elquery-children (node)
-  "Return a list of the children of NODE."
-  (plist-get node :children))
+(cl-defun elquery-children (node &key include-empty)
+  "Return a list of the children of NODE.
 
-(defun elquery-next-children (node)
-  "Return a list of children of NODE with their children removed."
-  (--map (append '(:children nil) it) (elquery-children node)))
+If INCLUDE-EMPTY is not nil, also consider empty text nodes."
+  (if include-empty (plist-get node :children)
+    (-filter (lambda (el) (or (elquery-elp el)
+                         (not (string-empty-p (elquery-text el)))))
+             (plist-get node :children))))
 
-(defun elquery-siblings (node)
-  "Return a list of NODE's siblings, including NODE."
-  (plist-get (plist-get node :parent) :children))
+(cl-defun elquery-next-children (node &key include-empty)
+  "Return a list of children of NODE with their children removed.
+
+If INCLUDE-EMPTY is not nil, also consider empty text nodes."
+  (--map (append '(:children nil) it)
+         (elquery-children node :include-empty include-empty)))
+
+(cl-defun elquery-siblings (node &key include-empty)
+  "Return a list of NODE's siblings, including NODE.
+
+If INCLUDE-EMPTY is not nil, also consider empty text nodes."
+  (elquery-children (elquery-parent node) :include-empty include-empty))
+
+(cl-defun elquery-next-sibling (node &key include-empty)
+  "Return the sibling immediately after NODE.
+
+If INCLUDE-EMPTY is not nil, also consider empty text nodes."
+  (let ((siblings (elquery-siblings node :include-empty include-empty)))
+    (when (-find-index (-partial #'eq node) siblings)
+      (nth (1+ (-find-index (-partial #'eq node) siblings)) siblings))))
 
 (defun elquery-prop (node prop &optional val)
   "In NODE, return the value of PROP.
@@ -272,6 +290,7 @@ Argument TREE is the libxml tree to convert."
   "Return whether QUERY matches the head element of TREE."
   (and tree
        (or (not (elquery-el query))
+           (equal "*" (elquery-el query))
            (equal (elquery-el tree) (elquery-el query)))
        (or (not (elquery-classes query))
            (elquery--subset? (elquery-classes query) (elquery-classes tree)))
@@ -282,7 +301,7 @@ Argument TREE is the libxml tree to convert."
                                  (--remove (equal it :class)
                                            (elquery--plist-keys (elquery-props query)))))))
 
-(defconst elquery--el-re "^[A-Za-z0-9\-]+")
+(defconst elquery--el-re "^[A-Za-z0-9*\-]+")
 (defconst elquery--classes-re "\\.\\([a-zA-Z0-9\-_]+\\)")
 (defconst elquery--id-re "#\\([a-zA-Z0-9\-_]+\\)")
 (defconst elquery--attr-re "\\[\\([A-z\-]+\\)=\\(.+?\\)\\]")
@@ -312,7 +331,7 @@ For example, span#kek.bur[foo=bar]"
    (t :child)))
 
 (defun elquery--kw-rel (kw)
-  "Return a relatinoship operator for the keyword KW."
+  "Return a relationship operator for the keyword KW."
   (cond
    ((equal kw :next-child) ">")
    ((equal kw :next-sibling) "+")
@@ -339,14 +358,14 @@ For example, #foo .bar > #bur[name=baz] returns
   (mapcar 'elquery--parse-heirarchy (s-split ", *" string)))
 
 (defun elquery--$-next (query tree)
-  "For QUERY, Return a subtree of TREE corresponding to :rel in QUERY."
-  (cond
-   ((equal (plist-get query :rel) :next-child) (elquery-children tree))
-   ((equal (plist-get query :rel) :next-sibling) (error "TODO"))
-   ;; TODO: Does returning the siblings INCLUDING the element cause
-   ;; issues with selectors like el-type ~ el-type?
-   ((equal (plist-get query :rel) :sibling) (elquery-siblings tree))
-   ((equal (plist-get query :rel) :child) (elquery-children tree))))
+  "For QUERY, Return a list of subtrees of TREE corresponding to :rel in QUERY."
+  (case (plist-get query :rel)
+    (:next-child (elquery-children tree))
+    (:next-sibling (list (elquery-next-sibling tree)))
+    ;; TODO: Does returning the siblings INCLUDING the element cause
+    ;; issues with selectors like el-type ~ el-type?
+    (:sibling (elquery-siblings tree))
+    (:child (elquery-children tree))))
 
 (defun elquery--$-recurse? (query)
   "Return whether recursion until finding a matching element is allowed.
