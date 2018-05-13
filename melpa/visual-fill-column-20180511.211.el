@@ -1,6 +1,6 @@
 ;;; visual-fill-column.el --- fill-column for visual-line-mode  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2015-2016 Joost Kremers
+;; Copyright (C) 2015-2018 Joost Kremers
 ;; Copyright (C) 2016 Martin Rudalics
 ;; All rights reserved.
 
@@ -8,7 +8,7 @@
 ;; Maintainer: Joost Kremers <joostkremers@fastmail.fm>
 ;; Created: 2015
 ;; Version: 1.9
-;; Package-Version: 20170502.1300
+;; Package-Version: 20180511.211
 ;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -82,7 +82,7 @@ this option is set to a value, it is used instead."
 (defun turn-on-visual-fill-column-mode ()
   "Turn on `visual-fill-column-mode'.
 Note that `visual-fill-column-mode' is only turned on in buffers
-in which `visual-line-mode' is active as well."
+in which Visual Line mode is active as well."
   (when visual-line-mode
     (visual-fill-column-mode 1)))
 
