@@ -7,7 +7,7 @@
 ;; Created: 19 Feb 2017
 
 ;; Keywords: html hypermedia tools webscale
-;; Package-Version: 20180512.2126
+;; Package-Version: 20180513.1912
 ;; Homepage: https://github.com/AdamNiederer/elquery
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "25.1") (s "1.11.0") (dash "2.13.0"))
@@ -157,9 +157,17 @@ If KEYS is supplied, only test keys from that list."
   (and (stringp s) (s-matches-p "^[[:space:]]*$" s)))
 
 ;; Predicates specific to elquery
-(defun elquery-elp (obj)
+(defun elquery-nodep (obj)
   "Return whether OBJ is a DOM element."
+  (member :el obj))
+
+(defun elquery-elp (obj)
+  "Return whether OBJ is a DOM element and is not a text node."
   (plist-get obj :el))
+
+(defun elquery-textp (obj)
+  "Return whether OBJ is a text node."
+  (and (elquery-nodep obj) (not (elquery-elp obj))))
 
 ;; Accessor Aliases on DOM nodes
 (defun elquery-props (node)
@@ -262,6 +270,7 @@ If VAL is supplied, destructively set NODE's data-KEY property to VAL"
 (defun elquery-read-string (string)
   "Return the AST of the HTML string STRING as a plist."
   (with-temp-buffer
+    (set-buffer-multibyte nil) ; ref debbugs.gnu.org/cgi/bugreport.cgi?bug=31427
     (insert-string string)
     (let ((tree (libxml-parse-html-region (point-min) (point-max))))
       (thread-last tree
@@ -355,12 +364,12 @@ For example, #foo .bar > #bur[name=baz] returns
 
 (defun elquery--parse-union (string)
   "Return a list of plists representing the query STRING."
-  (mapcar 'elquery--parse-heirarchy (s-split ", *" string)))
+  (mapcar 'elquery--parse-heirarchy (s-split ", " string)))
 
 (defun elquery--$-next (query tree)
   "For QUERY, Return a list of subtrees of TREE corresponding to :rel in QUERY."
-  (case (plist-get query :rel)
-    (:next-child (elquery-children tree))
+  (cl-case (plist-get query :rel)
+    (:next-child (elquery-next-children tree))
     (:next-sibling (list (elquery-next-sibling tree)))
     ;; TODO: Does returning the siblings INCLUDING the element cause
     ;; issues with selectors like el-type ~ el-type?
@@ -378,11 +387,12 @@ If CAN-RECURSE is set, continue down the tree until a matching element is found.
   (cond
    ;; If we're out of stuff to search, we can't do anything else
    ((equal tree nil) nil)
-   ;; No children in the query, no children in the tree, and a match in the tree
-   ;; means we can return the leaf
+   ;; No children in the query, no searchable children in the tree, and a match
+   ;; in the tree means we can return the leaf
    ((and (elquery--intersects? query tree)
          (not (elquery-children query))
-         (not (elquery-children tree)))
+         (or (not can-recurse)
+             (not (elquery-children tree))))
     tree)
    ;; A match with children remaining in the query to find means we have to
    ;; recurse according to the query's heirarchy relationship
@@ -409,7 +419,7 @@ If CAN-RECURSE is set, continue down the tree until a matching element is found.
 (defun elquery-$ (query-string tree)
   "Return a list of elements matching QUERY-STRING in the subtree of TREE."
   (let ((queries (elquery--parse-union query-string)))
-    (elquery-tree-flatten-until 'elquery-elp
+    (elquery-tree-flatten-until #'elquery-nodep
                                 (-non-nil (--map (elquery--$ it tree t) queries)))))
 
 (defun elquery--write-props (node)
@@ -460,7 +470,7 @@ If WHITESPACE? is non-nil, insert indentation and newlines according to
   (s-join ", " (-map 'elquery--fmt-heirarchy query)))
 
 (defun elquery--fmt-intersection (query)
-  "Return a query string for the given query intesrection QUERY.
+  "Return a query string for the given query intersection QUERY.
 Always of the form el-name#id.class[key=val], with null elements omitted."
   (concat (or (elquery-el query) "")
           (and (elquery-id query) (concat "#" (elquery-id query)))
@@ -468,6 +478,8 @@ Always of the form el-name#id.class[key=val], with null elements omitted."
           (s-join "" (elquery--plist-map (lambda (a b)
                                            (format "[%s=%s]" (elquery--kw-to-string a) b))
                                          (elquery-attrs query)))))
+
+(defalias 'elquery-pprint 'elquery--fmt-intersection)
 
 (defun elquery--pad-operator (string)
   "Return a padded version of the inheritance operator STRING."

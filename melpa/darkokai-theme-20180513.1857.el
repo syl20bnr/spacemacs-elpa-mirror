@@ -1,7 +1,7 @@
 ;;; darkokai-theme.el --- A darker variant on Monokai.
 
 ;; URL: http://github.com/sjrmanning/darkokai
-;; Package-Version: 20170728.339
+;; Package-Version: 20180513.1857
 ;; Version: 0.1.2
 
 ;; The MIT License (MIT)
@@ -1866,8 +1866,8 @@ Also affects 'linum-mode' background."
       (,terminal-class (:inherit erc-default-face))))
 
    `(erc-input-face
-     ((,class (:foreground ,darkokai-yellow))
-      (,terminal-class (:foreground ,terminal-darkokai-yellow))))
+     ((,class (:inherit erc-default-face))
+      (,terminal-class (:inherit erc-default-face))))
 
    `(erc-keyword-face
      ((,class (:foreground ,darkokai-blue
@@ -1892,8 +1892,8 @@ Also affects 'linum-mode' background."
       (,terminal-class (:inherit erc-default-face))))
 
    `(erc-notice-face
-     ((,class (:foreground ,darkokai-green))
-      (,terminal-class (:foreground ,terminal-darkokai-green))))
+     ((,class (:inherits erc-default-face))
+      (,terminal-class (:inherits erc-default-face))))
 
    `(erc-pal-face
      ((,class (:foreground ,darkokai-orange
@@ -1902,10 +1902,10 @@ Also affects 'linum-mode' background."
                                     :weight bold))))
 
    `(erc-prompt-face
-     ((,class (:foreground ,darkokai-orange
+     ((,class (:foreground ,darkokai-blue
                            :background ,darkokai-bg
                            :weight bold))
-      (,terminal-class (:foreground ,terminal-darkokai-orange
+      (,terminal-class (:foreground ,terminal-darkokai-blue
                                     :background ,terminal-darkokai-bg
                                     :weight bold))))
 
@@ -4259,38 +4259,32 @@ Also affects 'linum-mode' background."
                                     :foreground ,terminal-darkokai-blue-hc))))
 
    `(org-habit-clear-future-face
-     ((,class (:background ,darkokai-blue-lc))
-      (,terminal-class (:background ,terminal-darkokai-blue-lc))))
+     ((,class (:background ,darkokai-blue-l))
+      (,terminal-class (:background ,terminal-darkokai-blue-l))))
 
    `(org-habit-ready-face
-     ((,class (:background ,darkokai-green-lc
-                           :foreground ,darkokai-green))
-      (,terminal-class (:background ,terminal-darkokai-green-lc
-                                    :foreground ,terminal-darkokai-green))))
+     ((,class (:background ,darkokai-green-plain))
+      (,terminal-class (:background ,terminal-darkokai-green))))
 
    `(org-habit-ready-future-face
      ((,class (:background ,darkokai-green-lc))
       (,terminal-class (:background ,terminal-darkokai-green-lc))))
 
    `(org-habit-alert-face
-     ((,class (:background ,darkokai-yellow
-                           :foreground ,darkokai-yellow-lc))
-      (,terminal-class (:background ,terminal-darkokai-yellow
-                                    :foreground ,terminal-darkokai-yellow-lc))))
+     ((,class (:background ,darkokai-yellow))
+      (,terminal-class (:background ,terminal-darkokai-yellow))))
 
    `(org-habit-alert-future-face
      ((,class (:background ,darkokai-yellow-lc))
       (,terminal-class (:background ,terminal-darkokai-yellow-lc))))
 
    `(org-habit-overdue-face
-     ((,class (:background ,darkokai-red
-                           :foreground ,darkokai-red-lc))
-      (,terminal-class (:background ,terminal-darkokai-red
-                                    :foreground ,terminal-darkokai-red-lc))))
+     ((,class (:background ,darkokai-red-plain))
+      (,terminal-class (:background ,terminal-darkokai-red))))
 
    `(org-habit-overdue-future-face
-     ((,class (:background ,darkokai-red-lc))
-      (,terminal-class (:background ,terminal-darkokai-red-lc))))
+     ((,class (:background ,darkokai-red-hc))
+      (,terminal-class (:background ,terminal-darkokai-red-hc))))
 
    ;; latest additions
    `(org-agenda-dimmed-todo-face
