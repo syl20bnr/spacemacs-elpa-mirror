@@ -7,7 +7,7 @@ replacing "javascript" with "typescript"
 The main features of this typescript mode are syntactic
 highlighting (enabled with `font-lock-mode' or
 `global-font-lock-mode'), automatic indentation and filling of
-comments and C preprocessor fontification
+comments.
 
 
 General Remarks:

@@ -2,9 +2,9 @@
 
 ;; Author: Philippe Vaucher <philippe.vaucher@gmail.com>
 ;; URL: https://github.com/Silex/package-utils
-;; Package-Version: 20180422.2322
+;; Package-Version: 20180514.715
 ;; Keywords: package, convenience
-;; Version: 0.5.0
+;; Version: 1.0.1
 ;; Package-Requires: ((restart-emacs "0.1.1"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -109,6 +109,7 @@ With prefix argument NO-FETCH, do not call `package-refresh-contents'."
 With prefix argument NO-FETCH, do not call `package-refresh-contents'."
   (interactive "P")
   (package-utils-upgrade-all no-fetch)
+  (sleep-for 1)
   (save-buffers-kill-emacs t))
 
 ;;;###autoload
@@ -118,6 +119,7 @@ With prefix argument NO-FETCH, do not call `package-refresh-contents'."
 With prefix argument NO-FETCH, do not call `package-refresh-contents'."
   (interactive "P")
   (package-utils-upgrade-all no-fetch)
+  (sleep-for 1)
   (restart-emacs))
 
 ;;;###autoload

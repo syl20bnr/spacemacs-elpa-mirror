@@ -4,7 +4,7 @@
 
 ;; Author: istib
 ;; URL: https://github.com/istib/helm-aws
-;; Package-Version: 20171227.132
+;; Package-Version: 20180514.332
 ;; Version: 20141205.1
 ;; X-Original-Version: 0.2
 ;; Package-Requires: ((helm "1.5.3")(cl-lib "0.5")(s "1.9.0"))
@@ -189,8 +189,8 @@ If it is stopped, start it.  If it is running, stop it."
   (let ((choices (aws-get-active-instances)))
     (helm
      :buffer "*helm-aws*"
-     :sources '((name . "EC2 Instances")
-                (candidates . choices)
+     :sources `((name . "EC2 Instances")
+                (candidates . ,choices)
                 (action . (("SSH" .
                             (lambda (instance-json)
                               (aws-ssh-into-instance (aws-get-ip-from-instance instance-json))))
