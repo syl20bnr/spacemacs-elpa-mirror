@@ -4,7 +4,7 @@
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 0.2.0
-;; Package-Version: 20180319.243
+;; Package-Version: 20180514.345
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: maint
 ;; URL: https://github.com/akirak/emacs-playground
@@ -39,6 +39,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'subr-x)
 
 (defconst playground-original-home-directory (concat "~" user-login-name)
   "The original home directory of the user.")
@@ -164,16 +165,14 @@
     (setq playground-last-config-home home)))
 
 (defun playground--get-local-sandboxes ()
+  "Get a list of local variables."
   (directory-files playground-directory nil "^\[^.\]"))
 
 (defcustom playground-completion-type nil
-  "Completion engine used for playground.
-
-The possible values are: nil and helm. "
+  "Completion engine used for playground."
   :group 'playground
-  :type 'symbol
-  :options '(helm nil)
-  :type 'symbol)
+  :type '(choice (const :tag "Helm" helm)
+                 (const :tag "Use completing-read" nil)))
 
 (defun playground--completion-engine ()
   "Determine which completion engine to use.
@@ -182,7 +181,7 @@ If `playground-use-completion' variable is defined, use the value.
 Otherwise, consider the values of `helm-mode' and `ivy-mode' (or `counsel-mode')."
   (or playground-completion-type
       (cond
-       ((and (boundp 'helm-mode) helm-mode) 'helm))))
+       ((bound-and-true-p helm-mode) 'helm))))
 
 (defun playground--dotemacs-alist (&optional list-of-plists)
   "Build an alist of (name . plist) from LIST-OF-PLISTS of dotemacs.
@@ -207,7 +206,7 @@ LOCAL is a list of local sandbox names, and REMOTE is an alist of (name . spec).
                          :action
                          (lambda (name) (list name 'local)))
                        (helm-build-sync-source
-                           "Clone .emacs.d from a remote repository"
+                           "Clone emacs.d from a remote repository"
                          :candidates
                          (cl-loop for (name . plist) in remote
                                   unless (member name local)
@@ -224,16 +223,18 @@ LOCAL is a list of local sandbox names, and REMOTE is an alist of (name . spec).
 
 
 (defun playground--select-sandbox (prompt &optional completion)
-  "Let the user select an existing sandbox or a configuration spec and return
+  "Select a sandbox with PROMPT using COMPLETION interface.
+
+Let the user select an existing sandbox or a configuration spec and return
 a list of (user &optional spec). The result is used in `playground-checkout'.
 
 COMPLETION is a symbol representing a completion engine to be used. See
-`playground-completion-type' for possible values. "
+`playground-completion-type' for possible values."
   (let ((local (playground--get-local-sandboxes))
         (remote (playground--dotemacs-alist)))
-    (pcase (or completion (playground--completion-engine))
-      ('helm (playground--helm-select-sandbox prompt local remote))
-      (_ (let* ((candidates (append (cl-loop for name in local
+    (cl-case (or completion (playground--completion-engine))
+      (helm (playground--helm-select-sandbox prompt local remote))
+      (t (let* ((candidates (append (cl-loop for name in local
                                              collect (cons (format "%s" name)
                                                            (list name 'local)))
                                     (cl-loop for (name . plist) in remote
@@ -304,17 +305,18 @@ COMPLETION is a symbol representing a completion engine to be used. See
 ;;;###autoload
 (defun playground-checkout (name &optional spec)
   "Start Emacs on a sandbox named NAME with a dotemacs SPEC."
-  (interactive (playground--select-sandbox "Select a sandbox or enter a URL: "))
-
-  (let* ((dpath (playground--directory name))
-         (exists (file-directory-p dpath)))
-    (cond
-     (exists (playground--start name dpath))
-     ((eq spec 'local) (error "A sandbox named %s does not exist locally" name))
-     (spec (apply #'playground--start-with-dotemacs name spec))
-     (t (pcase (assoc name (playground--sandbox-alist))
-          (`nil (error "A sandbox named %s is not configured" name))
-          (pair (apply #'playground--start-with-dotemacs pair)))))))
+  (interactive (or (playground--select-sandbox "Select a sandbox or enter a URL: ")
+                   (cons nil nil)))
+  (when name
+    (let* ((dpath (playground--directory name))
+           (exists (file-directory-p dpath)))
+      (cond
+       (exists (playground--start name dpath))
+       ((eq spec 'local) (error "A sandbox named %s does not exist locally" name))
+       (spec (apply #'playground--start-with-dotemacs name spec))
+       (t (pcase (assoc name (playground--dotemacs-alist))
+            (`nil (error "A sandbox named %s is not configured" name))
+            (pair (apply #'playground--start-with-dotemacs pair))))))))
 
 ;;;###autoload
 (defun playground-checkout-with-options ()
