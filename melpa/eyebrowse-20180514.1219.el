@@ -4,7 +4,7 @@
 
 ;; Author: Vasilij Schneidermann <v.schneidermann@gmail.com>
 ;; URL: https://github.com/wasamasa/eyebrowse
-;; Package-Version: 20171216.944
+;; Package-Version: 20180514.1219
 ;; Version: 0.7.7
 ;; Package-Requires: ((dash "2.7.0") (emacs "24.3.1"))
 ;; Keywords: convenience
@@ -175,27 +175,27 @@ If t, ask for confirmation."
   :group 'eyebrowse)
 
 (defvar eyebrowse-mode-map
-  (let ((map (make-sparse-keymap)))
-    (let ((prefix-map (make-sparse-keymap)))
-      (define-key prefix-map (kbd "<") 'eyebrowse-prev-window-config)
-      (define-key prefix-map (kbd ">") 'eyebrowse-next-window-config)
-      (define-key prefix-map (kbd "'") 'eyebrowse-last-window-config)
-      (define-key prefix-map (kbd "\"") 'eyebrowse-close-window-config)
-      (define-key prefix-map (kbd ",") 'eyebrowse-rename-window-config)
-      (define-key prefix-map (kbd ".") 'eyebrowse-switch-to-window-config)
-      (define-key prefix-map (kbd "0") 'eyebrowse-switch-to-window-config-0)
-      (define-key prefix-map (kbd "1") 'eyebrowse-switch-to-window-config-1)
-      (define-key prefix-map (kbd "2") 'eyebrowse-switch-to-window-config-2)
-      (define-key prefix-map (kbd "3") 'eyebrowse-switch-to-window-config-3)
-      (define-key prefix-map (kbd "4") 'eyebrowse-switch-to-window-config-4)
-      (define-key prefix-map (kbd "5") 'eyebrowse-switch-to-window-config-5)
-      (define-key prefix-map (kbd "6") 'eyebrowse-switch-to-window-config-6)
-      (define-key prefix-map (kbd "7") 'eyebrowse-switch-to-window-config-7)
-      (define-key prefix-map (kbd "8") 'eyebrowse-switch-to-window-config-8)
-      (define-key prefix-map (kbd "9") 'eyebrowse-switch-to-window-config-9)
-      (define-key prefix-map (kbd "c") 'eyebrowse-create-window-config)
-      (define-key prefix-map (kbd "C-c") 'eyebrowse-create-window-config)
-      (define-key map eyebrowse-keymap-prefix prefix-map))
+  (let ((map (make-sparse-keymap))
+        (prefix-map (make-sparse-keymap)))
+    (define-key prefix-map (kbd "<") 'eyebrowse-prev-window-config)
+    (define-key prefix-map (kbd ">") 'eyebrowse-next-window-config)
+    (define-key prefix-map (kbd "'") 'eyebrowse-last-window-config)
+    (define-key prefix-map (kbd "\"") 'eyebrowse-close-window-config)
+    (define-key prefix-map (kbd ",") 'eyebrowse-rename-window-config)
+    (define-key prefix-map (kbd ".") 'eyebrowse-switch-to-window-config)
+    (define-key prefix-map (kbd "0") 'eyebrowse-switch-to-window-config-0)
+    (define-key prefix-map (kbd "1") 'eyebrowse-switch-to-window-config-1)
+    (define-key prefix-map (kbd "2") 'eyebrowse-switch-to-window-config-2)
+    (define-key prefix-map (kbd "3") 'eyebrowse-switch-to-window-config-3)
+    (define-key prefix-map (kbd "4") 'eyebrowse-switch-to-window-config-4)
+    (define-key prefix-map (kbd "5") 'eyebrowse-switch-to-window-config-5)
+    (define-key prefix-map (kbd "6") 'eyebrowse-switch-to-window-config-6)
+    (define-key prefix-map (kbd "7") 'eyebrowse-switch-to-window-config-7)
+    (define-key prefix-map (kbd "8") 'eyebrowse-switch-to-window-config-8)
+    (define-key prefix-map (kbd "9") 'eyebrowse-switch-to-window-config-9)
+    (define-key prefix-map (kbd "c") 'eyebrowse-create-window-config)
+    (define-key prefix-map (kbd "C-c") 'eyebrowse-create-window-config)
+    (define-key map eyebrowse-keymap-prefix prefix-map)
     map)
   "Initial key map for `eyebrowse-mode'.")
 
@@ -548,6 +548,8 @@ The specific behaviour is tmux-like."
          (slot (eyebrowse-free-slot slots)))
     (eyebrowse-switch-to-window-config slot)))
 
+(defvar evil-motion-state-map)
+
 ;;;###autoload
 (defun eyebrowse-setup-evil-keys ()
   "Set up key bindings specific to Evil.
@@ -623,7 +625,7 @@ is detected, extra key bindings will be set up with
                    (keymap
                     (let ((map (make-sparse-keymap)))
                       (define-key map (kbd "<mode-line><mouse-1>")
-                        (lambda (e)
+                        (lambda (_e)
                           (interactive "e")
                           (eyebrowse-switch-to-window-config slot)))
                       map))

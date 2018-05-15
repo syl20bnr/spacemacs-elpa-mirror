@@ -5,7 +5,7 @@
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; Homepage: https://github.com/proofit404/blacken
 ;; Version: 0.0.1
-;; Package-Version: 20180402.435
+;; Package-Version: 20180514.1349
 ;; Package-Requires: ((emacs "25.2"))
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -50,7 +50,8 @@
 
 (defcustom blacken-line-length nil
   "Line length to enforce."
-  :type 'number)
+  :type 'number
+  :safe 'numberp)
 
 (defun blacken-call-bin (input-buffer output-buffer error-buffer)
   "Call process black.
@@ -80,7 +81,7 @@ Return black process the exit code."
   "Build black process call arguments."
   (append
    (when blacken-line-length
-     (list "--multi-line" (number-to-string blacken-line-length)))
+     (list "--line-length" (number-to-string blacken-line-length)))
    '("-")))
 
 ;;;###autoload
