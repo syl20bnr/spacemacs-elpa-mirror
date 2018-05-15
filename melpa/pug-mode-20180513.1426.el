@@ -13,7 +13,7 @@
 ;; Created: February 18, 2016
 ;; Modified: December 08, 2017
 ;; Version: 1.0.7
-;; Package-Version: 20171208.2029
+;; Package-Version: 20180513.1426
 ;; Homepage: https://github.com/hlissner/emacs-pug-mode
 ;; Keywords: markup, language, jade, pug
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
@@ -603,7 +603,7 @@ If the universal argument is supplied, render pretty HTML (non-compressed)."
   (compile (format "pug%s %s" (if arg " -P" "") buffer-file-name)))
 
 ;;;###autoload
-(add-to-list 'auto-mode-alist '("\\.\\(jade\\|pug\\)\\'" . pug-mode))
+(add-to-list 'auto-mode-alist '("\\.\\(?:jade\\|pug\\)\\'" . pug-mode))
 
 (provide 'pug-mode)
 ;;; pug-mode.el ends here
