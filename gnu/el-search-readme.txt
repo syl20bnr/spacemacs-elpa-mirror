@@ -42,8 +42,8 @@ respectively:
   C-S, M-s e s (el-search-pattern)
     Start a search in the current buffer/go to the next match.
 
-  C-R, M-s e r (el-search-pattern-backwards)
-    Search backwards.
+  C-R, M-s e r (el-search-pattern-backward)
+    Search backward.
 
   C-%, M-s e % (el-search-query-replace)
     Do a query-replace.

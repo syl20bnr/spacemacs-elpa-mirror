@@ -3,7 +3,7 @@
 ;;
 ;; Author: Michał Kondraciuk <k.michal@zoho.com>
 ;; URL: https://github.com/mkcms/ivy-yasnippet
-;; Package-Version: 20180512.750
+;; Package-Version: 20180515.149
 ;; Package-Requires: ((emacs "25.3") (ivy "0.10.0") (yasnippet "0.12.2") (dash "2.14.1"))
 ;; Version: 0.0.1
 ;; Keywords: convenience
@@ -173,6 +173,9 @@ If text before point matches snippet key of any candidate, that
 candidate will be initially selected, unless variable
 `ivy-yasnippet-expand-keys' is set to nil."
   (interactive)
+  (barf-if-buffer-read-only)
+  (unless yas-minor-mode
+    (error "yas-minor-mode not enabled in current buffer"))
   (let* ((ivy-yasnippet--buffer (current-buffer))
 
 	 (ivy-yasnippet--region

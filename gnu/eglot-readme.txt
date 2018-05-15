@@ -1,0 +1,1 @@
+Simply M-x eglot should be enough to get you started, but see README.md.
