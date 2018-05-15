@@ -4,7 +4,7 @@
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 0.2.0
-;; Package-Version: 20180514.345
+;; Package-Version: 20180515.1017
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: maint
 ;; URL: https://github.com/akirak/emacs-playground
@@ -41,23 +41,27 @@
 (require 'cl-lib)
 (require 'subr-x)
 
-(defconst playground-original-home-directory (concat "~" user-login-name)
+(defconst playground-original-home-directory
+  (expand-file-name (concat "~" user-login-name))
   "The original home directory of the user.")
 
 (defcustom playground-script-directory
   (expand-file-name ".local/bin" playground-original-home-directory)
   "The directory where the wrapper script is saved."
-  :group 'playground)
+  :group 'playground
+  :type 'string)
 
 (defcustom playground-directory
   (expand-file-name ".emacs-play" playground-original-home-directory)
-  "The directory where home directories of playground are stored."
-  :group 'playground)
+  "The directory where sandboxed home directories of playground are stored."
+  :group 'playground
+  :type 'string)
 
 (defcustom playground-inherited-contents
   '(".gnupg" ".config/git" ".gitconfig" ".cache/chromium" ".config/chromium")
   "Files and directories in the home directory that should be added to virtual home directories."
-  :group 'playground)
+  :group 'playground
+  :type '(repeat string))
 
 (defcustom playground-dotemacs-list
   '(
@@ -65,10 +69,21 @@
     (:repo "https://github.com/seagle0128/.emacs.d.git")
     (:repo "https://github.com/purcell/emacs.d.git")
     (:repo "https://github.com/syl20bnr/spacemacs.git" :name "spacemacs")
-    (:repo "https://github.com/eschulte/emacs24-starter-kit.git" :name "emacs24-starter-kit")
-    )
+    (:repo "https://github.com/eschulte/emacs24-starter-kit.git" :name "emacs24-starter-kit"))
   "List of configuration repositories suggested in ‘playground-checkout’."
-  :group 'playground)
+  :group 'playground
+  :type '(repeat (list (const :tag "Repository" :repo) (string :tag "Git URL")
+                       (plist :inline t :tag "Options"
+                              :options
+                              (((const :tag "Specify a name" :name)
+                                string)
+                               ((const :tag "Check out a branch/revision" :branch)
+                                (string :tag "Revision"))
+                               ((const :tag "Recursively clone submodules (default: yes)"
+                                       :recursive)
+                                (const :tag "No" nil))
+                               ((const :tag "Depth (default: 1)" :depth)
+                                (const :tag "All commits" nil)))))))
 
 (defun playground--emacs-executable ()
   "Get the executable file of Emacs."
