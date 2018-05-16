@@ -2,7 +2,7 @@
 
 ;; Maintainer: Adam Porter
 ;; Version: 2.0
-;; Package-Version: 20170414.1228
+;; Package-Version: 20180515.1948
 ;; URL: https://github.com/alphapapa/navi
 ;; Package-Requires: ((outshine "2.0") (outorg "2.0"))
 
@@ -1578,6 +1578,10 @@ FUN-NO-PREFIX, otherwise add `outshine-' prefix and thus call the
   (interactive (list last-command-event current-prefix-arg))
   (let ((keystrg (format "%c" key))
         (numval-prefix (and prefix (prefix-numeric-value prefix))))
+    (when (or (eobp)
+              (string-empty-p (buffer-substring (point-at-bol) (point-at-eol))))
+      ;; If point is at the end of the buffer or on a blank line, move to previous line.  Fixes #3.
+      (forward-line -1))
     (if prefix
         (cond
          ((memq numval-prefix (number-sequence 1 8))

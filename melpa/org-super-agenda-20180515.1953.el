@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-super-agenda
-;; Package-Version: 20170904.1516
+;; Package-Version: 20180515.1953
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "25.1") (s "1.10.0") (dash "2.13") (org "9.0") (ht "2.2"))
 ;; Keywords: hypermedia, outlines, Org, agenda
@@ -652,8 +652,6 @@ The string should be the priority cookie letter, e.g. \"A\".")
 ;; like the regular groups do essentially the same thing.  But this
 ;; already works, so I'm going to go ahead and release it.
 
-;; FIXME: Do I need to nreverse the items in each group?
-
 (defun org-super-agenda--auto-group-items (all-items &rest ignore)
   "Divide ALL-ITEMS into groups based on their AGENDA-GROUP property."
   (cl-loop with groups = (ht-create)
@@ -669,7 +667,7 @@ The string should be the priority cookie letter, e.g. \"A\".")
                                 (cl-loop for key in (sort (ht-keys groups) #'string<)
                                          for name = (concat "Group: " key)
                                          collect (list :name name
-                                                       :items (ht-get groups key))))))
+                                                       :items (nreverse (ht-get groups key)))))))
 (setq org-super-agenda-group-types (plist-put org-super-agenda-group-types
                                               :auto-group #'org-super-agenda--auto-group-items))
 
@@ -703,7 +701,7 @@ Raise error if invalid selector."
    ;; Valid selector: return function
    ((plist-get org-super-agenda-group-types selector))
    ;; Invalid selector: raise error
-   ((user-error "Invalid org-agenda-super-groups selector: %s" selector))))
+   ((user-error "Invalid org-super-agenda-groups selector: %s" selector))))
 
 (defun org-super-agenda--group-dispatch (items group)
   "Group ITEMS with the appropriate grouping functions for GROUP.

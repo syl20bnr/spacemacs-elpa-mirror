@@ -4,11 +4,11 @@
 
 ;; Author: Ben Liblit <liblit@acm.org>
 ;; Created: 13 Aug 2015
-;; Version: 1.2.2
-;; Package-Version: 1.2.2
+;; Version: 1.3
+;; Package-Version: 1.3
 ;; Package-Requires: ((cl-lib "0.1") (emacs "24") (flycheck "0.20") (let-alist "1.0"))
 ;; Keywords: convenience languages tools
-;; Homepage: https://github.com/liblit/flycheck-status-emoji
+;; URL: https://github.com/liblit/flycheck-status-emoji
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -48,10 +48,11 @@
 ;;  dependencies
 ;;
 
-(require 'cl-lib)
 (require 'flycheck)
 
-(eval-when-compile (require 'let-alist))
+(eval-when-compile
+  (require 'cl-lib)
+  (require 'let-alist))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -65,17 +66,22 @@
   :type 'character)
 
 (defcustom flycheck-status-emoji-indicator-finished-ok ?😌
-  "Shown when the current syntax check finished normally with no errors or warnings."
+  "Shown when the current syntax check finished with no messages."
   :group 'flycheck-status-emoji
   :type 'character)
 
 (defcustom flycheck-status-emoji-indicator-finished-error ?😱
-  "Shown when the current syntax check finished normally, but with one or more errors."
+  "Shown when the current syntax check finished with one or more errors."
   :group 'flycheck-status-emoji
   :type 'character)
 
 (defcustom flycheck-status-emoji-indicator-finished-warning ?😟
-  "Shown when the current syntax check finished normally, but with one or more warnings."
+  "Shown when the current syntax check finished with one or more warnings."
+  :group 'flycheck-status-emoji
+  :type 'character)
+
+(defcustom flycheck-status-emoji-indicator-finished-info ?💁
+  "Shown when the current syntax check finished with one or more informational messages."
   :group 'flycheck-status-emoji
   :type 'character)
 
@@ -111,29 +117,32 @@
 ;;
 
 (defun flycheck-status-emoji--check (character)
-  "Return a single CHARACTER, but only if displayable on the current frame.
+  "Convert CHARACTER to a string, but only if displayable on the current frame.
 
-If the current frame cannot display the given CHARACTER, we throw
-an exception instead."
+If the current frame cannot display the given CHARACTER, throw an
+exception instead."
   (if (char-displayable-p character)
-      character
+      (string character)
     (throw 'flycheck-status-emoji--not-displayable nil)))
 
-(defun flycheck-status-emoji--face-count (character count)
-  "Concatenate an emoji CHARACTER and a COUNT.
+(defun flycheck-status-emoji--face-count (error-counts level)
+  "Format status indicator for ERROR-COUNTS messages at a specific LEVEL.
 
-If COUNT is 0, return nil.  If COUNT is 1, return just the emoji
-CHARACTER converted to a string.  If COUNT is larger than 1, then
-return the CHARACTER followed by COUNT.  Thus, this function
-might return “😟2” for a COUNT of 2, but just “😟” for a COUNT of
-1.
+If the associated count in ERROR-COUNTS for this LEVEL is 0,
+return nil.  If the count is 1, return just the emoji CHARACTER
+converted to a string.  If the count is larger than 1, then
+return the appropriate indicator character followed by the count.
+Thus, this function might return “😟2” for a count of 2, but just
+“😟” for a count of 1.
 
 If the current frame cannot display the given CHARACTER, we throw
 an exception instead."
-  (when count
-    (concat `(,(flycheck-status-emoji--check character))
-	    (when (> count 1)
-	      (number-to-string count)))))
+  (let ((count (alist-get level error-counts)))
+    (when count
+      (concat (flycheck-status-emoji--check (symbol-value (intern (concat "flycheck-status-emoji-indicator-finished-"
+									  (symbol-name level)))))
+	      (when (> count 1)
+		(number-to-string count))))))
 
 (defun flycheck-status-emoji-mode-line-text (&optional status)
   "Get a text using emoji to describe STATUS for use in the mode line.
@@ -147,25 +156,19 @@ cannot be displayed on the current frame,
 `flycheck-mode-line-status-text' is automatically used as a
 fallback."
   (or (catch 'flycheck-status-emoji--not-displayable
-	(let ((pick (cl-ecase (or status flycheck-last-status-change)
-		      ('finished
-		       (if flycheck-current-errors
-			   (let-alist (flycheck-count-errors flycheck-current-errors)
-			     (concat
-			      (flycheck-status-emoji--face-count flycheck-status-emoji-indicator-finished-error .error)
-			      (when (and .error .warning) '(?/))
-			      (flycheck-status-emoji--face-count flycheck-status-emoji-indicator-finished-warning .warning)))
-			 flycheck-status-emoji-indicator-finished-ok))
-		      ('running     flycheck-status-emoji-indicator-running)
-		      ('no-checker  flycheck-status-emoji-indicator-no-checker)
-		      ('not-checked flycheck-status-emoji-indicator-not-checked)
-		      ('errored     flycheck-status-emoji-indicator-errored)
-		      ('interrupted flycheck-status-emoji-indicator-interrupted)
-		      ('suspicious  flycheck-status-emoji-indicator-suspicious))))
-	  `(" "
-	    ,(if (characterp pick)
-		 (string (flycheck-status-emoji--check pick))
-	       pick))))
+	`(" "
+	  ,(let ((status (or status flycheck-last-status-change)))
+	     (if (eq 'finished status)
+		 (if flycheck-current-errors
+		     (let ((error-counts (flycheck-count-errors flycheck-current-errors)))
+		       (string-join (cl-remove-if #'null
+						  (mapcar (apply-partially #'flycheck-status-emoji--face-count
+									   error-counts)
+							  '(error warning info)))
+				    "/"))
+		   (flycheck-status-emoji--check flycheck-status-emoji-indicator-finished-ok))
+	       (flycheck-status-emoji--check (symbol-value (intern (concat "flycheck-status-emoji-indicator-"
+										   (symbol-name status)))))))))
       (flycheck-mode-line-status-text status)))
 
 
@@ -201,7 +204,7 @@ additional documentation.  Visit
 command `flycheck-status-emoji-submit-bug-report' to report bugs
 or offer suggestions for improvement."
   :global t
-  :package-version '(flycheck-status-emoji . "1.1")
+  :require 'flycheck-status-emoji
   (progn
     (setq flycheck-mode-line
 	  (if flycheck-status-emoji-mode
@@ -216,7 +219,7 @@ or offer suggestions for improvement."
 ;;  bug reporting
 ;;
 
-(defconst flycheck-status-emoji-version "1.2.2"
+(defconst flycheck-status-emoji-version "1.3"
   "Package version number for use in bug reports.")
 
 (defconst flycheck-status-emoji-maintainer-address "Ben Liblit <liblit@acm.org>"
