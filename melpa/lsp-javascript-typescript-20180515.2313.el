@@ -4,9 +4,9 @@
 
 ;; Author: George Pittarelli <g@gjp.cc>
 ;; Version: 1.0
-;; Package-Version: 20180422.1225
-;; Package-Requires: ((lsp-mode "3.0") (typescript-mode "0.1"))
-;; Keywords: javascript typescript lsp
+;; Package-Version: 20180515.2313
+;; Package-Requires: ((lsp-mode "3.0") (typescript-mode "0.1") (emacs "25.1"))
+;; Keywords: languages tools
 ;; URL: https://github.com/emacs-lsp/lsp-javascript
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -32,7 +32,7 @@
 (require 'lsp-mode)
 (require 'typescript-mode)
 
-(defconst lsp-javascript--get-root
+(defconst lsp-javascript-typescript--get-root
   (lsp-make-traverser #'(lambda (dir)
 						  (directory-files dir nil "package.json"))))
 

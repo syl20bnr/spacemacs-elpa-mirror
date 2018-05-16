@@ -4,7 +4,7 @@
 
 ;; Author: codefalling <code.falling@gmail.com>
 ;; Keywords: languages
-;; Package-Version: 20180510.2311
+;; Package-Version: 20180515.2012
 
 ;; Version: 0.4.0
 ;; Package-Requires: ((mmm-mode "0.5.5") (vue-html-mode "0.2") (ssass-mode "0.2") (edit-indirect "0.1.4"))
@@ -84,7 +84,8 @@ submode to pug-mode."
   :type '(repeat (list (const :format "Language Type: " :type)
                        (choice (const template)
                                (const script)
-                               (const style))
+                               (const style)
+                               (symbol :tag "Custom element type"))
                        (const :format "" :name)
                        (symbol :format "Language Name: %v")
 
