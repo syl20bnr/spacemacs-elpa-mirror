@@ -9,7 +9,7 @@
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Artur Malabarba <bruce.connor.am@gmail.com>
 ;; URL: http://github.com/clojure-emacs/clojure-mode
-;; Package-Version: 20180429.540
+;; Package-Version: 20180516.640
 ;; Keywords: languages clojure clojurescript lisp
 ;; Version: 5.7.0
 ;; Package-Requires: ((emacs "24.4"))
@@ -1516,6 +1516,7 @@ work).  To set it from Lisp code, use
   (locking 1)
   (proxy '(2 nil nil (:defn)))
   (as-> 2)
+  (fdef 1)
 
   (reify '(:defn (1)))
   (deftype '(2 nil nil (:defn)))

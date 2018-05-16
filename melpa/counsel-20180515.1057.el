@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180514.1146
+;; Package-Version: 20180515.1057
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -4485,6 +4485,8 @@ NAME specifies the name of the buffer (defaults to \"*Ibuffer*\")."
       (when (eq (buffer-local-value 'major-mode buf) mode)
         (push (buffer-name buf) bufs)))
     (nreverse bufs)))
+
+(declare-function shell-mode "shell")
 
 ;;;###autoload
 (defun counsel-switch-to-shell-buffer ()
