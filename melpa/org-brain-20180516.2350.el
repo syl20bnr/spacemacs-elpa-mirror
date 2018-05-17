@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; URL: http://github.com/Kungsgeten/org-brain
-;; Package-Version: 20180510.1541
+;; Package-Version: 20180516.2350
 ;; Keywords: outlines hypermedia
 ;; Package-Requires: ((emacs "25") (org "9"))
 ;; Version: 0.5
@@ -718,6 +718,12 @@ PROPERTY could for instance be BRAIN_CHILDREN."
                                              (org-brain-entry-identifier parent)))
     (org-save-all-org-buffers)))
 
+(defun org-brain-remove-line-if-matching (regex)
+  "Delete current line, if matching REGEX."
+  (when (string-match regex (buffer-substring (line-beginning-position)
+                                              (line-end-position)))
+    (kill-whole-line)))
+
 (defun org-brain-remove-relationship (parent child)
   "Remove external relationship between PARENT and CHILD."
   (unless (member child (org-brain-children parent))
@@ -731,6 +737,7 @@ PROPERTY could for instance be BRAIN_CHILDREN."
         (beginning-of-line)
         (re-search-forward (concat " " (org-brain-entry-identifier child)))
         (replace-match "")
+        (org-brain-remove-line-if-matching "^#\\+BRAIN_CHILDREN:[[:space:]]*$")
         (save-buffer))
     ;; Parent = Headline
     (org-entry-remove-from-multivalued-property (org-brain-entry-marker parent)
@@ -744,6 +751,7 @@ PROPERTY could for instance be BRAIN_CHILDREN."
         (beginning-of-line)
         (re-search-forward (concat " " (org-brain-entry-identifier parent)))
         (replace-match "")
+        (org-brain-remove-line-if-matching "^#\\+BRAIN_PARENTS:[[:space:]]*$")
         (save-buffer))
     ;; Child = Headline
     (org-entry-remove-from-multivalued-property (org-brain-entry-marker child)
@@ -833,9 +841,9 @@ Several parents can be added, by using `org-brain-entry-separator'."
   (let ((entry (org-brain-entry-at-pt)))
     (org-brain-remove-relationship
      (org-brain-choose-entry "Parent: "
-                             (org-brain--linked-property-entries
-                              entry "BRAIN_PARENTS")
-                             nil t)
+                     (org-brain--linked-property-entries
+                      entry "BRAIN_PARENTS")
+                     nil t)
      entry))
   (org-brain--revert-if-visualizing))
 
@@ -893,6 +901,7 @@ If run interactively, use `org-brain-entry-at-pt' as ENTRY1 and prompt for ENTRY
           (beginning-of-line)
           (re-search-forward (concat " " (org-brain-entry-identifier entry2)))
           (replace-match "")
+          (org-brain-remove-line-if-matching "^#\\+BRAIN_FRIENDS:[[:space:]]*$")
           (save-buffer))
       ;; Entry2 = Headline
       (org-entry-remove-from-multivalued-property (org-brain-entry-marker entry1)
