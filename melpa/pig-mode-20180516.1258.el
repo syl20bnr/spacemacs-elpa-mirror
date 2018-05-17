@@ -1,6 +1,6 @@
 ;;; pig-mode.el --- Major mode for Pig files
 ;; Version: 20130821.1454
-;; Package-Version: 20140617.1058
+;; Package-Version: 20180516.1258
 
 ;; Software License Agreement (BSD License)
 ;;
@@ -121,6 +121,8 @@
     "CROSS"
     "CUBE" ;; also for    "ROLLUP"
     "DEFINE"
+    "%DECLARE"
+    "%DEFAULT"
     "DISTINCT"
     "FILTER"
     "FLATTEN"
@@ -229,7 +231,6 @@
        '("COGROUP"
          "CROSS"
          "CUBE" "ROLLUP"
-         "DEFINE"
          "DISTINCT"
          "FILTER"
          "FOREACH"
@@ -242,7 +243,7 @@
          "ORDER" "BY"
          "RANK"
          "SAMPLE"
-         "SPLIT"
+         "SPLIT" "OTHERWISE"
          "STORE"
          "STREAM" "THROUGH"
          "UNION"
@@ -257,9 +258,25 @@
        'words)
      (1 font-lock-keyword-face))
 
-    ("^ *\\(REGISTER\\) *\\([^;]+\\)"
+    ("^[ \t]*\\(REGISTER\\)[ \t]+\\([^ \t;]+\\);"
      (1 font-lock-keyword-face)
      (2 font-lock-string-face))
+
+    ("^[ \t]*\\(DEFINE\\)[ \t]+\\([^ \t]+\\)"
+     (1 font-lock-keyword-face)
+     (2 font-lock-function-name-face))
+
+    (,(concat "^[ \t]*" (regexp-opt '("%DECLARE" "%DEFAULT") t)
+              "[ \t]+\\([^ \t]+\\)\\([^ \t;]+\\)")
+     (1 font-lock-keyword-face)
+     (2 font-lock-variable-name-face)
+     (3 font-lock-string-face))
+
+    ("^[ \t]*\\(SET\\)[ \t]+\\([^ \t]+\\)[ \t]+\\([^ \t;]+\\)[ \t]*;"
+     (1 font-lock-keyword-face)
+     (2 font-lock-variable-name-face)
+     (3 font-lock-string-face))
+
     (,(concat
        (regexp-opt
         '(;; Eval Functions
@@ -376,22 +393,29 @@
   :type 'integer :group 'pig)
 (put 'pig-indent-level 'safe-local-variable 'integerp)
 
+(defconst pig-top-level-commands '("%declare" "%default" "register"))
+(defconst pig-top-level-regexp
+  (concat "[ \t]*" (regexp-opt pig-top-level-commands)))
+
 (defun pig-indent-line ()
   "Indent current line as Pig code"
   (interactive)
   (indent-line-to
    (save-excursion
      (beginning-of-line)
-     (if (looking-at ".*}[ \t]*;[ \t]*$")
-         (pig-statement-indentation)
-       (forward-line -1)
-       (while (and (not (bobp)) (looking-at "^[ \t]*$"))
-         (forward-line -1))
-       (cond
-         ((bobp) 0)
-         ((looking-at "^[ \t]*--") (current-indentation))
-         ((looking-at ".*;[ \t]*\\(--.*\\)?$") (pig-statement-indentation))
-         (t (+ (pig-statement-indentation) pig-indent-level)))))))
+     (cond ((looking-at pig-top-level-regexp) 0)
+           ((looking-at ".*}[ \t]*;[ \t]*$")
+            (pig-statement-indentation))
+           (t
+            (forward-line -1)
+            (while (and (not (bobp)) (looking-at "^[ \t]*$"))
+              (forward-line -1))
+            (cond
+              ((bobp) 0)
+              ((looking-at pig-top-level-regexp) (pig-statement-indentation))
+              ((looking-at "^[ \t]*--") (current-indentation))
+              ((looking-at ".*;[ \t]*\\(--.*\\)?$") (pig-statement-indentation))
+              (t (+ (pig-statement-indentation) pig-indent-level))))))))
 
 (defun pig-statement-indentation ()
   (save-excursion
