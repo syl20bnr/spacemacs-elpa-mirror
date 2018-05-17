@@ -1,7 +1,7 @@
 ;;; lsp-java.el --- Java support for lsp-mode
 
 ;; Version: 1.0
-;; Package-Version: 20180514.1057
+;; Package-Version: 20180517.646
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "3.0"))
 ;; Keywords: java
 ;; URL: https://github.com/emacs-lsp/lsp-java
@@ -132,7 +132,7 @@ A package or type name prefix (e.g. 'org.eclipse') is a valid entry. An import i
           (const verbose)))
 
 ;;;###autoload
-(defcustom lsp-java-enable-file-watch t
+(defcustom lsp-java-enable-file-watch nil
   "Defines whether the client will monitor the files for changes."
   :group 'lsp-java
   :type 'boolean)
