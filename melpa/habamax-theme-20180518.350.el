@@ -2,7 +2,7 @@
 
 ;; Author: Maxim Kim <habamax@gmail.com>
 ;; Url: https://github.com/habamax/habamax-theme
-;; Package-Version: 20180507.754
+;; Package-Version: 20180518.350
 ;; Package-Requires: ((emacs "24"))
 
 ;;; Commentary:
@@ -209,7 +209,7 @@
    ;; ivy
    `(ivy-current-match ((t (:background ,color-bg-highlight-2))))
    `(ivy-minibuffer-match-face-1 ((t (:foreground ,color-dim-fg))))
-   '(ivy-minibuffer-match-face-2 ((t (:foreground "#b030b0" :weight bold :underline (:color "b030b0")))))
+   '(ivy-minibuffer-match-face-2 ((t (:foreground "#b030b0" :weight bold :underline (:color "#b030b0")))))
    '(ivy-minibuffer-match-face-3 ((t (:inherit ivy-minibuffer-match-face-2))))
    '(ivy-minibuffer-match-face-4 ((t (:inherit ivy-minibuffer-match-face-3))))
    '(ivy-modified-buffer ((nil (:slant italic))))
@@ -354,7 +354,5 @@
                (file-name-as-directory (file-name-directory load-file-name))))
 
 (provide-theme 'habamax)
-
-;;; noname-theme.el ends here
 
 ;;; habamax-theme.el ends here
