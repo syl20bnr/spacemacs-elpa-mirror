@@ -4,7 +4,7 @@
 
 ;; Author: Takuto Wada <takuto.wada at gmail com>
 ;; Keywords: coverage, overlay
-;; Package-Version: 20160507.955
+;; Package-Version: 20180517.2340
 ;; Homepage: https://github.com/twada/coverlay.el
 ;; Version: 2.0.0
 ;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
@@ -27,15 +27,14 @@
 (require 'cl-lib)
 
 ;;; Commentary:
-;; ------------
-;;
+
 ;; Load coverlay.el in your .emacs
 ;;
 ;;     (require 'coverlay)
 ;;
 ;; Minor mode will toggle overlays in all buffers according to current lcov file
 ;;
-;;     M-x coverlay-mode
+;;     M-x global-coverlay-mode
 ;;
 ;; Load lcov file into coverlay buffer
 ;;
@@ -556,10 +555,9 @@
   (tabulated-list-print))
 
 ;;;###autoload
-(define-minor-mode coverlay-mode
+(define-minor-mode coverlay-minor-mode
   "overlays for uncovered lines"
   :lighter " lcov"
-  :global t
   :keymap (let ((map (make-sparse-keymap)))
             (define-key map (kbd "C-c C-l l") 'coverlay-toggle-overlays)
             (define-key map (kbd "C-c C-l f") 'coverlay-load-file)
@@ -567,19 +565,35 @@
             (define-key map (kbd "C-c C-l g") 'coverlay-reload-file)
             (define-key map (kbd "C-c C-l s") 'coverlay-display-stats)
             map)
-  (coverlay--switch-mode coverlay-mode))
+  (coverlay--switch-mode coverlay-minor-mode))
+
+;;;###autoload
+(defun turn-on-coverlay-mode ()
+  "Turn on `coverlay-mode'."
+  (coverlay-minor-mode 1))
+
+;;;###autoload
+(define-globalized-minor-mode global-coverlay-mode coverlay-minor-mode
+  turn-on-coverlay-mode
+  :group 'coverlay
+  :require 'coverlay)
+
+;;;###autoload
+(make-obsolete 'coverlay-mode #'global-coverlay-mode "3.0.0")
+;;;###autoload
+(make-obsolete-variable 'coverlay-mode-hook 'coverlay-minor-mode-hook "3.0.0")
 
 (defun coverlay--switch-mode (enabled)
   "Switch global mode to be ENABLED or not."
   ;; missing: restore overlay state
   (if enabled
       (progn
-        (add-hook 'coverlay-mode-hook #'coverlay--update-buffers)
+        (add-hook 'coverlay-minor-mode-hook #'coverlay--update-buffers)
         (add-hook 'find-file-hook #'coverlay-file-load-callback))
     ;; cleanup
     (coverlay-end-watch)
     (remove-hook 'find-file-hook #'coverlay-file-load-callback)
-    (remove-hook 'coverlay-mode-hook #'coverlay--update-buffers)
+    (remove-hook 'coverlay-minor-mode-hook #'coverlay--update-buffers)
     (coverlay--clear-all-buffers)))
 
 ;;(setq coverlay-mode-hook nil)
@@ -587,7 +601,7 @@
 (defun coverlay--update-buffers ()
   "Update all buffers to current mode state."
   (mapcar (lambda (file)
-            (if coverlay-mode
+            (if coverlay-minor-mode
                 (coverlay-overlay-all-buffers file)
               (coverlay-clear-all-buffers file)))
         (coverlay--get-filenames)))

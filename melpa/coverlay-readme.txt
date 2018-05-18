@@ -1,12 +1,10 @@
-------------
-
 Load coverlay.el in your .emacs
 
     (require 'coverlay)
 
 Minor mode will toggle overlays in all buffers according to current lcov file
 
-    M-x coverlay-mode
+    M-x global-coverlay-mode
 
 Load lcov file into coverlay buffer
 

@@ -5,7 +5,7 @@
 ;; Author: Lorenzo Bolla <lbolla@gmail.com>
 ;; Created: 14 Septermber 2015
 ;; Version: 1.0
-;; Package-Version: 20160220.1432
+;; Package-Version: 20180518.4
 ;; Package-Requires: ((flycheck "0.18"))
 
 ;;; Commentary:
@@ -48,6 +48,9 @@
 
 (flycheck-def-args-var flycheck-python-mypy-args python-mypy)
 
+(flycheck-def-config-file-var flycheck-mypy.ini flycheck-mypy "mypy.ini"
+  :safe #'stringp)
+
 (flycheck-define-checker python-mypy
   "Mypy syntax checker. Requires mypy>=0.3.1.
 
@@ -59,6 +62,7 @@ E.g. when processing Python2 files, add \"--py2\".
 See URL `http://mypy-lang.org/'."
 
   :command ("mypy"
+            (config-file "--config-file" flycheck-mypy.ini)
             (eval flycheck-python-mypy-args)
             source-original)
   :error-patterns
