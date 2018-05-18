@@ -2,9 +2,9 @@
 
 ;; Author: midnightSuyama <midnightSuyama@gmail.com>
 ;; URL: https://github.com/midnightSuyama/shader-mode
-;; Package-Version: 20180517.756
+;; Package-Version: 20180518.457
 ;; Package-Requires: ((emacs "24"))
-;; Version: 0.2.3
+;; Version: 0.2.4
 
 ;; Copyright (C) 2015 midnightSuyama
 
@@ -94,10 +94,10 @@
              (regexp-opt '(
                            ;; Mathematical
                            "abs" "acos" "all" "any" "asin" "atan" "atan2"
-                           "ceil" "clamp" "cos" "cosh" "cross"
+                           "ceil" "clamp" "clip" "cos" "cosh" "cross"
                            "degress" "determinant" "dot"
                            "exp" "exp2"
-                           "floor" "fmod" "frac" "frexp"
+                           "floor" "fmod" "frac" "frexp" "fwidth"
                            "isfinite" "isinf" "isnan"
                            "ldexp" "lerp" "lit" "log" "log2" "log10"
                            "max" "min" "modf" "mul"
@@ -105,7 +105,7 @@
                            "pow"
                            "radians" "round" "rsqrt"
                            "saturate" "sign" "sin" "sincos" "sinh" "smoothstep" "step" "sqrt"
-                           "tan" "tanh" "transpose"
+                           "tan" "tanh" "transpose" "trunc"
                            
                            ;; Geometric
                            "distance" "faceforward" "length" "normalize" "reflect" "refract"
@@ -125,7 +125,7 @@
   `(,(concat "\\<\\("
              (regexp-opt '("void" "signed" "unsigned" "cint" "cfloat" "char" "short" "long" "double"))
              "\\|\\(bool\\|fixed\\|float\\|half\\|int\\)\\(\\([1234]\\(x[1234]\\)?\\)?\\)?"
-             "\\|sampler\\(\\(1D\\|2D\\)\\(ARRAY\\)?\\|3D\\|RECT\\|CUBE\\)?"
+             "\\|sampler\\(\\(1D\\|2D\\)\\(ARRAY\\)?\\|3D\\|RECT\\|CUBE\\)?\\(_half\\|_float\\)?"
              "\\)\\>") . font-lock-type-face))
 
 (defconst shader-font-lock-variable-name-face
