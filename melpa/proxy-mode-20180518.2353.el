@@ -2,7 +2,7 @@
 
 ;; Authors: stardiviner <numbchild@gmail.com>
 ;; Package-Requires: ((emacs "25"))
-;; Package-Version: 20180430.853
+;; Package-Version: 20180518.2353
 ;; Package-X-Original-Version: 0.1
 ;; Keywords: comm proxy
 ;; homepage: https://github.com/stardiviner/proxy-mode
@@ -109,17 +109,19 @@
 
 (defun proxy-mode-enable ()
   "Enable proxy-mode."
-  (if proxy-mode-proxy-type
-      (message "proxy-mode is already enabled.")
-    (cl-case (cdr (assoc
-                   (completing-read "Select proxy service to enable: " (mapcar 'car proxy-mode-types))
-                   proxy-mode-types))
-      ('http (proxy-mode-http-enable))
-      ('socks (proxy-mode-socks-enable))
-      ('url (proxy-mode-url-enable)))))
+  (interactive
+   (if proxy-mode-proxy-type
+       (message "proxy-mode is already enabled.")
+     (cl-case (cdr (assoc
+		    (completing-read "Select proxy service to enable: " (mapcar 'car proxy-mode-types))
+		    proxy-mode-types))
+       ('http (proxy-mode-http-enable))
+       ('socks (proxy-mode-socks-enable))
+       ('url (proxy-mode-url-enable))))))
 
 (defun proxy-mode-disable ()
   "Disable proxy-mode."
+  (interactive)
   (pcase proxy-mode-proxy-type
     ("http" (proxy-mode-http-disable))
     ("url" (proxy-mode-url-disable))
