@@ -7,6 +7,8 @@ the GNU Guix package manager.  It allows you:
 
 - to look at, compare and remove profile generations;
 
+- to look at system services and generations (if you use GuixSD);
+
 - to do many other things.
 
 Run "M-x guix-help" to look at the summary of available commands.

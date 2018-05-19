@@ -13,15 +13,28 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-;; Copyright (C) 2017 Christophe Rhodes <csr21@cantab.net>
+;; Copyright (C) 2017-2018 Christophe Rhodes <christophe@rhodes.io>
 
 ;; Author: Christophe Rhodes <christophe@rhodes.io>
 ;; URL: https://github.com/csrhodes/gift-mode
-;; Package-Version: 20180204.1358
+;; Package-Version: 20180519.437
 ;; Version: 0.1
 
 ;;; Commentary:
-;; 
+
+;; A major mode for editing quiz questions in GIFT format.
+
+;; GIFT format is an import format for quiz questions in the Moodle
+;; virtual learning environment, supporting multiple-choice,
+;; true-false, short answer, matching missing word, and numerical
+;; questions.
+
+;; This mode provides syntax highlighting and editing commands to make
+;; rapid viewing and modification of large numbers of questions
+;; easier.
+
+;; More details on GIFT format are available from Moodle's
+;; documentation at <https://docs.moodle.org/en/GIFT_format>.
 
 ;;; Code:
 
@@ -30,7 +43,7 @@
 (require 'outline)
 (require 'newcomment)
 
-(defconst gift-mode-syntax-table
+(defvar gift-mode-syntax-table
   (let ((table (make-syntax-table)))
     (modify-syntax-entry ?/ ". 12b" table)
     (modify-syntax-entry ?\n "> b" table)

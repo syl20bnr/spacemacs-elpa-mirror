@@ -4,8 +4,8 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/anaconda-mode
-;; Package-Version: 0.1.10
-;; Version: 0.1.10
+;; Package-Version: 0.1.11
+;; Version: 0.1.11
 ;; Package-Requires: ((emacs "24") (pythonic "0.1.0") (dash "2.6.0") (s "1.9") (f "0.16.2"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -94,14 +94,14 @@
 
 ;;; Server.
 
-(defvar anaconda-mode-server-version "0.1.10"
+(defvar anaconda-mode-server-version "0.1.11"
   "Server version needed to run `anaconda-mode'.")
 
 (defvar anaconda-mode-server-command "
 import sys, site
 site.addsitedir('.')
 import anaconda_mode
-anaconda_mode.main(sys.argv[1:])
+anaconda_mode.main(sys.argv[-2:])
 " "Run `anaconda-mode' server.")
 
 (defvar anaconda-mode-process-name "anaconda-mode"
@@ -294,7 +294,7 @@ parameters.  CALLBACK function will be called when
   (if (eq 0 (process-exit-status process))
       (anaconda-mode-check callback)
     (run-hooks 'anaconda-mode-process-fail-hook)
-    (message "Can not create %s directory"
+    (message "Cannot create %s directory"
              (anaconda-mode-server-directory))))
 
 (defun anaconda-mode-check (&optional callback)
@@ -339,7 +339,7 @@ parameters.  CALLBACK function will be called when
   (if (eq 0 (process-exit-status process))
       (anaconda-mode-bootstrap callback)
     (run-hooks 'anaconda-mode-process-fail-hook)
-    (message "Can not install `anaconda-mode' server")))
+    (message "Cannot install `anaconda-mode' server")))
 
 (defun anaconda-mode-bootstrap (&optional callback)
   "Run `anaconda-mode' server.
@@ -408,7 +408,7 @@ called when `anaconda-mode-port' will be bound."
 PROCESS and EVENT are basic sentinel parameters."
   (unless (eq 0 (process-exit-status process))
     (run-hooks 'anaconda-mode-process-fail-hook)
-    (message "Can not start `anaconda-mode' server")))
+    (message "Cannot start `anaconda-mode' server")))
 
 
 ;;; Interaction.
@@ -488,7 +488,7 @@ submitted."
                                       (goto-char (point-min)))
                                     nil)))))
                 (if (null response)
-                    (message "Can not read anaconda-mode server response")
+                    (message "Cannot read anaconda-mode server response")
                   (if (assoc 'error response)
                       (let* ((error-structure (cdr (assoc 'error response)))
                              (error-message (cdr (assoc 'message error-structure)))
