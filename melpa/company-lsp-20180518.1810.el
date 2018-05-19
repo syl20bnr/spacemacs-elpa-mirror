@@ -1,7 +1,7 @@
 ;;; company-lsp.el --- Company completion backend for lsp-mode.  -*- lexical-binding: t -*-
 
 ;; Version: 2.0.1
-;; Package-Version: 20180503.2319
+;; Package-Version: 20180518.1810
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "3.4") (company "0.9.0") (s "1.2.0") (dash "2.11.0"))
 ;; URL: https://github.com/tigersoldier/company-lsp
 
@@ -97,9 +97,6 @@ This is useful in cases such as 'std' is completed as 'std::' in C++."
 PREFIX is the prefix string.
 COMPLETION is a cache-item created by `company-lsp--cache-item-new'.")
 
-(defvar-local company-lsp--prefix-backup nil
-  "A copy of the last company prefix.")
-
 (defun company-lsp--trigger-characters ()
   "Return a list of completion trigger characters specified by server."
   (let ((provider (lsp--capability "completionProvider")))
@@ -136,22 +133,29 @@ as the prefix to be completed, or a cons cell of (prefix . t) to bypass
               symbol-cons)))
       (company-grab-symbol))))
 
-(defun company-lsp--make-candidate (item)
+(defun company-lsp--make-candidate (item prefix)
   "Convert a CompletionItem JSON data to a string.
 
 ITEM is a hashtable representing the CompletionItem interface.
+PREFIX is the currently active prefix.
 
 The returned string has a lsp-completion-item property with the
 value of ITEM."
   ;; The property has to be the same as added by `lsp--make-completion-item' so
   ;; that `lsp--annotate' can use it.
-  (propertize (gethash "label" item) 'lsp-completion-item item))
+  (propertize (gethash "label" item) 'lsp-completion-item item 'lsp-completion-prefix prefix))
 
 (defun company-lsp--candidate-item (candidate)
   "Retrieve the CompletionItem hashtable associated with CANDIDATE.
 
 CANDIDATE is a string returned by `company-lsp--make-candidate'."
   (plist-get (text-properties-at 0 candidate) 'lsp-completion-item))
+
+(defun company-lsp--candidate-prefix (candidate)
+  "Retrieves the prefix that was active during creation of the candidate.
+
+CANDIDATE is a string returned by `company-lsp--make-candidate'."
+  (plist-get (text-properties-at 0 candidate) 'lsp-completion-prefix))
 
 (defun company-lsp--resolve-candidate (candidate &rest props)
   "Resolve a completion candidate to fill some properties.
@@ -227,6 +231,7 @@ CANDIDATE is a string returned by `company-lsp--make-candidate'."
                                                              "textEdit"
                                                              "additionalTextEdits"))
          (item (company-lsp--candidate-item resolved-candidate))
+         (prefix (company-lsp--candidate-prefix candidate))
          (label (gethash "label" item))
          (start (- (point) (length label)))
          (insert-text (gethash "insertText" item))
@@ -238,7 +243,7 @@ CANDIDATE is a string returned by `company-lsp--make-candidate'."
      (text-edit
       (setq insert-text (gethash "newText" text-edit))
       (delete-region (- (point) (length candidate)) (point))
-      (insert company-lsp--prefix-backup)
+      (insert prefix)
       (let* ((range (gethash "range" text-edit))
              (start-point (lsp--position-to-point (gethash "start" range)))
              (new-text-length (length insert-text)))
@@ -285,7 +290,8 @@ Return a list of strings as the completion candidates."
   (let* ((incomplete (and (hash-table-p response) (gethash "isIncomplete" response)))
          (items (cond ((hash-table-p response) (gethash "items" response))
                       ((sequencep response) response)))
-         (candidates (mapcar #'company-lsp--make-candidate
+         (candidates (mapcar (lambda (item)
+                               (company-lsp--make-candidate item prefix))
                              (lsp--sort-completions items))))
     (when (null company-lsp--completion-cache)
       (add-hook 'company-completion-cancelled-hook #'company-lsp--cleanup-cache)
@@ -402,7 +408,6 @@ See the documentation of `company-backends' for COMMAND and ARG."
      ;; actions only apply to the pre-completion content. We backup the current
      ;; prefix and restore it after company completion is done, so the content
      ;; is restored and textEdit actions can be applied.
-     (setq company-lsp--prefix-backup arg)
      (or (company-lsp--cache-item-candidates (company-lsp--cache-get arg))
          (and company-lsp-async
               (cons :async (lambda (callback)

@@ -1,11 +1,11 @@
-;;; string-inflection.el --- underscore -> UPCASE -> CamelCase -> lowerCamelCase conversion of names
+;;; string-inflection.el --- underscore -> UPCASE -> CamelCase -> lowerCamelCase conversion of names -*- lexical-binding: t -*-
 
-;; Copyright (C) 2004,2014,2016,2017 Free Software Foundation, Inc.
+;; Copyright (C) 2004,2014,2016,2017,2018 Free Software Foundation, Inc.
 
 ;; Author: akicho8 <akicho8@gmail.com>
 ;; Keywords: elisp
-;; Package-Version: 20180102.643
-;; Version: 1.0.6
+;; Package-Version: 1.0.7
+;; Version: 1.0.7
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -222,6 +222,7 @@
   "FooBar => foo_bar"
   (let ((case-fold-search nil))
     (setq str (replace-regexp-in-string "\\([a-z0-9]\\)\\([A-Z]\\)" "\\1_\\2" str))
+    (setq str (replace-regexp-in-string "\\([A-Z]+\\)\\([A-Z][a-z]\\)" "\\1_\\2" str))
     (setq str (replace-regexp-in-string "-" "_" str)) ; FOO-BAR => FOO_BAR
     (setq str (replace-regexp-in-string "_+" "_" str))
     (downcase str)))

@@ -1,8 +1,9 @@
 Main functions are three
 
   1. For Ruby -> string-inflection-ruby-style-cycle  (foo_bar => FOO_BAR => FooBar => foo_bar)
-  2. For Java -> string-inflection-java-style-cycle  (fooBar  => FOO_BAR => FooBar => fooBar)
-  3. For All  -> string-inflection-all-cycle         (foo_bar => FOO_BAR => FooBar => fooBar => foo-bar => foo_bar)
+  2. For Python -> string-inflection-python-style-cycle  (foo_bar => FOO_BAR => FooBar => foo_bar)
+  3. For Java -> string-inflection-java-style-cycle  (fooBar  => FOO_BAR => FooBar => fooBar)
+  4. For All  -> string-inflection-all-cycle         (foo_bar => FOO_BAR => FooBar => fooBar => foo-bar => foo_bar)
 
 
 Setting Example 1
@@ -22,6 +23,9 @@ Setting Example 1
      ;; for java
      ((eq major-mode 'java-mode)
       (string-inflection-java-style-cycle))
+     ;; for python
+     ((eq major-mode 'python-mode)
+      (string-inflection-python-style-cycle))
      (t
       ;; default
       (string-inflection-ruby-style-cycle))))
@@ -38,6 +42,11 @@ Setting Example 2
   (add-hook 'ruby-mode-hook
             '(lambda ()
                (local-set-key (kbd "C-c C-u") 'string-inflection-ruby-style-cycle)))
+
+  ;; for python
+  (add-hook 'python-mode-hook
+            '(lambda ()
+               (local-set-key (kbd "C-c C-u") 'string-inflection-python-style-cycle)))
 
   ;; for java
   (add-hook 'java-mode-hook

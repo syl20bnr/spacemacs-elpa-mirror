@@ -4,7 +4,7 @@
 
 ;; Author: Takuto Wada <takuto.wada at gmail com>
 ;; Keywords: coverage, overlay
-;; Package-Version: 20180517.2340
+;; Package-Version: 20180518.1555
 ;; Homepage: https://github.com/twada/coverlay.el
 ;; Version: 2.0.0
 ;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
@@ -579,9 +579,9 @@
   :require 'coverlay)
 
 ;;;###autoload
-(make-obsolete 'coverlay-mode #'global-coverlay-mode "3.0.0")
+(define-obsolete-function-alias 'coverlay-mode #'global-coverlay-mode "3.0.0")
 ;;;###autoload
-(make-obsolete-variable 'coverlay-mode-hook 'coverlay-minor-mode-hook "3.0.0")
+(define-obsolete-variable-alias 'coverlay-mode-hook 'coverlay-minor-mode-hook "3.0.0")
 
 (defun coverlay--switch-mode (enabled)
   "Switch global mode to be ENABLED or not."
