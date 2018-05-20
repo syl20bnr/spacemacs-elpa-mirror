@@ -1,6 +1,6 @@
 ;;; pig-mode.el --- Major mode for Pig files
 ;; Version: 20130821.1454
-;; Package-Version: 20180516.1258
+;; Package-Version: 20180520.700
 
 ;; Software License Agreement (BSD License)
 ;;
@@ -388,7 +388,7 @@
     st)
   "Syntax table for pig mode")
 
-(defcustom pig-indent-level default-tab-width
+(defcustom pig-indent-level 4
   "*Indentation of pig statements."
   :type 'integer :group 'pig)
 (put 'pig-indent-level 'safe-local-variable 'integerp)

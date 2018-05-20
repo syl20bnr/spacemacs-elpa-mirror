@@ -3,7 +3,7 @@
 
 ;; Author: Daniel Berg
 ;; URL: https://github.com/roosta/emacs-srcery
-;; Package-Version: 20180514.944
+;; Package-Version: 20180520.755
 
 ;; Version: 0.1.0
 ;; Keywords: faces
@@ -404,6 +404,10 @@
      ((,srcery-class (:background ,srcery-yellow :foreground ,srcery-black))
       (,srcery-256-class (:background ,srcery-256-yellow :foreground ,srcery-256-black))))
 
+   `(ahs-edit-mode-face
+     ((,srcery-class (:background ,srcery-bright-red :foreground ,srcery-bright-white))
+      (,srcery-256-class (:background ,srcery-256-bright-red :foreground ,srcery-256-bright-white))))
+
    ;; anzu-mode
    `(anzu-mode-line
      ((,srcery-class (:foreground ,srcery-yellow :weight bold))
@@ -489,12 +493,18 @@
      ((,srcery-class :foreground ,srcery-yellow :weight bold)
       (,srcery-256-class :foreground ,srcery-256-yellow :weight bold)))
 
+   `(cider-deprecated-face
+     ((,srcery-class :background ,srcery-bright-yellow :foreground ,srcery-black)
+      (,srcery-256-class :background ,srcery-256-bright-yellow :foreground ,srcery-256-black)))
+
+   `(cider-debug-code-overlay-face
+     ((,srcery-class :background ,srcery-bright-blue :foreground ,srcery-black)
+      (,srcery-256-class :background ,srcery-256-bright-blue :foreground ,srcery-256-black)))
 
    ;; clojure
    `(clojure-keyword-face
      ((,srcery-class (:foreground ,srcery-blue))
       (,srcery-256-class (:foreground ,srcery-256-blue))))
-
 
    ;; company
    `(company-echo-common
@@ -1514,6 +1524,11 @@
      ((,srcery-class (:foreground ,srcery-yellow))
       (,srcery-256-class (:foreground ,srcery-256-yellow))))
 
+   ;; Git
+   `(diff-context
+     ((,srcery-class :foreground ,srcery-bright-white)
+      (,srcery-256-class :foreground ,srcery-256-bright-white)))
+
    ;; magit
    `(magit-blame-culprit
      ((,srcery-class :foreground ,srcery-yellow)
@@ -1872,12 +1887,12 @@
       (,srcery-256-class (:foreground ,srcery-256-bright-white))))
 
    `(org-block-begin-line
-     ((,srcery-class (:background ,srcery-bright-black :foreground ,srcery-green))
-      (,srcery-256-class (:background ,srcery-256-bright-black :foreground ,srcery-256-green))))
+     ((,srcery-class (:foreground ,srcery-green))
+      (,srcery-256-class (:foreground ,srcery-256-green))))
 
    `(org-block-end-line
-     ((,srcery-class (:background ,srcery-bright-black :foreground ,srcery-green))
-      (,srcery-256-class (:background ,srcery-256-bright-black :foreground ,srcery-256-green))))
+     ((,srcery-class (:foreground ,srcery-green))
+      (,srcery-256-class (:foreground ,srcery-256-green))))
 
    `(org-clock-overlay
      ((,srcery-class (:foreground ,srcery-green))
@@ -1928,8 +1943,8 @@
       (,srcery-256-class (:underline t :foreground ,srcery-256-bright-white))))
 
    `(org-hide
-     ((,srcery-class (:foreground ,srcery-bright-white))
-      (,srcery-256-class (:foreground ,srcery-256-bright-white))))
+     ((,srcery-class (:foreground ,srcery-black :background ,srcery-black))
+      (,srcery-256-class (:foreground ,srcery-256-black :background ,srcery-256-black))))
 
    `(org-kbd
      ((,srcery-class (:inherit region :foreground ,srcery-bright-white :box (:line-width 1 :style released-button)))
