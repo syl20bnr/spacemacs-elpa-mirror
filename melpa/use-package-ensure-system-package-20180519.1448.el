@@ -4,7 +4,7 @@
 
 ;; Author: Justin Talbott <justin@waymondo.com>
 ;; Keywords: convenience, tools, extensions
-;; Package-Version: 20180426.1121
+;; Package-Version: 20180519.1448
 ;; URL: https://github.com/waymondo/use-package-ensure-system-package
 ;; Version: 0.1
 ;; Package-Requires: ((use-package "2.1") (system-packages "1.0.4"))
@@ -24,9 +24,7 @@
 (require 'system-packages nil t)
 
 (eval-when-compile
-  (defvar system-packages-package-manager)
-  (defvar system-packages-supported-package-managers)
-  (defvar system-packages-use-sudo))
+  (declare-function system-packages-get-command "system-packages"))
 
 (defun use-package-ensure-system-package-install-command (pack)
   "Return the default install command for PACK."

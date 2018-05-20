@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/tarsius/hl-todo
 ;; Keywords: convenience
-;; Package-Version: 20180327.1716
+;; Package-Version: 20180519.1257
 
 ;; This file is not part of GNU Emacs.
 
@@ -66,16 +66,6 @@ This is used by `global-hl-todo-mode'."
   :group 'hl-todo
   :type '(repeat function))
 
-(defvar hl-todo-regexp nil)
-
-(defvar hl-todo-keyword-faces)
-
-(defun hl-todo-set-regexp ()
-  "Set the value of `hl-todo-regexp' based on `hl-todo-keyword-faces'."
-  (setq hl-todo-regexp
-        (concat "\\_<" (regexp-opt (mapcar #'car hl-todo-keyword-faces) t)
-                ":?\\_>")))
-
 (defcustom hl-todo-keyword-faces
   '(("HOLD" . "#d0bf8f")
     ("TODO" . "#cc9393")
@@ -98,20 +88,36 @@ This is used by `global-hl-todo-mode'."
   :type '(repeat (cons (string :tag "Keyword")
                        (choice :tag "Face   "
                                (string :tag "Color")
-                               (sexp :tag "Face"))))
-  :set (lambda (symbol value)
-         (set-default symbol value)
-         (hl-todo-set-regexp)))
+                               (sexp :tag "Face")))))
 
-(defvar hl-todo-keywords
-  `(((lambda (limit)
-       (let (case-fold-search)
-         (and (re-search-forward hl-todo-regexp limit t)
-              (nth 8 (syntax-ppss))))) ; inside comment or string
-     (1 (hl-todo-get-face) t t))))
+(defcustom hl-todo-highlight-punctuation ""
+  "String of punctuation characters to highlight after keywords.
+Each of the characters appearing in this string is highlighted
+using the same face as the preceeding keyword when it directly
+follows the keyword."
+  :group 'hl-todo
+  :type 'string)
 
-(defun hl-todo-get-face ()
-  (let ((face (cdr (assoc (match-string 1) hl-todo-keyword-faces))))
+(defvar-local hl-todo--regexp nil)
+(defvar-local hl-todo--keywords nil)
+
+(defun hl-todo--setup ()
+  (setq hl-todo--regexp
+        (concat "\\_<\\("
+                (regexp-opt (mapcar #'car hl-todo-keyword-faces) t)
+                (and (not (equal hl-todo-highlight-punctuation ""))
+                     (concat "[" hl-todo-highlight-punctuation "]?"))
+                "\\)[[({:;.,?!]?\\_>"))
+  (setq hl-todo--keywords
+        `(((lambda (limit)
+             (let (case-fold-search)
+               (and (re-search-forward hl-todo--regexp limit t)
+                    (nth 8 (syntax-ppss))))) ; inside comment or string
+           (1 (hl-todo--get-face) t t))))
+  (font-lock-add-keywords nil hl-todo--keywords t))
+
+(defun hl-todo--get-face ()
+  (let ((face (cdr (assoc (match-string 2) hl-todo-keyword-faces))))
     (if (stringp face)
         (list :inherit 'hl-todo :foreground face)
       face)))
@@ -126,9 +132,8 @@ This is used by `global-hl-todo-mode'."
   :keymap hl-todo-mode-map
   :group 'hl-todo
   (if hl-todo-mode
-      (progn (hl-todo-set-regexp)
-             (font-lock-add-keywords nil hl-todo-keywords t))
-    (font-lock-remove-keywords nil hl-todo-keywords))
+      (hl-todo--setup)
+    (font-lock-remove-keywords nil hl-todo--keywords))
   (when font-lock-mode
     (if (and (fboundp 'font-lock-flush)
              (fboundp 'font-lock-ensure))
@@ -141,9 +146,9 @@ This is used by `global-hl-todo-mode'."
 
 ;;;###autoload
 (define-globalized-minor-mode global-hl-todo-mode
-  hl-todo-mode turn-on-hl-todo-mode-if-desired)
+  hl-todo-mode hl-todo--turn-on-mode-if-desired)
 
-(defun turn-on-hl-todo-mode-if-desired ()
+(defun hl-todo--turn-on-mode-if-desired ()
   (when (apply #'derived-mode-p hl-todo-activate-in-modes)
     (hl-todo-mode 1)))
 
@@ -158,9 +163,9 @@ A negative argument means move backward that many keywords."
     (while (and (> arg 0)
                 (not (eobp))
                 (let ((case-fold-search nil))
-                  (when (looking-at hl-todo-regexp)
+                  (when (looking-at hl-todo--regexp)
                     (goto-char (match-end 0)))
-                  (or (re-search-forward hl-todo-regexp nil t)
+                  (or (re-search-forward hl-todo--regexp nil t)
                       (user-error "No more matches"))))
       (cl-decf arg))))
 
@@ -176,8 +181,8 @@ A negative argument means move forward that many keywords."
                 (not (bobp))
                 (let ((case-fold-search nil)
                       (start (point)))
-                  (re-search-backward (concat hl-todo-regexp "\\=") nil t)
-                  (or (re-search-backward hl-todo-regexp nil t)
+                  (re-search-backward (concat hl-todo--regexp "\\=") nil t)
+                  (or (re-search-backward hl-todo--regexp nil t)
                       (progn (goto-char start)
                              (user-error "No more matches")))))
       (goto-char (match-end 0))
@@ -190,7 +195,7 @@ This actually finds a superset of the highlighted keywords,
 because it uses a regexp instead of a more sophisticated
 matcher."
   (interactive)
-  (occur hl-todo-regexp))
+  (occur hl-todo--regexp))
 
 ;;; _
 (provide 'hl-todo)

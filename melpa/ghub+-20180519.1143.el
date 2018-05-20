@@ -6,7 +6,7 @@
 ;; Keywords: extensions, multimedia, tools
 ;; Homepage: https://github.com/vermiculus/ghub-plus
 ;; Package-Requires: ((emacs "25") (ghub "1.2") (apiwrap "0.4"))
-;; Package-Version: 20180330.1738
+;; Package-Version: 20180519.1143
 ;; Package-X-Original-Version: 0.2.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -240,8 +240,8 @@ See URL `http://emacs.stackexchange.com/a/31050/2264'."
   (declare (obsolete 'ghubp-ratelimit "2017-10-17"))
   (alist-get 'remaining (ghubp-ratelimit)))
 
-(defun ghubp-ratelimit ()
-  "Get `/rate_limit.rate' using `ghub-response-headers'.
+(defun ghubp-ratelimit (&optional no-headers)
+  "Get `/rate_limit.rate'.
 Returns nil if the service is not rate-limited.  Otherwise,
 returns an alist with the following properties:
 
@@ -252,15 +252,25 @@ returns an alist with the following properties:
      number of requests remaining for this hour.
 
   `.reset'
-     time value of instant `.remaining' resets to `.limit'."
-  (when (and ghub-response-headers
-             (assoc-string "X-RateLimit-Limit" ghub-response-headers))
-    (let* ((headers (list "X-RateLimit-Limit" "X-RateLimit-Remaining" "X-RateLimit-Reset"))
-           (headers (mapcar (lambda (x) (string-to-number (ghubp-header x))) headers)))
-      `((limit     . ,(nth 0 headers))
-        (remaining . ,(nth 1 headers))
-        (reset     . ,(seconds-to-time
-                       (nth 2 headers)))))))
+     time value of instant `.remaining' resets to `.limit'.
+
+Unless NO-HEADERS is non-nil, tries to use response headers
+instead of actually hitting /rate_limit."
+  ;; todo: bug when headers are from other host
+  (if (and (not no-headers)
+           ghub-response-headers
+           (assoc-string "X-RateLimit-Limit" ghub-response-headers))
+      (let* ((headers (list "X-RateLimit-Limit" "X-RateLimit-Remaining" "X-RateLimit-Reset"))
+             (headers (mapcar (lambda (x) (string-to-number (ghubp-header x))) headers)))
+        `((limit     . ,(nth 0 headers))
+          (remaining . ,(nth 1 headers))
+          (reset     . ,(seconds-to-time
+                         (nth 2 headers)))))
+    (ghubp-catch _
+        (let-alist (ghubp-request 'get "/rate_limit" nil nil)
+          .resources.core)
+      ;; Enterprise returns 404 if rate limiting is disabled
+      (404 nil))))
 
 (defun ghubp--follow (method resource &optional params data)
   "Using METHOD, follow the RESOURCE link with PARAMS and DATA.

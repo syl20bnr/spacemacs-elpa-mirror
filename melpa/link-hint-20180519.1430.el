@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/link-hint.el
-;; Package-Version: 20180407.1440
+;; Package-Version: 20180519.1430
 ;; Keywords: convenience url avy link links hyperlink
 ;; Package-Requires: ((avy "0.4.0") (emacs "24.1") (cl-lib "0.5"))
 ;; Version: 0.1
@@ -39,6 +39,7 @@
 (require 'cl-lib)
 (require 'avy)
 (require 'url-util)
+(require 'thingatpt)
 (require 'browse-url)
 (require 'goto-addr)
 (require 'ffap)
@@ -68,6 +69,7 @@
     link-hint-w3m-link
     link-hint-w3m-message-link
     link-hint-woman-button
+    link-hint-nov-link
     ;; link-hint-customize-widget
     ;; generic
     link-hint-button
@@ -280,7 +282,12 @@ Only search the range between just after the point and BOUND."
 
 (defun link-hint--text-url-at-point-p ()
   "Return the text url at the point or nil."
-  (let ((url (url-get-url-at-point)))
+  ;; using both thingatpt and url-util because:
+  ;; - thing-at-point won't detect e.g. www.google.com (https needed)
+  ;; - thing-at-point can correctly handle a url surrounded by parens
+  ;; - url-util won't detect a url that has an open paren before it
+  (let ((url (or (thing-at-point 'url)
+                 (url-get-url-at-point))))
     (and url
          (string-match link-hint-url-regexp url)
          (match-string 0 url))))
@@ -377,6 +384,7 @@ Only search the range between just after the point and BOUND."
   :at-point-p #'link-hint--shr-url-at-point-p
   ;; would need a comprehensive list of all modes that use shr.el
   ;; :vars
+  :not-vars '(nov-mode)
   :open #'browse-url
   :open-multiple t
   :copy #'kill-new)
@@ -742,6 +750,18 @@ Only search the range between just after the point and BOUND."
   :at-point-p #'link-hint--button-at-point-p
   :vars '(woman-mode)
   :open #'push-button
+  :copy #'kill-new)
+
+;; ** Nov.el Link
+(defun link-hint--nov-browse ()
+  "Call `nov-browse-url' with no args."
+  (nov-browse-url))
+
+(link-hint-define-type 'nov-link
+  :next #'link-hint--next-shr-url
+  :at-point-p #'link-hint--shr-url-at-point-p
+  :vars '(nov-mode)
+  :open #'link-hint--nov-browse
   :copy #'kill-new)
 
 ;; ** Customize Widget
