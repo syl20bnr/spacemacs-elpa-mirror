@@ -1,10 +1,10 @@
 ;;; elisp-refs.el --- find callers of elisp functions or macros -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2016  
+;; Copyright (C) 2016-2018
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
-;; Version: 1.3
-;; Package-Version: 20180331.1206
+;; Version: 1.4
+;; Package-Version: 20180519.1621
 ;; Keywords: lisp
 ;; Package-Requires: ((dash "2.12.0") (loop "1.2") (s "1.11.0"))
 
