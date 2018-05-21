@@ -5,7 +5,7 @@
 ;; Author: Matúš Goljer <matus.goljer@gmail.com>
 ;; Maintainer: Matúš Goljer <matus.goljer@gmail.com>
 ;; Version: 0.0.1
-;; Package-Version: 20171107.47
+;; Package-Version: 20180521.359
 ;; Created: 15th July 2017
 ;; Package-requires: ((dash "2.10.0") (f "0.19.0"))
 ;; Keywords: files
@@ -82,10 +82,10 @@
       (progn
         (add-hook 'dired-after-readin-hook 'dired-collapse 'append 'local)
         (add-hook 'dired-subtree-after-insert-hook 'dired-collapse 'append 'local)
-        ;; revert the buffer only if it is not empty (= we haven't yet
-        ;; read in the current directory)
+        ;; collapse the buffer only if it is not empty (= we haven't
+        ;; yet read in the current directory)
         (unless (= (buffer-size) 0)
-          (revert-buffer)))
+          (dired-collapse)))
     (remove-hook 'dired-after-readin-hook 'dired-collapse 'local)
     (remove-hook 'dired-subtree-after-insert-hook 'dired-collapse 'local)
     (revert-buffer)))

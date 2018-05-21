@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/emacscollective/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 0.5.13
+;; Package-Version: 0.5.14
 
 ;; This file is not part of GNU Emacs.
 
@@ -36,11 +36,11 @@
 ;; insight into what package might have created them.
 
 ;; This package sets out to fix this by changing the values of path
-;; variables to put files in either `no-littering-etc-directory'
-;; (defaulting to "~/.emacs.d/etc/") or `no-littering-var-directory'
-;; (defaulting to "~/.emacs.d/var/"), and by using descriptive file
-;; names and subdirectories when appropriate.  This is similar to a
-;; color-theme; a "path-theme" if you will.
+;; variables to put configuration files in `no-littering-etc-directory'
+;; (defaulting to "~/.emacs.d/etc/") and persistent data files in
+;; `no-littering-var-directory' (defaulting to "~/.emacs.d/var/"), and
+;; by using descriptive file names and subdirectories when appropriate.
+;; This is similar to a color-theme; a "path-theme" if you will.
 
 ;; We still have a long way to go until most built-in and many third-
 ;; party path variables are properly "themed".  Like a color-theme,
@@ -329,6 +329,8 @@ directories."
       `(make-directory ,(var "projectile/") t))
     (setq projectile-cache-file            (var "projectile/cache.el"))
     (setq projectile-known-projects-file   (var "projectile/known-projects.el"))
+    (setq purpose-default-layout-file      (etc "window-purpose/default-layout.el"))
+    (setq purpose-layout-dirs              (list (etc "window-purpose/layouts/")))
     (setq pyim-dcache-directory            (var "pyim/dcache/"))
     (setq quack-dir                        (var "quack/"))
     (setq request-storage-directory        (var "request/storage/"))

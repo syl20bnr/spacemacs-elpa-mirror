@@ -5,9 +5,9 @@
 ;; Author: Henrik Lissner <http://github/hlissner>
 ;; Maintainer: Henrik Lissner <henrik@lissner.net>
 ;; Created: Jun 03, 2017
-;; Modified: March 28, 2018
-;; Version: 1.0.5
-;; Package-Version: 20180328.343
+;; Modified: May 21, 2018
+;; Version: 1.0.6
+;; Package-Version: 20180521.235
 ;; Keywords: dim bright window buffer faces
 ;; Homepage: https://github.com/hlissner/emacs-solaire-mode
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
@@ -31,7 +31,7 @@
 ;;
 ;; Brighten buffers that represent real files:
 ;;
-;;   (add-hook 'after-change-major-mode-hook #'turn-on-solaire-mode)
+;;   (add-hook 'change-major-mode-hook #'turn-on-solaire-mode)
 ;;
 ;; If you use auto-revert-mode:
 ;;
@@ -85,7 +85,7 @@ asterixes in `org-mode' when `org-hide-leading-stars' is non-nil."
   :group 'solaire-mode)
 
 ;;
-(defcustom solaire-mode-real-buffer-fn #'solaire-mode--real-buffer-fn
+(defcustom solaire-mode-real-buffer-fn #'solaire-mode--real-buffer-p
   "The function that determines buffer eligability for `solaire-mode'.
 
 Should accept one argument: the buffer."
@@ -123,8 +123,8 @@ line number faces will be remapped to `solaire-line-number-face'."
   :group 'solaire-mode
   :type '(list face))
 
-(defun solaire-mode--real-buffer-fn (buf)
-  "Return t if the current buffer BUF represents a real, visited file."
+(defun solaire-mode--real-buffer-p ()
+  "Return t if the BUF is a file-visiting buffer."
   buffer-file-name)
 
 ;;;###autoload
@@ -159,7 +159,8 @@ Does nothing if it doesn't represent a real, file-visiting buffer (see
 `solaire-mode-real-buffer-fn')."
   (interactive)
   (when (and (not solaire-mode)
-             (funcall solaire-mode-real-buffer-fn (current-buffer)))
+             (not (minibufferp))
+             (funcall solaire-mode-real-buffer-fn))
     (solaire-mode +1)))
 
 ;;;###autoload

@@ -8,7 +8,7 @@
 ;;         Dmitry Gutov <dgutov@yandex.ru>
 ;;         Kyle Hargraves <pd@krh.me>
 ;; URL: http://github.com/nonsequitur/inf-ruby
-;; Package-Version: 20180309.433
+;; Package-Version: 20180521.648
 ;; Created: 8 April 1998
 ;; Keywords: languages ruby
 ;; Version: 2.5.1
@@ -572,12 +572,26 @@ Then switch to the process buffer."
     (widen)
     (ruby-send-region (point-min) (point-max))))
 
+(defun ruby-send-buffer-and-go ()
+  "Send the current buffer to the inferior Ruby process.
+Then switch to the process buffer."
+  (interactive)
+  (ruby-send-buffer)
+  (ruby-switch-to-inf t))
+
 (defun ruby-send-line ()
   "Send the current line to the inferior Ruby process."
   (interactive)
   (save-restriction
     (widen)
     (ruby-send-region (point-at-bol) (point-at-eol))))
+
+(defun ruby-send-line-and-go ()
+  "Send the current line to the inferior Ruby process.
+Then switch to the process buffer."
+  (interactive)
+  (ruby-send-line)
+  (ruby-switch-to-inf t))
 
 (defun ruby-escape-single-quoted (str)
   "Escape single quotes, double quotes and newlines in STR."

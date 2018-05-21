@@ -6,7 +6,7 @@
 ;; Homepage: https://github.com/tarsius/moody
 
 ;; Package-Requires: ((emacs "25.3"))
-;; Package-Version: 0.2.0
+;; Package-Version: 0.3.0
 
 ;; This file is not part of GNU Emacs.
 
@@ -301,6 +301,8 @@ to the command loop."
 (advice-add 'delete-frame :after            'moody--set-active-window)
 
 ;;; Kludges
+
+(advice-add 'resize-temp-buffer-window :before 'redisplay)
 
 (declare-function color-srgb-to-xyz "color" (red green blue))
 (declare-function color-rgb-to-hex "color" (red green blue &optional
