@@ -5,7 +5,7 @@
 ;; Author: Steve Purcell <steve@sanityinc.com>
 ;; URL: https://github.com/purcell/default-text-scale
 ;; Keywords: frames, faces
-;; Package-Version: 20170826.2215
+;; Package-Version: 20180520.2349
 ;; Package-X-Original-Version: 0
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -46,6 +46,10 @@
   :type 'integer
   :group 'default-text-scale)
 
+(defvar default-text-scale--complement 0
+  "Internal variable to store the delta needed to get back to the
+original default face height.")
+
 (defun default-text-scale-increment (delta)
   "Adjust the default font height by DELTA on every graphical frame.
 The pixel size of the frame will be kept approximately the same,
@@ -77,6 +81,7 @@ the :height face attribute."
                (width . ,(round pixel-width  (frame-char-width f))))))))
       (with-selected-frame f
         (run-hooks 'after-setting-font-hook)))
+    (setq default-text-scale--complement (- default-text-scale--complement delta))
     (message "Default font size is now %d" (/ new-height 10))))
 
 ;;;###autoload
@@ -92,6 +97,12 @@ the :height face attribute."
   (default-text-scale-increment (- default-text-scale-amount)))
 
 ;;;###autoload
+(defun default-text-scale-reset ()
+  "Resets the height of the default face."
+  (interactive)
+  (default-text-scale-increment default-text-scale--complement))
+
+;;;###autoload
 (define-minor-mode default-text-scale-mode
   "Change the size of the \"default\" face in every frame."
   :global t
@@ -99,6 +110,7 @@ the :height face attribute."
   :keymap (let ((map (make-sparse-keymap)))
             (define-key map (kbd "C-M-=") 'default-text-scale-increase)
             (define-key map (kbd "C-M--") 'default-text-scale-decrease)
+            (define-key map (kbd "C-M-0") 'default-text-scale-reset)
             map))
 
 

@@ -1,13 +1,13 @@
 ;;; solaire-mode.el --- make certain buffers grossly incandescent
 ;;
-;; Copyright (C) 2017 Henrik Lissner
+;; Copyright (C) 2017-2018 Henrik Lissner
 ;;
 ;; Author: Henrik Lissner <http://github/hlissner>
 ;; Maintainer: Henrik Lissner <henrik@lissner.net>
 ;; Created: Jun 03, 2017
-;; Modified: Dec 09, 2017
-;; Version: 1.0.4
-;; Package-Version: 1.0.4
+;; Modified: May 21, 2018
+;; Version: 1.0.6
+;; Package-Version: 1.0.6
 ;; Keywords: dim bright window buffer faces
 ;; Homepage: https://github.com/hlissner/emacs-solaire-mode
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
@@ -31,7 +31,7 @@
 ;;
 ;; Brighten buffers that represent real files:
 ;;
-;;   (add-hook 'after-change-major-mode-hook #'turn-on-solaire-mode)
+;;   (add-hook 'change-major-mode-hook #'turn-on-solaire-mode)
 ;;
 ;; If you use auto-revert-mode:
 ;;
@@ -85,7 +85,7 @@ asterixes in `org-mode' when `org-hide-leading-stars' is non-nil."
   :group 'solaire-mode)
 
 ;;
-(defcustom solaire-mode-real-buffer-fn #'solaire-mode--real-buffer-fn
+(defcustom solaire-mode-real-buffer-fn #'solaire-mode--real-buffer-p
   "The function that determines buffer eligability for `solaire-mode'.
 
 Should accept one argument: the buffer."
@@ -123,8 +123,8 @@ line number faces will be remapped to `solaire-line-number-face'."
   :group 'solaire-mode
   :type '(list face))
 
-(defun solaire-mode--real-buffer-fn (buf)
-  "Return t if the current buffer BUF represents a real, visited file."
+(defun solaire-mode--real-buffer-p ()
+  "Return t if the BUF is a file-visiting buffer."
   buffer-file-name)
 
 ;;;###autoload
@@ -159,7 +159,8 @@ Does nothing if it doesn't represent a real, file-visiting buffer (see
 `solaire-mode-real-buffer-fn')."
   (interactive)
   (when (and (not solaire-mode)
-             (funcall solaire-mode-real-buffer-fn (current-buffer)))
+             (not (minibufferp))
+             (funcall solaire-mode-real-buffer-fn))
     (solaire-mode +1)))
 
 ;;;###autoload
@@ -186,10 +187,11 @@ Does nothing if it doesn't represent a real, file-visiting buffer (see
         (solaire-mode -1)
         (solaire-mode +1)))))
 
-(defun solaire-mode--swap-bg (face1 face2)
-  (let ((bg (face-background face1)))
-    (set-face-background face1 (face-background face2))
-    (set-face-background face2 bg)))
+(defun solaire-mode--swap (face1 face2 &optional prop)
+  (let* ((prop (or prop :background))
+         (color (face-attribute face1 prop)))
+    (set-face-attribute face1 nil prop (face-attribute face2 prop))
+    (set-face-attribute face2 nil prop color)))
 
 ;;;###autoload
 (defun solaire-mode-swap-bg ()
@@ -197,11 +199,14 @@ Does nothing if it doesn't represent a real, file-visiting buffer (see
 
 + `default' <-> `solaire-default-face'
 + `hl-line' <-> `solaire-hl-line-face'
++ `org-hide' <-> `solaire-org-hide-face'
 
 This is necessary for themes in the doom-themes package."
-  (solaire-mode--swap-bg 'default 'solaire-default-face)
+  (solaire-mode--swap 'default 'solaire-default-face)
   (with-eval-after-load 'hl-line
-    (solaire-mode--swap-bg 'hl-line 'solaire-hl-line-face)))
+    (solaire-mode--swap 'hl-line 'solaire-hl-line-face))
+  (with-eval-after-load 'org
+    (solaire-mode--swap 'org-hide 'solaire-org-hide-face :foreground)))
 
 ;;;###autoload
 (defun solaire-mode-restore-persp-mode-buffers (&rest _)
