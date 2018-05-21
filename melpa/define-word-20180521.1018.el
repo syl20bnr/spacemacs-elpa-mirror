@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/define-word
-;; Package-Version: 20180327.1935
+;; Package-Version: 20180521.1018
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: dictionary, convenience
@@ -91,7 +91,7 @@ lets the user choose service."
             (funcall parser))))
     (if results
         (funcall displayfn results)
-      (message "0 definitions found")
+      (funcall displayfn "0 definitions found")
       nil)))
 
 ;;;###autoload
@@ -112,6 +112,14 @@ In a non-interactive call SERVICE can be passed."
                   (thing-at-point 'word))
         service arg)))
 
+(defface define-word-face-1
+  '((t :inherit font-lock-keyword-face))
+  "Face for the part of speech of the definition.")
+
+(defface define-word-face-2
+  '((t :inherit default))
+  "Face for the body of the definition")
+
 (defun define-word--parse-wordnik ()
   "Parse output from wordnik site and return formatted list"
   (save-match-data
@@ -123,8 +131,10 @@ In a non-interactive call SERVICE can be passed."
         (skip-chars-forward " ")
         (setq beg (point))
         (when (re-search-forward "</li>")
-          (push (concat (propertize part 'face 'font-lock-keyword-face)
-                        (buffer-substring-no-properties beg (match-beginning 0)))
+          (push (concat (propertize part 'face 'define-word-face-1)
+                        (propertize
+                         (buffer-substring-no-properties beg (match-beginning 0))
+                         'face 'define-word-face-2))
                 results)))
       (setq results (nreverse results))
       (cond ((= 0 (length results))

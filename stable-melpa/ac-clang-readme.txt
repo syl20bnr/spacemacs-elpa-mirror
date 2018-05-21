@@ -86,11 +86,13 @@ Usage:
 * SETUP:
   (require 'ac-clang)
 
-  (setq w32-pipe-read-delay 0)          ;; <- Windows Only
+  ;; Windows Only
+  (when (eq system-type 'windows-nt)
+    (setq w32-pipe-read-delay 0))
 
   (when (ac-clang-initialize)
     (add-hook 'c-mode-common-hook '(lambda ()
-                                     (setq ac-clang-cflags CFLAGS)
+                                     (setq clang-server-cflags CFLAGS)
                                      (ac-clang-activate-after-modify))))
 
 * DEFAULT KEYBIND

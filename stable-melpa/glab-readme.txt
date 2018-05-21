@@ -1,4 +1,4 @@
-Ghub is a library that provides basic support for using the Github API
+Glab is a library that provides basic support for using the Gitlab API
 from Emacs packages.  It abstracts access to API resources using only
 a handful of functions that are not resource-specific.
 

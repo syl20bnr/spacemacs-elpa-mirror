@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: text
-;; Package-Version: 20180520.2232
+;; Package-Version: 20180521.810
 ;; Version: 2.6.0
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -135,7 +135,7 @@
 ;; ----
 
 ;; Ethereum address 0x209C60afd8aF6c61ac4Dbe340d81D4f789DF64D3
-;; Bitcoin Cash address 19gUvL8YUzDKr5GyiHpYeF31BfQm87xM9L
+;; Bitcoin Cash address qp0n3z88mmq06xv9mvkwuur9289qhnyg2gl45tlhxf
 
 
 ;;; Code:
@@ -4494,7 +4494,7 @@ to include external files."
         (if found
             ;; There are scene numbers, so this scene number needs to be
             ;; calculated relative to those.
-            (let ((current-scene (fountain-scene-number-to-list (match-string 6)))
+            (let ((current-scene (fountain-scene-number-to-list (match-string 8)))
                   last-scene next-scene)
               ;; Check if scene heading is already numbered and if there is a
               ;; NEXT-SCENE. No previousscene number can be greater or equal to
@@ -4524,7 +4524,7 @@ to include external files."
                   (fountain-forward-scene 1))
                 (if (<= (point) x)
                     (setq current-scene
-                          (or (fountain-scene-number-to-list (match-string 6))
+                          (or (fountain-scene-number-to-list (match-string 8))
                               (list 1))))
                 ;; While before point X, go forward through each scene heading,
                 ;; setting LAST-SCENE to CURRENT-SCENE and CURRENT-SCENE to an

@@ -4,7 +4,7 @@
 
 ;; Author:  Atila Neves <atila.neves@gmail.com>
 ;; Version: 0.6
-;; Package-Version: 20180515.311
+;; Package-Version: 20180521.743
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (seq "1.11") (levenshtein "0") (s "1.11.0"))
 ;; Keywords: languages
 ;; URL: http://github.com/atilaneves/cmake-ide
@@ -777,7 +777,7 @@ Return nil for non-CMake project."
 
 (defun cide--get-file-params (response-file)
   "Get file parameters from a response file given as compilation argument."
-  (replace-regexp-in-string "\\\n" " " (cide--get-string-from-file (expand-file-name response-file (cide--build-dir-from-cache)))))
+  (replace-regexp-in-string "\\\n" " " (cide--get-string-from-file (expand-file-name response-file (cide--build-dir)))))
 
 (defun cide--quote-if-spaces (str)
   "Add quotes to STR if it has spaces."

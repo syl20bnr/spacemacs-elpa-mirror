@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/magit/ghub
 ;; Keywords: tools
-;; Package-Version: 2.0.0
+;; Package-Version: 2.0.1
 ;; Package-Requires: ((emacs "24.4") (ghub "2.0"))
 
 ;; This file is not part of GNU Emacs.
@@ -24,7 +24,7 @@
 
 ;;; Commentary:
 
-;; Ghub is a library that provides basic support for using the Github API
+;; Glab is a library that provides basic support for using the Gitlab API
 ;; from Emacs packages.  It abstracts access to API resources using only
 ;; a handful of functions that are not resource-specific.
 

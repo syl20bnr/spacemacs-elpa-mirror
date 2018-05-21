@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Created: 20081202
 ;; Package-Requires: ((emacs "26"))
-;; Package-Version: 1.2.2
+;; Package-Version: 1.2.3
 ;; Homepage: https://github.com/emacscollective/elx
 ;; Keywords: docs, libraries, packages
 
@@ -120,7 +120,7 @@ else as strings."
             (and keyword
                  (string-match elx-keywords-regexp keyword)
                  (push keyword keywords)))))
-      (setq keywords (sort keywords 'string<))
+      (setq keywords (delete-dups (sort keywords 'string<)))
       (if symbols (mapcar #'intern keywords) keywords))))
 
 ;;; Extract Commentary

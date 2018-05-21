@@ -4,7 +4,7 @@
 
 ;; Author: Fritz Stelzer <brotzeitmacher@gmail.com>
 ;; URL: https://github.com/brotzeitmacher/helm-xref
-;; Package-Version: 20171209.346
+;; Package-Version: 20180521.840
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "25.1") (helm "1.9.4"))
 
@@ -43,6 +43,13 @@
   "Face for xref line number"
   :group 'helm-xref)
 
+(defcustom  helm-xref-candidate-formatting-function 'helm-xref-format-candidate-short
+  "Select the function for candidate formatting."
+  :type '(radio (function-item helm-xref-format-candidate-short)
+		(function-item helm-xref-format-candidate-long)
+		function))
+  :group 'helm-xref
+
 (defun helm-xref-candidates (xrefs)
   "Convert XREF-ALIST items to helm candidates and add them to `helm-xref-alist'."
   (dolist (xref xrefs)
@@ -51,18 +58,34 @@
              (file (xref-location-group location))
              candidate)
         (setq candidate
-              (concat
-               (propertize (car (reverse (split-string file "\\/")))
-                           'font-lock-face 'helm-xref-file-name)
-               (when (string= "integer" (type-of line))
-                 (concat
-                  ":"
-                  (propertize (int-to-string line)
-                              'font-lock-face 'helm-xref-line-number)))
-               ":"
-               summary))
+              (funcall helm-xref-candidate-formatting-function file line summary))
         (push (cons candidate xref) helm-xref-alist))))
   (setq helm-xref-alist (reverse helm-xref-alist)))
+
+(defun helm-xref-format-candidate-short (file line summary)
+  "Build short form of candidate format with FILE, LINE, and SUMMARY."
+  (concat
+   (propertize (car (reverse (split-string file "\\/")))
+	       'font-lock-face 'helm-xref-file-name)
+   (when (string= "integer" (type-of line))
+     (concat
+      ":"
+      (propertize (int-to-string line)
+		  'font-lock-face 'helm-xref-line-number)))
+   ":"
+   summary))
+
+(defun helm-xref-format-candidate-long (file line summary)
+  "Build long form of candidate format with FILE, LINE, and SUMMARY."
+  (concat
+   (propertize file 'font-lock-face 'helm-xref-file-name)
+   (when (string= "integer" (type-of line))
+     (concat
+      "\n:"
+      (propertize (int-to-string line)
+		  'font-lock-face 'helm-xref-line-number)))
+   ":"
+   summary))
 
 (defun helm-xref-goto-xref-item (xref-item func)
   "Set buffer and point according to xref-item XREF-ITEM.
