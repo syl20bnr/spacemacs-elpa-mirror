@@ -2,8 +2,8 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/helm-org-rifle
-;; Package-Version: 1.5.1
-;; Version: 1.5.0
+;; Package-Version: 20180520.1835
+;; Version: 1.6.0-pre
 ;; Package-Requires: ((emacs "24.4") (dash "2.12") (f "0.18.1") (helm "1.9.4") (s "1.10.0"))
 ;; Keywords: hypermedia, outlines
 
@@ -148,6 +148,7 @@
     ;; before being pressed, it's not bound in the keymap, but after
     ;; pressing it once, it is, and then it works.  Weird.
     (define-key new-map (kbd "C-s") 'helm-org-rifle--save-results)
+    (define-key new-map (kbd "C-c C-w") #'helm-org-rifle--refile)
     new-map)
   "Keymap for `helm-org-rifle'.")
 
@@ -317,6 +318,7 @@ Just in case this is a performance issue for anyone, it can be disabled."
                                    (define-key map [remap undo] (lambda () (interactive) (let ((inhibit-read-only t)) (undo))))
                                    (define-key map [mouse-1] 'helm-org-rifle-occur-goto-entry)
                                    (define-key map (kbd "<RET>") 'helm-org-rifle-occur-goto-entry)
+                                   (define-key map (kbd "C-c C-w") #'helm-org-rifle--refile)
                                    (define-key map (kbd "d") 'helm-org-rifle-occur-delete-entry)
                                    (define-key map (kbd "b") (lambda () (interactive) (helm-org-rifle--speed-command 'org-backward-heading-same-level)))
                                    (define-key map (kbd "f") (lambda () (interactive) (helm-org-rifle--speed-command 'org-forward-heading-same-level)))
@@ -351,7 +353,6 @@ Just in case this is a performance issue for anyone, it can be disabled."
 
 ;;;;; Commands
 
-;;;###autoload
 (cl-defmacro helm-org-rifle-define-command (name args docstring &key sources (let nil) (transformer nil))
   "Define interactive helm-org-rifle command, which will run the appropriate hooks.
 Helm will be called with vars in LET bound."
@@ -376,7 +377,7 @@ Helm will be called with vars in LET bound."
              (helm :sources ,sources)))
        (run-hooks 'helm-org-rifle-after-command-hook))))
 
-;;;###autoload
+;;;###autoload (autoload 'helm-org-rifle "helm-org-rifle" nil t)
 (helm-org-rifle-define-command
  "" ()
  "This is my rifle.  There are many like it, but this one is mine.
@@ -407,13 +408,13 @@ So be it, until victory is ours and there is no enemy, but
 peace!"
  :sources (helm-org-rifle-get-sources-for-open-buffers))
 
-;;;###autoload
+;;;###autoload (autoload 'helm-org-rifle-current-buffer "helm-org-rifle" nil t)
 (helm-org-rifle-define-command
  "current-buffer" ()
  "Rifle through the current buffer."
  :sources (helm-org-rifle-get-source-for-buffer (current-buffer)))
 
-;;;###autoload
+;;;###autoload (autoload 'helm-org-rifle-files "helm-org-rifle" nil t)
 (helm-org-rifle-define-command
  "files" (&optional files)
  "Rifle through FILES, where FILES is a list of paths to Org files.
@@ -440,14 +441,14 @@ are searched; they are not filtered with
                                   (when (helm-attr 'new-buffer source)
                                     (kill-buffer (helm-attr 'buffer source))))))))))
 
-;;;###autoload
+;;;###autoload (autoload 'helm-org-rifle-sort-by-latest-timestamp "helm-org-rifle" nil t)
 (helm-org-rifle-define-command
  "sort-by-latest-timestamp" ()
  "Rifle through open buffers, sorted by latest timestamp."
  :transformer 'helm-org-rifle-transformer-sort-by-latest-timestamp
  :sources (helm-org-rifle-get-sources-for-open-buffers))
 
-;;;###autoload
+;;;###autoload (autoload 'helm-org-rifle-current-buffer-sort-by-latest-timestamp "helm-org-rifle" nil t)
 (helm-org-rifle-define-command
  "current-buffer-sort-by-latest-timestamp" ()
  "Rifle through the current buffer, sorted by latest timestamp."
@@ -494,7 +495,6 @@ Files in DIRECTORIES are filtered using
 
 ;;;;;; Occur commands
 
-;;;###autoload
 (cl-defmacro helm-org-rifle-define-occur-command (name args docstring &key buffers files directories preface)
   "Define `helm-org-rifle-occur' command to search BUFFERS."
   `(defun ,(intern (concat "helm-org-rifle-occur"
@@ -539,20 +539,21 @@ Files in DIRECTORIES are filtered using
                (helm-org-rifle-occur-begin buffers-collected))))
        (run-hooks 'helm-org-rifle-after-command-hook))))
 
-;;;###autoload
+;;;###autoload (autoload 'helm-org-rifle-occur "helm-org-rifle" nil t)
 (helm-org-rifle-define-occur-command
  nil ()
  "Search all Org buffers, showing results in an occur-like, persistent buffer."
  :buffers (--remove (string= helm-org-rifle-occur-results-buffer-name (buffer-name it))
                     (-select 'helm-org-rifle-buffer-visible-p
                              (org-buffer-list nil t))))
-;;;###autoload
+
+;;;###autoload (autoload 'helm-org-rifle-occur-current-buffer "helm-org-rifle" nil t)
 (helm-org-rifle-define-occur-command
  "current-buffer" ()
  "Search current buffer, showing results in an occur-like, persistent buffer."
  :buffers (list (current-buffer)))
 
-;;;###autoload
+;;;###autoload (autoload 'helm-org-rifle-occur-directories "helm-org-rifle" nil t)
 (helm-org-rifle-define-occur-command
  "directories" (&optional directories)
  "Search files in DIRECTORIES, showing results in an occur-like, persistent buffer.
@@ -560,7 +561,7 @@ Files are opened if necessary, and the resulting buffers are left open."
  :directories (or directories
                   (helm-read-file-name "Directories: " :marked-candidates t)))
 
-;;;###autoload
+;;;###autoload (autoload 'helm-org-rifle-occur-files "helm-org-rifle" nil t)
 (helm-org-rifle-define-occur-command
  "files" (&optional files)
  "Search FILES, showing results in an occur-like, persistent buffer.
@@ -568,14 +569,14 @@ Files are opened if necessary, and the resulting buffers are left open."
  :files (or files
             (helm-read-file-name "Files: " :marked-candidates t)))
 
-;;;###autoload
+;;;###autoload (autoload 'helm-org-rifle-occur-agenda-files "helm-org-rifle" nil t)
 (helm-org-rifle-define-occur-command
  "agenda-files" ()
  "Search Org agenda files, showing results in an occur-like, persistent buffer.
 Files are opened if necessary, and the resulting buffers are left open."
  :files (org-agenda-files))
 
-;;;###autoload
+;;;###autoload (autoload 'helm-org-rifle-occur-org-directory "helm-org-rifle" nil t)
 (helm-org-rifle-define-occur-command
  "org-directory" ()
  "Search files in `org-directory', showing results in an occur-like, persistent buffer.
@@ -598,7 +599,9 @@ Files are opened if necessary, and the resulting buffers are left open."
                   :action (helm-make-actions
                            "Show entry" 'helm-org-rifle--show-candidates
                            "Show entry in indirect buffer" 'helm-org-rifle-show-entry-in-indirect-buffer
-                           "Show entry in real buffer" 'helm-org-rifle-show-entry-in-real-buffer)
+                           "Show entry in real buffer" 'helm-org-rifle-show-entry-in-real-buffer
+			   "Clock in" 'helm-org-rifle--clock-in
+                           "Refile" #'helm-org-rifle--refile)
                   :keymap helm-org-rifle-map)))
     (helm-attrset 'buffer buffer source)
     source))
@@ -717,6 +720,20 @@ source, so we must gather them manually."
   (interactive)
   (with-helm-alive-p
     (helm-exit-and-execute-action 'helm-org-rifle-show-entry-in-indirect-buffer)))
+
+(defun helm-org-rifle--clock-in (candidate)
+  "Clock into CANDIDATE."
+  (-let (((buffer . pos) candidate))
+    (with-current-buffer buffer
+      (goto-char pos)
+      (org-clock-in))))
+
+(defun helm-org-rifle--refile (candidate)
+  "Refile CANDIDATE."
+  (-let (((buffer . pos) candidate))
+    (with-current-buffer buffer
+      (goto-char pos)
+      (org-refile))))
 
 ;;;;; The meat
 
@@ -1143,7 +1160,7 @@ the (DISPLAY . REAL) pair from
   "Return list of results for INPUT in BUFFER.
 Results is a list of strings with text-properties :NODE-BEG and :BUFFER."
   (with-current-buffer buffer
-    (unless (eq major-mode 'org-mode)
+    (unless (derived-mode-p 'org-mode)
       (error "Buffer %s is not an Org buffer." buffer)))
   (cl-loop for (text . (_ .  pos)) in (helm-org-rifle--get-candidates-in-buffer buffer input)
            collect (list :text text :buffer buffer :node-beg pos)))
