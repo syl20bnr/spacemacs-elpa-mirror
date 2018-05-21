@@ -2,7 +2,7 @@
 
 ;; Authors: stardiviner <numbchild@gmail.com>
 ;; Package-Requires: ((emacs "25"))
-;; Package-Version: 20180518.2353
+;; Package-Version: 20180520.2030
 ;; Package-X-Original-Version: 0.1
 ;; Keywords: comm proxy
 ;; homepage: https://github.com/stardiviner/proxy-mode
@@ -107,18 +107,22 @@
 
 ;;; ------------------------------------------------------------------------------------------
 
+;;;###autoload
 (defun proxy-mode-enable ()
   "Enable proxy-mode."
   (interactive
-   (if proxy-mode-proxy-type
-       (message "proxy-mode is already enabled.")
-     (cl-case (cdr (assoc
-		    (completing-read "Select proxy service to enable: " (mapcar 'car proxy-mode-types))
-		    proxy-mode-types))
-       ('http (proxy-mode-http-enable))
-       ('socks (proxy-mode-socks-enable))
-       ('url (proxy-mode-url-enable))))))
+   (let ((selected (if proxy-mode-proxy-type
+                       (message "proxy-mode is already enabled.")
+                     (cl-case (cdr (assoc
+		                                (completing-read "Select proxy service to enable: " (mapcar 'car proxy-mode-types))
+		                                proxy-mode-types))
+                       ('http (proxy-mode-http-enable))
+                       ('socks (proxy-mode-socks-enable))
+                       ('url (proxy-mode-url-enable))))))
+     (message "%s proxy selected." selected)
+     nil)))
 
+;;;###autoload
 (defun proxy-mode-disable ()
   "Disable proxy-mode."
   (interactive)
@@ -139,10 +143,11 @@
   :keymap proxy-mode-map
   :global nil
   (if proxy-mode
-      (proxy-mode-enable)
-    (proxy-mode-disable)))
+      (call-interactively 'proxy-mode-enable)
+    (call-interactively 'proxy-mode-disable)))
 
-(define-globalized-minor-mode global-proxy-mode proxy-mode proxy-mode)
+;; ;;;###autoload
+;; (define-globalized-minor-mode global-proxy-mode proxy-mode proxy-mode)
 
 
 

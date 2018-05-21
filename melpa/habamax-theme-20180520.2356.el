@@ -2,7 +2,7 @@
 
 ;; Author: Maxim Kim <habamax@gmail.com>
 ;; Url: https://github.com/habamax/habamax-theme
-;; Package-Version: 20180518.350
+;; Package-Version: 20180520.2356
 ;; Package-Requires: ((emacs "24"))
 
 ;;; Commentary:
@@ -345,8 +345,8 @@
    '(keycast-command ((t (:foreground "#000000" :height 1.0))))
 
 
-   )
-  )
+   ;; slime
+   `(slime-repl-prompt-face ((t (:background ,color-dim-bg :foreground ,color-dim-fg :weight bold))))))
 
 ;;;###autoload
 (when load-file-name
