@@ -4,7 +4,7 @@
 
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Package-Requires: ((evil "1.2.3") (magit "2.6.0"))
-;; Package-Version: 20180410.804
+;; Package-Version: 20180522.741
 ;; Homepage: https://github.com/justbur/evil-magit
 ;; Version: 0.4.1
 
@@ -66,6 +66,23 @@ popup (`magit-dispatch-popup'). Default is t."
 most magit buffers. The old \"h\" for help is moved to \"H\" and
 similarly for the old \"l\" for the log popup. The old \"L\" is
 then put on \"C-l\"."
+  :group 'magit
+  :type  'boolean)
+
+(defcustom evil-magit-use-z-for-folds nil
+  "When non nil, use \"z\" as a prefix for common vim fold commands, such as
+  - z1 Reset visibility to level 1 for all sections
+  - z2 Reset visibility to level 2 for all sections
+  - z3 Reset visibility to level 3 for all sections
+  - z4 Reset visibility to level 4 for all sections
+  - za Toggle a section
+  - zo Show section
+  - zO Show sections recursively
+  - zc Hide section
+  - zC Hide sections recursively
+  - zr Same as z4.
+
+When this option is enabled, the stash popup is available on \"Z\"."
   :group 'magit
   :type  'boolean)
 
@@ -335,7 +352,20 @@ moment.")
            ((visual) magit-mode-map "y"   evil-yank))
        `((,states magit-mode-map "v" set-mark-command)
          (,states magit-mode-map "V" set-mark-command)
-         (,states magit-mode-map "<escape>" evil-magit-maybe-deactivate-mark)))))
+         (,states magit-mode-map "<escape>" evil-magit-maybe-deactivate-mark)))
+
+     (when evil-magit-use-z-for-folds
+       `((,states magit-mode-map "z")
+         (,states magit-mode-map "z1"   magit-section-show-level-1-all)
+         (,states magit-mode-map "z2"   magit-section-show-level-2-all)
+         (,states magit-mode-map "z3"   magit-section-show-level-3-all)
+         (,states magit-mode-map "z4"   magit-section-show-level-4-all)
+         (,states magit-mode-map "za"   magit-section-toggle)
+         (,states magit-mode-map "zc"   magit-section-hide)
+         (,states magit-mode-map "zC"   magit-section-hide-children)
+         (,states magit-mode-map "zo"   magit-section-show)
+         (,states magit-mode-map "zO"   magit-section-show-children)
+         (,states magit-mode-map "zr"   magit-section-show-level-4-all)))))
   "Evil-magit bindings for major modes. Each element of this list
 takes the form
 

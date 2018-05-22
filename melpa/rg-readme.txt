@@ -34,6 +34,14 @@ own aliases:
   '(("foo" .    "*.foo *.bar")
     ("baz" .    "*.baz *.qux")))
 
+You may also add lambdas to `rg-custom-type-aliases' to add aliases
+dynamically based on mode, directory, project, etc.:
+(add-to-list
+ 'rg-custom-type-aliases
+ (lambda ()
+   (when (in-frontend-app)
+     (cons "ui" "*.js *.hbs *.json"))))
+
 The `rg-define-toggle' macro can be used to define a toggle-able
 flag for the rg command line.  Such flags can then be toggled from
 the results buffer to repeat the search with updated flags.

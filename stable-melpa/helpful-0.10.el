@@ -1,12 +1,12 @@
 ;;; helpful.el --- a better *help* buffer            -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2017  Wilfred Hughes
+;; Copyright (C) 2017-2018  Wilfred Hughes
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 0.9
+;; Package-Version: 0.10
 ;; Keywords: help, lisp
-;; Version: 0.9
+;; Version: 0.10
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -56,6 +56,7 @@
 (require 'info-look)
 (require 'edebug)
 (require 'trace)
+(require 'imenu)
 
 (defvar-local helpful--sym nil)
 (defvar-local helpful--callable-p nil)
@@ -82,6 +83,14 @@ To disable cleanup entirely, set this variable to nil. See also
   "Function called to display the *Helpful* buffer."
   :type 'function
   :group 'helpful)
+
+;; TODO: explore whether more basic highlighting is fast enough to
+;; handle larger functions. See `c-font-lock-init' and its use of
+;; font-lock-keywords-1.
+(defconst helpful-max-highlight 5000
+  "Don't highlight code with more than this many characters.
+This is particularly important for large pieces of C code, such
+as describing `this-command'.")
 
 (defun helpful--kind-name (symbol callable-p)
   "Describe what kind of symbol this is."
@@ -610,12 +619,15 @@ blank line afterwards."
   "Convert `foo' in docstrings to buttons (if bound) or else highlight."
   (replace-regexp-in-string
    ;; Replace all text of the form `foo'.
-   (rx "`" (+? (not (any "`" "'"))) "'")
+   (rx (? "\\=") "`" (+? (not (any "`" "'"))) "'")
    (lambda (it)
      (let* ((sym-name
              (s-chop-prefix "`" (s-chop-suffix "'" it)))
             (sym (intern sym-name)))
        (cond
+        ;; If the quote is escaped, don't modify it.
+        ((s-starts-with-p "\\=" it)
+         it)
         ;; Only create a link if this is a symbol that is bound as a
         ;; variable or callable.
         ((or (boundp sym) (fboundp sym))
@@ -832,12 +844,58 @@ unescaping too."
 (defun helpful--format-docstring (docstring)
   "Replace cross-references with links in DOCSTRING."
   (-> docstring
-      (helpful--format-command-keys)
       (helpful--split-first-line)
       (helpful--propertize-info)
+      (helpful--propertize-links)
+      (helpful--propertize-bare-links)
       (helpful--propertize-keywords)
       (helpful--propertize-quoted)
+      ;; This needs to happen after we've replaced quoted chars, so we
+      ;; don't confuse \\=` with `.
+      (helpful--format-command-keys)
       (s-trim)))
+
+(define-button-type 'helpful-link-button
+  'action #'helpful--follow-link
+  'follow-link t
+  'help-echo "Follow this link")
+
+(defun helpful--propertize-links (docstring)
+  "Convert URL links in docstrings to buttons."
+  (replace-regexp-in-string
+   (rx "URL `" (group (*? any)) "'")
+   (lambda (match)
+     (let ((url (match-string 1 match)))
+       (concat "URL "
+               (helpful--button
+                url
+                'helpful-link-button
+                'url url))))
+   docstring))
+
+(defun helpful--propertize-bare-links (docstring)
+  "Convert URL links in docstrings to buttons."
+  (replace-regexp-in-string
+   (rx (group (or string-start space))
+       (group "http" (? "s") "://" (+? (not (any space))))
+       (group (? (any "." ">" ")"))
+              (or space string-end)))
+   (lambda (match)
+     (let ((space-before (match-string 1 match))
+           (url (match-string 2 match))
+           (after (match-string 3 match)))
+       (concat
+        space-before
+        (helpful--button
+         url
+         'helpful-link-button
+         'url url)
+        after)))
+   docstring))
+
+(defun helpful--follow-link (button)
+  "Follow the URL specified by BUTTON."
+  (browse-url (button-get button 'url)))
 
 (defconst helpful--highlighting-funcs
   '(ert--activate-font-lock-keywords
@@ -857,25 +915,26 @@ hooks.")
   (with-temp-buffer
     (insert source)
 
-    ;; Switch to major-mode MODE, but don't run any hooks.
-    (delay-mode-hooks (funcall mode))
+    (when (< (length source) helpful-max-highlight)
+      ;; Switch to major-mode MODE, but don't run any hooks.
+      (delay-mode-hooks (funcall mode))
 
-    ;; `delayed-mode-hooks' contains mode hooks like
-    ;; `emacs-lisp-mode-hook'. Build a list of functions that are run
-    ;; when the mode hooks run.
-    (let (hook-funcs)
-      (dolist (hook delayed-mode-hooks)
-        (let ((funcs (symbol-value hook)))
-          (setq hook-funcs (append hook-funcs funcs))))
+      ;; `delayed-mode-hooks' contains mode hooks like
+      ;; `emacs-lisp-mode-hook'. Build a list of functions that are run
+      ;; when the mode hooks run.
+      (let (hook-funcs)
+        (dolist (hook delayed-mode-hooks)
+          (let ((funcs (symbol-value hook)))
+            (setq hook-funcs (append hook-funcs funcs))))
 
-      ;; Filter hooks to those that relate to highlighting, and run them.
-      (setq hook-funcs (-intersection hook-funcs helpful--highlighting-funcs))
-      (-map #'funcall hook-funcs))
+        ;; Filter hooks to those that relate to highlighting, and run them.
+        (setq hook-funcs (-intersection hook-funcs helpful--highlighting-funcs))
+        (-map #'funcall hook-funcs))
 
-    (if (fboundp 'font-lock-ensure)
-        (font-lock-ensure)
-      (with-no-warnings
-        (font-lock-fontify-buffer)))
+      (if (fboundp 'font-lock-ensure)
+          (font-lock-ensure)
+        (with-no-warnings
+          (font-lock-fontify-buffer))))
     (buffer-string)))
 
 (defun helpful--source (sym callable-p)
@@ -892,7 +951,12 @@ If the source code cannot be found, return the sexp used."
           (save-excursion
             (save-restriction
               (goto-char start-pos)
-              (narrow-to-defun)
+              (narrow-to-defun t)
+
+              ;; If there was a preceding comment, START-POS will be
+              ;; after that comment. Move the position to include that comment.
+              (setq start-pos (point-min))
+
               (setq source (buffer-substring-no-properties (point-min) (point-max))))))
         (setq source (s-trim-right source))
         (when (and source (buffer-file-name buf))
@@ -1076,7 +1140,10 @@ buffer."
 along with the keybindings in each keymap.
 
 We ignore keybindings that are menu items, and ignore keybindings
-from parent keymaps."
+from parent keymaps.
+
+`widget-global-map' is also ignored as it generally contains the
+same bindings as `global-map'."
   (let (matching-keymaps)
     ;; Look for this command in all keymaps.
     (dolist (keymap-sym (helpful--all-keymap-syms))
@@ -1094,7 +1161,7 @@ from parent keymaps."
               ;; Ignore keybindings that we've just inherited from the
               ;; parent.
               (-difference keycodes parent-keycodes))
-        (when keycodes
+        (when (and keycodes (not (eq keymap-sym 'widget-global-map)))
           (push (cons keymap-sym
                       (-map #'key-description keycodes))
                 matching-keymaps))))
@@ -1608,17 +1675,23 @@ state of the current symbol."
   "Get the signature for function SYM, as a string.
 For example, \"(some-func FOO &optional BAR)\"."
   (let (docstring-sig
-        source-sig)
+        source-sig
+        (advertised-args
+         (when (symbolp sym)
+           (gethash (symbol-function sym) advertised-signature-table))))
     ;; Get the usage from the function definition.
     (let* ((function-args
             (if (symbolp sym)
                 (help-function-arglist sym)
               (cadr sym)))
            (formatted-args
-            (if (listp function-args)
-                (-map #'helpful--format-argument
-                      function-args)
-              (list function-args))))
+            (cond
+             (advertised-args
+              (-map #'helpful--format-argument advertised-args))
+             ((listp function-args)
+              (-map #'helpful--format-argument function-args))
+             (t
+              (list function-args)))))
       (setq source-sig
             (cond
              ;; If it's a function object, just show the arguments.
@@ -1638,7 +1711,16 @@ For example, \"(some-func FOO &optional BAR)\"."
       (-when-let (docstring-with-usage (help-split-fundoc docstring sym))
         (setq docstring-sig (car docstring-with-usage))))
 
-    (or docstring-sig source-sig)))
+    (cond
+     ;; Advertised signature always wins.
+     (advertised-args
+      source-sig)
+     ;; If that's not set, use the usage specification in the
+     ;; docstring, if present.
+     (docstring-sig)
+     (t
+      ;; Otherwise, just use the signature from the source code.
+      source-sig))))
 
 (defun helpful--docstring (sym callable-p)
   "Get the docstring for SYM.
@@ -1797,10 +1879,17 @@ imenu."
   ;; Prevent imenu converting "Source Code" to "Source.Code".
   (setq-local imenu-space-replacement " "))
 
+(defun helpful--flash-region (start end)
+  "Temporarily highlight region from START to END."
+  (let ((overlay (make-overlay start end)))
+    (overlay-put overlay 'face 'highlight)
+    (run-with-timer 1.0 nil 'delete-overlay overlay)))
+
 (defun helpful-visit-reference ()
   "Go to the reference at point."
   (interactive)
-  (let* ((path (get-text-property (point) 'helpful-path))
+  (let* ((sym helpful--sym)
+         (path (get-text-property (point) 'helpful-path))
          (pos (get-text-property (point) 'helpful-pos))
          (pos-is-start (get-text-property (point) 'helpful-pos-is-start)))
     (when (and path pos)
@@ -1826,7 +1915,14 @@ imenu."
       (when (or (< pos (point-min))
                 (> pos (point-max)))
         (widen))
-      (goto-char pos))))
+      (goto-char pos)
+      (recenter 0)
+      (save-excursion
+        (let ((defun-end (scan-sexps (point) 1)))
+          (while (re-search-forward
+                  (rx-to-string `(seq symbol-start ,(symbol-name sym) symbol-end))
+                  defun-end t)
+            (helpful--flash-region (match-beginning 0) (match-end 0))))))))
 
 (defun helpful-kill-buffers ()
   "Kill all `helpful-mode' buffers.

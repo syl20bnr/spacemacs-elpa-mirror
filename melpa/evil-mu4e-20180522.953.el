@@ -4,8 +4,8 @@
 
 ;; Author: Joris Engbers <info@jorisengbers.nl>
 ;; Homepage: https://github.com/JorisE/evil-mu4e
-;; Version: 0.0.7
-;; Package-Version: 20171127.1214
+;; Version: 0.0.8
+;; Package-Version: 20180522.953
 ;; Package-Requires: ((emacs "24.4")(dash "2.12.0") (evil "1.2.10"))
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -89,6 +89,7 @@
     (,evil-mu4e-state mu4e-headers-mode-map "/"            mu4e-headers-search-narrow)
     (,evil-mu4e-state mu4e-headers-mode-map "?"            mu4e-headers-mark-for-unread)
     (,evil-mu4e-state mu4e-headers-mode-map "!"            mu4e-headers-mark-for-read)
+    (,evil-mu4e-state mu4e-headers-mode-map "%"            mu4e-headers-mark-pattern)
     (,evil-mu4e-state mu4e-headers-mode-map "\C-j"         mu4e-headers-next)
     (,evil-mu4e-state mu4e-headers-mode-map "\C-k"         mu4e-headers-prev)
     (,evil-mu4e-state mu4e-headers-mode-map "T"           (lambda ()
@@ -104,6 +105,7 @@
     (,evil-mu4e-state mu4e-view-mode-map "\C-k"            mu4e-view-headers-prev)
     (,evil-mu4e-state mu4e-view-mode-map "?"               mu4e-view-mark-for-unread)
     (,evil-mu4e-state mu4e-view-mode-map "!"               mu4e-view-mark-for-read)
+    (,evil-mu4e-state mu4e-view-mode-map "%"               mu4e-view-mark-pattern)
     (,evil-mu4e-state mu4e-view-mode-map "R"               mu4e-compose-reply)
     (,evil-mu4e-state mu4e-view-mode-map "F"               mu4e-compose-forward)
     (,evil-mu4e-state mu4e-view-mode-map "\C-u"            evil-scroll-up)
