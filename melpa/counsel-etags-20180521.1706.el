@@ -5,10 +5,10 @@
 ;; Author: Chen Bin <chenbin.sh@gmail.com>
 ;; Maintainer: Chen Bin <chenbin.sh@gmail.com>
 ;; URL: http://github.com/redguardtoo/counsel-etags
-;; Package-Version: 1.6.0
+;; Package-Version: 20180521.1706
 ;; Package-Requires: ((emacs "24.4") (counsel "0.9.1"))
 ;; Keywords: tools, convenience
-;; Version: 1.6.0
+;; Version: 1.6.1
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -874,11 +874,11 @@ used by other hooks or commands.  The tags updating might now happen."
     (cond
      ((counsel-etags-has-quick-grep)
       (concat (mapconcat (lambda (e)
-                           (format "-g=\"!%s/*" e))
+                           (format "-g=\"!%s/*\"" e))
                          ignore-dirs " ")
               " "
               (mapconcat (lambda (e)
-                           (format "-g=\"!%s" e))
+                           (format "-g=\"!%s\"" e))
                          ignore-file-names " ")))
      (t
       (concat (mapconcat (lambda (e)
@@ -897,7 +897,7 @@ Extended regex is used, like (pattern1|pattern2)."
     (format "%s %s \"%s\" --"
             (concat (executable-find "rg")
                     ;; (if counsel-etags-debug " --debug")
-                    " -n -M 512 --no-heading --color never -s")
+                    " -n -M 512 --no-heading --color never -s --path-separator /")
             (counsel-etags-exclude-opts use-cache)
             keyword))
    (t
