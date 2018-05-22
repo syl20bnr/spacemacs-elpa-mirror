@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/emacscollective/closql
 ;; Package-Requires: ((emacs "25.1") (emacsql-sqlite "2.0.3"))
-;; Package-Version: 20180318.1222
+;; Package-Version: 20180521.1202
 ;; Keywords: extensions
 
 ;; This file is not part of GNU Emacs.
@@ -399,7 +399,8 @@
                         (vec (make-vector len -1)))
                    (dotimes (i len)
                      (aset vec i (aref object i)))
-                   vec))
+                   vec)
+               object)
              type))
 
 (cl-defmethod closql--abbrev-class ((class-tag symbol))
@@ -482,6 +483,23 @@
              table
              (closql--abbrev-class class)
              key id)))
+
+;;; Utilities
+
+(defun closql-format (object string &rest slots)
+  "Format a string out of a format STRING and an OBJECT's SLOTS.
+
+STRING is a format-string like for `format'.  OBJECT is an Eieio
+object and SLOTS are slots of that object, their values are used
+like `format' uses its OBJECTS arguments (which are unrelated to
+this function's OBJECT argument, they just have similar names).
+
+While this function does not have much to do with the purpose of
+`closql', it is being defined here anyway because Eieio does not
+define a similar function under a more appropriate name such as
+`eieio-format'."
+  (apply #'format string
+         (mapcar (lambda (slot) (eieio-oref object slot)) slots)))
 
 ;;; _
 (provide 'closql)

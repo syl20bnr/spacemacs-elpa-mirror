@@ -4,7 +4,7 @@
 
 ;; Author: Julien Danjou <julien@danjou.info>
 ;; Keywords: faces
-;; Version: 1.0
+;; Version: 1.0.1
 
 ;; This file is part of GNU Emacs.
 
@@ -1101,7 +1101,7 @@ If the percentage value is above 100, it's converted to 100."
                              0
                              (if xterm-color? 'face 'font-lock-face)
                              applied)))
-        (unless (listp (car face-property))
+        (unless (listp (or (car-safe face-property) face-property))
           (setq face-property (list face-property)))
         (setq color (funcall (if xterm-color? 'cadr 'cdr)
                              (or (assq (if xterm-color?
@@ -1204,6 +1204,18 @@ This will fontify with colors the string like \"#aabbcc\" or \"blue\"."
 
 ;;;; ChangeLog:
 
+;; 2018-05-21  Julien Danjou  <julien@danjou.info>
+;; 
+;; 	* rainbow-mode/rainbow-mode.el: do not fail if face-property is a symbol
+;; 
+;; 	It turns out there are cases when `face-property' can be just a symbol
+;; 	and we need to protect our selves from that, i.e. `car' should not fail.
+;; 	Hence,
+;; 	`car-safe' is there and if it's `nil', then fall back to `face-property'
+;; 	as is.
+;; 
+;; 	See https://github.com/tarsius/hl-todo/issues/17
+;; 
 ;; 2018-03-26  Julien Danjou  <julien@danjou.info>
 ;; 
 ;; 	rainbow-mode: release 1.0

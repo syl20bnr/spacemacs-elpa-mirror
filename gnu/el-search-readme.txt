@@ -335,11 +335,11 @@ Known Limitations
 
   the comment will be lost.
 
-- Something like '(1 #1#) is unmatchable (because it is
-  un`read'able without context).  For a similar reason it is
-  currently not possible to allow a replacement to contain
-  uninterned symbols or repeated/circular parts.
+- Something like (1 #1#) is unmatchable (because it is un`read'able
+  without context).
 
+- In el-search-query-replace, replacements are not allowed to
+  contain uninterned symbols.
 
 
 BUGS

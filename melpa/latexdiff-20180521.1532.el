@@ -5,7 +5,7 @@
 ;; Author: Launay Gaby <gaby.launay@tutanota.com>
 ;; Maintainer: Launay Gaby <gaby.launay@tutanota.com>
 ;; Package-Requires: ((emacs "24.4"))
-;; Package-Version: 20171225.1623
+;; Package-Version: 20180521.1532
 ;; Version: 0.1.0
 ;; Keywords: tex, vc, tools, git, helm
 ;; URL: http://github.com/galaunay/latexdiff.el
@@ -307,7 +307,7 @@ display when the process ends."
   (let ((infos nil))
     (with-temp-buffer
       (vc-git-command t nil nil
-                      "log" "--format=%h---%cr---%cn---%s---%d"
+                      "log" "--all" "--format=%h---%cr---%cn---%s---%d"
                       "--abbrev-commit" "--date=short")
       (goto-char (point-min))
       (while (re-search-forward "^.+$" nil t)
