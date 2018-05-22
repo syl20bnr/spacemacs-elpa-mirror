@@ -5,7 +5,7 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-which-key
-;; Package-Version: 20180426.733
+;; Package-Version: 20180522.711
 ;; Version: 3.2.0
 ;; Keywords:
 ;; Package-Requires: ((emacs "24.4"))
@@ -2452,8 +2452,8 @@ is selected interactively by mode in `minor-mode-map-alist'."
                           nil "evil operator/motion keys"))
                    (which-key--show-page)))))
       (let* ((key (key-description (list (read-key)))))
-        (when (string= key "`")
-          ;; evil-goto-mark reads the next char manually
+        (when (member key '("f" "F" "t" "T" "`"))
+          ;; these keys trigger commands that read the next char manually
           (setq which-key--inhibit-next-operator-popup t))
         (cond ((and which-key-use-C-h-commands (string= "C-h" key))
                (which-key-C-h-dispatch))

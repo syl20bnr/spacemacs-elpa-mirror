@@ -4,7 +4,7 @@
 ;; Copyright 2011-2018 François-Xavier Bois
 
 ;; Version: 16.0.11
-;; Package-Version: 20180511.153
+;; Package-Version: 20180522.817
 ;; Author: François-Xavier Bois <fxbois AT Google Mail Service>
 ;; Maintainer: François-Xavier Bois
 ;; Package-Requires: ((emacs "23.1"))
@@ -6955,7 +6955,7 @@ another auto-completion with different ac-sources (e.g. ac-php)")
     (indent-region (point-min) (point-max))
     (when debug
       (setq sub (time-subtract (current-time) ts))
-      (message "buffer-indet: time elapsed = %Ss %9Sµs" (nth 1 sub) (nth 2 sub)))
+      (message "buffer-indent: time elapsed = %Ss %9Sµs" (nth 1 sub) (nth 2 sub)))
     (delete-trailing-whitespace)))
 
 (defun web-mode-buffer-change-tag-case (&optional type)

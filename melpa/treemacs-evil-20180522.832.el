@@ -4,7 +4,7 @@
 
 ;; Author: Alexander Miller <alexanderm@web.de>
 ;; Package-Requires: ((evil "1.2.12") (treemacs "0"))
-;; Package-Version: 20180504.417
+;; Package-Version: 20180522.832
 ;; Package-X-Original-Version: 0
 ;; Homepage: https://github.com/Alexander-Miller/treemacs
 
@@ -67,6 +67,8 @@
 (evil-define-key 'treemacs treemacs-mode-map (kbd "yy")     #'treemacs-copy-path-at-point)
 (evil-define-key 'treemacs treemacs-mode-map (kbd "gr")     #'treemacs-refresh)
 (evil-define-key 'treemacs treemacs-mode-map [down-mouse-1] #'ignore)
+(evil-define-key 'treemacs treemacs-mode-map (kbd "h")      #'treemacs-root-up)
+(evil-define-key 'treemacs treemacs-mode-map (kbd "l")      #'treemacs-root-down)
 
 (provide 'treemacs-evil)
 

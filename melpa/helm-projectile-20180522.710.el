@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov
 ;; URL: https://github.com/bbatsov/helm-projectile
-;; Package-Version: 20180521.1952
+;; Package-Version: 20180522.710
 ;; Created: 2011-31-07
 ;; Keywords: project, convenience
 ;; Version: 0.14.0
@@ -1027,6 +1027,7 @@ DIR is the project root, if not set then current directory is used"
         (define-key projectile-mode-map [remap projectile-grep] #'helm-projectile-grep)
         (define-key projectile-mode-map [remap projectile-ack] #'helm-projectile-ack)
         (define-key projectile-mode-map [remap projectile-ag] #'helm-projectile-ag)
+        (define-key projectile-mode-map [remap projectile-ripgrep] #'helm-projectile-rg)
         (define-key projectile-mode-map [remap projectile-browse-dirty-projects] #'helm-projectile-browse-dirty-projects)
         (helm-projectile-commander-bindings))
     (progn
@@ -1042,6 +1043,7 @@ DIR is the project root, if not set then current directory is used"
       (define-key projectile-mode-map [remap projectile-switch-to-buffer] nil)
       (define-key projectile-mode-map [remap projectile-grep] nil)
       (define-key projectile-mode-map [remap projectile-ag] nil)
+      (define-key projectile-mode-map [remap projectile-ripgrep] nil)
       (define-key projectile-mode-map [remap projectile-browse-dirty-projects] nil)
       (projectile-commander-bindings))))
 

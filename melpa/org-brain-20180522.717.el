@@ -5,7 +5,7 @@
 
 ;; Author: Erik Sjöstrand <sjostrand.erik@gmail.com>
 ;; URL: http://github.com/Kungsgeten/org-brain
-;; Package-Version: 20180516.2350
+;; Package-Version: 20180522.717
 ;; Keywords: outlines hypermedia
 ;; Package-Requires: ((emacs "25") (org "9"))
 ;; Version: 0.5
@@ -555,9 +555,8 @@ ignore `org-brain-exclude-children-tag' and
                         (org-end-of-subtree t))
                     (setq end (point)))
                   (buffer-substring-no-properties (point) end))))))))
-    (org-remove-indentation entry-text)
     (with-temp-buffer
-      (insert entry-text)
+      (insert (org-remove-indentation entry-text))
       (goto-char (point-min))
       (when (and (not all-data)
                  (re-search-forward org-brain-resources-start-re nil t))
