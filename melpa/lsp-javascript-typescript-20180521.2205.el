@@ -4,7 +4,7 @@
 
 ;; Author: George Pittarelli <g@gjp.cc>
 ;; Version: 1.0
-;; Package-Version: 20180515.2313
+;; Package-Version: 20180521.2205
 ;; Package-Requires: ((lsp-mode "3.0") (typescript-mode "0.1") (emacs "25.1"))
 ;; Keywords: languages tools
 ;; URL: https://github.com/emacs-lsp/lsp-javascript
@@ -51,7 +51,7 @@
    client "javascript" 'lsp-javascript-typescript--render-string))
 
 (lsp-define-stdio-client lsp-javascript-typescript "javascript"
-                         lsp-javascript--get-root '("javascript-typescript-stdio")
+                         lsp-javascript-typescript--get-root '("javascript-typescript-stdio")
                          :ignore-messages '("readFile .*? requested by TypeScript but content not available")
                          :initialize 'lsp-javascript-typescript--initialize-client)
 
