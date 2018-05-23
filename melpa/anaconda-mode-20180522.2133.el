@@ -4,7 +4,7 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/anaconda-mode
-;; Package-Version: 20180519.637
+;; Package-Version: 20180522.2133
 ;; Version: 0.1.11
 ;; Package-Requires: ((emacs "24") (pythonic "0.1.0") (dash "2.6.0") (s "1.9") (f "0.16.2"))
 
@@ -99,7 +99,9 @@
 
 (defvar anaconda-mode-server-command "
 import sys, site
+sys.path, remainder = sys.path[:1], sys.path[1:]
 site.addsitedir('.')
+sys.path.extend(remainder)
 import anaconda_mode
 anaconda_mode.main(sys.argv[-2:])
 " "Run `anaconda-mode' server.")
