@@ -5,7 +5,7 @@
 ;; Author: Feng Shu
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/ivy-posframe
-;; Package-Version: 20180309.132
+;; Package-Version: 20180523.53
 ;; Version: 0.1.0
 ;; Keywords: abbrev, convenience, matching, ivy
 ;; Package-Requires: ((emacs "26.0")(posframe "0.1.0")(ivy "0.10.0"))
@@ -128,6 +128,11 @@ When nil, Using current frame's font as fallback."
   "Face used by the ivy-posframe."
   :group 'ivy-posframe)
 
+(defface ivy-posframe-cursor
+  '((t (:inherit default :background "#ffff00")))
+  "Face used by the ivy-posframe's fake cursor."
+  :group 'ivy-posframe)
+
 (defvar ivy-posframe-buffer " *ivy-posframe-buffer*"
   "The posframe-buffer used by ivy-posframe.")
 
@@ -147,10 +152,13 @@ This variable is useful for `ivy-posframe-read-action' .")
        ivy-posframe-buffer
        :font ivy-posframe-font
        :string
-       (if ivy-posframe--ignore-prompt
-           str
-         (with-current-buffer (get-buffer-create " *Minibuf-1*")
-           (concat (buffer-string) "  " str)))
+       (with-current-buffer (get-buffer-create " *Minibuf-1*")
+         (let ((point (point))
+               (string (if ivy-posframe--ignore-prompt
+                           str
+                         (concat (buffer-string) "  " str))))
+           (add-text-properties (- point 1) point '(face ivy-posframe-cursor) string)
+           string))
        :position (point)
        :poshandler poshandler
        :background-color (face-attribute 'ivy-posframe :background)
