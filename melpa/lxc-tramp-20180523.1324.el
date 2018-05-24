@@ -4,7 +4,7 @@
 
 ;; Author: montag451
 ;; URL: https://github.com/montag451/lxc-tramp
-;; Package-Version: 20180505.1503
+;; Package-Version: 20180523.1324
 ;; Keywords: lxc, convenience
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24") (cl-lib "0.6"))
@@ -99,7 +99,7 @@ similarly to `process-lines'"
   "List running containers.
 
 TRAMP call this function with a filename which is IGNORED."
-  (lxc-tramp--process-lines lxc-tramp-lxc-ls-executable t "--running"))
+  (lxc-tramp--process-lines lxc-tramp-lxc-ls-executable t "--running" "-1"))
 
 (defun lxc-tramp--parse-running-containers (&optional ignored)
   "Return a list of (user host) tuples.

@@ -2,8 +2,8 @@
 ;; -*- lexical-binding: t; -*-
 
 ;; Adam Simpson <adam@adamsimpson.net>
-;; Version: 0.3.1
-;; Package-Version: 20180522.1031
+;; Version: 0.3.2
+;; Package-Version: 0.3.2
 ;; Package-Requires: (ivy "9.0"))
 ;; Keywords: rss, url, ivy
 ;; URL: https://github.com/asimpson/ivy-feedwrangler
@@ -37,7 +37,7 @@
   (mapcar (lambda (x)
             (cons (string-trim (format "%s - %s" (alist-get 'feed_name x) (decode-coding-string (alist-get 'title x) 'utf-8)))
                   (list :url (alist-get 'url x)
-                        :title (alist-get 'title x)
+                        :title (decode-coding-string  (alist-get 'title x) 'utf-8)
                         :id (alist-get 'feed_item_id x)
                         :body (decode-coding-string (alist-get 'body x) 'utf-8)))) feed))
 

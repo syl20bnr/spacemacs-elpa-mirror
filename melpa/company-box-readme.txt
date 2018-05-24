@@ -2,7 +2,7 @@ A company front-end
 
 Differences with the built-in front-end:
 
-- Differents colors for differents backends.
+- Different colors for differents backends.
 - Icons associated to functions/variables/.. and their backends
 - Display candidate's documentation (support quickhelp-string)
 - Not limited by the current window size, buffer's text properties, ..
