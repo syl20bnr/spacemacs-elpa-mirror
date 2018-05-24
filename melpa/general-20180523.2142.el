@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/general.el
-;; Package-Version: 20180507.2017
+;; Package-Version: 20180523.2142
 ;; Created: February 17, 2016
 ;; Keywords: vim, evil, leader, keybindings, keys
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
@@ -822,16 +822,21 @@ apply a predicate if there is one."
 This includes possibly calling `kbd' on keys and parsing extended definitions.
 MAPS will be altered to turn key binding pairs into triples in the form of (key
 parsed-def original-def) where parsed-def is the bindable form and original-def
-is the unaltered form (e.g. an extended definition)."
-  (let (def2)
+is the unaltered form (e.g. an extended definition; \":def\" will be implicitly
+added to the beginning of extended definitions when necessary)."
+  (let (bindable-def)
     (cl-loop for (key def) on maps by 'cddr
-             do (setq def2 (general--parse-def state keymap key def kargs))
-             unless (eq def2 :ignore)
+             do (setq bindable-def
+                      (general--parse-def state keymap key def kargs))
+             unless (eq bindable-def :ignore)
              collect key
              and collect (if general-implicit-kbd
-                             (general--kbd def2)
-                           def2)
-             and collect def)))
+                             (general--kbd bindable-def)
+                           bindable-def)
+             and collect (if (and (general--extended-def-p def)
+                                  (not (keywordp (car def))))
+                             (cons :def def)
+                           def))))
 
 ;; * Helper Key Definers
 (declare-function evil-define-minor-mode-key "evil-core")
@@ -847,7 +852,7 @@ is the unaltered form (e.g. an extended definition)."
     (let* ((keymap (general--get-keymap nil keymap))
            (key (key-description key))
            (plist (general--getf orig-def kargs :lispy-plist)))
-      (lispy-define-key keymap key def plist))))
+      (apply #'lispy-define-key keymap key def plist))))
 
 (declare-function worf-define-key "worf")
 (defun general-worf-define-key (_state keymap key def orig-def kargs)
@@ -856,7 +861,7 @@ is the unaltered form (e.g. an extended definition)."
     (let* ((keymap (general--get-keymap nil keymap))
            (key (key-description key))
            (plist (general--getf orig-def kargs :worf-plist)))
-      (worf-define-key keymap key def plist))))
+      (apply #'worf-define-key keymap key def plist))))
 
 (declare-function lpy-define-key "lpy")
 (defun general-lpy-define-key (_state keymap key def _orig-def _kargs)
@@ -896,6 +901,9 @@ non-nil if no custom definer is specified."
                (setq keymap (general--get-keymap nil keymap))
                (define-key keymap key def)))))))
 
+(defvar general--definer-p nil
+  "Whether the current keybinding is being created with `general-define-key'.")
+
 (defun general--define-key
     (states keymap maps non-normal-maps global-maps kargs)
   "A helper function for `general-define-key'.
@@ -927,9 +935,6 @@ to bind the keys with by calling `general--define-key-dispatch'."
             (general--define-key-dispatch state keymap maps kargs)))))))
 
 ;; * Functions With Keyword Arguments
-(defvar general--definer-p nil
-  "Whether the current keybinding is being created with `general-define-key'.")
-
 ;;;###autoload
 (cl-defun general-define-key
     (&rest maps &key
