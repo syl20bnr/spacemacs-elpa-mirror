@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2017, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 10.1.20180512175559
-;; Package-Version: 20180512.1801
+;; Version: 10.2.20180525124016
+;; Package-Version: 20180525.1241
 ;; Created: 10 Sep 2013
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, emulations, vim, ergoemacs
@@ -1348,7 +1348,7 @@ If in dired, copy the file/dir cursor is on, or marked files.
 If a buffer is not file and not dired, copy value of `default-directory' (which is usually the “current” dir when that buffer was created)
 
 URL `http://ergoemacs.org/emacs/emacs_copy_file_path.html'
-Version 2017-09-01"
+Version 2018-05-16"
   (interactive "P")
   (let (($fpath
          (if (string-equal major-mode 'dired-mode)
@@ -1363,10 +1363,10 @@ Version 2017-09-01"
     (kill-new
      (if @dir-path-only-p
          (progn
-           (message "Directory path copied: 「%s」" (file-name-directory $fpath))
+           (message "Directory path copied")
            (file-name-directory $fpath))
        (progn
-         (message "File path copied: 「%s」" $fpath)
+         (message "File path copied")
          $fpath )))))
 
 ;; (defun xah-delete-text-block ()
@@ -2432,26 +2432,27 @@ Version 2017-09-22"
 (defun xah-make-backup ()
   "Make a backup copy of current file or dired marked files.
 If in dired, backup current file or marked files.
-The backup file name is
- ‹name›~‹timestamp›~
-example:
- file.html~20150721T014457~
+The backup file name is in this format
+ x.html~2018-05-15_133429~
+ The last part is hour, minutes, seconds.
 in the same dir. If such a file already exist, it's overwritten.
 If the current buffer is not associated with a file, nothing's done.
+
 URL `http://ergoemacs.org/emacs/elisp_make-backup.html'
-Version 2015-10-14"
+Version 2018-05-15"
   (interactive)
-  (let (($fname (buffer-file-name)))
+  (let (($fname (buffer-file-name))
+        ($date-time-format "%Y-%m-%d_%H%M%S"))
     (if $fname
         (let (($backup-name
-               (concat $fname "~" (format-time-string "%Y%m%dT%H%M%S") "~")))
+               (concat $fname "~" (format-time-string $date-time-format) "~")))
           (copy-file $fname $backup-name t)
           (message (concat "Backup saved at: " $backup-name)))
       (if (string-equal major-mode "dired-mode")
           (progn
             (mapc (lambda ($x)
                     (let (($backup-name
-                           (concat $x "~" (format-time-string "%Y%m%dT%H%M%S") "~")))
+                           (concat $x "~" (format-time-string $date-time-format) "~")))
                       (copy-file $x $backup-name t)))
                   (dired-get-marked-files))
             (message "marked files backed up"))
@@ -2480,12 +2481,14 @@ Backup filename is “‹name›~‹date time stamp›~”. Existing file of the
 When `universal-argument' is called first, don't create backup.
 
 URL `http://ergoemacs.org/emacs/elisp_delete-current-file.html'
-Version 2016-07-20"
+Version 2018-05-15"
   (interactive "P")
   (let* (
          ($fname (buffer-file-name))
          ($buffer-is-file-p $fname)
-         ($backup-suffix (concat "~" (format-time-string "%Y%m%dT%H%M%S") "~")))
+         ($date-time-format "%Y-%m-%d_%H%M%S")
+         ($backup-suffix
+          (concat "~" (format-time-string $date-time-format) "~")))
     (if $buffer-is-file-p
         (progn
           (save-buffer $fname)
@@ -2821,6 +2824,39 @@ Version 2017-01-29"
     ("z" . "/"))
   "A alist, each element is of the form(\"e\" . \"d\"). First char is Dvorak, second is corresponding Colemak Mod-DH layout. Not all chars are in the list, such as digits. When not in this alist, they are assumed to be the same.")
 
+(defvar xah--dvorak-to-colemak-kmap
+  '(("'" . "q")
+    ("," . "w")
+    ("." . "f")
+    ("p" . "p")
+    ("y" . "g")
+    ("f" . "j")
+    ("g" . "l")
+    ("c" . "u")
+    ("r" . "y")
+    ("l" . ";")
+    ("a" . "a")
+    ("o" . "r")
+    ("e" . "s")
+    ("u" . "t")
+    ("i" . "d")
+    ("d" . "h")
+    ("h" . "n")
+    ("t" . "e")
+    ("n" . "i")
+    ("s" . "o")
+    (";" . "z")
+    ("q" . "x")
+    ("j" . "c")
+    ("k" . "v")
+    ("x" . "b")
+    ("b" . "k")
+    ("m" . "m")
+    ("w" . ",")
+    ("v" . ".")
+    ("z" . "/"))
+  "A alist, each element is of the form(\"e\" . \"d\"). First char is Dvorak, second is corresponding Colemak layout. Not all chars are in the list, such as digits. When not in this alist, they are assumed to be the same.")
+
 (defvar xah--dvorak-to-programer-dvorak-kmap
   '(
     ;; number row
@@ -2922,6 +2958,20 @@ Version 2018-01-25"
         @charstr
         ))))
 
+(defun xah--dvorak-to-colemak (@charstr)
+  "Convert dvorak key to Colemak. @charstr is a string of single char.
+For example, \"e\" becomes \"s\".
+If length of @charstr is greater than 1, such as \"TAB\", @charstr is returned unchanged.
+Version 2018-05-21"
+  (interactive)
+  (if (> (length @charstr) 1)
+      @charstr
+    (let (($result (assoc @charstr xah--dvorak-to-colemak-kmap)))
+      (if $result
+          (cdr $result)
+        @charstr
+        ))))
+
 (defun xah--dvorak-to-programer-dvorak (@charstr)
   "Convert dvorak key to Programmer Dvorak. @charstr is a string of single char.
 For example, \"e\" becomes \"d\".
@@ -2945,6 +2995,7 @@ Version 2017-12-29"
    ((string-equal xah-fly-key--current-layout "qwerty") (xah--dvorak-to-qwerty @charstr))
    ((string-equal xah-fly-key--current-layout "qwertz") (xah--dvorak-to-qwertz @charstr))
    ((string-equal xah-fly-key--current-layout "workman") (xah--dvorak-to-workman @charstr))
+   ((string-equal xah-fly-key--current-layout "colemak") (xah--dvorak-to-colemak @charstr))
    ((string-equal xah-fly-key--current-layout "colemak-mod-dh") (xah--dvorak-to-colemak-mod-dh @charstr))
    ((string-equal xah-fly-key--current-layout "programer-dvorak") (xah--dvorak-to-programer-dvorak @charstr))
    (t @charstr)))
@@ -3539,7 +3590,7 @@ Version 2017-01-21"
 
 (defun xah-fly-keys-set-layout (@layout)
   "Set a keyboard layout.
-Argument should be one of:  \"qwerty\", \"dvorak\", \"workman\", \"colemak-mod-dh\", \"programer-dvorak\"
+Argument should be one of:  \"qwerty\", \"dvorak\", \"workman\", \"colemak\", \"colemak-mod-dh\", \"programer-dvorak\"
 Version 2018-04-25"
   (interactive)
   (setq xah-fly-key--current-layout @layout)

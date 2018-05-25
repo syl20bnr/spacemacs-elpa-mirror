@@ -2,7 +2,7 @@
 
 ;; Author: MaxSt
 ;; Version: 0.0.2
-;; Package-Version: 20180223.644
+;; Package-Version: 20180525.918
 ;; Package-Requires: ((emacs "24"))
 ;; URL: https://github.com/challenger-deep-theme/emacs
 
@@ -183,8 +183,8 @@
                                (,ct (:background ,ct-bg :foreground ,ct-fg))))
      `(line-number            ((,c (:background ,black :foreground ,grey-dd))
                                (,ct (:background ,ct-black :foreground ,ct-grey-dd))))
-     `(line-number-current-line ((,c (:background ,blue :foreground ,black))
-                                 (,ct (:background ,ct-blue :foreground ,ct-black))))
+     `(line-number-current-line ((,c (:background ,black :foreground ,blue))
+                                 (,ct (:background ,ct-black :foreground ,ct-blue))))
      `(fringe                 ((,c (:inherit default :foreground ,comments))
                                (,ct (:inherit default :foreground ,ct-comments))))
      `(region                 ((,c (:background ,region))
