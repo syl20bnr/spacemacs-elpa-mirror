@@ -4,7 +4,7 @@
 
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;; URL: https://github.com/magit/magit-tbdiff
-;; Package-Version: 20180120.1553
+;; Package-Version: 20180524.1549
 ;; Keywords: vc, tools
 ;; Version: 0.2.0
 ;; Package-Requires: ((emacs "24.4") (magit "2.10.0"))
@@ -42,7 +42,7 @@
 ;;
 ;; These commands are available in the popup `magit-tbdiff-popup',
 ;; which in turn is available in the Magit diff popup, bound by
-;; default to "i" (for "interdiff").  So, with the default
+;; default to "i" (for "interdiff" [2]).  So, with the default
 ;; keybindings, you can invoke the tbdiff popup with "di".
 ;;
 ;; When Magit-tbdiff is installed from MELPA, no additional setup is
@@ -51,7 +51,14 @@
 ;; the first time that the tbdiff popup is invoked.
 ;;
 ;; [1] https://github.com/trast/tbdiff
-;; [2] https://public-inbox.org/git/87ip2pfs19.fsf@linux-k42r.v.cablecom.net/
+
+;; [2] When I selected that key, I didn't know what an interdiff was
+;;     and that what tbdiff refers to as an "interdiff" isn't
+;;     technically one.  Sorry.
+;;
+;;     https://public-inbox.org/git/nycvar.QRO.7.76.6.1805062155120.77@tvgsbejvaqbjf.bet/#t
+;;
+;; [3] https://public-inbox.org/git/87ip2pfs19.fsf@linux-k42r.v.cablecom.net/
 
 ;;; Code:
 
@@ -154,7 +161,7 @@
 
 (defun magit-tbdiff-refresh-buffer (rev-a rev-b _args)
   (setq header-line-format
-        (propertize (format " Interdiffs: %s vs %s" rev-a rev-b)
+        (propertize (format " Range diff: %s vs %s" rev-a rev-b)
                     'face 'magit-header-line))
   (magit-insert-section (tbdiff-buf)
     (magit-tbdiff-insert)))
@@ -169,7 +176,7 @@
 
 (defun magit-tbdiff-apply-error (&rest _args)
   (when (derived-mode-p 'magit-tbdiff-mode)
-    (user-error "Cannot apply changes from interdiff hunk")))
+    (user-error "Cannot apply changes from range diff hunk")))
 (advice-add 'magit-apply :before #'magit-tbdiff-apply-error)
 (advice-add 'magit-reverse :before #'magit-tbdiff-apply-error)
 

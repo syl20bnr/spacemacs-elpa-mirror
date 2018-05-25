@@ -16,7 +16,7 @@ There are three commands for calling git-tbdiff:
 
 These commands are available in the popup `magit-tbdiff-popup',
 which in turn is available in the Magit diff popup, bound by
-default to "i" (for "interdiff").  So, with the default
+default to "i" (for "interdiff" [2]).  So, with the default
 keybindings, you can invoke the tbdiff popup with "di".
 
 When Magit-tbdiff is installed from MELPA, no additional setup is
@@ -25,4 +25,11 @@ added under the Magit diff popup, and Magit-tbdiff will be loaded
 the first time that the tbdiff popup is invoked.
 
 [1] https://github.com/trast/tbdiff
-[2] https://public-inbox.org/git/87ip2pfs19.fsf@linux-k42r.v.cablecom.net/
+
+[2] When I selected that key, I didn't know what an interdiff was
+    and that what tbdiff refers to as an "interdiff" isn't
+    technically one.  Sorry.
+
+    https://public-inbox.org/git/nycvar.QRO.7.76.6.1805062155120.77@tvgsbejvaqbjf.bet/#t
+
+[3] https://public-inbox.org/git/87ip2pfs19.fsf@linux-k42r.v.cablecom.net/
