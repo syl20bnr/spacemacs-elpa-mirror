@@ -1,11 +1,11 @@
 ;;; pythonic.el --- Utility functions for writing pythonic emacs package.  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2015 by Artem Malyshev
+;; Copyright (C) 2015-2016 by Artem Malyshev
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/pythonic
-;; Package-Version: 0.1.0
-;; Version: 0.1.0
+;; Package-Version: 0.1.1
+;; Version: 0.1.1
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5") (dash "2.11") (s "1.9") (f "0.17.2"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -46,6 +46,39 @@
   (if pythonic-environment
       (tramp-tramp-file-p pythonic-environment)
     (tramp-tramp-file-p python-shell-interpreter)))
+
+(defun pythonic-remote-docker-p ()
+  "Determine docker remote virtual environment."
+  (and (pythonic-remote-p)
+       (s-starts-with-p "/docker:" (pythonic-tramp-connection))))
+
+(defun pythonic-remote-vagrant-p ()
+  "Determine vagrant remote virtual environment."
+  (and (pythonic-remote-p)
+       (s-equals-p (pythonic-remote-host) "localhost")
+       (s-equals-p (pythonic-remote-user) "vagrant")))
+
+(defun pythonic-remote-user ()
+  "Get user of the connection to the remote python interpreter."
+  (tramp-file-name-user
+   (tramp-dissect-file-name
+    (pythonic-tramp-connection))))
+
+(defun pythonic-remote-host ()
+  "Get host of the connection to the remote python interpreter."
+  (replace-regexp-in-string
+   "#.*\\'" ""
+   (tramp-file-name-host
+    (tramp-dissect-file-name
+     (pythonic-tramp-connection)))))
+
+(defun pythonic-remote-port ()
+  "Get port of the connection to the remote python interpreter."
+  (let ((hostname (tramp-file-name-host
+                   (tramp-dissect-file-name
+                    (pythonic-tramp-connection)))))
+    (when (s-contains-p "#" hostname)
+      (string-to-number (replace-regexp-in-string "\\`.*#" "" hostname)))))
 
 (defun pythonic-file-name (file)
   "Normalized FILE location with out tramp prefix."
@@ -199,7 +232,8 @@ necessary.  SENTINEL must be a symbol of process sentinel
 function if necessary.  QUERY-ON-EXIT will be corresponding
 process flag."
   (let ((default-directory (pythonic-default-directory cwd))
-        (process-environment (copy-sequence process-environment)))
+        (process-environment (copy-sequence process-environment))
+        (buffer (and buffer (get-buffer-create buffer))))
     (pythonic-set-process-environment)
     (let ((process (apply 'start-file-process process buffer (pythonic-executable) args)))
       (when filter
@@ -210,6 +244,7 @@ process flag."
       (process-put process
                    'pythonic
                    (list
+                    :executable (pythonic-executable)
                     :connection (pythonic-tramp-connection)
                     :pythonpath (pythonic-get-pythonpath)
                     :path (pythonic-get-path)
@@ -220,7 +255,7 @@ process flag."
   "Determine if python environment has been changed since PROCESS was started."
   (--if-let (process-get process 'pythonic)
       (and
-       (equal (car (process-command process)) (pythonic-executable))
+       (equal (plist-get it :executable) (pythonic-executable))
        (equal (plist-get it :connection) (pythonic-tramp-connection))
        (equal (plist-get it :pythonpath) (pythonic-get-pythonpath))
        (equal (plist-get it :path) (pythonic-get-path))

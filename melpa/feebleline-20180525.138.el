@@ -5,9 +5,9 @@
 ;; Author: Benjamin Lindqvist <benjamin.lindqvist@gmail.com>
 ;; Maintainer: Benjamin Lindqvist <benjamin.lindqvist@gmail.com>
 ;; URL: https://github.com/tautologyclub/feebleline
-;; Package-Version: 20180322.1401
-;; Package-X-Original-Version: 1.0
-;; Version: 1.0
+;; Package-Version: 20180525.138
+;; Package-X-Original-Version: 1.1
+;; Version: 1.1
 
 ;; This file is not part of GNU Emacs.
 
@@ -78,8 +78,25 @@
 (defface feebleline-previous-buffer-face '((t :foreground "#7e7e7e"))
   "Feebleline filename face."
   :group 'feebleline)
+(defface feebleline-dir-face '((t :inherit 'font-lock-variable-name-face))
+  "Feebleline filename face."
+  :group 'feebleline)
+(defface feebleline-git-branch-face '((t :inherit 'font-lock-comment-face :bold nil :italic t))
+  "Feebleline filename face."
+  :group 'feebleline)
+
+;; Customizations
 (defcustom feebleline-show-time nil
   "Set this if you want to show the time in the modeline proxy."
+  :group 'feebleline)
+(defcustom feebleline-show-git-branch nil
+  "Set this if you want to show the git branch in the modeline proxy."
+  :group 'feebleline)
+(defcustom feebleline-show-previous-buffer nil
+  "Set this if you want to show the previous 'buffer-name' in the modeline proxy."
+  :group 'feebleline)
+(defcustom feebleline-show-directory t
+  "Set this if you want to show the direcory path as well as the file-name in the modeline proxy."
   :group 'feebleline)
 
 (defun feebleline-previous-buffer-name ()
@@ -96,29 +113,58 @@ FORMAT-ARGS (a list) will be expanded as the rest of `format'
 arguments.  If PROPS is given, it should be a list which will be
 sent to `add-text-properties'.")
 
-(setq feebleline-mode-line-text
-      '(
-        ("%s"       ((if feebleline-show-time (format-time-string "[%H:%M:%S] ") "")) (face feebleline-time-face))
-        ("%6s"      ((format "%s,%s" (format-mode-line "%l") (current-column)))
-         (face feebleline-linum-face))
-        (" : %s"    ((if (buffer-file-name) (buffer-file-name)
-                       (buffer-name))) (face feebleline-bufname-face))
-        ("%s"       ((if (and (buffer-file-name) (buffer-modified-p)) "*" "" ))
-         (face feebleline-asterisk-face))
-        (" | %s"    ((feebleline-previous-buffer-name))
-         (face feebleline-previous-buffer-face))))
+(defun feebleline--git-branch-string ()
+  "Return current git branch as a string, or the empty string if pwd is not in a git repo (or the git command is not found)."
+  (interactive)
+  (require 'esh-ext)
+  (when (and (eshell-search-path "git")
+             (locate-dominating-file default-directory ".git"))
+    (let ((git-output (shell-command-to-string (concat "cd " default-directory " && git branch | grep '\\*' | sed -e 's/^\\* //'"))))
+      (if (> (length git-output) 0)
+          (substring git-output 0 -1)
+          ;; (concat " :" (substring git-output 0 -1))
+        "(no branch)"))))
+
+(defvar feebleline--home-dir nil)
+
+(setq
+ feebleline-mode-line-text
+ '(
+   ("%s" ((if feebleline-show-time (format-time-string "[%H:%M:%S] ") ""))
+    (face feebleline-time-face))
+   ("%6s" ((format "%s:%s" (format-mode-line "%l") (current-column)))
+    (face feebleline-linum-face))
+   (" %s" ((if (and feebleline-show-directory (buffer-file-name))
+               (replace-regexp-in-string
+                feebleline--home-dir "~"
+                (file-name-directory (buffer-file-name)))
+             ""))
+    (face feebleline-dir-face))
+   ("%s" ((if (buffer-file-name) (file-name-nondirectory (buffer-file-name))
+            (buffer-name)))
+    (face feebleline-bufname-face))
+   ("%s" ((if (and (buffer-file-name) (buffer-modified-p)) "*"
+            "" ))
+    (face feebleline-asterisk-face))
+   ("%s" ((if feebleline-show-git-branch (concat " : " (feebleline--git-branch-string))
+            ""))
+    (face feebleline-git-branch-face))
+   ("%s" ((if feebleline-show-previous-buffer (concat " | " (feebleline-previous-buffer-name))
+            ""))
+   (face feebleline-previous-buffer-face)))
+ )
+
 
 (defun feebleline-default-settings-on ()
   "Some default settings that works well with feebleline."
-  (custom-set-variables
-   '(window-divider-default-bottom-width 1)
-   '(window-divider-default-places (quote bottom-only)))
+  (setq window-divider-default-bottom-width 1
+        window-divider-default-places (quote bottom-only))
   (window-divider-mode t)
-  (custom-set-variables '(mode-line-format nil)))
+  (setq-default mode-line-format nil))
 
 (defun feebleline-legacy-settings-on ()
   "Some default settings for EMACS < 25."
-  (custom-set-faces '(mode-line ((t (:height 0.1))))))
+  (set-face-attribute 'mode-line nil :height 0.1))
 
 (defvar feebleline/timer)
 (defvar feebleline/mode-line-format-previous)
@@ -131,18 +177,18 @@ sent to `add-text-properties'.")
   (if feebleline-mode
       ;; Activation:
       (progn
+        (setq feebleline--home-dir (expand-file-name "~"))
         (setq feebleline/mode-line-format-previous mode-line-format)
         (setq feebleline/timer
-              (run-with-timer 0 0.1 'feebleline-mode-line-proxy-fn))
+              (run-with-timer 0 0.5 'feebleline-mode-line-proxy-fn))
         (if feebleline-use-legacy-settings (feebleline-legacy-settings-on)
           (feebleline-default-settings-on))
         (ad-activate 'handle-switch-frame)
         (add-hook 'focus-in-hook 'feebleline-mode-line-proxy-fn))
 
     ;; Deactivation:
-    (custom-set-faces '(mode-line ((t :height unspecified))))
-    (custom-set-variables
-     '(mode-line-format feebleline/mode-line-format-previous))
+    (set-face-attribute 'mode-line nil :height nil)
+    (setq-default 'mode-line-format feebleline/mode-line-format-previous)
     (cancel-timer feebleline/timer)
     (ad-deactivate 'handle-switch-frame)
     (remove-hook 'focus-in-hook 'feebleline-mode-line-proxy-fn)
