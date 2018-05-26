@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20180124.138
+;; Package-Version: 20180525.1922
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -5384,7 +5384,7 @@ Assumes match data is available for `markdown-regex-italic'."
     (define-key map (kbd "C-c S-<right>") 'markdown-table-insert-column)
     (define-key map (kbd "C-c C-M-h") 'markdown-mark-subtree)
     (define-key map (kbd "C-x n s") 'markdown-narrow-to-subtree)
-    (define-key map (kbd "M-<return>") 'markdown-insert-list-item)
+    (define-key map (kbd "M-RET") 'markdown-insert-list-item)
     (define-key map (kbd "C-c C-j") 'markdown-insert-list-item)
     ;; Paragraphs (Markdown context aware)
     (define-key map [remap backward-paragraph] 'markdown-backward-paragraph)
@@ -8377,7 +8377,8 @@ or \\[markdown-toggle-inline-images]."
         (let ((start (match-beginning 0))
               (end (match-end 0))
               (file (match-string-no-properties 6)))
-          (when (file-exists-p file)
+          (when (and (not (zerop (length file)))
+		     (file-exists-p file))
             (let* ((abspath (if (file-name-absolute-p file)
                                 file
                               (concat default-directory file)))

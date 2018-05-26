@@ -5,7 +5,7 @@
 ;; Author: Bocci Gionata <boccigionata@gmail.com>
 ;; Maintainer: Bocci Gionata <boccigionata@gmail.com>
 ;; URL: https://github.com/GioBo/ess-view
-;; Package-Version: 20180506.358
+;; Package-Version: 20180525.1503
 ;; Created: 2016-02-10
 ;; Version: 0.1
 ;; Package-Requires: ((ess "15")  (s "1.8.0") (f "0.16.0"))
@@ -160,12 +160,15 @@ Argument OBJ is the name of the dataframe to be cleaned."
   (ess-view-send-to-R (format "%s[%s=='NA']<-''\n" obj obj)))
 
 
-(defun ess-view-data-frame-view (object save row-names)
+(defun ess-view-data-frame-view (object save row-names dframe)
   "This function is used in case the passed OBJECT is a data frame.
 Argument SAVE if t means that the user wants to store the spreadsheet-modified
 version of the dataframe in the original object.
 Argument ROW-NAMES is either t or nil: in case it's true, user wants to save
-the row names of the dataframe as well."
+the row names of the dataframe as well.
+Argument DFRAME is t if the object of interest is a dataframe: if so, it is
+'cleaned' (via ess-view-clean-data-frame) before exporting; if it's a matrix
+it is not cleaned."
   ;;  (interactive)
   (save-excursion
 
@@ -181,7 +184,8 @@ the row names of the dataframe as well."
       ;; (in the form environm$object
       (setq ess-view-newobj (concat envir "$obj"))
       ;; remove NA and NAN so that objects is easier to read in spreadsheet file
-      (ess-view-clean-data-frame ess-view-newobj)
+      (if dframe
+	  (ess-view-clean-data-frame ess-view-newobj))
       ;; create a csv temp file
       (setq ess-view-temp-file (make-temp-file nil nil ".csv"))
       (if row-names (setq row-names "row.names=TRUE,col.names=NA")
@@ -240,8 +244,11 @@ If SAVE is t, it also saves back the result."
          ((ess-boolean-command (concat "is.vector(" ess-view-oggetto ")\n"))
           (ess-view-print-vector ess-view-oggetto))
          ((ess-boolean-command (concat "is.data.frame(" ess-view-oggetto ")\n"))
-          (ess-view-data-frame-view ess-view-oggetto save row-names))
-         (t
+          (ess-view-data-frame-view ess-view-oggetto save row-names t))
+         ((ess-boolean-command (concat "is.matrix(" ess-view-oggetto ")\n"))
+          (ess-view-data-frame-view ess-view-oggetto save nil nil))
+
+	 (t
           (message "the object is neither a vector or a data.frame; don't know how to show it..."))))
     (ess-no-program)))
 
