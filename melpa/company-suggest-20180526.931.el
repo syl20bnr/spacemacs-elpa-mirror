@@ -4,7 +4,7 @@
 
 ;; Author: Jürgen Hötzel <juergen@archlinux.org>
 ;; URL: https://github.com/juergenhoetzel/company-suggest
-;; Package-Version: 20180525.931
+;; Package-Version: 20180526.931
 ;; Keywords: completion convenience
 ;; Package-Requires: ((company "0.9.0") (emacs "25.1"))
 
@@ -51,13 +51,18 @@
 
 (defun company-suggest--google-candidates (callback prefix)
   "Return a list of Google suggestions matching PREFIX."
-  (url-retrieve (format company-suggest-google-url prefix)
-		(lambda (buffer)
-		  (funcall callback (remove-if-not (lambda  (s)
-						     (string-prefix-p prefix s t))
-						   (mapcar (lambda (node) (xml-get-attribute (car (xml-get-children node 'suggestion)) 'data))
-							   (xml-get-children (car (xml-parse-region (point-min) (point-max))) 'CompleteSuggestion)))))
-		nil t))
+  (let ((url-request-extra-headers '(("User-Agent" . "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181"))))
+    (url-retrieve (format company-suggest-google-url (url-encode-url prefix))
+		  (lambda (buffer)
+		    (funcall callback
+			     (prog1
+				 (remove-if-not (lambda  (s)
+						  (string-prefix-p prefix s t))
+						(mapcar (lambda (node)
+							  (decode-coding-string  (xml-get-attribute (car (xml-get-children node 'suggestion)) 'data) 'utf-8))
+							(xml-get-children (car (xml-parse-region (point-min) (point-max))) 'CompleteSuggestion)))
+			       (kill-buffer))))
+		  nil t)))
 
 (defun company-suggest--sentence-at-point ()
   "Return the sentence at point."

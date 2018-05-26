@@ -4,7 +4,7 @@
 
 ;; Author: alpha22jp <alpha22jp@gmail.com>
 ;; Package-Requires: ((emacs "24.3") (let-alist "1.0.4") (websocket "1.4"))
-;; Package-Version: 20180511.1616
+;; Package-Version: 20180526.447
 ;; Keywords: chrome edit textarea
 ;; URL: https://github.com/alpha22jp/atomic-chrome
 ;; Version: 2.0.0
@@ -211,13 +211,15 @@ TITLE is used for the buffer name and TEXT is inserted to the buffer."
 
 (defun atomic-chrome-close-edit-buffer (buffer)
   "Close buffer BUFFER if it's one of Atomic Chrome edit buffers."
-  (let ((frame (atomic-chrome-get-frame buffer)))
+  (let ((frame (atomic-chrome-get-frame buffer))
+        (window (get-buffer-window buffer)))
     (with-current-buffer buffer
       (save-restriction
         (run-hooks 'atomic-chrome-edit-done-hook)
         (when frame (delete-frame frame))
-        (if (eq atomic-chrome-buffer-open-style 'split)
-            (quit-window t)
+        (if (and (eq atomic-chrome-buffer-open-style 'split)
+                 window)
+            (quit-window t window)
           (kill-buffer buffer))))))
 
 (defun atomic-chrome-close-current-buffer ()
