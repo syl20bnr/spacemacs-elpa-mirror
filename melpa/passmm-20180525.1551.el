@@ -1,19 +1,20 @@
 ;;; passmm.el --- A minor mode for pass (Password Store).  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2016,2017 Peter Jones <pjones@devalot.com>
+;; Copyright (C) 2016-2018 Peter Jones <pjones@devalot.com>
 
 ;; Author: Peter Jones <pjones@devalot.com>
 ;; Homepage: https://github.com/pjones/passmm
-;; Package-Requires: ((emacs "24.4"))
-;; Package-Version: 20170113.837
-;; Version: 0.2.0
+;; Package-Requires: ((emacs "24.4") (password-store "0"))
+;; Package-Version: 20180525.1551
+;; Version: 0.3.1
 ;;
 ;; This file is not part of GNU Emacs.
 
 ;;; Commentary:
 ;;
 ;; This is a minor mode that uses `dired' to display all password
-;; files from the password store.
+;; files from the password store.  It also contains an optional
+;; interface for Helm.
 
 ;;; License:
 ;;
@@ -38,6 +39,8 @@
 
 ;;; Code:
 (require 'dired)
+(require 'helm nil t)
+(require 'password-store)
 
 (defgroup passmm nil
   "A minor mode for pass (Password Store)."
@@ -76,6 +79,14 @@
     map)
   "Default keymap for passmm.")
 
+(defvar passmm-helm-source
+  (when (fboundp 'helm)
+    (helm-make-source "Password File" 'helm-source-sync
+      :candidates #'password-store-list
+      :action '(("Kill Password" . passmm-kill-password)
+                ("Edit Password" . passmm-edit-entry))))
+  "Internal variable to track password files for Helm.")
+
 ;;;###autoload
 (defun passmm-list-passwords ()
   "List all passwords using a `dired' buffer.
@@ -95,14 +106,26 @@ buffer and refreshed."
         (passmm-mode 1)))
     (switch-to-buffer buf)))
 
-(defun passmm-edit-entry (&optional keep-password)
-  "Edit a password file.
+;;;###autoload
+(defun passmm-helm ()
+  "Helm interface for passmm."
+  (interactive)
+  (if (fboundp 'helm)
+      (helm :sources 'passmm-helm-source
+            :buffer "*helm-passmm*")
+    (error "Helm doesn't appear to be installed")))
+
+(defun passmm-edit-entry (entry &optional keep-password)
+  "Edit a password file for ENTRY.
+
+If ENTRY is nil, use the file under point in the `dired' buffer.
 
 The buffer will be narrowed so that it doesn't actually show the
 password (the first line).  If KEEP-PASSWORD is non-nil then no
 narrowing will be used and the entire file will be shown."
-  (interactive "P")
-  (let ((name (dired-get-file-for-visit)))
+  (interactive (list (dired-get-file-for-visit)
+                     current-prefix-arg))
+  (let ((name (passmm-entry-to-file-name entry)))
     (if (and (file-exists-p name) (not (file-directory-p name)))
         (progn
           (find-file name)
@@ -110,8 +133,8 @@ narrowing will be used and the entire file will be shown."
             (passmm-narrow-buffer (current-buffer))))
       (dired-maybe-insert-subdir name))))
 
-(defun passmm-kill-password (&optional show-entry)
-  "Store a password on the kill ring.
+(defun passmm-kill-password (entry &optional show-entry)
+  "Store a password on the kill ring for ENTRY.
 
 The password is taken from the file that is at point.  After
 `passmm-kill-timeout' seconds, the password will be removed from
@@ -119,8 +142,9 @@ the kill ring and the system clipboard.
 
 If SHOW-ENTRY is non-nil also display the password file narrowed
 so that it doesn't show the password line."
-  (interactive "P")
-  (let ((name (dired-get-file-for-visit))
+  (interactive (list (dired-get-file-for-visit)
+                     current-prefix-arg))
+  (let ((name (passmm-entry-to-file-name entry))
         history-pointer password buffer)
     (if (and (file-exists-p name) (not (file-directory-p name)))
         (save-excursion
@@ -154,7 +178,7 @@ so that it doesn't show the password line."
       (passmm-narrow-buffer buffer)
       (switch-to-buffer buffer))))
 
-(defun passmm-generate-password (&optional ask-dir)
+(defun passmm-generate-password (ask-dir)
   "Generate a password entry after asking for its name.
 
 If ASK-DIR is non-nil then you'll be prompted for the name of
@@ -185,6 +209,16 @@ current directory in the `dired' buffer."
     (forward-whitespace 1)
     (forward-line 0)
     (narrow-to-region (point) (point-max))))
+
+(defun passmm-entry-to-file-name (entry)
+  "Convert ENTRY into an absolute file name."
+  (let* ((ext (file-name-extension entry))
+         (file (if (and ext (string= ext "gpg")) entry
+                 (concat entry ".gpg"))))
+    (if (file-name-absolute-p entry) file
+      (concat (file-name-as-directory
+               (expand-file-name passmm-store-directory))
+              file))))
 
 (defun passmm-pass (callback &rest args)
   "Run the pass program and invoke CALLBACK when it completes.

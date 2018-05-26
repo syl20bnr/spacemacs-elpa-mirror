@@ -1,11 +1,11 @@
 ;;; basic-mode.el --- major mode for editing BASIC code
 
-;; Copyright (C) 2017 Johan Dykstrom
+;; Copyright (C) 2017-2018 Johan Dykstrom
 
 ;; Author: Johan Dykstrom
 ;; Created: Sep 2017
-;; Version: 0.3.3
-;; Package-Version: 20180517.1202
+;; Version: 0.4.0
+;; Package-Version: 20180525.1206
 ;; Keywords: basic, languages
 ;; URL: https://github.com/dykstrom/basic-mode
 ;; Package-Requires: ((seq "2.20") (emacs "24.3"))
@@ -35,6 +35,9 @@
 ;; a new line starting with a fresh line number. Typing C-c C-r will
 ;; renumber all lines in the region, or the entire buffer, including
 ;; any jumps in the code.
+;;
+;; Type M-. to goto the line number at point, and type M-, to go back
+;; again, see function `xref-find-definitions'.
 
 ;; Installation:
 
@@ -66,6 +69,7 @@
 
 ;;; Change Log:
 
+;;  0.4.0  2018-05-25  Added goto line number.
 ;;  0.3.3  2018-05-17  Fixed endless loop bug.
 ;;  0.3.2  2017-12-04  Indentation of one-line-loops.
 ;;  0.3.1  2017-11-25  Renumbering on-goto and bug fixes.
@@ -138,7 +142,7 @@ empty lines are never numbered."
 ;; Variables:
 ;; ----------------------------------------------------------------------------
 
-(defconst basic-mode-version "0.3.2"
+(defconst basic-mode-version "0.4.0"
   "The current version of `basic-mode'.")
 
 (defconst basic-increase-indent-keywords-bol
@@ -562,6 +566,47 @@ have numbers are included in the renumbering."
 	       jump-list))))
 
 ;; ----------------------------------------------------------------------------
+;; Xref backend:
+;; ----------------------------------------------------------------------------
+
+(declare-function xref-make "xref" (summary location))
+(declare-function xref-make-buffer-location "xref" (buffer point))
+
+(defun basic-xref-backend () 'basic)
+
+(defun basic-xref-make-xref (summary buffer point)
+  "Return a buffer xref object with SUMMARY, BUFFER and POINT."
+  (xref-make summary (xref-make-buffer-location buffer point)))
+
+(cl-defmethod xref-backend-identifier-at-point ((_backend (eql basic)))
+  (basic-xref-identifier-at-point))
+
+(defun basic-xref-identifier-at-point ()
+  "Return the relevant BASIC identifier at point."
+  (thing-at-point 'symbol t))
+
+(cl-defmethod xref-backend-definitions ((_backend (eql basic)) identifier)
+  (basic-xref-find-definitions identifier))
+
+(defun basic-xref-find-definitions (identifier)
+  "Find definitions of IDENTIFIER.
+Return a list of xref objects with the definitions found.
+If no definitions can be found, return nil."
+  (let (xrefs)
+    (let ((line-number (basic-xref-find-line-number identifier)))
+      (when line-number
+        (push (basic-xref-make-xref (format "%s (line number)" identifier) (current-buffer) line-number) xrefs)))))
+
+(defun basic-xref-find-line-number (line-number)
+  "Return the buffer position where LINE-NUMBER is defined.
+If LINE-NUMBER is not found, return nil."
+  (save-excursion
+    (when (string-match "[0-9]+" line-number)
+      (goto-char (point-min))
+      (when (re-search-forward (concat "^\\s-*\\(" line-number "\\)\\s-") nil t)
+        (match-beginning 1)))))
+
+;; ----------------------------------------------------------------------------
 ;; BASIC mode:
 ;; ----------------------------------------------------------------------------
 
@@ -595,6 +640,7 @@ and `basic-line-number-cols'.
 
 \\{basic-mode-map}"
   :group 'basic
+  (add-hook 'xref-backend-functions #'basic-xref-backend nil t)
   (setq-local indent-line-function 'basic-indent-line)
   (setq-local comment-start "'")
   (setq-local font-lock-defaults '(basic-font-lock-keywords nil t))

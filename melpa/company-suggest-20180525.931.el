@@ -4,7 +4,7 @@
 
 ;; Author: Jürgen Hötzel <juergen@archlinux.org>
 ;; URL: https://github.com/juergenhoetzel/company-suggest
-;; Package-Version: 20180325.931
+;; Package-Version: 20180525.931
 ;; Keywords: completion convenience
 ;; Package-Requires: ((company "0.9.0") (emacs "25.1"))
 
@@ -49,14 +49,15 @@
 (defvar company-suggest-wiktionary-url
   "https://en.wiktionary.org/w/api.php?action=opensearch&format=json&formatversion=2&search=%s&namespace=0&limit=10&suggest=true")
 
-(defun company-suggest--google-candidates (prefix)
+(defun company-suggest--google-candidates (callback prefix)
   "Return a list of Google suggestions matching PREFIX."
-  (with-temp-buffer
-    ;; FIXME: Error checking
-    (delete-region (point-min) (point-max))
-    (mm-url-insert (format company-suggest-google-url prefix))
-    (mapcar (lambda (node) (xml-get-attribute (car (xml-get-children node 'suggestion)) 'data))
-	    (xml-get-children (car (xml-parse-region (point-min) (point-max))) 'CompleteSuggestion))))
+  (url-retrieve (format company-suggest-google-url prefix)
+		(lambda (buffer)
+		  (funcall callback (remove-if-not (lambda  (s)
+						     (string-prefix-p prefix s t))
+						   (mapcar (lambda (node) (xml-get-attribute (car (xml-get-children node 'suggestion)) 'data))
+							   (xml-get-children (car (xml-parse-region (point-min) (point-max))) 'CompleteSuggestion)))))
+		nil t))
 
 (defun company-suggest--sentence-at-point ()
   "Return the sentence at point."
@@ -86,11 +87,8 @@
 		  (company-suggest--sentence-at-point)
 		(thing-at-point 'word))))
     (ignore-case t)
-    (candidates (mapcar (lambda  (s)
-			  (if (string-prefix-p arg s t)
-			      (concat arg (substring s (length arg)))
-			    s))
-			(company-suggest--google-candidates arg)))))
+    (candidates (cons :async (lambda (callback)
+			       (company-suggest--google-candidates callback arg))))))
 
 (defun company-suggest--wiktionary-candidates (prefix)
   "Return a list of Wiktionary suggestions matching PREFIX."

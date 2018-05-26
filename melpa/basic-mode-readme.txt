@@ -9,6 +9,9 @@ a new line starting with a fresh line number. Typing C-c C-r will
 renumber all lines in the region, or the entire buffer, including
 any jumps in the code.
 
+Type M-. to goto the line number at point, and type M-, to go back
+again, see function `xref-find-definitions'.
+
 Installation:
 
 The recommended way to install basic-mode is from MELPA, please see
