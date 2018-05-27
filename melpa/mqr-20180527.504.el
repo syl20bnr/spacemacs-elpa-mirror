@@ -8,12 +8,12 @@
 ;; Author: Tino Calancha <tino.calancha@gmail.com>
 ;; Maintainer: Tino Calancha <tino.calancha@gmail.com>
 ;; URL: https://github.com/calancha/multi-replace
-;; Package-Version: 20180526.2255
+;; Package-Version: 20180527.504
 ;; Keywords: convenience, extensions, lisp
 ;; Created: Sat May 12 22:09:30 JST 2018
-;; Version: 0.2.2
+;; Version: 0.2.3
 ;; Package-Requires: ((emacs "24.4"))
-;; Last-Updated: Sun May 27 14:53:12 JST 2018
+;; Last-Updated: Sun May 27 20:56:23 JST 2018
 ;;
 
 ;;; Commentary:
@@ -155,9 +155,11 @@ Each element is a cons (REGEXP . REPLACEMENT)."
                  (if (looking-at (if mqr--regexp-replace reg (regexp-quote reg)))
                      (setq match-data (match-data))))))))
       (if (and to-string mqr--regexp-replace)
-          (progn
+          (let ((replacement (query-replace-compile-replacement to-string 'regexp)))
             (set-match-data match-data)
-            (match-substitute-replacement to-string))
+            (unless (stringp replacement) ; Must be a Lisp expression starting with '\,'
+              (setq replacement (funcall (car replacement) (cdr replacement) 0)))
+            (match-substitute-replacement replacement))
         to-string))))
 
 (defun mqr--query-replace-interactive-spec (prompt)

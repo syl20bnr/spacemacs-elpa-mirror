@@ -4,9 +4,9 @@
 
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;; URL: https://github.com/magit/magit-imerge
-;; Package-Version: 0.3.0
+;; Package-Version: 0.3.1
 ;; Keywords: vc, tools
-;; Version: 0.3.0
+;; Version: 0.3.1
 ;; Package-Requires: ((emacs "24.4") (magit "2.10.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -37,7 +37,7 @@
 ;;   * git-imerge drop   => magit-imerge-drop
 ;;
 ;; All these commands are available under the popup
-;; `magit-imerge-popup', which by default is bound to "i" in the main
+;; `magit-imerge-popup', which by default is bound to "I" in the main
 ;; merge popup.
 ;;
 ;; Once an incremental merge has been started with one of the commands
@@ -284,7 +284,7 @@ plan to return to this incremental merge later."
   (magit-imerge--assert-in-progress)
   (if (magit-anything-unstaged-p t)
       (user-error "Cannot continue with unstaged changes")
-    (magit-run-git "imerge" "continue" "--no-edit")))
+    (magit-run-git-async "imerge" "continue" "--no-edit")))
 
 (defun magit-imerge--insert-tip (tip)
   ;; The order of these checks follows the same tag > local branch >

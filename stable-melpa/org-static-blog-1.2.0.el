@@ -2,8 +2,8 @@
 
 ;; Author: Bastian Bechtold
 ;; URL: https://github.com/bastibe/org-static-blog
-;; Package-Version: 1.1.2
-;; Version: 1.1.2
+;; Package-Version: 1.2.0
+;; Version: 1.2.0
 ;; Package-Requires: ((emacs "24.3"))
 
 ;;; Commentary:
@@ -40,7 +40,7 @@
 
 (defgroup org-static-blog nil
   "Settings for a static blog generator using org-mode"
-  :version "1.1.2"
+  :version "1.2.0"
   :group 'applications)
 
 (defcustom org-static-blog-publish-url "https://example.com/"
@@ -109,6 +109,10 @@ The tags page lists all posts as headlines."
 
 (defcustom org-static-blog-page-postamble ""
   "HTML to put after the content of each page."
+  :group 'org-static-blog)
+
+(defcustom org-static-blog-langcode "en"
+  "Language code for the blog content."
   :group 'org-static-blog)
 
 ;;;###autoload
@@ -256,16 +260,14 @@ The index, archive, tags, and RSS feed are not updated."
    (org-static-blog-matching-publish-filename post-filename)
    (erase-buffer)
    (insert
-    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-    "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" "
-    "\"https://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
-    "<html xmlns=\"https://www.w3.org/1999/xhtml\" lang=\"en\" xml:lang=\"en\">\n"
+    "<!DOCTYPE html>\n"
+    "<html lang=\"" org-static-blog-langcode "\">\n"
     "<head>\n"
-    "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=utf-8\" />\n"
+    "<meta charset=\"UTF-8\">\n"
     "<link rel=\"alternate\"\n"
-    "      type=\"appliation/rss+xml\"\n"
+    "      type=\"application/rss+xml\"\n"
     "      href=\"" org-static-blog-publish-url org-static-blog-rss-file "\"\n"
-    "      title=\"RSS feed for " org-static-blog-publish-url "\">\n"
+    "      title=\"RSS feed for " org-static-blog-publish-url "\"/>\n"
     "<title>" (org-static-blog-get-title post-filename) "</title>\n"
     org-static-blog-page-header
     "</head>\n"
@@ -286,9 +288,11 @@ The index, archive, tags, and RSS feed are not updated."
 
 (defun org-static-blog-render-post-content (post-filename)
   "Render blog content as bare HTML without header."
-  (org-static-blog-with-find-file
-   post-filename
-   (org-export-as 'org-static-blog-post-bare nil nil nil nil)))
+  (let ((org-html-doctype "html5")
+        (org-html-html5-fancy t))
+    (org-static-blog-with-find-file
+     post-filename
+     (org-export-as 'org-static-blog-post-bare nil nil nil nil))))
 
 (org-export-define-derived-backend 'org-static-blog-post-bare 'html
   :translate-alist '((template . (lambda (contents info) contents))))
@@ -312,16 +316,14 @@ Posts are sorted in descending time."
    pub-filename
    (erase-buffer)
    (insert
-    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-    "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\""
-    "\"https://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
-    "<html xmlns=\"https://www.w3.org/1999/xhtml\" lang=\"en\" xml:lang=\"en\">\n"
+    "<!DOCTYPE html>\n"
+    "<html lang=\"" org-static-blog-langcode "\">\n"
     "<head>\n"
-    "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=utf-8\" />\n"
+    "<meta charset=\"UTF-8\">\n"
     "<link rel=\"alternate\"\n"
     "      type=\"appliation/rss+xml\"\n"
     "      href=\"" org-static-blog-publish-url org-static-blog-rss-file "\"\n"
-    "      title=\"RSS feed for " org-static-blog-publish-url "\">\n"
+    "      title=\"RSS feed for " org-static-blog-publish-url "\"/>\n"
     "<title>" org-static-blog-publish-title "</title>\n"
     org-static-blog-page-header
     "</head>\n"
@@ -341,7 +343,8 @@ Posts are sorted in descending time."
     "<a href=\"" org-static-blog-archive-file "\">Other posts</a>\n"
     "</div>\n"
     "</div>\n"
-    "</body>\n")))
+    "</body>\n"
+    "</html>\n")))
 
 (defun org-static-blog-post-preamble (post-filename)
   "Returns the formatted date and headline of the post.
@@ -432,12 +435,10 @@ blog post, but no post body."
      archive-filename
      (erase-buffer)
      (insert
-      "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-      "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" "
-      "\"https://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
-      "<html xmlns=\"https://www.w3.org/1999/xhtml\" lang=\"en\" xml:lang=\"en\">\n"
+      "<!DOCTYPE html>\n"
+      "<html lang=\"" org-static-blog-langcode "\">\n"
       "<head>\n"
-      "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=utf-8\" />\n"
+      "<meta charset=\"UTF-8\">\n"
       "<link rel=\"alternate\"\n"
       "      type=\"appliation/rss+xml\"\n"
       "      href=\"" org-static-blog-publish-url org-static-blog-rss-file "\"\n"
@@ -489,12 +490,10 @@ blog post, sorted by tags, but no post body."
      tags-archive-filename
      (erase-buffer)
      (insert
-      "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-      "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" "
-      "\"https://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
-      "<html xmlns=\"https://www.w3.org/1999/xhtml\" lang=\"en\" xml:lang=\"en\">\n"
+      "<!DOCTYPE html>\n"
+      "<html lang=\"" org-static-blog-langcode "\">\n"
       "<head>\n"
-      "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=utf-8\" />\n"
+      "<meta charset=\"UTF-8\">\n"
       "<link rel=\"alternate\"\n"
       "      type=\"appliation/rss+xml\"\n"
       "      href=\"" org-static-blog-publish-url org-static-blog-rss-file "\"\n"

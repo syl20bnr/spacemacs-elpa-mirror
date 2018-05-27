@@ -3,8 +3,8 @@
 ;; Copyright 2017 Joe Wreschnig
 ;;
 ;; Author: Joe Wreschnig <joe.wreschnig@gmail.com>
-;; Package-Version: 20180401.245
-;; Package-X-Original-Version: 20170716
+;; Package-Version: 20180527.423
+;; Package-X-Original-Version: 20180527.1
 ;; Package-Requires: ((emacs "24.4"))
 ;; URL: https://github.com/joewreschnig/auto-minor-mode
 ;; Keywords: convenience
