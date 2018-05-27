@@ -4,7 +4,7 @@
 
 ;; Author: Jürgen Hötzel <juergen@archlinux.org>
 ;; URL: https://github.com/juergenhoetzel/company-suggest
-;; Package-Version: 20180526.931
+;; Package-Version: 20180527.931
 ;; Keywords: completion convenience
 ;; Package-Requires: ((company "0.9.0") (emacs "25.1"))
 
@@ -95,16 +95,17 @@
     (candidates (cons :async (lambda (callback)
 			       (company-suggest--google-candidates callback arg))))))
 
-(defun company-suggest--wiktionary-candidates (prefix)
+(defun company-suggest--wiktionary-candidates (callback prefix)
   "Return a list of Wiktionary suggestions matching PREFIX."
-  (with-temp-buffer
-    (delete-region (point-min) (point-max))
-    (mm-url-insert (format company-suggest-wiktionary-url prefix))
-    (let ((json-array-type 'list)
-	  (json-object-type 'hash-table)
-	  (json-key-type 'string))
-      ;; FIXME: Error checking
-      (cadr (json-read)))))
+  (url-retrieve (format company-suggest-wiktionary-url (url-encode-url prefix)) 
+		(lambda (buffer)
+		  (when (re-search-forward "^$")
+		    (let ((json-array-type 'list)
+			  (json-object-type 'hash-table)
+			  (json-key-type 'string))
+		      ;; FIXME: Error checking
+		      (funcall callback (cadr (json-read-from-string (decode-coding-string (buffer-substring-no-properties  (point) (point-max)) 'utf-8)))))))
+		nil t))
 
 ;;;###autoload
 (defun company-suggest-wiktionary (command &optional arg &rest ignored)
@@ -114,7 +115,7 @@
     (interactive (company-begin-backend 'company-suggest-wiktionary))
     (prefix (when (derived-mode-p 'text-mode)
 	      (thing-at-point 'word)))
-    (candidates (company-suggest--wiktionary-candidates arg))))
+    (candidates (cons :async (lambda (callback) (company-suggest--wiktionary-candidates callback arg))))))
 
 (provide 'company-suggest)
 ;;; company-suggest.el ends here

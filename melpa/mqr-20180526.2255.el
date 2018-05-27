@@ -8,12 +8,12 @@
 ;; Author: Tino Calancha <tino.calancha@gmail.com>
 ;; Maintainer: Tino Calancha <tino.calancha@gmail.com>
 ;; URL: https://github.com/calancha/multi-replace
-;; Package-Version: 20180524.2049
+;; Package-Version: 20180526.2255
 ;; Keywords: convenience, extensions, lisp
 ;; Created: Sat May 12 22:09:30 JST 2018
-;; Version: 0.2.1
+;; Version: 0.2.2
 ;; Package-Requires: ((emacs "24.4"))
-;; Last-Updated: Fri May 25 12:48:49 JST 2018
+;; Last-Updated: Sun May 27 14:53:12 JST 2018
 ;;
 
 ;;; Commentary:
@@ -784,6 +784,7 @@ call `mqr-replace'."
         (mqr-alist alist))
     (mqr-perform-replace regexp '("") nil t nil nil nil start end)))
 
+;;;###autoload
 (defun mqr-replace (alist &optional start end)
   "Match and replace several strings.
 ALIST is a list of conses (STRING . TO).
@@ -796,6 +797,7 @@ the user inputs '' for STRING."
   (interactive (mqr--replace-interactive-spec "Multi replace"))
   (mqr--replace alist start end))
 
+;;;###autoload
 (defun mqr-replace-regexp (alist &optional start end)
   "Match and replace several regexps.
 ALIST is a list of conses (REGEXP . TO).
@@ -814,6 +816,7 @@ the user inputs '' for REGEXP."
 
 
 ;;; Multi query replace (regexp)
+;;;###autoload
 (defun mqr-query-replace (alist &optional delimited start end backward region-noncontiguous-p)
   "Multi-dimensional version of `query-replace'.
 ALIST is a list of conses (STRING . REPLACEMENT).
@@ -828,6 +831,7 @@ inputs RET for STRING."
         (mqr-alist alist))
     (mqr-perform-replace from-string '("") t t delimited nil nil start end backward region-noncontiguous-p)))
 
+;;;###autoload
 (defun mqr-query-replace-regexp (alist &optional delimited start end backward region-noncontiguous-p)
   "Multi-dimensional version of `replace-regexp'.
 ALIST is a list of conses (REGEXP . REPLACEMENT).

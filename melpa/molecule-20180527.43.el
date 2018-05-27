@@ -4,7 +4,7 @@
 
 ;; Author:: drymer <drymer [ AT ] autistici.org>
 ;; Package-Requires: ((emacs "25.1"))
-;; Package-Version: 20180120.1514
+;; Package-Version: 20180527.43
 ;; Version: 0.1
 
 ;; Keywords:: languages terminals
@@ -251,14 +251,9 @@ otherwise disable it.
 
 When called from Lisp, enable `molecule-mode' if ARG is
 omitted, nil or positive.  If ARG is `toggle', toggle
-`molecule-mode'.  Otherwise behave as if called interactively.
+`molecule-mode'.  Otherwise behave as if called interactively."
 
-In `molecule-mode' provide the following keybindings for
-molecule testing:
-
-\\{molecule-mode-map}"
   :init-value nil
-  :keymap molecule-mode-map
   :lighter " Mol"
   :group 'molecule
   :require 'molecule)
