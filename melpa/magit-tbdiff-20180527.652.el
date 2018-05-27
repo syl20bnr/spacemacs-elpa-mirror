@@ -4,7 +4,7 @@
 
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;; URL: https://github.com/magit/magit-tbdiff
-;; Package-Version: 20180526.1142
+;; Package-Version: 20180527.652
 ;; Keywords: vc, tools
 ;; Version: 0.2.0
 ;; Package-Requires: ((emacs "24.4") (magit "2.10.0"))
@@ -169,6 +169,13 @@ Translates to 'git [global options] <subcommand> ...'.")
                     'face 'magit-header-line))
   (magit-insert-section (tbdiff-buf)
     (magit-tbdiff-insert)))
+
+(defun magit-tbdiff-buffer-lock-value (range-a range-b _args)
+  (list range-a range-b))
+
+(when (boundp magit-buffer-lock-functions) ; Added in Magit 2.12
+  (push (cons 'magit-tbdiff-mode #'magit-tbdiff-buffer-lock-value)
+        magit-buffer-lock-functions))
 
 (define-derived-mode magit-tbdiff-mode magit-mode "Magit-tbdiff"
   "Mode for viewing git tbdiff output.

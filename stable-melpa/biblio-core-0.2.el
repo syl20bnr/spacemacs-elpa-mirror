@@ -3,8 +3,8 @@
 ;; Copyright (C) 2016  Clément Pit-Claudel
 
 ;; Author: Clément Pit-Claudel <clement.pitclaudel@live.com>
-;; Version: 0.1
-;; Package-Version: 0.1
+;; Version: 0.2
+;; Package-Version: 0.2
 ;; Package-Requires: ((emacs "24.3") (let-alist "1.0.4") (seq "1.11") (dash "2.12.1"))
 ;; Keywords: bib, tex, convenience, hypermedia
 ;; URL: http://github.com/cpitclaudel/biblio.el
@@ -24,8 +24,10 @@
 
 ;;; Commentary:
 ;; A framework for browsing bibliographic search results.  This is the core
-;; package; for user interfaces, see any of `biblio-crossref', `biblio-dblp',
-;; `biblio-doi', and `biblio-dissemin', and the more general `biblio' package.
+;; package; for user interfaces, see any of `biblio-crossref', `biblio-dblp', `biblio-doi',
+;; `biblio-arxiv', `biblio-hal' and `biblio-dissemin', which are part of the `biblio' package.
+
+;;; Code:
 
 (require 'bibtex)
 (require 'browse-url)
@@ -37,8 +39,6 @@
 (require 'dash)
 (require 'let-alist)
 (require 'seq)
-
-;;; Code:
 
 (defvar-local biblio--target-buffer nil
   "Buffer into which BibTeX entries should be inserted.
@@ -91,36 +91,57 @@ Return an alist of the property-value pairs in PLIST."
 
 ;;; Utilities
 
-(defvar biblio-bibtex-entry-format
-  '(opts-or-alts numerical-fields page-dashes whitespace
-                 inherit-booktitle realign last-comma delimiters
-                 unify-case braces strings sort-fields)
+(defconst biblio--bibtex-entry-format
+  (list 'opts-or-alts 'numerical-fields 'page-dashes 'whitespace
+        'inherit-booktitle 'realign 'last-comma 'delimiters
+        'unify-case 'braces 'strings 'sort-fields)
   "Format to use in `biblio-format-bibtex'.
 See `bibtex-entry-format' for details; this list is all
-transformations, except errors for missing fields.")
+transformations, except errors for missing fields.
+Also see `biblio-cleanup-bibtex-function'.")
 
-(defun biblio--cleanup-bibtex (autokey)
+(defun biblio--cleanup-bibtex-1 (dialect autokey)
   "Cleanup BibTeX entry starting at point.
-AUTOKEY: see `biblio-format-bibtex'."
-  (let ((bibtex-entry-format biblio-bibtex-entry-format)
+DIALECT is `BibTeX' or `biblatex'.  AUTOKEY: see `biblio-format-bibtex'."
+  (let ((bibtex-entry-format biblio--bibtex-entry-format)
         (bibtex-align-at-equal-sign t)
         (bibtex-autokey-edit-before-use nil)
         (bibtex-autokey-year-title-separator ":"))
-    (ignore-errors ;; See https://github.com/crosscite/citeproc-doi-server/issues/12
-      (bibtex-clean-entry autokey))))
+    ;; Use biblatex to allow for e.g. @Online
+    ;; Use BibTeX to allow for e.g. @TechReport
+    (bibtex-set-dialect dialect t)
+    (bibtex-clean-entry autokey)))
+
+(defun biblio--cleanup-bibtex (autokey)
+  "Default balue of `biblio-cleanup-bibtex-function'.
+AUTOKEY: See biblio-format-bibtex."
+  (save-excursion
+    (when (search-forward "@data{" nil t)
+      (replace-match "@misc{")))
+  (ignore-errors ;; See https://github.com/crosscite/citeproc-doi-server/issues/12
+    (condition-case _
+        (biblio--cleanup-bibtex-1 'biblatex autokey)
+      (error (biblio--cleanup-bibtex-1 'BibTeX autokey)))))
+
+(defcustom biblio-cleanup-bibtex-function
+  #'biblio--cleanup-bibtex
+  "Function to clean up BibTeX entries.
+This function is called in a `bibtex-mode' buffer containing an
+unprocessed, potentially invalid BibTeX (or BibLaTeX) entry, and
+should clean it up in place.  It should take a single argument,
+AUTOKEY, indicating whether the entry needs a new key."
+  :group 'biblio
+  :type 'function)
 
 (defun biblio-format-bibtex (bibtex &optional autokey)
   "Format BIBTEX entry.
-WIth non-nil AUTOKEY, automatically generate a key for BIBTEX."
+With non-nil AUTOKEY, automatically generate a key for BIBTEX."
   (with-temp-buffer
     (bibtex-mode)
-    (bibtex-set-dialect 'biblatex) ;; Use biblatex to allow for e.g. @Online
     (save-excursion
       (insert (biblio-strip bibtex)))
-    (save-excursion
-      (when (search-forward "@data{" nil t)
-        (replace-match "@misc{")))
-    (biblio--cleanup-bibtex autokey)
+    (when (functionp biblio-cleanup-bibtex-function)
+      (funcall biblio-cleanup-bibtex-function autokey))
     (if (fboundp 'font-lock-ensure) (font-lock-ensure)
       (with-no-warnings (font-lock-fontify-buffer)))
     (buffer-string)))
@@ -135,6 +156,11 @@ WIth non-nil AUTOKEY, automatically generate a key for BIBTEX."
   "Extract body of response."
   (set-buffer-multibyte t)
   (decode-coding-region (point) (point-max) 'utf-8 t))
+
+(defun biblio-decode-url-buffer (coding)
+  "Decode URL buffer with CODING."
+  (set-buffer-multibyte t) ;; URL buffer is unibyte
+  (decode-coding-region (point-min) (point-max) coding))
 
 (defun biblio--event-error-code (event)
   "Extract HTTP error code from EVENT, if any."
@@ -281,7 +307,7 @@ That is, if two key map to `eq' values, they are grouped."
       (puthash value (cons key (gethash value map)) map))
     (pcase-dolist (`(,_ . ,value) alist)
       (-when-let* ((keys (gethash value map)))
-        (push (cons keys value) new-alist)
+        (push (cons (nreverse keys) value) new-alist)
         (puthash value nil map)))
     (nreverse new-alist)))
 
@@ -346,11 +372,18 @@ Uses .url, and .doi as a fallback."
         (concat "https://doi.org/" (url-encode-url .doi))))))
 
 (defun biblio--selection-browse ()
-  "Open the current entry in a web browser."
+  "Open the web page of the current entry in a web browser."
   (interactive)
   (-if-let* ((url (biblio-get-url (biblio--selection-metadata-at-point))))
       (browse-url url)
     (user-error "This record does not contain a URL")))
+
+(defun biblio--selection-browse-direct ()
+  "Open the full text of the current entry in a web browser."
+  (interactive)
+  (-if-let* ((url (biblio-alist-get 'direct-url (biblio--selection-metadata-at-point))))
+      (browse-url url)
+    (user-error "This record does not contain a direct URL (try arXiv or HAL)")))
 
 (defun biblio--selection-next ()
   "Move to next seach result."
@@ -421,7 +454,7 @@ If QUIT is set, also kill the results buffer."
                'forward-bibtex metadata
                (lambda (bibtex)
                  (with-current-buffer results-buffer
-                   (funcall forward-to bibtex metadata))))
+                   (funcall forward-to (biblio-format-bibtex bibtex) metadata))))
       (when quit (quit-window)))))
 
 (defun biblio--selection-change-buffer (buffer-name)
@@ -489,18 +522,20 @@ Interactively, query for ACTION from
     (define-key map (kbd "C-p") #'biblio--selection-previous)
     (define-key map (kbd "<down>") #'biblio--selection-next)
     (define-key map (kbd "C-n") #'biblio--selection-next)
-    (define-key map (kbd "c") #'biblio--selection-copy)
     (define-key map (kbd "RET") #'biblio--selection-browse)
+    (define-key map (kbd "<C-return>") #'biblio--selection-browse-direct)
+    (define-key map (kbd "C-RET") #'biblio--selection-browse-direct)
     (define-key map (kbd "M-w") #'biblio--selection-copy)
-    (define-key map (kbd "C") #'biblio--selection-copy-quit)
+    (define-key map (kbd "c") #'biblio--selection-copy)
     (define-key map (kbd "C-w") #'biblio--selection-copy-quit)
+    (define-key map (kbd "C") #'biblio--selection-copy-quit)
     (define-key map (kbd "i") #'biblio--selection-insert)
-    (define-key map (kbd "I") #'biblio--selection-insert-quit)
     (define-key map (kbd "C-y") #'biblio--selection-insert-quit)
+    (define-key map (kbd "I") #'biblio--selection-insert-quit)
     (define-key map (kbd "b") #'biblio--selection-change-buffer)
     (define-key map (kbd "x") #'biblio--selection-extended-action)
-    (define-key map (kbd "h") #'biblio--selection-help)
     (define-key map (kbd "?") #'biblio--selection-help)
+    (define-key map (kbd "h") #'biblio--selection-help)
     (define-key map (kbd "q") #'quit-window)
     map)
   "Keybindings for Bibliographic search results.")
@@ -523,7 +558,21 @@ Interactively, query for ACTION from
   (setq-local truncate-lines nil)
   (setq-local cursor-type nil)
   (setq-local buffer-read-only t)
-  (setq-local mode-name '(:eval (biblio--selection-mode-name))))
+  (setq-local mode-name '(:eval (biblio--selection-mode-name)))
+  (setq-local
+   header-line-format
+   `(:eval
+     (concat
+      (ignore-errors
+        (propertize " " 'display '(space :align-to 0) 'face 'fringe))
+      (substitute-command-keys
+       (biblio-join "   "
+         "\\[biblio--selection-help]: Help"
+         "\\[biblio--selection-insert],\\[biblio--selection-insert-quit]: Insert BibTex"
+         "\\[biblio--selection-copy],\\[biblio--selection-copy-quit]: Copy BibTeX"
+         "\\[biblio--selection-extended-action]: Extended action"
+         "\\[biblio--selection-browse]: Open in browser"
+         "\\[biblio--selection-change-buffer]: Change buffer"))))))
 
 ;;; Printing search results
 
@@ -584,22 +633,43 @@ NEWLINE is non-nil, add a newline before the main text."
 
 (defun biblio--browse-url (button)
   "Open web browser on page pointed to by BUTTON."
-  (browse-url (button-label button)))
+  (browse-url (button-get button 'target)))
 
-(defun biblio-make-url-button (url)
-  "Make a text button pointing to URL."
+(defun biblio-make-url-button (url &optional label)
+  "Make a text button pointing to URL.
+With non-nil LABEL, use that instead of URL to label the button."
   (unless (seq-empty-p url)
     (with-temp-buffer
-      (insert-text-button url
+      (insert-text-button (or label url)
+                          'target url
                           'follow-link t
                           'action #'biblio--browse-url)
       (buffer-string))))
 
 (defun biblio-insert-result (item &optional no-sep)
   "Print a (prepared) bibliographic search result ITEM.
-See also `crossref--extract-interesting-fields' and
-`dblp--extract-interesting-fields'.  With NO-SEP, do not add
-space after the record."
+With NO-SEP, do not add space after the record.
+
+This command expects ITEM to be a single alist, in the following format:
+
+  ((title . \"Title of entry\")
+   (authors . (\"Author 1\" \"Author 2\" …))
+   (container . \"Where this was published (which journal, conference, …)\")
+   (type . \"Type of document (journal paper, proceedings, report, …)\")
+   (category . \"Category of this document (aka primary topic)\")
+   (publisher . \"Publisher of this document\")
+   (references . \"Identifier(s) of this document (DOI, DPLB id, Handle, …)\")
+   (open-access-status . \"Open access status of this document\")
+   (url . \"Relevant URL\")
+   (direct-url . \"Direct URL of paper (typically PDF)\"))
+
+Each of `container', `type', `category', `publisher',
+`references', and `open-access-status' may be a list; in that
+case, entries of the list are displayed comma-separated.  All
+entries are optional.
+
+`crossref--extract-interesting-fields' and `dblp--extract-interesting-fields'
+provide examples of how to build such a result."
   (biblio--with-text-property 'biblio-metadata item
     (let-alist item
       (biblio-with-fontification 'font-lock-function-name-face
@@ -614,7 +684,9 @@ space after the record."
         (biblio--insert-detail "  Publisher: " .publisher t)
         (biblio--insert-detail "  References: " .references t)
         (biblio--insert-detail "  Open Access: " .open-access-status t)
-        (biblio--insert-detail "  URL: " (biblio-make-url-button .url) t))
+        (biblio--insert-detail "  URL: " (list (biblio-make-url-button .url)
+                                         (biblio-make-url-button .direct-url))
+                         t))
       (unless no-sep
         (insert "\n\n")))))
 
@@ -701,16 +773,18 @@ term to feed this backend.
 
 `url': (one argument, QUERY) Create a URL to query the backend's API.
 
-`parse-buffer': (on argument, BUFFER) Parse the contents of
-BUFFER (current at the time of the call) and return a list of
-results.
+`parse-buffer': (no arguments) Parse the contents of the current
+buffer and return a list of results.  At the time of the call,
+the current buffer contains the results of querying a url
+returned by (THIS-BACKEND `url' QUERY).  The format of individual
+results is described in the docstring of `biblio-insert-result').
 
 `forward-bibtex': (two arguments, METADATA and FORWARD-TO)
 Produce a BibTeX record from METADATA (one of the elements of the
 list produced by `parse-buffer') and call FORWARD-TO on it.
 
-For examples of backends, see one of `biblio-crossref-backend'
-and `biblio-dblp-backend'.
+For examples of backends, see one of `biblio-crossref-backend',
+`biblio-dblp-backend', `biblio-arxiv-backend', etc.
 
 
 To register your backend automatically, you may want to add a
@@ -740,13 +814,18 @@ themselves to biblio-backends.")
   "Collect an alist of (NAME . BACKEND)."
   (seq-map (lambda (b) (cons (funcall b 'name) b)) (biblio-collect-backends)))
 
-(defun biblio--select-backend ()
-  "Run `biblio-init-hook', then pick a backend from `biblio-backend'."
+(defun biblio--read-backend ()
+  "Run `biblio-init-hook', then read a backend from `biblio-backend'."
   (biblio-completing-read-alist "Backend: " (biblio--named-backends) nil t))
 
+(defun biblio--read-query (backend)
+  "Interactively read a query.
+Get prompt string from BACKEND."
+  (let* ((prompt (funcall backend 'prompt)))
+    (read-string prompt nil 'biblio--search-history)))
+
 (defun biblio--lookup-1 (backend query)
-  "Just like `biblio-lookup' on BACKEND, but use QUERY.
-Returns the buffer in which results will be inserted."
+  "Just like `biblio-lookup' on BACKEND and QUERY, but never prompt."
   (let ((results-buffer (biblio--make-results-buffer (current-buffer) query backend)))
     (biblio-url-retrieve
      (funcall backend 'url query)
@@ -754,14 +833,16 @@ Returns the buffer in which results will be inserted."
     results-buffer))
 
 ;;;###autoload
-(defun biblio-lookup (backend)
-  "Perform a search using BACKEND, prompting for a query.
-BACKEND should be a function obeying the interface described in
-the docstring of `biblio-backends'."
-  (interactive (list (biblio--select-backend)))
-  (biblio--lookup-1 backend
-              (let* ((prompt (funcall backend 'prompt)))
-                (read-string prompt nil 'biblio--search-history))))
+(defun biblio-lookup (&optional backend query)
+  "Perform a search using BACKEND, and QUERY.
+Prompt for any missing or nil arguments.  BACKEND should be a
+function obeying the interface described in the docstring of
+`biblio-backends'.  Returns the buffer in which results will be
+inserted."
+  (interactive)
+  (unless backend (setq backend (biblio--read-backend)))
+  (unless query (setq query (biblio--read-query backend)))
+  (biblio--lookup-1 backend query))
 
 (defun biblio-kill-buffers ()
   "Kill all `biblio-selection-mode' buffers."
@@ -774,6 +855,7 @@ the docstring of `biblio-backends'."
 
 ;; Local Variables:
 ;; nameless-current-name: "biblio"
+;; checkdoc-arguments-in-order-flag: nil
 ;; End:
 
 (provide 'biblio-core)

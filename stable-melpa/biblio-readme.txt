@@ -9,6 +9,7 @@ automatically fetched from well-curated sources, and formatted as BibTeX.
 * ‘CrossRef’, an exhaustive academic search engine (recommended)
 * ‘arXiv’, an archive of pre-prints in various scientific fields
 * ‘DBLP’, a database of Computer Science publications
+* ‘HAL’, a French repository of Open Access publications
 * ‘doi.org’, a DOI resolver (to retrieve BibTeX records from DOIs)
 * ‘CrossCite’, an alternative DOI resolver and BibTeX formatting service
 * ‘Dissemin’, a database tracking the open access status of scholarly articles
