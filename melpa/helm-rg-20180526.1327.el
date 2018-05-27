@@ -14,7 +14,7 @@
 
 ;; Author: Danny McClanahan
 ;; Version: 0.1
-;; Package-Version: 20180512.1323
+;; Package-Version: 20180526.1327
 ;; URL: https://github.com/cosmicexplorer/helm-rg
 ;; Package-Requires: ((emacs "25") (helm "2.8.8") (cl-lib "0.5") (dash "2.13.0"))
 ;; Keywords: find, file, files, helm, fast, rg, ripgrep, grep, search
@@ -144,6 +144,16 @@ unquoted name of a variable containing an alist."
   (helm-rg--gen-defcustom-form-from-alist name alist doc args))
 
 
+;; CL deftypes
+(cl-deftype helm-rg--existing-file ()
+  `(and string
+        (satisfies file-exists-p)))
+
+(cl-deftype helm-rg--existing-directory ()
+  `(and helm-rg--existing-file
+        (satisfies file-directory-p)))
+
+
 ;; Customization
 (defgroup helm-rg nil
   "Group for `helm-rg' customizations."
@@ -183,7 +193,7 @@ Used in `helm-rg--interpret-starting-dir'. Possible values:
   :type 'symbol
   :group 'helm-rg)
 
-(defcustom helm-rg-input-min-search-chars 3
+(defcustom helm-rg-input-min-search-chars 2
   "Ripgrep will not be invoked unless the input is at least this many chars.
 
 See `helm-rg--make-process' and `helm-rg--make-dummy-process' if interested."
@@ -413,14 +423,6 @@ that process's buffer. See `helm-rg--parse-process-output' for usage.")
      (propertize "(" 'face 'highlight)
      "%s"
      (propertize ")" 'face 'highlight)))))
-
-(cl-deftype helm-rg--existing-file ()
-  `(and string
-        (satisfies file-exists-p)))
-
-(cl-deftype helm-rg--existing-directory ()
-  `(and helm-rg--existing-file
-        (satisfies file-directory-p)))
 
 (defun helm-rg--process-paths-to-search (paths)
   (cl-check-type helm-rg--current-dir helm-rg--existing-directory)

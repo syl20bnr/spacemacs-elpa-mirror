@@ -4,7 +4,7 @@
 
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;; URL: https://github.com/magit/magit-tbdiff
-;; Package-Version: 20180526.907
+;; Package-Version: 20180526.1142
 ;; Keywords: vc, tools
 ;; Version: 0.2.0
 ;; Package-Requires: ((emacs "24.4") (magit "2.10.0"))
@@ -100,7 +100,7 @@ Translates to 'git [global options] <subcommand> ...'.")
                           (or (one-or-more digit)
                               (one-or-more "-"))))
           (hash-re '(or (repeat 4 40 (char digit (?a . ?f)))
-                        (repeat 7 "-"))))
+                        (repeat 4 40 "-"))))
       (rx-to-string `(and line-start
                           (group ,digit-re)
                           ":" (zero-or-more " ")
