@@ -1,11 +1,11 @@
 ;;; phan.el --- Utility functions for Phan (PHP static analizer)  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2017 USAMI Kenta
+;; Copyright (C) 2018  Friends of Emacs-PHP development
 
 ;; Author: USAMI Kenta <tadsan@pixiv.com>
 ;; Created: 28 Jan 2017
-;; Version: 0.0.3
-;; Package-Version: 20171017.2045
+;; Version: 0.0.4
+;; Package-Version: 20180527.2039
 ;; Keywords: tools php
 ;; Package-Requires: ((emacs "24") (composer "0.0.8") (f "0.17"))
 ;; URL: https://github.com/emacs-php/phan.el
@@ -60,7 +60,12 @@
   '("array" "bool" "float" "int" "null" "resource" "string" "void"))
 
 (defconst phan-issues
-  '("PhanSyntaxError"
+  '(;; Issue::CATEGORY_SYNTAX
+    "PhanSyntaxError"
+    ;; Removed issues
+    "PhanUnreferencedMethod"
+    "PhanUnreferencedProperty"
+
     ;; Issue::CATEGORY_UNDEFINED
     "PhanAmbiguousTraitAliasSource"
     "PhanClassContainsAbstractMethodInternal"
@@ -90,17 +95,22 @@
     "PhanUndeclaredTypeParameter"
     "PhanUndeclaredTypeReturnType"
     "PhanUndeclaredTypeProperty"
+    "PhanUndeclaredTypeThrowsType"
     "PhanUndeclaredVariable"
     "PhanUndeclaredVariableDim"
     "PhanUndeclaredClassInCallable"
     "PhanUndeclaredStaticMethodInCallable"
     "PhanUndeclaredFunctionInCallable"
     "PhanUndeclaredMethodInCallable"
+    "PhanEmptyFQSENInCallable"
+    "PhanEmptyFQSENInClasslike"
 
     ;; Issue::CATEGORY_TYPE
     "PhanNonClassMethodCall"
     "PhanTypeArrayOperator"
     "PhanTypeArraySuspicious"
+    "PhanTypeArrayUnsetSuspicious"
+    "PhanTypeArraySuspiciousNullable"
     "PhanTypeSuspiciousIndirectVariable"
     "PhanTypeComparisonFromArray"
     "PhanTypeComparisonToArray"
@@ -110,24 +120,64 @@
     "PhanTypeInvalidClosureScope"
     "PhanTypeInvalidLeftOperand"
     "PhanTypeInvalidRightOperand"
+    "PhanTypeInvalidInstanceof"
+    "PhanTypeInvalidDimOffset"
+    "PhanTypeInvalidDimOffsetArrayDestructuring"
+    "PhanTypeInvalidThrowsNonObject"
+    "PhanTypeInvalidThrowsNonThrowable"
+    "PhanTypeInvalidThrowsIsTrait"
+    "PhanTypeInvalidThrowsIsInterface"
     "PhanTypeMagicVoidWithReturn"
     "PhanTypeMismatchArgument"
     "PhanTypeMismatchArgumentInternal"
+    "PhanPartialTypeMismatchArgument"
+    "PhanPartialTypeMismatchArgumentInternal"
+    "PhanPossiblyNullTypeArgument"
+    "PhanPossiblyNullTypeArgumentInternal"
+    "PhanPossiblyFalseTypeArgument"
+    "PhanPossiblyFalseTypeArgumentInternal"
+
     "PhanTypeMismatchDefault"
+    "PhanTypeMismatchDimAssignment"
+    "PhanTypeMismatchDimEmpty"
+    "PhanTypeMismatchDimFetch"
+    "PhanTypeMismatchDimFetchNullable"
+    "PhanTypeMismatchUnpackKey"
+    "PhanTypeMismatchUnpackValue"
+    "PhanTypeMismatchArrayDestructuringKey"
     "PhanMismatchVariadicComment"
     "PhanMismatchVariadicParam"
     "PhanTypeMismatchForeach"
     "PhanTypeMismatchProperty"
+    "PhanPossiblyNullTypeMismatchProperty"
+    "PhanPossiblyFalseTypeMismatchProperty"
+    "PhanPartialTypeMismatchProperty"
     "PhanTypeMismatchReturn"
+    "PhanPartialTypeMismatchReturn"
+    "PhanPossiblyNullTypeReturn"
+    "PhanPossiblyFalseTypeReturn"
     "PhanTypeMismatchDeclaredReturn"
+    "PhanTypeMismatchDeclaredReturnNullable"
     "PhanTypeMismatchDeclaredParam"
+    "PhanTypeMismatchDeclaredParamNullable"
     "PhanTypeMissingReturn"
     "PhanTypeNonVarPassByRef"
     "PhanTypeParentConstructorCalled"
+    "PhanTypeSuspiciousEcho"
+    "PhanTypeSuspiciousStringExpression"
     "PhanTypeVoidAssignment"
     "PhanTypeInvalidCallableArraySize"
     "PhanTypeInvalidCallableArrayKey"
     "PhanTypeInvalidCallableObjectOfMethod"
+    "PhanTypeExpectedObject"
+    "PhanTypeExpectedObjectOrClassName"
+    "PhanTypeExpectedObjectPropAccess"
+    "PhanTypeExpectedObjectPropAccessButGotNull"
+    "PhanTypeExpectedObjectStaticPropAccess"
+
+    "PhanTypeMismatchGeneratorYieldValue"
+    "PhanTypeMismatchGeneratorYieldKey"
+    "PhanTypeInvalidYieldFrom"
 
     ;; Issue::CATEGORY_ANALYSIS
     "PhanUnanalyzable"
@@ -141,6 +191,7 @@
 
     ;; Issue::CATEGORY_CONTEXT
     "PhanContextNotObject"
+    "PhanContextNotObjectInCallable"
 
     ;; Issue::CATEGORY_DEPRECATED
     "PhanDeprecatedClass"
@@ -156,10 +207,13 @@
     "PhanParamSpecial2"
     "PhanParamSpecial3"
     "PhanParamSpecial4"
+    "PhanParamSuspiciousOrder"
     "PhanParamTooFew"
     "PhanParamTooFewInternal"
+    "PhanParamTooFewCallable"
     "PhanParamTooMany"
     "PhanParamTooManyInternal"
+    "PhanParamTooManyCallable"
     "PhanParamTypeMismatch"
     "PhanParamSignatureMismatch"
     "PhanParamSignatureMismatchInternal"
@@ -202,11 +256,46 @@
     "PhanNoopConstant"
     "PhanNoopProperty"
     "PhanNoopVariable"
+    "PhanNoopUnaryOperator"
+    "PhanNoopBinaryOperator"
+    "PhanNoopStringLiteral"
+    "PhanNoopEncapsulatedStringLiteral"
+    "PhanNoopNumericLiteral"
+    "PhanUnreachableCatch"
     "PhanUnreferencedClass"
     "PhanUnreferencedFunction"
-    "PhanUnreferencedMethod"
-    "PhanUnreferencedProperty"
+    "PhanUnreferencedPublicMethod"
+    "PhanUnreferencedProtectedMethod"
+    "PhanUnreferencedPrivateMethod"
+    "PhanUnreferencedPublicProperty"
+    "PhanUnreferencedProtectedProperty"
+    "PhanUnreferencedPrivateProperty"
+    "PhanReadOnlyPublicProperty"
+    "PhanReadOnlyProtectedProperty"
+    "PhanReadOnlyPrivateProperty"
+    "PhanWriteOnlyPublicProperty"
+    "PhanWriteOnlyProtectedProperty"
+    "PhanWriteOnlyPrivateProperty"
     "PhanUnreferencedConstant"
+    "PhanUnreferencedPublicClassConstant"
+    "PhanUnreferencedProtectedClassConstant"
+    "PhanUnreferencedPrivateClassConstant"
+    "PhanUnreferencedClosure"
+    "PhanUnreferencedUseNormal"
+    "PhanUnreferencedUseFunction"
+    "PhanUnreferencedUseConstant"
+
+    "PhanUnusedVariable"
+    "PhanUnusedPublicMethodParameter"
+    "PhanUnusedPublicFinalMethodParameter"
+    "PhanUnusedProtectedMethodParameter"
+    "PhanUnusedProtectedFinalMethodParameter"
+    "PhanUnusedPrivateMethodParameter"
+    "PhanUnusedPrivateFinalMethodParameter"
+    "PhanUnusedClosureUseVariable"
+    "PhanUnusedClosureParameter"
+    "PhanUnusedGlobalFunctionParameter"
+    "PhanUnusedVariableValueOfForeachWithKey"
 
     ;; Issue::CATEGORY_REDEFINE
     "PhanRedefineClass"
@@ -231,6 +320,7 @@
     "PhanAccessClassConstantPrivate"
     "PhanAccessClassConstantProtected"
     "PhanAccessPropertyStaticAsNonStatic"
+    "PhanAccessPropertyNonStaticAsStatic"
     "PhanAccessOwnConstructor"
 
     "PhanAccessConstantInternal"
@@ -249,6 +339,12 @@
     ;; Issue::CATEGORY_COMPATIBLE
     "PhanCompatibleExpressionPHP7"
     "PhanCompatiblePHP7"
+    "PhanCompatibleNullableTypePHP70"
+    "PhanCompatibleShortArrayAssignPHP70"
+    "PhanCompatibleKeyedArrayAssignPHP70"
+    "PhanCompatibleVoidTypePHP70"
+    "PhanCompatibleIterableTypePHP70"
+    "PhanCompatibleNullableTypePHP71"
 
     ;; Issue::CATEGORY_GENERIC
     "PhanTemplateTypeConstant"
@@ -262,10 +358,13 @@
     "PhanMisspelledAnnotation"
     "PhanUnextractableAnnotation"
     "PhanUnextractableAnnotationPart"
+    "PhanUnextractableAnnotationSuffix"
+    "PhanUnextractableAnnotationElementName"
     "PhanCommentParamWithoutRealParam"
     "PhanCommentParamOnEmptyParamList"
     "PhanCommentOverrideOnNonOverrideMethod"
     "PhanCommentOverrideOnNonOverrideConstant"
+    "PhanCommentParamOutOfOrder"
     )
   "Issue names of Phan.
 
@@ -292,16 +391,18 @@ https://github.com/etsy/phan/wiki/Issue-Types-Caught-by-Phan")
 
 (defconst phan-log-mode-syntax-table
   (let ((table (make-syntax-table)))
-    (modify-syntax-entry ?_  "_" table)
-    (modify-syntax-entry ?\\ "_" table)
     (modify-syntax-entry ?$  "_" table)
-    (modify-syntax-entry ?|  "." table)
-    (modify-syntax-entry ?\( "_" table)
-    (modify-syntax-entry ?\) "_" table)
-    (modify-syntax-entry ?-  "." table)
+    (modify-syntax-entry ?-  "_" table)
     (modify-syntax-entry ?.  "_" table)
+    (modify-syntax-entry ?/  "_" table)
     (modify-syntax-entry ?:  "." table)
     (modify-syntax-entry ?>  "." table)
+    (modify-syntax-entry ?\( "_" table)
+    (modify-syntax-entry ?\) "_" table)
+    (modify-syntax-entry ?\\ "_" table)
+    (modify-syntax-entry ?_  "_" table)
+    (modify-syntax-entry ??  "_" table)
+    (modify-syntax-entry ?|  "_" table)
     table))
 
 (defconst phan-log-font-lock-keywords

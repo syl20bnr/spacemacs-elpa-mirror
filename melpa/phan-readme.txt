@@ -12,6 +12,3 @@ A major mode for viewing Phan log format.
 ## phan-find-config-file
 
 Open `.phan/config.php' of current directory.
-
-
-
