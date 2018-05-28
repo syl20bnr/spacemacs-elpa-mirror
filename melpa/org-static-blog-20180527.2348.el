@@ -2,8 +2,8 @@
 
 ;; Author: Bastian Bechtold
 ;; URL: https://github.com/bastibe/org-static-blog
-;; Package-Version: 20180418.2318
-;; Version: 1.2.0
+;; Package-Version: 20180527.2348
+;; Version: 1.2.1
 ;; Package-Requires: ((emacs "24.3"))
 
 ;;; Commentary:
@@ -36,11 +36,12 @@
 
 ;;; Code:
 
+(require 'org)
 (require 'ox-html)
 
 (defgroup org-static-blog nil
   "Settings for a static blog generator using org-mode"
-  :version "1.2.0"
+  :version "1.2.1"
   :group 'applications)
 
 (defcustom org-static-blog-publish-url "https://example.com/"
@@ -321,7 +322,7 @@ Posts are sorted in descending time."
     "<head>\n"
     "<meta charset=\"UTF-8\">\n"
     "<link rel=\"alternate\"\n"
-    "      type=\"appliation/rss+xml\"\n"
+    "      type=\"application/rss+xml\"\n"
     "      href=\"" org-static-blog-publish-url org-static-blog-rss-file "\"\n"
     "      title=\"RSS feed for " org-static-blog-publish-url "\"/>\n"
     "<title>" org-static-blog-publish-title "</title>\n"
@@ -440,7 +441,7 @@ blog post, but no post body."
       "<head>\n"
       "<meta charset=\"UTF-8\">\n"
       "<link rel=\"alternate\"\n"
-      "      type=\"appliation/rss+xml\"\n"
+      "      type=\"application/rss+xml\"\n"
       "      href=\"" org-static-blog-publish-url org-static-blog-rss-file "\"\n"
       "      title=\"RSS feed for " org-static-blog-publish-url "\">\n"
       "<title>" org-static-blog-publish-title "</title>\n"
@@ -495,7 +496,7 @@ blog post, sorted by tags, but no post body."
       "<head>\n"
       "<meta charset=\"UTF-8\">\n"
       "<link rel=\"alternate\"\n"
-      "      type=\"appliation/rss+xml\"\n"
+      "      type=\"application/rss+xml\"\n"
       "      href=\"" org-static-blog-publish-url org-static-blog-rss-file "\"\n"
       "      title=\"RSS feed for " org-static-blog-publish-url "\">\n"
       "<title>" org-static-blog-publish-title "</title>\n"

@@ -3,8 +3,8 @@
 ;; Copyright (C) 2012-2016 Free Software Foundation, Inc.
 
 ;; Author: @torgeir
-;; Version: 1.1.1
-;; Package-Version: 20180528.20
+;; Version: 1.2.0
+;; Package-Version: 20180528.48
 ;; Keywords: files helm ag vc git lines complete tools languages
 ;; Package-Requires: ((emacs "24.4") (helm "1.9.8"))
 ;; URL: https://github.com/torgeir/helm-lines.el/
@@ -83,31 +83,22 @@ Indents the line after inserting it."
     (start-process-shell-command name (format "*%s*" name) cmd)))
 
 
-(defun helm-lines--trim-newline (str)
-  "Trim newlines from STR."
-  (replace-regexp-in-string "\r?\n" "" str))
-
-
 (defun helm-lines--candidates (root)
   "Helm candidates by listing all lines under the current git ROOT."
-  (let* ((query (if (string-empty-p helm-pattern)
-                    "^.*$"
-                  helm-pattern))
-         (cmd (format (concat "ag"
-                              " --nocolor"
-                              " --nonumbers"
-                              " --nofilename"
-                              " --ignore .git"
-                              " --ignore target"
-                              " --ignore node_modules"
-                              " -i \"%s\""                ;; the pattern
-                              " %s"                       ;; the folder
-                              " | grep -Ev \"^$\""        ;; remove empty lines
-                              " | sed -E \"s/^[ \t]*//\"" ;; remove leading ws
-                              " | sort -u"                ;; unique
-                              " | head -n 100")
-                      (shell-quote-argument query)
-                      (shell-quote-argument root))))
+  (let* ((query (if (string-empty-p helm-pattern) "^.*$" helm-pattern))
+         (cmd (concat "ag"
+                      " --nocolor"
+                      " --nonumbers"
+                      " --nofilename"
+                      " --ignore .git"
+                      " --ignore target"
+                      " --ignore node_modules"
+                      " -i \"" (shell-quote-argument query) "\"" ;; the pattern
+                      " " (shell-quote-argument root)            ;; the folder
+                      " | grep -Ev \"^$\""                       ;; remove empty lines
+                      " | sed -E \"s/^[ \t]*//\""                ;; remove leading ws
+                      " | sort -u"                               ;; unique
+                      " | head -n 100")))
     (helm-lines--async-shell-command cmd)))
 
 
@@ -118,7 +109,7 @@ Indents the line after inserting it."
     (user-error "Helm-lines: Could not find executable `ag', did you install it? https://github.com/ggreer/the_silver_searcher"))
   (let ((git-root (expand-file-name (or (funcall helm-lines-project-root-function)
                                         (error "Couldn't determine project root")))))
-    (helm :input (helm-lines--trim-newline (thing-at-point 'line t))
+    (helm :input (string-trim (thing-at-point 'line t))
           :sources (helm-build-async-source "Complete line in project"
                      :candidates-process (lambda () (helm-lines--candidates git-root))
                      :action 'helm-lines--action)
