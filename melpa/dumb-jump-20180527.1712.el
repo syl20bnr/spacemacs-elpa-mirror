@@ -2,7 +2,7 @@
 ;; Copyright (C) 2015-2018 jack angers
 ;; Author: jack angers
 ;; Version: 0.5.2
-;; Package-Version: 20180507.2133
+;; Package-Version: 20180527.1712
 ;; Package-Requires: ((emacs "24.3") (f "0.20.0") (s "1.11.0") (dash "2.9.0") (popup "0.5.3"))
 ;; Keywords: programming
 
@@ -1037,6 +1037,33 @@ or most optimal searcher."
                    "functor test (T:TEST) ="
                    "functor test(T:TEST) ="))
 
+    ;; sql
+    (:type "function" :supports ("ag" "grep" "rg" "git-grep") :language "sql"
+           :regex "(CREATE|create)\\s+(.+?\\s+)?(FUNCTION|function|PROCEDURE|procedure)\\s+JJJ\\s*\\\("
+           :tests ("CREATE FUNCTION test(i INT) RETURNS INT"
+                   "create or replace function test (int)"
+                   "CREATE PROCEDURE test (OUT p INT)"
+                   "create definer = 'test'@'localhost' procedure test()"))
+
+    (:type "table" :supports ("ag" "grep" "rg" "git-grep") :language "sql"
+           :regex "(CREATE|create)\\s+(.+?\\s+)?(TABLE|table)(\\s+(IF NOT EXISTS|if not exists))?\\s+JJJ\\b"
+           :tests ("CREATE TABLE test ("
+                   "create temporary table if not exists test"
+                   "CREATE TABLE IF NOT EXISTS test ("
+                   "create global temporary table test"))
+
+    (:type "view" :supports ("ag" "grep" "rg" "git-grep") :language "sql"
+           :regex "(CREATE|create)\\s+(.+?\\s+)?(VIEW|view)\\s+JJJ\\b"
+           :tests ("CREATE VIEW test ("
+                   "create sql security definer view test"
+                   "CREATE OR REPLACE VIEW test AS foo"))
+
+    (:type "type" :supports ("ag" "grep" "rg" "git-grep") :language "sql"
+           :regex "(CREATE|create)\\s+(.+?\\s+)?(TYPE|type)\\s+JJJ\\b"
+           :tests ("CREATE TYPE test"
+                   "CREATE OR REPLACE TYPE test AS foo ("
+                   "create type test as ("))
+
     ;; systemverilog
     (:type "type" :supports ("ag" "grep" "rg" "git-grep") :language "systemverilog"
            :regex "\\s*class\\s+\\bJJJ\\b"
@@ -1213,6 +1240,7 @@ or most optimal searcher."
     (:language "shell" :ext "ksh" :agtype nil :rgtype nil)
     (:language "shell" :ext "tcsh" :agtype nil :rgtype nil)
     (:language "sml" :ext "sml" :agtype "sml" :rgtype "sml")
+    (:language "sql" :ext "sql" :agtype "sql" :rgtype "sql")
     (:language "swift" :ext "swift" :agtype nil :rgtype "swift")
     (:language "tex" :ext "tex" :agtype "tex" :rgtype "tex")
     (:language "elixir" :ext "ex" :agtype "elixir" :rgtype "elixir")
