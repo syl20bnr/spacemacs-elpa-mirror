@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/lispyville
-;; Package-Version: 20180506.1633
+;; Package-Version: 20180528.1157
 ;; Created: March 03, 2016
 ;; Keywords: vim, evil, lispy, lisp, parentheses
 ;; Package-Requires: ((lispy "0") (evil "1.2.12") (cl-lib "0.5") (emacs "24.4"))
@@ -137,7 +137,7 @@ to a non-nil value."
 
 (defcustom lispyville-insert-states '(insert emacs hybrid iedit-insert)
   "Insertion states that lispy special can be used from."
-  :group 'lispyvilles
+  :group 'lispyville
   :type 'list)
 
 (defface lispyville-special-face
@@ -197,20 +197,22 @@ Closing delimiters inside strings and comments are ignored."
 (defun lispyville--after-left-p ()
   "Return whether the point is after an opening delimiters.
 Opening delimiters inside strings and comments are ignored."
-  (save-excursion
-    (backward-char)
-    (lispyville--at-left-p)))
+  (unless (bobp)
+    (save-excursion
+      (backward-char)
+      (lispyville--at-left-p))))
 
 (defun lispyville--after-delimiter-p ()
   "Return whether the point is after an opening or closing delimiter."
-  (let ((lispy-delimiters (concat (substring lispy-right 0 -1)
-                                  "\""
-                                  (substring lispy-left 1))))
-    (and (not (lispy--in-string-or-comment-p))
-         (lispy-looking-back lispy-delimiters)
-         (save-excursion
-           (backward-char)
-           (not (looking-back "\\\\" (- (point) 2)))))))
+  (unless (bobp)
+    (let ((lispy-delimiters (concat (substring lispy-right 0 -1)
+                                    "\""
+                                    (substring lispy-left 1))))
+      (and (not (lispy--in-string-or-comment-p))
+           (lispy-looking-back lispy-delimiters)
+           (save-excursion
+             (backward-char)
+             (not (looking-back "\\\\" (- (point) 2))))))))
 
 (defun lispyville--yank-text (text &optional type register yank-handler)
   "Like `evil-yank-characters' but takes TEXT directly instead of a region.
@@ -261,9 +263,10 @@ When DELETE is non-nil, delete the safe part of the region."
   "Like `lispy-splice' but also splice strings."
   (save-excursion
     (if (looking-at "\"")
-        (cond ((save-excursion
-                 (backward-char)
-                 (lispy--in-string-p))
+        (cond ((and (not (bobp))
+                    (save-excursion
+                      (backward-char)
+                      (lispy--in-string-p)))
                (let ((right-quote (point)))
                  (lispy--exit-string)
                  (save-excursion

@@ -4,8 +4,8 @@
 
 ;; Author: Christopher Wellons <wellons@nullprogram.com>
 ;; URL: https://github.com/skeeto/x86-lookup
-;; Package-Version: 1.1.1
-;; Version: 1.1.1
+;; Package-Version: 1.2.0
+;; Version: 1.2.0
 ;; Package-Requires: ((emacs "24.3") (cl-lib "0.3"))
 
 ;;; Commentary:
@@ -78,6 +78,8 @@ This function accepts two arguments: filename and page number."
                                 x86-lookup-browse-pdf-zathura)
                  (function-item :tag "MuPDF" :value
                                 x86-lookup-browse-pdf-mupdf)
+                 (function-item :tag "Sumatra PDF" :value
+                                x86-lookup-browse-pdf-sumatrapdf)
                  (function-item :tag "browse-url"
                                 :value x86-lookup-browse-pdf-browser)
                  (function :tag "Your own function")))
@@ -139,9 +141,13 @@ This function accepts two arguments: filename and page number."
 (cl-defun x86-lookup-create-index (&optional (pdf x86-lookup-pdf))
   "Create an index alist from PDF mapping mnemonics to page numbers.
 This function requires the pdftotext command line program."
-  (let ((mnemonic (concat "INSTRUCTION SET REFERENCE, [A-Z]-[A-Z]\n\n"
-                          "\\([[:alnum:]/ ]+\\)[- ]?—"))
-        (case-fold-search nil))
+  (let ((mnemonic (concat "\\(?:.*\n\n?\\)?"
+                          "\\([[:alnum:]/[:blank:]]+\\)[[:blank:]]*"
+                          "\\(?:--\\|—\\)\\(?:.*\n\n?\\)\\{1,3\\}"
+                          "[[:blank:]]*Opcode"))
+        (coding-system-for-read 'utf-8)
+        (coding-system-for-write 'utf-8)
+        (case-fold-search t))
     (with-temp-buffer
       (call-process x86-lookup-pdftotext-program nil t nil
                     (file-truename pdf) "-")
@@ -193,6 +199,21 @@ This function requires the pdftotext command line program."
         (setf x86-lookup-index (x86-lookup-create-index))
         (x86-lookup--save-index x86-lookup-pdf x86-lookup-index)))))
   x86-lookup-index)
+
+(defun x86-lookup-ensure-and-update-index ()
+  "Ensure the PDF index has been created and (unconditionally) updated.
+Useful for forcibly syncing the index with the current PDF without resorting
+to manual deletion of index file on filesystem."
+  (interactive)
+  (cond
+   ((null x86-lookup-pdf)
+    (error "No PDF available. Set `x86-lookup-pdf'."))
+   ((not (file-exists-p x86-lookup-pdf))
+    (error "PDF not found. Check `x86-lookup-pdf'."))
+   ((message "Generating mnemonic index ...")
+    (setf x86-lookup-index (x86-lookup-create-index))
+    (x86-lookup--save-index x86-lookup-pdf x86-lookup-index)
+    (message "Finished generating mnemonic index."))))
 
 (defun x86-lookup-browse-pdf (pdf page)
   "Launch a PDF viewer using `x86-lookup-browse-pdf-function'."
@@ -254,6 +275,10 @@ Defaults to the mnemonic under point."
   "View PDF at PAGE using zathura."
   (start-process "zathura" nil "zathura" "-P" (format "%d" page) "--" pdf))
 
+(defun x86-lookup-browse-pdf-sumatrapdf (pdf page)
+  "View PDF at PAGE using Sumatra PDF."
+  (start-process "sumatrapdf" nil "sumatrapdf" "-page" (format "%d" page) pdf))
+
 (defun x86-lookup-browse-pdf-mupdf (pdf page)
   "View PDF at PAGE using MuPDF."
   ;; MuPDF doesn't have a consistent name across platforms.
@@ -277,6 +302,7 @@ Defaults to the mnemonic under point."
       (ignore-errors (x86-lookup-browse-pdf-gv pdf page))
       (ignore-errors (x86-lookup-browse-pdf-zathura pdf page))
       (ignore-errors (x86-lookup-browse-pdf-mupdf pdf page))
+      (ignore-errors (x86-lookup-browse-pdf-sumatrapdf pdf page))
       (ignore-errors (x86-lookup-browse-pdf-browser pdf page))
       (error "Could not find a PDF viewer.")))
 

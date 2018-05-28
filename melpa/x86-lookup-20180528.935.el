@@ -4,8 +4,8 @@
 
 ;; Author: Christopher Wellons <wellons@nullprogram.com>
 ;; URL: https://github.com/skeeto/x86-lookup
-;; Package-Version: 20180321.1802
-;; Version: 1.1.1
+;; Package-Version: 20180528.935
+;; Version: 1.2.0
 ;; Package-Requires: ((emacs "24.3") (cl-lib "0.3"))
 
 ;;; Commentary:

@@ -2,8 +2,8 @@
 
 ;; Author: Bastian Bechtold
 ;; URL: http://github.com/bastibe/org-journal
-;; Package-Version: 1.13.4
-;; Version: 1.13.4
+;; Package-Version: 1.14.0
+;; Version: 1.14.0
 ;; Package-Requires: ((emacs "25.1"))
 
 ;;; Commentary:
@@ -99,7 +99,7 @@ org-journal. Use org-journal-file-format instead.")
 ; Customizable variables
 (defgroup org-journal nil
   "Settings for the personal journal"
-  :version "1.13.4"
+  :version "1.14.0"
   :group 'applications)
 
 (defface org-journal-highlight
@@ -277,12 +277,29 @@ If no TIME is given, uses the current time."
   "Open today's journal file and start a new entry.
 Giving the command a PREFIX arg will just open a today's file,
 without adding an entry. If given a TIME, create an entry for the
-time's day.
+time's day. If no TIME was given, use the current time (which is
+interpreted as belonging to yesterday if smaller than
+`org-extend-today-until`).
 
 Whenever a journal entry is created the
 `org-journal-after-entry-create-hook' hook is run"
   (interactive "P")
   (org-journal-dir-check-or-create)
+
+  ;; if time is before org-extend-today-until, interpret it as
+  ;; part of the previous day:
+  (let ((now (decode-time nil)))
+    (if (and (not time) ; time was not given
+             (< (nth 2 now)
+                org-extend-today-until))
+        (setq time (encode-time (nth 0 now)      ; second
+                                (nth 1 now)      ; minute
+                                (nth 2 now)      ; hour
+                                (1- (nth 3 now)) ; day
+                                (nth 4 now)      ; month
+                                (nth 5 now)      ; year
+                                (nth 8 now)))))  ; timezone
+
   (let* ((entry-path (org-journal-get-entry-path time))
          (should-add-entry-p (not prefix)))
 
@@ -350,7 +367,8 @@ previous day's file to the current file."
                  subtree))))
         (org-journal-open-previous-entry)
         (setq all-todos (org-map-entries delete-mapper
-                                         org-journal-carryover-items))))
+                                         org-journal-carryover-items))
+        (save-buffer)))
     (switch-to-buffer current-buffer-name)
     (when all-todos
       (unless (eq (current-column) 0) (insert "\n"))
@@ -366,8 +384,7 @@ previous day's file to the current file."
                      (point)))
          (subtree (buffer-substring-no-properties start end)))
     (when delete-p
-      (delete-region start end)
-      (save-buffer))
+      (delete-region start end))
     subtree))
 
 (defun org-journal-time-entry-level ()
@@ -451,7 +468,7 @@ If the date is in the future, create a schedule entry."
           (find-file filename)
           (org-journal-decrypt)
           (view-mode (if view-mode-p 1 -1))
-          (org-show-subtree))
+          (if (org-at-heading-p) (org-show-subtree)))
       (message "No next journal entry after this one"))))
 
 (defun org-journal-open-previous-entry ()
@@ -476,7 +493,7 @@ If the date is in the future, create a schedule entry."
           (find-file filename)
           (org-journal-decrypt)
           (view-mode (if view-mode-p 1 -1))
-          (org-show-subtree))
+          (if (org-at-heading-p) (org-show-subtree)))
       (message "No previous journal entry before this one"))))
 
 ;;
@@ -543,7 +560,7 @@ If the date is in the future, create a schedule entry."
                 (setq view-exit-action 'kill-buffer))
               (set (make-local-variable 'org-hide-emphasis-markers) t)
               (org-journal-decrypt)
-              (org-show-subtree))
+              (if (org-at-heading-p) (org-show-subtree)))
             (if (not noselect)
                 (funcall org-journal-find-file org-journal-file)
               (display-buffer buf t))))
