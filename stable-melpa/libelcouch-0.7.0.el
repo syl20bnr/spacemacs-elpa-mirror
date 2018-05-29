@@ -4,10 +4,10 @@
 
 ;; Author: Damien Cassou <damien@cassou.me>
 ;; Keywords: tools
-;; Package-Version: 0.6.0
+;; Package-Version: 0.7.0
 ;; Url: https://gitlab.petton.fr/elcouch/libelcouch/
 ;; Package-requires: ((emacs "25.1") (request "0.3.0"))
-;; Version: 0.6.0
+;; Version: 0.7.0
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -204,6 +204,18 @@ considered to have failed."
    :type "PUT"
    :headers '(("Content-Type" . "application/json"))
    :data (or content (encode-coding-string (buffer-substring-no-properties (point-min) (point-max)) 'utf-8))
+   :success (cl-function (lambda (&rest _args) (funcall function)))
+   :error #'libelcouch--request-error)
+  nil)
+
+(defun libelcouch-document-delete (document revision function)
+  "Delete DOCUMENT at REVISION and evaluate FUNCTION."
+  (request
+   (url-encode-url (libelcouch-entity-url document))
+   :type "DELETE"
+   :params `(("rev" . ,revision))
+   :headers '(("Content-Type" . "application/json")
+              ("Accept" . "application/json"))
    :success (cl-function (lambda (&rest _args) (funcall function)))
    :error #'libelcouch--request-error)
   nil)
