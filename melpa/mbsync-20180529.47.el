@@ -4,7 +4,7 @@
 
 ;; Author: Dimitri Fontaine <dim@tapoueh.org>
 ;; Version: 0.1.2
-;; Package-Version: 20171130.335
+;; Package-Version: 20180529.47
 ;; URL: https://github.com/dimitri/mbsync-el
 
 ;; This file is NOT part of GNU Emacs.
@@ -131,10 +131,11 @@ Arguments PROC, STRING as in `set-process-filter'."
         ;; errors
         (goto-char mbsync-process-filter-pos)
         (while (re-search-forward (rx (or
-                                       (and bol "Maildir error:" (* anything) eol)
-                                       (and bol "Error:" (* anything) eol)
-                                       (and bol "gpg: decryption failed: " (* anything) eol)
-                                       (and bol "Skipping account " (* anything) eol) ))
+                                       (and bol "Maildir error:" (* nonl) eol)
+                                       (and bol "Error:" (* nonl) eol)
+                                       (and (* nonl) ": unknown keyword " (* nonl) eol)
+                                       (and bol "gpg: decryption failed: " (* nonl) eol)
+                                       (and bol "Skipping account " (* nonl) eol) ))
                                   nil t)
           (message "%s" (match-string 0))
           (overlay-put (make-overlay (match-beginning 0)
@@ -151,7 +152,9 @@ Arguments PROC, STRING as in `set-process-filter'."
   "Mail sync is over, message it then run `mbsync-exit-hook'.
 Arguments PROC, CHANGE as in `set-process-sentinel'."
   (when (eq (process-status proc) 'exit)
-    (mbsync-log 'normal "mbsync is done")
+    (mbsync-log 'normal (format "mbsync is done: %s" change))
+    (when (not (eq (process-exit-status proc) 0))
+      (switch-to-buffer-other-window (process-buffer proc)))
     (run-hooks 'mbsync-exit-hook)))
 
 (defun mbsync-get-proc ()
