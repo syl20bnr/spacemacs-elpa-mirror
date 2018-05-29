@@ -5,7 +5,7 @@
 ;; Author: Damien Cassou <damien@cassou.me>,
 ;;         Nicolas Petton <nicolas@petton.fr>
 ;; Version: 4.0.1
-;; Package-Version: 20180326.8
+;; Package-Version: 20180529.657
 ;; Package-Requires: ((emacs "25"))
 ;; Url: https://github.com/DamienCassou/auth-password-store
 ;; Created: 07 Jun 2015
@@ -149,11 +149,6 @@ CONTENTS is the contents of a password-store formatted file."
                               (cons (car pair)
                                     (mapconcat #'identity (cdr pair) ":")))))
                         (cdr lines)))))
-
-(defun auth-source-pass--user-match-p (entry user)
-  "Return non-nil iff ENTRY match USER."
-  (or (null user)
-      (string= user (auth-source-pass-get "user" entry))))
 
 (defun auth-source-pass--do-debug (&rest msg)
   "Call `auth-source-do-debug` with MSG and a prefix."

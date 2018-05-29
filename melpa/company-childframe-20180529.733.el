@@ -5,7 +5,7 @@
 ;; Author: Clément Pit-Claudel, Feng Shu
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/company-mode/company-mode
-;; Package-Version: 20180510.2342
+;; Package-Version: 20180529.733
 ;; Version: 0.1.0
 ;; Keywords: abbrev, convenience, matching
 ;; Package-Requires: ((emacs "26.0")(company "0.9.0")(posframe "0.1.0"))
@@ -82,8 +82,7 @@ Using current frame's font if it it nil."
 (defvar company-childframe-buffer " *company-childframe-buffer*"
   "Company-childframe's buffer which used by posframe.")
 
-(defvar company-childframe-notification
-  "[Company-childframe]: Requires emacs (version >= 26.0.91).")
+(defvar company-childframe-notification "")
 
 (defun company-childframe-show ()
   "Show company-childframe candidate menu."
