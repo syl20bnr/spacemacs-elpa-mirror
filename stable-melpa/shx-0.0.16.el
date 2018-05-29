@@ -3,10 +3,10 @@
 ;; Authors: Chris Rayner (dchrisrayner @ gmail)
 ;; Created: May 23 2011
 ;; Keywords: processes, tools
-;; Package-Version: 0.0.15
+;; Package-Version: 0.0.16
 ;; URL: https://github.com/riscy/shx-for-emacs
 ;; Package-Requires: ((emacs "24.4"))
-;; Version: 0.0.15
+;; Version: 0.0.16
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -95,6 +95,10 @@
 (defcustom shx-comint-advise t
   "Whether to advise the behavior of a number of `comint-mode' functions."
   :type 'boolean)
+
+(defcustom shx-flash-prompt-time 0.25
+  "Length of time (in seconds) the prompt flashes, when so advised."
+  :type 'float)
 
 (defcustom shx-show-hints t
   "Whether to echo hints when running certain commands."
@@ -198,8 +202,8 @@ In normal circumstances this input is additionally filtered by
   "Before sending to PROCESS, filter the INPUT.
 That means, if INPUT is a shx-command, do that command instead.
 This function overrides `comint-input-sender'."
-  (let* ((match (string-match (concat "^" shx-leader shx-cmd-syntax)
-                              (string-trim-left input)))
+  (let* ((regexp (concat "^" shx-leader shx-cmd-syntax))
+         (match (string-match regexp (string-trim-left input)))
          (shx-cmd (and match (shx--get-user-cmd (match-string 1 input)))))
     (if (not shx-cmd)
         (comint-simple-send process input)
@@ -269,7 +273,7 @@ buffer's `process-mark'."
                    (set-buffer originating-buffer)
                    ;; some shx commands might add an extra newline:
                    (and (zerop (current-column))
-                        (not (eq 1 (point)))
+                        (/= (point) 1)
                         (delete-char 1)))))))))
 
 (defun shx--parse-output-for-triggers ()
@@ -367,13 +371,11 @@ With non-nil WITHOUT-PREFIX, strip `shx-cmd-prefix' from each."
 
 (defun shx--get-timer-list ()
   "Get the list of resident timers."
-  (let ((timer-list-1 (copy-sequence timer-list)))
-    (setq timer-list-1
-          (mapcar (lambda (timer) (when (shx--timer-by-shx-p timer) timer))
-                  timer-list-1))
-    (setq timer-list-1 (remove nil timer-list-1))
+  (let ((timer-list-1 (mapcar
+                       (lambda (timer) (when (shx--timer-by-shx-p timer) timer))
+                       timer-list)))
     ;; sort the timers for consistency
-    (sort timer-list-1
+    (sort (remove nil timer-list-1)
           (lambda (first-timer second-timer)
             (string< (format "%s" (aref first-timer 5))
                      (format "%s" (aref second-timer 5)))))))
@@ -444,14 +446,14 @@ not nil, then insert the command into the current buffer."
 '^pattern^replacement', and if the prompt is a colon, SPC and q
 are sent straight through to the process to handle paging."
   (interactive)
-  (let ((on-last-line (shx-point-on-input-p)))
-    (if (and on-last-line
+  (let ((on-input (shx-point-on-input-p)))
+    (if (and on-input
              (string-match ".*:$" (shx--current-prompt))
              (string-match "^\\s-*$" (shx--current-input)))
         (progn
           (message "shx: sending '%s'" (this-command-keys))
           (process-send-string nil (this-command-keys)))
-      (unless on-last-line (goto-char (point-max)))
+      (unless on-input (goto-char (point-max)))
       (if shx-use-magic-insert
           (comint-magic-space 1)
         (self-insert-command 1)))))
@@ -468,8 +470,8 @@ are sent straight through to the process to handle paging."
     string))
 
 (defun shx-insert (&rest args)
-  "Insert ARGS, combined using `shx-cat'."
-  (insert (apply 'shx-cat args)))
+  "Insert ARGS as an output field, combined using `shx-cat'."
+  (insert (propertize (apply 'shx-cat args) 'field 'output)))
 
 (defun shx-insert-filenames (&rest files)
   "Insert FILES, propertized to be clickable."
@@ -526,12 +528,10 @@ LINE-STYLE (for example 'w lp'); insert the plot in the buffer."
 
 (defun shx--format-timer-string (timer)
   "Create a human-readable string out of TIMER."
-  (let* ((timer-string (string-remove-prefix
-                        "(lambda nil (shx--auto "
-                        (string-remove-suffix
-                         "))"
-                         (format "%s" (aref timer 5))))))
-    (concat "[" timer-string "]")))
+  (let* ((str (format "%s" (aref timer 5)))
+         (output (string-remove-prefix "(lambda nil (shx--auto "
+                                       (string-remove-suffix "))" str))))
+    (concat "[" output "]")))
 
 
 ;;; asynch functions
@@ -650,7 +650,7 @@ therefore ensure `comint-prompt-read-only' is nil."
 \nExample:\n
   :diff file1.txt \"file 2.csv\""
   (setq files (shx-tokenize files))
-  (if (not (eq (length files) 2))
+  (if (/= (length files) 2)
       (shx-insert 'error "diff <file1> <file2>\n")
     (shx-insert "Diffing " 'font-lock-doc-face (car files) 'default
                 " and " 'font-lock-doc-face (cadr files) 'default "\n")
@@ -972,10 +972,11 @@ This function only works when the shx minor mode is active."
 
 (defun shx-flash-prompt (&rest _args)
   "Flash the text on the line with the highlight face."
-  (setq-local shx-prompt-overlay (make-overlay (point) (point-at-eol)))
-  (overlay-put shx-prompt-overlay 'face 'highlight)
-  (sit-for 1)
-  (delete-overlay shx-prompt-overlay))
+  (when (> shx-flash-prompt-time 0)
+    (setq-local shx-prompt-overlay (make-overlay (point) (point-at-eol)))
+    (overlay-put shx-prompt-overlay 'face 'highlight)
+    (sit-for shx-flash-prompt-time)
+    (delete-overlay shx-prompt-overlay)))
 
 (defun shx-snap-to-top (&rest _args)
   "Recenter window so the current line is at the top.
@@ -999,8 +1000,6 @@ This function only works when the shx minor mode is active."
   (advice-add #'comint-next-input :before #'shx-show-output)
   (advice-add #'comint-kill-input :before #'shx-show-output)
   (advice-add #'comint-send-eof :before #'shx-show-output)
-  (advice-add #'comint-previous-prompt :after #'shx-snap-to-top)
-  (advice-add #'comint-previous-prompt :after #'shx-flash-prompt)
   (advice-add #'comint-next-prompt :after #'shx-snap-to-top)
   (advice-add #'comint-next-prompt :after #'shx-flash-prompt))
 

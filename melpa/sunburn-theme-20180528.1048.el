@@ -5,7 +5,7 @@
 
 ;; Author: Martín Varela (martin@varela.fi)
 ;; URL: http://github.com/mvarela/Sunburn-Theme
-;; Package-Version: 20180414.2312
+;; Package-Version: 20180528.1048
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "24"))
 
@@ -158,7 +158,7 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(lazy-highlight ((t (:foreground ,sunburn-yellow-2 :weight bold :background ,sunburn-bg-05))))
 
    `(menu ((t (:foreground ,sunburn-fg :background ,sunburn-bg))))
-   `(minibuffer-prompt ((t (:foreground ,sunburn-yellow))))
+   `(minibuffer-prompt ((t (:background ,sunburn-bg-05 :foreground ,sunburn-yellow))))
    `(mode-line
      ((,class (:foreground ,sunburn-fg+1
                            :background ,sunburn-bg-05
@@ -824,15 +824,16 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(magit-diff-file-heading-highlight ((t (:background ,sunburn-bg+05  :weight bold))))
    `(magit-diff-file-heading-selection ((t (:background ,sunburn-bg+05
                                                         :foreground ,sunburn-orange :weight bold))))
-   `(magit-diff-hunk-heading           ((t (:background ,sunburn-bg+1))))
-   `(magit-diff-hunk-heading-highlight ((t (:background ,sunburn-bg+2))))
+   `(magit-diff-hunk-heading           ((t (:background ,sunburn-bg-05))))
+   `(magit-diff-hunk-heading-highlight ((t (:foreground ,sunburn-bg-05 :background ,sunburn-gold))))
    `(magit-diff-hunk-heading-selection ((t (:background ,sunburn-bg+2
                                                         :foreground ,sunburn-orange))))
-   `(magit-diff-lines-heading          ((t (:background ,sunburn-orange
-                                                        :foreground ,sunburn-bg+2))))
+   `(magit-diff-lines-heading          ((t (:background ,sunburn-red+1
+                                                        :foreground ,sunburn-bg-2))))
    `(magit-diff-context-highlight      ((t (:background ,sunburn-bg-1
                                                         :foreground ,sunburn-fg-1))))
    `(magit-diffstat-added   ((t (:foreground ,sunburn-green+4))))
+   `(magit-diff-whitespace-warning ((t (:background ,sunburn-red :foreground ,sunburn-fg+1))))
    `(magit-diffstat-removed ((t (:foreground ,sunburn-red))))
 ;;;;;; popup
    `(magit-popup-heading             ((t (:foreground ,sunburn-yellow  :weight bold))))

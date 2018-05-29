@@ -6,7 +6,7 @@
 ;; Keywords: extensions, multimedia, tools
 ;; Homepage: https://github.com/vermiculus/ghub-plus
 ;; Package-Requires: ((emacs "25") (ghub "1.2") (apiwrap "0.4"))
-;; Package-Version: 20180519.1143
+;; Package-Version: 20180528.1158
 ;; Package-X-Original-Version: 0.2.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -196,7 +196,7 @@ See `ghubp--catch'"
   `(ghubp-override-context unpaginate t ,@body))
 
 (defmacro ghubp-override-context (context new-value &rest body)
-  "Execute body while manually overriding CONTEXT with NEW-VALUE.
+  "Execute BODY while manually overriding CONTEXT with NEW-VALUE.
 NEW-VALUE takes precedence over anything that
 `ghubp-contextualize-function' provides for CONTEXT, but
 `ghubp-contextualize-function' is otherwise respected."
@@ -282,26 +282,32 @@ This method is intended for use with callbacks."
     (ghubp-request method (url-filename url) params data)))
 
 (defun ghubp-follow-get    (resource &optional params data)
-  "GET wrapper for `ghubp-follow'."
+  "GET wrapper for `ghubp-follow'.
+See that documentation for RESOURCE, PARAMS, and DATA."
   (ghubp--follow 'get    resource params data))
 (defun ghubp-follow-put    (resource &optional params data)
-  "PUT wrapper for `ghubp-follow'."
+  "PUT wrapper for `ghubp-follow'.
+See that documentation for RESOURCE, PARAMS, and DATA."
   (ghubp--follow 'put    resource params data))
 (defun ghubp-follow-head   (resource &optional params data)
-  "HEAD wrapper for `ghubp-follow'."
+  "HEAD wrapper for `ghubp-follow'.
+See that documentation for RESOURCE, PARAMS, and DATA."
   (ghubp--follow 'head   resource params data))
 (defun ghubp-follow-post   (resource &optional params data)
-  "POST wrapper for `ghubp-follow'."
+  "POST wrapper for `ghubp-follow'.
+See that documentation for RESOURCE, PARAMS, and DATA."
   (ghubp--follow 'post   resource params data))
 (defun ghubp-follow-patch  (resource &optional params data)
-  "PATCH wrapper for `ghubp-follow'."
+  "PATCH wrapper for `ghubp-follow'.
+See that documentation for RESOURCE, PARAMS, and DATA."
   (ghubp--follow 'patch  resource params data))
 (defun ghubp-follow-delete (resource &optional params data)
-  "DELETE wrapper for `ghubp-follow'."
+  "DELETE wrapper for `ghubp-follow'.
+See that documentation for RESOURCE, PARAMS, and DATA."
   (ghubp--follow 'delete resource params data))
 
 (defun ghubp-base-html-url ()
-  "Get the base HTML URL from `ghub-default-host'"
+  "Get the base HTML URL from `ghub-default-host'."
   (if-let ((host (car (ignore-errors
 			(process-lines "git" "config" "github.host")))))
       (and (string-match (rx bos (group (* any)) "/api/v3" eos) host)
@@ -317,7 +323,7 @@ This method is intended for use with callbacks."
   (ghub--username (ghub--host)))
 
 (defun ghubp-token (package)
-  "Exposes `ghub--token' in a friendly way."
+  "Exposes `ghub--token' for PACKAGE in a friendly way."
   (let* ((host (ghub--host))
          (user (ghub--username host)))
     (ghub--token host user package t)))
