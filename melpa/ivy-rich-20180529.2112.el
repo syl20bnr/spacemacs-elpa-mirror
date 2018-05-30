@@ -4,7 +4,7 @@
 
 ;; Author: Yevgnen Koh <wherejoystarts@gmail.com>
 ;; Package-Requires: ((emacs "24.4") (ivy "0.8.0"))
-;; Package-Version: 20180314.1909
+;; Package-Version: 20180529.2112
 ;; Version: 0.0.4
 ;; Keywords: ivy
 
@@ -129,11 +129,11 @@ Note that this variable takes effect only when
   "Use space to pad STR to LEN of length.
 
 When LEFT is not nil, pad from left side."
-  (let ((str-len (length str)))
+  (let ((str-len (string-width str)))
     (cond ((< str-len len)
            (if left
-               (concat (make-string (- len (length str)) ? ) str)
-             (concat str (make-string (- len (length str)) ? ))))
+               (concat (make-string (- len (string-width str)) ? ) str)
+             (concat str (make-string (- len (string-width str)) ? ))))
           ((> str-len len)
            (format "%s…" (substring str 0 (1- len))))
           (t str))))

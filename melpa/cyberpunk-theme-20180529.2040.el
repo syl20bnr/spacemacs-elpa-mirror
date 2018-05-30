@@ -4,7 +4,7 @@
 
 ;; Author: Nicholas M. Van Horn <nvanhorn@protonmail.com>
 ;; Keywords: color theme cyberpunk
-;; Package-Version: 20180501.2010
+;; Package-Version: 20180529.2040
 ;; Version: 1.20
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -121,7 +121,7 @@
    `(default ((,class (:foreground ,cyberpunk-gray :background ,cyberpunk-black))))
    `(cursor ((,class (:background ,cyberpunk-fg))))
    `(escape-glyph-face ((,class (:foreground ,cyberpunk-red))))
-   ;; `(fringe ((,class (:foreground ,cyberpunk-fg :background ,cyberpunk-bg+1))))
+   `(fringe ((,class (:foreground ,cyberpunk-fg :background ,cyberpunk-bg-1))))
    `(header-line ((,class (:foreground ,cyberpunk-yellow
                                        :background ,cyberpunk-bg-1
                                        :box (:line-width -1 :style released-button)))))
@@ -813,6 +813,11 @@
    ;; yascroll
    `(yascroll:thumb-text-area ((,class (:background ,cyberpunk-bg-1))))
    `(yascroll:thumb-fringe ((,class (:background ,cyberpunk-bg-1 :foreground ,cyberpunk-bg-1))))
+
+   ;; customize
+   `(custom-button ((,class (:box (:line-width 2 :style released-button)
+                                  :background ,cyberpunk-bg-05 :foreground ,cyberpunk-fg))))
+   `(custom-button-unraised ((,class (:background ,cyberpunk-bg-05 :foreground ,cyberpunk-fg))))
    )
 
   ;;; custom theme variables
