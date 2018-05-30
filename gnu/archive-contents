@@ -1248,12 +1248,12 @@
 	     ((:keywords "convenience" "emulation")
 	      (:url . "http://github.com/joaotavora/yasnippet"))])
  (yasnippet-classic-snippets .
-			     [(1 0 1)
+			     [(1 0 2)
 			      ((yasnippet
 				(0 9 1)))
-			      "\"Classic\" yasnippet snippets" single
-			      ((:url . "http://elpa.gnu.org/packages/yasnippet-classic-snippets.html")
-			       (:keywords "snippets"))])
+			      "\"Classic\" yasnippet snippets" tar
+			      ((:keywords "snippets")
+			       (:url . "http://elpa.gnu.org/packages/yasnippet-classic-snippets.html"))])
  (ztree .
 	[(1 0 5)
 	 ((cl-lib
