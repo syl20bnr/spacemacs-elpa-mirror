@@ -220,15 +220,15 @@ Documentation:
             (domain (url-host parsed-url))
             (path (url-filename parsed-url))
             (output (shell-command-to-string
- 		     (concat "ipfs add -r "
- 			     (concat output-folder domain))))
+                  (concat "ipfs add -r "
+                          (concat output-folder domain))))
             (ipref
- 	     (nth 1 (split-string
- 		     (car (last (split-string output "\n" t))) " "))))
+          (nth 1 (split-string
+                  (car (last (split-string output "\n" t))) " "))))
        (with-current-buffer (get-buffer-create "*org-board-post-archive*")
          (princ (format "your file is at %s\n"
- 			(concat "http://localhost:8080/ipfs/" ipref path))
- 		(current-buffer))))))
+                     (concat "http://localhost:8080/ipfs/" ipref path))
+             (current-buffer))))))
 
  (eval-after-load "org-board"
    '(add-hook 'org-board-after-archive-functions 'org-board-add-to-ipfs))

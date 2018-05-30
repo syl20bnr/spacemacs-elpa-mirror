@@ -1,7 +1,7 @@
 ;;; lsp-java.el --- Java support for lsp-mode
 
 ;; Version: 1.0
-;; Package-Version: 20180525.411
+;; Package-Version: 20180530.859
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "3.0"))
 ;; Keywords: java
 ;; URL: https://github.com/emacs-lsp/lsp-java
@@ -134,7 +134,7 @@ A package or type name prefix (e.g. 'org.eclipse') is a valid entry. An import i
 (defcustom lsp-java-trace-server 'off
   "Traces the communication between Emacs and the Java language server."
   :group 'lsp-java
-  :type '(choise
+  :type '(choice
           (const off)
           (const messages)
           (const verbose)))
@@ -142,6 +142,12 @@ A package or type name prefix (e.g. 'org.eclipse') is a valid entry. An import i
 ;;;###autoload
 (defcustom lsp-java-enable-file-watch nil
   "Defines whether the client will monitor the files for changes."
+  :group 'lsp-java
+  :type 'boolean)
+
+;;;###autoload
+(defcustom lsp-java-format-enabled t
+  "Specifies whether or not formatting is enabled on the language server."
   :group 'lsp-java
   :type 'boolean)
 
@@ -162,6 +168,16 @@ A package or type name prefix (e.g. 'org.eclipse') is a valid entry. An import i
   "Preference key used to include the comments during the formatting."
   :group 'lsp-java
   :type 'boolean)
+
+;;;###autoload
+(defcustom lsp-java-organize-imports 't
+  "Specifies whether or not organize imports is enabled as a save action."
+  :group 'lsp-java
+  :type 'boolean)
+
+(defun lsp-java--json-bool (param)
+  "Return a param for setting parsable by json.el for booleans"
+  (if param 't :json-false))
 
 (defun lsp-java--settings ()
   "JDT settings."
@@ -192,14 +208,14 @@ A package or type name prefix (e.g. 'org.eclipse') is a valid entry. An import i
      (implementationsCodeLens
       (enabled . t))
      (format
-      (enabled . t)
+      (enabled . ,(lsp-java--json-bool lsp-java-format-enabled))
       (settings
        (profile . ,lsp-java-format-settings-profile)
        (url . ,lsp-java-format-settings-url))
       (comments
-       (enabled . ,lsp-java-format-comments-enabled)))
+       (enabled . ,(lsp-java--json-bool lsp-java-format-comments-enabled))))
      (saveActions
-      (organizeImports . t))
+      (organizeImports . ,(lsp-java--json-bool lsp-java-format-enabled)))
      (contentProvider)
      (autobuild
       (enabled . t))
