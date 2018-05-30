@@ -7,7 +7,7 @@
 ;; Description: Mimic Eclipse C-S-o key. (Organeize Imports)
 ;; Keyword: organize imports java handy eclipse
 ;; Version: 0.0.1
-;; Package-Version: 20180525.2244
+;; Package-Version: 20180530.409
 ;; Package-Requires: ((emacs "24") (s "1.12.0") (cl-lib "0.6"))
 ;; URL: https://github.com/jcs090218/organize-imports-java
 
@@ -33,7 +33,6 @@
 ;; (@* "TODO" )
 ;; * Performance is terrible when loading all the jar files to path.
 ;;   Hopefully I can find out a way to get around this issue.
-;; * Performance imporvement when do imports task.
 ;;
 
 ;;; Code:

@@ -4,7 +4,7 @@
 
 ;; Author: Dimitri Fontaine <dim@tapoueh.org>
 ;; Version: 0.1.2
-;; Package-Version: 20180529.47
+;; Package-Version: 20180530.33
 ;; URL: https://github.com/dimitri/mbsync-el
 
 ;; This file is NOT part of GNU Emacs.
@@ -87,7 +87,7 @@
             (throw 'found i)
           (incf i))))))
 
-(defvar mbsync-log-levels '(normal verbose debug))
+(defvar mbsync-log-levels '(quiet normal verbose debug))
 
 (defun mbsync-log-level-int (severity)
   "Get the log level of SEVERITY as int."
