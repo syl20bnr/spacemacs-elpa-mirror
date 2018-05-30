@@ -82,8 +82,7 @@ inline in results like `helm-ag' (https://github.com/syohex/emacs-helm-ag)
     - [x] can insert markers on either side of each line to find the text
 added or removed
     - [x] can change the filename by editing the file line
-        - [ ] errors out with a *bad* error on newlines -- fix!
-        - [ ] **needs** to reset all the file data for each entry if the
+        - [x] **needs** to reset all the file data for each entry if the
 file name is being changed!!!
     - [ ] can expand the windows of text beyond single lines at a time
         - and pop into another buffer for a quick view if you want
@@ -91,7 +90,7 @@ file name is being changed!!!
     - [x] don't recolor when switching to a different result in the same
 file!
     - [x] don't color matches whenever file path matches
-`helm-rg-only-current-line-match-highlight-files-regexp'
+`helm-rg-shallow-highlight-files-regexp'
 - [ ] use `ripgrep' file types instead of flattening globbing out into
 `helm-rg-default-glob-string'
     - user defines file types in a `defcustom', and can interactively toggle

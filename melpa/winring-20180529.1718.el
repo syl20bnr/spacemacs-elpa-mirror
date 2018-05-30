@@ -1,16 +1,16 @@
 ;;; winring.el --- Window configuration rings
 
-;; Copyright (C) 1998-2015 Free Software Foundation, Inc.
+;; Copyright (C) 1998-2018 Barry Warsaw
 
-;; Author:   1997-2015 Barry A. Warsaw
+;; Author:   1997-2018 Barry A. Warsaw
 ;; Contact:  barry@python.org (Barry A. Warsaw)
 ;; Homepage: https://gitlab.com/warsaw/winring
 ;; Created:  March 1997
 ;; Keywords: frames tools
-;; Package-Version: 20150804.1108
+;; Package-Version: 20180529.1718
 
-(defconst winring-version "5.0"
-  "winring version number.")
+(defconst winring-version "5.1"
+  "The winring version number.")
 
 ;; winring.el is free software: you can redistribute it and/or modify it under
 ;; the terms of the GNU General Public License as published by the Free
@@ -217,9 +217,6 @@ If you change this, you must do it before calling `winring-initialize'.")
 
 
 ;; Winring names
-(defvar winring-name nil
-  "The name of the currently displayed window configuration.")
-
 (defvar winring-name-index 1
   "Index used as a sequence number for new unnamed window configurations.")
 
@@ -227,6 +224,7 @@ If you change this, you must do it before calling `winring-initialize'.")
   "History variable for window configuration name prompts.")
 
 (defun winring-next-name ()
+  "How to generate a new winring name."
   (let ((name (format "%03d" winring-name-index)))
     (setq winring-name-index (1+ winring-name-index))
     name))
@@ -235,25 +233,29 @@ If you change this, you must do it before calling `winring-initialize'.")
 
 ;; Utilities
 (defun winring-new-ring ()
+  "Create a new ring."
   (make-ring winring-ring-size))
 
 (defun winring-set-frame-ring (frame ring)
+  "Add to the given FRAME a new winring RING."
   (modify-frame-parameters frame (list (cons 'winring-ring ring))))
 
 (defun winring-get-frame-ring (frame)
+  "Get the winring ring from the given FRAME."
   (frame-parameter frame 'winring-ring))
 
 (defun winring-create-frame-hook (frame)
-  ;; Generate the name, but specify the newly created frame.
+  "Generate the name, but specify the newly created FRAME."
   (winring-set-name (and (eq winring-prompt-on-create t)
                          (read-string "Initial window configuration name? "
                                       nil 'winring-name-history))
                     frame))
 
 (defun winring-cleanup-hook ()
-  ;; Clear everything when emacs exits.  Desktop save modes can save frame
-  ;; parameters, but the winring-ring parameter if saved will contain bogus
-  ;; data.
+  "Clear everything when Emacs exits.
+
+   Desktop save modes can save frame parameters, but the
+   winring-ring parameter if saved will contain bogus data."
   (dolist (frame (frame-list))
     (winring-set-frame-ring frame (winring-new-ring))
     ))
@@ -271,6 +273,7 @@ not given then the currently selected frame is used."
       (message "Switching to window configuration: %s" name)))
 
 (defun winring-get-ring ()
+  "Get the winring ring for the current frame."
   (let* ((frame (selected-frame))
          (ring (winring-get-frame-ring frame)))
     (when (not ring)
@@ -279,20 +282,28 @@ not given then the currently selected frame is used."
     ring))
 
 (defsubst winring-name-of (config)
+  "Get the name of the current CONFIG."
   (car config))
 
 (defsubst winring-conf-of (config)
+  "Get the configuration of the current CONFIG."
   (car (cdr config)))
 
 (defsubst winring-point-of (config)
+  "Get the point of the current CONFIG."
   (nth 2 config))
 
-(defsubst winring-name-of-current ()
-  ;; In Emacs, just use the variable's string value directly, since the
-  ;; `displayed' value is kept as a frame parameter.
-  winring-name)
+(defun winring-name-of-current ()
+  "Get the current winring name.
+
+   In Emacs, just use the variable's string value directly, since
+   the `displayed' value is kept as a frame parameter."
+   (frame-parameter nil 'winring-name))
 
 (defun winring-save-current-configuration (&optional at-front)
+  "Save the current winring configuration.
+
+  With AT-FRONT, save this at the front of the ring."
   (let* ((ring (winring-get-ring))
          (name (winring-name-of-current))
          (here (point))
@@ -302,6 +313,9 @@ not given then the currently selected frame is used."
       (ring-insert ring conf))))
 
 (defun winring-restore-configuration (item)
+  "Restore the winring configuration.
+
+  ITEM is the thing to restore."
   (let ((conf (winring-conf-of item))
         (name (winring-name-of item))
         (here (winring-point-of item)))
@@ -313,6 +327,7 @@ not given then the currently selected frame is used."
   (force-mode-line-update))
 
 (defun winring-complete-name ()
+  "Get the complete winring name."
   (let* ((ring (winring-get-ring))
          (n (1- (ring-length ring)))
          (current (winring-name-of-current))
@@ -330,6 +345,7 @@ not given then the currently selected frame is used."
     (cdr (assoc name table))))
 
 (defun winring-read-name (prompt)
+  "PROMPT for the winring name to use."
   (let* ((ring (winring-get-ring))
          (n (1- (ring-length ring)))
          (table (list (winring-name-of-current)))
@@ -352,7 +368,7 @@ not given then the currently selected frame is used."
 The buffer shown in the new empty configuration is defined by
 `winring-new-config-buffer-name'.
 
-With \\[universal-argument] prompt for the new configuration's name.
+With \\[universal-argument] ARG, prompt for the new configuration's name.
 Otherwise, the function in `winring-name-generator' will be called to
 get the new configuration's name."
   (interactive "P")
@@ -370,7 +386,7 @@ get the new configuration's name."
 (defun winring-duplicate-configuration (&optional arg)
   "Push the current window configuration on the ring, and duplicate it.
 
-With \\[universal-argument] prompt for the new configuration's name.
+With \\[universal-argument] ARG prompt for the new configuration's name.
 Otherwise, the function in `winring-name-generator' will be called to
 get the new configuration's name."
   (interactive "P")
@@ -416,7 +432,7 @@ get the new configuration's name."
 ;;;###autoload
 (defun winring-delete-configuration (&optional arg)
   "Delete the current configuration and switch to the next one.
-With \\[universal-argument] prompt for named configuration to delete."
+With \\[universal-argument] ARG prompt for named configuration to delete."
   (interactive "P")
   (let ((ring (winring-get-ring))
         index)
@@ -448,10 +464,10 @@ With \\[universal-argument] prompt for named configuration to delete."
 
 (defun winring-submit-bug-report (comment-p)
   "Submit via mail a bug report on winring.
-With \\[universal-argument] just send any type of comment."
+With \\[universal-argument] COMMENT-P just send any type of comment."
   (interactive
    (list (not (y-or-n-p
-               "Is this a bug report? (hit `n' to send other comments) "))))
+               "Is this a bug report (hit `n' to send other comments)? "))))
   (let ((reporter-prompt-for-summary-p (if comment-p
                                            "(Very) brief summary: "
                                          t)))
@@ -481,27 +497,32 @@ in a timely way.\n\n")
 
 
 
-;; Initialization.  Create a frame-local variable and save the config name as
-;; a frame property.
+;; Initialization.
 
 (defun winring-initialize (&optional hack-modeline-function)
-  ;; Create the variable that holds the window configuration name
-  (make-variable-frame-local 'winring-name)
-  ;; Glom the configuration name into the mode-line.  I've experimented with
-  ;; a couple of different locations, including
-  ;; mode-line-frame-identification.  Sticking it on the very left side of
-  ;; the modeline, even before mode-line-modified seems like the most useful
-  ;; place.
+  "Create the variable to hold the window configuration name.
+
+  Use HACK-MODELINE-FUNCTION to override the default behavior."
+  (set-frame-parameter nil 'winring-name nil)
+  ;; Glom the configuration name into the mode-line.  I've experimented with a
+  ;; couple of different locations, including mode-line-frame-identification.
+  ;; Sticking it on the very left side of the modeline, even before
+  ;; mode-line-modified seems like the most useful place.
   ;;
   ;; Note that you can override the default hacking of the modeline
   ;; by passing in your own `hack-modeline-function'.
   (if hack-modeline-function
       (funcall hack-modeline-function)
-    ;; Else, default insertion hackery
-    (let ((format (list 'winring-show-names
-                        '("<" winring-name "> ")))
-          (splice (cdr mode-line-format)))
-      (setcar splice (list format (car splice)))))
+    ;; Else, default insertion hackery.
+    (let ((winring
+           ;; If winring-show-names is t then...
+           '(:eval
+             (when winring-show-names
+               (concat "<" (winring-name-of-current) "> "))))
+          (tail (cdr mode-line-format)))
+      ;; Don't use setq because we want this change to be global, not just
+      ;; local to the current buffer.
+      (setcar mode-line-format winring)))
   ;; Add a hook so that all newly created frames get initialized properly.
   (add-hook 'after-make-frame-functions 'winring-create-frame-hook)
   (add-hook 'kill-emacs-hook 'winring-cleanup-hook)

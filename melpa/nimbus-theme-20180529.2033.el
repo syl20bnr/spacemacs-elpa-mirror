@@ -5,7 +5,7 @@
 ;; Author: Marcin Swieczkowski <scatman@bu.edu>
 ;; Created: Thu Mar  2 22:19:19 CET 2017
 ;; Version: 1.0.0
-;; Package-Version: 20180410.307
+;; Package-Version: 20180529.2033
 ;; Last-Updated: Wed Apr 12 16:11:07 CEST 2017
 ;;           By: Marcin Swieczkowski
 ;;     Update #: 3
@@ -93,19 +93,20 @@
    `nimbus ;; you must use the same theme name here...
    `(default      ((t (:foreground ,nimbus/fg :background ,nimbus/bg))))
    `(cursor       ((t (:foreground ,nimbus/black :background ,nimbus/cursor))))
-   `(fringe       ((t (:background ,nimbus/fringe))))
+   `(fringe       ((t (:background ,nimbus/fringe  :bold nil :underline nil))))
    `(link         ((t (:foreground ,nimbus/light-blue :underline t))))
    `(link-visited ((t (:foreground ,nimbus/red :underline t))))
    `(highlight
      ((t (:foreground ,nimbus/bg :background ,nimbus/light-green))))
    `(region
-     ((t (:foreground ,nimbus/fg :background ,nimbus/fg))))
+     ((t (:foreground ,nimbus/bg :background ,nimbus/fg))))
    `(shadow       ((t (:foreground ,nimbus/light-gray))))
    `(tooltip      ((t (:background ,nimbus/fg :foreground ,nimbus/bg))))
 
    ;; standard font lock
    `(font-lock-builtin-face           ((t (:foreground ,nimbus/blue))))
-   `(font-lock-comment-face           ((t (:foreground ,nimbus/light-gray))))
+   `(font-lock-comment-face
+     ((t (:foreground ,nimbus/light-gray :slant italic))))
    `(font-lock-comment-delimiter-face ((t (:foreground ,nimbus/light-gray))))
    `(font-lock-function-name-face     ((t (:foreground ,nimbus/dark-green))))
    `(font-lock-keyword-face           ((t (:foreground ,nimbus/blue))))
@@ -121,7 +122,7 @@
 
    ;; highlight-numbers
    `(highlight-numbers-number
-     ((t (:foreground ,nimbus/purple))))
+     ((t (:foreground ,nimbus/orange))))
    ;; highlight-quoted
    `(highlight-quoted-symbol
      ((t (:foreground ,nimbus/green))))
@@ -196,7 +197,7 @@
 
    ;; line numbers
    `(linum
-     ((t (:inherit fringe :foreground ,nimbus/blue-gray :bold nil :underline nil))))
+     ((t (:inherit fringe :foreground ,nimbus/blue-gray))))
    `(nlinum-current-line
      ((t (:inherit linum :foreground ,nimbus/dark-green))))
 
