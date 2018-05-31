@@ -4,10 +4,10 @@
 
 ;; Author: Damien Cassou <damien@cassou.me>
 ;; Keywords: multimedia
-;; Package-Version: 20180502.1149
+;; Package-Version: 20180531.58
 ;; Url: https://gitlab.petton.fr/mpdel/libmpdel
 ;; Package-requires: ((emacs "25.1"))
-;; Version: 0.5.0
+;; Version: 0.6.0
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -155,6 +155,8 @@ message from the server.")
   (track nil :read-only t)
   (file nil :read-only t)
   (album nil :read-only t)
+  (disk nil :read-only t)
+  (date nil :read-only t)
   (id nil :read-only t)
   (pos nil :read-only t))
 
@@ -246,6 +248,14 @@ message from the server.")
   "Return the track number of SONG within its album."
   (or (libmpdel--song-track song) ""))
 
+(defun libmpdel-entity-date (song)
+  "Return the date of SONG."
+  (or (libmpdel--song-date song) ""))
+
+(defun libmpdel-song-disk (song)
+  "Return the disk number of SONG within its album."
+  (or (libmpdel--song-disk song) ""))
+
 (defun libmpdel-song-id (song)
   "Return SONG id within the current playlist, nil if none."
   (libmpdel--song-id song))
@@ -265,6 +275,8 @@ message from the server.")
    :album (libmpdel--album-create
            :name (cdr (assq 'Album song-data))
            :artist (libmpdel--artist-create :name (cdr (assq 'Artist song-data))))
+   :date (cdr (assq 'Date song-data))
+   :disk (cdr (assq 'Disk song-data))
    :id (cdr (assq 'Id song-data))
    :pos (cdr (assq 'Pos song-data))))
 

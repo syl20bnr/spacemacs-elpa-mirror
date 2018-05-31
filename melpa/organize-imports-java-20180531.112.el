@@ -7,8 +7,8 @@
 ;; Description: Mimic Eclipse C-S-o key. (Organeize Imports)
 ;; Keyword: organize imports java handy eclipse
 ;; Version: 0.0.1
-;; Package-Version: 20180530.409
-;; Package-Requires: ((emacs "24") (s "1.12.0") (cl-lib "0.6"))
+;; Package-Version: 20180531.112
+;; Package-Requires: ((emacs "24") (f "0.20.0") (s "1.12.0") (cl-lib "0.6"))
 ;; URL: https://github.com/jcs090218/organize-imports-java
 
 ;; This file is NOT part of GNU Emacs.
@@ -37,8 +37,9 @@
 
 ;;; Code:
 
-(require 's)
 (require 'cl-lib)
+(require 'f)
+(require 's)
 
 
 (defgroup organize-imports-java nil
@@ -63,8 +64,13 @@
   :type 'string
   :group 'organize-imports-java)
 
-(defcustom organize-imports-java-path-config-file "paths-config.oij"
-  "File generate store all the Java paths."
+(defcustom organize-imports-java-path-jar-lib-cache-file "paths-cache.oij"
+  "File generate store all the jar/lib Java paths."
+  :type 'string
+  :group 'organize-imports-java)
+
+(defcustom organize-imports-java-path-local-source-cache-file "paths-cache-local.oij"
+  "File generate store all the local source Java paths."
   :type 'string
   :group 'organize-imports-java)
 
@@ -89,8 +95,19 @@
   :type 'list
   :group 'organize-imports-java)
 
-(defvar organize-imports-java-path-buffer '()
+(defcustom organize-imports-java-source-dir-name "src"
+  "Source directory in the project, default is 'src'.")
+
+(defcustom organize-imports-java-non-class-list '("Callable"
+                                                  "Runnable")
+  "List that are no need to import like interface, etc.")
+
+
+(defvar organize-imports-java-path-buffer-jar-lib '()
   "All the available java paths store here.")
+
+(defvar organize-imports-java-path-buffer-local-source '()
+  "All the available local source java paths store here.")
 
 (defvar organize-imports-java-serach-regexp "[a-zA-Z0-9/_-]*/[A-Z][a-zA-Z0-9_-]*\\.class"
   "Regular Expression to search for java path.")
@@ -99,6 +116,14 @@
                                              "internal"
                                              "sun")
   "List of non Java source keywords.")
+
+
+(defvar organize-imports-java-pre-insert-path-list '()
+  "Paths that are ready to insert.")
+
+(defvar organize-imports-java-same-class-name-list '()
+  "Paths will store temporary, use to check if multiple class exists in the environment.")
+
 
 
 (defun organize-imports-java-get-alphabet-id (c)
@@ -268,12 +293,32 @@ L : list we want to flaaten."
         ((atom l) (list l))
         (t (loop for a in l appending (organize-imports-java-flatten a)))))
 
+(defun organize-imports-java-get-local-source ()
+  "Get the all the local source file path as a list."
+  (let ((src-file-path-list '())
+        (project-source-dir (concat (cdr (project-current)) organize-imports-java-source-dir-name "/")))
+    (setq src-file-path-list (f--files project-source-dir (equal (f-ext it) "java") t))
+
+    (let ((index 0))
+      (dolist (src-file-path src-file-path-list)
+        ;; Remove the source file path, only left the package file path.
+        (setf (nth index src-file-path-list)
+              (s-replace project-source-dir "" src-file-path))
+
+        ;; Convert '/' to '.'.
+        (setf (nth index src-file-path-list)
+              (s-replace "/" "." (nth index src-file-path-list)))
+
+        ;; Lastly, remove `.java' extension.
+        (setf (nth index src-file-path-list)
+              (s-replace ".java" "" (nth index src-file-path-list)))
+
+        (setq index (1+ index))))
+
+    src-file-path-list))
+
 (defun organize-imports-java-unzip-lib ()
   "Decode it `.jar' binary to readable data strucutre."
-
-  ;; Reset list.
-  (setq organize-imports-java-path-buffer '())
-
   (let ((tmp-lib-inc-file (concat
                            (cdr (project-current))
                            organize-imports-java-lib-inc-file))
@@ -292,7 +337,9 @@ L : list we want to flaaten."
         ;; length of the lib/jar paths list.
         (tmp-lib-list-length -1)
         ;; First character of the path readed from .ini file.
-        (first-char-from-path nil))
+        (first-char-from-path nil)
+        ;; Final return path list.
+        (all-lib-path-list '()))
     (when (file-exists-p tmp-lib-inc-file)
       ;; Read the ini file, in order to get all the target
       ;; lib/jar files.
@@ -334,80 +381,130 @@ L : list we want to flaaten."
                               tmp-lib-buffer))
 
         ;; Add the paths to the list.
-        (push tmp-class-list organize-imports-java-path-buffer)
+        (push tmp-class-list all-lib-path-list)
 
         ;; Add up index.
-        (setq tmp-index (+ tmp-index 2))))))
+        (setq tmp-index (+ tmp-index 2))))
+    all-lib-path-list))
 
-(defun organize-imports-java-erase-config-file ()
-  "Clean all the buffer in the config file."
+;;;###autoload
+(defun organize-imports-java-erase-cache-file ()
+  "Clean all the buffer in the cache files."
+  (interactive)
+  (organize-imports-java-erase-file organize-imports-java-path-jar-lib-cache-file)
+  (organize-imports-java-erase-file organize-imports-java-path-local-source-cache-file))
+
+(defun organize-imports-java-erase-file (in-filename)
+  "Erase a file.
+IN-FILENAME : filename relative to project root."
   (write-region ""  ;; Start, insert nothing here in order to clean it.
                 nil  ;; End
                 ;; File name (concatenate full path)
-                (concat (cdr (project-current)) organize-imports-java-path-config-file)
+                (concat (cdr (project-current))
+                        in-filename)  ;; Cache filename.
                 ;; Overwrite?
                 nil))
 
 ;;;###autoload
 (defun organize-imports-java-reload-paths ()
-  "Reload the Java include paths once."
+  "Reload the Java include paths and local source path once."
   (interactive)
-  ;; Make sure the .ini/.properties file exists before anything.
-  (if (file-exists-p (concat (cdr (project-current)) organize-imports-java-lib-inc-file))
+  ;; Write Java path to according cache file, both `jar/lib' and
+  ;; `local-source' cache.
+  (organize-imports-java-reload-jar-lib-paths)
+  (organize-imports-java-reload-local-source-paths))
+
+;;;###autoload
+(defun organize-imports-java-reload-jar-lib-paths ()
+  "Reload external Java paths.
+For .jar files."
+  (interactive)
+  ;; Make sure the .ini/.properties file exists before making the cache file.
+  (if (file-exists-p (concat (cdr (project-current))
+                             organize-imports-java-lib-inc-file))
       (progn
         ;; Import all libs/jars.
-        (organize-imports-java-unzip-lib)
+        (setq organize-imports-java-path-buffer-jar-lib
+              (organize-imports-java-unzip-lib))
 
         ;; Flatten it.
-        (setq organize-imports-java-path-buffer
-              (organize-imports-java-flatten organize-imports-java-path-buffer))
+        (setq organize-imports-java-path-buffer-jar-lib
+              (organize-imports-java-flatten organize-imports-java-path-buffer-jar-lib))
 
         ;; Remove duplicates value from list.
-        (setq organize-imports-java-path-buffer
-              (delete-dups organize-imports-java-path-buffer))
+        (setq organize-imports-java-path-buffer-jar-lib
+              (delete-dups organize-imports-java-path-buffer-jar-lib))
 
-        ;; Erase buffer before inserting.
-        (organize-imports-java-erase-config-file)
-
-        (let ((first-char-from-path "")
-              (tmp-write-to-file-content-buffer ""))
-
-          ;; Write into file so we don't need to do it every times.
-          (dolist (tmp-path organize-imports-java-path-buffer)
-            ;; Get the first character of the path.
-            (setq first-char-from-path (substring tmp-path 0 1))
-
-            (when (and (not (equal (upcase first-char-from-path) first-char-from-path))
-                       (not (organize-imports-java-is-contain-list-string organize-imports-java-non-src-list
-                                                                          tmp-path))
-                       (not (organize-imports-java-is-digit-string first-char-from-path))
-                       (not (string= first-char-from-path "-"))
-                       (not (string= first-char-from-path ".")))
-              ;; Swap `/' to `.'.
-              (setq tmp-path (s-replace "/" "." tmp-path))
-
-              ;; Remove `.class'.
-              (setq tmp-path (s-replace ".class" "" tmp-path))
-
-              ;; Add line break at the end.
-              (setq tmp-path (concat tmp-path "\n"))
-
-              ;; add to file content buffer.
-              (setq tmp-write-to-file-content-buffer (concat tmp-path tmp-write-to-file-content-buffer))))
-
-          ;; Write to file all at once.
-          (write-region tmp-write-to-file-content-buffer  ;; Start
-                        nil  ;; End
-                        ;; File name (concatenate full path)
-                        (concat (cdr (project-current)) organize-imports-java-path-config-file)
-                        ;; Overwrite?
-                        t)))
+        (organize-imports-java-erase-file organize-imports-java-path-jar-lib-cache-file)
+        (organize-imports-java-load-path-and-write-cache organize-imports-java-path-buffer-jar-lib
+                                                         organize-imports-java-path-jar-lib-cache-file))
     (error "%s"
            (propertize (concat "Include jar path file missing : "
                                (cdr (project-current))
                                organize-imports-java-lib-inc-file)
                        'face
                        '(:foreground "cyan")))))
+
+;;;###autoload
+(defun organize-imports-java-reload-local-source-paths ()
+  "Reload internal Java paths.
+Usually Java files under project root 'src' directory."
+  (interactive)
+  ;; Import local source files. File that isn't a jar/lib file.
+  (setq organize-imports-java-path-buffer-local-source
+        (organize-imports-java-get-local-source))
+
+  ;; Flatten it.
+  (setq organize-imports-java-path-buffer-local-source
+        (organize-imports-java-flatten organize-imports-java-path-buffer-local-source))
+
+  ;; Remove duplicates value from list.
+  (setq organize-imports-java-path-buffer-local-source
+        (delete-dups organize-imports-java-path-buffer-local-source))
+
+  (organize-imports-java-erase-file organize-imports-java-path-local-source-cache-file)
+  (organize-imports-java-load-path-and-write-cache organize-imports-java-path-buffer-local-source
+                                                   organize-imports-java-path-local-source-cache-file))
+
+(defun organize-imports-java-load-path-and-write-cache (path-list in-filename)
+  "Load the path and write the cache file.
+PATH-LIST : content paths we will write to IN-FILENAME.
+IN-FILENAME : name of the cache file."
+  (let ((first-char-from-path "")
+        (tmp-write-to-file-content-buffer ""))
+    ;; Write into file so we don't need to do it every times.
+    (dolist (tmp-path path-list)
+      ;; Get the first character of the path.
+      (setq first-char-from-path (substring tmp-path 0 1))
+
+      (when (and (not (equal (upcase first-char-from-path) first-char-from-path))
+                 (not (organize-imports-java-is-contain-list-string organize-imports-java-non-src-list
+                                                                    tmp-path))
+                 (not (organize-imports-java-is-contain-list-string organize-imports-java-non-class-list
+                                                                    tmp-path))
+                 (not (organize-imports-java-is-digit-string first-char-from-path))
+                 (not (string= first-char-from-path "-"))
+                 (not (string= first-char-from-path ".")))
+        ;; Swap `/' to `.'.
+        (setq tmp-path (s-replace "/" "." tmp-path))
+
+        ;; Remove `.class'.
+        (setq tmp-path (s-replace ".class" "" tmp-path))
+
+        ;; Add line break at the end.
+        (setq tmp-path (concat tmp-path "\n"))
+
+        ;; add to file content buffer.
+        (setq tmp-write-to-file-content-buffer (concat tmp-path tmp-write-to-file-content-buffer))))
+
+    ;; Write to file all at once.
+    (write-region tmp-write-to-file-content-buffer  ;; Start
+                  nil  ;; End
+                  ;; File name (concatenate full path)
+                  (concat (cdr (project-current))
+                          in-filename)  ;; Cache filename.
+                  ;; Overwrite?
+                  t)))
 
 (defun organize-imports-java-get-current-point-face-p ()
   "Get current point's type face as string."
@@ -472,13 +569,6 @@ Argument TMP-ONE-PATH Temporary passing in path, use to insert import string/cod
   "Check if C is a digit."
   (string-match-p "\^[0-9]'" c))
 
-
-(defvar organize-imports-java-pre-insert-path-list '()
-  "Paths that are ready to insert.")
-
-(defvar organize-imports-java-same-class-name-list '()
-  "Paths will store temporary, use to check if multiple class exists in the environment.")
-
 ;;;###autoload
 (defun organize-imports-java-same-class-ask (type)
   "Ask the user which path should you import?
@@ -489,21 +579,26 @@ TYPE : path string will be store at."
   (push type organize-imports-java-pre-insert-path-list))
 
 
-;;;###autoload
-(defun organize-imports-java-do-imports ()
-  "Do the functionalitiies of how organize imports work."
-  (interactive)
-
-  ;; Clear all imports before insert new imports.
-  (organize-imports-java-clear-all-imports)
-
+(defun organize-imports-java-do-imports-one-cache (in-cache)
+  "Do the import by cache file.
+IN-CACHE : cache file name relative to project root folder."
   (save-excursion
-    (let ((tmp-config-fullpath (concat (cdr (project-current)) organize-imports-java-path-config-file)))
-
+    (let ((tmp-config-fullpath (concat (cdr (project-current))
+                                               in-cache)))
       ;; If the file does not exists, load the Java path once.
       ;; Get this plugin ready to use.
       (when (not (file-exists-p tmp-config-fullpath))
-        (organize-imports-java-reload-paths))
+        (cond ((string= in-cache organize-imports-java-path-jar-lib-cache-file)
+               (progn
+                 (organize-imports-java-reload-jar-lib-paths)))
+              ((string= in-cache organize-imports-java-path-local-source-cache-file)
+               (progn
+                 (organize-imports-java-reload-local-source-paths)))
+              (t
+               (progn
+                 ;; Reload all the cache file as default. Even though this
+                 ;; should not happens.
+                 (organize-imports-java-reload-paths)))))
 
       (let ((tmp-type-keyword-list (organize-imports-java-get-type-face-keywords-by-face-name
                                     organize-imports-java-font-lock-type-faces))
@@ -548,7 +643,12 @@ TYPE : path string will be store at."
             ;; the last element is usually the class name.
             (setq tmp-last-element (nth (1- (length tmp-split-path-list)) tmp-split-path-list))
 
-            (when (not (string= tmp-last-element ""))
+            (when (and (not (string= tmp-last-element ""))
+                       ;; Exclude current buffer file name because own file
+                       ;; cannot be inserted. Is illegal in Java programming.
+                       (not (string= tmp-last-element
+                                     ;; Filename without extension.
+                                     (file-name-sans-extension (file-name-nondirectory buffer-file-name)))))
               ;; Get the first character from class name, in order
               ;; to sort in alphabetic order.
               (setq first-char-from-path (substring tmp-last-element 0 1))
@@ -634,6 +734,9 @@ TYPE : path string will be store at."
               ;; Clean the paths
               (setq organize-imports-java-same-class-name-list '()))))
 
+        ;; ------------------------------------------------------------------------------
+        ;; Prepare to insert to current buffer.
+
         ;; Remove duplicate for pre insert list.
         (setq organize-imports-java-pre-insert-path-list (delete-dups organize-imports-java-pre-insert-path-list))
 
@@ -675,6 +778,20 @@ TYPE : path string will be store at."
 
         ;; keep one line.
         (organize-imports-java-keep-one-line-between)))))
+
+;;;###autoload
+(defun organize-imports-java-do-imports ()
+  "Do the functionalitiies of how organize imports work."
+  (interactive)
+
+  ;; Clear all imports before insert new imports.
+  (organize-imports-java-clear-all-imports)
+
+  ;; First insert the `local-source' Java path, so once later on the `jar/lib'
+  ;; Java path will be ontop of the `local-source' paths.
+  (organize-imports-java-do-imports-one-cache organize-imports-java-path-local-source-cache-file)
+  ;; Insert the `jar/lib' Java paths.
+  (organize-imports-java-do-imports-one-cache organize-imports-java-path-jar-lib-cache-file))
 
 
 (provide 'organize-imports-java)

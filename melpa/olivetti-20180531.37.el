@@ -3,9 +3,9 @@
 ;; Copyright (c) 2014-2017 Paul Rankin
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
-;; Keywords: wp
-;; Package-Version: 20180523.308
-;; Version: 1.5.9
+;; Keywords: wp, text
+;; Package-Version: 20180531.37
+;; Version: 1.6.1
 ;; Package-Requires: ((emacs "24.4"))
 ;; URL: https://github.com/rnkn/olivetti
 
@@ -107,7 +107,7 @@
 (defgroup olivetti ()
   "Minor mode for a nice writing environment"
   :prefix "olivetti-"
-  :group 'wp)
+  :group 'text)
 
 
 ;;; Variables
@@ -120,7 +120,7 @@
 ;;; Options
 
 (defcustom olivetti-body-width
-  80
+  70
   "Text body width to which to adjust relative margin width.
 
 If an integer, set text body width to that integer in columns; if
@@ -136,7 +136,7 @@ but it's better to use a value between about 0.33 and 0.9 for
 best effect.
 
 This option does not affect file contents."
-  :type '(choice (integer 80) (float 0.5))
+  :type '(choice (integer 70) (float 0.5))
   :safe 'numberp
   :group 'olivetti)
 (make-variable-buffer-local 'olivetti-body-width)
@@ -201,7 +201,7 @@ care that the maximum size is 0."
             right-margin (max (round (- margin-total right-fringe)) 0))
       (set-window-parameter window 'split-window 'olivetti-split-window)
       (set-window-margins window left-margin right-margin))
-    (if olivetti-hide-mode-line (olivetti-set-mode-line))))
+    (when olivetti-hide-mode-line (olivetti-set-mode-line))))
 
 (defun olivetti-reset-all-windows ()
   "Remove Olivetti's parameters and margins from all windows.
@@ -213,8 +213,8 @@ Cycle through all windows displaying current buffer and call
 
 (defun olivetti-reset-window (window)
   "Remove Olivetti's parameters and margins from WINDOW."
-  (if (eq (window-parameter window 'split-window) 'olivetti-split-window)
-      (set-window-parameter window 'split-window nil))
+  (when (eq (window-parameter window 'split-window) 'olivetti-split-window)
+    (set-window-parameter window 'split-window nil))
   (set-window-margins window nil))
 
 (defun olivetti-split-window (&optional window size side pixelwise)
@@ -391,9 +391,9 @@ hidden."
       (remove-hook hook 'olivetti-set-environment t))
     (olivetti-reset-all-windows)
     (olivetti-set-mode-line 'exit)
-    (if (and olivetti-recall-visual-line-mode-entry-state
-             (not olivetti--visual-line-mode))
-        (visual-line-mode 0))
+    (when (and olivetti-recall-visual-line-mode-entry-state
+               (not olivetti--visual-line-mode))
+      (visual-line-mode 0))
     (kill-local-variable 'split-window-preferred-function)
     (kill-local-variable 'olivetti--visual-line-mode)))
 

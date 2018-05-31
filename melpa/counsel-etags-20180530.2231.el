@@ -5,7 +5,7 @@
 ;; Author: Chen Bin <chenbin.sh@gmail.com>
 ;; Maintainer: Chen Bin <chenbin.sh@gmail.com>
 ;; URL: http://github.com/redguardtoo/counsel-etags
-;; Package-Version: 20180521.1706
+;; Package-Version: 20180530.2231
 ;; Package-Requires: ((emacs "24.4") (counsel "0.9.1"))
 ;; Keywords: tools, convenience
 ;; Version: 1.6.1
@@ -118,7 +118,9 @@
     "tags"
     "TAGS"
     ;; compressed
+    "*.tgz"
     "*.gz"
+    "*.xz"
     "*.zip"
     "*.tar"
     "*.rar"
@@ -148,8 +150,11 @@
     "*.odt"
     ;; C/C++
     "*.obj"
+    "*.so"
     "*.o"
     "*.a"
+    "*.ifso"
+    "*.tbd"
     "*.dylib"
     "*.lib"
     "*.d"
