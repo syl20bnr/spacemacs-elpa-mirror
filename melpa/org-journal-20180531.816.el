@@ -2,8 +2,8 @@
 
 ;; Author: Bastian Bechtold
 ;; URL: http://github.com/bastibe/org-journal
-;; Package-Version: 20180531.451
-;; Version: 1.14.0
+;; Package-Version: 20180531.816
+;; Version: 1.15.0
 ;; Package-Requires: ((emacs "25.1"))
 
 ;;; Commentary:
@@ -193,6 +193,23 @@ to encrypt/decrypt it."
   "If non-nil, automatically adds current and future org-journal
   files to org-agenda-files."
   :type 'boolean :group 'org-journal)
+
+(defcustom org-journal-ics-export-scheduled-object "VEVENT"
+  "The iCalendar object name for scheduled journal entries."
+  :type 'string :group 'org-journal)
+
+(defcustom org-journal-ics-export-todo-object "VTODO"
+  "The iCalendar object name for TODO journal entries. If VTODO,
+these will get imported as todos, and might not appear in your
+calendar. VEVENT will make them normal calendar entries."
+  :type 'string :group 'org-journal)
+
+(defcustom org-journal-ics-export-journal-object "VJOURNAL"
+  "The iCalendar object name for non-TODO, non-scheduled journal
+entries. If VJOURNAL, these will get imported as journal entries, and
+might not appear in your calendar. VEVENT will make them normal
+calendar entries."
+  :type 'string :group 'org-journal)
 
 (defcustom org-journal-find-file 'find-file-other-window
   "The function to use when opening an entry. Set this to `find-file` if you don't want org-journal to split your window."
@@ -735,13 +752,12 @@ Think of this as a faster, less fancy version of your org-agenda."
     (view-mode t)
     (goto-char (point-min))))
 
-(defun org-journal-icalendar ()
-  (interactive)
-  (find-file-other-window "*Org-journal ICalendar*")
-  (view-mode -1)
+(defun org-journal-schedule-export (filename)
+  (interactive "F")
+  (find-file-other-window filename)
   (erase-buffer)
   (insert "BEGIN:VCALENDAR\n"
-          "VERSION:1.0\n"
+          "VERSION:2.0\n"
           "PRODID:org-journal\n")
   (let* ((schedule-buffer (current-buffer))
          (period-pair (org-journal-read-period 'future))
@@ -760,13 +776,20 @@ Think of this as a faster, less fancy version of your org-agenda."
       (let ((time (org-journal-calendar-date->time
                    (org-journal-file-name->calendar-date
                     (file-name-nondirectory filename))))
-            summary dtstamp dtstart dtend description uid)
+            summary dtstamp dtstart dtend description uid type priority categories)
+        ;; other possible fields:
+        ;; ics: class, created, geo, location, organizer, status, attendee
         (org-journal-with-find-file
          filename
          (dolist (headline (org-element-map (org-element-parse-buffer)
-                              'headline 'identity))
+                               'headline 'identity))
+           (cond ((eq (org-element-property ':todo-type headline) 'todo)
+                  (setq type org-journal-ics-export-todo-object))
+                 ((org-element-property ':scheduled headline)
+                  (setq type org-journal-ics-export-scheduled-object))
+                 (t (setq type org-journal-ics-export-journal-object)))
+           (setq summary (car (org-element-property ':title headline)))
            (when (org-element-property ':scheduled headline)
-             (setq summary (car (org-element-property ':title headline)))
              (let* ((scheduled (org-element-property ':scheduled headline))
                     (start-time (encode-time 0 ; second
                                              (or (plist-get (cadr scheduled) ':minute-start) 0)
@@ -780,24 +803,42 @@ Think of this as a faster, less fancy version of your org-agenda."
                                            (plist-get (cadr scheduled) ':day-end)
                                            (plist-get (cadr scheduled) ':month-end)
                                            (plist-get (cadr scheduled) ':year-end))))
-               (setq dtstamp (format-time-string "%Y%m%dT%H%M%SZ" start-time))
-               (setq dtstart (format-time-string "%Y%m%dT%H%M%SZ" start-time))
-               (setq dtend (format-time-string "%Y%m%dT%H%M%SZ" end-time))
-               (setq description (buffer-substring-no-properties
-                                  (org-element-property ':contents-begin headline)
-                                  (org-element-property ':contents-end headline)))))))
+               (setq dtstamp (format-time-string "%Y%m%dT%H%M%S" start-time))
+               (setq dtstart (format-time-string "%Y%m%dT%H%M%S" start-time))
+               (setq dtend (format-time-string "%Y%m%dT%H%M%S" end-time))))
+           (when (org-element-property ':tags headline)
+             (setq categories (mapconcat
+                               'substring-no-properties
+                               (org-element-property ':tags headline)
+                               ",")))
+           (when (org-element-property ':priority headline)
+             (setq priority (number-to-string
+                             (1+ (- (org-element-property ':priority headline)
+                                    org-highest-priority)))))
+           (setq uid (concat (replace-regexp-in-string "\s" "" summary)
+                             (file-name-nondirectory filename)))
+           (setq description (replace-regexp-in-string
+                              "\n" "\\\\n"
+                              (buffer-substring-no-properties
+                               (org-element-property ':contents-begin headline)
+                               (org-element-property ':contents-end headline))))))
         (when summary
-          (insert "BEGIN:VEVENT\n"
+          (insert "BEGIN:" type "\n"
                   "SUMMARY:" summary "\n"
-                  "DTSTAMP:" dtstamp "\n"
-                  "DTSTART:" dtstart "\n"
-                  "DTEND:" dtend "\n"
-                  "DESCRIPTION:" (replace-regexp-in-string "\n" "\\\\n\n" description) "\n"
-                  "END:VEVENT\n"))))))))
+                  "DESCRIPTION:" description "\n"
+                  "UID:" uid "\n")
+          (when dtstamp
+              (insert "DTSTAMP:" dtstamp "\n"
+                      "DTSTART:" dtstart "\n"
+                      "DTEND:" dtend "\n"))
+          (if categories
+              (insert "CATEGORIES:" categories "\n"))
+          (if priority
+              (insert "PRIORITY:" priority "\n"))
+          (insert "END:" type "\n"))))
     (insert "END:VCALENDAR\n")
-    (set-buffer-modified-p nil)
-    (view-mode t)
-    (goto-char (point-min))))
+    (goto-char (point-min))
+    (save-buffer)))
 
 (defun org-journal-read-period (period-name)
   "If the PERIOD-NAME is nil, then ask the user for period

@@ -5,7 +5,7 @@
 ;; Author: Matúš Goljer <matus.goljer@gmail.com>
 ;; Maintainer: Matúš Goljer <matus.goljer@gmail.com>
 ;; Version: 0.0.1
-;; Package-Version: 20180131.535
+;; Package-Version: 20180531.1206
 ;; Created: 28th February 2015
 ;; Package-requires: ((dash "2.10.0") (cl-lib "0.5"))
 ;; Keywords: files
@@ -163,6 +163,10 @@ Additionally, before saving the data, it filters the
 `abm-recent-buffers' list and removes bookmarks older than
 `abm-old-bookmark-threshold'."
   (interactive)
+  ;; in case this is called before init finished we might overwrite
+  ;; the saved data, so load that first
+  (unless abm-recent-buffers
+    (abm-load-from-file))
   ;; remove too old bookmarks
   (setq abm-recent-buffers (--remove
                             (time-less-p

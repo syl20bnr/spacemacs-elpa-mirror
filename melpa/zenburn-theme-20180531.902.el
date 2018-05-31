@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: http://github.com/bbatsov/zenburn-emacs
-;; Package-Version: 20180222.1757
+;; Package-Version: 20180531.902
 ;; Version: 2.5
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -127,6 +127,7 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(link-visited ((t (:foreground ,zenburn-yellow-2 :underline t :weight normal))))
    `(default ((t (:foreground ,zenburn-fg :background ,zenburn-bg))))
    `(cursor ((t (:foreground ,zenburn-fg :background ,zenburn-fg+1))))
+   `(widget-field ((t (:foreground ,zenburn-fg :background ,zenburn-bg+3))))
    `(escape-glyph ((t (:foreground ,zenburn-yellow :weight bold))))
    `(fringe ((t (:foreground ,zenburn-fg :background ,zenburn-bg+1))))
    `(header-line ((t (:foreground ,zenburn-yellow
