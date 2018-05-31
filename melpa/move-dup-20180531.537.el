@@ -1,6 +1,6 @@
 ;;; move-dup.el --- Eclipse-like moving and duplicating lines or rectangles.
 
-;; Copyright (C) 2014-2017 Jimmy Yuen Ho Wong
+;; Copyright (C) 2014-2018 Jimmy Yuen Ho Wong
 
 ;; This program is free software: you can redistribute it and/or modify it under
 ;; the terms of the GNU General Public License as published by the Free Software
@@ -17,11 +17,11 @@
 
 ;; Author: Jimmy Yuen Ho Wong <wyuenho@gmail.com>
 ;; Version: 1.0.0
-;; Package-Version: 20170513.1911
+;; Package-Version: 20180531.537
 ;; Created: 11 June 2014
 ;; Url: https://github.com/wyuenho/move-dup
 ;; Compatibility: GNU Emacs 25.1
-;; Keywords: convenience wp edit
+;; Keywords: convenience text edit
 
 ;; This file is not part of GNU Emacs.
 

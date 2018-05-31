@@ -4,7 +4,7 @@
 
 ;; Author: Alexander Miller <alexanderm@web.de>
 ;; Package-Requires: ((evil "1.2.12") (treemacs "0"))
-;; Package-Version: 1.18.1
+;; Package-Version: 2.1
 ;; Package-X-Original-Version: 0
 ;; Homepage: https://github.com/Alexander-Miller/treemacs
 
@@ -49,8 +49,6 @@
 
 (define-key evil-treemacs-state-map (kbd "j")   #'treemacs-next-line)
 (define-key evil-treemacs-state-map (kbd "k")   #'treemacs-previous-line)
-(define-key evil-treemacs-state-map (kbd "h")   #'treemacs-uproot)
-(define-key evil-treemacs-state-map (kbd "l")   #'treemacs-change-root)
 (define-key evil-treemacs-state-map (kbd "M-j") #'treemacs-next-neighbour)
 (define-key evil-treemacs-state-map (kbd "M-k") #'treemacs-previous-neighbour)
 (define-key evil-treemacs-state-map (kbd "M-J") #'treemacs-next-line-other-window)
@@ -60,15 +58,17 @@
 (define-key evil-treemacs-state-map (kbd "tf")  #'treemacs-follow-mode)
 (define-key evil-treemacs-state-map (kbd "ta")  #'treemacs-filewatch-mode)
 (define-key evil-treemacs-state-map (kbd "tg")  #'treemacs-git-mode)
-(define-key evil-treemacs-state-map (kbd "w")   #'treemacs-reset-width)
+(define-key evil-treemacs-state-map (kbd "w")   #'treemacs-set-width)
 (define-key evil-treemacs-state-map (kbd "b")   #'treemacs-add-bookmark)
 (define-key evil-treemacs-state-map (kbd "?")   #'treemacs-helpful-hydra)
 (define-key evil-treemacs-state-map (kbd "RET") #'treemacs-RET-action)
 
-(evil-define-key 'treemacs treemacs-mode-map (kbd "yr")     #'treemacs-yank-root)
-(evil-define-key 'treemacs treemacs-mode-map (kbd "yy")     #'treemacs-yank-path-at-point)
+(evil-define-key 'treemacs treemacs-mode-map (kbd "yr")     #'treemacs-copy-project-root)
+(evil-define-key 'treemacs treemacs-mode-map (kbd "yy")     #'treemacs-copy-path-at-point)
 (evil-define-key 'treemacs treemacs-mode-map (kbd "gr")     #'treemacs-refresh)
 (evil-define-key 'treemacs treemacs-mode-map [down-mouse-1] #'ignore)
+(evil-define-key 'treemacs treemacs-mode-map (kbd "h")      #'treemacs-root-up)
+(evil-define-key 'treemacs treemacs-mode-map (kbd "l")      #'treemacs-root-down)
 
 (provide 'treemacs-evil)
 

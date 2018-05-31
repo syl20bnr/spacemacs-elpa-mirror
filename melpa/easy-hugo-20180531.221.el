@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20180513.1055
-;; Version: 3.2.27
+;; Package-Version: 20180531.221
+;; Version: 3.3.27
 ;; Package-Requires: ((emacs "24.4") (popup "0.5.3"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -42,6 +42,11 @@
 
 (defcustom easy-hugo-basedir nil
   "Directory where hugo html source code is placed."
+  :group 'easy-hugo
+  :type 'string)
+
+(defcustom easy-hugo-bin "hugo"
+  "Hugo binary."
   :group 'easy-hugo
   :type 'string)
 
@@ -242,6 +247,7 @@ Because only two are supported by hugo."
   :type 'string)
 
 (push `((easy-hugo-basedir . ,easy-hugo-basedir)
+	(easy-hugo-bin . ,easy-hugo-bin)
 	(easy-hugo-url . ,easy-hugo-url)
 	(easy-hugo-root . ,easy-hugo-root)
 	(easy-hugo-sshdomain . ,easy-hugo-sshdomain)
@@ -277,6 +283,10 @@ Because only two are supported by hugo."
 (defvar easy-hugo--google-cloud-storage-deploy-timer-list
   (make-list (length easy-hugo-bloglist) 'nil)
   "Timer list for cansel google cloud storage deploy timer.")
+
+(defconst easy-hugo--default-bin
+  easy-hugo-bin
+  "Default easy-hugo-bin.")
 
 (defconst easy-hugo--default-github-deploy-script
   easy-hugo-github-deploy-script
@@ -338,7 +348,7 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
   `(progn
      (unless easy-hugo-basedir
        (error "Please set easy-hugo-basedir variable"))
-     (unless (executable-find "hugo")
+     (unless (executable-find easy-hugo-bin)
        (error "'hugo' is not installed"))
      (let ((default-directory easy-hugo-basedir))
        ,@body)))
@@ -574,7 +584,7 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
   (easy-hugo-with-env
    (when (file-directory-p "public")
      (delete-directory "public" t nil))
-   (let ((ret (call-process "hugo" nil "*hugo-publish*" t "--destination" "public")))
+   (let ((ret (call-process easy-hugo-bin nil "*hugo-publish*" t "--destination" "public")))
      (unless (zerop ret)
        (switch-to-buffer (get-buffer "*hugo-publish*"))
        (error "'hugo --destination public' command does not end normally")))
@@ -604,7 +614,7 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
   (interactive "nMinute:")
   (unless easy-hugo-basedir
     (error "Please set easy-hugo-basedir variable"))
-  (unless (executable-find "hugo")
+  (unless (executable-find easy-hugo-bin)
     (error "'hugo' is not installed"))
   (unless easy-hugo-sshdomain
     (error "Please set easy-hugo-sshdomain variable"))
@@ -637,7 +647,7 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
   (let ((default-directory (easy-hugo-nth-eval-bloglist easy-hugo-basedir n)))
     (when (file-directory-p "public")
       (delete-directory "public" t nil))
-    (let ((ret (call-process "hugo" nil "*hugo-publish*" t "--destination" "public")))
+    (let ((ret (call-process easy-hugo-bin nil "*hugo-publish*" t "--destination" "public")))
       (unless (zerop ret)
 	(switch-to-buffer (get-buffer "*hugo-publish*"))
 	(setf (nth n easy-hugo--publish-timer-list) nil)
@@ -700,7 +710,7 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
        (error "%s already exists!" filename))
      (if (and (null easy-hugo-org-header)
 	      (<= 0.25 (easy-hugo--version)))
-	 (call-process "hugo" nil "*hugo*" t "new"
+	 (call-process easy-hugo-bin nil "*hugo*" t "new"
 		       (file-relative-name filename
 					   (expand-file-name "content" easy-hugo-basedir)))
        (progn
@@ -709,7 +719,7 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
 		 (string-equal file-ext "rst")
 		 (string-equal file-ext "mmark")
 		 (string-equal file-ext easy-hugo-html-extension))
-	     (call-process "hugo" nil "*hugo*" t "new"
+	     (call-process easy-hugo-bin nil "*hugo*" t "new"
 			   (file-relative-name filename
 					       (expand-file-name "content" easy-hugo-basedir))))))
      (when (get-buffer "*hugo*")
@@ -726,7 +736,7 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
   "Return the version of hugo."
   (let ((source (split-string
 		 (with-temp-buffer
-		   (shell-command-to-string "hugo version"))
+		   (shell-command-to-string (concat easy-hugo-bin " version")))
 		 " ")))
     (string-to-number (substring (nth 4 source) 1))))
 
@@ -741,9 +751,9 @@ POST-FILE needs to have and extension '.md' or '.org' or '.ad' or '.rst' or '.mm
        (if (<= 0.25 (easy-hugo--version))
 	   (setq easy-hugo--server-process
 		 (start-process "hugo-server"
-				easy-hugo--preview-buffer "hugo" "server" "--navigateToChanged"))
+				easy-hugo--preview-buffer easy-hugo-bin "server" "--navigateToChanged"))
 	 (setq easy-hugo--server-process
-	       (start-process "hugo-server" easy-hugo--preview-buffer "hugo" "server")))
+	       (start-process "hugo-server" easy-hugo--preview-buffer easy-hugo-bin "server")))
        (while easy-hugo--preview-loop
 	 (if (equal (easy-hugo--preview-status) "200")
 	     (progn
@@ -946,7 +956,7 @@ to the server."
   (interactive "nMinute:")
   (unless easy-hugo-basedir
     (error "Please set easy-hugo-basedir variable"))
-  (unless (executable-find "hugo")
+  (unless (executable-find easy-hugo-bin)
     (error "'hugo' is not installed"))
   (let ((deployscript (file-truename (expand-file-name
 				      easy-hugo-github-deploy-script
@@ -1005,7 +1015,7 @@ to the server."
      (error "Please set 'easy-hugo-amazon-s3-bucket-name' variable"))
    (when (file-directory-p "public")
      (delete-directory "public" t nil))
-   (let ((ret (call-process "hugo" nil "*hugo-amazon-s3-deploy*" t "--destination" "public")))
+   (let ((ret (call-process easy-hugo-bin nil "*hugo-amazon-s3-deploy*" t "--destination" "public")))
      (unless (zerop ret)
        (switch-to-buffer (get-buffer "*hugo-amazon-s3-deploy*"))
        (error "'hugo --destination public' command does not end normally")))
@@ -1023,7 +1033,7 @@ to the server."
   (interactive "nMinute:")
   (unless easy-hugo-basedir
     (error "Please set easy-hugo-basedir variable"))
-  (unless (executable-find "hugo")
+  (unless (executable-find easy-hugo-bin)
     (error "'hugo' is not installed"))
   (unless (executable-find "aws")
     (error "'aws' is not installed"))
@@ -1050,7 +1060,7 @@ to the server."
 (defun easy-hugo-amazon-s3-deploy-on-timer (n)
   "Deploy hugo source at Amazon S3 on timer at N."
   (let* ((default-directory (easy-hugo-nth-eval-bloglist easy-hugo-basedir n))
-	 (ret (call-process "hugo" nil "*hugo-amazon-s3-deploy*" t "--destination" "public"))
+	 (ret (call-process easy-hugo-bin nil "*hugo-amazon-s3-deploy*" t "--destination" "public"))
 	 (default-directory easy-hugo-basedir))
     (unless (zerop ret)
       (switch-to-buffer (get-buffer "*hugo-amazon-s3-deploy*"))
@@ -1080,7 +1090,7 @@ to the server."
    (when (file-directory-p "public")
      (delete-directory "public" t nil))
    (let ((ret (call-process
-	       "hugo" nil "*hugo-google-cloud-storage-deploy*" t "--destination" "public")))
+	       easy-hugo-bin nil "*hugo-google-cloud-storage-deploy*" t "--destination" "public")))
      (unless (zerop ret)
        (switch-to-buffer (get-buffer "*hugo-google-cloud-storage-deploy*"))
        (error "'hugo --destination public' command does not end normally")))
@@ -1099,7 +1109,7 @@ to the server."
   (interactive "nMinute:")
   (unless easy-hugo-basedir
     (error "Please set easy-hugo-basedir variable"))
-  (unless (executable-find "hugo")
+  (unless (executable-find easy-hugo-bin)
     (error "'hugo' is not installed"))
   (unless (executable-find "gsutil")
     (error "'Google Cloud SDK' is not installed"))
@@ -1127,7 +1137,7 @@ to the server."
   "Deploy hugo source at Google Cloud Storage on timer at N."
   (let* ((default-directory (easy-hugo-nth-eval-bloglist easy-hugo-basedir n))
 	 (ret (call-process
-	       "hugo" nil "*hugo-google-cloud-storage-deploy*" t "--destination" "public"))
+	       easy-hugo-bin nil "*hugo-google-cloud-storage-deploy*" t "--destination" "public"))
 	 (default-directory easy-hugo-basedir))
     (unless (zerop ret)
       (switch-to-buffer (get-buffer "*hugo-google-cloud-storage-deploy*"))
@@ -1727,6 +1737,9 @@ Optional prefix ARG says how many lines to move; default is one line."
     (easy-hugo-set-bloglist easy-hugo-sshdomain)
     (easy-hugo-set-bloglist easy-hugo-amazon-s3-bucket-name)
     (easy-hugo-set-bloglist easy-hugo-google-cloud-storage-bucket-name)
+    (if (easy-hugo-eval-bloglist easy-hugo-bin)
+	(easy-hugo-set-bloglist easy-hugo-bin)
+      (setq easy-hugo-bin easy-hugo--default-bin))
     (if (easy-hugo-eval-bloglist easy-hugo-github-deploy-script)
 	(easy-hugo-set-bloglist easy-hugo-github-deploy-script)
       (setq easy-hugo-github-deploy-script easy-hugo--default-github-deploy-script))
@@ -1780,6 +1793,9 @@ Optional prefix ARG says how many lines to move; default is one line."
     (easy-hugo-set-bloglist easy-hugo-sshdomain)
     (easy-hugo-set-bloglist easy-hugo-amazon-s3-bucket-name)
     (easy-hugo-set-bloglist easy-hugo-google-cloud-storage-bucket-name)
+    (if (easy-hugo-eval-bloglist easy-hugo-bin)
+	(easy-hugo-set-bloglist easy-hugo-bin)
+      (setq easy-hugo-bin easy-hugo--default-bin))
     (if (easy-hugo-eval-bloglist easy-hugo-github-deploy-script)
 	(easy-hugo-set-bloglist easy-hugo-github-deploy-script)
       (setq easy-hugo-github-deploy-script easy-hugo--default-github-deploy-script))
@@ -1835,6 +1851,9 @@ Optional prefix ARG says how many lines to move; default is one line."
     (easy-hugo-set-bloglist easy-hugo-sshdomain)
     (easy-hugo-set-bloglist easy-hugo-amazon-s3-bucket-name)
     (easy-hugo-set-bloglist easy-hugo-google-cloud-storage-bucket-name)
+    (if (easy-hugo-eval-bloglist easy-hugo-bin)
+	(easy-hugo-set-bloglist easy-hugo-bin)
+      (setq easy-hugo-bin easy-hugo--default-bin))
     (if (easy-hugo-eval-bloglist easy-hugo-github-deploy-script)
 	(easy-hugo-set-bloglist easy-hugo-github-deploy-script)
       (setq easy-hugo-github-deploy-script easy-hugo--default-github-deploy-script))
@@ -1989,7 +2008,7 @@ output directories whose names match REGEXP."
      (error "'List draft' requires hugo 0.25 or higher"))
    (let ((source (split-string
 		  (with-temp-buffer
-		    (let ((ret (call-process-shell-command "hugo list drafts" nil t)))
+		    (let ((ret (call-process-shell-command (concat easy-hugo-bin " list drafts") nil t)))
 		      (unless (zerop ret)
 			(error "'Hugo list drafts' command does not end normally"))
 		      (buffer-string)))

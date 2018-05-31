@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 20180529.914
+;; Package-Version: 20180531.438
 ;; Version: 2.10
 
 ;; This file is not part of GNU Emacs.
@@ -110,7 +110,6 @@
 (defvar rtags-buffer-bookmarks 0)
 (defvar rtags-diagnostics-process nil)
 (defvar rtags-diagnostics-starting nil)
-(defvar rtags-tramp-enabled nil)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -310,6 +309,12 @@ the Customize interface, `rtags-set-periodic-reparse-timeout',
 
 (defcustom rtags-tracking nil
   "When on automatically jump to symbol under cursor in *RTags* buffer."
+  :group 'rtags
+  :type 'boolean
+  :safe 'booleanp)
+
+(defcustom rtags-tramp-enabled nil
+  "Enable tramp support."
   :group 'rtags
   :type 'boolean
   :safe 'booleanp)
@@ -1232,13 +1237,24 @@ absolute-location to remote. absolute-location can of course be a path"
           (not (tramp-tramp-file-p default-directory))
           (tramp-tramp-file-p absolute-location))
       absolute-location
-    (let ((location-vec (tramp-dissect-file-name default-directory)))
-      (if (arrayp location-vec)
-	  (progn
-	    (aset location-vec 3 absolute-location)
-	  (apply 'tramp-make-tramp-file-name (append location-vec nil)))
-	(setf (tramp-file-name-localname location-vec) absolute-location)
-	(tramp-make-tramp-file-name location-vec)))))
+    ;; From helm-files.el
+    ;; `tramp-dissect-file-name' returns a list in emacs-26
+    ;; whereas in 24.5 it returns a vector, thus the car is a
+    ;; symbol (`tramp-file-name') which is not needed as argument
+    ;; for `tramp-make-tramp-file-name' so transform the cdr in
+    ;; vector, and for 24.5 use directly the returned value.
+    (let ((location-vec
+           (cl-loop with v = (rtags--tramp-cons-or-vector
+                              (tramp-dissect-file-name default-directory))
+              for i across v collect i)))
+      (setf (nth (if (= (length location-vec)) 5 3 5) location-vec) absolute-location)
+      (apply #'tramp-make-tramp-file-name location-vec))))
+
+(defun rtags--tramp-cons-or-vector (vector-or-cons)
+  "Return VECTOR-OR-CONS as a vector."
+  (pcase vector-or-cons
+    (`(,_l . ,ll) (vconcat ll))
+    ((and vec (pred vectorp)) vec)))
 
 (defun rtags-untrampify (location)
   "Gets path segment from tramp path. For non-tramp location just return
@@ -4803,12 +4819,12 @@ See `rtags-get-summary-text' for details."
 
 (defun rtags-visible-buffers ()
   (let ((buffers))
-  (dolist (frame (frame-list))
-    (dolist (window (window-list frame))
-      (let ((buf (window-buffer window)))
-        (when (funcall rtags-is-indexable buf)
-          (cl-pushnew buf buffers)))))
-  buffers))
+    (dolist (frame (frame-list))
+      (dolist (window (window-list frame))
+        (let ((buf (window-buffer window)))
+          (when (funcall rtags-is-indexable buf)
+            (cl-pushnew buf buffers)))))
+    buffers))
 
 (defun rtags-visible-buffer-paths ()
   (mapcar (lambda (buf) (cons (rtags-trampify (buffer-file-name buf)) buf)) (rtags-visible-buffers)))
@@ -4825,11 +4841,11 @@ so it knows what files may be queried which helps with responsiveness.
            (arg (if buffers
                     (mapconcat 'rtags-buffer-file-name buffers ";")
                   ";")))
-        (when rtags-rc-log-enabled
-          (rtags-log (concat "--set-buffers files: " arg)))
-        (when (not (string= rtags-previous-buffer-list arg))
-          (setq rtags-previous-buffer-list arg)
-          (rtags-call-rc :noerror t :silent-query t :output nil :silent t :path t "--set-buffers" arg)))))
+      (when rtags-rc-log-enabled
+        (rtags-log (concat "--set-buffers files: " arg)))
+      (when (not (string= rtags-previous-buffer-list arg))
+        (setq rtags-previous-buffer-list arg)
+        (rtags-call-rc :noerror t :silent-query t :output nil :silent t :path t "--set-buffers" arg)))))
 
 (add-hook 'window-configuration-change-hook 'rtags-update-buffer-list)
 
