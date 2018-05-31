@@ -14,7 +14,7 @@
 
 ;; Author: Danny McClanahan
 ;; Version: 0.1
-;; Package-Version: 20180529.2224
+;; Package-Version: 20180530.1421
 ;; URL: https://github.com/cosmicexplorer/helm-rg
 ;; Package-Requires: ((emacs "25") (helm "2.8.8") (cl-lib "0.5") (dash "2.13.0"))
 ;; Keywords: find, file, files, helm, fast, rg, ripgrep, grep, search
@@ -106,8 +106,8 @@
 ;;     - [x] can insert markers on either side of each line to find the text
 ;; added or removed
 ;;     - [x] can change the filename by editing the file line
-;;         - [x] **needs** to reset all the file data for each entry if the
-;; file name is being changed!!!
+;;         - [x] needs to reset all the file data for each entry if the file
+;; name is being changed!!!
 ;;     - [ ] can expand the windows of text beyond single lines at a time
 ;;         - and pop into another buffer for a quick view if you want
 ;; - [x] color all results in the file in the async action!
@@ -296,7 +296,7 @@ This is purely an interface change, and does not affect anything else."
   "Face for the ripgrep executable in the ripgrep invocation."
   :group 'helm-rg)
 
-(defface helm-rg-cmd-arg-face
+(defface helm-rg-inactive-arg-face
   '((t (:foreground "gray" :weight normal)))
   "Face for non-essential arguments in the ripgrep invocation."
   :group 'helm-rg)
@@ -372,9 +372,9 @@ case-sensitivity.")
     ((->> helm-rg--case-sensitive-argument-alist
           (helm-rg--alist-get-exhaustive helm-rg--case-sensitivity))
      :face helm-rg-active-arg-face)
-    ("--color=ansi" :face helm-rg-cmd-arg-face)
+    ("--color=ansi" :face helm-rg-inactive-arg-face)
     ((helm-rg--construct-match-color-format-arguments)
-     :face helm-rg-cmd-arg-face)
+     :face helm-rg-inactive-arg-face)
     ((unless (helm-rg--empty-glob-p helm-rg--glob-string)
        (list "-g" helm-rg--glob-string))
      :face helm-rg-active-arg-face)
@@ -670,54 +670,46 @@ Make a dummy process if the input is empty with a clear message to the user."
   (cl-destructuring-bind (&key
                           ((:file orig-file))
                           ((:line-num orig-line-num))
-                          ((:match-results orig-match-results))) orig-line-parsed
-    ;; If the file path matches `helm-rg-shallow-highlight-files-regexp', just
-    ;; highlight the matches for the current line, if not on a file line.
-    (if (and (stringp helm-rg-shallow-highlight-files-regexp)
-             (string-match-p helm-rg-shallow-highlight-files-regexp
-                             file-abs-path))
-        (and orig-line-num orig-match-results
-             (list
-              (list :match-line-num orig-line-num
-                    :line-match-results orig-match-results)))
-      ;; Otherwise, collect all the results on all matching lines of the file.
-      (with-helm-window
-        (helm-rg--file-backward t)
-        (let ((all-match-results nil))
-          ;; Process the first line (`helm-rg--iterate-results' will advance
-          ;; past the initial element).
-          (cl-destructuring-bind (&key file line-num match-results) (helm-rg--current-jump-location)
-            (when (and line-num match-results)
-              (push (list :match-line-num line-num
-                          :line-match-results match-results)
-                    all-match-results)))
-          (helm-rg--iterate-results
-           'forward
-           :success-fn (lambda (cur-line-parsed)
-                         (cl-destructuring-bind (&key file line-num match-results)
-                             cur-line-parsed
-                           (cl-check-type orig-file string)
-                           (cl-check-type file string)
-                           (if (not (string= orig-file file))
-                               ;; We have reached the results from a different file, so done.
-                               t
-                             (progn
-                               ;; In filename lines, these are nil.
-                               (when (and line-num match-results)
-                                 (push (list :match-line-num line-num
-                                             :line-match-results match-results)
-                                       all-match-results))
-                               ;; We loop forever if there's only one file in
-                               ;; the results unless we return this as success.
-                               (helm-end-of-source-p)))))
-           :failure-fn (lambda (cur-line-parsed)
-                         (helm-rg--different-file-line orig-line-parsed cur-line-parsed)))
-          (helm-rg--iterate-results
-           'backward
-           :success-fn (lambda (cur-line-parsed)
-                         (helm-rg--on-same-entry orig-line-parsed cur-line-parsed))
-           :failure-fn #'ignore)
-          (reverse all-match-results))))))
+                          ((:match-results orig-match-results)))
+      orig-line-parsed
+    ;; Collect all the results on all matching lines of the file.
+    (with-helm-window
+      (helm-rg--file-backward t)
+      (let ((all-match-results nil))
+        ;; Process the first line (`helm-rg--iterate-results' will advance
+        ;; past the initial element).
+        (cl-destructuring-bind (&key file line-num match-results) (helm-rg--current-jump-location)
+          (when (and line-num match-results)
+            (push (list :match-line-num line-num
+                        :line-match-results match-results)
+                  all-match-results)))
+        (helm-rg--iterate-results
+         'forward
+         :success-fn (lambda (cur-line-parsed)
+                       (cl-destructuring-bind (&key file line-num match-results)
+                           cur-line-parsed
+                         (cl-check-type orig-file string)
+                         (cl-check-type file string)
+                         (if (not (string= orig-file file))
+                             ;; We have reached the results from a different file, so done.
+                             t
+                           (progn
+                             ;; In filename lines, these are nil.
+                             (when (and line-num match-results)
+                               (push (list :match-line-num line-num
+                                           :line-match-results match-results)
+                                     all-match-results))
+                             ;; We loop forever if there's only one file in
+                             ;; the results unless we return this as success.
+                             (helm-end-of-source-p)))))
+         :failure-fn (lambda (cur-line-parsed)
+                       (helm-rg--different-file-line orig-line-parsed cur-line-parsed)))
+        (helm-rg--iterate-results
+         'backward
+         :success-fn (lambda (cur-line-parsed)
+                       (helm-rg--on-same-entry orig-line-parsed cur-line-parsed))
+         :failure-fn #'ignore)
+        (reverse all-match-results)))))
 
 (defun helm-rg--convert-lines-matches-to-overlays (line-match-results)
   (beginning-of-line)
@@ -767,16 +759,29 @@ The match is highlighted in its buffer."
              (cur-file-matches
               ;; Clear the old matches and make new ones, if this is a different file than the last
               ;; one we visited in this session.
-              (if (not highlight-matches)
-                  nil
-                (let ((need-rewrite-match-highlights
-                       (not (eq helm-rg--previously-highlighted-buffer buffer-to-display))))
-                  (setq helm-rg--previously-highlighted-buffer buffer-to-display)
-                  (if need-rewrite-match-highlights
-                      (progn
-                        (helm-rg--delete-match-overlays)
-                        (helm-rg--collect-lines-matches-current-file parsed-output file-abs-path))
-                    nil)))))
+              (cond
+               ;; We don't highlight any matches, probably because we are the async action and just
+               ;; want to jump to a file location.
+               ((not highlight-matches)
+                nil)
+               ;; If the file path matches `helm-rg-shallow-highlight-files-regexp', just
+               ;; highlight the matches for the current line, if any. We need to do this again, even
+               ;; if it is the same file, because the single line number to draw may change.
+               ((and (stringp helm-rg-shallow-highlight-files-regexp)
+                     (string-match-p helm-rg-shallow-highlight-files-regexp file-abs-path))
+                ;; Delete the overlay for the previous line.
+                (helm-rg--delete-match-overlays)
+                (list (list :match-line-num line-num
+                            :line-match-results match-results)))
+               ;; This is the same buffer as last time, so do nothing.
+               ((eq helm-rg--previously-highlighted-buffer buffer-to-display)
+                nil)
+               (t
+                ;; This is a different buffer, so record that.
+                (setq helm-rg--previously-highlighted-buffer buffer-to-display)
+                ;; Clear the old lines (from the previous buffer) and make new ones.
+                (helm-rg--delete-match-overlays)
+                (helm-rg--collect-lines-matches-current-file parsed-output file-abs-path)))))
         ;; Display the buffer visiting the file with the matches.
         (funcall helm-rg--display-buffer-method buffer-to-display)
         ;; Make overlays highlighting all the matches (unless we are in the same file as
@@ -1104,6 +1109,14 @@ Merges stdout and stderr, and trims whitespace from the result."
    into cur-match-str
    collect (list :beg match-beg :end match-end) into match-regions))
 
+(cl-defun helm-rg--join-output-line (&key cur-file line-num-str propertized-line)
+  (helm-rg--join (->> ":"
+                      (helm-rg--make-face 'helm-rg-colon-separator-ripgrep-output-face))
+                 `(,@(and cur-file (list cur-file))
+                   ,(->> line-num-str
+                         (helm-rg--make-face 'helm-rg-line-number-match-face))
+                   ,propertized-line)))
+
 (defun helm-rg--process-transition (cur-file line)
   ;; TODO: document this function!
   ;; FIXME: some pcase extensions (?) for regex matching could make this method much more clear.
@@ -1116,15 +1129,10 @@ Merges stdout and stderr, and trims whitespace from the result."
            (propertized-match-results
             (helm-rg--parse-propertize-match-regions-from-match-line content)))
       (cl-destructuring-bind (&key propertized-line match-regions) propertized-match-results
-        (let* ((prefixed-line
-                (helm-rg--join
-                 (->> ":"
-                      (helm-rg--make-face 'helm-rg-colon-separator-ripgrep-output-face))
-                 `(,@(when helm-rg-include-file-on-every-match-line
-                       (list cur-file))
-                   ,(->> line-num-str
-                         (helm-rg--make-face 'helm-rg-line-number-match-face ))
-                   ,propertized-line)))
+        (let* ((prefixed-line (helm-rg--join-output-line
+                               :cur-file (and helm-rg-include-file-on-every-match-line cur-file)
+                               :line-num-str line-num-str
+                               :propertized-line propertized-line))
                (line-num (string-to-number line-num-str))
                (jump-to (list :file cur-file
                               :line-num line-num
@@ -1207,14 +1215,23 @@ Merges stdout and stderr, and trims whitespace from the result."
         ;; NB: we cut off the location entry to only the file, because we are
         ;; making a file header line.
         ;; TODO: make file header line creation into a factory method
-        ;; TODO: is this check necessary?
-        (cl-assert match-results)
         (let* ((file-entry-loc (list :file file))
                (propertized-file-entry-line
                 (propertize file helm-rg--jump-location-text-property file-entry-loc)))
           (insert (format "%s\n" propertized-file-entry-line)))))
     ;; TODO: ???
     (put-text-property pt (point) 'front-sticky `(face ,helm-rg--jump-location-text-property))))
+
+(defun helm-rg--propertize-line-number-prefix-range (beg end)
+  ;; Inserting text at the beginning is not allowed, except for the newline before this
+  ;; entry.
+  (put-text-property beg end 'front-sticky '(read-only))
+  ;; Inserting text after this entry is allowed, and we don't want it to take the face of this
+  ;; text.
+  (put-text-property beg end 'rear-nonsticky '(face read-only))
+  ;; Apply the read-only property.
+  ;; FIXME: can we remove this (1-) here? Why is it here?
+  (put-text-property (1- beg) end 'read-only t))
 
 (defun helm-rg--format-match-line-for-bounce (jump-loc)
   (let ((inhibit-read-only t))
@@ -1231,15 +1248,9 @@ Merges stdout and stderr, and trims whitespace from the result."
       ;; Make the propertized line number text read-only.
       (let* ((matched-number-str (match-string 1))
              (matched-num (string-to-number matched-number-str)))
-        (cl-assert (= matched-num line-num))
-        ;; Inserting text at the beginning is not allowed, except for the newline before this
-        ;; entry.
-        (put-text-property (match-beginning 0) (match-end 0) 'front-sticky '(read-only))
-        ;; Inserting text after this entry is allowed, and we don't want it to take the face of this
-        ;; text.
-        (put-text-property (match-beginning 0) (match-end 0) 'rear-nonsticky '(face read-only))
-        ;; Apply the read-only property.
-        (put-text-property (1- (match-beginning 0)) (match-end 0) 'read-only t))))
+        ;; TODO: is this check necessary?
+        (cl-assert (= matched-num line-num)))
+      (helm-rg--propertize-line-number-prefix-range (match-beginning 0) (match-end 0))))
   (forward-line 1))
 
 (defun helm-rg--propertize-match-line-from-file-for-bounce (line-to-propertize jump-loc)
@@ -1267,9 +1278,10 @@ Merges stdout and stderr, and trims whitespace from the result."
         (delete-region (point) match-end))
       (insert (-> cur-line-in-file-to-propertize
                   (copy-seq)
-                  (helm-rg--propertize-match-line-from-file-for-bounce jump-loc)))
-      ;; We don't insert a newline -- go to the next line.
-      (forward-char))))
+                  (helm-rg--propertize-match-line-from-file-for-bounce jump-loc))))
+    ;; We don't insert a newline -- go to the next line.
+    (forward-char)
+    line-num))
 
 (defun helm-rg--save-match-line-content-to-file-for-bounce
     (scratch-buf jump-loc match-end maybe-new-file-name)
@@ -1284,16 +1296,35 @@ Merges stdout and stderr, and trims whitespace from the result."
     (with-current-buffer scratch-buf
       (delete-region (line-beginning-position) (line-end-position))
       (insert match-text))
-    (cl-destructuring-bind (&key file line-num match-results) jump-loc
-      (unless (string= file maybe-new-file-name)
-        (let ((new-entry-props (list :file maybe-new-file-name
-                                     :line-num line-num
-                                     :match-results match-results))
-              (inhibit-read-only t))
-          (put-text-property
-           (line-beginning-position) match-end
-           helm-rg--jump-location-text-property new-entry-props))))
-    (goto-char (1+ match-end))))
+    (cl-destructuring-bind (&key file ((:line-num orig-line-num)) match-results) jump-loc
+      (let ((inhibit-read-only t))
+        ;; Put new "fake" match output line data into each line, including a numeric prefix (the first
+        ;; line is already done).
+        (cl-loop
+         with match-end-mark = (let ((mark (make-marker)))
+                                   (set-marker-insertion-type mark t)
+                                   (set-marker mark match-end)
+                                   mark)
+         ;; FIXME: doesn't quite work when adding lines and then trying to edit them!!!!
+         for new-line-num = (1+ orig-line-num) then (1+ new-line-num)
+         while (re-search-forward "\n" match-end-mark t)
+         for cur-match-line-num = (-> (helm-rg--current-jump-location) (plist-get :line-num))
+         do (put-text-property (1- (point)) (point) helm-rg--jump-location-text-property nil)
+         while (and cur-match-line-num (= orig-line-num cur-match-line-num))
+         for new-entry-props = (list :file maybe-new-file-name
+                                     :line-num new-line-num
+                                     :match-results nil)
+         for output-line-prefix = (helm-rg--join-output-line
+                                   :line-num-str (number-to-string new-line-num)
+                                   :propertized-line "")
+         do (insert output-line-prefix)
+         do (helm-rg--propertize-line-number-prefix-range (line-beginning-position) (point))
+         do (put-text-property (line-beginning-position) (line-end-position)
+                               helm-rg--jump-location-text-property new-entry-props)
+         finally (goto-char (1+ match-end-mark))
+         finally (set-marker match-end-mark nil)
+         finally (beginning-of-line)
+         finally return (1- new-line-num))))))
 
 (cl-defun helm-rg--iterate-match-entries-for-bounce (&key file-visitor match-visitor end-of-file-fn)
   (goto-char helm-rg--beginning-of-bounce-content-mark)
@@ -1317,17 +1348,21 @@ Merges stdout and stderr, and trims whitespace from the result."
    :match-visitor (lambda (match-loc)
                     (helm-rg--format-match-line-for-bounce match-loc))))
 
-(defun helm-rg--insert-colorized-file-contents (scratch-buf file-header-loc)
+(defun helm-rg--insert-colorized-file-contents-for-bounce (scratch-buf file-header-loc)
   (cl-destructuring-bind (&key file) file-header-loc
     (with-current-buffer scratch-buf
       ;; TODO: ???
       (insert-file-contents file t nil nil t)
-      ;; Don't apply e.g. syntax highlighting if e.g. this file is very large.
+      ;; Don't apply e.g. syntax highlighting if e.g. this file is very large (according to
+      ;; `helm-rg-shallow-highlight-files-regexp').
       (unless (and helm-rg-shallow-highlight-files-regexp
                    (string-match-p helm-rg-shallow-highlight-files-regexp file))
         (normal-mode)
         (font-lock-mode 1))
       (goto-char (point-min)))))
+
+(defun helm-rg--make-line-number-prefix-regexp-for-bounce (line-num)
+  (rx-to-string `(: bol ,(number-to-string line-num) ":")))
 
 (cl-defun helm-rg--apply-matches-with-file-for-bounce
     (&key file-header-line-visitor match-line-visitor finalize-file-buffer-fn)
@@ -1336,7 +1371,8 @@ Merges stdout and stderr, and trims whitespace from the result."
       (helm-rg--iterate-match-entries-for-bounce
        :file-visitor (lambda (file-header-loc)
                        (setq cur-line 1)
-                       (helm-rg--insert-colorized-file-contents scratch-buf file-header-loc)
+                       (helm-rg--insert-colorized-file-contents-for-bounce
+                        scratch-buf file-header-loc)
                        (let* ((file-header-end-pos
                                (next-single-property-change
                                 (point) helm-rg--jump-location-text-property))
@@ -1354,24 +1390,25 @@ Merges stdout and stderr, and trims whitespace from the result."
                          (set-marker file-header-end-marker nil)))
        :match-visitor (lambda (match-loc)
                         (cl-destructuring-bind (&key file line-num match-results) match-loc
-                          (let ((line-number-prefix-pattern
-                                 (rx-to-string `(: bol ,(number-to-string line-num) ":"))))
-                            (re-search-forward line-number-prefix-pattern))
+                          (-> line-num
+                              (helm-rg--make-line-number-prefix-regexp-for-bounce)
+                              (re-search-forward))
                           (let ((line-diff (- line-num cur-line)))
                             (cl-assert (or (and (= cur-line 1)
                                                 (= line-num 1))
                                            (> line-diff 0)))
                             (with-current-buffer scratch-buf
                               (forward-line line-diff))
-                            (let ((match-end
-                                   ;; Get the end of the text from this line of output -- it may
-                                   ;; span multiple lines. This is nil if the line is empty.
-                                   (next-single-property-change
-                                    (point) helm-rg--jump-location-text-property)))
-                              (funcall match-line-visitor scratch-buf match-loc match-end))
-                            ;; Update the line number in the scratch buffer to the one from this
-                            ;; match line.
-                            (setq cur-line line-num))))
+                            (let* ((match-end
+                                    ;; Get the end of the text from this line of output -- it may
+                                    ;; span multiple lines. This is nil if the line is empty.
+                                    (next-single-property-change
+                                     (point) helm-rg--jump-location-text-property))
+                                   (new-line-num
+                                    (funcall match-line-visitor scratch-buf match-loc match-end)))
+                              ;; Update the line number in the scratch buffer to the one from this
+                              ;; match line.
+                              (setq cur-line new-line-num)))))
        :end-of-file-fn (when finalize-file-buffer-fn
                          (lambda (file-header-loc)
                            (funcall finalize-file-buffer-fn file-header-loc scratch-buf)))))))

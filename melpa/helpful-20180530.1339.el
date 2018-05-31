@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180530.38
+;; Package-Version: 20180530.1339
 ;; Keywords: help, lisp
 ;; Version: 0.11
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -126,7 +126,7 @@ as describing `this-command'.")
           ;; Kill buffers so we have one buffer less than the maximum
           ;; before we create a new one.
           (-each excess-buffers #'kill-buffer)))
-      
+
       (setq buf (get-buffer-create buf-name)))
 
     ;; Initialise the buffer with the symbol and associated data.
@@ -1025,7 +1025,7 @@ buffer."
       ;; Convert foo.elc to foo.el.
       (-when-let (src-path (helpful--find-library-name path))
         ;; Open `path' ourselves, so we can widen before searching.
-        ;; 
+        ;;
         ;; Opening large.c files can be slow (e.g. when looking at
         ;; `defalias'), especially if the user has configured mode hooks.
         ;;
