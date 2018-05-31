@@ -5,7 +5,7 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-which-key
-;; Package-Version: 20180522.711
+;; Package-Version: 20180530.1902
 ;; Version: 3.2.0
 ;; Keywords:
 ;; Package-Requires: ((emacs "24.4"))
@@ -647,6 +647,12 @@ update.")
 (defvar which-key--previous-frame-size nil)
 (defvar which-key--prefix-title-alist nil)
 (defvar which-key--debug nil)
+(defvar which-key--evil-keys-regexp (eval-when-compile
+                                      (regexp-opt '("-state"))))
+(defvar which-key--ignore-non-evil-keys-regexp
+  (eval-when-compile
+    (regexp-opt '("mouse-" "wheel-" "remap" "drag-" "scroll-bar"
+                  "select-window" "switch-frame" "which-key-"))))
 (defvar which-key--ignore-keys-regexp
   (eval-when-compile
     (regexp-opt '("mouse-" "wheel-" "remap" "drag-" "scroll-bar"
@@ -1477,16 +1483,21 @@ which are strings. KEY is of the form produced by `key-binding'."
       (intern (cdr keydesc))))
 
 (defun which-key--map-binding-p (map keydesc)
+  "Does MAP contain KEYDESC = (key . binding)?"
   (or
    (when (bound-and-true-p evil-state)
-     (eq (which-key--safe-lookup-key
-          map
-          (kbd (which-key--current-key-string
-                (format "<%s-state> %s" evil-state (car keydesc)))))
-         (intern (cdr keydesc))))
-   (eq (which-key--safe-lookup-key
-        map (kbd (which-key--current-key-string (car keydesc))))
-       (intern (cdr keydesc)))))
+     (let ((lookup
+            (which-key--safe-lookup-key
+             map
+             (kbd (which-key--current-key-string
+                   (format "<%s-state> %s" evil-state (car keydesc)))))))
+       (or (eq lookup (intern (cdr keydesc)))
+           (and (keymapp lookup) (string= (cdr keydesc) "Prefix Command")))))
+   (let ((lookup
+          (which-key--safe-lookup-key
+           map (kbd (which-key--current-key-string (car keydesc))))))
+     (or (eq lookup (intern (cdr keydesc)))
+         (and (keymapp lookup) (string= (cdr keydesc) "Prefix Command"))))))
 
 (defun which-key--pseudo-key (key &optional prefix)
   "Replace the last key in the sequence KEY by a special symbol
@@ -1688,27 +1699,39 @@ ones. PREFIX is for internal use and should not be used."
      (lambda (ev def)
        (let* ((key (append prefix (list ev)))
               (key-desc (key-description key)))
-         (unless (or (string-match-p which-key--ignore-keys-regexp key-desc)
-                     (eq ev 'menu-bar))
-           (if (and (keymapp def)
-                    (or all
-                        ;; event 27 is escape, so this will pick up meta
-                        ;; bindings and hopefully not too much more
-                        (and (numberp ev) (= ev 27))))
-               (setq bindings
-                     (append bindings
-                             (which-key--get-keymap-bindings def t key)))
-             (when def
-               (cl-pushnew
-                (cons key-desc
-                      (cond
-                       ((keymapp def) "Prefix Command")
-                       ((symbolp def) (copy-sequence (symbol-name def)))
-                       ((eq 'lambda (car-safe def)) "lambda")
-                       ((eq 'menu-item (car-safe def)) "menu-item")
-                       ((stringp def) def)
-                       (t "unknown")))
-                bindings :test (lambda (a b) (string= (car a) (car b)))))))))
+         (cond ((or (string-match-p
+                     which-key--ignore-non-evil-keys-regexp key-desc)
+                    (eq ev 'menu-bar)))
+               ;; extract evil keys corresponding to current state
+               ((and (keymapp def)
+                     (boundp 'evil-state)
+                     (bound-and-true-p evil-local-mode)
+                     (string-match-p (format "<%s-state>$" evil-state) key-desc))
+                (setq bindings
+                      (append bindings
+                              (which-key--get-keymap-bindings def all prefix))))
+               ((and (keymapp def)
+                     (string-match-p which-key--evil-keys-regexp key-desc)))
+               ((and (keymapp def)
+                     (or all
+                         ;; event 27 is escape, so this will pick up meta
+                         ;; bindings and hopefully not too much more
+                         (and (numberp ev) (= ev 27))))
+                (setq bindings
+                      (append bindings
+                              (which-key--get-keymap-bindings def t key))))
+               (t
+                (when def
+                  (cl-pushnew
+                   (cons key-desc
+                         (cond
+                          ((keymapp def) "Prefix Command")
+                          ((symbolp def) (copy-sequence (symbol-name def)))
+                          ((eq 'lambda (car-safe def)) "lambda")
+                          ((eq 'menu-item (car-safe def)) "menu-item")
+                          ((stringp def) def)
+                          (t "unknown")))
+                   bindings :test (lambda (a b) (string= (car a) (car b)))))))))
      keymap)
     bindings))
 
