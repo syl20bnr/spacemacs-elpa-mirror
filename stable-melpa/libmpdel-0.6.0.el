@@ -4,10 +4,10 @@
 
 ;; Author: Damien Cassou <damien@cassou.me>
 ;; Keywords: multimedia
-;; Package-Version: 0.5.0
-;; Url: https://github.com/DamienCassou/mpdel
+;; Package-Version: 0.6.0
+;; Url: https://gitlab.petton.fr/mpdel/libmpdel
 ;; Package-requires: ((emacs "25.1"))
-;; Version: 0.5.0
+;; Version: 0.6.0
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -94,6 +94,15 @@ The logs of this connection are accessible in the *mpd* buffer.")
       "\n")
   "Regexp matching the responses sent by the MPD server.")
 
+(defconst libmpdel--msgfield-regexp
+  (rx line-start
+      (group (+? (not (any ?:))))
+      ": "
+      (group (* not-newline))
+      line-end)
+  "Regexp matching a line consisting of a key and a value.
+The key is stored in group 1 and the value in group 2.")
+
 (defvar libmpdel--msghandlers nil
   "Current commands sent to the server.
 Each element in the list is of the form (COMMAND HANDLER BUFFER).
@@ -146,6 +155,8 @@ message from the server.")
   (track nil :read-only t)
   (file nil :read-only t)
   (album nil :read-only t)
+  (disk nil :read-only t)
+  (date nil :read-only t)
   (id nil :read-only t)
   (pos nil :read-only t))
 
@@ -154,34 +165,18 @@ message from the server.")
                (:conc-name libmpdel--stored-playlist-))
   (name nil :read-only t))
 
-(cl-defstruct (libmpdel-current-playlist
-               (:constructor libmpdel--current-playlist-create)
-               (:conc-name libmpdel--current-playlist-)))
-
 (cl-defstruct (libmpdel-search-criteria
                (:constructor libmpdel-search-criteria-create)
                (:conc-name libmpdel--search-criteria-))
   (type nil :read-only t)
   (what nil :read-only t))
 
-(defun libmpdel-current-playlist ()
-  "Return the current playlist."
-  (libmpdel--current-playlist-create))
+(defun libmpdel-artist-name (entity)
+  "Return artist name of ENTITY."
+  (libmpdel--artist-name (libmpdel-artist entity)))
 
-(cl-defgeneric libmpdel-artist-name (object)
-  "Return artist name of OBJECT.")
-
-(cl-defmethod libmpdel-artist-name ((artist libmpdel-artist))
-  (libmpdel--artist-name artist))
-
-(cl-defmethod libmpdel-artist-name ((album libmpdel-album))
-  (libmpdel-artist-name (libmpdel--album-artist album)))
-
-(cl-defmethod libmpdel-artist-name ((song libmpdel-song))
-  (libmpdel-artist-name (libmpdel--song-album song)))
-
-(cl-defgeneric libmpdel-artist (object)
-  "Return artist of OBJECT.")
+(cl-defgeneric libmpdel-artist (entity)
+  "Return artist of ENTITY.")
 
 (cl-defmethod libmpdel-artist ((artist libmpdel-artist))
   artist)
@@ -192,17 +187,12 @@ message from the server.")
 (cl-defmethod libmpdel-artist ((song libmpdel-song))
   (libmpdel-artist (libmpdel--song-album song)))
 
-(cl-defgeneric libmpdel-album-name (object)
-  "Return album name of OBJECT.")
+(defun libmpdel-album-name (entity)
+  "Return album name of ENTITY."
+  (libmpdel--album-name (libmpdel-album entity)))
 
-(cl-defmethod libmpdel-album-name ((album libmpdel-album))
-  (libmpdel--album-name album))
-
-(cl-defmethod libmpdel-album-name ((song libmpdel-song))
-  (libmpdel-album-name (libmpdel--song-album song)))
-
-(cl-defgeneric libmpdel-album (object)
-  "Return album of OBJECT.")
+(cl-defgeneric libmpdel-album (entity)
+  "Return album of ENTITY.")
 
 (cl-defmethod libmpdel-album ((album libmpdel-album))
   album)
@@ -210,8 +200,8 @@ message from the server.")
 (cl-defmethod libmpdel-album ((song libmpdel-song))
   (libmpdel--song-album song))
 
-(cl-defgeneric libmpdel-entity-name (object)
-  "Return basename of OBJECT.")
+(cl-defgeneric libmpdel-entity-name (entity)
+  "Return basename of ENTITY.")
 
 (cl-defmethod libmpdel-entity-name ((artist libmpdel-artist))
   (libmpdel--artist-name artist))
@@ -226,7 +216,7 @@ message from the server.")
   (libmpdel--stored-playlist-name stored-playlist))
 
 (cl-defgeneric libmpdel-entity-parent (_entity)
-  "Return parent of _ENTITY."
+  "Return parent of ENTITY."
   nil)
 
 (cl-defmethod libmpdel-entity-parent ((song libmpdel-song))
@@ -258,6 +248,14 @@ message from the server.")
   "Return the track number of SONG within its album."
   (or (libmpdel--song-track song) ""))
 
+(defun libmpdel-entity-date (song)
+  "Return the date of SONG."
+  (or (libmpdel--song-date song) ""))
+
+(defun libmpdel-song-disk (song)
+  "Return the disk number of SONG within its album."
+  (or (libmpdel--song-disk song) ""))
+
 (defun libmpdel-song-id (song)
   "Return SONG id within the current playlist, nil if none."
   (libmpdel--song-id song))
@@ -277,12 +275,18 @@ message from the server.")
    :album (libmpdel--album-create
            :name (cdr (assq 'Album song-data))
            :artist (libmpdel--artist-create :name (cdr (assq 'Artist song-data))))
+   :date (cdr (assq 'Date song-data))
+   :disk (cdr (assq 'Disk song-data))
    :id (cdr (assq 'Id song-data))
    :pos (cdr (assq 'Pos song-data))))
 
 (defun libmpdel--create-songs-from-data (data)
   "Return a list of songs from DATA, a server's response."
   (mapcar #'libmpdel--create-song-from-data (libmpdel-group-data data)))
+
+(defun libmpdel-current-playlist-p (entity)
+  "Return non-nil if ENTITY is the current playlist."
+  (eq entity 'current-playlist))
 
 
 ;;; Helper functions
@@ -397,34 +401,37 @@ command."
   (libmpdel--raw-send-command-with-handler "idle" #'libmpdel--msghandler-idle)
   (mapc (lambda (changed-subsystem)
           (cl-case (intern (cdr changed-subsystem))
+            ;; At this point, libmpdel has only been informed that
+            ;; something changed (e.g., "the current playlist has been
+            ;; changed"). We don't have the details (e.g., "the
+            ;; current playlist contains these songs").  As a result,
+            ;; hook functions will have to fetch the details by
+            ;; themselves if they need to.  On the contrary, for hook
+            ;; functions requiring libmpdel to have new data, use
+            ;; `libmpdel--msghandler-status'.
             (playlist (run-hooks 'libmpdel-current-playlist-changed-hook))
             (stored_playlist (run-hooks 'libmpdel-stored-playlist-changed-hook))))
         data))
 
 (defun libmpdel--msghandler-status (data)
   "Handler for the response DATA to the \"status\" command."
-  (mapc (lambda (status-pair)
-          (let ((status-key (car status-pair))
-                (status-value (cdr status-pair)))
-            (cl-case status-key
-              (state (libmpdel--set-play-state status-value))
-              (songid (libmpdel--set-current-song status-value))
-              (playlistlength (libmpdel--set-playlist-length status-value))
-              (volume (libmpdel--set-volume status-value)))))
-        data))
+  (dolist (status-pair data)
+    (let ((status-key (car status-pair))
+          (status-value (cdr status-pair)))
+      (cl-case status-key
+        (state (libmpdel--set-play-state status-value))
+        (songid (libmpdel--set-current-song status-value))
+        (playlistlength (libmpdel--set-playlist-length status-value))
+        (volume (libmpdel--set-volume status-value)))))
+  ;; When no song is being played, 'songid is not in DATA.  If that's
+  ;; the case, we have to set current song to nil:
+  (unless (cl-member 'songid data :key #'car)
+    (libmpdel--set-current-song nil)))
 
 (defun libmpdel--msghandler-ignore (_)
   "No handler was associated to last response."
   ;; nothing to do
   nil)
-
-(defconst libmpdel--msgfield-regexp
-  (rx line-start
-      (group (+? (not (any ?:))))
-      ": "
-      (group (* not-newline))
-      line-end)
-  "Regexp matching a line consisting of a key and a value.")
 
 (defun libmpdel--extract-data (message)
   "Return MESSAGE."
@@ -481,14 +488,18 @@ bound containing the value to set."
   (eq 'stop (libmpdel-play-state)))
 
 (libmpdel--define-state current-song
-  "An object representing currently played song."
-  (let ((old-song libmpdel--current-song))
-    (when (or (not old-song) (not (equal new-value (libmpdel-song-id old-song))))
-      (libmpdel-send-command
-       "currentsong"
-       (lambda (data)
-         (setq libmpdel--current-song (libmpdel--create-song-from-data data))
-         (run-hooks 'libmpdel-current-song-changed-hook))))))
+  "An entity representing currently played song."
+  (when (libmpdel--new-current-song-p new-value)
+    (libmpdel-send-command
+     "currentsong"
+     (lambda (data)
+       (setq libmpdel--current-song (and data (libmpdel--create-song-from-data data)))
+       (run-hooks 'libmpdel-current-song-changed-hook)))))
+
+(defun libmpdel--new-current-song-p (song-id)
+  "Return non-nil if SONG-ID differs from `libmpdel--current-song'."
+  (let ((current-song-id (and libmpdel--current-song (libmpdel-song-id libmpdel--current-song))))
+    (not (equal song-id current-song-id))))
 
 (libmpdel--define-state playlist-length
   "Number of songs in current playlist."
@@ -544,13 +555,13 @@ The user is asked to choose for a stored playlist first."
   "Add ENTITY to a current playlist.
 
 ENTITY can also be a list of entities to add."
-  (libmpdel-playlist-add entity (libmpdel-current-playlist)))
+  (libmpdel-playlist-add entity 'current-playlist))
 
 (defun libmpdel-current-playlist-replace (entity)
   "Replace current playlist with ENTITY.
 
 ENTITY can also be a list of entities to replace with."
-  (libmpdel-playlist-replace entity (libmpdel-current-playlist)))
+  (libmpdel-playlist-replace entity 'current-playlist))
 
 (defun libmpdel-stored-playlist-add (entity)
   "Add ENTITY to a stored playlist.
@@ -567,6 +578,26 @@ The user is asked to choose for a stored playlist first.
 ENTITY can also be a list of entities to replace with."
   (libmpdel-funcall-on-stored-playlist
    (apply-partially #'libmpdel-playlist-replace entity)))
+
+(defun libmpdel-current-playlist-insert (entity)
+  "Insert ENTITY after currently-played song.
+ENTITY can also be a list of entities."
+  (libmpdel-list-songs
+   entity
+   (lambda (songs)
+     (libmpdel-send-commands
+      (mapcar (lambda (song) (format "addid %S" (libmpdel-song-file song))) songs)
+      (lambda (data)
+        (let ((song-ids (mapcar (lambda (song-data) (cdr song-data)) data))
+              ;; Add after current song if possible:
+              (target-index (if (libmpdel-current-song) "-1" "0")))
+          (libmpdel-send-commands
+           ;; The reverse is important to get the songs in the same
+           ;; order as in the selection:
+           (mapcar
+            (lambda (song-id) (format "moveid %s %s" song-id target-index))
+            (reverse song-ids))
+           (lambda (_) (libmpdel-send-command `("playid %s" ,(car song-ids)))))))))))
 
 
 ;;; Public functions
@@ -598,14 +629,15 @@ If HANDLER is nil, ignore response."
     (libmpdel--raw-send-command "noidle"))
   (libmpdel--raw-send-command-with-handler command handler))
 
-(defun libmpdel-send-commands (commands)
-  "Send several COMMANDS at once."
+(defun libmpdel-send-commands (commands &optional handler)
+  "Send several COMMANDS at once and execute HANDLER once with result."
   (libmpdel-send-command
    (with-temp-buffer
      (insert "command_list_begin\n")
      (mapc (lambda (command) (insert command "\n")) commands)
      (insert "command_list_end")
-     (buffer-substring-no-properties (point-min) (point-max)))))
+     (buffer-substring-no-properties (point-min) (point-max)))
+   handler))
 
 (defun libmpdel-entries (data key)
   "Collect DATA entries matching KEY."
@@ -648,8 +680,8 @@ If HANDLER is nil, ignore response."
 
 ;;; Helper queries
 
-(cl-defgeneric libmpdel-entity-to-criteria (object)
-  "Return search criteria matching OBJECT.")
+(cl-defgeneric libmpdel-entity-to-criteria (entity)
+  "Return search criteria matching ENTITY.")
 
 (cl-defmethod libmpdel-entity-to-criteria ((query string))
   query)
@@ -667,10 +699,11 @@ If HANDLER is nil, ignore response."
           (libmpdel-entity-to-criteria (libmpdel-album song))
           (libmpdel-entity-name song)))
 
-(cl-defgeneric libmpdel-list (object function)
-  "Call FUNCTION with all entries matching OBJECT.")
+(cl-defgeneric libmpdel-list (entity function)
+  "Call FUNCTION with all entries matching ENTITY."
+  (libmpdel-list-songs entity function))
 
-(cl-defmethod libmpdel-list ((_object (eql artists)) function)
+(cl-defmethod libmpdel-list ((_entity (eql artists)) function)
   (libmpdel-send-command
    "list artist"
    (lambda (data)
@@ -679,7 +712,7 @@ If HANDLER is nil, ignore response."
                (lambda (artist-name) (libmpdel--artist-create :name artist-name))
                (libmpdel-sorted-entries data 'Artist))))))
 
-(cl-defmethod libmpdel-list ((_object (eql stored-playlists)) function)
+(cl-defmethod libmpdel-list ((_entity (eql stored-playlists)) function)
   "Call FUNCTION with all stored playlists as parameters."
   (libmpdel-send-command
    "listplaylists"
@@ -688,14 +721,6 @@ If HANDLER is nil, ignore response."
               (mapcar
                (lambda (playlist-name) (libmpdel--stored-playlist-create :name playlist-name))
                (libmpdel-sorted-entries data 'playlist))))))
-
-(cl-defmethod libmpdel-list ((search-criteria libmpdel-search-criteria) function)
-  (libmpdel-send-command
-   `("search %s %S"
-     ,(libmpdel--search-criteria-type search-criteria)
-     ,(libmpdel--search-criteria-what search-criteria))
-   (lambda (data)
-     (funcall function (libmpdel--create-songs-from-data data)))))
 
 (cl-defmethod libmpdel-list ((artist libmpdel-artist) function)
   (libmpdel-send-command
@@ -706,23 +731,46 @@ If HANDLER is nil, ignore response."
                (lambda (album-name) (libmpdel--album-create :name album-name :artist artist))
                (libmpdel-sorted-entries data 'Album))))))
 
-(cl-defmethod libmpdel-list ((album libmpdel-album) function)
+(cl-defgeneric libmpdel-list-songs (entity function)
+  "Call FUNCTION with all songs matching ENTITY."
   (libmpdel-send-command
-   `("find %s" ,(libmpdel-entity-to-criteria album))
+   `("find %s" ,(libmpdel-entity-to-criteria entity))
    (lambda (data)
      (funcall function (libmpdel--create-songs-from-data data)))))
 
-(cl-defmethod libmpdel-list ((stored-playlist libmpdel-stored-playlist) function)
+(cl-defmethod libmpdel-list-songs ((stored-playlist libmpdel-stored-playlist) function)
   (libmpdel-send-command
    `("listplaylistinfo %S" ,(libmpdel-entity-name stored-playlist))
    (lambda (data)
      (funcall function (libmpdel--create-songs-from-data data)))))
 
-(cl-defmethod libmpdel-list ((_ libmpdel-current-playlist) function)
+(cl-defmethod libmpdel-list-songs ((_ (eql current-playlist)) function)
   (libmpdel-send-command
    "playlistinfo"
    (lambda (data)
      (funcall function (libmpdel--create-songs-from-data data)))))
+
+(cl-defmethod libmpdel-list-songs ((search-criteria libmpdel-search-criteria) function)
+  (libmpdel-send-command
+   `("search %s %S"
+     ,(libmpdel--search-criteria-type search-criteria)
+     ,(libmpdel--search-criteria-what search-criteria))
+   (lambda (data)
+     (funcall function (libmpdel--create-songs-from-data data)))))
+
+(cl-defmethod libmpdel-list-songs ((song libmpdel-song) function)
+  (funcall function (list song)))
+
+(cl-defmethod libmpdel-list-songs ((entities list) function)
+  "Apply FUNCTION only once for every song in ENTITIES."
+  (if (not entities)
+      (funcall function nil)
+    (libmpdel-list-songs
+     (cdr entities)
+     (lambda (latter-songs)
+       (libmpdel-list-songs
+        (car entities)
+        (lambda (first-songs) (funcall function (append first-songs latter-songs))))))))
 
 
 ;;; Playlist queries
@@ -731,7 +779,7 @@ If HANDLER is nil, ignore response."
   "Add ENTITY to PLAYLIST.
 ENTITY can also be a list of entities to add.")
 
-(cl-defmethod libmpdel-playlist-add (entity (_ libmpdel-current-playlist))
+(cl-defmethod libmpdel-playlist-add (entity (_ (eql current-playlist)))
   (libmpdel-send-command `("findadd %s" ,(libmpdel-entity-to-criteria entity))))
 
 (cl-defmethod libmpdel-playlist-add (entity (stored-playlist libmpdel-stored-playlist))
@@ -740,7 +788,7 @@ ENTITY can also be a list of entities to add.")
      ,(libmpdel-entity-name stored-playlist)
      ,(libmpdel-entity-to-criteria entity))))
 
-(cl-defmethod libmpdel-playlist-add ((stored-playlist libmpdel-stored-playlist) (_ libmpdel-current-playlist))
+(cl-defmethod libmpdel-playlist-add ((stored-playlist libmpdel-stored-playlist) (_ (eql current-playlist)))
   "Add content of STORED-PLAYLIST to the current playlist."
   (libmpdel-send-command `("load %S" ,(libmpdel-entity-name stored-playlist))))
 
@@ -756,7 +804,7 @@ ENTITY can also be a list of entities to add.")
 (cl-defgeneric libmpdel-playlist-clear (playlist)
   "Remove all songs from PLAYLIST.")
 
-(cl-defmethod libmpdel-playlist-clear ((_ libmpdel-current-playlist))
+(cl-defmethod libmpdel-playlist-clear ((_ (eql current-playlist)))
   (libmpdel-send-command "clear"))
 
 (cl-defmethod libmpdel-playlist-clear ((playlist libmpdel-stored-playlist))
@@ -765,7 +813,7 @@ ENTITY can also be a list of entities to add.")
 (cl-defgeneric libmpdel-playlist-delete (songs playlist)
   "Remove SONGS from PLAYLIST.")
 
-(cl-defmethod libmpdel-playlist-delete (songs (_ libmpdel-current-playlist))
+(cl-defmethod libmpdel-playlist-delete (songs (_ (eql current-playlist)))
   (libmpdel-send-commands
    (mapcar (lambda (song) (format "deleteid %s" (libmpdel-song-id song)))
            songs)))
@@ -807,6 +855,13 @@ ENTITY can also be a list of entities to add.")
        (mapcar (lambda (song)
                  (format "moveid %s %s" (libmpdel-song-id song) (1+ (libmpdel-song-position song))))
                songs)))))
+
+(defun libmpdel-playlist-save (name)
+  "Save current playlist as new stored playlist named NAME."
+  (interactive (list (read-from-minibuffer "Enter a new playlist name: ")))
+  (libmpdel-send-command
+   `("save %S" ,name)
+   (lambda (_data) (message "Current playlist saved to %S" name))))
 
 
 ;;; Playback queries
