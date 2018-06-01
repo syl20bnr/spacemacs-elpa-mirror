@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-web-tools
-;; Package-Version: 20180117.1915
+;; Package-Version: 20180531.1808
 ;; Version: 0.1.0-pre
 ;; Package-Requires: ((emacs "25.1") (org "9.0") (dash "2.12") (esxml "0.3.4") (s "1.10.0"))
 ;; Keywords: hypermedia, outlines, Org, Web
@@ -320,7 +320,8 @@ headers ourselves."
                          ;; Skip HTTP headers
                          (delete-region (point-min) url-http-end-of-headers)
                          (buffer-string))))
-    (kill-buffer response-buffer)     ; Not sure if necessary to avoid leaking buffer
+    ;; NOTE: Be careful to kill the buffer, because `url' doesn't close it automatically.
+    (kill-buffer response-buffer)
     (with-temp-buffer
       ;; For some reason, running `decode-coding-region' in the
       ;; response buffer has no effect, so we have to do it in a

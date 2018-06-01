@@ -5,7 +5,7 @@
 ;; Author: James Nguyen <james@jojojames.com>
 ;; Maintainer: James Nguyen <james@jojojames.com>
 ;; URL: https://github.com/jojojames/dired-sidebar
-;; Package-Version: 20180312.1715
+;; Package-Version: 20180531.1931
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1") (dired-subtree "0.0.1"))
 ;; Keywords: dired, files, tools
@@ -102,11 +102,13 @@ This uses format specified by `dired-sidebar-mode-line-format'."
 `ascii' is the simplest style, it will use +/- to display the fold state,
 it is suitable for terminal.
 `icons' use `all-the-icons'.
-`nerd' use the nerdtree indentation mode and arrow."
+`nerd' use the nerdtree indentation mode and arrow.
+`none' use no theme."
   :group 'dired-sidebar
   :type '(choice (const ascii)
                  (const icons)
-                 (const nerd)))
+                 (const nerd)
+                 (const none)))
 
 (defcustom dired-sidebar-width 35
   "Width of the `dired-sidebar' buffer."
@@ -460,8 +462,9 @@ Works around marker pointing to wrong buffer in Emacs 25."
       (all-the-icons-dired-mode)))
    ((eq dired-sidebar-theme 'nerd)
     (dired-sidebar-setup-tui))
-   (:default
-    (dired-sidebar-setup-tui)))
+   ((eq dired-sidebar-theme 'ascii)
+    (dired-sidebar-setup-tui))
+   (:default :no-theme))
 
   (when dired-sidebar-use-custom-font
     (dired-sidebar-set-font))
