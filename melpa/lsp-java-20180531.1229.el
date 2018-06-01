@@ -1,7 +1,7 @@
 ;;; lsp-java.el --- Java support for lsp-mode
 
 ;; Version: 1.0
-;; Package-Version: 20180530.859
+;; Package-Version: 20180531.1229
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "3.0"))
 ;; Keywords: java
 ;; URL: https://github.com/emacs-lsp/lsp-java
@@ -170,14 +170,48 @@ A package or type name prefix (e.g. 'org.eclipse') is a valid entry. An import i
   :type 'boolean)
 
 ;;;###autoload
-(defcustom lsp-java-organize-imports 't
+(defcustom  lsp-java-save-action-organize-imports t
+  "Organize imports on save."
+  :group 'lsp-java
+  :type 'boolean)
+
+;;;###autoload
+(defcustom lsp-java-organize-imports t
   "Specifies whether or not organize imports is enabled as a save action."
   :group 'lsp-java
   :type 'boolean)
 
+;;;###autoload
+(defcustom lsp-java-bundles nil
+  "List of bundles that will be loaded in the JDT server."
+  :group 'lsp-java
+  :type 'list)
+
+;;;###autoload
+(defcustom lsp-java-import-gradle-enabled t
+  "Enable/disable the Gradle importer."
+  :group 'lsp-java
+  :type 'boolean)
+
+;;;###autoload
+(defcustom lsp-java-import-maven-enabled t
+  "Enable/disable the Maven importer."
+  :group 'lsp-java
+  :type 'boolean)
+
+(defcustom lsp-java-auto-build t
+  "Enable/disable the 'auto build'."
+  :group 'lsp-java
+  :type 'boolean)
+
+(defcustom lsp-java-progress-report t
+  "[Experimental] Enable/disable progress reports from background processes on the server."
+  :group 'lsp-java
+  :type 'boolean)
+
 (defun lsp-java--json-bool (param)
-  "Return a param for setting parsable by json.el for booleans"
-  (if param 't :json-false))
+  "Return a PARAM for setting parsable by json.el for booleans."
+  (or param :json-false))
 
 (defun lsp-java--settings ()
   "JDT settings."
@@ -195,14 +229,14 @@ A package or type name prefix (e.g. 'org.eclipse') is a valid entry. An import i
       (server . ,lsp-java-trace-server))
      (import
       (gradle
-       (enabled . t))
+       (enabled . ,(lsp-java--json-bool lsp-java-import-gradle-enabled)))
       (maven
-       (enabled . t))
+       (enabled . ,(lsp-java--json-bool lsp-java-import-maven-enabled)))
       (exclusions . ,lsp-java-import-exclusions))
      (referencesCodeLens
       (enabled . t))
      (progressReports
-      (enabled . t))
+      (enabled . ,(lsp-java--json-bool lsp-java-progress-report)))
      (signatureHelp
       (enabled . t))
      (implementationsCodeLens
@@ -215,10 +249,10 @@ A package or type name prefix (e.g. 'org.eclipse') is a valid entry. An import i
       (comments
        (enabled . ,(lsp-java--json-bool lsp-java-format-comments-enabled))))
      (saveActions
-      (organizeImports . ,(lsp-java--json-bool lsp-java-format-enabled)))
+      (organizeImports . ,(lsp-java--json-bool lsp-java-save-action-organize-imports)))
      (contentProvider)
      (autobuild
-      (enabled . t))
+      (enabled . ,(lsp-java--json-bool lsp-java-auto-build)))
      (completion
       (favoriteStaticMembers . ,lsp-java-favorite-static-members)
       (importOrder . ,lsp-java-import-order)))))
@@ -438,7 +472,8 @@ PARAMS progress report notification data."
                                                                      lsp-java--workspace-folders)
                                                   :settings (lsp-java--settings)
                                                   :extendedClientCapabilities (list :progressReportProvider t
-                                                                                    :classFileContentsSupport t))
+                                                                                    :classFileContentsSupport t)
+                                                  :bundles lsp-java-bundles)
                          :initialize 'lsp-java--client-initialized)
 
 (defun lsp-java-update-user-settings ()
