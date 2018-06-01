@@ -4,7 +4,7 @@
 
 ;; Author: Ivan Malison <IvanMalison@gmail.com>
 ;; Keywords: org-mode todo tools outlines
-;; Package-Version: 20170819.1047
+;; Package-Version: 20180531.1942
 ;; URL: https://github.com/IvanMalison/org-projectile
 ;; Version: 0.0.1
 ;; Package-Requires: ((org "9.0.0") (emacs "24"))
@@ -80,9 +80,10 @@
                           (plist-get org-store-link-plist :annotation)
                         (ignore-errors (org-store-link nil)))))
       (org-capture-put :original-buffer orig-buf
-                       :original-file (or (buffer-file-name orig-buf)
-                                          (and (featurep 'dired)
-                                               (car (rassq orig-buf dired-buffers))))
+                       :original-file
+                       (or (buffer-file-name orig-buf)
+                           (and (featurep 'dired)
+                                (car (rassq orig-buf dired-buffers))))
                        :original-file-nondirectory
                        (and (buffer-file-name orig-buf)
                             (file-name-nondirectory
@@ -109,9 +110,10 @@
   (occ-get-capture-marker (oref context strategy) context))
 
 (cl-defun occ-get-category-heading-location
-    (category &rest args &key do-tree &allow-other-keys)
+    (category &rest args &key goto-subheading &allow-other-keys)
   "Find a heading with text or category CATEGORY."
   (save-excursion
+    (when goto-subheading (funcall goto-subheading))
     (if (equal major-mode 'org-mode)
         (let (result)
           (org-map-entries
@@ -119,9 +121,9 @@
              (when (and (not result)
                         (equal (apply 'occ-get-heading-category args) category))
                (setq result (point))))
-           nil (when do-tree 'tree)
+           nil (when goto-subheading 'tree)
            (1+ (or (org-current-level) 0))
-           (occ-level-filter (if do-tree (1+ (org-current-level)) 1)))
+           (occ-level-filter (if goto-subheading (1+ (org-current-level)) 1)))
           result)
       (error "Can't get category heading in non org-mode file"))))
 
@@ -137,7 +139,7 @@
     (category &rest args &key (build-heading 'identity)
               (insert-heading-fn 'occ-insert-at-end-of-file)
               &allow-other-keys)
-  "Create a heading for CATEGORY unless one is found with `occ-goto-category-heading'.
+  "Navigate to the heading for CATEGORY, creating one if it does not exist.
 
 BUILD-HEADING will be applied to category to create the heading
 text. INSERT-HEADING-FN is the function that will be used to
@@ -159,14 +161,6 @@ tuned so that by default it looks and creates top level headings."
 (defun occ-insert-subheading ()
   (occ-end-of-properties)
   (org-insert-subheading t))
-
-(defun occ-goto-or-insert-category-heading-subtree (category &rest args)
-  "Call `occ-goto-or-insert-category-heading' with CATEGORY forwarding ARGS.
-
-Provide arguments that will make it consider subheadings of the
-current heading."
-  (apply 'occ-goto-or-insert-category-heading
-         category :insert-heading-fn 'occ-insert-subheading :do-tree t args))
 
 (defun occ-level-filter (level)
   (lambda ()

@@ -4,7 +4,7 @@
 
 ;; Author: Alex Murray <murray.alex@gmail.com>
 ;; URL: https://github.com/alexmurray/ivy-xref
-;; Package-Version: 20180522.6
+;; Package-Version: 20180531.2119
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "25.1") (ivy "0.10.0"))
 
@@ -83,7 +83,12 @@
                 :require-match t
                 :action (lambda (candidate)
                           (setq done (eq 'ivy-done this-command))
-                          (xref--show-location (cdr candidate) 'quit))
+                          (condition-case err
+                              (let* ((marker (xref-location-marker (cdr candidate)))
+                                     (buf (marker-buffer marker)))
+                                (with-current-buffer buffer
+                                  (select-window (xref--show-pos-in-buf marker buf))))
+                            (user-error (message (error-message-string err)))))
                 :unwind (lambda ()
                           (unless done
                             (switch-to-buffer orig-buf)
