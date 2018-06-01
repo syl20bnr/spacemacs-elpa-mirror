@@ -5,7 +5,7 @@
 ;; Author: Alex Bennée <alex@bennee.com>
 ;; Maintainer: Alex Bennée <alex@bennee.com>
 ;; Version: 0.3
-;; Package-Version: 20180530.218
+;; Package-Version: 20180601.350
 ;; Package-Requires: ((s "1.12.0") (dash "2.0.0") (emacs "24"))
 ;; Homepage: https://github.com/stsquad/dired-rsync
 ;;
@@ -39,6 +39,8 @@
 ;; your local machine.
 ;;
 
+(eval-when-compile (require 'cl)) ; for lexical-let
+(require 'tramp) ; for tramp-tramp-file-p
 (require 'dired-aux) ; for dired-dwim-target-directory
 (require 'dash)
 (require 's)
