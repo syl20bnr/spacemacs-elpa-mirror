@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/helm-make
-;; Package-Version: 20180322.1251
+;; Package-Version: 20180602.653
 ;; Version: 0.2.0
 ;; Package-Requires: ((helm "1.5.3") (projectile "0.11.0"))
 ;; Keywords: makefile
@@ -146,17 +146,13 @@ An exception is \"GNUmakefile\", only GNU make understands it.")
          (make-command (format helm-make-command (or targets target)))
          (compile-buffer (compile make-command helm-make-comint)))
     (when helm-make-named-buffer
-      (helm--make-rename-buffer
-       compile-buffer
-       (if targets
-           (format "%s..." (substring targets 0 (string-match " " targets)))
-         target)))))
+      (helm--make-rename-buffer compile-buffer (or targets target)))))
 
 (defun helm--make-rename-buffer (buffer target)
   "Rename the compilation BUFFER based on the make TARGET."
-  (let ((buffer-name (format "*compilation (%s)*" target)))
-    (when (get-buffer-window buffer-name)
-      (delete-window (get-buffer-window buffer-name)))
+  (let ((buffer-name (format "*compilation in %s (%s)*"
+                             (abbreviate-file-name default-directory)
+                             target)))
     (when (get-buffer buffer-name)
       (kill-buffer buffer-name))
     (with-current-buffer buffer

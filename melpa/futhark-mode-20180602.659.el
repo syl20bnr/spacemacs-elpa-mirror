@@ -3,7 +3,7 @@
 ;; Copyright (C) DIKU 2013-2017, University of Copenhagen
 ;;
 ;; URL: https://github.com/diku-dk/futhark
-;; Package-Version: 20180602.334
+;; Package-Version: 20180602.659
 ;; Keywords: languages
 ;; Version: 0.1
 ;; Package-Requires: ((cl-lib "0.5"))
@@ -496,43 +496,16 @@ Ignore any program structure."
   (flycheck-define-checker futhark
     "A Futhark syntax and type checker.
 See URL `https://github.com/diku-dk/futhark'."
-    :command ("futhark" "-t" source)
+    :command ("futhark" "-t" source-inplace)
     :modes 'futhark-mode
     :error-patterns
-    ((error line-start "Type error at " (file-name) ":" line ":" column "-"
+    ((error line-start "Error at " (file-name) ":" line ":" column "-"
             (one-or-more not-newline) ":" (message (one-or-more anything))
-            "If you find")))
+            "If you find")
+     (error (message "lexical error") " at line " line ", column " column)
+     (warning line-start "Warning at " (file-name) ":" line ":" column "-"
+              (one-or-more not-newline) ":" (message (one-or-more anything)))))
   (add-to-list 'flycheck-checkers 'futhark))
-
-;;; The silly section
-
-(defvar futhark-danger-zone-path nil
-  "A path to a sound file to be played when writing the `unsafe' keyword.
-If nil, no sound will be played.")
-;; For example, you can enter this in your Emacs init file:
-;;
-;;    (setq futhark-danger-zone-path "/path/to/danger-zone.wav")
-;;
-;; You may have to restart your Emacs.
-
-(defun futhark-check-unsafe (begin end length)
-  "Play a sound if the user has just written the `unsafe' keyword.
-Ignore BEGIN, END, and LENGTH (present to satisfy Emacs)."
-  (if (and
-       (string= major-mode "futhark-mode")
-       futhark-danger-zone-path)
-      (save-excursion
-        (ignore-errors (backward-sexp 1) t)
-        (if (looking-at "\\<unsafe\\>")
-            (futhark-play-sound-file-in-background
-             futhark-danger-zone-path)))))
-
-(defun futhark-play-sound-file-in-background (path)
-  "Play the sound in PATH in the background."
-  ;; It would be nice to just use `play-sound-file', but that function
-  ;; blocks.
-  (start-process "futhark-sound" nil "mplayer" path))
-
 
 ;;; Actual mode declaration
 
@@ -547,8 +520,7 @@ Ignore BEGIN, END, and LENGTH (present to satisfy Emacs)."
   (setq-local comment-start-skip "--[ \t]*")
   (setq-local paragraph-start (concat " *-- |\\| ==$\\|" page-delimiter))
   (setq-local paragraph-separate (concat " *-- ==$\\|" page-delimiter))
-  (setq-local comment-padding " ")
-  (add-hook 'after-change-functions 'futhark-check-unsafe nil))
+  (setq-local comment-padding " "))
 
 (provide 'futhark-mode)
 
