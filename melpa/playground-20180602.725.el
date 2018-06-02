@@ -4,7 +4,7 @@
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 0.2.0
-;; Package-Version: 20180515.1108
+;; Package-Version: 20180602.725
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: maint
 ;; URL: https://github.com/akirak/emacs-playground
@@ -84,6 +84,10 @@
                                 (const :tag "No" nil))
                                ((const :tag "Depth (default: 1)" :depth)
                                 (const :tag "All commits" nil)))))))
+
+(declare-function 'helm "helm")
+(declare-function 'helm-build-sync-source "helm")
+(declare-function 'helm-build-dummy-source "helm")
 
 (defun playground--emacs-executable ()
   "Get the executable file of Emacs."
