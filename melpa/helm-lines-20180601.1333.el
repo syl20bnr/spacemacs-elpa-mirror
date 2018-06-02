@@ -3,9 +3,9 @@
 ;; Copyright (C) 2012-2016 Free Software Foundation, Inc.
 
 ;; Author: @torgeir
-;; Version: 1.2.0
-;; Package-Version: 20180528.48
-;; Keywords: files helm ag vc git lines complete tools languages
+;; Version: 1.3.0
+;; Package-Version: 20180601.1333
+;; Keywords: files helm ag pt vc git lines complete tools languages
 ;; Package-Requires: ((emacs "24.4") (helm "1.9.8"))
 ;; URL: https://github.com/torgeir/helm-lines.el/
 
@@ -32,14 +32,24 @@
 ;; Enable `helm-follow-mode' to replace in place as you jump around
 ;; the suggestions.
 ;;
-;; Requires `ag' [1] to be installed.
-;;
-;;   [1]: https://github.com/ggreer/the_silver_searcher
-;;
-;; The project root is defined by the results of
+;; The project root is defined by the result of
 ;; `helm-lines-project-root-function', and by default it is the root
 ;; of the current version-control tree.  Projectile users might like
 ;; to set this variable to `projectile-root'.
+;;
+;; Requires `ag' [1], `pt' [2] or similar to be installed. If you prefer
+;; something other than `ag' you need to customize the
+;; `helm-lines-search-function' accordingly, see below.
+;;
+;; The lines completed against are defined by the result of the
+;; `helm-lines-search-function', and by default it is `helm-lines-search-ag'.
+;; Users that prefer `pt' over `ag' can set this variable to
+;; `helm-lines-search-pt'. Other engines can be supported by supplying a
+;; custom search function. It will be called with the shell quoted query and the
+;; shell quoted folder to search in.
+;;
+;;   [1]: https://github.com/ggreer/the_silver_searcher
+;;   [2]: https://github.com/monochromegane/the_platinum_searcher
 
 ;;; Code:
 
@@ -55,6 +65,40 @@
 
 (defcustom helm-lines-project-root-function 'vc-root-dir
   "Function called to find the root directory of the current project."
+  :type 'function)
+
+
+(defun helm-lines-search-ag (query root)
+  "Search for lines matching QUERY in ROOT folder with `ag'."
+  (format (concat "ag"
+                  " --nocolor"
+                  " --nonumbers"
+                  " --nofilename"
+                  " --ignore .git"
+                  " --ignore target"
+                  " --ignore node_modules"
+                  " --ignore-case"
+                  " \"%s\" %s")
+          query root))
+
+
+(defun helm-lines-search-pt (query root)
+  "Search for lines matching QUERY in ROOT folder with `pt'."
+  (format (concat "pt"
+                  " --nocolor"
+                  " --nonumbers"
+                  " --nogroup"
+                  " --ignore-case"
+                  " \"%s\" %s"
+                  ;; remove leading file names as no option exist to remove them
+                  " | sed -E \"s/[^:]+://\""
+                  )
+          query root))
+
+
+(defcustom helm-lines-search-function 'helm-lines-search-ag
+  "Function called to find lines matching query. It is passed the search string
+and the folder to search in."
   :type 'function)
 
 
@@ -86,18 +130,12 @@ Indents the line after inserting it."
 (defun helm-lines--candidates (root)
   "Helm candidates by listing all lines under the current git ROOT."
   (let* ((query (if (string-empty-p helm-pattern) "^.*$" helm-pattern))
-         (cmd (concat "ag"
-                      " --nocolor"
-                      " --nonumbers"
-                      " --nofilename"
-                      " --ignore .git"
-                      " --ignore target"
-                      " --ignore node_modules"
-                      " -i \"" (shell-quote-argument query) "\"" ;; the pattern
-                      " " (shell-quote-argument root)            ;; the folder
-                      " | grep -Ev \"^$\""                       ;; remove empty lines
-                      " | sed -E \"s/^[ \t]*//\""                ;; remove leading ws
-                      " | sort -u"                               ;; unique
+         (cmd (concat (funcall helm-lines-search-function
+                               (shell-quote-argument query)
+                               (shell-quote-argument root))
+                      " | grep -Ev \"^$\""        ;; remove empty lines
+                      " | sed -E \"s/^[ \t]*//\"" ;; remove leading ws
+                      " | sort -u"                ;; unique
                       " | head -n 100")))
     (helm-lines--async-shell-command cmd)))
 
@@ -105,8 +143,9 @@ Indents the line after inserting it."
 (defun helm-lines ()
   "Helm-lines entry point."
   (interactive)
-  (unless (executable-find "ag")
-    (user-error "Helm-lines: Could not find executable `ag', did you install it? https://github.com/ggreer/the_silver_searcher"))
+  (unless (or (executable-find "ag")
+              (executable-find "pt"))
+    (user-error "Helm-lines: Could not find executable `ag' or `pt', did you install any of them? https://github.com/ggreer/the_silver_searcher or https://github.com/monochromegane/the_platinum_searcher"))
   (let ((git-root (expand-file-name (or (funcall helm-lines-project-root-function)
                                         (error "Couldn't determine project root")))))
     (helm :input (string-trim (thing-at-point 'line t))
