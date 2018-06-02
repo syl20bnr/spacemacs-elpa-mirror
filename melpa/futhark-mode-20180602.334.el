@@ -3,7 +3,7 @@
 ;; Copyright (C) DIKU 2013-2017, University of Copenhagen
 ;;
 ;; URL: https://github.com/diku-dk/futhark
-;; Package-Version: 20180416.830
+;; Package-Version: 20180602.334
 ;; Keywords: languages
 ;; Version: 0.1
 ;; Package-Requires: ((cl-lib "0.5"))
@@ -15,8 +15,9 @@
 
 ;;; Commentary:
 ;; Futhark is a small programming language designed to be compiled to
-;; efficient GPU code.  This Emacs mode provides syntax highlighting and
-;; conservative automatic indentation for Futhark source code.
+;; efficient GPU code.  This Emacs mode provides syntax highlighting
+;; and conservative automatic indentation for Futhark source code.  A
+;; simple flycheck definition is also included.
 ;;
 ;; Files with the ".fut" extension are automatically handled by this mode.
 ;;
@@ -49,13 +50,12 @@
   ;; Emacs Lisp is stupid.
   (defconst futhark-keywords
     '("if" "then" "else" "let" "loop" "in" "with" "type"
-      "fun" "val" "entry" "for" "while" "do"
-      "empty" "unsafe" "default" "include" "import" "module" "open" "local")
+      "val" "entry" "for" "while" "do"
+      "empty" "unsafe" "default" "include" "import" "module" "open" "local" "assert")
     "All Futhark keywords.")
 
   (defconst futhark-builtin-functions
-    '("reshape" "rearrange" "rotate"
-      "split" "concat" "zip" "unzip" "unsafe" "copy" "map" "reduce"
+    '("zip" "unzip" "map" "reduce"
       "reduce_comm" "scan" "filter" "partition" "scatter" "stream_map"
       "stream_map_per" "stream_red" "stream_map_per" "stream_seq")
     "All Futhark builtin SOACs, functions, and non-symbolic operators.")
@@ -488,6 +488,21 @@ Ignore any program structure."
     (and (futhark-looking-at-word word)
          (point))))
 
+
+;;; flycheck
+
+(require 'flycheck nil t) ;; no error if not found
+(when (featurep 'flycheck)
+  (flycheck-define-checker futhark
+    "A Futhark syntax and type checker.
+See URL `https://github.com/diku-dk/futhark'."
+    :command ("futhark" "-t" source)
+    :modes 'futhark-mode
+    :error-patterns
+    ((error line-start "Type error at " (file-name) ":" line ":" column "-"
+            (one-or-more not-newline) ":" (message (one-or-more anything))
+            "If you find")))
+  (add-to-list 'flycheck-checkers 'futhark))
 
 ;;; The silly section
 
