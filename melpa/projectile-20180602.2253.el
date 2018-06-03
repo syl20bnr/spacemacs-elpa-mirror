@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20180522.48
+;; Package-Version: 20180602.2253
 ;; Keywords: project, convenience
 ;; Version: 0.15.0-cvs
 ;; Package-Requires: ((emacs "24.3") (pkg-info "0.4"))
@@ -2383,6 +2383,11 @@ TEST-DIR which specifies the path to the tests relative to the project root."
 (projectile-register-project-type 'npm '("package.json")
                                   :compile "npm install"
                                   :test "npm test")
+;; Angular
+(projectile-register-project-type 'angular '("angular.json" ".angular-cli.json")
+                                  :compile "ng build"
+                                  :run "ng serve"
+                                  :test "ng test")
 ;; Python
 (projectile-register-project-type 'django '("manage.py")
                                   :compile "python manage.py runserver"

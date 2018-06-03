@@ -5,7 +5,7 @@
 ;; Author: Feng Shu <tumashu@163.com>
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/posframe
-;; Package-Version: 20180602.2141
+;; Package-Version: 20180602.2246
 ;; Version: 0.4.0
 ;; Keywords: tooltip
 ;; Package-Requires: ((emacs "26"))
@@ -99,7 +99,7 @@
   :group 'lisp
   :prefix "posframe-")
 
-(defcustom posframe-mouse-banish t
+(defcustom posframe-mouse-banish (not (eq system-type 'darwin))
   "Mouse will be moved to (0 , 0) when it is non-nil."
   :group 'posframe
   :type 'boolean)
