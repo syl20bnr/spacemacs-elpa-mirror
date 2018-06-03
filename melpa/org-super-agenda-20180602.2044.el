@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-super-agenda
-;; Package-Version: 20180515.1953
+;; Package-Version: 20180602.2044
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "25.1") (s "1.10.0") (dash "2.13") (org "9.0") (ht "2.2"))
 ;; Keywords: hypermedia, outlines, Org, agenda
@@ -443,7 +443,7 @@ This is a catch-all, probably most useful with the `:discard'
 selector."
   :test t)
 
-;; TODO: Rename this to something like :family-tree and make a new
+;; TODO: Rename this to something like :descendants and make a new
 ;; one-level-deep-only :children matcher that will be much faster
 (org-super-agenda--defgroup children
   "Select any item that has child entries.

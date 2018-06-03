@@ -2,8 +2,8 @@
 
 ;; Author: Bastian Bechtold
 ;; URL: http://github.com/bastibe/org-journal
-;; Package-Version: 1.14.0
-;; Version: 1.14.0
+;; Package-Version: 20180603.102
+;; Version: 1.14.2
 ;; Package-Requires: ((emacs "25.1"))
 
 ;;; Commentary:
@@ -99,7 +99,7 @@ org-journal. Use org-journal-file-format instead.")
 ; Customizable variables
 (defgroup org-journal nil
   "Settings for the personal journal"
-  :version "1.14.0"
+  :version "1.14.2"
   :group 'applications)
 
 (defface org-journal-highlight
@@ -438,14 +438,14 @@ If the date is in the future, create a schedule entry."
 
 ;;;###autoload
 (defun org-journal-new-scheduled-entry (prefix &optional scheduled-time)
-  "Create a new SCHEDULED TODO entry in the future."
+  "Create a new entry in the future."
   (interactive "P")
   (let ((scheduled-time (or scheduled-time (org-read-date nil nil nil "Date:"))))
     (org-journal-new-entry nil (org-time-string-to-time scheduled-time))
     (if (not prefix)
         (insert "TODO "))
     (save-excursion
-      (insert "\nSCHEDULED: <" scheduled-time ">"))))
+      (insert "\n<" scheduled-time ">"))))
 
 (defun org-journal-open-next-entry ()
   "Open the next journal entry starting from a currently displayed one"
@@ -666,7 +666,10 @@ And cleans out past org-journal files."
     (let ((agenda-files-without-org-journal
            (seq-filter
             (lambda (f)
-              (not (and (string= (file-name-directory f)
+              (message "DEBUG: %s %s"
+                       (expand-file-name (file-name-directory f))
+                       (expand-file-name (file-name-as-directory org-journal-dir)))
+              (not (and (string= (expand-file-name (file-name-directory f))
                                  (expand-file-name (file-name-as-directory org-journal-dir)))
                         (string-match org-journal-file-pattern (file-name-nondirectory f)))))
             org-agenda-files))
@@ -727,10 +730,10 @@ Think of this as a faster, less fancy version of your org-agenda."
         (org-journal-with-find-file
          filename
          (setq content-to-copy (org-map-entries copy-mapper
-                                                "+SCHEDULED>=\"<now>\"")))
+                                                "+TIMESTAMP>=\"<now>\"|+SCHEDULED>=\"<now>\"")))
         (if content-to-copy
             (insert (mapconcat 'identity content-to-copy "") "\n")
-          (insert "N/A"))))
+          (insert "N/A\n"))))
     (set-buffer-modified-p nil)
     (view-mode t)
     (goto-char (point-min))))

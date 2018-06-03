@@ -5,7 +5,7 @@
 ;; Author: Feng Shu <tumashu@163.com>
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/posframe
-;; Package-Version: 20180523.1621
+;; Package-Version: 20180602.2141
 ;; Version: 0.4.0
 ;; Keywords: tooltip
 ;; Package-Requires: ((emacs "26"))
@@ -379,6 +379,8 @@ you can use `posframe-delete-all' to delete all posframes."
           :font-height ,font-height
           :font-width ,font-width
           :posframe ,posframe
+          :height ,(frame-pixel-height posframe)
+          :width ,(frame-pixel-width posframe)
           :posframe-buffer ,posframe-buffer
           :parent-frame ,parent-frame
           :parent-window ,parent-window
