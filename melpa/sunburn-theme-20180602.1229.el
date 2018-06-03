@@ -5,7 +5,7 @@
 
 ;; Author: Martín Varela (martin@varela.fi)
 ;; URL: http://github.com/mvarela/Sunburn-Theme
-;; Package-Version: 20180528.1048
+;; Package-Version: 20180602.1229
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "24"))
 
@@ -644,8 +644,8 @@ Also bind `class' to ((class color) (min-colors 89))."
                       :underline nil
                       :weight bold
                       :box (:line-width -1 :style released-button)))))
-   `(helm-selection ((t (:background ,sunburn-bg+1 :underline nil))))
-   `(helm-selection-line ((t (:background ,sunburn-bg+1))))
+   `(helm-selection ((t (:background ,sunburn-bg-05 :foreground ,sunburn-gold :weight bold))))
+   `(helm-selection-line ((t (:background ,sunburn-bg-05 :foreground ,sunburn-gold :weight bold))))
    `(helm-visible-mark ((t (:foreground ,sunburn-bg :background ,sunburn-yellow-2))))
    `(helm-candidate-number ((t (:foreground ,sunburn-green+4 :background ,sunburn-bg-1))))
    `(helm-separator ((t (:foreground ,sunburn-red :background ,sunburn-bg))))
@@ -820,20 +820,26 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(magit-section-highlight           ((t (:background ,sunburn-bg-1 :foreground ,sunburn-fg-1))))
    `(magit-section-heading             ((t (:foreground ,sunburn-yellow :weight bold))))
    `(magit-section-heading-selection   ((t (:foreground ,sunburn-orange :weight bold))))
-   `(magit-diff-file-heading           ((t (:weight bold))))
-   `(magit-diff-file-heading-highlight ((t (:background ,sunburn-bg+05  :weight bold))))
-   `(magit-diff-file-heading-selection ((t (:background ,sunburn-bg+05
-                                                        :foreground ,sunburn-orange :weight bold))))
+   `(magit-diff-file-heading           ((t (:background ,sunburn-bg-05 :foreground ,sunburn-fg+1 :weight bold))))
+   `(magit-diff-file-heading-highlight ((t (:background ,sunburn-bg-05  :weight bold))))
+   `(magit-diff-file-heading-selection ((t (:background ,sunburn-bg-05
+                                                        :foreground ,sunburn-gold :weight bold))))
    `(magit-diff-hunk-heading           ((t (:background ,sunburn-bg-05))))
-   `(magit-diff-hunk-heading-highlight ((t (:foreground ,sunburn-bg-05 :background ,sunburn-gold))))
+   `(magit-diff-hunk-heading-highlight ((t (:background ,sunburn-bg-05 :foreground ,sunburn-gold))))
    `(magit-diff-hunk-heading-selection ((t (:background ,sunburn-bg+2
                                                         :foreground ,sunburn-orange))))
    `(magit-diff-lines-heading          ((t (:background ,sunburn-red+1
                                                         :foreground ,sunburn-bg-2))))
-   `(magit-diff-context-highlight      ((t (:background ,sunburn-bg-1
-                                                        :foreground ,sunburn-fg-1))))
-   `(magit-diffstat-added   ((t (:foreground ,sunburn-green+4))))
+   `(magit-diff-base      ((t (:background ,sunburn-bg :foreground ,sunburn-fg))))
+   `(magit-diff-context   ((t (:background ,sunburn-bg :foreground ,sunburn-fg :weight bold))))
+   `(magit-diff-context-highlight ((t (:background ,sunburn-bg :foreground ,sunburn-gold))))
+   `(magit-diff-removed-highlight ((t (:background ,sunburn-bg :foreground ,sunburn-red-2))))
+   `(magit-diff-removed  ((t (:background ,sunburn-bg :foreground ,sunburn-red+1))))
+   `(magit-diff-added-highlight  ((t (:background ,sunburn-bg :foreground ,sunburn-green+3))))
+   `(magit-diff-added  ((t (:background ,sunburn-bg :foreground ,sunburn-green+4))))
+   `(magit-diffstat-added   ((t (:background ,sunburn-bg :foreground ,sunburn-green+4))))
    `(magit-diff-whitespace-warning ((t (:background ,sunburn-red :foreground ,sunburn-fg+1))))
+   `(magit-diff-conflict-heading ((t (:background ,sunburn-red-4 :foreground ,sunburn-fg+1))))
    `(magit-diffstat-removed ((t (:foreground ,sunburn-red))))
 ;;;;;; popup
    `(magit-popup-heading             ((t (:foreground ,sunburn-yellow  :weight bold))))
@@ -857,24 +863,24 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(magit-sequence-done ((t (:foreground ,sunburn-fg-1))))
    `(magit-sequence-onto ((t (:foreground ,sunburn-fg-1))))
 ;;;;;; bisect
-   `(magit-bisect-good ((t (:foreground ,sunburn-green))))
-   `(magit-bisect-skip ((t (:foreground ,sunburn-yellow))))
-   `(magit-bisect-bad  ((t (:foreground ,sunburn-red))))
+   `(magit-bisect-good ((t (:background ,sunburn-bg :foreground ,sunburn-green))))
+   `(magit-bisect-skip ((t (:background ,sunburn-bg :foreground ,sunburn-yellow))))
+   `(magit-bisect-bad  ((t (:background ,sunburn-bg :foreground ,sunburn-red))))
 ;;;;;; blame
-   `(magit-blame-heading ((t (:background ,sunburn-bg-1 :foreground ,sunburn-blue-2))))
-   `(magit-blame-hash    ((t (:background ,sunburn-bg-1 :foreground ,sunburn-blue-2))))
+   `(magit-blame-heading ((t (:background ,sunburn-bg-1 :foreground ,sunburn-blue+1))))
+   `(magit-blame-hash    ((t (:background ,sunburn-bg-1 :foreground ,sunburn-orange))))
    `(magit-blame-name    ((t (:background ,sunburn-bg-1 :foreground ,sunburn-orange))))
    `(magit-blame-date    ((t (:background ,sunburn-bg-1 :foreground ,sunburn-orange))))
    `(magit-blame-summary ((t (:background ,sunburn-bg-1 :foreground ,sunburn-blue-2
                                           :weight bold))))
 ;;;;;; references etc
-   `(magit-dimmed         ((t (:foreground ,sunburn-bg+3))))
-   `(magit-hash           ((t (:foreground ,sunburn-bg+3))))
-   `(magit-tag            ((t (:foreground ,sunburn-orange :weight bold))))
-   `(magit-branch-remote  ((t (:foreground ,sunburn-green  :weight bold))))
-   `(magit-branch-local   ((t (:foreground ,sunburn-blue   :weight bold))))
-   `(magit-branch-current ((t (:foreground ,sunburn-blue   :weight bold :box t))))
-   `(magit-head           ((t (:foreground ,sunburn-blue   :weight bold))))
+   `(magit-dimmed         ((t (:background ,sunburn-bg :foreground ,sunburn-bg+3))))
+   `(magit-hash           ((t (:background ,sunburn-bg :foreground ,sunburn-bg+3))))
+   `(magit-tag            ((t (:background ,sunburn-bg :foreground ,sunburn-orange :weight bold))))
+   `(magit-branch-remote  ((t (:background ,sunburn-bg :foreground ,sunburn-green  :weight bold))))
+   `(magit-branch-local   ((t (:background ,sunburn-bg :foreground ,sunburn-blue   :weight bold))))
+   `(magit-branch-current ((t (:background ,sunburn-bg :foreground ,sunburn-blue   :weight bold :box t))))
+   `(magit-head           ((t (:background ,sunburn-bg :foreground ,sunburn-blue   :weight bold))))
    `(magit-refname        ((t (:background ,sunburn-bg+2 :foreground ,sunburn-fg :weight bold))))
    `(magit-refname-stash  ((t (:background ,sunburn-bg+2 :foreground ,sunburn-fg :weight bold))))
    `(magit-refname-wip    ((t (:background ,sunburn-bg+2 :foreground ,sunburn-fg :weight bold))))
@@ -987,9 +993,14 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(neo-vc-ignored-face ((t (:foreground ,sunburn-fg-1))))
 ;;;;; org-mode
    `(org-agenda-date-today
-     ((t (:foreground ,sunburn-fg+1 :slant italic :weight bold))) t)
+     ((t (:background ,sunburn-bg :foreground ,sunburn-fg+1 :slant italic :weight bold))) t)
+   `(org-agenda-clocking
+     ((t (:background ,sunburn-bg :foreground ,sunburn-blue+1))) t)
+   `(org-agenda-column-dateline
+     ((t (:background ,sunburn-bg :foreground ,sunburn-yellow-1))) t)
    `(org-agenda-structure
      ((t (:inherit font-lock-comment-face))))
+   `(org-agenda-dimmed-todo-face ((t (:background ,sunburn-red-1 :foreground ,sunburn-bg-1))))
    `(org-archived ((t (:foreground ,sunburn-fg :weight bold))))
    `(org-checkbox ((t (:background ,sunburn-bg+2 :foreground ,sunburn-fg+1
                                    :box (:line-width 1 :style released-button)))))
@@ -1007,8 +1018,14 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(org-level-7 ((t (:foreground ,sunburn-yellow))))
    `(org-level-8 ((t (:foreground ,sunburn-blue+1))))
    `(org-link ((t (:foreground ,sunburn-yellow :underline t))))
-   `(org-verbatim ((,class (:weight bold :foreground  ,sunburn-blue+1))))
-   `(org-code ((,class (:weight bold :foreground ,sunburn-blue+1))))
+   `(org-ref-acronym-face ((t (:foreground ,sunburn-gold :underline t))))
+   `(org-ref-cite-face ((t (:foreground ,sunburn-green :underline t))))
+   `(org-ref-glossary-face ((t (:foreground ,sunburn-blue :underline t))))
+   `(org-ref-label-face ((t (:foreground ,sunburn-magenta :underline t))))
+   `(org-ref-ref-face ((t (:foreground ,sunburn-red-2 :underline t))))
+   `(org-verbatim ((,class (:weight bold :background ,sunburn-bg :foreground ,sunburn-blue+1))))
+   `(org-quote ((,class (:weight bold :background ,sunburn-bg :foreground ,sunburn-blue+1))))
+   `(org-code ((,class (:weight bold :background ,sunburn-bg :foreground ,sunburn-blue+1))))
    `(org-scheduled ((t (:foreground ,sunburn-green+4))))
    `(org-scheduled-previously ((t (:foreground ,sunburn-red))))
    `(org-scheduled-today ((t (:foreground ,sunburn-blue))))
@@ -1018,8 +1035,12 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(org-meta-line ((t (:foreground ,sunburn-yellow-1))))
    ;; `(org-table ((t (:foreground ,sunburn-fg))))
    `(org-table ((t :background ,sunburn-bg :foreground ,sunburn-cyan)))
-   `(org-tag ((t (:weight bold :weight bold))))
+   `(org-priority ((t (:background ,sunburn-bg :foreground ,sunburn-red :weight bold))))
+   `(org-tag ((t (:background ,sunburn-bg :weight bold))))
+   `(org-tag-group ((t (:background ,sunburn-bg :weight bold))))
+   `(org-special-keyword ((t (:background ,sunburn-bg :weight bold))))
    `(org-time-grid ((t (:foreground ,sunburn-orange))))
+   `(org-kbd ((t :background ,sunburn-gold :foreground ,sunburn-bg-05 :weight bold)))
    `(org-done ((t :background ,sunburn-bg :foreground ,sunburn-green+3)))
    `(org-todo ((t :background ,sunburn-bg :foreground ,sunburn-red)))
    `(org-upcoming-deadline ((t (:inherit font-lock-keyword-face))))
@@ -1032,9 +1053,9 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(org-footnote ((t (:foreground ,sunburn-cyan :underline t))))
    `(org-date ((t (:foreground ,sunburn-cyan :underline t))))
    `(org-property-value ((t (:foreground ,sunburn-magenta :underline t))))
-   `(org-document-title ((t (:foreground ,sunburn-blue :height 1.4))))
-   `(org-document-info ((t (:foreground ,sunburn-blue :height 1.2))))
-   `(org-document-info-keyword ((t (:foreground ,sunburn-green :height 1.2))))
+   `(org-document-title ((t (:background ,sunburn-bg :foreground ,sunburn-blue :height 1.4))))
+   `(org-document-info ((t (:background ,sunburn-bg :foreground ,sunburn-blue :height 1.2))))
+   `(org-document-info-keyword ((t (:background ,sunburn-bg :foreground ,sunburn-green :height 1.2))))
    `(org-habit-ready-face ((t :background ,sunburn-green)))
    `(org-habit-alert-face ((t :background ,sunburn-yellow-1 :foreground ,sunburn-bg)))
    `(org-habit-clear-face ((t :background ,sunburn-blue-3)))

@@ -5,9 +5,9 @@
 ;; Author: Sean Allred <code@seanallred.com>
 ;; Keywords: extensions, multimedia, tools
 ;; Homepage: https://github.com/vermiculus/ghub-plus
-;; Package-Requires: ((emacs "25") (ghub "1.2") (apiwrap "0.4"))
-;; Package-Version: 20180528.1158
-;; Package-X-Original-Version: 0.2.1
+;; Package-Requires: ((emacs "25") (ghub "2.0") (apiwrap "0.5"))
+;; Package-Version: 0.3
+;; Package-X-Original-Version: 0.3
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by

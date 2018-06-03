@@ -6,8 +6,8 @@
 ;; Keywords: tools, maint, convenience
 ;; Homepage: https://github.com/vermiculus/apiwrap.el
 ;; Package-Requires: ((emacs "25"))
-;; Package-Version: 0.4
-;; Package-X-Original-Version: 0.4
+;; Package-Version: 0.5
+;; Package-X-Original-Version: 0.5
 
 ;; This file is not part of GNU Emacs.
 
@@ -34,6 +34,11 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'apropos)
+
+(defvar apiwrap-backends nil
+  "An alist of (BACKEND-NAME . BACKEND-PREFIX) for `apropos-api-endpoint'.
+See also `apiwrap-new-backend'.")
 
 (defun apiwrap-genform-resolve-api-params (object url)
   "Resolve parameters in URL to values in OBJECT.
@@ -239,9 +244,7 @@ appropriately handle all of these symbols as a METHOD.")
                        (eq 'function (car fn))
                        (or (functionp (cadr fn))
                            (macrop (cadr fn)))))
-        (if (memq key apiwrap-primitives)
-            (error "Primitive function literal required: %s" key)
-          (byte-compile-warn "Unknown function for `%S': %S" key fn)))))
+        (byte-compile-warn "Unknown function for `%S': %S" key fn))))
 
   ;; Build the macros
   (let (super-form)
@@ -290,7 +293,7 @@ Otherwise, just return VALUE quoted."
 
     (setq internal-resource (or internal-resource resource)
           around (alist-get 'around functions)
-          condition-case (alist-get 'condition-case functions)
+          condition-case (macroexpand-all (alist-get 'condition-case functions))
           primitive-func (alist-get 'request functions)
           data-massage-func (alist-get 'pre-process-data functions)
           params-massage-func (alist-get 'pre-process-params functions)
@@ -330,7 +333,7 @@ Otherwise, just return VALUE quoted."
                    (cl-every (lambda (h) (get (car h) 'error-conditions)) ;is error
                              condition-case))
         (error ":condition-case must be a list of error handlers; see the documentation: %S" condition-case))
-      (setq form `(condition-case _ ,form ,@condition-case)))
+      (setq form `(condition-case it ,form ,@condition-case)))
 
     (let ((props `((prefix   . ,prefix)
                    (method   . ,method)
@@ -341,6 +344,7 @@ Otherwise, just return VALUE quoted."
       (push `(defun ,funsym ,args
                ,(apiwrap--docfn name doc (alist-get objects standard-parameters) method resource
                                 (funcall link-func props))
+               (declare (indent ,(length objects)))
                ,form)
             fn-form)
       (cons 'prog1 fn-form))))
@@ -402,7 +406,12 @@ CONFIG is a list of arguments to configure the generated macros.
              (CONDITION-NAME BODY...))
 
         to appropriately deal with signals in the `:request'
-        primitive.  See also `condition-case'.
+        primitive.  Caught signals are bound to the symbol `it'.
+        Note that the form will need to mention `it' in some way
+        to avoid compile warnings.  If this is a problem for you,
+        track resolution of this issue in vermiculus/apiwrap#12.
+
+        See also `condition-case'.
 
     :link
 
@@ -438,7 +447,25 @@ CONFIG is a list of arguments to configure the generated macros.
            (,sstdp ,standard-parameters)
            (,sconfig ',(mapcar (lambda (f) (cons (car f) (eval (cdr f))))
                                (apiwrap-plist->alist config))))
+       (add-to-list 'apiwrap-backends (cons ,sname ,sprefix))
        (mapc #'eval (apiwrap-genmacros ,sname ,sprefix ,sstdp ,sconfig)))))
+
+(defun apropos-api-endpoint (backend pattern)
+  "Apropos for API endpoints of BACKEND matching PATTERN."
+  (interactive (let* ((b (completing-read "Search backend: "
+                                          (mapcar #'car apiwrap-backends)))
+                      (b (assoc-string b apiwrap-backends))
+                      (name (car b))
+                      (prefix (cdr b)))
+                 (list prefix (apropos-read-pattern (concat name " API endpoints")))))
+  (apropos-parse-pattern pattern)
+  (apropos-symbols-internal
+   (apropos-internal apropos-regexp
+                     (lambda (sym)
+                       (let-alist (get sym 'apiwrap)
+                         (and .prefix
+                              (string= .prefix backend)))))
+   nil))
 
 (provide 'apiwrap)
 ;;; apiwrap.el ends here
