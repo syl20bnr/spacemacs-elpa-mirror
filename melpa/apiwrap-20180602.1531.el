@@ -6,8 +6,8 @@
 ;; Keywords: tools, maint, convenience
 ;; Homepage: https://github.com/vermiculus/apiwrap.el
 ;; Package-Requires: ((emacs "25"))
-;; Package-Version: 20180318.1515
-;; Package-X-Original-Version: 0.4
+;; Package-Version: 20180602.1531
+;; Package-X-Original-Version: 0.5
 
 ;; This file is not part of GNU Emacs.
 
@@ -344,7 +344,7 @@ Otherwise, just return VALUE quoted."
       (push `(defun ,funsym ,args
                ,(apiwrap--docfn name doc (alist-get objects standard-parameters) method resource
                                 (funcall link-func props))
-               (declare (indent ,(1+ (length objects))))
+               (declare (indent ,(length objects)))
                ,form)
             fn-form)
       (cons 'prog1 fn-form))))

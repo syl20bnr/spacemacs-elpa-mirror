@@ -4,9 +4,9 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/anaconda-mode
-;; Package-Version: 20180602.321
+;; Package-Version: 20180602.1823
 ;; Version: 0.1.12
-;; Package-Requires: ((emacs "24") (pythonic "0.1.0") (dash "2.6.0") (s "1.9") (f "0.16.2"))
+;; Package-Requires: ((emacs "26.1") (pythonic "0.1.0") (dash "2.6.0") (s "1.9") (f "0.16.2"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
 
 (require 'pythonic)
 (require 'tramp)
+(require 'xref)
 (require 'json)
 (require 'dash)
 (require 'url)
@@ -44,42 +45,6 @@
   "Installation directory for `anaconda-mode' server."
   :group 'anaconda-mode
   :type 'directory)
-
-(defcustom anaconda-mode-complete-callback
-  'anaconda-mode-complete-callback
-  "Callback function used to display `anaconda-mode-complete' result."
-  :group 'anaconda-mode
-  :type 'function)
-
-(defcustom anaconda-mode-show-doc-callback
-  'anaconda-mode-show-doc-callback
-  "Callback function used to display `anaconda-mode-show-doc' result."
-  :group 'anaconda-mode
-  :type 'function)
-
-(defcustom anaconda-mode-find-definitions-callback
-  'anaconda-mode-find-definitions-callback
-  "Callback function used to display `anaconda-mode-find-definitions' result."
-  :group 'anaconda-mode
-  :type 'function)
-
-(defcustom anaconda-mode-find-assignments-callback
-  'anaconda-mode-find-assignments-callback
-  "Callback function used to display `anaconda-mode-find-assignments' result."
-  :group 'anaconda-mode
-  :type 'function)
-
-(defcustom anaconda-mode-find-references-callback
-  'anaconda-mode-find-references-callback
-  "Callback function used to display `anaconda-mode-find-references' result."
-  :group 'anaconda-mode
-  :type 'function)
-
-(defcustom anaconda-mode-eldoc-callback
-  'anaconda-mode-eldoc-callback
-  "Callback function used to display `anaconda-mode-eldoc-function' result."
-  :group 'anaconda-mode
-  :type 'function)
 
 (defcustom anaconda-mode-eldoc-as-single-line nil
   "If not nil, trim eldoc string to frame width."
@@ -183,23 +148,31 @@ def script_method(f):
 def process_definitions(f):
     @functools.wraps(f)
     def wrapper(script):
-        return [{
-            'name': definition.name,
-            'type': definition.type,
-            'module-name': definition.module_name,
-            'module-path': definition.module_path,
-            'line': definition.line,
-            'column': definition.column,
-            'docstring': definition.docstring(),
-            'description': definition.description,
-            'full-name': getattr(definition, 'full_name', definition.name),
-        } for definition in f(script)]
+        return [[definition.module_path,
+                 definition.line,
+                 definition.column,
+                 definition.get_line_code().strip()]
+                for definition in f(script)]
     return wrapper
 
 @script_method
-@process_definitions
 def complete(script):
-    return script.completions()
+    return [[definition.name, definition.type]
+            for definition in script.completions()]
+
+@script_method
+def company_complete(script):
+    return [[definition.name,
+             definition.type,
+             definition.docstring(),
+             definition.module_path,
+             definition.line]
+            for definition in script.completions()]
+
+@script_method
+def show_doc(script):
+    return [[definition.module_name, definition.docstring()]
+            for definition in script.goto_definitions()]
 
 @script_method
 @process_definitions
@@ -221,15 +194,13 @@ def eldoc(script):
     signatures = script.call_signatures()
     if len(signatures) == 1:
         signature = signatures[0]
-        return {
-            'name': signature.name,
-            'index': signature.index,
-            'params': [param.description[6:] for param in signature.params],
-        }
+        return [signature.name,
+                signature.index,
+                [param.description[6:] for param in signature.params]]
 
 # Run.
 
-app = [complete, goto_definitions, goto_assignments, usages, eldoc]
+app = [complete, company_complete, show_doc, goto_definitions, goto_assignments, usages, eldoc]
 
 service_factory.service_factory(app, server_address, 0, 'anaconda_mode port {port}')
 " "Run `anaconda-mode' server.")
@@ -470,17 +441,16 @@ submitted."
                           (not (equal anaconda-mode-request-tick (buffer-chars-modified-tick))))))
                 nil
               (search-forward-regexp "\r?\n\r?\n" nil t)
-              (let* ((json-array-type 'list)
-                     (response (condition-case nil
-                                   (json-read)
-                                 ((json-readtable-error json-end-of-file end-of-file)
-                                  (let ((response (concat (format "# status: %s\n# point: %s\n" status (point))
-                                                          (buffer-string))))
-                                    (with-current-buffer (get-buffer-create anaconda-mode-response-buffer)
-                                      (erase-buffer)
-                                      (insert response)
-                                      (goto-char (point-min)))
-                                    nil)))))
+              (let ((response (condition-case nil
+                                  (json-read)
+                                ((json-readtable-error json-end-of-file end-of-file)
+                                 (let ((response (concat (format "# status: %s\n# point: %s\n" status (point))
+                                                         (buffer-string))))
+                                   (with-current-buffer (get-buffer-create anaconda-mode-response-buffer)
+                                     (erase-buffer)
+                                     (insert response)
+                                     (goto-char (point-min)))
+                                   nil)))))
                 (if (null response)
                     (message "Cannot read anaconda-mode server response")
                   (if (assoc 'error response)
@@ -512,7 +482,7 @@ submitted."
   "Request completion candidates."
   (interactive)
   (unless (python-syntax-comment-or-string-p)
-    (anaconda-mode-call "complete" anaconda-mode-complete-callback)))
+    (anaconda-mode-call "complete" 'anaconda-mode-complete-callback)))
 
 (defun anaconda-mode-complete-callback (result)
   "Start interactive completion on RESULT receiving."
@@ -525,24 +495,15 @@ submitted."
 
 (defun anaconda-mode-complete-extract-names (result)
   "Extract completion names from `anaconda-mode' RESULT."
-  (--map (let* ((name (cdr (assoc 'name it)))
-                (type (cdr (assoc 'type it)))
-                (module-path (cdr (assoc 'module-path it)))
-                (line (cdr (assoc 'line it)))
-                (docstring (cdr (assoc 'docstring it)))
-                (description (if (equal type "statement")
-                                 "statement"
-                               (cdr (assoc 'description it)))))
-           (put-text-property 0 1 'description description name)
-           (put-text-property 0 1 'module-path module-path name)
-           (put-text-property 0 1 'line line name)
-           (put-text-property 0 1 'docstring docstring name)
+  (--map (let ((name (aref it 0))
+               (type (aref it 1)))
+           (put-text-property 0 1 'type type name)
            name)
          result))
 
 (defun anaconda-mode-complete-annotation (candidate)
   "Get annotation for CANDIDATE."
-  (--when-let (get-text-property 0 'description candidate)
+  (--when-let (get-text-property 0 'type candidate)
     (concat " <" it ">")))
 
 
@@ -551,13 +512,31 @@ submitted."
 (defun anaconda-mode-show-doc ()
   "Show documentation for context at point."
   (interactive)
-  (anaconda-mode-call "goto_definitions" anaconda-mode-show-doc-callback))
+  (anaconda-mode-call "show_doc" 'anaconda-mode-show-doc-callback))
 
 (defun anaconda-mode-show-doc-callback (result)
   "Process view doc RESULT."
   (if result
-      (anaconda-mode-documentation-view result)
+      (pop-to-buffer
+       (anaconda-mode-documentation-view result))
     (message "No documentation available")))
+
+(defun anaconda-mode-documentation-view (result)
+  "Show documentation view for rpc RESULT."
+  (let ((buf (get-buffer-create "*Anaconda*")))
+    (with-current-buffer buf
+      (view-mode -1)
+      (erase-buffer)
+      (--map
+       (progn
+         (insert (propertize (aref it 0) 'face 'bold))
+         (insert "\n")
+         (insert (s-trim-right (aref it 1)))
+         (insert "\n\n"))
+       result)
+      (view-mode 1)
+      (goto-char (point-min))
+      buf)))
 
 
 ;;; Find definitions.
@@ -565,13 +544,26 @@ submitted."
 (defun anaconda-mode-find-definitions ()
   "Find definitions for thing at point."
   (interactive)
-  (anaconda-mode-call "goto_definitions" anaconda-mode-find-definitions-callback))
+  (anaconda-mode-call
+   "goto_definitions"
+   (lambda (result)
+     (anaconda-mode-show-xrefs result nil "No definitions found"))))
 
-(defun anaconda-mode-find-definitions-callback (result)
-  "Process find definitions RESULT."
-  (if result
-      (anaconda-mode-definitions-view result)
-    (message "No definitions found")))
+(defun anaconda-mode-find-definitions-other-window ()
+  "Find definitions for thing at point."
+  (interactive)
+  (anaconda-mode-call
+   "goto_definitions"
+   (lambda (result)
+     (anaconda-mode-show-xrefs result 'window "No definitions found"))))
+
+(defun anaconda-mode-find-definitions-other-frame ()
+  "Find definitions for thing at point."
+  (interactive)
+  (anaconda-mode-call
+   "goto_definitions"
+   (lambda (result)
+     (anaconda-mode-show-xrefs result 'frame "No definitions found"))))
 
 
 ;;; Find assignments.
@@ -579,13 +571,26 @@ submitted."
 (defun anaconda-mode-find-assignments ()
   "Find assignments for thing at point."
   (interactive)
-  (anaconda-mode-call "goto_assignments" anaconda-mode-find-assignments-callback))
+  (anaconda-mode-call
+   "goto_assignments"
+   (lambda (result)
+     (anaconda-mode-show-xrefs result nil "No assignments found"))))
 
-(defun anaconda-mode-find-assignments-callback (result)
-  "Process find assignments RESULT."
-  (if result
-      (anaconda-mode-definitions-view result)
-    (message "No assignments found")))
+(defun anaconda-mode-find-assignments-other-window ()
+  "Find assignments for thing at point."
+  (interactive)
+  (anaconda-mode-call
+   "goto_assignments"
+   (lambda (result)
+     (anaconda-mode-show-xrefs result 'window "No assignments found"))))
+
+(defun anaconda-mode-find-assignments-other-frame ()
+  "Find assignments for thing at point."
+  (interactive)
+  (anaconda-mode-call
+   "goto_assignments"
+   (lambda (result)
+     (anaconda-mode-show-xrefs result 'frame "No assignments found"))))
 
 
 ;;; Find references.
@@ -593,20 +598,48 @@ submitted."
 (defun anaconda-mode-find-references ()
   "Find references for thing at point."
   (interactive)
-  (anaconda-mode-call "usages" anaconda-mode-find-references-callback))
+  (anaconda-mode-call "usages"
+                      (lambda (result)
+                        (anaconda-mode-show-xrefs result nil "No references found"))))
 
-(defun anaconda-mode-find-references-callback (result)
-  "Process find references RESULT."
+(defun anaconda-mode-find-references-other-window ()
+  "Find references for thing at point."
+  (interactive)
+  (anaconda-mode-call "usages"
+                      (lambda (result)
+                        (anaconda-mode-show-xrefs result 'window "No references found"))))
+
+(defun anaconda-mode-find-references-other-frame ()
+  "Find references for thing at point."
+  (interactive)
+  (anaconda-mode-call "usages"
+                      (lambda (result)
+                        (anaconda-mode-show-xrefs result 'frame "No references found"))))
+
+
+;;; Xref.
+
+(defun anaconda-mode-show-xrefs (result display-action error-message)
+  "Show xref from RESULT using DISPLAY-ACTION.
+Show ERROR-MESSAGE if result is empty."
   (if result
-      (anaconda-mode-definitions-view result)
-    (message "No references found")))
+      (xref--show-xrefs (anaconda-mode-make-xrefs result) display-action)
+    (message error-message)))
+
+(defun anaconda-mode-make-xrefs (result)
+  "Return a list of x-reference candidates created from RESULT."
+  (--map
+   (xref-make
+    (aref it 3)
+    (xref-make-file-location (aref it 0) (aref it 1) (aref it 2)))
+   result))
 
 
 ;;; Eldoc.
 
 (defun anaconda-mode-eldoc-function ()
   "Show eldoc for context at point."
-  (anaconda-mode-call "eldoc" anaconda-mode-eldoc-callback)
+  (anaconda-mode-call "eldoc" 'anaconda-mode-eldoc-callback)
   ;; Don't show response buffer name as ElDoc message.
   nil)
 
@@ -617,201 +650,18 @@ submitted."
 (defun anaconda-mode-eldoc-format (result)
   "Format eldoc string from RESULT."
   (when result
-    (let* ((name (cdr (assoc 'name result)))
-           (index (or (cdr (assoc 'index result)) 0))
-           (params (cdr (assoc 'params result)))
-           (doc (anaconda-mode-eldoc-format-definition name index params)))
+    (let ((doc (anaconda-mode-eldoc-format-definition
+                (aref result 0)
+                (or (aref result 1) 0)
+                (aref result 2))))
       (if anaconda-mode-eldoc-as-single-line
           (substring doc 0 (min (frame-width) (length doc)))
         doc))))
 
 (defun anaconda-mode-eldoc-format-definition (name index params)
   "Format function definition from NAME, INDEX and PARAMS."
-  (concat
-   (propertize name 'face 'font-lock-function-name-face)
-   "("
-   (anaconda-mode-eldoc-format-params params index)
-   ")"))
-
-(defun anaconda-mode-eldoc-format-params (args index)
-  "Build colorized ARGS string with current arg pointed to INDEX."
-  (->>
-   args
-   (--map-indexed
-    (if (= index it-index)
-        (propertize it 'face 'eldoc-highlight-function-argument)
-      it))
-   (-interpose ", ")
-   (apply 'concat)))
-
-
-;;; Result view.
-
-(defmacro anaconda-mode-with-view-buffer (&rest body)
-  "Create view buffer and execute BODY in it."
-  `(let ((buf (get-buffer-create "*Anaconda*")))
-     (with-current-buffer buf
-       (setq buffer-read-only nil)
-       (erase-buffer)
-       ,@body
-       (goto-char (point-min))
-       (anaconda-view-mode)
-       buf)))
-
-(defun anaconda-mode-definitions-view (result)
-  "Show definitions view for rpc RESULT."
-  (if (eq 1 (length result))
-      (anaconda-mode-find-file (car result))
-    (anaconda-mode-view result 'anaconda-mode-view-definitions-presenter)))
-
-(defun anaconda-mode-documentation-view (result)
-  "Show documentation view for rpc RESULT."
-  (anaconda-mode-view result 'anaconda-mode-view-documentation-presenter))
-
-(defun anaconda-mode-view (result presenter)
-  "Show RESULT to user for future selection.
-RESULT must be an RESULT field from json-rpc response.
-PRESENTER is the function used to format buffer content."
-  (pop-to-buffer
-   (anaconda-mode-with-view-buffer
-    (funcall presenter result))))
-
-(defun anaconda-mode-view-make-bold (string)
-  "Make passed STRING look bold."
-  (propertize string 'face 'bold))
-
-(defun anaconda-mode-view-make-source (string)
-  "Make passed STRING look like python source."
-  (with-temp-buffer
-    (insert string)
-    (let ((delay-mode-hooks t))
-      (python-mode))
-    (run-hooks 'font-lock-mode-hook)
-    (font-lock-ensure)
-    (buffer-string)))
-
-(define-button-type 'anaconda-mode-definition-button
-  'action #'anaconda-mode-view-jump
-  'face nil)
-
-(defun anaconda-mode-view-jump (button)
-  "Jump to definition file saved in BUTTON."
-  (let ((definition (button-get button 'definition)))
-    (anaconda-mode-find-file definition)))
-
-(defun anaconda-mode-view-jump-other-window (button)
-  "Jump to definition file saved in BUTTON."
-  (let ((definition (button-get button 'definition)))
-    (anaconda-mode-find-file-other-window definition)))
-
-(defun anaconda-mode-view-display-jump (button)
-  "Jump to definition file saved in BUTTON."
-  (let ((definition (button-get button 'definition)))
-    (anaconda-mode-display-buffer definition)))
-
-(defun anaconda-mode-find-file (definition)
-  "Find DEFINITION file, go to DEFINITION point."
-  (anaconda-mode-find-file-generic definition 'find-file))
-
-(defun anaconda-mode-find-file-other-window (definition)
-  "Find DEFINITION file other window, go to DEFINITION point."
-  (anaconda-mode-find-file-generic definition 'find-file-other-window))
-
-(defun anaconda-mode-display-buffer (definition)
-  "Display DEFINITION file, go to DEFINITION point."
-  (let ((buffer (anaconda-mode-find-file-generic definition 'find-file-noselect)))
-    (and buffer (display-buffer buffer))))
-
-(defun anaconda-mode-find-file-no-record-definition (definition)
-  "Find DEFINITION file, go to DEFINITION point (without recording in the go-back stack)."
-  (anaconda-mode-find-file-generic definition 'find-file t))
-
-(defvar-local anaconda-mode-go-back-definitions nil
-  "Previous definition from which current buffer was navigated.")
-
-(defun anaconda-mode-find-file-generic (definition find-function &optional no-record)
-  "Find DEFINITION with FIND-FUNCTION."
-  (let ((backward-navigation (when (buffer-file-name)
-                               `((module-path . ,(buffer-file-name))
-                                 (line . ,(line-number-at-pos (point)))
-                                 (column . ,(- (point) (line-beginning-position)))))))
-    (--if-let (cdr (assoc 'module-path definition))
-        (progn
-          (let ((buffer (funcall find-function it)))
-            (with-current-buffer buffer
-              (goto-char (point-min))
-              (forward-line (1- (cdr (assoc 'line definition))))
-              (forward-char (cdr (assoc 'column definition)))
-              (when (and (not no-record) backward-navigation)
-                (push backward-navigation anaconda-mode-go-back-definitions))
-              buffer)))
-      (message "Can't open %s module" (cdr (assoc 'module-name definition)))
-      nil)))
-
-(defun anaconda-mode-view-insert-button (name definition)
-  "Insert text button with NAME opening the DEFINITION."
-  (insert-text-button name
-                      'type 'anaconda-mode-definition-button
-                      'definition definition))
-
-(defun anaconda-mode-view-definitions-presenter (result)
-  "Insert definitions from RESULT."
-  (->>
-   (--group-by (cdr (assoc 'module-name it)) result)
-   (--map (anaconda-mode-view-insert-module-definition it))))
-
-(defun anaconda-mode-view-insert-module-definition (module)
-  "Insert MODULE definition into current buffer."
-  (insert (concat (anaconda-mode-view-make-bold (car module)) "\n"))
-  (--map
-   (progn
-     (insert "    ")
-     (anaconda-mode-view-insert-button
-      (anaconda-mode-view-make-source (cdr (assoc 'description it)))
-      it)
-     (insert "\n"))
-   (cdr module)))
-
-(defun anaconda-mode-view-documentation-presenter (result)
-  "Insert documentation from RESULT."
-  (--map
-   (progn
-     (insert (anaconda-mode-view-make-bold (cdr (assoc 'module-name it))))
-     (insert "\n")
-     (insert (s-trim-right (cdr (assoc 'docstring it))))
-     (insert "\n\n"))
-   result))
-
-(defvar anaconda-view-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "n") 'anaconda-view-mode-next-definition)
-    (define-key map (kbd "p") 'anaconda-view-mode-previous-definition)
-    (define-key map (kbd "q") 'quit-window)
-    map))
-
-(define-derived-mode anaconda-view-mode special-mode "Anaconda-View"
-  "Major mode for definitions view and navigation for `anaconda-mode'.
-
-\\{anaconda-view-mode-map}")
-
-(defun anaconda-view-mode-next-definition ()
-  "Navigate to the next definition in the view buffer."
-  (interactive)
-  (forward-button 1)
-  (anaconda-mode-view-display-jump (button-at (point))))
-
-(defun anaconda-view-mode-previous-definition ()
-  "Navigate to the previous definition in the view buffer."
-  (interactive)
-  (forward-button -1)
-  (anaconda-mode-view-display-jump (button-at (point))))
-
-(defun anaconda-mode-go-back ()
-  "Jump backward if buffer was navigated from `anaconda-mode' command."
-  (interactive)
-  (if anaconda-mode-go-back-definitions
-      (anaconda-mode-find-file-no-record-definition (pop anaconda-mode-go-back-definitions))
-    (message "No previous buffer")))
+  (aset params index (propertize (aref params index) 'face 'eldoc-highlight-function-argument))
+  (concat (propertize name 'face 'font-lock-function-name-face) "(" (mapconcat 'identity params ", ") ")"))
 
 
 ;;; Anaconda minor mode.
@@ -820,9 +670,15 @@ PRESENTER is the function used to format buffer content."
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-M-i") 'anaconda-mode-complete)
     (define-key map (kbd "M-.") 'anaconda-mode-find-definitions)
-    (define-key map (kbd "M-,") 'anaconda-mode-find-assignments)
+    (define-key map (kbd "C-x 4 .") 'anaconda-mode-find-definitions-other-window)
+    (define-key map (kbd "C-x 5 .") 'anaconda-mode-find-definitions-other-frame)
+    (define-key map (kbd "M-*") 'anaconda-mode-find-assignments)
+    (define-key map (kbd "C-x 4 *") 'anaconda-mode-find-assignments-other-window)
+    (define-key map (kbd "C-x 5 *") 'anaconda-mode-find-assignments-other-frame)
     (define-key map (kbd "M-r") 'anaconda-mode-find-references)
-    (define-key map (kbd "M-*") 'anaconda-mode-go-back)
+    (define-key map (kbd "C-x 4 r") 'anaconda-mode-find-references-other-window)
+    (define-key map (kbd "C-x 5 r") 'anaconda-mode-find-references-other-frame)
+    (define-key map (kbd "M-,") 'xref-pop-marker-stack)
     (define-key map (kbd "M-?") 'anaconda-mode-show-doc)
     map)
   "Keymap for `anaconda-mode'.")
