@@ -4,7 +4,7 @@
 
 ;; Author: S. Roskamp <steffen.roskamp@gmail.com>
 ;; Keywords: cloud, upload, share
-;; Package-Version: 20180317.1022
+;; Package-Version: 20180603.731
 ;; Package-Requires: ((async "1.0"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -37,67 +37,109 @@
 
 (defcustom transfer-sh-temp-file-location "/tmp/transfer-sh.tmp"
   "The temporary file to use for uploading to transfer.sh."
-  :type '(string)
+  :type 'string
   :group 'transfer-sh)
 
 (defcustom transfer-sh-remote-prefix nil
   "A prefix added to each remote file name."
-  :type '(string)
+  :type 'string
   :group 'transfer-sh)
 
 (defcustom transfer-sh-remote-suffix nil
   "A suffix added to each remote file name."
-  :type '(string)
+  :type 'string
   :group 'transfer-sh)
 
 (defcustom transfer-sh-gpg-args "-ac -o-"
   "Arguments given to gpg when using transfer-sh-upload-gpg."
-  :type '(string)
+  :type 'string
+  :group 'transfer-sh)
+
+(defcustom transfer-sh-upload-agent-command
+  (cond
+   ((executable-find "curl")
+    "curl")
+   ((executable-find "wget")
+    "wget"))
+  "Command used to upload files to transfer.sh"
+  :type 'string
+  :group 'transfer-sh)
+
+(defcustom transfer-sh-upload-agent-arguments
+  (cond
+   ((executable-find "curl")
+    (list "--silent" "--upload-file"))
+   ((executable-find "wget")
+    (list "--method" "PUT" "--output-document" "-"  "--no-verbose" "--quiet" "--body-file")))
+  "Suffix arguments to `transfer-sh-upload-agent-command'"
+  :type '(repeat string)
   :group 'transfer-sh)
 
 ;;;###autoload
 (defun transfer-sh-upload-file-async (local-filename &optional remote-filename)
-  "Uploads file LOCAL-FILENAME to transfer.sh in background.
+  "Upload file LOCAL-FILENAME to transfer.sh in background.
 
-If no REMOTE-FILENAME is given, the LOCAL-FILENAME is used."
+REMOTE-FILENAME is the name used in the transfer.sh link. If not
+provided, query the user.
+
+This function uses `transfer-sh-run-upload-agent'."
   (interactive "ffile: ")
+  (or remote-filename
+      (setq remote-filename (url-encode-url
+                             (read-from-minibuffer
+                              (format "Remote filename (default %s): "
+                                      (file-name-nondirectory local-filename))
+                              (file-name-nondirectory local-filename)))))
   (async-start
    `(lambda ()
       ,(async-inject-variables "local-filename")
       ,(async-inject-variables "remote-filename")
-      (shell-command-to-string
-        (concat "curl --silent --upload-file "
-                (shell-quote-argument local-filename)
-                " " (shell-quote-argument (concat "https://transfer.sh/" remote-filename)))))
-   `(lambda (transfer-link)
-      (kill-new transfer-link)
-      (message transfer-link))))
+      ,(transfer-sh-run-upload-agent local-filename remote-filename))))
 
 ;;;###autoload
 (defun transfer-sh-upload-file (local-filename &optional remote-filename)
   "Uploads file LOCAL-FILENAME to transfer.sh.
 
-If no REMOTE-FILENAME is given, the LOCAL-FILENAME is used."
+REMOTE-FILENAME is the name used in the transfer.sh link. If not
+provided, query the user.
+
+This function uses `transfer-sh-run-upload-agent'."
   (interactive "ffile: ")
-  (let*  ((remote-filename (if remote-filename
-                               remote-filename
-                             (file-name-nondirectory local-filename)))
-          (transfer-link (shell-command-to-string
-                           (concat "curl --silent --upload-file "
-                                   (shell-quote-argument local-filename)
-                                   " " (shell-quote-argument (concat "https://transfer.sh/" remote-filename))))))
+  (transfer-sh-run-upload-agent
+   local-filename
+   (or remote-filename
+       (url-encode-url
+        (read-from-minibuffer
+         (format "Remote filename (default %s): "
+                 (file-name-nondirectory local-filename))
+         (file-name-nondirectory local-filename))))))
+
+(defun transfer-sh-run-upload-agent (local-filename  &optional remote-filename)
+  "Upload LOCAL-FILENAME to transfer.sh using `transfer-sh-upload-agent-command'.
+
+If no REMOTE-FILE is given, LOCAL-FILENAME is used."
+  (let* ((filename-without-directory (file-name-nondirectory local-filename))
+         (remote-filename (or remote-filename filename-without-directory))
+         (transfer-link (with-temp-buffer
+                          (apply 'call-process
+                                 transfer-sh-upload-agent-command
+                                 nil t nil
+                                 (append transfer-sh-upload-agent-arguments
+                                         (list local-filename
+                                               (concat "https://transfer.sh/" remote-filename))))
+                          (buffer-string))))
     (kill-new transfer-link)
-    (message transfer-link)))
+    (minibuffer-message "File %S uploaded: %s" filename-without-directory transfer-link)))
 
 ;;;###autoload
 (defun transfer-sh-upload (async)
-  "Uploads either active region or complete buffer to transfer.sh.
+  "Upload either active region or complete buffer to transfer.sh.
 
 If a region is active, that region is exported to a file and then
-uploaded, otherwise the complete buffer is uploaded.  The remote
-file name is determined by the custom variables
-`transfer-sh-remote-prefix' and `transfer-sh-remote-suffix', and
-the buffer name."
+uploaded, otherwise the complete buffer is uploaded.
+
+This function uses `transfer-sh-upload-file' and
+`transfer-sh-upload-file-async'."
   (interactive "P")
   (let* ((remote-filename (concat transfer-sh-remote-prefix (buffer-name) transfer-sh-remote-suffix))
          (local-filename (if (use-region-p)
@@ -110,8 +152,8 @@ the buffer name."
                                (write-region (point-min) (point-max) transfer-sh-temp-file-location nil 0)
                                transfer-sh-temp-file-location)))))
     (if async
-        (transfer-sh-upload-file-async local-filename remote-filename)
-      (transfer-sh-upload-file local-filename remote-filename))))
+        (transfer-sh-upload-file-async local-filename)
+      (transfer-sh-upload-file local-filename))))
 
 ;;;###autoload
 (defun transfer-sh-upload-gpg (async)

@@ -2,11 +2,11 @@
 
 ;; Copyright (C) 2013-2017 Skye Shaw and others
 ;; Author: Skye Shaw <skye.shaw@gmail.com>
-;; Version: 0.6.0
-;; Package-Version: 20180603.756
+;; Version: 0.7.0
+;; Package-Version: 20180603.1043
 ;; Keywords: git, vc, github, bitbucket, gitlab, convenience
 ;; URL: http://github.com/sshaw/git-link
-;; Package-Requires: ((cl-lib "0.6.1"))
+;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -36,6 +36,12 @@
 
 ;;; Change Log:
 
+;; 2018-06-03 - v0.7.0
+;; * Add support for Tramp (Issue #49, thanks Jürgen Hötzel)
+;; * Fix various compiler warnings
+;; * Fix differences between url-path-and-query across Emacs versions
+;; * Require Emacs 24.3
+;;
 ;; 2018-04-23 - v0.6.0
 ;; * Fix parsing of remotes with auth info (Issue #51)
 ;; * Removed remote regex in favor of url-parse
@@ -109,6 +115,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'dired)
 (require 'thingatpt)
 (require 'url-util)
 (require 'url-parse)
@@ -125,10 +132,12 @@
 
 (defcustom git-link-default-remote nil
   "Name of the remote to link to."
+  :type 'string
   :group 'git-link)
 
 (defcustom git-link-default-branch nil
   "Name of the branch to link to."
+  :type 'string
   :group 'git-link)
 
 (defcustom git-link-open-in-browser nil
@@ -254,14 +263,13 @@ Return nil,
   (let* ((filename (buffer-file-name))
 	 (dir      (git-link--repo-root)))
 
-    (when (and (null filename)
-               (or (eq major-mode 'dired-mode)
-                   (and
-                    (string-match-p "^magit-" (symbol-name major-mode))
-                    (functionp 'magit-file-at-point))))
-
-      (setq filename (or (dired-file-name-at-point)
-                         (magit-file-at-point))))
+    (when (null filename)
+      (cond
+       ((eq major-mode 'dired-mode)
+        (setq filename (dired-file-name-at-point)))
+       ((and (string-match-p "^magit-" (symbol-name major-mode))
+             (fboundp 'magit-file-at-point))
+        (setq filename (magit-file-at-point)))))
 
     (if (and dir filename
              ;; Make sure filename is not above dir, e.g. "/foo/repo-root/.."
@@ -276,12 +284,14 @@ Return nil,
       (setq url (concat "ssh://" url)))
 
     (setq url  (url-generic-parse-url url)
-          path (car (url-path-and-query url))
+          ;; Normalize path.
+          ;; If none, will nil on Emacs < 25. Later versions return "".
+          path (or (car (url-path-and-query url)) "")
           host (url-host url))
 
     (when host
-
-      (when (and path (not (string= "/" path)))
+      (when (and (not (string= "/" path))
+                 (not (string= ""  path)))
         (setq path (substring (file-name-sans-extension path) 1)))
 
       ;; Fix-up scp style URLs
@@ -392,7 +402,7 @@ Return nil,
           hostname
           dirname
           commit
-          (if (string-blank-p (file-name-nondirectory filename))
+          (if (string= "" (file-name-nondirectory filename))
               filename
             (concat filename
                     "#"
