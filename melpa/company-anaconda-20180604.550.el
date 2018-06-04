@@ -4,7 +4,7 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/anaconda-mode
-;; Package-Version: 20180603.1737
+;; Package-Version: 20180604.550
 ;; Version: 0.2.0
 ;; Package-Requires: ((company "0.8.0") (anaconda-mode "0.1.1") (cl-lib "0.5.0") (dash "2.6.0") (s "1.9"))
 
@@ -49,12 +49,25 @@
   :group 'company-anaconda
   :type 'boolean)
 
+(defun company-anaconda-at-the-end-of-identifier ()
+  "Check if the cursor at the end of completable identifier."
+  (or
+   ;; At the end of the symbol, but not the end of int number
+   (and (looking-at "\\_>")
+	(not (looking-back "\\_<[[:digit:]]+" (line-beginning-position))))
+   ;; After the dot, but not when it's a dot after int number
+   ;; Although identifiers like "foo1.", "foo111.", or "foo1baz2." are ok
+   (and (looking-back "\\." (- (point) 1))
+	(not (looking-back "\\_<[[:digit:]]+\\." (line-beginning-position))))
+   ;; After dot in float constant like "1.1." or ".1."
+   (or (looking-back "\\_<[[:digit:]]+\\.[[:digit:]]+\\." (line-beginning-position))
+       (looking-back "\\.[[:digit:]]+\\." (line-beginning-position)))))
+
 (defun company-anaconda-prefix ()
   "Grab prefix at point."
   (and anaconda-mode
        (not (company-in-string-or-comment))
-       (or (looking-at "\\_>")
-           (looking-back "\\." (- (point) 1)))
+       (company-anaconda-at-the-end-of-identifier)
        (let* ((line-start (line-beginning-position))
               (start
                (save-excursion

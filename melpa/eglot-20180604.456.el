@@ -3,7 +3,7 @@
 ;; Copyright (C) 2018 Free Software Foundation, Inc.
 
 ;; Version: 0.8
-;; Package-Version: 20180601.958
+;; Package-Version: 20180604.456
 ;; Author: João Távora <joaotavora@gmail.com>
 ;; Maintainer: João Távora <joaotavora@gmail.com>
 ;; URL: https://github.com/joaotavora/eglot
@@ -271,7 +271,7 @@ CONTACT is in `eglot'.  Returns a process object."
     proc))
 
 (defun eglot--all-major-modes ()
-  "Return all know major modes."
+  "Return all known major modes."
   (let ((retval))
     (mapatoms (lambda (sym)
                 (when (plist-member (symbol-plist sym) 'derived-mode-parent)
@@ -738,7 +738,7 @@ DEFERRED is passed to `eglot--async-request', which see."
     (cadr res)))
 
 (cl-defun eglot--notify (server method params)
-  "Notify SERVER of something, don't expect a reply.e"
+  "Notify SERVER of something, don't expect a reply."
   (eglot--send server `(:jsonrpc  "2.0" :method ,method :params ,params)))
 
 (cl-defun eglot--reply (server id &key result error)
@@ -817,16 +817,26 @@ If optional MARKER, return a marker instead"
       (ignore-errors (funcall mode))
       (insert string) (font-lock-ensure) (buffer-string))))
 
+(defcustom eglot-ignored-server-capabilites (list)
+  "LSP server capabilities that Eglot could use, but won't.
+You could add, for instance, the symbol
+`:documentHighlightProvider' to prevent automatic highlighting
+under cursor."
+  :type '(repeat symbol))
+
 (defun eglot--server-capable (&rest feats)
   "Determine if current server is capable of FEATS."
-  (cl-loop for caps = (eglot--capabilities (eglot--current-server-or-lose))
-           then (cadr probe)
-           for feat in feats
-           for probe = (plist-member caps feat)
-           if (not probe) do (cl-return nil)
-           if (eq (cadr probe) t) do (cl-return t)
-           if (eq (cadr probe) :json-false) do (cl-return nil)
-           finally (cl-return (or probe t))))
+  (unless (cl-some (lambda (feat)
+                     (memq feat eglot-ignored-server-capabilites))
+                   feats)
+    (cl-loop for caps = (eglot--capabilities (eglot--current-server-or-lose))
+             then (cadr probe)
+             for feat in feats
+             for probe = (plist-member caps feat)
+             if (not probe) do (cl-return nil)
+             if (eq (cadr probe) t) do (cl-return t)
+             if (eq (cadr probe) :json-false) do (cl-return nil)
+             finally (cl-return (or probe t)))))
 
 (defun eglot--range-region (range &optional markers)
   "Return region (BEG . END) that represents LSP RANGE.
@@ -1273,7 +1283,7 @@ Calls REPORT-FN maybe if server publishes diagnostics in time."
 
 (defun eglot--xref-reset-known-symbols (&rest _dummy)
   "Reset `eglot--xref-reset-known-symbols'.
-DUMMY is ignored"
+DUMMY is ignored."
   (setq eglot--xref-known-symbols nil))
 
 (advice-add 'xref-find-definitions :after #'eglot--xref-reset-known-symbols)
