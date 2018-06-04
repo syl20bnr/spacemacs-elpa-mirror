@@ -4,7 +4,7 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/anaconda-mode
-;; Package-Version: 20180603.1215
+;; Package-Version: 20180603.1712
 ;; Version: 0.1.12
 ;; Package-Requires: ((emacs "25") (pythonic "0.1.0") (dash "2.6.0") (s "1.9") (f "0.16.2"))
 
@@ -642,7 +642,7 @@ Show ERROR-MESSAGE if result is empty."
   (when result
     (let ((doc (anaconda-mode-eldoc-format-definition
                 (aref result 0)
-                (or (aref result 1) 0)
+                (aref result 1)
                 (aref result 2))))
       (if anaconda-mode-eldoc-as-single-line
           (substring doc 0 (min (frame-width) (length doc)))
@@ -650,7 +650,8 @@ Show ERROR-MESSAGE if result is empty."
 
 (defun anaconda-mode-eldoc-format-definition (name index params)
   "Format function definition from NAME, INDEX and PARAMS."
-  (aset params index (propertize (aref params index) 'face 'eldoc-highlight-function-argument))
+  (when index
+    (aset params index (propertize (aref params index) 'face 'eldoc-highlight-function-argument)))
   (concat (propertize name 'face 'font-lock-function-name-face) "(" (mapconcat 'identity params ", ") ")"))
 
 
