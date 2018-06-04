@@ -4,10 +4,10 @@
 
 ;; Author: Damien Cassou <damien@cassou.me>
 ;; Keywords: tools
-;; Package-Version: 20180528.2351
+;; Package-Version: 20180604.53
 ;; Url: https://gitlab.petton.fr/elcouch/libelcouch/
 ;; Package-requires: ((emacs "25.1") (request "0.3.0"))
-;; Version: 0.7.0
+;; Version: 0.8.0
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -34,6 +34,8 @@
 (require 'request)
 (require 'json)
 (require 'map)
+
+(require 'subr-x)
 
 
 ;;; Customization
@@ -123,6 +125,37 @@ considered to have failed."
 
 (cl-defmethod libelcouch-entity-url ((instance libelcouch-instance))
   (libelcouch--instance-url instance))
+
+(defun libelcouch-entity-from-url (url)
+  "Return an entity by reading URL, a string."
+  (let* ((url-obj (url-generic-parse-url url))
+         (host (url-host url-obj))
+         (path (car (url-path-and-query url-obj)))
+         (path-components (split-string path "/" t))
+         ;; authority is the beginning of the url until the path starts:
+         (authority (substring url 0 (unless (string-empty-p path)
+                                       (- (length path)))))
+         (instance (libelcouch--instance-create
+                    :name host
+                    :url authority))
+         (database (when (and instance (>= (length path-components) 1))
+                     (libelcouch--database-create
+                      :name (car path-components)
+                      :instance instance)))
+         (document (when (and database (>= (length path-components) 2))
+                     (libelcouch--document-create
+                      :name (cadr path-components)
+                      :database database))))
+    (or document database instance)))
+
+(defun libelcouch-choose-instance ()
+  "Ask user for a CouchDB instance among `libelcouch-couchdb-instances'."
+  (let* ((instances (libelcouch-instances))
+         (instance-name (completing-read "CouchDB instance: "
+                                         (mapcar #'libelcouch-entity-name instances)
+                                         nil
+                                         t)))
+    (cl-find instance-name instances :test #'string= :key #'libelcouch-entity-name)))
 
 
 ;;; Private helpers

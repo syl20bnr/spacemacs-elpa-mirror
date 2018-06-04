@@ -5,7 +5,7 @@
 ;; Author: Feng Shu
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/ivy-posframe
-;; Package-Version: 20180523.53
+;; Package-Version: 20180604.125
 ;; Version: 0.1.0
 ;; Keywords: abbrev, convenience, matching, ivy
 ;; Package-Requires: ((emacs "26.0")(posframe "0.1.0")(ivy "0.10.0"))
@@ -129,7 +129,7 @@ When nil, Using current frame's font as fallback."
   :group 'ivy-posframe)
 
 (defface ivy-posframe-cursor
-  '((t (:inherit default :background "#ffff00")))
+  '((t (:inherit cursor)))
   "Face used by the ivy-posframe's fake cursor."
   :group 'ivy-posframe)
 
