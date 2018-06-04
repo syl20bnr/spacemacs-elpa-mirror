@@ -4,7 +4,7 @@
 
 ;; Author: Constantin Kulikov (Bad_ptr) <zxnotdead@gmail.com>
 ;; Version: 2.9.7
-;; Package-Version: 20180410.1252
+;; Package-Version: 20180604.1018
 ;; Package-Requires: ()
 ;; Keywords: perspectives, session, workspace, persistence, windows, buffers, convenience
 ;; URL: https://github.com/Bad-ptr/persp-mode.el
@@ -1663,16 +1663,16 @@ the selected window to a wrong buffer.")
                   (with-current-buffer buffer
                     (delete-if-not
                      #'(lambda (lvar)
-                         ,(persp--generate-predicate-loop-any-all
-                           save-vars
-                           '(and
-                             (if (persp-regexp-p item)
+                         (and
+                          ,(persp--generate-predicate-loop-any-all
+                            save-vars
+                            '(if (persp-regexp-p item)
                                  (persp-string-match-p item
                                                        (symbol-name lvar))
                                (eq item lvar))
-                             (persp-elisp-object-readable-p
-                              (symbol-value lvar)))
-                           t))
+                            t)
+                          (persp-elisp-object-readable-p
+                           (symbol-value lvar))))
                      (buffer-local-variables)
                      :key #'car-safe))))
              ,(if save-function

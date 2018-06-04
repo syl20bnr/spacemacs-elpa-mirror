@@ -4,8 +4,8 @@
 
 ;; Author: USAMI Kenta <tadsan@zonu.me>
 ;; Created: 27 Jul 2017
-;; Version: 0.0.3
-;; Package-Version: 20180217.914
+;; Version: 0.0.5
+;; Package-Version: 20180604.719
 ;; Keywords: files comm deploy
 ;; URL: https://github.com/emacs-php/emacs-auto-deployment
 ;; Package-Requires: ((emacs "24.3") (cl-lib "0.5") (f "0.17") (s "1.7.0"))
@@ -67,6 +67,8 @@
   "Minor mode lighter to use in the mode-line."
   :type 'string)
 
+(defconst copy-file-on-save-default-marker-file ".dir-locals.el")
+
 (defvar copy-file-on-save-lighter copy-file-on-save-default-lighter)
 (make-variable-buffer-local 'copy-file-on-save-lighter)
 
@@ -85,6 +87,15 @@
        (lambda (obj)
          (and (listp obj)
               (cl-loop for o in obj always (stringp o))))))
+;;;###autoload
+(progn
+  (defvar-local copy-file-on-save-project-root-marker nil
+    "Marker file for project root detection.")
+  (put 'copy-file-on-save-project-root-marker 'safe-local-variable
+       (lambda (obj)
+         (or (null obj)
+             (stringp obj)
+             (memq obj '(projectile))))))
 
 ;; Variables
 (defvar copy-file-on-save-base-dir nil
@@ -117,9 +128,13 @@
 
 (defun copy-file-on-save--detect-project-root ()
   "Return path to project root directory."
-  (if (fboundp 'projectile-project-root)
-      (projectile-project-root)
-    (file-truename (locate-dominating-file buffer-file-name ".dir-locals.el"))))
+  (let ((marker (or copy-file-on-save-project-root-marker
+                    (if (fboundp 'projectile-project-root)
+                        'projectile
+                      copy-file-on-save-default-marker-file))))
+    (if (eq marker 'projectile)
+        (projectile-project-root)
+      (file-truename (locate-dominating-file buffer-file-name marker)))))
 
 (defun copy-file-on-save--base-dir ()
   "Return path to project directory."

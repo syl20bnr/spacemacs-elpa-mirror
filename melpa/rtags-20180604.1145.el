@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 20180531.438
+;; Package-Version: 20180604.1145
 ;; Version: 2.10
 
 ;; This file is not part of GNU Emacs.
@@ -149,9 +149,10 @@
 (defcustom rtags-completing-read-behavior 'insert-default
   "Behavior for completing-read"
   :group 'rtags
-  :type '(choice (const :tag "insert default" insert-default)
-                 (const :tag "default when empty" default-when-empty)
-                 (const :tag "insert default and mark it" insert-default-marked)))
+  :type '(choice
+          (const :tag "insert default" insert-default)
+          (const :tag "default when empty" default-when-empty)
+          (const :tag "insert default and mark it" insert-default-marked)))
 
 (rtags-set-suspend-during-compilation-enabled)
 
@@ -471,10 +472,11 @@ on intervals."
 (defcustom rtags-bury-buffer-function 'rtags-bury-or-delete
   "The function used to bury or kill the current rtags buffer."
   :group 'rtags
-  :type '(radio (function-item rtags-bury-or-delete)
-                (function-item quit-window)
-                (function-item bury-buffer)
-                (function :tag "Function")))
+  :type '(radio
+          (function-item rtags-bury-or-delete)
+          (function-item quit-window)
+          (function-item bury-buffer)
+          (function :tag "Function")))
 
 (defcustom rtags-after-find-file-hook nil
   "Run after RTags has jumped to a location possibly in a new file."
@@ -635,9 +637,10 @@ Note: If *RTags Diagnostics* is not running, then the 'match check'
       is not performed, because sandbox tracking is not needed then.
 Note: It is recommended to run each sandbox is separate Emacs process."
   :group 'rtags
-  :type '(choice (const :tag "Perform query without update" nil)
-                 (const :tag "Ask the user" ask)
-                 (const :tag "Change sandbox and do command" t))
+  :type '(choice
+          (const :tag "Perform query without update" nil)
+          (const :tag "Ask the user" ask)
+          (const :tag "Change sandbox and do command" t))
   :safe 'symbolp)
 
 (defcustom rtags-includes-func 'rtags-dummy-includes-func
@@ -671,9 +674,10 @@ Note: It is recommended to run each sandbox is separate Emacs process."
 
 (defcustom rtags-display-result-backend 'default
   "Method to use to display RTags results, like references."
-  :type '(choice (const :tag "RTags (default)" default)
-                 (const :tag "Helm" helm)
-                 (const :tag "Ivy" ivy))
+  :type '(choice
+          (const :tag "RTags (default)" default)
+          (const :tag "Helm" helm)
+          (const :tag "Ivy" ivy))
   :group 'rtags
   :type 'symbol
   :risky t)
@@ -1510,9 +1514,10 @@ It uses the stored compile command from the RTags database for preprocessing."
 (defcustom rtags-completing-read-behavior 'insert-default-marked
   "Behavior for completing-read"
   :group 'rtags
-  :type '(choice (const :tag "insert default" insert-default)
-                 (const :tag "default when empty" helm)
-                 (const :tag "insert default marked" insert-default-marked))
+  :type '(choice
+          (const :tag "insert default" insert-default)
+          (const :tag "default when empty" helm)
+          (const :tag "insert default marked" insert-default-marked))
   :type 'symbol
   :risky t)
 
@@ -5072,22 +5077,27 @@ the class.
   (interactive)
   (when (or (not (rtags-called-interactively-p)) (rtags-sandbox-id-matches))
     (let ((filename (rtags-untrampify (rtags-buffer-file-name)))
-          (rc (rtags-executable-find "rc")))
+          (rc (rtags-executable-find "rc"))
+          (rtags-buffer-name "*RTags check includes*")
+          (arguments))
+      (setq arguments (mapcar (lambda (a) (concat a filename)) '("--current-file=" "--check-includes=")))
       (unless rc
         (rtags--error 'rtags-cannot-find-rc))
       (unless filename
         (rtags--error 'rtags-you-need-to-call-rtags-check-includes-from-an-actual-file))
-      (rtags-switch-to-buffer (rtags-get-buffer "*RTags check includes*"))
+      (rtags-switch-to-buffer (rtags-get-buffer rtags-buffer-name))
       (rtags-mode)
       (set (make-local-variable 'rtags-check-includes-received-output) nil)
       (let ((buffer-read-only nil))
         (insert "Waiting for rdm..."))
       (goto-char (point-min))
-      (let ((proc (start-file-process "*RTags check includes*"
-                                      (current-buffer)
-                                      rc
-                                      "--current-file" filename
-                                      "--check-includes" filename)))
+      (when (> (length rtags-socket-file) 0)
+        (push (rtags--get-socket-file-switch) arguments))
+      (let ((proc (apply #'start-file-process
+                         rtags-buffer-name
+                         (current-buffer)
+                         rc
+                         arguments)))
         (set-process-query-on-exit-flag proc nil)
         (set-process-filter proc 'rtags-check-includes-filter)
         (set-process-sentinel proc 'rtags-check-includes-sentinel)))))

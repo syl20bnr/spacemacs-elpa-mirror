@@ -2,7 +2,7 @@
 
 ;; Author: Natalie Weizenbaum
 ;; URL: https://github.com/nex3/dart-mode
-;; Package-Version: 20180528.1233
+;; Package-Version: 20180604.835
 ;; Version: 1.0.3
 ;; Package-Requires: ((emacs "24.5") (cl-lib "0.5") (dash "2.10.0") (flycheck "0.23") (s "1.10"))
 ;; Keywords: language
@@ -456,9 +456,6 @@ Returns nil if `dart-sdk-path' is nil."
 (define-key dart-mode-map (kbd "M-?") 'dart-expand-parameters)
 
 ;;; CC indentation support
-
-(defvar c-syntactic-context nil
-  "A dynamically-bound variable used by cc-mode.")
 
 (defun dart-block-offset (info)
   "Calculate the correct indentation for inline functions.
