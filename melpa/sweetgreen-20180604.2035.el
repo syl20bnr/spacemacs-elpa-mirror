@@ -1,6 +1,10 @@
 ;;; sweetgreen.el --- Order Salads from sweetgreen.com -*- lexical-binding: t -*-
 
 ;; Change Log:
+;; 02-Jun-2018    Diego Berrocal
+;;    Adapt to new Sweetgreen's API
+
+;; Change Log:
 ;; 16-Nov-2015    Diego Berrocal
 ;;    Improve Documentation
 
@@ -12,13 +16,13 @@
 ;; 16-Nov-2015    Diego Berrocal
 ;;    Add Org-Readme
 
-;; Copyright (C) 2015 Diego Berrocal
+;; Copyright (C) 2018 Diego Berrocal
 
 ;; Author: Diego Berrocal <cestdiego@gmail.com>
 ;; Homepage: https://www.github.com/CestDiego/sweetgreen.el
 ;; Created: Tue Nov  3 22:33:41 2012 (-0500)
-;; Version: 0.5
-;; Package-Version: 20180401.1715
+;; Version: 0.6
+;; Package-Version: 20180604.2035
 ;; URL: https://github.com/cestdiego/sweetgreen.el
 ;; Package-Requires: ((dash "2.12.1") (helm "1.5.6") (request "0.2.0") (cl-lib "0.5"))
 ;; Keywords: salad, food, sweetgreen, request
@@ -70,6 +74,9 @@
   :type 'string
   :group 'sweetgreen)
 
+(defvar sweetgreen--preferred-billing-account '()
+  "Preferred billing account id")
+
 (defvar sweetgreen--csrf-token-regexp "<meta content=\"\\([^\"]+\\).*?csrf-token.*?>"
   "Regular Expression used to grab the CSRF Token from the index page.")
 
@@ -108,56 +115,63 @@
 
 (defun => (alist &rest keys)
   "Accessor that makes it easy to traverse nested alists"
-  (-reduce-from (lambda (acc item) (assoc-default item acc)) alist keys))
+  (-reduce-from (lambda (acc item)
+                  (cond
+                        ((symbolp item)     (assoc-default item acc))
+                        ((numberp item)     (if (arrayp acc)
+                                                (aref acc item)
+                                              (assoc-default item acc)))
+                        ))
+                alist keys))
 
-(defun sweetgreen//auth (&optional username password)
+
+(defun sweetgreen//auth ()
   "Authenticate USERNAME with PASSWORD to sweetgreen and get all cookies"
   (interactive)
   (unless sweetgreen--username
     (setq sweetgreen--username (read-from-minibuffer "Username: ")))
   (unless sweetgreen--password
     (setq sweetgreen--password (read-passwd "Super Secret Password: ")))
+  (sweetgreen//fetch-auth-cookie sweetgreen--username sweetgreen--password)
   (sweetgreen//fetch-csrf-token)
-  (sweetgreen//fetch-auth-cookie username password))
+  )
 
 (defun sweetgreen//fetch-csrf-token ()
   "Parse CSRF-Token out of Sweetgreen's Homepage"
   (let* ((response (request
-                   "https://order.sweetgreen.com"
-                   :type "GET"
-                   :sync t
-                   :parser 'buffer-string
-                   :error
-                   (cl-function (lambda (&key data error-thrown &allow-other-keys&rest _)
-                                  (error "Got error: %S" error-thrown)))
-                   ))
-        (data  (request-response-data response))
-        (csrf-token (progn
-                      (string-match sweetgreen--csrf-token-regexp data)
-                      (match-string 1 data))))
-    (setq sweetgreen--csrf-token csrf-token)))
+                    "https://order.sweetgreen.com/api/session"
+                    :type "GET"
+                    :sync t
+                    :parser 'json-read
+                    :headers `(("Cookie" . ,sweetgreen--cookie-string))
+                    :error
+                    (cl-function (lambda (&key data error-thrown &allow-other-keys&rest _)
+                                   (error "Error Fetching CSRF Token: %S" error-thrown)))
+                    ))
+        (data  (request-response-data response)))
+    (setq sweetgreen--csrf-token (=> data 'session 'csrf))))
 
 (defun sweetgreen//fetch-auth-cookie (username password)
   "Login to get a session cookie"
   (let* ((response (request
-                    "https://order.sweetgreen.com/api/customers/login"
+                    "https://order.sweetgreen.com/api/customers/login_or_register"
                     :type "POST"
                     :sync t
-                    :data `(("customer[email]" . ,username)
-                            ("customer[password]" . ,password))
+                    :data (json-encode `(("customer" . (("email" . ,username)
+                                                   ("password" . ,password)))))
                     :headers '(("Accept"       . "application/json")
-                               ("Content-Type" . "application/x-www-form-urlencoded"))
+                               ("Content-Type" . "application/json"))
                     :parser 'json-read
                     :error
-                    (cl-function (lambda (&key data error-thrown &allow-other-keys&rest _)
-                                   (error "Got error: %S" error-thrown)))
+                    (cl-function (lambda (&rest args &key error-thrown &allow-other-keys)
+                                   (message "Got Error Fetching Auth Cookie: %S %S %S" username password error-thrown)))
                     ))
          (header (request-response-header response "set-cookie"))
          (data (request-response-data response))
          (cookie-string (progn
                           (string-match sweetgreen--cookie-regexp header)
                           (concat "_session_id=" (match-string 1 header)))))
-    (setq sweetgreen--curr-user     (=> data 'customer) )
+    (setq sweetgreen--curr-user     (=> data 'customers 0))
     (setq sweetgreen--cookie-string cookie-string)))
 
 (defun sweetgreen//logout (curr-user)
@@ -170,9 +184,13 @@
                     :type "DELETE"
                     :sync t
                     :headers '(("Accept"       . "application/json")
-                               ("Content-Type" . "application/x-www-form-urlencoded")
+                               ("Content-Type" . "application/json")
                                ("X-CSRF-Token" . ,sweetgreen--csrf-token))
-                    :parser 'buffer-string))
+                    :parser 'buffer-string
+                    :error
+                    (cl-function (lambda (&rest args &key error-thrown &allow-other-keys)
+                                   (message "Error Logging Out: %S %S %S" username password error-thrown)))
+                    ))
          (header (request-response-header response "set-cookie"))
          (cookie-string (progn
                           (string-match sweetgreen--cookie-regexp header)
@@ -246,6 +264,7 @@
         sweetgreen--menu-alist))
 
 
+;; Some restaurants don't accept orders
 (defun sweetgreen//get-restaurants (zip_code)
   "Get Restaurants alist out of your zip code"
   (when (and sweetgreen--csrf-token
@@ -319,12 +338,36 @@
                      :parser 'json-read
                      :error
                      (cl-function (lambda (&key data error-thrown &allow-other-keys&rest _)
-                                    (error "Got error: %S" error-thrown)))))
+                                    (error "Got Error Fetching Basket: %S" error-thrown)))))
          (data       (request-response-data response))
          (order      (aref (=> data 'orders) 0)))
     (setq sweetgreen--curr-basket-id (=> order 'basket_id))
     (setq sweetgreen--available-times (=> order 'available_wanted_times_tuples))
     (setq sweetgreen--curr-basket order)))
+
+(defun sweetgreen/confirm-payment ()
+  "Choose from Payment options available in the user's account we do not store any credit card information"
+  (let* ((response  (request
+                     (format "https://order.sweetgreen.com/api/customers/%.0f"
+                             (=> sweetgreen--curr-user 'id))
+                     :type    "GET"
+                     :sync    t
+                     :headers `(("Content-Type" . "application/json")
+                                ("Cookie" . ,sweetgreen--cookie-string)
+                                ("X-CSRF-Token" . ,sweetgreen--csrf-token))
+                     :parser 'json-read
+                     :error
+                     (cl-function (lambda (&key data error-thrown &allow-other-keys&rest _)
+                                    (error "Got Error Getting Customer Data for confirm payment: %S" error-thrown)))))
+         (data               (request-response-data response)))
+    (setq sweetgreen--preferred-billing-account (let ((billing-accounts (--map `(,(=> it 'description) . ,it)
+                                                                               (=> data 'billing_accounts))))
+                                                  (helm
+                                                   :sources (helm-build-sync-source "Select Billing Method"
+                                                              :candidates billing-accounts
+                                                              :action 'identity)
+                                                   :buffer "🌟 Sweetgreen 💖 Select Billing Method 💳 🌟")))))
+
 
 (defun sweetgreen/confirm-product (product)
   "Build prompt with random pun and interactively confirm order"
@@ -345,9 +388,14 @@
      (format
       "%s
 You are buying the %s
+
 At the %s location @ %s
+
 %s
-Price before Taxes is $%.2f
+
+Price before Taxes is $%.2f.
+You are Paying with %s
+
 It contains %.0f calories
 Confirm your order? "
       random-pun
@@ -356,6 +404,7 @@ Confirm your order? "
       address
       instructions
       cost
+      (=> sweetgreen--preferred-billing-account 'description)
       calories))))
 
 (defun sweetgreen//helm-select-time (order)
@@ -404,6 +453,7 @@ Confirm your order? "
                  (
                   ("available_wanted_times_tuples" . ,(=> basket 'available_wanted_times_tuples))
                   ("basket_id"                     . ,(=> basket 'basket_id))
+                  ("billing_account_id"            . ,(=> sweetgreen--preferred-billing-account 'id))
                   ("created_at"                    . ,(=> basket 'created_at))
                   ("coupon_code"                   . ,(=> basket 'coupon_code))
                   ("coupon_discount"               . ,(=> basket 'coupon_discount))
@@ -417,18 +467,7 @@ Confirm your order? "
                   ("wanted_time"                   . ,wanted_time)
                   ("uploaded_at")
                   ("contact_number" . "1111111111")
-                  ("state" . "complete")
-                  ("billing_account" .
-                   (
-                    ("card_type" . "cash")
-                    ("card_number")
-                    ("zip")
-                    ("last_four")
-                    ("cvv")
-                    ("expiry_month")
-                    ("expiry_year")
-                    ("description" . "sweetgreen Rewards (Pay with App)")
-                    ("save_on_file" . :json-false))))))))
+                  ("state" . "complete"))))))
     (request
      (concat "https://order.sweetgreen.com/api/orders/" (number-to-string (=> basket 'id)))
      :type "PUT"
@@ -449,6 +488,8 @@ Confirm your order? "
   "Order salad from http://sweetgreen.com"
   (interactive "P")
   (when args
+    (setq sweetgreen--username nil)
+    (setq sweetgreen--password nil)
     (setq sweetgreen--curr-restaurant nil))
   (when sweetgreen--curr-user
     (sweetgreen//logout sweetgreen--curr-user))
@@ -460,7 +501,9 @@ Confirm your order? "
          (curr-restaurant-id (number-to-string (=> curr-restaurant 'id)))
 
          (curr-product         (sweetgreen/helm-menu curr-restaurant-id))
-         (confirmed-product    (sweetgreen/confirm-product curr-product)))
+         (confirm-payment      (sweetgreen/confirm-payment))
+         (confirmed-product    (sweetgreen/confirm-product curr-product))
+         )
     (when confirmed-product
       (sweetgreen//order-product curr-product))))
 
