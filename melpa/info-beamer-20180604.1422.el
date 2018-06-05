@@ -1,10 +1,10 @@
-;;; info-beamer.el --- Send commands to info-beamer         -*- lexical-binding: t; -*-
+;;; info-beamer.el --- Utilities for working with info-beamer  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2018  Daniel Kraus
 
 ;; Author: Daniel Kraus <daniel@kraus.my>
 ;; Version: 0.1
-;; Package-Version: 20180601.221
+;; Package-Version: 20180604.1422
 ;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: tools, processes, comm
 ;; URL: https://github.com/dakra/info-beamer.el

@@ -1,10 +1,10 @@
 ;;; pelican-mode.el --- Minor mode for editing Pelican sites -*- lexical-binding: t -*-
 ;;
-;; Copyright 2013-2017 Joe Wreschnig
+;; Copyright 2013-2018 Joe Wreschnig
 ;;
 ;; Author: Joe Wreschnig <joe.wreschnig@gmail.com>
-;; Package-Version: 20180401.148
-;; Package-X-Original-Version: 20170808
+;; Package-Version: 20180604.1507
+;; Package-X-Original-Version: 20180605.1
 ;; Package-Requires: ((emacs "25"))
 ;; URL: https://git.korewanetadesu.com/pelican-mode.git
 ;; Keywords: convenience, editing
