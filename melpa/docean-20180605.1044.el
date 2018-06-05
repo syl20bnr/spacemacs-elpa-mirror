@@ -4,7 +4,7 @@
 
 ;; Author: Mario Rodas <marsam@users.noreply.github.com>
 ;; URL: https://github.com/emacs-pe/docean.el
-;; Package-Version: 20150927.1118
+;; Package-Version: 20180605.1044
 ;; Keywords: convenience
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5") (request "0.2.0"))
@@ -35,21 +35,24 @@
 ;;
 ;;; Features:
 ;;  + Show list of droplets.
-;;  + Perform [droplet actions][].
+;;  + Perform [droplet actions].
 ;;  + Show actions performed by an account.
 ;;
 ;;; Usage:
-;; To configure your account you need generate an api key in
-;; https://cloud.digitalocean.com/settings/applications.  and to set
-;; up, you can follow any of the following options:
+;; In order to use docean.el you need to generate API key for your Digital
+;; Ocean account. Go to https://cloud.digitalocean.com/settings/applications to
+;; generate your API key. docean.el can find your API key in the following
+;; ways:
 ;;
+;;  + Add a `.authinfo.gpg` entry with the host set to "api.digitalocean.com"
+;;  and password set to the API key.
 ;;  + Add `(setq docean-oauth-token "mytoken")` to your `init.el'
 ;;  + Set the environment variable `DO_API_TOKEN'.
 ;;
 ;; To show your droplets you can use `M-x docean-droplet-list`.
 ;;
 ;;; TODO:
-;; + [ ] Handle `meta' abd `links' in API responses.
+;; + [ ] Handle `meta' and `links' in API responses.
 ;;
 ;; [droplet actions]: https://developers.digitalocean.com/#droplet-actions
 
@@ -58,7 +61,7 @@
 (eval-when-compile (require 'cl-lib))
 
 (require 'json)
-
+(require 'auth-source)
 (require 'request)
 
 (defgroup docean nil
@@ -125,8 +128,16 @@
 (defun docean-oauth-token ()
   "Return the configured DigitalOcean token."
   (or docean-oauth-token
-      (getenv "DO_API_TOKEN")     ;; XXX: Used by dopy, and by extend ansible.
-      (error "You need to generate a personal access token.  https://cloud.digitalocean.com/settings/applications")))
+      (getenv "DO_API_TOKEN") ; XXX: Used by dopy, and by extension Ansible.
+      (let* ((docean-auth-info
+              (car (auth-source-search :max 1
+                                       :host "api.digitalocean.com"
+                                       :require '(:host))))
+             (docean-oauth-token-fn (getf docean-auth-info :secret)))
+        (setq docean-oauth-token
+              (funcall docean-oauth-token-fn))
+        docean-oauth-token)
+      (Error "You need to generate a personal access token.  https://cloud.digitalocean.com/settings/applications")))
 
 (defun docean--endpoint-url (endpoint)
   "Return a DigitalOcean absolure url of an ENDPOINT."

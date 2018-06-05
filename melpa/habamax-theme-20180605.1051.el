@@ -2,7 +2,7 @@
 
 ;; Author: Maxim Kim <habamax@gmail.com>
 ;; Url: https://github.com/habamax/habamax-theme
-;; Package-Version: 20180605.242
+;; Package-Version: 20180605.1051
 ;; Package-Requires: ((emacs "24"))
 
 ;;; Commentary:
@@ -170,17 +170,19 @@
    ;; default company colors are just fine for me
 
    ;; erc
-   ;; '(erc-current-nick-face ((t (:foreground "#ffffff"))))
-   ;;   ;; if erc-nick-default-face has foreground setup then it could not be
-   ;;   ;; overriden by erc-my-nick-face
-   ;;   ;; '(erc-nick-default-face ((t (:foreground "#779977"))))
+   `(erc-current-nick-face ((t (:foreground ,color-str :weight bold))))
+   ;; if erc-nick-default-face has foreground setup then it could not be
+   ;; overriden by erc-my-nick-face
+   ;;'(erc-nick-default-face ((t (:foreground "#779977"))))
    ;; '(erc-my-nick-face ((t (:foreground "#cc5555"))))
    ;; '(erc-input-face ((t (:foreground "#8dbdbd"))))
-   ;; '(erc-timestamp-face ((t (:foreground "Wheat"))))
-   ;; '(erc-notice-face ((t (:foreground "#555555"))))
-   ;; '(erc-action-face ((nil (:slant italic))))
-   ;; '(erc-button ((t (:underlined on))))
-
+   `(erc-timestamp-face ((t (:foreground ,color-gray))))
+   `(erc-notice-face ((t (:foreground ,color-gray))))
+   '(erc-action-face ((nil (:slant italic))))
+   '(erc-button ((t (:inherit link))))
+   `(erc-prompt-face ((t (:background ,color-dim-bg :foreground ,color-dim-fg :weight bold))))
+   '(erc-nick-msg-face ((nil (:foreground "#207000" :weight bold))))
+   '(erc-direct-msg-face ((nil (:foreground "#207000"))))
 
    ;; rcirc
    `(rcirc-server ((t (:foreground ,color-comment))))
