@@ -3,7 +3,7 @@
 
 ;; Author: Daniel Berg
 ;; URL: https://github.com/roosta/emacs-srcery
-;; Package-Version: 20180602.1101
+;; Package-Version: 20180604.828
 
 ;; Version: 0.1.0
 ;; Keywords: faces
@@ -299,8 +299,8 @@
       (,srcery-256-class (:foreground ,srcery-256-bright-blue))))
 
    `(font-lock-variable-name-face
-     ((,srcery-class (:foreground ,srcery-bright-magenta))
-      (,srcery-256-class (:foreground ,srcery-256-bright-magenta))))
+     ((,srcery-class (:foreground ,srcery-cyan))
+      (,srcery-256-class (:foreground ,srcery-256-cyan))))
 
    `(font-lock-warning-face
      ((,srcery-class (:foreground ,srcery-bright-orange :background ,srcery-black))
@@ -2545,6 +2545,15 @@
    `(web-mode-warning-face
      ((,srcery-class (:inherit ,font-lock-warning-face))
       (,srcery-256-class (:inherit ,font-lock-warning-face))))
+
+   ;; CSS
+   `(css-selector
+     ((,srcery-class (:foreground ,srcery-blue))
+      (,srcery-256-class (:foreground ,srcery-256-blue))))
+
+   `(css-property
+     ((,srcery-class (:foreground ,srcery-yellow))
+      (,srcery-256-class (:foreground ,srcery-256-yellow))))
 
    ;; XML
    `(nxml-element-local-name
