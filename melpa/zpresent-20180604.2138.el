@@ -1,7 +1,7 @@
 ;;; zpresent.el --- Simple presentation mode based on org files.  -*- lexical-binding: t; -*-
 
 ;; Version: 0.3
-;; Package-Version: 20180224.2212
+;; Package-Version: 20180604.2138
 ;; This file is not part of GNU Emacs.
 
 ;; Copyright 2015-2017 Zachary Kanfer <zkanfer@gmail.com>
@@ -111,6 +111,9 @@
 (defvar zpresent-default-background-color "#E0E0E0"
   "The default color placed over all fonts in the background.")
 
+(defvar zpresent-buffer-name ""
+  "The name of the buffer used to present in.")
+
 ;;;; Faces:
 
 (defface zpresent-whole-screen-face `((t . (:background ,zpresent-default-background-color))) "Face that should be put over the whole screen.")
@@ -119,7 +122,7 @@
 (defface zpresent-title-slide-title '((t . (:height 1.5 :inherit zpresent-base))) "Face for titles in a title slide." :group 'zpresent-faces)
 (defface zpresent-body '((t . (:height 0.66 :inherit zpresent-base))) "Face for the body." :group 'zpresent-faces)
 
-(defvar zpresent-whole-screen-overlay (with-current-buffer (get-buffer-create "zpresentation") (make-overlay 0 0))
+(defvar zpresent-whole-screen-overlay (make-overlay 0 0)
   "The overlay that's put over all the text in the screen.  Its purpose is to color the background color, and possibly other text properties too.")
 (overlay-put zpresent-whole-screen-overlay 'face 'zpresent-whole-screen-face)
 
@@ -136,7 +139,9 @@
   (setq zpresent-images (make-hash-table :test #'equal))
   (zpresent--cache-images zpresent-slides)
 
-  (switch-to-buffer "zpresentation")
+  (setq zpresent-buffer-name (zpresent--presentation-buffer-name))
+
+  (switch-to-buffer zpresent-buffer-name)
   (font-lock-mode 0)
   (zpresent-mode)
 
@@ -151,6 +156,10 @@
   (visual-line-mode)
 
   (zpresent--redisplay))
+
+(defun zpresent--presentation-buffer-name ()
+  "Get the name of the presentation buffer."
+  (format "zpresentation: %s" (file-name-base (buffer-file-name))))
 
 (defun zpresent--format (structure-list)
   "Convert an STRUCTURE-LIST into a list of slides."
@@ -624,14 +633,15 @@ for example, for the first slide of each top level org element."
                             zpresent-default-background-color)))))
   (move-overlay zpresent-whole-screen-overlay
                 (point-min)
-                (point-max))
+                (point-max)
+                (get-buffer zpresent-buffer-name))
   (goto-char (point-min)))
 
 (defun zpresent--present-normal-slide (slide)
   "Present SLIDE as a normal (read: non-title) slide."
   (interactive)
-  (switch-to-buffer "zpresentation")
-  (buffer-disable-undo "zpresentation")
+  (switch-to-buffer zpresent-buffer-name)
+  (buffer-disable-undo zpresent-buffer-name)
   (let ((inhibit-read-only t))
     (erase-buffer)
     (insert "\n")
@@ -642,8 +652,8 @@ for example, for the first slide of each top level org element."
 
 (defun zpresent--present-title-slide (slide)
   "Present SLIDE as a title slide."
-  (switch-to-buffer "zpresentation")
-  (buffer-disable-undo "zpresentation")
+  (switch-to-buffer zpresent-buffer-name)
+  (buffer-disable-undo zpresent-buffer-name)
   (let ((inhibit-read-only t)
         (title-lines (zpresent--get-lines-for-title (gethash :title slide) (window-max-chars-per-line nil 'zpresent-title-slide-title))))
     (erase-buffer)
@@ -665,8 +675,8 @@ for example, for the first slide of each top level org element."
 
 (defun zpresent--present-full-screen-image (slide)
   "Present SLIDE as a full screen image."
-  (switch-to-buffer "zpresentation")
-  (buffer-disable-undo "zpresentation")
+  (switch-to-buffer zpresent-buffer-name)
+  (buffer-disable-undo zpresent-buffer-name)
   (let ((inhibit-read-only t))
     (erase-buffer)
     (when-let ((image-location (assoc-default "image" (gethash :properties slide) #'equal))
@@ -921,7 +931,7 @@ If you want to insert an image, use '#'zpresent--insert-image'."
               #s(hash-table data (title ("title manually split" "onto three" "lines (this one is pretty gosh darn long, but it shouldn't be automatically split no matter how long it is.)")))
               #s(hash-table data (title "an automatically split really really really really really really really really really long title"))))
 
-  (switch-to-buffer "zpresentation")
+  (switch-to-buffer zpresent-buffer-name)
   (font-lock-mode 0)
   (zpresent-mode)
 

@@ -9,7 +9,7 @@
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Artur Malabarba <bruce.connor.am@gmail.com>
 ;; URL: http://github.com/clojure-emacs/clojure-mode
-;; Package-Version: 20180526.225
+;; Package-Version: 20180604.2056
 ;; Keywords: languages clojure clojurescript lisp
 ;; Version: 5.7.0
 ;; Package-Requires: ((emacs "24.4"))
@@ -179,10 +179,10 @@ For example, \[ is allowed in :db/id[:db.part/user]."
           (and (listp value)
                (cl-every 'characterp value))))
 
-(defcustom clojure-build-tool-files '("project.clj" "build.boot" "build.gradle" "deps.edn")
+(defcustom clojure-build-tool-files '("project.clj" "build.boot" "build.gradle" "deps.edn" "shadow-cljs.edn")
   "A list of files, which identify a Clojure project's root.
-Out-of-the box `clojure-mode' understands lein, boot, gradle
-and tools.deps."
+Out-of-the box `clojure-mode' understands lein, boot, gradle,
+ shadow-cljs and tools.deps."
   :type '(repeat string)
   :package-version '(clojure-mode . "5.0.0")
   :safe (lambda (value)
