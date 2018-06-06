@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180402.1857
+;; Package-Version: 20180606.837
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.9.0"))
 ;; Keywords: matching
@@ -42,7 +42,7 @@
   :prefix "swiper-")
 
 (defface swiper-match-face-1
-  '((t (:inherit isearch-lazy-highlight-face)))
+  '((t (:inherit lazy-highlight)))
   "The background face for `swiper' matches.")
 
 (defface swiper-match-face-2
@@ -433,6 +433,7 @@ When capture groups are present in the input, print them instead of lines."
                  'compilation-info))
          (re (progn (string-match "\"\\(.*\\)\"" (buffer-name))
                     (match-string 1 (buffer-name))))
+         (re (mapconcat #'identity (ivy--split re) ".*?"))
          (cands
           (mapcar
            (lambda (s)
@@ -631,6 +632,8 @@ Matched candidates should have `swiper-invocation-face'."
                       (string-to-number (match-string 0 str))
                     0)))
         (unless (memq this-command '(ivy-yank-word
+                                     ivy-yank-symbol
+                                     ivy-yank-char
                                      scroll-other-window))
           (when (cl-plusp num)
             (unless (if swiper--current-line
