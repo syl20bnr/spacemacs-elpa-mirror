@@ -21,7 +21,7 @@
 ;; -------------------------------------------------------------------------------------------
 
 ;; URL: http://github.com/ananthakumaran/typescript.el
-;; Package-Version: 20180514.531
+;; Package-Version: 20180605.1414
 ;; Version: 0.1
 ;; Keywords: typescript languages
 ;; Package-Requires: ()
@@ -2586,11 +2586,8 @@ the broken-down class name of the item to insert."
 
 ;;; Main Function
 
-(defalias 'typescript-parent-mode
-  (if (fboundp 'prog-mode) 'prog-mode 'fundamental-mode))
-
 ;;;###autoload
-(define-derived-mode typescript-mode typescript-parent-mode "typescript"
+(define-derived-mode typescript-mode prog-mode "typescript"
   "Major mode for editing typescript.
 
 Key bindings:
