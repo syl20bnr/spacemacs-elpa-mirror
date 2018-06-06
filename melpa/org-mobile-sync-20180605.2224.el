@@ -4,8 +4,8 @@
 
 ;; Author: steckerhalter
 ;; Package-Requires: ((emacs "24.3.50") (org "8.0"))
-;; Package-Version: 20160629.1307
-;; URL: https://github.com/steckerhalter/org-mobile-sync
+;; Package-Version: 20180605.2224
+;; URL: https://framagit.org/steckerhalter/org-mobile-sync
 ;; Keywords: org-mode org mobile sync todo
 
 ;;; Commentary:
