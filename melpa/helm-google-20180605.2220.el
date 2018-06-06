@@ -4,8 +4,8 @@
 
 ;; Author: steckerhalter
 ;; Package-Requires: ((helm "0"))
-;; Package-Version: 20180212.240
-;; URL: https://github.com/steckerhalter/helm-google
+;; Package-Version: 20180605.2220
+;; URL: https://framagit.org/steckerhalter/helm-google
 ;; Keywords: helm google search browse searx
 
 ;; This file is not part of GNU Emacs.
@@ -35,7 +35,7 @@
 
 (defgroup helm-google '()
   "Customization group for `helm-google'."
-  :link '(url-link "http://github.com/steckerhalter/helm-google")
+  :link '(url-link "https://framagit.org/steckerhalter/helm-google")
   :group 'convenience
   :group 'comm)
 

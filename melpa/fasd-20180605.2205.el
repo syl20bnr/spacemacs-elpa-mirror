@@ -3,8 +3,8 @@
 ;; Copyright (C) 2013 steckerhalter
 
 ;; Author: steckerhalter
-;; URL: https://github.com/steckerhalter/emacs-fasd
-;; Package-Version: 20180203.745
+;; URL: https://framagit.org/steckerhalter/emacs-fasd
+;; Package-Version: 20180605.2205
 ;; Keywords: cli bash zsh autojump
 
 ;;; Commentary:
