@@ -5,7 +5,7 @@
 ;; Authors: Jason Pellerin
 ;;          crystal-lang-tools
 ;; URL: https://github.com/crystal-lang-tools/emacs-crystal-mode
-;; Package-Version: 20180306.1821
+;; Package-Version: 20180606.755
 ;; Created: Tue Jun 23 2015
 ;; Keywords: languages crystal
 ;; Version: 0.2.0
@@ -207,6 +207,7 @@ This should only be called after matching against `crystal-here-doc-beg-re'."
      ["Show imp" crystal-tool-imp t])
     ("Spec"
      ["Switch" crystal-spec-switch t]
+     ["Call line" crystal-spec-line t]
      ["Call buffer" crystal-spec-buffer t]
      ["Call project" crystal-spec-all t])))
 
@@ -2674,6 +2675,19 @@ description at POINT."
               (substring fname-relative-dir
                          (length "src") nil)
               (replace-regexp-in-string ".cr" "_spec.cr" fname-non-dir)))))
+
+;;;###autoload
+(defun crystal-spec-line()
+  "Run spec on current line."
+  (interactive)
+  (if (buffer-file-name)
+      (let* ((fname (file-truename (buffer-file-name)))
+             (fname-with-line (concat fname ":" (number-to-string (line-number-at-pos)))))
+        (if (string-suffix-p "_spec.cr" fname)
+            (progn (message (concat "crystal spec " fname-with-line))
+                   (crystal-spec--call fname-with-line))
+          (error "Must be run on a crystal spec file.")))
+    (error "Cannot use crystal spec on a buffer without a file name.")))
 
 ;;;###autoload
 (defun crystal-spec-buffer()

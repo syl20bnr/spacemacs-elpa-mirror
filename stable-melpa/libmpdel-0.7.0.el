@@ -4,10 +4,10 @@
 
 ;; Author: Damien Cassou <damien@cassou.me>
 ;; Keywords: multimedia
-;; Package-Version: 20180605.627
+;; Package-Version: 0.7.0
 ;; Url: https://gitlab.petton.fr/mpdel/libmpdel
 ;; Package-requires: ((emacs "25.1"))
-;; Version: 0.6.0
+;; Version: 0.7.0
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -951,3 +951,7 @@ not specify it, everything is updated."
 
 (provide 'libmpdel)
 ;;; libmpdel.el ends here
+
+;; Local Variables:
+;; checkdoc-arguments-in-order-flag: nil
+;; End:

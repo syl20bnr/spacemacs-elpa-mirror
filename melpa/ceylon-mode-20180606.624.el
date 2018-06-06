@@ -4,7 +4,7 @@
 
 ;; Author: Lucas Werkmeister <mail@lucaswerkmeister.de>
 ;; URL: https://github.com/lucaswerkmeister/ceylon-mode
-;; Package-Version: 20170806.919
+;; Package-Version: 20180606.624
 ;; Keywords: languages ceylon
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "25"))
@@ -106,6 +106,8 @@
   "Syntax table for `ceylon-mode'.")
 
 (set-default 'tab-width 4)
+
+(set-default 'comment-start "// ")
 
 (defcustom ceylon-restore-point-on-indent t
   "Whether to restore point after an indentation.

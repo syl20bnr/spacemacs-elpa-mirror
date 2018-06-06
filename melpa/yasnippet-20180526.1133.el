@@ -6,7 +6,7 @@
 ;;          Noam Postavsky <npostavs@gmail.com>
 ;; Maintainer: Noam Postavsky <npostavs@gmail.com>
 ;; Version: 0.13.0
-;; Package-Version: 20180513.1004
+;; Package-Version: 20180526.1133
 ;; X-URL: http://github.com/joaotavora/yasnippet
 ;; Keywords: convenience, emulation
 ;; URL: http://github.com/joaotavora/yasnippet
@@ -2987,6 +2987,18 @@ The last element of POSSIBILITIES may be a list of strings."
     (cl-some (lambda (fn)
                (funcall fn "Choose: " possibilities))
              yas-prompt-functions)))
+
+(defun yas--auto-next ()
+  "Helper for `yas-auto-next'."
+  (remove-hook 'post-command-hook #'yas--auto-next t)
+  (yas-next-field))
+
+(defmacro yas-auto-next (&rest body)
+  "Automatically advance to next field after eval'ing BODY."
+  (declare (indent 0) (debug t))
+  `(unless yas-moving-away-p
+     (prog1 ,@body
+       (add-hook 'post-command-hook #'yas--auto-next nil t))))
 
 (defun yas-key-to-value (alist)
   (unless (or yas-moving-away-p
