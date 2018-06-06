@@ -7,13 +7,13 @@
 ;; Copyright (C) 1995-2018, Drew Adams, all rights reserved.
 ;; Created: Wed Oct 11 15:07:46 1995
 ;; Version: 0
-;; Package-Version: 20180131.1216
+;; Package-Version: 20180604.2335
 ;; Package-Requires: ()
-;; Last-Updated: Tue Jan 30 07:42:53 2018 (-0800)
+;; Last-Updated: Mon Jun  4 14:05:45 2018 (-0700)
 ;;           By: dradams
-;;     Update #: 4133
+;;     Update #: 4134
 ;; URL: https://www.emacswiki.org/emacs/download/highlight.el
-;; URL (GIT mirror): https://github.com/steckerhalter/highlight.el
+;; URL (GIT mirror): https://framagit.org/steckerhalter/highlight.el
 ;; Doc URL: https://www.emacswiki.org/emacs/HighlightLibrary
 ;; Keywords: faces, help, local
 ;; Compatibility: GNU Emacs: 20.x, 21.x, 22.x, 23.x, 24.x, 25.x, 26.x

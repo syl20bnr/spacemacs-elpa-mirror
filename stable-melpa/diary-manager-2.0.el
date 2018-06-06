@@ -6,9 +6,9 @@
 ;; Created: 28 Dec 2017
 ;; Homepage: https://github.com/raxod502/diary-manager
 ;; Keywords: extensions
-;; Package-Version: 20180527.1357
+;; Package-Version: 2.0
 ;; Package-Requires: ((emacs "25"))
-;; Version: 1.1.2
+;; Version: 2.0
 
 ;;; Commentary:
 
