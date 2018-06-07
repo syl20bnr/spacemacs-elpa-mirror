@@ -6,7 +6,7 @@
 ;; Author: Joris Engbers <info@jorisengbers.nl>
 ;; Homepage: https://github.com/JorisE/evil-mu4e
 ;; Version: 0.0.8
-;; Package-Version: 20180607.327
+;; Package-Version: 20180607.605
 ;; Package-Requires: ((emacs "24.4") (evil "1.2.10"))
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -82,6 +82,7 @@
     (,evil-mu4e-state mu4e-main-mode-map ";"               mu4e-context-switch)
     (,evil-mu4e-state mu4e-main-mode-map "H"               mu4e-display-manual)
     (,evil-mu4e-state mu4e-main-mode-map "C"               mu4e-compose-new)
+    (,evil-mu4e-state mu4e-main-mode-map "cc"              mu4e-compose-new)
     (,evil-mu4e-state mu4e-main-mode-map "x"               mu4e-kill-update-mail)
     (,evil-mu4e-state mu4e-main-mode-map "A"               mu4e-about)
     (,evil-mu4e-state mu4e-main-mode-map "f"               smtpmail-send-queued-mail)
@@ -94,6 +95,10 @@
     (,evil-mu4e-state mu4e-headers-mode-map "E"            mu4e-compose-edit)
     (,evil-mu4e-state mu4e-headers-mode-map "F"            mu4e-compose-forward)
     (,evil-mu4e-state mu4e-headers-mode-map "R"            mu4e-compose-reply)
+    (,evil-mu4e-state mu4e-headers-mode-map "cc"           mu4e-compose-new)
+    (,evil-mu4e-state mu4e-headers-mode-map "ce"           mu4e-compose-edit)
+    (,evil-mu4e-state mu4e-headers-mode-map "cf"           mu4e-compose-forward)
+    (,evil-mu4e-state mu4e-headers-mode-map "cr"           mu4e-compose-reply)
     (,evil-mu4e-state mu4e-headers-mode-map "o"            mu4e-headers-change-sorting)
     (,evil-mu4e-state mu4e-headers-mode-map "j"            mu4e-headers-next)
     (,evil-mu4e-state mu4e-headers-mode-map "k"            mu4e-headers-prev)
@@ -145,9 +150,15 @@
     (,evil-mu4e-state mu4e-view-mode-map "gX"              mu4e-view-fetch-url)
     (,evil-mu4e-state mu4e-view-mode-map "C"               mu4e-compose-new)
     (,evil-mu4e-state mu4e-view-mode-map "H"               mu4e-view-toggle-html)
-    (,evil-mu4e-state mu4e-view-mode-map "e"               mu4e-view-save-attachment) ; TODO: Bind mu4e-view-save-attachment-multi?
-    (,evil-mu4e-state mu4e-view-mode-map "E"               mu4e-compose-edit)
-    (,evil-mu4e-state mu4e-view-mode-map "F"               mu4e-compose-forward)
+    ;; (,evil-mu4e-state mu4e-view-mode-map "E"               mu4e-compose-edit)
+    ;; (,evil-mu4e-state mu4e-view-mode-map "F"               mu4e-compose-forward)
+    (,evil-mu4e-state mu4e-view-mode-map "R"               mu4e-compose-reply)
+    (,evil-mu4e-state mu4e-view-mode-map "cc"              mu4e-compose-new)
+    (,evil-mu4e-state mu4e-view-mode-map "ce"              mu4e-compose-edit)
+    (,evil-mu4e-state mu4e-view-mode-map "cf"              mu4e-compose-forward)
+    (,evil-mu4e-state mu4e-view-mode-map "cr"              mu4e-compose-reply)
+    (,evil-mu4e-state mu4e-view-mode-map "p"               mu4e-view-save-attachment)
+    (,evil-mu4e-state mu4e-view-mode-map "P"               mu4e-view-save-attachment-multi) ; Since mu4e 1.0, -multi is same as normal.
     (,evil-mu4e-state mu4e-view-mode-map "O"               mu4e-headers-change-sorting)
     (,evil-mu4e-state mu4e-view-mode-map "o"               mu4e-view-open-attachment)
     (,evil-mu4e-state mu4e-view-mode-map "A"               mu4e-view-attachment-action)
@@ -172,12 +183,10 @@
     (,evil-mu4e-state mu4e-view-mode-map "%"               mu4e-view-mark-pattern)
     (,evil-mu4e-state mu4e-view-mode-map "+"               mu4e-view-mark-for-flag)
     (,evil-mu4e-state mu4e-view-mode-map "-"               mu4e-view-mark-for-unflag)
-    (,evil-mu4e-state mu4e-view-mode-map "R"               mu4e-compose-reply)
-    (,evil-mu4e-state mu4e-view-mode-map "F"               mu4e-compose-forward)
     (,evil-mu4e-state mu4e-view-mode-map "\C-u"            evil-scroll-up)
     (,evil-mu4e-state mu4e-view-mode-map "zr"              mu4e-headers-toggle-include-related)
     (,evil-mu4e-state mu4e-view-mode-map "zt"              mu4e-headers-toggle-threading)
-    (,evil-mu4e-state mu4e-view-mode-map "zh"              mu4e-view-toggle-hide-cited)
+    (,evil-mu4e-state mu4e-view-mode-map "za"              mu4e-view-toggle-hide-cited)
     (,evil-mu4e-state mu4e-view-mode-map "gl"              mu4e-show-log)
     (,evil-mu4e-state mu4e-view-mode-map "s"               mu4e-view-search-edit)
     (,evil-mu4e-state mu4e-view-mode-map "|"               mu4e-view-pipe)

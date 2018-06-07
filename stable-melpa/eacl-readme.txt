@@ -51,8 +51,9 @@ The content of ".dir-locals.el":
                                   "*.log"))
                        (add-to-list 'grep-find-ignored-files v)))))))
 
-GNU Grep v3.1+, Emacs v24.3 and Ivy (https://github.com/abo-abo/swiper)
-are required.
+Emacs v24.3 and Ivy (https://github.com/abo-abo/swiper) are required.
+GNU Grep v3.1+ is optionally required for multi-line completion.
+"git grep" is automatically detected for single line completion.
 
 On macOS:
   - Use HomeBrew (https://brew.sh/) to install latest GNU Grep on macOS

@@ -4,7 +4,7 @@
 
 ;; Author: Thierry Volpiatto <thierry.volpiatto@gmail.com>
 ;; Version: 0.1
-;; Package-Version: 20150512.506
+;; Package-Version: 20180607.457
 
 ;; This file is part of GNU Emacs.
 
@@ -194,6 +194,7 @@ See `with-eldoc-in-minibuffer'."
 (define-minor-mode eldoc-in-minibuffer-mode
     "Show eldoc for current minibuffer input."
   :global t
+  :group 'eldoc-eval
   (if eldoc-in-minibuffer-mode
       (progn
         (add-hook 'minibuffer-exit-hook
