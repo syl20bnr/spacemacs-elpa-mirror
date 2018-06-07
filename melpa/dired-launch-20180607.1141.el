@@ -3,7 +3,7 @@
 ;; Copyright (C) 2016 David Thompson
 ;; Author: David Thompson
 ;; Version: 0.2
-;; Package-Version: 20171004.1027
+;; Package-Version: 20180607.1141
 ;; Keywords: dired, launch
 ;; URL: https://github.com/thomp/dired-launch
 
@@ -215,6 +215,10 @@
   "Ensure that `dired-launch-mode' will be enabled in `dired-mode'."
   (interactive)
   (add-hook 'dired-mode-hook 'dired-launch-mode))
+
+;; either inactivate dired-launch completely or deal with keybindings
+;; likely to interfere with use of wdired
+(add-hook 'wdired-mode-hook #'(lambda () (dired-launch-mode -1)))
 
 (provide 'dired-launch)
 ;;; dired-launch.el ends here

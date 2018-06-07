@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20180525.1952
+;; Package-Version: 20180607.913
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -89,7 +89,7 @@ Any changes to the output buffer made by this hook will be saved.")
 (defgroup markdown nil
   "Major mode for editing text files in Markdown format."
   :prefix "markdown-"
-  :group 'wp
+  :group 'text
   :link '(url-link "https://jblevins.org/projects/markdown-mode/"))
 
 (defcustom markdown-command "markdown"

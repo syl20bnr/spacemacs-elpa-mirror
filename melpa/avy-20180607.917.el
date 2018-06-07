@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/avy
-;; Package-Version: 20180514.1100
+;; Package-Version: 20180607.917
 ;; Version: 0.4.0
 ;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
 ;; Keywords: point, location
@@ -726,6 +726,29 @@ Set `avy-style' according to COMMMAND as well."
          (when (looking-at-p "\\b")
            (ispell-word)))))))
 
+(defun avy--process-1 (candidates overlay-fn)
+  (let ((len (length candidates)))
+    (cond ((= len 0)
+           nil)
+          ((= len 1)
+           (car candidates))
+          (t
+           (unwind-protect
+                (progn
+                  (avy--make-backgrounds
+                   (avy-window-list))
+                  (cond ((eq avy-style 'de-bruijn)
+                         (avy-read-de-bruijn
+                          candidates avy-keys))
+                        ((eq avy-style 'words)
+                         (avy-read-words
+                          candidates avy-words))
+                        (t
+                         (avy-read (avy-tree candidates avy-keys)
+                                   overlay-fn
+                                   #'avy--remove-leading-chars))))
+             (avy--done))))))
+
 (defun avy--process (candidates overlay-fn)
   "Select one of CANDIDATES using `avy-read'.
 Use OVERLAY-FN to visualize the decision overlay."
@@ -734,47 +757,30 @@ Use OVERLAY-FN to visualize the decision overlay."
     (setq candidates
           (mapcar (lambda (x) (cons x (selected-window)))
                   candidates)))
-  (let ((len (length candidates))
-        (cands (copy-sequence candidates))
-        res)
-    (if (= len 0)
-        (message "zero candidates")
-      (if (= len 1)
-          (setq res (car candidates))
-        (unwind-protect
-             (progn
-               (avy--make-backgrounds
-                (avy-window-list))
-               (setq res (cond ((eq avy-style 'de-bruijn)
-                                (avy-read-de-bruijn
-                                 candidates avy-keys))
-                               ((eq avy-style 'words)
-                                (avy-read-words
-                                 candidates avy-words))
-                               (t
-                                (avy-read (avy-tree candidates avy-keys)
-                                          overlay-fn
-                                          #'avy--remove-leading-chars)))))
-          (avy--done)))
-      (cond ((eq res 'restart)
-             (avy--process cands overlay-fn))
-            ;; ignore exit from `avy-handler-function'
-            ((eq res 'exit))
-            (t
-             (avy-push-mark)
-             (when (and (consp res)
-                        (windowp (cdr res)))
-               (let* ((window (cdr res))
-                      (frame (window-frame window)))
-                 (unless (equal frame (selected-frame))
-                   (select-frame-set-input-focus frame))
-                 (select-window window))
-               (setq res (car res)))
+  (let ((res (avy--process-1 candidates overlay-fn)))
+    (cond
+      ((null res)
+       (message "zero candidates")
+       t)
+      ((eq res 'restart)
+       (avy--process candidates overlay-fn))
+      ;; ignore exit from `avy-handler-function'
+      ((eq res 'exit))
+      (t
+       (avy-push-mark)
+       (when (and (consp res)
+                  (windowp (cdr res)))
+         (let* ((window (cdr res))
+                (frame (window-frame window)))
+           (unless (equal frame (selected-frame))
+             (select-frame-set-input-focus frame))
+           (select-window window))
+         (setq res (car res)))
 
-             (funcall (or avy-action 'avy-action-goto)
-                      (if (consp res)
-                          (car res)
-                        res)))))))
+       (funcall (or avy-action 'avy-action-goto)
+                (if (consp res)
+                    (car res)
+                  res))))))
 
 (defvar avy--overlays-back nil
   "Hold overlays for when `avy-background' is t.")
