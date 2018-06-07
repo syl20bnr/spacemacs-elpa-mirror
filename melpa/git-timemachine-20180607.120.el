@@ -3,8 +3,8 @@
 ;; Copyright (C) 2014 Peter Stiernström
 
 ;; Author: Peter Stiernström <peter@stiernstrom.se>
-;; Version: 4.5
-;; Package-Version: 20180307.414
+;; Version: 4.6
+;; Package-Version: 20180607.120
 ;; URL: https://github.com/pidu/git-timemachine
 ;; Keywords: git
 ;; Package-Requires: ((emacs "24.3"))
@@ -302,7 +302,8 @@ respect to the window first line"
  "Call magit-blame on current revision."
  (interactive)
  (if (fboundp 'magit-blame)
-  (magit-blame (car git-timemachine-revision) (buffer-file-name))
+  (let ((magit-buffer-revision (car git-timemachine-revision)))
+   (magit-blame))
   (message "You need to install magit for blame capabilities")))
 
 (defun git-timemachine-kill-revision ()
