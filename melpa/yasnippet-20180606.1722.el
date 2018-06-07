@@ -6,7 +6,7 @@
 ;;          Noam Postavsky <npostavs@gmail.com>
 ;; Maintainer: Noam Postavsky <npostavs@gmail.com>
 ;; Version: 0.13.0
-;; Package-Version: 20180526.1133
+;; Package-Version: 20180606.1722
 ;; X-URL: http://github.com/joaotavora/yasnippet
 ;; Keywords: convenience, emulation
 ;; URL: http://github.com/joaotavora/yasnippet
@@ -3071,6 +3071,10 @@ other fields."
 (defvar yas--active-field-overlay nil
   "Overlays the currently active field.")
 
+(defvar yas--active-snippets nil
+  "List of currently active snippets")
+(make-variable-buffer-local 'yas--active-snippets)
+
 (defvar yas--field-protection-overlays nil
   "Two overlays protect the current active field.")
 
@@ -3274,12 +3278,19 @@ equivalent to a range covering the whole buffer."
          (setq beg (point-min) end (point-max)))
         ((not end)
          (setq end (1+ beg))))
-  (cl-sort
-   (delete-dups ;; Snippets have multiple overlays.
-    (delq nil
-          (mapcar (lambda (ov) (overlay-get ov 'yas--snippet))
-                  (overlays-in beg end))))
-   #'>= :key #'yas--snippet-id))
+  (if (and (eq beg (point-min))
+           (eq end (point-max)))
+      yas--active-snippets
+    ;; Note: don't use `mapcar' here, since it would allocate in
+    ;; proportion to the amount of overlays, even though the list of
+    ;; active snippets should be very small.
+    (let ((snippets nil))
+      (dolist (ov (overlays-in beg end))
+        (let ((snippet (overlay-get ov 'yas--snippet)))
+          ;; Snippets have multiple overlays, so check for dups.
+          (when (and snippet (not (memq snippet snippets)))
+            (push snippet snippets))))
+      (cl-sort snippets #'>= :key #'yas--snippet-id))))
 
 (define-obsolete-function-alias 'yas--snippets-at-point
   'yas-active-snippets "0.12")
@@ -3439,6 +3450,9 @@ This renders the snippet as ordinary text."
     ;;
     (yas--markers-to-points snippet)
 
+    ;; It's no longer an active snippet.
+    (cl-callf2 delq snippet yas--active-snippets)
+
     ;; Take care of snippet revival on undo.
     (if (and yas-snippet-revival (listp buffer-undo-list))
         (push `(apply yas--snippet-revive ,yas-snippet-beg ,yas-snippet-end ,snippet)
@@ -3532,13 +3546,12 @@ HOOK should be a symbol, a hook variable, as in `run-hooks'."
   "Check if point exited the currently active field of the snippet.
 
 If so cleans up the whole snippet up."
-  (let* ((snippets (yas-active-snippets 'all))
-         (snippets-left snippets)
-         (snippet-exit-transform)
+  (let* ((snippet-exit-transform nil)
+         (exited-snippets-p nil)
          ;; Record the custom snippet `yas-after-exit-snippet-hook'
          ;; set in the expand-env field.
          (snippet-exit-hook yas-after-exit-snippet-hook))
-    (dolist (snippet snippets)
+    (dolist (snippet yas--active-snippets)
       (let ((active-field (yas--snippet-active-field snippet)))
         (yas--letenv (yas--snippet-expand-env snippet)
           ;; Note: the `force-exit' field could be a transform in case of
@@ -3546,10 +3559,10 @@ If so cleans up the whole snippet up."
           (setq snippet-exit-transform (yas--snippet-force-exit snippet))
           (cond ((or snippet-exit-transform
                      (not (and active-field (yas--field-contains-point-p active-field))))
-                 (setq snippets-left (delete snippet snippets-left))
                  (setf (yas--snippet-force-exit snippet) nil)
                  (setq snippet-exit-hook yas-after-exit-snippet-hook)
-                 (yas--commit-snippet snippet))
+                 (yas--commit-snippet snippet)
+                 (setq exited-snippets-p t))
                 ((and active-field
                       (or (not yas--active-field-overlay)
                           (not (overlay-buffer yas--active-field-overlay))))
@@ -3563,7 +3576,7 @@ If so cleans up the whole snippet up."
                    (yas--update-mirrors snippet)))
                 (t
                  nil)))))
-    (unless (or (null snippets) snippets-left)
+    (unless (or yas--active-snippets (not exited-snippets-p))
       (when snippet-exit-transform
         (yas--eval-for-effect snippet-exit-transform))
       (let ((yas-after-exit-snippet-hook snippet-exit-hook))
@@ -4056,6 +4069,7 @@ Returns the newly created snippet."
         ;; Move to end
         (goto-char (point-max))
 
+        (push snippet yas--active-snippets)
         snippet))))
 
 
