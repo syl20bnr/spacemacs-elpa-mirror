@@ -4,7 +4,7 @@
 ;;
 ;; Author: Sylvain Benner <sylvain.benner@gmail.com>
 ;; Keywords: convenience editing evil iedit mnemonic
-;; Package-Version: 20160905.1908
+;; Package-Version: 20180606.2258
 ;; Created: 12 Dec 2014
 ;; Version: 1.2
 ;; Package-Requires: ((evil "1.0.9") (iedit "0.97"))
@@ -152,7 +152,7 @@ If INTERACTIVE is non-nil then COMMAND is called interactively."
 (defun evil-iedit-state/paste-replace (count)
   "Replace the selection with the yanked text."
   (interactive "P")
-  (iedit-delete-occurrences)
+  (when kill-ring (iedit-delete-occurrences))
   (evil-paste-before count))
 
 ;; expand-region integration, add an "e" command
@@ -223,13 +223,19 @@ the initial string globally."
 (define-key evil-iedit-state-map "p"   'evil-iedit-state/paste-replace)
 (define-key evil-iedit-state-map "s"   'evil-iedit-state/evil-substitute)
 (define-key evil-iedit-state-map "S"   'evil-iedit-state/substitute)
-(define-key evil-iedit-state-map "V"   'iedit-toggle-unmatched-lines-visible)
+(define-key evil-iedit-state-map "V"   'iedit-show/hide-unmatched-lines)
 (define-key evil-iedit-state-map "U"   'iedit-upcase-occurrences)
 (define-key evil-iedit-state-map (kbd "C-U") 'iedit-downcase-occurrences)
-(define-key evil-iedit-state-map (kbd "C-g")'evil-iedit-state/quit-iedit-mode)
-(define-key evil-iedit-state-map [tab] 'iedit-toggle-selection)
+(define-key evil-iedit-state-map (kbd "C-g") 'evil-iedit-state/quit-iedit-mode)
+(define-key evil-iedit-state-map (kbd "TAB") 'iedit-toggle-selection)
+(define-key evil-iedit-state-map [tab]       'iedit-toggle-selection)
 (define-key evil-iedit-state-map [backspace] 'iedit-blank-occurrences)
 (define-key evil-iedit-state-map [escape]    'evil-iedit-state/quit-iedit-mode)
+;; override overlay keymap to toggle occurrences
+(define-key iedit-occurrence-keymap-default
+  (kbd "TAB") 'iedit-toggle-selection)
+(define-key iedit-occurrence-keymap-default
+  [tab] 'iedit-toggle-selection)
 
 (define-key evil-iedit-insert-state-map (kbd "C-g") 'evil-iedit-state/quit-iedit-mode)
 (define-key evil-iedit-insert-state-map [escape]    'evil-iedit-state)

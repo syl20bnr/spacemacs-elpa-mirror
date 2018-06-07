@@ -2,11 +2,11 @@
 
 ;; Copyright (C) 2013-2017 Skye Shaw and others
 ;; Author: Skye Shaw <skye.shaw@gmail.com>
-;; Version: 0.6.0
-;; Package-Version: 0.6.0
+;; Version: 0.7.0
+;; Package-Version: 20180606.2139
 ;; Keywords: git, vc, github, bitbucket, gitlab, convenience
 ;; URL: http://github.com/sshaw/git-link
-;; Package-Requires: ((cl-lib "0.6.1"))
+;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -36,6 +36,12 @@
 
 ;;; Change Log:
 
+;; 2018-06-07 - v0.7.0
+;; * Add support for Tramp (Issue #49, thanks Jürgen Hötzel)
+;; * Fix various compiler warnings
+;; * Fix differences between url-path-and-query across Emacs versions
+;; * Require Emacs 24.3
+;;
 ;; 2018-04-23 - v0.6.0
 ;; * Fix parsing of remotes with auth info (Issue #51)
 ;; * Removed remote regex in favor of url-parse
@@ -109,6 +115,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'dired)
 (require 'thingatpt)
 (require 'url-util)
 (require 'url-parse)
@@ -125,10 +132,12 @@
 
 (defcustom git-link-default-remote nil
   "Name of the remote to link to."
+  :type 'string
   :group 'git-link)
 
 (defcustom git-link-default-branch nil
   "Name of the branch to link to."
+  :type 'string
   :group 'git-link)
 
 (defcustom git-link-open-in-browser nil
@@ -172,7 +181,15 @@ As an example, \"gitlab\" will match with both \"gitlab.com\" and
   :group 'git-link)
 
 (defun git-link--exec(&rest args)
-  (ignore-errors (apply 'process-lines `("git" ,@(when args args)))))
+  (ignore-errors
+    (with-temp-buffer
+      (when (zerop (apply #'process-file "git" nil (current-buffer) nil args))
+        (goto-char (point-min))
+        (cl-loop until (eobp)
+                 collect (buffer-substring-no-properties
+                          (line-beginning-position)
+                          (line-end-position))
+                 do (forward-line 1))))))
 
 (defun git-link--get-config (name)
   (car (git-link--exec "config" "--get" name)))
@@ -192,7 +209,10 @@ As an example, \"gitlab\" will match with both \"gitlab.com\" and
   (car (git-link--exec "symbolic-ref" "--short" "HEAD")))
 
 (defun git-link--repo-root ()
-  (car (git-link--exec "rev-parse" "--show-toplevel")))
+  (let ((dir (car (git-link--exec "rev-parse" "--show-toplevel"))))
+    (if (file-remote-p default-directory)
+	(concat (file-remote-p default-directory) dir)
+      dir)))
 
 (defun git-link--remote-url (name)
   (git-link--get-config (format "remote.%s.url" name)))
@@ -243,14 +263,13 @@ Return nil,
   (let* ((filename (buffer-file-name))
 	 (dir      (git-link--repo-root)))
 
-    (when (and (null filename)
-               (or (eq major-mode 'dired-mode)
-                   (and
-                    (string-match-p "^magit-" (symbol-name major-mode))
-                    (functionp 'magit-file-at-point))))
-
-      (setq filename (or (dired-file-name-at-point)
-                         (magit-file-at-point))))
+    (when (null filename)
+      (cond
+       ((eq major-mode 'dired-mode)
+        (setq filename (dired-file-name-at-point)))
+       ((and (string-match-p "^magit-" (symbol-name major-mode))
+             (fboundp 'magit-file-at-point))
+        (setq filename (magit-file-at-point)))))
 
     (if (and dir filename
              ;; Make sure filename is not above dir, e.g. "/foo/repo-root/.."
@@ -265,12 +284,14 @@ Return nil,
       (setq url (concat "ssh://" url)))
 
     (setq url  (url-generic-parse-url url)
-          path (car (url-path-and-query url))
+          ;; Normalize path.
+          ;; If none, will nil on Emacs < 25. Later versions return "".
+          path (or (car (url-path-and-query url)) "")
           host (url-host url))
 
     (when host
-
-      (when (and path (not (string= "/" path)))
+      (when (and (not (string= "/" path))
+                 (not (string= ""  path)))
         (setq path (substring (file-name-sans-extension path) 1)))
 
       ;; Fix-up scp style URLs
@@ -381,7 +402,7 @@ Return nil,
           hostname
           dirname
           commit
-          (if (string-blank-p (file-name-nondirectory filename))
+          (if (string= "" (file-name-nondirectory filename))
               filename
             (concat filename
                     "#"

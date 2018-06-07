@@ -5,8 +5,8 @@
 ;; Author: Matthew Carter <m@ahungry.com>
 ;; Maintainer: Matthew Carter <m@ahungry.com>
 ;; URL: https://github.com/ahungry/prog-fill
-;; Package-Version: 20180128.2019
-;; Version: 0.0.1
+;; Package-Version: 20180606.1832
+;; Version: 1.0.0
 ;; Keywords: ahungry convenience c formatting editing
 ;; Package-Requires: ((emacs "25.1") (cl-lib "0.6.1"))
 
@@ -160,13 +160,34 @@ as it will assign the breaks without indenting them."
   :group 'prog-fill
   :type 'boolean)
 
-;;;###autoload
-(defun prog-fill ()
-  "Split multi-argument call into one per line.
+(defun prog-fill--in-comment-p (&optional pos)
+  "Check if POS is within a comment according to current syntax.
+If POS is nil, (point) is used.  The return value is the beginning
+position of the comment."
+  (setq pos (or pos (point)))
+  (let ((chkpos
+         (cond
+          ((eobp) pos)
+          ((= (char-syntax (char-after)) ?<) (1+ pos))
+          ((and (not (zerop (logand (car (syntax-after (point)))
+                                    (lsh 1 16))))
+                (not (zerop (logand (or (car (syntax-after (1+ (point)))) 0)
+                                    (lsh 1 17)))))
+           (+ pos 2))
+          ((and (not (zerop (logand (car (syntax-after (point)))
+                                    (lsh 1 17))))
+                (not (zerop (logand (or (car (syntax-after (1- (point)))) 0)
+                                    (lsh 1 16)))))
+           (1+ pos))
+          (t pos))))
+    (let ((syn (save-excursion (syntax-ppss chkpos))))
+      (and (nth 4 syn) (nth 8 syn)))))
+
+(defun prog-filler ()
+ "Split multi-argument call into one per line.
 
 TODO: Handle string quotations (do not break them apart).
 TODO: Handle different arg separators (Lisp style)."
-  (interactive)
   (cl-flet ((re-next (reg) (re-search-forward reg nil t)))
     (save-excursion
       (save-restriction
@@ -256,6 +277,14 @@ TODO: Handle different arg separators (Lisp style)."
           (indent-region (point-min) (point-max)))
 
         (fill-paragraph)))))
+
+;;;###autoload
+(defun prog-fill ()
+  "Either use the custom fill, or standard fill if in a comment region."
+  (interactive)
+  (if (prog-fill--in-comment-p)
+      (fill-paragraph)
+      (prog-filler)))
 
 (provide 'prog-fill)
 
