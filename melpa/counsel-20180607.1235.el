@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180517.1140
+;; Package-Version: 20180607.1235
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: completion, matching
@@ -623,34 +623,45 @@ input corresponding to the chosen variable."
                                 (counsel-variable-list)
                                 :preselect (ivy-thing-at-point)
                                 :history 'counsel-set-variable-history))))
-  (let (sym-type
+  (let ((doc (and (require 'cus-edit)
+                  (require 'lv nil t)
+                  (not (string= "nil" (custom-variable-documentation sym)))
+                  (propertize (custom-variable-documentation sym)
+                              'face 'font-lock-comment-face)))
+        sym-type
         cands)
-    (if (and (boundp sym)
-             (setq sym-type (get sym 'custom-type))
-             (cond
-               ((and (consp sym-type)
-                     (memq (car sym-type) '(choice radio)))
-                (setq cands (delq nil (mapcar #'counsel--setq-doconst (cdr sym-type)))))
-               ((eq sym-type 'boolean)
-                (setq cands '(("nil" . nil) ("t" . t))))
-               (t nil)))
-        (let* ((sym-val (symbol-value sym))
-               ;; Escape '%' chars if present
-               (sym-val-str (replace-regexp-in-string "%" "%%" (format "%s" sym-val)))
-               (res (ivy-read (format "Set (%S <%s>): " sym sym-val-str)
-                              cands
-                              :preselect (prin1-to-string sym-val))))
-          (when res
-            (setq res
-                  (if (assoc res cands)
-                      (cdr (assoc res cands))
-                    (read res)))
-            (set sym (if (and (listp res) (eq (car res) 'quote))
-                         (cadr res)
-                       res))))
-      (unless (boundp sym)
-        (set sym nil))
-      (counsel-read-setq-expression sym))))
+    (unwind-protect
+        (progn
+          (when doc
+            (lv-message doc))
+          (if (and (boundp sym)
+                   (setq sym-type (get sym 'custom-type))
+                   (cond
+                    ((and (consp sym-type)
+                          (memq (car sym-type) '(choice radio)))
+                     (setq cands (delq nil (mapcar #'counsel--setq-doconst (cdr sym-type)))))
+                    ((eq sym-type 'boolean)
+                     (setq cands '(("nil" . nil) ("t" . t))))
+                    (t nil)))
+              (let* ((sym-val (symbol-value sym))
+                     ;; Escape '%' chars if present
+                     (sym-val-str (replace-regexp-in-string "%" "%%" (format "%s" sym-val)))
+                     (res (ivy-read (format "Set (%S <%s>): " sym sym-val-str)
+                                    cands
+                                    :preselect (prin1-to-string sym-val))))
+                (when res
+                  (setq res
+                        (if (assoc res cands)
+                            (cdr (assoc res cands))
+                          (read res)))
+                  (set sym (if (and (listp res) (eq (car res) 'quote))
+                               (cadr res)
+                             res))))
+            (unless (boundp sym)
+              (set sym nil))
+            (counsel-read-setq-expression sym)))
+      (when doc
+        (lv-delete-window)))))
 
 ;;** `counsel-info-lookup-symbol'
 (defvar info-lookup-mode)
@@ -789,12 +800,35 @@ By default `counsel-bookmark' opens a dired buffer for directories."
       (put-text-property 0 (length key) 'face 'counsel-key-binding key)
       (format "%s (%s)" cmd key))))
 
+(defvar amx-initialized)
+(defvar amx-cache)
+(declare-function amx-initialize "ext:amx")
+(declare-function amx-detect-new-commands "ext:amx")
+(declare-function amx-update "ext:amx")
+(declare-function amx-rank "ext:amx")
 (defvar smex-initialized-p)
 (defvar smex-ido-cache)
 (declare-function smex-initialize "ext:smex")
 (declare-function smex-detect-new-commands "ext:smex")
 (declare-function smex-update "ext:smex")
 (declare-function smex-rank "ext:smex")
+
+(defun counsel--M-x-externs ()
+  "Return `counsel-M-x' candidates from external packages.
+The currently supported packages are, in order of precedence,
+`amx' and `smex'."
+  (cond ((require 'amx nil t)
+         (unless amx-initialized
+           (amx-initialize))
+         (when (amx-detect-new-commands)
+           (amx-update))
+         amx-cache)
+        ((require 'smex nil t)
+         (unless smex-initialized-p
+           (smex-initialize))
+         (when (smex-detect-new-commands)
+           (smex-update))
+         smex-ido-cache)))
 
 (defun counsel--M-x-prompt ()
   "String for `M-x' plus the string representation of `current-prefix-arg'."
@@ -816,37 +850,31 @@ By default `counsel-bookmark' opens a dired buffer for directories."
 ;;;###autoload
 (defun counsel-M-x (&optional initial-input)
   "Ivy version of `execute-extended-command'.
-Optional INITIAL-INPUT is the initial input in the minibuffer."
+Optional INITIAL-INPUT is the initial input in the minibuffer.
+This function integrates with either the `amx' or `smex' package
+when available, in that order of precedence."
   (interactive)
-  (let* ((cands obarray)
-         (pred 'commandp)
-         (sort t))
-    (when (require 'smex nil 'noerror)
-      (unless smex-initialized-p
-        (smex-initialize))
-      (when (smex-detect-new-commands)
-        (smex-update))
-      (setq cands smex-ido-cache)
-      (setq pred nil)
-      (setq sort nil))
-    ;; When `counsel-M-x' returns, `last-command' would be set to
-    ;; `counsel-M-x' because :action hasn't been invoked yet.
-    ;; Instead, preserve the old value of `this-command'.
-    (setq this-command last-command)
-    (setq real-this-command real-last-command)
-    (ivy-read (counsel--M-x-prompt) cands
-              :predicate pred
+  ;; When `counsel-M-x' returns, `last-command' would be set to
+  ;; `counsel-M-x' because :action hasn't been invoked yet.
+  ;; Instead, preserve the old value of `this-command'.
+  (setq this-command last-command)
+  (setq real-this-command real-last-command)
+  (let ((externs (counsel--M-x-externs)))
+    (ivy-read (counsel--M-x-prompt) (or externs obarray)
+              :predicate (and (not externs) #'commandp)
               :require-match t
               :history 'counsel-M-x-history
-              :action
-              (lambda (cmd)
-                (when (featurep 'smex)
-                  (smex-rank (intern cmd)))
-                (let ((prefix-arg current-prefix-arg))
-                  (setq real-this-command
-                        (setq this-command (intern cmd)))
-                  (command-execute (intern cmd) 'record)))
-              :sort sort
+              :action (lambda (cmd)
+                        (setq cmd (intern cmd))
+                        (cond ((bound-and-true-p amx-initialized)
+                               (amx-rank cmd))
+                              ((bound-and-true-p smex-initialized-p)
+                               (smex-rank cmd)))
+                        (setq prefix-arg current-prefix-arg)
+                        (setq this-command cmd)
+                        (setq real-this-command cmd)
+                        (command-execute cmd 'record))
+              :sort (not externs)
               :keymap counsel-describe-map
               :initial-input initial-input
               :caller 'counsel-M-x)))

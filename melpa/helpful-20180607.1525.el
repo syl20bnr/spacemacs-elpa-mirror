@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180530.1339
+;; Package-Version: 20180607.1525
 ;; Keywords: help, lisp
 ;; Version: 0.11
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -1189,12 +1189,14 @@ same bindings as `global-map'."
     (-map
      (-lambda ((minor-mode . keymap))
        ;; Only consider this keymap if we didn't find it bound to a variable.
-       (unless (memq keymap keymap-sym-vals)
+       (when (and (keymapp keymap)
+                  (not (memq keymap keymap-sym-vals)))
          (let ((key-sequences (helpful--key-sequences command-sym keymap)))
            (when key-sequences
              (push (cons (format "minor-mode-map-alist (%s)" minor-mode)
                          key-sequences)
                    matching-keymaps)))))
+     ;; TODO: examine `minor-mode-overriding-map-alist' too.
      minor-mode-map-alist)
 
     matching-keymaps))

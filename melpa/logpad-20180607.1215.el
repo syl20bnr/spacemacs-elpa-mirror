@@ -4,9 +4,9 @@
 
 ;; Author: Jens K. Loewe <git@tuxproject.de>
 ;; URL: https://bitbucket.org/tux_/logpad.el
-;; Package-Version: 20180606.1453
+;; Package-Version: 20180607.1215
 ;; Keywords: files outlines notepad
-;; Version: 1.0.0
+;; Version: 1.0.1
 
 ;; This work is free. You can redistribute it and/or modify it under the
 ;; terms of the Do What The Fuck You Want To Public License, Version 2,
@@ -34,7 +34,8 @@
 
 
 (defcustom logpad-add-newlines nil
-  "Non-nil fully simulates Notepad, otherwise, additional newlines will be added for look-and-feel reasons."
+  "When non-nil additional newlines are added for look-and-feel reasons.
+Set this to nil if you want the original Notepad behavior of not having newlines."
   :type 'boolean)
 
 
@@ -105,6 +106,7 @@ Otherwise, they will be added right below the .LOG line."
     (logpad--enable-logging)))
 
 
+;;;###autoload
 (define-minor-mode logpad-mode
   "Simulate Windows Notepad for logging."
   :after-hook (add-hook 'text-mode-hook (lambda () (logpad--check-for-log)))
