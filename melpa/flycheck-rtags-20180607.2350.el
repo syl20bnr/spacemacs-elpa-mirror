@@ -4,7 +4,7 @@
 
 ;; Author: Christian Schwarzgruber <c.schwarzgruber.cs@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 20170522.2154
+;; Package-Version: 20180607.2350
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "24") (flycheck "0.23") (rtags "2.10"))
 
@@ -82,7 +82,7 @@ CHECKER is the syntax checker used to parse BUFFER."
         (goto-char (point-min))
         (while (search-forward-regexp rx nil t)
           (let ((line (string-to-number (match-string-no-properties 2)))
-                (column (string-to-number (match-string-no-properties 3)))
+                (column (1- (string-to-number (match-string-no-properties 3))))
                 (severity (match-string-no-properties 4))
                 (text (match-string-no-properties 5)))
             (when (member severity '("warning" "error" "fixit"))
