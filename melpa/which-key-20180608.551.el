@@ -5,7 +5,7 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-which-key
-;; Package-Version: 20180601.646
+;; Package-Version: 20180608.551
 ;; Version: 3.2.0
 ;; Keywords:
 ;; Package-Requires: ((emacs "24.4"))
@@ -1708,8 +1708,12 @@ ones. PREFIX is for internal use and should not be used."
                      (bound-and-true-p evil-local-mode)
                      (string-match-p (format "<%s-state>$" evil-state) key-desc))
                 (setq bindings
-                      (append bindings
-                              (which-key--get-keymap-bindings def all prefix))))
+                      ;; this function keeps the latter of the two duplicates
+                      ;; which will be the evil binding
+                      (cl-remove-duplicates
+                       (append bindings
+                               (which-key--get-keymap-bindings def all prefix))
+                       :test (lambda (a b) (string= (car a) (car b))))))
                ((and (keymapp def)
                      (string-match-p which-key--evil-keys-regexp key-desc)))
                ((and (keymapp def)

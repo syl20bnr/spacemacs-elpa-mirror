@@ -4,7 +4,7 @@
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 0.2.1
-;; Package-Version: 20180501.1021
+;; Package-Version: 20180608.706
 ;; Package-Requires: ((emacs "24.3") (ivy "0.10.0") (dash "2.0"))
 ;; URL: https://github.com/akirak/counsel-org-clock
 
@@ -488,7 +488,8 @@ These actions will be available in `counsel-org-clock-context' and
   :type '(repeat (list (string :tag "Key")
                        counsel-org-clock-action-type
                        (string :tag "Label")))
-  :set (lambda (_ value)
+  :set (lambda (symbol value)
+         (set-default symbol value)
          (let ((actions (cl-loop for (key action label) in value
                                  collect (list key
                                                `(lambda (cand)

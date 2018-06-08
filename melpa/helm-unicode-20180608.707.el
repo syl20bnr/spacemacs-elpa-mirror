@@ -3,7 +3,7 @@
 ;; Copyright © 2015 Emanuel Evans
 
 ;; Version: 0.0.4
-;; Package-Version: 20160715.533
+;; Package-Version: 20180608.707
 ;; Package-Requires: ((helm "1.9.8") (emacs "24.4"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -37,10 +37,13 @@
                    (format "%s %c" name symbol)))
 
 (defun helm-unicode-build-candidates ()
-    "Builds the candidate list."
-  (sort
-   (mapcar 'helm-unicode-format-char-pair (ucs-names))
-   #'string-lessp))
+  "Builds the candidate list."
+  (let ((unames (if (hash-table-p (ucs-names))
+                    (mapcar (lambda (elem) `(,elem . ,(gethash elem (ucs-names)))) (hash-table-keys (ucs-names)))
+                  (ucs-names))))
+    (sort
+     (mapcar 'helm-unicode-format-char-pair unames)
+     #'string-lessp)))
 
 (defun helm-unicode-source ()
   "Builds the helm Unicode source.  Initialize the lookup cache if necessary."

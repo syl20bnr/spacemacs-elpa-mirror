@@ -9,9 +9,9 @@
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Artur Malabarba <bruce.connor.am@gmail.com>
 ;; URL: http://github.com/clojure-emacs/clojure-mode
-;; Package-Version: 20180607.2239
+;; Package-Version: 20180608.507
 ;; Keywords: languages clojure clojurescript lisp
-;; Version: 5.7.0
+;; Version: 5.8.0-snapshot
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This file is not part of GNU Emacs.
@@ -80,7 +80,7 @@
   :link '(url-link :tag "Github" "https://github.com/clojure-emacs/clojure-mode")
   :link '(emacs-commentary-link :tag "Commentary" "clojure-mode"))
 
-(defconst clojure-mode-version "5.7.0"
+(defconst clojure-mode-version "5.8.0-snapshot"
   "The current version of `clojure-mode'.")
 
 (defface clojure-keyword-face
@@ -179,7 +179,13 @@ For example, \[ is allowed in :db/id[:db.part/user]."
           (and (listp value)
                (cl-every 'characterp value))))
 
-(defcustom clojure-build-tool-files '("project.clj" "build.boot" "build.gradle" "deps.edn" "shadow-cljs.edn")
+(defcustom clojure-build-tool-files
+  '("project.clj"     ; Leiningen
+    "build.boot"      ; Boot
+    "build.gradle"    ; Gradle
+    "deps.edn"        ; Clojure CLI (a.k.a. tools.deps)
+    "shadow-cljs.edn" ; shadow-cljs
+    )
   "A list of files, which identify a Clojure project's root.
 Out-of-the box `clojure-mode' understands lein, boot, gradle,
  shadow-cljs and tools.deps."

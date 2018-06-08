@@ -2,7 +2,7 @@
 ;;
 ;; Author: Lassi Kortela <lassi@lassi.io>
 ;; URL: https://github.com/lassik/emacs-format-all-the-code
-;; Package-Version: 20180506.243
+;; Package-Version: 20180608.819
 ;; Version: 0.1.0
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; Keywords: languages util
@@ -22,6 +22,7 @@
 ;; - C/C++/Objective-C (clang-format)
 ;; - CSS/Less/SCSS (prettier)
 ;; - D (dfmt)
+;; - Elixir (mix format)
 ;; - Elm (elm-format)
 ;; - Emacs Lisp (native)
 ;; - Go (gofmt)
@@ -193,6 +194,12 @@ EXECUTABLE is the full path to the formatter."
 EXECUTABLE is the full path to the formatter."
   (format-all-buffer-process executable))
 
+(defun format-all-buffer-mix-format (executable)
+  "Format the current buffer as Elixir using \"mix format\".
+
+EXECUTABLE is the full path to the formatter."
+  (format-all-buffer-process executable nil nil "format" "-"))
+
 (defun format-all-buffer-ocp-indent (executable)
   "Format the current buffer as OCaml using \"ocp-indent\".
 
@@ -306,6 +313,11 @@ EXECUTABLE is the full path to the formatter."
      (:install "stack install hindent")
      (:function format-all-buffer-hindent)
      (:modes haskell-mode))
+    (mix-format
+     (:executable "mix")
+     (:install (darwin "brew install elixir"))
+     (:function format-all-buffer-mix-format)
+     (:modes elixir-mode))
     (ocp-indent
      (:executable "ocp-indent")
      (:install "opam install ocp-indent")
