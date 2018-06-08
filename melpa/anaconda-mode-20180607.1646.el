@@ -4,7 +4,7 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/anaconda-mode
-;; Package-Version: 20180606.2217
+;; Package-Version: 20180607.1646
 ;; Version: 0.1.12
 ;; Package-Requires: ((emacs "25") (pythonic "0.1.0") (dash "2.6.0") (s "1.9") (f "0.16.2"))
 
@@ -659,9 +659,9 @@ Show ERROR-MESSAGE if result is empty."
     (define-key map (kbd "M-.") 'anaconda-mode-find-definitions)
     (define-key map (kbd "C-x 4 .") 'anaconda-mode-find-definitions-other-window)
     (define-key map (kbd "C-x 5 .") 'anaconda-mode-find-definitions-other-frame)
-    (define-key map (kbd "M-*") 'anaconda-mode-find-assignments)
-    (define-key map (kbd "C-x 4 *") 'anaconda-mode-find-assignments-other-window)
-    (define-key map (kbd "C-x 5 *") 'anaconda-mode-find-assignments-other-frame)
+    (define-key map (kbd "M-=") 'anaconda-mode-find-assignments)
+    (define-key map (kbd "C-x 4 =") 'anaconda-mode-find-assignments-other-window)
+    (define-key map (kbd "C-x 5 =") 'anaconda-mode-find-assignments-other-frame)
     (define-key map (kbd "M-r") 'anaconda-mode-find-references)
     (define-key map (kbd "C-x 4 r") 'anaconda-mode-find-references-other-window)
     (define-key map (kbd "C-x 5 r") 'anaconda-mode-find-references-other-frame)

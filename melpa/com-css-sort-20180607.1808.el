@@ -7,7 +7,7 @@
 ;; Description: Common way of sorting the CSS attributes.
 ;; Keyword: Common CSS Handy Sort Sorting
 ;; Version: 0.0.1
-;; Package-Version: 20180518.1751
+;; Package-Version: 20180607.1808
 ;; Package-Requires: ((emacs "24.4") (s "1.12.0"))
 ;; URL: https://github.com/jcs090218/com-css-sort
 
@@ -219,13 +219,24 @@ FILE-PATH : file path."
   "Check if current cursor point inside the comment block."
   (nth 4 (syntax-ppss)))
 
-(defun com-css-sort-first-char-in-line-comment-line ()
-  "Check if the first character in the current line the comment line."
+(defun com-css-sort-attribute-line ()
+  "Check if current line the attribute line.
+If non-nil, attribute line.
+If nil, is not attribute line."
+  ;; Check attribute line by simply searching key character ':' colon.
+  (string-match-p ":" (com-css-sort-get-current-line)))
+
+(defun com-css-sort-currnet-line-not-attribute-comment-line ()
+  "Check if current line is a 'pure' comment line, not an attribute comment line."
   (save-excursion
     (com-css-sort-goto-first-char-in-line)
     (forward-char 1)
     (forward-char 1)
-    (com-css-sort-is-inside-comment-block-p)))
+    (and
+     ;; First check if is comment line.
+     (com-css-sort-is-inside-comment-block-p)
+     ;; Then check if current line attribute line.
+     (not (com-css-sort-attribute-line)))))
 
 (defun com-css-sort-get-sort-list-until-empty-or-comment-line ()
   "Get the list we want to sort.
@@ -233,7 +244,7 @@ Depends on if we meet a empty line or a comment line."
   (save-excursion
     (let ((line-list '()))
       (while (and (not (com-css-sort-current-line-empty-p))
-                  (not (com-css-sort-first-char-in-line-comment-line)))
+                  (not (com-css-sort-currnet-line-not-attribute-comment-line)))
         (let ((current-line (com-css-sort-get-current-line)))
           (when (not (string-match "}" current-line))
             ;; Push the line into list.
@@ -251,7 +262,7 @@ first character is a comment line."
   (interactive)
   (forward-line 1)
   (while (and (not (com-css-sort-current-line-empty-p))
-              (not (com-css-sort-first-char-in-line-comment-line)))
+              (not (com-css-sort-currnet-line-not-attribute-comment-line)))
     (forward-line 1)))
 
 ;;;###autoload
@@ -261,7 +272,7 @@ Not the comment or empty line."
   (interactive)
   (forward-line 1)
   (while (and (or (com-css-sort-current-line-empty-p)
-                  (com-css-sort-first-char-in-line-comment-line))
+                  (com-css-sort-currnet-line-not-attribute-comment-line))
               (not (= (point) (point-max))))
     (forward-line 1)))
 
@@ -317,10 +328,15 @@ LINE-LIST : list of line."
     (dolist (in-line line-list)
       (let ((index -1)
             (line-split-string '())
-            (first-word-in-line ""))
+            (first-word-in-line "")
+            (pure-attribute-line in-line))
+
+        ;; Remove the possible comment, if the line is a commented attribute line.
+        (setq pure-attribute-line (s-replace "/*" "" pure-attribute-line))
+        (setq pure-attribute-line (s-replace "*/" "" pure-attribute-line))
 
         ;; Split the line to list.
-        (setq line-split-string (split-string in-line ":"))
+        (setq line-split-string (split-string pure-attribute-line ":"))
 
         ;; Get the type which is usually the first word.
         (setq first-word-in-line (nth 0 line-split-string))

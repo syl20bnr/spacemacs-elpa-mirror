@@ -4,7 +4,7 @@
 
 ;; Author: Jonathan Chu <me@jonathanchu.is>
 ;; URL: https://github.com/jonathanchu/atom-one-dark-theme
-;; Package-Version: 20180524.745
+;; Package-Version: 20180607.1638
 ;; Version: 0.4.0
 
 ;; This file is not part of GNU Emacs.
@@ -301,6 +301,12 @@
    ;; perspective
    `(persp-selected-face ((t (:foreground ,atom-one-dark-blue))))
 
+   ;; powerline
+   `(powerline-active1 ((,class (:background ,atom-one-dark-bg-hl :foreground ,atom-one-dark-purple))))
+   `(powerline-active2 ((,class (:background ,atom-one-dark-bg-hl :foreground ,atom-one-dark-purple))))
+   `(powerline-inactive1 ((,class (:background ,atom-one-dark-bg :foreground ,atom-one-dark-fg))))
+   `(powerline-inactive2 ((,class (:background ,atom-one-dark-bg :foreground ,atom-one-dark-fg))))
+
    ;; rainbow-delimiters
    `(rainbow-delimiters-depth-1-face ((t (:foreground ,atom-one-dark-fg))))
    `(rainbow-delimiters-depth-2-face ((t (:foreground ,atom-one-dark-purple))))
@@ -322,6 +328,12 @@
    ;; smartparens
    `(sp-show-pair-mismatch-face ((t (:foreground ,atom-one-dark-red-1 :background ,atom-one-dark-gray :weight bold))))
    `(sp-show-pair-match-face ((t (:background ,atom-one-dark-gray :weight bold))))
+
+   ;; spaceline
+   `(spaceline-flycheck-error  ((,class (:foreground ,atom-one-dark-red-1))))
+   `(spaceline-flycheck-info   ((,class (:foreground ,atom-one-dark-green))))
+   `(spaceline-flycheck-warning((,class (:foreground ,atom-one-dark-orange-1))))
+   `(spaceline-python-venv ((,class (:foreground ,atom-one-dark-purple))))
 
    ;; web-mode
    `(web-mode-symbol-face ((t (:foreground ,atom-one-dark-orange-1))))
