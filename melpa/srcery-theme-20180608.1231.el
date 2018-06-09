@@ -3,7 +3,7 @@
 
 ;; Author: Daniel Berg
 ;; URL: https://github.com/roosta/emacs-srcery
-;; Package-Version: 20180604.828
+;; Package-Version: 20180608.1231
 
 ;; Version: 0.1.0
 ;; Keywords: faces
@@ -2745,6 +2745,10 @@
    `(js2-private-member
      ((,srcery-class (:foreground ,srcery-bright-white))
       (,srcery-256-class (:foreground ,srcery-256-bright-white))))
+
+   `(js2-object-property
+     ((,srcery-class (:foreground ,srcery-blue))
+      (,srcery-256-class (:foreground ,srcery-256-blue))))
 
    `(js3-error-face
      ((,srcery-class (:underline ,srcery-bright-orange))

@@ -4,7 +4,7 @@
 
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Package-Requires: ((evil "1.2.3") (magit "2.6.0"))
-;; Package-Version: 20180522.741
+;; Package-Version: 20180608.1235
 ;; Homepage: https://github.com/justbur/evil-magit
 ;; Version: 0.4.1
 
@@ -142,7 +142,6 @@ should be a string suitable for `kbd'."
 
 (defvar evil-magit-default-to-evil-magit-state-modes
   '(magit-blob-mode
-    magit-file-mode
     magit-gitflow-mode)
   "Modes that switch from default state to `evil-magit-state'")
 
@@ -150,6 +149,7 @@ should be a string suitable for `kbd'."
   '(git-popup-mode
     magit-blame-mode
     magit-blame-read-only-mode
+    magit-file-mode
     magit-popup-mode
     magit-popup-sequence-mode)
   "Modes whose evil states are unchanged")
