@@ -1,5 +1,5 @@
 * What is switch-window                       :README:
-switch-window is an emacs window switch tool, which offer a
+switch-window is an Emacs window switch tool, which offer a
 *visual* way to choose a window to switch to, delete, split
 or other operations.
 
@@ -21,6 +21,16 @@ Note: User can install switch-window with [[http://github.com/dimitri/el-get][El
 (global-set-key (kbd "C-x 2") 'switch-window-then-split-below)
 (global-set-key (kbd "C-x 3") 'switch-window-then-split-right)
 (global-set-key (kbd "C-x 0") 'switch-window-then-delete)
+
+(global-set-key (kbd "C-x 4 d") 'switch-window-then-dired)
+(global-set-key (kbd "C-x 4 f") 'switch-window-then-find-file)
+(global-set-key (kbd "C-x 4 m") 'switch-window-then-compose-mail)
+(global-set-key (kbd "C-x 4 r") 'switch-window-then-find-file-read-only)
+
+(global-set-key (kbd "C-x 4 C-f") 'switch-window-then-find-file)
+(global-set-key (kbd "C-x 4 C-o") 'switch-window-then-display-buffer)
+
+(global-set-key (kbd "C-x 4 0") 'switch-window-then-kill-buffer)
 #+END_EXAMPLE
 
 When switch-window is enabled, user can use the below five keys:
@@ -32,9 +42,15 @@ When switch-window is enabled, user can use the below five keys:
 | "j" | Move the border left  |
 | "k" | Move the border right |
 | "b" | Balance windows       |
+|"SPC"| Resume auto-resize    |
 
 If you want to customize this feature, please see variable:
 `switch-window-extra-map'.
+
+Note: if you use auto-resize window feature, you *must* know
+that when you execute above window operate commands, auto-resize
+feature will be disabled temporarily, you should use above "SPC"
+key to resume.
 
 ** Tips
 
@@ -46,9 +62,8 @@ If you want to customize this feature, please see variable:
 #+END_EXAMPLE
 
 *** I want to let window to show bigger label.
-#+BEGIN_EXAMPLE
-(setq switch-window-increase 6) ;Increase or decrease this number.
-#+END_EXAMPLE
+The face of label is switch-window-label, user can change it :height
+with custiomize-face
 
 *** I want to *hide* window label when window's number < 3
 #+BEGIN_EXAMPLE
@@ -59,6 +74,23 @@ If you want to customize this feature, please see variable:
 #+BEGIN_EXAMPLE
 (setq switch-window-minibuffer-shortcut ?z)
 #+END_EXAMPLE
+
+*** I want to auto resize a window when switch to it
+#+BEGIN_EXAMPLE
+(setq switch-window-auto-resize-window t)
+(setq switch-window-default-window-size 0.8) ;80% of frame size
+(switch-window-mouse-mode) ;auto resize when switch window with mouse
+#+END_EXAMPLE
+
+Advanced usage:
+#+BEGIN_EXAMPLE
+(setq switch-window-auto-resize-window
+      (lambda ()
+        (equal (buffer-name) "*scratch*"))) ;when return t, run auto switch
+(setq switch-window-default-window-size '(0.8 . 0.6)) ;80% width and 60% height of frame
+#+END_EXAMPLE
+
+By the way, you can use package [[https://github.com/roman/golden-ratio.el][golden-ratio]] also.
 
 *** Switch-window seem to conflict with Exwm, how to do?
 By default, switch-window get user's input with the help
@@ -89,7 +121,7 @@ with *small* ascii char.
    1.png ... 9.png, a.png ... z.png.
 
    You can use other image types supported by
-   emacs, please see: `image-types'.
+   Emacs, please see: `image-types'.
 2. Put all above images to directory:
    `switch-window-image-directory'.
 3. Set variable: `switch-window-shortcut-appearance'
@@ -99,7 +131,7 @@ with *small* ascii char.
 
 [[./snapshots/switch-window-2.png]]
 
-*** `switch-window-shortcut-appearance' can't satisfy my need. how to do?
+*** `switch-window-shortcut-appearance' can't satisfy my need.  how to do?
 All you should do is hacking you own label buffer function,
 for example: my-switch-window-label-buffer-function, and set
 the below variable:
@@ -113,6 +145,14 @@ the below variable:
 - [[https://github.com/abo-abo/ace-window][ace-window]]
 
 ** Changelog
+
+*** 1.6.0 - 2018-06-06
+1. Add switch-window-label face to control the appearance of label.
+2. Remove `switch-window-increase', use switch-window-label face instead.
+3. Show orig text with label: see `switch-window-background'
+4. Switch between frames:  see `switch-window-multiple-frames'
+5. [incompatible] `switch-window-label-buffer-function''s arguments have changed,
+   user should update when use it.
 
 *** 1.5.0 - 2017-04-29
 - Implement commands:

@@ -4,7 +4,7 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/djangonaut
-;; Package-Version: 20180606.826
+;; Package-Version: 20180608.1627
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.2") (magit-popup "2.6.0") (pythonic "0.1.0") (f "0.20.0") (s "1.12.0"))
 
@@ -36,8 +36,21 @@
 (require 'f)
 (require 's)
 
-(defvar djangonaut-keymap-prefix (kbd "C-c '")
-  "Djangonaut keymap prefix.")
+(defgroup djangonaut nil
+  "Minor mode to interact with Django projects"
+  :prefix "djangonaut-"
+  :group 'tools)
+
+(defcustom djangonaut-keymap-prefix (kbd "C-c '")
+  "Djangonaut keymap prefix."
+  :type 'key-sequence)
+
+(defcustom djangonaut-navigate-line-hook '(recenter)
+  "Hooks called after jumping to a place in the buffer.
+
+Useful things to use here include `reposition-window', `recenter', and
+\(lambda () (recenter 0)) to show at top of screen."
+  :type 'hook)
 
 (defvar djangonaut-get-pythonpath-code "
 from __future__ import print_function
@@ -713,7 +726,8 @@ user input.  HIST is a variable to store history of choices."
          (lineno (elt code 1)))
     (apply func (pythonic-real-file-name value) nil)
     (goto-char (point-min))
-    (forward-line lineno)))
+    (forward-line lineno)
+    (run-hooks 'djangonaut-navigate-line-hook)))
 
 (defun djangonaut-get-commands ()
   "Execute and parse python code to get commands."

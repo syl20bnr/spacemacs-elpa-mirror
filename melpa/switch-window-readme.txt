@@ -62,9 +62,8 @@ key to resume.
 #+END_EXAMPLE
 
 *** I want to let window to show bigger label.
-#+BEGIN_EXAMPLE
-(setq switch-window-increase 6) ;Increase or decrease this number.
-#+END_EXAMPLE
+The face of label is switch-window-label, user can change it :height
+with custiomize-face
 
 *** I want to *hide* window label when window's number < 3
 #+BEGIN_EXAMPLE
@@ -146,6 +145,14 @@ the below variable:
 - [[https://github.com/abo-abo/ace-window][ace-window]]
 
 ** Changelog
+
+*** 1.6.0 - 2018-06-06
+1. Add switch-window-label face to control the appearance of label.
+2. Remove `switch-window-increase', use switch-window-label face instead.
+3. Show orig text with label: see `switch-window-background'
+4. Switch between frames:  see `switch-window-multiple-frames'
+5. [incompatible] `switch-window-label-buffer-function''s arguments have changed,
+   user should update when use it.
 
 *** 1.5.0 - 2017-04-29
 - Implement commands:

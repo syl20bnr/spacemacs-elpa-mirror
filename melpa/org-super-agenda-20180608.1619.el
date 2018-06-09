@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-super-agenda
-;; Package-Version: 20180602.2044
+;; Package-Version: 20180608.1619
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "25.1") (s "1.10.0") (dash "2.13") (org "9.0") (ht "2.2"))
 ;; Keywords: hypermedia, outlines, Org, agenda
@@ -700,6 +700,9 @@ Raise error if invalid selector."
     nil)
    ;; Valid selector: return function
    ((plist-get org-super-agenda-group-types selector))
+   ((eq selector :habit)
+    ;; :habit selector used but `org-habit' not loaded
+    (user-error "Please `require' the `org-habit' library to use the :habit selector"))
    ;; Invalid selector: raise error
    ((user-error "Invalid org-super-agenda-groups selector: %s" selector))))
 

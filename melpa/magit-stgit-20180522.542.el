@@ -5,7 +5,7 @@
 ;; Author: Lluís Vilanova <vilanova@ac.upc.edu>
 ;; Maintainer: Lluís Vilanova <vilanova@ac.upc.edu>
 ;; Keywords: vc tools
-;; Package-Version: 20180520.551
+;; Package-Version: 20180522.542
 ;; Package: magit-stgit
 ;; Package-Requires: ((emacs "24.4") (magit "2.1.0"))
 
@@ -551,6 +551,7 @@ Use ARGS to pass additional arguments."
   :switches '((?m "Generate an mbox file instead of sending" "--mbox")
               (?g "Use git send-email" "--git" t)
               (?e "Edit cover letter before send" "--edit-cover")
+              (?a "Auto-detect recipients for each patch" "--auto")
               (?A "Auto-detect To, Cc and Bcc for all patches from cover"
                   "--auto-recipients" t))
   :options '((?o "Set file as cover message" "--cover="
