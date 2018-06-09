@@ -1,13 +1,13 @@
-;;; anaphora.el --- anaphoric macros providing implicit temp variables
+;;; anaphora.el --- anaphoric macros providing implicit temp variables  -*- lexical-binding: t -*-
 ;;
 ;; This code is in the public domain.
 ;;
 ;; Author: Roland Walker <walker@pobox.com>
 ;; Homepage: http://github.com/rolandwalker/anaphora
-;; URL: http://raw.github.com/rolandwalker/anaphora/master/anaphora.el
-;; Package-Version: 1.0.0
-;; Version: 1.0.0
-;; Last-Updated: 22 Oct 2013
+;; URL: http://raw.githubusercontent.com/rolandwalker/anaphora/master/anaphora.el
+;; Package-Version: 1.0.2
+;; Version: 1.0.2
+;; Last-Updated:  9 Jun 2018
 ;; EmacsWiki: Anaphora
 ;; Keywords: extensions
 ;;
@@ -57,11 +57,6 @@
 ;;     `a*'
 ;;     `a/'
 ;;
-;; The following macros are experimental
-;;
-;;     `anaphoric-set'
-;;     `anaphoric-setq'
-;;
 ;; See Also
 ;;
 ;;     M-x customize-group RET anaphora RET
@@ -79,7 +74,9 @@
 ;;
 ;; Compatibility and Requirements
 ;;
-;;     GNU Emacs version 24.4-devel     : yes, except macros marked experimental
+;;     GNU Emacs version 25.1-devel     : not tested
+;;     GNU Emacs version 24.5           : not tested
+;;     GNU Emacs version 24.4           : yes, except macros marked experimental
 ;;     GNU Emacs version 24.3           : yes, except macros marked experimental
 ;;     GNU Emacs version 23.3           : yes, except macros marked experimental
 ;;     GNU Emacs version 22.2           : yes, except macros marked experimental
@@ -95,9 +92,7 @@
 ;;
 ;; All code contributed by the author to this library is placed in the
 ;; public domain.  It is the author's belief that the portions adapted
-;; from examples in "On Lisp" are in the public domain.  At least 10
-;; lines of code have been adapted from the Emacs 'cl package (in the
-;; function `anaphoric-setq').
+;; from examples in "On Lisp" are in the public domain.
 ;;
 ;; Regardless of the copyright status of individual functions, all
 ;; code herein is free software, and is provided without any express
@@ -109,14 +104,14 @@
 ;;; requirements
 
 ;; for declare, labels, do, block, case, ecase, typecase, etypecase
-(require 'cl)
+(require 'cl-lib)
 
 ;;; customizable variables
 
 ;;;###autoload
 (defgroup anaphora nil
   "Anaphoric macros providing implicit temp variables"
-  :version "1.0.0"
+  :version "1.0.2"
   :link '(emacs-commentary-link :tag "Commentary" "anaphora")
   :link '(url-link :tag "GitHub" "http://github.com/rolandwalker/anaphora")
   :link '(url-link :tag "EmacsWiki" "http://emacswiki.org/emacs/Anaphora")
@@ -341,7 +336,7 @@ CLAUSES are otherwise as documented for `cond'."
 ARGS and BODY are otherwise as documented for `lambda'."
   (declare (debug lambda)
            (indent defun))
-  `(labels ((self ,args ,@body))
+  `(cl-labels ((self ,args ,@body))
      #'self))
 
 ;;;###autoload
@@ -354,9 +349,9 @@ except the initial one.
 NAME and BODY are otherwise as documented for `block'."
   (declare (debug block)
            (indent 1))
-  `(block ,name
+  `(cl-block ,name
      ,(funcall (anaphoric-lambda (body)
-                 (case (length body)
+                 (cl-case (length body)
                    (0 nil)
                    (1 (car body))
                    (t `(let ((it ,(car body)))
@@ -373,7 +368,7 @@ EXPR and CLAUSES are otherwise as documented for `case'."
   (declare (debug case)
            (indent 1))
   `(let ((it ,expr))
-     (case it ,@clauses)))
+     (cl-case it ,@clauses)))
 
 ;;;###autoload
 (defmacro anaphoric-ecase (expr &rest clauses)
@@ -385,7 +380,7 @@ EXPR and CLAUSES are otherwise as documented for `ecase'."
   (declare (debug ecase)
            (indent 1))
   `(let ((it ,expr))
-     (ecase it ,@clauses)))
+     (cl-ecase it ,@clauses)))
 
 ;;;###autoload
 (defmacro anaphoric-typecase (expr &rest clauses)
@@ -397,7 +392,7 @@ EXPR and CLAUSES are otherwise as documented for `typecase'."
   (declare (debug typecase)
            (indent 1))
   `(let ((it ,expr))
-     (typecase it ,@clauses)))
+     (cl-typecase it ,@clauses)))
 
 ;;;###autoload
 (defmacro anaphoric-etypecase (expr &rest clauses)
@@ -409,20 +404,16 @@ EXPR and CLAUSES are otherwise as documented for `etypecase'."
   (declare (debug etypecase)
            (indent 1))
   `(let ((it ,expr))
-     (etypecase it ,@clauses)))
+     (cl-etypecase it ,@clauses)))
 
 ;;;###autoload
-(defmacro anaphoric-let (varlist &rest body)
-  "Like `let', but the content of VARLIST is bound to `it'.
-
-VARLIST as it appears in `it' is not evaluated.  The variable `it'
-is available within BODY.
+(defmacro anaphoric-let (form &rest body)
+  "Like `let', but the result of evaluating VARLIST is bound to `it'.
 
 VARLIST and BODY are otherwise as documented for `let'."
   (declare (debug let)
            (indent 1))
-  `(let ((it ',varlist)
-         ,@varlist)
+  `(let ((it (,@form)))
      (progn ,@body)))
 
 ;;;###autoload
@@ -491,43 +482,6 @@ DIVIDEND, DIVISOR, and DIVISORS are otherwise as documented for `/'."
     (t
      `(let ((it ,divisor))
         (/ ,dividend (* it (anaphoric-* ,@divisors)))))))
-
-;;;###autoload
-(defmacro anaphoric-set (symbol value)
-  "Like `set', except that the value of SYMBOL is bound to `it'.
-
-The variable `it' is available within VALUE.
-
-SYMBOL and VALUE are otherwise as documented for `set'.
-
-Note that if this macro followed traditional naming for
-anaphoric expressions, it would conflict with the existing
-\(quite different\) function `aset'."
-  `(let ((it ,symbol))
-     (set it ,value)))
-
-;;;###autoload
-(defmacro anaphoric-setq (&rest args)
-  "Like `setq', except that the value of SYM is bound to `it'.
-
-The variable `it' is available within each VAL.
-
-ARGS in the form [SYM VAL] ... are otherwise as documented for `setq'.
-
-No alias `asetq' is provided, because it would easily mistaken
-for the pre-existing `aset', and because `anaphoric-setq' is not
-likely to find frequent use."
-  (cond
-    ((null args)
-     nil)
-    ((> (length args) 2)
-     (let ((pairs nil))
-       (while args
-         (push (list 'anaphoric-setq (pop args) (pop args)) pairs))
-       (cons 'progn (nreverse pairs))))
-    (t
-     `(let ((it (quote ,(car args))))
-        (set it ,(cadr args))))))
 
 (provide 'anaphora)
 
