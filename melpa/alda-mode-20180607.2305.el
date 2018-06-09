@@ -3,9 +3,9 @@
 ;; Copyright (C) 2016-2017 Jay Kamat
 ;; Author: Jay Kamat <jaygkamat@gmail.com>
 ;; Version: 0.3.0
-;; Package-Version: 20171103.1548
+;; Package-Version: 20180607.2305
 ;; Keywords: alda, highlight
-;; URL: http://github.com/jgkamat/alda-mode
+;; URL: http://gitlab.com/jgkamat/alda-mode
 ;; Package-Requires: ((emacs "24.0"))
 
 ;; This program is free software; you can redistribute it and/or modify

@@ -1,13 +1,13 @@
 ;;; ksp-cfg-mode.el --- major mode for editing KSP CFG files
 
-;; Copyright (c) 2016-2017 Emily Backes
+;; Copyright (c) 2016-2018 Emily Backes
 
 ;; Author: Emily Backes <lucca@accela.net>
 ;; Maintainer: Emily Backes <lucca@accela.net>
 ;; Created: 3 May 2016
 
-;; Version: 0.5
-;; Package-Version: 20170724.1127
+;; Version: 0.5.1
+;; Package-Version: 0.5.1
 ;; Package-X-Original-Version: 0.5
 ;; Keywords: data
 ;; URL: http://github.com/lashtear/ksp-cfg-mode
@@ -49,11 +49,6 @@
 
 ;; This defines a new major mode for KSP modding of part files that
 ;; provides syntax highlighting and intelligent indentation.
-
-;; todo:
-;; * support the ModuleManager variable and regexp syntaxes
-;; * refactor context help
-;; * better context help for common keys and modules
 
 ;;; Code:
 
@@ -158,7 +153,7 @@ Use `ksp-cfg-idle-help` to disable this entirely."
   "Face for KSP-cfg operators."
   :group 'ksp-cfg-faces)
 
-;; Generated from KSP 1.3.0 using something like:
+;; Generated from KSP 1.4.3 using something like:
 ;; $ find ~/.local/share/Steam/SteamApps/common/Kerbal\ Space\ Program/GameData/Squad -type f -name \*.cfg -print0 |xargs -0 grep '^\s*[A-Z]' |grep -v = |cut -d: -f2 |perl -pe 's/^\s+//; s[//.*$][]; s/\s+$//; $_="\"$_\"\n"' |sort -u |tr \\n \  |fmt
 
 (defvar ksp-cfg-node-types
@@ -176,22 +171,23 @@ Use `ksp-cfg-idle-help` to disable this entirely."
     "Editor_partSearch" "Editor_pitchDown" "Editor_pitchUp"
     "Editor_resetRotation" "Editor_rollLeft" "Editor_rollRight"
     "Editor_toggleAngleSnap" "Editor_toggleSymMethod" "Editor_toggleSymMode"
-    "Editor_yawLeft" "Editor_yawRight" "Editor_zoomScrollModifier"
-    "EFFECT" "EFFECTS" "EVA_back" "EVA_Board" "EVA_forward" "EVA_Jump"
-    "EVA_left" "EVA_Lights" "EVA_Orient" "EVA_Pack_back" "EVA_Pack_down"
-    "EVA_Pack_forward" "EVA_Pack_left" "EVA_Pack_right" "EVA_Pack_up"
-    "EVA_right" "EVA_Run" "EVA_ToggleMovementMode" "EVA_TogglePack" "EVA_Use"
-    "EVA_yaw_left" "EVA_yaw_right" "Exceptional" "EXPERIENCE_TRAIT"
-    "EXPERIMENT_DEFINITION" "Expiration" "Flag" "FOCUS_NEXT_VESSEL"
-    "FOCUS_PREV_VESSEL" "Funds" "GLOBAL_RESOURCE" "Grand" "HEADLIGHT_TOGGLE"
-    "INPUT_RESOURCE" "INTERNAL" "Introduction" "IonPlume" "ISRU"
-    "KEYBOARD_LAYOUT" "KEY_MAP" "LANDING_GEAR" "LAUNCH_STAGES"
-    "LINUX_VARIANT" "MAP_VIEW_TOGGLE" "MODEL" "MODEL_MULTI_PARTICLE"
-    "MODEL_PARTICLE" "MODIFIER_KEY" "MODULE" "NAVBALL_TOGGLE"
-    "OSX_VARIANT" "OUTPUT_RESOURCE" "PARAM" "Parent" "PART" "PART_REQUEST"
-    "PassiveEnergy" "PAUSE" "PITCH_DOWN" "PITCH_UP" "PLANETARY_RESOURCE"
-    "PRECISION_CTRL" "PREFAB_PARTICLE" "Problem" "Progression" "PROP"
-    "PROPELLANT" "QUICKLOAD" "QUICKSAVE" "RCS_TOGGLE" "RDNode" "Recovery"
+    "Editor_yawLeft" "Editor_yawRight" "Editor_zoomScrollModifier" "EFFECT"
+    "EFFECTS" "EVA_back" "EVA_Board" "EVA_ChuteDeploy" "EVA_forward"
+    "EVA_Jump" "EVA_left" "EVA_Lights" "EVA_Orient" "EVA_Pack_back"
+    "EVA_Pack_down" "EVA_Pack_forward" "EVA_Pack_left" "EVA_Pack_right"
+    "EVA_Pack_up" "EVA_right" "EVA_Run" "EVA_ToggleMovementMode"
+    "EVA_TogglePack" "EVA_Use" "EVA_yaw_left" "EVA_yaw_right" "Exceptional"
+    "EXPERIENCE_TRAIT" "EXPERIMENT_DEFINITION" "Expiration" "EXTRA_INFO"
+    "Flag" "FOCUS_NEXT_VESSEL" "FOCUS_PREV_VESSEL" "Funds" "GAMEOBJECTS"
+    "GLOBAL_RESOURCE" "Grand" "HEADLIGHT_TOGGLE" "INPUT_RESOURCE"
+    "INTERNAL" "Introduction" "IonPlume" "ISRU" "KEYBOARD_LAYOUT" "KEY_MAP"
+    "LANDING_GEAR" "LAUNCH_STAGES" "LINUX_VARIANT" "MAP_VIEW_TOGGLE"
+    "MODEL" "MODEL_MULTI_PARTICLE" "MODEL_PARTICLE" "MODIFIER_KEY"
+    "MODULE" "NAVBALL_TOGGLE" "OSX_VARIANT" "OUTPUT_RESOURCE"
+    "PARAM" "Parent" "PART" "PART_REQUEST" "PassiveEnergy" "PAUSE"
+    "PITCH_DOWN" "PITCH_UP" "PLANETARY_RESOURCE" "PRECISION_CTRL"
+    "PREFAB_PARTICLE" "Problem" "Progression" "PROP" "PROPELLANT"
+    "QUICKLOAD" "QUICKSAVE" "RCS_TOGGLE" "RDNode" "Recovery"
     "Reputation" "REQUIRED_EFFECTS" "RESOURCE" "RESOURCE_CONFIGURATION"
     "RESOURCE_DEFINITION" "RESOURCE_OVERLAY_CONFIGURATION_DOTS"
     "RESOURCE_OVERLAY_CONFIGURATION_LINES"
@@ -200,16 +196,17 @@ Use `ksp-cfg-idle-help` to disable this entirely."
     "SAS_TOGGLE" "Satellite" "Science" "SCROLL_ICONS_DOWN" "SCROLL_ICONS_UP"
     "SCROLL_VIEW_DOWN" "SCROLL_VIEW_UP" "Sentinel" "Significant" "Station"
     "STORY_DEF" "STRATEGY" "STRATEGY_DEPARTMENT" "Survey" "SURVEY_DEFINITION"
-    "TAKE_SCREENSHOT" "TemperatureModifier" "Test" "ThermalEfficiency"
-    "THROTTLE_CUTOFF" "THROTTLE_DOWN" "THROTTLE_FULL" "THROTTLE_UP"
-    "Thrust" "TIME_WARP_DECREASE" "TIME_WARP_INCREASE" "TIME_WARP_STOP"
-    "TOGGLE_FLIGHT_FORCES" "TOGGLE_LABELS" "TOGGLE_SPACENAV_FLIGHT_CONTROL"
-    "TOGGLE_SPACENAV_ROLL_LOCK" "TOGGLE_STATUS_SCREEN" "TOGGLE_TEMP_GAUGES"
-    "TOGGLE_TEMP_OVERLAY" "TOGGLE_UI" "Tour" "TRANSLATE_BACK" "TRANSLATE_DOWN"
-    "TRANSLATE_FWD" "TRANSLATE_LEFT" "TRANSLATE_RIGHT" "TRANSLATE_UP"
-    "Trivial" "TUTORIAL" "UIMODE_DOCKING" "UIMODE_STAGING" "WHEEL_STEER_LEFT"
-    "WHEEL_STEER_RIGHT" "WHEEL_THROTTLE_DOWN" "WHEEL_THROTTLE_UP" "YAW_LEFT"
-    "YAW_RIGHT" "ZOOM_IN" "ZOOM_OUT")
+    "TAKE_SCREENSHOT" "TemperatureModifier" "Test" "TEXTURE"
+    "ThermalEfficiency" "THROTTLE_CUTOFF" "THROTTLE_DOWN" "THROTTLE_FULL"
+    "THROTTLE_UP" "Thrust" "TIME_WARP_DECREASE" "TIME_WARP_INCREASE"
+    "TIME_WARP_STOP" "TOGGLE_FLIGHT_FORCES" "TOGGLE_LABELS"
+    "TOGGLE_SPACENAV_FLIGHT_CONTROL" "TOGGLE_SPACENAV_ROLL_LOCK"
+    "TOGGLE_STATUS_SCREEN" "TOGGLE_TEMP_GAUGES" "TOGGLE_TEMP_OVERLAY"
+    "TOGGLE_UI" "Tour" "TRANSLATE_BACK" "TRANSLATE_DOWN" "TRANSLATE_FWD"
+    "TRANSLATE_LEFT" "TRANSLATE_RIGHT" "TRANSLATE_UP" "Trivial"
+    "TUTORIAL" "UIMODE_DOCKING" "UIMODE_STAGING" "VARIANT" "VARIANTTHEME"
+    "WHEEL_STEER_LEFT" "WHEEL_STEER_RIGHT" "WHEEL_THROTTLE_DOWN"
+    "WHEEL_THROTTLE_UP" "YAW_LEFT" "YAW_RIGHT" "ZOOM_IN" "ZOOM_OUT")
   "A list of strings describing the node type keywords known to KSP.")
 
 ;;; Generated from ModuleManager 2.8.1

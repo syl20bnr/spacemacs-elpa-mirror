@@ -3,7 +3,7 @@
 ;; Copyright (C) DIKU 2013-2017, University of Copenhagen
 ;;
 ;; URL: https://github.com/diku-dk/futhark
-;; Package-Version: 20180602.659
+;; Package-Version: 20180606.356
 ;; Keywords: languages
 ;; Version: 0.1
 ;; Package-Requires: ((cl-lib "0.5"))
@@ -11,7 +11,7 @@
 ;; This file is not part of GNU Emacs.
 
 ;;; License:
-;; ICS <https://github.com/diku-dk/futhark/blob/master/LICENSE>
+;; ICS <https://github.com/diku-dk/futhark-mode/blob/master/LICENSE>
 
 ;;; Commentary:
 ;; Futhark is a small programming language designed to be compiled to
@@ -60,16 +60,36 @@
       "stream_map_per" "stream_red" "stream_map_per" "stream_seq")
     "All Futhark builtin SOACs, functions, and non-symbolic operators.")
 
-  (defconst futhark-builtin-types
+  (defconst futhark-numeric-types
     '("i8" "i16" "i32" "i64"
       "u8" "u16" "u32" "u64"
-      "f32" "f64"
-      "int" "real" "bool")
+      "f32" "f64")
+    "A list of Futhark numeric types.")
+
+  (defconst futhark-builtin-types
+    (cons "bool" futhark-numeric-types)
     "A list of Futhark types.")
 
   (defconst futhark-booleans
     '("true" "false")
     "All Futhark booleans.")
+
+  (defconst futhark-number
+    (concat "-?"
+            "\\<\\(?:"
+            (concat "\\(?:"
+                    "\\(?:0[xX]\\)"
+                    "[0-9a-fA-F]+"
+                    "\\(?:\\.[0-9a-fA-F]+\\)?"
+                    "\\(?:[pP][+-]?[0-9]+\\)?"
+                    "\\|"
+                    "[0-9]+"
+                    "\\(?:\\.[0-9]+\\)?"
+                    "\\)"
+                    )
+            "\\(?:i8\\|i16\\|i32\\|i64\\|u8\\|u16\\|u32\\|u64\\|f32\\|f64\\)?"
+            "\\)\\>")
+    "All numeric constants, including hex float literals.")
 
   (defconst futhark-var
     (concat "\\(?:" "[_'[:alnum:]]+" "\\)")
@@ -77,7 +97,7 @@
 
   (defconst futhark-operator
     (concat "["
-            "+*\\-/%!<>=&|@"
+            "-+*/%!<>=&|@"
             "]" "+"))
 
   (defconst futhark-non-tuple-type
@@ -121,11 +141,6 @@
   (defvar futhark-font-lock
     `(
 
-      ;; Function declarations.
-      (,(concat "\\(?:" "fun" "\\|" "val" "\\|" "entry" "\\)"
-                ws1 "\\(" futhark-var "\\)")
-       . '(1 font-lock-function-name-face))
-
       ;; Variable and tuple declarations.
       ;;; Lets.
       ;;;; Primitive values.
@@ -162,9 +177,6 @@
       ;;;; Builtin functions.
       (,(regexp-opt futhark-builtin-functions 'words)
        . font-lock-builtin-face)
-      ;;;; Tuple accessors.
-      (,(concat "#" "[[:digit:]]+")
-       . font-lock-builtin-face)
       ;;; Operators.
       (,futhark-operator
        . font-lock-builtin-face)
@@ -172,6 +184,9 @@
       ;; Constants.
       ;;; Booleans.
       (,(regexp-opt futhark-booleans 'words)
+       . font-lock-constant-face)
+
+      (,(concat "\\(" futhark-number "\\)")
        . font-lock-constant-face)
 
       )
@@ -228,14 +243,12 @@ In general, prefer as little indentation as possible."
 
        ;; Align global definitions and headers to nearest module definition or
        ;; column 0.
-       (and (or (futhark-looking-at-word "fun")
-                (futhark-looking-at-word "entry")
+       (and (or (futhark-looking-at-word "entry")
                 (futhark-looking-at-word "type")
                 (futhark-looking-at-word "val")
                 (futhark-looking-at-word "module")
                 (futhark-looking-at-word "include")
-                (futhark-looking-at-word "import")
-                (futhark-looking-at-word "default"))
+                (futhark-looking-at-word "import"))
             (or
              (save-excursion
                (and
@@ -503,8 +516,10 @@ See URL `https://github.com/diku-dk/futhark'."
             (one-or-more not-newline) ":" (message (one-or-more anything))
             "If you find")
      (error (message "lexical error") " at line " line ", column " column)
-     (warning line-start "Warning at " (file-name) ":" line ":" column "-"
-              (one-or-more not-newline) ":" (message (one-or-more anything)))))
+     (warning line-start "Warning at " (file-name) ":"
+              line ":" column "-" (one-or-more digit) ":" (one-or-more digit) ":" ?\n
+              (message (one-or-more (and (one-or-more (not (any ?\n))) ?\n)))
+              line-end)))
   (add-to-list 'flycheck-checkers 'futhark))
 
 ;;; Actual mode declaration

@@ -4,7 +4,7 @@
 
 ;; Author: Nicholas M. Van Horn <nvanhorn@protonmail.com>
 ;; Keywords: color theme cyberpunk
-;; Package-Version: 20180529.2040
+;; Package-Version: 1.21
 ;; Version: 1.20
 
 ;; This file is free software; you can redistribute it and/or modify
