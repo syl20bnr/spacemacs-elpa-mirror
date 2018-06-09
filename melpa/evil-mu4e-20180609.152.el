@@ -6,7 +6,7 @@
 ;; Author: Joris Engbers <info@jorisengbers.nl>
 ;; Homepage: https://github.com/JorisE/evil-mu4e
 ;; Version: 0.0.8
-;; Package-Version: 20180607.605
+;; Package-Version: 20180609.152
 ;; Package-Requires: ((emacs "24.4") (evil "1.2.10"))
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -294,7 +294,8 @@ is already done earlier."
     (add-hook 'mu4e-main-mode-hook 'evil-mu4e-update-main-view))
 
 ;; Evil-mu4e is only needed if mu4e is loaded.
-(eval-after-load "mu4e" '(evil-mu4e-init))
+(with-eval-after-load 'mu4e
+  (evil-mu4e-init))
 
 (provide 'evil-mu4e)
 ;;; evil-mu4e.el ends here
