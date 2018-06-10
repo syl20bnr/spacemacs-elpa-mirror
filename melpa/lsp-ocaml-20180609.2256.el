@@ -4,10 +4,10 @@
 
 ;; Author: Antonio N. Monteiro <anmonteiro@gmail.com>
 ;; Version: 1.0
-;; Package-Version: 20171111.1352
+;; Package-Version: 20180609.2256
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "3.0"))
 ;; Keywords: languages, ocaml, reason, lsp
-;; URL: https://github.com/anmonteiro/lsp-ocaml
+;; URL: https://github.com/emacs-lsp/lsp-ocaml
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -31,6 +31,24 @@
 
 (require 'lsp-mode)
 
+(defcustom lsp-ocaml-ocaml-lang-server-command
+  ("ocaml-language-server" "--stdio")
+  "The command that starts the language server."
+  :group 'lsp-ocaml
+  :type '(choice
+          (string :tag "Single string value")
+          (repeat :tag "List of string values"
+           string)))
+
+(defcustom lsp-ocaml-reason-lang-server-command
+  ("ocaml-language-server" "--stdio")
+  "The command that starts the language server."
+  :group 'lsp-ocaml
+  :type '(choice
+          (string :tag "Single string value")
+          (repeat :tag "List of string values"
+           string)))
+
 (defun lsp-ocaml--get-root ()
   "Retrieves the root directory of the OCaml project root if available.
 The current directory is assumed to be the OCaml project’s root otherwise."
@@ -45,7 +63,7 @@ The current directory is assumed to be the OCaml project’s root otherwise."
 	          default-directory)))))
 
 (lsp-define-stdio-client lsp-ocaml "ocaml" #'lsp-ocaml--get-root
-			 '("ocaml-language-server" "--stdio")
+                         lsp-ocaml-ocaml-lang-server-command
        :language-id-fn (lambda (buffer)
                          (let ((x (buffer-file-name buffer)))
                            (cond
@@ -57,7 +75,19 @@ The current directory is assumed to be the OCaml project’s root otherwise."
                                  (string-suffix-p ".mli" x)
                                  (string-suffix-p ".mll" x)
                                  (string-suffix-p ".mly" x))
-                             "ocaml")))))
+                             "ocaml"))))
+       :command-fn (lambda ()
+                     (let ((x (buffer-file-name (current-buffer))))
+                       (cond
+                        ((or (string-suffix-p ".re" x)
+                             (string-suffix-p ".rei" x))
+                         lsp-ocaml-reason-lang-server-command)
+
+                        ((or (string-suffix-p ".ml" x)
+                             (string-suffix-p ".mli" x)
+                             (string-suffix-p ".mll" x)
+                             (string-suffix-p ".mly" x))
+                         lsp-ocaml-ocaml-lang-server-command)))))
 
 (provide 'lsp-ocaml)
 ;;; lsp-ocaml.el ends here

@@ -3,8 +3,8 @@
 ;; Copyright (c) 2014-2018 Paul Rankin
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
-;; Keywords: text
-;; Package-Version: 20180524.338
+;; Keywords: wp, text
+;; Package-Version: 20180609.2322
 ;; Version: 2.6.0
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -151,7 +151,7 @@
 (defgroup fountain ()
   "Major mode for screenwriting in Fountain markup."
   :prefix "fountain-"
-  :group 'wp
+  :group 'text
   :link '(url-link "https://github.com/rnkn/fountain-mode"))
 
 
@@ -1212,7 +1212,8 @@ See <http://debbugs.gnu.org/24073>."
 
 (defun fountain-match-character ()
   "Match character if point is at character, nil otherwise."
-  (unless (fountain-match-scene-heading)
+  (unless (or (fountain-match-scene-heading)
+              (fountain-match-section-heading))
     (save-excursion
       (beginning-of-line)
       (and (not (and (looking-at fountain-action-regexp)
