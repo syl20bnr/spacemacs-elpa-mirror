@@ -4,7 +4,7 @@
 
 ;; Author: Oliver Marks <oly@digitaloctave.com>
 ;; URL: https://gitlab.com/olymk2/digitalocean-api
-;; Package-Version: 20180609.1359
+;; Package-Version: 20180610.46
 ;; Keywords: Processes tools
 ;; Version: 0.1
 ;; Created 01 July 2018
@@ -64,7 +64,7 @@
 		   (digitalocean-get-droplet-id-from-candidate candidate)
                    "destroy")))))))
 
-;;;autoload
+;;;###autoload
 (defun digitalocean-helm-droplets ()
   "Show helm droplet list."
   (interactive)
@@ -80,7 +80,7 @@
 			    "selected: %s"
 			    (helm-marked-candidates))))))))
 
-;;;autoload
+;;;###autoload
 (defun digitalocean-helm-images ()
   "Show helm image list."
   (interactive)
@@ -95,7 +95,7 @@
 			    "selected: %s"
 			    (helm-marked-candidates))))))))
 
-;;;autoload
+;;;###autoload
 (defun digitalocean-helm-regions ()
   "Show helm region list."
   (interactive)

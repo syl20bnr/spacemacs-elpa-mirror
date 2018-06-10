@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp, text
-;; Package-Version: 20180609.2322
+;; Package-Version: 20180610.231
 ;; Version: 2.6.0
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -689,7 +689,7 @@ Requires `fountain-match-metadata' for `bobp'.")
   (concat "^[\s\t]*\\(?1:\\(?:"
           "\\(?2:@\\)\\(?3:\\(?4:[^<>\n]+?\\)\\(?:[\s\t]*(.*?)\\)*?\\)"
           "\\|"
-          "\\(?3:\\(?4:[^a-z<>\n]*?[A-Z][^a-z<>\n]*?\\)\\(?:[\s\t]*(.*?)\\)*?\\)"
+          "\\(?3:\\(?4:[^!#a-z<>\n]*?[A-Z][^a-z<>\n]*?\\)\\(?:[\s\t]*(.*?)\\)*?\\)"
           "\\)[\s\t]*\\(?5:\\^\\)?\\)[\s\t]*$")
   "Regular expression for matching character names.
 
@@ -1212,13 +1212,10 @@ See <http://debbugs.gnu.org/24073>."
 
 (defun fountain-match-character ()
   "Match character if point is at character, nil otherwise."
-  (unless (or (fountain-match-scene-heading)
-              (fountain-match-section-heading))
+  (unless (fountain-match-scene-heading)
     (save-excursion
       (beginning-of-line)
-      (and (not (and (looking-at fountain-action-regexp)
-                     (match-string 1)))
-           (let ((case-fold-search nil))
+      (and (let ((case-fold-search nil))
              (looking-at fountain-character-regexp))
            (save-match-data
              (save-restriction

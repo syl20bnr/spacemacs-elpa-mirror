@@ -8,7 +8,7 @@
 ;; Original author:  wandad guscheh <wandad.guscheh@fh-hagenberg.at>
 ;; Author:           Cayetano Santos
 ;; Keywords: vhdl
-;; Package-Version: 20171111.930
+;; Package-Version: 20180610.403
 
 ;; Filename: vhdl-tools.el
 ;; Description: Utilities for navigating vhdl sources.
@@ -164,10 +164,6 @@ Needed to determine end of name."
 
 (defcustom vhdl-tools-use-outshine nil
   "Flag to activate `outshine' when `vhdl-tools' minor mode in active."
-  :type 'boolean :group 'vhdl-tools)
-
-(defcustom vhdl-tools-remap-smartscan nil
-  "Flag to allow remapping `smartscan' when `vhdl-tools' minor mode in active."
   :type 'boolean :group 'vhdl-tools)
 
 (defcustom vhdl-tools-manage-folding nil
@@ -577,44 +573,6 @@ When no symbol at point, move point to indentation."
 	   (format "%s " vhdl-tools-thing) max-point t)
 	  (vhdl-tools--fold)
 	  (vhdl-tools--post-jump-function))))))
-
-;;; SmartScan
-
-;; Custom version of `smartscan' jumping functions.  Here, I manage
-;; folding/unfolding of code headings, so that upon jumping only the
-;; relevant section is shown
-
-;;;; Go Forward
-
-(defun vhdl-tools-smcn-next()
-  (interactive)
-  (smartscan-symbol-go-forward)
-  (backward-char 1)
-  (vhdl-tools--fold)
-  (recenter-top-bottom vhdl-tools-recenter-nb-lines))
-
-(defun vhdl-tools-vorg-smcn-next()
-  (interactive)
-  (smartscan-symbol-go-forward)
-  (backward-char 1)
-  (vhdl-tools--fold)
-  (recenter-top-bottom vhdl-tools-recenter-nb-lines))
-
-;;;; Go Backwards
-
-(defun vhdl-tools-smcn-prev()
-  (interactive)
-  (smartscan-symbol-go-backward)
-  (forward-char 1)
-  (vhdl-tools--fold)
-  (recenter-top-bottom vhdl-tools-recenter-nb-lines))
-
-(defun vhdl-tools-vorg-smcn-prev()
-  (interactive)
-  (smartscan-symbol-go-backward)
-  (forward-char 1)
-  (vhdl-tools--fold)
-  (recenter-top-bottom vhdl-tools-recenter-nb-lines))
 
 ;;; Org / VHDL
 
@@ -1126,17 +1084,6 @@ Key bindings:
 		    (vc-find-root (buffer-file-name) ".git"))))
       (progn
 
-        ;; optional smartscan remapping
-	(when (and (require 'outshine)
-		   vhdl-tools-use-outshine
-                   (require 'smartscan)
-		   vhdl-tools-remap-smartscan
-		   (smartscan-mode 1))
-	  (define-key vhdl-mode-map [remap smartscan-symbol-go-forward]
-	    #'vhdl-tools-smcn-next)
-	  (define-key vhdl-mode-map [remap smartscan-symbol-go-backward]
-	    #'vhdl-tools-smcn-prev))
-
 	;; optional outshine use
 	(when (and (require 'outshine)
 		   vhdl-tools-use-outshine)
@@ -1205,14 +1152,6 @@ Key bindings:
 \\{vhdl-tools-vorg-mode-map}"
 
   (progn
-    ;; optional smartscan remapping
-    (when (and (require 'smartscan)
-	       vhdl-tools-remap-smartscan
-	       (smartscan-mode 1))
-      (define-key vhdl-tools-vorg-mode-map [remap smartscan-symbol-go-forward]
-	#'vhdl-tools-vorg-smcn-next)
-      (define-key vhdl-tools-vorg-mode-map [remap smartscan-symbol-go-backward]
-	#'vhdl-tools-vorg-smcn-prev))
 
     ;; update hook
     (add-to-list 'org-src-mode-hook 'vhdl-tools-vorg-src-edit-beautify)
