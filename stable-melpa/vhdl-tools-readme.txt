@@ -4,5 +4,3 @@ using `ggtags' to manage a vhdl project.  `Vhdl-tools' relies on `projectile',
 `imenu' and `outshine' features to ease navigating vhdl
 sources.  Additionally, it provides `vOrg' mode too, which benefits of all
 `Org' features.
-
-For details, refer to  https://github.com/csantosb/vhdl-tools/wiki

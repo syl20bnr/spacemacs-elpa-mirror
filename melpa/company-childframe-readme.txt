@@ -1,4 +1,8 @@
 * company-childframe README                                :README:
+
+NOTE: this package will be renamed to
+[[https://github.com/tumashu/company-posframe][company-posframe]]
+
 ** What is company-childframe
 company-childframe is a company extension, which let company use
 child frame as its candidate menu.
