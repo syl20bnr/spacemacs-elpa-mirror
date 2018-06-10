@@ -3,10 +3,10 @@
 ;; Copyright (C) 2018  Oliver Marks
 
 ;; Author: Oliver Marks <oly@digitaloctave.com>
-;; URL: https://github.com/olymk2/emacs-digitalocean
-;; Package-Version: 20180603.225
+;; URL: https://gitlab.com/olymk2/emacs-digitalocean
+;; Package-Version: 20180609.1355
 ;; Keywords: Processes tools
-;; Version: 0.1
+;; Version: 0.2
 ;; Created 27 May 2018
 ;; Package-Requires: ((request "2.5")(emacs "24.4"))
 
@@ -47,11 +47,6 @@
   "Set the default directory when connecting to a droplet."
   :type 'string
   :group 'digitalocean)
-
-(defun digitalocean-array-or-nil (value)
-  "Helper which will return VALUE to a list or nil if empty."
-  (when value (list value)))
-
 
 (defun digitalocean-make-get-request (url)
   "Perform a get request on URL which auto append the header tokens."
@@ -165,19 +160,19 @@ Argument VALUES y."
 	    (cdr (assoc head res)))))
 
 
-(defun digitalocean-digitalocean-droplet-list ()
+(defun digitalocean-droplet-list ()
   "Return list of droplets with specific attributes."
   (digitalocean-format-response (digitalocean-fetch-droplets) 'droplets 'id 'name 'status))
 
-(defun digitalocean-digitalocean-images-list ()
+(defun digitalocean-images-list ()
   "Return list of Image."
   (digitalocean-format-response (digitalocean-fetch-images) 'images 'name))
 
-(defun digitalocean-digitalocean-regions-list ()
+(defun digitalocean-regions-list ()
   "Return list of region slugs."
   (digitalocean-format-response (digitalocean-fetch-regions) 'regions 'slug))
 
-(defun digitalocean-digitalocean-sizes-list ()
+(defun digitalocean-sizes-list ()
   "Return list of sizes."
   (digitalocean-format-response (digitalocean-fetch-sizes) 'sizes 'slug ))
 
@@ -369,16 +364,16 @@ Given MSG and RES response match the root key MAIN show KEY values."
 					     ("region" . ,(widget-value (nth 10 digitalocean-widgets)))
 					     ("size" . ,(widget-value (nth 9 digitalocean-widgets)))
 					     ("image" . ,(widget-value (nth 8 digitalocean-widgets)))
-					     ("ssh_keys" . ,(digitalocean-array-or-nil
+					     ("ssh_keys" . ,(split-string
 							     (widget-value (nth 7 digitalocean-widgets))))
 					     ("backups" . ,(widget-value (nth 6 digitalocean-widgets)))
 					     ("ipv6" . ,(widget-value (nth 5 digitalocean-widgets)))
 					     ("private_networking" . ,(widget-value (nth 4 digitalocean-widgets)))
 					     ("user_data" . ,(widget-value (nth 3 digitalocean-widgets)))
 					     ("monitoring" . ,(widget-value (nth 2 digitalocean-widgets)))
-					     ("volumes" . ,(digitalocean-array-or-nil
+					     ("volumes" . ,(split-string
 							    (widget-value (nth 1 digitalocean-widgets))))
-					     ("tags" . ,(digitalocean-array-or-nil
+					     ("tags" . ,(split-string
 							 (widget-value (nth 0 digitalocean-widgets)))))))
 			       (message "Please wait new droplet sent for creation.")
 			       (digitalocean-create-droplet values)))
