@@ -4,7 +4,7 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/anaconda-mode
-;; Package-Version: 20180610.1344
+;; Package-Version: 20180610.1756
 ;; Version: 0.1.12
 ;; Package-Requires: ((emacs "25") (pythonic "0.1.0") (dash "2.6.0") (s "1.9") (f "0.16.2"))
 
@@ -453,15 +453,6 @@ submitted."
                         (apply 'message error-template (delq nil (list error-message error-data))))
                     (with-current-buffer anaconda-mode-request-buffer
                       (let ((result (cdr (assoc 'result response))))
-                        (when (vectorp result)
-                          (if (member command '("goto_definitions" "goto_assignments" "usages"))
-                              (mapc (lambda (x)
-                                      (aset x 0 (pythonic-real-file-name (aref x 0))))
-                                    result)
-                            (when (string= command "company_complete")
-                              (mapc (lambda (x)
-                                      (aset x 3 (pythonic-real-file-name (aref x 3))))
-                                    result))))
                         ;; Terminate `apply' call with empty list so response
                         ;; will be treated as single argument.
                         (apply callback result nil)))))))
@@ -628,7 +619,7 @@ Show ERROR-MESSAGE if result is empty."
   (--map
    (xref-make
     (aref it 3)
-    (xref-make-file-location (aref it 0) (aref it 1) (aref it 2)))
+    (xref-make-file-location (pythonic-real-file-name (aref it 0)) (aref it 1) (aref it 2)))
    result))
 
 

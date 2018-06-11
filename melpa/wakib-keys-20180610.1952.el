@@ -2,7 +2,7 @@
 
 ;; Author: Abdulla Bubshait
 ;; URL: https://github.com/darkstego/wakib-keys/
-;; Package-Version: 20180527.409
+;; Package-Version: 20180610.1952
 ;; Created: 6 April 2018
 ;; Keywords: convenience, keybindings, keys
 ;; License: GPL v3
@@ -195,7 +195,7 @@ ARG used as repeat function for interactive"
   (interactive "p")
   ;; if region active
   (cond ((eq last-command 'yank)
-	 (yank-pop arg))
+	 (yank-pop (- arg)))
 	((use-region-p)
 	 (exchange-point-and-mark))))
 
@@ -204,7 +204,7 @@ ARG used as repeat function for interactive"
 ARG used as repeat for interactive function."
   (interactive "p")
   (cond ((eq last-command 'yank)
-	 (yank-pop (- arg)))
+	 (yank-pop arg))
 	((use-region-p)
 	 (exchange-point-and-mark))))
 

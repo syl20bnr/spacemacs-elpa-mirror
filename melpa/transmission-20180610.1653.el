@@ -4,7 +4,7 @@
 
 ;; Author: Mark Oteiza <mvoteiza@udel.edu>
 ;; Version: 0.12.1
-;; Package-Version: 20180201.1506
+;; Package-Version: 20180610.1653
 ;; Package-Requires: ((emacs "24.4") (let-alist "1.0.5"))
 ;; Keywords: comm, tools
 
@@ -396,7 +396,7 @@ and port default to `transmission-host' and
     (let* ((user (plist-get transmission-rpc-auth :username))
            (pass (and user (or (plist-get transmission-rpc-auth :password)
                                (transmission--auth-source-secret user)))))
-      (concat "Basic " (base64-encode-string (concat user ":" pass))))))
+      (concat "Basic " (base64-encode-string (concat user ":" pass) t)))))
 
 (defun transmission-http-post (process content)
   "Send to PROCESS an HTTP POST request containing CONTENT."
@@ -1128,7 +1128,7 @@ When called with a prefix, prompt for DIRECTORY."
    (append (if (and (file-readable-p torrent) (not (file-directory-p torrent)))
                `(:metainfo ,(with-temp-buffer
                               (insert-file-contents-literally torrent)
-                              (base64-encode-string (buffer-string))))
+                              (base64-encode-string (buffer-string) t)))
              (setq torrent (string-trim torrent))
              `(:filename ,(if (transmission-btih-p torrent)
                               (concat "magnet:?xt=urn:btih:" torrent)
