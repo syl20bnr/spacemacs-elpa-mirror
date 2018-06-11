@@ -19,3 +19,10 @@ periodically to provide enhanced code analysis via
 
 To "unmanage" these buffers, shutdown the server with M-x
 eglot-shutdown.
+
+You can also do:
+
+  (add-hook 'foo-mode-hook 'eglot-ensure)
+
+To attempt to start an eglot session automatically everytime a
+foo-mode buffer is visited.
