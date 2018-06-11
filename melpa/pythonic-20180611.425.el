@@ -4,7 +4,7 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/pythonic
-;; Package-Version: 20180610.2316
+;; Package-Version: 20180611.425
 ;; Version: 0.1.1
 ;; Package-Requires: ((emacs "25") (s "1.9") (f "0.17.2"))
 
@@ -104,7 +104,8 @@
     (if (null alias-tuple)
         alias
       (concat (car alias-tuple)
-              (substring alias (length (cadr alias-tuple)))))))
+              (substring alias (min (length (cadr alias-tuple))
+                                    (length alias)))))))
 
 (defun pythonic-python-readable-file-name (filename)
   "Emacs to Python FILENAME conversion.

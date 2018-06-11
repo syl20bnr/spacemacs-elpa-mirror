@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp, text
-;; Package-Version: 20180610.231
+;; Package-Version: 20180611.109
 ;; Version: 2.6.0
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -660,10 +660,6 @@ Requires `fountain-match-scene-heading' for preceding blank line.")
 
 Set with `fountain-init-trans-regexp'. Requires
 `fountain-match-trans' for preceding and succeeding blank lines.")
-
-(defconst fountain-blank-regexp
-  "^\s?$"
-  "Regular expression for matching an empty line.")
 
 (defconst fountain-action-regexp
   "^\\(!\\)?\\(.*\\)[\s\t]*$"
@@ -3698,7 +3694,7 @@ If POS is nil, use `point' instead."
                (fountain-forward-character 0)
                (setq begin (line-beginning-position))
                (while (not (or (eobp)
-                               (looking-at fountain-blank-regexp)
+                               (and (bolp) (eolp))
                                (fountain-match-note)))
                  (forward-line))
                (skip-chars-forward "\n\s\t")
