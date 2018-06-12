@@ -5,7 +5,7 @@
 ;; Author: Matúš Goljer <matus.goljer@gmail.com>
 ;; Maintainer: Matúš Goljer <matus.goljer@gmail.com>
 ;; Version: 0.0.1
-;; Package-Version: 20180321.1535
+;; Package-Version: 20180612.328
 ;; Created: 10th March 2018
 ;; Package-requires: ((dash "2.13.0") (emacs "24"))
 ;; Keywords: outlines
@@ -54,8 +54,16 @@ POINT defaults to current point."
   (save-excursion
     (goto-char point)
     (let ((parent (org-element-context)))
+      ;; first find the first list parent
       (while (and parent
-                  (not (eq 'plain-list (org-element-type parent))))
+                  (not (eq (org-element-type parent) 'plain-list)))
+        (setq parent (org-element-property :parent parent)))
+      ;; then we want to go to the containing top-level list so we
+      ;; skip items and plain-lists until there's either no parent or
+      ;; one of different type
+      (while (and parent
+                  (memq (org-element-type (org-element-property :parent parent))
+                        (list 'plain-list 'item)))
         (setq parent (org-element-property :parent parent)))
       parent)))
 
