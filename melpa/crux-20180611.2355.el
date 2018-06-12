@@ -4,7 +4,7 @@
 ;;
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/crux
-;; Package-Version: 20180608.2108
+;; Package-Version: 20180611.2355
 ;; Version: 0.4.0-snapshot
 ;; Keywords: convenience
 ;; Package-Requires: ((seq "1.11"))
@@ -567,6 +567,14 @@ Doesn't mess with special buffers."
   (find-file-other-window user-init-file))
 
 ;;;###autoload
+(defun crux-find-user-custom-file ()
+  "Edit the `custom-file', in another window."
+    (interactive)
+    (if custom-file
+        (find-file-other-window custom-file)
+      (message "No custom file found.")))
+
+;;;###autoload
 (defun crux-find-shell-init-file ()
   "Edit the shell init file in another window."
   (interactive)
@@ -582,6 +590,27 @@ Doesn't mess with special buffers."
     (if (> (length candidates) 1)
         (find-file-other-window (completing-read "Choose shell init file: " candidates))
       (find-file-other-window (car candidates)))))
+
+;;;###autoload
+(defun crux-upcase-region (beg end)
+  "`upcase-region' when `transient-mark-mode' is on and region is active."
+  (interactive "*r")
+  (when (use-region-p)
+    (upcase-region beg end)))
+
+;;;###autoload
+(defun crux-downcase-region (beg end)
+  "`downcase-region' when `transient-mark-mode' is on and region is active."
+  (interactive "*r")
+  (when (use-region-p)
+    (downcase-region beg end)))
+
+;;;###autoload
+(defun crux-capitalize-region (beg end)
+  "`capitalize-region' when `transient-mark-mode' is on and region is active."
+  (interactive "*r")
+  (when (use-region-p)
+    (capitalize-region beg end)))
 
 ;; http://endlessparentheses.com/ispell-and-abbrev-the-perfect-auto-correct.html
 ;;;###autoload
