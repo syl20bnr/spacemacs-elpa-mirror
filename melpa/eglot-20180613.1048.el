@@ -2,8 +2,8 @@
 
 ;; Copyright (C) 2018 Free Software Foundation, Inc.
 
-;; Version: 0.9
-;; Package-Version: 0.9
+;; Version: 0.10
+;; Package-Version: 20180613.1048
 ;; Author: João Távora <joaotavora@gmail.com>
 ;; Maintainer: João Távora <joaotavora@gmail.com>
 ;; URL: https://github.com/joaotavora/eglot
@@ -738,7 +738,7 @@ happens, the original timer keeps counting). Return (ID TIMER)."
                        (setf (eglot--status server) `(,message t))
                        server `(:message "error ignored, status set"
                                          :id ,id :error ,code)))
-                 (or timer (funcall make-timer)))
+                 (setq timer (or timer (funcall make-timer))))
              (eglot--pending-continuations server))
     (list id timer)))
 
@@ -759,7 +759,10 @@ DEFERRED is passed to `eglot--async-request', which see."
                  (eglot--async-request
                   server method params
                   :success-fn (lambda (result) (throw done `(done ,result)))
-                  :timeout-fn (lambda () (throw done '(error "Timed out")))
+                  :timeout-fn (lambda () (throw done
+                                                `(error
+                                                  ,(format "Request id=%s timed out"
+                                                           (car id-and-timer)))))
                   :error-fn (eglot--lambda (&key code message _data)
                               (throw done `(error
                                             ,(format "Ooops: %s: %s" code message))))
@@ -868,8 +871,8 @@ under cursor."
              for feat in feats
              for probe = (plist-member caps feat)
              if (not probe) do (cl-return nil)
-             if (eq (cadr probe) t) do (cl-return t)
              if (eq (cadr probe) :json-false) do (cl-return nil)
+             if (not (listp (cadr probe))) do (cl-return (cadr probe))
              finally (cl-return (or probe t)))))
 
 (defun eglot--range-region (range &optional markers)
@@ -1040,14 +1043,14 @@ Uses THING, FACE, DEFS and PREPEND."
 
 ;;; Protocol implementation (Requests, notifications, etc)
 ;;;
-(defun eglot-shutdown (server &optional _interactive)
+(defun eglot-shutdown (server &optional _interactive timeout)
   "Politely ask SERVER to quit.
-Forcefully quit it if it doesn't respond.  Don't leave this
-function with the server still running."
+Forcefully quit it if it doesn't respond within TIMEOUT seconds.
+Don't leave this function with the server still running."
   (interactive (list (eglot--current-server-or-lose) t))
   (eglot--message "Asking %s politely to terminate" (eglot--name server))
   (unwind-protect
-      (let ((eglot-request-timeout 3))
+      (let ((eglot-request-timeout (or timeout 1.5)))
         (setf (eglot--shutdown-requested server) t)
         (eglot--request server :shutdown nil)
         ;; this one is supposed to always fail, hence ignore-errors

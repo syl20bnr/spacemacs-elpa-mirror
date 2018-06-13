@@ -12,12 +12,7 @@ Basic steps to setup:
        (global-set-key  "\C-ctp" 'tfsmacs-pendingchanges)
        (global-set-key  "\C-cto" 'tfsmacs-checkout)
        (global-set-key  "\C-cti" 'tfsmacs-checkin)
-       (global-set-key  "\C-ctr" 'tfsmacs-rename)
-       (global-set-key  "\C-ctg" 'tfsmacs-get)
-       (global-set-key  "\C-cth" 'tfsmacs-history)
-       (global-set-key  "\C-ctc" 'tfsmacs-changeset)
-       (global-set-key  "\C-ctu" 'tfsmacs-undo)
-       (global-set-key  "\C-ct-" 'tfsmacs-delete)
-       (global-set-key  "\C-ct+" 'tfsmacs-add)
+       ; etc.
+
 For a detailed user manual see:
 https://github.com/sebasmonia/tfsmacs/blob/master/README.md

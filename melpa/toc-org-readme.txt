@@ -14,4 +14,3 @@ And every time you'll be saving an org file, the first headline with a :TOC:
 tag will be updated with the current table of contents.
 
 For details, see https://github.com/snosov1/toc-org
-
