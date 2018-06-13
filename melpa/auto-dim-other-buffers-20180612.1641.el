@@ -8,7 +8,7 @@
 ;;	Michal Nazarewicz <mina86@mina86.com>
 ;; Maintainer: Michal Nazarewicz <mina86@mina86.com>
 ;; URL: https://github.com/mina86/auto-dim-other-buffers.el
-;; Package-Version: 20170925.1208
+;; Package-Version: 20180612.1641
 ;; Version: 1.8
 
 ;; This file is not part of GNU Emacs.
@@ -55,7 +55,8 @@
 
 ;;; Code:
 
-(defface auto-dim-other-buffers-face '((t :background "black"))
+(defface auto-dim-other-buffers-face
+  '((((background light)) :background "#eff") (t :background "#122"))
   "Face (presumably dimmed somehow) for non-current buffers."
   :group 'auto-dim-other-buffers)
 
@@ -82,16 +83,18 @@ Currently only mini buffer and echo areas are ignored."
 (defvar-local adob--face-mode-remapping nil
   "Current remapping cookie for `auto-dim-other-buffers-mode'.")
 
-(defun adob--dim-buffer (dim)
-  "Dim (if DIM is non-nil) or undim (otherwise) current buffer."
-  (when (cond ((and dim (not adob--face-mode-remapping))
-               (setq adob--face-mode-remapping
-                     (face-remap-add-relative 'default
-                                              'auto-dim-other-buffers-face)))
-              ((and (not dim) adob--face-mode-remapping)
-               (face-remap-remove-relative adob--face-mode-remapping)
-               (setq adob--face-mode-remapping nil)
-               t))
+(defun adob--dim-buffer ()
+  "Dim current buffer if not already dimmed."
+  (when (not adob--face-mode-remapping)
+    (setq adob--face-mode-remapping
+          (face-remap-add-relative 'default 'auto-dim-other-buffers-face))
+    (force-window-update (current-buffer))))
+
+(defun adob--undim-buffer ()
+  "Undim current buffer if dimmed."
+  (when adob--face-mode-remapping
+    (face-remap-remove-relative adob--face-mode-remapping)
+    (setq adob--face-mode-remapping nil)
     (force-window-update (current-buffer))))
 
 (defun adob--buffer-list-update-hook ()
@@ -107,10 +110,10 @@ Currently only mini buffer and echo areas are ignored."
       (and (buffer-live-p adob--last-buffer)
            (not (adob--never-dim-p adob--last-buffer))
            (with-current-buffer adob--last-buffer
-             (adob--dim-buffer t)))
+             (adob--dim-buffer)))
       ;; Undim the new buffer.
       (with-current-buffer buf
-        (adob--dim-buffer nil))
+        (adob--undim-buffer))
       (setq adob--last-buffer buf))))
 
 (defun adob--focus-out-hook ()
@@ -121,7 +124,7 @@ Currently only mini buffer and echo areas are ignored."
 (defun adob--focus-in-hook ()
   "Undim current buffers if `auto-dim-other-buffers-dim-on-focus-out'."
   (when auto-dim-other-buffers-dim-on-focus-out
-    (adob--dim-buffer nil)
+    (adob--undim-buffer)
     (setq adob--last-buffer (current-buffer))))
 
 (defun adob--dim-all-buffers (dim)
@@ -132,7 +135,7 @@ function."
     (dolist (buffer (buffer-list))
       (unless (adob--never-dim-p buffer)
         (set-buffer buffer)
-        (adob--dim-buffer dim)))))
+        (if dim (adob--dim-buffer) (adob--undim-buffer))))))
 
 (defun adob--hooks (callback)
   "Add (if CALLBACK is `add-hook') or remove (if `remove-hook') adob hooks."

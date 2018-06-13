@@ -5,7 +5,7 @@
 ;; Author: Pierre Neidhardt <ambrevar@gmail.com>
 ;; Maintainer: Pierre Neidhardt <ambrevar@gmail.com>
 ;; URL: https://gitlab.com/Ambrevar/mu4e-conversation
-;; Package-Version: 20180612.544
+;; Package-Version: 20180613.325
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: mail, convenience, mu4e
@@ -26,16 +26,26 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; In this file we define mu4e-conversation-mode (+ helper functions), which is
+;; In this file we define `mu4e-conversation' (+ helper functions), which is
 ;; used for viewing all e-mail messages of a thread in a single buffer.
+;;
+;; From the headers view, run the command `mu4e-conversation'.
+;;
+;; To fully replace `mu4e-view' with `mu4e-conversation' from any other command
+;; (e.g. `mu4e-headers-next', `helm-mu'), call
+;;
+;;   (setq mu4e-view-func 'mu4e-conversation)
+
+;;; Code:
 
 ;; TODO: Overrides are not commended.  Use unwind-protect to set handlers?  I don't think it would work.
 ;; TODO: Only mark visible messages as read.
 ;; TODO: Indent user messages?
 ;; TODO: Detect subject changes.
 ;; TODO: Check out mu4e gnus view.
+;; TODO: Should we reply to the selected message or to the last?  Make it an option: 'current, 'last, 'ask.
+;; TODO: Does toggle-display HTML work?
 
-;;; Code:
 (require 'mu4e)
 (require 'rx)
 (require 'outline)
@@ -122,30 +132,48 @@ If less than 0, don't limit the number of colors."
   :type 'integer
   :group 'mu4e-conversation)
 
-;; TODO: Maybe we need multiple maps: a common one, and one for each view.
-(defcustom mu4e-conversation-mode-map
+(defcustom mu4e-conversation-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "[") 'mu4e-conversation-previous-message)
-    (define-key map (kbd "]") 'mu4e-conversation-next-message)
     (define-key map (kbd "V") 'mu4e-conversation-toggle-view)
-    (define-key map (kbd "q") 'mu4e-conversation-quit)
     (define-key map (kbd "#") 'mu4e-conversation-toggle-hide-cited)
-    ;; TODO: Should we reply to the selected message or to the last?  Make it an option: 'current, 'last, 'ask.
-    ;; TODO: Binding to switch to regular view?
-    ;; TODO: Bind "h" to show-html?
     map)
-  "Map for `mu4e-conversation-mode'."
+  "Map for `mu4e-conversation'."
   :type 'key-sequence
   :group 'mu4e-conversation)
 
-(define-minor-mode mu4e-conversation-mode
-  "Minor mode for `mu4e-conversation' buffers."
-  :keymap mu4e-conversation-mode-map)
+(defcustom mu4e-conversation-linear-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c C-p") 'mu4e-conversation-previous-message)
+    (define-key map (kbd "C-c C-n") 'mu4e-conversation-next-message)
+    (define-key map (kbd "q") 'mu4e~view-quit-buffer)
+    map)
+  "Map for `mu4e-conversation' in linear view."
+  :type 'key-sequence
+  :group 'mu4e-conversation)
 
-(defun mu4e-conversation-previous-message ()
-  "Go to previous message in linear view."
-  (interactive)
-  (mu4e-conversation-next-message -1))
+(defcustom mu4e-conversation-tree-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "q") 'mu4e-conversation-quit)
+    (define-key map (kbd "C") 'mu4e-compose-new)
+    (define-key map (kbd "R") 'mu4e-compose-reply)
+    (define-key map (kbd "E") 'mu4e-compose-edit)
+    (define-key map (kbd "F") 'mu4e-compose-forward)
+    (define-key map (kbd ".") 'mu4e-view-raw-message)
+    (define-key map (kbd "A") 'mu4e-view-attachment-action)
+    (define-key map (kbd "a") 'mu4e-view-action)
+    (define-key map (kbd "|") 'mu4e-view-pipe)
+    (define-key map (kbd "M-q") 'mu4e-view-fill-long-lines)
+    map)
+  "Map for `mu4e-conversation' in tree view."
+  :type 'key-sequence
+  :group 'mu4e-conversation)
+
+(defun mu4e-conversation-previous-message (&optional count)
+  "Go to previous message in linear view.
+With numeric prefix argument or if COUNT is given, move that many
+messages.  A negative COUNT goes forwards."
+  (interactive "p")
+  (mu4e-conversation-next-message (if count (- count) -1)))
 
 (defun mu4e-conversation-next-message (&optional count)
   "Go to next message in linear view.
@@ -175,8 +203,7 @@ messages.  A negative COUNT goes backwards."
 (defun mu4e-conversation-quit ()
   "Quit conversation window."
   (interactive)
-  (unless (eq major-mode 'mu4e-view-mode)
-    (mu4e-view-mode))
+  (mu4e-view-mode)
   (mu4e~view-quit-buffer))
 
 (defun mu4e-conversation-toggle-view ()
@@ -191,8 +218,6 @@ messages.  A negative COUNT goes backwards."
   "Display the thread in the `mu4e-conversation--buffer-name' buffer."
   ;; See the docstring of `mu4e-message-field-raw'.
   (switch-to-buffer (get-buffer-create mu4e~view-buffer-name))
-  (view-mode 0)
-  (erase-buffer)
   (let* ((current-message-pos 0)
          (index 0)
          (filter (lambda (seq) (if (eq mu4e-conversation-print-message-function 'mu4e-conversation-print-message-linear)
@@ -203,7 +228,10 @@ messages.  A negative COUNT goes backwards."
                                                         (mu4e-message-field msg2 :date))))
                                  seq)))
          (mu4e-conversation--thread (funcall filter mu4e-conversation--thread))
-         (mu4e-conversation--thread-headers (funcall filter mu4e-conversation--thread-headers)))
+         (mu4e-conversation--thread-headers (funcall filter mu4e-conversation--thread-headers))
+         (inhibit-read-only t))
+    (erase-buffer)
+    (delete-all-overlays)
     (dolist (msg mu4e-conversation--thread)
       (when (= (mu4e-message-field msg :docid)
                (mu4e-message-field mu4e-conversation--current-message :docid))
@@ -218,14 +246,14 @@ messages.  A negative COUNT goes backwards."
       (setq index (1+ index))
       (goto-char (point-max)))
     (goto-char current-message-pos)
-    (recenter))
-  (mu4e~view-make-urls-clickable)       ; TODO: Don't discard sender face.
-  (setq header-line-format (propertize
-                            (mu4e-message-field (car mu4e-conversation--thread) :subject)
-                            'face 'bold))
-  (add-to-invisibility-spec '(mu4e-conversation-quote . t))
-  (view-mode 1)
-  (mu4e-conversation-mode))
+    (recenter)
+    (unless (eq major-mode 'org-mode)
+      (mu4e~view-make-urls-clickable))     ; TODO: Don't discard sender face.
+    (setq header-line-format (propertize
+                              (mu4e-message-field (car mu4e-conversation--thread) :subject)
+                              'face 'bold))
+    (add-to-invisibility-spec '(mu4e-conversation-quote . t)))
+  (read-only-mode 1))
 
 (defun mu4e-conversation--get-message-face (index)
   "Map 'from' addresses to 'sender-N' faces in chronological
@@ -284,12 +312,14 @@ E-mails whose sender is in `mu4e-user-mail-address-list' are skipped."
           (unless (eobp)
             ;; Optional gap.
             (while (and (not (eobp))
-                        (string-match "^[ \t]*$" (buffer-substring-no-properties
+                        (string-match (rx line-start (* (any space)) line-end)
+                                      (buffer-substring-no-properties
                                                   (line-beginning-position)
                                                   (line-end-position))))
               (forward-line))
             (if (or (eobp)
-                    (string-match "^--[ \t]*$" (buffer-substring-no-properties
+                    (string-match (rx line-start "--" (* (any space)) line-end)
+                                  (buffer-substring-no-properties
                                                 (line-beginning-position)
                                                 (line-end-position))))
                 ;; Found signature or end of buffer, no need to continue.
@@ -304,10 +334,10 @@ E-mails whose sender is in `mu4e-user-mail-address-list' are skipped."
 
 (defun mu4e-conversation-print-message-linear (index)
   "Insert formatted message found at INDEX in `mu4e-conversation--thread'."
-  ;; See the docstring of `mu4e-message-field-raw'.
   (unless (eq major-mode 'mu4e-view-mode)
     (mu4e-view-mode)
-    (read-only-mode 0))                 ; TODO: Set inhibit-read-only to t instead?
+    (use-local-map (make-composed-keymap (list mu4e-conversation-linear-map mu4e-conversation-map)
+                                         mu4e-view-mode-map)))
   (let* ((msg (nth index mu4e-conversation--thread))
          (from (car (mu4e-message-field msg :from)))
          (from-me-p (member (cdr from) mu4e-user-mail-address-list))
@@ -333,30 +363,56 @@ E-mails whose sender is in `mu4e-user-mail-address-list' are skipped."
 
 (defun mu4e-conversation-print-message-tree (index)
   "Insert formatted message found at INDEX in `mu4e-conversation--thread'."
-  ;; See the docstring of `mu4e-message-field-raw'.
   (unless (eq major-mode 'org-mode)
     (insert "#+SEQ_TODO: UNREAD READ\n\n") ; TODO: Is it possible to set `org-todo-keywords' locally?
-    (org-mode))
+    (org-mode)
+    (use-local-map (make-composed-keymap (list mu4e-conversation-tree-map mu4e-conversation-map)
+                                         org-mode-map)))
   (let* ((msg (nth index mu4e-conversation--thread))
          (msg-header (nth index mu4e-conversation--thread-headers))
          (from (car (mu4e-message-field msg :from)))
          (from-me-p (member (cdr from) mu4e-user-mail-address-list))
          (level (plist-get (mu4e-message-field msg-header :thread) :level))
          (org-level (make-string (1+ level) ?*)))
-    (insert (format "%s %s%s, %s %s\n"
-                    org-level
-                    (if (memq 'unread (mu4e-message-field msg :flags))
-                        "UNREAD "
-                      "")
-                    (mu4e-conversation--from-name msg)
-                    (current-time-string (mu4e-message-field msg :date))
-                    (mu4e-message-field msg :flags))
-            ;; TODO: Put quote in subsection / property?
-            ;; Prefix "*" at the beginning of lines with a space to prevent them
-            ;; from being interpreted as Org sections.
-            (replace-regexp-in-string (rx line-start "*") " *"
-                                      (mu4e-message-body-text msg))
-            "\n")))
+    (let ((header (format "%s %s%s, %s %s\n"
+                          org-level
+                          (if (memq 'unread (mu4e-message-field msg :flags))
+                              "UNREAD "
+                            "")
+                          (mu4e-conversation--from-name msg)
+                          (current-time-string (mu4e-message-field msg :date))
+                          (mu4e-message-field msg :flags)))
+          (body
+           (concat
+            ;; Use Org syntax for quoting.  TODO: How to nest quotes?
+            (replace-regexp-in-string
+             (rx line-start "--8<---------------cut here---------------start------------->8---" line-end) "#+begin_src"
+             (replace-regexp-in-string
+              (rx line-start "--8<---------------cut here---------------end--------------->8---" line-end) "#+end_src"
+              (replace-regexp-in-string
+               (rx line-start ">" (* space)) ": "
+               ;; Prefix "*" at the beginning of lines with a space to prevent them
+               ;; from being interpreted as Org sections.
+               (replace-regexp-in-string
+                (rx line-start "*") " *"
+                ;; TODO: Propertize HTML links.
+                (mu4e-message-body-text msg)))))
+            "\n"
+            (let ((attachments (mu4e~view-construct-attachments-header msg)))
+              ;; TODO: Propertize attachments.
+              (if attachments
+                  (format "
+:PROPERTIES:
+:ATTACHMENTS: %s
+:END:
+"
+                          attachments)
+                "")))))
+      ;; TODO: Put cited text and attachments in subsection / property?
+      ;; To use mu4e-conversation-unread on body, we would need to override Org faces.
+      (let ((s (concat header body)))
+        (add-text-properties 0 (length s) (list 'msg msg) s)
+        (insert s)))))
 
 (defun mu4e-conversation-view-handler (msg)
   "Handler function for displaying a message."
@@ -385,7 +441,6 @@ See `mu4e~proc-filter'"
   (advice-remove mu4e-header-func 'mu4e-conversation-header-handler)
   (advice-remove mu4e-erase-func 'mu4e-conversation-erase-handler)
   (advice-remove mu4e-found-func 'mu4e-conversation-found-handler)
-  ;; TODO: Check if current buffer is mu4e-headers?
   (setq mu4e-conversation--thread nil)
   (advice-add mu4e-view-func :override 'mu4e-conversation-view-handler)
   (dolist (msg mu4e-conversation--thread-headers)

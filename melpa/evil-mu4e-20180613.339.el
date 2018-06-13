@@ -6,7 +6,7 @@
 ;; Author: Joris Engbers <info@jorisengbers.nl>
 ;; Homepage: https://github.com/JorisE/evil-mu4e
 ;; Version: 0.0.8
-;; Package-Version: 20180610.1332
+;; Package-Version: 20180613.339
 ;; Package-Requires: ((emacs "24.4") (evil "1.2.10"))
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -110,6 +110,7 @@
     (,evil-mu4e-state mu4e-main-mode-map "A"               mu4e-about)
     (,evil-mu4e-state mu4e-main-mode-map "f"               smtpmail-send-queued-mail)
     (,evil-mu4e-state mu4e-main-mode-map "m"               mu4e~main-toggle-mail-sending-mode)
+    (,evil-mu4e-state mu4e-main-mode-map "s"               mu4e-headers-search)
     (,evil-mu4e-state mu4e-main-mode-map "q"               mu4e-quit)
 
     (,evil-mu4e-state mu4e-headers-mode-map "q"            mu4e~headers-quit-buffer)
@@ -152,6 +153,8 @@
     (,evil-mu4e-state mu4e-headers-mode-map "-"            mu4e-headers-mark-for-unflag)
     (,evil-mu4e-state mu4e-headers-mode-map "["            mu4e-headers-prev-unread)
     (,evil-mu4e-state mu4e-headers-mode-map "]"            mu4e-headers-next-unread)
+    (,evil-mu4e-state mu4e-headers-mode-map "gk"           mu4e-headers-prev-unread)
+    (,evil-mu4e-state mu4e-headers-mode-map "gj"           mu4e-headers-next-unread)
     (,evil-mu4e-state mu4e-headers-mode-map "\C-j"         mu4e-headers-next)
     (,evil-mu4e-state mu4e-headers-mode-map "\C-k"         mu4e-headers-prev)
     (,evil-mu4e-state mu4e-headers-mode-map "zr"           mu4e-headers-toggle-include-related)
@@ -189,6 +192,8 @@
     (,evil-mu4e-state mu4e-view-mode-map "J"               mu4e~headers-jump-to-maildir)
     (,evil-mu4e-state mu4e-view-mode-map "["               mu4e-view-headers-prev-unread)
     (,evil-mu4e-state mu4e-view-mode-map "]"               mu4e-view-headers-next-unread)
+    (,evil-mu4e-state mu4e-view-mode-map "gk"              mu4e-view-headers-prev-unread)
+    (,evil-mu4e-state mu4e-view-mode-map "gj"              mu4e-view-headers-next-unread)
     (,evil-mu4e-state mu4e-view-mode-map "\C-j"            mu4e-view-headers-next)
     (,evil-mu4e-state mu4e-view-mode-map "\C-k"            mu4e-view-headers-prev)
     (,evil-mu4e-state mu4e-view-mode-map "x"               mu4e-view-marked-execute)

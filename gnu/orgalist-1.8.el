@@ -6,7 +6,7 @@
 ;; Maintainer: Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "24.4"))
-;; Version: 1.7
+;; Version: 1.8
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -147,6 +147,17 @@ before it is checked too."
   :group 'orgalist
   :type 'boolean
   :safe #'booleanp)
+
+(defcustom orgalist-separated-items 'auto
+  "When non-nil, insert an empty line before every new item.
+When set to `auto', guess if an empty line is necessary according
+to the other items in the list, or default to none if there is
+not enough information."
+  :group 'orgalist
+  :type '(choice (cons :tag "None" nil)
+                 (cons :tag "Always" t)
+                 (cons :tag "Auto" auto))
+  :safe #'symbolp)
 
 (defcustom orgalist-radio-list-templates
   '((latex-mode "% BEGIN RECEIVE ORGLST %n
@@ -763,10 +774,15 @@ C-c C-c         `orgalist-check-item'"
    (orgalist-mode
     (when (derived-mode-p 'org-mode)
       (user-error "Cannot activate Orgalist mode in an Org buffer"))
+    (setq-local org-blank-before-new-entry
+                `((plain-list-item . ,orgalist-separated-items)))
     (setq-local org-list-allow-alphabetical t)
     (setq-local org-list-automatic-rules nil)
     (setq-local org-list-demote-modify-bullet nil)
+    (setq-local org-list-description-max-indent 5)
+    (setq-local org-list-indent-offset 0)
     (setq-local org-list-two-spaces-after-bullet-regexp nil)
+    (setq-local org-list-use-circular-motion nil)
     (setq-local org-plain-list-ordered-item-terminator ?.)
     (add-function :before-until
                   (local 'fill-paragraph-function)
@@ -1060,6 +1076,25 @@ for this list."
 
 ;;;; ChangeLog:
 
+;; 2018-06-12  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Bump to version 1.8
+;; 
+;; 2018-06-12  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Set some Org variables so behaviour is predictable
+;; 
+;; 	* orgalist.el (orgalist-mode): Set some variables from "org-list.el"
+;; 	 so that Orgalist behavior does not depend on the behavior of plain
+;; 	 lists in Org buffers.
+;; 
+;; 2018-06-12  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
+;; 
+;; 	Control empty lines between items
+;; 
+;; 	* orgalist.el (orgalist-separated-items): New variable.
+;; 	(orgalist-mode): Use new variable.
+;; 
 ;; 2018-05-07  Nicolas Goaziou  <mail@nicolasgoaziou.fr>
 ;; 
 ;; 	Bump to version 1.7
