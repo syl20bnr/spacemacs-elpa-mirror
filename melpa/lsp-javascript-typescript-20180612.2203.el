@@ -4,7 +4,7 @@
 
 ;; Author: George Pittarelli <g@gjp.cc>
 ;; Version: 1.0
-;; Package-Version: 20180521.2205
+;; Package-Version: 20180612.2203
 ;; Package-Requires: ((lsp-mode "3.0") (typescript-mode "0.1") (emacs "25.1"))
 ;; Keywords: languages tools
 ;; URL: https://github.com/emacs-lsp/lsp-javascript
@@ -32,9 +32,32 @@
 (require 'lsp-mode)
 (require 'typescript-mode)
 
+;;;###autoload
+(defcustom lsp-javascript-typescript-server
+  "javascript-typescript-stdio"
+  "The javascript-typescript-stdio executable to use.
+Leave as just the executable name to use the default behavior of
+finding the executable with `exec-path'."
+  :group 'lsp-javascript-typescript
+  :risky t
+  :type 'file)
+
+;;;###autoload
+(defcustom lsp-javascript-typescript-server-args
+  '()
+  "Extra arguments for the javascript-typescript-stdio language server"
+  :group 'lsp-javascript-typescript
+  :risky t
+  :type '(repeat string))
+
 (defconst lsp-javascript-typescript--get-root
   (lsp-make-traverser #'(lambda (dir)
 						  (directory-files dir nil "package.json"))))
+
+(defun lsp-javascript-typescript--ls-command ()
+  "Generate the language server startup command."
+  `(,lsp-javascript-typescript-server
+    ,@lsp-javascript-typescript-server-args))
 
 (defun lsp-javascript-typescript--render-string (str)
   (ignore-errors
@@ -50,10 +73,13 @@
   (lsp-provide-marked-string-renderer
    client "javascript" 'lsp-javascript-typescript--render-string))
 
-(lsp-define-stdio-client lsp-javascript-typescript "javascript"
-                         lsp-javascript-typescript--get-root '("javascript-typescript-stdio")
-                         :ignore-messages '("readFile .*? requested by TypeScript but content not available")
-                         :initialize 'lsp-javascript-typescript--initialize-client)
+(lsp-define-stdio-client
+ lsp-javascript-typescript "javascript"
+ lsp-javascript-typescript--get-root
+ nil
+ :ignore-messages '("readFile .*? requested by TypeScript but content not available")
+ :initialize 'lsp-javascript-typescript--initialize-client
+ :command-fn 'lsp-javascript-typescript--ls-command)
 
 (provide 'lsp-javascript-typescript)
 ;;; lsp-javascript-typescript.el ends here

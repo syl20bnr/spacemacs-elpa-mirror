@@ -2,7 +2,7 @@
 
 ;; Author: Derek Feichtinger <dfeich@gmail.com>
 ;; Keywords: convenience
-;; Package-Version: 20180612.1215
+;; Package-Version: 20180612.2226
 ;; Package-Requires: ((cl-lib "0.5") (seq "2.3") (emacs "24.4"))
 ;; Homepage: https://github.com/dfeich/org-listcruncher
 ;; Version: 0.2
@@ -73,9 +73,17 @@
   :group 'org)
 
 (defcustom org-listcruncher-parse-fn #'org-listcruncher-parseitem-default
-  "Function used for parsing list items."
+  "Function used for parsing list items.
+
+The function receives a list item as its single argument.  It must
+return a list (OUTP, DESCR, VARLST), where OUTP is a boolean
+indicating whether this list item will become a table row, DESCR
+is its description string appearing in the table, VARLST is the
+list of key/value pairs corresponding to the column name /
+values.  Refer to the default function
+`org-listcruncher-parseitem-default'."
   :group 'org-listcruncher
-  :type '(function))
+  :type 'function)
 
 (defcustom org-listcruncher-consolidate-fn #'org-listcruncher-consolidate-default
   "Function for consolidating a sequence of values for a certain key.

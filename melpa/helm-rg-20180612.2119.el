@@ -14,7 +14,7 @@
 
 ;; Author: Danny McClanahan
 ;; Version: 0.1
-;; Package-Version: 20180531.1421
+;; Package-Version: 20180612.2119
 ;; URL: https://github.com/cosmicexplorer/helm-rg
 ;; Package-Requires: ((emacs "25") (helm "2.8.8") (cl-lib "0.5") (dash "2.13.0"))
 ;; Keywords: find, file, files, helm, fast, rg, ripgrep, grep, search
@@ -1751,7 +1751,8 @@ The buffer has already been advanced to the appropriate line."
   (pcase-exhaustive default-directory-spec
     ('default default-directory)
     ('git-root (helm-rg--get-git-root))
-    ((pred stringp) (helm-rg--check-directory-path))))
+    ;; TODO: add a test for this function for all values of the directory spec (see #5)!
+    ((pred stringp) (helm-rg--check-directory-path default-directory-spec))))
 
 (defun helm-rg--set-case-sensitivity ()
   (interactive)
