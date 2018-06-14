@@ -1,10 +1,10 @@
-;;; use-package-ensure-system-package.el --- auto install system packages  -*- lexical: t; -*-
+;;; use-package-ensure-system-package.el --- auto install system packages  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2017 Justin Talbott
 
 ;; Author: Justin Talbott <justin@waymondo.com>
 ;; Keywords: convenience, tools, extensions
-;; Package-Version: 20180519.1448
+;; Package-Version: 20180613.2219
 ;; URL: https://github.com/waymondo/use-package-ensure-system-package
 ;; Version: 0.1
 ;; Package-Requires: ((use-package "2.1") (system-packages "1.0.4"))
@@ -44,10 +44,10 @@
             (use-package-ensure-system-package-install-command (symbol-name (cdr arg))))))))
 
 ;;;###autoload
-(defun use-package-normalize/:ensure-system-package (name-symbol keyword args)
+(defun use-package-normalize/:ensure-system-package (_name-symbol keyword args)
   "Turn `arg' into a list of cons-es of (`package-name' . `install-command')."
   (use-package-only-one (symbol-name keyword) args
-    (lambda (label arg)
+    (lambda (_label arg)
       (cond
        ((and (listp arg) (listp (cdr arg)))
         (mapcar #'use-package-ensure-system-package-consify arg))
@@ -55,7 +55,7 @@
         (list (use-package-ensure-system-package-consify arg)))))))
 
 ;;;###autoload
-(defun use-package-handler/:ensure-system-package (name keyword arg rest state)
+(defun use-package-handler/:ensure-system-package (name _keyword arg rest state)
   "Execute the handler for `:ensure-system-package' keyword in `use-package'."
   (let ((body (use-package-process-keywords name rest state)))
     (use-package-concat

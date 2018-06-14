@@ -1,10 +1,10 @@
-;;; use-package-chords.el --- key-chord keyword for use-package
+;;; use-package-chords.el --- key-chord keyword for use-package  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015-2017 Justin Talbott
 
 ;; Author: Justin Talbott <justin@waymondo.com>
 ;; Keywords: convenience, tools, extensions
-;; Package-Version: 20180127.1413
+;; Package-Version: 20180613.2219
 ;; URL: https://github.com/waymondo/use-package-chords
 ;; Version: 0.2
 ;; Package-Requires: ((use-package "2.1") (bind-key "1.0") (bind-chord "0.2") (key-chord "0.6"))
