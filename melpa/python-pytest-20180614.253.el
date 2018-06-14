@@ -1,8 +1,8 @@
 ;;; python-pytest.el --- helpers to run pytest -*- lexical-binding: t; -*-
 
 ;; Author: wouter bolsterlee <wouter@bolsterl.ee>
-;; Version: 0.3.1
-;; Package-Version: 20180503.716
+;; Version: 1.0.0
+;; Package-Version: 20180614.253
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (dash-functional "2.12.0") (magit-popup "2.12.0") (projectile "0.14.0") (s "1.12.0"))
 ;; Keywords: pytest, test, python, languages, processes, tools
 ;; URL: https://github.com/wbolster/emacs-python-pytest
