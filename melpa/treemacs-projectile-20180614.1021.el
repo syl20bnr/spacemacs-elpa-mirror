@@ -4,7 +4,7 @@
 
 ;; Author: Alexander Miller <alexanderm@web.de>
 ;; Package-Requires: ((projectile "0.14.0") (treemacs "0"))
-;; Package-Version: 20180531.501
+;; Package-Version: 20180614.1021
 ;; Package-X-Original-Version: 0
 ;; Homepage: https://github.com/Alexander-Miller/treemacs
 
@@ -34,7 +34,8 @@
   "Add one of `projectile-known-projects' to the treemacs workspace."
   (interactive)
   (if (and (bound-and-true-p projectile-known-projects)
-           (listp projectile-known-projects))
+           (listp projectile-known-projects)
+           projectile-known-projects)
       (treemacs--init (completing-read "Project: " projectile-known-projects))
     (treemacs-pulse-on-failure "It looks like projectile does not know any projects.")))
 
@@ -45,7 +46,10 @@
 This version will read a directory based on the current project root instead of
 the current dir."
   (when (treemacs-workspace->is-empty?)
-    (read-directory-name "Project root: " (projectile-project-root))))
+    (read-directory-name "Project root: "
+                         (condition-case _
+                             (projectile-project-root)
+                           (error nil)))))
 
 (provide 'treemacs-projectile)
 

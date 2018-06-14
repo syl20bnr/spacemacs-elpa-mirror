@@ -1,4 +1,4 @@
-;;; el-patch.el --- Future-proof your Emacs Lisp customizations!
+;;; el-patch.el --- Future-proof your Elisp. -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2016 Radon Rosborough
 
@@ -6,7 +6,7 @@
 ;; Created: 31 Dec 2016
 ;; Homepage: https://github.com/raxod502/el-patch
 ;; Keywords: extensions
-;; Package-Version: 20180510.1049
+;; Package-Version: 20180603.1923
 ;; Package-Requires: ((emacs "25"))
 ;; Version: 2.0
 
@@ -65,8 +65,7 @@
 This means that `el-patch-defvar', `el-patch-defconst', and
 `el-patch-defcustom' will unbind the old variable definition
 before evaluating the new one."
-  :type 'boolean
-  :group 'el-patch)
+  :type 'boolean)
 
 (defcustom el-patch-require-function #'require
   "Function to `require' a feature in `el-patch-pre-validate-hook'.
@@ -75,8 +74,7 @@ quoted literals, and it should load the feature. This function
 might be useful if, for example, some of your features are
 provided by lazy-installed packages, and those packages need to
 be installed before the features can be loaded."
-  :type 'function
-  :group 'el-patch)
+  :type 'function)
 
 ;;;; Internal variables
 
@@ -263,8 +261,7 @@ Also run before `el-patch-validate' if a prefix argument is
 provided. This hook should contain functions that make sure all
 of your patches are defined (for example, you might need to load
 some features if your patches are lazily defined)."
-  :type 'hook
-  :group 'el-patch)
+  :type 'hook)
 
 (defcustom el-patch-post-validate-hook nil
   "Hook run after `el-patch-validate-all'.
@@ -273,8 +270,7 @@ provided. This hook should contain functions that undo any
 patching that might have taken place in
 `el-patch-pre-validate-hook', if you do not want the patches to
 be defined permanently."
-  :type 'hook
-  :group 'el-patch)
+  :type 'hook)
 
 (defun el-patch--classify-definition-type (type)
   "Classifies a definition TYPE as a `function' or `variable'.
@@ -587,6 +583,7 @@ In the original definition, the ARGS and their containing form
 are removed. In the new definition, the ARGS are spliced into the
 containing s-expression."
   (declare (indent 0))
+  (ignore args)
   `(error "Can't use `el-patch-add' outside of an `el-patch'"))
 
 ;;;###autoload
@@ -596,6 +593,7 @@ In the original definition, the ARGS are spliced into the
 containing s-expression. In the new definition, the ARGS and
 their containing form are removed."
   (declare (indent 0))
+  (ignore args)
   `(error "Can't use `el-patch-remove' outside of an `el-patch'"))
 
 ;;;###autoload
@@ -604,6 +602,7 @@ their containing form are removed."
 In the original definition, OLD is spliced into the containing
 s-expression. In the new definition, NEW is spliced instead."
   (declare (indent 0))
+  (ignore old new)
   `(error "Can't use `el-patch-swap' outside of an `el-patch'"))
 
 ;;;###autoload
@@ -619,6 +618,7 @@ the ARGS are removed first. If TRIMR is provided, the last TRIMR
 are also removed. In the new definition, the ARGS and their
 containing list are spliced into the containing s-expression."
   (declare (indent defun))
+  (ignore triml trimr args)
   `(error "Can't use `el-patch-wrap' outside of an `el-patch'"))
 
 ;;;###autoload
@@ -635,6 +635,7 @@ s-expression. If TRIML is provided, the first TRIML of the ARGS
 are removed first. If TRIMR is provided, the last TRIMR are also
 removed."
   (declare (indent defun))
+  (ignore triml trimr args)
   `(error "Can't use `el-patch-splice' outside of an `el-patch'"))
 
 ;;;###autoload
@@ -646,6 +647,7 @@ that are also patch directives, but the bindings will not have
 effect if the symbols are used at the beginning of a list (they
 will act as patch directives)."
   (declare (indent 1))
+  (ignore varlist arg)
   `(error "Can't use `el-patch-let' outside of an `el-patch'"))
 
 ;;;###autoload
@@ -653,6 +655,7 @@ will act as patch directives)."
   "Patch directive for treating patch directives literally.
 Resolves to ARG, which is not processed further by el-patch."
   (declare (indent 0))
+  (ignore arg)
   `(error "Can't use `el-patch-literal' outside of an `el-patch'"))
 
 ;;;; Viewing patches
@@ -678,7 +681,7 @@ of the definition."
     (let* ((name (intern (completing-read
                           "Which patch? "
                           options
-                          (lambda (elt) t)
+                          nil
                           'require-match)))
            (patch-hash (gethash name el-patch--patches))
            (options (mapcar #'symbol-name
@@ -690,7 +693,7 @@ of the definition."
                       (_ (completing-read
                           "Which version? "
                           options
-                          (lambda (elt) t)
+                          nil
                           'require-match))))))))
 
 (defun el-patch--ediff-forms (name1 form1 name2 form2)
