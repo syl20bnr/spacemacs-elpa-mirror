@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180614.801
+;; Package-Version: 20180614.1500
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.9.0"))
 ;; Keywords: matching
@@ -25,7 +25,7 @@
 ;; see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;;
+
 ;; This package gives an overview of the current regex search
 ;; candidates.  The search regex can be split into groups with a
 ;; space.  Each group is highlighted with a different face.
@@ -34,6 +34,7 @@
 ;; lines will be matched.
 
 ;;; Code:
+
 (require 'ivy)
 
 (defgroup swiper nil

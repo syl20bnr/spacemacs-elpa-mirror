@@ -5,7 +5,7 @@
 ;; Author: Pierre Neidhardt <ambrevar@gmail.com>
 ;; Maintainer: Pierre Neidhardt <ambrevar@gmail.com>
 ;; URL: https://gitlab.com/Ambrevar/mu4e-conversation
-;; Package-Version: 20180613.325
+;; Package-Version: 20180615.214
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: mail, convenience, mu4e
@@ -29,7 +29,9 @@
 ;; In this file we define `mu4e-conversation' (+ helper functions), which is
 ;; used for viewing all e-mail messages of a thread in a single buffer.
 ;;
-;; From the headers view, run the command `mu4e-conversation'.
+;; From the headers view, run the command `mu4e-conversation'.  Call
+;; `mu4e-conversation-toggle-view' (bound to "V" by default) to switch between
+;; linear and tree view.
 ;;
 ;; To fully replace `mu4e-view' with `mu4e-conversation' from any other command
 ;; (e.g. `mu4e-headers-next', `helm-mu'), call
@@ -45,6 +47,7 @@
 ;; TODO: Check out mu4e gnus view.
 ;; TODO: Should we reply to the selected message or to the last?  Make it an option: 'current, 'last, 'ask.
 ;; TODO: Does toggle-display HTML work?
+;; TODO: Reply in-buffer?
 
 (require 'mu4e)
 (require 'rx)
