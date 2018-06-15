@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/avy
-;; Package-Version: 20180612.212
+;; Package-Version: 20180615.801
 ;; Version: 0.4.0
 ;; Package-Requires: ((emacs "24.1") (cl-lib "0.5"))
 ;; Keywords: point, location
@@ -757,13 +757,14 @@ Use OVERLAY-FN to visualize the decision overlay."
     (setq candidates
           (mapcar (lambda (x) (cons x (selected-window)))
                   candidates)))
-  (let ((res (avy--process-1 candidates overlay-fn)))
+  (let ((original-cands (copy-sequence candidates))
+        (res (avy--process-1 candidates overlay-fn)))
     (cond
       ((null res)
        (message "zero candidates")
        t)
       ((eq res 'restart)
-       (avy--process candidates overlay-fn))
+       (avy--process original-cands overlay-fn))
       ;; ignore exit from `avy-handler-function'
       ((eq res 'exit))
       (t

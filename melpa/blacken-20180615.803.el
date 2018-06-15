@@ -5,7 +5,7 @@
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; Homepage: https://github.com/proofit404/blacken
 ;; Version: 0.0.1
-;; Package-Version: 20180514.1349
+;; Package-Version: 20180615.803
 ;; Package-Requires: ((emacs "25.2"))
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -103,8 +103,9 @@ Show black output, if black exit abnormally and DISPLAY is t."
     (condition-case err
         (if (not (zerop (blacken-call-bin original-buffer tmpbuf errbuf)))
             (error "Black failed, see %s buffer for details" (buffer-name errbuf))
-          (with-current-buffer tmpbuf
-            (copy-to-buffer original-buffer (point-min) (point-max)))
+          (unless (eq (compare-buffer-substrings tmpbuf nil nil original-buffer nil nil) 0)
+            (with-current-buffer tmpbuf
+              (copy-to-buffer original-buffer (point-min) (point-max))))
           (mapc 'kill-buffer (list tmpbuf errbuf))
           (goto-char original-point)
           (set-window-start (selected-window) original-window-pos))

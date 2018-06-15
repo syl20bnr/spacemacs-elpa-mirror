@@ -65,7 +65,7 @@
 
 ;; Author: Yauhen Makei <yauhen.makei@gmail.com>
 ;; Version: 1.0.0
-;; Package-Version: 20180613.508
+;; Package-Version: 20180615.611
 ;; URL: http://bitbucket.org/EugeneMakei/belarus-holidays.el
 
 ;;; Code:
@@ -127,6 +127,7 @@ URL: https://www.emacswiki.org/emacs/ukrainian-holidays.el"
    string)))
 
 (defun belarus-holidays--easter-eastern (year)
+  "Date of Easter in YEAR."
   (let* ((x (% (+ (* (% year 19) 19) 15) 30))
 	 (day (- (+ x 10)
 		 (% (+ (/ (* year 5) 4) x) 7))))
