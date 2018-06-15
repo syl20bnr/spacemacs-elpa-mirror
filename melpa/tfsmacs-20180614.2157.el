@@ -4,9 +4,9 @@
 ;;
 ;; Author: Dino Chiesa <dpchiesa@outlook.com>, Sebastian Monia <smonia@outlook.com>
 ;; URL: http://github.com/sebasmonia/tfsmacs/
-;; Package-Version: 20180614.1539
+;; Package-Version: 20180614.2157
 ;; Package-Requires: ((emacs "25") (tablist "0.70"))
-;; Version: 1.0
+;; Version: 1.25
 ;; Keywords: tfs, vc
 
 ;; This file is not part of GNU Emacs.
@@ -51,15 +51,15 @@
   "Values for the -login option.  Ignored if empty."
   :type 'string)
 
-(defcustom tfsmacs-collection-url ""
-  "URL of the TFS Collection.  If empty, the TEE CLI will assume the collection from the existing folder mappings."
+(defcustom tfsmacs-current-workspace ""
+  "Name of the current workspace.  If empty, the TEE CLI will assume the workspace from the existing folder mappings."
   :type 'string)
 
 (defcustom tfsmacs-log-buffer-name "*TFS Log*"
   "Name of the TFS log buffer."
   :type 'string)
 
-;; with default values we will keep retrying for 15 seconds to complete the output
+;; with default values we will keep retrying for 20 seconds to complete the output
 (defcustom tfsmacs-async-command-timer 0.5
   "How often to check, in seconds, that a command has finished completing its output."
   :type 'float)
@@ -114,22 +114,28 @@
 
 (defun tfsmacs--process-command-sync-to-file (command output-filename)
   "Create a new instance of the TEE process, execute COMMAND and write output to OUTPUT-FILENAME."
-  (tfsmacs--append-to-log (format "COMMAND (sync): %s" (prin1-to-string command)))
-  ;; This used to have the collection and login parameters, but it turns out
-  ;; that the "print" command doesn't support them.
-  ;; Opened this issue: https://github.com/Microsoft/team-explorer-everywhere/issues/270
-  ;; no resolution so far (2018-06-14)
-  (with-temp-file output-filename
-    (apply 'call-process tfsmacs-cmd nil t nil command)))
+  (let* ((workspace-param (tfsmacs--get-workspace-parameter))
+         (login-param (tfsmacs--get-login-parameter))
+         (input-script (concat temporary-file-directory "input.temp"))
+         (command-string (mapconcat 'identity (append command (list workspace-param login-param)) " ")))
+    (tfsmacs--append-to-log (format "COMMAND (sync): %s" command-string))
+    (with-temp-file input-script
+      (insert command-string))
+    (with-temp-file output-filename
+      (call-process tfsmacs-cmd nil t nil (format "@%s" input-script)))))
 
 (defun tfsmacs--process-command-async (command callback)
   "Run COMMAND in the TEE CLI process and call CALLBACK once it's done.
 Output will be passed to the callback function as parameter."
-  (let* ((collection-param (tfsmacs--get-collection-parameter))
-         (login-param (tfsmacs--get-login-parameter))
-         (command-string (concat (mapconcat 'identity command " ") collection-param login-param "\n")))
-    (tfsmacs--append-to-log (concat "COMMAND: " command-string))
-    (setq command-string (concat command-string "help eula\n"))
+  (let* ((workspace-param (format " %s " (tfsmacs--get-workspace-parameter)))
+         (login-param (format " %s " (tfsmacs--get-login-parameter)))
+         (command-string ""))
+    (setq command (append command (list workspace-param login-param)))
+    ;; I prefer to do command-string in two parts to show a cleaner log
+    ;; of the commands being executed
+    (setq command-string (concat (mapconcat 'identity command " ")))
+    (tfsmacs--append-to-log (format "COMMAND (async): %s" command-string))
+    (setq command-string (concat command-string "\nhelp eula\n"))
     (setq tfsmacs--command-output-buffer "")
     (setq tfsmacs--command-retries 1)
     (message "TFS: Running command...")
@@ -168,16 +174,16 @@ If it did invoke CALLBACK, else re-schedule the function."
   "Schedule `tfsmacs--process-command-async-complete` with CALLBACK."
   (run-at-time tfsmacs-async-command-timer nil 'tfsmacs--process-command-async-complete callback))
     
-(defun tfsmacs--get-collection-parameter ()
+(defun tfsmacs--get-workspace-parameter ()
   "Return the collection parameter if configured, or empty string."
-  (if (not (string-empty-p tfsmacs-collection-url))
-      (format " -collection:%s " tfsmacs-collection-url)
+  (if (not (string-empty-p tfsmacs-current-workspace))
+      (format "-workspace:\"%s\"" tfsmacs-current-workspace)
     ""))
 
 (defun tfsmacs--get-login-parameter ()
   "Return the login parameter if configured, or empty string."
   (if (not (string-empty-p tfsmacs-login))
-      (format " -login:%s " tfsmacs-login)
+      (format "-login:%s" tfsmacs-login)
     ""))
 
 (defun tfsmacs--message-callback (cmd-output)
@@ -231,12 +237,9 @@ From: https://stackoverflow.com/questions/27284851/emacs-lisp-get-directory-name
 (defun tfsmacs--write-file-to-temp-directory (path version)
   "Write the VERSION of PATH to a temporary directory.
 It spins off a new instance of the TEE tool by calling 'tfsmacs--process-command-sync-to-file'"
-  ;; remove quotes around  path if needed.
-  (when (string-prefix-p "\"" path)
-    (setq path (substring path 1 -1)))
   (let* ((only-name (file-name-nondirectory path))
          (filename (concat temporary-file-directory version ";" only-name))
-         (command (list "print" (format "-version:%s" version) path)))
+         (command (list "print" (format "-version:%s" version) (tfsmacs--quote-string path))))
     (tfsmacs--process-command-sync-to-file command filename)
     filename))
 
@@ -528,7 +531,7 @@ The file to undo is deteremined this way:
 
 (defun tfsmacs--history-mode-get-marked-items ()
   "Return the selected items in ‘tfsmacs-history-mode’."
-  (mapcar 'tfsmacs--history-mode-quote-path (mapcar 'car (tablist-get-marked-items))))
+  (mapcar 'car (tablist-get-marked-items)))
 
 (defun tfsmacs--history-mode-get-this-version ()
   "Get the file version marked/selected in the ‘tfsmacs-history-mode’ buffer."
@@ -589,7 +592,7 @@ How the file is determined:
   (let ((files-for-history (tfsmacs--determine-target-files filename "File: ")))
     (if (equal (length files-for-history) 1)
         (let* ((source (car files-for-history))
-               (command (list "history" source)))
+               (command (list "history" (tfsmacs--quote-string source) )))
           (setq command (append command (tfsmacs--history-parameters-builder)))
           (message "TFS: Getting item history...")
           (setq tfsmacs--history-target source)
@@ -723,14 +726,14 @@ If VERSION to get is not provided, it will be prompted."
     (if (equal (length items) 1)
         (progn
           (message "TFS: Retrieving files to compare. This operation can take a few seconds.")
-          (let* ((local (substring (car items) 1 -1)) ;; these items are always quoted, remove the quotes
+          (let* ((local (car items))
                  (server (tfsmacs--write-file-to-temp-directory local "T")))
             (ediff-files local server)))
       (error "Select only one file to compare to latest version"))))
 
 (defun tfsmacs--status-mode-get-marked-items ()
   "Obtain only the path of the files selected in the list."
-  (mapcar 'tfsmacs--quote-string (mapcar 'car (tablist-get-marked-items))))
+  (mapcar 'car (tablist-get-marked-items)))
 
 (defun tfsmacs--status-mode-visit-item ()
   "Visit the file under the cursor in ‘tfsmacs-status-mode’."
@@ -751,7 +754,7 @@ If VERSION to get is not provided, it will be prompted."
     (if (derived-mode-p 'tfsmacs-status-mode)
         (tfsmacs--get-pending-changes tfsmacs--buffer-status-dir)
       (progn
-        (let* ((status-dir (tfsmacs--select-status-directory))
+        (let* ((status-dir (tfsmacs--quote-string (tfsmacs--select-status-directory)))
                (buffer (get-buffer-create "*TFS Status [running]*")))
           (with-current-buffer buffer
             (setq tfsmacs--buffer-status-dir status-dir)
