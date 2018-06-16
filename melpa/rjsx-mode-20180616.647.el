@@ -4,7 +4,7 @@
 
 ;; Author: Felipe Ochoa <felipe@fov.space>
 ;; URL: https://github.com/felipeochoa/rjsx-mode/
-;; Package-Version: 20180418.647
+;; Package-Version: 20180616.647
 ;; Package-Requires: ((emacs "24.4") (js2-mode "20170504"))
 ;; Version: 1.1
 ;; Keywords: languages
@@ -379,6 +379,10 @@ error and return a `js2-error-node'."
           (rjsx-maybe-message (format "Handling eof from %d" beg))
           (js2-report-error "msg.syntax" nil beg len)
           (make-js2-error-node :pos beg :len len))))))
+
+(defsubst rjsx-record-tag-bracket-face ()
+  "Fontify the current token with `rjsx-tag-bracket-face'."
+  (js2-set-face (js2-current-token-beg) (js2-current-token-end) 'rjsx-tag-bracket-face 'record))
 
 (defun rjsx-parse-top-xml ()
   "Parse a top level XML fragment.
@@ -826,10 +830,6 @@ as a fragment closing node, and not as an empty tag."
          (t (js2-add-to-string c)))))))
 
 (js2-deflocal rjsx-buffer-chars-modified-tick 0 "Variable holding the last per-buffer value of `buffer-chars-modified-tick'.")
-
-(defsubst rjsx-record-tag-bracket-face ()
-  "Fontify the current token with `rjsx-tag-bracket-face'."
-  (js2-set-face (js2-current-token-beg) (js2-current-token-end) 'rjsx-tag-bracket-face 'record))
 
 (defun rjsx-maybe-reparse ()
   "Called before accessing the parse tree.

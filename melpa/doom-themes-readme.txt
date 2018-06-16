@@ -11,6 +11,9 @@ Additional themes
   [X] `doom-darcula' (added by fuxialexnder)
   [X] `doom-molokai'
   [X] `doom-nord' (added by fuxialexnder)
+  [X] `doom-nord-light' (added by fuxialexnder)
+  [X] `doom-opera' (added by jwintz)
+  [X] `doom-opera-light' (added by jwintz)
   [X] `doom-nova' (added by bigardone)
   [X] `doom-peacock' (added by teesloane)
   [X] `doom-solarized-light' (added by fuxialexnder)
