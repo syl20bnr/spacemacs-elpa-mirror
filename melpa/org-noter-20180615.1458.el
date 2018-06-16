@@ -5,7 +5,7 @@
 ;; Author: Gonçalo Santos (aka. weirdNox@GitHub)
 ;; Homepage: https://github.com/weirdNox/org-noter
 ;; Keywords: lisp pdf interleave annotate external sync notes documents org-mode
-;; Package-Version: 20180512.858
+;; Package-Version: 20180615.1458
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.6") (org "9.0"))
 ;; Version: 1.0.2
 
@@ -115,6 +115,11 @@ When nil, it will use the selected frame if it does not belong to any other sess
 
 (defcustom org-noter-separate-notes-from-heading nil
   "When non-nil, add an empty line between each note's heading and content."
+  :group 'org-noter
+  :type 'boolean)
+
+(defcustom org-noter-insert-selected-text-inside-note t
+  "When non-nil, it will automatically append the selected text into an existing note."
   :group 'org-noter
   :type 'boolean)
 
@@ -1110,7 +1115,7 @@ Only available with PDF Tools."
   "Insert note associated with the current location.
 
 If:
-  - There are no notes for this locaiton yet, this will insert a new
+  - There are no notes for this location yet, this will insert a new
     subheading inside the root heading.
   - There is only one note for this location, it will insert there
   - If there are multiple notes for this location, it will ask you in
@@ -1124,7 +1129,10 @@ used as the default title.
 If you want to force the creation of a separate note, use a
 prefix ARG. PRECISE-LOCATION makes the new note associated with a
 more specific location (see `org-noter-insert-precise-note' for
-more info)."
+more info).
+
+See `org-noter-insert-selected-text-inside-note' for information
+on how to copy the selected text into a note."
   (interactive "P")
   (org-noter--with-valid-session
    (let* ((ast (org-noter--parse-root)) (contents (org-element-contents ast))
@@ -1132,13 +1140,18 @@ more info)."
           (notes-in-view (org-noter--get-notes-for-current-view))
           (location-cons (org-noter--doc-approx-location (or precise-location 'infer)))
           (include-property-less t)
-          (default-title-value
-            (cond
-             ((eq (org-noter--session-doc-mode session) 'pdf-view-mode)
-              (when (pdf-view-active-region-p)
-                (replace-regexp-in-string "\n" " " (mapconcat 'identity (pdf-view-active-region-text) ? ))))
-             ((eq (org-noter--session-doc-mode session) 'nov-mode)
-              (replace-regexp-in-string "\n" " " (buffer-substring-no-properties (mark) (point))))))
+
+          (selected-text
+           (cond
+            ((eq (org-noter--session-doc-mode session) 'pdf-view-mode)
+             (when (pdf-view-active-region-p)
+               (mapconcat 'identity (pdf-view-active-region-text) ? )))
+
+            ((eq (org-noter--session-doc-mode session) 'nov-mode)
+             (buffer-substring-no-properties (mark) (point)))))
+
+          (default-title-value (when selected-text (replace-regexp-in-string "\n" " " selected-text)))
+
           best-previous-element)
 
      (org-element-map contents 'headline
@@ -1206,7 +1219,10 @@ more info)."
                      (setq post-blank (1+ post-blank)))
 
                    (when (org-at-heading-p)
-                     (forward-line -1)))))
+                     (forward-line -1))
+
+                   (when (and org-noter-insert-selected-text-inside-note selected-text)
+                     (insert selected-text)))))
 
            (let ((title (read-string "Title: " default-title-value))
                  (wanted-post-blank (if org-noter-separate-notes-from-heading 2 1)))
@@ -1232,7 +1248,7 @@ more info)."
 
              (goto-char (org-element-property :contents-end (org-element-at-point)))
              (while (= 32 (char-syntax (char-before))) (backward-char))
-             (dotimes (i wanted-post-blank)
+             (dotimes (_ wanted-post-blank)
                (if (and (not (eobp)) (org-next-line-empty-p))
                    (forward-line)
                  (insert "\n")))
@@ -1255,9 +1271,23 @@ This will ask you to click where you want to scroll to when you
 sync the document to this note. You should click on the top of
 that part. Will always create a new note.
 
+When text is selected, it will automatically choose the top of
+the selected text as the location.
+
 See `org-noter-insert-note' docstring for more."
   (interactive)
-  (org-noter-insert-note t (org-noter--ask-precise-location)))
+  (org-noter--with-valid-session
+   (let ((location (cond
+                    ((and (eq (org-noter--session-doc-mode session) 'pdf-view-mode)
+                          (pdf-view-active-region-p))
+                     (cadar (pdf-view-active-region)))
+
+                    ((and (eq (org-noter--session-doc-mode session) 'nov-mode)
+                          (region-active-p))
+                     (min (mark) (point)))
+
+                    (t (org-noter--ask-precise-location)))))
+     (org-noter-insert-note t location))))
 
 (defun org-noter-sync-prev-page-or-chapter ()
   "Show previous page or chapter that has notes, in relation to the current page or chapter.
@@ -1503,48 +1533,73 @@ notes file, even if it finds one."
               t)
         (org-noter--create-session ast document-property notes-file-path))))
 
-   ;; NOTE(nox): Creating the session from the document
+   ;; NOTE(nox): Creating the session from the annotated document
    ((memq major-mode '(doc-view-mode pdf-view-mode nov-mode))
     (if (org-noter--valid-session org-noter--session)
         (progn (org-noter--setup-windows org-noter--session)
                (select-frame-set-input-focus (org-noter--session-frame org-noter--session)))
 
-      (let* ((document-name buffer-file-name)
-             (document-non-directory (file-name-nondirectory document-name))
-             (document-directory (file-name-directory document-name))
+      ;; NOTE(nox): `buffer-file-truename' is a workaround for modes that delete
+      ;; `buffer-file-name', and may not have the same results
+      (unless (or buffer-file-name buffer-file-truename)
+        (error "This buffer does not seem to be visiting any file"))
+
+      (let* ((document-path (or buffer-file-name buffer-file-truename))
+             (document-name (file-name-nondirectory document-path))
              (document-base (file-name-base document-name))
-             (document-location (org-noter--doc-approx-location 'infer))
+             (document-directory (if buffer-file-name
+                                     (file-name-directory buffer-file-name)
+                                   (if (file-equal-p document-name buffer-file-truename)
+                                       default-directory
+                                     (file-name-directory buffer-file-truename))))
+             ;; NOTE(nox): This is the path that is actually going to be used, and should
+             ;; be the same as `buffer-file-name', but is needed for the truename workaround
+             (document-used-path (expand-file-name document-name document-directory))
+
              (search-names (append org-noter-default-notes-file-names (list (concat document-base ".org"))))
-             notes-files-with-heading
-             notes-files)
+             notes-files-annotating     ; List of files annotating document
+             notes-files                ; List of found notes files (annotating or not)
+
+             (document-location (org-noter--doc-approx-location 'infer)))
+
+        ;; NOTE(nox): `search-names' is in reverse order, so we only need to (push ...)
+        ;; and it will end up in the correct order
         (dolist (name search-names)
-          (let ((directory (locate-dominating-file default-directory name))
+          (let ((directory (locate-dominating-file document-directory name))
                 file buffer)
             (when directory
-              (setq file (expand-file-name name directory)
-                    buffer (find-buffer-visiting file))
-              (when buffer (with-current-buffer buffer (save-buffer)))
+              (setq file (expand-file-name name directory))
               (push file notes-files)
+
+              ; NOTE(nox): In order to insert the correct file contents
+              (setq buffer (find-buffer-visiting file))
+              (when buffer (with-current-buffer buffer (save-buffer)))
+
               (with-temp-buffer
                 (insert-file-contents file)
                 (catch 'break
                   (while (re-search-forward (org-re-property org-noter-property-doc-file) nil t)
-                    (when (string= (expand-file-name (match-string 3) directory) document-name)
-                      (push file notes-files-with-heading)
+                    (when (file-equal-p (expand-file-name (match-string 3) directory)
+                                        document-path)
+                      ;; NOTE(nox): This notes file has the document we want!
+                      (push file notes-files-annotating)
                       (throw 'break t))))))))
 
-        (when (or arg (not notes-files-with-heading))
+        (setq search-names (nreverse search-names))
+
+        (when (or arg (not notes-files-annotating))
           (when (or arg (not notes-files))
-            (setq search-names (nreverse search-names))
             (let* ((notes-file-name (completing-read "What name do you want the notes to have? "
                                                      search-names nil t))
-                   (directory (locate-dominating-file default-directory notes-file-name))
+                   (directory (locate-dominating-file document-directory notes-file-name))
                    target)
               (while (not directory)
                 (setq directory
                       (expand-file-name (read-directory-name "Where do you want to save the notes file? "
                                                              nil nil t)))
                 (unless (string-match-p (regexp-quote directory) document-directory)
+                  (message "The chosen directory must be an ancestor to the annotated document")
+                  (sit-for 2.5)
                   (setq directory nil)))
               (setq target (expand-file-name notes-file-name directory)
                     notes-files (list target))
@@ -1554,25 +1609,26 @@ notes file, even if it finds one."
             (setq notes-files (list (completing-read "In which notes file should we create the heading? "
                                                      notes-files nil t))))
 
-          (if (member (car notes-files) notes-files-with-heading)
+          (if (member (car notes-files) notes-files-annotating)
               ;; NOTE(nox): This is needed in order to override with the arg
-              (setq notes-files-with-heading notes-files)
+              (setq notes-files-annotating notes-files)
             (with-current-buffer (find-file-noselect (car notes-files))
               (goto-char (point-max))
               (insert (if (save-excursion (beginning-of-line) (looking-at "[[:space:]]*$")) "" "\n")
                       "* " document-base)
               (org-entry-put nil org-noter-property-doc-file
-                             (file-relative-name document-name (file-name-directory (car notes-files)))))
-            (setq notes-files-with-heading notes-files)))
+                             (file-relative-name document-used-path
+                                                 (file-name-directory (car notes-files)))))
+            (setq notes-files-annotating notes-files)))
 
-        (with-current-buffer (find-file-noselect (car notes-files-with-heading))
+        (with-current-buffer (find-file-noselect (car notes-files-annotating))
           (org-with-wide-buffer
            (catch 'break
              (goto-char (point-min))
              (while (re-search-forward (org-re-property org-noter-property-doc-file) nil t)
-               (when (string= (expand-file-name (match-string 3)
-                                                (file-name-directory (car notes-files-with-heading)))
-                              document-name)
+               (when (file-equal-p (expand-file-name (match-string 3)
+                                                     (file-name-directory (car notes-files-annotating)))
+                                   document-path)
                  (let ((org-noter--start-location-override document-location))
                    (org-noter))
                  (throw 'break t)))))))))))

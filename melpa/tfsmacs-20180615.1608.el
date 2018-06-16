@@ -4,7 +4,7 @@
 ;;
 ;; Author: Dino Chiesa <dpchiesa@outlook.com>, Sebastian Monia <smonia@outlook.com>
 ;; URL: http://github.com/sebasmonia/tfsmacs/
-;; Package-Version: 20180614.2157
+;; Package-Version: 20180615.1608
 ;; Package-Requires: ((emacs "25") (tablist "0.70"))
 ;; Version: 1.25
 ;; Keywords: tfs, vc
@@ -71,6 +71,8 @@
 
 (defvar tfsmacs--process-name "TEECLI")
 (defvar tfsmacs--changeset-buffer-name "*TFS Changeset*")
+(defvar tfsmacs--server-dirs-buffer-name "*TFS Folders*")
+(defvar tfsmacs--server-current-dir "$/")
 ;; Used to repeat the command when using "g" in the status buffer. Buffer local.
 (defvar tfsmacs--buffer-status-dir nil)
 ;; Changeset ID in the changeset details window. Buffer local.
@@ -84,6 +86,9 @@
 (defvar tfsmacs--command-retries 0)
 ;; Holds the setup info when running initial setup
 (defvar tfsmacs--setup-info "")
+;; See https://github.com/Microsoft/team-explorer-everywhere/issues/272
+;; Also as a consequence getting from server paths is not working as expected
+(defvar tfsmacs--no-workspace (list "get"))
 
 (define-prefix-command 'tfsmacs-map)
 (define-key tfsmacs-map "p" 'tfsmacs-pending-changes)
@@ -109,10 +114,14 @@
       ;; testing if forcing process output helps with startup time
       ;; for newly created instances
       (process-send-string process "help eula\n")
-      (set-process-filter process 'tfsmacs--process-command-async-callback))
+      (set-process-filter process 'tfsmacs--async-command-callback))
     process))
 
-(defun tfsmacs--process-command-sync-to-file (command output-filename)
+;; Handling of parameters with call-process and TEE was hell. I opted to duplicate
+;; the approach used for async commands, but instead of using stdin, sync cases
+;; use an "input file". This worked much better. Now there's a lot of common ground
+;; between the two functions, will refactor later I guess?
+(defun tfsmacs--sync-command-to-file (command output-filename)
   "Create a new instance of the TEE process, execute COMMAND and write output to OUTPUT-FILENAME."
   (let* ((workspace-param (tfsmacs--get-workspace-parameter))
          (login-param (tfsmacs--get-login-parameter))
@@ -124,31 +133,33 @@
     (with-temp-file output-filename
       (call-process tfsmacs-cmd nil t nil (format "@%s" input-script)))))
 
-(defun tfsmacs--process-command-async (command callback)
+(defun tfsmacs--async-command (command callback)
   "Run COMMAND in the TEE CLI process and call CALLBACK once it's done.
 Output will be passed to the callback function as parameter."
   (let* ((workspace-param (format " %s " (tfsmacs--get-workspace-parameter)))
          (login-param (format " %s " (tfsmacs--get-login-parameter)))
          (command-string ""))
-    (setq command (append command (list workspace-param login-param)))
+    (if (member (car command) tfsmacs--no-workspace)
+        (setq command (append command (list login-param)))
+      (setq command (append command (list workspace-param login-param))))
     ;; I prefer to do command-string in two parts to show a cleaner log
     ;; of the commands being executed
-    (setq command-string (concat (mapconcat 'identity command " ")))
+    (setq command-string (mapconcat 'identity command " "))
     (tfsmacs--append-to-log (format "COMMAND (async): %s" command-string))
     (setq command-string (concat command-string "\nhelp eula\n"))
     (setq tfsmacs--command-output-buffer "")
     (setq tfsmacs--command-retries 1)
     (message "TFS: Running command...")
     (process-send-string (tfsmacs--get-or-create-process) command-string)
-    (tfsmacs--process-command-async-schedule-check callback)))
+    (tfsmacs--async-command-schedule-check callback)))
   
-(defun tfsmacs--process-command-async-callback (_process output)
+(defun tfsmacs--async-command-callback (_process output)
   "Accumulate the OUTPUT of PROCESS."
   (setq tfsmacs--command-output-buffer (concat tfsmacs--command-output-buffer output))
   (setq tfsmacs--command-retries 1) ;; Reset the retries counter as long as output is received
   (message "TFS: Receiving command output..."))
 
-(defun tfsmacs--process-command-async-complete (callback)
+(defun tfsmacs--async-command-complete (callback)
   "Check if the last command finished running using a marker.
 If it did invoke CALLBACK, else re-schedule the function."
   (setq tfsmacs--command-retries (+ tfsmacs--command-retries 1))
@@ -159,7 +170,7 @@ If it did invoke CALLBACK, else re-schedule the function."
           (funcall callback output)))
     (progn
       (if (< tfsmacs--command-retries tfsmacs-async-command-retries)
-          (tfsmacs--process-command-async-schedule-check callback)
+          (tfsmacs--async-command-schedule-check callback)
         (progn
           (tfsmacs--append-to-log "---Incomplete output:---")
           (tfsmacs--append-to-log tfsmacs--command-output-buffer)
@@ -170,9 +181,9 @@ If it did invoke CALLBACK, else re-schedule the function."
           (message "TFS: Command not completed. See log for details.")
           (funcall callback ""))))))
 
-(defun tfsmacs--process-command-async-schedule-check (callback)
-  "Schedule `tfsmacs--process-command-async-complete` with CALLBACK."
-  (run-at-time tfsmacs-async-command-timer nil 'tfsmacs--process-command-async-complete callback))
+(defun tfsmacs--async-command-schedule-check (callback)
+  "Schedule `tfsmacs--async-command-complete` with CALLBACK."
+  (run-at-time tfsmacs-async-command-timer nil 'tfsmacs--async-command-complete callback))
     
 (defun tfsmacs--get-workspace-parameter ()
   "Return the collection parameter if configured, or empty string."
@@ -236,14 +247,14 @@ From: https://stackoverflow.com/questions/27284851/emacs-lisp-get-directory-name
 
 (defun tfsmacs--write-file-to-temp-directory (path version)
   "Write the VERSION of PATH to a temporary directory.
-It spins off a new instance of the TEE tool by calling 'tfsmacs--process-command-sync-to-file'"
+It spins off a new instance of the TEE tool by calling 'tfsmacs--sync-command-to-file'"
   (let* ((only-name (file-name-nondirectory path))
          (filename (concat temporary-file-directory version ";" only-name))
          (command (list "print" (format "-version:%s" version) (tfsmacs--quote-string path))))
-    (tfsmacs--process-command-sync-to-file command filename)
+    (tfsmacs--sync-command-to-file command filename)
     filename))
 
-(defun tfsmacs-setup-collection ()
+(defun tfsmacs-setup-workspace ()
   "Interactive, opinionated function to configure a collection.
 Not bound by default, you would run this operation once per collection."
   (interactive)
@@ -252,7 +263,7 @@ Not bound by default, you would run this operation once per collection."
     (setq tfsmacs--setup-info `((collection  . ,url)
                                (workspace . ,workspace-name)))
     (when (y-or-n-p "Now it's time to setup the workspace.  Ready? ")
-      (tfsmacs--process-command-async (list "workspace"
+      (tfsmacs--async-command (list "workspace"
                                             "-new"
                                             (format "-collection:\"%s\"" url)
                                             (tfsmacs--quote-string workspace-name))
@@ -268,7 +279,7 @@ Not bound by default, you would run this operation once per collection."
         (error "Workspace creation failed.  See log for details")))
     (setq local-dir (expand-file-name (read-directory-name "Directory to map $/ (TFS root) in your computer: "
                                                            nil nil t)))
-    (tfsmacs--process-command-async (list "workfold"
+    (tfsmacs--async-command (list "workfold"
                                           "-map"
                                           "$/"
                                           (tfsmacs--quote-string local-dir)
@@ -309,7 +320,7 @@ writable."
          (command (append '("checkout") files-to-checkout)))
     (when files-to-checkout
       (message "TFS: Checking out file(s)...")
-      (tfsmacs--process-command-async command 'tfsmacs--message-callback))))
+      (tfsmacs--async-command command 'tfsmacs--message-callback))))
 
 (defun tfsmacs-checkin ()
   "Perform a tf checkin on the file being visited by the current buffer.
@@ -322,7 +333,7 @@ other files will not be checked in."
       (let* ((command (append '("checkin")
                               (tfsmacs--checkin-parameters-builder)
                               (list (tfsmacs--quote-string buffer-file-name)))))
-        (tfsmacs--process-command-async command 'tfsmacs--message-callback))
+        (tfsmacs--async-command command 'tfsmacs--message-callback))
     (error "Error tfsmacs-checkin: No file")))
 
 (defun tfsmacs--checkin-parameters-builder ()
@@ -366,8 +377,8 @@ buffer to the new name."
         (let* ((source (car file-to-rename))
                (newname (or new-name (read-string (format "New name for %s: " source) nil nil nil)))
                (command (list "rename" source newname)))
-          (tfsmacs--process-command-async command 'tfsmacs--message-callback)
-          (if (string-equal source buffer-file-name)
+          (tfsmacs--async-command command 'tfsmacs--message-callback)
+          (if (string= source buffer-file-name)
               (set-visited-file-name newname)
             (error "Rename of %s was unsuccessful" file-to-rename)))
       (error "Couldn't determine file to rename"))))
@@ -393,7 +404,7 @@ The file to add is deteremined this way:
     (if files-to-add
         (let* ((items (mapcar 'tfsmacs--quote-string files-to-add))
                (command (append '("add") items)))
-          (tfsmacs--process-command-async command 'tfsmacs--message-callback))
+          (tfsmacs--async-command command 'tfsmacs--message-callback))
       (error "Error tfsmacs-add: No file"))))
 
 (defun tfsmacs-delete (&optional filename)
@@ -419,8 +430,68 @@ is being deleted, then this function also kills the buffer."
     (if files-to-delete
         (let* ((items (mapcar 'tfsmacs--quote-string files-to-delete))
                (command (append '("delete") items)))
-          (tfsmacs--process-command-async command 'tfsmacs--message-callback))
+          (tfsmacs--async-command command 'tfsmacs--message-callback))
       (error "Error tfsmacs-delete: No file"))))
+
+(defun tfsmacs-server-directories (&optional path)
+  "Navigate the server tree and download directories.
+This should be useful for first time downloads of files, after
+running `tfsmacs-setup-collection`.
+PATH is used only for internal calls."
+  (interactive)
+  (when (not path)
+    (setq path "$/"))
+  (let ((command (list "dir" (tfsmacs--quote-string path) "-folders")))
+    (tfsmacs--async-command command 'tfsmacs--server-callback)))
+
+(defun tfsmacs--server-callback (output)
+  "Allow a selection from the list of server folders in OUTPUT."
+  (get-buffer-create tfsmacs--server-dirs-buffer-name)
+  (let ((lines (butlast (split-string output "\n") 2)))
+    (setq tfsmacs--server-current-dir (substring (car lines) 0 -1))
+    (setf (nth 0 lines) (format "Folders under %s\n" (car lines)))
+    (with-current-buffer tfsmacs--server-dirs-buffer-name
+      (setq buffer-read-only nil)
+      (kill-region (point-min) (point-max))
+      (insert "Use ^ and RET to navigate the folders, G to get the folder and it's contents recursively\n\n")
+      (insert (mapconcat 'identity  lines "\n"))
+      (goto-line 3) ; we are guaranteed to have at least that many lines
+      (setq buffer-read-only t)
+      (local-set-key "G" 'tfsmacs--server-get-directory)
+      (local-set-key "^" 'tfsmacs--server-go-up)
+      (local-set-key (kbd "RET") 'tfsmacs--server-go-down)
+      (local-set-key "p" 'previous-line)
+      (local-set-key "n" 'next-line)
+      (switch-to-buffer tfsmacs--server-dirs-buffer-name))))
+
+(defun tfsmacs--server-go-down ()
+  "Go down the server directory tree."
+  (interactive) 
+  (let ((line (buffer-substring-no-properties (line-beginning-position) (line-end-position))))
+    (when (string-suffix-p "/" tfsmacs--server-current-dir)
+      (setq tfsmacs--server-current-dir (substring tfsmacs--server-current-dir 0 -1))) ; remove trailing / if needed
+    (tfsmacs-server-directories (concat tfsmacs--server-current-dir "/" (substring line 1)))))
+
+(defun tfsmacs--server-go-up ()
+  "Go up the server directory tree."
+  (interactive)
+  (let ((parts (split-string tfsmacs--server-current-dir "/")))
+    (tfsmacs-server-directories (mapconcat 'identity (butlast parts 1) "/"))))
+
+(defun tfsmacs--server-get-directory ()
+  "Recursive get the directory under point."
+  (interactive)
+  (message "%s %s"
+           "Unsupported for the time being. You will need to create local folders matching the structure"
+           "of the directory and then run a get. See https://github.com/Microsoft/team-explorer-everywhere/issues/272 for more details"))
+;; (defun tfsmacs--server-get-directory ()
+;;   "Recursive get the directory under point."
+;;   (interactive)
+;;   (let* ((line (buffer-substring-no-properties (line-beginning-position) (line-end-position)))
+;;          (directory (concat tfsmacs--server-current-dir "/" (substring line 1))))
+;;     (when (y-or-n-p (format "Run GET on \"%s\" and it's subdirectories? " directory))
+;;       (tfsmacs-get-recursive directory))))
+
 
 (defun tfsmacs-get (&optional filename version)
   "Perform a tf get on a file.
@@ -445,7 +516,7 @@ If VERSION to get is not provided, it will be prompted."
         (let* ((items (mapcar 'tfsmacs--quote-string files-to-get))
                (version (list (tfsmacs--get-version-param version)))
                (command (append '("get") items version)))
-          (tfsmacs--process-command-async command 'tfsmacs--short-message-callback)))))
+          (tfsmacs--async-command command 'tfsmacs--short-message-callback)))))
 
 (defun tfsmacs--get-version-param (&optional version)
   "Get a version spec string for a command that supports it.
@@ -481,7 +552,7 @@ The directory to get is deteremined this way:
     (when force
       (setq command (append command '("-force"))))
     (when dir-to-get
-      (tfsmacs--process-command-async command 'tfsmacs--short-message-callback))))
+      (tfsmacs--async-command command 'tfsmacs--short-message-callback))))
 
 
 (defun tfsmacs-undo (&optional filename)
@@ -505,7 +576,7 @@ The file to undo is deteremined this way:
         (let* ((items (mapcar 'tfsmacs--quote-string files-to-undo))
                 (command (append '("undo") items)))
              (when (yes-or-no-p "Undo changes to file(s)? ")
-               (tfsmacs--process-command-async command 'tfsmacs--message-callback))))))
+               (tfsmacs--async-command command 'tfsmacs--message-callback))))))
 
 (define-derived-mode tfsmacs-history-mode tabulated-list-mode "TFS history Mode" "Major mode TFS History, displays an item's history and allows compares."
   (setq tabulated-list-format [("Changeset" 10 t)
@@ -596,7 +667,7 @@ How the file is determined:
           (setq command (append command (tfsmacs--history-parameters-builder)))
           (message "TFS: Getting item history...")
           (setq tfsmacs--history-target source)
-          (tfsmacs--process-command-async command 'tfsmacs--history-callback))
+          (tfsmacs--async-command command 'tfsmacs--history-callback))
       (error "Couldn't determine history target"))))
 
 (defun tfsmacs--history-parameters-builder ()
@@ -671,7 +742,7 @@ OUTPUT is the command's output"
   (let* ((comment (read-string "Updated check in comment: "))
          (params (list "changeset" tfsmacs--changeset-id (format "-comment:%s" (tfsmacs--quote-string comment)))))
     (with-current-buffer tfsmacs--changeset-buffer-name
-      (tfsmacs--process-command-async params 'tfsmacs--message-callback))))
+      (tfsmacs--async-command params 'tfsmacs--message-callback))))
 
 (defun tfsmacs-changeset (&optional version)
   "Gets info on a changeset.
@@ -686,7 +757,7 @@ If VERSION to get is not provided, it will be prompted."
   (with-current-buffer (get-buffer-create tfsmacs--changeset-buffer-name)
     (set (make-local-variable 'tfsmacs--changeset-id) version))
   (message "TFS: Getting changeset details...")
-  (tfsmacs--process-command-async (list "changeset" version) 'tfsmacs--changeset-callback))
+  (tfsmacs--async-command (list "changeset" version) 'tfsmacs--changeset-callback))
 
 (define-derived-mode tfsmacs-status-mode tabulated-list-mode "TFS Status Mode" "Major mode TFS Status, displays current pending changes"
   (setq tabulated-list-format [("Change" 7 t)
@@ -707,7 +778,7 @@ If VERSION to get is not provided, it will be prompted."
   (interactive)
   (let* ((items (tfsmacs--status-mode-get-marked-items))
          (command (append '("checkin") (tfsmacs--checkin-parameters-builder) items)))
-    (tfsmacs--process-command-async command 'tfsmacs--message-callback)))
+    (tfsmacs--async-command command 'tfsmacs--message-callback)))
 
 (defun tfsmacs--status-mode-revert ()
   "Revert (undo) the files marked using ‘tfsmacs-status-mode’."
@@ -717,7 +788,7 @@ If VERSION to get is not provided, it will be prompted."
          (command '("undo")))
     (when (yes-or-no-p "Undo changes to the  files marked? ")
       (setq command (append command quoted-items))
-      (tfsmacs--process-command-async command 'tfsmacs--message-callback))))
+      (tfsmacs--async-command command 'tfsmacs--message-callback))))
 
 (defun tfsmacs--status-mode-difference ()
   "Compares pending change to latest version."
@@ -765,7 +836,7 @@ If VERSION to get is not provided, it will be prompted."
   "Internal call to run the status command in DIRECTORY."
   (let* ((command (list "status" directory "-recursive" "-nodetect"  "-format:xml")))
     (message "TFS: Obtaining list of pending changes...")
-    (tfsmacs--process-command-async command 'tfsmacs--status-callback)))
+    (tfsmacs--async-command command 'tfsmacs--status-callback)))
 
 (defun tfsmacs--status-callback (output)
   "Process the output of tf status and display the ‘tfsmacs-status-mode’ buffer.

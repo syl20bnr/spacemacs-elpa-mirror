@@ -3,7 +3,7 @@
 ;; Copyright (C) 2018 Free Software Foundation, Inc.
 
 ;; Version: 0.10
-;; Package-Version: 20180613.1048
+;; Package-Version: 20180615.1556
 ;; Author: João Távora <joaotavora@gmail.com>
 ;; Maintainer: João Távora <joaotavora@gmail.com>
 ;; URL: https://github.com/joaotavora/eglot
@@ -164,7 +164,6 @@ deferred to the future.")
             :workspace (list
                         :applyEdit t
                         :executeCommand `(:dynamicRegistration :json-false)
-                        :codeAction `(:dynamicRegistration :json-false)
                         :workspaceEdit `(:documentChanges :json-false)
                         :didChangeWatchesFiles `(:dynamicRegistration t)
                         :symbol `(:dynamicRegistration :json-false))
@@ -180,6 +179,8 @@ deferred to the future.")
              :definition         `(:dynamicRegistration :json-false)
              :documentSymbol     `(:dynamicRegistration :json-false)
              :documentHighlight  `(:dynamicRegistration :json-false)
+             :codeAction         `(:dynamicRegistration :json-false)
+             :formatting         `(:dynamicRegistration :json-false)
              :rename             `(:dynamicRegistration :json-false)
              :publishDiagnostics `(:relatedInformation :json-false))
             :experimental (list))))
@@ -1382,6 +1383,33 @@ DUMMY is ignored."
             (eglot--request (eglot--current-server-or-lose)
                             :workspace/symbol
                             (list :query pattern)))))
+
+(defun eglot-format-buffer ()
+  "Format contents of current buffer."
+  (interactive)
+  (unless (eglot--server-capable :documentFormattingProvider)
+    (eglot--error "Server can't format!"))
+  (let* ((server (eglot--current-server-or-lose))
+         (resp
+          (eglot--request
+           server
+           :textDocument/formatting
+           (list :textDocument (eglot--TextDocumentIdentifier)
+                 :options (list
+                           :tabSize tab-width
+                           :insertSpaces (not indent-tabs-mode)))
+           :textDocument/formatting))
+         (after-point
+          (buffer-substring (point) (min (+ (point) 60) (point-max))))
+         (regexp (and (not (bobp))
+                      (replace-regexp-in-string
+                       "[\s\t\n\r]+" "[\s\t\n\r]+"
+                       (concat "\\(" (regexp-quote after-point) "\\)")))))
+    (when resp
+      (save-excursion
+        (eglot--apply-text-edits resp))
+      (when (and (bobp) regexp (search-forward-regexp regexp nil t))
+        (goto-char (match-beginning 1))))))
 
 (defun eglot-completion-at-point ()
   "EGLOT's `completion-at-point' function."

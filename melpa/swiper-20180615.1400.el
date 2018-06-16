@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180614.1500
+;; Package-Version: 20180615.1400
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.9.0"))
 ;; Keywords: matching
@@ -401,7 +401,6 @@ When non-nil, INITIAL-INPUT is the initial search pattern."
   (interactive)
   (swiper--ivy (swiper--candidates) initial-input))
 
-(declare-function string-trim-right "subr-x")
 (defvar swiper--current-window-start nil)
 
 (defun swiper--extract-matches (regex cands)
@@ -422,7 +421,6 @@ When non-nil, INITIAL-INPUT is the initial search pattern."
   "Generate a custom occur buffer for `swiper'.
 When REVERT is non-nil, regenerate the current *ivy-occur* buffer.
 When capture groups are present in the input, print them instead of lines."
-  (require 'subr-x)
   (let* ((buffer (ivy-state-buffer ivy-last))
          (fname (propertize
                  (with-ivy-window
@@ -438,14 +436,12 @@ When capture groups are present in the input, print them instead of lines."
          (cands
           (mapcar
            (lambda (s)
-             (format "%s:%s:%s"
-                     fname
-                     (propertize
-                      (string-trim-right
-                       (get-text-property 0 'swiper-line-number s))
-                      'face 'compilation-line-number)
-                     (substring s 1)))
-           (if (null revert)
+             (let* ((n (get-text-property 0 'swiper-line-number s))
+                    (i (string-match-p "[ \t\n\r]+\\'" n)))
+               (when i (setq n (substring n 0 i)))
+               (put-text-property 0 (length n) 'face 'compilation-line-number n)
+               (format "%s:%s:%s" fname n (substring s 1))))
+           (if (not revert)
                ivy--old-cands
              (setq ivy--old-re nil)
              (let ((ivy--regex-function 'swiper--re-builder))
