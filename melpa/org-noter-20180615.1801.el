@@ -5,7 +5,7 @@
 ;; Author: Gonçalo Santos (aka. weirdNox@GitHub)
 ;; Homepage: https://github.com/weirdNox/org-noter
 ;; Keywords: lisp pdf interleave annotate external sync notes documents org-mode
-;; Package-Version: 20180615.1458
+;; Package-Version: 20180615.1801
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.6") (org "9.0"))
 ;; Version: 1.0.2
 
@@ -125,6 +125,11 @@ When nil, it will use the selected frame if it does not belong to any other sess
 
 (defcustom org-noter-default-notes-file-names '("Notes.org")
   "List of possible names for the default notes file, in increasing order of priority."
+  :group 'org-noter
+  :type 'list)
+
+(defcustom org-noter-notes-search-path '("~/Documents")
+  "List of paths to check (non recursively) when searching for a notes file."
   :group 'org-noter
   :type 'list)
 
@@ -823,6 +828,35 @@ a continuous group of notes."
            ((= number-of-notes 1) (propertize " 1 note" 'face 'org-noter-notes-exist-face))
            (t (propertize (format " %d notes" number-of-notes) 'face 'org-noter-notes-exist-face))))))
 
+;; NOTE(nox): From machc/pdf-tools-org
+(defun org-noter--pdf-tools-edges-to-region (edges)
+  "Get 4-entry region (LEFT TOP RIGHT BOTTOM) from several EDGES."
+  (let ((left0 (nth 0 (car edges)))
+        (top0 (nth 1 (car edges)))
+        (bottom0 (nth 3 (car edges)))
+        (top1 (nth 1 (car (last edges))))
+        (right1 (nth 2 (car (last edges))))
+        (bottom1 (nth 3 (car (last edges))))
+        (n (safe-length edges)))
+    (list left0
+          (+ top0 (/ (- bottom0 top0) 3))
+          right1
+          (- bottom1 (/ (- bottom1 top1) 3)))))
+
+(defun org-noter--check-if-document-is-annotated-on-file (document-path notes-path)
+  ;; NOTE(nox): In order to insert the correct file contents
+  (let ((buffer (find-buffer-visiting notes-path)))
+    (when buffer (with-current-buffer buffer (save-buffer)))
+
+    (with-temp-buffer
+      (insert-file-contents notes-path)
+      (catch 'break
+        (while (re-search-forward (org-re-property org-noter-property-doc-file) nil t)
+          (when (file-equal-p (expand-file-name (match-string 3) (file-name-directory notes-path))
+                              document-path)
+            ;; NOTE(nox): This notes file has the document we want!
+            (throw 'break t)))))))
+
 ;; --------------------------------------------------------------------------------
 ;; NOTE(nox): User commands
 (defun org-noter-set-start-location (arg)
@@ -1045,6 +1079,7 @@ Only available with PDF Tools."
                (when (and (eq type 'goto-dest) (> page 0))
                  (push (vector title (cons page top) (1+ depth)) output-data))))
            (when output-data
+             (setq output-data (nreverse output-data))
              (push (vector "Outline" nil 1) output-data)))
           (t
            (let ((possible-annots (list '("Highlights" . highlight)
@@ -1053,7 +1088,7 @@ Only available with PDF Tools."
                                         '("Text notes" . text)
                                         '("Strikeouts" . strike-out)
                                         '("Links" . link)))
-                 chosen-annots)
+                 chosen-annots insert-contents)
              (while (> (length possible-annots) 1)
                (let* ((chosen-string (completing-read "Which types of annotations do you want? "
                                                       possible-annots nil t))
@@ -1064,12 +1099,17 @@ Only available with PDF Tools."
                    (setq possible-annots (delq chosen-pair possible-annots))
                    (when (= 1 (length chosen-annots)) (push '("DONE") possible-annots)))))
 
+             (setq insert-contents (y-or-n-p "Should we insert the annotations contents? "))
+
              (dolist (item (pdf-info-getannots))
-               (let ((type  (alist-get 'type item))
-                     (page  (alist-get 'page item))
-                     (edges (or (car (alist-get 'markup-edges item))
-                                (alist-get 'edges item)))
-                     name)
+               (let* ((type  (alist-get 'type item))
+                      (page  (alist-get 'page item))
+                      (markup-edges (alist-get 'markup-edges item))
+                      (edges (or (car markup-edges)
+                                 (alist-get 'edges item)))
+                      (item-subject (alist-get 'subject item))
+                      (item-contents (alist-get 'contents item))
+                      name contents)
                  (when (and (memq type chosen-annots) (> page 0))
                    (setq name (cond ((eq type 'highlight) "Highlight")
                                     ((eq type 'underline) "Underline")
@@ -1077,17 +1117,24 @@ Only available with PDF Tools."
                                     ((eq type 'text) "Text note")
                                     ((eq type 'strike-out) "Strikeout")
                                     ((eq type 'link) "Link")))
-                   (push (vector (format "%s on page %d" name page) (cons page (nth 1 edges)) 2)
+                   (when insert-contents
+                     (setq contents (concat (or item-subject "") (if (and item-subject item-contents) "\n" "")
+                                            (or item-contents "")))
+                     (when markup-edges
+                       (setq contents
+                             (concat
+                              (if (> (length contents) 0) "\n" "")
+                              (pdf-info-gettext page (org-noter--pdf-tools-edges-to-region markup-edges))))))
+                   (push (vector (format "%s on page %d" name page) (cons page (nth 1 edges)) 2 contents)
                          output-data)))))
            (when output-data
-             (push (vector "Annotations" nil 1) output-data)))))
-
-       (setq output-data
-             (sort output-data
-                   (lambda (e1 e2)
-                     (or (not (aref e1 1))
-                         (and (aref e2 1)
-                              (org-noter--compare-location-cons '< (aref e1 1) (aref e2 1)))))))
+             (setq output-data
+                   (sort output-data
+                         (lambda (e1 e2)
+                           (or (not (aref e1 1))
+                               (and (aref e2 1)
+                                    (org-noter--compare-location-cons '< (aref e1 1) (aref e2 1)))))))
+             (push (vector "Annotations" nil 1 nil) output-data)))))
 
        (with-current-buffer (org-noter--session-notes-buffer session)
          ;; NOTE(nox): org-with-wide-buffer can't be used because we want to set the
@@ -1101,7 +1148,14 @@ Only available with PDF Tools."
              (insert (aref data 0))
              (when (aref data 1)
                (org-entry-put
-                nil org-noter-property-note-location (org-noter--pretty-print-location (aref data 1)))))
+                nil org-noter-property-note-location (org-noter--pretty-print-location (aref data 1))))
+             (org-end-of-subtree)
+             (when (aref data 3)
+               (while (= 32 (char-syntax (char-before))) (backward-char))
+               (if (and (not (eobp)) (org-next-line-empty-p))
+                   (forward-line)
+                 (insert "\n"))
+               (insert (aref data 3))))
 
            (setq ast (org-noter--parse-root))
            (org-noter--narrow-to-root ast)
@@ -1562,6 +1616,15 @@ notes file, even if it finds one."
 
              (document-location (org-noter--doc-approx-location 'infer)))
 
+        ;; NOTE(nox): Check the search path
+        (dolist (path org-noter-notes-search-path)
+          (dolist (name search-names)
+            (let ((file-name (expand-file-name name path)))
+              (when (file-exists-p file-name)
+                (push file-name notes-files)
+                (when (org-noter--check-if-document-is-annotated-on-file document-path file-name)
+                  (push file-name notes-files-annotating))))))
+
         ;; NOTE(nox): `search-names' is in reverse order, so we only need to (push ...)
         ;; and it will end up in the correct order
         (dolist (name search-names)
@@ -1569,21 +1632,9 @@ notes file, even if it finds one."
                 file buffer)
             (when directory
               (setq file (expand-file-name name directory))
-              (push file notes-files)
-
-              ; NOTE(nox): In order to insert the correct file contents
-              (setq buffer (find-buffer-visiting file))
-              (when buffer (with-current-buffer buffer (save-buffer)))
-
-              (with-temp-buffer
-                (insert-file-contents file)
-                (catch 'break
-                  (while (re-search-forward (org-re-property org-noter-property-doc-file) nil t)
-                    (when (file-equal-p (expand-file-name (match-string 3) directory)
-                                        document-path)
-                      ;; NOTE(nox): This notes file has the document we want!
-                      (push file notes-files-annotating)
-                      (throw 'break t))))))))
+              (unless (member file notes-files) (push file notes-files))
+              (when (org-noter--check-if-document-is-annotated-on-file document-path file)
+                (push file notes-files-annotating)))))
 
         (setq search-names (nreverse search-names))
 
@@ -1591,19 +1642,49 @@ notes file, even if it finds one."
           (when (or arg (not notes-files))
             (let* ((notes-file-name (completing-read "What name do you want the notes to have? "
                                                      search-names nil t))
-                   (directory (locate-dominating-file document-directory notes-file-name))
+                   list-of-possible-targets
                    target)
-              (while (not directory)
-                (setq directory
-                      (expand-file-name (read-directory-name "Where do you want to save the notes file? "
-                                                             nil nil t)))
-                (unless (string-match-p (regexp-quote directory) document-directory)
-                  (message "The chosen directory must be an ancestor to the annotated document")
-                  (sit-for 2.5)
-                  (setq directory nil)))
-              (setq target (expand-file-name notes-file-name directory)
-                    notes-files (list target))
-              (unless (file-exists-p target) (write-region "" nil target))))
+
+              ;; NOTE(nox): Create list of targets from current path
+              (catch 'break
+                (let ((current-directory document-directory)
+                      file-name)
+                  (while t
+                    (setq file-name (expand-file-name notes-file-name current-directory))
+                    (when (file-exists-p file-name)
+                      (setq file-name (propertize file-name 'display
+                                                 (concat file-name
+                                                         (propertize " -- Exists!"
+                                                                     'face '(foreground-color . "green")))))
+                      (push file-name list-of-possible-targets)
+                      (throw 'break nil))
+
+                    (push file-name list-of-possible-targets)
+
+                    (when (string= current-directory
+                                   (setq current-directory
+                                         (file-name-directory (directory-file-name current-directory))))
+                      (throw 'break nil)))))
+              (setq list-of-possible-targets (nreverse list-of-possible-targets))
+
+              ;; NOTE(nox): Create list of targets from search path
+              (dolist (path org-noter-notes-search-path)
+                (when (file-exists-p path)
+                  (let ((file-name (expand-file-name notes-file-name path)))
+                    (unless (member file-name list-of-possible-targets)
+                      (when (file-exists-p file-name)
+                        (setq file-name (propertize file-name 'display
+                                                    (concat file-name
+                                                            (propertize " -- Exists!"
+                                                                        'face '(foreground-color . "green"))))))
+                      (push file-name list-of-possible-targets)))))
+
+              (setq target (completing-read "Where do you want to save it? " list-of-possible-targets
+                                            nil t))
+              (set-text-properties 0 (length target) nil target)
+              (unless (file-exists-p target) (write-region "" nil target))
+
+              (setq notes-files (list target))))
 
           (when (> (length notes-files) 1)
             (setq notes-files (list (completing-read "In which notes file should we create the heading? "
@@ -1620,6 +1701,10 @@ notes file, even if it finds one."
                              (file-relative-name document-used-path
                                                  (file-name-directory (car notes-files)))))
             (setq notes-files-annotating notes-files)))
+
+        (when (> (length notes-files-annotating) 1)
+            (setq notes-files-annotating (list (completing-read "Which notes file should we open? "
+                                                                notes-files-annotating nil t))))
 
         (with-current-buffer (find-file-noselect (car notes-files-annotating))
           (org-with-wide-buffer
