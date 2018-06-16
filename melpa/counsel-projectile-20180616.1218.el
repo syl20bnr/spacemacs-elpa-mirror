@@ -4,7 +4,7 @@
 
 ;; Author: Eric Danan
 ;; URL: https://github.com/ericdanan/counsel-projectile
-;; Package-Version: 20180609.1412
+;; Package-Version: 20180616.1218
 ;; Keywords: project, convenience
 ;; Version: 0.2.0
 ;; Package-Requires: ((counsel "0.10.0") (projectile "0.14.0"))
@@ -401,7 +401,7 @@ The sorting function can be modified by adding an entry for
 (counsel-projectile--defcustom-action
  'counsel-projectile-find-dir
  '(1
-   ("o" counsel-projectile-find-dir-action-other-window
+   ("o" counsel-projectile-find-dir-action
     "current window")
    ("j" counsel-projectile-find-dir-action-other-window
     "other window")

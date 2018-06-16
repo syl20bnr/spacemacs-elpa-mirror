@@ -4,7 +4,7 @@
 
 ;; Author: Christopher Wellons <wellons@nullprogram.com>
 ;; URL: https://github.com/skeeto/nasm-mode
-;; Package-Version: 20180422.924
+;; Package-Version: 20180616.850
 ;; Version: 1.1.1
 ;; Package-Requires: ((emacs "24.3"))
 
@@ -50,6 +50,13 @@
 
 (defcustom nasm-basic-offset (default-value 'tab-width)
   "Indentation level for `nasm-mode'."
+  :type 'integer
+  :group 'nasm-mode)
+
+(defcustom nasm-after-mnemonic-whitespace :tab
+  "In `nasm-mode', determines the whitespace to use after mnemonics.
+This can be :tab, :space, or nil (do nothing)."
+  :type '(choice (const :tab) (const :space) (const nil))
   :group 'nasm-mode)
 
 (defface nasm-registers
@@ -622,8 +629,10 @@ is not immediately after a mnemonic; otherwise, we insert a tab."
                  (bti (progn (back-to-indentation) (point))))
              (buffer-substring-no-properties bti point)))))
     (if (string-match nasm-full-instruction-regexp before)
-        ;; We are immediately after an instruction, just insert a tab
-        (insert "\t")
+        ;; We are immediately after a mnemonic
+        (cl-case nasm-after-mnemonic-whitespace
+          (:tab   (insert "\t"))
+          (:space (insert-char ?\s nasm-basic-offset)))
       ;; We're literally anywhere else, indent the whole line
       (let ((orig (- (point-max) (point))))
         (back-to-indentation)
