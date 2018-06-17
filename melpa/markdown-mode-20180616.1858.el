@@ -7,7 +7,7 @@
 ;; Maintainer: Jason R. Blevins <jblevins@xbeta.org>
 ;; Created: May 24, 2007
 ;; Version: 2.4-dev
-;; Package-Version: 20180607.913
+;; Package-Version: 20180616.1858
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5"))
 ;; Keywords: Markdown, GitHub Flavored Markdown, itex
 ;; URL: https://jblevins.org/projects/markdown-mode/
@@ -8481,9 +8481,11 @@ or \\[markdown-toggle-inline-images]."
       (goto-char (point-min))
       (while (re-search-forward markdown-regex-link-inline nil t)
         (let ((start (match-beginning 0))
+              (imagep (match-beginning 1))
               (end (match-end 0))
               (file (match-string-no-properties 6)))
-          (when (and (not (zerop (length file)))
+          (when (and imagep
+                     (not (zerop (length file)))
 		     (file-exists-p file))
             (let* ((abspath (if (file-name-absolute-p file)
                                 file
