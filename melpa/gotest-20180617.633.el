@@ -2,7 +2,7 @@
 
 ;; Author: Nicolas Lamirault <nicolas.lamirault@gmail.com>
 ;; URL: https://github.com/nlamirault/gotest.el
-;; Package-Version: 20180319.137
+;; Package-Version: 20180617.633
 ;; Version: 0.14.0
 ;; Keywords: languages, go, tests
 
@@ -251,10 +251,10 @@ For example, if the current buffer is `foo.go', the buffer for
 `foo_test.go' is returned."
   (if (string-match "_test\.go$" buffer-file-name)
       (current-buffer)
-    (let ((ff-always-try-to-create nil))
-      (let ((filename (ff-other-file-name)))
-        (message "File :%s" filename)
-        (find-file-noselect filename)))))
+    (let ((ff-always-try-to-create nil)
+	  (filename (ff-other-file-name)))
+      (when filename
+	(find-file-noselect filename)))))
 
 
 (defun go-test--get-current-data (prefix)
@@ -310,19 +310,21 @@ For example, if the current buffer is `foo.go', the buffer for
 (defun go-test--get-current-file-data (prefix)
   "Generate regexp to match test, benchmark or example the current buffer.
 `PREFIX' defines token to place cursor."
-  (with-current-buffer (go-test--get-current-buffer)
-    (save-excursion
-      (goto-char (point-min))
-      (if (string-match "\.go$" buffer-file-name)
-          (let ((regex
-                 (s-concat "^[[:space:]]*func[[:space:]]*\\(" prefix "[^(]+\\)"))
-                result)
-            (while
-                (re-search-forward regex nil t)
-              (let ((data (buffer-substring-no-properties
-                           (match-beginning 1) (match-end 1))))
-                (setq result (append result (list data)))))
-            (mapconcat 'identity result "|"))))))
+  (let ((buffer (go-test--get-current-buffer)))
+    (when buffer
+      (with-current-buffer buffer
+	(save-excursion
+	  (goto-char (point-min))
+	  (when (string-match "\.go$" buffer-file-name)
+            (let ((regex
+                   (s-concat "^[[:space:]]*func[[:space:]]*\\(" prefix "[^(]+\\)"))
+                  result)
+	      (while
+                  (re-search-forward regex nil t)
+		(let ((data (buffer-substring-no-properties
+                             (match-beginning 1) (match-end 1))))
+                  (setq result (append result (list data)))))
+	      (mapconcat 'identity result "|"))))))))
 
 
 (defun go-test--get-current-file-tests ()
