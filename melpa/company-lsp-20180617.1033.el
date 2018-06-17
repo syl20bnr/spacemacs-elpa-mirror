@@ -1,7 +1,7 @@
 ;;; company-lsp.el --- Company completion backend for lsp-mode.  -*- lexical-binding: t -*-
 
 ;; Version: 2.0.1
-;; Package-Version: 20180518.1810
+;; Package-Version: 20180617.1033
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "3.4") (company "0.9.0") (s "1.2.0") (dash "2.11.0"))
 ;; URL: https://github.com/tigersoldier/company-lsp
 
@@ -401,6 +401,7 @@ See the documentation of `company-backends' for COMMAND and ARG."
     (prefix (and
              (bound-and-true-p lsp-mode)
              (lsp--capability "completionProvider")
+             (not (company-in-string-or-comment))
              (or (company-lsp--completion-prefix) 'stop)))
     (candidates
      ;; If the completion items in the response have textEdit action populated,
