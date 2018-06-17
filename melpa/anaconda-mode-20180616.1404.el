@@ -4,7 +4,7 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/anaconda-mode
-;; Package-Version: 20180612.623
+;; Package-Version: 20180616.1404
 ;; Version: 0.1.12
 ;; Package-Requires: ((emacs "25") (pythonic "0.1.0") (dash "2.6.0") (s "1.9") (f "0.16.2"))
 
@@ -334,7 +334,7 @@ be bound."
                                 :query-on-exit nil
                                 :filter (lambda (process output)
                                           (anaconda-mode-bootstrap-filter process output callback))
-                                :sentinel (lambda (process event))
+                                :sentinel (lambda (_process _event))
                                 :args `("-c"
                                         ,anaconda-mode-server-command
                                         ,(anaconda-mode-server-directory)
@@ -411,7 +411,7 @@ number position, column number position and file path."
         (url-request-data (anaconda-mode-jsonrpc-request command)))
     (url-retrieve
      (format "http://%s:%s" (anaconda-mode-host) anaconda-mode-port)
-     (anaconda-mode-create-response-handler command callback)
+     (anaconda-mode-create-response-handler callback)
      nil
      t)))
 
@@ -430,11 +430,8 @@ number position, column number position and file path."
                (path . ,(when (buffer-file-name)
                           (pythonic-python-readable-file-name (buffer-file-name))))))))
 
-(defun anaconda-mode-create-response-handler (command callback)
-  "Create server response handler based on COMMAND and CALLBACK function.
-COMMAND argument will be used for response skip message.
-Response can be skipped if point was moved sense request was
-submitted."
+(defun anaconda-mode-create-response-handler (callback)
+  "Create server response handler based on CALLBACK function."
   (let ((anaconda-mode-request-point (point))
         (anaconda-mode-request-buffer (current-buffer))
         (anaconda-mode-request-window (selected-window))
@@ -526,8 +523,8 @@ submitted."
     (with-current-buffer buf
       (view-mode -1)
       (erase-buffer)
-      (--map
-       (progn
+      (mapc
+       (lambda (it)
          (insert (propertize (aref it 0) 'face 'bold))
          (insert "\n")
          (insert (s-trim-right (aref it 1)))

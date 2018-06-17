@@ -3,7 +3,7 @@
 ;; Copyright (C) 2018 Free Software Foundation, Inc.
 
 ;; Version: 0.10
-;; Package-Version: 20180615.1556
+;; Package-Version: 20180616.1559
 ;; Author: João Távora <joaotavora@gmail.com>
 ;; Maintainer: João Távora <joaotavora@gmail.com>
 ;; URL: https://github.com/joaotavora/eglot
@@ -848,7 +848,7 @@ If optional MARKER, return a marker instead"
   "Format MARKUP according to LSP's spec."
   (pcase-let ((`(,string ,mode)
                (if (stringp markup) (list (string-trim markup)
-                                          (intern "markdown-mode"))
+                                          (intern "gfm-mode"))
                  (list (plist-get markup :value)
                        (intern (concat (plist-get markup :language) "-mode" ))))))
     (with-temp-buffer
