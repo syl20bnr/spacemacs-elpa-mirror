@@ -5,7 +5,7 @@
 ;; Author: Gonçalo Santos (aka. weirdNox@GitHub)
 ;; Homepage: https://github.com/weirdNox/org-noter
 ;; Keywords: lisp pdf interleave annotate external sync notes documents org-mode
-;; Package-Version: 20180618.742
+;; Package-Version: 20180618.1208
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.6") (org "9.0"))
 ;; Version: 1.0.2
 
@@ -1516,9 +1516,10 @@ this command will ask you for the target file.
 With a prefix universal argument ARG, only check for the property
 in the current heading, don't inherit from parents.
 
-With a prefix number ARG, only open the document like `find-file'
-would if ARG >= 0, or open the folder containing the document
-when ARG < 0.
+With a prefix number ARG:
+- Greater than 0: Open the document like `find-file'
+-     Equal to 0: Create session with `org-noter-always-create-frame' toggled
+-    Less than 0: Open the folder containing the document
 
 - Creating the session from the document ---------------------------------------
 This will try to find a notes file in any of the parent folders.
@@ -1542,6 +1543,9 @@ notes file, even if it finds one."
     (let* ((notes-file-path (buffer-file-name))
            (document-property (org-entry-get nil org-noter-property-doc-file (not (equal arg '(4)))))
            (document-path (when (stringp document-property) (expand-file-name document-property)))
+           (org-noter-always-create-frame (if (and (numberp arg) (= arg 0))
+                                              (not org-noter-always-create-frame)
+                                            org-noter-always-create-frame))
            ast)
 
       (unless (and document-path (not (file-directory-p document-path)) (file-readable-p document-path))
@@ -1560,10 +1564,12 @@ notes file, even if it finds one."
       (setq ast (org-noter--parse-root (current-buffer) document-property))
       (when (catch 'should-continue
               (when (or (numberp arg) (eq arg '-))
-                (if (>= (prefix-numeric-value arg) 0)
-                    (find-file document-path)
-                  (find-file (file-name-directory document-path)))
-                (throw 'should-continue nil))
+                (cond ((> (prefix-numeric-value arg) 0)
+                       (find-file document-path)
+                       (throw 'should-continue nil))
+                      ((< (prefix-numeric-value arg) 0)
+                       (find-file (file-name-directory document-path))
+                       (throw 'should-continue nil))))
 
               ;; NOTE(nox): Test for existing sessions
               (dolist (test-session org-noter--sessions)

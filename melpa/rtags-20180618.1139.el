@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 20180615.428
+;; Package-Version: 20180618.1139
 ;; Version: 2.10
 
 ;; This file is not part of GNU Emacs.
@@ -4772,6 +4772,7 @@ Return nil if it can't get any info about the item."
     (when symbol
       (let ((brief (cdr (assoc 'briefComment symbol)))
             symbol-text
+            (auto-type (and (cdr (assoc 'auto symbol)) (cdr (assoc 'type symbol))))
             (arg-text (rtags-get-arg-usage-text (rtags-symbol-info-internal))))
         (unless (> (length brief) 0)
           (setq brief nil))
@@ -4779,6 +4780,8 @@ Return nil if it can't get any info about the item."
             (setq symbol-text (format "enum: %s = %d(0x%x)" (cdr (assoc 'symbolName symbol))
                                       (cdr (assoc 'enumValue symbol)) (cdr (assoc 'enumValue symbol))))
           (setq symbol-text (cdr (assoc 'contents (rtags-get-file-contents :info symbol :maxlines (or max-num-lines 5)))))
+          (when auto-type
+            (setq symbol-text (replace-regexp-in-string "\\(\\<auto\\>\\).*\\'" auto-type symbol-text nil nil 1)))
           (when arg-text
             (setq symbol-text (concat symbol-text "\n" arg-text)))
           (when brief
