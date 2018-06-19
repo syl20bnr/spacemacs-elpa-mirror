@@ -4,7 +4,7 @@
 ;;
 ;; Author: Dino Chiesa <dpchiesa@outlook.com>, Sebastian Monia <smonia@outlook.com>
 ;; URL: http://github.com/sebasmonia/tfsmacs/
-;; Package-Version: 20180615.1608
+;; Package-Version: 20180618.1611
 ;; Package-Requires: ((emacs "25") (tablist "0.70"))
 ;; Version: 1.25
 ;; Keywords: tfs, vc
@@ -86,9 +86,6 @@
 (defvar tfsmacs--command-retries 0)
 ;; Holds the setup info when running initial setup
 (defvar tfsmacs--setup-info "")
-;; See https://github.com/Microsoft/team-explorer-everywhere/issues/272
-;; Also as a consequence getting from server paths is not working as expected
-(defvar tfsmacs--no-workspace (list "get"))
 
 (define-prefix-command 'tfsmacs-map)
 (define-key tfsmacs-map "p" 'tfsmacs-pending-changes)
@@ -102,6 +99,18 @@
 (define-key tfsmacs-map "u" 'tfsmacs-undo)
 (define-key tfsmacs-map "-" 'tfsmacs-delete)
 (define-key tfsmacs-map "+" 'tfsmacs-add)
+(define-key tfsmacs-map "s" 'tfsmacs-shelvesets)
+
+(defun tfsmacs--append-to-log (text)
+  "Append TEXT to the TFS Messages buffer.
+Intended for internal use only."
+  (let ((buf (current-buffer))
+        (tfsbuffer (get-buffer-create tfsmacs-log-buffer-name)))
+    (set-buffer tfsbuffer)
+    (goto-char (point-max))
+    (insert text)
+    (insert "\n")
+    (set-buffer buf)))
 
 (defun tfsmacs--get-or-create-process ()
   "Create or return the TEE process."
@@ -133,13 +142,18 @@
     (with-temp-file output-filename
       (call-process tfsmacs-cmd nil t nil (format "@%s" input-script)))))
 
-(defun tfsmacs--async-command (command callback)
+
+;; See https://github.com/Microsoft/team-explorer-everywhere/issues/272 for details on
+;; the "no-workspace" commands.
+;; As a consequence getting from server paths is not working as expected
+(defun tfsmacs--async-command (command callback &optional no-workspace)
   "Run COMMAND in the TEE CLI process and call CALLBACK once it's done.
-Output will be passed to the callback function as parameter."
+Output will be passed to the callback function as parameter.
+If NO-WORKSPACE is provided, said parameter won't be added."
   (let* ((workspace-param (format " %s " (tfsmacs--get-workspace-parameter)))
          (login-param (format " %s " (tfsmacs--get-login-parameter)))
          (command-string ""))
-    (if (member (car command) tfsmacs--no-workspace)
+    (if no-workspace
         (setq command (append command (list login-param)))
       (setq command (append command (list workspace-param login-param))))
     ;; I prefer to do command-string in two parts to show a cleaner log
@@ -254,6 +268,11 @@ It spins off a new instance of the TEE tool by calling 'tfsmacs--sync-command-to
     (tfsmacs--sync-command-to-file command filename)
     filename))
 
+(defun tfsmacs--format-xml-date (date-string)
+  "Convert DATE-STRING to a better representation."
+  ;; Maybe it is worth it to do proper date formatting. TODO?
+  (replace-regexp-in-string "T" " " (substring date-string  0 -9)))
+
 (defun tfsmacs-setup-workspace ()
   "Interactive, opinionated function to configure a collection.
 Not bound by default, you would run this operation once per collection."
@@ -267,7 +286,8 @@ Not bound by default, you would run this operation once per collection."
                                             "-new"
                                             (format "-collection:\"%s\"" url)
                                             (tfsmacs--quote-string workspace-name))
-                                      'tfsmacs--workspace-callback))))
+                              'tfsmacs--workspace-callback
+                              t))))
 
 (defun tfsmacs--workspace-callback (output)
   "Process the OUTPUT of creating a new workspace and setups  mappings."
@@ -284,7 +304,8 @@ Not bound by default, you would run this operation once per collection."
                                           "$/"
                                           (tfsmacs--quote-string local-dir)
                                           (format "-workspace:\"%s\"" workspace-name))
-                                    'tfsmacs--mapping-callback)))
+                            'tfsmacs--mapping-callback
+                            t)))
 
 (defun tfsmacs--mapping-callback (output)
   "Process OUTPUT of setting the $/ mapping."
@@ -436,7 +457,7 @@ is being deleted, then this function also kills the buffer."
 (defun tfsmacs-server-directories (&optional path)
   "Navigate the server tree and download directories.
 This should be useful for first time downloads of files, after
-running `tfsmacs-setup-collection`.
+running `tfsmacs-setup-workspace`.
 PATH is used only for internal calls."
   (interactive)
   (when (not path)
@@ -454,8 +475,9 @@ PATH is used only for internal calls."
       (setq buffer-read-only nil)
       (kill-region (point-min) (point-max))
       (insert "Use ^ and RET to navigate the folders, G to get the folder and it's contents recursively\n\n")
-      (insert (mapconcat 'identity  lines "\n"))
-      (goto-line 3) ; we are guaranteed to have at least that many lines
+      (insert (mapconcat 'identity lines "\n"))
+      (goto-char (point-min))
+      (forward-line 3) ; we are guaranteed to have at least that many lines
       (setq buffer-read-only t)
       (local-set-key "G" 'tfsmacs--server-get-directory)
       (local-set-key "^" 'tfsmacs--server-go-up)
@@ -481,17 +503,16 @@ PATH is used only for internal calls."
 (defun tfsmacs--server-get-directory ()
   "Recursive get the directory under point."
   (interactive)
-  (message "%s %s"
-           "Unsupported for the time being. You will need to create local folders matching the structure"
-           "of the directory and then run a get. See https://github.com/Microsoft/team-explorer-everywhere/issues/272 for more details"))
-;; (defun tfsmacs--server-get-directory ()
-;;   "Recursive get the directory under point."
-;;   (interactive)
-;;   (let* ((line (buffer-substring-no-properties (line-beginning-position) (line-end-position)))
-;;          (directory (concat tfsmacs--server-current-dir "/" (substring line 1))))
-;;     (when (y-or-n-p (format "Run GET on \"%s\" and it's subdirectories? " directory))
-;;       (tfsmacs-get-recursive directory))))
+  (let* ((line (buffer-substring-no-properties (line-beginning-position) (line-end-position)))
+         (directory (concat tfsmacs--server-current-dir "/" (substring line 1))))
+    (when (y-or-n-p (format "Run GET on \"%s\" and it's subdirectories? " directory))
+      (tfsmacs--async-command (list "resolvePath" (tfsmacs--quote-string directory)) 'tfsmacs--server-get-directory--callback))))
 
+(defun tfsmacs--server-get-directory--callback (output)
+  "Start the recursive get on the folder listed in OUTPUT, after creating it."
+  (setq output (file-name-as-directory (substring output 0 -1))) ;; remove trailing new line
+  (make-directory output t)
+  (tfsmacs-get-recursive output t))
 
 (defun tfsmacs-get (&optional filename version)
   "Perform a tf get on a file.
@@ -516,7 +537,7 @@ If VERSION to get is not provided, it will be prompted."
         (let* ((items (mapcar 'tfsmacs--quote-string files-to-get))
                (version (list (tfsmacs--get-version-param version)))
                (command (append '("get") items version)))
-          (tfsmacs--async-command command 'tfsmacs--short-message-callback)))))
+          (tfsmacs--async-command command 'tfsmacs--short-message-callback t)))))
 
 (defun tfsmacs--get-version-param (&optional version)
   "Get a version spec string for a command that supports it.
@@ -552,7 +573,7 @@ The directory to get is deteremined this way:
     (when force
       (setq command (append command '("-force"))))
     (when dir-to-get
-      (tfsmacs--async-command command 'tfsmacs--short-message-callback))))
+      (tfsmacs--async-command command 'tfsmacs--short-message-callback t))))
 
 
 (defun tfsmacs-undo (&optional filename)
@@ -717,14 +738,9 @@ OUTPUT is the XML output from \"tf history\"."
      (vector
       (alist-get 'id changeset)
       (alist-get 'change-type item)
-      (tfsmacs--format-history-node-date (alist-get 'date changeset))
+      (tfsmacs--format-xml-date (alist-get 'date changeset))
       (alist-get 'committer changeset)
       comment))))
-
-(defun tfsmacs--format-history-node-date (date-string)
-  "Convert DATE-STRING to a better representation."
-  ;; Maybe it is worth it to do proper date formatting. TODO?
-  (replace-regexp-in-string "T" " " (substring date-string  0 -9)))
 
 (defun tfsmacs--changeset-callback (output)
   "Show the buffer with the changeset command result.
@@ -887,16 +903,60 @@ OUTPUT is the XML result of \"tf status\"."
       (setq default-dir-prompt default-directory))
     (read-directory-name "Status for directory: " default-dir-prompt nil t)))
 
-(defun tfsmacs--append-to-log (text)
-  "Append TEXT to the TFS Messages buffer.
-Intended for internal use only."
-  (let ((buf (current-buffer))
-        (tfsbuffer (get-buffer-create tfsmacs-log-buffer-name)))
-    (set-buffer tfsbuffer)
-    (goto-char (point-max))
-    (insert text)
-    (insert "\n")
-    (set-buffer buf)))
+(define-derived-mode tfsmacs-shelvesets-mode tabulated-list-mode "TFS Shelvesets Mode" "Major mode TFS Shelvesets, displays a list of shelvesets by user and allows operations on them."
+  (setq tabulated-list-format [("Owner" 30 t)
+                               ("Date" 20 t)
+                               ("Name" 0 t)])
+  (setq tabulated-list-padding 1)
+  (setq tabulated-list-sort-key (cons "Date" t))
+  (tabulated-list-init-header)
+  (tablist-minor-mode))
+
+;; (define-key tfsmacs-shelvesets-mode-map (kbd "U") 'tfsmacs--shelvesets-mode-unshelve)
+;; (define-key tfsmacs-shelvesets-mode-map (kbd "C") 'tfsmacs--shelvesets-changeset-details)
+;; (define-key tfsmacs-shelvesets-mode-map (kbd "D") 'tfsmacs--history-mode-difference)
+
+(defun tfsmacs-shelvesets (&optional owner)
+  "Run \"tf shelvesets\" and show the output in a tabulated list buffer.
+If OWNER is not provided in the call, it will be prompted."
+  (interactive)
+  (when (not owner)
+    (setq owner (read-string "Filter by user (blank for your own shelves, * for all users): ")))
+  (message "TFS: Retrieving shelvesets...")
+  (let ((command (list "shelvesets" "-format:xml")))
+    (when (not (string-empty-p owner))
+      (setq command (append command (list (format "-owner:\"%s\"" owner)))))
+    (tfsmacs--async-command command 'tfsmacs--shelvesets-callback)))
+
+(defun tfsmacs--shelvesets-callback (output)
+  "Process the shelvesets list and display the ‘tfsmacs-shelvesets-mode’ buffer.
+OUTPUT is the XML output from \"tf shelvesets\"."
+  (message "TFS: Showing item history")
+  (let ((parsed-data (tfsmacs--get-shelvesets-data-for-tablist output)))
+    (let* ((shelvesets-bufname (format "*TFS Shelvesets*"))
+           (buffer (get-buffer-create shelvesets-bufname)))
+      (with-current-buffer buffer
+        (setq tabulated-list-entries parsed-data)
+        (tfsmacs-shelvesets-mode)
+        (tablist-revert)
+        (switch-to-buffer buffer)))))
+
+(defun tfsmacs--get-shelvesets-data-for-tablist (xml-status-data)
+  "Format XML-STATUS-DATA from the history command for tabulated list."
+  (with-temp-buffer
+    (insert xml-status-data)
+    (let* ((converted-xml-data (libxml-parse-xml-region (point-min) (point-max)))
+           (shelvesets-nodes (dom-by-tag converted-xml-data 'shelveset)))
+      (mapcar 'tfsmacs--format-shelveset-node shelvesets-nodes))))
+
+(defun tfsmacs--format-shelveset-node (shelveset-node)
+  "Extract from SHELVESET-NODE the info."
+  (let* ((data (cadr shelveset-node))
+         (name (alist-get 'name data))
+         (owner (alist-get 'owner data))
+         (date (tfsmacs--format-xml-date (alist-get 'date data))))
+    (list (list name owner)
+          (vector owner date name))))
 
 ;; is it questionable to start the process as soon as the package loads?
 (tfsmacs--get-or-create-process)
