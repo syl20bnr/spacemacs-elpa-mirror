@@ -4,7 +4,7 @@
 
 ;; Author: Christian Schwarzgruber <c.schwarzgruber.cs@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 20180607.2350
+;; Package-Version: 20180619.124
 ;; Version: 0.2
 ;; Package-Requires: ((emacs "24") (flycheck "0.23") (rtags "2.10"))
 
@@ -89,7 +89,8 @@ CHECKER is the syntax checker used to parse BUFFER."
               (push (flycheck-error-new-at line
                                            column
                                            (pcase severity
-                                             ((or `"fixit" `"warning") 'warning)
+                                             (`"fixit" 'info)
+                                             (`"warning" 'warning)
                                              ((or `"error" `"fatal") 'error))
                                            text
                                            :checker checker
