@@ -5,7 +5,7 @@
 ;; Author: Jan Erik Hanssen <jhanssen@gmail.com>
 ;;         Anders Bakken <agbakken@gmail.com>
 ;; URL: http://rtags.net
-;; Package-Version: 20180618.1139
+;; Package-Version: 20180619.823
 ;; Version: 2.10
 
 ;; This file is not part of GNU Emacs.
@@ -2556,7 +2556,7 @@ of PREFIX or not, if doesn't contain one, one will be added."
   (define-key map (kbd (concat prefix ";")) 'rtags-find-file)
   (define-key map (kbd (concat prefix "F")) 'rtags-fixit)
   (define-key map (kbd (concat prefix "L")) 'rtags-copy-and-print-current-location)
-  (define-key map (kbd (concat prefix "X")) 'rtags-apply-fixit-at-point)
+  (define-key map (kbd (concat prefix "X")) 'rtags-fix-fixit-at-point)
   (define-key map (kbd (concat prefix "B")) 'rtags-show-rtags-buffer)
   (define-key map (kbd (concat prefix "K")) 'rtags-make-member)
   (define-key map (kbd (concat prefix "I")) 'rtags-imenu)
@@ -2598,7 +2598,7 @@ of PREFIX or not, if doesn't contain one, one will be added."
    ["Show compiler diagnostic messages" rtags-diagnostics]
    ["Cycle though diagnostic messages" rtags-cycle-through-diagnostics]
    ["Apply all compiler fix-its" rtags-fixit]
-   ["Apply compiler fix-it at point" rtags-apply-fixit-at-point]
+   ["Apply compiler fix-it at point" rtags-fix-fixit-at-point]
    ["Compile file" rtags-compile-file]
    "--"
    ["Rename symbol" rtags-rename-symbol]
@@ -3019,32 +3019,6 @@ can be specified with a prefix argument."
   (when (or (not (rtags-called-interactively-p)) (rtags-sandbox-id-matches))
     (rtags-find-symbols-by-name-internal "Find rreferences" (rtags-dir-filter) t)))
 
-;;;###autoload
-(defun rtags-apply-fixit-at-point ()
-  (interactive)
-  (let ((line (buffer-substring-no-properties (point-at-bol) (point-at-eol))))
-    (when (string-match "^\\(.*\\):[0-9]+:[0-9]+: fixit: \\([0-9]+\\)-\\([0-9]+\\): .*did you mean '\\(.*\\)'\\?$" line)
-      (let* ((file (match-string-no-properties 1 line))
-             (buf (find-buffer-visiting file))
-             (start (string-to-number (match-string-no-properties 2 line)))
-             (end (string-to-number (match-string-no-properties 3 line)))
-             (text (match-string-no-properties 4 line)))
-        (unless buf
-          (setq buf (find-file-noselect file)))
-        (when (and buf
-                   (or (not (buffer-modified-p buf))
-                       (y-or-n-p (format "%s is modified. This is probably not a good idea. Are you sure? " file))))
-          (let ((win (get-buffer-window buf)))
-            (if win
-                (select-window win)
-              (switch-to-buffer-other-window buf)))
-          (save-excursion
-            (save-restriction
-              (widen)
-              (goto-char start)
-              (delete-char (- end start)) ;; may be 0
-              (insert text))))))))
-
 (defun rtags-overlays-remove (&optional no-update-diagnostics-buffer)
   (save-restriction
     (widen)
@@ -3381,6 +3355,7 @@ of diagnostics count"
         (rtags-display-overlay overlay (overlay-start overlay))))))
 
 (defun rtags-fix-fixit-overlay (overlay)
+  "Apply the compiler fix-it available as overlay."
   (let* ((msg (overlay-get overlay 'rtags-error-message))
          (severity (overlay-get overlay 'rtags-error-severity))
          (replacedata (and msg (cond ((string-match "^[^']*'\\([^']*\\)'.*did you mean '\\([^']*\\)'" msg)
@@ -3421,6 +3396,7 @@ of diagnostics count"
 
 ;;;###autoload
 (defun rtags-fix-fixit-at-point ()
+  "Apply compiler fix-it at point."
   (interactive)
   (unless (rtags-has-diagnostics)
     (rtags--error 'rtags-fixit-diagnostics-not-running))
