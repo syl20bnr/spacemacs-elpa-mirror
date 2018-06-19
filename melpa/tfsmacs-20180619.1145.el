@@ -4,7 +4,7 @@
 ;;
 ;; Author: Dino Chiesa <dpchiesa@outlook.com>, Sebastian Monia <smonia@outlook.com>
 ;; URL: http://github.com/sebasmonia/tfsmacs/
-;; Package-Version: 20180618.1611
+;; Package-Version: 20180619.1145
 ;; Package-Requires: ((emacs "25") (tablist "0.70"))
 ;; Version: 1.25
 ;; Keywords: tfs, vc
@@ -36,6 +36,7 @@
 
 ;;; Code:
 
+(require 'ido)
 (require 'dom)
 (require 'tablist)
 
@@ -68,10 +69,14 @@
   "How many times to check that output was completed before giving up on the command."
   :type 'integer)
 
+(defcustom tfsmacs-workspaces-alist nil
+  "A string-string alist of all your workspaces, for easy switching. Used by `tfsmacs-switch-workspace`."
+  :type 'alist)
 
 (defvar tfsmacs--process-name "TEECLI")
 (defvar tfsmacs--changeset-buffer-name "*TFS Changeset*")
 (defvar tfsmacs--server-dirs-buffer-name "*TFS Folders*")
+(defvar tfsmacs--current-help-message "")
 (defvar tfsmacs--server-current-dir "$/")
 ;; Used to repeat the command when using "g" in the status buffer. Buffer local.
 (defvar tfsmacs--buffer-status-dir nil)
@@ -112,6 +117,11 @@ Intended for internal use only."
     (insert "\n")
     (set-buffer buf)))
 
+(defun tfsmacs--show-help ()
+  "Display the *TFS Help* buffer with the text in `tfsmacs--current-help-message`."
+  (with-output-to-temp-buffer "*TFS Help*"
+    (princ tfsmacs--current-help-message)))
+
 (defun tfsmacs--get-or-create-process ()
   "Create or return the TEE process."
   (let ((buffer-name (format "*%s*" tfsmacs--process-name))
@@ -141,7 +151,6 @@ Intended for internal use only."
       (insert command-string))
     (with-temp-file output-filename
       (call-process tfsmacs-cmd nil t nil (format "@%s" input-script)))))
-
 
 ;; See https://github.com/Microsoft/team-explorer-everywhere/issues/272 for details on
 ;; the "no-workspace" commands.
@@ -273,6 +282,15 @@ It spins off a new instance of the TEE tool by calling 'tfsmacs--sync-command-to
   ;; Maybe it is worth it to do proper date formatting. TODO?
   (replace-regexp-in-string "T" " " (substring date-string  0 -9)))
 
+(defun tfsmacs-switch-workspace ()
+  "Change to configuration to use a different workspace.
+The list of possible values is read from the alist `tfsmacs-workspaces`."
+  (interactive)
+  (let ((ws (ido-completing-read "Switch to workspace: "
+                                 (mapcar 'car tfsmacs-workspaces-alist))))
+    (customize-save-variable 'tfsmacs-current-workspace (alist-get ws tfsmacs-workspaces-alist))))
+  
+
 (defun tfsmacs-setup-workspace ()
   "Interactive, opinionated function to configure a collection.
 Not bound by default, you would run this operation once per collection."
@@ -297,6 +315,9 @@ Not bound by default, you would run this operation once per collection."
       (progn
         (tfsmacs--append-to-log (format "----WORKSPACE ERROR:\n%s\n-----------" output))
         (error "Workspace creation failed.  See log for details")))
+    (when (y-or-n-p (format "Set tfsmacs-current-workspace with \"%s\"? "
+                            workspace-name))
+      (customize-save-variable 'tfsmacs-current-workspace workspace-name))
     (setq local-dir (expand-file-name (read-directory-name "Directory to map $/ (TFS root) in your computer: "
                                                            nil nil t)))
     (tfsmacs--async-command (list "workfold"
@@ -314,7 +335,7 @@ Not bound by default, you would run this operation once per collection."
   (tfsmacs--append-to-log (concat "Mapping: -" output "-"))
   (when (not (string-empty-p output))
     (error "Mapping setup failed.  See log for details"))
-  (message "TFS: Setup completed. It is recommended to set the collection URL using Customize."))
+  (message "TFS: Setup completed. If you plan to switch between different workspaces, you should customize `tfsmacs-workspaces-alist`."))
 
 (defun tfsmacs-checkout (&optional filename)
   "Perform a tf checkout (edit).
@@ -454,15 +475,17 @@ is being deleted, then this function also kills the buffer."
           (tfsmacs--async-command command 'tfsmacs--message-callback))
       (error "Error tfsmacs-delete: No file"))))
 
-(defun tfsmacs-server-directories (&optional path)
+(defun tfsmacs-server-directories (&optional path files)
   "Navigate the server tree and download directories.
 This should be useful for first time downloads of files, after
 running `tfsmacs-setup-workspace`.
-PATH is used only for internal calls."
+PATH and FILES are used only for internal calls."
   (interactive)
   (when (not path)
     (setq path "$/"))
-  (let ((command (list "dir" (tfsmacs--quote-string path) "-folders")))
+  (let ((command (list "dir" (tfsmacs--quote-string path))))
+    (when (not files)
+      (setq command (append command '("-folders"))))
     (tfsmacs--async-command command 'tfsmacs--server-callback)))
 
 (defun tfsmacs--server-callback (output)
@@ -474,17 +497,37 @@ PATH is used only for internal calls."
     (with-current-buffer tfsmacs--server-dirs-buffer-name
       (setq buffer-read-only nil)
       (kill-region (point-min) (point-max))
-      (insert "Use ^ and RET to navigate the folders, G to get the folder and it's contents recursively\n\n")
       (insert (mapconcat 'identity lines "\n"))
       (goto-char (point-min))
-      (forward-line 3) ; we are guaranteed to have at least that many lines
+      (forward-line 2) ; we are guaranteed to have at least that many lines
       (setq buffer-read-only t)
       (local-set-key "G" 'tfsmacs--server-get-directory)
+      (local-set-key "F" 'tfsmacs--server-show-files)
       (local-set-key "^" 'tfsmacs--server-go-up)
       (local-set-key (kbd "RET") 'tfsmacs--server-go-down)
       (local-set-key "p" 'previous-line)
       (local-set-key "n" 'next-line)
-      (switch-to-buffer tfsmacs--server-dirs-buffer-name))))
+      (local-set-key "h" 'tfsmacs--server-directories-help)
+      (switch-to-buffer tfsmacs--server-dirs-buffer-name)))
+  (message "TFS: Done. Press \"h\" to show available bindings."))
+
+(defun tfsmacs--server-directories-help ()
+  "Show help for the directories buffer."
+  (interactive)
+  (setq tfsmacs--current-help-message
+        (concat
+         "--TFS Server Directories help--\n\n"
+         "You can use ^ and RET to navigate the folders just like in dired. Similarly n and p move between lines.\n\n"
+         "G will get the folder under point and its contents recursively. If needed it will create a local"
+         " directory tree to match the one on the server (based on the mappings for the workspace).\n\n"
+         "F will display the files in the current folder. Use it wiselym as it can be quite slow!"))
+  (tfsmacs--show-help))
+
+(defun tfsmacs--server-show-files ()
+  "Show files in the current directory. 
+Showing files all the time could get quite slow.  Hence this command."
+  (interactive)
+  (tfsmacs-server-directories tfsmacs--server-current-dir t))
 
 (defun tfsmacs--server-go-down ()
   "Go down the server directory tree."
@@ -497,15 +540,18 @@ PATH is used only for internal calls."
 (defun tfsmacs--server-go-up ()
   "Go up the server directory tree."
   (interactive)
-  (let ((parts (split-string tfsmacs--server-current-dir "/")))
-    (tfsmacs-server-directories (mapconcat 'identity (butlast parts 1) "/"))))
+  (let* ((parts (split-string tfsmacs--server-current-dir "/"))
+         (target (mapconcat 'identity (butlast parts 1) "/")))
+    (when (string= target "$")
+      (setq target "$/"))
+    (tfsmacs-server-directories target)))
 
 (defun tfsmacs--server-get-directory ()
   "Recursive get the directory under point."
   (interactive)
   (let* ((line (buffer-substring-no-properties (line-beginning-position) (line-end-position)))
          (directory (concat tfsmacs--server-current-dir "/" (substring line 1))))
-    (when (y-or-n-p (format "Run GET on \"%s\" and it's subdirectories? " directory))
+    (when (y-or-n-p (format "Run GET on \"%s\" and its subdirectories? " directory))
       (tfsmacs--async-command (list "resolvePath" (tfsmacs--quote-string directory)) 'tfsmacs--server-get-directory--callback))))
 
 (defun tfsmacs--server-get-directory--callback (output)
@@ -613,7 +659,21 @@ The file to undo is deteremined this way:
 (define-key tfsmacs-history-mode-map (kbd "T") 'tfsmacs--history-mode-get-this-version)
 (define-key tfsmacs-history-mode-map (kbd "C") 'tfsmacs--history-mode-changeset-details)
 (define-key tfsmacs-history-mode-map (kbd "D") 'tfsmacs--history-mode-difference)
+(define-key tfsmacs-history-mode-map (kbd "h") 'tfsmacs--history-mode-help)
 
+(defun tfsmacs--history-mode-help ()
+  "Show help for the history mode."
+  (interactive)
+  (setq tfsmacs--current-help-message
+        (concat
+         "--TFS History mode help--\n\n"
+         "This mode is derived from tabulated-list, so the usual bindings for marking elements work "
+         "as expected (m and u to mark and unmark, for example).\n\n"
+         "T will get the version under point (or marked, if only one file is marked).\n\n"
+         "C shows the changeset details in a separate window.\n\n"
+         "D runs ediff between two files marked in the list. The get for each file runs synchronous, "
+         "Emacs will be unresponsive until the operations are completed."))
+  (tfsmacs--show-help))
 
 (defun tfsmacs--history-mode-quote-path (item-pair)
   "Return the same ITEM-PAIR with only the path quoted."
@@ -706,7 +766,6 @@ How the file is determined:
 (defun tfsmacs--history-callback (output)
   "Process the history output and display the ‘tfsmacs-history-mode’ buffer.
 OUTPUT is the XML output from \"tf history\"."
-  (message "TFS: Showing item history")
   (let ((parsed-data (tfsmacs--get-history-data-for-tablist output)))
     (let* ((short-target (file-name-nondirectory tfsmacs--history-target))
            (history-bufname (format "*TFS History %s *" short-target))
@@ -715,7 +774,8 @@ OUTPUT is the XML output from \"tf history\"."
         (setq tabulated-list-entries parsed-data)
         (tfsmacs-history-mode)
         (tablist-revert)
-        (switch-to-buffer buffer)))))
+        (switch-to-buffer buffer))))
+  (message "TFS: Showing item history. Press \"h\" to show available bindings."))
 
 (defun tfsmacs--get-history-data-for-tablist (xml-status-data)
   "Format XML-STATUS-DATA from the history command for tabulated list."
@@ -750,7 +810,7 @@ OUTPUT is the command's output"
     (read-only-mode)
     (local-set-key "U" 'tfsmacs--changeset-update)
     (switch-to-buffer-other-window tfsmacs--changeset-buffer-name t))
-  (message "TFS: Displaying details. Use \"U\" to update the comment."))
+  (message "TFS: Displaying changeset details. Use \"U\" to update the comment."))
 
 (defun tfsmacs--changeset-update ()
   "Update the changeset comments in the current buffer."
@@ -832,7 +892,27 @@ If VERSION to get is not provided, it will be prompted."
 (define-key tfsmacs-status-mode-map (kbd "g") 'tfsmacs-pending-changes)
 (define-key tfsmacs-status-mode-map (kbd "RET") 'tfsmacs--status-mode-visit-item)
 (define-key tfsmacs-status-mode-map  (kbd "D") 'tfsmacs--status-mode-difference)
+(define-key tfsmacs-status-mode-map (kbd "h") 'tfsmacs--status-mode-help)
 ;;(define-key tfsmacs-status-mode-map (kbd "RET") 'tfsmacs--status-mode-shelve)
+
+(defun tfsmacs--status-mode-help ()
+  "Show help for the status mode."
+  (interactive)
+  (setq tfsmacs--current-help-message
+        (concat
+         "--TFS Status help--\n\n"
+         "This mode is derived from tabulated-list, so the usual bindings for marking elements work "
+         "as expected (m and u to mark and unmark, for example).\n\n"
+         "RET visits the file under point.\n\n"
+         "C will check in the files marked. You will be prompted for a changeset comment, a PBI to "
+         "associate and an override reason. Blank for any of the latter two means they are ignored.\n\n"
+         "R runs \"undo\" in the files marked. R from \"Revert\" :).\n\n"
+         "g updates the list of pending changes. It can take a couple seconds since it runs a check "
+         "against the server.\n\n"
+         "D runs ediff between a file marked in the list (or the one under point if none are marked)."
+         " It will compare your local with the latest on the server. The get for file is synchronous, "
+         "Emacs will be unresponsive until the operation is completed."))
+  (tfsmacs--show-help))
 
 (defun tfsmacs-pending-changes ()
   "Perform a recursive tf status.  Displays the result in a separate buffer."
@@ -857,7 +937,6 @@ If VERSION to get is not provided, it will be prompted."
 (defun tfsmacs--status-callback (output)
   "Process the output of tf status and display the ‘tfsmacs-status-mode’ buffer.
 OUTPUT is the XML result of \"tf status\"."
-  (message "TFS: Showing pending changes")
   (let ((parsed-data (tfsmacs--get-status-data-for-tablist output)))
     (let* ((directory tfsmacs--buffer-status-dir)
            (last-dir-in-path (tfsmacs--get-last-dir-name directory))
@@ -873,7 +952,8 @@ OUTPUT is the XML result of \"tf status\"."
         (setq tfsmacs--buffer-status-dir directory)
         (tablist-revert)
         (rename-buffer status-bufname)
-        (switch-to-buffer buffer)))))
+        (switch-to-buffer buffer))))
+  (message "TFS: Showing pending changes. Press \"h\" to show available bindings."))
 
 (defun tfsmacs--get-status-data-for-tablist (xml-status-data)
   "Format XML-STATUS-DATA from the status command for tabulated list."
@@ -912,9 +992,29 @@ OUTPUT is the XML result of \"tf status\"."
   (tabulated-list-init-header)
   (tablist-minor-mode))
 
-;; (define-key tfsmacs-shelvesets-mode-map (kbd "U") 'tfsmacs--shelvesets-mode-unshelve)
-;; (define-key tfsmacs-shelvesets-mode-map (kbd "C") 'tfsmacs--shelvesets-changeset-details)
-;; (define-key tfsmacs-shelvesets-mode-map (kbd "D") 'tfsmacs--history-mode-difference)
+(define-key tfsmacs-shelvesets-mode-map (kbd "U") 'tfsmacs--shelvesets-mode-unshelve)
+(define-key tfsmacs-shelvesets-mode-map (kbd "C") 'tfsmacs--shelvesets-changeset-details)
+(define-key tfsmacs-shelvesets-mode-map (kbd "D") 'tfsmacs--history-mode-difference)
+;;(define-key tfsmacs-shelvesets-mode-map (kbd "h") 'tfsmacs--shelvesets-mode-help)
+;; Not ready for prime time :)
+(defun tfsmacs--shelvesets-mode-help ()
+  "Show help for the shelvesets mode."
+  (interactive)
+  (setq tfsmacs--current-help-message
+        (concat
+         "--TFS Shelvesets help--\n\n"
+         "This mode is derived from tabulated-list, so the usual bindings for marking elements work "
+         "as expected (m and u to mark and unmark, for example).\n\n"
+         "U unshelves the shelve under point.\n\n"
+         "C will check in the files marked. You will be prompted for a changeset comment, a PBI to "
+         "associate and an override reason. Blank for any of the latter two means they are ignored.\n\n"
+         "R runs \"undo\" in the files marked. R from \"Revert\" :).\n\n"
+         "g updates the list of pending changes. It can take a couple seconds since it runs a check "
+         "against the server.\n\n"
+         "D runs ediff between a file marked in the list (or the one under point if none are marked)."
+         " It will compare your local with the latest on the server. The get for file is synchronous, "
+         "Emacs will be unresponsive until the operation is completed."))
+  (tfsmacs--show-help))
 
 (defun tfsmacs-shelvesets (&optional owner)
   "Run \"tf shelvesets\" and show the output in a tabulated list buffer.

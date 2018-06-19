@@ -27,7 +27,7 @@
 ;; POSSIBILITY OF SUCH DAMAGE.
 
 ;;; Version: 0.8
-;; Package-Version: 20180525.1852
+;; Package-Version: 20180619.857
 ;;; Author: Jason R. Blevins <jrblevin@xbeta.org>
 ;;; Keywords: plain text, notes, Simplenote, Notational Velocity
 ;;; URL: https://jblevins.org/projects/deft/
@@ -586,7 +586,7 @@ Set to nil to hide."
 (defcustom deft-new-file-format "%Y-%m-%dT%H%M"
   "Format string for new file names.
 The default value yields a short ISO-like timestamp, as in
-\"2016-05-12T09:00\".  To use a full ISO 8601 time stamp, for
+\"2016-05-12T0900\".  To use a full ISO 8601 time stamp, for
 example, set this variable to \"%FT%T%z\".  See
 `format-time-string' for possible format controls."
   :type 'string

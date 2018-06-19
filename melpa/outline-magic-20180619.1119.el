@@ -5,7 +5,7 @@
 ;; Author: Carsten Dominik <dominik@science.uva.nl>
 ;; Maintainer: Thorsten Jolitz <tjolitz AT gmail DOT com>
 ;; Version: 0.9.1
-;; Package-Version: 20150209.1426
+;; Package-Version: 20180619.1119
 ;; Keywords: outlines
 
 ;; This file is not part of GNU Emacs.
@@ -238,7 +238,8 @@ them set by set, separated by a nil element.  See the example for
     ; Run `outline-cycle' as if at the top of the buffer.
     (save-excursion
       (goto-char (point-min))
-      (outline-cycle nil)))
+			(let ((current-prefix-argument nil))
+      (outline-cycle nil))))
 
    (t
     (cond
