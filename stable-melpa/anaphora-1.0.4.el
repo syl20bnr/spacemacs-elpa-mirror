@@ -5,9 +5,9 @@
 ;; Author: Roland Walker <walker@pobox.com>
 ;; Homepage: http://github.com/rolandwalker/anaphora
 ;; URL: http://raw.githubusercontent.com/rolandwalker/anaphora/master/anaphora.el
-;; Package-Version: 20180609.1022
-;; Version: 1.0.2
-;; Last-Updated:  9 Jun 2018
+;; Package-Version: 1.0.4
+;; Version: 1.0.4
+;; Last-Updated: 18 Jun 2018
 ;; EmacsWiki: Anaphora
 ;; Keywords: extensions
 ;;
@@ -23,6 +23,10 @@
 ;;
 ;;     ;; anonymous function to compute factorial using `self'
 ;;     (alambda (x) (if (= x 0) 1 (* x (self (1- x)))))
+;;
+;;     ;; to fontify `it' and `self'
+;;     (with-eval-after-load "lisp-mode"
+;;       (anaphora-install-font-lock-keywords))
 ;;
 ;; Explanation
 ;;
@@ -68,18 +72,13 @@
 ;; Partially based on examples from the book "On Lisp", by Paul
 ;; Graham.
 ;;
-;; When this library is loaded, the provided anaphoric forms are
-;; registered as keywords in font-lock.  This may be disabled via
-;; customize.
-;;
 ;; Compatibility and Requirements
 ;;
-;;     GNU Emacs version 25.1-devel     : not tested
-;;     GNU Emacs version 24.5           : not tested
-;;     GNU Emacs version 24.4           : yes, except macros marked experimental
-;;     GNU Emacs version 24.3           : yes, except macros marked experimental
-;;     GNU Emacs version 23.3           : yes, except macros marked experimental
-;;     GNU Emacs version 22.2           : yes, except macros marked experimental
+;;     GNU Emacs version 26.1           : yes
+;;     GNU Emacs version 25.x           : yes
+;;     GNU Emacs version 24.x           : yes
+;;     GNU Emacs version 23.x           : yes
+;;     GNU Emacs version 22.x           : yes
 ;;     GNU Emacs version 21.x and lower : unknown
 ;;
 ;; Bugs
@@ -111,17 +110,12 @@
 ;;;###autoload
 (defgroup anaphora nil
   "Anaphoric macros providing implicit temp variables"
-  :version "1.0.2"
+  :version "1.0.4"
   :link '(emacs-commentary-link :tag "Commentary" "anaphora")
   :link '(url-link :tag "GitHub" "http://github.com/rolandwalker/anaphora")
   :link '(url-link :tag "EmacsWiki" "http://emacswiki.org/emacs/Anaphora")
   :prefix "anaphora-"
   :group 'extensions)
-
-(defcustom anaphora-add-font-lock-keywords t
-  "Add anaphora macros to font-lock keywords when editing Emacs Lisp."
-  :type 'boolean
-  :group 'anaphora)
 
 ;;;###autoload
 (defcustom anaphora-use-long-names-only nil
@@ -131,47 +125,10 @@
 
 ;;; font-lock
 
-(when anaphora-add-font-lock-keywords
-  (eval-after-load "lisp-mode"
-    '(progn
-       (let ((new-keywords '(
-                             "anaphoric-if"
-                             "anaphoric-prog1"
-                             "anaphoric-prog2"
-                             "anaphoric-when"
-                             "anaphoric-while"
-                             "anaphoric-and"
-                             "anaphoric-cond"
-                             "anaphoric-lambda"
-                             "anaphoric-block"
-                             "anaphoric-case"
-                             "anaphoric-ecase"
-                             "anaphoric-typecase"
-                             "anaphoric-etypecase"
-                             "anaphoric-let"
-                             "aif"
-                             "aprog1"
-                             "aprog2"
-                             "awhen"
-                             "awhile"
-                             "aand"
-                             "acond"
-                             "alambda"
-                             "ablock"
-                             "acase"
-                             "aecase"
-                             "atypecase"
-                             "aetypecase"
-                             "alet"
-                             ))
-             (special-variables '(
-                                  "it"
-                                  "self"
-                                  )))
-         (font-lock-add-keywords 'emacs-lisp-mode `((,(concat "\\<" (regexp-opt special-variables 'paren) "\\>")
-                                                     1 font-lock-variable-name-face)) 'append)
-         (font-lock-add-keywords 'emacs-lisp-mode `((,(concat "(\\s-*" (regexp-opt new-keywords 'paren) "\\>")
-                                                     1 font-lock-keyword-face)) 'append)))))
+(defun anaphora-install-font-lock-keywords nil
+  "Fontify keywords `it' and `self'."
+  (font-lock-add-keywords 'emacs-lisp-mode `((,(concat "\\<" (regexp-opt '("it" "self") 'paren) "\\>")
+                                              1 font-lock-variable-name-face)) 'append))
 
 ;;; aliases
 
@@ -408,12 +365,12 @@ EXPR and CLAUSES are otherwise as documented for `etypecase'."
 
 ;;;###autoload
 (defmacro anaphoric-let (form &rest body)
-  "Like `let', but the result of evaluating VARLIST is bound to `it'.
+  "Like `let', but the result of evaluating FORM is bound to `it'.
 
-VARLIST and BODY are otherwise as documented for `let'."
+FORM and BODY are otherwise as documented for `let'."
   (declare (debug let)
            (indent 1))
-  `(let ((it (,@form)))
+  `(let ((it ,form))
      (progn ,@body)))
 
 ;;;###autoload
@@ -498,7 +455,7 @@ DIVIDEND, DIVISOR, and DIVISORS are otherwise as documented for `/'."
 ;;
 ;; LocalWords: Anaphora EXPR awhen COND ARGS alambda ecase typecase
 ;; LocalWords: etypecase aprog aand acond ablock acase aecase alet
-;; LocalWords: atypecase aetypecase VARLIST
+;; LocalWords: atypecase aetypecase
 ;;
 
 ;;; anaphora.el ends here

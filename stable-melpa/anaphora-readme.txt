@@ -9,6 +9,10 @@ Quickstart
     ;; anonymous function to compute factorial using `self'
     (alambda (x) (if (= x 0) 1 (* x (self (1- x)))))
 
+    ;; to fontify `it' and `self'
+    (with-eval-after-load "lisp-mode"
+      (anaphora-install-font-lock-keywords))
+
 Explanation
 
 Anaphoric expressions implicitly create one or more temporary
@@ -53,18 +57,13 @@ Notes
 Partially based on examples from the book "On Lisp", by Paul
 Graham.
 
-When this library is loaded, the provided anaphoric forms are
-registered as keywords in font-lock.  This may be disabled via
-customize.
-
 Compatibility and Requirements
 
-    GNU Emacs version 25.1-devel     : not tested
-    GNU Emacs version 24.5           : not tested
-    GNU Emacs version 24.4           : yes, except macros marked experimental
-    GNU Emacs version 24.3           : yes, except macros marked experimental
-    GNU Emacs version 23.3           : yes, except macros marked experimental
-    GNU Emacs version 22.2           : yes, except macros marked experimental
+    GNU Emacs version 26.1           : yes
+    GNU Emacs version 25.x           : yes
+    GNU Emacs version 24.x           : yes
+    GNU Emacs version 23.x           : yes
+    GNU Emacs version 22.x           : yes
     GNU Emacs version 21.x and lower : unknown
 
 Bugs

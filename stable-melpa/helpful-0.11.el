@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180607.1525
+;; Package-Version: 0.11
 ;; Keywords: help, lisp
 ;; Version: 0.11
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -89,8 +89,12 @@ To disable cleanup entirely, set this variable to nil. See also
 ;; font-lock-keywords-1.
 (defconst helpful-max-highlight 5000
   "Don't highlight code with more than this many characters.
-This is particularly important for large pieces of C code, such
-as describing `this-command'.")
+
+This is currently only used for C code, as lisp highlighting
+seems to be more efficient. This may change again in future.
+
+See `this-command' as an example of a large piece of C code that
+can make Helpful very slow.")
 
 (defun helpful--kind-name (symbol callable-p)
   "Describe what kind of symbol this is."
@@ -770,7 +774,6 @@ vector suitable for `key-description', and COMMAND is a smbol."
     ;; inherited bindings last. Sort so that we group by prefix.
     (s-join "\n" (-sort #'string< lines))))
 
-;; TODO: \\<foo>
 (defun helpful--format-command-keys (docstring)
   "Convert command key references and keymap references
 in DOCSTRING to buttons.
@@ -807,12 +810,17 @@ unescaping too."
            (rx "\\{" (group (+ (not (in "}")))) "}"))
           (let* ((symbol-with-parens (match-string 0))
                  (symbol-name (match-string 1))
-                 (keymap (symbol-value (intern symbol-name))))
+                 (keymap
+                  ;; Gracefully handle variables not being defined.
+                  (ignore-errors
+                    (symbol-value (intern symbol-name)))))
             ;; Remove the original string.
             (delete-region (point)
                            (+ (point) (length symbol-with-parens)))
-            (insert
-             (helpful--format-keymap keymap))))
+            (if keymap
+                (insert (helpful--format-keymap keymap))
+              (insert (format "Keymap %s is not currently defined."
+                              symbol-name)))))
          ((looking-at
            ;; Text of the form \\[foo-command]
            (rx "\\[" (group (+ (not (in "]")))) "]"))
@@ -876,10 +884,10 @@ unescaping too."
 (defun helpful--propertize-bare-links (docstring)
   "Convert URL links in docstrings to buttons."
   (replace-regexp-in-string
-   (rx (group (or string-start space))
+   (rx (group (or string-start space "<"))
        (group "http" (? "s") "://" (+? (not (any space))))
        (group (? (any "." ">" ")"))
-              (or space string-end)))
+              (or space string-end ">")))
    (lambda (match)
      (let ((space-before (match-string 1 match))
            (url (match-string 2 match))
@@ -912,30 +920,47 @@ hooks.")
   "Return a propertized version of SOURCE in MODE."
   (unless mode
     (setq mode #'emacs-lisp-mode))
-  (with-temp-buffer
-    (insert source)
+  (if (or
+       (< (length source) helpful-max-highlight)
+       (eq mode 'emacs-lisp-mode))
+      (with-temp-buffer
+        (insert source)
 
-    (when (< (length source) helpful-max-highlight)
-      ;; Switch to major-mode MODE, but don't run any hooks.
-      (delay-mode-hooks (funcall mode))
+        ;; Switch to major-mode MODE, but don't run any hooks.
+        (delay-mode-hooks (funcall mode))
 
-      ;; `delayed-mode-hooks' contains mode hooks like
-      ;; `emacs-lisp-mode-hook'. Build a list of functions that are run
-      ;; when the mode hooks run.
-      (let (hook-funcs)
-        (dolist (hook delayed-mode-hooks)
-          (let ((funcs (symbol-value hook)))
-            (setq hook-funcs (append hook-funcs funcs))))
+        ;; `delayed-mode-hooks' contains mode hooks like
+        ;; `emacs-lisp-mode-hook'. Build a list of functions that are run
+        ;; when the mode hooks run.
+        (let (hook-funcs)
+          (dolist (hook delayed-mode-hooks)
+            (let ((funcs (symbol-value hook)))
+              (setq hook-funcs (append hook-funcs funcs))))
 
-        ;; Filter hooks to those that relate to highlighting, and run them.
-        (setq hook-funcs (-intersection hook-funcs helpful--highlighting-funcs))
-        (-map #'funcall hook-funcs))
+          ;; Filter hooks to those that relate to highlighting, and run them.
+          (setq hook-funcs (-intersection hook-funcs helpful--highlighting-funcs))
+          (-map #'funcall hook-funcs))
 
-      (if (fboundp 'font-lock-ensure)
-          (font-lock-ensure)
-        (with-no-warnings
-          (font-lock-fontify-buffer))))
-    (buffer-string)))
+        (if (fboundp 'font-lock-ensure)
+            (font-lock-ensure)
+          (with-no-warnings
+            (font-lock-fontify-buffer)))
+        (buffer-string))
+    ;; SOURCE was too long to highlight in a reasonable amount of
+    ;; time.
+    (concat
+     (propertize
+      "// Skipping highlighting due to "
+      'face 'font-lock-comment-face)
+     (helpful--button
+      "helpful-max-highlight"
+      'helpful-describe-exactly-button
+      'symbol 'helpful-max-highlight
+      'callable-p nil)
+     (propertize
+      ".\n"
+      'face 'font-lock-comment-face)
+     source)))
 
 (defun helpful--source (sym callable-p)
   "Return the source code of SYM.
@@ -1009,7 +1034,11 @@ buffer."
          (path nil)
          (buf nil)
          (pos nil)
-         (opened nil))
+         (opened nil)
+         ;; If we end up opening a buffer, don't bother with file
+         ;; variables. It prompts the user, and we discard the buffer
+         ;; afterwards anyway.
+         (enable-local-variables nil))
     (when (and (symbolp sym) callable-p)
       (-let [(_ . src-path) (find-function-library sym)]
         (setq path src-path)))
@@ -1031,11 +1060,7 @@ buffer."
         ;;
         ;; Bind `auto-mode-alist' to nil, so we open the buffer in
         ;; `fundamental-mode' if it isn't already open.
-        (let (auto-mode-alist
-              ;; Don't both setting buffer-local variables, it's
-              ;; annoying to prompt the user since we immediately
-              ;; discard the buffer.
-              enable-local-variables)
+        (let ((auto-mode-alist nil))
           (setq buf (find-file-noselect src-path)))
 
         (unless (-contains-p initial-buffers buf)
@@ -1047,8 +1072,7 @@ buffer."
         ;; table for searching.
         (when opened
           (with-current-buffer buf
-            (let (enable-local-variables)
-              (delay-mode-hooks (normal-mode t)))))
+            (delay-mode-hooks (normal-mode t))))
 
         ;; Based on `find-function-noselect'.
         (with-current-buffer buf
@@ -1648,7 +1672,7 @@ state of the current symbol."
         (propertize (format "%s Defined in " (if primitive-p "//" ";;"))
                     'face 'font-lock-comment-face)
         (helpful--navigate-button
-         source-path
+         (f-abbrev source-path)
          source-path
          (helpful--source-pos helpful--sym helpful--callable-p))
         "\n"))

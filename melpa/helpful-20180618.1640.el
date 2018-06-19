@@ -4,9 +4,9 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 0.10
+;; Package-Version: 20180618.1640
 ;; Keywords: help, lisp
-;; Version: 0.10
+;; Version: 0.12
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -89,8 +89,12 @@ To disable cleanup entirely, set this variable to nil. See also
 ;; font-lock-keywords-1.
 (defconst helpful-max-highlight 5000
   "Don't highlight code with more than this many characters.
-This is particularly important for large pieces of C code, such
-as describing `this-command'.")
+
+This is currently only used for C code, as lisp highlighting
+seems to be more efficient. This may change again in future.
+
+See `this-command' as an example of a large piece of C code that
+can make Helpful very slow.")
 
 (defun helpful--kind-name (symbol callable-p)
   "Describe what kind of symbol this is."
@@ -126,7 +130,7 @@ as describing `this-command'.")
           ;; Kill buffers so we have one buffer less than the maximum
           ;; before we create a new one.
           (-each excess-buffers #'kill-buffer)))
-      
+
       (setq buf (get-buffer-create buf-name)))
 
     ;; Initialise the buffer with the symbol and associated data.
@@ -770,7 +774,6 @@ vector suitable for `key-description', and COMMAND is a smbol."
     ;; inherited bindings last. Sort so that we group by prefix.
     (s-join "\n" (-sort #'string< lines))))
 
-;; TODO: \\<foo>
 (defun helpful--format-command-keys (docstring)
   "Convert command key references and keymap references
 in DOCSTRING to buttons.
@@ -807,12 +810,17 @@ unescaping too."
            (rx "\\{" (group (+ (not (in "}")))) "}"))
           (let* ((symbol-with-parens (match-string 0))
                  (symbol-name (match-string 1))
-                 (keymap (symbol-value (intern symbol-name))))
+                 (keymap
+                  ;; Gracefully handle variables not being defined.
+                  (ignore-errors
+                    (symbol-value (intern symbol-name)))))
             ;; Remove the original string.
             (delete-region (point)
                            (+ (point) (length symbol-with-parens)))
-            (insert
-             (helpful--format-keymap keymap))))
+            (if keymap
+                (insert (helpful--format-keymap keymap))
+              (insert (format "Keymap %s is not currently defined."
+                              symbol-name)))))
          ((looking-at
            ;; Text of the form \\[foo-command]
            (rx "\\[" (group (+ (not (in "]")))) "]"))
@@ -876,10 +884,10 @@ unescaping too."
 (defun helpful--propertize-bare-links (docstring)
   "Convert URL links in docstrings to buttons."
   (replace-regexp-in-string
-   (rx (group (or string-start space))
+   (rx (group (or string-start space "<"))
        (group "http" (? "s") "://" (+? (not (any space))))
        (group (? (any "." ">" ")"))
-              (or space string-end)))
+              (or space string-end ">")))
    (lambda (match)
      (let ((space-before (match-string 1 match))
            (url (match-string 2 match))
@@ -912,30 +920,47 @@ hooks.")
   "Return a propertized version of SOURCE in MODE."
   (unless mode
     (setq mode #'emacs-lisp-mode))
-  (with-temp-buffer
-    (insert source)
+  (if (or
+       (< (length source) helpful-max-highlight)
+       (eq mode 'emacs-lisp-mode))
+      (with-temp-buffer
+        (insert source)
 
-    (when (< (length source) helpful-max-highlight)
-      ;; Switch to major-mode MODE, but don't run any hooks.
-      (delay-mode-hooks (funcall mode))
+        ;; Switch to major-mode MODE, but don't run any hooks.
+        (delay-mode-hooks (funcall mode))
 
-      ;; `delayed-mode-hooks' contains mode hooks like
-      ;; `emacs-lisp-mode-hook'. Build a list of functions that are run
-      ;; when the mode hooks run.
-      (let (hook-funcs)
-        (dolist (hook delayed-mode-hooks)
-          (let ((funcs (symbol-value hook)))
-            (setq hook-funcs (append hook-funcs funcs))))
+        ;; `delayed-mode-hooks' contains mode hooks like
+        ;; `emacs-lisp-mode-hook'. Build a list of functions that are run
+        ;; when the mode hooks run.
+        (let (hook-funcs)
+          (dolist (hook delayed-mode-hooks)
+            (let ((funcs (symbol-value hook)))
+              (setq hook-funcs (append hook-funcs funcs))))
 
-        ;; Filter hooks to those that relate to highlighting, and run them.
-        (setq hook-funcs (-intersection hook-funcs helpful--highlighting-funcs))
-        (-map #'funcall hook-funcs))
+          ;; Filter hooks to those that relate to highlighting, and run them.
+          (setq hook-funcs (-intersection hook-funcs helpful--highlighting-funcs))
+          (-map #'funcall hook-funcs))
 
-      (if (fboundp 'font-lock-ensure)
-          (font-lock-ensure)
-        (with-no-warnings
-          (font-lock-fontify-buffer))))
-    (buffer-string)))
+        (if (fboundp 'font-lock-ensure)
+            (font-lock-ensure)
+          (with-no-warnings
+            (font-lock-fontify-buffer)))
+        (buffer-string))
+    ;; SOURCE was too long to highlight in a reasonable amount of
+    ;; time.
+    (concat
+     (propertize
+      "// Skipping highlighting due to "
+      'face 'font-lock-comment-face)
+     (helpful--button
+      "helpful-max-highlight"
+      'helpful-describe-exactly-button
+      'symbol 'helpful-max-highlight
+      'callable-p nil)
+     (propertize
+      ".\n"
+      'face 'font-lock-comment-face)
+     source)))
 
 (defun helpful--source (sym callable-p)
   "Return the source code of SYM.
@@ -1009,7 +1034,11 @@ buffer."
          (path nil)
          (buf nil)
          (pos nil)
-         (opened nil))
+         (opened nil)
+         ;; If we end up opening a buffer, don't bother with file
+         ;; variables. It prompts the user, and we discard the buffer
+         ;; afterwards anyway.
+         (enable-local-variables nil))
     (when (and (symbolp sym) callable-p)
       (-let [(_ . src-path) (find-function-library sym)]
         (setq path src-path)))
@@ -1025,17 +1054,13 @@ buffer."
       ;; Convert foo.elc to foo.el.
       (-when-let (src-path (helpful--find-library-name path))
         ;; Open `path' ourselves, so we can widen before searching.
-        ;; 
+        ;;
         ;; Opening large.c files can be slow (e.g. when looking at
         ;; `defalias'), especially if the user has configured mode hooks.
         ;;
         ;; Bind `auto-mode-alist' to nil, so we open the buffer in
         ;; `fundamental-mode' if it isn't already open.
-        (let (auto-mode-alist
-              ;; Don't both setting buffer-local variables, it's
-              ;; annoying to prompt the user since we immediately
-              ;; discard the buffer.
-              enable-local-variables)
+        (let ((auto-mode-alist nil))
           (setq buf (find-file-noselect src-path)))
 
         (unless (-contains-p initial-buffers buf)
@@ -1047,8 +1072,7 @@ buffer."
         ;; table for searching.
         (when opened
           (with-current-buffer buf
-            (let (enable-local-variables)
-              (delay-mode-hooks (normal-mode t)))))
+            (delay-mode-hooks (normal-mode t))))
 
         ;; Based on `find-function-noselect'.
         (with-current-buffer buf
@@ -1135,36 +1159,70 @@ buffer."
          (push sym keymaps))))
     keymaps))
 
+(defun helpful--key-sequences (command-sym keymap)
+  "Return all the key sequences of COMMAND-SYM in KEYMAP."
+  (let* ((keycodes
+          ;; Look up this command in the keymap, its parent and the
+          ;; global map. We need to include the global map to find
+          ;; remapped commands.
+          (where-is-internal command-sym keymap nil t))
+         ;; Look up this command in the parent keymap.
+         (parent-keymap (keymap-parent keymap))
+         (parent-keycodes
+          (when parent-keymap
+            (where-is-internal
+             command-sym (list parent-keymap) nil t)))
+         ;; Look up this command in the global map.
+         (global-keycodes
+          (unless (eq keymap global-map)
+            (where-is-internal
+             command-sym (list global-map) nil t))))
+    (->> keycodes
+         ;; Ignore keybindings from the parent or global map.
+         (--remove (-contains-p parent-keycodes it))
+         (--remove (-contains-p global-keycodes it))
+         ;; Convert raw keycode vectors into human-readable strings.
+         (-map #'key-description))))
+
 (defun helpful--keymaps-containing (command-sym)
-  "Return a list of pairs listing keymap symbols that contain COMMAND-SYM,
+  "Return a list of pairs listing keymap names that contain COMMAND-SYM,
 along with the keybindings in each keymap.
+
+Keymap names are typically variable names, but may also be
+descriptions of values in `minor-mode-map-alist'.
 
 We ignore keybindings that are menu items, and ignore keybindings
 from parent keymaps.
 
 `widget-global-map' is also ignored as it generally contains the
 same bindings as `global-map'."
-  (let (matching-keymaps)
-    ;; Look for this command in all keymaps.
-    (dolist (keymap-sym (helpful--all-keymap-syms))
-      (let* ((keymap (symbol-value keymap-sym))
-             (keycodes
-              (where-is-internal
-               command-sym (list keymap) nil t))
-             ;; Look up this command in the parent keymap.
-             (parent-keymap (keymap-parent keymap))
-             (parent-keycodes
-              (when parent-keymap
-                (where-is-internal
-                 command-sym (list parent-keymap) nil t))))
-        (setq keycodes
-              ;; Ignore keybindings that we've just inherited from the
-              ;; parent.
-              (-difference keycodes parent-keycodes))
-        (when (and keycodes (not (eq keymap-sym 'widget-global-map)))
-          (push (cons keymap-sym
-                      (-map #'key-description keycodes))
-                matching-keymaps))))
+  (let* ((keymap-syms (helpful--all-keymap-syms))
+         (keymap-sym-vals (-map #'symbol-value keymap-syms))
+         matching-keymaps)
+    ;; Look for this command in all keymaps bound to variables.
+    (-map
+     (-lambda ((keymap-sym . keymap))
+       (let ((key-sequences (helpful--key-sequences command-sym keymap)))
+         (when (and key-sequences (not (eq keymap-sym 'widget-global-map)))
+           (push (cons (symbol-name keymap-sym) key-sequences)
+                 matching-keymaps))))
+     (-zip keymap-syms keymap-sym-vals))
+
+    ;; Look for this command in keymaps used by minor modes that
+    ;; aren't bound to variables.
+    (-map
+     (-lambda ((minor-mode . keymap))
+       ;; Only consider this keymap if we didn't find it bound to a variable.
+       (when (and (keymapp keymap)
+                  (not (memq keymap keymap-sym-vals)))
+         (let ((key-sequences (helpful--key-sequences command-sym keymap)))
+           (when key-sequences
+             (push (cons (format "minor-mode-map-alist (%s)" minor-mode)
+                         key-sequences)
+                   matching-keymaps)))))
+     ;; TODO: examine `minor-mode-overriding-map-alist' too.
+     minor-mode-map-alist)
+
     matching-keymaps))
 
 (defun helpful--format-keys (command-sym)
@@ -1176,7 +1234,7 @@ same bindings as `global-map'."
         (dolist (key keys)
           (push
            (format "%s %s"
-                   (propertize (symbol-name map) 'face 'font-lock-variable-name-face)
+                   (propertize map 'face 'font-lock-variable-name-face)
                    key)
            (if (eq map 'global-map) global-lines mode-lines)))))
     (setq global-lines (-sort #'string< global-lines))
@@ -1614,7 +1672,7 @@ state of the current symbol."
         (propertize (format "%s Defined in " (if primitive-p "//" ";;"))
                     'face 'font-lock-comment-face)
         (helpful--navigate-button
-         source-path
+         (f-abbrev source-path)
          source-path
          (helpful--source-pos helpful--sym helpful--callable-p))
         "\n"))
