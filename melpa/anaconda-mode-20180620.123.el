@@ -4,7 +4,7 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/anaconda-mode
-;; Package-Version: 20180616.1404
+;; Package-Version: 20180620.123
 ;; Version: 0.1.12
 ;; Package-Requires: ((emacs "25") (pythonic "0.1.0") (dash "2.6.0") (s "1.9") (f "0.16.2"))
 
@@ -218,9 +218,6 @@ service_factory.service_factory(app, server_address, 0, 'anaconda_mode port {por
 (defvar anaconda-mode-process nil
   "Currently running `anaconda-mode' process.")
 
-(defvar anaconda-mode-port nil
-  "Port for `anaconda-mode' connection.")
-
 (defvar anaconda-mode-response-buffer "*anaconda-response*"
   "Buffer name for error report when `anaconda-mode' fail to read server response.")
 
@@ -257,6 +254,10 @@ service_factory.service_factory(app, server_address, 0, 'anaconda_mode port {por
    (t
     "127.0.0.1")))
 
+(defun anaconda-mode-port ()
+  "Port for `anaconda-mode' connection."
+  (process-get anaconda-mode-process 'port))
+
 (defun anaconda-mode-start (&optional callback)
   "Start `anaconda-mode' server.
 CALLBACK function will be called when `anaconda-mode-port' will
@@ -275,8 +276,7 @@ be bound."
     (set-process-filter anaconda-mode-process nil)
     (set-process-sentinel anaconda-mode-process nil)
     (kill-process anaconda-mode-process)
-    (setq anaconda-mode-process nil
-          anaconda-mode-port nil))
+    (setq anaconda-mode-process nil))
   (when (anaconda-mode-socat-running-p)
     (kill-process anaconda-mode-socat-process)
     (setq anaconda-mode-socat-process nil))
@@ -301,7 +301,7 @@ be bound."
 
 (defun anaconda-mode-bound-p ()
   "Is `anaconda-mode' port bound."
-  (numberp anaconda-mode-port))
+  (numberp (anaconda-mode-port)))
 
 (defun anaconda-mode-need-restart ()
   "Check if we need to restart `anaconda-mode-server'."
@@ -342,6 +342,7 @@ be bound."
                                         ,(or python-shell-virtualenv-root ""))))
   (process-put anaconda-mode-process 'interpreter python-shell-interpreter)
   (process-put anaconda-mode-process 'virtualenv python-shell-virtualenv-root)
+  (process-put anaconda-mode-process 'port nil)
   (when (pythonic-remote-p)
     (process-put anaconda-mode-process 'remote-p t)
     (process-put anaconda-mode-process 'remote-method (pythonic-remote-method))
@@ -362,7 +363,7 @@ called when `anaconda-mode-port' will be bound."
         (set-marker (process-mark process) (point)))))
   (unless (anaconda-mode-bound-p)
     (--when-let (s-match "anaconda_mode port \\([0-9]+\\)" output)
-      (setq anaconda-mode-port (string-to-number (cadr it)))
+      (process-put anaconda-mode-process 'port (string-to-number (cadr it)))
       (cond ((pythonic-remote-docker-p)
              (let* ((container-raw-description (with-output-to-string
                                                  (with-current-buffer
@@ -378,8 +379,8 @@ called when `anaconda-mode-port' will be bound."
                      (start-process anaconda-mode-socat-process-name
                                     anaconda-mode-socat-process-buffer
                                     "socat"
-                                    (format "TCP4-LISTEN:%d" anaconda-mode-port)
-                                    (format "TCP4:%s:%d" container-ip anaconda-mode-port)))
+                                    (format "TCP4-LISTEN:%d" (anaconda-mode-port))
+                                    (format "TCP4:%s:%d" container-ip (anaconda-mode-port))))
                (set-process-query-on-exit-flag anaconda-mode-socat-process nil)))
             ((pythonic-remote-vagrant-p)
              (setq anaconda-mode-ssh-process
@@ -388,7 +389,7 @@ called when `anaconda-mode-port' will be bound."
                                   "ssh" "-nNT"
                                   (format "%s@%s" (pythonic-remote-user) (pythonic-remote-host))
                                   "-p" (number-to-string (pythonic-remote-port))
-                                  "-L" (format "%s:%s:%s" anaconda-mode-port (pythonic-remote-host) anaconda-mode-port)))
+                                  "-L" (format "%s:%s:%s" (anaconda-mode-port) (pythonic-remote-host) (anaconda-mode-port))))
              (set-process-query-on-exit-flag anaconda-mode-ssh-process nil)))
       (when callback
         (funcall callback)))))
@@ -410,7 +411,7 @@ number position, column number position and file path."
   (let ((url-request-method "POST")
         (url-request-data (anaconda-mode-jsonrpc-request command)))
     (url-retrieve
-     (format "http://%s:%s" (anaconda-mode-host) anaconda-mode-port)
+     (format "http://%s:%s" (anaconda-mode-host) (anaconda-mode-port))
      (anaconda-mode-create-response-handler callback)
      nil
      t)))
