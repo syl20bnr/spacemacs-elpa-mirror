@@ -4,7 +4,7 @@
 
 ;; Author: PythonNut <pythonnut@pythonnut.com>
 ;; Keywords: convenience
-;; Package-Version: 20180210.2119
+;; Package-Version: 20180619.1223
 ;; Version: 20170111
 ;; URL: https://github.com/PythonNut/historian.el
 ;; Package-Requires: ((emacs "24.4"))
@@ -64,7 +64,9 @@
                                historian--history-table
                                (cons (list)
                                      (make-hash-table :test #'equal))))
-                     (new-value (substring-no-properties value)))
+                     (new-value (if (stringp value)
+                                    (substring-no-properties value)
+                                  (format "%S" value))))
                  (push new-value (car old-history))
                  (when (> (length (car old-history))
                           historian-history-length)
