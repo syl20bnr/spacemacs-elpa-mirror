@@ -14,7 +14,7 @@
 
 ;; Author: Daniel McClanahan <danieldmcclanahan@gmail.com>
 ;; Version: 0.2
-;; Package-Version: 20180620.1401
+;; Package-Version: 20180620.1812
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5") (dash "2.13.0") (thrift "0.9.3"))
 ;; Keywords: scrooge, thrift
 
@@ -106,7 +106,7 @@
          (group-n 4 (: (not whitespace)
                        (* not-newline)))
          eol))
-  "This regexp matches a line beginning with #@namespace
+  "This regexp matches a line beginning with #@namespace.
 
 These lines are how scrooge ensures compatibility with Apache Thrift, because they are normally
 parsed as comments.")
@@ -120,10 +120,13 @@ parsed as comments.")
 (defconst scrooge--comment-start "# "
   "Value to set `comment-start' when entering `scrooge-mode'.
 
-TODO: make this a `defcustom'!")
+TODO: make this a `defcustom'! Should probably support `comment-end' etc too.")
 
 (defconst scrooge--line-comment-rx-expr `(: "#" (* not-newline) "\n")
-  "We contain the newline because that's what you get if you use a syntax table to mark comments.")
+  "We contain the newline because that's what you get if you use a syntax table to mark comments.
+
+That is to say, they mark the newline with a comment face. If you use a color theme which changes
+the comment's background background color this can be seen clearly.")
 
 (defconst scrooge--title-case-symbol-rx-expr `(: upper-case (* (| alpha "_"))))
 
@@ -133,9 +136,9 @@ TODO: make this a `defcustom'!")
 ;; Public "immutable" variables
 (defconst scrooge-font-lock-keywords
   (--map
-   ;; Deconstruct each pair into a regexp and the rest, and convert the regexp into a function. This
-   ;; function is invoked to set match data, and allows us to control `case-fold-search' for our
-   ;; font lock keyword matching.
+   ;; Deconstruct each pair into a regexp and the rest, and convert the regexp into a closure. The
+   ;; closure is invoked by `font-lock' to set match data, and allows us to control
+   ;; e.g. `case-fold-search' for our font lock keyword matching.
    (cl-destructuring-bind (regexp . rest) it
      (cons (scrooge--invoke-regexp regexp) rest))
    `((,scrooge--special-namespace-line-regexp
@@ -171,12 +174,23 @@ TODO: make this a `defcustom'!")
   "Scrooge Keywords.")
 
 
+;; Macros
+(defmacro scrooge--at-point-in-buffer (pt &rest body)
+  "Go to the point PT and execute BODY, wrapped in a `save-excursion'."
+  (declare (indent 1))
+  `(save-excursion
+     ;; ,pt is only evaluated once!
+     (goto-char ,pt)
+     ,@body))
+
+
 ;; Implementation methods
 (defun scrooge--syntax-propertize-extend-region (start end)
   "Extend region to propertize between START and END upon change."
-  (let* ((b (line-beginning-position))
-         (e (if (and (bolp) (> (point) b)) (point)
-              (min (1+ (line-end-position)) (point-max)))))
+  (let* ((b (scrooge--at-point-in-buffer start
+              (line-beginning-position)))
+         (e (scrooge--at-point-in-buffer end
+              (-> (line-end-position) (1+) (min (point-max))))))
     (unless (and (= start b) (= end e)) (cons b e))))
 
 (defun scrooge--font-lock-extend (start end _)
@@ -187,6 +201,7 @@ TODO: make this a `defcustom'!")
             jit-lock-end (cdr res)))))
 
 (defun scrooge--match-generic-types-rx-expr ()
+  "Creates an `rx' sexp to match a use of a generic collection type, e.g. list<MyType>."
   `(: (group-n 1 (| ,@scrooge--generic-type-symbols))
       (group-n 2 "<")
       (group-n 3 ,scrooge--title-case-symbol-rx-expr)

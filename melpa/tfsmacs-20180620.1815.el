@@ -4,7 +4,7 @@
 ;;
 ;; Author: Dino Chiesa <dpchiesa@outlook.com>, Sebastian Monia <smonia@outlook.com>
 ;; URL: http://github.com/sebasmonia/tfsmacs/
-;; Package-Version: 20180620.1541
+;; Package-Version: 20180620.1815
 ;; Package-Requires: ((emacs "25") (tablist "0.70"))
 ;; Version: 1.25
 ;; Keywords: tfs, vc
@@ -38,6 +38,7 @@
 
 (require 'ido)
 (require 'dom)
+(require 'cl-lib)
 (require 'tablist)
 
 (defgroup tfsmacs nil
@@ -75,6 +76,7 @@
 
 (defvar tfsmacs--process-name "TEECLI")
 (defvar tfsmacs--changeset-buffer-name "*TFS Changeset*")
+(defvar tfsmacs--shelveset-buffer-name "*TFS Shelveset*")
 (defvar tfsmacs--server-dirs-buffer-name "*TFS Folders*")
 (defvar tfsmacs--current-help-message "")
 (defvar tfsmacs--server-current-dir "$/")
@@ -1007,6 +1009,36 @@ OUTPUT is the XML result of \"tf status\"."
           (tfsmacs--async-command (list "unshelve" as-string) 'tfsmacs--message-callback)))
       (error "Only one item should be selected for this operation")))
 
+(defun tfsmacs--shelvesets-mode-details ()
+  "Unshelve to current workspace when in tfsmacs-shelvesets-mode."
+  (interactive)
+  (let* ((items (tfsmacs--shelvesets-mode-get-marked-items)))
+    (if (equal (length items) 1)
+        (progn
+          (message "TFS: retrieving collection URL...")
+          (tfsmacs--async-command (list "workfold") 'tfsmacs--shelvesets-mode-details-collection-callback))
+      (error "Only one item should be selected for this operation"))))
+
+(defun tfsmacs--shelvesets-mode-details-collection-callback (output)
+  "Process the OUTPUT of the command \"tf workfold -workspace:name\" to get the collection URL."
+  (let* ((items (tfsmacs--shelvesets-mode-get-marked-items))
+         (to-unshelve (car items))
+         (as-string (format "\"%s;%s\"" (car to-unshelve) (cadr to-unshelve)))
+         (url (car (cl-remove-if-not (lambda (x): (string-prefix-p "http://" x))
+                                  (split-string output)))))
+    (when (get-buffer tfsmacs--shelveset-buffer-name)
+      (kill-buffer tfsmacs--shelveset-buffer-name))
+    (tfsmacs--async-command (list "status" (format "-collection:%s" url) (format "-shelveset:%s" as-string))
+                            'tfsmacs--shelvesets-details-callback
+                            t)))
+
+(defun tfsmacs--shelvesets-details-callback (output)
+  "Show the buffer with the shelveset details.
+OUTPUT is the command's output"
+  (with-current-buffer (get-buffer-create tfsmacs--shelveset-buffer-name)
+    (insert output)
+    (read-only-mode)
+    (switch-to-buffer-other-window tfsmacs--shelveset-buffer-name t)))
 
 (define-derived-mode tfsmacs-shelvesets-mode tabulated-list-mode "TFS Shelvesets Mode" "Major mode TFS Shelvesets, displays a list of shelvesets by user and allows operations on them."
   (setq tabulated-list-format [("Owner" 30 t)
@@ -1018,6 +1050,7 @@ OUTPUT is the XML result of \"tf status\"."
   (tablist-minor-mode))
 
 (define-key tfsmacs-shelvesets-mode-map (kbd "R") 'tfsmacs--shelvesets-mode-unshelve)
+(define-key tfsmacs-shelvesets-mode-map (kbd "D") 'tfsmacs--shelvesets-mode-details)
 (define-key tfsmacs-shelvesets-mode-map (kbd "h") 'tfsmacs--shelvesets-mode-help)
 
 (defun tfsmacs--shelvesets-mode-help ()
@@ -1028,7 +1061,8 @@ OUTPUT is the XML result of \"tf status\"."
          "--TFS Shelvesets help--\n\n"
          "This mode is derived from tabulated-list, so the usual bindings for marking elements work "
          "as expected (m and u to mark and unmark, for example).\n\n"
-         "R (retrieve) unshelves the shelve under point or marked (only one can be marked).\n\n"))
+         "R (retrieve) unshelves the shelve under point or marked (only one can be marked).\n\n"
+         "D shows details for the current/marked shelveset in a separate buffer."))
   (tfsmacs--show-help))
 
 (defun tfsmacs-shelvesets (&optional owner)
@@ -1046,7 +1080,7 @@ If OWNER is not provided in the call, it will be prompted."
 (defun tfsmacs--shelvesets-callback (output)
   "Process the shelvesets list and display the ‘tfsmacs-shelvesets-mode’ buffer.
 OUTPUT is the XML output from \"tf shelvesets\"."
-  (message "TFS: Showing item history")
+  (message "TFS: Showing shelvesets...")
   (let ((parsed-data (tfsmacs--get-shelvesets-data-for-tablist output)))
     (let* ((shelvesets-bufname (format "*TFS Shelvesets*"))
            (buffer (get-buffer-create shelvesets-bufname)))
