@@ -4,7 +4,7 @@
 ;;
 ;; Author: Dino Chiesa <dpchiesa@outlook.com>, Sebastian Monia <smonia@outlook.com>
 ;; URL: http://github.com/sebasmonia/tfsmacs/
-;; Package-Version: 20180620.844
+;; Package-Version: 20180620.1541
 ;; Package-Requires: ((emacs "25") (tablist "0.70"))
 ;; Version: 1.25
 ;; Keywords: tfs, vc
@@ -691,7 +691,8 @@ The file to undo is deteremined this way:
    (tfsmacs--quote-string (cadr item-pair))))
 
 (defun tfsmacs--history-mode-get-marked-items ()
-  "Return the selected items in ‘tfsmacs-history-mode’."
+  "Return the selected items in ‘tfsmacs-history-mode’.
+The function returns (changesed-id server-path) for each element."
   (mapcar 'car (tablist-get-marked-items)))
 
 (defun tfsmacs--history-mode-get-this-version ()
@@ -748,7 +749,6 @@ How the file is determined:
    the file being visited by the current buffer.
 
  - else, prompt the user for the file"
-  
   (interactive)
   (let ((files-for-history (tfsmacs--determine-target-files filename "File: ")))
     (if (equal (length files-for-history) 1)
@@ -995,6 +995,19 @@ OUTPUT is the XML result of \"tf status\"."
       (setq default-dir-prompt default-directory))
     (read-directory-name "Status for directory: " default-dir-prompt nil t)))
 
+(defun tfsmacs--shelvesets-mode-unshelve ()
+  "Unshelve to current workspace when in tfsmacs-shelvesets-mode."
+  (interactive)
+  (let* ((items (tfsmacs--shelvesets-mode-get-marked-items))
+         (to-unshelve (car items))
+         (as-string (format "\"%s;%s\"" (car to-unshelve) (cadr to-unshelve))))
+    (if (equal (length items) 1)
+        (progn
+          (message "TFS: unshelving...")
+          (tfsmacs--async-command (list "unshelve" as-string) 'tfsmacs--message-callback)))
+      (error "Only one item should be selected for this operation")))
+
+
 (define-derived-mode tfsmacs-shelvesets-mode tabulated-list-mode "TFS Shelvesets Mode" "Major mode TFS Shelvesets, displays a list of shelvesets by user and allows operations on them."
   (setq tabulated-list-format [("Owner" 30 t)
                                ("Date" 20 t)
@@ -1004,11 +1017,9 @@ OUTPUT is the XML result of \"tf status\"."
   (tabulated-list-init-header)
   (tablist-minor-mode))
 
-(define-key tfsmacs-shelvesets-mode-map (kbd "U") 'tfsmacs--shelvesets-mode-unshelve)
-(define-key tfsmacs-shelvesets-mode-map (kbd "C") 'tfsmacs--shelvesets-changeset-details)
-(define-key tfsmacs-shelvesets-mode-map (kbd "D") 'tfsmacs--history-mode-difference)
-;;(define-key tfsmacs-shelvesets-mode-map (kbd "h") 'tfsmacs--shelvesets-mode-help)
-;; Not ready for prime time :)
+(define-key tfsmacs-shelvesets-mode-map (kbd "R") 'tfsmacs--shelvesets-mode-unshelve)
+(define-key tfsmacs-shelvesets-mode-map (kbd "h") 'tfsmacs--shelvesets-mode-help)
+
 (defun tfsmacs--shelvesets-mode-help ()
   "Show help for the shelvesets mode."
   (interactive)
@@ -1017,15 +1028,7 @@ OUTPUT is the XML result of \"tf status\"."
          "--TFS Shelvesets help--\n\n"
          "This mode is derived from tabulated-list, so the usual bindings for marking elements work "
          "as expected (m and u to mark and unmark, for example).\n\n"
-         "U unshelves the shelve under point.\n\n"
-         "C will check in the files marked. You will be prompted for a changeset comment, a PBI to "
-         "associate and an override reason. Blank for any of the latter two means they are ignored.\n\n"
-         "R runs \"undo\" in the files marked. R from \"Revert\" :).\n\n"
-         "g updates the list of pending changes. It can take a couple seconds since it runs a check "
-         "against the server.\n\n"
-         "D runs ediff between a file marked in the list (or the one under point if none are marked)."
-         " It will compare your local with the latest on the server. The get for file is synchronous, "
-         "Emacs will be unresponsive until the operation is completed."))
+         "R (retrieve) unshelves the shelve under point or marked (only one can be marked).\n\n"))
   (tfsmacs--show-help))
 
 (defun tfsmacs-shelvesets (&optional owner)
@@ -1069,6 +1072,11 @@ OUTPUT is the XML output from \"tf shelvesets\"."
          (date (tfsmacs--format-xml-date (alist-get 'date data))))
     (list (list name owner)
           (vector owner date name))))
+
+(defun tfsmacs--shelvesets-mode-get-marked-items ()
+  "Obtain only (name owner) of the files selected in the list."
+  (mapcar 'car (tablist-get-marked-items)))
+
 
 ;; is it questionable to start the process as soon as the package loads?
 (tfsmacs--get-or-create-process)

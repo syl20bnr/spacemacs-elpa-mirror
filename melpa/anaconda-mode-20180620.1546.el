@@ -4,7 +4,7 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/anaconda-mode
-;; Package-Version: 20180620.123
+;; Package-Version: 20180620.1546
 ;; Version: 0.1.12
 ;; Package-Requires: ((emacs "25") (pythonic "0.1.0") (dash "2.6.0") (s "1.9") (f "0.16.2"))
 
@@ -251,6 +251,8 @@ service_factory.service_factory(app, server_address, 0, 'anaconda_mode port {por
     "127.0.0.1")
    ((pythonic-remote-p)
     (pythonic-remote-host))
+   ((s-equals-p system-type "darwin")
+    "localhost")
    (t
     "127.0.0.1")))
 

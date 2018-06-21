@@ -1,4 +1,4 @@
-;;; scrooge.el --- Major mode for Twitter Scrooge files
+;;; scrooge.el --- Major mode for Twitter Scrooge files -*- lexical-binding: t -*-
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation; either version 3, or (at your option)
@@ -14,8 +14,8 @@
 
 ;; Author: Daniel McClanahan <danieldmcclanahan@gmail.com>
 ;; Version: 0.2
-;; Package-Version: 20180620.1119
-;; Package-Requires: ((emacs "24") (cl-lib "0.5") (dash "2.13.0") (rainbow-delimiters "1.3.7") (thrift "0.9.3"))
+;; Package-Version: 20180620.1401
+;; Package-Requires: ((emacs "24") (cl-lib "0.5") (dash "2.13.0") (thrift "0.9.3"))
 ;; Keywords: scrooge, thrift
 
 ;;; Commentary:
@@ -29,7 +29,6 @@
 (require 'dash)
 (require 'thrift)
 (require 'font-lock)
-(require 'rainbow-delimiters)
 (require 'rx)
 
 
@@ -47,16 +46,16 @@
 
 (defun scrooge--rx-symbol-wrap (rx-expr) `(: symbol-start ,rx-expr symbol-end))
 
+(defun scrooge--invoke-regexp (pattern)
+  (lambda (last)
+    (let ((case-fold-search nil))
+      (re-search-forward pattern last t))))
+
 
 ;; Defcustoms
 (defgroup scrooge nil
   "Group for `scrooge-mode' customizations."
   :group 'prog-mode)
-
-(defcustom scrooge-use-rainbow-delimiters t
-  "Whether to enable `rainbow-delimiters-mode' when entering `scrooge-mode'."
-  :type 'boolean
-  :group 'scrooge)
 
 (defcustom scrooge-indent-level 2
   "The number of spaces to indent thrift and scrooge files."
@@ -87,13 +86,14 @@
     "byte"
     "i16" "i32" "i64"
     "double"
-    "binary"
-    "map"
+    "binary"))
+
+(defconst scrooge--generic-type-symbols
+  `("map"
     "list"
     "set"))
 
-(defconst scrooge--ordinals-rx-expr `(+ digit)
-  "???")
+(defconst scrooge--ordinals-rx-expr `(+ digit))
 
 ;;; TODO: named regexp groups macro (w more pcase extensions)!!
 (defconst scrooge--special-namespace-line-regexp
@@ -106,8 +106,10 @@
          (group-n 4 (: (not whitespace)
                        (* not-newline)))
          eol))
-  ;; FIXME: document this!!! this is the only important part!!!
-  "\\(?:^\\(?1:\\(?:#@\\)?\\)\\(?2:namespace\\)[ \t\v\f]+\\(?3:[^ \t\v\f]+\\)[ \t\v\f]+\\(?4:[^ \t\v\f].*\\)?$\\)")
+  "This regexp matches a line beginning with #@namespace
+
+These lines are how scrooge ensures compatibility with Apache Thrift, because they are normally
+parsed as comments.")
 
 (defconst scrooge--function-decl-rx-expr
   `(: symbol-start
@@ -120,8 +122,8 @@
 
 TODO: make this a `defcustom'!")
 
-(defconst scrooge--line-comment-rx-expr `(: "#" (* not-newline) line-end)
-  "???")
+(defconst scrooge--line-comment-rx-expr `(: "#" (* not-newline) "\n")
+  "We contain the newline because that's what you get if you use a syntax table to mark comments.")
 
 (defconst scrooge--title-case-symbol-rx-expr `(: upper-case (* (| alpha "_"))))
 
@@ -130,48 +132,43 @@ TODO: make this a `defcustom'!")
 
 ;; Public "immutable" variables
 (defconst scrooge-font-lock-keywords
-  `((,scrooge--special-namespace-line-regexp
-     (1 font-lock-keyword-face)
-     (2 font-lock-builtin-face)
-     (3 font-lock-type-face)
-     (4 font-lock-string-face))
-    (,(rx-to-string scrooge--line-comment-rx-expr)
-     . font-lock-comment-face)
-    (,(-> scrooge--keyword-literals (scrooge--rx-join) (scrooge--rx-symbol-wrap)
-          (rx-to-string))
-     . font-lock-keyword-face)
-    (,(-> scrooge--primitive-types-literals (scrooge--rx-join) (scrooge--rx-symbol-wrap)
-          (rx-to-string))
-     . font-lock-builtin-face)
-    (,(-> scrooge--ordinals-rx-expr (scrooge--rx-symbol-wrap)
-          (rx-to-string))
-     . font-lock-variable-name-face)
-    (,(-> scrooge--title-case-symbol-rx-expr (scrooge--rx-symbol-wrap)
-          (rx-to-string))
-     . font-lock-type-face)
-    (,(-> scrooge--lower-case-symbol-rx-expr (scrooge--rx-symbol-wrap)
-          (rx-to-string))
-     . font-lock-variable-name-face)
-    (,(rx-to-string scrooge--function-decl-rx-expr)
-     (1 font-lock-function-name-face)))
-  "Scrooge Keywords.
-
-FIXME: add case-based syntax highlighting!")
-
-(defconst scrooge-mode-syntax-table
-  (let ((tbl (make-syntax-table thrift-mode-syntax-table)))
-    ;; Remove the syntax entries for sh-style comments -- we need to parse them ourselves.
-    (modify-syntax-entry ?# "." tbl)
-    (modify-syntax-entry ?\n " " tbl)
-    ;; We want to use symbols here, in my opinion, since
-    (modify-syntax-entry ?_ "_")
-    tbl)
-  "Syntax table for scrooge-mode.
-
-also allowing underscore in words
-
-this does NOT mark sh-style comments! that is done with font locking due to the ambiguity with the
-scrooge #@namespace hack")
+  (--map
+   ;; Deconstruct each pair into a regexp and the rest, and convert the regexp into a function. This
+   ;; function is invoked to set match data, and allows us to control `case-fold-search' for our
+   ;; font lock keyword matching.
+   (cl-destructuring-bind (regexp . rest) it
+     (cons (scrooge--invoke-regexp regexp) rest))
+   `((,scrooge--special-namespace-line-regexp
+      (1 font-lock-keyword-face)
+      (2 font-lock-builtin-face)
+      (3 font-lock-type-face)
+      (4 font-lock-string-face))
+     (,(rx-to-string scrooge--line-comment-rx-expr)
+      . font-lock-comment-face)
+     (,(-> scrooge--keyword-literals (scrooge--rx-join) (scrooge--rx-symbol-wrap)
+           (rx-to-string))
+      . font-lock-keyword-face)
+     (,(-> scrooge--primitive-types-literals (scrooge--rx-join) (scrooge--rx-symbol-wrap)
+           (rx-to-string))
+      . font-lock-builtin-face)
+     (,(-> (scrooge--match-generic-types-rx-expr) (scrooge--rx-symbol-wrap)
+           (rx-to-string))
+      (1 font-lock-builtin-face)
+      (2 font-lock-builtin-face)
+      (3 font-lock-type-face)
+      (4 font-lock-builtin-face))
+     (,(-> scrooge--ordinals-rx-expr (scrooge--rx-symbol-wrap)
+           (rx-to-string))
+      . font-lock-variable-name-face)
+     (,(-> scrooge--title-case-symbol-rx-expr (scrooge--rx-symbol-wrap)
+           (rx-to-string))
+      . font-lock-type-face)
+     (,(-> scrooge--lower-case-symbol-rx-expr (scrooge--rx-symbol-wrap)
+           (rx-to-string))
+      . font-lock-variable-name-face)
+     (,(rx-to-string scrooge--function-decl-rx-expr)
+      (1 font-lock-function-name-face))))
+  "Scrooge Keywords.")
 
 
 ;; Implementation methods
@@ -189,6 +186,12 @@ scrooge #@namespace hack")
       (setq jit-lock-start (car res)
             jit-lock-end (cdr res)))))
 
+(defun scrooge--match-generic-types-rx-expr ()
+  `(: (group-n 1 (| ,@scrooge--generic-type-symbols))
+      (group-n 2 "<")
+      (group-n 3 ,scrooge--title-case-symbol-rx-expr)
+      (group-n 4 ">")))
+
 
 ;; Interactive methods
 (defun scrooge-indent-line ()
@@ -200,24 +203,17 @@ scrooge #@namespace hack")
 ;;;###autoload
 (define-derived-mode scrooge-mode prog-mode "Scrooge"
   "Mode for editing Scrooge files."
-  ;; We can't use :syntax-table because `thrift-mode' clobbers it ):
-  (set-syntax-table scrooge-mode-syntax-table)
   (setq-local font-lock-defaults '(scrooge-font-lock-keywords))
   (setq-local comment-start scrooge--comment-start)
   (setq-local indent-line-function #'scrooge-indent-line)
   (add-hook 'jit-lock-after-change-extend-region-functions
-            'scrooge--font-lock-extend t t)
-  (rainbow-delimiters-mode-disable)
-  ;; (when scrooge-use-rainbow-delimiters
-  ;;   (rainbow-delimiters-mode-enable))
-  )
+            #'scrooge--font-lock-extend
+            t t))
 
 
 ;; Modifications of global state (advice goes here too)
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.thrift\\'" . scrooge-mode))
-
-;; (remove-hook 'scrooge-mode-hook #'rainbow-delimiters-mode-enable)
 
 
 (provide 'scrooge)

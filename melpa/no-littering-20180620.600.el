@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/emacscollective/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 20180615.1108
+;; Package-Version: 20180620.600
 
 ;; This file is not part of GNU Emacs.
 
@@ -323,6 +323,7 @@ directories."
       `(make-directory ,(var "org/caldav/save") t))
     (setq org-caldav-backup-file           (var "org/caldav/backup.org"))
     (setq org-caldav-save-directory        (var "org/caldav/save"))
+    (setq pandoc-data-dir                  (etc "pandoc-mode/"))
     (setq pcache-directory                 (var "pcache/"))
     (setq persistent-scratch-save-file     (var "persistent-scratch.el"))
     (setq persp-save-dir                   (var "persp-mode/"))
