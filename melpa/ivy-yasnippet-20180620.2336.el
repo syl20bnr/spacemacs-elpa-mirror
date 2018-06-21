@@ -3,8 +3,8 @@
 ;;
 ;; Author: Michał Kondraciuk <k.michal@zoho.com>
 ;; URL: https://github.com/mkcms/ivy-yasnippet
-;; Package-Version: 20180515.149
-;; Package-Requires: ((emacs "25.3") (ivy "0.10.0") (yasnippet "0.12.2") (dash "2.14.1"))
+;; Package-Version: 20180620.2336
+;; Package-Requires: ((emacs "24") (ivy "0.10.0") (yasnippet "0.12.2") (dash "2.14.1"))
 ;; Version: 0.0.1
 ;; Keywords: convenience
 
