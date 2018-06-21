@@ -5,8 +5,8 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-which-key
-;; Package-Version: 3.2.0
-;; Version: 3.2.0
+;; Package-Version: 3.3.0
+;; Version: 3.3.0
 ;; Keywords:
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -647,6 +647,12 @@ update.")
 (defvar which-key--previous-frame-size nil)
 (defvar which-key--prefix-title-alist nil)
 (defvar which-key--debug nil)
+(defvar which-key--evil-keys-regexp (eval-when-compile
+                                      (regexp-opt '("-state"))))
+(defvar which-key--ignore-non-evil-keys-regexp
+  (eval-when-compile
+    (regexp-opt '("mouse-" "wheel-" "remap" "drag-" "scroll-bar"
+                  "select-window" "switch-frame" "which-key-"))))
 (defvar which-key--ignore-keys-regexp
   (eval-when-compile
     (regexp-opt '("mouse-" "wheel-" "remap" "drag-" "scroll-bar"
@@ -777,7 +783,7 @@ problems at github. If DISABLE is non-nil disable support."
         (add-hook 'pre-command-hook #'which-key--hide-popup)
         (add-hook 'focus-out-hook #'which-key--stop-timer)
         (add-hook 'focus-in-hook #'which-key--start-timer)
-        (add-hook 'window-configuration-change-hook
+        (add-hook 'window-size-change-functions
                   'which-key--hide-popup-on-frame-size-change)
         (which-key--start-timer))
     (setq echo-keystrokes which-key--echo-keystrokes-backup)
@@ -788,7 +794,7 @@ problems at github. If DISABLE is non-nil disable support."
     (remove-hook 'pre-command-hook #'which-key--hide-popup)
     (remove-hook 'focus-out-hook #'which-key--stop-timer)
     (remove-hook 'focus-in-hook #'which-key--start-timer)
-    (remove-hook 'window-configuration-change-hook
+    (remove-hook 'window-size-change-functions
                  'which-key--hide-popup-on-frame-size-change)
     (which-key--stop-timer)))
 
@@ -1087,7 +1093,7 @@ total height."
     (frame (which-key--hide-buffer-frame))
     (custom (funcall which-key-custom-hide-popup-function))))
 
-(defun which-key--hide-popup-on-frame-size-change ()
+(defun which-key--hide-popup-on-frame-size-change (&optional _)
   "Hide which-key popup if the frame is resized (to trigger a new
 popup)."
   (when (which-key--frame-size-changed-p)
@@ -1477,16 +1483,21 @@ which are strings. KEY is of the form produced by `key-binding'."
       (intern (cdr keydesc))))
 
 (defun which-key--map-binding-p (map keydesc)
+  "Does MAP contain KEYDESC = (key . binding)?"
   (or
    (when (bound-and-true-p evil-state)
-     (eq (which-key--safe-lookup-key
-          map
-          (kbd (which-key--current-key-string
-                (format "<%s-state> %s" evil-state (car keydesc)))))
-         (intern (cdr keydesc))))
-   (eq (which-key--safe-lookup-key
-        map (kbd (which-key--current-key-string (car keydesc))))
-       (intern (cdr keydesc)))))
+     (let ((lookup
+            (which-key--safe-lookup-key
+             map
+             (kbd (which-key--current-key-string
+                   (format "<%s-state> %s" evil-state (car keydesc)))))))
+       (or (eq lookup (intern (cdr keydesc)))
+           (and (keymapp lookup) (string= (cdr keydesc) "Prefix Command")))))
+   (let ((lookup
+          (which-key--safe-lookup-key
+           map (kbd (which-key--current-key-string (car keydesc))))))
+     (or (eq lookup (intern (cdr keydesc)))
+         (and (keymapp lookup) (string= (cdr keydesc) "Prefix Command"))))))
 
 (defun which-key--pseudo-key (key &optional prefix)
   "Replace the last key in the sequence KEY by a special symbol
@@ -1688,27 +1699,43 @@ ones. PREFIX is for internal use and should not be used."
      (lambda (ev def)
        (let* ((key (append prefix (list ev)))
               (key-desc (key-description key)))
-         (unless (or (string-match-p which-key--ignore-keys-regexp key-desc)
-                     (eq ev 'menu-bar))
-           (if (and (keymapp def)
-                    (or all
-                        ;; event 27 is escape, so this will pick up meta
-                        ;; bindings and hopefully not too much more
-                        (and (numberp ev) (= ev 27))))
-               (setq bindings
-                     (append bindings
-                             (which-key--get-keymap-bindings def t key)))
-             (when def
-               (cl-pushnew
-                (cons key-desc
-                      (cond
-                       ((keymapp def) "Prefix Command")
-                       ((symbolp def) (copy-sequence (symbol-name def)))
-                       ((eq 'lambda (car-safe def)) "lambda")
-                       ((eq 'menu-item (car-safe def)) "menu-item")
-                       ((stringp def) def)
-                       (t "unknown")))
-                bindings :test (lambda (a b) (string= (car a) (car b)))))))))
+         (cond ((or (string-match-p
+                     which-key--ignore-non-evil-keys-regexp key-desc)
+                    (eq ev 'menu-bar)))
+               ;; extract evil keys corresponding to current state
+               ((and (keymapp def)
+                     (boundp 'evil-state)
+                     (bound-and-true-p evil-local-mode)
+                     (string-match-p (format "<%s-state>$" evil-state) key-desc))
+                (setq bindings
+                      ;; this function keeps the latter of the two duplicates
+                      ;; which will be the evil binding
+                      (cl-remove-duplicates
+                       (append bindings
+                               (which-key--get-keymap-bindings def all prefix))
+                       :test (lambda (a b) (string= (car a) (car b))))))
+               ((and (keymapp def)
+                     (string-match-p which-key--evil-keys-regexp key-desc)))
+               ((and (keymapp def)
+                     (or all
+                         ;; event 27 is escape, so this will pick up meta
+                         ;; bindings and hopefully not too much more
+                         (and (numberp ev) (= ev 27))))
+                (setq bindings
+                      (append bindings
+                              (which-key--get-keymap-bindings def t key))))
+               (t
+                (when def
+                  (cl-pushnew
+                   (cons key-desc
+                         (cond
+                          ((keymapp def) "Prefix Command")
+                          ((symbolp def) (copy-sequence (symbol-name def)))
+                          ((eq 'lambda (car-safe def)) "lambda")
+                          ((eq 'menu-item (car-safe def)) "menu-item")
+                          ((stringp def) def)
+                          (t "unknown")))
+                   bindings :test (lambda (a b) (string= (car a) (car b)))))))))
      keymap)
     bindings))
 
@@ -2452,8 +2479,8 @@ is selected interactively by mode in `minor-mode-map-alist'."
                           nil "evil operator/motion keys"))
                    (which-key--show-page)))))
       (let* ((key (key-description (list (read-key)))))
-        (when (string= key "`")
-          ;; evil-goto-mark reads the next char manually
+        (when (member key '("f" "F" "t" "T" "`"))
+          ;; these keys trigger commands that read the next char manually
           (setq which-key--inhibit-next-operator-popup t))
         (cond ((and which-key-use-C-h-commands (string= "C-h" key))
                (which-key-C-h-dispatch))

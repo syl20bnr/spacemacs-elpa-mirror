@@ -4,7 +4,7 @@
 
 ;; Author: Ruin0x11 <ipickering2@gmail.com>
 ;; Keywords: languages processes tools
-;; Package-Version: 20180501.1852
+;; Package-Version: 20180621.1131
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "4.1"))
 ;; Version: 0.1
 ;; URL: https://github.com/Ruin0x11/lsp-intellij
@@ -185,7 +185,7 @@ Return the file path if found, nil otherwise."
          (drive-letter (url-host url))
          (raw (url-filename url))
          (paths (split-string raw "!/"))
-         (jar-path (concat drive-letter ":" (car paths)))
+         (jar-path (if (and (not drive-letter) (string= "" drive-letter)) (concat drive-letter ":" (car paths)) (car paths)))
          (internal-path (cadr paths))
          (temp-path (lsp-intellij--make-jar-temp-path jar-path internal-path))
          (is-source-file (string-match-p lsp-intellij--file-extracted-from-jar-regex internal-path))

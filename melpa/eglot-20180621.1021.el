@@ -3,7 +3,7 @@
 ;; Copyright (C) 2018 Free Software Foundation, Inc.
 
 ;; Version: 0.10
-;; Package-Version: 20180621.558
+;; Package-Version: 20180621.1021
 ;; Author: João Távora <joaotavora@gmail.com>
 ;; Maintainer: João Távora <joaotavora@gmail.com>
 ;; URL: https://github.com/joaotavora/eglot
@@ -1584,18 +1584,30 @@ If SKIP-SIGNATURE, don't try to send textDocument/signatureHelp."
   (unless (or (not version) (equal version eglot--versioned-identifier))
     (eglot--error "Edits on `%s' require version %d, you have %d"
                   (current-buffer) version eglot--versioned-identifier))
-  (mapc (pcase-lambda (`(,newText ,beg . ,end))
-          (save-restriction
-            (narrow-to-region beg end)
-            (let ((source (current-buffer)))
-              (with-temp-buffer
-                (insert newText)
-                (let ((temp (current-buffer)))
-                  (with-current-buffer source (replace-buffer-contents temp)))))))
-        (mapcar (eglot--lambda (&key range newText)
-                  (cons newText (eglot--range-region range 'markers)))
-                edits))
-  (eglot--message "%s: Performed %s edits" (current-buffer) (length edits)))
+  (atomic-change-group
+    (let* ((change-group (prepare-change-group))
+           (howmany (length edits))
+           (reporter (make-progress-reporter
+                      (format "[eglot] applying %s edits to `%s'..."
+                              howmany (current-buffer))
+                      0 howmany))
+           (done 0))
+      (mapc (pcase-lambda (`(,newText ,beg . ,end))
+              (let ((source (current-buffer)))
+                (with-temp-buffer
+                  (insert newText)
+                  (let ((temp (current-buffer)))
+                    (with-current-buffer source
+                      (save-excursion
+                        (save-restriction
+                          (narrow-to-region beg end)
+                          (replace-buffer-contents temp)))
+                      (progress-reporter-update reporter (cl-incf done)))))))
+            (mapcar (eglot--lambda (&key range newText)
+                      (cons newText (eglot--range-region range 'markers)))
+                    edits))
+      (undo-amalgamate-change-group change-group)
+      (progress-reporter-done reporter))))
 
 (defun eglot--apply-workspace-edit (wedit &optional confirm)
   "Apply the workspace edit WEDIT.  If CONFIRM, ask user first."
