@@ -716,7 +716,7 @@
 	   ((:url . "http://elpa.gnu.org/packages/minimap.html")
 	    (:keywords))])
  (mmm-mode .
-	   [(0 5 6)
+	   [(0 5 7)
 	    ((cl-lib
 	      (0 2)))
 	    "Allow Multiple Major Modes in a buffer" tar
@@ -1197,7 +1197,7 @@
 	     ((:keywords "communication" "websocket" "server")
 	      (:url . "http://elpa.gnu.org/packages/websocket.html"))])
  (which-key .
-	    [(3 1 0)
+	    [(3 3 0)
 	     ((emacs
 	       (24 4)))
 	     "Display available keybindings in popup" tar

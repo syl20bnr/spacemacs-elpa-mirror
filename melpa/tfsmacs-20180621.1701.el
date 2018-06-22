@@ -4,7 +4,7 @@
 ;;
 ;; Author: Dino Chiesa <dpchiesa@outlook.com>, Sebastian Monia <smonia@outlook.com>
 ;; URL: http://github.com/sebasmonia/tfsmacs/
-;; Package-Version: 20180620.1815
+;; Package-Version: 20180621.1701
 ;; Package-Requires: ((emacs "25") (tablist "0.70"))
 ;; Version: 1.25
 ;; Keywords: tfs, vc
@@ -90,6 +90,7 @@
 (defvar tfsmacs--command-output-buffer "")
 ;; Used to count the number of retries parsing the output of a command
 ;; It is resetted every time new input arrives
+;; and set to "-1" to signal the timeout elapsed
 (defvar tfsmacs--command-retries 0)
 ;; Holds the setup info when running initial setup
 (defvar tfsmacs--setup-info "")
@@ -180,9 +181,12 @@ If NO-WORKSPACE is provided, said parameter won't be added."
   
 (defun tfsmacs--async-command-callback (_process output)
   "Accumulate the OUTPUT of PROCESS."
-  (setq tfsmacs--command-output-buffer (concat tfsmacs--command-output-buffer output))
-  (setq tfsmacs--command-retries 1) ;; Reset the retries counter as long as output is received
-  (message "TFS: Receiving command output..."))
+  ;; this tests prevents the message appearing when we already gave up on the command
+  ;; (so, situations when we receive output way after the timeout elapsed)
+  (when (> tfsmacs--command-retries 0)
+    (setq tfsmacs--command-output-buffer (concat tfsmacs--command-output-buffer output))
+    (setq tfsmacs--command-retries 1) ;; Reset the retries counter as long as output is received
+    (message "TFS: Receiving command output...")))
 
 (defun tfsmacs--async-command-complete (callback)
   "Check if the last command finished running using a marker.
@@ -205,6 +209,7 @@ If it did invoke CALLBACK, else re-schedule the function."
 (defun tfsmacs--async-command-handle-error ()
   "Reset the state after a command didn't complete successfully."
   (tfsmacs--append-to-log (format "---Incomplete output:---\n%s\n-----------------------" tfsmacs--command-output-buffer))
+  (setq tfsmacs--command-retries -1) ;; prevents the "receiving output" message if we already timed out
   ;; Just in case the command killed the process instance, this will start another one
   ;; or just return the existing one, which is inexpensive
   (tfsmacs--get-or-create-process)
@@ -339,12 +344,11 @@ Not bound by default, you would run this operation once per collection."
                             'tfsmacs--mapping-callback
                             t)))
 
-(defun tfsmacs--mapping-callback (output)
+(defun tfsmacs--mapping-callback (_output)
   "Process OUTPUT of setting the $/ mapping."
   ;; For some mystical reason the workfold command has ZERO output.
-  ;; On error we get more info though, so let's assume that "empty output" = "good"
-  (tfsmacs--append-to-log (concat "Mapping: -" output "-"))
-  (when (not (string-empty-p (tfsmacs--trim-string output)))
+  ;; On error we have our trusted retries "flagged" with -1
+  (when (equal tfsmacs--command-retries -1)
     (error "Mapping setup failed.  See log for details"))
   (message "TFS: Setup completed. If you plan to switch between different workspaces, you should customize `tfsmacs-workspaces-alist`."))
 
@@ -890,6 +894,24 @@ If VERSION to get is not provided, it will be prompted."
             (ediff-files local server)))
       (error "Select only one file to compare to latest version"))))
 
+(defun tfsmacs--status-mode-shelve ()
+  "Shelve files marked in the tfs-status-mode buffer."
+  (interactive)
+  (let* ((items (tfsmacs--status-mode-get-marked-items))
+         (quoted-items (mapcar 'tfsmacs--quote-string items))
+         (name (read-string "Shelveset name (must be unique): "))
+         (comment (read-string "Comments: "))
+         (command nil))
+    (when (y-or-n-p (format "Shelve %d items? " (length items)))
+      (setq command (append (list "shelve"
+                                  (tfsmacs--quote-string name)
+                                  (format "-comment:\"%s\"" comment ))
+                            quoted-items))
+      (when (y-or-n-p "Undo local changes after shelving? ")
+        (push "-move" command))
+      (tfsmacs--async-command command 'tfsmacs--message-callback)
+  )))
+
 (defun tfsmacs--status-mode-get-marked-items ()
   "Obtain only the path of the files selected in the list."
   (mapcar 'car (tablist-get-marked-items)))
@@ -905,7 +927,7 @@ If VERSION to get is not provided, it will be prompted."
 (define-key tfsmacs-status-mode-map (kbd "RET") 'tfsmacs--status-mode-visit-item)
 (define-key tfsmacs-status-mode-map  (kbd "D") 'tfsmacs--status-mode-difference)
 (define-key tfsmacs-status-mode-map (kbd "h") 'tfsmacs--status-mode-help)
-;;(define-key tfsmacs-status-mode-map (kbd "RET") 'tfsmacs--status-mode-shelve)
+(define-key tfsmacs-status-mode-map (kbd "L") 'tfsmacs--status-mode-shelve)
 
 (defun tfsmacs--status-mode-help ()
   "Show help for the status mode."
@@ -923,7 +945,8 @@ If VERSION to get is not provided, it will be prompted."
          "against the server.\n\n"
          "D runs ediff between a file marked in the list (or the one under point if none are marked)."
          " It will compare your local with the latest on the server. The get for file is synchronous, "
-         "Emacs will be unresponsive until the operation is completed."))
+         "Emacs will be unresponsive until the operation is completed.\n\n"
+         "L (later) will shelve the files marked."))
   (tfsmacs--show-help))
 
 (defun tfsmacs-pending-changes ()
@@ -935,6 +958,7 @@ If VERSION to get is not provided, it will be prompted."
       (progn
         (let* ((status-dir (tfsmacs--quote-string (tfsmacs--select-status-directory)))
                (buffer (get-buffer-create "*TFS Status [running]*")))
+          (tfsmacs--append-to-log status-dir)
           (with-current-buffer buffer
             (setq tfsmacs--buffer-status-dir status-dir)
             (tfsmacs--get-pending-changes status-dir)
@@ -942,6 +966,7 @@ If VERSION to get is not provided, it will be prompted."
 
 (defun tfsmacs--get-pending-changes (directory)
   "Internal call to run the status command in DIRECTORY."
+  (tfsmacs--append-to-log directory)
   (let* ((command (list "status" directory "-recursive" "-nodetect"  "-format:xml")))
     (message "TFS: Obtaining list of pending changes...")
     (tfsmacs--async-command command 'tfsmacs--status-callback)))
@@ -1006,28 +1031,49 @@ OUTPUT is the XML result of \"tf status\"."
     (if (equal (length items) 1)
         (progn
           (message "TFS: unshelving...")
-          (tfsmacs--async-command (list "unshelve" as-string) 'tfsmacs--message-callback)))
-      (error "Only one item should be selected for this operation")))
+          (tfsmacs--async-command (list "unshelve" as-string) 'tfsmacs--shelvesets-mode-unshelve-callback))
+      (error "Only one item should be selected for this operation"))))
+
+(defun tfsmacs--shelvesets-mode-unshelve-callback (_output)
+  "Process OUTPUT of unshelving."
+  ;; Unshelving has empty output, but we can use our flag
+  ;; to detect is the command ran fine.
+  (when (equal tfsmacs--command-retries -1)
+    (error "Unshelving failed.  See log for details"))
+  (message "TFS: Changes unshelved."))
 
 (defun tfsmacs--shelvesets-mode-details ()
   "Unshelve to current workspace when in tfsmacs-shelvesets-mode."
   (interactive)
-  (let* ((items (tfsmacs--shelvesets-mode-get-marked-items)))
+  (let* ((items (tfsmacs--shelvesets-mode-get-marked-items))
+         (to-unshelve (car items))
+         (as-string (format "\"%s;%s\"" (car to-unshelve) (cadr to-unshelve))))
     (if (equal (length items) 1)
         (progn
-          (message "TFS: retrieving collection URL...")
-          (tfsmacs--async-command (list "workfold") 'tfsmacs--shelvesets-mode-details-collection-callback))
+          (when (get-buffer tfsmacs--shelveset-buffer-name)
+            (kill-buffer tfsmacs--shelveset-buffer-name))
+          (message "TFS: retrieving shelveset info...")
+          (tfsmacs--async-command (list "shelvesets" "-format:detailed" as-string) 'tfsmacs--shelvesets-mode-details-callback1))
       (error "Only one item should be selected for this operation"))))
 
-(defun tfsmacs--shelvesets-mode-details-collection-callback (output)
+(defun tfsmacs--shelvesets-mode-details-callback1 (output)
+  "Display OUTPUT (shelveset details header) in the buffer and invoke next command."
+  (interactive)
+  (if (string-empty-p (tfsmacs--trim-string output))
+      (error "Couldn't get shelveset details")
+    (progn
+      (with-current-buffer (get-buffer-create tfsmacs--shelveset-buffer-name)
+        (insert output))
+      (message "TFS: retrieving collection URL...")
+      (tfsmacs--async-command (list "workfold") 'tfsmacs--shelvesets-mode-details-callback2))))
+
+(defun tfsmacs--shelvesets-mode-details-callback2 (output)
   "Process the OUTPUT of the command \"tf workfold -workspace:name\" to get the collection URL."
   (let* ((items (tfsmacs--shelvesets-mode-get-marked-items))
          (to-unshelve (car items))
          (as-string (format "\"%s;%s\"" (car to-unshelve) (cadr to-unshelve)))
          (url (car (cl-remove-if-not (lambda (x): (string-prefix-p "http://" x))
                                   (split-string output)))))
-    (when (get-buffer tfsmacs--shelveset-buffer-name)
-      (kill-buffer tfsmacs--shelveset-buffer-name))
     (tfsmacs--async-command (list "status" (format "-collection:%s" url) (format "-shelveset:%s" as-string))
                             'tfsmacs--shelvesets-details-callback
                             t)))
