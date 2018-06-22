@@ -7,7 +7,7 @@
 ;; Description: Mimic Eclipse C-S-o key. (Organeize Imports)
 ;; Keyword: organize imports java handy eclipse
 ;; Version: 0.0.1
-;; Package-Version: 20180622.238
+;; Package-Version: 20180622.811
 ;; Package-Requires: ((emacs "26") (f "0.20.0") (s "1.12.0") (cl-lib "0.6"))
 ;; URL: https://github.com/jcs090218/organize-imports-java
 
@@ -113,7 +113,7 @@
 (defvar organize-imports-java-path-buffer-local-source '()
   "All the available local source java paths store here.")
 
-(defvar organize-imports-java-serach-regexp "[a-zA-Z0-9/_-]*/[A-Z][a-zA-Z0-9_-]*\\.class"
+(defvar organize-imports-java-serach-regexp "[a-zA-Z0-9/_-]*/[A-Z][a-zA-Z0-9_-\\$]*\\.class"
   "Regular Expression to search for java path.")
 
 (defvar organize-imports-java-non-src-list '("document"
@@ -301,7 +301,10 @@ L : list we want to flaaten."
   "Get the all the local source file path as a list."
   (let ((src-file-path-list '())
         (project-source-dir (concat (cdr (project-current)) organize-imports-java-source-dir-name "/")))
-    (setq src-file-path-list (f--files project-source-dir (equal (f-ext it) "java") t))
+    (setq src-file-path-list (f--files project-source-dir
+                                       (and (string= (f-ext it) "java")
+                                            (not (string-match-p "#" (f-filename it))))
+                                       t))
 
     (let ((index 0))
       (dolist (src-file-path src-file-path-list)
@@ -492,14 +495,25 @@ IN-FILENAME : name of the cache file."
         ;; Swap `/' to `.'.
         (setq tmp-path (s-replace "/" "." tmp-path))
 
+        ;; Swap `$' to `.'.
+        (setq tmp-path (s-replace "$" "." tmp-path))
+
         ;; Remove `.class'.
         (setq tmp-path (s-replace ".class" "" tmp-path))
 
-        ;; Add line break at the end.
-        (setq tmp-path (concat tmp-path "\n"))
+        (let ((class-name "")
+              (split-path-list '()))
+          (setq split-path-list (split-string tmp-path "\\."))
 
-        ;; add to file content buffer.
-        (setq tmp-write-to-file-content-buffer (concat tmp-path tmp-write-to-file-content-buffer))))
+          ;; Get the class name.
+          (setq class-name (nth (1- (length split-path-list)) split-path-list))
+
+          (unless (numberp (read class-name))
+            ;; Add line break at the end.
+            (setq tmp-path (concat tmp-path "\n"))
+
+            ;; add to file content buffer.
+            (setq tmp-write-to-file-content-buffer (concat tmp-path tmp-write-to-file-content-buffer))))))
 
     ;; Write to file all at once.
     (write-region tmp-write-to-file-content-buffer  ;; Start
