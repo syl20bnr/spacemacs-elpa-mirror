@@ -3,7 +3,7 @@
 ;; Copyright 2016 Free Software Foundation, Inc.
 
 ;; Author: David Gonzalez Gandara <dggandara@member.fsf.org>
-;; Version: 0.94
+;; Version: 0.95
 ;; Package-Requires: ((cl-lib "0.5"))
 
 ;; This program is free software: you can redistribute it and/or modify
@@ -219,6 +219,53 @@
             (if (string-match "[ \t\n\r]+\\'" s)
               (replace-match "" t t s)
               s))
+
+(defun arbitools-arpo-vega ()
+  "Create userTB.txt file for vega based on ARPO results file. Use in crosstable.txt. 
+   You need to open the ARPO file in another buffer."
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (forward-line 7) ;; where the data starts in crosstable.txt
+    (let* ((continue t)
+	   (arpodata "data")
+	   (arpopoint "point")
+	   (name " ")
+	   namesplit)
+
+      (when (not (get-buffer "userTB.txt")) (generate-new-buffer "userTB.txt"))
+      (save-excursion (with-current-buffer "userTB.txt" (erase-buffer) (insert "  User Tie-Break  ;")))
+      (while continue ;; loop over crosstable.txt
+        (beginning-of-line) (forward-word)
+	(if (thing-at-point 'word)
+	    ;; if statement
+	    (progn
+	      (clear-string name)
+	      (setq name (substring-no-properties (thing-at-point 'line) 4 24)) ;; read the players name
+	      (setq namesplit (split-string name ",")) ;; remove the comma, which is not in ARPO1
+	      (setq name (mapconcat 'identity namesplit "" )) ;; remove the comma
+	      (setq name (arbitools-trim-right name)) ;; remove the comma
+	      
+	      (save-excursion (with-current-buffer "ARPO1.txt"
+		  (goto-char (point-min))
+				
+		  (if (search-forward name) ;; find the name from crosstable
+		    ;; then
+		    (progn
+                      (end-of-line)(backward-word) ;; go to the end of line, where the ARPO is
+		      (setq arpopoint (thing-at-point 'word))(backward-word) ;; get decimal figures
+		      (setq arpodata (thing-at-point 'word)) ;;get integer part
+	
+		      (save-excursion (with-current-buffer "userTB.txt"
+			(insert arpodata)(insert ".")
+			(insert arpopoint) (insert ";")))) ;; insert the ARPO in userTB.txt
+                    ;; else
+		    (save-excursion (with-current-buffer "userTB.txt"
+			(insert "0.0;")))))) ;; in case the player has not got an ARPO, write a 0
+	    (next-line)) 
+	    ;;else statement
+	    (setq continue nil)))))) ;; if no more players, tell the while to stop
+
 
 (defun arbitools-list-pairing (round)
   "Get the pairings and/or results of the given round. It will
@@ -975,6 +1022,10 @@
 
 ;;;; ChangeLog:
 
+;; 2018-06-22  David Gonzalez Gandara  <dggandara@member.fsf.org>
+;; 
+;; 	 arbitools.el: added new function
+;; 
 ;; 2018-01-10  David Gonzalez Gandara  <dggandara@member.fsf.org>
 ;; 
 ;; 	arbitools.el: Improved functions, fixed bugs

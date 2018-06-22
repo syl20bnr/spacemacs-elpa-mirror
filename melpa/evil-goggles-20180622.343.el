@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20180611.2302
+;; Package-Version: 20180622.343
 ;; Package-Requires: ((emacs "24.4") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -496,7 +496,11 @@ CHAR is an argument for the advice-d function."
   "Advice for `evil-paste-before' and `evil-paste-after'.
 
 REGISTER and YANK-HANDLER are the argumenets to the original functions."
-  (when (and (called-interactively-p 'interactive)
+  (when (and (or
+              ;; paste called interactively (via `p', `P')
+              (called-interactively-p 'interactive)
+              ;; paste called via evil-paste-pop/evil-paste-pop-next (via `C-n', `C-p')
+              (memq real-this-command '(evil-paste-pop evil-paste-pop-next)))
              (evil-normal-state-p))
     (let* ((beg (save-excursion (evil-goto-mark ?\[) (if (eolp) (1+ (point)) (point))))
            (end (save-excursion (evil-goto-mark ?\]) (if (eolp) (1+ (point)) (point))))

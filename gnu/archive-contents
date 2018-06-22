@@ -63,7 +63,7 @@
 	((:url . "http://elpa.gnu.org/packages/ampc.html")
 	 (:keywords "ampc" "mpc" "mpd"))])
  (arbitools .
-	    [(0 94)
+	    [(0 95)
 	     ((cl-lib
 	       (0 5)))
 	     "Package for chess tournaments administration" single

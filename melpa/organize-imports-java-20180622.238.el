@@ -7,8 +7,8 @@
 ;; Description: Mimic Eclipse C-S-o key. (Organeize Imports)
 ;; Keyword: organize imports java handy eclipse
 ;; Version: 0.0.1
-;; Package-Version: 20180603.133
-;; Package-Requires: ((emacs "24") (f "0.20.0") (s "1.12.0") (cl-lib "0.6"))
+;; Package-Version: 20180622.238
+;; Package-Requires: ((emacs "26") (f "0.20.0") (s "1.12.0") (cl-lib "0.6"))
 ;; URL: https://github.com/jcs090218/organize-imports-java
 
 ;; This file is NOT part of GNU Emacs.
@@ -96,11 +96,15 @@
   :group 'organize-imports-java)
 
 (defcustom organize-imports-java-source-dir-name "src"
-  "Source directory in the project, default is 'src'.")
+  "Source directory in the project, default is 'src'."
+  :type 'string
+  :group 'organize-imports-java)
 
 (defcustom organize-imports-java-non-class-list '("Callable"
                                                   "Runnable")
-  "List that are no need to import like interface, etc.")
+  "List that are no need to import like interface, etc."
+  :type 'list
+  :group 'organize-imports-java)
 
 
 (defvar organize-imports-java-path-buffer-jar-lib '()
@@ -284,14 +288,14 @@ STRING : string to do searching."
         (setq pos (match-end 0)))
       matches)))
 
-(defun organize-imports-java-flatten (l)
+(defun organize-imports-java-flatten-list (l)
   "Flatten the multiple dimensional array to one dimensonal array.
 '(1 2 3 4 (5 6 7 8)) => '(1 2 3 4 5 6 7 8).
 
 L : list we want to flaaten."
   (cond ((null l) nil)
         ((atom l) (list l))
-        (t (loop for a in l appending (organize-imports-java-flatten a)))))
+        (t (loop for a in l appending (organize-imports-java-flatten-list a)))))
 
 (defun organize-imports-java-get-local-source ()
   "Get the all the local source file path as a list."
@@ -429,7 +433,7 @@ For .jar files."
 
         ;; Flatten it.
         (setq organize-imports-java-path-buffer-jar-lib
-              (organize-imports-java-flatten organize-imports-java-path-buffer-jar-lib))
+              (organize-imports-java-flatten-list organize-imports-java-path-buffer-jar-lib))
 
         ;; Remove duplicates value from list.
         (setq organize-imports-java-path-buffer-jar-lib
@@ -456,7 +460,7 @@ Usually Java files under project root 'src' directory."
 
   ;; Flatten it.
   (setq organize-imports-java-path-buffer-local-source
-        (organize-imports-java-flatten organize-imports-java-path-buffer-local-source))
+        (organize-imports-java-flatten-list organize-imports-java-path-buffer-local-source))
 
   ;; Remove duplicates value from list.
   (setq organize-imports-java-path-buffer-local-source
@@ -506,17 +510,38 @@ IN-FILENAME : name of the cache file."
                   ;; Overwrite?
                   t)))
 
-(defun organize-imports-java-get-current-point-face-p ()
+(defun organize-imports-java-get-faces (pos)
+  "Get the font faces at POS."
+  (organize-imports-java-flatten-list
+   (remq nil
+         (list
+          (get-char-property pos 'read-face-name)
+          (get-char-property pos 'face)
+          (plist-get (text-properties-at pos) 'face)))))
+
+(defun organize-imports-java-get-current-point-face ()
   "Get current point's type face as string."
   (interactive)
-  (let ((face (or (get-char-property (point) 'read-face-name)
-                  (get-char-property (point) 'face))))
-    face))
+  (organize-imports-java-get-faces (point)))
+
+(defun organize-imports-java-is-current-point-face (in-face)
+  "Check if current face the same face as IN-FACE.
+Returns, True if is the same as pass in face name string.
+False, is not the same as pass in face name string.
+IN-FACE : input face name as string."
+  (let ((faces (organize-imports-java-get-current-point-face)))
+    (if (listp faces)
+        (if (equal (cl-position in-face faces :test 'string=) nil)
+            ;; If return nil, mean not found in the `faces' list.
+            nil
+          ;; If have position, meaning the face exists.
+          t)
+      (string= in-face faces))))
 
 (defun organize-imports-java-current-point-face-list-p (face-name-list)
   "Is the current face name same as one of the pass in string in the list?
 FACE-NAME-LIST : list of face name in string."
-  (cl-some #'(lambda (face-name) (string= (organize-imports-java-get-current-point-face-p) face-name)) face-name-list))
+  (cl-some #'(lambda (face-name) (organize-imports-java-is-current-point-face face-name)) face-name-list))
 
 (defun organize-imports-java-get-type-face-keywords-by-face-name (face-name-list)
   "Get all the type keywords in current buffer.
