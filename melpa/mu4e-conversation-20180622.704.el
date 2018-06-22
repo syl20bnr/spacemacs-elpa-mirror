@@ -5,7 +5,7 @@
 ;; Author: Pierre Neidhardt <ambrevar@gmail.com>
 ;; Maintainer: Pierre Neidhardt <ambrevar@gmail.com>
 ;; URL: https://gitlab.com/Ambrevar/mu4e-conversation
-;; Package-Version: 20180622.47
+;; Package-Version: 20180622.704
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: mail, convenience, mu4e
@@ -257,7 +257,8 @@ messages.  A negative COUNT goes backwards."
 
 (defun mu4e-conversation-kill-buffer-query-function ()
   "Ask before killing a modified mu4e conversation buffer."
-  (or (not (eq major-mode 'mu4e-view-mode))
+  (or (not mu4e-conversation-mode)
+      (not (eq major-mode 'mu4e-view-mode))
       (not (buffer-modified-p))
       (yes-or-no-p  "Reply message has been modified.  Kill anyway? ")))
 
@@ -709,10 +710,21 @@ former buffer if modified."
       (switch-to-buffer buf)
       (mu4e-warn "Reply message preserved."))))
 
-(defun mu4e-conversation-init ()
+(define-minor-mode mu4e-conversation-mode
   "Replace `mu4e-view' with `mu4e-conversation'."
-  (advice-add 'mu4e-get-view-buffer :override 'mu4e-conversation-get-view-buffer)
-  (setq mu4e-view-func 'mu4e-conversation))
+  :init-value nil
+  (if mu4e-conversation-mode
+      (progn
+        (advice-add 'mu4e-get-view-buffer :override 'mu4e-conversation-get-view-buffer)
+        (setq mu4e-view-func 'mu4e-conversation))
+    (advice-remove 'mu4e-get-view-buffer 'mu4e-conversation-get-view-buffer)
+    (setq mu4e-view-func 'mu4e~headers-view-handler)))
+
+(defun mu4e-conversation--turn-on ()
+  "Turn on `mu4e-conversation-mode'."
+  (mu4e-conversation-mode))
+
+(define-globalized-minor-mode global-mu4e-conversation-mode mu4e-conversation-mode mu4e-conversation--turn-on)
 
 ;;;###autoload
 (defun mu4e-conversation (&optional msg)

@@ -4,7 +4,7 @@
 
 ;; Author: Alexander Miller <alexanderm@web.de>
 ;; Package-Requires: ((evil "1.2.12") (treemacs "0"))
-;; Package-Version: 20180522.832
+;; Package-Version: 20180622.426
 ;; Package-X-Original-Version: 0
 ;; Homepage: https://github.com/Alexander-Miller/treemacs
 
@@ -55,6 +55,7 @@
 (define-key evil-treemacs-state-map (kbd "M-K") #'treemacs-previous-line-other-window)
 (define-key evil-treemacs-state-map (kbd "th")  #'treemacs-toggle-show-dotfiles)
 (define-key evil-treemacs-state-map (kbd "tw")  #'treemacs-toggle-fixed-width)
+(define-key evil-treemacs-state-map (kbd "tv")  #'treemacs-fringe-indicator-mode)
 (define-key evil-treemacs-state-map (kbd "tf")  #'treemacs-follow-mode)
 (define-key evil-treemacs-state-map (kbd "ta")  #'treemacs-filewatch-mode)
 (define-key evil-treemacs-state-map (kbd "tg")  #'treemacs-git-mode)
