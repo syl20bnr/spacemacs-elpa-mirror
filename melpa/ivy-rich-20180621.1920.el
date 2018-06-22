@@ -4,7 +4,7 @@
 
 ;; Author: Yevgnen Koh <wherejoystarts@gmail.com>
 ;; Package-Requires: ((emacs "24.4") (ivy "0.8.0"))
-;; Package-Version: 20180529.2112
+;; Package-Version: 20180621.1920
 ;; Version: 0.0.4
 ;; Keywords: ivy
 
@@ -132,8 +132,9 @@ When LEFT is not nil, pad from left side."
   (let ((str-len (string-width str)))
     (cond ((< str-len len)
            (if left
-               (concat (make-string (- len (string-width str)) ? ) str)
-             (concat str (make-string (- len (string-width str)) ? ))))
+               (concat (make-string (- len str-len) ? ) str)
+             (concat str (make-string (- len str-len) ? ))))
+          ((<= len (- str-len)) "")
           ((> str-len len)
            (format "%s…" (substring str 0 (1- len))))
           (t str))))

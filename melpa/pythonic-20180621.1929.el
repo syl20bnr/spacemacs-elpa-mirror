@@ -4,7 +4,7 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/pythonic
-;; Package-Version: 20180611.425
+;; Package-Version: 20180621.1929
 ;; Version: 0.1.1
 ;; Package-Requires: ((emacs "25") (s "1.9") (f "0.17.2"))
 
@@ -91,8 +91,8 @@
                       pythonic-directory-aliases)))
     (if (null alias-tuple)
         path
-      (concat (cadr alias-tuple)
-              (substring path (length (car alias-tuple)))))))
+      (f-join (cadr alias-tuple)
+              (f-relative path (car alias-tuple))))))
 
 (defun pythonic-unaliased-path (alias)
   "Get real path from ALIAS."
@@ -103,9 +103,16 @@
                       pythonic-directory-aliases)))
     (if (null alias-tuple)
         alias
-      (concat (car alias-tuple)
-              (substring alias (min (length (cadr alias-tuple))
-                                    (length alias)))))))
+      (f-join (car alias-tuple)
+              (f-relative alias (cadr alias-tuple))))))
+
+(defun pythonic-has-alias-p (path)
+  "Check if given PATH has alias."
+  (not (null (cl-find-if
+              (lambda (it)
+                (or (f-same-p (car it) path)
+                    (f-ancestor-of-p (car it) path)))
+              pythonic-directory-aliases))))
 
 (defun pythonic-python-readable-file-name (filename)
   "Emacs to Python FILENAME conversion.
@@ -134,6 +141,80 @@ format."
                                        (length (tramp-file-name-localname (tramp-dissect-file-name directory)))))))
         (pythonic-unaliased-path (concat connection filename)))
     filename))
+
+
+;;; Docker Compose.
+
+(defvar pythonic-docker-compose-filename "docker-compose.yml")
+
+(defvar pythonic-read-docker-compose-file-code "
+from __future__ import print_function
+import json, sys, yaml
+print(json.dumps(yaml.safe_load(open(sys.argv[-1], 'r'))))
+")
+
+(defun pythonic-get-docker-compose-project ()
+  "Get directory where `pythonic-docker-compose-filename' is present."
+  (let ((project (locate-dominating-file default-directory pythonic-docker-compose-filename)))
+    (when project
+      (f-full project))))
+
+(defun pythonic-get-docker-compose-filename (project)
+  "Get full path to the docker-compose PROJECT configuration file."
+  (f-join project pythonic-docker-compose-filename))
+
+(defun pythonic-read-docker-compose-file (filename)
+  "Read docker-compose project configuration FILENAME."
+  (let ((json-key-type 'string)
+        (json-array-type 'list))
+    (json-read-from-string
+     (with-output-to-string
+       (with-current-buffer
+           standard-output
+         (call-process "python" nil t nil "-c" pythonic-read-docker-compose-file-code filename))))))
+
+(defun pythonic-get-docker-compose-volumes (struct)
+  "Get docker volume list from the compose STRUCT."
+  (let (volumes)
+    (dolist (service (cdr (assoc "services" struct)))
+      (dolist (volume (cdr (assoc "volumes" service)))
+        (when (s-starts-with-p ".:" volume)
+          (push (cons (car service) (s-chop-prefix ".:" volume)) volumes))))
+    volumes))
+
+(defun pythonic-get-docker-compose-container (filename service)
+  "Get container name from the FILENAME project for SERVICE name."
+  (s-trim
+   ;; FIXME: It is possible to have many running containers for given
+   ;; service.
+   (with-output-to-string
+     (with-current-buffer
+         standard-output
+       (call-process "docker-compose" nil t nil
+                     "--file" filename "ps" "--quiet" service)))))
+
+(defun pythonic-set-docker-compose-alias ()
+  "Build alias string for current docker-compose project."
+  (unless
+      (or (tramp-tramp-file-p default-directory)
+          (pythonic-has-alias-p default-directory))
+    (let ((project (pythonic-get-docker-compose-project)))
+      (when project
+        (let* ((filename (pythonic-get-docker-compose-filename project))
+               (struct (pythonic-read-docker-compose-file filename))
+               (volumes (pythonic-get-docker-compose-volumes struct))
+               (volume (if (< 1 (length volumes))
+                           (assoc (completing-read "Service: " (mapcar 'car volumes) nil t) volumes)
+                         (car volumes)))
+               (service (car volume))
+               (mount (cdr volume))
+               (container (pythonic-get-docker-compose-container filename service))
+               ;; FIXME: Get actual user for the connection string.
+               (connection (format "/docker:root@%s:%s" container mount))
+               (alias (list project connection)))
+          (unless (s-blank-p container)
+            (push alias pythonic-directory-aliases))
+          alias)))))
 
 
 ;;; Processes.
