@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20180616.252
+;; Package-Version: 20180621.2239
 ;; Keywords: project, convenience
 ;; Version: 0.15.0-cvs
 ;; Package-Requires: ((emacs "24.3") (pkg-info "0.4"))
@@ -3971,7 +3971,6 @@ is chosen."
 
 (easy-menu-change '("Tools") "--" nil "Search Files (Grep)...")
 
-;;;###autoload
 (defcustom projectile-mode-line
   '(:eval (format " Projectile[%s]"
                   (projectile-project-name)))

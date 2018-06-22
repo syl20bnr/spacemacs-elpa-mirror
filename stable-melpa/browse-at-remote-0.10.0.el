@@ -4,7 +4,7 @@
 ;;
 ;; Author:     Rustem Muslimov <r.muslimov@gmail.com>
 ;; Version:    0.10.0
-;; Package-Version: 20180227.52
+;; Package-Version: 0.10.0
 ;; Keywords:   github, gitlab, bitbucket, convenience
 ;; Package-Requires: ((f "0.17.2") (s "1.9.0") (cl-lib "0.5"))
 
