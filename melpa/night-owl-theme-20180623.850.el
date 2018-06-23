@@ -1,11 +1,12 @@
-;;; night-owl-theme.el --- A fruity color theme for Emacs.
+;;; night-owl-theme.el --- A color theme for the night owls out there
 
 ;; Copyright (C) 2018
 
 ;; Author: Aaron Jensen <aaronjensen@gmail.com>
 ;; URL: http://github.com/aaronjensen/night-owl-theme
-;; Package-Version: 20180620.236
+;; Package-Version: 20180623.850
 ;; Version: 0.1.0
+;; Package-Requires: ((emacs "24"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -22,7 +23,13 @@
 
 ;;; Commentary:
 ;;
-;; A port of the popular VSCode theme Night Owl for Emacs 24.
+;; A port of the popular VS Code theme Night Owl. From the VS Code Night Owl README:
+;;
+;; A theme for the night owls out there. Works well in the daytime, too, but this theme is
+;; fine-tuned for those of us who like to code late into the night. Color choices have taken
+;; into consideration what is accessible to people with colorblindness and in low-light
+;; circumstances. Decisions were also based on meaningful contrast for reading comprehension
+;; and for optimal razzle dazzle.
 ;;
 ;;; Credits:
 ;;
