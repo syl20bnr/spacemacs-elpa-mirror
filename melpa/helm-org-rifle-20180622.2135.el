@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/helm-org-rifle
-;; Package-Version: 20180606.1918
+;; Package-Version: 20180622.2135
 ;; Version: 1.6.0-pre
 ;; Package-Requires: ((emacs "24.4") (dash "2.12") (f "0.18.1") (helm "1.9.4") (s "1.10.0"))
 ;; Keywords: hypermedia, outlines
@@ -156,6 +156,16 @@
   "Settings for `helm-org-rifle'."
   :group 'helm
   :link '(url-link "http://github.com/alphapapa/helm-org-rifle"))
+
+(defcustom helm-org-rifle-actions
+  (helm-make-actions
+   "Show entry" 'helm-org-rifle--show-candidates
+   "Show entry in indirect buffer" 'helm-org-rifle-show-entry-in-indirect-buffer
+   "Show entry in real buffer" 'helm-org-rifle-show-entry-in-real-buffer
+   "Clock in" 'helm-org-rifle--clock-in
+   "Refile" 'helm-org-rifle--refile)
+  "Helm actions for `helm-org-rifle' commands."
+  :type '(alist :key-type string :value-type function))
 
 (defcustom helm-org-rifle-after-init-hook '(helm-org-rifle-set-input-idle-delay)
   "`:after-init-hook' for the Helm buffer.
@@ -596,12 +606,7 @@ Files are opened if necessary, and the resulting buffers are left open."
                   :match 'identity
                   :multiline helm-org-rifle-multiline
                   :volatile t
-                  :action (helm-make-actions
-                           "Show entry" 'helm-org-rifle--show-candidates
-                           "Show entry in indirect buffer" 'helm-org-rifle-show-entry-in-indirect-buffer
-                           "Show entry in real buffer" 'helm-org-rifle-show-entry-in-real-buffer
-			   "Clock in" 'helm-org-rifle--clock-in
-                           "Refile" #'helm-org-rifle--refile)
+                  :action 'helm-org-rifle-actions
                   :keymap helm-org-rifle-map)))
     (helm-attrset 'buffer buffer source)
     source))

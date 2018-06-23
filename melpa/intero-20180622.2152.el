@@ -11,7 +11,7 @@
 ;; Author: Chris Done <chrisdone@fpcomplete.com>
 ;; Maintainer: Chris Done <chrisdone@fpcomplete.com>
 ;; URL: https://github.com/commercialhaskell/intero
-;; Package-Version: 20180618.430
+;; Package-Version: 20180622.2152
 ;; Created: 3rd June 2016
 ;; Version: 0.1.13
 ;; Keywords: haskell, tools
@@ -2171,10 +2171,11 @@ as (CALLBACK STATE REPLY)."
 
 (defun intero-buffer (worker)
   "Get the WORKER buffer for the current directory."
-  (let ((buffer (intero-get-buffer-create worker)))
+  (let ((buffer (intero-get-buffer-create worker))
+        (targets (buffer-local-value 'intero-targets (current-buffer))))
     (if (get-buffer-process buffer)
         buffer
-      (intero-get-worker-create worker nil (current-buffer)
+      (intero-get-worker-create worker targets (current-buffer)
                                 (buffer-local-value
                                  'intero-stack-yaml (current-buffer))))))
 

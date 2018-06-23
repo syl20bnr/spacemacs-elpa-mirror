@@ -7,7 +7,7 @@
 ;; Description: Mimic Eclipse C-S-o key. (Organeize Imports)
 ;; Keyword: organize imports java handy eclipse
 ;; Version: 0.0.1
-;; Package-Version: 20180622.811
+;; Package-Version: 20180623.1
 ;; Package-Requires: ((emacs "26") (f "0.20.0") (s "1.12.0") (cl-lib "0.6"))
 ;; URL: https://github.com/jcs090218/organize-imports-java
 
@@ -113,11 +113,12 @@
 (defvar organize-imports-java-path-buffer-local-source '()
   "All the available local source java paths store here.")
 
-(defvar organize-imports-java-serach-regexp "[a-zA-Z0-9/_-]*/[A-Z][a-zA-Z0-9_-\\$]*\\.class"
+(defvar organize-imports-java-serach-regexp "[a-zA-Z0-9/_-]*/[A-Z][a-zA-Z0-9$_-]*\\.class"
   "Regular Expression to search for java path.")
 
 (defvar organize-imports-java-non-src-list '("document"
                                              "internal"
+                                             "package-info"
                                              "sun")
   "List of non Java source keywords.")
 
