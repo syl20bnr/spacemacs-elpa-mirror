@@ -4,7 +4,7 @@
 ;;
 ;; Author: Dino Chiesa <dpchiesa@outlook.com>, Sebastian Monia <smonia@outlook.com>
 ;; URL: http://github.com/sebasmonia/tfsmacs/
-;; Package-Version: 20180621.1701
+;; Package-Version: 20180622.1537
 ;; Package-Requires: ((emacs "25") (tablist "0.70"))
 ;; Version: 1.25
 ;; Keywords: tfs, vc
@@ -61,12 +61,12 @@
   "Name of the TFS log buffer."
   :type 'string)
 
-;; with default values we will keep retrying for 20 seconds to complete the output
 (defcustom tfsmacs-async-command-timer 0.5
   "How often to check, in seconds, that a command has finished completing its output."
   :type 'float)
-
-(defcustom tfsmacs-async-command-retries 40
+;; with default values of 0.5 and 60 we will keep retrying for 30 seconds to complete
+;; an async command and get its output
+(defcustom tfsmacs-async-command-retries 60
   "How many times to check that output was completed before giving up on the command."
   :type 'integer)
 
@@ -108,17 +108,20 @@
 (define-key tfsmacs-map "-" 'tfsmacs-delete)
 (define-key tfsmacs-map "+" 'tfsmacs-add)
 (define-key tfsmacs-map "s" 'tfsmacs-shelvesets)
+;; Commands not mapped:
+;; tfsmacs-server-directories
+;; tfsmacs-setup-workspace
+;; tfsmacs-switch-workspace
+;; tfsmacs-server-get-directory
 
 (defun tfsmacs--append-to-log (text)
   "Append TEXT to the TFS Messages buffer.
 Intended for internal use only."
-  (let ((buf (current-buffer))
-        (tfsbuffer (get-buffer-create tfsmacs-log-buffer-name)))
-    (set-buffer tfsbuffer)
-    (goto-char (point-max))
-    (insert text)
-    (insert "\n")
-    (set-buffer buf)))
+  (let ((messages-buffer (get-buffer-create tfsmacs-log-buffer-name)))
+    (with-current-buffer messages-buffer
+      (goto-char (point-max))
+      (insert text)
+      (insert "\n"))))
 
 (defun tfsmacs--show-help ()
   "Display the *TFS Help* buffer with the text in `tfsmacs--current-help-message`."
@@ -133,9 +136,6 @@ Intended for internal use only."
       (tfsmacs--append-to-log "Creating new process instance...")
       (setq process (start-process tfsmacs--process-name buffer-name
                                    tfsmacs-cmd "@"))
-      ;; testing if forcing process output helps with startup time
-      ;; for newly created instances
-      (process-send-string process "help eula\n")
       (set-process-filter process 'tfsmacs--async-command-callback))
     process))
 
@@ -143,12 +143,16 @@ Intended for internal use only."
 ;; the approach used for async commands, but instead of using stdin, sync cases
 ;; use an "input file". This worked much better. Now there's a lot of common ground
 ;; between the two functions, will refactor later I guess?
-(defun tfsmacs--sync-command-to-file (command output-filename)
-  "Create a new instance of the TEE process, execute COMMAND and write output to OUTPUT-FILENAME."
+(defun tfsmacs--sync-command-to-file (command output-filename &optional no-workspace)
+  "Create a new TEE process, run COMMAND and write output to OUTPUT-FILENAME.
+If NO-WORKSPACE is provided, said parameter won't be added."
   (let* ((workspace-param (tfsmacs--get-workspace-parameter))
          (login-param (tfsmacs--get-login-parameter))
          (input-script (concat temporary-file-directory "input.temp"))
-         (command-string (mapconcat 'identity (append command (list workspace-param login-param)) " ")))
+         (command-string ""))
+    (when no-workspace
+      (setq workspace-param ""))
+    (setq command-string (mapconcat 'identity (append command (list workspace-param login-param)) " "))
     (tfsmacs--append-to-log (format "COMMAND (sync): %s" command-string))
     (with-temp-file input-script
       (insert command-string))
@@ -168,8 +172,6 @@ If NO-WORKSPACE is provided, said parameter won't be added."
     (if no-workspace
         (setq command (append command (list login-param)))
       (setq command (append command (list workspace-param login-param))))
-    ;; I prefer to do command-string in two parts to show a cleaner log
-    ;; of the commands being executed
     (setq command-string (mapconcat 'identity command " "))
     (setq command-string (concat command-string " -exitcode\n"))
     (tfsmacs--append-to-log (format "COMMAND (async): %s" command-string))
@@ -181,8 +183,9 @@ If NO-WORKSPACE is provided, said parameter won't be added."
   
 (defun tfsmacs--async-command-callback (_process output)
   "Accumulate the OUTPUT of PROCESS."
-  ;; this tests prevents the message appearing when we already gave up on the command
-  ;; (so, situations when we receive output way after the timeout elapsed)
+  ;; the test below prevents the message appearing when we already gave up
+  ;; on the command (so, situations when we receive output way after the
+  ;; timeout elapsed)
   (when (> tfsmacs--command-retries 0)
     (setq tfsmacs--command-output-buffer (concat tfsmacs--command-output-buffer output))
     (setq tfsmacs--command-retries 1) ;; Reset the retries counter as long as output is received
@@ -201,10 +204,14 @@ If it did invoke CALLBACK, else re-schedule the function."
          (funcall callback ""))
         (t
          (if (< tfsmacs--command-retries tfsmacs-async-command-retries)
-             (tfsmacs--async-command-schedule-check callback)
+             (run-at-time tfsmacs-async-command-timer nil 'tfsmacs--async-command-complete callback)
            (progn
              (tfsmacs--async-command-handle-error)
              (funcall callback ""))))))
+
+(defun tfsmacs--async-command-schedule-check (callback)
+  "Schedule `tfsmacs--async-command-complete` with CALLBACK."
+  (run-at-time tfsmacs-async-command-timer nil 'tfsmacs--async-command-complete callback))
 
 (defun tfsmacs--async-command-handle-error ()
   "Reset the state after a command didn't complete successfully."
@@ -214,10 +221,6 @@ If it did invoke CALLBACK, else re-schedule the function."
   ;; or just return the existing one, which is inexpensive
   (tfsmacs--get-or-create-process)
   (message "TFS: Command not completed. See log for details."))
-
-(defun tfsmacs--async-command-schedule-check (callback)
-  "Schedule `tfsmacs--async-command-complete` with CALLBACK."
-  (run-at-time tfsmacs-async-command-timer nil 'tfsmacs--async-command-complete callback))
     
 (defun tfsmacs--get-workspace-parameter ()
   "Return the collection parameter if configured, or empty string."
@@ -231,19 +234,21 @@ If it did invoke CALLBACK, else re-schedule the function."
       (format "-login:%s" tfsmacs-login)
     ""))
 
-(defun tfsmacs--message-callback (cmd-output)
-  "Show CMD-OUTPUT as message.  Also append to the TFS log."
-  (tfsmacs--append-to-log cmd-output)
-  (message (format "TFS:\n%s" cmd-output)))
+(defun tfsmacs--message-callback (output)
+  "Show OUTPUT as message.  Also append to the TFS log."
+  (tfsmacs--append-to-log output)
+  (message (format "TFS:\n%s" output)))
 
-(defun tfsmacs--log-callback (cmd-output)
-  "Append CMD-OUTPUT to the TFS log."
-  (tfsmacs--append-to-log cmd-output))
+(defun tfsmacs--log-callback (output)
+  "Append OUTPUT to the TFS log."
+  (when (> tfsmacs--command-retries 0) ;; if the command failed, don't run
+    (tfsmacs--append-to-log output)))
 
-(defun tfsmacs--short-message-callback (cmd-output)
-  "Append CMD-OUTPUT to the TFS Log, and show a \"command completed\" message."
-  (tfsmacs--append-to-log cmd-output)
-  (message "TFS: Command completed. See TFS log for details."))
+(defun tfsmacs--short-message-callback (output)
+  "Append OUTPUT to the TFS Log, and show a \"command completed\" message."
+  (when (> tfsmacs--command-retries 0) ;; if the command failed, don't run
+    (tfsmacs--append-to-log output)
+    (message "TFS: Command completed. See TFS log for details.")))
 
 (defun tfsmacs--determine-target-files (filename prompt)
   "Determine the name of the file to use in a TF command, or prompt for one.
@@ -305,7 +310,6 @@ The list of possible values is read from the alist `tfsmacs-workspaces`."
   (let ((ws (ido-completing-read "Switch to workspace: "
                                  (mapcar 'car tfsmacs-workspaces-alist))))
     (customize-save-variable 'tfsmacs-current-workspace (alist-get ws tfsmacs-workspaces-alist))))
-  
 
 (defun tfsmacs-setup-workspace ()
   "Interactive, opinionated function to configure a collection.
@@ -347,7 +351,7 @@ Not bound by default, you would run this operation once per collection."
 (defun tfsmacs--mapping-callback (_output)
   "Process OUTPUT of setting the $/ mapping."
   ;; For some mystical reason the workfold command has ZERO output.
-  ;; On error we have our trusted retries "flagged" with -1
+  ;; On error we have the  retries "flagged" with -1
   (when (equal tfsmacs--command-retries -1)
     (error "Mapping setup failed.  See log for details"))
   (message "TFS: Setup completed. If you plan to switch between different workspaces, you should customize `tfsmacs-workspaces-alist`."))
@@ -505,26 +509,27 @@ PATH and FILES are used only for internal calls."
 
 (defun tfsmacs--server-callback (output)
   "Allow a selection from the list of server folders in OUTPUT."
-  (get-buffer-create tfsmacs--server-dirs-buffer-name)
-  (let ((lines (butlast (split-string output "\n") 2)))
-    (setq tfsmacs--server-current-dir (substring (car lines) 0 -1))
-    (setf (nth 0 lines) (format "Folders under %s\n" (car lines)))
-    (with-current-buffer tfsmacs--server-dirs-buffer-name
-      (setq buffer-read-only nil)
-      (kill-region (point-min) (point-max))
-      (insert (mapconcat 'identity lines "\n"))
-      (goto-char (point-min))
-      (forward-line 2) ; we are guaranteed to have at least that many lines
-      (setq buffer-read-only t)
-      (local-set-key "G" 'tfsmacs--server-get-directory)
-      (local-set-key "F" 'tfsmacs--server-show-files)
-      (local-set-key "^" 'tfsmacs--server-go-up)
-      (local-set-key (kbd "RET") 'tfsmacs--server-go-down)
-      (local-set-key "p" 'previous-line)
-      (local-set-key "n" 'next-line)
-      (local-set-key "h" 'tfsmacs--server-directories-help)
-      (switch-to-buffer tfsmacs--server-dirs-buffer-name)))
-  (message "TFS: Done. Press \"h\" to show available bindings."))
+  (when (> tfsmacs--command-retries 0) ;; if the command failed, don't run
+    (get-buffer-create tfsmacs--server-dirs-buffer-name)
+    (let ((lines (butlast (split-string output "\n") 2)))
+      (setq tfsmacs--server-current-dir (substring (car lines) 0 -1))
+      (setf (nth 0 lines) (format "Folders under %s\n" (car lines)))
+      (with-current-buffer tfsmacs--server-dirs-buffer-name
+        (setq buffer-read-only nil)
+        (kill-region (point-min) (point-max))
+        (insert (mapconcat 'identity lines "\n"))
+        (goto-char (point-min))
+        (forward-line 2) ; we are guaranteed to have at least that many lines
+        (setq buffer-read-only t)
+        (local-set-key "G" 'tfsmacs--server-get-directory)
+        (local-set-key "F" 'tfsmacs--server-show-files)
+        (local-set-key "^" 'tfsmacs--server-go-up)
+        (local-set-key (kbd "RET") 'tfsmacs--server-go-down)
+        (local-set-key "p" 'previous-line)
+        (local-set-key "n" 'next-line)
+        (local-set-key "h" 'tfsmacs--server-directories-help)
+        (switch-to-buffer tfsmacs--server-dirs-buffer-name)))
+    (message "TFS: Done. Press \"h\" to show available bindings.")))
 
 (defun tfsmacs--server-directories-help ()
   "Show help for the directories buffer."
@@ -546,7 +551,7 @@ Showing files all the time could get quite slow.  Hence this command."
 
 (defun tfsmacs--server-go-down ()
   "Go down the server directory tree."
-  (interactive) 
+  (interactive)
   (let ((line (buffer-substring-no-properties (line-beginning-position) (line-end-position))))
     (when (string-suffix-p "/" tfsmacs--server-current-dir)
       (setq tfsmacs--server-current-dir (substring tfsmacs--server-current-dir 0 -1))) ; remove trailing / if needed
@@ -561,7 +566,7 @@ Showing files all the time could get quite slow.  Hence this command."
       (setq target "$/"))
     (tfsmacs-server-directories target)))
 
-(defun tfsmacs--server-get-directory ()
+(defun tfsmacs-server-get-directory ()
   "Recursive get the directory under point."
   (interactive)
   (let* ((line (buffer-substring-no-properties (line-beginning-position) (line-end-position)))
@@ -571,9 +576,10 @@ Showing files all the time could get quite slow.  Hence this command."
 
 (defun tfsmacs--server-get-directory--callback (output)
   "Start the recursive get on the folder listed in OUTPUT, after creating it."
-  (setq output (file-name-as-directory (substring output 0 -1))) ;; remove trailing new line
-  (make-directory output t)
-  (tfsmacs-get-recursive output t))
+  (when (> tfsmacs--command-retries 0) 
+    (setq output (file-name-as-directory (substring output 0 -1))) ;; remove trailing new line
+    (make-directory output t)
+    (tfsmacs-get-recursive output t)))
 
 (defun tfsmacs-get (&optional filename version)
   "Perform a tf get on a file.
@@ -781,17 +787,18 @@ How the file is determined:
 (defun tfsmacs--history-callback (output)
   "Process the history output and display the ‘tfsmacs-history-mode’ buffer.
 OUTPUT is the XML output from \"tf history\"."
-  (let ((parsed-data (tfsmacs--get-history-data-for-tablist output)))
-    (let* ((short-target (file-name-nondirectory tfsmacs--history-target))
-           (history-bufname (format "*TFS History %s *" short-target))
-           (buffer (get-buffer-create history-bufname)))
-      (with-current-buffer buffer
-        (setq tabulated-list-entries parsed-data)
-        (tfsmacs-history-mode)
-        (tablist-revert)
-        (switch-to-buffer buffer))))
-  (message "TFS: Showing item history. Press \"h\" to show available bindings."))
-
+  (when (> tfsmacs--command-retries 0) ;; if the command failed, don't run
+    (let ((parsed-data (tfsmacs--get-history-data-for-tablist output)))
+      (let* ((short-target (file-name-nondirectory tfsmacs--history-target))
+             (history-bufname (format "*TFS History %s *" short-target))
+             (buffer (get-buffer-create history-bufname)))
+        (with-current-buffer buffer
+          (setq tabulated-list-entries parsed-data)
+          (tfsmacs-history-mode)
+          (tablist-revert)
+          (switch-to-buffer buffer))))
+    (message "TFS: Showing item history. Press \"h\" to show available bindings.")))
+  
 (defun tfsmacs--get-history-data-for-tablist (xml-status-data)
   "Format XML-STATUS-DATA from the history command for tabulated list."
   (with-temp-buffer
@@ -820,12 +827,13 @@ OUTPUT is the XML output from \"tf history\"."
 (defun tfsmacs--changeset-callback (output)
   "Show the buffer with the changeset command result.
 OUTPUT is the command's output"
-  (with-current-buffer tfsmacs--changeset-buffer-name
-    (insert output)
-    (read-only-mode)
-    (local-set-key "U" 'tfsmacs--changeset-update)
-    (switch-to-buffer-other-window tfsmacs--changeset-buffer-name t))
-  (message "TFS: Displaying changeset details. Use \"U\" to update the comment."))
+  (when (> tfsmacs--command-retries 0) ;; if the command failed, don't run
+    (with-current-buffer tfsmacs--changeset-buffer-name
+      (insert output)
+      (read-only-mode)
+      (local-set-key "U" 'tfsmacs--changeset-update)
+      (switch-to-buffer-other-window tfsmacs--changeset-buffer-name t))
+    (message "TFS: Displaying changeset details. Use \"U\" to update the comment.")))
 
 (defun tfsmacs--changeset-update ()
   "Update the changeset comments in the current buffer."
@@ -957,7 +965,7 @@ If VERSION to get is not provided, it will be prompted."
         (tfsmacs--get-pending-changes tfsmacs--buffer-status-dir)
       (progn
         (let* ((status-dir (tfsmacs--quote-string (tfsmacs--select-status-directory)))
-               (buffer (get-buffer-create "*TFS Status [running]*")))
+               (buffer (get-buffer-create "*TFS Status [...]*")))
           (tfsmacs--append-to-log status-dir)
           (with-current-buffer buffer
             (setq tfsmacs--buffer-status-dir status-dir)
@@ -972,27 +980,25 @@ If VERSION to get is not provided, it will be prompted."
     (tfsmacs--async-command command 'tfsmacs--status-callback)))
 
 (defun tfsmacs--status-callback (output)
-  "Process the output of tf status and display the ‘tfsmacs-status-mode’ buffer.
-OUTPUT is the XML result of \"tf status\"."
-  (when (string-empty-p (tfsmacs--trim-string output))
-    (error "See log for details"))
-  (let ((parsed-data (tfsmacs--get-status-data-for-tablist output)))
-    (let* ((directory tfsmacs--buffer-status-dir)
-           (last-dir-in-path (tfsmacs--get-last-dir-name directory))
-           (status-bufname (format "*TFS Status %s *" last-dir-in-path))
-           (buffer (get-buffer status-bufname)))
-      (when (not buffer)
-        (setq buffer (get-buffer "*TFS Status [running]*"))
-        (erase-buffer))
-      (with-current-buffer buffer
-        (tfsmacs-status-mode)
-        ;; Buffer local vars
-        (setq tabulated-list-entries parsed-data)
-        (setq tfsmacs--buffer-status-dir directory)
-        (tablist-revert)
-        (rename-buffer status-bufname)
-        (switch-to-buffer buffer))))
-  (message "TFS: Showing pending changes. Press \"h\" to show available bindings."))
+  "Process the OUTPUT of tf status and display the ‘tfsmacs-status-mode’ buffer."
+  (when (> tfsmacs--command-retries 0) ;; if the command failed, don't run
+    (let ((parsed-data (tfsmacs--get-status-data-for-tablist output)))
+      (let* ((directory tfsmacs--buffer-status-dir)
+             (last-dir-in-path (tfsmacs--get-last-dir-name directory))
+             (status-bufname (format "*TFS Status %s *" last-dir-in-path))
+             (buffer (get-buffer status-bufname)))
+        (when (not buffer)
+          (setq buffer (get-buffer "*TFS Status [...]*"))
+          (erase-buffer))
+        (with-current-buffer buffer
+          (tfsmacs-status-mode)
+          ;; Buffer local vars
+          (setq tabulated-list-entries parsed-data)
+          (setq tfsmacs--buffer-status-dir directory)
+          (tablist-revert)
+          (rename-buffer status-bufname)
+          (switch-to-buffer buffer))))
+    (message "TFS: Showing pending changes. Press \"h\" to show available bindings.")))
 
 (defun tfsmacs--get-status-data-for-tablist (xml-status-data)
   "Format XML-STATUS-DATA from the status command for tabulated list."
@@ -1038,9 +1044,8 @@ OUTPUT is the XML result of \"tf status\"."
   "Process OUTPUT of unshelving."
   ;; Unshelving has empty output, but we can use our flag
   ;; to detect is the command ran fine.
-  (when (equal tfsmacs--command-retries -1)
-    (error "Unshelving failed.  See log for details"))
-  (message "TFS: Changes unshelved."))
+  (when (> tfsmacs--command-retries 0) ;; if the command failed, don't run
+    (message "TFS: Changes unshelved.")))0
 
 (defun tfsmacs--shelvesets-mode-details ()
   "Unshelve to current workspace when in tfsmacs-shelvesets-mode."
@@ -1058,7 +1063,6 @@ OUTPUT is the XML result of \"tf status\"."
 
 (defun tfsmacs--shelvesets-mode-details-callback1 (output)
   "Display OUTPUT (shelveset details header) in the buffer and invoke next command."
-  (interactive)
   (if (string-empty-p (tfsmacs--trim-string output))
       (error "Couldn't get shelveset details")
     (progn
@@ -1126,15 +1130,16 @@ If OWNER is not provided in the call, it will be prompted."
 (defun tfsmacs--shelvesets-callback (output)
   "Process the shelvesets list and display the ‘tfsmacs-shelvesets-mode’ buffer.
 OUTPUT is the XML output from \"tf shelvesets\"."
-  (message "TFS: Showing shelvesets...")
-  (let ((parsed-data (tfsmacs--get-shelvesets-data-for-tablist output)))
-    (let* ((shelvesets-bufname (format "*TFS Shelvesets*"))
-           (buffer (get-buffer-create shelvesets-bufname)))
-      (with-current-buffer buffer
-        (setq tabulated-list-entries parsed-data)
-        (tfsmacs-shelvesets-mode)
-        (tablist-revert)
-        (switch-to-buffer buffer)))))
+  (when (> tfsmacs--command-retries 0) ;; if the command failed, don't run
+    (message "TFS: Showing shelvesets...")
+    (let ((parsed-data (tfsmacs--get-shelvesets-data-for-tablist output)))
+      (let* ((shelvesets-bufname (format "*TFS Shelvesets*"))
+             (buffer (get-buffer-create shelvesets-bufname)))
+        (with-current-buffer buffer
+          (setq tabulated-list-entries parsed-data)
+          (tfsmacs-shelvesets-mode)
+          (tablist-revert)
+          (switch-to-buffer buffer))))))
 
 (defun tfsmacs--get-shelvesets-data-for-tablist (xml-status-data)
   "Format XML-STATUS-DATA from the history command for tabulated list."
@@ -1157,9 +1162,6 @@ OUTPUT is the XML output from \"tf shelvesets\"."
   "Obtain only (name owner) of the files selected in the list."
   (mapcar 'car (tablist-get-marked-items)))
 
-
-;; is it questionable to start the process as soon as the package loads?
-(tfsmacs--get-or-create-process)
 (provide 'tfsmacs)
 
 ;;; tfsmacs.el ends here
