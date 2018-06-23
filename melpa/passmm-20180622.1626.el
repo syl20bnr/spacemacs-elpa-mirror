@@ -5,7 +5,7 @@
 ;; Author: Peter Jones <pjones@devalot.com>
 ;; Homepage: https://github.com/pjones/passmm
 ;; Package-Requires: ((emacs "24.4") (password-store "0"))
-;; Package-Version: 20180525.1551
+;; Package-Version: 20180622.1626
 ;; Version: 0.3.1
 ;;
 ;; This file is not part of GNU Emacs.
@@ -44,7 +44,7 @@
 
 (defgroup passmm nil
   "A minor mode for pass (Password Store)."
-  :version "0.2.0"
+  :version "25.3"
   :prefix "passmm-"
   :group 'applications)
 
@@ -73,9 +73,9 @@
 
 (defvar passmm-mode-map
   (let ((map (make-keymap)))
-    (define-key map (kbd "C-c C-p +")  'passmm-generate-password)
-    (define-key map (kbd "RET")        'passmm-edit-entry)
-    (define-key map (kbd "C-<return>") 'passmm-kill-password)
+    (define-key map (kbd "C-c +")      #'passmm-generate-password)
+    (define-key map (kbd "RET")        #'passmm-edit-entry)
+    (define-key map (kbd "C-<return>") #'passmm-kill-password)
     map)
   "Default keymap for passmm.")
 
@@ -131,7 +131,10 @@ narrowing will be used and the entire file will be shown."
           (find-file name)
           (when (not keep-password)
             (passmm-narrow-buffer (current-buffer))))
-      (dired-maybe-insert-subdir name))))
+      ;; Entry might be a directory in the dired buffer:
+      (when (and (derived-mode-p 'dired-mode)
+                 (file-directory-p entry))
+        (dired-maybe-insert-subdir entry)))))
 
 (defun passmm-kill-password (entry &optional show-entry)
   "Store a password on the kill ring for ENTRY.
