@@ -4,7 +4,7 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/djangonaut
-;; Package-Version: 20180612.2142
+;; Package-Version: 20180623.151
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.2") (magit-popup "2.6.0") (pythonic "0.1.0") (f "0.20.0") (s "1.12.0"))
 
@@ -334,6 +334,13 @@ def collect_views(resolver):
                 # DRF as_view result.
                 view = view.cls
                 name = getmodule(view).__name__ + '.' + view.__name__
+                result[name] = [getsourcefile(view), findsource(view)[1]]
+                for attrname in dir(view):
+                    view_attr = getattr(view, attrname)
+                    if getattr(view_attr, 'bind_to_methods', None):
+                        # DRF ViewSet method view.
+                        result[name + '.' + attrname] = [getsourcefile(view_attr), findsource(view_attr)[1]]
+                continue
             else:
                 view = unwrap(view)
                 if ismethod(view):
@@ -1033,7 +1040,7 @@ user input.  HIST is a variable to store history of choices."
     (define-key map djangonaut-keymap-prefix djangonaut-command-map)
     map))
 
-(easy-menu-define djangonout-mode-menu djangonaut-mode-map
+(easy-menu-define djangonaut-mode-menu djangonaut-mode-map
   "Menu to interact with Django project."
   '("Django"
     ["Run management command" djangonaut-run-management-command

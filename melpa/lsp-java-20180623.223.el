@@ -1,7 +1,7 @@
 ;;; lsp-java.el --- Java support for lsp-mode
 
 ;; Version: 1.0
-;; Package-Version: 20180531.1229
+;; Package-Version: 20180623.223
 ;; Package-Requires: ((emacs "25.1") (lsp-mode "3.0"))
 ;; Keywords: java
 ;; URL: https://github.com/emacs-lsp/lsp-java
@@ -24,6 +24,8 @@
 ;;; Code:
 (require 'cc-mode)
 (require 'lsp-mode)
+(require 'markdown-mode)
+(require 'lsp-methods)
 
 ;;;###autoload
 (defgroup lsp-java nil
@@ -281,7 +283,7 @@ The entry point of the language server is in `lsp-java-server-install-dir'/plugi
                  ((string-equal system-type "gnu/linux") ; linux
                   "config_linux"))))
     (let ((inhibit-message t))
-     (message (format "using config for %s" config)))
+      (message (format "using config for %s" config)))
     (expand-file-name config lsp-java-server-install-dir)))
 
 (defun lsp-java-organize-imports ()
@@ -364,7 +366,8 @@ PARAMS the parameters for language status notifications."
                     (string= "Starting" status)))
       (lsp-workspace-status (concat "::" status) workspace)
       (lsp-workspace-set-metadata "status" status workspace)
-      (message "%s[%s]" (gethash "message" params) (gethash "type" params)))))
+      (let ((inhibit-message lsp-inhibit-message))
+        (message "%s[%s]" (gethash "message" params) (gethash "type" params))))))
 
 (defun lsp-java--apply-workspace-edit (action)
   "Callback for java/applyWorkspaceEdit.
@@ -395,7 +398,8 @@ PARAMS the parameters for actionable notifications."
   "Progress report handling.
 
 PARAMS progress report notification data."
-  (message "%s%s" (gethash "status" params) (if (gethash "complete" params) " (done)" "")))
+  (let ((inhibit-message lsp-inhibit-message))
+    (message "%s%s" (gethash "status" params) (if (gethash "complete" params) " (done)" ""))))
 
 (defun lsp-java--render-string (str)
   "Render STR with `java-mode' syntax highlight."
@@ -407,6 +411,22 @@ PARAMS progress report notification data."
         (buffer-string))
     (error str)))
 
+(defun lsp-java--render-markup (string)
+  "Render STRING as markup."
+  (string-trim-right
+   (with-temp-buffer
+     (insert string)
+     (delay-mode-hooks
+       (make-local-variable 'markdown-code-lang-modes)
+       (add-to-list 'markdown-code-lang-modes (cons "java" 'java-mode))
+       (setq-local markdown-fontify-code-blocks-natively t)
+       (setq-local markdown-fontify-code-block-default-mode "java")
+       (setq-local markdown-hide-markup t)
+
+       (let ((inhibit-message t)) (gfm-view-mode))
+       (ignore-errors (font-lock-ensure)))
+     (buffer-string))))
+
 (defun lsp-java--client-initialized (client)
   "Callback for CLIENT initialized."
   (lsp-client-on-notification client "language/status" 'lsp-java--language-status-callback)
@@ -414,7 +434,9 @@ PARAMS progress report notification data."
   (lsp-client-on-notification client "language/progressReport" 'lsp-java--progress-report)
   (lsp-client-on-action client "java.apply.workspaceEdit" 'lsp-java--apply-workspace-edit)
   (lsp-client-register-uri-handler client "jdt" 'lsp-java--resolve-uri)
-  (lsp-provide-marked-string-renderer client "java" 'lsp-java--render-string))
+
+  (lsp-provide-marked-string-renderer client "java" #'lsp-java--render-string)
+  (lsp-provide-default-marked-string-renderer client #'lsp-java--render-markup))
 
 (defun lsp-java--get-filename (url)
   "Get the name of the buffer calculating it based on URL."
@@ -461,6 +483,61 @@ PARAMS progress report notification data."
     (remhash selected-notification notifications)
     (when (= (hash-table-count notifications) 0)
       (lsp-workspace-status (concat "::" (lsp-workspace-get-metadata "status"))))))
+
+(defun lsp-java-execute-matching-action (regexp &optional not-found-message)
+  "Executes the code action which title matches the REGEXP. "
+  (let ((actions (cl-remove-if-not
+                  (lambda (item) (string-match regexp (gethash "title" item)))
+                  (lsp-get-or-calculate-code-actions))))
+    (case (length actions)
+      (0 (error (or not-found-message "Unable to find action")))
+      (1 (lsp-execute-code-action (car actions)))
+      (t (lsp-execute-code-action (lsp--select-action actions))))))
+
+(defun lsp-java-extract-to-local-variable (arg)
+  "Extract local variable refactoring.
+The prefix ARG and `cider-prompt-for-symbol' decide whether to
+extract all or only the current occurrence."
+  (interactive "P")
+  (lsp-java-execute-matching-action
+   (if arg
+       "Extract to local variable$"
+     "Extract to local variable (replace all occurrences)")))
+
+(defun lsp-java-extract-to-constant ()
+  "Extract constant refactoring."
+  (interactive)
+  (lsp-java-execute-matching-action "Extract to constant"))
+
+(defun lsp-java-add-unimplemented-methods ()
+  "Extract constant refactoring."
+  (interactive)
+  (lsp-java-execute-matching-action "Add unimplemented methods"))
+
+(defun lsp-java-create-parameter ()
+  "Create parameter refactoring."
+  (interactive)
+  (lsp-java-execute-matching-action "Create parameter '"))
+
+(defun lsp-java-create-field ()
+  "Create field refactoring."
+  (interactive)
+  (lsp-java-execute-matching-action "Create field '"))
+
+(defun lsp-java-create-local ()
+  "Create local refactoring."
+  (interactive)
+  (lsp-java-execute-matching-action "Create local variable"))
+
+(defun lsp-java-extract-method ()
+  "Extract method refactoring."
+  (interactive)
+  (lsp-java-execute-matching-action "Extract to method"))
+
+(defun lsp-java-add-import ()
+  "Add missing import."
+  (interactive)
+  (lsp-java-execute-matching-action "Import '.*'"))
 
 (lsp-define-stdio-client lsp-java "java" (lambda () lsp-java-workspace-dir)
                          (lsp-java--ls-command)

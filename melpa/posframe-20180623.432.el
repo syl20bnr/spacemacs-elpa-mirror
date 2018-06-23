@@ -5,7 +5,7 @@
 ;; Author: Feng Shu <tumashu@163.com>
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/posframe
-;; Package-Version: 20180620.359
+;; Package-Version: 20180623.432
 ;; Version: 0.4.1
 ;; Keywords: tooltip
 ;; Package-Requires: ((emacs "26"))
@@ -51,6 +51,7 @@
 
 ;; *** Create a posframe
 
+;; **** Simple way
 ;; #+BEGIN_EXAMPLE
 ;; (posframe-show " *my-posframe-buffer*"
 ;;                :string "This is a test"
@@ -60,6 +61,20 @@
 ;; Arguments documents:
 ;; #+BEGIN_EXAMPLE
 ;; C-h f posframe-show
+;; #+END_EXAMPLE
+
+;; Note: buffers prefixed with space will be not showed in buffer-list.
+
+;; **** Advanced way
+;; #+BEGIN_EXAMPLE
+;; (defvar my-posframe-buffer " *my-posframe-buffer*")
+
+;; (with-current-buffer my-posframe-buffer
+;;   (erase-buffer)
+;;   (insert "Hello world"))
+
+;; (posframe-show my-posframe-buffer
+;;                :position (point))
 ;; #+END_EXAMPLE
 
 ;; *** Hide a posframe
@@ -283,16 +298,18 @@ by default, poshandler is auto selected based on
 POSITION's type, but user can *force* set one with
 the help of POSHANDLER argument. the below are buildin
 poshandler functions:
-1. `posframe-poshandler-frame-center'
-2. `posframe-poshandler-frame-bottom-left-corner'
-3. `posframe-poshandler-frame-bottom-right-corner'
-4. `posframe-poshandler-window-center'
-5. `posframe-poshandler-window-top-left-corner'
-6. `posframe-poshandler-window-top-right-corner'
-7. `posframe-poshandler-window-bottom-left-corner'
-8. `posframe-poshandler-window-bottom-right-corner'
-9. `posframe-poshandler-point-top-left-corner'
-9. `posframe-poshandler-point-bottom-left-corner'
+1.  `posframe-poshandler-frame-center'
+2.  `posframe-poshandler-frame-top-left-corner'
+3.  `posframe-poshandler-frame-top-right-corner'
+4.  `posframe-poshandler-frame-bottom-left-corner'
+5.  `posframe-poshandler-frame-bottom-right-corner'
+6.  `posframe-poshandler-window-center'
+7.  `posframe-poshandler-window-top-left-corner'
+8.  `posframe-poshandler-window-top-right-corner'
+9.  `posframe-poshandler-window-bottom-left-corner'
+10. `posframe-poshandler-window-bottom-right-corner'
+11. `posframe-poshandler-point-top-left-corner'
+12. `posframe-poshandler-point-bottom-left-corner'
 
 This posframe's buffer is POSFRAME-BUFFER.
 
@@ -373,7 +390,7 @@ you can use `posframe-delete-all' to delete all posframes."
       (posframe--set-frame-position
        posframe
        (posframe-run-poshandler
-        `(             ;All poshandlers will get info from this plist.
+        `(;All poshandlers will get info from this plist.
           :position ,position
           :poshandler ,poshandler
           :font-height ,font-height
@@ -476,9 +493,9 @@ This need PARENT-FRAME-WIDTH and PARENT-FRAME-HEIGHT"
       (cancel-timer posframe--timeout-timer))
     (setq-local posframe--timeout-timer
                 (run-with-timer
-                 secs nil #'posframe-hide-frame posframe))))
+                 secs nil #'posframe--make-frame-invisible posframe))))
 
-(defun posframe-hide-frame (frame)
+(defun posframe--make-frame-invisible (frame)
   "This function used to instead `make-frame-invisible' to make hide frame safely."
   (when (frame-live-p frame)
     (make-frame-invisible frame)))
@@ -509,7 +526,7 @@ WIDTH and MIN-WIDTH."
     (let ((buffer-info (frame-parameter frame 'posframe-buffer)))
       (when (or (equal posframe-buffer (car buffer-info))
                 (equal posframe-buffer (cdr buffer-info)))
-        (posframe-hide-frame frame)))))
+        (posframe--make-frame-invisible frame)))))
 
 (defun posframe-delete (posframe-buffer)
   "Delete posframe which buffer POSFRAME-BUFFER."
@@ -543,7 +560,7 @@ This posframe's buffer is POSFRAME-BUFFER."
   (interactive)
   (dolist (frame (frame-list))
     (let ((buffer-info (frame-parameter frame 'posframe-buffer)))
-      (when buffer-info (posframe-hide-frame frame)))))
+      (when buffer-info (posframe--make-frame-invisible frame)))))
 
 ;;;###autoload
 (defun posframe-delete-all ()
@@ -660,6 +677,23 @@ be found in docstring of `posframe-show'."
           (/ (- (frame-pixel-height parent-frame)
                 (frame-pixel-height posframe))
              2))))
+
+(defun posframe-poshandler-frame-top-left-corner (_info)
+  "Posframe's position handler.
+
+Get a position which let posframe stay onto its parent-frame's
+top left corner.  The structure of INFO can be found
+in docstring of `posframe-show'."
+  '(0 . 0))
+
+(defun posframe-poshandler-frame-top-right-corner (_info)
+  "Posframe's position handler.
+
+Get a position which let posframe stay onto its parent-frame's
+top right corner.  The structure of INFO can be found
+in docstring of `posframe-show'."
+  '(-1 . 0))
+
 
 (defun posframe-poshandler-frame-bottom-left-corner (_info)
   "Posframe's position handler.
