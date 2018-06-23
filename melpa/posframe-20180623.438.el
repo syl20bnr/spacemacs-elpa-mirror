@@ -5,7 +5,7 @@
 ;; Author: Feng Shu <tumashu@163.com>
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/posframe
-;; Package-Version: 20180623.432
+;; Package-Version: 20180623.438
 ;; Version: 0.4.1
 ;; Keywords: tooltip
 ;; Package-Requires: ((emacs "26"))
@@ -53,28 +53,28 @@
 
 ;; **** Simple way
 ;; #+BEGIN_EXAMPLE
+;; ;; NOTE: buffers prefixed with space will be not showed in buffer-list.
 ;; (posframe-show " *my-posframe-buffer*"
 ;;                :string "This is a test"
 ;;                :position (point))
 ;; #+END_EXAMPLE
 
-;; Arguments documents:
-;; #+BEGIN_EXAMPLE
-;; C-h f posframe-show
-;; #+END_EXAMPLE
-
-;; Note: buffers prefixed with space will be not showed in buffer-list.
-
 ;; **** Advanced way
 ;; #+BEGIN_EXAMPLE
 ;; (defvar my-posframe-buffer " *my-posframe-buffer*")
 
-;; (with-current-buffer my-posframe-buffer
+;; (with-current-buffer (get-buffer-create my-posframe-buffer)
 ;;   (erase-buffer)
 ;;   (insert "Hello world"))
 
 ;; (posframe-show my-posframe-buffer
 ;;                :position (point))
+;; #+END_EXAMPLE
+
+;; **** Arguments
+
+;; #+BEGIN_EXAMPLE
+;; C-h f posframe-show
 ;; #+END_EXAMPLE
 
 ;; *** Hide a posframe

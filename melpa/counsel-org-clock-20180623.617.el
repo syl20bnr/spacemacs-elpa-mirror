@@ -4,7 +4,7 @@
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 0.2.1
-;; Package-Version: 20180608.706
+;; Package-Version: 20180623.617
 ;; Package-Requires: ((emacs "24.3") (ivy "0.10.0") (dash "2.0"))
 ;; URL: https://github.com/akirak/counsel-org-clock
 
@@ -30,7 +30,7 @@
 ;; This library provides the following two commands via Ivy interface:
 ;;
 ;; - `counsel-org-clock-context' displays the currently clocked task as well as
-;;   its ancestors and descendants. If there is no currently running clock,
+;;   its ancestors and descendants.  If there is no currently running clock,
 ;;   this function behaves the same as `counsel-org-clock-history'.
 ;; - `counsel-org-clock-history' displays entries in `org-clock-history'
 ;;   variable.
@@ -48,7 +48,9 @@
   "Display the current org-clock, its ancestors, and its descendants via Ivy.
 
 If there is no clocking task, display the clock history using
-`counsel-org-clock-history'."
+`counsel-org-clock-history'.
+
+If prefix ARG is non-nil, restore the clock history from `org-agenda-files'."
   (interactive "P")
   (if (org-clocking-p)
       (counsel-org-clock--ivy-context org-clock-marker
@@ -170,7 +172,11 @@ If prefix ARG is given, rebuild the history from `org-agenda-files'."
         (org-time-string-to-time (match-string 0 src))))))
 
 (defun counsel-org-clock--get-history-entries (limit &optional include-archives)
-  "Get org-clock-history entries from `org-agenda-files'."
+  "Get org-clock-history entries from `org-agenda-files'.
+
+Take LIMIT entries are retrieved from the files.
+
+If INCLUDE-ARCHIVES is non-nil, archives are included in the scanning."
   (--> (org-map-entries (lambda ()
                           (let ((marker (point-marker))
                                 (time (counsel-org-clock--last-clock)))

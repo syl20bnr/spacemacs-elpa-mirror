@@ -7,7 +7,7 @@
 ;; Description: Mimic Eclipse C-S-o key. (Organeize Imports)
 ;; Keyword: organize imports java handy eclipse
 ;; Version: 0.0.1
-;; Package-Version: 20180623.1
+;; Package-Version: 20180623.552
 ;; Package-Requires: ((emacs "26") (f "0.20.0") (s "1.12.0") (cl-lib "0.6"))
 ;; URL: https://github.com/jcs090218/organize-imports-java
 
@@ -79,18 +79,27 @@
   :type 'list
   :group 'organize-imports-java)
 
-(defcustom organize-imports-java-unsearch-class-type '("[Bb]oolean"
-                                                       "[Bb]yte"
+(defcustom organize-imports-java-unsearch-class-type '("Boolean"
+                                                       "boolean"
+                                                       "Byte"
+                                                       "byte"
                                                        "Character"
                                                        "char"
-                                                       "[Dd]ouble"
-                                                       "[Ff]loat"
-                                                       "[Ii]nteger"
+                                                       "Double"
+                                                       "double"
+                                                       "Float"
+                                                       "float"
+                                                       "Integer"
+                                                       "integer"
                                                        "int"
-                                                       "[Ll]ong"
-                                                       "[Ss]tring"
-                                                       "[Ss]hort"
-                                                       "[Vv]oid")
+                                                       "Long"
+                                                       "long"
+                                                       "String"
+                                                       "string"
+                                                       "Short"
+                                                       "short"
+                                                       "Void"
+                                                       "void")
   "Class types that do not need to imports any library path."
   :type 'list
   :group 'organize-imports-java)
@@ -122,9 +131,6 @@
                                              "sun")
   "List of non Java source keywords.")
 
-
-(defvar organize-imports-java-pre-insert-path-list '()
-  "Paths that are ready to insert.")
 
 (defvar organize-imports-java-same-class-name-list '()
   "Paths will store temporary, use to check if multiple class exists in the environment.")
@@ -180,7 +186,7 @@ IN-STR : string to check by the IN-SUB-STR."
   "Check if a string in the string list.
 IN-LIST : list of strings.
 STR : string to check if is inside the list of strings above."
-  (cl-some #'(lambda (lb-sub-str) (string-match lb-sub-str str)) in-list))
+  (cl-some #'(lambda (lb-sub-str) (string= lb-sub-str str)) in-list))
 
 ;;;###autoload
 (defun organize-imports-java-current-line-empty-p ()
@@ -616,222 +622,247 @@ TYPE : path string will be store at."
   (interactive
    (list (completing-read
           "Choose select class: " organize-imports-java-same-class-name-list)))
-  (push type organize-imports-java-pre-insert-path-list))
+  ;; Just return the asked result/answer input.
+  type)
 
-
-(defun organize-imports-java-do-imports-one-cache (in-cache)
-  "Do the import by cache file.
+(defun organize-imports-java-get-paths-from-cache (in-cache)
+  "Return the list of path from IN-CHACHE.
 IN-CACHE : cache file name relative to project root folder."
-  (save-excursion
-    (let ((tmp-config-fullpath (concat (cdr (project-current))
-                                       in-cache)))
-      ;; If the file does not exists, load the Java path once.
-      ;; Get this plugin ready to use.
-      (when (not (file-exists-p tmp-config-fullpath))
-        (cond ((string= in-cache organize-imports-java-path-jar-lib-cache-file)
-               (progn
-                 (organize-imports-java-reload-jar-lib-paths)))
-              ((string= in-cache organize-imports-java-path-local-source-cache-file)
-               (progn
-                 (organize-imports-java-reload-local-source-paths)))
-              (t
-               (progn
-                 ;; Reload all the cache file as default. Even though this
-                 ;; should not happens.
-                 (organize-imports-java-reload-paths)))))
+  (let ((tmp-config-fullpath (concat (cdr (project-current))
+                                     in-cache))
+        ;; Read file to buffer.
+        (tmp-path-buffer "")
+        ;; Split `tmp-path-buffer', from the file.
+        (tmp-path-list '()))
+    ;; If the file does not exists, load the Java path once.
+    ;; Get this plugin ready to use.
+    (when (not (file-exists-p tmp-config-fullpath))
+      (cond ((string= in-cache organize-imports-java-path-jar-lib-cache-file)
+             (progn
+               (organize-imports-java-reload-jar-lib-paths)))
+            ((string= in-cache organize-imports-java-path-local-source-cache-file)
+             (progn
+               (organize-imports-java-reload-local-source-paths)))
+            (t
+             (progn
+               ;; Reload all the cache file as default. Even though this
+               ;; should not happens.
+               (organize-imports-java-reload-paths)))))
 
-      (let ((tmp-type-keyword-list (organize-imports-java-get-type-face-keywords-by-face-name
-                                    organize-imports-java-font-lock-type-faces))
-            ;; Read file to buffer.
-            (tmp-path-buffer (organize-imports-java-get-string-from-file tmp-config-fullpath))
-            (tmp-path-list '())
-            ;; Loop the data once and split into alphabetic order.
-            ;; List-Len = (Alphabet Id - 1).
-            ;; 0 = A, 1 = B, 2 = C, etc.
-            (alphabet-list-first '()))
+    ;; Read file to buffer.
+    (setq tmp-path-buffer (organize-imports-java-get-string-from-file tmp-config-fullpath))
 
-        ;; Make the path buffer back to list.
-        ;;
-        ;; Why I use the word 'back'? Because when we make our
-        ;; list, we made it from one chunk of buffer/string.
-        ;; And now we split the string back to list again.
-        (setq tmp-path-list (split-string tmp-path-buffer "\n"))
+    ;; Make the path buffer back to list.
+    ;;
+    ;; Why I use the word 'back'? Because when we make our
+    ;; list, we made it from one chunk of buffer/string.
+    ;; And now we split the string back to list again.
+    (setq tmp-path-list (split-string tmp-path-buffer "\n"))
 
-        ;; Reset alphabetic list.
-        (setq alphabet-list-first '())
+    ;; Return all the path from list.
+    tmp-path-list))
 
-        ;; Make 26 list for all A-Z alphabet letters.
-        (let ((count 0))
-          (while (< count 26)
-            (push '() alphabet-list-first)
-            (setq count (1+ count))))
+(defun organize-imports-java-insert-paths (in-paths)
+  "Insert the paths.
+IN-PATHS : List of all paths from all cache.  Should be pretty giant list."
+  (let (;; Loop the data once and split into alphabetic order.
+        ;; List-Len = (Alphabet Id - 1).
+        ;; 0 = A, 1 = B, 2 = C, etc.
+        (alphabet-list-first '())
+        ;; List will do the final insert.
+        (insert-path-list '()))
 
-        ;; After Loading data to list.
-        ;; Store data/paths to alphabetic order depends
-        ;; on the class.
-        (dolist (tmp-path tmp-path-list)
-          (let ((tmp-split-path-list '())
-                ;; Usually the class name data.
-                (tmp-last-element "")
-                (first-char-from-path nil)
+    ;; Reset alphabetic list.
+    (setq alphabet-list-first '())
+
+    ;; Make 26 list for all A-Z alphabet letters.
+    (let ((count 0))
+      (while (< count 26)
+        (push '() alphabet-list-first)
+        (setq count (1+ count))))
+
+    ;; Store data/paths to alphabetic order depends on the class.
+    ;; So we can use alphabet id instead of loop through the whole list.
+    ;;
+    ;; Saved a tone of performance.
+    (dolist (tmp-path in-paths)
+      (let ((tmp-split-path-list '())
+            ;; Usually the class name data.
+            (tmp-last-element "")
+            (first-char-from-path nil)
+            (alphabet-id -1)
+            (alphabet-list nil))
+
+        ;; split the string into list
+        (setq tmp-split-path-list (split-string tmp-path "\\."))
+
+        ;; the last element is usually the class name.
+        (setq tmp-last-element (nth (1- (length tmp-split-path-list)) tmp-split-path-list))
+
+        (when (and (not (string= tmp-last-element ""))
+                   ;; Exclude current buffer file name because own file
+                   ;; cannot be inserted. Is illegal in Java programming.
+                   (not (string= tmp-last-element
+                                 ;; Filename without extension.
+                                 (file-name-sans-extension (file-name-nondirectory buffer-file-name)))))
+          ;; Get the first character from class name, in order
+          ;; to sort in alphabetic order.
+          (setq first-char-from-path (substring tmp-last-element 0 1))
+
+          ;; get the alphabet id, which is the same as array id.
+          (setq alphabet-id (organize-imports-java-get-alphabet-id first-char-from-path))
+
+          (when (not (= alphabet-id -1))
+            ;; get the current alphabet list.
+            (setf alphabet-list (nth alphabet-id alphabet-list-first))
+
+            ;; First push it class name.
+            (push tmp-last-element alphabet-list)
+            ;; Then push it full path.
+            (push tmp-path alphabet-list)
+
+            ;; set to the two dimensional array.
+            (setf (nth alphabet-id alphabet-list-first) alphabet-list)))))
+
+    ;; ------------------------------------------------------------------------------
+    ;; Start searching class name.
+    (let ((tmp-same-class-name-list-length -1)
+          ;; Get all the `class-name'/`font-lock-type' from current buffer.
+          (type-name-list (organize-imports-java-get-type-face-keywords-by-face-name
+                           organize-imports-java-font-lock-type-faces)))
+      (dolist (tmp-type-class-keyword type-name-list)
+        ;; Exclude the general data type. (String, Integer, etc.)
+        (when (not (organize-imports-java-is-in-list-string organize-imports-java-unsearch-class-type
+                                                            tmp-type-class-keyword))
+          (let (;; Choose one list from `alphabet-list-first',
+                ;; depends on alphabet id.
+                (alphabet-list nil)
                 (alphabet-id -1)
-                (alphabet-list nil))
+                (tmp-class-name-first-char ""))
 
-            ;; split the string into list
-            (setq tmp-split-path-list (split-string tmp-path "\\."))
+            ;; Get the first character from the class
+            ;; name keyword.
+            (setq tmp-class-name-first-char (substring tmp-type-class-keyword 0 1))
 
-            ;; the last element is usually the class name.
-            (setq tmp-last-element (nth (1- (length tmp-split-path-list)) tmp-split-path-list))
+            ;; Get alphabet id.
+            (setq alphabet-id (organize-imports-java-get-alphabet-id tmp-class-name-first-char))
 
-            (when (and (not (string= tmp-last-element ""))
-                       ;; Exclude current buffer file name because own file
-                       ;; cannot be inserted. Is illegal in Java programming.
-                       (not (string= tmp-last-element
-                                     ;; Filename without extension.
-                                     (file-name-sans-extension (file-name-nondirectory buffer-file-name)))))
-              ;; Get the first character from class name, in order
-              ;; to sort in alphabetic order.
-              (setq first-char-from-path (substring tmp-last-element 0 1))
+            ;; Get the alphabet list depends on `alphabet id'
+            ;; what we just get above a line of code.
+            (setq alphabet-list (nth alphabet-id alphabet-list-first))
 
-              ;; get the alphabet id, which is the same as array id.
-              (setq alphabet-id (organize-imports-java-get-alphabet-id first-char-from-path))
+            (let ((alphabet-list-index 0)
+                  (alphabet-list-length (length alphabet-list)))
+              (while (< alphabet-list-index alphabet-list-length)
+                (let ((tmp-class-name "")
+                      (tmp-full-path ""))
+                  ;; Get class name.
+                  (setq tmp-class-name (nth (1+ alphabet-list-index) alphabet-list))
 
-              (when (not (= alphabet-id -1))
-                ;; get the current alphabet list.
-                (setf alphabet-list (nth alphabet-id alphabet-list-first))
+                  ;; Compare the keyword and class name stored.
+                  (when (string= tmp-type-class-keyword tmp-class-name)
+                    ;; Get full path.
+                    (setq tmp-full-path (nth alphabet-list-index alphabet-list))
 
-                ;; First push it class name.
-                (push tmp-last-element alphabet-list)
-                ;; Then push it full path.
-                (push tmp-path alphabet-list)
+                    ;; add full path to check same class name list.
+                    (push tmp-full-path organize-imports-java-same-class-name-list)))
 
-                ;; set to the two dimensional array.
-                (setf (nth alphabet-id alphabet-list-first) alphabet-list)))))
+                ;; Plus two cuz data structure look like this.
+                ;;   => Class name
+                ;;   => Full path
+                (setq alphabet-list-index (+ alphabet-list-index 2)))))
 
-        ;; ------------------------------------------------------------------------------
-        ;; Start searching class name.
-        (let ((tmp-same-class-name-list-length -1))
-          (dolist (tmp-type-class-keyword tmp-type-keyword-list)
-            ;; Exclude the general data type. (String, Integer, etc.)
-            (when (not (organize-imports-java-is-in-list-string organize-imports-java-unsearch-class-type
-                                                                tmp-type-class-keyword))
-              (let (;; Choose one list from `alphabet-list-first',
-                    ;; depends on alphabet id.
-                    (alphabet-list nil)
-                    (alphabet-id -1)
-                    (tmp-class-name-first-char ""))
+          ;; ------------------------------------------------------------------------------
+          ;; Remove duplicate.
+          (setq organize-imports-java-same-class-name-list (delete-dups organize-imports-java-same-class-name-list))
 
-                ;; Get the first character from the class
-                ;; name keyword.
-                (setq tmp-class-name-first-char (substring tmp-type-class-keyword 0 1))
+          ;; Get the length of the check same class list.
+          (setq tmp-same-class-name-list-length (length organize-imports-java-same-class-name-list))
 
-                ;; Get alphabet id.
-                (setq alphabet-id (organize-imports-java-get-alphabet-id tmp-class-name-first-char))
+          ;; to the final insert path list.
+          ;; IMPORTANT(jenchieh): Here is where you actually add the inserted path
+          (cond ((= tmp-same-class-name-list-length 1)
+                 (progn
+                   ;; Is exactly 1 result. Just add that to the
+                   ;; final pre-insert list.
+                   (push (nth 0 organize-imports-java-same-class-name-list) insert-path-list)))
+                ((>= tmp-same-class-name-list-length 2)
+                 (progn
+                   ;; Is is more than 2 results. Meaning we
+                   ;; need the user to select which class
+                   ;; to import!
+                   (call-interactively 'organize-imports-java-same-class-ask))))
 
-                ;; Get the alphabet list depends on `alphabet id'
-                ;; what we just get above a line of code.
-                (setq alphabet-list (nth alphabet-id alphabet-list-first))
+          ;; Clean the same class paths for next loop.
+          (setq organize-imports-java-same-class-name-list '()))))
 
-                (let ((alphabet-list-index 0)
-                      (alphabet-list-length (length alphabet-list)))
-                  (while (< alphabet-list-index alphabet-list-length)
-                    (let ((tmp-class-name "")
-                          (tmp-full-path ""))
-                      ;; Get class name and full path.
-                      (setq tmp-full-path (nth alphabet-list-index alphabet-list))
-                      ;; Get full path.
-                      (setq tmp-class-name (nth (1+ alphabet-list-index) alphabet-list))
 
-                      ;; Compare the keyword and class name stored.
-                      (when (string= tmp-type-class-keyword tmp-class-name)
-                        ;; add full path to check same class name list.
-                        (push tmp-full-path organize-imports-java-same-class-name-list)))
+    (save-excursion
+      ;; Remove duplicate for pre insert list.
+      (setq insert-path-list (delete-dups insert-path-list))
 
-                    ;; Plus two cuz data structure look like this.
-                    ;;   => Class name
-                    ;;   => Full path
-                    (setq alphabet-list-index (+ alphabet-list-index 2)))))
+      ;; Sort in alphabetic order.
+      (setq insert-path-list (sort insert-path-list 'string<))
 
-              ;; ------------------------------------------------------------------------------
-              ;; Remove duplicate.
-              (setq organize-imports-java-same-class-name-list (delete-dups organize-imports-java-same-class-name-list))
+      ;; Check package keyword exists.
+      (goto-char (point-min))
 
-              ;; Get the length of the check same class list.
-              (setq tmp-same-class-name-list-length (length organize-imports-java-same-class-name-list))
+      ;; Make it under `package' line. Otherwise, will just
+      ;; insert at the very top of the file.
+      (when (string= (thing-at-point 'word) "package")
+        (end-of-line)
+        (insert "\n"))
 
-              (cond ((= tmp-same-class-name-list-length 1)
-                     (progn
-                       ;; Is exactly 1 result. Just add that to the
-                       ;; final pre-insert list.
-                       (push (nth 0 organize-imports-java-same-class-name-list) organize-imports-java-pre-insert-path-list)))
-                    ((>= tmp-same-class-name-list-length 2)
-                     (progn
-                       ;; Is is more than 2 results. Meaning we
-                       ;; need the user to select which class
-                       ;; to import!
-                       (call-interactively 'organize-imports-java-same-class-ask))))
+      ;; Insert all import path line.
+      (let ((tmp-split-path-list '())
+            (tmp-first-element "")
+            (tmp-record-first-element ""))
+        (dolist (tmp-in-path insert-path-list)
 
-              ;; Clean the paths
-              (setq organize-imports-java-same-class-name-list '()))))
+          ;; split the path into list by using `.' delimiter.
+          (setq tmp-split-path-list (split-string tmp-in-path "\\."))
 
-        ;; ------------------------------------------------------------------------------
-        ;; Prepare to insert to current buffer.
+          ;; the first element is always the class name.
+          (setq tmp-first-element (nth 0 tmp-split-path-list))
 
-        ;; Remove duplicate for pre insert list.
-        (setq organize-imports-java-pre-insert-path-list (delete-dups organize-imports-java-pre-insert-path-list))
+          (when (not (string= tmp-first-element tmp-record-first-element))
+            (insert "\n")
 
-        ;; Sort in alphabetic order.
-        (setq organize-imports-java-pre-insert-path-list (sort organize-imports-java-pre-insert-path-list
-                                                               'string<))
+            ;; record it down.
+            (setq tmp-record-first-element tmp-first-element))
 
-        ;; Check package keyword exists.
-        (goto-char (point-min))
+          (organize-imports-java-insert-import-lib tmp-in-path)))
 
-        ;; Make it under `package' line. Otherwise, will just
-        ;; insert at the very top of the file.
-        (when (string= (thing-at-point 'word) "package")
-          (end-of-line)
-          (insert "\n"))
+      ;; keep one line.
+      (organize-imports-java-keep-one-line-between))))
 
-        ;; Insert all import path line.
-        (let ((tmp-split-path-list '())
-              (tmp-first-element "")
-              (tmp-record-first-element ""))
-          (dolist (tmp-in-path organize-imports-java-pre-insert-path-list)
-
-            ;; split the path into list by using `.' delimiter.
-            (setq tmp-split-path-list (split-string tmp-in-path "\\."))
-
-            ;; the first element is always the class name.
-            (setq tmp-first-element (nth 0 tmp-split-path-list))
-
-            (when (not (string= tmp-first-element tmp-record-first-element))
-              (insert "\n")
-
-              ;; record it down.
-              (setq tmp-record-first-element tmp-first-element))
-
-            (organize-imports-java-insert-import-lib tmp-in-path)))
-
-        ;; Clean pre insert list for next use.
-        (setq organize-imports-java-pre-insert-path-list '())
-
-        ;; keep one line.
-        (organize-imports-java-keep-one-line-between)))))
 
 ;;;###autoload
 (defun organize-imports-java-do-imports ()
   "Do the functionalitiies of how organize imports work."
   (interactive)
+  (save-excursion
+    ;; Clear all imports before insert new imports.
+    (organize-imports-java-clear-all-imports)
 
-  ;; Clear all imports before insert new imports.
-  (organize-imports-java-clear-all-imports)
+    (let (;; Path have all the classpath from local and external cache.
+          (all-lib-paths '()))
 
-  ;; First insert the `local-source' Java path, so once later on the `jar/lib'
-  ;; Java path will be ontop of the `local-source' paths.
-  (organize-imports-java-do-imports-one-cache organize-imports-java-path-local-source-cache-file)
-  ;; Insert the `jar/lib' Java paths.
-  (organize-imports-java-do-imports-one-cache organize-imports-java-path-jar-lib-cache-file))
+      ;; Add the local source path from local source cache.
+      (setq all-lib-paths
+            (append all-lib-paths
+                    (organize-imports-java-get-paths-from-cache
+                     ;; Local source.
+                     organize-imports-java-path-local-source-cache-file)))
+      ;; Get the external source path from external source cache.
+      (setq all-lib-paths
+            (append all-lib-paths
+                    (organize-imports-java-get-paths-from-cache
+                     ;; External source.
+                     organize-imports-java-path-jar-lib-cache-file)))
+
+      ;; Do insert.
+      (organize-imports-java-insert-paths all-lib-paths))))
 
 
 (provide 'organize-imports-java)
