@@ -4,7 +4,7 @@
 
 ;; Author: Aaron Jensen <aaronjensen@gmail.com>
 ;; URL: http://github.com/aaronjensen/night-owl-theme
-;; Package-Version: 20180623.850
+;; Package-Version: 20180623.1311
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24"))
 
@@ -3205,7 +3205,7 @@ Also affects 'linum-mode' background."
                       :weight bold))))
 
    `(org-table
-     ((t (:foreground ,night-owl-orange))))
+     ((t (:foreground ,night-owl-foreground-slightly-muted))))
 
    `(org-tag
      ((t (:weight bold))))

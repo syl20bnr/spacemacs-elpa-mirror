@@ -89,7 +89,7 @@
 	      ((:url . "http://user42.tuxfamily.org/aumix-mode/index.html")
 	       (:keywords "multimedia" "mixer" "aumix"))])
  (auto-correct .
-	       [(1 1 3)
+	       [(1 1 4)
 		nil "Remembers and automatically fixes past corrections" single
 		((:url . "http://elpa.gnu.org/packages/auto-correct.html")
 		 (:keywords "editing"))])
@@ -382,7 +382,7 @@
 	 ((:keywords "convenience" "languages")
 	  (:url . "https://github.com/joaotavora/eglot"))])
  (el-search .
-	    [(1 6 10)
+	    [(1 7 1)
 	     ((emacs
 	       (25))
 	      (stream

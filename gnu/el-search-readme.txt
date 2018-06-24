@@ -72,10 +72,13 @@ respectively:
     Prompt for a directory name and skip all subsequent files
     located under this directory.
 
-  C-A, M-s e a (el-search-from-beginning)
-    Go back to the first match in this buffer or (with prefix arg)
-    completely restart the current search from the first file or
-    buffer.
+  C-A, M-s e a, M-s e < (el-search-from-beginning)
+    Go back to the first match in this buffer or (with positive
+    prefix arg) completely restart the current search from the
+    first file or buffer.
+
+    With negative prefix arg, or with >, go to the last match in
+    the current buffer.
 
   C-J, M-s e j (el-search-jump-to-search-head)
     Resume the last search from the position of the last visited
@@ -313,11 +316,12 @@ can simply specify (literally!) the following rule:
 Acknowledgments
 ===============
 
+Thanks to Manuela for our review sessions.
 Thanks to Stefan Monnier for corrections and advice.
 
 
-Known Limitations
-=================
+Known Limitations and Bugs
+==========================
 
 - Replacing: in some cases the read syntax of forms is changing due
   to reading-printing.  "Some" because we can handle this problem
@@ -341,11 +345,8 @@ Known Limitations
 - In el-search-query-replace, replacements are not allowed to
   contain uninterned symbols.
 
-
-BUGS
-====
-
-- l is very slow for very long lists.  E.g. C-S-e (l "test")
+- The `l' pattern type is very slow for very long lists.
+  E.g. C-S-e (l "test")
 
 - Emacs bug#30132: 27.0.50; "scan-sexps and ##": Occurrences of the
   syntax "##" (a syntax for an interned symbol whose name is the
@@ -385,4 +386,4 @@ TODO:
 
 NEWS:
 
-Please see the NEWS file in this directory.
+NEWS are listed in the separate NEWS file.
