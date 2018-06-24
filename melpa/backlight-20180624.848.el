@@ -1,10 +1,10 @@
-;;; backlight.el --- backlight brightness adjustment -*- lexical-binding: t -*-
+;;; backlight.el --- backlight brightness adjustment on GNU/Linux -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2018 Michael Schuldt
 
 ;; Author: Michael Schuldt <mbschuldt@gmail.com>
-;; Version: 1.0
-;; Package-Version: 20180616.1804
+;; Version: 1.2
+;; Package-Version: 20180624.848
 ;; URL: https://github.com/mschuldt/backlight.el
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: hardware
@@ -135,20 +135,33 @@
 
 (defun backlight--get-inc-amount ()
   "Return the amount by which to adjust the brightness."
-  (if (<= (backlight--current-percentage) backlight-threshold)
-      backlight-small-inc-amount
-    backlight-large-inc-amount))
+  (if (< (floor (backlight--current-percentage)) 1)
+      1 ;; single step
+    (backlight--from-percent
+     (if (<= (backlight--current-percentage) backlight-threshold)
+            backlight-small-inc-amount
+          backlight-large-inc-amount))))
 
-(defun backlight--adjust (percent)
-  "Adjust the backlight brightness by PERCENT, which can be negative."
+(defun backlight--adjust (amount)
+  "Adjust the backlight brightness by signed integer AMOUNT"
   (backlight--check)
-  (let* ((threshold (backlight--from-percent backlight-threshold))
+  (let* (;; detect the case in which we step from one brightness
+         ;; region down into another region that has increased
+         ;; resolution, such a step must not be done with the
+         ;; larger step size from the previous region as the
+         ;; inverse brightness increment may take several steps
+         ;; which can be confusing.
+         (threshold (backlight--from-percent backlight-threshold))
+         (threshold2 (backlight--from-percent 1))
          (was-above-theshold (>= backlight--current-brightness threshold))
-         (new (+ backlight--current-brightness
-                 (backlight--from-percent percent))))
-    (when (and was-above-theshold
-               (< (- new threshold) 1))
-      (setq new (1- threshold)))
+         (was-above-theshold2 (>= backlight--current-brightness threshold2))
+         (new (+ backlight--current-brightness amount)))
+    (cond ((and was-above-theshold
+                (< (- new threshold) 1))
+           (setq new (1- threshold)))
+          ((and was-above-theshold2
+                (< (- new threshold2) 1))
+           (setq new (1- threshold2))))
     (setq new (min new backlight--max-brightness))
     (setq new (max new 0))
     (backlight--set-brightness new)))
@@ -156,11 +169,11 @@
 (defun backlight--minibuf-update (&optional decrement)
   "Do a brightess increment, or DECREMENT, and update minibuffer."
   (if decrement
-      (backlight-dec)
-    (backlight-inc))
+      (backlight-dec (backlight--get-inc-amount))
+    (backlight-inc (backlight--get-inc-amount)))
   (move-beginning-of-line 1)
   (kill-line)
-  (insert (format "%%%s" (floor (backlight--current-percentage)))))
+  (insert (backlight--prompt)))
 
 (defvar backlight--minibuffer-keymap
   (let ((map (copy-keymap minibuffer-local-map))
@@ -179,27 +192,32 @@
     map)
   "Key map used for interactive minibuffer brightness adjustment.")
 
+(defun backlight--prompt ()
+  (let ((percent (backlight--current-percentage)))
+    (if (< percent 1)
+        (format "%%%.2f" percent)
+      (format "%%%d" (floor percent)))))
+
 ;;;###autoload
 (defun backlight ()
   "Interactively adjust the backlight brightness in the minibuffer."
   (interactive)
   (backlight--check)
   (read-from-minibuffer "brightness: "
-                        (format "%%%s"
-                                (floor (backlight--current-percentage)))
+                        (backlight--prompt)
                         backlight--minibuffer-keymap))
 
 ;;;###autoload
-(defun backlight-inc ()
-  "Increment the backlight brightness."
-  (interactive)
-  (backlight--adjust (backlight--get-inc-amount)))
+(defun backlight-inc (amount)
+  "Increment the backlight brightness by the specified or default AMOUNT."
+  (interactive (list (backlight--get-inc-amount)))
+  (backlight--adjust amount))
 
 ;;;###autoload
-(defun backlight-dec ()
-  "Decrements the backlight brightness."
-  (interactive)
-  (backlight--adjust (- (backlight--get-inc-amount))))
+(defun backlight-dec (amount)
+  "Decrements the backlight brightness by the specified or default AMOUNT."
+  (interactive (list (backlight--get-inc-amount)))
+  (backlight--adjust (* amount -1)))
 
 ;;;###autoload
 (defun backlight-set-raw ()
@@ -210,7 +228,7 @@
               (format "raw brightness (%s max): "
                       backlight--max-brightness)
               (number-to-string backlight--current-brightness))))
-    (backlight--set-brightness (number-to-string new))))
+    (backlight--set-brightness (string-to-number new))))
 
 (backlight--init)
 

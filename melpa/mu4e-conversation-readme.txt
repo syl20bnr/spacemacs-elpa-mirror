@@ -8,4 +8,4 @@ linear and tree view.
 To fully replace `mu4e-view' with `mu4e-conversation' from any other command
 (e.g. `mu4e-headers-next', `helm-mu'), call
 
-  (mu4e-conversation-init)
+  (global-mu4e-conversation-mode)
