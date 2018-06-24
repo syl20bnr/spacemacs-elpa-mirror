@@ -13,8 +13,8 @@ running process in a buffer.
 
 THE ESS MAILING LIST
 
-There is an informal mailing list for discussions of ESS. Alpha
-and beta releases of ESS are also announced here. Send mail
+There is an informal mailing list for discussions of ESS.  Alpha
+and beta releases of ESS are also announced here.  Send mail
 to ess-help-request@r-project.org to join.
 
 OVERVIEW OF ESS

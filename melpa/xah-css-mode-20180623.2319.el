@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2017 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.9.20180518143656
-;; Package-Version: 20180518.1437
+;; Version: 2.9.20180623231913
+;; Package-Version: 20180623.2319
 ;; Created: 18 April 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: languages, convenience, css, color
@@ -236,8 +236,10 @@ Version 2018-02-19"
   (if (looking-at "[a-z0-9]")
       (progn
         (forward-char )
-        (insert ";")
-        (newline))
+        (if (xah-css-expand-abbrev)
+            (progn )
+          (progn (insert ";")
+                 (newline))))
     (progn
       (forward-char )
       (newline))))
@@ -590,7 +592,6 @@ Version 2016-10-02"
  xah-css-value-kwds
  '(
 
-"important" ; todo, this actually needs to be !important
 "absolute"
 "alpha"
 "at"
@@ -599,13 +600,16 @@ Version 2016-10-02"
 "blink"
 "block"
 "bold"
+"border-box"
 "both"
 "bottom"
 "break-word"
+"calc"
 "capitalize"
 "center"
 "circle"
 "collapse"
+"content-box"
 "dashed"
 "dotted"
 "double"
@@ -621,6 +625,7 @@ Version 2016-10-02"
 "hidden"
 "hsl"
 "hsla"
+"important" ; todo, this actually needs to be !important
 "inherit"
 "initial"
 "inline"
@@ -814,6 +819,7 @@ This uses `ido-mode' user interface for completion."
           (,cssColorNames . font-lock-constant-face)
 
           (,(concat "[0-9]" "\\(" cssUnitNames "\\)") . (1 font-lock-type-face))
+          ;; (,(concat "[0-9]+" cssUnitNames  ) . font-lock-type-face)
 
           (,cssMedia . font-lock-builtin-face)
 
@@ -987,7 +993,7 @@ Version 2016-10-24"
 (define-abbrev-table 'xah-css-mode-abbrev-table
   '(
 
-    ("b" "border;" xah-css--ahf)
+    ("b" "border" xah-css--ahf)
     ("bbc" "border-bottom-color" xah-css--ahf)
     ("bbs" "border-bottom-style" xah-css--ahf)
     ("bbw" "border-bottom-width" xah-css--ahf)
@@ -1044,6 +1050,7 @@ Version 2016-10-24"
     ("background-position-y" "background-position-y: 9px;" xah-css--ahf)
     ("background-size" "background-size: 500px;" xah-css--ahf)
     ("border" "border: solid thin gray;" xah-css--ahf)
+    ("outline" "outline: solid thin gray;" xah-css--ahf)
     ("border-bottom-color" "border-bottom-color: blue;" xah-css--ahf)
     ("border-bottom-style" "border-bottom-style: none hidden dotted dashed solid double groove ridge inset outset inherit initial unset;" xah-css--ahf)
     ("border-bottom-width" "border-bottom-width: 2px;" xah-css--ahf)
