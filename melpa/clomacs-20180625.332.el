@@ -4,7 +4,7 @@
 
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/clojure-emacs/clomacs
-;; Package-Version: 20180623.908
+;; Package-Version: 20180625.332
 ;; Keywords: clojure, interaction
 ;; Version: 0.0.3
 ;; Package-Requires: ((emacs "24.3") (cider "0.16.0") (s "1.12.0") (simple-httpd "1.4.6"))
@@ -67,7 +67,7 @@ REPL-BUFFER-PROJECT-NAME \"clomacs\"."
       (let ((this-repl
              (s-chop-suffix
               "*"
-              (cadr (split-string (buffer-name (car cider-connections)) " ")))))
+              (cadr (split-string (buffer-name (car (cider-connections))) " ")))))
         (if (and
              (>= (length this-repl)
                  (length repl-buffer-project-name))
@@ -76,14 +76,14 @@ REPL-BUFFER-PROJECT-NAME \"clomacs\"."
                                 0
                                 (length repl-buffer-project-name))))
             x)))
-    cider-connections)))
+    (cider-connections))))
 
 (defun clomacs-get-connection (&optional library)
   "Return buffer with nREPL process related to LIBRARY.
 If LIBRARY is nil, attempts to use \"clomacs\", \"localhost\" or
 any current connection.
 If can't find any nREPL process return nil."
-  (if (> (length cider-connections) 0)
+  (if (> (length (cider-connections)) 0)
       (if library
           (clomacs-search-connection library)
         (or (clomacs-search-connection "clomacs")
