@@ -4,7 +4,7 @@
 
 ;; Author:  Atila Neves <atila.neves@gmail.com>
 ;; Version: 0.12
-;; Package-Version: 20180321.1546
+;; Package-Version: 20180625.935
 ;; Package-Requires: ((flycheck "0.24") (f "0.18.2"))
 ;; Keywords: languages
 ;; URL: http://github.com/atilaneves/flycheck-dmd-dub
@@ -190,22 +190,30 @@ brace are discarded before parsing."
 
 (defun fldd--get-project-dir ()
   "Locates the project directory by searching up for either package.json or dub.json."
-  (let ((dub-sdl-dir (fldd--locate-topmost "dub.sdl"))
-        (dub-json-dir (fldd--locate-topmost "dub.json"))
-        (package-json-dir (fldd--locate-topmost "package.json")))
-    (file-truename (or dub-sdl-dir dub-json-dir package-json-dir))))
+  (let ((dir (fldd--locate-topmost
+              (lambda (dir)
+                (or
+                 (file-exists-p (expand-file-name "dub.sdl" dir))
+                 (file-exists-p (expand-file-name "dub.json" dir))
+                 (file-exists-p (expand-file-name "package.json" dir)))))))
+    (when dir
+      (file-truename dir))))
 
-(defun fldd--locate-topmost (file-name)
-  "Locate the topmost FILE-NAME."
-  (fldd--locate-topmost-impl file-name default-directory nil))
+(defun fldd--locate-topmost (name)
+  "Locate the topmost directory containing NAME.
 
-(defun fldd--locate-topmost-impl (file-name dir last-found)
-  "Locate the topmost FILE-NAME from DIR using LAST-FOUND as a 'plan B'."
-  (let ((new-dir (locate-dominating-file dir file-name)))
+NAME can be a filename or a predicate, like the `locate-dominating-file' argument."
+  (fldd--locate-topmost-impl name default-directory nil))
+
+(defun fldd--locate-topmost-impl (name dir last-found)
+  "Locate the topmost NAME from DIR using LAST-FOUND as a 'plan B'.
+
+NAME can be a filename or a predicate, like the `locate-dominating-file' argument."
+  (let ((new-dir (locate-dominating-file dir name)))
     (if new-dir
         (if fldd-no-recurse-dir
             new-dir
-          (fldd--locate-topmost-impl file-name (expand-file-name ".." new-dir) new-dir))
+          (fldd--locate-topmost-impl name (expand-file-name ".." new-dir) new-dir))
       last-found)))
 
 

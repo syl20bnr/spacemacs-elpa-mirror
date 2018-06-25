@@ -4,7 +4,7 @@
 
 ;; Author: Justin Talbott <justin@waymondo.com>
 ;; Keywords: convenience, tools, extensions
-;; Package-Version: 20180613.2219
+;; Package-Version: 20180625.1212
 ;; URL: https://github.com/waymondo/use-package-chords
 ;; Version: 0.2
 ;; Package-Requires: ((use-package "2.1") (bind-key "1.0") (bind-chord "0.2") (key-chord "0.6"))
@@ -25,24 +25,18 @@
 (require 'bind-chord)
 
 ;;;###autoload
+(defalias 'use-package-autoloads/:chords 'use-package-autoloads-mode)
+
+;;;###autoload
 (defalias 'use-package-normalize/:chords 'use-package-normalize-binder)
 
 ;;;###autoload
 (defun use-package-handler/:chords (name keyword arg rest state)
   "Handler for `:chords' keyword in `use-package'."
-  (let* ((commands (remq nil (mapcar #'(lambda (arg)
-                                         (if (listp arg)
-                                             (cdr arg)
-                                           nil)) arg)))
-         (chord-binder
-          (use-package-concat
-           (use-package-process-keywords name
-             (use-package-sort-keywords
-              (use-package-plist-maybe-put rest :defer t))
-             (use-package-plist-append state :commands commands))
-           `(,(macroexpand
-               `(bind-chords :package ,name ,@arg))))))
-    (use-package-handler/:preface name keyword chord-binder rest state)))
+  (use-package-concat
+   (use-package-process-keywords name rest state)
+   `(,(macroexpand
+       `(bind-chords :package ,name ,@arg)))))
 
 (add-to-list 'use-package-keywords :chords t)
 
