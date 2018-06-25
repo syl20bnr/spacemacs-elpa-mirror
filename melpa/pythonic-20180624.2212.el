@@ -4,7 +4,7 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/pythonic
-;; Package-Version: 20180621.1929
+;; Package-Version: 20180624.2212
 ;; Version: 0.1.1
 ;; Package-Requires: ((emacs "25") (s "1.9") (f "0.17.2"))
 
@@ -178,8 +178,8 @@ print(json.dumps(yaml.safe_load(open(sys.argv[-1], 'r'))))
   (let (volumes)
     (dolist (service (cdr (assoc "services" struct)))
       (dolist (volume (cdr (assoc "volumes" service)))
-        (when (s-starts-with-p ".:" volume)
-          (push (cons (car service) (s-chop-prefix ".:" volume)) volumes))))
+        (when (s-starts-with-p "." volume)
+          (push (cons (car service) (s-split ":" volume)) volumes))))
     volumes))
 
 (defun pythonic-get-docker-compose-container (filename service)
@@ -207,11 +207,12 @@ print(json.dumps(yaml.safe_load(open(sys.argv[-1], 'r'))))
                            (assoc (completing-read "Service: " (mapcar 'car volumes) nil t) volumes)
                          (car volumes)))
                (service (car volume))
-               (mount (cdr volume))
+               (sub-project (f-join project (cadr volume)))
+               (mount (caddr volume))
                (container (pythonic-get-docker-compose-container filename service))
                ;; FIXME: Get actual user for the connection string.
                (connection (format "/docker:root@%s:%s" container mount))
-               (alias (list project connection)))
+               (alias (list sub-project connection)))
           (unless (s-blank-p container)
             (push alias pythonic-directory-aliases))
           alias)))))

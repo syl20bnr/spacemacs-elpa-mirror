@@ -14,7 +14,7 @@
 
 ;; Author: Danny McClanahan
 ;; Version: 0.1
-;; Package-Version: 20180615.1556
+;; Package-Version: 20180624.2339
 ;; URL: https://github.com/cosmicexplorer/helm-rg
 ;; Package-Requires: ((emacs "25") (helm "2.8.8") (cl-lib "0.5") (dash "2.13.0"))
 ;; Keywords: find, file, files, helm, fast, rg, ripgrep, grep, search
@@ -189,13 +189,400 @@ unquoted name of a variable containing an alist."
 
 
 ;; CL deftypes
-(cl-deftype helm-rg--existing-file ()
+(cl-deftype helm-rg-existing-file ()
   `(and string
         (satisfies file-exists-p)))
 
-(cl-deftype helm-rg--existing-directory ()
-  `(and helm-rg--existing-file
+(cl-deftype helm-rg-existing-directory ()
+  `(and helm-rg-existing-file
         (satisfies file-directory-p)))
+
+
+;; Interesting macros
+(cl-defmacro helm-rg--with-gensyms ((&rest syms) &rest body)
+  (declare (indent 1))
+  `(let ,(--map `(,it (cl-gensym)) syms)
+     ,@body))
+
+(defmacro helm-rg--_ (expr)
+  "Replace all instances of `_' in EXPR with an anonymous argument.
+
+Return a lambda accepting that argument."
+  (declare (debug (sexp body)))
+  (helm-rg--with-gensyms (arg)
+    `(lambda (,arg)
+       ,(cl-subst arg '_ expr :test #'eq))))
+
+(cl-defun helm-rg--join-conditions (conditions &key (joiner 'or))
+  "If CONDITIONS has one element, return it, otherwise wrap them with JOINER.
+
+This is used because `pcase' doesn't accept conditions with a single element (e.g. `(or 3)')."
+  (pcase-exhaustive conditions
+    (`nil (error "nil conditions with joiner '%S'" joiner))
+    (`(,single-sexp) single-sexp)
+    (x `(,joiner ,@x))))
+
+(pcase-defmacro helm-rg-cl-typep (&rest types)
+  "Matches when the subject is any of TYPES, using `cl-typep'."
+  (helm-rg--with-gensyms (val)
+    `(and ,val
+          ,(helm-rg--join-conditions
+            (--map `(guard (cl-typep ,val ',it)) types)))))
+
+(pcase-defmacro helm-rg-deref-sym (sym)
+  "???"
+  (list 'quote (eval sym)))
+
+(defconst helm-rg--keyword-symbol-rx-expr `(: bos ":"))
+
+(cl-deftype helm-rg-non-keyword-symbol ()
+  `(and symbol
+        (not keyword)))
+
+(defun helm-rg--make-non-keyword-sym-from-keyword-sym (kw-sym)
+  (cl-check-type kw-sym keyword)
+  (->> kw-sym
+       (symbol-name)
+       (replace-regexp-in-string (rx-to-string helm-rg--keyword-symbol-rx-expr) "")
+       (intern)))
+
+(defun helm-rg--make-keyword-from-non-keyword-sym (non-kw-sym)
+  (cl-check-type non-kw-sym helm-rg-non-keyword-symbol)
+  (->> non-kw-sym
+       (symbol-name)
+       (format ":%s")
+       (intern)))
+
+(defun helm-rg--parse-plist-spec (plist-spec)
+  (pcase-exhaustive plist-spec
+    (`(,(and (helm-rg-cl-typep keyword) kw-sym)
+       ,value)
+     `(,kw-sym ,value))
+    ((and (helm-rg-cl-typep helm-rg-non-keyword-symbol)
+          sym)
+     `(,(helm-rg--make-keyword-from-non-keyword-sym sym)
+       ,sym))))
+
+(defmacro helm-rg-construct-plist (&rest plist-specs)
+  (->> plist-specs
+       (-map #'helm-rg--parse-plist-spec)
+       (apply #'append '(list))))
+
+(defun helm-rg--parse-&optional-spec (optional-spec)
+  (pcase-exhaustive optional-spec
+    (`(,upat ,initform ,svar)
+     (helm-rg-construct-plist upat initform svar))
+    (`(,upat ,initform)
+     (helm-rg-construct-plist upat initform))
+    ((or `(,upat) upat)
+     (helm-rg-construct-plist upat))))
+
+(defun helm-rg--read-&optional-specs (parsed-optional-spec-list)
+  (pcase-exhaustive parsed-optional-spec-list
+    (`(,cur . ,rest)
+     `(or (and `nil
+               ,@(->> (cons cur rest)
+                      (--map (cl-destructuring-bind (&key upat initform svar) it
+                               `(,@(and svar `((let ,svar nil)))
+                                 (let ,upat ,initform))))
+                      (funcall #'append)
+                      (-flatten-n 1)))
+          ,(cl-destructuring-bind (&key upat initform svar) cur
+             (helm-rg--join-conditions
+              ;; NB: SVAR is bound before INITFORM is evaluated, which means you can refer to SVAR
+              ;; within INITFORM (and more importantly, within UPAT)!
+              `(,@(and svar `((let ,svar t)))
+                ,(list '\` (cons (list '\, upat)
+                                 (and rest
+                                      (list '\, (helm-rg--read-&optional-specs rest))))))
+              :joiner 'and))))))
+
+(pcase-defmacro helm-rg-&optional (&rest all-optional-specs)
+  (->> all-optional-specs
+       (-map #'helm-rg--parse-&optional-spec)
+       (helm-rg--read-&optional-specs)))
+
+(defun helm-rg--parse-&key-spec (key-spec)
+  (pcase-exhaustive key-spec
+    ((and (or :exhaustive :required) special-sym)
+     special-sym)
+    (`(,(or `(,(and (helm-rg-cl-typep keyword)
+                    kw-sym)
+              ,upat)
+            (and (or `(,upat) upat)
+                 (let kw-sym (helm-rg--make-keyword-from-non-keyword-sym upat))))
+       . ,(or
+           (and :required
+                (let required t)
+                (let initform nil)
+                (let svar nil))
+           (and (helm-rg-&optional initform svar)
+                (let required nil))))
+     (helm-rg-construct-plist kw-sym upat required initform svar))
+    ((and (helm-rg-cl-typep helm-rg-non-keyword-symbol)
+          upat)
+     (helm-rg-construct-plist
+      (:kw-sym (helm-rg--make-keyword-from-non-keyword-sym upat))
+      upat
+      (:required nil)
+      (:initform nil)
+      (:svar nil)))))
+
+(defun helm-rg--flipped-plist-member (prop plist)
+  (plist-member plist prop))
+
+(defun helm-rg--plist-parse-pairs (plist)
+  (cl-loop
+   with prev-keyword = nil
+   for el in plist
+   for is-keyword-posn = t then (not is-keyword-posn)
+   when is-keyword-posn
+   do (progn
+        (cl-check-type el keyword)
+        (setq prev-keyword el))
+   else
+   collect (list prev-keyword el)
+   into pairs
+   finally return (progn
+                    (cl-assert (not is-keyword-posn) t
+                               (format "Invalid plist %S ends on keyword '%S'"
+                                       plist prev-keyword))
+                    pairs)))
+
+(defun helm-rg--plist-keys (plist)
+  (->> plist
+       (helm-rg--plist-parse-pairs)
+       (-map #'car)))
+
+(defun helm-rg--force-required-parsed-&key-spec (spec)
+  (cl-destructuring-bind (&key kw-sym upat required initform svar) spec
+    ;; TODO: better error messaging here!
+    (cl-assert (not initform))
+    (cl-assert (not svar))
+    (cl-assert (not required))
+    (helm-rg-construct-plist kw-sym upat (:required t) (:initform nil) (:svar nil))))
+
+(cl-defun helm-rg--find-first-duplicate (seq &key (test #'eq))
+  (cl-loop
+   with tbl = (make-hash-table :test test)
+   for el in seq
+   when (gethash el tbl)
+   return el
+   else do (puthash el t tbl)
+   finally return nil))
+
+(cl-defun helm-rg--read-&key-specs (parsed-key-spec-list &key exhaustive)
+  (let* ((all-keys (->> parsed-key-spec-list
+                        (--keep (pcase-exhaustive it
+                                  (:required nil)
+                                  (x (plist-get x :kw-sym))))))
+         (first-duplicate-key (helm-rg--find-first-duplicate all-keys)))
+    (when first-duplicate-key
+      (error "keyword '%S' provided more than once for keyword set %S"
+             first-duplicate-key all-keys))
+    (let ((pcase-expr
+           (pcase-exhaustive parsed-key-spec-list
+             (`(:required . ,rest)
+              (--> rest
+                   (-map #'helm-rg--force-required-parsed-&key-spec it)
+                   (helm-rg--read-&key-specs it)))
+             (`(,cur . ,rest)
+              (helm-rg--join-conditions
+               `(,(helm-rg--join-conditions
+                   (cl-destructuring-bind (&key kw-sym upat required initform svar) cur
+                     `((app (helm-rg--flipped-plist-member ,kw-sym)
+                            ,(helm-rg--join-conditions
+                              `(,@(unless required
+                                    `((and `nil
+                                           ,@(and svar `((let ,svar nil)))
+                                           (let ,upat ,initform))))
+                                ;; NB: SVAR is bound before INITFORM is evaluated, which means you
+                                ;; can refer to SVAR within INITFORM (and more importantly, within
+                                ;; UPAT)!
+                                ,(helm-rg--join-conditions
+                                  `(,@(and svar `((let ,svar t)))
+                                    ,(list '\` (list kw-sym
+                                                     (list '\, upat)
+                                                     ;; This is the result of `plist-member', from
+                                                     ;; the `helm-rg--flipped-plist-member' above,
+                                                     ;; so there may be more to the list, but we
+                                                     ;; don't need it, so we use the placeholder `_'
+                                                     ;; which is unbound. This all becomes:
+                                                     ;; `(,kw-sym ,upat . ,_)
+                                                     '\, '_)))
+                                  :joiner 'and))
+                              :joiner 'or))))
+                   :joiner 'and)
+                 ,@(and rest (list (helm-rg--read-&key-specs rest))))
+               :joiner 'and)))))
+      (if exhaustive
+          (helm-rg--with-gensyms (exp-plist-keys)
+            `(and
+              ;; NB: we do not attempt to parse the `pcase' subject as a plist unless `:exhaustive'
+              ;; is provided -- this is intentional.
+              (and (app (helm-rg--plist-keys) ,exp-plist-keys)
+                   (guard (not (-difference ,exp-plist-keys ',all-keys))))
+              ,pcase-expr))
+        pcase-expr))))
+
+(pcase-defmacro helm-rg-&key (&rest all-key-specs)
+  (pcase all-key-specs
+    (`(:exhaustive . ,rest)
+     (--> rest
+          (-map #'helm-rg--parse-&key-spec it)
+          (helm-rg--read-&key-specs it :exhaustive t)))
+    (specs (->> specs
+                (-map #'helm-rg--parse-&key-spec)
+                (helm-rg--read-&key-specs)))))
+
+(pcase-defmacro helm-rg-&key-complete (&rest all-key-specs)
+  "`helm-rg-&key', but there must be no other keys, and all the keys in ALL-KEY-SPECS must exist."
+  `(helm-rg-&key :exhaustive :required ,@all-key-specs))
+
+(defun helm-rg--parse-format-spec (format-spec)
+  "Convert a list of strings and other things into some result for `helm-rg--make-formatter'."
+  (pcase-exhaustive format-spec
+    ((and (helm-rg-cl-typep string) x)
+     (helm-rg-construct-plist
+      (:component x) (:exprs nil) (:arguments nil) (:with-expr nil)))
+    ((and (helm-rg-cl-typep helm-rg-non-keyword-symbol) sym)
+     (helm-rg-construct-plist
+      (:component " %S ") (:exprs `(,sym)) (:arguments nil) (:with-expr nil)))
+    ((and (helm-rg-cl-typep keyword)
+          kw-sym
+          (app (helm-rg--make-non-keyword-sym-from-keyword-sym)
+               non-kw-sym)
+          (let arguments `(,kw-sym))
+          (let exprs `(,non-kw-sym)))
+     (helm-rg-construct-plist (:component " %S ") exprs arguments (:with-expr nil)))
+    (`(,(and (or (and (helm-rg-cl-typep keyword)
+                      kw-sym
+                      (app (helm-rg--make-non-keyword-sym-from-keyword-sym)
+                           expr)
+                      (let arguments `(,kw-sym)))
+                 (and expr
+                      (let arguments nil)))
+             (let exprs `(,expr)))
+       . ,(helm-rg-&key (fmt " %S ") with-expr))
+     (helm-rg-construct-plist (:component fmt) exprs arguments with-expr))))
+
+;; (defun helm-rg--make-formatter (all-format-specs)
+;;   (list :kwarg-decls '(a) :fn (lambda (&rest kwargs)
+;;                                 (cl-destructuring-bind (&key a) kwargs
+;;                                  a))))
+
+;; (defmacro helm-rg--format (format-spec &rest kwargs)
+;;   (--> format-spec
+;;        (helm-rg--make-formatter it)
+;;        (cl-destructuring-bind (&key kwarg-decls fn) it
+;;          (apply fn kwarg-decls))))
+
+(defun helm-rg--validate-rx-kwarg (keyword-sym-for-binding)
+  (pcase-exhaustive keyword-sym-for-binding
+    ((and (helm-rg-cl-typep keyword)
+          (app (helm-rg--make-non-keyword-sym-from-keyword-sym)
+               non-kw-sym))
+     non-kw-sym)
+    ((and (helm-rg-cl-typep symbol)
+          non-kw-sym
+          (app (helm-rg--make-keyword-from-non-keyword-sym)
+               kw-sym))
+     ;; (error (helm-rg--format
+     ;;         ("symbol" keyword-sym-for-binding
+     ;;          "must be a keyword arg"
+     ;;          (keyword-sym-for-binding :fmt "(e.g. :%S)")
+     ;;          ".")))
+     ;; TODO: do named format string args (like rx though)!
+     (error "symbol '%S' must be a keyword arg (e.g. ':%S')."
+            non-kw-sym kw-sym))))
+
+(defun helm-rg--apply-tree-fun (mapper tree)
+  "???"
+  (let (intermediate-value-holder)
+    (-tree-map-nodes
+     (helm-rg--_ (setq intermediate-value-holder (funcall mapper _)))
+     (helm-rg--_ intermediate-value-holder)
+     tree)))
+
+(defmacro helm-rg--pcase-tree (tree &rest pcase-exprs)
+  "???"
+  (declare (indent 1))
+  `(helm-rg--apply-tree-fun
+    (helm-rg--_ (pcase _ ,@pcase-exprs))
+    ,tree))
+
+;;; FIXME: have some way to get the indices of each bound var for things like match-data etc!!! cmon
+;;; FIXME: remove the unnecessary uses of `helm-rg-deref-sym' in this method! It's more clear when
+;;; the literal symbols are used (in this particular case).
+(defconst helm-rg--named-group-symbol 'named-group)
+(defconst helm-rg--eval-expr-symbol 'eval)
+;;; TODO: add alist/plist matching!
+(cl-defun helm-rg--transform-rx-sexp (sexp &key (group-num-init 1))
+  (let ((all-bind-vars-mappings nil))
+    (--> (helm-rg--pcase-tree sexp
+           ;; `(eval ,eval-expr) => evaluate the expression!
+           ;; NB: this occurs at macro-expansion time, like the equivalent `rx' pcase macro, which
+           ;; is before any surrounding let-bindings occur!)
+           (`(,(helm-rg-deref-sym helm-rg--eval-expr-symbol) ,eval-expr)
+            (cl-destructuring-bind (&key transformed bind-vars)
+                (helm-rg--transform-rx-sexp (eval eval-expr t) :group-num-init group-num-init)
+              (cl-loop
+               for quoted-var in bind-vars
+               do (progn
+                    (incf group-num-init)
+                    (when (cl-find quoted-var all-bind-vars-mappings)
+                      (error (concat "'%S' variable name used a second time "
+                                     "in evaluation of form '%S'. "
+                                     "previous vars were: %S")
+                             quoted-var eval-expr all-bind-vars-mappings))
+                    (push quoted-var all-bind-vars-mappings)))
+              transformed))
+           ;; `(named-group :var-name . ,rx-forms) => create an explicitly-numbered regexp group
+           ;; and, if the resulting regexp matches, bind the match string for that numbered group to
+           ;; var-name (without the initial ":", which is required)!
+           (`(,(helm-rg-deref-sym helm-rg--named-group-symbol)
+              ,(app (helm-rg--validate-rx-kwarg) binding-var)
+              . ,rx-forms)
+            ;; We have bound to this variable -- save the current group number and push this
+            ;; variable onto the list of binding variables.
+            (let ((cur-group-num group-num-init))
+              (push binding-var all-bind-vars-mappings)
+              (incf group-num-init)
+              (cl-loop
+               for sub-rx in rx-forms
+               collect (cl-destructuring-bind (&key transformed bind-vars)
+                           (helm-rg--transform-rx-sexp sub-rx :group-num-init group-num-init)
+                         (cl-loop
+                          for quoted-var in bind-vars
+                          do (progn
+                               (incf group-num-init)
+                               (when (cl-find quoted-var all-bind-vars-mappings)
+                                 (error (concat "'%S' variable name used a second time "
+                                                "in declaration of regexp group '%S'. "
+                                                "previous vars were: %S")
+                                        quoted-var sub-rx all-bind-vars-mappings))
+                               (push quoted-var all-bind-vars-mappings)))
+                         transformed)
+               into all-transformed-exprs
+               finally return `(group-n ,cur-group-num ,@all-transformed-exprs)))))
+         (list :transformed it :bind-vars (reverse all-bind-vars-mappings)))))
+
+(pcase-defmacro helm-rg-rx (&rest rx-sexps)
+  (let ((transformed-rx-sexp
+         (-> rx-sexps
+             ;; We need to join the sexps so that we can keep the regex group numbers uniformly
+             ;; increasing across the consituent forms of the generated regexp.
+             (helm-rg--join-conditions :joiner 'and)
+             (helm-rg--transform-rx-sexp))))
+    (cl-destructuring-bind (&key transformed bind-vars) transformed-rx-sexp
+      (helm-rg--with-gensyms (str-sym)
+        `(and ,str-sym
+              ,(helm-rg--join-conditions
+                `((rx ,transformed)
+                  ,@(cl-loop for symbol-to-bind in bind-vars
+                             for match-index upfrom 1
+                             collect `(let ,symbol-to-bind (match-string ,match-index ,str-sym))))
+                :joiner 'and))))))
 
 
 ;; Public error types
@@ -415,18 +802,25 @@ case-sensitivity.")
 
 (defconst helm-rg--bounce-buffer-name "helm-rg-bounce-buf")
 
-(defconst helm-rg--output-new-file-line-regexp
-  (rx (: bos (group (+? (not (any 0)))) eos))
+(defconst helm-rg--output-new-file-line-rx-expr
+  `(named-group
+    :whole-line
+    (: bos
+       (named-group :file-path (+? (not (any 0))))
+       eos))
   "Regexp for ripgrep output which marks the start of results for a new file.
 
 See `helm-rg--process-transition' for usage.")
 
-(defconst helm-rg--numbered-text-line-regexp
-  (rx (: bos
-         (: (group (+ digit)) ":"
-            (group (*? anything)))
-         eos))
-  "Regexp for ripgrep output which marks a matched line, with he line number and content.
+(defconst helm-rg--numbered-text-line-rx-expr
+  `(named-group
+    :whole-line
+    (: bos
+       (named-group :line-num-str (+ digit))
+       ":"
+       (named-group :content (*? anything))
+       eos))
+  "Regexp for ripgrep output which marks a matched line, with the line number and content.
 
 See `helm-rg--process-transition' for usage.")
 
@@ -613,7 +1007,7 @@ BODY is executed in the original buffer, not the new temp buffer."
   (helm-rg--props `(face ,face) str))
 
 (defun helm-rg--process-paths-to-search (paths)
-  (cl-check-type helm-rg--current-dir helm-rg--existing-directory)
+  (cl-check-type helm-rg--current-dir helm-rg-existing-directory)
   (cl-loop
    for path in paths
    for expanded = (expand-file-name path helm-rg--current-dir)
@@ -1136,8 +1530,9 @@ Merges stdout and stderr, and trims whitespace from the result."
    concat (substring match-line match-end match-beg) into cur-match-str
    for match-end = (helm-rg--first-match-start-ripgrep-output match-beg match-line t)
    do (setq line-char-index match-end)
-   concat (helm-rg--make-face
-           'helm-rg-match-text-face (substring match-line match-beg match-end))
+   concat (--> match-line
+               (substring it match-beg match-end)
+               (helm-rg--make-face 'helm-rg-match-text-face it))
    into cur-match-str
    collect (list :beg match-beg :end match-end) into match-regions))
 
@@ -1150,41 +1545,42 @@ Merges stdout and stderr, and trims whitespace from the result."
                    ,propertized-line)))
 
 (defun helm-rg--process-transition (cur-file line)
-  ;; TODO: document this function!
-  ;; FIXME: some pcase extensions (?) for regex matching could make this method much more clear.
-  (cond
-   ((string= line "") (list :file-path nil))
-   ((and cur-file (string-match helm-rg--numbered-text-line-regexp line))
-    (let* ((whole-line (match-string 0 line))
-           (line-num-str (match-string 1 line))
-           (content (match-string 2 line))
-           (propertized-match-results
+  (pcase-exhaustive line
+    ;; When we see an empty line, we clear all the state.
+    ((rx (: bos eos))
+     (list :file-path nil))
+    ;; When we see a line with a number and text, we must be collecting match lines from a
+    ;; particular file right now. Parse the line and add "jump" information as text properties.
+    ((and (helm-rg-rx (eval helm-rg--numbered-text-line-rx-expr))
+          (let (helm-rg-&key-complete propertized-line match-regions)
             (helm-rg--parse-propertize-match-regions-from-match-line content)))
-      (cl-destructuring-bind (&key propertized-line match-regions) propertized-match-results
-        (let* ((prefixed-line (helm-rg--join-output-line
-                               :cur-file (and helm-rg-include-file-on-every-match-line cur-file)
-                               :line-num-str line-num-str
-                               :propertized-line propertized-line))
-               (line-num (string-to-number line-num-str))
-               (jump-to (list :file cur-file
-                              :line-num line-num
-                              :match-results match-regions))
-               (output-line
-                (propertize prefixed-line helm-rg--jump-location-text-property jump-to)))
-          (list :file-path cur-file
-                :line-content output-line)))))
-   ((string-match helm-rg--output-new-file-line-regexp line)
-    (let* ((whole-line (->> (match-string 0 line)
-                            (helm-rg--make-face 'helm-rg-file-match-face)))
-           (file-path (->> (match-string 1 line)
-                           (helm-rg--make-face 'helm-rg-file-match-face)))
-           (jump-to (list :file file-path))
-           (output-line
-            (propertize whole-line helm-rg--jump-location-text-property jump-to)))
-      (append
-       (list :file-path file-path)
-       (and helm-rg-prepend-file-name-line-at-top-of-matches
-            (list :line-content output-line)))))))
+     (cl-check-type cur-file string)
+     (let* ((prefixed-line (helm-rg--join-output-line
+                            :cur-file (and helm-rg-include-file-on-every-match-line cur-file)
+                            :line-num-str line-num-str
+                            :propertized-line propertized-line))
+            (line-num (string-to-number line-num-str))
+            (jump-to (list :file cur-file
+                           :line-num line-num
+                           :match-results match-regions))
+            (output-line
+             (propertize prefixed-line helm-rg--jump-location-text-property jump-to)))
+       (list :file-path cur-file
+             :line-content output-line)))
+    ;; If we see a line with just a filename, we must have just finished the results from another
+    ;; file. We update the state to the file parsed from this line, but we may not insert anything
+    ;; into the output depending on the user's customizations.
+    ((helm-rg-rx (eval helm-rg--output-new-file-line-rx-expr))
+     ;; FIXME: why does this fail?
+     ;; (cl-check-type cur-file null)
+     (let* ((whole-line (helm-rg--make-face 'helm-rg-file-match-face whole-line))
+            (file-path (helm-rg--make-face 'helm-rg-file-match-face file-path))
+            (jump-to (list :file file-path))
+            (output-line (propertize whole-line helm-rg--jump-location-text-property jump-to)))
+       (append
+        (list :file-path file-path)
+        (and helm-rg-prepend-file-name-line-at-top-of-matches
+             (list :line-content output-line)))))))
 
 (defun helm-rg--maybe-get-line (content)
   (helm-rg--into-temp-buffer content
@@ -1276,7 +1672,7 @@ Merges stdout and stderr, and trims whitespace from the result."
       ;; TODO: fix cl-destructuring-bind, and merge with pcase and regexp matching (allowing named
       ;; matches)!
       ;; We are looking at a line number.
-      (cl-assert (looking-at (rx-to-string `(: bol (group ,(number-to-string line-num)) ":"))))
+      (cl-assert (looking-at (rx-to-string `(: bol (group-n 1 ,(number-to-string line-num)) ":"))))
       ;; Make the propertized line number text read-only.
       (let* ((matched-number-str (match-string 1))
              (matched-num (string-to-number matched-number-str)))

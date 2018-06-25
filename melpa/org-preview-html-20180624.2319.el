@@ -5,7 +5,7 @@
 ;; Author: DarkSun <lujun9972@gmail.com>
 ;; Created: 2015-12-27
 ;; Version: 0.2
-;; Package-Version: 20180613.528
+;; Package-Version: 20180624.2319
 ;; Package-X-Original-Version: 20160905.2215
 ;; Keywords: convenience, eww, org
 ;; Package-Requires: ((org "8.0") (emacs "24.4"))
@@ -59,7 +59,11 @@
   ;; temp filename into a buffer local variable
   (unless org-preview-html/htmlfilename
     ; (setq org-preview-html/htmlfilename (concat buffer-file-name (make-temp-name "-") ".html")))
-    (setq org-preview-html/htmlfilename (concat "/tmp/org_preview_html" (make-temp-name "-") ".html")))
+    (setq org-preview-html/htmlfilename (concat  (if (or (string= system-type "ms-dos")
+                                                         (string= system-type "windows-nt"))
+                                                     (make-temp-name "org_preview_html-")
+                                                   (make-temp-name "/tmp/org_preview_html-"))
+                                                 ".html")))
   (let ((cb (current-buffer)))
     (save-excursion
       (with-selected-window (display-buffer (get-buffer-create "*eww*"))
