@@ -4,7 +4,7 @@
 
 ;; Author: Felipe Ochoa <felipe@fov.space>
 ;; URL: https://github.com/felipeochoa/rjsx-mode/
-;; Package-Version: 20180616.647
+;; Package-Version: 20180624.1758
 ;; Package-Requires: ((emacs "24.4") (js2-mode "20170504"))
 ;; Version: 1.1
 ;; Keywords: languages
@@ -53,13 +53,21 @@ parsing supports the magic `rjsx-electric-lt' and
   :group 'rjsx-mode)
 
 ;;;###autoload
+(define-minor-mode rjsx-minor-mode
+  "Minor mode for parsing JSX syntax into an AST."
+  :lighter " rjsx"
+  (if rjsx-minor-mode
+      (js2-minor-mode 1)
+    (js2-minor-mode 0)))
+
+;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.jsx\\'" . rjsx-mode))
 
 (defun rjsx-parse-xml-initializer (orig-fun)
   "Dispatch the xml parser based on variable `rjsx-mode' being active or not.
 This function is used to advise `js2-parse-xml-initializer' (ORIG-FUN) using
 the `:around' combinator.  JS2-PARSER is the original XML parser."
-  (if (eq major-mode 'rjsx-mode)
+  (if (or (eq major-mode 'rjsx-mode) rjsx-minor-mode)
       (rjsx-parse-top-xml)
     (apply orig-fun nil)))
 
