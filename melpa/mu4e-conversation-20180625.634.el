@@ -5,7 +5,7 @@
 ;; Author: Pierre Neidhardt <ambrevar@gmail.com>
 ;; Maintainer: Pierre Neidhardt <ambrevar@gmail.com>
 ;; URL: https://gitlab.com/Ambrevar/mu4e-conversation
-;; Package-Version: 20180624.1038
+;; Package-Version: 20180625.634
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: mail, convenience, mu4e
@@ -42,7 +42,7 @@
 
 ;; TODO: Overrides are not commended.  Use unwind-protect to set handlers?  I don't think it would work.
 ;; TODO: Only mark visible messages as read.
-;; TODO: Indent user messages?
+;; TODO: Indent user messages?  Make formatting more customizable.
 ;; TODO: Detect subject changes.
 ;; TODO: Check out mu4e gnus view.
 ;; TODO: Should we reply to the selected message or to the last?  Make it an option: 'current, 'last, 'ask.
@@ -52,6 +52,7 @@
 ;; transparently (e.g. ":w" with Evil).  Problem is that the draft buffer and
 ;; the conversation view are different buffers.
 
+;; TODO: Add convenience functions to check if some recipients have been left out, or to return the list of all recipients.
 ;; TODO: Tweak Org indentation?  See `org-adapt-indentation'.
 ;; TODO: Mark/flag messages that are in thread but not in headers buffer.  See `mu4e-mark-set'.
 ;; TODO: Fine-tune the recipient list display and composition in linear view.
@@ -160,16 +161,14 @@ If less than 0, don't limit the number of colors."
   :type 'integer
   :group 'mu4e-conversation)
 
-(defcustom mu4e-conversation-map
+(defvar mu4e-conversation-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "V") 'mu4e-conversation-toggle-view)
     (define-key map (kbd "#") 'mu4e-conversation-toggle-hide-cited)
     map)
-  "Map for `mu4e-conversation'."
-  :type 'key-sequence
-  :group 'mu4e-conversation)
+  "Map for `mu4e-conversation'.")
 
-(defcustom mu4e-conversation-compose-map
+(defvar mu4e-conversation-compose-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map global-map)
     (define-key map (kbd "C-c C-c") 'mu4e-conversation-send)
@@ -177,11 +176,9 @@ If less than 0, don't limit the number of colors."
     (define-key map (kbd "C-c C-p") 'mu4e-conversation-previous-message)
     (define-key map (kbd "C-c C-n") 'mu4e-conversation-next-message)
     map)
-  "Map for `mu4e-conversation' in compose area."
-  :type 'key-sequence
-  :group 'mu4e-conversation)
+  "Map for `mu4e-conversation' in compose area.")
 
-(defcustom mu4e-conversation-linear-map
+(defvar mu4e-conversation-linear-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "<return>") 'mu4e-conversation-cite)
     (define-key map (kbd "C-c C-c") 'mu4e-conversation-send)
@@ -189,18 +186,12 @@ If less than 0, don't limit the number of colors."
     (define-key map (kbd "C-c C-p") 'mu4e-conversation-previous-message)
     (define-key map (kbd "C-c C-n") 'mu4e-conversation-next-message)
     (define-key map (kbd "M-q") 'mu4e-conversation-fill-long-lines)
-    (define-key map (kbd "e") 'mu4e-conversation-save-attachment)
-    (define-key map (kbd "o") 'mu4e-conversation-open-attachment)
     (define-key map (kbd "q") 'mu4e-conversation-quit)
     map)
-  "Map for `mu4e-conversation' in linear view."
-  :type 'key-sequence
-  :group 'mu4e-conversation)
+  "Map for `mu4e-conversation' in linear view.")
 
-(defcustom mu4e-conversation-tree-map
+(defvar mu4e-conversation-tree-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "e") 'mu4e-conversation-save-attachment)
-    (define-key map (kbd "o") 'mu4e-conversation-open-attachment)
     (define-key map (kbd "q") 'mu4e-conversation-quit)
     (define-key map (kbd "C") 'mu4e-compose-new)
     (define-key map (kbd "R") 'mu4e-compose-reply)
@@ -212,9 +203,7 @@ If less than 0, don't limit the number of colors."
     (define-key map (kbd "|") 'mu4e-view-pipe)
     (define-key map (kbd "M-q") 'mu4e-conversation-fill-long-lines)
     map)
-  "Map for `mu4e-conversation' in tree view."
-  :type 'key-sequence
-  :group 'mu4e-conversation)
+  "Map for `mu4e-conversation' in tree view.")
 
 (defun mu4e-conversation-fill-long-lines ()
   "Same as `mu4e-view-fill-long-lines' but does not change the modified state."
@@ -227,23 +216,15 @@ If less than 0, don't limit the number of colors."
     (mu4e-view-fill-long-lines)
     (set-buffer-modified-p modified-p)))
 
-(defun mu4e-conversation-save-attachment (&optional msg)
-  "Same as `mu4e-view-save-attachment-multi' but works for message at point."
+(defun mu4e-conversation-set-attachment (&optional msg)
+  "Call before attachment
+functions (e.g. `mu4e-view-save-attachment-multi') so that it
+works for message at point.  Suitable as a :before advice."
   (interactive)
   (unless mu4e-conversation--is-view-buffer
     (mu4e-warn "Not a conversation buffer"))
   (setq msg (or msg (mu4e-message-at-point)))
-  (mu4e~view-construct-attachments-header msg)
-  (mu4e-view-save-attachment-multi))
-
-(defun mu4e-conversation-open-attachment (&optional msg)
-  "Same as `mu4e-view-open-attachment-multi' but works for message at point."
-  (interactive)
-  (unless mu4e-conversation--is-view-buffer
-    (mu4e-warn "Not a conversation buffer"))
-  (setq msg (or msg (mu4e-message-at-point)))
-  (mu4e~view-construct-attachments-header msg)
-  (mu4e-view-open-attachment))
+  (mu4e~view-construct-attachments-header msg))
 
 (defun mu4e-conversation-previous-message (&optional count)
   "Go to previous message in linear view.
@@ -312,7 +293,6 @@ If NO-CONFIRM is nil, ask for confirmation if message was not saved."
   (when (and buffer-undo-list
              (not (yes-or-no-p "Undo list will be reset after switching view.  Continue? ")))
     (mu4e-warn "Keeping undo list"))
-  (buffer-disable-undo)
   ;; Org properties skew line calculation, so remove it first.
   (let ((inhibit-read-only t)
         (block (org-get-property-block))
@@ -404,22 +384,19 @@ is non-nil."
 If BUFFER is nil, buffer is as returned by `mu4e-conversation--get-buffer'.
 If print-function is nil, use `mu4e-conversation-print-message-function'."
   ;; See the docstring of `mu4e-message-field-raw'.
+  (setq print-function (or print-function mu4e-conversation-print-message-function))
   (switch-to-buffer (mu4e-conversation--get-buffer
                      (mu4e-message-field (car mu4e-conversation--thread) :subject)))
   (let* ((current-message-pos 0)
          (index 0)
-         (filter (lambda (seq) (if (eq mu4e-conversation-print-message-function
-                                       'mu4e-conversation-print-message-linear)
-                                   ;; In linear view, it makes more sense to sort messages chronologically.
-                                   (sort seq
-                                         (lambda (msg1 msg2)
-                                           (time-less-p (mu4e-message-field msg1 :date)
-                                                        (mu4e-message-field msg2 :date))))
-                                 seq)))
          ;; let-bind the thread variables to preserve them when changing major modes.
          ;; We can make them buffer local once the major mode is set.
-         (thread (funcall filter mu4e-conversation--thread))
-         (thread-headers (funcall filter mu4e-conversation--thread-headers))
+         (thread mu4e-conversation--thread)
+         (thread-headers mu4e-conversation--thread-headers)
+         ;; If we want to re-order a thread, let's do it on a copy so that we
+         ;; don't lose the tree structure.
+         (thread-sorted thread)
+         (thread-headers-sorted thread-headers)
          (inhibit-read-only t)
          ;; Extra care must be taken to copy along the draft with its properties, in
          ;; case it wasn't saved.
@@ -432,20 +409,29 @@ If print-function is nil, use `mu4e-conversation-print-message-function'."
                                          (point-max))))
          (buffer-modified (buffer-modified-p))
          draft-messages)
+    (when (eq print-function
+              'mu4e-conversation-print-message-linear)
+      ;; In linear view, it makes more sense to sort messages chronologically.
+      (let ((filter (lambda (seq)
+                      (sort (copy-seq seq)
+                            (lambda (msg1 msg2)
+                              (time-less-p (mu4e-message-field msg1 :date)
+                                           (mu4e-message-field msg2 :date)))))))
+        (setq thread-sorted (funcall filter thread)
+              thread-headers-sorted (funcall filter thread-headers))))
     (erase-buffer)
     (delete-all-overlays)
-    (dolist (msg mu4e-conversation--thread)
+    (dolist (msg thread-sorted)
       (if (member 'draft (mu4e-message-field msg :flags))
           (push msg draft-messages)
         (when (= (mu4e-message-field msg :docid)
                  (mu4e-message-field mu4e-conversation--current-message :docid))
           (setq current-message-pos (point)))
         (let ((begin (point)))
-          (funcall (or print-function
-                       mu4e-conversation-print-message-function)
+          (funcall print-function
                    index
-                   thread
-                   thread-headers)
+                   thread-sorted
+                   thread-headers-sorted)
           (mu4e~view-show-images-maybe msg)
           (goto-char (point-max))
           (add-text-properties begin (point) (list 'msg msg)))
@@ -503,17 +489,18 @@ If print-function is nil, use `mu4e-conversation-print-message-function'."
     (unless (eq major-mode 'org-mode)
       (mu4e~view-make-urls-clickable))  ; TODO: Don't discard sender face.
     (setq header-line-format (propertize
-                              (mu4e-message-field (car mu4e-conversation--thread) :subject)
+                              (mu4e-message-field (car thread-sorted) :subject)
                               'face 'bold))
     (add-to-invisibility-spec '(mu4e-conversation-quote . t))
     ;; TODO: Undo history is not preserved accross redisplays.
-    (buffer-enable-undo)
     (set-buffer-modified-p buffer-modified)
     ;; Save the thread in for the current buffer.  This is useful for redisplays.
     (set (make-local-variable 'mu4e-conversation--thread) thread)
     (set (make-local-variable 'mu4e-conversation--thread-headers) thread-headers)
     (make-local-variable 'mu4e-conversation--current-message)
-    (add-to-list 'kill-buffer-query-functions 'mu4e-conversation-kill-buffer-query-function)))
+    (add-to-list 'kill-buffer-query-functions 'mu4e-conversation-kill-buffer-query-function)
+    (buffer-disable-undo)               ; Reset `buffer-undo-list'.
+    (buffer-enable-undo)))
 
 (defun mu4e-conversation--get-message-face (index thread)
   "Map 'from' addresses to 'sender-N' faces in chronological
@@ -890,8 +877,12 @@ former buffer if modified."
   (if mu4e-conversation-mode
       (progn
         (advice-add 'mu4e-get-view-buffer :override 'mu4e-conversation--get-view-buffer)
+        (advice-add 'mu4e-view-save-attachment-multi :before 'mu4e-conversation-set-attachment)
+        (advice-add 'mu4e-view-open-attachment :before 'mu4e-conversation-set-attachment)
         (setq mu4e-view-func 'mu4e-conversation))
     (advice-remove 'mu4e-get-view-buffer 'mu4e-conversation--get-view-buffer)
+    (advice-remove 'mu4e-view-save-attachment-multi 'mu4e-conversation-save-attachment)
+    (advice-remove 'mu4e-view-open-attachment 'mu4e-conversation-open-attachment)
     (setq mu4e-view-func 'mu4e~headers-view-handler)))
 
 (defun mu4e-conversation--turn-on ()
@@ -912,7 +903,8 @@ former buffer if modified."
   (advice-add mu4e-erase-func :override 'mu4e-conversation--erase-handler)
   (advice-add mu4e-found-func :override 'mu4e-conversation--found-handler)
   (mu4e~proc-find
-   (funcall mu4e-query-rewrite-function
+   ;; `mu4e-query-rewrite-function' seems to be missing from mu<1.0.
+   (funcall (or mu4e-query-rewrite-function 'identity)
             (format "msgid:%s" (mu4e-message-field
                                 mu4e-conversation--current-message
                                 :message-id)))
