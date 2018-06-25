@@ -72,9 +72,11 @@ Yankpad example:
 
 * Category 2
 
-  Descriptive lists at the top-level of a category will be treated as
-  snippets.  You can set them to be treated as `abbrev-mode' abbrevs instead,
-  by setting `yankpad-descriptive-list-treatment' to abbrev.
+  Descriptive lists will be treated as snippets.  You can set them to be
+  treated as `abbrev-mode' abbrevs instead, by setting
+  `yankpad-descriptive-list-treatment' to abbrev.  If a heading could be considered
+  to be a snippet, add the `snippetlist' tag to ignore the snippet and scan
+  it for descriptive lists instead.
 
   - name :: Erik Sjöstrand
   - key :: Typing "key" followed by `yankpad-expand' will insert this snippet.
