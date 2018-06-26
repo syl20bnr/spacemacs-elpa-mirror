@@ -5,10 +5,10 @@
 ;; Author: Radon Rosborough <radon.neon@gmail.com>
 ;; Homepage: https://github.com/raxod502/prescient.el
 ;; Keywords: extensions
-;; Package-Version: 1.0
+;; Package-Version: 2.0
 ;; Created: 7 Aug 2017
-;; Package-Requires: ((emacs "25.1") (prescient "1.0") (ivy "0.10.0"))
-;; Version: 1.0
+;; Package-Requires: ((emacs "25.1") (prescient "2.0") (ivy "0.10.0"))
+;; Version: 2.0
 
 ;;; Commentary:
 
@@ -90,6 +90,20 @@ This is for use in `ivy-sort-functions-alist'.")
 This is the value that was associated to
 `read-file-name-internal'.")
 
+(defvar ivy-prescient--old-initial-inputs-alist nil
+  "Previous value of `ivy-initial-inputs-alist'.")
+
+(defun ivy-prescient--wrap-action (caller action)
+  "Wrap an action for use in `ivy-read'.
+CALLER is the `:caller' argument to `ivy-read', and ACTION is the
+original action, a function. Return a new function that also
+invokes `prescient-remember'."
+  (lambda (result)
+    (unless (memq caller ivy-prescient-excluded-commands)
+      (prescient-remember result))
+    (when action
+      (funcall action result))))
+
 (cl-defun ivy-prescient-read
     (ivy-read prompt collection &rest rest &key action caller
               &allow-other-keys)
@@ -105,11 +119,17 @@ same as in `ivy-read'. REST is the list of keyword arguments, and
 keyword arguments ACTION, CALLER are the same as in `ivy-read'."
   (apply ivy-read prompt collection
          (append `(:action
-                   ,(lambda (result)
-                      (unless (memq caller ivy-prescient-excluded-commands)
-                        (prescient-remember result))
-                      (when action
-                        (funcall action result)))
+                   ,(if (or (null action) (functionp action))
+                        (ivy-prescient--wrap-action caller action)
+                      (mapcar
+                       (lambda (entry)
+                         (if (listp entry)
+                             (cl-destructuring-bind (key fun . rest) entry
+                               (apply #'list key
+                                      (ivy-prescient--wrap-action caller fun)
+                                      rest))
+                           entry))
+                       action))
                    ,@(when (memq caller ivy-prescient-sort-commands)
                        `(:sort t)))
                  rest)))
@@ -132,6 +152,8 @@ keyword arguments ACTION, CALLER are the same as in `ivy-read'."
               (alist-get #'read-file-name-internal ivy-sort-functions-alist))
         (setf (alist-get #'read-file-name-internal ivy-sort-functions-alist)
               #'ivy-prescient-sort-file-function)
+        (setq ivy-prescient--old-initial-inputs-alist ivy-initial-inputs-alist)
+        (setq ivy-initial-inputs-alist nil)
         (advice-add #'ivy-read :around #'ivy-prescient-read))
     (when (equal (alist-get t ivy-re-builders-alist)
                  #'ivy-prescient-re-builder)
@@ -146,6 +168,8 @@ keyword arguments ACTION, CALLER are the same as in `ivy-read'."
                  #'ivy-prescient-sort-file-function)
       (setf (alist-get #'read-file-name-internal ivy-sort-functions-alist)
             ivy-prescient--old-ivy-sort-file-function))
+    (dolist (pair (reverse ivy-prescient--old-initial-inputs-alist))
+      (setf (alist-get (car pair) ivy-initial-inputs-alist) (cdr pair)))
     (advice-remove #'ivy-read #'ivy-prescient-read)))
 
 ;;;; Closing remarks

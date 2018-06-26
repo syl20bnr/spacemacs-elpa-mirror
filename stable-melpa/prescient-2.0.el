@@ -5,10 +5,10 @@
 ;; Author: Radon Rosborough <radon.neon@gmail.com>
 ;; Homepage: https://github.com/raxod502/prescient.el
 ;; Keywords: extensions
-;; Package-Version: 1.0
+;; Package-Version: 2.0
 ;; Created: 7 Aug 2017
 ;; Package-Requires: ((emacs "25.1"))
-;; Version: 1.0
+;; Version: 2.0
 
 ;;; Commentary:
 
@@ -38,6 +38,11 @@
 ;; For more information, see https://github.com/raxod502/prescient.el.
 
 ;;; Code:
+
+;; To see the outline of this file, run M-x outline-minor-mode and
+;; then press C-c @ C-t. To also show the top-level functions and
+;; variable declarations in each section, run M-x occur with the
+;; following query: ^;;;;* \|^(
 
 ;;;; Libraries
 
