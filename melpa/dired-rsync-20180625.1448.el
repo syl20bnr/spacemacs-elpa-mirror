@@ -5,7 +5,7 @@
 ;; Author: Alex Bennée <alex@bennee.com>
 ;; Maintainer: Alex Bennée <alex@bennee.com>
 ;; Version: 0.5
-;; Package-Version: 20180625.704
+;; Package-Version: 20180625.1448
 ;; Package-Requires: ((s "1.12.0") (dash "2.0.0") (emacs "24"))
 ;; Homepage: https://github.com/stsquad/dired-rsync
 ;;
@@ -125,7 +125,9 @@ neither is set we simply display the current number of jobs."
 (defun dired-rsync--sentinel(proc desc details)
   "Process sentinel for rsync processes.
 This gets called whenever the inferior `PROC' changes state as
-  described by `DESC'."
+  described by `DESC'.  `DETAILS' provides access to additional
+  information such as the locate of the dired-buffer."
+  (message "sentinal: %s" desc)
   (when (s-starts-with-p "finished" desc)
     ;; clean-up finished tasks
     (let ((proc-buf (process-buffer proc))

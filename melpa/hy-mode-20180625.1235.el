@@ -6,7 +6,7 @@
 ;; Authors: Julien Danjou <julien@danjou.info>
 ;;          Eric Kaschalk <ekaschalk@gmail.com>
 ;; URL: http://github.com/hylang/hy-mode
-;; Package-Version: 20180605.1248
+;; Package-Version: 20180625.1235
 ;; Version: 1.0
 ;; Keywords: languages, lisp, python
 ;; Package-Requires: ((dash "2.13.0") (dash-functional "1.2.0") (s "1.11.0") (emacs "24"))
@@ -971,7 +971,8 @@ Right now the keybinding is not publically exposed."
                (process
                 (get-buffer-process buffer)))
     (with-current-buffer buffer
-      (inferior-hy-mode))
+      (unless (derived-mode-p 'inferior-hy-mode)
+        (inferior-hy-mode)))
     (when show
       (display-buffer buffer))
     (if internal
@@ -1451,7 +1452,7 @@ Not all defuns can be argspeced - eg. C defuns.\"
 ;;;###autoload
 (defun hy-shell-start-or-switch-to-shell ()
   (interactive)
-  (if (hy--shell-buffer?)
+  (if (and (hy--shell-buffer?) (get-buffer-process hy-shell-buffer))
       (switch-to-buffer-other-window
        (hy--shell-get-or-create-buffer))
     (run-hy)))
