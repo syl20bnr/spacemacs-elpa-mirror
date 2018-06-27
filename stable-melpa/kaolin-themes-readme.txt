@@ -11,6 +11,7 @@ inspired by Sierra.vim with adding some extra colors.
  * kaolin-ocean - dark blue variant.
  * kaolin-galaxy - bright theme based on one of the Sebastian Andaur arts.
  * kaolin-aurora - Kaolin meets polar lights.
+ * kaolin-bubblegum - Kaolin colorful theme with dark blue background.
  * kaolin-valley-dark - colorful Kaolin theme with brown background.
  * kaolin-valley-light - light version of kaolin-valley-dark theme.
  * kaolin-mono-dark - almost monochrome dark green Kaolin theme.
