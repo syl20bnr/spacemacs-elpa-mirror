@@ -3,9 +3,9 @@
 ;; Copyright (C) 2018, Vitalie Spinu
 ;; Author: Vitalie Spinu
 ;; URL: https://github.com/vspinu/sesman
-;; Package-Version: 0.1.0
+;; Package-Version: 0.1.1
 ;; Keywords: process
-;; Version: 0.1.0
+;; Version: 0.1.1
 ;; Package-Requires: ((emacs "25"))
 ;; Keywords: processes, tools, vc
 ;;
@@ -50,14 +50,14 @@
   :prefix "sesman-"
   :group 'tools)
 
-(defcustom sesman-disambiguate-by-relevance t
-  "If t choose most relevant session in ambiguous situations, otherwise ask.
-Ambiguity arises when multiple sessions are associated with current context.  By
-default only projects could be associated with multiple sessions.  See
-`sesman-single-link-contexts' in order to change that.  Relevance is decided by
-system's implementation, see `sesman-more-relevant-p'."
-  :group 'sesman
-  :type 'boolean)
+;; (defcustom sesman-disambiguate-by-relevance t
+;;   "If t choose most relevant session in ambiguous situations, otherwise ask.
+;; Ambiguity arises when multiple sessions are associated with current context.  By
+;; default only projects could be associated with multiple sessions.  See
+;; `sesman-single-link-contexts' in order to change that.  Relevance is decided by
+;; system's implementation, see `sesman-more-relevant-p'."
+;;   :group 'sesman
+;;   :type 'boolean)
 
 (defcustom sesman-single-link-context-types '(buffer)
   "List of context types to which at most one session can be linked."
@@ -211,11 +211,11 @@ Can be either a symbol, or a function returning a symbol.")
 
 (defun sesman--format-link (link)
   (let ((val (sesman--abbrev-path-maybe
-              (sesman--link-value link))))
+              (sesman--lnk-value link))))
     (format "%s(%s)->%s"
-            (sesman--link-context-type link)
+            (sesman--lnk-context-type link)
             (if (listp val) (cdr val) val)
-            (propertize (sesman--link-session-name link) 'face 'bold))))
+            (propertize (sesman--lnk-session-name link) 'face 'bold))))
 
 (defun sesman--ask-for-link (prompt links &optional ask-all)
   (let* ((name.keys (mapcar (lambda (link)
@@ -233,18 +233,6 @@ Can be either a symbol, or a function returning a symbol.")
           (t
            (cdr (assoc sel name.keys))))))
 
-(defun sesman--link-system-name (link)
-  (caar link))
-
-(defun sesman--link-session-name (link)
-  (cdar link))
-
-(defun sesman--link-context-type (link)
-  (cadr link))
-
-(defun sesman--link-value (link)
-  (nth 2 link))
-
 (defun sesman--sort-sessions (system sessions)
   (seq-sort (lambda (x1 x2)
               (sesman-more-relevant-p system x1 x2))
@@ -256,6 +244,16 @@ Can be either a symbol, or a function returning a symbol.")
                                       (gethash (car x1) sesman-sessions-hashmap)
                                       (gethash (car x2) sesman-sessions-hashmap)))
             links))
+
+;; link data structure accessors
+(defun sesman--lnk-system-name (lnk)
+  (caar lnk))
+(defun sesman--lnk-session-name (lnk)
+  (cdar lnk))
+(defun sesman--lnk-context-type (lnk)
+  (cadr lnk))
+(defun sesman--lnk-value (lnk)
+  (nth 2 lnk))
 
 
 ;;; User Interface
@@ -499,6 +497,12 @@ return a list of sessions, otherwise a single session."
 CXT-TYPES is as in `sesman-linked-sessions'."
   (car (sesman-linked-sessions system cxt-types)))
 
+(defun sesman-ensure-session (system &optional cxt-types)
+  "Get the most relevant linked session for SYSTEM or throw if none exists.
+CXT-TYPES is as in `sesman-linked-sessions'."
+  (or (car (sesman-linked-sessions system))
+      (user-error "No linked %s sessions" system)))
+
 (defun sesman-linked-sessions (system &optional cxt-types)
   "Return a list of SYSTEM sessions linked in current context.
 CXT-TYPES is a list of context types to consider.  Defaults to the
@@ -510,29 +514,6 @@ list returned from `sesman-context-types'."
     (mapcar (lambda (assoc)
               (gethash (car assoc) sesman-sessions-hashmap))
             (sesman-current-links system cxt-types))))
-
-(defun sesman-ensure-linked-session (system &optional prompt ask-new ask-all)
-  "Ensure that at least one SYSTEM session is linked to the current context.
-If there is an unambiguous link in place, return that session, otherwise
-ask for a session with PROMPT.  ASK-NEW and ASK-ALL have an effect only when
-there are multiple associations and `sesman-disambiguate-by-relevance' is
-nil, in which case ASK-NEW and ASK-ALL are passed directly to
-`sesman-ask-for-session'."
-  (let ((prompt (or prompt (format "%s session: " (sesman--cap-system-name system))))
-        (sessions (sesman-linked-sessions system)))
-    (cond
-     ;; 0. No sessions; throw
-     ((null sessions)
-      (user-error "No linked %s sessions in current context" system))
-     ;; 1. Single association, or auto-disambiguate; return first
-     ((or sesman-disambiguate-by-relevance
-          (eq (length sessions) 1))
-      (if ask-all
-          sessions
-        (car sessions)))
-     ;; 2. Multiple ambiguous associations; ask
-     (sessions
-      (sesman-ask-for-session system prompt sessions ask-new ask-all)))))
 
 (defun sesman-session-links (system session &optional as-string)
   "Retrieve all links for SYSTEM's SESSION from the global `SESSION-LINKS'.
@@ -551,8 +532,8 @@ If AS-STRING is non-nil, return an equivalent string representation."
          (out (mapcar (lambda (x) (list x))
                       (sesman-context-types system))))
     (mapc (lambda (link)
-            (let* ((type (sesman--link-context-type link))
-                   (val (sesman--link-value link))
+            (let* ((type (sesman--lnk-context-type link))
+                   (val (sesman--lnk-value link))
                    (entry (assoc type out)))
               (when entry
                 (setcdr entry (cons val (cdr entry))))))
@@ -598,10 +579,10 @@ CXT-TYPES defaults to `sesman-context-types' for current SYSTEM."
         (found))
     (condition-case nil
         (mapc (lambda (l)
-                (when (eq system (sesman--link-system-name l))
-                  (let ((cxt (sesman--link-context-type l)))
+                (when (eq system (sesman--lnk-system-name l))
+                  (let ((cxt (sesman--lnk-context-type l)))
                     (when (and (member cxt cxt-types)
-                               (sesman-relevant-context-p cxt (sesman--link-value l)))
+                               (sesman-relevant-context-p cxt (sesman--lnk-value l)))
                       (setq found t)
                       (throw 'found nil)))))
               sesman-links-alist)
