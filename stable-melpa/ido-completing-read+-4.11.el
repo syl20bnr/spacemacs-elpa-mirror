@@ -5,8 +5,8 @@
 ;; Filename: ido-completing-read+.el
 ;; Author: Ryan Thompson
 ;; Created: Sat Apr  4 13:41:20 2015 (-0700)
-;; Version: 4.10
-;; Package-Version: 4.10
+;; Version: 4.11
+;; Package-Version: 4.11
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (s "0.1") (memoize "1.1"))
 ;; URL: https://github.com/DarwinAwardWinner/ido-completing-read-plus
 ;; Keywords: ido, completion, convenience
@@ -78,7 +78,7 @@
 ;;
 ;;; Code:
 
-(defconst ido-completing-read+-version "4.10"
+(defconst ido-completing-read+-version "4.11"
   "Currently running version of ido-completing-read+.
 
 Note that when you update ido-completing-read+, this variable may
@@ -89,7 +89,9 @@ not be updated until you restart Emacs.")
 (require 'cl-lib)
 (require 'cus-edit)
 (require 's)
-(require 'memoize)
+
+;; Optional dependency, only needed for optimization
+(require 'memoize nil t)
 
 ;; Silence some byte-compiler warnings
 (eval-when-compile
@@ -293,7 +295,9 @@ disable fallback based on collection size, set this to nil."
     ;; https://github.com/DarwinAwardWinner/ido-completing-read-plus/issues/39
     Info-read-node-name
     ;; https://github.com/DarwinAwardWinner/ido-completing-read-plus/issues/44
-    tmm-prompt)
+    tmm-prompt
+    ;; https://github.com/DarwinAwardWinner/ido-completing-read-plus/issues/156
+    org-tags-completion-function)
   "Functions & commands for which ido-cr+ should be disabled.
 
 Each entry can be either a symbol or a string. A symbol means to
@@ -518,11 +522,11 @@ completion for them."
          (ido-cr+-last-dynamic-update-text nil)
          ;; Only memoize if the collection is dynamic.
          (ido-cr+-all-prefix-completions-memoized
-          (if ido-cr+-dynamic-collection
+          (if (and ido-cr+-dynamic-collection (featurep 'memoize))
               (memoize (indirect-function 'ido-cr+-all-prefix-completions))
             'ido-cr+-all-prefix-completions))
          (ido-cr+-all-completions-memoized
-          (if ido-cr+-dynamic-collection
+          (if (and ido-cr+-dynamic-collection (featurep 'memoize))
               (memoize (indirect-function 'all-completions))
             'all-completions))
          ;; If the whitelist is empty, everything is whitelisted
@@ -884,19 +888,6 @@ result."
    for tortoise on x
    for hare on (cdr x) by #'cddr
    thereis (eq tortoise hare)))
-
-(defun ido-cr+-maybe-chop (items elem)
-  "Like `ido-chop', but a no-op if ELEM is not in ITEMS.
-
-Normal `ido-chop' hangs infinitely in this case."
-  (cl-loop
-   with new-tail = ()
-   for remaining on items
-   for next = (car remaining)
-   if (equal next elem)
-   return (nconc remaining new-tail)
-   else collect next into new-tail
-   finally return items))
 
 (defun ido-cr+-update-dynamic-collection ()
   "Update the set of completions for a dynamic collection.
