@@ -4,7 +4,7 @@
 ;;
 ;; Author: Dino Chiesa <dpchiesa@outlook.com>, Sebastian Monia <smonia@outlook.com>
 ;; URL: http://github.com/sebasmonia/tfsmacs/
-;; Package-Version: 20180622.1537
+;; Package-Version: 20180629.1011
 ;; Package-Requires: ((emacs "25") (tablist "0.70"))
 ;; Version: 1.25
 ;; Keywords: tfs, vc
@@ -15,21 +15,20 @@
 
 ;;; Commentary:
 
-;; Basic steps to setup:
+;; Steps to setup:
 ;;   1. Obtain the Team Explorer Everywhere CLI tool from https://github.com/Microsoft/team-explorer-everywhere/releases
-;;   2. Place `tfsmacs.el' in your `load-path'.
-;;   3. In your .emacs file:
+;;      (don't forget to run "tf eula" to accept the tool's terms and conditions)
+;;   2. Place tfsmacs.el in your load-path.  Or install from MELPA.
+;;   3. In your .emacs file you can setup keybindings for the tfsmacs commands, there's a keymap:
 ;;        (require 'tfsmacs)
-;;        (setq tfsmacs-cmd  "location/of/TEE/tf")
-;;        (setq tfsmacs-login "/login:domain\\userid,password")
-;;   4. Also in your .emacs file,  set local or global key bindings for tfs commands.  Or use the provided keymap.
-;;      Example:
 ;;        (global-set-key  "\C-ct" 'tfsmacs-map)
-;;      OR:
+;;      OR for individual commands:
 ;;        (global-set-key  "\C-ctp" 'tfsmacs-pendingchanges)
 ;;        (global-set-key  "\C-cto" 'tfsmacs-checkout)
 ;;        (global-set-key  "\C-cti" 'tfsmacs-checkin)
 ;;        ; etc.
+;;   4. Customize the group tfsmacs to provide credentials and the location of the TEE tool
+;;   5. Run tfsmacs-setup-workspace to configure collections and their workspaces in your computer
 ;;
 ;; For a detailed user manual see:
 ;; https://github.com/sebasmonia/tfsmacs/blob/master/README.md
@@ -79,7 +78,10 @@
 (defvar tfsmacs--shelveset-buffer-name "*TFS Shelveset*")
 (defvar tfsmacs--server-dirs-buffer-name "*TFS Folders*")
 (defvar tfsmacs--current-help-message "")
+;; Keeps track of the current directory when navigating server files using "tf dir"
 (defvar tfsmacs--server-current-dir "$/")
+;; Directory on which "tfsmacs--server-compare-dir " was invoked on
+(defvar tfsmacs--server-compare-dir "")
 ;; Used to repeat the command when using "g" in the status buffer. Buffer local.
 (defvar tfsmacs--buffer-status-dir nil)
 ;; Changeset ID in the changeset details window. Buffer local.
@@ -523,6 +525,7 @@ PATH and FILES are used only for internal calls."
         (setq buffer-read-only t)
         (local-set-key "G" 'tfsmacs--server-get-directory)
         (local-set-key "F" 'tfsmacs--server-show-files)
+        ;;(local-set-key "D" 'tfsmacs--server-compare-dirs)
         (local-set-key "^" 'tfsmacs--server-go-up)
         (local-set-key (kbd "RET") 'tfsmacs--server-go-down)
         (local-set-key "p" 'previous-line)
@@ -540,7 +543,9 @@ PATH and FILES are used only for internal calls."
          "You can use ^ and RET to navigate the folders just like in dired. Similarly n and p move between lines.\n\n"
          "G will get the folder under point and its contents recursively. If needed it will create a local"
          " directory tree to match the one on the server (based on the mappings for the workspace).\n\n"
-         "F will display the files in the current folder. Use it wiselym as it can be quite slow!"))
+         "F will display the files in the current folder. Use it wisely as it can be quite slow!\n\n"))
+         ;; "D shows the difference between the local and server folder. Its useful to figure out if you "
+         ;; "missed adding files, or deleted something from your local and it's not synced any more."))
   (tfsmacs--show-help))
 
 (defun tfsmacs--server-show-files ()
@@ -566,7 +571,7 @@ Showing files all the time could get quite slow.  Hence this command."
       (setq target "$/"))
     (tfsmacs-server-directories target)))
 
-(defun tfsmacs-server-get-directory ()
+(defun tfsmacs--server-get-directory ()
   "Recursive get the directory under point."
   (interactive)
   (let* ((line (buffer-substring-no-properties (line-beginning-position) (line-end-position)))
@@ -576,10 +581,24 @@ Showing files all the time could get quite slow.  Hence this command."
 
 (defun tfsmacs--server-get-directory--callback (output)
   "Start the recursive get on the folder listed in OUTPUT, after creating it."
-  (when (> tfsmacs--command-retries 0) 
-    (setq output (file-name-as-directory (substring output 0 -1))) ;; remove trailing new line
+  (when (> tfsmacs--command-retries 0)
+    (setq output (file-name-as-directory (substring output 0 -2))) ;; remove trailing new lines
     (make-directory output t)
     (tfsmacs-get-recursive output t)))
+
+;; (defun tfsmacs--server-compare-dirs ()
+;;   "Show the file differences between local and server directory."
+;;   (interactive)
+;;   (let* ((line (buffer-substring-no-properties (line-beginning-position) (line-end-position)))
+;;          (directory (concat tfsmacs--server-current-dir "/" (substring line 1)))
+;;          ;;(command (list "resolvePath" line)))
+;;          (command (list "dir" directory "-recursive")))
+;;     (setq tfsmacs--server-compare-dir directory)
+;;     (tfsmacs--async-command command 'tfsmacs--server-compare-dirs-callback)))
+
+;; (defun tfsmacs--server-compare-dirs-callback (output)
+;;   "Process the OUTPUT of the first step for server-local dir compare."
+;;   (tfsmacs--append-to-log (format "---%s---" output)))
 
 (defun tfsmacs-get (&optional filename version)
   "Perform a tf get on a file.
