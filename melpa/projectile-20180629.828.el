@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20180626.454
+;; Package-Version: 20180629.828
 ;; Keywords: project, convenience
 ;; Version: 0.15.0-cvs
 ;; Package-Requires: ((emacs "24.3") (pkg-info "0.4"))
@@ -4031,17 +4031,11 @@ Otherwise behave as if called interactively.
     (add-hook 'find-file-hook 'projectile-find-file-hook-function)
     (add-hook 'projectile-find-dir-hook #'projectile-track-known-projects-find-file-hook t)
     (add-hook 'dired-before-readin-hook #'projectile-track-known-projects-find-file-hook t t)
-    (add-hook 'project-find-functions #'projectile-root-bottom-up)
-    (add-hook 'project-find-functions #'projectile-root-top-down)
-    (add-hook 'project-find-functions #'projectile-root-top-down-recurring)
     (ad-activate 'compilation-find-file)
     (ad-activate 'delete-file))
    (t
     (remove-hook 'find-file-hook #'projectile-find-file-hook-function)
     (remove-hook 'dired-before-readin-hook #'projectile-track-known-projects-find-file-hook t)
-    (remove-hook 'project-find-functions #'projectile-root-bottom-up)
-    (remove-hook 'project-find-functions #'projectile-root-top-down)
-    (remove-hook 'project-find-functions #'projectile-root-top-down-recurring)
     (ad-deactivate 'compilation-find-file)
     (ad-deactivate 'delete-file))))
 
