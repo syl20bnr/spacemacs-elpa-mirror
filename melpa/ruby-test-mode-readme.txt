@@ -25,7 +25,3 @@ C-c C-t t    - Runs the unit test or rspec example at the current buffer's
 C-c C-t C-t    buffer's point.
 
 C-c C-s      - Toggle between implementation and test/example files.
-
-
-(require 'ruby-mode)
-(require 'pcre2el)

@@ -15,5 +15,3 @@ Usage:
 Select some region and `M-x lodgeit-paste`. The major mode should
 be used to properly highlight the paste on the server. The URL is
 added to the kill ring for pasting as needed.
-
-

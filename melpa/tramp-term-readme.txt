@@ -9,4 +9,3 @@ different shells via a per-host configuration.
 The ideas presented here and various bits of code within were
 lifted directly from http://www.emacswiki.org/emacs-se/AnsiTermHints.
 Consider the editors of that page as contributors to this package.
-

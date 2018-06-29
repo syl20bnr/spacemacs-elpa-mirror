@@ -14,5 +14,3 @@ M-x fetch-resource
 
 The temporary download directory can be adjusted by setting the
 fetch-download-location variable.
-
-(require 'url)

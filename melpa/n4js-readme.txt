@@ -5,6 +5,3 @@ and add the following line to your .emacs:
 
 Type M-x n4js-start to run Neo4j Shell.
 See also `comint-mode' to check key bindings.
-
-(require 'comint)
-(require 'cypher-mode)

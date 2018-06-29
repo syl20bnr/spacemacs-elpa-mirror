@@ -12,6 +12,3 @@ and add the following line to your .emacs:
 
 Type M-x babel-repl to run Babel.js REPL.
 See also `comint-mode' to check key bindings.
-
-
-(require 'comint)

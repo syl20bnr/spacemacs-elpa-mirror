@@ -49,5 +49,3 @@ lock two times use the line
 You can control the flipping via customization.  See M-x
 customize-apropos rope-read.  Shortcut: With point after the next
 closing parenthesis do C-xe (customize-apropos "rope-read").
-
-

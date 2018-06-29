@@ -69,5 +69,3 @@ work on anyway. Maybe I could solve this by advicing
 `set-cursor-colour', but this would fail if someone uses
 `modify-frame-parameters' directly, and I really don't want to
 advice this function anyway.
-
-(require 'easy-mmode)

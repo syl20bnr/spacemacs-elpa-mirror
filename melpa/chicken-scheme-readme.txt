@@ -54,5 +54,3 @@ This packages plays very well with the chicken-slime package.
 Contributors:
 Dan Leslie
 Mao Junhua - Disk Caching
-
-(require 'scheme)

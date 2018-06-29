@@ -15,5 +15,3 @@ Based mainly on the author's flymake-jslint.el, and using the
 error regex from Arne Jørgensen's similar flymake-csslint.el.
 
 Uses flymake-easy, from https://github.com/purcell/flymake-easy
-
-(require 'flymake-easy)

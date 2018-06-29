@@ -40,5 +40,3 @@ If you like this project, Buy Xah Emacs Tutorial http://ergoemacs.org/emacs/buy_
 • No character other than whitespace are removed or inserted.
 
 in the future, this package will expand to complete reformat. That is, given a singe very loooooooong line of code, it will reformat it into multiple lines in a pretty way, with proper place to insert newline, proper indentation, and skipping comment line or string.
-
-

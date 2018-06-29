@@ -62,5 +62,3 @@ Installation
 
   This package is available fom Melpa, you may install it by calling
   `M-x package-install'.
-
-

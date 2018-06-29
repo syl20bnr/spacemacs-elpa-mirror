@@ -13,4 +13,3 @@ such simple functionality to be.
 
 For more sophisticated features, like HTML tags or LaTeX environments
 handling, consider https://github.com/Fuco1/smartparens
-

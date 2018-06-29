@@ -1,7 +1,0 @@
-(require 'mandoku)
-(require 'org)
-(require 'mandoku-dict)
-(require 'mandoku-annot)
-(require 'hydra)
-(require 'helm-charinfo)
-(require 'subr-x)

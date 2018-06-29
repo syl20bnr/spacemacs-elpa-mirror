@@ -28,5 +28,3 @@ TODO: The most pressing isue is a way to let not only single symbols be
   On a longer timeline, it would be nice if it could understand some basic
   newcommands, and automatically deduce the needed unicode (but this seems
   super hard).
-
-(require 'cl-lib)

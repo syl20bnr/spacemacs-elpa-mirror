@@ -8,7 +8,3 @@ Smart region guesses what you want to select by one command:
   column as mark, it adds a cursor to each line (with `mc/edit-lines').
 
 This basic concept is from sense-region: https://gist.github.com/tnoda/1776988.
-
-(require 'expand-region)
-(require 'multiple-cursors)
-(require 'cl-lib)

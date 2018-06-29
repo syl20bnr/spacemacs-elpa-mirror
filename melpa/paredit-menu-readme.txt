@@ -22,6 +22,3 @@ paredit. If you autoload paredit, then
    '(require 'paredit-menu))
 
 will achieve the same effect.
-
-
-(require 'paredit)

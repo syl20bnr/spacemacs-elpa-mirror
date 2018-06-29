@@ -22,6 +22,3 @@ Limitations:
 'hack-time-mode' has actually limitted control over time.  There
 are time sources in Emacs _not_ controlled by 'hack-time-mode'.
 Watch out!
-
-
-

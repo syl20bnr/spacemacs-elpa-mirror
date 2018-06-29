@@ -20,5 +20,3 @@ copy the image or latex equation at point to the clipboard as an image. The
 default latex scale is too small for me, so the default size for this is set
 to 3 in `ox-clip-default-latex-scale'. This overrides the settings in
 `org-format-latex-options'.
-
-(require 'htmlize)

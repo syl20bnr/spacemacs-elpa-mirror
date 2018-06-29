@@ -12,6 +12,3 @@ NOTE: The parameters are not escaped as the values are define by the user and
 hence it is a trusted source. However, functionality for evaluating a value
 will probably be added in the future which would require the values to be
 escaped (hence, a breaking change is expected in the future).
-
-(require 's)
-(require 'sql)

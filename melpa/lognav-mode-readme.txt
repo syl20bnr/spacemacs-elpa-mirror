@@ -14,7 +14,3 @@ Add the following line in your .emacs file to use Lognav-mode:
 The following bindings are created for Lognav-mode:
 M-n   - Next log error            Moves the cursor to the next error
 M-p   - Previous log error        Moves the cursor to the previous error
-
-
-(require 'easymenu)
-(require 'cl-lib)
