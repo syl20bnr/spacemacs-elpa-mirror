@@ -2,9 +2,9 @@
 
 ;; Author: Danny McClanahan
 ;; Version: 0.1
-;; Package-Version: 20180629.41
+;; Package-Version: 20180629.220
 ;; URL: https://github.com/cosmicexplorer/helm-rg
-;; Package-Requires: ((emacs "24") (cl-lib "0.5") (dash "2.13.0") (helm "2.8.8"))
+;; Package-Requires: ((emacs "25") (cl-lib "0.5") (dash "2.13.0") (helm "2.8.8"))
 ;; Keywords: find, file, files, helm, fast, rg, ripgrep, grep, search, match
 
 ;; This file is not part of GNU Emacs.
@@ -185,10 +185,11 @@
      ,@args))
 
 (defmacro helm-rg--defcustom-from-alist (name alist doc &rest args)
-  "Create a `defcustom' named NAME which allows the keys of ALIST as values.
+  "Create a `defcustom' named NAME which can take the keys of ALIST as values.
 
-The default value for the `defcustom' is the `car' of the first element of ALIST. ALIST must be the
-unquoted name of a variable containing an alist."
+The DOC and ARGS are passed on to the generated `defcustom' form. The default value for the
+`defcustom' is the `car' of the first element of ALIST. ALIST must be the unquoted name of a
+variable containing an alist."
   (declare (indent 2))
   (helm-rg--gen-defcustom-form-from-alist name alist doc args))
 
@@ -223,7 +224,7 @@ Return a lambda accepting that argument."
 
 This is used because `pcase' doesn't accept conditions with a single element (e.g. `(or 3)')."
   (pcase-exhaustive conditions
-    (`nil (error "nil conditions with joiner '%S'" joiner))
+    (`nil (error "The list of conditions may not be nil (with joiner '%S')" joiner))
     (`(,single-sexp) single-sexp)
     (x `(,joiner ,@x))))
 
@@ -294,12 +295,17 @@ This is used because `pcase' doesn't accept conditions with a single element (e.
                       (-flatten-n 1)))
           ,(cl-destructuring-bind (&key upat _initform svar) cur
              (helm-rg--join-conditions
+              ;; FIXME: put the below comment in the docstrings for optional and keyword pcase
+              ;; macros!
               ;; NB: SVAR is bound before INITFORM is evaluated, which means you can refer to SVAR
               ;; within INITFORM (and more importantly, within UPAT)!
               `(,@(and svar `((let ,svar t)))
-                ,(list '\` (cons (list '\, upat)
-                                 (and rest
-                                      (list '\, (helm-rg--read-&optional-specs rest))))))
+                ,(->> (and rest
+                           (->> rest
+                                (helm-rg--read-&optional-specs)
+                                (list '\,)))
+                      (cons (list '\, upat))
+                      (list '\`)))
               :joiner 'and))))))
 
 (pcase-defmacro helm-rg-&optional (&rest all-optional-specs)
@@ -383,7 +389,7 @@ This is used because `pcase' doesn't accept conditions with a single element (e.
                                   (x (plist-get x :kw-sym))))))
          (first-duplicate-key (helm-rg--find-first-duplicate all-keys)))
     (when first-duplicate-key
-      (error "keyword '%S' provided more than once for keyword set %S"
+      (error "Keyword '%S' provided more than once for keyword set %S"
              first-duplicate-key all-keys))
     (let ((pcase-expr
            (pcase-exhaustive parsed-key-spec-list
@@ -394,24 +400,20 @@ This is used because `pcase' doesn't accept conditions with a single element (e.
              (`(,cur . ,rest)
               (helm-rg--join-conditions
                `(,(helm-rg--join-conditions
-                   (cl-destructuring-bind (&key kw-sym upat required initform svar) cur
+                   (cl-destructuring-bind
+                       (&key kw-sym upat required initform svar) cur
                      `((app (helm-rg--flipped-plist-member ,kw-sym)
                             ,(helm-rg--join-conditions
                               `(,@(unless required
                                     `((and `nil
                                            ,@(and svar `((let ,svar nil)))
                                            (let ,upat ,initform))))
-                                ;; NB: SVAR is bound before INITFORM is evaluated, which means you
-                                ;; can refer to SVAR within INITFORM (and more importantly, within
-                                ;; UPAT)!
                                 ,(helm-rg--join-conditions
                                   `(,@(and svar `((let ,svar t)))
-                                    ;; This is the result of `plist-member', from the
-                                    ;; `helm-rg--flipped-plist-member' above, so there may be more
-                                    ;; to the list, but we don't need it, so we use the placeholder
-                                    ;; `_', which is unbound. This all becomes:
-                                    ;; `(,kw-sym ,upat . ,_)
-                                    ,(list '\` (list kw-sym (list '\, upat) '\, '_)))
+                                    ;; `plist-member' gives us the rest of the list too -- discard
+                                    ;; by matching it to `_'.
+                                    ,(->> (list kw-sym (list '\, upat) '\, '_)
+                                          (list '\`)))
                                   :joiner 'and))
                               :joiner 'or))))
                    :joiner 'and)
@@ -420,14 +422,17 @@ This is used because `pcase' doesn't accept conditions with a single element (e.
       (if exhaustive
           (helm-rg--with-gensyms (exp-plist-keys)
             `(and
-              ;; NB: we do not attempt to parse the `pcase' subject as a plist unless `:exhaustive'
-              ;; is provided -- this is intentional.
+              ;; NB: we do not attempt to parse the `pcase' subject as a plist (done with
+              ;; `helm-rg--plist-keys') unless `:exhaustive' is provided (we just use `plist-get')
+              ;; -- this is intentional.
               (and (app (helm-rg--plist-keys) ,exp-plist-keys)
                    (guard (not (-difference ,exp-plist-keys ',all-keys))))
               ,pcase-expr))
         pcase-expr))))
 
 (pcase-defmacro helm-rg-&key (&rest all-key-specs)
+  ;;; TODO: add alist matching -- this should be trivial, just allowing
+  ;;; non-keyword syms in the argument spec.
   (pcase all-key-specs
     (`(:exhaustive . ,rest)
      (--> rest
@@ -442,7 +447,7 @@ This is used because `pcase' doesn't accept conditions with a single element (e.
   `(helm-rg-&key :exhaustive :required ,@all-key-specs))
 
 (defun helm-rg--parse-format-spec (format-spec)
-  "Convert a list of strings and other things into some result for `helm-rg--make-formatter'."
+  "Convert a list FORMAT-SPEC into some result for `helm-rg--make-formatter'."
   (pcase-exhaustive format-spec
     ((and (helm-rg-cl-typep string) x)
      (helm-rg-construct-plist
@@ -486,7 +491,7 @@ This is used because `pcase' doesn't accept conditions with a single element (e.
          ;; TODO: a "once-only" macro that's just sugar for gensyms
          (format (mapconcat #'identity (list ,@fmts) ,sep) ,@exprs)))
      (kwargs
-      (error "no arguments were declared, but keyword arguments %S were provided" kwargs))
+      (error "No arguments were declared, but keyword arguments %S were provided" kwargs))
      (t
       `(format (mapconcat #'identity (list ,@fmts) ,sep) ,@exprs)))))
 
@@ -494,7 +499,7 @@ This is used because `pcase' doesn't accept conditions with a single element (e.
   (cl-destructuring-bind (&key fmts exprs arguments)
       (helm-rg--read-format-specs format-specs)
     (unless arguments
-      (error "no arguments were declared in the specs %S" format-specs))
+      (error "No arguments were declared in the specs %S" format-specs))
     ;; TODO: make a macro that can create a lambda with visible keyword arguments (a "cl-lambda"
     ;; type thing)
     (helm-rg--with-gensyms (args)
@@ -517,7 +522,10 @@ This is used because `pcase' doesn't accept conditions with a single element (e.
                   "must be a keyword arg" (kw-sym :fmt "(e.g. %S)."))))))))
 
 (defun helm-rg--apply-tree-fun (mapper tree)
-  "???"
+  "Apply MAPPER to the nodes of TREE using `-tree-map-nodes'.
+
+This method applies MAPPER, saves the result, and if the result is non-nil, returns the result
+instead of the node of MAPPER, otherwise it continues to recurse down the nodes of TREE."
   (let (intermediate-value-holder)
     (-tree-map-nodes
      (helm-rg--_ (setq intermediate-value-holder (funcall mapper _)))
@@ -525,24 +533,30 @@ This is used because `pcase' doesn't accept conditions with a single element (e.
      tree)))
 
 (defmacro helm-rg--pcase-tree (tree &rest pcase-exprs)
-  "???"
+  "Apply a `pcase' to the nodes of TREE with `helm-rg--apply-tree-fun'.
+
+PCASE-EXPRS are the cases provided to `pcase'. If the `pcase' cases do not
+match the node (returns nil), it continues to recurse down the tree --
+otherwise, the return value replaces the node of the tree."
   (declare (indent 1))
   `(helm-rg--apply-tree-fun
     (helm-rg--_ (pcase _ ,@pcase-exprs))
     ,tree))
 
-;;; FIXME: have some way to get the indices of each bound var for things like match-data etc!!! cmon
-;;; FIXME: remove the unnecessary uses of `helm-rg-deref-sym' in this method! It's more clear when
-;;; the literal symbols are used (in this particular case).
 (defconst helm-rg--named-group-symbol 'named-group)
 (defconst helm-rg--eval-expr-symbol 'eval)
-;;; TODO: add alist/plist matching!
+(defconst helm-rg--duplicate-var-eval-form-error-str
+  "'%S' variable name used a second time in evaluation of form '%S'.
+previous vars were: %S")
+(defconst helm-rg--duplicate-var-literal-form-error-str
+  "'%S' variable named used a second time in declaration of regexp group '%S'.
+previous vars were: %S")
 (cl-defun helm-rg--transform-rx-sexp (sexp &key (group-num-init 1))
   (let ((all-bind-vars-mappings nil))
     (--> (helm-rg--pcase-tree sexp
            ;; `(eval ,eval-expr) => evaluate the expression!
-           ;; NB: this occurs at macro-expansion time, like the equivalent `rx' pcase macro, which
-           ;; is before any surrounding let-bindings occur!)
+           ;; NB: this occurs at macro-expansion time, like the equivalent `rx'
+           ;; pcase macro, which is before any surrounding let-bindings occur!)
            (`(,(helm-rg-deref-sym helm-rg--eval-expr-symbol) ,eval-expr)
             (cl-destructuring-bind (&key transformed bind-vars)
                 (helm-rg--transform-rx-sexp (eval eval-expr t) :group-num-init group-num-init)
@@ -551,9 +565,7 @@ This is used because `pcase' doesn't accept conditions with a single element (e.
                do (progn
                     (cl-incf group-num-init)
                     (when (cl-find quoted-var all-bind-vars-mappings)
-                      (error (concat "'%S' variable name used a second time "
-                                     "in evaluation of form '%S'. "
-                                     "previous vars were: %S")
+                      (error helm-rg--duplicate-var-eval-form-error-str
                              quoted-var eval-expr all-bind-vars-mappings))
                     (push quoted-var all-bind-vars-mappings)))
               transformed))
@@ -577,10 +589,9 @@ This is used because `pcase' doesn't accept conditions with a single element (e.
                           do (progn
                                (cl-incf group-num-init)
                                (when (cl-find quoted-var all-bind-vars-mappings)
-                                 (error (concat "'%S' variable name used a second time "
-                                                "in declaration of regexp group '%S'. "
-                                                "previous vars were: %S")
-                                        quoted-var sub-rx all-bind-vars-mappings))
+                                 (error
+                                  helm-rg--duplicate-var-literal-form-error-str
+                                  quoted-var sub-rx all-bind-vars-mappings))
                                (push quoted-var all-bind-vars-mappings)))
                          transformed)
                into all-transformed-exprs
@@ -589,19 +600,22 @@ This is used because `pcase' doesn't accept conditions with a single element (e.
 
 (defmacro helm-rg-pcase-cl-defmacro (&rest args)
   "`pcase-defmacro', but the --pcase-macroexpander function is a `cl-defun'.
-
-(fn NAME ARGS [DOC] &rest BODY...)"
+\n(fn NAME ARGS [DOC] &rest BODY...)"
   (declare (indent 2) (debug defun) (doc-string 3))
   (->> `(pcase-defmacro ,@args)
        (macroexpand-1)
        (cl-subst 'cl-defun 'defun)))
 
 (helm-rg-pcase-cl-defmacro helm-rg-rx (rx-sexp)
+  ;; FIXME: have some way to get the indices of each bound var (for things like
+  ;; `match-data')
   (pcase-exhaustive (helm-rg--transform-rx-sexp rx-sexp)
     ((helm-rg-&key-complete transformed bind-vars)
      (helm-rg--with-gensyms (str-sym)
        `(and ,str-sym
              ,(helm-rg--join-conditions
+               ;; We would just delegate to `rx--pcase-macroexpander', but requiring subr errors
+               ;; out, extremely mysteriously.
                `((pred (string-match (rx-to-string ',transformed)))
                  ,@(cl-loop for symbol-to-bind in bind-vars
                             for match-index upfrom 1
@@ -791,8 +805,10 @@ This is purely an interface change, and does not affect anything else."
 ;; Constants
 (defconst helm-rg--color-format-argument-alist
   '((red :cmd-line "red" :text-property "red3"))
-  "Alist mapping (a symbol named after a color) -> (strings to describe that symbol on the ripgrep
-command line and in an emacs text property). This allows `helm-rg' to identify matched text using
+  "Alist mapping symbols to color descriptions.
+
+This alist mapps (a symbol named after a color) -> (strings to describe that symbol on the ripgrep
+command line and in an Emacs text property). This allows `helm-rg' to identify matched text using
 ripgrep's highlighted output directly instead of doing it ourselves, by telling ripgrep to highlight
 matches a specific color, then searching for that specific color as a text property in the output.")
 
@@ -806,7 +822,7 @@ matches a specific color, then searching for that specific color as a text prope
     (case-insensitive "--ignore-case"))
   "Alist of methods of treating case-sensitivity when invoking ripgrep.
 
-The value is the ripgrep command-line argument which enforces the specified type of
+The value is the ripgrep command line argument which enforces the specified type of
 case-sensitivity.")
 
 (defconst helm-rg--ripgrep-argv-format-alist
@@ -940,7 +956,7 @@ using `helm-rg--async-persistent-action'.")
 (defvar helm-rg--last-argv nil
   "Argument list for the most recent ripgrep invocation.
 
-Used for the command-line header in `helm-rg--bounce-mode'.")
+Used for the command line header in `helm-rg--bounce-mode'.")
 
 
 ;; Buffer-local Variables
@@ -965,7 +981,7 @@ This may be expensive for larger files, so it is turned off if
 (defun helm-rg--alist-get-exhaustive (key alist)
   "Get KEY from ALIST, or throw an error."
   (or (alist-get key alist)
-      (error "key '%s' was not found in alist '%S' during exhaustive check"
+      (error "Key '%s' was not found in alist '%S' during an exhaustiveness check"
              key alist)))
 
 (defun helm-rg--alist-keys (alist)
@@ -993,7 +1009,7 @@ This may be expensive for larger files, so it is turned off if
 
 BODY is executed in the original buffer, not the new temp buffer."
   (declare (indent 1))
-  (let ((cur-buf (gensym "helm-rg--with-named-temp-buffer")))
+  (let ((cur-buf (cl-gensym "helm-rg--with-named-temp-buffer")))
     `(let ((,cur-buf (current-buffer)))
        (with-temp-buffer
          (let ((,name (current-buffer)))
@@ -1003,7 +1019,10 @@ BODY is executed in the original buffer, not the new temp buffer."
 
 ;; Logic
 (defun helm-rg--make-dummy-process (input err-msg)
-  "Make a process that immediately exits to display just a title."
+  "Make a process that immediately exits to display just a title.
+
+Provide INPUT to represent the `helm-pattern', and ERR-MSG as the reasoning for failing to display
+any results."
   (let* ((dummy-proc (make-process
                       :name helm-rg--process-name
                       :buffer helm-rg--process-buffer-name
@@ -1059,7 +1078,7 @@ BODY is executed in the original buffer, not the new temp buffer."
       (string-blank-p glob-str)))
 
 (defun helm-rg--construct-argv (pattern)
-  "Create an argument list for the ripgrep command.
+  "Create an argument list from the `helm-pattern' PATTERN for the ripgrep command.
 
 This argument list is propertized for display in the `helm-buffer' header when using `helm-rg', and
 is used directly to invoke ripgrep. It uses `defcustom' values, and `defvar' values bound in other
@@ -1121,8 +1140,8 @@ Make a dummy process if the input is empty with a clear message to the user."
     (delete-overlay it))
   (setq helm-rg--current-line-overlay nil))
 
-(defun helm-rg--collect-lines-matches-current-file (orig-line-parsed _file-abs-path)
-  "Collect all matches from ripgrep's highlighted output from from FILE-ABS-PATH."
+(defun helm-rg--collect-lines-matches-current-file (orig-line-parsed)
+  "Collect all of the matched text regions from ripgrep's highlighted output from ORIG-LINE-PARSED."
   ;; If we are on a file's line, stay where we are, otherwise back up to the closest file line above
   ;; the current line (this is the file that "owns" the entry).
   (cl-destructuring-bind (&key
@@ -1193,8 +1212,9 @@ Make a dummy process if the input is empty with a clear message to the user."
                 (helm-rg--convert-lines-matches-to-overlays line-match-results))))))
 
 (defun helm-rg--async-action (parsed-output &optional highlight-matches)
-  "Visit the file at the line and column specified by CAND.
-The match is highlighted in its buffer."
+  "Visit the file at the line and column according to PARSED-OUTPUT.
+
+The match is highlighted in its buffer if HIGHLIGHT-MATCHES is non-nil."
   (let ((default-directory helm-rg--current-dir)
         (helm-rg--display-buffer-method
          (or helm-rg--display-buffer-method
@@ -1239,7 +1259,7 @@ The match is highlighted in its buffer."
                 (setq helm-rg--previously-highlighted-buffer buffer-to-display)
                 ;; Clear the old lines (from the previous buffer) and make new ones.
                 (helm-rg--delete-match-overlays)
-                (helm-rg--collect-lines-matches-current-file parsed-output file-abs-path)))))
+                (helm-rg--collect-lines-matches-current-file parsed-output)))))
         ;; Display the buffer visiting the file with the matches.
         (funcall helm-rg--display-buffer-method buffer-to-display)
         ;; Make overlays highlighting all the matches (unless we are in the same file as
@@ -1265,8 +1285,9 @@ The match is highlighted in its buffer."
         (recenter)))))
 
 (defun helm-rg--async-persistent-action (parsed-output)
-  "Visit the file at the line and column specified by CAND.
-Call `helm-rg--async-action', but push the buffer corresponding to CAND to
+  "Visit the file at the line and column specified by PARSED-OUTPUT.
+
+Call `helm-rg--async-action', but push the buffer corresponding to PARSED-OUTPUT to
 `helm-rg--matches-in-current-file-overlays', if there was no buffer visiting it already."
   (let ((helm-rg--append-persistent-buffers t)
         (helm-rg--display-buffer-method helm-rg--persistent-action-display-buffer-method))
@@ -1372,6 +1393,7 @@ TODO: add ert testing for this function!"
    (helm-rg--join "|")))
 
 (defun helm-rg--advance-forward ()
+  "Move forward a line in the results, cycling if necessary."
   (interactive)
   (let ((helm-move-to-line-cycle-in-source t))
     (if (helm-end-of-source-p)
@@ -1379,6 +1401,7 @@ TODO: add ert testing for this function!"
       (helm-next-line))))
 
 (defun helm-rg--advance-backward ()
+  "Move backward a line in the results, cycling if necessary."
   (interactive)
   (let ((helm-move-to-line-cycle-in-source t))
     (if (helm-beginning-of-source-p)
@@ -1455,6 +1478,7 @@ This will loop around the results when advancing past the beginning or end of th
                      (helm-rg--on-same-entry orig-line-parsed cur-line-parsed))))))
 
 (defun helm-rg--file-forward ()
+  "Move forward to the beginning of the next file in the output, cycling if necessary."
   (interactive)
   (condition-case _err
       (helm-rg--move-file 'forward)
@@ -1474,6 +1498,10 @@ This will loop around the results when advancing past the beginning or end of th
       (helm-rg--advance-forward))))
 
 (defun helm-rg--file-backward (stay-if-at-top-of-file)
+  "Move backward to the beginning of the previous file in the output, cycling if necessary.
+
+STAY-IF-AT-TOP-OF-FILE determines whether to move to the previous file if point is at the top of a
+file in the output."
   (interactive (list nil))
   (condition-case _err
       (helm-rg--do-file-backward-dwim stay-if-at-top-of-file)
@@ -1488,7 +1516,8 @@ This will loop around the results when advancing past the beginning or end of th
       (replace-regexp-in-string "" str)))
 
 (defun helm-rg--process-output (exe &rest args)
-  "Get output from a process specified by string arguments.
+  "Get output from a process EXE with string arguments ARGS.
+
 Merges stdout and stderr, and trims whitespace from the result."
   (with-temp-buffer
     (let ((proc (make-process
@@ -1501,7 +1530,7 @@ Merges stdout and stderr, and trims whitespace from the result."
 
 (defun helm-rg--check-directory-path (path)
   (if (and path (file-directory-p path)) path
-    (error "path '%S' was not a directory." path)))
+    (error "Path '%S' was not a directory" path)))
 
 (defun helm-rg--make-help-buffer (help-buf-name)
   ;; FIXME: this could be more useful -- but also, is it going to matter to anyone but the
@@ -1589,7 +1618,7 @@ Merges stdout and stderr, and trims whitespace from the result."
 (defun helm-rg--process-transition (cur-file line)
   (pcase-exhaustive line
     ;; When we see an empty line, we clear all the state.
-    ((rx (: bos eos))
+    ((helm-rg-rx (: bos eos))
      (list :file-path nil))
     ;; When we see a line with a number and text, we must be collecting match lines from a
     ;; particular file right now. Parse the line and add "jump" information as text properties.
@@ -1639,12 +1668,12 @@ Merges stdout and stderr, and trims whitespace from the result."
   (let* ((colored-line (ansi-color-apply input-line))
          (string-result
           (cl-destructuring-bind (&key cur-file) helm-rg--process-output-parse-state
-            (if-let* ((parsed (helm-rg--process-transition cur-file colored-line)))
+            (-if-let* ((parsed (helm-rg--process-transition cur-file colored-line)))
                 (cl-destructuring-bind (&key file-path line-content) parsed
                   (setq-local helm-rg--process-output-parse-state (list :cur-file file-path))
                   ;; Exits here.
                   (or line-content ""))
-              (error "line '%s' could not be parsed! state was: '%S'"
+              (error "Line '%s' could not be parsed! state was: '%S'"
                      colored-line helm-rg--process-output-parse-state)))))
     string-result))
 
@@ -1745,9 +1774,9 @@ Merges stdout and stderr, and trims whitespace from the result."
        resulting-line))))
 
 (defun helm-rg--line-from-corresponding-file-for-bounce (scratch-buf)
-  "Get the corresponding line in the file's buffer.
+  "Get the corresponding line in the file's buffer SCRATCH-BUF, and return it.
 
-The buffer has already been advanced to the appropriate line."
+SCRATCH-BUF has already been advanced to the appropriate line."
   (with-current-buffer scratch-buf
     (let ((beg (line-beginning-position))
           (end (line-end-position)))
@@ -2088,22 +2117,26 @@ The buffer has already been advanced to the appropriate line."
     new-buf))
 
 (defun helm-rg--bounce ()
+  "Enter into `helm-rg--bounce-mode' in a new buffer from the results for `helm-rg'."
   (interactive)
   (let ((new-buf (helm-rg--make-buffer-for-bounce)))
     (helm-rg--run-after-exit
      (funcall helm-rg-display-buffer-normal-method new-buf))))
 
 (defun helm-rg--bounce-refresh ()
+  "Revert all the contents in the bounce mode buffer to what they were in the file."
   (interactive)
   ;; TODO: fix prompts
-  (if (and (buffer-modified-p) (not (y-or-n-p "changes found. lose changes and overwrite anyway?")))
-      (message "%s" "no changes were made.")
-    (message "%s" "reading file contents...")
+  (if (and (buffer-modified-p)
+           (not (y-or-n-p "Changes found. lose changes and overwrite anyway? ")))
+      (message "%s" "No changes were made")
+    (message "%s" "Reading file contents... ")
     (save-excursion
       (helm-rg--reread-entries-from-file-for-bounce nil))
     (set-buffer-modified-p nil)))
 
 (defun helm-rg--bounce-refresh-current-file ()
+  "Revert just the contents of the current file in the bounce mode buffer."
   (interactive)
   ;; TODO: add messaging!
   ;; FIXME: add some indicator of whether the current file contents have been modified, not just
@@ -2112,6 +2145,7 @@ The buffer has already been advanced to the appropriate line."
     (helm-rg--reread-entries-from-file-for-bounce t)))
 
 (defun helm-rg--bounce-dump ()
+  "Save the contents of all the files in the bounce mode buffer."
   (interactive)
   (if (not (buffer-modified-p))
       (message "%s" "no changes to save!")
@@ -2121,12 +2155,14 @@ The buffer has already been advanced to the appropriate line."
     (set-buffer-modified-p nil)))
 
 (defun helm-rg--bounce-dump-current-file ()
+  "Save just the content of the current file in the bounce mode buffer."
   (interactive)
   ;; TODO: add messaging!
   (save-excursion
     (helm-rg--save-entries-to-file-for-bounce t)))
 
 (defun helm-rg--spread-match-context (signed-amount)
+  "Read the contents of the current line and SIGNED-AMOUNT lines above or below from the file."
   (interactive "p")
   ;; TODO: add useful messaging!
   (cond
@@ -2138,12 +2174,14 @@ The buffer has already been advanced to the appropriate line."
     (helm-rg--expand-match-context-for-bounce (abs signed-amount) 0))))
 
 (defun helm-rg--expand-match-context (unsigned-amount)
+  "Read the contents of the current line and UNSIGNED-AMOUNT lines above and below from the file."
   (interactive (list (if (numberp current-prefix-arg) (abs current-prefix-arg)
                        helm-rg--default-expand-match-lines-for-bounce)))
   ;; TODO: add useful messaging!
   (helm-rg--expand-match-context-for-bounce unsigned-amount unsigned-amount))
 
 (defun helm-rg--visit-current-file-for-bounce ()
+  "Jump to the current line of the current file where point is at in bounce mode."
   (interactive)
   ;; TODO: add useful messaging!
   ;; TODO: visit the right line number too!!! (if on a match line)
@@ -2197,7 +2235,7 @@ The buffer has already been advanced to the appropriate line."
   (if (helm-rg--is-executable-file helm-rg-git-executable)
       (helm-rg--process-output helm-rg-git-executable
                                "rev-parse" "--show-toplevel")
-    (error "helm-rg-git-executable is not an executable file (was: %S)."
+    (error "The defvar helm-rg-git-executable is not an executable file (was: %S)"
            helm-rg-git-executable)))
 
 (defun helm-rg--interpret-starting-dir (default-directory-spec)
@@ -2208,6 +2246,7 @@ The buffer has already been advanced to the appropriate line."
     ((pred stringp) (helm-rg--check-directory-path default-directory-spec))))
 
 (defun helm-rg--set-case-sensitivity ()
+  "Set the value of `helm-rg--case-sensitivity' and re-run `helm-rg'."
   (interactive)
   (let ((pat helm-pattern)
         (start-dir helm-rg--current-dir))
@@ -2357,7 +2396,7 @@ in some window, select that window, or else display the help buffer with
          (or (get-buffer helm-rg--ripgrep-help-buffer-name)
              (helm-rg--make-help-buffer helm-rg--ripgrep-help-buffer-name))))
     (if pfx (switch-to-buffer filled-out-help-buf)
-      (if-let* ((buf-win (get-buffer-window filled-out-help-buf t)))
+      (-if-let* ((buf-win (get-buffer-window filled-out-help-buf t)))
           (select-window buf-win)
         (pop-to-buffer filled-out-help-buf)))))
 
