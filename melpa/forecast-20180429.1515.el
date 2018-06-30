@@ -4,9 +4,9 @@
 ;;
 ;; Author: Göktuğ Kayaalp <self@gkayaalp.com>
 ;; Keywords: weather, forecast
-;; Package-Version: 20180429.1500
+;; Package-Version: 20180429.1515
 ;; Version: 0.6.3
-;; URL: http://gkayaalp.com/emacs.html#forecast-el
+;; URL: https://cadadr.github.io/elisp/index.html#forecast-el
 ;; Package-Requires: ((emacs "24.4"))
 ;;
 ;; Permission  is  hereby  granted,  free of  charge,  to  any  person

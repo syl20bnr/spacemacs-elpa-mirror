@@ -3,10 +3,10 @@
 ;;
 ;; Author: Göktuğ Kayaalp
 ;; Keywords: theme paper
-;; Package-Version: 20180125.926
+;; Package-Version: 20180429.1515
 ;; Package-X-Original-Version: 1.0.1
 ;; Package-Requires: ((emacs "24"))
-;; URL: http://gkayaalp.com/emacs.html#paper
+;; URL: https://cadadr.github.io/elisp/index.html#paper
 ;;
 ;; Permission  is  hereby  granted,  free of  charge,  to  any  person
 ;; obtaining  a copy  of  this software  and associated  documentation

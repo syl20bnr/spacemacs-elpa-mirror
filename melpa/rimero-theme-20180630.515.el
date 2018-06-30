@@ -6,10 +6,10 @@
 ;; Maintainer: Yves Zoundi <yveszoundi@users.sf.net>
 ;; Created: 12th August 2017
 ;; URL: https://github.com/yveszoundi/emacs-rimero-theme
-;; Package-Version: 20180521.1247
-;; Package-X-Original-Version: 20180521.821
+;; Package-Version: 20180630.515
+;; Package-X-Original-Version: 20180630.821
 ;; Keywords: faces, theme, dark, light colors
-;; Version: 0.0.4
+;; Version: 0.0.5
 ;; Package-Requires: ((emacs "24"))
 
 ;; License: GPL3
@@ -75,7 +75,7 @@
    `(highlight ((,class (:foreground ,fg3 :background ,bg3))))
    `(hl-line ((,class (:background  ,bg2))))
    `(fringe ((,class (:background ,bg2 :foreground ,fg4))))
-   `(cursor ((,class (:background ,bg3))))
+   `(cursor ((,class (:background ,comment))))
    `(show-paren-match-face ((,class (:background ,warning))))
    `(isearch ((,class (:bold t :foreground ,warning :background ,bg3))))
    `(mode-line ((,class (:box (:line-width 1 :color nil) :bold t :foreground ,fg4 :background ,bg2))))
