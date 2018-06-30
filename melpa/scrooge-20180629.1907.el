@@ -14,7 +14,7 @@
 
 ;; Author: Daniel McClanahan <danieldmcclanahan@gmail.com>
 ;; Version: 0.2
-;; Package-Version: 20180620.1812
+;; Package-Version: 20180629.1907
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5") (dash "2.13.0") (thrift "0.9.3"))
 ;; Keywords: scrooge, thrift
 
@@ -133,6 +133,15 @@ the comment's background background color this can be seen clearly.")
 (defconst scrooge--lower-case-symbol-rx-expr `(: lower-case (* (| alpha "_"))))
 
 
+;; Helper methods
+(defun scrooge--match-generic-types-rx-expr ()
+  "Creates an `rx' sexp to match a use of a generic collection type, e.g. list<MyType>."
+  `(: (group-n 1 (| ,@scrooge--generic-type-symbols))
+      (group-n 2 "<")
+      (group-n 3 ,scrooge--title-case-symbol-rx-expr)
+      (group-n 4 ">")))
+
+
 ;; Public "immutable" variables
 (defconst scrooge-font-lock-keywords
   (--map
@@ -199,13 +208,6 @@ the comment's background background color this can be seen clearly.")
     (when res
       (setq jit-lock-start (car res)
             jit-lock-end (cdr res)))))
-
-(defun scrooge--match-generic-types-rx-expr ()
-  "Creates an `rx' sexp to match a use of a generic collection type, e.g. list<MyType>."
-  `(: (group-n 1 (| ,@scrooge--generic-type-symbols))
-      (group-n 2 "<")
-      (group-n 3 ,scrooge--title-case-symbol-rx-expr)
-      (group-n 4 ">")))
 
 
 ;; Interactive methods
