@@ -5,7 +5,7 @@
 ;; Author: Louis Roché <louis@louisroche.net>
 ;; Created: 27 April 2018
 ;; Version: 1.2
-;; Package-Version: 20180526.129
+;; Package-Version: 20180630.1026
 ;; Keywords: merlin ocaml languages eldoc
 ;; Homepage: https://github.com/khady/merlin-eldoc
 ;; Package-Requires: ((emacs "24.4") (merlin "3.0"))
@@ -368,7 +368,7 @@ non-nil."
     (while (not (equal previous-type type))
       (setq previous-type type)
       (setq type (merlin-eldoc--raw-type t)))
-    (merlin-eldoc--format-type type)))
+    (when type (merlin-eldoc--format-type type))))
 
 (defun merlin-eldoc--raw-doc ()
   "Return a string containing raw documentation of the thing at point."
