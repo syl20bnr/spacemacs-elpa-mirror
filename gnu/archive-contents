@@ -457,6 +457,11 @@
 	   "Color unbalanced parentheses and parentheses inconsistent with indentation" single
 	   ((:url . "http://elpa.gnu.org/packages/flylisp.html")
 	    (:keywords))])
+ (frame-tabs .
+	     [(1 1)
+	      nil "show buffer tabs in side window" single
+	      ((:url . "http://elpa.gnu.org/packages/frame-tabs.html")
+	       (:keywords "frames" "tabs"))])
  (fsm .
       [(0 2 1)
        ((emacs

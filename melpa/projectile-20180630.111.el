@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20180629.828
+;; Package-Version: 20180630.111
 ;; Keywords: project, convenience
 ;; Version: 0.15.0-cvs
 ;; Package-Requires: ((emacs "24.3") (pkg-info "0.4"))
@@ -796,7 +796,8 @@ at the top level of DIRECTORY."
      (lambda (dir)
        (when (and (file-directory-p dir)
                   (not (member (file-name-nondirectory dir) '(".." "."))))
-         (let ((default-directory dir))
+         (let ((default-directory dir)
+               (projectile-cached-project-root dir))
            (when (projectile-project-p)
              (projectile-add-known-project (projectile-project-root))))))
      subdirs)))
@@ -1281,8 +1282,8 @@ dirty project list."
         (mod-proj nil))
     (while (not (= (length status) 0))
       (setq mod-proj (cons (car (pop status)) mod-proj)))
-     (projectile-completing-read "Select project: " mod-proj
-                                 :action 'projectile-vc)))
+    (projectile-completing-read "Select project: " mod-proj
+                                :action 'projectile-vc)))
 
 (defun projectile-files-via-ext-command (command)
   "Get a list of relative file names in the project root by executing COMMAND."

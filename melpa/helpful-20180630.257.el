@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180629.1446
+;; Package-Version: 20180630.257
 ;; Keywords: help, lisp
 ;; Version: 0.12
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -717,6 +717,8 @@ vector suitable for `key-description', and COMMAND is a smbol."
    ;; we can call.
    ((symbolp keymap)
     `(([] ,keymap)))
+   ((stringp (car keymap))
+    (helpful--keymap-keys (cdr keymap)))
    ;; Otherwise, recurse on the keys at this level of the keymap.
    (t
     (let (result)

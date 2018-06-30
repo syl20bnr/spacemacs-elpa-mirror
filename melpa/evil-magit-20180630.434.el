@@ -4,7 +4,7 @@
 
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Package-Requires: ((evil "1.2.3") (magit "2.6.0"))
-;; Package-Version: 20180608.1235
+;; Package-Version: 20180630.434
 ;; Homepage: https://github.com/justbur/evil-magit
 ;; Version: 0.4.1
 
@@ -524,6 +524,8 @@ evil-magit affects.")
 
 (defvar evil-magit-popup-changes
   (append
+   (when evil-magit-use-z-for-folds
+     '((magit-dispatch-popup :actions "z" "Z" magit-stash)))
    (when evil-magit-want-horizontal-movement
      '((magit-dispatch-popup :actions "L" "\C-l" magit-log-refresh-popup)
        (magit-dispatch-popup :actions "l" "L" magit-log-popup)))
