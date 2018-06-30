@@ -9,7 +9,7 @@
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Artur Malabarba <bruce.connor.am@gmail.com>
 ;; URL: http://github.com/clojure-emacs/clojure-mode
-;; Package-Version: 20180629.826
+;; Package-Version: 20180629.1500
 ;; Keywords: languages clojure clojurescript lisp
 ;; Version: 5.8.1-snapshot
 ;; Package-Requires: ((emacs "24.4"))
@@ -195,7 +195,7 @@ Out-of-the box `clojure-mode' understands lein, boot, gradle,
           (and (listp value)
                (cl-every 'stringp value))))
 
-(defcustom clojure-project-root-function #'clojure-current-project
+(defcustom clojure-project-root-function #'clojure-project-root-path
   "Function to locate clojure project root directory."
   :type 'function
   :risky t
@@ -556,7 +556,7 @@ replacement for `cljr-expand-let`."
   (add-hook 'electric-indent-functions
             (lambda (_char) (if (clojure-in-docstring-p) 'do-indent)))
   ;; integration with project.el
-  (add-hook 'project-find-functions #'clojure-project-dir))
+  (add-hook 'project-find-functions #'clojure-current-project))
 
 (defcustom clojure-verify-major-mode t
   "If non-nil, warn when activating the wrong `major-mode'."

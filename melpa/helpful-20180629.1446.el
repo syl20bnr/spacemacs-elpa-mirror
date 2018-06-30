@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180627.1406
+;; Package-Version: 20180629.1446
 ;; Keywords: help, lisp
 ;; Version: 0.12
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -63,6 +63,9 @@
 (defvar-local helpful--associated-buffer nil
   "We store a reference to the buffer we were called from, so we can
 show the value of buffer-local variables.")
+(defvar-local helpful--view-literal t
+  "Whether to show a value as a literal, or a pretty interactive
+view.")
 
 (defgroup helpful nil
   "A rich help system with contextual information."
@@ -523,6 +526,16 @@ or disable if already enabled."
       (eval-expression expr))
     (helpful-update)))
 
+(define-button-type 'helpful-view-literal-button
+  'action #'helpful--view-literal
+  'help-echo "Toggle viewing as a literal")
+
+(defun helpful--view-literal (_button)
+  "Set the value of this symbol."
+  (setq helpful--view-literal
+        (not helpful--view-literal))
+  (helpful-update))
+
 (define-button-type 'helpful-all-references-button
   'action #'helpful--all-references
   'symbol nil
@@ -743,6 +756,21 @@ vector suitable for `key-description', and COMMAND is a smbol."
              result))
       ;; Preserve the original order of the keymap.
       (nreverse result)))))
+
+(defun helpful--format-hook (hook-val)
+  "Given a list value assigned to a hook, format it with links to functions."
+  (let ((lines
+         (--map
+          (if (and (symbolp it) (fboundp it))
+              (helpful--button
+               (symbol-name it)
+               'helpful-describe-exactly-button
+               'symbol it
+               'callable-p t)
+            (helpful--syntax-highlight (helpful--pretty-print it)))
+          hook-val)))
+    (format "(%s)"
+            (s-join "\n " lines))))
 
 ;; TODO: unlike `substitute-command-keys', this shows keybindings
 ;; which are currently shadowed (e.g. a global minor mode map).
@@ -1366,6 +1394,14 @@ POSITION-HEADS takes the form ((123 (defun foo)) (456 (defun bar)))."
    'symbol sym
    'buffer buffer))
 
+(defun helpful--make-toggle-literal-button ()
+  "Make set button for SYM in BUFFER."
+  (helpful--button
+   (if helpful--view-literal
+       "Pretty view"
+     "View as literal")
+   'helpful-view-literal-button))
+
 (defun helpful--make-customize-button (sym)
   "Make customize button for SYM."
   (helpful--button
@@ -1558,13 +1594,36 @@ state of the current symbol."
 
     (when (not helpful--callable-p)
       (helpful--insert-section-break)
-      (let ((sym helpful--sym)
-            (buf (or helpful--associated-buffer (current-buffer))))
+      (let* ((sym helpful--sym)
+             (buf (or helpful--associated-buffer (current-buffer)))
+             (val (helpful--sym-value sym buf))
+             (multiple-views-p
+              (or (stringp val)
+                  (keymapp val)
+                  (and (s-ends-with-p "-hook" (symbol-name sym))
+                       (consp val)))))
         (insert
          (helpful--heading "Value")
-         (helpful--pretty-print
-          (helpful--sym-value sym buf))
+         (cond
+          (helpful--view-literal
+           (helpful--pretty-print val))
+          ;; Allow strings to be viewed with properties rendered in
+          ;; Emacs, rather than as a literal.
+          ((stringp val)
+           val)
+          ;; Allow keymaps to be viewed with keybindings shown and
+          ;; links to the commands bound.
+          ((keymapp val)
+           (helpful--format-keymap val))
+          ((and (s-ends-with-p "-hook" (symbol-name sym))
+                (consp val))
+           (helpful--format-hook val))
+          (t
+           (error "don't know how to format value of type %s"
+                  (type-of val))))
          "\n\n")
+        (when multiple-views-p
+          (insert (helpful--make-toggle-literal-button) " "))
         (when (memq (helpful--sym-value helpful--sym buf) '(nil t))
           (insert (helpful--make-toggle-button helpful--sym buf) " "))
         (insert (helpful--make-set-button helpful--sym buf))
