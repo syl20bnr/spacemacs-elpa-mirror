@@ -2,10 +2,10 @@
 
 ;; Author: Derek Feichtinger <dfeich@gmail.com>
 ;; Keywords: convenience
-;; Package-Version: 20180627.1344
+;; Package-Version: 20180630.1326
 ;; Package-Requires: ((cl-lib "0.5") (seq "2.3") (emacs "24.4"))
 ;; Homepage: https://github.com/dfeich/org-listcruncher
-;; Version: 0.2
+;; Version: 1.0
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -62,7 +62,10 @@
 ;;   | item C                              |       |     25 |          3 |     2024 |
 ;;   | item Y modified by operations       |       |  150.0 |          4 |     2026 |
 ;;   | item Z entered in scientific format |       |  900.0 |          3 |     2025 |
-;; 
+;;
+;;  The parsing and consolidation functions for producing the table can be modified by
+;;  the user.  Please refer to the README and to the documentation strings of the
+;;  functions.
 ;;; Code:
 (require 'org)
 (require 'cl-lib)
@@ -80,8 +83,9 @@ return a list (OUTP, DESCR, VARLST), where OUTP is a boolean
 indicating whether this list item will become a table row, DESCR
 is its description string appearing in the table, VARLST is the
 list of key/value pairs corresponding to the column name /
-values.  Refer to the default function
-`org-listcruncher-parseitem-default'."
+values.  Simple example functions for this purpose can be generated
+using the `org-listcruncher-mk-parseitem-default' generator
+function."
   :group 'org-listcruncher
   :type 'function)
 
@@ -96,23 +100,44 @@ function `org-listcruncher-consolidate-default'."
   :group 'org-listcruncher
   :type 'function )
 
-(defun org-listcruncher-mk-parseitem-default (tag)
+;; TODO: make parentheses definitions a parameter
+(cl-defun org-listcruncher-mk-parseitem-default (&key (tag "\\*?item:\\*?")
+						      (bra "(")
+						      (ket ")"))
   "List item default parsing function generator for org-listcruncher.
 
-Returns a parsing function taking a list item line as an
-argument.  Outputting of a line is triggered by having the TAG at
-the start of the line.  The description is a string terminated by
-a colon or an opening parenthesis.  The key value pairs are given
-after the description in a format of (key1: val1, key2: val2,
-...).  Further words between the description and the key/value
-definition are ignored."
+This generator can be used to produce a family of parsing
+functions with similar structure. It returns a parsing function
+that will take a list item line as its only argument.
+
+The generated parsing functions all share the following features.
+1. Whether a list item will become a table row is defined by a matching
+   TAG at the beginning of the list item. Default is \"item:\" and allowing
+   for org bold markers.
+2. The row's description is defined by the string following the TAG up to
+   the full stop or the opening parenthesis used for beginning the key/value
+   pairs.
+3. The key/value pairs are separated by commas, and a key is separated from
+   its value by a colon key1: val1, key2: val2. The default brackets are
+   \"(\" and \")\".
+
+The resulting function can be modified by the following keyword arguments:
+- :tag REGEXP defines the TAG used for identifying whether a line will become
+  a table row.
+- The :bra and :ket keywords can be used to define strings defining the opening
+  and closing parentheses to be used for enclosing the key/value pairs
+  The given strings will get regexp quoted."
   (lambda (line)
     (let (outp descr varstr varlst)
       ;; TODO: I should make the expression for the key:val list more restrictive
       (if (string-match
 	   (concat
-	    "^ *\\(" tag
-	    "\\)? *\\([^(.]*\\)[^(]*\\\((\\\(\\\(\\\([^:,)]+\\\):\\\([^,)]+\\\),?\\\)+\\\))\\\)?")
+	    "^ *\\(" tag "\\)?" ;; tag
+	    " *\\([^" bra ".]*\\)" ;; description
+	    "[^" bra "]*" ;; ignore everything until a bracket expression begins
+	    ;; key/val pairs
+	    "\\\(" (regexp-quote  bra) "\\\(\\\(\\\([^:,)]+\\\):\\\([^,)]+\\\),?\\\)+\\\)"
+	    (regexp-quote  ket) "\\\)?")
 	   line)
 	  (progn
 	    (setq outp (if (match-string 1 line) t nil)
@@ -132,7 +157,7 @@ definition are ignored."
   "List item default parsing function for org-listcruncher.
 
 Parses the given list item LINE."
-  (funcall (org-listcruncher-mk-parseitem-default "\\*?item:\\*?") line))
+  (funcall (org-listcruncher-mk-parseitem-default) line))
 
 (defun org-listcruncher--sparse-to-table (sparselst &optional order)
   "Return list of all unique keys of the list of alists in SPARSELST.
@@ -168,13 +193,17 @@ original order."
 
 
 ;;;###autoload
-(defun org-listcruncher-to-table (listname &optional order)
+(cl-defun org-listcruncher-to-table (listname
+				     &key (parsefn org-listcruncher-parse-fn)
+				     (order nil))
   "Return a table structure based on parsing the Org list with name LISTNAME.
 
-If a list is provided in the ORDER argument, the table columns
-will be ordered according to this list.  The list may contain only
-a subset of the items.  The remaining columns will be added in the
-original order."
+Optional keyword arguments: The user may use the :parsefn
+FUNCTION argument to define another parsing function for the list
+items.  The :order keyword takes a list containing column names as
+its argument for defining the output table's desired columns
+order. The list may contain only a subset of the items.  The
+remaining columns will be added in the original order."
   (let ((lst
 	 (save-excursion
 	   (goto-char (point-min))
@@ -183,17 +212,19 @@ original order."
 	   (forward-line 1)
 	   (org-list-to-lisp))))
     (org-listcruncher--sparse-to-table
-     (cadr (org-listcruncher--parselist lst nil nil))
+     (cadr (org-listcruncher--parselist lst parsefn nil nil))
      order)))
 
-(defun org-listcruncher--parselist (lst inheritvars resultlst)
+(defun org-listcruncher--parselist (lst parsefn inheritvars resultlst)
   "Parse an org list into a table structure.
 
-LST is a list as produced from `org-list-to-lisp'.  INHERITVARS is
-an association list of (varname value) pairs that constitute the
+LST is a list as produced from `org-list-to-lisp'.  PARSEFN is the
+parsing function for the list items.  INHERITVARS is an
+association list of (varname value) pairs that constitute the
 inherited variable values from the parent.  RESULTLST contains the
-current result structure in form of a list of association lists.  Each
-contained association list corresponds to a later table row."
+current result structure in form of a list of association
+lists.  Each contained association list corresponds to a later
+table row."
   (let ((ltype (car lst))
 	(itemstructs (cdr lst))
 	retvarlst)
@@ -204,7 +235,7 @@ contained association list corresponds to a later table row."
 			    (sublist (cadr struct))
 			    itemvarlst subtreevarlst outvarlst)
 			;; parse this item
-			(let* ((prsitem (apply org-listcruncher-parse-fn `(,itemtext)))
+			(let* ((prsitem (apply parsefn `(,itemtext)))
 			       (outp (car prsitem))
 			       (descr (nth 1 prsitem))
 			       (itemvarlst (nth 2 prsitem)))
@@ -212,6 +243,7 @@ contained association list corresponds to a later table row."
 			  ;; if item has a sublist, recurse with this sublist and get varlst of this tree
 			  (when sublist
 			    (let ((parseresult (org-listcruncher--parselist sublist
+									    parsefn
 									    (append itemvarlst inheritvars)
 									    resultlst)))
 			      (setq subtreevarlst (car parseresult))
@@ -266,14 +298,14 @@ argument set to \"key\" it will return 60."
 
 
 ;;;###autoload
-(defun org-listcruncher-get-field (listname row col)
+(cl-defun org-listcruncher-get-field (listname row col &key (parsefn org-listcruncher-parse-fn))
   "Return field defined by ROW,COL from the table derived from LISTNAME.
 
 The given list with LISTNAME is parsed by listcruncher to obtain a table.
 The field is defined by the two strings for ROW and COL, where the ROW string
 corresponds to the contents of the item's \"description\" column and the COL
 string corresponds to the column's name."
-  (let* ((tbl (org-listcruncher-to-table listname))
+  (let* ((tbl (org-listcruncher-to-table listname :parsefn parsefn))
 	 (colnames (car tbl))
 	 (colidx (cl-position col colnames :test #'equal)))
     (nth colidx (assoc row tbl))))

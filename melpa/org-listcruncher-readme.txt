@@ -38,3 +38,7 @@ Example:
   | item C                              |       |     25 |          3 |     2024 |
   | item Y modified by operations       |       |  150.0 |          4 |     2026 |
   | item Z entered in scientific format |       |  900.0 |          3 |     2025 |
+
+ The parsing and consolidation functions for producing the table can be modified by
+ the user.  Please refer to the README and to the documentation strings of the
+ functions.

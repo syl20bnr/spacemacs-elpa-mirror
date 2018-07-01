@@ -611,6 +611,13 @@
 	     "Major mode for editing JSON files" single
 	     ((:url . "http://elpa.gnu.org/packages/json-mode.html")
 	      (:keywords "data"))])
+ (jsonrpc .
+	  [(1 0 0)
+	   ((emacs
+	     (26 1)))
+	   "JSON-RPC library" single
+	   ((:url . "http://elpa.gnu.org/packages/jsonrpc.html")
+	    (:keywords "processes" "languages" "extensions"))])
  (jumpc .
 	[(3 0)
 	 nil "jump to previous insertion points" single
