@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20180622.343
+;; Package-Version: 20180701.534
 ;; Package-Requires: ((emacs "24.4") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -131,8 +131,7 @@ background of 'evil-goggles-default-face, then 'region."
 
 (defun evil-goggles--show-p (beg end)
   "Return t if the overlay should be displayed in region BEG to END."
-  (and (not evil-inhibit-operator-value)
-       (bound-and-true-p evil-mode)
+  (and (bound-and-true-p evil-mode)
        (numberp beg)
        (numberp end)
        ;; don't show overlay if the region is a single char on a single line
@@ -323,13 +322,17 @@ which take BEG and END as their first and second arguments."
 (defvar evil-goggles--async-ov nil)
 
 (defun evil-goggles--vanish (&rest _)
-  "Remove the async overlay and cancel the timer."
-  (when (timerp evil-goggles--timer)
-    (cancel-timer evil-goggles--timer)
-    (setq evil-goggles--timer nil))
-  (when evil-goggles--async-ov
-    (delete-overlay evil-goggles--async-ov)
-    (setq evil-goggles--async-ov nil)))
+  "Remove the async overlay, cancel the timer, unregister from ‘pre-command-hook’."
+  ;; user's C-g during this function execution should not result in
+  ;; this function getting removed from pre-command-hook/run-at-time
+  (with-local-quit
+    (when (overlayp evil-goggles--async-ov)
+      (delete-overlay evil-goggles--async-ov)
+      (setq evil-goggles--async-ov nil)
+    (when (timerp evil-goggles--timer)
+      (cancel-timer evil-goggles--timer)
+      (setq evil-goggles--timer nil)
+    (remove-hook 'pre-command-hook 'evil-goggles--vanish)))))
 
 (defun evil-goggles--show-async-hint (beg end)
   "Show blocking hint from BEG to END."
@@ -339,6 +342,8 @@ which take BEG and END as their first and second arguments."
     (unwind-protect
         ;; show the overlay
         (evil-goggles--show-or-pulse-overlay ov face dur)
+      ;; any command by the user should prematurely cleanup the overlay
+      (add-hook 'pre-command-hook #'evil-goggles--vanish)
       ;; remove the overlay with a timer
       (setq
        evil-goggles--async-ov ov
@@ -534,6 +539,7 @@ Argument YANK-HANDLER is the yank hanler."
     (evil-delete-line           :face evil-goggles-delete-face                :switch evil-goggles-enable-delete                :advice evil-goggles--delete-line-advice)
     (evil-org-delete            :face evil-goggles-delete-face                :switch evil-goggles-enable-delete                :advice evil-goggles--delete-line-advice)
     (evil-yank                  :face evil-goggles-yank-face                  :switch evil-goggles-enable-yank                  :advice evil-goggles--generic-async-advice)
+    (evil-yank-line             :face evil-goggles-yank-face                  :switch evil-goggles-enable-yank                  :advice evil-goggles--generic-async-advice)
     (evil-change                :face evil-goggles-change-face                :switch evil-goggles-enable-change                :advice evil-goggles--generic-blocking-advice)
     (evil-change-line           :face evil-goggles-change-face                :switch evil-goggles-enable-change                :advice evil-goggles--generic-blocking-advice)
     (evil-change-whole-line     :face evil-goggles-change-face                :switch evil-goggles-enable-change                :advice evil-goggles--generic-blocking-advice)
@@ -576,7 +582,6 @@ Argument YANK-HANDLER is the yank hanler."
   :require 'evil-goggles
   (if evil-goggles-mode
       (progn
-        (add-hook 'pre-command-hook #'evil-goggles--vanish)
         ;; add advice
         (dolist (command-cfg evil-goggles--commands)
           (let ((cmd (car command-cfg))
@@ -586,7 +591,6 @@ Argument YANK-HANDLER is the yank hanler."
             (when (symbol-value switch)
               (advice-add cmd (if after :after :before) advice)))))
     ;; remove advice
-    (remove-hook   'pre-command-hook        'evil-goggles--vanish)
     (dolist (command-cfg evil-goggles--commands)
       (let ((cmd (car command-cfg))
              (advice (plist-get (cdr command-cfg) :advice)))
