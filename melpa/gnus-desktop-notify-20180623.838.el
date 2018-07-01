@@ -4,7 +4,7 @@
 ;; Contributors: Philipp Haselwarter <philipp.haselwarter AT gmx.de>
 ;;               Basil L. Contovounesios <contovob AT tcd.ie>
 ;; Version: 1.4
-;; Package-Version: 20171007.1235
+;; Package-Version: 20180623.838
 ;; URL: http://www.thregr.org/~wavexx/software/gnus-desktop-notify.el/
 ;; GIT: git://src.thregr.org/gnus-desktop-notify.el/
 ;; Package-Requires: ((gnus "1.0"))
@@ -206,7 +206,7 @@ the notification of new messages (depending on the value of
 (defun gnus-desktop-notify--read-count (group)
   "Return read count for gnus GROUP."
   (let* ((range (gnus-range-normalize (gnus-info-read group)))
-         (count (gnus-last-element range)))
+         (count (car (last range))))
     (or (cdr-safe count) count)))
 
 (defun gnus-desktop-notify--short-group-name (group)
