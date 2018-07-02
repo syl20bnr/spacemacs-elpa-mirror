@@ -4,7 +4,7 @@
 
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Package-Requires: ((evil "1.2.3") (magit "2.6.0"))
-;; Package-Version: 20180701.806
+;; Package-Version: 20180702.853
 ;; Homepage: https://github.com/justbur/evil-magit
 ;; Version: 0.4.1
 
@@ -578,8 +578,7 @@ go back to evil-magit behavior."
   (interactive)
   (evil-magit-adjust-section-bindings)
   (evil-magit-adjust-popups)
-  (evil-magit-set-initial-states)
-  (message "evil-magit initialized"))
+  (evil-magit-set-initial-states))
 (evil-magit-init)
 
 ;;;###autoload
