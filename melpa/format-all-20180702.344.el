@@ -2,7 +2,7 @@
 ;;
 ;; Author: Lassi Kortela <lassi@lassi.io>
 ;; URL: https://github.com/lassik/emacs-format-all-the-code
-;; Package-Version: 20180627.1128
+;; Package-Version: 20180702.344
 ;; Version: 0.1.0
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; Keywords: languages util
@@ -43,20 +43,37 @@
 ;; If `format-all-buffer` can't find the right program, it will try to
 ;; tell you how to install it.
 ;;
-;; There is currently no before-save hook and no customize variables
-;; either, since it's not clear what approach should be taken.  Please
-;; see https://github.com/lassik/emacs-format-all-the-code/issues for
+;; A local minor mode called `format-all-mode` is available.  Please
+;; see the documentation for that function for instructions.
+;;
+;; There are currently no customize variables, since it's not clear
+;; what approach should be taken.  Please see
+;; https://github.com/lassik/emacs-format-all-the-code/issues for
 ;; discussion.
 ;;
 ;; Many of the external formatters support configuration files in the
-;; source code directory to control their formatting. Please see the
+;; source code directory to control their formatting.  Please see the
 ;; documentation for each formatter.
 ;;
 ;; New external formatters can be added easily if they can read code
-;; from standard input and format it to standard output. Feel free to
+;; from standard input and format it to standard output.  Feel free to
 ;; submit a pull request or ask for help in GitHub issues.
 ;;
 ;;; Code:
+
+(defconst format-all-system-type
+  (cl-case system-type
+    (windows-nt 'windows)
+    (cygwin     'windows)
+    (darwin     'macos)
+    (gnu/linux  'linux)
+    (berkeley-unix
+     (save-match-data
+       (let ((case-fold-search t))
+         (cond ((string-match "freebsd" system-configuration) 'freebsd)
+               ((string-match "openbsd" system-configuration) 'openbsd)
+               ((string-match "netbsd"  system-configuration) 'netbsd))))))
+  "Current operating system according to the format-all package.")
 
 (defun format-all-fix-trailing-whitespace ()
   "Fix trailing whitespace since some formatters don't do that."
@@ -73,7 +90,7 @@
       (insert "\n"))))
 
 (defun format-all-remove-ansi-color (string)
-  "Internal helper function to remove terminal color codes from a string."
+  "Internal helper function to remove terminal color codes from STRING."
   (save-match-data (replace-regexp-in-string "\x1b\\[[0-9]+m" "" string t)))
 
 (defun format-all-buffer-thunk (thunk)
@@ -292,17 +309,17 @@ EXECUTABLE is the full path to the formatter."
      (:modes python-mode))
     (clang-format
      (:executable "clang-format")
-     (:install (darwin "brew install clang-format"))
+     (:install (macos "brew install clang-format"))
      (:function format-all-buffer-clang-format)
      (:modes c-mode c++-mode objc-mode))
     (dfmt
      (:executable "dfmt")
-     (:install (darwin "brew install dfmt"))
+     (:install (macos "brew install dfmt"))
      (:function format-all-buffer-dfmt)
      (:modes d-mode))
     (elm-format
      (:executable "elm-format")
-     (:install (darwin "brew install elm"))
+     (:install (macos "brew install elm"))
      (:function format-all-buffer-elm-format)
      (:modes elm-mode))
     (emacs-lisp
@@ -312,7 +329,7 @@ EXECUTABLE is the full path to the formatter."
      (:modes emacs-lisp-mode lisp-interaction-mode))
     (gofmt
      (:executable "gofmt")
-     (:install (darwin "brew install go"))
+     (:install (macos "brew install go"))
      (:function format-all-buffer-gofmt)
      (:modes go-mode))
     (hindent
@@ -327,7 +344,7 @@ EXECUTABLE is the full path to the formatter."
      (:modes kotlin-mode))
     (mix-format
      (:executable "mix")
-     (:install (darwin "brew install elixir"))
+     (:install (macos "brew install elixir"))
      (:function format-all-buffer-mix-format)
      (:modes elixir-mode))
     (ocp-indent
@@ -360,7 +377,7 @@ EXECUTABLE is the full path to the formatter."
      (:modes rust-mode))
     (shfmt
      (:executable "shfmt")
-     (:install (darwin "brew install shfmt"))
+     (:install (macos "brew install shfmt"))
      (:function format-all-buffer-shfmt)
      (:modes sh-mode))
     (standard
@@ -370,7 +387,7 @@ EXECUTABLE is the full path to the formatter."
      (:modes js-mode js2-mode))
     (swiftformat
      (:executable "swiftformat")
-     (:install (darwin "brew install swiftformat"))
+     (:install (macos "brew install swiftformat"))
      (:function format-all-buffer-swiftformat)
      (:modes swift-mode swift3-mode)))
   "Table of source code formatters supported by format-all.")
@@ -385,10 +402,10 @@ EXECUTABLE is the full path to the formatter."
   "Internal helper function to get PROPERTY of FORMATTER."
   (cl-dolist (choice (format-all-property-list property formatter)
                      (error "Property %S missing for formatter %S system %S"
-                            property formatter system-type))
+                            property formatter format-all-system-type))
     (cond ((atom choice)
            (cl-return choice))
-          ((eql system-type (car choice))
+          ((eql format-all-system-type (car choice))
            (cl-return (cadr choice))))))
 
 (defun format-all-please-install (executable formatter)
@@ -456,6 +473,42 @@ changes to the code, point is placed at the first change."
         (when errput
           (insert errput)
           (display-buffer (current-buffer)))))))
+
+;;;###autoload
+(define-minor-mode format-all-mode
+  "Toggle automatic source code formatting before save.
+
+When the Format-All minor mode is enabled, `format-all-buffer' is
+automatically called each time before you save the buffer.
+
+When called from Lisp, the mode is toggled if ARG is ‘toggle’,
+disabled if ARG is a negative integer or zero, and enabled
+otherwise.
+
+The mode is buffer-local and needs to be enabled separately each
+time a file is visited or a temporary buffer is created.
+
+You may want to use `add-hook' to add a function to your personal
+`after-change-major-mode-hook' in your `user-init-file' to enable
+the mode based on the buffer's `major-mode' and some
+`buffer-file-name' patterns. For example:
+
+    (defun my-after-change-major-mode ()
+      (format-all-mode
+       (if (and (buffer-file-name)
+                (save-match-data
+                  (let ((dir (file-name-directory (buffer-file-name))))
+                    (or (string-match \"foo\" dir)
+                        (string-match \"bar\" dir))))
+                (member major-mode '(js-mode python-mode)))
+           1 0)))
+
+    (add-hook 'after-change-major-mode-hook 'my-after-change-major-mode)"
+  :lighter " Format-All"
+  :global nil
+  (if format-all-mode
+      (add-hook 'before-save-hook 'format-all-buffer nil 'local)
+    (remove-hook 'before-save-hook 'format-all-buffer 'local)))
 
 (provide 'format-all)
 

@@ -29,15 +29,18 @@ You will need to install external programs to do the formatting.
 If `format-all-buffer` can't find the right program, it will try to
 tell you how to install it.
 
-There is currently no before-save hook and no customize variables
-either, since it's not clear what approach should be taken.  Please
-see https://github.com/lassik/emacs-format-all-the-code/issues for
+A local minor mode called `format-all-mode` is available.  Please
+see the documentation for that function for instructions.
+
+There are currently no customize variables, since it's not clear
+what approach should be taken.  Please see
+https://github.com/lassik/emacs-format-all-the-code/issues for
 discussion.
 
 Many of the external formatters support configuration files in the
-source code directory to control their formatting. Please see the
+source code directory to control their formatting.  Please see the
 documentation for each formatter.
 
 New external formatters can be added easily if they can read code
-from standard input and format it to standard output. Feel free to
+from standard input and format it to standard output.  Feel free to
 submit a pull request or ask for help in GitHub issues.

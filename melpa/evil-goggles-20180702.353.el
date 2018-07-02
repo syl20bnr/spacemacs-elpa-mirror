@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-goggles
-;; Package-Version: 20180701.534
+;; Package-Version: 20180702.353
 ;; Package-Requires: ((emacs "24.4") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim, visual
@@ -131,7 +131,8 @@ background of 'evil-goggles-default-face, then 'region."
 
 (defun evil-goggles--show-p (beg end)
   "Return t if the overlay should be displayed in region BEG to END."
-  (and (bound-and-true-p evil-mode)
+  (and (not evil-inhibit-operator-value)
+       (bound-and-true-p evil-mode)
        (numberp beg)
        (numberp end)
        ;; don't show overlay if the region is a single char on a single line
@@ -328,14 +329,14 @@ which take BEG and END as their first and second arguments."
   (with-local-quit
     (when (overlayp evil-goggles--async-ov)
       (delete-overlay evil-goggles--async-ov)
-      (setq evil-goggles--async-ov nil)
+      (setq evil-goggles--async-ov nil))
     (when (timerp evil-goggles--timer)
       (cancel-timer evil-goggles--timer)
-      (setq evil-goggles--timer nil)
-    (remove-hook 'pre-command-hook 'evil-goggles--vanish)))))
+      (setq evil-goggles--timer nil))
+    (remove-hook 'pre-command-hook 'evil-goggles--vanish)))
 
 (defun evil-goggles--show-async-hint (beg end)
-  "Show blocking hint from BEG to END."
+  "Show asynchronous hint from BEG to END."
   (let ((ov (evil-goggles--make-overlay beg end 'insert-behind-hooks '(evil-goggles--overlay-insert-behind-hook)))
         (dur (or evil-goggles-async-duration evil-goggles-duration))
         (face (evil-goggles--get-face this-command)))
