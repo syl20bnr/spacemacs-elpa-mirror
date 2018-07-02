@@ -6,7 +6,7 @@
 ;; Authors: Julien Danjou <julien@danjou.info>
 ;;          Eric Kaschalk <ekaschalk@gmail.com>
 ;; URL: http://github.com/hylang/hy-mode
-;; Package-Version: 20180625.1235
+;; Package-Version: 20180702.1240
 ;; Version: 1.0
 ;; Keywords: languages, lisp, python
 ;; Package-Requires: ((dash "2.13.0") (dash-functional "1.2.0") (s "1.11.0") (emacs "24"))
@@ -546,7 +546,8 @@ will indent special. Exact forms require the symbol and def exactly match.")
 
 (defun hy--check-non-symbol-sexp (pos)
   "Check for a non-symbol yet symbol-like (tuple constructor comma) at POS."
-  (member (char-after pos) '(?\, ?\|)))
+  (and (member (char-after pos) '(?\, ?\|))
+       (char-equal (char-after (1+ pos)) ?\s)))
 
 ;;;; Normal Indent
 

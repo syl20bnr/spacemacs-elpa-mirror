@@ -5,7 +5,7 @@
 ;; Author: Radon Rosborough <radon.neon@gmail.com>
 ;; Homepage: https://github.com/raxod502/prescient.el
 ;; Keywords: extensions
-;; Package-Version: 20180626.1050
+;; Package-Version: 20180702.1140
 ;; Created: 7 Aug 2017
 ;; Package-Requires: ((emacs "25.1") (prescient "2.0") (ivy "0.10.0"))
 ;; Version: 2.0
@@ -55,6 +55,24 @@ This allows you to enable sorting for commands which call
   :group 'prescient
   :type '(list symbol))
 
+(defcustom ivy-prescient-retain-classic-highlighting nil
+  "Whether to emulate the way Ivy highlights candidates as closely as possible.
+With the default value, nil, the entire match is highlighted with
+`ivy-minibuffer-match-face-1' while initials in an initialism are
+highlighted with `ivy-minibuffer-match-face-2' through
+`ivy-minibuffer-match-face-4'. With a non-nil value, substring
+matches are also highlighted using `ivy-minibuffer-match-face-2'
+through `ivy-minibuffer-match-face-4', meaning that the only use
+of `ivy-minibuffer-match-face-1' is in between the initials of an
+initialism.
+
+Note that a non-nil value for this variable emulates the
+highlighting behavior of `ivy--regex-ignore-order', not the
+default `ivy--regex-plus', since `ivy-prescient' allows
+out-of-order matching."
+  :group 'prescient
+  :type 'boolean)
+
 ;;;; Minor mode
 
 (defun ivy-prescient-re-builder (query)
@@ -66,7 +84,11 @@ This is for use in `ivy-re-builders-alist'."
     (lambda (regexp)
       (setq ivy--subexps (max ivy--subexps (regexp-opt-depth regexp)))
       (cons regexp t))
-    (prescient-filter-regexps query 'with-groups))
+    (prescient-filter-regexps
+     query
+     (if ivy-prescient-retain-classic-highlighting
+         'all
+       'with-groups)))
    ;; For some reason, Ivy doesn't seem to like to be given an empty
    ;; list of regexps. Instead, it wants an empty string.
    ""))

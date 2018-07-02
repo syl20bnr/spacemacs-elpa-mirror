@@ -2,7 +2,7 @@
 
 ;; Author: Maxim Kim <habamax@gmail.com>
 ;; Url: https://github.com/habamax/habamax-theme
-;; Package-Version: 20180605.1051
+;; Package-Version: 20180702.958
 ;; Package-Requires: ((emacs "24"))
 
 ;;; Commentary:
@@ -131,14 +131,14 @@
    '(diredfl-dir-heading ((t (:inherit dired-header))))
    '(diredfl-file-name ((t (:inherit default))))
    '(diredfl-ignored-file-name ((t (:inherit default))))
-   '(diredfl-file-suffix ((t (:foreground "#305090"))))
-   '(diredfl-compressed-file-suffix ((t (:foreground "#0000FF"))))
-   `(diredfl-date-time ((t (:foreground ,color-keyword-dim))))
-   `(diredfl-number ((t (:foreground ,color-keyword-dim))))
+   '(diredfl-file-suffix ((t (:inherit default))))
+   '(diredfl-compressed-file-suffix ((t (:inherit default))))
+   '(diredfl-date-time ((t (:inherit default))))
+   '(diredfl-number ((t (:inherit default))))
    '(diredfl-dir-priv ((t (:inherit default :weight bold))))
-   '(diredfl-read-priv ((t (:background "#DDFFDD" :foreground "#005000"))))
-   '(diredfl-write-priv ((t (:background "#EDEDFF" :foreground "#0000AA"))))
-   '(diredfl-exec-priv ((t (:background "#FFEDFFp" :foreground "#AA00AA"))))
+   '(diredfl-read-priv ((t (:inherit default))))
+   '(diredfl-write-priv ((t (:inherit default))))
+   '(diredfl-exec-priv ((t (:inherit default))))
    '(diredfl-no-priv ((t (:inherit default))))
    '(diredfl-flag-mark-line ((t (:background "#FFE0E0"))))
 
