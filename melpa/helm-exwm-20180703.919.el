@@ -4,7 +4,7 @@
 
 ;; Author: Pierre Neidhardt <ambrevar@gmail.com>
 ;; URL: https://github.com/emacs-helm/helm-exwm
-;; Package-Version: 20180522.2337
+;; Package-Version: 20180703.919
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.2") (helm "2.8.5") (exwm "0.15"))
 ;; Keywords: helm, exwm
@@ -49,6 +49,12 @@
 
 ;;; Code:
 (require 'helm)
+(require 'exwm)
+(require 'helm-buffers)
+(require 'seq)
+
+;; Silence compiler.
+(defvar browse-url-generic-program)
 
 (defvar helm-exwm-buffer-max-length 51
   "Max length of EXWM buffer names before truncating.
@@ -164,7 +170,7 @@ Example: List all EXWM buffers but those running XTerm or the URL browser.
 
   (helm-exwm (function
               (lambda ()
-                (pcase (downcase (or exwm-class-name ""))
+                (pcase (downcase (or exwm-class-name \"\"))
                   (\"XTerm\" nil)
                   ((file-name-nondirectory browse-url-generic-program) nil)
                   (_ t)))))"
@@ -210,6 +216,7 @@ With prefix argument or if OTHER-WINDOW is non-nil, open in other window."
 
 See `helm-exwm-switch'."
   (interactive)
+  (require 'browse-url)
   (helm-exwm-switch (file-name-nondirectory browse-url-generic-program) browse-url-generic-program))
 
 ;;;###autoload
@@ -218,6 +225,7 @@ See `helm-exwm-switch'."
 
 See `helm-exwm-switch'."
   (interactive)
+  (require 'browse-url)
   (helm-exwm-switch (file-name-nondirectory browse-url-generic-program) browse-url-generic-program t))
 
 (provide 'helm-exwm)

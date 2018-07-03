@@ -4,7 +4,7 @@
 
 ;; Author: Justin Talbott <justin@waymondo.com>
 ;; Keywords: convenience, tools, extensions
-;; Package-Version: 20180625.1212
+;; Package-Version: 20180703.1258
 ;; URL: https://github.com/waymondo/use-package-chords
 ;; Version: 0.2
 ;; Package-Requires: ((use-package "2.1") (bind-key "1.0") (bind-chord "0.2") (key-chord "0.6"))
@@ -38,7 +38,7 @@
    `(,(macroexpand
        `(bind-chords :package ,name ,@arg)))))
 
-(add-to-list 'use-package-keywords :chords t)
+(add-to-list 'use-package-keywords :chords)
 
 (provide 'use-package-chords)
 
