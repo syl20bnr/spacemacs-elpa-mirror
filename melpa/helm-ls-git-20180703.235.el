@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 ~ 2015 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 
 ;; Package-Requires: ((helm "1.7.8"))
-;; Package-Version: 20180628.2107
+;; Package-Version: 20180703.235
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -491,7 +491,7 @@ and launch git-grep from there.
                                       (file-name-directory candidate))
                                      (marked (helm-marked-candidates)))
                                  (vc-call-backend 'Git 'register marked))))
-                         '("Delete file(s)" . helm-delete-marked-files)
+                         '("Delete file(s)" . helm-ff-delete-files)
                          '("Copy bnames to .gitignore"
                            . (lambda (candidate)
                                (let ((default-directory
