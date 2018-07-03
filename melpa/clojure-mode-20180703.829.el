@@ -9,9 +9,9 @@
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Artur Malabarba <bruce.connor.am@gmail.com>
 ;; URL: http://github.com/clojure-emacs/clojure-mode
-;; Package-Version: 5.8.0
+;; Package-Version: 20180703.829
 ;; Keywords: languages clojure clojurescript lisp
-;; Version: 5.8.0
+;; Version: 5.8.1
 ;; Package-Requires: ((emacs "24.4"))
 
 ;; This file is not part of GNU Emacs.
@@ -77,10 +77,10 @@
   "Major mode for editing Clojure code."
   :prefix "clojure-"
   :group 'languages
-  :link '(url-link :tag "Github" "https://github.com/clojure-emacs/clojure-mode")
+  :link '(url-link :tag "GitHub" "https://github.com/clojure-emacs/clojure-mode")
   :link '(emacs-commentary-link :tag "Commentary" "clojure-mode"))
 
-(defconst clojure-mode-version "5.8.0"
+(defconst clojure-mode-version "5.8.1"
   "The current version of `clojure-mode'.")
 
 (defface clojure-keyword-face
@@ -440,11 +440,14 @@ ENDP and DELIM."
               (t)))))
 
 (defconst clojure--collection-tag-regexp "#\\(::[a-zA-Z0-9._-]*\\|:?\\([a-zA-Z0-9._-]+/\\)?[a-zA-Z0-9._-]+\\)"
-    "Allowed strings that can come before a collection literal (e.g. '[]' or '{}'), as reader macro tags.
-This includes #fully.qualified/my-ns[:kw val] and #::my-ns{:kw val} as of Clojure 1.9.")
+    "Collection reader macro tag regexp.
+It is intended to check for allowed strings that can come before a
+collection literal (e.g. '[]' or '{}'), as reader macro tags.
+This includes #fully.qualified/my-ns[:kw val] and #::my-ns{:kw
+val} as of Clojure 1.9.")
 
 (defun clojure-no-space-after-tag (endp delimiter)
-  "Prevent inserting a space after a reader-literal tag?
+  "Prevent inserting a space after a reader-literal tag.
 
 When a reader-literal tag is followed be an opening delimiter
 listed in `clojure-omit-space-between-tag-and-delimiters', this
@@ -553,7 +556,7 @@ replacement for `cljr-expand-let`."
   (add-hook 'electric-indent-functions
             (lambda (_char) (if (clojure-in-docstring-p) 'do-indent)))
   ;; integration with project.el
-  (add-hook 'project-find-functions #'clojure-project-dir))
+  (add-hook 'project-find-functions #'clojure-current-project))
 
 (defcustom clojure-verify-major-mode t
   "If non-nil, warn when activating the wrong `major-mode'."
@@ -1662,6 +1665,16 @@ are cached in a buffer local variable (`clojure-cached-project-dir')."
                (not clojure-cached-project-dir))
       (setq clojure-cached-project-dir project-dir))
     project-dir))
+
+(defun clojure-current-project (&optional dir-name)
+  "Return the current project as a cons cell usable by project.el.
+
+Call is delegated down to `clojure-clojure-dir' with
+optional DIR-NAME as argument."
+  (let ((project-dir (clojure-project-dir dir-name)))
+    (if project-dir
+        (cons 'clojure project-dir)
+      nil)))
 
 (defun clojure-project-root-path (&optional dir-name)
   "Return the absolute path to the project's root directory.
