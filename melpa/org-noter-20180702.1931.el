@@ -5,7 +5,7 @@
 ;; Author: Gonçalo Santos (aka. weirdNox@GitHub)
 ;; Homepage: https://github.com/weirdNox/org-noter
 ;; Keywords: lisp pdf interleave annotate external sync notes documents org-mode
-;; Package-Version: 20180625.1023
+;; Package-Version: 20180702.1931
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.6") (org "9.0"))
 ;; Version: 1.0.2
 
@@ -131,6 +131,14 @@ When nil, it will use the selected frame if it does not belong to any other sess
 
 (defcustom org-noter-notes-search-path '("~/Documents")
   "List of paths to check (non recursively) when searching for a notes file."
+  :group 'org-noter
+  :type 'list)
+
+(defcustom org-noter-arrow-delay 0.2
+  "Number of seconds from when the command was invoked until the tooltip arrow appears.
+
+When set to a negative number, the arrow tooltip is disabled.
+This is needed in order to keep Emacs from hanging when doing many syncs."
   :group 'org-noter
   :type 'list)
 
@@ -663,11 +671,14 @@ If the point isn't inside any heading with location property, return the outer h
          (if (eq mode 'doc-view-mode)
              (doc-view-goto-page (car location-cons))
            (pdf-view-goto-page (car location-cons))
-           ;; NOTE(nox): This timer is needed because the tooltip introduces a delay, so
-           ;; syncing multiple pages was slow
-           (when org-noter--arrow-location (cancel-timer (aref org-noter--arrow-location 0)))
-           (setq org-noter--arrow-location (vector (run-with-idle-timer 0.7 nil 'org-noter--show-arrow)
-                                                   window (cdr location-cons))))
+           ;; NOTE(nox): This timer is needed because the tooltip may introduce a delay,
+           ;; so syncing multiple pages was slow
+           (when (>= org-noter-arrow-delay 0)
+             (when org-noter--arrow-location (cancel-timer (aref org-noter--arrow-location 0)))
+             (setq org-noter--arrow-location
+                   (vector (run-with-idle-timer org-noter-arrow-delay nil 'org-noter--show-arrow)
+                           window
+                           (cdr location-cons)))))
          (image-scroll-up (- (org-noter--conv-page-percentage-scroll (cdr location-cons))
                              (window-vscroll))))
 
@@ -841,9 +852,9 @@ a continuous group of notes."
 (defun org-noter--mode-line-text ()
   (org-noter--with-valid-session
    (let* ((number-of-notes (or (org-noter--session-num-notes-in-view session) 0)))
-     (cond ((= number-of-notes 0) (propertize " 0 notes" 'face 'org-noter-no-notes-exist-face))
-           ((= number-of-notes 1) (propertize " 1 note" 'face 'org-noter-notes-exist-face))
-           (t (propertize (format " %d notes" number-of-notes) 'face 'org-noter-notes-exist-face))))))
+     (cond ((= number-of-notes 0) (propertize " 0 notes " 'face 'org-noter-no-notes-exist-face))
+           ((= number-of-notes 1) (propertize " 1 note " 'face 'org-noter-notes-exist-face))
+           (t (propertize (format " %d notes " number-of-notes) 'face 'org-noter-notes-exist-face))))))
 
 ;; NOTE(nox): From machc/pdf-tools-org
 (defun org-noter--pdf-tools-edges-to-region (edges)
@@ -1499,7 +1510,9 @@ As such, it will only work when the notes window exists."
 
   (let ((mode-line-segment '(:eval (org-noter--mode-line-text))))
     (if org-noter-doc-mode
-        (push mode-line-segment mode-line-format)
+        (if (symbolp (car-safe mode-line-format))
+            (setq mode-line-format (list mode-line-segment mode-line-format))
+          (push mode-line-segment mode-line-format))
       (setq mode-line-format (delete mode-line-segment mode-line-format)))))
 
 (define-minor-mode org-noter-notes-mode

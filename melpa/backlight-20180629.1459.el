@@ -3,8 +3,8 @@
 ;; Copyright (C) 2018 Michael Schuldt
 
 ;; Author: Michael Schuldt <mbschuldt@gmail.com>
-;; Version: 1.2
-;; Package-Version: 20180624.848
+;; Version: 1.3
+;; Package-Version: 20180629.1459
 ;; URL: https://github.com/mschuldt/backlight.el
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: hardware
@@ -23,19 +23,19 @@
 ;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; 
+;;
 ;; A simple utility for setting backlight brightness on some
 ;; GNU/Linux systems using sysfs files.
-;; 
+;;
 ;; This works like most system provided backlight brightness
 ;; controls but allows for increased resolution when the
 ;; brightness percentage nears zero.
-;; 
+;;
 ;; USAGE
-;; 
+;;
 ;;  M-x backlight
 ;;   Then use '<' or '>' to adjust backlight brightness, 'C-g' when done.
-;; 
+;;
 ;;  M-x backlight-set-raw
 ;;   prompts for a value to write directly to the device file.
 
@@ -94,6 +94,11 @@
     (insert-file-contents-literally (backlight--filepath file))
     (string-to-number (buffer-string))))
 
+(defun backlight--read-current-brightness ()
+  "Read the current brightness."
+  (setq backlight--current-brightness
+        (backlight--get "actual_brightness")))
+
 (defun backlight--init ()
   "Find the backlight device file and read initial values."
   (let ((devices (cddr (and (file-exists-p backlight-sys-dir)
@@ -105,15 +110,17 @@
         (message "Error: Unable to find backlight device")
       (setq backlight--device (car devices))
       (setq backlight--max-brightness (backlight--get "max_brightness"))
-      (setq backlight--current-brightness (backlight--get "actual_brightness"))
+      (backlight--read-current-brightness)
       (setq backlight--initialized t)))
   backlight--initialized)
 
-(defun backlight--check ()
-  "Verify initialization."
+(defun backlight--begin ()
+  "Used to begin a backlight interactive command."
+  ;; read brightness again as it may have been changed by another process
+  (backlight--read-current-brightness)
   (unless backlight--initialized
     (unless (backlight--init)
-      (error "backlight initialization failed"))))
+      (error "Backlight initialization failed"))))
 
 (defun backlight--current-percentage ()
   "Calculate the current brightness percentage."
@@ -143,8 +150,8 @@
           backlight-large-inc-amount))))
 
 (defun backlight--adjust (amount)
-  "Adjust the backlight brightness by signed integer AMOUNT"
-  (backlight--check)
+  "Adjust the backlight brightness by signed integer AMOUNT."
+  (backlight--begin)
   (let* (;; detect the case in which we step from one brightness
          ;; region down into another region that has increased
          ;; resolution, such a step must not be done with the
@@ -193,6 +200,7 @@
   "Key map used for interactive minibuffer brightness adjustment.")
 
 (defun backlight--prompt ()
+  "Calculate the backlight prompt string."
   (let ((percent (backlight--current-percentage)))
     (if (< percent 1)
         (format "%%%.2f" percent)
@@ -202,7 +210,7 @@
 (defun backlight ()
   "Interactively adjust the backlight brightness in the minibuffer."
   (interactive)
-  (backlight--check)
+  (backlight--begin)
   (read-from-minibuffer "brightness: "
                         (backlight--prompt)
                         backlight--minibuffer-keymap))
@@ -223,7 +231,7 @@
 (defun backlight-set-raw ()
   "Interactively set the raw backlight brightness value."
   (interactive)
-  (backlight--check)
+  (backlight--begin)
   (let ((new (read-from-minibuffer
               (format "raw brightness (%s max): "
                       backlight--max-brightness)
