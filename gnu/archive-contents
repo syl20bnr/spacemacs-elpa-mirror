@@ -614,7 +614,7 @@
  (jsonrpc .
 	  [(1 0 0)
 	   ((emacs
-	     (26 1)))
+	     (25 1)))
 	   "JSON-RPC library" single
 	   ((:url . "http://elpa.gnu.org/packages/jsonrpc.html")
 	    (:keywords "processes" "languages" "extensions"))])

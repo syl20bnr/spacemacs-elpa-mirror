@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2017, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 10.3.20180701153739
-;; Package-Version: 20180701.1537
+;; Version: 10.4.20180702151750
+;; Package-Version: 20180702.1521
 ;; Created: 10 Sep 2013
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: convenience, emulations, vim, ergoemacs
@@ -55,8 +55,8 @@
 ;; 【f】 (or Dvorak 【u】) activates insertion mode.
 ;; 【Space】 is a leader key. For example, 【SPACE r】 (Dvorak 【SPACE p】) calls query-replace. Press 【SPACE C-h】 to see the full list.
 ;; 【Space Space】 also activates insertion mode.
-;; 【Space Enter】 calls execute-extended-command or smex (if smex is installed).
-;; 【a】 calls execute-extended-command or smex (if smex is installed).
+;; 【Space Enter】 calls execute-extended-command or smex or helm (if they are installed).
+;; 【a】 calls execute-extended-command or smex or helm (if they are installed).
 
 ;; The leader key sequence basically replace ALL emacs commands that starts with C-x key.
 
@@ -71,7 +71,7 @@
 
 ;; You NEVER need to press Ctrl+x
 
-;; Any emacs commands that has a keybinding starting with C-x, has also a key sequence binding in xah-fly-keys. For example,
+;; Any emacs command that has a keybinding starting with C-x, has also a key sequence binding in xah-fly-keys. For example,
 ;; 【C-x b】 switch-to-buffer is 【SPACE f】 (Dvorak 【SPACE u】)
 ;; 【C-x C-f】 find-file is 【SPACE i e】 (Dvorak 【SPACE c .】)
 ;; 【C-x n n】 narrow-to-region is 【SPACE l l】 (Dvorak 【SPACE n n】)
@@ -3662,7 +3662,8 @@ Version 2017-01-21"
      ("y" . set-mark-command)
      ("z" . xah-goto-matching-bracket)))
 
-  (define-key xah-fly-key-map (kbd "a") (if (fboundp 'smex) 'smex 'execute-extended-command ))
+  (define-key xah-fly-key-map (kbd "a")
+    (if (fboundp 'smex) 'smex (if (fboundp 'helm-M-x) 'helm-M-x 'execute-extended-command)))
 
   ;; (when xah-fly-swapped-1-8-and-2-7-p
   ;;     (xah-fly--define-keys

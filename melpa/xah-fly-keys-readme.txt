@@ -38,8 +38,8 @@ When in command mode:
 【f】 (or Dvorak 【u】) activates insertion mode.
 【Space】 is a leader key. For example, 【SPACE r】 (Dvorak 【SPACE p】) calls query-replace. Press 【SPACE C-h】 to see the full list.
 【Space Space】 also activates insertion mode.
-【Space Enter】 calls execute-extended-command or smex (if smex is installed).
-【a】 calls execute-extended-command or smex (if smex is installed).
+【Space Enter】 calls execute-extended-command or smex or helm (if they are installed).
+【a】 calls execute-extended-command or smex or helm (if they are installed).
 
 The leader key sequence basically replace ALL emacs commands that starts with C-x key.
 
@@ -54,7 +54,7 @@ Leader key
 
 You NEVER need to press Ctrl+x
 
-Any emacs commands that has a keybinding starting with C-x, has also a key sequence binding in xah-fly-keys. For example,
+Any emacs command that has a keybinding starting with C-x, has also a key sequence binding in xah-fly-keys. For example,
 【C-x b】 switch-to-buffer is 【SPACE f】 (Dvorak 【SPACE u】)
 【C-x C-f】 find-file is 【SPACE i e】 (Dvorak 【SPACE c .】)
 【C-x n n】 narrow-to-region is 【SPACE l l】 (Dvorak 【SPACE n n】)

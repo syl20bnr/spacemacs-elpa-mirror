@@ -2,7 +2,7 @@
 ;;
 ;; Author: Dean Serenevy <dean@serenevy.net>
 ;; Version: 0.1.0
-;; Package-Version: 20180611.1507
+;; Package-Version: 20180702.1329
 ;;
 ;; This document borrowed heavily from yaml-mode.el by Yoshiki Kurihara and
 ;; Marshall Vandegrift.
@@ -143,6 +143,9 @@
   (modify-syntax-entry ?\\ "\\" kivy-mode-syntax-table)
   (modify-syntax-entry ?- "_" kivy-mode-syntax-table)
   (modify-syntax-entry ?_ "w" kivy-mode-syntax-table)
+  (modify-syntax-entry ?< "." kivy-mode-syntax-table)
+  (modify-syntax-entry ?> "." kivy-mode-syntax-table)
+  (modify-syntax-entry ?_ "_" kivy-mode-syntax-table)
   )
 
 
