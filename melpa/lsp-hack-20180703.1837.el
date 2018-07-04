@@ -3,9 +3,9 @@
 ;; Copyright (C) 2017  John Allen <oss@porcnick.com>
 
 ;; Author: John Allen <oss@porcnick.com>
-;; Version: 1.1.2
-;; Package-Version: 20171128.1238
-;; Package-Requires: ((lsp-mode "3.1"))
+;; Version: 1.1.3
+;; Package-Version: 20180703.1837
+;; Package-Requires: ((lsp-mode "4.2"))
 ;; URL: https://github.com/jra3/lsp-hack
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -27,18 +27,6 @@
 
 ;;; Code:
 (require 'lsp-mode)
-(require 'lsp-common)
-
-(defgroup lsp_hack nil
-  "Major mode `hack-mode' for editing Hack code."
-  :prefix "lsp-hack-"
-  :group 'languages)
-
-(defcustom lsp-hack--binary
-  "hh_client"
-  "How to call hh_client.  Provide a path if necessary."
-  :group 'hack-mode
-  :type 'string)
 
 (defconst lsp-hack--handlers
   '(("telemetry/event" . (lambda (_w _p))))
