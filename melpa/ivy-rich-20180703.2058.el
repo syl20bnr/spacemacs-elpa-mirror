@@ -4,7 +4,7 @@
 
 ;; Author: Yevgnen Koh <wherejoystarts@gmail.com>
 ;; Package-Requires: ((emacs "24.4") (ivy "0.8.0"))
-;; Package-Version: 20180621.1920
+;; Package-Version: 20180703.2058
 ;; Version: 0.0.4
 ;; Keywords: ivy
 
@@ -319,6 +319,29 @@ Currently the transformed format is
                 ivy-rich-switch-buffer-align-virtual-buffer)
            (ivy-rich-switch-buffer-virtual-buffer str))
           (t str))))
+
+
+;; Utilities for setting and unsetting the transformers
+(defvar ivy-rich--original-display-transformers-list nil)  ; Backup list
+
+(defun ivy-rich-set-display-transformer (cmd transformer)
+  (setq ivy-rich--original-display-transformers-list
+        (plist-put
+         ivy-rich--original-display-transformers-list cmd (plist-get ivy--display-transformers-list cmd)))
+  (ivy-set-display-transformer cmd transformer))
+
+(defun ivy-rich-unset-display-transformer (cmd)
+  (ivy-set-display-transformer
+   cmd
+   (plist-get ivy-rich--original-display-transformers-list cmd)))
+
+(define-minor-mode ivy-rich-mode
+  "Toggle ivy-rich mode globally."
+  :global t
+  (if ivy-rich-mode
+      (ivy-rich-set-display-transformer 'ivy-switch-buffer 'ivy-rich-switch-buffer-transformer)
+    (ivy-rich-unset-display-transformer 'ivy-switch-buffer)
+    (setq ivy-rich--original-display-transformers-list nil)))
 
 (provide 'ivy-rich)
 
