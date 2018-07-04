@@ -2,7 +2,7 @@
 
 ;; Author: death <github.com/death>
 ;; Version: 1.0
-;; Package-Version: 20141219.318
+;; Package-Version: 20180703.1327
 ;; Package-Requires: ((cl-lib "0.5") (emacs "24"))
 ;; Keywords: tools, convenience
 ;; URL: http://github.com/death/ssh-tunnels
@@ -38,7 +38,12 @@
 ;; - Set the variable `ssh-tunnels-configurations', e.g.:
 ;;
 ;;   (setq ssh-tunnels-configurations
-;;         '((:name "my tunnel"
+;;         '((:name "my local tunnel"
+;;            :local-port 1234
+;;            :remote-port 3306
+;;            :login "me@host")
+;;           (:name "my remote tunnel"
+;;            :type "-R"
 ;;            :local-port 1234
 ;;            :remote-port 3306
 ;;            :login "me@host")))
@@ -112,6 +117,13 @@ with the following properties:
 
   :name - The name of the tunnel.
 
+  :type - Tunnel type; defaults to \"-L\" (Local).
+          May also be \"-R\" or \"-D\" for Remote and Dynamic port forwards.
+          If set to \"SH\", no port forwarding will be attempted and your ssh
+          client is responsible for tunnelling (e.g. with ~/.ssh/config), in
+          this case `:login' must match your ~/.ssh/config entry and `:host',
+          `:local-port' and `:remote-port' are ignored.
+
   :login - The SSH login to use.
 
   :host - The tunneling host; defaults to \"localhost\".
@@ -173,6 +185,7 @@ become irrelevant if `ssh-tunnels-configurations' changes.")
     (setq tabulated-list-format
           (vector `("S" 1 t)
                   `("Name" ,name-width t)
+                  `("T." 2 t)
                   `("LPort" ,local-port-width ssh-tunnels--lport> :right-align t)
                   `("Host" ,host-width t)
                   `("RPort" ,remote-port-width ssh-tunnels--rport> :right-align t)
@@ -181,6 +194,7 @@ become irrelevant if `ssh-tunnels-configurations' changes.")
   (let ((entries '()))
     (dolist (tunnel ssh-tunnels-configurations)
       (let* ((name (ssh-tunnels--property tunnel :name))
+             (tunnel-type (ssh-tunnels--property tunnel :type))
              (local-port (ssh-tunnels--property tunnel :local-port))
              (host (ssh-tunnels--property tunnel :host))
              (remote-port (ssh-tunnels--property tunnel :remote-port))
@@ -188,6 +202,7 @@ become irrelevant if `ssh-tunnels-configurations' changes.")
         (push (list tunnel
                     (vector (if (ssh-tunnels--check tunnel) "R" " ")
                             (ssh-tunnels--pretty-name name)
+                            tunnel-type
                             (number-to-string local-port)
                             host
                             (number-to-string remote-port)
@@ -249,25 +264,39 @@ become irrelevant if `ssh-tunnels-configurations' changes.")
 (defun ssh-tunnels--property (tunnel key)
   (cond ((eq key :host)
          (or (cl-getf tunnel :host) "localhost"))
+        ((eq key :type)
+         (or (cl-getf tunnel :type) "-L"))
         ((eq key :local-port)
          (or (gethash (cl-getf tunnel :name) ssh-tunnels--state-table)
              (cl-getf tunnel :local-port)
-             (cl-getf tunnel :remote-port)))
+             (cl-getf tunnel :remote-port)
+             (if (string= (cl-getf tunnel :type) "SH") 0)))
         ((eq key :remote-port)
          (or (cl-getf tunnel :remote-port)
-             (cl-getf tunnel :local-port)))
+             (cl-getf tunnel :local-port)
+             (if (string= (cl-getf tunnel :type) "SH") 0)))
         (t
          (cl-getf tunnel key))))
 
 (defun ssh-tunnels--command (tunnel command)
   (let* ((name (ssh-tunnels--property tunnel :name))
+         (tunnel-type (ssh-tunnels--property tunnel :type))
          (local-port (ssh-tunnels--property tunnel :local-port))
          (remote-port (ssh-tunnels--property tunnel :remote-port))
          (host (ssh-tunnels--property tunnel :host))
          (login (ssh-tunnels--property tunnel :login))
+         (tunnel-definition
+          (if (eq command :run)
+              (cond ((string= tunnel-type "-D")
+                     (format "%s:%s" host local-port))
+                    ; Default Local/Remote port forwarding
+                    (t (format "%s:%s:%s"
+                                local-port host remote-port)))))
          (args (cond ((eq command :run)
-                      (list "-M" "-f" "-N" "-T"
-                            "-L" (format "%s:%s:%s" local-port host remote-port)))
+                      (append (list "-M" "-f" "-N" "-T")
+                              (cond ((string= tunnel-type "SH") nil)
+                                    (t (list tunnel-type
+                                             tunnel-definition)))))
                      ((eq command :kill)
                       (list "-O" "exit"))
                      ((eq command :check)

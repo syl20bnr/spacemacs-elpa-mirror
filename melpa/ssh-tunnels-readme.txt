@@ -3,7 +3,12 @@ This package lets you run and kill SSH tunnels.  To use it:
 - Set the variable `ssh-tunnels-configurations', e.g.:
 
   (setq ssh-tunnels-configurations
-        '((:name "my tunnel"
+        '((:name "my local tunnel"
+           :local-port 1234
+           :remote-port 3306
+           :login "me@host")
+          (:name "my remote tunnel"
+           :type "-R"
            :local-port 1234
            :remote-port 3306
            :login "me@host")))
