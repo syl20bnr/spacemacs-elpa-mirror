@@ -5,7 +5,7 @@
 ;; Author: Pierre Neidhardt <ambrevar@gmail.com>
 ;; Maintainer: Pierre Neidhardt <ambrevar@gmail.com>
 ;; URL: https://gitlab.com/Ambrevar/mu4e-conversation
-;; Package-Version: 20180625.634
+;; Package-Version: 20180627.545
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: mail, convenience, mu4e
@@ -26,42 +26,70 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; In this file we define `mu4e-conversation' (+ helper functions), which is
-;; used for viewing all e-mail messages of a thread in a single buffer.
 ;;
-;; From the headers view, run the command `mu4e-conversation'.  Call
-;; `mu4e-conversation-toggle-view' (bound to "V" by default) to switch between
-;; linear and tree view.
+;; This package offers an alternate view to `mu4e' e-mail display.  It shows all
+;; e-mails of a thread in a single view, where each correspondant has their own
+;; face.  Threads can be displayed linearly (in which case e-mails are displayed
+;; in chronological order) or as an Org document where the node tree maps the
+;; thread tree.
+;;
+;; * Setup
+;;
+;; From the headers view, call `M-x mu4e-conversation'.
 ;;
 ;; To fully replace `mu4e-view' with `mu4e-conversation' from any other command
 ;; (e.g. `mu4e-headers-next', `helm-mu'), call
 ;;
 ;;   (global-mu4e-conversation-mode)
+;;
+;; * Features
+;;
+;; Call `mu4e-conversation-toggle-view' (bound to "V" by default) to switch between
+;; linear and tree view.
+;;
+;; The last section is writable.
+;;
+;; Call `mu4e-conversation-send' ("C-c C-c" by default) to send the message.
+;;
+;; When the region is active anywhere in the thread, `mu4e-conversation-cite'
+;; ("<return>" by default) will append the selected text as citation to the
+;; message being composed.
+;;
+;; Each conversation gets its own buffer.
+
 
 ;;; Code:
 
 ;; TODO: Overrides are not commended.  Use unwind-protect to set handlers?  I don't think it would work.
 ;; TODO: Only mark visible messages as read.
-;; TODO: Indent user messages?  Make formatting more customizable.
 ;; TODO: Detect subject changes.
 ;; TODO: Check out mu4e gnus view.
 ;; TODO: Should we reply to the selected message or to the last?  Make it an option: 'current, 'last, 'ask.
 ;; TODO: Does toggle-display HTML work?
-;; TODO: Auto-update conversation buffer when receiving/sending mail.
 ;; TODO: Save using "save-buffer"?  This would allow different bindings to work
 ;; transparently (e.g. ":w" with Evil).  Problem is that the draft buffer and
 ;; the conversation view are different buffers.
 
-;; TODO: Add convenience functions to check if some recipients have been left out, or to return the list of all recipients.
+;; TODO: Views should be structure with
+;; - Thread sort function
+;; - Previous / next function
+;; - Print function
+;; TODO: Indent user messages?  Make formatting more customizable.
 ;; TODO: Tweak Org indentation?  See `org-adapt-indentation'.
+
+;; TODO: Sometimes messages are not marked as read.
+;; TODO: Auto-update conversation buffer when receiving/sending mail.
+;; TODO: Add convenience functions to check if some recipients have been left out, or to return the list of all recipients.
 ;; TODO: Mark/flag messages that are in thread but not in headers buffer.  See `mu4e-mark-set'.
 ;; TODO: Fine-tune the recipient list display and composition in linear view.
 ;; In tree view, we could read properties from the composition subtree.
+
 ;; TODO: Evil mode: Preserve normal-state bindings when returning from composition.
 ;; TODO: `org-open-line'(?) and `evil-open-below' remove the local-map from the
 ;; text properties.  Solution would be as for the above Evil issue: define
 ;; "special-<kbd>" bindings such when read-only, act special, otherwise act
 ;; normal.
+;; Check out `org-mu4e-compose-org-mode'.
 
 (require 'mu4e)
 (require 'rx)
@@ -97,6 +125,31 @@ If nil, the name value is not substituted."
   "Format of the conversation buffer name.
 '%s' will be replaced by the buffer name."
   :type 'string
+  :group 'mu4e-conversation)
+
+(defcustom mu4e-conversation-send-hook nil
+  "A hook run before sending messages.
+For example, to disable appending signature at the end of a message:
+
+  (add-hook
+   'mu4e-conversation-send-hook
+   (lambda ()
+     (set (make-local-variable 'mu4e-compose-signature-auto-include) nil)))
+"
+  :type 'hook
+  :group 'mu4e-conversation)
+
+(defcustom mu4e-conversation-use-citation-line nil
+  "If non-nil, precede each citation with a line as per
+`mu4e-conversation-citation-line-function'."
+  :type 'boolean
+  :group 'mu4e-conversation)
+
+(defcustom mu4e-conversation-citation-line-function 'mu4e-conversation-insert-citation-line
+  "Function called to insert the \"Whomever writes:\" line."
+  :type '(choice
+	  (function-item :tag "default" mu4e-conversation-insert-citation-line)
+	  (function :tag "Other"))
   :group 'mu4e-conversation)
 
 (defface mu4e-conversation-unread
@@ -283,6 +336,9 @@ If NO-CONFIRM is nil, ask for confirmation if message was not saved."
     ;; `mu4e~view-quit-buffer' must be called from a buffer in `mu4e-view-mode'.
     (unless (eq major-mode 'mu4e-view-mode)
       (mu4e-view-mode))
+    ;; Change major mode reset the local variable and we need to let know
+    ;; subsequent calls that this still is a conversation buffer.
+    (setq mu4e-conversation--is-view-buffer t)
     (mu4e~view-quit-buffer)))
 
 (defun mu4e-conversation-toggle-view ()
@@ -378,6 +434,36 @@ is non-nil."
                   (with-current-buffer b
                     mu4e-conversation--is-view-buffer))
                 (buffer-list)))))
+
+(defun mu4e-converation--headers-redraw-get-view-window ()
+  "Like `mu4e~headers-redraw-get-view-window' but preserve conversation buffers."
+  (if (eq mu4e-split-view 'single-window)
+      (or (and (buffer-live-p (mu4e-get-view-buffer))
+	       (get-buffer-window (mu4e-get-view-buffer)))
+	  (selected-window))
+    (mu4e-hide-other-mu4e-buffers)
+    (unless (buffer-live-p (mu4e-get-headers-buffer))
+      (mu4e-error "No headers buffer available"))
+    (switch-to-buffer (mu4e-get-headers-buffer))
+    ;; kill the existing view window
+    (when (and (buffer-live-p (mu4e-get-view-buffer))
+               (with-current-buffer (mu4e-get-view-buffer)
+                 mu4e-conversation--is-view-buffer))
+      (let ((win (get-buffer-window (mu4e-get-view-buffer))))
+        (when (eq t (window-deletable-p win))
+          (delete-window win))))
+    ;; get a new view window
+    (setq mu4e~headers-view-win
+     (let* ((new-win-func
+	     (cond
+	      ((eq mu4e-split-view 'horizontal) ;; split horizontally
+	       '(split-window-vertically mu4e-headers-visible-lines))
+	      ((eq mu4e-split-view 'vertical) ;; split vertically
+	       '(split-window-horizontally mu4e-headers-visible-columns)))))
+       (cond ((with-demoted-errors "Unable to split window: %S"
+		(eval new-win-func)))
+	     (t ;; no splitting; just use the currently selected one
+	      (selected-window)))))))
 
 (defun mu4e-conversation--show-thread (&optional print-function)
   "Display the conversation in BUFFER.
@@ -628,8 +714,9 @@ The list is in the following format:
 (defun mu4e-conversation-print-message-tree (index thread thread-headers)
   "Insert Org-formatted message found at INDEX in THREAD."
   (unless (eq major-mode 'org-mode)
-    (insert "#+SEQ_TODO: UNREAD READ NEW\n\n") ; TODO: Is it possible to set `org-todo-keywords' locally?
+    (insert "#+SEQ_TODO: UNREAD READ NEW\n\n")
     (org-mode)
+    (erase-buffer) ; TODO: Is it possible to set `org-todo-keywords' locally without this workaround?
     (use-local-map (make-composed-keymap (list mu4e-conversation-tree-map mu4e-conversation-map)
                                          org-mode-map)))
   (let* ((msg (nth index thread))
@@ -658,10 +745,10 @@ The list is in the following format:
     (goto-char body-start)
     (while (re-search-forward (rx line-start ">" (* blank)) nil t) (replace-match ": "))
     (goto-char body-start)
-    (while (re-search-forward (rx line-start "--8<---------------cut here---------------start------------->8---" line-end) nil t)
+    (while (re-search-forward (rx line-start "--8<---------------cut here---------------start------------->8---") nil t)
       (replace-match "#+begin_src"))
     (goto-char body-start)
-    (while (re-search-forward (rx line-start "--8<---------------cut here---------------end--------------->8---" (* space)) nil t)
+    (while (re-search-forward (rx line-start "--8<---------------cut here---------------end--------------->8---") nil t)
       (replace-match "#+end_src"))
     (goto-char (point-max))
     (org-set-property "To" (mu4e-conversation--format-address-list
@@ -681,24 +768,40 @@ The list is in the following format:
           (forward-line -1)
           (org-cycle))))))
 
-(defun mu4e-conversation-cite (start end)
-  (interactive "r")
+(defun mu4e-conversation-insert-citation-line (&optional msg)
+  "This is similar to `message-insert-citation-line' but takes a
+mu4e message as argument."
+  (setq msg (or msg (mu4e-message-at-point)))
+  (concat
+   (mu4e-conversation--format-address-list (mu4e-message-field msg :from))
+   " writes:\n"))
+
+(defun mu4e-conversation-cite (start end &optional toggle-citation-line)
+  (interactive "r\nP")
   (unless mu4e-conversation--is-view-buffer
     (mu4e-warn "Not a conversation buffer"))
   (if (not (use-region-p))
-      (mu4e-scroll-up)
-    (let ((text (buffer-substring-no-properties start end)))
+      (mu4e-scroll-up)                  ; TODO: Call function associate to `this-command-key' in mu4e-view-mode / org-mode.
+    (let ((text (buffer-substring-no-properties start end))
+          (mu4e-conversation-use-citation-line (if toggle-citation-line
+                                             (not mu4e-conversation-use-citation-line)
+                                           mu4e-conversation-use-citation-line))
+          (msg (mu4e-message-at-point)))
       (save-excursion
         (goto-char (point-max))
         (backward-char)
         (insert
          (propertize
+          (concat
+           "\n\n"
+           (if (and mu4e-conversation-use-citation-line msg)
+               (funcall mu4e-conversation-citation-line-function msg)
+             "")
+           "> "
           ;; TODO: Re-cite first line properly.
-          (concat "\n\n"
-                  "> "
-                  (replace-regexp-in-string
-                   "\n" "\n> "
-                   text))
+           (replace-regexp-in-string
+            "\n" "\n> "
+            text))
           'local-map mu4e-conversation-compose-map))))))
 
 (defun mu4e-conversation--open-draft (&optional msg)
@@ -762,6 +865,7 @@ If MSG is specified, then send this message instead."
   (unless mu4e-conversation--is-view-buffer
     (mu4e-warn "Not a conversation buffer"))
   (let (draft-buf)
+    (run-hooks 'mu4e-conversation-send-hook)
     (save-window-excursion
       (mu4e-conversation--open-draft msg)
       (condition-case nil
@@ -855,34 +959,22 @@ See `mu4e~proc-filter'"
                   mu4e-decryption-policy))))
       (mu4e~proc-view docid mu4e-view-show-images decrypt))))
 
-(defun mu4e-conversation--get-view-buffer ()
-  "Like `mu4e-get-view-buffer' except that if switches to the
-former buffer if modified."
-  (let ((buf (get-buffer mu4e~view-buffer-name)))
-    (if (or (null buf)
-            (not (buffer-modified-p buf))
-            (yes-or-no-p  "Reply message has been modified.  Discard? "))
-        (progn
-          ;; Don't prompt again.
-          (when buf
-            (with-current-buffer buf
-              (set-buffer-modified-p nil)))
-          buf)
-      (switch-to-buffer buf)
-      (mu4e-warn "Reply message preserved."))))
-
 (define-minor-mode mu4e-conversation-mode
   "Replace `mu4e-view' with `mu4e-conversation'."
   :init-value nil
   (if mu4e-conversation-mode
       (progn
-        (advice-add 'mu4e-get-view-buffer :override 'mu4e-conversation--get-view-buffer)
+        (advice-add 'mu4e-get-view-buffer :override 'mu4e-conversation--get-buffer)
+        (advice-add 'mu4e~headers-redraw-get-view-window :override 'mu4e-conversation--headers-redraw-get-view-window)
         (advice-add 'mu4e-view-save-attachment-multi :before 'mu4e-conversation-set-attachment)
         (advice-add 'mu4e-view-open-attachment :before 'mu4e-conversation-set-attachment)
+        ;; We must set the variable and not override its function because we
+        ;; will need the override later.
         (setq mu4e-view-func 'mu4e-conversation))
-    (advice-remove 'mu4e-get-view-buffer 'mu4e-conversation--get-view-buffer)
-    (advice-remove 'mu4e-view-save-attachment-multi 'mu4e-conversation-save-attachment)
-    (advice-remove 'mu4e-view-open-attachment 'mu4e-conversation-open-attachment)
+    (advice-remove 'mu4e-get-view-buffer 'mu4e-conversation--get-buffer)
+    (advice-remove 'mu4e-view-save-attachment-multi 'mu4e-conversation-set-attachment)
+    (advice-remove 'mu4e-view-open-attachment 'mu4e-conversation-set-attachment)
+    (advice-remove 'mu4e~headers-redraw-get-view-window 'mu4e-conversation--headers-redraw-get-view-window)
     (setq mu4e-view-func 'mu4e~headers-view-handler)))
 
 (defun mu4e-conversation--turn-on ()

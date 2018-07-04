@@ -2,7 +2,7 @@
 
 ;; Author: Fox Kiester <noct@openmailbox.org>
 ;; URL: https://github.com/noctuid/lispyville
-;; Package-Version: 20180528.1157
+;; Package-Version: 20180704.458
 ;; Created: March 03, 2016
 ;; Keywords: vim, evil, lispy, lisp, parentheses
 ;; Package-Requires: ((lispy "0") (evil "1.2.12") (cl-lib "0.5") (emacs "24.4"))
@@ -646,7 +646,7 @@ ARG has the same effect."
   (interactive "<r>")
   (let ((orig-pos (point)))
     (evil-exit-visual-state)
-    (ignore-errors (backward-up-list))
+    (lispy--out-backward 1)
     (while (and (ignore-errors (lispyville--forward-list))
                 (<= (save-excursion
                       (backward-list))
