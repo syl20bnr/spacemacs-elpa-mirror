@@ -5,7 +5,7 @@
 ;; Author: Sibi Prabakaran <sibi@psibi.in>
 ;; Maintainer: Sibi Prabakaran <sibi@psibi.in>
 ;; Keywords: languages
-;; Package-Version: 20180703.2209
+;; Package-Version: 20180704.1659
 ;; Version: 0.1.3
 ;; Package-Requires: ((emacs "24.4"))
 ;; URL: https://github.com/psibi/dhall-mode
@@ -111,7 +111,9 @@ Should be dhall or the complete path to your dhall executable,
 
 (defcustom dhall-format-command "dhall-format"
   "Command used to format Dhall files.
-Should be dhall or the complete path to your dhall executable,
+If not specified \"dhall format\" will be used.
+
+If specified, this should be the complete path to your dhall-format executable,
   e.g.: /home/sibi/.local/bin/dhall-format"
   :type 'file
   :group 'dhall
@@ -132,17 +134,20 @@ Should be dhall or the complete path to your dhall executable,
 (defun dhall-buffer-type ()
   "Return the type of the expression in the current buffer."
   (interactive)
-  (let ((stderr (make-temp-file "dhall-buffer-type")))
-    (when (zerop (call-process-region (point-min) (point-max) dhall-command nil (list nil stderr)))
-      (let ((type (car (split-string (with-temp-buffer
-                                       (insert-file-contents stderr)
-                                       (buffer-string))
-                                     "[]+"
-                                     t
-                                     split-string-default-separators))))
-        (delete-file stderr)
-        (unless (string-match-p "↳" type)
-          (ansi-color-apply (replace-regexp-in-string "[\n\s]+" " " type)))))))
+  (when (executable-find dhall-command)
+    (let ((stderr (make-temp-file "dhall-buffer-type")))
+      (unwind-protect
+          (when (zerop (call-process-region (point-min) (point-max) dhall-command nil (list nil stderr)))
+            (let ((type (car (split-string (with-temp-buffer
+                                             (insert-file-contents stderr)
+                                             (buffer-string))
+                                           "[]+"
+                                           t
+                                           split-string-default-separators))))
+
+              (unless (string-match-p "↳" type)
+                (ansi-color-apply (replace-regexp-in-string "[\n\s]+" " " type)))))
+        (delete-file stderr)))))
 
 (defun dhall-format ()
   "Formats the current buffer using dhall-format."
@@ -160,8 +165,12 @@ Should be dhall or the complete path to your dhall executable,
           (write-region nil nil bufferfile)
           (with-current-buffer errbuf
             (erase-buffer))
-          (apply 'call-process dhall-format-command nil errbuf t (append dhall-format-options (list
-                                                                                               (buffer-file-name))))
+          (apply 'call-process (or dhall-format-command "dhall") nil errbuf t
+                 (append
+                  (unless dhall-format-command
+                    '("format"))
+                  dhall-format-options (list
+                                        (buffer-file-name))))
           (with-current-buffer errbuf
             (save-restriction
               (widen)
@@ -251,7 +260,7 @@ STRING-TYPE type of string based off of Emacs syntax table types"
                  "..."))
             (propertize "Error determining type." 'face 'error)))))
 
-(defun dhall-after-change (_beg _end _length)
+(defun dhall-after-change (&optional _beg _end _length)
   "Called after any change in the buffer."
   (when dhall-buffer-type-compute-timer
     (cancel-timer dhall-buffer-type-compute-timer))
@@ -267,7 +276,7 @@ STRING-TYPE type of string based off of Emacs syntax table types"
   (when dhall-use-header-line
     (setq header-line-format
           '((:eval dhall-buffer-type)))
-    (dhall-buffer-type-compute))
+    (dhall-after-change))
   (setq font-lock-defaults '(dhall-mode-font-lock-keywords))
   (setq-local indent-tabs-mode t)
   (setq-local tab-width 4)

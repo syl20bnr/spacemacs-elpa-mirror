@@ -4,7 +4,7 @@
 
 ;; Author: Yevgnen Koh <wherejoystarts@gmail.com>
 ;; Package-Requires: ((emacs "24.4") (ivy "0.8.0"))
-;; Package-Version: 20180703.2058
+;; Package-Version: 20180704.1821
 ;; Version: 0.0.4
 ;; Keywords: ivy
 
@@ -335,6 +335,7 @@ Currently the transformed format is
    cmd
    (plist-get ivy-rich--original-display-transformers-list cmd)))
 
+;;;###autoload
 (define-minor-mode ivy-rich-mode
   "Toggle ivy-rich mode globally."
   :global t
