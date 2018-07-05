@@ -3,9 +3,9 @@
 ;; Copyright (C) 2018 Vincent Zhang
 
 ;; Author: Vincent Zhang <seagle0128@gmail.com>
-;; URL: https://github.com/seagle0128/doom-modeline
-;; Package-Version: 20180704.2334
+;; Homepage: https://github.com/seagle0128/doom-modeline
 ;; Version: 0.2.0
+;; Package-Version: 20180705.157
 ;; Package-Requires: ((emacs "25.1") (all-the-icons "1.0.0") (projectile "0.10.0") (shrink-path "0.2.0") (eldoc-eval "0.1") (dash "2.11.0"))
 ;; Keywords: faces
 
@@ -381,7 +381,8 @@ If STRICT-P, return nil if no project was found, otherwise return
       (sit-for eldoc-show-in-mode-line-delay))))
 (setq eldoc-in-minibuffer-show-fn #'doom-modeline--show-eldoc)
 
-(eldoc-in-minibuffer-mode +1)
+(declare-function eldoc-in-minibuffer-mode 'eldoc-eval)
+(eldoc-in-minibuffer-mode 1)
 
 
 ;; anzu and evil-anzu expose current/total state that can be displayed in the

@@ -5,7 +5,7 @@
 ;; Author: Feng Shu <tumashu@163.com>
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/posframe
-;; Package-Version: 20180623.438
+;; Package-Version: 20180705.200
 ;; Version: 0.4.1
 ;; Keywords: tooltip
 ;; Package-Requires: ((emacs "26"))
@@ -221,6 +221,7 @@ This posframe's buffer is POSFRAME-BUFFER."
                        (keep-ratio ,keep-ratio)
                        (posframe-buffer . ,(cons (buffer-name posframe-buffer)
                                                  posframe-buffer))
+                       (fullscreen . nil)
                        (no-accept-focus . t)
                        (min-width  . 0)
                        (min-height . 0)
