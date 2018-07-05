@@ -3,7 +3,7 @@
 ;;
 ;; Author: Michał Kondraciuk <k.michal@zoho.com>
 ;; URL: https://github.com/mkcms/interactive-align
-;; Package-Version: 20180322.848
+;; Package-Version: 20180705.453
 ;; Package-Requires: ((emacs "24.4"))
 ;; Version: 0.4.2
 ;; Keywords: tools, editing, align, interactive
@@ -195,7 +195,8 @@ help"))))
   "Revert the current region, then align it."
   (ialign--revert)
   (ialign--with-region-narrowed
-   (let ((case-fold-search ialign--case-fold-search))
+   (let ((case-fold-search ialign--case-fold-search)
+	 (indent-tabs-mode (ialign--enable-tabs-p)))
      (align-regexp (point-min) (point-max) ialign--regexp
 		   ialign--group ialign--spacing ialign--repeat))))
 
@@ -365,8 +366,7 @@ Use `ialign-commit' to actually align the region in the buffer."
 	  (ialign--update-minibuffer-prompt)
 	  (when (or (called-interactively-p 'interactive)
 		    (ialign--autoupdate-p))
-	    (let ((regexp (minibuffer-contents-no-properties))
-		  (indent-tabs-mode (ialign--enable-tabs-p)))
+	    (let ((regexp (minibuffer-contents-no-properties)))
 	      (setq ialign--regexp regexp)
 	      (ialign--align)
 	      (redisplay))))
