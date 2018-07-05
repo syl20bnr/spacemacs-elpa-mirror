@@ -448,6 +448,13 @@
 			 nil "Parse and browse f90 interfaces" single
 			 ((:url . "http://github.com/wence-/f90-iface/")
 			  (:keywords))])
+ (filladapt .
+	    [(2 12 1)
+	     ((emacs
+	       (24 4)))
+	     "Adaptive fill" single
+	     ((:url . "http://elpa.gnu.org/packages/filladapt.html")
+	      (:keywords))])
  (flylisp .
 	  [(0 2)
 	   ((emacs
