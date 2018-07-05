@@ -31,6 +31,8 @@ For instance, in a Ruby on Rails project, you are interested in all
 .rb files that don't exist in the "vendor" directory.  In that case
 you could set `ffip-find-options' to "-not -regex \".*vendor.*\"".
 
+`ffip-insert-file' insert file content into current buffer.
+
 `find-file-with-similar-name' find file with similar name to current
 opened file. The regular expression `ffip-strip-file-name-regex' is
 also used by `find-file-with-similar-name'.
