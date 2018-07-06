@@ -4,7 +4,7 @@
 
 ;; Author: Artur Malabarba <emacs@endlessparentheses.com>
 ;; URL: https://github.com/Malabarba/speed-of-thought-lisp
-;; Package-Version: 20170429.1945
+;; Package-Version: 20180706.1049
 ;; Keywords: convenience, lisp
 ;; Package-Requires: ((emacs "24.1"))
 ;; Version: 1.6.2
@@ -136,10 +136,12 @@ Returns non-nil if, after moving backwards by a sexp, either
 non-nil."
   (save-excursion
     (ignore-errors
-      (skip-chars-backward (rx alnum))
-      (and (sotlisp--code-p)
-           (or (sotlisp--function-form-p)
-               (sotlisp--function-quote-p))))))
+      (and (not (string-match (rx (syntax symbol)) (string last-command-event)))
+           (sotlisp--code-p)
+           (progn
+             (skip-chars-backward (rx alnum))
+             (or (sotlisp--function-form-p)
+                 (sotlisp--function-quote-p)))))))
 
 (defun sotlisp--whitespace-p ()
   "Non-nil if current `self-insert'ed char is whitespace."
