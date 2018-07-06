@@ -1,1 +1,1 @@
-Provides text formatting to template files via Emacs overlays
+Display template regions using overlays.

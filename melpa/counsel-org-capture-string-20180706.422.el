@@ -4,7 +4,7 @@
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 1.0-pre
-;; Package-Version: 20180623.2316
+;; Package-Version: 20180706.422
 ;; Package-Requires: ((emacs "25.1") (ivy "0.10"))
 ;; Keywords: outlines
 ;; URL: https://github.com/akirak/counsel-org-capture-string
@@ -68,6 +68,7 @@ When nil, the default value is used."
 (defvar counsel-org-capture-string--candidates nil)
 (defvar counsel-org-capture-string-history nil)
 
+;;;###autoload
 (defun counsel-org-capture-string ()
   "Supply input to `org-capture-string' from counsel."
   (interactive)

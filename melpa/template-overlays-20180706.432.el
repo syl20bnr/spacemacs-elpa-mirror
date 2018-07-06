@@ -1,11 +1,11 @@
-;;; template-overlays.el --- Emacs overlays for template files -*- coding: utf-8 -*-
+;;; template-overlays.el --- Display template regions using overlays -*- coding: utf-8 -*-
 
 ;; Copyright © 2018 Mariano Montone
 ;;
 ;; Author: Mariano Montone <marianomontone@gmail.com>
 ;; Maintainer: Mariano Montone <marianomontone@gmail.com>
 ;; URL: http://www.github.com/mmontone/template-overlays
-;; Package-Version: 20180626.828
+;; Package-Version: 20180706.432
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "24.4") (ov "1.0.6"))
 ;; Keywords: faces, convenience, templates, overlays
@@ -27,7 +27,7 @@
 
 ;;; Commentary:
 
-;; Provides text formatting to template files via Emacs overlays
+;; Display template regions using overlays.
 
 ;;; Code:
 
