@@ -5,7 +5,7 @@
 ;; Author: Paul van Dam <pvandam@m-industries.com>
 ;; Maintainer: Paul van Dam <pvandam@m-industries.com>
 ;; Version: 1.0.0
-;; Package-Version: 20180705.2253
+;; Package-Version: 20180706.825
 ;; Created: 13 October 2017
 ;; URL: https://github.com/M-industries/AlanForEmacs
 ;; Homepage: https://alan-platform.com/
@@ -234,19 +234,26 @@ Optional argument DOCSTRING for the major mode."
   (xref-make (format alan--xref-format symbol type (line-number-at-pos symbol-position))
 			 (xref-make-buffer-location buffer symbol-position)))
 
+(defun alan--projectile-project-root ()
+  "Finds the project root of a buffer if projectile is available.
+Return default-directory if the buffer is not in a project or
+projectile is not available."
+  (if (featurep 'projectile)
+	(let ((projectile-require-project-root nil))
+	  (projectile-project-root))
+	default-directory))
+
 (defun alan--xref-find-definitions (symbol)
   "Find all definitions matching SYMBOL."
   (let ((xrefs)
 		(project-scope-limit (and
-							  (featurep 'projectile)
 							  alan-xref-limit-to-project-scope
-							  (projectile-project-root))))
+							  (alan--projectile-project-root))))
 	(dolist (buffer (buffer-list))
 	  (with-current-buffer buffer
 		(when (and (derived-mode-p 'alan-mode)
 				   (or (null project-scope-limit)
-					   (and (featurep 'projectile)
-							(string= project-scope-limit (projectile-project-root)))))
+					   (string= project-scope-limit (alan--projectile-project-root))))
 		  (save-excursion
 			(save-restriction
 			  (widen)
@@ -466,7 +473,7 @@ Return nil if the script can not be found."
 				 (let ((alan-script-candidate (concat name "alan")))
 				   (and (file-executable-p alan-script-candidate)
 						(not (file-directory-p alan-script-candidate))))))))
-	(concat alan-project-script "alan")))
+	(expand-file-name (concat alan-project-script "alan"))))
 
 (defun alan--file-exists (name)
   "Return the file NAME if it exists."
@@ -488,7 +495,7 @@ Return nil if the script can not be found."
 		   (concat alan-project-compiler " " alan-project-language " --format emacs --log warning /dev/null ")))
 	 ((and  alan-project-script)
 	  (setq flycheck-alan-executable alan-project-script)
-	  (set (make-local-variable 'compile-command) (concat alan-project-script " build emacs ")))
+	  (set (make-local-variable 'compile-command) (concat alan-project-script " build --format emacs ")))
 	 (t (message "No alan compiler or script found.")))))
 
 ;;; Modes
