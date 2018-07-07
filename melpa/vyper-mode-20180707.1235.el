@@ -2,7 +2,7 @@
 
 ;; Author: Alex Stokes <r.alex.stokes@gmail.com>
 ;; Version: 0.0.1
-;; Package-Version: 20180706.1420
+;; Package-Version: 20180707.1235
 ;; URL: https://github.com/ralexstokes/vyper-mode
 ;; Keywords: languages
 ;; Package-Requires: ((emacs "24.3"))
