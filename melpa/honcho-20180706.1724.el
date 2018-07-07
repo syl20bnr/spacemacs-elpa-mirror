@@ -4,7 +4,7 @@
 
 ;; Author: Mario Rodas <marsam@users.noreply.github.com>
 ;; URL: https://github.com/emacs-pe/honcho.el
-;; Package-Version: 20180423.724
+;; Package-Version: 20180706.1724
 ;; Keywords: convenience
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "25.1") (sudo-edit "0.1"))
@@ -211,9 +211,9 @@ Otherwise convert it to a symbol and return that."
   "Guess dotenv suffix from a PROCFILE name."
   (and honcho-procfile-env-suffix-p (let ((ext (file-name-extension procfile))) (and ext (concat "." ext)))))
 
-(defun honcho-collect-dotenv (dotenv)
-  "Return a list of environment variables in DOTENV file."
-  (cl-loop for line in (honcho-file-lines (concat dotenv (honcho-dotenv-ext honcho-procfile)))
+(defun honcho-collect-dotenv (dotenv &optional extension)
+  "Return a list of environment variables in DOTENV file with EXTENSION."
+  (cl-loop for line in (honcho-file-lines (concat dotenv extension))
            when (string-match "^\\(.+[^[:space:]]\\)[[:space:]]*=[[:space:]]*\\(.+\\)" line)
            collect (cons (match-string-no-properties 1 line) (match-string-no-properties 2 line))))
 
@@ -227,11 +227,11 @@ Otherwise convert it to a symbol and return that."
   "Collect the services defined in PROCFILE."
   (setq honcho-services
         (cl-loop with cwd = (file-name-directory procfile)
-                 with env = (honcho-collect-dotenv honcho-dotenv)
+                 with env = (honcho-collect-dotenv honcho-dotenv (honcho-dotenv-ext procfile))
                  with services = honcho-services
                  for (name command) in (honcho-collect-commands procfile)
                  if (gethash name services)
-                 do (setf (honcho-service-env it) (honcho-collect-dotenv honcho-dotenv) (honcho-service-command it) command)
+                 do (setf (honcho-service-env it) env (honcho-service-command it) command)
                  else do (puthash name (honcho-service-new :name name :command command :env env :cwd cwd) services)
                  finally return services)))
 
