@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180706.808
+;; Package-Version: 20180706.1636
 ;; Keywords: help, lisp
 ;; Version: 0.12
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -1103,6 +1103,8 @@ buffer."
          (buf nil)
          (pos nil)
          (opened nil)
+         ;; Skip running find-file-hook since it may prompt the user.
+         (find-file-hook nil)
          ;; If we end up opening a buffer, don't bother with file
          ;; variables. It prompts the user, and we discard the buffer
          ;; afterwards anyway.
