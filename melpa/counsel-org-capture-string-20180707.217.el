@@ -4,7 +4,7 @@
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 1.0-pre
-;; Package-Version: 20180706.422
+;; Package-Version: 20180707.217
 ;; Package-Requires: ((emacs "25.1") (ivy "0.10"))
 ;; Keywords: outlines
 ;; URL: https://github.com/akirak/counsel-org-capture-string
@@ -40,7 +40,7 @@
 (require 'org-capture)
 (require 'map)
 (require 'imenu)
-(require 'cl-macs)
+(require 'cl-lib)
 
 (defcustom counsel-org-capture-string-sources
   '(counsel-org-capture-string--org-clock-candidates

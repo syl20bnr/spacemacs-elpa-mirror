@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-super-agenda
-;; Package-Version: 20180608.1619
+;; Package-Version: 20180707.255
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "25.1") (s "1.10.0") (dash "2.13") (org "9.0") (ht "2.2"))
 ;; Keywords: hypermedia, outlines, Org, agenda
@@ -139,6 +139,10 @@ Populated automatically by `org-super-agenda--defgroup'.")
 See readme for information."
   :type 'list)
 
+(defcustom org-super-agenda-group-property-name "agenda-group"
+  "Name of the Org property used by the :auto-group selector."
+  :type 'string)
+
 (defcustom org-super-agenda-properties-inherit t
   "Use property inheritance when checking properties with the :auto-group selector.
 With this enabled, you can set the \"agenda-group\" property for
@@ -199,6 +203,10 @@ If ANY is non-nil, return as soon as FORM returns non-nil."
 (defsubst org-super-agenda--get-marker (s)
   "Return `org-marker' text properties of string S."
   (org-find-text-property-in-string 'org-marker s))
+
+(defsubst org-super-agenda--get-category (s)
+  "Return category of agenda item string S."
+  (org-find-text-property-in-string 'org-category s))
 
 (defsubst org-super-agenda--get-tags (s)
   "Return list of tags in agenda item string S."
@@ -523,6 +531,13 @@ Argument may be a string or list of strings."
   :section-name (concat "Items tagged with: " (s-join " OR " args))
   :test (seq-intersection (org-super-agenda--get-tags item) args 'cl-equalp))
 
+(org-super-agenda--defgroup category
+  "Group items that match any of the given categories.
+Argument may be a string or list of strings."
+  :section-name (concat "Items categorized as: " (s-join " OR " args))
+  :test (cl-member (org-super-agenda--get-category item)
+                   args :test #'string=))
+
 (org-super-agenda--defgroup todo
   "Group items that match any of the given TODO keywords.
 Argument may be a string or list of strings, or `t' to match any
@@ -657,7 +672,7 @@ The string should be the priority cookie letter, e.g. \"A\".")
   (cl-loop with groups = (ht-create)
            for item in all-items
            for group = (org-entry-get (org-super-agenda--get-marker item)
-                                      "agenda-group"
+                                      org-super-agenda-group-property-name
                                       org-super-agenda-properties-inherit)
            if group
            do (ht-set! groups group (cons item (ht-get groups group)))
