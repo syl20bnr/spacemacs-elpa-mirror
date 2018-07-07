@@ -6,7 +6,7 @@
 
 ;; Compatibility: GNU Emacs 24.1+
 ;; Package-Requires: ((emacs "24") (cl-lib "0.5"))
-;; Package-Version: 20180322.28
+;; Package-Version: 20180706.2155
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -401,6 +401,7 @@ Shell buffers.  It implements `shell-completion-execonly' for
              (pcomplete-opt "dfmqsyuVabthvco"))))
     (cond (;; commands
            (or (string= prec "apt-get")
+               (string= prec "apt")
                (string-match "\\`--?" prec))
            (while (pcomplete-here* cmd-list (pcomplete-arg 'last))))
           ;; packages
@@ -416,6 +417,8 @@ Shell buffers.  It implements `shell-completion-execonly' for
                                 nil (current-buffer))
                                (mapcar (lambda (line) (car (split-string line " - ")))
                                        (split-string (buffer-string) "\n")))))))))))
+
+(defalias 'pcomplete/apt 'pcomplete/apt-get)
 
 
 (provide 'pcomplete-extension)

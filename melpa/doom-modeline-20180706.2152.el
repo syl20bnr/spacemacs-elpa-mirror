@@ -5,7 +5,7 @@
 ;; Author: Vincent Zhang <seagle0128@gmail.com>
 ;; Homepage: https://github.com/seagle0128/doom-modeline
 ;; Version: 0.2.0
-;; Package-Version: 20180705.157
+;; Package-Version: 20180706.2152
 ;; Package-Requires: ((emacs "25.1") (all-the-icons "1.0.0") (projectile "0.10.0") (shrink-path "0.2.0") (eldoc-eval "0.1") (dash "2.11.0"))
 ;; Keywords: faces
 
@@ -683,9 +683,12 @@ directory, the file name, and its state (modified, read-only or non-existent)."
            (when doom-modeline-env-version
              (concat " " doom-modeline-env-version))
            (and (featurep 'face-remap)
-                (> text-scale-mode-amount 0)
                 (/= text-scale-mode-amount 0)
-                (format " (%+d)" text-scale-mode-amount)))
+                (format
+                 (if (> text-scale-mode-amount 0)
+                     " (%+d)"
+                   " (%-d)")
+                 text-scale-mode-amount)))
    'face (if (doom-modeline--active) 'doom-modeline-buffer-major-mode)))
 
 
