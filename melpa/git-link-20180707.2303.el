@@ -2,8 +2,8 @@
 
 ;; Copyright (C) 2013-2017 Skye Shaw and others
 ;; Author: Skye Shaw <skye.shaw@gmail.com>
-;; Version: 0.7.0
-;; Package-Version: 20180606.2139
+;; Version: 0.7.1
+;; Package-Version: 20180707.2303
 ;; Keywords: git, vc, github, bitbucket, gitlab, convenience
 ;; URL: http://github.com/sshaw/git-link
 ;; Package-Requires: ((emacs "24.3"))
@@ -36,6 +36,9 @@
 
 ;;; Change Log:
 
+;; 2018-07-08 - v0.7.1
+;; * Add support for vc-revision-other-window
+;;
 ;; 2018-06-07 - v0.7.0
 ;; * Add support for Tramp (Issue #49, thanks Jürgen Hötzel)
 ;; * Fix various compiler warnings
@@ -259,6 +262,14 @@ Return nil,
                         (string-match-p (car lst) str))
                       alist))))
 
+(defun git-link--parse-vc-revision (filename)
+"If FILENAME appears to be from `vc-revision-other-window'
+return (FILENAME . REVISION) otherwise nil."
+  (when (and (string-match "\\(.+\\)\\.~\\([^~]+\\)~$" filename)
+             (file-exists-p (match-string 1 filename)))
+    (cons (match-string 1 filename)
+          (match-string 2 filename))))
+
 (defun git-link--relative-filename ()
   (let* ((filename (buffer-file-name))
 	 (dir      (git-link--repo-root)))
@@ -453,17 +464,23 @@ Defaults to \"origin\"."
             ((not (functionp handler))
              (message "No handler found for %s" (car remote-info)))
             ;; TODO: null ret val
-            ((git-link--new
-              (funcall handler
-                       (car remote-info)
-                       (cadr remote-info)
-                       filename
-                       (if (or (git-link--using-git-timemachine) git-link-use-commit)
-                           nil
-                         (url-hexify-string branch))
-                       commit
-                       start
-                       end)))))))
+            (t
+             (let ((vc-revison (git-link--parse-vc-revision filename)))
+               (when vc-revison
+                 (setq filename (car vc-revison)
+                       commit   (cdr vc-revison)))
+
+               (git-link--new
+                (funcall handler
+                         (car remote-info)
+                         (cadr remote-info)
+                         filename
+                         (if (or (git-link--using-git-timemachine) vc-revison git-link-use-commit)
+                             nil
+                           (url-hexify-string branch))
+                         commit
+                         start
+                         end))))))))
 
 ;;;###autoload
 (defun git-link-commit (remote)
