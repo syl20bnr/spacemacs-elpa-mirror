@@ -1,6 +1,6 @@
 ssh-deploy enables automatic deploys on explicit-save actions, manual uploads, renaming,
-deleting, downloads, file and directory differences, launching remote terminals,
-detection of remote changes and remote directory browsing via TRAMP.
+deleting, downloads, file and directory differences, launching remote terminals (eshell, shell),
+detection of remote changes, remote directory browsing, remote SQL database sessions via TRAMP.
 
 For asynchrous operations it uses package async.el.
 
@@ -31,11 +31,14 @@ Set permissions to this file to 600 with your user as the owner.
     (global-set-key (kbd "C-c C-z x") (lambda() (interactive)(ssh-deploy-diff-handler) ))
     (global-set-key (kbd "C-c C-z t") (lambda() (interactive)(ssh-deploy-remote-terminal-eshell-base-handler) ))
     (global-set-key (kbd "C-c C-z T") (lambda() (interactive)(ssh-deploy-remote-terminal-eshell-handler) ))
+    (global-set-key (kbd "C-c C-z h") (lambda() (interactive)(ssh-deploy-remote-terminal-shell-base-handler) ))
+    (global-set-key (kbd "C-c C-z H") (lambda() (interactive)(ssh-deploy-remote-terminal-shell-handler) ))
     (global-set-key (kbd "C-c C-z R") (lambda() (interactive)(ssh-deploy-rename-handler) ))
     (global-set-key (kbd "C-c C-z e") (lambda() (interactive)(ssh-deploy-remote-changes-handler) ))
     (global-set-key (kbd "C-c C-z b") (lambda() (interactive)(ssh-deploy-browse-remote-base-handler) ))
     (global-set-key (kbd "C-c C-z B") (lambda() (interactive)(ssh-deploy-browse-remote-handler) ))
     (global-set-key (kbd "C-c C-z o") (lambda() (interactive)(ssh-deploy-open-remote-file-handler) ))
+    (global-set-key (kbd "C-c C-z m") (lambda() (interactive)(ssh-deploy-remote-sql-mysql-handler) ))
 
 - To install and set-up using use-package and hydra do this:
   (use-package ssh-deploy
@@ -52,10 +55,11 @@ _d_: Download
 _D_: Delete
 _x_: Difference
 _t_: Eshell Base Terminal                _T_: Eshell Relative Terminal
+_h_: Shell Base Terminal                 _H_: Shell Relative Terminal
 _e_: Detect Remote Changes
 _R_: Rename
 _b_: Browse Base                         _B_: Browse Relative
-_o_: Open current file on remote
+_o_: Open current file on remote         _m_: Open sql-mysql on remote
 "
       ("f" ssh-deploy-upload-handler-forced)
       ("u" ssh-deploy-upload-handler)
@@ -64,11 +68,14 @@ _o_: Open current file on remote
       ("x" ssh-deploy-diff-handler)
       ("t" ssh-deploy-remote-terminal-eshell-base-handler)
       ("T" ssh-deploy-remote-terminal-eshell-handler)
+      ("h" ssh-deploy-remote-terminal-shell-base-handler)
+      ("H" ssh-deploy-remote-terminal-shell-handler)
       ("e" ssh-deploy-remote-changes-handler)
       ("R" ssh-deploy-rename-handler)
       ("b" ssh-deploy-browse-remote-base-handler)
       ("B" ssh-deploy-browse-remote-handler)
-      ("o" ssh-deploy-open-remote-file-handler)))
+      ("o" ssh-deploy-open-remote-file-handler)
+      ("m" ssh-deploy-remote-sql-mysql-handler)))
 
 
 Here is an example for SSH deployment, /Users/Chris/Web/Site1/.dir-locals.el:
@@ -98,13 +105,19 @@ Now when you are in a directory which is configured for deployment.
 
 Here is a list of other variables you can set globally or per directory:
 
-* ssh-deploy-root-local - The local root that should be under deployment *(string)*
-* ssh-deploy-root-remote - The remote TRAMP root that is used for deployment *(string)*
-* ssh-deploy-debug - Enables debugging messages *(boolean)*
-* ssh-deploy-revision-folder - The folder used for storing local revisions *(string)*
-* ssh-deploy-automatically-detect-remote-changes - Enables automatic detection of remote changes *(boolean)*
-* ssh-deploy-on-explicit-save - Enabled automatic uploads on save *(boolean)*
-* ssh-deploy-exclude-list - A list defining what paths to exclude from deployment *(list)*
-* ssh-deploy-async - Enables asynchronous transfers (you need to have `async.el` installed as well) *(boolean)*
+* `ssh-deploy-root-local' - The local root that should be under deployment *(string)*
+* `ssh-deploy-root-remote' - The remote TRAMP root that is used for deployment *(string)*
+* `ssh-deploy-debug' - Enables debugging messages *(boolean)*
+* `ssh-deploy-revision-folder' - The folder used for storing local revisions *(string)*
+* `ssh-deploy-automatically-detect-remote-changes' - Enables automatic detection of remote changes *(boolean)*
+* `ssh-deploy-on-explicit-save' - Enabled automatic uploads on save *(boolean)*
+* `ssh-deploy-exclude-list' - A list defining what paths to exclude from deployment *(list)*
+* `ssh-deploy-async' - Enables asynchronous transfers (you need to have `async.el` installed as well) *(boolean)*
+* `ssh-deploy-remote-sql-database' - Default database when connecting to remote SQL database *(string)*
+* `ssh-deploy-remote-sql-password' - Default password when connecting to remote SQL database *(string)*
+* `ssh-deploy-remote-sql-port' - Default port when connecting to remote SQL database *(integer)*
+* `ssh-deploy-remote-sql-server' - Default server when connecting to remote SQL database *(string)*
+* `ssh-deploy-remote-sql-user' - Default user when connecting to remote SQL database *(string)*
+* `ssh-deploy-remote-shell-executable' - Default shell executable when launching shell on remote host
 
 Please see README.md from the same repository for extended documentation.

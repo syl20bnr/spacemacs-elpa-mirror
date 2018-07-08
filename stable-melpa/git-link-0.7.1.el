@@ -3,7 +3,7 @@
 ;; Copyright (C) 2013-2017 Skye Shaw and others
 ;; Author: Skye Shaw <skye.shaw@gmail.com>
 ;; Version: 0.7.1
-;; Package-Version: 20180707.2303
+;; Package-Version: 0.7.1
 ;; Keywords: git, vc, github, bitbucket, gitlab, convenience
 ;; URL: http://github.com/sshaw/git-link
 ;; Package-Requires: ((emacs "24.3"))
@@ -37,7 +37,7 @@
 ;;; Change Log:
 
 ;; 2018-07-08 - v0.7.1
-;; * Add support for vc-revision-other-window
+;; * Add support for vc-revision-other-window files (Issue #54)
 ;;
 ;; 2018-06-07 - v0.7.0
 ;; * Add support for Tramp (Issue #49, thanks Jürgen Hötzel)
