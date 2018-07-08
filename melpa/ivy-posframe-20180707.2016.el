@@ -5,7 +5,7 @@
 ;; Author: Feng Shu
 ;; Maintainer: Feng Shu <tumashu@163.com>
 ;; URL: https://github.com/tumashu/ivy-posframe
-;; Package-Version: 20180610.950
+;; Package-Version: 20180707.2016
 ;; Version: 0.1.0
 ;; Keywords: abbrev, convenience, matching, ivy
 ;; Package-Requires: ((emacs "26.0")(posframe "0.1.0")(ivy "0.10.0"))
@@ -118,6 +118,12 @@ When nil, Using current frame's font as fallback."
   :group 'ivy-posframe
   :type 'string)
 
+(defcustom ivy-posframe-border-width 0
+  "The border width used by ivy-posframe.
+When 0, no border is showed."
+  :group 'ivy-posframe
+  :type 'number)
+
 (defcustom ivy-posframe-parameters nil
   "The frame parameters used by ivy-posframe."
   :group 'ivy-posframe
@@ -166,6 +172,7 @@ This variable is useful for `ivy-posframe-read-action' .")
        :height ivy-height
        :min-height 10
        :min-width 50
+       :internal-border-width ivy-posframe-border-width
        :override-parameters ivy-posframe-parameters))))
 
 (defun ivy-posframe-display (str)
