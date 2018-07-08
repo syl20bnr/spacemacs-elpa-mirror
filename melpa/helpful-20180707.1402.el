@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180706.1636
+;; Package-Version: 20180707.1402
 ;; Keywords: help, lisp
 ;; Version: 0.12
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -1616,10 +1616,11 @@ may contain duplicates."
        protected-form-fns
        (-flatten handler-fns))))
 
-   ;; Calling a function with `funcall' or `apply', for example
-   ;; (funcall 'foo 1 2).
+   ;; Calling a function with a well known higher order function, for
+   ;; example (funcall 'foo 1 2).
    ((and
-     (memq (car form) '(funcall apply))
+     (memq (car form) '(funcall apply call-interactively
+                                mapcar mapc mapconcat -map))
      (eq (car-safe (nth 1 form)) 'quote))
     (cons
      (cadr (nth 1 form))
