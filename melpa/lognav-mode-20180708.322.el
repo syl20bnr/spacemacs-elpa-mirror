@@ -3,8 +3,8 @@
 ;; Copyright (C) 2017
 
 ;; Author: Shawn Ellis <shawn.ellis17@gmail.com>
-;; Version: 0.0.5
-;; Package-Version: 20171230.1052
+;; Version: 0.0.6
+;; Package-Version: 20180708.322
 ;; Package-Requires: ((emacs "24.3"))
 ;; URL: https://bitbucket.org/ellisvelo/lognav-mode
 ;; Keywords: log error lognav-mode convenience
@@ -55,7 +55,7 @@
   :group 'convenience)
 
 
-(defcustom lognav-regexp "\\(ERROR\\)\\|\\(WARNING\\)\\|\\(SEVERE\\)\\|\\(Caused by:\\)\\|\\(nested exception is:\\)"
+(defcustom lognav-regexp "\\(FATAL\\)\\|\\(ERROR\\)\\|\\(WARNING\\)\\|\\(SEVERE\\)\\|\\(Caused by:\\)\\|\\(nested exception is:\\)"
   "Regular expression used for navigating errors."
   :type 'regexp)
 
