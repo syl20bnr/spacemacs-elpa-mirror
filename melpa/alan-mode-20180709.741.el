@@ -5,7 +5,7 @@
 ;; Author: Paul van Dam <pvandam@m-industries.com>
 ;; Maintainer: Paul van Dam <pvandam@m-industries.com>
 ;; Version: 1.0.0
-;; Package-Version: 20180706.825
+;; Package-Version: 20180709.741
 ;; Created: 13 October 2017
 ;; URL: https://github.com/M-industries/AlanForEmacs
 ;; Homepage: https://alan-platform.com/
@@ -95,8 +95,8 @@ Setting this will try to use the `alan-compiler' instead of the `alan-script'."
 	(modify-syntax-entry ?/ ". 124" alan-mode-syntax-table)
 	(modify-syntax-entry ?\n ">" alan-mode-syntax-table)
 	(modify-syntax-entry ?' "\"" alan-mode-syntax-table)
-	(modify-syntax-entry ?{ "(}" alan-mode-syntax-table)
-	(modify-syntax-entry ?} "){" alan-mode-syntax-table)
+	(modify-syntax-entry ?{ "_" alan-mode-syntax-table)
+	(modify-syntax-entry ?} "_" alan-mode-syntax-table)
 	alan-mode-syntax-table)
   "Syntax table for ‘alan-mode’.")
 

@@ -1,5 +1,5 @@
 ;;; cmake-mode.el --- major-mode for editing CMake sources
-;; Package-Version: 20180104.1137
+;; Package-Version: 20180709.726
 
 ; Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
 ; file Copyright.txt or https://cmake.org/licensing for details.
@@ -56,7 +56,7 @@ set the path with these commands:
       (* (or (not (any space "()#\\\n")) (and ?\\ nonl)))))
 (defconst cmake-regex-token
   (rx-to-string `(group (or (regexp ,cmake-regex-comment)
-                            ?( ?)
+                            ?\( ?\)
                             (regexp ,cmake-regex-argument-unquoted)
                             (regexp ,cmake-regex-argument-quoted)))))
 (defconst cmake-regex-indented

@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180703.840
+;; Package-Version: 20180709.902
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: convenience, matching, tools
@@ -2462,17 +2462,16 @@ AG-PROMPT, if non-nil, is passed as `ivy-read' prompt argument."
                                      (car (split-string counsel-ag-command)))))))
   (when (null extra-ag-args)
     (setq extra-ag-args ""))
-  (let* ((args-end (string-match " -- " extra-ag-args))
+  (let* ((args-end (string-match "-- " extra-ag-args))
          (file (if args-end
-                   (substring-no-properties extra-ag-args (+ args-end 3))
+                   (substring-no-properties extra-ag-args (match-end 0))
                  ""))
          (extra-ag-args (if args-end
                             (substring-no-properties extra-ag-args 0 args-end)
                           extra-ag-args)))
     (setq counsel-ag-command (format counsel-ag-command
                                      (concat extra-ag-args
-                                             " -- "
-                                             "%s"
+                                             " -- %s "
                                              file))))
   (ivy-set-prompt 'counsel-ag counsel-prompt-function)
   (let ((default-directory (or initial-directory
@@ -2864,6 +2863,7 @@ otherwise continue prompting for tags."
 (declare-function org-global-tags-completion-table "org")
 (declare-function org-agenda-files "org")
 (declare-function org-agenda-set-tags "org-agenda")
+(declare-function org-tags-completion-function "org")
 
 ;;;###autoload
 (defun counsel-org-tag ()
@@ -2884,19 +2884,22 @@ otherwise continue prompting for tags."
       (setq counsel-org-tags (split-string (org-get-tags-string) ":" t)))
     (let ((org-setting-tags t)
           (org-last-tags-completion-table
-           (append org-tag-persistent-alist
-                   (or org-tag-alist (org-get-buffer-tags))
-                   (and
-                    (or org-complete-tags-always-offer-all-agenda-tags
-                        (eq major-mode 'org-agenda-mode))
-                    (org-global-tags-completion-table
-                     (org-agenda-files))))))
+           (append (and (or org-complete-tags-always-offer-all-agenda-tags
+                            (eq major-mode 'org-agenda-mode))
+                        (org-global-tags-completion-table
+                         (org-agenda-files)))
+                   (unless (boundp 'org-current-tag-alist)
+                     org-tag-persistent-alist)
+                   (or (if (boundp 'org-current-tag-alist)
+                           org-current-tag-alist
+                         org-tag-alist)
+                       (org-get-buffer-tags)))))
       (ivy-read (counsel-org-tag-prompt)
-                (lambda (str &rest _unused)
+                (lambda (str _pred _action)
                   (delete-dups
-                   (all-completions str 'org-tags-completion-function)))
+                   (all-completions str #'org-tags-completion-function)))
                 :history 'org-tags-history
-                :action 'counsel-org-tag-action
+                :action #'counsel-org-tag-action
                 :caller 'counsel-org-tag))))
 
 ;;;###autoload
