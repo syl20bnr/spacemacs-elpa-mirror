@@ -4,7 +4,7 @@
 
 ;; Author: Phil Dawes
 ;; URL: https://github.com/racer-rust/emacs-racer
-;; Package-Version: 20171211.1548
+;; Package-Version: 20180708.2325
 ;; Version: 1.3
 ;; Package-Requires: ((emacs "24.3") (rust-mode "0.2.0") (dash "2.13.0") (s "1.10.0") (f "0.18.2") (pos-tip "0.4.6"))
 ;; Keywords: abbrev, convenience, matching, rust, tools
@@ -190,8 +190,10 @@ racer or racer.el."
   "Call racer command COMMAND with args ARGS.
 Return stdout if COMMAND exits normally, otherwise show an
 error."
-  (let ((rust-src-path (or racer-rust-src-path (getenv "RUST_SRC_PATH")))
-        (cargo-home (or racer-cargo-home (getenv "CARGO_HOME"))))
+  (let ((rust-src-path (or (when racer-rust-src-path (expand-file-name racer-rust-src-path))
+                           (getenv "RUST_SRC_PATH")))
+        (cargo-home (or (when racer-cargo-home (expand-file-name racer-cargo-home))
+                        (getenv "CARGO_HOME"))))
     (when (null rust-src-path)
       (user-error "You need to set `racer-rust-src-path' or `RUST_SRC_PATH'"))
     (unless (file-exists-p rust-src-path)
@@ -199,8 +201,8 @@ error."
                   rust-src-path))
     (let ((default-directory (or (racer--cargo-project-root) default-directory))
           (process-environment (append (list
-                                        (format "RUST_SRC_PATH=%s" (expand-file-name rust-src-path))
-                                        (format "CARGO_HOME=%s" (expand-file-name cargo-home)))
+                                        (format "RUST_SRC_PATH=%s" rust-src-path)
+                                        (format "CARGO_HOME=%s" cargo-home))
                                        process-environment)))
       (-let [(exit-code stdout _stderr)
              (racer--shell-command racer-cmd (cons command args))]
@@ -483,9 +485,9 @@ fenced code delimiters and code annotations."
                  sections)))
     (s-join "\n\n" propertized-sections)))
 
-(defun racer--find-file (path line column)
+(defun racer--find-file (path line column find-file-func)
   "Open PATH and move point to LINE and COLUMN."
-  (find-file path)
+  (funcall find-file-func path)
   (goto-char (point-min))
   (forward-line (1- line))
   (forward-char column))
@@ -494,7 +496,8 @@ fenced code delimiters and code annotations."
   (racer--find-file
    (button-get button 'path)
    (button-get button 'line)
-   (button-get button 'column)))
+   (button-get button 'column)
+   #'find-file))
 
 (define-button-type 'racer-src-button
   'action 'racer--button-go-to-src
@@ -694,10 +697,8 @@ Commands:
   (length (buffer-substring-no-properties
            (line-beginning-position) (point))))
 
-;;;###autoload
-(defun racer-find-definition ()
-  "Run the racer find-definition command and process the results."
-  (interactive)
+
+(defun racer--find-definition(find-file-func)
   (-if-let (match (--first (s-starts-with? "MATCH" it)
                            (racer--call-at-point "find-definition")))
       (-let [(_name line col file _matchtype _ctx)
@@ -706,8 +707,23 @@ Commands:
             (xref-push-marker-stack)
           (with-no-warnings
             (ring-insert find-tag-marker-ring (point-marker))))
-        (racer--find-file file (string-to-number line) (string-to-number col)))
+        (racer--find-file file (string-to-number line) (string-to-number col) find-file-func))
     (error "No definition found")))
+
+;;;###autoload
+(defun racer-find-definition ()
+  "Run the racer find-definition command and process the results."
+  (interactive (racer--find-definition #'find-file)))
+
+;;;###autoload
+(defun racer-find-definition-other-window ()
+  "Run the racer find-definition command and process the results."
+  (interactive (racer--find-definition #'find-file-other-window)))
+
+;;;###autoload
+(defun racer-find-definition-other-frame ()
+  "Run the racer find-definition command and process the results."
+  (interactive (racer--find-definition #'find-file-other-frame)))
 
 (defun racer--syntax-highlight (str)
   "Apply font-lock properties to a string STR of Rust code."
@@ -775,6 +791,8 @@ If PATH is not in DIRECTORY, just abbreviate it."
 (defvar racer-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "M-.") #'racer-find-definition)
+    (define-key map (kbd "C-x 4 .") #'racer-find-definition-other-window)
+    (define-key map (kbd "C-x 5 .") #'racer-find-definition-other-frame)
     (define-key map (kbd "M-,") #'pop-tag-mark)
     map))
 
