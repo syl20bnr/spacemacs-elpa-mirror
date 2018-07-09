@@ -6,8 +6,6 @@ thread tree.
 
 * Setup
 
-From the headers view, call `M-x mu4e-conversation'.
-
 To fully replace `mu4e-view' with `mu4e-conversation' from any other command
 (e.g. `mu4e-headers-next', `helm-mu'), call
 

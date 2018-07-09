@@ -3,8 +3,8 @@
 ;; Author: Dan Harms <danielrharms@gmail.com>
 ;; Created: Wednesday, June  1, 2016
 ;; Version: 0.1
-;; Package-Version: 20180126.857
-;; Modified Time-stamp: <2018-01-26 10:56:40 dan.harms>
+;; Package-Version: 20180709.1114
+;; Modified Time-stamp: <2018-07-09 13:13:11 dan.harms>
 ;; Modified by: Dan Harms
 ;; Keywords: tools c++ namespace
 ;; URL: https://github.com/articuluxe/outrespace.git
@@ -38,7 +38,7 @@
   :prefix "outrespace")
 
 (defvar-local outrespace-list nil
-   "List of namespaces in the current buffer.")
+  "List of namespaces in the current buffer.")
 
 (defcustom outrespace-prefix-key (kbd "C-c C-`")
   "Prefix key for `outrespace-mode'."
@@ -448,8 +448,9 @@ This removes the tags and delimiters, not the content."
   "Jump to a namespace in current buffer, selected by name."
   (interactive)
   (let ((ns (outrespace--choose-ns-by-name "Namespace to jump to: ")))
-    (when ns
-      (outrespace--jump-to-ns ns))))
+    (if ns
+        (outrespace--jump-to-ns ns)
+      (message "No namespaces."))))
 
 ;;;###autoload
 (defun outrespace-change-ns-name ()
@@ -457,8 +458,9 @@ This removes the tags and delimiters, not the content."
   (interactive)
   (outrespace-scan-buffer)
   (let ((ns (outrespace--choose-ns-by-name "Namespace to change: ")))
-    (when ns
-      (outrespace--change-ns-name ns))))
+    (if ns
+        (outrespace--change-ns-name ns)
+      (message "No namespaces."))))
 
 ;;;###autoload
 (defun outrespace-delete-ns-by-name ()
@@ -466,8 +468,9 @@ This removes the tags and delimiters, not the content."
   (interactive)
   (outrespace-scan-buffer)
   (let ((ns (outrespace--choose-ns-by-name "Namespace to delete: ")))
-    (when ns
-      (outrespace--delete-ns ns))))
+    (if ns
+        (outrespace--delete-ns ns)
+      (message "No namespaces."))))
 
 ;;;###autoload
 (defun outrespace-highlight-ns-by-name ()
@@ -475,8 +478,9 @@ This removes the tags and delimiters, not the content."
   (interactive)
   (outrespace-scan-buffer)
   (let ((ns (outrespace--choose-ns-by-name "Namespace to highlight: ")))
-    (when ns
-      (outrespace--highlight-ns ns))))
+    (if ns
+        (outrespace--highlight-ns ns)
+      (message "No namespaces."))))
 
 ;;;###autoload
 (defun outrespace-print-enclosing-ns-name ()

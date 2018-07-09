@@ -4,10 +4,10 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20180630.111
+;; Package-Version: 20180709.1217
 ;; Keywords: project, convenience
-;; Version: 0.15.0-cvs
-;; Package-Requires: ((emacs "24.3") (pkg-info "0.4"))
+;; Version: 1.0.0-snapshot
+;; Package-Requires: ((emacs "25.1") (pkg-info "0.4"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -43,6 +43,7 @@
 (require 'ibuf-ext)
 (require 'compile)
 (require 'grep)
+(require 'subr-x)
 
 (eval-when-compile
   (defvar ag-ignore-list)
@@ -64,68 +65,6 @@
 (defvar grep-files-aliases)
 (defvar grep-find-ignored-directories)
 (defvar grep-find-ignored-files)
-
-;;;; Compatibility
-(eval-and-compile
-  ;; Added in Emacs 24.3.
-  (unless (fboundp 'defvar-local)
-    (defmacro defvar-local (var val &optional docstring)
-      "Define VAR as a buffer-local variable with default value VAL.
-Like `defvar' but additionally marks the variable as being automatically
-buffer-local wherever it is set."
-      (declare (debug defvar) (doc-string 3))
-      `(progn
-         (defvar ,var ,val ,docstring)
-         (make-variable-buffer-local ',var))))
-
-  ;; Added in Emacs 24.4
-  (unless (fboundp 'string-suffix-p)
-    (defun string-suffix-p (suffix string &optional ignore-case)
-      "Return non-nil if SUFFIX is a suffix of STRING.
-If IGNORE-CASE is non-nil, the comparison is done without paying
-attention to case differences."
-      (let ((start-pos (- (length string) (length suffix))))
-        (and (>= start-pos 0)
-             (eq t (compare-strings suffix nil nil
-                                    string start-pos nil ignore-case))))))
-
-  ;; Improved (no more stack overflows) in Emacs 24.5
-  (eval-after-load 'etags
-    '(when (< emacs-major-version 25)
-       (defvar etags--table-line-limit 500)
-       (defun etags-tags-completion-table ()
-         (let ((table (make-vector 511 0))
-               (progress-reporter
-                (make-progress-reporter
-                 (format "Making tags completion table for %s..." buffer-file-name)
-                 (point-min) (point-max))))
-           (save-excursion
-             (goto-char (point-min))
-             (while (not (eobp))
-               (if (not (re-search-forward
-                         "[\f\t\n\r()=,; ]?\177\\\(?:\\([^\n\001]+\\)\001\\)?"
-                         (+ (point) etags--table-line-limit) t))
-                   (forward-line 1)
-                 (intern (prog1 (if (match-beginning 1)
-                                    (buffer-substring (match-beginning 1) (match-end 1))
-                                  (goto-char (match-beginning 0))
-                                  (skip-chars-backward "^\f\t\n\r()=,; ")
-                                  (prog1
-                                      (buffer-substring (point) (match-beginning 0))
-                                    (goto-char (match-end 0))))
-                           (progress-reporter-update progress-reporter (point)))
-                         table))))
-           table)))))
-
-(defun projectile-trim-string (string)
-  "Remove whitespace at the beginning and end of STRING."
-  (replace-regexp-in-string
-   "[ 	\n\r]+\\'"
-   ""
-   (replace-regexp-in-string
-    "\\`[ 	\n\r]+"
-    ""
-    string)))
 
 
 ;;; Customization
@@ -205,7 +144,6 @@ Otherwise consider the current directory the project root."
   :group 'projectile
   :type '(radio
           (const :tag "Ido" ido)
-          (const :tag "Grizzl" grizzl)
           (const :tag "Helm" helm)
           (const :tag "Ivy" ivy)
           (const :tag "Default" default)
@@ -590,7 +528,7 @@ When set to nil you'll have always add projects explicitly with
 `projectile-add-known-project'."
   :group 'projectile
   :type 'boolean
-  :package-version '(projectile . "0.15.0"))
+  :package-version '(projectile . "1.0.0"))
 
 
 ;;; Version information
@@ -1102,7 +1040,7 @@ Possible checked states are:
 as defined in `vc.el'."
   :group 'projectile
   :type '(repeat (string))
-  :package-version '(projectile . "0.15.0"))
+  :package-version '(projectile . "1.0.0"))
 
 (defun projectile-get-ext-command ()
   "Determine which external command to invoke based on the project's VCS."
@@ -1711,11 +1649,11 @@ prefix the string will be assumed to be an ignore string."
             (?! (push (buffer-substring (1+ (point)) (line-end-position)) ensure))
             (_ (push (buffer-substring (point) (line-end-position)) ignore)))
           (forward-line)))
-      (list (mapcar (lambda (f) (file-name-as-directory (projectile-trim-string f)))
+      (list (mapcar (lambda (f) (file-name-as-directory (string-trim f)))
                     (delete "" (reverse keep)))
-            (mapcar #'projectile-trim-string
+            (mapcar #'string-trim
                     (delete "" (reverse ignore)))
-            (mapcar #'projectile-trim-string
+            (mapcar #'string-trim
                     (delete "" (reverse ensure)))))))
 
 (defun projectile-expand-root (name)
@@ -1750,12 +1688,6 @@ project-root for every file."
                       :buffer "*helm-projectile*")
               (user-error "Please install helm from \
 https://github.com/emacs-helm/helm")))
-           ((eq projectile-completion-system 'grizzl)
-            (if (and (fboundp 'grizzl-completing-read)
-                     (fboundp 'grizzl-make-index))
-                (grizzl-completing-read prompt (grizzl-make-index choices))
-              (user-error "Please install grizzl from \
-https://github.com/d11wtq/grizzl")))
            ((eq projectile-completion-system 'ivy)
             (if (fboundp 'ivy-read)
                 (ivy-read prompt choices
@@ -1831,21 +1763,21 @@ https://github.com/abo-abo/swiper")))
     ("cxx" . ("h" "hxx" "ixx"))
     ("ixx" . ("h" "hxx" "cxx"))
     ("hxx" . ("h" "ixx" "cxx"))
-    ("c" . ("h"))
-    ("m" . ("h"))
-    ("mm" . ("h"))
-    ("h" . ("c" "cc" "cpp" "ipp" "hpp" "cxx" "ixx" "hxx" "m" "mm"))
-    ("cc" . ("h" "hh" "hpp"))
-    ("hh" . ("cc"))
+    ("c"   . ("h"))
+    ("m"   . ("h"))
+    ("mm"  . ("h"))
+    ("h"   . ("c" "cc" "cpp" "ipp" "hpp" "cxx" "ixx" "hxx" "m" "mm"))
+    ("cc"  . ("h" "hh" "hpp"))
+    ("hh"  . ("cc"))
 
     ;; vertex shader and fragment shader extensions in glsl
     ("vert" . ("frag"))
     ("frag" . ("vert"))
 
     ;; handle files with no extension
-    (nil . ("lock" "gpg"))
+    (nil    . ("lock" "gpg"))
     ("lock" . (""))
-    ("gpg" . (""))
+    ("gpg"  . (""))
     )
   "Alist of extensions for switching to file with the same name,
   using other extensions based on the extension of current
@@ -2299,7 +2231,7 @@ TEST-DIR which specifies the path to the tests relative to the project root."
   :group 'projectile
   :type 'function)
 
-(define-obsolete-variable-alias 'projectile-go-function 'projectile-go-project-test-function "0.15")
+(define-obsolete-variable-alias 'projectile-go-function 'projectile-go-project-test-function "1.0.0")
 
 ;;; Project type registration
 ;;
@@ -2875,7 +2807,7 @@ SEARCH-TERM is a regexp."
       (with-temp-buffer
         (setq exit-code
               (call-process-shell-command command nil (current-buffer))
-              shell-output (projectile-trim-string
+              shell-output (string-trim
                             (buffer-substring (point-min) (point-max)))))
       (unless (zerop exit-code)
         (error shell-output))
@@ -3012,8 +2944,7 @@ Returns a list of expanded filenames."
                           (substring str 2)
                         str)))
             (split-string
-             (projectile-trim-string
-              (shell-command-to-string cmd))
+             (string-trim (shell-command-to-string cmd))
              "\n+"
              t))))
 
@@ -4039,9 +3970,6 @@ Otherwise behave as if called interactively.
     (remove-hook 'dired-before-readin-hook #'projectile-track-known-projects-find-file-hook t)
     (ad-deactivate 'compilation-find-file)
     (ad-deactivate 'delete-file))))
-
-;;;###autoload
-(define-obsolete-function-alias 'projectile-global-mode 'projectile-mode)
 
 (provide 'projectile)
 

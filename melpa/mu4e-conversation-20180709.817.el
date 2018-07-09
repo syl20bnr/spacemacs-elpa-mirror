@@ -5,7 +5,7 @@
 ;; Author: Pierre Neidhardt <ambrevar@gmail.com>
 ;; Maintainer: Pierre Neidhardt <ambrevar@gmail.com>
 ;; URL: https://gitlab.com/Ambrevar/mu4e-conversation
-;; Package-Version: 20180708.857
+;; Package-Version: 20180709.817
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: mail, convenience, mu4e
@@ -34,8 +34,6 @@
 ;; thread tree.
 ;;
 ;; * Setup
-;;
-;; From the headers view, call `M-x mu4e-conversation'.
 ;;
 ;; To fully replace `mu4e-view' with `mu4e-conversation' from any other command
 ;; (e.g. `mu4e-headers-next', `helm-mu'), call

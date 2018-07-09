@@ -3,7 +3,7 @@
 ;;
 ;; Author: Kevin Kehl <kevin.kehl@gmail.com>
 ;; URL: http://github.com/Galooshi/emacs-import-js/
-;; Package-Version: 20171026.1628
+;; Package-Version: 20180709.1133
 ;; Package-Requires: ((grizzl "0.1.0") (emacs "24"))
 ;; Version: 1.0.0
 ;; Keywords: javascript
@@ -43,10 +43,15 @@
   (unless import-js-process
     (throw 'import-js-daemon "import-js-daemon not running")))
 
+(defun import-js-json-encode-alist (alist)
+  (let ((json-encoding-pretty-print nil))
+    (json-encode-alist alist)))
+
 (defun import-js-send-input (input-alist)
   "Append the current buffer content and path to file to a data alist, and send to import-js"
-  (let ((input-json (json-encode-alist (append input-alist `(("fileContent" . ,(buffer-string))
-                                                             ("pathToFile" . ,(buffer-file-name)))))))
+  (let ((input-json (import-js-json-encode-alist (append input-alist
+                                                         `(("fileContent" . ,(buffer-string))
+                                                           ("pathToFile" . ,(buffer-file-name)))))))
     (process-send-string import-js-process input-json)
     (process-send-string import-js-process "\n")))
 
