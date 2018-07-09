@@ -5,7 +5,7 @@
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Created: 2017-09-25
 ;; Version: 0.2-pre
-;; Package-Version: 20171127.335
+;; Package-Version: 20180709.130
 ;; Keywords: pocket
 ;; Package-Requires: ((emacs "25.1") (dash "2.13.0") (kv "0.0.19") (pocket-lib "0.1") (s "1.10") (ov "1.0.6") (rainbow-identifiers "0.2.2") (org-web-tools "0.1") (ht "2.2"))
 ;; URL: https://github.com/alphapapa/pocket-reader.el
@@ -113,7 +113,7 @@
                     "u" pocket-reader-unmark-all
                     "o" pocket-reader-more
                     "l" pocket-reader-limit
-                    "r" pocket-reader-random-item
+                    "R" pocket-reader-random-item
                     "ta" pocket-reader-add-tags
                     "tr" pocket-reader-remove-tags
                     "tt" pocket-reader-set-tags

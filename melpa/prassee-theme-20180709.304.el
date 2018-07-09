@@ -4,7 +4,7 @@
 
 ;; Author: Prassee  <prassee.sathian@gmail.com>
 ;; Keywords: dark high-contrast  faces
-;; Package-Version: 20180705.2124
+;; Package-Version: 20180709.304
 ;; URL: https://github.com/prassee/prassee-emacs-theme
 ;; Package-Requires: ((emacs "24"))
 ;; Version: 1.2
@@ -369,8 +369,7 @@
      )))
 
 ;; set cursor style
-(setq-default cursor-type '(bar . 4))
-;; (set-cursor-color ,magenta) 
+(setq-default cursor-type '(bar . 5))
 
 ;; autoload
 (when load-file-name
