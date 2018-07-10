@@ -4,7 +4,7 @@
 
 ;; Author: Edward Banner <edward.banner@gmail.com>
 ;; Version: 1.0
-;; Package-Version: 20180410.1715
+;; Package-Version: 20180709.2025
 ;; Package-Requires: ((emacs "24.4") (ein "0.13.1") (epc "0.1.1") (deferred "0.5.1"))
 ;; Keywords: convenience
 ;; URL: https://github.com/ebanner/pynt
@@ -263,14 +263,14 @@ FIXME this is experimental and not currently used."
           (pynt-log "Annotated code = %s" annotated-code)
           (ein:shared-output-eval-string annotated-code))))))
 
-(defun pynt-expand-for ()
-  "Expand a for loop to its first iteration.
+(defun pynt-unpack ()
+  "Unpack a statement.
 
 Applies to the cell corresponding to the line at point."
   (interactive)
   (let* ((code (buffer-substring-no-properties (point-min) (point-max))))
     (deferred:$
-      (epc:call-deferred pynt-ast-server 'expand_loop `(,code ,pynt-namespace ,(line-number-at-pos)))
+      (epc:call-deferred pynt-ast-server 'unpack `(,code ,pynt-namespace ,(line-number-at-pos)))
       (deferred:nextc it
         (lambda (cells)
           (with-current-buffer (pynt-notebook-buffer)
@@ -717,7 +717,7 @@ This involves creating a notebook if we haven't created one yet."
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-e") 'pynt-dump-namespace)
     (define-key map (kbd "C-c C-s") 'pynt-recover-notebook-window)
-    (define-key map (kbd "C-c C-k") 'pynt-expand-for)
+    (define-key map (kbd "C-c C-k") 'pynt-unpack)
     (define-key map (kbd "C-c C-n") 'pynt-goto-next-cell-line)
     (define-key map (kbd "C-c C-p") 'pynt-goto-prev-cell-line)
     (define-key map (kbd "<up>") 'pynt-next-cell-instance)
