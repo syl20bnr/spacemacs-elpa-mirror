@@ -5,8 +5,8 @@
 ;; Code licensed under the MIT license
 
 ;; Author: film42
-;; Version: 1.4.0
-;; Package-Version: 20180517.556
+;; Version: 1.5.0
+;; Package-Version: 20180710.624
 ;; Package-Requires: ((emacs "24"))
 ;; URL: https://github.com/dracula/emacs
 
@@ -15,7 +15,7 @@
 ;; A dark color theme available for a number of editors.
 
 ;;; Code:
-
+(require 'cl-lib)
 (deftheme dracula)
 
 (let ((colors '((fg1          "#f8f8f2")      ; Assigment form: VARIABLE COLOR [TTY-COLOR]
@@ -225,8 +225,8 @@
                (magit-section-heading :foreground ,keyword :weight bold)
                (magit-section-highlight :background ,bg2)
                ;; mode-line
-               (mode-line :foreground nil :background ,bg3 :box ,bg3)
-               (mode-line-inactive :foreground ,fg1 :background ,bg1 :box ,bg1)
+               (mode-line :foreground nil :background ,bg5 :box ,bg5)
+               (mode-line-inactive :foreground ,fg1 :background ,bg2 :box ,bg2)
                ;; mu4e
                (mu4e-cited-1-face :foreground ,fg2)
                (mu4e-cited-7-face :foreground ,fg3)
@@ -429,10 +429,10 @@
                                                    (eval `(backquote ,spec)))))
              (cl-loop for (face . spec) in faces
                       collect `(,face
-                                ((((type tty))
-                                  ,(expand-for-tty spec))
-                                 (((type graphic))
-                                  ,(expand-for-graphic spec)))))))))
+                                ((((min-colors 16777216))
+                                  ,(expand-for-graphic spec))
+                                 (t
+                                  ,(expand-for-tty spec)))))))))
 
 ;;;###autoload
 (when load-file-name

@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180709.902
+;; Package-Version: 20180710.807
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: convenience, matching, tools
@@ -2882,8 +2882,7 @@ otherwise continue prompting for tags."
       (unless (org-at-heading-p)
         (org-back-to-heading t))
       (setq counsel-org-tags (split-string (org-get-tags-string) ":" t)))
-    (let ((org-setting-tags t)
-          (org-last-tags-completion-table
+    (let ((org-last-tags-completion-table
            (append (and (or org-complete-tags-always-offer-all-agenda-tags
                             (eq major-mode 'org-agenda-mode))
                         (org-global-tags-completion-table

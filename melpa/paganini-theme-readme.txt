@@ -1,1 +1,1 @@
- This theme is based on FireCode
+ A colorful, dark and warm Emacs theme.

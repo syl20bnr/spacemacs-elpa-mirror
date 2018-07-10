@@ -4,7 +4,7 @@
 ;; Author:  Shinji Tanaka <shinji.tanaka@gmail.com>
 ;; Created: 17 Feb 2013
 ;; Version: 0.0.5
-;; Package-Version: 20140626.35
+;; Package-Version: 20180710.656
 ;; URL: https://github.com/stanaka/dash-at-point
 ;;
 ;; This file is NOT part of GNU Emacs.
@@ -114,7 +114,9 @@ Nil means use the modern mode ('dash-plugin://').
     (rust-mode . "rust")
     (sass-mode . "sass,compass,bourbon,neat,css")
     (scala-mode . "scala,akka,playscala,scaladoc")
+    (sql-mode . "psql,mysql,sqlite,postgis")
     (stylus-mode . "stylus")
+    (swift-mode . "cpp,iphoneos,macosx,appledoc,cocoapods,cocos2dx,cocos2d,cocos3d,kobold2d,sparrow,c,manpages")
     (tcl-mode . "tcl")
     (tuareg-mode . "ocaml")
     (twig-mode . "twig")
