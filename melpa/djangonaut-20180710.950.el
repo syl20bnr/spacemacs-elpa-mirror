@@ -4,7 +4,7 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/djangonaut
-;; Package-Version: 20180623.151
+;; Package-Version: 20180710.950
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.2") (magit-popup "2.6.0") (pythonic "0.1.0") (f "0.20.0") (s "1.12.0"))
 
@@ -396,6 +396,39 @@ collect_url_modules(get_resolver(get_urlconf()))
 
 " "Python source code to get url modules.")
 
+(defvar djangonaut-get-forms-code "
+from gc import get_objects
+from importlib import import_module
+from inspect import findsource, getsourcefile, getmodule, isclass
+
+from django.forms.forms import BaseForm
+from django.forms.formsets import BaseFormSet
+
+import_module(settings.ROOT_URLCONF)
+
+for obj in get_objects():
+    if isclass(obj) and issubclass(obj, (BaseForm, BaseFormSet)):
+        name = getmodule(obj).__name__ + '.' + obj.__name__
+        result[name] = [getsourcefile(obj), findsource(obj)[1]]
+
+" "Python source code to get forms.")
+
+(defvar djangonaut-get-widgets-code "
+from gc import get_objects
+from importlib import import_module
+from inspect import findsource, getsourcefile, getmodule, isclass
+
+from django.forms.widgets import Widget
+
+import_module(settings.ROOT_URLCONF)
+
+for obj in get_objects():
+    if isclass(obj) and issubclass(obj, Widget):
+        name = getmodule(obj).__name__ + '.' + obj.__name__
+        result[name] = [getsourcefile(obj), findsource(obj)[1]]
+
+" "Python source code to get widgets.")
+
 (defvar djangonaut-get-templates-code "
 from os import walk
 from os.path import join
@@ -586,6 +619,10 @@ except:
 
 (defvar djangonaut-url-modules-history nil)
 
+(defvar djangonaut-forms-history nil)
+
+(defvar djangonaut-widgets-history nil)
+
 (defvar djangonaut-templates-history nil)
 
 (defvar djangonaut-template-tags-history nil)
@@ -745,6 +782,14 @@ user input.  HIST is a variable to store history of choices."
 (defun djangonaut-get-url-modules ()
   "Execute and parse python code to get url modules."
   (djangonaut-read (djangonaut-call djangonaut-get-url-modules-code)))
+
+(defun djangonaut-get-forms ()
+  "Execute and parse python code to get forms."
+  (djangonaut-read (djangonaut-call djangonaut-get-forms-code)))
+
+(defun djangonaut-get-widgets ()
+  "Execute and parse python code to get widgets."
+  (djangonaut-read (djangonaut-call djangonaut-get-widgets-code)))
 
 (defun djangonaut-get-templates ()
   "Execute and parse python code to get templates."
@@ -942,6 +987,26 @@ user input.  HIST is a variable to store history of choices."
   (interactive)
   (djangonaut-find-file #'find-file-other-window "URL Module: " (djangonaut-get-url-modules) 'djangonaut-url-modules-history))
 
+(defun djangonaut-find-form ()
+  "Open definition of the Django form."
+  (interactive)
+  (djangonaut-find-file-and-line #'find-file "Form: " (djangonaut-get-forms) 'djangonaut-forms-history))
+
+(defun djangonaut-find-form-other-window ()
+  "Open definition of the Django form in the other window."
+  (interactive)
+  (djangonaut-find-file-and-line #'find-file-other-window "Form: " (djangonaut-get-forms) 'djangonaut-forms-history))
+
+(defun djangonaut-find-widget ()
+  "Open definition of the Django widget."
+  (interactive)
+  (djangonaut-find-file-and-line #'find-file "Widget: " (djangonaut-get-widgets) 'djangonaut-widgets-history))
+
+(defun djangonaut-find-widget-other-window ()
+  "Open definition of the Django widget in the other window."
+  (interactive)
+  (djangonaut-find-file-and-line #'find-file-other-window "Widget: " (djangonaut-get-widgets) 'djangonaut-widgets-history))
+
 (defun djangonaut-find-template ()
   "Open definition of the Django template."
   (interactive)
@@ -1008,11 +1073,13 @@ user input.  HIST is a variable to store history of choices."
     (define-key map (kbd "s") 'djangonaut-find-drf-serializer)
     (define-key map (kbd "p") 'djangonaut-find-drf-permission)
     (define-key map (kbd "v") 'djangonaut-find-view)
-    (define-key map (kbd "w") 'djangonaut-find-middleware)
+    (define-key map (kbd "d") 'djangonaut-find-middleware)
     (define-key map (kbd "u") 'djangonaut-find-url-module)
+    (define-key map (kbd "f") 'djangonaut-find-form)
+    (define-key map (kbd "w") 'djangonaut-find-widget)
     (define-key map (kbd "t") 'djangonaut-find-template)
     (define-key map (kbd "g") 'djangonaut-find-template-tag)
-    (define-key map (kbd "f") 'djangonaut-find-template-filter)
+    (define-key map (kbd "h") 'djangonaut-find-template-filter)
     (define-key map (kbd "j") 'djangonaut-find-static-file)
     (define-key map (kbd "S") 'djangonaut-find-settings-module)
     (define-key map (kbd "4 i") 'djangonaut-dired-installed-apps-other-window)
@@ -1026,11 +1093,13 @@ user input.  HIST is a variable to store history of choices."
     (define-key map (kbd "4 s") 'djangonaut-find-drf-serializer-other-window)
     (define-key map (kbd "4 p") 'djangonaut-find-drf-permission-other-window)
     (define-key map (kbd "4 v") 'djangonaut-find-view-other-window)
-    (define-key map (kbd "4 w") 'djangonaut-find-middleware-other-window)
+    (define-key map (kbd "4 d") 'djangonaut-find-middleware-other-window)
     (define-key map (kbd "4 u") 'djangonaut-find-url-module-other-window)
+    (define-key map (kbd "4 f") 'djangonaut-find-form-other-window)
+    (define-key map (kbd "4 w") 'djangonaut-find-widget-other-window)
     (define-key map (kbd "4 t") 'djangonaut-find-template-other-window)
     (define-key map (kbd "4 g") 'djangonaut-find-template-tag-other-window)
-    (define-key map (kbd "4 f") 'djangonaut-find-template-filter-other-window)
+    (define-key map (kbd "4 h") 'djangonaut-find-template-filter-other-window)
     (define-key map (kbd "4 j") 'djangonaut-find-static-file-other-window)
     (define-key map (kbd "4 S") 'djangonaut-find-settings-module-other-window)
     map))
@@ -1073,6 +1142,10 @@ user input.  HIST is a variable to store history of choices."
      :help "Open definition of the Django middleware"]
     ["Find url module" djangonaut-find-url-module
      :help "Open definition of the Django url module"]
+    ["Find form" djangonaut-find-form
+     :help "Open definition of the Django form"]
+    ["Find widget" djangonaut-find-widget
+     :help "Open definition of the Django widget"]
     ["Find template" djangonaut-find-template
      :help "Open definition of the Django template"]
     ["Find template tag" djangonaut-find-template-tag
