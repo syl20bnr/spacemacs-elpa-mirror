@@ -3,8 +3,8 @@
 ;; Copyright © 2010-2018 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 2.6.20180506163108
-;; Package-Version: 20180506.1631
+;; Version: 2.7.20180709222433
+;; Package-Version: 20180709.2228
 ;; Created: 08 Dec 2010
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: abbrev, convenience, unicode, math, LaTex
@@ -568,6 +568,7 @@
    ["diam" "♦"]
 
    ["<3" "♥"]
+
    ))
 
 (xah-math-input--add-to-hash
@@ -728,8 +729,18 @@ Version 2018-02-16"
      ;; html entity hex number. e.g. 「&#x3b1;」
      ((string-match "\\`&#x\\([0-9a-fA-F]+\\);\\'" @inputStr) (char-to-string (string-to-number (match-string 1 @inputStr) 16)))
      ;; unicode full name. e.g. 「GREEK SMALL LETTER ALPHA」
-     ((and (string-match "\\`\\([- a-zA-Z0-9]+\\)\\'" @inputStr) (setq $charByNameResult (assoc-string @inputStr (ucs-names) t))) (char-to-string (cdr $charByNameResult)))
+     ((and (string-match "\\`\\([- a-zA-Z0-9]+\\)\\'" @inputStr)
+           (setq $charByNameResult (xah-math-input--name-to-codepoint @inputStr)))
+      (char-to-string $charByNameResult))
      (t nil))))
+
+(defun xah-math-input--name-to-codepoint (@name)
+  "Returns integer that's the codepoint of Unicode char named @name (string).
+Version 2018-07-09"
+  (interactive)
+  (if (version<= "26" emacs-version)
+      (gethash @name (ucs-names))
+    (assoc-string @name (ucs-names) t)))
 
 (defun xah-math-input-change-to-symbol (&optional print-message-when-no-match)
   "Change text selection or word to the left of cursor into a Unicode character.
@@ -750,7 +761,7 @@ Full Unicode name can also be used, e.g. 「greek small letter alpha」.
 If preceded by `universal-argument', print error message when no valid abbrev found.
 
 See also: `xah-math-input-mode'.
-Version 2018-02-16"
+Version 2018-07-09"
   (interactive "P")
   (let ($p1 $p2 $inputStr $resultChar)
     (if (region-active-p)
