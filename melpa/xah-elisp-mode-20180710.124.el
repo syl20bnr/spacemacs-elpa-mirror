@@ -3,8 +3,8 @@
 ;; Copyright © 2013-2017, by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.info/ )
-;; Version: 3.3.20180402
-;; Package-Version: 20180402.2139
+;; Version: 3.4.20180710012420
+;; Package-Version: 20180710.124
 ;; Created: 23 Mar 2013
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: lisp, languages
@@ -3214,7 +3214,6 @@ Version 2017-01-27"
     ("looking-at" "(looking-at \"REGEXP▮\")" xah-elisp--ahf)
     ("looking-back" "(looking-back \"REGEXP▮\" LIMIT &optional GREEDY)" xah-elisp--ahf)
 
-
     ("make-directory" "(make-directory ▮ &optional PARENTS)" xah-elisp--ahf)
     ("make-indirect-buffer" "(make-indirect-buffer BASE-BUFFER▮ NAME &optional CLONE)" xah-elisp--ahf)
     ("make-list" "(make-list LENGTH▮ INIT)" xah-elisp--ahf)
@@ -3380,6 +3379,14 @@ Version 2017-01-27"
     ("string-suffix-p" "(string-suffix-p suffix▮ string &optional ignore-case)" xah-elisp--ahf)
     ("compare-strings" "(compare-strings string1▮ start1 end1 string2 start2 end2)" xah-elisp--ahf)
     ("assoc-string" "(assoc-string key▮ alist &optional case-fold)" xah-elisp--ahf)
+
+
+    ("clrhash" "(clrhash ▮)" xah-elisp--ahf)
+    ("gethash" "(gethash KEY▮ TABLE &optional DFLT)" xah-elisp--ahf)
+    ("maphash" "(maphash FUNCTION▮ TABLE)" xah-elisp--ahf)
+    ("puthash" "(puthash KEY▮ VALUE TABLE)" xah-elisp--ahf)
+    ("remhash" "(remhash KEY▮ TABLE)" xah-elisp--ahf)
+    ("make-hash-table" "(make-hash-table :test 'equal ▮ &rest KEYWORD-ARGS)" xah-elisp--ahf)
 
     ;;
     )

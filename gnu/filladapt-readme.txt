@@ -10,7 +10,7 @@ only if the fill prefix is not already non-nil.
 
 The net result of this is that blurbs of text that are offset
 from left margin by asterisks, dashes, and/or spaces, numbered
-examples, included text from USENET news articles, etc. are
+examples, included text from USENET news articles, etc.. are
 generally filled correctly with no fuss.
 
 Since this package replaces existing Emacs functions, it cannot

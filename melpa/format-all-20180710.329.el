@@ -2,7 +2,7 @@
 ;;
 ;; Author: Lassi Kortela <lassi@lassi.io>
 ;; URL: https://github.com/lassik/emacs-format-all-the-code
-;; Package-Version: 20180702.344
+;; Package-Version: 20180710.329
 ;; Version: 0.1.0
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; Keywords: languages util
@@ -37,14 +37,16 @@
 ;; - Ruby (rufo)
 ;; - Rust (rustfmt)
 ;; - Shell script (shfmt)
+;; - SQL (sqlformat)
 ;; - Swift (swiftformat)
 ;;
 ;; You will need to install external programs to do the formatting.
 ;; If `format-all-buffer` can't find the right program, it will try to
 ;; tell you how to install it.
 ;;
-;; A local minor mode called `format-all-mode` is available.  Please
-;; see the documentation for that function for instructions.
+;; A local minor mode called `format-all-mode` is available to format
+;; code on save.  Please see the documentation for that function for
+;; instructions.
 ;;
 ;; There are currently no customize variables, since it's not clear
 ;; what approach should be taken.  Please see
@@ -288,12 +290,35 @@ EXECUTABLE is the full path to the formatter."
    "-ln" (cl-case (and (boundp 'sh-shell) (symbol-value 'sh-shell))
            (bash "bash") (mksh "mksh") (t "posix"))))
 
+(defun format-all-buffer-sqlformat (executable)
+  "Format the current buffer as SQL using \"sqlformat\".
+
+EXECUTABLE is the full path to the formatter."
+  (let* ((ic (car default-process-coding-system))
+         (oc (cdr default-process-coding-system))
+         (ienc (symbol-name (or (coding-system-get ic :mime-charset) 'utf-8)))
+         (oenc (symbol-name (or (coding-system-get oc :mime-charset) 'utf-8)))
+         (process-environment (cons (concat "PYTHONIOENCODING=" oenc)
+                                    process-environment)))
+    (format-all-buffer-process
+     executable
+     nil nil
+     "--keywords" "upper"
+     "--reindent_aligned"
+     "--encoding" ienc
+     "-")))
+
 (defun format-all-buffer-standard (executable)
   "Format the current buffer as JavaScript using \"standard\".
 
 EXECUTABLE is the full path to the formatter."
+  ;; `standard --stdin` properly uses zero vs non-zero exit codes to
+  ;; indicate success vs error.  However, it checks for quite a broad
+  ;; range of errors, all the way up to undeclared identifiers and
+  ;; such.  To catch only syntax errors, we need to look specifically
+  ;; for the text "Parsing error:".
   (format-all-buffer-process
-   executable '(0 1) "Parsing error:" "--fix" "--stdin"))
+   executable '(0 1) ".*?:.*?:[0-9]+:[0-9]+: Parsing error:" "--fix" "--stdin"))
 
 (defun format-all-buffer-swiftformat (executable)
   "Format the current buffer as Swift using \"swiftformat\".
@@ -380,6 +405,11 @@ EXECUTABLE is the full path to the formatter."
      (:install (macos "brew install shfmt"))
      (:function format-all-buffer-shfmt)
      (:modes sh-mode))
+    (sqlformat
+     (:executable "sqlformat")
+     (:install "pip install sqlparse")
+     (:function format-all-buffer-sqlformat)
+     (:modes sql-mode))
     (standard
      (:executable "standard")
      (:install "npm install standard")

@@ -23,14 +23,16 @@ Supported languages:
 - Ruby (rufo)
 - Rust (rustfmt)
 - Shell script (shfmt)
+- SQL (sqlformat)
 - Swift (swiftformat)
 
 You will need to install external programs to do the formatting.
 If `format-all-buffer` can't find the right program, it will try to
 tell you how to install it.
 
-A local minor mode called `format-all-mode` is available.  Please
-see the documentation for that function for instructions.
+A local minor mode called `format-all-mode` is available to format
+code on save.  Please see the documentation for that function for
+instructions.
 
 There are currently no customize variables, since it's not clear
 what approach should be taken.  Please see

@@ -375,9 +375,11 @@
 	     ((:url . "http://elpa.gnu.org/packages/ediprolog.html")
 	      (:keywords "languages" "processes"))])
  (eglot .
-	[(1 0)
+	[(1 1)
 	 ((emacs
-	   (26 1)))
+	   (26 1))
+	  (jsonrpc
+	   (1 0 0)))
 	 "Client for Language Server Protocol (LSP) servers" tar
 	 ((:keywords "convenience" "languages")
 	  (:url . "https://github.com/joaotavora/eglot"))])
@@ -449,7 +451,7 @@
 			 ((:url . "http://github.com/wence-/f90-iface/")
 			  (:keywords))])
  (filladapt .
-	    [(2 12 1)
+	    [(2 12 2)
 	     ((emacs
 	       (24 4)))
 	     "Adaptive fill" single

@@ -5,7 +5,7 @@
 ;; Author: Pierre Neidhardt <ambrevar@gmail.com>
 ;; Maintainer: Pierre Neidhardt <ambrevar@gmail.com>
 ;; URL: https://gitlab.com/Ambrevar/mu4e-conversation
-;; Package-Version: 20180709.817
+;; Package-Version: 20180710.246
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: mail, convenience, mu4e
@@ -307,7 +307,7 @@ If less than 0, don't limit the number of colors."
     (mu4e-view-fill-long-lines)
     (set-buffer-modified-p modified-p)))
 
-(defun mu4e-conversation-set-attachment (&optional msg)
+(defun mu4e-conversation-set-attachment (&optional msg &rest _)
   "Call before attachment
 functions (e.g. `mu4e-view-save-attachment-multi') so that it
 works for message at point.  Suitable as a :before advice."
@@ -1347,6 +1347,7 @@ in existing view buffers. "
         (advice-add 'mu4e~headers-redraw-get-view-window :override 'mu4e-conversation--headers-redraw-get-view-window)
         (advice-add 'mu4e~proc-filter :override 'mu4e-conversation--proc-filter)
         (advice-add 'mu4e-view-save-attachment-multi :before 'mu4e-conversation-set-attachment)
+        (advice-add 'mu4e-view-save-attachment-single :before 'mu4e-conversation-set-attachment)
         (advice-add 'mu4e-view-open-attachment :before 'mu4e-conversation-set-attachment)
         (advice-add mu4e-update-func :after 'mu4e-conversation--update-handler-extra)
         (add-hook 'mu4e-index-updated-hook 'mu4e-conversation--query-new)
@@ -1355,6 +1356,7 @@ in existing view buffers. "
     (advice-remove 'mu4e~headers-redraw-get-view-window 'mu4e-conversation--headers-redraw-get-view-window)
     (advice-remove 'mu4e~proc-filter 'mu4e-conversation--proc-filter)
     (advice-remove 'mu4e-view-save-attachment-multi 'mu4e-conversation-set-attachment)
+    (advice-remove 'mu4e-view-save-attachment-single 'mu4e-conversation-set-attachment)
     (advice-remove 'mu4e-view-open-attachment 'mu4e-conversation-set-attachment)
     (advice-remove mu4e-update-func 'mu4e-conversation--update-handler-extra)
     (remove-hook 'mu4e-index-updated-hook 'mu4e-conversation--query-new)
@@ -1371,6 +1373,8 @@ in existing view buffers. "
 ;;;###autoload
 (defun mu4e-conversation (&optional msg)
   (interactive)
+  (unless mu4e-conversation-mode
+    (mu4e-warn "mu4e-conversation-mode must be enabled"))
   (setq msg (or msg (mu4e-message-at-point)))
   (unless msg
     (mu4e-warn "No message at point"))
