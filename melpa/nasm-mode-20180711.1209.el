@@ -4,7 +4,7 @@
 
 ;; Author: Christopher Wellons <wellons@nullprogram.com>
 ;; URL: https://github.com/skeeto/nasm-mode
-;; Package-Version: 20180616.850
+;; Package-Version: 20180711.1209
 ;; Version: 1.1.1
 ;; Package-Requires: ((emacs "24.3"))
 
@@ -678,6 +678,15 @@ is not immediately after a mnemonic; otherwise, we insert a tab."
           (end (progn (back-to-indentation) (point))))
       (and (<= start point) (<= point end)))))
 
+(defun nasm-comment-indent ()
+  "Compute desired indentation for comment on the current line."
+  comment-column)
+
+(defun nasm-insert-comment ()
+  "Insert a comment if the current line doesn’t contain one."
+  (let ((comment-insert-comment-function nil))
+    (comment-indent)))
+
 (defun nasm-comment (&optional arg)
   "Begin or edit a comment with context-sensitive placement.
 
@@ -741,6 +750,8 @@ With a prefix arg, kill the comment on the current line with
   (setf font-lock-defaults '(nasm-font-lock-keywords nil :case-fold)
         indent-line-function #'nasm-indent-line
         comment-start ";"
+        comment-indent-function #'nasm-comment-indent
+        comment-insert-comment-function #'nasm-insert-comment
         imenu-generic-expression nasm-imenu-generic-expression))
 
 (provide 'nasm-mode)
