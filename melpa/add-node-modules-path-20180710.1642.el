@@ -6,7 +6,7 @@
 
 ;; Author: Neri Marschik <marschik_neri@cyberagent.co.jp>
 ;; Version: 1.0
-;; Package-Version: 20180522.1916
+;; Package-Version: 20180710.1642
 ;; Package-Requires: ()
 ;; Keywords: javascript, node, node_modules, eslint
 ;; URL: https://github.com/codesuki/add-node-modules-path
@@ -49,10 +49,11 @@ Traverse the directory structure up, until reaching the user's home directory,
  or hitting add-node-modules-max-depth.
 Any path found is added to the `exec-path'."
   (interactive)
-  (let* ((file (or (buffer-file-name) default-directory))
+  (let* ((default-dir (expand-file-name default-directory))
+         (file (or (buffer-file-name) default-dir))
          (home (expand-file-name "~"))
          (iterations add-node-modules-max-depth)
-         (root (directory-file-name (or (file-name-directory (buffer-file-name)) default-directory)))
+         (root (directory-file-name (or (and (buffer-file-name) (file-name-directory (buffer-file-name))) default-dir)))
          (roots '()))
     (while (and root (> iterations 0))
       (setq iterations (1- iterations))
