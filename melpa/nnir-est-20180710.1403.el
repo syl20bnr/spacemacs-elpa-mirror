@@ -4,8 +4,8 @@
 ;; Description: Gnus nnir interface for HyperEstraier
 ;; Author: KAWABATA, Taichi <kawabata.taichi_at_gmail.com>
 ;; Created: 2014-02-01
-;; Version: 1.170817
-;; Package-Version: 20170818.746
+;; Version: 1.180705
+;; Package-Version: 20180710.1403
 ;; Keywords: mail
 ;; Human-Keywords: gnus nnir
 ;; URL: https://github.com/kawabata/nnir-est
@@ -210,6 +210,9 @@ Tested with HyperEstraier 1.4.13 on a GNU/Linux and MacOS X 10.9 systems."
            (qwords (car qlist))
            (qattrs (cdr qlist))
            )
+      ;;
+      ;;(message "debug qwords=%s" qwords)
+      ;;(setq qwords (encode-coding-string qwords 'shift_jis))
       (setenv "LC_MESSAGES" "C")
       (set-buffer (get-buffer-create nnir-tmp-buffer))
       (erase-buffer)
@@ -225,8 +228,10 @@ Tested with HyperEstraier 1.4.13 on a GNU/Linux and MacOS X 10.9 systems."
                    (nnir-read-server-parm 'nnir-est-max server))
                  ,@(nnir-read-server-parm 'nnir-est-additional-switches server)
                  ,@qattrs               ; query attributes
-                 ,(expand-file-name
-                   (nnir-read-server-parm 'nnir-est-index-directory server))
+                 ;; trailing "/" fails Windows version of Hyperestraier.
+                 ,(substring (expand-file-name
+                              (nnir-read-server-parm 'nnir-est-index-directory server))
+                             0 -1)
                                         ; index directory
                  ,qwords                ; query words
                  ))
@@ -260,6 +265,11 @@ Tested with HyperEstraier 1.4.13 on a GNU/Linux and MacOS X 10.9 systems."
       ;; 75340	file:///home/john/Mail/mail/test/1937
       ;; 44645	file:///home/john/Mail/mail/linux/935
       ;; ....
+      ;; For windows,
+      ;; --------[02D18ACF5B0A7757]--------
+      ;; 28984   file:///C|/Users/john/Mail/mail/misc/7787
+      ;; 9226    file:///C|/Users/john/Mail/mail/etsi/3270
+      ;; --------[02D18ACF5B0A7757]--------:END
 
       (goto-char (point-min))
       ;; debug
@@ -268,6 +278,9 @@ Tested with HyperEstraier 1.4.13 on a GNU/Linux and MacOS X 10.9 systems."
               "^\\([0-9]+\\)	+file://\\([^ ]+?\\)$" nil t)
         (setq score (1+ score))
         (let ((filename (url-unhex-string (match-string 2))))
+          ;; for windows
+          (when (string-match "^/\\(.\\)|/" filename)
+            (setq filename (concat (match-string 1 filename) ":" (substring filename 3))))
           (setq group (file-name-directory filename)
                 article (file-name-nondirectory filename)))
         ;; debug
@@ -278,7 +291,7 @@ Tested with HyperEstraier 1.4.13 on a GNU/Linux and MacOS X 10.9 systems."
 	  (nnir-add-result group article (number-to-string score)
                            prefix server artlist)))
       ;; debug
-      (message "prefix=%s,server=%s,artlist=%s" prefix server artlist)
+      ;; (message "prefix=%s,server=%s,artlist=%s" prefix server artlist)
       ;; sort artlist by score
       (apply 'vector
              (sort artlist

@@ -4,7 +4,7 @@
 
 ;; Author: Artem Malyshev <proofit404@gmail.com>
 ;; URL: https://github.com/proofit404/djangonaut
-;; Package-Version: 20180710.950
+;; Package-Version: 20180710.1445
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.2") (magit-popup "2.6.0") (pythonic "0.1.0") (f "0.20.0") (s "1.12.0"))
 
@@ -577,6 +577,9 @@ import collections, json, os, sys, traceback
 stdout = sys.stdout
 sys.stdout = open(os.devnull, 'w')
 sys.stderr = open(os.devnull, 'w')
+
+if not sys.path[0]:
+    del sys.path[0]
 
 try:
     from django.apps import apps

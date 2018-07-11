@@ -3,8 +3,8 @@
 ;; Copyright (C) 2016, 2018 Sangho Na <microamp@protonmail.com>
 ;;
 ;; Author: Sangho Na <microamp@protonmail.com>
-;; Version: 0.0.10
-;; Package-Version: 20180510.245
+;; Version: 0.6.0
+;; Package-Version: 20180710.1452
 ;; Keywords: go golang refactoring
 ;; Homepage: https://github.com/microamp/godoctor.el
 
@@ -118,7 +118,7 @@
     (let* ((compilation-buffer "*godoctor rename*")
            (new-name (symbol-name symbol))
            (len (length new-name))
-           (pos (format "%d,%d" (point) len))
+           (pos (format "%d,%d" (1- (car (bounds-of-thing-at-point 'symbol))) len))
            (new-name (read-string "New name: " new-name))
            (cmd (godoctor-rename-cmd pos new-name dry-run)))
       (godoctor--execute-command compilation-buffer cmd dry-run))))
