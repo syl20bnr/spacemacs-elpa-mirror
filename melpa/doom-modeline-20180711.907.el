@@ -5,7 +5,7 @@
 ;; Author: Vincent Zhang <seagle0128@gmail.com>
 ;; Homepage: https://github.com/seagle0128/doom-modeline
 ;; Version: 0.2.0
-;; Package-Version: 20180711.206
+;; Package-Version: 20180711.907
 ;; Package-Requires: ((emacs "25.1") (all-the-icons "1.0.0") (projectile "0.10.0") (shrink-path "0.2.0") (eldoc-eval "0.1") (dash "2.11.0"))
 ;; Keywords: faces
 
@@ -1035,8 +1035,9 @@ enabled."
 
 (doom-modeline-def-segment global
   "For the time string and whatever uses global-mode-string."
-  (when (< 0 (length global-mode-string))
-    '(" " global-mode-string "  ")))
+  (if (< 0 (length global-mode-string))
+      '(" " global-mode-string "  ")
+    ""))
 
 
 ;;

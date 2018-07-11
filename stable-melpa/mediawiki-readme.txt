@@ -1,6 +1,6 @@
 This version of mediawiki.el represents a merging of
 wikipedia-mode.el (maintained by Uwe Brauer <oub at mat.ucm.es>)
-from http://www.emacswiki.org/emacs/wikipedia-mode.el for its
+from https://www.emacswiki.org/emacs/wikipedia-mode.el for its
 font-lock code, menu, draft mode, replying and convenience
 functions to produce mediawiki.el 2.0.
 
