@@ -3,7 +3,7 @@
 ;; Copyright (C) 2018 Free Software Foundation, Inc.
 
 ;; Version: 1.1
-;; Package-Version: 20180709.1426
+;; Package-Version: 20180711.230
 ;; Author: João Távora <joaotavora@gmail.com>
 ;; Maintainer: João Távora <joaotavora@gmail.com>
 ;; URL: https://github.com/joaotavora/eglot
@@ -858,6 +858,16 @@ Uses THING, FACE, DEFS and PREPEND."
 ;;; Protocol implementation (Requests, notifications, etc)
 ;;;
 (cl-defmethod eglot-handle-notification
+  (_server method &key)
+  "Handle unknown notification"
+  (eglot--warn "Server sent unknown notification method `%s'" method))
+
+(cl-defmethod eglot-handle-request
+  (_server method &key)
+  "Handle unknown request"
+  (jsonrpc-error "Unknown request method `%s'" method))
+
+(cl-defmethod eglot-handle-notification
   (_server (_method (eql window/showMessage)) &key type message)
   "Handle notification window/showMessage"
   (eglot--message (propertize "Server reports (type=%s): %s"
@@ -1582,21 +1592,6 @@ If SKIP-SIGNATURE, don't try to send textDocument/signatureHelp."
          (cache (expand-file-name ".cquery_cached_index/" root)))
     (list :cacheDirectory (file-name-as-directory cache)
           :progressReportFrequencyMs -1)))
-
-(cl-defmethod eglot-handle-notification
-  ((_server eglot-cquery) (_method (eql $cquery/progress))
-   &rest counts &key _activeThreads &allow-other-keys)
-  "No-op for noisy $cquery/progress extension")
-
-(cl-defmethod eglot-handle-notification
-  ((_server eglot-cquery) (_method (eql $cquery/setInactiveRegions))
-   &key _uri _inactiveRegions &allow-other-keys)
-  "No-op for unsupported $cquery/setInactiveRegions extension")
-
-(cl-defmethod eglot-handle-notification
-  ((_server eglot-cquery) (_method (eql $cquery/publishSemanticHighlighting))
-   &key _uri _symbols &allow-other-keys)
-  "No-op for unsupported $cquery/publishSemanticHighlighting extension")
 
 
 ;; FIXME: A horrible hack of Flymake's insufficient API that must go

@@ -4,7 +4,7 @@
 
 ;; Author: Wei Jian Gan <weijiangan@outlook.com>
 ;; Keywords: convenience, tools, go
-;; Package-Version: 20180527.2307
+;; Package-Version: 20180711.117
 ;; URL: https://github.com/weijiangan/flycheck-golangci-lint
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24") (flycheck "0.22"))
@@ -57,8 +57,8 @@
   "A Go syntax checker using golangci-lint that's 5x faster than gometalinter
 
 See URL `https://github.com/golangci/golangci-lint'."
-  :command ("golangci-lint" "run" "--print-issued-lines=false"
-	    (option "--config" flycheck-golangci-lint-config concat)
+  :command ("golangci-lint" "run" "--print-issued-lines=false" "--out-format=line-number"
+	    (option "--config=" flycheck-golangci-lint-config concat)
 	    (option "--deadline=" flycheck-golangci-lint-deadline concat)
 	    (option-flag "--tests" flycheck-golangci-lint-tests)
 	    (option-flag "--fast" flycheck-golangci-lint-fast)

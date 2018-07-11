@@ -5,7 +5,7 @@
 ;; Author: Pierre Neidhardt <ambrevar@gmail.com>
 ;; Maintainer: Pierre Neidhardt <ambrevar@gmail.com>
 ;; URL: https://gitlab.com/Ambrevar/mu4e-conversation
-;; Package-Version: 20180710.246
+;; Package-Version: 20180711.251
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: mail, convenience, mu4e
@@ -1373,7 +1373,7 @@ in existing view buffers. "
 ;;;###autoload
 (defun mu4e-conversation (&optional msg)
   (interactive)
-  (unless mu4e-conversation-mode
+  (unless (or mu4e-conversation-mode global-mu4e-conversation-mode)
     (mu4e-warn "mu4e-conversation-mode must be enabled"))
   (setq msg (or msg (mu4e-message-at-point)))
   (unless msg
