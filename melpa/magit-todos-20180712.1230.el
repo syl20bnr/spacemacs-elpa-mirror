@@ -4,8 +4,8 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; URL: http://github.com/alphapapa/magit-todos
-;; Package-Version: 20180712.805
-;; Version: 1.0.0
+;; Package-Version: 20180712.1230
+;; Version: 1.1-pre
 ;; Package-Requires: ((emacs "25.2") (a "0.1.0") (anaphora "1.0.0") (async "1.9.2") (dash "2.13.0") (f "0.17.2") (hl-todo "1.9.0") (magit "2.13.0") (pcre2el "1.8") (s "1.12.0"))
 ;; Keywords: magit, vc
 
@@ -257,7 +257,7 @@ This function should be called from inside a ‘magit-status’ buffer."
   (declare (indent defun))
   ;; NOTE: This could be factored out into some kind of `magit-insert-section-async' macro if necessary.
   (when (not (buffer-live-p magit-status-buffer))
-    (error "`magit-todos--insert-items-callback': Callback called for deleted buffer"))
+    (message "`magit-todos--insert-items-callback': Callback called for deleted buffer"))
   (let* ((items (magit-todos--sort items))
          (num-items (length items))
          (group-fns (pcase magit-todos-auto-group-items

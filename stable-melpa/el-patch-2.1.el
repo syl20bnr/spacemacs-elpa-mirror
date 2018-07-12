@@ -6,9 +6,9 @@
 ;; Created: 31 Dec 2016
 ;; Homepage: https://github.com/raxod502/el-patch
 ;; Keywords: extensions
-;; Package-Version: 2.0.1
+;; Package-Version: 2.1
 ;; Package-Requires: ((emacs "25"))
-;; Version: 2.0.1
+;; Version: 2.1
 
 ;;; Commentary:
 
@@ -125,6 +125,14 @@ of evaluating the last form in BODY."
              (remhash (car kv) table)
            (puthash (car kv) (cadr kv) table))))))
 
+(defun el-patch--copy-semitree (tree)
+  "Copy the list TREE, and return the copy. The list may be improper.
+This function lives halfway between `copy-sequence' and
+`copy-tree', since it only recurses into cdrs."
+  (if (consp tree)
+      (cons (car tree) (el-patch--copy-semitree (cdr tree)))
+    tree))
+
 (defun el-patch--resolve (form new &optional table)
   "Resolve a patch FORM.
 Return a list of forms to be spliced into the surrounding
@@ -202,13 +210,10 @@ their bindings."
                  (cl-mapcan resolve (nthcdr triml (butlast body trimr))))))
             ((quote el-patch-let)
              (let ((bindings (nth 1 form))
-                   (body (nth 2 form)))
+                   (body (nthcdr 2 form)))
                (cond
                 ((<= (length form) 2)
                  (error "Not enough arguments (%d) for `el-patch-let'"
-                        (1- (length form))))
-                ((>= (length form) 4)
-                 (error "Too many arguments (%d) for `el-patch-let'"
                         (1- (length form))))
                 ((not (listp bindings))
                  (error "Non-list (%s) as first argument for `el-patch-let'"
@@ -222,7 +227,7 @@ their bindings."
                       (list (car kv)
                             (funcall resolve (cadr kv))))
                     bindings)
-                 (funcall resolve body))))
+                 (cl-mapcan resolve body))))
             ((quote el-patch-literal)
              (when (<= (length form) 1)
                (error "Not enough arguments (%d) for `el-patch-literal'"
@@ -239,8 +244,12 @@ their bindings."
                    (setf (nthcdr (length forms) forms)
                          (car (last cdr-forms)))
                    (list forms))))))))
-      (or (gethash form table)
-          (list form)))))
+      (or
+       ;; Copy since otherwise we may end up with the same list object
+       ;; returned multiple times, which is not okay since lists
+       ;; returned by this function may be modified destructively.
+       (el-patch--copy-semitree (gethash form table))
+       (list form)))))
 
 (defun el-patch--resolve-definition (patch-definition new)
   "Resolve a PATCH-DEFINITION.
@@ -639,23 +648,24 @@ removed."
   `(error "Can't use `el-patch-splice' outside of an `el-patch'"))
 
 ;;;###autoload
-(defmacro el-patch-let (varlist arg)
+(defmacro el-patch-let (varlist &rest args)
   "Patch directive for creating local el-patch bindings.
-Creates local bindings according to VARLIST, then resolves to ARG
-in both the original and new definitions. You may bind symbols
+Creates local bindings according to VARLIST, then splices ARGS
+into both the original and new definitions. You may bind symbols
 that are also patch directives, but the bindings will not have
 effect if the symbols are used at the beginning of a list (they
 will act as patch directives)."
   (declare (indent 1))
-  (ignore varlist arg)
+  (ignore varlist args)
   `(error "Can't use `el-patch-let' outside of an `el-patch'"))
 
 ;;;###autoload
-(defmacro el-patch-literal (arg)
+(defmacro el-patch-literal (&rest args)
   "Patch directive for treating patch directives literally.
-Resolves to ARG, which is not processed further by el-patch."
+ARGS are spliced into the containing s-expression, but are not
+processed further by el-patch."
   (declare (indent 0))
-  (ignore arg)
+  (ignore args)
   `(error "Can't use `el-patch-literal' outside of an `el-patch'"))
 
 ;;;; Viewing patches

@@ -2,7 +2,7 @@
 
 ;; Author: Andrey Kotlarski <m00naticus@gmail.com>
 ;; URL: https://github.com/m00natic/anti-zenburn-theme
-;; Package-Version: 20180708.755
+;; Package-Version: 20180712.1138
 ;; Version: 2.5.1
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -469,7 +469,7 @@
    '(ediff-fine-diff-Ancestor ((t (:inherit ediff-fine-diff-A))))
    '(ediff-fine-diff-B ((t (:inherit diff-refine-added :weight bold))))
    `(ediff-fine-diff-C ((t (:foreground ,azenburn-beige+3 :background ,azenburn-beige-4 :weight bold ))))
-   '(ediff-odd-diff-A ((t (:background ,azenburn-bg+2))))
+   `(ediff-odd-diff-A ((t (:background ,azenburn-bg+2))))
    '(ediff-odd-diff-Ancestor ((t (:inherit ediff-odd-diff-A))))
    '(ediff-odd-diff-B ((t (:inherit ediff-odd-diff-A))))
    '(ediff-odd-diff-C ((t (:inherit ediff-odd-diff-A))))
