@@ -2,8 +2,8 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/helm-org-rifle
-;; Package-Version: 20180711.1121
-;; Version: 1.6.0-pre
+;; Package-Version: 20180711.1315
+;; Version: 1.7.0-pre
 ;; Package-Requires: ((emacs "24.4") (dash "2.12") (f "0.18.1") (helm "1.9.4") (s "1.10.0"))
 ;; Keywords: hypermedia, outlines
 
@@ -266,7 +266,7 @@ like \": \"."
   "Show and match against Org todo keywords."
   :group 'helm-org-rifle :type 'boolean)
 
-(defcustom helm-org-rifle-show-path nil
+(defcustom helm-org-rifle-show-path t
   "Show the whole heading path instead of just the entry's heading."
   :group 'helm-org-rifle :type 'boolean)
 
@@ -880,9 +880,14 @@ because it uses variables in its outer scope."
                       ;; s-join leaves an extra space when there's no
                       ;; priority.
                       (format "[#%c]" priority-char)))
-          (heading (s-trim (if helm-org-rifle-show-todo-keywords
-                               (s-join " " (list todo-keyword priority heading))
-                             heading)))
+          (todo-keyword (when todo-keyword
+                          (if helm-org-rifle-show-todo-keywords
+                              (propertize todo-keyword
+                                          'face (org-get-todo-face todo-keyword))
+                            todo-keyword)))
+          (heading (if helm-org-rifle-show-todo-keywords
+                       (s-join " " (list priority heading))
+                     heading))
           (matching-positions-in-node nil)
           (matching-lines-in-node nil)
           (matched-words-with-context nil))
@@ -979,22 +984,48 @@ because it uses variables in its outer scope."
 
           (setq heading
                 (if helm-org-rifle-show-path
-                    (if helm-org-rifle-fontify-headings
-                        (concat (org-format-outline-path
-                                 ;; Replace links in path elements with plain text, otherwise
-                                 ;; they will be truncated by `org-format-outline-path' and only
-                                 ;; show part of the URL.  FIXME: Use org-link-display-format function
-                                 (-map 'helm-org-rifle-replace-links-in-string (append (or path (org-get-outline-path))
-                                                                                       (list heading))))
-                                (if tags
-                                    (concat " " (helm-org-rifle-fontify-like-in-org-mode tags))
-                                  ""))
-                      ;; Not fontifying
-                      (s-join "/" (list (or path (org-get-outline-path)) heading)))
+                    (progn
+                      ;; Trim the heading here.  Trying to avoid calling trim too much, to avoid slowing down.
+                      (setq heading (s-trim heading))
+                      (if helm-org-rifle-fontify-headings
+                          (let ((path (org-format-outline-path
+                                       ;; Replace links in path elements with plain text, otherwise
+                                       ;; they will be truncated by `org-format-outline-path' and only
+                                       ;; show part of the URL.  FIXME: Use org-link-display-format function
+                                       (-map 'helm-org-rifle-replace-links-in-string
+                                             (append (or path (org-get-outline-path))
+                                                     (list heading)))))
+                                (tags (if tags
+                                          (concat " " (helm-org-rifle-fontify-like-in-org-mode tags))
+                                        "")))
+                            (when (and helm-org-rifle-show-todo-keywords
+                                       todo-keyword)
+                              ;; FIXME: This is ugly, but we don't seem to have much choice.  Hopefully it's not too slow...
+                              (let* ((parts (s-split "/" path))
+                                     (last (car (last parts)))
+                                     (parts (butlast parts))
+                                     (keyword (propertize todo-keyword
+                                                          'face (org-get-todo-face todo-keyword)))
+                                     (last (concat keyword " " last)))
+                                (setq path (s-join "/" (-snoc parts last)))))
+                            (concat path tags))
+                        ;; Not fontifying
+                        (s-join "/" (list (or path (org-get-outline-path)) heading))))
                   ;; No path or not showing path
                   (if helm-org-rifle-fontify-headings
                       (helm-org-rifle-fontify-like-in-org-mode
-                       (s-join " " (list (s-repeat level "*") heading (concat tags " "))))
+                       (s-join " " (-non-nil
+                                    ;; NOTE: Using `-non-nil' isn't essential here, so we might
+                                    ;; consider removing it to increase performance, but it means
+                                    ;; leaving an extra space between the heading starts and the
+                                    ;; heading text when there is no to-do keyword.
+                                    (list (s-repeat level "*")
+                                          (when (and helm-org-rifle-show-todo-keywords
+                                                     todo-keyword)
+                                            (propertize todo-keyword
+                                                        'face (org-get-todo-face todo-keyword)))
+                                          heading
+                                          (concat tags " ")))))
                     ;; Not fontifying
                     (s-join " " (list (s-repeat level "*") heading tags)))))
 
