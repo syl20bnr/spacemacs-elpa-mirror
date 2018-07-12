@@ -4,7 +4,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; URL: http://github.com/alphapapa/magit-todos
-;; Package-Version: 20180711.1713
+;; Package-Version: 20180712.805
 ;; Version: 1.0.0
 ;; Package-Requires: ((emacs "25.2") (a "0.1.0") (anaphora "1.0.0") (async "1.9.2") (dash "2.13.0") (f "0.17.2") (hl-todo "1.9.0") (magit "2.13.0") (pcre2el "1.8") (s "1.12.0"))
 ;; Keywords: magit, vc
@@ -578,9 +578,6 @@ This should be set automatically by customizing
   "Regular expression to match keyword items with rg, ag, and git-grep.
 This should be set automatically by customizing
 `magit-todos-keywords'.")
-
-(defvar magit-todos-ignored-directories nil
-  "Automatically set by `magit-todos--repo-todos'.")
 
 (defvar-local magit-todos-active-scan nil
   "The current scan's process.
