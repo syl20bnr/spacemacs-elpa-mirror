@@ -5,7 +5,7 @@
 ;; Author: Paul van Dam <pvandam@m-industries.com>
 ;; Maintainer: Paul van Dam <pvandam@m-industries.com>
 ;; Version: 1.0.0
-;; Package-Version: 20180710.2358
+;; Package-Version: 20180711.2148
 ;; Created: 13 October 2017
 ;; URL: https://github.com/M-industries/AlanForEmacs
 ;; Homepage: https://alan-platform.com/
@@ -158,6 +158,7 @@ Optional argument DOCSTRING for the major mode."
 		  (s-chop-suffix "-mode" (s-chop-prefix "alan-" (symbol-name name))))
 		 (file-pattern ;; the naming convention for the file pattern is to use underscores.
 		  (concat (s-replace "-" "_" language-name) "\\.alan\\'"))
+		 (syntax-table-name (intern (concat (symbol-name name) "-syntax-table")))
 		 (keywords)
 		 (language)
 		 (pairs '())
@@ -184,6 +185,10 @@ Optional argument DOCSTRING for the major mode."
 	   (add-to-list 'auto-mode-alist '(,file-pattern . ,name))
 	   (flycheck-add-mode 'alan ',name)
 
+	   (defvar ,syntax-table-name
+		 (make-syntax-table alan-mode-syntax-table)
+		 ,(concat "Syntax table for ‘" (symbol-name name)  "’."))
+
 	   (define-derived-mode ,name alan-mode ,language-name
 		 ,docstring
 		 :group 'alan
@@ -197,8 +202,8 @@ Optional argument DOCSTRING for the major mode."
 		 ,@(mapcar
 			(lambda (pair)
 			  `(progn
-				 (modify-syntax-entry ,(string-to-char (car pair)) ,(concat "(" (cdr pair)) alan-mode-syntax-table)
-				 (modify-syntax-entry ,(string-to-char (cdr pair)) ,(concat ")" (car pair)) alan-mode-syntax-table)))
+				 (modify-syntax-entry ,(string-to-char (car pair)) ,(concat "(" (cdr pair)) ,syntax-table-name)
+				 (modify-syntax-entry ,(string-to-char (cdr pair)) ,(concat ")" (car pair)) ,syntax-table-name)))
 			pairs)
 		 ,(when propertize-rules
 			`(progn
