@@ -5,7 +5,7 @@
 ;; Author: Vincent Zhang <seagle0128@gmail.com>
 ;; Homepage: https://github.com/seagle0128/doom-modeline
 ;; Version: 0.2.0
-;; Package-Version: 20180711.907
+;; Package-Version: 20180712.2015
 ;; Package-Requires: ((emacs "25.1") (all-the-icons "1.0.0") (projectile "0.10.0") (shrink-path "0.2.0") (eldoc-eval "0.1") (dash "2.11.0"))
 ;; Keywords: faces
 
@@ -405,7 +405,7 @@ If STRICT-P, return nil if no project was found, otherwise return
         anzu-minimum-input-length 1
         anzu-search-threshold 250)
 
-  (eval-when-compile
+  (eval-and-compile
     (defun doom-modeline-fix-anzu-count (positions here)
       (cl-loop for (start . end) in positions
                collect t into before

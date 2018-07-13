@@ -2,10 +2,10 @@
 
 ;; Author: Masahiro Hayashi <mhayashi1120@gmail.com>
 ;; Keywords: grep edit extensions
-;; Package-Version: 20141016.1656
+;; Package-Version: 20180710.2326
 ;; URL: http://github.com/mhayashi1120/Emacs-wgrep/raw/master/wgrep.el
 ;; Emacs: GNU Emacs 22 or later
-;; Version: 2.1.10
+;; Version: 2.2.0
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License as
@@ -193,11 +193,27 @@ a file."
 (defvar wgrep-acceptable-modes nil)
 (make-obsolete 'wgrep-acceptable-modes nil "2.1.1")
 
+;; These regexp come from `grep-regexp-alist' at grep.el
+(eval-and-compile
+  (defconst wgrep-null-file-separator-header-regexp
+    "\\(?1:[^\0\n]+\\)\\(?:\0\\)\\(?3:[0-9]+\\):")
+
+  (defconst wgrep-colon-file-separator-header-regexp
+    "\\(?1:[^\n:]+?[^\n/:]\\):[\t ]*\\(?3:[1-9][0-9]*\\)[\t ]*:"))
+
+;; Generalized regexp, but wrong matching when colon `:' and null `\0'
+;; is contained in grep result.
 (defconst wgrep-default-line-header-regexp
-  ;; This regexp come from Emacs-25 grep.el
-  ;; Capture subexp 2 is still exists for the backward compatibility.
-  ;; But will be removed in future release.
-  "^\\(.*?[^/\n]\\)\\(:[ \t]*\\)\\([1-9][0-9]*\\)[ \t]*:")
+  (eval-when-compile
+    (concat
+     "^"
+     "\\(?:"
+     ;; `--null' argument is used.
+     wgrep-null-file-separator-header-regexp
+     "\\|"
+     ;; Fallback regexp
+     wgrep-colon-file-separator-header-regexp
+     "\\)")))
 
 (defvar wgrep-line-file-regexp wgrep-default-line-header-regexp
   "Regexp that match to line header of grep result.
@@ -230,6 +246,21 @@ End of this match equals start of file contents.
 ;;;###autoload
 (defun wgrep-setup ()
   "Setup wgrep preparation."
+  (cond
+   ((and (boundp 'grep-use-null-filename-separator)
+         grep-use-null-filename-separator
+         ;; FIXME: command may contain "--null" text in search text
+         ;; (e.g. grep -nH -e "searching --null argument")
+         ;; `grep-use-null-filename-separator' is non-nil
+         ;; enough to reduce that confusion.
+         (let ((command (car-safe compilation-arguments)))
+           (and (stringp command)
+                (string-match "[\s\t]--null[\s\t]" command))))
+    (set (make-local-variable 'wgrep-line-file-regexp)
+         wgrep-null-file-separator-header-regexp))
+   (t
+    (set (make-local-variable 'wgrep-line-file-regexp)
+         wgrep-colon-file-separator-header-regexp)))
   (wgrep-setup-internal))
 
 (defun wgrep-setup-internal ()
@@ -715,7 +746,7 @@ This change will be applied when \\[wgrep-finish-edit]."
   (let* ((next (+ direction line))
          (fregexp (regexp-quote filename)))
     (forward-line direction)
-    (while (looking-at (format "^%s-%d-" fregexp next))
+    (while (looking-at (format "^%s[-\0]%d-" fregexp next))
       (let ((start (match-beginning 0))
             (end (match-end 0))
             (bol (line-beginning-position))
