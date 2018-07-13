@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180615.1400
+;; Package-Version: 20180713.946
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.1") (ivy "0.9.0"))
 ;; Keywords: matching
@@ -498,9 +498,7 @@ When capture groups are present in the input, print them instead of lines."
   "Transform STR into a swiper regex.
 This is the regex used in the minibuffer where candidates have
 line numbers.  For the buffer, use `ivy--regex' instead."
-  (let* ((re-builder
-          (or (cdr (assoc 'swiper ivy-re-builders-alist))
-              (cdr (assoc t ivy-re-builders-alist))))
+  (let* ((re-builder (ivy-alist-setting ivy-re-builders-alist))
          (re (cond
                ((equal str "")
                 "")

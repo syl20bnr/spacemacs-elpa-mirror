@@ -4,7 +4,7 @@
 
 ;; Author:  Atila Neves <atila.neves@gmail.com>
 ;; Version: 0.6
-;; Package-Version: 20180710.119
+;; Package-Version: 20180713.813
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.5") (seq "1.11") (levenshtein "0") (s "1.11.0"))
 ;; Keywords: languages
 ;; URL: http://github.com/atilaneves/cmake-ide
@@ -1197,13 +1197,16 @@ returned unchanged."
      ((cide--valid-cppcheck-standard-p gnu-replaced) gnu-replaced)
      ;; Otherwise, just hand back the original input.
      (t standard))))
+
 (defun cide--filter-output-arg (args)
   "Filter out '-o <output>' from the provided 'args' list."
-  (if (not args)
-      nil
-    (if (string-equal "-o" (car args))
-	(nthcdr 2 args) ;; We assume '-o <output>' is provided only once, hence we stop recursion here.
-      (cons (car args) (cide--filter-output-arg (cdr args))))))
+  (let (result)
+      (while args
+        (if (string-equal "-o" (car args))
+            (setq args (nthcdr 2 args))
+          (push (car args) result)
+          (setq args (cdr args))))
+      (nreverse result)))
 
 (provide 'cmake-ide)
 ;;; cmake-ide.el ends here

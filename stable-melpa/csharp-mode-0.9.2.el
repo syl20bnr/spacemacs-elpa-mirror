@@ -3,12 +3,12 @@
 ;; Author     : Dylan R. E. Moonfire (original)
 ;; Maintainer : Jostein Kjønigsen <jostein@gmail.com>
 ;; Created    : Feburary 2005
-;; Modified   : 2016
-;; Version    : 0.9.0
-;; Package-Version: 0.9.0
+;; Modified   : 2018
+;; Version    : 0.9.2
+;; Package-Version: 0.9.2
 ;; Keywords   : c# languages oop mode
 ;; X-URL      : https://github.com/josteink/csharp-mode
-;; Last-saved : 2016-May-28
+;; Last-saved : 2018-Jul-08
 
 ;;
 ;; This program is free software; you can redistribute it and/or modify
@@ -28,7 +28,7 @@
 
 ;;; Commentary:
 ;;
-;;    This is a major mode for editing C# code. It performs automatic
+;;    This is a major mode for editing C# code.  It performs automatic
 ;;    indentation of C# syntax; font locking; and integration with
 ;;    imenu.el.
 ;;
@@ -69,7 +69,7 @@
 ;;      (append '(("\\.cs$" . csharp-mode)) auto-mode-alist))
 ;;
 ;;
-;; Optionally, define and register a mode-hook function. To do so, use
+;; Optionally, define and register a mode-hook function.  To do so, use
 ;; something like this in your .emacs file:
 ;;
 ;;   (defun my-csharp-mode-fn ()
@@ -92,7 +92,7 @@
 ;;  imenu integration
 ;;  -----------------------------
 ;;
-;;  This should just work. For those who don't know what imenu is, it
+;;  This should just work.  For those who don't know what imenu is, it
 ;;  allows navigation to different points within the file from an
 ;;  "Index" menu, in the window's menubar.  csharp-mode computes the
 ;;  menu containing the namespaces, classes, methods, and so on, in the
@@ -295,8 +295,19 @@
 ;;          - Fix Emacs-25 related bugs.
 ;;          - Cleaned up dead code.
 ;;
+;;    0.9.1 2017
+;;          - Fix indentation for generic type-initializers.
+;;          - Fix fontification of using and namespace-statements with
+;;            underscores in them.
+;;          - Fixes for indentation for many kinds of type-initializers.
+;;
+;;    0.9.2 2018 July
+;;          - Try to fix some breakage introduced by changes in Emacs 27.
+;;
+;;; Code:
 
 (require 'cc-mode)
+(require 'cc-fonts)
 (require 'cl-lib)
 
 ;; prevent warnings like
@@ -358,6 +369,10 @@
 ;;      :test 'equal)))
 
 
+(defgroup csharp nil
+  "Major mode for editing C# code."
+  :group 'prog-mode)
+
 
 ;; Custom variables
 ;; ensure all are defined before using ...;
@@ -376,7 +391,7 @@ This is used in particular by the verbatim-literal
 string scanning.
 
 Most other csharp functions are not instrumented.
-0 = NONE, 1 = Info, 2 = VERBOSE, 3 = DEBUG, 4 = SHUTUP ALREADY. "
+0 = NONE, 1 = Info, 2 = VERBOSE, 3 = DEBUG, 4 = SHUTUP ALREADY."
   :type 'integer
   :group 'csharp)
 
@@ -410,6 +425,12 @@ Most other csharp functions are not instrumented.
   ;; constants used in this module
   ;; ==================================================================
 
+  (defconst csharp-type-initializer-statement-re
+    (concat
+     "\\<new[ \t\n\r\f\v]+"
+     "\\([[:alpha:]_][[:alnum:]_<>\\.]*\\)")
+    "Regexp that captures a type-initializer statement in C#")
+
   (defconst csharp-enum-decl-re
     (concat
      "\\<enum[ \t\n\r\f\v]+"
@@ -421,8 +442,7 @@ Most other csharp functions are not instrumented.
        (list "sbyte" "byte" "short" "ushort" "int" "uint" "long" "ulong"))
      "\\)"
      "\\)?")
-    "Regex that captures an enum declaration in C#"
-    )
+    "Regex that captures an enum declaration in C#")
 
   ;; ==================================================================
 
@@ -455,7 +475,7 @@ Most other csharp functions are not instrumented.
 It returns t if at a position where a virtual-semicolon is.
 Otherwise nil.
 
-This is the C# version of the function. It gets set into
+This is the C# version of the function.  It gets set into
 the variable `c-at-vsemi-p-fn'.
 
 A vsemi is a cc-mode concept implying the end of a statement,
@@ -473,10 +493,8 @@ A vsemi appears in 2 cases in C#:
 
 An example of the former is  [WebMethod] or [XmlElement].
 
-Providing this function allows the indenting in csharp-mode
-to work properly with code that includes attributes.
-
-"
+Providing this function allows the indenting in `csharp-mode'
+to work properly with code that includes attributes."
   (save-excursion
     (let ((pos-or-point (progn (if pos (goto-char pos)) (point))))
 
@@ -739,7 +757,9 @@ to work properly with code that includes attributes.
              ;; Match a char before the string starter to make
              ;; `c-skip-comments-and-strings' work correctly.
              (concat ".\\(" c-string-limit-regexp "\\)")
-             '((c-font-lock-invalid-string)))
+             '((if (fboundp 'c-font-lock-invalid-string)
+                   (c-font-lock-invalid-string)
+                 (csharp-mode-font-lock-invalid-string))))
 
 
            ;; Fontify keyword constants.
@@ -755,11 +775,11 @@ to work properly with code that includes attributes.
            ,`(,(concat
                 "\\<\\(using\\)[ \t\n\f\v\r]+"
                 "\\(?:"
-                "\\([A-Za-z_][[:alnum:]]*\\)"
+                "\\([A-Za-z0-9_]+\\)"
                 "[ \t\n\f\v\r]*="
                 "[ \t\n\f\v\r]*"
                 "\\)?"
-                "\\(\\(?:[A-Za-z_][[:alnum:]]*\\.\\)*[A-Za-z_][[:alnum:]]*\\)"
+                "\\(\\(?:[A-Za-z0-9_]+\\.\\)*[A-Za-z0-9_]+\\)"
                 "[ \t\n\f\v\r]*;")
               (2 font-lock-constant-face t t)
               (3 font-lock-constant-face))
@@ -967,7 +987,11 @@ to work properly with code that includes attributes.
                                                       'c-decl-id-start)
                                  (c-forward-syntactic-ws))
                                (save-match-data
-                                 (c-font-lock-declarators limit t nil))
+                                 (ignore-errors
+                                   (condition-case nil
+                                       (c-font-lock-declarators limit t nil)
+                                     (wrong-number-of-arguments
+                                      (c-font-lock-declarators limit t nil nil)))))
                                (goto-char (match-end 0))
                                )
                              )))
@@ -1044,7 +1068,7 @@ to work properly with code that includes attributes.
                                          (save-excursion
                                            (c-beginning-of-statement-1)
                                            (looking-at
-                                            "#\\(pragma\\|endregion\\|region\\|if\\|else\\|endif\\)"))
+                                            "#\\s *\\(pragma\\|endregion\\|region\\|if\\|else\\|endif\\)"))
                                          )))
 
                         (if is-attr
@@ -1103,7 +1127,7 @@ to work properly with code that includes attributes.
            ;; this needs to be done in the matchers-after because
            ;; otherwise the namespace names get the font-lock-type-face,
            ;; due to the energetic efforts of c-forward-type.
-           ,`("\\<\\(namespace\\)[ \t\n\r\f\v]+\\(\\(?:[A-Za-z_][[:alnum:]]*\\.\\)*[A-Za-z_][[:alnum:]]*\\)"
+           ,`("\\<\\(namespace\\)[ \t\n\r\f\v]+\\(\\(?:[A-Za-z0-9_]+\\.\\)*[A-Za-z0-9_]+\\)"
               2 font-lock-constant-face t)
 
 
@@ -1114,7 +1138,7 @@ to work properly with code that includes attributes.
   csharp ?@)
 
 (defun csharp-mode-syntax-propertize-function (beg end)
-  "Apply syntax table properties to special constructs.
+  "Apply syntax table properties to special constructs in region BEG to END.
 Currently handled:
 
 - Fontify verbatim literal strings correctly
@@ -1145,9 +1169,11 @@ Currently handled:
                   (setq done t)))))))))
 
     (goto-char beg)
-    (while (re-search-forward "^\\s-*#\\(region\\|pragma\\) " end t)
-      (when (looking-at "\\w")
-        (put-text-property (point) (1+ (point))
+    (while (re-search-forward "^\\s *#\\s *\\(region\\|pragma\\)\\s " end t)
+      (when (looking-at "\\s *\\S ")
+        ;; mark the whitespace separating the directive from the comment
+        ;; text as comment starter to allow correct word movement
+        (put-text-property (1- (point)) (point)
                            'syntax-table (string-to-syntax "< b"))))))
 
 ;; C# does generics.  Setting this to t tells the parser to put
@@ -1391,7 +1417,7 @@ This regexp is assumed to not match any non-operator identifier."
           ;; Use the eval form for `font-lock-keywords' to be able to use
           ;; the `c-preprocessor-face-name' variable that maps to a
           ;; suitable face depending on the (X)Emacs version.
-          '(eval . (list "^\\s *\\(#pragma\\|undef\\|define\\)\\>\\(.*\\)"
+          '(eval . (list "^\\s *#\\s *\\(pragma\\|undef\\|define\\)\\>\\(.*\\)"
                          (list 1 c-preprocessor-face-name)
                          '(2 font-lock-string-face)))
           ;; There are some other things in `c-cpp-matchers' besides the
@@ -1422,13 +1448,13 @@ This regexp is assumed to not match any non-operator identifier."
 
 
 (defvar csharp-mode-syntax-table nil
-  "Syntax table used in csharp-mode buffers.")
+  "Syntax table used in ‘csharp-mode’ buffers.")
 (or csharp-mode-syntax-table
     (setq csharp-mode-syntax-table
           (funcall (c-lang-const c-make-mode-syntax-table csharp))))
 
 (defvar csharp-mode-abbrev-table nil
-  "Abbreviation table used in csharp-mode buffers.")
+  "Abbreviation table used in ‘csharp-mode’ buffers.")
 (c-define-abbrev-table 'csharp-mode-abbrev-table
   ;; Keywords that if they occur first on a line might alter the
   ;; syntactic context, and which therefore should trig reindentation
@@ -1441,7 +1467,7 @@ This regexp is assumed to not match any non-operator identifier."
 (defvar csharp-mode-map (let ((map (c-make-inherited-keymap)))
                           ;; Add bindings which are only useful for C#
                           map)
-  "Keymap used in csharp-mode buffers.")
+  "Keymap used in ‘csharp-mode’ buffers.")
 
 
 ;; TODO
@@ -1533,30 +1559,26 @@ This regexp is assumed to not match any non-operator identifier."
 
 
 (defun csharp--regexp (symbol)
-  "Retrieves a regexp from the `csharp--regexp-alist' corresponding
-to the given symbol.
-"
+  "Retrieve a regexp from `csharp--regexp-alist' corresponding to SYMBOL."
   (let ((elt (assoc symbol csharp--regexp-alist)))
     (if elt (cadr elt) nil)))
 
 
 (defun csharp-move-back-to-beginning-of-block ()
-  "Moves to the previous open curly.
-"
+  "Move to the previous open curly."
   (interactive)
   (re-search-backward "{" (point-min) t))
 
 
 (defun csharp--move-back-to-beginning-of-something (must-match &optional must-not-match)
-  "Moves back to the open-curly that defines the beginning of *something*,
-defined by the given MUST-MATCH, a regexp which must match immediately
-preceding the curly.  If MUST-NOT-MATCH is non-nil, it is treated
-as a regexp that must not match immediately preceding the curly.
+  "Move back to the open-curly that begin *something*.
+*something* is defined by MUST-MATCH, a regexp which must match
+immediately preceding the curly.  If MUST-NOT-MATCH is non-nil,
+it is treated as a regexp that must not match immediately
+preceding the curly.
 
 This is a helper fn for `csharp-move-back-to-beginning-of-defun' and
-`csharp-move-back-to-beginning-of-class'
-
-"
+`csharp-move-back-to-beginning-of-class'"
   (interactive)
   (let (done
         (found (point))
@@ -1575,12 +1597,11 @@ This is a helper fn for `csharp-move-back-to-beginning-of-defun' and
 
 
 (defun csharp-move-back-to-beginning-of-defun ()
-  "Moves back to the open-curly that defines the beginning of the
-enclosing method.  If point is outside a method, then move back to the
+  "Move back to the open-curly that start the enclosing method.
+If point is outside a method, then move back to the
 beginning of the prior method.
 
-See also, `csharp-move-fwd-to-end-of-defun'.
-"
+See also, `csharp-move-fwd-to-end-of-defun'."
   (interactive)
   (cond
 
@@ -1606,7 +1627,7 @@ See also, `csharp-move-fwd-to-end-of-defun'.
 
 
 (defun csharp--on-defun-open-curly-p ()
-  "return t when point is on the open-curly of a method."
+  "Return t when point is on the open-curly of a method."
   (and (looking-at "{")
        (not (looking-back (csharp--regexp 'class-start) nil))
        (not (looking-back (csharp--regexp 'namespace-start) nil))
@@ -1614,19 +1635,18 @@ See also, `csharp-move-fwd-to-end-of-defun'.
 
 
 (defun csharp--on-class-open-curly-p ()
-  "return t when point is on the open-curly of a class."
+  "Return t when point is on the open-curly of a class."
   (and (looking-at "{")
        (not (looking-back (csharp--regexp 'namespace-start) nil))
        (looking-back (csharp--regexp 'class-start) nil)))
 
 
 (defun csharp-move-fwd-to-end-of-defun ()
-  "Moves forward to the close-curly that defines the end of the enclosing
-method. If point is outside a method, moves forward to the close-curly that
+  "Move forward to the close-curly that ends the enclosing method.
+If point is outside a method, moves forward to the close-curly that
 defines the end of the next method.
 
-See also, `csharp-move-back-to-beginning-of-defun'.
-"
+See also, `csharp-move-back-to-beginning-of-defun'."
   (interactive)
 
   (let ((really-move
@@ -1688,12 +1708,11 @@ See also, `csharp-move-back-to-beginning-of-defun'.
 
 
 (defun csharp-move-back-to-beginning-of-class ()
-  "Moves back to the open-curly that defines the beginning of the
-enclosing class.  If point is outside a class, then move back to the
+  "Move back to the open-curly that begin the enclosing class.
+If point is outside a class, then move back to the
 beginning of the prior class.
 
-See also, `csharp-move-fwd-to-end-of-defun'.
-"
+See also, `csharp-move-fwd-to-end-of-defun'."
   (interactive)
 
   (cond
@@ -1721,11 +1740,9 @@ See also, `csharp-move-fwd-to-end-of-defun'.
 
 
 (defun csharp-move-fwd-to-end-of-class ()
-  "Moves forward to the close-curly that defines the end of the
-enclosing class.
+  "Move forward to the close-curly that ends the enclosing class.
 
-See also, `csharp-move-back-to-beginning-of-class'.
-"
+See also, `csharp-move-back-to-beginning-of-class'."
   (interactive)
   (let ((start (point))
         dest-char)
@@ -1741,11 +1758,9 @@ See also, `csharp-move-back-to-beginning-of-class'.
 
 
 (defun csharp-move-back-to-beginning-of-namespace ()
-  "Moves back to the open-curly that defines the beginning of the
-enclosing namespace.  If point is outside a namespace, then move back
-to the beginning of the prior namespace.
-
-"
+  "Move back to the open-curly that begins the enclosing namespace.
+If point is outside a namespace, then move back
+to the beginning of the prior namespace."
   (interactive)
   (cond
 
@@ -1976,10 +1991,10 @@ to the beginning of the prior namespace.
                         ";") 1))))
 
 (defun csharp--imenu-get-pos (pair)
-  "Takes a (title . position) cons-pair `PAIR' and returns position.
+  "Return `position' from a (title . position) cons-pair `PAIR'.
 
    The position may be a integer, or a marker (as returned by
-   imenu-indexing). This function ensures what is returned is an
+   imenu-indexing).  This function ensures what is returned is an
    integer which can be used for easy comparison."
   (let ((pos (cdr pair)))
     (if (markerp pos)
@@ -1987,9 +2002,9 @@ to the beginning of the prior namespace.
       pos)))
 
 (defun csharp--imenu-get-container (item containers previous)
-  "Returns the container which `ITEM' belongs to.
+  "Return the container which `ITEM' belongs to.
 
-   `ITEM' is a (title . position) cons-pair. `CONTAINERS' is a
+   `ITEM' is a (title . position) cons-pair.  `CONTAINERS' is a
    list of such.  `PREVIOUS' is the name of the previous
    container found when recursing through `CONTAINERS'.
 
@@ -2007,7 +2022,7 @@ to the beginning of the prior namespace.
         (csharp--imenu-get-container item rest container)))))
 
 (defun csharp--imenu-get-container-name (item containers)
-  "Returns the name of the container which `ITEM' belongs to.
+  "Return the name of the container which `ITEM' belongs to.
 
    `ITEM' is a (title . position) cons-pair.
    `CONTAINERS' is a list of such.
@@ -2025,7 +2040,7 @@ to the beginning of the prior namespace.
           container-p1)))))
 
 (defun csharp--imenu-sort (items)
-  "Sorts an imenu-index list `ITMES' by the string-portion."
+  "Sort an imenu-index list `ITEMS' by the string-portion."
   (sort items (lambda (item1 item2)
                 (string< (car item1) (car item2)))))
 
@@ -2044,7 +2059,7 @@ to the beginning of the prior namespace.
         (concat type " " namespace "." name)))))
 
 (defun csharp--imenu-get-class-nodes (classes namespaces)
-  "Creates a new alist with classes as root nodes with namespaces added.
+  "Create a new alist with CLASSES as root nodes with NAMESPACES added.
 
    Each class will have one imenu index-entry \"( top)\" added by
    default."
@@ -2061,7 +2076,7 @@ to the beginning of the prior namespace.
           classes))
 
 (defun csharp--imenu-get-class-node (result item classes namespaces)
-  "Gets the class-node which a `ITEM' should be inserted into in `RESULT'.
+  "Get the class-node in `RESULT' which an `ITEM' should be inserted into.
 
    For this calculation, the original index items `CLASSES' and `NAMESPACES'
    is needed."
@@ -2070,12 +2085,15 @@ to the beginning of the prior namespace.
     (assoc class-name result)))
 
 (defun csharp--imenu-format-item-node (item type)
-  "Formats a item with a specified type as a imenu item to be inserted into the index."
+  "Format an ITEM with a specified TYPE as an imenu item to be inserted into the index."
   (cons
    (concat "(" type ") " (car item))
    (cdr item)))
 
 (defun csharp--imenu-append-items-to-menu (result key name index classes namespaces)
+  "Formats the imenu-index using the provided values.
+
+This is done by modifying the contents of `RESULT' in place."
   ;; items = all methods, all events, etc based on "type"
   (let* ((items (cdr (assoc key index))))
     (dolist (item items)
@@ -2084,7 +2102,7 @@ to the beginning of the prior namespace.
         (nconc class-node (list item-node))))))
 
 (defun csharp--imenu-transform-index (index)
-  "Transforms a imenu-index based on `IMENU-GENERIC-EXPRESSION'.
+  "Transform an imenu INDEX based on `IMENU-GENERIC-EXPRESSION'.
 
   The resulting structure should be based on full type-names, with
   type-members nested hierarchially below its parent.
@@ -2142,11 +2160,12 @@ to the beginning of the prior namespace.
     (csharp--imenu-sort result)))
 
 (defun csharp--imenu-create-index-function ()
+  "Create an imenu index."
   (csharp--imenu-transform-index
    (imenu--generic-function csharp--imenu-expression)))
 
 (defun csharp--setup-imenu ()
-  "Sets up `imenu' for `csharp-mode'."
+  "Set up `imenu' for `csharp-mode'."
 
   ;; There are two ways to do imenu indexing. One is to provide a
   ;; function, via `imenu-create-index-function'.  The other is to
@@ -2180,13 +2199,12 @@ to the beginning of the prior namespace.
 ;; must live within csharp-mode itself.
 
 (defun csharp-maybe-insert-codedoc (arg)
-
-  "Insert an xml code documentation template as appropriate, when
-typing slashes.  This fn gets bound to / (the slash key), in
-csharp-mode.  If the slash being inserted is not the third
+  "Insert an xml code documentation template on third consecutive slash.
+This fn gets bound to / (the slash key), in
+‘csharp-mode’.  If the slash being inserted is not the third
 consecutive slash, the slash is inserted as normal.  If it is the
 third consecutive slash, then a xml code documentation template
-may be inserted in some cases. For example,
+may be inserted in some cases.  For example,
 
   a <summary> template is inserted if the prior line is empty,
         or contains only an open curly brace;
@@ -2201,13 +2219,15 @@ may be inserted in some cases. For example,
 
 In all other cases the slash is inserted as normal.
 
+The prefix argument ARG is passed on to `self-insert-command'
+when the code documentation template isn't triggered.  This makes
+sure that M-10 / still produces 10 consecutive slashes as expected.
+
 If you want the default cc-mode behavior, which implies no automatic
 insertion of xml code documentation templates, then use this in
 your `csharp-mode-hook' function:
 
-     (local-set-key (kbd \"/\") 'c-electric-slash)
-
- "
+     (local-set-key (kbd \"/\") 'c-electric-slash)"
   (interactive "*p")
   ;;(message "csharp-maybe-insert-codedoc")
   (let (
@@ -2273,7 +2293,7 @@ your `csharp-mode-hook' function:
                  ;; contains only an open-curly.  In this case, insert a
                  ;; summary element pair.
                  (preceding-line-is-empty
-                  (setq text-to-insert  "/ <summary>\n///   \n/// </summary>"
+                  (setq text-to-insert  "/ <summary>\n ///   \n /// </summary>"
                         flavor 1) )
 
                  ;; The preceding word closed a summary element.  In this case,
@@ -2281,13 +2301,13 @@ your `csharp-mode-hook' function:
                  ;; insert a remarks element.
                  ((and (string-equal word-back "summary") (eq char0 ?/)  (eq char1 ?<))
                   (if (not (and (string-equal word-fore "remarks") (eq char-0 ?<)))
-                      (setq text-to-insert "/ <remarks>\n///   <para>\n///     \n///   </para>\n/// </remarks>"
+                      (setq text-to-insert "/ <remarks>\n ///   <para>\n ///     \n ///   </para>\n /// </remarks>"
                             flavor 2)))
 
                  ;; The preceding word closed the remarks section.  In this case,
                  ;; insert an example element.
                  ((and (string-equal word-back "remarks")  (eq char0 ?/)  (eq char1 ?<))
-                  (setq text-to-insert "/ <example>\n///   \n/// </example>"
+                  (setq text-to-insert "/ <example>\n ///   \n /// </example>"
                         flavor 3))
 
                  ;; The preceding word closed the example section.  In this
@@ -2329,7 +2349,7 @@ your `csharp-mode-hook' function:
                     (if (string-equal word-back "remarks")
                         (setq spacer (concat spacer "   ")))
 
-                    (setq text-to-insert (format "/%s<para>\n///%s  \n///%s</para>"
+                    (setq text-to-insert (format "/%s<para>\n ///%s  \n ///%s</para>"
                                                  spacer spacer spacer)
                           flavor 6)))
 
@@ -2403,7 +2423,7 @@ your `csharp-mode-hook' function:
 ;; ==================================================================
 
 (defun csharp-time ()
-  "returns the time of day as a string.  Used in the `csharp-log' function."
+  "Return the time of day as a string.  Used in the `csharp-log' function."
   (substring (current-time-string) 11 19)) ;24-hr time
 
 
@@ -2425,6 +2445,7 @@ are the string substitutions (see `format')."
 (defadvice c-forward-objc-directive (around
                                      csharp-mode-advice-2
                                      compile activate)
+  "Make `c-forward-objc-directive' a no-op in `csharp-mode'."
   (if (c-major-mode-is 'csharp-mode)
       nil
     ad-do-it)
@@ -2451,6 +2472,36 @@ are the string substitutions (see `format')."
 ;; figure out how to get cc-mode to do what C# needs, without modifying
 ;; these defuns.
 ;;
+
+;; verabatim copy of c-font-lock-invalid-string before it was removed
+;; from emacs/cc-mode in Git commit bb591f139f0602af292c772f974dcc14dabb1deb.
+
+(defun csharp-mode-font-lock-invalid-string ()
+  ;; Assuming the point is after the opening character of a string,
+  ;; fontify that char with `font-lock-warning-face' if the string
+  ;; decidedly isn't terminated properly.
+  ;;
+  ;; This function does hidden buffer changes.
+  (let ((start (1- (point))))
+    (save-excursion
+      (and (eq (elt (parse-partial-sexp start (c-point 'eol)) 8) start)
+	   (if (if (eval-when-compile (integerp ?c))
+		   ;; Emacs
+		   (integerp c-multiline-string-start-char)
+		 ;; XEmacs
+		 (characterp c-multiline-string-start-char))
+	       ;; There's no multiline string start char before the
+	       ;; string, so newlines aren't allowed.
+	       (not (eq (char-before start) c-multiline-string-start-char))
+	     ;; Multiline strings are allowed anywhere if
+	     ;; c-multiline-string-start-char is t.
+	     (not c-multiline-string-start-char))
+	   (if c-string-escaped-newlines
+	       ;; There's no \ before the newline.
+	       (not (eq (char-before (point)) ?\\))
+	     ;; Escaped newlines aren't supported.
+	     t)
+	   (c-put-font-lock-face start (1+ start) 'font-lock-warning-face)))))
 
 (defun c-looking-at-inexpr-block (lim containing-sexp &optional check-at-end)
   ;; Return non-nil if we're looking at the beginning of a block
@@ -2565,11 +2616,18 @@ are the string substitutions (see `format')."
 
         res))))
 
+(advice-add 'c-inside-bracelist-p
+            :around 'csharp-inside-bracelist-or-c-inside-bracelist-p)
 
+(defun csharp-inside-bracelist-or-c-inside-bracelist-p (command &rest args)
+  "Run `csharp-inside-bracelist-p' if in `csharp-mode'.
 
+Otherwise run `c-inside-bracelist-p'."
+  (if (eq major-mode 'csharp-mode)
+      (csharp-inside-bracelist-p (nth 0 args) (nth 1 args))
+    (apply command args)))
 
-
-(defun c-inside-bracelist-p (containing-sexp paren-state)
+(defun csharp-inside-bracelist-p (containing-sexp paren-state)
   ;; return the buffer position of the beginning of the brace list
   ;; statement if we're inside a brace list, otherwise return nil.
   ;; CONTAINING-SEXP is the buffer pos of the innermost containing
@@ -2594,20 +2652,30 @@ are the string substitutions (see `format')."
                         (c-safe (c-forward-sexp -1))
                         (looking-at c-brace-list-key))
 
-                      ;; dinoch Thu, 22 Apr 2010  18:20
-                      ;; ============================================
-                      ;; looking enum Foo : int
-                      ;; means this is a brace list, so, return nil,
-                      ;; implying NOT looking-at-inexpr-block
-
                       (and (c-major-mode-is 'csharp-mode)
-                           (progn
-                             (c-safe (c-forward-sexp -1))
-                             (looking-at csharp-enum-decl-re))))
+                           (or
+                            ;; dinoch Thu, 22 Apr 2010  18:20
+                            ;; ============================================
+                            ;; looking enum Foo : int
+                            ;; means this is a brace list, so, return nil,
+                            ;; implying NOT looking-at-inexpr-block
+                            (progn
+                              (c-safe (c-forward-sexp -1))
+                              (looking-at csharp-enum-decl-re))
+
+                            ;; type-initializers are not properly detected and
+                            ;; indented unless we help out. (no need to forward
+                            ;; when looking here, because enum-check already did
+                            ;; it!)
+                            (looking-at csharp-type-initializer-statement-re))))
 
                   (setq bracepos (c-down-list-forward (point)))
-                  (not (c-crosses-statement-barrier-p (point)
-                                                      (- bracepos 2))))
+                  (or
+                   (not (c-crosses-statement-barrier-p (point)
+                                                       (- bracepos 2)))
+                   ;; this little hack (combined with the regexp-check above)
+                   ;; fixes indentation for all type-initializers.
+                   (c-major-mode-is 'csharp-mode)))
              (point)))))
 
    ;; this will pick up array/aggregate init lists, even if they are nested.
@@ -2741,6 +2809,7 @@ are the string substitutions (see `format')."
 ;; match name of class [c:\Users\user\project.csproj]
 
 (defun csharp--compilation-error-file-resolve ()
+  "Resolve an msbuild error to a (filename . dirname) cons cell."
   ;; http://stackoverflow.com/a/18049590/429091
   (cons (match-string 1) (file-name-directory (match-string 4))))
 
@@ -2903,7 +2972,7 @@ The mode provides fontification and indent for C# syntax, as well
 as some other handy features.
 
 At mode startup, there are two interesting hooks that run:
-`c-mode-common-hook' is run with no args, then `csharp-mode-hook' is run after
+`prog-mode-hook' is run with no args, then `csharp-mode-hook' is run after
 that, also with no args.
 
 To run your own logic after csharp-mode starts, do this:
@@ -2950,20 +3019,21 @@ Key bindings:
   ;; customized values for our language.
   (c-init-language-vars csharp-mode)
 
-  ;; Set style to c# style unless a file local variable or default
-  ;; style is found, in which case it should be set after
-  ;; calling `c-common-init' below.
-  (unless (or c-file-style
-              (stringp c-default-style)
-              (assq 'csharp-mode c-default-style))
-    (c-set-style "C#"))
-
-  ;; `c-common-init' initializes most of the components of a CC Mode
-  ;; buffer, including setup of the mode menu, font-lock, etc.
-  ;; There's also a lower level routine `c-basic-common-init' that
-  ;; only makes the necessary initialization to get the syntactic
-  ;; analysis and similar things working.
-  (c-common-init 'csharp-mode)
+  ;; Use our predefined "C#" style unless a file local or default
+  ;; style is found. This is done by rebinding `c-default-style'
+  ;; during the `c-common-init' call. 'c-common-init' will initialize
+  ;; the buffer's style using the value of `c-default-style'.
+  (let ((c-default-style (if (or c-file-style
+                                 (stringp c-default-style)
+                                 (assq 'csharp-mode c-default-style))
+                             c-default-style
+                           "C#")))
+    ;; `c-common-init' initializes most of the components of a CC Mode
+    ;; buffer, including setup of the mode menu, font-lock, etc.
+    ;; There's also a lower level routine `c-basic-common-init' that
+    ;; only makes the necessary initialization to get the syntactic
+    ;; analysis and similar things working.
+    (c-common-init 'csharp-mode))
 
   (define-key csharp-mode-map (kbd "/") 'csharp-maybe-insert-codedoc)
 
