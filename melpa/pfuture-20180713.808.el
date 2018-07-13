@@ -5,7 +5,7 @@
 ;; Author: Alexander Miller <alexanderm@web.de>
 ;; Homepage: https://github.com/Alexander-Miller/pfuture
 ;; Package-Requires: ((emacs "25.2"))
-;; Package-Version: 20180628.2232
+;; Package-Version: 20180713.808
 ;; Version: 1.2.2
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -42,6 +42,22 @@ this is right: (pfuture-new \"git\" \"status\")"
     (process-put process 'result "")
     (set-process-filter process #'pfuture--append-output)
     process))
+
+(defmacro pfuture--decompose-fn-form (fn &rest args)
+  "Expands into the correct call form for FN and ARGS.
+FN may either be a (sharp) quoted function, and unquoted function or an sexp."
+  (declare (indent 1))
+  (pcase fn
+    (`(function ,fn)
+     `(,fn ,@args))
+    (`(quote ,fn)
+     `(,fn ,@args))
+    (`(,_ . ,_)
+     fn)
+    ((pred null)
+     (ignore fn))
+    (fn
+     `(funcall ,fn ,@args))))
 
 (cl-defmacro pfuture-callback (command &key directory on-success on-error on-status-change name connection-type)
   "Pfuture variant that supports a callback-based workflow.
@@ -87,49 +103,29 @@ CONNECTION-TYPE will be passed to the :connection-process property of
          (name (or name (concat "Pfuture Callback: [" (mapconcat #'identity command " ") "]")))
          (connection-type (or connection-type (quote 'pipe)))
          (directory (or directory default-directory)))
-    ;; When we receive a quoted function for on-success or on-error the macro doesn't actually
-    ;; see a function symbol, it sees a cons in the form (function name) where `name' is the name
-    ;; of the quoted function. If we want to accept quoted functions as well we need to manually bend
-    ;; things into shape.
-    (setq on-success
-          (pcase on-success
-            (`(function ,fn) fn)
-            (_ on-success))
-          on-error
-          (pcase on-error
-            (`(function ,fn) fn)
-            (_ on-error))
-          on-status-change
-          (pcase on-status-change
-            (`(function ,fn) fn)
-            (_ on-status-change)))
-    `(let ((default-directory ,directory))
-       (make-process
-        :name ,name
-        :command ',command
-        :connection-type ,connection-type
-        :filter #'pfuture--append-output
-        :sentinel (lambda (process status)
-                    ,@(when on-status-change
-                        `((let ((output (process-get process 'result)))
-                            ,@(cl-typecase on-status-change
-                                (function
-                                 `((funcall (function ,on-status-change) process status output)))
-                                (cons
-                                 `(,on-status-change))))))
-                    (unless (process-live-p process)
-                      (let ((output (process-get process 'result)))
-                        (if (= 0 (process-exit-status process))
-                            ,@(cl-typecase on-success
-                                (function
-                                 `((funcall (function ,on-success) process status output)))
-                                (cons
-                                 `(,on-success)))
-                          ,@(cl-typecase on-error
-                              (function
-                               `((funcall (function ,on-error) process status output)))
-                              (cons
-                               `(,on-error)))))))))))
+    `(let* ((default-directory ,directory)
+            (buffer (generate-new-buffer ,name))
+            (process
+             (make-process
+              :name ,name
+              :command ',command
+              :connection-type ,connection-type
+              :filter #'pfuture--append-output-to-buffer
+              :sentinel (lambda (process status)
+                          ,@(when on-status-change
+                              `((let ((output (pfuture--result-from-buffer process)))
+                                  (pfuture--decompose-fn-form ,on-status-change
+                                    process status output))))
+                          (unless (process-live-p process)
+                            (let ((output (pfuture--result-from-buffer process)))
+                              (if (= 0 (process-exit-status process))
+                                  (pfuture--decompose-fn-form ,on-success
+                                    process status output)
+                                (pfuture--decompose-fn-form ,on-error
+                                  process status output)))
+                            (kill-buffer (process-get process 'buffer)))))))
+       (process-put process 'buffer buffer)
+       process)))
 
 (cl-defun pfuture-await (process &key (timeout 1) (just-this-one t))
   "Block until PROCESS has produced output and return it.
@@ -160,11 +156,24 @@ If the process never quits this method will block forever. Use with caution!"
 
 (defsubst pfuture-result (process)
   "Return the output of PROCESS."
+  (declare (side-effect-free t))
   (process-get process 'result))
 
 (defun pfuture--append-output (process msg)
   "Append PROCESS' MSG to the already saved output."
   (process-put process 'result (concat (process-get process 'result) msg)))
+
+(defun pfuture--append-output-to-buffer (process msg)
+  "Append PROCESS' MSG to its output buffer."
+  (with-current-buffer (process-get process 'buffer)
+    (goto-char (point-min))
+    (insert msg)))
+
+(defsubst pfuture--result-from-buffer (process)
+  "Get the output from PROCESS' buffer."
+  (declare (side-effect-free t))
+  (with-current-buffer (process-get process 'buffer)
+    (buffer-string)))
 
 (provide 'pfuture)
 
