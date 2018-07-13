@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180710.807
+;; Package-Version: 20180712.1301
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: convenience, matching, tools
@@ -1414,6 +1414,7 @@ INITIAL-INPUT can be given as the initial minibuffer input."
                 :unwind unwind-function
                 :history 'counsel-git-grep-history
                 :caller 'counsel-git-grep))))
+(cl-pushnew 'counsel-git-grep ivy-highlight-grep-commands)
 
 (defun counsel-git-grep-proj-function (str)
   "Grep for STR in the current git repository."
@@ -2488,6 +2489,7 @@ AG-PROMPT, if non-nil, is passed as `ivy-read' prompt argument."
                         (counsel-delete-process)
                         (swiper--cleanup))
               :caller 'counsel-ag)))
+(cl-pushnew 'counsel-ag ivy-highlight-grep-commands)
 
 (defun counsel-grep-like-occur (cmd-template)
   (unless (eq major-mode 'ivy-occur-grep-mode)
@@ -2530,6 +2532,7 @@ This uses `counsel-ag' with `counsel-pt-base-command' instead of
   (interactive)
   (let ((counsel-ag-base-command counsel-pt-base-command))
     (counsel-ag initial-input)))
+(cl-pushnew 'counsel-pt ivy-highlight-grep-commands)
 
 ;;** `counsel-ack'
 (defcustom counsel-ack-base-command
@@ -2574,6 +2577,7 @@ RG-PROMPT, if non-nil, is passed as `ivy-read' prompt argument."
   (interactive)
   (let ((counsel-ag-base-command counsel-rg-base-command))
     (counsel-ag initial-input initial-directory extra-rg-args rg-prompt)))
+(cl-pushnew 'counsel-rg ivy-highlight-grep-commands)
 
 ;;** `counsel-grep'
 (defcustom counsel-grep-base-command "grep -E -n -e %s %s"

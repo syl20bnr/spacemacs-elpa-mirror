@@ -6,9 +6,9 @@
 ;; Created: 31 Dec 2016
 ;; Homepage: https://github.com/raxod502/el-patch
 ;; Keywords: extensions
-;; Package-Version: 20180627.1038
+;; Package-Version: 20180712.1302
 ;; Package-Requires: ((emacs "25"))
-;; Version: 2.0.1
+;; Version: 2.1
 
 ;;; Commentary:
 
@@ -51,8 +51,14 @@
 (require 'subr-x)
 (require 'cl-lib)
 
+(defvar use-package-keywords)
+
+(declare-function use-package-normalize-forms "use-package")
+(declare-function use-package-process-keywords "use-package")
+
 ;;;; User-facing variables
 
+;;;###autoload
 (defgroup el-patch nil
   "Future-proof your Emacs Lisp customizations!"
   :prefix "el-patch-"
@@ -75,6 +81,47 @@ might be useful if, for example, some of your features are
 provided by lazy-installed packages, and those packages need to
 be installed before the features can be loaded."
   :type 'function)
+
+;;;###autoload
+(defcustom el-patch-deftype-alist nil
+  "Alist of types of definitions that can be patched with `el-patch'.
+The keys are definition types, like `defun', `define-minor-mode',
+etc. The values are plists; the following keywords are accepted:
+
+`:classify' - a function which may be called with a full
+definition form (a list starting with e.g. `defun') and which
+returns an alist detailing what it defines. In this alist, the
+keys are symbols; only the values `function' and `variable' are
+allowed. The values are names of functions and variables,
+respectively, that are defined by the definition form. This
+argument is mandatory.
+
+`:declare' - a list to be put in a `declare' form of the
+resulting `el-patch' macro, like:
+
+    ((doc-string 2) (indent defun))
+
+This argument is optional.
+
+`:macro-name' - normally the name of the macro generated for
+patching a `defun' is called `el-patch-defun', but you can
+override that by providing this argument. This argument is
+optional."
+  :type '(alist
+          :key-type symbol
+          :value-type (plist
+                       :key-type (choice
+                                  (const :classify)
+                                  (const :declare)
+                                  (const :macro-name))
+                       :value-type sexp)))
+
+(defcustom el-patch-enable-use-package-integration t
+  "Non-nil means to automatically enable `use-package' integration.
+This variable has an effect only when the `el-patch' library is
+loaded. You can toggle the `use-package' integration later using
+\\[el-patch-use-package-mode]."
+  :type 'boolean)
 
 ;;;; Internal variables
 
@@ -233,6 +280,11 @@ their bindings."
                (error "Not enough arguments (%d) for `el-patch-literal'"
                       (1- (length form))))
              (cdr form))
+            ((quote el-patch-concat)
+             (when (<= (length form) 1)
+               (error "Not enough arguments (%d) for `el-patch-concat'"
+                      (1- (length form))))
+             (list (apply #'concat (cl-mapcan resolve (cdr form)))))
             (_
              (let ((car-forms (funcall resolve (car form)))
                    (cdr-forms (funcall resolve (cdr form))))
@@ -445,50 +497,63 @@ See `el-patch-validate'."
 
 ;;;; Applying patches
 
-(defun el-patch--compute-load-history-items (definition)
-  "Determine the items that DEFINITION will add to the `load-history'.
-Return a list of those items. Beware, uses heuristics."
-  (cl-destructuring-bind (type name . body) definition
-    (pcase type
-      ((or 'defun 'defmacro 'defsubst)
-       (list (cons 'defun name)))
-      ((or 'defvar 'defconst 'defcustom)
-       (list name))
-      ((quote define-minor-mode)
-       (list (cons 'defun name)
-             (or (when-let ((rest (member :variable body)))
-                   (cadr rest))
-                 name)))
-      (_ (error "Unexpected definition type %S" type)))))
-
-(defmacro el-patch--stealthy-eval (definition)
+(defmacro el-patch--stealthy-eval (definition &optional docstring-note)
   "Evaluate DEFINITION without updating `load-history'.
 DEFINITION should be an unquoted list beginning with `defun',
-`defmacro', `define-minor-mode', etc."
-  (let ((items (cl-remove-if (lambda (item)
-                               (member item current-load-list))
-                             (el-patch--compute-load-history-items
-                              definition))))
-    `(prog2
-         ;; Using a `progn' here so that the `prog2' above will
-         ;; correctly cause the evaluated definition to be returned,
-         ;; even if `el-patch-use-aggressive-defvar' is nil.
-         (progn
-           ,@(when (and el-patch-use-aggressive-defvar
-                        (eq (el-patch--classify-definition-type
-                             (car definition))
-                            'variable))
-               ;; Note that this won't necessarily handle
-               ;; `define-minor-mode' correctly if a custom
-               ;; `:variable' is specified. However, I'm not going to
-               ;; handle that edge case until somebody else complains
-               ;; about it.
-               `((makunbound ',(cadr definition)))))
-         ,definition
-       ,@(mapcar (lambda (item)
-		   `(setq current-load-list
-			  (remove ',item current-load-list)))
-		 items))))
+`defmacro', `define-minor-mode', etc. DOCSTRING-NOTE, if given,
+is a sentence to put in brackets at the end of the docstring."
+  (let* ((type (nth 0 definition))
+         (props (alist-get type el-patch-deftype-alist)))
+    (unless props
+      (error "Unregistered definition type `%S'" type))
+    (let* ((classify (plist-get props :classify))
+           (docstring-idx
+            (nth 1 (assq 'doc-string (plist-get props :declare)))))
+      (unless classify
+        (error
+         "Definition type `%S' has no `:classify' in `el-patch-deftype-alist'"
+         type))
+      (when (and docstring-note docstring-idx)
+        (let ((old-docstring (nth docstring-idx definition)))
+          (when (stringp old-docstring)
+            (let ((new-docstring
+                   (concat
+                    old-docstring
+                    (format "\n\n[%s]" docstring-note))))
+              (setq definition (cl-copy-list definition))
+              (setf (nth docstring-idx definition)
+                    new-docstring)))))
+      (let* ((classification
+              (funcall classify definition))
+             (items
+              (cl-remove-if
+               (lambda (item)
+                 (member item current-load-list))
+               (mapcar
+                (lambda (entry)
+                  (pcase (car entry)
+                    (`function (cons 'defun (cdr entry)))
+                    (`variable (cdr entry))
+                    (_ (error
+                        "Unexpected classification type `%S'" (car entry)))))
+                classification))))
+        `(prog2
+             ;; Using a `progn' here so that the `prog2' above will
+             ;; correctly cause the evaluated definition to be
+             ;; returned, even if `el-patch-use-aggressive-defvar' is
+             ;; nil.
+             (progn
+               ,@(when el-patch-use-aggressive-defvar
+                   (cl-mapcan
+                    (lambda (entry)
+                      (when (eq (car entry) 'variable)
+                        `((makunbound ',(cdr entry)))))
+                    classification)))
+             ,definition
+           ,@(mapcar (lambda (item)
+		       `(setq current-load-list
+			      (remove ',item current-load-list)))
+	             items))))))
 
 (defmacro el-patch--definition (patch-definition)
   "Activate a PATCH-DEFINITION and update `el-patch--patches'.
@@ -505,65 +570,112 @@ PATCH-DEFINITION is an unquoted list starting with `defun',
          ;; away so that if there is an error then at least the user
          ;; can undo the patch (as long as it is not too terribly
          ;; wrong).
-         (unless (gethash ',name el-patch--patches)
-           (puthash ',name (make-hash-table :test #'equal) el-patch--patches))
-         (puthash ',type ',patch-definition (gethash ',name el-patch--patches))
+         (puthash ',type
+                  ',patch-definition
+                  (or (gethash ',name el-patch--patches)
+                      (puthash ',name
+                               (make-hash-table :test #'equal)
+                               el-patch--patches)))
          ;; Now we actually overwrite the current definition.
-         (el-patch--stealthy-eval ,definition)))))
+         (el-patch--stealthy-eval
+          ,definition
+          "This function was patched by `el-patch'.")))))
 
-;; Function-like objects.
+(defun el-patch-classify-variable (definition)
+  "Classify the items defined by a variable DEFINITION.
+DEFINITION is a list starting with `defvar' or similar."
+  (list (cons 'variable (nth 1 definition))))
 
-;;;###autoload
-(defmacro el-patch-defun (&rest args)
-  "Patch a function. The ARGS are the same as for `defun'."
-  (declare (doc-string 3)
-           (indent defun))
-  `(el-patch--definition ,(cons #'defun args)))
+(defun el-patch-classify-function (definition)
+  "Classify the items defined by a function DEFINITION.
+DEFINITION is a list starting with `defun' or similar."
+  (list (cons 'function (nth 1 definition))))
 
-;;;###autoload
-(defmacro el-patch-defmacro (&rest args)
-  "Patch a macro. The ARGS are the same as for `defmacro'."
-  (declare (doc-string 3)
-           (indent defun))
-  `(el-patch--definition ,(cons #'defmacro args)))
-
-;;;###autoload
-(defmacro el-patch-defsubst (&rest args)
-  "Patch an inline function. The ARGS are the same as for `defsubst'."
-  (declare (doc-string 3)
-           (indent defun))
-  `(el-patch--definition ,(cons #'defsubst args)))
-
-;; Variable-like objects.
-
-;;;###autoload
-(defmacro el-patch-defvar (&rest args)
-  "Patch a variable. The ARGS are the same as for `defvar'."
-  (declare (indent defun))
-  `(el-patch--definition ,(cons #'defvar args)))
+(defun el-patch-classify-define-minor-mode (definition)
+  "Classify the items defined by a minor mode DEFINITION.
+DEFINITION is a list starting with `define-minor-mode' or
+similar."
+  (let* ((function-name (nth 1 definition))
+         (variable-name (nth 1 definition))
+         (kw-args (nthcdr 3 definition)))
+    (dotimes (_ 3)
+      (unless (keywordp (car kw-args))
+        (setq kw-args (cdr kw-args))))
+    (while (keywordp (car kw-args))
+      (when (eq (car kw-args) :variable)
+        (setq variable-name (car kw-args)))
+      (setq kw-args (nthcdr 2 kw-args)))
+    (list (cons 'function function-name)
+          (cons 'variable variable-name))))
 
 ;;;###autoload
-(defmacro el-patch-defconst (&rest args)
-  "Patch a constant. The ARGS are the same as for `defconst'."
-  (declare (indent defun))
-  `(el-patch--definition ,(cons #'defconst args)))
+(progn
+  (cl-defmacro el-patch-deftype
+      (type &rest kwargs &key classify declare macro-name)
+    "Allow `el-patch' to patch definitions of the given TYPE.
+TYPE is a symbol like `defun', `define-minor-mode', etc. This
+updates `el-patch-deftype-alist' (which see) with the provided
+keyword arguments and defines a macro named like
+`el-patch-defun', `el-patch-define-minor-mode', etc."
+    (declare (indent defun))
+    (unless classify
+      (error "You must specify `:classify' in calls to `el-patch-deftype'"))
+    `(progn
+       (setf (alist-get ',type el-patch-deftype-alist)
+             ;; Make sure we don't accidentally create self-modifying
+             ;; code if somebody decides to mutate
+             ;; `el-patch-deftype-alist'.
+             (copy-tree ',kwargs))
+       (defmacro ,(or macro-name (intern (format "el-patch-%S" type)))
+           (name &rest args)
+         ,(format "Use `el-patch' to override a `%S' form.
+The ARGS are the same as for `%S'."
+                  type type)
+         ,@(when declare
+             `((declare ,@declare)))
+         (list #'el-patch--definition (cl-list* ',type name args))))))
 
 ;;;###autoload
-(defmacro el-patch-defcustom (&rest args)
-  "Patch a customizable variable. The ARGS are the same as for `defcustom'."
-  (declare (indent defun))
-  `(el-patch--definition ,(cons #'defcustom args)))
-
-;; Other objects.
+(el-patch-deftype defconst
+  :classify el-patch-classify-variable
+  :declare ((doc-string 3)
+            (indent defun)))
 
 ;;;###autoload
-(defmacro el-patch-define-minor-mode (&rest args)
-  "Patch a minor mode. The ARGS are the same as for `define-minor-mode'."
-  (declare (doc-string 2)
-           (indent defun))
-  `(el-patch--definition ,(cons #'define-minor-mode args)))
+(el-patch-deftype defcustom
+  :classify el-patch-classify-variable
+  :declare ((doc-string 3)
+            (indent defun)))
 
-;; For convenience.
+;;;###autoload
+(el-patch-deftype define-minor-mode
+  :classify el-patch-classify-define-minor-mode
+  :declare ((doc-string 2)
+            (indent defun)))
+
+;;;###autoload
+(el-patch-deftype defmacro
+  :classify el-patch-classify-function
+  :declare ((doc-string 3)
+            (indent defun)))
+
+;;;###autoload
+(el-patch-deftype defsubst
+  :classify el-patch-classify-function
+  :declare ((doc-string 3)
+            (indent defun)))
+
+;;;###autoload
+(el-patch-deftype defun
+  :classify el-patch-classify-function
+  :declare ((doc-string 3)
+            (indent defun)))
+
+;;;###autoload
+(el-patch-deftype defvar
+  :classify el-patch-classify-variable
+  :declare ((doc-string 3)
+            (indent defun)))
 
 ;;;###autoload
 (defmacro el-patch-feature (feature &rest args)
@@ -667,6 +779,16 @@ processed further by el-patch."
   (declare (indent 0))
   (ignore args)
   `(error "Can't use `el-patch-literal' outside of an `el-patch'"))
+
+;;;###autoload
+(defmacro el-patch-concat (&rest args)
+  "Patch directive for modifying string literals.
+ARGS should resolve to strings; those strings are passed to
+`concat' and spliced into the containing s-expression in both the
+original and new definitions."
+  (declare (indent 0))
+  (ignore args)
+  `(error "Can't use `el-patch-concat' outside of an `el-patch'"))
 
 ;;;; Viewing patches
 
@@ -777,9 +899,73 @@ This restores the original functionality of the object being
 patched. NAME and TYPE are as returned by `el-patch-get'."
   (interactive (el-patch--select-patch))
   (if-let ((patch-definition (el-patch-get name type)))
-      (eval `(el-patch--stealthy-eval ,(el-patch--resolve-definition
-                                        patch-definition nil)))
+      (eval `(el-patch--stealthy-eval
+              ,(el-patch--resolve-definition
+                patch-definition nil)
+              "This function was patched and then unpatched by `el-patch'."))
     (error "There is no patch for %S %S" type name)))
+
+;;;; use-package integration
+
+(defun el-patch--use-package-handler
+    (base-keyword name _keyword args rest state)
+  "When applied partially, return a `use-package' handler.
+BASE-KEYWORD is either `:init' or `:config'. The remaining
+arguments NAME, KEYWORD, ARGS, REST, and STATE are explained by
+the `use-package' documentation."
+  (setq rest
+        (plist-put
+         rest base-keyword
+         (append
+          (mapcar
+           (lambda (arg)
+             (if (and (consp arg)
+                      (assq (car arg) el-patch-deftype-alist))
+                 (cons (or
+                        (plist-get
+                         (alist-get (car arg) el-patch-deftype-alist)
+                         :macro-name)
+                        (intern (format "el-patch-%S" (car arg))))
+                       (cdr arg))
+               arg))
+           args)
+          (plist-get rest base-keyword))))
+  (setq rest
+        (plist-put
+         rest :init
+         (cons `(el-patch-feature ,name)
+               (plist-get rest :init))))
+  (use-package-process-keywords name rest state))
+
+(define-minor-mode el-patch-use-package-mode
+  "Minor mode to enable `use-package' integration for `el-patch'.
+This mode is enabled or disabled automatically when the
+`el-patch' library is loaded, according to the value of
+`el-patch-enable-use-package-integration'."
+  :global t
+  (if el-patch-use-package-mode
+      (with-eval-after-load 'use-package-core
+        (dolist (kw '(:init/el-patch :config/el-patch))
+          (cl-pushnew kw use-package-keywords))
+        (dolist (fun '(use-package-normalize/:init/el-patch
+                       use-package-normalize/:config/el-patch))
+          (defalias fun #'use-package-normalize-forms))
+        (defalias 'use-package-handler/:init/el-patch
+          (apply-partially #'el-patch--use-package-handler :init))
+        (defalias 'use-package-handler/:config/el-patch
+          (apply-partially #'el-patch--use-package-handler :config)))
+    (with-eval-after-load 'use-package-core
+      (dolist (kw '(:init/el-patch :config/el-patch))
+        (setq use-package-keywords (delq kw use-package-keywords)))
+      (dolist (fun '(use-package-normalize/:init/el-patch
+                     use-package-normalize/:config/el-patch
+                     use-package-handler/:init/el-patch
+                     use-package-handler/:config/el-patch))
+        (fmakunbound fun)))))
+
+(if el-patch-enable-use-package-integration
+    (el-patch-use-package-mode +1)
+  (el-patch-use-package-mode -1))
 
 ;;;; Closing remarks
 

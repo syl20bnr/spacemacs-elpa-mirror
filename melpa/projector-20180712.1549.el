@@ -4,7 +4,7 @@
 ;;
 ;; Author: Justin Talbott <justin@waymondo.com>
 ;; URL: https://github.com/waymondo/projector
-;; Package-Version: 20171006.1258
+;; Package-Version: 20180712.1549
 ;; Version: 0.3.1
 ;; Package-Requires: ((alert "1.1") (projectile "0.11.0") (cl-lib "0.5"))
 ;; License: GNU General Public License version 3, or (at your option) any later version
@@ -141,15 +141,15 @@ This is usually most helpful to set on a directoy local level via a
      ((eq projector-completion-system 'ivy)
       (if (fboundp 'ivy-read)
           (let ((project-root (projectile-project-root)))
-            (ivy-read prompt choices
-                    :caller 'projector-run-command-buffer-prompt
-                    :history 'projector-ivy-command-history
-                    :action (lambda (cmd)
-                              (unless in-current-directory (cd project-root))
-                              (push cmd projector-command-history)
-                              (setq projector-command-history
-                                    (delq nil (delete-dups projector-command-history)))
-                              (projector-run-command-buffer cmd in-current-directory notify-on-exit))))
+            (ivy-read prompt projector-ivy-command-history
+                      :caller 'projector-run-command-buffer-prompt
+                      :history 'projector-ivy-command-history
+                      :action (lambda (cmd)
+                                (unless in-current-directory (cd project-root))
+                                (push cmd projector-command-history)
+                                (setq projector-command-history
+                                      (delq nil (delete-dups projector-command-history)))
+                                (projector-run-command-buffer cmd in-current-directory notify-on-exit))))
         (user-error "Please install ivy from \
 https://github.com/abo-abo/swiper")))
      (t (funcall projector-completion-system prompt choices)))))
@@ -243,7 +243,6 @@ Sends the exit message as a notification."
                         (projector-is-shell-buffer-name (buffer-name buf))
                         ))))
              (buffer-list)))))
-
 
 ;;;###autoload
 (defun projector-switch-to-or-create-project-shell ()

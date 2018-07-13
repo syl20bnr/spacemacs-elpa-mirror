@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/helm-org-rifle
-;; Package-Version: 20180711.1653
+;; Package-Version: 20180712.1545
 ;; Version: 1.7.0-pre
 ;; Package-Requires: ((emacs "24.4") (dash "2.12") (f "0.18.1") (helm "1.9.4") (s "1.10.0"))
 ;; Keywords: hypermedia, outlines
@@ -1022,19 +1022,19 @@ because it uses variables in its outer scope."
                       (if helm-org-rifle-fontify-headings
                           (let ((path (if helm-org-rifle-reverse-paths
                                           (--> (org-get-outline-path t)
-                                               (-map #'org-link-display-format it)
                                                (org-format-outline-path it 1000 nil "")
                                                (org-split-string it "")
                                                (nreverse it)
                                                (s-join "\\" it)
+                                               (org-link-display-format it)
                                                (if (> (length it) (window-width))
                                                    (concat (substring it 0 (- (window-width) 2))
                                                            "..")
                                                  it))
                                         (--> (or path (org-get-outline-path))
                                              (append it (list heading))
-                                             (-map #'org-link-display-format it)
-                                             (org-format-outline-path it))))
+                                             (org-format-outline-path it)
+                                             (org-link-display-format it))))
                                 (tags (if tags
                                           (concat " " (helm-org-rifle-fontify-like-in-org-mode tags))
                                         "")))
