@@ -3,7 +3,7 @@
 ;; Author: Sliim <sliim@mailoo.org>
 ;;    xuchunyang <xuchunyang56@gmail.com>
 ;; URL: https://github.com/Sliim/helm-github-stars
-;; Package-Version: 20150625.1523
+;; Package-Version: 1.3.3
 ;; Version: 1.3.2
 ;; Package-Requires: ((helm "1.6.8") (emacs "24.4"))
 ;; Keywords: helm github stars
@@ -207,7 +207,7 @@ For example, to open just cloned repo in dired automatically:
     (concat
      ;; Name
      (if (> (string-width name) helm-github-stars-name-length)
-         (helm-substring-by-width name helm-github-stars-name-length)
+         (helm-substring-by-width name helm-github-stars-name-length "...")
        (concat name (make-string
                      (- (+ helm-github-stars-name-length 3)
                         (string-width name)) ? )))
@@ -402,13 +402,13 @@ When git cloen is not yet done, use `list-processes' to dispaly related process.
        (message "Git clone done.")
        (run-hook-with-args 'helm-github-stars-clone-done-hook directory)))))
 
+;;;###autoload
 (defun helm-github-stars-fetch ()
   "Remove cache file before calling helm-github-stars."
   (interactive)
   (hgs/clear-cache-file)
   (helm-github-stars))
 
-;;;###autoload
 (defun helm-github-stars ()
   "Show and Browse your github's stars."
   (interactive)

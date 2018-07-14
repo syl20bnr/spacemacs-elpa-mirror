@@ -12,7 +12,7 @@
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 
 ;; Package-Requires: ((emacs "25.1") (dash "20180413") (with-editor "20180414"))
-;; Package-Version: 20180607.906
+;; Package-Version: 20180713.1444
 ;; Keywords: git tools vc
 ;; Homepage: https://github.com/magit/magit
 
@@ -435,6 +435,21 @@ This is only used if Magit is available."
                           (match-string 3 buffer-file-name)))))
     (when (file-accessible-directory-p (file-name-directory it))
       (find-alternate-file it)))
+  ;; Pretend that git-commit-mode is a major-mode,
+  ;; so that directory-local settings can be used.
+  (let ((default-directory
+          (if (file-exists-p ".dir-locals.el")
+              default-directory
+            ;; When $GIT_DIR/.dir-locals.el doesn't exist,
+            ;; fallback to $GIT_WORK_TREE/.dir-locals.el,
+            ;; because the maintainer can use the latter
+            ;; to enforce conventions, while s/he has no
+            ;; control over the former.
+            (magit-toplevel))))
+    (let ((buffer-file-name nil)         ; trick hack-dir-local-variables
+          (major-mode 'git-commit-mode)) ; trick dir-locals-collect-variables
+      (hack-dir-local-variables)
+      (hack-local-variables-apply)))
   (when git-commit-major-mode
     (let ((auto-mode-alist (list (cons (concat "\\`"
                                                (regexp-quote buffer-file-name)
@@ -720,7 +735,7 @@ Added to `font-lock-extend-region-functions'."
      (0 'git-commit-pseudo-header))
     ;; Summary
     (eval . `(,(git-commit-summary-regexp)
-              (1 'git-commit-summary t)))
+              (1 'git-commit-summary)))
     ;; - Note (overrides summary)
     ("\\[.+?\\]"
      (0 'git-commit-note t))
@@ -845,5 +860,22 @@ Added to `font-lock-extend-region-functions'."
                                 (get-text-property pos 'face)))
            (buffer-string)))))))
 
+;;; Elisp Text Mode
+
+(define-derived-mode git-commit-elisp-text-mode text-mode "ElText"
+  "Major mode for editing commit messages of elisp projects.
+This is intended for use as `git-commit-major-mode' for projects
+that expect `symbols' to look like this.  I.e. like they look in
+Elisp doc-strings, including this one.  Unlike in doc-strings,
+\"strings\" also look different than the other text."
+  (setq font-lock-defaults '(git-commit-elisp-text-mode-keywords)))
+
+(defvar git-commit-elisp-text-mode-keywords
+  `((,(concat "[`‘]\\(\\(?:\\sw\\|\\s_\\|\\\\.\\)"
+              lisp-mode-symbol-regexp "\\)['’]")
+     (1 font-lock-constant-face prepend))
+    ("\"[^\"]*\"" (0 font-lock-string-face prepend))))
+
+;;; _
 (provide 'git-commit)
 ;;; git-commit.el ends here
