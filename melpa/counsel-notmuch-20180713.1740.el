@@ -4,7 +4,7 @@
 
 ;; Author: Alexander Fu Xi <fuxialexander@gmail.com>
 ;; URL: https://github.com/fuxialexander/counsel-notmuch
-;; Package-Version: 20171223.145
+;; Package-Version: 20180713.1740
 ;; Keywords: mail
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "24") (ivy "0.10.0") (notmuch "0.21") (s "1.12.0"))
@@ -85,7 +85,7 @@
 (defun counsel-notmuch-function (input)
   "Get mail from notmuch using INPUT."
   (if (< (length input) 3)
-      (counsel-more-chars 3)
+      (counsel-more-chars)
     (counsel--async-command
      (counsel-notmuch-cmd input)) '("" "working...")))
 

@@ -4,8 +4,8 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; URL: http://github.com/alphapapa/magit-todos
-;; Package-Version: 1.0.0
-;; Version: 1.0.0
+;; Package-Version: 20180713.1828
+;; Version: 1.0.1
 ;; Package-Requires: ((emacs "25.2") (a "0.1.0") (anaphora "1.0.0") (async "1.9.2") (dash "2.13.0") (f "0.17.2") (hl-todo "1.9.0") (magit "2.13.0") (pcre2el "1.8") (s "1.12.0"))
 ;; Keywords: magit, vc
 
@@ -15,13 +15,21 @@
 ;; in the Magit status buffer.  Activating an item jumps to it in its file.  By
 ;; default, it uses keywords from `hl-todo', minus a few (like "NOTE").
 
-;;;; Installation:
+;;;; Usage:
 
-;;;;; MELPA
+;; Run `magit-todos-mode', then open a Magit status buffer.
+
+;;;; Tips:
+
+;; + You can customize settings in the `magit-todos' group.
+
+;;; Installation:
+
+;;;; MELPA
 
 ;; If you installed from MELPA, you're done.
 
-;;;;; Manual
+;;;; Manual
 
 ;; Install these required packages:
 
@@ -38,18 +46,6 @@
 ;; Then put this file in your load-path, and put this in your init file:
 
 ;;   (require 'magit-todos)
-
-;;;; Usage:
-
-;; Run `magit-todos-mode', then open a Magit status buffer.
-
-;;;; Tips:
-
-;; + You can customize settings in the `magit-todos' group.
-
-;;;; Credits:
-
-;; This package was inspired by <https://github.com/danielma/magit-org-todos.el>.
 
 ;;; License:
 
@@ -261,7 +257,7 @@ This function should be called from inside a ‘magit-status’ buffer."
   (declare (indent defun))
   ;; NOTE: This could be factored out into some kind of `magit-insert-section-async' macro if necessary.
   (when (not (buffer-live-p magit-status-buffer))
-    (error "`magit-todos--insert-items-callback': Callback called for deleted buffer"))
+    (message "`magit-todos--insert-items-callback': Callback called for deleted buffer"))
   (let* ((items (magit-todos--sort items))
          (num-items (length items))
          (group-fns (pcase magit-todos-auto-group-items
@@ -582,9 +578,6 @@ This should be set automatically by customizing
   "Regular expression to match keyword items with rg, ag, and git-grep.
 This should be set automatically by customizing
 `magit-todos-keywords'.")
-
-(defvar magit-todos-ignored-directories nil
-  "Automatically set by `magit-todos--repo-todos'.")
 
 (defvar-local magit-todos-active-scan nil
   "The current scan's process.
@@ -922,8 +915,7 @@ MAGIT-STATUS-BUFFER is what it says.  DIRECTORY is the directory in which to run
                  extra-args search-regexp directory))
 
 (magit-todos-defscanner "git grep"
-  :test (not (string-match "Perl-compatible"
-                           (shell-command-to-string "git grep --max-depth 0 --perl-regexp --no-index --q magit-todos-test-string")))
+  :test (string-match "--perl-regexp" (shell-command-to-string "git grep --help"))
   :command (list "git" "--no-pager" "grep"
                  "--full-name" "--no-color" "-n"
                  (when depth
