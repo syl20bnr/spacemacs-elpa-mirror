@@ -4,8 +4,8 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; URL: http://github.com/alphapapa/magit-todos
-;; Package-Version: 20180713.1828
-;; Version: 1.0.1
+;; Package-Version: 20180714.1242
+;; Version: 1.0.2
 ;; Package-Requires: ((emacs "25.2") (a "0.1.0") (anaphora "1.0.0") (async "1.9.2") (dash "2.13.0") (f "0.17.2") (hl-todo "1.9.0") (magit "2.13.0") (pcre2el "1.8") (s "1.12.0"))
 ;; Keywords: magit, vc
 
@@ -215,8 +215,8 @@ Assumes current buffer is ITEM's buffer."
       (forward-line (1- line))
       (if column
           (forward-char column)
-        (re-search-forward keyword (line-end-position) t)
-        (goto-char (match-beginning 0))))))
+        (when (re-search-forward (regexp-quote keyword) (line-end-position) t)
+          (goto-char (match-beginning 0)))))))
 
 (defun magit-todos--insert-todos ()
   "Insert to-do items into current buffer.
@@ -634,7 +634,12 @@ find-grep, in that order. "
            (unless value
              ;; Choosing automatically
              (setq value (or (magit-todos--choose-scanner)
-                             (message "magit-todos: Unable to choose scanner automatically"))))
+                             (progn
+                               (display-warning 'magit-todos
+                                                "`magit-todos' was unable to find a suitable scanner.  Please install \"rg\", or a PCRE-compatible version of \"git\" or \"grep\".  Disabling `magit-todos-mode'."
+                                                :error)
+                               (magit-todos-mode -1)
+                               nil))))
            (set-default option value))))
 
 (defcustom magit-todos-nice t
@@ -929,6 +934,7 @@ MAGIT-STATUS-BUFFER is what it says.  DIRECTORY is the directory in which to run
 (magit-todos-defscanner "find|grep"
   ;; NOTE: The filenames output by find|grep have a leading "./".  I don't expect this scanner to be
   ;; used much, if at all, so I'm not going to go to the trouble to fix this now.
+  :test (string-match "--perl-regexp" (shell-command-to-string "grep --help"))
   :command (let* ((grep-find-template (progn
                                         (unless grep-find-template
                                           (grep-compute-defaults))
