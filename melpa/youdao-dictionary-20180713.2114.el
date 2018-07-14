@@ -4,7 +4,7 @@
 
 ;; Author: Chunyang Xu <xuchunyang56@gmail.com>
 ;; URL: https://github.com/xuchunyang/youdao-dictionary.el
-;; Package-Version: 20180712.2118
+;; Package-Version: 20180713.2114
 ;; Package-Requires: ((popup "0.5.0") (pos-tip "0.4.6") (chinese-word-at-point "0.2") (names "0.5") (emacs "24"))
 ;; Version: 0.4
 ;; Created: 11 Jan 2015
@@ -288,7 +288,8 @@ i.e. `[语][计] dictionary' => 'dictionary'."
 
 (defun -play-voice (word)
   "Play voice of the WORD if there has mplayer or mpg123 program."
-  (let ((player (or (executable-find "mplayer")
+  (let ((player (or (executable-find "mpv")
+                    (executable-find "mplayer")
                     (executable-find "mpg123"))))
     (if player
         (start-process player nil player (-format-voice-url word))
