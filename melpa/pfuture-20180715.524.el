@@ -5,7 +5,7 @@
 ;; Author: Alexander Miller <alexanderm@web.de>
 ;; Homepage: https://github.com/Alexander-Miller/pfuture
 ;; Package-Requires: ((emacs "25.2"))
-;; Package-Version: 20180713.808
+;; Package-Version: 20180715.524
 ;; Version: 1.2.2
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -52,7 +52,7 @@ FN may either be a (sharp) quoted function, and unquoted function or an sexp."
      `(,fn ,@args))
     (`(quote ,fn)
      `(,fn ,@args))
-    (`(,_ . ,_)
+    ((or `(,_ . ,_) `(,_))
      fn)
     ((pred null)
      (ignore fn))
