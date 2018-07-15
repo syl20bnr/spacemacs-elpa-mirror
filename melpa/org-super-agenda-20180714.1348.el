@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-super-agenda
-;; Package-Version: 20180707.255
+;; Package-Version: 20180714.1348
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "25.1") (s "1.10.0") (dash "2.13") (org "9.0") (ht "2.2"))
 ;; Keywords: hypermedia, outlines, Org, agenda
@@ -129,6 +129,11 @@ Populated automatically by `org-super-agenda--defgroup'.")
 (defvar org-super-agenda-group-transformers nil
   "List of agenda group transformers.")
 
+(defvar org-super-agenda-header-map (make-sparse-keymap)
+  "Keymap applied to agenda group headers.
+This is useful to, e.g. use `origami' to fold group headings by
+binding a key to `origami-toggle-node' in this map.")
+
 (defgroup org-super-agenda nil
   "Settings for `org-super-agenda'."
   :group 'org
@@ -217,7 +222,12 @@ If ANY is non-nil, return as soon as FORM returns non-nil."
   (pcase s
     ('none "")
     (_ (setq s (concat " " s))
-       (org-add-props s nil 'face 'org-agenda-structure)
+       (org-add-props s nil 'face 'org-agenda-structure
+                      'keymap org-super-agenda-header-map
+                      ;; NOTE: According to the manual, only `keymap' should be necessary, but in my
+                      ;; testing, it only takes effect in Agenda buffers when `local-map' is set, so
+                      ;; we'll use both.
+                      'local-map org-super-agenda-header-map)
        (concat "\n" s))))
 
 (defsubst org-super-agenda--get-priority-cookie (s)

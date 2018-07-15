@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/deadgrep
-;; Package-Version: 20180713.1528
+;; Package-Version: 0.4
 ;; Keywords: tools
 ;; Version: 0.4
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (s "1.11.0") (spinner "1.7.3") (projectile "0.14.0"))
@@ -36,7 +36,7 @@
 (require 's)
 (require 'dash)
 (require 'spinner)
-(autoload 'projectile-project-root "projectile")
+(require 'projectile)
 
 (defgroup deadgrep nil
   "A powerful text search UI using ripgrep."
@@ -52,6 +52,11 @@
 if there are more than this many.
 
 To disable cleanup entirely, set this variable to nil.")
+
+(defvar deadgrep-project-root-function
+  #'deadgrep--project-root
+  "Function called by `deadgrep' to work out the root directory
+to search from.")
 
 (defvar deadgrep-history
   nil
@@ -833,9 +838,7 @@ for a string, offering the current word as a default."
              (prompt
               (if sym
                   (format "Search term (default %s): " sym-name)
-                "Search term: "))
-             (user-input
-              ))
+                "Search term: ")))
         (setq search-term
               (read-from-minibuffer
                prompt nil nil nil 'deadgrep-history sym-name))
@@ -845,20 +848,17 @@ for a string, offering the current word as a default."
       (push search-term deadgrep-history))
     search-term))
 
-(defun deadgrep--project-root (file-path)
+(defun deadgrep--project-root ()
   "Guess the project root of the given FILE-PATH."
-  (or
-   (ignore-errors
-     ;; This raises an error if we're not in a project.
-     (projectile-project-root))
-   file-path))
+  (let ((projectile-require-project-root nil))
+    (projectile-project-root)))
 
 ;;;###autoload
 (defun deadgrep ()
   "Start a ripgrep search for SEARCH-TERM."
   (interactive)
   (let* ((search-term (deadgrep--read-search-term))
-         (dir (deadgrep--project-root default-directory))
+         (dir (funcall deadgrep-project-root-function))
          (buf (deadgrep--buffer
                search-term
                dir
