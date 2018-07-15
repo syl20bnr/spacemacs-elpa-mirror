@@ -5,7 +5,7 @@
 ;; Author: Sibi Prabakaran <sibi@psibi.in>
 ;; Maintainer: Sibi Prabakaran <sibi@psibi.in>
 ;; Keywords: languages
-;; Package-Version: 20180704.1659
+;; Package-Version: 20180715.213
 ;; Version: 0.1.3
 ;; Package-Requires: ((emacs "24.4"))
 ;; URL: https://github.com/psibi/dhall-mode
@@ -111,7 +111,8 @@ Should be dhall or the complete path to your dhall executable,
 
 (defcustom dhall-format-command "dhall-format"
   "Command used to format Dhall files.
-If not specified \"dhall format\" will be used.
+If your dhall command is new and supports the \"format\" sub-command,
+then set this to nil.  This will become the default later.
 
 If specified, this should be the complete path to your dhall-format executable,
   e.g.: /home/sibi/.local/bin/dhall-format"

@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp, text
-;; Package-Version: 20180611.109
+;; Package-Version: 20180715.145
 ;; Version: 2.6.0
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -3682,55 +3682,73 @@ If POS is nil, use `point' instead."
   "Return the beginning and end bounds of current element block."
   (let ((element (fountain-get-element))
         begin end)
-    (save-excursion
-      (save-restriction
-        (widen)
-        (cond ((memq element '(section-heading scene-heading))
-               (setq begin (match-beginning 0))
-               (outline-end-of-subtree)
-               (skip-chars-forward "\n\s\t")
-               (setq end (point)))
-              ((memq element '(character paren lines))
-               (fountain-forward-character 0)
-               (setq begin (line-beginning-position))
-               (while (not (or (eobp)
-                               (and (bolp) (eolp))
-                               (fountain-match-note)))
-                 (forward-line))
-               (skip-chars-forward "\n\s\t")
-               (setq end (point)))
-              ((memq element '(trans center synopsis note page-break))
-               (setq begin (match-beginning 0))
-               (goto-char (match-end 0))
-               (skip-chars-forward "\n\s\t")
-               (setq end (point)))
-              ((eq element 'action)
-               (save-excursion
-                 (if (fountain-blank-before-p)
-                     (setq begin (line-beginning-position))
-                   (backward-char)
-                   (while (eq (fountain-get-element) 'action)
-                     (forward-line -1))
+    (when element
+      (save-excursion
+        (save-restriction
+          (widen)
+          (cond ((memq element '(section-heading scene-heading))
+                 (setq begin (match-beginning 0))
+                 (outline-end-of-subtree)
+                 (skip-chars-forward "\n\s\t")
+                 (setq end (point)))
+                ((memq element '(character paren lines))
+                 (fountain-forward-character 0)
+                 (setq begin (line-beginning-position))
+                 (while (not (or (eobp)
+                                 (and (bolp) (eolp))
+                                 (fountain-match-note)))
+                   (forward-line))
+                 (skip-chars-forward "\n\s\t")
+                 (setq end (point)))
+                ((memq element '(trans center synopsis note page-break))
+                 (setq begin (match-beginning 0))
+                 (goto-char (match-end 0))
+                 (skip-chars-forward "\n\s\t")
+                 (setq end (point)))
+                ((eq element 'action)
+                 (save-excursion
+                   (if (fountain-blank-before-p)
+                       (setq begin (line-beginning-position))
+                     (backward-char)
+                     (while (and (eq (fountain-get-element) 'action)
+                                 (not (bobp)))
+                       (forward-line -1))
+                     (skip-chars-forward "\n\s\t")
+                     (beginning-of-line)
+                     (setq begin (point))))
+                 (forward-line)
+                 (unless (eobp)
+                   (while (and (eq (fountain-get-element) 'action)
+                               (not (eobp)))
+                     (forward-line))
                    (skip-chars-forward "\n\s\t")
-                   (beginning-of-line)
-                   (setq begin (point))))
-               (forward-line)
-               (while (eq (fountain-get-element) 'action)
-                 (forward-line))
-               (skip-chars-forward "\n\s\t")
-               (beginning-of-line)
-               (setq end (point))))))
-    (cons begin end)))
+                   (beginning-of-line))
+                 (setq end (point))))))
+      (cons begin end))))
 
-(defun fountain-shift-block-down (&optional n)
-  "Move the current block down past N blocks of same level."
+(defun fountain-insert-hanging-line-maybe ()
+  "Insert a empty newline if needed.
+Return non-nil if empty newline was inserted."
+  (let (hanging-line)
+    (when (and (eobp) (/= (char-before) ?\n))
+      (insert "\n"))
+    (when (and (eobp) (not (fountain-blank-before-p)))
+      (insert "\n")
+      (setq hanging-line t))
+    (unless (eobp)
+      (forward-char 1))
+    hanging-line))
+
+(defun fountain-shift-down (&optional n)
+  "Move the current element down past an element of the same level."
   (interactive "p")
   (unless n (setq n 1))
   (if (outline-on-heading-p)
       (fountain-outline-shift-down n)
-    (let ((p (< 0 n)))
+    (let ((forward (< 0 n))
+          hanging-line)
       (when (and (bolp) (eolp))
-        (funcall (if p 'skip-chars-forward 'skip-chars-backward)
+        (funcall (if forward 'skip-chars-forward 'skip-chars-backward)
                  "\n\s\t"))
       (save-excursion
         (save-restriction
@@ -3739,30 +3757,45 @@ If POS is nil, use `point' instead."
                 outline-begin outline-end next-block-bounds)
             (unless (and (car block-bounds)
                          (cdr block-bounds))
-              (user-error "Not at a moveable block"))
+              (user-error "Not at a moveable element"))
             (save-excursion
-              (outline-back-to-heading)
+              (when (not forward)
+                (goto-char (cdr block-bounds))
+                (when (setq hanging-line (fountain-insert-hanging-line-maybe))
+                  (setcdr block-bounds (point)))
+                (goto-char (car block-bounds)))
+              (outline-previous-heading)
               (setq outline-begin (point))
               (outline-next-heading)
               (setq outline-end (point)))
-            (if p
+            (if forward
                 (goto-char (cdr block-bounds))
               (goto-char (car block-bounds))
               (backward-char)
               (skip-chars-backward "\n\s\t"))
             (setq next-block-bounds (fountain-get-block-bounds))
+            (unless (and (car next-block-bounds)
+                         (cdr next-block-bounds))
+              (user-error "Cannot shift element any further"))
+            (when forward
+              (goto-char (cdr next-block-bounds))
+              (when (setq hanging-line (fountain-insert-hanging-line-maybe))
+                (setcdr next-block-bounds (point))))
             (unless (< outline-begin (car next-block-bounds) outline-end)
               (user-error "Cannot shift past higher level"))
-            (goto-char (funcall (if p 'car 'cdr) block-bounds))
+            (goto-char (if forward (car block-bounds) (cdr block-bounds)))
             (insert-before-markers
              (delete-and-extract-region (car next-block-bounds)
-                                        (cdr next-block-bounds)))))))))
+                                        (cdr next-block-bounds))))
+          (when hanging-line
+            (goto-char (point-max))
+            (delete-char -1)))))))
 
-(defun fountain-shift-block-up (&optional n)
-  "Move the current block up past N element blocks of same level."
+(defun fountain-shift-up (&optional n)
+  "Move the current element up past an element of the same level."
   (interactive "p")
   (unless n (setq n 1))
-  (fountain-shift-block-down (- n)))
+  (fountain-shift-down (- n)))
 
 (defun fountain-outline-shift-down (&optional n)
   "Move the current subtree down past N headings of same level."
@@ -3776,17 +3809,7 @@ If POS is nil, use `point' instead."
          (end-point-fun
           (lambda ()
             (outline-end-of-subtree)
-            ;; Add newline if none at eof.
-            (when (and (eobp) (/= (char-before) ?\n))
-              (insert-char ?\n))
-            ;; Temporary newline if only 1 at eof
-            (when (and (eobp)
-                       (not (fountain-blank-before-p)))
-              (insert-char ?\n)
-              (setq hanging-line t))
-            ;; Avoid eobp signal.
-            (unless (eobp)
-              (forward-char 1))
+            (setq hanging-line (fountain-insert-hanging-line-maybe))
             (point)))
          (beg (point))
          (folded
@@ -3809,7 +3832,6 @@ If POS is nil, use `point' instead."
     (insert (delete-and-extract-region beg end))
     (goto-char insert-point)
     (when folded (outline-hide-subtree))
-    ;; Remove temporary newline.
     (when hanging-line
       (save-excursion
         (goto-char (point-max))
@@ -4943,10 +4965,10 @@ keywords suitable for Font Lock."
     (define-key map (kbd "M-n") #'fountain-forward-character)
     (define-key map (kbd "M-p") #'fountain-backward-character)
     ;; Block editing commands:
-    (define-key map (kbd "<M-down>") #'fountain-shift-block-down)
-    (define-key map (kbd "ESC <down>") #'fountain-shift-block-down)
-    (define-key map (kbd "<M-up>") #'fountain-shift-block-up)
-    (define-key map (kbd "ESC <up>") #'fountain-shift-block-up)
+    (define-key map (kbd "<M-down>") #'fountain-shift-down)
+    (define-key map (kbd "ESC <down>") #'fountain-shift-down)
+    (define-key map (kbd "<M-up>") #'fountain-shift-up)
+    (define-key map (kbd "ESC <up>") #'fountain-shift-up)
     ;; Outline commands:
     (define-key map [remap forward-list] #'fountain-outline-next)
     (define-key map [remap backward-list] #'fountain-outline-previous)
@@ -4980,25 +5002,38 @@ keywords suitable for Font Lock."
 (easy-menu-define fountain-mode-menu fountain-mode-map
   "Menu for `fountain-mode'."
   '("Fountain"
+    ("Show/Hide"
+     ["Cycle Outline Visibility" fountain-outline-cycle]
+     ["Cycle Global Outline Visibility" fountain-outline-cycle-global]
+     ["Show All" outline-show-all]      ; FIXME: fountain-outline-show-all
+     "---"
+     ["Hide Emphasis Delimiters"
+      (customize-set-variable 'fountain-hide-emphasis-delim
+                              (not fountain-hide-emphasis-delim))
+      :style toggle
+      :selected fountain-hide-emphasis-delim]
+     ["Hide Syntax Characters"
+      (customize-set-variable 'fountain-hide-syntax-chars
+                              (not fountain-hide-syntax-chars))
+      :style toggle
+      :selected fountain-hide-syntax-chars])
+    "---"
     ("Navigate"
-     ["Next Scene/Section" fountain-outline-next]
-     ["Previous Scene/Section" fountain-outline-previous]
-     ["Up Scene/Section" fountain-outline-up]
-     ["Forward Scene/Section" fountain-outline-forward]
-     ["Backward Scene/Section" fountain-outline-backward]
+     ["Up Heading" fountain-outline-up]
+     ["Next Heading" fountain-outline-next]
+     ["Previous Heading" fountain-outline-previous]
+     ["Forward Heading Same Level" fountain-outline-forward]
+     ["Backward Heading Same Level" fountain-outline-backward]
      "---"
      ["Next Character" fountain-forward-character]
      ["Previous Character" fountain-backward-character]
      "---"
      ["Go to Scene Heading..." fountain-goto-scene]
      ["Go to Page..." fountain-goto-page])
-    ("Outline"
-     ["Cycle Scene/Section Visibility" fountain-outline-cycle]
-     ["Cycle Global Visibility" fountain-outline-cycle-global]
-     "---"
+    ("Edit Structure"
      ["Mark Section/Scene" fountain-outline-mark]
-     ["Shift Block Up" fountain-shift-block-up]
-     ["Shift Block Down" fountain-shift-block-down]
+     ["Shift Up" fountain-shift-up]
+     ["Shift Down" fountain-shift-down]
      "---"
      ["Open Scene/Section in Indirect Buffer" fountain-outline-to-indirect-buffer])
     ("Scene Numbers"
@@ -5032,31 +5067,6 @@ keywords suitable for Font Lock."
     ["Insert Page Break..." fountain-insert-page-break]
     ["Refresh Continued Dialog" fountain-continued-dialog-refresh]
     ["Update Auto-Completion" fountain-completion-update]
-    "---"
-    ("Show/Hide"
-     ["Hide Emphasis Delimiters"
-      (customize-set-variable 'fountain-hide-emphasis-delim
-                              (not fountain-hide-emphasis-delim))
-      :style toggle
-      :selected fountain-hide-emphasis-delim]
-     ["Hide Syntax Characters"
-      (customize-set-variable 'fountain-hide-syntax-chars
-                              (not fountain-hide-syntax-chars))
-      :style toggle
-      :selected fountain-hide-syntax-chars])
-    ("Syntax Highlighting"
-     ["Minimum"
-      (fountain-set-font-lock-decoration 1)
-      :style radio
-      :selected (= (fountain-get-font-lock-decoration) 1)]
-     ["Default"
-      (fountain-set-font-lock-decoration 2)
-      :style radio
-      :selected (= (fountain-get-font-lock-decoration) 2)]
-     ["Maximum"
-      (fountain-set-font-lock-decoration 3)
-      :style radio
-      :selected (= (fountain-get-font-lock-decoration) 3)])
     "---"
     ("Export"
      ["Export buffer..." fountain-export-buffer]
@@ -5114,7 +5124,7 @@ keywords suitable for Font Lock."
      ["Contextual (Do What I Mean)" (customize-set-variable 'fountain-tab-command 'fountain-dwim)
       :style radio
       :selected (eq fountain-tab-command 'fountain-dwim)]
-     ["Cycle Scene/Section Visibility" (customize-set-variable 'fountain-tab-command 'fountain-outline-cycle)
+     ["Cycle Outline Visibility" (customize-set-variable 'fountain-tab-command 'fountain-outline-cycle)
       :style radio
       :selected (eq fountain-tab-command 'fountain-outline-cycle)]
      ["Toggle Auto-Upcasing" (customize-set-variable 'fountain-tab-command 'fountain-toggle-auto-upcase)
@@ -5123,6 +5133,19 @@ keywords suitable for Font Lock."
      ["Auto-Completion" (customize-set-variable 'fountain-tab-command 'completion-at-point)
       :style radio
       :selected (eq fountain-tab-command 'completion-at-point)])
+    ("Syntax Highlighting"
+     ["Minimum"
+      (fountain-set-font-lock-decoration 1)
+      :style radio
+      :selected (= (fountain-get-font-lock-decoration) 1)]
+     ["Default"
+      (fountain-set-font-lock-decoration 2)
+      :style radio
+      :selected (= (fountain-get-font-lock-decoration) 2)]
+     ["Maximum"
+      (fountain-set-font-lock-decoration 3)
+      :style radio
+      :selected (= (fountain-get-font-lock-decoration) 3)])
     ["Display Elements Auto-Aligned"
      (customize-set-variable 'fountain-align-elements
                              (not fountain-align-elements))
