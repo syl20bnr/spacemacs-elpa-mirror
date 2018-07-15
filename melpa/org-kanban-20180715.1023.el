@@ -8,7 +8,7 @@
 ;;         Aldric Giacomoni <trevoke@gmail.com>
 ;; Keywords: org-mode, org, kanban, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "24.4") (org "9.1"))
-;; Package-Version: 20180607.137
+;; Package-Version: 20180715.1023
 ;; Package-X-Original-Version: 0.4.5
 ;; Homepage: http://github.com/gizmomogwai/org-kanban
 
@@ -342,7 +342,7 @@ Return file and marker."
         (files (or (mapcar 'symbol-name (plist-get params :files)) (list buffer-file-name)))
         (multi-file (> (length files) 1))
         (todo-keywords (org-kanban//todo-keywords files mirrored))
-        (todo-infos (org-map-entries 'org-kanban//todo-info-extract t files))
+        (todo-infos (org-map-entries 'org-kanban//todo-info-extract (plist-get params :match) files))
         (row-for (lambda(todo-info) (org-kanban//row-for todo-info todo-keywords multi-file)))
         (rows (-map row-for (-filter
                              (lambda(todo-info)

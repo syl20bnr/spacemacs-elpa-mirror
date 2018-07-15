@@ -6,7 +6,7 @@
 ;; Author: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; Maintainer: Jean-Philippe Bernardy <jeanphilippe.bernardy@gmail.com>
 ;; URL: https://github.com/jyp/attrap
-;; Package-Version: 20180218.1243
+;; Package-Version: 20180715.1205
 ;; Created: February 2018
 ;; Keywords: programming, tools
 ;; Package-Requires: ((dash "2.12.0") (emacs "25.1") (f "0.19.0") (flycheck "0.30") (s "1.11.0"))
@@ -127,6 +127,11 @@ usage: (attrap-alternatives CLAUSES...)"
 (defun attrap-elisp-fixer (msg _)
   "An `attrap' fixer for any elisp warning given as MSG."
   (attrap-alternatives
+   ((string-match "Name emacs should appear capitalized as Emacs" msg)
+    (attrap-one-option 'capitalize-emacs
+      (let ((case-fold-search nil))
+        (re-search-forward "emacs" (line-end-position))
+        (replace-match "Emacs" nil t nil 0))))
    ((string-match "White space found at end of line" msg)
     (attrap-one-option 'delete-trailing-space
       (end-of-line)
@@ -210,6 +215,14 @@ usage: (attrap-alternatives CLAUSES...)"
     (attrap-one-option 'rename-module-import
       (let ((replacement (match-string 2 msg)))
         ;; ^^ delete-region may garble the matches
+        (search-forward (match-string 1 msg))
+        (delete-region (match-beginning 0) (point))
+        (insert replacement))))
+   ((string-match "Unsupported extension: \\(.*\\)\n[ ]*Perhaps you meant ‘\\([^‘]*\\)’" msg)
+    (attrap-one-option 'rename-extension
+      (let ((replacement (match-string 2 msg)))
+        ;; ^^ delete-region may garble the matches
+        (goto-char pos)
         (search-forward (match-string 1 msg))
         (delete-region (match-beginning 0) (point))
         (insert replacement))))
