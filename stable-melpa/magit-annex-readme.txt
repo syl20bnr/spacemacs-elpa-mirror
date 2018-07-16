@@ -11,10 +11,21 @@ Adding files:
 Managing file content:
   @fu   Unlock files.
   @fl   Lock files.
+  @fU   Undo files.
+
   @fg   Get files.
   @fd   Drop files.
   @fc   Copy files.
   @fm   Move files.
+
+   The above commands, which operate on paths, are also useful
+   outside of Magit buffers, especially in Dired buffers.  To make
+   these commands easily accessible in Dired, you can add a binding
+   for `magit-annex-file-action-popup'.  If you use git-annex.el,
+   you can put the popup under the same binding (@f) with
+
+    (define-key git-annex-dired-map "f"
+      #'magit-annex-file-action-popup)
 
   @u    Browse unused files.
   @l    List annex files.
