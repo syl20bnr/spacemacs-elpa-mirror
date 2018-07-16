@@ -5,7 +5,7 @@
 ;; Author: Kyle Meyer <kyle@kyleam.com>
 ;;         Rémi Vanicat <vanicat@debian.org>
 ;; URL: https://github.com/magit/magit-annex
-;; Package-Version: 20180715.1427
+;; Package-Version: 20180715.1812
 ;; Keywords: vc tools
 ;; Version: 1.6.0
 ;; Package-Requires: ((cl-lib "0.3") (magit "2.12.0"))
@@ -99,14 +99,14 @@
   "Whether to confirm before adding all changes to the annex."
   :type 'boolean)
 
+(define-obsolete-variable-alias 'magit-annex-standard-options
+  'magit-annex-global-arguments "1.4.0")
+
 (defcustom magit-annex-global-arguments nil
   "Arguments that are added to every git-annex call.
 These are placed after \"annex\" in the call, whereas values from
 `magit-git-global-arguments' are placed after \"git\"."
   :type '(repeat string))
-
-(define-obsolete-variable-alias 'magit-annex-standard-options
-  'magit-annex-global-arguments "1.4.0")
 
 (defcustom magit-annex-limit-file-choices t
   "Limit choices for file commands based on state of repo.
