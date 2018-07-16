@@ -5,7 +5,7 @@
 ;; Author: Radon Rosborough <radon.neon@gmail.com>
 ;; Homepage: https://github.com/raxod502/prescient.el
 ;; Keywords: extensions
-;; Package-Version: 20180714.825
+;; Package-Version: 20180716.907
 ;; Created: 7 Aug 2017
 ;; Package-Requires: ((emacs "25.1") (prescient "2.0") (ivy "0.10.0"))
 ;; Version: 2.0
@@ -130,11 +130,15 @@ original action, a function. Return a new function that also
 invokes `prescient-remember'."
   (lambda (result)
     ;; Same as in `ivy-prescient-sort-function', we have to account
-    ;; for candidates which are lists by taking their cars.
-    (when (listp result)
-      (setq result (car result)))
-    (unless (memq caller ivy-prescient-excluded-commands)
-      (prescient-remember result))
+    ;; for candidates which are lists by taking their cars. Make sure
+    ;; to do this only for the call to `prescient-remember', and not
+    ;; for the actual action, though. See
+    ;; https://github.com/raxod502/prescient.el/issues/12.
+    (let ((result result))
+      (when (listp result)
+        (setq result (car result)))
+      (unless (memq caller ivy-prescient-excluded-commands)
+        (prescient-remember result)))
     (when action
       (funcall action result))))
 

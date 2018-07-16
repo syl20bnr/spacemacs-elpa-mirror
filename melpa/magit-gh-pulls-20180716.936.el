@@ -4,10 +4,10 @@
 
 ;; Author: Yann Hodique <yann.hodique@gmail.com>
 ;; Keywords: git tools
-;; Package-Version: 20171117.226
+;; Package-Version: 20180716.936
 ;; Version: 0.5.3
 ;; URL: https://github.com/sigma/magit-gh-pulls
-;; Package-Requires: ((emacs "24.4") (gh "0.9.1") (magit "2.1.0") (pcache "0.2.3") (s "1.6.1"))
+;; Package-Requires: ((emacs "24.4") (gh "0.9.1") (magit "2.12.0") (pcache "0.2.3") (s "1.6.1"))
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -209,11 +209,12 @@ config option."
   (let ((creds nil)
         (ssh-config-hosts (magit-gh-pulls-get-ssh-config-hosts)))
     (dolist (remote (magit-git-lines "remote") creds)
-      (let ((parsed (magit-gh-pulls-parse-url
-                     (magit-get "remote" remote "url")
-                     ssh-config-hosts)))
-        (when parsed
-          (setq creds parsed))))))
+      (let ((url (magit-get "remote" remote "url")))
+        (if url
+          (let ((parsed (magit-gh-pulls-parse-url url ssh-config-hosts)))
+            (when parsed
+              (setq creds parsed)))
+          (message "Warning: no URL for remote %s" remote))))))
 
 (defun magit-gh-pulls-guess-repo ()
   "Return (user . project) pair obtained either from explicit
@@ -331,7 +332,7 @@ option, or inferred from remotes."
 (defun magit-gh-section-req-data (&optional section)
   (oref (apply #'gh-pulls-get
                (magit-gh-pulls-get-api)
-               (magit-section-value (or section (magit-current-section))))
+               (oref (or section (magit-current-section)) value))
         :data))
 
 (defun magit-gh-pulls-diff-pull-request ()
@@ -413,7 +414,7 @@ option, or inferred from remotes."
 
 (defun magit-gh-pulls-open-in-browser ()
   (interactive)
-  (let ((info (magit-section-value (magit-current-section))))
+  (let ((info (oref (magit-current-section) value)))
     (magit-section-case
       (pull           (browse-url (magit-gh-pulls-url-for-pull info)))
       (unfetched-pull (browse-url (magit-gh-pulls-url-for-pull info))))))
