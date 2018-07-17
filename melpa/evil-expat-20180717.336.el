@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-expat
-;; Package-Version: 20180302.657
+;; Package-Version: 20180717.336
 ;; Package-Requires: ((emacs "24.3") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim
@@ -255,6 +255,8 @@ BANG forces removal of files with modifications"
 (evil-define-command evil-expat-colorscheme (theme)
   "The ex :colorscheme command"
   (interactive "<expat-theme>")
+  (unless (or (string-equal theme "default") (memq theme (custom-available-themes)))
+    (user-error "Cannot find theme `%s'" theme))
   (mapc #'disable-theme custom-enabled-themes)
   (unless (string-equal "default" theme)
     (load-theme theme t)))
