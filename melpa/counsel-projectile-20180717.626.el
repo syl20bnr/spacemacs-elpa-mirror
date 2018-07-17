@@ -4,7 +4,7 @@
 
 ;; Author: Eric Danan
 ;; URL: https://github.com/ericdanan/counsel-projectile
-;; Package-Version: 20180716.520
+;; Package-Version: 20180717.626
 ;; Keywords: project, convenience
 ;; Version: 0.2.0
 ;; Package-Requires: ((counsel "0.10.0") (projectile "0.14.0"))
@@ -414,7 +414,7 @@ The sorting function can be modified by adding an entry for
    ("p" (lambda (_) (counsel-projectile-switch-project))
     "switch project"))
  'counsel-projectile)
-
+ 
 (defun counsel-projectile--project-directories ()
   "Return a list of current project's directories."
   (if projectile-find-dir-includes-top-level
@@ -437,7 +437,7 @@ The sorting function can be modified by adding an entry for
   (counsel-find-file-extern (projectile-expand-root dir))
   (run-hooks 'projectile-find-dir-hook))
 
-(defun counsel-projectile-find-file-action-root (dir)
+(defun counsel-projectile-find-dir-action-root (dir)
   "Visit DIR as root and run `projectile-find-dir-hook'."
   (counsel-find-file-as-root (projectile-expand-root dir))
   (run-hooks 'projectile-find-dir-hook))
@@ -580,15 +580,14 @@ construct the command.")
 
 (defun counsel-projectile-grep-function (string)
   "Grep for STRING in the current project."
-  (if (< (length string) 3)
-      (counsel-more-chars 3)
-    (let ((default-directory (ivy-state-directory ivy-last))
-          (regex (counsel-unquote-regex-parens
-                  (setq ivy--old-re
-                        (ivy--regex string)))))
-      (counsel--async-command (format counsel-projectile-grep-command
-                                      (shell-quote-argument regex)))
-      nil)))
+  (or (counsel-more-chars)
+      (let ((default-directory (ivy-state-directory ivy-last))
+            (regex (counsel-unquote-regex-parens
+                    (setq ivy--old-re
+                          (ivy--regex string)))))
+        (counsel--async-command (format counsel-projectile-grep-command
+                                        (shell-quote-argument regex)))
+        nil)))
 
 (defun counsel-projectile-grep-transformer (str)
   "Higlight file and line number in STR, first removing the
