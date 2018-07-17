@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180713.946
+;; Package-Version: 20180717.845
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: convenience, matching, tools
@@ -3222,7 +3222,11 @@ include attachments of other Org buffers."
                    (lambda (x)
                      (when (> (length x) 2)
                        (format "%-5s %s" (nth 0 x) (nth 1 x))))
-                   (or org-capture-templates
+                   ;; We build the list of capture templates as in
+                   ;; `org-capture-select-template':
+                   (or (org-contextualize-keys
+                        (org-capture-upgrade-templates org-capture-templates)
+                        org-capture-templates-contexts)
                        '(("t" "Task" entry (file+headline "" "Tasks")
                           "* TODO %?\n  %u\n  %a")))))
             :require-match t
