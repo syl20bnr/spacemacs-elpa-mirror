@@ -4,7 +4,7 @@
 
 ;; Author:            Adam Sokolnicki <adam.sokolnicki@gmail.com>
 ;; URL:               https://github.com/asok/projectile-rails
-;; Package-Version: 20180618.804
+;; Package-Version: 20180718.55
 ;; Version:           0.15.0
 ;; Keywords:          rails, projectile
 ;; Package-Requires:  ((emacs "24.3") (projectile "0.12.0") (inflections "1.1") (inf-ruby "2.2.6") (f "0.13.0") (rake "0.3.2"))
@@ -911,6 +911,11 @@ This only works when yas package is installed."
            (projectile-rails--expand-snippet
             (format
              "class %s < ${1:ApplicationController}\n$2\nend"
+             (s-join "::" (projectile-rails-classify (match-string 1 name))))))
+          ((string-match "app/jobs/\\(.+\\)\\.rb$" name)
+           (projectile-rails--expand-snippet
+            (format
+             "class %s < ${1:ApplicationJob}\n$2\nend"
              (s-join "::" (projectile-rails-classify (match-string 1 name))))))
           ((string-match "spec/[^/]+/\\(.+\\)_spec\\.rb$" name)
            (projectile-rails--expand-snippet
