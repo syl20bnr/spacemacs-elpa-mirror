@@ -3,8 +3,8 @@
 ;; Author: Sliim <sliim@mailoo.org>
 ;;    xuchunyang <xuchunyang56@gmail.com>
 ;; URL: https://github.com/Sliim/helm-github-stars
-;; Package-Version: 1.3.4
-;; Version: 1.3.4
+;; Package-Version: 20180717.1811
+;; Version: 1.3.5
 ;; Package-Requires: ((helm "1.6.8") (emacs "24.4"))
 ;; Keywords: helm github stars
 
@@ -409,6 +409,7 @@ When git cloen is not yet done, use `list-processes' to dispaly related process.
   (hgs/clear-cache-file)
   (helm-github-stars))
 
+;;;###autoload
 (defun helm-github-stars ()
   "Show and Browse your github's stars."
   (interactive)
