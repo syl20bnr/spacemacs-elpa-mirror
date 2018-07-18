@@ -7,7 +7,7 @@
 ;; Description: Generic Tree Traversing Tools
 ;; Author: Daniel Barreto <daniel.barreto.n@gmail.com>
 ;; Keywords: lisp, maint, tools
-;; Package-Version: 20170722.355
+;; Package-Version: 20180717.2342
 ;; Created: Mon Jul 10 15:17:36 2017 (+0200)
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "25.1"))
@@ -163,7 +163,7 @@ Execute BODY in this context."
                          vars)))
     `(let* (,@lex-ctx) ,@body)))
 
-;; Construction
+;;;; Construction
 
 (defun treepy-zipper (branchp children make-node root)
   "Create a new zipper structure.
@@ -193,7 +193,7 @@ ROOT is the root node."
         (children (lambda (cs) (seq-into cs 'list))))
     (treepy-zipper #'vectorp children make-node root)))
 
-;; Context
+;;;; Context
 
 (defun treepy-node (loc)
   "Return the node at LOC."
@@ -227,7 +227,7 @@ with them.  The LOC is only used to supply the constructor."
   "Return a list of the right siblings of this LOC."
   (treepy--context loc ':r))
 
-;; Navigation
+;;;; Navigation
 
 (defun treepy-down (loc)
   "Return the loc of the leftmost child of the node at this LOC.
@@ -326,7 +326,7 @@ If LOC is already the leftmost sibiling, return self."
     (setq loc (treepy-down loc)))
   loc)
 
-;; Modification
+;;;; Modification
 
 (defun treepy-insert-left (loc item)
   "Insert as the left sibiling of this LOC'S node the ITEM.
@@ -399,7 +399,7 @@ walk."
                (and ppath (treepy--context-assoc context ':changed? t)))
          (treepy--meta loc))))))
 
-;; Enumeration
+;;;; Enumeration
 
 (defun treepy--preorder-next (loc)
   "Move to the next LOC in the hierarchy, depth-first in preorder.

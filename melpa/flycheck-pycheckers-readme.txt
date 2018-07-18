@@ -101,7 +101,7 @@ Example .pycheckers file:
 Variables that can be set in the configuration file include the following.
 Note that these are implemented as modifying the values received by
 `argparse' in the `pycheckers.py' script, so running `bin/pycheckers.py
---help` is a good way to find other options that may be specified.:
+--help` is a good way to find other options that may be specified.
 
 * `max-line-length' - the maximum allowable line-length.  This is a good
   option to place in a project-specific directory if you have a personal
@@ -131,3 +131,6 @@ Note that these are implemented as modifying the values received by
 
 * `mypy_config_file' - the location of a project-specific configuration file
   for mypy
+
+* `flake8_config_file' - the location of a project-specific configuration file
+  for flake8
