@@ -4,7 +4,7 @@
 
 ;; Author: Eric Danan
 ;; URL: https://github.com/ericdanan/counsel-projectile
-;; Package-Version: 20180717.626
+;; Package-Version: 20180717.1420
 ;; Keywords: project, convenience
 ;; Version: 0.2.0
 ;; Package-Requires: ((counsel "0.10.0") (projectile "0.14.0"))
@@ -946,6 +946,25 @@ capture."
     (with-current-buffer (or from-buffer (current-buffer))
       (counsel-org-capture))))
 
+;;;; counsel-projectile-org-agenda
+
+;;;###autoload
+(defun counsel-projectile-org-agenda (&optional arg org-keys restriction)
+  "Open project agenda.
+
+This command simply calls `org-agenda' after filtering out all
+agenda files that do not belong to the current project.
+
+Optional arguments ARG, ORG-KEYS, and RESTRICTION are as in
+`org-agenda'."
+  (interactive "P")
+  (let* ((root (projectile-project-root))
+         (org-agenda-files
+          (cl-remove-if-not (lambda (file)
+                              (string-prefix-p root file))
+                            (org-agenda-files t 'ifmode))))
+    (org-agenda arg org-keys restriction)))
+
 ;;;; counsel-projectile-switch-project
 
 (defcustom counsel-projectile-sort-projects nil
@@ -1003,8 +1022,10 @@ candidates list of `counsel-projectile-switch-project'."
     "invoke eshell from project root")
    ("xt" counsel-projectile-switch-project-action-run-term
     "invoke term from project root")
-   ("O" counsel-projectile-switch-project-action-org-capture
-    "org-capture into project"))
+   ("Oc" counsel-projectile-switch-project-action-org-capture
+    "capture into project")
+   ("Oa" counsel-projectile-switch-project-action-org-capture
+    "open project agenda"))
  'counsel-projectile)
 
 (defun counsel-projectile-switch-project-by-name (project)
@@ -1319,7 +1340,8 @@ If not inside a project, call `counsel-projectile-switch-project'."
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map projectile-command-map)
     (define-key map (kbd "s r") 'counsel-projectile-rg)
-    (define-key map (kbd "O") 'counsel-projectile-org-capture)
+    (define-key map (kbd "O c") 'counsel-projectile-org-capture)
+    (define-key map (kbd "O a") 'counsel-projectile-org-agenda)
     (define-key map (kbd "SPC") 'counsel-projectile)
     map)
   "Keymap for Counesl-Projectile commands after `projectile-keymap-prefix'.")
