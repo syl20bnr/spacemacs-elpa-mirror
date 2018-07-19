@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180718.250
+;; Package-Version: 20180719.1037
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: convenience, matching, tools
@@ -49,16 +49,17 @@
 (defvar counsel-more-chars-alist
   '((counsel-grep . 2)
     (t . 3))
-  "Minimum amount of characters to prompt for before fetching candidates.")
+  "Map commands to their minimum required input length.
+That is the number of characters prompted for before fetching
+candidates.  The special key t is used as a fallback.")
 
 (defun counsel-more-chars ()
   "Return two fake candidates prompting for at least N input.
 N is obtained from `counsel-more-chars-alist'."
-  (let ((len (length ivy-text))
-        (n (ivy-alist-setting counsel-more-chars-alist)))
-    (when (< len n)
-      (list ""
-            (format "%d chars more" (- n len))))))
+  (let ((diff (- (ivy-alist-setting counsel-more-chars-alist)
+                 (length ivy-text))))
+    (when (> diff 0)
+      (list "" (format "%d chars more" diff)))))
 
 (defun counsel-unquote-regex-parens (str)
   "Unquote regex parenthesis in STR."
