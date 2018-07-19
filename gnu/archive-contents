@@ -439,9 +439,9 @@
 	       ((:keywords "calendar")
 		(:url . "http://elpa.gnu.org/packages/excorporate.html"))])
  (exwm .
-       [(0 18)
+       [(0 19)
 	((xelb
-	  (0 14)))
+	  (0 15)))
 	"Emacs X Window Manager" tar
 	((:keywords "unix")
 	 (:url . "https://github.com/ch11ng/exwm"))])
@@ -1248,7 +1248,7 @@
 	 ((:url . "http://elpa.gnu.org/packages/xclip.html")
 	  (:keywords "convenience" "tools"))])
  (xelb .
-       [(0 14)
+       [(0 15)
 	((emacs
 	  (24 4))
 	 (cl-generic
