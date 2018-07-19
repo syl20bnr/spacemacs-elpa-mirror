@@ -4,7 +4,7 @@
 
 ;; Authors: Valeriy Savchenko <sinmipt@gmail.com>
 ;; URL: http://github.com/SavchenkoValeriy/emacs-powerthesaurus
-;; Package-Version: 20180612.447
+;; Package-Version: 20180719.208
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "24") (request "0.3.0") (s "1.12.0"))
 ;; Keywords: convenience, writing
@@ -37,6 +37,27 @@
 (require 'request)
 (require 'rx)
 (require 's)
+
+;;;###autoload
+(defun powerthesaurus-lookup-word-dwim ()
+  "Wrapper function for powerthesaurus-lookup-word commands.
+
+If a region is selected use powerthesaurus-lookup-word
+if a thing at point is not empty use powerthesaurus-lookup-word-at-point
+otherwise as for word using powerthesaurus-lookup-word"
+  (interactive)
+  (let (beg end bounds)
+    ;; selection is active -> look up whatever is selected
+    (if (use-region-p)
+        (progn
+          (setq beg (region-beginning))
+          (setq end (region-end))
+          (powerthesaurus-lookup-word beg end))
+      ;; point is is at a word -> look it up
+      (if (thing-at-point 'word)
+          (powerthesaurus-lookup-word-at-point (point))
+        ;; nothing appropriate nearby -> ask the user
+        (powerthesaurus-lookup-word)))))
 
 ;;;###autoload
 (defun powerthesaurus-lookup-word-at-point (word-point)

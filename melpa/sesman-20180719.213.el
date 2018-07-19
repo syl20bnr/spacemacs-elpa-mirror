@@ -3,7 +3,7 @@
 ;; Copyright (C) 2018, Vitalie Spinu
 ;; Author: Vitalie Spinu
 ;; URL: https://github.com/vspinu/sesman
-;; Package-Version: 20180628.659
+;; Package-Version: 20180719.213
 ;; Keywords: process
 ;; Version: 0.1.1-snapshot
 ;; Package-Requires: ((emacs "25"))
@@ -119,7 +119,7 @@ Can be either a symbol, or a function returning a symbol.")
                                        (setq cxt-type ctype)
                                        val))
                                    (reverse (sesman-context-types system))))
-                       (user-error "No local context of type %s" cxt-type))))
+                       (error "No local context of type %s" cxt-type))))
          (key (cons system ses-name))
          (link (list key cxt-type cxt-val)))
     (if (member cxt-type sesman-single-link-context-types)
@@ -271,16 +271,16 @@ Can be either a symbol, or a function returning a symbol.")
   "Restart sesman session."
   (interactive)
   (let* ((system (sesman--system))
-         (old-session (sesman-ensure-linked-session system "Restart session: ")))
+         (old-session (sesman-ensure-session system "Restart session: ")))
     (message "Restarting %s '%s' session" system (car old-session))
     (sesman-restart-session system old-session)))
 
  ;;;###autoload
 (defun sesman-quit (which)
   "Terminate sesman session.
-When WHICH is nil, kill only the current session; when a single
-universal argument or 'linked, kill all linked session; when a
-double universal argument, t or 'all, kill all sessions."
+When WHICH is nil, kill only the current session; when a single universal
+argument or 'linked, kill all linked session; when a double universal argument,
+t or 'all, kill all sessions."
   (interactive "P")
   (let* ((system (sesman--system))
          (sessions (sesman--on-C-u-u-sessions system which)))
@@ -298,10 +298,9 @@ double universal argument, t or 'all, kill all sessions."
  ;;;###autoload
 (defun sesman-show-session-info (which)
   "Display session(s) info.
-When WHICH is nil, show info for current session; when a single
-universal argument or 'linked, show info for all linked session;
-when a double universal argument or 'all, show info for all
-sessions."
+When WHICH is nil, show info for current session; when a single universal
+argument or 'linked, show info for all linked sessions; when a double universal
+argument or 'all, show info for all sessions."
   (interactive "P")
   (let* ((system (sesman--system))
          (sessions (sesman--on-C-u-u-sessions system which)))

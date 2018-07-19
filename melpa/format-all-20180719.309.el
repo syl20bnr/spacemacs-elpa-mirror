@@ -1,8 +1,8 @@
-;;; format-all.el --- Auto-format C, C++, JS, Python, Ruby and 20 other languages -*- lexical-binding: t -*-
+;;; format-all.el --- Auto-format C, C++, JS, Python, Ruby and 25 other languages -*- lexical-binding: t -*-
 ;;
 ;; Author: Lassi Kortela <lassi@lassi.io>
 ;; URL: https://github.com/lassik/emacs-format-all-the-code
-;; Package-Version: 20180718.1642
+;; Package-Version: 20180719.309
 ;; Version: 0.1.0
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; Keywords: languages util
@@ -34,6 +34,7 @@
 ;; - Markdown (prettier)
 ;; - OCaml (ocp-indent)
 ;; - Perl (perltidy)
+;; - Protocol Buffers (clang-format)
 ;; - Python (autopep8)
 ;; - Ruby (rufo)
 ;; - Rust (rustfmt)
@@ -182,7 +183,8 @@ EXECUTABLE is the full path to the formatter."
                  (c-mode ".c")
                  (c++-mode ".cpp")
                  (java-mode ".java")
-                 (objc-mode ".m"))))))
+                 (objc-mode ".m")
+                 (protobuf-mode ".proto"))))))
 
 (defun format-all-buffer-dfmt (executable)
   "Format the current buffer as D using \"dfmt\".
@@ -345,7 +347,7 @@ EXECUTABLE is the full path to the formatter."
      (:executable "clang-format")
      (:install (macos "brew install clang-format"))
      (:function format-all-buffer-clang-format)
-     (:modes c-mode c++-mode java-mode objc-mode))
+     (:modes c-mode c++-mode java-mode objc-mode protobuf-mode))
     (dfmt
      (:executable "dfmt")
      (:install (macos "brew install dfmt"))
