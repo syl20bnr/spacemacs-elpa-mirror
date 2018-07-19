@@ -4,7 +4,7 @@
 
 ;; Author: Paul Walsh <paulywalsh@gmail.com>
 ;; URL: https://github.com/pwalsh/pipenv.el
-;; Package-Version: 20180626.2323
+;; Package-Version: 20180718.2247
 ;; Version: 0.0.1-beta
 ;; Package-Requires: ((emacs "25.1")(f "0.19.0")(s "1.12.0"))
 
@@ -322,6 +322,7 @@ A poor-man's equivalent of subprocess.check_output in Python."
     (pop-to-buffer name)
     (shell (current-buffer))
     (insert pipenv-shell-buffer-init-command)
+    (setq-local comint-process-echoes t)
     (comint-send-input)
     (comint-clear-buffer)))
 

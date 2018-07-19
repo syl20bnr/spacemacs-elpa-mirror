@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 20180531.221
-;; Version: 3.3.27
+;; Package-Version: 20180719.20
+;; Version: 3.3.30
 ;; Package-Requires: ((emacs "24.4") (popup "0.5.3"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -97,6 +97,11 @@
 
 (defcustom easy-hugo-default-ext ".md"
   "Default extension when posting new articles."
+  :group 'easy-hugo
+  :type 'string)
+
+(defcustom easy-hugo-helm-ag nil
+  "Helm-ag use flg."
   :group 'easy-hugo
   :type 'string)
 
@@ -383,7 +388,7 @@ Report an error if hugo is not installed, or if `easy-hugo-basedir' is unset."
   (interactive)
   (unless easy-hugo-basedir
     (error "Please set easy-hugo-basedir variable"))
-  (if (package-installed-p 'magit)
+  (if (require 'magit nil t)
       (magit-status-internal easy-hugo-basedir)
     (error "'magit' is not installed")))
 
@@ -1161,9 +1166,9 @@ to the server."
   "Search for blog article with counsel-ag or helm-ag."
   (interactive)
   (easy-hugo-with-env
-   (if (package-installed-p 'counsel)
+   (if (and (require 'counsel nil t) (not easy-hugo-helm-ag))
        (counsel-ag nil (expand-file-name easy-hugo-postdir easy-hugo-basedir))
-     (if (package-installed-p 'helm-ag)
+     (if (require 'helm-ag nil t)
 	 (helm-ag (expand-file-name easy-hugo-postdir easy-hugo-basedir))
        (error "'counsel' or 'helm-ag' is not installed")))))
 

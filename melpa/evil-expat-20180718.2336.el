@@ -4,7 +4,7 @@
 
 ;; Author: edkolev <evgenysw@gmail.com>
 ;; URL: http://github.com/edkolev/evil-expat
-;; Package-Version: 20180717.336
+;; Package-Version: 20180718.2336
 ;; Package-Requires: ((emacs "24.3") (evil "1.0.0"))
 ;; Version: 0.0.1
 ;; Keywords: emulations, evil, vim
@@ -284,11 +284,12 @@ If REVISION is null, show unstaged changes."
   (unless (require 'vdiff-magit nil 'noerror)
     (user-error "Package vdiff-magit isn't installed"))
 
-  (let ((filename (evil-expat--filename-or-user-error t)))
+  (let ((filename (evil-expat--filename-or-user-error t))
+        (vdiff-magit-stage-is-2way t))
     ;; TODO revision should be given as a string by the interactive ex arg <expat-git-branch>
     (if revision
         (vdiff-magit-compare (symbol-name revision) nil filename filename)
-      (vdiff-magit-show-unstaged filename))
+      (vdiff-magit-stage filename))
     ))
 
 (provide 'evil-expat)
