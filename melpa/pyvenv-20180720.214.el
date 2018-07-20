@@ -4,7 +4,7 @@
 
 ;; Author: Jorgen Schaefer <contact@jorgenschaefer.de>
 ;; URL: http://github.com/jorgenschaefer/pyvenv
-;; Package-Version: 20180629.514
+;; Package-Version: 20180720.214
 ;; Version: 1.16
 ;; Keywords: Python, Virtualenv, Tools
 
@@ -196,6 +196,13 @@ This is usually the base name of `pyvenv-virtual-env'.")
                                  (directory-file-name directory))
         python-shell-virtualenv-path directory
         python-shell-virtualenv-root directory)
+  ;; Set venv name as parent directory for generic directories
+  (when (member pyvenv-virtual-env-name '("venv" ".venv"))
+    (setq pyvenv-virtual-env-name
+          (file-name-nondirectory
+           (directory-file-name
+            (file-name-directory
+             (directory-file-name directory))))))
   ;; Preserve variables from being overwritten.
   (let ((old-exec-path exec-path)
         (old-eshell-path eshell-path-env)

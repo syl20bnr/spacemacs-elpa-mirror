@@ -4,7 +4,7 @@
 
 ;; Author: Bjarte Johansen
 ;; Keywords: literate programming, reproducible research
-;; Package-Version: 20180328.1034
+;; Package-Version: 20180720.344
 ;; URL: https://github.com/ljos/ob-prolog
 ;; Version: 1.0.2
 
@@ -183,7 +183,6 @@ running just the body through the Prolog process."
   (with-current-buffer session
     (setq comint-prompt-regexp "^|: *"))
   (org-babel-comint-input-command session "consult(user).\n")
-  (message (prolog-prompt-regexp))
   (org-babel-comint-with-output (session "\n")
     (setq comint-prompt-regexp (prolog-prompt-regexp))
     (dolist (line clauses)
