@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/swiper
-;; Package-Version: 20180719.1037
+;; Package-Version: 20180719.1303
 ;; Version: 0.10.0
 ;; Package-Requires: ((emacs "24.3") (swiper "0.9.0"))
 ;; Keywords: convenience, matching, tools
@@ -3225,8 +3225,11 @@ include attachments of other Org buffers."
 
 ;;** `counsel-org-capture'
 (defvar org-capture-templates)
+(defvar org-capture-templates-contexts)
+(declare-function org-contextualize-keys "org")
 (declare-function org-capture-goto-last-stored "org-capture")
 (declare-function org-capture-goto-target "org-capture")
+(declare-function org-capture-upgrade-templates "org-capture")
 
 ;;;###autoload
 (defun counsel-org-capture ()

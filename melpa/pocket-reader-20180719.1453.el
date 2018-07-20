@@ -5,7 +5,7 @@
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Created: 2017-09-25
 ;; Version: 0.2-pre
-;; Package-Version: 20180709.130
+;; Package-Version: 20180719.1453
 ;; Keywords: pocket
 ;; Package-Requires: ((emacs "25.1") (dash "2.13.0") (kv "0.0.19") (pocket-lib "0.1") (s "1.10") (ov "1.0.6") (rainbow-identifiers "0.2.2") (org-web-tools "0.1") (ht "2.2"))
 ;; URL: https://github.com/alphapapa/pocket-reader.el
@@ -76,6 +76,7 @@
 (require 'cl-lib)
 (require 'url-parse)
 (require 'seq)
+(require 'subr-x)
 (require 'thingatpt)
 
 (require 'dash)
@@ -398,7 +399,7 @@ add items instead of replacing."
   (let* ((count (if (= 1 count)
                     pocket-reader-show-count
                   count)))
-    (incf pocket-reader-offset count)
+    (cl-incf pocket-reader-offset count)
     (--each pocket-reader-queries
       (pocket-reader-search it :add t))))
 
@@ -884,7 +885,7 @@ no spacers will be inserted. "
                do (progn
                     (ov (line-beginning-position) (line-beginning-position) 'before-string "\n")
                     (setq prev-data current-data))
-               else do (incf largest-group-size)
+               else do (cl-incf largest-group-size)
                finally do (when (< largest-group-size min-group-size)
                             (ov-clear))))))
 

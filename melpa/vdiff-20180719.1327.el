@@ -5,7 +5,7 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-vdiff
-;; Package-Version: 20180627.615
+;; Package-Version: 20180719.1327
 ;; Version: 0.2.3
 ;; Keywords: diff
 ;; Package-Requires: ((emacs "24.4") (hydra "0.13.0"))
@@ -2175,6 +2175,9 @@ nothing to revert then this command fails."
 
 (defun vdiff--buffer-init ()
   ;; this is a buffer-local var
+  (unless vdiff--temp-session
+    (user-error "Incorrect initialization of vdiff session. \
+See README for entry points into a vdiff session."))
   (setq vdiff--session vdiff--temp-session)
   (unless vdiff--testing-mode
     (setq cursor-in-non-selected-windows nil)

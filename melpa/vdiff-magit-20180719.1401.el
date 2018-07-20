@@ -4,9 +4,9 @@
 
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
-;; URL: https://github.com/justbur/emacs-vdiff
-;; Package-Version: 0.3.1
-;; Version: 0.3
+;; URL: https://github.com/justbur/emacs-vdiff-magit
+;; Package-Version: 20180719.1401
+;; Version: 0.3.3
 ;; Keywords: diff
 ;; Package-Requires: ((emacs "24.4") (vdiff "0.3") (magit "2.10.0"))
 
@@ -137,9 +137,8 @@ conflicts, including those already resolved by Git, use
   "Stage and unstage changes to FILE using vdiff.
 FILE has to be relative to the top directory of the repository."
   (interactive
-   (list (magit-completing-read "Selectively stage file" nil
-                                (magit-tracked-files) nil nil nil
-                                (magit-current-file))))
+   (list (magit-completing-read "Selectively stage file" (magit-tracked-files)
+                                nil nil nil nil (magit-current-file))))
   (magit-with-toplevel
     (let* ((buf-a (or (magit-get-revision-buffer "HEAD" file)
                       (magit-find-file-noselect "HEAD" file)))

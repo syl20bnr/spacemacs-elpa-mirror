@@ -5,8 +5,8 @@
 ;; Author: Justin Burkett <justin@burkett.cc>
 ;; Maintainer: Justin Burkett <justin@burkett.cc>
 ;; URL: https://github.com/justbur/emacs-vdiff-magit
-;; Package-Version: 20170519.1407
-;; Version: 0.3
+;; Package-Version: 0.3.2
+;; Version: 0.3.2
 ;; Keywords: diff
 ;; Package-Requires: ((emacs "24.4") (vdiff "0.3") (magit "2.10.0"))
 
@@ -138,8 +138,9 @@ conflicts, including those already resolved by Git, use
 FILE has to be relative to the top directory of the repository."
   (interactive
    (list (magit-completing-read "Selectively stage file" nil
-                                (magit-tracked-files) nil nil nil
-                                (magit-current-file))))
+                                (lambda (file)
+                                  (member file (magit-tracked-files)))
+                                nil nil nil (magit-current-file))))
   (magit-with-toplevel
     (let* ((buf-a (or (magit-get-revision-buffer "HEAD" file)
                       (magit-find-file-noselect "HEAD" file)))
