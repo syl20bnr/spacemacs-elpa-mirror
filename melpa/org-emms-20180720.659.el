@@ -4,7 +4,7 @@
 
 ;; Author: Jonathan Gregory <jgrg at autistici dot org>
 ;; Version: 0.1
-;; Package-Version: 20180705.649
+;; Package-Version: 20180720.659
 ;; URL: https://github.com/jagrg/org-emms
 ;; Keywords: multimedia
 ;; Package-Requires: ((emacs "24"))
@@ -75,21 +75,17 @@ This string is passed to `format-seconds' function."
   :group 'org-emms)
 
 (defun org-emms-time-string-to-seconds (s)
-  "Convert a string S (\"HH:MM:SS\") to a number of seconds."
-  (cond
-   ((and (stringp s)
-         (string-match "\\([0-9]+\\):\\([0-9]+\\):\\([0-9]+\\)" s))
-    (let ((hour (string-to-number (match-string 1 s)))
-          (min (string-to-number (match-string 2 s)))
-          (sec (string-to-number (match-string 3 s))))
-      (+ (* hour 3600) (* min 60) sec)))
-   ((and (stringp s)
-         (string-match "\\([0-9]+\\):\\([0-9]+\\)" s))
-    (let ((min (string-to-number (match-string 1 s)))
-          (sec (string-to-number (match-string 2 s))))
-      (+ (* min 60) sec)))
-   ((stringp s) (string-to-number s))
-   (t s)))
+  "Convert timestring S (\"HH:MM:SS\") to a number of seconds.
+Hours, minutes and leading zeros are optional."
+  (save-match-data
+    (if (stringp s)
+	(if (string-match "\\([0-9]\\{1,2\\}\\)?:?\\([0-9]\\{1,2\\\}\\):\\([0-9]\\{1,2\\}\\)" s)
+	    (let ((hh (if (match-beginning 1) (string-to-number (match-string 1 s)) 0))
+		  (mm (string-to-number (match-string 2 s)))
+		  (ss (string-to-number (match-string 3 s))))
+	      (+ (* hh 3600) (* mm 60) ss))
+	  (string-to-number s))
+      s)))
 
 (defun org-emms-play (file)
   "Play multimedia FILE from `org-mode'.
@@ -160,7 +156,7 @@ for a track position."
   (let* ((track (emms-playlist-current-selected-track))
 	 (file (emms-track-name track))
 	 (title (emms-track-get track 'info-title)))
-    (when (eq major-mode 'org-mode)
+    (when (derived-mode-p 'org-mode)
       (insert
        (format "[[emms:%s][%s]]" file title)))))
 
@@ -172,7 +168,7 @@ for a track position."
 	 (file (emms-track-name track))
 	 (tp (format-seconds org-emms-time-format emms-playing-time)))
     (insert
-     (if (eq major-mode 'org-mode)
+     (if (derived-mode-p 'org-mode)
 	 (format "[[emms:%s::%s][%s]]" file tp tp)
        (format "[%s]" tp)))))
 

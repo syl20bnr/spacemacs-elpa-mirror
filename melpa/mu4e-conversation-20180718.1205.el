@@ -5,7 +5,7 @@
 ;; Author: Pierre Neidhardt <ambrevar@gmail.com>
 ;; Maintainer: Pierre Neidhardt <ambrevar@gmail.com>
 ;; URL: https://gitlab.com/Ambrevar/mu4e-conversation
-;; Package-Version: 20180718.223
+;; Package-Version: 20180718.1205
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: mail, convenience, mu4e
@@ -296,6 +296,19 @@ works for message at point.  Suitable as a :before advice."
   (setq msg (or msg (mu4e-message-at-point)))
   (mu4e~view-construct-attachments-header msg))
 
+(defun mu4e-conversation-fill-paragraph (orig-fun &optional region)
+  "Like `mu4e-fill-paragraph' but also works on the composition area."
+  (interactive)
+  (if (mu4e-conversation--buffer-p)
+      (let ((start (save-excursion (goto-char (point-max))
+                                   (mu4e-conversation-previous-message)
+                                   (next-line)
+                                   (point))))
+        (save-restriction
+          (narrow-to-region start (point-max))
+          (apply orig-fun region)))
+    (apply orig-fun region)))
+
 (defun mu4e-conversation-previous-message (&optional count)
   "Go to previous message in linear view.
 With numeric prefix argument or if COUNT is given, move that many
@@ -314,11 +327,17 @@ messages.  A negative COUNT goes backwards."
   (if (eq major-mode 'org-mode)
       (org-next-visible-heading count)
     (let ((move-function (if (< count 0)
-                             'previous-single-char-property-change
-                           'next-single-char-property-change)))
+                             ;; Don't use `next-single-char-property-change' or
+                             ;; else it would stop at flyspell's highlights, for
+                             ;; instance.
+                             'previous-single-property-change
+                           'next-single-property-change))
+          (limit (if (< count 0)
+                     (point-min)
+                   (point-max))))
       (setq count (abs count))
       (dotimes (_ count)
-        (while (and (goto-char (funcall move-function (point) 'face))
+        (while (and (goto-char (funcall move-function (point) 'face nil limit))
                     (not (eq (get-text-property (point) 'face) 'mu4e-conversation-header))
                     (not (eobp))))))))
 
@@ -1339,18 +1358,24 @@ in existing view buffers. "
         (advice-add 'mu4e-get-view-buffer :override 'mu4e-conversation--get-buffer)
         (advice-add 'mu4e~headers-redraw-get-view-window :override 'mu4e-conversation--headers-redraw-get-view-window)
         (advice-add 'mu4e~proc-filter :override 'mu4e-conversation--proc-filter)
+        ;; Some commands need specialization:
         (advice-add 'mu4e-view-save-attachment-multi :before 'mu4e-conversation-set-attachment)
         (advice-add 'mu4e-view-save-attachment-single :before 'mu4e-conversation-set-attachment)
         (advice-add 'mu4e-view-open-attachment :before 'mu4e-conversation-set-attachment)
+        (advice-add 'mu4e-fill-paragraph :around 'mu4e-conversation-fill-paragraph)
+        ;; Live-update the buffer:
         (advice-add mu4e-update-func :after 'mu4e-conversation--update-handler-extra)
         (add-hook 'mu4e-index-updated-hook 'mu4e-conversation--query-new)
         (advice-add mu4e-view-func :override 'mu4e-conversation))
     (advice-remove 'mu4e-get-view-buffer 'mu4e-conversation--get-buffer)
     (advice-remove 'mu4e~headers-redraw-get-view-window 'mu4e-conversation--headers-redraw-get-view-window)
     (advice-remove 'mu4e~proc-filter 'mu4e-conversation--proc-filter)
+    ;; De-specialize.
     (advice-remove 'mu4e-view-save-attachment-multi 'mu4e-conversation-set-attachment)
     (advice-remove 'mu4e-view-save-attachment-single 'mu4e-conversation-set-attachment)
     (advice-remove 'mu4e-view-open-attachment 'mu4e-conversation-set-attachment)
+    (advice-remove 'mu4e-fill-paragraph 'mu4e-conversation-fill-paragraph)
+    ;; Remove live-updates.
     (advice-remove mu4e-update-func 'mu4e-conversation--update-handler-extra)
     (remove-hook 'mu4e-index-updated-hook 'mu4e-conversation--query-new)
     (advice-remove mu4e-view-func 'mu4e-conversation)

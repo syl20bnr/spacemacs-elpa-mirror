@@ -6,7 +6,7 @@
 ;; Created: 31 Dec 2016
 ;; Homepage: https://github.com/raxod502/el-patch
 ;; Keywords: extensions
-;; Package-Version: 20180712.1302
+;; Package-Version: 20180720.821
 ;; Package-Requires: ((emacs "25"))
 ;; Version: 2.1
 
@@ -336,12 +336,12 @@ be defined permanently."
 (defun el-patch--classify-definition-type (type)
   "Classifies a definition TYPE as a `function' or `variable'.
 TYPE is a symbol `defun', `defmacro', etc."
-  (pcase type
-    ((or 'defun 'defmacro 'defsubst 'define-minor-mode)
-     'function)
-    ((or 'defvar 'defconst 'defcustom)
-     'variable)
-    (_ (error "Unexpected definition type %S" type))))
+  (if-let ((classify (assoc type el-patch-deftype-alist)))
+      (pcase (plist-get (cdr classify) :classify)
+        ('el-patch-classify-function 'function)
+        ('el-patch-classify-define-minor-mode 'function)
+        ('el-patch-classify-variable 'variable))
+    (error "Unexpected definition type `%S'" type)))
 
 (defun el-patch--find-symbol (name type)
   "Return the Lisp form that defines the symbol NAME.

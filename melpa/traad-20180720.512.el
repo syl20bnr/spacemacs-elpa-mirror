@@ -4,7 +4,7 @@
 ;;
 ;; Author: Austin Bingham <austin.bingham@gmail.com>
 ;; Version: 3.1.1
-;; Package-Version: 20180716.604
+;; Package-Version: 20180720.512
 ;; URL: https://github.com/abingham/traad
 ;; Package-Requires: ((dash "2.13.0") (deferred "0.3.2") (popup "0.5.0") (request "0.2.0") (request-deferred "0.2.0") (virtualenvwrapper "20151123") (f "0.20.0"))
 ;;
@@ -1293,6 +1293,72 @@ See each of these commands for full documentation.
            'traad-froms-to-imports
            'traad-handle-long-imports
            'traad-organize-imports)))
+
+(defun traad--get-definition (pos)
+  "Get definition for an object.
+
+Returns a deferred which produces an alist containing the result.
+The result has the form:
+
+((result   . <\"success\" or \"failure\">)
+ (realpath . <the absolute path of the definition's file>)
+ (path     . <relative path to the definition's file>)
+ (name     . <name of the definition's file>)
+ (lineno   . <the line number in the file>))
+"
+  ;; This function passes the code directly in the request. This could raise
+  ;; issues if the buffer is particularly large.
+  (lexical-let ((data (list (cons "offset" (traad--adjust-point pos))
+                            (cons "path" (buffer-file-name))
+                            (cons "code" (buffer-string)))))
+
+    (deferred:$
+      (traad--deferred-request
+       (buffer-file-name)
+       "/code_assist/definition"
+       :data data
+       :type "POST")
+
+      (deferred:nextc it
+        (lambda (req)
+          (request-response-data req))))))
+
+;;;###autoload
+(defun traad-goto-definition (pos)
+  "Jump to the position this object was defined."
+  (interactive "d")
+  (lexical-let ((symbol (thing-at-point 'symbol)))
+    (deferred:$
+      (traad--get-definition pos)
+      (deferred:nextc it
+        (lambda (response-data)
+          (if response-data
+              (let ((success (string= (assoc-default 'result
+                                                     response-data)
+                                      "success")))
+                (if success
+                    (let ((full-path (assoc-default 'realpath response-data))
+                          (lineno (assoc-default 'lineno response-data)))
+                      ;; Jump to the definition
+                      (find-file full-path)
+                      (goto-line lineno)
+                      (beginning-of-line-text)
+                      (search-forward symbol (line-end-position) t)
+                      ;; Small fix for if the mark was active before the jump -
+                      ;; disable it.
+                      (deactivate-mark)
+                      ;; Visual feedback for user.
+                      (recenter)
+                      t)
+                  (user-error "Could not find definition.")))
+            (user-error "No response from Traad server")))))))
+
+;;;###autoload
+(defun traad-goto-definition-synchronous (pos)
+  "Go to this object's definition. Blocks until the task is completed."
+  (interactive "d")
+  (deferred:sync!
+    (traad-goto-definition pos)))
 
 (defun traad--findit-occurrences (pos)
   "Get all occurences the use of the symbol at POS.
