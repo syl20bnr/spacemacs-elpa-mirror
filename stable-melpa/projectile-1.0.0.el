@@ -4,9 +4,9 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20180711.102
+;; Package-Version: 1.0.0
 ;; Keywords: project, convenience
-;; Version: 1.0.0-snapshot
+;; Version: 1.0.0
 ;; Package-Requires: ((emacs "25.1") (pkg-info "0.4"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -72,7 +72,7 @@
   "Manage and navigate projects easily."
   :group 'tools
   :group 'convenience
-  :link '(url-link :tag "Github" "https://github.com/bbatsov/projectile")
+  :link '(url-link :tag "GitHub" "https://github.com/bbatsov/projectile")
   :link '(url-link :tag "Online Manual" "https://projectile.readthedocs.io/")
   :link '(emacs-commentary-link :tag "Commentary" "projectile"))
 
