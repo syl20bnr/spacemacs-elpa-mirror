@@ -7,7 +7,7 @@
 ;;     Sebastian Wiesner <swiesner@lunaryorn.com>
 ;; Maintainer: Peter Fraenkel <pnf@podsnap.com>
 ;; URL: https://github.com/clojure-emacs/squiggly-clojure
-;; Package-Version: 20170221.1354
+;; Package-Version: 20180721.712
 ;; Version: 1.8.0
 ;; Package-Requires: ((cider "0.8.1") (flycheck "0.22-cvs1") (let-alist "1.0.1") (emacs "24"))
 
@@ -71,7 +71,8 @@ Return a list of parsed `flycheck-error' objects."
                                       (url-filename
                                        (url-generic-parse-url .file))))
                        (filename (if (and parsed-file
-                                          (file-name-absolute-p parsed-file))
+                                          (file-name-absolute-p parsed-file)
+                                          (not (string-prefix-p (expand-file-name "~/.boot/cache") parsed-file)))
                                      parsed-file
                                    (buffer-file-name))))
                   (flycheck-error-new-at .line .column (intern .level) .msg
@@ -90,7 +91,7 @@ Uses the tooling session, with no specified namespace."
 Checks for `cider-mode', and a current nREPL connection.
 
 Standard predicate for cider checkers."
-  (let ((connection-buffer (cider-default-connection :no-error)))
+  (let ((connection-buffer (cider-current-repl)))
     (and (bound-and-true-p cider-mode)
          connection-buffer
          (buffer-live-p (get-buffer connection-buffer))
