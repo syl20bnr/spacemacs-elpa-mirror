@@ -3,7 +3,7 @@
 ;; Copyright (C) 2018 Free Software Foundation, Inc.
 
 ;; Version: 1.1
-;; Package-Version: 20180720.946
+;; Package-Version: 20180722.1107
 ;; Author: João Távora <joaotavora@gmail.com>
 ;; Maintainer: João Távora <joaotavora@gmail.com>
 ;; URL: https://github.com/joaotavora/eglot
@@ -701,7 +701,9 @@ If optional MARKERS, make markers."
     (add-hook 'change-major-mode-hook 'eglot--managed-mode-onoff nil t)
     (add-function :before-until (local 'eldoc-documentation-function)
                   #'eglot-eldoc-function)
-    (add-function :around (local 'imenu-create-index-function) #'eglot-imenu))
+    (add-function :around (local 'imenu-create-index-function) #'eglot-imenu)
+    (flymake-mode 1)
+    (eldoc-mode 1))
    (t
     (remove-hook 'flymake-diagnostic-functions 'eglot-flymake-backend t)
     (remove-hook 'after-change-functions 'eglot--after-change t)
@@ -738,9 +740,6 @@ Reset in `eglot--managed-mode-onoff'.")
              (when server
                (setf (eglot--managed-buffers server)
                      (delq buf (eglot--managed-buffers server)))))))))
-
-(add-hook 'eglot--managed-mode-hook 'flymake-mode)
-(add-hook 'eglot--managed-mode-hook 'eldoc-mode)
 
 (defun eglot--current-server ()
   "Find the current logical EGLOT server."

@@ -5,7 +5,7 @@
 ;; Author: Pierre Neidhardt <ambrevar@gmail.com>
 ;; Maintainer: Pierre Neidhardt <ambrevar@gmail.com>
 ;; URL: https://gitlab.com/Ambrevar/mu4e-conversation
-;; Package-Version: 20180718.1205
+;; Package-Version: 20180722.159
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: mail, convenience, mu4e
@@ -302,7 +302,7 @@ works for message at point.  Suitable as a :before advice."
   (if (mu4e-conversation--buffer-p)
       (let ((start (save-excursion (goto-char (point-max))
                                    (mu4e-conversation-previous-message)
-                                   (next-line)
+                                   (forward-line)
                                    (point))))
         (save-restriction
           (narrow-to-region start (point-max))
@@ -582,6 +582,15 @@ If PRINT-FUNCTION is nil, use `mu4e-conversation-print-function'."
                   thread-headers-sorted (funcall filter thread-headers-sorted))))
         (erase-buffer)
         (delete-all-overlays)
+        (if (eq print-function 'mu4e-conversation-print-linear)
+            (progn
+              (mu4e-view-mode)
+              (read-only-mode 0)
+              (use-local-map (make-composed-keymap mu4e-conversation-map mu4e-compose-mode-map)))
+          (insert "#+SEQ_TODO: UNREAD READ NEW\n\n")
+          (org-mode)
+          (erase-buffer) ; TODO: Is it possible to set `org-todo-keywords' locally without this workaround?
+          (use-local-map (make-composed-keymap mu4e-conversation-map org-mode-map)))
         (dolist (msg thread-content-sorted)
           (if (member 'draft (mu4e-message-field msg :flags))
               (push msg draft-messages)
@@ -738,10 +747,6 @@ E-mails whose sender is in `mu4e-user-mail-address-list' are skipped."
 
 (defun mu4e-conversation-print-linear (index thread-content &optional _thread-headers)
   "Insert formatted message found at INDEX in THREAD-CONTENT."
-  (unless (eq major-mode 'mu4e-view-mode)
-    (mu4e-view-mode)
-    (read-only-mode 0)
-    (use-local-map (make-composed-keymap mu4e-conversation-map mu4e-compose-mode-map)))
   (let* ((msg (nth index thread-content))
          (from (car (mu4e-message-field msg :from)))
          (from-me-p (member (cdr from) mu4e-user-mail-address-list))
@@ -785,12 +790,6 @@ The list is in the following format:
 
 (defun mu4e-conversation-print-tree (index thread-content thread-headers)
   "Insert Org-formatted message found at INDEX in THREAD-CONTENT."
-  (unless (eq major-mode 'org-mode)
-    (insert "#+SEQ_TODO: UNREAD READ NEW\n\n")
-    (org-mode)
-    (erase-buffer) ; TODO: Is it possible to set `org-todo-keywords' locally without this workaround?
-    (use-local-map (make-composed-keymap mu4e-conversation-map
-                                         org-mode-map)))
   (let* ((msg (nth index thread-content))
          (msg-header (nth index thread-headers))
          (level (plist-get (mu4e-message-field msg-header :thread) :level))
@@ -856,16 +855,19 @@ mu4e message as argument."
     (mu4e-warn "(cite) Not a conversation buffer"))
   (if (not (use-region-p))
       (mu4e-scroll-up)                  ; TODO: Call function associate to `this-command-key' in mu4e-view-mode / org-mode.
-    (let ((text (buffer-substring-no-properties start end))
+    (let ((text (replace-regexp-in-string
+                 "\n+$" ""
+                 (buffer-substring-no-properties start end)))
           (mu4e-conversation-use-citation-line (if toggle-citation-line
                                              (not mu4e-conversation-use-citation-line)
                                            mu4e-conversation-use-citation-line))
           (msg (mu4e-message-at-point)))
       (save-excursion
         (goto-char (point-max))
-        (backward-char)
+        (newline 2)
+        (delete-blank-lines)
+        (newline)
         (insert
-         "\n\n"
          (if (and mu4e-conversation-use-citation-line msg)
              (funcall mu4e-conversation-citation-line-function msg)
            "")
@@ -1274,6 +1276,13 @@ See `mu4e-conversation--enqueue' to add a transaction."
                       (length mu4e-conversation--transaction-queue))
             (mu4e-conversation--proc-filter nil ""))))))))
 
+(defun mu4e-conversation--proc-start-reset ()
+  "Call before `mu4e~proc-start' to make sure the transaction queue is clean when starting.
+This is useful when we restart the server.
+Suitable as a :before advice"
+  (setq mu4e-conversation--transaction-running nil)
+  (setq mu4e-conversation--transaction-queue nil))
+
 (defun mu4e-conversation--query-thread (query-function query &optional message show-thread include-related)
   (setq message (or message (mu4e-message-at-point 'noerror)))
   (let ((count 0)
@@ -1358,6 +1367,7 @@ in existing view buffers. "
         (advice-add 'mu4e-get-view-buffer :override 'mu4e-conversation--get-buffer)
         (advice-add 'mu4e~headers-redraw-get-view-window :override 'mu4e-conversation--headers-redraw-get-view-window)
         (advice-add 'mu4e~proc-filter :override 'mu4e-conversation--proc-filter)
+        (advice-add 'mu4e~proc-start :before 'mu4e-conversation--proc-start-reset)
         ;; Some commands need specialization:
         (advice-add 'mu4e-view-save-attachment-multi :before 'mu4e-conversation-set-attachment)
         (advice-add 'mu4e-view-save-attachment-single :before 'mu4e-conversation-set-attachment)
@@ -1370,6 +1380,7 @@ in existing view buffers. "
     (advice-remove 'mu4e-get-view-buffer 'mu4e-conversation--get-buffer)
     (advice-remove 'mu4e~headers-redraw-get-view-window 'mu4e-conversation--headers-redraw-get-view-window)
     (advice-remove 'mu4e~proc-filter 'mu4e-conversation--proc-filter)
+    (advice-remove 'mu4e~proc-start 'mu4e-conversation--proc-start-reset)
     ;; De-specialize.
     (advice-remove 'mu4e-view-save-attachment-multi 'mu4e-conversation-set-attachment)
     (advice-remove 'mu4e-view-save-attachment-single 'mu4e-conversation-set-attachment)
