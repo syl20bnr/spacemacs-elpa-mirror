@@ -4,7 +4,7 @@
 
 ;; Authors: Jason Milkins <jasonm23@gmail.com>
 ;; URL: http://github.com/emacsfodder/emacs-theme-darktooth
-;; Package-Version: 20180612.1814
+;; Package-Version: 20180721.2039
 ;; Version: 0.3.9
 
 ;; Package-Requires: ((autothemer "0.2"))
@@ -756,7 +756,11 @@
   (helm-swoop-target-word-face               (:foreground darktooth-light0 :background darktooth-faded_aqua))
   (helm-swoop-target-line-block-face         (:foreground darktooth-light0_hard :background darktooth-faded_blue))
   (helm-swoop-target-line-face               (:foreground darktooth-light0_hard :background darktooth-faded_blue))
-  (helm-swoop-line-number-face               (:foreground darktooth-neutral_orange)))
+  (helm-swoop-line-number-face               (:foreground darktooth-neutral_orange))
+
+  ;; MODE SUPPORT: eldoc
+  (eldoc-highlight-function-argument         (:foreground darktooth-aquamarine4 :weight 'bold)))
+
 
  (defface darktooth-modeline-one-active
    `((t

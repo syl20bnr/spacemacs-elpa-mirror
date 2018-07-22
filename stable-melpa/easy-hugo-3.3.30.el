@@ -4,8 +4,8 @@
 
 ;; Author: Masashı Mıyaura
 ;; URL: https://github.com/masasam/emacs-easy-hugo
-;; Package-Version: 3.3.29
-;; Version: 3.3.29
+;; Package-Version: 3.3.30
+;; Version: 3.3.30
 ;; Package-Requires: ((emacs "24.4") (popup "0.5.3"))
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -97,6 +97,11 @@
 
 (defcustom easy-hugo-default-ext ".md"
   "Default extension when posting new articles."
+  :group 'easy-hugo
+  :type 'string)
+
+(defcustom easy-hugo-helm-ag nil
+  "Helm-ag use flg."
   :group 'easy-hugo
   :type 'string)
 
@@ -1161,7 +1166,7 @@ to the server."
   "Search for blog article with counsel-ag or helm-ag."
   (interactive)
   (easy-hugo-with-env
-   (if (require 'counsel nil t)
+   (if (and (require 'counsel nil t) (not easy-hugo-helm-ag))
        (counsel-ag nil (expand-file-name easy-hugo-postdir easy-hugo-basedir))
      (if (require 'helm-ag nil t)
 	 (helm-ag (expand-file-name easy-hugo-postdir easy-hugo-basedir))
