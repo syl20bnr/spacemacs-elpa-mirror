@@ -8,7 +8,7 @@
 ;;         Aldric Giacomoni <trevoke@gmail.com>
 ;; Keywords: org-mode, org, kanban, tools
 ;; Package-Requires: ((dash "2.13.0") (emacs "24.4") (org "9.1"))
-;; Package-Version: 20180717.712
+;; Package-Version: 20180722.704
 ;; Package-X-Original-Version: 0.4.6
 ;; Homepage: http://github.com/gizmomogwai/org-kanban
 
@@ -266,8 +266,9 @@ Return file and marker."
         (map (make-sparse-keymap)))
         (define-key map org-kanban/prev-key (lambda () (interactive) (org-kanban/shift 'left)))
         (define-key map org-kanban/next-key (lambda () (interactive) (org-kanban/shift 'right)))
-      map)))
+	map)))
 
+;;;###autoload
 (defun org-kanban/initialize (&optional arg)
   "Create an org-kanban dynamic block at position ARG."
   (interactive "p")
@@ -278,6 +279,7 @@ Return file and marker."
     ((eq arg 16) (org-kanban/initialize-at-end))
     (t (error (message "Unsupported universal argument %s" arg)))))
 
+;;;###autoload
 (defun org-kanban/initialize-at-beginning ()
   "Create an org-kanban dynamic block at the beginning of the buffer."
   (interactive)
@@ -286,6 +288,7 @@ Return file and marker."
     (forward-line)
     (org-kanban//initialize-mirrored-kanban-at-point)))
 
+;;;###autoload
 (defun org-kanban/initialize-at-end ()
   "Create an org-kanban dynamic block at the end of the buffer."
   (interactive)
@@ -294,6 +297,7 @@ Return file and marker."
     (newline)
     (org-kanban//initialize-mirrored-kanban-at-point)))
 
+;;;###autoload
 (defun org-kanban/initialize-here ()
   "Create an org-kanban dynamic block at the point."
   (interactive)
@@ -362,6 +366,7 @@ Return file and marker."
      (format "|%s|\n|--|\n%s" table-title table)))
   (org-table-align))
 
+;;;###autoload
 (defun org-kanban/version ()
   "Print org-kanban version."
   (interactive)

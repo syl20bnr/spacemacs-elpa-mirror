@@ -4,7 +4,7 @@
 
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/clojure-emacs/clomacs
-;; Package-Version: 20180713.340
+;; Package-Version: 20180722.757
 ;; Keywords: clojure, interaction
 ;; Version: 0.0.3
 ;; Package-Requires: ((emacs "24.3") (cider "0.16.0") (s "1.12.0") (simple-httpd "1.4.6"))
@@ -113,8 +113,8 @@ If can't find any nREPL process return nil."
     ;; simple run lein
     (if lib-buff
         (with-current-buffer lib-buff
-          (cider-jack-in))
-      (cider-jack-in))
+          (cider-jack-in nil))
+      (cider-jack-in nil))
     (message starting-msg)
     (if sync
         (let ((old-cider-repl-pop cider-repl-pop-to-buffer-on-connect))
