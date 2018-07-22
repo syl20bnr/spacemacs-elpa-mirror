@@ -5,7 +5,7 @@
 ;; Author: Xu Chunyang <mail@xuchunyang.me>
 ;; Homepage: https://github.com/xuchunyang/helm-lastpass
 ;; Package-Requires: ((emacs "25.1") (helm "2.0") (csv "2.1"))
-;; Package-Version: 20180430.1012
+;; Package-Version: 20180722.106
 ;; Version: 0
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -42,44 +42,40 @@
   :type 'string
   :group 'helm-lastpass)
 
-(defcustom helm-lastpass-actions
-  '(("Copy password" . helm-lastpass-copy-password)
-    ("Copy username" . helm-lastpass-copy-username)
-    ("Copy URL"      . helm-lastpass-copy-url)
-    ("Browse URL"    . helm-lastpass-browse-url))
+(defcustom helm-lastpass-actions nil
   "Actions for `helm-lastpass'."
   :group 'helm-lastpass
   :type '(alist :key-type string :value-type function))
 
 (defun helm-lastpass-copy-password (al)
-  (let ((password (alist-get 'password al)))
-    (if password
+  (let-alist al
+    (if .password
         (progn
-          (kill-new password)
-          (message "Copied: %s" password)))
-    (user-error "No password for this entry")))
+          (kill-new .password)
+          (message "Copied: %s" .password))
+      (message "No password for this entry"))))
 
 (defun helm-lastpass-copy-username (al)
-  (let ((username (alist-get 'username al)))
-    (if username
+  (let-alist al
+    (if .username
         (progn
-          (kill-new username)
-          (message "Copied: %s" username))
-      (user-error "No username for this entry"))))
+          (kill-new .username)
+          (message "Copied: %s" .username))
+      (message "No username for this entry"))))
 
-(defun helm-lastpass-copy-url (al)
-  (let ((url (alist-get 'url al)))
-    (if url
+(defun helm-lastpass-copy-note (al)
+  (let-alist al
+    (if .extra
         (progn
-          (kill-new url)
-          (message "Copied: %s" url))
-      (user-error "No URL for this entry"))))
+          (kill-new .extra)
+          (message "Copied: %s" .extra))
+      (message "No note for this entry"))))
 
 (defun helm-lastpass-browse-url (al)
-  (let ((url (alist-get 'url al)))
-    (if url
-        (browse-url url)
-      (user-error "No URL for this entry"))))
+  (let-alist al
+    (if .url
+        (browse-url .url)
+      (message "No URL for this entry"))))
 
 (defun helm-lastpass-cli ()
   (or (executable-find helm-lastpass-cli)
@@ -165,12 +161,27 @@ Return a list of alist which contain all account information."
   (mapcar
    (lambda (alist)
      (cons (alist-get 'fullname alist) alist))
-   (helm-lastpass-export)))
+   (helm-lastpass-export 'no)))
+
+(defun helm-lastpass-action-transformer (actions candidate)
+  (append
+   (delq
+    nil
+    (let-alist candidate
+      (list (and .password '("Copy Password" . helm-lastpass-copy-password))
+            (and .username '("Copy Username" . helm-lastpass-copy-username))
+            (and .extra '("Copy Notes" . helm-lastpass-copy-note))
+            (and .url
+                 ;; 'sn' stands for Secure Notes, I guess.
+                 (not (string= .url "http://sn"))
+                 '("Browse URL"    . helm-lastpass-browse-url)))))
+   actions))
 
 (defvar helm-lastpass-source
   (helm-build-sync-source "LastPass"
     :candidates #'helm-lastpass-candidates
-    :action helm-lastpass-actions)
+    :action 'helm-lastpass-actions
+    :action-transformer #'helm-lastpass-action-transformer)
   "Source for `helm-lastpass'.")
 
 ;;;###autoload

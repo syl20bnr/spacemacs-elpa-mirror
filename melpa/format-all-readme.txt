@@ -14,6 +14,7 @@ Supported languages:
 - Go (gofmt)
 - GraphQL (prettier)
 - Haskell (hindent)
+- HTML/XHTML/XML (tidy)
 - Java (clang-format)
 - JavaScript/JSON/JSX/TypeScript/Vue (prettier)
 - Kotlin (ktlint)

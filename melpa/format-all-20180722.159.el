@@ -2,7 +2,7 @@
 ;;
 ;; Author: Lassi Kortela <lassi@lassi.io>
 ;; URL: https://github.com/lassik/emacs-format-all-the-code
-;; Package-Version: 20180719.309
+;; Package-Version: 20180722.159
 ;; Version: 0.1.0
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; Keywords: languages util
@@ -28,6 +28,7 @@
 ;; - Go (gofmt)
 ;; - GraphQL (prettier)
 ;; - Haskell (hindent)
+;; - HTML/XHTML/XML (tidy)
 ;; - Java (clang-format)
 ;; - JavaScript/JSON/JSX/TypeScript/Vue (prettier)
 ;; - Kotlin (ktlint)
@@ -225,6 +226,12 @@ EXECUTABLE is the full path to the formatter."
 EXECUTABLE is the full path to the formatter."
   (format-all-buffer-process executable))
 
+(defun format-all-buffer-html-tidy (executable)
+  "Format the current buffer as HTML/XHTML/XML using \"tidy\".
+
+EXECUTABLE is the full path to the formatter."
+  (format-all-buffer-process executable '(0 1) nil "-q" "-indent"))
+
 (defun format-all-buffer-ktlint (executable)
   "Format the current buffer as Kotlin using \"ktlint\".
 
@@ -373,6 +380,13 @@ EXECUTABLE is the full path to the formatter."
      (:install "stack install hindent")
      (:function format-all-buffer-hindent)
      (:modes haskell-mode))
+    (html-tidy
+     (:executable "tidy")
+     (:install (macos "brew install tidy-html5"))
+     (:function format-all-buffer-html-tidy)
+     (:modes
+      html-helper-mode html-mode mhtml-mode nxhtml-mode nxml-mode web-mode
+      xml-mode))
     (ktlint
      (:executable "ktlint")
      (:install nil)
