@@ -5,7 +5,7 @@
 ;; Author: Juergen Hoetzel <juergen@hoetzel.info>
 ;; Maintainer: Juergen Hoetzel <juergen@hoetzel.info>
 ;; URL: https://github.com/juergenhoetzel/pkgbuild-mode
-;; Package-Version: 20180609.931
+;; Package-Version: 20180723.747
 ;; Package-Requires: ((emacs "25.1"))
 ;; Version: 1.0-snapshot
 ;; Keywords: languages
@@ -491,7 +491,7 @@ command."
     (if (get-buffer stderr-buffer) (kill-buffer stderr-buffer))
     (if (get-buffer stdout-buffer) (kill-buffer stdout-buffer))
     (if (not (equal
-              (flet ((message (arg &optional args) nil)) ;Hack disable empty output
+              (cl-labels ((message (arg &optional args) nil)) ;Hack disable empty output
                 (shell-command "bash -c 'source PKGBUILD'" stdout-buffer stderr-buffer))
               0))
         (multiple-value-bind (err-p line) (pkgbuild-postprocess-stderr stderr-buffer)
