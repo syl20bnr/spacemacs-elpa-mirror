@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/emacscollective/closql
 ;; Package-Requires: ((emacs "25.1") (emacsql-sqlite "2.0.3"))
-;; Package-Version: 20180627.1931
+;; Package-Version: 20180714.1208
 ;; Keywords: extensions
 
 ;; This file is not part of GNU Emacs.
@@ -354,7 +354,9 @@
                       [:select $i1 :from $i2])
                     (and pred
                          [:where class :in $v3])
-                    [:order-by [(asc $i4)]])
+                    (if-let ((order (oref-default class closql-order-by)))
+                        (vector :order-by order)
+                      [:order-by [(asc $i4)]]))
            select
            (oref-default class closql-table)
            (and pred (closql-where-class-in pred))

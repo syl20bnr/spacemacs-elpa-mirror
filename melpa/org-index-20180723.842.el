@@ -4,7 +4,7 @@
 
 ;; Author: Marc Ihm <org-index@2484.de>
 ;; URL: https://github.com/marcIhm/org-index
-;; Package-Version: 20180720.127
+;; Package-Version: 20180723.842
 ;; Version: 5.8.99
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -660,7 +660,8 @@ interactive calls."
 
 ")
          (insert "\nSee https://github.com/marcIhm/org-index/ChangeLog.org for older news.\n")
-         (org-mode))
+         (org-mode)
+         (org-cycle '(64)))
         (shrink-window-if-larger-than-buffer (get-buffer-window oidx--news-buffer-name)))
        
 
@@ -2890,6 +2891,7 @@ This function calls itself recursively."
                                  t
                                  ;; this is run (in any case) on leaving the map
                                  (lambda () (cancel-timer oidx--ws-cancel-timer)
+                                   (message nil)
                                    ;; Clean up overlay
                                    (if oidx--ws-overlay (delete-overlay oidx--ws-overlay))
                                    (setq oidx--ws-overlay nil)
@@ -2899,7 +2901,7 @@ This function calls itself recursively."
                                          (if (input-pending-p) (setq keys (read-key-sequence nil)))
                                          (org-with-limited-levels (org-clock-in))
                                          (if keys (setq unread-command-events (listify-key-sequence keys)))))
-                                   ;; ignore-errors saves during tear-down of some tests
+                                   ;; ignore-errors helps during tear-down of some tests
                                    (ignore-errors (oidx--update-line (org-id-get) t)))))
         (setq menu-clause (if oidx--short-help-wanted "; type 'w' to jump to next node in list; 'h' for heading, 'b' for bottom of node; type 'd' to delete this node from list; 'm' creates buffer with menu" "; type w,h,b,d,m or ? for short help"))
         
