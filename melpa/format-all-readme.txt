@@ -28,6 +28,7 @@ Supported languages:
 - Shell script (shfmt)
 - SQL (sqlformat)
 - Swift (swiftformat)
+- YAML (yq)
 
 You will need to install external programs to do the formatting.
 If `format-all-buffer` can't find the right program, it will try to

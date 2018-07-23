@@ -11,6 +11,6 @@ section and fill-in the blanks if required.
 
 This work was based on the freely available PDF titled "English
 for Writing Research - Papers Useful Phrases" which can be found
-here <http://www.springer.com/gb/book/9783319260921>. This work
+here <https://www.springer.com/gb/book/9783319260921>. This work
 was done with the kind permission of Springer Nature and Adrian
 Wallwork.
