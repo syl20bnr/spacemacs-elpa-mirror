@@ -5,7 +5,7 @@
 ;; Author: Gonçalo Santos (aka. weirdNox@GitHub)
 ;; Homepage: https://github.com/weirdNox/org-noter
 ;; Keywords: lisp pdf interleave annotate external sync notes documents org-mode
-;; Package-Version: 20180722.853
+;; Package-Version: 20180723.1804
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.6") (org "9.0"))
 ;; Version: 1.1.0
 
@@ -835,6 +835,7 @@ a continuous group of notes."
                (vector 'nov (org-noter--doc-approx-location (window-start))
                        (org-noter--doc-approx-location (window-end nil t))))))
             result group)
+
        (org-element-map contents 'headline
          (lambda (headline)
            (let ((property (org-noter--location-property headline)))
@@ -1320,8 +1321,9 @@ on how to copy the selected text into a note."
          (select-frame-set-input-focus (window-frame window))
          (select-window window)
 
-         ;; NOTE(nox): Need to be careful changing the next part, it is a bit complicated to
-         ;; get it right...
+         ;; IMPORTANT(nox): Need to be careful changing the next part, it is a bit
+         ;; complicated to get it right...
+
          (if (and notes-in-view (not arg))
              (let ((point (point))
                    default note collection)

@@ -8,7 +8,7 @@
 ;; Homepage: https://github.com/emacs-php/apache-mode
 ;; License: GPL-2.0-or-later
 ;; Keywords: languages, faces
-;; Package-Version: 20180722.2350
+;; Package-Version: 20180723.2051
 ;; Version: 2.1
 
 ;; apache-mode.el is free software; you can redistribute it and/or modify it
@@ -105,40 +105,40 @@
 
     (list (concat                       ; sections
            "^[ \t]*</?"
-           (regexp-opt '(
-                         "Directory"          ; core
-                         "DirectoryMatch"
-                         "Else"
-                         "ElseIf"
-                         "Files"
-                         "FilesMatch"
-                         "If"
-                         "IfDefine"
-                         "IfModule"
-                         "Limit"
-                         "LimitExcept"
-                         "Location"
-                         "LocationMatch"
-                         "Proxy"
-                         "ProxyMatch"
-                         "VirtualHost"
-                         "AuthnProviderAlias" ; mod_authn_core
-                         "AuthzProviderAlias" ; mod_authz_core
-                         "RequireAll"
-                         "RequireAny"
-                         "RequireNone"
-                         "Macro"              ; mod_macro
-                         "Perl"               ; mod_perl
-                         "IfVersion"          ; mod_version
-                         ) 'words)
+           (regexp-opt
+            '("Directory"          ; core
+              "DirectoryMatch"
+              "Else"
+              "ElseIf"
+              "Files"
+              "FilesMatch"
+              "If"
+              "IfDefine"
+              "IfModule"
+              "Limit"
+              "LimitExcept"
+              "Location"
+              "LocationMatch"
+              "Proxy"
+              "ProxyMatch"
+              "VirtualHost"
+              "AuthnProviderAlias" ; mod_authn_core
+              "AuthzProviderAlias" ; mod_authz_core
+              "RequireAll"
+              "RequireAny"
+              "RequireNone"
+              "Macro"              ; mod_macro
+              "Perl"               ; mod_perl
+              "IfVersion"          ; mod_version
+              )
+            'words)
            ".*?>")
           1 'font-lock-function-name-face)
 
     (list (concat                       ; directives
            "^[ \t]*"
            (regexp-opt
-            '(
-              "AcceptFilter"                                    ; core
+            '("AcceptFilter"                                    ; core
               "AcceptMutex"
               "AcceptPathInfo"
               "AccessConfig"
@@ -1160,7 +1160,8 @@
         "trace"
         "warn"
         "server-status"                                   ; mod_status
-       ) 'words)
+        )
+      'words)
      1 'font-lock-type-face)))
   "Expressions to highlight in Apache config buffers.")
 
@@ -1172,7 +1173,6 @@
     (if savep
         (save-excursion (indent-line-to indent))
       (indent-line-to indent))))
-
 
 (defun apache-previous-indentation ()
   "Return the previous (non-empty/comment) indentation.  Doesn't save position."
@@ -1207,5 +1207,4 @@
   (add-to-list 'auto-mode-alist '("/apache2/sites-\\(?:available\\|enabled\\)/" . apache-mode)))
 
 (provide 'apache-mode)
-
 ;;; apache-mode.el ends here
