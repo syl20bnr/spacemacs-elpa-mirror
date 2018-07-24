@@ -4,7 +4,7 @@
 
 ;; Author: Felipe Lema <felipelema en mortemale punto org>
 ;; URL: https://bitbucket.org/FelipeLema/evil-python-movement.el/
-;; Package-Version: 20180719.811
+;; Package-Version: 20180724.720
 ;; Package-Requires: ((emacs "25.1") (cl-lib "0.5") (dash "2.13.0") (evil "1.0") (s "1.12.0"))
 
 ;; Version: 1.0
@@ -129,7 +129,7 @@ Returns new position or nil."
 		    (number-sequence 1 count))))))
       (goto-char maybe-new-position))))
 
-;; [[
+;; Evil motion: `[['
 ;;;###autoload(autoload 'evil-python-movement-lsb-lsb "evil-python-movement" nil t)
 (evil-define-motion evil-python-movement-lsb-lsb (count noerror)
   "Mimic Neovim's [[ movement in Python editing.
@@ -145,7 +145,7 @@ Based off `evil-forward-char'."
 					       #'evil-python-movement-backwards-to-top-level-def
 					       "[["))
 
-;; ]]
+;; Evil motion: `]]'
 ;;;###autoload(autoload 'evil-python-movement-rsb-rsb "evil-python-movement" nil t)
 (evil-define-motion evil-python-movement-rsb-rsb (count noerror)
   "Mimic Neovim's ]] movement in Python editing.
@@ -160,7 +160,7 @@ Based off `evil-forward-char'."
    count noerror
    #'evil-python-movement-forward-to-top-level-def "]]"))
 
-;; [m
+;; Evil motion: `[m'
 ;;;###autoload(autoload 'evil-python-movement-lsb-m "evil-python-movement" nil t)
 (evil-define-motion evil-python-movement-lsb-m (count noerror)
   "Mimic Neovim's [m movement in Python editing.
@@ -181,7 +181,7 @@ Based off `evil-forward-char'."
 			  p))))
     (goto-char new-pos)))
 
-;; ]m
+;; Evil motion: `]m`
 ;;;###autoload(autoload 'evil-python-movement-rsb-m "evil-python-movement" nil t)
 (evil-define-motion evil-python-movement-rsb-m (count noerror)
   "Mimic Neovim's ]m movement in Python editing.
@@ -246,7 +246,7 @@ Moves to end of block and end of line."
   (unless noerror
     (message "Cannot move %s-wise" movement-name)))
 
-;;[M
+;; Evil motion: `[M`
 ;;;###autoload(autoload 'evil-python-movement-lsb-M "evil-python-movement" nil t)
 (evil-define-motion evil-python-movement-lsb-M (count noerror)
   "Mimic Neovim's ]M movement in Python editing.
@@ -266,7 +266,7 @@ Based off `evil-forward-char'."
 						  "[M"))
    "[M" noerror))
 
-;;]M
+;; Evil motion: `]M`
 ;;;###autoload(autoload 'evil-python-movement-rsb-M "evil-python-movement" nil t)
 (evil-define-motion evil-python-movement-rsb-M (count noerror)
   :jump t
@@ -280,7 +280,7 @@ Based off `evil-forward-char'."
      (goto-char (evil-python-movement-py-block-end)))
    "]M" noerror))
 
-;;[]
+;; Evil motion: `[]`
 ;;;###autoload(autoload 'evil-python-movement-lsb-rsb "evil-python-movement" nil t)
 (evil-define-motion evil-python-movement-lsb-rsb (count noerror)
   :jump t
@@ -289,7 +289,7 @@ Based off `evil-forward-char'."
   (evil-python-movement-lsb-lsb count noerror)
   (evil-python-movement-py-block-end))
 
-;;][
+;; Evil motion: `][`
 ;;;###autoload(autoload 'evil-python-movement-rsb-lsb "evil-python-movement" nil t)
 (evil-define-motion evil-python-movement-rsb-lsb (count noerror)
   :jump t

@@ -1,5 +1,3 @@
-/ This Commentary will be copied to help-text and README.org by Rake /
-
 Purpose:
 
  Fast search for selected org-nodes and things outside.
