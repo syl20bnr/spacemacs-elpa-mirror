@@ -4,7 +4,7 @@
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: https://github.com/bbatsov/projectile
-;; Package-Version: 20180721.352
+;; Package-Version: 20180724.318
 ;; Keywords: project, convenience
 ;; Version: 1.1.0-snapshot
 ;; Package-Requires: ((emacs "25.1") (pkg-info "0.4"))
@@ -3238,7 +3238,18 @@ Should be set via .dir-locals.el.")
   (plist-get (gethash project-type projectile-project-types) 'run-command))
 
 (defun projectile-configure-command (compile-dir)
-  "Retrieve the configure command for COMPILE-DIR."
+  "Retrieve the configure command for COMPILE-DIR.
+
+The command is determined like this:
+
+- first we check `projectile-configure-cmd-map' for the last
+configure command that was invoked on the project
+
+- then we check for `projectile-project-configure-cmd' supplied
+via .dir-locals.el
+
+- finally we check for the default configure command for a
+project of that type"
   (or (gethash compile-dir projectile-configure-cmd-map)
       projectile-project-configure-cmd
       (let ((cmd-format-string (projectile-default-configure-command (projectile-project-type))))
@@ -3246,19 +3257,52 @@ Should be set via .dir-locals.el.")
           (format cmd-format-string (projectile-project-root))))))
 
 (defun projectile-compilation-command (compile-dir)
-  "Retrieve the compilation command for COMPILE-DIR."
+  "Retrieve the compilation command for COMPILE-DIR.
+
+The command is determined like this:
+
+- first we check `projectile-compilation-cmd-map' for the last
+compile command that was invoked on the project
+
+- then we check for `projectile-project-compilation-cmd' supplied
+via .dir-locals.el
+
+- finally we check for the default compilation command for a
+project of that type"
   (or (gethash compile-dir projectile-compilation-cmd-map)
       projectile-project-compilation-cmd
       (projectile-default-compilation-command (projectile-project-type))))
 
 (defun projectile-test-command (compile-dir)
-  "Retrieve the test command for COMPILE-DIR."
+  "Retrieve the test command for COMPILE-DIR.
+
+The command is determined like this:
+
+- first we check `projectile-test-cmd-map' for the last
+test command that was invoked on the project
+
+- then we check for `projectile-project-test-cmd' supplied
+via .dir-locals.el
+
+- finally we check for the default test command for a
+project of that type"
   (or (gethash compile-dir projectile-test-cmd-map)
       projectile-project-test-cmd
       (projectile-default-test-command (projectile-project-type))))
 
 (defun projectile-run-command (compile-dir)
-  "Retrieve the run command for COMPILE-DIR."
+  "Retrieve the run command for COMPILE-DIR.
+
+The command is determined like this:
+
+- first we check `projectile-run-cmd-map' for the last
+run command that was invoked on the project
+
+- then we check for `projectile-project-run-cmd' supplied
+via .dir-locals.el
+
+- finally we check for the default run command for a
+project of that type"
   (or (gethash compile-dir projectile-run-cmd-map)
       projectile-project-run-cmd
       (projectile-default-run-command (projectile-project-type))))
@@ -3537,26 +3581,30 @@ This command will first prompt for the directory the file is in."
   "Determine whether we should cleanup (remove) PROJECT or not.
 
 It handles the case of remote projects as well.
-See `projectile-cleanup-known-projects'."
+See `projectile--cleanup-known-projects'."
   ;; Taken from from `recentf-keep-default-predicate'
   (cond
    ((file-remote-p project nil t) (file-readable-p project))
    ((file-remote-p project))
    ((file-readable-p project))))
 
-;;;###autoload
-(defun projectile-cleanup-known-projects ()
-  "Remove known projects that don't exist anymore."
-  (interactive)
+(defun projectile--cleanup-known-projects ()
+  "Remove known projects that don't exist anymore and return a list of projects removed."
   (projectile-merge-known-projects)
   (let ((projects-kept (cl-remove-if-not #'projectile-keep-project-p projectile-known-projects))
         (projects-removed (cl-remove-if #'projectile-keep-project-p projectile-known-projects)))
     (setq projectile-known-projects projects-kept)
     (projectile-merge-known-projects)
-    (if projects-removed
-        (message "Projects removed: %s"
-                 (mapconcat #'identity projects-removed ", "))
-      (message "No projects needed to be removed."))))
+    projects-removed))
+
+;;;###autoload
+(defun projectile-cleanup-known-projects ()
+  "Remove known projects that don't exist anymore."
+  (interactive)
+  (if-let ((projects-removed (projectile--cleanup-known-projects)))
+      (message "Projects removed: %s"
+               (mapconcat #'identity projects-removed ", "))
+    (message "No projects needed to be removed.")))
 
 ;;;###autoload
 (defun projectile-clear-known-projects ()
@@ -3997,7 +4045,7 @@ Otherwise behave as if called interactively.
       (setq projectile-projects-cache-time
             (make-hash-table :test 'equal)))
     ;; update the list of known projects
-    (projectile-cleanup-known-projects)
+    (projectile--cleanup-known-projects)
     (projectile-discover-projects-in-search-path)
     (add-hook 'find-file-hook 'projectile-find-file-hook-function)
     (add-hook 'projectile-find-dir-hook #'projectile-track-known-projects-find-file-hook t)
