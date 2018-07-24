@@ -4,7 +4,7 @@
 ;;
 ;; Author: Dino Chiesa <dpchiesa@outlook.com>, Sebastian Monia <smonia@outlook.com>
 ;; URL: http://github.com/sebasmonia/tfsmacs/
-;; Package-Version: 20180629.1011
+;; Package-Version: 20180723.1659
 ;; Package-Requires: ((emacs "25") (tablist "0.70"))
 ;; Version: 1.25
 ;; Keywords: tfs, vc
@@ -76,7 +76,7 @@
 (defvar tfsmacs--process-name "TEECLI")
 (defvar tfsmacs--changeset-buffer-name "*TFS Changeset*")
 (defvar tfsmacs--shelveset-buffer-name "*TFS Shelveset*")
-(defvar tfsmacs--server-dirs-buffer-name "*TFS Folders*")
+(defvar tfsmacs--server-dirs-buffer-name "*TFS Directories*")
 (defvar tfsmacs--current-help-message "")
 ;; Keeps track of the current directory when navigating server files using "tf dir"
 (defvar tfsmacs--server-current-dir "$/")
@@ -114,7 +114,6 @@
 ;; tfsmacs-server-directories
 ;; tfsmacs-setup-workspace
 ;; tfsmacs-switch-workspace
-;; tfsmacs-server-get-directory
 
 (defun tfsmacs--append-to-log (text)
   "Append TEXT to the TFS Messages buffer.
@@ -125,10 +124,10 @@ Intended for internal use only."
       (insert text)
       (insert "\n"))))
 
-(defun tfsmacs--show-help ()
-  "Display the *TFS Help* buffer with the text in `tfsmacs--current-help-message`."
+(defun tfsmacs--show-help (help-message)
+  "Display the *TFS Help* buffer with the text in HELP-MESSAGE."
   (with-output-to-temp-buffer "*TFS Help*"
-    (princ tfsmacs--current-help-message)))
+    (princ help-message)))
 
 (defun tfsmacs--get-or-create-process ()
   "Create or return the TEE process."
@@ -512,6 +511,14 @@ PATH and FILES are used only for internal calls."
 (defun tfsmacs--server-callback (output)
   "Allow a selection from the list of server folders in OUTPUT."
   (when (> tfsmacs--command-retries 0) ;; if the command failed, don't run
+    ;; the block below "fixes" the output when there are not subdirs/files to list
+    ;; so that the same processing applies to both cases
+    (tfsmacs--append-to-log (format "---\n%s\n---" output))
+    (when (string-prefix-p "No items found under " output)
+      (setq output (replace-regexp-in-string "\n" "" output)) ;; only first line has content
+      (setq output (format "%s:\n[No items found under in this dir. Try displaying files.]\n\n"
+                           (cadr (split-string output "No items found under ")))))
+    (tfsmacs--append-to-log (format "---\n%s\n---" output))
     (get-buffer-create tfsmacs--server-dirs-buffer-name)
     (let ((lines (butlast (split-string output "\n") 2)))
       (setq tfsmacs--server-current-dir (substring (car lines) 0 -1))
@@ -537,16 +544,16 @@ PATH and FILES are used only for internal calls."
 (defun tfsmacs--server-directories-help ()
   "Show help for the directories buffer."
   (interactive)
-  (setq tfsmacs--current-help-message
+  (let ((help-message
         (concat
          "--TFS Server Directories help--\n\n"
          "You can use ^ and RET to navigate the folders just like in dired. Similarly n and p move between lines.\n\n"
          "G will get the folder under point and its contents recursively. If needed it will create a local"
          " directory tree to match the one on the server (based on the mappings for the workspace).\n\n"
-         "F will display the files in the current folder. Use it wisely as it can be quite slow!\n\n"))
-         ;; "D shows the difference between the local and server folder. Its useful to figure out if you "
-         ;; "missed adding files, or deleted something from your local and it's not synced any more."))
-  (tfsmacs--show-help))
+         "F will display the files in the current folder. Use it wisely as it can be quite slow!\n\n"
+         "D shows the difference between the local and server folder. Its useful to figure out if you "
+         "missed adding files, or deleted something from your local and it's not synced any more.")))
+    (tfsmacs--show-help help-message)))
 
 (defun tfsmacs--server-show-files ()
   "Show files in the current directory.
@@ -586,19 +593,19 @@ Showing files all the time could get quite slow.  Hence this command."
     (make-directory output t)
     (tfsmacs-get-recursive output t)))
 
-;; (defun tfsmacs--server-compare-dirs ()
-;;   "Show the file differences between local and server directory."
-;;   (interactive)
-;;   (let* ((line (buffer-substring-no-properties (line-beginning-position) (line-end-position)))
-;;          (directory (concat tfsmacs--server-current-dir "/" (substring line 1)))
-;;          ;;(command (list "resolvePath" line)))
-;;          (command (list "dir" directory "-recursive")))
-;;     (setq tfsmacs--server-compare-dir directory)
-;;     (tfsmacs--async-command command 'tfsmacs--server-compare-dirs-callback)))
+(defun tfsmacs--server-compare-dirs ()
+  "Show the file differences between local and server directory."
+  (interactive)
+  (let* ((line (buffer-substring-no-properties (line-beginning-position) (line-end-position)))
+         (directory (concat tfsmacs--server-current-dir "/" (substring line 1)))
+         ;;(command (list "resolvePath" line)))
+         (command (list "dir" directory "-recursive")))
+    (setq tfsmacs--server-compare-dir directory)
+    (tfsmacs--async-command command 'tfsmacs--server-compare-dirs-callback)))
 
-;; (defun tfsmacs--server-compare-dirs-callback (output)
-;;   "Process the OUTPUT of the first step for server-local dir compare."
-;;   (tfsmacs--append-to-log (format "---%s---" output)))
+(defun tfsmacs--server-compare-dirs-callback (output)
+  "Process the OUTPUT of the first step for server-local dir compare."
+  (tfsmacs--append-to-log (format "---%s---" output)))
 
 (defun tfsmacs-get (&optional filename version)
   "Perform a tf get on a file.
@@ -704,7 +711,7 @@ The file to undo is deteremined this way:
 (defun tfsmacs--history-mode-help ()
   "Show help for the history mode."
   (interactive)
-  (setq tfsmacs--current-help-message
+  (let ((help-message
         (concat
          "--TFS History mode help--\n\n"
          "This mode is derived from tabulated-list, so the usual bindings for marking elements work "
@@ -712,8 +719,8 @@ The file to undo is deteremined this way:
          "T will get the version under point (or marked, if only one file is marked).\n\n"
          "C shows the changeset details in a separate window.\n\n"
          "D runs ediff between two files marked in the list. The get for each file runs synchronous, "
-         "Emacs will be unresponsive until the operations are completed."))
-  (tfsmacs--show-help))
+         "Emacs will be unresponsive until the operations are completed.")))
+    (tfsmacs--show-help help-message)))
 
 (defun tfsmacs--history-mode-quote-path (item-pair)
   "Return the same ITEM-PAIR with only the path quoted."
@@ -959,7 +966,7 @@ If VERSION to get is not provided, it will be prompted."
 (defun tfsmacs--status-mode-help ()
   "Show help for the status mode."
   (interactive)
-  (setq tfsmacs--current-help-message
+  (let ((help-message
         (concat
          "--TFS Status help--\n\n"
          "This mode is derived from tabulated-list, so the usual bindings for marking elements work "
@@ -973,8 +980,8 @@ If VERSION to get is not provided, it will be prompted."
          "D runs ediff between a file marked in the list (or the one under point if none are marked)."
          " It will compare your local with the latest on the server. The get for file is synchronous, "
          "Emacs will be unresponsive until the operation is completed.\n\n"
-         "L (later) will shelve the files marked."))
-  (tfsmacs--show-help))
+         "L (later) will shelve the files marked.")))
+    (tfsmacs--show-help help-message)))
 
 (defun tfsmacs-pending-changes ()
   "Perform a recursive tf status.  Displays the result in a separate buffer."
@@ -1125,14 +1132,14 @@ OUTPUT is the command's output"
 (defun tfsmacs--shelvesets-mode-help ()
   "Show help for the shelvesets mode."
   (interactive)
-  (setq tfsmacs--current-help-message
+  (let ((help-message
         (concat
          "--TFS Shelvesets help--\n\n"
          "This mode is derived from tabulated-list, so the usual bindings for marking elements work "
          "as expected (m and u to mark and unmark, for example).\n\n"
          "R (retrieve) unshelves the shelve under point or marked (only one can be marked).\n\n"
-         "D shows details for the current/marked shelveset in a separate buffer."))
-  (tfsmacs--show-help))
+         "D shows details for the current/marked shelveset in a separate buffer.")))
+    (tfsmacs--show-help help-message)))
 
 (defun tfsmacs-shelvesets (&optional owner)
   "Run \"tf shelvesets\" and show the output in a tabulated list buffer.

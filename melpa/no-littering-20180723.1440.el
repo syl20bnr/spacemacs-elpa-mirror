@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/emacscollective/no-littering
 ;; Package-Requires: ((cl-lib "0.5"))
-;; Package-Version: 20180620.600
+;; Package-Version: 20180723.1440
 
 ;; This file is not part of GNU Emacs.
 
@@ -264,6 +264,7 @@ This variable has to be set before `no-littering' is loaded.")
     (eval-after-load 'company-statistics
       `(make-directory ,(var "company/") t))
     (setq company-statistics-file          (var "company/statistics.el"))
+    (setq dired-recent-directories-file    (var "dired-recent-directories.el"))
     (setq elbank-data-file                 (var "elbank-data.el"))
     (eval-after-load 'elfeed
       `(make-directory ,(var "elfeed/") t))
@@ -282,6 +283,8 @@ directories."
     (eval-after-load 'emojify
       `(make-directory ,(var "emojify/") t))
     (setq emojify-emojis-dir               (var "emojify/"))
+    (setq forge-database-file              (var "forge/database.sqlite"))
+    (setq forge-post-directory             (var "forge/posts/"))
     (setq geben-temporary-file-directory   (var "geben/"))
     (eval-after-load 'geiser
       `(make-directory ,(var "geiser/") t))
@@ -307,7 +310,6 @@ directories."
       `(make-directory ,(etc "lookup/") t))
     (setq litable-list-file                (var "litable-list.el"))
     (setq lookup-init-directory            (etc "lookup/"))
-    (setq magit-forge-database-file        (var "magit/forge-database.sqlite"))
     (setq magithub-dir                     (var "magithub/"))
     (setq magithub-cache-file              (var "magithub/cache.el"))
     (setq mc/list-file                     (var "mc-list.el"))
