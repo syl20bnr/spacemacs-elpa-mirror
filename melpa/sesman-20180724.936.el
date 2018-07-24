@@ -3,7 +3,7 @@
 ;; Copyright (C) 2018, Vitalie Spinu
 ;; Author: Vitalie Spinu
 ;; URL: https://github.com/vspinu/sesman
-;; Package-Version: 20180719.213
+;; Package-Version: 20180724.936
 ;; Keywords: process
 ;; Version: 0.1.1-snapshot
 ;; Package-Requires: ((emacs "25"))
@@ -48,7 +48,8 @@
 (defgroup sesman nil
   "Generic Session Manager."
   :prefix "sesman-"
-  :group 'tools)
+  :group 'tools
+  :link '(url-link :tag "GitHub" "https://github.com/vspinu/sesman"))
 
 ;; (defcustom sesman-disambiguate-by-relevance t
 ;;   "If t choose most relevant session in ambiguous situations, otherwise ask.
@@ -62,9 +63,10 @@
 (defcustom sesman-single-link-context-types '(buffer)
   "List of context types to which at most one session can be linked."
   :group 'sesman
-  :type '(repeat symbol))
+  :type '(repeat symbol)
+  :package-version '(sesman . "0.1.0"))
 
-;; fixme;
+;; FIXME:
 ;; (defcustom sesman-abbreviate-paths 2
 ;;   "Abbreviate paths to that many parents.
 ;; When set to nil, don't abbreviate directories."
@@ -258,15 +260,15 @@ Can be either a symbol, or a function returning a symbol.")
 
 ;;; User Interface
 
- ;;;###autoload
+;;;###autoload
 (defun sesman-start ()
   "Start sesman session."
   (interactive)
-  (let* ((system (sesman--system)))
+  (let ((system (sesman--system)))
     (message "Starting new %s session ..." system)
     (sesman-start-session system)))
 
- ;;;###autoload
+;;;###autoload
 (defun sesman-restart ()
   "Restart sesman session."
   (interactive)
@@ -275,7 +277,7 @@ Can be either a symbol, or a function returning a symbol.")
     (message "Restarting %s '%s' session" system (car old-session))
     (sesman-restart-session system old-session)))
 
- ;;;###autoload
+;;;###autoload
 (defun sesman-quit (which)
   "Terminate sesman session.
 When WHICH is nil, kill only the current session; when a single universal
@@ -295,7 +297,7 @@ t or 'all, kill all sessions."
        (if (= 1 (length sessions)) "session" "sessions")
        (mapcar #'car sessions)))))
 
- ;;;###autoload
+;;;###autoload
 (defun sesman-show-session-info (which)
   "Display session(s) info.
 When WHICH is nil, show info for current session; when a single universal
@@ -315,7 +317,7 @@ argument or 'all, show info for all sessions."
                   "\n"))
       (message "No %s sessions" system))))
 
- ;;;###autoload
+;;;###autoload
 (defun sesman-show-links ()
   "Display links active in the current context."
   (interactive)
@@ -325,25 +327,25 @@ argument or 'all, show info for all sessions."
         (message (mapconcat #'sesman--format-link links "\n"))
       (message "No %s links in the current context" system))))
 
- ;;;###autoload
+;;;###autoload
 (defun sesman-link-with-buffer ()
   "Associate a session with current buffer."
   (interactive)
   (sesman--link-session-interactively buffer))
 
- ;;;###autoload
+;;;###autoload
 (defun sesman-link-with-directory ()
   "Associate a session with current directory."
   (interactive)
   (sesman--link-session-interactively directory))
 
- ;;;###autoload
+;;;###autoload
 (defun sesman-link-with-project ()
   "Associate a session with current project."
   (interactive)
   (sesman--link-session-interactively project))
 
- ;;;###autoload
+;;;###autoload
 (defun sesman-unlink ()
   "Break any of the previously created links."
   (interactive)
@@ -356,24 +358,24 @@ argument or 'all, show info for all sessions."
 (defvar sesman-map
   (let (sesman-map)
     (define-prefix-command 'sesman-map)
-    (define-key sesman-map (kbd "C-i") 'sesman-show-session-info)
-    (define-key sesman-map (kbd   "i") 'sesman-show-session-info)
-    (define-key sesman-map (kbd "C-l") 'sesman-show-links)
-    (define-key sesman-map (kbd   "l") 'sesman-show-links)
-    (define-key sesman-map (kbd "C-s") 'sesman-start)
-    (define-key sesman-map (kbd   "s") 'sesman-start)
-    (define-key sesman-map (kbd "C-r") 'sesman-restart)
-    (define-key sesman-map (kbd   "r") 'sesman-restart)
-    (define-key sesman-map (kbd "C-q") 'sesman-quit)
-    (define-key sesman-map (kbd   "q") 'sesman-quit)
-    (define-key sesman-map (kbd "C-b") 'sesman-link-with-buffer)
-    (define-key sesman-map (kbd   "b") 'sesman-link-with-buffer)
-    (define-key sesman-map (kbd "C-d") 'sesman-link-with-directory)
-    (define-key sesman-map (kbd   "d") 'sesman-link-with-directory)
-    (define-key sesman-map (kbd "C-p") 'sesman-link-with-project)
-    (define-key sesman-map (kbd   "p") 'sesman-link-with-project)
-    (define-key sesman-map (kbd "C-u") 'sesman-unlink)
-    (define-key sesman-map (kbd "  u") 'sesman-unlink)
+    (define-key sesman-map (kbd "C-i") #'sesman-show-session-info)
+    (define-key sesman-map (kbd   "i") #'sesman-show-session-info)
+    (define-key sesman-map (kbd "C-l") #'sesman-show-links)
+    (define-key sesman-map (kbd   "l") #'sesman-show-links)
+    (define-key sesman-map (kbd "C-s") #'sesman-start)
+    (define-key sesman-map (kbd   "s") #'sesman-start)
+    (define-key sesman-map (kbd "C-r") #'sesman-restart)
+    (define-key sesman-map (kbd   "r") #'sesman-restart)
+    (define-key sesman-map (kbd "C-q") #'sesman-quit)
+    (define-key sesman-map (kbd   "q") #'sesman-quit)
+    (define-key sesman-map (kbd "C-b") #'sesman-link-with-buffer)
+    (define-key sesman-map (kbd   "b") #'sesman-link-with-buffer)
+    (define-key sesman-map (kbd "C-d") #'sesman-link-with-directory)
+    (define-key sesman-map (kbd   "d") #'sesman-link-with-directory)
+    (define-key sesman-map (kbd "C-p") #'sesman-link-with-project)
+    (define-key sesman-map (kbd   "p") #'sesman-link-with-project)
+    (define-key sesman-map (kbd "C-u") #'sesman-unlink)
+    (define-key sesman-map (kbd "  u") #'sesman-unlink)
     sesman-map)
   "Session management prefix keymap.")
 

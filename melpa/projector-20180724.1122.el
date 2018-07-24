@@ -4,7 +4,7 @@
 ;;
 ;; Author: Justin Talbott <justin@waymondo.com>
 ;; URL: https://github.com/waymondo/projector
-;; Package-Version: 20180712.1549
+;; Package-Version: 20180724.1122
 ;; Version: 0.3.1
 ;; Package-Requires: ((alert "1.1") (projectile "0.11.0") (cl-lib "0.5"))
 ;; License: GNU General Public License version 3, or (at your option) any later version
@@ -141,7 +141,7 @@ This is usually most helpful to set on a directoy local level via a
      ((eq projector-completion-system 'ivy)
       (if (fboundp 'ivy-read)
           (let ((project-root (projectile-project-root)))
-            (ivy-read prompt projector-ivy-command-history
+            (ivy-read prompt projector-command-history
                       :caller 'projector-run-command-buffer-prompt
                       :history 'projector-ivy-command-history
                       :action (lambda (cmd)

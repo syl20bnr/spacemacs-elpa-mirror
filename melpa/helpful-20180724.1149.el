@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/helpful
-;; Package-Version: 20180724.101
+;; Package-Version: 20180724.1149
 ;; Keywords: help, lisp
 ;; Version: 0.13
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (dash-functional "1.2.0") (s "1.11.0") (f "0.20.0") (elisp-refs "1.2") (shut-up "0.3"))
@@ -1805,7 +1805,7 @@ state of the current symbol."
            (t "Value")))
          (cond
           (helpful--view-literal
-           (helpful--pretty-print val))
+           (helpful--syntax-highlight (helpful--pretty-print val)))
           ;; Allow strings to be viewed with properties rendered in
           ;; Emacs, rather than as a literal.
           ((stringp val)
