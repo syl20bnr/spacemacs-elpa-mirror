@@ -2,7 +2,7 @@
 
 ;; Author: wouter bolsterlee <wouter@bolsterl.ee>
 ;; Version: 1.0.0
-;; Package-Version: 20180614.253
+;; Package-Version: 20180725.446
 ;; Package-Requires: ((emacs "24.4") (dash "2.12.0") (dash-functional "2.12.0") (magit-popup "2.12.0") (projectile "0.14.0") (s "1.12.0"))
 ;; Keywords: pytest, test, python, languages, processes, tools
 ;; URL: https://github.com/wbolster/emacs-python-pytest
@@ -37,6 +37,7 @@
 ;;; Code:
 
 (require 'comint)
+(require 'compile)
 (require 'python)
 
 (require 'dash)
@@ -131,6 +132,9 @@ When non-nil only ‘test_foo()’ will match, and nothing else."
 
 (defvar-local python-pytest--current-command nil
   "Current command; used in python-pytest-mode buffers.")
+
+(fmakunbound 'python-pytest-popup)
+(makunbound 'python-pytest-popup)
 
 ;;;###autoload (autoload 'python-pytest-popup "python-pytest" nil t)
 (magit-define-popup python-pytest-popup
@@ -300,7 +304,8 @@ With a prefix ARG, allow editing."
 
 (define-derived-mode python-pytest-mode
   comint-mode "pytest"
-  "Major mode for pytest sessions (derived from comint-mode).")
+  "Major mode for pytest sessions (derived from comint-mode)."
+  (compilation-setup))
 
 (cl-defun python-pytest--run (&key args file func edit)
   "Run pytest for the given arguments."
@@ -354,7 +359,9 @@ With a prefix ARG, allow editing."
       (when process
         (delete-process process))
       (erase-buffer)
-      (python-pytest-mode)
+      (unless (eq major-mode 'python-pytest-mode)
+        (python-pytest-mode))
+      (compilation-forget-errors)
       (insert (format "cwd: %s\ncmd: %s\n\n" default-directory command))
       (make-local-variable 'python-pytest-arguments)
       (setq python-pytest--current-command command
