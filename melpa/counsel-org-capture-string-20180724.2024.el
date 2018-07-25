@@ -4,7 +4,7 @@
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 1.0-pre
-;; Package-Version: 20180707.217
+;; Package-Version: 20180724.2024
 ;; Package-Requires: ((emacs "25.1") (ivy "0.10"))
 ;; Keywords: outlines
 ;; URL: https://github.com/akirak/counsel-org-capture-string
@@ -65,8 +65,38 @@ When nil, the default value is used."
          (set key value)
          (map-put ivy-height-alist 'counsel-org-capture-string value)))
 
+(defcustom counsel-org-capture-string-filter-templates t
+  "Exclude templates only that contain \"%i\" in the body.
+
+This affects the descriptive list of templates (which is bound on
+\"c\" by default).  As `org-capture-string' sets the initial text
+of `org-capture' to its argument, it doesn't make sense if the
+template doesn't contain a place holder for the initial text.
+
+When this option is turned on, the template list function checks
+the template strings and eliminate that don't contain a place holder.
+Note that non-string templates, i.e. a file or a function, are also
+excluded if this option is turned on."
+  :group 'counsel-org-capture-string
+  :type 'boolean)
+
+(defcustom counsel-org-capture-string-use-ivy-selector nil
+  "Use an Ivy template selector as the default action.
+
+When this option is non-nil, `counsel-org-capture-string' uses
+an Ivy-based template selector as the default action.
+Otherwise, it uses the built-in template selector of `org-capture'."
+  :group 'counsel-org-capture-string
+  :type 'boolean)
+
 (defvar counsel-org-capture-string--candidates nil)
 (defvar counsel-org-capture-string-history nil)
+
+;;;; Faces
+(defface counsel-org-capture-string-template-body-face
+  '((t :inherit font-lock-builtin-face))
+  "Face for template bodies."
+  :group 'counsel-org-capture-string)
 
 ;;;###autoload
 (defun counsel-org-capture-string ()
@@ -76,7 +106,10 @@ When nil, the default value is used."
             #'counsel-org-capture-string--candidates
             :caller 'counsel-org-capture-string
             :history 'counsel-org-capture-string-history
-            :action #'org-capture-string))
+            :action
+            (if counsel-org-capture-string-use-ivy-selector
+                #'counsel-org-capture-string--select
+              #'org-capture-string)))
 
 (defun counsel-org-capture-string--candidates (&optional _string
                                                          _collection
@@ -99,25 +132,49 @@ When nil, the default value is used."
 
 (defun counsel-org-capture-string--template-list (_string _candidates _)
   "Generate a descriptive list of `org-capture-templates'."
-  (let* ((table (cl-loop for (key desc type target) in org-capture-templates
+  (let* ((table (cl-loop for (key desc type target body) in org-capture-templates
                          when type
+                         when (or (not counsel-org-capture-string-filter-templates)
+                                  (and (stringp body)
+                                       (string-match-p "%i" body)))
                          collect (list key
                                        desc
                                        (symbol-name type)
                                        (pcase target
                                          (`(id ,id) (format "id:%s" id))
-                                         (`(clock) "clock")
-                                         (`(function ,func) (symbol-name func))
-                                         (`(,_ ,filename . ,_) (file-name-nondirectory filename))))))
+                                         (`(clock) "(clock)")
+                                         (`(function ,func) (if (symbolp func)
+                                                                (symbol-name func)
+                                                              "(lambda)"))
+                                         (`(,_ ,filename . ,_) (file-name-nondirectory filename))
+                                         (_ (prin1-to-string target))))))
          (w1 (apply #'max (mapcar (lambda (cells) (length (nth 0 cells)))
                                   table)))
          (w2 (apply #'max (mapcar (lambda (cells) (length (nth 1 cells)))
                                   table)))
          (w3 (apply #'max (mapcar (lambda (cells) (length (nth 2 cells)))
                                   table)))
-         (fmt (format "%%-%ds  %%-%ds  %%-%ds  %%s" w1 w2 w3)))
+         (w4 (apply #'max (mapcar (lambda (cells) (length (nth 3 cells)))
+                                  table)))
+         (fmt (format "%%-%ds  %%-%ds  %%-%ds  %%-%ds  " w1 w2 w3 w4)))
     (mapcar (lambda (cell) (apply #'format fmt cell))
             table)))
+
+(defun counsel-org-capture-string--template-list-transformer (str)
+  (let* ((name (car (split-string str)))
+         (template (assoc name org-capture-templates))
+         (body (nth 4 template)))
+    (concat str
+            (propertize (pcase body
+                          ((pred stringp)
+                           (string-join (split-string body "\n") "\\n"))
+                          (`(file ,filename)
+                           (format "(file %s)" filename))
+                          (`(function ,function)
+                           (if (symbolp function)
+                               (format "(function %s)" function)
+                             "(function lambda)")))
+                        'face 'counsel-org-capture-string-template-body-face))))
 
 (defun counsel-org-capture-string--select (string)
   "Capture something with STRING as an initial input."
@@ -132,6 +189,9 @@ When nil, the default value is used."
 (ivy-add-actions 'counsel-org-capture-string
                  '(("c" counsel-org-capture-string--select
                     "Select a template via Ivy")))
+
+(ivy-set-display-transformer 'counsel-org-capture-string--select
+                             #'counsel-org-capture-string--template-list-transformer)
 
 ;;;; Example candidate functions
 
