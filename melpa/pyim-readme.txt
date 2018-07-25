@@ -154,6 +154,16 @@ pyim 支持双拼输入模式，用户可以通过变量 `pyim-default-scheme' �
 2. 用户可以使用变量 `pyim-schemes' 添加自定义双拼方案。
 3. 用户可能需要重新设置 `pyim-translate-trigger-char'。
 
+*** 让 pyim 使用 rime (实验特性)
+pyim 可以通过 [[https://gitlab.com/liberime/liberime][liberime]] 包来和
+rime 配合使用。
+
+#+BEGIN_EXAMPLE
+(require 'liberime)
+(rime-start "$rime_shared_data_dir" "$user_data_dir")
+(setq pyim-default-scheme 'rime)
+#+END_EXAMPLE
+
 *** 使用五笔输入
 pyim 支持五笔输入模式，用户可以通过变量 `pyim-default-scheme' 来设定：
 

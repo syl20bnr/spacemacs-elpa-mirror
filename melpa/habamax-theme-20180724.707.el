@@ -2,7 +2,7 @@
 
 ;; Author: Maxim Kim <habamax@gmail.com>
 ;; Url: https://github.com/habamax/habamax-theme
-;; Package-Version: 20180702.958
+;; Package-Version: 20180724.707
 ;; Package-Requires: ((emacs "24"))
 
 ;;; Commentary:
@@ -316,15 +316,26 @@
 
 
    ;; rainbow-delimiters
+   ;; '(rainbow-delimiters-depth-1-face ((t (:foreground "#000000"))))
+   ;; '(rainbow-delimiters-depth-2-face ((t (:foreground "#cf0000"))))
+   ;; '(rainbow-delimiters-depth-3-face ((t (:foreground "#ff00ff"))))
+   ;; '(rainbow-delimiters-depth-4-face ((t (:foreground "#ff7f50"))))
+   ;; '(rainbow-delimiters-depth-5-face ((t (:foreground "#cf0000"))))
+   ;; '(rainbow-delimiters-depth-6-face ((t (:foreground "#ff00ff"))))
+   ;; '(rainbow-delimiters-depth-7-face ((t (:foreground "#ff7f50"))))
+   ;; '(rainbow-delimiters-depth-8-face ((t (:foreground "#cf0000"))))
+   ;; '(rainbow-delimiters-depth-9-face ((t (:foreground "#ff00ff"))))
+
    '(rainbow-delimiters-depth-1-face ((t (:foreground "#000000"))))
-   '(rainbow-delimiters-depth-2-face ((t (:foreground "#8a2be2"))))
-   '(rainbow-delimiters-depth-3-face ((t (:foreground "#008b8b"))))
-   '(rainbow-delimiters-depth-4-face ((t (:foreground "#ff7f50"))))
-   '(rainbow-delimiters-depth-5-face ((t (:foreground "#3450F2"))))
-   '(rainbow-delimiters-depth-6-face ((t (:foreground "#6F1E54"))))
-   '(rainbow-delimiters-depth-7-face ((t (:foreground "#0DB100"))))
-   '(rainbow-delimiters-depth-8-face ((t (:foreground "#47D2E5"))))
-   '(rainbow-delimiters-depth-9-face ((t (:foreground "#000000"))))
+   '(rainbow-delimiters-depth-2-face ((t (:foreground "#302020"))))
+   '(rainbow-delimiters-depth-3-face ((t (:foreground "#504040"))))
+   '(rainbow-delimiters-depth-4-face ((t (:foreground "#706060"))))
+   '(rainbow-delimiters-depth-5-face ((t (:foreground "#908080"))))
+   '(rainbow-delimiters-depth-6-face ((t (:foreground "#b0a0a0"))))
+   '(rainbow-delimiters-depth-7-face ((t (:foreground "#d0c0c0"))))
+   '(rainbow-delimiters-depth-8-face ((t (:foreground "#e0d0d0"))))
+   '(rainbow-delimiters-depth-9-face ((t (:foreground "#f0e0e0"))))
+
 
    ;; asciidoctor-mode
    ;; `(asciidoctor-header-delimiter-face ((t (:foreground ,color-fg-dim))))
