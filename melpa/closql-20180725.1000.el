@@ -5,7 +5,7 @@
 ;; Author: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/emacscollective/closql
 ;; Package-Requires: ((emacs "25.1") (emacsql-sqlite "2.0.3"))
-;; Package-Version: 20180714.1208
+;; Package-Version: 20180725.1000
 ;; Keywords: extensions
 
 ;; This file is not part of GNU Emacs.
@@ -288,7 +288,7 @@
                              arg))
                          args))))
 
-(cl-defmethod closql-insert ((db closql-database) obj)
+(cl-defmethod closql-insert ((db closql-database) obj &optional replace)
   (closql--oset obj 'closql-database db)
   (let (alist)
     (dolist (slot (eieio-class-slots (eieio--object-class obj)))
@@ -298,7 +298,10 @@
           (push (cons slot (closql-oref obj slot)) alist)
           (closql--oset obj slot eieio-unbound))))
     (emacsql-with-transaction db
-      (emacsql db [:insert-into $i1 :values $v2]
+      (emacsql db
+               (if replace
+                   [:insert-or-replace-into $i1 :values $v2]
+                 [:insert-into $i1 :values $v2])
                (oref-default obj closql-table)
                (pcase-let ((`(,class ,_db . ,values)
                             (closql--intern-unbound

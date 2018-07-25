@@ -5,7 +5,7 @@
 ;; Author: Paul van Dam <pvandam@m-industries.com>
 ;; Maintainer: Paul van Dam <pvandam@m-industries.com>
 ;; Version: 1.0.0
-;; Package-Version: 20180725.352
+;; Package-Version: 20180725.1034
 ;; Created: 13 October 2017
 ;; URL: https://github.com/M-industries/AlanForEmacs
 ;; Homepage: https://alan-platform.com/
@@ -82,6 +82,15 @@ against the `alan-project-root'."
   :group 'alan
   :safe 'stringp)
 (make-variable-buffer-local 'alan-language-definition)
+
+(defconst alan-add-line-in-braces-rule
+  (lambda (when (and (derived-mode-p 'alan-mode)
+					 (looking-back "\\s(\\s-*\n\\s-*") (looking-at-p "\\s)"))
+			'after-stay))
+  "A rule that can be added to `electric-layout-rules'.
+
+It can be added locally by adding it to the alan-hook:
+(set (make-variable-buffer-local 'electric-layout-rules) '(alan-add-line-in-braces-rule))")
 
 ;;; Alan mode
 

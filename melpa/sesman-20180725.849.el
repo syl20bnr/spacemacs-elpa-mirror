@@ -3,7 +3,7 @@
 ;; Copyright (C) 2018, Vitalie Spinu
 ;; Author: Vitalie Spinu
 ;; URL: https://github.com/vspinu/sesman
-;; Package-Version: 20180724.936
+;; Package-Version: 20180725.849
 ;; Keywords: process
 ;; Version: 0.1.1-snapshot
 ;; Package-Requires: ((emacs "25"))
@@ -430,8 +430,8 @@ By default, calls `sesman-quit-session' and then
 (cl-defgeneric sesman-more-relevant-p (_system session1 session2)
   "Return non-nil if SESSION1 should be sorted before SESSION2.
 By default, sort by session name. Systems should overwrite this method to
-provide a more meaningful ordering. If your system objects are buffers you
-can use `sesman-more-relevant-p' utility in this method."
+provide a more meaningful ordering. If your system objects are buffers you can
+use `sesman-more-recent-p' utility in this method."
   (not (string-greaterp (car session1) (car session2))))
 
 

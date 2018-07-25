@@ -4,7 +4,7 @@
 
 ;; Author: Christopher Monsanto <chris@monsan.to>, Alexey Romanov <alexey.v.romanov@gmail.com>
 ;; Version: 0.1
-;; Package-Version: 20180330.1118
+;; Package-Version: 20180725.1212
 ;; URL: https://github.com/alexeyr/company-auctex/
 ;; Package-Requires: ((yasnippet "0.8.0") (company "0.8.0") (auctex "11.87"))
 
@@ -265,7 +265,7 @@
   (interactive (list 'interactive))
   (cl-case command
     (interactive (company-begin-backend 'company-auctex-labels))
-    (prefix (company-auctex-prefix "\\\\\\(?:eq\\|auto\\)?ref{\\([^}]*\\)\\="))
+    (prefix (company-auctex-prefix "\\\\\\(?:eq\\|auto\\|c\\)?ref{\\([^}]*\\)\\="))
     (candidates (company-auctex-label-candidates arg))))
 
 

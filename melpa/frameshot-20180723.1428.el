@@ -6,7 +6,7 @@
 ;; Homepage: https://github.com/tarsius/frameshot
 
 ;; Package-Requires: ((emacs "25.3"))
-;; Package-Version: 20180228.408
+;; Package-Version: 20180723.1428
 
 ;; This file is not part of GNU Emacs.
 
@@ -25,16 +25,30 @@
 
 ;;; Commentary:
 
-;; This package provides a command for taking screenshots of
-;; an individual frame.  It also support setting up the frame
-;; according to simple predetermined rules.
+;; This package provides a command for taking screenshots of an
+;; individual frame.  It also support setting up the frame according
+;; to simple predetermined rules.  Simple examples can be found at
+;; https://github.com/tarsius/emacsair.me/tree/master/assets/readme.
 
 ;; This package uses the `import' and `convert' binaries from
 ;; the `imagemagick' package.
 
 ;;; Code:
 
-(defvar frameshot-config nil
+(eval-when-compile (require 'subr-x))
+
+(defgroup frameshot nil
+  "Take screenshots of a frame."
+  :group 'multimedia)
+
+(defcustom frameshot-default-config nil
+  "Default Frameshot configuration.
+Use `frameshot-default-setup' to use this configuration.
+See `frameshot-config' for information about the format."
+  :group 'frameshot
+  :type 'sexp)
+
+(defcustom frameshot-config nil
   "Current Frameshot configuration.
 
 The value has this form:
@@ -55,7 +69,14 @@ is WIDTH - SIGMA * 4.  Only after adding the drop shadow the
 final image has the proportions specified by HEIGHT and WIDTH.
 
 The value of this variable is typically set by passing an alist
-that matches the above form to `frameshot-setup'.")
+that matches the above form to `frameshot-setup'.
+
+WARNING: While this variable is defined as a customizable option,
+you should never actually save your customizations.  You may
+however, and that is why this is defined as an option, customize
+and *set* (not save) the value for the current session."
+  :group 'frameshot
+  :type 'sexp)
 
 (defvar frameshot-setup-hook nil
   "Hook run by `frameshot-setup'.
@@ -79,8 +100,12 @@ examples.")
 Set variable `frameshot-config' to CONFIG, resize the selected
 frame according to CONFIG, and call `frameshot-setup-hook'.  If
 CONFIG is nil, then use the value of `frameshot-config' instead.
+See `frameshot-config' for the format of CONFIG.
 
-See `frameshot-config' for the format of CONFIG."
+Also run `frameshot-setup-hook' and `frameshot-clear'.
+
+When called interactively, then reload the previously loaded
+configuration if any."
   (interactive)
   (frameshot-mode 1)
   (setq frameshot-buffer (get-buffer-create " *frameshot*"))
@@ -90,14 +115,24 @@ See `frameshot-config' for the format of CONFIG."
   (let-alist frameshot-config
     (let ((shadow (if .shadow.sigma (* 4 .shadow.sigma) 0))
           (frame (selected-frame)))
-      (set-frame-size
-       frame
-       (- .width shadow
-          (or  left-fringe-width (frame-parameter frame  'left-fringe))
-          (or right-fringe-width (frame-parameter frame 'right-fringe)))
-       (- .height shadow)
-       t)))
+      (when .width
+        (set-frame-width
+         frame
+         (- .width shadow
+            (or  left-fringe-width (frame-parameter frame  'left-fringe))
+            (or right-fringe-width (frame-parameter frame 'right-fringe)))
+         nil t))
+      (when .height
+        (set-frame-height frame (- .height shadow) nil t))))
   (frameshot-clear))
+
+;;;###autoload
+(defun frameshot-default-setup ()
+  "Setup the selected frame using `frame-default-config'."
+  (interactive)
+  (unless frameshot-default-config
+    (user-error "`frameshot-default-config' is nil"))
+  (frameshot-setup frameshot-default-config))
 
 ;;;###autoload
 (defun frameshot-clear ()
@@ -110,9 +145,9 @@ See `frameshot-config' for the format of CONFIG."
 (defun frameshot-take ()
   "Take a screenshot of the selected frame."
   (interactive)
-  (let ((file (format "%s-%s.png"
-                      (format-time-string "%Y%m%d-%H:%M:%S")
-                      (cdr (assq 'name frameshot-config)))))
+  (let ((file (concat (and-let* ((name (cdr (assq 'name frameshot-config))))
+                        (concat name "-"))
+                      (format-time-string "%Y%m%d-%H:%M:%S") ".png")))
     (frameshot--import  file)
     (frameshot--convert file)))
 
@@ -136,6 +171,8 @@ See `frameshot-config' for the format of CONFIG."
        file))))
 
 (defun frameshot--call-process (program &rest args)
+  (unless frameshot-buffer
+    (setq frameshot-buffer (get-buffer-create " *frameshot*")))
   (with-current-buffer frameshot-buffer
     (goto-char (point-max))
     (insert "\n$ " (mapconcat #'identity (cons program args) " ") "\n"))

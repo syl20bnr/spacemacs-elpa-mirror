@@ -9,7 +9,7 @@
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Artur Malabarba <bruce.connor.am@gmail.com>
 ;; URL: http://github.com/clojure-emacs/clojure-mode
-;; Package-Version: 20180709.648
+;; Package-Version: 20180725.933
 ;; Keywords: languages clojure clojurescript lisp
 ;; Version: 5.9.0-snapshot
 ;; Package-Requires: ((emacs "25.1"))
@@ -1826,7 +1826,8 @@ content) are considered part of the preceding sexp."
 Note that this won't work well in buffers with multiple namespace
 declarations (which rarely occur in practice) and you'll
 have to invalidate this manually after changing the ns for
-a buffer."
+a buffer.  If you update the ns using `clojure-update-ns'
+the cached value will be updated automatically."
   :type 'boolean
   :safe #'booleanp
   :package-version '(clojure-mode . "5.8.0"))

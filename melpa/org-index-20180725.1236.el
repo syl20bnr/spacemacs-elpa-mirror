@@ -4,7 +4,7 @@
 
 ;; Author: Marc Ihm <org-index@2484.de>
 ;; URL: https://github.com/marcIhm/org-index
-;; Package-Version: 20180724.809
+;; Package-Version: 20180725.1236
 ;; Version: 5.8.99
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -39,7 +39,11 @@
 ;;  by usage count and date, so that recently or frequently used entries
 ;;  appear first in the list of results.
 ;;
-;;  In addition, org-index introduces these supplemental concepts:
+;;  Please note, that org-index uses org-id to add an id-property to all
+;;  nodes in the index.
+;;
+;;  In the addition to the index table, org-index introduces these
+;;  supplemental concepts:
 ;;
 ;;  - 'References' are decorated numbers (e.g. 'R237' or '--455--'); they are
 ;;     well suited to be used outside of org, e.g. in folder names,
@@ -337,7 +341,11 @@ of matching lines is updated with every keystroke; results are sorted
 by usage count and date, so that recently or frequently used entries
 appear first in the list of results.
 
-In addition, org-index introduces these supplemental concepts:
+Please note, that org-index uses org-id to add an id-property to all
+nodes in the index.
+
+In the addition to the index table, org-index introduces these
+supplemental concepts:
 
 - 'References' are decorated numbers (e.g. 'R237' or '--455--'); they are
    well suited to be used outside of org, e.g. in folder names,
@@ -824,9 +832,10 @@ interactive calls."
 
         (if (and oidx--within-index-node
                  (org-at-table-p))
-            (let (char col num)
-              (setq char (read-char "Please specify, which column to go to (r=ref, k=keywords, c=category, y=yank): "))
-              (unless (memq char (list ?r ?k ?c ?y))
+            (let ((char-choices (list ?r ?k ?c ?y))
+                  char col num)
+              (setq char (read-char-choice "Please specify, which column to go to (r=ref, k=keywords, c=category, y=yank): " char-choices))
+              (unless (memq char char-choices)
                 (error (format "Invalid char '%c', cannot goto this column" char)))
               (setq col (cdr (assoc char '((?r . ref) (?k . keywords) (?c . category) (?y . yank)))))
               (setq num (oidx--column-num col))
@@ -905,7 +914,7 @@ interactive calls."
                       (progn
                         (setq oidx--last-ws-message nil)
                         (oidx--ws-circle))
-                    (oidx--ws-dispatch))))
+                    (org-index-working-set))))
           (setq message-text (concat (upcase (substring mt 0 1)) (substring mt 1)))))
 
 
@@ -2763,14 +2772,15 @@ specify flag TEMPORARY for th new table temporary, maybe COMPARE it with existin
 
 
 ;; Functions for working-set
-(defun oidx--ws-dispatch ()
+(defun org-index-working-set ()
   "Central dispatch for handling working-set."
   (interactive)
-  (let (id text more-text char prompt ids-up-to-top)
+  (let ((char-choices (list ?s ?a ?d ?u ?w ?m ?c ? ))
+        id text more-text char prompt ids-up-to-top)
 
     (setq prompt (format "Please specify action on working-set of %d nodes (s,a,d,r,m,w,c,space or ? for short help) - " (length oidx--ws-ids)))
-    (while (not (memq char (list ?s ?a ?d ?u ?w ?m ?c ? )))
-      (setq char (read-char-exclusive prompt))
+    (while (not (memq char char-choices))
+      (setq char (read-char-choice prompt char-choices))
       (setq prompt (format "Actions on working-set of %d nodes:  s)et working-set to this node alone,  a)ppend this node to set,  d)elete this node from list,  u)ndo last modification of working set, m)enu to edit working set (same as 'w'), c) enter working set circl (same as space)e.  Please choose - " (length oidx--ws-ids))))
     (setq text
           (cond
@@ -2978,7 +2988,7 @@ See `oidx--ws-menu-rebuld' for a list of commands."
             (oidx--ws-goto-id (oidx--ws-menu-get-id))
             (delete-other-windows)
             (recenter 1)
-            (read-char-exclusive "Peeking into node, any key to return." nil 10)))))
+            (read-char "Peeking into node, any key to return." nil 10)))))
 
     (define-key keymap (kbd "d")
       (lambda () (interactive)
