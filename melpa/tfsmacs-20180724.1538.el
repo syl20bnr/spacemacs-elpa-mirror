@@ -4,7 +4,7 @@
 ;;
 ;; Author: Dino Chiesa <dpchiesa@outlook.com>, Sebastian Monia <smonia@outlook.com>
 ;; URL: http://github.com/sebasmonia/tfsmacs/
-;; Package-Version: 20180723.1659
+;; Package-Version: 20180724.1538
 ;; Package-Requires: ((emacs "25") (tablist "0.70"))
 ;; Version: 1.25
 ;; Keywords: tfs, vc
@@ -17,7 +17,7 @@
 
 ;; Steps to setup:
 ;;   1. Obtain the Team Explorer Everywhere CLI tool from https://github.com/Microsoft/team-explorer-everywhere/releases
-;;      (don't forget to run "tf eula" to accept the tool's terms and conditions)
+;;      (don't forget to run "tf eula" to accept the terms and conditions)
 ;;   2. Place tfsmacs.el in your load-path.  Or install from MELPA.
 ;;   3. In your .emacs file you can setup keybindings for the tfsmacs commands, there's a keymap:
 ;;        (require 'tfsmacs)
@@ -184,44 +184,55 @@ If NO-WORKSPACE is provided, said parameter won't be added."
   
 (defun tfsmacs--async-command-callback (_process output)
   "Accumulate the OUTPUT of PROCESS."
-  ;; the test below prevents the message appearing when we already gave up
-  ;; on the command (so, situations when we receive output way after the
-  ;; timeout elapsed)
-  (when (> tfsmacs--command-retries 0)
-    (setq tfsmacs--command-output-buffer (concat tfsmacs--command-output-buffer output))
-    (setq tfsmacs--command-retries 1) ;; Reset the retries counter as long as output is received
-    (message "TFS: Receiving command output...")))
+  ;; the test below diffentiates a command being processed from
+  ;; one where we timed out but might still be running
+  (if (> tfsmacs--command-retries 0)
+      (progn
+        (setq tfsmacs--command-output-buffer (concat tfsmacs--command-output-buffer output))
+        (setq tfsmacs--command-retries 1) ;; Reset the retries counter as long as output is received
+        (message "TFS: Receiving command output..."))
+    (progn
+      (tfsmacs--append-to-log (format "Timedout command partial output:\n%s\n-------"
+                                      output)))))
 
 (defun tfsmacs--async-command-complete (callback)
-  "Check if the last command finished running using a marker.
+  "Check if the last command finished by looking for an ExitCode.
 If it did invoke CALLBACK, else re-schedule the function."
   (setq tfsmacs--command-retries (+ tfsmacs--command-retries 1))
   (cond ((string-match "ExitCode: 0\n" tfsmacs--command-output-buffer)
          (let ((output (replace-regexp-in-string "ExitCode: 0\n" "" tfsmacs--command-output-buffer)))
            (message "TFS: Processing command output...")
            (funcall callback output)))
-        ((string-match "ExitCode: " tfsmacs--command-output-buffer) ;; this will match all exit codes BUT 0 (since it matches in prev. expression)
+        ((string-match "ExitCode: " tfsmacs--command-output-buffer) ;;  will match all exit codes BUT 0 (since it matches in prev. expression)
          (tfsmacs--async-command-handle-error)
          (funcall callback ""))
         (t
          (if (< tfsmacs--command-retries tfsmacs-async-command-retries)
              (run-at-time tfsmacs-async-command-timer nil 'tfsmacs--async-command-complete callback)
            (progn
-             (tfsmacs--async-command-handle-error)
+             (tfsmacs--async-command-handle-timeout)
              (funcall callback ""))))))
 
 (defun tfsmacs--async-command-schedule-check (callback)
   "Schedule `tfsmacs--async-command-complete` with CALLBACK."
   (run-at-time tfsmacs-async-command-timer nil 'tfsmacs--async-command-complete callback))
 
+(defun tfsmacs--async-command-handle-timeout ()
+  "Reset the state after a command timed out."
+  (message "TFS: Command timed out. Command output, if any, will be dumped in the log buffer.")
+  (tfsmacs--append-to-log (format "Timedout command partial output:\n%s\n-----------------------"
+                                  tfsmacs--command-output-buffer))
+  ;; prevent the "receiving output" message if we already timed out, and send subsequent output
+  ;; to the TFS log rather than processing it.
+  (setq tfsmacs--command-retries -1))
+
 (defun tfsmacs--async-command-handle-error ()
-  "Reset the state after a command didn't complete successfully."
-  (tfsmacs--append-to-log (format "---Incomplete output:---\n%s\n-----------------------" tfsmacs--command-output-buffer))
-  (setq tfsmacs--command-retries -1) ;; prevents the "receiving output" message if we already timed out
+  "Reset the state after a command failed."
+  (tfsmacs--append-to-log (format "Failed command output:\n%s\n-----------------------"
+                                  tfsmacs--command-output-buffer))
   ;; Just in case the command killed the process instance, this will start another one
   ;; or just return the existing one, which is inexpensive
-  (tfsmacs--get-or-create-process)
-  (message "TFS: Command not completed. See log for details."))
+  (tfsmacs--get-or-create-process))
     
 (defun tfsmacs--get-workspace-parameter ()
   "Return the collection parameter if configured, or empty string."
@@ -513,12 +524,10 @@ PATH and FILES are used only for internal calls."
   (when (> tfsmacs--command-retries 0) ;; if the command failed, don't run
     ;; the block below "fixes" the output when there are not subdirs/files to list
     ;; so that the same processing applies to both cases
-    (tfsmacs--append-to-log (format "---\n%s\n---" output))
     (when (string-prefix-p "No items found under " output)
       (setq output (replace-regexp-in-string "\n" "" output)) ;; only first line has content
       (setq output (format "%s:\n[No items found under in this dir. Try displaying files.]\n\n"
                            (cadr (split-string output "No items found under ")))))
-    (tfsmacs--append-to-log (format "---\n%s\n---" output))
     (get-buffer-create tfsmacs--server-dirs-buffer-name)
     (let ((lines (butlast (split-string output "\n") 2)))
       (setq tfsmacs--server-current-dir (substring (car lines) 0 -1))
@@ -992,7 +1001,6 @@ If VERSION to get is not provided, it will be prompted."
       (progn
         (let* ((status-dir (tfsmacs--quote-string (tfsmacs--select-status-directory)))
                (buffer (get-buffer-create "*TFS Status [...]*")))
-          (tfsmacs--append-to-log status-dir)
           (with-current-buffer buffer
             (setq tfsmacs--buffer-status-dir status-dir)
             (tfsmacs--get-pending-changes status-dir)
@@ -1000,7 +1008,6 @@ If VERSION to get is not provided, it will be prompted."
 
 (defun tfsmacs--get-pending-changes (directory)
   "Internal call to run the status command in DIRECTORY."
-  (tfsmacs--append-to-log directory)
   (let* ((command (list "status" directory "-recursive" "-nodetect"  "-format:xml")))
     (message "TFS: Obtaining list of pending changes...")
     (tfsmacs--async-command command 'tfsmacs--status-callback)))

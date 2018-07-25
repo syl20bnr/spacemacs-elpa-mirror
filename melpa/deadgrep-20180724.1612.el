@@ -4,7 +4,7 @@
 
 ;; Author: Wilfred Hughes <me@wilfred.me.uk>
 ;; URL: https://github.com/Wilfred/deadgrep
-;; Package-Version: 20180714.1716
+;; Package-Version: 20180724.1612
 ;; Keywords: tools
 ;; Version: 0.5
 ;; Package-Requires: ((emacs "25.1") (dash "2.12.0") (s "1.11.0") (spinner "1.7.3") (projectile "0.14.0"))
@@ -111,6 +111,9 @@ This is stored as a cons cell of integers (lines-before . lines-after).")
   "We can't guarantee that our process filter will always receive whole lines.
 We save the last line here, in case we need to append more text to it.")
 
+(defvar-local deadgrep--debug-command nil)
+(defvar-local deadgrep--debug-first-output nil)
+
 (defconst deadgrep--position-column-width 5)
 
 (defconst deadgrep--color-code
@@ -206,9 +209,16 @@ We save the last line here, in case we need to append more text to it.")
           (save-excursion
             (let ((inhibit-read-only t))
               (goto-char (point-max))
-              (insert output))))))))
+              (insert output))))
+
+        (message "Deadgrep finished")))))
 
 (defun deadgrep--process-filter (process output)
+  ;; Searches may see a lot of output, but it's really useful to have
+  ;; a snippet of output when debugging. Store the first output received.
+  (unless deadgrep--debug-first-output
+    (setq deadgrep--debug-first-output output))
+
   ;; If we had an unfinished line from our last call, include that.
   (when deadgrep--remaining-output
     (setq output (concat deadgrep--remaining-output output))
@@ -678,12 +688,12 @@ buffer."
               (max deadgrep--position-column-width
                    (length (number-to-string line-number))))
              (i 0)
-             (start-pos 0))
+             (start-pos 0)
+             (line-end-pos (line-end-position)))
 
         (forward-char line-number-width)
 
-        (while (and (not (looking-at "\n"))
-                    (not (bobp)))
+        (while (<= (point) line-end-pos)
           ;; If we've just entered a match, record the start position.
           (when (and (deadgrep--match-face-p (point))
                      (not (deadgrep--match-face-p (1- (point)))))
@@ -840,13 +850,15 @@ This will either be a button, a filename, or a search result."
   "Start a ripgrep search."
   (setq deadgrep--spinner (spinner-create 'progress-bar t))
   (spinner-start deadgrep--spinner)
-  (let ((process
-         (start-process-shell-command
-          (format "rg %s" search-term)
-          (current-buffer)
-          (deadgrep--format-command
-           search-term search-type case
-           deadgrep--context))))
+  (let* ((command (deadgrep--format-command
+                   search-term search-type case
+                   deadgrep--context))
+         (process
+          (start-process-shell-command
+           (format "rg %s" search-term)
+           (current-buffer)
+           command)))
+    (setq deadgrep--debug-command command)
     (set-process-filter process #'deadgrep--process-filter)
     (set-process-sentinel process #'deadgrep--process-sentinel)))
 
@@ -935,6 +947,26 @@ for a string, offering the current word as a default."
      search-term
      deadgrep--search-type
      deadgrep--search-case)))
+
+(defun deadgrep-debug ()
+  "Show a buffer with some debug information about the current search."
+  (interactive)
+  (let ((command deadgrep--debug-command)
+        (output deadgrep--debug-first-output)
+        (buf (get-buffer-create "*deadgrep debug*"))
+        (inhibit-read-only t))
+    (pop-to-buffer buf)
+    (erase-buffer)
+    (special-mode)
+    (setq buffer-read-only t)
+
+    (insert
+     "About your environment:\n"
+     (format "Platform: %s\n" system-type)
+     (format "Emacs version: %s\n" emacs-version)
+     (format "Command: %s\n" command)
+     (format "\nInitial output from ripgrep:\n%S" output)
+     (format "\n\nPlease file bugs at https://github.com/Wilfred/deadgrep/issues/new"))))
 
 (provide 'deadgrep)
 ;;; deadgrep.el ends here

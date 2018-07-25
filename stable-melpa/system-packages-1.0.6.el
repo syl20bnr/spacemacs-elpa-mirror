@@ -4,10 +4,10 @@
 
 ;; Author: J. Alexander Branham <branham@utexas.edu>
 ;; Maintainer: J. Alexander Branham <branham@utexas.edu>
-;; URL: https://github.com/jabranham/system-packages
-;; Package-Version: 1.0.5
+;; URL: https://gitlab.com/jabranham/system-packages
+;; Package-Version: 1.0.6
 ;; Package-Requires: ((emacs "24.3"))
-;; Version: 1.0.4
+;; Version: 1.0.6
 
 
 ;; This file is not part of GNU Emacs.
@@ -74,24 +74,24 @@
            (list-dependencies-of . nil)
            (noconfirm . nil)))
     ;; nix
-    (nix-env .
-             ((default-sudo . nil)
-              (install . "nix-env -i")
-              (search . "nix search")
-              (uninstall . "nix-env -e")
-              (update . ("nix-env -u" ))
-              (clean-cache . nil)
-              (log . nil)
-              (get-info . nil)
-              (get-info-remote . nil)
-              (list-files-provided-by . nil)
-              (verify-all-packages . nil)
-              (verify-all-dependencies . nil)
-              (remove-orphaned . nil)
-              (list-installed-packages . "nix-env -q")
-              (list-installed-packages-all . "nix-env -q")
-              (list-dependencies-of . nil)
-              (noconfirm . nil)))
+    (nix .
+         ((default-sudo . nil)
+          (install . "nix-env -i")
+          (search . "nix search")
+          (uninstall . "nix-env -e")
+          (update . ("nix-env -u" ))
+          (clean-cache . nil)
+          (log . nil)
+          (get-info . nil)
+          (get-info-remote . nil)
+          (list-files-provided-by . nil)
+          (verify-all-packages . nil)
+          (verify-all-dependencies . nil)
+          (remove-orphaned . nil)
+          (list-installed-packages . "nix-env -q")
+          (list-installed-packages-all . "nix-env -q")
+          (list-dependencies-of . nil)
+          (noconfirm . nil)))
     ;; Mac
     (brew .
           ((default-sudo . nil)
@@ -325,8 +325,6 @@ of passing additional arguments to the package manager."
       (error (format "%S not supported in %S" action system-packages-package-manager)))
     (unless (listp command)
       (setq command (list command)))
-    (when system-packages-use-sudo
-      (setq command (mapcar (lambda (part) (concat "sudo " part)) command)))
     (setq command (mapconcat 'identity command " && "))
     (setq command (mapconcat 'identity (list command pack) " "))
     (when noconfirm
@@ -337,7 +335,10 @@ of passing additional arguments to the package manager."
   "Run a command asynchronously using the system's package manager.
 See `system-packages-get-command' for how to use ACTION, PACK,
 and ARGS."
-  (let ((command (system-packages-get-command action pack args)))
+  (let ((command (system-packages-get-command action pack args))
+        (default-directory (if system-packages-use-sudo
+                               "/sudo::"
+                             default-directory)))
     (async-shell-command command "*system-packages*")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

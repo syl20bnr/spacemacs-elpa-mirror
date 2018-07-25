@@ -1,6 +1,6 @@
 Steps to setup:
   1. Obtain the Team Explorer Everywhere CLI tool from https://github.com/Microsoft/team-explorer-everywhere/releases
-     (don't forget to run "tf eula" to accept the tool's terms and conditions)
+     (don't forget to run "tf eula" to accept the terms and conditions)
   2. Place tfsmacs.el in your load-path.  Or install from MELPA.
   3. In your .emacs file you can setup keybindings for the tfsmacs commands, there's a keymap:
        (require 'tfsmacs)

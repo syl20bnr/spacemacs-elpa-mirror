@@ -1,7 +1,7 @@
 ;;; org-bullets.el --- Show bullets in org-mode as UTF-8 characters
 
 ;; Version: 0.2.4
-;; Package-Version: 20171127.526
+;; Package-Version: 20180208.1543
 ;; Author: sabof
 ;; Maintainer: Jonas Bernoulli <jonas@bernoul.li>
 ;; Homepage: https://github.com/emacsorphanage/org-bullets
@@ -58,21 +58,7 @@ Otherwise the face of the heading level is used."
   :group 'org-bullets
   :type 'symbol)
 
-(defvar org-bullets-bullet-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map [mouse-1] 'org-cycle)
-    (define-key map [mouse-2] 'org-bullets-set-point-and-cycle)
-    map)
-  "Mouse events for bullets.
-Should this be undesirable, one can remove them with
-
-\(setcdr org-bullets-bullet-map nil\)")
-
-(defun org-bullets-set-point-and-cycle (event)
-  "Set `point' and where the user clicked and call `org-cycle'."
-  (interactive "e")
-  (mouse-set-point e)
-  (org-cycle))
+(defvar org-bullets-bullet-map (make-sparse-keymap))
 
 (defun org-bullets-level-char (level)
   (string-to-char
