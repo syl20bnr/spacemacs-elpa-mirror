@@ -5,7 +5,7 @@
 ;; Author: Gonçalo Santos (aka. weirdNox@GitHub)
 ;; Homepage: https://github.com/weirdNox/org-noter
 ;; Keywords: lisp pdf interleave annotate external sync notes documents org-mode
-;; Package-Version: 20180725.1946
+;; Package-Version: 20180726.830
 ;; Package-Requires: ((emacs "24.4") (cl-lib "0.6") (org "9.0"))
 ;; Version: 1.1.1
 
@@ -45,10 +45,17 @@
 (declare-function image-get-display-property "image-mode")
 (declare-function image-mode-window-get "image-mode")
 (declare-function image-scroll-up "image-mode")
-(declare-function pdf-view-mode "ext:pdf-view")
-(declare-function pdf-view-goto-page "ext:pdf-view")
-(declare-function pdf-info-outline "ext:pdf-info")
 (declare-function nov-render-document "ext:nov")
+(declare-function pdf-info-getannots "ext:pdf-info")
+(declare-function pdf-info-gettext "ext:pdf-info")
+(declare-function pdf-info-outline "ext:pdf-info")
+(declare-function pdf-info-pagelinks "ext:pdf-info")
+(declare-function pdf-util-tooltip-arrow "ext:pdf-util")
+(declare-function pdf-view-active-region "ext:pdf-view")
+(declare-function pdf-view-active-region-p "ext:pdf-view")
+(declare-function pdf-view-active-region-text "ext:pdf-view")
+(declare-function pdf-view-goto-page "ext:pdf-view")
+(declare-function pdf-view-mode "ext:pdf-view")
 (defvar nov-documents-index)
 (defvar nov-file-name)
 
@@ -82,10 +89,13 @@ at the moment."
 
 When the list contains:
 - `start', the window will be created when starting a `org-noter' session.
-- `scroll', it will be created when you go to a location with an associated note."
+- `scroll', it will be created when you go to a location with an associated note.
+- `only-prev', it will be created when you go to a location without notes, but that
+   has previous notes that are shown."
   :group 'org-noter
   :type '(set (const :tag "Session start" start)
-              (const :tag "Scrolling" scroll)))
+              (const :tag "Scrolling" scroll)
+              (const :tag "Scroll to location with previous notes only" only-prev)))
 
 (defcustom org-noter-notes-window-location 'horizontal-split
   "Whether the notes should appear in the main frame (horizontal or vertical split) or in a separate frame.
@@ -540,8 +550,11 @@ properties, by a margin of NEWLINES-NUMBER."
       (let ((notes-window (org-noter--get-notes-window)))
         (if notes-window
             (with-selected-window notes-window
-              ,(unless with-error error-str)
-              (progn ,@body))
+              ,(if with-error
+                   `(progn ,@body)
+                 (if body
+                     `(progn ,error-str ,@body)
+                   `(progn ,error-str))))
           ,(when with-error `(user-error "%s" ,error-str)))))))
 
 (defun org-noter--notes-window-behavior-property (ast)
@@ -783,41 +796,45 @@ Every direct subheading that isn't a note itself will also be opened."
    (when (org-noter--session-hide-other session) (org-overview))
    (org-cycle-hide-drawers 'all)
 
-   (let ((notes-cons (org-noter--view-info-notes view-info)))
+   (let* ((notes-cons (org-noter--view-info-notes view-info))
+          (regions (or (org-noter--view-info-regions view-info)
+                       (org-noter--view-info-prev-regions view-info)))
+          (point-before (point))
+          target-region
+          point-inside-target-region)
      (cond
       (notes-cons
        (dolist (note-cons notes-cons) (org-noter--show-note-entry (car note-cons)))
 
-       (unless (catch 'break
-                 (let ((point (point)))
-                   (dolist (region (org-noter--view-info-regions view-info))
-                     (when (and (>= point (car region))
-                                (<  point (cdr region)))
-                       (throw 'break t)))))
-         (let* ((region (car (org-noter--view-info-regions view-info)))
-                (begin (car region))
-                (end   (cdr region))
-                (target (org-noter--get-properties-end (caar notes-cons)))
-                (window-start (window-start))
-                (window-end (window-end nil t))
-                (num-lines (count-screen-lines begin end)))
-           (cond
-            ((> num-lines (window-height))
-             (goto-char begin)
-             (recenter 0))
+       (setq target-region (or (catch 'result (dolist (region regions) (when (and (>= point-before (car region))
+                                                                                  (<  point-before (cdr region)))
+                                                                         (setq point-inside-target-region t)
+                                                                         (throw 'result region))))
+                               (car regions)))
 
-            ((< begin window-start)
-             (goto-char begin)
-             (recenter 0))
+       (let ((begin (car target-region)) (end (cdr target-region)) num-lines
+             (target-char (if point-inside-target-region
+                              point-before
+                            (org-noter--get-properties-end (caar notes-cons))))
+             (window-start (window-start)) (window-end (window-end nil t)))
+         (setq num-lines (count-screen-lines begin end))
 
-            ((> end window-end)
-             (goto-char end)
-             (recenter -2)))
+         (cond
+          ((> num-lines (window-height))
+           (goto-char begin)
+           (recenter 0))
 
-           (goto-char target))))
+          ((< begin window-start)
+           (goto-char begin)
+           (recenter 0))
 
-      (t
-       (org-noter--show-note-entry (org-noter--parse-root)))))))
+          ((> end window-end)
+           (goto-char end)
+           (recenter -2)))
+
+         (goto-char target-char)))
+
+      (t (org-noter--show-note-entry (org-noter--parse-root)))))))
 
 (defun org-noter--get-current-view ()
   "Return a vector with the current view information."
@@ -872,7 +889,7 @@ Every direct subheading that isn't a note itself will also be opened."
                            (org-element-property :begin ,headline) (org-element-property :end ,headline)
                            ',list-name)))))
 
-(cl-defstruct org-noter--view-info notes regions reference-for-insertion)
+(cl-defstruct org-noter--view-info notes regions prev-regions reference-for-insertion)
 
 (defun org-noter--get-view-info (view &optional new-location)
   "Return VIEW related information.
@@ -881,8 +898,9 @@ When optional NEW-LOCATION is provided, it will be used to find
 the best heading to serve as a reference to create the new one
 relative to."
   (when view
+    (org-noter--with-valid-session
      (let ((contents (org-element-contents (org-noter--parse-root)))
-           (without-property t) (search-for-before t) ;; NOTE(nox): Used when searching reference
+           (without-property t) ;; NOTE(nox): Used when searching reference
            notes-in-view regions-in-view
            reference-for-insertion reference-location
            (all-after-tipping-point t)
@@ -930,14 +948,15 @@ relative to."
                (when new-location
                  (setq without-property nil)
                  (cond ((and (org-noter--compare-location-cons '<= property new-location)
-                             (org-noter--compare-location-cons '>= property reference-location))
-                        (setq search-for-before nil
-                              reference-for-insertion (cons 'after headline)
+                             (or (eq (car reference-for-insertion) 'before)
+                                 (org-noter--compare-location-cons '>= property reference-location)))
+                        (setq reference-for-insertion (cons 'after headline)
                               reference-location property))
 
-                       ((and search-for-before
-                             (org-noter--compare-location-cons '>= property new-location)
-                             (org-noter--compare-location-cons '<= property reference-location))
+                       ((and (eq (car reference-for-insertion) 'after)
+                             (< (org-element-property :begin headline)
+                                (org-element-property :end   (cdr reference-for-insertion)))
+                             (org-noter--compare-location-cons '>= property new-location))
                         (setq reference-for-insertion (cons 'before headline)
                               reference-location property)))))
 
@@ -952,21 +971,19 @@ relative to."
                                  (org-element-property :end   (caar closest-notes)))
                           (setcdr (car closest-notes) headline)))))
 
-               (when (and new-location without-property)
-                 (setq reference-for-insertion (cons 'after headline)))))))
+               (when (and new-location without-property) (setq reference-for-insertion (cons 'after headline)))))))
          nil nil org-noter--note-search-no-recurse)
 
        (org-noter--view-region-finish current-region-info)
 
        (setf (org-noter--session-num-notes-in-view session) (length notes-in-view))
 
-       (when all-after-tipping-point
-         (setq notes-in-view   (append closest-notes         notes-in-view)
-               regions-in-view (append closest-notes-regions regions-in-view)))
+       (when all-after-tipping-point (setq notes-in-view (append closest-notes notes-in-view)))
 
        (make-org-noter--view-info
         :notes (nreverse notes-in-view)
         :regions (nreverse regions-in-view)
+        :prev-regions (nreverse closest-notes-regions)
         :reference-for-insertion reference-for-insertion)))))
 
 (defun org-noter--make-view-info-for-single-note (headline)
@@ -992,7 +1009,8 @@ relative to."
    (let ((view-info (org-noter--get-view-info (org-noter--get-current-view))))
      (force-mode-line-update t)
      (unless org-noter--inhibit-location-change-handler
-       (org-noter--get-notes-window 'scroll)
+       (org-noter--get-notes-window (cond ((org-noter--view-info-regions view-info) 'scroll)
+                                          ((org-noter--view-info-prev-regions view-info) 'only-prev)))
        (org-noter--focus-notes-region view-info)))
 
    (when (org-noter--session-auto-save-last-location session) (org-noter-set-start-location))))
@@ -1100,7 +1118,7 @@ With a prefix ARG, delete the current setting and use the default."
 - With a prefix \\[universal-argument], set it permanently for this document.
 - With a prefix \\[universal-argument] \\[universal-argument], remove the setting and use the default."
   (interactive "P")
-  (org-noter--with-selected-notes-window
+  (org-noter--with-valid-session
    (let* ((ast (org-noter--parse-root))
           (inhibit-read-only t)
           (persistent (cond ((equal arg '(4)) 'write)
@@ -1110,11 +1128,12 @@ With a prefix ARG, delete the current setting and use the default."
                          (read-number "New tipping point: " (org-noter--session-closest-tipping-point session)))))
      (setf (org-noter--session-closest-tipping-point session) new-setting)
      (when persistent
-       (org-with-wide-buffer
-        (goto-char (org-element-property :begin ast))
-        (if (eq persistent 'write)
-            (org-entry-put nil org-noter--property-closest-tipping-point (format "%f" new-setting))
-          (org-entry-delete nil org-noter--property-closest-tipping-point)))))))
+       (with-current-buffer (org-noter--session-notes-buffer session)
+         (org-with-wide-buffer
+          (goto-char (org-element-property :begin ast))
+          (if (eq persistent 'write)
+              (org-entry-put nil org-noter--property-closest-tipping-point (format "%f" new-setting))
+            (org-entry-delete nil org-noter--property-closest-tipping-point))))))))
 
 (defun org-noter-set-notes-window-behavior (arg)
   "Set the notes window behaviour for the current session.
@@ -1125,24 +1144,38 @@ See `org-noter-notes-window-behavior' for more information."
   (org-noter--with-valid-session
    (let* ((inhibit-read-only t)
           (ast (org-noter--parse-root))
-          (behavior-possibilities
-           '(("Default" . nil)
-             ("On start and scroll" . (start scroll))
-             ("On start" . (start))
-             ("On scroll" . (scroll))
-             ("Never" . (never))))
-          (behavior
-           (cdr (assoc (completing-read "Behavior: " behavior-possibilities nil t)
-                       behavior-possibilities))))
+          (possible-behaviors (list '("Default" . default)
+                                    '("On start" . start)
+                                    '("On scroll" . scroll)
+                                    '("On scroll to location that only has previous notes" . only-prev)
+                                    '("Never" . never)))
+          chosen-behaviors)
+
+     (while (> (length possible-behaviors) 1)
+       (let ((chosen-pair (assoc (completing-read "Behavior: " possible-behaviors nil t) possible-behaviors)))
+         (cond ((eq (cdr chosen-pair) 'default) (setq possible-behaviors nil))
+
+               ((eq (cdr chosen-pair) 'never) (setq chosen-behaviors (list 'never)
+                                                    possible-behaviors nil))
+
+               ((eq (cdr chosen-pair) 'done) (setq possible-behaviors nil))
+
+               (t (push (cdr chosen-pair) chosen-behaviors)
+                  (setq possible-behaviors (delq chosen-pair possible-behaviors))
+                  (when (= (length chosen-behaviors) 1)
+                    (setq possible-behaviors (delq (rassq 'default possible-behaviors) possible-behaviors)
+                          possible-behaviors (delq (rassq 'never possible-behaviors) possible-behaviors))
+                    (push (cons "Done" 'done) possible-behaviors))))))
+
      (setf (org-noter--session-window-behavior session)
-           (or behavior org-noter-notes-window-behavior))
+           (or chosen-behaviors org-noter-notes-window-behavior))
+
      (when arg
        (with-current-buffer (org-noter--session-notes-buffer session)
          (org-with-wide-buffer
           (goto-char (org-element-property :begin ast))
-          (if behavior
-              (org-entry-put nil org-noter--property-behavior
-                             (format "%s" behavior))
+          (if chosen-behaviors
+              (org-entry-put nil org-noter--property-behavior (format "%s" chosen-behaviors))
             (org-entry-delete nil org-noter--property-behavior))))))))
 
 (defun org-noter-set-notes-window-location (arg)
@@ -1460,7 +1493,7 @@ defines if the text should be inserted inside the note."
          ;; complicated to get it right...
 
          (let ((point (point))
-               collection default title selection
+               collection default default-begin title selection
                (target-post-blank (if org-noter-separate-notes-from-heading 2 1)))
 
            ;; NOTE(nox): When precise, it will certainly be a new note
@@ -1468,10 +1501,12 @@ defines if the text should be inserted inside the note."
                (setq default (and selected-text (replace-regexp-in-string "\n" " " selected-text)))
 
              (dolist (note-cons (org-noter--view-info-notes view-info))
-               (let ((display (org-element-property :raw-value (car note-cons))))
+               (let ((display (org-element-property :raw-value (car note-cons)))
+                     (begin   (org-element-property :begin     (car note-cons))))
                  (push (cons display note-cons) collection)
-                 (when (>= point (org-element-property :begin (car note-cons)))
-                   (setq default display)))))
+                 (when (and (>= point begin) (> begin (or default-begin 0)))
+                   (setq default display
+                         default-begin begin)))))
 
            (setq collection (nreverse collection)
                  title (completing-read "Note: " collection nil nil nil nil default)
@@ -1509,7 +1544,8 @@ defines if the text should be inserted inside the note."
                  (when (and org-noter-insert-selected-text-inside-note selected-text) (insert selected-text)))
 
              ;; NOTE(nox): Inserting a new note
-             (let ((reference-element-cons (org-noter--view-info-reference-for-insertion view-info)))
+             (let ((reference-element-cons (org-noter--view-info-reference-for-insertion view-info))
+                   level)
                (when (zerop (length title))
                  (setq title (replace-regexp-in-string (regexp-quote "$p$") (number-to-string (car location-cons))
                                                        org-noter-default-heading-title)))
@@ -1522,23 +1558,26 @@ defines if the text should be inserted inside the note."
                       ((eq (car reference-element-cons) 'after)
                        (goto-char (org-element-property :end (cdr reference-element-cons)))))
 
-                     (org-noter--insert-heading (org-element-property :level (cdr reference-element-cons)) title
-                                                target-post-blank))
+                     (setq level (org-element-property :level (cdr reference-element-cons))))
 
-                 (goto-char (org-element-map contents 'section (lambda (section) (org-element-property :end section))
-                                             nil t org-element-all-elements))
-                 ;; NOTE(nox): This is needed to insert in the right place...
-                 (outline-show-entry)
-                 (org-noter--insert-heading (1+ (org-element-property :level ast)) title target-post-blank))
+                 (goto-char (org-element-map contents 'section
+                              (lambda (section) (org-element-property :end section))
+                              nil t org-element-all-elements))
+                 (setq level (1+ (org-element-property :level ast))))
+
+               ;; NOTE(nox): This is needed to insert in the right place...
+               (outline-show-entry)
+               (org-noter--insert-heading level title target-post-blank)
+               (when (org-noter--session-hide-other session) (org-overview))
 
                (org-entry-put nil org-noter-property-note-location (org-noter--pretty-print-location location-cons))
 
                (setf (org-noter--session-num-notes-in-view session)
                      (1+ (org-noter--session-num-notes-in-view session)))))
 
-           (org-show-context)
-           (org-show-siblings)
-           (org-show-subtree)
+           (org-show-entry)
+           (org-show-children)
+           (org-show-set-visibility t)
            (org-cycle-hide-drawers 'all)))
        (when quit-flag
          ;; NOTE(nox): If this runs, it means the user quitted while creating a note, so
@@ -1888,9 +1927,9 @@ notes file, even if it finds one."
                     (setq file-name (expand-file-name notes-file-name current-directory))
                     (when (file-exists-p file-name)
                       (setq file-name (propertize file-name 'display
-                                                 (concat file-name
-                                                         (propertize " -- Exists!"
-                                                                     'face '(foreground-color . "green")))))
+                                                  (concat file-name
+                                                          (propertize " -- Exists!"
+                                                                      'face '(foreground-color . "green")))))
                       (push file-name list-of-possible-targets)
                       (throw 'break nil))
 
@@ -1938,8 +1977,8 @@ notes file, even if it finds one."
             (setq notes-files-annotating notes-files)))
 
         (when (> (length notes-files-annotating) 1)
-            (setq notes-files-annotating (list (completing-read "Which notes file should we open? "
-                                                                notes-files-annotating nil t))))
+          (setq notes-files-annotating (list (completing-read "Which notes file should we open? "
+                                                              notes-files-annotating nil t))))
 
         (with-current-buffer (find-file-noselect (car notes-files-annotating))
           (org-with-wide-buffer

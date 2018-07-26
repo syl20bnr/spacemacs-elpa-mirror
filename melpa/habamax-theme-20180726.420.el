@@ -2,7 +2,7 @@
 
 ;; Author: Maxim Kim <habamax@gmail.com>
 ;; Url: https://github.com/habamax/habamax-theme
-;; Package-Version: 20180724.707
+;; Package-Version: 20180726.420
 ;; Package-Requires: ((emacs "24"))
 
 ;;; Commentary:
@@ -316,25 +316,25 @@
 
 
    ;; rainbow-delimiters
-   ;; '(rainbow-delimiters-depth-1-face ((t (:foreground "#000000"))))
-   ;; '(rainbow-delimiters-depth-2-face ((t (:foreground "#cf0000"))))
-   ;; '(rainbow-delimiters-depth-3-face ((t (:foreground "#ff00ff"))))
-   ;; '(rainbow-delimiters-depth-4-face ((t (:foreground "#ff7f50"))))
-   ;; '(rainbow-delimiters-depth-5-face ((t (:foreground "#cf0000"))))
-   ;; '(rainbow-delimiters-depth-6-face ((t (:foreground "#ff00ff"))))
-   ;; '(rainbow-delimiters-depth-7-face ((t (:foreground "#ff7f50"))))
-   ;; '(rainbow-delimiters-depth-8-face ((t (:foreground "#cf0000"))))
-   ;; '(rainbow-delimiters-depth-9-face ((t (:foreground "#ff00ff"))))
-
    '(rainbow-delimiters-depth-1-face ((t (:foreground "#000000"))))
-   '(rainbow-delimiters-depth-2-face ((t (:foreground "#302020"))))
-   '(rainbow-delimiters-depth-3-face ((t (:foreground "#504040"))))
-   '(rainbow-delimiters-depth-4-face ((t (:foreground "#706060"))))
-   '(rainbow-delimiters-depth-5-face ((t (:foreground "#908080"))))
-   '(rainbow-delimiters-depth-6-face ((t (:foreground "#b0a0a0"))))
-   '(rainbow-delimiters-depth-7-face ((t (:foreground "#d0c0c0"))))
-   '(rainbow-delimiters-depth-8-face ((t (:foreground "#e0d0d0"))))
-   '(rainbow-delimiters-depth-9-face ((t (:foreground "#f0e0e0"))))
+   '(rainbow-delimiters-depth-2-face ((t (:foreground "#ff7f50"))))
+   '(rainbow-delimiters-depth-3-face ((t (:foreground "#00bb33"))))
+   '(rainbow-delimiters-depth-4-face ((t (:foreground "#ff00ff"))))
+   '(rainbow-delimiters-depth-5-face ((t (:foreground "#2277ff"))))
+   '(rainbow-delimiters-depth-6-face ((t (:foreground "#cf0000"))))
+   '(rainbow-delimiters-depth-7-face ((t (:foreground "#00c0b0"))))
+   '(rainbow-delimiters-depth-8-face ((t (:foreground "#D4C65C"))))
+   '(rainbow-delimiters-depth-9-face ((t (:foreground "#7D0CE8"))))
+
+   ;; '(rainbow-delimiters-depth-1-face ((t (:foreground "#000000"))))
+   ;; '(rainbow-delimiters-depth-2-face ((t (:foreground "#302020"))))
+   ;; '(rainbow-delimiters-depth-3-face ((t (:foreground "#504040"))))
+   ;; '(rainbow-delimiters-depth-4-face ((t (:foreground "#706060"))))
+   ;; '(rainbow-delimiters-depth-5-face ((t (:foreground "#908080"))))
+   ;; '(rainbow-delimiters-depth-6-face ((t (:foreground "#b0a0a0"))))
+   ;; '(rainbow-delimiters-depth-7-face ((t (:foreground "#d0c0c0"))))
+   ;; '(rainbow-delimiters-depth-8-face ((t (:foreground "#e0d0d0"))))
+   ;; '(rainbow-delimiters-depth-9-face ((t (:foreground "#f0e0e0"))))
 
 
    ;; asciidoctor-mode
