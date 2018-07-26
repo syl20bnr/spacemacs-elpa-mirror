@@ -4,8 +4,9 @@
 
 ;; Authors: Jason Milkins <jasonm23@gmail.com>
 ;; URL: http://github.com/emacsfodder/emacs-theme-darktooth
-;; Package-Version: 0.3.7
-;; Version: 0.3.7
+;; Package-Version: 0.3.10
+;; Version: 0.3.10
+
 ;; Package-Requires: ((autothemer "0.2"))
 
 ;;; Commentary:
@@ -141,6 +142,9 @@
   (mode-line-inactive                        (:foreground darktooth-light4 :background darktooth-dark2 :box nil))
   (fringe                                    (:background darktooth-dark0))
   (linum                                     (:foreground darktooth-dark4))
+  ;; TODO: set up inheritance when native line numbers reach release
+  (line-number                               (:foreground darktooth-dark4))
+  (line-number-current-line                  (:foreground darktooth-light4 :background darktooth-dark1))
   (hl-line                                   (:background darktooth-dark_purple))
   (region                                    (:background darktooth-mid_blue :distant-foreground darktooth-light0))
   (secondary-selection                       (:background darktooth-dark_blue))
@@ -183,6 +187,14 @@
   ;; MODE SUPPORT: woman
   (woman-bold                               (:foreground darktooth-bright_red :bold t))
   (woman-italic                             (:foreground darktooth-bright_green :bold t))
+
+  ;; MODE SUPPORT: tldr
+  (tldr-command-itself                       (:foreground darktooth-bright_red :bold t))
+  (tldr-command-argument                     (:foreground darktooth-bright_green :bold t))
+  (tldr-code-block                           (:foreground darktooth-bright_blue :bold t))
+  (tldr-description                          (:inherit 'default))
+  (tldr-title                                (:foreground darktooth-bright_red :bold t :height 1.2))
+  (tldr-introduction                         (:inherit 'font-lock-comment-face :slant 'italic))
 
   ;; MODE SUPPORT: whitespace-mode
   (whitespace-space                          (:foreground darktooth-dark4 :background darktooth-dark0))
@@ -266,6 +278,24 @@
   (sp-show-pair-match-face                   (:background darktooth-dark2))
   (sp-show-pair-mismatch-face                (:background darktooth-neutral_red))
 
+  ;; MODE SUPPORT: flycheck
+  (flycheck-warning                          (:underline (:style 'wave :color darktooth-bright_yellow)))
+  (flycheck-error                            (:underline (:style 'wave :color darktooth-bright_red)))
+  (flycheck-info                             (:underline (:style 'wave :color darktooth-bright_blue)))
+  (flycheck-fringe-warning                   (:foreground darktooth-bright_yellow))
+  (flycheck-fringe-error                     (:foreground darktooth-bright_red))
+  (flycheck-fringe-info                      (:foreground darktooth-bright_blue))
+  (flycheck-error-list-warning               (:foreground darktooth-bright_yellow :bold t))
+  (flycheck-error-list-error                 (:foreground darktooth-bright_red :bold t))
+  (flycheck-error-list-info                  (:foreground darktooth-bright_blue :bold t))
+
+  ;; MODE SUPPORT: flymake
+  (flymake-warning                          (:underline (:style 'wave :color darktooth-bright_yellow)))
+  (flymake-error                            (:underline (:style 'wave :color darktooth-bright_red)))
+  (flymake-note                             (:underline (:style 'wave :color darktooth-bright_blue)))
+  (flymake-errline                          (:underline (:style 'wave :color darktooth-bright_red)))
+  (flymake-warline                          (:underline (:style 'wave :color darktooth-bright_yellow)))
+
   ;; MODE SUPPORT: auctex
   (font-latex-math-face                      (:foreground darktooth-lightblue4))
   (font-latex-sectioning-5-face              (:foreground darktooth-neutral_green))
@@ -295,7 +325,9 @@
   ;; MODE SUPPORT: diff
   (diff-changed                              (:foreground darktooth-light1 :background nil))
   (diff-added                                (:foreground darktooth-neutral_green :background nil))
+  (diff-refine-added                         (:foreground darktooth-bright_green :background darktooth-muted_green))
   (diff-removed                              (:foreground darktooth-neutral_red :background nil))
+  (diff-refine-removed                       (:foreground darktooth-bright_red :background darktooth-muted_red))
 
   ;; MODE SUPPORT: diff-indicator
   (diff-indicator-changed                    (:inherit 'diff-changed))
@@ -704,7 +736,55 @@
   (message-header-xheader                    (:foreground darktooth-faded_cyan ))
   (message-separator                         (:foreground darktooth-faded_cyan ))
   (message-cited-text                        (:foreground darktooth-light3 ))
-  (message-mml                               (:foreground darktooth-faded_aqua )))
+  (message-mml                               (:foreground darktooth-faded_aqua ))
+
+  ;; MODE SUPPORT: Web
+  (web-mode-doctype-face                     (:foreground darktooth-light2 :weight 'bold))
+  (web-mode-html-attr-name-face              (:inherit 'font-lock-variable-name-face))
+  (web-mode-html-attr-equal-face             (:inherit 'default))
+  (web-mode-html-tag-face                    (:foreground darktooth-light3))
+  (web-mode-html-tag-bracket-face            (:inherit 'default))
+
+  ;; MODE SUPPORT: swoop
+  (swoop-face-target-line                    (:foreground darktooth-light0_hard :background darktooth-faded_blue))
+  (swoop-face-target-words                   (:foreground darktooth-light0 :background darktooth-faded_aqua))
+  (swoop-face-line-buffer-name               (:foreground darktooth-light2 :background darktooth-dark1))
+  (swoop-face-header-format-line             (:foreground darktooth-white :background darktooth-muted_blue :height 1.3 :weight 'bold))
+  (swoop-face-line-number                    (:foreground darktooth-neutral_orange))
+
+  ;; MODE SUPPORT: helm-swoop
+  (helm-swoop-target-word-face               (:foreground darktooth-light0 :background darktooth-faded_aqua))
+  (helm-swoop-target-line-block-face         (:foreground darktooth-light0_hard :background darktooth-faded_blue))
+  (helm-swoop-target-line-face               (:foreground darktooth-light0_hard :background darktooth-faded_blue))
+  (helm-swoop-line-number-face               (:foreground darktooth-neutral_orange))
+
+  ;; MODE SUPPORT: eldoc
+  (eldoc-highlight-function-argument         (:foreground darktooth-aquamarine4 :weight 'bold))
+
+  ;; MODE SUPPORT: erc
+  (erc-action-face                           (:inherit 'erc-default-face))
+  (erc-bold-face                             (:weight 'bold))
+  (erc-current-nick-face                     (:foreground darktooth-aquamarine4 :weight 'bold))
+  (erc-dangerous-host-face                   (:inherit 'font-lock-warning-face))
+  (erc-default-face                          (:inherit 'default))
+  (erc-direct-msg-face                       (:inherit 'erc-default-face))
+  (erc-error-face                            (:inherit 'font-lock-warning-face))
+  (erc-fool-face                             (:inherit 'erc-default-face))
+  (erc-input-face                            (:foreground darktooth-sienna))
+  (erc-my-nick-face                          (:foreground darktooth-sienna :weight 'bold))
+  (erc-nick-msg-face                         (:inherit 'erc-default-face))
+  (erc-notice-face                           (:foreground darktooth-dark4))
+  (erc-timestamp-face                        (:foreground darktooth-neutral_green))
+  (erc-underline-face                        (:underline t))
+  (erc-prompt-face                           (:foreground darktooth-sienna :weight 'bold))
+  (erc-pal-face                              (:foreground darktooth-neutral_yellow :weight 'bold))
+  (erc-keyword-face                          (:foreground darktooth-bright_orange :weight 'bold))
+  (erc-nick-default-face                     (:weight 'bold))
+  (erc-button                                (:weight 'bold  :underline t))
+
+  ) ;; autothemer end of reduced-specs
+
+ ;; autothemer body
 
  (defface darktooth-modeline-one-active
    `((t
