@@ -4,7 +4,7 @@
 
 ;; Author: Paul Rankin <hello@paulwrankin.com>
 ;; Keywords: wp, text
-;; Package-Version: 20180725.2
+;; Package-Version: 20180725.2138
 ;; Version: 2.6.0
 ;; Package-Requires: ((emacs "24.5"))
 ;; URL: https://github.com/rnkn/fountain-mode
@@ -284,7 +284,7 @@
   'fountain-export-tmp-buffer-name "2.4.0")
 
 (make-obsolete-variable 'fountain-outline-startup-level
-  'fountain-outline-custom-level "2.5.4")
+                        'fountain-outline-custom-level "2.5.4")
 
 (make-obsolete-variable 'fountain-endnotes-buffer
                         "Use a third-party package instead" "2.6.0")
@@ -311,9 +311,9 @@
 (defcustom fountain-script-format "screenplay"
   "Default script format for editing and exporting.
 
-Can be overridden in metadata with, e.g.:
+Can be overridden in metadata with, e.g.
 
-  format: teleplay"
+    format: teleplay"
   :type 'string
   :safe 'string
   :group 'fountain)
@@ -358,10 +358,10 @@ changes desired."
          (dolist (buffer (buffer-list))
            (with-current-buffer buffer
              (when (eq major-mode 'fountain-mode)
-                   (if fountain-hide-emphasis-delim
-                       (add-to-invisibility-spec 'fountain-emphasis-delim)
-                     (remove-from-invisibility-spec 'fountain-emphasis-delim))
-                   (font-lock-refresh-defaults))))))
+               (if fountain-hide-emphasis-delim
+                   (add-to-invisibility-spec 'fountain-emphasis-delim)
+                 (remove-from-invisibility-spec 'fountain-emphasis-delim))
+               (font-lock-refresh-defaults))))))
 
 (defcustom fountain-hide-syntax-chars
   nil
@@ -374,10 +374,10 @@ changes desired."
          (dolist (buffer (buffer-list))
            (with-current-buffer buffer
              (when (eq major-mode 'fountain-mode)
-                   (if fountain-hide-syntax-chars
-                       (add-to-invisibility-spec 'fountain-syntax-chars)
-                     (remove-from-invisibility-spec 'fountain-syntax-chars))
-                   (font-lock-refresh-defaults))))))
+               (if fountain-hide-syntax-chars
+                   (add-to-invisibility-spec 'fountain-syntax-chars)
+                 (remove-from-invisibility-spec 'fountain-syntax-chars))
+               (font-lock-refresh-defaults))))))
 
 (defcustom fountain-time-format
   "%F"
@@ -442,7 +442,7 @@ This option does not affect file contents."
          (dolist (buffer (buffer-list))
            (with-current-buffer buffer
              (when (eq major-mode 'fountain-mode)
-                   (font-lock-refresh-defaults))))))
+               (font-lock-refresh-defaults))))))
 
 (defcustom fountain-align-section-heading
   '(("screenplay" 0)
@@ -811,7 +811,7 @@ bold-italic delimiters together, e.g.
 ;;; Faces
 
 (defgroup fountain-faces ()
-  "Faces used in `fountain-mode'.
+  "\\<fountain-mode-map>Faces used in `fountain-mode'.
 There are three levels of `font-lock-mode' decoration:
 
     1 (minimum):
@@ -1373,7 +1373,7 @@ Added to `jit-lock-functions'."
   (fountain-forward-scene 0)
   (while (< (point) end)
     (when (and (not (and (integerp fountain--edit-line)
-                       (= fountain--edit-line (line-number-at-pos))))
+                         (= fountain--edit-line (line-number-at-pos))))
                (fountain-match-character))
       (let* ((character (match-string-no-properties 4))
              (candidate (assoc-string character fountain-completion-characters))
@@ -1429,8 +1429,8 @@ characters from `fountain-completion-characters'."
                               string pred)))))
 
 (defun fountain-completion-at-point ()
-  "Return completion table for entity at point.
-Trigger completion with `completion-at-point' (\\[completion-at-point]).
+  "\\<fountain-mode-map>Return completion table for entity at point.
+Trigger completion with \\[completion-at-point].
 
 Always delimits entity from beginning of line to point. If at a
 scene heading, return `fountain-scene-heading-candidates'. If
@@ -1995,9 +1995,9 @@ Includes child elements."
                       'end end
                       'dual dual
                       'export (when (or (memq 'character export-elements)
-                                      (memq 'lines export-elements)
-                                      (memq 'paren export-elements))
-                                  t))
+                                        (memq 'lines export-elements)
+                                        (memq 'paren export-elements))
+                                t))
                 (cons character
                       (fountain-parse-region (point) end export-elements job))))
     ;; If at the first (left) character of dual dialogue, parse a dual-dialogue
@@ -2730,9 +2730,9 @@ whitespace is converted to dashes. e.g.
   (let ((replace-alist
          (plist-get (cdr (assq format fountain-export-formats))
                     :string-replace)))
-  (dolist (replacement replace-alist string)
-    (setq string (replace-regexp-in-string
-                  (car replacement) (cadr replacement) string t nil)))))
+    (dolist (replacement replace-alist string)
+      (setq string (replace-regexp-in-string
+                    (car replacement) (cadr replacement) string t nil)))))
 
 (defun fountain-export-get-cond-replacement (format element key value)
   (let ((replace-alist
@@ -2896,7 +2896,7 @@ strings."
                          (list 'begin start
                                'end end
                                'export t)
-                               (fountain-read-metadata))
+                         (fountain-read-metadata))
                         tree))))
     ;; Walk through TREE, concatenating exported elements to STRING.
     (while tree
@@ -3667,6 +3667,14 @@ Used by `fountain-outline-cycle'.")
                  (const :tag "Level 5" 5))
   :group 'fountain)
 
+(defcustom fountain-shift-all-elements
+  t
+  "\\<fountain-mode-map>Non-nil if \\[fountain-shift-up] and \\[fountain-shift-down] should operate on all elements.
+Otherwise, only operate on section and scene headings."
+  :type 'boolean
+  :safe 'boolean
+  :group 'fountain)
+
 (defalias 'fountain-outline-next 'outline-next-visible-heading)
 (defalias 'fountain-outline-previous 'outline-previous-visible-heading)
 (defalias 'fountain-outline-forward 'outline-forward-same-level)
@@ -3754,51 +3762,52 @@ Return non-nil if empty newline was inserted."
   (unless n (setq n 1))
   (if (outline-on-heading-p)
       (fountain-outline-shift-down n)
-    (let ((forward (< 0 n))
-          hanging-line)
-      (when (and (bolp) (eolp))
-        (funcall (if forward 'skip-chars-forward 'skip-chars-backward)
-                 "\n\s\t"))
-      (save-excursion
-        (save-restriction
-          (widen)
-          (let ((block-bounds (fountain-get-block-bounds))
-                outline-begin outline-end next-block-bounds)
-            (unless (and (car block-bounds)
-                         (cdr block-bounds))
-              (user-error "Not at a moveable element"))
-            (save-excursion
-              (when (not forward)
-                (goto-char (cdr block-bounds))
+    (when fountain-shift-all-elements
+      (let ((forward (< 0 n))
+            hanging-line)
+        (when (and (bolp) (eolp))
+          (funcall (if forward 'skip-chars-forward 'skip-chars-backward)
+                   "\n\s\t"))
+        (save-excursion
+          (save-restriction
+            (widen)
+            (let ((block-bounds (fountain-get-block-bounds))
+                  outline-begin outline-end next-block-bounds)
+              (unless (and (car block-bounds)
+                           (cdr block-bounds))
+                (user-error "Not at a moveable element"))
+              (save-excursion
+                (when (not forward)
+                  (goto-char (cdr block-bounds))
+                  (when (setq hanging-line (fountain-insert-hanging-line-maybe))
+                    (setcdr block-bounds (point)))
+                  (goto-char (car block-bounds)))
+                (outline-previous-heading)
+                (setq outline-begin (point))
+                (outline-next-heading)
+                (setq outline-end (point)))
+              (if forward
+                  (goto-char (cdr block-bounds))
+                (goto-char (car block-bounds))
+                (backward-char)
+                (skip-chars-backward "\n\s\t"))
+              (setq next-block-bounds (fountain-get-block-bounds))
+              (unless (and (car next-block-bounds)
+                           (cdr next-block-bounds))
+                (user-error "Cannot shift element any further"))
+              (when forward
+                (goto-char (cdr next-block-bounds))
                 (when (setq hanging-line (fountain-insert-hanging-line-maybe))
-                  (setcdr block-bounds (point)))
-                (goto-char (car block-bounds)))
-              (outline-previous-heading)
-              (setq outline-begin (point))
-              (outline-next-heading)
-              (setq outline-end (point)))
-            (if forward
-                (goto-char (cdr block-bounds))
-              (goto-char (car block-bounds))
-              (backward-char)
-              (skip-chars-backward "\n\s\t"))
-            (setq next-block-bounds (fountain-get-block-bounds))
-            (unless (and (car next-block-bounds)
-                         (cdr next-block-bounds))
-              (user-error "Cannot shift element any further"))
-            (when forward
-              (goto-char (cdr next-block-bounds))
-              (when (setq hanging-line (fountain-insert-hanging-line-maybe))
-                (setcdr next-block-bounds (point))))
-            (unless (< outline-begin (car next-block-bounds) outline-end)
-              (user-error "Cannot shift past higher level"))
-            (goto-char (if forward (car block-bounds) (cdr block-bounds)))
-            (insert-before-markers
-             (delete-and-extract-region (car next-block-bounds)
-                                        (cdr next-block-bounds))))
-          (when hanging-line
-            (goto-char (point-max))
-            (delete-char -1)))))))
+                  (setcdr next-block-bounds (point))))
+              (unless (< outline-begin (car next-block-bounds) outline-end)
+                (user-error "Cannot shift past higher level"))
+              (goto-char (if forward (car block-bounds) (cdr block-bounds)))
+              (insert-before-markers
+               (delete-and-extract-region (car next-block-bounds)
+                                          (cdr next-block-bounds))))
+            (when hanging-line
+              (goto-char (point-max))
+              (delete-char -1))))))))
 
 (defun fountain-shift-up (&optional n)
   "Move the current element up past an element of the same level."
@@ -4902,8 +4911,10 @@ keywords suitable for Font Lock."
             align-props facespec)
         (when (and align fountain-align-elements)
           (setq align-props
-                `(line-prefix (space :align-to ,align)
-                  wrap-prefix (space :align-to ,align))))
+                `(line-prefix
+                  (space :align-to ,align)
+                  wrap-prefix
+                  (space :align-to ,align))))
         (dolist (var plist-list)
           (let ((subexp (plist-get var :subexp))
                 (face (when (<= (plist-get var :level) dec)
@@ -4936,7 +4947,7 @@ keywords suitable for Font Lock."
   (while (< (point) (min end (point-max)))
     (when (fountain-match-scene-heading)
       (if (and fountain-display-scene-numbers-in-margin
-                 (match-string 8))
+               (match-string 8))
           (put-text-property (match-beginning 6) (match-end 9)
                              'display (list '(margin right-margin)
                                             (match-string-no-properties 8)))
@@ -5044,16 +5055,21 @@ keywords suitable for Font Lock."
      ["Shift Up" fountain-shift-up]
      ["Shift Down" fountain-shift-down]
      "---"
-     ["Open Scene/Section in Indirect Buffer" fountain-outline-to-indirect-buffer])
+     ["Open Scene/Section in Indirect Buffer" fountain-outline-to-indirect-buffer]
+     "---"
+     ["Shift All Elements" (customize-set-variable 'fountain-shift-all-elements
+                                                   (not fountain-shift-all-elements))
+      :style toggle
+      :selected fountain-shift-all-elements])
     ("Scene Numbers"
      ["Add Scene Numbers" fountain-add-scene-numbers]
      ["Remove Scene Numbers" fountain-remove-scene-numbers]
      "---"
      ["Display Scene Numbers in Margin"
-     (customize-set-variable 'fountain-display-scene-numbers-in-margin
-                             (not fountain-display-scene-numbers-in-margin))
-     :style toggle
-     :selected fountain-display-scene-numbers-in-margin])
+      (customize-set-variable 'fountain-display-scene-numbers-in-margin
+                              (not fountain-display-scene-numbers-in-margin))
+      :style toggle
+      :selected fountain-display-scene-numbers-in-margin])
     ("Page Numbers"
      ["Count Pages" fountain-count-pages]
      "---"

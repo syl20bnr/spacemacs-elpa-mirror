@@ -9,7 +9,7 @@
 ;;       Bozhidar Batsov <bozhidar@batsov.com>
 ;;       Artur Malabarba <bruce.connor.am@gmail.com>
 ;; URL: http://github.com/clojure-emacs/clojure-mode
-;; Package-Version: 20180725.933
+;; Package-Version: 20180725.2316
 ;; Keywords: languages clojure clojurescript lisp
 ;; Version: 5.9.0-snapshot
 ;; Package-Requires: ((emacs "25.1"))
@@ -1820,7 +1820,7 @@ content) are considered part of the preceding sexp."
       (zero-or-one (any ":'")) ;; (in-ns 'foo) or (ns+ :user)
       (group (one-or-more (not (any "()\"" whitespace))) symbol-end)))
 
-(defcustom clojure-cache-ns t
+(defcustom clojure-cache-ns nil
   "Whether to cache the results of `clojure-find-ns'.
 
 Note that this won't work well in buffers with multiple namespace
