@@ -2,7 +2,7 @@
 ;;
 ;; Author: Lassi Kortela <lassi@lassi.io>
 ;; URL: https://github.com/lassik/emacs-format-all-the-code
-;; Package-Version: 20180726.327
+;; Package-Version: 20180726.834
 ;; Version: 0.1.0
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; Keywords: languages util
@@ -343,7 +343,7 @@ EXECUTABLE is the full path to the formatter."
   "Format the current buffer as Swift using \"swiftformat\".
 
 EXECUTABLE is the full path to the formatter."
-  (format-all-buffer-process executable nil "error:"))
+  (format-all-buffer-process executable))
 
 (defun format-all-buffer-yq (executable)
   "Format the current buffer as YAML using \"yq\".
