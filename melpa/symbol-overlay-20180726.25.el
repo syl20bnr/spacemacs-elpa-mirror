@@ -4,7 +4,7 @@
 
 ;; Author: wolray <wolray@foxmail.com>
 ;; Version: 4.0
-;; Package-Version: 20180412.339
+;; Package-Version: 20180726.25
 ;; URL: https://github.com/wolray/symbol-overlay/
 ;; Keywords: faces, matching
 ;; Package-Requires: ((emacs "24.3"))
@@ -133,20 +133,6 @@
   :type '(repeat face)
   :group 'symbol-overlay)
 
-(defcustom symbol-overlay-colors
-  '("dodger blue"
-    "hot pink"
-    "orange"
-    "orchid"
-    "red"
-    "salmon"
-    "spring green"
-    "turquoise")
-  "Colors used for overlays' background.
-You can add more colors whatever you like."
-  :type '(repeat string)
-  :group 'symbol-overlay)
-
 (defcustom symbol-overlay-idle-time 0.5
   "Idle time after every command and before the temporary highlighting."
   :group 'symbol-overlay
@@ -160,8 +146,8 @@ This is an association list that maps a MAJOR-MODE symbol to a
 function that determines whether a symbol should be ignored. For
 instance, such a function could use a major mode's font-lock
 definitions to prevent a language's keywords from getting highlighted."
-  :group 'symbol-overlay)
-;; todo: add :type
+  :group 'symbol-overlay
+  :type '(repeat (cons (function :tag "Mode") function)))
 
 (defvar symbol-overlay-map
   (let ((map (make-sparse-keymap)))

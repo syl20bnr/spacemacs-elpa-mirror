@@ -2,7 +2,7 @@
 ;;
 ;; Author: Lassi Kortela <lassi@lassi.io>
 ;; URL: https://github.com/lassik/emacs-format-all-the-code
-;; Package-Version: 20180723.240
+;; Package-Version: 20180726.327
 ;; Version: 0.1.0
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; Keywords: languages util
@@ -396,7 +396,7 @@ EXECUTABLE is the full path to the formatter."
       xml-mode))
     (ktlint
      (:executable "ktlint")
-     (:install nil)
+     (:install (macos "brew install ktlint"))
      (:function format-all-buffer-ktlint)
      (:modes kotlin-mode))
     (mix-format

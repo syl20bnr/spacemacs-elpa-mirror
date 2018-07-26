@@ -2,7 +2,7 @@
 
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; Url: http://github.com/alphapapa/org-super-agenda
-;; Package-Version: 20180714.1348
+;; Package-Version: 20180726.37
 ;; Version: 0.1-pre
 ;; Package-Requires: ((emacs "25.1") (s "1.10.0") (dash "2.13") (org "9.0") (ht "2.2"))
 ;; Keywords: hypermedia, outlines, Org, agenda
@@ -260,6 +260,10 @@ With prefix argument ARG, turn on if positive, otherwise off."
                              (advice-remove from fn)))))
     (funcall advice-function #'org-agenda-finalize-entries
              #'org-super-agenda--filter-finalize-entries)
+    ;; Add variable to list of variables (see issue #22).
+    (if org-super-agenda-mode
+        (add-to-list 'org-agenda-local-vars 'org-super-agenda-groups)
+      (setq org-agenda-local-vars (remove 'org-super-agenda-groups org-agenda-local-vars)))
     ;; Display message
     (message (if org-super-agenda-mode
                  "org-super-agenda-mode enabled."

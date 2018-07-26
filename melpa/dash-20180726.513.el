@@ -4,7 +4,7 @@
 
 ;; Author: Magnar Sveen <magnars@gmail.com>
 ;; Version: 2.14.1
-;; Package-Version: 20180413.30
+;; Package-Version: 20180726.513
 ;; Keywords: lists
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -1619,7 +1619,7 @@ SOURCE is a proper or improper list."
         (cond
          ((and (symbolp (car match-form))
                (memq (car match-form) '(&keys &plist &alist &hash)))
-          (dash--match-kv match-form (dash--match-cons-get-cdr skip-cdr source)))
+          (dash--match-kv (dash--match-kv-normalize-match-form match-form) (dash--match-cons-get-cdr skip-cdr source)))
          ((dash--match-ignore-place-p (car match-form))
           (dash--match-cons-1 (cdr match-form) source
                               (plist-put props :skip-cdr (1+ skip-cdr))))
@@ -1703,6 +1703,47 @@ is discarded."
         (setq i (1+ i))))
     (-flatten-n 1 (nreverse re))))
 
+(defun dash--match-kv-normalize-match-form (pattern)
+  "Normalize kv PATTERN.
+
+This method normalizes PATTERN to the format expected by
+`dash--match-kv'.  See `-let' for the specification."
+  (let ((normalized (list (car pattern)))
+        (skip nil)
+        (fill-placeholder (make-symbol "--dash-fill-placeholder--")))
+    (-each (apply '-zip (-pad fill-placeholder (cdr pattern) (cddr pattern)))
+      (lambda (pair)
+        (let ((current (car pair))
+              (next (cdr pair)))
+          (if skip
+              (setq skip nil)
+            (if (or (eq fill-placeholder next)
+                    (not (or (and (symbolp next)
+                                  (not (keywordp next))
+                                  (not (eq next t))
+                                  (not (eq next nil)))
+                             (and (consp next)
+                                  (not (eq (car next) 'quote)))
+                             (vectorp next))))
+                (progn
+                  (cond
+                   ((keywordp current)
+                    (push current normalized)
+                    (push (intern (substring (symbol-name current) 1)) normalized))
+                   ((stringp current)
+                    (push current normalized)
+                    (push (intern current) normalized))
+                   ((and (consp current)
+                         (eq (car current) 'quote))
+                    (push current normalized)
+                    (push (cadr current) normalized))
+                   (t (error "-let: found key `%s' in kv destructuring but its pattern `%s' is invalid and can not be derived from the key" current next)))
+                  (setq skip nil))
+              (push current normalized)
+              (push next normalized)
+              (setq skip t))))))
+    (nreverse normalized)))
+
 (defun dash--match-kv (match-form source)
   "Setup a kv matching environment and call the real matcher.
 
@@ -1775,7 +1816,7 @@ Key-value stores are disambiguated by placing a token &plist,
         (cons (list s source)
               (dash--match (cddr match-form) s))))
      ((memq (car match-form) '(&keys &plist &alist &hash))
-      (dash--match-kv match-form source))
+      (dash--match-kv (dash--match-kv-normalize-match-form match-form) source))
      (t (dash--match-cons match-form source))))
    ((vectorp match-form)
     ;; We support the &as binding in vectors too
@@ -1787,6 +1828,20 @@ Key-value stores are disambiguated by placing a token &plist,
         (cons (list s source)
               (dash--match (dash--vector-tail match-form 2) s))))
      (t (dash--match-vector match-form source))))))
+
+(defun dash--normalize-let-varlist (varlist)
+  "Normalize VARLIST so that every binding is a list.
+
+`let' allows specifying a binding which is not a list but simply
+the place which is then automatically bound to nil, such that all
+three of the following are identical and evaluate to nil.
+
+  (let (a) a)
+  (let ((a)) a)
+  (let ((a nil)) a)
+
+This function normalizes all of these to the last form."
+  (--map (if (consp it) it (list it nil)) varlist))
 
 (defmacro -let* (varlist &rest body)
   "Bind variables according to VARLIST then eval BODY.
@@ -1800,9 +1855,10 @@ VARLIST.  This is useful if you want to destructure SOURCE
 recursively but also want to name the intermediate structures.
 
 See `-let' for the list of all possible patterns."
-  (declare (debug ((&rest (sexp form)) body))
+  (declare (debug ((&rest [&or (sexp form) sexp]) body))
            (indent 1))
-  (let ((bindings (--mapcat (dash--match (car it) (cadr it)) varlist)))
+  (let* ((varlist (dash--normalize-let-varlist varlist))
+         (bindings (--mapcat (dash--match (car it) (cadr it)) varlist)))
     `(let* ,bindings
        ,@body)))
 
@@ -1877,14 +1933,17 @@ Key/value stores:
   (&plist key0 a0 ... keyN aN) - bind value mapped by keyK in the
                                  SOURCE plist to aK.  If the
                                  value is not found, aK is nil.
+                                 Uses `plist-get' to fetch values.
 
   (&alist key0 a0 ... keyN aN) - bind value mapped by keyK in the
                                  SOURCE alist to aK.  If the
                                  value is not found, aK is nil.
+                                 Uses `assoc' to fetch values.
 
   (&hash key0 a0 ... keyN aN) - bind value mapped by keyK in the
                                 SOURCE hash table to aK.  If the
                                 value is not found, aK is nil.
+                                Uses `gethash' to fetch values.
 
 Further, special keyword &keys supports \"inline\" matching of
 plist-like key-value pairs, similarly to &keys keyword of
@@ -1894,6 +1953,36 @@ plist-like key-value pairs, similarly to &keys keyword of
 
 This binds N values from the list to a1 ... aN, then interprets
 the cdr as a plist (see key/value matching above).
+
+A shorthand notation for kv-destructuring exists which allows the
+patterns be optionally left out and derived from the key name in
+the following fashion:
+
+- a key :foo is converted into `foo' pattern,
+- a key 'bar is converted into `bar' pattern,
+- a key \"baz\" is converted into `baz' pattern.
+
+That is, the entire value under the key is bound to the derived
+variable without any further destructuring.
+
+This is possible only when the form following the key is not a
+valid pattern (i.e. not a symbol, a cons cell or a vector).
+Otherwise the matching proceeds as usual and in case of an
+invalid spec fails with an error.
+
+Thus the patterns are normalized as follows:
+
+   ;; derive all the missing patterns
+   (&plist :foo 'bar \"baz\") => (&plist :foo foo 'bar bar \"baz\" baz)
+
+   ;; we can specify some but not others
+   (&plist :foo 'bar explicit-bar) => (&plist :foo foo 'bar explicit-bar)
+
+   ;; nothing happens, we store :foo in x
+   (&plist :foo x) => (&plist :foo x)
+
+   ;; nothing happens, we match recursively
+   (&plist :foo (a b c)) => (&plist :foo (a b c))
 
 You can name the source using the syntax SYMBOL &as PATTERN.
 This syntax works with lists (proper or improper), vectors and
@@ -1934,14 +2023,15 @@ it with pattern
 Note: Clojure programmers may know this feature as the \":as
 binding\".  The difference is that we put the &as at the front
 because we need to support improper list binding."
-  (declare (debug ([&or (&rest (sexp form))
+  (declare (debug ([&or (&rest [&or (sexp form) sexp])
                         (vector [&rest [sexp form]])]
                    body))
            (indent 1))
   (if (vectorp varlist)
       `(let* ,(dash--match (aref varlist 0) (aref varlist 1))
          ,@body)
-    (let* ((inputs (--map-indexed (list (make-symbol (format "input%d" it-index)) (cadr it)) varlist))
+    (let* ((varlist (dash--normalize-let-varlist varlist))
+           (inputs (--map-indexed (list (make-symbol (format "input%d" it-index)) (cadr it)) varlist))
            (new-varlist (--map (list (caar it) (cadr it)) (-zip varlist inputs))))
       `(let ,inputs
          (-let* ,new-varlist ,@body)))))
@@ -1978,6 +2068,60 @@ See `-let' for the description of destructuring mechanism."
       ;; We should find a way to optimize that.  Not critical however.
       `(lambda ,(--map (cadr it) inputs)
          (-let* ,inputs ,@body))))))
+
+(defmacro -setq (&rest forms)
+  "Bind each MATCH-FORM to the value of its VAL.
+
+MATCH-FORM destructuring is done according to the rules of `-let'.
+
+This macro allows you to bind multiple variables by destructuring
+the value, so for example:
+
+  (-setq (a b) x
+         (&plist :c c) plist)
+
+expands roughly speaking to the following code
+
+  (setq a (car x)
+        b (cadr x)
+        c (plist-get plist :c))
+
+Care is taken to only evaluate each VAL once so that in case of
+multiple assignments it does not cause unexpected side effects.
+
+\(fn [MATCH-FORM VAL]...)"
+  (declare (debug (&rest sexp form))
+           (indent 1))
+  (when (= (mod (length forms) 2) 1)
+    (error "Odd number of arguments"))
+  (let* ((forms-and-sources
+          ;; First get all the necessary mappings with all the
+          ;; intermediate bindings.
+          (-map (lambda (x) (dash--match (car x) (cadr x)))
+                (-partition 2 forms)))
+         ;; To preserve the logic of dynamic scoping we must ensure
+         ;; that we `setq' the variables outside of the `let*' form
+         ;; which holds the destructured intermediate values.  For
+         ;; this we generate for each variable a placeholder which is
+         ;; bound to (lexically) the result of the destructuring.
+         ;; Then outside of the helper `let*' form we bind all the
+         ;; original variables to their respective placeholders.
+         ;; TODO: There is a lot of room for possible optimization,
+         ;; for start playing with `special-variable-p' to eliminate
+         ;; unnecessary re-binding.
+         (variables-to-placeholders
+          (-mapcat
+           (lambda (bindings)
+             (-map
+              (lambda (binding)
+                (let ((var (car binding)))
+                  (list var (make-symbol (concat "--dash-binding-" (symbol-name var) "--")))))
+              (--filter (not (string-prefix-p "--" (symbol-name (car it)))) bindings)))
+           forms-and-sources)))
+    `(let ,(-map 'cadr variables-to-placeholders)
+       (let* ,(-flatten-n 1 forms-and-sources)
+         (setq ,@(-flatten (-map 'reverse variables-to-placeholders))))
+       (setq ,@(-flatten variables-to-placeholders)))))
 
 (defmacro -if-let* (vars-vals then &rest else)
   "If all VALS evaluate to true, bind them to their corresponding
