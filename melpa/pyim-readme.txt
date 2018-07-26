@@ -161,7 +161,6 @@ rime 配合使用。
 #+BEGIN_EXAMPLE
 (require 'liberime)
 (rime-start "$rime_shared_data_dir" "$user_data_dir")
-(setq pyim-default-scheme 'rime)
 #+END_EXAMPLE
 
 *** 使用五笔输入
