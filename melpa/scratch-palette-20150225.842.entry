@@ -1,0 +1,2 @@
+
+(scratch-palette . [(20150225 842) ((popwin (0 7 0 -3))) "make scratch buffer for each files" single ((:commit . "f6803b448079f4a81cc699cec7442ef543cd5818") (:authors ("zk_phi")) (:maintainer "zk_phi") (:url . "http://hins11.yu-yake.com/"))])

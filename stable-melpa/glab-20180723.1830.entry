@@ -1,0 +1,2 @@
+
+(glab . [(20180723 1830) ((emacs (24 4)) (ghub (2 0))) "minuscule client library for the Gitlab API" single ((:commit . "d83ebaee75fd7f0d175b76d5f3d226853a9ba205") (:keywords "tools") (:authors ("Jonas Bernoulli" . "jonas@bernoul.li")) (:maintainer "Jonas Bernoulli" . "jonas@bernoul.li") (:url . "https://github.com/magit/ghub"))])

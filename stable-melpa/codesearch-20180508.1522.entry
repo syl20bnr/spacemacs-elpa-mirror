@@ -1,0 +1,2 @@
+
+(codesearch . [(20180508 1522) ((elog (0 1))) "Core support for managing codesearch tools" tar ((:commit . "b6452c87d8405f37a65ce9320e59422733580bbe") (:keywords "tools" "development" "search") (:authors ("Austin Bingham" . "austin.bingham@gmail.com") ("Youngjoo Lee" . "youngker@gmail.com")) (:maintainer "Austin Bingham" . "austin.bingham@gmail.com") (:url . "https://github.com/abingham/emacs-codesearch"))])

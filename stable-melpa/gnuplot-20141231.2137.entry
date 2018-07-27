@@ -1,0 +1,2 @@
+
+(gnuplot . [(20141231 2137) nil "drive gnuplot from within emacs" tar ((:commit . "21f9046e3f5caad41b750b5c9cee02fa4fd20fb9") (:keywords "gnuplot" "plotting") (:authors ("Bruce Ravel" . "bruceravel1@gmail.com")) (:maintainer "Bruce Ravel" . "bruceravel1@gmail.com"))])

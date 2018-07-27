@@ -1,0 +1,2 @@
+
+(slime-docker . [(20171004 1851) ((emacs (24)) (slime (2 16)) (docker-tramp (0 1)) (cl-lib (0 5))) "Integration of SLIME with Docker containers." tar ((:commit . "13fa8be2fca516f3ff5fb70fa79dd8404bf86439") (:keywords "docker" "lisp" "slime") (:url . "https://github.com/daewok/slime-docker"))])

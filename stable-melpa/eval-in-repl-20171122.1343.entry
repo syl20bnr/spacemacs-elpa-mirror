@@ -1,0 +1,2 @@
+
+(eval-in-repl . [(20171122 1343) ((dash (0 0 0)) (paredit (0 0 0)) (ace-window (0 0 0))) "Consistent ESS-like eval interface for various REPLs" tar ((:commit . "fea05a5b81d74ac53cb2a83aa83a73d9526bcc42") (:url . "https://github.com/kaz-yos/eval-in-repl/"))])

@@ -1,0 +1,2 @@
+
+(hmac . [(20180429 2010) ((cl-lib (0 5)) (emacs (25))) "hash-based message authentication code" single ((:commit . "30132cd3fee7d3d91a9f04709d49ca0dcb96d565") (:authors ("Sean McAfee")) (:maintainer "Sean McAfee") (:url . "https://github.com/grimnebulin/emacs-hmac"))])

@@ -1,0 +1,2 @@
+
+(project-persist . [(20150519 2024) nil "A minor mode to allow loading and saving of project settings." tar ((:commit . "8da45c80b23b1d7499eac11a258fd7382312a304"))])

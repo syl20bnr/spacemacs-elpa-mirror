@@ -1,0 +1,2 @@
+
+(readability . [(20140716 27) ((oauth (1 4)) (ov (1 0)) (emacs (24 3))) "Read articles from Readability in Emacs" single ((:commit . "6c220ab8e0ca63946574ed892add5c8fd14002ce") (:keywords "readability" "oauth") (:authors ("Shingo Fukuyama - http://fukuyama.co")) (:maintainer "Shingo Fukuyama - http://fukuyama.co") (:url . "https://github.com/ShingoFukuyama/emacs-readability"))])

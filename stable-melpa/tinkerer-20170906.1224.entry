@@ -1,0 +1,2 @@
+
+(tinkerer . [(20170906 1224) ((s (1 2 0))) "Elisp wrapper for Tinkerer Blogging Engine." single ((:commit . "e34135555f3748b578c7f8706dfd0c888fb87581") (:keywords "tinkerer" "blog" "wrapper") (:authors ("Yagnesh Raghava Yakkala" . "hi@yagnesh.org")) (:maintainer "Yagnesh Raghava Yakkala" . "hi@yagnesh.org") (:url . "https://github.com/yyr/tinkerer.el"))])

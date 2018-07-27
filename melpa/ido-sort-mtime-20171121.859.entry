@@ -1,0 +1,2 @@
+
+(ido-sort-mtime . [(20171121 859) nil "Sort Ido's file list by modification time" single ((:commit . "f638ff0c922af862f5211779f2311a27fde428eb") (:keywords "convenience" "files") (:authors ("Paweł Kraśnicki")) (:maintainer "Paweł Kraśnicki"))])

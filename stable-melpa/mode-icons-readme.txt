@@ -10,6 +10,7 @@ among others:
 - Haml
 - JavaScript
 - Lisp
+- Lua
 - nXML
 - PHP
 - Python

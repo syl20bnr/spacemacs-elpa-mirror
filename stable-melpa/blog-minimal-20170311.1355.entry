@@ -1,0 +1,2 @@
+
+(blog-minimal . [(20170311 1355) ((ht (1 5)) (simple-httpd (1 4 6)) (mustache (0 22)) (s (1 11 0)) (org (9 0 3))) "a very simple static site generator based on org mode" tar ((:commit . "d679d74039ecc114b037800c8a94303265b9542a") (:keywords "blog" "org") (:authors ("Thank Fly" . "thiefuniverses@gmail.com")) (:maintainer "Thank Fly" . "thiefuniverses@gmail.com") (:url . "https://github.com/thiefuniverse/blog-minimal"))])

@@ -1,0 +1,2 @@
+
+(reverse-im . [(20180213 1325) ((emacs (24 4))) "Reverse mapping for keyboard layouts other than english." single ((:commit . "16931909115a922b1cf3846b1f60509b6590001f") (:keywords "input" "method") (:url . "https://github.com/a13/reverse-im.el"))])

@@ -1,9 +1,10 @@
 This package provides a major mode for viewing log files, including syntax
 highlighting, filtering, and source code browsing.
 
-Log records are syntax highlighted using keywords such as INFO and ERROR.
-Customizable regular expressions are used to find the beginning and end of
-multi-line log records.
+Log records are syntax highlighted using customizable regular expressions
+that contain keywords such as INFO and ERROR. Other customizable regular
+expressions are used to find the beginning and end of multi-line log
+records.
 
 To filter a log file buffer, type `C-c C-s', and enter the desired filter
 criteria - any number of keywords separated by spaces. Log records that
@@ -26,9 +27,6 @@ information about jtags, see http://jtags.sourceforge.net.
 Finally, the commands `M-}' and `M-{' are redefined to move to the end
 and beginning of the current log record.
 
-The latest version of Log4j mode can always be found at
-http://log4j-mode.sourceforge.net.
-
 Installation:
 
 Place "log4j-mode.el" in your `load-path' and place the following lines
@@ -44,13 +42,17 @@ Configuration:
 You can customize the faces that are used for syntax highlighting.
 Type `M-x customize-group' and enter group name "log4j-mode".
 
-Log file buffers are auto reverted by default. If you don't like that,
-set `log4j-auto-revert-flag' to nil.
+To customize the regular expressions used to identify log records for
+syntax highlighting, change the variables `log4j-match-error-regexp'
+etc.
 
 You can also customize the regular expressions that are used to find the
 beginning and end of multi-line log records. However, in many cases this
 will not be necessary. Log4j mode can automatically detect single-line and
 multi-line log records created by Log4j and JDK's built-in logging package.
+
+Log file buffers are auto reverted by default. If you don't like that,
+set `log4j-auto-revert-flag' to nil.
 
 If you use the arrow keys to move around in the text, you can define `C-up'
 and `C-down' to move to the end and beginning of the current log record.

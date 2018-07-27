@@ -1,0 +1,2 @@
+
+(pomidor . [(20180614 828) ((emacs (24 3)) (alert (1 2))) "Simple and cool pomodoro timer" tar ((:commit . "8859aecdb48b76a36c5e251793da0f108b2dfeb4") (:keywords "tools" "time" "applications" "pomodoro technique") (:authors ("TatriX" . "tatrics@gmail.com")) (:maintainer "TatriX" . "tatrics@gmail.com") (:url . "https://github.com/TatriX/pomidor"))])

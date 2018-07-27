@@ -1,0 +1,2 @@
+
+(swap-regions . [(20180116 1053) ((emacs (24 3))) "Swap text in two regions" single ((:commit . "6e7a1bc68f11afe00809c8e27c13bca08393a91c") (:keywords "convenience") (:authors ("Xu Chunyang" . "mail@xuchunyang.me")) (:maintainer "Xu Chunyang" . "mail@xuchunyang.me") (:url . "https://github.com/xuchunyang/swap-regions.el"))])

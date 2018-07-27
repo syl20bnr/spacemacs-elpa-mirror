@@ -1,0 +1,2 @@
+
+(picpocket . [(20180610 1059) ((emacs (24 4))) "Image viewer" single ((:commit . "ce4b6ed088384f2414af82e8e4eae5b92c2874bf") (:keywords "multimedia") (:authors ("Johan Claesson" . "johanclaesson@bredband.net")) (:maintainer "Johan Claesson" . "johanclaesson@bredband.net") (:url . "https://github.com/johanclaesson/picpocket"))])

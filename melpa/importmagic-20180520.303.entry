@@ -1,0 +1,2 @@
+
+(importmagic . [(20180520 303) ((f (0 11 0)) (epc (0 1 0)) (emacs (24 3))) "Fix Python imports using importmagic." tar ((:commit . "e32ee9f6a5eef937b76eba82fdae8bae85d18088") (:keywords "languages" "convenience") (:authors ("Nicolás Salas V." . "nikosalas@gmail.com")) (:maintainer "Nicolás Salas V." . "nikosalas@gmail.com") (:url . "https://github.com/anachronic/importmagic.el"))])

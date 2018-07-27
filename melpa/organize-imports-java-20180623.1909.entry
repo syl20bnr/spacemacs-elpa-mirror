@@ -1,0 +1,2 @@
+
+(organize-imports-java . [(20180623 1909) ((emacs (26)) (f (0 20 0)) (s (1 12 0)) (cl-lib (0 6))) "Mimic Eclipse's Organize Imports functionality." single ((:commit . "cd21c23f903384ffe0eca5e6511bdf893457ab19") (:authors ("Shen, Jen-Chieh" . "jcs090218@gmail.com")) (:maintainer "Shen, Jen-Chieh" . "jcs090218@gmail.com") (:url . "https://github.com/jcs090218/organize-imports-java"))])

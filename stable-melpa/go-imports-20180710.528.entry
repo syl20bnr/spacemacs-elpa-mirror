@@ -1,0 +1,2 @@
+
+(go-imports . [(20180710 528) nil "Insert go import statement given package name" tar ((:commit . "d9950309c868aa46c45f8671413e53f97dc7fe0b") (:keywords "tools" "go" "import") (:authors ("Yaz Saito")) (:maintainer "Yaz Saito") (:url . "https://github.com/yasushi-saito/go-imports"))])

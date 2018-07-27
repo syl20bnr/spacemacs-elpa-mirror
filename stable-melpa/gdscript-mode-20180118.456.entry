@@ -1,0 +1,2 @@
+
+(gdscript-mode . [(20180118 456) ((emacs (24 3))) "Major mode for editing Godot GDScript files" single ((:commit . "31af5283eaec207bc864022a28e2824132471eaf") (:keywords "languages") (:authors ("Adam Bark" . "adam@adambark.com")) (:maintainer "Adam Bark" . "adam@adambark.com") (:url . "https://github.com/AdamBark/gdscript-mode"))])

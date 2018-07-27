@@ -1,0 +1,2 @@
+
+(temporary-persistent . [(20161210 1133) ((emacs (24 3)) (names (20151201 0)) (dash (2 12 1)) (s (1 10 0))) "Keep temp notes buffers persistent -*- lexical-binding: t" single ((:commit . "ac66f3054fc701d53f11ada9d2d9ab18ea481dc0") (:keywords "temp" "buffers" "notes") (:authors ("Kostafey" . "kostafey@gmail.com")) (:maintainer "Kostafey" . "kostafey@gmail.com") (:url . "https://github.com/kostafey/temporary-persistent"))])

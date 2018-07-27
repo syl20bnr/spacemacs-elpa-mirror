@@ -1,0 +1,2 @@
+
+(ob-async . [(20180624 2253) ((async (1 9)) (org (9 0 1)) (emacs (24 4)) (dash (2 14 1))) "Asynchronous org-babel src block execution" single ((:commit . "1b54723ad383aab39dcffc041a91791dcc8add8e") (:keywords "tools") (:authors ("Andrew Stahlman" . "andrewstahlman@gmail.com")) (:maintainer "Andrew Stahlman" . "andrewstahlman@gmail.com") (:url . "https://github.com/astahlman/ob-async"))])

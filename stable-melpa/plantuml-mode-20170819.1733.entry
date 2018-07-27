@@ -1,0 +1,2 @@
+
+(plantuml-mode . [(20170819 1733) nil "Major mode for PlantUML" single ((:commit . "cfb408fc840dae80a7d05d5648d27c18f04c00a9") (:keywords "uml" "plantuml" "ascii") (:authors ("Zhang Weize (zwz)")) (:maintainer "Carlo Sciolla (skuro)"))])

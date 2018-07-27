@@ -1,0 +1,2 @@
+
+(aproject . [(20150605 906) nil "Basic project framework for Emacs" tar ((:commit . "3c7d23c341862dfd77fd0a64775df12ddb44ab54") (:keywords "environment" "project") (:authors ("Vietor Liu" . "vietor.liu@gmail.com")) (:maintainer "Vietor Liu" . "vietor.liu@gmail.com") (:url . "https://github.com/vietor/aproject"))])

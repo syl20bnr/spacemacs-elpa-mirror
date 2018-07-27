@@ -1,0 +1,2 @@
+
+(git-annex . [(20180427 1556) nil "Mode for easy editing of git-annex'd files" single ((:commit . "ebdb44aef1883f1b2b8058e05d30fb9315b03707") (:keywords "files" "data" "git" "annex") (:authors ("John Wiegley" . "jwiegley@gmail.com")) (:maintainer "John Wiegley" . "jwiegley@gmail.com") (:url . "https://github.com/jwiegley/git-annex-el"))])

@@ -1,0 +1,2 @@
+
+(fuo . [(20180314 1648) ((emacs (24 4))) "feeluown client." single ((:commit . "5318bef9d935b53031e6312652554920def69af2") (:keywords "feeluown" "multimedia" "unix") (:authors ("cosven" . "yinshaowen241@gmail.com")) (:maintainer "cosven" . "yinshaowen241@gmail.com") (:url . "http://github.com/cosven/emacs-fuo"))])

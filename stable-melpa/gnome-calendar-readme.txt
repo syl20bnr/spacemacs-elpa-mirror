@@ -1,2 +1,1 @@
-Commentary:
-GNOME Shell calendar integration
+GNOME Shell calendar integration with Emacs.

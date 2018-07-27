@@ -1,0 +1,2 @@
+
+(cubicaltt . [(20171108 1402) ((emacs (24 1)) (cl-lib (0 5))) "Mode for cubical type theory" single ((:commit . "452d973fae544861090fbdea51f4f5da653fb394") (:keywords "languages") (:url . "https://github.com/mortberg/cubicaltt"))])

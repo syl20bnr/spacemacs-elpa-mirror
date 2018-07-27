@@ -1,0 +1,2 @@
+
+(flycheck-ycmd . [(20180207 1643) ((emacs (24)) (dash (2 13 0)) (flycheck (0 22)) (ycmd (1 2)) (let-alist (1 0 5))) "flycheck integration for ycmd" single ((:commit . "fe35b7f2e3d9370941b9e537c9bc578d814acce2") (:authors ("Austin Bingham" . "austin.bingham@gmail.com")) (:maintainer "Austin Bingham" . "austin.bingham@gmail.com") (:url . "https://github.com/abingham/emacs-ycmd"))])

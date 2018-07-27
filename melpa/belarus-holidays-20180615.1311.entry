@@ -1,0 +1,2 @@
+
+(belarus-holidays . [(20180615 1311) nil "Belarus holidays whith transfers" single ((:commit . "410a7dcf46fdcbee762a0c0aa0c7af03230b9656") (:authors ("Yauhen Makei" . "yauhen.makei@gmail.com")) (:maintainer "Yauhen Makei" . "yauhen.makei@gmail.com") (:url . "http://bitbucket.org/EugeneMakei/belarus-holidays.el"))])

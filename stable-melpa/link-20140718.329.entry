@@ -1,0 +1,2 @@
+
+(link . [(20140718 329) nil "Hypertext links in text buffers" single ((:commit . "a23b8f4a422d0de69a006ed010eff5795319db98") (:keywords "interface" "hypermedia") (:authors ("Torsten Hilbrich" . "torsten.hilbrich@gmx.net")) (:maintainer "Torsten Hilbrich" . "torsten.hilbrich@gmx.net"))])

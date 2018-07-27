@@ -1,0 +1,2 @@
+
+(seclusion-mode . [(20121118 2353) nil "Edit in seclusion. A Dark Room mode." single ((:commit . "9634e76c52bfb7200ff0f9f01404f743429e9ef0") (:authors (nil . "Daniel Leslie dan@ironoxide.ca")) (:maintainer nil . "Daniel Leslie dan@ironoxide.ca") (:url . "http://github.com/dleslie/seclusion-mode"))])

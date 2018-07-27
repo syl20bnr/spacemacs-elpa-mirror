@@ -1,0 +1,2 @@
+
+(proxy-mode . [(20180521 330) ((emacs (25))) "A minor mode to toggle proxy." single ((:commit . "1cf689c2408945081215550589936a7eaab14987") (:keywords "comm" "proxy") (:url . "https://github.com/stardiviner/proxy-mode"))])

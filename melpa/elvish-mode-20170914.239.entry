@@ -1,0 +1,2 @@
+
+(elvish-mode . [(20170914 239) ((emacs (24 3))) "Defines a major mode for Elvish" single ((:commit . "9cf31b453ac79b011b84e83ca11c964c4e647649") (:authors ("Adam Schwalm" . "adamschwalm@gmail.com")) (:maintainer "Adam Schwalm" . "adamschwalm@gmail.com") (:url . "https://github.com/ALSchwalm/elvish-mode"))])

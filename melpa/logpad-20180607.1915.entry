@@ -1,0 +1,2 @@
+
+(logpad . [(20180607 1915) nil "Simulate Windows Notepad for logging." single ((:keywords "files" "outlines" "notepad") (:authors ("Jens K. Loewe" . "git@tuxproject.de")) (:maintainer "Jens K. Loewe" . "git@tuxproject.de") (:url . "https://bitbucket.org/tux_/logpad.el"))])

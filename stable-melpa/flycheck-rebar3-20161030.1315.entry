@@ -1,0 +1,2 @@
+
+(flycheck-rebar3 . [(20161030 1315) ((flycheck (27))) "Rebar3 flycheck integration for Erlang projects" single ((:commit . "56a7c94857f0a0ea6a2a73c476a1a2faadc0f7c6") (:keywords "erlang" "flycheck" "rebar3") (:authors ("Joe DeVivo")) (:maintainer "Joe DeVivo") (:url . "https://github/joedevivo/flycheck-rebar3"))])

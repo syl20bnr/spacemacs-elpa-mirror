@@ -1,0 +1,2 @@
+
+(korean-holidays . [(20170301 445) nil "Korean holidays for calendar." single ((:commit . "6e94c2e071069aee9ed12ebbfd9b0ad863b8c78e") (:keywords "calendar") (:authors ("SeungKi Kim" . "tttuuu888@gmail.com")) (:maintainer "SeungKi Kim" . "tttuuu888@gmail.com") (:url . "https://github.com/tttuuu888/korean-holidays"))])

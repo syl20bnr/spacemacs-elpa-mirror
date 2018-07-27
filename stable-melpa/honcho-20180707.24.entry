@@ -1,0 +1,2 @@
+
+(honcho . [(20180707 24) ((emacs (25 1)) (sudo-edit (0 1))) "Run and manage long-running services" single ((:commit . "f6a89a27e255b3ecb1f0b13058933558b1f0c6fb") (:keywords "convenience") (:authors ("Mario Rodas" . "marsam@users.noreply.github.com")) (:maintainer "Mario Rodas" . "marsam@users.noreply.github.com") (:url . "https://github.com/emacs-pe/honcho.el"))])

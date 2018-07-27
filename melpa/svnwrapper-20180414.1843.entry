@@ -1,0 +1,2 @@
+
+(svnwrapper . [(20180414 1843) ((e2ansi (0 1 1))) "Highlighting and paging for shell command `svn'" tar ((:commit . "de5069f5784e5d9e87a0af0159ba5f28a3716583") (:keywords "faces") (:authors ("Anders Lindgren")) (:maintainer "Anders Lindgren") (:url . "https://github.com/Lindydancer/svnwrapper"))])

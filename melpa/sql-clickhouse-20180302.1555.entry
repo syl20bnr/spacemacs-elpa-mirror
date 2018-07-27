@@ -1,0 +1,2 @@
+
+(sql-clickhouse . [(20180302 1555) ((emacs (24))) "support ClickHouse as SQL interpreter" single ((:commit . "2edccd94145c55a040a3a87193793f06cf01f64f") (:authors ("Robert Schwarz" . "mail@rschwarz.net")) (:maintainer "Robert Schwarz" . "mail@rschwarz.net") (:url . "https://github.com/leethargo/sql-clickhouse"))])

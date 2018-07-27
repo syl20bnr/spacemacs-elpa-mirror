@@ -1,0 +1,2 @@
+
+(map-progress . [(20140310 2132) nil "mapping macros that report progress" single ((:commit . "3167eb218510953fb97e7d50948a625eaa3f0005") (:keywords "convenience") (:authors ("Jonas Bernoulli" . "jonas@bernoul.li")) (:maintainer "Jonas Bernoulli" . "jonas@bernoul.li") (:url . "https://github.com/tarsius/map-progress/"))])

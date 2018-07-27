@@ -1,0 +1,2 @@
+
+(kiwix . [(20170927 820) ((emacs (24 4)) (cl-lib (0 5))) "Kiwix interface and support." single ((:commit . "86dbead6c0017beefd92a0b64a0bb5f5d12c5b16") (:keywords "kiwix" "wikipedia") (:authors ("stardiviner" . "numbchild@gmail.com")) (:maintainer "stardiviner" . "numbchild@gmail.com") (:url . "https://github.com/stardiviner/kiwix.el"))])

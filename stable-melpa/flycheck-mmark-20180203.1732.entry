@@ -1,0 +1,2 @@
+
+(flycheck-mmark . [(20180203 1732) ((emacs (24 4)) (flycheck (0 29))) "Flycheck checker for the MMark markdown processor" single ((:commit . "7fdcc48ff6ffa5e7db126a76f4948ab08b9eb8d4") (:keywords "convenience" "text") (:authors ("Mark Karpov" . "markkarpov92@gmail.com")) (:maintainer "Mark Karpov" . "markkarpov92@gmail.com") (:url . "https://github.com/mmark-md/flycheck-mmark"))])

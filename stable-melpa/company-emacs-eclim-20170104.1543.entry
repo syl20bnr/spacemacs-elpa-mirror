@@ -1,0 +1,2 @@
+
+(company-emacs-eclim . [(20170104 1543) ((eclim (0 3)) (company (0 7)) (cl-lib (0 5))) "company-mode backend for eclim" single ((:commit . "6396ad1cd25c0a197109343ec1cce5d5080acdff"))])

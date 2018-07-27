@@ -1,0 +1,2 @@
+
+(neato-graph-bar . [(20171231 153) ((emacs (24 3))) "Neat-o graph bars CPU/memory etc." single ((:commit . "c59f15ed9a40aecc174aa22c4bbfa7978e182705") (:authors ("Robert Cochran" . "robert-git@cochranmail.com")) (:maintainer "Robert Cochran" . "robert-git@cochranmail.com") (:url . "https://gitlab.com/RobertCochran/neato-graph-bar"))])

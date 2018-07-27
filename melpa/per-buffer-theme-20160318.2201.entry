@@ -1,0 +1,2 @@
+
+(per-buffer-theme . [(20160318 2201) ((cl-lib (0 5))) "Change theme according to buffer name or major mode." single ((:keywords "themes") (:authors ("Iñigo Serna" . "inigoserna@gmail.com")) (:maintainer "Iñigo Serna" . "inigoserna@gmail.com") (:url . "https://bitbucket.com/inigoserna/per-buffer-theme.el"))])

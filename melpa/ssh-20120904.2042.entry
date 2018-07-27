@@ -1,0 +1,2 @@
+
+(ssh . [(20120904 2042) nil "Support for remote logins using ssh." single ((:commit . "c17cf5b43df8ac4662a0580f85898e1f078df0d1") (:keywords "unix" "comm") (:authors ("Noah Friedman" . "friedman@splode.com")) (:maintainer "Ian Eure" . "ian.eure@gmail.com"))])

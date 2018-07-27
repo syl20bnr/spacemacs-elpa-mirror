@@ -1,0 +1,2 @@
+
+(flycheck-golangci-lint . [(20180711 817) ((emacs (24)) (flycheck (0 22))) "Flycheck checker for golangci-lint" single ((:commit . "b4b51aa6fe5335c0f46f2f83c7dc32e4141ff9f1") (:keywords "convenience" "tools" "go") (:authors ("Wei Jian Gan" . "weijiangan@outlook.com")) (:maintainer "Wei Jian Gan" . "weijiangan@outlook.com") (:url . "https://github.com/weijiangan/flycheck-golangci-lint"))])

@@ -1,0 +1,2 @@
+
+(bibtex-utils . [(20170817 1919) nil "Provides utilities for extending BibTeX mode" single ((:commit . "ed5ccce46c2088a28a2f0c49caa679d2f20567f0") (:keywords "bibtex") (:authors ("Tyler Smith" . "tyler@plantarum.ca")) (:maintainer "Tyler Smith" . "tyler@plantarum.ca") (:url . "https://github.com/plantarum/bibtex-utils"))])

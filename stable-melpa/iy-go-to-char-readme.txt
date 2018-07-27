@@ -28,13 +28,18 @@ Or if you prefer up-to (vim "t") versions:
 You also can bind go-to methods and up-to methods to different keys.
 
 Except repeating the char key, followings keys are defined before
-quitting the search:
+quitting the search (which can be disabled by setting
+`iy-go-to-char-override-local-map' to nil):
+
+   X   -- where X is the char to be searched. Repeating it will search
+          forward the char. Can be disabled through
+          `iy-go-to-char-continue-when-repeating'
 
    ;   -- search forward the char, customizable:
-          `iy-go-to-char-key-forward'
+          `iy-go-to-char-key-forward', `iy-go-to-char-use-key-forward'
 
    ,   -- search backward the char, customizable:
-          `iy-go-to-char-key-backward'
+          `iy-go-to-char-key-backward', `iy-go-to-char-use-key-backward'
 
    C-g -- quit
 

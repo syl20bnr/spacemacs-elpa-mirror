@@ -1,0 +1,2 @@
+
+(powerline-evil . [(20151112 1510) ((evil (1 0 8)) (powerline (2 3))) "Utilities for better Evil support for Powerline" tar ((:commit . "98b3a102b6dba6632aa0755a7257300c9b164309") (:keywords "evil" "mode-line" "powerline") (:authors ("Chris Johnson" . "raugturi@gmail.com")) (:maintainer "Chris Johnson" . "raugturi@gmail.com") (:url . "http://github.com/raugturi/powerline-evil/"))])

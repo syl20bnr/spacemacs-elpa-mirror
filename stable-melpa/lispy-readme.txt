@@ -25,7 +25,7 @@ When special, the digit keys call `digit-argument', since most
 `lispy' commands accept a numeric argument.  For instance, "3c" is
 equivalent to "ccc" (clone sexp 3 times), and "4j" is equivalent to
 "jjjj" (move point 4 sexps down).  Some useful applications are
-"9l" and "9a" - they exit list forwards and backwards respectively
+"9l" and "9h" - they exit list forwards and backwards respectively
 at most 9 times which makes them effectively equivalent to
 `end-of-defun' and `beginning-of-defun'.
 
@@ -98,7 +98,7 @@ until all your Lisp code is turned into Python :).
 
 Some Clojure support depends on `cider'.
 Some Scheme support depends on `geiser'.
-Some Common Lisp support depends on `slime'.
+Some Common Lisp support depends on `slime' or `sly'.
 You can get them from MELPA.
 
 See http://abo-abo.github.io/lispy/ for a detailed documentation.

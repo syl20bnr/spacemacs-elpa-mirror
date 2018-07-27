@@ -1,0 +1,2 @@
+
+(related . [(20161003 610) ((cl-lib (0 5))) "Switch back and forth between similarly named buffers." single ((:commit . "0065a2e16eeaa9bface49f7f0815b9cf9719f441") (:keywords "file" "buffer" "switch" "selection" "matching" "convenience") (:authors ("Julien Montmartin")) (:maintainer "Julien Montmartin") (:url . "https://bitbucket.org/lyude/related/raw/master/related.el"))])

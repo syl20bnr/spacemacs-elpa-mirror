@@ -1,0 +1,2 @@
+
+(hexo . [(20180224 344) ((emacs (24 3))) "Major mode & tools for Hexo" single ((:commit . "ff21ab2d95e13666f36a243989ffea2027842191") (:keywords "tools" "hexo") (:authors ("Ono Hiroko (kuanyui)" . "azazabc123@gmail.com")) (:maintainer "Ono Hiroko (kuanyui)" . "azazabc123@gmail.com") (:url . "https://github.com/kuanyui/hexo.el"))])

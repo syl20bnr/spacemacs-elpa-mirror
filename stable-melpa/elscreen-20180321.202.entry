@@ -1,0 +1,2 @@
+
+(elscreen . [(20180321 202) ((emacs (24))) "Emacs window session manager" tar ((:commit . "02164afab2c5fbff6e4aa7c59e0daedc6c504772") (:keywords "window" "convenience") (:authors ("Naoto Morishima" . "naoto@morishima.net")) (:maintainer "Akinori MUSHA" . "knu@iDaemons.org") (:url . "https://github.com/knu/elscreen"))])

@@ -1,0 +1,2 @@
+
+(hlint-refactor . [(20170818 448) nil "Apply HLint suggestions" single ((:commit . "92c69aa01c65968e86c15db087bb1ea785e4736c") (:keywords "haskell" "refactor") (:url . "https://github.com/mpickering/hlint-refactor-mode"))])

@@ -1,0 +1,2 @@
+
+(cricbuzz . [(20171228 7) ((enlive (0 0 1)) (f (0 19 0)) (dash (2 13 0)) (s (1 11 0))) "Cricket scores from cricbuzz in emacs" single ((:commit . "557f75f10525e7a4d50e83010b9ed07fbf9df889") (:keywords "cricket" "score") (:authors ("Abhinav Tushar" . "abhinav.tushar.vs@gmail.com")) (:maintainer "Abhinav Tushar" . "abhinav.tushar.vs@gmail.com") (:url . "https://github.com/lepisma/cricbuzz.el"))])

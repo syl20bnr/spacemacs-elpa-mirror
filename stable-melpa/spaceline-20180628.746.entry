@@ -1,0 +1,2 @@
+
+(spaceline . [(20180628 746) ((emacs (24 4)) (cl-lib (0 5)) (powerline (2 3)) (dash (2 11 0)) (s (1 10 0))) "Modeline configuration library for powerline" tar ((:commit . "29ced71ed0097cd5eba15d6bfdbafd9d18f5bd82") (:keywords "mode-line" "powerline" "spacemacs") (:authors ("Eivind Fonn" . "evfonn@gmail.com")) (:maintainer "Eivind Fonn" . "evfonn@gmail.com") (:url . "https://github.com/TheBB/spaceline"))])

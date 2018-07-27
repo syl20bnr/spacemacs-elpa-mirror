@@ -1,0 +1,2 @@
+
+(window-purpose . [(20180531 2036) ((emacs (24)) (cl-lib (0 5)) (let-alist (1 0 3)) (imenu-list (0 1))) "Purpose-based window management for Emacs" tar ((:commit . "8737c5d8cb4a0d749771a04a136a784e5d519d5e") (:keywords "frames") (:authors ("Bar Magal")) (:maintainer "Bar Magal") (:url . "https://github.com/bmag/emacs-purpose"))])

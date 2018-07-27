@@ -1,0 +1,2 @@
+
+(json-navigator . [(20171220 819) ((emacs (24 3)) (hierarchy (0 6 0))) "View and navigate JSON structures" single ((:commit . "7a1fec93500c46ccba4086d10115d8188607d0d0") (:authors ("Damien Cassou" . "damien@cassou.me")) (:maintainer "Damien Cassou" . "damien@cassou.me") (:url . "https://github.com/DamienCassou/json-navigator"))])

@@ -25,6 +25,10 @@ If you have a different keyfile, you can set that, too:
 If you use a non-standard ssh port, you can specify it by setting
 `scpaste-scp-port'.
 
+If you need to use alternative scp and ssh programs, you can set
+`scpaste-scp' and `scpaste-ssh'. For example, scpaste works with the Putty
+suite on Windows if you set these to pscp and plink, respectively.
+
 Optionally you can set the displayed name for the footer and where
 it should link to:
 (setq scpaste-user-name "Technomancy"

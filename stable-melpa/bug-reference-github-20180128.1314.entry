@@ -1,0 +1,2 @@
+
+(bug-reference-github . [(20180128 1314) nil "Set `bug-reference-url-format' in Github repos" tar ((:commit . "f570a0532bfb44f095b42cf68ab1f69799101137") (:keywords "programming" "tools") (:authors ("Arne Jørgensen" . "arne@arnested.dk")) (:maintainer "Arne Jørgensen" . "arne@arnested.dk") (:url . "https://github.com/arnested/bug-reference-github"))])

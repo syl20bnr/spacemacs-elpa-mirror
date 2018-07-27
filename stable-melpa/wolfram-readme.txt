@@ -13,8 +13,3 @@ package.
 
 To make a query, run `M-x wolfram-alpha' then type your query. It will show
 the results in a buffer called `*WolframAlpha*'.
-
-(require 'url)
-(require 'xml)
-(require 'url-cache)
-(require 'org-faces)                    ;For `org-level-1' and `org-level-2' faces

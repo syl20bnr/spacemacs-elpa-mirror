@@ -13,7 +13,8 @@ This will bind "S" in dired-mode to invoke the quick sort hydra and new Dired
 buffers are automatically sorted according to the setup in this package.  See
 the document of `dired-quick-sort-setup` if you need a different setup.  It
 is recommended that at least "-l" should be put into
-`dired-listing-switches'.
+`dired-listing-switches'.  If used with dired+, you may want to set
+`diredp-hide-details-initially-flag' to nil.
 
 To make full use of this extensions, please make sure that the variable
 `insert-directory-program' points to the GNU version of ls.
@@ -22,3 +23,6 @@ To report bugs and make feature requests, please open a new ticket at the
 issue tracker <https://gitlab.com/xuhdev/dired-quick-sort/issues>. To
 contribute, please create a merge request at
 <https://gitlab.com/xuhdev/dired-quick-sort/merge_requests>.
+
+For any other questions and comments, please send them to
+<https://www.topbug.net/blog/2016/08/17/dired-quick-sort-sort-dired-buffers-quickly-in-emacs/>.

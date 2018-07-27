@@ -1,0 +1,2 @@
+
+(esqlite-helm . [(20151116 850) ((esqlite (0 2 0)) (helm (20131207 845))) "Define helm source for sqlite database" single ((:commit . "bc4047e09b8f6c34802db86095cd465935670dce") (:keywords "data") (:authors ("Masahiro Hayashi" . "mhayashi1120@gmail.com")) (:maintainer "Masahiro Hayashi" . "mhayashi1120@gmail.com") (:url . "https://github.com/mhayashi1120/Emacs-esqlite"))])

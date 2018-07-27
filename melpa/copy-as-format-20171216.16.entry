@@ -1,0 +1,2 @@
+
+(copy-as-format . [(20171216 16) ((cl-lib (0 5))) "Copy buffer locations as GitHub/Slack/JIRA/HipChat/... formatted code" single ((:commit . "971957166fe64d914ec4be209b4f80efeeabbb19") (:keywords "github" "slack" "jira" "hipchat" "gitlab" "bitbucket" "org-mode" "pod" "rst" "asciidoc" "tools" "convenience") (:authors ("Skye Shaw" . "skye.shaw@gmail.com")) (:maintainer "Skye Shaw" . "skye.shaw@gmail.com") (:url . "https://github.com/sshaw/copy-as-format"))])

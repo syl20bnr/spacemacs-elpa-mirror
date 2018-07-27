@@ -1,0 +1,2 @@
+
+(org2ctex . [(20171017 643) ((emacs (24 4))) "Export org to ctex (a latex macro for Chinese)" single ((:commit . "1b74aa9cf45de224ffd6aa9b93f0debddc2b48bc") (:authors ("Feng Shu" . "tumashu@163.com")) (:maintainer "Feng Shu" . "tumashu@163.com") (:url . "https://github.com/tumashu/org2ctex"))])

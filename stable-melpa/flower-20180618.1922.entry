@@ -1,0 +1,2 @@
+
+(flower . [(20180618 1922) ((emacs (24 4)) (clomacs (0 0 3))) "Emacs task tracker client." tar ((:commit . "4d05448dc0118078ec320f564d87acaa740ae47c") (:keywords "hypermedia" "outlines" "tools" "vc") (:authors ("Sergey Sobko" . "SSobko@ptsecurity.com")) (:maintainer "Sergey Sobko" . "SSobko@ptsecurity.com") (:url . "https://github.com/PositiveTechnologies/flower"))])

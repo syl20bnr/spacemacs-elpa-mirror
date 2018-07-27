@@ -1,0 +1,2 @@
+
+(jquery-doc . [(20150812 758) nil "jQuery api documentation interface for emacs" tar ((:commit . "24032284919b942ec27707d929bdd8bf48420062") (:keywords "docs" "jquery") (:authors ("Anantha kumaran" . "ananthakumaran@gmail.com")) (:maintainer "Anantha kumaran" . "ananthakumaran@gmail.com"))])

@@ -1,0 +1,2 @@
+
+(mingus . [(20180713 636) ((libmpdee (2 1))) "MPD Interface" tar ((:commit . "686d383f48b196c916c5fcb6ddc3bcff8a0c4b14") (:keywords "multimedia" "elisp" "music" "mpd") (:authors ("Niels Giesen <pft on #emacs>")) (:maintainer "Niels Giesen <pft on #emacs>") (:url . "https://github.com/pft/mingus"))])

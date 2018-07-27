@@ -1,0 +1,2 @@
+
+(mu4e-jump-to-list . [(20180425 1832) ((emacs (24 4)) (cl-lib (0 5))) "mu4e jump-to-list extension" single ((:commit . "e336ffe84b55edaaf4e48040d4d9156a9f4c881e") (:keywords "mu4e" "mail" "convenience") (:authors ("Yuri D'Elia" . "wavexx@thregr.org")) (:maintainer "Yuri D'Elia" . "wavexx@thregr.org") (:url . "https://github.com/wavexx/mu4e-jump-to-list.el"))])

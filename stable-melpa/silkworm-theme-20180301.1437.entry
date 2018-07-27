@@ -1,0 +1,2 @@
+
+(silkworm-theme . [(20180301 1437) ((emacs (24))) "Light theme with pleasant, low contrast colors." single ((:commit . "4a297f952401cfe894dcb24174f6eda05e00fada") (:authors ("Martin Haesler")) (:maintainer "Martin Haesler"))])

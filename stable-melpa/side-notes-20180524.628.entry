@@ -1,0 +1,2 @@
+
+(side-notes . [(20180524 628) ((emacs (24 5))) "Easy access to a directory notes file" single ((:commit . "981ac308b9b5d58e2af20485377e693d2a6e15aa") (:keywords "convenience") (:authors ("Paul W. Rankin" . "hello@paulwrankin.com")) (:maintainer "Paul W. Rankin" . "hello@paulwrankin.com") (:url . "https://github.com/rnkn/side-notes"))])

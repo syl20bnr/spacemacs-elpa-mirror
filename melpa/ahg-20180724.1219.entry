@@ -1,0 +1,2 @@
+
+(ahg . [(20180724 1219) nil "Alberto's Emacs interface for Mercurial (Hg)" single ((:authors ("Alberto Griggio" . "agriggio@users.sourceforge.net")) (:maintainer "Alberto Griggio" . "agriggio@users.sourceforge.net") (:url . "https://bitbucket.org/agriggio/ahg"))])

@@ -1,0 +1,2 @@
+
+(grin . [(20110806 658) nil "run grin and grind (python replacements for grep and find) putting hits in a grep buffer" single ((:keywords "python" "grin" "grind" "grep" "find") (:authors ("Darius Powell" . "dariusp686@gmail.com")) (:maintainer "Darius Powell" . "dariusp686@gmail.com") (:url . "http://bitbucket.org/dariusp686/emacs-grin"))])

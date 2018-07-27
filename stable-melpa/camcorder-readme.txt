@@ -35,13 +35,6 @@ Dependencies
 Troubleshooting
 ───────────────
 
-  On my machine, I noticed that the window-id Emacs reported
-  ┌────
-  │ (format "%x"
-  │   (string-to-number
-  │    (frame-parameter (selected-frame) 'window-id)))
-  └────
-  differed from the id that the WM reported with the `wminfo' utility. I
-  added the variable `camcorder-window-id-offset' to correct that. The
-  default value is -4, but you might need to increase or decrease that
-  to make those two numbers match.
+  If camcorder.el seems to pick an incorrect window id (differing from the
+  one that `wminfo' returns), you can change `camcorder-window-id-offset' from its
+  default value of 0.

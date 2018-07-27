@@ -1,0 +1,2 @@
+
+(drupal-spell . [(20130520 1655) nil "Aspell extra dictionary for Drupal" tar ((:commit . "cddf1dbc71fb4c5c4c50317db6830467fa97cff0") (:keywords "wp") (:authors ("Arne Jørgensen" . "arne@arnested.dk")) (:maintainer "Arne Jørgensen" . "arne@arnested.dk") (:url . "https://github.com/arnested/drupal-spell"))])

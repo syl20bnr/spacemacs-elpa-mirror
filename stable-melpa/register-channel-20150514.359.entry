@@ -1,0 +1,2 @@
+
+(register-channel . [(20150514 359) nil "Jump around fast using registers" single ((:commit . "f62f9a62ebd2537d4a8c8f2e358562c67d2aefc1") (:keywords "convenience") (:authors ("Yang Zhao" . "YangZhao11@users.noreply.github.com")) (:maintainer "Yang Zhao" . "YangZhao11@users.noreply.github.com"))])

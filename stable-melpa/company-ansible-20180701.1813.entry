@@ -1,0 +1,2 @@
+
+(company-ansible . [(20180701 1813) ((emacs (24 4)) (company (0 8 12))) "A company back-end for ansible" tar ((:commit . "c6dc714e3a15f89671ae5e8fe668858b20ef63e8") (:keywords "ansible") (:authors ("Krzysztof Magosa" . "krzysztof@magosa.pl")) (:maintainer "Krzysztof Magosa" . "krzysztof@magosa.pl") (:url . "https://github.com/krzysztof-magosa/company-ansible"))])

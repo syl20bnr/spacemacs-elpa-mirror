@@ -1,0 +1,2 @@
+
+(auto-complete-rst . [(20140225 944) ((auto-complete (1 4))) "Auto-complete extension for ReST and Sphinx" tar])

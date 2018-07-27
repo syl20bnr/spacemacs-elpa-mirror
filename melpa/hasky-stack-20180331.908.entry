@@ -1,0 +1,2 @@
+
+(hasky-stack . [(20180331 908) ((emacs (24 4)) (f (0 18 0)) (magit-popup (2 10))) "Interface to the Stack Haskell development tool" single ((:commit . "3e17ce07dd6b0207474e4ff14ad7b8c467382947") (:keywords "tools" "haskell") (:authors ("Mark Karpov" . "markkarpov92@gmail.com")) (:maintainer "Mark Karpov" . "markkarpov92@gmail.com") (:url . "https://github.com/hasky-mode/hasky-stack"))])

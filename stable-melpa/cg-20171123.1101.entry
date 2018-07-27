@@ -1,0 +1,2 @@
+
+(cg . [(20171123 1101) nil "major mode for editing Constraint Grammar files" single ((:commit . "e19f3bf60b9c8dbcff053b008fa3ace17fc073fe") (:keywords "languages") (:authors ("Kevin Brubeck Unhammer" . "unhammer@fsfe.org")) (:maintainer "Kevin Brubeck Unhammer" . "unhammer@fsfe.org") (:url . "https://visl.sdu.dk/constraint_grammar.html"))])

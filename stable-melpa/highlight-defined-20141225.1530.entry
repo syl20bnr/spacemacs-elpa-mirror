@@ -1,0 +1,2 @@
+
+(highlight-defined . [(20141225 1530) ((emacs (24))) "Syntax highlighting of known Elisp symbols" single ((:commit . "243478cc204ab42d29805ed610961cbb260c1dfd") (:authors ("Fanael Linithien" . "fanael4@gmail.com")) (:maintainer "Fanael Linithien" . "fanael4@gmail.com") (:url . "https://github.com/Fanael/highlight-defined"))])

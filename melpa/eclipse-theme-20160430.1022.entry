@@ -1,0 +1,2 @@
+
+(eclipse-theme . [(20160430 1022) nil "Theme based on Eclipse circa 2010" single ((:commit . "dc54d9312d97210823b922038076e2b1b132eff2") (:keywords "themes") (:authors ("Oleh Krehel" . "ohwoeowho@gmail.com")) (:maintainer "Oleh Krehel" . "ohwoeowho@gmail.com") (:url . "https://github.com/abo-abo/eclipse-theme"))])

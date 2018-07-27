@@ -15,6 +15,6 @@ init file to enable this mode for such projects:
                  (add-hook 'hack-local-variables-hook
                            (lambda ()
                              (if indent-tabs-mode
-                                 (haskell-tab-indent-mode)
-                               (haskell-indentation-mode)))
+                                 (haskell-tab-indent-mode 1)
+                               (haskell-indentation-mode 1)))
                            nil t))) ; local hook

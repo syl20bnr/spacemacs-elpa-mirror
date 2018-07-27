@@ -1,0 +1,2 @@
+
+(emms-player-mpv . [(20180503 2127) ((emms (0))) "mpv support for EMMS" single ((:commit . "9c9ffc6f00a737a6db6377681a88e5292ebcf86b") (:keywords "multimedia" "emms" "mpv") (:url . "https://github.com/dochang/emms-player-mpv/"))])

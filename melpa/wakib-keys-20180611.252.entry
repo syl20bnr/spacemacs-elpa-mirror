@@ -1,0 +1,2 @@
+
+(wakib-keys . [(20180611 252) ((emacs (24 4))) "Minor Mode for Modern Keybindings" single ((:commit . "682e3241ebc9147f4e316627cbff456dd316e372") (:keywords "convenience" "keybindings" "keys") (:authors ("Abdulla Bubshait")) (:maintainer "Abdulla Bubshait") (:url . "https://github.com/darkstego/wakib-keys/"))])

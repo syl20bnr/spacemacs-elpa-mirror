@@ -1,0 +1,2 @@
+
+(eloud . [(20160731 1557) ((emacs (24 4))) "A lightweight, interactive screen reader" single ((:commit . "82c97918585bd2a749251ae87d7732ca9d856c16") (:keywords "extensions") (:authors ("Patrick Smyth" . "patricksmyth01@gmail.com")) (:maintainer "Patrick Smyth" . "patricksmyth01@gmail.com") (:url . "https://github.com/smythp/eloud"))])

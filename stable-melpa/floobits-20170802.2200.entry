@@ -1,0 +1,2 @@
+
+(floobits . [(20170802 2200) ((json (1 2)) (highlight (0))) "Floobits plugin for real-time collaborative editing" tar ((:commit . "ed5586d1bf94f36354091648e824ccb6fcaf807f") (:keywords "comm" "tools") (:authors ("Matt Kaniaris") ("Geoff Greer")) (:maintainer "Matt Kaniaris") (:url . "http://github.com/Floobits/floobits-emacs"))])

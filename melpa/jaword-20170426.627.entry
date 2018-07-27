@@ -1,0 +1,2 @@
+
+(jaword . [(20170426 627) ((tinysegmenter (0 1))) "Minor-mode for handling Japanese words better" single ((:commit . "ac062b0e5ab4bd3270497e80aa0f3ac033a0493f") (:authors ("zk_phi")) (:maintainer "zk_phi") (:url . "http://hins11.yu-yake.com/"))])

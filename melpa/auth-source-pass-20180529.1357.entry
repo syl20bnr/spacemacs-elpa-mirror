@@ -1,0 +1,2 @@
+
+(auth-source-pass . [(20180529 1357) ((emacs (25))) "Integrate auth-source with password-store" single])

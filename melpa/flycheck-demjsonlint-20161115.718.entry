@@ -1,0 +1,2 @@
+
+(flycheck-demjsonlint . [(20161115 718) ((flycheck (30))) "Flychecker for json-mode using jsonlint from demjson" tar ((:commit . "a3dfe1df8ecdea76c076c0849901427567356228") (:keywords "convenience" "tools") (:authors ("Zenkie Zhu" . "451218651@qq.com")) (:maintainer "Zenkie Zhu" . "451218651@qq.com") (:url . "https://github.com/z4139jq/flycheck-demjsonlint"))])

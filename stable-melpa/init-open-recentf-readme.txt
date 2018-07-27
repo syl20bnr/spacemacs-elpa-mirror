@@ -9,7 +9,7 @@ Put the following into your .emacs file (~/.emacs.d/init.el)
 
   (init-open-recentf)
 
-`init-open-recentf' supports the following frameworks: helm, ido, anything (and the default emacs setup without those frameworks).
+`init-open-recentf' supports the following frameworks: helm, ido, anything (and the default Emacs setup without those frameworks).
  The package determines the frameworks from your environment, but you can also indicate it explicitly.
 
   (setq init-open-recentf-interface 'ido)

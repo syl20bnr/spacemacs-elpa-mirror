@@ -1,0 +1,2 @@
+
+(skype . [(20160711 824) nil "skype UI for emacs users.." tar ((:commit . "8e3b33e620ed355522aa36434ff41e3ced080629") (:keywords "skype" "chat") (:authors ("SAKURAI Masashi" . "m.sakurai@kiwanami.net")) (:maintainer "SAKURAI Masashi" . "m.sakurai@kiwanami.net"))])

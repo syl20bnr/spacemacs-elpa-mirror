@@ -1,0 +1,2 @@
+
+(helm-notmuch . [(20180521 1107) ((helm (1 9 3)) (notmuch (0 21))) "Search emails with Notmuch and Helm" single ((:commit . "3176305a700c571e3bd6cdb37598708ad283ea73") (:keywords "mail") (:authors ("Chunyang Xu" . "mail@xuchunyang.me")) (:maintainer "Chunyang Xu" . "mail@xuchunyang.me") (:url . "https://github.com/xuchunyang/helm-notmuch"))])

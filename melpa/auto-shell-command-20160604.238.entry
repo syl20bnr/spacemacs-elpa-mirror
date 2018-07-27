@@ -1,0 +1,2 @@
+
+(auto-shell-command . [(20160604 238) ((deferred (20130312)) (popwin (20130329))) "Run the shell command asynchronously that you specified when you save the file." single ((:commit . "454b75a07b663095334381d5bf5625c7f136f743") (:keywords "shell" "save" "async" "deferred" "auto") (:authors ("ongaeshi")) (:maintainer "ongaeshi"))])

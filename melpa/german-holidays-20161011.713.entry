@@ -1,0 +1,2 @@
+
+(german-holidays . [(20161011 713) nil "German holidays for Emacs calendar" single ((:commit . "d7d540c229c1a8be68ee09fbda08fe3ea31b7d29") (:authors ("Sebastian Christ" . "rudolfo.christ@gmail.com")) (:maintainer "Sebastian Christ" . "rudolfo.christ@gmail.com") (:url . "https://github.com/rudolfochrist/german-holidays"))])

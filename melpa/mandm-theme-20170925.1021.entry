@@ -1,0 +1,2 @@
+
+(mandm-theme . [(20170925 1021) nil "An M&M color theme." single ((:commit . "078d6d6f11bd48193c5de590cfb0e3d0d687ffc9") (:authors ("Christian Hopps" . "chopps@gmail.com")) (:maintainer "Christian Hopps" . "chopps@gmail.com") (:url . "https://github.com/choppsv1/emacs-mandm-theme.git"))])

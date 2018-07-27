@@ -1,0 +1,2 @@
+
+(company-nixos-options . [(20160215 857) ((company (0 8 0)) (nixos-options (0 0 1)) (cl-lib (0 5 0))) "Company Backend for nixos-options" single ((:commit . "7007363e773a419203a69798fb0e0731b2eb0f73") (:keywords "unix") (:authors ("Diego Berrocal" . "cestdiego@gmail.com") ("Travis B. Hartwell" . "nafai@travishartwell.net")) (:maintainer "Diego Berrocal" . "cestdiego@gmail.com") (:url . "http://www.github.com/travisbhartwell/nix-emacs/"))])

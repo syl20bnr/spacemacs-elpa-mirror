@@ -1,0 +1,2 @@
+
+(ac-js2 . [(20140906 1142) ((js2-mode (20090723)) (skewer-mode (1 4))) "Auto-complete source for Js2-mode, with navigation" tar ((:commit . "721c482e1d4a08f4a29a74437257d573e8f69969") (:authors ("Scott Barnett" . "scott.n.barnett@gmail.com")) (:maintainer "Scott Barnett" . "scott.n.barnett@gmail.com") (:url . "https://github.com/ScottyB/ac-js2"))])

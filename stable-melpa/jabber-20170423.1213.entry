@@ -1,0 +1,2 @@
+
+(jabber . [(20170423 1213) ((fsm (0 2))) "A Jabber client for Emacs." tar ((:commit . "3de7fb40ab9c82ada2a4b5f364a2417345953050"))])

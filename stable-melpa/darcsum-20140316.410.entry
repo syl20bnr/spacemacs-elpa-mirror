@@ -1,0 +1,2 @@
+
+(darcsum . [(20140316 410) nil "a pcl-cvs like interface for managing darcs patches" tar ((:commit . "00c252b51cb24c25fb74f529960ebd631514a4c1") (:keywords "completion" "convenience" "tools" "vc") (:authors ("John Wiegley" . "johnw@gnu.org")) (:maintainer "John Wiegley" . "johnw@gnu.org"))])

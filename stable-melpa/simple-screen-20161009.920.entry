@@ -1,0 +1,2 @@
+
+(simple-screen . [(20161009 920) nil "Simple screen configuration manager" single ((:commit . "596e3a451d9af24730ab31a8fe15c91a4264d09d") (:keywords "tools") (:authors ("Tadashi Watanabe" . "wac@umiushi.org")) (:maintainer "Tadashi Watanabe" . "wac@umiushi.org") (:url . "https://github.com/wachikun/simple-screen"))])

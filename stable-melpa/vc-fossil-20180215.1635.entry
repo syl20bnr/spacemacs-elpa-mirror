@@ -1,0 +1,2 @@
+
+(vc-fossil . [(20180215 1635) nil "VC backend for the fossil sofware configuraiton management system" tar ((:commit . "7c5af95181213db38f81f5f9586f3334301a3ea0") (:authors ("Venkat Iyer" . "venkat@comit.com")) (:maintainer "Venkat Iyer" . "venkat@comit.com"))])

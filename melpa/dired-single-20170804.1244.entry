@@ -1,0 +1,2 @@
+
+(dired-single . [(20170804 1244) nil "Reuse the current dired buffer to visit a directory" single ((:commit . "0dcc645de6397bf12c33229de67a503e4490c618") (:keywords "dired" "reuse" "buffer") (:authors ("Joe Casadonte" . "emacs@northbound-train.com")) (:maintainer "crocket" . "crockabiscuit@gmail.com"))])

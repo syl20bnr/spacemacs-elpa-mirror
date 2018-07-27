@@ -1,0 +1,2 @@
+
+(org-vcard . [(20170929 1110) nil "org-mode support for vCard export and import." tar ((:commit . "dbe266b79df4fb31f1766010322bf4e383ce1c03") (:keywords "outlines" "org" "vcard") (:authors ("Alexis" . "flexibeast@gmail.com")) (:maintainer "Alexis" . "flexibeast@gmail.com") (:url . "https://github.com/flexibeast/org-vcard"))])

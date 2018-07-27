@@ -1,0 +1,2 @@
+
+(face-explorer . [(20170710 1901) nil "Library and tools for faces and text properties" single ((:commit . "13bd4553bc4b09215a04d0267be1cb4ed834775c") (:keywords "faces") (:authors ("Anders Lindgren")) (:maintainer "Anders Lindgren") (:url . "https://github.com/Lindydancer/face-explorer"))])

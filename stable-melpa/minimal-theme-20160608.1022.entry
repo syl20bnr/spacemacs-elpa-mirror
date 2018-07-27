@@ -1,0 +1,2 @@
+
+(minimal-theme . [(20160608 1022) nil "A light/dark minimalistic Emacs 24 theme." tar ((:commit . "430e0d3fc2044c16aa9f10961841febbd60df285") (:keywords "color" "theme" "minimal") (:authors ("Anler Hp <anler86 [at] gmail.com>")) (:maintainer "Anler Hp <anler86 [at] gmail.com>") (:url . "http://github.com/ikame/minimal-theme"))])

@@ -1,0 +1,2 @@
+
+(ink-mode . [(20160814 1116) ((emacs (24 3))) "Major mode for writing interactive fiction in Ink" single ((:commit . "e35f26abbaf8ea23c5aa0a0c7ef15334cdfb7b48") (:keywords "languages") (:authors ("Erik Sjöstrand")) (:maintainer "Erik Sjöstrand") (:url . "http://github.com/Kungsgeten/ink-mode"))])

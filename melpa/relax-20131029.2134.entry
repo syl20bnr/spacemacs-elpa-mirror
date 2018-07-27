@@ -1,0 +1,2 @@
+
+(relax . [(20131029 2134) ((json (1 2))) "For browsing and interacting with CouchDB" single ((:commit . "6e33892623ab87833082262321dc8e1977209626") (:keywords "database" "http") (:authors ("Phil Hagelberg")) (:maintainer "Phil Hagelberg") (:url . "http://github.com/technomancy/relax.el"))])

@@ -1,0 +1,2 @@
+
+(god-mode . [(20180117 1134) nil "God-like command entering minor mode" tar ((:commit . "344167ed9b4c212273dd056e7481cf1373b461d0") (:authors ("Chris Done" . "chrisdone@gmail.com")) (:maintainer "Chris Done" . "chrisdone@gmail.com") (:url . "https://github.com/chrisdone/god-mode"))])

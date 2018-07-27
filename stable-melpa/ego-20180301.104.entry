@@ -1,0 +1,2 @@
+
+(ego . [(20180301 104) ((emacs (24 5)) (ht (1 5)) (mustache (0 22)) (htmlize (1 47)) (org (8 0)) (dash (2 0 0)) (simple-httpd (1 4 5))) "a static site generator based on org mode, forked from org-page." tar ((:commit . "719809679c1a60887735db41abae53b61f08ef59"))])

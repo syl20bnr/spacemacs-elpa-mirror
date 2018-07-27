@@ -1,0 +1,2 @@
+
+(info-beamer . [(20180604 2122) ((emacs (24 4))) "Utilities for working with info-beamer" single ((:commit . "af443795af20481af91ac54a489b20f6a9d90b0a") (:keywords "tools" "processes" "comm") (:authors ("Daniel Kraus" . "daniel@kraus.my")) (:maintainer "Daniel Kraus" . "daniel@kraus.my") (:url . "https://github.com/dakra/info-beamer.el"))])

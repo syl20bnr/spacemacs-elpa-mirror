@@ -1,0 +1,2 @@
+
+(quelpa-use-package . [(20180618 656) ((emacs (24 3)) (quelpa (0)) (use-package (2))) "quelpa handler for use-package" single ((:commit . "226f928c077eaff59c8bbd76398f0f6876505bc0") (:keywords "package" "management" "elpa" "use-package") (:authors ("steckerhalter")) (:maintainer "steckerhalter") (:url . "https://framagit.org/steckerhalter/quelpa-use-package"))])

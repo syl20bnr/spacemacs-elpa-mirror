@@ -1,0 +1,2 @@
+
+(ahk-mode . [(20160320 2221) ((emacs (24 3))) "Major mode for editing AHK (AutoHotkey and AutoHotkey_L)" single ((:commit . "9cfc4840507f6cc8016fdede84ad90df53285359") (:keywords "ahk" "autohotkey" "hotkey" "keyboard shortcut" "automation") (:authors ("Rich Alesi")) (:maintainer "Rich Alesi") (:url . "https://github.com/ralesi/ahk-mode"))])

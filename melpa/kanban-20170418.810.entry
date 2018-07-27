@@ -1,0 +1,2 @@
+
+(kanban . [(20170418 810) nil "Parse org-todo headlines to use org-tables as Kanban tables" single ((:keywords "outlines" "convenience") (:authors ("Arne Babenhauserheide" . "arne_bab@web.de")) (:maintainer "Arne Babenhauserheide" . "arne_bab@web.de"))])

@@ -1,0 +1,2 @@
+
+(symbolword-mode . [(20180401 1427) ((emacs (24)) (f (0 19 0))) "modify word split" single ((:commit . "3857c42696e20f49f274ff8bc45a6f3ee26884d4") (:authors ("ncaq" . "ncaq@ncaq.net")) (:maintainer "ncaq" . "ncaq@ncaq.net") (:url . "https://github.com/ncaq/symbolword-mode"))])

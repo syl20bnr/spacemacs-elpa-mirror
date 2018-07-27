@@ -1,0 +1,2 @@
+
+(passmm . [(20180622 2326) ((emacs (24 4)) (password-store (0))) "A minor mode for pass (Password Store)." single ((:commit . "898709c63130d6c0422af544ebac64eae04d24ac") (:authors ("Peter Jones" . "pjones@devalot.com")) (:maintainer "Peter Jones" . "pjones@devalot.com") (:url . "https://github.com/pjones/passmm"))])

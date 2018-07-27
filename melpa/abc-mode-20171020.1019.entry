@@ -1,0 +1,2 @@
+
+(abc-mode . [(20171020 1019) nil "Major mode for editing abc music files" single ((:commit . "238deedeb6c90df168045552eb463cfae9e1f88f") (:keywords "local" "docs") (:authors ("Matthew K. Junker" . "junker@alum.mit.edu")) (:maintainer "Matthew K. Junker" . "junker@alum.mit.edu"))])

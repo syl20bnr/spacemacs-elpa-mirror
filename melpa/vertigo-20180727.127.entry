@@ -1,0 +1,2 @@
+
+(vertigo . [(20180727 127) ((dash (2 11 0))) "Jump across lines using the home row." single ((:commit . "6a79ced43bf8536e41f066ac7f8d04a5d638a7cb") (:keywords "vim" "vertigo") (:authors ("Fox Kiester" . "noct@posteo.net")) (:maintainer "Fox Kiester" . "noct@posteo.net") (:url . "https://github.com/noctuid/vertigo.el"))])

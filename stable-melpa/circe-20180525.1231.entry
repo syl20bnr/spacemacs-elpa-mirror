@@ -1,0 +1,2 @@
+
+(circe . [(20180525 1231) ((cl-lib (0 5))) "Client for IRC in Emacs" tar])

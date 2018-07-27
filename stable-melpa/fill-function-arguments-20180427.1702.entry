@@ -1,0 +1,2 @@
+
+(fill-function-arguments . [(20180427 1702) ((emacs (24 4))) "Convert function arguments to/from single line" single ((:commit . "fcfb2a671adaf04110586aee0c499b1f0056a8e6") (:keywords "convenience") (:authors ("David Shepherd" . "davidshepherd7@gmail.com")) (:maintainer "David Shepherd" . "davidshepherd7@gmail.com") (:url . "https://github.com/davidshepherd7/fill-function-arguments"))])

@@ -1,0 +1,2 @@
+
+(ncl-mode . [(20180129 703) ((emacs (24))) "Major Mode for editing NCL scripts and other goodies" tar ((:commit . "602292712a9e6b7e7c25155978999e77d06b7338"))])

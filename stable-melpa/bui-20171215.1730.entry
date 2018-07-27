@@ -1,0 +1,2 @@
+
+(bui . [(20171215 1730) ((emacs (24 3)) (dash (2 11 0))) "Buffer interface library" tar ((:commit . "af1a237b4d1ed31780dd37bcbef51fc8ca9b0603") (:keywords "tools") (:authors ("Alex Kost" . "alezost@gmail.com")) (:maintainer "Alex Kost" . "alezost@gmail.com") (:url . "https://github.com/alezost/bui.el"))])

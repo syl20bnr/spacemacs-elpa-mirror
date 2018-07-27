@@ -1,0 +1,2 @@
+
+(comint-intercept . [(20170317 1228) ((emacs (24 3))) "Intercept input in comint-mode" single ((:commit . "a329abf01fa8e0c6b02b46b29bcb421a21120dc5") (:keywords "processes" "terminals") (:authors ("\"Huang, Ying\"" . "huang.ying.caritas@gmail.com")) (:maintainer "\"Huang, Ying\"" . "huang.ying.caritas@gmail.com") (:url . "https://github.com/hying-caritas/comint-intercept"))])

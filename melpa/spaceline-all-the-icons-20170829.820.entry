@@ -1,0 +1,2 @@
+
+(spaceline-all-the-icons . [(20170829 820) ((emacs (24 4)) (all-the-icons (2 6 0)) (spaceline (2 0 0)) (memoize (1 0 1))) "A Spaceline theme using All The Icons" tar ((:commit . "e2e195f64a541d72b6d0ba0451f1e3072234b820") (:keywords "convenience" "lisp" "tools") (:authors ("Dominic Charlesworth" . "dgc336@gmail.com")) (:maintainer "Dominic Charlesworth" . "dgc336@gmail.com") (:url . "https://github.com/domtronn/spaceline-all-the-icons.el"))])

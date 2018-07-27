@@ -1,0 +1,2 @@
+
+(asilea . [(20150105 1525) ((emacs (24)) (cl-lib (0 5))) "Find best compiler options using simulated annealing" single])

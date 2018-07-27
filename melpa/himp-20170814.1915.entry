@@ -1,0 +1,2 @@
+
+(himp . [(20170814 1915) ((emacs (24 3)) (vimish-fold (0 1 0))) "Automatically hide imports/documentation" single ((:commit . "140234b7f7cde03cf858c5011a2ab63e3bc802ec") (:keywords "convenience" "tools") (:authors ("Michał Kondraciuk" . "k.michal@zoho.com")) (:maintainer "Michał Kondraciuk" . "k.michal@zoho.com") (:url . "http://github.com/mkcms/himp/"))])

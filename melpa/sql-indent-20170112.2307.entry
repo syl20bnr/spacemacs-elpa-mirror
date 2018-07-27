@@ -1,0 +1,2 @@
+
+(sql-indent . [(20170112 2307) nil "indentation of SQL statements" single])

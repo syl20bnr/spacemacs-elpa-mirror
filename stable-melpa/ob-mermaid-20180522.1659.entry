@@ -1,0 +1,2 @@
+
+(ob-mermaid . [(20180522 1659) nil "org-babel support for mermaid evaluation" single ((:commit . "31ed3e2d3d84c0a08a0a1a3985e87a92caea6f00") (:keywords "lisp") (:authors ("Alexei Nunez" . "alexeirnunez@gmail.com")) (:maintainer "Alexei Nunez" . "alexeirnunez@gmail.com") (:url . "https://github.com/arnm/ob-mermaid"))])

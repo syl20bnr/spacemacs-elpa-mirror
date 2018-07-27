@@ -1,0 +1,2 @@
+
+(dired-recent . [(20180527 1959) ((emacs (24))) "Dired visited paths history" single ((:commit . "22104c87593f24ec513dfdf97fc4c8c91defec33") (:keywords "files") (:authors ("Wojciech Siewierski <wojciech dot siewierski at onet dot pl>")) (:maintainer "Wojciech Siewierski <wojciech dot siewierski at onet dot pl>") (:url . "https://github.com/vifon/dired-recent"))])

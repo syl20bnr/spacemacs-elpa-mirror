@@ -1,0 +1,2 @@
+
+(org-parser . [(20171003 436) ((emacs (25 1)) (dash (2 12 0)) (ht (2 1))) "parse org files into structured datatypes." single ((:keywords "files" "outlines" "tools") (:url . "https://bitbucket.org/zck/org-parser.el"))])

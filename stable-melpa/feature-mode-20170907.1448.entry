@@ -1,0 +1,2 @@
+
+(feature-mode . [(20170907 1448) nil "Major mode for editing Gherkin (i.e. Cucumber) user stories" tar ((:commit . "722b352c4f0b800a9356dd369c79612782b3b847"))])

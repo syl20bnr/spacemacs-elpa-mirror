@@ -1,0 +1,2 @@
+
+(scratch-pop . [(20170510 1458) ((popwin (0 7 0 -3))) "Generate, popup (& optionally backup) scratch buffer(s)." single ((:commit . "7f4172c792b10bd38898dd8963cf0ade91921869") (:authors ("zk_phi")) (:maintainer "zk_phi") (:url . "http://hins11.yu-yake.com/"))])

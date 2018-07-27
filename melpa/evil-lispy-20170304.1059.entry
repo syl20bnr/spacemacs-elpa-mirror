@@ -1,0 +1,2 @@
+
+(evil-lispy . [(20170304 1059) ((lispy (0 26 0)) (evil (1 2 12)) (hydra (0 13 5))) "precision Lisp editing with Evil and Lispy" tar ((:commit . "040a7ee130c2403a1d6dac591b94b202bb48e186") (:keywords "lisp") (:authors ("Brandon Carrell <brandoncarrell@gmail.com>, Mika Vilpas" . "mika.vilpas@gmail.com")) (:maintainer "Brandon Carrell <brandoncarrell@gmail.com>, Mika Vilpas" . "mika.vilpas@gmail.com") (:url . "https://github.com/sp3ctum/evil-lispy"))])

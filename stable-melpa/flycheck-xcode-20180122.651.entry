@@ -1,0 +1,2 @@
+
+(flycheck-xcode . [(20180122 651) ((emacs (25 1)) (flycheck (0 25))) "Flycheck extension for Apple's Xcode." single ((:commit . "6147ab777e2c08e4f5ffdbd85d3013ca700fa835") (:keywords "languages" "xcode") (:maintainer "James Nguyen" . "james@jojojames.com") (:url . "https://github.com/jojojames/flycheck-xcode"))])

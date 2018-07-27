@@ -1,0 +1,2 @@
+
+(orgbox . [(20140529 126) ((org (8 0)) (cl-lib (0 5))) "Mailbox-like task scheduling Org." single ((:commit . "72373b09768cc2200d143af38e25a0c082e8375d") (:keywords "org") (:authors ("Yasuhito Takamiya" . "yasuhito@gmail.com")) (:maintainer "Yasuhito Takamiya" . "yasuhito@gmail.com") (:url . "https://github.com/yasuhito/orgbox"))])

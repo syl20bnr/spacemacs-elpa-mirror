@@ -1,0 +1,2 @@
+
+(php-runtime . [(20180110 1734) ((emacs (25)) (cl-lib (0 5))) "Language binding bridge to PHP" single ((:commit . "fa4312863245511462b75cb31df2f8558288f4df") (:keywords "processes" "php") (:authors ("USAMI Kenta" . "tadsan@zonu.me")) (:maintainer "USAMI Kenta" . "tadsan@zonu.me") (:url . "https://github.com/emacs-php/php-runtime.el"))])

@@ -1,0 +1,2 @@
+
+(dired-avfs . [(20161012 1104) ((dash (2 5 0)) (dired-hacks-utils (0 0 1))) "AVFS support for dired" single ((:commit . "3fd347a0823312e966872bd0d26d9a75b2898c9c") (:keywords "files") (:authors ("Matus Goljer" . "matus.goljer@gmail.com")) (:maintainer "Matus Goljer" . "matus.goljer@gmail.com"))])

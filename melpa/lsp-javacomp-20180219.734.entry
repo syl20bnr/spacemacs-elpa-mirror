@@ -1,0 +1,2 @@
+
+(lsp-javacomp . [(20180219 734) ((emacs (25 1)) (lsp-mode (3 0)) (s (1 2 0))) "Provide Java IDE features powered by JavaComp." single ((:commit . "cb080824e1fc08e2724d6ecde7034f1acfd565f0") (:keywords "java") (:url . "https://github.com/tigersoldier/lsp-javacomp"))])

@@ -1,0 +1,2 @@
+
+(japanlaw . [(20160129 820) ((cl-lib (0 5))) "Japan law from law.e-gov.go.jp" single ((:commit . "c160e195cda0e02a709a2d39c62bc2a1ed39a09a") (:keywords "docs" "help") (:authors ("Kazushi NODA (http://www.ne.jp/asahi/alpha/kazu/)")) (:maintainer "Masahiro Hayashi" . "mhayashi1120@gmail.com"))])

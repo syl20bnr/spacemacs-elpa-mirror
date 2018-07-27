@@ -1,0 +1,2 @@
+
+(sicp . [(20171028 2223) nil "Structure and Interpretation of Computer Programs in info format" tar ((:commit . "8e13f7ff4695a05471486d37a6c5f979a5b965fb") (:authors ("Hal Abelson") ("Jerry Sussman") ("Julie Sussman")) (:maintainer "Hal Abelson") (:url . "https://mitpress.mit.edu/sicp"))])

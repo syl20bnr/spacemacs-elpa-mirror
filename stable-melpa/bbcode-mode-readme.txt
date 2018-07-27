@@ -1,7 +1,7 @@
-Put this file in your Emacs Lisp path (i.e. site-lisp) and add
-this to your `.emacs' file:
+This major mode lets you write phpBB forum posts in Emacs. It
+implements syntax highlighting and keyboard commands for BBCode
+(Bulletin Board Code), the markup language used by phpBB.
 
-    (require 'bbcode-mode)
-
-Files with the '.bbcode' extension automatically enable
-bbcode-mode.  No other extensions are associated with the mode.
+Do M-x bbcode-scratch to instantly get a temp buffer to write
+posts. Use M-x bbcode-mode to switch an existing buffer to BBCode
+mode. The file name extension .bbcode is also recognized.

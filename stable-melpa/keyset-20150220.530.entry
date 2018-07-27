@@ -1,0 +1,2 @@
+
+(keyset . [(20150220 530) ((dash (2 8 0)) (cl-lib (0 5))) "A small library for structuring key bindings." single ((:commit . "41bbfc4dbed5de6ecf3ec1dba634c7c26241ca84") (:authors ("Hiroki YAMAKAWA" . "s06139@gmail.com")) (:maintainer "Hiroki YAMAKAWA" . "s06139@gmail.com") (:url . "https://github.com/HKey/keyset"))])

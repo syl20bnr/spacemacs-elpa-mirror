@@ -1,0 +1,2 @@
+
+(pelican-mode . [(20180604 2207) ((emacs (25))) "Minor mode for editing Pelican sites" single ((:commit . "209ad24318e1f28675da430aa10ef3467694b9ac") (:keywords "convenience" "editing") (:authors ("Joe Wreschnig" . "joe.wreschnig@gmail.com")) (:maintainer "Joe Wreschnig" . "joe.wreschnig@gmail.com") (:url . "https://git.korewanetadesu.com/pelican-mode.git"))])

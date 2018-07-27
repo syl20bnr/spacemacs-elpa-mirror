@@ -1,0 +1,2 @@
+
+(company-childframe . [(20180705 546) ((emacs (26 0)) (company-posframe (0 1 0))) "Please use company-posframe instead." single ((:commit . "562eaa1e3a0c39dd36f10cda37a3724384fde1df") (:keywords "abbrev" "convenience" "matching") (:authors ("Clément Pit-Claudel, Feng Shu")) (:maintainer "Feng Shu" . "tumashu@163.com") (:url . "https://github.com/company-mode/company-mode"))])

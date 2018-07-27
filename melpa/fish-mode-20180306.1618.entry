@@ -1,0 +1,2 @@
+
+(fish-mode . [(20180306 1618) ((emacs (24))) "Major mode for fish shell scripts" single ((:commit . "bac709ac1235751952d6022dddc6307d9135d096") (:keywords "fish" "shell") (:authors ("Tony Wang" . "wwwjfy@gmail.com")) (:maintainer "Tony Wang" . "wwwjfy@gmail.com"))])

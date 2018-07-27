@@ -1,0 +1,2 @@
+
+(rings . [(20160531 2027) nil "Buffer rings. Like tabs, but better." single ((:commit . "3590b222eb80652cbd27866f066bd3571d86edfc") (:keywords "utilities" "productivity") (:authors ("Konrad Scorciapino")) (:maintainer "Konrad Scorciapino") (:url . "http://github.com/konr/rings"))])

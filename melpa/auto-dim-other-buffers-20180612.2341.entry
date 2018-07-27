@@ -1,0 +1,2 @@
+
+(auto-dim-other-buffers . [(20180612 2341) nil "Makes non-current buffers less prominent" single])

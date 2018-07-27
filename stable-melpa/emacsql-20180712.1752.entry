@@ -1,0 +1,2 @@
+
+(emacsql . [(20180712 1752) ((emacs (25 1))) "high-level SQL database front-end" tar ((:commit . "6f1e375a2ebb558138b73d2a63f2077da1028f92") (:authors ("Christopher Wellons" . "wellons@nullprogram.com")) (:maintainer "Christopher Wellons" . "wellons@nullprogram.com") (:url . "https://github.com/skeeto/emacsql"))])

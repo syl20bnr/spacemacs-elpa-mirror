@@ -1,0 +1,2 @@
+
+(mo-vi-ment-mode . [(20131029 633) nil "Provide vi-like cursor movement that's easy on the fingers" single ((:commit . "f45b014261f8fab19254920bd1d92f3a83263411") (:keywords "convenience") (:authors ("Ajay MT" . "ajay.tatachar@gmail.com")) (:maintainer "Ajay MT" . "ajay.tatachar@gmail.com"))])

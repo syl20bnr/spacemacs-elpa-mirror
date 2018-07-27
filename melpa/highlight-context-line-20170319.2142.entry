@@ -1,0 +1,2 @@
+
+(highlight-context-line . [(20170319 2142) nil "Improve orientation when scrolling" single ((:commit . "716e10a0c7b703b5f1d9c6ca1481524a4d06b7b8") (:keywords "faces" "services" "user") (:authors ("Stefan Kamphausen <www.skamphausen.de>")) (:maintainer "Stefan Kamphausen <www.skamphausen.de>") (:url . "https://github.com/ska2342/highlight-context-line/"))])

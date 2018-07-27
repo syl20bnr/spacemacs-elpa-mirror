@@ -1,0 +1,2 @@
+
+(python-x . [(20180218 2247) ((python (0 24)) (folding (0)) (cl-lib (0 5))) "python.el extras for interactive evaluation" tar ((:commit . "35d6719953e809a07c0bb8f770deb5fa712d00e5") (:keywords "python" "eval" "folding") (:url . "https://github.com/wavexx/python-x.el") (:author . "Yuri D'Elia <wavexx@thregr.org>"))])

@@ -1,0 +1,2 @@
+
+(persp-fr . [(20180103 1442) ((emacs (25 0)) (persp-mode (2 9 6)) (dash (2 13 0))) "In persp-mode, show perspective list in the GUI window title" single ((:commit . "aeb3b5de6135269091bb9aa0396973766c27fc88") (:keywords "perspectives" "workspace" "windows" "convenience") (:authors ("Francesc Rocher" . "francesc.rocher@gmail.com")) (:maintainer "Francesc Rocher" . "francesc.rocher@gmail.com") (:url . "http://github.com/rocher/persp-fr"))])

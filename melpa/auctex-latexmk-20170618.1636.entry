@@ -1,0 +1,2 @@
+
+(auctex-latexmk . [(20170618 1636) ((auctex (11 87))) "Add LatexMk support to AUCTeX" single])

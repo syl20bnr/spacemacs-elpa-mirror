@@ -1,0 +1,2 @@
+
+(realgud-rdb2 . [(20160303 843) ((realgud (1 3))) "realgud front-end for interacting with Ruby debugger2" tar ((:commit . "b394bee61e75b7c6a5fa565594aa79b74887f5df") (:authors ("Rocky Bernstein")) (:maintainer "Rocky Bernstein") (:url . "http://github.com/rocky/realgud-ruby-debugger2"))])

@@ -1,5 +1,5 @@
 This package provides functionality for correcting words via custom
-interfaces. There are two functions for this: `flyspell-correct-word-generic'
+interfaces. There are two functions for this: `flyspell-correct-at-point'
 to correct word at point and `flyspell-correct-previous-word-generic' to
 correct any visible word before point. In most cases second function is more
 convenient, so don't forget to bind it.

@@ -1,0 +1,2 @@
+
+(latex-preview-pane . [(20180222 1751) nil "Makes LaTeX editing less painful by providing a updatable preview pane" tar ((:commit . "e7dbe0df3ca938128ab394cdf04f3e40eb5b139e"))])

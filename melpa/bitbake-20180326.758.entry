@@ -1,0 +1,2 @@
+
+(bitbake . [(20180326 758) ((emacs (24 1)) (dash (2 6 0)) (mmm-mode (0 5 4)) (s (1 10 0))) "Running bitbake from emacs" single ((:commit . "e5088c4b3dfb4feb96850fbc281b4207d23c7713") (:keywords "convenience") (:authors ("Damien Merenne")) (:maintainer "Damien Merenne") (:url . "https://github.com/canatella/bitbake-el"))])

@@ -1,0 +1,2 @@
+
+(ob-applescript . [(20160914 2027) nil "org-babel functions for template evaluation" single ((:commit . "bc708af6cf45707d4e8d8f00ea59a7e413bfaca7") (:keywords "literate programming" "reproducible research" "mac") (:authors ("Stig Brautaset")) (:maintainer "Stig Brautaset") (:url . "http://github.com/stig/ob-applescript.el"))])

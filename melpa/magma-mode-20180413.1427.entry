@@ -1,0 +1,2 @@
+
+(magma-mode . [(20180413 1427) ((cl-lib (0 3)) (dash (2 6 0)) (f (0 17 1))) "Magma mode for Emacs" tar ((:commit . "d8e41b3c0bc7d37be78fdbcabf6c13c9e182dfaa") (:url . "https://github.com/ThibautVerron/magma-mode"))])

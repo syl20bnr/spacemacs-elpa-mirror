@@ -1,0 +1,2 @@
+
+(sudoku . [(20161111 706) ((emacs (24 4))) "Simple sudoku game, can download puzzles" single ((:commit . "77c11b5041b58fc943cf1668b44b40bae039cb5b") (:keywords "games") (:authors ("Zajcev Evgeny" . "zevlg@yandex.ru")) (:maintainer "Zajcev Evgeny" . "zevlg@yandex.ru"))])

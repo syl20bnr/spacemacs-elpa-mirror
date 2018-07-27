@@ -1,0 +1,2 @@
+
+(bury-successful-compilation . [(20150329 28) nil "Bury the *compilation* buffer after successful compilation" single ((:commit . "52da2c07419beceab9b4d426d76adb3dcf2548d1") (:keywords "compilation") (:authors ("Eric Crosson" . "esc@ericcrosson.com")) (:maintainer "Eric Crosson" . "esc@ericcrosson.com"))])

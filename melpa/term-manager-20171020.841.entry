@@ -1,0 +1,2 @@
+
+(term-manager . [(20171020 841) ((dash (2 12 0)) (emacs (24 4))) "Contextual terminal management" tar ((:commit . "13a0f1637a1f075d70211ccb8162e63a18a474da") (:keywords "terminals" "tools") (:authors ("Ivan Malison" . "IvanMalison@gmail.com")) (:maintainer "Ivan Malison" . "IvanMalison@gmail.com") (:url . "https://www.github.com/IvanMalison/term-manager"))])

@@ -1,0 +1,2 @@
+
+(pytest . [(20170614 1445) ((s (1 9 0))) "Easy Python test running in Emacs" single ((:commit . "013fccd684fc8f2092d6e1ec4203ec574e12051d") (:keywords "pytest" "python" "testing") (:url . "https://github.com/ionrock/pytest-el"))])

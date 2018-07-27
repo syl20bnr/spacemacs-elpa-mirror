@@ -1,0 +1,2 @@
+
+(poly-ruby . [(20170802 1348) ((emacs (24 3)) (polymode (1 0))) "Provides poly-ruby-mode" single ((:commit . "e6f50a92d29a5ff567d70cafa6621c4f89056d11") (:keywords "languages") (:authors ("Akinori MUSHA" . "knu@iDaemons.org")) (:maintainer "Akinori MUSHA" . "knu@iDaemons.org") (:url . "https://github.com/knu/poly-ruby.el"))])

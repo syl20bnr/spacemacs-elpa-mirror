@@ -1,0 +1,2 @@
+
+(e2ansi . [(20180403 1915) ((face-explorer (0 0 3))) "Syntax highlighting support for `less', powered by Emacs." tar ((:commit . "f886e687d50ff58063a92d40623f2400fa913af0") (:keywords "faces" "languages") (:authors ("Anders Lindgren")) (:maintainer "Anders Lindgren") (:url . "https://github.com/Lindydancer/e2ansi"))])

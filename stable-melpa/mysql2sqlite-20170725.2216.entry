@@ -1,0 +1,2 @@
+
+(mysql2sqlite . [(20170725 2216) nil "Convert mysql databases into sqlite databases." single ((:commit . "8e6e74451c942e2e92f90dc13222b95a7dbb285e"))])

@@ -1,0 +1,2 @@
+
+(ibuffer-projectile . [(20180325 325) ((projectile (0 11 0))) "Group ibuffer's list by projectile root" single ((:commit . "1e89bfa7cae0629d29f24af3d81774b88b3cede0") (:keywords "themes") (:authors ("Steve Purcell" . "steve@sanityinc.com")) (:maintainer "Steve Purcell" . "steve@sanityinc.com") (:url . "http://github.com/purcell/ibuffer-projectile"))])

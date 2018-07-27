@@ -1,0 +1,2 @@
+
+(instapaper . [(20130104 1421) nil "add URLs to instapaper from emacs" single ((:authors ("Jason F. McBrayer" . "jmcbray@carcosa.net")) (:maintainer "Jason F. McBrayer" . "jmcbray@carcosa.net") (:url . "htts://bitbucket.org/jfm/emacs-instapaper"))])

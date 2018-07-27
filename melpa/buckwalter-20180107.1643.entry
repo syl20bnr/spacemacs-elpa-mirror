@@ -1,0 +1,2 @@
+
+(buckwalter . [(20180107 1643) nil "Write arabic using Buckwalter transliteration" single ((:commit . "2aa5451c3682c268adebc6b1191a796466732f53") (:keywords "arabic" "transliteration" "i18n") (:authors ("Joe HAKIM RAHME" . "joehakimrahme@gmail.com")) (:maintainer "Joe HAKIM RAHME" . "joehakimrahme@gmail.com") (:url . "https://github.com/joehakimrahme/buckwalter-arabic"))])

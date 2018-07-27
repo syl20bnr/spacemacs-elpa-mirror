@@ -1,0 +1,2 @@
+
+(emacsagist . [(20140331 1830) ((cl-lib (0 5))) "Search Packagist.org packages without leaving Emacs" single ((:commit . "aba342ba59c254a88017f25e9fb7a8cd6f2fda83") (:keywords "tools") (:authors ("Brian Zwahr" . "echosa@icloud.com")) (:maintainer "Brian Zwahr" . "echosa@icloud.com") (:url . "http://github.com/echosa/emacsagist"))])

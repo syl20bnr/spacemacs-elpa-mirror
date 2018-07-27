@@ -1,0 +1,2 @@
+
+(auto-complete-pcmp . [(20140227 651) ((auto-complete (1 4 0)) (log4e (0 2 0)) (yaxception (0 1))) "Provide auto-complete sources using pcomplete results" single])

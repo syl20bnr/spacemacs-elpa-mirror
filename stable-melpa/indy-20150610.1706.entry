@@ -1,0 +1,2 @@
+
+(indy . [(20150610 1706) nil "A minor mode and EDSL to manage your mode's indentation rules." single ((:commit . "4604867d8111f0e186a5351e68e054a77cb14abf") (:keywords "convenience" "matching" "tools") (:authors ("Kevin W. van Rooijen" . "kevin.van.rooijen@attichacker.com")) (:maintainer "Kevin W. van Rooijen" . "kevin.van.rooijen@attichacker.com"))])

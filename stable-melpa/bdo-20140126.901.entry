@@ -1,0 +1,2 @@
+
+(bdo . [(20140126 901) nil "Do things to a browser page from Emacs. BETA!" tar ((:commit . "c96cb6aa9e97fa3491185c50dee0f77a13241010") (:keywords "development") (:authors ("Chris Done" . "chrisdone@gmail.com")) (:maintainer "Chris Done" . "chrisdone@gmail.com"))])

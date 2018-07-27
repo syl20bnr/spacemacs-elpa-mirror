@@ -1,0 +1,2 @@
+
+(cerbere . [(20140418 1415) ((s (1 9 0)) (f (0 16 0)) (pkg-info (0 5))) "Unit testing in Emacs for several programming languages" tar ((:commit . "dd2105c372b469954e665a5aa0c3766b4922ce6a") (:keywords "python" "go" "php" "tests" "tdd") (:authors ("Nicolas Lamirault" . "nicolas.lamirault@gmail.com")) (:maintainer "Nicolas Lamirault" . "nicolas.lamirault@gmail.com") (:url . "https://github.com/nlamirault/cerbere"))])

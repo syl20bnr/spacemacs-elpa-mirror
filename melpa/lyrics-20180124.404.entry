@@ -1,0 +1,2 @@
+
+(lyrics . [(20180124 404) ((emacs (25 1)) (seq (2 15))) "Show lyrics" single ((:commit . "fb35b387796f64f48b4daa5a163f4a576210f200") (:keywords "convenience") (:authors ("Mario Rodas" . "marsam@users.noreply.github.com")) (:maintainer "Mario Rodas" . "marsam@users.noreply.github.com") (:url . "https://github.com/emacs-pe/lyrics.el"))])

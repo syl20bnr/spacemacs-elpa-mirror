@@ -1,0 +1,2 @@
+
+(flycheck-flow . [(20180723 1503) ((flycheck (0 18)) (json (1 4))) "Support Flow in flycheck" single ((:commit . "83e72c4e7eb443639b2756b509812c152bb1f2d7") (:authors ("Lorenzo Bolla" . "lbolla@gmail.com")) (:maintainer "Lorenzo Bolla" . "lbolla@gmail.com"))])

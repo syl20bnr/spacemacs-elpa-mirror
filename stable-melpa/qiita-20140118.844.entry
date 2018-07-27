@@ -1,0 +1,2 @@
+
+(qiita . [(20140118 844) ((helm (1 5 9)) (markdown-mode (2 0))) "Qiita API Library for emacs" single ((:commit . "93c697b97d540fd1601a13a3d9889fb939b19878") (:keywords "qiita") (:authors ("Wataru MIYAGUNI (gonngo _at_ gmail.com)")) (:maintainer "Wataru MIYAGUNI (gonngo _at_ gmail.com)") (:url . "https://github.com/gongo/qiita-el"))])

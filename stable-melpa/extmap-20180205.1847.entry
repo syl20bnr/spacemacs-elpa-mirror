@@ -1,0 +1,2 @@
+
+(extmap . [(20180205 1847) ((emacs (24 1))) "Externally-stored constant mapping for Elisp" single ((:commit . "3860b69fb19c962425d4e271ee0a24547b67d323") (:keywords "lisp") (:authors ("Paul Pogonyshev" . "pogonyshev@gmail.com")) (:maintainer "Paul Pogonyshev" . "pogonyshev@gmail.com") (:url . "https://github.com/doublep/extmap"))])

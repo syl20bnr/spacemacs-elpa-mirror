@@ -1,0 +1,2 @@
+
+(emacsc . [(20161028 1706) nil "helper for emacsc(1)" tar ((:commit . "421e0c567358769e32f670ae8e949d99abae0c28") (:keywords "tools") (:authors ("Akinori MUSHA" . "knu@iDaemons.org")) (:maintainer "Akinori MUSHA" . "knu@iDaemons.org") (:url . "https://github.com/knu/emacsc"))])

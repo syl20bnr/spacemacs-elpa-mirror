@@ -1,0 +1,2 @@
+
+(smart-mode-line-powerline-theme . [(20160706 38) ((emacs (24 3)) (powerline (2 2)) (smart-mode-line (2 5))) "smart-mode-line theme that mimics the powerline appearance." tar ((:commit . "96e7ea0caba37fec485ea8b683afb4aed46d1d24") (:keywords "mode-line" "faces" "themes") (:authors ("Artur Malabarba" . "bruce.connor.am@gmail.com")) (:maintainer "Artur Malabarba" . "bruce.connor.am@gmail.com") (:url . "http://github.com/Bruce-Connor/smart-mode-line"))])

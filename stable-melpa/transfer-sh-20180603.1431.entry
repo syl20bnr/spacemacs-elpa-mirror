@@ -1,0 +1,2 @@
+
+(transfer-sh . [(20180603 1431) ((async (1 0))) "Simple interface for sending buffer contents to transfer.sh" single ((:commit . "55da85f963d347255a2b46568954923679331798") (:keywords "cloud" "upload" "share") (:authors ("S. Roskamp" . "steffen.roskamp@gmail.com")) (:maintainer "S. Roskamp" . "steffen.roskamp@gmail.com"))])

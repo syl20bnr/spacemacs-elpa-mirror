@@ -1,0 +1,2 @@
+
+(markdownfmt . [(20160609 1241) ((emacs (24))) "Format markdown using markdownfmt" single ((:commit . "187a74eb4fd9e8520ce08da42d1d292b9af7f2b7") (:keywords "markdown") (:authors ("Nicolas Lamirault" . "nicolas.lamirault@gmail.com")) (:maintainer "Nicolas Lamirault" . "nicolas.lamirault@gmail.com") (:url . "https://github.com/nlamirault/emacs-markdownfmt"))])

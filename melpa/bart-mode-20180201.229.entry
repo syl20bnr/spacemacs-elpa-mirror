@@ -1,0 +1,2 @@
+
+(bart-mode . [(20180201 229) ((emacs (24 3))) "Real time BART departures info." single ((:commit . "6feeb8f9badbc2ce4b60499bf7bf4acdae4cfed7") (:keywords "convenience" "transit") (:authors ("Michael Schuldt" . "mbschuldt@gmail.com")) (:maintainer "Michael Schuldt" . "mbschuldt@gmail.com") (:url . "https://github.com/mschuldt/bart-mode"))])

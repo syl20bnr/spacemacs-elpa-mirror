@@ -1,0 +1,2 @@
+
+(envdir . [(20160221 1923) ((emacs (24)) (dash (2 10 0)) (f (0 17 2))) "Modify environment according to files in a specified directory" single ((:commit . "f29346c55ccf11d8c75628edc6d430ed63c36917") (:authors ("Artem Malyshev" . "proofit404@gmail.com")) (:maintainer "Artem Malyshev" . "proofit404@gmail.com") (:url . "https://github.com/proofit404/envdir-mode"))])

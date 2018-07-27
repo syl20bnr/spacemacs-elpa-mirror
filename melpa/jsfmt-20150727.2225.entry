@@ -1,0 +1,2 @@
+
+(jsfmt . [(20150727 2225) nil "Interface to jsfmt command for javascript files" single ((:commit . "68109120f553fbc651fafb6fc35ed83c3e79f8a6") (:authors ("Brett Langdon" . "brett@blangdon.com")) (:maintainer "Brett Langdon" . "brett@blangdon.com") (:url . "https://github.com/brettlangdon/jsfmt.el"))])

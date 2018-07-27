@@ -1,0 +1,2 @@
+
+(emoji-fontset . [(20160726 1924) nil "Set font face for Emoji." single ((:commit . "10be897fa5165fd40fd35a89e38c759e008fa775") (:keywords "emoji" "font" "config") (:authors ("USAMI Kenta" . "tadsan@zonu.me")) (:maintainer "USAMI Kenta" . "tadsan@zonu.me"))])

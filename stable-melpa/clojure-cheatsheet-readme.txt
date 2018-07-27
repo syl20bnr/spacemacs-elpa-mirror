@@ -1,1 +1,1 @@
-A quick reference system for Clojure. Fast, searchable & available offline.
+A quick reference system for Clojure.  Fast, searchable & available offline.

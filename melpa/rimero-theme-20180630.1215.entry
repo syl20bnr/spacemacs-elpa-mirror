@@ -1,0 +1,2 @@
+
+(rimero-theme . [(20180630 1215) ((emacs (24))) "Theme with a dark background suitable for UI and terminal usage." single ((:commit . "dc6917b7404d3f79044046c231a195c40c9d0a88") (:keywords "faces" "theme" "dark" "light colors") (:authors ("Yves Zoundi" . "yveszoundi@users.sf.net")) (:maintainer "Yves Zoundi" . "yveszoundi@users.sf.net") (:url . "https://github.com/yveszoundi/emacs-rimero-theme"))])

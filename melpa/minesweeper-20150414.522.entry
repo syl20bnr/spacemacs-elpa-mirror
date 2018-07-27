@@ -1,0 +1,2 @@
+
+(minesweeper . [(20150414 522) nil "play minesweeper in Emacs" single ((:keywords "game" "fun" "minesweeper" "inane" "diversion") (:authors ("Zachary Kanfer" . "zkanfer@gmail.com")) (:maintainer "Zachary Kanfer" . "zkanfer@gmail.com") (:url . "https://bitbucket.org/zck/minesweeper.el"))])

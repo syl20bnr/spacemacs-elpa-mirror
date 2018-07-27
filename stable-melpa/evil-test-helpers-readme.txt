@@ -18,7 +18,3 @@ with keyword arguments.  See the documentation string of
 `evil-test-buffer' for more details.
 
 This file is NOT part of Evil itself.
-
-(require 'elp)
-(require 'ert)
-(require 'evil)

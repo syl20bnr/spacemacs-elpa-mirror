@@ -1,0 +1,2 @@
+
+(bbcode-mode . [(20180505 927) ((cl-lib (0 5))) "Major mode for phpBB posts (BBCode markup)" single ((:commit . "ee30d43f9029e0919a06be0dde0ed16f201647c1") (:keywords "bbcode" "languages") (:authors ("Eric James Michael Ritz" . "lobbyjones@gmail.com")) (:maintainer "Lassi Kortela" . "lassi@lassi.io") (:url . "https://github.com/lassik/bbcode-mode"))])

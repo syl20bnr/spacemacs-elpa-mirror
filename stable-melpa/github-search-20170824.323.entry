@@ -1,0 +1,2 @@
+
+(github-search . [(20170824 323) ((magit (0 8 1)) (gh (1 0 0))) "Clone repositories by searching github" single ((:commit . "c5fa1d9f8f9bcf201fa31478a6f5e02ed5ac086b") (:keywords "github" "search" "clone" "api" "gh" "magit" "vc" "tools") (:authors ("Ivan Malison" . "IvanMalison@gmail.com")) (:maintainer "Ivan Malison" . "IvanMalison@gmail.com") (:url . "https://github.com/IvanMalison/github-search"))])

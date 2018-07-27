@@ -1,0 +1,2 @@
+
+(neotree . [(20180616 1603) ((cl-lib (0 5))) "A tree plugin like NerdTree for Vim" tar ((:commit . "4f8d80fd51c712df7b11ae8491be3527db46f612") (:authors ("jaypei" . "jaypei97159@gmail.com")) (:maintainer "jaypei" . "jaypei97159@gmail.com") (:url . "https://github.com/jaypei/emacs-neotree"))])

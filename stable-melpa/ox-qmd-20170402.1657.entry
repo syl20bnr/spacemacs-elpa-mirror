@@ -1,0 +1,2 @@
+
+(ox-qmd . [(20170402 1657) ((org (8 0))) "Qiita Markdown Back-End for Org Export Engine" single ((:commit . "3a24c7a0b3ec80e494b977e14a3dfb94c9f1d8ec") (:keywords "org" "wp" "markdown" "qiita") (:authors ("0x60DF" . "0x60DF@gmail.com")) (:maintainer "0x60DF" . "0x60DF@gmail.com") (:url . "https://github.com/0x60df/ox-qmd"))])

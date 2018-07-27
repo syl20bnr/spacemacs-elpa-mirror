@@ -1,0 +1,2 @@
+
+(elmacro . [(20180628 1411) ((s (1 11 0)) (dash (2 13 0))) "Convert keyboard macros to emacs lisp" single ((:commit . "89b9b0feabafd01fee48111d67131c4c9b5fed9a") (:keywords "macro" "elisp" "convenience") (:authors ("Philippe Vaucher" . "philippe.vaucher@gmail.com")) (:maintainer "Philippe Vaucher" . "philippe.vaucher@gmail.com") (:url . "https://github.com/Silex/elmacro"))])

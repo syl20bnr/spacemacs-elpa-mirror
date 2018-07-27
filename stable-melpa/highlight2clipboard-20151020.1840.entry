@@ -1,0 +1,2 @@
+
+(highlight2clipboard . [(20151020 1840) ((htmlize (1 47))) "Copy text to clipboard with highlighting." tar ((:commit . "6ce58a060d9c5843ccb8c79ec2bba7858c68ac15") (:keywords "tools") (:authors ("Anders Lindgren")) (:maintainer "Anders Lindgren"))])

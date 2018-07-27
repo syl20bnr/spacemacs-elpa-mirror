@@ -1,0 +1,2 @@
+
+(dotnet . [(20170827 1538) nil "Interact with dotnet CLI tool" single ((:commit . "e22fd23bf2bfab980d4802b10c4d872b800f90d4") (:keywords ".net" "tools") (:authors ("Julien BLANCHARD" . "julien@sideburns.eu")) (:maintainer "Julien BLANCHARD" . "julien@sideburns.eu") (:url . "https://github.com/julienXX/dotnet.el"))])

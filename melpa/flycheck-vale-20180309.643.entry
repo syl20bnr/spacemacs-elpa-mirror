@@ -1,0 +1,2 @@
+
+(flycheck-vale . [(20180309 643) ((emacs (24 4)) (flycheck (0 22)) (let-alist (1 0 4))) "flycheck integration for vale" single ((:commit . "7777e0d4cf961b6ee6ae4ef917636121d18b3ee8") (:authors ("Austin Bingham" . "austin.bingham@gmail.com")) (:maintainer "Austin Bingham" . "austin.bingham@gmail.com") (:url . "https://github.com/abingham/flycheck-vale"))])

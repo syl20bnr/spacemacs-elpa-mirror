@@ -1,0 +1,2 @@
+
+(msvc . [(20171225 1538) ((emacs (24)) (cl-lib (0 5)) (cedet (1 0)) (ac-clang (2 0 0))) "Microsoft Visual C/C++ mode" tar ((:commit . "dfc529aa6da8b46b0a0c7db9a0e5e9bc33ab1fb3") (:keywords "languages" "completion" "syntax check" "mode" "intellisense") (:authors ("yaruopooner [https://github.com/yaruopooner]")) (:maintainer "yaruopooner [https://github.com/yaruopooner]") (:url . "https://github.com/yaruopooner/msvc"))])

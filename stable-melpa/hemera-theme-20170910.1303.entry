@@ -1,0 +1,2 @@
+
+(hemera-theme . [(20170910 1303) ((emacs (24))) "Light theme" single ((:commit . "354ae3b788c11ac08e6e2fe7c86adc621e2b16fd") (:keywords "themes" "light-theme") (:authors ("Guido Schmidt")) (:maintainer "Guido Schmidt" . "guido.schmidt.2912@gmail.com") (:url . "https://github.com/GuidoSchmidt/emacs-hemera-theme"))])

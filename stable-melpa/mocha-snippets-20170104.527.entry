@@ -1,0 +1,2 @@
+
+(mocha-snippets . [(20170104 527) ((yasnippet (0 8 0))) "Yasnippets for the Mocha JS Testing Framework" tar ((:commit . "e054137bd78f0d236e983874da1f345d30a71816") (:keywords "test" "javascript") (:authors ("Charles Lowell" . "cowboyd@frontside.io")) (:maintainer "Charles Lowell" . "cowboyd@frontside.io"))])

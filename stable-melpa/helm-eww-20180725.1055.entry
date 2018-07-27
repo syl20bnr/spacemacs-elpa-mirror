@@ -1,0 +1,2 @@
+
+(helm-eww . [(20180725 1055) ((emacs (24 4)) (helm (2 8 6)) (seq (1 8))) "Helm UI wrapper for EWW." single ((:commit . "9d36acc433bcf689598b1b4d7d47c9aeb84d6b44") (:keywords "helm" "packages") (:authors ("Pierre Neidhardt" . "ambrevar@gmail.com")) (:maintainer "Pierre Neidhardt" . "ambrevar@gmail.com") (:url . "https://github.com/emacs-helm/helm-eww"))])

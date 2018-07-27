@@ -1,0 +1,2 @@
+
+(system-packages . [(20180724 2348) ((emacs (24 3))) "functions to manage system packages" single ((:commit . "23e127ef005325f161e18c497a650efce1012039") (:authors ("J. Alexander Branham" . "branham@utexas.edu")) (:maintainer "J. Alexander Branham" . "branham@utexas.edu") (:url . "https://gitlab.com/jabranham/system-packages"))])

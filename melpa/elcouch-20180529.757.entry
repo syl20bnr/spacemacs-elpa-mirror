@@ -1,0 +1,2 @@
+
+(elcouch . [(20180529 757) ((emacs (25 1)) (json-mode (1 0 0)) (libelcouch (0 7 0))) "View and manipulate CouchDB databases" single ((:commit . "608fe254a7ee69c43c69b905ef708189dc3e3192") (:keywords "data" "tools") (:authors ("Damien Cassou" . "damien@cassou.me")) (:maintainer "Damien Cassou" . "damien@cassou.me") (:url . "https://gitlab.petton.fr/DamienCassou/elcouch"))])

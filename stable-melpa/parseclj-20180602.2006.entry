@@ -1,0 +1,2 @@
+
+(parseclj . [(20180602 2006) ((emacs (25)) (a (0 1 0 -3 4))) "Clojure/EDN parser" tar ((:commit . "dc0d165b0a8633f5b11ed9175a6e421c52f4d314") (:keywords "lisp") (:authors ("Arne Brasseur" . "arne@arnebrasseur.net")) (:maintainer "Arne Brasseur" . "arne@arnebrasseur.net"))])

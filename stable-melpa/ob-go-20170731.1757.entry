@@ -1,0 +1,2 @@
+
+(ob-go . [(20170731 1757) nil "org-babel functions for go evaluation" tar ((:commit . "28a0250cd969974936e44dfdccb0265632d25f84") (:keywords "golang" "go" "literate programming" "reproducible research") (:authors ("K. Adam Christensen")) (:maintainer "K. Adam Christensen") (:url . "http://orgmode.org"))])

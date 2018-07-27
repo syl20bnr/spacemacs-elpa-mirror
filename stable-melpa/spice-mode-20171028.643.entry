@@ -1,0 +1,2 @@
+
+(spice-mode . [(20171028 643) ((emacs (24 3))) "Major mode for SPICE" single ((:commit . "702bf2d5c3561be44771ea77b476532d32068504") (:keywords "spice" "spice2g6" "spice3" "eldo" "hspice" "layla" "mondriaan" "fasthenry" "cdl" "spectre compatibility" "netlist editing") (:authors ("Geert A. M. Van der Plas" . "geert_vanderplas@email.com") ("Emmanuel Rouat" . "emmanuel.rouat@wanadoo.fr") ("Carlin J. Vieri, MIT AI Lab" . "cvieri@ai.mit.edu")) (:maintainer "Geert A. M. Van der Plas" . "geert_vanderplas@email.com") (:url . "http://spice-mode.4t.com/"))])

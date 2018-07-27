@@ -1,0 +1,2 @@
+
+(nanowrimo . [(20151105 228) nil "Track progress for nanowrimo" single ((:authors ("Ivan Andrus <darthandrus at gmail.com>")) (:maintainer "Ivan Andrus <darthandrus at gmail.com>") (:url . "https://bitbucket.org/gvol/nanowrimo-mode"))])

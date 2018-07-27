@@ -1,0 +1,2 @@
+
+(dna-mode . [(20170804 814) nil "a major mode for editing dna sequences" tar ((:commit . "471d374de22c33eaddd8e41dd8ae29753fab2f6a") (:keywords "dna" "emacs" "editing") (:authors ("Harley Gorrell" . "harley@panix.com")) (:maintainer "Harley Gorrell" . "harley@panix.com") (:url . "http://www.mahalito.net/~harley/elisp/dna-mode.el"))])

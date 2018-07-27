@@ -1,0 +1,2 @@
+
+(ivy-pages . [(20160728 1920) ((emacs (24 1)) (ivy (0 8 0))) "Complete current buffer's pages with Ivy" single ((:commit . "47b03a1f9384502cf22369ff31a2898c863d3aff") (:keywords "convenience" "matching") (:authors ("Igor Epstein" . "igorepst@gmail.com")) (:maintainer "Igor Epstein" . "igorepst@gmail.com") (:url . "https://github.com/igorepst/ivy-pages"))])

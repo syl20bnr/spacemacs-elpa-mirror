@@ -1,0 +1,2 @@
+
+(tdd-status-mode-line . [(20131123 1716) nil "TDD status on the mode-line" single ((:commit . "4c082e62f4915b573338a97efcc6854d132323dc") (:keywords "faces" "tdd") (:authors ("Gergely Nagy" . "algernon@madhouse-project.org")) (:maintainer "Gergely Nagy" . "algernon@madhouse-project.org") (:url . "https://github.com/algernon/tdd-status-mode-line"))])

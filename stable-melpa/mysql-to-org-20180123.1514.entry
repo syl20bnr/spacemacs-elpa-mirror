@@ -1,0 +1,2 @@
+
+(mysql-to-org . [(20180123 1514) ((emacs (24 3)) (s (1 11 0))) "Minor mode to output the results of mysql queries to org tables" single ((:commit . "2526205ad484ad3fa38d41e7d537ace38c27645c") (:authors ("Tijs Mallaerts" . "tijs.mallaerts@gmail.com")) (:maintainer "Tijs Mallaerts" . "tijs.mallaerts@gmail.com"))])

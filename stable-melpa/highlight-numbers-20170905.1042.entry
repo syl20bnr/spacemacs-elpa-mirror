@@ -1,0 +1,2 @@
+
+(highlight-numbers . [(20170905 1042) ((emacs (24)) (parent-mode (2 0))) "Highlight numbers in source code" single ((:commit . "f952ecb7448c125d4ef82ee6ad136b25e640d74a") (:authors ("Fanael Linithien" . "fanael4@gmail.com")) (:maintainer "Fanael Linithien" . "fanael4@gmail.com") (:url . "https://github.com/Fanael/highlight-numbers"))])

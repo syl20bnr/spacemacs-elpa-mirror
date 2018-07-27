@@ -1,0 +1,2 @@
+
+(highlight-indentation . [(20171218 937) nil "Minor modes for highlighting indentation" single ((:commit . "35e2c1d4f8f368685893128f77f90454cb9c2708") (:authors ("Anton Johansson" . "anton.johansson@gmail.com")) (:maintainer "Anton Johansson" . "anton.johansson@gmail.com") (:url . "https://github.com/antonj/Highlight-Indentation-for-Emacs"))])

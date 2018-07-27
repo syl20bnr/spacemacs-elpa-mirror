@@ -1,0 +1,2 @@
+
+(org2issue . [(20160427 118) ((org (8 0)) (emacs (24 4)) (ox-gfm (0 1)) (gh (0 1)) (s (20160405 920))) "export org to github issue" single ((:commit . "0f7f13463e389f2d8d7d830a928042d0cf1c71eb") (:keywords "convenience" "github" "org") (:authors ("DarkSun" . "lujun9972@gmail.com")) (:maintainer "DarkSun" . "lujun9972@gmail.com") (:url . "https://github.com/lujun9972/org2issue"))])

@@ -1,0 +1,2 @@
+
+(emojify-logos . [(20171125 1014) ((emojify (0 4))) "Add logos to emojify" tar ((:commit . "96c74383a7c69e839ba41de3507154ca4ad564a1") (:authors ("mxgoldstein" . "m_goldstein@gmx.net")) (:maintainer "mxgoldstein" . "m_goldstein@gmx.net") (:url . "https://github.com/mxgoldstein/emojify-logos"))])

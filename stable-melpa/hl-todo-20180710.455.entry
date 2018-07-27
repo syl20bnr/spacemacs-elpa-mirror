@@ -1,0 +1,2 @@
+
+(hl-todo . [(20180710 455) nil "highlight TODO and similar keywords" single ((:commit . "3401f322d954e635372995bf5cc77dae171a78ba") (:keywords "convenience") (:authors ("Jonas Bernoulli" . "jonas@bernoul.li")) (:maintainer "Jonas Bernoulli" . "jonas@bernoul.li") (:url . "https://github.com/tarsius/hl-todo"))])

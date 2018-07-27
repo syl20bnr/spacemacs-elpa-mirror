@@ -7,7 +7,6 @@ For more infomation, see <https://github.com/aki2o/emacs-pophint/blob/master/REA
 
 Dependencies:
 
-- popup.el ( bundled auto-complete.el. see <https://github.com/auto-complete/auto-complete> )
 - yaxception.el ( see <https://github.com/aki2o/yaxception> )
 - log4e.el ( see <https://github.com/aki2o/log4e> )
 

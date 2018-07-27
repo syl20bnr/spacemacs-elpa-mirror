@@ -3,7 +3,7 @@ This will compute the TOC at insert it at current position.
 Update existing TOC: C-u M-x markdown-toc-generate-toc
 
 Here is a possible output:
-<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 **Table of Contents**
 
 - [some markdown page title](#some-markdown-page-title)

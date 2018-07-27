@@ -1,0 +1,2 @@
+
+(simple-paren . [(20180427 918) ((emacs (24)) (cl-lib (0 5))) "Insert paired delimiter, wrap" single ((:commit . "8d735905306c587851eff1445898499c01c530ca") (:keywords "convenience") (:authors ("Andreas Röhler, Steve Purcell")) (:maintainer "Andreas Röhler, Steve Purcell") (:url . "https://github.com/andreas-roehler/simple-paren"))])

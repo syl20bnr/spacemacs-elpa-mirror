@@ -1,0 +1,2 @@
+
+(writeroom-mode . [(20170623 1027) ((emacs (24 1)) (visual-fill-column (1 9))) "Minor mode for distraction-free writing" tar ((:commit . "07221a4fd979ff6d671247bc402d3dda5dbe14cc") (:keywords "text") (:authors ("Joost Kremers" . "joostkremers@fastmail.fm")) (:maintainer "Joost Kremers" . "joostkremers@fastmail.fm"))])

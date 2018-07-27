@@ -1,0 +1,2 @@
+
+(flycheck-hdevtools . [(20160926 702) ((flycheck (0 21 -4 1)) (dash (2 0))) "A flycheck checker for Haskell using hdevtools" single ((:commit . "eab1fc184854341a56154623a131cab6ff0ce18c") (:keywords "convenience" "languages" "tools") (:authors ("Steve Purcell" . "steve@sanityinc.com")) (:maintainer "Steve Purcell" . "steve@sanityinc.com") (:url . "https://github.com/flycheck/flycheck-hdevtools"))])

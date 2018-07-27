@@ -1,0 +1,2 @@
+
+(pinyin . [(20180620 1241) ((cl-lib (0 5)) (emacs (24))) "Convert Hanzi to Pinyin (汉字转拼音)" tar ((:commit . "a325e790e9dd7c5028c4c8d110b08e9d78227382") (:keywords "extensions") (:authors ("Xu Chunyang" . "mail@xuchunyang.me")) (:maintainer "Xu Chunyang" . "mail@xuchunyang.me") (:url . "https://github.com/xuchunyang/pinyin.el"))])

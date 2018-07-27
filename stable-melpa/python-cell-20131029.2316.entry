@@ -1,0 +1,2 @@
+
+(python-cell . [(20131029 2316) nil "Support for MATLAB-like cells in python mode" single ((:commit . "ccacd91a19be784860d687eb1e8ce88fddaacaf6") (:keywords "python" "matlab" "cell") (:authors ("Thomas Hisch" . "t.hisch@gmail.com")) (:maintainer "Thomas Hisch" . "t.hisch@gmail.com"))])

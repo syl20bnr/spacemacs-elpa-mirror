@@ -1,0 +1,2 @@
+
+(espresso-theme . [(20170716 1513) nil "Espresso Tutti Colori port for Emacs" single ((:commit . "e79c5c14732b7e34aab75dbcc968839536536c59") (:authors ("Martin Kühl <purl.org/net/mkhl>")) (:maintainer "Martin Kühl <purl.org/net/mkhl>") (:url . "https://github.com/dgutov/espresso-theme"))])

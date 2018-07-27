@@ -1,0 +1,2 @@
+
+(lsp-rust . [(20180305 1308) ((emacs (25)) (lsp-mode (3 0)) (rust-mode (0 3 0)) (dash (1 0)) (markdown-mode (2 3))) "Rust support for lsp-mode" single ((:commit . "ecc889cc8735b280e0e6e84d2f4526b0048148b3") (:keywords "rust") (:authors ("Vibhav Pant" . "vibhavp@gmail.com")) (:maintainer "Vibhav Pant" . "vibhavp@gmail.com") (:url . "https://github.com/emacs-lsp/lsp-rust"))])

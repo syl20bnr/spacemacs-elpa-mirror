@@ -1,0 +1,2 @@
+
+(outrespace . [(20180711 1432) ((emacs (24 4))) "c++ namespace utility functions" single ((:commit . "7dafed7e1cabf4a0bb55e5c6465e83796e3fdabe") (:keywords "tools" "c++" "namespace") (:authors ("Dan Harms" . "danielrharms@gmail.com")) (:maintainer "Dan Harms" . "danielrharms@gmail.com") (:url . "https://github.com/articuluxe/outrespace.git"))])

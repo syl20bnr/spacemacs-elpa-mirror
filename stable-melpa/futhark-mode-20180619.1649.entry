@@ -1,0 +1,2 @@
+
+(futhark-mode . [(20180619 1649) ((cl-lib (0 5))) "major mode for editing Futhark source files" single ((:commit . "f834d03aeef2230315e541646e375e6c38a6a10c") (:keywords "languages") (:url . "https://github.com/diku-dk/futhark"))])

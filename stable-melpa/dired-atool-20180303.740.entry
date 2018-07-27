@@ -1,0 +1,2 @@
+
+(dired-atool . [(20180303 740) ((emacs (24))) "Pack/unpack files with atool on dired." single ((:commit . "b92e0106827d34fa686e189c7e9a537a3a947a8b") (:keywords "files") (:authors ("Hiroki YAMAKAWA" . "s06139@gmail.com")) (:maintainer "Hiroki YAMAKAWA" . "s06139@gmail.com") (:url . "https://github.com/HKey/dired-atool"))])

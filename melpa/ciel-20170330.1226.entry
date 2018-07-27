@@ -1,0 +1,2 @@
+
+(ciel . [(20170330 1226) ((emacs (24))) "A command that is clone of \"ci\" in vim." single ((:commit . "8c73f78d60ef52d3c395a9629963a63439b8a83e") (:keywords "convinience") (:authors ("Takuma Matsushita" . "cs14095@gmail.com")) (:maintainer "Takuma Matsushita" . "cs14095@gmail.com") (:url . "https://github.com/cs14095/ciel.el"))])

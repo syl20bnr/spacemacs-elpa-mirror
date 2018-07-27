@@ -1,0 +1,2 @@
+
+(vue-mode . [(20180516 312) ((mmm-mode (0 5 5)) (vue-html-mode (0 2)) (ssass-mode (0 2)) (edit-indirect (0 1 4))) "Major mode for vue component based on mmm-mode" single ((:commit . "ac5bd63e6ee50c158362bb6442067ed5ea9f36fd") (:keywords "languages") (:authors ("codefalling" . "code.falling@gmail.com")) (:maintainer "codefalling" . "code.falling@gmail.com"))])

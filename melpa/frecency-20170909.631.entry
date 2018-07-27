@@ -1,0 +1,2 @@
+
+(frecency . [(20170909 631) ((emacs (25 1)) (a (0 1)) (dash (2 13 0))) "Library for sorting items by frequency and recency of access" single ((:commit . "31ef9ff4af1a4fed3dcc24ea74037feea8795c87") (:keywords "libraries" "recency" "recent" "frequency" "frequent") (:authors ("Adam Porter" . "adam@alphapapa.net")) (:maintainer "Adam Porter" . "adam@alphapapa.net") (:url . "http://github.com/alphapapa/frecency.el"))])

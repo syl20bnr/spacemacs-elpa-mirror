@@ -1,0 +1,2 @@
+
+(syndicate . [(20160603 1523) ((evil (1 0))) "evil keybindings for org-mode" single ((:commit . "90cee202a06f5bab48268ebf9f62c43334b69f50") (:keywords "evil" "org" "bindings") (:authors ("Kawin Nikomborirak")) (:maintainer "Kawin Nikomborirak") (:url . "https://github.com/KNX32542/syndicate.git"))])

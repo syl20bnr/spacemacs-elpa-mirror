@@ -1,0 +1,2 @@
+
+(python-test . [(20171113 537) ((emacs (25 1))) "Python testing integration" single ((:commit . "f00b9de14647b15b6f36ceee77d7e9e08dd074a4") (:keywords "convenience" "tools" "processes") (:authors ("Mario Rodas" . "marsam@users.noreply.github.com")) (:maintainer "Mario Rodas" . "marsam@users.noreply.github.com") (:url . "https://github.com/emacs-pe/python-test.el"))])

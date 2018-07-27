@@ -17,17 +17,17 @@ The following variables are available for customization (see more via
 - Var `lua-documentation-function': function used to
   show documentation (`eww` is a viable alternative for Emacs 25)
 
-These are variables/commands that operate on Lua subprocess:
+These are variables/commands that operate on the Lua process:
 
 - Var `lua-default-application':
-  command to start up the subprocess (REPL)
+  command to start the Lua process (REPL)
 - Var `lua-default-command-switches':
-  arguments to pass to the subprocess on startup (make sure `-i` is there
+  arguments to pass to the Lua process on startup (make sure `-i` is there
   if you expect working with Lua shell interactively)
 - Cmd `lua-start-process': start new REPL process, usually happens automatically
 - Cmd `lua-kill-process': kill current REPL process
 
-These are variables/commands for interaction with Lua subprocess:
+These are variables/commands for interaction with the Lua process:
 
 - Cmd `lua-show-process-buffer': switch to REPL buffer
 - Cmd `lua-hide-process-buffer': hide window showing REPL buffer

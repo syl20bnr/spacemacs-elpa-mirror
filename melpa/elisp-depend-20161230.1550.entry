@@ -1,0 +1,2 @@
+
+(elisp-depend . [(20161230 1550) nil "Parse depend libraries of elisp file." single ((:commit . "e4b201ac7dcee4489d58800c299fd04aaa61d07a"))])

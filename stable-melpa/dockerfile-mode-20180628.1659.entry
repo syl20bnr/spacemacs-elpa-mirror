@@ -1,0 +1,2 @@
+
+(dockerfile-mode . [(20180628 1659) ((emacs (24)) (s (1 12))) "Major mode for editing Docker's Dockerfiles" single ((:commit . "64733f64ea9be1e5e534e590846869b75c62ed1f") (:url . "https://github.com/spotify/dockerfile-mode"))])

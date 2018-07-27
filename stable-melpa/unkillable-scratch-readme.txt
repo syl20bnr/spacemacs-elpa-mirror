@@ -5,10 +5,10 @@ being killed. Any buffer matching a regexp in the list
 Only one bufer is in `unkillable-buffers' by default: the *scratch*
 buffer.
 
-The *scratch* buffer is considered specially; in the event of a
-call to `kill-buffer' it will be regenerated (populated only with
-`initial-scratch-message'.) Removing the regexp matching *scratch*
-from `unkillable-buffers' disables this behavior.
+The *scratch* buffer is considered specially; in the event of a call to
+`kill-buffer' the buffer will be replaced with
+`initial-scratch-message'. Removing the regexp matching *scratch* from
+`unkillable-buffers' disables this behavior.
 
 Usage:
 

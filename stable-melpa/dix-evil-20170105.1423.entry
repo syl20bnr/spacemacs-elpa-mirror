@@ -1,0 +1,2 @@
+
+(dix-evil . [(20170105 1423) ((dix (0 3 0)) (evil (1 0 7))) "optional evil-integration with dix.el" single ((:commit . "bcc7fd7aef5d25171978c386c620e09d0ba8d2f8") (:keywords "languages") (:authors ("Kevin Brubeck Unhammer" . "unhammer@fsfe.org")) (:maintainer "Kevin Brubeck Unhammer" . "unhammer@fsfe.org") (:url . "http://wiki.apertium.org/wiki/Emacs"))])

@@ -1,0 +1,2 @@
+
+(grep-context . [(20180415 1135) ((emacs (24 4)) (dash (2 12 0)) (cl-lib (0 5 0))) "Increase context in compilation and grep buffers" single ((:commit . "4c63d0f2654dee1e249c2054d118d674a757bd45") (:keywords "convenience" "search" "grep" "compile") (:authors ("Michał Kondraciuk" . "k.michal@zoho.com")) (:maintainer "Michał Kondraciuk" . "k.michal@zoho.com") (:url . "https://github.com/mkcms/grep-context"))])

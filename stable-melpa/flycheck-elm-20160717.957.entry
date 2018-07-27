@@ -1,0 +1,2 @@
+
+(flycheck-elm . [(20160717 957) ((flycheck (0 29 -4)) (emacs (24 4))) "Flycheck support for the elm language" single ((:commit . "b401873ebd2176190a0a6fb4d61c2cca97d3b9fb") (:authors ("Brian Sermons")) (:maintainer "Brian Sermons") (:url . "https://github.com/bsermons/flycheck-elm"))])

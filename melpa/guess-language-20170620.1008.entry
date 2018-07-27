@@ -1,0 +1,2 @@
+
+(guess-language . [(20170620 1008) ((cl-lib (0 5)) (emacs (24))) "Robust automatic language detection" tar ((:commit . "1f1602f74d7159e7fb8c90f92ec5a3d1df5429da") (:authors ("Titus von der Malsburg" . "malsburg@posteo.de")) (:maintainer "Titus von der Malsburg" . "malsburg@posteo.de") (:url . "https://github.com/tmalsburg/guess-language.el"))])

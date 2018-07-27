@@ -1,0 +1,2 @@
+
+(pkgbuild-mode . [(20180723 1447) ((emacs (25 1))) "Interface to the ArchLinux package manager" single])

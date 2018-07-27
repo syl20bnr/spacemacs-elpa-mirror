@@ -1,0 +1,2 @@
+
+(mbsync . [(20180530 733) nil "run mbsync to fetch mails" single ((:commit . "bca442138f24f20479b89bd5d77b012ab06f4232") (:authors ("Dimitri Fontaine" . "dim@tapoueh.org")) (:maintainer "Dimitri Fontaine" . "dim@tapoueh.org") (:url . "https://github.com/dimitri/mbsync-el"))])

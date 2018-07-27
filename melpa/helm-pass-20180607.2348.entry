@@ -1,0 +1,2 @@
+
+(helm-pass . [(20180607 2348) ((emacs (25)) (helm (0)) (password-store (0)) (auth-source-pass (4 0 0))) "helm interface of pass, the standard Unix password manager" single ((:commit . "fdff8f8f2e2b8a61caed7b6c171624700dbe1346") (:authors ("J. Alexander Branham" . "branham@utexas.edu")) (:maintainer "J. Alexander Branham" . "branham@utexas.edu") (:url . "https://github.com/jabranham/helm-pass"))])

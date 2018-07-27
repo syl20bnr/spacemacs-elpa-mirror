@@ -1,0 +1,2 @@
+
+(eredis . [(20180221 2113) nil "eredis, a Redis client in emacs lisp" single ((:commit . "8a96034805fe0664132ce2e12deb9936503af2d4") (:authors ("Justin Heyes-Jones")) (:maintainer "Justin Heyes-Jones") (:url . "http://code.google.com/p/eredis/"))])

@@ -1,0 +1,2 @@
+
+(digit-groups . [(20160817 226) ((dash (2 11 0))) "Highlight place-value positions in numbers" single ((:authors ("Michael D. Adams <http://michaeldadams.org>")) (:maintainer "Michael D. Adams <http://michaeldadams.org>") (:url . "http://bitbucket.com/adamsmd/digit-groups"))])

@@ -10,14 +10,19 @@ settings to enjoy mic-paren.
 
 Some examples to try in your ~/.emacs:
 
-(add-hook 'LaTeX-mode-hook
-          (function (lambda ()
-                      (paren-toggle-matching-quoted-paren 1)
-                      (paren-toggle-matching-paired-delimiter 1))))
+ (add-hook 'LaTeX-mode-hook
+           (function (lambda ()
+                       (paren-toggle-matching-quoted-paren 1)
+                       (paren-toggle-matching-paired-delimiter 1))))
 
-(add-hook 'c-mode-common-hook
-          (function (lambda ()
-                       (paren-toggle-open-paren-context 1))))
+ (add-hook 'c-mode-common-hook
+           (function (lambda ()
+                        (paren-toggle-open-paren-context 1))))
+
+If you use CUA mode, these might be useful, too:
+
+ (put 'paren-forward-sexp 'CUA 'move)
+ (put 'paren-backward-sexp 'CUA 'move)
 
 ----------------------------------------------------------------------
 Installation:
@@ -47,6 +52,9 @@ o Both forward and backward parenthesis matching (simultaneously if
   cursor is between two expressions).
 o Indication of mismatched parentheses.
 o Recognition of "escaped" (also often called "quoted") parentheses.
+o Recognition of SML-style "sexp-ish" comment syntax.
+  NB: This support is preliminary; there are still problems
+      when the parens in the comment span multiple lines, etc.
 o Option to match "escaped" parens too, especially in (La)TeX-mode
   (e.g., matches expressions like "\(foo bar\)" properly).
 o Offers two functions as replacement for `forward-sexp' and
@@ -129,6 +137,14 @@ IMPORTANT NOTES (important for people who have customized mic-paren
 
 ----------------------------------------------------------------------
 Versions:
+v3.13   + Fix bug introduced in v3.12: Use ‘cl-flet*’.
+
+v3.12   + Avoid naked ‘flet’; use ‘cl-flet’ instead.
+          Thanks to Le Wang.
+
+v3.11   + Added support for recognizing SML-style comments as a sexp.
+          Thanks to Leo Liu, Stefan Monnier.
+
 v3.10   + Added message-length clamping (var `paren-max-message-length').
           Thanks to Jonathan Kotta.
 
@@ -159,11 +175,11 @@ v3.5    + No mic-paren-messages are displayed if we are in isearch-mode.
           the computation of the offscreen-message-linenumber.  Either the
           number of lines between the two matching parens or the absolute
           linenumber.  (Thank you for the idea and a first implementation
-          to Eliyahu Barzilay <eli@cs.bgu.ac.il>.)
+          to Eli Barzilay <eli@barzilay.org>.)
         + New option `paren-message-truncate-lines': If mic-paren messages
           should be truncated or not (has only an effect in GNU Emacs 21).
-          (Thank you for the idea and a first implementation to Eliyahu
-          Barzilay <eli@cs.bgu.ac.il>.)
+          (Thank you for the idea and a first implementation to Eli
+          Barzilay <eli@barzilay.org>.)
 
 v3.4    + Corrected some bugs in the backward-compatibility for older
           Emacsen.  Thanks to Tetsuo Tsukamoto <czkmt@remus.dti.ne.jp>.
@@ -255,7 +271,7 @@ v2.0    Support for MULE and Emacs 20 multibyte characters added.
 
 v1.9    Avoids multiple messages/dings when point has not moved.  Thus,
         mic-paren no longer overwrites messages in minibuffer.  Inspired by
-        the suggestion and code of Barzilay Eliyahu <eli@cs.bgu.ac.il>.
+        the suggestion and code of Eli Barzilay <eli@barzilay.org>.
 
 v1.3.1  Some spelling corrected (from Vinicius Jose Latorre
         <vinicius@cpqd.br> and Steven L Baur <steve@xemacs.org>).

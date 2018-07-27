@@ -1,0 +1,2 @@
+
+(kodi-remote . [(20180609 2354) ((request (0 2 0)) (let-alist (1 0 4)) (json (1 4)) (elnode (20140203 1506))) "Remote Control for Kodi" single ((:commit . "bca7250bb69e09c1a9829e15ef4aed1f486777eb") (:keywords "kodi" "tools" "convinience") (:authors ("Stefan Huchler" . "stefan.huchler@mail.de")) (:maintainer "Stefan Huchler" . "stefan.huchler@mail.de") (:url . "http://github.com/spiderbit/kodi-remote.el"))])

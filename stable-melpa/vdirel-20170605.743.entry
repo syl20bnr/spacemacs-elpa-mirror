@@ -1,0 +1,2 @@
+
+(vdirel . [(20170605 743) ((emacs (24 4)) (org-vcard (0 1 0)) (helm (1 7 0)) (seq (1 11))) "Manipulate vdir (i.e., vCard) repositories" single ((:commit . "72399f5e09f53aa25a068be8689cb711b8accf08") (:authors ("Damien Cassou" . "damien@cassou.me")) (:maintainer "Damien Cassou" . "damien@cassou.me"))])

@@ -1,0 +1,2 @@
+
+(company-pollen . [(20160812 1510) ((company (0 9 0)) (pollen-mode (1 0))) "company-mode completion backend for pollen" single ((:commit . "df4eab5b490cb478a092e6bab6b07f9e2f9c6fad") (:keywords "languages" "pollen" "pollenpub" "company") (:authors ("Junsong Li <ljs.darkfish AT GMAIL>")) (:maintainer "Junsong Li") (:url . "https://github.com/lijunsong/pollen-mode"))])

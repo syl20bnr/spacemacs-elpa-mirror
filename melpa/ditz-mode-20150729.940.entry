@@ -1,0 +1,2 @@
+
+(ditz-mode . [(20150729 940) nil "Emacs interface to Ditz issue tracking system" single ((:keywords "tools") (:authors ("Glenn Hutchings" . "zondo42@gmail.com")) (:maintainer "Glenn Hutchings" . "zondo42@gmail.com"))])

@@ -1,0 +1,2 @@
+
+(flycheck-ledger . [(20180125 831) ((flycheck (0 15))) "Flycheck integration for ledger files" single ((:commit . "044f28d126d1bce55c4b78ba6d5bc92e1f6cfd69") (:keywords "convenience" "languages" "tools") (:authors ("Steve Purcell" . "steve@sanityinc.com")) (:maintainer "Steve Purcell" . "steve@sanityinc.com"))])

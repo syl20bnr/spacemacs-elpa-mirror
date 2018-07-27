@@ -1,0 +1,2 @@
+
+(show-marks . [(20130805 1449) ((fm (1 0))) "Navigate and visualize the mark-ring" single ((:commit . "97609566582e65eed0d0a854efa5c312f209115d") (:keywords "convenience") (:authors ("Greg Rowe" . "emacs@therowes.net")) (:maintainer "Joe Bloggs" . "vapniks@yahoo.com") (:url . "https://github.com/vapniks/mark"))])

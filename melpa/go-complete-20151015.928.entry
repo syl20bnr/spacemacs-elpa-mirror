@@ -1,0 +1,2 @@
+
+(go-complete . [(20151015 928) ((go-mode (0)) (cl-lib (0 5))) "Native code completion for Go" single ((:commit . "e39efc356f6e19f17db3f3d2c81f28d38b31a55e") (:keywords "go" "golang" "completion") (:authors ("Vibhav Pant" . "vibhavp@gmail.com")) (:maintainer "Vibhav Pant" . "vibhavp@gmail.com") (:url . "https://github.com/vibhavp/go-complete"))])

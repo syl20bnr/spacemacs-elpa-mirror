@@ -1,0 +1,2 @@
+
+(cider-spy . [(20160313 1440) ((emacs (24 4)) (cider (0 10 0)) (dash (2 5 0)) (cl-lib (0 5)) (noflet (0 0 15))) "Spy on CIDER to get info" single ((:commit . "0224608d240e9900e588b6df049c2a87c24fc936") (:keywords "languages" "clojure" "cider" "nrepl") (:authors ("Jon Pither" . "jon.pither@gmail.com")) (:maintainer "Jon Pither" . "jon.pither@gmail.com") (:url . "http://www.github.com/jonpither/cider-spy"))])

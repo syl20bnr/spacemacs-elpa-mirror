@@ -1,0 +1,2 @@
+
+(fullframe . [(20170816 1003) ((cl-lib (0 5))) "Generalized automatic execution in a single frame" single ((:commit . "d6a5217f7f2a5a5edcb75140f3fa69b3a50f1cdd") (:keywords "fullscreen") (:authors ("Tom Regner" . "tom@goochesa.de")) (:maintainer "Tom Regner" . "tom@goochesa.de"))])

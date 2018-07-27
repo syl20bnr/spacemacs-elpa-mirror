@@ -1,0 +1,2 @@
+
+(frames-only-mode . [(20180114 1848) ((emacs (24 4)) (dash (2 13 0)) (s (1 11 0))) "Use frames instead of Emacs windows" single ((:commit . "0f42139a41e97bb0a2ebc320d41cec071c034ca0") (:keywords "frames" "windows") (:authors ("David Shepherd" . "davidshepherd7@gmail.com")) (:maintainer "David Shepherd" . "davidshepherd7@gmail.com") (:url . "https://github.com/davidshepherd7/frames-only-mode"))])

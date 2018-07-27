@@ -1,0 +1,2 @@
+
+(simplenote2 . [(20171202 206) ((request-deferred (0 2 0))) "Interact with app.simplenote.com" tar ((:commit . "0fd6dbd0566af29964078e4b74baf69c2f52381a") (:keywords "simplenote") (:authors ("alpha22jp" . "alpha22jp@gmail.com")) (:maintainer "alpha22jp" . "alpha22jp@gmail.com"))])

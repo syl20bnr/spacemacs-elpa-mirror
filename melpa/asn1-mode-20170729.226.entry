@@ -1,0 +1,2 @@
+
+(asn1-mode . [(20170729 226) ((emacs (24 3)) (s (1 10 0))) "ASN.1/GDMO mode for GNU Emacs" single])

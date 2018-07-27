@@ -1,0 +1,2 @@
+
+(cssh . [(20150810 1709) nil "clusterssh implementation for emacs" single ((:commit . "2fe2754235225a59b63f08b130cfd4352e2e1c3f") (:keywords "clusterssh" "ssh" "cssh") (:authors ("Dimitri Fontaine" . "dim@tapoueh.org")) (:maintainer "Dimitri Fontaine" . "dim@tapoueh.org") (:url . "http://tapoueh.org/emacs/cssh.html"))])

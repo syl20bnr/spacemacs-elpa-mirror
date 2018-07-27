@@ -1,0 +1,2 @@
+
+(mc-extras . [(20180520 439) ((multiple-cursors (1 2 1))) "Extra functions for multiple-cursors mode." tar ((:commit . "fac7e42d03078b4ca0fa72f191995c727143a0d1") (:keywords "editing" "cursors") (:authors ("Akinori MUSHA" . "knu@iDaemons.org")) (:maintainer "Akinori MUSHA" . "knu@iDaemons.org") (:url . "https://github.com/knu/mc-extras.el"))])

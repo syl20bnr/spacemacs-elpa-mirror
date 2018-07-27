@@ -1,0 +1,2 @@
+
+(auto-complete-distel . [(20160816 600) ((auto-complete (1 4)) (distel-completion-lib (1 0 0))) "Erlang/distel completion backend for auto-complete-mode" single])

@@ -1,0 +1,2 @@
+
+(mastodon . [(20180306 309) ((emacs (24 4))) "Client for Mastodon" tar ((:commit . "ae8dabda04e377a6ac22cb854e4844f68073f533") (:authors ("Johnson Denen" . "johnson.denen@gmail.com")) (:maintainer "Johnson Denen" . "johnson.denen@gmail.com") (:url . "https://github.com/jdenen/mastodon.el"))])

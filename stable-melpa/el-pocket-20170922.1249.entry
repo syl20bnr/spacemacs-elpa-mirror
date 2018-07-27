@@ -1,0 +1,2 @@
+
+(el-pocket . [(20170922 1249) ((web (0 5 2)) (emacs (24))) "Read and write to Pocket (getpocket.com)" single ((:commit . "a80abfb67efe68ada1d7d0a73aecee57e763baaa") (:keywords "emacs" "pocket" "bookmarks") (:authors ("Tod Davies" . "davies.t.o@gmail.com")) (:maintainer "Tod Davies" . "davies.t.o@gmail.com") (:url . "http://github.com/pterygota/el-pocket"))])

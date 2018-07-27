@@ -1,0 +1,2 @@
+
+(outline-toc . [(20170730 1130) nil "Sidebar showing a \"table of contents\"." single ((:commit . "31f04bea19cfcfb01a94d1fd2b72391cb02b7463") (:keywords "convenience" "outlines") (:authors ("Austin Bingham" . "austin.bingham@gmail.com")) (:maintainer "Austin Bingham" . "austin.bingham@gmail.com") (:url . "https://github.com/abingham/outline-toc.el"))])

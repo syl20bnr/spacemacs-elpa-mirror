@@ -1,0 +1,2 @@
+
+(bfbuilder . [(20150924 1650) ((cl-lib (0 3))) "A brainfuck development environment with interactive debugger" single ((:commit . "49560bdef131fa5672dab660e0c62376dbdcd906") (:authors ("zk_phi")) (:maintainer "zk_phi") (:url . "http://hins11.yu-yake.com/"))])

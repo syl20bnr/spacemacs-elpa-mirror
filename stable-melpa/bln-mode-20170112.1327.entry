@@ -1,0 +1,2 @@
+
+(bln-mode . [(20170112 1327) nil "binary line navigation minor mode for cursor movement in long lines" single ((:commit . "6c20b3269e88952c19ca9ad151221c7e2e27b465") (:keywords "motion" "location" "cursor" "convenience") (:authors ("Maarten Grachten")) (:maintainer "Maarten Grachten") (:url . "https://github.com/mgrachten/bln-mode"))])

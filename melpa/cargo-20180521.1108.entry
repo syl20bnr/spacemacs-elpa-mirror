@@ -1,0 +1,2 @@
+
+(cargo . [(20180521 1108) ((emacs (24 3)) (rust-mode (0 2 0)) (markdown-mode (2 4))) "Emacs Minor Mode for Cargo, Rust's Package Manager." tar ((:commit . "10093586bdac7252e65e11851f26da8ba4720608") (:keywords "tools") (:authors ("Kevin W. van Rooijen" . "kevin.van.rooijen@attichacker.com")) (:maintainer "Kevin W. van Rooijen" . "kevin.van.rooijen@attichacker.com"))])

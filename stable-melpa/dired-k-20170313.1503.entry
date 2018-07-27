@@ -1,0 +1,2 @@
+
+(dired-k . [(20170313 1503) ((emacs (24 3))) "highlight dired buffer by file size, modified time, git status" tar ((:commit . "c50e8f73358060a448bff66db2d330b52bbeffc1") (:authors ("Syohei YOSHIDA" . "syohex@gmail.com")) (:maintainer "Syohei YOSHIDA" . "syohex@gmail.com") (:url . "https://github.com/syohex/emacs-dired-k"))])

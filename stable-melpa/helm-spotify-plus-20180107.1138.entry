@@ -1,0 +1,2 @@
+
+(helm-spotify-plus . [(20180107 1138) ((emacs (24 4)) (helm (2 0 0)) (multi (2 0 1))) "Control Spotify search and select music with Helm." single ((:commit . "895f241f1259891d5c89cd42023f119f9fa121d6") (:authors ("Wanderson Ferreira <https://github.com/wandersoncferreira> and Luis Moneda <https://github.com/lgmoneda>")) (:maintainer "Wanderson Ferreira <https://github.com/wandersoncferreira> and Luis Moneda <https://github.com/lgmoneda>"))])

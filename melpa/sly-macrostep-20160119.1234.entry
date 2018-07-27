@@ -1,0 +1,2 @@
+
+(sly-macrostep . [(20160119 1234) ((sly (1 0 0 -2 2)) (macrostep (0 9))) "fancy macro-expansion via macrostep.el" tar ((:commit . "eb16778d104413a3e2a8d5537437c4ad76c2954b") (:keywords "languages" "lisp" "sly") (:url . "https://github.com/capitaomorte/sly-macrostep"))])

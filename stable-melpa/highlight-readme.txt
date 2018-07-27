@@ -12,30 +12,33 @@
  navigate around the sections of this doc.  Linkd mode will
  highlight this Index, as well as the cross-references and section
  headings throughout this file.  You can get `linkd.el' here:
- http://dto.freeshell.org/notebook/Linkd.html.
+ https://www.emacswiki.org/emacs/download/linkd.el.
 
  (@> "Things Defined Here")
  (@> "Documentation")
-   (@> "Library `facemenu+.el' Puts Highlight on the Menu")
-   (@> "User Option `hlt-use-overlays-flag'")
+   (@> "Libraries `facemenu+.el' and `mouse3.el' put Highlight on the Menu")
+   (@> "User Options `hlt-use-overlays-flag' and `hlt-overlays-priority'")
    (@> "Temporary or Permanent Highlighting")
    (@> "Commands")
+   (@> "Copy and Yank (Paste) Text Properties")
    (@> "User Option `hlt-act-on-any-face-flag'")
    (@> "Hiding and Showing Text")
      (@> "Hiding and Showing Text - Icicles Multi-Commands")
    (@> "What Gets Highlighted: Region, Buffer, New Text You Type")
-   (@> "Interference by Font Lock")
+   (@> "Interaction with Font Lock")
    (@> "Suggested Bindings")
    (@> "See Also")
    (@> "Commands That Won't Work in Emacs 20")
    (@> "To Do")
  (@> "Change log")
+ (@> "Macros")
  (@> "Key Bindings")
  (@> "Menus")
  (@> "Variables and Faces")
  (@> "Misc Functions - Emacs 20+")
  (@> "Misc Functions - Emacs 21+")
  (@> "Functions for Highlighting Propertized Text - Emacs 21+")
+ (@> "Functions for Highlighting Isearch Matches - Emacs 23+")
  (@> "General and Utility Functions")
 
 (@* "Things Defined Here")
@@ -43,17 +46,25 @@
  Things Defined Here
  -------------------
 
+ Macros defined here:
+
+   `hlt-user-error'.
+
  Commands defined here:
 
    `hlt-choose-default-face', `hlt-copy-props', `hlt-eraser',
    `hlt-eraser-mouse', `hlt-hide-default-face', `hlt-highlight',
    `hlt-highlight-all-prop', `hlt-highlight-enclosing-list',
    `hlt-highlighter', `hlt-highlighter-mouse',
+   `hlt-highlight-isearch-matches',
+   `hlt-highlight-line-dups-region', `hlt-highlight-lines',
    `hlt-highlight-property-with-value',
+   `hlt-highlight-regexp-groups-region',
    `hlt-highlight-regexp-region',
    `hlt-highlight-regexp-region-in-buffers',
    `hlt-highlight-regexp-to-end', `hlt-highlight-region',
-   `hlt-highlight-region-in-buffers',
+   `hlt-highlight-region-in-buffers', `hlt-highlight-regions',
+   `hlt-highlight-regions-in-buffers',
    `hlt-highlight-single-quotations', `hlt-highlight-symbol',
    `hlt-mouse-copy-props', `hlt-mouse-face-each-line',
    `hlt-next-face', `hlt-next-highlight', `hlt-paste-props',
@@ -64,24 +75,32 @@
    `hlt-toggle-link-highlighting',
    `hlt-toggle-property-highlighting',
    `hlt-toggle-use-overlays-flag', `hlt-unhighlight-all-prop',
+   `hlt-unhighlight-isearch-matches',
+   `hlt-unhighlight-regexp-groups-region',
    `hlt-unhighlight-regexp-region',
    `hlt-unhighlight-regexp-region-in-buffers',
    `hlt-unhighlight-regexp-to-end', `hlt-unhighlight-region',
    `hlt-unhighlight-region-for-face',
    `hlt-unhighlight-region-for-face-in-buffers',
-   `hlt-unhighlight-region-in-buffers', `hlt-unhighlight-symbol',
+   `hlt-unhighlight-region-in-buffers', `hlt-unhighlight-regions',
+   `hlt-unhighlight-regions-in-buffers',`hlt-unhighlight-symbol',
    `hlt-yank-props'.
 
  User options (variables) defined here:
 
    `hlt-act-on-any-face-flag', `hlt-auto-face-backgrounds',
    `hlt-auto-face-foreground', `hlt-auto-faces-flag',
-   `hlt-default-copy/yank-props', `hlt-max-region-no-warning',
-   `hlt-use-overlays-flag'.
+   `hlt-default-copy/yank-props', `hlt-face-prop',
+   `hlt-line-dups-ignore-regexp', `hlt-max-region-no-warning',
+   `hlt-overlays-priority', `hlt-use-overlays-flag'.
 
  Faces defined here:
 
-   `hlt-property-highlight', `minibuffer-prompt' (for Emacs 20).
+   `hlt-property-highlight', `hlt-regexp-level-1',
+   `hlt-regexp-level-2', `hlt-regexp-level-3',
+   `hlt-regexp-level-4', `hlt-regexp-level-5',
+   `hlt-regexp-level-6', `hlt-regexp-level-7',
+   `hlt-regexp-level-8', `minibuffer-prompt' (for Emacs 20).
 
  Non-interactive functions defined here:
 
@@ -90,15 +109,15 @@
    `hlt-+/--read-bufs', `hlt-add-listifying',
    `hlt-add-to-invisibility-spec', `hlt-delete-highlight-overlay',
    `hlt-highlight-faces-in-buffer', `hlt-flat-list',
-   `hlt-highlight-faces-in-buffer',
+   `hlt-highlight-faces-in-buffer', `hlt-highlight-regexp-groups',
    `hlt-listify-invisibility-spec',
    `hlt-mouse-toggle-link-highlighting',
    `hlt-mouse-toggle-property-highlighting',
    `hlt-nonempty-region-p', `hlt-props-to-copy/yank',
    `hlt-read-bg/face-name', `hlt-read-props-completing',
    `hlt-region-or-buffer-limits', `hlt-remove-if-not',
-   `hlt-set-intersection', `hlt-set-union', `hlt-subplist',
-   `hlt-tty-colors', `hlt-unhighlight-for-overlay'.
+   `hlt-set-intersection', `hlt-set-union', `hlt-string-match-p',
+   `hlt-subplist', `hlt-tty-colors', `hlt-unhighlight-for-overlay'.
 
  Internal variables defined here:
 
@@ -129,8 +148,8 @@
      are available on the `Thing at Pointer' submenu of the `No
      Region' right-click popup menu.
 
-(@* "User Option `hlt-use-overlays-flag'")
- ** User Option `hlt-use-overlays-flag'
+(@* "User Options `hlt-use-overlays-flag' and `hlt-overlays-priority'")
+ ** User Options `hlt-use-overlays-flag' and `hlt-overlays-priority'
 
  You can highlight text in two ways using this library, depending
  on the value of user option `hlt-use-overlays-flag':
@@ -163,6 +182,11 @@
  You can toggle the value of `hlt-use-overlays-flag' at any time
  between nil and its previous non-nil value, using command
  `hlt-toggle-use-overlays-flag'.
+
+ Option `hlt-overlays-priority' is the priority assigned to
+ overlays created by `hlt-* functions.  A higher priority makes an
+ overlay seem to be "on top of" lower priority overlays.  The
+ default value is a zero priority.
 
 (@* "Temporary or Permanent Highlighting")
 ** "Temporary or Permanent Highlighting" **
@@ -201,8 +225,9 @@
 
  When you reopen your file later, it is automatically in enriched
  mode, and your highlighting shows.  However, be aware that
- font-locking interferes with enriched mode, so you will probably
- want to use it on files where you don't use font-locking.
+ font-locking can interfere with enriched mode, so you might want
+ to use it on files where you don't use font-locking.  But see also
+ (@> "Interaction with Font Lock").
 
 (@* "Commands")
  ** Commands **
@@ -250,7 +275,7 @@
  active region.  If the region is not active then they act on the
  text in the whole buffer.  The commands with `to-end' in their
  name act on the text from point to the end of the buffer.  See
- also (@* "What Gets Highlighted: Region, Buffer, New Text You Type").
+ also (@> "What Gets Highlighted: Region, Buffer, New Text You Type").
 
  The commands you will use the most often are perhaps
  `hlt-highlight', `hlt-highlighter', `hlt-highlight-symbol',
@@ -287,6 +312,24 @@
  has no effect for `hlt-eraser' unless `hlt-use-overlays-flag' is
  `only', in which case it erases the Nth face in
  `hlt-auto-face-backgrounds', where N is the prefix arg.
+
+ Command `hlt-highlight-regexp-groups-region', like command
+ `hlt-highlight-regexp-region', highlights regexp matches.  But
+ unlike the latter, it highlights the regexp groups (up to 8
+ levels) using different faces - faces `hlt-regexp-level-1' through
+ `hlt-regexp-level-8'.  Use it, for example, when you are trying
+ out a complex regexp, to see what it is actually matching.
+ Command `hlt-unhighlight-regexp-groups-region' unhighlights such
+ highlighting.
+
+ Command `hlt-highlight-line-dups-region' highlights the sets of
+ duplicate lines in the region (or the buffer, if the region is not
+ active).  By default, leading and trailing whitespace are ignored
+ when checking for duplicates, but this is controlled by option
+ `hlt-line-dups-ignore-regexp'.  And with a prefix arg the behavior
+ effectively acts opposite to the value of that option.  So if the
+ option says not to ignore whitespace and you use a prefix arg then
+ whitespace is ignored, and vice versa.
 
  If you use Emacs 21 or later, you can use various commands that
  highlight and unhighlight text that has certain text properties
@@ -345,11 +388,14 @@
  Command `hlt-mouse-face-each-line' puts a `mouse-face' property on
  each line of the region.
 
- Finally, you can highlight and unhighlight multiple buffers at the
- same time.  Just as for a single buffer, there are commands for
- regexp (un)highlighting, and all of the multiple-buffer commands,
- whose names end in `-in-buffers', are sensitive to the region in
- each buffer, when active.  These are the multiple-buffer commands:
+ Command `hlt-highlight-lines' highlights all lines touched by the
+ region, extending the highlighting to the window edges.
+
+ You can highlight and unhighlight multiple buffers at the same
+ time.  Just as for a single buffer, there are commands for regexp
+ (un)highlighting, and all of the multiple-buffer commands, whose
+ names end in `-in-buffers', are sensitive to the region in each
+ buffer, when active.  These are the multiple-buffer commands:
 
  `hlt-highlight-region-in-buffers'
  `hlt-unhighlight-region-in-buffers'
@@ -363,6 +409,29 @@
  non-positive prefix arg means act on all visible or iconified
  buffers.  (A non-negative prefix arg means use property
  `mouse-face', not `face'.)
+
+ If you also use library `zones.el' then narrowing and other
+ operations record buffer zones (including narrowings) in (by
+ default) buffer-local variable `zz-izones'.  Besides narrowing,
+ you can use `C-x n a' (command `zz-add-zone') to add the current
+ region to the same variable.
+
+ You can use command `hlt-highlight-regions' to highlight buffer
+ zones, as defined by their limits (interactively, `zz-izones'),
+ and you can use command `hlt-highlight-regions-in-buffers' to
+ highlight all zones recorded for a given set of buffers.  You can
+ use commands `hlt-unhighlight-regions' and
+ `hlt-unhighlight-regions-in-buffers' to unhighlight them.  If
+ option `hlt-auto-faces-flag' is non-nil then each zone gets a
+ different face.  Otherwise, all of them are highlighted with the
+ same face.
+
+ From Isearch you can highlight the search-pattern matches.  You
+ can do this across multiple buffers being searched together.
+ These keys are bound on the Isearch keymap for this:
+
+  `M-s h h' - `hlt-highlight-isearch-matches'
+  `M-s h u' - `hlt-unhighlight-isearch-matches'
 
 (@* "Copy and Yank (Paste) Text Properties")
  ** Copy and Yank (Paste) Text Properties **
@@ -472,8 +541,8 @@
  The other hide and show commands depend on your also using
  Icicles, which is a set of libraries that offer enhanced
  completion.  Complete information about Icicles is here:
- `http://www.emacswiki.org/emacs/Icicles'.  You can obtain Icicles
- here: `http://www.emacswiki.org/emacs/Icicles_-_Libraries'.
+ `https://www.emacswiki.org/emacs/Icicles'.  You can obtain Icicles
+ here: `https://www.emacswiki.org/emacs/Icicles_-_Libraries'.
 
  The Icicles commands defined for `highlight.el' are the following:
 
@@ -547,25 +616,56 @@
  - Otherwise, the face is applied to the entire buffer (or the
    current restriction, if the buffer is narrowed).
 
-(@* "Interference by Font Lock")
- ** Interference by Font Lock **
+(@* "Interaction with Font Lock")
+ ** Interaction with Font Lock **
 
- If you use Emacs 22 or later, then you can use this library in
- conjunction with library `font-lock+.el' (it is loaded
- automatically, if available).  That prevents font-locking from
- removing any highlighting face properties that you apply using the
- commands defined here.
+ Any highlighting that uses text property `face' is overruled by
+ font-lock highlighting - font-lock wants to win.  (This does not
+ apply to highlighting that uses overlays - font-lock has no effect
+ on overlays.)  In many cases you can still highlight text, but
+ sooner or later font-lock erases that highlighting when it
+ refontifies the buffer.
+
+ To prevent this interference of font-lock with other highlighting,
+ the typical Emacs approach is to fool font-lock into thinking that
+ it is font-lock highlighting, even when it does not involve
+ `font-lock-keywords'.
+
+ But this has the effect that such highlighting is turned off when
+ `font-lock-mode' is turned off.  Whether this is a good thing or
+ bad depends on your use case.
+
+ In vanilla Emacs you have no choice about this.  Either the
+ highlighting is not recognized by font-lock, which overrules it,
+ or it is recognized as "one of its own", in which case it is
+ turned off when font-lock highlighting is turned off.  With
+ library `highlight.el' things are more flexible.
+
+ First, there is option `hlt-face-prop', whose value determines the
+ highlighting property: Value `font-lock-face' means that the
+ highlighting is controlled by font-lock.  Value `face' means that
+ `font-lock' does not recognize the highlighting.
+
+ Second, for the case where the option value is `face', if you also
+ use library `font-lock+.el' then there is no interference by
+ font-lock - the highlighting is independent of font-lock.  Library
+ `font-lock+.el' is loaded automatically by `highlight.el', if it
+ is in your `load-path'.  It prevents font-locking from removing
+ any highlighting face properties that you apply using the commands
+ defined here.
+
+ Then font-lock does not override this highlighting with its own,
+ and it does not turn this highlighting on and off.  Depending on
+ your application, this can be quite important.
+
+ The default value of option `hlt-face-prop' is `font-lock-face'.
+ If you want text-property highlighting that you add to be able to
+ persist and be independent of font-locking, then change the value
+ to `face' and put library `font-lock+.el' in your `load-path'.
 
  [If you also load library `facemenu+.el', then the same applies to
- highlighting that you apply using the face menu: that highlighting
- is also protected from interference by font lock.]
-
- Otherwise, when `hlt-use-overlays-flag' is nil, font-lock
- highlighting interferes with the highlighting of this library.  In
- most cases, you can still highlight text, but sooner or later
- font-lock erases that highlighting when it refontifies the buffer.
- If `hlt-use-overlays-flag' is non-nil, there is no such problem :
- font-lock has no effect on overlays.
+ highlighting that you apply using the face menu: `font-lock+.el'
+ also protects that highlighting from interference by font-lock.]
 
 (@* "Suggested Bindings")
  ** Suggested Bindings **
@@ -575,9 +675,8 @@
  submenu of the `Edit' menu-bar menu, if you have a `Region'
  submenu.  To obtain this menu, load library `menu-bar+.el'.
 
- Library `highlight.el' makes no other key bindings.  Here are some
- additional, suggested bindings (`C-x C-y', `C-x mouse-2', `C-x
- S-mouse-2', `C-S-p', and `C-S-n', respectively):
+ Here are some additional, suggested key bindings (`C-x C-y', `C-x
+ mouse-2', `C-x S-mouse-2', `C-S-p', and `C-S-n', respectively):
 
   (define-key ctl-x-map [(control ?y)]     'hlt-highlight)
   (define-key ctl-x-map [(down-mouse-2)]   'hlt-highlighter)
@@ -593,13 +692,13 @@
  * `highlight-chars.el' - Provides ways to highlight different sets
    of characters, including whitespace and Unicode characters.  It
    is available here:
-   http://www.emacswiki.org/highlight-chars.el              (code)
-   http://www.emacswiki.org/ShowWhiteSpace#HighlightChars   (doc)
+   https://www.emacswiki.org/emacs/download/highlight-chars.el (code)
+   https://www.emacswiki.org/emacs/ShowWhiteSpace#HighlightChars (doc)
 
  * `hi-lock.el' - The features of `highlight.el' are complementary
    to those of vanilla Emacs library `hi-lock.el', so you can use
    the two libraries together.  See this page for a comparison:
-   http://www.emacswiki.org/HighlightTemporarily.
+   https://www.emacswiki.org/emacs/HighlightTemporarily.
 
 (@* "Commands That Won't Work in Emacs 20")
  ** Commands That Won't Work in Emacs 20 **
@@ -608,6 +707,7 @@
  more recent than Emacs 20:
 
  `hlt-act-on-any-face-flag', `hlt-hide-default-face',
+ `hlt-highlight-line-dups-region',
  `hlt-highlight-property-with-value', `hlt-next-highlight',
  `hlt-previous-highlight', `hlt-show-default-face',
  `hlt-toggle-act-on-any-face-flag'.

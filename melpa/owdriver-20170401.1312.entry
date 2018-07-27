@@ -1,0 +1,2 @@
+
+(owdriver . [(20170401 1312) ((smartrep (0 0 3)) (log4e (0 2 0)) (yaxception (0 2 0))) "Quickly perform various actions on other windows" single ((:commit . "d934f182bafe29aa16c173440eff3fef08b0ec10") (:keywords "convenience") (:authors ("Hiroaki Otsu" . "ootsuhiroaki@gmail.com")) (:maintainer "Hiroaki Otsu" . "ootsuhiroaki@gmail.com") (:url . "https://github.com/aki2o/owdriver"))])

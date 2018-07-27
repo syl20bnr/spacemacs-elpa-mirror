@@ -1,0 +1,2 @@
+
+(wsd-mode . [(20170731 1537) nil "Emacs major-mode for www.websequencediagrams.com" tar ((:commit . "566ae4b45b4a34b985f1b363d6cdbd463ab6aba6") (:keywords "wsd" "diagrams" "design" "process" "modelling" "uml") (:authors ("Jostein Kjønigsen" . "jostein@gmail.com")) (:maintainer "Jostein Kjønigsen" . "jostein@gmail.com") (:url . "https://github.com/josteink/wsd-mode"))])

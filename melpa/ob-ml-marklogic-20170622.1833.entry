@@ -1,0 +1,2 @@
+
+(ob-ml-marklogic . [(20170622 1833) nil "org-babel functions for MarkLogic evaluation" tar ((:commit . "f678af0f440b3030e311ed6fbc444200be04da91") (:keywords "marklogic" "xquery" "javascript" "sparql") (:authors ("Norman Walsh" . "ndw@nwalsh.com")) (:maintainer "Norman Walsh" . "ndw@nwalsh.com") (:url . "http://github.com/ndw/ob-ml-marklogic"))])

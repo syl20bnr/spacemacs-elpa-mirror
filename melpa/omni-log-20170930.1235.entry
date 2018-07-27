@@ -1,0 +1,2 @@
+
+(omni-log . [(20170930 1235) ((emacs (24)) (ht (2 0)) (s (1 6 1)) (dash (2 13 0))) "Logging utilities" tar ((:commit . "11e959473c1bd9415d0cda785940c36ba6ad44ab") (:keywords "convenience" "languages" "tools") (:authors ("Adrien Becchis" . "adriean.khisbe@live.fr")) (:maintainer "Adrien Becchis" . "adriean.khisbe@live.fr") (:url . "https://github.com/AdrieanKhisbe/omni-log.el"))])

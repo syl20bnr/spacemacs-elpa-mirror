@@ -1,0 +1,2 @@
+
+(org-table-sticky-header . [(20170409 114) ((org (8 2 10)) (emacs (24 4))) "Sticky header for org-mode tables" single ((:commit . "93dc69efc00ac9fd3cc2ece5100f51df33ec7d8b") (:keywords "extensions") (:authors ("Junpeng Qiu" . "qjpchmail@gmail.com")) (:maintainer "Junpeng Qiu" . "qjpchmail@gmail.com"))])

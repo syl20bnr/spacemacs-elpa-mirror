@@ -57,6 +57,7 @@ pyim 的目标是： *尽最大的努力成为一个好用的 Emacs 中文输入
 #+BEGIN_EXAMPLE
 (use-package pyim
   :ensure nil
+  :demand t
   :config
   ;; 激活 basedict 拼音词库
   (use-package pyim-basedict
@@ -91,7 +92,9 @@ pyim 的目标是： *尽最大的努力成为一个好用的 Emacs 中文输入
   ;; 开启拼音搜索功能
   (pyim-isearch-mode 1)
 
-  ;; 使用 pupup-el 来绘制选词框
+  ;; 使用 pupup-el 来绘制选词框, 如果用 emacs26, 建议设置
+  ;; 为 'posframe, 速度很快并且菜单不会变形，不过需要用户
+  ;; 手动安装 posframe 包。
   (setq pyim-page-tooltip 'popup)
 
   ;; 选词框显示5个候选词
@@ -151,6 +154,12 @@ pyim 支持双拼输入模式，用户可以通过变量 `pyim-default-scheme' �
 2. 用户可以使用变量 `pyim-schemes' 添加自定义双拼方案。
 3. 用户可能需要重新设置 `pyim-translate-trigger-char'。
 
+*** 让 pyim 使用 liberime (实验特性)
+pyim 可以使用 [[https://gitlab.com/liberime/liberime][liberime]]
+包来提高整句输入能力，用户只要激活 liberime, pyim 就会自动使用它。
+
+liberime 激活方式请参考：[[https://gitlab.com/liberime/liberime/blob/master/README.org]] 。
+
 *** 使用五笔输入
 pyim 支持五笔输入模式，用户可以通过变量 `pyim-default-scheme' 来设定：
 
@@ -209,10 +218,11 @@ pyim 支持其它版本的仓颉，但需要用户自己创建词库文件。
    #+BEGIN_EXAMPLE
    (setq pyim-page-tooltip 'popup)
    #+END_EXAMPLE
-2. 使用 child-frame 来绘制选词框（emacs-version >= 26）
+2. 使用 posframe 来绘制选词框
    #+BEGIN_EXAMPLE
-   (setq pyim-page-tooltip 'child-frame)
+   (setq pyim-page-tooltip 'posframe)
    #+END_EXAMPLE
+   注意：pyim 不会自动安装 posframe, 用户需要手动安装这个包，
 
 *** 调整 tooltip 选词框的显示样式
 pyim 的 tooltip 选词框默认使用 *双行显示* 的样式，在一些特
@@ -227,6 +237,20 @@ pyim 的 tooltip 选词框默认使用 *双行显示* 的样式，在一些特
 
 *** 设置模糊音
 可以通过设置 `pyim-fuzzy-pinyin-alist' 变量来自定义模糊音。
+
+*** 使用魔术转换器
+用户可以将待选词条作 “特殊处理” 后再 “上屏”，比如 “简体转繁体” 或者
+“输入中文，上屏英文” 之类的。
+
+用户需要设置 `pyim-magic-converter', 比如：下面这个例子实现，
+输入 “二呆”，“一个超级帅的小伙子” 上屏 :-)
+#+BEGIN_EXAMPLE
+(defun my-converter (string)
+  (if (equal string "二呆")
+      "“一个超级帅的小伙子”"
+    string))
+(setq pyim-magic-converter #'my-converter)
+#+END_EXAMPLE
 
 *** 切换全角标点与半角标点
 

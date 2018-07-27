@@ -1,0 +1,2 @@
+
+(basic-theme . [(20160817 827) ((emacs (24))) "Minimalistic light color theme" single ((:commit . "e2a855bd39f4b78296228d4b790f9123156f7d7e") (:keywords "theme" "basic" "minimal" "colors") (:authors ("Felix Geller" . "fgeller@gmail.com")) (:maintainer "Felix Geller" . "fgeller@gmail.com") (:url . "http://github.com/fgeller/basic-theme.el"))])

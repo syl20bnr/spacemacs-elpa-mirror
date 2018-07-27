@@ -1,0 +1,2 @@
+
+(opensource . [(20160926 1616) ((s (1 11 0)) (dash (2 12 1)) (pkg-info (0 6 0)) (request (0 2 0))) "Client for Opensource API" tar ((:commit . "13499b7ae602c735e40c1c494bda6252a2f1c98f") (:keywords "opensource") (:authors ("Nicolas Lamirault" . "nicolas.lamirault@gmail.com")) (:maintainer "Nicolas Lamirault" . "nicolas.lamirault@gmail.com") (:url . "https://github.com/OpenSourceOrg/el-opensourceorg"))])

@@ -1,0 +1,2 @@
+
+(live-code-talks . [(20150115 2223) ((emacs (24)) (cl-lib (0 5)) (narrowed-page-navigation (0 1))) "Support for slides with live code in them" single ((:commit . "fece58108939a53104f88d348298c9e122f25b75") (:keywords "docs" "multimedia") (:authors ("David Raymond Christiansen" . "david@davidchristiansen.dk")) (:maintainer "David Raymond Christiansen" . "david@davidchristiansen.dk"))])

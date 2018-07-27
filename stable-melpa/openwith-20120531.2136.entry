@@ -1,0 +1,2 @@
+
+(openwith . [(20120531 2136) nil "Open files with external programs" single ((:keywords "files" "processes") (:authors ("Markus Triska" . "markus.triska@gmx.at")) (:maintainer "Markus Triska" . "markus.triska@gmx.at") (:url . "https://bitbucket.org/jpkotta/openwith"))])

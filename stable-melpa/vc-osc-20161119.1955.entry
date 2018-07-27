@@ -1,0 +1,2 @@
+
+(vc-osc . [(20161119 1955) nil "non-resident support for osc version-control" single ((:commit . "8c09a0d5f69237285101554261b77d76b546a24b") (:authors ("Adam Spiers (see vc.el for full credits)")) (:maintainer "Adam Spiers" . "aspiers@suse.com"))])

@@ -1,0 +1,2 @@
+
+(e2wm-sww . [(20140524 858) ((e2wm (1 2))) "Plugin of e2wm.el to switch plugin quickly" single ((:commit . "1063f9854bd34db5ac771cd1036cecc89834729d") (:keywords "tools" "window manager") (:authors ("Hiroaki Otsu" . "ootsuhiroaki@gmail.com")) (:maintainer "Hiroaki Otsu" . "ootsuhiroaki@gmail.com") (:url . "https://github.com/aki2o/e2wm-sww"))])

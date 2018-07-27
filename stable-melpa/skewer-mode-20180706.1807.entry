@@ -1,0 +1,2 @@
+
+(skewer-mode . [(20180706 1807) ((simple-httpd (1 4 0)) (js2-mode (20090723)) (emacs (24))) "live browser JavaScript, CSS, and HTML interaction" tar ((:commit . "a381049acc4fa2087615b4b3b26c0865841386bd"))])

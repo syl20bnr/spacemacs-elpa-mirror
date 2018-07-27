@@ -3,7 +3,7 @@
 This package provides a replacement for `comment-dwim', `comment-dwim-2',
 which includes more comment commands than its predecessor and allows to
 comment / uncomment / insert comment / kill comment / indent comment
-depending on the context. The command can be repeated several times to
+depending on the context.  The command can be repeated several times to
 switch between the different possible behaviors.
 
 # Demonstration
@@ -21,7 +21,7 @@ for instance:
 # Customization
 
 Contrary to `comment-dwim', `comment-dwim-2' will by default kill an
-inline comment if it encounters one when being repeated. If you prefer
+inline comment if it encounters one when being repeated.  If you prefer
 the `comment-dwim' behavior (which is to reindent the inline comment),
 set comment-dwim-2--inline-comment-behavior to 'reindent-comment.
 

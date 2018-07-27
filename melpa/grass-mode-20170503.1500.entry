@@ -1,0 +1,2 @@
+
+(grass-mode . [(20170503 1500) ((cl-lib (0 2)) (dash (2 8 0))) "Provides Emacs modes for interacting with the GRASS GIS program" single ((:keywords "grass" "gis") (:authors ("Tyler Smith" . "tyler@plantarum.ca")) (:maintainer "Tyler Smith" . "tyler@plantarum.ca"))])

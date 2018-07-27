@@ -1,0 +1,2 @@
+
+(pamparam . [(20180415 748) ((emacs (24 3)) (lispy (0 26 0)) (worf (0 1 0)) (hydra (0 13 4))) "Simple and fast flashcards." single ((:commit . "8fa25d06fb2ae6d992e738a10d8b2150e109d9bf") (:keywords "outlines" "hypermedia" "flashcards" "memory") (:authors ("Oleh Krehel" . "ohwoeowho@gmail.com")) (:maintainer "Oleh Krehel" . "ohwoeowho@gmail.com") (:url . "https://github.com/abo-abo/pamparam"))])

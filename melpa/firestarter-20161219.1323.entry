@@ -1,0 +1,2 @@
+
+(firestarter . [(20161219 1323) nil "Execute (shell) commands on save" single ((:commit . "4d6b106f325ac1802eabce3c8a7cd0a4c7a32864") (:keywords "convenience") (:authors ("Vasilij Schneidermann" . "v.schneidermann@gmail.com")) (:maintainer "Vasilij Schneidermann" . "v.schneidermann@gmail.com") (:url . "https://github.com/wasamasa/firestarter"))])

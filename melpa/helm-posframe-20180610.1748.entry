@@ -1,0 +1,2 @@
+
+(helm-posframe . [(20180610 1748) ((emacs (26 0)) (posframe (0 1 0)) (helm (0 1))) "Using posframe to show helm window" single ((:commit . "d28f96ea92ee9393658901bb552723db10f40dc3") (:keywords "abbrev" "convenience" "matching" "helm") (:authors ("Feng Shu")) (:maintainer "Feng Shu" . "tumashu@163.com") (:url . "https://github.com/tumashu/helm-posframe"))])

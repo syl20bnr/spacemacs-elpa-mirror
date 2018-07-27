@@ -1,0 +1,2 @@
+
+(gap-mode . [(20160204 1536) nil "Major mode for editing files in the GAP programing language." tar ((:keywords "gap") (:authors ("Michael Smith" . "smith@pell.anu.edu.au") ("Gary Zablackis") ("Goetz Pfeiffer") ("Ivan Andrus" . "darthandrus@gmail.com")) (:maintainer "Ivan Andrus" . "darthandrus@gmail.com") (:url . "https://bitbucket.org/gvol/gap-mode"))])

@@ -1,0 +1,2 @@
+
+(ivy-bibtex . [(20180612 1319) ((swiper (0 7 0)) (parsebib (1 0)) (s (1 9 0)) (dash (2 6 0)) (f (0 16 2)) (cl-lib (0 5)) (biblio (0 2))) "A bibliography manager based on Ivy" tar ((:commit . "3c0c77c7d20444865d069225525855407220572f") (:authors ("Justin Burkett" . "justin@burkett.cc")) (:maintainer "Titus von der Malsburg" . "malsburg@posteo.de"))])

@@ -1,0 +1,2 @@
+
+(pyfmt . [(20150521 2056) nil "Emacs interface to pyfmt" single ((:commit . "cb92be2cf0804cc53142dc5edb36f8e0ef5cec32") (:keywords "tools") (:authors ("Alexandre Héaumé" . "aheaume@gmail.com")) (:maintainer "Alexandre Héaumé" . "aheaume@gmail.com") (:url . "https://github.com/aheaume/pyfmt.el"))])

@@ -1,0 +1,2 @@
+
+(emacsshot . [(20161018 1443) nil "Snapshot a frame or window from within Emacs" tar ((:commit . "11ace77ab718292d05b82d93178380aff591468b") (:keywords "convenience") (:authors ("Marco Wahl" . "marcowahlsoft@gmail.com")) (:maintainer "Marco Wahl") (:url . "https://github.com/marcowahl/emacsshot"))])

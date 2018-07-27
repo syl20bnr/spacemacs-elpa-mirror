@@ -1,0 +1,2 @@
+
+(what-the-commit . [(20150901 1316) nil "Random commit message generator" single ((:commit . "868c80a1b8614bcbd2225cd0290142c72f2a7956") (:keywords "git" "commit" "message") (:authors ("Dan Barbarito" . "dan@barbarito.me")) (:maintainer "Dan Barbarito" . "dan@barbarito.me") (:url . "http://barbarito.me/"))])

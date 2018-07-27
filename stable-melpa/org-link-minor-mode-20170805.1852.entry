@@ -1,0 +1,2 @@
+
+(org-link-minor-mode . [(20170805 1852) ((org (8))) "Enable org-mode links in non-org modes" single ((:commit . "7b92df60f3fee7f609d649d80ef243b45771ebea") (:authors ("Sean O'Halpin <sean dot ohalpin at gmail dot com>")) (:maintainer "Sean O'Halpin <sean dot ohalpin at gmail dot com>") (:url . "https://github.com/seanohalpin/org-link-minor-mode"))])

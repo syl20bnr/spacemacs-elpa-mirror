@@ -1,0 +1,2 @@
+
+(inferior-spim . [(20160826 1346) nil "inferior mode for spim." single ((:commit . "fb9aa091f6058bf320793f1a608c1ed7322c1f47") (:keywords "spim" "inferior" "mips") (:authors ("hiddenlotus" . "kaihaosw@gmail.com")) (:maintainer "hiddenlotus" . "kaihaosw@gmail.com"))])

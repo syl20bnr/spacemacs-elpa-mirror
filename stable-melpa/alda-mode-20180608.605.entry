@@ -1,0 +1,2 @@
+
+(alda-mode . [(20180608 605) ((emacs (24 0))) "An Alda major mode" single ((:commit . "c49dad79591de6662bf5f4eb79acac1d5dd2610e") (:keywords "alda" "highlight") (:authors ("Jay Kamat" . "jaygkamat@gmail.com")) (:maintainer "Jay Kamat" . "jaygkamat@gmail.com") (:url . "http://gitlab.com/jgkamat/alda-mode"))])

@@ -1,0 +1,2 @@
+
+(loccur . [(20161227 1051) ((emacs (24 3))) "Perform an occur-like folding in current buffer" single ((:commit . "650d91dda0d313c8f445a0803c07809d857dee0f") (:keywords "matching") (:authors ("Alexey Veretennikov" . "alexey.veretennikov@gmail.com")) (:maintainer "Alexey Veretennikov" . "alexey.veretennikov@gmail.com") (:url . "https://github.com/fourier/loccur"))])

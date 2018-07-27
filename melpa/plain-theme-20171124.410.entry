@@ -1,0 +1,2 @@
+
+(plain-theme . [(20171124 410) ((emacs (24))) "Plain theme without syntax highlighting" single ((:commit . "a3d5389a44326314da21f147bad2ede60e2cf986"))])

@@ -1,0 +1,2 @@
+
+(omni-quotes . [(20170425 1832) ((dash (2 8)) (omni-log (0 3 3)) (f (0 19 0)) (s (1 11 0)) (ht (2 1))) "Random quotes displayer" tar ((:commit . "454116c1dd6581baaeefd6b9310b1b6b7a5c36d0") (:keywords "convenience") (:authors ("Adrien Becchis" . "adriean.khisbe@live.fr")) (:maintainer "Adrien Becchis" . "adriean.khisbe@live.fr") (:url . "https://github.com/AdrieanKhisbe/omni-quotes.el"))])

@@ -1,0 +1,2 @@
+
+(mozc-temp . [(20160228 840) ((emacs (24)) (dash (2 10 0)) (mozc (0))) "Use mozc temporarily" single ((:commit . "9d6b645eff901ea79dbc43a55d5a97ead3f4bad7") (:authors ("Hiroki YAMAKAWA" . "s06139@gmail.com")) (:maintainer "Hiroki YAMAKAWA" . "s06139@gmail.com") (:url . "https://github.com/HKey/mozc-temp"))])

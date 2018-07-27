@@ -1,0 +1,2 @@
+
+(use-ttf . [(20180609 552) ((emacs (24 4)) (s (1 12 0))) "Use the same font cross OS." single ((:commit . "be1599e10ae5c095cd263a1d9be3e8270f770f55") (:authors ("Shen, Jen-Chieh" . "jcs090218@gmail.com")) (:maintainer "Shen, Jen-Chieh" . "jcs090218@gmail.com") (:url . "https://github.com/jcs090218/use-ttf"))])

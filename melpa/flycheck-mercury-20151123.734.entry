@@ -1,0 +1,2 @@
+
+(flycheck-mercury . [(20151123 734) ((flycheck (0 22)) (s (1 9 0)) (dash (2 4 0))) "Mercury support in Flycheck" single ((:commit . "fa9e433a0a912f0fae9e4dec9ea616ef99fcf861") (:keywords "convenience" "languages" "tools") (:authors ("Matthias Güdemann" . "matthias.gudemann@gmail.com")) (:maintainer "Matthias Güdemann" . "matthias.gudemann@gmail.com") (:url . "https://github.com/flycheck/flycheck-mercury"))])

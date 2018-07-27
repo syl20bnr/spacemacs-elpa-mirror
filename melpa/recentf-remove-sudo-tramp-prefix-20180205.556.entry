@@ -1,0 +1,2 @@
+
+(recentf-remove-sudo-tramp-prefix . [(20180205 556) ((emacs (24 4))) "Normalise recentf history" single ((:commit . "6d23ebc3f52b0a66236c171c45cc77a4d3aba541") (:authors ("ncaq" . "ncaq@ncaq.net")) (:maintainer "ncaq" . "ncaq@ncaq.net") (:url . "https://github.com/ncaq/recentf-remove-sudo-tramp-prefix"))])

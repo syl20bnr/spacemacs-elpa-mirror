@@ -1,0 +1,2 @@
+
+(vagrant-tramp . [(20160427 2332) ((dash (2 12 0))) "Vagrant method for TRAMP" tar ((:commit . "453ba605b28d2964bb4e10074f1e6891ebb4d2d6") (:keywords "vagrant") (:authors ("Doug MacEachern" . "dougm@vmware.com") ("Ryan Prior     " . "ryanprior@gmail.com")) (:maintainer "Doug MacEachern" . "dougm@vmware.com") (:url . "https://github.com/dougm/vagrant-tramp"))])

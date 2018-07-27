@@ -1,0 +1,2 @@
+
+(kotlin-mode . [(20180219 1653) ((emacs (24 3))) "Major mode for kotlin" single ((:commit . "a2c2628d55c4e8b018ffe9f55ca38d89302a1bbc") (:keywords "languages") (:authors ("Shodai Yokoyama" . "quantumcars@gmail.com")) (:maintainer "Shodai Yokoyama" . "quantumcars@gmail.com"))])

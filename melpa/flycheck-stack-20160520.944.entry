@@ -1,0 +1,2 @@
+
+(flycheck-stack . [(20160520 944) ((flycheck (26)) (haskell-mode (13))) "Flychecker using stack ghci" single ((:commit . "f04235e00998000ee2c305f5a3ee72bb5dbbc926"))])

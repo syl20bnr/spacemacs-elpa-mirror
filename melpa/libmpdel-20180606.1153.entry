@@ -1,0 +1,2 @@
+
+(libmpdel . [(20180606 1153) ((emacs (25 1))) "Communication with an MPD server" single ((:commit . "3d3bcd9de8a3836ec7d7ec5b5db121bcefe65149") (:keywords "multimedia") (:authors ("Damien Cassou" . "damien@cassou.me")) (:maintainer "Damien Cassou" . "damien@cassou.me") (:url . "https://gitlab.petton.fr/mpdel/libmpdel"))])

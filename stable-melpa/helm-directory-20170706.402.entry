@@ -1,0 +1,2 @@
+
+(helm-directory . [(20170706 402) ((emacs (24 4)) (helm (2 0))) "selecting directory before select the file" single ((:commit . "29f05c87046f9a04329f817e9d7489a290a2592a") (:authors ("Masashı Mıyaura")) (:maintainer "Masashı Mıyaura") (:url . "https://github.com/masasam/emacs-helm-directory"))])

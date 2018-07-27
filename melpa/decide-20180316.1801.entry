@@ -1,0 +1,2 @@
+
+(decide . [(20180316 1801) nil "rolling dice and other random things" single ((:commit . "257f0e39ac60ca375942950b44eeaee04cb9d961") (:authors ("Pelle Nilsson" . "perni@lysator.liu.se")) (:maintainer "Pelle Nilsson" . "perni@lysator.liu.se"))])

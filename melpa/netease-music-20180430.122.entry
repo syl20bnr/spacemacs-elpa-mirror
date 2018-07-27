@@ -1,0 +1,2 @@
+
+(netease-music . [(20180430 122) ((names (0 5)) (emacs (25))) "listen netease music" single ((:commit . "a48dbe96429540d41abcc0b88d5d33532fca734d") (:keywords "multimedia" "chinese" "music") (:authors ("hiro方圆" . "wfy11235813@gmail.com")) (:maintainer "hiro方圆" . "wfy11235813@gmail.com") (:url . "https://github.com/nicehiro/netease-music"))])

@@ -1,0 +1,2 @@
+
+(helm-hatena-bookmark . [(20170821 1346) ((helm (2 8 2))) "Hatena::Bookmark with helm interface" single ((:commit . "ee0d2554f573779210b0e2595e539b3e28461f1d") (:authors ("Takashi Masuda" . "masutaka.net@gmail.com")) (:maintainer "Takashi Masuda" . "masutaka.net@gmail.com") (:url . "https://github.com/masutaka/emacs-helm-hatena-bookmark"))])

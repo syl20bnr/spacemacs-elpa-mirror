@@ -4,4 +4,4 @@ will be setup automatically.  If installed manually, use a snippet like
 the following to set it up:
 
     (when (locate-library "digistar-mode")
-     (add-to-list 'auto-mode-alist '("\\.ds\\'" . digistar-mode)))
+      (add-to-list 'auto-mode-alist '("\\.ds\\'" . digistar-mode)))

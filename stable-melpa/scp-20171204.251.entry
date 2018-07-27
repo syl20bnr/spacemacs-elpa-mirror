@@ -1,0 +1,2 @@
+
+(scp . [(20171204 251) ((emacs (25 1)) (cl-lib (0 5))) "Use the SCP command to transfer files with the remote server" single ((:commit . "447305db246d9c9240678dd9c734ed920300463a") (:keywords "convenience" "scp") (:authors ("zg" . "13853850881@163.com")) (:maintainer "zg" . "13853850881@163.com") (:url . "https://github.com/tszg/emacs-scp"))])

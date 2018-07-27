@@ -1,0 +1,2 @@
+
+(math-symbols . [(20170818 1459) ((helm (1 0))) "Math Symbol Input methods and conversion tools" tar ((:commit . "3f8b466f002e1b28ddbe9a6f236c9a1352adb17d") (:keywords "i18n" "languages" "tex") (:authors ("KAWABATA, Taichi <kawabata.taichi_at_gmail.com>")) (:maintainer "KAWABATA, Taichi <kawabata.taichi_at_gmail.com>") (:url . "https://github.com/kawabata/math-symbols"))])

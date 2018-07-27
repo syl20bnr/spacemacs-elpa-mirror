@@ -1,0 +1,2 @@
+
+(airline-themes . [(20180411 406) ((powerline (2 3))) "vim-airline themes for emacs powerline" tar ((:commit . "8b528fbae0e557461315bed82883275d58df41f2") (:keywords "evil" "mode-line" "powerline" "airline" "themes") (:authors ("Anthony DiGirolamo" . "anthony.digirolamo@gmail.com")) (:maintainer "Anthony DiGirolamo" . "anthony.digirolamo@gmail.com") (:url . "http://github.com/AnthonyDiGirolamo/airline-themes"))])

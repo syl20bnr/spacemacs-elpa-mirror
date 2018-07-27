@@ -1,0 +1,2 @@
+
+(repo . [(20170213 939) ((emacs (24 3))) "Running repo from Emacs" single ((:commit . "d7b87cd515bad8a67d3a892a46a23f5fe81e08de") (:keywords "convenience") (:authors ("Damien Merenne")) (:maintainer "Damien Merenne") (:url . "https://github.com/canatella/repo-el"))])

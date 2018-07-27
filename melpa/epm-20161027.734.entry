@@ -1,0 +1,2 @@
+
+(epm . [(20161027 734) ((emacs (24 3)) (epl (0 8))) "Emacs Package Manager" tar ((:commit . "ab3d194fc4d11520d6b9bce4746d7242f3f1606a") (:authors ("Chunyang Xu" . "xuchunyang.me@gmail.com")) (:maintainer "Chunyang Xu" . "xuchunyang.me@gmail.com") (:url . "https://github.com/xuchunyang/epm"))])

@@ -1,0 +1,2 @@
+
+(eshell-fixed-prompt . [(20170804 1335) ((emacs (25)) (s (1 11 0))) "Restrict eshell to a single fixed prompt" single ((:commit . "4351b214de6d4e8e45279930448e2f93b491848e") (:authors ("Tijs Mallaerts" . "tijs.mallaerts@gmail.com")) (:maintainer "Tijs Mallaerts" . "tijs.mallaerts@gmail.com"))])

@@ -1,0 +1,2 @@
+
+(copyit-pandoc . [(20160624 2028) ((emacs (24)) (copyit (0 0 1)) (pandoc (0 0 1))) "Copy it, yank anything!" single ((:commit . "f50d033b129d467fb517a351adf3f16cabd82a62") (:keywords "convinience" "yank" "clipboard") (:authors ("USAMI Kenta" . "tadsan@zonu.me")) (:maintainer "USAMI Kenta" . "tadsan@zonu.me") (:url . "https://github.com/zonuexe/emacs-copyit"))])

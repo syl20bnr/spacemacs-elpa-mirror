@@ -1,0 +1,2 @@
+
+(hoa-mode . [(20151203 1650) nil "Major mode for the Hanoi Omega Automata format" single ((:commit . "3c608e15b655d2375c5f81323ac561c7848dc029") (:keywords "major-mode" "automata" "convenience") (:authors ("Alexandre Duret-Lutz" . "adl@lrde.epita.fr")) (:maintainer "Alexandre Duret-Lutz" . "adl@lrde.epita.fr") (:url . "https://gitlab.lrde.epita.fr/spot/emacs-modes"))])

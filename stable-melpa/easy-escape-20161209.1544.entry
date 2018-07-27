@@ -1,0 +1,2 @@
+
+(easy-escape . [(20161209 1544) nil "Improve readability of escape characters in regular expressions" single ((:commit . "63fa5fcf9a53b7d3c1e872081e65afad5a722ba8") (:keywords "convenience" "lisp" "tools") (:authors ("Clément Pit--Claudel" . "clement.pitclaudel@live.com")) (:maintainer "Clément Pit--Claudel" . "clement.pitclaudel@live.com") (:url . "https://github.com/cpitclaudel/easy-escape"))])

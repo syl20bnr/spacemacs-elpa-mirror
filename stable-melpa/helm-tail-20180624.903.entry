@@ -1,0 +1,2 @@
+
+(helm-tail . [(20180624 903) ((emacs (25 1)) (helm (2 7 0))) "Read recent output from various sources" single ((:commit . "cdbbd9bfb121534a4c089df84325cf776ba2c578") (:keywords "maint" "tools") (:authors ("Akira Komamura" . "akira.komamura@gmail.com")) (:maintainer "Akira Komamura" . "akira.komamura@gmail.com") (:url . "https://github.com/akirak/helm-tail"))])

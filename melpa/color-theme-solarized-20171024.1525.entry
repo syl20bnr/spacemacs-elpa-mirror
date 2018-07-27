@@ -1,0 +1,2 @@
+
+(color-theme-solarized . [(20171024 1525) ((color-theme (6 5 5))) "Solarized themes for Emacs" tar ((:commit . "f3ca8902ea056fb8e46cb09f09c96294e31cd4ee"))])

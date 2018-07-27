@@ -1,0 +1,2 @@
+
+(phpunit . [(20171127 1101) ((s (1 9 0)) (f (0 16 0)) (pkg-info (0 5)) (cl-lib (0 5)) (emacs (24 3))) "Launch PHP unit tests using phpunit" tar ((:commit . "a13706733f98be3639c47311fc820b3b50f4bc33") (:keywords "tools" "php" "tests" "phpunit") (:authors ("Nicolas Lamirault" . "nicolas.lamirault@gmail.com") ("Eric Hansen" . "hansen.c.eric@gmail.com")) (:maintainer "Nicolas Lamirault" . "nicolas.lamirault@gmail.com") (:url . "https://github.com/nlamirault/phpunit.el"))])

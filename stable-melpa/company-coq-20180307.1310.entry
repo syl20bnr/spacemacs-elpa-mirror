@@ -1,0 +1,2 @@
+
+(company-coq . [(20180307 1310) ((company-math (1 1)) (company (0 8 12)) (yasnippet (0 11 0)) (dash (2 12 1)) (cl-lib (0 5))) "A collection of extensions for Proof General's Coq mode" tar ((:commit . "0271b2cbea7f056d143ed248a6f32a319d33534a"))])

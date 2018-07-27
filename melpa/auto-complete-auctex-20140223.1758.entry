@@ -1,0 +1,2 @@
+
+(auto-complete-auctex . [(20140223 1758) ((yasnippet (0 6 1)) (auto-complete (1 4))) "auto-completion for auctex" single])

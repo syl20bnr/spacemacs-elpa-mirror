@@ -10,3 +10,6 @@ C-c % {
 C-c % #
 C-c % %
   for {# and {% as well.
+
+In-Emacs documentation: ElDoc and help buffers are available
+if you have Salt installed.

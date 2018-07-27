@@ -1,0 +1,2 @@
+
+(counsel-codesearch . [(20180713 1004) ((codesearch (1)) (counsel (0 10 0)) (emacs (24)) (ivy (0 10 0))) "Counsel interface for codesearch.el" single ((:commit . "cb9f3df541e84b4b13905c3ad3658cad2f34b0cf") (:keywords "tools") (:authors ("Austin Bingham" . "austin.bingham@gmail.com")) (:maintainer "Austin Bingham" . "austin.bingham@gmail.com") (:url . "https://github.com/abingham/emacs-counsel-codesearch"))])

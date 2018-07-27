@@ -1,0 +1,2 @@
+
+(one-themes . [(20180507 1708) ((emacs (24))) "One Colorscheme" tar ((:commit . "7677a1801494cf70460e5493908248f1b7c06df1") (:authors ("Balaji Sivaraman" . "balaji@balajisivaraman.com")) (:maintainer "Balaji Sivaraman" . "balaji@balajisivaraman.com") (:url . "http://github.com/balajisivaraman/emacs-one-themes"))])

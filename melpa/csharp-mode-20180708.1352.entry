@@ -1,0 +1,2 @@
+
+(csharp-mode . [(20180708 1352) nil "C# mode derived mode" single ((:commit . "5e47b7764b3f4c97c260a902e8072d444dbd0f1b") (:keywords "c#" "languages" "oop" "mode") (:authors ("Dylan R. E. Moonfire (original)")) (:maintainer "Jostein Kjønigsen" . "jostein@gmail.com") (:url . "https://github.com/josteink/csharp-mode"))])

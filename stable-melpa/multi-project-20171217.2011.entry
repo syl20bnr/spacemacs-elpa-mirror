@@ -1,0 +1,2 @@
+
+(multi-project . [(20171217 2011) ((emacs (25))) "Find files, compile, search, and switch between" single ((:keywords "convenience" "project" "management") (:authors ("Shawn Ellis" . "shawn.ellis17@gmail.com")) (:maintainer "Shawn Ellis" . "shawn.ellis17@gmail.com") (:url . "https://bitbucket.org/ellisvelo/multi-project/overview"))])

@@ -1,0 +1,2 @@
+
+(benchstat . [(20171014 312) nil "proper benchmarking made simple" single ((:commit . "a5b67cf7972ca2bbc9f5bc6a0f521ab02b76d4f0") (:keywords "lisp") (:authors ("Iskander Sharipov" . "quasilyte@gmail.com")) (:maintainer "Iskander Sharipov" . "quasilyte@gmail.com") (:url . "https://github.com/Quasilyte/benchstat.el"))])

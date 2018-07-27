@@ -1,0 +1,2 @@
+
+(tuareg . [(20180512 2006) ((caml (3 12 0 1))) "OCaml mode for Emacs." tar ((:commit . "faa976ac930d3fba42ec59881046929c90ffa8f3") (:keywords "ocaml" "languages") (:authors ("Albert Cohen" . "Albert.Cohen@inria.fr") ("Sam Steingold" . "sds@gnu.org") ("Christophe Troestler" . "Christophe.Troestler@umons.ac.be") ("Till Varoquaux" . "till@pps.jussieu.fr") ("Sean McLaughlin" . "seanmcl@gmail.com") ("Stefan Monnier" . "monnier@iro.umontreal.ca")) (:maintainer "Albert Cohen" . "Albert.Cohen@inria.fr") (:url . "https://github.com/ocaml/tuareg"))])

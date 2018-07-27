@@ -1,0 +1,2 @@
+
+(orglue . [(20171220 1226) ((org (8 1)) (epic (0 2))) "more functionality to org-mode." tar ((:commit . "ae2a45c19b52e45db7891093a3ff17ba2e51c507") (:keywords "org") (:authors ("Yoshinari Nomura" . "nom@quickhack.net")) (:maintainer "Yoshinari Nomura" . "nom@quickhack.net"))])

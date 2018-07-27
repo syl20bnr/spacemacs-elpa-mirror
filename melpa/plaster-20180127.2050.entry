@@ -1,0 +1,2 @@
+
+(plaster . [(20180127 2050) ((emacs (24 3))) "Pasting to a plaster host with buffers." single ((:commit . "c6c9c223d634041411d111b4397574f65e140585") (:keywords "convenience" "paste service") (:authors ("Nicolas Hafner" . "shinmera@tymoon.eu")) (:maintainer "Nicolas Hafner" . "shinmera@tymoon.eu") (:url . "http://github.com/shirakumo/plaster/"))])

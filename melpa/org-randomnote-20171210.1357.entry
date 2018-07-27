@@ -1,0 +1,2 @@
+
+(org-randomnote . [(20171210 1357) ((f (0 19 0)) (dash (2 12 0))) "Find a random note in your Org-Mode files" single ((:commit . "c89eb4cf625ea7e7624b6a2d3d5676ce25ab03d7") (:authors ("Michael Fogleman" . "michaelwfogleman@gmail.com")) (:maintainer "Michael Fogleman" . "michaelwfogleman@gmail.com") (:url . "http://github.com/mwfogleman/org-randomnote"))])

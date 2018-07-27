@@ -1,0 +1,2 @@
+
+(usql . [(20180305 2323) ((emacs (25 1))) "U-SQL support for sql-mode" single ((:commit . "bfaf428b366a9a185eef84f0d645a98dc918fe3d") (:keywords "languages") (:authors ("Nicholas Barnwell" . "nb@ul.io")) (:maintainer "Nicholas Barnwell" . "nb@ul.io") (:url . "https://github.com/nickbarwell/usql.el"))])

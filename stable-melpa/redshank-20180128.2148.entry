@@ -1,0 +1,2 @@
+
+(redshank . [(20180128 2148) ((paredit (21))) "Common Lisp Editing Extensions" tar ((:commit . "f3eef7d4891570e6bcb74eb52c73edb765a639b8") (:keywords "languages" "lisp") (:authors ("Michael Weber" . "michaelw@foldr.org")) (:maintainer "Michael Weber" . "michaelw@foldr.org"))])

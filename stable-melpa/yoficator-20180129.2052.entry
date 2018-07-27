@@ -1,0 +1,2 @@
+
+(yoficator . [(20180129 2052) nil "Interactively yoficate Russian texts" tar ((:commit . "e0dc076cb0d1999cb41585b5f36322681109fe86") (:authors ("Eugene Minkovskii" . "emin@mccme.ru") ("Alexander Krotov" . "ilabdsf@gmail.com")) (:maintainer "Eugene Minkovskii" . "emin@mccme.ru") (:url . "https://gitlab.com/link2xt/yoficator"))])

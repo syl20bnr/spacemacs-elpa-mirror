@@ -1,0 +1,24 @@
+* helm-posframe README                                :README:
+
+** What is helm-posframe
+helm-posframe is a helm extension, which let helm use posframe
+to show its candidate menu.
+
+NOTE: helm-posframe requires Emacs 26
+
+** How to enable helm-posframe
+   #+BEGIN_EXAMPLE
+   (helm-posframe-enable)
+   #+END_EXAMPLE
+
+** Tips
+
+*** How to show fringe to helm-posframe
+#+BEGIN_EXAMPLE
+(setq helm-posframe-parameters
+      '((left-fringe . 10)
+        (right-fringe . 10)))
+#+END_EXAMPLE
+
+By the way, User can set *any* parameters of helm-posframe with
+the help of `helm-posframe-parameters'.

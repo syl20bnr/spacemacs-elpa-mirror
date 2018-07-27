@@ -1,0 +1,2 @@
+
+(mandoku . [(20180403 1106) ((org (8 0)) (magit (20151028)) (github-clone (20150705)) (git (20140128))) "A tool to access repositories of premodern Chinese texts" tar ((:commit . "f230c871de8aab1be7b7a9718cd930548a90baa8"))])

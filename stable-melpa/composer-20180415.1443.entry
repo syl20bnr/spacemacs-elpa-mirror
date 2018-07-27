@@ -1,0 +1,2 @@
+
+(composer . [(20180415 1443) ((emacs (24)) (s (1 9 0)) (f (0 17)) (request (0 2 0)) (seq (1 9)) (php-runtime (0 1 0))) "Interface to PHP Composer" single ((:commit . "1d43edd8079e84df5e1b46c65e6783cb3ff9debd") (:keywords "tools" "php" "dependency" "manager") (:authors ("USAMI Kenta" . "tadsan@zonu.me")) (:maintainer "USAMI Kenta" . "tadsan@zonu.me") (:url . "https://github.com/zonuexe/composer.el"))])

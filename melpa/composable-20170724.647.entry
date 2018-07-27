@@ -1,0 +1,2 @@
+
+(composable . [(20170724 647) ((emacs (24 4))) "composable editing" tar ((:commit . "ac981974f89607393cc61314aaa19672d45b0650") (:keywords "lisp") (:authors ("Simon Friis Vindum" . "simon@vindum.io")) (:maintainer "Simon Friis Vindum" . "simon@vindum.io"))])

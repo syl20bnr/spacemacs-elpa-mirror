@@ -1,0 +1,2 @@
+
+(universal-emotions-emoticons . [(20171210 220) ((emacs (24 4))) "Emoticons For The Six Universal Expressions" single ((:commit . "c89063a4f8e00f8e9c4dc6c252474b6d4bfc4e01") (:keywords "convenience" "docs" "languages") (:authors ("Grant Rettke" . "gcr@wisdomandwonder.com")) (:maintainer nil . "<gcr@wisdomandwonder.com>") (:url . "https://github.com/grettke/universal-emotions-emoticons"))])

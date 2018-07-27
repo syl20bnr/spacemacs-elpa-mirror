@@ -1,0 +1,2 @@
+
+(arduino-mode . [(20180509 36) ((emacs (25)) (cl-lib (0 5)) (spinner (1 7 3))) "Major mode for editing Arduino code." tar ((:commit . "e39cb1c02acb6676aea35f93fbd0d86badce6a38") (:keywords "languages" "arduino") (:maintainer "stardiviner" . "numbchild@gmail.com") (:url . "https://github.com/stardiviner/arduino-mode"))])

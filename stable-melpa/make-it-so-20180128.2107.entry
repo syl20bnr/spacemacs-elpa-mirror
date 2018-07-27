@@ -1,0 +1,2 @@
+
+(make-it-so . [(20180128 2107) ((swiper (0 8 0)) (emacs (24))) "Transform files with Makefile recipes." tar ((:commit . "bc3b01d6b9ed6ff66ebbd524234f9d6df60dd4be") (:keywords "make" "dired") (:authors ("Oleh Krehel" . "ohwoeowho@gmail.com")) (:maintainer "Oleh Krehel" . "ohwoeowho@gmail.com") (:url . "https://github.com/abo-abo/make-it-so"))])

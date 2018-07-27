@@ -1,0 +1,2 @@
+
+(pyim-basedict . [(20170727 259) nil "The default pinyin dict of pyim" tar ((:commit . "3196cb210e056702c5a4ea1dac1d8e1e27740fab") (:keywords "convenience" "chinese" "pinyin" "input-method" "complete") (:authors ("Feng Shu" . "tumashu@163.com")) (:maintainer "Feng Shu" . "tumashu@163.com") (:url . "https://github.com/tumashu/pyim-basedict"))])

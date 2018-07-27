@@ -1,0 +1,2 @@
+
+(chinese-wbim . [(20150624 350) nil "Enable Wubi Input Method in Emacs." tar ((:commit . "57ff61ff3895d77335709d24b40cefc4d10b0095"))])

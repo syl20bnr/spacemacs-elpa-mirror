@@ -1,0 +1,2 @@
+
+(syntax-subword . [(20160519 1905) nil "make operations on words more fine-grained" single ((:authors ("Jonathan Kotta" . "jpkotta@gmail.com")) (:maintainer "Jonathan Kotta" . "jpkotta@gmail.com"))])

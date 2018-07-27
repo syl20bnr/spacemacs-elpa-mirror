@@ -273,8 +273,3 @@ FAQ
   configure the variable `cdlatex-math-modify-prefix'.
 
 - To insert a backquote into the buffer, use C-q `
-
-
-
-
-

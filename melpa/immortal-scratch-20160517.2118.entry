@@ -1,0 +1,2 @@
+
+(immortal-scratch . [(20160517 2118) nil "respawn the scratch buffer when it's killed" single ((:authors ("Jonathan Kotta" . "jpkotta@gmail.com")) (:maintainer "Jonathan Kotta" . "jpkotta@gmail.com"))])

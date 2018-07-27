@@ -1,2 +1,4 @@
-The project is hosted at https://github.com/sabof/org-bullets
-The latest version, and all the relevant information can be found there.
+Show org-mode bullets as UTF-8 characters.
+
+Because the author is inactive, this package is currenlty being
+maintained at https://github.com/emacsorphanage/org-bullets.

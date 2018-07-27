@@ -1,0 +1,2 @@
+
+(yara-mode . [(20170720 651) ((emacs (24))) "Major mode for editing yara rule file" single ((:commit . "af5c05b34a29fc1bd73a6d21c82cc76320b33e5c") (:keywords "yara") (:authors (nil . "binjo.cn@gmail.com")) (:maintainer nil . "binjo.cn@gmail.com") (:url . "not distributed yet"))])

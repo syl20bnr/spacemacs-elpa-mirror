@@ -1,0 +1,2 @@
+
+(flimenu . [(20170418 147) ((dash (2 10 0)) (emacs (24 4))) "Flatten imenu automatically" single ((:commit . "9351201d89b05cbdaec312a6ebd7fd10c38d6112") (:keywords "imenu" "browse" "structure" "hook" "mode" "matching" "tools" "convenience" "files") (:authors ("Ivan Malison" . "IvanMalison@gmail.com")) (:maintainer "Ivan Malison" . "IvanMalison@gmail.com") (:url . "https://github.com/IvanMalison/flimenu"))])

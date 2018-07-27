@@ -13,11 +13,11 @@ no region is selected) and search GitHub for it, displaying the
 results in your default browser.
 
 The `defengine' macro can also take an optional key combination,
-prefixed with "C-c /":
+prefixed with "C-x /":
 
 (defengine duckduckgo
   "https://duckduckgo.com/?q=%s"
   :keybinding "d")
 
-`C-c / d' is now bound to the new function
+`C-x / d' is now bound to the new function
 engine/search-duckduckgo'! Nifty.

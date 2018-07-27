@@ -1,5 +1,5 @@
 This is an Emacs interface to the Ditz distributed issue tracking
-system, which can be found at http://ditz.rubyforge.org.
+system, which can be found at http://rubygems.org/gems/ditz.
 
 Put this file in your Lisp load path and something like the following in
 your .emacs file:

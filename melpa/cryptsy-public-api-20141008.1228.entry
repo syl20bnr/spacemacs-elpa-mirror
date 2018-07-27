@@ -1,0 +1,2 @@
+
+(cryptsy-public-api . [(20141008 1228) ((json (1 2))) "Library for working with the Cryptsy public API" single ((:commit . "795c204452f880c0087663e7c35faf26ea34af4d") (:keywords "cryptsy" "bitcoin" "litecoin" "dogecoin") (:authors ("Phil Newton" . "phil@sodaware.net")) (:maintainer "Phil Newton" . "phil@sodaware.net"))])

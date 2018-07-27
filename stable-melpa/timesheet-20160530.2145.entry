@@ -1,0 +1,2 @@
+
+(timesheet . [(20160530 2145) ((s (1)) (org (7)) (auctex (11))) "Timesheet management add-on for org-mode" tar ((:commit . "2ed6fea9b508eb7eaff659d9a34a09ba064d4df8") (:keywords "org" "timesheet") (:authors ("Tom Marble")) (:maintainer "Tom Marble") (:url . "https://github.com/tmarble/timesheet.el"))])

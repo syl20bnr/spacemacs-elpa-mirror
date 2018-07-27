@@ -1,0 +1,2 @@
+
+(material-theme . [(20171123 1840) ((emacs (24 1))) "A Theme based on the colors of the Google Material Design" tar ((:commit . "b66838d220ad380a16da1d8878936974b26f815d") (:keywords "themes") (:authors ("Christoph Paulik" . "cpaulik@gmail.com")) (:maintainer "Christoph Paulik" . "cpaulik@gmail.com") (:url . "http://github.com/cpaulik/emacs-material-theme"))])

@@ -1,0 +1,2 @@
+
+(ivy-lobsters . [(20171202 2041) ((ivy (0 8 0)) (cl-lib (0 5))) "Browse lobste.rs stories with ivy." single ((:commit . "4364df4b3685fd1b50865ac9360fb948c0288dd1") (:authors ("Julien Blanchard <https://github.com/julienXX>")) (:maintainer "Julien Blanchard <https://github.com/julienXX>") (:url . "https://github.com/julienXX/ivy-lobsters"))])

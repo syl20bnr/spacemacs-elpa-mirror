@@ -1,0 +1,2 @@
+
+(rdf-prefix . [(20180127 1806) nil "Prefix lookup for RDF" single ((:commit . "164136d05505275d42d1ca3a390f55fcc89694b8") (:keywords "convenience" "abbrev") (:authors ("Simen Heggestøyl" . "simenheg@gmail.com")) (:maintainer "Simen Heggestøyl" . "simenheg@gmail.com") (:url . "https://github.com/simenheg/rdf-prefix"))])

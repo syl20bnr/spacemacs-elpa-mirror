@@ -1,0 +1,2 @@
+
+(projectile-git-autofetch . [(20180418 2336) ((projectile (0 14 0)) (alert (1 2))) "automatically fetch git repositories" single ((:commit . "55855886bccb5a22fbeb2b1c86ef2e9ff4de9067") (:keywords "tools" "vc") (:authors ("Andreas Müller" . "code@0x7.ch")) (:maintainer "Andreas Müller" . "code@0x7.ch") (:url . "https://github.com/andrmuel/projectile-git-autofetch"))])

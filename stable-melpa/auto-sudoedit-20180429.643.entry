@@ -1,0 +1,2 @@
+
+(auto-sudoedit . [(20180429 643) ((emacs (24)) (f (0 19 0))) "auto sudo edit by tramp" single ((:commit . "5a770615fe2989b3b7cb1435d0e65fa672d775d7") (:authors ("ncaq" . "ncaq@ncaq.net")) (:maintainer "ncaq" . "ncaq@ncaq.net") (:url . "https://github.com/ncaq/auto-sudoedit"))])

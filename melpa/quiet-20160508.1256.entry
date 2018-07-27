@@ -1,0 +1,2 @@
+
+(quiet . [(20160508 1256) nil "disconnect from the online world for a while" single ((:commit . "6f20309f99e26fcae2601d1544b342f044e54baf") (:keywords "quiet" "distraction" "network" "detachment" "offline") (:authors ("nik gaffney" . "nik@fo.am")) (:maintainer "nik gaffney" . "nik@fo.am") (:url . "https://github.com/zzkt/quiet"))])

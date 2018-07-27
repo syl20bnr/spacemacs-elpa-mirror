@@ -1,0 +1,2 @@
+
+(stash . [(20151117 1427) nil "lightweight persistent caching" single ((:commit . "c2e494d20c752b80ebbdffbf66687b3cdfc425ad") (:keywords "extensions" "data" "internal" "lisp") (:authors ("Sean Allred" . "code@seanallred.com")) (:maintainer "Sean Allred" . "code@seanallred.com") (:url . "https://www.github.com/vermiculus/stash.el/"))])

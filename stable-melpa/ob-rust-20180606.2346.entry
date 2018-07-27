@@ -1,0 +1,2 @@
+
+(ob-rust . [(20180606 2346) nil "Org-babel functions for Rust" tar ((:commit . "a0e3c62ac3d4d44ae73746b5a45c04322c908bd3") (:keywords "rust" "languages" "org" "babel") (:authors ("Mican Zhang")) (:maintainer "Mican Zhang") (:url . "https://github.com/micanzhang/ob-rust"))])

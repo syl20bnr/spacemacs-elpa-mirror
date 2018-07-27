@@ -1,0 +1,2 @@
+
+(reykjavik-theme . [(20160109 800) ((emacs (24))) "Theme with a dark background." single ((:commit . "d9bb783d6cf3c3b52cf377d9207484fba54657fd") (:authors ("martin haesler")) (:maintainer "martin haesler"))])

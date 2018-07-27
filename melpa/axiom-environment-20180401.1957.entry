@@ -1,0 +1,2 @@
+
+(axiom-environment . [(20180401 1957) ((emacs (24 2))) "An environment for using Axiom/OpenAxiom/FriCAS" tar ((:commit . "6842fb7f85df839acde395093647e2f91cf62fdd") (:keywords "axiom" "openaxiom" "fricas") (:authors ("Paul Onions" . "paul.onions@acm.org")) (:maintainer "Paul Onions" . "paul.onions@acm.org"))])

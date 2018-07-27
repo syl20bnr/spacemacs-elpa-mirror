@@ -1,0 +1,2 @@
+
+(maude-mode . [(20160222 1607) nil "Emacs mode for the programming language Maude" single ((:commit . "c9543bb8a172fa77af592388e7f520a4a6d38987") (:keywords "maude") (:authors ("Ellef Gjelstad <ellefg+maude*ifi.uio.no>")) (:maintainer "Rudi Schlatte" . "rudi@constantly.at"))])

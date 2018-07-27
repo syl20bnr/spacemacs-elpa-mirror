@@ -1,0 +1,2 @@
+
+(total-lines . [(20171227 1239) ((emacs (24 3))) "Keep track of a buffer's total number of lines" single ((:commit . "8c1c3d45d1c5bc5911401d74d0f01f64ce2bf737") (:keywords "convenience" "mode-line") (:authors ("Hinrik Örn Sigurðsson")) (:maintainer "Hinrik Örn Sigurðsson") (:url . "https://github.com/hinrik/total-lines"))])

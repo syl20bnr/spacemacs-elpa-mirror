@@ -1,0 +1,2 @@
+
+(company-terraform . [(20180703 1233) ((emacs (24 4)) (company (0 8 12)) (terraform-mode (0 6))) "A company backend for terraform" tar ((:commit . "9c1146bfe23d4c461f4a59577faf4e46fcca7fe9") (:keywords "abbrev" "convenience" "terraform" "company") (:authors ("Rafał Cieślak" . "rafalcieslak256@gmail.com")) (:maintainer "Rafał Cieślak" . "rafalcieslak256@gmail.com") (:url . "https://github.com/rafalcieslak/emacs-company-terraform"))])

@@ -1,0 +1,2 @@
+
+(xah-reformat-code . [(20170821 1111) nil "commands to reformat source code." single ((:commit . "7fec8b28e46b8cc2813fac5149e3bbb56c0aa6b1") (:keywords "convenience") (:authors ("Xah Lee ( http://xahlee.info/ )")) (:maintainer "Xah Lee ( http://xahlee.info/ )") (:url . "http://ergoemacs.org/emacs/emacs_reformat_lines.html"))])

@@ -1,0 +1,2 @@
+
+(el-spice . [(20180128 1721) nil "Extra spice for emacs lisp programming" tar ((:commit . "4e0852ebf5d8e9cbb3eaaa6ae9c53d126b53f58c") (:keywords "languages" "extensions") (:authors ("Vedang Manerikar" . "vedang.manerikar@gmail.com")) (:maintainer "Vedang Manerikar" . "vedang.manerikar@gmail.com") (:url . "https://github.com/vedang/el-spice"))])

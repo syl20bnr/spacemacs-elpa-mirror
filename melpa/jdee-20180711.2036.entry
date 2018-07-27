@@ -1,0 +1,2 @@
+
+(jdee . [(20180711 2036) ((emacs (24 3)) (flycheck (30)) (memoize (1 0 1)) (dash (2 13 0)) (s (1 12 0))) "Java Development Environment for Emacs" tar ((:commit . "9192578df89dc92c88a7faf71d8aaf4f60bcb84c") (:keywords "java" "tools") (:authors ("Paul Kinnucan" . "pkinnucan@attbi.com")) (:maintainer "Paul Landes") (:url . "http://github.com/jdee-emacs/jdee"))])

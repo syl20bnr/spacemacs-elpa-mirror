@@ -1,0 +1,2 @@
+
+(evil-goggles . [(20180702 1053) ((emacs (24 4)) (evil (1 0 0))) "Add a visual hint to evil operations" single ((:commit . "ea5ab4012af0eb451e2c0d996455c58f1554f7c1") (:keywords "emulations" "evil" "vim" "visual") (:authors ("edkolev" . "evgenysw@gmail.com")) (:maintainer "edkolev" . "evgenysw@gmail.com") (:url . "http://github.com/edkolev/evil-goggles"))])

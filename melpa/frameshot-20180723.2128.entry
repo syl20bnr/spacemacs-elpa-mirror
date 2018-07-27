@@ -1,0 +1,2 @@
+
+(frameshot . [(20180723 2128) ((emacs (25 3))) "Take screenshots of a frame" single ((:commit . "917efdd678e397aa01efa657e3488d34445eca90") (:authors ("Jonas Bernoulli" . "jonas@bernoul.li")) (:maintainer "Jonas Bernoulli" . "jonas@bernoul.li") (:url . "https://github.com/tarsius/frameshot"))])

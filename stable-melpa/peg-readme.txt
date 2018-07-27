@@ -115,6 +115,3 @@ http://home.pipeline.com/~hbaker1/Prag-Parse.html
 
 Roman Redziejowski does good PEG related research
 http://www.romanredz.se/pubs.htm
-
-(unless (>= emacs-major-version 22)
-  (error "peg.el requires Emacs version 22 or newer"))

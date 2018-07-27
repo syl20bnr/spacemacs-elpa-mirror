@@ -45,5 +45,3 @@ To this:
   (save-excursion
     (beginning-of-line)                ; [ ] <point>
     (let ((beg (point)))
-
-

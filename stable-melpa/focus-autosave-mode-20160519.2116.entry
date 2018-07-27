@@ -1,0 +1,2 @@
+
+(focus-autosave-mode . [(20160519 2116) ((emacs (24 4))) "Automatically save files in focus-out-hook." single ((:commit . "e89ed22aa4dfc76e1b844b202aedd468ad58814a") (:keywords "convenience" "files" "frames" "mouse") (:authors ("Wojciech Siewierski" . "wojciech.siewierski@onet.pl")) (:maintainer "Wojciech Siewierski" . "wojciech.siewierski@onet.pl"))])

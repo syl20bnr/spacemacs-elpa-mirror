@@ -1,0 +1,2 @@
+
+(lentic . [(20161202 2152) ((emacs (24 4)) (m-buffer (0 13)) (dash (2 5 0)) (f (0 17 2)) (s (1 9 0))) "One buffer as a view of another" tar ((:commit . "678db9327209a1e6200c9272f4080595dc68f8a5") (:authors ("Phillip Lord" . "phillip.lord@russet.org.uk")) (:maintainer "Phillip Lord" . "phillip.lord@russet.org.uk"))])

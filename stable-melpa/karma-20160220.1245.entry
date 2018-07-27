@@ -1,0 +1,2 @@
+
+(karma . [(20160220 1245) ((pkg-info (0 4)) (emacs (24))) "Karma Test Runner Emacs Integration" single ((:commit . "31d3e7708246183d7ed0686be92bf23140af348c") (:keywords "language" "javascript" "js" "karma" "testing") (:authors ("Samuel Tonini")) (:maintainer "Samuel Tonini") (:url . "http://github.com/tonini/karma.el"))])

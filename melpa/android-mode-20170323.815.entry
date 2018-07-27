@@ -1,0 +1,2 @@
+
+(android-mode . [(20170323 815) nil "Minor mode for Android application development" single ((:commit . "f274da87429617b0b9c5889d46b36de64d982da4") (:keywords "tools" "processes") (:authors ("R.W. van 't Veer")) (:maintainer "R.W. van 't Veer") (:url . "https://github.com/remvee/android-mode"))])

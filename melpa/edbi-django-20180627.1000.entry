@@ -1,0 +1,2 @@
+
+(edbi-django . [(20180627 1000) ((emacs (25)) (pythonic (0 1 0)) (edbi (0 1 3))) "Run edbi with django settings" single ((:commit . "5fe3fe82c8691af91dfc24ad3dc591ca228ec875") (:authors ("Artem Malyshev" . "proofit404@gmail.com")) (:maintainer "Artem Malyshev" . "proofit404@gmail.com") (:url . "https://github.com/proofit404/edbi-django"))])

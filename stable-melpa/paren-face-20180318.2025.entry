@@ -1,0 +1,2 @@
+
+(paren-face . [(20180318 2025) nil "a face for parentheses in lisp modes" single ((:commit . "a45d111153a76c481fa0b36d6172ac90e073dfc4") (:maintainer "Jonas Bernoulli" . "jonas@bernoul.li") (:url . "https://github.com/tarsius/paren-face"))])

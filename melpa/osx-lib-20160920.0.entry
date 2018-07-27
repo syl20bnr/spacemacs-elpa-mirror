@@ -1,0 +1,2 @@
+
+(osx-lib . [(20160920 0) ((emacs (24 4))) "Basic function for Apple/OSX." single ((:commit . "fdbbb41e07ba64d6a09b54bd142a7c7b83bfd09f") (:keywords "apple" "applescript" "osx" "finder" "emacs" "elisp" "vpn" "speech") (:authors ("Raghav Kumar Gautam" . "raghav@apache.org")) (:maintainer "Raghav Kumar Gautam" . "raghav@apache.org"))])

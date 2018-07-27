@@ -1,0 +1,2 @@
+
+(js-codemod . [(20171104 1154) ((emacs (24 4))) "Run js-codemod on current line or selected region" tar ((:commit . "014e56c846487d1eeaf8a91dd503b9d96eb1510a") (:keywords "js" "codemod" "region") (:authors (nil . "Torgeir Thoresen <@torgeir>")) (:maintainer nil . "Torgeir Thoresen <@torgeir>"))])

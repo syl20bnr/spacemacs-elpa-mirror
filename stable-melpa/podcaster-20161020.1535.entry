@@ -1,0 +1,2 @@
+
+(podcaster . [(20161020 1535) ((cl-lib (0 5))) "Podcast client" single ((:commit . "9854517025deb5d556168a68955fb7b662239f5c") (:authors ("DarkSun" . "lujun9972@gmail.com")) (:maintainer "DarkSun" . "lujun9972@gmail.com") (:url . "https://github.com/lujun9972/podcaster"))])

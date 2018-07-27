@@ -1,0 +1,2 @@
+
+(zotxt . [(20180518 147) ((request-deferred (0 2 0))) "Tools to integrate emacs with Zotero via the zotxt plugin." tar ((:commit . "23a4a9f74a658222027d53a9a83cd4bcc583ca8b"))])

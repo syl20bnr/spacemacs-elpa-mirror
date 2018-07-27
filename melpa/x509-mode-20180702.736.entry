@@ -1,0 +1,2 @@
+
+(x509-mode . [(20180702 736) ((emacs (24 1)) (cl-lib (0 5))) "View certificates, CRLs and keys using OpenSSL." tar ((:commit . "89bdeca8c7494eaaea115031b3235f0bfbd4d945") (:authors ("Fredrik Axelsson" . "f.axelsson@gmai.com") ("Package-Requires: ((emacs \"24.1\") (cl-lib \"0.5\"))")) (:maintainer "Fredrik Axelsson" . "f.axelsson@gmai.com"))])

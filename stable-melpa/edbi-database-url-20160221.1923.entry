@@ -1,0 +1,2 @@
+
+(edbi-database-url . [(20160221 1923) ((emacs (24)) (edbi (0 1 3))) "Run edbi with database url" single ((:commit . "d56c580268cd93651998c4c6b1c5558e6b6ca90f") (:authors ("Artem Malyshev" . "proofit404@gmail.com")) (:maintainer "Artem Malyshev" . "proofit404@gmail.com") (:url . "https://github.com/proofit404/edbi-database-url"))])

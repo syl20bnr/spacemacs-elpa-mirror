@@ -11,8 +11,9 @@ Magit-imerge.
   * git-imerge drop   => magit-imerge-drop
 
 All these commands are available under the popup
-`magit-imerge-popup', which by default is bound to "I" in the main
-merge popup.
+`magit-imerge-popup', which is bound to "i".  Note that this
+overrides the default binding for `magit-gitignore', but this
+command is also available under `magit-gitignore-popup' ("I").
 
 Once an incremental merge has been started with one of the commands
 above, the imerge popup will display the following sequence

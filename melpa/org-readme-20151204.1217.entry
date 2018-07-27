@@ -1,0 +1,2 @@
+
+(org-readme . [(20151204 1217) ((http-post-simple (1 0)) (yaoddmuse (0 1 1)) (header2 (21 0)) (lib-requires (21 0)) (cl-lib (0 5))) "Integrates Readme.org and Commentary/Change-logs." tar ((:commit . "4cb9f768d282a2835b4510b6504ff9ede487007d") (:keywords "header2" "readme.org" "emacswiki" "git") (:authors ("Matthew L. Fidler")) (:maintainer "Matthew L. Fidler") (:url . "https://github.com/mlf176f2/org-readme"))])

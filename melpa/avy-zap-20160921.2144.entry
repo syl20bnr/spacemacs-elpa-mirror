@@ -1,0 +1,2 @@
+
+(avy-zap . [(20160921 2144) ((avy (0 2 0))) "Zap to char using `avy'" single ((:commit . "6081738668ab726099ce1c711c580d9745dfaede") (:keywords "extensions") (:authors ("Junpeng Qiu" . "qjpchmail@gmail.com")) (:maintainer "Junpeng Qiu" . "qjpchmail@gmail.com") (:url . "https://github.com/cute-jumper/avy-zap"))])

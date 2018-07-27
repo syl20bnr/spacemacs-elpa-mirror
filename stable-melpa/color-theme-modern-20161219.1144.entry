@@ -1,0 +1,2 @@
+
+(color-theme-modern . [(20161219 1144) ((emacs (24))) "Reimplement colortheme with Emacs 24 theme framework." tar ((:commit . "42a79266f1d7b473e9328e67a455e505e6c3eff5") (:url . "https://github.com/emacs-jp/replace-colorthemes/"))])

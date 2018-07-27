@@ -1,0 +1,2 @@
+
+(yankpad . [(20180624 2315) ((emacs (24))) "Paste snippets from an org-mode file" single ((:commit . "ad8ce33fec5d9eb2a7e1111b1097e4015f78c0ed") (:keywords "abbrev" "convenience") (:authors ("Erik Sjöstrand")) (:maintainer "Erik Sjöstrand") (:url . "http://github.com/Kungsgeten/yankpad"))])

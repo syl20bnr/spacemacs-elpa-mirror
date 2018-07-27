@@ -1,0 +1,2 @@
+
+(iter2 . [(20180510 1333) ((emacs (25 1))) "Reimplementation of Elisp generators" single ((:commit . "f8fb8dc7230cdcd37c5d0e4e5a432125c13816d2") (:keywords "elisp" "extensions") (:authors ("Paul Pogonyshev" . "pogonyshev@gmail.com")) (:maintainer "Paul Pogonyshev" . "pogonyshev@gmail.com") (:url . "https://github.com/doublep/iter2"))])

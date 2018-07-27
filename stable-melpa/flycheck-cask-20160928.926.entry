@@ -1,0 +1,2 @@
+
+(flycheck-cask . [(20160928 926) ((emacs (24 1)) (flycheck (0 14)) (dash (2 4 0))) "Cask support in Flycheck" single ((:commit . "c3a51147eddeb7347de81f6a498fc96538bac499") (:keywords "tools" "convenience") (:authors ("Sebastian Wiesner" . "swiesner@lunaryorn.com")) (:maintainer "Sebastian Wiesner" . "swiesner@lunaryorn.com") (:url . "https://github.com/flycheck/flycheck-cask"))])

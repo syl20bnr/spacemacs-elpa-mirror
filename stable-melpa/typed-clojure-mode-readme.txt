@@ -1,1 +1,1 @@
-Provides utility functions for Typed Clojure
+Provides helpers for getting things done in Typed Clojure

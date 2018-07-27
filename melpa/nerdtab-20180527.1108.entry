@@ -1,0 +1,2 @@
+
+(nerdtab . [(20180527 1108) ((emacs (24 5))) "Keyboard-oriented tabs" single ((:commit . "8ba090a73e82b1d5f2f90db0f348901f107591db") (:keywords "convenience") (:authors ("Yuan Fu" . "casouri@gmail.com")) (:maintainer "Yuan Fu" . "casouri@gmail.com") (:url . "https://github.com/casouri/nerdtab"))])

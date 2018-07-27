@@ -1,0 +1,2 @@
+
+(erc-crypt . [(20161228 1539) ((cl-lib (0 5))) "Symmetric Encryption for ERC" single ((:commit . "731f9264a5bf08a8fc0b5ce69e72058c86f873a5") (:keywords "comm") (:authors (nil . "xristos@sdf.lonestar.org")) (:maintainer nil . "xristos@sdf.lonestar.org") (:url . "https://github.com/atomontage/erc-crypt"))])

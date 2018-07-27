@@ -1,0 +1,2 @@
+
+(eclim . [(20171114 154) ((dash (2 11 0)) (json (1 2)) (popup (0 5 2)) (s (1 9 0)) (cl-lib (0 5)) (yasnippet (0 10 0))) "An interface to the Eclipse IDE." tar ((:commit . "6396ad1cd25c0a197109343ec1cce5d5080acdff"))])

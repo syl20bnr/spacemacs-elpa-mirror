@@ -1,0 +1,2 @@
+
+(find-temp-file . [(20170107 1339) nil "Open quickly a temporary file" single ((:commit . "513005d19d72d71f34481ee00158dd57bd93206f") (:keywords "convenience") (:authors ("Sylvain Rousseau <thisirs at gmail dot com>")) (:maintainer "Sylvain Rousseau <thisirs at gmail dot com>") (:url . "https://github.com/thisirs/find-temp-file.git"))])

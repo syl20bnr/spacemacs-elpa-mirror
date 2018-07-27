@@ -1,0 +1,2 @@
+
+(auto-async-byte-compile . [(20160916 454) nil "Automatically byte-compile when saved" single])

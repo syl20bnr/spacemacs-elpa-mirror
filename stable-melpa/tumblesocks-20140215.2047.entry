@@ -1,0 +1,2 @@
+
+(tumblesocks . [(20140215 2047) ((htmlize (1 39)) (oauth (1 0 3)) (markdown-mode (1 8 1))) "An Emacs tumblr client." tar ((:commit . "85a6cdc2db3390593fd886c474959b675460b310"))])

@@ -1,0 +1,2 @@
+
+(cframe . [(20170917 2209) ((emacs (25)) (buffer-manage (0 6)) (dash (2 13 0))) "customize a frame and fast switch size and positions" single ((:commit . "bb99672502046e87c8f029ce98c637f762a4fc54") (:keywords "frame" "customize") (:authors ("Paul Landes")) (:maintainer "Paul Landes") (:url . "https://github.com/plandes/cframe"))])

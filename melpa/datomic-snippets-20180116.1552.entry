@@ -1,0 +1,2 @@
+
+(datomic-snippets . [(20180116 1552) ((s (1 4 0)) (dash (1 2 0)) (yasnippet (0 6 1))) "Yasnippets for Datomic" tar ((:commit . "731fbd31b814ef1521bd7eb1558eeab6a4c2e01b"))])

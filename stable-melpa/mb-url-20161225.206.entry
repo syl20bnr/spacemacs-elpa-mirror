@@ -1,0 +1,2 @@
+
+(mb-url . [(20161225 206) ((cl-lib (0))) "Multiple Backends for Emacs URL package." tar ((:commit . "129a0bb6a684be76fb9f09010e710065d0e5baaa") (:url . "https://github.com/dochang/mb-url") (:keywords "url"))])

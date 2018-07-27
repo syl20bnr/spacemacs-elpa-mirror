@@ -1,0 +1,2 @@
+
+(flycheck-dtrace . [(20180126 1935) ((emacs (25 1)) (flycheck (0 22))) "Flycheck: DTrace support" single ((:commit . "a328c38aea855c0fd02f901c141c100c24b27d7f") (:keywords "languages" "convenience" "tools") (:authors ("Jürgen Hötzel" . "juergen@hoetzel.info")) (:maintainer "Jürgen Hötzel" . "juergen@hoetzel.info"))])

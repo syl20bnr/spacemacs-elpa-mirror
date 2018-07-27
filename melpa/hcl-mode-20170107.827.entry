@@ -1,0 +1,2 @@
+
+(hcl-mode . [(20170107 827) ((emacs (24 3))) "Major mode for Hashicorp" single ((:commit . "0f2c5ec7e7bcf77c8548e8cac8721ea935ca1b5e") (:authors ("Syohei YOSHIDA" . "syohex@gmail.com")) (:maintainer "Syohei YOSHIDA" . "syohex@gmail.com") (:url . "https://github.com/syohex/emacs-hcl-mode"))])

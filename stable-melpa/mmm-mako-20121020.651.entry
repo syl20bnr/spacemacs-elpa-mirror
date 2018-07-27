@@ -1,0 +1,2 @@
+
+(mmm-mako . [(20121020 651) ((mmm-mode (0 4 8))) "MMM submode class for Mako Templates" single ((:authors ("Philip Jenvey" . "pjenvey@underboss.org")) (:maintainer "Philip Jenvey" . "pjenvey@underboss.org") (:url . "https://bitbucket.org/pjenvey/mmm-mako"))])

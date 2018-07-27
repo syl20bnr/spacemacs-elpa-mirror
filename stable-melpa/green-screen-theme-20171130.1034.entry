@@ -1,0 +1,2 @@
+
+(green-screen-theme . [(20171130 1034) nil "A nice color theme for those who miss green CRTs" single ((:commit . "c348ea0adf0e6ae99294a05be183a7b425a4bab0") (:keywords "faces" "theme") (:authors ("Ricardo Banffy" . "rbanffy@gmail.com")) (:maintainer "Ricardo Banffy" . "rbanffy@gmail.com") (:url . "https://github.com/rbanffy/green-screen-emacs"))])

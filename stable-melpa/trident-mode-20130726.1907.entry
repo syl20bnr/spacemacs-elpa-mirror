@@ -1,0 +1,2 @@
+
+(trident-mode . [(20130726 1907) ((emacs (24)) (slime (20130526)) (skewer-mode (1 5 0)) (dash (1 0 3))) "Live Parenscript interaction" single ((:commit . "ad3201f47e114de35df189c3d80f0fdea9507ea9") (:keywords "languages" "lisp" "processes" "tools") (:authors ("John Mastro" . "john.b.mastro@gmail.com")) (:maintainer "John Mastro" . "john.b.mastro@gmail.com") (:url . "https://github.com/johnmastro/trident-mode.el"))])

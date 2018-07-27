@@ -1,0 +1,2 @@
+
+(sayid . [(20180404 1839) ((cider (0 14 0))) "sayid nREPL middleware client" single ((:commit . "8ea70573e6eb1a0d1a450fd501f38c2cf26ce27f") (:authors ("Bill Piel" . "bill@billpiel.com")) (:maintainer "Bill Piel" . "bill@billpiel.com") (:url . "https://github.com/bpiel/sayid"))])

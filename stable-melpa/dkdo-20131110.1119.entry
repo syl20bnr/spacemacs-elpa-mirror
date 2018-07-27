@@ -1,0 +1,2 @@
+
+(dkdo . [(20131110 1119) ((dkmisc (0 50)) (emacs (24 1))) "Do List major mode based on org-mode." tar ((:commit . "fd6bb105e8331fafb6385c5238c988c4c5bbe2da"))])

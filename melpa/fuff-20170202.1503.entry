@@ -1,0 +1,2 @@
+
+(fuff . [(20170202 1503) ((seq (2 3))) "Find files with findutils, recursively" single ((:commit . "278e849913df87bd8756c59382282d87474802c3") (:keywords "files" "project" "convenience") (:authors ("Joel Moberg")) (:maintainer "Joel Moberg") (:url . "https://github.com/joelmo/fuff"))])

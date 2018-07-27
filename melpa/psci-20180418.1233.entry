@@ -1,0 +1,2 @@
+
+(psci . [(20180418 1233) ((purescript-mode (13 10)) (dash (2 9 0)) (s (1 9 0)) (f (0 17 1))) "Major mode for purescript repl psci" tar ((:commit . "3f5ef1141a97c4b5507204d48e8aeccd553e4591") (:keywords "purescript" "psci" "repl" "major" "mode") (:authors ("Antoine R. Dumont <eniotna.t AT gmail.com>")) (:maintainer "Antoine R. Dumont <eniotna.t AT gmail.com>") (:url . "https://github.com/ardumont/emacs-psci"))])

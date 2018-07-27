@@ -1,0 +1,2 @@
+
+(project-persist-drawer . [(20151108 1222) ((project-persist (0 3))) "Use a project drawer with project-persist." tar ((:commit . "35bbe132a4fab6a0fec15ce6c0fd2fe6a4aa9626"))])

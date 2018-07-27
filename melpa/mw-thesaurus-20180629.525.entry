@@ -1,0 +1,2 @@
+
+(mw-thesaurus . [(20180629 525) ((emacs (25))) "Merriam-Webster Thesaurus" single ((:commit . "b3f8c3aae2b68a4e6cc054c6c99d3b3135e781d1") (:keywords "wp" "matching") (:authors ("Ag Ibragimov")) (:maintainer "Ag Ibragimov") (:url . "https://github.com/agzam/mw-thesaurus.el"))])

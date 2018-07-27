@@ -1,0 +1,2 @@
+
+(rubocop . [(20170312 611) ((emacs (24))) "An Emacs interface for RuboCop" single ((:commit . "0ab1329a8634762bec5bdf5f415c05b32f990248") (:keywords "project" "convenience") (:authors ("Bozhidar Batsov")) (:maintainer "Bozhidar Batsov") (:url . "https://github.com/bbatsov/rubocop-emacs"))])

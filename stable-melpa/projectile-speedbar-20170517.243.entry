@@ -1,0 +1,2 @@
+
+(projectile-speedbar . [(20170517 243) ((projectile (0 11 0)) (sr-speedbar (0))) "projectile integration for speedbar" single ((:commit . "dcab13db72c2084edbebe808e35f1126fe0b3bcd") (:keywords "project" "convenience" "speedbar" "projectile") (:authors ("Anshul Verma" . "anshul.verma86@gmail.com")) (:maintainer "Anshul Verma" . "anshul.verma86@gmail.com") (:url . "https://github.com/anshulverma/projectile-speedbar"))])

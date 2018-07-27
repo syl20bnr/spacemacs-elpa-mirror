@@ -1,0 +1,2 @@
+
+(dkmisc . [(20131110 1115) ((emacs (24 1))) "Miscellaneous functions required by dk* packages." tar ((:commit . "fe3d49c6f8322b6f89466361acd97585bdfe0608"))])

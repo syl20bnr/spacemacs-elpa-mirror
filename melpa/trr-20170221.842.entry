@@ -1,0 +1,2 @@
+
+(trr . [(20170221 842) nil "a type-writing training program on GNU Emacs." tar ((:commit . "83660d8343ef3367837354dc684dfdde2f95826a") (:keywords "games" "faces") (:authors ("YAMAMOTO Hirotaka" . "ymmt@is.s.u-tokyo.ac.jp") ("KATO Kenji" . "kato@suri.co.jp") ("	*Original Author") ("INAMURA You" . "inamura@icot.or.jp") ("	*Original Author")) (:maintainer "YAMAMOTO Hirotaka" . "ymmt@is.s.u-tokyo.ac.jp"))])

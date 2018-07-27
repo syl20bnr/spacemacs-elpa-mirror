@@ -1,0 +1,2 @@
+
+(evil-mark-replace . [(20150424 718) ((evil (1 0 8))) "replace the thing in marked area" single ((:commit . "56cf191724a3e82239ca47a17b071c20aedb0617") (:keywords "mark" "replace" "evil") (:authors ("Chen Bin" . "chenbin.sh@gmail.com")) (:maintainer "Chen Bin" . "chenbin.sh@gmail.com") (:url . "http://github.com/redguardtoo/evil-mark-replace"))])

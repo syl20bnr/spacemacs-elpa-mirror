@@ -1,0 +1,2 @@
+
+(navi2ch . [(20150330 216) nil "Navigator for 2ch for Emacsen" tar ((:commit . "f39d93c32acd5b9c3a7fb1a9fe14c5e1c4b5288e") (:keywords "network" "2ch") (:authors ("Taiki SUGAWARA" . "taiki@users.sourceforge.net")) (:maintainer "Taiki SUGAWARA" . "taiki@users.sourceforge.net"))])

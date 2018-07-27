@@ -1,0 +1,2 @@
+
+(ietf-docs . [(20150928 957) nil "Fetch, Cache and Load IETF documents" single ((:commit . "ede30d6d26044069e1731fd20c0ab2324552c0b4") (:keywords "ietf" "rfc") (:authors ("Christian E. Hopps" . "chopps@gmail.com")) (:maintainer "Christian E. Hopps" . "chopps@gmail.com") (:url . "https://github.com/choppsv1/ietf-docs"))])

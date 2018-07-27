@@ -1,0 +1,2 @@
+
+(org-rich-yank . [(20180430 1344) ((emacs (24 4))) "paste with org-mode markup and link to source" single ((:commit . "b29bd06f295424fc15b3b8c1b3f78f501d67db47") (:keywords "convenience" "hypermedia" "org") (:authors ("Kevin Brubeck Unhammer" . "unhammer@fsfe.org")) (:maintainer "Kevin Brubeck Unhammer" . "unhammer@fsfe.org"))])
