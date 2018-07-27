@@ -1,0 +1,2 @@
+
+(djangonaut . [(20180727 1544) ((emacs (25 2)) (magit-popup (2 6 0)) (pythonic (0 1 0)) (f (0 20 0)) (s (1 12 0))) "Minor mode to interact with Django projects" single ((:commit . "487dbd19a312cf5b45183df82d5d57f5c5a403a2") (:authors ("Artem Malyshev" . "proofit404@gmail.com")) (:maintainer "Artem Malyshev" . "proofit404@gmail.com") (:url . "https://github.com/proofit404/djangonaut"))])

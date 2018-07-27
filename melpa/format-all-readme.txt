@@ -6,6 +6,7 @@ package and formatting command for each language.  Just do M-x
 Supported languages:
 
 - C/C++/Objective-C (clang-format)
+- Crystal (crystal tool format)
 - CSS/Less/SCSS (prettier)
 - D (dfmt)
 - Elixir (mix format)

@@ -1,0 +1,2 @@
+
+(lsp-clangd . [(20180701 134) ((lsp-mode (3 0)) (emacs (24 3))) "clangd support for lsp-mode" single ((:commit . "bf7641f6c512a133a038556c17e8b454b0602ea0") (:keywords "lsp" "clang" "clangd" "c" "c++" "objective-c" "objective-c++") (:authors ("Thomas Brown" . "tabsoftwareconsulting@gmail.com")) (:maintainer "Thomas Brown" . "tabsoftwareconsulting@gmail.com") (:url . "https://github.com/emacs-lsp/lsp-clangd"))])

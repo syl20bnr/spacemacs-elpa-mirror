@@ -1,2 +1,2 @@
 
-(atom-dark-theme . [(20170710 2312) nil "An Emacs port of the Atom Dark theme from Atom.io." single])
+(atom-dark-theme . [(20170710 2312) nil "An Emacs port of the Atom Dark theme from Atom.io." single ((:commit . "7fb37fd953e417acbcf7dd3f36e3167bed9bc887") (:keywords "themes" "atom" "dark") (:authors (nil . "Jeremy Whitlock <jwhitlock@apache.org")) (:maintainer nil . "Jeremy Whitlock <jwhitlock@apache.org") (:url . "https://github.com/whitlockjc/atom-dark-theme-emacs"))])
