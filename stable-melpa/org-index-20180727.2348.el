@@ -4,7 +4,7 @@
 
 ;; Author: Marc Ihm <org-index@2484.de>
 ;; URL: https://github.com/marcIhm/org-index
-;; Package-Version: 20180727.1426
+;; Package-Version: 20180727.2348
 ;; Version: 5.8.99
 ;; Package-Requires: ((emacs "24.4"))
 
@@ -79,17 +79,9 @@
 
 ;;; Change Log:
 
-;; / This Change Log will be copied to command 'news' and ChangeLog.org by Rake /
-;; 
 ;;   Version 5.9
 ;; 
 ;;   - Renamed 'focus' to 'working-set', changed commands and help texts accordingly.
-;;     Especially these customization options have been renamed:
-;;     - org-index-clock-into-focus         into  org-index-clock-into-working-set
-;;     - org-index-show-focus-overlay       into  org-index-show-working-set-overlay
-;;     - org-index-goto-bottom-after-focus  into  org-index-goto-bottom-in-working-set
-;;     If you have changed those options from their defaults,
-;;     you may need to adjust your settings manually.
 ;;   - Added special buffer to manage the working-set
 ;; 
 ;;   Version 5.8
@@ -235,15 +227,21 @@ those pieces."
                   (const category)
                   (const keywords))))
 
+(define-obsolete-variable-alias 'org-index-clock-into-focus 'org-index-clock-into-working-set)
+
 (defcustom org-index-clock-into-working-set nil
   "Clock into nodes of working-set ?"
   :group 'org-index
   :type 'boolean)
 
+(define-obsolete-variable-alias 'org-index-show-focus-overlay 'org-index-show-working-set-overlay)
+
 (defcustom org-index-show-working-set-overlay t
   "Show overlay text when traversing the working-set."
   :group 'org-index
   :type 'boolean)
+
+(define-obsolete-variable-alias 'org-index-goto-bottom-after-focus 'org-index-goto-bottom-in-working-set)
 
 (defcustom org-index-goto-bottom-in-working-set nil
   "After visiting a node from the working-set; position cursor at bottom of node (as opposed to heading) ?"
@@ -357,7 +355,9 @@ supplemental concepts:
    well suited to be used outside of org, e.g. in folder names,
    ticket systems or on printed documents.
 - 'Working set' (short: ws) is a small set of nodes for your daily work;
-   it can be managed easily and traversed very fast.
+   it can be managed easily and traversed very fast. All related tasks
+   are also available through the interactive function
+   org-index-working-set, which see.
 
 On first invocation org-index will assist you in creating the index
 table.
@@ -654,7 +654,7 @@ interactive calls."
          (insert "
 * 5.9
 
-  - Renamed 'focus' to 'working-set', changed commands and help texts accordingly
+  - Renamed 'focus' to 'working-set', changed commands and help texts accordingly.
   - Added special buffer to manage the working-set
 
 * 5.8
