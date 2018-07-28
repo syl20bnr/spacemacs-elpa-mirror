@@ -1,2 +1,2 @@
 
-(rustic . [(20180727 1235) ((emacs (26 1)) (xterm-color (1 6)) (dash (2 13 0)) (s (1 10 0)) (f (0 18 2)) (projectile (0 14 0)) (markdown-mode (2 3)) (spinner (1 7 3))) "A major emacs mode for editing Rust source code" tar ((:commit . "9a7bd1e52c588a1e8ed9ffd3a22a3e382440a657") (:keywords "languages") (:authors ("Mozilla")) (:maintainer "Mozilla"))])
+(rustic . [(20180727 1235) ((emacs (26 1)) (xterm-color (1 6)) (dash (2 13 0)) (s (1 10 0)) (f (0 18 2)) (projectile (0 14 0)) (markdown-mode (2 3)) (spinner (1 7 3))) "A major emacs mode for editing Rust source code" tar ((:commit . "4a4741802fd4b3767a84cd9633dac369b498120a") (:keywords "languages") (:authors ("Mozilla")) (:maintainer "Mozilla"))])

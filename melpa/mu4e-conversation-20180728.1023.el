@@ -5,7 +5,7 @@
 ;; Author: Pierre Neidhardt <ambrevar@gmail.com>
 ;; Maintainer: Pierre Neidhardt <ambrevar@gmail.com>
 ;; URL: https://gitlab.com/Ambrevar/mu4e-conversation
-;; Package-Version: 20180722.859
+;; Package-Version: 20180728.1023
 ;; Version: 0.0.1
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: mail, convenience, mu4e
@@ -856,7 +856,9 @@ mu4e message as argument."
   (if (not (use-region-p))
       (mu4e-scroll-up)                  ; TODO: Call function associate to `this-command-key' in mu4e-view-mode / org-mode.
     (let ((text (replace-regexp-in-string
-                 "\n+$" ""
+                 (rx (or (group (1+ "\n") string-end)
+                         (group string-start (1+ "\n"))))
+                 ""
                  (buffer-substring-no-properties start end)))
           (mu4e-conversation-use-citation-line (if toggle-citation-line
                                              (not mu4e-conversation-use-citation-line)
